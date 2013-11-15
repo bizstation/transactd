@@ -1,0 +1,84 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{5482331D-F464-403D-B777-E0EF276097E1}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="tdclc\tdclc_64.cbproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="tdclcpp\tdclcpp_bcb_64.cbproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="test_tdcl\test_tdclcpp_bcb_64.cbproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="bench_td\bench_tdclcpp_bcb_64.cbproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="bench_td\bench_tdclcpp_c_bcb_64.cbproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="tdclc_64">
+        <MSBuild Projects="tdclc\tdclc_64.cbproj"/>
+    </Target>
+    <Target Name="tdclc_64:Clean">
+        <MSBuild Projects="tdclc\tdclc_64.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="tdclc_64:Make">
+        <MSBuild Projects="tdclc\tdclc_64.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="tdclcpp_bcb_64">
+        <MSBuild Projects="tdclcpp\tdclcpp_bcb_64.cbproj"/>
+    </Target>
+    <Target Name="tdclcpp_bcb_64:Clean">
+        <MSBuild Projects="tdclcpp\tdclcpp_bcb_64.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="tdclcpp_bcb_64:Make">
+        <MSBuild Projects="tdclcpp\tdclcpp_bcb_64.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="test_tdclcpp_bcb_64">
+        <MSBuild Projects="test_tdcl\test_tdclcpp_bcb_64.cbproj"/>
+    </Target>
+    <Target Name="test_tdclcpp_bcb_64:Clean">
+        <MSBuild Projects="test_tdcl\test_tdclcpp_bcb_64.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="test_tdclcpp_bcb_64:Make">
+        <MSBuild Projects="test_tdcl\test_tdclcpp_bcb_64.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="bench_tdclcpp_bcb_64">
+        <MSBuild Projects="bench_td\bench_tdclcpp_bcb_64.cbproj"/>
+    </Target>
+    <Target Name="bench_tdclcpp_bcb_64:Clean">
+        <MSBuild Projects="bench_td\bench_tdclcpp_bcb_64.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="bench_tdclcpp_bcb_64:Make">
+        <MSBuild Projects="bench_td\bench_tdclcpp_bcb_64.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="bench_tdclcpp_c_bcb_64">
+        <MSBuild Projects="bench_td\bench_tdclcpp_c_bcb_64.cbproj"/>
+    </Target>
+    <Target Name="bench_tdclcpp_c_bcb_64:Clean">
+        <MSBuild Projects="bench_td\bench_tdclcpp_c_bcb_64.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="bench_tdclcpp_c_bcb_64:Make">
+        <MSBuild Projects="bench_td\bench_tdclcpp_c_bcb_64.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="tdclc_64;tdclcpp_bcb_64;test_tdclcpp_bcb_64;bench_tdclcpp_bcb_64;bench_tdclcpp_c_bcb_64"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="tdclc_64:Clean;tdclcpp_bcb_64:Clean;test_tdclcpp_bcb_64:Clean;bench_tdclcpp_bcb_64:Clean;bench_tdclcpp_c_bcb_64:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="tdclc_64:Make;tdclcpp_bcb_64:Make;test_tdclcpp_bcb_64:Make;bench_tdclcpp_bcb_64:Make;bench_tdclcpp_c_bcb_64:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

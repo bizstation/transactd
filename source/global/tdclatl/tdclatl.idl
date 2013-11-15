@@ -1,0 +1,1035 @@
+/*=================================================================
+   Copyright (C) 2013 BizStation Corp All rights reserved.
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License
+   as published by the Free Software Foundation; either version 2
+   of the License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software 
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   02111-1307, USA.
+=================================================================*/
+import "oaidl.idl";
+import "ocidl.idl";
+
+coclass Database;
+interface IDbDef;
+coclass DbDef;
+  
+interface ITableDef;
+interface IFieldDef;
+interface IKeyDef;
+interface ITable;
+interface IFlags;
+interface IKeySegment;
+interface IField;
+interface ITdVersion;
+
+
+typedef
+[
+  helpstring("Update, Insert type Constants")
+]
+enum eUpdateType
+{
+  changeCurrentCc  = 0,
+  changeCurrentNcc = 1,
+  changeInKey = 2
+}eUpdateType;
+
+typedef
+[
+  helpstring("Field info query type Constants")
+]
+enum eFieldQuery 
+{
+    minlen = 0, 
+	mxlen = 1,
+	defaultlen = 2,
+	decimals = 3
+}eFieldQuery;
+
+typedef
+[
+  helpstring("Find type Constants")
+]
+enum eFindType
+{
+  findForword = 0,
+  findBackForword = 0
+}eFindType;
+
+
+typedef
+[
+  helpstring("Schema type enum")
+]
+enum eSchemaType
+{
+	schemaBdf = (short)0,
+    schemaDdf = (short)1
+}eSchemaType;
+
+typedef
+[
+  helpstring("Open mode enum")
+]
+enum eOpenMode
+{
+	normal = 0,
+    readOnly = -2,
+	exclusive = -4
+}eOpenMode;
+
+
+
+typedef
+[
+  helpstring("Status code Constants")
+]
+enum eStatus
+{
+	STATUS_TABLE_YET_OPEN		= -3,
+	STATUS_DURING_TRANSACTION	= -4,
+	STATUS_NO_ACR_UPDATE_DELETE = -5,
+	STATUS_NO_ACR_INSERT		= -6,
+	STATUS_NO_ACR_READ			= -7,
+	STATUS_CANT_ALLOC_MEMORY	= -8,
+	STATUS_USE_KEYFIELD			= -9,
+	STATUS_TOO_MANY_TABLES		= -10,
+	STATUS_INVARID_PRM_KEY_NUM	= -11,
+	STATUS_INVARID_PNT_KEY_NUM	= -12,
+	STATUS_INVARID_REP_KEY_NUM	= -13,
+	STATUS_INVARID_FIELD_IDX	= -14,
+	STATUS_ALREADY_DELETED		= -15,
+	STATUS_LMITS_MAX_TABLES		= -16,
+	STATUS_DB_YET_OPEN			= -17,
+	STATUS_TABLENAME_NOTFOUND	= -18,
+	STATUS_DIFFERENT_DBVERSION	= -19,
+	STATUS_DUPLICATE_FIELDNAME	= -20,
+	STATUS_INVALID_TABLE_IDX	= -21,
+	STATUS_AUTH_DENIED			= -22,
+	STATUS_TOO_MANY_FIELDS		= -23,
+	STATUS_FILTERSTRING_ERROR	= -24,
+	STATUS_INVALID_FIELDLENGTH	= -25,
+	STATUS_INVALID_KEYTYPE		= -26,
+	STATUS_LVAR_NOTE_NOT_LAST	= -27,
+	STATUS_NODEF_FOR_CONVERT	= -28,
+	STATUS_AUTOINC_SPACE_ERROR  = -31,
+	STATUS_TOO_LONG_OWNERNAME   = -32,
+	STATUS_CANT_DEL_FOR_REL		= -33,
+	STATUS_NO_AUTOINC_SPACE		= -34,
+	STATUS_INVALID_RECLEN		= -35,
+	STATUS_INVALID_FIELDVALUE	= -36,
+	STATUS_INVALID_VALLEN		= -37,
+	STATUS_FIELDTYPE_NOTSUPPORT = -42,
+	STATUS_SUCCESS				= 0,
+	STATUS_PROGRAM_ERROR		= 1,
+	STATUS_IO_ERROR				= 2,
+	STATUS_FILE_NOT_OPENED		= 3,
+	STATUS_NOT_FOUND_TI			= 4,
+	STATUS_DUPPLICATE_KEYVALUE	= 5,
+	STATUS_INVALID_KEYNUM		= 6,
+	STATUS_NO_CURRENT			= 8,
+	STATUS_EOF					= 9,
+	STATUS_TABLE_NOTOPEN		= 12,
+	STATUS_REQUESTER_DEACTIVE   = 20,
+	STATUS_KEYBUFFERTOOSMALL	= 21,
+	STATUS_BUFFERTOOSMALL		= 22,
+	STATUS_CANT_CREATE          = 25,
+	STATUS_NOSUPPORT_OP         = 41,
+	STATUS_INVALID_BOOKMARK		= 43,
+	STATUS_ACCESS_DENIED		= 46,
+	STATUS_INVALID_OWNERNAME	= 51,
+	STATUS_TABLE_EXISTS_ERROR	= 59,
+	STATUS_LIMMIT_OF_REJECT		= 60,
+	STATUS_REACHED_FILTER_COND	= 64,
+	STATUS_INVALID_FIELD_OFFSET = 65,
+	STATUS_CHANGE_CONFLICT		= 80,
+	STATUS_INVALID_LOCKTYPE		= 83,
+	STATUS_LOCK_ERROR			= 84,
+	STATUS_FILE_LOCKED			= 85,
+	STATUS_CANNOT_LOCK_TABLE	= 88,
+	TATUS_INVALID_KEYNAME		= 6,
+	STATUS_INVALID_DATASIZE		= 22,
+	STATUS_INVALID_FIELDNAME	= 65,
+	ERROR_TD_INVALID_CLINETHOST	= 171,
+	ERROR_NOSPECIFY_TABLE       = 176,
+	NET_BAD_SRB_FORMAT			= 3021,
+	ERROR_TD_HOSTNAME_NOT_FOUND = 3103,
+	ERROR_TD_CONNECTION_FAILURE = 3106,
+	ERROR_TD_NOT_CONNECTED      = 3110
+}eStatus;
+
+typedef
+[
+  helpstring("Field type Constants")
+]
+enum eFieldType
+{
+	ft_string		= 0, 
+	ft_integer		= 1,
+	ft_float		= 2,
+	ft_date			= 3,
+	ft_time			= 4,
+	ft_decimal		= 5,
+	ft_money		= 6,
+	ft_logical		= 7,
+	ft_numeric		= 8,
+	ft_bfloat		= 9, 
+	ft_lstring		= 10,
+	ft_zstring		= 11,
+	ft_note			= 12,
+	ft_lvar			= 13,
+	ft_uinteger		= 14,
+	ft_autoinc		= 15,
+	ft_bit			= 16,
+	ft_numericsts	= 17,
+	ft_numericsa	= 18,
+	ft_currency		= 19,
+	ft_timestamp	= 20,
+	ft_blob			= 21,
+	ft_reserve22	= 22,
+	ft_reserve23	= 23,
+	ft_reserve24	= 24,
+	ft_wstring		= 25,
+	ft_wzstring		= 26,
+	ft_guid			= 27,
+	ft_datatime		= 30,
+	ft_myvarchar	= 40,
+	ft_myvarbinary	= 41,
+	ft_mywvarchar	= 42,
+	ft_mywvarbinary	= 43,
+	ft_mychar		= 44,
+	ft_mywchar		= 45,
+	ft_mydate		= 46,
+	ft_mytime		= 47,
+	ft_mydatetime 	= 48,
+	ft_mytimestamp	= 49,
+	ft_mytext 		= 50,
+	ft_myblob 		= 51,
+	ft_nullindicator = 255
+}eFieldType;
+
+typedef
+[
+  helpstring("Charset type Constants")
+]
+enum eCharset
+{
+	CHARSET_LATIN1  =  1,
+	CHARSET_CP850   =  4,
+	CHARSET_ASCII   =  9,
+	CHARSET_SJIS	= 11,
+	CHARSET_UTF8	= 22,
+	CHARSET_USC2	= 23,
+	CHARSET_UTF8B4	= 30,
+	CHARSET_UTF16LE	= 33,
+	CHARSET_CP932	= 38,
+	CHARSET_EUCJ	= 40,
+	MAX_CHAR_INFO   = 41
+
+}eCharset;
+
+typedef
+[
+  helpstring("Lock type Constants")
+]
+enum eLockType
+{
+  LOCK_NONE           = 0,
+  LOCK_SINGLE_WAIT    = 100,
+  LOCK_SINGLE_NOWAIT  = 200,
+  LOCK_MULTI_WAIT     = 300,
+  LOCK_MULTI_NOWAIT   = 400,
+  NOWAIT_WRITE        = 500,
+  PARALLEL_TRN        = 1000,
+  PARA_SINGLE_NOWAIT  = 1700,
+  PARA_MULTI_NOWAIT   = 1900
+}eLockType;
+
+typedef
+[
+  helpstring("Continus operation types")
+]
+enum eContinusOpr
+{
+	backup_start = 0,
+	backup_end = 1
+}eContinusOpr;
+
+typedef
+[
+  helpstring("Continus operation types")
+]
+enum eContinusStatus
+{
+	TD_BACKUP_MODE_OK            = 0,
+	TD_BACKUP_MODE_NOT_SUPPORT   = 1,
+	TD_BACKUP_MODE_BUSY          = 88,
+	TD_BACKUP_MODE_NOT_PERMIT    = 41,
+	TD_BACKUP_MODE_SERVER_ERROR  = 91	
+}eContinusStatus;
+
+
+
+[
+  object,
+  uuid(3EE9F43F-99D0-4300-B8A4-3085A2C4D00B),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IDatabase : IDispatch
+{
+  [id(0x00000001)]
+  HRESULT _stdcall Open([in] BSTR Uri, [in, defaultvalue(schemaBdf)] eSchemaType SchemaType, [in, defaultvalue(readOnly)] eOpenMode Mode, [in, defaultvalue("")] BSTR Dir, [in, defaultvalue("")] BSTR OwnerName, [out, retval] VARIANT_BOOL* Param6);
+  [propget, id(0x00000008)]
+  HRESULT _stdcall DbDef([out, retval] IDbDef** Value);
+  [id(0x00000002)]
+  HRESULT _stdcall OpenTable([in] VARIANT TableID, [in,  defaultvalue(normal)] eOpenMode Mode, [in, defaultvalue(-1)] VARIANT_BOOL AutoCreate, [in, defaultvalue("")] BSTR OwnerName, [in, defaultvalue("")] BSTR Uri, [out, retval] ITable** ret);
+  [id(0x00000003), hidden]
+  HRESULT _stdcall AtatchDatabase([in] hyper* nativeDatabase);
+  [propget, id(0x00000004)]
+  HRESULT _stdcall RootDir([out, retval] BSTR* Value);
+  [propput, id(0x00000004)]
+  HRESULT _stdcall RootDir([in] BSTR Value);
+  [propget, id(0x00000005)]
+  HRESULT _stdcall Stat([out, retval] eStatus* Value);
+  [id(0x00000006)]
+  HRESULT _stdcall BeginTrn([in, defaultvalue(PARA_SINGLE_NOWAIT)] eLockType Bias);
+  [id(0x00000007)]
+  HRESULT _stdcall EndTrn(void);
+  [id(0x00000009)]
+  HRESULT _stdcall AbortTrn(void);
+  [propget, id(0x0000000A)]
+  HRESULT _stdcall NativeDatabase([out, retval] hyper** Value);
+  [id(0x000000C9)]
+  HRESULT _stdcall BeginSnapshot(void);
+  [id(0x000000CA)]
+  HRESULT _stdcall EndSnapshot(void);
+  [id(0x000000CB)]
+  HRESULT _stdcall Drop(void);
+  [id(0x000000CC)]
+  HRESULT _stdcall DropTable([in] BSTR TableName);
+  [id(0x000000CD)]
+  HRESULT _stdcall Create([in] BSTR Uri, [in, defaultvalue(0)] int type);
+  [id(0x000000CE)]
+  HRESULT _stdcall Connect([in] BSTR Uri, [in, defaultvalue(0)] VARIANT_BOOL NewConnection, [out, retval] VARIANT_BOOL* Value);
+  [id(0x000000CF)]
+  HRESULT _stdcall Disconnect([in] BSTR Uri, [out, retval] VARIANT_BOOL* Param2);
+  [id(0x000000D0)]
+  HRESULT _stdcall Close(void);
+  [propget, id(0x000000D1)]
+  HRESULT _stdcall EnableTrn([out, retval] VARIANT_BOOL* Value);
+  [id(0x000000D2)]
+  HRESULT _stdcall GetBtrVersion([in]int Index, [out, retval] ITdVersion** Value);
+
+  [id(0x000000D4)]
+  HRESULT _stdcall IsTransactdUri([in] BSTR Uri, [out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x000000D5)]
+  HRESULT _stdcall IsUseTransactd([out, retval] VARIANT_BOOL* Value);
+  [id(0x000000D6)]
+  HRESULT _stdcall SetUseTransactd(void);
+  [propget, id(0x000000D7)]
+  HRESULT _stdcall LocalSharing([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000D7)]
+  HRESULT _stdcall LocalSharing([in] VARIANT_BOOL Value);
+  [propget, id(0x000000D8)]
+  HRESULT _stdcall LockWaitCount([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000D8)]
+  HRESULT _stdcall LockWaitCount([in] VARIANT_BOOL Value);
+  [propget, id(0x000000D9)]
+  HRESULT _stdcall LockWaitTime([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000D9)]
+  HRESULT _stdcall LockWaitTime([in] VARIANT_BOOL Value);
+  [propget, id(0x000000DA)]
+  HRESULT _stdcall UseLongFilename([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000DA)]
+  HRESULT _stdcall UseLongFilename([in] VARIANT_BOOL Value);
+  [propget, id(0x000000DB)]
+  HRESULT _stdcall OpenTableCount([out, retval] short* Value);
+  [id(0x000000DC)]
+  HRESULT _stdcall ReadDatabaseDirectory([out, retval] BSTR* Value);
+  [id(0x000000DE)]
+  HRESULT _stdcall Rename([in] BSTR OldUri, [in] BSTR newUri);
+  [propget, id(0x000000DF)]
+  HRESULT _stdcall Uri( [out, retval] BSTR* Uri);
+  [id(0x000000E1)]
+  HRESULT _stdcall TdapErr([in]OLE_HANDLE hWnd, [out, retval] BSTR* Value);
+  [id(0x000000E3)]
+  HRESULT _stdcall Clone([out, retval] IDatabase** Value);
+  [id(0x000000E4)]
+  HRESULT _stdcall AssignSchemaData([in] IDbDef* Src, [out, retval] short* Value);
+  [id(0x000000E5)]
+  HRESULT _stdcall Continuous([in] eContinusOpr Op, [in, defaultvalue(0)] VARIANT_BOOL inclideRepfile, [out, retval] eContinusStatus* Value);
+  [id(0x000000E6)]
+  HRESULT _stdcall ConvertTable([in] short TableIndex, [in, defaultvalue(-1)] VARIANT_BOOL Turbo, [in, defaultvalue("")] BSTR OwnerName);
+  [id(0x000000E7)]
+  HRESULT _stdcall CopyTableData([in] ITable* Dest, [in] ITable* Src, [in] VARIANT_BOOL Turbo, [in, defaultvalue(0)] int Offset
+	  , [in, defaultvalue(-1)] short KeyNum, [in, defaultvalue(-1)] int MaxSkip, [out, retval] short* Value);
+  [id(0x000000E8)]
+  HRESULT _stdcall CreateTable([in] short FileNum, [in, defaultvalue("")] BSTR Uri, [out, retval] VARIANT_BOOL* Value);
+  [id(0x000000E9)]
+  HRESULT _stdcall ExistsTableFile([in] short TableIndex, [in, defaultvalue("")] BSTR OwnerName);
+  [id(0x000000EA)]
+  HRESULT _stdcall GetTableUri([in] short FileNum, [out, retval] BSTR* Value);
+  [propget, id(0x000000EB)]
+  HRESULT _stdcall IsOpened([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x000000EC)]
+  HRESULT _stdcall TableReadOnly([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000EC)]
+  HRESULT _stdcall TableReadOnly([in] VARIANT_BOOL Value);
+  [id(0x000000ED)]
+  HRESULT _stdcall SwapTablename([in] BSTR Uri1, [in] BSTR Uri2);
+  [propget, id(0x000000EF)]
+  HRESULT _stdcall ClientID([out, retval] short* Value);
+  [propget, id(0x000000F0)]
+  HRESULT _stdcall RefCount([out, retval] int* Value);
+  [propget, id(0x000000F1)]
+  HRESULT _stdcall TrnsactionFlushWaitStatus([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000F2), helpstring("Effect to all Database instance.")]
+  HRESULT _stdcall ExecCodePage([in] unsigned int Value);
+  [propget, id(0x000000F2)]
+  HRESULT _stdcall ExecCodePage([out, retval] unsigned int* Value);
+  [propget, id(0x000000F3)]
+  HRESULT _stdcall MaxTables([out, retval]  int* Value);
+ 
+  
+};
+
+
+
+
+[
+  object,
+  uuid(907FD3F0-130F-4A44-BC79-AAECBDBE93AF),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IDbDef : IDispatch
+{
+  [propget, id(0x00000003)]
+  HRESULT _stdcall TableCount([out, retval] short* Value);
+  [id(0x000000C9)]
+  HRESULT _stdcall InsertTable([in] short index, [out, retval] ITableDef** Param1);
+  [id(0x000000CA)]
+  HRESULT _stdcall UpDateTableDef([in] short TableIndex);
+  [id(0x000000CB)]
+  HRESULT _stdcall InsertField([in] short TableIndex, [in] short InsertIndex, [out, retval] IFieldDef** Param3);
+  [id(0x000000CC)]
+  HRESULT _stdcall DeleteField([in] short TableIndex, [in] short FieldIndex);
+  [id(0x000000CD)]
+  HRESULT _stdcall InsertKey([in] short TableIndex, [in] short InsertIndex, [out, retval] IKeyDef** Param3);
+  [id(0x000000CE)]
+  HRESULT _stdcall DeleteKey([in] short TableIndex, [in] short KeyIndex);
+  [id(0x000000CF)]
+  HRESULT _stdcall TableDef([in] short Index, [out, retval] ITableDef** Value);
+
+  [id(0x000000D0)]
+  HRESULT _stdcall CompAsBackup([in] short TableIndex, [out, retval] VARIANT_BOOL* Value);
+  [id(0x000000D1)]
+  HRESULT _stdcall DeleteTable([in] short TableIndex);
+  [id(0x000000D2)]
+  HRESULT _stdcall TableNumByName([in] BSTR Name, [out, retval] short* Value);
+  [id(0x000000D3)]
+  HRESULT _stdcall FieldNumByName([in] short TableIndex, [in] BSTR Name, [out, retval] short* Value);
+  [id(0x000000D4)]
+  HRESULT _stdcall FieldValidLength([in] eFieldQuery Query, [in] short FieldType, [out, retval] unsigned int* Value);
+  [id(0x000000D5)]
+  HRESULT _stdcall FindKeynumByFieldNum([in] short TableIndex, [in] short Index, [out, retval] unsigned short* Value);
+  [id(0x000000D6)]
+  HRESULT _stdcall GetRecordLen([in] short TableIndex, [out, retval] unsigned short* Value);
+  [propget, id(0x000000D7)]
+  HRESULT _stdcall OpenMode([out, retval] eOpenMode* Value);
+  [id(0x000000D8)]
+  HRESULT _stdcall PopBackup([in] short TableIndex);
+  [id(0x000000D9)]
+  HRESULT _stdcall PushBackup([in] short TableIndex);
+  [id(0x000000DA)]
+  HRESULT _stdcall RenumberTable([in] short OldIndex, [in] short NewIndex);
+  [id(0x000000DB)]
+  HRESULT _stdcall Reopen([in, defaultvalue(readOnly)] eOpenMode Mode);
+  [propget, id(0x000000DC)]
+  HRESULT _stdcall Version([out, retval] int* Value);
+  [propput, id(0x000000DC)]
+  HRESULT _stdcall Version([in] int Value);
+  [propget, id(0x000000DD)]
+  HRESULT _stdcall Stat([out, retval] eStatus* Value);
+  [id(0x000000DE)]
+  HRESULT _stdcall TdapErr([in]OLE_HANDLE hWnd, [out, retval] BSTR* Value);
+};
+[
+	object,
+	uuid(91FD8A45-1D66-4939-9AF0-7F0ACD65AA00),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface ITable : IDispatch
+{
+  [propget, id(0x00000001)]
+  HRESULT _stdcall Vlng([in] VARIANT Index, [out, retval] int* Value);
+  [propput, id(0x00000001)]
+  HRESULT _stdcall Vlng([in] VARIANT Index, [in] int Value);
+  [propget, id(0x00000002)]
+  HRESULT _stdcall Text([in] VARIANT Index, [out, retval] BSTR* Value);
+  [propput, id(0x00000002)]
+  HRESULT _stdcall Text([in] VARIANT Index, [in] BSTR Value);
+  [propget, id(0x00000003)]
+  HRESULT _stdcall TableDef([out, retval] ITableDef** Value);
+  [id(0x00000004)]
+  HRESULT _stdcall Insert([in, defaultvalue(changeCurrentNcc)] eUpdateType ncc);
+  [id(0x00000005)]
+  HRESULT _stdcall UpDate([in, defaultvalue(changeCurrentNcc)] eUpdateType ncc);
+  [id(0x00000006)]
+  HRESULT _stdcall Delete([in, defaultvalue(0)] VARIANT_BOOL inkey);
+  [id(0x00000007)]
+  HRESULT _stdcall ClearBuffer(void);
+  [id(0x00000019)]
+  HRESULT _stdcall Close(void);
+  [id(0x0000001A)]
+  HRESULT _stdcall SeekFirst([in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x0000001B)]
+  HRESULT _stdcall SeekLast([in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x0000001C)]
+  HRESULT _stdcall SeekPrev([in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x0000001D)]
+  HRESULT _stdcall SeekNext([in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x0000001E)]
+  HRESULT _stdcall Seek([in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x0000001F)]
+  HRESULT _stdcall SeekGreater([in] VARIANT_BOOL orEqual, [in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x00000020)]
+  HRESULT _stdcall SeekLessThan([in] VARIANT_BOOL orEqual, [in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [propget, id(0x00000030)]
+  HRESULT _stdcall BookMark([out, retval] long* Value);
+  [id(0x00000022)]
+  HRESULT _stdcall SeekByBookMark([in] long Value, [in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [propget, id(0x00000023)]
+  HRESULT _stdcall Percentage([out, retval] long* Value);
+  [id(0x00000031)]
+  HRESULT _stdcall SeekByPercentage([in] long Value);
+  [propget, id(0x00000024)]
+  HRESULT _stdcall RecordCount([out, retval] long* Value);
+  [propget, id(0x00000025)]
+  HRESULT _stdcall RecordLength([out, retval] long* Value);
+  [propget, id(0x00000026)]
+  HRESULT _stdcall Stat([out, retval] eStatus* Value);
+  [propput, id(0x00000026)]
+  HRESULT _stdcall Stat([in] eStatus Value);
+  [propget, id(0x00000027)]
+  HRESULT _stdcall KeyNum([out, retval] short* Value);
+  [propput, id(0x00000027)]
+  HRESULT _stdcall KeyNum([in] short Value);
+  [propget, id(0x00000021)]
+  HRESULT _stdcall Vdbl([in] VARIANT Index, [out, retval] double* Value);
+  [propput, id(0x00000021)]
+  HRESULT _stdcall Vdbl([in] VARIANT Index, [in] double Value);
+  [propget, id(0x00000028)]
+  HRESULT _stdcall Vbin([in] VARIANT Index, [out, retval] BSTR* Value);
+  [propput, id(0x00000028)]
+  HRESULT _stdcall Vbin([in] VARIANT Index, [in] BSTR Value);
+  [propget, id(0x00000029)]
+  HRESULT _stdcall Filter([out, retval] BSTR* Value);
+  [propput, id(0x00000029)]
+  HRESULT _stdcall Filter([in] BSTR Value);
+  [id(0x0000002A)]
+  HRESULT _stdcall FindNext([in, defaultvalue(-1)] VARIANT_BOOL notIncCurrent);
+  [id(0x0000002B)]
+  HRESULT _stdcall FindPrev([in, defaultvalue(-1)] VARIANT_BOOL notIncCurrent);
+  [id(0x0000002C)]
+  HRESULT _stdcall FindFirst(void);
+  [id(0x0000002D)]
+  HRESULT _stdcall FindLast(void);
+  [propget, id(0x0000000F)]
+  HRESULT _stdcall V64([in] VARIANT Index, [out, retval] hyper* Value);
+  [propput, id(0x0000000F)]
+  HRESULT _stdcall V64([in] VARIANT Index, [in] hyper Value);
+  [id(0x0000002E)]
+  HRESULT _stdcall StepFirst([in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x0000002F)]
+  HRESULT _stdcall StepLast([in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x00000032)]
+  HRESULT _stdcall StepPrev([in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x00000033)]
+  HRESULT _stdcall StepNext([in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  [id(0x000000C9)]
+  HRESULT _stdcall BeginBulkInsert([in, defaultvalue(55535)] long Value);
+  [id(0x000000CA)]
+  HRESULT _stdcall CommitBulkInsert(void);
+  [id(0x000000CB)]
+  HRESULT _stdcall AbortBulkInsert(void);
+  [propget, id(0x000000CC)]
+  HRESULT _stdcall FilterRejectCount([out, retval] long* Value);
+  [propput, id(0x000000CC)]
+  HRESULT _stdcall FilterRejectCount([in] long Value);
+  [propget, id(0x000000CD)]
+  HRESULT _stdcall FilterGetCount([out, retval] long* Value);
+  [propput, id(0x000000CD)]
+  HRESULT _stdcall FilterGetCount([in] long Value);
+  [id(0x000000CE)]
+  HRESULT _stdcall Field([in] VARIANT Index, [out, retval] IField** Value);
+  [propget, id(0x000000CF)]
+  HRESULT _stdcall CanDelete([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x000000D0)]
+  HRESULT _stdcall CanInsert([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x000000D1)]
+  HRESULT _stdcall CanRead([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x000000D2)]
+  HRESULT _stdcall CanWrite([out, retval] VARIANT_BOOL* Value);
+  [id(0x000000D3)]
+  HRESULT _stdcall ClearOwnerName(void);
+  [id(0x000000D4)]
+  HRESULT _stdcall CreateIndex([in, defaultvalue(0)] VARIANT_BOOL specifyKeyNum);
+  [id(0x000000D5)]
+  HRESULT _stdcall DropIndex([in, defaultvalue(0)] VARIANT_BOOL norenumber);
+  [propget, id(0x000000D6)]
+  HRESULT _stdcall Datalen([out, retval] unsigned int* Value);
+  [propget, id(0x000000D7)]
+  HRESULT _stdcall WriteImageLen([out, retval] unsigned int* Value);
+  [propget, id(0x000000D8)]
+  HRESULT _stdcall IsOpen([out, retval] VARIANT_BOOL* Value);
+  [id(0x000000D9)]
+  HRESULT _stdcall SetAccessRights([in] unsigned char curd);
+  [id(0x000000DA)]
+  HRESULT _stdcall SetOwnerName([in] BSTR* name, [in, defaultvalue(0)] short enctype);
+  [id(0x000000DB)]
+  HRESULT _stdcall TdapErr([in]OLE_HANDLE hWnd, [out, retval] BSTR* Value);
+  [id(0x000000DC)]
+  HRESULT _stdcall Unlock_([in, defaultvalue(0)] unsigned int bm);
+  [propget, id(0x000000DD)]
+  HRESULT _stdcall BlobFieldUsed([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x000000DF)]
+  HRESULT _stdcall BookmarkFindCurrent([out, retval] unsigned int* Value);
+  [propget, id(0x000000F0)]
+  HRESULT _stdcall BookMarksCount([out, retval] int* Value);
+  [id(0x000000F1)]
+  HRESULT _stdcall Find([in] eFindType FindType);
+  [propget, id(0x000000F2)]
+  HRESULT _stdcall RecordHash([out, retval] unsigned int* Value);
+  [propget, id(0x000000F3)]
+  HRESULT _stdcall LogicalToString([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000F3)]
+  HRESULT _stdcall LogicalToString([in] VARIANT_BOOL Value);
+  [propget, id(0x000000F4)]
+  HRESULT _stdcall TrimPadChar([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000F4)]
+  HRESULT _stdcall TrimPadChar([in] VARIANT_BOOL Value);
+  [propget, id(0x000000F5)]
+  HRESULT _stdcall UsePadChar([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000F5)]
+  HRESULT _stdcall UsePadChar([in] VARIANT_BOOL Value);
+  [id(0x000000F6)]
+  HRESULT _stdcall MoveBookmarksId([in] long Value);
+  [propget, id(0x000000F7)]
+  HRESULT _stdcall MyDateTimeValueByBtrv([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x000000F8)]
+  HRESULT _stdcall ValiableFormatType([out, retval] VARIANT_BOOL* Value);
+  [id(0x000000F9)]
+  HRESULT _stdcall SmartUpdate(void);
+
+
+};
+[
+	object,
+	uuid(C459B95E-1EB4-4670-B251-F074168153ED),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface ITableDef : IDispatch
+{
+  [propget, id(0x00000003)]
+  HRESULT _stdcall FieldCount([out, retval] short* Value);
+  [propget, id(0x00000004)]
+  HRESULT _stdcall KeyCount([out, retval] short* Value);
+  [propget, id(0x00000005)]
+  HRESULT _stdcall PageSize([out, retval] short* Value);
+  [propput, id(0x00000005)]
+  HRESULT _stdcall PageSize([in] short Value);
+  [propget, id(0x00000006)]
+  HRESULT _stdcall PreAlloc([out, retval] short* Value);
+  [propput, id(0x00000006)]
+  HRESULT _stdcall PreAlloc([in] short Value);
+  [propget, id(0x00000007)]
+  HRESULT _stdcall FileName([out, retval] BSTR* Value);
+  [propput, id(0x00000007)]
+  HRESULT _stdcall FileName([in] BSTR Value);
+  [propget, id(0x00000008)]
+  HRESULT _stdcall TableName([out, retval] BSTR* Value);
+  [propput, id(0x00000008)]
+  HRESULT _stdcall TableName([in] BSTR Value);
+  [propget, id(0x00000009)]
+  HRESULT _stdcall Flags([out, retval] IFlags** Value);
+  [propput, id(0x00000009)]
+  HRESULT _stdcall Flags([in] IFlags* Value);
+  [propget, id(0x0000000A)]
+  HRESULT _stdcall PrimaryKeyNum([out, retval] unsigned char* Value);
+  [propput, id(0x0000000A)]
+  HRESULT _stdcall PrimaryKeyNum([in] unsigned char Value);
+  [propget, id(0x0000000B), hidden]
+  HRESULT _stdcall ParentKeyNum([out, retval] unsigned char* Value);
+  [propput, id(0x0000000B), hidden]
+  HRESULT _stdcall ParentKeyNum([in] unsigned char Value);
+  [propget, id(0x0000000C), hidden]
+  HRESULT _stdcall ReplicaKeyNum([out, retval] unsigned char* Value);
+  [propput, id(0x0000000C), hidden]
+  HRESULT _stdcall ReplicaKeyNum([in] unsigned char Value);
+  [propget, id(0x0000000D)]
+  HRESULT _stdcall OptionFlags([out, retval] IFlags** Value);
+  [propput, id(0x0000000D)]
+  HRESULT _stdcall OptionFlags([in] IFlags* Value);
+  [propget, id(0x0000000E), hidden]
+  HRESULT _stdcall IconIndex([out, retval] unsigned char* Value);
+  [propput, id(0x0000000E), hidden]
+  HRESULT _stdcall IconIndex([in] unsigned char Value);
+  [propget, id(0x0000000F)]
+  HRESULT _stdcall Id([out, retval] short* Value);
+  [propput, id(0x0000000F)]
+  HRESULT _stdcall Id([in] short Value);
+  [propget, id(0x000000C9)]
+  HRESULT _stdcall Charsetindex([out, retval] eCharset* Value);
+  [propput, id(0x000000C9)]
+  HRESULT _stdcall Charsetindex([in] eCharset Value);
+  [propget, id(0x000000CC)]
+  HRESULT _stdcall FixedRecordLen([out, retval] unsigned short* Value);
+  [propput, id(0x000000CC)]
+  HRESULT _stdcall FixedRecordLen([in] unsigned short Value);
+  [propget, id(0x000000CD)]
+  HRESULT _stdcall MaxRecordLen([out, retval] unsigned short* Value);
+  [propput, id(0x000000CD)]
+  HRESULT _stdcall MaxRecordLen([in] unsigned short Value);
+  [propget, id(0x000000CF)]
+  HRESULT _stdcall SchemaCodePage([out, retval] unsigned int* Value);
+  [propput, id(0x000000CF)]
+  HRESULT _stdcall SchemaCodePage([in] unsigned int Value);
+  [propget, id(0x000000D0)]
+  HRESULT _stdcall Version([out, retval] unsigned short* Value);
+  [propget, id(0x000000CA)]
+  HRESULT _stdcall FieldDef([in] short Index, [out, retval] IFieldDef** Value);
+  [propget, id(0x000000CB)]
+  HRESULT _stdcall KeyDef([in] short Index, [out, retval] IKeyDef** Value);
+};
+[
+	object,
+	uuid(B97808AB-5353-41EF-A41D-EF94967BCBE2),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IFieldDef : IDispatch
+{
+  [propget, id(0x00000001)]
+  HRESULT _stdcall Name([out, retval] BSTR* Value);
+  [propput, id(0x00000001)]
+  HRESULT _stdcall Name([in] BSTR Value);
+  [propget, id(0x00000002)]
+  HRESULT _stdcall Type([out, retval] eFieldType* Value);
+  [propput, id(0x00000002)]
+  HRESULT _stdcall Type([in] eFieldType Value);
+  [propget, id(0x00000003)]
+  HRESULT _stdcall Len([out, retval] short* Value);
+  [propput, id(0x00000003)]
+  HRESULT _stdcall Len([in] short Value);
+  [propget, id(0x00000004)]
+  HRESULT _stdcall Decimals([out, retval] unsigned char* Value);
+  [propput, id(0x00000004)]
+  HRESULT _stdcall Decimals([in] unsigned char Value);
+  [propget, id(0x00000005)]
+  HRESULT _stdcall Max([out, retval] double* Value);
+  [propput, id(0x00000005)]
+  HRESULT _stdcall Max([in] double Value);
+  [propget, id(0x00000006)]
+  HRESULT _stdcall Min([out, retval] double* Value);
+  [propput, id(0x00000006)]
+  HRESULT _stdcall Min([in] double Value);
+  [propget, id(0x00000007)]
+  HRESULT _stdcall DefValue([out, retval] double* Value);
+  [propput, id(0x00000007)]
+  HRESULT _stdcall DefValue([in] double Value);
+  [propget, id(0x00000008), hidden]
+  HRESULT _stdcall LookTable([out, retval] unsigned char* Value);
+  [propput, id(0x00000008), hidden]
+  HRESULT _stdcall LookTable([in] unsigned char Value);
+  [propget, id(0x00000009), hidden]
+  HRESULT _stdcall LookField([out, retval] unsigned char* Value);
+  [propput, id(0x00000009), hidden]
+  HRESULT _stdcall LookField([in] unsigned char Value);
+  [propget, id(0x0000000A), hidden]
+  HRESULT _stdcall LookViewField([in] short Index, [out, retval] unsigned char* Value);
+  [propput, id(0x0000000A), hidden]
+  HRESULT _stdcall LookViewField([in] short Index, [in] unsigned char Value);
+  [propget, id(0x0000000B), hidden]
+  HRESULT _stdcall EnableFlags([out, retval] IFlags** Value);
+  [propput, id(0x0000000B), hidden]
+  HRESULT _stdcall EnableFlags([in] IFlags* Value);
+  [propget, id(0x0000000C)]
+  HRESULT _stdcall Keylen([out, retval] unsigned short* Value);
+  [propput, id(0x0000000C)]
+  HRESULT _stdcall Keylen([in] unsigned short Value);
+  [propget, id(0x0000000D)]
+  HRESULT _stdcall NullValue([out, retval] unsigned short* Value);
+  [propput, id(0x0000000D)]
+  HRESULT _stdcall NullValue([in] unsigned short Value);
+  [propget, id(0x0000000E)]
+  HRESULT _stdcall Align([out, retval] unsigned int* Value);
+  [propget, id(0x0000000F)]
+  HRESULT _stdcall TypeName([out, retval] BSTR* Value);
+  [propget, id(0x00000010)]
+  HRESULT _stdcall IsStringType([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x00000011)]
+  HRESULT _stdcall CharsetIndex([out, retval] eCharset* Value);
+  [propput, id(0x00000011)]
+  HRESULT _stdcall CharsetIndex([in] eCharset Value);
+  [propget, id(0x00000012)]
+  HRESULT _stdcall CodePage([out, retval] unsigned int* Value);
+  [propget, id(0x00000013)]
+  HRESULT _stdcall CharNum([out, retval] unsigned int* Value);
+  [id(0x00000014)]
+  HRESULT _stdcall SetLenByCharnum([in] unsigned short Value);
+
+
+
+};
+[
+	object,
+	uuid(AE15153A-87D9-4A6F-B17D-31695BA24B35),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IKeyDef : IDispatch
+{
+  [propget, id(0x00000001)]
+  HRESULT _stdcall SegmentCount([out, retval] unsigned char* Value);
+  [propput, id(0x00000001)]
+  HRESULT _stdcall SegmentCount([in] unsigned char Value);
+  [id(0x000000C9)]
+  HRESULT _stdcall Segments([in] short Index, [out, retval] IKeySegment** Value);
+
+};
+[
+	object,
+	uuid(1777FC4B-FE81-4FF8-9FF0-92D160CA6C9E),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IFlags : IDispatch
+{
+  [propget, id(0x00000001)]
+  HRESULT _stdcall Bits([in] short Index, [out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x00000001)]
+  HRESULT _stdcall Bits([in] short Index, [in] VARIANT_BOOL Value);
+  [id(0x000000C9)]
+  HRESULT _stdcall All([out] unsigned short* Value);
+  [id(0x000000CA)]
+  HRESULT _stdcall GetBit([in] short Index, [out, retval] VARIANT_BOOL* Value);
+  [id(0x000000CB)]
+  HRESULT _stdcall SetBit([in] short Index, [in] VARIANT_BOOL Value);
+};
+
+
+
+[
+	object,
+	uuid(8DCAB5C6-AFCC-4BED-8D06-7044F0CCB3A3),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IKeySegment : IDispatch
+{
+  [propget, id(0x00000001)]
+  HRESULT _stdcall FieldNum([out, retval] unsigned char* Value);
+  [propput, id(0x00000001)]
+  HRESULT _stdcall FieldNum([in] unsigned char Value);
+  [propget, id(0x00000002)]
+  HRESULT _stdcall Flags([out, retval] IFlags** Value);
+  [propput, id(0x00000002)]
+  HRESULT _stdcall Flags([in] IFlags* Value);
+
+
+};
+[
+	object,
+	uuid(775F02E3-CCD0-49A0-986F-F4A517ABD7ED),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IField : IDispatch
+{
+  [propget, id(0x000000C9)]
+  HRESULT _stdcall Text([out, retval] BSTR* Value);
+  [propput, id(0x000000C9)]
+  HRESULT _stdcall Text([in] BSTR Value);
+  [propget, id(0x000000CA)]
+  HRESULT _stdcall Vlng([out, retval] int* Value);
+  [propput, id(0x000000CA)]
+  HRESULT _stdcall Vlng([in] int Value);
+  [propget, id(0x000000CB)]
+  HRESULT _stdcall V64([out, retval] hyper* Value);
+  [propput, id(0x000000CB)]
+  HRESULT _stdcall V64([in] hyper Value);
+  [propget, id(0x000000CC)]
+  HRESULT _stdcall Vdbl([out, retval] double* Value);
+  [propput, id(0x000000CC)]
+  HRESULT _stdcall Vdbl([in] double Value);
+  [propget, id(0x000000CD)]
+  HRESULT _stdcall Vbin([out, retval] BSTR* Value);
+  [propput, id(0x000000CD)]
+  HRESULT _stdcall Vbin([in] BSTR Value);
+};
+
+[
+	object,
+	uuid(775F02E3-CCD0-49A0-986F-F4A517ABD7EF),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface ITdVersion : IDispatch
+{
+  [propget, id(1)]
+  HRESULT _stdcall MajorVersion([out, retval] short* Value);
+  [propput, id(1)]
+  HRESULT _stdcall MajorVersion([in] short Value);
+  [propget, id(2)]
+  HRESULT _stdcall MinorVersion([out, retval] short* Value);
+  [propput, id(2)]
+  HRESULT _stdcall MinorVersion([in] short Value);
+  [propget, id(3)]
+  HRESULT _stdcall Type([out, retval] short* Value);
+  [propput, id(3)]
+  HRESULT _stdcall Type([in] short Value);
+  [id(4)]
+  HRESULT _stdcall ModuleTypeString([out, retval] BSTR* Value);
+  [id(5)]
+  HRESULT _stdcall ModuleVersionShortString([out, retval] BSTR* Value);
+
+};
+
+[
+	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
+	version(1.0),
+]
+
+library transactd
+{
+  importlib("stdole2.tlb");
+  [
+	uuid(530AC521-AB85-4139-8F78-CA56F8B7722F)		
+  ]
+  dispinterface _IDatabaseEvents
+  {	
+	properties:
+	methods:
+		[id(1)] 
+		HRESULT OnCopyData(IDatabase* db, int recordCount, int count, VARIANT_BOOL* cancel);
+		[id(2)] 
+		HRESULT OnDeleteRecord(IDatabase* db, ITable* tb, VARIANT_BOOL* Value);
+		[id(3)] 
+		HRESULT OnSchemaMgrFn(IDatabase* db, short* Value);
+  };
+  [
+    uuid(1DF73F19-D216-47A4-847D-8CD1279E1077)
+  ]
+  coclass Database
+  {
+    [default] interface IDatabase;
+	[default, source] dispinterface _IDatabaseEvents;
+	
+  };
+  
+  [
+    uuid(9B3CAC13-FCB8-42E1-993C-D81645B40FEF)
+    ,noncreatable
+  ]
+  coclass DbDef
+  {
+    [default] interface IDbDef;
+  };
+  [
+    uuid(4B8E64CA-F963-408C-AC4E-C1F9556738D4)
+    ,noncreatable
+  ]
+  coclass Table
+  {
+    [default] interface ITable;
+  };
+  [
+    uuid(D2115BB4-48CE-461C-A1C1-324DD12C37EE)
+    ,noncreatable
+  ]
+  coclass TableDef
+  {
+    [default] interface ITableDef;
+  };
+  [
+    uuid(42AE202D-A721-45A6-BB5C-2074101A8751)
+    ,noncreatable
+  ]
+  coclass FieldDef
+  {
+    [default] interface IFieldDef;
+
+  };
+  [
+    uuid(38DDBD32-27D5-41C5-AAE6-B6D2D4CF0F0D)
+    ,noncreatable
+  ]
+  coclass KeyDef
+  {
+    [default] interface IKeyDef;
+  };
+  [
+    uuid(27968808-D981-4DEC-9937-A8E6A71714A8)
+    ,noncreatable
+  ]
+  coclass Flags
+  {
+    [default] interface IFlags;
+  };
+
+
+  [
+    uuid(DEC4DD3C-C661-4C41-8F6C-F579187CF2C9)
+    ,noncreatable
+  ]
+  coclass KeySegment
+  {
+    [default] interface IKeySegment;
+  };
+  [
+    uuid(692ADBB5-B156-48A6-8A32-3A6C31586698)
+    ,noncreatable
+  ]
+  coclass Field
+  {
+    [default] interface IField;
+  };
+	
+  [
+    uuid(692ADBB5-B156-48A6-8A32-3A6C31586699)
+    ,noncreatable
+  ]
+  coclass TdVersion
+  {
+    [default] interface ITdVersion;
+  };
+  
+ 
+
+};
+
+import "shobjidl.idl";

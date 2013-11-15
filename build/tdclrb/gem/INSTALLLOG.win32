@@ -1,0 +1,9 @@
+Transactd client for ruby gem
+
+To uninstall run : gem uninstall transactd
+
+Some files are installed on System32 or SysWOW64 or ruby-bin directory.
+In most cases you DON'T have to remove these files.
+
+install log:
+

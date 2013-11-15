@@ -1,0 +1,49 @@
+--- sql/mysqld.h	2013-01-16 16:35:18.000000000 +0900
++++ sql/mysqld.h	2013-09-26 19:10:04.000000000 +0900
+@@ -153,7 +153,7 @@
+ extern const double log_10[309];
+ extern ulonglong keybuff_size;
+ extern ulonglong thd_startup_options;
+-extern ulong thread_id;
++extern MYSQL_PLUGIN_IMPORT ulong thread_id;
+ extern ulong binlog_cache_use, binlog_cache_disk_use;
+ extern ulong binlog_stmt_cache_use, binlog_stmt_cache_disk_use;
+ extern ulong aborted_threads,aborted_connects;
+@@ -206,7 +206,7 @@
+ extern handlerton *heap_hton;
+ extern const char *load_default_groups[];
+ extern struct my_option my_long_options[];
+-extern int mysqld_server_started;
++extern MYSQL_PLUGIN_IMPORT int mysqld_server_started;
+ extern "C" MYSQL_PLUGIN_IMPORT int orig_argc;
+ extern "C" MYSQL_PLUGIN_IMPORT char **orig_argv;
+ extern pthread_attr_t connection_attrib;
+@@ -223,7 +223,7 @@
+   THR_MALLOC is a key which will be used to set/get MEM_ROOT** for a thread,
+   using my_pthread_setspecific_ptr()/my_thread_getspecific_ptr().
+ */
+-extern pthread_key(MEM_ROOT**,THR_MALLOC);
++extern MYSQL_PLUGIN_IMPORT pthread_key(MEM_ROOT**,THR_MALLOC);
+ 
+ #ifdef HAVE_PSI_INTERFACE
+ #ifdef HAVE_MMAP
+@@ -347,8 +347,8 @@
+ #ifdef HAVE_OPENSSL
+ extern mysql_mutex_t LOCK_des_key_file;
+ #endif
+-extern mysql_mutex_t LOCK_server_started;
+-extern mysql_cond_t COND_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_cond_t COND_server_started;
+ extern mysql_rwlock_t LOCK_grant, LOCK_sys_init_connect, LOCK_sys_init_slave;
+ extern mysql_rwlock_t LOCK_system_variables_hash;
+ extern mysql_cond_t COND_thread_count;
+--- sql/sql_cache.h	2013-01-16 16:35:18.000000000 +0900
++++ sql/sql_cache.h	2013-09-26 19:10:04.000000000 +0900
+@@ -580,5 +580,5 @@
+ #define query_cache_is_cacheable_query(L) 0
+ #endif /*HAVE_QUERY_CACHE*/
+ 
+-extern Query_cache query_cache;
++extern MYSQL_PLUGIN_IMPORT Query_cache query_cache;
+ #endif

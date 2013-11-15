@@ -1,0 +1,26 @@
+HKCR
+{
+	transactd.database.1 = s 'database Class'
+	{
+		CLSID = s '{1DF73F19-D216-47A4-847D-8CD1279E1077}'
+	}
+	transactd.database = s 'database Class'
+	{		
+		CurVer = s 'transactd.database.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {1DF73F19-D216-47A4-847D-8CD1279E1077} = s 'database Class'
+		{
+			ProgID = s 'transactd.database.1'
+			VersionIndependentProgID = s 'transactd.database'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}

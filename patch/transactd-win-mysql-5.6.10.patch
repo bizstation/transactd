@@ -1,0 +1,31 @@
+--- sql/mysqld.h	2013-01-23 01:54:50.000000000 +0900
++++ sql/mysqld.h	2013-09-27 19:22:46.000000000 +0900
+@@ -177,7 +177,7 @@
+ extern const double log_10[309];
+ extern ulonglong keybuff_size;
+ extern ulonglong thd_startup_options;
+-extern ulong thread_id;
++extern MYSQL_PLUGIN_IMPORT ulong thread_id;
+ extern ulong binlog_cache_use, binlog_cache_disk_use;
+ extern ulong binlog_stmt_cache_use, binlog_stmt_cache_disk_use;
+ extern ulong aborted_threads,aborted_connects;
+--- sql/sql_cache.h	2013-01-23 01:54:50.000000000 +0900
++++ sql/sql_cache.h	2013-09-27 19:22:46.000000000 +0900
+@@ -582,5 +582,5 @@
+ #define query_cache_is_cacheable_query(L) 0
+ #endif /*HAVE_QUERY_CACHE*/
+ 
+-extern Query_cache query_cache;
++extern MYSQL_PLUGIN_IMPORT Query_cache query_cache;
+ #endif
+--- sql/global_threads.h	2013-01-23 01:54:50.000000000 +0900
++++ sql/global_threads.h	2013-09-27 19:22:46.000000000 +0900
+@@ -22,7 +22,7 @@
+ 
+ class THD;
+ 
+-extern mysql_mutex_t LOCK_thread_count;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_thread_count;
+ extern mysql_cond_t COND_thread_count;
+ 
+ /**
