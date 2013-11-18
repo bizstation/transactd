@@ -197,7 +197,7 @@ void nstable::destroy()
 
 void nstable::doClose()
 {
-    if (m_impl->isOpen)
+    if (test(this) && m_impl && (m_impl->isOpen))
     {
         tdap(TD_CLOSETABLE);
         if (m_stat == STATUS_SUCCESS)

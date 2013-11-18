@@ -148,7 +148,7 @@ Installing Transactd clients
 If you want to install the clients for Embarcadero C++Builder XE series, select
 [custom] on setup type selection window. Installable target compiler is:
 
-  * Microsoft Visual studio 2010
+  * Microsoft Visual studio 2010 (Include ActiveX(COM) client)
   * Embarcadero C++Builder XE series
 
 For Microsoft Visual studio is certainly installed.

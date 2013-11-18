@@ -148,7 +148,7 @@ Transactdクライアントのインストール
 セットアップタイプの選択画面で[カスタム]を選択するとEmbarcadero C++Builder XE
 シリーズ用のクライアントも選択できます。インストールできるコンパイラターゲットは
 
-  * Microsoft Visual studio 2010用
+  * Microsoft Visual studio 2010用 (ActiveX(COM)クライアントを含みます)
   * Embarcadero C++Builder XEシリーズ用
 
 の2種類です。Microsoft Visual studio 2010版については必ずインストールされます。

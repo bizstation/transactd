@@ -25,14 +25,14 @@ struct clientID
 {
 
 #ifdef __x86_64__
-	void* con;
-	char_td reserved[4];
+    void* con;
+    char_td reserved[4];
 #else
-	void* con;
-	char_td reserved[8];
+    void* con;
+    char_td reserved[8];
 #endif
-	char_td		aid[2];
-	ushort_td 	id;
+    char_td     aid[2];
+    ushort_td   id;
 };
 
 
@@ -45,7 +45,7 @@ class connectionPool
     mutable mutex m_mutex;
     mutable mutex m_mutex2;
 
-	mutable condition m_busy;
+    mutable condition m_busy;
 
 public:
     connectionPool(){};
@@ -63,12 +63,12 @@ public:
 
             }
             mutex::scoped_lock lck(m_mutex2);
-			m_busy.wait(lck);
+            m_busy.wait(lck);
       
         }
     }
 
-    /** create database and log in the server with each connection*/
+    /** create database and login the server with each connection*/
     void create(size_t size, const connectParams& param)
     {
         for (size_t i =0;i<size;++i)
@@ -82,8 +82,8 @@ public:
     
     void releaseOne()
     {
-		m_busy.notify_one();
-	}
+        m_busy.notify_one();
+    }
 
 };
 
@@ -91,7 +91,7 @@ connectionPool cpool;
 
 void releaseConnection(connectionPool* pool)
 {
-	pool->releaseOne();
+    pool->releaseOne();
 }
 
 class worker
@@ -105,46 +105,43 @@ public:
     {
         try
         {
-
-	        shared_ptr<connectionPool> pool(&cpool, releaseConnection);
-
+            shared_ptr<connectionPool> pool(&cpool, releaseConnection);
             {
-	        	database_ptr db = pool->get();
-	        
-				clientID* cid = (clientID*)db->clientID();
-		
-		        {
-		            mutex::scoped_lock lck(m_mutex);
-		            std::cout << "worker strat id = " << m_id
-		                        << " connection = 0x" << std::hex << cid->con << std::endl;
-		        }
-		
-		        Sleep(m_worktime);
-                if (m_id == 4)
-                    throw "error";    //throw error example
+                database_ptr db = pool->get();
+            
+                clientID* cid = (clientID*)db->clientID();
+        
+                {
+                    mutex::scoped_lock lck(m_mutex);
+                    std::cout << "worker strat id = " << m_id
+                                << " connection = 0x" << std::hex << cid->con << std::endl;
+                }
+        
+                Sleep(m_worktime);
+                if (m_id == 4) throw "error";    //throw error example
 
-		        {
-		            mutex::scoped_lock lck(m_mutex);
-		            std::cout << "worker finish id = " << m_id
-		                    << " connection = 0x" << std::hex << cid->con << std::endl;
-		        }
-		    } // release database
+                {
+                    mutex::scoped_lock lck(m_mutex);
+                    std::cout << "worker finish id = " << m_id
+                            << " connection = 0x" << std::hex << cid->con << std::endl;
+                }
+            } // release database
 
-	        delete this;
-	    } //call releaseConnection
+            delete this;
+        } //call releaseConnection
 
-	    catch(...)
-	    {
+        catch(...)
+        {
             mutex::scoped_lock lck(m_mutex);
             std::cout << "worker error id = " << m_id << std::endl;
-			delete this;
-		}
+            delete this;
+        }
     }
 
 };
 mutex worker::m_mutex;
 
-static const worktime[10] = {5, 1, 3, 5, 4, 1, 2, 5, 4,1};
+static const worktime[10] = {5, 1, 3, 5, 4, 1, 2, 5, 4, 1};
 
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
