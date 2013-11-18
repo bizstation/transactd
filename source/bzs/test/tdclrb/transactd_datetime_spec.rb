@@ -19,7 +19,6 @@
 ===================================================================
 =end
 require 'transactd'
-Transactd::Nsdatabase::setExecCodePage(Transactd::CP_UTF8)
 
 describe Transactd, 'datetime' do
   it 'get BtrDate' do

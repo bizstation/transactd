@@ -19,7 +19,6 @@
 ===================================================================
 =end
 require 'transactd'
-Transactd::Nsdatabase::setExecCodePage(Transactd::CP_UTF8)
 
 require 'rbconfig'
 IS_WINDOWS = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
@@ -824,12 +823,12 @@ def testCreateDatabaseVar(db)
     testCreateVarTable(db, 2, 'user2', Transactd::Ft_myvarbinary, Transactd::CHARSET_CP932)
     if isUtf16leSupport(db)
       testCreateVarTable(db, 3, 'user3', Transactd::Ft_mywvarchar,    Transactd::CHARSET_CP932)
-      testCreateVarTable(db, 4, 'user4', Transactd::Ft_mywvarbinary,  Transactd::CHARSET_CP932)
-      testCreateVarTable(db, 5, 'user5', Transactd::Ft_myvarchar,     Transactd::CHARSET_UTF8B4)
-      db.close()
-      db.open(PROTOCOL + HOSTNAME + DBNAME_VAR + '?dbfile=transactd_schemaname', 0, 0)
-      expect(db.stat()).to eq 0
     end
+    testCreateVarTable(db, 4, 'user4', Transactd::Ft_mywvarbinary,  Transactd::CHARSET_CP932)
+    testCreateVarTable(db, 5, 'user5', Transactd::Ft_myvarchar,     Transactd::CHARSET_UTF8B4)
+    db.close()
+    db.open(PROTOCOL + HOSTNAME + DBNAME_VAR + '?dbfile=transactd_schemaname', 0, 0)
+    expect(db.stat()).to eq 0
   end
 end
 

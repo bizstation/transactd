@@ -19,7 +19,6 @@
 ===================================================================
 =end
 require 'transactd'
-Transactd::Nsdatabase::setExecCodePage(Transactd::CP_UTF8)
 
 require 'rbconfig'
 IS_WINDOWS = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
@@ -90,7 +89,7 @@ def testCreateTable(db, tableid, tablename)
   expect(dbdef.stat()).to eq 0
   fd = dbdef.insertField(tableid, FDI_NAME)
   fd.setName(FDN_NAME)
-  fd.type = Transactd::Ft_mywvarchar
+  fd.type = Transactd::Ft_zstring
   fd.len = 33
   ### Set field charset index
   #     - charset for each field VALUE

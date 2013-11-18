@@ -20,12 +20,12 @@
 =end
 spec_build = Gem::Specification.new do |s|
   s.name        = 'transactd'
-  s.date        = '2013-11-01'
+  s.date        = '2013-11-20'
   s.summary     = 'Transactd client'
-  s.description = 'Transactd client gem'
+  s.description = 'Transactd client for ruby gem'
   s.author      = 'BizStation Corp.'
-  s.email       = 'info@bizstation.jp'
-  s.homepage    = 'http://www.bizstation.jp/en/transactd'
+  s.email       = 'transactd@aie.ne.jp'
+  s.homepage    = 'http://www.bizstation.jp/ja/transactd'
   s.license     = 'GPL v2'
   
   verfile = 'build/tdclrb/GEM_VERSION'

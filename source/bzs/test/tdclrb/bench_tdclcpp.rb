@@ -20,7 +20,6 @@
 =end
 require 'date'
 require 'transactd'
-Transactd::Nsdatabase::setExecCodePage(Transactd::CP_UTF8)
 
 TYPE_SCHEMA_BDF = 0
 

@@ -19,7 +19,6 @@
  ===================================================================
 =end
 require 'transactd'
-Transactd::Nsdatabase::setExecCodePage(Transactd::CP_UTF8)
 
 FN_ID = 0
 FN_NAME = 1
