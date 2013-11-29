@@ -64,16 +64,12 @@
     <PropertyGroup Condition="'$(Base)'!=''">
         <ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
-        <BRCC_Defines>__BCPLUSPLUS__;$(BRCC_Defines)</BRCC_Defines>
+        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <BRCC_EnableMultiByte>true</BRCC_EnableMultiByte>
-        <VerInfo_MinorVer>1</VerInfo_MinorVer>
-        <VerInfo_DLL>true</VerInfo_DLL>
         <Defines>ARBTREGN_PKG;$(Defines)</Defines>
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
         <Manifest_File>None</Manifest_File>
         <ILINK_AdditionalOptions>/Gl</ILINK_AdditionalOptions>
-        <VerInfo_Keys>CompanyName=BizStation Corp;FileDescription=;FileVersion=1.1.0.0;InternalName=;LegalCopyright=Copyright(C) 2013 BizStation Corp;LegalTrademarks=;OriginalFilename=;ProductName=Transactd Client;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <VerInfo_Locale>1041</VerInfo_Locale>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <BCC_wiip>false</BCC_wiip>
         <TD_VER_MAJOR>1</TD_VER_MAJOR>
@@ -100,14 +96,10 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <Manifest_File>None</Manifest_File>
-        <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <_TCHARMapping>char</_TCHARMapping>
@@ -136,8 +128,6 @@
         <TASM_Debugging>None</TASM_Debugging>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Locale>1033</VerInfo_Locale>
         <Defines>NDEBUG;$(Defines)</Defines>
         <DllSuffix>m_$(DllSuffix)</DllSuffix>
     </PropertyGroup>
@@ -149,9 +139,7 @@
         <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
         <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <ILINK_Verbose>true</ILINK_Verbose>
-        <VerInfo_Locale>1033</VerInfo_Locale>
         <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <DllSuffix>u_$(DllSuffix)</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_4)'!=''">
@@ -162,8 +150,6 @@
         <BCC_WindowsVersionDefines>NTDDI_VERSION=NTDDI_WINXPSP1;_WIN32_WINNT=_WIN32_WINNT_WINXP</BCC_WindowsVersionDefines>
         <BCC_OptimizeForSize>true</BCC_OptimizeForSize>
         <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <DllSuffix>u_$(DllSuffix)</DllSuffix>
     </PropertyGroup>
     <ItemGroup>

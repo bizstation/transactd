@@ -36,15 +36,12 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<BRCC_EnableMultiByte>true</BRCC_EnableMultiByte>
 			<BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
-			<BRCC_Defines>__BCPLUSPLUS__;$(BRCC_Defines)</BRCC_Defines>
+			<BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
 			<Defines>ARBTREGN_PKG;BOOST_ALL_NO_LIB;$(Defines)</Defines>
-			<VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-			<VerInfo_Keys>CompanyName=BizStation Corp;FileDescription=;FileVersion=1.1.0.0;InternalName=;LegalCopyright=Copy right (C) 2013 BizStation Corp;LegalTrademarks=;OriginalFilename=;ProductName=Transactd Client;ProductVersion=1.1.0.0;Comments=</VerInfo_Keys>
-			<VerInfo_MinorVer>1</VerInfo_MinorVer>
-			<VerInfo_DLL>true</VerInfo_DLL>
 			<DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-			<VerInfo_Locale>1041</VerInfo_Locale>
 			<BCC_wiip>false</BCC_wiip>
+			<BCC_wpch>false</BCC_wpch>
+			<BCC_wpar>false</BCC_wpar>
 			<Multithreaded>true</Multithreaded>
 			<ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
 			<ProjectType>CppDynamicLibrary</ProjectType>
@@ -59,7 +56,6 @@
 			<UsePackages>false</UsePackages>
 			<IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
 			<FinalOutputDir>..\..\bin\</FinalOutputDir>
-			<BCC_wpar>false</BCC_wpar>
 			<BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
 			<BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
 			<TD_VER_MAJOR>1</TD_VER_MAJOR>
