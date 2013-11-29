@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/database.h>
 #include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/dbdef.h>
+#include <bzs/db/protocol/tdap/client/dbDef.h>
 #include <boost/bind.hpp>
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -36,19 +36,19 @@ bool changeUserTable(dbdef* def)
 {
 
     //change name size
-    tabledef* td = def->tableDefs(tablenum_user);
-    fielddef* fd = &td->fieldDefs[fieldnum_name];
+    tabledef** td = def->tableDefPtr(tablenum_user);
+    fielddef* fd = &(*td)->fieldDefs[fieldnum_name];
     fd->setLenByCharnum(64);
 
     //add tel field
-    fd = def->insertField(td->id, td->fieldCount);
+    fd = def->insertField((*td)->id, (*td)->fieldCount);
     fd->setName(_T("tel"));
     fd->type = ft_mychar;
     fd->setCharsetIndex( CHARSET_LATIN1);
     fd->setLenByCharnum(16);
 
     //write user table schema
-    def->updateTableDef(td->id);
+    def->updateTableDef((*td)->id);
     if (def->stat() != 0)
     {
         showError(_T("edit schema table"), NULL, def->stat());
@@ -70,7 +70,7 @@ bool openDbExclusive(database* db, const _TCHAR* uri)
     return true;
 }
 
-void __stdcall onCopyData(database* db, int recordCount, int count, bool &cancel)
+void __STDCALL onCopyData(database* db, int recordCount, int count, bool &cancel)
 {
      if (count == 0)
          _tprintf(_T("\n"));

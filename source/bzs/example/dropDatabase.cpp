@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/database.h>
 #include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/dbdef.h>
+#include <bzs/db/protocol/tdap/client/dbDef.h>
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -52,7 +52,10 @@ int _tmain(int argc, _TCHAR* argv[])
         if (db->stat() != 0)
             showError(_T("drop daatabase"), NULL, db->stat());
         result = db->stat();
+        if (result == 0)
+            _tprintf(_T("Drop daatabase success. \n"));
         db->close();
+
     }
     database::destroy(db);
     return result;

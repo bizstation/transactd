@@ -23,7 +23,7 @@ int _tmain(int argc, _TCHAR* argv[])
         openDatabase(db, prams);
         dropDatabase(db);
 
-        std::cout << "drop databse success." << std::endl;
+        std::cout << "Drop databse success." << std::endl;
         return 0;
     }
     catch(bzs::rtl::exception& e)

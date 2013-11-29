@@ -43,9 +43,7 @@
     <PropertyGroup Condition="'$(Base)'!=''">
         <Defines>BOOST_ALL_NO_LIB;TRANSACTD;$(Defines)</Defines>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
-        <BRCC_Defines>__BCPLUSPLUS__;$(BRCC_Defines)</BRCC_Defines>
-        <VerInfo_DLL>true</VerInfo_DLL>
-        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <DllSuffix>_1_0</DllSuffix>
         <DynamicRTL>false</DynamicRTL>
         <BPILibOutputDir>..\..\lib</BPILibOutputDir>
@@ -55,8 +53,6 @@
         <Manifest_File>None</Manifest_File>
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_Locale>1041</VerInfo_Locale>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <OutputExt>dll</OutputExt>
         <PackageImports>vcl.bpi;rtl.bpi</PackageImports>
         <Multithreaded>true</Multithreaded>
@@ -101,7 +97,7 @@
     </PropertyGroup>
     <ItemGroup>
         <ResourceCompile Include="tdclc.rc">
-             <Form>tdclcpp.res</Form>
+             <Form>tdclc.res</Form>
              <BuildOrder>20</BuildOrder>
         </ResourceCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\client.cpp">
@@ -137,9 +133,6 @@
         <CppCompile Include="..\..\source\bzs\netsvc\client\tcpClient.cpp">
             <DependentOn>..\..\netsvc\client\tcpClient.h</DependentOn>
             <BuildOrder>2</BuildOrder>
-        </CppCompile>
-        <CppCompile Include="..\..\source\bzs\rtl\datetime.cpp">
-            <BuildOrder>13</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\rtl\stl_uty.cpp">
             <BuildOrder>9</BuildOrder>

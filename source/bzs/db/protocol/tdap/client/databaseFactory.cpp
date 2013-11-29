@@ -20,7 +20,7 @@
 #pragma hdrstop
 
 #include "database.h"
-
+#include <bzs/rtl/exception.h>
 //---------------------------------------------------------------------------
 
 
@@ -40,7 +40,12 @@ namespace client
 
 database* database::create()
 {
-    return new database();
+    try
+	{
+		return new database();
+	}
+	catch( bzs::rtl::exception& /*e*/){}
+	return NULL;
 }
 
 }//namespace client
@@ -49,22 +54,58 @@ database* database::create()
 }//namespace db
 }//namespace bzs
 
+
+#undef USETLS
+#if ((defined(_WIN32) && _MSC_VER) || __APPLE__)
+#define USETLS
+#endif
+
 /* At MSVC use __thread before Windows Vista,  After the DLL is loaded with LoadLibrary
    then  it causes system failure.
   
 */
-#if (defined(_WIN32) && _MSC_VER)
-DWORD g_tlsiID_SC1 = 0;
-DWORD g_tlsiID_SC2 = 0;
-DWORD g_tlsiID_SC3 = 0;
+#ifdef USETLS
+tls_key g_tlsiID_SC1;
+tls_key g_tlsiID_SC2;
+tls_key g_tlsiID_SC3;
 
 void initTlsThread()
 {
-	TlsSetValue(g_tlsiID_SC1, new wchar_t[256]);
-
-	TlsSetValue(g_tlsiID_SC2, new wchar_t[45]);
-	TlsSetValue(g_tlsiID_SC3, new wchar_t[45]);
+	tls_setspecific(g_tlsiID_SC1, new wchar_t[256]);
+	tls_setspecific(g_tlsiID_SC2, new wchar_t[45]);
+	tls_setspecific(g_tlsiID_SC3, new wchar_t[45]);
 }
+
+void cleanupTls()
+{
+     delete (char*)tls_getspecific(g_tlsiID_SC1);
+	 delete (char*)tls_getspecific(g_tlsiID_SC2);
+	 delete (char*)tls_getspecific(g_tlsiID_SC3);
+}
+
+#ifdef __APPLE__
+
+void __attribute__ ((constructor)) onLoadLibrary(void);
+void __attribute__ ((destructor)) onUnloadLibrary(void);
+
+void onLoadLibrary(void)
+{
+     pthread_key_create(&g_tlsiID_SC1, NULL);
+	 pthread_key_create(&g_tlsiID_SC2, NULL);
+	 pthread_key_create(&g_tlsiID_SC3, NULL);
+}
+
+void onUnloadLibrary(void)
+{
+	 cleanupTls();
+	 pthread_key_delete(g_tlsiID_SC1); 
+	 pthread_key_delete(g_tlsiID_SC2); 
+	 pthread_key_delete(g_tlsiID_SC3); 
+}
+
+
+
+#else
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 {
@@ -77,7 +118,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 		if ((g_tlsiID_SC3 = TlsAlloc()) == TLS_OUT_OF_INDEXES)
 			return FALSE;
 		initTlsThread();
-		
 	}
 	else if(reason == DLL_THREAD_ATTACH)
 	{
@@ -85,16 +125,18 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 	}
 	else if(reason == DLL_THREAD_DETACH)
 	{
-
+		cleanupTls();
 	}
 	else if (reason == DLL_PROCESS_DETACH)
 	{
+		cleanupTls();
 		TlsFree(g_tlsiID_SC1);
 		TlsFree(g_tlsiID_SC2);
 		TlsFree(g_tlsiID_SC3);
 	}
 	return TRUE;
 }
+#endif
 #endif //(_UNICODE && defined(_WIN32) && _MSC_VER)
 
 

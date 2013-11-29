@@ -185,7 +185,7 @@ boost::mutex g_mutex;
 
 nsdatabase::nsdatabase() : m_stat(0)
 {
-    m_nsimpl = new nsdbimpl();
+    
     int type = 0;
     if (hBtrvDLL == 0x00)
         type = smartLoadLibrary();
@@ -193,8 +193,11 @@ nsdatabase::nsdatabase() : m_stat(0)
     m_btrcallid = getBtrvEntryPoint();
     if (m_btrcallid == NULL)
         m_btrcallid = getTrnsctdEntryPoint();
+	if (!m_btrcallid)
+		nstable::throwError(_T("Can't load C Interface library"), ERROR_LOAD_CLIBRARY);
 
-    if ((type == 2) || MYTICALLID)
+	m_nsimpl = new nsdbimpl();
+	if ((type == 2) || MYTICALLID)
         setUseLongFilename(true);
     else
     {

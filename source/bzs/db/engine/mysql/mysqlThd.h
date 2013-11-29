@@ -28,7 +28,7 @@ THD* createThdForThread();
 void deleteThdForThread(THD* thd);
 void endThread();
 
-#ifdef _WIN32
+#if (defined(_WIN32) || defined(__APPLE__))
 #define USETLS
 #endif
 

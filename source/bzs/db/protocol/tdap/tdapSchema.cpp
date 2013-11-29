@@ -29,11 +29,16 @@
 
 #pragma package(smart_init)
 
+#undef USETLS
+#if ((defined(_WIN32) && _MSC_VER) || __APPLE__)
+#define USETLS
+#endif
 
-#if (defined(_WIN32) && _MSC_VER)
-	extern DWORD g_tlsiID_SC1;
+
+#ifdef USETLS
+	extern tls_key g_tlsiID_SC1;
 #else
-	wchar_t __THREAD  g_nameBuf[266]={NULL};
+	wchar_t __THREAD  g_nameBuf[266]={0};
 #endif
 
 
@@ -52,8 +57,14 @@ namespace tdap
 
 inline wchar_t* namebuf()
 {
-	#if (defined(_WIN32) && _MSC_VER)
-		return (wchar_t*)TlsGetValue(g_tlsiID_SC1);
+	#ifdef USETLS
+		_TCHAR* p = (_TCHAR*)tls_getspecific(g_tlsiID_SC1);
+		if (p == NULL)
+		{
+			p = (_TCHAR*)new wchar_t[256];
+			tls_setspecific(g_tlsiID_SC1, p);
+		}
+		return p; 
 	#else
 		return g_nameBuf;
 	#endif

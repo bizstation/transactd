@@ -31,7 +31,10 @@
 #include <vector>
 #ifdef _WIN32
 #include <mbstring.h>
+#else
+#include <pthread.h> 
 #endif
+
 extern bzs::netsvc::client::connections* m_cons;
 
 namespace bzs
@@ -46,7 +49,8 @@ namespace client
 {
 #define TABELNAME_PREFIX "dbfile="
 
-
+class client;
+void setClientThread(client* v);
 
 class client
 {
@@ -60,11 +64,10 @@ class client
 	std::string m_sql;
 	std::string m_serverCharData;
 	std::string m_serverCharData2;
-
 	uint_td m_tmplen;
 	bool m_logout;
 	blobBuffer m_blobBuffer;
-
+	bool m_disconnected;
 
 	std::vector<char> m_sendbuf;
 	inline bzs::netsvc::client::connection* con(){return m_req.cid->con;};
@@ -72,7 +75,10 @@ class client
 	
 	inline void disconnect()
 	{
-		m_req.result = !m_cons->disconnect(con());
+		if (!con())
+			m_req.result = 1;
+		else
+			m_disconnected = m_cons->disconnect(con());
 		if (m_req.result==0)
 			setCon(NULL);
 	}
@@ -106,8 +112,13 @@ class client
 	}
 	static void addSecondCharsetData(unsigned int destCodePage, std::string& src);
 public:
-	client():m_charsetIndexServer(-1)
+	client():m_charsetIndexServer(-1),m_disconnected(true)
 	{
+	}
+	void cleanup()
+	{
+		if (m_disconnected)
+			setClientThread(NULL);
 	}
 	request& req(){return m_req;}
 	inline void setParam(ushort_td op, posblk*   pbk,
@@ -136,9 +147,8 @@ public:
 	{
 		if (m_op==TD_STOP_ENGINE)
 		{
-			m_req.result = !m_cons->disconnect(con());
-			if (m_req.result==0)
-				setCon(NULL);
+			m_req.result = 0;
+			disconnect();
 			return !m_req.result;
 		}
 		return false;
@@ -153,7 +163,7 @@ public:
 			setCon(m_cons->connect(host));  //if error throw exception
 
 		}
-
+		m_disconnected = !m_req.cid->con;
 	}
 	inline void create()
 	{
@@ -176,7 +186,6 @@ public:
 		}else if ((m_req.keyNum == CR_SUBOP_SWAPNAME)||(m_req.keyNum == CR_SUBOP_RENAME))
 		{
 			readServerCharsetIndex();
-			//m_sql = std::string((char*)m_req.data, *m_req.datalen);
 			m_sql = (char*)m_req.data;
 			addSecondCharsetData(mysql::codePage(m_charsetIndexServer), m_sql);
 			m_req.data =(ushort_td*) m_sql.c_str();
@@ -211,7 +220,6 @@ public:
 	{
 		if (result()==0)
 		{
-			//mutex::scoped_lock lck(m_mutex);
 			if (!con())
 				m_preResult = ERROR_TD_NOT_CONNECTED;
 			else
@@ -257,27 +265,47 @@ public:
 	
 };
 
-#ifndef _MSC_VER
-extern __THREAD client* __THREAD_BCB g_client;
+#define USETLS //USE TLS ALL
+
+
+
+#ifdef USETLS
+extern tls_key g_tlsiID;
 #else
-extern DWORD g_tlsiID;
+extern __THREAD client* __THREAD_BCB g_client;
 #endif
+
 
 
 inline client* getClientThread()
 {
-#ifdef _MSC_VER
-	return (client*)TlsGetValue(g_tlsiID);
+#ifdef USETLS
+	client* p = (client*)tls_getspecific(g_tlsiID);
+	if (p == NULL)
+	{
+		p = new client();
+		tls_setspecific(g_tlsiID, p);
+	}
+	return p;
 #else
+	if (g_client == NULL)
+		g_client = new client();
 	return g_client;
 #endif	
 }
 
 inline void setClientThread(client* v)
 {
-#ifdef _MSC_VER
-	TlsSetValue(g_tlsiID, v);
+#ifdef USETLS
+	if (v == NULL)
+	{
+		client* p = (client*)tls_getspecific(g_tlsiID);
+		delete p;
+	}
+	tls_setspecific(g_tlsiID, v);
 #else
+	if (v == NULL)
+		delete g_client;
 	g_client = v;
 #endif
 }

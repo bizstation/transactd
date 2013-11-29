@@ -1720,7 +1720,7 @@ void testStringFileter(database* db)
     BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase");
 
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testString"), BDFNAME), 0, 0);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase 1 stat = " << db->stat());
 
     doTestStringFileter(db, 1, _T("zstring"), ft_zstring, ft_wzstring);
     if (isUtf16leSupport(db))

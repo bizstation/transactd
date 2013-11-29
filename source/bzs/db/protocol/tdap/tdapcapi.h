@@ -328,6 +328,7 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define STATUS_INVALID_FIELDNAME	STATUS_INVALID_FIELD_OFFSET
 #define ERROR_TD_INVALID_CLINETHOST	171
 #define ERROR_NOSPECIFY_TABLE       176
+#define ERROR_LOAD_CLIBRARY         200
 #define NET_BAD_SRB_FORMAT			3021
 #define ERROR_TD_HOSTNAME_NOT_FOUND 3103
 #define ERROR_TD_CONNECTION_FAILURE 3106
@@ -363,11 +364,15 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
  If you change this version then you need change The ($TargetName) project options too.
 */
 #define C_INTERFACE_VER_MAJOR "1"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "0"//##2 Build marker! Don't remove
-#define C_INTERFACE_VER_RELEASE "1"//##3 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "1"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_RELEASE "2"//##3 Build marker! Don't remove
 
 #ifdef LINUX
+#ifdef __APPLE__
+#define C_INTERFACE_VERSTR "." C_INTERFACE_VER_MAJOR "." C_INTERFACE_VER_MINOR ".so"//use loadlibrary
+#else
 #define C_INTERFACE_VERSTR ".so." C_INTERFACE_VER_MAJOR "." C_INTERFACE_VER_MINOR//use loadlibrary
+#endif
 #else
 #define C_INTERFACE_VERSTR "_" C_INTERFACE_VER_MAJOR "_" C_INTERFACE_VER_MINOR ".dll"//use loadlibrary
 #endif
@@ -410,7 +415,7 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 
 #define CPP_INTERFACE_VER_MAJOR "1"//##4 Build marker! Don't remove
 #define CPP_INTERFACE_VER_MINOR "1"//##5 Build marker! Don't remove
-#define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
+#define CPP_INTERFACE_VER_RELEASE "2"//##6 Build marker! Don't remove
 
 #ifdef _WIN32
 #define CPP_INTERFACE_VERSTR "_" COMPILER_VERSTR "_" TD_LIB_PART "_" CPP_INTERFACE_VER_MAJOR "_" CPP_INTERFACE_VER_MINOR //use autolink
@@ -418,6 +423,6 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 
 #define TRANSACTD_VER_MAJOR 1//##7 Build marker! Don't remove
 #define TRANSACTD_VER_MINOR 1//##8 Build marker! Don't remove
-#define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
+#define TRANSACTD_VER_RELEASE 2//##9 Build marker! Don't remove
 
 #endif //BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

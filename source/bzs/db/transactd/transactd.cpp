@@ -297,7 +297,24 @@ mysql_declare_plugin(transactd)
 mysql_declare_plugin_end;
 
 #ifdef USETLS
-extern DWORD g_tlsiID;
+extern tls_key g_tlsiID;
+
+#ifdef __APPLE__ 
+
+void __attribute__ ((constructor)) onLoadLibrary(void);
+void __attribute__ ((destructor)) onUnloadLibrary(void);
+
+void onLoadLibrary(void)
+{
+     pthread_key_create(&g_tlsiID, NULL);
+}
+
+void onUnloadLibrary(void)
+{
+     pthread_key_delete(g_tlsiID);  
+}
+
+#else //WIN32
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
 { 
@@ -306,13 +323,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     case DLL_PROCESS_ATTACH:
 		if ((g_tlsiID = TlsAlloc()) == TLS_OUT_OF_INDEXES)
 			return FALSE;
-		TlsSetValue(g_tlsiID, 0);
 		break;
-    case DLL_THREAD_ATTACH:
-		TlsSetValue(g_tlsiID, 0);
-        break;
-    case DLL_THREAD_DETACH:
-        break;
     case DLL_PROCESS_DETACH:
         TlsFree(g_tlsiID);
         break;
@@ -322,4 +333,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
     return TRUE; 
 }
 
-#endif
+#endif //__APPLE__
+
+#endif //USETLS
+

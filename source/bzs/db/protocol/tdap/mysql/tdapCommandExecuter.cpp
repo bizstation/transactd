@@ -54,6 +54,20 @@ namespace mysql
 static const char* TableNameTitle =  "dbfile=";
 static const char* BdfNameTitle =  ".bdf";
 
+std::string& toLowerCaseName(std::string& name , bool forSql)
+{
+	if (forSql)
+	{
+		char tmp[MAX_PATH];
+		strcpy_s(tmp, MAX_PATH, name.c_str());
+		my_casedn_str(global_system_variables.collation_server, tmp);
+		name = tmp;
+	}
+	else
+		boost::algorithm::to_lower(name);
+	return name;
+}
+
 std::string getDatabaseName(const request& req, bool forSql)
 {
 	std::vector<std::string> ssc ;
@@ -74,7 +88,11 @@ std::string getDatabaseName(const request& req, bool forSql)
 				std::vector<std::string> db;
 				split(db, ss[3], "?");
 				if (db.size()>0)
+				{
+					if (g_tableNmaeLower)
+						toLowerCaseName(db[0], forSql);
 					return db[0];
+				}
 			}
 		}
 	}
@@ -107,7 +125,7 @@ std::string getTableName(const std::string& src, bool forSql)
 
 		name = name.substr(pos, pos2 - pos);
 		if (g_tableNmaeLower)
-			boost::algorithm::to_lower(name);
+			toLowerCaseName(name, forSql);
 		return name;
 	}
 	

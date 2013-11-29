@@ -159,9 +159,10 @@ MYSQL_ADD_PLUGIN(${this_target} ${${this_target}_SOURCE_FILES}
 # ==========================================================
 # add SONAME
 # ==========================================================
-set_target_properties(${this_target} PROPERTIES
-  SOVERSION ${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE})
-
+if(NOT APPLE)
+  set_target_properties(${this_target} PROPERTIES
+    SOVERSION ${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE})
+endif()
 
 # ==========================================================
 # add boost libraries and include path
