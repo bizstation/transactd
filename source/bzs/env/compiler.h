@@ -39,7 +39,13 @@
 #	else
 #		define __x86_32__
 #	endif
+#else
+#	ifndef LINUX
+#		define LINUX //Support 64bit only
+#	endif
 #endif
+
+
 
 
 #undef PACKAGE
