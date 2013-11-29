@@ -31,17 +31,28 @@
 
 #pragma package(smart_init)
 
+#undef USETLS
+#if ((defined(_WIN32) && _MSC_VER) || __APPLE__)
+#define USETLS
+#endif
 
-#if (defined(_WIN32) && _MSC_VER)
-	extern DWORD g_tlsiID_SC2;
+
+#ifdef USETLS
+	extern tls_key g_tlsiID_SC2;
 #else
 	__THREAD _TCHAR __THREAD_BCB g_date2[45];
 #endif
 
 inline _TCHAR* databuf()
 {
-	#if (defined(_WIN32) && _MSC_VER)
-		return (_TCHAR*)TlsGetValue(g_tlsiID_SC2);
+	#ifdef USETLS
+		_TCHAR* p = (_TCHAR*)tls_getspecific(g_tlsiID_SC2);
+		if (p == NULL)
+		{
+			p = (_TCHAR*)new wchar_t[45];
+			tls_setspecific(g_tlsiID_SC2, p);
+		}
+		return p; 
 	#else
 		return g_date2;
 	#endif

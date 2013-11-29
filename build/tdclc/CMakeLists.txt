@@ -67,6 +67,12 @@ set(${this_target}_SOURCE_FILES
   ${TRANSACTD_ROOT}/source/bzs/netsvc/client/tcpClient.cpp
   ${TRANSACTD_ROOT}/source/bzs/rtl/stl_uty.cpp
 )
+if(APPLE)
+  set(${this_target}_SOURCE_FILES ${${this_target}_SOURCE_FILES}
+    ${TRANSACTD_ROOT}/source/bzs/env/crosscompile.cpp
+    ${TRANSACTD_ROOT}/source/bzs/env/mbcswchrLinux.cpp
+  )
+endif()
 
 
 # ==========================================================
@@ -129,6 +135,9 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # add link / include
 # ==========================================================
 transactd_link_boost_libraries("filesystem;system;thread")
+if(APPLE)
+  target_link_libraries(${this_target} iconv)
+endif()
 
 
 # ==========================================================

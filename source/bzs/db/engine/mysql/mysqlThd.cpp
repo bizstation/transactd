@@ -27,15 +27,16 @@ extern unsigned int g_lock_wait_timeout;
 extern char* g_transaction_isolation;
 
 #ifdef USETLS
-DWORD g_tlsiID = 0;
+tls_key g_tlsiID ;
+#else
+__THREAD char* __THREAD_BCB t_stack = NULL;
 #endif
 
-__THREAD char* __THREAD_BCB t_stack = NULL;
 
 inline char* getStackaddr()
 {
 #ifdef USETLS
-	return (char*)TlsGetValue(g_tlsiID);
+	return (char*)tls_getspecific(g_tlsiID);
 #else
 	return t_stack;
 #endif	
@@ -44,7 +45,7 @@ inline char* getStackaddr()
 inline void setStackaddr(char* v)
 {
 #ifdef USETLS
-	TlsSetValue(g_tlsiID, v);
+	tls_setspecific(g_tlsiID, v);
 #else
 	t_stack = v;
 #endif

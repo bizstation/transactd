@@ -36,8 +36,8 @@ namespace tdap
 namespace client
 {
 
-#if( defined(_WIN32) && defined(_MSC_VER))
-DWORD g_tlsiID = 0;
+#ifdef USETLS
+tls_key g_tlsiID;
 #else
 __THREAD client* __THREAD_BCB g_client=NULL;
 #endif

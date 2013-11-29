@@ -167,8 +167,12 @@ endif()
 # ==========================================================
 # add_library
 # ==========================================================
-add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
-
+if(APPLE)
+  add_library(${this_target} MODULE ${${this_target}_SOURCE_FILES})
+  set_target_properties(${this_target} PROPERTIES LINK_FLAGS "-flat_namespace")
+else()
+  add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
+endif()
 
 # ==========================================================
 # add link / include
@@ -187,8 +191,12 @@ target_link_libraries(${this_target} ${TRANSACTD_RUBY_LIBRARY_PATH})
 # ==========================================================
 set_target_properties(${this_target} PROPERTIES PREFIX "")
 set_target_properties(${this_target} PROPERTIES OUTPUT_NAME transactd)
-set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
-if(UNIX)
+if(APPLE)
+  set_target_properties(${this_target} PROPERTIES SUFFIX ".bundle")
+else()
+  set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+endif()
+if(UNIX AND NOT APPLE)
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TDVER_RUBYGEM_MAJOR}.${TDVER_RUBYGEM_MINOR}
     VERSION ${TDVER_RUBYGEM_MAJOR}.${TDVER_RUBYGEM_MINOR}.${TDVER_RUBYGEM_RELEASE})

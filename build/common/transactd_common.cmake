@@ -208,8 +208,12 @@ macro(transactd_link_boost_libraries boost_components)
     if(MINGW)
       target_link_libraries(${this_target} ${Boost_LIBRARIES})
     else()
-      # need "-lrt" after chrono or timer
-      target_link_libraries(${this_target} ${Boost_LIBRARIES} rt)
+      if(APPLE)
+        target_link_libraries(${this_target} ${Boost_LIBRARIES})
+      else()
+        # need "-lrt" after chrono or timer
+        target_link_libraries(${this_target} ${Boost_LIBRARIES} rt)
+      endif()
     endif()
   endif()
   ## find Boost for Visual Studio /MD or /MDd or /MT or /MTd

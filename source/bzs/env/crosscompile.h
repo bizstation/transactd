@@ -145,6 +145,14 @@
 	#define localtime_x(_tm, time) (localtime_s(_tm, time)==0)
 #endif//__BORLANDC__
 
-
+#ifdef _WIN32
+	#define tls_key DWORD
+	#define tls_getspecific(A) TlsGetValue(A)
+	#define tls_setspecific(A, B) TlsSetValue(A, B)
+#else
+	#define tls_key pthread_key_t
+	#define tls_getspecific(A) pthread_getspecific(A) 
+	#define tls_setspecific(A, B) pthread_setspecific(A, B)
+#endif
 
 #endif //BZS_ENV_CROSSCOMPILE_H

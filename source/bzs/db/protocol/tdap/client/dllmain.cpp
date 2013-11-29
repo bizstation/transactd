@@ -50,8 +50,8 @@ using namespace bzs::netsvc::client;
 void writeErrorLog(int err, const char* msg);
 
 
-#if (defined(_WIN32) && defined(_MSC_VER))
-DWORD g_tlsiID1;
+#ifdef USETLS
+tls_key g_tlsiID1;
 #else
 __THREAD clientID __THREAD_BCB g_cid;
 __THREAD bool __THREAD_BCB g_initCid = false;
@@ -66,7 +66,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 {
 	if (reason == DLL_PROCESS_ATTACH)
 	{
-		#ifdef _MSC_VER
+		#ifdef USETLS
 		if ((g_tlsiID = TlsAlloc()) == TLS_OUT_OF_INDEXES)
 			return FALSE;
 		if ((g_tlsiID1 = TlsAlloc()) == TLS_OUT_OF_INDEXES)
@@ -74,16 +74,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 		#endif
 
 		m_cons = new  connections(PIPENAME);
-	}else if(reason == DLL_THREAD_ATTACH)
+	}else if(reason == DLL_THREAD_DETACH)
 	{
-		#ifdef _MSC_VER
-		TlsSetValue(g_tlsiID, 0);
-		clientID* p = new clientID();
-		memset(p, 0, sizeof(clientID));
-		p->id = 1;
-		p->aid[0] = 'G';
-		p->aid[1] = 'X';
-		TlsSetValue(g_tlsiID1, p);
+		#ifdef USETLS
+		delete (bzs::db::protocol::tdap::client::client*)tls_getspecific(g_tlsiID);
+		#else
+		delete g_client;
 		#endif
 	}
 	else if (reason == DLL_PROCESS_DETACH)
@@ -91,7 +87,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 		delete m_cons;
 		m_cons=NULL;
 
-		#ifdef _MSC_VER
+		#ifdef USETLS
 		TlsFree(g_tlsiID);
 		TlsFree(g_tlsiID1);
 
@@ -106,12 +102,21 @@ void __attribute__ ((destructor)) onUnloadLibrary(void);
 
 void onLoadLibrary(void)
 {
-     m_cons = new  connections(PIPENAME);
+    m_cons = new  connections(PIPENAME);
+	#ifdef USETLS
+	pthread_key_create(&g_tlsiID, NULL);
+	pthread_key_create(&g_tlsiID1, NULL);
+	#endif
+
 }
 void onUnloadLibrary(void)
 {
-     delete m_cons;
-		m_cons=NULL;
+    delete m_cons;
+	m_cons=NULL;
+	#ifdef USETLS
+	pthread_key_delete(g_tlsiID); 
+	pthread_key_delete(g_tlsiID1);
+	#endif
 }
 #endif
 
@@ -120,22 +125,20 @@ extern "C" short_td  __STDCALL
    uint_td* datalen, void_td*   keybuf, keylen_td keylen,
    char_td keyNum, clientID* cid)
 {
-	bzs::db::protocol::tdap::client::client* client_t;
-	if ((client_t = getClientThread()) == NULL)
-	{
-		client_t = new  bzs::db::protocol::tdap::client::client();
-		setClientThread(client_t);
-	}	
+	bzs::db::protocol::tdap::client::client* client_t = getClientThread();
 
 	short_td ret;
 	try
 	{
-		//op = op%100;
 
 		if ((TD_GET_BLOB_BUF != op) && (TD_ADD_SENDBLOB != op))
 			client_t->setParam(op, pbk,data,datalen,keybuf,keylen,keyNum,cid);
 
-		if (client_t->stop_if()) return 0;
+		if (client_t->stop_if()) 
+		{
+			client_t->cleanup();
+			return 0;
+		}
 		if (cid==NULL) return 1;
 
 		switch(op)
@@ -154,7 +157,10 @@ extern "C" short_td  __STDCALL
 					if (client_t->readServerCharsetIndex())
 						client_t->create();
 					else
+					{
+						client_t->cleanup();
 						return 1;
+					}
 				}
 				else if (op == TD_OPENTABLE)
 					client_t->req().paramMask = P_MASK_ALL;
@@ -190,6 +196,7 @@ extern "C" short_td  __STDCALL
 			break;
 		case TD_UNLOCK:
 		case TD_UPDATE_PART:
+			client_t->cleanup();
 			return 0;
 		case TD_REC_DELETE:
 		case TD_CLOSETABLE:
@@ -271,13 +278,18 @@ extern "C" short_td  __STDCALL
 			}else
 				client_t->req().result = STATUS_BUFFERTOOSMALL;
 			if (datalen < sizeof(btrVersion)*2)
+			{
+				client_t->cleanup();
 				return 0;
+			}
 			break;
 		}
 
 
 		}
-		return client_t->execute();
+		short_td ret = client_t->execute();
+		client_t->cleanup();
+		return ret;
 	}
 	catch(boost::system::system_error &e)
 	{
@@ -364,8 +376,18 @@ void writeErrorLog(int err, const char* msg)
 
 inline clientID* getCid()
 {
-#ifdef _MSC_VER
-	return (clientID*)TlsGetValue(g_tlsiID1);
+#ifdef USETLS
+	clientID* p = (clientID*)tls_getspecific(g_tlsiID1);
+	if (p==NULL)
+	{
+		clientID* p = new clientID();
+		memset(p, 0, sizeof(clientID));
+		p->id = 1;
+		p->aid[0] = 'G';
+		p->aid[1] = 'X';
+		tls_setspecific(g_tlsiID1, p);
+	}
+	return p;
 #else
 	return &g_cid;
 #endif	
@@ -374,7 +396,7 @@ inline clientID* getCid()
 
 void initCid()
 {
-#ifndef _MSC_VER
+#ifndef USETLS
 	if (!g_initCid)
 	{
 		g_initCid = true;

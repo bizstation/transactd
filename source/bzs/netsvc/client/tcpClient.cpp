@@ -147,7 +147,7 @@ connection* connections::getConnectionPipe()
 
 bool connections::disconnect(connection* c)
 {
-	if (!c) return false;
+	//if (!c) return false;
 	mutex::scoped_lock lck(m_mutex);
 	c->release();
 	if (c->refCount()==0)
@@ -161,8 +161,9 @@ bool connections::disconnect(connection* c)
 			}
 		}
 		delete c;
+		return true;	
 	}
-	return true;
+	return false;
 }
 
 /** If ep is local then isUseNamedPipe is true 

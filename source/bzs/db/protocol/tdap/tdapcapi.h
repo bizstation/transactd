@@ -367,7 +367,11 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define C_INTERFACE_VER_RELEASE "1"//##3 Build marker! Don't remove
 
 #ifdef LINUX
+#ifdef __APPLE__
+#define C_INTERFACE_VERSTR "." C_INTERFACE_VER_MAJOR "." C_INTERFACE_VER_MINOR ".so"//use loadlibrary
+#else
 #define C_INTERFACE_VERSTR ".so." C_INTERFACE_VER_MAJOR "." C_INTERFACE_VER_MINOR//use loadlibrary
+#endif
 #else
 #define C_INTERFACE_VERSTR "_" C_INTERFACE_VER_MAJOR "_" C_INTERFACE_VER_MINOR ".dll"//use loadlibrary
 #endif
