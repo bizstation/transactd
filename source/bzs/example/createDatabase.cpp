@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/database.h>
 #include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/dbdef.h>
+#include <bzs/db/protocol/tdap/client/dbDef.h>
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -104,8 +104,8 @@ bool createUserTableSchema(dbdef* def)
 
     //Insert table
     tabledef td;
-    td.setTableName(L"user");
-    td.setFileName(L"user.dat");
+    td.setTableName(_T("user"));
+    td.setFileName(_T("user.dat"));
     td.id =1;
     td.charsetIndex = CHARSET_UTF8B4;
     def->insertTable(&td);
@@ -167,8 +167,8 @@ bool createGroupTableSchema(dbdef* def)
 
     //Insert table
     tabledef td;
-    td.setTableName(L"group1");
-    td.setFileName(L"group1.dat");
+    td.setTableName(_T("group1"));
+    td.setFileName(_T("group1.dat"));
     td.id = 2;
     td.charsetIndex = CHARSET_UTF8B4;
     def->insertTable(&td);
@@ -216,8 +216,8 @@ bool createPictureTableSchema(dbdef* def)
 {
     //Insert table
     tabledef td;
-    td.setTableName(L"picture");
-    td.setFileName(L"picture.dat");
+    td.setTableName(_T("picture"));
+    td.setFileName(_T("picture.dat"));
     td.id = 3;
     td.charsetIndex = CHARSET_LATIN1;
     def->insertTable(&td);

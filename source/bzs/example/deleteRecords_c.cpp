@@ -45,7 +45,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
         table_ptr tb = openTable(db, _T("user"));
         deleteUser(tb);
-        std::cout << "Insert records success." << std::endl;
+        std::cout << "Delete records success." << std::endl;
         return 0;
     }
 

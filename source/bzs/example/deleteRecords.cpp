@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/database.h>
 #include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/dbdef.h>
+#include <bzs/db/protocol/tdap/client/dbDef.h>
 
 
 using namespace bzs::db::protocol::tdap::client;
@@ -77,7 +77,7 @@ int _tmain(int argc, _TCHAR* argv[])
         else
         {
              if (deleteUser(tbu))
-                _tprintf(_T("Update records success. \n"));
+                _tprintf(_T("Delete records success. \n"));
              tbu->release();
         }
         db->close();

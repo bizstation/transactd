@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/database.h>
 #include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/dbdef.h>
+#include <bzs/db/protocol/tdap/client/dbDef.h>
 #include <vector>
 
 using namespace bzs::db::protocol::tdap::client;

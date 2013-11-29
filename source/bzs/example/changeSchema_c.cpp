@@ -25,17 +25,17 @@ static const short fieldnum_name = 1;
 void changeUserTable(dbdef* def)
 {
     //change name size
-    tabledef* td = def->tableDefs(tablenum_user);
-    fielddef* fd = &td->fieldDefs[fieldnum_name];
+    tabledef** td = def->tableDefPtr(tablenum_user);
+    fielddef* fd = &(*td)->fieldDefs[fieldnum_name];
     fd->setLenByCharnum(64);
 
     //add tel field
     int size = lenByCharnum(ft_mychar, CHARSET_LATIN1, 16);
-    fd = insertField(def, td->id, td->fieldCount, _T("tel"), ft_mychar, size);
+    fd = insertField(def, (*td)->id, (*td)->fieldCount, _T("tel"), ft_mychar, size);
     fd->setCharsetIndex(CHARSET_LATIN1);
 
     //write user table schema
-    updateTableDef(def, td->id);
+    updateTableDef(def, (*td)->id);
 }
 
 void __stdcall onCopyData(database* db, int recordCount, int count, bool &cancel)

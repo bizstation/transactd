@@ -68,7 +68,7 @@ int _tmain(int argc, _TCHAR* argv[])
         //Commit transaction. If an error throwed then abort transaction automaticaly.
         trn.end();
 
-        std::cout << "Insert records success." << std::endl;
+        std::cout << "Update records success." << std::endl;
         return 0;
     }
 
