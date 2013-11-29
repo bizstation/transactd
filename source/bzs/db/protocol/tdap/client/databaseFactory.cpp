@@ -20,7 +20,7 @@
 #pragma hdrstop
 
 #include "database.h"
-
+#include <bzs/rtl/exception.h>
 //---------------------------------------------------------------------------
 
 
@@ -40,7 +40,12 @@ namespace client
 
 database* database::create()
 {
-    return new database();
+    try
+	{
+		return new database();
+	}
+	catch( bzs::rtl::exception& /*e*/){}
+	return NULL;
 }
 
 }//namespace client
