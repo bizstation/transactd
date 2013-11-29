@@ -258,7 +258,7 @@ to drop a database.
 mysql>drop database test;
 ```
 
-If `-- showprogress=yes` is passed, it shows progress like:
+If `-- show_progress=yes` is passed, it shows progress like:
  ```
 0%   10   20   30   40   50   60   70   80   90   100%
 |----|----|----|----|----|----|----|----|----|----|
