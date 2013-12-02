@@ -25,6 +25,7 @@ cmake_minimum_required(VERSION 2.6)
 include(../common/transactd_required.cmake)
 include(../common/transactd_common.cmake)
 include(../common/options.cmake)
+include(../common/system.cmake)
 include(../common/get_boost_libs.cmake)
 
 
