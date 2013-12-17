@@ -448,7 +448,7 @@ def testSnapShot(db)
   if ISOLATION_READ_COMMITTED
     expect(tb2.stat()).to eq 0
   elsif ISOLATION_REPEATABLE_READ
-    expect(tb2.stat()).to eq STATUS_LOCK_ERROR
+    expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
   end
   # ----------------------------------------------------
   tb.seekFirst()
