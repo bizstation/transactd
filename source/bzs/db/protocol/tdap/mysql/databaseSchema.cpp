@@ -238,6 +238,9 @@ bool isFrmFile(const std::string& name)
 	size_t pos = name.find(TRANSACTD_SCHEMANAME);
 	if (pos != std::string::npos)
 		return false;
+	//First of name is '#' that is alter table temp file.
+	if (name.size() && name[0] == '#')
+		return false;
 	pos = name.find(".frm");
 	if (pos != std::string::npos)
 		return pos == name.size()-4; 
