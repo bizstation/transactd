@@ -159,8 +159,8 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
 		tdef.fixedRecordLen = (ushort_td)src->recordLenCl();
 	tdef.maxRecordLen = (ushort_td)src->recordLenCl();
 	tdef.pageSize = 2048;
-	tdef.optionFlags.bitA = (src->recordFormatType() & RF_VALIABLE_LEN);
-	tdef.optionFlags.bitB = src->blobFields()!=0;
+	tdef.optionFlags.bitA = (bool)(src->recordFormatType() & RF_VALIABLE_LEN);
+	tdef.optionFlags.bitB = (src->blobFields()!=0);
 	
 	datalen+=sizeof(tabledef);
 	tdef.fieldDefs = (fielddef*)(rec.get() + datalen);
