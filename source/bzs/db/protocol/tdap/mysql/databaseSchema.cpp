@@ -217,11 +217,6 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
 					fd.keylen = ks.length;
 					
 				}
-				if (sg.fieldNum == tdef.fieldCount-1)
-				{
-					tdef.flags.bit0 = 0; //NOT valiable length
-					tdef.optionFlags.bitA = 0;//NOT RF_VALIABLE_LEN
-				}
 				++segNum;
 			}
 		}
