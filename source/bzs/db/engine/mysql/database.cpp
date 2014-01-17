@@ -790,6 +790,8 @@ inline bool isNull(Field* fd)
 				
 		return (len==0);
 	}
+	else if (isBlobType(fd->type()))
+		return (0==blob_len(fd));
 	else
 	{
 		unsigned int k=0;
@@ -1641,7 +1643,9 @@ void table::beginDel()
 			}
 			else
 				movePos(position(true), -1, true);
-			if (cmp_record(m_table, record[1]))
+
+			//Has blob fileds then ignore conflicts.
+			if ((m_table->s->blob_fields==0) && cmp_record(m_table, record[1]))
 				m_stat = STATUS_CHANGE_CONFLICT;
 			
 			m_cursor = m_validCursor = (m_stat == 0);
