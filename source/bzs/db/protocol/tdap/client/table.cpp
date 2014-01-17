@@ -286,6 +286,7 @@ inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
         case 8: ret = *((__int64*)(ptr + fd.pos));
             break;
         }
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_bit:
@@ -332,10 +333,11 @@ inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
                 break;
             case 4: *((int*)(ptr + fd.pos)) = (int)value;
                 break;
-            case 8: *((__int64*)(ptr + fd.pos)) = (int)value;
+            case 8: *((__int64*)(ptr + fd.pos)) = value;
                 break;
             }
         }
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_bit:
@@ -346,7 +348,8 @@ inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
     case ft_mytime:
     case ft_mydate:
     case ft_mydatetime:
-    case ft_mytimestamp: memcpy(ptr + fd.pos, &value, fd.len);
+    case ft_mytimestamp:
+        memcpy(ptr + fd.pos, &value, fd.len);
         break;
     }
 }
@@ -1276,6 +1279,7 @@ void table::setFVA(short index, const char* data)
     case ft_time: // time hh:nn:ss
         value = /*StrToBtrTime*/atobtrt((const char*)data).i;
         break;
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_integer:
     case ft_autoinc:
@@ -1375,6 +1379,7 @@ void table::setFVW(short index, const wchar_t* data)
         setFV(index, value);
         return;
 
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_integer:
     case ft_autoinc:
@@ -1485,6 +1490,7 @@ void table::setFV(short index, int data)
     case ft_integer:
     case ft_date:
     case ft_time:
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_autoinc:
@@ -1593,6 +1599,7 @@ void table::setFV(short index, double data)
     case ft_integer:
     case ft_date:
     case ft_time:
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_autoinc:
@@ -1684,6 +1691,7 @@ int table::getFVlng(short index)
             break;
         }
         break;
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_bit:
@@ -1794,6 +1802,7 @@ double table::getFVdbl(short index)
     case ft_integer:
     case ft_date:
     case ft_time:
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_autoinc:
@@ -1903,7 +1912,9 @@ const wchar_t* table::getFVWstr(short index)
             }
             break;
         }
-    case ft_uinteger: swprintf_s(p, 50, L"%u", getFVlng(index));
+    case ft_autoIncUnsigned:
+    case ft_uinteger:
+        swprintf_s(p, 50, L"%lu", getFV64(index));
         break;
     case ft_date: return btrdtoa(getFVlng(index), p);
     case ft_time: return btrttoa(getFVlng(index), p);
@@ -2038,7 +2049,9 @@ const char* table::getFVAstr(short index)
         }
     case ft_date: return btrdtoa(getFVlng(index), p);
     case ft_time: return btrttoa(getFVlng(index), p);
-    case ft_uinteger: sprintf(p, "%u", getFVlng(index));
+    case ft_autoIncUnsigned:
+    case ft_uinteger:
+        sprintf_s(p, 50, "%lu", getFV64(index));
         break;
 
     case ft_mydate:
@@ -2185,6 +2198,7 @@ __int64 table::getFV64(short index)
     case 8:
         switch (fd.type)
         {
+        case ft_autoIncUnsigned:
         case ft_uinteger:
         case ft_integer:
         case ft_logical:
@@ -2229,6 +2243,7 @@ void table::setFV(short index, __int64 data)
     case 8:
         switch (fd.type)
         {
+        case ft_autoIncUnsigned:
         case ft_uinteger:
         case ft_integer:
         case ft_logical:

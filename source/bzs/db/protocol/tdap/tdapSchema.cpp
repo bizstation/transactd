@@ -215,6 +215,7 @@ const _TCHAR* getTypeName(short type)
     case ft_mytimestamp: return _T("myTimeStamp");
     case ft_mytext: return _T("myText");
     case ft_myblob: return _T("myBlob");
+    case ft_autoIncUnsigned: return _T("AutoIncUnsigned");
     case ft_nullindicator: return _T("Nullindicator");
     default: return _T("Unknown");
     }

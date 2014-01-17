@@ -300,6 +300,7 @@ private:
 			return strncmp(l, r, len);
 		case ft_logical:
 		case ft_uinteger:
+		case ft_autoIncUnsigned:
 		case ft_date:
 		case ft_time:
 		case ft_timestamp:

@@ -98,7 +98,7 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary, bool
 	case MYSQL_TYPE_YEAR:
 	case MYSQL_TYPE_INT24:
 		if (flags & AUTO_INCREMENT_FLAG)
-			return ft_autoinc;
+			return (flags & UNSIGNED_FLAG) ? ft_autoIncUnsigned : ft_autoinc;
 		if ((flags & UNSIGNED_FLAG) || (type == MYSQL_TYPE_YEAR))
 			return ft_uinteger;
 		return ft_integer;
