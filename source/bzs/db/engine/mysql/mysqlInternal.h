@@ -26,12 +26,15 @@
 #ifndef MYSQL_DYNAMIC_PLUGIN
 	#define MYSQL_DYNAMIC_PLUGIN
 #endif
+
 #define MYSQL_SERVER 1
 
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H
 #endif
 
+#define HAVE_PSI_INTERFACE //50700
+#define NO_USE_MALLOC_SERVICE_INTERFACE
 
 #ifdef ERROR
 #undef ERROR
@@ -44,6 +47,7 @@
 #pragma warning(disable:4800) 
 #pragma warning(disable:4267) 
 #pragma warning(disable:4996) 
+#pragma warning(disable:4805) 
 #endif
 
 #include <my_config.h>
@@ -70,8 +74,12 @@
 #include "sql/sql_parse.h"  
 #include "sql/sql_table.h"
 #include "sql/sql_db.h"
-#include "sql/sql_acl.h"
+#include "sql_acl.h"
 #include "mysqld_error.h"
+
+#if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
+#include "sql/log.h"
+#endif
 
 #undef test
 
@@ -84,6 +92,7 @@
 #pragma warning(default:4996) 
 #pragma warning(default:4267) 
 #pragma warning(default:4800) 
+#pragma warning(default:4805) 
 #endif
 
 #undef min
@@ -114,6 +123,10 @@
 	#define MDL_SHARED_UPGRADABLE MDL_SHARED_WRITE
 	#define	cp_get_sql_error()	stmt_da->sql_errno()
 	#define	cp_isOk()			stmt_da->is_ok()
+#elif ((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
+	#define	cp_get_sql_error()	get_stmt_da()->mysql_errno()
+	#define query_cache_invalidate3(A, B, C) query_cache.invalidate(A, B, C)
+	#define	cp_isOk()			get_stmt_da()->is_ok()
 #else
 	#define	cp_get_sql_error()	get_stmt_da()->sql_errno()
 	#define	cp_isOk()			get_stmt_da()->is_ok()
@@ -166,6 +179,35 @@
 #if (MYSQL_VERSION_NUM < 50611)
 	#define ha_index_read_map		index_read_map
 #endif
+
+/* memory management */
+#if ((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
+	#define td_malloc(A, B) my_malloc(PSI_NOT_INSTRUMENTED, A, B)
+	#define td_realloc(A, B, C) my_realloc(PSI_NOT_INSTRUMENTED, A, B, C)
+	#define td_strdup(A, B) my_strdup(PSI_NOT_INSTRUMENTED, A, B)
+	#define td_free(A) my_free(A)
+	
+	/* On Windows,
+	   "operator delete()" function is implemented in mysqld. 
+	   But "operator new" operation implement in transactd.dll.
+	   Therefore, memory managers differ.*/ 
+	#ifdef _WIN32
+		inline void releaseTHD(THD* thd)
+		{
+			thd->~THD();
+			operator delete((void*)thd); 
+		}
+	#else
+		inline void releaseTHD(THD* thd){delete thd;}
+	#endif
+#else
+	#define td_malloc(A, B) my_malloc(A, B)
+	#define td_realloc(A, B, C) my_realloc(A, B, C)
+	#define td_strdup(A, B) my_strdup(A, B)
+	#define td_free(A) my_free(A)
+	inline void releaseTHD(THD* thd){delete thd;}
+#endif
+
 
 
 #endif //MYSQLINTERNAL_H

@@ -135,9 +135,9 @@ class bookmarks
 			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_INVALID_BOOKMARK ,"invalid bookmark.");
 		void* tmp;
 		if (m_ptr == NULL)
-			tmp = (unsigned char*)my_malloc(count*m_refLen, 0);
+			tmp = (unsigned char*)td_malloc(count*m_refLen, 0);
 		else
-			tmp = my_realloc(m_ptr, count*m_refLen, 0);
+			tmp = td_realloc(m_ptr, count*m_refLen, 0);
 		if (tmp)
 			m_ptr = (unsigned char*)tmp;
 		else
@@ -153,7 +153,7 @@ public:
 	
 	~bookmarks()
 	{
-		my_free(m_ptr); 
+		td_free(m_ptr); 
 	}
 	
 	/** get integer bookmark pointer by raw ref pointer
