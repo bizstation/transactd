@@ -123,9 +123,6 @@
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fileDDF.cpp">
 				<BuildOrder>8</BuildOrder>
 			</CppCompile>
-			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\filter.cpp">
-				<BuildOrder>9</BuildOrder>
-			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\indexDDF.cpp">
 				<BuildOrder>10</BuildOrder>
 			</CppCompile>

@@ -32,7 +32,6 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/errorMessage.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fieldDDF.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fileDDF.cpp
-    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/filter.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/indexDDF.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/nsDatabase.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/nsTable.cpp
