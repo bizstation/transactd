@@ -279,6 +279,7 @@ void testFind(database* db)
         --i;
     }
 
+    tb->clearBuffer();
     v = 20000;
     tb->setFV((short)0, v);
     tb->find(table::findForword);
@@ -303,6 +304,38 @@ void testFindNext(database* db)
         BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "findNext value");
 
     }
+	tb->release();
+}
+
+void testFindIn(database* db)
+{
+
+    table* tb = openTable(db);
+    tb->setKeyNum(0);
+    tb->clearBuffer();
+    queryBase q;
+    q.addSeekKeyValue(_T("10"), true);
+    q.addSeekKeyValue(_T("50"));
+    q.addSeekKeyValue(_T("80"));
+    q.addSeekKeyValue(_T("5000"));
+
+
+
+    tb->setQuery(&q);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
+    tb->find();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 10, "find in 10");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 50, "find in 50");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 80, "find in 80");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 5000, "find in 5000");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "find in more");
+
+
 	tb->release();
 }
 
@@ -1687,7 +1720,9 @@ void doTestSF(table* tb)
 
 
     tb->setFilter(_T("name = 'あい*'"), 0, 10);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
     tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
     tb->findNext(false);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
     BOOST_CHECK_MESSAGE(_tstring(_T("あいうえおかきくこ")) == _tstring(tb->getFVstr(1)), "doTestReadSF2");
@@ -1704,6 +1739,7 @@ void doTestSF(table* tb)
     BOOST_CHECK_MESSAGE(5 == (int)tb->recordCount(), "doTestReadSF2");
 
     //test setFilter don't change field value
+    tb->clearBuffer();
     tb->setFV(_T("name"), _T("ABCDE"));
     tb->setFilter(_T("name = 'あい'"), 0, 10);
     BOOST_CHECK_MESSAGE(_tstring(_T("ABCDE")) == _tstring(tb->getFVstr(1)), "doTestReadSF2 field value");
@@ -2094,8 +2130,20 @@ void testQuery()
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2' and name = '3'")
                             ,  "queryString");
 
-}
+    //IN include
+    q.queryString(_T("select id,name,fc IN '1','2','3'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc in '1','2','3'")
+                            ,  "queryString");
 
+    q.queryString(_T("IN '1','2','3'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in '1','2','3'")
+                            ,  "queryString");
+
+    q.queryString(_T("IN 1,2,3"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in '1','2','3'")
+                            ,  "queryString");
+
+}
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -2115,7 +2163,11 @@ BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
     BOOST_FIXTURE_TEST_CASE(find, fixture) {testFind(db());}
 
-    BOOST_FIXTURE_TEST_CASE(findNext, fixture) {testFindNext(db());}
+    BOOST_FIXTURE_TEST_CASE(findNext, fixture)
+    {
+        testFindNext(db());
+        testFindIn(db());
+    }
 
     BOOST_FIXTURE_TEST_CASE(getPercentage, fixture) {testGetPercentage(db());}
 

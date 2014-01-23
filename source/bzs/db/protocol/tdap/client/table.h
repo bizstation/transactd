@@ -47,6 +47,7 @@ class AGRPACK table : public nstable
     friend class recordCache;
     friend class database;
     friend class filter;
+
     struct tbimpl* m_impl;
     tabledef* m_tableDef;
 
@@ -132,7 +133,7 @@ public:
     void clearBuffer();
     unsigned int getRecordHash();
     void smartUpdate();
-    void find(eFindType type);
+    void find(eFindType type=findForword);
     void findFirst();
     void findLast();
     void findNext(bool notIncCurrent = true);
@@ -213,24 +214,19 @@ public:
 };
 
 
-AGRPACK void analyzeQuery(const _TCHAR* str
-        , std::vector<std::_tstring>& selects
-        , std::vector<std::_tstring>& where
-        ,bool& nofilter);
-
-
 class AGRPACK queryBase
 {
 
     struct impl* m_impl;
-protected:
-    void addField(const _TCHAR* name);
-    void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
-    void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
-    void clearSelectFields();
 public:
     queryBase();
     virtual ~queryBase();
+    void addField(const _TCHAR* name);
+    void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
+    void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
+    void addSeekKeyValue(const _TCHAR* value, bool reset=false);
+    void clearSeekKeyValues();
+    void clearSelectFields();
     queryBase& queryString(const TCHAR* str);
     queryBase& reject(int v);
 	queryBase& limit(int v);
@@ -239,6 +235,7 @@ public:
     const _TCHAR* toString() const;
     const std::vector<std::_tstring>& getSelects() const;
     const std::vector<std::_tstring>& getWheres() const;
+    const std::vector<std::_tstring>& getSeekKeyValues() const;
     table::eFindType getDirection() const;
     int getReject()const;
     int getLimit()const;

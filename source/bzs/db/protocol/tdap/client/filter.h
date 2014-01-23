@@ -245,6 +245,19 @@ public:
         return false;
     }
 
+    //setParam from keyValue
+    bool setParam(void* keyValue, ushort_td keylen)
+    {
+        logType = 1;// '=' type
+        opr = eCor;
+        len = keylen;
+        type = ft_string;// this value is ignored.
+        pos = 0;
+        allocBuffer(len);
+        memcpy(data, keyValue, len);
+        return true;
+    }
+
     unsigned char* writeBuffer(unsigned char* p, bool estimate)
     {
         int n = sizeof(logic) - sizeof(unsigned char*);
@@ -344,6 +357,7 @@ class filter
     int m_extendBuflen;
     std::_tstring m_str;
     bool m_ignoreFields;
+    bool m_seeksMode;
 
 
     bool addWhere(const _TCHAR* name, const _TCHAR* type, const _TCHAR*  value, char combine, bool compField = false)
@@ -421,6 +435,37 @@ class filter
 
     }
 
+    bool setSeeks(const std::vector<std::_tstring>& keyValues)
+    {
+        //Check key values
+        keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
+        if (keyValues.size() % kd->segmentCount)
+            return false;
+        //Check uniqe key
+        if (kd->segments[0].flags.bit0)
+            return false;
+
+        for (size_t i=0;i<keyValues.size();i+= kd->segmentCount)
+        {
+            for (int j=0;j<kd->segmentCount;++j)
+                m_tb->setFV(kd->segments[j].fieldNum, keyValues[i+j].c_str());
+
+            logic* l = new logic();
+            ushort_td len = m_tb->writeKeyData();
+            if (l->setParam(m_tb->m_keybuf, len))
+                m_logics.push_back(l);
+            else
+            {
+                delete l;
+                return false;
+            }
+        }
+        if (m_logics.size())
+            m_logics[m_logics.size() -1]->opr = eCend;
+        m_seeksMode = true;
+        return true;
+    }
+
     bool doSetFilter(const queryBase* q)
     {
         cleanup();
@@ -435,7 +480,15 @@ class filter
                 addAllFields();
             else if (!setSelect(q->getSelects()))
                 return false;
-            return setWhere(q->getWheres());
+
+            //seeks or where
+            if (q->getSeekKeyValues().size() && q->getWheres().size())
+                return false;
+
+            if (q->getSeekKeyValues().size())
+                return setSeeks(q->getSeekKeyValues());
+            else if (q->getWheres().size())
+                return setWhere(q->getWheres());
         }
         return true;
     }
@@ -527,7 +580,7 @@ class filter
     }
 
 public:
-    filter(table* tb):m_tb(tb),m_ignoreFields(false){}
+    filter(table* tb):m_tb(tb),m_ignoreFields(false),m_seeksMode(false){}
     ~filter()
     {
         cleanup();
@@ -544,6 +597,7 @@ public:
         m_hd.reset();
         m_ret.reset();
         m_ignoreFields = false;
+        m_seeksMode = false;
     }
 
     bool setQuery(const queryBase* q)
@@ -606,7 +660,8 @@ public:
 
     bool ignoreFields() const {return m_ignoreFields;}
 
-    void setIgnoreFields(bool v){m_ignoreFields = v;};
+    void setIgnoreFields(bool v){m_ignoreFields = v;}
+    bool isSeeksMode()const {return m_seeksMode;}
 };
 
 

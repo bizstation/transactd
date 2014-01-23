@@ -569,14 +569,26 @@ bookmark_td table::bookmarkFindCurrent() const
 
 void table::find(eFindType type)
 {
+    ushort_td op;
+    if (m_impl->filterPtr->isSeeksMode())
+        op = TD_KEY_SEEK_MULTI;
+    else
+        op = (type == findForword) ? TD_KEY_GE_NEXT_MULTI:TD_KEY_LE_PREV_MULTI;
+
     if (nsdb()->isUseTransactd())
     {
         m_impl->rc->reset();
-        ushort_td op = (type == findForword) ? TD_KEY_GE_NEXT_MULTI:TD_KEY_LE_PREV_MULTI;
         doFind(op, true/*notIncCurrent*/);
     }
     else
     {
+
+        if (op == TD_KEY_SEEK_MULTI)
+        {
+            //P.SQL not support TD_KEY_SEEK_MULTI
+            m_stat = STATUS_FILTERSTRING_ERROR;
+            return;
+        }
         if (type == findForword)
             seekGreater(true);
         else
@@ -753,6 +765,7 @@ const _TCHAR* table::filterStr()
 
 void table::clearBuffer()
 {
+    m_pdata = m_impl->dataBak;
     memset(m_pdata, 0x00, m_buflen);
     if (blobFieldUsed())
         resetSendBlob();
@@ -863,8 +876,8 @@ bool table::onUpdateCheck(eUpdateType type)
 
 void table::onUpdateAfter(int beforeResult)
 {
-    if (blobFieldUsed())
-        resetSendBlob();
+    //if (blobFieldUsed())
+    //    resetSendBlob();
     if (valiableFormatType() && m_impl->dataPacked)
         m_datalen = unPack((char*)m_pdata, m_datalen);
 
@@ -2623,10 +2636,12 @@ typedef boost::tokenizer<esc_sep
 void analyzeQuery(const _TCHAR* str
         , std::vector<std::_tstring>& selects
         , std::vector<std::_tstring>& where
+        , std::vector<std::_tstring>& keyValues
         ,bool& nofilter)
 {
     selects.clear();
     where.clear();
+    keyValues.clear();
     esc_sep sep(_T('&'), _T(' '), _T('\''));
     std::_tstring s = str;
     tokenizer tokens(s, sep);
@@ -2649,8 +2664,24 @@ void analyzeQuery(const _TCHAR* str
             selects.push_back(*(itf++));
         ++it;
     }
-    while (it != tokens.end())
-        where.push_back(*(it++));
+    if (it == tokens.end())
+        return;
+    s = *it;
+    boost::algorithm::to_lower(s);
+    if (s == _T("in"))
+    {
+        s = *(++it);
+        esc_sep sep(_T('&'), _T(','), _T('\''));
+        tokenizer values(s, sep);
+        tokenizer::iterator itf = values.begin();
+        while (itf != values.end())
+            keyValues.push_back(*(itf++));
+    }
+    else
+    {
+        while (it != tokens.end())
+            where.push_back(*(it++));
+    }
 }
 
 
@@ -2667,6 +2698,7 @@ struct impl
     mutable std::_tstring m_str;
     std::vector<std::_tstring> m_selects;
     std::vector<std::_tstring> m_wheres;
+    std::vector<std::_tstring> m_keyValues;
 };
 
 queryBase::queryBase():m_impl(new impl){}
@@ -2689,10 +2721,13 @@ void queryBase::addField(const _TCHAR* name)
 
 void queryBase::addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value)
 {
+    m_impl->m_keyValues.clear();
+    m_impl->m_wheres.clear();
     m_impl->m_wheres.push_back(name);
     m_impl->m_wheres.push_back(logic);
     m_impl->m_wheres.push_back(value);
 }
+
 void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name
     , const _TCHAR* logic,  const _TCHAR* value)
 {
@@ -2700,9 +2735,27 @@ void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name
     addLogic(name, logic, value);
 }
 
+void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
+{
+    if (reset)
+    {
+        m_impl->m_wheres.clear();
+        m_impl->m_keyValues.clear();
+    }
+    m_impl->m_keyValues.push_back(value);
+    m_impl->m_reject = 1;
+
+}
+
+void queryBase::clearSeekKeyValues()
+{
+    m_impl->m_keyValues.clear();
+}
+
 queryBase& queryBase::queryString(const TCHAR* str)
 {
-    analyzeQuery(str, m_impl->m_selects, m_impl->m_wheres, m_impl->m_nofilter);
+    analyzeQuery(str, m_impl->m_selects, m_impl->m_wheres, m_impl->m_keyValues
+                                                ,m_impl->m_nofilter);
     return *this;
 }
 
@@ -2754,6 +2807,7 @@ const _TCHAR* queryBase::toString() const
     std::_tstring& s = m_impl->m_str;
     std::vector<std::_tstring>& selects = m_impl->m_selects;
     std::vector<std::_tstring>& wheres = m_impl->m_wheres;
+    std::vector<std::_tstring>& keyValues = m_impl->m_keyValues;
     if (selects.size())
     {
         s = _T("select ");
@@ -2770,6 +2824,11 @@ const _TCHAR* queryBase::toString() const
         if (i+3 < wheres.size())
             s += wheres[i+3] + _T(" ");
     }
+
+    if (keyValues.size())
+        s += _T("in ");
+    for (size_t i= 0;i < keyValues.size();++i)
+        s += _T("'") + escape_value(keyValues[i]) + _T("',");
     if (s.size())
         s.erase(s.end() -1);
 
@@ -2785,7 +2844,7 @@ bool queryBase::isNofilter()const{return m_impl->m_nofilter;};
 
 const std::vector<std::_tstring>& queryBase::getSelects() const {return m_impl->m_selects;}
 const std::vector<std::_tstring>& queryBase::getWheres() const {return m_impl->m_wheres;}
-
+const std::vector<std::_tstring>& queryBase::getSeekKeyValues() const{return m_impl->m_keyValues;}
 }// namespace client
 }// namespace tdap
 }// namespace protocol

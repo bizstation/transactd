@@ -394,11 +394,15 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     activeTable<group_orm>のreadEach関数にそのリストを渡します。
     */
     group_list_ptr grps(listup(users, &user::grp));
-    gt.readEach(*grps);
+    gt.cursor().index(primary_key);
+    query qe;
+    q.select(_T("id"), _T("name"));
+    gt.readEach(*grps, qe);
 
     //オリジナルのグループリストでもlistup関数は使えます。
     group_list_ptr grps2(listup(m, &user::grp));
-    gt.readEach(*grps2);
+    gt.cursor().index(primary_key);
+    gt.readEach(*grps2, qe);
 
 }
 

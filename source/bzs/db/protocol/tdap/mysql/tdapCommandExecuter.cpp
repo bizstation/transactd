@@ -466,7 +466,8 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 		m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT : HA_READ_KEY_OR_PREV);
 		
 		extRequest* ereq = (extRequest*)req.data;
-		req.result = m_readHandler->begin(m_tb, ereq, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen);
+		req.result = m_readHandler->begin(m_tb, ereq, true
+				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen);
 		if (req.result != 0)
 			return 1;
 		if (m_tb->stat() == 0)
@@ -497,18 +498,33 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 	m_tb = getTable(req.pbk->handle);
 	extRequest* ereq = (extRequest*)req.data;
 	bool incCurrent = !((ereq->type[0]=='E') && (ereq->type[1]=='G'));
-	req.result = m_readHandler->begin(m_tb, ereq, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen);
+	req.result = m_readHandler->begin(m_tb, ereq,(op != TD_KEY_SEEK_MULTI)
+			, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen);
 	if (req.result == 0)
 	{
-		if (op == TD_KEY_NEXT_MULTI)
-			m_tb->getNextExt(m_readHandler, incCurrent);
-		else if (op == TD_KEY_PREV_MULTI)
-			m_tb->getPrevExt(m_readHandler, incCurrent);
-		else if (op == TD_POS_NEXT_MULTI)
-			m_tb->stepNextExt(m_readHandler, incCurrent);
-		else if (op == TD_POS_PREV_MULTI)
-			m_tb->stepPrevExt(m_readHandler, incCurrent);
-		req.result = errorCodeSht(m_tb->stat());
+		if (op == TD_KEY_SEEK_MULTI)
+		{
+			char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
+			if (m_tb->setKeyNum(keynum))
+				req.result = errorCodeSht(seekEach(ereq));
+			else
+			{
+				if (m_tb)m_tb->unUse();
+				return ret;
+			}
+		}
+		else
+		{
+			if (op == TD_KEY_NEXT_MULTI)
+				m_tb->getNextExt(m_readHandler, incCurrent);
+			else if (op == TD_KEY_PREV_MULTI)
+				m_tb->getPrevExt(m_readHandler, incCurrent);
+			else if (op == TD_POS_NEXT_MULTI)
+				m_tb->stepNextExt(m_readHandler, incCurrent);
+			else if (op == TD_POS_PREV_MULTI)
+				m_tb->stepPrevExt(m_readHandler, incCurrent);
+			req.result = errorCodeSht(m_tb->stat());
+		}
 		DEBUG_WRITELOG2(op, req);
 		size = req.serializeForExt(m_tb, resultBuffer, m_readHandler->end());
 		if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
@@ -520,6 +536,25 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 	}
 	if (m_tb)m_tb->unUse();
 	return ret;
+}
+
+inline short dbExecuter::seekEach(extRequest* ereq)
+{
+	short stat = 0;
+	logicalField* fd = &ereq->field;
+	for (int i=0;i<ereq->logicalCount;++i)
+	{
+		m_tb->setKeyValuesPacked(fd->ptr, fd->len);
+		m_tb->seekKey(HA_READ_KEY_EXACT);
+		stat = m_tb->stat();
+		if (stat == 0)
+			stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
+		if (stat) break;	
+		fd = fd->next();
+	}
+	if (stat==0)
+		stat = STATUS_REACHED_FILTER_COND;
+	return stat;
 }
 
 inline void dbExecuter::doStepRead(request& req, int op)
@@ -874,6 +909,7 @@ int dbExecuter::commandExec(request& req, char* resultBuffer, size_t& size, nets
 			if (doReadMultiWithSeek(req, op, resultBuffer, size, optionalData) == EXECUTE_RESULT_SUCCESS)
 				return EXECUTE_RESULT_SUCCESS; // Caution Call unUse()
 			break;
+		case TD_KEY_SEEK_MULTI:
 		case TD_KEY_NEXT_MULTI:
 		case TD_KEY_PREV_MULTI:
 		case TD_POS_NEXT_MULTI:

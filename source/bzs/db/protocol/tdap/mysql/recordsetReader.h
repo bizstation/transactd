@@ -538,7 +538,7 @@ inline short fieldInfoCache::cache(extRequest& req, position& position, const KE
 	char* pos = m_sizeBytes;
 	bool isCheckKeyseg = (key != NULL);
 	unsigned short segmentIndex = 0;
-	for (int i=0;i<req.logicalCount;i++)
+	for (int i=0;i<req.logicalCount;++i)
 	{
 		
 		int num = position.getFieldNumByPos(fd->pos);
@@ -598,16 +598,18 @@ class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 	fieldInfoCache  m_fieldInfoCache;
 public:
 
-	short begin(engine::mysql::table* tb, extRequest* req, char* buf,size_t offset, unsigned short maxlen)
+	short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache, char* buf,size_t offset, unsigned short maxlen)
 	{
 		short ret = 0;
 		m_position.setTable(tb);
 		m_req = req;
-		const KEY* key = NULL;
-		if (tb->keyNum() >= 0)
-			key = &tb->keyDef(tb->keyNum());
-		m_fieldInfoCache.cache(*m_req, m_position, key);
-
+		if (fieldCache)
+		{
+			const KEY* key = NULL;
+			if (tb->keyNum() >= 0)
+				key = &tb->keyDef(tb->keyNum());
+			m_fieldInfoCache.cache(*m_req, m_position, key);
+		}
 		m_resultDef = m_req->resultDef();
 		if (m_resultDef->fieldCount > 1)
 			ret = convResultPosToFieldNum();

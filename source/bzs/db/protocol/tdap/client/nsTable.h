@@ -46,6 +46,7 @@ class bulkInsert;
 class AGRPACK nstable
 {
 	friend class nsdatabase; // for destroy()
+    friend class filter;
 public:
     enum eUpdateType{changeCurrentCc,changeCurrentNcc,changeInKey};
     static const bool inkey = true;

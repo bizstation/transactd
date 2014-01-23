@@ -417,6 +417,7 @@ public:
         const tabledef& td = *tb->tableDef();
         if (keynum < td.keyCount)
         {
+            tb->clearBuffer();
             const keydef kd = td.keyDefs[keynum];
             if (kd.segmentCount > 0)
                 tb->setFV(kd.segments[0].fieldNum, kv0);

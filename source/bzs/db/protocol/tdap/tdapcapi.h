@@ -125,6 +125,7 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define TD_ADD_SENDBLOB 	       92
 #define TD_GET_BLOB_BUF		       93
 #define TD_STASTISTICS	           94
+#define TD_KEY_SEEK_MULTI		   95
 
 
 
