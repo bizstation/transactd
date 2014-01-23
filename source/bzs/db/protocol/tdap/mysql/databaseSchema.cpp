@@ -262,7 +262,7 @@ short schemaBuilder::execute(database* db, table* mtb)
 			if (isFrmFile(s))
 			{
 				filename_to_tablename(it->path().stem().string().c_str(), path, FN_REFLEN);
-				table* tb = db->openTable(path, TD_OPEN_READONLY);
+				table* tb = db->openTable(path, TD_OPEN_READONLY, NULL);
 				if (!tb->isView())
 				{
 					if ((stat = insertMetaRecord(mtb, tb, ++id))!=0)

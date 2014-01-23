@@ -370,7 +370,7 @@ bool database::endSnapshot()
 /** Metadata lock, a table name is case-sensitive 
  *  However, in actual opening, it is not distinguished at Windows.
  */
-TABLE* database::doOpenTable(const std::string& name, short mode)
+TABLE* database::doOpenTable(const std::string& name, short mode, const char* ownerName)
 {
 	TABLE_LIST tables;
 	m_thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
@@ -388,6 +388,23 @@ TABLE* database::doOpenTable(const std::string& name, short mode)
 			m_stat = STATUS_CANNOT_LOCK_TABLE;
 		THROW_BZS_ERROR_WITH_CODEMSG(m_stat, name.c_str());
 	}
+	
+	//Check owner name
+	if (ownerName && ownerName[0])
+	{
+		const char* p = tables.table->s->comment.str;
+		if ((p[0] == '%') && (p[1] =='@') && (p[2] =='%'))
+		{
+			int readNoNeed = p[3] - '0';
+			if ((mode == TD_OPEN_READONLY) && readNoNeed)
+				;
+			else if (strcmp(p + 4, ownerName))
+			{
+				m_stat = STATUS_INVALID_OWNERNAME;
+				return NULL;
+			}
+		}
+	}
 
 	tables.table->use_all_columns();
 	tables.table->open_by_handler = 1;
@@ -399,15 +416,20 @@ TABLE* database::doOpenTable(const std::string& name, short mode)
 	return tables.table;
 }
 
-table* database::openTable(const std::string& name, short mode)
+table* database::openTable(const std::string& name, short mode, const char* ownerName)
 {
 	if (existsTable(name))
 	{
 		tableRef.addref(m_dbname, name);//addef first then table open.
-		boost::shared_ptr<table> tb(new table(doOpenTable(name, mode) , *this, name, mode, (int)m_tables.size()));
-		m_tables.push_back(tb);
-		m_stat = STATUS_SUCCESS;
-		return tb.get();
+		TABLE* t = doOpenTable(name, mode, ownerName);
+		if (t)
+		{
+			boost::shared_ptr<table> tb(new table(t , *this, name, mode, (int)m_tables.size()));
+			m_tables.push_back(tb);
+			m_stat = STATUS_SUCCESS;
+			return tb.get();
+		}
+		return NULL;
 	}
 	m_stat = STATUS_TABLE_NOTOPEN;
 	THROW_BZS_ERROR_WITH_CODEMSG(m_stat, name.c_str());
@@ -459,7 +481,7 @@ void database::reopen()
 	{
 		if (m_tables[i] && (m_tables[i]->m_table==NULL))
 		{
-			TABLE* table = doOpenTable(m_tables[i]->m_name.c_str(), m_tables[i]->m_mode);
+			TABLE* table = doOpenTable(m_tables[i]->m_name.c_str(), m_tables[i]->m_mode, NULL);
 			if (table)
 				m_tables[i]->resetInternalTable(table);
 			else

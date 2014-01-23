@@ -101,7 +101,7 @@ class database : private boost::noncopyable
 	short m_trnType;
 	
 	std::vector<boost::shared_ptr<table> > m_tables;
-	TABLE* doOpenTable(const std::string& name, short mode);
+	TABLE* doOpenTable(const std::string& name, short mode, const char* ownerName);
 	
 	void unUseTable(table* tb);
 public:
@@ -111,7 +111,7 @@ public:
 	THD* thd()const{return m_thd;};
 	void use() const;
 	short clientID()const{return m_cid;}
-	table* openTable(const std::string& name, short mode);
+	table* openTable(const std::string& name, short mode, const char* ownerName);
 	const std::string& name()const{return m_dbname;};
 	table* useTable(int index, enum_sql_command cmd);
 	bool beginTrn(short type);

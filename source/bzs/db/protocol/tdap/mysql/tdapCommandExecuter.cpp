@@ -143,6 +143,14 @@ std::string getTableName(const request& req, bool forSql)
 	return "";
 }
 
+const char* getOwnerName(const request& req)
+{
+	const char* p = (const char*)req.data;
+	if (*req.datalen && (p[*req.datalen-1] == 0x00))
+		return p;
+	return "";
+}
+
 void dumpStdErr(int op, request& req, table* tb)
 {
 	boost::scoped_array<char> msg(new char[1024]);
@@ -357,7 +365,7 @@ inline void dbExecuter::doOpenTable(request& req)
 	if (dbname != "")
 	{
 		database* db = getDatabase(dbname.c_str(), req.cid);
-		m_tb = db->openTable(getTableName(req), req.keyNum);// if error occured that throw exception
+		m_tb = db->openTable(getTableName(req), req.keyNum, getOwnerName(req));// if error occured that throw exception
 		req.result = db->stat();
 		if (m_tb)
 		{
@@ -846,7 +854,12 @@ int dbExecuter::commandExec(request& req, char* resultBuffer, size_t& size, nets
 		{
 			database* db = getDatabaseCid(req.cid);
 			m_tb = getTable(req.pbk->handle);
-			req.result = ddl_execSql(db->thd(), makeSQLChangeTableComment(db->name(), m_tb->name(), (const char*)req.keybuf));
+			int num = (req.keyNum >1) ? req.keyNum -2: req.keyNum; 
+			num += '0';
+			std::string s("%@%");
+			s += (const char*)&num;
+			s += (const char*)req.keybuf;
+			req.result = ddl_execSql(db->thd(), makeSQLChangeTableComment(db->name(), m_tb->name(), s.c_str()));
 			break;
 		}
 		case TD_DROP_INDEX:
