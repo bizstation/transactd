@@ -36,6 +36,10 @@ namespace tdap
 namespace client
 {
 
+#define BOOKMARK_ALLOC_SIZE 40960
+#define BOOKMARK_SIZE 4
+#define DATASIZE_BYTE 2
+
 
 inline ushort_td varlenForFilter(const fielddef& fd)
 {
@@ -438,7 +442,8 @@ class filter
 
     ushort_td resultRowSize(bool ignoreFields)
     {
-        ushort_td recordLen = 6;
+
+        ushort_td recordLen = BOOKMARK_SIZE + DATASIZE_BYTE;
         if (!ignoreFields)
         {
             for (size_t i=0;i< m_fields.size();++i)
@@ -454,7 +459,7 @@ class filter
 
     ushort_td resultBufferNeedSize()
     {
-        return (m_ret.maxRows * resultRowSize(m_ignoreFields)) + 2;
+        return (m_ret.maxRows * resultRowSize(m_ignoreFields)) + DATASIZE_BYTE;
     }
 
     void joinLogic()

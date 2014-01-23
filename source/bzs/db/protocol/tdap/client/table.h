@@ -227,7 +227,7 @@ protected:
     void addField(const _TCHAR* name);
     void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
     void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
-
+    void clearSelectFields();
 public:
     queryBase();
     virtual ~queryBase();

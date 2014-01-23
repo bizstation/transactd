@@ -20,6 +20,8 @@
 =================================================================*/
 #include <bzs/db/protocol/tdap/client/trdboostapiInternal.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
+
 #include <stdio.h>
 
 #if defined(__GNUC__) 

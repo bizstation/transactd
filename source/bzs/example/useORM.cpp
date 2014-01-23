@@ -18,35 +18,9 @@ Please execute "create database" , "change schema" and "insert records" example
 
 */
 
-static const short fieldnum_id = 0;
-static const short fieldnum_name = 1;
-static const short fieldnum_group = 2;
-static const short fieldnum_tel = 3;
+
 static const char_td keynum_group = 1;
-
-
-
-class group_fdi : public fdibase
-{
-
-public:
-    short id;
-    short name;
-    void resolv(table* tb)
-    {
-        id = tb->fieldNumByName(_T("id"));
-        name = tb->fieldNumByName(_T("name"));
-    }
-};
-
-
-
-/** Group class */
-class group;
-const _TCHAR* getTableName(group* )
-{
-    return _T("group1");
-}
+static const char_td primary_key = 0;
 
 class group
 {
@@ -62,36 +36,80 @@ public:
     void setName(const char* v){m_name = v;}
     static group* create(void* owner){return new group(owner);};
 
+
 };
+
 typedef boost::shared_ptr<group> group_ptr;
-
-typedef boost::function<void (group& , const fields&, int )> group_map_functor;
-
-fdibase* createFdi(group* )
-{
-    return new group_fdi();
-}
-
-
-class user;
-const _TCHAR* getTableName(user* )
-{
-    return _T("user");
-}
+typedef std::vector<group_ptr> group_ptr_list;
+typedef std::vector<group*> group_list;
+typedef boost::shared_ptr<group_list> group_list_ptr;
 
 
 
-class user_fdi : public fdibase
+group* create(group_ptr_list& m){return group::create(&m);}
+
+class group_fdi
 {
 
 public:
     short id;
     short name;
-    void resolv(table* tb)
+
+    //table*を引数にとるinit関数がなければならない
+    void init(table* tb)
     {
         id = tb->fieldNumByName(_T("id"));
         name = tb->fieldNumByName(_T("name"));
     }
+    //インスタンスを返すstatic な create関数がなければならない
+    static group_fdi* create(){return new group_fdi();};
+};
+
+class group_orm
+{
+    const group_fdi& m_fdi;
+
+public:
+
+    /*  fdi_typenameを定義しなければならない*/
+    typedef group       mdl_typename;
+
+    /*  fdi_typenameを定義しなければならない
+        fdiを使用しない場合はデフォルトのtypedef fdibase fdi_typename; とすること
+        ことなるFDIを使用する場合はactiveTable<group, group_fdi>のように
+        activeTableのインスタンス作成時にfdiの型を指定する */
+    typedef group_fdi   fdi_typename;
+
+    /* fdi_typename fdi&を引数に取るコンストラクタが必須 */
+    group_orm(const fdi_typename& fdi):m_fdi(fdi){}
+
+    void setKeyValues(group& g, const fields& fds, int keyNum)
+    {
+        fds[m_fdi.id] = g.id();
+    }
+
+    void writeMap(group& g, const fields& fds, int optipn)
+    {
+        fds[m_fdi.id] = g.id();
+        fds[m_fdi.name] = g.name();
+    }
+
+    void readMap(group& g, const fields& fds, int optipn)
+    {
+        g.setId(fds[m_fdi.id].i());
+        g.setName(fds[m_fdi.name].a_str()); //get by ansi string
+    }
+
+    void readAuntoincValue(group& g, const fields& fds, int optipn)
+    {
+        g.setId(fds[m_fdi.id].i());
+    }
+
+    /* クラス名からテーブル名を引くための関数getTableNameが必須 */
+    const _TCHAR* getTableName(){return _T("group1");}
+
+
+
 };
 
 /** User class */
@@ -119,17 +137,152 @@ public:
     void setName(const char* v){m_name = v;}
     void setTel(const char* v){m_tel = v;}
 
+    //コレクション操作で必須の関数　ownerにはコレクションのポインタが渡されます。
+
     static user* create(void* owner){return new user(owner);};
+
 
 };
 
 typedef boost::shared_ptr<user> user_ptr;
-typedef boost::function<void (user& , const fields&, int )> user_map_functor;
-fdibase* createFdi(user* )
-{
-    return new user_fdi();
-}
+typedef std::vector<user_ptr> user_ptr_list;
+typedef std::vector<user*> user_list;
+typedef boost::shared_ptr<user_list> user_list_ptr;
 
+class mdls;
+class mdlsIterator : public std::iterator<std::random_access_iterator_tag, user*>
+{
+    int m_index;
+    mdls& m_mdls;
+public:
+    mdlsIterator(mdls& m, int index=0);
+    user* operator*() const;
+    mdlsIterator &operator++();
+    bool operator!=(const mdlsIterator &r) const;
+};
+
+class mdls
+{
+    std::vector<user*> m_users;
+public:
+    user* add(user* u)
+    {
+        m_users.push_back(u);
+        return u;
+    }
+    user* item(int index){return m_users[index];}
+
+    /** オリジナルコレクションの場合は以下の３つの関数と
+        アイテムの格納型を示すitem_typeを実装する
+        関数の追加が困難な場合はadapterを作ってください。
+    */
+
+    size_t size(){return m_users.size();}
+    user* operator[](unsigned int index){return item(index);}
+    typedef user* item_type;  //保持する型を指定できるが vectorで生の場合は指定する方法がない
+
+    void push_back(user* u){add(u);}
+    mdlsIterator begin(){return mdlsIterator(*this, 0);}
+    mdlsIterator end(){return mdlsIterator(*this, size());}
+    typedef mdlsIterator iterator;
+};
+
+
+/* イテレータをつくるのは面倒だけれども、さまざまなアルゴリズムを使うことを考えると
+    作成するのがベター
+*/
+mdlsIterator::mdlsIterator(mdls& m, int index):m_index(index),m_mdls(m){};
+user* mdlsIterator::operator*() const{return m_mdls[m_index];}
+mdlsIterator& mdlsIterator::operator++() {++m_index; return *this;}
+bool mdlsIterator::operator!=(const mdlsIterator &r) const {return m_index != r.m_index;}
+
+/*
+template <>
+mdlsIterator begin<mdls>(mdls& m){return mdlsIterator(m, 0);}
+
+template <>
+mdlsIterator end(mdls& m){return mdlsIterator(m, m.size());}
+
+template <>
+void push_back(mdls& m, user* u){m.add(u);}
+*/
+user* create(mdls& m){return user::create(&m);}
+user* create(user_ptr_list& m){return user::create(&m);}
+
+
+
+class user_fdi : public fdibase
+{
+
+public:
+    short id;
+    short name;
+    short tel;
+    short group;
+    void init(table* tb)
+    {
+        id = tb->fieldNumByName(_T("id"));
+        name = tb->fieldNumByName(_T("name"));
+        tel = tb->fieldNumByName(_T("tel"));
+        group = tb->fieldNumByName(_T("group"));
+    }
+
+    static user_fdi* create()
+    {
+        return new user_fdi();
+    }
+};
+
+
+class user_orm
+{
+    const user_fdi& m_fdi;
+
+public:
+    user_orm(const user_fdi& fdi):m_fdi(fdi){}
+    void writeMap(user& u, const fields& fds, int optipn)
+    {
+        fds[m_fdi.id] = u.id();
+        fds[m_fdi.name] = u.name();
+        fds[m_fdi.tel] = u.tel();
+        fds[m_fdi.group] = u.grp()->id();
+    }
+
+    void readMap(user& u, const fields& fds, int optipn)
+    {
+        u.setId(fds[m_fdi.id].i());
+        u.setName(fds[m_fdi.name].a_str()); //get by ansi string
+        u.setTel(fds[m_fdi.tel].a_str());  //get by ansi string
+        u.grp()->setId(fds[m_fdi.group].i());
+    }
+
+    void readAuntoincValue(user& u, const fields& fds, int optipn)
+    {
+        u.setId(fds[m_fdi.id].i());
+    }
+
+    /* クラス名からテーブル名を引くための関数getTableNameが必須 */
+    const _TCHAR* getTableName(){return _T("user");}
+
+    typedef user        mdl_typename;
+    typedef user_fdi    fdi_typename;
+
+    /* オリジナルコレクションをつかうときに定義する
+       最初の型はこのマップクラス、2番目の型はコレクションクラス
+       これが定義されていてもvector<shared_ptr<T>>のコレクションの
+       も同時に使えます。
+    */
+    typedef mdlsHandler<user_orm, mdls>   collection_orm_typename;
+
+};
+
+typedef user_orm::collection_orm_typename users_orm;
+
+
+int isMatch(const fields& fds)
+{
+    return filter_validate_value;
+}
 
 /** dump user to screen */
 void dumpUser(const user_ptr& user)
@@ -141,153 +294,111 @@ void dumpUser(const user_ptr& user)
 
 }
 
-user& trdReadormap(user& u, const fields& fds, int)
-{
-    u.setId(fds[fieldnum_id].i());
-    u.setName(fds[fieldnum_name].a_str()); //get by ansi string
-    u.setTel(fds[fieldnum_tel].a_str());  //get by ansi string
-    u.grp()->setId(fds[fieldnum_group].i());
-    return u;
-}
-
-void trdWriteormap(const fields& fds , user& u, int)
-{
-    fds[fieldnum_id] = u.id();
-    fds[fieldnum_name] = u.name();
-    fds[fieldnum_tel] = u.tel();
-    fds[fieldnum_group] = u.grp()->id();
-}
-
-
-group& trdReadormap(group& g, const fields& fds , int)
-{
-    g.setId(fds[fieldnum_id].i());
-    g.setName(fds[fieldnum_name].a_str()); //get by ansi string
-    return g;
-}
-
-void trdWriteormap(const fields& fds , group& g, int)
-{
-    fds[fieldnum_id] = g.id();
-    fds[fieldnum_name] = g.name();
-}
-
-void trdReadormapg(group& g, const fields& fds , int)
-{
-    g.setId(fds[fieldnum_id].i());
-    g.setName(fds[fieldnum_name].a_str()); //get by ansi string
-}
-
-/** OR mapping functional object*/
-class groupMappper
-{
-
-public:
-    groupMappper(){}
-    void operator()(group& grp, const fields& fds, int optipn)
-    {
-       trdReadormap(grp , fds, optipn);
-    }
-};
-
-//独自のコレクション
-
-class mdls
-{
-public:
-    user* add(){return user::create(0);};
-
-};
-
-class cstmMdlsMapper
-{
-    mdls& m_mdls;
-    int m_optipn;
-public:
-    cstmMdlsMapper(mdls& m, int option)
-        :m_mdls(m),m_optipn(option){}
-    void operator()(const fields& fds)
-    {
-        user* u = m_mdls.add();
-        trdReadormap(*u, fds, m_optipn);
-    }
-};
-
-int isMatch(const fields& fds)
-{
-    return filter_validate_value;
-}
 
 void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 {
-    int maxid = 3;
+    int id = 12;
+    int find_group_id = 3;
 
-    // userのactiveTableのインスタンスを作成します。
-    activeTable<user> ut(db);
+    // user_ormのactiveTableのインスタンスを作成します。
+    activeTable<user_orm> ut(db);
+
+    //id=12のユーザーを作成します。
+    user_ptr u(user::create(0));
+    u->setId(id);
+    u->setName("moriwaki");
+    u->setTel("81-999-9999");
+    u->grp()->setId(1);
+    ut.save(*u);
+
+    //id=12のユーザーを読み取り
+    ut.cursor().index(primary_key).position(u->id());
+    ut.read(*u);
+
+    //id=12のユーザーの電話番号の変更
+    u->setTel("81-999-8888");
+    ut.cursor().index(primary_key).position(u->id());
+    ut.update(*u);
+
+    //id=12のユーザー削除
+    ut.cursor().index(primary_key).position(u->id());
+    ut.del();
+
 
     //カーソルのindexとキー位置を指定します。
     //ここからレコードの検索を開始します。
-    ut.cursor().index(keynum_group).position(maxid);
+    ut.cursor().index(keynum_group).position(find_group_id);
 
     //検索条件を指定します。サーバーフィルターです。
     //rejectで指定したアンマッチレコード数になると検索を中止します。
     query q;
         q.select(_T("*"))
-            .where(_T("group"), _T("=") , maxid)//.or(_T("group"), _T("=") , _T("a"))
+            .where(_T("group"), _T("=") , find_group_id)//.or(_T("group"), _T("=") , _T("a"))
             .reject(1);
 
     //読み取りを実行。　結果を受け取るコレクションとクエリーを渡します。
     ut.reads(users, q);
 
 
-    //前回のreadsで使用したコレクションはvectorでした。しかしオリジナルの
-    //コレクションを使用している場合もあるでしょう
-    //ループで使うハンドラを規定の型でつくれば簡単に取り替えできます。
+    /*
+    前回のreadsで使用したコレクションはvectorでした。しかしオリジナルの
+    コレクションを使用している場合もあるでしょう
+    user_ormにオリジナルコレクションマップの型collection_orm_typenameを
+    知らせておけば自動でインスタンスを作成しハンドルしてくれます*/
 
     mdls m;
-    ut.cursor().index(keynum_group).position(maxid);
-    ut.reads<mdls, cstmMdlsMapper>(m, q);
+    ut.cursor().index(keynum_group).position(find_group_id);
+    ut.reads(m, q);
 
-    //クライアント側フィルターも簡単に使えます。
-    ut.cursor().index(keynum_group).position(maxid);
+    /*
+    オリジナルコレクションマップを自動で作成でなく自分で初期化して
+    使いたいこともあるでしょうその時はreadsByを使用します*/
+
+    users_orm users_hdr(m);
+    ut.readsBy(users_hdr, q);
+
+
+    /* クライアント側フィルターも簡単に使えます。
+        isMatch関数のような　const fields&を引数に取ってintを返す関数なら何でも
+        OKです。
+    */
+    ut.cursor().index(keynum_group).position(find_group_id);
     ut.reads(users, q, isMatch);
 
 
-
-    // userの復元
-    ut.cursor().index(0).position(2);
-    user_ptr u(user::create(0));
-    ut.read(*u);
-
-    // group の復元
+    //groupの読み取り
     group_ptr grp(group::create(0));
 
-    activeTable<group> gt(db);
+    activeTable<group_orm> gt(db);
     gt.cursor().index(0).position(2);
 
-    //デフォルトマップ関数 + shared_ptr
+    //shared_ptr<group>のインスタンスを*をつけて渡します。
     gt.read(*grp);
 
-    //独自のマップファンクタ+ 生ポインタ
-    group_map_functor f = groupMappper();
+    /*
+    生ポインタのポインタの時も *をつけて渡します。
+    shared_ptrでも生ポインタでも*をつけて同じように渡せます。
+    */
     group* g = group::create(0);
-    gt.readfunc(&f).read(*g);
+    gt.read(*g);
+    delete g;
 
-    //関数ポインタもOK
-    f = trdReadormapg;
-    gt.readfunc(&f).read(*grp);
 
-    //デフォルトマップ関数に戻してよみとり
-    gt.readfunc((group_map_functor*)NULL).read(*grp);
+    //--------------------------------------------------------
+    //  Joinのような処理
+    //--------------------------------------------------------
+    /*
+    usersからグループのリストを作成してuserに関連付けたグループ
+    を読み取ります。
+    list関数にコレクションとuser->grp()関数のアドレスを渡します。
+    activeTable<group_orm>のreadEach関数にそのリストを渡します。
+    */
+    group_list_ptr grps(listup(users, &user::grp));
+    gt.readEach(*grps);
 
-    //グループ名を変更
-    grp->setName("group3");
-    gt.cursor().index(0).position(2);
-    gt.update(*grp);
-
-    //削除
-    gt.cursor().index(0).position(2);
-    //gt.del();
+    //オリジナルのグループリストでもlistup関数は使えます。
+    group_list_ptr grps2(listup(m, &user::grp));
+    gt.readEach(*grps2);
 
 }
 

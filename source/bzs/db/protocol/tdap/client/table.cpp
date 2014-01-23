@@ -64,9 +64,6 @@ namespace client
 #define EXEC_CODEPAGE CP_UTF8
 #endif
 
-#define BOOKMARK_ALLOC_SIZE 40960
-#define BOOKMARK_SIZE 4
-#define DATASIZE_BYTE 2
 
 class CFiledNameIndex
 {
@@ -721,9 +718,9 @@ void table::setQuery(const queryBase* query)
     }
     if (!m_impl->bookMarks)
     {
-        m_impl->bookMarks = malloc(40960);
+        m_impl->bookMarks = malloc(BOOKMARK_ALLOC_SIZE);
         if (m_impl->bookMarks)
-            m_impl->bookMarksMemSize = 40960;
+            m_impl->bookMarksMemSize = BOOKMARK_ALLOC_SIZE;
         else
         {
             m_stat = STATUS_FILTERSTRING_ERROR;
@@ -2679,6 +2676,12 @@ queryBase::~queryBase()
 {
     delete m_impl;
 }
+
+void queryBase::clearSelectFields()
+{
+    m_impl->m_selects.clear();
+}
+
 void queryBase::addField(const _TCHAR* name)
 {
     m_impl->m_selects.push_back(name);

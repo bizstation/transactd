@@ -1931,7 +1931,7 @@ void testResultField(database* db)
     BOOST_CHECK_MESSAGE(rf.len == 33, " resultField.setParam");
     BOOST_CHECK_MESSAGE(rf.pos == 4, " resultField.setParam");
 
-    int len = rf.writeBuffer(0, true) - (unsigned char*)0;
+    size_t len = rf.writeBuffer(0, true) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 4, " resultField.writeBuffer");
 
 }
@@ -1944,7 +1944,7 @@ void testResultDef()
     BOOST_CHECK_MESSAGE(rd.maxRows == 0, " resultDef.maxRows");
     BOOST_CHECK_MESSAGE(rd.fieldCount == 0, " resultDef.fieldCount");
 
-    int len = rd.writeBuffer(0, true) - (unsigned char*)0;
+    size_t len = rd.writeBuffer(0, true) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 4, " resultDef.writeBuffer");
 
  
@@ -1964,9 +1964,9 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
     BOOST_CHECK_MESSAGE(lc.logType == 1, " logic.logType");
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
-    BOOST_CHECK_MESSAGE(strcmp(lc.data, "abc")==0, " logic.data");
+    BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc")==0, " logic.data");
 
-    int len = lc.writeBuffer(0, true) - (unsigned char*)0;
+    size_t len = lc.writeBuffer(0, true) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7+33, " logic.writeBuffer");
 
     //compField invalid filed name
@@ -1996,13 +1996,13 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
     BOOST_CHECK_MESSAGE(lc.logType == 1, " logic.logType");
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
-    BOOST_CHECK_MESSAGE(strcmp(lc.data, "abc")==0, " logic.data");
+    BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc")==0, " logic.data");
 
     len = lc.writeBuffer(0, true) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7+3, " logic.writeBuffer");
 
     ret = lc.setParam(tb, _T("name"), _T("="), _T("漢字*"), eCend, false);
-    BOOST_CHECK_MESSAGE(strcmp(lc.data, "漢字")==0, " logic.data");
+    BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "漢字")==0, " logic.data");
 
     len = lc.writeBuffer(0, true) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7 + (_tcslen(_T("漢字"))*sizeof(_TCHAR))
