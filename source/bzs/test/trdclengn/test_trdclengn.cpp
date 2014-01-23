@@ -2076,6 +2076,10 @@ void testQuery()
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&' efg'")
                           ,  "queryString");
 
+    q.queryString(_T("select id,name id = 0 AND name = 'Abc&& efg'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&& efg'")
+                          ,  "queryString");
+
     q.queryString(_T("*"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("*"),  "queryString");
 
