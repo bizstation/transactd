@@ -55,7 +55,7 @@ class AGRPACK dbdef : private nstable
     bool isPassKey(uchar_td FieldType);
     void openDdf(const _TCHAR* dir, short Mode, const _TCHAR* OwnerName);
     void createDDF(const _TCHAR* fullpath);
-    void saveDDF(short tableIndex, short opration);
+    void saveDDF(short tableIndex, short opration, bool forPsqlDdf=true);
     ushort_td getDDFNewTableIndex();
     ushort_td getDDFNewFieldIndex();
     int totalDefLength(short tableIndex);
@@ -94,7 +94,7 @@ public:
 
     inline short_td stat() const {return m_stat;}
 
-    void updateTableDef(short tableIndex);
+    void updateTableDef(short tableIndex, bool forPsqlDdf=true);
     fielddef* insertField(short tableIndex, short insertIndex);
     void deleteField(short tableIndex, short deleteIndex);
     keydef* insertKey(short tableIndex, short insertIndex);

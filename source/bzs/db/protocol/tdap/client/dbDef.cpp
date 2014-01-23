@@ -201,7 +201,7 @@ void dbdef::setCodePage(tabledef* td)
     }
 }
 
-void dbdef::updateTableDef(short TableIndex)
+void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
 {
     m_stat = STATUS_SUCCESS;
     tabledef* td = tableDefs(TableIndex);
@@ -292,7 +292,7 @@ void dbdef::updateTableDef(short TableIndex)
         return;
     }
     if (m_impl->deftype == TYPE_SCHEMA_DDF)
-        saveDDF(TableIndex, 3);
+        saveDDF(TableIndex, 3, forPsqlDdf);
     else
     {
         moveById(td->id);
@@ -1204,7 +1204,7 @@ void dbdef::createDDF(const _TCHAR* fullpath)
 
 }
 
-void dbdef::saveDDF(short TableIndex, short opration)
+void dbdef::saveDDF(short TableIndex, short opration, bool forPsqlDdf)
 {
     ushort_td chOpen = 0;
     short Mode = 0;
@@ -1271,7 +1271,10 @@ void dbdef::saveDDF(short TableIndex, short opration)
             tb->seek();
             strcpy(tb->tablename, TableDef->tableNameA());
             strcpy(tb->filename, TableDef->fileNameA());
-            tb->flag = TableDef->flags.all;
+            if (forPsqlDdf)
+                tb->flag = 0;//PSQL are reading flags from table files.
+            else
+                tb->flag = TableDef->flags.all;
             if (tb->stat() == STATUS_SUCCESS)
             {
                 if (opration == 4)
@@ -1305,6 +1308,8 @@ void dbdef::saveDDF(short TableIndex, short opration)
                     fd->fileid = tb->id;
                     strcpy(fd->name, FieldDef->nameA());
                     fd->type = FieldDef->type;
+                    if (forPsqlDdf && (fd->type == ft_logical))
+                        fd->type = ft_uinteger;
                     fd->pos = (ushort_td)(pos - 1);
                     fd->len = FieldDef->len;
                     pos += FieldDef->len;
