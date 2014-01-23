@@ -165,6 +165,20 @@ void testCreateNewDataBase(database* db)
         def->updateTableDef(1);
         BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2 stat = " << def->stat());
 
+        fd = def->insertField(1, 2);
+        fd->setName(_T("select"));
+        fd->type = ft_integer;
+        fd->len = (ushort_td)4;
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2 stat = " << def->stat());
+
+        fd = def->insertField(1, 3);
+        fd->setName(_T("in"));
+        fd->type = ft_integer;
+        fd->len = (ushort_td)4;
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2 stat = " << def->stat());
+
         keydef* kd = def->insertKey(1, 0);
         kd->segments[0].fieldNum = 0;
         kd->segments[0].flags.bit8 = 1; // extended key type
@@ -333,9 +347,16 @@ void testFindIn(database* db)
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 5000, "find in 5000");
     tb->findNext();
-    BOOST_CHECK_MESSAGE(9 == tb->stat(), "find in more");
+    BOOST_CHECK_MESSAGE(STATUS_EOF == tb->stat(), "find in more");
 
+    // Too many params
+    _TCHAR buf[20];
+    q.addSeekKeyValue(_itot(1, buf, 10), true);
 
+    for (int i=1;i<20000;++i)
+        q.addSeekKeyValue(_itot(i, buf, 10));
+    tb->setQuery(&q);
+    BOOST_CHECK_MESSAGE(STATUS_FILTERSTRING_ERROR == tb->stat(), "find in stat = " << tb->stat());
 	tb->release();
 }
 
@@ -2141,6 +2162,15 @@ void testQuery()
 
     q.queryString(_T("IN 1,2,3"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in '1','2','3'")
+                            ,  "queryString");
+
+    //special field name
+    q.queryString(_T("select = 1"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select = '1'")
+                            ,  "queryString");
+
+    q.queryString(_T("in <> 1"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in <> '1'")
                             ,  "queryString");
 
 }

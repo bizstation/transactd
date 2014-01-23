@@ -40,6 +40,8 @@ namespace client
 #define BOOKMARK_SIZE 4
 #define DATASIZE_BYTE 2
 
+#define MAX_DATA_SIZE 57000
+
 
 inline ushort_td varlenForFilter(const fielddef& fd)
 {
@@ -294,8 +296,7 @@ public:
         memcpy(data + len, src->data, src->len);
         len += src->len;
         type = ft_string; //compare by memcmp
-        if (src->opr == eCend)
-            opr = eCend;
+        opr = src->opr;
         delete [] tmp;
     }
 };
@@ -463,6 +464,9 @@ class filter
         if (m_logics.size())
             m_logics[m_logics.size() -1]->opr = eCend;
         m_seeksMode = true;
+        m_ret.maxRows = m_logics.size();
+        if (calcMaxRows() < m_ret.maxRows)
+            return false;
         return true;
     }
 
@@ -507,7 +511,7 @@ class filter
 
     ushort_td calcMaxRows()
     {
-        return (ushort_td)(57000 / resultRowSize(m_ignoreFields));
+        return (ushort_td)(MAX_DATA_SIZE / resultRowSize(m_ignoreFields));
     }
 
     ushort_td resultBufferNeedSize()
@@ -525,7 +529,7 @@ class filter
             {
                 lb->joinAfter(la);
                 delete la;
-                m_logics.erase(m_logics.end() -1);
+                m_logics.erase(m_logics.begin()+i+1);
             }
         }
     }
@@ -563,9 +567,12 @@ class filter
         return len;
     }
 
-    void allocDataBuffer()
+    bool allocDataBuffer()
     {
-        m_hd.len = doWriteBuffer(true);
+        int len = doWriteBuffer(true);
+        if (len > (int)MAX_DATA_SIZE)
+            return false;
+        m_hd.len = len;
         int resultLen = resultBufferNeedSize();
         m_extendBuflen = std::max<int>((int)m_hd.len, resultLen);
 
@@ -577,6 +584,7 @@ class filter
             m_tb->setDataBak((void*) realloc(m_tb->dataBak(), m_extendBuflen));
             m_tb->setData(m_tb->dataBak());
         }
+        return true;
     }
 
 public:
@@ -645,10 +653,11 @@ public:
         return m_fields[index]->pos;
     }
 
-    void writeBuffer()
+    bool writeBuffer()
     {
-        allocDataBuffer();
-        doWriteBuffer(false);
+        if (allocDataBuffer())
+            return doWriteBuffer(false);
+        return false;
     }
 
     ushort_td extendBuflen() const{return m_extendBuflen;}

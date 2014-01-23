@@ -524,7 +524,11 @@ void table::btrvGetExtend(ushort_td op)
     if (op >= TD_KEY_GE_NEXT_MULTI)
         m_keylen = writeKeyData();
     m_pdata = m_impl->dataBak;
-    m_impl->filterPtr->writeBuffer();
+    if (!m_impl->filterPtr->writeBuffer())
+    {
+        m_stat = STATUS_WARKSPACE_TOO_SMALL;
+        return;
+    }
     m_datalen = m_impl->filterPtr->exDataBufLen();
     tdap(op);
     short stat = m_stat;
@@ -2656,28 +2660,40 @@ void analyzeQuery(const _TCHAR* str
     boost::algorithm::to_lower(s);
     if (s == _T("select"))
     {
+        tokenizer::iterator itTmp = it;
         s = *(++it);
-        esc_sep sep(_T('&'), _T(','), _T('\''));
-        tokenizer fields(s, sep);
-        tokenizer::iterator itf = fields.begin();
-        while (itf != fields.end())
-            selects.push_back(*(itf++));
-        ++it;
+        if (getFilterLogicTypeCode(s.c_str())==255)
+        {
+            esc_sep sep(_T('&'), _T(','), _T('\''));
+            tokenizer fields(s, sep);
+            tokenizer::iterator itf = fields.begin();
+            while (itf != fields.end())
+                selects.push_back(*(itf++));
+            ++it;
+        }else
+            it = itTmp; // field name is select
     }
     if (it == tokens.end())
         return;
     s = *it;
     boost::algorithm::to_lower(s);
+    bool enableWhere = true;
     if (s == _T("in"))
     {
+        tokenizer::iterator itTmp = it;
         s = *(++it);
-        esc_sep sep(_T('&'), _T(','), _T('\''));
-        tokenizer values(s, sep);
-        tokenizer::iterator itf = values.begin();
-        while (itf != values.end())
-            keyValues.push_back(*(itf++));
+        if (getFilterLogicTypeCode(s.c_str())==255)
+        {
+            enableWhere = false;
+            esc_sep sep(_T('&'), _T(','), _T('\''));
+            tokenizer values(s, sep);
+            tokenizer::iterator itf = values.begin();
+            while (itf != values.end())
+                keyValues.push_back(*(itf++));
+        }else
+            it = itTmp; // field name is in
     }
-    else
+    if (enableWhere)
     {
         while (it != tokens.end())
             where.push_back(*(it++));
@@ -2813,6 +2829,7 @@ const _TCHAR* queryBase::toString() const
         s = _T("select ");
         for (int i= 0;i < (int)selects.size();++i)
             s += selects[i] + _T(",");
+
         if (s.size())
             s.replace(s.size()-1,1, _T(" "));
     }
@@ -2826,9 +2843,11 @@ const _TCHAR* queryBase::toString() const
     }
 
     if (keyValues.size())
+    {
         s += _T("in ");
-    for (size_t i= 0;i < keyValues.size();++i)
-        s += _T("'") + escape_value(keyValues[i]) + _T("',");
+        for (size_t i= 0;i < keyValues.size();++i)
+            s += _T("'") + escape_value(keyValues[i]) + _T("',");
+    }
     if (s.size())
         s.erase(s.end() -1);
 
