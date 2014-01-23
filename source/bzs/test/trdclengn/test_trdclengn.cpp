@@ -27,6 +27,7 @@
 #include <bzs/db/protocol/tdap/tdapcapi.h>
 #include <bzs/db/protocol/tdap/client/stringConverter.h>
 #include <stdio.h>
+#include <bzs/db/protocol/tdap/client/filter.h>
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -1893,7 +1894,152 @@ void testGetEqualKanji(database* db)
 	tb->release();
 
 }
+// ------------------------------------------------------------------------
+void testResultField(database* db)
+{
+    table* tb = openTable(db);
+    resultField rf;
+    rf.setParam(tb, _T("name"));
 
+    BOOST_CHECK_MESSAGE(rf.len == 33, " resultField.setParam");
+    BOOST_CHECK_MESSAGE(rf.pos == 4, " resultField.setParam");
+
+    int len = rf.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 4, " resultField.writeBuffer");
+
+}
+
+void testResultDef()
+{
+    resultDef rd;
+
+    rd.reset();
+    BOOST_CHECK_MESSAGE(rd.maxRows == 0, " resultDef.maxRows");
+    BOOST_CHECK_MESSAGE(rd.fieldCount == 0, " resultDef.fieldCount");
+
+    int len = rd.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 4, " resultDef.writeBuffer");
+
+}
+
+	unsigned char	type;
+	unsigned short	len;
+	unsigned short	pos;
+	unsigned char	logType;
+	char			opr;
+    unsigned char*  data;
+
+
+void testLogic(database* db)
+{
+    table* tb = openTable(db);
+    logic lc;
+
+    lc.setParam(tb, _T("name"), _T("="), _T("abc"), eCend);
+
+
+    BOOST_CHECK_MESSAGE(lc.type == ft_zstring, " logic.type");
+    BOOST_CHECK_MESSAGE(lc.len == 33, " logic.len");
+    BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
+    BOOST_CHECK_MESSAGE(lc.logType == 1, " logic.logType");
+    BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
+    BOOST_CHECK_MESSAGE(strcmp(lc.data, "abc")==0, " logic.data");
+
+    int len = lc.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 7+33, " logic.writeBuffer");
+
+    //compField invalid filed name
+    bool ret = lc.setParam(tb, _T("name"), _T("="), _T("1"), eCend, true);
+    BOOST_CHECK_MESSAGE(ret == false, " logic invalid filed name");
+
+    //compField
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("id"), eCend, true);
+    BOOST_CHECK_MESSAGE(ret == true, " logic filed name");
+    BOOST_CHECK_MESSAGE(lc.type == ft_zstring, " logic.type");
+    BOOST_CHECK_MESSAGE(lc.len == 33, " logic.len");
+    BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
+    BOOST_CHECK_MESSAGE(lc.logType == 1+CMPLOGICAL_FIELD, " logic.logType compField");
+    BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
+    BOOST_CHECK_MESSAGE(*((short*)lc.data) == 0, " logic.data");
+    len = lc.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 7+2, " logic.writeBuffer");
+
+    //invalid filed name
+    ret = lc.setParam(tb, _T("name1"), _T("="), _T("id"), eCend, true);
+    BOOST_CHECK_MESSAGE(ret == false, " logic invalid filed name2");
+
+    //wildcard
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCend, false);
+    BOOST_CHECK_MESSAGE(lc.type == ft_zstring, " logic.type");
+    BOOST_CHECK_MESSAGE(lc.len == 3, " logic.len");
+    BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
+    BOOST_CHECK_MESSAGE(lc.logType == 1, " logic.logType");
+    BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
+    BOOST_CHECK_MESSAGE(strcmp(lc.data, "abc")==0, " logic.data");
+
+    len = lc.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 7+3, " logic.writeBuffer");
+
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("漢字*"), eCend, false);
+    BOOST_CHECK_MESSAGE(strcmp(lc.data, "漢字")==0, " logic.data");
+
+    len = lc.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 7+4, " logic.writeBuffer");
+
+    //combine
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCor, false);
+    BOOST_CHECK_MESSAGE(lc.opr == 2, " logic.opr or");
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCand, false);
+    BOOST_CHECK_MESSAGE(lc.opr == 1, " logic.opr and");
+
+    //logType
+    ret = lc.setParam(tb, _T("name"), _T("!="), _T("abc*"), eCend, false);
+    BOOST_CHECK_MESSAGE(lc.logType == 255, " logic.logType !=");
+    BOOST_CHECK_MESSAGE(ret == false, " logic invalid logType");
+
+    //canJoin
+
+    //文字は接続不可
+    lc.setParam(tb, _T("name"), _T("="), _T("1"), eCand, false);
+    BOOST_CHECK_MESSAGE(lc.canJoin(false) == false, " logic canJoin");
+    BOOST_CHECK_MESSAGE(lc.canJoin(true) == false, " logic canJoin");
+
+    lc.setParam(tb, _T("id"), _T("="), _T("1"), eCand, false);
+    BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
+    BOOST_CHECK_MESSAGE(lc.canJoin(true) == true, " logic canJoin");
+    lc.opr = eCend; //前とは接続可能
+    BOOST_CHECK_MESSAGE(lc.canJoin(true) == false, " logic canJoin");
+    BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
+
+    lc.opr = eCor; //前とは接続可能
+    BOOST_CHECK_MESSAGE(lc.canJoin(true) == false, " logic canJoin");
+    BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
+
+
+    lc.opr = eCand;
+
+    logic lc2;
+    lc2.setParam(tb, _T("id"), _T("="), _T("1"), eCend, false);
+    lc2.pos = 3;
+
+    lc.isNextFiled(&lc2);
+    BOOST_CHECK_MESSAGE(lc.isNextFiled(&lc2) == false, " logic isNextFiled");
+    lc2.pos = 4;
+    BOOST_CHECK_MESSAGE(lc.isNextFiled(&lc2) == true, " logic isNextFiled");
+
+    //join
+    lc.joinAfter(&lc2);
+    BOOST_CHECK_MESSAGE(lc.len == 8, " logic joinAfter");
+
+    BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic joinAfter");
+
+    header hd;
+    len = hd.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 8, " header.writeBuffer");
+
+
+}
+/*
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -2025,6 +2171,28 @@ BOOST_AUTO_TEST_SUITE(kanjiSchema)
 
     BOOST_FIXTURE_TEST_CASE(dropDatabaseKanji, fixture) {testDropDatabaseKanji(db());}
 
+BOOST_AUTO_TEST_SUITE_END() */
+// ------------------------------------------------------------------------
+BOOST_AUTO_TEST_SUITE(filter)
+
+    BOOST_FIXTURE_TEST_CASE(resultField, fixture)
+    {
+        const _TCHAR* uri = makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME);
+		_tprintf(_T("URI = %s\n"), uri);
+		if (db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME)))
+            db()->drop();
+        testCreateNewDataBase(db());
+        testResultField(db());
+        testResultDef();
+        testLogic(db());
+    }
+    BOOST_FIXTURE_TEST_CASE(drop, fixture)
+    {
+        testDropDatabase(db());
+    }
     BOOST_FIXTURE_TEST_CASE(fuga, fixture) {BOOST_CHECK_EQUAL(2 * 3, 6);}
+
 BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
+
+

@@ -173,6 +173,9 @@ PACKAGE ushort_td lenByCharnum(uchar_td type, uchar_td charsetIndex
 
 #endif
 
+/* Is field type string ?*/
+PACKAGE bool isStringType(uchar_td type);
+
 /* Mark of ** that BizStation Corp internal use only.
  */
 template <int N>
@@ -550,6 +553,10 @@ struct btrVersions
 #pragma option -a.
 pragma_pop
 
+/*filter cobine type*/
+enum combineType{eCend, eCand, eCor};
+
+PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr);
 
 }// namespace tdap
 }// namespace protocol

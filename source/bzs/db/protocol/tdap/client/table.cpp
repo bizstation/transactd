@@ -544,7 +544,7 @@ void table::btrvGetExtend(ushort_td op)
     if (op >= TD_KEY_GE_NEXT_MULTI)
         m_keylen = writeKeyData();
     m_pdata = m_impl->dataBak;
-    m_impl->filterPtr->WriteBuffer();
+    m_impl->filterPtr->writeBuffer();
     m_datalen = m_impl->filterPtr->exDataBufLen();
     tdap(op);
     short stat = m_stat;

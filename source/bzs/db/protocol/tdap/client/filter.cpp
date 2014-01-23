@@ -35,42 +35,147 @@ namespace tdap
 namespace client
 {
 
-inline ushort_td varlenForFilter(const fielddef& fd)
+
+
+
+#ifdef NEW_FILTER
+
+
+
+
+
+/*
+filter::filter(table* tb):m_impl(new filter_t(tb))
 {
-    if (((fd.type >= ft_myvarchar) && (fd.type <= ft_mywvarbinary)) || fd.type == ft_lstring)
-        return fd.len < 256 ? 1 : 2;
-    else if ((fd.type == ft_myblob) || (fd.type == ft_mytext))
-        return fd.len - 8;
-    return 0;
+
 }
 
-/** Length of compare
- * if part of string or zstring then return strlen.
- */
-inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
+filter::~filter()
 {
-    uint_td length = fd.keyDataLen(ptr);
-    if (part)
-    {
-        if ((fd.type == ft_string) || (fd.type == ft_zstring) || (fd.type == ft_note))
-            length = (uint_td)strlen((const char*)ptr);
-        else if ((fd.type == ft_wstring) || (fd.type == ft_wzstring))
-            length = (uint_td)wcslen((const wchar_t*)ptr);
-    }
-    return length;
+    delete m_impl;
 }
 
-/** copy data for select comp
- */
-inline ushort_td copyForCompare(const fielddef& fd, uchar_td* to, const uchar_td* from, bool part)
+bool filter::posTypeNext()
 {
-    ushort_td varlen = varlenForFilter(fd);
-    int copylen = compDataLen(fd, from, part);
-    if (varlen)
-        memcpy(to, from, varlen);
-    memcpy(to + varlen, fd.keyData(from), copylen);
-    return copylen + varlen;
+    return m_impl->positionTypeNext();
 }
+
+void filter::setPosTypeNext(bool v)
+{
+    m_impl->setPositionType(!v);
+}
+
+uint_td filter::exDataBufLen() const
+{
+    return m_impl->extendBuflen();
+}
+
+ushort_td filter::recordCount() const
+{
+    return m_impl->maxRows();
+}
+
+void filter::setRecordCount(ushort_td v)
+{
+    m_impl->setMaxRows(v);
+}
+
+ushort_td filter::fieldCount() const
+{
+    return m_impl->fieldCount();
+}
+
+void filter::setFieldCount(ushort_td v)
+{
+    m_impl->setFieldCount(v);
+}
+
+ushort_td* filter::recordCountDirect() const
+{
+    return &m_impl->m_ret.maxRows;
+}
+void filter::setRecordCountDirect(ushort_td* v)
+{
+    m_impl->m_ret.maxRows = *v;
+}
+ushort_td filter::rejectCount() const
+{
+    return m_impl->rejectCount();
+}
+
+ushort_td filter::fieldLen(int index)
+{
+    return m_impl->fieldLen(index);
+}
+
+ushort_td filter::fieldOffset(int index)
+{
+    return m_impl->fieldOffset(index);
+}
+
+bool filter::fieldSelected() const
+{
+    return m_impl->fieldSelected();
+}
+
+void filter::WriteBuffer()
+{
+    m_impl->allocDataBuffer();
+    m_impl->writeBuffer(false);
+
+}
+bool filter::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount)
+{
+    return m_impl->setFilter(str, RejectCount, CashCount);
+}
+_TCHAR* filter::filterStr()
+{
+
+}
+*/
+
+
+
+
+
+
+#else
+
+#pragma option -a-
+pragma_pack1
+
+struct BFilter
+{
+    uchar_td Type;
+    ushort_td Len;
+    ushort_td Pos;
+    uchar_td CompType;
+    uchar_td LogicalType;
+    ushort_td Data;
+};
+
+struct BFilterHeader
+{
+    ushort_td BufLen;
+    char PosType[2]; // "EG" or "UC"
+    ushort_td RejectCount;
+    ushort_td LogicalCount;
+};
+
+struct BSelectField
+{
+    ushort_td iFieldLen;
+    ushort_td iFieldOffset;
+};
+
+struct BFilterDisc
+{
+    ushort_td iRecordCount;
+    ushort_td iFieldCount;
+    BSelectField iSelectFields[255];
+};
+#pragma option -a
+pragma_pop
 
 filter::filter(table* pBao)
 {
@@ -172,11 +277,17 @@ bool filter::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashC
     if (m_pEntendBuf == NULL)
         return false;
 
-    itm = (BFilter*)((char*)m_pEntendBuf + 8);
+    itm = (BFilter*)((char*)m_pEntendBuf + sizeof(BFilterHeader));
 
     NewPointer = m_pFilter;
 
     m_FieldSelected = false;
+
+    //backup data buffer
+    char* backup = new char[m_tb->buflen()];
+    if (backup == NULL) return false;
+    memcpy(backup, m_tb->dataBak(), m_tb->buflen());
+
     if (m_pFilter[0] == '*')
         LogicalCount = 0;
     else
@@ -187,8 +298,12 @@ bool filter::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashC
         if (_tcsstr(m_pFilter, _T("SELECT ")) == NewPointer)
         {
             if (!MakeFieldSelect(&NewPointer))
+            {
+                delete [] backup;
                 return false;
+            }
         }
+
 
         while (1)
         {
@@ -212,17 +327,20 @@ bool filter::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashC
             // -------------------------------------------------------------
             itm->CompType = GetCompType(&NewPointer);
             if (itm->CompType == 255)
+            {
+                delete [] backup;
                 return false;
-
+            }
             // -------------------------------------------------------------
             // Get compare value
             // if [fieldName] then comapre as field value
             // -------------------------------------------------------------
             _TCHAR* start = NewPointer;
-            if (!GetCompStr(&NewPointer))
+            if (!GetCompStr(&NewPointer) || (NewPointer == NULL))
+            {
+                delete [] backup;
                 return false;
-            if (NewPointer == NULL)
-                return false;
+            }
 
             int offset = 0;
             if (start[0] == '[')
@@ -298,6 +416,7 @@ bool filter::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashC
             // move pointer
             itm = (BFilter*)((char*)itm +sizeof(BFilter) + offset);
         }
+
     }
     _tcscpy(m_pFilter, str);
     // header
@@ -341,9 +460,13 @@ bool filter::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashC
         m_tb->setData(m_tb->dataBak());
 
         if (m_tb->data() == NULL)
+        {
+            delete [] backup;
             return false;
-
+        }
     }
+    memcpy(m_tb->dataBak(), backup, m_tb->buflen());
+    delete [] backup;
     return true;
 }
 
@@ -493,32 +616,12 @@ uchar_td filter::GetCompType(_TCHAR** str)
     {
         _tcsncpy(cmpstr, *str, ret - *str);
         *str = ret + 1;
-        if (_tcscmp(cmpstr, _T("=")) == 0)
-            return (uchar_td)1;
-
-        if (_tcscmp(cmpstr, _T(">")) == 0)
-            return (uchar_td)2;
-
-        if (_tcscmp(cmpstr, _T("<")) == 0)
-            return (uchar_td)3;
-
-        if (_tcscmp(cmpstr, _T("<>")) == 0)
-            return (uchar_td)4;
-
-        if (_tcscmp(cmpstr, _T("=>")) == 0)
-            return (uchar_td)5;
-        if (_tcscmp(cmpstr, _T(">=")) == 0)
-            return (uchar_td)5;
-
-        if (_tcscmp(cmpstr, _T("=<")) == 0)
-            return (uchar_td)6;
-        if (_tcscmp(cmpstr, _T("<=")) == 0)
-            return (uchar_td)6;
-        return 255;
+        return getFilterLogicTypeCode(cmpstr);
     }
     else
         return 255;
 }
+#endif//NEW_FILTER
 
 }// namespace client
 }// namespace tdap

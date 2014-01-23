@@ -46,6 +46,7 @@ class AGRPACK table : public nstable
     friend class recordCache;
     friend class database;
     friend class filter;
+    friend class filter_t;
     struct tbimpl* m_impl;
     tabledef* m_tableDef;
 

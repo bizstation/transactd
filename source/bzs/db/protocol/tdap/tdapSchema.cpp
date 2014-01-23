@@ -130,16 +130,20 @@ void tabledef::setTableName(const wchar_t* s)
 	WideCharToMultiByte(schemaCodePage, (schemaCodePage == CP_UTF8) ? 0:WC_COMPOSITECHECK, s, -1, m_tableName, TABLE_NAME_SIZE, NULL, NULL);
 }
 #endif //_UNICODE
-
-bool fielddef::isStringType()const
+bool isStringType(uchar_td type)
 {
-		return ((type == ft_string)|| (type == ft_zstring)
+	return ((type == ft_string)|| (type == ft_zstring)
 			||(type == ft_wstring)|| (type == ft_wzstring)
 			||(type == ft_myvarchar)|| (type == ft_myvarbinary)
 			||(type == ft_mywvarchar)|| (type == ft_mywvarbinary)
 			||(type == ft_myblob)|| (type == ft_mytext)
 			||(type == ft_mychar)|| (type == ft_mywchar)
 			||(type == ft_lstring)|| (type == ft_note));
+}
+
+bool fielddef::isStringType()const
+{
+    return tdap::isStringType(type);
 }
 
 unsigned int fielddef::charNum(/*int index*/)const
@@ -298,6 +302,32 @@ const _TCHAR* btrVersion::moduleVersionShortString(_TCHAR* buf)
     }
 #pragma warning(default:4996)
     return buf;
+}
+
+PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr)
+{
+    if (_tcscmp(cmpstr, _T("=")) == 0)
+        return (uchar_td)1;
+
+    if (_tcscmp(cmpstr, _T(">")) == 0)
+        return (uchar_td)2;
+
+    if (_tcscmp(cmpstr, _T("<")) == 0)
+        return (uchar_td)3;
+
+    if (_tcscmp(cmpstr, _T("<>")) == 0)
+        return (uchar_td)4;
+
+    if (_tcscmp(cmpstr, _T("=>")) == 0)
+        return (uchar_td)5;
+    if (_tcscmp(cmpstr, _T(">=")) == 0)
+        return (uchar_td)5;
+
+    if (_tcscmp(cmpstr, _T("=<")) == 0)
+        return (uchar_td)6;
+    if (_tcscmp(cmpstr, _T("<=")) == 0)
+        return (uchar_td)6;
+    return 255;
 }
 
 }//namespace tdap

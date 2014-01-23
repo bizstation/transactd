@@ -77,22 +77,58 @@ public:
     inline float f() const {return m_tb.getFVflt(m_index);}
 
     inline double d() const {return m_tb.getFVdbl(m_index);}
-    inline field& operator = (const _TCHAR* p) {
+
+    inline field& operator = (const _TCHAR* p)
+    {
         m_tb.setFV(m_index, p);
         return *this;
-    } inline field& operator = (int v) {
-        m_tb.setFV(m_index, v);
+    }
+
+    inline field& operator = (const std::_tstring& p)
+    {
+        m_tb.setFV(m_index, p.c_str());
         return *this;
-    } inline field& operator = (__int64 v) {
-        m_tb.setFV(m_index, v);
+    }
+
+#ifdef _UNICODE
+    inline field& operator = (const char* p)
+    {
+        m_tb.setFVA(m_index, p);
         return *this;
-    } inline field& operator = (float v) {
-        m_tb.setFV(m_index, v);
+    }
+
+    inline field& operator = (const std::string& p)
+    {
+        m_tb.setFVA(m_index, p.c_str());
         return *this;
-    } inline field& operator = (double v) {
+    }
+
+#endif
+
+    inline field& operator = (int v)
+    {
         m_tb.setFV(m_index, v);
         return *this;
     }
+
+    inline field& operator = (__int64 v)
+    {
+        m_tb.setFV(m_index, v);
+        return *this;
+    }
+
+    inline field& operator = (float v)
+    {
+        m_tb.setFV(m_index, v);
+        return *this;
+    }
+
+    inline field& operator = (double v)
+    {
+        m_tb.setFV(m_index, v);
+        return *this;
+    }
+
     inline bool operator != (const _TCHAR* p) {return (_tcscmp(p, c_str()) != 0);};
     inline bool operator == (const _TCHAR* p) {return (_tcscmp(p, c_str())==0);};
 
@@ -287,6 +323,14 @@ const filterdStepIterator filterdStepIterator::eos;
 template<>
 const filterdFindIterator filterdFindIterator::eos;
 
+template<>
+const filterdIndexRvIterator filterdIndexRvIterator::eos;
+
+template<>
+const filterdStepRvIterator filterdStepRvIterator::eos;
+
+template<>
+const filterdFindRvIterator filterdFindRvIterator::eos;
 
 
 inline indexIterator readIndex(table_ptr tb, eIndexOpType op)
@@ -362,7 +406,7 @@ class keyValue
 {
 
 public:
-    inline static void set(table_ptr tb, const char_td keynum
+    static void set(table_ptr tb, const char_td keynum
         ,const T0 kv0, const T1 kv1=NULL
         ,const T2 kv2=NULL, const T3 kv3=NULL
         ,const T4 kv4=NULL, const T5 kv5=NULL
@@ -396,7 +440,7 @@ public:
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5, class T6, class T7>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
@@ -407,7 +451,7 @@ indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5, class T6>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5, const T6 kv6)
 {
@@ -418,7 +462,7 @@ indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5)
 {
@@ -427,7 +471,7 @@ indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
 }
 
 template <class T0, class T1, class T2, class T3, class T4>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3, const T4 kv4)
 {
     keyValue<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
@@ -435,7 +479,7 @@ indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
 }
 
 template <class T0, class T1, class T2, class T3>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1 ,const T2 kv2, const T3 kv3)
 {
     keyValue<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
@@ -443,7 +487,7 @@ indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
 }
 
 template <class T0, class T1, class T2>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1 ,const T2 kv2)
 {
     keyValue<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
@@ -451,7 +495,7 @@ indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
 }
 
 template <class T0, class T1>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1)
 {
     keyValue<T0, T1>::set(tb, keynum, kv0, kv1);
@@ -459,7 +503,7 @@ indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
 }
 
 template <class T0>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0)
 {
     keyValue<T0>::set(tb, keynum, kv0);
@@ -469,7 +513,7 @@ indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5, class T6, class T7>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
@@ -480,7 +524,7 @@ indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynu
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5, class T6>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5, const T6 kv6)
 {
@@ -491,7 +535,7 @@ indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynu
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5)
 {
@@ -500,7 +544,7 @@ indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynu
 }
 
 template <class T0, class T1, class T2, class T3, class T4>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3, const T4 kv4)
 {
     keyValue<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
@@ -508,7 +552,7 @@ indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynu
 }
 
 template <class T0, class T1, class T2, class T3>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1 ,const T2 kv2, const T3 kv3)
 {
     keyValue<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
@@ -516,7 +560,7 @@ indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynu
 }
 
 template <class T0, class T1, class T2>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1 ,const T2 kv2)
 {
     keyValue<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
@@ -524,7 +568,7 @@ indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynu
 }
 
 template <class T0, class T1>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1)
 {
     keyValue<T0, T1>::set(tb, keynum, kv0, kv1);
@@ -532,7 +576,7 @@ indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynu
 }
 
 template <class T0>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0)
 {
     keyValue<T0>::set(tb, keynum, kv0);
@@ -555,7 +599,7 @@ inline stepRvIterator readStepRv(table_ptr tb)
 
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -566,7 +610,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -576,7 +620,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5>
-findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -586,7 +630,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2, class T3, class T4>
-findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -596,7 +640,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2, class T3>
-findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -606,7 +650,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2>
-findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -616,7 +660,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1>
-findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -626,7 +670,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0>
-findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -636,7 +680,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -647,7 +691,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -657,7 +701,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5>
-findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -667,7 +711,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2, class T3, class T4>
-findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -677,7 +721,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2, class T3>
-findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -687,7 +731,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1, class T2>
-findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -697,7 +741,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0, class T1>
-findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
@@ -707,7 +751,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
 }
 
 template <class T0>
-findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
