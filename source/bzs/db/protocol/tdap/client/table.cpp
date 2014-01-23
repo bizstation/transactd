@@ -452,34 +452,19 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
         ushort_td recCountOnce = 50;
 
         bookmark_td bm = bookmark();
-        ushort_td tmpFieldCount = m_impl->filterPtr->fieldCount();
+
         ushort_td tmpRejectCount = m_impl->filterPtr->rejectCount();
         ushort_td tmpRecCount = m_impl->filterPtr->recordCount();
-        _TCHAR* str = new _TCHAR[_tcslen(filterStr()) + 1];
-        if (str)
-        {
-            _tcscpy(str, filterStr());
-            m_impl->filterPtr->setFieldCount(0);
-            m_stat = 0;
-            m_impl->filterPtr->setFilter(str, tmpRejectCount, 10000);
-            if (m_stat != 0)
-            {
-                // restore filter string
-                m_impl->filterPtr->setFieldCount(tmpFieldCount);
-                m_impl->filterPtr->setFilter(str, tmpRejectCount, tmpRecCount);
-                delete[]str;
-                str = NULL;
-            }
-        }
-        else
-            assert(0);
+
+        m_impl->filterPtr->setIgnoreFields(true);
+        m_impl->filterPtr->setMaxRows(10000);
         m_impl->maxBookMarkedCount = 0;
         if (fromCurrent)
             m_stat = curStat;
         else
             seekFirst();
 
-        *(m_impl->filterPtr->recordCountDirect()) = recCountOnce;
+        m_impl->filterPtr->setMaxRows(recCountOnce);
         if (m_stat == 0)
         {
             m_impl->filterPtr->setPosTypeNext(false);
@@ -505,8 +490,7 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
                     }
                 }
                 recCountOnce = calcNextReadRecordCount(recCountOnce, eTime);
-
-                *(m_impl->filterPtr->recordCountDirect()) = recCountOnce;
+                m_impl->filterPtr->setMaxRows(recCountOnce);
                 result += *((ushort_td*)m_impl->dataBak);
                 setBookMarks(m_impl->maxBookMarkedCount + 1, (void*)((char*)m_impl->dataBak + 2),
                     *((ushort_td*)m_impl->dataBak));
@@ -521,12 +505,11 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
                 eTime = (int)(t.elapsed() * 1000);
             }
         }
+
         short tmpStat = m_stat;
-        if (str)
-        {
-            setFilter(str, tmpRejectCount, tmpRecCount);
-            delete[]str;
-        }
+        m_impl->filterPtr->setIgnoreFields(false);
+        m_impl->filterPtr->setMaxRows(tmpRecCount);
+
         if (bm)
             seekByBookmark(bm);
         m_impl->exBookMarking = false;
@@ -702,7 +685,7 @@ void table::findPrev(bool notIncCurrent)
 
 }
 
-void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount)
+void table::setQuery(const queryBase* query)
 {
 
     m_stat = 0;
@@ -711,7 +694,7 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
     m_impl->exBookMarking = false;
     m_impl->exSlideStat = 0;
     m_impl->exNext = 0;
-    if (str[0] == 0x00)
+    if (query == NULL)
     {
         m_impl->maxBookMarkedCount = 0;
         delete m_impl->filterPtr;
@@ -728,7 +711,8 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
         return;
 
     }
-    if (!m_impl->filterPtr->setFilter(str, RejectCount, CashCount))
+
+    if (!m_impl->filterPtr->setQuery(query))
     {
         m_stat = STATUS_FILTERSTRING_ERROR;
         delete m_impl->filterPtr;
@@ -747,6 +731,19 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
             m_impl->filterPtr = NULL;
         }
     }
+}
+
+void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount)
+{
+    if (!str || (str[0] == 0x00))
+        setQuery(NULL);
+    else
+    {
+        queryBase q;
+        q.queryString(str).reject(RejectCount).limit(CashCount);
+        setQuery(&q);
+    }
+
 }
 
 const _TCHAR* table::filterStr()
@@ -2593,10 +2590,6 @@ unsigned int table::getRecordHash()
     return hash((const char*)fieldPtr(0), datalen());
 }
 
-
-
-
-
 int table::bookMarksCount() const
 {
     int ret;
@@ -2620,6 +2613,175 @@ short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 }
 
 
+
+
+//-------------------------------------------------------------------
+//      class queryBase
+//-------------------------------------------------------------------
+typedef boost::escaped_list_separator<_TCHAR> esc_sep;
+typedef boost::tokenizer<esc_sep
+        ,std::_tstring::const_iterator
+        ,std::_tstring> tokenizer;
+
+void analyzeQuery(const _TCHAR* str
+        , std::vector<std::_tstring>& selects
+        , std::vector<std::_tstring>& where
+        ,bool& nofilter)
+{
+    selects.clear();
+    where.clear();
+    esc_sep sep(_T('&'), _T(' '), _T('\''));
+    std::_tstring s = str;
+    tokenizer tokens(s, sep);
+    nofilter = false;
+    tokenizer::iterator it = tokens.begin();
+    if (*it == _T("*"))
+    {
+        nofilter = true;
+        return;
+    }
+    s = *it;
+    boost::algorithm::to_lower(s);
+    if (s == _T("select"))
+    {
+        s = *(++it);
+        esc_sep sep(_T('&'), _T(','), _T('\''));
+        tokenizer fields(s, sep);
+        tokenizer::iterator itf = fields.begin();
+        while (itf != fields.end())
+            selects.push_back(*(itf++));
+        ++it;
+    }
+    while (it != tokens.end())
+        where.push_back(*(it++));
+}
+
+
+struct impl
+{
+    impl():
+    m_reject(1),m_limit(0),m_direction(table::findForword)
+        ,m_nofilter(false){}
+
+	int m_reject;
+	int m_limit;
+    table::eFindType m_direction;
+    bool m_nofilter;
+    mutable std::_tstring m_str;
+    std::vector<std::_tstring> m_selects;
+    std::vector<std::_tstring> m_wheres;
+};
+
+queryBase::queryBase():m_impl(new impl){}
+
+
+queryBase::~queryBase()
+{
+    delete m_impl;
+}
+void queryBase::addField(const _TCHAR* name)
+{
+    m_impl->m_selects.push_back(name);
+}
+
+void queryBase::addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value)
+{
+    m_impl->m_wheres.push_back(name);
+    m_impl->m_wheres.push_back(logic);
+    m_impl->m_wheres.push_back(value);
+}
+void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name
+    , const _TCHAR* logic,  const _TCHAR* value)
+{
+    m_impl->m_wheres.push_back(combine);
+    addLogic(name, logic, value);
+}
+
+queryBase& queryBase::queryString(const TCHAR* str)
+{
+    analyzeQuery(str, m_impl->m_selects, m_impl->m_wheres, m_impl->m_nofilter);
+    return *this;
+}
+
+queryBase& queryBase::reject(int v)
+{
+    m_impl->m_reject = v;
+    return *this;
+}
+
+queryBase& queryBase::limit(int v)
+{
+    m_impl->m_limit = v;
+    return *this;
+}
+
+queryBase& queryBase::direction(table::eFindType v)
+{
+    m_impl->m_direction = v;
+    return *this;
+}
+
+queryBase& queryBase::noFilter(bool v)
+{
+    m_impl->m_nofilter = v;
+    return *this;
+}
+
+table::eFindType queryBase::getDirection() const {return m_impl->m_direction;}
+
+std::_tstring escape_value(std::_tstring s)
+{
+    std::_tstring::iterator it = s.begin();
+    for (int i=(int)s.size()-1;i>=0;--i)
+    {
+        if (s[i] == _T('&'))
+            s.insert(s.begin()+i, _T('&'));
+        else if (s[i] == _T('\''))
+            s.insert(s.begin()+i, _T('&'));
+    }
+    return s;
+}
+
+const _TCHAR* queryBase::toString() const
+{
+    m_impl->m_str.clear();
+    if (m_impl->m_nofilter)
+        return _T("*");
+
+    std::_tstring& s = m_impl->m_str;
+    std::vector<std::_tstring>& selects = m_impl->m_selects;
+    std::vector<std::_tstring>& wheres = m_impl->m_wheres;
+    if (selects.size())
+    {
+        s = _T("select ");
+        for (int i= 0;i < (int)selects.size();++i)
+            s += selects[i] + _T(",");
+        if (s.size())
+            s.replace(s.size()-1,1, _T(" "));
+    }
+
+    for (size_t i= 0;i < wheres.size();i+=4)
+    {
+        s += wheres[i] + _T(" ") + wheres[i+1] + _T(" '")
+             + escape_value(wheres[i+2]) + _T("' ");
+        if (i+3 < wheres.size())
+            s += wheres[i+3] + _T(" ");
+    }
+    if (s.size())
+        s.erase(s.end() -1);
+
+
+    return s.c_str();
+}
+
+int queryBase::getReject()const{return m_impl->m_reject;}
+
+int queryBase::getLimit()const{return m_impl->m_limit;}
+
+bool queryBase::isNofilter()const{return m_impl->m_nofilter;};
+
+const std::vector<std::_tstring>& queryBase::getSelects() const {return m_impl->m_selects;}
+const std::vector<std::_tstring>& queryBase::getWheres() const {return m_impl->m_wheres;}
 
 }// namespace client
 }// namespace tdap

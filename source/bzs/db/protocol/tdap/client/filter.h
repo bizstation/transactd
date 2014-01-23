@@ -22,6 +22,8 @@
 #include <assert.h>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/tokenizer.hpp>
+
 
 namespace bzs
 {
@@ -33,6 +35,7 @@ namespace tdap
 {
 namespace client
 {
+
 
 inline ushort_td varlenForFilter(const fielddef& fd)
 {
@@ -59,22 +62,13 @@ inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
     return length;
 }
 
-/** copy data for select comp
- */
-inline ushort_td copyForCompare(const fielddef& fd, uchar_td* to, const uchar_td* from, bool part)
+bool verType(uchar_td type)
 {
-    ushort_td varlen = varlenForFilter(fd);
-    int copylen = compDataLen(fd, from, part);
-    if (varlen)
-        memcpy(to, from, varlen);
-    memcpy(to + varlen, fd.keyData(from), copylen);
-    return copylen + varlen;
+    if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) || type == ft_lstring)
+        return true;
+    return false;
 }
 
-
-#define NEW_FILTER
-
-#ifdef NEW_FILTER
 
 #pragma option -a-
 pragma_pack1
@@ -176,13 +170,16 @@ public:
         if (fd->isStringType())
         {
              _TCHAR* p = (_TCHAR*)tb->getFVstr(index);
-            int n = _tcslen(p);
-
-            if ((ret = (p[n-1] == _T('*')))!=0)
+            if (p)
             {
-                p[n-1] = 0x00;
-                tb->setFV(index, p);
-            }
+                size_t n = _tcslen(p);
+                if ((ret = (p[n-1] == _T('*')))!=0)
+                {
+                    p[n-1] = 0x00;
+                    tb->setFV(index, p);
+                }
+            }else
+                tb->setFV(index, _T(""));
         }
         return ret;
     }
@@ -191,14 +188,23 @@ public:
     {
          if (data)
             delete [] data;
-         data = new unsigned char[len + 2];
+         data = new unsigned char[size + 2];
+         memset(data, 0, size + 2);
     }
 
     void copyToBuffer(table* tb, short index, bool part)
     {
         fielddef* fd = &tb->tableDef()->fieldDefs[index];
-        len = copyForCompare(*fd, (uchar_td*)data,
-                    (const uchar_td*)tb->fieldPtr(index), part);
+        const uchar_td* ptr = (const uchar_td*)tb->fieldPtr(index);
+        int varlen = varlenForFilter(*fd);
+        int copylen = compDataLen(*fd, ptr, part);
+        len = varlen + copylen;
+        allocBuffer(len);
+        uchar_td* to = (uchar_td*)data;
+        if (varlen)
+            memcpy(to, ptr, varlen);
+        memcpy(to + varlen, fd->keyData(ptr), copylen);
+
         if (!part && (fd->varLenBytes() || fd->blobLenBytes()))
             logType |= CMPLOGICAL_VAR_COMP_ALL; //match complate
     }
@@ -215,7 +221,7 @@ public:
             fielddef* fd = &tb->tableDef()->fieldDefs[fieldNum];
             setFieldParam(fd);
             unsigned char* tmp = new unsigned char[len];
-            allocBuffer(len);
+
             //backup
             memcpy(tmp, tb->fieldPtr(fieldNum), len);
 
@@ -225,16 +231,10 @@ public:
             {
                 tb->setFV(fieldNum, value);
                 bool part = isPart(tb, fieldNum);
-                int varlen = varlenForFilter(*fd);
-                if (varlen > len)
-                     allocBuffer(varlen);
-
                 copyToBuffer(tb, fieldNum, part);
             }
-
             //restore
             memcpy(tb->fieldPtr(fieldNum),tmp, len);
-
             delete [] tmp;
             return ret;
         }
@@ -258,8 +258,8 @@ public:
             flag = (opr == 1);
         return (flag
                 && (logType == 1)
-                && !(logType & CMPLOGICAL_FIELD)
-                && !isStringType(type));
+                && (type != ft_zstring)
+                && !verType(type));
     }
 
     bool isNextFiled(logic* src)
@@ -271,11 +271,12 @@ public:
     {
         assert(src);
         assert(src->data);
-        void* tmp = data;
+        unsigned char* tmp = data;
         data = new unsigned char[len + src->len + 2];
         memcpy(data, tmp, len);
         memcpy(data + len, src->data, src->len);
         len += src->len;
+        type = ft_string; //compare by memcmp
         if (src->opr == eCend)
             opr = eCend;
         delete [] tmp;
@@ -326,9 +327,11 @@ struct header
 #pragma option -a
 pragma_pop
 
+
+
 class filter
 {
-    //friend class filter;
+
     table* m_tb;
     header m_hd;
     resultDef m_ret;
@@ -336,239 +339,8 @@ class filter
     std::vector<logic*> m_logics;
     int m_extendBuflen;
     std::_tstring m_str;
+    bool m_ignoreFields;
 
-    void cleanup()
-    {
-        for (int i=0;i<(int)m_logics.size();++i)
-            delete m_logics[i];
-        for (int i=0;i<(int)m_fields.size();++i)
-            delete m_fields[i];
-        m_logics.erase(m_logics.begin(), m_logics.end());
-        m_fields.erase(m_fields.begin(), m_fields.end());
-        m_hd.reset();
-        m_ret.reset();
-    }
-
-    bool setSelect(std::vector<std::_tstring>& selects)
-    {
-        if (selects.size() == 0)
-            return false;
-        if (selects[0] == _T("*"))
-            addAllFields();
-        else
-        {
-            for (int i=0;i<(int)selects.size();++i)
-                addSelect(selects[i].c_str());
-        }
-        return true;
-    }
-
-    bool doSetFilter(const _TCHAR* str, ushort_td rejectCount, ushort_td maxRows)
-    {
-        cleanup();
-        setRejectCount(rejectCount);
-        setMaxRows(maxRows);
-        std::vector<std::_tstring> tmp;
-        std::vector<std::_tstring> selects;
-
-        boost::algorithm::split(tmp, str, boost::is_space());
-        std::_tstring s = tmp[0];
-        boost::algorithm::to_lower(s);
-
-        if (s == _T("select"))
-        {
-            if (tmp.size() < 2) return false;// no field specify
-            tmp.erase(tmp.begin());
-            s = tmp[0];
-            if (s == _T("*"))
-                addAllFields();
-            else
-            {
-                boost::algorithm::split(selects, tmp[0], boost::is_any_of(_T(",")));
-                if (!setSelect(selects))
-                    return false;
-            }
-            tmp.erase(tmp.begin());
-
-        }else
-        {
-            if (s == _T("*"))
-                tmp.erase(tmp.begin());
-            addAllFields();
-        }
-
-        if (tmp.size() > 2)
-        {
-            for (int i=1;i<(int)tmp.size();i+=3)
-            {
-                char combine = eCend;
-                bool compField = (tmp[i+2][0] == _T('['));
-                if (compField)
-                {
-                    tmp.erase(tmp.begin());
-                    tmp.erase(tmp.end() - 1);
-                }
-                if (i+3 <(int) tmp.size())
-                {
-                    s = tmp[i+2];
-                    boost::algorithm::to_lower(s);
-                    if (s == _T("or")) combine = eCor;
-                    else if (s == _T("and"))
-                        combine = eCand;
-                    else
-                        return false;
-                }
-                if (!addWhere(tmp[i].c_str(), tmp[i+1].c_str()
-                        , tmp[i+2].c_str(), combine, compField))
-                    return false;
-
-            }
-        }
-        return true;
-    }
-
-    ushort_td resultRowSize()
-    {
-        ushort_td recordLen = 0;
-        for (int i=0;i<(int)m_fields.size();++i)
-            recordLen += m_fields[i]->len;
-        return recordLen;
-    }
-
-    ushort_td calcMaxRows()
-    {
-        int recordLen = 6; //length(2) + bookmark(4)
-        recordLen += resultRowSize();
-        return (ushort_td)(57000 / recordLen);
-    }
-
-    ushort_td resultBufferNeedSize()
-    {
-        return m_ret.maxRows * resultRowSize() + 2;
-    }
-
-    void joinLogic()
-    {
-        for (int i=m_logics.size()-2;i>=0;--i)
-        {
-            logic* la = m_logics[i+1];
-            logic* lb = m_logics[i];
-            if (la->canJoin(false) && lb->canJoin(true) && lb->isNextFiled(la))
-            {
-                lb->joinAfter(la);
-                delete la;
-                m_logics.erase(m_logics.end() -1);
-            }
-        }
-    }
-
-    int doWwriteBuffer(bool estimate)
-    {
-        unsigned char* p = (unsigned char*)m_tb->dataBak();
-        joinLogic();
- 	    m_hd.logicalCount = m_logics.size();
-        m_ret.fieldCount = m_fields.size();
-        if (m_ret.maxRows == 0)
-            m_ret.maxRows = calcMaxRows();
-
-        unsigned char* start = p;
-        p =  m_hd.writeBuffer(p, estimate);
-
-        for (int i=0;i<(int)m_logics.size();++i)
-            p = m_logics[i]->writeBuffer(p, estimate);
-
-        for (int i=0;i<(int)m_fields.size();++i)
-            p = m_fields[i]->writeBuffer(p, estimate);
-
-        p =  m_ret.writeBuffer(p, estimate);
-
-        //write total length
-        int len = p - start;
-        unsigned short* s = (unsigned short*)start;
-        *s = len;
-        return len;
-    }
-
-    void allocDataBuffer()
-    {
-        int inputlen = doWwriteBuffer(true);
-        int resultLen = resultBufferNeedSize();
-        m_extendBuflen = std::max(inputlen, resultLen);
-
-        if ((m_fields.size() != 1) || m_tb->valiableFormatType())
-            m_extendBuflen += m_tb->buflen();
-
-        if ((int)m_tb->buflen() < m_extendBuflen)
-        {
-            m_tb->setDataBak((void*) realloc(m_tb->dataBak(), m_extendBuflen));
-            m_tb->setData(m_tb->dataBak());
-        }
-    }
-
-public:
-    filter(table* tb):m_tb(tb){}
-    ~filter()
-    {
-        cleanup();
-    }
-
-    bool setFilter(const _TCHAR* str, ushort_td rejectCount, ushort_td maxRows)
-    {
-        bool ret = doSetFilter(str, rejectCount, maxRows);
-        if (!ret)
-            cleanup();
-        return ret;
-    }
-
-    inline void setPositionType(bool incCurrent)
-    {
-        m_hd.setPositionType(incCurrent);
-    }
-
-    inline bool positionTypeNext() const
-    {
-        return m_hd.positionTypeNext();
-    }
-
-    void setRejectCount(ushort_td v){m_hd.rejectCount = v;}
-    ushort_td rejectCount()const {return m_hd.rejectCount;}
-
-    void setMaxRows(ushort_td v){m_ret.maxRows = v;}
-    ushort_td maxRows()const {return m_ret.maxRows;}
-
-    //-----------------------------
-    ushort_td recordCount()const {return maxRows();}
-    ushort_td* recordCountDirect()
-    {
-        return &m_ret.maxRows;
-    }
-    void setRecordCountDirect(ushort_td* v)
-    {
-        m_ret.maxRows = *v;
-    }
-    void setPosTypeNext(bool v)
-    {
-        setPositionType(!v);
-    }
-    uint_td exDataBufLen() const
-    {
-        return extendBuflen();
-    }
-    void init(table* pBao){};
-
-    _TCHAR* filterStr()
-    {
-        m_str = _T("select ");
-        if (!fieldSelected())
-            m_str += _T("* ");
-        else
-        {
-            for (int i=0;i<m_fields.size();++i)
-                m_str += m_fields.pos;
-        }
-        return _T("");
-    }
-    //-----------------------------
 
     bool addWhere(const _TCHAR* name, const _TCHAR* type, const _TCHAR*  value, char combine, bool compField = false)
     {
@@ -602,15 +374,205 @@ public:
         return false;
     }
 
-    ushort_td fieldCount() const
+    bool setSelect(const std::vector<std::_tstring>& selects)
     {
-        return m_ret.fieldCount;
+        for (size_t i=0;i < selects.size();++i)
+        {
+            if (!addSelect(selects[i].c_str()))
+                return false;
+        }
+        return true;
     }
 
-    void setFieldCount(ushort_td v)
+    bool setWhere(const std::vector<std::_tstring>& where)
     {
-        m_ret.fieldCount = v;
+        if (where.size() == 0) return true;
+        if (where.size() < 3) return false;
+
+        for (size_t i=0;i<where.size();i+=4)
+        {
+            char combine = eCend;
+            std::_tstring value = where[i+2];
+            bool compField = (value[0] == _T('['));
+            if (compField)
+            {
+                value.erase(value.begin());
+                value.erase(value.end() - 1);
+            }
+            if (i+3 < where.size())
+            {
+                std::_tstring s = where[i+3];
+                boost::algorithm::to_lower(s);
+                if (s == _T("or")) combine = eCor;
+                else if (s == _T("and"))
+                    combine = eCand;
+                else
+                    return false;
+            }
+            if (!addWhere(where[i].c_str(), where[i+1].c_str()
+                    , value.c_str(), combine, compField))
+                return false;
+        }
+        return true;
+
     }
+
+    bool doSetFilter(const queryBase* q)
+    {
+        cleanup();
+        setRejectCount(q->getReject());
+        setMaxRows(q->getLimit());
+
+        if (q->isNofilter())
+            addAllFields();
+        else
+        {
+            if (q->getSelects().size() == 0)
+                addAllFields();
+            else if (!setSelect(q->getSelects()))
+                return false;
+            return setWhere(q->getWheres());
+        }
+        return true;
+    }
+
+    ushort_td resultRowSize(bool ignoreFields)
+    {
+        ushort_td recordLen = 6;
+        if (!ignoreFields)
+        {
+            for (size_t i=0;i< m_fields.size();++i)
+                recordLen += m_fields[i]->len;
+        }
+        return recordLen;
+    }
+
+    ushort_td calcMaxRows()
+    {
+        return (ushort_td)(57000 / resultRowSize(m_ignoreFields));
+    }
+
+    ushort_td resultBufferNeedSize()
+    {
+        return (m_ret.maxRows * resultRowSize(m_ignoreFields)) + 2;
+    }
+
+    void joinLogic()
+    {
+        for (int i= (int)m_logics.size()-2;i>=0;--i)
+        {
+            logic* la = m_logics[i+1];
+            logic* lb = m_logics[i];
+            if (la->canJoin(false) && lb->canJoin(true) && lb->isNextFiled(la))
+            {
+                lb->joinAfter(la);
+                delete la;
+                m_logics.erase(m_logics.end() -1);
+            }
+        }
+    }
+
+    int doWriteBuffer(bool estimate)
+    {
+        unsigned char* p = (unsigned char*)m_tb->dataBak();
+        joinLogic();
+ 	    m_hd.logicalCount = (ushort_td)m_logics.size();
+        if (m_ignoreFields)
+            m_ret.fieldCount = 0;
+        else
+            m_ret.fieldCount = (ushort_td)m_fields.size();
+        if (m_ret.maxRows == 0)
+            m_ret.maxRows = calcMaxRows();
+
+        unsigned char* start = p;
+        p =  m_hd.writeBuffer(p, estimate);
+
+        for (size_t i=0;i< m_logics.size();++i)
+            p = m_logics[i]->writeBuffer(p, estimate);
+
+        p =  m_ret.writeBuffer(p, estimate);
+
+        if (!m_ignoreFields)
+        {
+            for (size_t i=0;i< m_fields.size();++i)
+                p = m_fields[i]->writeBuffer(p, estimate);
+        }
+
+        //write total length
+        int len = (int)(p - start);
+        unsigned short* s = (unsigned short*)start;
+        *s = len;
+        return len;
+    }
+
+    void allocDataBuffer()
+    {
+        m_hd.len = doWriteBuffer(true);
+        int resultLen = resultBufferNeedSize();
+        m_extendBuflen = std::max<int>((int)m_hd.len, resultLen);
+
+        if ((m_fields.size() != 1) || m_tb->valiableFormatType())
+            m_extendBuflen += m_tb->buflen();
+
+        if ((int)m_tb->buflen() < m_extendBuflen)
+        {
+            m_tb->setDataBak((void*) realloc(m_tb->dataBak(), m_extendBuflen));
+            m_tb->setData(m_tb->dataBak());
+        }
+    }
+
+public:
+    filter(table* tb):m_tb(tb),m_ignoreFields(false){}
+    ~filter()
+    {
+        cleanup();
+    }
+
+    void cleanup()
+    {
+        for (size_t i=0;i < m_logics.size();++i)
+            delete m_logics[i];
+        for (size_t i=0;i < m_fields.size();++i)
+            delete m_fields[i];
+        m_logics.erase(m_logics.begin(), m_logics.end());
+        m_fields.erase(m_fields.begin(), m_fields.end());
+        m_hd.reset();
+        m_ret.reset();
+        m_ignoreFields = false;
+    }
+
+    bool setQuery(const queryBase* q)
+    {
+        m_str = q->toString();
+        bool ret = doSetFilter(q);
+        if (!ret)
+            cleanup();
+        return ret;
+    }
+
+    void setPositionType(bool incCurrent){m_hd.setPositionType(incCurrent);}
+
+    bool positionTypeNext() const{return m_hd.positionTypeNext();}
+
+    void setRejectCount(ushort_td v){m_hd.rejectCount = v;}
+    ushort_td rejectCount()const {return m_hd.rejectCount;}
+
+    void setMaxRows(ushort_td v){m_ret.maxRows = v;}
+    ushort_td maxRows()const {return m_ret.maxRows;}
+
+    ushort_td recordCount()const {return maxRows();}
+
+    void setPosTypeNext(bool v){setPositionType(!v);}
+
+    uint_td exDataBufLen() const{return extendBuflen();}
+
+    void init(table* pBao){};
+
+    const _TCHAR* filterStr(){return m_str.c_str();}
+
+    ushort_td fieldCount() const {return m_ret.fieldCount;}
+
+    void setFieldCount(ushort_td v){m_ret.fieldCount = v;}
 
     ushort_td fieldLen(int index) const
     {
@@ -627,127 +589,24 @@ public:
     void writeBuffer()
     {
         allocDataBuffer();
-        doWwriteBuffer(false);
+        doWriteBuffer(false);
     }
 
-    ushort_td extendBuflen() const
-    {
-        return m_extendBuflen;
-    }
+    ushort_td extendBuflen() const{return m_extendBuflen;}
 
     bool fieldSelected() const
     {
         return !((m_fields.size() == 1) && (m_fields[0]->pos == 0));
     }
+
+    bool ignoreFields() const {return m_ignoreFields;}
+
+    void setIgnoreFields(bool v){m_ignoreFields = v;};
 };
 
-/*
-class filter
-{
-    class filter_t* m_impl;
-
-public:
-    filter(table* tb);
-    ~filter();
-
-    bool posTypeNext();
-    void setPosTypeNext(bool v);
-    uint_td exDataBufLen() const;
-    ushort_td recordCount() const;
-    void setRecordCount(ushort_td v);
-    ushort_td fieldCount() const;
-    void setFieldCount(ushort_td v);
-    ushort_td* recordCountDirect() const;
-    void setRecordCountDirect(ushort_td* v);
-    ushort_td rejectCount() const;
-    ushort_td fieldLen(int index);
-    ushort_td fieldOffset(int index);
-    bool fieldSelected() const;
-    void init(table*){};
-    void WriteBuffer();
-    bool setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount);
-    _TCHAR* filterStr();
-};*/
 
 
-#else
-class filter
-{
 
-    table* m_tb;
-
-    //buffer
-    _TCHAR* m_pFilter;
-    void* m_pEntendBuf;
-    ushort_td m_pEntendBuflen;
-    uint_td m_ExDataBufLen;
-
-    //hedaer
-    ushort_td m_RejectCount;
-    char m_PosType[3]; // "EG" or "UC"
-
-    //tail
-    ushort_td m_iRecordCount;
-    ushort_td m_iFieldCount;
-
-    ushort_td* m_iRecordCountDirect;
-    //result
-    ushort_td m_iFieldLen[255];
-    ushort_td m_iFieldOffset[255];
-
-    bool GetCompStr(_TCHAR** str);
-    uchar_td GetLogical(_TCHAR** str);
-    uchar_td GetCompType(_TCHAR** str);
-    short GetField(_TCHAR** str);
-    ushort_td GetFieldLen(int index);
-    ushort_td GetFieldOffset(int index);
-    bool MakeFieldSelect(_TCHAR** str);
-
-    bool m_FieldSelected;
-
-public:
-    filter(table* tb);
-    ~filter();
-
-    bool posTypeNext() {return GetPosType();}
-
-    void setPosTypeNext(bool v) {SetPosType(v);}
-
-    uint_td exDataBufLen() const {return m_ExDataBufLen;}
-
-    ushort_td recordCount() const {return m_iRecordCount;}
-
-    void setRecordCount(ushort_td v) {m_iRecordCount = v;}
-
-    ushort_td fieldCount() const {return m_iFieldCount;}
-
-    void setFieldCount(ushort_td v) {m_iFieldCount = v;}
-
-    //void* entendBuf() const {return m_pEntendBuf;}
-
-    //void setEntendBuf(void* v) {m_pEntendBuf = v;};
-
-    ushort_td* recordCountDirect() const {return m_iRecordCountDirect;}
-
-    void setRecordCountDirect(ushort_td* v) {m_iRecordCountDirect = v;}
-
-    ushort_td rejectCount() const {return m_RejectCount;}
-
-    ushort_td fieldLen(int index) {return GetFieldLen(index);}
-
-    ushort_td fieldOffset(int index) {return GetFieldOffset(index);}
-
-    bool fieldSelected() const {return m_FieldSelected;}
-
-    void init(table* pBao);
-    //bool GetPosType();
-    //void SetPosType(bool);
-    void WriteBuffer();
-    bool setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount);
-    _TCHAR* filterStr();
-
-};
-#endif//NEW_FILTER
 
 }// namespace client
 }// namespace tdap

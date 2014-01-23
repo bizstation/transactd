@@ -19,7 +19,7 @@
  02111-1307, USA.
  ================================================================= */
 #include "nsTable.h"
-
+#include <vector>
 namespace bzs
 {
 
@@ -36,6 +36,7 @@ namespace client
 
 class fields;
 class database;
+class queryBase;
 #define null_str _T("")
 
 #pragma warning(disable:4251)
@@ -46,7 +47,6 @@ class AGRPACK table : public nstable
     friend class recordCache;
     friend class database;
     friend class filter;
-    friend class filter_t;
     struct tbimpl* m_impl;
     tabledef* m_tableDef;
 
@@ -103,7 +103,7 @@ protected:
 
 	virtual void doInit(tabledef* def, short filenum, bool regularDir);
 
-    virtual void onRecordCounting(size_t count, bool complate){};
+    virtual void onRecordCounting(size_t count, bool& complate){};
 
     virtual void setNoUpdateTimeStamp(bool v) {};
 
@@ -138,6 +138,7 @@ public:
     void findNext(bool notIncCurrent = true);
     void findPrev(bool notIncCurrent = true);
     bookmark_td bookmarkFindCurrent() const;
+    void setQuery(const queryBase* query);
     void setFilter(const _TCHAR* str, ushort_td rejectCount, ushort_td cacheCount);
     const _TCHAR* filterStr();
     short fieldNumByName(const _TCHAR* name);
@@ -210,6 +211,40 @@ public:
     void* fieldPtr(short index);
 
 };
+
+
+AGRPACK void analyzeQuery(const _TCHAR* str
+        , std::vector<std::_tstring>& selects
+        , std::vector<std::_tstring>& where
+        ,bool& nofilter);
+
+
+class AGRPACK queryBase
+{
+
+    struct impl* m_impl;
+protected:
+    void addField(const _TCHAR* name);
+    void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
+    void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
+
+public:
+    queryBase();
+    virtual ~queryBase();
+    queryBase& queryString(const TCHAR* str);
+    queryBase& reject(int v);
+	queryBase& limit(int v);
+    queryBase& direction(table::eFindType v);
+    queryBase& noFilter(bool v);
+    const _TCHAR* toString() const;
+    const std::vector<std::_tstring>& getSelects() const;
+    const std::vector<std::_tstring>& getWheres() const;
+    table::eFindType getDirection() const;
+    int getReject()const;
+    int getLimit()const;
+    bool isNofilter()const;
+};
+
 
 #pragma warning(default:4251)
 

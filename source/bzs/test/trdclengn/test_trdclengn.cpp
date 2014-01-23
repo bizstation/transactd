@@ -1534,14 +1534,14 @@ void stringFileterCreateTable(database* db, int id, const _TCHAR* name, uchar_td
     // td.charsetIndex = CHARSET_CP932;
 
     def->insertTable(&td);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "insertTable");
+    BOOST_CHECK_MESSAGE(0 == def->stat(), "insertTable stat = " << def->stat());
 
     fielddef* fd = def->insertField(id, 0);
     fd->setName(_T("id"));
     fd->type = ft_integer;
     fd->len = (ushort_td)4;
     def->updateTableDef(id);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 1");
+    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 1 stat = " << def->stat());
 
     fd = def->insertField(id, 1);
     fd->setName(_T("name"));
@@ -1560,7 +1560,7 @@ void stringFileterCreateTable(database* db, int id, const _TCHAR* name, uchar_td
 
     fd->keylen = fd->len;
     def->updateTableDef(id);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2");
+    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2 stat = " << def->stat());
 
     fd = def->insertField(id, 2);
     fd->setName(_T("namew"));
@@ -1684,12 +1684,15 @@ void doTestSF(table* tb)
     tb->setKeyNum(0);
     tb->clearBuffer();
 
+
+
     tb->setFilter(_T("name = 'あい*'"), 0, 10);
     tb->seekFirst();
     tb->findNext(false);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
     BOOST_CHECK_MESSAGE(_tstring(_T("あいうえおかきくこ")) == _tstring(tb->getFVstr(1)), "doTestReadSF2");
     BOOST_CHECK_MESSAGE(2 == (int)tb->recordCount(), "doTestReadSF2");
+
 
     tb->setFilter(_T("name <> 'あい*'"), 0, 10);
     BOOST_CHECK_MESSAGE(3 == (int)tb->recordCount(), "doTestReadSF2");
@@ -1699,6 +1702,28 @@ void doTestSF(table* tb)
 
     tb->setFilter(_T("name <> ''"), 0, 10);
     BOOST_CHECK_MESSAGE(5 == (int)tb->recordCount(), "doTestReadSF2");
+
+    //test setFilter don't change field value
+    tb->setFV(_T("name"), _T("ABCDE"));
+    tb->setFilter(_T("name = 'あい'"), 0, 10);
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDE")) == _tstring(tb->getFVstr(1)), "doTestReadSF2 field value");
+
+}
+
+void doTestUpdateSF(table* tb)
+{
+
+    tb->setKeyNum(0);
+    tb->clearBuffer();
+    tb->seekFirst();
+    tb->setFV(_T("name"), _T("ABCDE"));
+    tb->setFV(_T("namew"), _T("ABCDEW"));
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDE")) == _tstring(tb->getFVstr(1)), "doTestUpdateSF");
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDEW")) == _tstring(tb->getFVstr(2)), "doTestUpdateSF" );
 
 }
 
@@ -1712,6 +1737,7 @@ void doTestStringFileter(database* db, int id, const _TCHAR* name, uchar_td type
     doInsertStringFileter(tb);
     doTestReadSF(tb);
     doTestSF(tb);
+    doTestUpdateSF(tb);
     tb->release();
 }
 
@@ -1894,6 +1920,7 @@ void testGetEqualKanji(database* db)
 	tb->release();
 
 }
+
 // ------------------------------------------------------------------------
 void testResultField(database* db)
 {
@@ -1920,14 +1947,8 @@ void testResultDef()
     int len = rd.writeBuffer(0, true) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 4, " resultDef.writeBuffer");
 
+ 
 }
-
-	unsigned char	type;
-	unsigned short	len;
-	unsigned short	pos;
-	unsigned char	logType;
-	char			opr;
-    unsigned char*  data;
 
 
 void testLogic(database* db)
@@ -1984,7 +2005,9 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(strcmp(lc.data, "漢字")==0, " logic.data");
 
     len = lc.writeBuffer(0, true) - (unsigned char*)0;
-    BOOST_CHECK_MESSAGE(len == 7+4, " logic.writeBuffer");
+    BOOST_CHECK_MESSAGE(len == 7 + (_tcslen(_T("漢字"))*sizeof(_TCHAR))
+                                    , " logic.writeBuffer len =" << len);
+
 
     //combine
     ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCor, false);
@@ -1999,7 +2022,7 @@ void testLogic(database* db)
 
     //canJoin
 
-    //文字は接続不可
+    //zstring is cannot join
     lc.setParam(tb, _T("name"), _T("="), _T("1"), eCand, false);
     BOOST_CHECK_MESSAGE(lc.canJoin(false) == false, " logic canJoin");
     BOOST_CHECK_MESSAGE(lc.canJoin(true) == false, " logic canJoin");
@@ -2007,11 +2030,11 @@ void testLogic(database* db)
     lc.setParam(tb, _T("id"), _T("="), _T("1"), eCand, false);
     BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
     BOOST_CHECK_MESSAGE(lc.canJoin(true) == true, " logic canJoin");
-    lc.opr = eCend; //前とは接続可能
+    lc.opr = eCend;
     BOOST_CHECK_MESSAGE(lc.canJoin(true) == false, " logic canJoin");
     BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
 
-    lc.opr = eCor; //前とは接続可能
+    lc.opr = eCor;
     BOOST_CHECK_MESSAGE(lc.canJoin(true) == false, " logic canJoin");
     BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
 
@@ -2039,7 +2062,36 @@ void testLogic(database* db)
 
 
 }
-/*
+
+
+
+void testQuery()
+{
+    queryBase q;
+    q.queryString(_T("id = 0 and name = 'Abc efg'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("id = '0' and name = 'Abc efg'")
+                          ,  "queryString");
+
+    q.queryString(_T("select id,name id = 0 AND name = 'Abc&' efg'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&' efg'")
+                          ,  "queryString");
+
+    q.queryString(_T("*"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("*"),  "queryString");
+
+
+    q.queryString(_T("Select id,name id = 2"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '2'")
+                            ,  "queryString");
+    q.queryString(_T("SELECT id,name,fc id = 2"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2'")
+                            ,  "queryString");
+    q.queryString(_T("select id,name,fc id = 2 and name = '3'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2' and name = '3'")
+                            ,  "queryString");
+
+}
+
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -2171,20 +2223,21 @@ BOOST_AUTO_TEST_SUITE(kanjiSchema)
 
     BOOST_FIXTURE_TEST_CASE(dropDatabaseKanji, fixture) {testDropDatabaseKanji(db());}
 
-BOOST_AUTO_TEST_SUITE_END() */
+BOOST_AUTO_TEST_SUITE_END()
+
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(filter)
 
     BOOST_FIXTURE_TEST_CASE(resultField, fixture)
     {
-        const _TCHAR* uri = makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME);
-		_tprintf(_T("URI = %s\n"), uri);
+
 		if (db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME)))
             db()->drop();
         testCreateNewDataBase(db());
         testResultField(db());
         testResultDef();
         testLogic(db());
+        testQuery();
     }
     BOOST_FIXTURE_TEST_CASE(drop, fixture)
     {
@@ -2193,6 +2246,7 @@ BOOST_AUTO_TEST_SUITE(filter)
     BOOST_FIXTURE_TEST_CASE(fuga, fixture) {BOOST_CHECK_EQUAL(2 * 3, 6);}
 
 BOOST_AUTO_TEST_SUITE_END()
+
 // ------------------------------------------------------------------------
 
 

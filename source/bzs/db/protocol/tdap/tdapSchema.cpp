@@ -141,6 +141,7 @@ bool isStringType(uchar_td type)
 			||(type == ft_lstring)|| (type == ft_note));
 }
 
+
 bool fielddef::isStringType()const
 {
     return tdap::isStringType(type);
