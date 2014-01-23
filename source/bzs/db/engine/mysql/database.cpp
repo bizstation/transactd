@@ -1594,7 +1594,7 @@ void table::setFiledNullFlags()
 
 __int64 table::insert(bool ncc)
 {
-	if (!cp_is_write_lock(m_table->file))
+	if ((m_mode==TD_OPEN_READONLY) || !cp_is_write_lock(m_table->file))
 	{
 		m_stat = STATUS_INVALID_LOCKTYPE;
 		return 0;
@@ -1633,6 +1633,7 @@ __int64 table::insert(bool ncc)
 
 void table::beginUpdate(char keyNum)
 {
+	m_stat = 0;
 	m_table->file->try_semi_consistent_read(1); 
 	beginDel();
 	if (m_stat==0)
@@ -1648,6 +1649,11 @@ void table::beginUpdate(char keyNum)
 
 void table::beginDel()
 {
+	if ((m_mode==TD_OPEN_READONLY) || !cp_is_write_lock(m_table->file))
+	{
+		m_stat = STATUS_INVALID_LOCKTYPE;
+		return;
+	}
 	if (m_cursor)
 	{
 		m_stat = 0;
