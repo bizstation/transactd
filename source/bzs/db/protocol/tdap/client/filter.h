@@ -372,7 +372,7 @@ class filter
     bool m_seeksMode;
     size_t m_seeksWritedCount;
     size_t m_logicalLimitCount;
-
+    table::eFindType m_direction;
 
     bool addWhere(const _TCHAR* name, const _TCHAR* type, const _TCHAR*  value, char combine, bool compField = false)
     {
@@ -486,6 +486,7 @@ class filter
         cleanup();
         setRejectCount(q->getReject());
         setMaxRows(q->getLimit());
+        m_direction = q->getDirection();
 
         if (q->isAll())
             addAllFields();
@@ -725,6 +726,9 @@ public:
 
     void setIgnoreFields(bool v){m_ignoreFields = v;}
     bool isSeeksMode()const {return m_seeksMode;}
+    table::eFindType direction() const{return m_direction;}
+    void setDirection(table::eFindType v) {m_direction = v;}
+
 };
 
 

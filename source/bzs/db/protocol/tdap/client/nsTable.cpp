@@ -521,7 +521,7 @@ ushort_td nstable::doCommitBulkInsert(bool autoCommit)
     return count;
 }
 
-void nstable::abortBulkInsert()
+void nstable::doAbortBulkInsert()
 {
     delete m_impl->bulkIns;
     m_impl->bulkIns = NULL;

@@ -109,6 +109,7 @@ protected:
     virtual uint_td doRecordCount(bool estimate, bool fromCurrent);
     virtual short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf);
     virtual ushort_td doCommitBulkInsert(bool autoCommit);
+    virtual void doAbortBulkInsert();
     inline void open(const _TCHAR* uri, char_td mode = 0, const _TCHAR* ownerName = NULL) {
         doOpen(uri, mode, ownerName);}
 
@@ -153,7 +154,7 @@ public:
     inline short_td tdapErr(HWND hWnd, _TCHAR* retbuf = NULL) {return doBtrvErr(hWnd, retbuf);}
     
     void beginBulkInsert(int maxBuflen);
-    void abortBulkInsert();
+    void abortBulkInsert(){doAbortBulkInsert();}
     inline ushort_td commitBulkInsert(bool autoCommit = false) {
         return doCommitBulkInsert(autoCommit);}
     void tdap(ushort_td op);

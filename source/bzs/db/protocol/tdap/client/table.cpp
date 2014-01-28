@@ -515,6 +515,8 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
             seekByBookmark(bm);
         m_impl->exBookMarking = false;
         m_stat = tmpStat;
+        if (m_stat == STATUS_EOF)
+            m_stat = 0;
     }
     else
         return nstable::doRecordCount(estimate, fromCurrent);
@@ -527,6 +529,7 @@ void table::btrvGetExtend(ushort_td op)
 
     if (op >= TD_KEY_GE_NEXT_MULTI)
         m_keylen = writeKeyData();
+
     m_pdata = m_impl->dataBak;
     if (!m_impl->filterPtr->writeBuffer())
     {
@@ -534,6 +537,13 @@ void table::btrvGetExtend(ushort_td op)
         return;
     }
     m_datalen = m_impl->filterPtr->exDataBufLen();
+
+    //cacheing direction
+    if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI))
+        m_impl->filterPtr->setDirection(findBackForword);
+    else
+        m_impl->filterPtr->setDirection(findForword);
+
     tdap(op);
     short stat = m_stat;
     if (!m_impl->filterPtr->isWriteComleted() && (stat == STATUS_REACHED_FILTER_COND))
@@ -553,8 +563,6 @@ void table::btrvGetExtend(ushort_td op)
         m_stat = STATUS_SUCCESS;
     }else if ((m_stat == STATUS_LIMMIT_OF_REJECT) && (m_impl->filterPtr->rejectCount()>=1))
         m_stat = STATUS_EOF;
-
-
 }
 
 void table::getRecords(ushort_td op)
@@ -581,6 +589,7 @@ bookmark_td table::bookmarkFindCurrent() const
 void table::find(eFindType type)
 {
     ushort_td op;
+
     if (m_impl->filterPtr->isSeeksMode())
     {
         m_impl->filterPtr->resetSeeksWrited();
@@ -626,6 +635,7 @@ void table::findFirst()
     {
         if (m_impl->filterPtr)
         {
+
             m_impl->exNext = 1;
             m_impl->filterPtr->setPosTypeNext(false);
             getRecords(TD_KEY_NEXT_MULTI);
@@ -640,11 +650,27 @@ void table::findLast()
     {
         if (m_impl->filterPtr)
         {
+
             m_impl->exNext = -1;
             m_impl->filterPtr->setPosTypeNext(false);
             getRecords(TD_KEY_PREV_MULTI);
         }
     }
+}
+
+bool table::checkFindDirection(ushort_td op)
+{
+    bool ret ;
+    if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI))
+        ret = (m_impl->filterPtr->direction() == findBackForword);
+    else
+        ret = (m_impl->filterPtr->direction() == findForword);
+    if (!ret)
+    {
+        assert(0);
+        m_stat = 1;
+    }
+    return ret;
 }
 
 void table::doFind( ushort_td op, bool notIncCurrent)
@@ -659,12 +685,19 @@ void table::doFind( ushort_td op, bool notIncCurrent)
 
         if (m_impl->rc->withinCache(row) && (!m_impl->exBookMarking))
         {   /* read from cache */
+
+            /*Is direction same */
+            if (!checkFindDirection(op))
+                return ;
             m_pdata = (void*)m_impl->rc->setRow(row);
             m_datalen = m_impl->rc->len();
         }
         else if (m_impl->rc->isEndOfRow(row))
         {
             /* whole row readed */
+            /*Is direction same */
+            if (!checkFindDirection(op))
+                return ;
             /* A special situation that if rejectCount() == 0 and status = STATUS_LIMMIT_OF_REJECT
                 then it continues . */
             if ((m_impl->exSlideStat == 0)
@@ -783,9 +816,10 @@ const _TCHAR* table::filterStr()
 
 void table::clearBuffer()
 {
+    m_impl->rc->reset();
     m_pdata = m_impl->dataBak;
     memset(m_pdata, 0x00, m_buflen);
-    if (blobFieldUsed())
+    if ((bulkIns()==NULL) && blobFieldUsed())
         resetSendBlob();
 
 }
@@ -894,8 +928,9 @@ bool table::onUpdateCheck(eUpdateType type)
 
 void table::onUpdateAfter(int beforeResult)
 {
-    //if (blobFieldUsed())
-    //    resetSendBlob();
+    if (blobFieldUsed())
+        addSendBlob(NULL);
+
     if (valiableFormatType() && m_impl->dataPacked)
         m_datalen = unPack((char*)m_pdata, m_datalen);
 
@@ -920,16 +955,23 @@ ushort_td table::doCommitBulkInsert(bool autoCommit)
 {
     ushort_td ret = nstable::doCommitBulkInsert(autoCommit);
     if (blobFieldUsed())
-        resetSendBlob();
+        addSendBlob(NULL);
     return ret;
+}
+
+void table::doAbortBulkInsert()
+{
+    nstable::doAbortBulkInsert();
+    if (blobFieldUsed())
+        addSendBlob(NULL);
 }
 
 void table::onInsertAfter(int beforeResult)
 {
     if (valiableFormatType() && m_impl->dataPacked)
         m_datalen = unPack((char*)m_pdata, m_datalen);
-    if (blobFieldUsed())
-        resetSendBlob();
+    if ((bulkIns()==NULL) && blobFieldUsed())
+        addSendBlob(NULL);
 }
 
 void* table::attachBuffer(void* NewPtr, bool unpack, size_t size)
@@ -1147,9 +1189,11 @@ void table::resetSendBlob()
 void table::addSendBlob(const blob* blob)
 {
     short stat = m_stat;
+    /*backup current data buffer*/
     const void *tmp = data();
     setData((void*)blob);
     tdap(TD_ADD_SENDBLOB);
+    /*restore data buffer*/
     setData((void*)tmp);
     m_stat = stat;
 }
@@ -1158,9 +1202,11 @@ const blobHeader* table::getBlobHeader()
 {
     short stat = m_stat;
     const blobHeader* p;
+    /*backup current data buffer*/
     const void *tmp = data();
     setData(&p);
     tdap(TD_GET_BLOB_BUF);
+    /*restore data buffer*/
     setData((void*)tmp);
     std::swap(stat, m_stat);
 

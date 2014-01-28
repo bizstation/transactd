@@ -1691,6 +1691,7 @@ void stringFileterCreateTable(database* db, int id, const _TCHAR* name, uchar_td
 
 void doInsertStringFileter(table* tb)
 {
+    tb->beginBulkInsert(BULKBUFSIZE);
     tb->clearBuffer();
     int id = 1;
     tb->setFV(_T("id"), id);
@@ -1704,6 +1705,7 @@ void doInsertStringFileter(table* tb)
     tb->setFV(_T("name"), _T("A123456"));
     tb->setFV(_T("namew"), _T("A123456"));
     tb->insert();
+
 
     tb->clearBuffer();
     id = 3;
@@ -1725,7 +1727,7 @@ void doInsertStringFileter(table* tb)
     tb->setFV(_T("name"), _T("おめでとうございます。"));
     tb->setFV(_T("namew"), _T("おめでとうございます。"));
     tb->insert();
-
+    tb->commitBulkInsert();
 }
 
 void doTestReadSF(table* tb)
@@ -1779,6 +1781,38 @@ void doTestSF(table* tb)
 
     tb->setFilter(_T("name <> 'あい*'"), 0, 10);
     BOOST_CHECK_MESSAGE(3 == (int)tb->recordCount(), "doTestReadSF2");
+    tb->clearBuffer();
+    tb->seekFirst();
+    tb->findNext(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("A123456")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おはようございます")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おめでとうございます。")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "doTestReadSF1");
+
+    tb->clearBuffer();
+    tb->seekLast();
+    tb->findPrev(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おめでとうございます。")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findPrev();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おはようございます")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findPrev(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("A123456")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findPrev();
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "doTestReadSF1");
 
     tb->setFilter(_T("name = 'あい'"), 0, 10);
     BOOST_CHECK_MESSAGE(0 == (int)tb->recordCount(), "doTestReadSF2");
@@ -1800,14 +1834,27 @@ void doTestUpdateSF(table* tb)
     tb->setKeyNum(0);
     tb->clearBuffer();
     tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
     tb->setFV(_T("name"), _T("ABCDE"));
     tb->setFV(_T("namew"), _T("ABCDEW"));
     tb->update();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+
+    tb->setFV(_T("name"), _T("ABCDE2"));
+    tb->setFV(_T("namew"), _T("ABCDEW2"));
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+
     tb->seekFirst();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
     BOOST_CHECK_MESSAGE(_tstring(_T("ABCDE")) == _tstring(tb->getFVstr(1)), "doTestUpdateSF");
     BOOST_CHECK_MESSAGE(_tstring(_T("ABCDEW")) == _tstring(tb->getFVstr(2)), "doTestUpdateSF" );
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDE2")) == _tstring(tb->getFVstr(1)), "doTestUpdateSF");
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDEW2")) == _tstring(tb->getFVstr(2)), "doTestUpdateSF" );
 
 }
 

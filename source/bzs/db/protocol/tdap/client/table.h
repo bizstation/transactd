@@ -52,7 +52,7 @@ class AGRPACK table : public nstable
     tabledef* m_tableDef;
 
     uchar_td charset() const ;
-
+    bool checkFindDirection(ushort_td op);
     bool checkIndex(short index);
     void getKeySpec(keySpec* ks, bool SpecifyKeyNum = false);
     const bzs::db::blobHeader* getBlobHeader();
@@ -65,6 +65,7 @@ class AGRPACK table : public nstable
     uint_td doGetWriteImageLen();   // orverride
     void doUpdate(bool ncc = false); // orverride
     ushort_td doCommitBulkInsert(bool autoCommit = false); // orverride
+    void doAbortBulkInsert(); // orverride
     void doCreateIndex(bool SpecifyKeyNum = false); // orverride
     uint_td doRecordCount(bool estimate, bool fromCurrent); // orverride
     short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf = NULL); // orverride
@@ -107,7 +108,6 @@ protected:
     virtual void onRecordCounting(size_t count, bool& complate){};
 
     virtual void setNoUpdateTimeStamp(bool v) {};
-
 
 
 public:
