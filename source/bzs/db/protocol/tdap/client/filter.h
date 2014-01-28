@@ -143,6 +143,11 @@ public:
         delete [] data;
     }
 
+    size_t getLength()
+    {
+        return sizeof(logic) - sizeof(unsigned char*) + getDatalen();
+    }
+
     void setFieldParam(fielddef* fd )
     {
         type = fd->type;
@@ -260,11 +265,17 @@ public:
         return true;
     }
 
-    unsigned char* writeBuffer(unsigned char* p, bool estimate)
+    unsigned char* writeBuffer(unsigned char* p, bool estimate, bool end)
     {
         int n = sizeof(logic) - sizeof(unsigned char*);
-        if (!estimate) memcpy(p, this, n);
+        if (!estimate)
+        {
+            memcpy(p, this, n);
+            if (end)
+                *(p+n-1) = eCend;
+        }
         p += n;
+
         n = getDatalen();
         if (!estimate) memcpy(p, data, n);
         return p + n;
@@ -359,6 +370,8 @@ class filter
     std::_tstring m_str;
     bool m_ignoreFields;
     bool m_seeksMode;
+    size_t m_seeksWritedCount;
+    size_t m_logicalLimitCount;
 
 
     bool addWhere(const _TCHAR* name, const _TCHAR* type, const _TCHAR*  value, char combine, bool compField = false)
@@ -464,9 +477,7 @@ class filter
         if (m_logics.size())
             m_logics[m_logics.size() -1]->opr = eCend;
         m_seeksMode = true;
-        m_ret.maxRows = m_logics.size();
-        if (calcMaxRows() < m_ret.maxRows)
-            return false;
+        m_seeksWritedCount = 0;
         return true;
     }
 
@@ -476,7 +487,7 @@ class filter
         setRejectCount(q->getReject());
         setMaxRows(q->getLimit());
 
-        if (q->isNofilter())
+        if (q->isAll())
             addAllFields();
         else
         {
@@ -521,6 +532,7 @@ class filter
 
     void joinLogic()
     {
+        if (m_seeksMode) return;
         for (int i= (int)m_logics.size()-2;i>=0;--i)
         {
             logic* la = m_logics[i+1];
@@ -537,20 +549,30 @@ class filter
     int doWriteBuffer(bool estimate)
     {
         unsigned char* p = (unsigned char*)m_tb->dataBak();
-        joinLogic();
- 	    m_hd.logicalCount = (ushort_td)m_logics.size();
+        unsigned char* start = p;
+
+ 	    m_hd.logicalCount = (ushort_td)m_logicalLimitCount;
         if (m_ignoreFields)
             m_ret.fieldCount = 0;
         else
             m_ret.fieldCount = (ushort_td)m_fields.size();
+
+        size_t first = 0, last = m_logicalLimitCount;
+        if (m_seeksMode)
+        {
+            first = m_seeksWritedCount;
+            last = std::min<size_t>(calcMaxRows() + m_seeksWritedCount, m_logicalLimitCount);
+            m_hd.rejectCount = 0;
+            m_ret.maxRows = m_hd.logicalCount = last - first;
+        }
         if (m_ret.maxRows == 0)
             m_ret.maxRows = calcMaxRows();
 
-        unsigned char* start = p;
         p =  m_hd.writeBuffer(p, estimate);
-
-        for (size_t i=0;i< m_logics.size();++i)
-            p = m_logics[i]->writeBuffer(p, estimate);
+        for (size_t i=first;i< last;++i)
+            p = m_logics[i]->writeBuffer(p, estimate, (i==(last-1)));
+        if (m_seeksMode && !estimate)
+            m_seeksWritedCount += m_hd.logicalCount;
 
         p =  m_ret.writeBuffer(p, estimate);
 
@@ -563,15 +585,38 @@ class filter
         //write total length
         int len = (int)(p - start);
         unsigned short* s = (unsigned short*)start;
-        *s = len;
+        if (!estimate)
+            *s = len;
         return len;
+    }
+
+    int calcLogicalCutsize(int oversize)
+    {
+        int cutsize = 0;
+        for (size_t i=m_hd.logicalCount-1;i!=0;--i)
+        {
+            cutsize += m_logics[i+m_seeksWritedCount]->getLength();
+            if (oversize - cutsize < 0)
+            {
+                m_logicalLimitCount = i;
+                return  cutsize;
+            }
+        }
+        return 0;
     }
 
     bool allocDataBuffer()
     {
+        joinLogic();
+        m_logicalLimitCount = m_logics.size();
         int len = doWriteBuffer(true);
         if (len > (int)MAX_DATA_SIZE)
-            return false;
+        {
+            if (m_seeksMode)
+                len -= calcLogicalCutsize(len - MAX_DATA_SIZE + 1);
+            else
+                return false;
+        }
         m_hd.len = len;
         int resultLen = resultBufferNeedSize();
         m_extendBuflen = std::max<int>((int)m_hd.len, resultLen);
@@ -588,7 +633,8 @@ class filter
     }
 
 public:
-    filter(table* tb):m_tb(tb),m_ignoreFields(false),m_seeksMode(false){}
+    filter(table* tb):m_tb(tb),m_ignoreFields(false)
+        ,m_seeksMode(false),m_seeksWritedCount(0){}
     ~filter()
     {
         cleanup();
@@ -606,6 +652,7 @@ public:
         m_ret.reset();
         m_ignoreFields = false;
         m_seeksMode = false;
+        m_seeksWritedCount = 0;
     }
 
     bool setQuery(const queryBase* q)
@@ -616,6 +663,13 @@ public:
             cleanup();
         return ret;
     }
+
+    bool isWriteComleted() const
+    {
+        if (!m_seeksMode) return true;
+        return (m_seeksWritedCount == m_logics.size());
+    }
+    void resetSeeksWrited(){m_seeksWritedCount = 0;}
 
     void setPositionType(bool incCurrent){m_hd.setPositionType(incCurrent);}
 

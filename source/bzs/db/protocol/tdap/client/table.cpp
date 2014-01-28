@@ -532,6 +532,9 @@ void table::btrvGetExtend(ushort_td op)
     m_datalen = m_impl->filterPtr->exDataBufLen();
     tdap(op);
     short stat = m_stat;
+    if (!m_impl->filterPtr->isWriteComleted() && (stat == STATUS_REACHED_FILTER_COND))
+        stat = STATUS_LIMMIT_OF_REJECT;
+
     m_impl->rc->reset(m_impl->filterPtr, (char*)m_impl->dataBak, m_datalen, blobFieldUsed() ?
         getBlobHeader() : NULL);
 
@@ -575,7 +578,10 @@ void table::find(eFindType type)
 {
     ushort_td op;
     if (m_impl->filterPtr->isSeeksMode())
+    {
+        m_impl->filterPtr->resetSeeksWrited();
         op = TD_KEY_SEEK_MULTI;
+    }
     else
         op = (type == findForword) ? TD_KEY_GE_NEXT_MULTI:TD_KEY_LE_PREV_MULTI;
 
@@ -684,7 +690,11 @@ void table::findNext(bool notIncCurrent)
 {
 
     if (m_impl->filterPtr)
-        doFind(TD_KEY_NEXT_MULTI, notIncCurrent);
+    {
+        short op = m_impl->filterPtr->isSeeksMode() ? TD_KEY_SEEK_MULTI
+                    : TD_KEY_NEXT_MULTI;
+        doFind(op, notIncCurrent);
+    }
     else if (notIncCurrent == true)
         seekNext();
 }
@@ -2719,10 +2729,15 @@ struct impl
 
 queryBase::queryBase():m_impl(new impl){}
 
-
 queryBase::~queryBase()
 {
     delete m_impl;
+}
+
+void queryBase::reset()
+{
+    delete m_impl;
+    m_impl = new impl;
 }
 
 void queryBase::clearSelectFields()
@@ -2733,6 +2748,7 @@ void queryBase::clearSelectFields()
 void queryBase::addField(const _TCHAR* name)
 {
     m_impl->m_selects.push_back(name);
+    m_impl->m_nofilter = false;
 }
 
 void queryBase::addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value)
@@ -2742,6 +2758,8 @@ void queryBase::addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR*
     m_impl->m_wheres.push_back(name);
     m_impl->m_wheres.push_back(logic);
     m_impl->m_wheres.push_back(value);
+    m_impl->m_nofilter = false;
+
 }
 
 void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name
@@ -2759,7 +2777,8 @@ void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
         m_impl->m_keyValues.clear();
     }
     m_impl->m_keyValues.push_back(value);
-    m_impl->m_reject = 1;
+    //m_impl->m_reject = 1;
+    m_impl->m_nofilter = false;
 
 }
 
@@ -2793,9 +2812,10 @@ queryBase& queryBase::direction(table::eFindType v)
     return *this;
 }
 
-queryBase& queryBase::noFilter(bool v)
+queryBase& queryBase::all()
 {
-    m_impl->m_nofilter = v;
+    reset();
+    m_impl->m_nofilter = true;
     return *this;
 }
 
@@ -2859,7 +2879,7 @@ int queryBase::getReject()const{return m_impl->m_reject;}
 
 int queryBase::getLimit()const{return m_impl->m_limit;}
 
-bool queryBase::isNofilter()const{return m_impl->m_nofilter;};
+bool queryBase::isAll()const{return m_impl->m_nofilter;};
 
 const std::vector<std::_tstring>& queryBase::getSelects() const {return m_impl->m_selects;}
 const std::vector<std::_tstring>& queryBase::getWheres() const {return m_impl->m_wheres;}

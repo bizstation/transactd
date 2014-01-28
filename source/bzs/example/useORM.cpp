@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <bzs/db/protocol/tdap/client/trdormapi.h>
+#include <boost/iterator/iterator_facade.hpp>
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -71,7 +72,7 @@ class group_orm
 
 public:
 
-    /*  fdi_typenameを定義しなければならない*/
+    /*  mdl_typenameを定義しなければならない*/
     typedef group       mdl_typename;
 
     /*  fdi_typenameを定義しなければならない
@@ -82,6 +83,12 @@ public:
 
     /* fdi_typename fdi&を引数に取るコンストラクタが必須 */
     group_orm(const fdi_typename& fdi):m_fdi(fdi){}
+
+    /* ユニークキーしか呼ばれないないのでその他のキー分は定義しなくてよい*/
+    bool compKeyValue(group& l, group& r, int keyNum) const
+    {
+        return l.id() < r.id();
+    }
 
     void setKeyValues(group& g, const fields& fds, int keyNum)
     {
@@ -149,63 +156,143 @@ typedef std::vector<user_ptr> user_ptr_list;
 typedef std::vector<user*> user_list;
 typedef boost::shared_ptr<user_list> user_list_ptr;
 
-class mdls;
+/* イテレータをつくるのは面倒だけれども、さまざまなアルゴリズムを使うことを考えると
+    作成するのがベター
+*/
+/*class mdls;
 class mdlsIterator : public std::iterator<std::random_access_iterator_tag, user*>
 {
     int m_index;
     mdls& m_mdls;
 public:
+    //mdlsIterator():m_mdls(*((mdls*)0)){};
     mdlsIterator(mdls& m, int index=0);
+    //mdlsIterator& operator=(const mdlsIterator &r) ;
     user* operator*() const;
     mdlsIterator &operator++();
     bool operator!=(const mdlsIterator &r) const;
+    //mdlsIterator& operator-(const mdlsIterator &r);
+    //mdlsIterator& operator+(const mdlsIterator &r);
+};*/
+
+class mdls;
+
+/*user* mdlsIterator::operator*() const{return m_mdls[m_index];}
+mdlsIterator& mdlsIterator::operator++() {++m_index; return *this;}
+bool mdlsIterator::operator!=(const mdlsIterator &r) const {return m_index != r.m_index;}
+*/
+
+
+class mdlsIterator
+    : public boost::iterator_facade<mdlsIterator, user*
+                            , boost::random_access_traversal_tag>
+{
+    friend class boost::iterator_core_access;
+    size_t m_index;
+    mdls* m_mdls;
+    user*& dereference() const;
+    void increment();
+    void decrement();
+    void advance(size_t n);
+    size_t distance_to(const mdlsIterator &r)const;
+    bool equal(const mdlsIterator &r) const;
+
+public:
+    mdlsIterator(mdls* m, int index=0);
+
+
 };
 
 class mdls
 {
-    std::vector<user*> m_users;
+    mutable std::vector<user*> m_users;
 public:
+    void clear(){m_users.clear();}
     user* add(user* u)
     {
         m_users.push_back(u);
         return u;
     }
-    user* item(int index){return m_users[index];}
-
+    user*& item(int index)const {return m_users[index];}
+    //user** item_ptr(int index)const {return &(m_users[index]);}
     /** オリジナルコレクションの場合は以下の３つの関数と
         アイテムの格納型を示すitem_typeを実装する
         関数の追加が困難な場合はadapterを作ってください。
     */
 
     size_t size(){return m_users.size();}
-    user* operator[](unsigned int index){return item(index);}
-    typedef user* item_type;  //保持する型を指定できるが vectorで生の場合は指定する方法がない
+    user* operator[](unsigned int index)const{return item(index);}
 
-    void push_back(user* u){add(u);}
-    mdlsIterator begin(){return mdlsIterator(*this, 0);}
-    mdlsIterator end(){return mdlsIterator(*this, size());}
-    typedef mdlsIterator iterator;
+    /*
+    以下の２つのtypedefを加える必要がある
+    typedefはインタフェースに影響しないので、依存コードの再コンパイルは不要です
+    */
+    typedef user* item_type;  //保持する型を指定できるが vectorで生の場合は指定する方法がない
+    typedef mdlsIterator iterator;//必須
+    /*
+        push_back() begin() end()は(インタフェースの変更を伴うのが難しい場合)
+        実装してもしなくても良い。しない場合は bzs::db::protocol::tdap::client名前空間に
+        特殊化した
+        template <>
+        mdlsIterator push_back(mdls& m);
+        mdlsIterator begin(mdls& m);
+        mdlsIterator end(mdls& m);
+        の３つの関数を作成する。
+    */
+    //void push_back(user* u){add(u);}
+    //mdlsIterator begin(){return mdlsIterator(*this, 0);}
+    //mdlsIterator end(){return mdlsIterator(*this, size());}
+
 };
 
-
-/* イテレータをつくるのは面倒だけれども、さまざまなアルゴリズムを使うことを考えると
-    作成するのがベター
-*/
-mdlsIterator::mdlsIterator(mdls& m, int index):m_index(index),m_mdls(m){};
+/* mdlsIteratorの実装 */
+/*mdlsIterator::mdlsIterator(mdls& m, int index):m_index(index),m_mdls(m){};
 user* mdlsIterator::operator*() const{return m_mdls[m_index];}
 mdlsIterator& mdlsIterator::operator++() {++m_index; return *this;}
 bool mdlsIterator::operator!=(const mdlsIterator &r) const {return m_index != r.m_index;}
-
-/*
-template <>
-mdlsIterator begin<mdls>(mdls& m){return mdlsIterator(m, 0);}
-
-template <>
-mdlsIterator end(mdls& m){return mdlsIterator(m, m.size());}
-
-template <>
-void push_back(mdls& m, user* u){m.add(u);}
 */
+void dumpUser2(const user* user)
+{
+    std::cout << " id           " << user->id()    << std::endl;
+    std::cout << " name         " << user->name()  << std::endl;
+    std::cout << " group        " << user->grp()->name() << std::endl;
+    std::cout << " tel          " << user->tel()   << std::endl << std::endl;
+
+}
+
+
+user*& mdlsIterator::dereference() const
+{
+    //for (int i=0;i<m_mdls->size();++i)
+    //    dumpUser2((*m_mdls)[i]);
+
+    return m_mdls->item(m_index);
+    //return p;
+}
+void mdlsIterator::increment() {++m_index;}
+void mdlsIterator::decrement() {--m_index;}
+void mdlsIterator::advance(size_t n){m_index+=n;}
+size_t mdlsIterator::distance_to(const mdlsIterator &r)const{return r.m_index - m_index;}
+bool mdlsIterator::equal(const mdlsIterator &r) const {return m_index == r.m_index;}
+mdlsIterator::mdlsIterator(mdls* m, int index):m_index(index),m_mdls(m){}
+
+
+
+//オリジナルコレクションにpush_back begin end　を実装しない場合は以下の名前
+//空間にそれぞれの関数を作成する
+namespace bzs{namespace db{namespace protocol{namespace tdap{namespace client
+{
+template <>
+inline mdlsIterator begin(mdls& m){return mdlsIterator(&m, 0);}
+
+template <>
+inline mdlsIterator end(mdls& m){return mdlsIterator(&m, m.size());}
+
+template <>
+inline void push_back(mdls& m, user* u){m.add(u);}
+}}}}}
+
+
 user* create(mdls& m){return user::create(&m);}
 user* create(user_ptr_list& m){return user::create(&m);}
 
@@ -240,6 +327,19 @@ class user_orm
 
 public:
     user_orm(const user_fdi& fdi):m_fdi(fdi){}
+
+    bool compKeyValue(user& l, user& r, int keyNum) const
+    {
+        if (keyNum==0)
+            return l.id() < r.id();
+        return 1;
+    }
+
+    void setKeyValues(user& u, const fields& fds, int keyNum)
+    {
+        fds[m_fdi.id] = u.id();
+    }
+
     void writeMap(user& u, const fields& fds, int optipn)
     {
         fds[m_fdi.id] = u.id();
@@ -294,6 +394,11 @@ void dumpUser(const user_ptr& user)
 
 }
 
+bool sortFunc2(const user* l, const user* r)
+{
+
+    return l->name() < r->name();
+}
 
 void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 {
@@ -396,13 +501,45 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     group_list_ptr grps(listup(users, &user::grp));
     gt.cursor().index(primary_key);
     query qe;
-    q.select(_T("id"), _T("name"));
+    qe.select(_T("id"), _T("name"));
     gt.readEach(*grps, qe);
 
     //オリジナルのグループリストでもlistup関数は使えます。
     group_list_ptr grps2(listup(m, &user::grp));
     gt.cursor().index(primary_key);
     gt.readEach(*grps2, qe);
+
+    //listup処理を内包して自動で行う
+    gt.cursor().index(primary_key);
+    qe.select(_T("id"), _T("name"));
+    gt.readEach(users, &user::grp, qe);
+    gt.readEach(m, &user::grp, qe);
+
+    //IN
+    gt.cursor().index(primary_key);
+    qe.reset();
+    qe.select(_T("id"), _T("name")).in(1, 2, 3);
+    std::vector<group_ptr> gmdls;
+    gt.reads(gmdls, qe);
+
+    //orderby
+    users.clear();
+    ut.cursor().index(0).position(0);
+    q.all();
+    ut.reads(users, q);
+    sort(users, &user::name, &user::id);
+
+    //ソート対応のイテレータは大変です。
+    m.clear();
+    ut.cursor().index(0).position(0);
+    ut.reads(m, q);
+    sort(m, &user::name);
+    std::sort(begin(m), end(m), &sortFunc2);
+
+    std::for_each(begin(m), end(m), dumpUser2);
+    //to xml
+    //これはクラスの機能なのでクラスをデコレートする？
+
 
 }
 

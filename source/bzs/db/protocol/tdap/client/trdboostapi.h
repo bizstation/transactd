@@ -830,6 +830,7 @@ inline database_ptr createDatadaseObject()
     return p;
 }
 
+template <class Database_Ptr>
 inline void connect(database_ptr db, const connectParams& connPrams, bool newConnection)
 {
     db->connect(connPrams.uri(), newConnection);
@@ -838,6 +839,7 @@ inline void connect(database_ptr db, const connectParams& connPrams, bool newCon
 
 }
 
+template <class Database_Ptr>
 inline void disconnect(database_ptr db, const connectParams& connPrams)
 {
     db->disconnect(connPrams.uri());
@@ -846,6 +848,7 @@ inline void disconnect(database_ptr db, const connectParams& connPrams)
 
 }
 
+template <class Database_Ptr>
 inline void disconnect(database_ptr db)
 {
     db->disconnect();
@@ -854,14 +857,16 @@ inline void disconnect(database_ptr db)
 
 }
 
-inline void createDatabase(database_ptr db, const connectParams& connPrams)
+template <class Database_Ptr>
+inline void createDatabase(Database_Ptr db, const connectParams& connPrams)
 {
     db->create(connPrams.uri());
     if (db->stat())
         nstable::throwError((std::_tstring(_T("Create database ")) + connPrams.uri()).c_str(), db->stat());
 }
 
-inline void createDatabase(database_ptr db, const _TCHAR* uri)
+template <class Database_Ptr>
+inline void createDatabase(Database_Ptr db, const _TCHAR* uri)
 {
     db->create(uri);
     if (db->stat())
@@ -869,7 +874,8 @@ inline void createDatabase(database_ptr db, const _TCHAR* uri)
 }
 
 
-inline void openDatabase(database_ptr db, const connectParams& connPrams)
+template <class Database_Ptr>
+inline void openDatabase(Database_Ptr db, const connectParams& connPrams)
 {
     db->open(connPrams.uri(), connPrams.type(), connPrams.mode());
     if (db->stat())
@@ -877,7 +883,8 @@ inline void openDatabase(database_ptr db, const connectParams& connPrams)
 
 }
 
-inline void openDatabase(database_ptr db, const _TCHAR* uri, short schemaType = 0, short mode = -2, const _TCHAR* dir = NULL,
+template <class Database_Ptr>
+inline void openDatabase(Database_Ptr db, const _TCHAR* uri, short schemaType = 0, short mode = -2, const _TCHAR* dir = NULL,
         const _TCHAR* ownername = NULL)
 {
     db->open(uri, schemaType, mode, dir, ownername);
@@ -886,7 +893,8 @@ inline void openDatabase(database_ptr db, const _TCHAR* uri, short schemaType = 
 
 }
 
-inline void dropDatabase(database_ptr db)
+template <class Database_Ptr>
+inline void dropDatabase(Database_Ptr db)
 {
     db->drop();
     if (db->stat())
@@ -894,7 +902,8 @@ inline void dropDatabase(database_ptr db)
 
 }
 
-inline table_ptr openTable(database_ptr db, const _TCHAR* name)
+template <class Database_Ptr>
+inline table_ptr openTable(Database_Ptr db, const _TCHAR* name)
 {
     table_ptr p(db->openTable(name), releaseTable);
     if (db->stat())
@@ -902,7 +911,9 @@ inline table_ptr openTable(database_ptr db, const _TCHAR* name)
     return p;
 
 }
-inline void convertTable(database_ptr db, short tableid, copyDataFn func=NULL)
+
+template <class Database_Ptr>
+inline void convertTable(Database_Ptr db, short tableid, copyDataFn func=NULL)
 {
 
     if (db->existsTableFile(tableid, NULL))
@@ -919,7 +930,8 @@ inline void convertTable(database_ptr db, short tableid, copyDataFn func=NULL)
     }
 }
 
-inline void convertTable(database_ptr db, const _TCHAR* name, copyDataFn func=NULL)
+template <class Database_Ptr>
+inline void convertTable(Database_Ptr db, const _TCHAR* name, copyDataFn func=NULL)
 {
     assert(db->dbDef());
     short tablenum = db->dbDef()->tableNumByName(name);

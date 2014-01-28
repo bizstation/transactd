@@ -349,14 +349,41 @@ void testFindIn(database* db)
     tb->findNext();
     BOOST_CHECK_MESSAGE(STATUS_EOF == tb->stat(), "find in more");
 
-    // Too many params
+    // Many params
     _TCHAR buf[20];
     q.addSeekKeyValue(_itot(1, buf, 10), true);
 
-    for (int i=1;i<20000;++i)
+    for (int i=2;i<=10000;++i)
         q.addSeekKeyValue(_itot(i, buf, 10));
     tb->setQuery(&q);
-    BOOST_CHECK_MESSAGE(STATUS_FILTERSTRING_ERROR == tb->stat(), "find in stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
+
+    tb->find();
+    int i = 0;
+    while (0 == tb->stat())
+    {
+
+        BOOST_CHECK_MESSAGE(++i == tb->getFVint(fdi_id), "findNext in value");
+        tb->findNext(true);
+    }
+    BOOST_CHECK_MESSAGE(i == 10000, "findNext in count");
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "find in end stat = " << tb->stat());
+
+    //LogicalCountLimit
+    q.addField(_T("id"));
+    tb->setQuery(&q);
+
+    tb->find();
+    i = 0;
+    while (0 == tb->stat())
+    {
+
+        BOOST_CHECK_MESSAGE(++i == tb->getFVint(fdi_id), "findNext in value");
+        tb->findNext(true);
+    }
+    BOOST_CHECK_MESSAGE(i == 10000, "findNext in count");
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "find in end stat = " << tb->stat());
+
 	tb->release();
 }
 
@@ -2023,7 +2050,7 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
     BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc")==0, " logic.data");
 
-    size_t len = lc.writeBuffer(0, true) - (unsigned char*)0;
+    size_t len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7+33, " logic.writeBuffer");
 
     //compField invalid filed name
@@ -2039,7 +2066,7 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.logType == 1+CMPLOGICAL_FIELD, " logic.logType compField");
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
     BOOST_CHECK_MESSAGE(*((short*)lc.data) == 0, " logic.data");
-    len = lc.writeBuffer(0, true) - (unsigned char*)0;
+    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7+2, " logic.writeBuffer");
 
     //invalid filed name
@@ -2055,13 +2082,13 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
     BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc")==0, " logic.data");
 
-    len = lc.writeBuffer(0, true) - (unsigned char*)0;
+    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7+3, " logic.writeBuffer");
 
     ret = lc.setParam(tb, _T("name"), _T("="), _T("漢字*"), eCend, false);
     BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "漢字")==0, " logic.data");
 
-    len = lc.writeBuffer(0, true) - (unsigned char*)0;
+    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7 + (_tcslen(_T("漢字"))*sizeof(_TCHAR))
                                     , " logic.writeBuffer len =" << len);
 

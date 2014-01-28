@@ -218,20 +218,22 @@ class AGRPACK queryBase
 {
 
     struct impl* m_impl;
+
 public:
     queryBase();
     virtual ~queryBase();
+    void reset();
+    void clearSeekKeyValues();
+    void clearSelectFields();
     void addField(const _TCHAR* name);
     void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
     void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
     void addSeekKeyValue(const _TCHAR* value, bool reset=false);
-    void clearSeekKeyValues();
-    void clearSelectFields();
     queryBase& queryString(const TCHAR* str);
     queryBase& reject(int v);
 	queryBase& limit(int v);
     queryBase& direction(table::eFindType v);
-    queryBase& noFilter(bool v);
+    queryBase& all();
     const _TCHAR* toString() const;
     const std::vector<std::_tstring>& getSelects() const;
     const std::vector<std::_tstring>& getWheres() const;
@@ -239,7 +241,7 @@ public:
     table::eFindType getDirection() const;
     int getReject()const;
     int getLimit()const;
-    bool isNofilter()const;
+    bool isAll()const;
 };
 
 
