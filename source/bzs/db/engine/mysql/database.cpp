@@ -1480,6 +1480,8 @@ uint table::posPtrLen()const
 
 ha_rows table::recordCount(bool estimate)
 {
+	if ((m_table->file->ha_table_flags() & (HA_HAS_RECORDS | HA_STATS_RECORDS_IS_EXACT)) != 0)
+		return m_table->file->records();		 
 	if (estimate)
 	{	//Since the answer of innodb is random, 1 returns also 0.
 		//Since it is important, in the case of 1

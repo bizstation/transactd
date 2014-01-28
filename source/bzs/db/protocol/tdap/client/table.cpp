@@ -196,10 +196,14 @@ public:
             m_ptr += DATASIZE_BYTE;
             m_bookmark = *((bookmark_td*)(m_ptr));
             m_ptr += BOOKMARK_SIZE;
-
-            if (m_hd)
+        }
+        if (m_hd)
+        {
+            //blob pointer is allready point to next row
+            while (m_row - m_hd->curRow)
             {
-                m_hd->nextField = (blobField*)m_hd->nextField->next();
+                for(int j=0;j<m_hd->fieldCount;++j)
+                    m_hd->nextField = (blobField*)m_hd->nextField->next();
                 ++m_hd->curRow;
             }
         }
