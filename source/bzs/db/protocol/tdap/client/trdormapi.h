@@ -735,7 +735,7 @@ public:
        sortedをtrueにします。検索するレコードと通信量が激減します。
     */
     template <class MDLS>
-    void readEach(MDLS& mdls, queryBase& q, bool sorted=false)
+    void readEach(MDLS& mdls, queryBase& q, bool sorted=false, bzs::rtl::exception* e=NULL)
     {
         q.clearSeekKeyValues();
         table_ptr tb = m_cb.table();
@@ -778,8 +778,21 @@ public:
                 (!sorted
                     || (m_map.compKeyValue(mdl, mdlb, tb->keyNum())==true)
                     || (m_map.compKeyValue(mdlb, mdl, tb->keyNum())==true)))
+            {
                 tb->findNext();
-            m_map.readMap(mdl, fds, m_option);
+                if (tb->stat() != 0)
+                {
+                    _TCHAR buf[4096];
+                    table::keyValueDescription(tb.get(), buf, 4096);
+                    if (e)
+                        *e << bzs::rtl::errnoCode(tb->stat()) << bzs::rtl::errMessage(buf);
+                    else
+                        THROW_BZS_ERROR_WITH_CODEMSG(tb->stat(), buf);
+                }
+
+            }
+            if (tb->stat() == 0)
+                m_map.readMap(mdl, fds, m_option);
             mdlb = mdl;
             ++it;
         }
@@ -795,9 +808,18 @@ public:
         table_ptr tb = m_cb.table();
         compFunc<MAP, T> comp(m_map, tb->keyNum());
         std::sort(refList->begin(), refList->end(), comp);
-        readEach(*refList, q, true);
+        readEach(*refList, q, true, NULL);
     }
 
+    template <class BASEMDLS, class T2>
+    void readEach(BASEMDLS& mdls, T* (T2::*func)()const, queryBase& q, bzs::rtl::exception& e)
+    {
+        boost::shared_ptr<std::vector<T*> > refList(listup(mdls, func));
+        table_ptr tb = m_cb.table();
+        compFunc<MAP, T> comp(m_map, tb->keyNum());
+        std::sort(refList->begin(), refList->end(), comp);
+        readEach(*refList, q, true, &e);
+    }
 
     /* No use field select */
     template <class MDLS>

@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/filter.h>
 
+
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 using namespace std;
@@ -357,10 +358,10 @@ void testFindIn(database* db)
 
     // Many params
     _TCHAR buf[20];
-    q.addSeekKeyValue(_itot(1, buf, 10), true);
+    q.addSeekKeyValue(_ltot_s(1, buf, 20, 10), true);
 
     for (int i=2;i<=10000;++i)
-        q.addSeekKeyValue(_itot(i, buf, 10));
+        q.addSeekKeyValue(_ltot_s(i, buf, 20, 10));
     tb->setQuery(&q);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
 
