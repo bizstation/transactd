@@ -204,7 +204,12 @@ class tableIterator
 public:
     static const tableIterator eos;
 
-    inline tableIterator(table& tb) : m_tb(tb), m_fds(tb) {};
+    inline tableIterator(table& tb) : m_tb(tb), m_fds(tb)
+    {
+        if ((tb.stat() != 0) && (tb.stat() != STATUS_EOF) && (tb.stat() != STATUS_NOT_FOUND_TI))
+            nstable::throwError(std::_tstring(_T("tableIterator")).c_str(), &tb);
+
+    }
 
     table& tb() const {return m_tb;};
 
@@ -830,8 +835,8 @@ inline database_ptr createDatadaseObject()
     return p;
 }
 
-template <class Database_Ptr>
-inline void connect(database_ptr db, const connectParams& connPrams, bool newConnection)
+template <class Database_Ptr, class ConnectParam_type>
+inline void connect(database_ptr db, const ConnectParam_type& connPrams, bool newConnection)
 {
     db->connect(connPrams.uri(), newConnection);
     if (db->stat())
@@ -874,8 +879,8 @@ inline void createDatabase(Database_Ptr db, const _TCHAR* uri)
 }
 
 
-template <class Database_Ptr>
-inline void openDatabase(Database_Ptr db, const connectParams& connPrams)
+template <class Database_Ptr, class ConnectParam_type>
+inline void openDatabase(Database_Ptr db, const ConnectParam_type& connPrams)
 {
     db->open(connPrams.uri(), connPrams.type(), connPrams.mode());
     if (db->stat())
@@ -989,7 +994,7 @@ inline void insertRecord(const T& it, bool ncc = true)
 {
     it.tb().insert(ncc);
     if (it.tb().stat() != 0)
-        nstable::throwError(std::_tstring(_T("Insert record")).c_str(), it.tb().stat());
+        nstable::throwError(std::_tstring(_T("Insert record")).c_str(), &(it.tb()));
 
 }
 
@@ -998,7 +1003,7 @@ inline void updateRecord(const T& it, bool ncc = true)
 {
     it.tb().update((nstable::eUpdateType)ncc);
     if (it.tb().stat() != 0)
-        nstable::throwError(std::_tstring(_T("Update record")).c_str(), it.tb().stat());
+        nstable::throwError(std::_tstring(_T("Update record")).c_str(), &(it.tb()));
 
 }
 
@@ -1007,7 +1012,7 @@ inline void updateRecord(fields& fd, char_td keynum)
     fd.tb().setKeyNum(keynum);
 	fd.tb().update(nstable::changeInKey);
     if (fd.tb().stat() != 0)
-        nstable::throwError(std::_tstring(_T("Update record")).c_str(), fd.tb().stat());
+        nstable::throwError(std::_tstring(_T("Update record")).c_str(), &(fd.tb()));
 }
 
 inline void deleteRecord(fields& fd, const char_td keynum)
@@ -1015,7 +1020,7 @@ inline void deleteRecord(fields& fd, const char_td keynum)
     fd.tb().setKeyNum(keynum);
 	fd.tb().del(true/*inKey*/);
     if (fd.tb().stat() != 0)
-		nstable::throwError(std::_tstring(_T("Update record")).c_str(), fd.tb().stat());
+		nstable::throwError(std::_tstring(_T("Update record")).c_str(), &(fd.tb()));
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
@@ -1095,7 +1100,7 @@ inline void deleteRecord(const T& it)
 {
 	it.tb().del(false/*inKey*/);
 	if (it.tb().stat() != 0)
-		nstable::throwError(std::_tstring(_T("Delete record")).c_str(), it.tb().stat());
+		nstable::throwError(std::_tstring(_T("Delete record")).c_str(), &(it.tb()));
 }
 
 

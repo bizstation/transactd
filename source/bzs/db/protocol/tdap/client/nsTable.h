@@ -185,6 +185,7 @@ public:
     static short_td tdapErr(HWND hWnd, short_td status, const _TCHAR* tableName = NULL,
         _TCHAR* retbuf = NULL);
 	static void throwError(const _TCHAR* caption, short statusCode);
+    static void throwError(const _TCHAR* caption, nstable* tb);
     static _TCHAR* getDirURI(const _TCHAR* uri, _TCHAR* retbuf);
     static bool existsFile(const _TCHAR* filename);
 	static bool test(nstable* p);

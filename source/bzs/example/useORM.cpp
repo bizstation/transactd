@@ -63,8 +63,12 @@ public:
         name = tb->fieldNumByName(_T("name"));
     }
     //インスタンスを返すstatic な create関数がなければならない
-    static group_fdi* create(){return new group_fdi();};
+    //static group_fdi* create(){return new group_fdi();};
 };
+
+group_fdi* createFdi(group_fdi *){return new group_fdi();}
+void destroyFdi(group_fdi * p){delete p;}
+void initFdi(group_fdi * fdi, table* tb){fdi->init(tb);}
 
 class group_orm
 {
@@ -282,13 +286,11 @@ mdlsIterator::mdlsIterator(mdls* m, int index):m_index(index),m_mdls(m){}
 //空間にそれぞれの関数を作成する
 namespace bzs{namespace db{namespace protocol{namespace tdap{namespace client
 {
-template <>
+
 inline mdlsIterator begin(mdls& m){return mdlsIterator(&m, 0);}
 
-template <>
 inline mdlsIterator end(mdls& m){return mdlsIterator(&m, m.size());}
 
-template <>
 inline void push_back(mdls& m, user* u){m.add(u);}
 }}}}}
 
@@ -298,7 +300,7 @@ user* create(user_ptr_list& m){return user::create(&m);}
 
 
 
-class user_fdi : public fdibase
+class user_fdi //: public fdibase
 {
 
 public:
@@ -314,11 +316,12 @@ public:
         group = tb->fieldNumByName(_T("group"));
     }
 
-    static user_fdi* create()
-    {
-        return new user_fdi();
-    }
+    //static user_fdi* create(){return new user_fdi();}
 };
+
+user_fdi* createFdi(user_fdi *){return new user_fdi();}
+void destroyFdi(user_fdi * p){delete p;}
+void initFdi(user_fdi * fdi, table* tb){fdi->init(tb);}
 
 
 class user_orm

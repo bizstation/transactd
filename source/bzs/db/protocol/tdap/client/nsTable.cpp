@@ -791,7 +791,7 @@ short_td nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* TableName, _
 
 #pragma warning(disable:4996)
     if (retbuf)
-        _stprintf(retbuf, _T("table_name:%s %s"), TableName, buf);
+        _stprintf(retbuf, _T("table_name:%s \n%s"), TableName, buf);
 #pragma warning(default:4996)
 
     if ((int)hWnd <= 0) return errorCode;
@@ -813,6 +813,16 @@ void nstable::throwError(const _TCHAR* caption, short statusCode)
     _TCHAR tmp2[1024]={0x00};
     _stprintf_s(tmp2, 1024, _T("%s\n%s\n"),caption, tmp);
     THROW_BZS_ERROR_WITH_CODEMSG(statusCode, tmp2);
+}
+
+void nstable::throwError(const _TCHAR* caption, nstable* tb)
+{
+    _TCHAR tmp[1024]={0x00};
+    nstable::tdapErr(0x00, tb->stat(), tb->uri(), tmp);
+    _TCHAR tmp2[1024]={0x00};
+    _stprintf_s(tmp2, 1024, _T("[%s]\n%s\n"),caption, tmp);
+    THROW_BZS_ERROR_WITH_CODEMSG(tb->stat(), tmp2);
+
 }
 
 _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)

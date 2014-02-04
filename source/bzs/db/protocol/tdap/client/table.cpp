@@ -613,15 +613,15 @@ void table::find(eFindType type)
             return;
         }
         if (type == findForword)
-            seekGreater(true);
+            seekGreater(false);
         else
-            seekLessThan(true);
+            seekLessThan(false);
         if (m_stat == 0)
         {
             if (type == findForword)
-                findNext(true);
+                findNext(false);
             else
-                findPrev(true);
+                findPrev(false);
         }
     }
 
