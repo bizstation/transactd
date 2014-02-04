@@ -210,6 +210,7 @@ public:
     void setFV(short index, __int64 data);
     void setFV(const _TCHAR* fieldName, __int64 data);
     void* fieldPtr(short index);
+    static void keyValueDescription(table* tb, _TCHAR* buf, int bufsize);
 
 };
 

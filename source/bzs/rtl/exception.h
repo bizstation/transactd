@@ -44,12 +44,16 @@ class exception : public std::exception
 
 
 public:
+    exception(): std::exception(),m_error(0){};
     exception(int error, const std::_tstring& message): std::exception()
         ,m_error(error),m_message(message){};
     explicit exception(int error):std::exception(),m_error(error){};
     explicit exception(const std::_tstring& message): std::exception(),m_message(message){};
     const std::_tstring& getMessage(){return m_message;}
     const int& getErrorCode(){return m_error;}
+    exception& operator<<(int error){m_error = error;return *this;}
+    exception& operator<<(const _TCHAR* msg){m_message += msg;return *this;}
+
 
 };
 
@@ -67,6 +71,8 @@ inline const int* getCode(bzs::rtl::exception &e)
 	return &e.getErrorCode();
 }
 
+inline int errnoCode(int code){return code;}
+inline const _TCHAR* errMessage(const _TCHAR* msg){return msg;}
 
 
 

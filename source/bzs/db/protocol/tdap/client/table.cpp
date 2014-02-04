@@ -2686,7 +2686,42 @@ short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
     return nstable::tdapErr(hWnd, m_stat, m_tableDef->tableName(), retbuf);
 }
 
+void table::keyValueDescription(table* tb, _TCHAR* buf, int bufsize)
+{
 
+    std::_tstring s;
+	if (tb->stat() == STATUS_NOT_FOUND_TI)
+	{
+
+		for (int i=0;i<tb->tableDef()->keyDefs[tb->keyNum()].segmentCount;i++)
+		{
+			short fnum = tb->tableDef()->keyDefs[tb->keyNum()].segments[i].fieldNum;
+			s += std::_tstring(tb->tableDef()->fieldDefs[fnum].name())
+                + _T(" = ") + tb->getFVstr(fnum) + _T("\n");
+		}
+	}
+    else if (tb->stat() == STATUS_DUPPLICATE_KEYVALUE)
+	{
+        _TCHAR tmp[50];
+		for (int j=0;j<tb->tableDef()->keyCount;j++)
+		{
+			_stprintf_s(tmp, 50, _T("[key%d]\n"), j);
+			s += tmp;
+			for (int i=0;i<tb->tableDef()->keyDefs[j].segmentCount;i++)
+			{
+				short fnum = tb->tableDef()->keyDefs[j].segments[i].fieldNum;
+				s += std::_tstring(tb->tableDef()->fieldDefs[fnum].name())
+                    + _T(" = ") + tb->getFVstr(fnum) + _T("\n");
+			}
+		}
+
+	}
+
+    _stprintf_s(buf, bufsize, _T("table:%s\nstat:%d\n%s")
+                                        ,tb->tableDef()->tableName()
+                                        ,tb->stat()
+                                        ,s.c_str());
+}
 
 
 //-------------------------------------------------------------------
