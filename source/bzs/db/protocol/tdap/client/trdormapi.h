@@ -133,66 +133,66 @@ public:
     }
 
     template <class T0>
-	inline cursor& position(const T0 kv0)
+	inline cursor& keyValue(const T0 kv0)
 	{
-        keyValue<T0>::set(m_table, m_table->keyNum(), kv0);
+        keyValueSetter<T0>::set(m_table, m_table->keyNum(), kv0);
         return *this;
 	}
 
     template <class T0, class T1>
-	inline cursor& position(const T0 kv0, const T1 kv1)
+	inline cursor& keyValue(const T0 kv0, const T1 kv1)
 	{
-        keyValue<T0, T1>::set(m_table, m_table->keyNum(), kv0, kv1);
+        keyValueSetter<T0, T1>::set(m_table, m_table->keyNum(), kv0, kv1);
         return *this;
 	}
 
     template <class T0, class T1 , class T2>
-	inline cursor& position(const T0 kv0, const T1 kv1, const T2 kv2)
+	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2)
 	{
-        keyValue<T0, T1, T2>::set(m_table, m_table->keyNum(), kv0, kv1, kv2);
+        keyValueSetter<T0, T1, T2>::set(m_table, m_table->keyNum(), kv0, kv1, kv2);
         return *this;
 	}
 
     template <class T0, class T1 , class T2, class T3>
-	inline cursor& position(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
+	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 	{
-        keyValue<T0, T1, T2, T3>::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3);
+        keyValueSetter<T0, T1, T2, T3>::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3);
         return *this;
 	}
 
     template <class T0, class T1 , class T2, class T3, class T4>
-	inline cursor& position(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
                             ,const T4 kv4)
 	{
-        keyValue<T0, T1, T2, T3, T4>
+        keyValueSetter<T0, T1, T2, T3, T4>
                 ::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3, kv4);
         return *this;
 	}
 
     template <class T0, class T1 , class T2, class T3, class T4, class T5 >
-	inline cursor& position(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
                             ,const T4 kv4, const T5 kv5)
 	{
-        keyValue<T0, T1, T2, T3, T4, T5>
+        keyValueSetter<T0, T1, T2, T3, T4, T5>
                 ::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5);
         return *this;
 	}
 
     template <class T0, class T1 , class T2, class T3, class T4, class T5 , class T6>
-	inline cursor& position(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
                             ,const T4 kv4, const T5 kv5, const T6 kv6)
 	{
-        keyValue<T0, T1, T2, T3, T4, T5, T6>
+        keyValueSetter<T0, T1, T2, T3, T4, T5, T6>
                 ::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6);
         return *this;
 	}
 
     template <class T0, class T1 , class T2, class T3
                 ,class T4, class T5 , class T6 , class T7>
-	inline cursor& position(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
                             ,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 	{
-        keyValue<T0, T1, T2, T3, T4, T5, T6, T7>
+        keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>
                 ::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
         return *this;
 	}

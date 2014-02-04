@@ -420,22 +420,22 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     ut.save(*u);
 
     //id=12のユーザーを読み取り
-    ut.cursor().index(primary_key).position(u->id());
+    ut.cursor().index(primary_key).keyValue(u->id());
     ut.read(*u);
 
     //id=12のユーザーの電話番号の変更
     u->setTel("81-999-8888");
-    ut.cursor().index(primary_key).position(u->id());
+    ut.cursor().index(primary_key).keyValue(u->id());
     ut.update(*u);
 
     //id=12のユーザー削除
-    ut.cursor().index(primary_key).position(u->id());
+    ut.cursor().index(primary_key).keyValue(u->id());
     ut.del();
 
 
     //カーソルのindexとキー位置を指定します。
     //ここからレコードの検索を開始します。
-    ut.cursor().index(keynum_group).position(find_group_id);
+    ut.cursor().index(keynum_group).keyValue(find_group_id);
 
     //検索条件を指定します。サーバーフィルターです。
     //rejectで指定したアンマッチレコード数になると検索を中止します。
@@ -455,7 +455,7 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     知らせておけば自動でインスタンスを作成しハンドルしてくれます*/
 
     mdls m;
-    ut.cursor().index(keynum_group).position(find_group_id);
+    ut.cursor().index(keynum_group).keyValue(find_group_id);
     ut.reads(m, q);
 
     /*
@@ -470,7 +470,7 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
         isMatch関数のような　const fields&を引数に取ってintを返す関数なら何でも
         OKです。
     */
-    ut.cursor().index(keynum_group).position(find_group_id);
+    ut.cursor().index(keynum_group).keyValue(find_group_id);
     ut.reads(users, q, isMatch);
 
 
@@ -478,7 +478,7 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     group_ptr grp(group::create(0));
 
     activeTable<group_orm> gt(db);
-    gt.cursor().index(0).position(2);
+    gt.cursor().index(0).keyValue(2);
 
     //shared_ptr<group>のインスタンスを*をつけて渡します。
     gt.read(*grp);
@@ -527,14 +527,14 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 
     //orderby
     users.clear();
-    ut.cursor().index(0).position(0);
+    ut.cursor().index(0).keyValue(0);
     q.all();
     ut.reads(users, q);
     sort(users, &user::name, &user::id);
 
     //ソート対応のイテレータは大変です。
     m.clear();
-    ut.cursor().index(0).position(0);
+    ut.cursor().index(0).keyValue(0);
     ut.reads(m, q);
     sort(m, &user::name);
     std::sort(begin(m), end(m), &sortFunc2);
