@@ -47,7 +47,7 @@ typedef boost::shared_ptr<group_list> group_list_ptr;
 
 
 
-group* create(group_ptr_list& m){return group::create(&m);}
+group* create(group_ptr_list& m, int){return group::create(&m);}
 
 class group_fdi
 {
@@ -295,8 +295,8 @@ inline void push_back(mdls& m, user* u){m.add(u);}
 }}}}}
 
 
-user* create(mdls& m){return user::create(&m);}
-user* create(user_ptr_list& m){return user::create(&m);}
+user* create(mdls& m, int){return user::create(&m);}
+user* create(user_ptr_list& m, int){return user::create(&m);}
 
 
 
@@ -407,7 +407,7 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 {
     int id = 12;
     int find_group_id = 3;
-
+    bool readMyKeyValue = false;
     // user_ormのactiveTableのインスタンスを作成します。
     activeTable<user_orm> ut(db);
 
@@ -417,35 +417,41 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     u->setName("moriwaki");
     u->setTel("81-999-9999");
     u->grp()->setId(1);
+    ut.index(primary_key);
     ut.save(*u);
 
     //id=12のユーザーを読み取り
-    ut.cursor().index(primary_key).keyValue(u->id());
     ut.read(*u);
 
     //id=12のユーザーの電話番号の変更
     u->setTel("81-999-8888");
-    ut.cursor().index(primary_key).keyValue(u->id());
     ut.update(*u);
 
-    //id=12のユーザー削除
-    ut.cursor().index(primary_key).keyValue(u->id());
-    ut.del();
+    //キー値を変えるときは
+    ut.index(primary_key).keyValue(u->id());
+    u->setId(13);
+    ut.update(*u, readMyKeyValue);
+
+    //id=13のユーザー削除
+    ut.del(*u);
+
+    //削除はキー値だけでもOK
+    ut.index(primary_key).keyValue(12).del(); //エラー　レコードなし
+
 
 
     //カーソルのindexとキー位置を指定します。
     //ここからレコードの検索を開始します。
-    ut.cursor().index(keynum_group).keyValue(find_group_id);
+    ut.index(keynum_group).keyValue(find_group_id);
 
     //検索条件を指定します。サーバーフィルターです。
     //rejectで指定したアンマッチレコード数になると検索を中止します。
     query q;
-        q.select(_T("*"))
-            .where(_T("group"), _T("=") , find_group_id)//.or(_T("group"), _T("=") , _T("a"))
+    q.select(_T("*")).where(_T("group"), _T("=") , find_group_id)//.or(_T("group"), _T("=") , _T("a"))
             .reject(1);
 
     //読み取りを実行。　結果を受け取るコレクションとクエリーを渡します。
-    ut.reads(users, q);
+    ut.read(users, q);
 
 
     /*
@@ -455,33 +461,33 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     知らせておけば自動でインスタンスを作成しハンドルしてくれます*/
 
     mdls m;
-    ut.cursor().index(keynum_group).keyValue(find_group_id);
-    ut.reads(m, q);
+    ut.index(keynum_group).keyValue(find_group_id).read(m, q);
+
 
     /*
     オリジナルコレクションマップを自動で作成でなく自分で初期化して
     使いたいこともあるでしょうその時はreadsByを使用します*/
 
     users_orm users_hdr(m);
-    ut.readsBy(users_hdr, q);
+    ut.readRange(users_hdr, q);
 
 
     /* クライアント側フィルターも簡単に使えます。
         isMatch関数のような　const fields&を引数に取ってintを返す関数なら何でも
         OKです。
     */
-    ut.cursor().index(keynum_group).keyValue(find_group_id);
-    ut.reads(users, q, isMatch);
+    ut.index(keynum_group).keyValue(find_group_id).read(users, q, isMatch);
+
 
 
     //groupの読み取り
     group_ptr grp(group::create(0));
 
     activeTable<group_orm> gt(db);
-    gt.cursor().index(0).keyValue(2);
-
     //shared_ptr<group>のインスタンスを*をつけて渡します。
-    gt.read(*grp);
+    gt.index(0).keyValue(2).read(*grp);
+
+
 
     /*
     生ポインタのポインタの時も *をつけて渡します。
@@ -501,49 +507,47 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     list関数にコレクションとuser->grp()関数のアドレスを渡します。
     activeTable<group_orm>のreadEach関数にそのリストを渡します。
     */
-    group_list_ptr grps(listup(users, &user::grp));
-    gt.cursor().index(primary_key);
     query qe;
-    qe.select(_T("id"), _T("name"));
-    gt.readEach(*grps, qe);
+    group_list_ptr grps(listup(users, &user::grp));
+    gt.index(primary_key).readEach(*grps, qe.select(_T("id"), _T("name")));
+
 
     //オリジナルのグループリストでもlistup関数は使えます。
     group_list_ptr grps2(listup(m, &user::grp));
-    gt.cursor().index(primary_key);
-    gt.readEach(*grps2, qe);
+    gt.index(primary_key).readEach(*grps2, qe);
+
 
     //listup処理を内包して自動で行う
-    gt.cursor().index(primary_key);
-    qe.select(_T("id"), _T("name"));
-    gt.readEach(users, &user::grp, qe);
+    gt.index(primary_key);
+    gt.readEach(users, &user::grp, qe.select(_T("id"), _T("name")));
     gt.readEach(m, &user::grp, qe);
 
     //IN
-    gt.cursor().index(primary_key);
+    gt.index(primary_key);
     qe.reset();
-    qe.select(_T("id"), _T("name")).in(1, 2, 3);
     std::vector<group_ptr> gmdls;
-    gt.reads(gmdls, qe);
+    gt.read(gmdls, qe.select(_T("id"), _T("name")).in(1, 2, 3));
 
     //orderby
     users.clear();
-    ut.cursor().index(0).keyValue(0);
-    q.all();
-    ut.reads(users, q);
+    ut.index(0).keyValue(0).read(users, q.all());
     sort(users, &user::name, &user::id);
+
+    //groupby
+    //ある値を取り出して
 
     //ソート対応のイテレータは大変です。
     m.clear();
-    ut.cursor().index(0).keyValue(0);
-    ut.reads(m, q);
+    ut.index(0).keyValue(0).read(m, q);
+
     sort(m, &user::name);
     std::sort(begin(m), end(m), &sortFunc2);
 
     std::for_each(begin(m), end(m), dumpUser2);
-    //to xml
-    //これはクラスの機能なのでクラスをデコレートする？
 
-
+    //テーブルだけの操作
+    table_ptr tb = ut.table();
+    tb->clearOwnerName();
 }
 
 

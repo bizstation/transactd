@@ -213,6 +213,7 @@ public:
 
         if ((m_len==0) && m_pFilter->isSeeksMode() && m_pFilter->fieldCount())
         {
+            /*seek error*/
             m_seekMultiStat = m_bookmark;
             m_bookmark = 0;
             memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
@@ -572,7 +573,7 @@ void table::btrvGetExtend(ushort_td op)
     if (m_impl->rc->rowCount() && (!m_impl->exBookMarking))
     {
         m_pdata = (void*)m_impl->rc->setRow(0);
-        m_datalen = m_impl->rc->len();
+        m_datalen = tableDef()->maxRecordLen;//m_impl->rc->len();
 
         m_stat = m_impl->rc->seekMultiStat();
     }else if ((m_stat == STATUS_LIMMIT_OF_REJECT) && (m_impl->filterPtr->rejectCount()>=1))
@@ -703,10 +704,16 @@ void table::doFind( ushort_td op, bool notIncCurrent)
             /*Is direction same */
             if (!checkFindDirection(op))
                 return ;
+
             m_pdata = (void*)m_impl->rc->setRow(row);
-            //if (m_impl->rc->seekMultiStat())
             m_stat = m_impl->rc->seekMultiStat();
-            m_datalen = m_impl->rc->len();
+
+            /*set keyvalue for keyValueDescription*/
+            if (m_stat != 0)
+                setSeekValueField(row);
+
+            //m_datalen = m_impl->rc->len();
+            m_datalen = tableDef()->maxRecordLen;
         }
         else if (m_impl->rc->isEndOfRow(row))
         {
@@ -2702,40 +2709,57 @@ short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
     return nstable::tdapErr(hWnd, m_stat, m_tableDef->tableName(), retbuf);
 }
 
-void table::keyValueDescription(table* tb, _TCHAR* buf, int bufsize)
+/* For keyValueDescription */
+bool table::setSeekValueField(int row)
+{
+    const std::vector<std::_tstring>& keyValues = m_impl->filterPtr->keyValuesCache();
+    keydef* kd = &tableDef()->keyDefs[keyNum()];
+    if (keyValues.size() % kd->segmentCount)
+        return false;
+    //Check uniqe key
+    if (kd->segments[0].flags.bit0)
+        return false;
+
+    size_t pos = kd->segmentCount * row;
+    for (int j=0;j<kd->segmentCount;++j)
+        setFV(kd->segments[j].fieldNum, keyValues[pos+j].c_str());
+    return true;
+}
+
+void table::keyValueDescription(_TCHAR* buf, int bufsize)
 {
 
     std::_tstring s;
-	if (tb->stat() == STATUS_NOT_FOUND_TI)
+	if (stat() == STATUS_NOT_FOUND_TI)
 	{
 
-		for (int i=0;i<tb->tableDef()->keyDefs[tb->keyNum()].segmentCount;i++)
+		for (int i=0;i<tableDef()->keyDefs[keyNum()].segmentCount;i++)
 		{
-			short fnum = tb->tableDef()->keyDefs[tb->keyNum()].segments[i].fieldNum;
-			s += std::_tstring(tb->tableDef()->fieldDefs[fnum].name())
-                + _T(" = ") + tb->getFVstr(fnum) + _T("\n");
+			short fnum = tableDef()->keyDefs[keyNum()].segments[i].fieldNum;
+			s += std::_tstring(tableDef()->fieldDefs[fnum].name())
+                + _T(" = ") + getFVstr(fnum) + _T("\n");
 		}
 	}
-    else if (tb->stat() == STATUS_DUPPLICATE_KEYVALUE)
+    else if (stat() == STATUS_DUPPLICATE_KEYVALUE)
 	{
         _TCHAR tmp[50];
-		for (int j=0;j<tb->tableDef()->keyCount;j++)
+		for (int j=0;j<tableDef()->keyCount;j++)
 		{
 			_stprintf_s(tmp, 50, _T("[key%d]\n"), j);
 			s += tmp;
-			for (int i=0;i<tb->tableDef()->keyDefs[j].segmentCount;i++)
+			for (int i=0;i<tableDef()->keyDefs[j].segmentCount;i++)
 			{
-				short fnum = tb->tableDef()->keyDefs[j].segments[i].fieldNum;
-				s += std::_tstring(tb->tableDef()->fieldDefs[fnum].name())
-                    + _T(" = ") + tb->getFVstr(fnum) + _T("\n");
+				short fnum = tableDef()->keyDefs[j].segments[i].fieldNum;
+				s += std::_tstring(tableDef()->fieldDefs[fnum].name())
+                    + _T(" = ") + getFVstr(fnum) + _T("\n");
 			}
 		}
 
 	}
 
     _stprintf_s(buf, bufsize, _T("table:%s\nstat:%d\n%s")
-                                        ,tb->tableDef()->tableName()
-                                        ,tb->stat()
+                                        ,tableDef()->tableName()
+                                        ,stat()
                                         ,s.c_str());
 }
 

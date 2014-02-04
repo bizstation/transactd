@@ -36,7 +36,6 @@ namespace tdap
 namespace client
 {
 
-
 class logic
 {
     std::_tstring m_name;
@@ -69,8 +68,6 @@ public:
 		}
 };
 
-
-
 class databaseManager : boost::noncopyable
 {
     database* m_db;
@@ -98,110 +95,6 @@ public:
     database* db(){return m_db;}
 
 };
-
-
-
-
-class cursor
-{
-
-
-
-protected:
-	table_ptr m_table;
-
-public:
-    cursor(databaseManager& mgr, const _TCHAR* name)
-	{
-        m_table = mgr.table(name);
-	}
-
-    cursor(database_ptr& db, const _TCHAR* name)
-    {
-        m_table = openTable(db, name);
-    }
-
-    cursor(database* db, const _TCHAR* name)
-    {
-        m_table = openTable(db, name);
-    }
-
-    inline cursor& index(int v)
-    {
-        m_table->setKeyNum(v);
-        return *this;
-    }
-
-    template <class T0>
-	inline cursor& keyValue(const T0 kv0)
-	{
-        keyValueSetter<T0>::set(m_table, m_table->keyNum(), kv0);
-        return *this;
-	}
-
-    template <class T0, class T1>
-	inline cursor& keyValue(const T0 kv0, const T1 kv1)
-	{
-        keyValueSetter<T0, T1>::set(m_table, m_table->keyNum(), kv0, kv1);
-        return *this;
-	}
-
-    template <class T0, class T1 , class T2>
-	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2)
-	{
-        keyValueSetter<T0, T1, T2>::set(m_table, m_table->keyNum(), kv0, kv1, kv2);
-        return *this;
-	}
-
-    template <class T0, class T1 , class T2, class T3>
-	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
-	{
-        keyValueSetter<T0, T1, T2, T3>::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3);
-        return *this;
-	}
-
-    template <class T0, class T1 , class T2, class T3, class T4>
-	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
-                            ,const T4 kv4)
-	{
-        keyValueSetter<T0, T1, T2, T3, T4>
-                ::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3, kv4);
-        return *this;
-	}
-
-    template <class T0, class T1 , class T2, class T3, class T4, class T5 >
-	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
-                            ,const T4 kv4, const T5 kv5)
-	{
-        keyValueSetter<T0, T1, T2, T3, T4, T5>
-                ::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5);
-        return *this;
-	}
-
-    template <class T0, class T1 , class T2, class T3, class T4, class T5 , class T6>
-	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
-                            ,const T4 kv4, const T5 kv5, const T6 kv6)
-	{
-        keyValueSetter<T0, T1, T2, T3, T4, T5, T6>
-                ::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6);
-        return *this;
-	}
-
-    template <class T0, class T1 , class T2, class T3
-                ,class T4, class T5 , class T6 , class T7>
-	inline cursor& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
-                            ,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
-	{
-        keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>
-                ::set(m_table, m_table->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
-        return *this;
-	}
-
-    inline table_ptr table() const {return m_table;};
-
-};
-
-
 
 class query : public queryBase
 {
@@ -359,16 +252,7 @@ public:
 
 };
 
-/*
-template <class Containor>
-inline typename Containor::iterator begin(Containor& m){return m.begin();}
 
-template <class Containor>
-inline typename Containor::iterator end(Containor& m){return m.end();}
-
-template <class Containor, class T>
-inline void push_back(Containor& m, T c){return m.push_back(c);}
-*/
 template <class T>
 inline std::vector<T>::iterator begin(std::vector<T>& m){return m.begin();}
 
@@ -378,32 +262,43 @@ inline std::vector<T>::iterator end(std::vector<T>& m){return m.end();}
 template <class T>
 inline void push_back(std::vector<T>& m, T c){return m.push_back(c);}
 
-/* Collection operation handlter
+/* Container operation handlter
 
 */
 template <class MAP
-            , class MDLSTYPE
+            , class Container
             , class T=MAP::mdl_typename
             , class FDI=MAP::fdi_typename>
 class mdlsHandler
 {
     typedef std::vector<boost::shared_ptr<typename T> > collection_vec_type;
-
     mdlsHandler();
+
 protected:
-    MDLSTYPE& m_mdls;
+    Container& m_mdls;
     int m_option;
     FDI* m_fdi;
     MAP* m_map;
 
+    template <class mdls_type>
+    void addContainer(T* u, typename mdls_type::item_type* p )
+    {
+        mdls_type::item_type ptr(u);
+        push_back(m_mdls, ptr);
+    }
+
+    template <class mdls_type>
+    void addContainer(T* u, ...)
+    {
+        push_back(m_mdls, boost::shared_ptr<T>(u));
+    }
 
 
 public:
-    mdlsHandler(MDLSTYPE& mdls)
-        :m_mdls(mdls){}
+    mdlsHandler(Container& mdls):m_mdls(mdls){}
 
     virtual ~mdlsHandler(){};
-    /* 初期化 */
+
     void init(int option, FDI* fdi, MAP& map)
     {
         m_option = option;
@@ -411,26 +306,11 @@ public:
         m_map = &map;
     }
 
-    template <class mdls_type>
-    void addCollection(T* u, typename mdls_type::item_type* p )
-    {
-        mdls_type::item_type ptr(u);
-        //m_mdls.push_back(ptr);
-        push_back(m_mdls, ptr);
-    }
-
-    template <class mdls_type>
-    void addCollection(T* u, ...)
-    {
-        //m_mdls.push_back(boost::shared_ptr<T>(u));
-        push_back(m_mdls, boost::shared_ptr<T>(u));
-    }
-
     void operator()(const fields& fds)
     {
-        T* u(create(m_mdls));
+        T* u(create(m_mdls, m_option));
         m_map->readMap(*u, fds, m_option);
-        addCollection<MDLSTYPE>(u, 0);
+        addContainer<Container>(u, 0);
     }
 
 };
@@ -461,8 +341,6 @@ bool sortFuncBase(T&l, T& r , RET (T::*func1)() const)
 {
     RET retl = (l.*func1)();
     RET retr = (r.*func1)();
-    //return (l.*func1)() < (r.*func1)();
-
     return retl < retr;
 }
 
@@ -510,31 +388,31 @@ public:
     }
 };
 
-template <class MDLS, class FUNC1, class FUNC2, class FUNC3>
-void sort(MDLS& mdls, FUNC1 func1, FUNC2 func2, FUNC3 func3 )
+template <class Container, class FUNC1, class FUNC2, class FUNC3>
+void sort(Container& mdls, FUNC1 func1, FUNC2 func2, FUNC3 func3 )
 {
     sortFunctor<FUNC1, FUNC2, FUNC3> functor(func1, func2, func3);
     std::sort(begin(mdls), end(mdls), functor);
 }
 
-template <class MDLS, class FUNC1, class FUNC2>
-void sort(MDLS& mdls, FUNC1 func1, FUNC2 func2)
+template <class Container, class FUNC1, class FUNC2>
+void sort(Container& mdls, FUNC1 func1, FUNC2 func2)
 {
     sortFunctor<FUNC1, FUNC2, FUNC1> functor(func1, func2, NULL);
     std::sort(begin(mdls), end(mdls), functor);
 }
 
-template <class MDLS, class FUNC1>
-void sort(MDLS& mdls, FUNC1 func1)
+template <class Container, class FUNC1>
+void sort(Container& mdls, FUNC1 func1)
 {
     sortFunctor<FUNC1, FUNC1, FUNC1> functor(func1, NULL, NULL);
     std::sort(begin(mdls), end(mdls), functor);
 }
 
-template <class T2, class T, class MDLS>
-inline boost::shared_ptr<std::vector<T> > listup(MDLS& mdls, T (T2::*func)()const)
+template <class T2, class T, class Container>
+inline boost::shared_ptr<std::vector<T> > listup(Container& mdls, T (T2::*func)()const)
 {
-    typename MDLS::iterator it = begin(mdls), ite = end(mdls);
+    typename Container::iterator it = begin(mdls), ite = end(mdls);
 
 	boost::shared_ptr<std::vector<T> > mdlst( new std::vector<T>());
     while(it != ite)
@@ -547,47 +425,136 @@ inline boost::shared_ptr<std::vector<T> > listup(MDLS& mdls, T (T2::*func)()cons
 	return mdlst;
 }
 
-
 template <class MAP, class T=MAP::mdl_typename, class FDI=MAP::fdi_typename>
 class activeTable : boost::noncopyable
 {
     typedef std::vector<boost::shared_ptr<T> > collection_vec_type;
-
+    table_ptr m_tb;
     FDI* m_fdi;
     MAP m_map;
     int m_option;
-    cursor m_cb;
     bool m_useTransactd;
 
     inline size_t size(collection_vec_type& mdls){return mdls.size();}
     inline T& getItem(collection_vec_type& mdls, unsigned int index){return *(mdls[index]);}
+    void init(databaseManager& mgr, const _TCHAR* name)
+	{
+        m_tb = mgr.table(name);
+	}
+
+    void init(database_ptr& db, const _TCHAR* name)
+    {
+        m_tb = openTable(db, name);
+    }
+
+    void init(database* db, const _TCHAR* name)
+    {
+        m_tb = openTable(db, name);
+    }
 
 public:
+
     activeTable(databaseManager& mgr)
             :m_option(0)
             ,m_fdi(createFdi(m_fdi))
             ,m_map(*m_fdi)
-            ,m_cb(mgr, m_map.getTableName())
             ,m_useTransactd(mgr.db()->isUseTransactd())
             {
-                if (m_cb.table() && m_fdi)
-                    initFdi(m_fdi, m_cb.table().get());
+                init(mgr, m_map.getTableName());
+                if (table() && m_fdi)
+                    initFdi(m_fdi, m_tb.get());
             }
 
     activeTable(database_ptr& db)
             :m_option(0)
             ,m_fdi(createFdi(m_fdi))
             ,m_map(*m_fdi)
-            ,m_cb(db, m_map.getTableName())
             ,m_useTransactd(db->isUseTransactd())
             {
-                if (m_cb.table() && m_fdi)
-                    initFdi(m_fdi, m_cb.table().get());
+                init(db, m_map.getTableName());
+                if (table() && m_fdi)
+                    initFdi(m_fdi, m_tb.get());
             }
 
     ~activeTable(){destroyFdi(m_fdi);}
 
-    cursor& cursor(){return m_cb;}
+    inline void beginBulkInsert(int maxBuflen){m_tb->beginBulkInsert(maxBuflen);}
+    inline void abortBulkInsert(){m_tb->abortBulkInsert();}
+    inline ushort_td commitBulkInsert() {m_tb->commitBulkInsert();}
+
+    activeTable& index(int v)
+    {
+        m_tb->clearBuffer();
+        m_tb->setKeyNum(v);
+        return *this;
+    }
+
+    template <class T0>
+	activeTable& keyValue(const T0 kv0)
+	{
+        keyValueSetter<T0>::set(m_tb, m_tb->keyNum(), kv0);
+        return *this;
+	}
+
+    template <class T0, class T1>
+	activeTable& keyValue(const T0 kv0, const T1 kv1)
+	{
+        keyValueSetter<T0, T1>::set(m_tb, m_tb->keyNum(), kv0, kv1);
+        return *this;
+	}
+
+    template <class T0, class T1 , class T2>
+	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2)
+	{
+        keyValueSetter<T0, T1, T2>::set(m_tb, m_tb->keyNum(), kv0, kv1, kv2);
+        return *this;
+	}
+
+    template <class T0, class T1 , class T2, class T3>
+	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
+	{
+        keyValueSetter<T0, T1, T2, T3>::set(m_tb, m_tb->keyNum(), kv0, kv1, kv2, kv3);
+        return *this;
+	}
+
+    template <class T0, class T1 , class T2, class T3, class T4>
+	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+                            ,const T4 kv4)
+	{
+        keyValueSetter<T0, T1, T2, T3, T4>
+                ::set(m_tb, m_tb->keyNum(), kv0, kv1, kv2, kv3, kv4);
+        return *this;
+	}
+
+    template <class T0, class T1 , class T2, class T3, class T4, class T5 >
+	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+                            ,const T4 kv4, const T5 kv5)
+	{
+        keyValueSetter<T0, T1, T2, T3, T4, T5>
+                ::set(m_tb, m_tb->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5);
+        return *this;
+	}
+
+    template <class T0, class T1 , class T2, class T3, class T4, class T5 , class T6>
+	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+                            ,const T4 kv4, const T5 kv5, const T6 kv6)
+	{
+        keyValueSetter<T0, T1, T2, T3, T4, T5, T6>
+                ::set(m_tb, m_tb->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6);
+        return *this;
+	}
+
+    template <class T0, class T1 , class T2, class T3
+                ,class T4, class T5 , class T6 , class T7>
+	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+                            ,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
+	{
+        keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>
+                ::set(m_tb, m_tb->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
+        return *this;
+	}
+
+    inline table_ptr table() const {return m_tb;};
 
     activeTable& option(int v)
     {
@@ -595,137 +562,160 @@ public:
         return *this;
     }
 
-    template <class MDLSMAP>
-    void readsBy(MDLSMAP& map, queryBase& q)
+    template <class Any_Map_type>
+    void readRange(Any_Map_type& map, queryBase& q)
     {
         map.init(m_option, m_fdi, m_map);
-        table_ptr tb = m_cb.table();
+        m_tb->setQuery(&q);
+        if (m_tb->stat())
+            nstable::throwError(_T("Query is inaccurate"), &(*m_tb));
 
-        tb->setQuery(&q);
-        if (tb->stat())
-            nstable::throwError(_T("Query is inaccurate"), &(*tb));
-
-        tb->find(q.getDirection());
+        m_tb->find(q.getDirection());
         if (q.getDirection() == table::findForword)
         {
-            findIterator itsf(*tb);
+            findIterator itsf(*m_tb);
             for_each(itsf, map);
         }else
         {
-            findRvIterator itsf(*tb);
+            findRvIterator itsf(*m_tb);
             for_each(itsf, map);
         }
     }
 
 
-    template <class MDLSMAP>
-    void readsBy(MDLSMAP& map, queryBase& q, validationFunc func)
+    template <class Any_Map_type>
+    void readRange(Any_Map_type& map, queryBase& q, validationFunc func)
     {
         map.init(m_option, m_fdi, m_map);
-        table_ptr tb = m_cb.table();
-        tb->setQuery(&q);
-        if (tb->stat())
-            nstable::throwError(_T("Query is inaccurate"), &(*tb));
-        tb->find(q.getDirection());
+        m_tb->setQuery(&q);
+        if (m_tb->stat())
+            nstable::throwError(_T("Query is inaccurate"), &(*m_tb));
+        m_tb->find(q.getDirection());
         if (q.getDirection() == table::findForword)
         {
-            findIterator itsf(*tb);
+            findIterator itsf(*m_tb);
             filterdFindIterator it(itsf, func);
             for_each(it, map);
         }else
         {
-            findRvIterator itsf(*tb);
+            findRvIterator itsf(*m_tb);
             filterdFindRvIterator it(itsf, func);
             for_each(it, map);
         }
     }
 
-
-    inline void reads(collection_vec_type& mdls, queryBase& q, validationFunc func)
+    void read(collection_vec_type& mdls, queryBase& q, validationFunc func)
     {
         mdlsHandler<MAP, collection_vec_type> map(mdls);
-        readsBy(map, q, func);
+        readRange(map, q, func);
     }
 
-    inline void reads(collection_vec_type& mdls, queryBase& q)
+    void read(collection_vec_type& mdls, queryBase& q)
     {
         mdlsHandler<MAP, collection_vec_type> map(mdls);
-        readsBy(map, q);
+        readRange(map, q);
     }
 
-    template <class MDLS>
-    inline void reads(MDLS& mdls, queryBase& q)
+    template <class Container>
+    void read(Container& mdls, queryBase& q)
     {
         typename MAP::collection_orm_typename map(mdls);
-        readsBy(map, q);
+        readRange(map, q);
     }
 
-    template <class MDLS>
-    inline void reads(MDLS& mdls, queryBase& q, validationFunc func)
+    template <class Container>
+    void read(Container& mdls, queryBase& q, validationFunc func)
     {
         typename MAP::collection_orm_typename map(mdls);
-        readsBy(map, q, func);
+        readRange(map, q, func);
     }
 
-    void read(T& mdl)
+    void read(T& mdl, bool setKeyValueFromObj=true)
     {
-        table_ptr tb = m_cb.table();
-        indexIterator it = readIndex(tb, eSeekEqual);
-        if (tb->stat() != 0)
-            nstable::throwError(_T("activeTable read"), &(*tb));
-
-        fields fds(tb);
+        fields fds(m_tb);
+        if (setKeyValueFromObj)
+            m_map.setKeyValues(mdl, fds, m_tb->keyNum());
+        indexIterator it = readIndex(m_tb, eSeekEqual);
+        if (m_tb->stat() != 0)
+            nstable::throwError(_T("activeTable read"), &(*m_tb));
         m_map.readMap(mdl, fds, m_option);
     }
 
-    void update(T& mdl)
+    void update(T& mdl, bool setKeyValueFromObj=true)
     {
-        table_ptr tb = m_cb.table();
-        indexIterator it = readIndex(tb, eSeekEqual);
-        if (tb->stat() != 0)
-            nstable::throwError(_T("activeTable update"), &(*tb));
+        fields fds(m_tb);
+        if (setKeyValueFromObj)
+            m_map.setKeyValues(mdl, fds, m_tb->keyNum());
+        indexIterator it = readIndex(m_tb, eSeekEqual);
+        if (m_tb->stat() != 0)
+            nstable::throwError(_T("activeTable update"), &(*m_tb));
 
-        fields fds(tb);
         m_map.writeMap(mdl, fds, m_option);
         updateRecord(it);
 
     }
 
+    template <class Container>
+    void update(Container& mdls)
+    {
+        typename Container::iterator it = begin(mdls),ite = end(mdls);
+        while (it != ite)
+            update(*it);
+
+    }
+
+    // No need object
     void del()
     {
-        table_ptr tb = m_cb.table();
-        readIndex(tb, eSeekEqual);
-        if (tb->stat() != 0)
-            nstable::throwError(_T("activeTable delete"), &(*tb));
-        tb->del();
+        readIndex(m_tb, eSeekEqual);
+        if (m_tb->stat() != 0)
+            nstable::throwError(_T("activeTable delete"), &(*m_tb));
+        m_tb->del();
     }
 
     //Recieve delete record by mdl
-    void del(T& mdl)
+    void del(T& mdl, bool setKeyValueFromObj=true)
     {
-        read(mdl);
-        m_cb.table()->del();
+        read(mdl, setKeyValueFromObj);
+        m_tb->del();
+    }
+
+    template <class Container>
+    void del(Container& mdls)
+    {
+        typename Container::iterator it = begin(mdls),ite = end(mdls);
+        while (it != ite)
+            del(*it);
+
     }
 
     void insert(T& mdl)
     {
-
-        fields fds(m_cb.table());
+        fields fds(m_tb);
         m_map.writeMap(mdl, fds, m_option);
         insertRecord(fds);
-        // set autoincrement value
         m_map.readAuntoincValue(mdl, fds, m_option);
     }
 
-    void save(T& mdl)
+    template <class Container>
+    void insert(Container& mdls)
     {
-        table_ptr tb = m_cb.table();
-        indexIterator it = readIndex(tb, eSeekEqual);
-        if (it.tb().stat() == STATUS_NOT_FOUND_TI)
+        typename Container::iterator it = begin(mdls),ite = end(mdls);
+        while (it != ite)
+            insert(*it);
+
+    }
+
+    void save(T& mdl, bool setKeyValueFromObj=true)
+    {
+        fields fds(m_tb);
+        if (setKeyValueFromObj)
+            m_map.setKeyValues(mdl, fds, m_tb->keyNum());
+        indexIterator it = readIndex(m_tb, eSeekEqual);
+        if (m_tb->stat() == STATUS_NOT_FOUND_TI)
             insert(mdl);
         else
         {
-            fields fds(tb);
             m_map.writeMap(mdl, fds, m_option);
             updateRecord(it);
         }
@@ -734,13 +724,12 @@ public:
     /* mdlsがキーフィールドに対応するメンバによってソート済の時は
        sortedをtrueにします。検索するレコードと通信量が激減します。
     */
-    template <class MDLS>
-    void readEach(MDLS& mdls, queryBase& q, bool sorted=false, bzs::rtl::exception* e=NULL)
+    template <class Container>
+    void readEach(Container& mdls, queryBase& q, bool sorted=false, bzs::rtl::exception* e=NULL)
     {
         q.clearSeekKeyValues();
-        table_ptr tb = m_cb.table();
-        fields fds(tb);
-        typename MDLS::iterator it = begin(mdls),itb = begin(mdls),ite = end(mdls);
+        fields fds(m_tb);
+        typename Container::iterator it = begin(mdls),itb = begin(mdls),ite = end(mdls);
         it = itb = begin(mdls);
         T& mdlb = *(*it);
         if (!m_useTransactd)
@@ -751,83 +740,79 @@ public:
             T& mdl = *(*it);
             if ((it == itb)
                     || !sorted
-                    || (m_map.compKeyValue(mdl, mdlb, tb->keyNum())==true)
-                    || (m_map.compKeyValue(mdlb, mdl, tb->keyNum())==true))
+                    || (m_map.compKeyValue(mdl, mdlb, m_tb->keyNum())==true)
+                    || (m_map.compKeyValue(mdlb, mdl, m_tb->keyNum())==true))
             {
-                m_map.setKeyValues(mdl, fds, tb->keyNum());
-                keydef* kd = &tb->tableDef()->keyDefs[tb->keyNum()];
+                m_map.setKeyValues(mdl, fds, m_tb->keyNum());
+                keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
                 for (int i=0;i<kd->segmentCount;++i)
                     q.addSeekKeyValue(fds[kd->segments[i].fieldNum].c_str());
             }
             mdlb = mdl;
             ++it;
         }
-        tb->setQuery(&q);
-        if (tb->stat() != 0)
-            nstable::throwError(_T("activeTable readEach Query"), &(*tb));
-        tb->find();
+        m_tb->setQuery(&q);
+        if (m_tb->stat() != 0)
+            nstable::throwError(_T("activeTable readEach Query"), &(*m_tb));
+        m_tb->find();
         //見つからないレコードがあると、その時点でエラーで返る
         //行ごとにエラーかどうかわかった方がよい。
         it = itb = begin(mdls);
         while(it != ite)
         {
-            if (tb->stat() != 0)
-                nstable::throwError(_T("activeTable readEach"), &(*tb));
+            if (m_tb->stat() != 0)
+                nstable::throwError(_T("activeTable readEach"), &(*m_tb));
             T& mdl = *(*it);
             if ((it != itb) &&
                 (!sorted
-                    || (m_map.compKeyValue(mdl, mdlb, tb->keyNum())==true)
-                    || (m_map.compKeyValue(mdlb, mdl, tb->keyNum())==true)))
+                    || (m_map.compKeyValue(mdl, mdlb, m_tb->keyNum())==true)
+                    || (m_map.compKeyValue(mdlb, mdl, m_tb->keyNum())==true)))
             {
-                tb->findNext();
-                if (tb->stat() != 0)
+                m_tb->findNext();
+                if (m_tb->stat() != 0)
                 {
-                    _TCHAR buf[4096];
-                    table::keyValueDescription(tb.get(), buf, 4096);
+                    _TCHAR buf[8192];
+                    m_tb->keyValueDescription(buf, 8192);
                     if (e)
-                        *e << bzs::rtl::errnoCode(tb->stat()) << bzs::rtl::errMessage(buf);
+                        *e << bzs::rtl::errnoCode(m_tb->stat()) << bzs::rtl::errMessage(buf);
                     else
-                        THROW_BZS_ERROR_WITH_CODEMSG(tb->stat(), buf);
+                        THROW_BZS_ERROR_WITH_CODEMSG(m_tb->stat(), buf);
                 }
 
             }
-            if (tb->stat() == 0)
+            if (m_tb->stat() == 0)
                 m_map.readMap(mdl, fds, m_option);
             mdlb = mdl;
             ++it;
         }
-
     }
 
     /** Join相当の処理を事前ソートして高速に行います。
     */
-    template <class BASEMDLS, class T2>
-    void readEach(BASEMDLS& mdls, T* (T2::*func)()const, queryBase& q)
+    template <class BaseContainer, class T2>
+    void readEach(BaseContainer& mdls, T* (T2::*func)()const, queryBase& q)
     {
         boost::shared_ptr<std::vector<T*> > refList(listup(mdls, func));
-        table_ptr tb = m_cb.table();
-        compFunc<MAP, T> comp(m_map, tb->keyNum());
+        compFunc<MAP, T> comp(m_map, m_tb->keyNum());
         std::sort(refList->begin(), refList->end(), comp);
         readEach(*refList, q, true, NULL);
     }
 
-    template <class BASEMDLS, class T2>
-    void readEach(BASEMDLS& mdls, T* (T2::*func)()const, queryBase& q, bzs::rtl::exception& e)
+    template <class BaseContainer, class T2>
+    void readEach(BaseContainer& mdls, T* (T2::*func)()const, queryBase& q, bzs::rtl::exception& e)
     {
         boost::shared_ptr<std::vector<T*> > refList(listup(mdls, func));
-        table_ptr tb = m_cb.table();
-        compFunc<MAP, T> comp(m_map, tb->keyNum());
+        compFunc<MAP, T> comp(m_map, m_tb->keyNum());
         std::sort(refList->begin(), refList->end(), comp);
         readEach(*refList, q, true, &e);
     }
 
     /* No use field select */
-    template <class MDLS>
-    void readEach(MDLS& mdls, bool sorted=false, bzs::rtl::exception* e=NULL)
+    template <class Container>
+    void readEach(Container& mdls, bool sorted=false, bzs::rtl::exception* e=NULL)
     {
-        table_ptr tb = m_cb.table();
-        fields fds(tb);
-        typename MDLS::iterator it = mdls.begin(),itb = mdls.begin(),ite = end(mdls);
+        fields fds(m_tb);
+        typename Container::iterator it = mdls.begin(),itb = mdls.begin(),ite = end(mdls);
         it = itb = begin(mdls);
         T& mdlb = *(*it);
         while(it != ite)
@@ -835,22 +820,22 @@ public:
             T& mdl = *(*it);
             if ((it == itb)
                     || !sorted
-                    || (m_map.compKeyValue(mdl, mdlb, tb->keyNum())==true)
-                    || (m_map.compKeyValue(mdlb, mdl, tb->keyNum())==true))
+                    || (m_map.compKeyValue(mdl, mdlb, m_tb->keyNum())==true)
+                    || (m_map.compKeyValue(mdlb, mdl, m_tb->keyNum())==true))
             {
-                m_map.setKeyValues(mdl, fds, tb->keyNum());
-                readIndex(tb, eSeekEqual);
-                if (tb->stat() != 0)
+                m_map.setKeyValues(mdl, fds, m_tb->keyNum());
+                readIndex(m_tb, eSeekEqual);
+                if (m_tb->stat() != 0)
                 {
-                    _TCHAR buf[4096];
-                    table::keyValueDescription(tb.get(), buf, 4096);
+                    _TCHAR buf[8192];
+                    m_tb->keyValueDescription(buf, 8192);
                     if (e)
-                        *e << bzs::rtl::errnoCode(tb->stat()) << bzs::rtl::errMessage(buf);
+                        *e << bzs::rtl::errnoCode(m_tb->stat()) << bzs::rtl::errMessage(buf);
                     else
-                        THROW_BZS_ERROR_WITH_CODEMSG(tb->stat(), buf);
+                        THROW_BZS_ERROR_WITH_CODEMSG(m_tb->stat(), buf);
                 }
             }
-            if (tb->stat() == 0)
+            if (m_tb->stat() == 0)
                 m_map.readMap(mdl, fds, m_option);
             mdlb = mdl;
             ++it;
@@ -858,34 +843,24 @@ public:
     }
 
     /* No use field select */
-    template <class BASEMDLS, class T2>
-    void readEach(BASEMDLS& mdls, T* (T2::*func)()const)
+    template <class BaseContainer, class T2>
+    void readEach(BaseContainer& mdls, T* (T2::*func)()const)
     {
-
         boost::shared_ptr<std::vector<T*> > refList(listup(mdls, func));
-        table_ptr tb = m_cb.table();
-        compFunc<MAP, T> comp(m_map, tb->keyNum());
+        compFunc<MAP, T> comp(m_map, m_tb->keyNum());
         std::sort(refList->begin(), refList->end(), comp);
         readEach(*refList, true, NULL);
     }
 
-    template <class BASEMDLS, class T2>
-    void readEach(BASEMDLS& mdls, T* (T2::*func)()const , bzs::rtl::exception& e)
+    template <class BaseContainer, class T2>
+    void readEach(BaseContainer& mdls, T* (T2::*func)()const , bzs::rtl::exception& e)
     {
-
         boost::shared_ptr<std::vector<T*> > refList(listup(mdls, func));
-        table_ptr tb = m_cb.table();
-        compFunc<MAP, T> comp(m_map, tb->keyNum());
+        compFunc<MAP, T> comp(m_map, m_tb->keyNum());
         std::sort(refList->begin(), refList->end(), comp);
         readEach(*refList, true, &e);
     }
-
-
-
 };
-
-//template <class T2, class T, class MDLS>
-//inline boost::shared_ptr<std::vector<T> > listup(MDLS& mdls, T (T2::*func)()const)
 
 
 }// namespace client

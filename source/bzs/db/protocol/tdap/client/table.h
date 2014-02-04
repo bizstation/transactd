@@ -75,6 +75,8 @@ class AGRPACK table : public nstable
     void setFVDecimal(short index, double data);
     void setFVNumeric(short index, double data);
     void doFind( ushort_td op, bool notIncCurrent);
+    bool setSeekValueField(int row);
+
 protected:
     explicit table(nsdatabase *pbe); // Inheritance is impossible
     virtual ~table();
@@ -210,7 +212,7 @@ public:
     void setFV(short index, __int64 data);
     void setFV(const _TCHAR* fieldName, __int64 data);
     void* fieldPtr(short index);
-    static void keyValueDescription(table* tb, _TCHAR* buf, int bufsize);
+    void keyValueDescription(_TCHAR* buf, int bufsize);
 
 };
 

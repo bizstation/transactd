@@ -373,6 +373,7 @@ class filter
     size_t m_seeksWritedCount;
     size_t m_logicalLimitCount;
     table::eFindType m_direction;
+    std::vector<std::_tstring> m_keyValuesCache;
 
     bool addWhere(const _TCHAR* name, const _TCHAR* type, const _TCHAR*  value, char combine, bool compField = false)
     {
@@ -449,6 +450,7 @@ class filter
 
     }
 
+
     bool setSeeks(const std::vector<std::_tstring>& keyValues)
     {
         //Check key values
@@ -459,6 +461,7 @@ class filter
         if (kd->segments[0].flags.bit0)
             return false;
 
+        m_keyValuesCache = keyValues;
         for (size_t i=0;i<keyValues.size();i+= kd->segmentCount)
         {
             for (int j=0;j<kd->segmentCount;++j)
@@ -732,6 +735,8 @@ public:
     bool isSeeksMode()const {return m_seeksMode;}
     table::eFindType direction() const{return m_direction;}
     void setDirection(table::eFindType v) {m_direction = v;}
+    const std::vector<std::_tstring>& keyValuesCache(){return m_keyValuesCache;};
+
 
 };
 
