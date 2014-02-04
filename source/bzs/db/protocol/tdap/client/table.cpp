@@ -159,6 +159,7 @@ class recordCache
     char* m_ptr;
     char* m_tmpPtr;
     blobHeader* m_hd;
+    short_td m_seekMultiStat;
 
 public:
     inline recordCache(table* tb) : m_tb(tb) {reset();}
@@ -207,11 +208,22 @@ public:
                 ++m_hd->curRow;
             }
         }
+
         m_tb->m_impl->strBufs.clear();
+
+        if ((m_len==0) && m_pFilter->isSeeksMode() && m_pFilter->fieldCount())
+        {
+            m_seekMultiStat = m_bookmark;
+            m_bookmark = 0;
+            memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
+            return m_tmpPtr;
+        }else
+            m_seekMultiStat = 0;
+
         if (m_pFilter->fieldSelected())
         {
             int offset = 0;
-            memset(m_tmpPtr, 0, m_len);
+            memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             for (int i = 0; i < m_pFilter->fieldCount(); i++)
             {
                 memcpy((char*)m_tmpPtr + m_pFilter->fieldOffset(i), m_ptr + offset,
@@ -223,6 +235,7 @@ public:
         }
         else if (m_tb->valiableFormatType())
         {
+            memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             memcpy(m_tmpPtr, m_ptr, m_len);
             m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
             m_tb->setBlobFieldPointer(m_tmpPtr, m_hd);
@@ -253,6 +266,7 @@ public:
     inline int rowCount() const {return m_rowCount;}
     inline bool isEndOfRow(unsigned int row) const {return  (m_rowCount && (row == m_rowCount));}
 	inline bool withinCache(unsigned int row) const {return (row < m_rowCount);}
+    inline short_td seekMultiStat(){return m_seekMultiStat;}
 };
 
 // ---------------------------------------------------------------------------
@@ -560,7 +574,7 @@ void table::btrvGetExtend(ushort_td op)
         m_pdata = (void*)m_impl->rc->setRow(0);
         m_datalen = m_impl->rc->len();
 
-        m_stat = STATUS_SUCCESS;
+        m_stat = m_impl->rc->seekMultiStat();
     }else if ((m_stat == STATUS_LIMMIT_OF_REJECT) && (m_impl->filterPtr->rejectCount()>=1))
         m_stat = STATUS_EOF;
 }
@@ -690,6 +704,8 @@ void table::doFind( ushort_td op, bool notIncCurrent)
             if (!checkFindDirection(op))
                 return ;
             m_pdata = (void*)m_impl->rc->setRow(row);
+            //if (m_impl->rc->seekMultiStat())
+            m_stat = m_impl->rc->seekMultiStat();
             m_datalen = m_impl->rc->len();
         }
         else if (m_impl->rc->isEndOfRow(row))

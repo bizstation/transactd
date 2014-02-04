@@ -650,7 +650,7 @@ bool table::setNonKey(bool scan)
 	return true;
 }
 
-bool table::setKeyNum(char num)
+bool table::setKeyNum(char num, bool sorted)
 {
 	if ((m_keyNum != num) || ((m_keyNum >= 0)&& (m_table->file->inited == handler::NONE)))
 	{
@@ -659,7 +659,7 @@ bool table::setKeyNum(char num)
 		if(keynumCheck(num))
 		{
 			m_keyNum = num;
-			m_table->file->ha_index_init(m_keyNum, 1/*sorted*/);
+			m_table->file->ha_index_init(m_keyNum, sorted);
 			return true;
 		}
 		else
@@ -1492,16 +1492,44 @@ ha_rows table::recordCount(bool estimate)
 			return rows;
 	}
 	uint n = 0;
-	m_table->read_set= &m_table->tmp_set;
+	m_table->read_set = &m_table->tmp_set;
+	m_table->write_set = &m_table->tmp_set;
 	bitmap_clear_all(m_table->read_set);
-	setNonKey(true/*scan*/);
-	m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
-	while (m_stat == 0)
+	//bitmap_clear_all(m_table->write_set);
+	
+	char keynum = m_keyNum;
+	int inited = m_table->file->inited;
+	m_table->file->ha_index_or_rnd_end();
+	m_table->set_keyread(true);
+	if (setKeyNum((char)0, false/*sorted*/))
 	{
-		n++;
-		m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
+		m_stat = m_table->file->ha_index_first(m_table->record[0]);
+		while (m_stat == 0)
+		{
+			n++;
+			m_stat = m_table->file->ha_index_next(m_table->record[0]);
+		}
+		m_table->set_keyread(false);
+
+		//restore index init
+		if ((inited == (int)handler::INDEX) && (m_keyNum != keynum))
+			setKeyNum(keynum);
+		else if((inited == (int)handler::RND))
+			setNonKey(true/*scan*/);
 	}
+	else
+	{
+		setNonKey(true/*scan*/);
+		m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
+		while (m_stat == 0)
+		{
+			n++;
+			m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
+		}
+	}
+	m_table->set_keyread(false);
 	m_table->read_set = &m_table->s->all_set;
+	m_table->write_set = &m_table->s->all_set;
 	return n;
 }
 

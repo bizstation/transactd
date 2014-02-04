@@ -458,36 +458,42 @@ class resultWriter
 		memcpy(m_buf + m_resultLen, (const char*)&bookmark,  sizeof(unsigned int));
 		m_resultLen += sizeof(unsigned int);
 		
-		if ((m_def->fieldCount == 1) && (m_def->field[0].len >= pos->recordLenCl()))
-		{	//write whole row
-			int len = pos->recordLenCl();
-			if (m_maxLen + RETBUF_EXT_RESERVE_SIZE >= m_resultLen + len)
-			{
-				int maxlen = m_maxLen + RETBUF_EXT_RESERVE_SIZE - m_resultLen;
-				len =  pos->recordPackCopy(m_buf + m_resultLen, maxlen);
-				if (len == 0)
-					return STATUS_BUFFERTOOSMALL;
-				m_resultLen += len;
-				recLen += len;
-			}else
-				return STATUS_BUFFERTOOSMALL;
-		}else
+		//if pos ==NULL , that is not found record in a TD_KEY_SEEK_MULTI operation
+		// and bookmark has error code also STATUS_NOT_FOUND_TI 
+		// in the client, fieldCount > 0 buf recLen=0 then this pattern
+		if (pos)
 		{
-			//write each fields by field num.
-			for (int i=0;i<m_def->fieldCount;i++)
-			{
-				resultField& fd = m_def->field[i];
-				if (m_maxLen+RETBUF_EXT_RESERVE_SIZE>= m_resultLen + fd.len)
+			if ((m_def->fieldCount == 1) && (m_def->field[0].len >= pos->recordLenCl()))
+			{	//write whole row
+				int len = pos->recordLenCl();
+				if (m_maxLen + RETBUF_EXT_RESERVE_SIZE >= m_resultLen + len)
 				{
-					//memcpy(m_buf + m_resultLen, pos->record() + fd.pos,  fd.len);
-					memcpy(m_buf + m_resultLen, pos->fieldPtr(&fd),  fd.len);
-					m_resultLen += fd.len;
-					recLen += fd.len;
-					if (pos->isBlobField(&fd))
-						pos->addBlobBuffer(fd.fieldNum);
-				}
-				else
+					int maxlen = m_maxLen + RETBUF_EXT_RESERVE_SIZE - m_resultLen;
+					len =  pos->recordPackCopy(m_buf + m_resultLen, maxlen);
+					if (len == 0)
+						return STATUS_BUFFERTOOSMALL;
+					m_resultLen += len;
+					recLen += len;
+				}else
 					return STATUS_BUFFERTOOSMALL;
+			}else
+			{
+				//write each fields by field num.
+				for (int i=0;i<m_def->fieldCount;i++)
+				{
+					resultField& fd = m_def->field[i];
+					if (m_maxLen+RETBUF_EXT_RESERVE_SIZE>= m_resultLen + fd.len)
+					{
+						//memcpy(m_buf + m_resultLen, pos->record() + fd.pos,  fd.len);
+						memcpy(m_buf + m_resultLen, pos->fieldPtr(&fd),  fd.len);
+						m_resultLen += fd.len;
+						recLen += fd.len;
+						if (pos->isBlobField(&fd))
+							pos->addBlobBuffer(fd.fieldNum);
+					}
+					else
+						return STATUS_BUFFERTOOSMALL;
+				}
 			}
 		}
 		//write recLength;
@@ -654,21 +660,32 @@ public:
 		return m_req->match(m_position.record(), typeNext, m_fieldInfoCache);
 	}
 
-	short write(const unsigned char* bmPtr, unsigned int bmlen)
+	short write(const unsigned char* bmPtr, unsigned int bmlen, short stat=0)
 	{
 		unsigned int bookmark = 0;
-		switch(bmlen)
+		//if bmPtr ==NULL , that is not found record in a TD_KEY_SEEK_MULTI operation
+		// and set error code to bookmark also STATUS_NOT_FOUND_TI 
+		if (bmPtr == NULL)
 		{
-		case 4:
-			bookmark = *((unsigned int*)bmPtr);break;
-		case 2:
-			bookmark = *((unsigned short*)bmPtr);break;
-		case 3:
-			bookmark = *((unsigned int*)bmPtr) & 0x0FFFFFF;break;
-		case 1:
-			bookmark = *((unsigned short*)bmPtr) & 0x0FF;break;
+			bookmark = stat;
+			return m_writer->write(NULL, bookmark);
 		}
-		return m_writer->write(&m_position, bookmark);
+		else
+		{
+			switch(bmlen)
+			{
+			case 4:
+				bookmark = *((unsigned int*)bmPtr);break;
+			case 2:
+				bookmark = *((unsigned short*)bmPtr);break;
+			case 3:
+				bookmark = *((unsigned int*)bmPtr) & 0x0FFFFFF;break;
+			case 1:
+				bookmark = *((unsigned short*)bmPtr) & 0x0FF;break;
+			}
+			return m_writer->write(&m_position, bookmark);
+		}
+		
 	}
 	unsigned short rejectCount(){return m_req->rejectCount;};
 	unsigned short maxRows(){return m_resultDef->maxRows;};

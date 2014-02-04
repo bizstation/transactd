@@ -283,8 +283,8 @@ public:
 		return m_keyconv.keyNumByMakeOrder(num);
 	}
 	
-	bool setKeyNum(char num);
-	inline void setKeyNum(const char* name){setKeyNum(keynumByName(name));};
+	bool setKeyNum(char num, bool sorted = true);
+	inline void setKeyNum(const char* name, bool sorted = true){setKeyNum(keynumByName(name), sorted);};
 	bool isNisKey(char num)const;
 	void seekKey(enum ha_rkey_function find_flag);
 	void getNextSame();

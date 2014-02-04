@@ -329,7 +329,9 @@ void testFindIn(database* db)
     tb->clearBuffer();
     queryBase q;
     q.addSeekKeyValue(_T("10"), true);
+    q.addSeekKeyValue(_T("300000"));
     q.addSeekKeyValue(_T("50"));
+    q.addSeekKeyValue(_T("-1"));
     q.addSeekKeyValue(_T("80"));
     q.addSeekKeyValue(_T("5000"));
 
@@ -341,7 +343,11 @@ void testFindIn(database* db)
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 10, "find in 10");
     tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in 300000");
+    tb->findNext();
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 50, "find in 50");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in -1");
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 80, "find in 80");
     tb->findNext();

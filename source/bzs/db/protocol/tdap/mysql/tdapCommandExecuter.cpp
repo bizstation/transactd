@@ -546,9 +546,10 @@ inline short dbExecuter::seekEach(extRequest* ereq)
 	{
 		m_tb->setKeyValuesPacked(fd->ptr, fd->len);
 		m_tb->seekKey(HA_READ_KEY_EXACT);
-		stat = m_tb->stat();
-		if (stat == 0)
+		if (m_tb->stat() == 0)
 			stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
+		else 
+			stat = m_readHandler->write(NULL, m_tb->posPtrLen(), errorCodeSht(m_tb->stat()));
 		if (stat) break;	
 		fd = fd->next();
 	}

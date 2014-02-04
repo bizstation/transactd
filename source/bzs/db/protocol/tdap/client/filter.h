@@ -724,6 +724,10 @@ public:
 
     bool ignoreFields() const {return m_ignoreFields;}
 
+    /* The Ignore fields option don't use with multi seek operation.
+       because if a server are not found a record then a server return
+       error code in a bookmark field.
+    */
     void setIgnoreFields(bool v){m_ignoreFields = v;}
     bool isSeeksMode()const {return m_seeksMode;}
     table::eFindType direction() const{return m_direction;}
