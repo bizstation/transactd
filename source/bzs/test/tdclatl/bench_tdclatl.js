@@ -217,6 +217,7 @@ function Reads(db, tb, start,  end, name, shapshot)
 /*--------------------------------------------------------------------------------*/
 function ReadRange(db, tb, start, end, name, unit, shapshot)
 {
+    var qb = new ActiveXObject('transactd.query');
     var ret = true;
     var now = new Date();
     var ticks = now.getTime();
@@ -229,9 +230,9 @@ function ReadRange(db, tb, start, end, name, unit, shapshot)
     while (en != end)
     {
         en = st + unit;
-        tb.Filter = "id >= " + st + " and id < " + en;
-        tb.FilterRejectCount = 1;
         tb.ClearBuffer();
+        qb.Where("id", ">=", st).And("id", "<", en);
+  		tb.SetQuery(qb);
         tb.Vlng(fn_id) = st;
         tb.SeekGreater(true/*orEqual*/);
         for(var i=st;i<en;i++)
@@ -243,7 +244,6 @@ function ReadRange(db, tb, start, end, name, unit, shapshot)
                 break;
             }
             tb.FindNext();  
-
         }
         if (ret==false) break;
         st = en;
@@ -391,15 +391,20 @@ function main()
     var end = start + count;
     
     if (db.Open(URI, TYPE_BDF, OPEN_NORMAL, "", ""))
-        db.Drop();
+    {
+        if (execType < 3)
+        	db.Drop();
+    }
     if (db.Stat == 3106)
     {
         WScript.Echo("Error! Maybe MySQL or Tranasactd is stopping! "); 
         return 1;
     }
-    if (!createTestDataBase(db, URI))
-        return 1;
-
+    if (execType < 3)
+    {
+    	if (!createTestDataBase(db, URI))
+        	return 1;
+	}
     var now = new Date();
     WScript.Echo("Start Bench mark Insert Items = " +  count);
     WScript.Echo(now);

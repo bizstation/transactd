@@ -251,6 +251,7 @@
     <ClCompile Include="..\..\source\global\tdclatl\Flags.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeyDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeySegment.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\QueryBase.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -272,6 +273,7 @@
     <ClInclude Include="..\..\source\global\tdclatl\Flags.h" />
     <ClInclude Include="..\..\source\global\tdclatl\KeyDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\keySegment.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\QueryBase.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Resource.h" />
     <ClInclude Include="..\..\source\global\tdclatl\stdafx.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Table.h" />
@@ -280,9 +282,13 @@
     <ClInclude Include="..\..\source\global\tdclatl\tdclatl_i.h" />
     <ClInclude Include="..\..\source\global\tdclatl\TdVersion.h" />
     <ClInclude Include="..\..\source\global\tdclatl\_IDatabaseEvents_CP.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\source\global\tdclatl\tdclatl.def" />
+    <None Include="database.rgs" />
+    <None Include="QueryBase.rgs" />
+    <None Include="tdclatl.rgs" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="..\..\source\global\tdclatl\tdclatl.idl" />
