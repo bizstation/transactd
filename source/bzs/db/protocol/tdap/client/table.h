@@ -219,9 +219,12 @@ public:
 
 class AGRPACK queryBase
 {
-
+	friend class filter;
     struct impl* m_impl;
 
+    const std::vector<std::_tstring>& getSelects() const;
+    const std::vector<std::_tstring>& getWheres() const;
+    const std::vector<std::_tstring>& getSeekKeyValues() const;
 public:
     queryBase();
     virtual ~queryBase();
@@ -238,9 +241,6 @@ public:
     queryBase& direction(table::eFindType v);
     queryBase& all();
     const _TCHAR* toString() const;
-    const std::vector<std::_tstring>& getSelects() const;
-    const std::vector<std::_tstring>& getWheres() const;
-    const std::vector<std::_tstring>& getSeekKeyValues() const;
     table::eFindType getDirection() const;
     int getReject()const;
     int getLimit()const;

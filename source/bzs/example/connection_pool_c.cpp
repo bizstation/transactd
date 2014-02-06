@@ -23,14 +23,8 @@ Each worker shows the connection object pointer.
 
 struct clientID
 {
-
-#ifdef __x86_64__
     void* con;
-    char_td reserved[4];
-#else
-    void* con;
-    char_td reserved[8];
-#endif
+    char_td reserved[12 - sizeof(void*)];//32bit = 8 64bit = 4
     char_td     aid[2];
     ushort_td   id;
 };

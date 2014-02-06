@@ -369,11 +369,15 @@ void testFindIn(database* db)
 
     // Many params
     _TCHAR buf[20];
-    q.addSeekKeyValue(_ltot_s(1, buf, 20, 10), true);
+	_ltot_s(1, buf, 20, 10);
+    q.addSeekKeyValue(buf, true);
 
     for (int i=2;i<=10000;++i)
-        q.addSeekKeyValue(_ltot_s(i, buf, 20, 10));
-    tb->setQuery(&q);
+	{
+        _ltot_s(i, buf, 20, 10);
+		q.addSeekKeyValue(buf);
+	}
+	tb->setQuery(&q);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
 
     tb->find();

@@ -1500,7 +1500,8 @@ ha_rows table::recordCount(bool estimate)
 	char keynum = m_keyNum;
 	int inited = m_table->file->inited;
 	m_table->file->ha_index_or_rnd_end();
-	m_table->set_keyread(true);
+	
+	m_table->file->extra(HA_EXTRA_KEYREAD);
 	if (setKeyNum((char)0, false/*sorted*/))
 	{
 		m_stat = m_table->file->ha_index_first(m_table->record[0]);
@@ -1509,7 +1510,7 @@ ha_rows table::recordCount(bool estimate)
 			n++;
 			m_stat = m_table->file->ha_index_next(m_table->record[0]);
 		}
-		m_table->set_keyread(false);
+		m_table->file->extra(HA_EXTRA_NO_KEYREAD);
 
 		//restore index init
 		if ((inited == (int)handler::INDEX) && (m_keyNum != keynum))
@@ -1527,7 +1528,7 @@ ha_rows table::recordCount(bool estimate)
 			m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
 		}
 	}
-	m_table->set_keyread(false);
+	m_table->file->extra(HA_EXTRA_NO_KEYREAD);
 	m_table->read_set = &m_table->s->all_set;
 	m_table->write_set = &m_table->s->all_set;
 	return n;

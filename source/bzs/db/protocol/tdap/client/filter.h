@@ -567,7 +567,7 @@ class filter
             first = m_seeksWritedCount;
             last = std::min<size_t>(calcMaxRows() + m_seeksWritedCount, m_logicalLimitCount);
             m_hd.rejectCount = 0;
-            m_ret.maxRows = m_hd.logicalCount = last - first;
+            m_ret.maxRows = m_hd.logicalCount = (ushort_td)(last - first);
         }
         if (m_ret.maxRows == 0)
             m_ret.maxRows = calcMaxRows();
@@ -599,7 +599,7 @@ class filter
         int cutsize = 0;
         for (size_t i=m_hd.logicalCount-1;i!=0;--i)
         {
-            cutsize += m_logics[i+m_seeksWritedCount]->getLength();
+            cutsize += (int)m_logics[i+m_seeksWritedCount]->getLength();
             if (oversize - cutsize < 0)
             {
                 m_logicalLimitCount = i;
@@ -714,7 +714,7 @@ public:
     bool writeBuffer()
     {
         if (allocDataBuffer())
-            return doWriteBuffer(false);
+            return (doWriteBuffer(false) > 0);
         return false;
     }
 
