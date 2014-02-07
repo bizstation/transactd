@@ -235,7 +235,7 @@ public:
     void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
     void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
     void addSeekKeyValue(const _TCHAR* value, bool reset=false);
-    queryBase& queryString(const TCHAR* str);
+    queryBase& queryString(const _TCHAR* str);
     queryBase& reject(int v);
 	queryBase& limit(int v);
     queryBase& direction(table::eFindType v);

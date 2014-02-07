@@ -2921,7 +2921,7 @@ void queryBase::clearSeekKeyValues()
     m_impl->m_keyValues.clear();
 }
 
-queryBase& queryBase::queryString(const TCHAR* str)
+queryBase& queryBase::queryString(const _TCHAR* str)
 {
     analyzeQuery(str, m_impl->m_selects, m_impl->m_wheres, m_impl->m_keyValues
                                                 ,m_impl->m_nofilter);
