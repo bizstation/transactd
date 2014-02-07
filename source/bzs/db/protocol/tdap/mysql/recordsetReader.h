@@ -24,6 +24,7 @@
 #include <bzs/db/engine/mysql/IReadRecords.h>
 #include <bzs/db/engine/mysql/fieldAccess.h>
 #include <boost/shared_ptr.hpp>
+#include <bzs/db/protocol/tdap/tdapSchema.h>
 
 namespace bzs
 {
@@ -220,7 +221,7 @@ inline int compareBlobType(const char* l, const char* r, bool bin, char logType,
 	return (tmp==0 && (llen < rlen))? -1:tmp; 
 }
 
-#define MAX_ISINDEX_CACHE	8
+//#define MAX_ISINDEX_CACHE	8
 #define REC_MACTH			0
 #define REC_NOMACTH			1
 #define REC_NOMACTH_NOMORE  2
@@ -232,15 +233,19 @@ struct extRequest;
 class fieldInfoCache
 {
 	char m_sizeBytes[1000];
-	bool m_isIndex[MAX_ISINDEX_CACHE];
+	unsigned char* m_isIndex;
+	mutable bool* m_equalMatched;
 	mutable int m_index;
-	
+	int m_logicalCount;
+	inline void initMem(int count);
 public:
 	inline fieldInfoCache();
 	inline ~fieldInfoCache();
 	inline short cache(extRequest& req, position& position, const KEY* key);
 	inline int getPos()const;
 	inline bool isIndex()const;
+	inline void setMatched()const;
+	inline bool isMatched()const;
 	inline void reset()const;
 
 };
@@ -373,12 +378,12 @@ public:
 			return REC_MACTH;
 		else if(sb.isIndex())
 		{
-			char log = logType & 0xF;
-			if (log == 1)//==
+			eCompType log = (eCompType)(logType & 0xF);
+			if ((log == equal) && sb.isMatched())//==
 				return REC_NOMACTH_NOMORE;
-			else if (typeNext && (log == 3 || log==6))
+			else if (typeNext && (log == less || log==lessEq))
 				return REC_NOMACTH_NOMORE;
-			else if (!typeNext && (log == 2 || log==5))
+			else if (!typeNext && (log == greater || log==greaterEq))
 				return REC_NOMACTH_NOMORE;
 		}
 		return REC_NOMACTH;
@@ -386,6 +391,8 @@ public:
 	int match(const char* record, bool typeNext, const fieldInfoCache& sb) const
 	{
 		bool ret = matchThis(record, sb.getPos());
+		if (ret && sb.isIndex())
+			sb.setMatched();
 		if (opr == 0) //this is last
 			return checkNomore(ret, typeNext, sb); 
 		if (!ret)
@@ -526,14 +533,25 @@ public:
 /* ---------------------------------------------------------------
  *   Implement fieldInfoCache
  * ---------------------------------------------------------------*/
-inline fieldInfoCache::fieldInfoCache()
+inline fieldInfoCache::fieldInfoCache():m_isIndex(0),m_equalMatched(0) 
 {
-	memset(m_isIndex, 0, sizeof(bool) * MAX_ISINDEX_CACHE);	
+
 }
 
 inline fieldInfoCache::~fieldInfoCache()
 {
 	
+}
+
+inline void fieldInfoCache::initMem(int count)
+{
+	delete [] m_isIndex;
+	delete [] m_equalMatched;
+	m_isIndex = new unsigned char[count];
+	m_equalMatched = new bool[count];
+	memset(m_isIndex, 0, sizeof(unsigned char) * count);	
+	memset(m_equalMatched, 0, sizeof(bool) * count);
+	m_logicalCount = count;
 }
 
 inline short fieldInfoCache::cache(extRequest& req, position& position, const KEY* key)
@@ -543,7 +561,10 @@ inline short fieldInfoCache::cache(extRequest& req, position& position, const KE
 	logicalField* fd = &req.field;
 	char* pos = m_sizeBytes;
 	bool isCheckKeyseg = (key != NULL);
-	unsigned short segmentIndex = 0;
+	short segmentIndex = 0;
+	initMem(req.logicalCount);
+	bool segmentRef[MAX_KEY_SEGMENT+1] ;
+	memset(segmentRef, 0, sizeof(segmentRef));
 	for (int i=0;i<req.logicalCount;++i)
 	{
 		
@@ -552,23 +573,36 @@ inline short fieldInfoCache::cache(extRequest& req, position& position, const KE
 			return STATUS_INVALID_FIELD_OFFSET;
 		*pos = (char)position.fieldSizeByte(num);
 
-		/* Is target field  current keynum segnmnt 
+		/* Is target field  current keynum segnmnt ?
 		   For optimize match() return NOMATCH_NOMORE
 		*/ 
-		if (isCheckKeyseg && (i < MAX_ISINDEX_CACHE))
+		if (isCheckKeyseg)
 		{
-			if (segmentIndex < key->user_defined_key_parts)
+			segmentIndex = 0;
+			int segments = std::min<uint>(MAX_KEY_SEGMENT, key->user_defined_key_parts);
+			while (segmentIndex < segments)
 			{
-				m_isIndex[i] = (key->key_part[segmentIndex].field->field_index == num);
-				if (!m_isIndex[i] && (++segmentIndex < key->user_defined_key_parts))
-					m_isIndex[i] = (key->key_part[segmentIndex].field->field_index == num);
+				if (key->key_part[segmentIndex].field->field_index == num)
+				{
+					m_isIndex[i] = (unsigned char)segmentIndex+1;
+					segmentRef[segmentIndex] = true;
+					break;
+				}
+				++segmentIndex;
 			}
-			isCheckKeyseg = m_isIndex[i];
 			if (fd->opr == 2) isCheckKeyseg = false;
 		}
-
 		++pos;
 		fd = fd->next();
+	}
+	//check segment order
+	segmentIndex = -1;
+	while (segmentRef[++segmentIndex]);
+	
+	for  (int i=0;i < req.logicalCount;++i)
+	{
+		if (m_isIndex[i] > segmentIndex)
+			m_isIndex[i] = 0;
 	}
 	return 0;
 }
@@ -583,14 +617,22 @@ inline int fieldInfoCache::getPos()const
 /* It certainly calls after getPos() */
 inline bool fieldInfoCache::isIndex()const
 {
-	return m_isIndex[m_index-1];
+	return m_isIndex[m_index-1]!=0;
 }
 
+inline void fieldInfoCache::setMatched()const
+{
+	m_equalMatched[m_index-1] = true;
+}
+
+inline bool fieldInfoCache::isMatched()const
+{
+	return m_equalMatched[m_index-1];
+}
 /* reset for next record */
 inline void fieldInfoCache::reset()const
 {
 	m_index = 0;
-	
 }
 
 /* ---------------------------------------------------------------*/

@@ -240,11 +240,13 @@ public:
 	queryBase& limit(int v);
     queryBase& direction(table::eFindType v);
     queryBase& all();
+    queryBase& optimize(bool v);
     const _TCHAR* toString() const;
     table::eFindType getDirection() const;
     int getReject()const;
     int getLimit()const;
     bool isAll()const;
+    bool useOptimize()const;
 };
 
 

@@ -210,7 +210,17 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define ft_autoIncUnsigned 	52
 #define ft_nullindicator    255
 
-
+/** compair types
+*/
+enum eCompType
+{
+	equal		= 1,
+	greater		= 2,
+	less		= 3,
+	notEq		= 4,
+	greaterEq	= 5,
+	lessEq		= 6
+};
 
 /** charset type number
  */

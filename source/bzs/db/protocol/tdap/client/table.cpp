@@ -2848,12 +2848,13 @@ struct impl
 {
     impl():
     m_reject(1),m_limit(0),m_direction(table::findForword)
-        ,m_nofilter(false){}
+        ,m_nofilter(false),m_optimize(false){}
 
 	int m_reject;
 	int m_limit;
     table::eFindType m_direction;
     bool m_nofilter;
+    bool m_optimize;
     mutable std::_tstring m_str;
     std::vector<std::_tstring> m_selects;
     std::vector<std::_tstring> m_wheres;
@@ -2950,6 +2951,17 @@ queryBase& queryBase::all()
     reset();
     m_impl->m_nofilter = true;
     return *this;
+}
+
+queryBase& queryBase::optimize(bool v)
+{
+    m_impl->m_optimize = v;
+	return *this;
+}
+
+bool queryBase::useOptimize()const
+{
+    return m_impl->m_optimize;
 }
 
 table::eFindType queryBase::getDirection() const {return m_impl->m_direction;}

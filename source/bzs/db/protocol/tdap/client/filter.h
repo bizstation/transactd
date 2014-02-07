@@ -370,6 +370,7 @@ class filter
     std::_tstring m_str;
     bool m_ignoreFields;
     bool m_seeksMode;
+    bool m_useOptimize;
     size_t m_seeksWritedCount;
     size_t m_logicalLimitCount;
     table::eFindType m_direction;
@@ -490,6 +491,7 @@ class filter
         setRejectCount(q->getReject());
         setMaxRows(q->getLimit());
         m_direction = q->getDirection();
+        m_useOptimize = q->useOptimize();
 
         if (q->isAll())
             addAllFields();
@@ -536,7 +538,8 @@ class filter
 
     void joinLogic()
     {
-        if (m_seeksMode) return;
+        if (m_seeksMode || !m_useOptimize) return;
+
         for (int i= (int)m_logics.size()-2;i>=0;--i)
         {
             logic* la = m_logics[i+1];
@@ -643,7 +646,7 @@ class filter
 
 public:
     filter(table* tb):m_tb(tb),m_ignoreFields(false)
-        ,m_seeksMode(false),m_seeksWritedCount(0){}
+        ,m_seeksMode(false),m_seeksWritedCount(0),m_useOptimize(true){}
     ~filter()
     {
         cleanup();
@@ -662,6 +665,7 @@ public:
         m_ignoreFields = false;
         m_seeksMode = false;
         m_seeksWritedCount = 0;
+        m_useOptimize = true;
     }
 
     bool setQuery(const queryBase* q)

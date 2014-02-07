@@ -134,11 +134,12 @@ struct keySegment
 
 /* brief A key infomation
  */
+#define MAX_KEY_SEGMENT 8
 struct keydef
 {
-    uchar_td segmentCount;   // Number of segment
-    keySegment segments[8];  // key segments . max 8 segments
-    uchar_td keyNumber;      // key number
+    uchar_td segmentCount;					// Number of segment
+    keySegment segments[MAX_KEY_SEGMENT];   // key segments . max 8 segments
+    uchar_td keyNumber;						// key number
 };
 // 26byte
 
