@@ -37,6 +37,14 @@
 
 
 /* ===============================================
+  Rename functions
+=============================================== */
+// Rename function which has keyword of Ruby as its name.
+%rename(andWhere) bzs::db::protocol::tdap::client::queryBase::And;
+%rename(orWhere) bzs::db::protocol::tdap::client::queryBase::Or;
+
+
+/* ===============================================
   Ruby can't convert String to c++ wchar_t
   so define _TCHAR as char.
 =============================================== */
@@ -63,6 +71,36 @@ typedef char  _TCHAR;
 };
 %newobject bzs::db::protocol::tdap::client::database::createObject;
 %delobject bzs::db::protocol::tdap::client::database::release;
+
+
+/* ===============================================
+  setFV / getFV for binary data
+=============================================== */
+%ignore bzs::db::protocol::tdap::client::table::setFV(short, const void *, uint_td);
+%extend bzs::db::protocol::tdap::client::table {
+  void setFV(short index, const char * data, uint_td size) {
+    return self->setFV(index, (void const *) data, size);
+  }
+  void setFV(const _TCHAR *fieldName, const char * data, uint_td size) {
+    return self->setFV(fieldName, (void const *) data, size);
+  }
+  const char * getFVbin(short index, uint_td& size)
+  {
+    return (const char *)(self->getFVbin(index, size));
+  }
+  const char * getFVbin(const _TCHAR *fieldName, uint_td& size)
+  {
+    return (const char *)(self->getFVbin(fieldName, size));
+  }
+};
+%typemap(in, numinputs=0) (uint_td & size) (uint_td temp) {
+  $1 = &temp;
+}
+%typemap(argout) (uint_td & size) {
+  $result = rb_str_new((const char *)result, *$1);
+}
+%ignore bzs::db::protocol::tdap::client::table::getFVbin(short, uint_td&);
+%ignore bzs::db::protocol::tdap::client::table::getFVbin(const _TCHAR *, uint_td&);
 
 
 /* ===============================================
