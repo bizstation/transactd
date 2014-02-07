@@ -71,7 +71,11 @@ public:
   STDMETHOD(Where)(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase** retVal);
   STDMETHOD(And)(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase** retVal);
   STDMETHOD(Or)(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase** retVal);
-  STDMETHOD(AddSeekKeyValue)(VARIANT Value, VARIANT_BOOL Reset);
+  STDMETHOD(AddInValue)(VARIANT Value, VARIANT_BOOL Reset);
+  STDMETHOD(In)(VARIANT Value
+			,VARIANT Value1, VARIANT Value2, VARIANT Value3, VARIANT Value4, VARIANT Value5
+			,VARIANT Value6, VARIANT Value7, VARIANT Value8, VARIANT Value9, VARIANT Value10
+			, IQueryBase** retVal);
   STDMETHOD(QueryString)(BSTR Value, IQueryBase** retVal);
   STDMETHOD(Reject)(long Value, IQueryBase** retVal);
   STDMETHOD(Limit)(long Value, IQueryBase** retVal);
@@ -82,7 +86,10 @@ public:
   STDMETHOD(GetReject)(long* retVal);
   STDMETHOD(GetLimit)(long* retVal);
   STDMETHOD(IsAll)(VARIANT_BOOL* retVal);
+  STDMETHOD(Optimize)(VARIANT_BOOL Value, IQueryBase** retVal);
+  STDMETHOD(IsOptimize)(VARIANT_BOOL* retVal);
 
+ 
 
 };
 

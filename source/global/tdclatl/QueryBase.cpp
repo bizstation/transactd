@@ -94,11 +94,53 @@ STDMETHODIMP CQueryBase::Or(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase** r
 	return S_OK;
 }
 
-STDMETHODIMP CQueryBase::AddSeekKeyValue(VARIANT Value, VARIANT_BOOL Reset)
+STDMETHODIMP CQueryBase::AddInValue(VARIANT Value, VARIANT_BOOL Reset)
 {
-    VariantChangeType( &Value, &Value, 0, VT_BSTR );
+	VariantChangeType( &Value, &Value, 0, VT_BSTR );
 	m_qb.addSeekKeyValue(Value.bstrVal, (Reset==-1));
 	return S_OK;
+}
+
+STDMETHODIMP CQueryBase::In(VARIANT Value
+			,VARIANT Value1, VARIANT Value2, VARIANT Value3, VARIANT Value4, VARIANT Value5
+			,VARIANT Value6, VARIANT Value7, VARIANT Value8, VARIANT Value9, VARIANT Value10
+			, IQueryBase** retVal)
+{
+	setResult(retVal);
+	VariantChangeType( &Value, &Value, 0, VT_BSTR );
+	m_qb.addSeekKeyValue(Value.bstrVal, false);
+	
+	VariantChangeType( &Value1, &Value1, 0, VT_BSTR );
+	if (Value1.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value1.bstrVal, false);
+	VariantChangeType( &Value2, &Value2, 0, VT_BSTR );
+	if (Value2.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value2.bstrVal, false);
+	VariantChangeType( &Value3, &Value3, 0, VT_BSTR );
+	if (Value3.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value3.bstrVal, false);
+	VariantChangeType( &Value4, &Value4, 0, VT_BSTR );
+	if (Value4.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value4.bstrVal, false);
+	VariantChangeType( &Value5, &Value5, 0, VT_BSTR );
+	if (Value5.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value5.bstrVal, false);
+	VariantChangeType( &Value6, &Value6, 0, VT_BSTR );
+	if (Value6.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value6.bstrVal, false);
+	VariantChangeType( &Value7, &Value7, 0, VT_BSTR );
+	if (Value7.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value7.bstrVal, false);
+	VariantChangeType( &Value8, &Value8, 0, VT_BSTR );
+	if (Value8.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value8.bstrVal, false);
+	VariantChangeType( &Value9, &Value9, 0, VT_BSTR );
+	if (Value9.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value9.bstrVal, false);
+	VariantChangeType( &Value10, &Value10, 0, VT_BSTR );
+	if (Value10.bstrVal == L"") return S_OK;
+	m_qb.addSeekKeyValue(Value10.bstrVal, false);
+	return S_OK; 
 }
 
 void CQueryBase::setResult(IQueryBase** retVal)
@@ -171,5 +213,19 @@ STDMETHODIMP CQueryBase::GetLimit(long* retVal)
 STDMETHODIMP CQueryBase::IsAll(VARIANT_BOOL* retVal)
 {
     *retVal = m_qb.isAll();
+	return S_OK;
+}
+
+
+STDMETHODIMP CQueryBase::Optimize(VARIANT_BOOL v, IQueryBase** retVal)
+{
+	m_qb.optimize(v==-1);
+	setResult(retVal);
+	return S_OK;
+}
+
+STDMETHODIMP CQueryBase::IsOptimize(VARIANT_BOOL* retVal)
+{
+	*retVal = m_qb.isOptimize();
 	return S_OK;
 }
