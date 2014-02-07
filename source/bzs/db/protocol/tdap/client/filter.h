@@ -491,7 +491,7 @@ class filter
         setRejectCount(q->getReject());
         setMaxRows(q->getLimit());
         m_direction = q->getDirection();
-        m_useOptimize = q->useOptimize();
+        m_useOptimize = q->isOptimize();
 
         if (q->isAll())
             addAllFields();

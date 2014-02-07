@@ -246,7 +246,7 @@ public:
     int getReject()const;
     int getLimit()const;
     bool isAll()const;
-    bool useOptimize()const;
+    bool isOptimize()const;
 };
 
 

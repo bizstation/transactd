@@ -2963,7 +2963,7 @@ queryBase& queryBase::optimize(bool v)
 	return *this;
 }
 
-bool queryBase::useOptimize()const
+bool queryBase::isOptimize()const
 {
     return m_impl->m_optimize;
 }
