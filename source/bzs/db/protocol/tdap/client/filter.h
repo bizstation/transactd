@@ -623,8 +623,13 @@ class filter
         }
         m_hd.len = len;
         int resultLen = resultBufferNeedSize();
+        if (resultLen > MAX_DATA_SIZE)
+        {
+            m_ret.maxRows = calcMaxRows();
+            resultLen = resultBufferNeedSize();
+        }
         m_extendBuflen = std::max<int>((int)m_hd.len, resultLen);
-
+        m_extendBuflen = std::max<int>(m_extendBuflen, m_tb->tableDef()->maxRecordLen);
         if ((m_fields.size() != 1) || m_tb->valiableFormatType())
             m_extendBuflen += m_tb->buflen();
 
@@ -689,7 +694,12 @@ public:
 
     void setPosTypeNext(bool v){setPositionType(!v);}
 
-    uint_td exDataBufLen() const{return extendBuflen();}
+    uint_td exDataBufLen() const
+    {
+        if ((m_fields.size() != 1) || m_tb->valiableFormatType())
+            return m_extendBuflen - m_tb->buflen();
+        return m_extendBuflen;
+    }
 
     void init(table* pBao){};
 

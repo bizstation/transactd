@@ -338,9 +338,6 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define ERROR_TD_NOT_CONNECTED      3110
 
 
-#define STATUS_BUFFERTOOSMALL		22
-#define STATUS_KEYBUFFERTOOSMALL	21
-
 #define TRANSACTD_SCHEMANAME		_T("transactd_schema")
 #define TYPE_SCHEMA_BDF				(short)0
 #define TYPE_SCHEMA_DDF				(short)1

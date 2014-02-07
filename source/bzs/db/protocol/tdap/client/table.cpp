@@ -450,8 +450,8 @@ inline short calcNextReadRecordCount(ushort_td curCount, int eTime)
     else
         ret = (ushort_td)(curCount * ((float)100 / (float)eTime));
 
-    if (ret > 10000)
-        return 10000;
+    if (ret > 9500)
+        return 9500;
     if (ret == 0)
         return 1;
     return ret;
@@ -469,7 +469,7 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType directio
             op += TD_POS_NEXT_MULTI - TD_KEY_NEXT_MULTI;// KEY to POS
         short curStat = m_stat;
         m_impl->exBookMarking = true;
-        ushort_td recCountOnce = 50;
+        ushort_td recCountOnce = 100;
 
         bookmark_td bm = bookmark();
 
@@ -477,7 +477,6 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType directio
         ushort_td tmpRecCount = m_impl->filterPtr->recordCount();
 
         m_impl->filterPtr->setIgnoreFields(true);
-        m_impl->filterPtr->setMaxRows(10000);
         m_impl->maxBookMarkedCount = 0;
         if (fromCurrent)
             m_stat = curStat;
@@ -521,7 +520,6 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType directio
                 setBookMarks(m_impl->maxBookMarkedCount + 1, (void*)((char*)m_impl->dataBak + 2),
                     *((ushort_td*)m_impl->dataBak));
                 m_impl->maxBookMarkedCount = result;
-
                 onRecordCounting(result, Complete);
                 if (Complete)
                     break;
@@ -1278,7 +1276,7 @@ void table::onReadAfter()
     {
         m_datalen = unPack((char*)m_pdata, m_datalen);
         if (m_datalen == 0)
-            m_stat = 22;
+            m_stat = STATUS_BUFFERTOOSMALL;
     }
     if (blobFieldUsed())
     {
