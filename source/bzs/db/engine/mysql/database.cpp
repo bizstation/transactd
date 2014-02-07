@@ -1373,6 +1373,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 	//Is a current position read or not? 
 	bool read = !includeCurrent;
 	bool unlock = (!m_db.inSnapshot() && !m_db.inTransaction()) || (m_db.inTransaction() && (m_db.transactionType()== 0));
+	bool forword = (type == READ_RECORD_GETNEXT) || (type == READ_RECORD_STEPNEXT);
 	while((reject!=0) && (rows!=0))
 	{
 		if (read)
@@ -1402,7 +1403,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 		
 		if (m_stat)	
 			break;
-		int ret = hdr->match(type == READ_RECORD_GETNEXT);
+		int ret = hdr->match(forword);
 		if (ret == REC_MACTH)
 		{
 			m_stat = hdr->write(position(), posPtrLen());

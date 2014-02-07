@@ -467,7 +467,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 		
 		extRequest* ereq = (extRequest*)req.data;
 		req.result = m_readHandler->begin(m_tb, ereq, true
-				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen);
+				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, (op == TD_KEY_NEXT_MULTI));
 		if (req.result != 0)
 			return 1;
 		if (m_tb->stat() == 0)
@@ -498,8 +498,9 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 	m_tb = getTable(req.pbk->handle);
 	extRequest* ereq = (extRequest*)req.data;
 	bool incCurrent = !((ereq->type[0]=='E') && (ereq->type[1]=='G'));
+	bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
 	req.result = m_readHandler->begin(m_tb, ereq,(op != TD_KEY_SEEK_MULTI)
-			, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen);
+			, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, forword);
 	if (req.result == 0)
 	{
 		if (op == TD_KEY_SEEK_MULTI)

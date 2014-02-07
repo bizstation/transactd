@@ -241,7 +241,7 @@ class fieldInfoCache
 public:
 	inline fieldInfoCache();
 	inline ~fieldInfoCache();
-	inline short cache(extRequest& req, position& position, const KEY* key);
+	inline short cache(extRequest& req, position& position, const KEY* key, bool forword);
 	inline int getPos()const;
 	inline bool isIndex()const;
 	inline void setMatched()const;
@@ -355,10 +355,10 @@ private:
 			return compareBlobType(l, r, type==ft_myblob, logType, sizeByte);
 		}
 		return 0;
-	};
+	}
+
 	bool matchThis(const char* record, int sizeByte) const
 	{
-		
 		int v = comp(record, sizeByte);
 		switch(logType & 0xF) //16 or more are disregarded. 
 		{
@@ -371,12 +371,11 @@ private:
 		}			
 		return false;
 	}
+
 public:
-	int checkNomore(bool matchResult, bool typeNext, const fieldInfoCache& sb)const
+	int checkNomore(bool typeNext, const fieldInfoCache& sb)const
 	{
-		if (matchResult)
-			return REC_MACTH;
-		else if(sb.isIndex())
+		if(sb.isIndex())
 		{
 			eCompType log = (eCompType)(logType & 0xF);
 			if ((log == equal) && sb.isMatched())//==
@@ -388,18 +387,16 @@ public:
 		}
 		return REC_NOMACTH;
 	}
+
 	int match(const char* record, bool typeNext, const fieldInfoCache& sb) const
 	{
 		bool ret = matchThis(record, sb.getPos());
-		if (ret && sb.isIndex())
-			sb.setMatched();
-		if (opr == 0) //this is last
-			return checkNomore(ret, typeNext, sb); 
-		if (!ret)
-			return (opr == 1)?checkNomore(ret, typeNext, sb):next()->match(record, typeNext, sb); 
-		else 
-			return (opr == 1)?next()->match(record, typeNext, sb):checkNomore(ret, typeNext, sb); 
+		if (ret && sb.isIndex()) sb.setMatched();
+		bool end = (opr == 0)||(!ret && (opr == 1))||(ret && (opr == 2));
+		if (!end) return next()->match(record, typeNext, sb);
+		return ret ? REC_MACTH : checkNomore(typeNext, sb); 
 	}
+
 	extResultDef* resultDef() const
 	{
 		if (opr == 0)
@@ -415,12 +412,14 @@ struct extRequest
 	unsigned short	rejectCount;
 	unsigned short	logicalCount;
 	logicalField	field;
+
 	int match(const char* record, bool typeNext, const fieldInfoCache& sb)const
 	{
 		if (logicalCount)
 			return field.match(record, typeNext, sb);
 		return REC_MACTH;
 	}
+
 	extResultDef* resultDef()const 
 	{
 		if (logicalCount)
@@ -554,51 +553,73 @@ inline void fieldInfoCache::initMem(int count)
 	m_logicalCount = count;
 }
 
-inline short fieldInfoCache::cache(extRequest& req, position& position, const KEY* key)
+inline short fieldInfoCache::cache(extRequest& req, position& position, const KEY* key, bool forword)
 {
-	
 	m_index = 0;
 	logicalField* fd = &req.field;
 	char* pos = m_sizeBytes;
 	bool isCheckKeyseg = (key != NULL);
 	short segmentIndex = 0;
 	initMem(req.logicalCount);
-	bool segmentRef[MAX_KEY_SEGMENT+1] ;
-	memset(segmentRef, 0, sizeof(segmentRef));
+	char isSegmentEq[MAX_KEY_SEGMENT+1] ;
+	memset(isSegmentEq, 0, sizeof(isSegmentEq));
+	bool keysegFound = false;
 	for (int i=0;i<req.logicalCount;++i)
 	{
-		
 		int num = position.getFieldNumByPos(fd->pos);
 		if (num == -1)
 			return STATUS_INVALID_FIELD_OFFSET;
 		*pos = (char)position.fieldSizeByte(num);
 
-		/* Is target field  current keynum segnmnt ?
+		/* Is target field current keynum segnmnt ?
 		   For optimize match() return NOMATCH_NOMORE
 		*/ 
+
+		/* if connect next is "or", it is can not retun NOMATCH_NOMORE */
+		if (isCheckKeyseg && (fd->opr == 2)) isCheckKeyseg = false;
+
 		if (isCheckKeyseg)
 		{
 			segmentIndex = 0;
 			int segments = std::min<uint>(MAX_KEY_SEGMENT, key->user_defined_key_parts);
+			
 			while (segmentIndex < segments)
 			{
 				if (key->key_part[segmentIndex].field->field_index == num)
 				{
-					m_isIndex[i] = (unsigned char)segmentIndex+1;
-					segmentRef[segmentIndex] = true;
+					eCompType comp = (eCompType)(fd->logType);
+					bool gt = (comp == greater)||(comp == greaterEq);
+					bool le = (comp == less)||(comp == lessEq);	
+					bool valid = !(forword ? gt:le);	
+					if (valid)
+					{
+						m_isIndex[i] = (unsigned char)segmentIndex+1;
+						//if same filed found, use equal logic.
+						// if comp is a range , ignore after segment 
+						if (isSegmentEq[segmentIndex]!=2)
+							isSegmentEq[segmentIndex] = (comp == equal) ? 2:1;
+					}
 					break;
 				}
 				++segmentIndex;
 			}
-			if (fd->opr == 2) isCheckKeyseg = false;
 		}
 		++pos;
 		fd = fd->next();
 	}
-	//check segment order
+
+	/* if comp is a range , ignore after segment */
 	segmentIndex = -1;
-	while (segmentRef[++segmentIndex]);
-	
+	while (isSegmentEq[++segmentIndex])
+	{
+		if (isSegmentEq[segmentIndex]==1)
+		{
+			++segmentIndex;
+			break;
+		}
+	}
+
+	//ignore after segment
 	for  (int i=0;i < req.logicalCount;++i)
 	{
 		if (m_isIndex[i] > segmentIndex)
@@ -646,7 +667,8 @@ class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 	fieldInfoCache  m_fieldInfoCache;
 public:
 
-	short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache, char* buf,size_t offset, unsigned short maxlen)
+	short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache
+		, char* buf,size_t offset, unsigned short maxlen, bool forword)
 	{
 		short ret = 0;
 		m_position.setTable(tb);
@@ -656,7 +678,7 @@ public:
 			const KEY* key = NULL;
 			if (tb->keyNum() >= 0)
 				key = &tb->keyDef(tb->keyNum());
-			m_fieldInfoCache.cache(*m_req, m_position, key);
+			m_fieldInfoCache.cache(*m_req, m_position, key, forword);
 		}
 		m_resultDef = m_req->resultDef();
 		if (m_resultDef->fieldCount > 1)
