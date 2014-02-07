@@ -29,16 +29,28 @@ include(build/common/transactd_common.cmake)
 option(WITH_TRANSACTD_SERVER    "Build Transactd server plugin"                   ON)
 option(WITH_TRANSACTD_CLIENTS   "Build Transactd client libraries"                ON)
 option(TRANSACTD_HANDLERSOCKET  "Add HandlerSocket protocol to Transactd plugin"  ON)
-option(TRANSACTD_RUBY_GEM       "Build Transactd ruby gem"                        OFF)
 set(TRANSACTD_PREFIX  "/usr/local/transactd"  CACHE STRING "Prefix for transactd executables(test,benchmark)")
 set(TRANSACTD_CLIENTS_PREFIX    ""            CACHE STRING "Prefix for transactd client libraries")
+  # options for Ruby client
+option(TRANSACTD_RUBY_GEM       "Build Transactd ruby gem"                        OFF)
+  # options for PHP client
+option(TRANSACTD_PHP            "Build Transactd client PHP extension"            OFF)
+set(TRANSACTD_PHP_SOURCE_ROOT   "" CACHE STRING "Path of php source directory")
+set(TRANSACTD_PHP_LIBRARY_PATH  "" CACHE STRING "Library path for php")
+option(TRANSACTD_PHP_ZTS        "Add ZTS flag for build Transactd client PHP extension" OFF)
 
 #   The following options are set automatically if not specified.
 #   Usually you do not have to set these values.
+  # options for Ruby client
 set(TRANSACTD_RUBY_GEM_ROOT_PATH    "" CACHE STRING "Transactd gem root path")
 set(TRANSACTD_RUBY_EXECUTABLE_PATH  "" CACHE STRING "Ruby executable path")
-set(TRANSACTD_RUBY_INCLUDE_PATH     "" CACHE STRING "Include path for ruby-swig")
-set(TRANSACTD_RUBY_LIBRARY_PATH     "" CACHE STRING "Include path for ruby")
+set(TRANSACTD_RUBY_INCLUDE_PATH     "" CACHE STRING "Include path for ruby")
+set(TRANSACTD_RUBY_LIBRARY_PATH     "" CACHE STRING "Library path for ruby")
+  # options for PHP client
+set(TRANSACTD_PHP_INCLUDE_PATH      "" CACHE STRING "Include path for PHP")
+option(TRANSACTD_PHP_USE_32BIT_TIME_T 
+  "Add _USE_32BIT_TIME_T option for building Transactd client PHP extension"      ON)
+set(TDCL_CPP_CHARSET  "" CACHE STRING "Transactd clients charset m:Multibyte u:Unicode")
 
 
 # ==========================================================
@@ -47,6 +59,10 @@ set(TRANSACTD_RUBY_LIBRARY_PATH     "" CACHE STRING "Include path for ruby")
 get_filename_component(TRANSACTD_ROOT "${CMAKE_CURRENT_SOURCE_DIR}" ABSOLUTE)
 set(TRANSACTD_BINARY_ROOT       "${CMAKE_CURRENT_BINARY_DIR}")
 if(TRANSACTD_RUBY_GEM)
+  set(WITH_TRANSACTD_SERVER   OFF)
+  set(WITH_TRANSACTD_CLIENTS  OFF)
+endif()
+if(TRANSACTD_PHP)
   set(WITH_TRANSACTD_SERVER   OFF)
   set(WITH_TRANSACTD_CLIENTS  OFF)
 endif()
@@ -71,7 +87,9 @@ if(WITH_TRANSACTD_CLIENTS)
   endif()
   subdirs("build/tdclc")
   if(WIN32 AND NOT MINGW)
-    set(TDCL_CPP_CHARSET u)
+    if((NOT ("${TDCL_CPP_CHARSET}" STREQUAL "m")) AND (NOT ("${TDCL_CPP_CHARSET}" STREQUAL "u")))
+      set(TDCL_CPP_CHARSET u)
+    endif()
   else()
     set(TDCL_CPP_CHARSET m)
   endif()
@@ -91,6 +109,21 @@ if(TRANSACTD_RUBY_GEM)
   if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
     project(tdcl)
   endif()
+  set(TDCL_CPP_CHARSET m)
   transactd_copy_subdir("${TRANSACTD_ROOT}" tdclcpp tdclcppm)
   subdirs("build/tdclrb")
+endif()
+
+
+# ==========================================================
+# build PHP extension
+# ==========================================================
+if(TRANSACTD_PHP)
+  message(STATUS "BUILD Transactd client PHP extension")
+  if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+    project(tdcl)
+  endif()
+  set(TDCL_CPP_CHARSET m)
+  transactd_copy_subdir("${TRANSACTD_ROOT}" tdclcpp tdclcppm)
+  subdirs("build/tdclphp")
 endif()

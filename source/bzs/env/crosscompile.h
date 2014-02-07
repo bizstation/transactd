@@ -106,9 +106,14 @@
 	
 #else //!defined(LINUX)
 
-#ifdef __MINGW32__
-	#define _ttof      atof
-#endif
+	// define _ttof for MinGW or less than visual studio 2010
+	#if defined(__MINGW32__) || (defined(_MSC_VER) && _MSC_VER < 1600)
+		#ifdef _UNICODE
+			#define _ttof _wtof
+		#else
+			#define _ttof atof
+		#endif
+	#endif
 
 /* c c++ runtime library */
 	#include <tchar.h>

@@ -122,10 +122,10 @@ public:
              btrTimeStamp(btrDate d, btrTime t);
 #ifdef _WIN32
     explicit btrTimeStamp(const wchar_t* p);
-    wchar_t* toString(wchar_t* p);
+    wchar_t* toString(wchar_t* retbuf);
     void fromString(const wchar_t* p);
 #endif
-    char* toString(char* p);
+    char* toString(char* retbuf);
     void fromString(const char* p);
 
 };
