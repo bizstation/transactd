@@ -77,29 +77,143 @@ void doInsertStringFileter(table* tb)
     tb->insert();
 }
 
-void doTestFilterBug(table* tb)
+void doTestSeek(table* tb)
+{
+    uint_td dummy = 0;
+    // 1
+    tb->clearBuffer();
+    tb->setFV(FDI_ID, 1);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestSeek - stat 1");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 1, "doTestSeek - id 1");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestSeek - user_id 1");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("1\ntest\nテスト\n\nあいうえおあいうえお")), "doTestSeek - body 1");
+    // 2
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestSeek - stat 2");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 2, "doTestSeek - id 2");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestSeek - user_id 2");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえお")), "doTestSeek - body 2");
+    // 3
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestSeek - stat 3");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 3, "doTestSeek - id 3");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 2, "doTestSeek - user_id 3");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("3\ntest\nテスト\n\nあいうえおあいうえお")), "doTestSeek - body 3");
+    // 2
+    tb->seekPrev();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestSeek - stat 2");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 2, "doTestSeek - id 2");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestSeek - user_id 2");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえお")), "doTestSeek - body 2");
+}
+
+void doTestFind(table* tb)
 {
     tb->setKeyNum(0);
     tb->clearBuffer();
 
 	tb->setFilter(_T("id >= 1 and id < 3"), 1, 0);
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestFilterBug - setFilter");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestFind - setFilter");
 
     tb->setFV(FDI_ID, 1);
 	tb->find(table::findForword);
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestFilterBug - find");
-    BOOST_CHECK_MESSAGE(1 == tb->getFVint(FDI_ID), "doTestFilterBug - getFVint 1");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestFind - find");
+    BOOST_CHECK_MESSAGE(1 == tb->getFVint(FDI_ID), "doTestFind - getFVint 1");
 
 	tb->findNext(true);
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestFilterBug - findNext");
-	std::cout << tb->getFVint(FDI_ID) << std::endl;
-    BOOST_CHECK_MESSAGE(2 == tb->getFVint(FDI_ID), "doTestFilterBug - getFVint 2");
-	std::cout << tb->getFVstr(FDI_BODY) << std::endl;
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestFind - findNext");
+    BOOST_CHECK_MESSAGE(2 == tb->getFVint(FDI_ID), "doTestFind - getFVint 2");
 	BOOST_CHECK_MESSAGE(
 		_tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえおb")) == _tstring(tb->getFVstr(FDI_BODY)),
-		"doTestFilterBug - getFVstr 2");
+		"doTestFind - getFVstr 2");
     tb->findNext(true);
-    BOOST_CHECK_MESSAGE(9 == tb->stat(), "doTestFilterBug - findNext");
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "doTestFind - findNext");
+    // 2
+    tb->findPrev(true);
+    BOOST_CHECK_MESSAGE(tb->stat() == STATUS_PROGRAM_ERROR, "doTestFind - findPrev");
+}
+
+void doTestUpdate(table* tb)
+{
+    // select 1
+    tb->clearBuffer();
+    tb->setFV(FDI_ID, 1);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - stat 1");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 1, "doTestUpdate - id 1");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestUpdate - user_id 1");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("1\ntest\nテスト\n\nあいうえおあいうえお")), "doTestUpdate - body 1");
+    // update
+    tb->setFV(FDI_USER, 11);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - setFV stat 1");
+    tb->setFV(FDI_BODY, "1\nテスト\ntest\n\nABCDEFG");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - setFV stat 1");
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - update stat 1");
+    // select 2
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - stat 2");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 2, "doTestUpdate - id 2");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestUpdate - user_id 2");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえお")), "doTestUpdate - body 2");
+    // update
+    tb->setFV(FDI_USER, 12);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - setFV stat 2");
+    tb->setFV(FDI_BODY, "2\nテスト\ntest\n\nABCDEFG");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - setFV stat 2");
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - update stat 2");
+    // check 1
+    tb->seekPrev();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - stat 2 1");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 1, "doTestUpdate - id 2 1");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 11, "doTestUpdate - user_id 2 1");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("1\nテスト\ntest\n\nABCDEFG")), "doTestUpdate - body 2 1");
+    // check 2
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - stat 2 2");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 2, "doTestUpdate - id 2 2");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 12, "doTestUpdate - user_id 2 2");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("2\nテスト\ntest\n\nABCDEFG")), "doTestUpdate - body 2 2");
+}
+
+void doTestDelete(table* tb)
+{
+    // delete 2
+    tb->clearBuffer();
+    tb->setFV(FDI_ID, 2);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestDelete - seek 2");
+    tb->del();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestDelete - delete 2");
+    // select 1
+    tb->clearBuffer();
+    tb->setFV(FDI_ID, 1);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestDelete - stat 1");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 1, "doTestDelete - id 1");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 11, "doTestDelete - user_id 1");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("1\nテスト\ntest\n\nABCDEFG")), "doTestDelete - body 1");
+    // next is 3
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestDelete - stat 3");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 3, "doTestDelete - id 3");
+    BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 2, "doTestDelete - user_id 3");
+    BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+        _tstring(_T("3\ntest\nテスト\n\nあいうえおあいうえお")), "doTestDelete - body 3");
+    // eof
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(tb->stat() == STATUS_EOF, "doTestDelete - eof 3");
 }
 
 void createDatabase(database* db)
@@ -110,7 +224,7 @@ void createDatabase(database* db)
 		db->open(URL, 0, 0);
 		BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase 1");
 		db->drop();
-		BOOST_CHECK_MESSAGE(0 == db->stat(), "DropDataBaseTestString stat=" << db->stat());
+		BOOST_CHECK_MESSAGE(0 == db->stat(), "drop stat=" << db->stat());
 		db->create(URL);
 	}
     BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase");
@@ -187,11 +301,19 @@ void testStringFileter(database* db)
     BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable");
 	
     doInsertStringFileter(tb);
-	doTestFilterBug(tb);
+    doTestSeek(tb);
+	doTestFind(tb);
+    doTestUpdate(tb);
+    doTestDelete(tb);
 	
 	tb->release();
 
     db->close();
+
+    db->open(URL, 0, 0);
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "drop 1");
+    db->drop();
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "drop stat=" << db->stat());
 }
 
 

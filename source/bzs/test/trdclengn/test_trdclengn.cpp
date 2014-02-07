@@ -2224,51 +2224,127 @@ void testQuery()
     q.queryString(_T("id = 0 and name = 'Abc efg'"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("id = '0' and name = 'Abc efg'")
                           ,  "queryString");
-
+    
+    q.queryString(_T(""));
+    q.addLogic(_T("id"), _T("="), _T("0"));
+    q.addLogic(_T("and"), _T("name"), _T("="), _T("Abc efg"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("id = '0' and name = 'Abc efg'"), "queryString");
+    
     q.queryString(_T("select id,name id = 0 AND name = 'Abc&' efg'"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&' efg'")
                           ,  "queryString");
-
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addLogic(_T("id"), _T("="), _T("0"));
+    q.addLogic(_T("AND"), _T("name"), _T("="), _T("Abc' efg"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&' efg'")
+                          ,  "queryString");
+    
     q.queryString(_T("select id,name id = 0 AND name = 'Abc&& efg'"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&& efg'")
                           ,  "queryString");
-
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addLogic(_T("id"), _T("="), _T("0"));
+    q.addLogic(_T("AND"), _T("name"), _T("="), _T("Abc& efg"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&& efg'")
+                          ,  "queryString");
+    
     q.queryString(_T("*"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("*"),  "queryString");
-
-
+    
+    q.queryString(_T(""));
+    q.all();
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("*"),  "queryString");
+    
     q.queryString(_T("Select id,name id = 2"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '2'")
                             ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addLogic(_T("id"), _T("="), _T("2"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '2'")
+                            ,  "queryString");
+    
     q.queryString(_T("SELECT id,name,fc id = 2"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2'")
                             ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addField(_T("fc"));
+    q.addLogic(_T("id"), _T("="), _T("2"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2'")
+                            ,  "queryString");
+    
     q.queryString(_T("select id,name,fc id = 2 and name = '3'"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2' and name = '3'")
                             ,  "queryString");
-
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addField(_T("fc"));
+    q.addLogic(_T("id"), _T("="), _T("2"));
+    q.addLogic(_T("and"), _T("name"), _T("="), _T("3"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2' and name = '3'")
+                            ,  "queryString");
+    
     //IN include
     q.queryString(_T("select id,name,fc IN '1','2','3'"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc in '1','2','3'")
                             ,  "queryString");
-
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addField(_T("fc"));
+    q.addSeekKeyValue(_T("1"));
+    q.addSeekKeyValue(_T("2"));
+    q.addSeekKeyValue(_T("3"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc in '1','2','3'")
+                            ,  "queryString");
+    
     q.queryString(_T("IN '1','2','3'"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in '1','2','3'")
                             ,  "queryString");
-
+    
     q.queryString(_T("IN 1,2,3"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in '1','2','3'")
                             ,  "queryString");
-
+    
+    q.queryString(_T(""));
+    q.addSeekKeyValue(_T("1"));
+    q.addSeekKeyValue(_T("2"));
+    q.addSeekKeyValue(_T("3"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in '1','2','3'")
+                            ,  "queryString");
+    
     //special field name
     q.queryString(_T("select = 1"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select = '1'")
                             ,  "queryString");
-
+    
+    q.queryString(_T(""));
+    q.addLogic(_T("select"), _T("="), _T("1"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select = '1'")
+                            ,  "queryString");
+    
     q.queryString(_T("in <> 1"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in <> '1'")
                             ,  "queryString");
-
+    
+    q.queryString(_T(""));
+    q.addLogic(_T("in"), _T("<>"), _T("1"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in <> '1'")
+                            ,  "queryString");
 }
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
