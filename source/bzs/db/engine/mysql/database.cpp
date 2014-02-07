@@ -749,6 +749,9 @@ void table::setKeyValuesPacked(const uchar* ptr, int size)
 
 uint table::keyPackCopy(uchar* ptr)
 {
+	//if nokey and getbookmark operation then keynum = -2
+	if (m_keyNum < 0) return 0; 
+
 	KEY& key = m_table->key_info[m_keyNum];
 	if ((key.flags & HA_NULL_PART_KEY) || (key.flags & HA_VAR_LENGTH_KEY))
 	{
@@ -1358,7 +1361,7 @@ void table::stepPrev()
 
 void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 {
-	if ((m_table->file->inited != handler::INDEX) || !m_cursor)
+	if ((m_table->file->inited == handler::NONE) || !m_cursor)
 	{
 		m_stat = STATUS_NO_CURRENT;
 		return;
@@ -1385,6 +1388,13 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 				m_stat = m_table->file->ha_index_next(m_table->record[0]);
 			else if (type == READ_RECORD_GETPREV)
 				m_stat = m_table->file->ha_index_prev(m_table->record[0]);
+			else if (type == READ_RECORD_STEPNEXT)
+				m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
+			else if (type == READ_RECORD_STEPPREV)
+			{
+				m_stat = STATUS_NOSUPPORT_OP;
+				return;
+			}
 			m_cursor = m_validCursor = (m_stat == 0);
 		}else
 			read = true;
@@ -1441,7 +1451,7 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
 	unlockRow();
 	m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
 	m_cursor =  (m_stat == 0);
-	if (keyNum==-1)
+	if ((keyNum==-1)||(keyNum==-64))
 		return ;
 	if (m_stat==0)
 	{

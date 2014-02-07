@@ -49,7 +49,9 @@ class AGRPACK nstable
     friend class filter;
 public:
     enum eUpdateType{changeCurrentCc,changeCurrentNcc,changeInKey};
+    enum eFindType{findForword, findBackForword};
     static const bool inkey = true;
+
 private:
     struct nstimpl* m_impl;
 
@@ -61,7 +63,6 @@ private:
 	static TCHAR* getErrorMessage(int errorCode, _TCHAR* buf, size_t size);
 
 protected:
-
 
     ushort_td m_op;
     void* m_pdata;
@@ -106,21 +107,22 @@ protected:
     virtual void doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownername);
     virtual void doClose();
     virtual void doCreateIndex(bool specifyKeyNum);
-    virtual uint_td doRecordCount(bool estimate, bool fromCurrent);
+    virtual uint_td doRecordCount(bool estimate, bool fromCurrent, eFindType direction);
     virtual short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf);
     virtual ushort_td doCommitBulkInsert(bool autoCommit);
     virtual void doAbortBulkInsert();
     inline void open(const _TCHAR* uri, char_td mode = 0, const _TCHAR* ownerName = NULL) {
         doOpen(uri, mode, ownerName);}
 
-	/* 	   
+	/*
 		This method is ignore refarence count of nstable and force delete.
 		Use in nsdatabase::reset()	
 	*/
 	void destroy();
 	void setShared();
-	
+
 public:
+
     explicit nstable(nsdatabase *pbe);
 	void addref(void);
 	void release();
@@ -150,7 +152,8 @@ public:
     inline ushort_td insert(bool ncc = false) {return doInsert(ncc);};
     inline void createIndex(bool specifyKeyNum = false) {doCreateIndex(specifyKeyNum);}
     void dropIndex(bool norenumber = false);
-    inline uint_td recordCount(bool estimate = true, bool fromCurrent = false) {return doRecordCount(estimate, fromCurrent);}
+    inline uint_td recordCount(bool estimate = true, bool fromCurrent = false, eFindType direction = findForword)
+    {return doRecordCount(estimate, fromCurrent, direction);}
     inline short_td tdapErr(HWND hWnd, _TCHAR* retbuf = NULL) {return doBtrvErr(hWnd, retbuf);}
     
     void beginBulkInsert(int maxBuflen);

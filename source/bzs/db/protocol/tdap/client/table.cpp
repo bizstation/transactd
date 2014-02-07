@@ -457,12 +457,16 @@ inline short calcNextReadRecordCount(ushort_td curCount, int eTime)
     return ret;
 }
 
-uint_td table::doRecordCount(bool estimate, bool fromCurrent)
+uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType direction)
 {
     uint_td result = 0;
 
     if (m_impl->filterPtr)
     {
+        short_td op = (direction == findForword) ? TD_KEY_NEXT_MULTI:TD_KEY_PREV_MULTI;
+
+        if (tableDef()->keyCount == 0)
+            op += TD_POS_NEXT_MULTI - TD_KEY_NEXT_MULTI;// KEY to POS
         short curStat = m_stat;
         m_impl->exBookMarking = true;
         ushort_td recCountOnce = 50;
@@ -477,15 +481,21 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
         m_impl->maxBookMarkedCount = 0;
         if (fromCurrent)
             m_stat = curStat;
-        else
+        else if (op == TD_KEY_NEXT_MULTI)
             seekFirst();
+        else if (op == TD_KEY_PREV_MULTI)
+            seekLast();
+        else if (op == TD_POS_NEXT_MULTI)
+            stepFirst();
+        else if (op == TD_POS_PREV_MULTI)
+            stepLast();
 
         m_impl->filterPtr->setMaxRows(recCountOnce);
         if (m_stat == 0)
         {
             m_impl->filterPtr->setPosTypeNext(false);
             boost::timer t;
-            btrvGetExtend(TD_KEY_NEXT_MULTI);
+            btrvGetExtend(op);
             int eTime = (int)(t.elapsed() * 1000);
             while ((m_stat == 0) || (m_stat == STATUS_LIMMIT_OF_REJECT) || (m_stat == STATUS_EOF)
                         || (m_stat == STATUS_REACHED_FILTER_COND))
@@ -517,7 +527,7 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
                     break;
                 t.restart();
                 m_impl->filterPtr->setPosTypeNext(true);
-                btrvGetExtend(TD_KEY_NEXT_MULTI);
+                btrvGetExtend(op);
                 eTime = (int)(t.elapsed() * 1000);
             }
         }
@@ -534,7 +544,7 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
             m_stat = 0;
     }
     else
-        return nstable::doRecordCount(estimate, fromCurrent);
+        return nstable::doRecordCount(estimate, fromCurrent, direction);
 
     return result;
 }
@@ -554,7 +564,7 @@ void table::btrvGetExtend(ushort_td op)
     m_datalen = m_impl->filterPtr->exDataBufLen();
 
     //cacheing direction
-    if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI))
+    if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI)|| (op == TD_POS_PREV_MULTI))
         m_impl->filterPtr->setDirection(findBackForword);
     else
         m_impl->filterPtr->setDirection(findForword);

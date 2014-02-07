@@ -67,7 +67,7 @@ class AGRPACK table : public nstable
     ushort_td doCommitBulkInsert(bool autoCommit = false); // orverride
     void doAbortBulkInsert(); // orverride
     void doCreateIndex(bool SpecifyKeyNum = false); // orverride
-    uint_td doRecordCount(bool estimate, bool fromCurrent); // orverride
+    uint_td doRecordCount(bool estimate, bool fromCurrent, eFindType direction); // orverride
     short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf = NULL); // orverride
 
     double getFVnumeric(short index);
@@ -113,7 +113,7 @@ protected:
 
 
 public:
-    enum eFindType{findForword, findBackForword};
+    using nstable::eFindType;
 
     inline const tabledef* tableDef() const {return m_tableDef;};
 

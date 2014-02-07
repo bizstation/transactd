@@ -314,12 +314,12 @@ public:
 
 	inline void stepNextExt(IReadRecordsHandler* handler, bool includeCurrent)
 	{
-		readRecords(handler, includeCurrent, READ_RECORD_GETNEXT);
+		readRecords(handler, includeCurrent, READ_RECORD_STEPNEXT);
 	}
 
 	inline void stepPrevExt(IReadRecordsHandler* handler, bool includeCurrent)
 	{
-		readRecords(handler, includeCurrent, READ_RECORD_GETPREV);
+		readRecords(handler, includeCurrent, READ_RECORD_STEPPREV);
 	}
 
 	void clearBuffer();
