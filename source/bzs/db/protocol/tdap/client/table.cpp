@@ -2900,7 +2900,11 @@ void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name
     , const _TCHAR* logic,  const _TCHAR* value)
 {
     m_impl->m_wheres.push_back(combine);
-    addLogic(name, logic, value);
+    m_impl->m_wheres.push_back(name);
+    m_impl->m_wheres.push_back(logic);
+    m_impl->m_wheres.push_back(value);
+    m_impl->m_nofilter = false;
+
 }
 
 void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
