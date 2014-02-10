@@ -103,6 +103,9 @@ endif()
 if(TRANSACTD_HANDLERSOCKET)
   add_definitions(-DUSE_HANDLERSOCKET)
 endif()
+if(MY_PTHREAD_FASTMUTEX)
+  add_definitions(-DMY_PTHREAD_FASTMUTEX=1)
+endif()
 foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
   bz_add_cxx_flag("-DBOOST_ALL_NO_LIB -DPIC -DPACKAGE_NO_EXPORT" "${build_type}")
   bz_remove_cxx_flag("-fno-exceptions" "${build_type}")
@@ -168,7 +171,7 @@ endif()
 # ==========================================================
 # add boost libraries and include path
 # ==========================================================
-transactd_link_boost_libraries("chrono;filesystem;system;thread")
+transactd_link_boost_libraries("filesystem;thread;chrono;system")
 
 
 # ==========================================================

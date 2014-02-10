@@ -178,7 +178,7 @@ endif()
 # add link / include
 # ==========================================================
 if(MINGW)
-  transactd_link_boost_libraries("timer;chrono;filesystem;system;thread")
+  transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
 else()
   transactd_link_boost_libraries("timer")
 endif()

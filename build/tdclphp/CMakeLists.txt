@@ -183,7 +183,7 @@ endif()
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("timer;chrono;filesystem;system;thread")
+transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
 if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} iconv)
 endif()
