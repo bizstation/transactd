@@ -467,7 +467,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 		
 		extRequest* ereq = (extRequest*)req.data;
 		req.result = m_readHandler->begin(m_tb, ereq, true
-				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, (op == TD_KEY_NEXT_MULTI));
+				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, (op == TD_KEY_GE_NEXT_MULTI));
 		if (req.result != 0)
 			return 1;
 		if (m_tb->stat() == 0)
