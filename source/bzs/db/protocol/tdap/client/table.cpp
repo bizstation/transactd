@@ -3037,6 +3037,19 @@ bool queryBase::isAll()const{return m_impl->m_nofilter;};
 const std::vector<std::_tstring>& queryBase::getSelects() const {return m_impl->m_selects;}
 const std::vector<std::_tstring>& queryBase::getWheres() const {return m_impl->m_wheres;}
 const std::vector<std::_tstring>& queryBase::getSeekKeyValues() const{return m_impl->m_keyValues;}
+
+void queryBase::release()
+{
+    delete this;
+}
+
+queryBase* queryBase::create()
+{
+    return new queryBase();
+
+}
+
+
 }// namespace client
 }// namespace tdap
 }// namespace protocol

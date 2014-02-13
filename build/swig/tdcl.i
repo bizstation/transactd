@@ -81,6 +81,19 @@ using namespace bzs::db::protocol::tdap::client;
 /* ===============================================
       Ignore section
 =============================================== */
+// functions used by internal C++
+%ignore bzs::db::protocol::tdap::client::nsdatabase::btrvFunc;
+%ignore bzs::db::protocol::tdap::fileSpec;
+%ignore bzs::db::protocol::tdap::keySpec;
+%ignore bzs::db::protocol::tdap::fielddef::dataLen;
+%ignore bzs::db::protocol::tdap::fielddef::keyCopy;
+%ignore bzs::db::protocol::tdap::fielddef::keyData;
+%ignore bzs::db::protocol::tdap::fielddef::keyDataLen;
+%ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;
+%ignore bzs::db::protocol::tdap::fielddef::blobDataLen;
+// overwrote functions
+%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrVersion(btrVersions*, uchar_td*);
 // ignore members used BizStation internal only
 %ignore bzs::db::protocol::tdap::fielddef::chainChar;
 %ignore bzs::db::protocol::tdap::fielddef::setChainChar;
@@ -118,6 +131,10 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::queryBase::addField;
 %ignore bzs::db::protocol::tdap::client::queryBase::addLogic;
 %ignore bzs::db::protocol::tdap::client::queryBase::addSeekKeyValue;
+// ignore queryBase destructor. use release instead of it.
+%ignore bzs::db::protocol::tdap::client::queryBase::~queryBase;
+%newobject bzs::db::protocol::tdap::client::queryBase::create;
+%delobject bzs::db::protocol::tdap::client::queryBase::release;
 
 
 /* ===============================================

@@ -247,6 +247,8 @@ public:
     int getLimit()const;
     bool isAll()const;
     bool isOptimize()const;
+    void release();
+    static queryBase* create();
 };
 
 

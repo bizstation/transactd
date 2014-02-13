@@ -21,24 +21,11 @@
 /* ===============================================
   ignore functions
 =============================================== */
-// functions used by internal C++
-%ignore bzs::db::protocol::tdap::client::nsdatabase::btrvFunc;
-%ignore bzs::db::protocol::tdap::fileSpec;
-%ignore bzs::db::protocol::tdap::keySpec;
-%ignore bzs::db::protocol::tdap::fielddef::dataLen;
-%ignore bzs::db::protocol::tdap::fielddef::keyCopy;
-%ignore bzs::db::protocol::tdap::fielddef::keyData;
-%ignore bzs::db::protocol::tdap::fielddef::keyDataLen;
-%ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;
-%ignore bzs::db::protocol::tdap::fielddef::blobDataLen;
 // original callback
 %ignore bzs::db::protocol::tdap::client::database::onCopyData;
 %ignore bzs::db::protocol::tdap::client::database::setOnCopyData;
 %ignore bzs::db::protocol::tdap::client::database::onDeleteRecord;
 %ignore bzs::db::protocol::tdap::client::database::setOnDeleteRecord;
-// overwrote functions
-%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable;
-%ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrVersion(btrVersions*, uchar_td*);
 // overloaded functions
 %ignore bzs::db::protocol::tdap::client::table::setFV(short, float); // use double instead of this
 %ignore bzs::db::protocol::tdap::client::table::setFV(short, unsigned char);  // use __int64 instead of this
