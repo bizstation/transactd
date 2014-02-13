@@ -374,8 +374,8 @@ enum eCompType
  If you change this version then you need change The ($TargetName) project options too.
 */
 #define C_INTERFACE_VER_MAJOR "1"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "1"//##2 Build marker! Don't remove
-#define C_INTERFACE_VER_RELEASE "2"//##3 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "2"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 #ifdef LINUX
 #ifdef __APPLE__
@@ -424,15 +424,15 @@ enum eCompType
 
 
 #define CPP_INTERFACE_VER_MAJOR "1"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "1"//##5 Build marker! Don't remove
-#define CPP_INTERFACE_VER_RELEASE "2"//##6 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "2"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 #ifdef _WIN32
 #define CPP_INTERFACE_VERSTR "_" COMPILER_VERSTR "_" TD_LIB_PART "_" CPP_INTERFACE_VER_MAJOR "_" CPP_INTERFACE_VER_MINOR //use autolink
 #endif
 
 #define TRANSACTD_VER_MAJOR 1//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 1//##8 Build marker! Don't remove
-#define TRANSACTD_VER_RELEASE 2//##9 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 2//##8 Build marker! Don't remove
+#define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif //BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H
