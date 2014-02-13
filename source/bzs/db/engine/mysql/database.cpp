@@ -1368,6 +1368,8 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 	}
 	m_nonNcc = false;
 	int reject = (hdr->rejectCount()==0)?4096:hdr->rejectCount();
+	if (reject==0xFFFF)
+		reject = -1;
 	int rows = hdr->maxRows();
 	
 	//Is a current position read or not? 

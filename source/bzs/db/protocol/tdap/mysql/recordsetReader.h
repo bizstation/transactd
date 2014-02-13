@@ -227,10 +227,13 @@ inline int compareBlobType(const char* l, const char* r, bool bin, char logType,
 #define REC_NOMACTH			1
 #define REC_NOMACTH_NOMORE  2
 
+//#define COMP_USE_SWITCHCASE
+#ifndef COMP_USE_SWITCHCASE
+#define COMP_USE_FUNCTION_POINTER 
+#endif
 
 struct logicalField;
-typedef int (logicalField::*compFunc3)(const char* l, const char* r, int sizeByte) const;
-
+typedef int (logicalField::*compFunc)(const char* l, const char* r, int sizeByte) const;
 struct logicalField
 {
 	
@@ -252,6 +255,92 @@ public:
 	}
 
 public:	
+#ifdef COMP_USE_SWITCHCASE
+	int comp(const char* record, int sizeByte) const
+	{	
+		const char* r = (const char*) ptr;
+		if  (logType & CMPLOGICAL_FIELD)
+			r = record + offset;
+		const char* l = record + pos;
+		switch(type)
+		{
+		case ft_integer:
+		case ft_autoinc:
+		case ft_currency:
+		{
+			switch(len)
+			{
+			case 1:return compare<char>(l, r);
+			case 2:return compare<short>(l, r);
+			case 3:return compareInt24(l, r);
+			case 4:return compare<int>(l, r);
+			case 8:return compare<__int64>(l, r);
+			}
+		}
+		case ft_mychar:
+		case ft_string:
+			if (logType & CMPLOGICAL_CASEINSENSITIVE)
+				return _strnicmp(l, r, len);
+			return memcmp(l, r, len);
+		case ft_zstring:
+		case ft_note:
+			if (logType & CMPLOGICAL_CASEINSENSITIVE)
+				return _strnicmp(l, r, len);
+			return strncmp(l, r, len);
+		case ft_logical:
+		case ft_uinteger:
+		case ft_autoIncUnsigned:
+		case ft_date:
+		case ft_time:
+		case ft_timestamp:
+		case ft_mydate:
+		{
+			switch(len)
+			{
+			case 1:return compare<unsigned char>(l, r);
+			case 2:return compare<unsigned short>(l, r);
+			case 3:return compareUint24(l, r);
+			case 4:return compare<unsigned int>(l, r);
+			case 8:return compare<unsigned __int64>(l, r);
+			}
+		}
+		
+		case ft_mytime:
+		case ft_mydatetime:
+		case ft_mytimestamp:
+			return memcmp(l, r, len);
+		case ft_float:
+			switch(len)
+			{
+			case 4:return compare<float>(l, r);
+			case 8:return compare<double>(l, r);
+			}
+		case ft_mywchar:
+		case ft_wstring:
+		case ft_wzstring:
+			if (logType & CMPLOGICAL_CASEINSENSITIVE)
+				return wcsnicmp16((char16_t*)l, (char16_t*)r, len);
+			if ((type==ft_wstring)||(type==ft_mywchar))
+				return memcmp(l, r, len);	
+			return wcsncmp16((char16_t*)l, (char16_t*)r, len);
+		case ft_lstring: 
+		case ft_myvarchar:
+		case ft_myvarbinary:
+			if (sizeByte==1)
+				return compareVartype<unsigned char>(l, r, type==ft_myvarbinary, logType);
+			return compareVartype<unsigned short>(l, r, type==ft_myvarbinary, logType); 
+		case ft_mywvarchar:
+		case ft_mywvarbinary:
+			if (sizeByte==1)
+				return compareWvartype<unsigned char>(l, r, type==ft_mywvarbinary, logType);
+			return compareWvartype<unsigned short>(l, r, type==ft_mywvarbinary, logType);
+		case ft_mytext:
+		case ft_myblob:
+			return compareBlobType(l, r, type==ft_myblob, logType, sizeByte);
+		}
+		return 0;
+	};
+#else //COMP_USE_FUNCTION_POINTER
 
 	template <class T>
 	int compNumber(const char* l, const char* r, int sizeByte) const
@@ -311,7 +400,7 @@ public:
 		return compareBlobType(l, r, type==ft_myblob, logType, sizeByte);
 	}
 
-	compFunc3 logicalField::getCompFunc(int sizeByte)
+	compFunc logicalField::getCompFunc(int sizeByte)
 	{		
 		switch(type)
 		{
@@ -390,7 +479,7 @@ public:
 		}
 		return NULL;
 	}
-
+#endif
 	extResultDef* resultDef() const
 	{
 		if (opr == 0)
@@ -432,7 +521,9 @@ class fieldAdapter
 	logicalField* m_fd;
 	fieldAdapter* m_next;
 	bool (*m_isMatchFunc)(int);
-	compFunc3 m_compFunc;
+#ifdef COMP_USE_FUNCTION_POINTER
+	compFunc m_compFunc;
+#endif
 	unsigned char m_keySeg;
 	mutable bool m_judge;
 	char m_judgeType;
@@ -450,7 +541,9 @@ public:
 		if (num == -1)
 			return STATUS_INVALID_FIELD_OFFSET;
 		m_sizeBytes = (char)position.fieldSizeByte(num);
+#ifdef COMP_USE_FUNCTION_POINTER
 		m_compFunc = fd->getCompFunc(m_sizeBytes);
+#endif
 		if (fd->opr == 2)
 		{
 			m_judgeType = 0;
@@ -494,11 +587,15 @@ public:
 	
 	int match(const char* record, bool typeNext) const
 	{
+#ifdef COMP_USE_SWITCHCASE
+		int v = m_fd->comp(record, m_sizeBytes);
+#else //COMP_USE_FUNCTION_POINTER
 		const char* r = (const char*) m_fd->ptr;
 		if  (m_fd->logType & CMPLOGICAL_FIELD)
 			r = record + m_fd->offset;
 		const char* l = record + m_fd->pos;
 		int v = (m_fd->*m_compFunc)(l, r , m_sizeBytes);
+#endif		
 		bool ret = m_isMatchFunc(v);
 		if (ret && m_judgeType)
 		{
@@ -573,6 +670,11 @@ public:
 				flag = false;
 			++cur;
 		}
+
+		//if first logic is first segmnet then first logic can judge.
+		if ((begin->m_keySeg == 1) && begin->m_judgeType)
+			begin->m_judge = true;
+
 		if (lastIndex == req.logicalCount) --end;
 		end->m_fd->opr = tmpOpr;
 		for (int i=0;i<req.logicalCount-1;++i)
