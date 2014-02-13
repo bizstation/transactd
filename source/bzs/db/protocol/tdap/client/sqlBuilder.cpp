@@ -96,6 +96,7 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
 		if (size==4)return "INT";
 		if (size==8)return "BIGINT";
 	case ft_uinteger:
+    case ft_autoIncUnsigned:
 		if (size==1)return "TINYINT UNSIGNED";
 		if (size==2)return "SMALLINT UNSIGNED";
 		if (size==4)return "INT UNSIGNED";
@@ -257,7 +258,7 @@ std::string getFiledList(tabledef* table, std::vector<std::string>& fdl)
 			s += " NULL";
 		else
 			s += " NOT NULL";
-		if (fd.type == ft_autoinc)
+		if ((fd.type == ft_autoinc)||(fd.type == ft_autoIncUnsigned))
 			s +=	" AUTO_INCREMENT";
 		s += ",";
 	}

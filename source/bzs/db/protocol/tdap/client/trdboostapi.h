@@ -20,6 +20,8 @@
 =================================================================*/
 #include <bzs/db/protocol/tdap/client/trdboostapiInternal.h>
 #include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
+
 #include <stdio.h>
 
 #if defined(__GNUC__) 
@@ -77,22 +79,58 @@ public:
     inline float f() const {return m_tb.getFVflt(m_index);}
 
     inline double d() const {return m_tb.getFVdbl(m_index);}
-    inline field& operator = (const _TCHAR* p) {
+
+    inline field& operator = (const _TCHAR* p)
+    {
         m_tb.setFV(m_index, p);
         return *this;
-    } inline field& operator = (int v) {
-        m_tb.setFV(m_index, v);
+    }
+
+    inline field& operator = (const std::_tstring& p)
+    {
+        m_tb.setFV(m_index, p.c_str());
         return *this;
-    } inline field& operator = (__int64 v) {
-        m_tb.setFV(m_index, v);
+    }
+
+#ifdef _UNICODE
+    inline field& operator = (const char* p)
+    {
+        m_tb.setFVA(m_index, p);
         return *this;
-    } inline field& operator = (float v) {
-        m_tb.setFV(m_index, v);
+    }
+
+    inline field& operator = (const std::string& p)
+    {
+        m_tb.setFVA(m_index, p.c_str());
         return *this;
-    } inline field& operator = (double v) {
+    }
+
+#endif
+
+    inline field& operator = (int v)
+    {
         m_tb.setFV(m_index, v);
         return *this;
     }
+
+    inline field& operator = (__int64 v)
+    {
+        m_tb.setFV(m_index, v);
+        return *this;
+    }
+
+    inline field& operator = (float v)
+    {
+        m_tb.setFV(m_index, v);
+        return *this;
+    }
+
+    inline field& operator = (double v)
+    {
+        m_tb.setFV(m_index, v);
+        return *this;
+    }
+
     inline bool operator != (const _TCHAR* p) {return (_tcscmp(p, c_str()) != 0);};
     inline bool operator == (const _TCHAR* p) {return (_tcscmp(p, c_str())==0);};
 
@@ -166,7 +204,12 @@ class tableIterator
 public:
     static const tableIterator eos;
 
-    inline tableIterator(table& tb) : m_tb(tb), m_fds(tb) {};
+    inline tableIterator(table& tb) : m_tb(tb), m_fds(tb)
+    {
+        if ((tb.stat() != 0) && (tb.stat() != STATUS_EOF) && (tb.stat() != STATUS_NOT_FOUND_TI))
+            nstable::throwError(std::_tstring(_T("tableIterator")).c_str(), &tb);
+
+    }
 
     table& tb() const {return m_tb;};
 
@@ -287,9 +330,17 @@ const filterdStepIterator filterdStepIterator::eos;
 template<>
 const filterdFindIterator filterdFindIterator::eos;
 
+template<>
+const filterdIndexRvIterator filterdIndexRvIterator::eos;
+
+template<>
+const filterdStepRvIterator filterdStepRvIterator::eos;
+
+template<>
+const filterdFindRvIterator filterdFindRvIterator::eos;
 
 
-inline indexIterator readIndex(table_ptr tb, eIndexOpType op)
+indexIterator readIndex(table_ptr tb, eIndexOpType op)
 {
 
     switch (op)
@@ -309,7 +360,7 @@ inline indexIterator readIndex(table_ptr tb, eIndexOpType op)
     return indexIterator(*tb);
 }
 
-inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op)
+indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op)
 {
 
     switch (op)
@@ -355,190 +406,150 @@ inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op, char_td keynum
 
 }
 
-
-template <class T0 = _TCHAR*, class T1 = _TCHAR*, class T2 = _TCHAR*, class T3 = _TCHAR*
-        , class T4 = _TCHAR*, class T5 = _TCHAR*, class T6 = _TCHAR*, class T7 = _TCHAR*>
-class keyValue
-{
-
-public:
-    inline static void set(table_ptr tb, const char_td keynum
-        ,const T0 kv0, const T1 kv1=NULL
-        ,const T2 kv2=NULL, const T3 kv3=NULL
-        ,const T4 kv4=NULL, const T5 kv5=NULL
-        ,const T6 kv6=NULL, const T7 kv7=NULL)
-    {
-        const tabledef& td = *tb->tableDef();
-        if (keynum < td.keyCount)
-        {
-            const keydef kd = td.keyDefs[keynum];
-            if (kd.segmentCount > 0)
-                tb->setFV(kd.segments[0].fieldNum, kv0);
-            if (kd.segmentCount > 1)
-                tb->setFV(kd.segments[1].fieldNum, kv1);
-            if (kd.segmentCount > 2)
-                tb->setFV(kd.segments[2].fieldNum, kv2);
-            if (kd.segmentCount > 3)
-                tb->setFV(kd.segments[3].fieldNum, kv3);
-            if (kd.segmentCount > 4)
-                tb->setFV(kd.segments[4].fieldNum, kv4);
-            if (kd.segmentCount > 5)
-                tb->setFV(kd.segments[5].fieldNum, kv5);
-            if (kd.segmentCount > 6)
-                tb->setFV(kd.segments[6].fieldNum, kv6);
-            if (kd.segmentCount > 7)
-                tb->setFV(kd.segments[7].fieldNum, kv7);
-        }
-        tb->setKeyNum(keynum);
-
-    }
-};
-
 template <class T0, class T1, class T2, class T3
         , class T4, class T5, class T6, class T7>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
-    keyValue<T0, T1, T2, T3, T4, T5, T6, T7>::
+    keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::
             set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
     return readIndex(tb, op);
 }
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5, class T6>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5, const T6 kv6)
 {
-    keyValue<T0, T1, T2, T3, T4, T5, T6>::
+    keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::
             set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
     return readIndex(tb, op);
 }
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5)
 {
-    keyValue<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
+    keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
     return readIndex(tb, op);
 }
 
 template <class T0, class T1, class T2, class T3, class T4>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3, const T4 kv4)
 {
-    keyValue<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
+    keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
     return readIndex(tb, op);
 }
 
 template <class T0, class T1, class T2, class T3>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1 ,const T2 kv2, const T3 kv3)
 {
-    keyValue<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
+    keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
     return readIndex(tb, op);
 }
 
 template <class T0, class T1, class T2>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1 ,const T2 kv2)
 {
-    keyValue<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
+    keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
     return readIndex(tb, op);
 }
 
 template <class T0, class T1>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1)
 {
-    keyValue<T0, T1>::set(tb, keynum, kv0, kv1);
+    keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
     return readIndex(tb, op);
 }
 
 template <class T0>
-indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0)
 {
-    keyValue<T0>::set(tb, keynum, kv0);
+    keyValueSetter<T0>::set(tb, keynum, kv0);
     return readIndex(tb, op);
 }
 
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5, class T6, class T7>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
-    keyValue<T0, T1, T2, T3, T4, T5, T6, T7>::
+    keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::
             set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
     return readIndexRv(tb, op);
 }
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5, class T6>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5, const T6 kv6)
 {
-    keyValue<T0, T1, T2, T3, T4, T5, T6>::
+    keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::
             set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
     return readIndexRv(tb, op);
 }
 
 template <class T0, class T1, class T2, class T3
         , class T4, class T5>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
     ,const T4 kv4, const T5 kv5)
 {
-    keyValue<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
+    keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
     return readIndexRv(tb, op);
 }
 
 template <class T0, class T1, class T2, class T3, class T4>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3, const T4 kv4)
 {
-    keyValue<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
+    keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
     return readIndexRv(tb, op);
 }
 
 template <class T0, class T1, class T2, class T3>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1 ,const T2 kv2, const T3 kv3)
 {
-    keyValue<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
+    keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
     return readIndexRv(tb, op);
 }
 
 template <class T0, class T1, class T2>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1 ,const T2 kv2)
 {
-    keyValue<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
+    keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
     return readIndexRv(tb, op);
 }
 
 template <class T0, class T1>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0, const T1 kv1)
 {
-    keyValue<T0, T1>::set(tb, keynum, kv0, kv1);
+    keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
     return readIndexRv(tb, op);
 }
 
 template <class T0>
-indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
+inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
     ,const T0 kv0)
 {
-    keyValue<T0>::set(tb, keynum, kv0);
+    keyValueSetter<T0>::set(tb, keynum, kv0);
     return readIndexRv(tb, op);
 }
-
 
 
 inline stepIterator readStep(table_ptr tb)
@@ -559,7 +570,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3, T4, T5, T6, T7>::
+	keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::
             set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
     tb->find(table::findForword);
 	return findIterator(*tb);
@@ -570,7 +581,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
+	keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
     tb->find(table::findForword);
 	return findIterator(*tb);
 }
@@ -580,7 +591,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
+	keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
     tb->find(table::findForword);
 	return findIterator(*tb);
 }
@@ -590,7 +601,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
+	keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
     tb->find(table::findForword);
 	return findIterator(*tb);
 }
@@ -600,7 +611,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
+	keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
     tb->find(table::findForword);
 	return findIterator(*tb);
 }
@@ -610,7 +621,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
+	keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
     tb->find(table::findForword);
 	return findIterator(*tb);
 }
@@ -620,7 +631,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1>::set(tb, keynum, kv0, kv1);
+	keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
     tb->find(table::findForword);
 	return findIterator(*tb);
 }
@@ -630,7 +641,7 @@ findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0>::set(tb, keynum, kv0);
+	keyValueSetter<T0>::set(tb, keynum, kv0);
     tb->find(table::findForword);
 	return findIterator(*tb);
 }
@@ -640,7 +651,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3, T4, T5, T6, T7>::
+	keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::
             set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
     tb->find(table::findBackForword);
 	return findRvIterator(*tb);
@@ -651,7 +662,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
+	keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
     tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
@@ -661,7 +672,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
+	keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
     tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
@@ -671,7 +682,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
+	keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
     tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
@@ -681,7 +692,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
+	keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
     tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
@@ -691,7 +702,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1, const T2 kv2)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
+	keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
     tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
@@ -701,7 +712,7 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0, const T1 kv1)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0, T1>::set(tb, keynum, kv0, kv1);
+	keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
     tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
@@ -711,14 +722,12 @@ findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
     ,const T0 kv0)
 {
     tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
-	keyValue<T0>::set(tb, keynum, kv0);
+	keyValueSetter<T0>::set(tb, keynum, kv0);
     tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
 
-
-
-inline findIterator getFindIterator(indexIterator it, const filterParams& fp
+findIterator getFindIterator(indexIterator it, const filterParams& fp
                     ,bool isCurrentValid)
 
 {
@@ -731,7 +740,7 @@ inline findIterator getFindIterator(indexIterator it, const filterParams& fp
     return findIterator(it.tb());
 }
 
-inline findRvIterator getFindIterator(indexRvIterator it, const filterParams& fp
+findRvIterator getFindIterator(indexRvIterator it, const filterParams& fp
                     ,bool isCurrentValid)
 {
     if (it != indexRvIterator::eos)
@@ -783,7 +792,8 @@ inline database_ptr createDatadaseObject()
     return p;
 }
 
-inline void connect(database_ptr db, const connectParams& connPrams, bool newConnection)
+template <class Database_Ptr, class ConnectParam_type>
+inline void connect(Database_Ptr db, const ConnectParam_type& connPrams, bool newConnection)
 {
     db->connect(connPrams.uri(), newConnection);
     if (db->stat())
@@ -791,7 +801,8 @@ inline void connect(database_ptr db, const connectParams& connPrams, bool newCon
 
 }
 
-inline void disconnect(database_ptr db, const connectParams& connPrams)
+template <class Database_Ptr>
+inline void disconnect(Database_Ptr db, const connectParams& connPrams)
 {
     db->disconnect(connPrams.uri());
     if (db->stat())
@@ -799,7 +810,8 @@ inline void disconnect(database_ptr db, const connectParams& connPrams)
 
 }
 
-inline void disconnect(database_ptr db)
+template <class Database_Ptr>
+inline void disconnect(Database_Ptr db)
 {
     db->disconnect();
     if (db->stat())
@@ -807,14 +819,16 @@ inline void disconnect(database_ptr db)
 
 }
 
-inline void createDatabase(database_ptr db, const connectParams& connPrams)
+template <class Database_Ptr>
+inline void createDatabase(Database_Ptr db, const connectParams& connPrams)
 {
     db->create(connPrams.uri());
     if (db->stat())
         nstable::throwError((std::_tstring(_T("Create database ")) + connPrams.uri()).c_str(), db->stat());
 }
 
-inline void createDatabase(database_ptr db, const _TCHAR* uri)
+template <class Database_Ptr>
+inline void createDatabase(Database_Ptr db, const _TCHAR* uri)
 {
     db->create(uri);
     if (db->stat())
@@ -822,7 +836,8 @@ inline void createDatabase(database_ptr db, const _TCHAR* uri)
 }
 
 
-inline void openDatabase(database_ptr db, const connectParams& connPrams)
+template <class Database_Ptr, class ConnectParam_type>
+inline void openDatabase(Database_Ptr db, const ConnectParam_type& connPrams)
 {
     db->open(connPrams.uri(), connPrams.type(), connPrams.mode());
     if (db->stat())
@@ -830,7 +845,8 @@ inline void openDatabase(database_ptr db, const connectParams& connPrams)
 
 }
 
-inline void openDatabase(database_ptr db, const _TCHAR* uri, short schemaType = 0, short mode = -2, const _TCHAR* dir = NULL,
+template <class Database_Ptr>
+inline void openDatabase(Database_Ptr db, const _TCHAR* uri, short schemaType = 0, short mode = -2, const _TCHAR* dir = NULL,
         const _TCHAR* ownername = NULL)
 {
     db->open(uri, schemaType, mode, dir, ownername);
@@ -839,7 +855,8 @@ inline void openDatabase(database_ptr db, const _TCHAR* uri, short schemaType = 
 
 }
 
-inline void dropDatabase(database_ptr db)
+template <class Database_Ptr>
+inline void dropDatabase(Database_Ptr db)
 {
     db->drop();
     if (db->stat())
@@ -847,7 +864,8 @@ inline void dropDatabase(database_ptr db)
 
 }
 
-inline table_ptr openTable(database_ptr db, const _TCHAR* name)
+template <class Database_Ptr>
+inline table_ptr openTable(Database_Ptr db, const _TCHAR* name)
 {
     table_ptr p(db->openTable(name), releaseTable);
     if (db->stat())
@@ -855,7 +873,9 @@ inline table_ptr openTable(database_ptr db, const _TCHAR* name)
     return p;
 
 }
-inline void convertTable(database_ptr db, short tableid, copyDataFn func=NULL)
+
+template <class Database_Ptr>
+inline void convertTable(Database_Ptr db, short tableid, copyDataFn func=NULL)
 {
 
     if (db->existsTableFile(tableid, NULL))
@@ -872,7 +892,8 @@ inline void convertTable(database_ptr db, short tableid, copyDataFn func=NULL)
     }
 }
 
-inline void convertTable(database_ptr db, const _TCHAR* name, copyDataFn func=NULL)
+template <class Database_Ptr>
+inline void convertTable(Database_Ptr db, const _TCHAR* name, copyDataFn func=NULL)
 {
     assert(db->dbDef());
     short tablenum = db->dbDef()->tableNumByName(name);
@@ -930,7 +951,7 @@ inline void insertRecord(const T& it, bool ncc = true)
 {
     it.tb().insert(ncc);
     if (it.tb().stat() != 0)
-        nstable::throwError(std::_tstring(_T("Insert record")).c_str(), it.tb().stat());
+        nstable::throwError(std::_tstring(_T("Insert record")).c_str(), &(it.tb()));
 
 }
 
@@ -939,7 +960,7 @@ inline void updateRecord(const T& it, bool ncc = true)
 {
     it.tb().update((nstable::eUpdateType)ncc);
     if (it.tb().stat() != 0)
-        nstable::throwError(std::_tstring(_T("Update record")).c_str(), it.tb().stat());
+        nstable::throwError(std::_tstring(_T("Update record")).c_str(), &(it.tb()));
 
 }
 
@@ -948,7 +969,7 @@ inline void updateRecord(fields& fd, char_td keynum)
     fd.tb().setKeyNum(keynum);
 	fd.tb().update(nstable::changeInKey);
     if (fd.tb().stat() != 0)
-        nstable::throwError(std::_tstring(_T("Update record")).c_str(), fd.tb().stat());
+        nstable::throwError(std::_tstring(_T("Update record")).c_str(), &(fd.tb()));
 }
 
 inline void deleteRecord(fields& fd, const char_td keynum)
@@ -956,14 +977,14 @@ inline void deleteRecord(fields& fd, const char_td keynum)
     fd.tb().setKeyNum(keynum);
 	fd.tb().del(true/*inKey*/);
     if (fd.tb().stat() != 0)
-		nstable::throwError(std::_tstring(_T("Update record")).c_str(), fd.tb().stat());
+		nstable::throwError(std::_tstring(_T("Update record")).c_str(), &(fd.tb()));
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
 void deleteRecord(table_ptr tb, const char_td keynum
     ,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
-	keyValue<T0, T1, T2, T3, T4, T5, T6, T7>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
+	keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
@@ -972,7 +993,7 @@ template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
 void deleteRecord(table_ptr tb, const char_td keynum
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6)
 {
-	keyValue<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
+	keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
@@ -981,7 +1002,7 @@ template <class T0, class T1, class T2, class T3, class T4, class T5>
 void deleteRecord(table_ptr tb, const char_td keynum
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5)
 {
-	keyValue<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
+	keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
@@ -990,7 +1011,7 @@ template <class T0, class T1, class T2, class T3, class T4>
 void deleteRecord(table_ptr tb, const char_td keynum
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4)
 {
-	keyValue<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
+	keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
@@ -999,7 +1020,7 @@ template <class T0, class T1, class T2, class T3>
 void deleteRecord(table_ptr tb, const char_td keynum
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 {
-	keyValue<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
+	keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
@@ -1008,7 +1029,7 @@ template <class T0, class T1, class T2>
 void deleteRecord(table_ptr tb, const char_td keynum
 	,const T0 kv0, const T1 kv1, const T2 kv2)
 {
-	keyValue<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
+	keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
@@ -1017,7 +1038,7 @@ template <class T0, class T1>
 void deleteRecord(table_ptr tb, const char_td keynum
 	,const T0 kv0, const T1 kv1)
 {
-	keyValue<T0, T1>::set(tb, keynum, kv0, kv1);
+	keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
@@ -1026,7 +1047,7 @@ template <class T0>
 void deleteRecord(table_ptr tb, const char_td keynum
 	,const T0 kv0)
 {
-	keyValue<T0>::set(tb, keynum, kv0);
+	keyValueSetter<T0>::set(tb, keynum, kv0);
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
@@ -1036,7 +1057,7 @@ inline void deleteRecord(const T& it)
 {
 	it.tb().del(false/*inKey*/);
 	if (it.tb().stat() != 0)
-		nstable::throwError(std::_tstring(_T("Delete record")).c_str(), it.tb().stat());
+		nstable::throwError(std::_tstring(_T("Delete record")).c_str(), &(it.tb()));
 }
 
 

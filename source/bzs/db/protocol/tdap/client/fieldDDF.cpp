@@ -83,11 +83,6 @@ void fieldDDF::writeRecordData()
     for (size_t i = strlen(datbuf.name); i < 20; i++)
         datbuf.name[i] = ' ';
 
-#ifdef DDF_PSQLV_MODE
-    if (type == ft_logical)
-        type = ft_uinteger;
-
-#endif
     datbuf.type = type;
     datbuf.pos = pos;
     datbuf.len = len;

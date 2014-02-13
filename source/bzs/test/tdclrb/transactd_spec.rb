@@ -100,6 +100,21 @@ def testCreateTable(db)
   fd.len = 33
   dbdef.updateTableDef(1)
   expect(dbdef.stat()).to eq 0
+  
+  fd = dbdef.insertField(1, 2)
+  fd.setName('select')
+  fd.type = Transactd::Ft_integer
+  fd.len = 4
+  dbdef.updateTableDef(1)
+  expect(dbdef.stat()).to eq 0
+  
+  fd = dbdef.insertField(1, 3)
+  fd.setName('in')
+  fd.type = Transactd::Ft_integer
+  fd.len = 4
+  dbdef.updateTableDef(1)
+  expect(dbdef.stat()).to eq 0
+  
   kd = dbdef.insertKey(1,0)
   kd.segment(0).fieldNum = 0
   kd.segment(0).flags.bit8 = 1
@@ -191,6 +206,7 @@ def testFind(db)
     i = i - 1
   end
   # out of filter range (EOF)
+  tb.clearBuffer()
   v = TEST_COUNT
   tb.setFV(FDI_ID, v)
   tb.find(Transactd::Table::FindForword)
@@ -212,6 +228,79 @@ def testFindNext(db)
     expect(tb.stat()).to eq 0
     expect(tb.getFVint(FDI_ID)).to eq i
   end
+  tb.close()
+end
+
+def testFindIn(db)
+  tb = testOpenTable(db)
+  tb.setKeyNum(0)
+  tb.clearBuffer()
+  q = Transactd::QueryBase.new()
+  q.addInValue('10', true)
+  q.addInValue('300000')
+  q.addInValue('50')
+  q.addInValue('-1')
+  q.addInValue('80')
+  q.addInValue('5000')
+  
+  tb.setQuery(q)
+  expect(tb.stat()).to eq 0
+  tb.find()
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq 10
+  tb.findNext()
+  expect(tb.stat()).to eq Transactd::STATUS_NOT_FOUND_TI
+  
+  msg = tb.keyValueDescription()
+  expect(msg).to eq "table:user\nstat:4\nid = 300000\n"
+ 
+  tb.findNext()
+  expect(tb.getFVint(FDI_ID)).to eq 50
+  tb.findNext()
+  expect(tb.stat()).to eq Transactd::STATUS_NOT_FOUND_TI
+  
+  msg = tb.keyValueDescription()
+  expect(msg).to eq "table:user\nstat:4\nid = -1\n"
+ 
+  tb.findNext()
+  expect(tb.getFVint(FDI_ID)).to eq 80
+  tb.findNext()
+  expect(tb.getFVint(FDI_ID)).to eq 5000
+  tb.findNext()
+  expect(tb.stat()).to eq Transactd::STATUS_EOF
+  
+  # Many params
+  q.addInValue('1', true)
+  2.upto(10000) do |i|
+    q.addInValue(i.to_s)
+  end
+  tb.setQuery(q)
+  expect(tb.stat()).to eq 0
+  
+  tb.find()
+  i = 0
+  while tb.stat() == 0 do
+    i = i + 1
+    expect(tb.getFVint(FDI_ID)).to eq i
+    tb.findNext(true)
+  end
+  expect(tb.stat()).to eq Transactd::STATUS_EOF
+  expect(i).to eq 10000
+  
+  # LogicalCountLimit
+  q.select('id')
+  tb.setQuery(q)
+  
+  tb.find()
+  i = 0
+  while tb.stat() == 0 do
+    i = i + 1
+    expect(tb.getFVint(FDI_ID)).to eq i
+    tb.findNext(true)
+  end
+  expect(tb.stat()).to eq Transactd::STATUS_EOF
+  expect(i).to eq 10000
+  
   tb.close()
 end
 
@@ -448,7 +537,7 @@ def testSnapShot(db)
   if ISOLATION_READ_COMMITTED
     expect(tb2.stat()).to eq 0
   elsif ISOLATION_REPEATABLE_READ
-    expect(tb2.stat()).to eq STATUS_LOCK_ERROR
+    expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
   end
   # ----------------------------------------------------
   tb.seekFirst()
@@ -1263,6 +1352,7 @@ def testCreateTableStringFilter(db, id, name, type, type2)
 end
 
 def doTestInsertStringFilter(tb)
+  tb.beginBulkInsert(BULKBUFSIZE)
   tb.clearBuffer()
   id = 1
   tb.setFV('id', id)
@@ -1293,6 +1383,7 @@ def doTestInsertStringFilter(tb)
   tb.setFV('name', 'おめでとうございます。')
   tb.setFV('namew', 'おめでとうございます。')
   tb.insert()
+  tb.commitBulkInsert()
 end
 
 def doTestReadStringFilter(tb)
@@ -1325,18 +1416,91 @@ end
 def doTestSetStringFilter(tb)
   tb.setKeyNum(0)
   tb.clearBuffer()
+  
   tb.setFilter("name = 'あい*'", 0, 10)
+  expect(tb.stat()).to eq 0
   tb.seekFirst()
+  expect(tb.stat()).to eq 0
   tb.findNext(false)
   expect(tb.stat()).to eq 0
   expect(tb.getFVstr(FDI_NAME)).to eq 'あいうえおかきくこ'
   expect(tb.recordCount()).to eq 2
+  
   tb.setFilter("name <> 'あい*'", 0, 10)
   expect(tb.recordCount()).to eq 3
+  tb.clearBuffer()
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  tb.findNext(false)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVstr(FDI_NAMEW)).to eq 'A123456'
+  
+  tb.findNext()
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVstr(FDI_NAMEW)).to eq 'おはようございます'
+  
+  tb.findNext()
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVstr(FDI_NAMEW)).to eq 'おめでとうございます。'
+  
+  tb.findNext()
+  expect(tb.stat()).to eq Transactd::STATUS_EOF
+  
+  tb.clearBuffer()
+  tb.seekLast()
+  tb.findPrev(false)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVstr(FDI_NAMEW)).to eq 'おめでとうございます。'
+  
+  tb.findPrev()
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVstr(FDI_NAMEW)).to eq 'おはようございます'
+  
+  tb.findPrev(false)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVstr(FDI_NAMEW)).to eq 'A123456'
+  
+  tb.findPrev()
+  expect(tb.stat()).to eq Transactd::STATUS_EOF
+  
   tb.setFilter("name = 'あい'", 0, 10)
   expect(tb.recordCount()).to eq 0
+  
   tb.setFilter("name <> ''", 0, 10)
   expect(tb.recordCount()).to eq 5
+  
+  # testing that setFilter don't change field value
+  tb.clearBuffer()
+  tb.setFV('name', 'ABCDE')
+  tb.setFilter("name = 'あい'", 0, 10)
+  expect(tb.getFVstr(FDI_NAME)).to eq 'ABCDE'
+end
+
+def doTestUpdateStringFilter(tb)
+  tb.setKeyNum(0)
+  tb.clearBuffer()
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  tb.setFV('name', 'ABCDE')
+  tb.setFV('namew', 'ABCDEW')
+  tb.update()
+  expect(tb.stat()).to eq 0
+  tb.seekNext()
+  expect(tb.stat()).to eq 0
+  
+  tb.setFV('name', 'ABCDE2')
+  tb.setFV('namew', 'ABCDEW2')
+  tb.update()
+  expect(tb.stat()).to eq 0
+  
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVstr(FDI_NAME)).to eq 'ABCDE'
+  expect(tb.getFVstr(FDI_NAMEW)).to eq 'ABCDEW'
+  tb.seekNext()
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVstr(FDI_NAME)).to eq 'ABCDE2'
+  expect(tb.getFVstr(FDI_NAMEW)).to eq 'ABCDEW2'
 end
 
 def doTestStringFilter(db, id, name, type, type2)
@@ -1346,6 +1510,7 @@ def doTestStringFilter(db, id, name, type, type2)
   doTestInsertStringFilter(tb)
   doTestReadStringFilter(tb)
   doTestSetStringFilter(tb)
+  doTestUpdateStringFilter(tb)
   tb.close()
 end
 
@@ -1372,6 +1537,90 @@ def testDropDatabaseStringFilter(db)
   expect(db.stat()).to eq 0
   db.drop()
   expect(db.stat()).to eq 0
+end
+
+def testQuery()
+  q = Transactd::QueryBase.new()
+  q.queryString("id = 0 and name = 'Abc efg'")
+  expect(q.toString()).to eq "id = '0' and name = 'Abc efg'"
+  
+  q.queryString('')
+  q.where('id', '=', '0').andWhere('name', '=', 'Abc efg')
+  expect(q.toString()).to eq "id = '0' and name = 'Abc efg'"
+  
+  q.queryString("select id,name id = 0 AND name = 'Abc&' efg'")
+  expect(q.toString()).to eq "select id,name id = '0' AND name = 'Abc&' efg'"
+  
+  q.queryString('')
+  q.select('id', 'name').where('id', '=', '0').andWhere('name', '=', "Abc' efg")
+  expect(q.toString()).to eq "select id,name id = '0' and name = 'Abc&' efg'"
+  
+  q.queryString("select id,name id = 0 AND name = 'Abc&& efg'")
+  expect(q.toString()).to eq "select id,name id = '0' AND name = 'Abc&& efg'"
+  
+  q.queryString('')
+  q.select('id', 'name').where('id', '=', '0').andWhere('name', '=', 'Abc& efg')
+  expect(q.toString()).to eq "select id,name id = '0' and name = 'Abc&& efg'"
+  
+  q.queryString('*')
+  expect(q.toString()).to eq '*'
+  
+  q.all()
+  expect(q.toString()).to eq '*'
+  
+  q.queryString('Select id,name id = 2')
+  expect(q.toString()).to eq "select id,name id = '2'"
+  
+  q.queryString('')
+  q.select('id', 'name').where('id', '=', '2')
+  expect(q.toString()).to eq "select id,name id = '2'"
+  
+  q.queryString('SELECT id,name,fc id = 2')
+  expect(q.toString()).to eq "select id,name,fc id = '2'"
+  
+  q.queryString('')
+  q.select('id', 'name', 'fc').where('id', '=', '2')
+  expect(q.toString()).to eq "select id,name,fc id = '2'"
+  
+  q.queryString("select id,name,fc id = 2 and name = '3'")
+  expect(q.toString()).to eq "select id,name,fc id = '2' and name = '3'"
+  
+  q.queryString('')
+  q.select('id', 'name', 'fc').where('id', '=', '2').andWhere('name', '=', '3')
+  expect(q.toString()).to eq "select id,name,fc id = '2' and name = '3'"
+  
+  #  IN include
+  q.queryString("select id,name,fc IN '1','2','3'")
+  expect(q.toString()).to eq "select id,name,fc in '1','2','3'"
+  
+  q.queryString('')
+  q.select('id', 'name', 'fc').In('1', '2', '3')
+  expect(q.toString()).to eq "select id,name,fc in '1','2','3'"
+  
+  q.queryString("IN '1','2','3'")
+  expect(q.toString()).to eq "in '1','2','3'"
+  
+  q.queryString('IN 1,2,3')
+  expect(q.toString()).to eq "in '1','2','3'"
+  
+  q.queryString('')
+  q.In('1', '2', '3')
+  expect(q.toString()).to eq "in '1','2','3'"
+  
+  # special field name
+  q.queryString('select = 1')
+  expect(q.toString()).to eq "select = '1'"
+  
+  q.queryString('')
+  q.where('select', '=', '1')
+  expect(q.toString()).to eq "select = '1'"
+  
+  q.queryString('in <> 1')
+  expect(q.toString()).to eq "in <> '1'"
+  
+  q.queryString('')
+  q.where('in', '<>', '1')
+  expect(q.toString()).to eq "in <> '1'"
 end
 
 
@@ -1404,6 +1653,9 @@ describe Transactd do
   end
   it 'findNext' do
     testFindNext(@db)
+  end
+  it 'findIn' do
+    testFindIn(@db)
   end
   it 'get percentage' do
     testGetPercentage(@db)
@@ -1464,6 +1716,9 @@ describe Transactd do
   end
   it 'login' do
     testLogin(@db)
+  end
+  it 'query' do
+    testQuery()
   end
 end
 

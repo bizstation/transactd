@@ -370,7 +370,7 @@ bool database::endSnapshot()
 /** Metadata lock, a table name is case-sensitive 
  *  However, in actual opening, it is not distinguished at Windows.
  */
-TABLE* database::doOpenTable(const std::string& name, short mode)
+TABLE* database::doOpenTable(const std::string& name, short mode, const char* ownerName)
 {
 	TABLE_LIST tables;
 	m_thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
@@ -388,6 +388,23 @@ TABLE* database::doOpenTable(const std::string& name, short mode)
 			m_stat = STATUS_CANNOT_LOCK_TABLE;
 		THROW_BZS_ERROR_WITH_CODEMSG(m_stat, name.c_str());
 	}
+	
+	//Check owner name
+	if (ownerName && ownerName[0])
+	{
+		const char* p = tables.table->s->comment.str;
+		if ((p[0] == '%') && (p[1] =='@') && (p[2] =='%'))
+		{
+			int readNoNeed = p[3] - '0';
+			if ((mode == TD_OPEN_READONLY) && readNoNeed)
+				;
+			else if (strcmp(p + 4, ownerName))
+			{
+				m_stat = STATUS_INVALID_OWNERNAME;
+				return NULL;
+			}
+		}
+	}
 
 	tables.table->use_all_columns();
 	tables.table->open_by_handler = 1;
@@ -399,15 +416,20 @@ TABLE* database::doOpenTable(const std::string& name, short mode)
 	return tables.table;
 }
 
-table* database::openTable(const std::string& name, short mode)
+table* database::openTable(const std::string& name, short mode, const char* ownerName)
 {
 	if (existsTable(name))
 	{
 		tableRef.addref(m_dbname, name);//addef first then table open.
-		boost::shared_ptr<table> tb(new table(doOpenTable(name, mode) , *this, name, mode, (int)m_tables.size()));
-		m_tables.push_back(tb);
-		m_stat = STATUS_SUCCESS;
-		return tb.get();
+		TABLE* t = doOpenTable(name, mode, ownerName);
+		if (t)
+		{
+			boost::shared_ptr<table> tb(new table(t , *this, name, mode, (int)m_tables.size()));
+			m_tables.push_back(tb);
+			m_stat = STATUS_SUCCESS;
+			return tb.get();
+		}
+		return NULL;
 	}
 	m_stat = STATUS_TABLE_NOTOPEN;
 	THROW_BZS_ERROR_WITH_CODEMSG(m_stat, name.c_str());
@@ -459,7 +481,7 @@ void database::reopen()
 	{
 		if (m_tables[i] && (m_tables[i]->m_table==NULL))
 		{
-			TABLE* table = doOpenTable(m_tables[i]->m_name.c_str(), m_tables[i]->m_mode);
+			TABLE* table = doOpenTable(m_tables[i]->m_name.c_str(), m_tables[i]->m_mode, NULL);
 			if (table)
 				m_tables[i]->resetInternalTable(table);
 			else
@@ -628,7 +650,7 @@ bool table::setNonKey(bool scan)
 	return true;
 }
 
-bool table::setKeyNum(char num)
+bool table::setKeyNum(char num, bool sorted)
 {
 	if ((m_keyNum != num) || ((m_keyNum >= 0)&& (m_table->file->inited == handler::NONE)))
 	{
@@ -637,7 +659,7 @@ bool table::setKeyNum(char num)
 		if(keynumCheck(num))
 		{
 			m_keyNum = num;
-			m_table->file->ha_index_init(m_keyNum, 1/*sorted*/);
+			m_table->file->ha_index_init(m_keyNum, sorted);
 			return true;
 		}
 		else
@@ -727,6 +749,9 @@ void table::setKeyValuesPacked(const uchar* ptr, int size)
 
 uint table::keyPackCopy(uchar* ptr)
 {
+	//if nokey and getbookmark operation then keynum = -2
+	if (m_keyNum < 0) return 0; 
+
 	KEY& key = m_table->key_info[m_keyNum];
 	if ((key.flags & HA_NULL_PART_KEY) || (key.flags & HA_VAR_LENGTH_KEY))
 	{
@@ -790,6 +815,8 @@ inline bool isNull(Field* fd)
 				
 		return (len==0);
 	}
+	else if (isBlobType(fd->type()))
+		return (0==blob_len(fd));
 	else
 	{
 		unsigned int k=0;
@@ -1334,18 +1361,21 @@ void table::stepPrev()
 
 void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 {
-	if ((m_table->file->inited != handler::INDEX) || !m_cursor)
+	if ((m_table->file->inited == handler::NONE) || !m_cursor)
 	{
 		m_stat = STATUS_NO_CURRENT;
 		return;
 	}
 	m_nonNcc = false;
 	int reject = (hdr->rejectCount()==0)?4096:hdr->rejectCount();
+	if (reject==0xFFFF)
+		reject = -1;
 	int rows = hdr->maxRows();
 	
 	//Is a current position read or not? 
 	bool read = !includeCurrent;
 	bool unlock = (!m_db.inSnapshot() && !m_db.inTransaction()) || (m_db.inTransaction() && (m_db.transactionType()== 0));
+	bool forword = (type == READ_RECORD_GETNEXT) || (type == READ_RECORD_STEPNEXT);
 	while((reject!=0) && (rows!=0))
 	{
 		if (read)
@@ -1361,6 +1391,13 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 				m_stat = m_table->file->ha_index_next(m_table->record[0]);
 			else if (type == READ_RECORD_GETPREV)
 				m_stat = m_table->file->ha_index_prev(m_table->record[0]);
+			else if (type == READ_RECORD_STEPNEXT)
+				m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
+			else if (type == READ_RECORD_STEPPREV)
+			{
+				m_stat = STATUS_NOSUPPORT_OP;
+				return;
+			}
 			m_cursor = m_validCursor = (m_stat == 0);
 		}else
 			read = true;
@@ -1368,7 +1405,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 		
 		if (m_stat)	
 			break;
-		int ret = hdr->match(type == READ_RECORD_GETNEXT);
+		int ret = hdr->match(forword);
 		if (ret == REC_MACTH)
 		{
 			m_stat = hdr->write(position(), posPtrLen());
@@ -1417,7 +1454,7 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
 	unlockRow();
 	m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
 	m_cursor =  (m_stat == 0);
-	if (keyNum==-1)
+	if ((keyNum==-1)||(keyNum==-64))
 		return ;
 	if (m_stat==0)
 	{
@@ -1456,6 +1493,8 @@ uint table::posPtrLen()const
 
 ha_rows table::recordCount(bool estimate)
 {
+	if ((m_table->file->ha_table_flags() & (HA_HAS_RECORDS | HA_STATS_RECORDS_IS_EXACT)) != 0)
+		return m_table->file->records();		 
 	if (estimate)
 	{	//Since the answer of innodb is random, 1 returns also 0.
 		//Since it is important, in the case of 1
@@ -1466,16 +1505,45 @@ ha_rows table::recordCount(bool estimate)
 			return rows;
 	}
 	uint n = 0;
-	m_table->read_set= &m_table->tmp_set;
+	m_table->read_set = &m_table->tmp_set;
+	m_table->write_set = &m_table->tmp_set;
 	bitmap_clear_all(m_table->read_set);
-	setNonKey(true/*scan*/);
-	m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
-	while (m_stat == 0)
+	//bitmap_clear_all(m_table->write_set);
+	
+	char keynum = m_keyNum;
+	int inited = m_table->file->inited;
+	m_table->file->ha_index_or_rnd_end();
+	
+	m_table->file->extra(HA_EXTRA_KEYREAD);
+	if (setKeyNum((char)0, false/*sorted*/))
 	{
-		n++;
-		m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
+		m_stat = m_table->file->ha_index_first(m_table->record[0]);
+		while (m_stat == 0)
+		{
+			n++;
+			m_stat = m_table->file->ha_index_next(m_table->record[0]);
+		}
+		m_table->file->extra(HA_EXTRA_NO_KEYREAD);
+
+		//restore index init
+		if ((inited == (int)handler::INDEX) && (m_keyNum != keynum))
+			setKeyNum(keynum);
+		else if((inited == (int)handler::RND))
+			setNonKey(true/*scan*/);
 	}
+	else
+	{
+		setNonKey(true/*scan*/);
+		m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
+		while (m_stat == 0)
+		{
+			n++;
+			m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
+		}
+	}
+	m_table->file->extra(HA_EXTRA_NO_KEYREAD);
 	m_table->read_set = &m_table->s->all_set;
+	m_table->write_set = &m_table->s->all_set;
 	return n;
 }
 
@@ -1570,7 +1638,7 @@ void table::setFiledNullFlags()
 
 __int64 table::insert(bool ncc)
 {
-	if (!cp_is_write_lock(m_table->file))
+	if ((m_mode==TD_OPEN_READONLY) || !cp_is_write_lock(m_table->file))
 	{
 		m_stat = STATUS_INVALID_LOCKTYPE;
 		return 0;
@@ -1609,6 +1677,7 @@ __int64 table::insert(bool ncc)
 
 void table::beginUpdate(char keyNum)
 {
+	m_stat = 0;
 	m_table->file->try_semi_consistent_read(1); 
 	beginDel();
 	if (m_stat==0)
@@ -1624,6 +1693,11 @@ void table::beginUpdate(char keyNum)
 
 void table::beginDel()
 {
+	if ((m_mode==TD_OPEN_READONLY) || !cp_is_write_lock(m_table->file))
+	{
+		m_stat = STATUS_INVALID_LOCKTYPE;
+		return;
+	}
 	if (m_cursor)
 	{
 		m_stat = 0;
@@ -1641,7 +1715,9 @@ void table::beginDel()
 			}
 			else
 				movePos(position(true), -1, true);
-			if (cmp_record(m_table, record[1]))
+
+			//Has blob fileds then ignore conflicts.
+			if ((m_table->s->blob_fields==0) && cmp_record(m_table, record[1]))
 				m_stat = STATUS_CHANGE_CONFLICT;
 			
 			m_cursor = m_validCursor = (m_stat == 0);

@@ -1,0 +1,24 @@
+HKCR
+{
+	transactd.query.1 = s 'query Class'
+	{
+		CLSID = s '{CA076B05-541B-48EF-AC55-33323FB052F3}'
+	}
+	transactd.query = s 'query Class'
+	{		
+		CurVer = s 'transactd.query.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {CA076B05-541B-48EF-AC55-33323FB052F3} = s 'query Class'
+		{
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}

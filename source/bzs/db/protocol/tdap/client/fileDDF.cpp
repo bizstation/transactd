@@ -87,10 +87,6 @@ void fileDDF::writeRecordData()
     strncpy(datbuf.filename, filename, 64);
     for (size_t i = strlen(datbuf.filename); i < 64; i++)
         datbuf.filename[i] = ' ';
-#ifdef DDF_PSQLV_MODE
-    flag = 0;
-
-#endif
 
     datbuf.flag = flag;
     memset(datbuf.filler, 0, 9);

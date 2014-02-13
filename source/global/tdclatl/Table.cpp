@@ -22,6 +22,7 @@
 #include "DbDef.h"
 #include "TableDef.h"
 #include "Field.h"
+#include "QueryBase.h"
 
 using namespace bzs::db::protocol::tdap;
 
@@ -597,4 +598,27 @@ STDMETHODIMP CTableTd::SmartUpdate(void)
 {
     m_tb->smartUpdate();
     return S_OK;
+}
+
+STDMETHODIMP CTableTd::KeyValueDescription(BSTR* Value)
+{
+	wchar_t tmp[8192];
+	m_tb->keyValueDescription(tmp, 8192);
+	*Value = tmp;
+	return S_OK;
+}
+
+STDMETHODIMP CTableTd::SetQuery(IQueryBase* Value)
+{
+	if (Value)
+	{
+		CQueryBase* p = dynamic_cast<CQueryBase*>(Value);
+		if (p)
+		{	
+			m_tb->setQuery(&p->query());
+			return S_OK;
+		}
+	}
+	return S_FALSE;
+	
 }

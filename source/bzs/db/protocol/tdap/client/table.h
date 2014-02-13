@@ -19,7 +19,7 @@
  02111-1307, USA.
  ================================================================= */
 #include "nsTable.h"
-
+#include <vector>
 namespace bzs
 {
 
@@ -36,6 +36,7 @@ namespace client
 
 class fields;
 class database;
+class queryBase;
 #define null_str _T("")
 
 #pragma warning(disable:4251)
@@ -46,11 +47,12 @@ class AGRPACK table : public nstable
     friend class recordCache;
     friend class database;
     friend class filter;
+
     struct tbimpl* m_impl;
     tabledef* m_tableDef;
 
     uchar_td charset() const ;
-
+    bool checkFindDirection(ushort_td op);
     bool checkIndex(short index);
     void getKeySpec(keySpec* ks, bool SpecifyKeyNum = false);
     const bzs::db::blobHeader* getBlobHeader();
@@ -63,8 +65,9 @@ class AGRPACK table : public nstable
     uint_td doGetWriteImageLen();   // orverride
     void doUpdate(bool ncc = false); // orverride
     ushort_td doCommitBulkInsert(bool autoCommit = false); // orverride
+    void doAbortBulkInsert(); // orverride
     void doCreateIndex(bool SpecifyKeyNum = false); // orverride
-    uint_td doRecordCount(bool estimate, bool fromCurrent); // orverride
+    uint_td doRecordCount(bool estimate, bool fromCurrent, eFindType direction); // orverride
     short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf = NULL); // orverride
 
     double getFVnumeric(short index);
@@ -72,6 +75,8 @@ class AGRPACK table : public nstable
     void setFVDecimal(short index, double data);
     void setFVNumeric(short index, double data);
     void doFind( ushort_td op, bool notIncCurrent);
+    bool setSeekValueField(int row);
+
 protected:
     explicit table(nsdatabase *pbe); // Inheritance is impossible
     virtual ~table();
@@ -102,14 +107,13 @@ protected:
 
 	virtual void doInit(tabledef* def, short filenum, bool regularDir);
 
-    virtual void onRecordCounting(size_t count, bool complate){};
+    virtual void onRecordCounting(size_t count, bool& complate){};
 
     virtual void setNoUpdateTimeStamp(bool v) {};
 
 
-
 public:
-    enum eFindType{findForword, findBackForword};
+    using nstable::eFindType;
 
     inline const tabledef* tableDef() const {return m_tableDef;};
 
@@ -131,12 +135,13 @@ public:
     void clearBuffer();
     unsigned int getRecordHash();
     void smartUpdate();
-    void find(eFindType type);
+    void find(eFindType type=findForword);
     void findFirst();
     void findLast();
     void findNext(bool notIncCurrent = true);
     void findPrev(bool notIncCurrent = true);
     bookmark_td bookmarkFindCurrent() const;
+    void setQuery(const queryBase* query);
     void setFilter(const _TCHAR* str, ushort_td rejectCount, ushort_td cacheCount);
     const _TCHAR* filterStr();
     short fieldNumByName(const _TCHAR* name);
@@ -207,8 +212,45 @@ public:
     void setFV(short index, __int64 data);
     void setFV(const _TCHAR* fieldName, __int64 data);
     void* fieldPtr(short index);
+    void keyValueDescription(_TCHAR* buf, int bufsize);
 
 };
+
+
+class AGRPACK queryBase
+{
+	friend class filter;
+    struct impl* m_impl;
+
+    const std::vector<std::_tstring>& getSelects() const;
+    const std::vector<std::_tstring>& getWheres() const;
+    const std::vector<std::_tstring>& getSeekKeyValues() const;
+public:
+    queryBase();
+    virtual ~queryBase();
+    void reset();
+    void clearSeekKeyValues();
+    void clearSelectFields();
+    void addField(const _TCHAR* name);
+    void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
+    void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
+    void addSeekKeyValue(const _TCHAR* value, bool reset=false);
+    queryBase& queryString(const _TCHAR* str);
+    queryBase& reject(int v);
+	queryBase& limit(int v);
+    queryBase& direction(table::eFindType v);
+    queryBase& all();
+    queryBase& optimize(bool v);
+    const _TCHAR* toString() const;
+    table::eFindType getDirection() const;
+    int getReject()const;
+    int getLimit()const;
+    bool isAll()const;
+    bool isOptimize()const;
+    void release();
+    static queryBase* create();
+};
+
 
 #pragma warning(default:4251)
 

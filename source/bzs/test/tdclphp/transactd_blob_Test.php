@@ -1,0 +1,325 @@
+<?php
+/* ================================================================
+   Copyright (C) 2013 BizStation Corp All rights reserved.
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License
+   as published by the Free Software Foundation; either version 2
+   of the License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software 
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   02111-1307, USA.
+================================================================ */
+mb_internal_encoding('UTF-8');
+
+require_once("transactd.php");
+
+define("HOSTNAME", "localhost/");
+define("URL", "tdap://" . HOSTNAME . "test_blob?dbfile=test.bdf");
+define("TABLENAME", "comments");
+define("FDI_ID", 0);
+define("FDI_USER_ID", 1);
+define("FDI_BODY", 2);
+define("FDI_IMAGE", 3);
+
+define("TYPE_SCHEMA_BDF", 0);
+
+class transactdBlobTest extends PHPUnit_Framework_TestCase
+{
+    private function getDbObj()
+    {
+        return database::createObject();
+    }
+    private function deleteDbObj($db)
+    {
+        $db->close();
+        $db = NULL;
+    }
+    private function dropDatabase($db, $url)
+    {
+        $db->open($url);
+        $this->assertEquals($db->stat(), 0);
+        $db->drop();
+        $this->assertEquals($db->stat(), 0);
+    }
+    private function createDatabase($db, $url)
+    {
+        $db->create($url);
+        if ($db->stat() == transactd::STATUS_TABLE_EXISTS_ERROR)
+        {
+            $this->dropDatabase($db, $url);
+            $db->create($url);
+        }
+        $this->assertEquals($db->stat(), 0);
+    }
+    private function openDatabase($db, $url)
+    {
+        $db->open($url, TYPE_SCHEMA_BDF, transactd::TD_OPEN_NORMAL);
+        $this->assertEquals($db->stat(), 0);
+    }
+    private function createTable($db, $tableid, $tablename)
+    {
+        $dbdef = $db->dbDef();
+        $this->assertNotEquals($dbdef, NULL);
+        $td = new tabledef();
+        // Set table schema codepage to UTF-8
+        //   - codepage for field NAME and tableNAME
+        $td->schemaCodePage = transactd::CP_UTF8;
+        $td->setTableName($tablename);
+        $td->setFileName($tablename . '.dat');
+        // Set table default charaset index
+        //    - default charset for field VALUE
+        $td->charsetIndex = transactd::charsetIndex(transactd::CP_UTF8);
+        //
+        $td->id = $tableid;
+        $td->pageSize = 2048;
+        $dbdef->insertTable($td);
+        $this->assertEquals($dbdef->stat(), 0);
+        // id
+        $fd = $dbdef->insertField($tableid, FDI_ID);
+        $fd->setName('id');
+        $fd->type = transactd::ft_autoinc;
+        $fd->len = 4;
+        $dbdef->updateTableDef($tableid);
+        $this->assertEquals($dbdef->stat(), 0);
+        // user_id
+        $fd = $dbdef->insertField($tableid, FDI_USER_ID);
+        $fd->setName('user_id');
+        $fd->type = transactd::ft_integer;
+        $fd->len = 4;
+        $dbdef->updateTableDef($tableid);
+        $this->assertEquals($dbdef->stat(), 0);
+        // body
+        $fd = $dbdef->insertField($tableid, FDI_BODY);
+        $fd->setName('body');
+        $fd->type = transactd::ft_mytext;
+        $fd->len = 10; // 9:TYNYTEXT 10:TEXT 11:MIDIUMTEXT 12:LONGTEXT
+        $dbdef->updateTableDef($tableid);
+        $this->assertEquals($dbdef->stat(), 0);
+        // image
+        $fd = $dbdef->insertField($tableid, FDI_IMAGE);
+        $fd->setName('image');
+        $fd->type = transactd::ft_myblob;
+        $fd->len = 10; // 9:TYNYBLOB 10:BLOB 11:MIDIUMBLOB 12:LONGBLOB
+        $dbdef->updateTableDef($tableid);
+        $this->assertEquals($dbdef->stat(), 0);
+        // key
+        $kd = $dbdef->insertKey($tableid, 0);
+        $kd->segment(0)->fieldNum = 0;
+        $kd->segment(0)->flags->bit8 = 1;
+        $kd->segment(0)->flags->bit1 = 1;
+        $kd->segmentCount = 1;
+        $dbdef->updateTableDef($tableid);
+        $this->assertEquals($dbdef->stat(), 0);
+    }
+    private function openTable($db, $tablename)
+    {
+        $tb = $db->openTable($tablename);
+        $this->assertEquals($db->stat(), 0);
+        return $tb;
+    }
+    private function getTestBinary() {
+        $image_base64 = 'R0lGODdhEAAQAKEBAGZmZv///5mZmczMzCwAAAAAEAAQAAACRowzIgA6BxebTMAgG60nW5NM1kAZikGFHAmgYvYgJpW12FfTyLpJjz+IVSSXR4IlQCoUgCCG8ds0D5xZT3TJYS8IZiMJKQAAOw==';
+        return base64_decode($image_base64);
+    }
+    
+    public function testCreate()
+    {
+        $db = $this->getDbObj();
+        $this->createDatabase($db, URL);
+        $this->openDatabase($db, URL);
+        $this->createTable($db, 1, TABLENAME);
+        $tb = $this->openTable($db, TABLENAME);
+        $tb->close();
+        $this->deleteDbObj($db);
+    }
+    public function testInsert()
+    {
+        $image = $this->getTestBinary();
+        $db = $this->getDbObj();
+        $this->openDatabase($db, URL);
+        $tb = $this->openTable($db, TABLENAME);
+        $this->assertNotEquals($tb, NULL);
+        // 1
+        $tb->clearBuffer();
+        $tb->setFV(FDI_USER_ID, 1);
+        $tb->setFV(FDI_BODY, "1\ntest\nテスト\n\nあいうえおあいうえお");
+        $tb->setFV(FDI_IMAGE, $image, strlen($image));
+        $tb->insert();
+        $this->assertEquals($tb->stat(), 0);
+        // 2
+        $tb->clearBuffer();
+        $tb->setFV('user_id', 1);
+        $tb->setFV('body', "2\ntest\nテスト\n\nあいうえおあいうえお");
+        $str = "2\ntest\nテスト\n\nあいうえおあいうえお";
+        $tb->setFV('image', $str, strlen($str));
+        $tb->insert();
+        $this->assertEquals($tb->stat(), 0);
+        // 3
+        $tb->clearBuffer();
+        $tb->setFV(FDI_USER_ID, 2);
+        $tb->setFV(FDI_BODY, "3\ntest\nテスト\n\nあいうえおあいうえお");
+        $str = "3\ntest\nテスト\n\nあいうえおあいうえお";
+        $tb->setFV(FDI_IMAGE, $str, strlen($str));
+        $tb->insert();
+        $this->assertEquals($tb->stat(), 0);
+        // close
+        $tb->close();
+        $this->deleteDbObj($db);
+    }
+    public function testSeek()
+    {
+        $db = $this->getDbObj();
+        $this->openDatabase($db, URL);
+        $tb = $this->openTable($db, TABLENAME);
+        $this->assertNotEquals($tb, NULL);
+        // 1
+        $tb->clearBuffer();
+        $tb->setFV(FDI_ID, 1);
+        $tb->seek();
+        $this->assertEquals($tb->getFVint(FDI_ID), 1);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "1\ntest\nテスト\n\nあいうえおあいうえお");
+        $image = $this->getTestBinary();
+        $this->assertEquals($tb->getFVbin(FDI_IMAGE), $image);
+        // 2
+        $tb->seekNext();
+        $this->assertEquals($tb->getFVint(FDI_ID), 2);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "2\ntest\nテスト\n\nあいうえおあいうえお");
+        $this->assertEquals($tb->getFVbin(FDI_IMAGE), "2\ntest\nテスト\n\nあいうえおあいうえお");
+        // 3
+        $tb->seekNext();
+        $this->assertEquals($tb->getFVint(FDI_ID), 3);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 2);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "3\ntest\nテスト\n\nあいうえおあいうえお");
+        $this->assertEquals($tb->getFVbin(FDI_IMAGE), "3\ntest\nテスト\n\nあいうえおあいうえお");
+        // 2
+        $tb->seekPrev();
+        $this->assertEquals($tb->getFVint(FDI_ID), 2);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "2\ntest\nテスト\n\nあいうえおあいうえお");
+        $this->assertEquals($tb->getFVbin(FDI_IMAGE), "2\ntest\nテスト\n\nあいうえおあいうえお");
+        // close
+        $tb->close();
+        $this->deleteDbObj($db);
+    }
+    public function testFind()
+    {
+        $db = $this->getDbObj();
+        $this->openDatabase($db, URL);
+        $tb = $this->openTable($db, TABLENAME);
+        $this->assertNotEquals($tb, NULL);
+        // 1
+        $tb->setKeyNum(0);
+        $tb->clearBuffer();
+        $tb->setFilter('id >= 1 and id < 3', 1, 0);
+        $this->assertEquals($tb->stat(), 0);
+        $tb->setFV(FDI_ID, 1);
+        $tb->find(table::findForword);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), 1);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "1\ntest\nテスト\n\nあいうえおあいうえお");
+        // 2
+        $tb->findNext(true);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), 2);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "2\ntest\nテスト\n\nあいうえおあいうえお");
+        // 3... but not found because filtered
+        $tb->findNext(true);
+        $this->assertEquals($tb->stat(), transactd::STATUS_EOF);
+        // 2... but changing seek-direction is not allowed
+        $tb->findPrev(true);
+        $this->assertEquals($tb->stat(), transactd::STATUS_PROGRAM_ERROR);
+        // close
+        $tb->close();
+        $this->deleteDbObj($db);
+    }
+    public function testUpdate()
+    {
+        $db = $this->getDbObj();
+        $this->openDatabase($db, URL);
+        $tb = $this->openTable($db, TABLENAME);
+        $this->assertNotEquals($tb, NULL);
+        // select 1
+        $tb->clearBuffer();
+        $tb->setFV(FDI_ID, 1);
+        $tb->seek();
+        $this->assertEquals($tb->getFVint(FDI_ID), 1);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "1\ntest\nテスト\n\nあいうえおあいうえお");
+        // update
+        $tb->setFV(FDI_BODY, "1\nテスト\ntest\n\nABCDEFG");
+        $tb->update();
+        $this->assertEquals($tb->stat(), 0);
+        // select 2
+        $tb->seekNext();
+        $this->assertEquals($tb->getFVint(FDI_ID), 2);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "2\ntest\nテスト\n\nあいうえおあいうえお");
+        // update
+        $tb->setFV(FDI_BODY, "2\nテスト\ntest\n\nABCDEFG");
+        $tb->update();
+        $this->assertEquals($tb->stat(), 0);
+        // check 1
+        $tb->seekPrev();
+        $this->assertEquals($tb->getFVint(FDI_ID), 1);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "1\nテスト\ntest\n\nABCDEFG");
+        // check 2
+        $tb->seekNext();
+        $this->assertEquals($tb->getFVint(FDI_ID), 2);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "2\nテスト\ntest\n\nABCDEFG");
+        // close
+        $tb->close();
+        $this->deleteDbObj($db);
+    }
+    public function testDelete()
+    {
+        $db = $this->getDbObj();
+        $this->openDatabase($db, URL);
+        $tb = $this->openTable($db, TABLENAME);
+        $this->assertNotEquals($tb, NULL);
+        // delete 2
+        $tb->clearBuffer();
+        $tb->setFV(FDI_ID, 2);
+        $tb->seek();
+        $this->assertEquals($tb->stat(), 0);
+        $tb->del();
+        $this->assertEquals($tb->stat(), 0);
+        // select 1
+        $tb->clearBuffer();
+        $tb->setFV(FDI_ID, 1);
+        $tb->seek();
+        $this->assertEquals($tb->getFVint(FDI_ID), 1);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "1\nテスト\ntest\n\nABCDEFG");
+        // next is 3
+        $tb->seekNext();
+        $this->assertEquals($tb->getFVint(FDI_ID), 3);
+        $this->assertEquals($tb->getFVint(FDI_USER_ID), 2);
+        $this->assertEquals($tb->getFVstr(FDI_BODY), "3\ntest\nテスト\n\nあいうえおあいうえお");
+        // eof
+        $tb->seekNext();
+        $this->assertEquals($tb->stat(), transactd::STATUS_EOF);
+        // close
+        $tb->close();
+        $this->deleteDbObj($db);
+    }
+    public function testDrop()
+    {
+        $db = $this->getDbObj();
+        $this->dropDatabase($db, URL);
+        $this->deleteDbObj($db);
+    }
+}

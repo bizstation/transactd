@@ -51,25 +51,26 @@ inline void setStackaddr(char* v)
 #endif
 }
 
+
 void* operator new(size_t t)
 {   
-    return my_malloc(t, MY_WME);   
+    return td_malloc(t, MY_WME);   
 }   
 
 void operator delete(void* p)
 {   
-    my_free(p);   
+    td_free(p);   
 }   
   
 void* operator new[](size_t t)
 {   
-    return my_malloc(t, MY_WME);   
+    return td_malloc(t, MY_WME);   
 }   
 
 void operator delete[](void* p)
 {   
-    my_free(p);   
-}  
+    td_free(p);   
+} 
 
 void initThread(THD* thd )
 {
@@ -121,8 +122,8 @@ THD* buildTHD()
 	sprintf_s(tmp, 256,"set innodb_lock_wait_timeout=%d;", g_lock_wait_timeout);
 	dispatch_command(COM_QUERY, thd, tmp, (uint)strlen(tmp));
 
-	my_free(thd->db);
-	thd->db = my_strdup("bizstation", MYF(0));
+	td_free(thd->db);
+	thd->db = td_strdup("bizstation", MYF(0));
 	if(thd->variables.sql_log_bin)
 		thd->set_current_stmt_binlog_format_row();
 	return thd;
@@ -165,6 +166,7 @@ void deleteThdForThread(THD* thd)
 	cp_thd_release_resources(thd);
 	cp_remove_global_thread(thd);
 	mysql_mutex_unlock(&LOCK_thread_count);
-	delete thd;
 
+	releaseTHD(thd);
+	
 }

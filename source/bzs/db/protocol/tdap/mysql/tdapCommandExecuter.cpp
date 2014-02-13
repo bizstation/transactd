@@ -143,6 +143,14 @@ std::string getTableName(const request& req, bool forSql)
 	return "";
 }
 
+const char* getOwnerName(const request& req)
+{
+	const char* p = (const char*)req.data;
+	if (*req.datalen && (p[*req.datalen-1] == 0x00))
+		return p;
+	return "";
+}
+
 void dumpStdErr(int op, request& req, table* tb)
 {
 	boost::scoped_array<char> msg(new char[1024]);
@@ -357,7 +365,7 @@ inline void dbExecuter::doOpenTable(request& req)
 	if (dbname != "")
 	{
 		database* db = getDatabase(dbname.c_str(), req.cid);
-		m_tb = db->openTable(getTableName(req), req.keyNum);// if error occured that throw exception
+		m_tb = db->openTable(getTableName(req), req.keyNum, getOwnerName(req));// if error occured that throw exception
 		req.result = db->stat();
 		if (m_tb)
 		{
@@ -458,7 +466,8 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 		m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT : HA_READ_KEY_OR_PREV);
 		
 		extRequest* ereq = (extRequest*)req.data;
-		req.result = m_readHandler->begin(m_tb, ereq, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen);
+		req.result = m_readHandler->begin(m_tb, ereq, true
+				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, (op == TD_KEY_GE_NEXT_MULTI));
 		if (req.result != 0)
 			return 1;
 		if (m_tb->stat() == 0)
@@ -489,18 +498,34 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 	m_tb = getTable(req.pbk->handle);
 	extRequest* ereq = (extRequest*)req.data;
 	bool incCurrent = !((ereq->type[0]=='E') && (ereq->type[1]=='G'));
-	req.result = m_readHandler->begin(m_tb, ereq, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen);
+	bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
+	req.result = m_readHandler->begin(m_tb, ereq,(op != TD_KEY_SEEK_MULTI)
+			, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, forword);
 	if (req.result == 0)
 	{
-		if (op == TD_KEY_NEXT_MULTI)
-			m_tb->getNextExt(m_readHandler, incCurrent);
-		else if (op == TD_KEY_PREV_MULTI)
-			m_tb->getPrevExt(m_readHandler, incCurrent);
-		else if (op == TD_POS_NEXT_MULTI)
-			m_tb->stepNextExt(m_readHandler, incCurrent);
-		else if (op == TD_POS_PREV_MULTI)
-			m_tb->stepPrevExt(m_readHandler, incCurrent);
-		req.result = errorCodeSht(m_tb->stat());
+		if (op == TD_KEY_SEEK_MULTI)
+		{
+			char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
+			if (m_tb->setKeyNum(keynum))
+				req.result = errorCodeSht(seekEach(ereq));
+			else
+			{
+				if (m_tb)m_tb->unUse();
+				return ret;
+			}
+		}
+		else
+		{
+			if (op == TD_KEY_NEXT_MULTI)
+				m_tb->getNextExt(m_readHandler, incCurrent);
+			else if (op == TD_KEY_PREV_MULTI)
+				m_tb->getPrevExt(m_readHandler, incCurrent);
+			else if (op == TD_POS_NEXT_MULTI)
+				m_tb->stepNextExt(m_readHandler, incCurrent);
+			else if (op == TD_POS_PREV_MULTI)
+				m_tb->stepPrevExt(m_readHandler, incCurrent);
+			req.result = errorCodeSht(m_tb->stat());
+		}
 		DEBUG_WRITELOG2(op, req);
 		size = req.serializeForExt(m_tb, resultBuffer, m_readHandler->end());
 		if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
@@ -512,6 +537,26 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 	}
 	if (m_tb)m_tb->unUse();
 	return ret;
+}
+
+inline short dbExecuter::seekEach(extRequest* ereq)
+{
+	short stat = 0;
+	logicalField* fd = &ereq->field;
+	for (int i=0;i<ereq->logicalCount;++i)
+	{
+		m_tb->setKeyValuesPacked(fd->ptr, fd->len);
+		m_tb->seekKey(HA_READ_KEY_EXACT);
+		if (m_tb->stat() == 0)
+			stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
+		else 
+			stat = m_readHandler->write(NULL, m_tb->posPtrLen(), errorCodeSht(m_tb->stat()));
+		if (stat) break;	
+		fd = fd->next();
+	}
+	if (stat==0)
+		stat = STATUS_REACHED_FILTER_COND;
+	return stat;
 }
 
 inline void dbExecuter::doStepRead(request& req, int op)
@@ -846,7 +891,12 @@ int dbExecuter::commandExec(request& req, char* resultBuffer, size_t& size, nets
 		{
 			database* db = getDatabaseCid(req.cid);
 			m_tb = getTable(req.pbk->handle);
-			req.result = ddl_execSql(db->thd(), makeSQLChangeTableComment(db->name(), m_tb->name(), (const char*)req.keybuf));
+			int num = (req.keyNum >1) ? req.keyNum -2: req.keyNum; 
+			num += '0';
+			std::string s("%@%");
+			s += (const char*)&num;
+			s += (const char*)req.keybuf;
+			req.result = ddl_execSql(db->thd(), makeSQLChangeTableComment(db->name(), m_tb->name(), s.c_str()));
 			break;
 		}
 		case TD_DROP_INDEX:
@@ -861,6 +911,7 @@ int dbExecuter::commandExec(request& req, char* resultBuffer, size_t& size, nets
 			if (doReadMultiWithSeek(req, op, resultBuffer, size, optionalData) == EXECUTE_RESULT_SUCCESS)
 				return EXECUTE_RESULT_SUCCESS; // Caution Call unUse()
 			break;
+		case TD_KEY_SEEK_MULTI:
 		case TD_KEY_NEXT_MULTI:
 		case TD_KEY_PREV_MULTI:
 		case TD_POS_NEXT_MULTI:

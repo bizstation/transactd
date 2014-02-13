@@ -201,7 +201,7 @@ void dbdef::setCodePage(tabledef* td)
     }
 }
 
-void dbdef::updateTableDef(short TableIndex)
+void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
 {
     m_stat = STATUS_SUCCESS;
     tabledef* td = tableDefs(TableIndex);
@@ -292,7 +292,7 @@ void dbdef::updateTableDef(short TableIndex)
         return;
     }
     if (m_impl->deftype == TYPE_SCHEMA_DDF)
-        saveDDF(TableIndex, 3);
+        saveDDF(TableIndex, 3, forPsqlDdf);
     else
     {
         moveById(td->id);
@@ -831,6 +831,7 @@ void dbdef::getFileSpec(fileSpec* fs, short TableIndex)
             ks->keyFlag.all = KeyDef->segments[j].flags.all;
             ks->keyCount = 0;
             ks->keyType = TableDef->fieldDefs[FieldNum].type;
+
             if ((ks->keyType == ft_autoinc) && (KeyDef->segmentCount > 1))
                 ks->keyType = 1;
             if (ks->keyFlag.bit3 == true)
@@ -1051,9 +1052,10 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
         maxlen = 8;
         defaultlen = 2;
         break;
+    case ft_autoIncUnsigned:
     case ft_autoinc: minlen = 2;
-        maxlen = 4;
-        defaultlen = 2;
+        maxlen = 8;
+        defaultlen = 4;
         break;
     case ft_bit: minlen = 1;
         maxlen = 1;
@@ -1101,9 +1103,9 @@ bool dbdef::validLen(uchar_td FieldType, uint_td FieldLen)
                 return false;
 
         }
-        else if (FieldType == ft_autoinc)
+        else if ((FieldType == ft_autoinc) || (FieldType == ft_autoIncUnsigned))
         {
-            if ((FieldLen == 2) || (FieldLen == 4))
+            if ((FieldLen == 2) || (FieldLen == 4)|| (FieldLen == 8))
                 return true;
             else
                 return false;
@@ -1202,7 +1204,7 @@ void dbdef::createDDF(const _TCHAR* fullpath)
 
 }
 
-void dbdef::saveDDF(short TableIndex, short opration)
+void dbdef::saveDDF(short TableIndex, short opration, bool forPsqlDdf)
 {
     ushort_td chOpen = 0;
     short Mode = 0;
@@ -1269,7 +1271,10 @@ void dbdef::saveDDF(short TableIndex, short opration)
             tb->seek();
             strcpy(tb->tablename, TableDef->tableNameA());
             strcpy(tb->filename, TableDef->fileNameA());
-            tb->flag = TableDef->flags.all;
+            if (forPsqlDdf)
+                tb->flag = 0;//PSQL are reading flags from table files.
+            else
+                tb->flag = TableDef->flags.all;
             if (tb->stat() == STATUS_SUCCESS)
             {
                 if (opration == 4)
@@ -1303,6 +1308,8 @@ void dbdef::saveDDF(short TableIndex, short opration)
                     fd->fileid = tb->id;
                     strcpy(fd->name, FieldDef->nameA());
                     fd->type = FieldDef->type;
+                    if (forPsqlDdf && (fd->type == ft_logical))
+                        fd->type = ft_uinteger;
                     fd->pos = (ushort_td)(pos - 1);
                     fd->len = FieldDef->len;
                     pos += FieldDef->len;

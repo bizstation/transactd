@@ -109,7 +109,6 @@ public:
     STDMETHOD(get_FilterRejectCount)(long* Value);
     STDMETHOD(put_FilterGetCount)(long Value);
     STDMETHOD(put_FilterRejectCount)(long Value);
-
     STDMETHOD(Field)(VARIANT Index, IField** Value);
     STDMETHOD(get_IsOpen)(VARIANT_BOOL* Value);
     STDMETHOD(get_CanDelete)(VARIANT_BOOL* Value);
@@ -140,5 +139,7 @@ public:
     STDMETHOD(get_MyDateTimeValueByBtrv)(VARIANT_BOOL* Value);
     STDMETHOD(get_ValiableFormatType)(VARIANT_BOOL* Value);
     STDMETHOD(SmartUpdate)(void);
+	STDMETHOD(KeyValueDescription)(BSTR* Value);
+	STDMETHOD(SetQuery)(IQueryBase* Value);
 
 };

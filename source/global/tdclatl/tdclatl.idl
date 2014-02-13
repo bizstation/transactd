@@ -31,7 +31,7 @@ interface IFlags;
 interface IKeySegment;
 interface IField;
 interface ITdVersion;
-
+interface IQueryBase;
 
 typedef
 [
@@ -636,7 +636,10 @@ interface ITable : IDispatch
   HRESULT _stdcall ValiableFormatType([out, retval] VARIANT_BOOL* Value);
   [id(0x000000F9)]
   HRESULT _stdcall SmartUpdate(void);
-
+  [id(0x000000FA)]
+  HRESULT _stdcall KeyValueDescription([out, retval] BSTR* Value);
+  [id(0x000000FB)]
+  HRESULT _stdcall SetQuery([in] IQueryBase* Value);
 
 };
 [
@@ -920,6 +923,82 @@ interface ITdVersion : IDispatch
 };
 
 [
+	object,
+	uuid(828B3682-4B3F-465C-8168-D36BF62ECA8E),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+
+interface IQueryBase : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall Reset(void);
+  [id(0x0000002)]
+  HRESULT _stdcall ClearSeekKeyValues(void);
+  [id(0x0000003)]
+  HRESULT _stdcall ClearSelectFields(void);
+  [id(0x0000004)]
+  HRESULT _stdcall Select([in] BSTR Value
+			,[in, defaultvalue("")] BSTR Value1
+			,[in, defaultvalue("")] BSTR Value2
+			,[in, defaultvalue("")] BSTR Value3
+			,[in, defaultvalue("")] BSTR Value4
+			,[in, defaultvalue("")] BSTR Value5
+			,[in, defaultvalue("")] BSTR Value6
+			,[in, defaultvalue("")] BSTR Value7
+			,[in, defaultvalue("")] BSTR Value8
+			,[in, defaultvalue("")] BSTR Value9
+			,[in, defaultvalue("")] BSTR Value10
+			, [out, retval] IQueryBase** retVal);
+  [id(0x0000005)]
+  HRESULT _stdcall Where([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IQueryBase** retVal);
+  [id(0x0000006)]
+  HRESULT _stdcall And([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IQueryBase** retVal);
+  [id(0x0000007)]
+  HRESULT _stdcall Or([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IQueryBase** retVal);
+  [id(0x0000008)]
+  HRESULT _stdcall AddInValue([in] VARIANT Value, [in] VARIANT_BOOL Reset);
+  [id(0x0000009)]
+  HRESULT _stdcall In([in] VARIANT Value
+			,[in, defaultvalue("")] VARIANT Value1
+			,[in, defaultvalue("")] VARIANT Value2
+			,[in, defaultvalue("")] VARIANT Value3
+			,[in, defaultvalue("")] VARIANT Value4
+			,[in, defaultvalue("")] VARIANT Value5
+			,[in, defaultvalue("")] VARIANT Value6
+			,[in, defaultvalue("")] VARIANT Value7
+			,[in, defaultvalue("")] VARIANT Value8
+			,[in, defaultvalue("")] VARIANT Value9
+			,[in, defaultvalue("")] VARIANT Value10
+			, [out, retval] IQueryBase** retVal);
+  [id(0x000000A)]
+  HRESULT _stdcall QueryString([in] BSTR Value, [out, retval] IQueryBase** retVal);
+  [id(0x000000B)]
+  HRESULT _stdcall Reject([in, defaultvalue(1)] long Value, [out, retval] IQueryBase** retVal);
+  [id(0x000000C)]
+  HRESULT _stdcall Limit([in, defaultvalue(0)] long Value, [out, retval] IQueryBase** retVal);
+  [id(0x000000D)]
+  HRESULT _stdcall Direction([in] eFindType FindType, [out, retval] IQueryBase** retVal);
+  [id(0x000000E)]
+  HRESULT _stdcall All([out, retval] IQueryBase** retVal);
+  [id(0x000000F)]
+  HRESULT _stdcall ToString([out, retval] BSTR* retVal);
+  [id(0x0000010)]
+  HRESULT _stdcall GetDirection([out, retval] eFindType* retVal);
+  [id(0x0000011)]
+  HRESULT _stdcall GetReject([out, retval] long* retVal);
+  [id(0x0000012)]
+  HRESULT _stdcall GetLimit([out, retval] long* retVal);
+  [id(0x0000013)]
+  HRESULT _stdcall IsAll([out, retval] VARIANT_BOOL* retVal);
+  [id(0x0000014)]
+  HRESULT _stdcall Optimize([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
+  [id(0x0000015)]
+  HRESULT _stdcall IsOptimize([out, retval] VARIANT_BOOL* retVal);
+
+};
+[
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
 	version(1.0),
 ]
@@ -1030,6 +1109,13 @@ library transactd
   
  
 
+	[
+		uuid(CA076B05-541B-48EF-AC55-33323FB052F3)		
+	]
+	coclass QueryBase
+	{
+		[default] interface IQueryBase;
+	};
 };
 
 import "shobjidl.idl";

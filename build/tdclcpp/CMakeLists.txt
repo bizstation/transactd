@@ -104,7 +104,7 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("chrono;filesystem;system;thread")
+transactd_link_boost_libraries("filesystem;thread;chrono;system")
 if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} iconv)
 endif()

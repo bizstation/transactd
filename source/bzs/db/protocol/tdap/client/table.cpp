@@ -64,9 +64,6 @@ namespace client
 #define EXEC_CODEPAGE CP_UTF8
 #endif
 
-#define BOOKMARK_ALLOC_SIZE 40960
-#define BOOKMARK_SIZE 4
-#define DATASIZE_BYTE 2
 
 class CFiledNameIndex
 {
@@ -162,6 +159,7 @@ class recordCache
     char* m_ptr;
     char* m_tmpPtr;
     blobHeader* m_hd;
+    short_td m_seekMultiStat;
 
 public:
     inline recordCache(table* tb) : m_tb(tb) {reset();}
@@ -199,18 +197,34 @@ public:
             m_ptr += DATASIZE_BYTE;
             m_bookmark = *((bookmark_td*)(m_ptr));
             m_ptr += BOOKMARK_SIZE;
-
-            if (m_hd)
+        }
+        if (m_hd)
+        {
+            //blob pointer is allready point to next row
+            while (m_row - m_hd->curRow)
             {
-                m_hd->nextField = (blobField*)m_hd->nextField->next();
+                for(int j=0;j<m_hd->fieldCount;++j)
+                    m_hd->nextField = (blobField*)m_hd->nextField->next();
                 ++m_hd->curRow;
             }
         }
+
         m_tb->m_impl->strBufs.clear();
+
+        if ((m_len==0) && m_pFilter->isSeeksMode() && m_pFilter->fieldCount())
+        {
+            /*seek error*/
+            m_seekMultiStat = m_bookmark;
+            m_bookmark = 0;
+            memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
+            return m_tmpPtr;
+        }else
+            m_seekMultiStat = 0;
+
         if (m_pFilter->fieldSelected())
         {
             int offset = 0;
-            memset(m_tmpPtr, 0, m_len);
+            memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             for (int i = 0; i < m_pFilter->fieldCount(); i++)
             {
                 memcpy((char*)m_tmpPtr + m_pFilter->fieldOffset(i), m_ptr + offset,
@@ -222,6 +236,7 @@ public:
         }
         else if (m_tb->valiableFormatType())
         {
+            memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             memcpy(m_tmpPtr, m_ptr, m_len);
             m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
             m_tb->setBlobFieldPointer(m_tmpPtr, m_hd);
@@ -252,6 +267,7 @@ public:
     inline int rowCount() const {return m_rowCount;}
     inline bool isEndOfRow(unsigned int row) const {return  (m_rowCount && (row == m_rowCount));}
 	inline bool withinCache(unsigned int row) const {return (row < m_rowCount);}
+    inline short_td seekMultiStat(){return m_seekMultiStat;}
 };
 
 // ---------------------------------------------------------------------------
@@ -286,6 +302,7 @@ inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
         case 8: ret = *((__int64*)(ptr + fd.pos));
             break;
         }
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_bit:
@@ -332,10 +349,11 @@ inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
                 break;
             case 4: *((int*)(ptr + fd.pos)) = (int)value;
                 break;
-            case 8: *((__int64*)(ptr + fd.pos)) = (int)value;
+            case 8: *((__int64*)(ptr + fd.pos)) = value;
                 break;
             }
         }
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_bit:
@@ -346,7 +364,8 @@ inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
     case ft_mytime:
     case ft_mydate:
     case ft_mydatetime:
-    case ft_mytimestamp: memcpy(ptr + fd.pos, &value, fd.len);
+    case ft_mytimestamp:
+        memcpy(ptr + fd.pos, &value, fd.len);
         break;
     }
 }
@@ -431,57 +450,51 @@ inline short calcNextReadRecordCount(ushort_td curCount, int eTime)
     else
         ret = (ushort_td)(curCount * ((float)100 / (float)eTime));
 
-    if (ret > 10000)
-        return 10000;
+    if (ret > 9500)
+        return 9500;
     if (ret == 0)
         return 1;
     return ret;
 }
 
-uint_td table::doRecordCount(bool estimate, bool fromCurrent)
+uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType direction)
 {
     uint_td result = 0;
 
     if (m_impl->filterPtr)
     {
+        short_td op = (direction == findForword) ? TD_KEY_NEXT_MULTI:TD_KEY_PREV_MULTI;
+
+        if (tableDef()->keyCount == 0)
+            op += TD_POS_NEXT_MULTI - TD_KEY_NEXT_MULTI;// KEY to POS
         short curStat = m_stat;
         m_impl->exBookMarking = true;
-        ushort_td recCountOnce = 50;
+        ushort_td recCountOnce = 100;
 
         bookmark_td bm = bookmark();
-        ushort_td tmpFieldCount = m_impl->filterPtr->fieldCount();
+
         ushort_td tmpRejectCount = m_impl->filterPtr->rejectCount();
         ushort_td tmpRecCount = m_impl->filterPtr->recordCount();
-        _TCHAR* str = new _TCHAR[_tcslen(filterStr()) + 1];
-        if (str)
-        {
-            _tcscpy(str, filterStr());
-            m_impl->filterPtr->setFieldCount(0);
-            m_stat = 0;
-            m_impl->filterPtr->setFilter(str, tmpRejectCount, 10000);
-            if (m_stat != 0)
-            {
-                // restore filter string
-                m_impl->filterPtr->setFieldCount(tmpFieldCount);
-                m_impl->filterPtr->setFilter(str, tmpRejectCount, tmpRecCount);
-                delete[]str;
-                str = NULL;
-            }
-        }
-        else
-            assert(0);
+
+        m_impl->filterPtr->setIgnoreFields(true);
         m_impl->maxBookMarkedCount = 0;
         if (fromCurrent)
             m_stat = curStat;
-        else
+        else if (op == TD_KEY_NEXT_MULTI)
             seekFirst();
+        else if (op == TD_KEY_PREV_MULTI)
+            seekLast();
+        else if (op == TD_POS_NEXT_MULTI)
+            stepFirst();
+        else if (op == TD_POS_PREV_MULTI)
+            stepLast();
 
-        *(m_impl->filterPtr->recordCountDirect()) = recCountOnce;
+        m_impl->filterPtr->setMaxRows(recCountOnce);
         if (m_stat == 0)
         {
             m_impl->filterPtr->setPosTypeNext(false);
             boost::timer t;
-            btrvGetExtend(TD_KEY_NEXT_MULTI);
+            btrvGetExtend(op);
             int eTime = (int)(t.elapsed() * 1000);
             while ((m_stat == 0) || (m_stat == STATUS_LIMMIT_OF_REJECT) || (m_stat == STATUS_EOF)
                         || (m_stat == STATUS_REACHED_FILTER_COND))
@@ -502,35 +515,34 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
                     }
                 }
                 recCountOnce = calcNextReadRecordCount(recCountOnce, eTime);
-
-                *(m_impl->filterPtr->recordCountDirect()) = recCountOnce;
+                m_impl->filterPtr->setMaxRows(recCountOnce);
                 result += *((ushort_td*)m_impl->dataBak);
                 setBookMarks(m_impl->maxBookMarkedCount + 1, (void*)((char*)m_impl->dataBak + 2),
                     *((ushort_td*)m_impl->dataBak));
                 m_impl->maxBookMarkedCount = result;
-
                 onRecordCounting(result, Complete);
                 if (Complete)
                     break;
                 t.restart();
                 m_impl->filterPtr->setPosTypeNext(true);
-                btrvGetExtend(TD_KEY_NEXT_MULTI);
+                btrvGetExtend(op);
                 eTime = (int)(t.elapsed() * 1000);
             }
         }
+
         short tmpStat = m_stat;
-        if (str)
-        {
-            setFilter(str, tmpRejectCount, tmpRecCount);
-            delete[]str;
-        }
+        m_impl->filterPtr->setIgnoreFields(false);
+        m_impl->filterPtr->setMaxRows(tmpRecCount);
+
         if (bm)
             seekByBookmark(bm);
         m_impl->exBookMarking = false;
         m_stat = tmpStat;
+        if (m_stat == STATUS_EOF)
+            m_stat = 0;
     }
     else
-        return nstable::doRecordCount(estimate, fromCurrent);
+        return nstable::doRecordCount(estimate, fromCurrent, direction);
 
     return result;
 }
@@ -540,11 +552,26 @@ void table::btrvGetExtend(ushort_td op)
 
     if (op >= TD_KEY_GE_NEXT_MULTI)
         m_keylen = writeKeyData();
+
     m_pdata = m_impl->dataBak;
-    m_impl->filterPtr->WriteBuffer();
+    if (!m_impl->filterPtr->writeBuffer())
+    {
+        m_stat = STATUS_WARKSPACE_TOO_SMALL;
+        return;
+    }
     m_datalen = m_impl->filterPtr->exDataBufLen();
+
+    //cacheing direction
+    if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI)|| (op == TD_POS_PREV_MULTI))
+        m_impl->filterPtr->setDirection(findBackForword);
+    else
+        m_impl->filterPtr->setDirection(findForword);
+
     tdap(op);
     short stat = m_stat;
+    if (!m_impl->filterPtr->isWriteComleted() && (stat == STATUS_REACHED_FILTER_COND))
+        stat = STATUS_LIMMIT_OF_REJECT;
+
     m_impl->rc->reset(m_impl->filterPtr, (char*)m_impl->dataBak, m_datalen, blobFieldUsed() ?
         getBlobHeader() : NULL);
 
@@ -554,13 +581,11 @@ void table::btrvGetExtend(ushort_td op)
     if (m_impl->rc->rowCount() && (!m_impl->exBookMarking))
     {
         m_pdata = (void*)m_impl->rc->setRow(0);
-        m_datalen = m_impl->rc->len();
+        m_datalen = tableDef()->maxRecordLen;//m_impl->rc->len();
 
-        m_stat = STATUS_SUCCESS;
+        m_stat = m_impl->rc->seekMultiStat();
     }else if ((m_stat == STATUS_LIMMIT_OF_REJECT) && (m_impl->filterPtr->rejectCount()>=1))
         m_stat = STATUS_EOF;
-
-
 }
 
 void table::getRecords(ushort_td op)
@@ -586,24 +611,40 @@ bookmark_td table::bookmarkFindCurrent() const
 
 void table::find(eFindType type)
 {
+    ushort_td op;
+
+    if (m_impl->filterPtr->isSeeksMode())
+    {
+        m_impl->filterPtr->resetSeeksWrited();
+        op = TD_KEY_SEEK_MULTI;
+    }
+    else
+        op = (type == findForword) ? TD_KEY_GE_NEXT_MULTI:TD_KEY_LE_PREV_MULTI;
+
     if (nsdb()->isUseTransactd())
     {
         m_impl->rc->reset();
-        ushort_td op = (type == findForword) ? TD_KEY_GE_NEXT_MULTI:TD_KEY_LE_PREV_MULTI;
         doFind(op, true/*notIncCurrent*/);
     }
     else
     {
+
+        if (op == TD_KEY_SEEK_MULTI)
+        {
+            //P.SQL not support TD_KEY_SEEK_MULTI
+            m_stat = STATUS_FILTERSTRING_ERROR;
+            return;
+        }
         if (type == findForword)
-            seekGreater(true);
+            seekGreater(false);
         else
-            seekLessThan(true);
+            seekLessThan(false);
         if (m_stat == 0)
         {
             if (type == findForword)
-                findNext(true);
+                findNext(false);
             else
-                findPrev(true);
+                findPrev(false);
         }
     }
 
@@ -617,6 +658,7 @@ void table::findFirst()
     {
         if (m_impl->filterPtr)
         {
+
             m_impl->exNext = 1;
             m_impl->filterPtr->setPosTypeNext(false);
             getRecords(TD_KEY_NEXT_MULTI);
@@ -631,11 +673,27 @@ void table::findLast()
     {
         if (m_impl->filterPtr)
         {
+
             m_impl->exNext = -1;
             m_impl->filterPtr->setPosTypeNext(false);
             getRecords(TD_KEY_PREV_MULTI);
         }
     }
+}
+
+bool table::checkFindDirection(ushort_td op)
+{
+    bool ret ;
+    if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI))
+        ret = (m_impl->filterPtr->direction() == findBackForword);
+    else
+        ret = (m_impl->filterPtr->direction() == findForword);
+    if (!ret)
+    {
+        assert(0);
+        m_stat = 1;
+    }
+    return ret;
 }
 
 void table::doFind( ushort_td op, bool notIncCurrent)
@@ -650,12 +708,27 @@ void table::doFind( ushort_td op, bool notIncCurrent)
 
         if (m_impl->rc->withinCache(row) && (!m_impl->exBookMarking))
         {   /* read from cache */
+
+            /*Is direction same */
+            if (!checkFindDirection(op))
+                return ;
+
             m_pdata = (void*)m_impl->rc->setRow(row);
-            m_datalen = m_impl->rc->len();
+            m_stat = m_impl->rc->seekMultiStat();
+
+            /*set keyvalue for keyValueDescription*/
+            if (m_stat != 0)
+                setSeekValueField(row);
+
+            //m_datalen = m_impl->rc->len();
+            m_datalen = tableDef()->maxRecordLen;
         }
         else if (m_impl->rc->isEndOfRow(row))
         {
             /* whole row readed */
+            /*Is direction same */
+            if (!checkFindDirection(op))
+                return ;
             /* A special situation that if rejectCount() == 0 and status = STATUS_LIMMIT_OF_REJECT
                 then it continues . */
             if ((m_impl->exSlideStat == 0)
@@ -685,7 +758,11 @@ void table::findNext(bool notIncCurrent)
 {
 
     if (m_impl->filterPtr)
-        doFind(TD_KEY_NEXT_MULTI, notIncCurrent);
+    {
+        short op = m_impl->filterPtr->isSeeksMode() ? TD_KEY_SEEK_MULTI
+                    : TD_KEY_NEXT_MULTI;
+        doFind(op, notIncCurrent);
+    }
     else if (notIncCurrent == true)
         seekNext();
 }
@@ -699,7 +776,7 @@ void table::findPrev(bool notIncCurrent)
 
 }
 
-void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount)
+void table::setQuery(const queryBase* query)
 {
 
     m_stat = 0;
@@ -708,7 +785,7 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
     m_impl->exBookMarking = false;
     m_impl->exSlideStat = 0;
     m_impl->exNext = 0;
-    if (str[0] == 0x00)
+    if (query == NULL)
     {
         m_impl->maxBookMarkedCount = 0;
         delete m_impl->filterPtr;
@@ -725,7 +802,8 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
         return;
 
     }
-    if (!m_impl->filterPtr->setFilter(str, RejectCount, CashCount))
+
+    if (!m_impl->filterPtr->setQuery(query))
     {
         m_stat = STATUS_FILTERSTRING_ERROR;
         delete m_impl->filterPtr;
@@ -734,9 +812,9 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
     }
     if (!m_impl->bookMarks)
     {
-        m_impl->bookMarks = malloc(40960);
+        m_impl->bookMarks = malloc(BOOKMARK_ALLOC_SIZE);
         if (m_impl->bookMarks)
-            m_impl->bookMarksMemSize = 40960;
+            m_impl->bookMarksMemSize = BOOKMARK_ALLOC_SIZE;
         else
         {
             m_stat = STATUS_FILTERSTRING_ERROR;
@@ -744,6 +822,19 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
             m_impl->filterPtr = NULL;
         }
     }
+}
+
+void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount)
+{
+    if (!str || (str[0] == 0x00))
+        setQuery(NULL);
+    else
+    {
+        queryBase q;
+        q.queryString(str).reject(RejectCount).limit(CashCount);
+        setQuery(&q);
+    }
+
 }
 
 const _TCHAR* table::filterStr()
@@ -756,8 +847,10 @@ const _TCHAR* table::filterStr()
 
 void table::clearBuffer()
 {
+    m_impl->rc->reset();
+    m_pdata = m_impl->dataBak;
     memset(m_pdata, 0x00, m_buflen);
-    if (blobFieldUsed())
+    if ((bulkIns()==NULL) && blobFieldUsed())
         resetSendBlob();
 
 }
@@ -867,7 +960,8 @@ bool table::onUpdateCheck(eUpdateType type)
 void table::onUpdateAfter(int beforeResult)
 {
     if (blobFieldUsed())
-        resetSendBlob();
+        addSendBlob(NULL);
+
     if (valiableFormatType() && m_impl->dataPacked)
         m_datalen = unPack((char*)m_pdata, m_datalen);
 
@@ -892,16 +986,23 @@ ushort_td table::doCommitBulkInsert(bool autoCommit)
 {
     ushort_td ret = nstable::doCommitBulkInsert(autoCommit);
     if (blobFieldUsed())
-        resetSendBlob();
+        addSendBlob(NULL);
     return ret;
+}
+
+void table::doAbortBulkInsert()
+{
+    nstable::doAbortBulkInsert();
+    if (blobFieldUsed())
+        addSendBlob(NULL);
 }
 
 void table::onInsertAfter(int beforeResult)
 {
     if (valiableFormatType() && m_impl->dataPacked)
         m_datalen = unPack((char*)m_pdata, m_datalen);
-    if (blobFieldUsed())
-        resetSendBlob();
+    if ((bulkIns()==NULL) && blobFieldUsed())
+        addSendBlob(NULL);
 }
 
 void* table::attachBuffer(void* NewPtr, bool unpack, size_t size)
@@ -1119,9 +1220,11 @@ void table::resetSendBlob()
 void table::addSendBlob(const blob* blob)
 {
     short stat = m_stat;
+    /*backup current data buffer*/
     const void *tmp = data();
     setData((void*)blob);
     tdap(TD_ADD_SENDBLOB);
+    /*restore data buffer*/
     setData((void*)tmp);
     m_stat = stat;
 }
@@ -1130,9 +1233,11 @@ const blobHeader* table::getBlobHeader()
 {
     short stat = m_stat;
     const blobHeader* p;
+    /*backup current data buffer*/
     const void *tmp = data();
     setData(&p);
     tdap(TD_GET_BLOB_BUF);
+    /*restore data buffer*/
     setData((void*)tmp);
     std::swap(stat, m_stat);
 
@@ -1171,7 +1276,7 @@ void table::onReadAfter()
     {
         m_datalen = unPack((char*)m_pdata, m_datalen);
         if (m_datalen == 0)
-            m_stat = 22;
+            m_stat = STATUS_BUFFERTOOSMALL;
     }
     if (blobFieldUsed())
     {
@@ -1276,6 +1381,7 @@ void table::setFVA(short index, const char* data)
     case ft_time: // time hh:nn:ss
         value = /*StrToBtrTime*/atobtrt((const char*)data).i;
         break;
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_integer:
     case ft_autoinc:
@@ -1375,6 +1481,7 @@ void table::setFVW(short index, const wchar_t* data)
         setFV(index, value);
         return;
 
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_integer:
     case ft_autoinc:
@@ -1485,6 +1592,7 @@ void table::setFV(short index, int data)
     case ft_integer:
     case ft_date:
     case ft_time:
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_autoinc:
@@ -1593,6 +1701,7 @@ void table::setFV(short index, double data)
     case ft_integer:
     case ft_date:
     case ft_time:
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_autoinc:
@@ -1684,6 +1793,7 @@ int table::getFVlng(short index)
             break;
         }
         break;
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_bit:
@@ -1794,6 +1904,7 @@ double table::getFVdbl(short index)
     case ft_integer:
     case ft_date:
     case ft_time:
+    case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
     case ft_autoinc:
@@ -1903,7 +2014,9 @@ const wchar_t* table::getFVWstr(short index)
             }
             break;
         }
-    case ft_uinteger: swprintf_s(p, 50, L"%u", getFVlng(index));
+    case ft_autoIncUnsigned:
+    case ft_uinteger:
+        swprintf_s(p, 50, L"%lu", getFV64(index));
         break;
     case ft_date: return btrdtoa(getFVlng(index), p);
     case ft_time: return btrttoa(getFVlng(index), p);
@@ -2038,7 +2151,9 @@ const char* table::getFVAstr(short index)
         }
     case ft_date: return btrdtoa(getFVlng(index), p);
     case ft_time: return btrttoa(getFVlng(index), p);
-    case ft_uinteger: sprintf(p, "%u", getFVlng(index));
+    case ft_autoIncUnsigned:
+    case ft_uinteger:
+        sprintf_s(p, 50, "%lu", getFV64(index));
         break;
 
     case ft_mydate:
@@ -2185,6 +2300,7 @@ __int64 table::getFV64(short index)
     case 8:
         switch (fd.type)
         {
+        case ft_autoIncUnsigned:
         case ft_uinteger:
         case ft_integer:
         case ft_logical:
@@ -2229,6 +2345,7 @@ void table::setFV(short index, __int64 data)
     case 8:
         switch (fd.type)
         {
+        case ft_autoIncUnsigned:
         case ft_uinteger:
         case ft_integer:
         case ft_logical:
@@ -2578,10 +2695,6 @@ unsigned int table::getRecordHash()
     return hash((const char*)fieldPtr(0), datalen());
 }
 
-
-
-
-
 int table::bookMarksCount() const
 {
     int ret;
@@ -2604,6 +2717,337 @@ short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
     return nstable::tdapErr(hWnd, m_stat, m_tableDef->tableName(), retbuf);
 }
 
+/* For keyValueDescription */
+bool table::setSeekValueField(int row)
+{
+    const std::vector<std::_tstring>& keyValues = m_impl->filterPtr->keyValuesCache();
+    keydef* kd = &tableDef()->keyDefs[keyNum()];
+    if (keyValues.size() % kd->segmentCount)
+        return false;
+    //Check uniqe key
+    if (kd->segments[0].flags.bit0)
+        return false;
+
+    size_t pos = kd->segmentCount * row;
+    for (int j=0;j<kd->segmentCount;++j)
+        setFV(kd->segments[j].fieldNum, keyValues[pos+j].c_str());
+    return true;
+}
+
+void table::keyValueDescription(_TCHAR* buf, int bufsize)
+{
+
+    std::_tstring s;
+	if (stat() == STATUS_NOT_FOUND_TI)
+	{
+
+		for (int i=0;i<tableDef()->keyDefs[keyNum()].segmentCount;i++)
+		{
+			short fnum = tableDef()->keyDefs[keyNum()].segments[i].fieldNum;
+			s += std::_tstring(tableDef()->fieldDefs[fnum].name())
+                + _T(" = ") + getFVstr(fnum) + _T("\n");
+		}
+	}
+    else if (stat() == STATUS_DUPPLICATE_KEYVALUE)
+	{
+        _TCHAR tmp[50];
+		for (int j=0;j<tableDef()->keyCount;j++)
+		{
+			_stprintf_s(tmp, 50, _T("[key%d]\n"), j);
+			s += tmp;
+			for (int i=0;i<tableDef()->keyDefs[j].segmentCount;i++)
+			{
+				short fnum = tableDef()->keyDefs[j].segments[i].fieldNum;
+				s += std::_tstring(tableDef()->fieldDefs[fnum].name())
+                    + _T(" = ") + getFVstr(fnum) + _T("\n");
+			}
+		}
+
+	}
+
+    _stprintf_s(buf, bufsize, _T("table:%s\nstat:%d\n%s")
+                                        ,tableDef()->tableName()
+                                        ,stat()
+                                        ,s.c_str());
+}
+
+
+//-------------------------------------------------------------------
+//      class queryBase
+//-------------------------------------------------------------------
+typedef boost::escaped_list_separator<_TCHAR> esc_sep;
+typedef boost::tokenizer<esc_sep
+        ,std::_tstring::const_iterator
+        ,std::_tstring> tokenizer;
+
+void analyzeQuery(const _TCHAR* str
+        , std::vector<std::_tstring>& selects
+        , std::vector<std::_tstring>& where
+        , std::vector<std::_tstring>& keyValues
+        ,bool& nofilter)
+{
+    esc_sep sep(_T('&'), _T(' '), _T('\''));
+    std::_tstring s = str;
+    tokenizer tokens(s, sep);
+
+    tokenizer::iterator it = tokens.begin();
+    if (it == tokens.end()) return;
+    if (*it == _T("*"))
+    {
+        nofilter = true;
+        return;
+    }
+    s = *it;
+    boost::algorithm::to_lower(s);
+    if (s == _T("select"))
+    {
+        tokenizer::iterator itTmp = it;
+        s = *(++it);
+        if (getFilterLogicTypeCode(s.c_str())==255)
+        {
+            esc_sep sep(_T('&'), _T(','), _T('\''));
+            tokenizer fields(s, sep);
+            tokenizer::iterator itf = fields.begin();
+            while (itf != fields.end())
+                selects.push_back(*(itf++));
+            ++it;
+        }else
+            it = itTmp; // field name is select
+    }
+    if (it == tokens.end())
+        return;
+    s = *it;
+    boost::algorithm::to_lower(s);
+    bool enableWhere = true;
+    if (s == _T("in"))
+    {
+        tokenizer::iterator itTmp = it;
+        s = *(++it);
+        if (getFilterLogicTypeCode(s.c_str())==255)
+        {
+            enableWhere = false;
+            esc_sep sep(_T('&'), _T(','), _T('\''));
+            tokenizer values(s, sep);
+            tokenizer::iterator itf = values.begin();
+            while (itf != values.end())
+                keyValues.push_back(*(itf++));
+        }else
+            it = itTmp; // field name is in
+    }
+    if (enableWhere)
+    {
+        while (it != tokens.end())
+            where.push_back(*(it++));
+    }
+
+}
+
+
+struct impl
+{
+    impl():
+    m_reject(1),m_limit(0),m_direction(table::findForword)
+        ,m_nofilter(false),m_optimize(false){}
+
+	int m_reject;
+	int m_limit;
+    table::eFindType m_direction;
+    bool m_nofilter;
+    bool m_optimize;
+    mutable std::_tstring m_str;
+    std::vector<std::_tstring> m_selects;
+    std::vector<std::_tstring> m_wheres;
+    std::vector<std::_tstring> m_keyValues;
+};
+
+queryBase::queryBase():m_impl(new impl){}
+
+queryBase::~queryBase()
+{
+    delete m_impl;
+}
+
+void queryBase::reset()
+{
+    delete m_impl;
+    m_impl = new impl;
+}
+
+void queryBase::clearSelectFields()
+{
+    m_impl->m_selects.clear();
+}
+
+void queryBase::addField(const _TCHAR* name)
+{
+    m_impl->m_selects.push_back(name);
+    m_impl->m_nofilter = false;
+}
+
+void queryBase::addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value)
+{
+    m_impl->m_keyValues.clear();
+    m_impl->m_wheres.clear();
+    m_impl->m_wheres.push_back(name);
+    m_impl->m_wheres.push_back(logic);
+    m_impl->m_wheres.push_back(value);
+    m_impl->m_nofilter = false;
+
+}
+
+void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name
+    , const _TCHAR* logic,  const _TCHAR* value)
+{
+    m_impl->m_wheres.push_back(combine);
+    m_impl->m_wheres.push_back(name);
+    m_impl->m_wheres.push_back(logic);
+    m_impl->m_wheres.push_back(value);
+    m_impl->m_nofilter = false;
+
+}
+
+void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
+{
+    if (reset)
+    {
+        m_impl->m_wheres.clear();
+        m_impl->m_keyValues.clear();
+    }
+    m_impl->m_keyValues.push_back(value);
+    //m_impl->m_reject = 1;
+    m_impl->m_nofilter = false;
+
+}
+
+void queryBase::clearSeekKeyValues()
+{
+    m_impl->m_keyValues.clear();
+}
+
+queryBase& queryBase::queryString(const _TCHAR* str)
+{
+    m_impl->m_selects.clear();
+    m_impl->m_wheres.clear();
+    m_impl->m_keyValues.clear();
+    m_impl->m_nofilter = false;
+    if (str && str[0])
+        analyzeQuery(str, m_impl->m_selects, m_impl->m_wheres, m_impl->m_keyValues
+                                                ,m_impl->m_nofilter);
+    return *this;
+}
+
+queryBase& queryBase::reject(int v)
+{
+    m_impl->m_reject = v;
+    return *this;
+}
+
+queryBase& queryBase::limit(int v)
+{
+    m_impl->m_limit = v;
+    return *this;
+}
+
+queryBase& queryBase::direction(table::eFindType v)
+{
+    m_impl->m_direction = v;
+    return *this;
+}
+
+queryBase& queryBase::all()
+{
+    reset();
+    m_impl->m_nofilter = true;
+    return *this;
+}
+
+queryBase& queryBase::optimize(bool v)
+{
+    m_impl->m_optimize = v;
+	return *this;
+}
+
+bool queryBase::isOptimize()const
+{
+    return m_impl->m_optimize;
+}
+
+table::eFindType queryBase::getDirection() const {return m_impl->m_direction;}
+
+std::_tstring escape_value(std::_tstring s)
+{
+    std::_tstring::iterator it = s.begin();
+    for (int i=(int)s.size()-1;i>=0;--i)
+    {
+        if (s[i] == _T('&'))
+            s.insert(s.begin()+i, _T('&'));
+        else if (s[i] == _T('\''))
+            s.insert(s.begin()+i, _T('&'));
+    }
+    return s;
+}
+
+const _TCHAR* queryBase::toString() const
+{
+    m_impl->m_str.clear();
+    if (m_impl->m_nofilter)
+        return _T("*");
+
+    std::_tstring& s = m_impl->m_str;
+    std::vector<std::_tstring>& selects = m_impl->m_selects;
+    std::vector<std::_tstring>& wheres = m_impl->m_wheres;
+    std::vector<std::_tstring>& keyValues = m_impl->m_keyValues;
+    if (selects.size())
+    {
+        s = _T("select ");
+        for (int i= 0;i < (int)selects.size();++i)
+            s += selects[i] + _T(",");
+
+        if (s.size())
+            s.replace(s.size()-1,1, _T(" "));
+    }
+
+    for (size_t i= 0;i < wheres.size();i+=4)
+    {
+        s += wheres[i] + _T(" ") + wheres[i+1] + _T(" '")
+             + escape_value(wheres[i+2]) + _T("' ");
+        if (i+3 < wheres.size())
+            s += wheres[i+3] + _T(" ");
+    }
+
+    if (keyValues.size())
+    {
+        s += _T("in ");
+        for (size_t i= 0;i < keyValues.size();++i)
+            s += _T("'") + escape_value(keyValues[i]) + _T("',");
+    }
+    if (s.size())
+        s.erase(s.end() -1);
+
+
+    return s.c_str();
+}
+
+int queryBase::getReject()const{return m_impl->m_reject;}
+
+int queryBase::getLimit()const{return m_impl->m_limit;}
+
+bool queryBase::isAll()const{return m_impl->m_nofilter;};
+
+const std::vector<std::_tstring>& queryBase::getSelects() const {return m_impl->m_selects;}
+const std::vector<std::_tstring>& queryBase::getWheres() const {return m_impl->m_wheres;}
+const std::vector<std::_tstring>& queryBase::getSeekKeyValues() const{return m_impl->m_keyValues;}
+
+void queryBase::release()
+{
+    delete this;
+}
+
+queryBase* queryBase::create()
+{
+    return new queryBase();
+
+}
 
 
 }// namespace client

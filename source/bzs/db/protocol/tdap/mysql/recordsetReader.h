@@ -25,6 +25,9 @@
 #include <bzs/db/engine/mysql/fieldAccess.h>
 #include <boost/shared_ptr.hpp>
 
+#ifndef MAX_KEY_SEGMENT
+#define MAX_KEY_SEGMENT 8
+#endif
 namespace bzs
 {
 namespace db
@@ -145,7 +148,7 @@ inline int compareInt24(const char* l, const char* r)
 }
 
 template <class T>
-int compare(const char* l, const char* r)
+inline int compare(const char* l, const char* r)
 {
 	if (*((T*)l) < *((T*)r))
 		return -1;
@@ -155,7 +158,7 @@ int compare(const char* l, const char* r)
 }
 
 template <class T>
-int compare(T l, T r)
+inline int compare(T l, T r)
 {
 	if (l < r)
 		return -1;
@@ -165,7 +168,7 @@ int compare(T l, T r)
 }
 
 template <class T>
-int compareVartype(const char* l, const char* r, bool bin, char logType)
+inline int compareVartype(const char* l, const char* r, bool bin, char logType)
 {
 	int llen = (*(T*)l);
 	int rlen = (*(T*)r);
@@ -183,7 +186,7 @@ int compareVartype(const char* l, const char* r, bool bin, char logType)
 }
 
 template <class T>
-int compareWvartype(const char* l, const char* r, bool bin, char logType)
+inline int compareWvartype(const char* l, const char* r, bool bin, char logType)
 {
 	int llen = (*(T*)l) / sizeof(char16_t);
 	int rlen = (*(T*)r) / sizeof(char16_t);
@@ -220,32 +223,17 @@ inline int compareBlobType(const char* l, const char* r, bool bin, char logType,
 	return (tmp==0 && (llen < rlen))? -1:tmp; 
 }
 
-#define MAX_ISINDEX_CACHE	8
 #define REC_MACTH			0
 #define REC_NOMACTH			1
 #define REC_NOMACTH_NOMORE  2
 
+//#define COMP_USE_SWITCHCASE
+#ifndef COMP_USE_SWITCHCASE
+#define COMP_USE_FUNCTION_POINTER 
+#endif
 
-
-
-struct extRequest;
-class fieldInfoCache
-{
-	char m_sizeBytes[1000];
-	bool m_isIndex[MAX_ISINDEX_CACHE];
-	mutable int m_index;
-	
-public:
-	inline fieldInfoCache();
-	inline ~fieldInfoCache();
-	inline short cache(extRequest& req, position& position, const KEY* key);
-	inline int getPos()const;
-	inline bool isIndex()const;
-	inline void reset()const;
-
-};
-
-
+struct logicalField;
+typedef int (logicalField::*compFunc)(const char* l, const char* r, int sizeByte) const;
 struct logicalField
 {
 	
@@ -260,13 +248,14 @@ public:
 		unsigned short	offset;  
 		unsigned char	ptr[2]; //variable
 	};
-
+	
 	logicalField* next() const
 	{
-		return (logType & 64)?(logicalField*)(ptr + 2):(logicalField*)(ptr + len/*std::max((unsigned short)2,len)*/);
+		return (logType & 64)?(logicalField*)(ptr + 2):(logicalField*)(ptr + len);
 	}
 
-private:	
+public:	
+#ifdef COMP_USE_SWITCHCASE
 	int comp(const char* record, int sizeByte) const
 	{	
 		const char* r = (const char*) ptr;
@@ -300,6 +289,7 @@ private:
 			return strncmp(l, r, len);
 		case ft_logical:
 		case ft_uinteger:
+		case ft_autoIncUnsigned:
 		case ft_date:
 		case ft_time:
 		case ft_timestamp:
@@ -350,48 +340,146 @@ private:
 		}
 		return 0;
 	};
-	bool matchThis(const char* record, int sizeByte) const
-	{
-		
-		int v = comp(record, sizeByte);
-		switch(logType & 0xF) //16 or more are disregarded. 
-		{
-		case 1:return (v==0);	//==
-		case 2:return (v>0);	//>
-		case 3:return (v<0);	//<
-		case 4:return (v!=0);	//!=
-		case 5:return (v>=0);	//>=
-		case 6:return (v<=0);	//<= 		
-		}			
-		return false;
+#else //COMP_USE_FUNCTION_POINTER
+
+	template <class T>
+	int compNumber(const char* l, const char* r, int sizeByte) const
+	{	
+		return compare<T>(l , r);
 	}
-public:
-	int checkNomore(bool matchResult, bool typeNext, const fieldInfoCache& sb)const
-	{
-		if (matchResult)
-			return REC_MACTH;
-		else if(sb.isIndex())
+
+	int compNumber24(const char* l, const char* r, int sizeByte) const
+	{	
+		return compareInt24(l , r);
+	}
+
+	int compNumberU24(const char* l, const char* r, int sizeByte) const
+	{	
+		return compareUint24(l , r);
+	}
+
+	int compMem(const char* l, const char* r, int sizeByte) const
+	{	
+		return memcmp(l , r, len);
+	}
+
+	int compString(const char* l, const char* r, int sizeByte) const
+	{	
+		return strncmp(l , r, len);
+	}
+
+	int compiString(const char* l, const char* r, int sizeByte) const
+	{	
+		return _strnicmp(l , r, len);
+	}
+
+	int compWString(const char* l, const char* r, int sizeByte) const
+	{	
+		return wcsncmp16((char16_t*)l , (char16_t*)r, len);
+	}
+
+	int compiWString(const char* l, const char* r, int sizeByte) const
+	{	
+		return wcsnicmp16((char16_t*)l , (char16_t*)r, len);
+	}
+
+	template <class T>
+	int compVarString(const char* l, const char* r, int sizeByte) const
+	{	
+		return compareVartype<T>(l, r, type==ft_myvarbinary, logType); 
+	}
+
+	template <class T>
+	int compWVarString(const char* l, const char* r, int sizeByte) const
+	{	
+		return compareWvartype<T>(l, r, type==ft_mywvarbinary, logType); 
+	}
+
+	int compBlob(const char* l, const char* r, int sizeByte) const
+	{	
+		return compareBlobType(l, r, type==ft_myblob, logType, sizeByte);
+	}
+
+	compFunc logicalField::getCompFunc(int sizeByte)
+	{		
+		switch(type)
 		{
-			char log = logType & 0xF;
-			if (log == 1)//==
-				return REC_NOMACTH_NOMORE;
-			else if (typeNext && (log == 3 || log==6))
-				return REC_NOMACTH_NOMORE;
-			else if (!typeNext && (log == 2 || log==5))
-				return REC_NOMACTH_NOMORE;
+		case ft_integer:
+		case ft_autoinc:
+		case ft_currency:
+		{
+			switch(len)
+			{
+			case 1:return &logicalField::compNumber<char>;
+			case 2:return &logicalField::compNumber<short>;
+			case 3:return &logicalField::compNumber24;
+			case 4:return &logicalField::compNumber<int>;
+			case 8:return &logicalField::compNumber<__int64>;
+			}
 		}
-		return REC_NOMACTH;
+		case ft_mychar:
+		case ft_string:
+			if (logType & CMPLOGICAL_CASEINSENSITIVE)
+				return &logicalField::compiString;
+			return &logicalField::compMem;
+		case ft_zstring:
+		case ft_note:
+			if (logType & CMPLOGICAL_CASEINSENSITIVE)
+				return &logicalField::compiString;
+			return &logicalField::compString;
+		case ft_logical:
+		case ft_uinteger:
+		case ft_autoIncUnsigned:
+		case ft_date:
+		case ft_time:
+		case ft_timestamp:
+		case ft_mydate:
+		{
+			switch(len)
+			{
+			case 1:return &logicalField::compNumber<unsigned char>;
+			case 2:return &logicalField::compNumber<unsigned short>;
+			case 3:return &logicalField::compNumberU24;
+			case 4:return &logicalField::compNumber<unsigned int>;
+			case 8:return &logicalField::compNumber<unsigned __int64>;
+			}
+		}
+		case ft_mytime:
+		case ft_mydatetime:
+		case ft_mytimestamp:
+			return &logicalField::compMem;
+		case ft_float:
+			switch(len)
+			{
+			case 4:return &logicalField::compNumber<float>;
+			case 8:return &logicalField::compNumber<double>;
+			}
+		case ft_mywchar:
+		case ft_wstring:
+		case ft_wzstring:
+			if (logType & CMPLOGICAL_CASEINSENSITIVE)
+				return &logicalField::compiWString;
+			if ((type==ft_wstring)||(type==ft_mywchar))
+				return &logicalField::compMem;	
+			return &logicalField::compWString;
+		case ft_lstring: 
+		case ft_myvarchar:
+		case ft_myvarbinary:
+			if (sizeByte==1)
+				return &logicalField::compVarString<unsigned char>;
+			return &logicalField::compVarString<unsigned short>; 
+		case ft_mywvarchar:
+		case ft_mywvarbinary:
+			if (sizeByte==1)
+				return &logicalField::compWVarString<unsigned char>;
+			return &logicalField::compWVarString<unsigned short>;
+		case ft_mytext:
+		case ft_myblob:
+			return &logicalField::compBlob;
+		}
+		return NULL;
 	}
-	int match(const char* record, bool typeNext, const fieldInfoCache& sb) const
-	{
-		bool ret = matchThis(record, sb.getPos());
-		if (opr == 0) //this is last
-			return checkNomore(ret, typeNext, sb); 
-		if (!ret)
-			return (opr == 1)?checkNomore(ret, typeNext, sb):next()->match(record, typeNext, sb); 
-		else 
-			return (opr == 1)?next()->match(record, typeNext, sb):checkNomore(ret, typeNext, sb); 
-	}
+#endif
 	extResultDef* resultDef() const
 	{
 		if (opr == 0)
@@ -407,12 +495,7 @@ struct extRequest
 	unsigned short	rejectCount;
 	unsigned short	logicalCount;
 	logicalField	field;
-	int match(const char* record, bool typeNext, const fieldInfoCache& sb)const
-	{
-		if (logicalCount)
-			return field.match(record, typeNext, sb);
-		return REC_MACTH;
-	}
+
 	extResultDef* resultDef()const 
 	{
 		if (logicalCount)
@@ -424,6 +507,185 @@ struct extRequest
 
 #pragma option -a
 pragma_pop
+
+bool isMatch1(int v){return (v==0);}
+bool isMatch2(int v){return (v>0);}
+bool isMatch3(int v){return (v<0);}
+bool isMatch4(int v){return (v!=0);}
+bool isMatch5(int v){return (v>=0);}
+bool isMatch6(int v){return (v<=0);}
+
+class fields;
+class fieldAdapter
+{
+	logicalField* m_fd;
+	fieldAdapter* m_next;
+	bool (*m_isMatchFunc)(int);
+#ifdef COMP_USE_FUNCTION_POINTER
+	compFunc m_compFunc;
+#endif
+	unsigned char m_keySeg;
+	mutable bool m_judge;
+	char m_judgeType;
+	char m_sizeBytes;
+	mutable bool m_matched;
+public:
+	friend class fields;
+	fieldAdapter():	m_keySeg(0xff),m_judge(false)
+			,m_judgeType(0),m_sizeBytes(0),m_matched(false){}
+
+	int init(logicalField* fd, position& position, const KEY* key, bool forword)
+	{
+		m_fd = fd;
+		int num = position.getFieldNumByPos(fd->pos);
+		if (num == -1)
+			return STATUS_INVALID_FIELD_OFFSET;
+		m_sizeBytes = (char)position.fieldSizeByte(num);
+#ifdef COMP_USE_FUNCTION_POINTER
+		m_compFunc = fd->getCompFunc(m_sizeBytes);
+#endif
+		if (fd->opr == 2)
+		{
+			m_judgeType = 0;
+			return 0;
+		}
+		int segmentIndex = 0;
+		int segments = std::min<uint>(MAX_KEY_SEGMENT, key->user_defined_key_parts);
+		while (segmentIndex < segments)
+		{
+			if (key->key_part[segmentIndex].field->field_index == num)
+			{
+				eCompType comp = (eCompType)(fd->logType);
+				bool gt = (comp == greater)||(comp == greaterEq);
+				bool le = (comp == less)||(comp == lessEq);	
+				bool valid = !(forword ? gt:le);	
+				if (valid)
+				{
+					m_keySeg = (unsigned char)segmentIndex+1;
+					m_judgeType =  (comp == equal) ? 2:1;
+				}
+				break;
+			}
+			++segmentIndex;
+		}
+		return 0;
+	}
+
+	inline int checkNomore(bool typeNext, eCompType log)const
+	{
+		if (m_judge)
+		{
+			if ((log == equal) && m_matched)//==
+				return REC_NOMACTH_NOMORE;
+			else if (typeNext && (log == less || log==lessEq))
+				return REC_NOMACTH_NOMORE;
+			else if (!typeNext && (log == greater || log==greaterEq))
+				return REC_NOMACTH_NOMORE;
+		}
+		return REC_NOMACTH;
+	}
+	
+	int match(const char* record, bool typeNext) const
+	{
+#ifdef COMP_USE_SWITCHCASE
+		int v = m_fd->comp(record, m_sizeBytes);
+#else //COMP_USE_FUNCTION_POINTER
+		const char* r = (const char*) m_fd->ptr;
+		if  (m_fd->logType & CMPLOGICAL_FIELD)
+			r = record + m_fd->offset;
+		const char* l = record + m_fd->pos;
+		int v = (m_fd->*m_compFunc)(l, r , m_sizeBytes);
+#endif		
+		bool ret = m_isMatchFunc(v);
+		if (ret && m_judgeType)
+		{
+			m_matched = true;
+			// check  is this logic range of max ? 
+			// if max then set judge node to next logic 
+			if ((m_fd->opr != 0) && m_judge && (v == 0) && m_next->m_judgeType)
+				m_next->m_judge = true;
+		}
+		bool end = (m_fd->opr == 0)||(!ret && (m_fd->opr == 1))||(ret && (m_fd->opr == 2));
+		if (!end)return m_next->match(record, typeNext);
+		return ret ? REC_MACTH : checkNomore(typeNext, (eCompType)(m_fd->logType & 0xF)); 
+	}
+	
+	bool operator<(const fieldAdapter& r)
+	{
+		if (m_judgeType != r.m_judgeType)
+			return m_judgeType > r.m_judgeType;
+		return m_keySeg < r.m_keySeg;
+	}
+};
+
+class fields
+{
+	fieldAdapter*   m_fields;
+
+public:
+	fields():m_fields(NULL){};
+
+	~fields()
+	{
+		delete [] m_fields;
+	}
+
+	void init(extRequest& req, position& position, const KEY* key, bool forword)
+	{
+		if (req.logicalCount==0) return ;
+
+		logicalField* fd = &req.field;
+		delete [] m_fields;
+		m_fields = new fieldAdapter[req.logicalCount];
+		int lastIndex = req.logicalCount;
+		for (int i=0;i<req.logicalCount;++i)
+		{
+			fieldAdapter& fda = m_fields[i];
+			fda.init(fd, position, key, forword);
+			eCompType log = (eCompType)(fd->logType & 0xF);
+			switch(log) 
+			{
+			case 1:fda.m_isMatchFunc = isMatch1;break;
+			case 2:fda.m_isMatchFunc = isMatch2;break;
+			case 3:fda.m_isMatchFunc = isMatch3;break;
+			case 4:fda.m_isMatchFunc = isMatch4;break;
+			case 5:fda.m_isMatchFunc = isMatch5;break;
+			case 6:fda.m_isMatchFunc = isMatch6;break;
+			}
+
+			fd = fd->next();
+			if (fda.m_fd->opr == 2) 
+				lastIndex = i;
+		}
+		fieldAdapter* begin = &m_fields[0], *cur = &m_fields[0], *end = &m_fields[lastIndex];
+		char tmpOpr = (lastIndex != req.logicalCount) ? end->m_fd->opr: 0;
+		std::sort(begin, end);
+		bool flag = true;
+		while (cur != end)
+		{
+			cur->m_fd->opr = 1;//and
+			if (flag && cur->m_judgeType == 2)
+				cur->m_judge = true;
+			else
+				flag = false;
+			++cur;
+		}
+
+		//if first logic is first segmnet then first logic can judge.
+		if ((begin->m_keySeg == 1) && begin->m_judgeType)
+			begin->m_judge = true;
+
+		if (lastIndex == req.logicalCount) --end;
+		end->m_fd->opr = tmpOpr;
+		for (int i=0;i<req.logicalCount-1;++i)
+			m_fields[i].m_next = &m_fields[i+1];
+	}
+
+	int match(const char* record, bool typeNext) const
+	{
+		return m_fields[0].match(record, typeNext);
+	}
+};
 
 class resultWriter
 {
@@ -437,8 +699,7 @@ class resultWriter
 	short writeFirst( position* pos, unsigned int bookmark)
 	{
 		m_rowsPos = m_resultLen;
-	
-		memset(m_buf + m_resultLen, 0x00,  sizeof(unsigned short));
+		*((unsigned short*)(m_buf + m_resultLen)) = 0; 
 		m_resultLen += sizeof(unsigned short);
 		return doWrite(pos, bookmark);
 	}
@@ -448,50 +709,56 @@ class resultWriter
 		// write rowCount	
 		unsigned short* rows = (unsigned short*) (m_buf + m_rowsPos);
 		++(*rows);
+
 		//write recLength space;
 		unsigned short recLen = 0;
 		unsigned short recLenPos = m_resultLen;
-		memcpy(m_buf + m_resultLen, (const char*)&recLen,  sizeof(unsigned short));
+		*((unsigned short*)(m_buf + m_resultLen)) = recLen; 
 		m_resultLen += sizeof(unsigned short);
+
 		//write bookmark
-		memcpy(m_buf + m_resultLen, (const char*)&bookmark,  sizeof(unsigned int));
+		*((unsigned int*)(m_buf + m_resultLen)) = bookmark; 
 		m_resultLen += sizeof(unsigned int);
 		
-		if ((m_def->fieldCount == 1) && (m_def->field[0].len >= pos->recordLenCl()))
-		{	//write whole row
-			int len = pos->recordLenCl();
-			if (m_maxLen + RETBUF_EXT_RESERVE_SIZE >= m_resultLen + len)
-			{
-				int maxlen = m_maxLen + RETBUF_EXT_RESERVE_SIZE - m_resultLen;
-				len =  pos->recordPackCopy(m_buf + m_resultLen, maxlen);
-				if (len == 0)
-					return STATUS_BUFFERTOOSMALL;
-				m_resultLen += len;
-				recLen += len;
-			}else
-				return STATUS_BUFFERTOOSMALL;
-		}else
+		//if pos ==NULL , that is not found record in a TD_KEY_SEEK_MULTI operation
+		// and bookmark has error code also STATUS_NOT_FOUND_TI 
+		// in the client, fieldCount > 0 buf recLen=0 then this pattern
+		if (pos)
 		{
-			//write each fields by field num.
-			for (int i=0;i<m_def->fieldCount;i++)
-			{
-				resultField& fd = m_def->field[i];
-				if (m_maxLen+RETBUF_EXT_RESERVE_SIZE>= m_resultLen + fd.len)
+			if ((m_def->fieldCount == 1) && (m_def->field[0].len >= pos->recordLenCl()))
+			{	//write whole row
+				int len = pos->recordLenCl();
+				if (m_maxLen + RETBUF_EXT_RESERVE_SIZE >= m_resultLen + len)
 				{
-					//memcpy(m_buf + m_resultLen, pos->record() + fd.pos,  fd.len);
-					memcpy(m_buf + m_resultLen, pos->fieldPtr(&fd),  fd.len);
-					m_resultLen += fd.len;
-					recLen += fd.len;
-					if (pos->isBlobField(&fd))
-						pos->addBlobBuffer(fd.fieldNum);
-				}
-				else
+					int maxlen = m_maxLen + RETBUF_EXT_RESERVE_SIZE - m_resultLen;
+					len =  pos->recordPackCopy(m_buf + m_resultLen, maxlen);
+					if (len == 0)
+						return STATUS_BUFFERTOOSMALL;
+					m_resultLen += len;
+					recLen += len;
+				}else
 					return STATUS_BUFFERTOOSMALL;
+			}else
+			{
+				//write each fields by field num.
+				for (int i=0;i<m_def->fieldCount;i++)
+				{
+					resultField& fd = m_def->field[i];
+					if (m_maxLen+RETBUF_EXT_RESERVE_SIZE>= m_resultLen + fd.len)
+					{
+						memcpy(m_buf + m_resultLen, pos->fieldPtr(&fd),  fd.len);
+						m_resultLen += fd.len;
+						recLen += fd.len;
+						if (pos->isBlobField(&fd))
+							pos->addBlobBuffer(fd.fieldNum);
+					}
+					else
+						return STATUS_BUFFERTOOSMALL;
+				}
 			}
 		}
 		//write recLength;
-		unsigned short* tmp = (unsigned short*) (m_buf + recLenPos);
-		*tmp = recLen;
+		*((unsigned short*)(m_buf + recLenPos)) = recLen;
 		return 0;
 	}
 public:
@@ -516,77 +783,6 @@ public:
 	const char* resultBuffer(){return m_buf;}
 };
 
-/* ---------------------------------------------------------------
- *   Implement fieldInfoCache
- * ---------------------------------------------------------------*/
-inline fieldInfoCache::fieldInfoCache()
-{
-	memset(m_isIndex, 0, sizeof(bool) * MAX_ISINDEX_CACHE);	
-}
-
-inline fieldInfoCache::~fieldInfoCache()
-{
-	
-}
-
-inline short fieldInfoCache::cache(extRequest& req, position& position, const KEY* key)
-{
-	
-	m_index = 0;
-	logicalField* fd = &req.field;
-	char* pos = m_sizeBytes;
-	bool isCheckKeyseg = (key != NULL);
-	unsigned short segmentIndex = 0;
-	for (int i=0;i<req.logicalCount;i++)
-	{
-		
-		int num = position.getFieldNumByPos(fd->pos);
-		if (num == -1)
-			return STATUS_INVALID_FIELD_OFFSET;
-		*pos = (char)position.fieldSizeByte(num);
-
-		/* Is target field  current keynum segnmnt 
-		   For optimize match() return NOMATCH_NOMORE
-		*/ 
-		if (isCheckKeyseg && (i < MAX_ISINDEX_CACHE))
-		{
-			if (segmentIndex < key->user_defined_key_parts)
-			{
-				m_isIndex[i] = (key->key_part[segmentIndex].field->field_index == num);
-				if (!m_isIndex[i] && (++segmentIndex < key->user_defined_key_parts))
-					m_isIndex[i] = (key->key_part[segmentIndex].field->field_index == num);
-			}
-			isCheckKeyseg = m_isIndex[i];
-			if (fd->opr == 2) isCheckKeyseg = false;
-		}
-
-		++pos;
-		fd = fd->next();
-	}
-	return 0;
-}
-
-/* get value and inc index.
-*/
-inline int fieldInfoCache::getPos()const
-{
-	return m_sizeBytes[m_index++];
-}
-
-/* It certainly calls after getPos() */
-inline bool fieldInfoCache::isIndex()const
-{
-	return m_isIndex[m_index-1];
-}
-
-/* reset for next record */
-inline void fieldInfoCache::reset()const
-{
-	m_index = 0;
-	
-}
-
-/* ---------------------------------------------------------------*/
 
 class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 {
@@ -594,20 +790,23 @@ class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 	extRequest*		m_req;
 	extResultDef*	m_resultDef;
 	position		m_position;
-	fieldInfoCache  m_fieldInfoCache;
-public:
+	fields			m_fields;
 
-	short begin(engine::mysql::table* tb, extRequest* req, char* buf,size_t offset, unsigned short maxlen)
+public:
+	short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache
+		, char* buf,size_t offset, unsigned short maxlen, bool forword)
 	{
 		short ret = 0;
 		m_position.setTable(tb);
 		m_req = req;
-		const KEY* key = NULL;
-		if (tb->keyNum() >= 0)
-			key = &tb->keyDef(tb->keyNum());
-		m_fieldInfoCache.cache(*m_req, m_position, key);
-
 		m_resultDef = m_req->resultDef();
+		if (fieldCache)
+		{
+			const KEY* key = NULL;
+			if (tb->keyNum() >= 0)
+				key = &tb->keyDef(tb->keyNum());
+			m_fields.init(*m_req, m_position, key, forword);
+		}
 		if (m_resultDef->fieldCount > 1)
 			ret = convResultPosToFieldNum();
 			
@@ -647,25 +846,37 @@ public:
 
 	int match(bool typeNext)const
 	{
-		m_fieldInfoCache.reset();
-		return m_req->match(m_position.record(), typeNext, m_fieldInfoCache);
+		if (m_req->logicalCount)
+			return m_fields.match(m_position.record(), typeNext);
+		return REC_MACTH;
 	}
 
-	short write(const unsigned char* bmPtr, unsigned int bmlen)
+	short write(const unsigned char* bmPtr, unsigned int bmlen, short stat=0)
 	{
 		unsigned int bookmark = 0;
-		switch(bmlen)
+		//if bmPtr ==NULL , that is not found record in a TD_KEY_SEEK_MULTI operation
+		// and set error code to bookmark also STATUS_NOT_FOUND_TI 
+		if (bmPtr == NULL)
 		{
-		case 4:
-			bookmark = *((unsigned int*)bmPtr);break;
-		case 2:
-			bookmark = *((unsigned short*)bmPtr);break;
-		case 3:
-			bookmark = *((unsigned int*)bmPtr) & 0x0FFFFFF;break;
-		case 1:
-			bookmark = *((unsigned short*)bmPtr) & 0x0FF;break;
+			bookmark = stat;
+			return m_writer->write(NULL, bookmark);
 		}
-		return m_writer->write(&m_position, bookmark);
+		else
+		{
+			switch(bmlen)
+			{
+			case 4:
+				bookmark = *((unsigned int*)bmPtr);break;
+			case 2:
+				bookmark = *((unsigned short*)bmPtr);break;
+			case 3:
+				bookmark = *((unsigned int*)bmPtr) & 0x0FFFFFF;break;
+			case 1:
+				bookmark = *((unsigned short*)bmPtr) & 0x0FF;break;
+			}
+			return m_writer->write(&m_position, bookmark);
+		}
+		
 	}
 	unsigned short rejectCount(){return m_req->rejectCount;};
 	unsigned short maxRows(){return m_resultDef->maxRows;};

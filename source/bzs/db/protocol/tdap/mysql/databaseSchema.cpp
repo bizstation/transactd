@@ -98,7 +98,7 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary, bool
 	case MYSQL_TYPE_YEAR:
 	case MYSQL_TYPE_INT24:
 		if (flags & AUTO_INCREMENT_FLAG)
-			return ft_autoinc;
+			return (flags & UNSIGNED_FLAG) ? ft_autoIncUnsigned : ft_autoinc;
 		if ((flags & UNSIGNED_FLAG) || (type == MYSQL_TYPE_YEAR))
 			return ft_uinteger;
 		return ft_integer;
@@ -159,8 +159,8 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
 		tdef.fixedRecordLen = (ushort_td)src->recordLenCl();
 	tdef.maxRecordLen = (ushort_td)src->recordLenCl();
 	tdef.pageSize = 2048;
-	tdef.optionFlags.bitA = (src->recordFormatType() & RF_VALIABLE_LEN);
-	tdef.optionFlags.bitB = src->blobFields()!=0;
+	tdef.optionFlags.bitA = ((src->recordFormatType() & RF_VALIABLE_LEN)!= 0);
+	tdef.optionFlags.bitB = (src->blobFields()!=0);
 	
 	datalen+=sizeof(tabledef);
 	tdef.fieldDefs = (fielddef*)(rec.get() + datalen);
@@ -217,11 +217,6 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
 					fd.keylen = ks.length;
 					
 				}
-				if (sg.fieldNum == tdef.fieldCount-1)
-				{
-					tdef.flags.bit0 = 0; //NOT valiable length
-					tdef.optionFlags.bitA = 0;//NOT RF_VALIABLE_LEN
-				}
 				++segNum;
 			}
 		}
@@ -237,6 +232,9 @@ bool isFrmFile(const std::string& name)
 {
 	size_t pos = name.find(TRANSACTD_SCHEMANAME);
 	if (pos != std::string::npos)
+		return false;
+	//First of name is '#' that is alter table temp file.
+	if (name.size() && name[0] == '#')
 		return false;
 	pos = name.find(".frm");
 	if (pos != std::string::npos)
@@ -264,7 +262,7 @@ short schemaBuilder::execute(database* db, table* mtb)
 			if (isFrmFile(s))
 			{
 				filename_to_tablename(it->path().stem().string().c_str(), path, FN_REFLEN);
-				table* tb = db->openTable(path, TD_OPEN_READONLY);
+				table* tb = db->openTable(path, TD_OPEN_READONLY, NULL);
 				if (!tb->isView())
 				{
 					if ((stat = insertMetaRecord(mtb, tb, ++id))!=0)

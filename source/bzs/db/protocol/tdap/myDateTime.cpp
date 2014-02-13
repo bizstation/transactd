@@ -226,9 +226,9 @@ public:
 	inline char* toStr(char* p)
 	{
 		if (m_dec)
-			sprintf(p, time_format_ms, hh, nn, ss, m_dec, ms);
+			sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss, m_dec, (int)ms);
 		else
-			sprintf(p, time_format, hh, nn, ss);
+			sprintf(p, time_format, (int)hh, (int)nn, (int)ss);
 		return p;
 	}
 	
@@ -236,9 +236,9 @@ public:
 	inline wchar_t* toStr(wchar_t* p)
 	{
 		if (m_dec)
-			swprintf_s(p, 17, wtime_format_ms, hh, nn, ss, ms);
+			swprintf_s(p, 17, wtime_format_ms, (int)hh, (int)nn, (int)ss, (int)ms);
 		else
-			swprintf_s(p, 9, wtime_format, hh, nn, ss);
+			swprintf_s(p, 9, wtime_format, (int)hh, (int)nn, (int)ss);
 		return p;
 	}
 #endif
@@ -328,9 +328,9 @@ public:
 	inline char* toStr(char* p)
 	{
 		if (m_dec)
-			sprintf(p, datetime_format_ms ,yymm/13,yymm%13, dd, hh, nn, ss, ms);
+			sprintf(p, datetime_format_ms ,(int)(yymm/13),(int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss,(int) ms);
 		else
-			sprintf(p, datetime_format, yymm/13,yymm%13, dd, hh, nn, ss);
+			sprintf(p, datetime_format, (int)(yymm/13),(int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss);
 		return p;
 	}
 	
@@ -338,9 +338,9 @@ public:
 	inline wchar_t* toStr(wchar_t* p)
 	{
 		if (m_dec)
-			swprintf_s(p, 26, wdatetime_format_ms, yymm/13, yymm%13, dd, hh, nn, ss, ms);
+			swprintf_s(p, 26, wdatetime_format_ms, (int)(yymm/13), (int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss, (int)ms);
 		else
-			swprintf_s(p, 20, wdatetime_format, yymm/13, yymm%13, dd, hh, nn, ss);
+			swprintf_s(p, 20, wdatetime_format, (int)(yymm/13), (int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss);
 		return p;
 	}
 #endif

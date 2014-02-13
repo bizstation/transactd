@@ -134,11 +134,12 @@ struct keySegment
 
 /* brief A key infomation
  */
+#define MAX_KEY_SEGMENT 8
 struct keydef
 {
-    uchar_td segmentCount;   // Number of segment
-    keySegment segments[8];  // key segments . max 8 segments
-    uchar_td keyNumber;      // key number
+    uchar_td segmentCount;					// Number of segment
+    keySegment segments[MAX_KEY_SEGMENT];   // key segments . max 8 segments
+    uchar_td keyNumber;						// key number
 };
 // 26byte
 
@@ -172,6 +173,9 @@ PACKAGE ushort_td lenByCharnum(uchar_td type, uchar_td charsetIndex
                                                     , ushort_td charnum);
 
 #endif
+
+/* Is field type string ?*/
+PACKAGE bool isStringType(uchar_td type);
 
 /* Mark of ** that BizStation Corp internal use only.
  */
@@ -550,6 +554,10 @@ struct btrVersions
 #pragma option -a.
 pragma_pop
 
+/*filter cobine type*/
+enum combineType{eCend, eCand, eCor};
+
+PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr);
 
 }// namespace tdap
 }// namespace protocol

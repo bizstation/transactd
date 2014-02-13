@@ -125,6 +125,7 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define TD_ADD_SENDBLOB 	       92
 #define TD_GET_BLOB_BUF		       93
 #define TD_STASTISTICS	           94
+#define TD_KEY_SEEK_MULTI		   95
 
 
 
@@ -165,50 +166,61 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 
 /**  field types
  */
-#define ft_string		0 
-#define ft_integer		1
-#define ft_float		2
-#define ft_date			3
-#define ft_time			4
-#define ft_decimal		5
-#define ft_money		6
-#define ft_logical		7
-#define ft_numeric		8 
-#define ft_bfloat		9 
-#define ft_lstring		10
-#define ft_zstring		11
-#define ft_note			12
-#define ft_lvar			13
-#define ft_uinteger		14
-#define ft_autoinc		15
-#define ft_bit			16
-#define ft_numericsts	17
-#define ft_numericsa	18
-#define ft_currency		19
-#define ft_timestamp	20
-#define ft_blob			21
-#define ft_reserve22	22
-#define ft_reserve23	23
-#define ft_reserve24	24
-#define ft_wstring		25
-#define ft_wzstring		26
-#define ft_guid			27
-#define ft_datatime		30
-#define ft_myvarchar	40
-#define ft_myvarbinary	41
-#define ft_mywvarchar	42
-#define ft_mywvarbinary	43
-#define ft_mychar		44
-#define ft_mywchar		45
-#define ft_mydate		46
-#define ft_mytime		47
-#define ft_mydatetime 	48
-#define ft_mytimestamp	49
-#define ft_mytext 		50
-#define ft_myblob 		51
-#define ft_nullindicator  255
+#define ft_string		    0
+#define ft_integer		    1
+#define ft_float		    2
+#define ft_date			    3
+#define ft_time			    4
+#define ft_decimal		    5
+#define ft_money		    6
+#define ft_logical		    7
+#define ft_numeric		    8
+#define ft_bfloat		    9
+#define ft_lstring		    10
+#define ft_zstring		    11
+#define ft_note			    12
+#define ft_lvar			    13
+#define ft_uinteger		    14
+#define ft_autoinc		    15
+#define ft_bit			    16
+#define ft_numericsts	    17
+#define ft_numericsa	    18
+#define ft_currency		    19
+#define ft_timestamp	    20
+#define ft_blob			    21
+#define ft_reserve22	    22
+#define ft_reserve23	    23
+#define ft_reserve24	    24
+#define ft_wstring		    25
+#define ft_wzstring		    26
+#define ft_guid			    27
+#define ft_datatime		    30
+#define ft_myvarchar	    40
+#define ft_myvarbinary	    41
+#define ft_mywvarchar	    42
+#define ft_mywvarbinary	    43
+#define ft_mychar		    44
+#define ft_mywchar		    45
+#define ft_mydate		    46
+#define ft_mytime		    47
+#define ft_mydatetime 	    48
+#define ft_mytimestamp	    49
+#define ft_mytext 		    50
+#define ft_myblob 		    51
+#define ft_autoIncUnsigned 	52
+#define ft_nullindicator    255
 
-
+/** compair types
+*/
+enum eCompType
+{
+	equal		= 1,
+	greater		= 2,
+	less		= 3,
+	notEq		= 4,
+	greaterEq	= 5,
+	lessEq		= 6
+};
 
 /** charset type number
  */
@@ -316,6 +328,7 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define	STATUS_INVALID_OWNERNAME	51
 #define STATUS_TABLE_EXISTS_ERROR	59
 #define STATUS_LIMMIT_OF_REJECT		60
+#define STATUS_WARKSPACE_TOO_SMALL	61
 #define STATUS_REACHED_FILTER_COND	64
 #define STATUS_INVALID_FIELD_OFFSET 65
 #define STATUS_CHANGE_CONFLICT		80
@@ -334,9 +347,6 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define ERROR_TD_CONNECTION_FAILURE 3106
 #define ERROR_TD_NOT_CONNECTED      3110
 
-
-#define STATUS_BUFFERTOOSMALL		22
-#define STATUS_KEYBUFFERTOOSMALL	21
 
 #define TRANSACTD_SCHEMANAME		_T("transactd_schema")
 #define TYPE_SCHEMA_BDF				(short)0
@@ -364,8 +374,8 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
  If you change this version then you need change The ($TargetName) project options too.
 */
 #define C_INTERFACE_VER_MAJOR "1"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "1"//##2 Build marker! Don't remove
-#define C_INTERFACE_VER_RELEASE "2"//##3 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "2"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 #ifdef LINUX
 #ifdef __APPLE__
@@ -414,15 +424,15 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 
 
 #define CPP_INTERFACE_VER_MAJOR "1"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "1"//##5 Build marker! Don't remove
-#define CPP_INTERFACE_VER_RELEASE "2"//##6 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "2"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 #ifdef _WIN32
 #define CPP_INTERFACE_VERSTR "_" COMPILER_VERSTR "_" TD_LIB_PART "_" CPP_INTERFACE_VER_MAJOR "_" CPP_INTERFACE_VER_MINOR //use autolink
 #endif
 
 #define TRANSACTD_VER_MAJOR 1//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 1//##8 Build marker! Don't remove
-#define TRANSACTD_VER_RELEASE 2//##9 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 2//##8 Build marker! Don't remove
+#define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif //BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

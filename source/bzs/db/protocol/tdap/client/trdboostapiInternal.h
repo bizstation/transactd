@@ -168,6 +168,45 @@ public:
 };
 
 
+template <class T0 = _TCHAR*, class T1 = _TCHAR*, class T2 = _TCHAR*, class T3 = _TCHAR*
+        , class T4 = _TCHAR*, class T5 = _TCHAR*, class T6 = _TCHAR*, class T7 = _TCHAR*>
+class keyValueSetter
+{
+
+public:
+    template <class table_ptr>
+    static void set(table_ptr tb, const char_td keynum
+        ,const T0 kv0, const T1 kv1=NULL
+        ,const T2 kv2=NULL, const T3 kv3=NULL
+        ,const T4 kv4=NULL, const T5 kv5=NULL
+        ,const T6 kv6=NULL, const T7 kv7=NULL)
+    {
+        const tabledef& td = *tb->tableDef();
+        if (keynum < td.keyCount)
+        {
+            tb->clearBuffer();
+            const keydef kd = td.keyDefs[keynum];
+            if (kd.segmentCount > 0)
+                tb->setFV(kd.segments[0].fieldNum, kv0);
+            if (kd.segmentCount > 1)
+                tb->setFV(kd.segments[1].fieldNum, kv1);
+            if (kd.segmentCount > 2)
+                tb->setFV(kd.segments[2].fieldNum, kv2);
+            if (kd.segmentCount > 3)
+                tb->setFV(kd.segments[3].fieldNum, kv3);
+            if (kd.segmentCount > 4)
+                tb->setFV(kd.segments[4].fieldNum, kv4);
+            if (kd.segmentCount > 5)
+                tb->setFV(kd.segments[5].fieldNum, kv5);
+            if (kd.segmentCount > 6)
+                tb->setFV(kd.segments[6].fieldNum, kv6);
+            if (kd.segmentCount > 7)
+                tb->setFV(kd.segments[7].fieldNum, kv7);
+        }
+        tb->setKeyNum(keynum);
+
+    }
+};
 
 
 

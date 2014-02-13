@@ -27,6 +27,8 @@
 #include <bzs/db/protocol/tdap/tdapcapi.h>
 #include <bzs/db/protocol/tdap/client/stringConverter.h>
 #include <stdio.h>
+#include <bzs/db/protocol/tdap/client/filter.h>
+
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -164,6 +166,20 @@ void testCreateNewDataBase(database* db)
         def->updateTableDef(1);
         BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2 stat = " << def->stat());
 
+        fd = def->insertField(1, 2);
+        fd->setName(_T("select"));
+        fd->type = ft_integer;
+        fd->len = (ushort_td)4;
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2 stat = " << def->stat());
+
+        fd = def->insertField(1, 3);
+        fd->setName(_T("in"));
+        fd->type = ft_integer;
+        fd->len = (ushort_td)4;
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2 stat = " << def->stat());
+
         keydef* kd = def->insertKey(1, 0);
         kd->segments[0].fieldNum = 0;
         kd->segments[0].flags.bit8 = 1; // extended key type
@@ -278,6 +294,7 @@ void testFind(database* db)
         --i;
     }
 
+    tb->clearBuffer();
     v = 20000;
     tb->setFV((short)0, v);
     tb->find(table::findForword);
@@ -302,6 +319,93 @@ void testFindNext(database* db)
         BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "findNext value");
 
     }
+	tb->release();
+}
+
+void testFindIn(database* db)
+{
+
+    table* tb = openTable(db);
+    tb->setKeyNum(0);
+    tb->clearBuffer();
+    queryBase q;
+    q.addSeekKeyValue(_T("10"), true);
+    q.addSeekKeyValue(_T("300000"));
+    q.addSeekKeyValue(_T("50"));
+    q.addSeekKeyValue(_T("-1"));
+    q.addSeekKeyValue(_T("80"));
+    q.addSeekKeyValue(_T("5000"));
+
+
+
+    tb->setQuery(&q);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
+    tb->find();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 10, "find in 10");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in 300000");
+
+    _TCHAR msg[1024];
+    tb->keyValueDescription(msg, 1024);
+    int comp = _tcscmp(_T("table:user\nstat:4\nid = 300000\n"), msg);
+    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription");
+
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 50, "find in 50");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in -1");
+
+    tb->keyValueDescription(msg, 1024);
+    comp = _tcscmp(_T("table:user\nstat:4\nid = -1\n"), msg);
+    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription");
+
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 80, "find in 80");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 5000, "find in 5000");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(STATUS_EOF == tb->stat(), "find in more");
+
+    // Many params
+    _TCHAR buf[20];
+	_ltot_s(1, buf, 20, 10);
+    q.addSeekKeyValue(buf, true);
+
+    for (int i=2;i<=10000;++i)
+	{
+        _ltot_s(i, buf, 20, 10);
+		q.addSeekKeyValue(buf);
+	}
+	tb->setQuery(&q);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
+
+    tb->find();
+    int i = 0;
+    while (0 == tb->stat())
+    {
+
+        BOOST_CHECK_MESSAGE(++i == tb->getFVint(fdi_id), "findNext in value");
+        tb->findNext(true);
+    }
+    BOOST_CHECK_MESSAGE(i == 10000, "findNext in count");
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "find in end stat = " << tb->stat());
+
+    //LogicalCountLimit
+    q.addField(_T("id"));
+    tb->setQuery(&q);
+
+    tb->find();
+    i = 0;
+    while (0 == tb->stat())
+    {
+
+        BOOST_CHECK_MESSAGE(++i == tb->getFVint(fdi_id), "findNext in value");
+        tb->findNext(true);
+    }
+    BOOST_CHECK_MESSAGE(i == 10000, "findNext in count");
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "find in end stat = " << tb->stat());
+
 	tb->release();
 }
 
@@ -1533,14 +1637,14 @@ void stringFileterCreateTable(database* db, int id, const _TCHAR* name, uchar_td
     // td.charsetIndex = CHARSET_CP932;
 
     def->insertTable(&td);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "insertTable");
+    BOOST_CHECK_MESSAGE(0 == def->stat(), "insertTable stat = " << def->stat());
 
     fielddef* fd = def->insertField(id, 0);
     fd->setName(_T("id"));
     fd->type = ft_integer;
     fd->len = (ushort_td)4;
     def->updateTableDef(id);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 1");
+    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 1 stat = " << def->stat());
 
     fd = def->insertField(id, 1);
     fd->setName(_T("name"));
@@ -1559,7 +1663,7 @@ void stringFileterCreateTable(database* db, int id, const _TCHAR* name, uchar_td
 
     fd->keylen = fd->len;
     def->updateTableDef(id);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2");
+    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2 stat = " << def->stat());
 
     fd = def->insertField(id, 2);
     fd->setName(_T("namew"));
@@ -1609,6 +1713,7 @@ void stringFileterCreateTable(database* db, int id, const _TCHAR* name, uchar_td
 
 void doInsertStringFileter(table* tb)
 {
+    tb->beginBulkInsert(BULKBUFSIZE);
     tb->clearBuffer();
     int id = 1;
     tb->setFV(_T("id"), id);
@@ -1622,6 +1727,7 @@ void doInsertStringFileter(table* tb)
     tb->setFV(_T("name"), _T("A123456"));
     tb->setFV(_T("namew"), _T("A123456"));
     tb->insert();
+
 
     tb->clearBuffer();
     id = 3;
@@ -1643,7 +1749,7 @@ void doInsertStringFileter(table* tb)
     tb->setFV(_T("name"), _T("おめでとうございます。"));
     tb->setFV(_T("namew"), _T("おめでとうございます。"));
     tb->insert();
-
+    tb->commitBulkInsert();
 }
 
 void doTestReadSF(table* tb)
@@ -1683,21 +1789,94 @@ void doTestSF(table* tb)
     tb->setKeyNum(0);
     tb->clearBuffer();
 
+
+
     tb->setFilter(_T("name = 'あい*'"), 0, 10);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
     tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
     tb->findNext(false);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
     BOOST_CHECK_MESSAGE(_tstring(_T("あいうえおかきくこ")) == _tstring(tb->getFVstr(1)), "doTestReadSF2");
     BOOST_CHECK_MESSAGE(2 == (int)tb->recordCount(), "doTestReadSF2");
 
+
     tb->setFilter(_T("name <> 'あい*'"), 0, 10);
     BOOST_CHECK_MESSAGE(3 == (int)tb->recordCount(), "doTestReadSF2");
+    tb->clearBuffer();
+    tb->seekFirst();
+    tb->findNext(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("A123456")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おはようございます")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おめでとうございます。")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "doTestReadSF1");
+
+    tb->clearBuffer();
+    tb->seekLast();
+    tb->findPrev(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おめでとうございます。")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findPrev();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おはようございます")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findPrev(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("A123456")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
+
+    tb->findPrev();
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "doTestReadSF1");
 
     tb->setFilter(_T("name = 'あい'"), 0, 10);
     BOOST_CHECK_MESSAGE(0 == (int)tb->recordCount(), "doTestReadSF2");
 
     tb->setFilter(_T("name <> ''"), 0, 10);
     BOOST_CHECK_MESSAGE(5 == (int)tb->recordCount(), "doTestReadSF2");
+
+    //test setFilter don't change field value
+    tb->clearBuffer();
+    tb->setFV(_T("name"), _T("ABCDE"));
+    tb->setFilter(_T("name = 'あい'"), 0, 10);
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDE")) == _tstring(tb->getFVstr(1)), "doTestReadSF2 field value");
+
+}
+
+void doTestUpdateSF(table* tb)
+{
+
+    tb->setKeyNum(0);
+    tb->clearBuffer();
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+    tb->setFV(_T("name"), _T("ABCDE"));
+    tb->setFV(_T("namew"), _T("ABCDEW"));
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+
+    tb->setFV(_T("name"), _T("ABCDE2"));
+    tb->setFV(_T("namew"), _T("ABCDEW2"));
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDE")) == _tstring(tb->getFVstr(1)), "doTestUpdateSF");
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDEW")) == _tstring(tb->getFVstr(2)), "doTestUpdateSF" );
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdateSF stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDE2")) == _tstring(tb->getFVstr(1)), "doTestUpdateSF");
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDEW2")) == _tstring(tb->getFVstr(2)), "doTestUpdateSF" );
 
 }
 
@@ -1711,6 +1890,7 @@ void doTestStringFileter(database* db, int id, const _TCHAR* name, uchar_td type
     doInsertStringFileter(tb);
     doTestReadSF(tb);
     doTestSF(tb);
+    doTestUpdateSF(tb);
     tb->release();
 }
 
@@ -1895,6 +2075,278 @@ void testGetEqualKanji(database* db)
 }
 
 // ------------------------------------------------------------------------
+void testResultField(database* db)
+{
+    table* tb = openTable(db);
+    resultField rf;
+    rf.setParam(tb, _T("name"));
+
+    BOOST_CHECK_MESSAGE(rf.len == 33, " resultField.setParam");
+    BOOST_CHECK_MESSAGE(rf.pos == 4, " resultField.setParam");
+
+    size_t len = rf.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 4, " resultField.writeBuffer");
+
+}
+
+void testResultDef()
+{
+    resultDef rd;
+
+    rd.reset();
+    BOOST_CHECK_MESSAGE(rd.maxRows == 0, " resultDef.maxRows");
+    BOOST_CHECK_MESSAGE(rd.fieldCount == 0, " resultDef.fieldCount");
+
+    size_t len = rd.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 4, " resultDef.writeBuffer");
+
+ 
+}
+
+
+void testLogic(database* db)
+{
+    table* tb = openTable(db);
+    logic lc;
+
+    lc.setParam(tb, _T("name"), _T("="), _T("abc"), eCend);
+
+
+    BOOST_CHECK_MESSAGE(lc.type == ft_zstring, " logic.type");
+    BOOST_CHECK_MESSAGE(lc.len == 33, " logic.len");
+    BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
+    BOOST_CHECK_MESSAGE(lc.logType == 1, " logic.logType");
+    BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
+    BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc")==0, " logic.data");
+
+    size_t len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 7+33, " logic.writeBuffer");
+
+    //compField invalid filed name
+    bool ret = lc.setParam(tb, _T("name"), _T("="), _T("1"), eCend, true);
+    BOOST_CHECK_MESSAGE(ret == false, " logic invalid filed name");
+
+    //compField
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("id"), eCend, true);
+    BOOST_CHECK_MESSAGE(ret == true, " logic filed name");
+    BOOST_CHECK_MESSAGE(lc.type == ft_zstring, " logic.type");
+    BOOST_CHECK_MESSAGE(lc.len == 33, " logic.len");
+    BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
+    BOOST_CHECK_MESSAGE(lc.logType == 1+CMPLOGICAL_FIELD, " logic.logType compField");
+    BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
+    BOOST_CHECK_MESSAGE(*((short*)lc.data) == 0, " logic.data");
+    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 7+2, " logic.writeBuffer");
+
+    //invalid filed name
+    ret = lc.setParam(tb, _T("name1"), _T("="), _T("id"), eCend, true);
+    BOOST_CHECK_MESSAGE(ret == false, " logic invalid filed name2");
+
+    //wildcard
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCend, false);
+    BOOST_CHECK_MESSAGE(lc.type == ft_zstring, " logic.type");
+    BOOST_CHECK_MESSAGE(lc.len == 3, " logic.len");
+    BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
+    BOOST_CHECK_MESSAGE(lc.logType == 1, " logic.logType");
+    BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
+    BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc")==0, " logic.data");
+
+    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 7+3, " logic.writeBuffer");
+
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("漢字*"), eCend, false);
+    BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "漢字")==0, " logic.data");
+
+    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 7 + (_tcslen(_T("漢字"))*sizeof(_TCHAR))
+                                    , " logic.writeBuffer len =" << len);
+
+
+    //combine
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCor, false);
+    BOOST_CHECK_MESSAGE(lc.opr == 2, " logic.opr or");
+    ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCand, false);
+    BOOST_CHECK_MESSAGE(lc.opr == 1, " logic.opr and");
+
+    //logType
+    ret = lc.setParam(tb, _T("name"), _T("!="), _T("abc*"), eCend, false);
+    BOOST_CHECK_MESSAGE(lc.logType == 255, " logic.logType !=");
+    BOOST_CHECK_MESSAGE(ret == false, " logic invalid logType");
+
+    //canJoin
+
+    //zstring is cannot join
+    lc.setParam(tb, _T("name"), _T("="), _T("1"), eCand, false);
+    BOOST_CHECK_MESSAGE(lc.canJoin(false) == false, " logic canJoin");
+    BOOST_CHECK_MESSAGE(lc.canJoin(true) == false, " logic canJoin");
+
+    lc.setParam(tb, _T("id"), _T("="), _T("1"), eCand, false);
+    BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
+    BOOST_CHECK_MESSAGE(lc.canJoin(true) == true, " logic canJoin");
+    lc.opr = eCend;
+    BOOST_CHECK_MESSAGE(lc.canJoin(true) == false, " logic canJoin");
+    BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
+
+    lc.opr = eCor;
+    BOOST_CHECK_MESSAGE(lc.canJoin(true) == false, " logic canJoin");
+    BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
+
+
+    lc.opr = eCand;
+
+    logic lc2;
+    lc2.setParam(tb, _T("id"), _T("="), _T("1"), eCend, false);
+    lc2.pos = 3;
+
+    lc.isNextFiled(&lc2);
+    BOOST_CHECK_MESSAGE(lc.isNextFiled(&lc2) == false, " logic isNextFiled");
+    lc2.pos = 4;
+    BOOST_CHECK_MESSAGE(lc.isNextFiled(&lc2) == true, " logic isNextFiled");
+
+    //join
+    lc.joinAfter(&lc2);
+    BOOST_CHECK_MESSAGE(lc.len == 8, " logic joinAfter");
+
+    BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic joinAfter");
+
+    header hd;
+    len = hd.writeBuffer(0, true) - (unsigned char*)0;
+    BOOST_CHECK_MESSAGE(len == 8, " header.writeBuffer");
+
+
+}
+
+
+
+void testQuery()
+{
+    queryBase q;
+    q.queryString(_T("id = 0 and name = 'Abc efg'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("id = '0' and name = 'Abc efg'")
+                          ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addLogic(_T("id"), _T("="), _T("0"));
+    q.addLogic(_T("and"), _T("name"), _T("="), _T("Abc efg"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("id = '0' and name = 'Abc efg'"), "queryString");
+    
+    q.queryString(_T("select id,name id = 0 AND name = 'Abc&' efg'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&' efg'")
+                          ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addLogic(_T("id"), _T("="), _T("0"));
+    q.addLogic(_T("AND"), _T("name"), _T("="), _T("Abc' efg"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&' efg'")
+                          ,  "queryString");
+    
+    q.queryString(_T("select id,name id = 0 AND name = 'Abc&& efg'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&& efg'")
+                          ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addLogic(_T("id"), _T("="), _T("0"));
+    q.addLogic(_T("AND"), _T("name"), _T("="), _T("Abc& efg"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '0' AND name = 'Abc&& efg'")
+                          ,  "queryString");
+    
+    q.queryString(_T("*"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("*"),  "queryString");
+    
+    q.queryString(_T(""));
+    q.all();
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("*"),  "queryString");
+    
+    q.queryString(_T("Select id,name id = 2"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '2'")
+                            ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addLogic(_T("id"), _T("="), _T("2"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name id = '2'")
+                            ,  "queryString");
+    
+    q.queryString(_T("SELECT id,name,fc id = 2"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2'")
+                            ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addField(_T("fc"));
+    q.addLogic(_T("id"), _T("="), _T("2"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2'")
+                            ,  "queryString");
+    
+    q.queryString(_T("select id,name,fc id = 2 and name = '3'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2' and name = '3'")
+                            ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addField(_T("fc"));
+    q.addLogic(_T("id"), _T("="), _T("2"));
+    q.addLogic(_T("and"), _T("name"), _T("="), _T("3"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc id = '2' and name = '3'")
+                            ,  "queryString");
+    
+    //IN include
+    q.queryString(_T("select id,name,fc IN '1','2','3'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc in '1','2','3'")
+                            ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addField(_T("id"));
+    q.addField(_T("name"));
+    q.addField(_T("fc"));
+    q.addSeekKeyValue(_T("1"));
+    q.addSeekKeyValue(_T("2"));
+    q.addSeekKeyValue(_T("3"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select id,name,fc in '1','2','3'")
+                            ,  "queryString");
+    
+    q.queryString(_T("IN '1','2','3'"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in '1','2','3'")
+                            ,  "queryString");
+    
+    q.queryString(_T("IN 1,2,3"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in '1','2','3'")
+                            ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addSeekKeyValue(_T("1"));
+    q.addSeekKeyValue(_T("2"));
+    q.addSeekKeyValue(_T("3"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in '1','2','3'")
+                            ,  "queryString");
+    
+    //special field name
+    q.queryString(_T("select = 1"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select = '1'")
+                            ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addLogic(_T("select"), _T("="), _T("1"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("select = '1'")
+                            ,  "queryString");
+    
+    q.queryString(_T("in <> 1"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in <> '1'")
+                            ,  "queryString");
+    
+    q.queryString(_T(""));
+    q.addLogic(_T("in"), _T("<>"), _T("1"));
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in <> '1'")
+                            ,  "queryString");
+}
+// ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
     BOOST_FIXTURE_TEST_CASE(createNewDataBase, fixture)
@@ -1913,7 +2365,11 @@ BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
     BOOST_FIXTURE_TEST_CASE(find, fixture) {testFind(db());}
 
-    BOOST_FIXTURE_TEST_CASE(findNext, fixture) {testFindNext(db());}
+    BOOST_FIXTURE_TEST_CASE(findNext, fixture)
+    {
+        testFindNext(db());
+        testFindIn(db());
+    }
 
     BOOST_FIXTURE_TEST_CASE(getPercentage, fixture) {testGetPercentage(db());}
 
@@ -2025,6 +2481,30 @@ BOOST_AUTO_TEST_SUITE(kanjiSchema)
 
     BOOST_FIXTURE_TEST_CASE(dropDatabaseKanji, fixture) {testDropDatabaseKanji(db());}
 
-    BOOST_FIXTURE_TEST_CASE(fuga, fixture) {BOOST_CHECK_EQUAL(2 * 3, 6);}
 BOOST_AUTO_TEST_SUITE_END()
+
 // ------------------------------------------------------------------------
+BOOST_AUTO_TEST_SUITE(filter)
+
+    BOOST_FIXTURE_TEST_CASE(resultField, fixture)
+    {
+
+		if (db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME)))
+            db()->drop();
+        testCreateNewDataBase(db());
+        testResultField(db());
+        testResultDef();
+        testLogic(db());
+        testQuery();
+    }
+    BOOST_FIXTURE_TEST_CASE(drop, fixture)
+    {
+        testDropDatabase(db());
+    }
+    BOOST_FIXTURE_TEST_CASE(fuga, fixture) {BOOST_CHECK_EQUAL(2 * 3, 6);}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// ------------------------------------------------------------------------
+
+

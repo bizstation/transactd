@@ -282,7 +282,7 @@ int dbExecuter::commandExec(std::vector<request>& requests, char* result, size_t
 		{	
 			checkNewHandle(req.handle);
 			database* db = getDatabase(req.db.name, 0/*cid*/);
-			m_tb = db->openTable(req.table.name, req.table.openMode);
+			m_tb = db->openTable(req.table.name, req.table.openMode, NULL);
 			addHandle(getDatabaseID(0/*cid*/), m_tb->id(), req.handle);
 			m_tb = getTable(req.handle);
 			m_tb->setUseFieldList(req.table.fields);

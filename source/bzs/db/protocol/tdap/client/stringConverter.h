@@ -586,6 +586,7 @@ char* blobStore(char* ptr, const T* data, fielddef& fd, stringConverter* cv)
             maxlen = std::min<size_t>(maxlen, len + 1);
             p = new char[maxlen];
             memcpy_t(p, data, len);
+            p[len] = 0x00;
         }
     }
     memset(ptr, 0, fd.len);
