@@ -2786,14 +2786,12 @@ void analyzeQuery(const _TCHAR* str
         , std::vector<std::_tstring>& keyValues
         ,bool& nofilter)
 {
-    selects.clear();
-    where.clear();
-    keyValues.clear();
     esc_sep sep(_T('&'), _T(' '), _T('\''));
     std::_tstring s = str;
     tokenizer tokens(s, sep);
-    nofilter = false;
+
     tokenizer::iterator it = tokens.begin();
+    if (it == tokens.end()) return;
     if (*it == _T("*"))
     {
         nofilter = true;
@@ -2841,6 +2839,7 @@ void analyzeQuery(const _TCHAR* str
         while (it != tokens.end())
             where.push_back(*(it++));
     }
+
 }
 
 
@@ -2927,7 +2926,12 @@ void queryBase::clearSeekKeyValues()
 
 queryBase& queryBase::queryString(const _TCHAR* str)
 {
-    analyzeQuery(str, m_impl->m_selects, m_impl->m_wheres, m_impl->m_keyValues
+    m_impl->m_selects.clear();
+    m_impl->m_wheres.clear();
+    m_impl->m_keyValues.clear();
+    m_impl->m_nofilter = false;
+    if (str && str[0])
+        analyzeQuery(str, m_impl->m_selects, m_impl->m_wheres, m_impl->m_keyValues
                                                 ,m_impl->m_nofilter);
     return *this;
 }
