@@ -130,6 +130,9 @@ include_directories(${TRANSACTD_ROOT}
 # ==========================================================
 tdcl_add_compiler_options()
 bz_get_compiler_bitness()
+if(MSVC90)
+  add_definitions(-D_SECURE_SCL=0)
+endif()
 foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
   if(TRANSACTD_PHP_ZTS)
     bz_add_cxx_flag("-DZTS=1" "${build_type}")
