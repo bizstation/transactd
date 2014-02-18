@@ -153,7 +153,8 @@ class keynumConvert
 	char m_convNum;
 	
 public:
-	keynumConvert(KEY* key, int count):m_key(key),m_keyCount(count),m_keyNum(-1){}
+	keynumConvert(KEY* key, int count):m_key(key)
+			,m_keyCount(count),m_keyNum(-1),m_convNum(-1){}
 	void setKey(KEY* key){m_key=key;};
 	char keyNumByMakeOrder(char num)
 	{
