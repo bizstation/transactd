@@ -2788,6 +2788,7 @@ void analyzeQuery(const _TCHAR* str
 {
     esc_sep sep(_T('&'), _T(' '), _T('\''));
     std::_tstring s = str;
+    std::_tstring tmp;
     tokenizer tokens(s, sep);
 
     tokenizer::iterator it = tokens.begin();
@@ -2797,16 +2798,16 @@ void analyzeQuery(const _TCHAR* str
         nofilter = true;
         return;
     }
-    s = *it;
-    boost::algorithm::to_lower(s);
-    if (s == _T("select"))
+    tmp = *it;
+    boost::algorithm::to_lower(tmp);
+    if (tmp == _T("select"))
     {
         tokenizer::iterator itTmp = it;
-        s = *(++it);
-        if (getFilterLogicTypeCode(s.c_str())==255)
+        tmp = *(++it);
+        if (getFilterLogicTypeCode(tmp.c_str())==255)
         {
             esc_sep sep(_T('&'), _T(','), _T('\''));
-            tokenizer fields(s, sep);
+            tokenizer fields(tmp, sep);
             tokenizer::iterator itf = fields.begin();
             while (itf != fields.end())
                 selects.push_back(*(itf++));
@@ -2816,18 +2817,18 @@ void analyzeQuery(const _TCHAR* str
     }
     if (it == tokens.end())
         return;
-    s = *it;
-    boost::algorithm::to_lower(s);
+    tmp = *it;
+    boost::algorithm::to_lower(tmp);
     bool enableWhere = true;
-    if (s == _T("in"))
+    if (tmp == _T("in"))
     {
         tokenizer::iterator itTmp = it;
-        s = *(++it);
-        if (getFilterLogicTypeCode(s.c_str())==255)
+        tmp = *(++it);
+        if (getFilterLogicTypeCode(tmp.c_str())==255)
         {
             enableWhere = false;
             esc_sep sep(_T('&'), _T(','), _T('\''));
-            tokenizer values(s, sep);
+            tokenizer values(tmp, sep);
             tokenizer::iterator itf = values.begin();
             while (itf != values.end())
                 keyValues.push_back(*(itf++));
