@@ -163,29 +163,8 @@ typedef boost::shared_ptr<user_list> user_list_ptr;
 /* イテレータをつくるのは面倒だけれども、さまざまなアルゴリズムを使うことを考えると
     作成するのがベター
 */
-/*class mdls;
-class mdlsIterator : public std::iterator<std::random_access_iterator_tag, user*>
-{
-    int m_index;
-    mdls& m_mdls;
-public:
-    //mdlsIterator():m_mdls(*((mdls*)0)){};
-    mdlsIterator(mdls& m, int index=0);
-    //mdlsIterator& operator=(const mdlsIterator &r) ;
-    user* operator*() const;
-    mdlsIterator &operator++();
-    bool operator!=(const mdlsIterator &r) const;
-    //mdlsIterator& operator-(const mdlsIterator &r);
-    //mdlsIterator& operator+(const mdlsIterator &r);
-};*/
 
 class mdls;
-
-/*user* mdlsIterator::operator*() const{return m_mdls[m_index];}
-mdlsIterator& mdlsIterator::operator++() {++m_index; return *this;}
-bool mdlsIterator::operator!=(const mdlsIterator &r) const {return m_index != r.m_index;}
-*/
-
 
 class mdlsIterator
     : public boost::iterator_facade<mdlsIterator, user*
@@ -249,12 +228,6 @@ public:
 
 };
 
-/* mdlsIteratorの実装 */
-/*mdlsIterator::mdlsIterator(mdls& m, int index):m_index(index),m_mdls(m){};
-user* mdlsIterator::operator*() const{return m_mdls[m_index];}
-mdlsIterator& mdlsIterator::operator++() {++m_index; return *this;}
-bool mdlsIterator::operator!=(const mdlsIterator &r) const {return m_index != r.m_index;}
-*/
 void dumpUser2(const user* user)
 {
     std::cout << " id           " << user->id()    << std::endl;
@@ -267,11 +240,7 @@ void dumpUser2(const user* user)
 
 user*& mdlsIterator::dereference() const
 {
-    //for (int i=0;i<m_mdls->size();++i)
-    //    dumpUser2((*m_mdls)[i]);
-
     return m_mdls->item(m_index);
-    //return p;
 }
 void mdlsIterator::increment() {++m_index;}
 void mdlsIterator::decrement() {--m_index;}
@@ -315,8 +284,6 @@ public:
         tel = tb->fieldNumByName(_T("tel"));
         group = tb->fieldNumByName(_T("group"));
     }
-
-    //static user_fdi* create(){return new user_fdi();}
 };
 
 user_fdi* createFdi(user_fdi *){return new user_fdi();}
