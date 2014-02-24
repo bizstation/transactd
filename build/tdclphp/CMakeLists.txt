@@ -188,9 +188,12 @@ endif()
 # ==========================================================
 transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
 if(CAN_LINK_ICONV)
-  target_link_libraries(${this_target} iconv)
+  target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()
 target_link_libraries(${this_target} "${TRANSACTD_PHP_LIBRARY_PATH}")
+if(NOT MSVC)
+  target_link_libraries(${this_target} dl)
+endif()
 
 
 # ==========================================================

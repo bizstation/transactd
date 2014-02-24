@@ -25,6 +25,8 @@ include(../common/transactd_common.cmake)
 include(../common/options.cmake)
 include(../common/system.cmake)
 include(../common/get_boost_libs.cmake)
+include(../common/check_for_link_iconv.cmake)
+check_for_link_iconv()
 
 
 set(this_target tdclc)
@@ -135,8 +137,8 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # add link / include
 # ==========================================================
 transactd_link_boost_libraries("filesystem;thread;chrono;system")
-if(APPLE)
-  target_link_libraries(${this_target} iconv)
+if(CAN_LINK_ICONV)
+  target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()
 if(NOT MSVC)
   target_link_libraries(${this_target} pthread)
