@@ -85,6 +85,8 @@ void cleanupTls()
 
 #ifdef __APPLE__
 
+#include <pthread.h>
+
 void __attribute__ ((constructor)) onLoadLibrary(void);
 void __attribute__ ((destructor)) onUnloadLibrary(void);
 

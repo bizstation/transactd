@@ -31,6 +31,9 @@
 
 #undef USETLS
 #if ((defined(_WIN32) && _MSC_VER) || __APPLE__)
+#ifdef __APPLE__
+#include <pthread.h>
+#endif
 #define USETLS
 #endif
 
