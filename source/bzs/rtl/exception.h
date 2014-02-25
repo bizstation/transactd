@@ -21,6 +21,7 @@
 
 #include <exception>
 #include <string>
+#include <bzs/env/compiler.h>
 #if (defined(__x86_32__) && defined(__BORLANDC__))
 #include <bzs/env/tstring.h>
 #else

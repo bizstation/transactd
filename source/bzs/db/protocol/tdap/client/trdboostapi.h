@@ -72,6 +72,8 @@ public:
 
     inline int i() const {return m_tb.getFVint(m_index);}
 
+    inline int i8() const {return m_tb.getFVbyt(m_index);}
+
     inline short i16() const {return m_tb.getFVsht(m_index);}
 
     inline __int64 i64() const {return m_tb.getFV64(m_index);}
@@ -852,7 +854,6 @@ inline void openDatabase(Database_Ptr db, const _TCHAR* uri, short schemaType = 
     db->open(uri, schemaType, mode, dir, ownername);
     if (db->stat())
         nstable::throwError((std::_tstring(_T("Open database ")) + std::_tstring(uri)).c_str(), db->stat());
-
 }
 
 template <class Database_Ptr>

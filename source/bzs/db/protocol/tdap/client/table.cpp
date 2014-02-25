@@ -1309,7 +1309,7 @@ short table::fieldNumByName(const _TCHAR* name)
     {
         std::vector<CFiledNameIndex>::iterator p;
         p = lower_bound(m_impl->fields.begin(), m_impl->fields.end(), CFiledNameIndex(0, name));
-        return m_impl->fields[p - m_impl->fields.begin()].index;
+        return (*p).index;
     }
 
     return -1;
