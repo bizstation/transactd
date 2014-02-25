@@ -209,7 +209,7 @@ const _TCHAR* getTypeName(short type)
     case ft_blob: return _T("Blob");
     case ft_wstring: return _T("WString");
     case ft_wzstring: return _T("WZstring");
-    case ft_datatime: return _T("DateTime");
+    case ft_datetime: return _T("DateTime");
     case ft_guid: return _T("Guid");
     case ft_myvarchar: return _T("myVarChar");
     case ft_myvarbinary: return _T("myVarBinary");

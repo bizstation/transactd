@@ -12,7 +12,7 @@ using namespace bzs::db::protocol::tdap;
 
 This program  create "test" database and
 "test" table. The table of "test" has schema data.
-And it call "schaem table".
+And it call "schema table".
 
 database name :  'test'
 

@@ -194,7 +194,7 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define ft_wstring		    25
 #define ft_wzstring		    26
 #define ft_guid			    27
-#define ft_datatime		    30
+#define ft_datetime		    30
 #define ft_myvarchar	    40
 #define ft_myvarbinary	    41
 #define ft_mywvarchar	    42
