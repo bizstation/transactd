@@ -20,32 +20,35 @@
 =end
 spec_build = Gem::Specification.new do |s|
   s.name        = 'transactd'
-  s.date        = '2013-11-20'
   s.summary     = 'Transactd client'
   s.description = 'Transactd client for ruby gem'
   s.author      = 'BizStation Corp.'
-  s.email       = 'transactd@aie.ne.jp'
+  s.email       = 'transactd@bizstation.jp'
   s.homepage    = 'http://www.bizstation.jp/ja/transactd'
   s.license     = 'GPL v2'
   
-  verfile = 'build/tdclrb/GEM_VERSION'
+  # read version from tdapcapi.h
+  verfile = 'source/bzs/db/protocol/tdap/tdapcapi.h'
   unless File.exist?(verfile)
     raise 'Can not found ' + verfile
   end
-  vers = IO.readlines(verfile).map{ |i| i.strip.split(/\s+/) }
   versions = {}
-  for i in vers
-    versions[i[0].to_sym] = Integer(i[1].sub(/^"(.*)"$/, '\1')) if i.length == 2
+  File.open(verfile, "r") {|f|
+    f.each_line { |l|
+      if l.index("Build marker! Don't remove") != nil
+        l = l.sub(/#define/, '').sub(/\/\/.*$/, '').gsub('"', '').strip().split(/\s/)
+        versions[l[0].to_sym] = Integer(l[1]) if l.length == 2
+      end
+    }
+  }
+  unless (versions.has_key?(:TRANSACTD_VER_MAJOR) &&
+          versions.has_key?(:TRANSACTD_VER_MINOR) &&
+          versions.has_key?(:TRANSACTD_VER_RELEASE))
+    raise 'Can not read versions from ' + verfile
   end
-  unless (versions.has_key?(:TDVER_RUBYGEM_VER_MAJOR) &&
-          versions.has_key?(:TDVER_RUBYGEM_VER_MINOR) &&
-          versions.has_key?(:TDVER_RUBYGEM_VER_RELEASE))
-    raise 'Can not read versions from ' + verfile + 
-          "\n need: TDVER_RUBYGEM_VER_MAJOR,TDVER_RUBYGEM_VER_MINOR,TDVER_RUBYGEM_VER_RELEASE"
-  end
-  s.version = versions[:TDVER_RUBYGEM_VER_MAJOR].to_s + '.' + 
-              versions[:TDVER_RUBYGEM_VER_MINOR].to_s + '.' + 
-              versions[:TDVER_RUBYGEM_VER_RELEASE].to_s
+  s.version = versions[:TRANSACTD_VER_MAJOR].to_s + '.' + 
+              versions[:TRANSACTD_VER_MINOR].to_s + '.' + 
+              versions[:TRANSACTD_VER_RELEASE].to_s
   
   binary_file = File.join('bin', RUBY_VERSION.match(/\d+\.\d+/)[0], 'transactd.so')
   binarymode = File.exist?(binary_file)

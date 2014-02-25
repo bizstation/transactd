@@ -71,15 +71,9 @@ endif()
 # ==========================================================
 # version info
 # ==========================================================
-transactd_read_variables("${TRANSACTD_ROOT}/build/tdclrb/GEM_VERSION")
-foreach(vername MAJOR MINOR RELEASE)
-  if("${TDREAD_TDVER_RUBYGEM_VER_${vername}}" STREQUAL "")
-    message(SEND_ERROR "Can not read TDVER_RUBYGEM_${vername}")
-  endif()
-  set(TDVER_RUBYGEM_${vername} "${TDREAD_TDVER_RUBYGEM_VER_${vername}}")
-endforeach()
+transactd_read_version("${TRANSACTD_ROOT}")
 transactd_read_build_number("${TRANSACTD_ROOT}")
-set(TDVER_RUBYGEM_BUILD "${TRANSACTD_BUILD_NUMBER}")
+set(TDVER_RUBY_BUILD "${TRANSACTD_BUILD_NUMBER}")
 
 
 # ==========================================================
@@ -155,8 +149,8 @@ if(WIN32)
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
-    F_VER   "${TDVER_RUBYGEM_MAJOR}.${TDVER_RUBYGEM_MINOR}.${TDVER_RUBYGEM_RELEASE}.${TDVER_RUBYGEM_BUILD}"
-    P_VER   "${TDVER_RUBYGEM_MAJOR}.${TDVER_RUBYGEM_MINOR}.${TDVER_RUBYGEM_RELEASE}.${TDVER_RUBYGEM_BUILD}"
+    F_VER   "${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE}.${TDVER_RUBY_BUILD}"
+    P_VER   "${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE}.${TDVER_RUBY_BUILD}"
     P_NAME  "Transactd Ruby Client"
     F_DESC  "Transactd Ruby Client module"
   )
@@ -198,8 +192,8 @@ else()
 endif()
 if(UNIX AND NOT APPLE)
   set_target_properties(${this_target} PROPERTIES
-    SOVERSION ${TDVER_RUBYGEM_MAJOR}.${TDVER_RUBYGEM_MINOR}
-    VERSION ${TDVER_RUBYGEM_MAJOR}.${TDVER_RUBYGEM_MINOR}.${TDVER_RUBYGEM_RELEASE})
+    SOVERSION ${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}
+    VERSION ${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE})
 endif()
 
 
