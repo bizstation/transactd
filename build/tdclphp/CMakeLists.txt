@@ -191,7 +191,7 @@ if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()
 target_link_libraries(${this_target} "${TRANSACTD_PHP_LIBRARY_PATH}")
-if(NOT MSVC)
+if(NOT WIN32)
   target_link_libraries(${this_target} dl)
 endif()
 

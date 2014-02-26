@@ -108,7 +108,7 @@ transactd_link_boost_libraries("filesystem;thread;chrono;system")
 if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()
-if(NOT MSVC)
+if(NOT WIN32)
   target_link_libraries(${this_target} dl)
 endif()
 
