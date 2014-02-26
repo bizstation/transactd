@@ -239,20 +239,18 @@ typedef tableIterator<indexFindNavi> findIterator;
 typedef tableIterator<stepNavi> stepIterator;
 
 
-template <> const indexIterator indexIterator::eos;
-template <> const findIterator findIterator::eos;
-template <> const stepIterator stepIterator::eos;
-
-
+template <> const indexIterator indexIterator::eos=indexIterator();
+template <> const findIterator findIterator::eos=findIterator();
+template <> const stepIterator stepIterator::eos=stepIterator();
 
 typedef tableIterator<indexRvNavi> indexRvIterator;
 typedef tableIterator<indexRvFindNavi> findRvIterator;
 typedef tableIterator<stepRvNavi> stepRvIterator;
 
 
-template <> const indexRvIterator indexRvIterator::eos;
-template <> const findRvIterator findRvIterator::eos;
-template <> const stepRvIterator stepRvIterator::eos;
+template <> const indexRvIterator indexRvIterator::eos=indexRvIterator();
+template <> const findRvIterator findRvIterator::eos=findRvIterator();
+template <> const stepRvIterator stepRvIterator::eos=stepRvIterator();
 
 
 
@@ -323,23 +321,13 @@ typedef filterdIterator<findRvIterator> filterdFindRvIterator;
 
 
 
-template<>
-const filterdIndexIterator filterdIndexIterator::eos;
+template<> const filterdIndexIterator filterdIndexIterator::eos=filterdIndexIterator();
+template<> const filterdStepIterator filterdStepIterator::eos=filterdStepIterator();
+template<> const filterdFindIterator filterdFindIterator::eos=filterdFindIterator();
 
-template<>
-const filterdStepIterator filterdStepIterator::eos;
-
-template<>
-const filterdFindIterator filterdFindIterator::eos;
-
-template<>
-const filterdIndexRvIterator filterdIndexRvIterator::eos;
-
-template<>
-const filterdStepRvIterator filterdStepRvIterator::eos;
-
-template<>
-const filterdFindRvIterator filterdFindRvIterator::eos;
+template<> const filterdIndexRvIterator filterdIndexRvIterator::eos=filterdIndexRvIterator();
+template<> const filterdStepRvIterator filterdStepRvIterator::eos=filterdStepRvIterator();
+template<> const filterdFindRvIterator filterdFindRvIterator::eos=filterdFindRvIterator();
 
 
 indexIterator readIndex(table_ptr tb, eIndexOpType op)
