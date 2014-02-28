@@ -145,14 +145,15 @@ endforeach()
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
+  transactd_ver_info_lic()
   set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TDVER_RUBY_BUILD}"
     P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TDVER_RUBY_BUILD}"
-    P_NAME  "Transactd Ruby Client"
-    F_DESC  "Transactd Ruby Client module"
+    P_NAME  "Transactd Ruby Client ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd Ruby Client module ${TRANSACTD_VER_POSTFIX}"
   )
   transactd_add_rc_file()
 endif()

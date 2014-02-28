@@ -130,6 +130,7 @@ endforeach()
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
+  transactd_ver_info_lic()
   # disable versioninfo_dll.rc (add in MYSQL_ADD_PLUGIN macro)
   #   set file property as "header" then not compiled
   set_source_files_properties(
@@ -142,8 +143,8 @@ if(WIN32)
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}.0"
-    P_NAME  "Transactd Plugin"
-    F_DESC  "Transactd Plugin for MySQL/MariaDB"
+    P_NAME  "Transactd Plugin ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd Plugin for MySQL/MariaDB ${TRANSACTD_VER_POSTFIX}"
   )
   transactd_add_rc_file()
 endif()

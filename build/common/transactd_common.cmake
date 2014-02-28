@@ -17,6 +17,20 @@
 #   02111-1307, USA.
 ##=================================================================
 # ==========================================================
+#   Version infomation macro
+# ==========================================================
+if(NOT COMMAND transactd_ver_info_lic)
+macro(transactd_ver_info_lic)
+  if(TRANSACTD_COMMERCIAL)
+    set(TRANSACTD_VER_POSTFIX "(Commercial)")
+  else()
+    set(TRANSACTD_VER_POSTFIX "(GPL V2)")
+  endif()
+endmacro()
+endif()
+
+
+# ==========================================================
 #   make subdir, copy CMakeLists.txt and BUILDNUMBER.txt
 # ==========================================================
 if(NOT COMMAND transactd_copy_subdir)
