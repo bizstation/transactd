@@ -245,9 +245,10 @@ STDMETHODIMP CTableTd::get_RecordLength(long* Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_RecordCount(long* Value)
+STDMETHODIMP CTableTd::RecordCount(VARIANT_BOOL estimate, VARIANT_BOOL fromCurrent
+						, eFindType direction, long* Value)
 {
-    *Value = m_tb->recordCount();
+    *Value = m_tb->recordCount((estimate == -1), (fromCurrent==-1), (client::table::eFindType)direction);
     return S_OK;
 }
 

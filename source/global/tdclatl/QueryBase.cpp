@@ -45,26 +45,27 @@ STDMETHODIMP CQueryBase::Select(BSTR Value
 						,BSTR Value6, BSTR Value7, BSTR Value8, BSTR Value9, BSTR Value10
 						,IQueryBase** retVal)
 {
-    m_qb.addField(Value);
-    if (Value1 != L"")
+    
+	m_qb.addField(Value);
+    if (Value1 && Value1[0])
 		m_qb.addField(Value1);
-    if (Value2 != L"")
+    if (Value2 && Value2[0])
 		m_qb.addField(Value2);
-    if (Value3 != L"")
+    if (Value3 && Value3[0])
 		m_qb.addField(Value3);
-    if (Value4 != L"")
+    if (Value4 && Value4[0])
 		m_qb.addField(Value4);
-    if (Value5 != L"")
+    if (Value5 && Value5[0])
 		m_qb.addField(Value5);
-    if (Value6 != L"")
+    if (Value6 && Value6[0])
 		m_qb.addField(Value6);
-    if (Value7 != L"")
+    if (Value7 && Value7[0])
 		m_qb.addField(Value7);
-    if (Value8 != L"")
+    if (Value8 && Value8[0])
 		m_qb.addField(Value8);
-    if (Value9 != L"")
+    if (Value9 && Value9[0])
 		m_qb.addField(Value9);
-    if (Value10 != L"")
+    if (Value10 && Value10[0])
 		m_qb.addField(Value10);
 	setResult(retVal);
 	return S_OK;
@@ -72,7 +73,8 @@ STDMETHODIMP CQueryBase::Select(BSTR Value
 
 STDMETHODIMP CQueryBase::Where(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase** retVal)
 {
-    VariantChangeType( &Value, &Value, 0, VT_BSTR );
+    if (Value.vt != VT_BSTR)
+		VariantChangeType( &Value, &Value, 0, VT_BSTR );
 	m_qb.addLogic(Name, Logic, Value.bstrVal);
 	setResult(retVal);
 	return S_OK;
@@ -80,7 +82,8 @@ STDMETHODIMP CQueryBase::Where(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase*
 
 STDMETHODIMP CQueryBase::And(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase** retVal)
 {
-    VariantChangeType( &Value, &Value, 0, VT_BSTR );
+    if (Value.vt != VT_BSTR)
+		VariantChangeType( &Value, &Value, 0, VT_BSTR );
 	m_qb.addLogic(L"and", Name, Logic, Value.bstrVal);
 	setResult(retVal);
 	return S_OK;
@@ -88,7 +91,8 @@ STDMETHODIMP CQueryBase::And(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase** 
 
 STDMETHODIMP CQueryBase::Or(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase** retVal)
 {
-    VariantChangeType( &Value, &Value, 0, VT_BSTR );
+    if (Value.vt != VT_BSTR)
+		VariantChangeType( &Value, &Value, 0, VT_BSTR );
 	m_qb.addLogic(L"or", Name, Logic, Value.bstrVal);
 	setResult(retVal);
 	return S_OK;
@@ -96,7 +100,8 @@ STDMETHODIMP CQueryBase::Or(BSTR Name, BSTR Logic, VARIANT Value, IQueryBase** r
 
 STDMETHODIMP CQueryBase::AddInValue(VARIANT Value, VARIANT_BOOL Reset)
 {
-	VariantChangeType( &Value, &Value, 0, VT_BSTR );
+	if (Value.vt != VT_BSTR)
+		VariantChangeType( &Value, &Value, 0, VT_BSTR );
 	m_qb.addSeekKeyValue(Value.bstrVal, (Reset==-1));
 	return S_OK;
 }
@@ -107,38 +112,58 @@ STDMETHODIMP CQueryBase::In(VARIANT Value
 			, IQueryBase** retVal)
 {
 	setResult(retVal);
-	VariantChangeType( &Value, &Value, 0, VT_BSTR );
+	if (Value.vt != VT_BSTR)
+		VariantChangeType( &Value, &Value, 0, VT_BSTR );
 	m_qb.addSeekKeyValue(Value.bstrVal, false);
 	
-	VariantChangeType( &Value1, &Value1, 0, VT_BSTR );
-	if (Value1.bstrVal == L"") return S_OK;
+	if (Value1.vt != VT_BSTR)
+		VariantChangeType( &Value1, &Value1, 0, VT_BSTR );
+	if (Value1.bstrVal && Value1.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value1.bstrVal, false);
-	VariantChangeType( &Value2, &Value2, 0, VT_BSTR );
-	if (Value2.bstrVal == L"") return S_OK;
+	
+	if (Value2.vt != VT_BSTR)
+		VariantChangeType( &Value2, &Value2, 0, VT_BSTR );
+	if (Value2.bstrVal && Value2.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value2.bstrVal, false);
-	VariantChangeType( &Value3, &Value3, 0, VT_BSTR );
-	if (Value3.bstrVal == L"") return S_OK;
+	
+	if (Value3.vt != VT_BSTR)
+		VariantChangeType( &Value3, &Value3, 0, VT_BSTR );
+	if (Value3.bstrVal && Value3.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value3.bstrVal, false);
-	VariantChangeType( &Value4, &Value4, 0, VT_BSTR );
-	if (Value4.bstrVal == L"") return S_OK;
+	
+	if (Value4.vt != VT_BSTR)
+		VariantChangeType( &Value4, &Value4, 0, VT_BSTR );
+	if (Value4.bstrVal && Value4.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value4.bstrVal, false);
-	VariantChangeType( &Value5, &Value5, 0, VT_BSTR );
-	if (Value5.bstrVal == L"") return S_OK;
+	
+	if (Value5.vt != VT_BSTR)
+		VariantChangeType( &Value5, &Value5, 0, VT_BSTR );
+	if (Value5.bstrVal && Value5.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value5.bstrVal, false);
-	VariantChangeType( &Value6, &Value6, 0, VT_BSTR );
-	if (Value6.bstrVal == L"") return S_OK;
+	
+	if (Value6.vt != VT_BSTR)
+		VariantChangeType( &Value6, &Value6, 0, VT_BSTR );
+	if (Value6.bstrVal && Value6.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value6.bstrVal, false);
-	VariantChangeType( &Value7, &Value7, 0, VT_BSTR );
-	if (Value7.bstrVal == L"") return S_OK;
+	
+	if (Value7.vt != VT_BSTR)
+		VariantChangeType( &Value7, &Value7, 0, VT_BSTR );
+	if (Value7.bstrVal && Value7.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value7.bstrVal, false);
-	VariantChangeType( &Value8, &Value8, 0, VT_BSTR );
-	if (Value8.bstrVal == L"") return S_OK;
+	
+	if (Value8.vt != VT_BSTR)
+		VariantChangeType( &Value8, &Value8, 0, VT_BSTR );
+	if (Value8.bstrVal && Value8.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value8.bstrVal, false);
-	VariantChangeType( &Value9, &Value9, 0, VT_BSTR );
-	if (Value9.bstrVal == L"") return S_OK;
+	
+	if (Value9.vt != VT_BSTR)
+		VariantChangeType( &Value9, &Value9, 0, VT_BSTR );
+	if (Value9.bstrVal && Value9.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value9.bstrVal, false);
-	VariantChangeType( &Value10, &Value10, 0, VT_BSTR );
-	if (Value10.bstrVal == L"") return S_OK;
+	
+	if (Value10.vt != VT_BSTR)
+		VariantChangeType( &Value10, &Value10, 0, VT_BSTR );
+	if (Value10.bstrVal && Value10.bstrVal[0]) return S_OK;
 	m_qb.addSeekKeyValue(Value10.bstrVal, false);
 	return S_OK; 
 }

@@ -78,7 +78,7 @@ public:
     STDMETHOD(SeekByBookMark)(long Value, eLockType lockBias);
     STDMETHOD(get_Percentage)(long* Value);
     STDMETHOD(get_RecordLength)(long* Value);
-    STDMETHOD(get_RecordCount)(long* Value);
+    STDMETHOD(RecordCount)(VARIANT_BOOL estimate, VARIANT_BOOL fromCurrent, eFindType direction, long* Value);
     STDMETHOD(SeekByPercentage)(long Value);
     STDMETHOD(get_KeyNum)(short* Value);
     STDMETHOD(get_Stat)(eStatus* eStatus);
