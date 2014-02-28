@@ -1419,7 +1419,7 @@ void dbdef::openDdf(const _TCHAR* dir, short Mode, const _TCHAR* OwnerName)
             return;
         }
 
-        tb->setKeyNum(1);
+        tb->setKeyNum(0);
         tb->seekFirst();
         while (tb->stat() == 0)
         { // Inser table
