@@ -611,7 +611,12 @@ bookmark_td table::bookmarkFindCurrent() const
 
 void table::find(eFindType type)
 {
-    ushort_td op;
+    if (!m_impl->filterPtr)
+	{
+		m_stat = STATUS_FILTERSTRING_ERROR;
+        return;
+	}
+	ushort_td op;
 
     if (m_impl->filterPtr->isSeeksMode())
     {
