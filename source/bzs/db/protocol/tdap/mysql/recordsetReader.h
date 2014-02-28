@@ -549,24 +549,27 @@ public:
 			m_judgeType = 0;
 			return 0;
 		}
-		int segmentIndex = 0;
-		int segments = std::min<uint>(MAX_KEY_SEGMENT, key->user_defined_key_parts);
-		while (segmentIndex < segments)
+		if (key)
 		{
-			if (key->key_part[segmentIndex].field->field_index == num)
+			int segmentIndex = 0;
+			int segments = std::min<uint>(MAX_KEY_SEGMENT, key->user_defined_key_parts);
+			while (segmentIndex < segments)
 			{
-				eCompType comp = (eCompType)(fd->logType);
-				bool gt = (comp == greater)||(comp == greaterEq);
-				bool le = (comp == less)||(comp == lessEq);	
-				bool valid = !(forword ? gt:le);	
-				if (valid)
+				if (key->key_part[segmentIndex].field->field_index == num)
 				{
-					m_keySeg = (unsigned char)segmentIndex+1;
-					m_judgeType =  (comp == equal) ? 2:1;
+					eCompType comp = (eCompType)(fd->logType);
+					bool gt = (comp == greater)||(comp == greaterEq);
+					bool le = (comp == less)||(comp == lessEq);	
+					bool valid = !(forword ? gt:le);	
+					if (valid)
+					{
+						m_keySeg = (unsigned char)segmentIndex+1;
+						m_judgeType =  (comp == equal) ? 2:1;
+					}
+					break;
 				}
-				break;
+				++segmentIndex;
 			}
-			++segmentIndex;
 		}
 		return 0;
 	}
@@ -657,26 +660,29 @@ public:
 			if (fda.m_fd->opr == 2) 
 				lastIndex = i;
 		}
-		fieldAdapter* begin = &m_fields[0], *cur = &m_fields[0], *end = &m_fields[lastIndex];
-		char tmpOpr = (lastIndex != req.logicalCount) ? end->m_fd->opr: 0;
-		std::sort(begin, end);
-		bool flag = true;
-		while (cur != end)
+		if (key)
 		{
-			cur->m_fd->opr = 1;//and
-			if (flag && cur->m_judgeType == 2)
-				cur->m_judge = true;
-			else
-				flag = false;
-			++cur;
+			fieldAdapter* begin = &m_fields[0], *cur = &m_fields[0], *end = &m_fields[lastIndex];
+			char tmpOpr = (lastIndex != req.logicalCount) ? end->m_fd->opr: 0;
+			std::sort(begin, end);
+			bool flag = true;
+			while (cur != end)
+			{
+				cur->m_fd->opr = 1;//and
+				if (flag && cur->m_judgeType == 2)
+					cur->m_judge = true;
+				else
+					flag = false;
+				++cur;
+			}
+
+			//if first logic is first segmnet then first logic can judge.
+			if ((begin->m_keySeg == 1) && begin->m_judgeType)
+				begin->m_judge = true;
+
+			if (lastIndex == req.logicalCount) --end;
+			end->m_fd->opr = tmpOpr;
 		}
-
-		//if first logic is first segmnet then first logic can judge.
-		if ((begin->m_keySeg == 1) && begin->m_judgeType)
-			begin->m_judge = true;
-
-		if (lastIndex == req.logicalCount) --end;
-		end->m_fd->opr = tmpOpr;
 		for (int i=0;i<req.logicalCount-1;++i)
 			m_fields[i].m_next = &m_fields[i+1];
 	}
