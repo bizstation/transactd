@@ -169,6 +169,41 @@ public:
 	}
 };
 
+class fieldBitmap
+{
+	bool m_keyRead;
+	TABLE* m_table;
+public:
+	inline fieldBitmap(TABLE* table):m_table(table),m_keyRead(false)
+	{
+		m_table->read_set = &m_table->tmp_set;
+		m_table->write_set = &m_table->tmp_set;
+		bitmap_clear_all(m_table->read_set);
+	}
+	
+	inline ~fieldBitmap()
+	{
+		if (m_keyRead)
+			m_table->file->extra(HA_EXTRA_NO_KEYREAD);
+		m_table->read_set = &m_table->s->all_set;
+		m_table->write_set = &m_table->s->all_set;			
+	}
+	
+	inline void setKeyRead(bool v)
+	{
+		if (v)
+			m_table->file->extra(HA_EXTRA_KEYREAD);
+		else if (m_keyRead)
+			m_table->file->extra(HA_EXTRA_NO_KEYREAD);
+		m_keyRead = v;
+	}
+
+	inline void setReadBitmap(uint bit)
+	{
+		bitmap_set_bit(m_table->read_set, bit);
+	}
+};
+
 class table : private boost::noncopyable
 {
 	friend class database;
@@ -315,11 +350,15 @@ public:
 
 	inline void stepNextExt(IReadRecordsHandler* handler, bool includeCurrent)
 	{
+		if (m_table->file->inited != handler::RND)
+			setNonKey(true);
 		readRecords(handler, includeCurrent, READ_RECORD_STEPNEXT);
 	}
 
 	inline void stepPrevExt(IReadRecordsHandler* handler, bool includeCurrent)
 	{
+		if (m_table->file->inited != handler::RND)
+			setNonKey(true);
 		readRecords(handler, includeCurrent, READ_RECORD_STEPPREV);
 	}
 

@@ -208,9 +208,7 @@ public:
 
     inline tableIterator(table& tb) : m_tb(tb), m_fds(tb)
     {
-        if ((tb.stat() != 0) && (tb.stat() != STATUS_EOF) && (tb.stat() != STATUS_NOT_FOUND_TI))
-            nstable::throwError(std::_tstring(_T("tableIterator")).c_str(), &tb);
-
+        readStatusCheck(tb, _T("tableIterator"));
     }
 
     table& tb() const {return m_tb;};
