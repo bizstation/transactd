@@ -41,14 +41,14 @@ spec_build = Gem::Specification.new do |s|
       end
     }
   }
-  unless (versions.has_key?(:TRANSACTD_VER_MAJOR) &&
-          versions.has_key?(:TRANSACTD_VER_MINOR) &&
-          versions.has_key?(:TRANSACTD_VER_RELEASE))
+  unless (versions.has_key?(:CPP_INTERFACE_VER_MAJOR) &&
+          versions.has_key?(:CPP_INTERFACE_VER_MINOR) &&
+          versions.has_key?(:CPP_INTERFACE_VER_RELEASE))
     raise 'Can not read versions from ' + verfile
   end
-  s.version = versions[:TRANSACTD_VER_MAJOR].to_s + '.' + 
-              versions[:TRANSACTD_VER_MINOR].to_s + '.' + 
-              versions[:TRANSACTD_VER_RELEASE].to_s
+  s.version = versions[:CPP_INTERFACE_VER_MAJOR].to_s + '.' + 
+              versions[:CPP_INTERFACE_VER_MINOR].to_s + '.' + 
+              versions[:CPP_INTERFACE_VER_RELEASE].to_s
   
   binary_file = File.join('bin', RUBY_VERSION.match(/\d+\.\d+/)[0], 'transactd.so')
   binarymode = File.exist?(binary_file)
