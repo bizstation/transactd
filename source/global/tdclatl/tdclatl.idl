@@ -996,6 +996,12 @@ interface IQueryBase : IDispatch
   HRESULT _stdcall Optimize([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
   [id(0x0000015)]
   HRESULT _stdcall IsOptimize([out, retval] VARIANT_BOOL* retVal);
+  [id(0x0000016)]
+  HRESULT _stdcall SelectCount([out, retval] short* retVal);
+  [id(0x0000017)]
+  HRESULT _stdcall GetSelect([in] short index, [out, retval] BSTR* retVal);
+
+
 
 };
 [

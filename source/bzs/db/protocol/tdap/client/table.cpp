@@ -3044,6 +3044,17 @@ const std::vector<std::_tstring>& queryBase::getSelects() const {return m_impl->
 const std::vector<std::_tstring>& queryBase::getWheres() const {return m_impl->m_wheres;}
 const std::vector<std::_tstring>& queryBase::getSeekKeyValues() const{return m_impl->m_keyValues;}
 
+short queryBase::selectCount() const
+{
+	return (short)m_impl->m_selects.size();
+}
+
+const _TCHAR* queryBase::getSelect(short index) const
+{
+	assert((index >= 0) && (index < m_impl->m_selects.size()));
+	return m_impl->m_selects[index].c_str();
+}
+
 void queryBase::release()
 {
     delete this;

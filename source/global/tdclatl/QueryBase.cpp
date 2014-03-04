@@ -254,3 +254,20 @@ STDMETHODIMP CQueryBase::IsOptimize(VARIANT_BOOL* retVal)
 	*retVal = m_qb.isOptimize();
 	return S_OK;
 }
+
+
+STDMETHODIMP CQueryBase::SelectCount(short* retVal)
+{
+	*retVal = m_qb.selectCount();
+	return S_OK;
+}
+
+STDMETHODIMP CQueryBase::GetSelect(short index, BSTR* retVal)
+{
+	if (index >= 0 && index < m_qb.selectCount())
+		*retVal = ::SysAllocString(m_qb.getSelect(index));
+	else
+		return Error("Invalid index", IID_IQueryBase);
+	return S_OK;
+}
+

@@ -222,7 +222,7 @@ class AGRPACK queryBase
 	friend class filter;
     struct impl* m_impl;
 
-    const std::vector<std::_tstring>& getSelects() const;
+	const std::vector<std::_tstring>& getSelects() const;
     const std::vector<std::_tstring>& getWheres() const;
     const std::vector<std::_tstring>& getSeekKeyValues() const;
 public:
@@ -247,6 +247,8 @@ public:
     int getLimit()const;
     bool isAll()const;
     bool isOptimize()const;
+	short selectCount() const;
+	const _TCHAR* getSelect(short index) const;
     void release();
     static queryBase* create();
 };

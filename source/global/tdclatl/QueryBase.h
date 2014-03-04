@@ -88,6 +88,8 @@ public:
   STDMETHOD(IsAll)(VARIANT_BOOL* retVal);
   STDMETHOD(Optimize)(VARIANT_BOOL Value, IQueryBase** retVal);
   STDMETHOD(IsOptimize)(VARIANT_BOOL* retVal);
+  STDMETHOD(SelectCount)(short* retVal);
+  STDMETHOD(GetSelect)(short index, BSTR* retVal);
 
  
 
