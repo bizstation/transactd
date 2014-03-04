@@ -801,6 +801,8 @@ interface IFieldDef : IDispatch
   HRESULT _stdcall CharNum([out, retval] unsigned int* Value);
   [id(0x00000014)]
   HRESULT _stdcall SetLenByCharnum([in] unsigned short Value);
+  [propget, id(0x00000015)]
+  HRESULT _stdcall Index([out, retval] short* Value);
 
 
 

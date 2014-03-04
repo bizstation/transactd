@@ -236,3 +236,10 @@ STDMETHODIMP CFieldDef::SetLenByCharnum(unsigned short Value)
     return S_OK;
 }
 
+STDMETHODIMP CFieldDef::get_Index(short* Value)
+{
+	*Value = m_index;
+    return S_OK;
+
+}
+

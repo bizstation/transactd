@@ -82,6 +82,6 @@ public:
     STDMETHOD(get_CodePage)(unsigned int* Value);
     STDMETHOD(get_CharNum)(unsigned int* Value);
     STDMETHOD(SetLenByCharnum)(unsigned short Value);
-
+	STDMETHOD(get_Index)(short* Value);
 
 };
