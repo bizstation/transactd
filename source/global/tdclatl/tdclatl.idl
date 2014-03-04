@@ -962,7 +962,7 @@ interface IQueryBase : IDispatch
   [id(0x0000007)]
   HRESULT _stdcall Or([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IQueryBase** retVal);
   [id(0x0000008)]
-  HRESULT _stdcall AddInValue([in] VARIANT Value, [in] VARIANT_BOOL Reset);
+  HRESULT _stdcall AddInValue([in] VARIANT Value, [in, defaultvalue(0)] VARIANT_BOOL Reset);
   [id(0x0000009)]
   HRESULT _stdcall In([in] VARIANT Value
 			,[in, defaultvalue("")] VARIANT Value1

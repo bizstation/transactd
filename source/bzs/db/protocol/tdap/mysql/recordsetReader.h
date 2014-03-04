@@ -813,7 +813,8 @@ public:
 				key = &tb->keyDef(tb->keyNum());
 			m_fields.init(*m_req, m_position, key, forword);
 		}
-		if (m_resultDef->fieldCount > 1)
+		if ((m_resultDef->fieldCount > 1) ||
+			((m_resultDef->fieldCount == 1) && (m_resultDef->field[0].len < m_position.recordLenCl())))
 			ret = convResultPosToFieldNum();
 			
 		m_writer.reset(new resultWriter(buf, offset, m_resultDef, maxlen));
