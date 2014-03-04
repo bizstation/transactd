@@ -640,6 +640,8 @@ interface ITable : IDispatch
   HRESULT _stdcall KeyValueDescription([out, retval] BSTR* Value);
   [id(0x000000FB)]
   HRESULT _stdcall SetQuery([in] IQueryBase* Value);
+  [id(0x000000FC)]
+  HRESULT _stdcall FieldNumByName([in] BSTR Name, [out, retval] short* Value);
 
 };
 [

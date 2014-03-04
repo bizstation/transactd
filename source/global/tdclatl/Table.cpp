@@ -623,3 +623,9 @@ STDMETHODIMP CTableTd::SetQuery(IQueryBase* Value)
 	return S_FALSE;
 	
 }
+
+STDMETHODIMP CTableTd::FieldNumByName(BSTR Name, short* Value)
+{
+	*Value = m_tb->fieldNumByName(Name);	
+	return S_FALSE;
+}

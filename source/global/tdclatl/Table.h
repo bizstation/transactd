@@ -141,5 +141,5 @@ public:
     STDMETHOD(SmartUpdate)(void);
 	STDMETHOD(KeyValueDescription)(BSTR* Value);
 	STDMETHOD(SetQuery)(IQueryBase* Value);
-
+	STDMETHOD(FieldNumByName)(BSTR Name, short* Value);
 };
