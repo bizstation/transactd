@@ -568,6 +568,11 @@ void table::btrvGetExtend(ushort_td op)
         m_impl->filterPtr->setDirection(findForword);
 
     tdap(op);
+	if (m_stat 
+			&& (m_stat != STATUS_LIMMIT_OF_REJECT) 
+			&& (m_stat != STATUS_REACHED_FILTER_COND)
+			&& (m_stat != STATUS_EOF))
+			return;
     short stat = m_stat;
     if (!m_impl->filterPtr->isWriteComleted() && (stat == STATUS_REACHED_FILTER_COND))
         stat = STATUS_LIMMIT_OF_REJECT;
