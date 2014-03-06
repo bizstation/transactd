@@ -736,7 +736,8 @@ public:
 
     bool fieldSelected() const
     {
-        return !((m_fields.size() == 1) && (m_fields[0]->pos == 0));
+        return !((m_fields.size() == 1) 
+			&& (m_fields[0]->pos == 0) && (m_fields[0]->len == (ushort_td) m_tb->tableDef()->maxRecordLen));
     }
 
     bool ignoreFields() const {return m_ignoreFields;}
