@@ -427,7 +427,7 @@ class filter
         {
             char combine = eCend;
             std::_tstring value = where[i+2];
-            bool compField = (value[0] == _T('['));
+            bool compField = (value.size() && (value[0] == _T('[')));
             if (compField)
             {
                 value.erase(value.begin());

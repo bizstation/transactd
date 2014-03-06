@@ -885,8 +885,8 @@ public:
 		}
 		
 	}
-	unsigned short rejectCount(){return m_req->rejectCount;};
-	unsigned short maxRows(){return m_resultDef->maxRows;};
+	unsigned short rejectCount()const{return m_req->rejectCount;};
+	unsigned short maxRows()const{return m_resultDef->maxRows;};
 };
 
 }//namespace mysql
