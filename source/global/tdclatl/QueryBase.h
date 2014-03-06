@@ -29,12 +29,14 @@ class ATL_NO_VTABLE CQueryBase :
 	public CComCoClass<CQueryBase, &CLSID_QueryBase>,
 	public IDispatchImpl<IQueryBase, &IID_IQueryBase, &LIBID_transactd, /*wMajor =*/ 1, /*wMinor =*/ 0>
 {
-	bzs::db::protocol::tdap::client::queryBase m_qb;
+	bzs::db::protocol::tdap::client::queryBase& m_qb;
 	void setResult(IQueryBase** retVal);
 
 public:
-	CQueryBase()
+	CQueryBase():m_qb(*bzs::db::protocol::tdap::client::queryBase::create())
 	{
+		 
+    
 	}
 
 	DECLARE_REGISTRY_RESOURCEID(IDR_QUERYBASE)
@@ -56,6 +58,7 @@ public:
 
 	void FinalRelease()
 	{
+		//m_qb.release();
 	}
 
 public:

@@ -669,7 +669,7 @@ void testSnapShot(database* db)
     tb2->setFV(fdi_name, tb2->getFVint(fdi_name) + 1);
     tb2->update();
 #ifdef ISOLATION_READ_COMMITTED
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->update(");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->update");
 #else
 #ifdef ISOLATION_REPEATABLE_READ
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->update(");

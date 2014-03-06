@@ -63,7 +63,7 @@ typedef
 enum eFindType
 {
   findForword = 0,
-  findBackForword = 0
+  findBackForword = 1
 }eFindType;
 
 
