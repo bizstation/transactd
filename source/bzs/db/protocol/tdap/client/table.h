@@ -249,6 +249,9 @@ public:
     bool isOptimize()const;
 	short selectCount() const;
 	const _TCHAR* getSelect(short index) const;
+	short whereTokens() const;
+	const _TCHAR* getWhereToken(short index) const;
+
     void release();
     static queryBase* create();
 };

@@ -1004,6 +1004,10 @@ interface IQueryBase : IDispatch
   HRESULT _stdcall SelectCount([out, retval] short* retVal);
   [id(0x0000017)]
   HRESULT _stdcall GetSelect([in] short index, [out, retval] BSTR* retVal);
+  [id(0x0000018)]
+  HRESULT _stdcall WhereTokenCount([out, retval] short* retVal);
+  [id(0x0000019)]
+  HRESULT _stdcall GetWhereToken([in] short index, [out, retval] BSTR* retVal);
 
 
 

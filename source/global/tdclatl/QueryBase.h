@@ -90,8 +90,9 @@ public:
   STDMETHOD(IsOptimize)(VARIANT_BOOL* retVal);
   STDMETHOD(SelectCount)(short* retVal);
   STDMETHOD(GetSelect)(short index, BSTR* retVal);
+  STDMETHOD(WhereTokenCount)(short* retVal);
+  STDMETHOD(GetWhereToken)(short index, BSTR* retVal);
 
- 
 
 };
 

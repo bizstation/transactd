@@ -638,7 +638,6 @@ void table::find(eFindType type)
     }
     else
     {
-
         if (op == TD_KEY_SEEK_MULTI)
         {
             //P.SQL not support TD_KEY_SEEK_MULTI
@@ -657,8 +656,6 @@ void table::find(eFindType type)
                 findPrev(false);
         }
     }
-
-
 }
 
 void table::findFirst()
@@ -761,7 +758,6 @@ void table::doFind( ushort_td op, bool notIncCurrent)
             m_impl->filterPtr->setPosTypeNext(notIncCurrent);
             getRecords(op);
         }
-
 }
 
 void table::findNext(bool notIncCurrent)
@@ -783,7 +779,6 @@ void table::findPrev(bool notIncCurrent)
         doFind(TD_KEY_PREV_MULTI, notIncCurrent);
     else if (notIncCurrent == true)
         seekPrev();
-
 }
 
 void table::setQuery(const queryBase* query)
@@ -810,7 +805,6 @@ void table::setQuery(const queryBase* query)
     {
         m_stat = STATUS_CANT_ALLOC_MEMORY;
         return;
-
     }
 
     if (!m_impl->filterPtr->setQuery(query))
@@ -844,7 +838,6 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
         q.queryString(str).reject(RejectCount).limit(CashCount);
         setQuery(&q);
     }
-
 }
 
 const _TCHAR* table::filterStr()
@@ -862,7 +855,6 @@ void table::clearBuffer()
     memset(m_pdata, 0x00, m_buflen);
     if ((bulkIns()==NULL) && blobFieldUsed())
         resetSendBlob();
-
 }
 
 void table::getKeySpec(keySpec* ks, bool SpecifyKeyNum)
@@ -974,7 +966,6 @@ void table::onUpdateAfter(int beforeResult)
 
     if (valiableFormatType() && m_impl->dataPacked)
         m_datalen = unPack((char*)m_pdata, m_datalen);
-
 }
 
 bool table::onDeleteCheck(bool inkey)
@@ -1036,7 +1027,6 @@ void table::dettachBuffer()
     if (m_impl->bfAtcPtr)
         m_pdata = m_impl->bfAtcPtr;
     m_impl->bfAtcPtr = NULL;
-
 }
 
 void table::init(tabledef* Def, short fnum, bool regularDir) {doInit(Def, fnum, regularDir);}
@@ -1080,7 +1070,6 @@ void table::doInit(tabledef* Def, short fnum, bool /*regularDir*/)
     m_buflen = len;
     m_datalen = len;
     setTableid(fnum);
-
 }
 
 keylen_td table::writeKeyData()
@@ -3058,6 +3047,17 @@ const _TCHAR* queryBase::getSelect(short index) const
 {
 	assert((index >= 0) && (index < m_impl->m_selects.size()));
 	return m_impl->m_selects[index].c_str();
+}
+
+short queryBase::whereTokens() const
+{
+    return (short)m_impl->m_wheres.size();
+}
+
+const _TCHAR* queryBase::getWhereToken(short index) const
+{
+    assert((index >= 0) && (index < m_impl->m_wheres.size()));
+	return m_impl->m_wheres[index].c_str();
 }
 
 void queryBase::release()

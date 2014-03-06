@@ -271,3 +271,19 @@ STDMETHODIMP CQueryBase::GetSelect(short index, BSTR* retVal)
 	return S_OK;
 }
 
+STDMETHODIMP CQueryBase::WhereTokenCount(short* retVal)
+{
+	*retVal = m_qb.whereTokens();
+	return S_OK;
+}
+
+STDMETHODIMP CQueryBase::GetWhereToken(short index, BSTR* retVal)
+{
+	if (index >= 0 && index < m_qb.whereTokens())
+		*retVal = ::SysAllocString(m_qb.getWhereToken(index));
+	else
+		return Error("Invalid index", IID_IQueryBase);
+	return S_OK;
+}
+
+
