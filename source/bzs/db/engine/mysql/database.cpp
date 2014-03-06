@@ -1244,7 +1244,7 @@ void table::getByPercentage(unsigned short per)
 
 int table::percentage(uchar* first, uchar* last, uchar* cur)
 {
-	m_table->file->init_table_handle_for_HANDLER() ;
+	initHandler();
 	KEY& key = m_table->key_info[m_keyNum];
 	// 1 cur to last
 	key_range minkey;
@@ -1361,11 +1361,13 @@ void table::stepPrev()
 
 void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 {
+
 	if ((m_table->file->inited == handler::NONE) || !m_cursor)
 	{
 		m_stat = STATUS_NO_CURRENT;
 		return;
 	}
+	initHandler();
 	m_nonNcc = false;
 	int reject = (hdr->rejectCount()==0)?4096:hdr->rejectCount();
 	if (reject==0xFFFF)
@@ -1453,7 +1455,7 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
 	unlockRow();
 	m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
 	m_cursor =  (m_stat == 0);
-	if ((keyNum==-1)||(keyNum==-64))
+	if ((keyNum==-1)||(keyNum==-64)||(keyNum==-2))
 		return ;
 	if (m_stat==0)
 	{
@@ -1511,6 +1513,7 @@ ha_rows table::recordCount(bool estimate)
 	fb.setKeyRead(true);
 	if (setKeyNum((char)0, false/*sorted*/))
 	{
+		initHandler();
 		m_stat = m_table->file->ha_index_first(m_table->record[0]);
 		while (m_stat == 0)
 		{
@@ -1528,6 +1531,7 @@ ha_rows table::recordCount(bool estimate)
 	else
 	{
 		setNonKey(true/*scan*/);
+		initHandler();
 		m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
 		while (m_stat == 0)
 		{
