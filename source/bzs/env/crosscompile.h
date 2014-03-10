@@ -121,6 +121,8 @@
 		#define _ltow_s(A,B,C,D) _ltow(A, B, D)
 		#define _ltoa_s(A,B,C,D) _ltoa(A, B, D)
 		#define _ltot_s(A,B,C,D) _ltot(A,B,D)
+		#define _ultot_s(A,B,C,D) _ultot(A,B,D)
+        #define _i64tot_s(A,B,C,D)  _i64tot(A, B, D)
 		#define _i64tow_s(A,B,C,D)  _i64tow(A, B, D)
 		#define _i64toa_s(A,B,C,D)  _i64toa(A, B, D)
 		#define _strlwr_s(A, B) strlwr(A)

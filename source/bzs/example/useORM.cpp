@@ -4,6 +4,7 @@
 #include <bzs/db/protocol/tdap/client/trdormapi.h>
 #include <boost/iterator/iterator_facade.hpp>
 
+
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
@@ -375,6 +376,8 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     int id = 12;
     int find_group_id = 3;
     bool readMyKeyValue = false;
+
+
     // user_ormのactiveTableのインスタンスを作成します。
     activeTable<user_orm> ut(db);
 
