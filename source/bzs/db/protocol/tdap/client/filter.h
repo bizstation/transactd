@@ -84,7 +84,7 @@ struct resultField
 	unsigned short len;
     unsigned short pos;
 
-    bool setParam(table* tb, const _TCHAR* name)
+    int setParam(table* tb, const _TCHAR* name)
     {
         short fieldNum = tb->fieldNumByName(name);
         if (fieldNum != -1)
@@ -92,9 +92,9 @@ struct resultField
             fielddef* fd = &tb->tableDef()->fieldDefs[fieldNum];
             len = fd->len;
             pos = fd->pos;
-            return true;
+            return fieldNum;
         }
-        return false;
+        return -1;
     }
     unsigned char* writeBuffer(unsigned char* p, bool estimate)
     {
@@ -365,6 +365,7 @@ class filter
     header m_hd;
     resultDef m_ret;
     std::vector<resultField*> m_fields;
+    std::vector<short> m_selectFieldIndexes;
     std::vector<logic*> m_logics;
     int m_extendBuflen;
     std::_tstring m_str;
@@ -399,9 +400,11 @@ class filter
     bool addSelect(const _TCHAR* name)
     {
         resultField* r = new resultField();
-        if (r->setParam(m_tb, name))
+        int fieldNum = r->setParam(m_tb, name);
+        if (fieldNum != -1)
         {
             m_fields.push_back(r);
+            m_selectFieldIndexes.push_back(fieldNum);
             return true;
         }
         delete r;
@@ -658,8 +661,9 @@ public:
             delete m_logics[i];
         for (size_t i=0;i < m_fields.size();++i)
             delete m_fields[i];
-        m_logics.erase(m_logics.begin(), m_logics.end());
-        m_fields.erase(m_fields.begin(), m_fields.end());
+        m_selectFieldIndexes.clear();
+        m_fields.clear();
+        m_logics.clear();
         m_hd.reset();
         m_ret.reset();
         m_ignoreFields = false;
@@ -750,9 +754,8 @@ public:
     bool isSeeksMode()const {return m_seeksMode;}
     table::eFindType direction() const{return m_direction;}
     void setDirection(table::eFindType v) {m_direction = v;}
-    const std::vector<std::_tstring>& keyValuesCache(){return m_keyValuesCache;};
-
-
+    const std::vector<std::_tstring>& keyValuesCache(){return m_keyValuesCache;}
+    const std::vector<short>& selectFieldIndexes(){return m_selectFieldIndexes;}
 };
 
 

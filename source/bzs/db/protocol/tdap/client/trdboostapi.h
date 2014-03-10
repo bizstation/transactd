@@ -162,6 +162,7 @@ class fields
 public:
     inline explicit fields(table& tb) : m_tb(tb) {};
     inline explicit fields(table_ptr tb) : m_tb(*tb) {};
+
     inline void clearValues(){m_tb.clearBuffer();};
     inline field operator[](size_t index) const {return field(m_tb, (short)index);}
 
@@ -174,6 +175,12 @@ public:
     inline field fd(size_t index) const {return field(m_tb, (short)index);}
 
     inline field fd(const _TCHAR* name) const {return field(m_tb, m_tb.fieldNumByName(name));}
+
+    short inproc_size() const{return m_tb.getCurProcFieldCount();}
+
+    inline field inproc_fd(short index) const{return field(m_tb, m_tb.getCurProcFieldIndex(index)); };
+
+
 };
 
 class filterParams

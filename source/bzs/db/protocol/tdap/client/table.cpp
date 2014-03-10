@@ -2770,6 +2770,19 @@ void table::keyValueDescription(_TCHAR* buf, int bufsize)
                                         ,s.c_str());
 }
 
+short table::getCurProcFieldCount() const
+{
+    if (!m_impl->filterPtr || !m_impl->filterPtr->fieldSelected())
+        return tableDef()->fieldCount;
+    return m_impl->filterPtr->selectFieldIndexes().size();
+}
+
+short table::getCurProcFieldIndex(short index) const
+{
+    if (!m_impl->filterPtr || !m_impl->filterPtr->fieldSelected())
+       return index;
+    return m_impl->filterPtr->selectFieldIndexes()[index];
+}
 
 //-------------------------------------------------------------------
 //      class queryBase

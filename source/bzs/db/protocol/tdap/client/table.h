@@ -213,7 +213,8 @@ public:
     void setFV(const _TCHAR* fieldName, __int64 data);
     void* fieldPtr(short index);
     void keyValueDescription(_TCHAR* buf, int bufsize);
-
+    short getCurProcFieldCount() const;
+    short getCurProcFieldIndex(short index) const;
 };
 
 
