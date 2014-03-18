@@ -242,12 +242,15 @@ public:
     queryBase& direction(table::eFindType v);
     queryBase& all();
     queryBase& optimize(bool v);
+    queryBase& withBookmark(bool v);
+
     const _TCHAR* toString() const;
     table::eFindType getDirection() const;
     int getReject()const;
     int getLimit()const;
     bool isAll()const;
     bool isOptimize()const;
+    bool isWithBookmark()const;
 	short selectCount() const;
 	const _TCHAR* getSelect(short index) const;
 	short whereTokens() const;

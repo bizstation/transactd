@@ -1359,7 +1359,7 @@ void table::stepPrev()
 		m_stat = STATUS_NOSUPPORT_OP;	
 }
 
-void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
+void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type, bool noBookmark)
 {
 
 	if ((m_table->file->inited == handler::NONE) || !m_cursor)
@@ -1373,6 +1373,10 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 	if (reject==0xFFFF)
 		reject = -1;
 	int rows = hdr->maxRows();
+	
+	// dummy bookmark , use if bobbokmark=true
+	unsigned int tmp = 0;
+	const uchar* bm = (unsigned char*)&tmp;
 	
 	//Is a current position read or not? 
 	bool read = !includeCurrent;
@@ -1410,7 +1414,10 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type)
 		int ret = hdr->match(forword);
 		if (ret == REC_MACTH)
 		{
-			m_stat = hdr->write(position(), posPtrLen());
+			
+			if (!noBookmark)
+				bm = position();
+			m_stat = hdr->write(bm, posPtrLen());
 			if (m_stat) break;
 			--rows;
 		}

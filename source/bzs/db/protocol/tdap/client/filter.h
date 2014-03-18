@@ -324,10 +324,10 @@ struct header
         rejectCount = 1;
         logicalCount = 0;
         len = 0;
-        setPositionType(true);
+        setPositionType(true, false);
     }
 
-    void setPositionType(bool incCurrent)
+    void setPositionType(bool incCurrent, bool withBookmark)
     {
         if (incCurrent)
         {
@@ -339,6 +339,8 @@ struct header
             type[0] = 'E';
             type[1] = 'G';
         }
+        if (!withBookmark)
+            type[1] = 'N';
     }
 
     bool positionTypeNext() const
@@ -372,6 +374,7 @@ class filter
     bool m_ignoreFields;
     bool m_seeksMode;
     bool m_useOptimize;
+    bool m_withBookmark;
     size_t m_seeksWritedCount;
     size_t m_logicalLimitCount;
     table::eFindType m_direction;
@@ -495,7 +498,7 @@ class filter
         setMaxRows(q->getLimit());
         m_direction = q->getDirection();
         m_useOptimize = q->isOptimize();
-
+        m_withBookmark = q->isWithBookmark();
         if (q->isAll())
             addAllFields();
         else
@@ -649,7 +652,8 @@ class filter
 
 public:
     filter(table* tb):m_tb(tb),m_ignoreFields(false)
-        ,m_seeksMode(false),m_seeksWritedCount(0),m_useOptimize(true){}
+        ,m_seeksMode(false),m_seeksWritedCount(0)
+        ,m_useOptimize(true),m_withBookmark(true){}
     ~filter()
     {
         cleanup();
@@ -688,7 +692,7 @@ public:
     }
     void resetSeeksWrited(){m_seeksWritedCount = 0;}
 
-    void setPositionType(bool incCurrent){m_hd.setPositionType(incCurrent);}
+    void setPositionType(bool incCurrent){m_hd.setPositionType(incCurrent, m_withBookmark);}
 
     bool positionTypeNext() const{return m_hd.positionTypeNext();}
 

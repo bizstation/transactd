@@ -835,6 +835,7 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
     else
     {
         queryBase q;
+        q.withBookmark(true);
         q.queryString(str).reject(RejectCount).limit(CashCount);
         setQuery(&q);
     }
@@ -2860,13 +2861,14 @@ struct impl
 {
     impl():
     m_reject(1),m_limit(0),m_direction(table::findForword)
-        ,m_nofilter(false),m_optimize(false){}
+        ,m_nofilter(false),m_optimize(false),m_withBookmark(false){}
 
 	int m_reject;
 	int m_limit;
     table::eFindType m_direction;
     bool m_nofilter;
     bool m_optimize;
+    bool m_withBookmark;
     mutable std::_tstring m_str;
     std::vector<std::_tstring> m_selects;
     std::vector<std::_tstring> m_wheres;
@@ -2984,6 +2986,18 @@ bool queryBase::isOptimize()const
 {
     return m_impl->m_optimize;
 }
+
+queryBase& queryBase::withBookmark(bool v)
+{
+    m_impl->m_withBookmark = v;
+    return *this;
+}
+
+bool queryBase::isWithBookmark() const
+{
+    return m_impl->m_withBookmark;
+}
+
 
 table::eFindType queryBase::getDirection() const {return m_impl->m_direction;}
 

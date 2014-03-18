@@ -169,40 +169,7 @@ public:
 	}
 };
 
-class fieldBitmap
-{
-	bool m_keyRead;
-	TABLE* m_table;
-public:
-	inline fieldBitmap(TABLE* table):m_table(table),m_keyRead(false)
-	{
-		m_table->read_set = &m_table->tmp_set;
-		m_table->write_set = &m_table->tmp_set;
-		bitmap_clear_all(m_table->read_set);
-	}
-	
-	inline ~fieldBitmap()
-	{
-		if (m_keyRead)
-			m_table->file->extra(HA_EXTRA_NO_KEYREAD);
-		m_table->read_set = &m_table->s->all_set;
-		m_table->write_set = &m_table->s->all_set;			
-	}
-	
-	inline void setKeyRead(bool v)
-	{
-		if (v)
-			m_table->file->extra(HA_EXTRA_KEYREAD);
-		else if (m_keyRead)
-			m_table->file->extra(HA_EXTRA_NO_KEYREAD);
-		m_keyRead = v;
-	}
 
-	inline void setReadBitmap(uint bit)
-	{
-		bitmap_set_bit(m_table->read_set, bit);
-	}
-};
 
 class table : private boost::noncopyable
 {
@@ -239,7 +206,7 @@ class table : private boost::noncopyable
 	std::vector<Field*> m_nonKeySegNullFields;
 	
 	void moveKey(boost::function<int()> func);
-	void readRecords(IReadRecordsHandler* handler, bool includeCurrent, int type);
+	void readRecords(IReadRecordsHandler* handler, bool includeCurrent, int type, bool noBookmark);
 	
 	bool keyCheckForPercent();
 	inline bool keynumCheck(char num);
@@ -342,28 +309,28 @@ public:
 	void stepPrev();
 	void movePos(const uchar* pos, char keyNum, bool sureRawValue=false);
 
-	inline void getNextExt(IReadRecordsHandler* handler, bool includeCurrent)
+	inline void getNextExt(IReadRecordsHandler* handler, bool includeCurrent, bool noBookmark)
 	{
-		readRecords(handler, includeCurrent, READ_RECORD_GETNEXT);
+		readRecords(handler, includeCurrent, READ_RECORD_GETNEXT, noBookmark);
 	}
 
-	inline void getPrevExt(IReadRecordsHandler* handler, bool includeCurrent)
+	inline void getPrevExt(IReadRecordsHandler* handler, bool includeCurrent, bool noBookmark)
 	{
-		readRecords(handler, includeCurrent, READ_RECORD_GETPREV);
+		readRecords(handler, includeCurrent, READ_RECORD_GETPREV, noBookmark);
 	}
 
-	inline void stepNextExt(IReadRecordsHandler* handler, bool includeCurrent)
+	inline void stepNextExt(IReadRecordsHandler* handler, bool includeCurrent, bool noBookmark)
 	{
 		if (m_table->file->inited != handler::RND)
 			setNonKey(true);
-		readRecords(handler, includeCurrent, READ_RECORD_STEPNEXT);
+		readRecords(handler, includeCurrent, READ_RECORD_STEPNEXT, noBookmark);
 	}
 
-	inline void stepPrevExt(IReadRecordsHandler* handler, bool includeCurrent)
+	inline void stepPrevExt(IReadRecordsHandler* handler, bool includeCurrent, bool noBookmark)
 	{
 		if (m_table->file->inited != handler::RND)
 			setNonKey(true);
-		readRecords(handler, includeCurrent, READ_RECORD_STEPPREV);
+		readRecords(handler, includeCurrent, READ_RECORD_STEPPREV, noBookmark);
 	}
 
 	void clearBuffer();
@@ -411,6 +378,11 @@ public:
 	/*number of key.*/
 	inline unsigned short keys()const{return m_table->s->keys;};
 	inline const KEY&  keyDef(char keyNum)const{return m_table->key_info[keyNum];};
+	inline const KEY* primaryKey()
+	{
+		return (m_table->s->primary_key != MAX_KEY)
+				? &m_table->key_info[m_table->s->primary_key] : NULL;
+	}
 	inline Field*  field(int fieldNum)const{return m_table->field[fieldNum];};
 	inline char  primarykey()const{return m_table->s->primary_key;};
 	/** is this view. not table*/
@@ -454,8 +426,75 @@ public:
 	}
 
 	inline void setBlobFieldCount(uint num){m_blobBuffer->setFieldCount(num);};
-
+	inline void indexInit()
+	{
+		m_table->file->ha_index_or_rnd_end();
+		if (m_keyNum >= 0)
+			m_table->file->ha_index_init(m_keyNum, true);
+		else
+			m_table->file->ha_rnd_init(true);
+	};
 };
+
+class fieldBitmap
+{
+	bool m_keyRead;
+	TABLE* m_table;
+public:
+
+	inline fieldBitmap(TABLE* table):m_table(table),m_keyRead(false)
+	{
+		m_table->read_set = &m_table->tmp_set;
+		m_table->write_set = &m_table->tmp_set;
+		bitmap_clear_all(m_table->read_set);
+	}
+
+	inline fieldBitmap():m_table(NULL),m_keyRead(false)
+	{
+	}
+	
+	inline void setTable(table* tb)
+	{
+		if (tb)
+		{
+			m_table = tb->internalTable();
+			m_table->read_set = &m_table->tmp_set;
+			m_table->write_set = &m_table->tmp_set;
+			bitmap_clear_all(m_table->read_set);
+		}else if (m_table)
+		{
+			if (m_keyRead)
+				m_table->file->extra(HA_EXTRA_NO_KEYREAD);
+			m_table->read_set = &m_table->s->all_set;
+			m_table->write_set = &m_table->s->all_set;
+			m_table = NULL;
+		}
+	}
+	
+	
+	inline ~fieldBitmap()
+	{
+		if (m_keyRead)
+			m_table->file->extra(HA_EXTRA_NO_KEYREAD);
+		m_table->read_set = &m_table->s->all_set;
+		m_table->write_set = &m_table->s->all_set;			
+	}
+	
+	inline void setKeyRead(bool v)
+	{
+		if (v)
+			m_table->file->extra(HA_EXTRA_KEYREAD);
+		else if (m_keyRead)
+			m_table->file->extra(HA_EXTRA_NO_KEYREAD);
+		m_keyRead = v;
+	}
+
+	inline void setReadBitmap(uint bit)
+	{
+		bitmap_set_bit(m_table->read_set, bit);
+	}
+};
+
 
 //smart wrapper for exception
 class smartBulkInsert

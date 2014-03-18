@@ -632,7 +632,7 @@ public:
 	{
 		delete [] m_fields;
 	}
-
+	
 	void init(extRequest& req, position& position, const KEY* key, bool forword)
 	{
 		if (req.logicalCount==0) return ;
@@ -797,10 +797,10 @@ class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 	extResultDef*	m_resultDef;
 	position		m_position;
 	fields			m_fields;
-
+	engine::mysql::fieldBitmap bm;
 public:
 	short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache
-		, char* buf,size_t offset, unsigned short maxlen, bool forword)
+		, char* buf,size_t offset, unsigned short maxlen, bool forword, bool noBookmark)
 	{
 		short ret = 0;
 		m_position.setTable(tb);
@@ -815,17 +815,19 @@ public:
 		}
 		if ((m_resultDef->fieldCount > 1) ||
 			((m_resultDef->fieldCount == 1) && (m_resultDef->field[0].len < m_position.recordLenCl())))
-			ret = convResultPosToFieldNum();
+			ret = convResultPosToFieldNum(tb, noBookmark);
 			
 		m_writer.reset(new resultWriter(buf, offset, m_resultDef, maxlen));
 		//DEBUG_RECORDS_BEGIN(m_resultDef, m_req)
+
 		return ret;
 	}
 
 	//TODO This convert is move to client. but legacy app is need this 
-	short convResultPosToFieldNum()
+	short convResultPosToFieldNum(engine::mysql::table* tb, bool noBookmark)
 	{
 		int blobs = 0;
+		bm.setTable(tb);
 		for (int i=0;i<m_resultDef->fieldCount;i++)
 		{
 			resultField& fd = m_resultDef->field[i];
@@ -833,11 +835,36 @@ public:
 			if (num == -1)
 				return STATUS_INVALID_FIELD_OFFSET;
 			fd.fieldNum = num; 
+			bm.setReadBitmap(num);
 			if (m_position.isBlobField(&fd)) 
 				++blobs;
 			
 		}
 		
+		logicalField* fd = &m_req->field;
+		for (int i=0;i<m_req->logicalCount;++i)
+		{
+			bm.setReadBitmap(m_position.getFieldNumByPos(fd->pos));
+			fd = fd->next();
+		}
+
+		//if need bookmark , add primary key fields
+		if (!noBookmark)
+		{
+			const KEY* key = tb->primaryKey();
+			if (key)
+			{
+				int sgi = 0;
+				int segments = std::min<uint>(MAX_KEY_SEGMENT, key->user_defined_key_parts);
+				while (sgi < segments)
+				{
+					bm.setReadBitmap(key->key_part[sgi].field->field_index);
+					++sgi;
+				}
+			}
+		}
+
+		tb->indexInit();
 		m_position.setBlobFieldCount(blobs);
 		return 0;
 	}
@@ -846,8 +873,8 @@ public:
 	{
 		unsigned int len = m_writer->resultLen();
 		//DEBUG_RECORDS_END(m_writer.get())
-
 		m_writer.reset();
+		bm.setTable(NULL);
 		return len;
 	}
 
