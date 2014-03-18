@@ -287,3 +287,18 @@ STDMETHODIMP CQueryBase::GetWhereToken(short index, BSTR* retVal)
 }
 
 
+STDMETHODIMP CQueryBase::BookmarkAlso(VARIANT_BOOL v, IQueryBase** retVal)
+{
+	m_qb.bookmarkAlso(v==-1);
+	setResult(retVal);
+	return S_OK;
+}
+
+STDMETHODIMP CQueryBase::IsBookmarkAlso(VARIANT_BOOL* retVal)
+{
+	*retVal = m_qb.isBookmarkAlso();
+	return S_OK;
+}
+
+
+

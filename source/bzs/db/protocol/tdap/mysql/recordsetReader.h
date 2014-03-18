@@ -701,6 +701,7 @@ class resultWriter
 	unsigned short m_maxLen;
 	unsigned short m_resultLen;
 	bool m_writeFirst;
+	bool m_noBookmark;
 
 	short writeFirst( position* pos, unsigned int bookmark)
 	{
@@ -723,9 +724,11 @@ class resultWriter
 		m_resultLen += sizeof(unsigned short);
 
 		//write bookmark
-		*((unsigned int*)(m_buf + m_resultLen)) = bookmark; 
-		m_resultLen += sizeof(unsigned int);
-		
+		if (!m_noBookmark)
+		{
+			*((unsigned int*)(m_buf + m_resultLen)) = bookmark; 
+			m_resultLen += sizeof(unsigned int);
+		}	
 		//if pos ==NULL , that is not found record in a TD_KEY_SEEK_MULTI operation
 		// and bookmark has error code also STATUS_NOT_FOUND_TI 
 		// in the client, fieldCount > 0 buf recLen=0 then this pattern
@@ -768,8 +771,10 @@ class resultWriter
 		return 0;
 	}
 public:
-	resultWriter(char* buf ,size_t offset,  extResultDef* def, unsigned short maxlen)
-			:m_buf(buf),m_def(def),m_rowsPos(0),m_maxLen(maxlen),m_writeFirst(true)
+	resultWriter(char* buf ,size_t offset,  extResultDef* def
+			, unsigned short maxlen, bool noBookmark)
+			:m_buf(buf),m_def(def),m_rowsPos(0),m_maxLen(maxlen)
+				,m_writeFirst(true),m_noBookmark(noBookmark)
 	{
 		m_resultLen = (unsigned short)offset;
 	}
@@ -817,7 +822,7 @@ public:
 			((m_resultDef->fieldCount == 1) && (m_resultDef->field[0].len < m_position.recordLenCl())))
 			ret = convResultPosToFieldNum(tb, noBookmark);
 			
-		m_writer.reset(new resultWriter(buf, offset, m_resultDef, maxlen));
+		m_writer.reset(new resultWriter(buf, offset, m_resultDef, maxlen, noBookmark));
 		//DEBUG_RECORDS_BEGIN(m_resultDef, m_req)
 
 		return ret;

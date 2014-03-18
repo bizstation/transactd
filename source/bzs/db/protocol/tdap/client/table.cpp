@@ -182,21 +182,28 @@ public:
         m_ptr = data + DATASIZE_BYTE;
         m_len = m_unpackLen = *((unsigned short*)m_ptr); // Not include bookmark and size bytes.
         m_ptr += DATASIZE_BYTE;
-        m_bookmark = *((bookmark_td*)(m_ptr));
-        m_ptr += BOOKMARK_SIZE;
+        if (m_pFilter->bookmarkSize())
+        {
+            m_bookmark = *((bookmark_td*)(m_ptr));
+            m_ptr += m_pFilter->bookmarkSize();
+        }
         m_tmpPtr = data + totalSize;
         m_hd = const_cast<blobHeader*>(hd);
     }
 
     inline const char* moveRow(int count)
     {
+        //move row data address pointer in result buffer
         for (int i = 0; i < count; i++)
         {
             m_ptr += m_len;
             m_len = m_unpackLen = *((unsigned short*)m_ptr);
             m_ptr += DATASIZE_BYTE;
-            m_bookmark = *((bookmark_td*)(m_ptr));
-            m_ptr += BOOKMARK_SIZE;
+            if (m_pFilter->bookmarkSize())
+            {
+                m_bookmark = *((bookmark_td*)(m_ptr));
+                m_ptr += m_pFilter->bookmarkSize();
+            }
         }
         if (m_hd)
         {
@@ -421,6 +428,8 @@ bool table::logicalToString() const {return m_impl->logicalToString;};
 
 void table::setLogicalToString(bool v) {m_impl->logicalToString = v;}
 
+bool table::isUseTransactd() const{return nsdb()->isUseTransactd();}
+
 void table::setBookMarks(int StartId, void* Data, ushort_td Count)
 {
     long size = (StartId + Count) * 6;
@@ -631,7 +640,7 @@ void table::find(eFindType type)
     else
         op = (type == findForword) ? TD_KEY_GE_NEXT_MULTI:TD_KEY_LE_PREV_MULTI;
 
-    if (nsdb()->isUseTransactd())
+    if (isUseTransactd())
     {
         m_impl->rc->reset();
         doFind(op, true/*notIncCurrent*/);
@@ -835,7 +844,7 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
     else
     {
         queryBase q;
-        q.withBookmark(true);
+        q.bookmarkAlso(true);
         q.queryString(str).reject(RejectCount).limit(CashCount);
         setQuery(&q);
     }
@@ -936,7 +945,7 @@ bool table::onUpdateCheck(eUpdateType type)
             return false;
         }else
         {
-            if (nsdb()->isUseTransactd()==false)
+            if (isUseTransactd()==false)
             {
                 //backup update data
                 smartUpdate();
@@ -2987,13 +2996,13 @@ bool queryBase::isOptimize()const
     return m_impl->m_optimize;
 }
 
-queryBase& queryBase::withBookmark(bool v)
+queryBase& queryBase::bookmarkAlso(bool v)
 {
     m_impl->m_withBookmark = v;
     return *this;
 }
 
-bool queryBase::isWithBookmark() const
+bool queryBase::isBookmarkAlso() const
 {
     return m_impl->m_withBookmark;
 }

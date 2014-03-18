@@ -54,6 +54,29 @@ namespace mysql
 static const char* TableNameTitle =  "dbfile=";
 static const char* BdfNameTitle =  ".bdf";
 
+
+
+class smartReadRecordsHandler
+{
+	ReadRecordsHandler* m_hdr;
+	bool m_ended;
+public:
+	smartReadRecordsHandler(ReadRecordsHandler* hdr)
+		:m_hdr(hdr),m_ended(false){}
+	unsigned int end()
+	{
+		m_ended = true;
+		return m_hdr->end();
+	}
+
+	~smartReadRecordsHandler()
+	{
+		if (!m_ended)
+			m_hdr->end();		
+	}
+
+};
+
 std::string& toLowerCaseName(std::string& name , bool forSql)
 {
 	if (forSql)
@@ -468,7 +491,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 		extRequest* ereq = (extRequest*)req.data;
 		bool noBookmark = (ereq->type[1]=='N');
 
-
+		smartReadRecordsHandler srrh(m_readHandler);
 		req.result = m_readHandler->begin(m_tb, ereq, true
 				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, (op == TD_KEY_GE_NEXT_MULTI), noBookmark);
 		if (req.result != 0)
@@ -482,7 +505,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 		}
 		req.result = errorCodeSht(m_tb->stat());
 		DEBUG_WRITELOG2(op, req);
-		size = req.serializeForExt(m_tb, resultBuffer, m_readHandler->end());
+		size = req.serializeForExt(m_tb, resultBuffer, srrh.end());
 		if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
 			size = req.serializeBlobBody(m_blobBuffer, resultBuffer, FILE_MAP_SIZE, optionalData);
 
@@ -504,6 +527,7 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 	bool noBookmark = (ereq->type[1]=='N');
 
 	bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
+	smartReadRecordsHandler srrh(m_readHandler);
 	req.result = m_readHandler->begin(m_tb, ereq,(op != TD_KEY_SEEK_MULTI)
 			, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, forword, noBookmark);
 	if (req.result == 0)
@@ -532,7 +556,7 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 			req.result = errorCodeSht(m_tb->stat());
 		}
 		DEBUG_WRITELOG2(op, req);
-		size = req.serializeForExt(m_tb, resultBuffer, m_readHandler->end());
+		size = req.serializeForExt(m_tb, resultBuffer, srrh.end());
 		if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
 			size = req.serializeBlobBody(m_blobBuffer, resultBuffer, FILE_MAP_SIZE, optionalData);
 

@@ -474,14 +474,18 @@ public:
 	
 	inline ~fieldBitmap()
 	{
-		if (m_keyRead)
-			m_table->file->extra(HA_EXTRA_NO_KEYREAD);
-		m_table->read_set = &m_table->s->all_set;
-		m_table->write_set = &m_table->s->all_set;			
+		if (m_table)
+		{
+			if (m_keyRead)
+				m_table->file->extra(HA_EXTRA_NO_KEYREAD);
+			m_table->read_set = &m_table->s->all_set;
+			m_table->write_set = &m_table->s->all_set;
+		}
 	}
 	
 	inline void setKeyRead(bool v)
 	{
+		assert(m_table);
 		if (v)
 			m_table->file->extra(HA_EXTRA_KEYREAD);
 		else if (m_keyRead)
@@ -491,6 +495,7 @@ public:
 
 	inline void setReadBitmap(uint bit)
 	{
+		assert(m_table);
 		bitmap_set_bit(m_table->read_set, bit);
 	}
 };

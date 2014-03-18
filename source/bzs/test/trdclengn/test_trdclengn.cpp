@@ -952,11 +952,11 @@ void testLogin(database* db)
         // second connection
         database* db2 = database::create();
         db2->connect(makeUri(PROTOCOL, HOSTNAME, _T("")), true);
-        BOOST_CHECK_MESSAGE(0 == db->stat(), "new connection connect");
+        BOOST_CHECK_MESSAGE(0 == db->stat(), "new connection connect  db->stat() = " << db->stat());
         database::destroy(db2);
 
         db->disconnect(makeUri(PROTOCOL, HOSTNAME, _T("")));
-        BOOST_CHECK_MESSAGE(0 == db->stat(), "disconnect");
+        BOOST_CHECK_MESSAGE(0 == db->stat(), "disconnect  db->stat() = " << db->stat());
 
     }
     // invalid host name
@@ -974,26 +974,26 @@ void testLogin(database* db)
     }
     testCreateNewDataBase(db);
     db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "databese disconnect");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "databese disconnect db->stat() = " << db->stat());
 
     // true database name
     db->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "databese ");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "databese  connect db->stat() = " << db->stat());
     if (db->stat() == 0)
     {
         db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-        BOOST_CHECK_MESSAGE(0 == db->stat(), "databese disconnect");
+        BOOST_CHECK_MESSAGE(0 == db->stat(), "databese disconnect db->stat() = " << db->stat());
     }
     // invalid database name
     testDropDatabase(db);
     db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "databese disconnect");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "databese disconnect db->stat() = " << db->stat());
 
     db->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-    BOOST_CHECK_MESSAGE(25000 + 1049 == db->stat(), "bad databese connect");
+    BOOST_CHECK_MESSAGE(25000 + 1049 == db->stat(), "databese connect db->stat() = " << db->stat());
 
     db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "bad databese disconnect");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "databese disconnect db->stat() = " << db->stat());
 
 }
 
@@ -1804,9 +1804,10 @@ void doTestSF(table* tb)
     tb->setFilter(_T("name <> 'あい*'"), 0, 10);
     BOOST_CHECK_MESSAGE(3 == (int)tb->recordCount(), "doTestReadSF2");
     tb->clearBuffer();
+	tb->setFilter(_T("name <> 'あい*'"), 0, 10);
     tb->seekFirst();
     tb->findNext(false);
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1 stat = " << tb->stat());
     BOOST_CHECK_MESSAGE(_tstring(_T("A123456")) == _tstring(tb->getFVstr(2)), "doTestReadSF1");
 
     tb->findNext();
@@ -2501,7 +2502,10 @@ BOOST_AUTO_TEST_SUITE(filter)
     {
         testDropDatabase(db());
     }
-    BOOST_FIXTURE_TEST_CASE(fuga, fixture) {BOOST_CHECK_EQUAL(2 * 3, 6);}
+    BOOST_FIXTURE_TEST_CASE(fuga, fixture) 
+	{
+		BOOST_CHECK_EQUAL(2 * 3, 6);
+	}
 
 BOOST_AUTO_TEST_SUITE_END()
 

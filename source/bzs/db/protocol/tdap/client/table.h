@@ -85,6 +85,7 @@ protected:
     void setBookMarks(int StartId, void* Data, ushort_td Count);
     uint_td unPack(char*ptr, size_t size);
     uint_td pack(char*ptr, size_t size);
+    bool isUseTransactd() const;
     keylen_td writeKeyData(); // orverride
     
 	void writeRecordData(){};
@@ -242,7 +243,7 @@ public:
     queryBase& direction(table::eFindType v);
     queryBase& all();
     queryBase& optimize(bool v);
-    queryBase& withBookmark(bool v);
+    queryBase& bookmarkAlso(bool v);
 
     const _TCHAR* toString() const;
     table::eFindType getDirection() const;
@@ -250,7 +251,7 @@ public:
     int getLimit()const;
     bool isAll()const;
     bool isOptimize()const;
-    bool isWithBookmark()const;
+    bool isBookmarkAlso()const;
 	short selectCount() const;
 	const _TCHAR* getSelect(short index) const;
 	short whereTokens() const;

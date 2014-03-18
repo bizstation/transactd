@@ -95,6 +95,8 @@ public:
   STDMETHOD(GetSelect)(short index, BSTR* retVal);
   STDMETHOD(WhereTokenCount)(short* retVal);
   STDMETHOD(GetWhereToken)(short index, BSTR* retVal);
+  STDMETHOD(BookmarkAlso)(VARIANT_BOOL Value, IQueryBase** retVal);
+  STDMETHOD(IsBookmarkAlso)(VARIANT_BOOL* retVal);
 
 
 };

@@ -585,8 +585,8 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode, 
 	
 	if (m_nullFields)
 		m_recordFormatType |= RF_INCLUDE_NIS;
-	m_recordLenCl = (uint)(m_table->s->reclength-(uint)(m_table->s->null_fields>0) - m_nullFields-m_lastVarLenBytes);
-	
+	m_recordLenCl = (uint)(m_table->s->reclength - m_table->s->null_bytes - m_nullFields-m_lastVarLenBytes);
+
 	//Chash null field
 	if (m_table->s->null_fields)
 	{

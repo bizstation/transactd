@@ -1008,7 +1008,10 @@ interface IQueryBase : IDispatch
   HRESULT _stdcall WhereTokenCount([out, retval] short* retVal);
   [id(0x0000019)]
   HRESULT _stdcall GetWhereToken([in] short index, [out, retval] BSTR* retVal);
-
+  [id(0x000001A)]
+  HRESULT _stdcall BookmarkAlso([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
+  [id(0x000001B)]
+  HRESULT _stdcall IsBookmarkAlso([out, retval] VARIANT_BOOL* retVal);
 
 
 };

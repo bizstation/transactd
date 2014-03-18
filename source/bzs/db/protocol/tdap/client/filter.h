@@ -318,16 +318,21 @@ struct header
 	char			type[2];
 	unsigned short	rejectCount;
 	unsigned short	logicalCount;
-    header(){reset();};
+    header():rejectCount(1),logicalCount(0),len(0)
+    {
+        type[0] = 0x00;
+        type[1] = 0x00;
+    }
+    
     void reset()
     {
         rejectCount = 1;
         logicalCount = 0;
         len = 0;
-        setPositionType(true, false);
+        setPositionType(true, false, false);
     }
 
-    void setPositionType(bool incCurrent, bool withBookmark)
+    void setPositionType(bool incCurrent, bool withBookmark, bool isTransactd)
     {
         if (incCurrent)
         {
@@ -339,8 +344,15 @@ struct header
             type[0] = 'E';
             type[1] = 'G';
         }
-        if (!withBookmark)
+        if (!withBookmark && isTransactd)
             type[1] = 'N';
+    }
+
+    int bookmarkSize() const
+    {
+        assert(type[0]);
+        if (type[1] == 'N') return 0;
+        return BOOKMARK_SIZE;
     }
 
     bool positionTypeNext() const
@@ -498,7 +510,7 @@ class filter
         setMaxRows(q->getLimit());
         m_direction = q->getDirection();
         m_useOptimize = q->isOptimize();
-        m_withBookmark = q->isWithBookmark();
+        m_withBookmark = q->isBookmarkAlso();
         if (q->isAll())
             addAllFields();
         else
@@ -513,7 +525,10 @@ class filter
                 return false;
 
             if (q->getSeekKeyValues().size())
+            {
+                m_withBookmark = true;
                 return setSeeks(q->getSeekKeyValues());
+            }
             else if (q->getWheres().size())
                 return setWhere(q->getWheres());
         }
@@ -523,7 +538,7 @@ class filter
     ushort_td resultRowSize(bool ignoreFields)
     {
 
-        ushort_td recordLen = BOOKMARK_SIZE + DATASIZE_BYTE;
+        ushort_td recordLen = m_hd.bookmarkSize() + DATASIZE_BYTE;
         if (!ignoreFields)
         {
             for (size_t i=0;i< m_fields.size();++i)
@@ -692,7 +707,10 @@ public:
     }
     void resetSeeksWrited(){m_seeksWritedCount = 0;}
 
-    void setPositionType(bool incCurrent){m_hd.setPositionType(incCurrent, m_withBookmark);}
+    void setPositionType(bool incCurrent)
+    {
+        m_hd.setPositionType(incCurrent, m_withBookmark, m_tb->isUseTransactd());
+    }
 
     bool positionTypeNext() const{return m_hd.positionTypeNext();}
 
@@ -749,6 +767,8 @@ public:
     }
 
     bool ignoreFields() const {return m_ignoreFields;}
+
+    int bookmarkSize() const {return m_hd.bookmarkSize();}
 
     /* The Ignore fields option don't use with multi seek operation.
        because if a server are not found a record then a server return

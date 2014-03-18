@@ -134,6 +134,7 @@ class user
 protected:
     user(void* owner):m_grp(NULL),m_id(0){}
 public:
+    int count;  //test for group
 
 
     group* grp()const
@@ -187,6 +188,10 @@ public:
 
 };
 
+
+
+
+
 class mdls
 {
     mutable std::vector<user*> m_users;
@@ -227,6 +232,12 @@ public:
     //mdlsIterator begin(){return mdlsIterator(*this, 0);}
     //mdlsIterator end(){return mdlsIterator(*this, size());}
 
+    //for grouping
+    typedef int key_type;
+    typedef user* row_type;
+
+
+
 };
 
 void dumpUser2(const user* user)
@@ -262,6 +273,43 @@ inline mdlsIterator begin(mdls& m){return mdlsIterator(&m, 0);}
 inline mdlsIterator end(mdls& m){return mdlsIterator(&m, m.size());}
 
 inline void push_back(mdls& m, user* u){m.add(u);}
+
+/* for grouping */
+inline void clear(mdls& m)
+{
+    m.clear();
+}
+
+/* for grouping */
+inline int resolvKeyValue(mdls&, const std::_tstring& name
+        , bool noexception=false)
+{
+    if (name == _T("grp")) return 1;
+    if (name == _T("count")) return 2;
+    return 0;
+}
+
+const int key_grp = 1;
+const int key_count = 2;
+
+
+int compByKey(const user& l, const user& r, const int& s)
+{
+
+    if (s == key_grp)
+        return l.grp()->id() -  r.grp()->id();
+    if (s == key_count)
+        return l.count -  r.count;
+    return 0;
+}
+
+void setValue(user& u, const int& resultKey, const int& v)
+{
+    if (resultKey == key_count)
+        u.count = v;
+}
+
+
 }}}}}
 
 
@@ -371,6 +419,31 @@ bool sortFunc2(const user* l, const user* r)
     return l->name() < r->name();
 }
 
+
+class count
+{
+    int m_value;
+    int m_resultKey;
+public:
+    count():m_value(0){}
+
+    void setResultKey(int key)
+    {
+        m_resultKey = key;
+    }
+
+    void operator()(const user& u)
+    {
+        ++m_value;
+    }
+    int result()const{return m_value;}
+
+    void reset(){m_value = 0;}
+
+};
+
+
+
 void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 {
     int id = 12;
@@ -423,7 +496,6 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     //読み取りを実行。　結果を受け取るコレクションとクエリーを渡します。
     ut.read(users, q);
 
-
     /*
     前回のreadsで使用したコレクションはvectorでした。しかしオリジナルの
     コレクションを使用している場合もあるでしょう
@@ -433,6 +505,10 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     mdls m;
     ut.index(keynum_group).keyValue(find_group_id).read(m, q);
 
+    //グルーピング グループごとに属する人数を数える
+    groupQuery gq;
+    gq.keyField(_T("grp")).resultField(_T("count"));
+    gq.grouping(m, count());
 
     /*
     オリジナルコレクションマップを自動で作成でなく自分で初期化して
