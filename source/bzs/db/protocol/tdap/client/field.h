@@ -19,9 +19,6 @@
    02111-1307, USA.
 =================================================================*/
 #include "nsTable.h"
-#include <vector>
-#include "stringConverter.h"
-#include <bzs/rtl/stringBuffers.h>
 
 namespace bzs
 {
@@ -34,14 +31,15 @@ namespace tdap
 namespace client
 {
 
-class fields;
-class field
+typedef int (*compFieldFunc)(const class field& l, const class field& r, char logType);
+
+class AGRPACK field
 {
 	const fielddef& m_fd;
 	unsigned char* m_ptr;
-    fields* m_fds;
+    class fieldInfo* m_fds;
 
-
+    compFieldFunc getCompFunc(char logType);
 protected:
     double getFVnumeric() const;
     double getFVDecimal() const;
@@ -79,10 +77,16 @@ public:
     inline const char* getFVstr() const {return getFVAstr();};
     inline void setFV(const char* data) {setFVA(data);};
 #endif
+    void* ptr() const;
 	//  ---- end regacy interfaces ----  //
 
 public:
-    inline field(unsigned char* ptr, const fielddef& fd, fields* fds)
+    unsigned char type() const {return m_fd.type;}
+    unsigned short len() const {return m_fd.len;}
+    int varLenBytes() const {return m_fd.varLenBytes();}
+    int blobLenBytes() const {return m_fd.blobLenBytes();}
+
+    inline field(unsigned char* ptr, const fielddef& fd, fieldInfo* fds)
             : m_ptr(ptr), m_fd(fd), m_fds(fds) {};
 
     inline const _TCHAR* c_str() const {return getFVstr();}
@@ -172,6 +176,8 @@ public:
 
     inline void setBin(const void* data, uint_td size){setFV(data, size);}
     inline void* getBin(uint_td& size){return getFVbin(size);};
+
+    int comp(const field& r, char logType);
 };
 
 

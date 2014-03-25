@@ -20,12 +20,9 @@
 #pragma hdrstop
 
 #include "field.h"
-#include "database.h"
-#include "stringConverter.h"
+#include "fields.h"
 #include <bzs/db/protocol/tdap/myDateTime.cpp>
-#include <boost/shared_array.hpp>
-#include <map>
-
+#include <bzs/db/protocol/tdap/fieldComp.h>
 
 #pragma package(smart_init)
 
@@ -43,74 +40,6 @@ namespace tdap
 {
 namespace client
 {
-
-class cvprams
-{
-    friend class field;
-private:
-    struct
-    {
-    unsigned char myDateTimeValueByBtrv: 1;
-    unsigned char trimPadChar: 1;
-    unsigned char usePadChar: 1;
-    unsigned char logicalToString: 1;
-    };
-
-    stringConverter* cv;
-    std::vector<boost::shared_array<char> >blobs;
-    bzs::rtl::stringBuffer strBufs;
-
-public:
-    cvprams() : strBufs(4096),myDateTimeValueByBtrv(true), trimPadChar(true),
-        usePadChar(true), logicalToString(false)
-    {
-        cv = new stringConverter(nsdatabase::execCodePage(), nsdatabase::execCodePage());
-    }
-
-    virtual ~cvprams()
-    {
-        delete cv;
-    }
-};
-
-
-class fields : private cvprams
-{
-
-    std::vector<fielddef> m_fields;
-    std::map<std::_tstring, int> m_map;
-
-
-public:
-    short m_stat;
-
-    fields():cvprams(),m_stat(0){};
-    void add(fielddef* p)
-    {
-        m_fields.push_back(*p);
-        m_map[p->name()] = m_fields.size() - 1;
-    }
-
-    void remove(index)
-    {
-        m_fields.erase(m_fields.begin() + index);
-        m_map.erase(m_fields[index].name());
-    }
-
-    void clear()
-    {
-        m_fields.clear();
-        m_map.clear();
-    }
-    inline int indexByName(const _TCHAR* name){return m_map[name];};
-    inline fielddef& operator[](int index){return m_fields[index];}
-    inline fielddef& operator[](const _TCHAR* name){return m_fields[indexByName(name)];}
-    inline fielddef& operator[](const std::_tstring& name){return m_fields[indexByName(name.c_str())];}
-    inline size_t size() {return m_fields.size();}
-
-};
-
-
 
 inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
 {
@@ -196,6 +125,12 @@ inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
         memcpy(ptr + fd.pos, &value, fd.len);
         break;
     }
+}
+
+
+void* field::ptr() const
+{
+    return m_ptr + m_fd.pos;;
 }
 
 void field::setFVA(const char* data)
@@ -1397,6 +1332,155 @@ void field::setFVNumeric(double data)
 
     memcpy((void*)((char*)m_ptr + m_fd.pos), t,
         m_fd.len);
+}
+
+
+template <class T>
+inline int compNumber(const field& l, const field& r, char logType)
+{
+    return compare<T>((const char*)l.ptr() , (const char*)r.ptr());
+}
+
+inline int compNumber24(const field& l, const field& r, char logType)
+{
+    return compareInt24((const char*)l.ptr() , (const char*)r.ptr());
+}
+
+inline int compNumberU24(const field& l, const field& r, char logType)
+{
+    return compareUint24((const char*)l.ptr() , (const char*)r.ptr());
+}
+
+inline int compMem(const field& l, const field& r, char logType)
+{
+    return memcmp((const char*)l.ptr() , (const char*)r.ptr(), l.len());
+}
+
+inline int compString(const field& l, const field& r, char logType)
+{
+    return strncmp((const char*)l.ptr() , (const char*)r.ptr(), l.len());
+}
+
+inline int compiString(const field& l, const field& r, char logType)
+{
+    return _strnicmp((const char*)l.ptr() , (const char*)r.ptr(), l.len());
+}
+
+inline int compWString(const field& l, const field& r, char logType)
+{
+    return wcsncmp16((char16_t*)l.ptr() , (char16_t*)r.ptr(), l.len());
+}
+
+inline int compiWString(const field& l, const field& r, char logType)
+{
+    return wcsnicmp16((char16_t*)l.ptr() , (char16_t*)r.ptr(), l.len());
+}
+
+template <class T>
+inline int compVarString(const field& l, const field& r, char logType)
+{
+    return compareVartype<T>((const char*)l.ptr() , (const char*)r.ptr()
+                , l.type()==ft_myvarbinary, logType);
+}
+
+template <class T>
+inline int compWVarString(const field& l, const field& r, char logType)
+{
+    return compareWvartype<T>((const char*)l.ptr() , (const char*)r.ptr()
+                , l.type()==ft_mywvarbinary, logType);
+}
+
+inline int compBlob(const field& l, const field& r, char logType)
+{
+    return compareBlobType((const char*)l.ptr() , (const char*)r.ptr()
+                , l.type()==ft_myblob, logType, l.blobLenBytes());
+
+}
+
+compFieldFunc field::getCompFunc(char logType)
+{
+    switch(m_fd.type)
+    {
+    case ft_integer:
+    case ft_autoinc:
+    case ft_currency:
+    {
+        switch(m_fd.len)
+        {
+        case 1:return &compNumber<char>;
+        case 2:return &compNumber<short>;
+        case 3:return &compNumber24;
+        case 4:return &compNumber<int>;
+        case 8:return &compNumber<__int64>;
+        }
+    }
+    case ft_mychar:
+    case ft_string:
+        if (logType & CMPLOGICAL_CASEINSENSITIVE)
+            return &compiString;
+        return &compMem;
+    case ft_zstring:
+    case ft_note:
+        if (logType & CMPLOGICAL_CASEINSENSITIVE)
+            return &compiString;
+        return &compString;
+    case ft_logical:
+    case ft_uinteger:
+    case ft_autoIncUnsigned:
+    case ft_date:
+    case ft_time:
+    case ft_timestamp:
+    case ft_mydate:
+    {
+        switch(m_fd.len)
+        {
+        case 1:return &compNumber<unsigned char>;
+        case 2:return &compNumber<unsigned short>;
+        case 3:return &compNumberU24;
+        case 4:return &compNumber<unsigned int>;
+        case 8:return &compNumber<unsigned __int64>;
+        }
+    }
+    case ft_mytime:
+    case ft_mydatetime:
+    case ft_mytimestamp:
+        return &compMem;
+    case ft_float:
+        switch(m_fd.len)
+        {
+        case 4:return &compNumber<float>;
+        case 8:return &compNumber<double>;
+        }
+    case ft_mywchar:
+    case ft_wstring:
+    case ft_wzstring:
+        if (logType & CMPLOGICAL_CASEINSENSITIVE)
+            return &compiWString;
+        if ((m_fd.type==ft_wstring)||(m_fd.type==ft_mywchar))
+            return &compMem;
+        return &compWString;
+    case ft_lstring:
+    case ft_myvarchar:
+    case ft_myvarbinary:
+        if (m_fd.varLenBytes()==1)
+            return &compVarString<unsigned char>;
+        return &compVarString<unsigned short>;
+    case ft_mywvarchar:
+    case ft_mywvarbinary:
+        if (m_fd.varLenBytes()==1)
+            return &compWVarString<unsigned char>;
+        return &compWVarString<unsigned short>;
+    case ft_mytext:
+    case ft_myblob:
+        return &compBlob;
+    }
+    return NULL;
+}
+
+int field::comp(const field& r, char logType)
+{
+    compFieldFunc f = getCompFunc(logType);
+    return f(*this, r, logType);
 }
 
 }// namespace client

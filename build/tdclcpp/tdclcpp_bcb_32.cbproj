@@ -87,6 +87,15 @@
 			<TASM_Debugging>None</TASM_Debugging>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_3)'!=''">
+			<BCC_SmartPCHCache>false</BCC_SmartPCHCache>
+			<BCC_MergeDuplicateStrings>true</BCC_MergeDuplicateStrings>
+			<BCC_MonitorThis>true</BCC_MonitorThis>
+			<BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
+			<BCC_MonitorInlinePtrAccess>true</BCC_MonitorInlinePtrAccess>
+			<ILINK_Verbose>true</ILINK_Verbose>
+			<BCC_MonitorGlobalAndStackData>true</BCC_MonitorGlobalAndStackData>
+			<BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
 			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
 			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
 			<BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
@@ -117,8 +126,14 @@
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\errorMessage.cpp">
 				<BuildOrder>19</BuildOrder>
 			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\field.cpp">
+				<BuildOrder>20</BuildOrder>
+			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fieldDDF.cpp">
 				<BuildOrder>7</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fields.cpp">
+				<BuildOrder>21</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fileDDF.cpp">
 				<BuildOrder>8</BuildOrder>
