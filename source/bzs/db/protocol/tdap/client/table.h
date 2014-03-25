@@ -143,7 +143,7 @@ public:
     void findPrev(bool notIncCurrent = true);
     bookmark_td bookmarkFindCurrent() const;
     void setQuery(const queryBase* query);
-    void setFilter(const _TCHAR* str, ushort_td rejectCount, ushort_td cacheCount);
+    void setFilter(const _TCHAR* str, ushort_td rejectCount, ushort_td cacheCount, bool autoEscape = true);
     const _TCHAR* filterStr();
     short fieldNumByName(const _TCHAR* name);
     unsigned char getFVbyt(short index);
@@ -237,7 +237,7 @@ public:
     void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
     void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
     void addSeekKeyValue(const _TCHAR* value, bool reset=false);
-    queryBase& queryString(const _TCHAR* str);
+    queryBase& queryString(const _TCHAR* str, bool autoEscape = false);
     queryBase& reject(int v);
 	queryBase& limit(int v);
     queryBase& direction(table::eFindType v);

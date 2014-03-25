@@ -815,8 +815,14 @@ void table::setQuery(const queryBase* query)
         m_stat = STATUS_CANT_ALLOC_MEMORY;
         return;
     }
+    bool ret = false;
+    try
+    {
+        ret = m_impl->filterPtr->setQuery(query);
+    }
+    catch(...){}
 
-    if (!m_impl->filterPtr->setQuery(query))
+    if (!ret)
     {
         m_stat = STATUS_FILTERSTRING_ERROR;
         delete m_impl->filterPtr;
@@ -837,7 +843,8 @@ void table::setQuery(const queryBase* query)
     }
 }
 
-void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount)
+void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount
+            , bool autoEscape )
 {
     if (!str || (str[0] == 0x00))
         setQuery(NULL);
@@ -845,7 +852,7 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
     {
         queryBase q;
         q.bookmarkAlso(true);
-        q.queryString(str).reject(RejectCount).limit(CashCount);
+        q.queryString(str, autoEscape).reject(RejectCount).limit(CashCount);
         setQuery(&q);
     }
 }
@@ -2948,15 +2955,66 @@ void queryBase::clearSeekKeyValues()
     m_impl->m_keyValues.clear();
 }
 
-queryBase& queryBase::queryString(const _TCHAR* str)
+std::_tstring escape_value(std::_tstring s)
+{
+    std::_tstring::iterator it = s.begin();
+    for (int i=(int)s.size()-1;i>=0;--i)
+    {
+        if (s[i] == _T('&'))
+            s.insert(s.begin()+i, _T('&'));
+        else if (s[i] == _T('\''))
+            s.insert(s.begin()+i, _T('&'));
+    }
+    return s;
+}
+
+std::_tstring& escape_string(std::_tstring& s)
+{
+    std::_tstring::iterator it = s.begin();
+    bool begin = false;
+    for (int i=0; i< (int)s.size();++i)
+    {
+        if (s[i] == _T('&'))
+        {
+            s.insert(s.begin()+i, _T('&'));
+            ++i;
+        }
+        else if (s[i] == _T('\''))
+        {
+            if (begin)
+            {
+                if ((i == s.size()-1) || (s[i+1]==_T(' ')))
+                    begin = false;
+                else
+                    s.insert(s.begin()+i, _T('&'));
+                ++i;
+            }
+            else if ((i == 0) || (s[i-1]==_T(' ')))
+                begin = true;
+            else
+            {
+                s.insert(s.begin()+i, _T('&'));
+                ++i;
+            }
+        }
+    }
+    return s;
+}
+
+queryBase& queryBase::queryString(const _TCHAR* str, bool autoEscape)
 {
     m_impl->m_selects.clear();
     m_impl->m_wheres.clear();
     m_impl->m_keyValues.clear();
     m_impl->m_nofilter = false;
     if (str && str[0])
-        analyzeQuery(str, m_impl->m_selects, m_impl->m_wheres, m_impl->m_keyValues
+    {
+        std::_tstring s = str;
+        if (autoEscape)
+            escape_string(s);
+        analyzeQuery(s.c_str(), m_impl->m_selects, m_impl->m_wheres, m_impl->m_keyValues
                                                 ,m_impl->m_nofilter);
+    }
     return *this;
 }
 
@@ -3009,19 +3067,6 @@ bool queryBase::isBookmarkAlso() const
 
 
 table::eFindType queryBase::getDirection() const {return m_impl->m_direction;}
-
-std::_tstring escape_value(std::_tstring s)
-{
-    std::_tstring::iterator it = s.begin();
-    for (int i=(int)s.size()-1;i>=0;--i)
-    {
-        if (s[i] == _T('&'))
-            s.insert(s.begin()+i, _T('&'));
-        else if (s[i] == _T('\''))
-            s.insert(s.begin()+i, _T('&'));
-    }
-    return s;
-}
 
 const _TCHAR* queryBase::toString() const
 {
@@ -3081,7 +3126,7 @@ short queryBase::selectCount() const
 
 const _TCHAR* queryBase::getSelect(short index) const
 {
-	assert((index >= 0) && (index < m_impl->m_selects.size()));
+	assert((index >= 0) && (index < (short)m_impl->m_selects.size()));
 	return m_impl->m_selects[index].c_str();
 }
 
@@ -3092,7 +3137,7 @@ short queryBase::whereTokens() const
 
 const _TCHAR* queryBase::getWhereToken(short index) const
 {
-    assert((index >= 0) && (index < m_impl->m_wheres.size()));
+    assert((index >= 0) && (index < (short)m_impl->m_wheres.size()));
 	return m_impl->m_wheres[index].c_str();
 }
 

@@ -344,7 +344,7 @@ void testFindIn(database* db)
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 10, "find in 10");
     tb->findNext();
-    BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in 300000");
+    BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in 300000 stat =" << tb->stat());
 
     _TCHAR msg[1024];
     tb->keyValueDescription(msg, 1024);
@@ -2346,6 +2346,51 @@ void testQuery()
     q.addLogic(_T("in"), _T("<>"), _T("1"));
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("in <> '1'")
                             ,  "queryString");
+
+    //test auto_escape
+    q.queryString(_T("code = ab'c"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'ab&'c'")
+                            ,  "queryString");
+
+    q.queryString(_T("code = ab&c"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'ab&&c'")
+                            ,  "queryString");
+
+    q.queryString(_T("code = abc&"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'abc&&'")
+                            ,  "queryString");
+    q.queryString(_T("code = abc&&"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'abc&&&&'")
+                            ,  "queryString");
+
+    q.queryString(_T("code = 'abc&'"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'abc&&'")
+                            ,  "queryString");
+    q.queryString(_T("code = 'abc&&'"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'abc&&&&'")
+                            ,  "queryString");
+
+    q.queryString(_T("code = 'ab'c'"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'ab&'c'")
+                            ,  "queryString");
+
+    q.queryString(_T("code = 'abc''"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'abc&''")
+                            ,  "queryString");
+
+    q.queryString(_T("code = abc'"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'abc&''")
+                            ,  "queryString");
+
+    // Invalid end no close '
+    q.queryString(_T("code = 'abc"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = 'abc'")
+                            ,  "queryString");
+
+    q.queryString(_T("code = &abc"), true);
+    BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = '&&abc'")
+                            ,  "queryString");
+
 }
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
