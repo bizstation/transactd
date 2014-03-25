@@ -307,10 +307,10 @@ typedef stringConverter converter_type;
 
 class myCharStoreBase
 {
-    fielddef& m_fd;
+    const fielddef& m_fd;
 
 public:
-    inline myCharStoreBase(fielddef& fd) : m_fd(fd) {};
+    inline myCharStoreBase(const fielddef& fd) : m_fd(fd) {};
 
     inline size_t maxStoreBytes() const {return m_fd.len;};
 
@@ -329,10 +329,10 @@ typedef myCharStoreBase myCharStore;
 
 class myVarCharStoreBase
 {
-    fielddef& m_fd;
+    const fielddef& m_fd;
 
 public:
-    inline myVarCharStoreBase(fielddef& fd) : m_fd(fd) {};
+    inline myVarCharStoreBase(const fielddef& fd) : m_fd(fd) {};
 
     inline size_t maxStoreBytes() const {return m_fd.len - m_fd.varLenBytes();};
 
@@ -352,10 +352,10 @@ typedef myVarCharStoreBase myVarCharStore;
 
 class myVarBinaryStoreBase
 {
-    fielddef& m_fd;
+    const fielddef& m_fd;
 
 public:
-    inline myVarBinaryStoreBase(fielddef& fd) : m_fd(fd) {};
+    inline myVarBinaryStoreBase(const fielddef& fd) : m_fd(fd) {};
 
     inline size_t maxStoreBytes() const {return m_fd.len - m_fd.varLenBytes();};
 
@@ -374,10 +374,10 @@ typedef myVarBinaryStoreBase myVarBinaryStore;
 
 class myBinaryStoreBase
 {
-    fielddef& m_fd;
+    const fielddef& m_fd;
 
 public:
-    inline myBinaryStoreBase(fielddef& fd) : m_fd(fd) {};
+    inline myBinaryStoreBase(const fielddef& fd) : m_fd(fd) {};
 
     inline size_t maxStoreBytes() const {return m_fd.len;};
 
@@ -395,10 +395,10 @@ typedef myBinaryStoreBase myBinaryStore;
 
 class zstringStore
 {
-    fielddef& m_fd;
+    const fielddef& m_fd;
 
 public:
-    inline zstringStore(fielddef& fd) : m_fd(fd) {};
+    inline zstringStore(const fielddef& fd) : m_fd(fd) {};
 
     inline size_t maxStoreBytes() const {return m_fd.len - 1;};
 
@@ -413,10 +413,10 @@ public:
 
 class wzstringStore
 {
-    fielddef& m_fd;
+    const fielddef& m_fd;
 
 public:
-    inline wzstringStore(fielddef& fd) : m_fd(fd) {};
+    inline wzstringStore(const fielddef& fd) : m_fd(fd) {};
 
     inline size_t maxStoreBytes() const {return m_fd.len -sizeof(short);};
 
@@ -431,10 +431,10 @@ public:
 
 class stringStoreBase
 {
-    fielddef& m_fd;
+    const fielddef& m_fd;
 
 public:
-    inline stringStoreBase(fielddef& fd) : m_fd(fd) {};
+    inline stringStoreBase(const fielddef& fd) : m_fd(fd) {};
 
     inline size_t maxStoreBytes() const {return m_fd.len;};
 
@@ -466,7 +466,7 @@ inline void* memset_t(void *dest, int c, size_t count) {return memset(dest, c, c
 inline WCHAR* memset_t(WCHAR* dest, int c, size_t count) {return wmemset16(dest, (WCHAR)c, count);}
 
 template<typename _SF, typename store_type, typename T>
-void store(char* ptr, const T* data, fielddef& fd, stringConverter* cv, bool usePad = true)
+void store(char* ptr, const T* data, const fielddef& fd, stringConverter* cv, bool usePad = true)
 {
     _SF sf(fd);
 
@@ -526,7 +526,7 @@ T* trim(T* src, T* end, int padChar)
 #pragma warn -8066
 
 template<class _SF, typename store_type, typename T>
-const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, fielddef& fd, stringConverter* cv,
+const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, const fielddef& fd, stringConverter* cv,
     bool isTrimPadChar = false)
 {
     _SF sf(fd);
@@ -565,7 +565,7 @@ const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, fielddef& fd, string
 #pragma warn .8066
 
 template<typename T>
-char* blobStore(char* ptr, const T* data, fielddef& fd, stringConverter* cv)
+char* blobStore(char* ptr, const T* data, const fielddef& fd, stringConverter* cv)
 {
     size_t len = strlen_t(data);
     int offset = fd.len - 8;
@@ -598,7 +598,7 @@ char* blobStore(char* ptr, const T* data, fielddef& fd, stringConverter* cv)
 }
 #pragma warn -8004
 template<typename T>
-const T* readBlob(char* ptr, ::bzs::rtl::stringBuffer* strBufs, fielddef& fd, stringConverter* cv)
+const T* readBlob(char* ptr, ::bzs::rtl::stringBuffer* strBufs, const fielddef& fd, stringConverter* cv)
 {
 
     int offset = fd.len - 8;

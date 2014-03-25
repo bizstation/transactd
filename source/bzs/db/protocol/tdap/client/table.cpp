@@ -3010,6 +3010,7 @@ queryBase& queryBase::queryString(const _TCHAR* str, bool autoEscape)
     if (str && str[0])
     {
         std::_tstring s = str;
+        boost::trim(s);
         if (autoEscape)
             escape_string(s);
         analyzeQuery(s.c_str(), m_impl->m_selects, m_impl->m_wheres, m_impl->m_keyValues
