@@ -226,17 +226,17 @@ class table : private boost::noncopyable
 	void setKeyValues(const uchar* ptr, int size);
 	void setBlobFieldPointer(const bzs::db::blobHeader* hd);
 	inline void unlockRow();
+	inline void initHandler()
+	{
+		if ((m_db.m_inSnapshot==0)&& (m_table->reginfo.lock_type != TL_WRITE))
+			m_table->file->init_table_handle_for_HANDLER() ;
+	}
 
 #ifdef USE_HANDLERSOCKET
 	std::vector<int> m_useFields;
 	void checkFiledIndex(int index);
 	int fieldIndexByName(const char* name)const;
 	void addUseField(int index){m_useFields.push_back(index);};
-	inline void initHandler()
-	{
-		if ((m_db.m_inSnapshot==0)&& (m_table->reginfo.lock_type != TL_WRITE))
-			m_table->file->init_table_handle_for_HANDLER() ;
-	}
 public:
 	std::vector<int>& useFields(){return m_useFields;};
 	void setUseFieldList(const std::string& csv);
