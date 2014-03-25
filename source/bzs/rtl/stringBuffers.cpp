@@ -40,6 +40,7 @@ stringBuffer::~stringBuffer()
 {
     if (m_ptr)
         free(m_ptr);
+    m_ptr = NULL;
 }
 
 void stringBuffer::clear()

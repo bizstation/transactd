@@ -127,6 +127,12 @@
 		#define _i64toa_s(A,B,C,D)  _i64toa(A, B, D)
 		#define _strlwr_s(A, B) strlwr(A)
 	#endif
+
+    #if defined(__BORLANDC__)
+        #define _strupr strupr
+        #define _strnicmp strnicmp
+    #endif
+
 	#define wcsnicmp16(A, B, C)	_wcsnicmp((const wchar_t*)(A), (const wchar_t*)(B) , C)
 	#define wcsncmp16(A, B, C)	wcsncmp((const wchar_t*)(A), (const wchar_t*)(B) , C)
 	#define	wmemset16	wmemset	

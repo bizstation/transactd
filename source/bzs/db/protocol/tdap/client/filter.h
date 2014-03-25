@@ -443,6 +443,8 @@ class filter
 
         for (size_t i=0;i<where.size();i+=4)
         {
+            if (i+2 >= where.size())
+                return false;
             char combine = eCend;
             std::_tstring value = where[i+2];
             bool compField = (value.size() && (value[0] == _T('[')));

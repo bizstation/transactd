@@ -3091,8 +3091,10 @@ const _TCHAR* queryBase::toString() const
 
     for (size_t i= 0;i < wheres.size();i+=4)
     {
-        s += wheres[i] + _T(" ") + wheres[i+1] + _T(" '")
-             + escape_value(wheres[i+2]) + _T("' ");
+        if (i+1 < wheres.size())
+            s += wheres[i] + _T(" ") + wheres[i+1] ;
+        if (i+2 < wheres.size())
+            s += _T(" '") + escape_value(wheres[i+2]) + _T("' ");
         if (i+3 < wheres.size())
             s += wheres[i+3] + _T(" ");
     }
