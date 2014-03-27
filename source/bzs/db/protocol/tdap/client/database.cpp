@@ -555,6 +555,8 @@ short database::assignSchemaData(dbdef* src)
             tdtmp.fieldCount = 0;
             tdtmp.keyCount = 0;
             defDest->insertTable(&tdtmp);
+            if (defDest->stat())
+                break;
             for (int j=0;j<td->fieldCount;++j)
             {
                 fielddef& fd = td->fieldDefs[j];
@@ -566,7 +568,7 @@ short database::assignSchemaData(dbdef* src)
                 *defDest->insertKey(td->id, j) = kd;
             }
             defDest->updateTableDef(td->id);
-            if (defDest->stat() != 0) break;
+            if (defDest->stat()) break;
         }
         bool Cancel = false;
         onCopyDataInternal(NULL, recordCount, Count, Cancel);
