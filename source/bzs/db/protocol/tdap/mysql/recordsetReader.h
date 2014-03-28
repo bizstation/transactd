@@ -617,6 +617,8 @@ public:
 	{
 		if (m_judgeType != r.m_judgeType)
 			return m_judgeType > r.m_judgeType;
+		else if (m_keySeg == r.m_keySeg)
+			return this < &r;// no change order     
 		return m_keySeg < r.m_keySeg;
 	}
 };
@@ -657,8 +659,8 @@ public:
 			}
 
 			fd = fd->next();
-			if (fda.m_fd->opr == 2) 
-				lastIndex = i;
+			if (fda.m_fd->opr == 2 && (lastIndex == req.logicalCount)) 
+				lastIndex = i; //the first 'or' index
 		}
 		if (key)
 		{
