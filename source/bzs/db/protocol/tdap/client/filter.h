@@ -537,7 +537,7 @@ class filter
         return true;
     }
 
-    ushort_td resultRowSize(bool ignoreFields)
+    ushort_td resultRowSize(bool ignoreFields) const
     {
 
         ushort_td recordLen = m_hd.bookmarkSize() + DATASIZE_BYTE;
@@ -554,7 +554,7 @@ class filter
         return (ushort_td)(MAX_DATA_SIZE / resultRowSize(m_ignoreFields));
     }
 
-    ushort_td resultBufferNeedSize()
+    int resultBufferNeedSize()
     {
         return (m_ret.maxRows * resultRowSize(m_ignoreFields)) + DATASIZE_BYTE;
     }
@@ -648,12 +648,14 @@ class filter
                 return false;
         }
         m_hd.len = len;
-        int resultLen = resultBufferNeedSize();
+        int resultLen = (int)resultBufferNeedSize();
         if (resultLen > MAX_DATA_SIZE)
         {
+            /* change the max rows fit to a max buffer size */
             m_ret.maxRows = calcMaxRows();
             resultLen = resultBufferNeedSize();
         }
+
         m_extendBuflen = std::max<int>((int)m_hd.len, resultLen);
         m_extendBuflen = std::max<int>(m_extendBuflen, m_tb->tableDef()->maxRecordLen);
         if ((m_fields.size() != 1) || m_tb->valiableFormatType())
@@ -745,6 +747,11 @@ public:
     {
         assert(index < (int)m_fields.size());
         return m_fields[index]->len;
+    }
+
+    ushort_td totalFieldLen() const
+    {
+        return resultRowSize(false) - m_hd.bookmarkSize() - DATASIZE_BYTE;
     }
 
     ushort_td fieldOffset(int index) const

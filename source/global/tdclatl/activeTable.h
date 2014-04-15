@@ -30,7 +30,6 @@ class ATL_NO_VTABLE CActiveTable :
 	public CComObjectRootEx<CComSingleThreadModel>,
     public CComCoClass<CActiveTable, &CLSID_ActiveTable>,
 	public IDispatchImpl<IActiveTable, &IID_IActiveTable, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
-	
 {
 	void setResult(IActiveTable** retVal);
 
@@ -73,7 +72,7 @@ public:
 					, VARIANT Value6, VARIANT Value7, IActiveTable** retVal);
 
 	STDMETHOD(Option)(int Value, IActiveTable** retVal);
-	STDMETHOD(Read)(IQueryBase* query, IRecordset** retVal);
+	STDMETHOD(Read)(VARIANT/*IQueryBase**/ query, IRecordset** retVal);
 	STDMETHOD(Alias)(BSTR Src, BSTR Dst, IActiveTable** retVal);
 	STDMETHOD(ResetAlias)(IActiveTable** retVal);
 	STDMETHOD(Join)(IRecordset* rs, IQueryBase* query, BSTR Name0
@@ -84,7 +83,7 @@ public:
 					,BSTR Name1, BSTR Name2, BSTR Name3, BSTR Name4
 					,BSTR Name5, BSTR Name6, BSTR Name7
 					,IRecordset** retVal);
-	STDMETHOD(GetWriteableRecord)(IWritableRecord** retVal);
+	STDMETHOD(CreateWritableRecord)(IWritableRecord** retVal);
 
 };
 

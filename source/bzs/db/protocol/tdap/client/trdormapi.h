@@ -1,5 +1,5 @@
-#ifndef trdormapiH
-#define trdormapiH
+#ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_TRDORMAPI_H
+#define BZS_DB_PROTOCOL_TDAP_CLIENT_TRDORMAPI_H
 /*=================================================================
    Copyright (C) 2013 BizStation Corp All rights reserved.
 
@@ -19,12 +19,11 @@
    02111-1307, USA.
 =================================================================*/
 #include <bzs/db/protocol/tdap/client/trdboostapi.h>
-#include <iostream>
-#include <vector>
-#include <tstring.h>
-#include <boost/noncopyable.hpp>
 #include <boost/lexical_cast.hpp>
-
+#include "filedNameAlias.h"
+#include "groupQuery.h"
+#include "memRecord.h"
+#include <vector>
 namespace bzs
 {
 namespace db
@@ -255,10 +254,10 @@ public:
 
 
 template <class T>
-inline std::vector<T>::iterator begin(std::vector<T>& m){return m.begin();}
+inline typename std::vector<T>::iterator begin(std::vector<T>& m){return m.begin();}
 
 template <class T>
-inline std::vector<T>::iterator end(std::vector<T>& m){return m.end();}
+inline typename std::vector<T>::iterator end(std::vector<T>& m){return m.end();}
 
 template <class T>
 inline void push_back(std::vector<T>& m, T c){return m.push_back(c);}
@@ -267,9 +266,10 @@ inline void push_back(std::vector<T>& m, T c){return m.push_back(c);}
 
 /* Container has readBefore(table_ptr) function*/
 template <class Container>
-void readBefore(Container::header_type* dummy, Container& mdls, table_ptr tb)
+void readBefore(typename Container::header_type* dummy, Container& mdls
+                , table_ptr tb, const aliasMap_type* alias)
 {
-    mdls.readBefore(tb);
+    mdls.readBefore(tb, alias);
 }
 
 /* Container has'nt readBefore(table_ptr) function*/
@@ -313,13 +313,13 @@ public:
 
     virtual ~mdlsHandler(){};
 
-    void init(int option, FDI* fdi, MAP& map, table_ptr tb)
+    void init(int option, FDI* fdi, MAP& map, table_ptr tb, const aliasMap_type* alias=NULL)
     {
         m_option = option;
         m_fdi = fdi;
         m_map = &map;
 
-        readBefore<Container>(0, m_mdls, tb);
+        readBefore<Container>(0, m_mdls, tb, alias);
     }
 
     void operator()(const fields& fds)
@@ -441,238 +441,33 @@ inline boost::shared_ptr<std::vector<T> > listup(Container& mdls, T (T2::*func)(
 	return mdlst;
 }
 
-//------------------------------------------------------------------------------
-template <class T, typename key_type>
-int compByKey(const T& l, const T& r, const key_type& s)
+
+class mraResetter
 {
-    if ((s >= (int)l.size()) || (s >= (int)r.size()))
-        throw bzs::rtl::exception(0, _T("groupSort:Invalid key index"));
-    return comp_any(l.at(s), r.at(s));
-}
-
-
-template <class Container>
-class grouping_comp
-{
-    const std::vector<typename Container::key_type>& m_keys;
-    Container& m_mdls;
-
+    table_ptr& m_tb;
 public:
-    grouping_comp(Container& mdls
-            , const std::vector<typename Container::key_type>& keys)
-        :m_mdls(mdls),m_keys(keys) {}
+    mraResetter(table_ptr& tb):m_tb(tb){}
 
-    int operator() (int lv, int rv) const
+    ~mraResetter()
     {
-        const typename Container::row_type& lm = m_mdls[lv] ;
-        const typename Container::row_type& rm = m_mdls[rv] ;
-        for (int i=0;i<m_keys.size();++i)
-        {
-            const Container::key_type& s = m_keys[i];
-            int ret = compByKey(*lm, *rm, s);
-            if (ret) return ret;
-        }
-        return 0;
-    }
-
-    bool isEqual(const typename Container::row_type& lm
-                    , const typename Container::row_type& rm)
-	{
-		for (int i=0;i< m_keys.size();++i)
-		{
-			const Container::key_type& s = m_keys[i];
-            int ret = compByKey(*lm, *rm, s);
-            if (ret) return false;
-		}
-		return true;
-	}
-};
-
-
-/*
-class groupQuery
-
---------------------
-dataset requirements
---------------------
-
-define types
-    dataset::row_type   rowset vector type
-
-    // key_type, if row is object , The key type is a string, a numeric,
-    // a function address, etc. which you decided.
-    dataset::key_type key_type;
-
-
-public functions
-    // Compair with key, which return int value.
-    // row_type& is *row_type. If row_type is shared_ptr<T> then row_type& is T.
-    int compByKey(const row_type& l, const row_type& r, const key_type& s)
-
-    dataset::iterator begin(dataset& m)
-    dataset::iterator end(dataset& m)
-    void push_back(dataset& m, T c)
-    void clear(dataset& m)      //clear rows
-
-    // resolvKeyValue is use for convert to key value from filed name
-    dataset::key_type resolvKeyValue(dataset&, const std::_tstring& name , bool noexception=false)  const
-
-    void setValue(row_type& row, const key_type& resultKey, const result_type& T);
-
---------------------
-dataset options
---------------------
-define types
-
-    // header_type: If this type id defined then
-    // readBefore(const tdc::table_ptr tb) function called automaticaly.
-    // In almost all the cases It is vector<std::_tstring>.
-    dataset:: header_type;
-
-
-functions
-    // This function clled at before reading.
-    // You can make heder name list etc.
-    // If you define header_type, you are necessary to certainly
-    // define this function.
-    void readBefore(const tdc::table_ptr tb)
-
-*/
-class groupQuery
-{
-    std::vector<std::_tstring> m_keyFields;
-    std::_tstring m_resultField;
-    const query* m_having;
-
-     /* remove none grouping fields */
-    template <class Container>
-	void removeFileds(typename Container::row_type m)
-	{
-		/*var tgtName = func.fieldName;
-		var obj = new Object();
-		obj[tgtName] = data[tgtName];
-		for (key in data)
-		{
-			for (var i=0;i< fields.length;++i)
-			{
-				if (key === fields[i])
-					obj[key] = data[key];
-			}
-		} */
-		//return obj;
-	}
-
-    template <class Container, class FUNC>
-    int binary_search(int key, const Container& a
-            , int left, int right, FUNC func, bool& find)
-    {
-        find = false;
-        if (right == 0) return 0; // no size
-
-        int mid, tmp, end = right;
-        while(left <= right)
-        {
-            mid = (left + right) / 2;
-            if (mid >= end)
-                return end;
-            if ((tmp = func(a[mid], key)) == 0)
-            {
-                find = true;
-                return mid;
-            }
-            else if (tmp < 0)
-                left = mid + 1;  //keyValue is more large
-            else
-                right = mid - 1; //keyValue is more small
-        }
-        return left;
-    }
-
-public:
-
-    groupQuery& keyField(const TCHAR* name, const TCHAR* name1=NULL, const TCHAR* name2=NULL, const TCHAR* name3=NULL
-                ,const TCHAR* name4=NULL, const TCHAR* name5=NULL, const TCHAR* name6=NULL, const TCHAR* name7=NULL
-                ,const TCHAR* name8=NULL, const TCHAR* name9=NULL, const TCHAR* name10=NULL)
-    {
-        m_keyFields.clear();
-        m_keyFields.push_back(name);
-        if (name1) m_keyFields.push_back(name1);
-        if (name2) m_keyFields.push_back(name2);
-        if (name3) m_keyFields.push_back(name3);
-        if (name4) m_keyFields.push_back(name4);
-        if (name5) m_keyFields.push_back(name5);
-        if (name6) m_keyFields.push_back(name6);
-        if (name7) m_keyFields.push_back(name7);
-        if (name8) m_keyFields.push_back(name8);
-        if (name9) m_keyFields.push_back(name9);
-        if (name10) m_keyFields.push_back(name10);
-        return *this;
-    }
-
-    groupQuery& resultField(const _TCHAR* name)
-    {
-        m_resultField = name;
-        return *this;
-    }
-
-    groupQuery& having(const query& q) {m_having = &q;return *this;}
-	const std::vector<std::_tstring>& getKeyFields()const {return m_keyFields;}
-	const std::_tstring& getResultFields()const {return m_resultField;}
-	const query& getHaving() const {return *m_having;}
-
-    template <class Container, class FUNC>
-    void grouping(Container& mdls,  FUNC func)
-    {
-        std::vector<typename Container::key_type> keyFields;
-
-        /* convert key value from filed name */
-        for (int i=0;i<m_keyFields.size();++i)
-            keyFields.push_back(resolvKeyValue(mdls, m_keyFields[i]));
-        typename Container::key_type resultKey = resolvKeyValue(mdls, m_resultField, true);
-        func.setResultKey(resultKey);
-		grouping_comp<typename Container> groupingComp(mdls, keyFields);
-
-        std::vector<int> index;
-        typename Container::iterator it = begin(mdls), ite = end(mdls);
-        std::vector<FUNC> funcs;
-        int i,n = 0;
-		while(it != ite)
-        {
-            bool found = false;
-            i = binary_search(n, index, 0, index.size(), groupingComp, found);
-            if (!found)
-            {
-                index.insert(index.begin() + i, n);
-                funcs.insert(funcs.begin() + i, FUNC(func));
-            }
-            funcs[i](*(*it));
-            ++n;
-            ++it;
-		}
-        //real sort by index
-        typename Container c(mdls);
-
-        clear(mdls);
-        for (int i=0;i<index.size();++i)
-        {
-            typename Container::row_type cur = c[index[i]];
-            setValue(*cur, resultKey, funcs[i].result());
-            push_back(mdls, cur);
-        }
+        if (m_tb->mra())
+            m_tb->mra()->setJoinType( mra::mra_nojoin);
+       m_tb->setMra(NULL);
     }
 };
-//------------------------------------------------------------------------------
 
 
 template <class MAP, class T=MAP::mdl_typename, class FDI=MAP::fdi_typename>
 class activeTable : boost::noncopyable
 {
+protected:
     typedef std::vector<boost::shared_ptr<T> > collection_vec_type;
     table_ptr m_tb;
     FDI* m_fdi;
     MAP m_map;
     int m_option;
     bool m_useTransactd;
+    fdNmaeAlias m_alias;
 
     inline T& getItem(collection_vec_type& mdls, unsigned int index){return *(mdls[index]);}
     void init(databaseManager& mgr, const _TCHAR* name)
@@ -688,6 +483,97 @@ class activeTable : boost::noncopyable
     void init(database* db, const _TCHAR* name)
     {
         m_tb = openTable(db, name);
+    }
+
+    inline void reverseAliasNamesQuery(queryBase& q)
+    {
+        aliasMap_type::const_iterator it = m_alias.map().begin();
+        while(it != m_alias.map().end())
+        {
+            q.reverseAliasName((*it).second.c_str(), (*it).first.c_str());
+            ++it;
+        }
+    }
+
+    template <class Container>
+    void doJoin(bool innner, Container& mdls, queryBase& q, const _TCHAR* name1
+                    , const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
+                    , const _TCHAR* name4=NULL, const _TCHAR* name5=NULL
+                    , const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
+                    , const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
+                    , const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
+    {
+        if (!m_useTransactd)
+            nstable::throwError(_T("activeTable P.SQL can not use this"), (short_td)0);
+        reverseAliasNamesQuery(q);
+        q.clearSeekKeyValues();
+        fields fds(m_tb);
+        mraResetter mras(m_tb);
+
+        typename Container::iterator it = mdls.begin(),ite = mdls.end();
+        typename Container::key_type key[11];
+
+        if (name1) key[0] = resolvKeyValue(mdls, name1);
+        if (name2) key[1] = resolvKeyValue(mdls, name2);
+        if (name3) key[2] = resolvKeyValue(mdls, name3);
+        if (name4) key[3] = resolvKeyValue(mdls, name4);
+        if (name5) key[4] = resolvKeyValue(mdls, name5);
+        if (name6) key[5] = resolvKeyValue(mdls, name6);
+        if (name7) key[6] = resolvKeyValue(mdls, name7);
+        if (name8) key[7] = resolvKeyValue(mdls, name8);
+        if (name9) key[8] = resolvKeyValue(mdls, name9);
+        if (name10) key[9] = resolvKeyValue(mdls, name10);
+        if (name11) key[10] = resolvKeyValue(mdls, name11);
+
+        //_TCHAR tmp[1024];
+        while(it != ite)
+        {
+            T& mdl = *(*it);
+            if (name1) q.addSeekKeyValue(mdl[key[0]].c_str());
+            if (name2) q.addSeekKeyValue(mdl[key[1]].c_str());
+            if (name3) q.addSeekKeyValue(mdl[key[2]].c_str());
+            if (name4) q.addSeekKeyValue(mdl[key[3]].c_str());
+            if (name5) q.addSeekKeyValue(mdl[key[4]].c_str());
+            if (name6) q.addSeekKeyValue(mdl[key[5]].c_str());
+            if (name7) q.addSeekKeyValue(mdl[key[6]].c_str());
+            if (name8) q.addSeekKeyValue(mdl[key[7]].c_str());
+            if (name9) q.addSeekKeyValue(mdl[key[8]].c_str());
+            if (name10) q.addSeekKeyValue(mdl[key[9]].c_str());
+            if (name11) q.addSeekKeyValue(mdl[key[10]].c_str());
+            ++it;
+        }
+
+        m_tb->setQuery(&q);
+        if (m_tb->stat() != 0)
+            nstable::throwError(_T("activeTable readEach Query"), &(*m_tb));
+
+       typename MAP::collection_orm_typename map(mdls);
+
+        /* ignore list for inner join */
+        std::vector<typename Container::iterator> ignores;
+        it = mdls.begin();
+        map.init(m_option, m_fdi, m_map, m_tb, &m_alias.map());
+        if (m_tb->mra())
+            m_tb->mra()->setJoinType(innner ? mra::mra_innerjoin : mra::mra_outerjoin);
+        m_tb->find();
+        while(1)
+        {
+            if (m_tb->stat())
+            {
+                if ((m_tb->stat() == STATUS_EOF) ||
+                    ((m_tb->stat() != STATUS_SUCCESS) && (m_tb->stat() != STATUS_NOT_FOUND_TI)))
+                    break;
+                else if (innner)
+                    ignores.push_back(it);
+            }
+            ++it;
+            m_tb->findNext(); //mra copy value to memrecord
+        }
+        readStatusCheck(*m_tb, _T("join"));
+
+        /* remove record see ignore list for inner join */
+        for (int i=(int)ignores.size()-1;i>=0;--i)
+            mdls.erase(ignores[i]);
     }
 
 public:
@@ -714,6 +600,7 @@ public:
                     initFdi(m_fdi, m_tb.get());
             }
 
+
     explicit activeTable(databaseManager& mgr, const _TCHAR* tableName)
             :m_option(0)
             ,m_fdi(createFdi(m_fdi))
@@ -736,12 +623,25 @@ public:
                     initFdi(m_fdi, m_tb.get());
             }
 
+	explicit activeTable(database* db, const _TCHAR* tableName)
+            :m_option(0)
+            ,m_fdi(createFdi(m_fdi))
+            ,m_map(*m_fdi)
+            ,m_useTransactd(db->isUseTransactd())
+            {
+                init(db, tableName);
+                if (table() && m_fdi)
+                    initFdi(m_fdi, m_tb.get());
+            }
 
     ~activeTable(){destroyFdi(m_fdi);}
 
     inline void beginBulkInsert(int maxBuflen){m_tb->beginBulkInsert(maxBuflen);}
+
     inline void abortBulkInsert(){m_tb->abortBulkInsert();}
+
     inline ushort_td commitBulkInsert() {m_tb->commitBulkInsert();}
+
 
     activeTable& index(int v)
     {
@@ -817,6 +717,7 @@ public:
 
     inline table_ptr table() const {return m_tb;};
 
+
     activeTable& option(int v)
     {
         m_option = v;
@@ -826,11 +727,13 @@ public:
     template <class Any_Map_type>
     activeTable& readRange(Any_Map_type& map, queryBase& q)
     {
+        mraResetter mras(m_tb);
+        reverseAliasNamesQuery(q);
         m_tb->setQuery(&q);
         if (m_tb->stat())
             nstable::throwError(_T("Query is inaccurate"), &(*m_tb));
 
-        map.init(m_option, m_fdi, m_map, m_tb);
+        map.init(m_option, m_fdi, m_map, m_tb, &m_alias.map());
         m_tb->find(q.getDirection());
         if (q.getDirection() == table::findForword)
         {
@@ -844,14 +747,15 @@ public:
         return *this;
     }
 
-
     template <class Any_Map_type>
     activeTable& readRange(Any_Map_type& map, queryBase& q, validationFunc func)
     {
+        mraResetter mras(m_tb);
+        reverseAliasNamesQuery(q);
         m_tb->setQuery(&q);
         if (m_tb->stat())
             nstable::throwError(_T("Query is inaccurate"), &(*m_tb));
-        map.init(m_option, m_fdi, m_map, m_tb);
+        map.init(m_option, m_fdi, m_map, m_tb, &m_alias.map());
         m_tb->find(q.getDirection());
         if (q.getDirection() == table::findForword)
         {
@@ -886,6 +790,7 @@ public:
         return readRange(map, q);
     }
 
+	
     template <class Container>
     activeTable& read(Container& mdls, queryBase& q, validationFunc func)
     {
@@ -893,7 +798,7 @@ public:
         return readRange(map, q, func);
     }
 
-    template <class T2>
+	template <class T2>
     void read(T2& mdl, bool setKeyValueFromObj=true)
     {
         fields fds(m_tb);
@@ -936,6 +841,8 @@ public:
         if (m_tb->stat() != 0)
             nstable::throwError(_T("activeTable delete"), &(*m_tb));
         m_tb->del();
+        if (m_tb->stat() != 0)
+            nstable::throwError(_T("activeTable delete"), &(*m_tb));
     }
 
     //Recieve delete record by mdl
@@ -944,6 +851,8 @@ public:
     {
         read(mdl, setKeyValueFromObj);
         m_tb->del();
+        if (m_tb->stat() != 0)
+            nstable::throwError(_T("activeTable delete"), &(*m_tb));
     }
 
     /*template <class Container>
@@ -989,13 +898,16 @@ public:
         }
     }
 
+
+
     /* mdlsがキーフィールドに対応するメンバによってソート済の時は
        sortedをtrueにします。検索するレコードと通信量が激減します。
     */
     template <class Container>
     void readEach(Container& mdls, queryBase& q, bool sorted=false, bzs::rtl::exception* e=NULL)
     {
-        q.clearSeekKeyValues();
+        mraResetter mras(m_tb);
+        reverseAliasNamesQuery(q);
         fields fds(m_tb);
         typename Container::iterator it = begin(mdls),itb = begin(mdls),ite = end(mdls);
         it = itb = begin(mdls);
@@ -1080,6 +992,7 @@ public:
     void readEach(Container& mdls, bool sorted=false, bzs::rtl::exception* e=NULL)
     {
         fields fds(m_tb);
+        mraResetter mras(m_tb);
         typename Container::iterator it = begin(mdls),itb = begin(mdls),ite = end(mdls);
         it = itb = begin(mdls);
         T& mdlb = *(*it);
@@ -1129,102 +1042,82 @@ public:
         readEach(*refList, true, &e);
     }
 
-    template <class Container, class FUNC>
+    /*template <class Container, class FUNC>
     activeTable& groupBy(Container& mdls, groupQuery& gq, FUNC func)
     {
         gq.grouping(mdls, func);
         return *this;
-    }
+    }*/
 
-private:
-    template <class Container>
-    void doJoin(bool innner, Container& mdls, queryBase& q, const _TCHAR* name1
-                    , const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
-                    , const _TCHAR* name4=NULL, const _TCHAR* name5=NULL
-                    , const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
-                    , const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
-                    , const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
+    inline activeTable& alias(const _TCHAR* src, const _TCHAR* dst)
     {
-        if (!m_useTransactd)
-            nstable::throwError(_T("activeTable P.SQL can not use this"), (short_td)0);
-        q.clearSeekKeyValues();
-        fields fds(m_tb);
-
-        typename Container::iterator it = mdls.begin(),ite = mdls.end();
-
-        typename Container::key_type key[11];
-        if (name1) key[0] = resolvKeyValue(mdls, name1);
-        if (name2) key[1] = resolvKeyValue(mdls, name2);
-        if (name3) key[2] = resolvKeyValue(mdls, name3);
-        if (name4) key[3] = resolvKeyValue(mdls, name4);
-        if (name5) key[4] = resolvKeyValue(mdls, name5);
-        if (name6) key[5] = resolvKeyValue(mdls, name6);
-        if (name7) key[6] = resolvKeyValue(mdls, name7);
-        if (name8) key[7] = resolvKeyValue(mdls, name8);
-        if (name9) key[8] = resolvKeyValue(mdls, name9);
-        if (name10) key[9] = resolvKeyValue(mdls, name10);
-        if (name11) key[10] = resolvKeyValue(mdls, name11);
-
-        _TCHAR tmp[1024];
-        while(it != ite)
-        {
-            T& mdl = *(*it);
-            if (name1) q.addSeekKeyValue(toString(mdl[key[0]], tmp, 1024));
-            if (name2) q.addSeekKeyValue(toString(mdl[key[1]], tmp, 1024));
-            if (name3) q.addSeekKeyValue(toString(mdl[key[2]], tmp, 1024));
-            if (name4) q.addSeekKeyValue(toString(mdl[key[3]], tmp, 1024));
-            if (name5) q.addSeekKeyValue(toString(mdl[key[4]], tmp, 1024));
-            if (name6) q.addSeekKeyValue(toString(mdl[key[5]], tmp, 1024));
-            if (name7) q.addSeekKeyValue(toString(mdl[key[6]], tmp, 1024));
-            if (name8) q.addSeekKeyValue(toString(mdl[key[7]], tmp, 1024));
-            if (name9) q.addSeekKeyValue(toString(mdl[key[8]], tmp, 1024));
-            if (name10) q.addSeekKeyValue(toString(mdl[key[9]], tmp, 1024));
-            if (name11) q.addSeekKeyValue(toString(mdl[key[10]], tmp, 1024));
-            ++it;
-        }
-
-        m_tb->setQuery(&q);
-        if (m_tb->stat() != 0)
-            nstable::throwError(_T("activeTable readEach Query"), &(*m_tb));
-
-        int offset = mdls.header().size();
-        typename MAP::collection_orm_typename map(mdls);
-        map.init(m_option, m_fdi, m_map, m_tb);
-        m_tb->find();
-        it = mdls.begin();
-        bool readMap;
-        while(it != ite)
-        {
-            if ((m_tb->stat() != STATUS_SUCCESS)
-                        && (m_tb->stat() != STATUS_NOT_FOUND_TI))
-                   nstable::throwError(_T("activeTable join"), &(*m_tb));
-            T& mdl = *(*it);
-            if (!(readMap = (m_tb->stat() == 0)))
-            {
-                if (innner)
-                {
-                    it = mdls.erase(it);
-                    ite = mdls.end();
-                }
-                else
-                {
-                    int n = fds.inproc_size();
-                    for (int i=0;i<n;++i)
-                        (*(*it)).push_back(var_type((int)0));
-                    readMap = true;
-                }
-            }
-            if (readMap)
-            {
-                m_map.readMap(*(*it), fds, offset);
-                ++it;
-            }
-            m_tb->findNext();
-        }
-        readStatusCheck(*m_tb, _T("join"));
+        m_alias.set(src, dst);
+        return *this;
     }
 
-public:
+    inline activeTable& resetAlias()
+    {
+        m_alias.clear();
+        return *this;
+    }
+
+    typedef boost::shared_ptr<writableRecord> record;
+    record m_record;
+
+    inline writableRecord& createWritableRecord()
+    {
+        m_record.reset(writableRecord::create(m_tb), &writableRecord::release);
+        return *m_record.get();
+    }
+    /*
+    bool read(memoryRecord& rec)
+    {
+        rec.copyToBuffer(m_tb.get());
+        m_tb->seek();
+        if (m_tb->stat())
+            return false;
+        rec.copyFromBuffer(m_tb.get());
+        return true;
+    }
+
+    void insert(memoryRecord& rec)
+    {
+        rec.copyToBuffer(m_tb.get());
+        insertRecord(m_tb);
+    }
+
+    void del(memoryRecord& rec)
+    {
+        rec.copyToBuffer(m_tb.get());
+        m_tb->seek();
+        if (m_tb->stat())
+            nstable::throwError(_T("activeTable delete "), m_tb->stat());
+        deleteRecord(m_tb.get());
+    }
+
+    void update(memoryRecord& rec)
+    {
+        rec.copyToBuffer(m_tb.get());
+        m_tb->seek();
+        if (m_tb->stat())
+            nstable::throwError(_T("activeTable update "), m_tb->stat());
+        rec.copyToBuffer(m_tb.get(), true);
+        updateRecord(m_tb.get());
+    }
+
+    void save(memoryRecord& rec)
+    {
+        rec.copyToBuffer(m_tb.get());
+        m_tb->seek();
+        if (m_tb->stat() == STATUS_NOT_FOUND_TI)
+            insertRecord(m_tb);
+        else
+        {
+            rec.copyToBuffer(m_tb.get());
+            updateRecord(m_tb.get());
+        }
+    }*/
+
     template <class Container>
     activeTable& join(Container& mdls, queryBase& q, const _TCHAR* name1
                     , const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
@@ -1233,7 +1126,7 @@ public:
                     , const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
                     , const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
     {
-        doJoin(true, mdls, q, name1, name2, name3, name4, name5
+        doJoin<typename Container>(true, mdls, q, name1, name2, name3, name4, name5
                         , name6, name7, name8, name9, name10, name11);
         return *this;
     }
@@ -1246,11 +1139,12 @@ public:
                     , const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
                     , const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
     {
-        doJoin(false, mdls, q, name1, name2, name3, name4, name5
+        doJoin<typename Container>(false, mdls, q, name1, name2, name3, name4, name5
                         , name6, name7, name8, name9, name10, name11);
         return *this;
 
     }
+
 
 };
 
@@ -1264,4 +1158,4 @@ public:
 }// namespace db
 }// namespace bzs
 
-#endif//trdormapiH
+#endif//BZS_DB_PROTOCOL_TDAP_CLIENT_TRDORMAPI_H

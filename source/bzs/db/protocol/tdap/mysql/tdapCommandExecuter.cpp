@@ -748,7 +748,7 @@ inline void dbExecuter::doStat(request& req)
 	if (req.resultLen >= 6 + sizeof(uint))
 	{
 		ushort_td len = (ushort_td)(m_tb->recordLenCl());
-		if (m_tb->recordFormatType() == RF_FIXED_PLUS_VALIABLE_LEN)
+		if (m_tb->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
 			len -= m_tb->lastVarFiled()->pack_length() - m_tb->lastVarLenBytes(); 
 				
 		memcpy((char*)req.data, &len, sizeof(ushort_td));

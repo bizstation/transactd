@@ -24,6 +24,7 @@
 using namespace ATL;
 
 class CRecord;
+class CFieldDefs;
 
 class ATL_NO_VTABLE CARecordset : 
 	public CComObjectRootEx<CComSingleThreadModel>, 
@@ -32,6 +33,7 @@ class ATL_NO_VTABLE CARecordset :
 {
 	void setResult(IRecordset** retVal);
 	CComObject<CRecord>* m_recObj;
+	CComObject<CFieldDefs>* m_fieldDefsObj;
 public:
     recordset* m_rs;
 
@@ -48,22 +50,24 @@ public:
 
     HRESULT FinalConstruct() {return S_OK;}
 
-    void FinalRelease(); 
+	void FinalRelease(){}; 
 	
 
 public:
 
-  //STDMETHOD(Clear)(void);
   STDMETHOD(Record)(short Index, IRecord** retVal);
   STDMETHOD(First)(IRecord** retVal);
   STDMETHOD(Last)(IRecord** retVal);
   STDMETHOD(Top)(long Num, IRecordset** retVal);
   STDMETHOD(Erase)(long Index);
-  STDMETHOD(Count)(long* retVal);
+  STDMETHOD(get_Count)(long* retVal);
+  STDMETHOD(get_Size)(long* retVal);
   STDMETHOD(RemoveField)(short Index, IRecordset** retVal);
   STDMETHOD(GroupBy)(IGroupQuery* gq, enum eGroupFunc func, IRecordset** retVal);
   STDMETHOD(OrderBy)( BSTR name0,  BSTR name1,  BSTR name2,  BSTR name3,  BSTR name4, 
 					 BSTR name5,  BSTR name6,  BSTR name7,  BSTR name8
 					, IRecordset** retVal);
   STDMETHOD(Reverse)(IRecordset** retVal);
+  STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
+ 
 };

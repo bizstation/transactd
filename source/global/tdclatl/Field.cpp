@@ -18,78 +18,7 @@
 =================================================================*/
 #include "stdafx.h"
 #include "Field.h"
-/*
-STDMETHODIMP CField::get_Text(BSTR* Value)
-{
 
-    *Value = ::SysAllocString(m_tb->getFVstr(m_index));
-    return S_OK;
-}
-
-STDMETHODIMP CField::get_Vlng(int* Value)
-{
-    *Value = m_tb->getFVint(m_index);
-    return S_OK;
-}
-
-STDMETHODIMP CField::put_Text(BSTR Value)
-{
-    m_tb->setFVW(m_index, Value);
-    ::SysFreeString(Value);
-
-    return S_OK;
-}
-
-STDMETHODIMP CField::put_Vlng(int Value)
-{
-    m_tb->setFV(m_index, Value);
-    return S_OK;
-}
-
-STDMETHODIMP CField::get_V64(__int64* Value)
-{
-    *Value = m_tb->getFV64(m_index);
-    return S_OK;
-}
-
-STDMETHODIMP CField::put_V64(__int64 Value)
-{
-    m_tb->setFV(m_index, Value);
-    return S_OK;
-}
-
-STDMETHODIMP CField::get_Vbin(BSTR* Value)
-{
-    uint_td size;
-    void* p = m_tb->getFVbin(m_index, size);
-
-    *Value = ::SysAllocStringByteLen((char*)p, size);
-
-    return S_OK;
-}
-
-STDMETHODIMP CField::get_Vdbl(double* Value)
-{
-    *Value = m_tb->getFVdbl(m_index);
-    return S_OK;
-}
-
-STDMETHODIMP CField::put_Vbin(BSTR Value)
-{
-
-    int len = ::SysStringByteLen(Value);
-    if (len > m_tb->tableDef()->fieldDefs[m_index].len)
-        len = m_tb->tableDef()->fieldDefs[m_index].len;
-    m_tb->setFV(m_index, Value, len);
-
-    return S_OK;
-}
-
-STDMETHODIMP CField::put_Vdbl(double Value)
-{
-    m_tb->setFV(m_index, Value);
-    return S_OK;
-}*/
 
 STDMETHODIMP CField::get_Text(BSTR* Value)
 {
@@ -106,15 +35,13 @@ STDMETHODIMP CField::get_Vlng(int* Value)
 
 STDMETHODIMP CField::put_Text(BSTR Value)
 {
-    m_fd.setFVW(Value);
-    ::SysFreeString(Value);
-
+    m_fd.operator=(Value);
     return S_OK;
 }
 
 STDMETHODIMP CField::put_Vlng(int Value)
 {
-    m_fd.setFV(Value);
+    m_fd.operator=(Value);
     return S_OK;
 }
 
@@ -126,7 +53,7 @@ STDMETHODIMP CField::get_V64(__int64* Value)
 
 STDMETHODIMP CField::put_V64(__int64 Value)
 {
-    m_fd.setFV(Value);
+    m_fd.operator=(Value);
     return S_OK;
 }
 
@@ -150,16 +77,13 @@ STDMETHODIMP CField::put_Vbin(BSTR Value)
 {
 
     int len = ::SysStringByteLen(Value);
-    //if (len > m_tb->tableDef()->fieldDefs[m_index].len)
-    //    len = m_tb->tableDef()->fieldDefs[m_index].len;
-    m_fd.setFV(Value, len);
-
+	m_fd.setBin(Value, len);
     return S_OK;
 }
 
 STDMETHODIMP CField::put_Vdbl(double Value)
 {
-    m_fd.setFV(Value);
+    m_fd.operator=(Value);
     return S_OK;
 }
 

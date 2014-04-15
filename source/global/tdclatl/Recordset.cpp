@@ -21,37 +21,23 @@
 #include "Record.h"
 #include "Field.h"
 #include "GroupQuery.h"
+#include "FieldDefs.h"
 
-CARecordset::CARecordset():m_rs(new recordset()),m_recObj(NULL)
+
+CARecordset::CARecordset():m_rs(new recordset()),m_recObj(NULL),m_fieldDefsObj(NULL)
 {
-
-
+	
 }
 
 CARecordset::~CARecordset() 
 {
-	
 	delete m_rs;
-
-}
-
-void CARecordset::FinalRelease() 
-{
-	if (m_recObj)
-		;//m_recObj->Release();
-	//delete m_rs;
-
 }
 
 void CARecordset::setResult(IRecordset** retVal)
 {
 	this->QueryInterface(IID_IRecordset, (void**)retVal);
 }
-
-/*STDMETHODIMP CARecordset::Clear(void)
-{
-	return S_OK;
-}*/
 
 STDMETHODIMP CARecordset::Record(short Index, IRecord** retVal)
 {
@@ -60,8 +46,6 @@ STDMETHODIMP CARecordset::Record(short Index, IRecord** retVal)
 		if (m_recObj == NULL)
 		{
 			CComObject<CRecord>::CreateInstance(&m_recObj);
-			if (m_recObj)
-				;//m_recObj->AddRef();
 		}
 		if (m_recObj)
 		{
@@ -116,15 +100,22 @@ STDMETHODIMP CARecordset::Erase(long Index)
 	return Error("Invalid index", IID_IRecordset);	
 }
 
-STDMETHODIMP CARecordset::Count(long* retVal)
+STDMETHODIMP CARecordset::get_Count(long* retVal)
 {
 	*retVal = (long)m_rs->count();
 	return S_OK;
 }
 
+STDMETHODIMP CARecordset::get_Size(long* retVal)
+{
+	*retVal = (long)m_rs->count();
+	return S_OK;
+}
+
+
 STDMETHODIMP CARecordset::RemoveField(short Index, IRecordset** retVal)
 {
-	if (Index >= 0 && Index < m_rs->fieldInfo()->size())
+	if (Index >= 0 && Index < m_rs->fieldDefs()->size())
 	{
 		m_rs->removeField(Index);
 		setResult(retVal);	
@@ -135,45 +126,58 @@ STDMETHODIMP CARecordset::RemoveField(short Index, IRecordset** retVal)
 
 STDMETHODIMP CARecordset::GroupBy(IGroupQuery* igq, enum eGroupFunc func, IRecordset** retVal)
 {
-	if (igq)
+	try
 	{
-		CGroupQuery* gq = dynamic_cast<CGroupQuery*>(igq);
-		if (func == fsum)
-			m_rs->groupBy(gq->m_gq, sum<row, int, double>());
-		else if (func == fmin)
-			m_rs->groupBy(gq->m_gq, min<row, int, double>());
-		else if (func == fmax)
-			m_rs->groupBy(gq->m_gq, max<row, int, double>());
-		else if (func == favg)
-			m_rs->groupBy(gq->m_gq, avg<row, int, double>());
+		if (igq)
+		{
+			CGroupQuery* gq = dynamic_cast<CGroupQuery*>(igq);
+			if (func == fsum)
+				m_rs->groupBy(gq->m_gq, sum<row, int, double>());
+			else if (func == fmin)
+				m_rs->groupBy(gq->m_gq, min<row, int, double>());
+			else if (func == fmax)
+				m_rs->groupBy(gq->m_gq, max<row, int, double>());
+			else if (func == favg)
+				m_rs->groupBy(gq->m_gq, avg<row, int, double>());
+		}
+		setResult(retVal);	
+		return S_OK;
 	}
-	setResult(retVal);	
-	return S_OK;
-
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
 }
 
 STDMETHODIMP CARecordset::OrderBy( BSTR Name0,  BSTR Name1,  BSTR Name2,  BSTR Name3,  BSTR Name4, 
 					 BSTR Name5,  BSTR Name6,  BSTR Name7,  BSTR Name8
 					, IRecordset** retVal)
 {
-	if (!Name1 || !Name1[0])
-		m_rs->orderBy(Name0);	
-	else if (!Name2 || !Name2[0]) 
-		m_rs->orderBy(Name0, Name1);	
-	else if (!Name3 || !Name3[0]) 
-		m_rs->orderBy(Name0,  Name1,  Name2);	
-	else if (!Name4 || !Name4[0]) 
-		m_rs->orderBy(Name0,  Name1,  Name2, Name3);	
-	else if (!Name5 || !Name5[0]) 
-		m_rs->orderBy(Name0,  Name1,  Name2, Name3, Name4);	
-	else if (!Name6 || !Name6[0]) 
-		m_rs->orderBy(Name0,  Name1,  Name2, Name3, Name4, Name5);	
-	else if (!Name7 || !Name7[0]) 
-		m_rs->orderBy(Name0,  Name1,  Name2, Name3, Name4, Name5, Name6);
-	else
-		m_rs->orderBy(Name0,  Name1,  Name2, Name3, Name4, Name5, Name6, Name7);
-	setResult(retVal);
-	return S_OK;
+	try
+	{	
+		if (!Name1 || !Name1[0])
+			m_rs->orderBy(Name0);	
+		else if (!Name2 || !Name2[0]) 
+			m_rs->orderBy(Name0, Name1);	
+		else if (!Name3 || !Name3[0]) 
+			m_rs->orderBy(Name0,  Name1,  Name2);	
+		else if (!Name4 || !Name4[0]) 
+			m_rs->orderBy(Name0,  Name1,  Name2, Name3);	
+		else if (!Name5 || !Name5[0]) 
+			m_rs->orderBy(Name0,  Name1,  Name2, Name3, Name4);	
+		else if (!Name6 || !Name6[0]) 
+			m_rs->orderBy(Name0,  Name1,  Name2, Name3, Name4, Name5);	
+		else if (!Name7 || !Name7[0]) 
+			m_rs->orderBy(Name0,  Name1,  Name2, Name3, Name4, Name5, Name6);
+		else
+			m_rs->orderBy(Name0,  Name1,  Name2, Name3, Name4, Name5, Name6, Name7);
+		setResult(retVal);
+		return S_OK;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
 }
 
 STDMETHODIMP CARecordset::Reverse(IRecordset** retVal)
@@ -182,3 +186,24 @@ STDMETHODIMP CARecordset::Reverse(IRecordset** retVal)
 	setResult(retVal);	
 	return S_OK;
 }
+
+STDMETHODIMP CARecordset::get_FieldDefs(IFieldDefs** retVal)
+{
+	if (m_fieldDefsObj == NULL)
+	{
+		CComObject<CFieldDefs>::CreateInstance(&m_fieldDefsObj);
+	}
+	if (m_fieldDefsObj)
+	{
+		m_fieldDefsObj->m_fds = m_rs->fieldDefs();
+		
+		IFieldDefs* fds;
+		m_fieldDefsObj->QueryInterface(IID_IFieldDefs, (void**)&fds);
+		_ASSERTE(fds);
+		*retVal = fds;
+	}
+	return S_OK;
+}
+
+
+

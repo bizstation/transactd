@@ -590,6 +590,7 @@ short database::assignSchemaData(dbdef* src)
     return defDest->stat();
 }
 
+
 /*  Copy from src to dest table.
  * 	Copy as same field name.
  *	If turbo then copy use memcpy and offset dest of first address.
@@ -689,27 +690,43 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset, s
         {
             for (i = 0; i < src->tableDef()->fieldCount; i++)
             {
-                if (NewFieldNum[i] != -1)
+                int dindex = NewFieldNum[i];
+                fielddef& fds = src->tableDef()->fieldDefs[i];
+                fielddef& fdd = dest->tableDef()->fieldDefs[dindex];
+
+                if (dindex != -1)
                 {
-                    // If diffrent field type then convert to string then copy.
-                    if (cpytype[i] != 0)
-                    dest->setFV(NewFieldNum[i], src->getFVstr(i));
-                    else
+                    //src valiable len and last field;
+                    if (cpytype[i] == 0)
                     {
-                    len = src->tableDef()->fieldDefs[i].len;
-                    if (src->tableDef()->fieldDefs[i].len >
-                    dest->tableDef()->fieldDefs[NewFieldNum[i]].len)
-                    len = dest->tableDef()->fieldDefs[NewFieldNum[i]].len;
-                    memcpy(dest->fieldPtr(NewFieldNum[i]), src->fieldPtr(i), len);
+                        len = fds.len;
+                        if (fds.len > fdd.len)
+                            len = fdd.len;
+                        memcpy(dest->fieldPtr(dindex), src->fieldPtr(i), len);
+                    }else
+                    {
+                        switch (fdd.type)
+                        {
+                        case ft_myvarbinary:
+                        case ft_mywvarbinary:
+                        case ft_myblob:
+                        case ft_mytext:
+                        {
+                            uint_td size;
+                            uint_td maxlen = fdd.maxVarDatalen();
+                            const void* data = src->getFVbin(i, size);
+                            if (maxlen < size)
+                                size = maxlen;
+                            dest->setFV(dindex, data, size);
+                        }
+                        default:
+                            // If diffrent field type then convert to string then copy.
+                            dest->setFV(dindex, src->getFVstr(i));
+                        }
                     }
                 }
             }
         }
-        bool Cancel = false;
-        onCopyDataInternal(dest, recordCount, Count, Cancel);
-        if (Cancel)
-            return -1;
-        Count++;
 
         if (repData)
         {
@@ -725,6 +742,12 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset, s
             SkipCount++;
         else if (dest->stat() != STATUS_SUCCESS)
             return dest->stat();
+        else
+            Count++;
+        bool Cancel = false;
+        onCopyDataInternal(dest, recordCount, Count, Cancel);
+        if (Cancel)
+            return -1;
         if (keyNum == -1)
             src->stepNext();
         else
@@ -733,7 +756,7 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset, s
     if ((SkipCount) && (maxSkip == -1))
     {
         bool Cancel = false;
-        onCopyDataInternal(dest, recordCount, Count, Cancel);
+        onCopyDataInternal(dest, -1/*recordCount*/, Count, Cancel);
         if (Cancel)
             return -1;
     }

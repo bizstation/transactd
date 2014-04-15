@@ -19,9 +19,13 @@
    02111-1307, USA.
 =================================================================*/
 #include "nsTable.h"
+#include <boost/unordered_map.hpp>
+
+class CField; //atl interface
 
 namespace bzs
 {
+    namespace rtl {class stringBuffer;}
 namespace db
 {
 namespace protocol
@@ -31,22 +35,85 @@ namespace tdap
 namespace client
 {
 
+class stringConverter;
+
+class AGRPACK fieldShare
+{
+    friend class field;
+    friend class table;
+    friend class recordCache;
+
+private:
+    struct
+    {
+    unsigned char myDateTimeValueByBtrv: 1;
+    unsigned char trimPadChar: 1;
+    unsigned char usePadChar: 1;
+    unsigned char logicalToString: 1;
+    };
+    struct Imple* m_imple;
+
+
+
+public:
+    fieldShare();
+    virtual ~fieldShare();
+    stringConverter* cv();
+    bzs::rtl::stringBuffer* strBufs();
+    void blobPushBack(char* p);
+    void blobClear();
+};
+
+
+typedef boost::unordered_map<std::_tstring, std::_tstring> aliasMap_type;
+
+class AGRPACK fielddefs : public fieldShare
+{
+    struct infoImple* m_imple;
+    void aliasing(fielddef* p) const;
+    fielddefs();
+	~fielddefs();
+public:
+    short m_stat;
+    void setAliases(const aliasMap_type* p);
+    void addAllFileds(tabledef* def);
+    void push_back(const fielddef* p);
+    void remove(int index);
+    void reserve(size_t size);
+    void clear();
+    void resetUpdateIndicator();
+    int indexByName(const std::_tstring& name)const;
+    const fielddef& operator[] (int index) const;
+    const fielddef& operator[] (const _TCHAR* name) const;
+    const fielddef& operator[] (const std::_tstring& name)const;
+    bool checkIndex(int index)const;
+    size_t size() const;
+    size_t totalFieldLen() const;
+    void copyFrom(const class table* tb);
+	static fielddefs* create();
+	static void destroy(fielddefs* p);
+};
+
+
+
 typedef int (*compFieldFunc)(const class field& l, const class field& r, char logType);
 
-class AGRPACK field
+class AGRPACK field 
 {
-	const fielddef& m_fd;
+    friend class table;
+	friend class CField;//atl interface
+	fielddef* m_fd;
 	unsigned char* m_ptr;
-    class fieldInfo* m_fds;
+    class fielddefs* m_fds;
 
-    compFieldFunc getCompFunc(char logType);
+    compFieldFunc getCompFunc(char logType)const;
 protected:
     double getFVnumeric() const;
     double getFVDecimal() const;
     void setFVDecimal(double data);
     void setFVNumeric(double data);
 
-public:
+private:
 	//  ---- bigin regacy interfaces ----  //
     unsigned char getFVbyt() const;
     short getFVsht() const;
@@ -77,17 +144,29 @@ public:
     inline const char* getFVstr() const {return getFVAstr();};
     inline void setFV(const char* data) {setFVA(data);};
 #endif
-    void* ptr() const;
+
+	inline field()
+            : m_ptr(NULL), m_fd(NULL), m_fds(NULL) {};
+
 	//  ---- end regacy interfaces ----  //
-
 public:
-    unsigned char type() const {return m_fd.type;}
-    unsigned short len() const {return m_fd.len;}
-    int varLenBytes() const {return m_fd.varLenBytes();}
-    int blobLenBytes() const {return m_fd.blobLenBytes();}
+	
+    void* ptr() const;
+	inline field& operator=(const field& r)
+	{
+		m_fd = r.m_fd;
+		m_ptr = r.m_ptr;
+		m_fds = r.m_fds;
+		return *this;
+	}
 
-    inline field(unsigned char* ptr, const fielddef& fd, fieldInfo* fds)
-            : m_ptr(ptr), m_fd(fd), m_fds(fds) {};
+    unsigned char type() const {return m_fd->type;}
+    unsigned short len() const {return m_fd->len;}
+    int varLenBytes() const {return m_fd->varLenBytes();}
+    int blobLenBytes() const {return m_fd->blobLenBytes();}
+
+    inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
+            : m_ptr(ptr), m_fd((fielddef*)&fd), m_fds(fds) {};
 
     inline const _TCHAR* c_str() const {return getFVstr();}
 
@@ -108,12 +187,14 @@ public:
     inline field& operator = (const _TCHAR* p)
     {
         setFV(p);
+        m_fd->enableFlags.bitE = true;
         return *this;
     }
 
     inline field& operator = (const std::_tstring& p)
     {
         setFV(p.c_str());
+        m_fd->enableFlags.bitE = true;
         return *this;
     }
 
@@ -121,12 +202,14 @@ public:
     inline field& operator = (const char* p)
     {
         setFVA(p);
+        m_fd->enableFlags.bitE = true;
         return *this;
     }
 
     inline field& operator = (const std::string& p)
     {
         setFVA( p.c_str());
+        m_fd->enableFlags.bitE = true;
         return *this;
     }
 
@@ -135,24 +218,28 @@ public:
     inline field& operator = (int v)
     {
         setFV( v);
+        m_fd->enableFlags.bitE = true;
         return *this;
     }
 
     inline field& operator = (__int64 v)
     {
         setFV(v);
+        m_fd->enableFlags.bitE = true;
         return *this;
     }
 
     inline field& operator = (float v)
     {
         setFV(v);
+        m_fd->enableFlags.bitE = true;
         return *this;
     }
 
     inline field& operator = (double v)
     {
         setFV(v);
+        m_fd->enableFlags.bitE = true;
         return *this;
     }
 
@@ -174,15 +261,17 @@ public:
     inline bool operator != (double v) {return (v != d());};
     inline bool operator == (double v) {return (v == d());};
 
-    inline void setBin(const void* data, uint_td size){setFV(data, size);}
+    inline void setBin(const void* data, uint_td size)
+    {
+        setFV(data, size);
+        m_fd->enableFlags.bitE = true;
+    }
     inline void* getBin(uint_td& size){return getFVbin(size);};
 
-    int comp(const field& r, char logType);
+    int comp(const field& r, char logType) const;
 };
 
-
-
-
+AGRPACK const fielddef& dummyFd();
 
 }// namespace client
 }// namespace tdap

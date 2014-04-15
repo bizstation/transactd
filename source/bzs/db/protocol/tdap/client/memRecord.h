@@ -36,13 +36,13 @@ class autoMemory
 {
 
 public:
-	explicit autoMemory(unsigned char* p, size_t s, short endIndex, bool own);
+	explicit autoMemory(unsigned char* p, size_t s, short* endIndex, bool own);
     explicit autoMemory(const autoMemory& p);
 	~autoMemory();
     autoMemory& operator=(const autoMemory& p);
 	unsigned char* ptr;
 	size_t size;
-	short endFieldIndex;
+	short* endFieldIndex;
 	bool owner;
 };
 
@@ -52,19 +52,20 @@ public:
 class memoryRecord : public fieldsBase
 {
     friend class multiRecordAlocatorImple;
-	std::vector<autoMemory > m_memblock;
-    memoryRecord(fieldInfo& fdinfo);
 
+	std::vector<autoMemory > m_memblock;
+protected:
+    memoryRecord(fielddefs& fdinfo);
 public:
+    virtual ~memoryRecord();
     void clear();
-    ~memoryRecord();
     void setRecordData(unsigned char* ptr, size_t size
-            , short endFieldIndex, bool owner = false);
+            , short* endFieldIndex, bool owner = false);
     /* return memory block first address which not field ptr address */
     inline unsigned char* memoryRecord::ptr(int index) const
     {
         for (int i=0;i<(int)m_memblock.size();++i)
-            if (m_memblock[i].endFieldIndex > index)
+            if (*(m_memblock[i].endFieldIndex) > index)
                 return 	m_memblock[i].ptr;
         assert(0);
         return NULL;
@@ -73,9 +74,10 @@ public:
     inline const autoMemory&  memoryRecord::memBlock(int index) const
     {
         for (int i=0;i<(int)m_memblock.size();++i)
-            if (m_memblock[i].endFieldIndex > index)
+            if (*(m_memblock[i].endFieldIndex) > index)
                 return m_memblock[i];
         assert(0);
+        return *((autoMemory*)0);
     }
 
     inline int memoryRecord::memBlockSize() const
@@ -83,13 +85,32 @@ public:
         return (int) m_memblock.size();
     }
 
+    void copyToBuffer(table* tb, bool updateOnly=false) const;
 
-    static memoryRecord* create(fieldInfo& fdinfo);
+    void copyFromBuffer(const table* tb);
+
+    static memoryRecord* create(fielddefs& fdinfo);
     static void release(memoryRecord* p);
 };
 
+class writableRecord : public memoryRecord
+{
+    fielddefs* m_fddefs;
+    short m_endIndex;
+    table_ptr m_tb;
+    writableRecord(table_ptr tb);
+    fielddefs* fddefs();
+public:
+	~writableRecord();
+    bool read();
+    void insert();
+    void del();
+    void update();
+    void save();
 
+    static writableRecord* create(table_ptr tb);
 
+};
 
 }// namespace client
 }// namespace tdap

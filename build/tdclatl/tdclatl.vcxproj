@@ -259,6 +259,7 @@
     </ClCompile>
     <ClCompile Include="..\..\source\global\tdclatl\Field.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\FieldDef.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\FieldDefs.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Flags.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\GroupQuery.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeyDef.cpp" />
@@ -293,6 +294,7 @@
     <ClInclude Include="..\..\source\global\tdclatl\dllmain.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Field.h" />
     <ClInclude Include="..\..\source\global\tdclatl\FieldDef.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\FieldDefs.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Flags.h" />
     <ClInclude Include="..\..\source\global\tdclatl\GroupQuery.h" />
     <ClInclude Include="..\..\source\global\tdclatl\KeyDef.h" />

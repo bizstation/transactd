@@ -19,12 +19,7 @@
 #include "stdafx.h"
 #include "Record.h"
 #include "Field.h"
-
-void CRecord::FinalRelease()
-{
-	if (m_fieldObj)
-		;//m_fieldObj->Release();
-}
+#include "FieldDefs.h"
 
 short CRecord::GetFieldNum(VARIANT* Index)
 {
@@ -42,28 +37,149 @@ STDMETHODIMP CRecord::get_Size(short* retVal)
 	return S_OK;
 }
 
-STDMETHODIMP CRecord::Field(VARIANT Index, IField** retVal)
+STDMETHODIMP CRecord::get_Field(VARIANT Index, IField** retVal)
 {
     short index = GetFieldNum(&Index);
     if (index < 0)
         return Error("Invalid index", IID_ITable);
 
 	if (m_fieldObj == NULL)
-	{
 		CComObject<CField>::CreateInstance(&m_fieldObj);
-		if (m_fieldObj)
-			;//m_fieldObj->AddRef();
-	}
 	if (m_fieldObj)
 	{				 
-		
 		m_fieldObj->m_fd = (*m_rec)[index]; 
 		IField* fd;
 		m_fieldObj->QueryInterface(IID_IField, (void**)&fd);
 		_ASSERTE(fd);
 		*retVal = fd;
-			
 	}
 	return S_OK;
 
 }
+
+
+short CWritableRecord::GetFieldNum(VARIANT* Index)
+{
+    short index = -1;
+    if (Index->vt == VT_BSTR)
+        index = m_rec->indexByName(Index->bstrVal);
+    else if ((Index->vt == VT_I2) || (Index->vt == VT_I4))
+        index = Index->iVal;
+    return index;
+}
+
+STDMETHODIMP CWritableRecord::Clear()
+{
+	m_rec->clear();
+	return S_OK;
+}
+
+STDMETHODIMP CWritableRecord::get_Size(short* retVal)
+{
+	*retVal = (short)m_rec->size();
+	return S_OK;
+}
+
+STDMETHODIMP CWritableRecord::get_Field(VARIANT Index, IField** retVal)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_IWritableRecord);
+
+	if (m_fieldObj == NULL)
+		CComObject<CField>::CreateInstance(&m_fieldObj);
+	if (m_fieldObj)
+	{				 
+		m_fieldObj->m_fd = (*m_rec)[index]; 
+		IField* fd;
+		m_fieldObj->QueryInterface(IID_IField, (void**)&fd);
+		_ASSERTE(fd);
+		*retVal = fd;
+	}
+	return S_OK;
+
+}
+
+STDMETHODIMP CWritableRecord::Save()
+{
+	try
+	{
+		m_rec->save();
+		return S_OK;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IWritableRecord);
+    }
+}
+
+STDMETHODIMP CWritableRecord::Insert()
+{
+	try
+	{
+		m_rec->insert();
+		return S_OK;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IWritableRecord);
+    }
+}
+
+STDMETHODIMP CWritableRecord::Del()
+{
+	try
+	{
+		m_rec->del();
+		return S_OK;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IWritableRecord);
+    }
+}
+
+STDMETHODIMP CWritableRecord::Update()
+{
+	try
+	{
+		m_rec->update();
+		return S_OK;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IWritableRecord);
+    }
+}
+
+STDMETHODIMP CWritableRecord::Read(VARIANT_BOOL* retVal)
+{
+	try
+	{
+		*retVal = m_rec->read();
+		return S_OK;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IWritableRecord);
+    }
+}
+
+STDMETHODIMP CWritableRecord::get_FieldDefs(IFieldDefs** retVal)
+{
+	if (m_fieldDefsObj == NULL)
+	{
+		CComObject<CFieldDefs>::CreateInstance(&m_fieldDefsObj);
+	}
+	if (m_fieldDefsObj)
+	{
+		m_fieldDefsObj->m_fds = m_rec->fieldDefs();
+		
+		IFieldDefs* fds;
+		m_fieldDefsObj->QueryInterface(IID_IFieldDefs, (void**)&fds);
+		_ASSERTE(fds);
+		*retVal = fds;
+	}
+	return S_OK;
+}
+

@@ -224,6 +224,10 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
         }
         // Check field length.
         type = td->fieldDefs[i].type;
+
+        //reset update indicator
+        td->fieldDefs[i].enableFlags.bitE = false;
+
         ret = validLen(type, td->fieldDefs[i].len);
         if (!ret)
         {
@@ -240,18 +244,21 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
         }
 
         // Check valiable type
-        if (!td->flags.bit0 && ((type == ft_myvarchar) || (type == ft_myvarbinary) ||
+        if ((i != (short)(td->fieldCount - 1) )&&
+            ((type == ft_myvarchar) || (type == ft_myvarbinary) ||
             (type == ft_mywvarchar) || (type == ft_mywvarbinary)))
             td->optionFlags.bitA = true;
         if ((type == ft_myblob) || (type == ft_mytext))
             td->optionFlags.bitB = true;
 
+        if (td->optionFlags.bitA || td->optionFlags.bitB)
+            td->flags.bit0 = false;
          // If valiable length then cannot use blob.
-        if (td->flags.bit0 && td->optionFlags.bitB)
+        /*if (td->flags.bit0 && (td->optionFlags.bitA || td->optionFlags.bitB))
         {
             m_stat = STATUS_LVAR_NOTE_NOT_LAST;
             return;
-        }
+        }*/
 
     }
 

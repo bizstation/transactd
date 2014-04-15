@@ -926,8 +926,29 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size, const bzs::db
 uint table::recordPackCopy(char* buf, uint maxsize) 
 {
 	char* p = buf;
-	
-	if ((recordFormatType() & RF_VALIABLE_LEN)
+	if (recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
+	{
+		uint varLenBytes = lastVarLenBytes();
+		uint varLenBytesPos = lastVarFieldPos();
+		const uchar* data = (const uchar *) record();
+		int len = recordLenCl();
+		if (varLenBytes)
+		{
+			memcpy(p, data, varLenBytesPos);
+			p += varLenBytesPos;
+			data += varLenBytesPos;
+			if (varLenBytes == 1)
+				len  = *data;
+			else
+				len = *((const unsigned short*)data);
+			//In the variable length of tdap type, it returns except for varsize.
+			data += varLenBytes; 
+		}
+		memcpy(p, data, len);
+		p += len;
+
+	}
+	else if ((recordFormatType() & RF_VALIABLE_LEN)
 			 || (recordFormatType() & RF_INCLUDE_NIS))
 	{
 		int blobs = 0;
@@ -955,22 +976,8 @@ uint table::recordPackCopy(char* buf, uint maxsize)
 		setBlobFieldCount(blobs);
 	}else
 	{  
-		uint varLenBytes = lastVarLenBytes();
-		uint varLenBytesPos = lastVarFieldPos();
 		const uchar* data = (const uchar *) record();
 		int len = recordLenCl();
-		if (varLenBytes)
-		{
-			memcpy(p, data, varLenBytesPos);
-			p += varLenBytesPos;
-			data += varLenBytesPos;
-			if (varLenBytes == 1)
-				len  = *data;
-			else
-				len = *((const unsigned short*)data);
-			//In the variable length of tdap type, it returns except for varsize.
-			data += varLenBytes; 
-		}
 		memcpy(p, data, len);
 		p += len;
 	}
@@ -1786,7 +1793,7 @@ void table::del()
  */
 unsigned short table::lastVarFieldPos()const
 {	
-	if (m_table->s->varchar_fields && (m_recordFormatType == RF_FIXED_PLUS_VALIABLE_LEN))		
+	if (m_table->s->varchar_fields && (m_recordFormatType & RF_FIXED_PLUS_VALIABLE_LEN))		
 		return (unsigned short)(lastVarFiled()->ptr - m_table->s->field[0]->ptr);
 	return 0;
 }

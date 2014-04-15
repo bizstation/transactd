@@ -138,8 +138,9 @@ public:
     /* if header_type is defined then mdlsHandler handler call readBefore
         function at before reading.
     */
+    //ToDo not inplemnts alias
     typedef std::vector<std::_tstring> header_type;
-    void readBefore( const tdc::table_ptr tb)
+    void readBefore( const tdc::table_ptr tb, const tdc::aliasMap_type* alias)
     {
         const td::tabledef* def = tb->tableDef();
         int n = tb->getCurProcFieldCount();

@@ -369,6 +369,23 @@ public:
         return 0;
     }
 
+    inline int maxVarDatalen() const
+    {
+        if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) || type == ft_lstring)
+            return (len < 256) ? 0xFF-1 : 0xFFFF-2;
+        else  if ((type == ft_myblob) || (type == ft_mytext))
+        {
+            switch(len - 8)
+            {
+            case 1:return 0xFF;
+            case 2:return 0xFFFF;
+            case 3:return 0xFFFFFF;
+            case 4:return 0xFFFFFFFF;
+            }
+            return 0;
+        }
+        return 0;
+    }
     /* data length
      */
     inline uint_td dataLen(const uchar_td* ptr) const

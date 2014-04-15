@@ -71,7 +71,7 @@ protected:
     void* m_keybuf;
     keylen_td m_keybuflen;
     keylen_td m_keylen;
-    short_td m_stat;
+    mutable short_td m_stat;
     char_td m_keynum;
 
     union
@@ -127,7 +127,7 @@ public:
 	void addref(void);
 	void release();
 	int refCount() const;
-	
+
     short tableid() const ;
     void setTableid(short v);
     bool isOpen() const;

@@ -37,6 +37,7 @@ interface IRecordset;
 interface IRecord;
 interface IWritableRecord;
 interface IGroupQuery;
+interface IFieldDefs;
 
 typedef
 [
@@ -1054,7 +1055,7 @@ interface IActiveTable : IDispatch
   [id(0x0000004)]
   HRESULT _stdcall Option([in] int Value, [out, retval] IActiveTable** retVal);
   [id(0x0000005)]
-  HRESULT _stdcall Read([in, defaultvalue(0)] IQueryBase* query, [out, retval] IRecordset** retVal);
+  HRESULT _stdcall Read([in, optional] VARIANT query, [out, retval] IRecordset** retVal);
   [id(0x0000006)]
   HRESULT _stdcall Alias([in] BSTR Src, [in] BSTR Dst, [out, retval] IActiveTable** retVal);
   [id(0x0000007)]
@@ -1076,7 +1077,7 @@ interface IActiveTable : IDispatch
 					,[out, retval] IRecordset** retVal);
 
   [id(0x000000A)]
-  HRESULT _stdcall GetWriteableRecord([out, retval] IWritableRecord** retVal);
+  HRESULT _stdcall CreateWritableRecord([out, retval] IWritableRecord** retVal);
   				
 };
 
@@ -1090,8 +1091,7 @@ interface IActiveTable : IDispatch
 ]
 interface IRecordset : IDispatch
 {
-  //[id(0x0000001)]
-  //HRESULT _stdcall Clear(void);
+
   [id(0x0000002)]
   HRESULT _stdcall Record([in] short Index, [out, retval] IRecord** retVal);
   [id(0x0000003)]
@@ -1102,7 +1102,7 @@ interface IRecordset : IDispatch
   HRESULT _stdcall Top([in]long Num, [out, retval] IRecordset** retVal);
   [id(0x0000006)]
   HRESULT _stdcall Erase([in]long Index);
-  [id(0x0000007)]
+  [propget,id(0x0000007)]
   HRESULT _stdcall Count([out, retval] long* retVal);
   [id(0x0000008)]
   HRESULT _stdcall RemoveField([in]short Index, [out, retval] IRecordset** retVal);
@@ -1117,6 +1117,11 @@ interface IRecordset : IDispatch
   [id(0x000000B)]
   HRESULT _stdcall Reverse([out, retval] IRecordset** retVal);
 
+  [propget,id(0x000000C)]
+  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
+  [propget,id(0x000000D)]
+  HRESULT _stdcall Size([out, retval] long* retVal);
+
 };
 
 [
@@ -1130,7 +1135,7 @@ interface IRecord : IDispatch
 {
   [propget, id(0x0000001)]
   HRESULT _stdcall Size([out, retval] short* retVal);
-  [id(0x0000002)]
+  [propget, id(0x0000002)]
   HRESULT _stdcall Field([in] VARIANT Index, [out, retval] IField** retVal);
  
 };
@@ -1142,19 +1147,23 @@ interface IRecord : IDispatch
   nonextensible,
   pointer_default(unique)
 ]
-interface IWritableRecord : IDispatch
+interface IWritableRecord : IRecord 
 {
-  [id(0x0000001)]
+  [id(0x0000010)]
   HRESULT _stdcall Save(void);
-  [id(0x0000002)]
+  [id(0x0000011)]
   HRESULT _stdcall Insert(void);
-  [id(0x0000003)]
+  [id(0x0000013)]
   HRESULT _stdcall Del(void);
-  [id(0x0000004)]
+  [id(0x0000014)]
   HRESULT _stdcall Update(void);
-  [id(0x0000005)]
+  [id(0x0000015)]
   HRESULT _stdcall Read([out, retval] VARIANT_BOOL* retVal);
-
+  [id(0x0000016)]
+  HRESULT _stdcall Clear();
+  [propget,id(0x0000017)]
+  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
+  
 };
 
 [
@@ -1184,6 +1193,22 @@ interface IGroupQuery : IDispatch
 
 };
 
+[
+  object,
+  uuid(4A38F70D-9D46-474E-B429-DF4EE61CDAA5),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IFieldDefs : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall IndexByName([in] BSTR Name, [out, retval] short* retVal);
+  [propget, id(0x0000002)]
+  HRESULT _stdcall FieldDef([in] VARIANT Name, [out, retval] IFieldDef** retVal);
+  [propget, id(0x0000003)]
+  HRESULT _stdcall Size([out, retval] short* retVal);
+};
 
 [
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
@@ -1294,8 +1319,6 @@ library transactd
     [default] interface ITdVersion;
   };
   
- 
-
 	[
 		uuid(CA076B05-541B-48EF-AC55-33323FB052F3)		
 	]
@@ -1346,6 +1369,15 @@ library transactd
 	coclass GroupQuery
 	{
 		[default] interface IGroupQuery;
+	};
+
+	[
+		uuid(4A92626B-03B9-45F8-B952-1E696D23752E)
+		,noncreatable
+	]
+	coclass FieldDefs
+	{
+		[default] interface IFieldDefs;
 	};
 	
 };

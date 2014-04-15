@@ -506,9 +506,10 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
     ut.index(keynum_group).keyValue(find_group_id).read(m, q);
 
     //グルーピング グループごとに属する人数を数える
-    groupQuery gq;
+    /*groupQuery gq;
     gq.keyField(_T("grp")).resultField(_T("count"));
     gq.grouping(m, count());
+    */
 
     /*
     オリジナルコレクションマップを自動で作成でなく自分で初期化して

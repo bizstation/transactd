@@ -28,9 +28,30 @@ class ATL_NO_VTABLE CFieldDef : public CComObjectRootEx<CComSingleThreadModel>,
     public CComCoClass<CFieldDef, &CLSID_FieldDef>,
     public IDispatchImpl<IFieldDef, &IID_IFieldDef, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
 {
-	bzs::db::protocol::tdap::fielddef* fielddef(){return &(*m_tabledefPtr)->fieldDefs[m_index];}
+	bzs::db::protocol::tdap::fielddef* fielddef()
+	{
+		if (m_fielddef)
+			return NULL;
+		return &(*m_tabledefPtr)->fieldDefs[m_index];
+	}
+
+	const bzs::db::protocol::tdap::fielddef* const_fielddef()
+	{
+		if (m_fielddef)
+			return m_fielddef;
+		return &(*m_tabledefPtr)->fieldDefs[m_index];
+	}
+	bool isWritabale()
+	{
+		return (m_tabledefPtr != NULL);
+	}
+	HRESULT write_error()
+	{
+		return Error("This object is no writable.", IID_IFieldDef);
+	}
 public:
-    CFieldDef():m_tabledefPtr(NULL) {}
+    CFieldDef():m_tabledefPtr(NULL),m_fielddef(NULL) {}
+	const bzs::db::protocol::tdap::fielddef* m_fielddef;
 	bzs::db::protocol::tdap::tabledef** m_tabledefPtr;
 	short m_index;
 

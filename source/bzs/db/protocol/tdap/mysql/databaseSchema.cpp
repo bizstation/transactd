@@ -150,10 +150,10 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
 	tdef.fieldCount = (uchar_td)src->fields();
 	tdef.keyCount = (uchar_td)src->keys();
 	tdef.charsetIndex = charsetIndex(src->charset().csname);
-	tdef.flags.bit0 = (src->recordFormatType()== RF_FIXED_PLUS_VALIABLE_LEN);//‰Â•Ï’·
+	tdef.flags.bit0 = (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN);//‰Â•Ï’·
 	
 	tdef.primaryKeyNum = (src->primarykey()<tdef.keyCount) ? src->primarykey():-1;
-	if (src->recordFormatType()== RF_FIXED_PLUS_VALIABLE_LEN)
+	if (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
 		tdef.fixedRecordLen = (ushort_td)(src->recordLenCl()-src->lastVarFieldDataLen());
 	else
 		tdef.fixedRecordLen = (ushort_td)src->recordLenCl();

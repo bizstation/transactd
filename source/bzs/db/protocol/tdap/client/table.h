@@ -34,12 +34,31 @@ namespace tdap
 namespace client
 {
 
-class fields;
+
 class database;
 class queryBase;
 #define null_str _T("")
 
 #pragma warning(disable:4251)
+
+class multiRecordAlocator
+{
+
+public:
+	const static int mra_nojoin = 0;
+	const static int mra_first = 0;
+	const static int mra_nextrows = 1;
+	const static int mra_innerjoin = 2;
+	const static int mra_outerjoin = 4;
+    const static int mra_current_block = -1;
+    virtual ~multiRecordAlocator(){}
+    virtual void init(size_t recordCount, size_t recordLen,int addType, const class table* tb) = 0;
+    virtual unsigned char* ptr(size_t row, int stat) = 0;
+    virtual void setJoinType(int v)=0;
+
+};
+
+typedef multiRecordAlocator mra;
 
 
 class AGRPACK table : public nstable
@@ -47,13 +66,15 @@ class AGRPACK table : public nstable
     friend class recordCache;
     friend class database;
     friend class filter;
+    friend class fields;
 
     struct tbimpl* m_impl;
+    class fielddefs* m_fddefs;
     tabledef* m_tableDef;
 
     uchar_td charset() const ;
     bool checkFindDirection(ushort_td op);
-    bool checkIndex(short index);
+    bool checkIndex(short index) const;
     void getKeySpec(keySpec* ks, bool SpecifyKeyNum = false);
     const bzs::db::blobHeader* getBlobHeader();
     void setBlobFieldPointer(char*ptr, const ::bzs::db::blobHeader* p);
@@ -70,10 +91,10 @@ class AGRPACK table : public nstable
     uint_td doRecordCount(bool estimate, bool fromCurrent, eFindType direction); // orverride
     short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf = NULL); // orverride
 
-    double getFVnumeric(short index);
-    double getFVDecimal(short index);
-    void setFVDecimal(short index, double data);
-    void setFVNumeric(short index, double data);
+    //double getFVnumeric(short index);
+    //double getFVDecimal(short index);
+    //void setFVDecimal(short index, double data);
+    //void setFVNumeric(short index, double data);
     void doFind( ushort_td op, bool notIncCurrent);
     bool setSeekValueField(int row);
 
@@ -136,6 +157,10 @@ public:
     void clearBuffer();
     unsigned int getRecordHash();
     void smartUpdate();
+
+    void setMra(multiRecordAlocator* p);
+    multiRecordAlocator* mra() const;
+
     void find(eFindType type=findForword);
     void findFirst();
     void findLast();
@@ -212,10 +237,12 @@ public:
     void setFV(const _TCHAR* fieldName, const void* data, uint_td size);
     void setFV(short index, __int64 data);
     void setFV(const _TCHAR* fieldName, __int64 data);
-    void* fieldPtr(short index);
+    void* fieldPtr(short index) const;
     void keyValueDescription(_TCHAR* buf, int bufsize);
     short getCurProcFieldCount() const;
     short getCurProcFieldIndex(short index) const;
+    fields& fields();
+
 };
 
 
@@ -256,6 +283,7 @@ public:
 	const _TCHAR* getSelect(short index) const;
 	short whereTokens() const;
 	const _TCHAR* getWhereToken(short index) const;
+    void reverseAliasName(const _TCHAR* alias, const _TCHAR* src);
 
     void release();
     static queryBase* create();

@@ -19,14 +19,8 @@
    02111-1307, USA.
 =================================================================*/
 #include "field.h"
-#include "nsdatabase.h"
 #include "table.h"
-#include "stringConverter.h"
-#include <bzs/rtl/stringBuffers.h>
-#include <boost/shared_array.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/unordered_map.hpp>
-#include <map>
 
 namespace bzs
 {
@@ -39,113 +33,30 @@ namespace tdap
 namespace client
 {
 
-class fieldShare
-{
-    friend class field;
-    friend class table;
-    friend class recordCache;
-
-private:
-    struct
-    {
-    unsigned char myDateTimeValueByBtrv: 1;
-    unsigned char trimPadChar: 1;
-    unsigned char usePadChar: 1;
-    unsigned char logicalToString: 1;
-    };
-
-    stringConverter* cv;
-    std::vector<boost::shared_array<char> >blobs;
-    bzs::rtl::stringBuffer strBufs;
-
-public:
-    fieldShare() : strBufs(4096),myDateTimeValueByBtrv(true), trimPadChar(true),
-        usePadChar(true), logicalToString(false)
-    {
-        cv = new stringConverter(nsdatabase::execCodePage(), nsdatabase::execCodePage());
-    }
-
-    virtual ~fieldShare()
-    {
-        delete cv;
-        cv = NULL;
-    }
-};
-
-
-class fieldInfo : private fieldShare
-{
-
-    std::vector<fielddef> m_fields;
-    boost::unordered_map<std::_tstring, int> m_map;
-
-
-public:
-    short m_stat;
-
-    fieldInfo():fieldShare(),m_stat(0){};
-
-    void addAllFileds(tabledef* def)
-    {
-        for (int i=0;i<def->fieldCount;++i)
-            push_back(&def->fieldDefs[i]);
-    }
-
-    void push_back(const fielddef* p)
-    {
-        m_fields.push_back(*p);
-        m_map[p->name()] = m_fields.size() - 1;
-    }
-
-    void remove(index)
-    {
-        m_fields.erase(m_fields.begin() + index);
-        m_map.erase(m_fields[index].name());
-    }
-    void reserve(size_t size){m_fields.reserve(size);}
-
-    void clear()
-    {
-        m_fields.clear();
-        m_map.clear();
-    }
-    inline int indexByName(const std::_tstring& name)const
-    {
-        if(m_map.count(name)==0) return -1;
-
-        return m_map.at(name);
-    }
-    inline const fielddef& operator[] (int index) const
-    {
-        assert(index >= 0  && index < m_fields.size());
-        return m_fields[index];
-    }
-    inline const fielddef& operator[] (const _TCHAR* name) const {return m_fields[indexByName(std::_tstring(name))];}
-    inline const fielddef& operator[] (const std::_tstring& name)const{return m_fields[indexByName(name)];}
-    inline size_t size() const {return m_fields.size();}
-
-};
 
 class fieldsBase
 {
-    fieldInfo& m_fns;
 
     virtual unsigned char* ptr(int index) const = 0;
-
+protected:
+    fielddefs& m_fns;
 public:
+
+    explicit inline fieldsBase(fielddefs& fns):m_fns(fns){}
     virtual ~fieldsBase(){};
 
-    inline explicit fieldsBase(fieldInfo& fns):m_fns(fns){}
-
-    inline field operator[](size_t index) const
+    inline field operator[](short index) const
     {
-        return field(ptr((short)index), m_fns[(short)index], &m_fns);
+        if (m_fns.checkIndex(index))
+            return field(ptr((short)index), m_fns[(short)index], &m_fns);
+        nstable::throwError(_T("Invalid field name or index"), STATUS_INVARID_FIELD_IDX);
+        return field(NULL, dummyFd(), &m_fns);
     }
 
     inline field operator[](const _TCHAR* name) const
     {
 		int index = m_fns.indexByName(name);
-		return field(ptr(index), m_fns[index], &m_fns);
+		return operator[](index);
 	}
 
     inline field operator[](const std::_tstring& name) const
@@ -156,16 +67,26 @@ public:
     inline size_t size() const {return m_fns.size();}
 
 
-    inline field fd(size_t index) const
+    inline field fd(short index) const
     {
-        return field(ptr((short)index), m_fns[(short)index], &m_fns);
+        return operator[](index);
     }
 
     inline field fd(const _TCHAR* name) const
     {
         int index = m_fns.indexByName(name);
-		return field(ptr(index), m_fns[index], &m_fns);
+		return operator[](index);
     }
+
+	inline short indexByName(const _TCHAR* name) const
+	{
+		return m_fns.indexByName(name);
+	}
+
+	inline const fielddefs* fieldDefs() const
+	{
+		return &m_fns;
+	}
 
 };
 
@@ -183,16 +104,16 @@ class fields : public fieldsBase
 
 public:
     inline explicit fields()
-            :fieldsBase(*((fieldInfo*)0)),m_tb(*((table*)0)){}
+            :fieldsBase(*((fielddefs*)0)),m_tb(*((table*)0)){}
     inline explicit fields(table& tb)
-            :fieldsBase(*(tb.m_fdinfo)),m_tb(tb){}
+            :fieldsBase(*(tb.m_fddefs)),m_tb(tb){}
 
     inline explicit fields(table_ptr tb)
-            :fieldsBase(*((*tb).m_fdinfo)),m_tb(*tb){}
+            :fieldsBase(*((*tb).m_fddefs)),m_tb(*tb){}
 
     inline void clearValues(){m_tb.clearBuffer();}
     inline table& tb() const {return m_tb;}
-    short inproc_size() const{return m_tb.getCurProcFieldCount();}
+    inline short inproc_size() const{return m_tb.getCurProcFieldCount();}
     inline field inproc_fd(short index) const
     {
         return operator[]( m_tb.getCurProcFieldIndex(index));
@@ -201,11 +122,14 @@ public:
 };
 
 
-
 }// namespace client
 }// namespace tdap
 }// namespace protocol
 }// namespace db
 }// namespace bzs
+
+
+
+
 #endif //BZS_DB_PROTOCOL_TDAP_CLIENT_FIELDS_H
 

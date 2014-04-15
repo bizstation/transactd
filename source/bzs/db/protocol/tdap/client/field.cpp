@@ -21,14 +21,15 @@
 
 #include "field.h"
 #include "fields.h"
+#include "nsdatabase.h"
 #include <bzs/db/protocol/tdap/myDateTime.cpp>
 #include <bzs/db/protocol/tdap/fieldComp.h>
+#include "stringConverter.h"
+#include <bzs/rtl/stringBuffers.h>
+#include <boost/shared_array.hpp>
+
 
 #pragma package(smart_init)
-
-#ifdef __BCPLUSPLUS__
-#define _strupr strupr
-#endif
 
 namespace bzs
 {
@@ -41,51 +42,275 @@ namespace tdap
 namespace client
 {
 
+
+//------------------------------------------------------------------------------
+//       class fieldShare
+//------------------------------------------------------------------------------
+struct Imple
+{
+    stringConverter* cv;
+    bzs::rtl::stringBuffer strBufs;
+    std::vector<boost::shared_array<char> >blobs;
+
+    Imple():strBufs(4096)
+    {
+        cv = new stringConverter(nsdatabase::execCodePage(), nsdatabase::execCodePage());
+    }
+
+    ~Imple()
+    {
+        delete cv;
+    }
+};
+
+
+
+
+fieldShare::fieldShare() : myDateTimeValueByBtrv(true), trimPadChar(true),
+        usePadChar(true), logicalToString(false), m_imple(new Imple())
+{
+
+}
+
+fieldShare::~fieldShare()
+{
+    delete m_imple;
+
+}
+
+inline stringConverter* fieldShare::cv()
+{
+    return m_imple->cv;
+}
+
+inline bzs::rtl::stringBuffer* fieldShare::strBufs()
+{
+    return &m_imple->strBufs;
+}
+
+void fieldShare::blobPushBack(char* p)
+{
+    m_imple->blobs.push_back(boost::shared_array<char>(p));
+}
+
+void fieldShare::blobClear()
+{
+    m_imple->blobs.clear();
+}
+
+//------------------------------------------------------------------------------
+//       class fielddefs
+//------------------------------------------------------------------------------
+
+
+struct infoImple
+{
+    std::vector<fielddef> fields;
+    boost::unordered_map<std::_tstring, int> map;
+    const aliasMap_type* aliasMap;
+    infoImple():aliasMap(NULL){}
+};
+
+
+
+fielddefs::fielddefs():fieldShare(),m_imple(new infoImple),m_stat(0)
+{
+
+}
+
+void fielddefs::aliasing(fielddef* p) const
+{
+    if (m_imple->aliasMap)
+    {
+        if (m_imple->aliasMap->count(p->name()))
+            p->setName(m_imple->aliasMap->at(p->name()).c_str());
+    }
+}
+
+fielddefs::~fielddefs()
+{
+    delete m_imple;
+}
+
+void fielddefs::setAliases(const aliasMap_type* p)
+{
+    m_imple->aliasMap = p;
+}
+
+void fielddefs::addAllFileds(tabledef* def)
+{
+    for (int i=0;i<def->fieldCount;++i)
+        push_back(&def->fieldDefs[i]);
+}
+
+void fielddefs::push_back(const fielddef* p)
+{
+    m_imple->fields.push_back(*p);
+    fielddef* pp = &m_imple->fields[m_imple->fields.size() - 1];
+    //reset update indicator
+    pp->enableFlags.bitE = false;
+    aliasing(pp);
+    m_imple->map[pp->name()] = (int)m_imple->fields.size() - 1;
+}
+
+void fielddefs::remove(int index)
+{
+    m_imple->map.erase(m_imple->fields[index].name());
+    m_imple->fields.erase(m_imple->fields.begin() + index);
+    boost::unordered_map<std::_tstring, int>::iterator it = m_imple->map.begin();
+    while(it != m_imple->map.end())
+    {
+        if ((*it).second > index)
+            (*it).second--;
+        ++it;
+    }
+}
+
+void fielddefs::reserve(size_t size){m_imple->fields.reserve(size);}
+
+void fielddefs::clear()
+{
+    m_imple->fields.clear();
+    m_imple->map.clear();
+}
+
+void fielddefs::resetUpdateIndicator()
+{
+    std::vector<fielddef>::iterator it = m_imple->fields.begin();
+    while (it != m_imple->fields.end())
+    {
+        (*it).enableFlags.bitE = false;
+        ++it;
+    }
+}
+
+bool fielddefs::checkIndex(int index) const
+{
+    return (index >= 0  && index < (int)m_imple->fields.size());
+}
+
+
+int fielddefs::indexByName(const std::_tstring& name)const
+{
+    if(m_imple->map.count(name)==0) return -1;
+
+    return m_imple->map.at(name);
+}
+
+const fielddef& fielddefs::operator[] (int index) const
+{
+    assert(checkIndex(index));
+
+    return m_imple->fields[index];
+
+}
+
+const fielddef& fielddefs::operator[] (const _TCHAR* name) const
+{
+    return m_imple->fields[indexByName(std::_tstring(name))];
+}
+
+const fielddef& fielddefs::operator[] (const std::_tstring& name)const
+{
+    return m_imple->fields[indexByName(name)];
+}
+
+size_t fielddefs::size() const {return m_imple->fields.size();}
+
+size_t fielddefs::totalFieldLen() const
+{
+    const fielddef& fd = m_imple->fields[size() - 1];
+    return fd.pos + fd.len;
+}
+
+void fielddefs::copyFrom(const table* tb)
+{
+    int n = tb->getCurProcFieldCount();
+    m_imple->fields.reserve(n + size());
+    const tabledef* def = tb->tableDef();
+    int pos = 0;
+    for (int i=0;i<n;++i)
+    {
+        fielddef fd = def->fieldDefs[tb->getCurProcFieldIndex(i)];
+        fd.pos = pos;
+        push_back(&fd);
+        pos += fd.len;
+    }
+}
+
+fielddefs* fielddefs::create()
+{
+	return new fielddefs();
+}
+
+void fielddefs::destroy(fielddefs* p)
+{
+	delete p;
+}
+//------------------------------------------------------------------------------
+//       class field
+//------------------------------------------------------------------------------
+fielddef fdDummy;
+
+AGRPACK const fielddef& dummyFd()
+{
+    fdDummy.type = ft_integer;
+    fdDummy.pos = 0;
+    fdDummy.len = 2;
+    fdDummy.setName(_T("Invalid filed"));
+    return fdDummy;
+}
+
+//const field fieldDummy(NULL, initDummy(), NULL);
+
 inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
 {
     __int64 ret = 0;
-    switch (fd.type)
+    if (ptr)
     {
-    case ft_integer:
-    case ft_autoinc:
-        switch (fd.len)
+        switch (fd.type)
         {
-        case 1: ret = *((char*)(ptr + fd.pos));
-            break;
-        case 2: ret = *((short*)(ptr + fd.pos));
-            break;
-        case 4: ret = *((int*)(ptr + fd.pos));
-            break;
-        case 8: ret = *((__int64*)(ptr + fd.pos));
-            break;
-        }
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_bit:
-    case ft_currency:
-    case ft_date:
-    case ft_time:
-    case ft_timestamp:
-    case ft_mydate:
-    case ft_mytime:
-    case ft_mydatetime:
-    case ft_mytimestamp:
-        switch (fd.len)
-        {
-        case 1: ret = *((unsigned char*)(ptr + fd.pos));
-            break;
-        case 2: ret = *((unsigned short*)(ptr + fd.pos));
-            break;
-        case 4: ret = *((unsigned int*)(ptr + fd.pos));
-            break;
-        case 3:
-        case 5:
-        case 6:
-        case 7: memcpy(&ret, ptr + fd.pos, fd.len);
-            break;
-        case 8: ret = *((__int64*)(ptr + fd.pos));
-            break;
+        case ft_integer:
+        case ft_autoinc:
+            switch (fd.len)
+            {
+            case 1: ret = *((char*)(ptr + fd.pos));
+                break;
+            case 2: ret = *((short*)(ptr + fd.pos));
+                break;
+            case 4: ret = *((int*)(ptr + fd.pos));
+                break;
+            case 8: ret = *((__int64*)(ptr + fd.pos));
+                break;
+            }
+        case ft_autoIncUnsigned:
+        case ft_uinteger:
+        case ft_logical:
+        case ft_bit:
+        case ft_currency:
+        case ft_date:
+        case ft_time:
+        case ft_timestamp:
+        case ft_mydate:
+        case ft_mytime:
+        case ft_mydatetime:
+        case ft_mytimestamp:
+            switch (fd.len)
+            {
+            case 1: ret = *((unsigned char*)(ptr + fd.pos));
+                break;
+            case 2: ret = *((unsigned short*)(ptr + fd.pos));
+                break;
+            case 4: ret = *((unsigned int*)(ptr + fd.pos));
+                break;
+            case 3:
+            case 5:
+            case 6:
+            case 7: memcpy(&ret, ptr + fd.pos, fd.len);
+                break;
+            case 8: ret = *((__int64*)(ptr + fd.pos));
+                break;
+            }
         }
     }
     return ret;
@@ -93,6 +318,7 @@ inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
 
 inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
 {
+    if (!ptr) return;
     switch (fd.type)
     {
     case ft_integer:
@@ -130,43 +356,43 @@ inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
 
 void* field::ptr() const
 {
-    return m_ptr + m_fd.pos;;
+    return m_ptr + m_fd->pos;;
 }
 
 void field::setFVA(const char* data)
 {
-
+    if (!m_ptr) return;
     __int64 value;
     double fltValue;
 
-    char* p = (char*)m_ptr + m_fd.pos;
+    char* p = (char*)m_ptr + m_fd->pos;
     if (data == NULL)
     {
-        memset(p, 0, m_fd.len);
+        memset(p, 0, m_fd->len);
         return;
     }
 
-    switch (m_fd.type)
+    switch (m_fd->type)
     {
     case ft_string:
-        return store<stringStore, char, char>(p, data, m_fd, m_fds->cv, m_fds->usePadChar);
+        return store<stringStore, char, char>(p, data, *m_fd, m_fds->cv(), m_fds->usePadChar);
     case ft_note:
-    case ft_zstring: return store<zstringStore, char, char>(p, data, m_fd, m_fds->cv);
-    case ft_wzstring: return store<wzstringStore, WCHAR, char>(p, data, m_fd, m_fds->cv);
+    case ft_zstring: return store<zstringStore, char, char>(p, data, *m_fd, m_fds->cv());
+    case ft_wzstring: return store<wzstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
-        return store<wstringStore, WCHAR, char>(p, data, m_fd, m_fds->cv, m_fds->usePadChar);
-    case ft_mychar: return store<myCharStore, char, char>(p, data, m_fd, m_fds->cv);
-    case ft_myvarchar: return store<myVarCharStore, char, char>(p, data, m_fd, m_fds->cv);
+        return store<wstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv(), m_fds->usePadChar);
+    case ft_mychar: return store<myCharStore, char, char>(p, data, *m_fd, m_fds->cv());
+    case ft_myvarchar: return store<myVarCharStore, char, char>(p, data, *m_fd, m_fds->cv());
     case ft_lstring:
-    case ft_myvarbinary: return store<myVarBinaryStore, char, char>(p, data, m_fd, m_fds->cv);
-    case ft_mywchar: return store<myWcharStore, WCHAR, char>(p, data, m_fd, m_fds->cv);
-    case ft_mywvarchar: return store<myWvarCharStore, WCHAR, char>(p, data, m_fd, m_fds->cv);
-    case ft_mywvarbinary: return store<myWvarBinaryStore, WCHAR, char>(p, data, m_fd, m_fds->cv);
+    case ft_myvarbinary: return store<myVarBinaryStore, char, char>(p, data, *m_fd, m_fds->cv());
+    case ft_mywchar: return store<myWcharStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
+    case ft_mywvarchar: return store<myWvarCharStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
+    case ft_mywvarbinary: return store<myWvarBinaryStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_myblob:
     case ft_mytext:
         {
-            char* tmp = blobStore<char>(p, data, m_fd, m_fds->cv);
-            m_fds->blobs.push_back(boost::shared_array<char>(tmp));
+            char* tmp = blobStore<char>(p, data, *m_fd, m_fds->cv());
+            m_fds->blobPushBack(tmp);
             return;
         }
     case ft_decimal:
@@ -220,7 +446,7 @@ void field::setFVA(const char* data)
         }
     case ft_mytime:
         {
-            myTime t(m_fd.len);
+            myTime t(m_fd->len);
             t = data;
             value = t.getValue();
             break;
@@ -228,52 +454,52 @@ void field::setFVA(const char* data)
 
     case ft_mydatetime:
         {
-            myDateTime t(m_fd.len);
+            myDateTime t(m_fd->len);
             t = data;
             value = t.getValue();
             break;
         }
     default: return;
     }
-    setValue(m_fd, (uchar_td*)m_ptr, value);
+    setValue(*m_fd, (uchar_td*)m_ptr, value);
 }
 
 #ifdef _WIN32
 
 void field::setFVW(const wchar_t* data)
 {
-
+    if (!m_ptr) return;
     int value;
     double fltValue;
 
-    char* p = (char*)m_ptr + m_fd.pos;
+    char* p = (char*)m_ptr + m_fd->pos;
     if (data == NULL)
     {
-        memset(p, 0, m_fd.len);
+        memset(p, 0, m_fd->len);
         return;
     }
 
-    switch (m_fd.type)
+    switch (m_fd->type)
     {
     case ft_string:
-        return store<stringStore, char, WCHAR>(p, data, m_fd, m_fds->cv, m_fds->usePadChar);
+        return store<stringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv(), m_fds->usePadChar);
     case ft_note:
-    case ft_zstring: return store<zstringStore, char, WCHAR>(p, data, m_fd, m_fds->cv);
-    case ft_wzstring: return store<wzstringStore, WCHAR, WCHAR>(p, data, m_fd, m_fds->cv);
+    case ft_zstring: return store<zstringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
+    case ft_wzstring: return store<wzstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
-        return store<wstringStore, WCHAR, WCHAR>(p, data, m_fd, m_fds->cv, m_fds->usePadChar);
-    case ft_mychar: return store<myCharStore, char, WCHAR>(p, data, m_fd, m_fds->cv);
-    case ft_myvarchar: return store<myVarCharStore, char, WCHAR>(p, data, m_fd, m_fds->cv);
+        return store<wstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv(), m_fds->usePadChar);
+    case ft_mychar: return store<myCharStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
+    case ft_myvarchar: return store<myVarCharStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_lstring:
-    case ft_myvarbinary: return store<myVarBinaryStore, char, WCHAR>(p, data, m_fd, m_fds->cv);
-    case ft_mywchar: return store<myWcharStore, WCHAR, WCHAR>(p, data, m_fd, m_fds->cv);
-    case ft_mywvarchar: return store<myWvarCharStore, WCHAR, WCHAR>(p, data, m_fd, m_fds->cv);
-    case ft_mywvarbinary: return store<myWvarBinaryStore, WCHAR, WCHAR>(p, data, m_fd, m_fds->cv);
+    case ft_myvarbinary: return store<myVarBinaryStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
+    case ft_mywchar: return store<myWcharStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
+    case ft_mywvarchar: return store<myWvarCharStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
+    case ft_mywvarbinary: return store<myWvarBinaryStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_myblob:
     case ft_mytext:
         {
-            char* tmp = blobStore<WCHAR>(p, data, m_fd, m_fds->cv);
-            m_fds->blobs.push_back(boost::shared_array<char>(tmp));
+            char* tmp = blobStore<WCHAR>(p, data, *m_fd, m_fds->cv());
+            m_fds->blobPushBack(tmp);
             return;
         }
 
@@ -332,19 +558,19 @@ void field::setFVW(const wchar_t* data)
         {
             myDate d;
             d = data;
-            setValue(m_fd, (uchar_td *)m_ptr, d.getValue());
+            setValue(*m_fd, (uchar_td *)m_ptr, d.getValue());
             return;
         }
     case ft_mytime:
         {
-            myTime t(m_fd.len);
+            myTime t(m_fd->len);
             t = data;
-            setValue(m_fd, (uchar_td*)m_ptr, t.getValue());
+            setValue(*m_fd, (uchar_td*)m_ptr, t.getValue());
             return;
         }
     case ft_mydatetime:
         {
-            myDateTime t(m_fd.len);
+            myDateTime t(m_fd->len);
             t = data;
             setFV(t.getValue());
             return;
@@ -359,29 +585,31 @@ void field::setFVW(const wchar_t* data)
 
 void field::setFV(unsigned char data)
 {
+
     int value = (int)data;
     setFV(value);
 }
 
 void field::setFV(int data)
 {
+    if (!m_ptr) return;
     char buf[20];
     double d;
     int v = data;
-    switch (m_fd.type)
+    switch (m_fd->type)
     {
     case ft_mydate:
         {
             myDate myd;
             myd.setValue(data, m_fds->myDateTimeValueByBtrv);
-            setValue(m_fd, (uchar_td*)m_ptr, myd.getValue());
+            setValue(*m_fd, (uchar_td*)m_ptr, myd.getValue());
             break;
         }
     case ft_mytime:
         {
-            myTime myt(m_fd.len);
+            myTime myt(m_fd->len);
             myt.setValue(data, m_fds->myDateTimeValueByBtrv);
-            setValue(m_fd, (uchar_td*)m_ptr, myt.getValue());
+            setValue(*m_fd, (uchar_td*)m_ptr, myt.getValue());
             break;
         }
     case ft_integer:
@@ -393,17 +621,17 @@ void field::setFV(int data)
     case ft_autoinc:
     case ft_bit:
     case ft_mydatetime:
-        switch (m_fd.len)
+        switch (m_fd->len)
         {
-        case 1: *((char*)((char*)m_ptr + m_fd.pos)) = (char) v;
+        case 1: *((char*)((char*)m_ptr + m_fd->pos)) = (char) v;
             break;
-        case 2: *((short*)((char*)m_ptr + m_fd.pos)) = (short)v;
+        case 2: *((short*)((char*)m_ptr + m_fd->pos)) = (short)v;
             break;
-        case 3: memcpy((char*)m_ptr + m_fd.pos, &v, 3);
+        case 3: memcpy((char*)m_ptr + m_fd->pos, &v, 3);
             break;
-        case 4: *((int*)((char*)m_ptr + m_fd.pos)) = v;
+        case 4: *((int*)((char*)m_ptr + m_fd->pos)) = v;
             break;
-        case 8: *((__int64*)((char*)m_ptr + m_fd.pos)) = v;
+        case 8: *((__int64*)((char*)m_ptr + m_fd->pos)) = v;
             break;
         }
         break;
@@ -462,9 +690,10 @@ void field::setFV(int data)
 
 void field::setFV(double data)
 {
+    if (!m_ptr) return;
     char buf[20];
     __int64 i64;
-    switch (m_fd.type)
+    switch (m_fd->type)
     {
     case ft_currency: // currency
         i64 = (__int64)(data * 10000 + 0.5);
@@ -472,11 +701,11 @@ void field::setFV(double data)
         break;
     case ft_bfloat: // bfloat
     case ft_float:
-        switch (m_fd.len)
+        switch (m_fd->len)
         {
-        case 4: *((float*)((char*)m_ptr + m_fd.pos)) = (float)data;
+        case 4: *((float*)((char*)m_ptr + m_fd->pos)) = (float)data;
             break;
-        case 8: *((double*)((char*)m_ptr + m_fd.pos)) = data;
+        case 8: *((double*)((char*)m_ptr + m_fd->pos)) = data;
             break;
         default:
             break;
@@ -562,23 +791,23 @@ short field::getFVsht() const {return (short)getFVlng();}
 
 int field::getFVlng() const
 {
+    if (!m_ptr) return 0;
     int ret = 0;
-
-    switch (m_fd.type)
+    switch (m_fd->type)
     {
     case ft_integer:
     case ft_autoinc:
-        switch (m_fd.len)
+        switch (m_fd->len)
         {
-        case 1: ret = *(((char*)m_ptr + m_fd.pos));
+        case 1: ret = *(((char*)m_ptr + m_fd->pos));
             break;
-        case 2: ret = *((short*)((char*)m_ptr + m_fd.pos));
+        case 2: ret = *((short*)((char*)m_ptr + m_fd->pos));
             break;
-        case 3: memcpy(&ret, (char*)m_ptr + m_fd.pos, 3);
+        case 3: memcpy(&ret, (char*)m_ptr + m_fd->pos, 3);
             ret = ((ret & 0xFFFFFF) << 8) / 0x100;
             break;
         case 8:
-        case 4: ret = *((int*)((char*)m_ptr + m_fd.pos));
+        case 4: ret = *((int*)((char*)m_ptr + m_fd->pos));
             break;
         }
         break;
@@ -591,31 +820,31 @@ int field::getFVlng() const
     case ft_timestamp:
     case ft_mydatetime:
     case ft_mytimestamp:
-        switch (m_fd.len)
+        switch (m_fd->len)
         {
-        case 1: ret = *((unsigned char*)((char*)m_ptr + m_fd.pos));
+        case 1: ret = *((unsigned char*)((char*)m_ptr + m_fd->pos));
             break;
-        case 2: ret = *((unsigned short*)((char*)m_ptr + m_fd.pos));
+        case 2: ret = *((unsigned short*)((char*)m_ptr + m_fd->pos));
             break;
-        case 3: memcpy(&ret, (char*)m_ptr + m_fd.pos, 3);
+        case 3: memcpy(&ret, (char*)m_ptr + m_fd->pos, 3);
             break;
         case 8:
         case 4:
-            ret = *((unsigned int*)((char*)m_ptr + m_fd.pos));
+            ret = *((unsigned int*)((char*)m_ptr + m_fd->pos));
             break;
         }
         break;
     case ft_mydate:
         {
             myDate myd;
-            myd.setValue((int)getValue64(m_fd, (const uchar_td*)m_ptr));
+            myd.setValue((int)getValue64(*m_fd, (const uchar_td*)m_ptr));
             ret = myd.getValue(m_fds->myDateTimeValueByBtrv);
             break;
         }
     case ft_mytime:
         {
-            myTime myt(m_fd.len);
-            myt.setValue((int)getValue64(m_fd, (const uchar_td*)m_ptr));
+            myTime myt(m_fd->len);
+            myt.setValue((int)getValue64(*m_fd, (const uchar_td*)m_ptr));
             ret = (int)myt.getValue(m_fds->myDateTimeValueByBtrv);
             break; ;
         }
@@ -632,7 +861,7 @@ int field::getFVlng() const
     case ft_mywvarchar:
     case ft_mywchar: ret = _ttol(getFVstr());
         break;
-    case ft_currency: ret = (long)(*((__int64*)((char*)m_ptr + m_fd.pos)) / 10000);
+    case ft_currency: ret = (long)(*((__int64*)((char*)m_ptr + m_fd->pos)) / 10000);
         break;
     case ft_bfloat:
     case ft_float: ret = (long)getFVdbl();
@@ -655,23 +884,24 @@ float field::getFVflt() const {return (float) getFVdbl();}
 
 double field::getFVdbl() const
 {
+    if (!m_ptr) return 0;
     double ret = 0;
-    switch (m_fd.type)
+    switch (m_fd->type)
     {
     case ft_currency:
-        ret = (double) * ((__int64*)((char*)m_ptr + m_fd.pos));
+        ret = (double) * ((__int64*)((char*)m_ptr + m_fd->pos));
         ret = ret / 10000;
         break;
 
     case ft_bfloat:
     case ft_timestamp:
     case ft_float:
-        switch (m_fd.len)
+        switch (m_fd->len)
         {
-        case 4: ret = (double) * ((float*)((char*)m_ptr + m_fd.pos));
+        case 4: ret = (double) * ((float*)((char*)m_ptr + m_fd->pos));
             break;
         case 10: // long double
-        case 8: ret = (double) * ((double*)((char*)m_ptr + m_fd.pos));
+        case 8: ret = (double) * ((double*)((char*)m_ptr + m_fd->pos));
             break;
         }
         break;
@@ -721,43 +951,43 @@ unsigned char field::getFVbyt() const {return (unsigned char)getFVlng();}
 
 const wchar_t* field::getFVWstr() const
 {
-
-    char* data = (char*)m_ptr + m_fd.pos;
-    switch (m_fd.type)
+    if (!m_ptr) return L"";
+    char* data = (char*)m_ptr + m_fd->pos;
+    switch (m_fd->type)
     {
     case ft_string:
-        return read<stringStore, char, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv,
+        return read<stringStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv(),
             m_fds->trimPadChar);
     case ft_note:
-    case ft_zstring: return read<zstringStore, char, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+    case ft_zstring: return read<zstringStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_wzstring:
-        return read<wzstringStore, WCHAR, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<wzstringStore, WCHAR, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_wstring:
-        return read<wstringStore, WCHAR, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv,
+        return read<wstringStore, WCHAR, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv(),
             m_fds->trimPadChar);
     case ft_mychar:
-        return read<myCharStore, char, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv,
+        return read<myCharStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv(),
             m_fds->trimPadChar);
     case ft_myvarchar:
-        return read<myVarCharStore, char, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<myVarCharStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_lstring:
     case ft_myvarbinary:
-        return read<myVarBinaryStore, char, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<myVarBinaryStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_mywchar:
-        return read<myWcharStore, WCHAR, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv,
+        return read<myWcharStore, WCHAR, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv(),
             m_fds->trimPadChar);
     case ft_mywvarchar:
-        return read<myWvarCharStore, WCHAR, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<myWvarCharStore, WCHAR, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_mywvarbinary:
-        return read<myWvarBinaryStore, WCHAR, WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<myWvarBinaryStore, WCHAR, WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_myblob:
-    case ft_mytext: return readBlob<WCHAR>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+    case ft_mytext: return readBlob<WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     }
-    wchar_t* p = (wchar_t*) m_fds->strBufs.getPtrW(max(m_fd.len * 2, 50));
+    wchar_t* p = (wchar_t*) m_fds->strBufs()->getPtrW(max(m_fd->len * 2, 50));
 
 	wchar_t buf[10] = L"%0.";
 
-    switch (m_fd.type)
+    switch (m_fd->type)
     {
 
     case ft_integer:
@@ -806,26 +1036,26 @@ const wchar_t* field::getFVWstr() const
     case ft_mydate:
         {
             myDate d;
-            d.setValue((int)getValue64(m_fd, (const uchar_td*)m_ptr));
+            d.setValue((int)getValue64(*m_fd, (const uchar_td*)m_ptr));
             return d.toStr(p, m_fds->myDateTimeValueByBtrv);
         }
     case ft_mytime:
         {
 
-            myTime t(m_fd.len);
-            t.setValue(getValue64(m_fd, (const uchar_td*)m_ptr));
+            myTime t(m_fd->len);
+            t.setValue(getValue64(*m_fd, (const uchar_td*)m_ptr));
             return t.toStr(p);
 
         }
     case ft_mydatetime:
         {
-            myDateTime t(m_fd.len);
+            myDateTime t(m_fd->len);
             t.setValue(getFV64());
             return t.toStr(p);
         }
     case ft_mytimestamp:
         {
-            myTimeStamp ts(m_fd.len);
+            myTimeStamp ts(m_fd->len);
             ts.setValue(getFV64());
             return ts.toStr(p);
         }
@@ -833,7 +1063,7 @@ const wchar_t* field::getFVWstr() const
     case ft_money:
     case ft_numeric:
     case ft_numericsts:
-    case ft_numericsa: _ltow_s(m_fd.decimals, p, 50, 10);
+    case ft_numericsa: _ltow_s(m_fd->decimals, p, 50, 10);
         wcscat(buf, p);
         wcscat(buf, L"lf");
         swprintf(p, 50, buf, getFVdbl());
@@ -849,42 +1079,44 @@ const wchar_t* field::getFVWstr() const
 
 const char* field::getFVAstr() const
 {
+    if (!m_ptr) return "";
+
     char buf[10] = "%0.";
 
-    char* data = (char*)m_ptr + m_fd.pos;
-    switch (m_fd.type)
+    char* data = (char*)m_ptr + m_fd->pos;
+    switch (m_fd->type)
     {
 
     case ft_string:
-        return read<stringStore, char, char>(data, &m_fds->strBufs, m_fd, m_fds->cv,
+        return read<stringStore, char, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv(),
             m_fds->trimPadChar);
     case ft_note:
-    case ft_zstring: return read<zstringStore, char, char>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+    case ft_zstring: return read<zstringStore, char, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_wzstring:
-        return read<wzstringStore, WCHAR, char>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<wzstringStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_wstring:
-        return read<wstringStore, WCHAR, char>(data, &m_fds->strBufs, m_fd, m_fds->cv,
+        return read<wstringStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv(),
             m_fds->trimPadChar);
     case ft_mychar:
-        return read<myCharStore, char, char>(data, &m_fds->strBufs, m_fd, m_fds->cv,
+        return read<myCharStore, char, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv(),
             m_fds->trimPadChar);
     case ft_myvarchar:
-        return read<myVarCharStore, char, char>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<myVarCharStore, char, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_lstring:
     case ft_myvarbinary:
-        return read<myVarBinaryStore, char, char>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<myVarBinaryStore, char, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_mywchar:
-        return read<myWcharStore, WCHAR, char>(data, &m_fds->strBufs, m_fd, m_fds->cv,
+        return read<myWcharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv(),
             m_fds->trimPadChar);
     case ft_mywvarchar:
-        return read<myWvarCharStore, WCHAR, char>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<myWvarCharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_mywvarbinary:
-        return read<myWvarBinaryStore, WCHAR, char>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+        return read<myWvarBinaryStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     case ft_myblob:
-    case ft_mytext: return readBlob<char>(data, &m_fds->strBufs, m_fd, m_fds->cv);
+    case ft_mytext: return readBlob<char>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
     }
-    char* p = m_fds->strBufs.getPtrA(max(m_fd.len * 2, 50));
-    switch (m_fd.type)
+    char* p = m_fds->strBufs()->getPtrA(max(m_fd->len * 2, 50));
+    switch (m_fd->type)
     {
     case ft_integer:
     case ft_bit:
@@ -932,24 +1164,24 @@ const char* field::getFVAstr() const
     case ft_mydate:
         {
             myDate d;
-            d.setValue((int)getValue64(m_fd, (const uchar_td*)m_ptr));
+            d.setValue((int)getValue64(*m_fd, (const uchar_td*)m_ptr));
             return d.toStr(p, m_fds->myDateTimeValueByBtrv);
         }
     case ft_mytime:
         {
-            myTime t(m_fd.len);
-            t.setValue(getValue64(m_fd, (const uchar_td*)m_ptr));
+            myTime t(m_fd->len);
+            t.setValue(getValue64(*m_fd, (const uchar_td*)m_ptr));
             return t.toStr(p);
         }
     case ft_mytimestamp:
         {
-            myTimeStamp ts(m_fd.len);
+            myTimeStamp ts(m_fd->len);
             ts.setValue(getFV64());
             return ts.toStr(p);
         }
     case ft_mydatetime:
         {
-            myDateTime t(m_fd.len);
+            myDateTime t(m_fd->len);
             t.setValue(getFV64());
             return t.toStr(p);
         }
@@ -957,7 +1189,7 @@ const char* field::getFVAstr() const
     case ft_money:
     case ft_numeric:
     case ft_numericsts:
-    case ft_numericsa: _ltoa_s(m_fd.decimals, p, 50, 10);
+    case ft_numericsa: _ltoa_s(m_fd->decimals, p, 50, 10);
         strcat(buf, p);
         strcat(buf, "lf");
         sprintf_s(p, 50, buf, getFVdbl());
@@ -973,11 +1205,12 @@ int field::getFVint() const {return (int)getFVlng();}
 
 __int64 field::getFV64() const
 {
+    if (!m_ptr) return 0;
 
-    switch (m_fd.len)
+    switch (m_fd->len)
     {
     case 8:
-        switch (m_fd.type)
+        switch (m_fd->type)
         {
         case ft_autoIncUnsigned:
         case ft_uinteger:
@@ -988,20 +1221,20 @@ __int64 field::getFV64() const
         case ft_currency:
         case ft_timestamp:
         case ft_mydatetime:
-        case ft_mytimestamp: return (__int64) *((__int64*)((char*)m_ptr + m_fd.pos));
+        case ft_mytimestamp: return (__int64) *((__int64*)((char*)m_ptr + m_fd->pos));
         }
         return 0;
     case 7:
     case 6:
     case 5:
-        switch (m_fd.type)
+        switch (m_fd->type)
         {
         case ft_mytime:
         case ft_mydatetime:
         case ft_mytimestamp:
             {
                 __int64 v = 0;
-                memcpy(&v, (char*)m_ptr + m_fd.pos, m_fd.len);
+                memcpy(&v, (char*)m_ptr + m_fd->pos, m_fd->len);
                 return v;
             }
         }
@@ -1015,10 +1248,12 @@ __int64 field::getFV64() const
 
 void field::setFV(__int64 data)
 {
-    switch (m_fd.len)
+    if (!m_ptr) return ;
+
+    switch (m_fd->len)
     {
     case 8:
-        switch (m_fd.type)
+        switch (m_fd->type)
         {
         case ft_autoIncUnsigned:
         case ft_uinteger:
@@ -1028,7 +1263,7 @@ void field::setFV(__int64 data)
         case ft_bit:
         case ft_currency:
         case ft_mydatetime:
-        case ft_mytimestamp: *((__int64*)((char*)m_ptr + m_fd.pos)) = data;
+        case ft_mytimestamp: *((__int64*)((char*)m_ptr + m_fd->pos)) = data;
             break;
         case ft_timestamp:
             {
@@ -1036,7 +1271,7 @@ void field::setFV(__int64 data)
                 d.i = getNowDate();
                 btrTime t;
                 t.i = getNowTime();
-                *((__int64*)((char*)m_ptr + m_fd.pos)) = btrTimeStamp(d, t).i64;
+                *((__int64*)((char*)m_ptr + m_fd->pos)) = btrTimeStamp(d, t).i64;
                 break;
             }
         case ft_float:
@@ -1050,11 +1285,11 @@ void field::setFV(__int64 data)
     case 7:
     case 6:
     case 5:
-        switch (m_fd.type)
+        switch (m_fd->type)
         {
         case ft_mytime:
         case ft_mydatetime:
-        case ft_mytimestamp: memcpy((char*)m_ptr + m_fd.pos, &data, m_fd.len);
+        case ft_mytimestamp: memcpy((char*)m_ptr + m_fd->pos, &data, m_fd->len);
             break;
         default: break;
         }
@@ -1073,7 +1308,8 @@ void field::setFV(__int64 data)
  */
 void field::setFV(const void* data, uint_td size)
 {
-    switch (m_fd.type)
+    if (!m_ptr) return ;
+    switch (m_fd->type)
     {
     case ft_myvarbinary:
     case ft_myvarchar:
@@ -1081,23 +1317,33 @@ void field::setFV(const void* data, uint_td size)
     case ft_mywvarchar:
     case ft_lstring:
         {
-            int sizeByte = m_fd.varLenBytes();
-            size = std::min<uint_td>((uint_td)(m_fd.len - sizeByte), size);
-            memset((char*)m_ptr + m_fd.pos, 0, m_fd.len);
-            memcpy((char*)m_ptr + m_fd.pos, &size, sizeByte);
-            memcpy((char*)m_ptr + m_fd.pos + sizeByte, data, size);
+            int sizeByte = m_fd->varLenBytes();
+            size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
+            memset((char*)m_ptr + m_fd->pos, 0, m_fd->len);
+            memcpy((char*)m_ptr + m_fd->pos, &size, sizeByte);
+            memcpy((char*)m_ptr + m_fd->pos + sizeByte, data, size);
             break;
         }
     case ft_myblob:
     case ft_mytext:
         {
-            int sizeByte = m_fd.len - 8;
-            memset((char*)m_ptr + m_fd.pos, 0, m_fd.len);
-            memcpy((char*)m_ptr + m_fd.pos, &size, sizeByte);
-            memcpy((char*)m_ptr + m_fd.pos + sizeByte, &data, sizeof(char*));
+            int sizeByte = m_fd->len - 8;
+            memset((char*)m_ptr + m_fd->pos, 0, m_fd->len);
+            memcpy((char*)m_ptr + m_fd->pos, &size, sizeByte);
+            memcpy((char*)m_ptr + m_fd->pos + sizeByte, &data, sizeof(char*));
             break;
 
         }
+    case ft_lvar:
+    {
+        int sizeByte = 2;
+        size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
+        memset((char*)m_ptr + m_fd->pos, 0, m_fd->len);
+        memcpy((char*)m_ptr + m_fd->pos, &size, sizeByte);
+        memcpy((char*)m_ptr + m_fd->pos + sizeByte, data, size);
+        break;
+
+    }
     default: m_fds->m_stat = STATUS_FIELDTYPE_NOTSUPPORT; // this field type is not supported.
     }
 }
@@ -1108,7 +1354,9 @@ void field::setFV(const void* data, uint_td size)
  */
 void* field::getFVbin(uint_td& size) const
 {
-    switch (m_fd.type)
+    if (!m_ptr) return 0;
+
+    switch (m_fd->type)
     {
     case ft_myvarbinary:
     case ft_myvarchar:
@@ -1116,19 +1364,26 @@ void* field::getFVbin(uint_td& size) const
     case ft_mywvarchar:
     case ft_lstring:
         {
-            int sizeByte = m_fd.varLenBytes();
+            int sizeByte = m_fd->varLenBytes();
             size = 0;
-            memcpy(&size, (char*)m_ptr + m_fd.pos, sizeByte);
-            return (void*)((char*)m_ptr + m_fd.pos + sizeByte);
+            memcpy(&size, (char*)m_ptr + m_fd->pos, sizeByte);
+            return (void*)((char*)m_ptr + m_fd->pos + sizeByte);
         }
     case ft_myblob:
     case ft_mytext:
         {
-            int sizeByte = m_fd.len - 8;
+            int sizeByte = m_fd->len - 8;
             size = 0;
-            memcpy(&size, (char*)m_ptr + m_fd.pos, sizeByte);
-            char** ptr = (char**)((char*)m_ptr + m_fd.pos + sizeByte);
+            memcpy(&size, (char*)m_ptr + m_fd->pos, sizeByte);
+            char** ptr = (char**)((char*)m_ptr + m_fd->pos + sizeByte);
             return (void*)*ptr;
+        }
+    case ft_lvar:
+        {
+            int sizeByte = 2;
+            size = 0;
+            memcpy(&size, (char*)m_ptr + m_fd->pos, sizeByte);
+            return (void*)((char*)m_ptr + m_fd->pos + sizeByte);
         }
     }
     return NULL;
@@ -1136,15 +1391,17 @@ void* field::getFVbin(uint_td& size) const
 
 double field::getFVDecimal() const
 {
+    if (!m_ptr) return 0;
+
     unsigned char buf[20] = {0x00};
     char result[30] = {0x00};
     char n[10];
     int i;
     char* t;
     unsigned char sign;
-    int len = m_fd.len;
+    int len = m_fd->len;
     result[0] = '+';
-    memcpy(buf, (void*)((char*)m_ptr + m_fd.pos), len);
+    memcpy(buf, (void*)((char*)m_ptr + m_fd->pos), len);
     sign = (unsigned char)(buf[len - 1] & 0x0F);
     buf[len - 1] = (unsigned char)(buf[len - 1] & 0xF0);
     for (i = 0; i < len; i++)
@@ -1159,7 +1416,7 @@ double field::getFVDecimal() const
     result[i - 1] = 0x00;
 
 
-    t = result + (m_fd.len * 2) - m_fd.decimals;
+    t = result + (m_fd->len * 2) - m_fd->decimals;
     strcpy((char*)buf, t);
     *t = '.';
     strcpy(t + 1, (char*)buf);
@@ -1168,6 +1425,8 @@ double field::getFVDecimal() const
 
 double field::getFVnumeric() const
 {
+    if (!m_ptr) return 0;
+
     char* t;
     char dp[] = "{ABCDEFGHI}JKLMNOPQR";
     char dpsa[] = "PQRSTUVWXYpqrstuvwxy";
@@ -1177,12 +1436,12 @@ double field::getFVnumeric() const
     char dummy[20];
 
     buf[0] = '+';
-    strncpy(buf + 1, (char*)((char*)m_ptr + m_fd.pos),
-        m_fd.len);
+    strncpy(buf + 1, (char*)((char*)m_ptr + m_fd->pos),
+        m_fd->len);
 
-    t = &(buf[m_fd.len]);
+    t = &(buf[m_fd->len]);
 
-    switch (m_fd.type)
+    switch (m_fd->type)
     {
     case ft_numeric: pdp = dp;
         break;
@@ -1211,7 +1470,7 @@ double field::getFVnumeric() const
         }
     }
 
-    t = buf + strlen(buf) - m_fd.decimals;
+    t = buf + strlen(buf) - m_fd->decimals;
     strcpy(dummy, t);
     *t = '.';
     strcpy(t + 1, dummy);
@@ -1220,6 +1479,8 @@ double field::getFVnumeric() const
 
 void field::setFVDecimal(double data)
 { // Double  -> Decimal
+    if (!m_ptr) return;
+
     char buf[30] = "%+0";
     char dummy[30];
     int point;
@@ -1228,11 +1489,11 @@ void field::setFVDecimal(double data)
     int i, k;
     int strl;
     bool offset = false; ;
-    point = (m_fd.len) * 2;
+    point = (m_fd->len) * 2;
     _ltoa_s(point, dummy, 30, 10);
     strcat(buf, dummy);
     strcat(buf, ".");
-    _ltoa_s(m_fd.decimals, dummy, 30, 10);
+    _ltoa_s(m_fd->decimals, dummy, 30, 10);
     strcat(buf, dummy);
     strcat(buf, "lf");
     sprintf(dummy, buf, data);
@@ -1251,7 +1512,7 @@ void field::setFVDecimal(double data)
     k = 0;
     n = 0;
     point = (int)strlen(dummy + 1);
-    if (strl <= m_fd.len)
+    if (strl <= m_fd->len)
     {
         for (i = 1; i <= point; i++)
         {
@@ -1278,13 +1539,15 @@ void field::setFVDecimal(double data)
         else
             buf[k] += ((unsigned char)(n + 12));
     }
-    memcpy((void*)((char*)m_ptr + m_fd.pos), buf,
-        m_fd.len);
+    memcpy((void*)((char*)m_ptr + m_fd->pos), buf,
+        m_fd->len);
 
 }
 
 void field::setFVNumeric(double data)
 { // Double  -> Numeric
+    if (!m_ptr) return ;
+
     char buf[30] = "%+0";
     char dummy[30];
     int point;
@@ -1294,12 +1557,12 @@ void field::setFVNumeric(double data)
     bool sign = false;
     char* t;
 
-    point = m_fd.len + 1;
+    point = m_fd->len + 1;
 
     _ltoa_s(point, dummy, 30, 10);
     strcat(buf, dummy);
     strcat(buf, ".");
-    _ltoa_s(m_fd.decimals, dummy, 30, 10);
+    _ltoa_s(m_fd->decimals, dummy, 30, 10);
     strcat(buf, dummy);
     strcat(buf, "lf");
     sprintf(dummy, buf, data);
@@ -1307,19 +1570,19 @@ void field::setFVNumeric(double data)
         sign = true;
 
 
-    strcpy(buf, &dummy[point - m_fd.decimals] + 1);
-    dummy[point - m_fd.decimals] = 0x00;
+    strcpy(buf, &dummy[point - m_fd->decimals] + 1);
+    dummy[point - m_fd->decimals] = 0x00;
     strcat(dummy, buf);
 
-    n = atol(&dummy[m_fd.len]);
+    n = atol(&dummy[m_fd->len]);
     if (sign)
         n += 10;
     t = dummy + 1;
-    switch (m_fd.type)
+    switch (m_fd->type)
     {
-    case ft_numeric: dummy[m_fd.len] = dp[n];
+    case ft_numeric: dummy[m_fd->len] = dp[n];
         break;
-    case ft_numericsa: dummy[m_fd.len] = dpsa[n];
+    case ft_numericsa: dummy[m_fd->len] = dpsa[n];
         break;
     case ft_numericsts:
         if (sign)
@@ -1330,8 +1593,8 @@ void field::setFVNumeric(double data)
         break;
     }
 
-    memcpy((void*)((char*)m_ptr + m_fd.pos), t,
-        m_fd.len);
+    memcpy((void*)((char*)m_ptr + m_fd->pos), t,
+        m_fd->len);
 }
 
 
@@ -1397,15 +1660,15 @@ inline int compBlob(const field& l, const field& r, char logType)
 
 }
 
-compFieldFunc field::getCompFunc(char logType)
+compFieldFunc field::getCompFunc(char logType) const
 {
-    switch(m_fd.type)
+    switch(m_fd->type)
     {
     case ft_integer:
     case ft_autoinc:
     case ft_currency:
     {
-        switch(m_fd.len)
+        switch(m_fd->len)
         {
         case 1:return &compNumber<char>;
         case 2:return &compNumber<short>;
@@ -1432,7 +1695,7 @@ compFieldFunc field::getCompFunc(char logType)
     case ft_timestamp:
     case ft_mydate:
     {
-        switch(m_fd.len)
+        switch(m_fd->len)
         {
         case 1:return &compNumber<unsigned char>;
         case 2:return &compNumber<unsigned short>;
@@ -1446,7 +1709,7 @@ compFieldFunc field::getCompFunc(char logType)
     case ft_mytimestamp:
         return &compMem;
     case ft_float:
-        switch(m_fd.len)
+        switch(m_fd->len)
         {
         case 4:return &compNumber<float>;
         case 8:return &compNumber<double>;
@@ -1456,18 +1719,18 @@ compFieldFunc field::getCompFunc(char logType)
     case ft_wzstring:
         if (logType & CMPLOGICAL_CASEINSENSITIVE)
             return &compiWString;
-        if ((m_fd.type==ft_wstring)||(m_fd.type==ft_mywchar))
+        if ((m_fd->type==ft_wstring)||(m_fd->type==ft_mywchar))
             return &compMem;
         return &compWString;
     case ft_lstring:
     case ft_myvarchar:
     case ft_myvarbinary:
-        if (m_fd.varLenBytes()==1)
+        if (m_fd->varLenBytes()==1)
             return &compVarString<unsigned char>;
         return &compVarString<unsigned short>;
     case ft_mywvarchar:
     case ft_mywvarbinary:
-        if (m_fd.varLenBytes()==1)
+        if (m_fd->varLenBytes()==1)
             return &compWVarString<unsigned char>;
         return &compWVarString<unsigned short>;
     case ft_mytext:
@@ -1477,7 +1740,7 @@ compFieldFunc field::getCompFunc(char logType)
     return NULL;
 }
 
-int field::comp(const field& r, char logType)
+int field::comp(const field& r, char logType) const
 {
     compFieldFunc f = getCompFunc(logType);
     return f(*this, r, logType);
