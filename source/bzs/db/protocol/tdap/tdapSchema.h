@@ -240,6 +240,7 @@ private:
      bitB  disbale export this field data.
      bitC  not show list view but add select field list
      bitD  enable lookDBNum
+     bitE  field value is changed
  */
 
 typedef fielddef_t<MYSQL_FDNAME_SIZE> fielddef_t_my;
