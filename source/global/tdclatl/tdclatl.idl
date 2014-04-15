@@ -32,6 +32,11 @@ interface IKeySegment;
 interface IField;
 interface ITdVersion;
 interface IQueryBase;
+interface IActiveTable;
+interface IRecordset;
+interface IRecord;
+interface IWritableRecord;
+interface IGroupQuery;
 
 typedef
 [
@@ -278,6 +283,17 @@ enum eContinusStatus
 	TD_BACKUP_MODE_SERVER_ERROR  = 91	
 }eContinusStatus;
 
+typedef
+[
+  helpstring("Group function")
+]
+enum eGroupFunc
+{
+	fmax = 0,
+    fmin = 1,
+	favg = 2,
+	fsum = 3
+}eGroupFunc;
 
 
 [
@@ -1015,11 +1031,164 @@ interface IQueryBase : IDispatch
 
 
 };
+
+[
+  object,
+  uuid(3EE9F43F-99D0-4300-B8A4-3085A2C4DAAB),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IActiveTable : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall SetDatabase([in] IDatabase* Value, [in] BSTR tableName);
+  [id(0x0000002)]
+  HRESULT _stdcall Index([in] short Value, [out, retval] IActiveTable** retVal);
+  [id(0x0000003)]
+  HRESULT _stdcall KeyValue([in] VARIANT Value0, [in, defaultvalue("")] VARIANT Value1
+					,[in, defaultvalue("")] VARIANT Value2, [in, defaultvalue("")] VARIANT Value3
+					,[in, defaultvalue("")] VARIANT Value4, [in, defaultvalue("")] VARIANT Value5
+					,[in, defaultvalue("")] VARIANT Value6, [in, defaultvalue("")] VARIANT Value7
+					,[out, retval] IActiveTable** retVal);
+  [id(0x0000004)]
+  HRESULT _stdcall Option([in] int Value, [out, retval] IActiveTable** retVal);
+  [id(0x0000005)]
+  HRESULT _stdcall Read([in, defaultvalue(0)] IQueryBase* query, [out, retval] IRecordset** retVal);
+  [id(0x0000006)]
+  HRESULT _stdcall Alias([in] BSTR Src, [in] BSTR Dst, [out, retval] IActiveTable** retVal);
+  [id(0x0000007)]
+  HRESULT _stdcall ResetAlias([out, retval] IActiveTable** retVal);
+  [id(0x0000008)]
+  HRESULT _stdcall Join([in] IRecordset* rs, [in] IQueryBase* query, [in] BSTR Name0
+					, [in, defaultvalue("")] BSTR Name1, [in, defaultvalue("")] BSTR Name2
+					, [in, defaultvalue("")] BSTR Name3, [in, defaultvalue("")] BSTR Name4
+					, [in, defaultvalue("")] BSTR Name5, [in, defaultvalue("")] BSTR Name6
+					, [in, defaultvalue("")] BSTR Name7
+					,[out, retval] IRecordset** retVal);
+
+  [id(0x0000009)]
+  HRESULT _stdcall OuterJoin([in] IRecordset* rs, [in] IQueryBase* query, [in] BSTR Name0
+					, [in, defaultvalue("")] BSTR Name1, [in, defaultvalue("")] BSTR Name2
+					, [in, defaultvalue("")] BSTR Name3, [in, defaultvalue("")] BSTR Name4
+					, [in, defaultvalue("")] BSTR Name5, [in, defaultvalue("")] BSTR Name6
+					, [in, defaultvalue("")] BSTR Name7
+					,[out, retval] IRecordset** retVal);
+
+  [id(0x000000A)]
+  HRESULT _stdcall GetWriteableRecord([out, retval] IWritableRecord** retVal);
+  				
+};
+
+
+[
+  object,
+  uuid(3EE9F43F-99D0-43CC-B8A4-3085A2C4DAAB),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IRecordset : IDispatch
+{
+  //[id(0x0000001)]
+  //HRESULT _stdcall Clear(void);
+  [id(0x0000002)]
+  HRESULT _stdcall Record([in] short Index, [out, retval] IRecord** retVal);
+  [id(0x0000003)]
+  HRESULT _stdcall First([out, retval] IRecord** retVal);
+  [id(0x0000004)]
+  HRESULT _stdcall Last([out, retval] IRecord** retVal);
+  [id(0x0000005)]
+  HRESULT _stdcall Top([in]long Num, [out, retval] IRecordset** retVal);
+  [id(0x0000006)]
+  HRESULT _stdcall Erase([in]long Index);
+  [id(0x0000007)]
+  HRESULT _stdcall Count([out, retval] long* retVal);
+  [id(0x0000008)]
+  HRESULT _stdcall RemoveField([in]short Index, [out, retval] IRecordset** retVal);
+  [id(0x0000009)]
+  HRESULT _stdcall GroupBy(IGroupQuery* gq, [in] eGroupFunc func, [out, retval] IRecordset** retVal);
+  [id(0x000000A)]
+  HRESULT _stdcall OrderBy([in] BSTR name0, [in, defaultvalue("")] BSTR name1, [in, defaultvalue("")] BSTR name2,
+					[in, defaultvalue("")] BSTR name3, [in, defaultvalue("")] BSTR name4, 
+					[in, defaultvalue("")] BSTR name5, [in, defaultvalue("")] BSTR name6,
+					[in, defaultvalue("")] BSTR name7, [in, defaultvalue("")] BSTR name8,
+					[out, retval] IRecordset** retVal);
+  [id(0x000000B)]
+  HRESULT _stdcall Reverse([out, retval] IRecordset** retVal);
+
+};
+
+[
+  object,
+  uuid(1EF8FE71-92AF-4E56-AD0E-30ACF31B090E),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IRecord : IDispatch
+{
+  [propget, id(0x0000001)]
+  HRESULT _stdcall Size([out, retval] short* retVal);
+  [id(0x0000002)]
+  HRESULT _stdcall Field([in] VARIANT Index, [out, retval] IField** retVal);
+ 
+};
+
+[
+  object,
+  uuid(687452CD-C9D8-4B24-A955-EB3B69BA02C5),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IWritableRecord : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall Save(void);
+  [id(0x0000002)]
+  HRESULT _stdcall Insert(void);
+  [id(0x0000003)]
+  HRESULT _stdcall Del(void);
+  [id(0x0000004)]
+  HRESULT _stdcall Update(void);
+  [id(0x0000005)]
+  HRESULT _stdcall Read([out, retval] VARIANT_BOOL* retVal);
+
+};
+
+[
+  object,
+  uuid(1EF8FE71-92AF-4E56-ADAE-30ACF31B09AE),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IGroupQuery : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall KeyField([in, defaultvalue("")] BSTR Name, [in, defaultvalue("")] BSTR Name1,
+				[in, defaultvalue("")] BSTR Name2, [in, defaultvalue("")] BSTR Name3,
+                [in, defaultvalue("")] BSTR Name4, [in, defaultvalue("")] BSTR Name5,
+				[in, defaultvalue("")] BSTR Name6, [in, defaultvalue("")] BSTR Name7,
+				[in, defaultvalue("")] BSTR Name8, [in, defaultvalue("")] BSTR Name9,
+				[in, defaultvalue("")] BSTR Name10, [out, retval] IGroupQuery** retVal);
+
+  [id(0x0000002)]
+  HRESULT _stdcall ResultField(BSTR Name, [out, retval] IGroupQuery** retVal);
+  [id(0x0000003)]
+  HRESULT _stdcall Having(IQueryBase* query, [out, retval] IGroupQuery** retVal);
+  [id(0x0000004)]
+  HRESULT _stdcall Reset([out, retval] IGroupQuery** retVal);
+
+
+};
+
+
 [
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
 	version(1.0),
 ]
-
 library transactd
 {
   importlib("stdole2.tlb");
@@ -1113,6 +1282,7 @@ library transactd
   coclass Field
   {
     [default] interface IField;
+
   };
 	
   [
@@ -1133,6 +1303,51 @@ library transactd
 	{
 		[default] interface IQueryBase;
 	};
+
+	[
+		uuid(BB90F201-61B3-47F9-A185-343176B046DF)		
+	]
+	coclass ActiveTable
+	{
+		[default] interface IActiveTable;
+	};
+
+	[
+		uuid(3A5A39FA-15EE-459E-BE8C-5769A97DA27B)	
+		,noncreatable
+	]
+	coclass Recordset
+	{
+		[default] interface IRecordset;
+		
+	};
+
+	[
+		uuid(3729705B-AA47-4592-ABE3-844B20E8A141)	
+		,noncreatable
+	]
+	coclass Record
+	{
+		[default] interface IRecord;
+		
+	};
+
+	[
+		uuid(1D51D5EE-41CC-4D83-A8D6-C297D25C3D87)		
+	]
+	coclass WritableRecord
+	{
+		[default] interface IWritableRecord;
+	};
+
+	[
+		uuid(8EB78589-1084-4546-A826-20B615831EFF)		
+	]
+	coclass GroupQuery
+	{
+		[default] interface IGroupQuery;
+	};
+	
 };
 
 import "shobjidl.idl";

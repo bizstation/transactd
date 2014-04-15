@@ -1,6 +1,6 @@
 #pragma once
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2014 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -20,22 +20,18 @@
 #include "resource.h"
 
 #include "tdclatl_i.h"
-#include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/field.h>
+#include <bzs/db/protocol/tdap/client/memRecord.h>
 
 using namespace ATL;
 
-class ATL_NO_VTABLE CField : public CComObjectRootEx<CComSingleThreadModel>, public CComCoClass<CField, &CLSID_Field>,
-    public IDispatchImpl<IField, &IID_IField, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CWritableRecord : public CComObjectRootEx<CComSingleThreadModel>, public CComCoClass<CWritableRecord, &CLSID_WritableRecord>,
+    public IDispatchImpl<IWritableRecord, &IID_IWritableRecord, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
 {
 public:
-    CField():m_tb(NULL){}
-	bzs::db::protocol::tdap::client::field m_fd;
-    bzs::db::protocol::tdap::client::table* m_tb;
-    short m_index;
+    CWritableRecord(){}
 
-    BEGIN_COM_MAP(CField) 
-		COM_INTERFACE_ENTRY(IField) 
+    BEGIN_COM_MAP(CWritableRecord) 
+		COM_INTERFACE_ENTRY(IWritableRecord) 
 		COM_INTERFACE_ENTRY(IDispatch) 
 	END_COM_MAP()
 
@@ -47,15 +43,6 @@ public:
 
 public:
 
-    STDMETHOD(get_Text)(BSTR* Value);
-    STDMETHOD(get_Vlng)(int* Value);
-    STDMETHOD(put_Text)(BSTR Value);
-    STDMETHOD(put_Vlng)(int Value);
-    STDMETHOD(get_V64)(__int64* Value);
-    STDMETHOD(put_V64)(__int64 Value);
-    STDMETHOD(get_Vbin)(BSTR* Value);
-    STDMETHOD(get_Vdbl)(double* Value);
-    STDMETHOD(put_Vbin)(BSTR Value);
-    STDMETHOD(put_Vdbl)(double Value);
+  
 
 };

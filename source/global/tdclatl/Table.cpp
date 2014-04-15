@@ -21,8 +21,8 @@
 #include "Database.h"
 #include "DbDef.h"
 #include "TableDef.h"
-#include "Field.h"
 #include "QueryBase.h"
+#include <bzs/db/protocol/tdap/client/fields.h>
 
 using namespace bzs::db::protocol::tdap;
 
@@ -391,14 +391,14 @@ STDMETHODIMP CTableTd::put_FilterRejectCount(long Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::Field(VARIANT Index, IField** Value)
+STDMETHODIMP CTableTd::Field(VARIANT Index, IField** retVal)
 {
 
     short index = GetFieldNum(&Index);
     if (index < 0)
         return Error("Invalid index", IID_ITable);
 
-    CComObject<CField> *piObj;
+    /*CComObject<CField> *piObj;
     CComObject<CField>::CreateInstance(&piObj);
 	if (piObj)
 	{
@@ -411,7 +411,26 @@ STDMETHODIMP CTableTd::Field(VARIANT Index, IField** Value)
 	}
 	else
 		*Value = 0;
-    return S_OK;
+*/
+
+	
+	if (m_fieldObj == NULL)
+	{
+		CComObject<CField>::CreateInstance(&m_fieldObj);
+		if (m_fieldObj)
+			m_fieldObj->AddRef();
+	}
+	if (m_fieldObj)
+	{				 
+		client::fields fds(*m_tb);
+		m_fieldObj->m_fd = fds[index]; 
+		IField* fd;
+		m_fieldObj->QueryInterface(IID_IField, (void**)&fd);
+		_ASSERTE(fd);
+		*retVal = fd;
+			
+	}
+	return S_OK;
 }
 
 STDMETHODIMP CTableTd::get_CanDelete(VARIANT_BOOL* Value)

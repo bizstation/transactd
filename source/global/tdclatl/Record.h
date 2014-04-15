@@ -1,6 +1,6 @@
 #pragma once
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2014 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -20,22 +20,26 @@
 #include "resource.h"
 
 #include "tdclatl_i.h"
-#include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/field.h>
+#include <bzs/db/protocol/tdap/client/memRecord.h>
 
 using namespace ATL;
+class CField;
 
-class ATL_NO_VTABLE CField : public CComObjectRootEx<CComSingleThreadModel>, public CComCoClass<CField, &CLSID_Field>,
-    public IDispatchImpl<IField, &IID_IField, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CRecord : 
+	public CComObjectRootEx<CComSingleThreadModel>, 
+	public CComCoClass<CRecord, &CLSID_Record>,
+    public IDispatchImpl<IRecord, &IID_IRecord, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
 {
-public:
-    CField():m_tb(NULL){}
-	bzs::db::protocol::tdap::client::field m_fd;
-    bzs::db::protocol::tdap::client::table* m_tb;
-    short m_index;
 
-    BEGIN_COM_MAP(CField) 
-		COM_INTERFACE_ENTRY(IField) 
+	CComObject<CField>* m_fieldObj;
+	short GetFieldNum(VARIANT* Index);
+
+public:
+	bzs::db::protocol::tdap::client::memoryRecord* m_rec;
+    CRecord():m_fieldObj(NULL){}
+
+    BEGIN_COM_MAP(CRecord) 
+		COM_INTERFACE_ENTRY(IRecord) 
 		COM_INTERFACE_ENTRY(IDispatch) 
 	END_COM_MAP()
 
@@ -43,19 +47,11 @@ public:
 
     HRESULT FinalConstruct() {return S_OK;}
 
-    void FinalRelease() {}
+    void FinalRelease();
 
 public:
 
-    STDMETHOD(get_Text)(BSTR* Value);
-    STDMETHOD(get_Vlng)(int* Value);
-    STDMETHOD(put_Text)(BSTR Value);
-    STDMETHOD(put_Vlng)(int Value);
-    STDMETHOD(get_V64)(__int64* Value);
-    STDMETHOD(put_V64)(__int64 Value);
-    STDMETHOD(get_Vbin)(BSTR* Value);
-    STDMETHOD(get_Vdbl)(double* Value);
-    STDMETHOD(put_Vbin)(BSTR Value);
-    STDMETHOD(put_Vdbl)(double Value);
+  STDMETHOD(get_Size)(short* retVal);
+  STDMETHOD(Field)(VARIANT Index, IField** retVal);
 
 };

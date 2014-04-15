@@ -1,6 +1,6 @@
 #pragma once
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2014 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -20,22 +20,26 @@
 #include "resource.h"
 
 #include "tdclatl_i.h"
-#include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/field.h>
+#include <bzs/db/protocol/tdap/client/groupQuery.h>
 
 using namespace ATL;
 
-class ATL_NO_VTABLE CField : public CComObjectRootEx<CComSingleThreadModel>, public CComCoClass<CField, &CLSID_Field>,
-    public IDispatchImpl<IField, &IID_IField, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
-{
-public:
-    CField():m_tb(NULL){}
-	bzs::db::protocol::tdap::client::field m_fd;
-    bzs::db::protocol::tdap::client::table* m_tb;
-    short m_index;
 
-    BEGIN_COM_MAP(CField) 
-		COM_INTERFACE_ENTRY(IField) 
+class ATL_NO_VTABLE CGroupQuery : 
+	public CComObjectRootEx<CComSingleThreadModel>, 
+	public CComCoClass<CGroupQuery, &CLSID_GroupQuery>,
+    public IDispatchImpl<IGroupQuery, &IID_IGroupQuery, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+{
+	void setResult(IGroupQuery** retVal);
+
+public:
+	bzs::db::protocol::tdap::client::groupQuery m_gq;
+    CGroupQuery(){}
+
+	DECLARE_REGISTRY_RESOURCEID(IDR_GROUPQUERY)
+
+    BEGIN_COM_MAP(CGroupQuery) 
+		COM_INTERFACE_ENTRY(IGroupQuery) 
 		COM_INTERFACE_ENTRY(IDispatch) 
 	END_COM_MAP()
 
@@ -43,19 +47,16 @@ public:
 
     HRESULT FinalConstruct() {return S_OK;}
 
-    void FinalRelease() {}
+    void FinalRelease(){};
 
 public:
-
-    STDMETHOD(get_Text)(BSTR* Value);
-    STDMETHOD(get_Vlng)(int* Value);
-    STDMETHOD(put_Text)(BSTR Value);
-    STDMETHOD(put_Vlng)(int Value);
-    STDMETHOD(get_V64)(__int64* Value);
-    STDMETHOD(put_V64)(__int64 Value);
-    STDMETHOD(get_Vbin)(BSTR* Value);
-    STDMETHOD(get_Vdbl)(double* Value);
-    STDMETHOD(put_Vbin)(BSTR Value);
-    STDMETHOD(put_Vdbl)(double Value);
+  STDMETHOD(KeyField)(BSTR Name, BSTR Name1, BSTR Name2, BSTR Name3, BSTR Name4, BSTR Name5,
+				BSTR Name6, BSTR Name7,	BSTR Name8, BSTR Name9,	BSTR Name10,
+				IGroupQuery** retVal);
+  STDMETHOD(ResultField)(BSTR Name, IGroupQuery** retVal);
+  STDMETHOD(Having)(IQueryBase* query , IGroupQuery** retVal);
+  STDMETHOD(Reset)(IGroupQuery** retVal);
 
 };
+
+OBJECT_ENTRY_AUTO(__uuidof(GroupQuery), CGroupQuery)

@@ -73,6 +73,7 @@ public:
 
 	void FinalRelease(){if (m_db) m_db->release();};
 public:
+	bzs::db::protocol::tdap::client::database* database(){return m_db;};
 
     STDMETHOD(Open)(BSTR Uri, eSchemaType SchemaType, eOpenMode Mode, BSTR Dir, BSTR Ownername, VARIANT_BOOL* Param6);
     STDMETHOD(get_DbDef)(IDbDef** Value);
