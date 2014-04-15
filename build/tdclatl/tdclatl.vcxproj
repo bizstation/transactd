@@ -97,7 +97,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4068;4800</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4068;4800;4819</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <SmallerTypeCheck>false</SmallerTypeCheck>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -132,9 +132,10 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4068;4800</DisableSpecificWarnings>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4068;4800;4819;4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -165,7 +166,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4068;4800</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4068;4800;4819</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Midl>
@@ -200,8 +201,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
-      <DisableSpecificWarnings>4068;4800</DisableSpecificWarnings>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
+      <DisableSpecificWarnings>4068;4800;4819;4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Midl>
@@ -230,6 +231,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.cpp" />
+    <ClCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\activeTable.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4068;4800;4819;4996</DisableSpecificWarnings>
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4068;4800;4819;4996</DisableSpecificWarnings>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_CRT_NON_CONFORMING_SWPRINTFS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <ClCompile Include="..\..\source\global\tdclatl\Database.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\DbDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\dllmain.cpp">
@@ -249,9 +260,12 @@
     <ClCompile Include="..\..\source\global\tdclatl\Field.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\FieldDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Flags.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\GroupQuery.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeyDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeySegment.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\QueryBase.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\Record.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\Recordset.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -263,17 +277,29 @@
     <ClCompile Include="..\..\source\global\tdclatl\tdclatl.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\tdclatl_i.c" />
     <ClCompile Include="..\..\source\global\tdclatl\TdVersion.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\WriteAbleRecord.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.h" />
+    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\groupQuery.h" />
+    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.h" />
+    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\ormRecordset.h" />
+    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\trdboostapi.h" />
+    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\trdboostapiInternal.h" />
+    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\trdormapi.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\activeTable.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Database.h" />
     <ClInclude Include="..\..\source\global\tdclatl\DbDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\dllmain.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Field.h" />
     <ClInclude Include="..\..\source\global\tdclatl\FieldDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Flags.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\GroupQuery.h" />
     <ClInclude Include="..\..\source\global\tdclatl\KeyDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\keySegment.h" />
     <ClInclude Include="..\..\source\global\tdclatl\QueryBase.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\Record.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\Recordset.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Resource.h" />
     <ClInclude Include="..\..\source\global\tdclatl\stdafx.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Table.h" />
@@ -281,12 +307,15 @@
     <ClInclude Include="..\..\source\global\tdclatl\targetver.h" />
     <ClInclude Include="..\..\source\global\tdclatl\tdclatl_i.h" />
     <ClInclude Include="..\..\source\global\tdclatl\TdVersion.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\WriteAbleRecord.h" />
     <ClInclude Include="..\..\source\global\tdclatl\_IDatabaseEvents_CP.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\source\global\tdclatl\tdclatl.def" />
+    <None Include="ActiveTable.rgs" />
     <None Include="database.rgs" />
+    <None Include="GroupQuery.rgs" />
     <None Include="QueryBase.rgs" />
     <None Include="tdclatl.rgs" />
   </ItemGroup>

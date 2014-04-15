@@ -1,0 +1,24 @@
+HKCR
+{
+	transactd.groupQuery.1 = s 'groupQuery Class'
+	{
+		CLSID = s '{8EB78589-1084-4546-A826-20B615831EFF}'
+	}
+	transactd.groupQuery = s 'groupQuery Class'
+	{		
+		CurVer = s 'transactd.groupQuery.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {8EB78589-1084-4546-A826-20B615831EFF} = s 'groupQuery Class'
+		{
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}
