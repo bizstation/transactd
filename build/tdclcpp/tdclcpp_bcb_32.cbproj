@@ -132,9 +132,6 @@
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fieldDDF.cpp">
 				<BuildOrder>7</BuildOrder>
 			</CppCompile>
-			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fields.cpp">
-				<BuildOrder>21</BuildOrder>
-			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fileDDF.cpp">
 				<BuildOrder>8</BuildOrder>
 			</CppCompile>
