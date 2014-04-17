@@ -157,7 +157,7 @@ public:
 
     int getDatalen() const
     {
-        if (logType & 64)
+        if (logType & CMPLOGICAL_FIELD)
             return 2;
         return len;
     }
@@ -167,7 +167,9 @@ public:
          short tmp = tb->fieldNumByName(name);
          if (tmp !=-1)
          {
-            memcpy(data, &tmp, 2);
+            allocBuffer(2);
+            fielddef& fd = tb->tableDef()->fieldDefs[tmp];
+            memcpy(data, &(fd.pos), 2);
             logType |= CMPLOGICAL_FIELD;
             return true;
          }

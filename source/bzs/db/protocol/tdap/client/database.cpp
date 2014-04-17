@@ -517,24 +517,7 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
     return (m_stat == 0);
 }
 
-int moveVaileRecord(table* src)
-{
-    int count = 0;
-    bookmark_td bm = 0;
-    src->stepLast();
-    while (src->stat() == STATUS_SUCCESS)
-    {
-        bm = src->bookmark();
-        ++count;
-        src->stepPrev();
-    }
-    if (count)
-    {
-        src->seekByBookmark(bm);
-        return count;
-    }
-    return 0;
-}
+
 
 short database::assignSchemaData(dbdef* src)
 {
@@ -590,59 +573,135 @@ short database::assignSchemaData(dbdef* src)
     return defDest->stat();
 }
 
+struct filedChnageInfo
+{
+    filedChnageInfo():fieldnum(-1),changed(0){}
+    short fieldnum;
+    bool changed;
+};
+
+void makeChangeInfo( const tabledef* ddef, const tabledef* sdef, filedChnageInfo* fci )
+{
+    for (short i = 0; i < sdef->fieldCount; i++)
+    {
+        fielddef& fds = sdef->fieldDefs[i];
+        for (short j = 0; j < ddef->fieldCount; j++)
+        {
+            fielddef& fdd = ddef->fieldDefs[j];
+            if (strcmp(fdd.nameA(), fds.nameA()) == 0)
+            {
+                fci[i].fieldnum = j;
+                if (fds.type != fdd.type)
+                    fci[i].changed = true; //diffrent type
+                else if (fds.len != fdd.len)
+                    fci[i].changed = true; //different size
+                break;
+            }
+            else
+                fci[i].fieldnum = -1;
+        }
+    }
+
+}
+
+inline void copyEachFiledData(table* dest, table* src, filedChnageInfo* fci)
+{
+    const tabledef* ddef = dest->tableDef();
+    const tabledef* sdef = src->tableDef();
+
+    for (int i=0; i<sdef->fieldCount; i++)
+    {
+        int dindex = fci[i].fieldnum;
+        fielddef& fds = sdef->fieldDefs[i];
+        fielddef& fdd = ddef->fieldDefs[dindex];
+
+        if (dindex != -1)
+        {
+            //src valiable len and last field;
+            if (fci[i].changed == false)
+            {
+                int len = fds.len;
+                if (fds.len > fdd.len)
+                    len = fdd.len;
+                memcpy(dest->fieldPtr(dindex), src->fieldPtr(i), len);
+            }else
+            {
+                if (fdd.maxVarDatalen() && fds.maxVarDatalen())
+                {
+                    uint_td size;
+                    uint_td maxlen = fdd.maxVarDatalen();
+                    const void* data = src->getFVbin(i, size);
+                    if (maxlen < size)
+                        size = maxlen;
+                    dest->setFV(dindex, data, size);
+                }else
+                {
+                    // If diffrent field type then convert to string then copy.
+                    dest->setFV(dindex, src->getFVstr(i));
+                }
+
+            }
+        }
+    }
+}
+
+inline int moveVaileRecord(table* src)
+{
+    int count = 0;
+    bookmark_td bm = 0;
+    src->stepLast();
+    while (src->stat() == STATUS_SUCCESS)
+    {
+        bm = src->bookmark();
+        ++count;
+        src->stepPrev();
+    }
+    if (count)
+    {
+        src->seekByBookmark(bm);
+        return count;
+    }
+    return 0;
+}
+
+inline void moveNextRecord(table* src, short keyNum)
+{
+    if (keyNum == -1)
+        src->stepNext();
+    else
+        src->seekNext();
+}
+
+inline void moveFirstRecord(table* src, short keyNum)
+{
+    if (keyNum == -1)
+        src->stepFirst();
+    else
+        src->seekFirst();
+}
 
 /*  Copy from src to dest table.
  * 	Copy as same field name.
  *	If turbo then copy use memcpy and offset dest of first address.
+ *  if a src field is variable size binary, that dest field needs to be variable size binary.
+ *  if src and dest fields are different type ,then a text copy is used.
  */
 #pragma warn -8004
 short database::copyTableData(table* dest, table* src, bool turbo, int offset, short keyNum,
     int maxSkip)
 {
-    ushort_td ins_rows = 0;
-    bool repData = false;
-    if (_tcsstr(dest->tableDef()->fileName(), _T("rep.dat")))
-        repData = true;
-
-    int SkipCount = 0;
-    short NewFieldNum[256] = {-1};
-    int cpytype[256] = {0}; // 0 mem 1 str
-    short i, j;
-    int Count;
-    int recordCount = src->recordCount();
-    for (i = 0; i < src->tableDef()->fieldCount; i++)
-    {
-        for (j = 0; j < dest->tableDef()->fieldCount; j++)
-        {
-            if (strcmp(dest->tableDef()->fieldDefs[j].nameA(),
-                src->tableDef()->fieldDefs[i].nameA()) == 0)
-            {
-                NewFieldNum[i] = j;
-                if (src->tableDef()->fieldDefs[i].type == ft_lvar)
-                    cpytype[i] = 0;
-                else if (src->tableDef()->fieldDefs[i].type != dest->tableDef()
-                    ->fieldDefs[NewFieldNum[i]].type)
-                    cpytype[i] = 1; //diffrent type
-                else if (src->tableDef()->fieldDefs[i].len != dest->tableDef()
-                    ->fieldDefs[NewFieldNum[i]].len)
-                    cpytype[i] = 1; //different size
-                else
-                    cpytype[i] = 0;
-                break;
-            }
-            else
-                NewFieldNum[i] = -1;
-
-        }
-    }
     src->setKeyNum((char_td)keyNum);
-    if (keyNum == -1)
-        src->stepFirst();
-    else
-        src->seekFirst();
-    Count = 1;
+    const tabledef* ddef = dest->tableDef();
+    const tabledef* sdef = src->tableDef();
+    ushort_td ins_rows = 0;
+    bool repData = (_tcsstr(ddef->fileName(), _T("rep.dat"))) ? true:false;
+    int skipCount = 0, count = 1;
+    int recordCount = src->recordCount();
+    filedChnageInfo fci[256];
 
-    int len;
+    makeChangeInfo(ddef, sdef, fci);
+    moveFirstRecord(src, keyNum);
+
     while (1)
     {
         if (src->stat())
@@ -651,25 +710,22 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset, s
             {
                 if (maxSkip != -1)
                     break;
-                if (recordCount < SkipCount + Count)
+                if (recordCount < skipCount + count)
                 {
                     if (src->stat() == STATUS_IO_ERROR)
                     {
-                    int n = moveVaileRecord(src);
-                    if (n)
-                    SkipCount = recordCount - n - Count;
-                    else
-                    break;
+                        int n = moveVaileRecord(src);
+                        if (n)
+                            skipCount = recordCount - n - count;
+                        else
+                            break;
                     }
                     else
-                    break;
+                        break;
                 }
-                if (keyNum == -1)
-                    src->stepNext();
-                else
-                    src->seekNext();
+                moveNextRecord(src, keyNum);
 
-                SkipCount++;
+                skipCount++;
                 if (src->stat() == STATUS_SUCCESS)
                     break;
 
@@ -687,82 +743,38 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset, s
             memcpy((char*)dest->fieldPtr(0) + offset, src->fieldPtr(0), src->datalen());
         }
         else
-        {
-            for (i = 0; i < src->tableDef()->fieldCount; i++)
-            {
-                int dindex = NewFieldNum[i];
-                fielddef& fds = src->tableDef()->fieldDefs[i];
-                fielddef& fdd = dest->tableDef()->fieldDefs[dindex];
-
-                if (dindex != -1)
-                {
-                    //src valiable len and last field;
-                    if (cpytype[i] == 0)
-                    {
-                        len = fds.len;
-                        if (fds.len > fdd.len)
-                            len = fdd.len;
-                        memcpy(dest->fieldPtr(dindex), src->fieldPtr(i), len);
-                    }else
-                    {
-                        switch (fdd.type)
-                        {
-                        case ft_myvarbinary:
-                        case ft_mywvarbinary:
-                        case ft_myblob:
-                        case ft_mytext:
-                        {
-                            uint_td size;
-                            uint_td maxlen = fdd.maxVarDatalen();
-                            const void* data = src->getFVbin(i, size);
-                            if (maxlen < size)
-                                size = maxlen;
-                            dest->setFV(dindex, data, size);
-                        }
-                        default:
-                            // If diffrent field type then convert to string then copy.
-                            dest->setFV(dindex, src->getFVstr(i));
-                        }
-                    }
-                }
-            }
-        }
+            copyEachFiledData(dest, src, fci);
 
         if (repData)
         {
-
             dest->m_datalen = src->m_datalen;
             dest->tdap(TD_REC_INSERT);
         }
         else
             ins_rows += dest->insert();
         if (dest->stat() == STATUS_INVALID_VALLEN)
-                SkipCount++;
+            skipCount++;
         else if (dest->stat() == STATUS_DUPPLICATE_KEYVALUE)
-            SkipCount++;
+            skipCount++;
         else if (dest->stat() != STATUS_SUCCESS)
             return dest->stat();
         else
-            Count++;
-        bool Cancel = false;
-        onCopyDataInternal(dest, recordCount, Count, Cancel);
-        if (Cancel)
-            return -1;
-        if (keyNum == -1)
-            src->stepNext();
-        else
-            src->seekNext();
+            count++;
+        bool cancel = false;
+        onCopyDataInternal(dest, recordCount, count, cancel);
+        if (cancel) return -1;
+
+        moveNextRecord(src, keyNum);
     }
-    if ((SkipCount) && (maxSkip == -1))
+    if ((skipCount) && (maxSkip == -1))
     {
-        bool Cancel = false;
-        onCopyDataInternal(dest, -1/*recordCount*/, Count, Cancel);
-        if (Cancel)
-            return -1;
+        bool cancel = false;
+        onCopyDataInternal(dest, -1, count, cancel);
+        if (cancel) return -1;
+
     }
 
-    if (src->stat() == 9)
-        return 0;
+    if (src->stat() == 9) return 0;
     return src->stat();
 }
 #pragma warn .8004

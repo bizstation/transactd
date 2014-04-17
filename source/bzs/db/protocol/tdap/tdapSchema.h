@@ -372,7 +372,9 @@ public:
     inline int maxVarDatalen() const
     {
         if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) || type == ft_lstring)
-            return (len < 256) ? 0xFF-1 : 0xFFFF-2;
+            return (len < 256) ? len-1 : len-2;
+        else if (type == ft_lvar)
+            return len - 4;
         else  if ((type == ft_myblob) || (type == ft_mytext))
         {
             switch(len - 8)
