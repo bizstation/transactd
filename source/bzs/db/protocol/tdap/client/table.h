@@ -138,6 +138,7 @@ public:
     using nstable::eFindType;
 
     inline const tabledef* tableDef() const {return m_tableDef;};
+	inline const tabledef** tableDefPtr() const {return const_cast<const tabledef**>(&m_tableDef);};
 
     inline bool valiableFormatType() const {return m_tableDef->optionFlags.bitA;}
 

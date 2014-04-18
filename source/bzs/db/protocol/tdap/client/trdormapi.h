@@ -1066,7 +1066,7 @@ public:
 
     inline writableRecord& createWritableRecord()
     {
-        m_record.reset(writableRecord::create(m_tb), &writableRecord::release);
+        m_record.reset(writableRecord::create(m_tb, &m_alias.map()), &writableRecord::release);
         return *m_record.get();
     }
     /*

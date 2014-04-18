@@ -84,6 +84,7 @@ public:
 					,BSTR Name5, BSTR Name6, BSTR Name7
 					,IRecordset** retVal);
 	STDMETHOD(CreateWritableRecord)(IWritableRecord** retVal);
+	STDMETHOD(get_TableDef)(ITableDef** Value);
 
 };
 

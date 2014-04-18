@@ -98,7 +98,7 @@ class writableRecord : public memoryRecord
     fielddefs* m_fddefs;
     short m_endIndex;
     table_ptr m_tb;
-    writableRecord(table_ptr tb);
+    writableRecord(table_ptr tb, const aliasMap_type* alias);
     fielddefs* fddefs();
 public:
 	~writableRecord();
@@ -108,7 +108,7 @@ public:
     void update();
     void save();
 
-    static writableRecord* create(table_ptr tb);
+    static writableRecord* create(table_ptr tb, const aliasMap_type* alias);
 
 };
 

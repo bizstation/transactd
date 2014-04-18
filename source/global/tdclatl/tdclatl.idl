@@ -1078,6 +1078,8 @@ interface IActiveTable : IDispatch
 
   [id(0x000000A)]
   HRESULT _stdcall CreateWritableRecord([out, retval] IWritableRecord** retVal);
+  [propget, id(0x000000B)]
+  HRESULT _stdcall TableDef([out, retval] ITableDef** Value);
   				
 };
 

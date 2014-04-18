@@ -139,12 +139,13 @@ void memoryRecord::release(memoryRecord* p)
 //---------------------------------------------------------------------------
 //    class writableRecord
 //---------------------------------------------------------------------------
-writableRecord::writableRecord(table_ptr tb):memoryRecord(*fddefs())
+writableRecord::writableRecord(table_ptr tb, const aliasMap_type* alias):memoryRecord(*fddefs())
         ,m_tb(tb)
 {
     m_tb->setFilter(NULL, 0, 0);
     m_tb->clearBuffer();
     m_fddefs->clear();
+	m_fddefs->setAliases(alias);
     m_fddefs->copyFrom(m_tb.get());
     setRecordData(0, 0, &m_endIndex, true);
 }
@@ -174,6 +175,7 @@ void writableRecord::insert()
 {
     copyToBuffer(m_tb.get());
     insertRecord(m_tb);
+	copyFromBuffer(m_tb.get());
 }
 
 void writableRecord::del()
@@ -208,9 +210,9 @@ void writableRecord::save()
     }
 }
 
-writableRecord* writableRecord::create(table_ptr tb)
+writableRecord* writableRecord::create(table_ptr tb, const aliasMap_type* alias)
 {
-    return new writableRecord(tb);
+    return new writableRecord(tb, alias);
 }
 
 

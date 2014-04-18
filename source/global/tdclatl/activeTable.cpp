@@ -22,6 +22,7 @@
 #include "QueryBase.h"
 #include "Recordset.h"
 #include "Record.h"
+#include "TableDef.h"
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -296,4 +297,24 @@ STDMETHODIMP CActiveTable::CreateWritableRecord(IWritableRecord** retVal)
     }
 	return S_OK;
 }
+
+
+STDMETHODIMP CActiveTable::get_TableDef(ITableDef** Value)
+{
+    CComObject<CTableDef> *piObj;
+    CComObject<CTableDef>::CreateInstance(&piObj);
+	if (piObj)
+	{
+
+		piObj->m_tabledefPtr = const_cast<tabledef** >(m_at->table()->tableDefPtr());
+		
+		ITableDef* tbd;
+		piObj->QueryInterface(IID_ITableDef, (void**)&tbd);
+		_ASSERTE(tbd);
+		*Value = tbd;
+	}else
+		*Value = 0;
+    return S_OK;
+}
+
 
