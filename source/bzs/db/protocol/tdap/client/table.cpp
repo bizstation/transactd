@@ -212,7 +212,10 @@ public:
             m_seekMultiStat = m_bookmark;
             m_bookmark = 0;
             if (mra)
+            {
                 m_tmpPtr = (char*)mra->ptr(m_row, multiRecordAlocator::mra_current_block);
+                mra->setInvalidRecord(m_row, true);
+            }
             else
                 memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             return m_tmpPtr;

@@ -47,12 +47,13 @@ public:
 
     HRESULT FinalConstruct() {return S_OK;}
 
-	void FinalRelease(){};
+	void FinalRelease();
 
 public:
 
   STDMETHOD(get_Size)(short* retVal);
   STDMETHOD(get_Field)(VARIANT Index, IField** retVal);
+  STDMETHOD(get_IsInvalidRecord)(VARIANT_BOOL* retVal);
 
 };
 
@@ -80,7 +81,7 @@ public:
 
     HRESULT FinalConstruct() {return S_OK;}
 
-	void FinalRelease(){};
+	void FinalRelease();
 
 public:
   STDMETHOD(Clear)();
@@ -92,5 +93,6 @@ public:
   STDMETHOD(Update)();
   STDMETHOD(Read)(VARIANT_BOOL* retVal);
   STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
+  STDMETHOD(get_IsInvalidRecord)(VARIANT_BOOL* retVal);
 
 };

@@ -47,7 +47,7 @@ public:
     inline unsigned char* ptr(size_t row, int stat);
     inline void setRowOffset(int v){m_rowOffset = v;}
     inline void setJoinType(int v){m_addType = v;}
-
+	inline void setInvalidRecord(size_t row, bool v);
 };
 
 
@@ -260,6 +260,10 @@ inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
     return (*m_rs)[row+m_rowOffset]->ptr(col);
 }
 
+inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
+{
+	(*m_rs)[row+m_rowOffset]->setInvalidRecord(v);
+}
 
 namespace bzs{namespace db{namespace protocol{namespace tdap{namespace client
 {

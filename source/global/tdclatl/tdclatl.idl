@@ -1095,17 +1095,17 @@ interface IRecordset : IDispatch
 {
 
   [id(0x0000002)]
-  HRESULT _stdcall Record([in] short Index, [out, retval] IRecord** retVal);
+  HRESULT _stdcall Record([in] unsigned long Index, [out, retval] IRecord** retVal);
   [id(0x0000003)]
   HRESULT _stdcall First([out, retval] IRecord** retVal);
   [id(0x0000004)]
   HRESULT _stdcall Last([out, retval] IRecord** retVal);
   [id(0x0000005)]
-  HRESULT _stdcall Top([in]long Num, [out, retval] IRecordset** retVal);
+  HRESULT _stdcall Top([in]unsigned long Num, [out, retval] IRecordset** retVal);
   [id(0x0000006)]
-  HRESULT _stdcall Erase([in]long Index);
+  HRESULT _stdcall Erase([in]unsigned long Index);
   [propget,id(0x0000007)]
-  HRESULT _stdcall Count([out, retval] long* retVal);
+  HRESULT _stdcall Count([out, retval]unsigned long* retVal);
   [id(0x0000008)]
   HRESULT _stdcall RemoveField([in]short Index, [out, retval] IRecordset** retVal);
   [id(0x0000009)]
@@ -1122,7 +1122,7 @@ interface IRecordset : IDispatch
   [propget,id(0x000000C)]
   HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
   [propget,id(0x000000D)]
-  HRESULT _stdcall Size([out, retval] long* retVal);
+  HRESULT _stdcall Size([out, retval]unsigned long* retVal);
 
 };
 
@@ -1139,7 +1139,9 @@ interface IRecord : IDispatch
   HRESULT _stdcall Size([out, retval] short* retVal);
   [propget, id(0x0000002)]
   HRESULT _stdcall Field([in] VARIANT Index, [out, retval] IField** retVal);
- 
+  [propget, id(0x0000003)]
+  HRESULT _stdcall IsInvalidRecord( [out, retval] VARIANT_BOOL* retVal);
+
 };
 
 [

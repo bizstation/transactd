@@ -29,7 +29,7 @@ class ATL_NO_VTABLE CFlags : public CComObjectRootEx<CComSingleThreadModel>, pub
 {
 public:
     CFlags() {}
-    bzs::db::protocol::tdap::FLAGS m_flags;
+    bzs::db::protocol::tdap::FLAGS* m_flags;
 
     BEGIN_COM_MAP(CFlags) 
 		COM_INTERFACE_ENTRY(IFlags) 

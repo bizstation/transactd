@@ -40,10 +40,13 @@ class fieldsBase
     virtual unsigned char* ptr(int index) const = 0;
 protected:
     fielddefs& m_fns;
+	bool m_invalidRecord;
 public:
 
-    explicit inline fieldsBase(fielddefs& fns):m_fns(fns){}
+    explicit inline fieldsBase(fielddefs& fns):m_fns(fns),m_invalidRecord(false){}
     virtual ~fieldsBase(){};
+	void setInvalidRecord(bool v){m_invalidRecord = v;}
+	bool isInvalidRecord()const{return m_invalidRecord;}
 
     inline field operator[](short index) const
     {

@@ -160,7 +160,7 @@ STDMETHODIMP CFieldDef::get_EnableFlags(IFlags** Value)
     CComObject<CFlags>::CreateInstance(&piObj);
 	if (piObj)
 	{
-		piObj->m_flags = const_fielddef()->enableFlags;
+		piObj->m_flags = (bzs::db::protocol::tdap::FLAGS*)&(const_fielddef()->enableFlags);
 		IFlags* fl;
 		piObj->QueryInterface(IID_IFlags, (void**)&fl);
 		_ASSERTE(fl);

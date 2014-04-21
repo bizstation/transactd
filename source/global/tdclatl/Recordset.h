@@ -55,13 +55,13 @@ public:
 
 public:
 
-  STDMETHOD(Record)(short Index, IRecord** retVal);
+  STDMETHOD(Record)(unsigned long Index, IRecord** retVal);
   STDMETHOD(First)(IRecord** retVal);
   STDMETHOD(Last)(IRecord** retVal);
-  STDMETHOD(Top)(long Num, IRecordset** retVal);
-  STDMETHOD(Erase)(long Index);
-  STDMETHOD(get_Count)(long* retVal);
-  STDMETHOD(get_Size)(long* retVal);
+  STDMETHOD(Top)(unsigned long Num, IRecordset** retVal);
+  STDMETHOD(Erase)(unsigned long Index);
+  STDMETHOD(get_Count)(unsigned long* retVal);
+  STDMETHOD(get_Size)(unsigned long* retVal);
   STDMETHOD(RemoveField)(short Index, IRecordset** retVal);
   STDMETHOD(GroupBy)(IGroupQuery* gq, enum eGroupFunc func, IRecordset** retVal);
   STDMETHOD(OrderBy)( BSTR name0,  BSTR name1,  BSTR name2,  BSTR name3,  BSTR name4, 

@@ -20,6 +20,12 @@
 #include "FieldDefs.h"
 #include "FieldDef.h"
 
+void CFieldDefs::FinalRelease()
+{
+	if (m_fieldDefObj)
+		m_fieldDefObj->AddRef();
+}
+
 short CFieldDefs::GetFieldNum(VARIANT* Index)
 {
     short index = -1;
@@ -44,6 +50,7 @@ STDMETHODIMP CFieldDefs::get_FieldDef(VARIANT Name, IFieldDef** retVal)
 		if (m_fieldDefObj == NULL)
 		{
 			CComObject<CFieldDef>::CreateInstance(&m_fieldDefObj);
+			m_fieldDefObj->AddRef();
 		}
 		if (m_fieldDefObj)
 		{

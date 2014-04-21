@@ -55,6 +55,7 @@ public:
     virtual void init(size_t recordCount, size_t recordLen,int addType, const class table* tb) = 0;
     virtual unsigned char* ptr(size_t row, int stat) = 0;
     virtual void setJoinType(int v)=0;
+	virtual void setInvalidRecord(size_t row, bool v) = 0;
 
 };
 

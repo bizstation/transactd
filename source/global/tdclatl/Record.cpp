@@ -21,6 +21,12 @@
 #include "Field.h"
 #include "FieldDefs.h"
 
+void CRecord::FinalRelease()
+{
+	if (m_fieldObj)
+		m_fieldObj->Release();
+
+}
 short CRecord::GetFieldNum(VARIANT* Index)
 {
     short index = -1;
@@ -44,7 +50,11 @@ STDMETHODIMP CRecord::get_Field(VARIANT Index, IField** retVal)
         return Error("Invalid index", IID_ITable);
 
 	if (m_fieldObj == NULL)
+	{
 		CComObject<CField>::CreateInstance(&m_fieldObj);
+		m_fieldObj->AddRef();
+		
+	}
 	if (m_fieldObj)
 	{				 
 		m_fieldObj->m_fd = (*m_rec)[index]; 
@@ -57,7 +67,21 @@ STDMETHODIMP CRecord::get_Field(VARIANT Index, IField** retVal)
 
 }
 
+STDMETHODIMP CRecord::get_IsInvalidRecord( VARIANT_BOOL* retVal)
+{
+	*retVal = m_rec->isInvalidRecord();
+	return S_OK;
+}
 
+
+void CWritableRecord::FinalRelease()
+{
+	if (m_fieldObj)
+		m_fieldObj->Release();
+	if (m_fieldDefsObj)
+		m_fieldDefsObj->Release();
+
+}
 short CWritableRecord::GetFieldNum(VARIANT* Index)
 {
     short index = -1;
@@ -87,7 +111,10 @@ STDMETHODIMP CWritableRecord::get_Field(VARIANT Index, IField** retVal)
         return Error("Invalid index", IID_IWritableRecord);
 
 	if (m_fieldObj == NULL)
+	{
 		CComObject<CField>::CreateInstance(&m_fieldObj);
+		m_fieldObj->AddRef();
+	}
 	if (m_fieldObj)
 	{				 
 		m_fieldObj->m_fd = (*m_rec)[index]; 
@@ -170,6 +197,7 @@ STDMETHODIMP CWritableRecord::get_FieldDefs(IFieldDefs** retVal)
 	if (m_fieldDefsObj == NULL)
 	{
 		CComObject<CFieldDefs>::CreateInstance(&m_fieldDefsObj);
+		m_fieldDefsObj->AddRef();
 	}
 	if (m_fieldDefsObj)
 	{
@@ -183,3 +211,8 @@ STDMETHODIMP CWritableRecord::get_FieldDefs(IFieldDefs** retVal)
 	return S_OK;
 }
 
+STDMETHODIMP CWritableRecord::get_IsInvalidRecord(VARIANT_BOOL* retVal)
+{
+	*retVal = m_rec->isInvalidRecord();
+	return S_OK;
+}

@@ -32,6 +32,10 @@ CARecordset::CARecordset():m_rs(new recordset()),m_recObj(NULL),m_fieldDefsObj(N
 CARecordset::~CARecordset() 
 {
 	delete m_rs;
+	if (m_recObj)
+		m_recObj->Release();
+	if (m_fieldDefsObj)
+		m_fieldDefsObj->Release();
 }
 
 void CARecordset::setResult(IRecordset** retVal)
@@ -39,13 +43,14 @@ void CARecordset::setResult(IRecordset** retVal)
 	this->QueryInterface(IID_IRecordset, (void**)retVal);
 }
 
-STDMETHODIMP CARecordset::Record(short Index, IRecord** retVal)
+STDMETHODIMP CARecordset::Record(unsigned long Index, IRecord** retVal)
 {
     if (Index >= 0 && Index < m_rs->size())
 	{
 		if (m_recObj == NULL)
 		{
 			CComObject<CRecord>::CreateInstance(&m_recObj);
+			m_recObj->AddRef();
 		}
 		if (m_recObj)
 		{
@@ -71,7 +76,7 @@ STDMETHODIMP CARecordset::Last(IRecord** retVal)
 	return Record((short)m_rs->size()-1, retVal);
 }
 
-STDMETHODIMP CARecordset::Top(long Num, IRecordset** retVal)
+STDMETHODIMP CARecordset::Top(unsigned long Num, IRecordset** retVal)
 {
 	if (Num > 0 && Num < m_rs->size())
 	{
@@ -90,7 +95,7 @@ STDMETHODIMP CARecordset::Top(long Num, IRecordset** retVal)
 	return Error("Invalid top number", IID_IRecordset);	
 }
 
-STDMETHODIMP CARecordset::Erase(long Index)
+STDMETHODIMP CARecordset::Erase(unsigned long Index)
 {
 	if (Index >= 0 && Index < m_rs->size())
 	{
@@ -100,13 +105,13 @@ STDMETHODIMP CARecordset::Erase(long Index)
 	return Error("Invalid index", IID_IRecordset);	
 }
 
-STDMETHODIMP CARecordset::get_Count(long* retVal)
+STDMETHODIMP CARecordset::get_Count(unsigned long* retVal)
 {
 	*retVal = (long)m_rs->count();
 	return S_OK;
 }
 
-STDMETHODIMP CARecordset::get_Size(long* retVal)
+STDMETHODIMP CARecordset::get_Size(unsigned long* retVal)
 {
 	*retVal = (long)m_rs->count();
 	return S_OK;
@@ -192,6 +197,7 @@ STDMETHODIMP CARecordset::get_FieldDefs(IFieldDefs** retVal)
 	if (m_fieldDefsObj == NULL)
 	{
 		CComObject<CFieldDefs>::CreateInstance(&m_fieldDefsObj);
+		m_fieldDefsObj->AddRef();
 	}
 	if (m_fieldDefsObj)
 	{

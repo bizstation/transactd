@@ -32,7 +32,7 @@ STDMETHODIMP CKeySegment::get_Flags(IFlags** Value)
     CComObject<CFlags>::CreateInstance(&piObj);
 	if (piObj)
 	{
-		piObj->m_flags = segment()->flags;
+		piObj->m_flags = &(segment()->flags);
 		IFlags* fl;
 		piObj->QueryInterface(IID_IFlags, (void**)&fl);
 		_ASSERTE(fl);

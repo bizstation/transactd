@@ -44,7 +44,7 @@ public:
 
     HRESULT FinalConstruct() {return S_OK;}
 
-    void FinalRelease() {}
+    void FinalRelease();
 
 public:
 

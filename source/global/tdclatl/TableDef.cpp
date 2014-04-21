@@ -134,7 +134,7 @@ STDMETHODIMP CTableDef::get_Flags(IFlags** Value)
     CComObject<CFlags>::CreateInstance(&piObj);
 	if (piObj)
 	{
-		piObj->m_flags = (*m_tabledefPtr)->flags;
+		piObj->m_flags = &((*m_tabledefPtr)->flags);
 		IFlags* fl;
 		piObj->QueryInterface(IID_IFlags, (void**)&fl);
 		_ASSERTE(fl);
@@ -192,7 +192,7 @@ STDMETHODIMP CTableDef::get_OptionFlags(IFlags** Value)
     CComObject<CFlags>::CreateInstance(&piObj);
 	if (piObj)
 	{
-		piObj->m_flags = (*m_tabledefPtr)->optionFlags;
+		piObj->m_flags = &((*m_tabledefPtr)->optionFlags);
 		IFlags* fl;
 		piObj->QueryInterface(IID_IFlags, (void**)&fl);
 		_ASSERTE(fl);
