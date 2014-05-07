@@ -129,8 +129,8 @@ class recordCache
     unsigned int m_unpackLen;
     unsigned int m_rowCount;
     bookmark_td m_bookmark;
-    char* m_ptr;
-    char* m_tmpPtr;
+    uchar_td* m_ptr;
+    uchar_td* m_tmpPtr;
     blobHeader* m_hd;
     short_td m_seekMultiStat;
     int m_memblockType;
@@ -154,7 +154,7 @@ public:
 
     inline void setMemblockType(int v){m_memblockType = v;}
 
-    inline void reset(filter* p, char* data, unsigned int totalSize, const blobHeader* hd)
+    inline void reset(filter* p, uchar_td* data, unsigned int totalSize, const blobHeader* hd)
     {
         m_pFilter = p;
         m_row = 0;
@@ -170,14 +170,14 @@ public:
         m_tmpPtr = data + totalSize;
         if (m_tb->m_impl->mraPtr)
         {
-            size_t recordLen = m_pFilter->fieldSelected() ?
+			size_t recordLen = m_pFilter->fieldSelected() ?
                     m_pFilter->totalFieldLen() : m_tb->tableDef()->maxRecordLen;
-            m_tb->m_impl->mraPtr->init(m_rowCount, recordLen, m_memblockType, m_tb);
+ 			m_tb->m_impl->mraPtr->init(m_rowCount, recordLen, m_memblockType, m_tb);
         }
         m_hd = const_cast<blobHeader*>(hd);
     }
 
-    inline const char* moveRow(int count)
+    inline const uchar_td* moveRow(int count)
     {
         //move row data address pointer in result buffer
         for (int i = 0; i < count; i++)
@@ -213,7 +213,7 @@ public:
             m_bookmark = 0;
             if (mra)
             {
-                m_tmpPtr = (char*)mra->ptr(m_row, multiRecordAlocator::mra_current_block);
+                m_tmpPtr = mra->ptr(m_row, multiRecordAlocator::mra_current_block);
                 mra->setInvalidRecord(m_row, true);
             }
             else
@@ -223,25 +223,24 @@ public:
             m_seekMultiStat = 0;
 
         if (mra)
-            m_tmpPtr = (char*)mra->ptr(m_row, multiRecordAlocator::mra_current_block);
+            m_tmpPtr = mra->ptr(m_row, multiRecordAlocator::mra_current_block);
 
         if (m_pFilter->fieldSelected())
         {
-            int offset = 0;
             int resultOffset = 0;
+			uchar_td* fieldPtr = m_ptr;
             if (!mra)
                 memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             for (int i = 0; i < m_pFilter->fieldCount(); i++)
             {
-                if (!mra)
-                    resultOffset = m_pFilter->fieldOffset(i);
-                memcpy((char*)m_tmpPtr + resultOffset, m_ptr + offset, m_pFilter->fieldLen(i));
-
-                offset += m_pFilter->fieldLen(i);
+				const fielddef& fd =  m_tb->tableDef()->fieldDefs[m_pFilter->selectFieldIndexes()[i]];
+				if (!mra) 
+					resultOffset = fd.pos;
+				fieldPtr += fd.unPackCopy(m_tmpPtr + resultOffset, fieldPtr);
                 if (mra)
-                    resultOffset += m_pFilter->fieldLen(i);
+                    resultOffset += fd.len;
             }
-            m_tb->setBlobFieldPointer(m_tmpPtr, m_hd);
+            m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
             return m_tmpPtr;
         }
         else if (m_tb->valiableFormatType())
@@ -249,7 +248,7 @@ public:
             memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             memcpy(m_tmpPtr, m_ptr, m_len);
             m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
-            m_tb->setBlobFieldPointer(m_tmpPtr, m_hd);
+            m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
             return m_tmpPtr;
         }
         else
@@ -257,15 +256,15 @@ public:
             if (mra)
             {
                 memcpy(m_tmpPtr, m_ptr, m_len);
-                m_tb->setBlobFieldPointer(m_tmpPtr, m_hd);
+                m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
                 return m_tmpPtr;
             }else
-                m_tb->setBlobFieldPointer(m_ptr, m_hd);
+                m_tb->setBlobFieldPointer((char*)m_ptr, m_hd);
             return m_ptr;
         }
     }
 
-    inline const char* setRow(unsigned int rowNum)
+    inline const uchar_td* setRow(unsigned int rowNum)
     {
         if (rowNum < m_rowCount)
         {
@@ -500,7 +499,7 @@ void table::btrvGetExtend(ushort_td op)
     if (!m_impl->filterPtr->isWriteComleted() && (stat == STATUS_REACHED_FILTER_COND))
         stat = STATUS_LIMMIT_OF_REJECT;
 
-    m_impl->rc->reset(m_impl->filterPtr, (char*)m_impl->dataBak, m_datalen, blobFieldUsed() ?
+    m_impl->rc->reset(m_impl->filterPtr, (uchar_td*)m_impl->dataBak, m_datalen, blobFieldUsed() ?
         getBlobHeader() : NULL);
 
     m_stat = stat;

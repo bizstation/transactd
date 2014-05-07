@@ -354,6 +354,8 @@ public:
 	void setRecordFromPacked(const uchar* packedPtr, uint size, const bzs::db::blobHeader* hd);
 	uint recordPackCopy(char* buf, uint maxsize=0);
 
+	ushort fieldPackCopy(unsigned char* dest, short filedNum);
+
 	uint fieldSizeByte(int fieldNum){return var_bytes_if(m_table->field[fieldNum]);}
 	unsigned short fieldDataLen(int fieldNum)const;
 	

@@ -457,6 +457,18 @@ public:
 
     inline uchar_td charsetIndex()const {return m_charsetIndex;};
 
+	inline uint_td unPackCopy(uchar_td* dest, const uchar_td* src) const
+	{
+		int clen = varLenBytes();
+		if (clen == 0)
+			clen = len;
+        else if (clen == 1)
+            clen += *((unsigned char*)src);
+		else 
+			clen += *((unsigned short*)src);
+		memcpy(dest, src, clen);
+		return clen;
+	}
 
 };
 

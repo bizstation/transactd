@@ -984,6 +984,17 @@ uint table::recordPackCopy(char* buf, uint maxsize)
 	return (uint)(p - buf);
 }
 
+ushort table::fieldPackCopy(unsigned char* dest, short filedNum)
+{
+	Field* fd = m_table->field[filedNum];
+	uint len = fd->pack_length();
+	if (isVarType(fd->type()))
+		len = var_total_len(fd);
+					
+	memcpy(dest, fd->ptr, len);
+	return (ushort)len;
+}
+
 inline bool table::keynumCheck(char num)
 {
 	return ((num>=0) && (num < (short)m_table->s->keys));

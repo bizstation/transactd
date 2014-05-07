@@ -74,6 +74,7 @@ public:
 		return -1;
 	}
 	inline uint fieldSizeByte(int fieldNum){return m_tb->fieldSizeByte(fieldNum);}
+	inline ushort fieldPackCopy(unsigned char* dest, short filedNum){return m_tb->fieldPackCopy(dest, filedNum);}
 };
 
 /** If get all field then len = record length.
@@ -123,6 +124,8 @@ inline unsigned short position::packLen(const resultField* rf) const
 {
 	return m_tb->fieldDataLen(rf->fieldNum);
 }
+
+
 
 inline int compareUint24(const char* l, const char* r)
 {
@@ -757,9 +760,9 @@ class resultWriter
 					resultField& fd = m_def->field[i];
 					if (m_maxLen + RETBUF_EXT_RESERVE_SIZE >= m_resultLen + fd.len)
 					{
-						memcpy(m_buf + m_resultLen, pos->fieldPtr(&fd),  fd.len);
-						m_resultLen += fd.len;
-						recLen += fd.len;
+						uint len = pos->fieldPackCopy((unsigned char*)m_buf + m_resultLen, fd.fieldNum);
+						m_resultLen += len;
+						recLen += len;
 						if (pos->isBlobField(&fd))
 							pos->addBlobBuffer(fd.fieldNum);
 					}
