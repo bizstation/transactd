@@ -83,7 +83,7 @@ class connection  : public iconnection, private boost::noncopyable
 				size_t size=0;
 				if (m_optionalBuffes.size())
 					m_optionalBuffes.clear();
-				if (m_module->execute(&m_result[0], size, &m_optionalBuffes) == EXECUTE_RESULT_QUIT)
+				if (m_module->execute(vecBuffer(m_result), size, &m_optionalBuffes) == EXECUTE_RESULT_QUIT)
 					return ;
 				else
 				{

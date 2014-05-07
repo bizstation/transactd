@@ -47,12 +47,31 @@ class iconnection;
 
 typedef std::vector<boost::asio::const_buffer> buffers;
 
+class IResultBuffer
+{
+public:
+	virtual void resize(size_t v) = 0;	
+	virtual size_t  size()const = 0;
+	virtual char* ptr() = 0;
+};
+
+class vecBuffer : public IResultBuffer
+{
+	std::vector<char>& m_vecbuf;
+public:
+	vecBuffer(std::vector<char>& v):m_vecbuf(v){}
+	void resize(size_t v){m_vecbuf.resize(v);}	
+	size_t  size()const{return m_vecbuf.size();}
+	virtual char* ptr(){return &m_vecbuf[0];}
+};
+
 class IAppModule
 {
 public:
 		
 	virtual ~IAppModule() {};
-	virtual int execute(char* result, size_t& size, buffers* optionalData) = 0;
+	//virtual int execute(char* result, size_t& size, buffers* optionalData) = 0;
+	virtual int execute(IResultBuffer& result, size_t& size, buffers* optionalData) = 0;
 	virtual size_t onRead(const char* data, size_t size, bool& complete)=0;
 	virtual size_t onAccept(char* message, size_t bufsize)=0;
 	virtual void reset() = 0;

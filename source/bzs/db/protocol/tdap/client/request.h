@@ -109,6 +109,20 @@ public:
 			blobHeader = NULL;
 	
 	}
+	
+	inline unsigned int sendLenEstimate()
+	{
+		if (P_MASK_EX_SENDLEN & paramMask)
+		{
+			unsigned int v = *((unsigned int*)data);
+			v &= 0xFFFFFFF; //28bit
+			return v + 2048;
+		}
+		else if (P_MASK_DATA & paramMask)
+			return *datalen + 2048;
+		return 2048;
+	}
+
 	inline unsigned int serialize(char* buf)
 	{
 		char* p = buf;
@@ -118,7 +132,11 @@ public:
 			totallen += POSBLK_SIZE;
 	
 		if (P_MASK_EX_SENDLEN & paramMask)
-			totallen += *((ushort_td*)data);
+		{
+			unsigned int v = *((unsigned int*)data);
+			v &= 0xFFFFFFF;
+			totallen += v;
+		}
 		else if (P_MASK_DATA & paramMask)
 			totallen += *datalen;
 	

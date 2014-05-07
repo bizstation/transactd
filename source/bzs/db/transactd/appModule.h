@@ -58,7 +58,9 @@ public:
 			, bool tpool,int type);
 	~module();
 	void reset();
-	int execute(char* result, size_t& size, netsvc::server::buffers*  optionalData);
+	//int execute(char* result, size_t& size, netsvc::server::buffers*  optionalData);
+	int execute(netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers*  optionalData);
+	
 	void cleanup(){ m_commandExecuter->cleanup();};
 	bool isShutDown(){return m_commandExecuter->isShutDown();}
 	bool checkHost(const char* hostCheckname);

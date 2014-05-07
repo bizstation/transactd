@@ -265,10 +265,11 @@ void dbExecuter::doRecordOperation(request& req, engine::mysql::table* tb, resul
 	
 }
 
-int dbExecuter::commandExec(std::vector<request>& requests, char* result, size_t& size, netsvc::server::buffers* optionalData)
+int dbExecuter::commandExec(std::vector<request>& requests
+			, netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData)
 {
 	request& req = requests[0];
-	resultBuffer buf(result);
+	resultBuffer buf(result.ptr());
 	try
 	{
 		switch(req.op)

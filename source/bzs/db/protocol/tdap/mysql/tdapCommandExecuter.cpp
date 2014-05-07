@@ -769,10 +769,12 @@ inline short getTrnsactionType(int op)
 	return TRN_RECORD_LOCK_SINGLE;
 }
 
-int dbExecuter::commandExec(request& req, char* resultBuffer, size_t& size, netsvc::server::buffers* optionalData)
+//int dbExecuter::commandExec(request& req, char* resultBuffer, size_t& size, netsvc::server::buffers* optionalData)
+int dbExecuter::commandExec(request& req, netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData)
 {
 	DEBUG_PROFILE_START(1)
 	m_tb = NULL;
+	char* resultBuffer = result.ptr();
 	int op = req.op % 100;
 	int opTrn = req.op;
 	if (op==99)	return 0;
@@ -937,7 +939,8 @@ int dbExecuter::commandExec(request& req, char* resultBuffer, size_t& size, nets
 		}
 		case TD_KEY_GE_NEXT_MULTI:
 		case TD_KEY_LE_PREV_MULTI:
-			if (doReadMultiWithSeek(req, op, resultBuffer, size, optionalData) == EXECUTE_RESULT_SUCCESS)
+			if (result.size() < *(req.datalen)) result.resize(*(req.datalen));
+			if (doReadMultiWithSeek(req, op, result.ptr(), size, optionalData) == EXECUTE_RESULT_SUCCESS)
 				return EXECUTE_RESULT_SUCCESS; // Caution Call unUse()
 			break;
 		case TD_KEY_SEEK_MULTI:
@@ -945,7 +948,8 @@ int dbExecuter::commandExec(request& req, char* resultBuffer, size_t& size, nets
 		case TD_KEY_PREV_MULTI:
 		case TD_POS_NEXT_MULTI:
 		case TD_POS_PREV_MULTI:
-			if (doReadMulti(req, op, resultBuffer, size, optionalData) == EXECUTE_RESULT_SUCCESS)
+			if (result.size() < *(req.datalen)) result.resize(*(req.datalen));
+			if (doReadMulti(req, op, result.ptr(), size, optionalData) == EXECUTE_RESULT_SUCCESS)
 				return EXECUTE_RESULT_SUCCESS; // Caution Call unUse()
 			break;
 		case TD_MOVE_PER:
@@ -1067,14 +1071,14 @@ int connMgrExecuter::disconnectAll(char* buf, size_t& size)
 	return EXECUTE_RESULT_SUCCESS;
 }
 
-int connMgrExecuter::commandExec(char* buf, size_t& size)
+int connMgrExecuter::commandExec(netsvc::server::IResultBuffer& buffer, size_t& size)
 {
 	if (m_req.keyNum == TD_STSTCS_READ)
-		return read(buf, size);
+		return read(buffer.ptr(), size);
 	else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ONE)
-		return disconnectOne( buf, size);
+		return disconnectOne( buffer.ptr(), size);
 	else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ALL)
-		return disconnectAll(buf, size);		
+		return disconnectAll(buffer.ptr(), size);		
 	return 0;
 }
 

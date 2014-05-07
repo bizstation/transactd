@@ -77,7 +77,7 @@ class dbExecuter : public engine::mysql::dbManager
 public:
 	dbExecuter();
 	~dbExecuter();
-	int commandExec(request& req, char* result, size_t& size, netsvc::server::buffers* optionalData);
+	int commandExec(request& req, netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData);
 	int errorCode(int ha_error);
 	short_td errorCodeSht(int ha_error){return (short_td)errorCode(ha_error);};
 	
@@ -94,7 +94,7 @@ public:
 	int read(char* buf, size_t& size);
 	int disconnectOne(char* buf, size_t& size);
 	int disconnectAll(char* buf, size_t& size);
-	int commandExec(char* buf, size_t& size);
+	int commandExec(netsvc::server::IResultBuffer& buf, size_t& size);
 };
 
 class commandExecuter :  public ICommandExecuter, public engine::mysql::igetDatabases
@@ -118,7 +118,8 @@ public:
 
 	bool parse(const char* p, size_t size);
 
-	int execute(char* resultBuffer, size_t& size, netsvc::server::buffers* optionalData)
+	//int execute(char* resultBuffer, size_t& size, netsvc::server::buffers* optionalData)
+	int execute(netsvc::server::IResultBuffer& resultBuffer, size_t& size, netsvc::server::buffers* optionalData)
 	{
 		if (m_req.op == TD_STASTISTICS)
 			return connMgrExecuter(m_req, m_modHandle).commandExec(resultBuffer, size);

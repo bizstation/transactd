@@ -188,7 +188,7 @@ class dbExecuter : public engine::mysql::dbManager
 	inline int readAfter(request& req, engine::mysql::table* tb, resultBuffer& buf, changeFunc func);
 
 public:
-	int commandExec(std::vector<request>& requests, char* result, size_t& size, netsvc::server::buffers* optionalData);
+	int commandExec(std::vector<request>& requests, netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData);
 	int errorCode(int ha_error){return 0;};
 
 };
@@ -207,9 +207,9 @@ public:
 	size_t perseRequestEnd(const char* p, size_t size, bool& comp)const;
 	size_t getAcceptMessage(char* message, size_t size){return 0;};
 	bool parse(const char* p, size_t size) ;
-	int execute(char* resultBuffer, size_t& size, netsvc::server::buffers* optionalData)
+	int execute(netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData)
 	{
-		return m_dbExec->commandExec(m_requests, resultBuffer, size, optionalData);
+		return m_dbExec->commandExec(m_requests, result, size, optionalData);
 	}
 	void cleanup(){};
 	bool isShutDown(){return m_dbExec->isShutDown();}

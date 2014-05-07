@@ -55,7 +55,7 @@ bool client::readServerCharsetIndex()
 		req.datalen = &len;
 
 		mutex::scoped_lock lck(m_mutex);
-		char* p = con()->sendBuffer();
+		char* p = con()->sendBuffer(m_req.sendLenEstimate());
 		unsigned int size = req.serialize(p);
 		p = con()->asyncWriteRead(size);
 		req.parse(p);

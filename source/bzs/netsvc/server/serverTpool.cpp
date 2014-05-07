@@ -98,7 +98,7 @@ class connection : public boost::enable_shared_from_this<connection>,
 				m_readLen = 0;
 				size_t size=0;
 				m_optionalBuffes.clear();
-				int ret = m_module->execute(&m_result[0], size, &m_optionalBuffes);
+				int ret = m_module->execute(vecBuffer(m_result), size, &m_optionalBuffes);
 				
 				if (ret == EXECUTE_RESULT_QUIT)
 					return false;
@@ -133,7 +133,7 @@ class connection : public boost::enable_shared_from_this<connection>,
 				DEBUG_PROFILE_END(1, "handle_read")
 				size_t size=0;
 				m_optionalBuffes.clear();
-				int ret = m_module->execute(&m_result[0], size, &m_optionalBuffes);
+				int ret = m_module->execute(vecBuffer(m_result), size, &m_optionalBuffes);
 				
 				if (ret == EXECUTE_RESULT_QUIT)
 					return ;

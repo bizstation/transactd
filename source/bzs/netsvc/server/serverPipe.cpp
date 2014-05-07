@@ -269,6 +269,7 @@ class sharedMem
 	
 	char* m_readPtr;
 	char* m_writePtr;
+	DWORD m_size;
 public:
 
 	sharedMem(const char* name, unsigned int memsize)
@@ -279,18 +280,18 @@ public:
 		
 		SYSTEM_INFO SystemInfo;
 		GetSystemInfo(&SystemInfo);
-		int size = memsize/SystemInfo.dwAllocationGranularity + 1;
-		size =  size*SystemInfo.dwAllocationGranularity;
+		m_size = memsize/SystemInfo.dwAllocationGranularity + 1;
+		m_size =  m_size*SystemInfo.dwAllocationGranularity;
 
 
-		m_mapFile = CreateFileMapping(INVALID_HANDLE_VALUE, &sa, PAGE_READWRITE, 0, size*2, name);
+		m_mapFile = CreateFileMapping(INVALID_HANDLE_VALUE, &sa, PAGE_READWRITE, 0, m_size*2, name);
 		if (m_mapFile == NULL)
 			THROW_BZS_ERROR_WITH_MSG("CreateFileMapping error");
 
-		m_readPtr = (char*)MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0, 0, size);
+		m_readPtr = (char*)MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0, 0, m_size);
 		if (m_readPtr == NULL)
 			THROW_BZS_ERROR_WITH_MSG("MapViewOfFile R error");
-		m_writePtr = (char*)MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0, size, size);
+		m_writePtr = (char*)MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0, m_size, m_size);
 		if (m_writePtr == NULL)
 			THROW_BZS_ERROR_WITH_MSG("MapViewOfFile W error");
 	}
@@ -304,6 +305,7 @@ public:
 			CloseHandle(m_mapFile);
 		}
 	}
+	size_t size() const {return (size_t)m_size;}
 
 	char* readBuffer()
 	{
@@ -314,6 +316,16 @@ public:
 	{
 		return m_writePtr;
 	}
+};
+
+class sharedMemBuffer : public IResultBuffer
+{
+	sharedMem& m_buf;
+public:
+	sharedMemBuffer(sharedMem& v):m_buf(v){}
+	void resize(size_t v){}	
+	size_t  size()const{return m_buf.size();}
+	char* ptr(){return m_buf.writeBuffer();}
 };
 
 class connection  : public iconnection, private noncopyable 			
@@ -343,7 +355,7 @@ class connection  : public iconnection, private noncopyable
 			if (complete)
 			{
 				size_t size=0;
-				if (m_module->execute(m_sharedMem->writeBuffer(), size, NULL) == EXECUTE_RESULT_QUIT)
+				if (m_module->execute(sharedMemBuffer(*m_sharedMem), size, NULL) == EXECUTE_RESULT_QUIT)
 					return ;
 				else
 					m_readLen = 0;

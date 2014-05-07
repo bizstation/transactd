@@ -159,7 +159,8 @@ bool module::checkHost( const char* hostCheckname)
 	return ret;
 }
 
-int module::execute(char* result, size_t& size, netsvc::server::buffers* optionalData)
+//int module::execute(char* result, size_t& size, netsvc::server::buffers* optionalData)
+int module::execute(netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData)
 {
 	m_commandExecuter->parse(m_readBuf, m_readSize);
 	boost::mutex::scoped_lock lck(m_mutex);

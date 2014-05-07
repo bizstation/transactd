@@ -121,7 +121,7 @@ public:
 	virtual	bool isConnected()const = 0;
 	virtual const asio::ip::tcp::endpoint& endpoint() const = 0;
 	virtual thread_id tid()const = 0;
-	virtual char* sendBuffer()=0;
+	virtual char* sendBuffer(size_t size)=0;
 	virtual unsigned int sendBufferSize()=0;
 	virtual buffers* optionalBuffers()=0;
 	virtual char* asyncWriteRead(unsigned int writeSize)=0;
@@ -154,7 +154,12 @@ public:
 	{
 
 	}
-	char* sendBuffer(){return &m_sendbuf[0];};
+	char* sendBuffer(size_t size)
+	{
+		if (size > m_sendbuf.size())
+			m_sendbuf.resize(size);
+		return &m_sendbuf[0];
+	};
 	unsigned int sendBufferSize(){return (unsigned int)m_sendbuf.size();};
 };
 
@@ -213,7 +218,11 @@ protected:
 		unsigned int* n=NULL;
 		n = (unsigned int*)(&m_readbuf[0]);
 
-		if (*n > m_readbuf.size()) m_readbuf.resize(*n);
+		if (*n > m_readbuf.size()) 
+		{
+			m_readbuf.resize(*n);
+			n = (unsigned int*)(&m_readbuf[0]);
+		}
 		if (m_readLen != *n)
 			m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], *n-m_readLen)
 				, boost::asio::transfer_all());
@@ -223,7 +232,7 @@ protected:
 	{
     	if (!m_connected)
 			throw system_error(asio::error::not_connected);
-		m_optionalBuffes.insert(m_optionalBuffes.begin(), asio::buffer(sendBuffer(), writeSize));
+		m_optionalBuffes.insert(m_optionalBuffes.begin(), asio::buffer(sendBuffer(0), writeSize));
 		boost::asio::write(m_socket, m_optionalBuffes,  boost::asio::transfer_all());
 		m_optionalBuffes.clear();
 
@@ -476,7 +485,7 @@ public:
 		return m_readbuf_p;
 	}
 
-	char* sendBuffer(){return m_writebuf_p;}
+	char* sendBuffer(size_t size){return m_writebuf_p;}
 	unsigned int sendBufferSize(){return m_sendBufferSize;};
 	buffers* optionalBuffers(){return NULL;}; //not support
 };

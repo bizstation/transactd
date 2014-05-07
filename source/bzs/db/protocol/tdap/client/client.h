@@ -224,7 +224,7 @@ public:
 				m_preResult = ERROR_TD_NOT_CONNECTED;
 			else
 			{
-				char* p = con()->sendBuffer();
+				char* p = con()->sendBuffer(m_req.sendLenEstimate());
 				unsigned int size = m_req.serialize(p);
 				if ((m_req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer.blobs())
 					size = m_req.serializeBlobBody(&m_blobBuffer
