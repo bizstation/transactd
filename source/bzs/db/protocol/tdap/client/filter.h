@@ -507,6 +507,44 @@ class filter
         return true;
     }
 
+	bool setSeeksPtr(const std::vector<const void*>& keyValues)
+    {
+        //Check key values
+        keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
+        if (keyValues.size() % kd->segmentCount)
+            return false;
+        //Check uniqe key
+        if (kd->segments[0].flags.bit0)
+            return false;
+
+        //m_keyValuesCache = keyValues;
+        for (size_t i=0;i<keyValues.size();i+= kd->segmentCount)
+        {
+            for (int j=0;j<kd->segmentCount;++j)
+			{
+				short fieldnum = kd->segments[j].fieldNum;
+				fielddef& fd = m_tb->tableDef()->fieldDefs[fieldnum];
+				memcpy(m_tb->fieldPtr(fieldnum), keyValues[i+j], fd.len);
+			}
+            logic* l = new logic();
+            ushort_td len = m_tb->writeKeyData();
+            if (l->setParam(m_tb->m_keybuf, len))
+                m_logics.push_back(l);
+            else
+            {
+                delete l;
+                return false;
+            }
+        }
+        if (m_logics.size())
+            m_logics[m_logics.size() -1]->opr = eCend;
+        m_seeksMode = true;
+        m_seeksWritedCount = 0;
+        return true;
+    }
+
+	
+
     bool doSetFilter(const queryBase* q)
     {
         cleanup();
@@ -532,6 +570,11 @@ class filter
             {
                 m_withBookmark = true;
                 return setSeeks(q->getSeekKeyValues());
+            }
+			else if (q->getSeekValuesPtr().size())
+            {
+                m_withBookmark = true;
+                return setSeeksPtr(q->getSeekValuesPtr());
             }
             else if (q->getWheres().size())
                 return setWhere(q->getWheres());

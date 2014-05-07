@@ -32,7 +32,16 @@ void CActiveTable::setResult(IActiveTable** retVal)
 {
 	this->QueryInterface(IID_IActiveTable, (void**)retVal);
 }
+void CActiveTable::FinalRelease()
+{
+	if (m_recObj)
+		m_recObj->Release();
+	//if (m_rsObj)
+	//	m_rsObj->Release();
+	delete m_at;
 
+
+};  
 STDMETHODIMP CActiveTable::SetDatabase(IDatabase* Value, BSTR tableName)
 {
 	try
@@ -148,11 +157,12 @@ STDMETHODIMP CActiveTable::Option(int Value, IActiveTable** retVal)
 STDMETHODIMP CActiveTable::Read(VARIANT/*IQueryBase**/ query, IRecordset** retVal)
 {
 
+	
 	CComObject<CARecordset>* rsObj;
-    CComObject<CARecordset>::CreateInstance(&rsObj);
+	CComObject<CARecordset>::CreateInstance(&rsObj);
+
     if (rsObj)
     {
-		
 		IRecordset* rs;
 		rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
 		_ASSERTE(rs);
@@ -209,6 +219,7 @@ STDMETHODIMP CActiveTable::Join(IRecordset* rs, IQueryBase* query, BSTR Name0
 		if (query)
 		{
 			CARecordset* p = dynamic_cast<CARecordset*>(rs);
+			p->AddRef();
 			p->QueryInterface(IID_IRecordset, (void**)retVal);
 			CQueryBase* qb = dynamic_cast<CQueryBase*>(query);
 			queryBase* q = &qb->query();
@@ -231,6 +242,7 @@ STDMETHODIMP CActiveTable::Join(IRecordset* rs, IQueryBase* query, BSTR Name0
 				else
 					m_at->join(*p->m_rs, *q, Name0,  Name1,  Name2, Name3, Name4, Name5, Name6, Name7);
 			}
+			p->Release();
 		
 		}
 		return S_OK;
@@ -285,16 +297,22 @@ STDMETHODIMP CActiveTable::OuterJoin(IRecordset* rs, IQueryBase* query, BSTR Nam
 
 STDMETHODIMP CActiveTable::CreateWritableRecord(IWritableRecord** retVal)
 {
-	CComObject<CWritableRecord>* recObj;
-	CComObject<CWritableRecord>::CreateInstance(&recObj);
-    if (recObj)
-    {
-		recObj->m_rec = &m_at->createWritableRecord();
+
+	if (m_recObj == NULL)
+	{
+		CComObject<CWritableRecord>::CreateInstance(&m_recObj);
+		m_recObj->AddRef();
+		m_recObj->m_rec = &m_at->createWritableRecord();
+	}
+	if (m_recObj)
+	{
+		
 		IWritableRecord* wrec;
-		recObj->QueryInterface(IID_IWritableRecord, (void**)&wrec);
+		m_recObj->QueryInterface(IID_IWritableRecord, (void**)&wrec);
 		_ASSERTE(wrec);
 		*retVal = wrec;
-    }
+	}
+
 	return S_OK;
 }
 

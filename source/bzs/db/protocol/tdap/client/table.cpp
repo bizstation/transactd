@@ -1664,6 +1664,7 @@ struct impl
     std::vector<std::_tstring> m_selects;
     std::vector<std::_tstring> m_wheres;
     std::vector<std::_tstring> m_keyValues;
+	std::vector<const void*> m_keyValuesPtr;
 };
 
 queryBase::queryBase():m_impl(new impl){}
@@ -1692,7 +1693,8 @@ void queryBase::addField(const _TCHAR* name)
 
 void queryBase::addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value)
 {
-    m_impl->m_keyValues.clear();
+    m_impl->m_keyValuesPtr.clear();
+	m_impl->m_keyValues.clear();
     m_impl->m_wheres.clear();
     m_impl->m_wheres.push_back(name);
     m_impl->m_wheres.push_back(logic);
@@ -1712,14 +1714,35 @@ void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name
 
 }
 
+void queryBase::reserveSeekKeyValueSize(size_t v)
+{
+	m_impl->m_keyValues.reserve(v);
+	m_impl->m_keyValuesPtr.reserve(v);
+}
+
 void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
 {
     if (reset)
     {
         m_impl->m_wheres.clear();
         m_impl->m_keyValues.clear();
+		m_impl->m_keyValuesPtr.clear();
     }
     m_impl->m_keyValues.push_back(value);
+    //m_impl->m_reject = 1;
+    m_impl->m_nofilter = false;
+
+}
+
+void queryBase::addSeekKeyValuePtr(const void* value, bool reset)
+{
+    if (reset)
+    {
+        m_impl->m_wheres.clear();
+        m_impl->m_keyValues.clear();
+		m_impl->m_keyValuesPtr.clear();
+    }
+    m_impl->m_keyValuesPtr.push_back(value);
     //m_impl->m_reject = 1;
     m_impl->m_nofilter = false;
 
@@ -1728,6 +1751,7 @@ void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
 void queryBase::clearSeekKeyValues()
 {
     m_impl->m_keyValues.clear();
+	m_impl->m_keyValuesPtr.clear();
 }
 
 std::_tstring escape_value(std::_tstring s)
@@ -1896,7 +1920,7 @@ bool queryBase::isAll()const{return m_impl->m_nofilter;};
 const std::vector<std::_tstring>& queryBase::getSelects() const {return m_impl->m_selects;}
 const std::vector<std::_tstring>& queryBase::getWheres() const {return m_impl->m_wheres;}
 const std::vector<std::_tstring>& queryBase::getSeekKeyValues() const{return m_impl->m_keyValues;}
-
+const std::vector<const void*>&queryBase:: getSeekValuesPtr() const{return m_impl->m_keyValuesPtr;}
 short queryBase::selectCount() const
 {
 	return (short)m_impl->m_selects.size();

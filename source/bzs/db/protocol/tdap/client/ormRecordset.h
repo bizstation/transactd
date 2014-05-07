@@ -41,6 +41,8 @@ class multiRecordAlocatorImple : public tdc::multiRecordAlocator
     int m_rowOffset;
     int m_addType;
     int m_curFirstFiled;
+	const std::vector< std::vector<int> >* m_joinRowMap;
+	
 public:
     inline multiRecordAlocatorImple(recordset* rs);
     inline void init(size_t recordCount, size_t recordLen, int addType, const tdc::table* tb);
@@ -48,6 +50,9 @@ public:
     inline void setRowOffset(int v){m_rowOffset = v;}
     inline void setJoinType(int v){m_addType = v;}
 	inline void setInvalidRecord(size_t row, bool v);
+	inline void setCurFirstFiled(int v){m_curFirstFiled = v;}
+	inline void setJoinRowMap(const std::vector< std::vector<int> >* v/*, size_t size*/){m_joinRowMap = v;/*m_joinMapSize = size;*/}
+	inline const std::vector< std::vector<int> >* joinRowMap()const {return m_joinRowMap;}
 };
 
 
@@ -67,28 +72,47 @@ class recordset
 	std::vector<row_ptr> m_recordset;
 	std::vector<boost::shared_ptr<tdc::autoMemory> > m_memblock;
 
+	/* for registerMemoryBlock temp data */
+	size_t m_joinRows;
+	
+	/* 
+		for optimazing join.
+		If the first reading is using by uniq key , set that field count.
+	*/
+	short m_uniqueReadMaxField; 
 public:
 	typedef std::vector<boost::shared_ptr<tdc::memoryRecord> >::iterator iterator;
 
 private:
 
-	int registerMemoryBlock(unsigned char* ptr, size_t size, size_t recordLen
+	void registerMemoryBlock(unsigned char* ptr, size_t size, size_t recordLen
                     , int addtype, const tdc::table* tb=NULL)
 	{
-        int firstField = 0;
         tdc::autoMemory* am = new tdc::autoMemory(ptr, size, 0 , true);
 		m_memblock.push_back(boost::shared_ptr<tdc::autoMemory>(am));
         unsigned char* p = am->ptr;
 		//copy fileds
-        if (addtype == tdc::multiRecordAlocator::mra_nextrows)
-            m_mra->setRowOffset((int)m_recordset.size());
-        else
+        if (addtype & tdc::multiRecordAlocator::mra_nextrows)
+		{
+            if (addtype == tdc::multiRecordAlocator::mra_nextrows)
+				m_mra->setRowOffset((int)m_recordset.size()); //no join
+			else
+				m_mra->setRowOffset((int)m_joinRows); //Join
+		}
+		else 
 		{
 			assert(tb);
+			m_joinRows = 0;
             m_mra->setRowOffset(0);
-            firstField = (int)m_fds->size();
+            m_mra->setCurFirstFiled((int)m_fds->size());
             m_fds->copyFrom(tb);
+			if (tb && (addtype == tdc::multiRecordAlocator::mra_nojoin))
+			{
+				const td::keydef& kd = tb->tableDef()->keyDefs[tb->keyNum()];
+				m_uniqueReadMaxField =  (kd.segments[0].flags.bit0 == false) ? (short)m_fds->size():0;
+			}
 		}
+		
 		*(am->endFieldIndex) = (short)m_fds->size();
 		size_t rows = size/recordLen;
 
@@ -96,9 +120,27 @@ private:
 		if ((addtype & tdc::multiRecordAlocator::mra_innerjoin)
                         || (addtype & tdc::multiRecordAlocator::mra_outerjoin))
 		{
-			assert(m_recordset.size() == rows);
-			for (int i=0;i<(int)rows;++i)
-				m_recordset[i]->setRecordData(p + recordLen*i , 0, am->endFieldIndex, false);
+			//Join optimazing
+			const std::vector< std::vector<int> >* jmap = m_mra->joinRowMap();
+			
+			if (jmap)
+			{
+				// At Join that if some base records reference to a joined record
+				//		that the joined record pointer is shared by some base records.  
+				for (int i=0;i<(int)rows;++i)
+				{
+					const std::vector<int>& map = (*jmap)[i+m_joinRows];
+					for (int j=0;j<map.size();++j)
+						m_recordset[map[j]]->setRecordData(p + recordLen*i , 0, am->endFieldIndex, false);
+				}
+			}
+			else
+			{
+				for (int i=0;i<(int)rows;++i)
+					m_recordset[i+m_joinRows]->setRecordData(p + recordLen*i , 0, am->endFieldIndex, false);
+			}
+			m_joinRows += rows;
+			
 		}
 		else
 		{	//create new record
@@ -111,8 +153,7 @@ private:
 				m_recordset.push_back(rec);
 			}
 		}
-        return firstField;
-	}
+    }
 
     void makeSortFields(const _TCHAR* name, std::vector<int>& fieldNums)
     {
@@ -124,7 +165,8 @@ private:
     }
 
 public:
-    recordset():m_fds(tdc::fielddefs::create(), &tdc::fielddefs::destroy),m_mra(new ::multiRecordAlocatorImple(this))
+    recordset():m_fds(tdc::fielddefs::create(), &tdc::fielddefs::destroy)
+		,m_mra(new ::multiRecordAlocatorImple(this)),m_uniqueReadMaxField(0)
     {
 
     };
@@ -133,10 +175,11 @@ public:
     {
 
     }
-
+	inline short uniqueReadMaxField() const{return m_uniqueReadMaxField;}
 	inline void clearRecords()
 	{
 		m_recordset.clear();
+		m_uniqueReadMaxField = 0;
 	}
 
     const tdc::fielddefs* fieldDefs() const {return m_fds.get();}
@@ -240,7 +283,7 @@ public:
 };
 
 inline multiRecordAlocatorImple::multiRecordAlocatorImple(recordset* rs)
-    :m_rs(rs),m_rowOffset(0),m_addType(0),m_curFirstFiled(0)
+    :m_rs(rs),m_rowOffset(0),m_addType(0),m_curFirstFiled(0),m_joinRowMap(NULL)
 {
 
 }
@@ -248,7 +291,7 @@ inline multiRecordAlocatorImple::multiRecordAlocatorImple(recordset* rs)
 inline void multiRecordAlocatorImple::init(size_t recordCount, size_t recordLen
         , int addType, const tdc::table* tb)
 {
-    m_curFirstFiled = m_rs->registerMemoryBlock(NULL, recordCount * recordLen
+     m_rs->registerMemoryBlock(NULL, recordCount * recordLen
             , recordLen, addType|m_addType, tb);
 }
 
@@ -257,7 +300,10 @@ inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
     int col = 0;
     if (stat == tdc::mra::mra_current_block)
         col = m_curFirstFiled;
-    return (*m_rs)[row+m_rowOffset]->ptr(col);
+	size_t rowNum  = row+m_rowOffset;
+	if (m_joinRowMap)
+		rowNum = (*m_joinRowMap)[rowNum][0];
+    return (*m_rs)[rowNum]->ptr(col);
 }
 
 inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)

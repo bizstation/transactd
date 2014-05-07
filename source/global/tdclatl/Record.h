@@ -89,9 +89,9 @@ public:
   STDMETHOD(get_Field)(VARIANT Index, IField** retVal);
   STDMETHOD(Save)();
   STDMETHOD(Insert)();
-  STDMETHOD(Del)();
+  STDMETHOD(Del)(VARIANT_BOOL KeysetAlrady);
   STDMETHOD(Update)();
-  STDMETHOD(Read)(VARIANT_BOOL* retVal);
+  STDMETHOD(Read)(VARIANT_BOOL KeysetAlrady, VARIANT_BOOL* retVal);
   STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
   STDMETHOD(get_IsInvalidRecord)(VARIANT_BOOL* retVal);
 

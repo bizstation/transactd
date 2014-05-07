@@ -161,9 +161,10 @@ writableRecord::~writableRecord()
 	fielddefs::destroy(m_fddefs);
 }
 
-bool writableRecord::read()
+bool writableRecord::read(bool KeysetAlrady)
 {
-    copyToBuffer(m_tb.get());
+    if (!KeysetAlrady)
+		copyToBuffer(m_tb.get());
     m_tb->seek();
     if (m_tb->stat())
         return false;
@@ -178,9 +179,10 @@ void writableRecord::insert()
 	copyFromBuffer(m_tb.get());
 }
 
-void writableRecord::del()
+void writableRecord::del(bool KeysetAlrady)
 {
-    copyToBuffer(m_tb.get());
+    if (!KeysetAlrady)
+		copyToBuffer(m_tb.get());
     m_tb->seek();
     if (m_tb->stat())
         nstable::throwError(_T("activeTable delete "), m_tb->stat());

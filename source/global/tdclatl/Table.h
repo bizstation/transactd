@@ -55,8 +55,10 @@ public:
 
 	void FinalRelease()
 	{
-		m_fieldObj->Release();
-		if (m_tb) m_tb->release();
+		if (m_fieldObj)
+			m_fieldObj->Release();
+		if (m_tb) 
+			m_tb->release();
 	};
 
 public:

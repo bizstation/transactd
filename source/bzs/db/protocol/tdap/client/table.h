@@ -56,6 +56,8 @@ public:
     virtual unsigned char* ptr(size_t row, int stat) = 0;
     virtual void setJoinType(int v)=0;
 	virtual void setInvalidRecord(size_t row, bool v) = 0;
+	virtual void setJoinRowMap(const std::vector< std::vector<int> >* v/*, size_t size*/)=0;
+	virtual const std::vector<std::vector<int> >* joinRowMap()const  = 0;
 
 };
 
@@ -256,6 +258,8 @@ class AGRPACK queryBase
 	const std::vector<std::_tstring>& getSelects() const;
     const std::vector<std::_tstring>& getWheres() const;
     const std::vector<std::_tstring>& getSeekKeyValues() const;
+	const std::vector<const void*>& getSeekValuesPtr() const;
+	
 public:
     queryBase();
     virtual ~queryBase();
@@ -266,6 +270,8 @@ public:
     void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
     void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
     void addSeekKeyValue(const _TCHAR* value, bool reset=false);
+	void addSeekKeyValuePtr(const void* value, bool reset=false);
+	void reserveSeekKeyValueSize(size_t v);
     queryBase& queryString(const _TCHAR* str, bool autoEscape = false);
     queryBase& reject(int v);
 	queryBase& limit(int v);

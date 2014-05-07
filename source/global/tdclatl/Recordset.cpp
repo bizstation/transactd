@@ -31,11 +31,12 @@ CARecordset::CARecordset():m_rs(new recordset()),m_recObj(NULL),m_fieldDefsObj(N
 
 CARecordset::~CARecordset() 
 {
-	delete m_rs;
+
 	if (m_recObj)
 		m_recObj->Release();
 	if (m_fieldDefsObj)
 		m_fieldDefsObj->Release();
+	delete m_rs;
 }
 
 void CARecordset::setResult(IRecordset** retVal)

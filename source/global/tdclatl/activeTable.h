@@ -25,7 +25,8 @@
 
 using namespace ATL;
 
-
+class CWritableRecord;
+class CARecordset;
 class ATL_NO_VTABLE CActiveTable : 
 	public CComObjectRootEx<CComSingleThreadModel>,
     public CComCoClass<CActiveTable, &CLSID_ActiveTable>,
@@ -34,9 +35,10 @@ class ATL_NO_VTABLE CActiveTable :
 	void setResult(IActiveTable** retVal);
 
 	bzs::db::protocol::tdap::client::activeTable<map_orm>* m_at;
+	CComObject<CWritableRecord>* m_recObj;
 
 public:
-    CActiveTable():m_at(NULL)
+    CActiveTable():m_at(NULL),m_recObj(NULL)
     {
        	
     }
@@ -56,11 +58,7 @@ public:
 		return S_OK;
 	}
 
-	void FinalRelease()
-	{
-		delete m_at;
-
-	};  
+	void FinalRelease();
 
 public:
 

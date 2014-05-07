@@ -228,6 +228,38 @@ public:
 	const std::_tstring& getResultFields()const {return m_resultField;}
 	const queryBase& getHaving() const {return *m_having;}
 
+	template <class Container>
+    void getFieldIndexes(Container& mdls, std::vector<typename Container::key_type>& fieldIndexes)
+	{
+        /* convert field Index from filed name */
+		for (int i=0;i<m_keyFields.size();++i)
+            fieldIndexes.push_back(resolvKeyValue(mdls, m_keyFields[i]));
+	}
+
+	template <class Container>
+    void makeJoinMap(Container& mdls, std::vector<std::vector<int> >& joinRowMap
+				, std::vector<typename Container::key_type>& keyFields)
+    {
+        
+		grouping_comp<typename Container> groupingComp(mdls, keyFields);
+        std::vector<int> index;
+        typename Container::iterator it = begin(mdls), ite = end(mdls);
+        int i,n = 0;
+		while(it != ite)
+        {
+            bool found = false;
+            i = binary_search(n, index, 0, index.size(), groupingComp, found);
+            if (!found)
+			{
+                index.insert(index.begin() + i, n);
+				joinRowMap.insert(joinRowMap.begin() + i, std::vector<int>());
+			}
+			joinRowMap[i].push_back(n);
+            ++n;
+            ++it;
+		}
+	}
+
     template <class Container, class FUNC>
     void grouping(Container& mdls,  FUNC func)
     {

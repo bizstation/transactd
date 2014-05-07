@@ -153,11 +153,11 @@ STDMETHODIMP CWritableRecord::Insert()
     }
 }
 
-STDMETHODIMP CWritableRecord::Del()
+STDMETHODIMP CWritableRecord::Del(VARIANT_BOOL KeysetAlrady)
 {
 	try
 	{
-		m_rec->del();
+		m_rec->del(KeysetAlrady);
 		return S_OK;
 	}
 	catch(bzs::rtl::exception& e)
@@ -179,11 +179,11 @@ STDMETHODIMP CWritableRecord::Update()
     }
 }
 
-STDMETHODIMP CWritableRecord::Read(VARIANT_BOOL* retVal)
+STDMETHODIMP CWritableRecord::Read(VARIANT_BOOL KeysetAlrady, VARIANT_BOOL* retVal)
 {
 	try
 	{
-		*retVal = m_rec->read();
+		*retVal = m_rec->read(KeysetAlrady);
 		return S_OK;
 	}
 	catch(bzs::rtl::exception& e)

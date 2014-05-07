@@ -1158,11 +1158,11 @@ interface IWritableRecord : IRecord
   [id(0x0000011)]
   HRESULT _stdcall Insert(void);
   [id(0x0000013)]
-  HRESULT _stdcall Del(void);
+  HRESULT _stdcall Del([in, defaultvalue(0)]VARIANT_BOOL KeysetAlrady);
   [id(0x0000014)]
   HRESULT _stdcall Update(void);
   [id(0x0000015)]
-  HRESULT _stdcall Read([out, retval] VARIANT_BOOL* retVal);
+  HRESULT _stdcall Read([in, defaultvalue(0)]VARIANT_BOOL KeysetAlrady, [out, retval] VARIANT_BOOL* retVal);
   [id(0x0000016)]
   HRESULT _stdcall Clear();
   [propget,id(0x0000017)]

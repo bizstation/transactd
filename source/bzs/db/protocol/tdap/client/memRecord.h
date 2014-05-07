@@ -102,9 +102,9 @@ class writableRecord : public memoryRecord
     fielddefs* fddefs();
 public:
 	~writableRecord();
-    bool read();
+    bool read(bool KeysetAlrady=false);
     void insert();
-    void del();
+    void del(bool KeysetAlrady=false);
     void update();
     void save();
 

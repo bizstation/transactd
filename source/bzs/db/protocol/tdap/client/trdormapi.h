@@ -24,6 +24,8 @@
 #include "groupQuery.h"
 #include "memRecord.h"
 #include <vector>
+#include <boost/shared_array.hpp>
+
 namespace bzs
 {
 namespace db
@@ -509,43 +511,76 @@ protected:
         q.clearSeekKeyValues();
         fields fds(m_tb);
         mraResetter mras(m_tb);
+		typename Container::iterator it = mdls.begin(),ite = mdls.end();
 
-        typename Container::iterator it = mdls.begin(),ite = mdls.end();
-        typename Container::key_type key[11];
+        bool optimaize = true;
+		optimaize = (bool)_tcscmp(name1, _T("id"));
+		std::vector<std::vector<int> > joinRowMap;
+		std::vector<typename Container::key_type> fieldIndexes;
+		groupQuery gq;
+		gq.keyField(name1, name2, name3, name4, name5, name6, name7, name8, name9, name10, name11);
+		gq.getFieldIndexes(mdls, fieldIndexes);
+		if (optimaize)
+		{
+		/* optimazing join
+			If base recordset is made by unique key and join by uniqe field, that can not opitimize.
+        */
+		//DWORD v = timeGetTime();
 
-        if (name1) key[0] = resolvKeyValue(mdls, name1);
-        if (name2) key[1] = resolvKeyValue(mdls, name2);
-        if (name3) key[2] = resolvKeyValue(mdls, name3);
-        if (name4) key[3] = resolvKeyValue(mdls, name4);
-        if (name5) key[4] = resolvKeyValue(mdls, name5);
-        if (name6) key[5] = resolvKeyValue(mdls, name6);
-        if (name7) key[6] = resolvKeyValue(mdls, name7);
-        if (name8) key[7] = resolvKeyValue(mdls, name8);
-        if (name9) key[8] = resolvKeyValue(mdls, name9);
-        if (name10) key[9] = resolvKeyValue(mdls, name10);
-        if (name11) key[10] = resolvKeyValue(mdls, name11);
+		gq.makeJoinMap(mdls, joinRowMap, fieldIndexes);
+		//v = timeGetTime()- v;
+		//_tprintf(_T("makeJoinMap = %d msc\n"), v);
 
-        //_TCHAR tmp[1024];
+		//v = timeGetTime();
+		q.reserveSeekKeyValueSize(joinRowMap.size());
+		std::vector<std::vector<int> >::iterator it1 = joinRowMap.begin(),ite1 = joinRowMap.end();
+		while(it1 != ite1)
+        {
+            T& mdl = *(mdls[(*it1)[0]]);
+			//for (int i=0;i<fieldIndexes.size();++i)
+			//	q.addSeekKeyValue(mdl[fieldIndexes[i]].c_str());
+			for (int i=0;i<fieldIndexes.size();++i)
+				q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
+            ++it1;
+        }
+		//v = timeGetTime()- v;
+		//_tprintf(_T("q.addSeekKeyValue = %d msc\n"), v);
+
+		}
+		else
+		{
         while(it != ite)
         {
-            T& mdl = *(*it);
-            if (name1) q.addSeekKeyValue(mdl[key[0]].c_str());
-            if (name2) q.addSeekKeyValue(mdl[key[1]].c_str());
-            if (name3) q.addSeekKeyValue(mdl[key[2]].c_str());
-            if (name4) q.addSeekKeyValue(mdl[key[3]].c_str());
-            if (name5) q.addSeekKeyValue(mdl[key[4]].c_str());
-            if (name6) q.addSeekKeyValue(mdl[key[5]].c_str());
-            if (name7) q.addSeekKeyValue(mdl[key[6]].c_str());
-            if (name8) q.addSeekKeyValue(mdl[key[7]].c_str());
-            if (name9) q.addSeekKeyValue(mdl[key[8]].c_str());
-            if (name10) q.addSeekKeyValue(mdl[key[9]].c_str());
-            if (name11) q.addSeekKeyValue(mdl[key[10]].c_str());
+            //ToDo The conversion to a string is useless.
+			T& mdl = *(*it);
+            //T& mdl = *(mdls[(*it1)[0]]);
+			//for (int i=0;i<fieldIndexes.size();++i)
+			//	q.addSeekKeyValue(mdl[fieldIndexes[i]].c_str());
+			for (int i=0;i<fieldIndexes.size();++i)
+				q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
+			/*
+			if (name1) q.addSeekKeyValue(mdl[fieldIndexes[0]].c_str());
+            if (name2) q.addSeekKeyValue(mdl[fieldIndexes[1]].c_str());
+            if (name3) q.addSeekKeyValue(mdl[fieldIndexes[2]].c_str());
+            if (name4) q.addSeekKeyValue(mdl[fieldIndexes[3]].c_str());
+            if (name5) q.addSeekKeyValue(mdl[fieldIndexes[4]].c_str());
+            if (name6) q.addSeekKeyValue(mdl[fieldIndexes[5]].c_str());
+            if (name7) q.addSeekKeyValue(mdl[fieldIndexes[6]].c_str());
+            if (name8) q.addSeekKeyValue(mdl[fieldIndexes[7]].c_str());
+            if (name9) q.addSeekKeyValue(mdl[fieldIndexes[8]].c_str());
+            if (name10) q.addSeekKeyValue(mdl[fieldIndexes[9]].c_str());
+            if (name11) q.addSeekKeyValue(mdl[fieldIndexes[10]].c_str());*/
             ++it;
         }
+		}
+		//v = timeGetTime();
 
         m_tb->setQuery(&q);
         if (m_tb->stat() != 0)
             nstable::throwError(_T("activeTable readEach Query"), &(*m_tb));
+		
+		//v = timeGetTime()- v;
+		//_tprintf(_T("q.setQuery = %d msc\n"), v);
 
        typename MAP::collection_orm_typename map(mdls);
 
@@ -554,8 +589,14 @@ protected:
         it = mdls.begin();
         map.init(m_option, m_fdi, m_map, m_tb, &m_alias.map());
         if (m_tb->mra())
+		{
             m_tb->mra()->setJoinType(innner ? mra::mra_innerjoin : mra::mra_outerjoin);
-        m_tb->find();
+			if (optimaize)
+				m_tb->mra()->setJoinRowMap(&joinRowMap);
+		}
+		//v = timeGetTime();
+
+		m_tb->find();
         while(1)
         {
             if (m_tb->stat())
@@ -569,8 +610,12 @@ protected:
             ++it;
             m_tb->findNext(); //mra copy value to memrecord
         }
-        readStatusCheck(*m_tb, _T("join"));
 
+		//v = timeGetTime()- v;
+		//_tprintf(_T("find = %d msc\n"), v);
+
+        readStatusCheck(*m_tb, _T("join"));
+		m_tb->mra()->setJoinRowMap(NULL);
         /* remove record see ignore list for inner join */
         for (int i=(int)ignores.size()-1;i>=0;--i)
             mdls.erase(ignores[i]);
