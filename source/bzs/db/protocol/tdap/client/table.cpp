@@ -1519,7 +1519,7 @@ bool table::setSeekValueField(int row)
     if (kd->segments[0].flags.bit0)
         return false;
 
-    size_t pos = kd->segmentCount * row;
+    //size_t pos = kd->segmentCount * row;
 	const uchar_td* ptr = keyValues[row]->data;
 	const uchar_td* data;
 	ushort_td dataSize;

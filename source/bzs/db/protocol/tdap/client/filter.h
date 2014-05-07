@@ -431,7 +431,7 @@ class filter
 	bool m_isTransactd;
 	inline int maxDataBuffer()
 	{
-		return m_isTransactd ? TDAP_MAX_DATA_SIZE: BTRV_MAX_DATA_SIZE;
+		return /*m_isTransactd ? TDAP_MAX_DATA_SIZE:*/ BTRV_MAX_DATA_SIZE;
 	}
 
     bool addWhere(const _TCHAR* name, const _TCHAR* type, const _TCHAR*  value, char combine, bool compField = false)
@@ -707,7 +707,7 @@ class filter
             else
                 return false;
         }
-        m_hd.len = len;//lost 2byte data at transactd
+        //m_hd.len = len;//lost 2byte data at transactd
         int resultLen = (int)resultBufferNeedSize();
         if (resultLen > maxDataBuffer())
         {

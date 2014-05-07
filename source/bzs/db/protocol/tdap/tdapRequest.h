@@ -46,6 +46,10 @@ namespace tdap
 #define P_MASK_KEYNUM		16
 #define P_MASK_EX_SENDLEN	32  //< The data length which transmits to a client is described at 2 bytes of the data buffer head.
 #define P_MASK_BLOBBODY		64
+#define P_MASK_USELZSS	   128
+
+
+
 
 #define P_MASK_ALL			P_MASK_POSBLK|P_MASK_DATA|P_MASK_DATALEN|P_MASK_KEYBUF|P_MASK_KEYNUM
 #define P_MASK_KEYONLY 		P_MASK_KEYBUF|P_MASK_KEYNUM
@@ -140,6 +144,8 @@ public:
 	{
     	memset(this, 0, sizeof(request));
 	}
+	
+	virtual ~request(){}
 
 	void reset()
 	{

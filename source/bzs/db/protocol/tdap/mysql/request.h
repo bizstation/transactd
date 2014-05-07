@@ -22,7 +22,9 @@
 #include <bzs/db/protocol/tdap/tdapRequest.h>
 #include <bzs/rtl/exception.h>
 #include <bzs/db/blobBuffer.h>
-
+#ifdef USE_DATA_COMPRESS
+#include <bzs/rtl/lzss.h>
+#endif
 /** readRecords reserved buffer size
  *
  */
@@ -46,8 +48,19 @@ class request : public bzs::db::protocol::tdap::request
 public:
 	
 	ushort_td cid;
+	char* decodeBuffer;
+	char* m_tmp;
+	request():bzs::db::protocol::tdap::request(),cid(0)
+					,decodeBuffer(0),m_tmp(new char[0XFFFF])
+	{
+	
+	}
 
-	request():bzs::db::protocol::tdap::request(),cid(0){};
+	~request()
+	{
+		delete [] decodeBuffer;
+		delete [] m_tmp;
+	}
 	
 	/**
 	 *  @param size  allready copied size.
@@ -83,52 +96,66 @@ public:
 
 	inline unsigned int serialize(engine::mysql::table* tb, char* buf)
 	{
-		char* bufptr = buf;
+		char* p = buf;
 		char* datalenPtr = NULL;
 	
-		bufptr += sizeof(unsigned int);//space of totalLen 
+		p += sizeof(unsigned int);//space of totalLen
+#ifdef USE_DATA_COMPRESS
+		//add lzss infomation
+		if ((P_MASK_DATA & paramMask) && (resultLen > 1600))
+			paramMask |= P_MASK_USELZSS;
+#endif
 	
-		memcpy(bufptr, (const char*)(&paramMask), sizeof(uchar_td));
-		bufptr += sizeof(uchar_td);
+		memcpy(p, (const char*)(&paramMask), sizeof(uchar_td));
+		p += sizeof(uchar_td);
 		
-		memcpy(bufptr, (const char*)(&result), sizeof(short_td));
-		bufptr += sizeof(short_td);
+		memcpy(p, (const char*)(&result), sizeof(short_td));
+		p += sizeof(short_td);
 	
 		if (P_MASK_POSBLK & paramMask)
 		{
-			memcpy(bufptr, (const char*)pbk, POSBLK_SIZE);
-			bufptr += POSBLK_SIZE;
+			memcpy(p, (const char*)pbk, POSBLK_SIZE);
+			p += POSBLK_SIZE;
 		}
 		if (P_MASK_DATALEN & paramMask)
 		{
-			datalenPtr = bufptr;
-			bufptr += sizeof(uint_td);
+			datalenPtr = p;
+			p += sizeof(uint_td);
 		}
-		
-		if (P_MASK_DATA & paramMask)
+#ifdef USE_DATA_COMPRESS
+		if (P_MASK_USELZSS & paramMask)
 		{
 			if (tb && (data == tb->record()))
 			{
-				resultLen = tb->recordPackCopy(bufptr, 0);
-				bufptr += resultLen;
+				resultLen = tb->recordPackCopy(m_tmp, 0);
+				data = m_tmp;
 			}
-			else
-			{
-				memcpy(bufptr, (const char*)data, resultLen);
-				bufptr += resultLen;
-			}
+			uint_td compSize = bzs::rtl::lzssEncode(data, resultLen, p + sizeof(uint_td));
+			memcpy(p, &compSize, sizeof(uint_td));
+			p += compSize + sizeof(uint_td);
 		}
+		else
+#endif
+		if (P_MASK_DATA & paramMask)
+		{
+			if (tb && (data == tb->record()))
+				resultLen = tb->recordPackCopy(p, 0);
+			else
+				memcpy(p, (const char*)data, resultLen);
+			p += resultLen;
+		}
+
 		if (P_MASK_DATALEN & paramMask)
 			memcpy(datalenPtr, (const char*)&resultLen, sizeof(uint_td));
 	
 		if (tb && (P_MASK_KEYBUF & paramMask))
 		{
-			keylen = tb->keyPackCopy((uchar*)bufptr + sizeof(keylen_td));
-			memcpy(bufptr, (const char*)&keylen, sizeof(keylen_td));
-			bufptr += sizeof(keylen_td);
-			bufptr += keylen;
+			keylen = tb->keyPackCopy((uchar*)p + sizeof(keylen_td));
+			memcpy(p, (const char*)&keylen, sizeof(keylen_td));
+			p += sizeof(keylen_td);
+			p += keylen;
 		}
-		unsigned int totallen = (unsigned int)(bufptr - buf);
+		unsigned int totallen = (unsigned int)(p - buf);
 		memcpy(buf, &totallen, sizeof(unsigned int));
 		return totallen;
 	}
@@ -141,7 +168,6 @@ public:
 		op = *((ushort_td*)p);
 		p += sizeof(ushort_td);
 	
-	
 		if (P_MASK_POSBLK & paramMask)
 		{
 			pbk = (posblk*)p;
@@ -152,6 +178,22 @@ public:
 			datalen = (uint_td*)p;
 			p += sizeof(uint_td);
 		}
+#ifdef USE_DATA_COMPRESS
+		if (P_MASK_USELZSS & paramMask)
+		{
+			uint_td compSize = *(uint_td*)p;
+			p += sizeof(uint_td);
+
+			if (decodeBuffer)
+				delete [] decodeBuffer;
+			uint_td dataSize = bzs::rtl::lzssDecode(p, NULL);
+			decodeBuffer = new char[dataSize];
+			bzs::rtl::lzssDecode(p, decodeBuffer);
+			data = decodeBuffer;
+			p += compSize;
+		}
+		else
+#endif
 		if (P_MASK_EX_SENDLEN & paramMask)
 		{
 			data = (void_td*)p;

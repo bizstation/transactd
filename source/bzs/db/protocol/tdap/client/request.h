@@ -21,7 +21,9 @@
 
 #include <bzs/db/protocol/tdap/tdapRequest.h>
 
-
+#ifdef USE_DATA_COMPRESS
+#include <bzs/rtl/lzss.h>
+#endif
 
 namespace bzs
 {
@@ -54,7 +56,7 @@ public:
 		p += sizeof(uchar_td);
 		op = *((ushort_td*)p);
 		p += sizeof(ushort_td);
-	
+
 		if (P_MASK_POSBLK & paramMask)
 		{
 			memcpy(pbk, p, POSBLK_SIZE);
@@ -70,13 +72,18 @@ public:
 				*datalen = tmp;
 			p += sizeof(uint_td);
 		}
-		if (P_MASK_EX_SENDLEN & paramMask)
+#ifdef USE_DATA_COMPRESS
+		if (P_MASK_USELZSS & paramMask)
 		{
-			memcpy(data, p, (*(ushort_td*)p));
-			p += (*(ushort_td*)p);
-	
+			unsigned int compSize;
+			memcpy(&compSize, p, sizeof(unsigned int));
+			p += sizeof(unsigned int);
+			unsigned int decompSize = bzs::rtl::lzssDecode(p, data);
+			p += compSize;
 		}
-		else if (P_MASK_DATA & paramMask)
+		else
+#endif
+		if (P_MASK_DATA & paramMask)
 		{
 			memcpy(data, p, *datalen);
 			p += *datalen;
@@ -126,35 +133,28 @@ public:
 	inline unsigned int serialize(char* buf)
 	{
 		char* p = buf;
-		unsigned int totallen = sizeof(unsigned int) + sizeof(uchar_td)
-				+  sizeof(ushort_td) +  CLIENTID_SIZE;
-		if (P_MASK_POSBLK & paramMask)
-			totallen += POSBLK_SIZE;
+		unsigned int dataSize=0;
 	
 		if (P_MASK_EX_SENDLEN & paramMask)
 		{
-			unsigned int v = *((unsigned int*)data);
-			v &= 0xFFFFFFF;
-			totallen += v;
+			dataSize = *((unsigned int*)data);
+			dataSize &= 0xFFFFFFF;
 		}
 		else if (P_MASK_DATA & paramMask)
-			totallen += *datalen;
-	
-		if (P_MASK_DATALEN & paramMask)
-			totallen += sizeof(uint_td);
-		if (P_MASK_KEYBUF & paramMask)
-			totallen += keylen+sizeof(keylen_td) + 1;//+1 is null terminate byte
-		if (P_MASK_KEYNUM & paramMask)
-			totallen += sizeof(char_td);
-		memcpy(p, &totallen, sizeof(unsigned int));
+			dataSize = *datalen;	
+		//add lzss infomation
+#ifdef USE_DATA_COMPRESS
+		if (dataSize > 1500)
+			paramMask |= P_MASK_USELZSS;
+#endif	
 		p += sizeof(unsigned int);
 	
 		memcpy(p, &paramMask,  sizeof(uchar_td));
 		p += sizeof(uchar_td);
-	
+		
 		memcpy(p, &op,  sizeof(ushort_td));
 		p += sizeof(ushort_td);
-	
+		
 		if (P_MASK_POSBLK & paramMask)
 		{
 			memcpy(p, pbk,  POSBLK_SIZE);
@@ -166,7 +166,15 @@ public:
 			memcpy(p, datalen,  sizeof(uint_td));
 			p += sizeof(uint_td);
 		}
-	
+#ifdef USE_DATA_COMPRESS
+		if (P_MASK_USELZSS & paramMask)
+		{
+			uint_td compSize = bzs::rtl::lzssEncode(data, dataSize, p + sizeof(uint_td));
+			memcpy(p, &compSize, sizeof(uint_td));
+			p += compSize + sizeof(uint_td);
+		}
+		else 
+#endif
 		if (P_MASK_EX_SENDLEN & paramMask)
 		{
 			unsigned int v = *((unsigned int*)data);
@@ -199,7 +207,10 @@ public:
 		memcpy(p, &cid->id, CLIENTID_SIZE);
 		p += CLIENTID_SIZE;
 
-		return (unsigned int)(p - buf);
+		unsigned int totallen = (unsigned int)(p - buf);
+		memcpy(buf, &totallen, sizeof(unsigned int));
+		return totallen;
+
 	}
 
 
