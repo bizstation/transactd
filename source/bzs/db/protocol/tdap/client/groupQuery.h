@@ -243,20 +243,17 @@ public:
         
 		grouping_comp<typename Container> groupingComp(mdls, keyFields);
         std::vector<int> index;
-        typename Container::iterator it = begin(mdls), ite = end(mdls);
-        int i,n = 0;
-		while(it != ite)
-        {
+		std::vector<int> tmp;
+        for (int n=0;n<mdls.size();++n)
+		{
             bool found = false;
-            i = binary_search(n, index, 0, index.size(), groupingComp, found);
+			int i = binary_search(n, index, 0, index.size(), groupingComp, found);
             if (!found)
 			{
                 index.insert(index.begin() + i, n);
-				joinRowMap.insert(joinRowMap.begin() + i, std::vector<int>());
+				joinRowMap.insert(joinRowMap.begin() + i, tmp);
 			}
 			joinRowMap[i].push_back(n);
-            ++n;
-            ++it;
 		}
 	}
 
@@ -298,7 +295,6 @@ public:
             typename Container::row_type cur = c[index[i]];
             setValue(*cur, resultKey, funcs[i].result());
             mdls.push_back(cur);
-            //push_back(mdls, cur);
         }
         removeFileds(mdls);
     }

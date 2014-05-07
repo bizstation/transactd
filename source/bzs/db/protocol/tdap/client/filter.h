@@ -40,7 +40,9 @@ namespace client
 #define BOOKMARK_SIZE 4
 #define DATASIZE_BYTE 2
 
-#define MAX_DATA_SIZE 57000
+#define BTRV_MAX_DATA_SIZE 57000
+#define TDAP_MAX_DATA_SIZE 3145728 //3Mbyte
+
 
 
 inline ushort_td varlenForFilter(const fielddef& fd)
@@ -316,8 +318,21 @@ public:
 
 struct header
 {
-	unsigned short	len;
-	char			type[2];
+private:
+	union
+	{
+		struct
+		{
+			unsigned short	len;
+			char			type[2];
+		};
+		struct 
+		{
+			int ilen  :28;
+			int itype : 4;
+		};
+	};
+public:
 	unsigned short	rejectCount;
 	unsigned short	logicalCount;
     header():rejectCount(1),logicalCount(0),len(0)
@@ -331,36 +346,57 @@ struct header
         rejectCount = 1;
         logicalCount = 0;
         len = 0;
-        setPositionType(true, false, false);
+		type[0] = 0x00;
+        type[1] = 0x00;
     }
 
     void setPositionType(bool incCurrent, bool withBookmark, bool isTransactd)
     {
-        if (incCurrent)
-        {
-            type[0] = 'U';
-            type[1] = 'C';
-        }
-        else
-        {
-            type[0] = 'E';
-            type[1] = 'G';
-        }
-        if (!withBookmark && isTransactd)
-            type[1] = 'N';
+		if (isTransactd)
+		{
+			itype = incCurrent ? FILTER_CURRENT_TYPE_INC : FILTER_CURRENT_TYPE_NOTINC;
+			if (!withBookmark)
+				itype |= FILTER_CURRENT_TYPE_NOBOOKMARK;
+		}
+		else
+		{
+			if (incCurrent)
+			{
+				type[0] = 'U';
+				type[1] = 'C';
+			}
+			else
+			{
+				type[0] = 'E';
+				type[1] = 'G';
+			}
+		}
+        
     }
 
-    int bookmarkSize() const
+    int bookmarkSize(bool isTransactd) const
     {
-        assert(type[0]);
+        if (isTransactd)
+			return (itype & FILTER_CURRENT_TYPE_NOBOOKMARK) ? 0: BOOKMARK_SIZE;
+		assert(type[0]);
         if (type[1] == 'N') return 0;
         return BOOKMARK_SIZE;
     }
 
-    bool positionTypeNext() const
+    bool positionTypeNext(bool isTransactd) const
     {
-        return (type[0] == 'E');
+        if (isTransactd)
+			return !(itype & FILTER_CURRENT_TYPE_INC);
+		return (type[0] == 'E');
     }
+	
+	void setLen(int size, bool isTransactd)
+	{
+		if (isTransactd) 
+			ilen = size; 
+		else
+			len = size;
+	}
 
     unsigned char* writeBuffer(unsigned char* p, bool estimate)
     {
@@ -392,7 +428,11 @@ class filter
     size_t m_seeksWritedCount;
     size_t m_logicalLimitCount;
     table::eFindType m_direction;
-    std::vector<std::_tstring> m_keyValuesCache;
+	bool m_isTransactd;
+	inline int maxDataBuffer()
+	{
+		return m_isTransactd ? TDAP_MAX_DATA_SIZE: BTRV_MAX_DATA_SIZE;
+	}
 
     bool addWhere(const _TCHAR* name, const _TCHAR* type, const _TCHAR*  value, char combine, bool compField = false)
     {
@@ -473,41 +513,20 @@ class filter
 
     }
 
+	inline void setSeekValue(short filedNum, const std::_tstring& s)
+	{
+		 m_tb->setFV(filedNum, s.c_str());
+	}
 
-    bool setSeeks(const std::vector<std::_tstring>& keyValues)
-    {
-        //Check key values
-        keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
-        if (keyValues.size() % kd->segmentCount)
-            return false;
-        //Check uniqe key
-        if (kd->segments[0].flags.bit0)
-            return false;
+	inline void setSeekValue(short filedNum, const void* v)
+	{
+		fielddef& fd = m_tb->tableDef()->fieldDefs[filedNum];
+		memcpy(m_tb->fieldPtr(filedNum), v, fd.len);
+		
+	}
 
-        m_keyValuesCache = keyValues;
-        for (size_t i=0;i<keyValues.size();i+= kd->segmentCount)
-        {
-            for (int j=0;j<kd->segmentCount;++j)
-                m_tb->setFV(kd->segments[j].fieldNum, keyValues[i+j].c_str());
-
-            logic* l = new logic();
-            ushort_td len = m_tb->writeKeyData();
-            if (l->setParam(m_tb->m_keybuf, len))
-                m_logics.push_back(l);
-            else
-            {
-                delete l;
-                return false;
-            }
-        }
-        if (m_logics.size())
-            m_logics[m_logics.size() -1]->opr = eCend;
-        m_seeksMode = true;
-        m_seeksWritedCount = 0;
-        return true;
-    }
-
-	bool setSeeksPtr(const std::vector<const void*>& keyValues)
+	template <class vector_type>
+	bool setSeeks(const vector_type& keyValues)
     {
         //Check key values
         keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
@@ -521,11 +540,7 @@ class filter
         for (size_t i=0;i<keyValues.size();i+= kd->segmentCount)
         {
             for (int j=0;j<kd->segmentCount;++j)
-			{
-				short fieldnum = kd->segments[j].fieldNum;
-				fielddef& fd = m_tb->tableDef()->fieldDefs[fieldnum];
-				memcpy(m_tb->fieldPtr(fieldnum), keyValues[i+j], fd.len);
-			}
+				setSeekValue(kd->segments[j].fieldNum, keyValues[i+j]);
             logic* l = new logic();
             ushort_td len = m_tb->writeKeyData();
             if (l->setParam(m_tb->m_keybuf, len))
@@ -543,15 +558,13 @@ class filter
         return true;
     }
 
-	
-
     bool doSetFilter(const queryBase* q)
     {
         cleanup();
         setRejectCount(q->getReject());
         setMaxRows(q->getLimit());
         m_direction = q->getDirection();
-        m_useOptimize = q->isOptimize();
+        m_useOptimize = ((q->getOptimize() & queryBase::joinWhereFields) == queryBase::joinWhereFields);
         m_withBookmark = q->isBookmarkAlso();
         if (q->isAll())
             addAllFields();
@@ -574,7 +587,7 @@ class filter
 			else if (q->getSeekValuesPtr().size())
             {
                 m_withBookmark = true;
-                return setSeeksPtr(q->getSeekValuesPtr());
+                return setSeeks(q->getSeekValuesPtr());
             }
             else if (q->getWheres().size())
                 return setWhere(q->getWheres());
@@ -582,10 +595,10 @@ class filter
         return true;
     }
 
-    ushort_td resultRowSize(bool ignoreFields) const
+    int resultRowSize(bool ignoreFields) const
     {
 
-        ushort_td recordLen = m_hd.bookmarkSize() + DATASIZE_BYTE;
+        int recordLen = m_hd.bookmarkSize(m_isTransactd) + DATASIZE_BYTE;
         if (!ignoreFields)
         {
             for (size_t i=0;i< m_fields.size();++i)
@@ -594,9 +607,9 @@ class filter
         return recordLen;
     }
 
-    ushort_td calcMaxRows()
+    int calcMaxRows()
     {
-        return (ushort_td)(MAX_DATA_SIZE / resultRowSize(m_ignoreFields));
+        return maxDataBuffer() / resultRowSize(m_ignoreFields);
     }
 
     int resultBufferNeedSize()
@@ -641,7 +654,7 @@ class filter
             m_ret.maxRows = m_hd.logicalCount = (ushort_td)(last - first);
         }
         if (m_ret.maxRows == 0)
-            m_ret.maxRows = calcMaxRows();
+            m_ret.maxRows = (unsigned short)std::min<int>(calcMaxRows(), USHRT_MAX);
 
         p =  m_hd.writeBuffer(p, estimate);
         for (size_t i=first;i< last;++i)
@@ -659,10 +672,12 @@ class filter
 
         //write total length
         int len = (int)(p - start);
-        unsigned short* s = (unsigned short*)start;
         if (!estimate)
-            *s = len;
-        return len;
+		{
+			m_hd.setLen(len, m_isTransactd);
+			m_hd.writeBuffer(start, false);
+		}
+		return len;
     }
 
     int calcLogicalCutsize(int oversize)
@@ -685,23 +700,23 @@ class filter
         joinLogic();
         m_logicalLimitCount = m_logics.size();
         int len = doWriteBuffer(true);
-        if (len > (int)MAX_DATA_SIZE)
+        if (len > maxDataBuffer())
         {
             if (m_seeksMode)
-                len -= calcLogicalCutsize(len - MAX_DATA_SIZE + 1);
+                len -= calcLogicalCutsize(len - maxDataBuffer() + 1);
             else
                 return false;
         }
-        m_hd.len = len;
+        m_hd.len = len;//lost 2byte data at transactd
         int resultLen = (int)resultBufferNeedSize();
-        if (resultLen > MAX_DATA_SIZE)
+        if (resultLen > maxDataBuffer())
         {
             /* change the max rows fit to a max buffer size */
             m_ret.maxRows = calcMaxRows();
             resultLen = resultBufferNeedSize();
         }
 
-        m_extendBuflen = std::max<int>((int)m_hd.len, resultLen);
+        m_extendBuflen = std::max<int>((int)len, resultLen);
         m_extendBuflen = std::max<int>(m_extendBuflen, m_tb->tableDef()->maxRecordLen);
         if ((m_fields.size() != 1) || m_tb->valiableFormatType())
             m_extendBuflen += m_tb->buflen();
@@ -717,10 +732,15 @@ class filter
 public:
     filter(table* tb):m_tb(tb),m_ignoreFields(false)
         ,m_seeksMode(false),m_seeksWritedCount(0)
-        ,m_useOptimize(true),m_withBookmark(true){}
+        ,m_useOptimize(true),m_withBookmark(true)
+	{
+		m_isTransactd = m_tb->isUseTransactd();
+	}
+
     ~filter()
     {
         cleanup();
+		
     }
 
     void cleanup()
@@ -758,10 +778,10 @@ public:
 
     void setPositionType(bool incCurrent)
     {
-        m_hd.setPositionType(incCurrent, m_withBookmark, m_tb->isUseTransactd());
+        m_hd.setPositionType(incCurrent, m_withBookmark, m_isTransactd);
     }
 
-    bool positionTypeNext() const{return m_hd.positionTypeNext();}
+    bool positionTypeNext() const{return m_hd.positionTypeNext(m_isTransactd);}
 
     void setRejectCount(ushort_td v){m_hd.rejectCount = v;}
     ushort_td rejectCount()const {return m_hd.rejectCount;}
@@ -796,7 +816,7 @@ public:
 
     ushort_td totalFieldLen() const
     {
-        return resultRowSize(false) - m_hd.bookmarkSize() - DATASIZE_BYTE;
+        return resultRowSize(false) - m_hd.bookmarkSize(m_isTransactd) - DATASIZE_BYTE;
     }
 
     ushort_td fieldOffset(int index) const
@@ -822,7 +842,7 @@ public:
 
     bool ignoreFields() const {return m_ignoreFields;}
 
-    int bookmarkSize() const {return m_hd.bookmarkSize();}
+    int bookmarkSize() const {return m_hd.bookmarkSize(m_isTransactd);}
 
     /* The Ignore fields option don't use with multi seek operation.
        because if a server are not found a record then a server return
@@ -832,8 +852,8 @@ public:
     bool isSeeksMode()const {return m_seeksMode;}
     table::eFindType direction() const{return m_direction;}
     void setDirection(table::eFindType v) {m_direction = v;}
-    const std::vector<std::_tstring>& keyValuesCache(){return m_keyValuesCache;}
     const std::vector<short>& selectFieldIndexes(){return m_selectFieldIndexes;}
+	const std::vector<logic*>& logics() const {return m_logics;}
 };
 
 

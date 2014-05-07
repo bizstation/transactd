@@ -513,76 +513,44 @@ protected:
         mraResetter mras(m_tb);
 		typename Container::iterator it = mdls.begin(),ite = mdls.end();
 
-        bool optimaize = true;
-		optimaize = (bool)_tcscmp(name1, _T("id"));
+        bool optimaize = !(q.getOptimize() & queryBase::hasOneJoin);
 		std::vector<std::vector<int> > joinRowMap;
 		std::vector<typename Container::key_type> fieldIndexes;
 		groupQuery gq;
 		gq.keyField(name1, name2, name3, name4, name5, name6, name7, name8, name9, name10, name11);
 		gq.getFieldIndexes(mdls, fieldIndexes);
-		if (optimaize)
-		{
 		/* optimazing join
 			If base recordset is made by unique key and join by uniqe field, that can not opitimize.
         */
-		//DWORD v = timeGetTime();
-
-		gq.makeJoinMap(mdls, joinRowMap, fieldIndexes);
-		//v = timeGetTime()- v;
-		//_tprintf(_T("makeJoinMap = %d msc\n"), v);
-
-		//v = timeGetTime();
-		q.reserveSeekKeyValueSize(joinRowMap.size());
-		std::vector<std::vector<int> >::iterator it1 = joinRowMap.begin(),ite1 = joinRowMap.end();
-		while(it1 != ite1)
-        {
-            T& mdl = *(mdls[(*it1)[0]]);
-			//for (int i=0;i<fieldIndexes.size();++i)
-			//	q.addSeekKeyValue(mdl[fieldIndexes[i]].c_str());
-			for (int i=0;i<fieldIndexes.size();++i)
-				q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
-            ++it1;
-        }
-		//v = timeGetTime()- v;
-		//_tprintf(_T("q.addSeekKeyValue = %d msc\n"), v);
-
+		if (optimaize)
+		{
+			gq.makeJoinMap(mdls, joinRowMap, fieldIndexes);
+			q.reserveSeekKeyValueSize(joinRowMap.size());
+			std::vector<std::vector<int> >::iterator it1 = joinRowMap.begin(),ite1 = joinRowMap.end();
+			while(it1 != ite1)
+			{
+				T& mdl = *(mdls[(*it1)[0]]);
+				for (int i=0;i<fieldIndexes.size();++i)
+					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
+				++it1;
+			}
 		}
 		else
 		{
-        while(it != ite)
-        {
-            //ToDo The conversion to a string is useless.
-			T& mdl = *(*it);
-            //T& mdl = *(mdls[(*it1)[0]]);
-			//for (int i=0;i<fieldIndexes.size();++i)
-			//	q.addSeekKeyValue(mdl[fieldIndexes[i]].c_str());
-			for (int i=0;i<fieldIndexes.size();++i)
-				q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
-			/*
-			if (name1) q.addSeekKeyValue(mdl[fieldIndexes[0]].c_str());
-            if (name2) q.addSeekKeyValue(mdl[fieldIndexes[1]].c_str());
-            if (name3) q.addSeekKeyValue(mdl[fieldIndexes[2]].c_str());
-            if (name4) q.addSeekKeyValue(mdl[fieldIndexes[3]].c_str());
-            if (name5) q.addSeekKeyValue(mdl[fieldIndexes[4]].c_str());
-            if (name6) q.addSeekKeyValue(mdl[fieldIndexes[5]].c_str());
-            if (name7) q.addSeekKeyValue(mdl[fieldIndexes[6]].c_str());
-            if (name8) q.addSeekKeyValue(mdl[fieldIndexes[7]].c_str());
-            if (name9) q.addSeekKeyValue(mdl[fieldIndexes[8]].c_str());
-            if (name10) q.addSeekKeyValue(mdl[fieldIndexes[9]].c_str());
-            if (name11) q.addSeekKeyValue(mdl[fieldIndexes[10]].c_str());*/
-            ++it;
-        }
+			while(it != ite)
+			{
+				T& mdl = *(*it);
+				for (int i=0;i<fieldIndexes.size();++i)
+					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
+				++it;
+			}
 		}
-		//v = timeGetTime();
 
         m_tb->setQuery(&q);
         if (m_tb->stat() != 0)
             nstable::throwError(_T("activeTable readEach Query"), &(*m_tb));
 		
-		//v = timeGetTime()- v;
-		//_tprintf(_T("q.setQuery = %d msc\n"), v);
-
-       typename MAP::collection_orm_typename map(mdls);
+        typename MAP::collection_orm_typename map(mdls);
 
         /* ignore list for inner join */
         std::vector<typename Container::iterator> ignores;
@@ -594,8 +562,6 @@ protected:
 			if (optimaize)
 				m_tb->mra()->setJoinRowMap(&joinRowMap);
 		}
-		//v = timeGetTime();
-
 		m_tb->find();
         while(1)
         {
@@ -610,9 +576,6 @@ protected:
             ++it;
             m_tb->findNext(); //mra copy value to memrecord
         }
-
-		//v = timeGetTime()- v;
-		//_tprintf(_T("find = %d msc\n"), v);
 
         readStatusCheck(*m_tb, _T("join"));
 		m_tb->mra()->setJoinRowMap(NULL);

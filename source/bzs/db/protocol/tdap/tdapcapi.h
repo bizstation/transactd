@@ -352,6 +352,9 @@ enum eCompType
 #define TYPE_SCHEMA_BDF				(short)0
 #define TYPE_SCHEMA_DDF				(short)1
 
+#define FILTER_CURRENT_TYPE_NOTINC		0
+#define FILTER_CURRENT_TYPE_INC			1
+#define FILTER_CURRENT_TYPE_NOBOOKMARK	2
 
 
 #define NIS_FILED_NAME		"$nf"

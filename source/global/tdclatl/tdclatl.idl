@@ -296,6 +296,18 @@ enum eGroupFunc
 	fsum = 3
 }eGroupFunc;
 
+typedef
+[
+  helpstring("query optimize option")
+]
+enum eOptimize
+{
+	none = 0,
+    hasOneJoin = 1,
+	joinWhereFields = 2
+}eOptimize;
+
+
 
 [
   object,
@@ -1014,9 +1026,9 @@ interface IQueryBase : IDispatch
   [id(0x0000013)]
   HRESULT _stdcall IsAll([out, retval] VARIANT_BOOL* retVal);
   [id(0x0000014)]
-  HRESULT _stdcall Optimize([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
+  HRESULT _stdcall Optimize([in, defaultvalue(none)] eOptimize Value, [out, retval] IQueryBase** retVal);
   [id(0x0000015)]
-  HRESULT _stdcall IsOptimize([out, retval] VARIANT_BOOL* retVal);
+  HRESULT _stdcall GetOptimize([out, retval] eOptimize* retVal);
   [id(0x0000016)]
   HRESULT _stdcall SelectCount([out, retval] short* retVal);
   [id(0x0000017)]

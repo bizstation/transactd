@@ -151,8 +151,10 @@ public:
 	
 		if (P_MASK_EX_SENDLEN & paramMask)
 		{
-			memcpy(p, data,  *((ushort_td*)data));
-			p += *((ushort_td*)data);
+			unsigned int v = *((unsigned int*)data);
+			v &= 0xFFFFFFF; //28bit
+			memcpy(p, data,  v);
+			p += v;
 		}
 		else if (P_MASK_DATA & paramMask)
 		{

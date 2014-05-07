@@ -490,8 +490,8 @@ public:
 
 struct extRequest
 {
-	unsigned short	len;
-	char			type[2];
+	int ilen  :28;
+	int itype : 4;
 	unsigned short	rejectCount;
 	unsigned short	logicalCount;
 	logicalField	field;
@@ -699,9 +699,9 @@ class resultWriter
 {
 	char* m_buf;
 	extResultDef* m_def;
-	unsigned short m_rowsPos;
-	unsigned short m_maxLen;
-	unsigned short m_resultLen;
+	int m_maxLen;
+	int m_rowsPos;
+	int m_resultLen;
 	bool m_writeFirst;
 	bool m_noBookmark;
 
@@ -721,7 +721,7 @@ class resultWriter
 
 		//write recLength space;
 		unsigned short recLen = 0;
-		unsigned short recLenPos = m_resultLen;
+		int recLenPos = m_resultLen;
 		*((unsigned short*)(m_buf + m_resultLen)) = recLen; 
 		m_resultLen += sizeof(unsigned short);
 
@@ -755,7 +755,7 @@ class resultWriter
 				for (int i=0;i<m_def->fieldCount;i++)
 				{
 					resultField& fd = m_def->field[i];
-					if (m_maxLen+RETBUF_EXT_RESERVE_SIZE>= m_resultLen + fd.len)
+					if (m_maxLen + RETBUF_EXT_RESERVE_SIZE >= m_resultLen + fd.len)
 					{
 						memcpy(m_buf + m_resultLen, pos->fieldPtr(&fd),  fd.len);
 						m_resultLen += fd.len;
@@ -774,11 +774,11 @@ class resultWriter
 	}
 public:
 	resultWriter(char* buf ,size_t offset,  extResultDef* def
-			, unsigned short maxlen, bool noBookmark)
+			, int maxlen, bool noBookmark)
 			:m_buf(buf),m_def(def),m_rowsPos(0),m_maxLen(maxlen)
 				,m_writeFirst(true),m_noBookmark(noBookmark)
 	{
-		m_resultLen = (unsigned short)offset;
+		m_resultLen = (int)offset;
 	}
 
 	short write(position* pos, unsigned int bookmark)
@@ -791,7 +791,7 @@ public:
 		return doWrite(pos,  bookmark);
 	}
 
-	unsigned short resultLen(){return m_resultLen;};
+	unsigned int resultLen(){return m_resultLen;};
 	
 	const char* resultBuffer(){return m_buf;}
 };
@@ -807,7 +807,7 @@ class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 	engine::mysql::fieldBitmap bm;
 public:
 	short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache
-		, char* buf,size_t offset, unsigned short maxlen, bool forword, bool noBookmark)
+		, char* buf,size_t offset, int maxlen, bool forword, bool noBookmark)
 	{
 		short ret = 0;
 		m_position.setTable(tb);

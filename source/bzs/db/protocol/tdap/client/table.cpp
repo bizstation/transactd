@@ -1511,8 +1511,8 @@ short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 /* For keyValueDescription */
 bool table::setSeekValueField(int row)
 {
-    const std::vector<std::_tstring>& keyValues = m_impl->filterPtr->keyValuesCache();
-    keydef* kd = &tableDef()->keyDefs[keyNum()];
+    const std::vector<logic*>& keyValues = m_impl->filterPtr->logics();
+	keydef* kd = &tableDef()->keyDefs[keyNum()];
     if (keyValues.size() % kd->segmentCount)
         return false;
     //Check uniqe key
@@ -1520,8 +1520,19 @@ bool table::setSeekValueField(int row)
         return false;
 
     size_t pos = kd->segmentCount * row;
-    for (int j=0;j<kd->segmentCount;++j)
-        setFV(kd->segments[j].fieldNum, keyValues[pos+j].c_str());
+	const uchar_td* ptr = keyValues[row]->data;
+	const uchar_td* data;
+	ushort_td dataSize;
+	for (int j=0;j<kd->segmentCount;++j)
+	{
+		short filedNum = kd->segments[j].fieldNum;
+		fielddef& fd = tableDef()->fieldDefs[filedNum];
+		ptr = fd.getKeyValueFromKeybuf(ptr, &data, dataSize);
+		if (fd.maxVarDatalen())
+			setFV(filedNum, data, dataSize);
+		else
+			memcpy(fieldPtr(filedNum), data, dataSize);
+	}
     return true;
 }
 
@@ -1652,13 +1663,13 @@ struct impl
 {
     impl():
     m_reject(1),m_limit(0),m_direction(table::findForword)
-        ,m_nofilter(false),m_optimize(false),m_withBookmark(false){}
+        ,m_nofilter(false),m_optimize(queryBase::none),m_withBookmark(false){}
 
 	int m_reject;
 	int m_limit;
     table::eFindType m_direction;
     bool m_nofilter;
-    bool m_optimize;
+    queryBase::eOptimize m_optimize;
     bool m_withBookmark;
     mutable std::_tstring m_str;
     std::vector<std::_tstring> m_selects;
@@ -1843,13 +1854,13 @@ queryBase& queryBase::all()
     return *this;
 }
 
-queryBase& queryBase::optimize(bool v)
+queryBase& queryBase::optimize(queryBase::eOptimize v)
 {
     m_impl->m_optimize = v;
 	return *this;
 }
 
-bool queryBase::isOptimize()const
+queryBase::eOptimize queryBase::getOptimize() const
 {
     return m_impl->m_optimize;
 }

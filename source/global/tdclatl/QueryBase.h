@@ -89,8 +89,8 @@ public:
   STDMETHOD(GetReject)(long* retVal);
   STDMETHOD(GetLimit)(long* retVal);
   STDMETHOD(IsAll)(VARIANT_BOOL* retVal);
-  STDMETHOD(Optimize)(VARIANT_BOOL Value, IQueryBase** retVal);
-  STDMETHOD(IsOptimize)(VARIANT_BOOL* retVal);
+  STDMETHOD(Optimize)(eOptimize Value, IQueryBase** retVal);
+  STDMETHOD(GetOptimize)(eOptimize* retVal);
   STDMETHOD(SelectCount)(short* retVal);
   STDMETHOD(GetSelect)(short index, BSTR* retVal);
   STDMETHOD(WhereTokenCount)(short* retVal);

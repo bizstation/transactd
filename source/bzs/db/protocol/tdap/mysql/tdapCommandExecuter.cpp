@@ -489,7 +489,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 		m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT : HA_READ_KEY_OR_PREV);
 		
 		extRequest* ereq = (extRequest*)req.data;
-		bool noBookmark = (ereq->type[1]=='N');
+		bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK)!= 0;
 
 		smartReadRecordsHandler srrh(m_readHandler);
 		req.result = m_readHandler->begin(m_tb, ereq, true
@@ -523,8 +523,8 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 	int ret = 1;
 	m_tb = getTable(req.pbk->handle);
 	extRequest* ereq = (extRequest*)req.data;
-	bool incCurrent = (ereq->type[0]=='U');
-	bool noBookmark = (ereq->type[1]=='N');
+	bool incCurrent = (ereq->itype & FILTER_CURRENT_TYPE_INC)!= 0;
+	bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK)!= 0;
 
 	bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
 	smartReadRecordsHandler srrh(m_readHandler);

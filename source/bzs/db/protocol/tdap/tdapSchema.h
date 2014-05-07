@@ -353,6 +353,25 @@ public:
         return to + kl - keyVarlen;
     }
 
+	/*  Get keyValue from keybuf for seek mode error description
+     *  return next copy key address.
+     */
+    inline const uchar_td* getKeyValueFromKeybuf(const uchar_td* from, const uchar_td** data, ushort_td& size)
+    {
+		ushort_td keyVarlen = keyFromVarlen(); // size of var sizeByte for record.
+        if (keyVarlen)
+        {
+            size = *((ushort_td*)from);
+			*data = from + 2;
+        }
+		else
+		{
+			size = maxKeylen();
+			*data = from;
+		}
+        return *data + size;
+    }
+
     /* length bytes of var field
      */
     inline int varLenBytes() const

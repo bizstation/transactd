@@ -242,16 +242,16 @@ STDMETHODIMP CQueryBase::IsAll(VARIANT_BOOL* retVal)
 }
 
 
-STDMETHODIMP CQueryBase::Optimize(VARIANT_BOOL v, IQueryBase** retVal)
+STDMETHODIMP CQueryBase::Optimize(eOptimize v, IQueryBase** retVal)
 {
-	m_qb.optimize(v==-1);
+	m_qb.optimize((bzs::db::protocol::tdap::client::queryBase::eOptimize)v);
 	setResult(retVal);
 	return S_OK;
 }
 
-STDMETHODIMP CQueryBase::IsOptimize(VARIANT_BOOL* retVal)
+STDMETHODIMP CQueryBase::GetOptimize(eOptimize* retVal)
 {
-	*retVal = m_qb.isOptimize();
+	*retVal = (eOptimize)m_qb.getOptimize();
 	return S_OK;
 }
 

@@ -58,7 +58,7 @@ public:
 						P_MASK_READ_EXT : P_MASK_DATA|P_MASK_DATALEN;
 		//paramMask = P_MASK_READ_EXT;
 		if (tb->blobFields()) paramMask |=P_MASK_BLOBBODY;
-		resultLen = (ushort_td)(size - RETBUF_EXT_RESERVE_SIZE);// 4+1+2+4 = 11
+		resultLen = (size - RETBUF_EXT_RESERVE_SIZE);// 4+1+2+4 = 11
 	
 		int pos = sizeof(unsigned int);									//4
 		memcpy(buf + pos, (const char*)(&paramMask), sizeof(uchar_td));	//1
@@ -155,8 +155,9 @@ public:
 		if (P_MASK_EX_SENDLEN & paramMask)
 		{
 			data = (void_td*)p;
-			p += (*(ushort_td*)p);
-	
+			int v = *((int*)p);
+			v &= 0xFFFFFFF; //28bit
+			p += v;
 		}
 		else if (P_MASK_DATA & paramMask)
 		{

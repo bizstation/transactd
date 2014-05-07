@@ -261,6 +261,8 @@ class AGRPACK queryBase
 	const std::vector<const void*>& getSeekValuesPtr() const;
 	
 public:
+	enum eOptimize{none=0, hasOneJoin=1, joinWhereFields=2};
+
     queryBase();
     virtual ~queryBase();
     void reset();
@@ -277,7 +279,7 @@ public:
 	queryBase& limit(int v);
     queryBase& direction(table::eFindType v);
     queryBase& all();
-    queryBase& optimize(bool v);
+    queryBase& optimize(eOptimize v);
     queryBase& bookmarkAlso(bool v);
 
     const _TCHAR* toString() const;
@@ -285,7 +287,7 @@ public:
     int getReject()const;
     int getLimit()const;
     bool isAll()const;
-    bool isOptimize()const;
+    eOptimize getOptimize() const;
     bool isBookmarkAlso()const;
 	short selectCount() const;
 	const _TCHAR* getSelect(short index) const;
