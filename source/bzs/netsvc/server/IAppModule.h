@@ -105,7 +105,12 @@ public:
 											, bool tpool) = 0;
 };
 
+class INetAsyncWriter
+{
 
+public:
+	virtual void asyncWrite(const char* p, size_t size, bool end) = 0;
+};
 
 }//namespace server
 }//namespace netsvc

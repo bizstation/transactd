@@ -32,27 +32,18 @@ namespace client
 {
 
 
-/*template <class T, typename key_type>
-int compByKey(const T& l, const T& r, const key_type& s)
-{
-    if ((s >= (int)l.size()) || (s >= (int)r.size()))
-        throw bzs::rtl::exception(0, _T("groupSort:Invalid key index"));
-    return comp_any(l.at(s), r.at(s));
-}*/
-
-
 inline int compByKey(const fieldsBase& l, const fieldsBase& r, const int& s)
 {
-    if ((s >= (int)l.size()) || (s >= (int)r.size()))
-        THROW_BZS_ERROR_WITH_MSG(_T("groupSort:Invalid key index"));//throw bzs::rtl::exception(0, _T("groupSort:Invalid key index"));
-    return l[s].comp(r[s], 0);
+    assert((s < (int)l.size()) && (s < (int)r.size()));
+    return l.getFieldInternal(s).comp(r.getFieldInternal(s), 0);
 }
 
 
 template <class Container>
 class grouping_comp
 {
-    const std::vector<typename Container::key_type>& m_keys;
+    typedef std::vector<typename Container::key_type> key_vec;
+    const key_vec& m_keys;
     Container& m_mdls;
 
 public:

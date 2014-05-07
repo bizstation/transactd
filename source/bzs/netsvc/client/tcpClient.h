@@ -125,6 +125,7 @@ public:
 	virtual unsigned int sendBufferSize()=0;
 	virtual buffers* optionalBuffers()=0;
 	virtual char* asyncWriteRead(unsigned int writeSize)=0;
+    virtual unsigned int datalen()const = 0; //additinal info at segment read
 
 };
 
@@ -168,18 +169,18 @@ public:
 template <class T>
 class connectionImple : public connectionBase
 {
+    unsigned int m_datalen;
 protected:
 	T m_socket;
 	buffers m_optionalBuffes;
-
-	void handle_read(const boost::system::error_code& e
+	/*void handle_read(const boost::system::error_code& e
 							, std::size_t bytes_transferred)
 	{
 		if (!e)
 		{
 			unsigned int* n=NULL;
 			if (bytes_transferred==0)
-				return ;
+				return;
 			m_readLen += bytes_transferred;
 			n = (unsigned int*)(&m_readbuf[0]);
 			if (*n == m_readLen)
@@ -199,13 +200,34 @@ protected:
 	{
 		if (!e)
 		{
-			m_optionalBuffes.clear();
-			m_readLen = 0;
-			m_socket.async_read_some(asio::buffer(&m_readbuf[0], m_readbuf.size()),
-				boost::bind(&connectionImple::handle_read, this,
-				boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 		}
-	}
+	} */
+
+    unsigned int datalen()const {return m_datalen;}
+
+    // server send any segment of lower than 0xFFFF data by asyncWrite
+    // last 4byte is 0xFFFFFFFF, that is specify end of data
+    void segmentRead()
+    {
+        bool end = false;
+        unsigned short n;
+
+        while (end)
+        {
+            boost::asio::read(m_socket, boost::asio::buffer(&n, 2),boost::asio::transfer_all());
+
+            if (m_readLen + n > m_readbuf.size())
+                m_readbuf.resize(m_readLen + n);
+            m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], n)
+                    , boost::asio::transfer_all());
+            end = (*((unsigned int*)(&m_readbuf[m_readLen - 4])) == 0xFFFFFFFF);
+        }
+        m_readLen -= 4;
+        //additinal data length info
+        boost::asio::read(m_socket, boost::asio::buffer(&m_datalen, 4)
+                    , boost::asio::transfer_all());
+
+    }
 
 	void read()
 	{
@@ -213,19 +235,26 @@ protected:
 			throw system_error(asio::error::not_connected);
 		boost::system::error_code e;
 		m_readLen = 0;
-		m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], m_readbuf.size()-m_readLen)
-				,boost::asio::transfer_at_least(4));
+        m_datalen = 0;
+		//m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], m_readbuf.size()-m_readLen)
+		//		,boost::asio::transfer_at_least(4));
+		m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[0], 4)
+                    , boost::asio::transfer_all());
 		unsigned int* n=NULL;
 		n = (unsigned int*)(&m_readbuf[0]);
-
-		if (*n > m_readbuf.size()) 
-		{
-			m_readbuf.resize(*n);
-			n = (unsigned int*)(&m_readbuf[0]);
-		}
-		if (m_readLen != *n)
-			m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], *n-m_readLen)
-				, boost::asio::transfer_all());
+        if (*n == 0xFFFFFFFF)
+            segmentRead();
+        else
+        {
+            if (*n > m_readbuf.size())
+            {
+                m_readbuf.resize(*n);
+                n = (unsigned int*)(&m_readbuf[0]);
+            }
+            if (m_readLen != *n)
+                m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], *n-m_readLen)
+                    , boost::asio::transfer_all());
+        }
 	}
 
 	void write(unsigned int writeSize)
@@ -240,9 +269,8 @@ protected:
 
 public:
 	connectionImple(asio::ip::tcp::endpoint& ep)
-		:connectionBase(ep),m_socket(m_ios)
+		:connectionBase(ep),m_socket(m_ios),m_datalen(0)
 	{
-
 	}
 
 	~connectionImple()
@@ -260,7 +288,6 @@ public:
 	{
 		write(writeSize);
 		read();
-		
 		return &m_readbuf[0];
 	}
 
@@ -273,6 +300,7 @@ public:
  */
 class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 {
+
 
 public:
 	tcpConnection(asio::ip::tcp::endpoint& ep)
@@ -305,6 +333,7 @@ public:
 		m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
 		char tmp[20];
 		m_socket.read_some(boost::asio::buffer(tmp, 10));
+		
 		m_connected = true;
 
 	}

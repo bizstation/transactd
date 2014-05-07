@@ -39,7 +39,7 @@ class IReadRecordsHandler
 public:
 	virtual ~IReadRecordsHandler(){};
 	virtual int match(bool typeNext) const=0;
-	virtual short write(const unsigned char* bookmark, unsigned int bmlen, short stat=0)=0;
+	virtual short write(const unsigned char* bookmark, unsigned int bmlen/*, short stat=0*/)=0;
 	virtual unsigned short rejectCount() const= 0;
 	virtual unsigned short maxRows()const = 0;
 };

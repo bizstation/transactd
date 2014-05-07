@@ -205,16 +205,13 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
 {
     m_stat = STATUS_SUCCESS;
     tabledef* td = tableDefs(TableIndex);
-    short i = (short)(td->fieldCount - 1);
-    short j;
-    short ret;
-    short Fnum;
+    //short i = (short)(td->fieldCount - 1);
+    short i, j, ret, Fnum;
     uchar_td type;
 
     td->optionFlags.bitA = false; // reset valiable type
 
-
-    for (; i >= 0; --i)
+    for (i=0; i <td->fieldCount; ++i)
     {
         ret = fieldNumByName(TableIndex, td->fieldDefs[i].name());
         if ((ret != -1) && (ret != i))
@@ -243,24 +240,40 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
             }
         }
 
-        // Check valiable type
-        if ((i != (short)(td->fieldCount - 1) )&&
-            ((type == ft_myvarchar) || (type == ft_myvarbinary) ||
-            (type == ft_mywvarchar) || (type == ft_mywvarbinary)))
-            td->optionFlags.bitA = true;
-        if ((type == ft_myblob) || (type == ft_mytext))
-            td->optionFlags.bitB = true;
-
-        if (td->optionFlags.bitA || td->optionFlags.bitB)
-            td->flags.bit0 = false;
-         // If valiable length then cannot use blob.
-        /*if (td->flags.bit0 && (td->optionFlags.bitA || td->optionFlags.bitB))
+        bool flag = (td->flags.bit0 == true)
+                            && (i == (short)(td->fieldCount - 1));
+        if (flag &&
+                (type != ft_myvarbinary) &&
+                (type != ft_mywvarbinary) &&
+                (type != ft_note) &&
+                (type != ft_lvar))
         {
             m_stat = STATUS_LVAR_NOTE_NOT_LAST;
             return;
-        }*/
+        }
+        if((type == ft_myvarchar) || (type == ft_mywvarchar))
+            td->optionFlags.bitA = true;
+        if ((type == ft_myblob) || (type == ft_mytext))
+            td->optionFlags.bitB = true;
+        // Check valiable type
 
+        if (i != (short)(td->fieldCount - 1))
+        {
+            if ((type == ft_myvarbinary) || (type == ft_mywvarbinary))
+                td->optionFlags.bitA = true;
+
+        }else
+        {
+            // It is td->flags.bit0 true when the only last field verbin type is specified.
+            if (isUseTransactd() && (td->flags.bit0==false) && ((type == ft_myvarbinary) || (type == ft_mywvarbinary)))
+            {
+                m_stat = STATUS_TRD_NEED_VARLENGTH;
+                return;
+            }
+
+        }
     }
+  
 
     // Check invalid key type
     for (i = 0; i < td->keyCount; i++)
@@ -276,6 +289,7 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
             }
         }
     }
+
 
     // Chack duplicate table name.
     for (i = 1; i < m_impl->tableCount; i++)

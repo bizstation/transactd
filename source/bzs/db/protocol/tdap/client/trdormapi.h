@@ -513,16 +513,17 @@ protected:
         mraResetter mras(m_tb);
 		typename Container::iterator it = mdls.begin(),ite = mdls.end();
 
-        bool optimaize = !(q.getOptimize() & queryBase::hasOneJoin);
+        bool optimize = !(q.getOptimize() & queryBase::hasOneJoin);
 		std::vector<std::vector<int> > joinRowMap;
 		std::vector<typename Container::key_type> fieldIndexes;
 		groupQuery gq;
 		gq.keyField(name1, name2, name3, name4, name5, name6, name7, name8, name9, name10, name11);
 		gq.getFieldIndexes(mdls, fieldIndexes);
-		/* optimazing join
+
+		/* optimizing join
 			If base recordset is made by unique key and join by uniqe field, that can not opitimize.
         */
-		if (optimaize)
+		if (optimize)
 		{
 			gq.makeJoinMap(mdls, joinRowMap, fieldIndexes);
 			q.reserveSeekKeyValueSize(joinRowMap.size());
@@ -548,8 +549,8 @@ protected:
 
         m_tb->setQuery(&q);
         if (m_tb->stat() != 0)
-            nstable::throwError(_T("activeTable readEach Query"), &(*m_tb));
-		
+            nstable::throwError(_T("activeTable Join Query"), &(*m_tb));
+
         typename MAP::collection_orm_typename map(mdls);
 
         /* ignore list for inner join */
@@ -559,7 +560,7 @@ protected:
         if (m_tb->mra())
 		{
             m_tb->mra()->setJoinType(innner ? mra::mra_innerjoin : mra::mra_outerjoin);
-			if (optimaize)
+			if (optimize)
 				m_tb->mra()->setJoinRowMap(&joinRowMap);
 		}
 		m_tb->find();

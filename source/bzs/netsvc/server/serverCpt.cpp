@@ -54,7 +54,7 @@ unsigned int g_waitThread = 0;
 #define READBUF_SIZE 66000
 #define WRITEBUF_SIZE 66000
 
-class connection  : public iconnection, private boost::noncopyable 			
+class connection  : public iconnection, public INetAsyncWriter, private boost::noncopyable 			
 {
 	mutable io_service m_ios;
 
@@ -64,6 +64,7 @@ class connection  : public iconnection, private boost::noncopyable
 	std::vector<char> m_result;
 	buffers m_optionalBuffes;
 	shared_ptr<IAppModule> m_module;
+	bool m_segmentWrite;
 	
 	size_t m_readLen;
 	void handle_read(const boost::system::error_code& e, std::size_t bytes_transferred)
@@ -90,20 +91,20 @@ class connection  : public iconnection, private boost::noncopyable
 					m_readLen = 0;
 					DEBUG_PROFILE_START(1)
 					{
-					if (m_optionalBuffes.size())
-					{
-						m_optionalBuffes.insert(m_optionalBuffes.begin(), buffer(&m_result[0], size));
-						async_write(m_socket, m_optionalBuffes, boost::bind(&connection::handle_write, this,
-						 boost::asio::placeholders::error));
-					}else
-					{
-						async_write(m_socket, buffer(&m_result[0], size), boost::bind(&connection::handle_write, this,
-						 boost::asio::placeholders::error));
-						/*boost::asio::write(m_socket, buffer(&m_result[0], size), boost::asio::transfer_all());
-						m_socket.async_read_some(buffer(&m_buffer[0], m_buffer.size()),
-							boost::bind(&connection::handle_read, this,
-							boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));*/
-					}
+						if (m_optionalBuffes.size())
+						{
+							m_optionalBuffes.insert(m_optionalBuffes.begin(), buffer(&m_result[0], size));
+							async_write(m_socket, m_optionalBuffes, boost::asio::transfer_all(), boost::bind(&connection::handle_write, this,
+								boost::asio::placeholders::error));
+						}else
+						{
+							async_write(m_socket, buffer(&m_result[0], size), boost::asio::transfer_all(), boost::bind(&connection::handle_write, this,
+								boost::asio::placeholders::error));
+						
+						}
+						m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
+						boost::asio::write(m_socket, buffer("", 0),  boost::asio::transfer_all());
+
 					}
 					m_module->cleanup();
 					return;
@@ -112,9 +113,10 @@ class connection  : public iconnection, private boost::noncopyable
 			
 			if (n > m_buffer.size())
 				m_buffer.resize(n);
-			m_socket.async_read_some(buffer(&m_buffer[m_readLen], m_buffer.size()-m_readLen),
-					boost::bind(&connection::handle_read, this,
-					boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+			async_read(m_socket, buffer(&m_buffer[m_readLen], n - m_readLen)
+				,boost::asio::transfer_all()
+				,boost::bind(&connection::handle_read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+
 		}
 	}
 	
@@ -122,18 +124,20 @@ class connection  : public iconnection, private boost::noncopyable
 	{
 		if (!e)
 		{
-			
-			DEBUG_PROFILE_END(1, "write")
-			m_socket.async_read_some(buffer(&m_buffer[0], m_buffer.size()),
-			boost::bind(&connection::handle_read, this,
-				boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+			if (m_segmentWrite == false)
+			{
+				DEBUG_PROFILE_END(1, "write")
+				async_read(m_socket, buffer(&m_buffer[0], 4)
+					,boost::asio::transfer_all()
+					,boost::bind(&connection::handle_read, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+			}
 		}
 				
 	}
 public:
 	
 	connection(): m_socket(m_ios)
-		,m_readLen(0)
+		,m_readLen(0),m_segmentWrite(false)
 	{
 		m_buffer.resize(READBUF_SIZE);
 		m_result.resize(WRITEBUF_SIZE);
@@ -156,6 +160,16 @@ public:
 				--g_connections;
 			}
 		}
+	}
+
+	void asyncWrite(const char* p, size_t size, bool end)
+	{
+		m_segmentWrite = !end;
+		m_socket.set_option(boost::asio::ip::tcp::no_delay(false));
+		async_write(m_socket, buffer(p, size)
+			, boost::asio::transfer_all()
+			, boost::bind(&connection::handle_write, this, boost::asio::placeholders::error));
+
 	}
 	
 	void close()
@@ -181,8 +195,9 @@ public:
 	void sendConnectAccept()
 	{
 		m_ios.reset();
-		const boost::asio::ip::tcp::no_delay nodelay(true);
-		m_socket.set_option(nodelay);
+		m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
+		m_socket.set_option(boost::asio::socket_base::receive_buffer_size(512*1024));
+		m_socket.set_option(boost::asio::socket_base::send_buffer_size (1024*1024*10));
 
 		size_t n = m_module->onAccept(&m_result[0], WRITEBUF_SIZE);
 		if (n)

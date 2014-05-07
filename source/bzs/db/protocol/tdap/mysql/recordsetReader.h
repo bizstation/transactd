@@ -235,6 +235,24 @@ inline int compareBlobType(const char* l, const char* r, bool bin, char logType,
 #define COMP_USE_FUNCTION_POINTER 
 #endif
 
+struct seek
+{
+	unsigned short len;
+	unsigned char  ptr[1]; //variable
+	seek* next() const
+	{
+		return (seek*)((char*)this + len + sizeof(unsigned short));
+	}
+
+	extResultDef* resultDef(int count) const
+	{
+		const seek* s = this;
+		while (count--)
+			s = s->next();	
+		return (extResultDef*)s;
+	}
+};
+
 struct logicalField;
 typedef int (logicalField::*compFunc)(const char* l, const char* r, int sizeByte) const;
 struct logicalField
@@ -504,6 +522,23 @@ struct extRequest
 		if (logicalCount)
 			return field.resultDef();
 		return (extResultDef*)&field;
+	}
+
+};
+
+struct extRequestSeeks
+{
+	int ilen  :28;
+	int itype : 4;
+	unsigned short	rejectCount;
+	unsigned short	logicalCount;
+	seek			seekData;
+
+	extResultDef* resultDef() const 
+	{
+		if (logicalCount)
+			return seekData.resultDef(logicalCount);
+		return (extResultDef*)&seekData;
 	}
 
 };
@@ -810,12 +845,12 @@ class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 	engine::mysql::fieldBitmap bm;
 public:
 	short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache
-		, char* buf,size_t offset, int maxlen, bool forword, bool noBookmark)
+		, char* buf,size_t offset, int maxlen, bool forword, bool noBookmark, bool seeksMode)
 	{
 		short ret = 0;
 		m_position.setTable(tb);
 		m_req = req;
-		m_resultDef = m_req->resultDef();
+		m_resultDef =  seeksMode ? ((extRequestSeeks*)m_req)->resultDef():m_req->resultDef();
 		if (fieldCache)
 		{
 			const KEY* key = NULL;
@@ -825,7 +860,7 @@ public:
 		}
 		if ((m_resultDef->fieldCount > 1) ||
 			((m_resultDef->fieldCount == 1) && (m_resultDef->field[0].len < m_position.recordLenCl())))
-			ret = convResultPosToFieldNum(tb, noBookmark);
+			ret = convResultPosToFieldNum(tb, noBookmark, seeksMode);
 			
 		m_writer.reset(new resultWriter(buf, offset, m_resultDef, maxlen, noBookmark));
 		//DEBUG_RECORDS_BEGIN(m_resultDef, m_req)
@@ -834,7 +869,7 @@ public:
 	}
 
 	//TODO This convert is move to client. but legacy app is need this 
-	short convResultPosToFieldNum(engine::mysql::table* tb, bool noBookmark)
+	short convResultPosToFieldNum(engine::mysql::table* tb, bool noBookmark, bool seeksMode)
 	{
 		int blobs = 0;
 		bm.setTable(tb);
@@ -850,14 +885,16 @@ public:
 				++blobs;
 			
 		}
-		
-		logicalField* fd = &m_req->field;
-		for (int i=0;i<m_req->logicalCount;++i)
-		{
-			bm.setReadBitmap(m_position.getFieldNumByPos(fd->pos));
-			fd = fd->next();
-		}
 
+		if (!seeksMode)
+		{
+			logicalField* fd = &m_req->field;
+			for (int i=0;i<m_req->logicalCount;++i)
+			{
+				bm.setReadBitmap(m_position.getFieldNumByPos(fd->pos));
+				fd = fd->next();
+			}
+		}
 		//if need bookmark , add primary key fields
 		if (!noBookmark)
 		{
@@ -895,14 +932,14 @@ public:
 		return REC_MACTH;
 	}
 
-	short write(const unsigned char* bmPtr, unsigned int bmlen, short stat=0)
+	short write(const unsigned char* bmPtr, unsigned int bmlen/*, short stat=0*/)
 	{
 		unsigned int bookmark = 0;
 		//if bmPtr ==NULL , that is not found record in a TD_KEY_SEEK_MULTI operation
 		// and set error code to bookmark also STATUS_NOT_FOUND_TI 
 		if (bmPtr == NULL)
 		{
-			bookmark = stat;
+			//bookmark = stat;
 			return m_writer->write(NULL, bookmark);
 		}
 		else

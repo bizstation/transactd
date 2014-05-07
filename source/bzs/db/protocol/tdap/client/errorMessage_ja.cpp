@@ -68,6 +68,7 @@ PACKAGE _TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size)
     case STATUS_INVALID_KEYTYPE: p = _T("使用できないキータイプが指定されています。");break;
     case STATUS_LVAR_NOTE_NOT_LAST: p = _T("Note及びLvarタイプはフィールドの一番最後でなければなりません。");break;
     case STATUS_NODEF_FOR_CONVERT: p = _T("コンバート元定義がありません。");break;
+    case STATUS_TRD_NEED_VARLENGTH: p = _T("可変長テーブルの指定が必要です。");break;
     case STATUS_TOO_LONG_OWNERNAME: p = _T("オーナーネームが長すぎます。");break;
     case STATUS_CANT_DEL_FOR_REL: p = _T("参照整合性のため削除できません。");break;
     case STATUS_NO_AUTOINC_SPACE: p = _T("AutoIncExのスペースがありません。");break;

@@ -130,7 +130,7 @@ private:
 				for (int i=0;i<(int)rows;++i)
 				{
 					const std::vector<int>& map = (*jmap)[i+m_joinRows];
-					for (int j=0;j<map.size();++j)
+					for (int j=0;j<(int)map.size();++j)
 						m_recordset[map[j]]->setRecordData(p + recordLen*i , 0, am->endFieldIndex, false);
 				}
 			}
@@ -297,12 +297,8 @@ inline void multiRecordAlocatorImple::init(size_t recordCount, size_t recordLen
 
 inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
 {
-    int col = 0;
-    if (stat == tdc::mra::mra_current_block)
-        col = m_curFirstFiled;
-	size_t rowNum  = row+m_rowOffset;
-	if (m_joinRowMap)
-		rowNum = (*m_joinRowMap)[rowNum][0];
+    int col = (stat == tdc::mra::mra_current_block) ? m_curFirstFiled : 0;
+ 	size_t rowNum  = m_joinRowMap ? (*m_joinRowMap)[row+m_rowOffset][0] : row+m_rowOffset;
     return (*m_rs)[rowNum]->ptr(col);
 }
 
@@ -545,5 +541,8 @@ public:
 
 
 typedef sum<row, int, double> group_sum;
+
+
+typedef tdc::activeTable<map_orm> queryTable;
 
 #endif

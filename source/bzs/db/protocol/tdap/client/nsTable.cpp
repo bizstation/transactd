@@ -138,6 +138,8 @@ void nstable::unlock(bookmark_td bm)
     m_pdata = db;
 }
 
+bool nstable::isUseTransactd() const{return nsdb()->isUseTransactd();}
+
 void nstable::seekByBookmark() {seekByBookmark(m_impl->bookmark);}
 
 const _TCHAR* nstable::uri() const {return m_impl->uri;}

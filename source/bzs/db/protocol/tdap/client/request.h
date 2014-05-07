@@ -49,12 +49,13 @@ public:
 	request():bzs::db::protocol::tdap::request()
 			,cid(NULL){};
 
-	inline void parse(const char* p)
+	inline void parse(const char* p, unsigned int segmentDataLen)
 	{
 		p += sizeof(unsigned int);
 		paramMask = *((uchar_td*)p);
 		p += sizeof(uchar_td);
-		op = *((ushort_td*)p);
+
+		result = *((ushort_td*)p);
 		p += sizeof(ushort_td);
 
 		if (P_MASK_POSBLK & paramMask)
@@ -62,6 +63,7 @@ public:
 			memcpy(pbk, p, POSBLK_SIZE);
 			p += POSBLK_SIZE;
 		}
+
 		if (P_MASK_DATALEN & paramMask)
 		{
 			uint_td tmp = *((uint_td*)p);
@@ -72,6 +74,15 @@ public:
 				*datalen = tmp;
 			p += sizeof(uint_td);
 		}
+
+        if (P_MASK_FINALDATALEN & paramMask)
+        {
+			memset(data, 0, *datalen);
+			if (*datalen < segmentDataLen)
+				result = STATUS_BUFFERTOOSMALL;
+			else
+				*datalen = segmentDataLen;
+        }
 #ifdef USE_DATA_COMPRESS
 		if (P_MASK_USELZSS & paramMask)
 		{
@@ -106,6 +117,15 @@ public:
 			keyNum =  *((char_td*)p);
 			p += sizeof(char_td);
 		}
+
+        if (P_MASK_FINALRET & paramMask)
+        {
+            result = *((ushort_td*)p);
+		    p += sizeof(ushort_td);
+        }
+
+
+
 		if (paramMask & P_MASK_BLOBBODY)
 		{
 			blobHeader = (const bzs::db::blobHeader*)p;

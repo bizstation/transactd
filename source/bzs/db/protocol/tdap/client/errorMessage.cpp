@@ -63,6 +63,7 @@ _TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size)
     case STATUS_INVALID_KEYTYPE: p =  _T("The specified key type cannot be used");break;
     case STATUS_LVAR_NOTE_NOT_LAST: p =  _T("If Note or a Lvar type is not the last of a record, it will not become");break;
     case STATUS_NODEF_FOR_CONVERT: p =  _T("There is no definition of the origin to convert");break;
+	case STATUS_TRD_NEED_VARLENGTH: p =  _T("A variable-length table needs to be specified");break;
     case STATUS_TOO_LONG_OWNERNAME: p =  _T("The owner name is too long");break;
     case STATUS_CANT_DEL_FOR_REL: p =  _T("It cannot delete because of relationship");break;
     case STATUS_NO_AUTOINC_SPACE: p =  _T("There is no space of the auto increment number");break;

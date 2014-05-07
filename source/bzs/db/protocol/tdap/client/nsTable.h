@@ -131,6 +131,7 @@ public:
     short tableid() const ;
     void setTableid(short v);
     bool isOpen() const;
+    bool isUseTransactd() const;
     inline void setAccessRights(unsigned char curd) {m_curd = curd;};
     inline const void* data() const {return m_pdata;}
     inline void setData(void* v) {m_pdata = v;}

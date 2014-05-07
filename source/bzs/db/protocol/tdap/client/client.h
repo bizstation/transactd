@@ -230,7 +230,7 @@ public:
 					size = m_req.serializeBlobBody(&m_blobBuffer
 						, p, con()->sendBufferSize(), con()->optionalBuffers());
 				p = con()->asyncWriteRead(size);
-				m_req.parse(p);
+				m_req.parse(p, con()->datalen());
 				if (m_logout)
 					disconnect();
 				m_preResult = m_req.result;

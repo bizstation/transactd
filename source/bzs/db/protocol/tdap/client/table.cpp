@@ -209,8 +209,8 @@ public:
         if ((m_len==0) && m_pFilter->isSeeksMode() && m_pFilter->fieldCount())
         {
             /*seek error*/
-            m_seekMultiStat = m_bookmark;
-            m_bookmark = 0;
+            m_seekMultiStat = STATUS_NOT_FOUND_TI ;//m_bookmark;
+            //m_bookmark = 0;
             if (mra)
             {
                 m_tmpPtr = mra->ptr(m_row, multiRecordAlocator::mra_current_block);
@@ -338,8 +338,6 @@ bool table::myDateTimeValueByBtrv() const {return m_fddefs->myDateTimeValueByBtr
 bool table::logicalToString() const {return m_fddefs->logicalToString;};
 
 void table::setLogicalToString(bool v) {m_fddefs->logicalToString = v;}
-
-bool table::isUseTransactd() const{return nsdb()->isUseTransactd();}
 
 fields& table::fields(){return m_impl->fields;}
 
@@ -1004,12 +1002,12 @@ void table::doInit(tabledef* Def, short fnum, bool /*regularDir*/)
     setTableid(fnum);
 }
 
-keylen_td table::writeKeyData()
+keylen_td table::writeKeyDataTo(uchar_td* to)
 {
-    if (m_tableDef->keyCount)
+	if (m_tableDef->keyCount)
     {
         keydef& keydef = m_tableDef->keyDefs[(short)m_impl->keyNumIndex[m_keynum]];
-        uchar_td* to = (uchar_td*)m_impl->keybuf;
+        uchar_td* start = to;
 
         for (int j = 0; j < keydef.segmentCount; j++)
         {
@@ -1018,9 +1016,14 @@ keylen_td table::writeKeyData()
             uchar_td* from = (uchar_td*)m_pdata + fd.pos;
             to = fd.keyCopy(to, from);
         }
-        return (keylen_td)(to - (uchar_td*)m_impl->keybuf);
+        return (keylen_td)(to - start);
     }
     return 0;
+}
+
+keylen_td table::writeKeyData()
+{
+	return writeKeyDataTo((uchar_td*)m_impl->keybuf);
 }
 
 uint_td table::pack(char*ptr, size_t size)
@@ -1510,7 +1513,7 @@ short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 /* For keyValueDescription */
 bool table::setSeekValueField(int row)
 {
-    const std::vector<logic*>& keyValues = m_impl->filterPtr->logics();
+    const std::vector<client::seek>& keyValues = m_impl->filterPtr->seeks();
 	keydef* kd = &tableDef()->keyDefs[keyNum()];
     if (keyValues.size() % kd->segmentCount)
         return false;
@@ -1518,8 +1521,7 @@ bool table::setSeekValueField(int row)
     if (kd->segments[0].flags.bit0)
         return false;
 
-    //size_t pos = kd->segmentCount * row;
-	const uchar_td* ptr = keyValues[row]->data;
+	const uchar_td* ptr = (const uchar_td*)keyValues[row].data;
 	const uchar_td* data;
 	ushort_td dataSize;
 	for (int j=0;j<kd->segmentCount;++j)

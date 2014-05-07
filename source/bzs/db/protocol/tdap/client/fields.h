@@ -48,6 +48,11 @@ public:
 	void setInvalidRecord(bool v){m_invalidRecord = v;}
 	bool isInvalidRecord()const{return m_invalidRecord;}
 
+    inline field getFieldInternal(short index) const
+    {
+        return field(ptr((short)index), m_fns[(short)index], &m_fns);
+    }
+
     inline field operator[](short index) const
     {
         if (m_fns.checkIndex(index))

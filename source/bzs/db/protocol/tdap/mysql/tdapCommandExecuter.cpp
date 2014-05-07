@@ -493,7 +493,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 
 		smartReadRecordsHandler srrh(m_readHandler);
 		req.result = m_readHandler->begin(m_tb, ereq, true
-				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, (op == TD_KEY_GE_NEXT_MULTI), noBookmark);
+				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, (op == TD_KEY_GE_NEXT_MULTI), noBookmark, false);
 		if (req.result != 0)
 			return 1;
 		if (m_tb->stat() == 0)
@@ -529,14 +529,14 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 	bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
 	smartReadRecordsHandler srrh(m_readHandler);
 	req.result = m_readHandler->begin(m_tb, ereq,(op != TD_KEY_SEEK_MULTI)
-			, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, forword, noBookmark);
+			, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, forword, noBookmark, (op == TD_KEY_SEEK_MULTI));
 	if (req.result == 0)
 	{
 		if (op == TD_KEY_SEEK_MULTI)
 		{
 			char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
 			if (m_tb->setKeyNum(keynum))
-				req.result = errorCodeSht(seekEach(ereq));
+				req.result = errorCodeSht(seekEach((extRequestSeeks*)req.data));
 			else
 			{
 				if (m_tb)m_tb->unUse();
@@ -568,10 +568,10 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 	return ret;
 }
 
-inline short dbExecuter::seekEach(extRequest* ereq)
+inline short dbExecuter::seekEach(extRequestSeeks* ereq)
 {
 	short stat = 0;
-	logicalField* fd = &ereq->field;
+	seek* fd = &ereq->seekData;
 	for (int i=0;i<ereq->logicalCount;++i)
 	{
 		m_tb->setKeyValuesPacked(fd->ptr, fd->len);
@@ -579,7 +579,7 @@ inline short dbExecuter::seekEach(extRequest* ereq)
 		if (m_tb->stat() == 0)
 			stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
 		else 
-			stat = m_readHandler->write(NULL, m_tb->posPtrLen(), errorCodeSht(m_tb->stat()));
+			stat = m_readHandler->write(NULL, m_tb->posPtrLen()/*, errorCodeSht(m_tb->stat())*/);
 		if (stat) break;	
 		fd = fd->next();
 	}
