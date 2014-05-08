@@ -732,7 +732,7 @@ public:
 		return m_fields[0].match(record, typeNext);
 	}
 };
-
+/*
 class resultWriter
 {
 	char* m_buf;
@@ -832,8 +832,106 @@ public:
 	unsigned int resultLen(){return m_resultLen;};
 	
 	const char* resultBuffer(){return m_buf;}
-};
+};*/
 
+class resultWriter
+{
+	netsvc::server::netWriter* m_nw;
+	extResultDef* m_def;
+	//int m_maxLen;
+	//unsigned short* m_rowsPos;
+	//unsigned short m_rows;
+	//bool m_writeFirst;
+	bool m_noBookmark;
+
+	/*short writeFirst( position* pos, unsigned int bookmark)
+	{
+		//m_rowsPos = (unsigned short*)m_nw->ptr();
+		//short v = 0;
+		m_nw->asyncWrite(NULL, 2, netsvc::server::netWriter::curSeekOnly);
+		return doWrite(pos, bookmark);
+	}*/
+
+	short doWrite(position* pos, unsigned int bookmark)
+	{
+		
+
+		//write recLength space;
+		unsigned short recLen = 0;
+		unsigned short* recLenPos = (unsigned short*)m_nw->curPtr();
+		m_nw->asyncWrite((const char*) &recLen, 2);
+
+		//write bookmark
+		if (!m_noBookmark)
+			m_nw->asyncWrite((const char*) &bookmark, 4);
+
+		//if pos ==NULL , that is not found record in a TD_KEY_SEEK_MULTI operation
+		// and bookmark has error code also STATUS_NOT_FOUND_TI 
+		// in the client, fieldCount > 0 buf recLen=0 then this pattern
+		if (pos)
+		{
+			if ((m_def->fieldCount == 1) && (m_def->field[0].len >= pos->recordLenCl()))
+			{	//write whole row
+				//int len = pos->recordLenCl();
+				int len =  pos->recordPackCopy(m_nw->curPtr(), (uint)m_nw->bufferSpace());
+				if (len == 0)
+					return STATUS_BUFFERTOOSMALL;
+				m_nw->asyncWrite(NULL, len, netsvc::server::netWriter::curSeekOnly);
+				recLen += len;
+			}else
+			{
+				//write each fields by field num.
+				for (int i=0;i<m_def->fieldCount;i++)
+				{
+					resultField& fd = m_def->field[i];
+					if (m_nw->bufferSpace() > fd.len)
+					{
+						uint len = pos->fieldPackCopy((unsigned char*)m_nw->curPtr(), fd.fieldNum);
+						m_nw->asyncWrite(NULL, len, netsvc::server::netWriter::curSeekOnly);
+						recLen += len;
+						if (pos->isBlobField(&fd))
+							pos->addBlobBuffer(fd.fieldNum);
+					}
+					else
+						return STATUS_BUFFERTOOSMALL;
+				}
+			}
+		}
+
+		//write recLength;
+		*recLenPos = recLen;
+		m_nw->asyncWrite(NULL, 0, netsvc::server::netWriter::write);
+		// rowCount	
+		m_nw->incremetRows();
+		return 0;
+	}
+public:
+	resultWriter(netsvc::server::netWriter* nw, extResultDef* def, bool noBookmark)
+		:m_nw(nw),m_def(def)/*,m_writeFirst(true)*/,m_noBookmark(noBookmark)
+	{
+		//m_resultLen = (int)offset;
+	}
+
+	short write(position* pos, unsigned int bookmark)
+	{
+		/*if (m_writeFirst)
+		{
+			m_writeFirst = false;
+			return writeFirst(pos,  bookmark);
+		}*/
+		return doWrite(pos,  bookmark);
+	}
+	inline unsigned int end()
+	{
+		m_nw->asyncWrite(NULL, 0, netsvc::server::netWriter::writeEnd);
+		return m_nw->resultLen();
+	}
+	//unsigned int resultLen(){return m_nw->resultLen();};
+	
+	const char* resultBuffer(){return m_nw->ptr();}
+
+
+};
 
 class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 {
@@ -844,8 +942,10 @@ class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 	fields			m_fields;
 	engine::mysql::fieldBitmap bm;
 public:
+	//short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache
+	//	, char* buf,size_t offset, int maxlen, bool forword, bool noBookmark, bool seeksMode)
 	short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache
-		, char* buf,size_t offset, int maxlen, bool forword, bool noBookmark, bool seeksMode)
+		, netsvc::server::netWriter* nw, bool forword, bool noBookmark, bool seeksMode)
 	{
 		short ret = 0;
 		m_position.setTable(tb);
@@ -862,7 +962,9 @@ public:
 			((m_resultDef->fieldCount == 1) && (m_resultDef->field[0].len < m_position.recordLenCl())))
 			ret = convResultPosToFieldNum(tb, noBookmark, seeksMode);
 			
-		m_writer.reset(new resultWriter(buf, offset, m_resultDef, maxlen, noBookmark));
+		//m_writer.reset(new resultWriter(buf, offset, m_resultDef, maxlen, noBookmark));
+		nw->beginExt(tb->blobFields() != 0);
+		m_writer.reset(new resultWriter(nw, m_resultDef, noBookmark));
 		//DEBUG_RECORDS_BEGIN(m_resultDef, m_req)
 
 		return ret;
@@ -918,7 +1020,8 @@ public:
 
 	unsigned int end()
 	{
-		unsigned int len = m_writer->resultLen();
+		unsigned int len = m_writer->end();
+		//unsigned int len = m_writer->resultLen();
 		//DEBUG_RECORDS_END(m_writer.get())
 		m_writer.reset();
 		bm.setTable(NULL);

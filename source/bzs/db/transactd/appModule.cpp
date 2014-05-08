@@ -60,6 +60,169 @@ namespace db
 namespace transactd
 {
 
+
+
+#define ASYNCWRITE_DATA_SIZE 16382
+static const unsigned int segment_mark = 0xFFFFFFFF;
+class netAsyncWriter : public netWriter
+{
+	iconnection* m_conn;
+	char* m_buf;
+	char* m_data;
+	size_t m_asyncDataSize;
+	unsigned short m_rows;
+	int m_databufLen;
+
+	//size_t m_asyncDataTotalSize;
+
+	inline void doWrite()
+	{
+		size_t size = ASYNCWRITE_DATA_SIZE;
+		if (m_asyncDataSize < ASYNCWRITE_DATA_SIZE)
+			size = m_asyncDataSize;
+		int offset = (int)(m_data - m_buf);
+		
+		*((unsigned short*)(m_data - 2)) =  (unsigned short) size/* - offset - 2*/;
+		m_conn->asyncWrite(m_buf, size+offset);
+		datalen += size;
+
+		m_asyncDataSize -= size;
+		memmove(m_buf + 2, m_data + size, m_asyncDataSize);
+		m_data = m_buf + 2;
+	}
+
+	inline void writeEndMark()
+	{
+		memcpy(m_data, &segment_mark , 4);
+		m_asyncDataSize = 4;
+		memcpy(m_data + m_asyncDataSize, &m_databufLen , 4);
+		memcpy(m_data + m_asyncDataSize + 4, &m_rows , 2);
+		*((unsigned short*)(m_data - 2)) = (unsigned short)m_asyncDataSize;
+
+		m_conn->asyncWrite(m_buf, m_asyncDataSize+2+4+2);
+		m_asyncDataSize = 0;
+	}
+
+public:
+	netAsyncWriter(iconnection* conn)
+		:netWriter(),m_conn(conn),m_asyncDataSize(0)
+	{
+		m_buf = new char[ASYNCWRITE_DATA_SIZE+65536+2];
+		memcpy(m_buf, &segment_mark, sizeof(unsigned int));
+		m_data = m_buf + 2 + 4;
+	}
+
+	~netAsyncWriter() {delete [] m_buf;}
+
+	void reset(IResultBuffer* retBuf, buffers* optData)
+	{
+		netWriter::reset(retBuf, optData);
+		m_asyncDataSize = 0;
+		
+		memcpy(m_buf, &segment_mark, sizeof(unsigned int));
+		m_data = m_buf + 2 + 4;
+	
+	}
+
+	void beginExt(bool includeBlob)
+	{
+		short result = 0;
+		ushort_td paramMask = P_MASK_DATA|P_MASK_FINALDATALEN|P_MASK_FINALRET;
+		if (!engine::mysql::table::noKeybufResult)  
+			paramMask |= P_MASK_KEYBUF;
+
+
+		if (includeBlob) paramMask |=P_MASK_BLOBBODY;
+
+		asyncWrite((const char*)(&paramMask) , sizeof(ushort_td));
+		asyncWrite((const char*)(&result) , sizeof(short));
+		asyncWrite((const char*)(&m_rows) , sizeof(unsigned short));
+		m_databufLen = sizeof(unsigned short);// + 8;
+		m_rows = 0;
+	}
+
+	bool asyncWrite(const char* p, size_t size, eWriteMode mode=copyOnly)
+	{
+		
+		if (resultBuffer->size() < datalen + m_asyncDataSize + size)
+			return false;
+		m_databufLen += (int)size;
+		if (mode==curSeekOnly)
+			m_asyncDataSize += size;
+		else if (mode == write)
+		{
+			if (m_asyncDataSize  > ASYNCWRITE_DATA_SIZE)
+				doWrite();
+		}
+		else if (mode == writeEnd)
+		{
+			if (m_asyncDataSize)
+				doWrite();
+			writeEndMark();
+		}
+		else
+		{
+			memcpy(m_data + m_asyncDataSize, p, size);
+			m_asyncDataSize += size;
+		}		
+		return true;	
+	}
+
+	void incremetRows()
+	{
+		++m_rows;
+	}
+
+	char* curPtr()const {return m_data + m_asyncDataSize;}
+	size_t bufferSpace() const
+	{
+		return ASYNCWRITE_DATA_SIZE+65536+2 - (curPtr() - m_buf);
+	}
+
+	unsigned int resultLen() const {return (unsigned int)m_databufLen+8;};
+
+};
+
+
+class netStdWriter : public netWriter
+{
+	//char* m_ptr;
+	unsigned short* m_rowsPos;
+public:
+	netStdWriter():netWriter(){}
+
+	void beginExt(bool includeBlob)
+	{
+		m_offset = RETBUF_EXT_RESERVE_SIZE;
+		m_rowsPos = (unsigned short*)(curPtr());
+		(*m_rowsPos) = 0;
+		datalen+=2;
+	}
+	
+	bool asyncWrite(const char* p, size_t n, eWriteMode mode=copyOnly)
+	{
+		if (mode >= write) return true;
+		if (resultBuffer->size() < datalen + m_offset + n) return false;
+
+		if (mode != curSeekOnly)
+			memcpy(curPtr(), p, n);
+		datalen += n;
+		return true;
+		
+	}
+
+	void incremetRows()
+	{
+		++(*m_rowsPos);
+	}
+
+	size_t bufferSpace() const
+	{
+		return resultBuffer->size() - (curPtr() - ptr());
+	}
+};
+
+
 /** The module created for every connection
  *  In the case of a thread pool, thread termination processing is not performed by a destructor.
  */
@@ -75,6 +238,9 @@ module::module(const boost::asio::ip::tcp::endpoint& endpoint
 #endif
 	boost::mutex::scoped_lock lck(modulesMutex);
 	modules.push_back(this);
+	m_nw = new netAsyncWriter(connection);
+	//m_nw = new netStdWriter();
+
 }
 
 module::~module(void)
@@ -159,18 +325,19 @@ bool module::checkHost( const char* hostCheckname)
 	return ret;
 }
 
-//int module::execute(char* result, size_t& size, netsvc::server::buffers* optionalData)
 int module::execute(netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData)
 {
 	m_commandExecuter->parse(m_readBuf, m_readSize);
+	m_nw->reset(&result, optionalData);
 	boost::mutex::scoped_lock lck(m_mutex);
+	//int ret = m_commandExecuter->execute(result, size, optionalData);
+	int	ret = m_commandExecuter->execute(m_nw);
 	if (m_useThreadPool)
-	{
-		int ret = m_commandExecuter->execute(result, size, optionalData);
 		cleanup();
-		return ret;
-	}
-	return m_commandExecuter->execute(result, size, optionalData);
+	//else
+	//	ret = m_commandExecuter->execute(m_nw);
+	size = m_nw->datalen;
+	return ret;
 }
 
 void  module::disconnect()

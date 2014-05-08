@@ -401,7 +401,12 @@ public:
 	{
 		m_comm->chancel();
 	}
-	
+
+	void asyncWrite(const char* p, size_t size)
+	{
+		
+	}
+
 	io_service& ios()const{return m_ios;};
 	
 	platform_stream& socket(){return m_socket;}

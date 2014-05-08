@@ -54,7 +54,7 @@ unsigned int g_waitThread = 0;
 #define READBUF_SIZE 66000
 #define WRITEBUF_SIZE 66000
 
-class connection  : public iconnection, public INetAsyncWriter, private boost::noncopyable 			
+class connection  : public iconnection, private boost::noncopyable 			
 {
 	mutable io_service m_ios;
 
@@ -102,8 +102,8 @@ class connection  : public iconnection, public INetAsyncWriter, private boost::n
 								boost::asio::placeholders::error));
 						
 						}
-						m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
-						boost::asio::write(m_socket, buffer("", 0),  boost::asio::transfer_all());
+						//m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
+						//boost::asio::write(m_socket, buffer("", 0),  boost::asio::transfer_all());
 
 					}
 					m_module->cleanup();
@@ -162,14 +162,10 @@ public:
 		}
 	}
 
-	void asyncWrite(const char* p, size_t size, bool end)
+	void asyncWrite(const char* p, size_t size)
 	{
-		m_segmentWrite = !end;
-		m_socket.set_option(boost::asio::ip::tcp::no_delay(false));
-		async_write(m_socket, buffer(p, size)
-			, boost::asio::transfer_all()
-			, boost::bind(&connection::handle_write, this, boost::asio::placeholders::error));
-
+		//m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
+		boost::asio::write(m_socket, buffer(p, size),  boost::asio::transfer_all());
 	}
 	
 	void close()

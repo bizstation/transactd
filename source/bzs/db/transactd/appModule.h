@@ -49,6 +49,7 @@ class module :public netsvc::server::IAppModule,  private boost::noncopyable
 	bzs::netsvc::server::iconnection* m_connection;
 	const char* m_readBuf;
 	size_t m_readSize;
+	netsvc::server::netWriter* m_nw;
 	bool perseLineEnd(const char* p, size_t size)const;
 	size_t onRead(const char* data, size_t size, bool& complete);
 	size_t onAccept(char* message, size_t bufsize);
@@ -58,9 +59,7 @@ public:
 			, bool tpool,int type);
 	~module();
 	void reset();
-	//int execute(char* result, size_t& size, netsvc::server::buffers*  optionalData);
-	int execute(netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers*  optionalData);
-	
+	int execute(netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers*  optionalData);	
 	void cleanup(){ m_commandExecuter->cleanup();};
 	bool isShutDown(){return m_commandExecuter->isShutDown();}
 	bool checkHost(const char* hostCheckname);

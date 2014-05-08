@@ -105,12 +105,38 @@ public:
 											, bool tpool) = 0;
 };
 
-class INetAsyncWriter
+class netWriter
 {
-
+protected:
+	IResultBuffer* resultBuffer;
+	
+	buffers* m_optionalData;
+	size_t m_offset;
 public:
-	virtual void asyncWrite(const char* p, size_t size, bool end) = 0;
+	enum eWriteMode{copyOnly, curSeekOnly, write, writeEnd};
+	netWriter():datalen(0),m_offset(0){}
+	virtual ~netWriter(){};
+
+	inline void resize(size_t v){resultBuffer->resize(v);};	
+	inline size_t bufferSize()const{return resultBuffer->size();};
+	inline buffers* optionalData(){return m_optionalData;};
+	inline char* ptr()const{return resultBuffer->ptr();}
+	virtual unsigned int resultLen() const {return (unsigned int)(datalen + m_offset);};
+	virtual char* curPtr()const{return resultBuffer->ptr() + datalen + m_offset;}
+	size_t datalen ;
+	virtual size_t bufferSpace() const = 0;
+	virtual void reset(IResultBuffer* retBuf, buffers* optData)
+	{
+		resultBuffer = 	retBuf;
+		m_optionalData = optData;
+		m_offset = 0;
+		datalen = 0;
+	}
+	virtual void beginExt(bool includeBlob) = 0;	
+	virtual bool asyncWrite(const char* p, size_t n, eWriteMode mode=copyOnly) = 0;
+	virtual void incremetRows() = 0;
 };
+
 
 }//namespace server
 }//namespace netsvc

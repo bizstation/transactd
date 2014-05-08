@@ -54,6 +54,7 @@ class iconnection
 public:
 	virtual ~iconnection(){};
 	virtual void close() = 0;
+	virtual void asyncWrite(const char* p, size_t size) = 0;
 };
 
 

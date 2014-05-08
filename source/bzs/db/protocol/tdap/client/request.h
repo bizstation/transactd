@@ -49,11 +49,11 @@ public:
 	request():bzs::db::protocol::tdap::request()
 			,cid(NULL){};
 
-	inline void parse(const char* p, unsigned int segmentDataLen)
+	inline void parse(const char* p, unsigned int segmentDataLen, unsigned short rows)
 	{
 		p += sizeof(unsigned int);
-		paramMask = *((uchar_td*)p);
-		p += sizeof(uchar_td);
+		paramMask = *((ushort_td*)p);
+		p += sizeof(ushort_td);
 
 		result = *((ushort_td*)p);
 		p += sizeof(ushort_td);
@@ -98,6 +98,11 @@ public:
 		{
 			memcpy(data, p, *datalen);
 			p += *datalen;
+			if (P_MASK_FINALDATALEN & paramMask)
+			{
+				memcpy(data, &rows, 2);
+				p += sizeof(unsigned int);
+			}
 		}
 		if (P_MASK_KEYBUF & paramMask)
 		{
@@ -169,8 +174,8 @@ public:
 #endif	
 		p += sizeof(unsigned int);
 	
-		memcpy(p, &paramMask,  sizeof(uchar_td));
-		p += sizeof(uchar_td);
+		memcpy(p, &paramMask,  sizeof(ushort_td));
+		p += sizeof(ushort_td);
 		
 		memcpy(p, &op,  sizeof(ushort_td));
 		p += sizeof(ushort_td);

@@ -202,6 +202,12 @@ public:
 	
 	boost::asio::ip::tcp::socket& socket(){return m_socket;}
 	
+	void asyncWrite(const char* p, size_t size)
+	{
+		//m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
+		boost::asio::write(m_socket, buffer(p, size),  boost::asio::transfer_all());
+	}
+
 	void sendConnectAccept()
 	{
 		size_t n = m_module->onAccept(&m_result[0], WRITEBUF_SIZE);

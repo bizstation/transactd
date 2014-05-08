@@ -477,8 +477,9 @@ inline void dbExecuter::doMoveKey(request& req, int op)
 	readAfter(req, m_tb, this);
 }
 
-inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuffer
-							, size_t& size, netsvc::server::buffers* optionalData)
+//inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuffer
+//							, size_t& size, netsvc::server::buffers* optionalData)
+inline int dbExecuter::doReadMultiWithSeek(request& req, int op, netsvc::server::netWriter* nw)
 {
 	int ret = 1;
 	m_tb = getTable(req.pbk->handle);
@@ -492,8 +493,9 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 		bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK)!= 0;
 
 		smartReadRecordsHandler srrh(m_readHandler);
+		
 		req.result = m_readHandler->begin(m_tb, ereq, true
-				, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, (op == TD_KEY_GE_NEXT_MULTI), noBookmark, false);
+				, nw, (op == TD_KEY_GE_NEXT_MULTI), noBookmark, false);
 		if (req.result != 0)
 			return 1;
 		if (m_tb->stat() == 0)
@@ -505,6 +507,11 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 		}
 		req.result = errorCodeSht(m_tb->stat());
 		DEBUG_WRITELOG2(op, req);
+
+		char* resultBuffer = nw->ptr();
+		size_t& size =  nw->datalen;
+		netsvc::server::buffers* optionalData = nw->optionalData();
+
 		size = req.serializeForExt(m_tb, resultBuffer, srrh.end());
 		if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
 			size = req.serializeBlobBody(m_blobBuffer, resultBuffer, FILE_MAP_SIZE, optionalData);
@@ -517,8 +524,9 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, char* resultBuf
 	return ret;
 }
 
-inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
-							, size_t& size, netsvc::server::buffers* optionalData)
+//inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
+//							, size_t& size, netsvc::server::buffers* optionalData)
+inline int dbExecuter::doReadMulti(request& req, int op, netsvc::server::netWriter* nw)
 {
 	int ret = 1;
 	m_tb = getTable(req.pbk->handle);
@@ -528,8 +536,10 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 
 	bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
 	smartReadRecordsHandler srrh(m_readHandler);
+	//req.result = m_readHandler->begin(m_tb, ereq,(op != TD_KEY_SEEK_MULTI)
+	//		, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, forword, noBookmark, (op == TD_KEY_SEEK_MULTI));
 	req.result = m_readHandler->begin(m_tb, ereq,(op != TD_KEY_SEEK_MULTI)
-			, resultBuffer, RETBUF_EXT_RESERVE_SIZE, *req.datalen, forword, noBookmark, (op == TD_KEY_SEEK_MULTI));
+			, nw, forword, noBookmark, (op == TD_KEY_SEEK_MULTI));
 	if (req.result == 0)
 	{
 		if (op == TD_KEY_SEEK_MULTI)
@@ -556,6 +566,11 @@ inline int dbExecuter::doReadMulti(request& req, int op, char* resultBuffer
 			req.result = errorCodeSht(m_tb->stat());
 		}
 		DEBUG_WRITELOG2(op, req);
+
+		char* resultBuffer = nw->ptr();
+		size_t& size =  nw->datalen;
+		netsvc::server::buffers* optionalData = nw->optionalData();
+
 		size = req.serializeForExt(m_tb, resultBuffer, srrh.end());
 		if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
 			size = req.serializeBlobBody(m_blobBuffer, resultBuffer, FILE_MAP_SIZE, optionalData);
@@ -769,12 +784,15 @@ inline short getTrnsactionType(int op)
 	return TRN_RECORD_LOCK_SINGLE;
 }
 
-//int dbExecuter::commandExec(request& req, char* resultBuffer, size_t& size, netsvc::server::buffers* optionalData)
-int dbExecuter::commandExec(request& req, netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData)
+//int dbExecuter::commandExec(request& req, netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData)
+int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 {
 	DEBUG_PROFILE_START(1)
 	m_tb = NULL;
-	char* resultBuffer = result.ptr();
+	char* resultBuffer = nw->ptr();
+	size_t& size =  nw->datalen;
+	netsvc::server::buffers* optionalData = nw->optionalData();
+
 	int op = req.op % 100;
 	int opTrn = req.op;
 	if (op==99)	return 0;
@@ -939,8 +957,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::IResultBuffer& result,
 		}
 		case TD_KEY_GE_NEXT_MULTI:
 		case TD_KEY_LE_PREV_MULTI:
-			if (result.size() < *(req.datalen)) result.resize(*(req.datalen));
-			if (doReadMultiWithSeek(req, op, result.ptr(), size, optionalData) == EXECUTE_RESULT_SUCCESS)
+			//if (result.size() < *(req.datalen)) result.resize(*(req.datalen));
+			//if (doReadMultiWithSeek(req, op, result.ptr(), size, optionalData) == EXECUTE_RESULT_SUCCESS)
+			if (nw->bufferSize() < *(req.datalen)) nw->resize(*(req.datalen));
+			//if (doReadMultiWithSeek(req, op, nw->ptr(), size, optionalData) == EXECUTE_RESULT_SUCCESS)
+			if (doReadMultiWithSeek(req, op, nw) == EXECUTE_RESULT_SUCCESS)
 				return EXECUTE_RESULT_SUCCESS; // Caution Call unUse()
 			break;
 		case TD_KEY_SEEK_MULTI:
@@ -948,8 +969,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::IResultBuffer& result,
 		case TD_KEY_PREV_MULTI:
 		case TD_POS_NEXT_MULTI:
 		case TD_POS_PREV_MULTI:
-			if (result.size() < *(req.datalen)) result.resize(*(req.datalen));
-			if (doReadMulti(req, op, result.ptr(), size, optionalData) == EXECUTE_RESULT_SUCCESS)
+			//if (result.size() < *(req.datalen)) result.resize(*(req.datalen));
+			//if (doReadMulti(req, op, result.ptr(), size, optionalData) == EXECUTE_RESULT_SUCCESS)
+			if (nw->bufferSize() < *(req.datalen)) nw->resize(*(req.datalen));
+			//if (doReadMulti(req, op, nw->ptr(), size, optionalData) == EXECUTE_RESULT_SUCCESS)
+			if (doReadMulti(req, op, nw) == EXECUTE_RESULT_SUCCESS)
 				return EXECUTE_RESULT_SUCCESS; // Caution Call unUse()
 			break;
 		case TD_MOVE_PER:
@@ -1071,6 +1095,17 @@ int connMgrExecuter::disconnectAll(char* buf, size_t& size)
 	return EXECUTE_RESULT_SUCCESS;
 }
 
+int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
+{
+	if (m_req.keyNum == TD_STSTCS_READ)
+		return read(nw->ptr(), nw->datalen);
+	else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ONE)
+		return disconnectOne( nw->ptr(), nw->datalen);
+	else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ALL)
+		return disconnectAll(nw->ptr(), nw->datalen);		
+	return 0;
+}
+/*
 int connMgrExecuter::commandExec(netsvc::server::IResultBuffer& buffer, size_t& size)
 {
 	if (m_req.keyNum == TD_STSTCS_READ)
@@ -1080,7 +1115,7 @@ int connMgrExecuter::commandExec(netsvc::server::IResultBuffer& buffer, size_t& 
 	else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ALL)
 		return disconnectAll(buffer.ptr(), size);		
 	return 0;
-}
+}*/
 
 
 // ---------------------------------------------------------------------------

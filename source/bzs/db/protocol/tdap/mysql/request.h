@@ -28,7 +28,7 @@
 /** readRecords reserved buffer size
  *
  */
-#define RETBUF_EXT_RESERVE_SIZE 11
+#define RETBUF_EXT_RESERVE_SIZE 12
 
 
 
@@ -65,22 +65,23 @@ public:
 	/**
 	 *  @param size  allready copied size.
 	 */
+	/*
 	inline unsigned int serializeForExt(engine::mysql::table* tb, char* buf, unsigned int size)
 	{
 		paramMask = (engine::mysql::table::noKeybufResult==false) ? 
 						P_MASK_READ_EXT : P_MASK_DATA|P_MASK_DATALEN;
 		//paramMask = P_MASK_READ_EXT;
 		if (tb->blobFields()) paramMask |=P_MASK_BLOBBODY;
-		resultLen = (size - RETBUF_EXT_RESERVE_SIZE);// 4+1+2+4 = 11
+		resultLen = (size - RETBUF_EXT_RESERVE_SIZE);// 4+2+2+4 = 12
 	
 		int pos = sizeof(unsigned int);									//4
-		memcpy(buf + pos, (const char*)(&paramMask), sizeof(uchar_td));	//1
-		pos += sizeof(uchar_td);
+		memcpy(buf + pos, (const char*)(&paramMask), sizeof(ushort_td));	//1
+		pos += sizeof(ushort_td);
 		memcpy(buf + pos, (const char*)(&result), sizeof(short_td));		//2
 		pos += sizeof(short_td);
 		memcpy(buf + pos, (const char*)&resultLen, sizeof(uint_td));		//4
 		
-		/* The result contents is copied allready.*/
+		// The result contents is copied allready.
 	
 		//buf + size
 		if (paramMask & P_MASK_KEYBUF)
@@ -91,6 +92,33 @@ public:
 			size += keylen;
 		}
 		memcpy(buf, (const char*)(&size), sizeof(unsigned int));
+		return size;
+	}
+	*/
+	inline unsigned int serializeForExt(engine::mysql::table* tb, char* buf, unsigned int size)
+	{
+		unsigned int writed = size;// + 8;// sizeof(len) + sizeof(paramMask) + sizeof(result);
+		size = 4;
+		paramMask = P_MASK_DATA|P_MASK_FINALDATALEN|P_MASK_FINALRET;
+		if (!engine::mysql::table::noKeybufResult)  
+			paramMask |= P_MASK_KEYBUF;
+
+		if (tb->blobFields()) paramMask |=P_MASK_BLOBBODY;
+
+		// The result contents is copied allready.
+		
+		if (paramMask & P_MASK_KEYBUF)
+		{
+			keylen = tb->keyPackCopy((uchar*)buf + size + sizeof(keylen_td));
+			memcpy(buf + size, (const char*)&keylen, sizeof(keylen_td));
+			size += sizeof(keylen_td);
+			size += keylen;
+		}
+		memcpy(buf + size, (const char*)(&result), sizeof(short_td));//P_MASK_FINALRET
+		size += sizeof(short_td);
+		//send size = whole size;
+		writed += size;
+		memcpy(buf, (const char*)(&writed), sizeof(unsigned int));
 		return size;
 	}
 
@@ -106,8 +134,8 @@ public:
 			paramMask |= P_MASK_USELZSS;
 #endif
 	
-		memcpy(p, (const char*)(&paramMask), sizeof(uchar_td));
-		p += sizeof(uchar_td);
+		memcpy(p, (const char*)(&paramMask), sizeof(ushort_td));
+		p += sizeof(ushort_td);
 		
 		memcpy(p, (const char*)(&result), sizeof(short_td));
 		p += sizeof(short_td);
@@ -163,8 +191,8 @@ public:
 	inline void parse(const char* p)
 	{
 		p += sizeof(unsigned int);
-		paramMask = *((uchar_td*)p);
-		p += sizeof(uchar_td);
+		paramMask = *((ushort_td*)p);
+		p += sizeof(ushort_td);
 		op = *((ushort_td*)p);
 		p += sizeof(ushort_td);
 	

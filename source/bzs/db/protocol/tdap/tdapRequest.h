@@ -46,9 +46,8 @@ namespace tdap
 #define P_MASK_KEYNUM		16
 #define P_MASK_EX_SENDLEN	32  //< The data length which transmits to a client is described at 2 bytes of the data buffer head.
 #define P_MASK_BLOBBODY		64
-#define P_MASK_USELZSS	    128 //compress data
-#define P_MASK_FINALRET	    256 //server sent final result
-#define P_MASK_FINALDATALEN	512 //server sent final result
+#define P_MASK_FINALRET	    128 //server sent final result
+#define P_MASK_FINALDATALEN	256 //server sent final result
 
 
 
@@ -128,7 +127,7 @@ private:
 	ushort_td		varLenBytes;	/*Bytes of last var field length */
 
 public:
-	uchar_td		paramMask;
+	ushort_td		paramMask;
 	union
 	{
 		short_td    result;
