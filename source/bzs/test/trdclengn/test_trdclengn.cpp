@@ -1015,6 +1015,7 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType, 
     td.keyCount = 0;
     td.fieldCount = 0;
     td.flags.all = 0;
+
     td.primaryKeyNum = -1;
     td.parentKeyNum = -1;
     td.replicaKeyNum = -1;
@@ -1030,8 +1031,6 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType, 
     fd->setName(_T("id"));
     fd->type = ft_integer;
     fd->len = (ushort_td)4;
-    def->updateTableDef(id);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 1");
 
     fd = def->insertField(id, 1);
     fd->setName(_T("name"));
@@ -1049,15 +1048,12 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType, 
     }
     else
         fd->len = (ushort_td)7; // max 6 char len byte
-    def->updateTableDef(id);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 2");
+
 
     fd = def->insertField(id, 2);
     fd->setName(_T("groupid"));
     fd->type = ft_integer;
     fd->len = (ushort_td)4;
-    def->updateTableDef(id);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 3");
 
     keydef* kd = def->insertKey(id, 0);
 
@@ -1065,8 +1061,6 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType, 
     kd->segments[0].flags.bit8 = 1; // extended key type
     kd->segments[0].flags.bit1 = 1; // changeable
     kd->segmentCount = 1;
-
-    def->updateTableDef(id);
 
     kd = def->insertKey(id, 1);
 
@@ -1110,6 +1104,9 @@ void testCreateDataBaseVar(database* db)
 {
     if (_tcscmp(PROTOCOL, _T("tdap")) != 0)
         return;
+
+    if (db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME)))
+        db->drop();
 
     db->create(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME));
     BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase stat = " << db->stat());

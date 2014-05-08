@@ -127,7 +127,7 @@ public:
 	virtual char* asyncWriteRead(unsigned int writeSize)=0;
     virtual unsigned int datalen()const = 0; //additinal info at segment read
 	virtual unsigned short rows()const = 0; //additinal info at segment read
-
+	virtual void setReadBufferSizeIf(size_t size) = 0;
 };
 
 /**  Implementation of Part of the connection interface
@@ -163,6 +163,13 @@ public:
 		return &m_sendbuf[0];
 	};
 	unsigned int sendBufferSize(){return (unsigned int)m_sendbuf.size();};
+
+	void setReadBufferSizeIf(size_t size)
+	{
+		if (m_readbuf.size() < size)
+			m_readbuf.resize(size);
+	}
+	
 };
 
 /**  Implementation of the connection template
@@ -178,13 +185,13 @@ protected:
 
     unsigned int datalen()const {return m_datalen;}
 	unsigned short rows() const {return m_rows;}
-    // server send any segment of lower than 0xFFFF data by asyncWrite
+    
+	// server send any segment of lower than 0xFFFF data by asyncWrite
     // last 4byte is 0xFFFFFFFF, that is specify end of data
     void segmentRead()
     {
         bool end = false;
         unsigned short n;
-
         while (!end)
         {
 			boost::asio::read(m_socket, boost::asio::buffer(&n, 2),boost::asio::transfer_all());
@@ -203,8 +210,6 @@ protected:
                     , boost::asio::transfer_all());
         boost::asio::read(m_socket, boost::asio::buffer(&m_rows, 2)
                     , boost::asio::transfer_all());            
-                    
-		
     }
 
 	void read()
@@ -218,26 +223,16 @@ protected:
 		unsigned int n;
 		m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&n, 4)
                     , boost::asio::transfer_all());
-		
-		//n = (unsigned int*)(&m_readbuf[0]);
         if (n == 0xFFFFFFFF)
 		{
             segmentRead();
-			
 			m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&n, 4), boost::asio::transfer_all());
-                    
 		}
-		//else
-        {
-            if (n > m_readbuf.size())
-            {
-                m_readbuf.resize(n);
-                //n = (unsigned int*)(&m_readbuf[0]);
-            }
-            if (m_readLen != n)
-                m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], n-m_readLen)
-                    , boost::asio::transfer_all());
-        }
+        if (n > m_readbuf.size())
+            m_readbuf.resize(n);
+        if (m_readLen != n)
+            m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], n-m_readLen)
+                , boost::asio::transfer_all());
 	}
 
 	void write(unsigned int writeSize)
@@ -502,6 +497,11 @@ public:
 	char* sendBuffer(size_t size){return m_writebuf_p;}
 	unsigned int sendBufferSize(){return m_sendBufferSize;};
 	buffers* optionalBuffers(){return NULL;}; //not support
+
+	void setReadBufferSizeIf(size_t size)
+	{
+		;//not support
+	}
 };
 #endif
 

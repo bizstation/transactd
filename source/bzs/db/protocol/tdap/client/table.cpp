@@ -769,14 +769,6 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCo
     }
 }
 
-const _TCHAR* table::filterStr()
-{
-    if (m_impl->filterPtr)
-        return m_impl->filterPtr->filterStr();
-    else
-        return NULL;
-}
-
 void table::clearBuffer()
 {
     m_impl->rc->reset();

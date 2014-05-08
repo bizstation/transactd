@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_MYSQL_REQUSET_H
 #define BZS_DB_PROTOCOL_TDAP_MYSQL_REQUSET_H
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013 2014 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -22,14 +22,12 @@
 #include <bzs/db/protocol/tdap/tdapRequest.h>
 #include <bzs/rtl/exception.h>
 #include <bzs/db/blobBuffer.h>
-#ifdef USE_DATA_COMPRESS
-#include <bzs/rtl/lzss.h>
-#endif
+#include <bzs/netsvc/server/IAppModule.h>
+
 /** readRecords reserved buffer size
- *
  */
 #define RETBUF_EXT_RESERVE_SIZE 12
-
+#define RETBUF_EXT_ASYNC_RESERVE_SIZE 8
 
 
 namespace bzs
@@ -48,78 +46,32 @@ class request : public bzs::db::protocol::tdap::request
 public:
 	
 	ushort_td cid;
-	char* decodeBuffer;
-	char* m_tmp;
 	request():bzs::db::protocol::tdap::request(),cid(0)
-					,decodeBuffer(0),m_tmp(new char[0XFFFF])
 	{
 	
 	}
+	
+	inline unsigned int serializeForExt(engine::mysql::table* tb, netsvc::server::netWriter* nw)
+	{
+		// The result contents is copied or sent allready.
 
-	~request()
-	{
-		delete [] decodeBuffer;
-		delete [] m_tmp;
-	}
-	
-	/**
-	 *  @param size  allready copied size.
-	 */
-	/*
-	inline unsigned int serializeForExt(engine::mysql::table* tb, char* buf, unsigned int size)
-	{
-		paramMask = (engine::mysql::table::noKeybufResult==false) ? 
-						P_MASK_READ_EXT : P_MASK_DATA|P_MASK_DATALEN;
-		//paramMask = P_MASK_READ_EXT;
-		if (tb->blobFields()) paramMask |=P_MASK_BLOBBODY;
-		resultLen = (size - RETBUF_EXT_RESERVE_SIZE);// 4+2+2+4 = 12
-	
-		int pos = sizeof(unsigned int);									//4
-		memcpy(buf + pos, (const char*)(&paramMask), sizeof(ushort_td));	//1
-		pos += sizeof(ushort_td);
-		memcpy(buf + pos, (const char*)(&result), sizeof(short_td));		//2
-		pos += sizeof(short_td);
-		memcpy(buf + pos, (const char*)&resultLen, sizeof(uint_td));		//4
-		
-		// The result contents is copied allready.
-	
-		//buf + size
+		paramMask = nw->getParamMask(tb->blobFields()!=0);
+		unsigned int allreadysent = nw->allreadySent();
+		nw->writeHeadar(paramMask, result);
+
 		if (paramMask & P_MASK_KEYBUF)
 		{
-			keylen = tb->keyPackCopy((uchar*)buf + size + sizeof(keylen_td));
-			memcpy(buf + size, (const char*)&keylen, sizeof(keylen_td));
-			size += sizeof(keylen_td);
-			size += keylen;
+			keylen = tb->keyPackCopy((uchar*)nw->curPtr() + sizeof(keylen_td));
+			nw->write((const char*)&keylen, sizeof(keylen_td));
+			nw->write(NULL, keylen, netsvc::server::netWriter::curSeekOnly);
 		}
-		memcpy(buf, (const char*)(&size), sizeof(unsigned int));
-		return size;
-	}
-	*/
-	inline unsigned int serializeForExt(engine::mysql::table* tb, char* buf, unsigned int size)
-	{
-		unsigned int writed = size;// + 8;// sizeof(len) + sizeof(paramMask) + sizeof(result);
-		size = 4;
-		paramMask = P_MASK_DATA|P_MASK_FINALDATALEN|P_MASK_FINALRET;
-		if (!engine::mysql::table::noKeybufResult)  
-			paramMask |= P_MASK_KEYBUF;
-
-		if (tb->blobFields()) paramMask |=P_MASK_BLOBBODY;
-
-		// The result contents is copied allready.
-		
-		if (paramMask & P_MASK_KEYBUF)
-		{
-			keylen = tb->keyPackCopy((uchar*)buf + size + sizeof(keylen_td));
-			memcpy(buf + size, (const char*)&keylen, sizeof(keylen_td));
-			size += sizeof(keylen_td);
-			size += keylen;
-		}
-		memcpy(buf + size, (const char*)(&result), sizeof(short_td));//P_MASK_FINALRET
-		size += sizeof(short_td);
-		//send size = whole size;
-		writed += size;
-		memcpy(buf, (const char*)(&writed), sizeof(unsigned int));
-		return size;
+		//write final ret
+		if (paramMask & P_MASK_FINALRET)
+			nw->write((const char*)&result, sizeof(short_td));
+		unsigned int* totalLen = (unsigned int*)nw->ptr();
+		*totalLen = nw->resultLen();
+	
+		return *totalLen - allreadysent;
 	}
 
 	inline unsigned int serialize(engine::mysql::table* tb, char* buf)
@@ -128,11 +80,6 @@ public:
 		char* datalenPtr = NULL;
 	
 		p += sizeof(unsigned int);//space of totalLen
-#ifdef USE_DATA_COMPRESS
-		//add lzss infomation
-		if ((P_MASK_DATA & paramMask) && (resultLen > 1600))
-			paramMask |= P_MASK_USELZSS;
-#endif
 	
 		memcpy(p, (const char*)(&paramMask), sizeof(ushort_td));
 		p += sizeof(ushort_td);
@@ -145,25 +92,13 @@ public:
 			memcpy(p, (const char*)pbk, POSBLK_SIZE);
 			p += POSBLK_SIZE;
 		}
+
 		if (P_MASK_DATALEN & paramMask)
 		{
 			datalenPtr = p;
 			p += sizeof(uint_td);
 		}
-#ifdef USE_DATA_COMPRESS
-		if (P_MASK_USELZSS & paramMask)
-		{
-			if (tb && (data == tb->record()))
-			{
-				resultLen = tb->recordPackCopy(m_tmp, 0);
-				data = m_tmp;
-			}
-			uint_td compSize = bzs::rtl::lzssEncode(data, resultLen, p + sizeof(uint_td));
-			memcpy(p, &compSize, sizeof(uint_td));
-			p += compSize + sizeof(uint_td);
-		}
-		else
-#endif
+
 		if (P_MASK_DATA & paramMask)
 		{
 			if (tb && (data == tb->record()))
@@ -206,22 +141,7 @@ public:
 			datalen = (uint_td*)p;
 			p += sizeof(uint_td);
 		}
-#ifdef USE_DATA_COMPRESS
-		if (P_MASK_USELZSS & paramMask)
-		{
-			uint_td compSize = *(uint_td*)p;
-			p += sizeof(uint_td);
 
-			if (decodeBuffer)
-				delete [] decodeBuffer;
-			uint_td dataSize = bzs::rtl::lzssDecode(p, NULL);
-			decodeBuffer = new char[dataSize];
-			bzs::rtl::lzssDecode(p, decodeBuffer);
-			data = decodeBuffer;
-			p += compSize;
-		}
-		else
-#endif
 		if (P_MASK_EX_SENDLEN & paramMask)
 		{
 			data = (void_td*)p;

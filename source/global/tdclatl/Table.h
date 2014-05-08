@@ -98,7 +98,6 @@ public:
     STDMETHOD(FindLast)();
     STDMETHOD(FindNext)(VARIANT_BOOL notIncCurrent);
     STDMETHOD(FindPrev)(VARIANT_BOOL notIncCurrent);
-    STDMETHOD(get_Filter)(BSTR* Value);
     STDMETHOD(put_Filter)(BSTR Value);
     STDMETHOD(get_V64)(VARIANT Index, __int64* Value);
     STDMETHOD(put_V64)(VARIANT Index, __int64 Value);

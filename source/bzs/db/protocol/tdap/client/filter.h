@@ -220,7 +220,7 @@ public:
             if (p)
             {
                 size_t n = _tcslen(p);
-                if ((ret = (p[n-1] == _T('*')))!=0)
+                if (n && ((ret = (p[n-1] == _T('*')))!=0))
                 {
                     p[n-1] = 0x00;
                     tb->setFV(index, p);
@@ -452,7 +452,6 @@ class filter
 	uchar_td* m_seeksDataBuffer;
 
     int m_extendBuflen;
-    std::_tstring m_str;
     bool m_ignoreFields;
     bool m_seeksMode;
     bool m_useOptimize;
@@ -757,7 +756,7 @@ class filter
 
         m_extendBuflen = std::max<int>((int)len, resultLen);
         m_extendBuflen = std::max<int>(m_extendBuflen, m_tb->tableDef()->maxRecordLen);
-        if ((m_fields.size() != 1) || m_tb->valiableFormatType())
+        if (fieldSelected() || m_tb->valiableFormatType())
             m_extendBuflen += m_tb->buflen();
 
         if ((int)m_tb->buflen() < m_extendBuflen)
@@ -803,8 +802,7 @@ public:
 
     bool setQuery(const queryBase* q)
     {
-        m_str = q->toString();
-        bool ret = doSetFilter(q);
+         bool ret = doSetFilter(q);
         if (!ret)
             cleanup();
         return ret;
@@ -836,14 +834,12 @@ public:
 
     uint_td exDataBufLen() const
     {
-        if ((m_fields.size() != 1) || m_tb->valiableFormatType())
+        if (fieldSelected() || m_tb->valiableFormatType())
             return m_extendBuflen - m_tb->buflen();
         return m_extendBuflen;
     }
 
     void init(table* pBao){};
-
-    const _TCHAR* filterStr(){return m_str.c_str();}
 
     ushort_td fieldCount() const {return m_ret.fieldCount;}
 

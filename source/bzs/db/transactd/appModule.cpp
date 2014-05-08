@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2012 2013 2014 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -62,52 +62,54 @@ namespace transactd
 
 
 
-#define ASYNCWRITE_DATA_SIZE 16382
+#define ASYNCWRITE_DATA_SIZE 16374 //16384 - 10
 static const unsigned int segment_mark = 0xFFFFFFFF;
+
+
 class netAsyncWriter : public netWriter
 {
 	iconnection* m_conn;
 	char* m_buf;
 	char* m_data;
-	size_t m_asyncDataSize;
-	unsigned short m_rows;
+	size_t m_defBuffferPos;
 	int m_databufLen;
-
-	//size_t m_asyncDataTotalSize;
+	unsigned short m_rows;
 
 	inline void doWrite()
 	{
+		size_t asyncDataSize = m_curPtr - m_data;
 		size_t size = ASYNCWRITE_DATA_SIZE;
-		if (m_asyncDataSize < ASYNCWRITE_DATA_SIZE)
-			size = m_asyncDataSize;
+		if (asyncDataSize < ASYNCWRITE_DATA_SIZE)
+			size = asyncDataSize;
 		int offset = (int)(m_data - m_buf);
 		
-		*((unsigned short*)(m_data - 2)) =  (unsigned short) size/* - offset - 2*/;
+		*((unsigned short*)(m_data - 2)) =  (unsigned short) size;
 		m_conn->asyncWrite(m_buf, size+offset);
 		datalen += size;
 
-		m_asyncDataSize -= size;
-		memmove(m_buf + 2, m_data + size, m_asyncDataSize);
+		asyncDataSize -= size;
+		memmove(m_buf + 2, m_data + size, asyncDataSize);
 		m_data = m_buf + 2;
+		m_curPtr = m_data + asyncDataSize;
 	}
 
 	inline void writeEndMark()
 	{
 		memcpy(m_data, &segment_mark , 4);
-		m_asyncDataSize = 4;
-		memcpy(m_data + m_asyncDataSize, &m_databufLen , 4);
-		memcpy(m_data + m_asyncDataSize + 4, &m_rows , 2);
-		*((unsigned short*)(m_data - 2)) = (unsigned short)m_asyncDataSize;
+		unsigned short tmp = 4;
+		memcpy(m_data + tmp, &m_databufLen , 4);
+		memcpy(m_data + tmp + 4, &m_rows , 2);
+		*((unsigned short*)(m_data - 2)) = tmp;
+		m_conn->asyncWrite(m_buf, tmp+2+4+2);
 
-		m_conn->asyncWrite(m_buf, m_asyncDataSize+2+4+2);
-		m_asyncDataSize = 0;
+		m_curPtr = m_data;
 	}
 
 public:
 	netAsyncWriter(iconnection* conn)
-		:netWriter(),m_conn(conn),m_asyncDataSize(0)
+		:netWriter(),m_conn(conn),m_defBuffferPos(0)
 	{
-		m_buf = new char[ASYNCWRITE_DATA_SIZE+65536+2];
+		m_buf = new char[ASYNCWRITE_DATA_SIZE+65536+6];
 		memcpy(m_buf, &segment_mark, sizeof(unsigned int));
 		m_data = m_buf + 2 + 4;
 	}
@@ -117,55 +119,66 @@ public:
 	void reset(IResultBuffer* retBuf, buffers* optData)
 	{
 		netWriter::reset(retBuf, optData);
-		m_asyncDataSize = 0;
-		
+		m_defBuffferPos = 0;
+
 		memcpy(m_buf, &segment_mark, sizeof(unsigned int));
 		m_data = m_buf + 2 + 4;
+		m_curPtr = m_data;
 	
 	}
 
 	void beginExt(bool includeBlob)
 	{
 		short result = 0;
-		ushort_td paramMask = P_MASK_DATA|P_MASK_FINALDATALEN|P_MASK_FINALRET;
-		if (!engine::mysql::table::noKeybufResult)  
-			paramMask |= P_MASK_KEYBUF;
-
-
-		if (includeBlob) paramMask |=P_MASK_BLOBBODY;
+		ushort_td paramMask = getParamMask(includeBlob);
 
 		asyncWrite((const char*)(&paramMask) , sizeof(ushort_td));
 		asyncWrite((const char*)(&result) , sizeof(short));
 		asyncWrite((const char*)(&m_rows) , sizeof(unsigned short));
-		m_databufLen = sizeof(unsigned short);// + 8;
+		m_databufLen = sizeof(unsigned short);//rows space;
 		m_rows = 0;
 	}
 
 	bool asyncWrite(const char* p, size_t size, eWriteMode mode=copyOnly)
 	{
-		
-		if (resultBuffer->size() < datalen + m_asyncDataSize + size)
+		size_t asyncDataSize = (m_curPtr - m_data);
+		if (resultBuffer->size() < datalen + asyncDataSize + size)
 			return false;
 		m_databufLen += (int)size;
 		if (mode==curSeekOnly)
-			m_asyncDataSize += size;
-		else if (mode == write)
+			m_curPtr += size;
+		else if (mode == netwrite)
 		{
-			if (m_asyncDataSize  > ASYNCWRITE_DATA_SIZE)
+			if (asyncDataSize  > ASYNCWRITE_DATA_SIZE)
 				doWrite();
 		}
 		else if (mode == writeEnd)
 		{
-			if (m_asyncDataSize)
+			if (asyncDataSize)
 				doWrite();
 			writeEndMark();
 		}
 		else
 		{
-			memcpy(m_data + m_asyncDataSize, p, size);
-			m_asyncDataSize += size;
+			memcpy(m_curPtr, p, size);
+			m_curPtr += size;
 		}		
 		return true;	
+	}
+
+	//write to default buffer
+	bool write(const char* p, size_t n, eWriteMode mode=copyOnly)
+	{
+		if (mode >= netwrite) return true;
+		if (resultBuffer->size() < m_defBuffferPos + n) return false;
+
+		if (mode != curSeekOnly)
+			memcpy(resultBuffer->ptr() + m_defBuffferPos, p, n);
+		m_defBuffferPos += n;
+		datalen += n;
+		m_databufLen += (int)n;
+		return true;
+		
 	}
 
 	void incremetRows()
@@ -173,20 +186,40 @@ public:
 		++m_rows;
 	}
 
-	char* curPtr()const {return m_data + m_asyncDataSize;}
 	size_t bufferSpace() const
 	{
-		return ASYNCWRITE_DATA_SIZE+65536+2 - (curPtr() - m_buf);
+		return ASYNCWRITE_DATA_SIZE+65536+6 - (curPtr() - m_buf);
 	}
 
-	unsigned int resultLen() const {return (unsigned int)m_databufLen+8;};
+	unsigned int resultLen() const 
+	{
+		return (unsigned int)m_databufLen + RETBUF_EXT_ASYNC_RESERVE_SIZE;
+	}
+
+	unsigned short getParamMask(bool includeBlob)
+	{
+		ushort_td paramMask = P_MASK_DATA|P_MASK_FINALDATALEN|P_MASK_FINALRET;
+		if (!engine::mysql::table::noKeybufResult)  
+			paramMask |= P_MASK_KEYBUF;
+
+		if (includeBlob) paramMask |=P_MASK_BLOBBODY;
+		return paramMask;
+	}
+	
+	/* Increment total deta size space only.
+	   The header and contents are already sent */
+	void writeHeadar(unsigned short paramMask, short result)
+	{
+		write(NULL, 4, curSeekOnly);
+	}
+
+	unsigned int allreadySent()const{return resultLen();}
 
 };
 
 
 class netStdWriter : public netWriter
 {
-	//char* m_ptr;
 	unsigned short* m_rowsPos;
 public:
 	netStdWriter():netWriter(){}
@@ -194,21 +227,30 @@ public:
 	void beginExt(bool includeBlob)
 	{
 		m_offset = RETBUF_EXT_RESERVE_SIZE;
-		m_rowsPos = (unsigned short*)(curPtr());
+		m_curPtr = m_ptr + m_offset;
+		m_rowsPos = (unsigned short*)m_curPtr;
 		(*m_rowsPos) = 0;
-		datalen+=2;
+		datalen = sizeof(unsigned short);//rows space;
+		m_curPtr += 2;
 	}
 	
+
 	bool asyncWrite(const char* p, size_t n, eWriteMode mode=copyOnly)
 	{
-		if (mode >= write) return true;
+		if (mode >= netwrite) return true;
 		if (resultBuffer->size() < datalen + m_offset + n) return false;
 
 		if (mode != curSeekOnly)
-			memcpy(curPtr(), p, n);
+			memcpy(m_curPtr, p, n);
+		m_curPtr += n;
 		datalen += n;
-		return true;
 		
+		return true;
+	}
+	
+	bool write(const char* p, size_t n, eWriteMode mode=copyOnly)
+	{
+		return asyncWrite(p, n, mode);
 	}
 
 	void incremetRows()
@@ -218,8 +260,27 @@ public:
 
 	size_t bufferSpace() const
 	{
-		return resultBuffer->size() - (curPtr() - ptr());
+		return resultBuffer->size() - (m_curPtr - m_ptr);
 	}
+
+	unsigned short getParamMask(bool includeBlob)
+	{
+		ushort_td paramMask = (engine::mysql::table::noKeybufResult==false) ? 
+						P_MASK_READ_EXT : P_MASK_DATA|P_MASK_DATALEN;
+		if (includeBlob) paramMask |=P_MASK_BLOBBODY;
+		return paramMask;
+	}
+
+	void writeHeadar(unsigned short paramMask, short result)
+	{
+		char* p = ptr() + sizeof(unsigned int);						//4
+		memcpy(p, (const char*)(&paramMask), sizeof(ushort_td));	//2
+		p += sizeof(ushort_td);
+		memcpy(p, (const char*)(&result), sizeof(short_td));		//2
+		p += sizeof(short_td);
+		memcpy(p, (const char*)&datalen, sizeof(uint_td));		    //4
+	}
+	unsigned int allreadySent()const{return 0;}
 };
 
 
@@ -230,23 +291,25 @@ module::module(const boost::asio::ip::tcp::endpoint& endpoint
 			, iconnection* connection, bool tpool, int type)
 	:m_endpoint(endpoint), m_connection(connection), m_useThreadPool(tpool)
 {
-	if (type == PROTOCOL_TYPE_BTRV)
+	if (type & PROTOCOL_TYPE_BTRV)
 		m_commandExecuter.reset(new protocol::tdap::mysql::commandExecuter((unsigned __int64)this));
 #ifdef USE_HANDLERSOCKET
-	else if(type == PROTOCOL_TYPE_HS)
+	else if(type & PROTOCOL_TYPE_HS)
 		m_commandExecuter.reset(new protocol::hs::commandExecuter((unsigned __int64)this));
 #endif
 	boost::mutex::scoped_lock lck(modulesMutex);
 	modules.push_back(this);
-	m_nw = new netAsyncWriter(connection);
-	//m_nw = new netStdWriter();
-
+	if (type & PROTOCOL_TYPE_ASYNCWRITE)
+		m_nw = new netAsyncWriter(connection);
+	else
+		m_nw = new netStdWriter();
 }
 
 module::~module(void)
 {
 	boost::mutex::scoped_lock lck(modulesMutex);
 	modules.erase( find(modules.begin(), modules.end(), this));
+	delete m_nw;
 	m_commandExecuter.reset();
 	if (m_useThreadPool==false)
 	{
@@ -330,12 +393,9 @@ int module::execute(netsvc::server::IResultBuffer& result, size_t& size, netsvc:
 	m_commandExecuter->parse(m_readBuf, m_readSize);
 	m_nw->reset(&result, optionalData);
 	boost::mutex::scoped_lock lck(m_mutex);
-	//int ret = m_commandExecuter->execute(result, size, optionalData);
 	int	ret = m_commandExecuter->execute(m_nw);
 	if (m_useThreadPool)
 		cleanup();
-	//else
-	//	ret = m_commandExecuter->execute(m_nw);
 	size = m_nw->datalen;
 	return ret;
 }

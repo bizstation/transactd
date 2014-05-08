@@ -306,11 +306,6 @@ STDMETHODIMP CTableTd::FindPrev(VARIANT_BOOL notIncCurrent)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_Filter(BSTR* Value)
-{
-    *Value = ::SysAllocString(m_tb->filterStr());
-    return S_OK;
-}
 
 STDMETHODIMP CTableTd::put_Filter(BSTR Value)
 {

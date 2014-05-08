@@ -21,8 +21,11 @@
 
 #include <bzs/netsvc/server/IAppModule.h>
 
-#define PROTOCOL_TYPE_BTRV	0
-#define PROTOCOL_TYPE_HS	1
+#define PROTOCOL_TYPE_BTRV				1
+#define PROTOCOL_TYPE_HS				2
+#define PROTOCOL_TYPE_ASYNCWRITE		4
+#define PROTOCOL_TYPE_MEMBUFFER			8
+
 
 /** IAppModule factry
  *	Implements IAppModule and Implements IMyPluginModule::create too.

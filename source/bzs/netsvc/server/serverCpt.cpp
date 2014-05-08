@@ -102,9 +102,6 @@ class connection  : public iconnection, private boost::noncopyable
 								boost::asio::placeholders::error));
 						
 						}
-						//m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
-						//boost::asio::write(m_socket, buffer("", 0),  boost::asio::transfer_all());
-
 					}
 					m_module->cleanup();
 					return;
@@ -164,7 +161,6 @@ public:
 
 	void asyncWrite(const char* p, size_t size)
 	{
-		//m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
 		boost::asio::write(m_socket, buffer(p, size),  boost::asio::transfer_all());
 	}
 	

@@ -62,8 +62,6 @@ class dbExecuter : public engine::mysql::dbManager
 	inline void doSeekKey(request& req, int op);
 	inline void doMoveFirst(request& req);
 	inline void doMoveKey(request& req, int op);
-	//inline int  doReadMultiWithSeek(request& req, int op, char* resultBuffer, size_t& size, netsvc::server::buffers* optionalData);
-	//inline int  doReadMulti(request& req, int op, char* resultBuffer, size_t& size, netsvc::server::buffers* optionalData);
 	inline int  doReadMultiWithSeek(request& req, int op, netsvc::server::netWriter* nw);
 	inline int  doReadMulti(request& req, int op, netsvc::server::netWriter* nw);
 	inline void doStepRead(request& req, int op);
@@ -80,7 +78,6 @@ class dbExecuter : public engine::mysql::dbManager
 public:
 	dbExecuter();
 	~dbExecuter();
-	//int commandExec(request& req, netsvc::server::IResultBuffer& result, size_t& size, netsvc::server::buffers* optionalData);
 	int commandExec(request& req, netsvc::server::netWriter* nw);
 	int errorCode(int ha_error);
 	short_td errorCodeSht(int ha_error){return (short_td)errorCode(ha_error);};
@@ -98,7 +95,6 @@ public:
 	int read(char* buf, size_t& size);
 	int disconnectOne(char* buf, size_t& size);
 	int disconnectAll(char* buf, size_t& size);
-	//int commandExec(netsvc::server::IResultBuffer& buf, size_t& size);
 	int commandExec(netsvc::server::netWriter* nw);
 };
 
@@ -122,13 +118,6 @@ public:
 	}
 
 	bool parse(const char* p, size_t size);
-
-	/*int execute(netsvc::server::IResultBuffer& resultBuffer, size_t& size, netsvc::server::buffers* optionalData)
-	{
-		if (m_req.op == TD_STASTISTICS)
-			return connMgrExecuter(m_req, m_modHandle).commandExec(resultBuffer, size);
-		return m_dbExec->commandExec(m_req, resultBuffer, size, optionalData);
-	}*/
 
 	int execute(netsvc::server::netWriter* nw)
 	{

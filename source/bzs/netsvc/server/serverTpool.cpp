@@ -204,7 +204,6 @@ public:
 	
 	void asyncWrite(const char* p, size_t size)
 	{
-		//m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
 		boost::asio::write(m_socket, buffer(p, size),  boost::asio::transfer_all());
 	}
 

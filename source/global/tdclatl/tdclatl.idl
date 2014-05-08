@@ -567,8 +567,6 @@ interface ITable : IDispatch
   HRESULT _stdcall Vbin([in] VARIANT Index, [out, retval] BSTR* Value);
   [propput, id(0x00000028)]
   HRESULT _stdcall Vbin([in] VARIANT Index, [in] BSTR Value);
-  [propget, id(0x00000029)]
-  HRESULT _stdcall Filter([out, retval] BSTR* Value);
   [propput, id(0x00000029)]
   HRESULT _stdcall Filter([in] BSTR Value);
   [id(0x0000002A)]

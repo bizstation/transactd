@@ -97,9 +97,9 @@ static int transactd_plugin_init(void *p)
 {
 	try
 	{
-		boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(PROTOCOL_TYPE_BTRV));
 		if (g_tcpServerType == TCP_CPT_SERVER)
 		{
+			boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(PROTOCOL_TYPE_BTRV|PROTOCOL_TYPE_ASYNCWRITE));
 			cpt::server* p = new cpt::server(g_maxTcpConnections, g_hostCheckUserName);
 			p->addApplication(app, g_listenAddress, g_listenPort);
 			#ifdef USE_HANDLERSOCKET
@@ -114,12 +114,13 @@ static int transactd_plugin_init(void *p)
 		}
 		else if (g_tcpServerType == TCP_TPOOL_SERVER)
 		{
+			boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(PROTOCOL_TYPE_BTRV|PROTOCOL_TYPE_ASYNCWRITE));
 			tpool::server* p = new tpool::server(g_pool_threads, g_hostCheckUserName);
 			p->addApplication(app, g_listenAddress, g_listenPort);
 			#ifdef USE_HANDLERSOCKET
 			if (g_use_hs)
 			{
-				boost::shared_ptr<IAppModuleBuilder> app_hs(new transctionalIF(PROTOCOL_TYPE_HS));
+				boost::shared_ptr<IAppModuleBuilder> app_hs(new transctionalIF(PROTOCOL_TYPE_HS|PROTOCOL_TYPE_MEMBUFFER));
 				p->addApplication(app_hs, g_listenAddress, g_hs_listenPort);
 			}
 			#endif
@@ -133,6 +134,7 @@ static int transactd_plugin_init(void *p)
 	#ifdef PIPE_SERVER
 		if (g_usePipedLocal)
 		{
+			boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(PROTOCOL_TYPE_BTRV|PROTOCOL_TYPE_MEMBUFFER));
 			srv_p.reset(new pipe::server(app, PIPE_NAME , g_maxPipeConnections, g_pipeCommSharememSize, g_hostCheckUserName));
 			srv_p->registerErrorHandler(&srvErh);
 			srv_p->start();

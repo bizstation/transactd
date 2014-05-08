@@ -112,17 +112,19 @@ protected:
 	
 	buffers* m_optionalData;
 	size_t m_offset;
+	char* m_ptr;
+	char* m_curPtr;
 public:
-	enum eWriteMode{copyOnly, curSeekOnly, write, writeEnd};
+	enum eWriteMode{copyOnly, curSeekOnly, netwrite, writeEnd};
 	netWriter():datalen(0),m_offset(0){}
 	virtual ~netWriter(){};
 
-	inline void resize(size_t v){resultBuffer->resize(v);};	
+	inline void resize(size_t v){resultBuffer->resize(v);m_ptr = resultBuffer->ptr();};	
 	inline size_t bufferSize()const{return resultBuffer->size();};
 	inline buffers* optionalData(){return m_optionalData;};
-	inline char* ptr()const{return resultBuffer->ptr();}
+	inline char* ptr()const{return m_ptr;}
+	inline char* curPtr()const{return m_curPtr;}
 	virtual unsigned int resultLen() const {return (unsigned int)(datalen + m_offset);};
-	virtual char* curPtr()const{return resultBuffer->ptr() + datalen + m_offset;}
 	size_t datalen ;
 	virtual size_t bufferSpace() const = 0;
 	virtual void reset(IResultBuffer* retBuf, buffers* optData)
@@ -131,10 +133,15 @@ public:
 		m_optionalData = optData;
 		m_offset = 0;
 		datalen = 0;
+		m_ptr = resultBuffer->ptr();
 	}
 	virtual void beginExt(bool includeBlob) = 0;	
 	virtual bool asyncWrite(const char* p, size_t n, eWriteMode mode=copyOnly) = 0;
+	virtual bool write(const char* p, size_t n, eWriteMode mode=copyOnly) = 0;
 	virtual void incremetRows() = 0;
+	virtual unsigned short getParamMask(bool includeBlob) = 0;
+	virtual void writeHeadar(unsigned short paramMask, short result) = 0;
+	virtual unsigned int allreadySent() const= 0;
 };
 
 

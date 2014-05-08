@@ -229,6 +229,8 @@ public:
 				if ((m_req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer.blobs())
 					size = m_req.serializeBlobBody(&m_blobBuffer
 						, p, con()->sendBufferSize(), con()->optionalBuffers());
+				if (m_req.paramMask & P_MASK_DATALEN)
+					con()->setReadBufferSizeIf(*m_req.datalen);
 				p = con()->asyncWriteRead(size);
 				m_req.parse(p, con()->datalen(), con()->rows());
 				if (m_logout)
