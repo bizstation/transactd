@@ -67,7 +67,10 @@ public:
 		}
 		//write final ret
 		if (paramMask & P_MASK_FINALRET)
+		{
 			nw->write((const char*)&result, sizeof(short_td));
+			resltPtr = (short_td*)(nw->curPtr() - 2);
+		}
 		unsigned int* totalLen = (unsigned int*)nw->ptr();
 		*totalLen = nw->resultLen();
 	
@@ -85,6 +88,7 @@ public:
 		p += sizeof(ushort_td);
 		
 		memcpy(p, (const char*)(&result), sizeof(short_td));
+		resltPtr = (short_td*)p;
 		p += sizeof(short_td);
 	
 		if (P_MASK_POSBLK & paramMask)

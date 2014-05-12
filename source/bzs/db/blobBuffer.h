@@ -23,7 +23,8 @@
 #include <assert.h>
 #include <boost/shared_array.hpp>
 
-#define FILE_MAP_SIZE 3145728-1024//3M
+extern unsigned int g_pipeCommSharememSize;
+#define  FILE_MAP_SIZE (g_pipeCommSharememSize-1024) 
 
 namespace bzs
 {
@@ -39,9 +40,15 @@ class blobBuffer : public IblobBuffer, private boost::noncopyable
 {
 	std::vector<blob> m_blobs;
 	blobHeader m_bh;
-	std::vector<boost::shared_array<unsigned char> > m_strings;
+	std::vector<unsigned char> m_data;
+	unsigned int m_datasize;
+	unsigned int m_blobCount;
+
 public:
-	blobBuffer(){m_bh.fieldCount = 0;}
+	blobBuffer()
+	{
+		m_bh.fieldCount = 0;
+	}
 	const blobHeader* getHeader()const {return &m_bh;};
 
 	void clear()
@@ -49,25 +56,45 @@ public:
 		m_blobs.clear();
 		m_bh.fieldCount = 0;
 		m_bh.rows=0;
-		m_strings.clear();
+		m_data.clear();
+		m_datasize = 0;
+		m_blobCount = 0;
 	}
 
-	size_t blobs(){return m_blobs.size();};
+	size_t blobs(){return m_blobCount;};
 	/**
 	 *   @param dataPtr blob data body pointer in result record image.
 	 */
 	void addBlob(unsigned int bloblen, unsigned short fieldNum, const unsigned char* dataPtr)
 	{
-		unsigned char* p = new unsigned char[bloblen];
-		m_strings.push_back(boost::shared_array<unsigned char>(p));
-		memcpy(p, dataPtr, bloblen);
-		m_blobs.push_back(blob(bloblen, fieldNum, p));
+		if (m_data.size() < m_datasize + bloblen + sizeof(blobField) +2)
+			m_data.resize(m_datasize + bloblen  + 1024);
+		
+		unsigned char* p = &m_data[m_datasize];
+
+		blob b(bloblen, fieldNum, p + sizeof(blobField));
+		//m_blobs.push_back(b);
+
+		//write field desc
+		memcpy(p, &b.bf, sizeof(blobField));
+		p += sizeof(blobField);
+
+		//write field body
+		memcpy(p, dataPtr, b.bf.size);
+					
+		//write null terminate
+		p += b.bf.size;
+		memcpy(p, nullbyte, 2);
+		p += 2;
+		m_datasize = (unsigned int)(p - &m_data[0]);
+		++m_blobCount;
 						
 	}
 
 	void addBlob(const blob& b)
 	{
 		m_blobs.push_back(b);
+		++m_blobCount;
 	}
 
 	void setFieldCount(unsigned int v){m_bh.fieldCount=v;};
@@ -96,29 +123,37 @@ public:
 		if (m_bh.fieldCount)
 		{
 			//write buffer header
-			m_bh.rows = (unsigned short)(m_blobs.size()/m_bh.fieldCount);
+			m_bh.rows = (unsigned short)(m_blobCount/m_bh.fieldCount);
 			mbuffer.push_back(boost::asio::buffer((char*)&m_bh, sizeof(blobHeader)));
 			size += sizeof(blobHeader);
-
-			for (size_t i=0;i<m_blobs.size();i++)
+			if (m_blobs.size() == 0)
 			{
-				const blob& b = m_blobs[i];
-				//add field desc
-				mbuffer.push_back(boost::asio::buffer((char*)&b.bf, sizeof(blobField)));
-				size += sizeof(blobField);
+				mbuffer.push_back(boost::asio::buffer((char*)&m_data[0], m_datasize));
+				size += m_datasize;
+			}else
+			{
+				for (size_t i=0;i<m_blobs.size();i++)
+				{
+					const blob& b = m_blobs[i];
+					//add field desc
+					mbuffer.push_back(boost::asio::buffer((char*)&b.bf, sizeof(blobField)));
+					size += sizeof(blobField);
 
-				//add field body
-				mbuffer.push_back(boost::asio::buffer(b.ptr, b.bf.size));
+					//add field body
+					mbuffer.push_back(boost::asio::buffer(b.ptr, b.bf.size));
 
-				//add null terminate 
-				mbuffer.push_back(boost::asio::buffer(nullbyte, 2));
+					//add null terminate 
+					mbuffer.push_back(boost::asio::buffer(nullbyte, 2));
 
-				//update record image pointer to offset from record start
-				size += b.bf.size + 2;
+					//update record image pointer to offset from record start
+					size += b.bf.size + 2;
+				}
 			}
 		}
 		return size;
 	}
+
+	
 
 	/** Copy to single buffer.
 	 *  this is use for pipe server only.
@@ -134,36 +169,47 @@ public:
 	 *  2				fieldNum ...
 	 *  ----------------------------
 	 */
-	unsigned int writeBuffer(unsigned char* buffer, unsigned int maxsize, int& stat)
+	unsigned int writeBuffer(unsigned char* buffer, unsigned int maxsize, short& stat)
 	{
 		stat = 0;
-		unsigned char* p = buffer;// + offset ;
+		unsigned char* p = buffer;
 		if (m_bh.fieldCount)
 		{
 			//write buffer header
-			m_bh.rows = (unsigned short)(m_blobs.size()/m_bh.fieldCount);
+			m_bh.rows = (unsigned short)(m_blobCount/m_bh.fieldCount);
 			memcpy(p, &m_bh, sizeof(blobHeader));
 			p += sizeof(blobHeader);
-
-			for (size_t i=0;i<m_blobs.size();i++)
+			if (m_blobs.size() == 0)
 			{
-				const blob& b = m_blobs[i];
-				if (maxsize > (p - buffer) + b.bf.size + 2)
-				{
-					//write field desc
-					memcpy(p, &b.bf, sizeof(blobField));
-					p += sizeof(blobField);
-					//write field body
-					memcpy(p, b.ptr, b.bf.size);
-					
-					//write null terminate
-					p += b.bf.size;
-					memcpy(p, nullbyte, 2);
-					p += 2;
-				}else
-				{
+				if (maxsize - (p - buffer) < m_datasize)
 					stat = STATUS_BUFFERTOOSMALL;
-					break;
+				else
+				{
+					memcpy(p, &m_data[0], m_datasize);
+					p += m_datasize;
+				}
+			}else
+			{
+				for (size_t i=0;i<m_blobs.size();i++)
+				{
+					const blob& b = m_blobs[i];
+					if (maxsize > (p - buffer) + b.bf.size + 2)
+					{
+						//write field desc
+						memcpy(p, &b.bf, sizeof(blobField));
+						p += sizeof(blobField);
+						//write field body
+						memcpy(p, b.ptr, b.bf.size);
+					
+						//write null terminate
+						p += b.bf.size;
+						memcpy(p, nullbyte, 2);
+						p += 2;
+					}else
+					{
+						stat = STATUS_BUFFERTOOSMALL;
+						break;
+					}
 				}
 			}
 		}

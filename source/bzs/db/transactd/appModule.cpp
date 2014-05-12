@@ -177,6 +177,7 @@ public:
 		m_defBuffferPos += n;
 		datalen += n;
 		m_databufLen += (int)n;
+		m_curPtr = resultBuffer->ptr() + m_defBuffferPos;
 		return true;
 		
 	}

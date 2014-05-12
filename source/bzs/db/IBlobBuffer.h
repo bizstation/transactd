@@ -40,7 +40,7 @@ public:
 	virtual void setFieldCount(unsigned int v)=0;
 	virtual unsigned int fieldCount()=0;
 	virtual unsigned int makeMultiBuffer(std::vector<boost::asio::const_buffer>& mbuffer)=0;
-	virtual unsigned int writeBuffer(unsigned char* buffer, unsigned int maxsize, int& stat)=0;
+	virtual unsigned int writeBuffer(unsigned char* buffer, unsigned int maxsize, short& stat)=0;
 	
 
 };

@@ -48,7 +48,7 @@ static unsigned int g_tcpServerType = TCP_CPT_SERVER;
 
 static unsigned int g_maxTcpConnections = 200;
 static unsigned int g_pool_threads = 20;
-static unsigned int g_pipeCommSharememSize = 3145728;
+unsigned int g_pipeCommSharememSize = 3145728;
 int g_tableNmaeLower = 1; //defined in btrvProtocol.h 
 int g_useBtrvVariableTable = 1;
 unsigned int g_lock_wait_timeout = 1;

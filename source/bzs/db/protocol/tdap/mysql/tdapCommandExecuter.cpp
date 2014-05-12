@@ -509,12 +509,13 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, netsvc::server:
 
 			
 		}
+		short dummy=0;
 		size_t& size =  nw->datalen;
 		size = req.serializeForExt(m_tb, nw);
 		char* resultBuffer = nw->ptr();
 		netsvc::server::buffers* optionalData = nw->optionalData();
 		if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
-			size = req.serializeBlobBody(m_blobBuffer, resultBuffer, FILE_MAP_SIZE, optionalData);
+			size = req.serializeBlobBody(m_blobBuffer, resultBuffer, size, FILE_MAP_SIZE, optionalData, dummy);
 
 		DEBUG_PROFILE_END_OP(1, op)
 		ret = EXECUTE_RESULT_SUCCESS;
@@ -570,14 +571,17 @@ inline int dbExecuter::doReadMulti(request& req, int op, netsvc::server::netWrit
 		DEBUG_WRITELOG2(op, req);
 
 		
-	}	
+	}
+
+	short dummy=0;
 	size_t& size =  nw->datalen;
 	size = req.serializeForExt(m_tb, nw);
 
 	char* resultBuffer = nw->ptr();
 	netsvc::server::buffers* optionalData = nw->optionalData();
 	if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
-		size = req.serializeBlobBody(m_blobBuffer, resultBuffer, FILE_MAP_SIZE, optionalData);
+		size = req.serializeBlobBody(m_blobBuffer, resultBuffer, size, FILE_MAP_SIZE, optionalData, dummy);
+				
 
 	DEBUG_PROFILE_END_OP(1, op)
 		
@@ -998,8 +1002,9 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 
 		DEBUG_WRITELOG2(op, req)
 		size = req.serialize(m_tb, resultBuffer);
+		short dymmy=0;
 		if ((req.result==0) && (req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
-			size = req.serializeBlobBody(m_blobBuffer, resultBuffer, FILE_MAP_SIZE, optionalData);
+			size = req.serializeBlobBody(m_blobBuffer, resultBuffer, size, FILE_MAP_SIZE, optionalData, dymmy);
 			
 		if (transactionResult)
 		{

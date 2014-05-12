@@ -226,13 +226,18 @@ public:
 			{
 				char* p = con()->sendBuffer(m_req.sendLenEstimate());
 				unsigned int size = m_req.serialize(p);
+                short stat = 0;
 				if ((m_req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer.blobs())
 					size = m_req.serializeBlobBody(&m_blobBuffer
-						, p, con()->sendBufferSize(), con()->optionalBuffers());
-				if (m_req.paramMask & P_MASK_DATALEN)
-					con()->setReadBufferSizeIf(*m_req.datalen);
-				p = con()->asyncWriteRead(size);
-				m_req.parse(p, con()->datalen(), con()->rows());
+						, p, size, con()->sendBufferSize(), con()->optionalBuffers(), stat);
+                if (stat == 0)
+                {
+                    if (m_req.paramMask & P_MASK_DATALEN)
+                        con()->setReadBufferSizeIf(*m_req.datalen);
+                    p = con()->asyncWriteRead(size);
+                    m_req.parse(p, con()->datalen(), con()->rows());
+                }else
+                    m_req.result = stat;
 				if (m_logout)
 					disconnect();
 				m_preResult = m_req.result;

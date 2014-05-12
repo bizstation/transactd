@@ -809,9 +809,6 @@ void database::doConvertTable(short TableIndex, bool Turbo, const _TCHAR* OwnerN
 
     _tcscpy(szTempPath, getTableUri(buf, TableIndex));
 
-    _TCHAR* pireod = _tcsrchr(szTempPath, '.');
-    if (pireod)
-        * pireod = 0x00;
     _tcscat(szTempPath, _T("_conv_dest.tmp"));
 
     createTable(TableIndex, szTempPath);
@@ -842,7 +839,6 @@ void database::doConvertTable(short TableIndex, bool Turbo, const _TCHAR* OwnerN
             swapTablename(szTempPath, tmp);
         else
         {
-
             _TCHAR* pireod = _tcsrchr(tmp, '.');
             if (pireod)
                 * pireod = 0x00;

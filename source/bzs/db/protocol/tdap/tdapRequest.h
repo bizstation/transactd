@@ -80,8 +80,9 @@ struct req1
 pragma_pack1
 
 
-#define POSBLK_SIZE 4
-#define CLIENTID_SIZE 2
+#define POSBLK_SIZE		4
+#define CLIENTID_SIZE	2
+#define PARAMMASK_SIZE	2
 
 /** tdap version info struct
  */
@@ -140,7 +141,8 @@ public:
 	keylen_td 		keylen;
 	void_td*		keybuf;
 	char_td			keyNum;
-	uint_td			resultLen;		
+	uint_td			resultLen;
+	short_td*		resltPtr;
 	
 	request()
 	{
@@ -160,31 +162,31 @@ public:
 
 	const struct bzs::db::blobHeader* blobHeader;
 
-	inline unsigned int serializeBlobBody(blobBuffer* blob, char* buf, unsigned int max_size
-				, std::vector<boost::asio::const_buffer>* mbuffer)
+	inline unsigned int serializeBlobBody(blobBuffer* blob, char* buf, size_t curSize,  unsigned int max_size
+				, std::vector<boost::asio::const_buffer>* mbuffer, short& stat)
 	{
-		unsigned int totallen = *((unsigned int*)(buf));
-		unsigned int size = totallen;
-		char* blobbuf = buf + totallen;
+
+		char* blobbuf = buf + curSize;
+		unsigned int datalen = *((unsigned int*)buf);
 		//write blob body
-		int stat=0;
+		unsigned int bloblen = 0;
 		if (mbuffer)
-			totallen += blob->makeMultiBuffer(*mbuffer);
+			bloblen = blob->makeMultiBuffer(*mbuffer);
 		else
-			totallen += blob->writeBuffer((unsigned char*)blobbuf, max_size - totallen - 200, stat);
+			bloblen = blob->writeBuffer((unsigned char*)blobbuf, max_size - datalen - 200, stat);
+		
 		//write total
-		memcpy(buf, &totallen, sizeof(unsigned int));
+		
+		datalen += bloblen;
+		memcpy(buf, &datalen, sizeof(unsigned int));
 
 		//write result
-		if (stat)
-		{
-			short_td* retPtr = (short_td*)(buf + 4 + 1);
-			*retPtr = stat;
-		}
+		if (stat && resltPtr)
+			*resltPtr = stat;
 		//return this buffer size;
 		if (mbuffer)
-			return size;
-		return totallen;
+			return (unsigned int)curSize;
+		return (unsigned int)curSize + bloblen;
 	}
 };
 
