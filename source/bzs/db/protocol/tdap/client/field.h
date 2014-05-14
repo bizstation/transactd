@@ -130,7 +130,6 @@ private:
 #endif
 	void setFV(float data);
 	void setFV(double data);
-	void setFV(bool data);
 	void setFV(unsigned char data);
 	void setFV(short data);
 	void setFV(int data);

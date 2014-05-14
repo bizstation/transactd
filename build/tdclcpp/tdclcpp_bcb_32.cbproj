@@ -138,6 +138,9 @@
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\indexDDF.cpp">
 				<BuildOrder>10</BuildOrder>
 			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp">
+				<BuildOrder>22</BuildOrder>
+			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsDatabase.cpp">
 				<BuildOrder>11</BuildOrder>
 			</CppCompile>

@@ -37,6 +37,7 @@ namespace client
 
 class database;
 class queryBase;
+class fields;
 #define null_str _T("")
 
 #pragma warning(disable:4251)
@@ -195,43 +196,33 @@ public:
 	void setFV(short index, double data);
 	void setFV(short index, float data);
 	void setFV(short index, unsigned char data);
-	void setFV(short index, bool data);
 	void setFV(short index, short data);
 	void setFVA(short index, const char* data);
 	void setFV(short index, int data);
 	void setFV(short index, const void* data, uint_td size);
 	void setFV(const _TCHAR* fieldName, int data);
 	void setFVA(const _TCHAR* fieldName, const char* data);
+	void setFVW(short index, const wchar_t* data);
+	void setFVW(const _TCHAR* fieldName, const wchar_t* data);
 
 #ifdef _WIN32
 	const wchar_t* getFVWstr(const _TCHAR* fieldName);
 	const wchar_t* getFVWstr(short index);
-	void setFVW(short index, const wchar_t* data);
-	void setFVW(const _TCHAR* fieldName, const wchar_t* data);
 
 #endif
 
 #ifdef _UNICODE
-
 	inline const wchar_t* getFVstr(short index) {return getFVWstr(index);};
-
 	inline const wchar_t* getFVstr(const wchar_t* fieldName) {return getFVWstr(fieldName);};
+#else
+	inline const char* getFVstr(short index) {return getFVAstr(index);};
+	inline const char* getFVstr(const char* fieldName) {return getFVAstr(fieldName);};
+#endif
 
 	inline void setFV(short index, const wchar_t* data) {setFVW(index, data);};
-
-	inline void setFV(const wchar_t* fieldName, const wchar_t* data) {setFVW(fieldName, data);};
-
-#else
-
-	inline const char* getFVstr(short index) {return getFVAstr(index);};
-
-	inline const char* getFVstr(const char* fieldName) {return getFVAstr(fieldName);};
-
 	inline void setFV(short index, const char* data) {setFVA(index, data);};
-
-	inline void setFV(const char* fieldName, const char* data) {setFVA(fieldName, data);};
-
-#endif
+	inline void setFV(const _TCHAR* fieldName, const char* data) {setFVA(fieldName, data);};
+	inline void setFV(const _TCHAR* fieldName, const wchar_t* data) {setFVW(fieldName, data);};
 
 	void setFV(const _TCHAR* fieldName, double data);
 	void setFV(const _TCHAR* fieldName, float data);
@@ -244,7 +235,7 @@ public:
 	void keyValueDescription(_TCHAR* buf, int bufsize);
 	short getCurProcFieldCount() const;
 	short getCurProcFieldIndex(short index) const;
-	fields& fields();
+	client::fields& fields();
 
 };
 

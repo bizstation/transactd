@@ -1,9 +1,24 @@
-#ifndef ormRecordsetH
-#define ormRecordsetH
+#ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_MEMRECORDSET_H
+#define BZS_DB_PROTOCOL_TDAP_CLIENT_MEMRECORDSET_H
+/*=================================================================
+   Copyright (C) 2014 BizStation Corp All rights reserved.
 
-#include <bzs/db/protocol/tdap/client/trdormapi.h>
-#include "memrecord.h"
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License
+   as published by the Free Software Foundation; either version 2
+   of the License, or (at your option) any later version.
 
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+   02111-1307, USA.
+=================================================================*/
+#include "trdormapi.h"
 
 namespace tdc =  bzs::db::protocol::tdap::client;
 namespace td =  bzs::db::protocol::tdap;
@@ -77,7 +92,7 @@ class recordset
 	
 	/* 
 		for optimazing join.
-		If the first reading is using by uniq key , set that field count.
+		If the first reading is using by unique key , set that field count.
 	*/
 	short m_uniqueReadMaxField; 
 public:
@@ -160,7 +175,6 @@ private:
 		int index =  m_fds->indexByName(name);
 		if (index ==-1)
 			THROW_BZS_ERROR_WITH_MSG(_T("oorderBy:Invalid field name"));
-			//throw bzs::rtl::exception(0, _T("oorderBy:Invalid field name"));
 		fieldNums.push_back(index);
 	}
 
@@ -232,7 +246,6 @@ public:
 			return index;
 		if (!noexception)
 			THROW_BZS_ERROR_WITH_MSG(_T("groupQuery:Invalid key name"));
-			//throw bzs::rtl::exception(0, _T("groupQuery:Invalid key name"));
 		return (key_type)m_fds->size();
 	}
 
@@ -438,31 +451,6 @@ public:
 	typedef typename value_type_ value_type;
 };
 
-/*
-template <class row_type=row, class key_type=int, class value_type_=__int64>
-class count
-{
-	value_type_ m_value;
-	key_type m_resultKey;
-public:
-	count():m_value(0){}
-
-	void setResultKey(key_type key)
-	{
-		m_resultKey = key;
-	}
-
-	void operator()(const row_type& row)
-	{
-		++m_value;
-	}
-
-	value_type_ result()const{return m_value;}
-
-	void reset(){m_value = 0;}
-	typedef typename value_type_ value_type;
-};*/
-
 
 template <class row_type=row, class key_type=int, class value_type_=__int64>
 class avg
@@ -545,4 +533,4 @@ typedef sum<row, int, double> group_sum;
 
 typedef tdc::activeTable<map_orm> queryTable;
 
-#endif
+#endif //BZS_DB_PROTOCOL_TDAP_CLIENT_MEMRECORDSET_H

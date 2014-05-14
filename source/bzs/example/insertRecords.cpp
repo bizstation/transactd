@@ -143,7 +143,7 @@ void readImage(const _TCHAR* path, std::vector<char>& s)
 	std::ifstream ifs(path, std::ios::in | std::ios::binary );
 
 	ifs.seekg(0, std::ios::end);
-	s.resize(ifs.tellg());
+	s.resize((unsigned int)ifs.tellg());
 
 	ifs.seekg(0, std::ios::beg);
 	ifs.read(&s[0], s.size());

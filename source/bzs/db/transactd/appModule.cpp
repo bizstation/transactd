@@ -77,8 +77,8 @@ class netAsyncWriter : public netWriter
 
 	inline void doWrite()
 	{
-		size_t asyncDataSize = m_curPtr - m_data;
-		size_t size = ASYNCWRITE_DATA_SIZE;
+		unsigned int asyncDataSize = m_curPtr - m_data;
+		unsigned int size = ASYNCWRITE_DATA_SIZE;
 		if (asyncDataSize < ASYNCWRITE_DATA_SIZE)
 			size = asyncDataSize;
 		int offset = (int)(m_data - m_buf);
@@ -139,9 +139,9 @@ public:
 		m_rows = 0;
 	}
 
-	bool asyncWrite(const char* p, size_t size, eWriteMode mode=copyOnly)
+	bool asyncWrite(const char* p, unsigned int size, eWriteMode mode=copyOnly)
 	{
-		size_t asyncDataSize = (m_curPtr - m_data);
+		unsigned int asyncDataSize = (m_curPtr - m_data);
 		if (resultBuffer->size() < datalen + asyncDataSize + size)
 			return false;
 		m_databufLen += (int)size;
@@ -236,7 +236,7 @@ public:
 	}
 	
 
-	bool asyncWrite(const char* p, size_t n, eWriteMode mode=copyOnly)
+	bool asyncWrite(const char* p, unsigned int n, eWriteMode mode=copyOnly)
 	{
 		if (mode >= netwrite) return true;
 		if (resultBuffer->size() < datalen + m_offset + n) return false;

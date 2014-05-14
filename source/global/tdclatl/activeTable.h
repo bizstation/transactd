@@ -20,7 +20,7 @@
 #include "resource.h"
 
 #include "tdclatl_i.h"
-#include <bzs/db/protocol/tdap/client/ormRecordset.h>
+#include <bzs/db/protocol/tdap/client/memRecordset.h>
 
 
 using namespace ATL;

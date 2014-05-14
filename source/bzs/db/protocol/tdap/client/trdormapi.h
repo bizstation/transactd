@@ -18,14 +18,13 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
    02111-1307, USA.
 =================================================================*/
-#include <bzs/db/protocol/tdap/client/trdboostapi.h>
-#include <boost/lexical_cast.hpp>
+#include "trdboostapi.h"
 #include "filedNameAlias.h"
 #include "groupQuery.h"
 #include "memRecord.h"
-#include <vector>
+#include <boost/lexical_cast.hpp>
 #include <boost/shared_array.hpp>
-
+#include <vector>
 namespace bzs
 {
 namespace db

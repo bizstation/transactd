@@ -402,7 +402,7 @@ public:
 		m_comm->chancel();
 	}
 
-	void asyncWrite(const char* p, size_t size)
+	void asyncWrite(const char* p, unsigned int size)
 	{
 		
 	}

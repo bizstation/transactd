@@ -1,5 +1,5 @@
-#ifndef trdboostapiH
-#define trdboostapiH
+#ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_TRDBOOSTAPI_H
+#define BZS_DB_PROTOCOL_TDAP_CLIENT_TRDBOOSTAPI_H
 /*=================================================================
    Copyright (C) 2013 BizStation Corp All rights reserved.
 
@@ -18,7 +18,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
    02111-1307, USA.
 =================================================================*/
-#include <bzs/db/protocol/tdap/client/trdboostapiInternal.h>
+#include "trdboostapiInternal.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <iterator>
@@ -1016,4 +1016,4 @@ public:
 }// namespace db
 }// namespace bzs
 
-#endif
+#endif //BZS_DB_PROTOCOL_TDAP_CLIENT_TRDBOOSTAPI_H

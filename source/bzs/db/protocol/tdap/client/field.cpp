@@ -21,7 +21,7 @@
 
 #include "field.h"
 #include "fields.h"
-#include "nsdatabase.h"
+#include "nsDatabase.h"
 #include <bzs/db/protocol/tdap/myDateTime.cpp>
 #include <bzs/db/protocol/tdap/fieldComp.h>
 #include "stringConverter.h"
@@ -78,12 +78,12 @@ fieldShare::~fieldShare()
 
 }
 
-inline stringConverter* fieldShare::cv()
+stringConverter* fieldShare::cv()
 {
 	return m_imple->cv;
 }
 
-inline bzs::rtl::stringBuffer* fieldShare::strBufs()
+bzs::rtl::stringBuffer* fieldShare::strBufs()
 {
 	return &m_imple->strBufs;
 }
@@ -766,12 +766,6 @@ void field::setFV(double data)
 			break;
 		}
 	}
-}
-
-void field::setFV( bool data)
-{
-	int value = (int)data;
-	setFV(value);
 }
 
 void field::setFV(short data)

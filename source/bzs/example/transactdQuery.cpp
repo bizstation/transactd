@@ -1,8 +1,25 @@
+/*=================================================================
+   Copyright (C) 2014 BizStation Corp All rights reserved.
 
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU General Public License
+   as published by the Free Software Foundation; either version 2
+   of the License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+   02111-1307, USA.
+=================================================================*/
 #include <iostream>
 #include <locale.h>
 #include <boost/iterator/iterator_facade.hpp>
-#include "ormRecordset.h"
+#include "memRecordset.h"
 #include "benchmark.h"
 
 using namespace bzs::db::protocol::tdap::client;
@@ -81,7 +98,7 @@ bool createUserTable(dbdef* def)
 	keydef* kd = def->insertKey(tableid, keyNum);
 	keySegment& seg1 = kd->segments[0];
 	seg1.fieldNum = 0;
-	seg1.flags.bit8 = true;    //extended key type
+	seg1.flags.bit8 = true;//extended key type
 	seg1.flags.bit1 = true;//chanageable
 	kd->segmentCount = 1;
 	td = def->tableDefs(tableid);
@@ -140,7 +157,7 @@ bool createGroupTable(dbdef* def)
 	keydef* kd = def->insertKey(tableid, keyNum);
 	keySegment& seg1 = kd->segments[0];
 	seg1.fieldNum = 0;
-	seg1.flags.bit8 = true;    //extended key type
+	seg1.flags.bit8 = true;//extended key type
 	seg1.flags.bit1 = true;//chanageable
 	kd->segmentCount = 1;
 
@@ -185,7 +202,7 @@ bool createUserExtTable(dbdef* def)
 	keydef* kd = def->insertKey(tableid, keyNum);
 	keySegment& seg1 = kd->segments[0];
 	seg1.fieldNum = 0;
-	seg1.flags.bit8 = true;    //extended key type
+	seg1.flags.bit8 = true;//extended key type
 	seg1.flags.bit1 = true;//chanageable
 	kd->segmentCount = 1;
 	td = def->tableDefs(tableid);
@@ -265,7 +282,7 @@ bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep,
 
 			atu.index(0).keyValue(i+1).read(rs, q);
 
-		//Join extention::comment
+			//Join extention::comment
 			if (kind & 2)
 			{
 				initQuery();
@@ -279,11 +296,6 @@ bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep,
 				atg.index(0).join(rs, q.select(_T("group_name")), _T("group"));
 			}
 		}
-		/*
-		size_t count = rs.count;
-		for (size_t j= 0;j<count;++j)
-			 record& s = rs.record(j);*/
-
 	}
 	return true;
 }
@@ -334,7 +346,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		bzs::rtl::benchmark bm;
 		bm.report(boost::bind(btest, &rs, &atu, &atg, &ate, kind, n), "exec time ");
-		//showConsole(rs);
 		return 0;
 	}
 

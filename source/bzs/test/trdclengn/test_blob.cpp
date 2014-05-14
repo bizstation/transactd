@@ -88,28 +88,28 @@ void doTestSeek(table* tb)
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 1, "doTestSeek - id 1");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestSeek - user_id 1");
 	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
-		_tstring(_T("1\ntest\nテスト\n\nあいうえおあいうえお")), "doTestSeek - body 1");
+		_tstring(_T("1\ntest\nテスト\n\nあいうえおあいうえおb")), "doTestSeek - body 1");
 	// 2
 	tb->seekNext();
 	BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestSeek - stat 2");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 2, "doTestSeek - id 2");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestSeek - user_id 2");
 	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
-		_tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえお")), "doTestSeek - body 2");
+		_tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえおb")), "doTestSeek - body 2");
 	// 3
 	tb->seekNext();
 	BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestSeek - stat 3");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 3, "doTestSeek - id 3");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 2, "doTestSeek - user_id 3");
 	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
-		_tstring(_T("3\ntest\nテスト\n\nあいうえおあいうえお")), "doTestSeek - body 3");
+		_tstring(_T("3\ntest\nテスト\n\nあいうえおあいうえおb")), "doTestSeek - body 3");
 	// 2
 	tb->seekPrev();
 	BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestSeek - stat 2");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 2, "doTestSeek - id 2");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestSeek - user_id 2");
 	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
-		_tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえお")), "doTestSeek - body 2");
+		_tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえおb")), "doTestSeek - body 2");
 }
 
 void doTestFind(table* tb)
@@ -134,8 +134,8 @@ void doTestFind(table* tb)
 	tb->findNext(true);
 	BOOST_CHECK_MESSAGE(9 == tb->stat(), "doTestFind - findNext");
 	// 2
-	tb->findPrev(true);
-	BOOST_CHECK_MESSAGE(tb->stat() == STATUS_PROGRAM_ERROR, "doTestFind - findPrev");
+	//tb->findPrev(true);
+	//BOOST_CHECK_MESSAGE(tb->stat() == STATUS_PROGRAM_ERROR, "doTestFind - findPrev");
 }
 
 void doTestUpdate(table* tb)
@@ -148,7 +148,7 @@ void doTestUpdate(table* tb)
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 1, "doTestUpdate - id 1");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestUpdate - user_id 1");
 	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
-		_tstring(_T("1\ntest\nテスト\n\nあいうえおあいうえお")), "doTestUpdate - body 1");
+		_tstring(_T("1\ntest\nテスト\n\nあいうえおあいうえおb")), "doTestUpdate - body 1");
 	// update
 	tb->setFV(FDI_USER, 11);
 	BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - setFV stat 1");
@@ -162,7 +162,7 @@ void doTestUpdate(table* tb)
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 2, "doTestUpdate - id 2");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 1, "doTestUpdate - user_id 2");
 	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
-		_tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえお")), "doTestUpdate - body 2");
+		_tstring(_T("2\ntest\nテスト\n\nあいうえおあいうえおb")), "doTestUpdate - body 2");
 	// update
 	tb->setFV(FDI_USER, 12);
 	BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - setFV stat 2");
@@ -175,14 +175,14 @@ void doTestUpdate(table* tb)
 	BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - stat 2 1");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 1, "doTestUpdate - id 2 1");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 11, "doTestUpdate - user_id 2 1");
-	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) ==
 		_tstring(_T("1\nテスト\ntest\n\nABCDEFG")), "doTestUpdate - body 2 1");
 	// check 2
 	tb->seekNext();
 	BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestUpdate - stat 2 2");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 2, "doTestUpdate - id 2 2");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 12, "doTestUpdate - user_id 2 2");
-	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
+	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) ==
 		_tstring(_T("2\nテスト\ntest\n\nABCDEFG")), "doTestUpdate - body 2 2");
 }
 
@@ -210,7 +210,7 @@ void doTestDelete(table* tb)
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_ID) == 3, "doTestDelete - id 3");
 	BOOST_CHECK_MESSAGE(tb->getFVint(FDI_USER) == 2, "doTestDelete - user_id 3");
 	BOOST_CHECK_MESSAGE(_tstring(tb->getFVstr(FDI_BODY)) == 
-		_tstring(_T("3\ntest\nテスト\n\nあいうえおあいうえお")), "doTestDelete - body 3");
+		_tstring(_T("3\ntest\nテスト\n\nあいうえおあいうえおb")), "doTestDelete - body 3");
 	// eof
 	tb->seekNext();
 	BOOST_CHECK_MESSAGE(tb->stat() == STATUS_EOF, "doTestDelete - eof 3");

@@ -98,7 +98,9 @@ class connection : public boost::enable_shared_from_this<connection>,
 				m_readLen = 0;
 				size_t size=0;
 				m_optionalBuffes.clear();
-				int ret = m_module->execute(vecBuffer(m_result), size, &m_optionalBuffes);
+				vecBuffer vbuf(m_result);
+				bzs::netsvc::server::IResultBuffer& buf = vbuf;
+				int ret = m_module->execute(buf, size, &m_optionalBuffes);
 				
 				if (ret == EXECUTE_RESULT_QUIT)
 					return false;
@@ -133,7 +135,9 @@ class connection : public boost::enable_shared_from_this<connection>,
 				DEBUG_PROFILE_END(1, "handle_read")
 				size_t size=0;
 				m_optionalBuffes.clear();
-				int ret = m_module->execute(vecBuffer(m_result), size, &m_optionalBuffes);
+				vecBuffer vbuf(m_result);
+				bzs::netsvc::server::IResultBuffer& buf = vbuf;
+				int ret = m_module->execute(buf, size, &m_optionalBuffes);
 				
 				if (ret == EXECUTE_RESULT_QUIT)
 					return ;
@@ -202,7 +206,7 @@ public:
 	
 	boost::asio::ip::tcp::socket& socket(){return m_socket;}
 	
-	void asyncWrite(const char* p, size_t size)
+	void asyncWrite(const char* p, unsigned int size)
 	{
 		boost::asio::write(m_socket, buffer(p, size),  boost::asio::transfer_all());
 	}

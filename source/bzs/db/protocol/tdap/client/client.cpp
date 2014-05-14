@@ -54,6 +54,7 @@ bool client::readServerCharsetIndex()
 	if (m_charsetIndexServer == -1)
 	{
 		request req = m_req;
+		req.paramMask = P_MASK_POSBLK|P_MASK_DATA|P_MASK_DATALEN;
 		trdVersiton ver;
 		ver.cherserServer[0] = 0x00;
 		ver.clMajor = (ushort_td)atoi(C_INTERFACE_VER_MAJOR);

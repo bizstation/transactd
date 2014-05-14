@@ -136,7 +136,7 @@ public:
 		m_ptr = resultBuffer->ptr();
 	}
 	virtual void beginExt(bool includeBlob) = 0;	
-	virtual bool asyncWrite(const char* p, size_t n, eWriteMode mode=copyOnly) = 0;
+	virtual bool asyncWrite(const char* p, unsigned int n, eWriteMode mode=copyOnly) = 0;
 	virtual bool write(const char* p, size_t n, eWriteMode mode=copyOnly) = 0;
 	virtual void incremetRows() = 0;
 	virtual unsigned short getParamMask(bool includeBlob) = 0;

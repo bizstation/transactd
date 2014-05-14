@@ -233,8 +233,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.cpp" />
-    <ClCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\activeTable.cpp">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4068;4800;4819;4996</DisableSpecificWarnings>
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4068;4800;4819;4996</DisableSpecificWarnings>
@@ -286,7 +284,6 @@
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\groupQuery.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.h" />
-    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\ormRecordset.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\trdboostapi.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\trdboostapiInternal.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\trdormapi.h" />

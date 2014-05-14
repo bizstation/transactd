@@ -84,7 +84,9 @@ class connection  : public iconnection, private boost::noncopyable
 				size_t size=0;
 				if (m_optionalBuffes.size())
 					m_optionalBuffes.clear();
-				if (m_module->execute(vecBuffer(m_result), size, &m_optionalBuffes) == EXECUTE_RESULT_QUIT)
+				vecBuffer vbuf(m_result);
+				bzs::netsvc::server::IResultBuffer& buf = vbuf;
+				if (m_module->execute(buf, size, &m_optionalBuffes) == EXECUTE_RESULT_QUIT)
 					return ;
 				else
 				{
@@ -159,7 +161,7 @@ public:
 		}
 	}
 
-	void asyncWrite(const char* p, size_t size)
+	void asyncWrite(const char* p, unsigned int size)
 	{
 		boost::asio::write(m_socket, buffer(p, size),  boost::asio::transfer_all());
 	}

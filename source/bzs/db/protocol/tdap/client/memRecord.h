@@ -32,7 +32,7 @@ namespace client
 {
 
 
-class autoMemory
+class AGRPACK autoMemory
 {
 
 public:
@@ -49,7 +49,7 @@ public:
 
 #define ROW_MEM_BLOCK_RESERVE 4
 
-class memoryRecord : public fieldsBase
+class AGRPACK memoryRecord : public fieldsBase
 {
 	friend class multiRecordAlocatorImple;
 
@@ -93,7 +93,7 @@ public:
 	static void release(memoryRecord* p);
 };
 
-class writableRecord : public memoryRecord
+class AGRPACK writableRecord : public memoryRecord
 {
 	fielddefs* m_fddefs;
 	short m_endIndex;

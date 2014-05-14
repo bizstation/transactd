@@ -61,11 +61,12 @@ namespace client
 
 class recordCache;
 
+
 struct tbimpl
 {
 
 	void* bookMarks;
-	fields fields;
+	client::fields fields;
 	filter* filterPtr;
 	recordCache* rc;
 	multiRecordAlocator* mraPtr;
@@ -1267,13 +1268,6 @@ void table::setFV(short index, double data)
 {
 	if (!checkIndex(index)) return;
 	m_impl->fields[index].setFV(data);
-}
-
-void table::setFV(short index, bool data)
-{
-	if (!checkIndex(index)) return;
-	int value = (int)data;
-	setFV(index, value);
 }
 
 void table::setFV(short index, short data)
