@@ -45,7 +45,7 @@ typedef nsdatabase** (*EnginsFunc)();
 		PACKAGE nsdatabase** enginsShared();
 	#else
 		PACKAGE_IMPORT nsdatabase** enginsShared(); //Implemant at ARBtEgn_Shared.dll
-    #endif
+	#endif
 #endif
 
 }//namespace client
@@ -53,4 +53,5 @@ typedef nsdatabase** (*EnginsFunc)();
 }//namespace protocol
 }//namespace db
 }//namespace bzs
+
 #endif//BZS_DB_PROTOCOL_TDAP_CLIENT_SHAREDDATA_H

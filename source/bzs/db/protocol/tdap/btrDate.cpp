@@ -77,12 +77,12 @@ namespace tdap
 
 __int64 btrTimeStamp::getDateTimeInt(int& time)
 {
-    // seconds from 0000-01-01 00:00:00
-    __int64 sec = i64 / 10000000 - _timezone;
-    time = sec % 86400;
-    // 1721426 days differs from JDate2Num.
-    __int64 days = sec / 86400 + 1721426;
-    return days;
+	// seconds from 0000-01-01 00:00:00
+	__int64 sec = i64 / 10000000 - _timezone;
+	time = sec % 86400;
+	// 1721426 days differs from JDate2Num.
+	__int64 days = sec / 86400 + 1721426;
+	return days;
 }
 
 
@@ -90,123 +90,123 @@ btrTimeStamp::btrTimeStamp(unsigned __int64 i):i64(i){};
 
 btrTimeStamp::btrTimeStamp(const char* p)
 {
-    fromString(p);
+	fromString(p);
 }
 
 btrTimeStamp::btrTimeStamp(btrDate d, btrTime t):i64(0)
 {
 	i64 += timeToi64(t);
-    i64 += dateToi64(btrdtoa(d, (_TCHAR*)NULL));
-    i64 *= 10000000;
+	i64 += dateToi64(btrdtoa(d, (_TCHAR*)NULL));
+	i64 *= 10000000;
 
 }
 
 #ifdef _WIN32
 btrTimeStamp::btrTimeStamp(const wchar_t* p)
 {
-    fromString(p);
+	fromString(p);
 }
 
 wchar_t* btrTimeStamp::toString(wchar_t* p)
 {
-    int time;
-    int v = (int)getDateTimeInt(time);
-    #ifdef _UNICODE
-        swprintf_s(p, 20, _T("%s %02d:%02d:%02d"), JNum2Date(v), time/3600,time%3600/60,time%3600%60);
-        return p;
-    #else
-        char buf[30];
-        sprintf_s(buf, 30, _T("%s %02d:%02d:%02d"), JNum2Date(v), time/3600,time%3600/60,time%3600%60);
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf, -1, p, 20);
-        return p;
-    #endif
+	int time;
+	int v = (int)getDateTimeInt(time);
+	#ifdef _UNICODE
+		swprintf_s(p, 20, _T("%s %02d:%02d:%02d"), JNum2Date(v), time/3600,time%3600/60,time%3600%60);
+		return p;
+	#else
+		char buf[30];
+		sprintf_s(buf, 30, _T("%s %02d:%02d:%02d"), JNum2Date(v), time/3600,time%3600/60,time%3600%60);
+		MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, buf, -1, p, 20);
+		return p;
+	#endif
 
 }
 
 void btrTimeStamp::fromString(const wchar_t* p)
 {
-    i64 = 0;
-    const  wchar_t* p2 = wcsstr(p, L" ");
-    
-    if (p2)
-    {
-        btrTime t = atobtrt(p2+1);
-        i64 += timeToi64(t);
-    }
-    i64 += dateToi64(p);
-    i64 *= 10000000;
+	i64 = 0;
+	const  wchar_t* p2 = wcsstr(p, L" ");
+	
+	if (p2)
+	{
+		btrTime t = atobtrt(p2+1);
+		i64 += timeToi64(t);
+	}
+	i64 += dateToi64(p);
+	i64 *= 10000000;
 }
 #endif //_WIN32
 
 char* btrTimeStamp::toString(char* p)
 {
-    int time;
-    int v = (int)getDateTimeInt(time);
-    #ifndef _UNICODE
-        sprintf_s(p, 20, _T("%s %02d:%02d:%02d"), JNum2Date(v), time/3600,time%3600/60,time%3600%60);
-        return p;
-    #else
-        wchar_t buf[30];
-        swprintf_s(buf, 30, _T("%s %02d:%02d:%02d"), JNum2Date(v), time/3600,time%3600/60,time%3600%60);
-        wtoa(p, buf, 20);
-        return p;
-    #endif
+	int time;
+	int v = (int)getDateTimeInt(time);
+	#ifndef _UNICODE
+		sprintf_s(p, 20, _T("%s %02d:%02d:%02d"), JNum2Date(v), time/3600,time%3600/60,time%3600%60);
+		return p;
+	#else
+		wchar_t buf[30];
+		swprintf_s(buf, 30, _T("%s %02d:%02d:%02d"), JNum2Date(v), time/3600,time%3600/60,time%3600%60);
+		wtoa(p, buf, 20);
+		return p;
+	#endif
 }
 
 void btrTimeStamp::fromString(const char* p)
 {
-    i64 = 0;
-    const char* p2 = strstr(p, " ");
+	i64 = 0;
+	const char* p2 = strstr(p, " ");
 
-    if (p2)
-    {
-        btrTime t = atobtrt(p2+1);
-        i64 += timeToi64(t);
-    }
-    i64 += dateToi64(p);
-    i64 *= 10000000;
+	if (p2)
+	{
+		btrTime t = atobtrt(p2+1);
+		i64 += timeToi64(t);
+	}
+	i64 += dateToi64(p);
+	i64 *= 10000000;
 }
 
 
 
 bdate::bdate(int date)
 {
-    m_date.i = date;
+	m_date.i = date;
 }
 
 bdate::bdate(const _TCHAR* date)
 {
-    btrDate bt;
-    bt.yy = (short)GetYear(date, false);
-    bt.mm = (char)GetMonth(date, false);
-    bt.dd = (char)bzs::rtl::GetDate(date);
-    m_date = bt;
+	btrDate bt;
+	bt.yy = (short)GetYear(date, false);
+	bt.mm = (char)GetMonth(date, false);
+	bt.dd = (char)bzs::rtl::GetDate(date);
+	m_date = bt;
 }
 
 const _TCHAR* bdate::year_str()
 {
-    _TCHAR* p = databuf();
+	_TCHAR* p = databuf();
 	_stprintf_s(p , 30, _T("%d"), (int)m_date.yy);
 	return p;
 }
 
 const _TCHAR* bdate::month_str()
 {
-    _TCHAR* p = databuf();
+	_TCHAR* p = databuf();
 	_stprintf_s(p, 30,_T("%d"), (int)m_date.mm);
-    return p;
+	return p;
 }
 
 const _TCHAR* bdate::date_str()
 {
-    _TCHAR* p = databuf();
+	_TCHAR* p = databuf();
 	_stprintf_s(p, 30, _T("%d"), (int)m_date.dd);
-    return p;
+	return p;
 }
 
 const _TCHAR* bdate::c_str()
 {
-    return btrdtoa(m_date, (_TCHAR*)NULL);
+	return btrdtoa(m_date, (_TCHAR*)NULL);
 }
 
 const char* dateFormatString(const char*){return "%04d/%02d/%02d";}
@@ -239,20 +239,20 @@ T* formatDate(T* p, const btrDate& d, bool type_vb);
 
 template <> char* formatDate(char* p, const btrDate& d, bool type_vb)
 {
-    if (type_vb)
+	if (type_vb)
 		sprintf_s(p, 11, dateFormatString_h(p), d.yy, d.mm, d.dd);
-    else
+	else
 		sprintf_s(p, 11, dateFormatString(p), d.yy, d.mm, d.dd);
-    return p;
+	return p;
 }
 
 template <> wchar_t* formatDate(wchar_t* p, const btrDate& d, bool type_vb)
 {
-    if (type_vb)
+	if (type_vb)
 		swprintf_s(p, 11, dateFormatString_h(p), d.yy, d.mm, d.dd);
-    else
+	else
 		swprintf_s(p, 11, dateFormatString(p), d.yy, d.mm, d.dd);
-    return p;
+	return p;
 }
 
 
@@ -261,34 +261,34 @@ T* formatTime(T* p, const btrTime& d, bool type_vb);
 
 template <> char* formatTime(char* p, const btrTime& t, bool type_vb)
 {
-    if (type_vb)
+	if (type_vb)
 		sprintf_s(p, 9, timeFormatString_h(p), t.hh, t.nn, t.ss);
-    else
+	else
 		sprintf_s(p, 9, timeFormatString(p), t.hh, t.nn, t.ss);
-    return p;
+	return p;
 }
 
 template <> wchar_t* formatTime(wchar_t* p, const btrTime& t, bool type_vb)
 {
-    if (type_vb)
+	if (type_vb)
 		swprintf_s(p, 9, timeFormatString_h(p), t.hh, t.nn, t.ss);
-    else
+	else
 		swprintf_s(p, 9, timeFormatString(p), t.hh, t.nn, t.ss);
-    return p;
+	return p;
 }
 
 template <class T>
 btrDate atobtrd(const T* date)
 {
-    btrDate bt;
-    bt.i=0;
+	btrDate bt;
+	bt.i=0;
 	if (date &&
 		((_tcslen_(date)==10) || ((_tcslen_(date) > 10) && (date[10]== 'T' || date[10]== ' '))))
 	{
 		bt.yy = (short)_ttoi_(date);
-        bt.mm = (char)_ttoi_(date + 5);
+		bt.mm = (char)_ttoi_(date + 5);
 		bt.dd = (char)_ttoi_(date + 8);
-    }
+	}
 	return bt;
 
 }
@@ -297,10 +297,10 @@ btrDate atobtrd(const T* date)
 template <class T>
 const T* btrdtoa(const btrDate& d, T* retbuf, bool type_vb)
 {
-    T* p = retbuf;
+	T* p = retbuf;
 	if (p == NULL)
-        p = (T*)databuf();
-    return formatDate(p, d, type_vb);
+		p = (T*)databuf();
+	return formatDate(p, d, type_vb);
 }
 
 template <class T>
@@ -322,21 +322,21 @@ btrTime atobtrt(const T* p)
 		retVal.hh = (char)_ttoi_(p);
 		retVal.nn = (char)_ttoi_(p + 3);
 		retVal.ss = (char)_ttoi_(p + 6);
-    }else
-        retVal.i = 0;
-    return retVal;
+	}else
+		retVal.i = 0;
+	return retVal;
 }
 
 btrDate atobtrd(const char* p){return atobtrd<char>(p);}
 
 const char* btrdtoa(const btrDate& d, char* retbuf, bool type_vb)
 {
-    return btrdtoa<char>(d, retbuf, type_vb);
+	return btrdtoa<char>(d, retbuf, type_vb);
 }
 
 const char* btrttoa(const btrTime& t, char* retbuf, bool type_vb)
 {
-    return btrttoa<char>(t, retbuf, type_vb);
+	return btrttoa<char>(t, retbuf, type_vb);
 }
 
 btrTime atobtrt(const char* p){return atobtrt<char>(p);}
@@ -345,12 +345,12 @@ btrTime atobtrt(const char* p){return atobtrt<char>(p);}
 #ifdef _WIN32
 const wchar_t* btrdtoa(const btrDate& d, wchar_t* retbuf, bool type_vb)
 {
-    return btrdtoa<wchar_t>(d, retbuf, type_vb);
+	return btrdtoa<wchar_t>(d, retbuf, type_vb);
 }
 
 const wchar_t* btrttoa(const btrTime& t, wchar_t* retbuf, bool type_vb)
 {
-    return btrttoa<wchar_t>(t, retbuf, type_vb);
+	return btrttoa<wchar_t>(t, retbuf, type_vb);
 }
 
 btrDate atobtrd(const wchar_t* p){return atobtrd<wchar_t>(p);}
@@ -393,11 +393,11 @@ int getNowDate()
 	btrDate dtb;
 #ifdef _WIN32
 	SYSTEMTIME pst;
-    GetLocalTime(&pst);
+	GetLocalTime(&pst);
 
-    dtb.yy = (short)pst.wYear;
-    dtb.mm = (char)(pst.wMonth);
-    dtb.dd = (char)pst.wDay;
+	dtb.yy = (short)pst.wYear;
+	dtb.mm = (char)(pst.wMonth);
+	dtb.dd = (char)pst.wDay;
 #else
 	//not _WIN32
 	struct tm* date;
@@ -408,8 +408,8 @@ int getNowDate()
 	localtime_x(date, &now);
 
 	dtb.yy = (short)date->tm_year + 1900;
-    dtb.mm = (char)date->tm_mon + 1;
-    dtb.dd = (char)date->tm_mday;
+	dtb.mm = (char)date->tm_mon + 1;
+	dtb.dd = (char)date->tm_mday;
 #endif //NOT _WIN32
 	return dtb.i;
 
@@ -422,9 +422,9 @@ int getNowTime()
 
 	tmb.i = 0;
 	SYSTEMTIME pst;
-    GetLocalTime(&pst);
-    tmb.hh = (char)pst.wHour;    tmb.nn = (char)pst.wMinute;
-    tmb.ss = (char)pst.wSecond;
+	GetLocalTime(&pst);
+	tmb.hh = (char)pst.wHour;    tmb.nn = (char)pst.wMinute;
+	tmb.ss = (char)pst.wSecond;
 	tmb.uu = (char)(pst.wMilliseconds/10);
 #else
 	struct tm* date;
@@ -435,10 +435,10 @@ int getNowTime()
 	localtime_x(date, &now);
  	tmb.hh = (char)date->tm_hour;
  	tmb.nn = (char)date->tm_min;
-    tmb.ss = (char)date->tm_sec;
+	tmb.ss = (char)date->tm_sec;
 	tmb.uu = 00;
 #endif
-    return tmb.i;
+	return tmb.i;
 }
 
 

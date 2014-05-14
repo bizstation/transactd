@@ -87,7 +87,7 @@ const wchar_t*  fielddef::chainChar()const
 {
 	wchar_t* p = namebuf();
 	MultiByteToWideChar(m_schemaCodePage, (m_schemaCodePage==CP_UTF8)?0:MB_PRECOMPOSED, m_chainChar, -1, p, 2);
-    return p;
+	return p;
 }
 
 void fielddef::setName(const wchar_t* s)
@@ -147,7 +147,7 @@ bool isStringType(uchar_td type)
 
 bool fielddef::isStringType()const
 {
-    return tdap::isStringType(type);
+	return tdap::isStringType(type);
 }
 
 unsigned int fielddef::charNum(/*int index*/)const
@@ -167,171 +167,171 @@ unsigned int fielddef::charNum(/*int index*/)const
 
 ushort_td lenByCharnum(uchar_td type, uchar_td charsetIndex, ushort_td charnum)
 {
-    ushort_td len;
-    if (charsetIndex && ((type == ft_mychar)|| (type == ft_mywchar)
-            || (type == ft_myvarchar) || (type == ft_mywvarchar)))
-    {
-        len = (ushort_td)(mysql::charsize(charsetIndex) * charnum);
-        if ((type == ft_myvarchar) || (type == ft_mywvarchar))
-            len += ((len >= 256)? 2 : 1);
-        else
-            len = std::min<ushort_td>(len, 255);
-    }else
-        len = charnum;
-    return len;
+	ushort_td len;
+	if (charsetIndex && ((type == ft_mychar)|| (type == ft_mywchar)
+			|| (type == ft_myvarchar) || (type == ft_mywvarchar)))
+	{
+		len = (ushort_td)(mysql::charsize(charsetIndex) * charnum);
+		if ((type == ft_myvarchar) || (type == ft_mywvarchar))
+			len += ((len >= 256)? 2 : 1);
+		else
+			len = std::min<ushort_td>(len, 255);
+	}else
+		len = charnum;
+	return len;
 }
 
 const _TCHAR* getTypeName(short type)
 {
-    switch (type)
-    {
-    case ft_string: return _T("String");
-    case ft_integer: return _T("Integer");
-    case ft_float: return _T("Float");
-    case ft_date: return _T("Date");
-    case ft_time: return _T("Time");
-    case ft_decimal: return _T("Decimal");
-    case ft_money: return _T("Money");
-    case ft_logical: return _T("Logical");
-    case ft_numeric: return _T("Numeric");
-    case ft_bfloat: return _T("BFloat");
-    case ft_lstring: return _T("LString");
-    case ft_zstring: return _T("ZString");
-    case ft_note: return _T("Note");
-    case ft_lvar: return _T("Lvar");
-    case ft_uinteger: return _T("Unsigned Binary");
-    case ft_autoinc: return _T("AutoIncrement");
-    case ft_bit: return _T("Bit");
-    case ft_numericsts: return _T("Numericsts");
-    case ft_numericsa: return _T("Numericsa");
-    case ft_currency: return _T("Currency");
-    case ft_timestamp: return _T("TimeStamp");
-    case ft_blob: return _T("Blob");
-    case ft_wstring: return _T("WString");
-    case ft_wzstring: return _T("WZstring");
-    case ft_datetime: return _T("DateTime");
-    case ft_guid: return _T("Guid");
-    case ft_myvarchar: return _T("myVarChar");
-    case ft_myvarbinary: return _T("myVarBinary");
-    case ft_mywvarchar: return _T("myWVarChar");
-    case ft_mywvarbinary: return _T("myWVarBinary");
-    case ft_mychar: return _T("myChar");
-    case ft_mywchar: return _T("myWChar");
-    case ft_mydate: return _T("myDate");
-    case ft_mytime: return _T("myTime");
-    case ft_mydatetime: return _T("myDateTime");
-    case ft_mytimestamp: return _T("myTimeStamp");
-    case ft_mytext: return _T("myText");
-    case ft_myblob: return _T("myBlob");
-    case ft_autoIncUnsigned: return _T("AutoIncUnsigned");
-    case ft_nullindicator: return _T("Nullindicator");
-    default: return _T("Unknown");
-    }
+	switch (type)
+	{
+	case ft_string: return _T("String");
+	case ft_integer: return _T("Integer");
+	case ft_float: return _T("Float");
+	case ft_date: return _T("Date");
+	case ft_time: return _T("Time");
+	case ft_decimal: return _T("Decimal");
+	case ft_money: return _T("Money");
+	case ft_logical: return _T("Logical");
+	case ft_numeric: return _T("Numeric");
+	case ft_bfloat: return _T("BFloat");
+	case ft_lstring: return _T("LString");
+	case ft_zstring: return _T("ZString");
+	case ft_note: return _T("Note");
+	case ft_lvar: return _T("Lvar");
+	case ft_uinteger: return _T("Unsigned Binary");
+	case ft_autoinc: return _T("AutoIncrement");
+	case ft_bit: return _T("Bit");
+	case ft_numericsts: return _T("Numericsts");
+	case ft_numericsa: return _T("Numericsa");
+	case ft_currency: return _T("Currency");
+	case ft_timestamp: return _T("TimeStamp");
+	case ft_blob: return _T("Blob");
+	case ft_wstring: return _T("WString");
+	case ft_wzstring: return _T("WZstring");
+	case ft_datetime: return _T("DateTime");
+	case ft_guid: return _T("Guid");
+	case ft_myvarchar: return _T("myVarChar");
+	case ft_myvarbinary: return _T("myVarBinary");
+	case ft_mywvarchar: return _T("myWVarChar");
+	case ft_mywvarbinary: return _T("myWVarBinary");
+	case ft_mychar: return _T("myChar");
+	case ft_mywchar: return _T("myWChar");
+	case ft_mydate: return _T("myDate");
+	case ft_mytime: return _T("myTime");
+	case ft_mydatetime: return _T("myDateTime");
+	case ft_mytimestamp: return _T("myTimeStamp");
+	case ft_mytext: return _T("myText");
+	case ft_myblob: return _T("myBlob");
+	case ft_autoIncUnsigned: return _T("AutoIncUnsigned");
+	case ft_nullindicator: return _T("Nullindicator");
+	default: return _T("Unknown");
+	}
 
 }
 
 int getTypeAlign(short type)
 {
-    switch (type)
-    {
-    case ft_string:
-    case ft_date:
-    case ft_time:
-    case ft_lstring:
-    case ft_zstring:
-    case ft_note:
-    case ft_timestamp:
-    case ft_wstring:
-    case ft_wzstring:
-    case ft_myvarchar:
-    case ft_myvarbinary:
-    case ft_mychar:
-    case ft_mywchar:
-    case ft_mywvarchar:
-    case ft_mywvarbinary:
-    case ft_mydate:
-    case ft_mytime:
-    case ft_mydatetime:
-    case ft_mytimestamp:
-    case ft_myblob:
-    case ft_mytext: return BT_AL_LEFT;
+	switch (type)
+	{
+	case ft_string:
+	case ft_date:
+	case ft_time:
+	case ft_lstring:
+	case ft_zstring:
+	case ft_note:
+	case ft_timestamp:
+	case ft_wstring:
+	case ft_wzstring:
+	case ft_myvarchar:
+	case ft_myvarbinary:
+	case ft_mychar:
+	case ft_mywchar:
+	case ft_mywvarchar:
+	case ft_mywvarbinary:
+	case ft_mydate:
+	case ft_mytime:
+	case ft_mydatetime:
+	case ft_mytimestamp:
+	case ft_myblob:
+	case ft_mytext: return BT_AL_LEFT;
 
-    }
+	}
 
-    return BT_AL_RIGHT;
+	return BT_AL_RIGHT;
 }
 
 
 const _TCHAR* btrVersion::moduleTypeString()
 {
-    switch (type)
-    {
-    case 'N': return _T("Requester");
-    case 'D': return _T("DOS Workstation MicroKernel");
-    case 'W': return _T("Windows Workstation MicroKernel");
-    case 'O': return _T("OS/2 WorkStation MicroKernel");
-    case '3':
-    case '9': return _T("Windows 32Bit Workstation MicroKernel");
-    case 'S': return _T("Netware Server MicroKernel");
-    case 'T': return _T("Windows Server MicroKernel");
-    case 'L': return _T("Linux Server MicroKernel");
-    case 'F': return _T("FileSharing WorkStation MicroKernel");
-    }
-    return _T("Unknown Type");
+	switch (type)
+	{
+	case 'N': return _T("Requester");
+	case 'D': return _T("DOS Workstation MicroKernel");
+	case 'W': return _T("Windows Workstation MicroKernel");
+	case 'O': return _T("OS/2 WorkStation MicroKernel");
+	case '3':
+	case '9': return _T("Windows 32Bit Workstation MicroKernel");
+	case 'S': return _T("Netware Server MicroKernel");
+	case 'T': return _T("Windows Server MicroKernel");
+	case 'L': return _T("Linux Server MicroKernel");
+	case 'F': return _T("FileSharing WorkStation MicroKernel");
+	}
+	return _T("Unknown Type");
 }
 
 const _TCHAR* btrVersion::moduleVersionShortString(_TCHAR* buf)
 {
 #pragma warning(disable:4996)
-    switch (type)
-    {
-    case 'N': _stprintf(buf, _T("Reqster %d.%d"), majorVersion, minorVersion);
-        break;
-    case 'D': _stprintf(buf, _T("DosLocal %d.%d"), majorVersion, minorVersion);
-        break;
-    case 'W': _stprintf(buf, _T("W1Local %d.%d"), majorVersion, minorVersion);
-        break;
-    case 'O': _stprintf(buf, _T("OS/2Local %d.%d"), majorVersion, minorVersion);
-        break;
-    case '3':
-    case '9': _stprintf(buf, _T("W3Local %d.%d"), majorVersion, minorVersion);
-        break;
-    case 'S': _stprintf(buf, _T("NServer %d.%d"), majorVersion, minorVersion);
-        break;
-    case 'T': _stprintf(buf, _T("Server %d.%d"), majorVersion, minorVersion);
-        break;
-    case 'L': _stprintf(buf, _T("Lerver %d.%d"), majorVersion, minorVersion);
-        break;
-    default: return _T("Unknown Type");
-    }
+	switch (type)
+	{
+	case 'N': _stprintf(buf, _T("Reqster %d.%d"), majorVersion, minorVersion);
+		break;
+	case 'D': _stprintf(buf, _T("DosLocal %d.%d"), majorVersion, minorVersion);
+		break;
+	case 'W': _stprintf(buf, _T("W1Local %d.%d"), majorVersion, minorVersion);
+		break;
+	case 'O': _stprintf(buf, _T("OS/2Local %d.%d"), majorVersion, minorVersion);
+		break;
+	case '3':
+	case '9': _stprintf(buf, _T("W3Local %d.%d"), majorVersion, minorVersion);
+		break;
+	case 'S': _stprintf(buf, _T("NServer %d.%d"), majorVersion, minorVersion);
+		break;
+	case 'T': _stprintf(buf, _T("Server %d.%d"), majorVersion, minorVersion);
+		break;
+	case 'L': _stprintf(buf, _T("Lerver %d.%d"), majorVersion, minorVersion);
+		break;
+	default: return _T("Unknown Type");
+	}
 #pragma warning(default:4996)
-    return buf;
+	return buf;
 }
 
 PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr)
 {
-    if (_tcscmp(cmpstr, _T("=")) == 0)
-        return (uchar_td)1;
+	if (_tcscmp(cmpstr, _T("=")) == 0)
+		return (uchar_td)1;
 
-    if (_tcscmp(cmpstr, _T(">")) == 0)
-        return (uchar_td)2;
+	if (_tcscmp(cmpstr, _T(">")) == 0)
+		return (uchar_td)2;
 
-    if (_tcscmp(cmpstr, _T("<")) == 0)
-        return (uchar_td)3;
+	if (_tcscmp(cmpstr, _T("<")) == 0)
+		return (uchar_td)3;
 
-    if (_tcscmp(cmpstr, _T("<>")) == 0)
-        return (uchar_td)4;
+	if (_tcscmp(cmpstr, _T("<>")) == 0)
+		return (uchar_td)4;
 
-    if (_tcscmp(cmpstr, _T("=>")) == 0)
-        return (uchar_td)5;
-    if (_tcscmp(cmpstr, _T(">=")) == 0)
-        return (uchar_td)5;
+	if (_tcscmp(cmpstr, _T("=>")) == 0)
+		return (uchar_td)5;
+	if (_tcscmp(cmpstr, _T(">=")) == 0)
+		return (uchar_td)5;
 
-    if (_tcscmp(cmpstr, _T("=<")) == 0)
-        return (uchar_td)6;
-    if (_tcscmp(cmpstr, _T("<=")) == 0)
-        return (uchar_td)6;
-    return 255;
+	if (_tcscmp(cmpstr, _T("=<")) == 0)
+		return (uchar_td)6;
+	if (_tcscmp(cmpstr, _T("<=")) == 0)
+		return (uchar_td)6;
+	return 255;
 }
 
 }//namespace tdap

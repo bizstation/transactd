@@ -82,33 +82,33 @@ char* _ltoa_s(int v, char* tmp, unsigned long size, int radix)
 
 int wcsnicmp16(const char16_t *sl, const char16_t *sr, size_t n)
 {
-    if (n == 0) return 0;
-    while (*sl)
-    {
-    	wchar_t tmpl = towlower(*sl);
-    	wchar_t tmpr = towlower(*sr);
-        
-        if (tmpl != tmpr)
-        	return (int)(tmpl - tmpr);
-        if (--n == 0)  return 0;
-        ++sl;
-        ++sr;
-    }
-    return 0 - *sr;
+	if (n == 0) return 0;
+	while (*sl)
+	{
+		wchar_t tmpl = towlower(*sl);
+		wchar_t tmpr = towlower(*sr);
+		
+		if (tmpl != tmpr)
+			return (int)(tmpl - tmpr);
+		if (--n == 0)  return 0;
+		++sl;
+		++sr;
+	}
+	return 0 - *sr;
 }
 
 int wcsncmp16(const char16_t *sl, const char16_t *sr, size_t n)
 {
-    if (n == 0) return 0;
-    while (*sl)
-    {
-        if (*sl != *sr)
-        	return (int)(*sl - *sr);
-        if (--n == 0)  return 0;
-        ++sl;
-        ++sr;
-    }
-    return 0 - *sr;
+	if (n == 0) return 0;
+	while (*sl)
+	{
+		if (*sl != *sr)
+			return (int)(*sl - *sr);
+		if (--n == 0)  return 0;
+		++sl;
+		++sr;
+	}
+	return 0 - *sr;
 }
 
 char16_t* wmemset16(char16_t* p , char16_t c, size_t n)
@@ -122,7 +122,7 @@ char16_t* wmemset16(char16_t* p , char16_t c, size_t n)
 char16_t* wmemcpy(char16_t* dest, const char16_t* src, size_t count)
 {
 	return (char16_t*)memcpy(dest, src, count*sizeof(char16_t));
-}	
+}
 
 
 #endif //LINUX

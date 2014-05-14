@@ -44,9 +44,9 @@ using namespace std;
 
 unsigned int hash(const char *s, size_t len)
 {
-    unsigned int h = 0;
-    for (size_t i=0;i < len; i++)
-        h = h * 137 + *(s+i);
+	unsigned int h = 0;
+	for (size_t i=0;i < len; i++)
+		h = h * 137 + *(s+i);
 	return h % 1987;
 }
 
@@ -495,7 +495,7 @@ bool database::existsTable(const std::string& name)
 	char tmp[FN_REFLEN + 1];
 	
 	build_table_filename(tmp, sizeof(tmp) - 1,
-                       m_dbname.c_str(), name.c_str(), reg_ext, 0);
+					   m_dbname.c_str(), name.c_str(), reg_ext, 0);
 	MY_STAT st;
 	if (mysql_file_stat(0, tmp, &st, MYF(0)))
 		return true;
@@ -851,23 +851,23 @@ inline bool isNullNis(KEY& key, bool all)
 
 void table::setBlobFieldPointer(const bzs::db::blobHeader* hd)
 {
-    
+	
 	if (hd)
-    {
-        assert(hd->curRow < hd->rows);
+	{
+		assert(hd->curRow < hd->rows);
 		const blobField* f = hd->nextField;
-        for (int i=0;i<hd->fieldCount;i++)
-        {
-            Field* fd = m_table->field[f->fieldNum];
-            int sizeByte = blob_var_bytes(fd);
-            memcpy(fd->ptr, &f->size, sizeByte);
-            const char* data = f->data();
-            memcpy(fd->ptr+sizeByte, &data, sizeof(char*));
-            f = f->next();
-        }
+		for (int i=0;i<hd->fieldCount;i++)
+		{
+			Field* fd = m_table->field[f->fieldNum];
+			int sizeByte = blob_var_bytes(fd);
+			memcpy(fd->ptr, &f->size, sizeByte);
+			const char* data = f->data();
+			memcpy(fd->ptr+sizeByte, &data, sizeof(char*));
+			f = f->next();
+		}
 		++hd->curRow;
-        hd->nextField = (blobField*)f;
-    }
+		hd->nextField = (blobField*)f;
+	}
 
 }
 

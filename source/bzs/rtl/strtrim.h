@@ -29,7 +29,7 @@ PACKAGE  wchar_t*  wcstrim(wchar_t* str);
 PACKAGE  char*     strltrimA(char* str);
 PACKAGE  wchar_t*  wcsltrim(wchar_t* str);
 #ifdef _UNICODE
-    PACKAGE  int   wcslen_a(wchar_t* str); //half charctor length
+	PACKAGE  int   wcslen_a(wchar_t* str); //half charctor length
 
 	#define strtrim wcstrim
 	#define strltrim wcsltrim

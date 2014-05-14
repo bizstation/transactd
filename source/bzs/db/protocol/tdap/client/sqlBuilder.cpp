@@ -96,7 +96,7 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
 		if (size==4)return "INT";
 		if (size==8)return "BIGINT";
 	case ft_uinteger:
-    case ft_autoIncUnsigned:
+	case ft_autoIncUnsigned:
 		if (size==1)return "TINYINT UNSIGNED";
 		if (size==2)return "SMALLINT UNSIGNED";
 		if (size==4)return "INT UNSIGNED";
@@ -402,8 +402,8 @@ std::string sqlCreateTable(const char* name/*utf8*/, tabledef* table, uchar_td c
 		s.erase(s.end()-1);
 	s += ") ENGINE=InnoDB default charset="+ std::string(mysql::charsetName(table->charsetIndex));
 
-    // create statement charset must be server default charset.
-    // server default charset writen in my.cnf.
+	// create statement charset must be server default charset.
+	// server default charset writen in my.cnf.
 	if (schemaCodePage != mysql::codePage(charsetIndexServer))
 		s = convertString(mysql::codePage(charsetIndexServer), schemaCodePage, s.c_str());
 	return s;
@@ -533,7 +533,7 @@ void makeTableDef(tabledef* TableDef, fileSpec* fs, std::vector<fielddef>& fds)
 	{
 		keySpec* ks = &(fs->keySpecs[k++]);
 		TableDef->keyDefs[keynum].segments[seg].fieldNum = findFieldNum(fds, ks->keyPos);
-        seg++;
+		seg++;
 		if (ks->keyFlag.bit4==false)
 		{
 			keynum++;

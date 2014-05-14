@@ -102,7 +102,7 @@ void __attribute__ ((destructor)) onUnloadLibrary(void);
 
 void onLoadLibrary(void)
 {
-    m_cons = new  connections(PIPENAME);
+	m_cons = new  connections(PIPENAME);
 	#ifdef USETLS
 	pthread_key_create(&g_tlsiID, NULL);
 	pthread_key_create(&g_tlsiID1, NULL);
@@ -111,7 +111,7 @@ void onLoadLibrary(void)
 }
 void onUnloadLibrary(void)
 {
-    delete m_cons;
+	delete m_cons;
 	m_cons=NULL;
 	#ifdef USETLS
 	pthread_key_delete(g_tlsiID); 
@@ -164,7 +164,11 @@ extern "C" short_td  __STDCALL
 				}
 				else if (op == TD_OPENTABLE)
 					client_t->req().paramMask = P_MASK_ALL;
-				client_t->buildDualChasetKeybuf();
+				if (!client_t->buildDualChasetKeybuf())
+				{
+					client_t->cleanup();
+					return SERVER_CLIENT_NOT_COMPATIBLE;
+				}
 			}
 			break;
 		case TD_CONNECT:
@@ -306,7 +310,7 @@ extern "C" short_td  __STDCALL
 		case 10061:
 			ret= ERROR_TD_CONNECTION_FAILURE;
 			break;
-        case 232:
+		case 232:
 		case 109:
 		case 2:
 		case 1:

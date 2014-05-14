@@ -75,14 +75,14 @@ public:
 			p += sizeof(uint_td);
 		}
 
-        if (P_MASK_FINALDATALEN & paramMask)
-        {
+		if (P_MASK_FINALDATALEN & paramMask)
+		{
 			memset(data, 0, *datalen);
 			if (*datalen < segmentDataLen)
 				result = STATUS_BUFFERTOOSMALL;
 			else
 				*datalen = segmentDataLen;
-        }
+		}
 #ifdef USE_DATA_COMPRESS
 		if (P_MASK_USELZSS & paramMask)
 		{
@@ -115,7 +115,7 @@ public:
 			keylen = *((keylen_td*)p);
 			p += sizeof(keylen_td);
 			memcpy(keybuf, p, keylen);
-            p += keylen;
+			p += keylen;
 		}
 		if (P_MASK_KEYNUM & paramMask)
 		{
@@ -123,11 +123,11 @@ public:
 			p += sizeof(char_td);
 		}
 
-        if (P_MASK_FINALRET & paramMask)
-        {
-            result = *((ushort_td*)p);
+		if (P_MASK_FINALRET & paramMask)
+		{
+			result = *((ushort_td*)p);
 		    p += sizeof(ushort_td);
-        }
+		}
 
 
 
@@ -237,11 +237,6 @@ public:
 		return totallen;
 
 	}
-
-
-
-
-
 };
 
 }//namespace client
@@ -249,6 +244,5 @@ public:
 }//namespace tdap
 }//namespace db
 }//namespace bzs
-
 
 #endif //BZS_DB_PROTOCOL_TDAP_CLIENT_REQUSET_H

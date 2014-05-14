@@ -49,5 +49,4 @@ std::string sqlCreateTable(const char* fileName, fileSpec* fs, uchar_td charsetI
 }//namespace db
 }//namespace bzs
 
-
 #endif //BZS_DB_PROTOCOL_TDAP_CLIENT_SQLBUILDER_H

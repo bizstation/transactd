@@ -40,35 +40,35 @@ class database;
 class AGRPACK connMgr : private nstable
 {
 public:
-    typedef  bzs::db::transactd::connection::record  record;
-    typedef  std::vector<record> records;
+	typedef  bzs::db::transactd::connection::record  record;
+	typedef  std::vector<record> records;
 protected:
 
 
 private:
-    std::vector<record> m_records;
+	std::vector<record> m_records;
 	__int64 m_params[2];
-    database* m_db;
-    std::_tstring m_uri;
-    void allocBuffer();
-    void writeRecordData(){};
-    void onReadAfter(){};
+	database* m_db;
+	std::_tstring m_uri;
+	void allocBuffer();
+	void writeRecordData(){};
+	void onReadAfter(){};
 
-     ~connMgr();
+	 ~connMgr();
 public:
 	explicit connMgr(database* db);
 
-    void connect(const _TCHAR* uri);
-    void disconnect();
-    const records& connections();
-    const records& databases(__int64 connid);
-    const records& tables(__int64 connid, int dbid);
-    void disconnectOne(__int64 connid);
-    void disconnectAll();
-    short_td stat();
+	void connect(const _TCHAR* uri);
+	void disconnect();
+	const records& connections();
+	const records& databases(__int64 connid);
+	const records& tables(__int64 connid, int dbid);
+	void disconnectOne(__int64 connid);
+	void disconnectAll();
+	short_td stat();
 
-    database* db()const;
-    using nstable::tdapErr;
+	database* db()const;
+	using nstable::tdapErr;
 };
 
 #pragma warning(default:4251)

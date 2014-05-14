@@ -42,16 +42,28 @@ tls_key g_tlsiID;
 __THREAD client* __THREAD_BCB g_client=NULL;
 #endif
 
+bool chaeckVersion(trdVersiton& ver)
+{
+	if ((ver.srvMajor == 1)&& (ver.srvMinor < 3))
+		return false;
+	return true;
+}
 
 bool client::readServerCharsetIndex()
 {
 	if (m_charsetIndexServer == -1)
 	{
 		request req = m_req;
-		uint_td len = 256;
-		char tmp[256]={0x00};
+		trdVersiton ver;
+		ver.cherserServer[0] = 0x00;
+		ver.clMajor = (ushort_td)atoi(C_INTERFACE_VER_MAJOR);
+		ver.clMinor = (ushort_td)atoi(C_INTERFACE_VER_MINOR);
+		ver.clRelease = (ushort_td)atoi(C_INTERFACE_VER_RELEASE);
+
+
+		uint_td len = sizeof(trdVersiton);
 		req.op = TD_GETSERVER_CHARSET;
-		req.data = tmp;
+		req.data = &ver;
 		req.datalen = &len;
 
 		mutex::scoped_lock lck(m_mutex);
@@ -61,7 +73,8 @@ bool client::readServerCharsetIndex()
 		req.parse(p, 0, 0);
 		if (req.result==0)
 		{
-			m_charsetIndexServer = mysql::charsetIndex((const char*)req.data);
+			if (!chaeckVersion(ver)) return false;
+			m_charsetIndexServer = mysql::charsetIndex(ver.cherserServer);
 			return true;
 		}
 		return false;
@@ -94,7 +107,7 @@ bool client::buildDualChasetKeybuf()
 	
 	m_req.keybuf = (void_td*)m_serverCharData.c_str();
 	m_req.keylen = (keylen_td)m_serverCharData.size() + 1;
-    return true;
+	return true;
 }
 
 }//namespace client

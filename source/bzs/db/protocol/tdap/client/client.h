@@ -52,6 +52,9 @@ namespace client
 class client;
 void setClientThread(client* v);
 
+
+
+
 class client
 {
 
@@ -205,7 +208,10 @@ public:
 				if (host=="")
 					m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
 				setCon(m_cons->connect(host, (m_req.keyNum == LG_SUBOP_NEWCONNECT))); //if error throw exception
-				buildDualChasetKeybuf();
+				if (readServerCharsetIndex() == false)
+					m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
+				else
+				    buildDualChasetKeybuf();
 			}
 		}else if (m_req.keyNum == LG_SUBOP_DISCONNECT)
 		{
@@ -226,18 +232,18 @@ public:
 			{
 				char* p = con()->sendBuffer(m_req.sendLenEstimate());
 				unsigned int size = m_req.serialize(p);
-                short stat = 0;
+				short stat = 0;
 				if ((m_req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer.blobs())
 					size = m_req.serializeBlobBody(&m_blobBuffer
 						, p, size, con()->sendBufferSize(), con()->optionalBuffers(), stat);
-                if (stat == 0)
-                {
-                    if (m_req.paramMask & P_MASK_DATALEN)
-                        con()->setReadBufferSizeIf(*m_req.datalen);
-                    p = con()->asyncWriteRead(size);
-                    m_req.parse(p, con()->datalen(), con()->rows());
-                }else
-                    m_req.result = stat;
+				if (stat == 0)
+				{
+					if (m_req.paramMask & P_MASK_DATALEN)
+						con()->setReadBufferSizeIf(*m_req.datalen);
+					p = con()->asyncWriteRead(size);
+					m_req.parse(p, con()->datalen(), con()->rows());
+				}else
+					m_req.result = stat;
 				if (m_logout)
 					disconnect();
 				m_preResult = m_req.result;

@@ -39,7 +39,7 @@ inline char* getStackaddr()
 	return (char*)tls_getspecific(g_tlsiID);
 #else
 	return t_stack;
-#endif	
+#endif
 }
 
 inline void setStackaddr(char* v)
@@ -54,22 +54,22 @@ inline void setStackaddr(char* v)
 
 void* operator new(size_t t)
 {   
-    return td_malloc(t, MY_WME);   
+	return td_malloc(t, MY_WME);   
 }   
 
 void operator delete(void* p)
 {   
-    td_free(p);   
+	td_free(p);   
 }   
   
 void* operator new[](size_t t)
 {   
-    return td_malloc(t, MY_WME);   
+	return td_malloc(t, MY_WME);   
 }   
 
 void operator delete[](void* p)
 {   
-    td_free(p);   
+	td_free(p);   
 } 
 
 void initThread(THD* thd )

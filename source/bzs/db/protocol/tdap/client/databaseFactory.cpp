@@ -40,7 +40,7 @@ namespace client
 
 database* database::create()
 {
-    try
+	try
 	{
 		return new database();
 	}
@@ -78,7 +78,7 @@ void initTlsThread()
 
 void cleanupTls()
 {
-     delete (char*)tls_getspecific(g_tlsiID_SC1);
+	 delete (char*)tls_getspecific(g_tlsiID_SC1);
 	 delete (char*)tls_getspecific(g_tlsiID_SC2);
 	 delete (char*)tls_getspecific(g_tlsiID_SC3);
 }
@@ -92,7 +92,7 @@ void __attribute__ ((destructor)) onUnloadLibrary(void);
 
 void onLoadLibrary(void)
 {
-     pthread_key_create(&g_tlsiID_SC1, NULL);
+	 pthread_key_create(&g_tlsiID_SC1, NULL);
 	 pthread_key_create(&g_tlsiID_SC2, NULL);
 	 pthread_key_create(&g_tlsiID_SC3, NULL);
 }

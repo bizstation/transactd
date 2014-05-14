@@ -88,9 +88,9 @@ pragma_pack1
  */
 struct version
 {
-    ushort_td majorVersion;
-    ushort_td minorVersion;
-    uchar_td Type;           
+	ushort_td majorVersion;
+	ushort_td minorVersion;
+	uchar_td Type;           
 };
 
 struct posblk
@@ -146,7 +146,7 @@ public:
 	
 	request()
 	{
-    	memset(this, 0, sizeof(request));
+		memset(this, 0, sizeof(request));
 	}
 	
 	virtual ~request(){}

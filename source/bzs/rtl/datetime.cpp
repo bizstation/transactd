@@ -68,44 +68,44 @@ namespace rtl
 
 int   GetDate(const _TCHAR* NowDate)
 {
-    int ret;
-    ret = _ttol(NowDate+8);
-    return ret;
+	int ret;
+	ret = _ttol(NowDate+8);
+	return ret;
 }
 
 int   GetYear(const _TCHAR* NowDate, bool PrevMonth)
 {
-    int ret;
-    ret = _ttol(NowDate);
-    if ((PrevMonth) && (GetMonth(NowDate, false) == 1))
-        ret--;
-    return ret;
+	int ret;
+	ret = _ttol(NowDate);
+	if ((PrevMonth) && (GetMonth(NowDate, false) == 1))
+		ret--;
+	return ret;
 }
 
 int   GetMonth(const _TCHAR* NowDate, bool PrevMonth)
 {
-    int ret;
-    ret = _ttol(NowDate+5);
-    if (PrevMonth)
-        ret--;
-    if (ret == 0)
-        ret = 12;
+	int ret;
+	ret = _ttol(NowDate+5);
+	if (PrevMonth)
+		ret--;
+	if (ret == 0)
+		ret = 12;
 
-    return ret;
+	return ret;
 }
 
 bool  IsUrudosi(int Year)
 {
-    if ((Year % 4) == 0)
-    {
-        if ((Year % 400) == 0)
-            return true;
-        else if ((Year % 100) == 0)
-            return false;
-        else
-            return true;
-    }
-    return false;
+	if ((Year % 4) == 0)
+	{
+		if ((Year % 400) == 0)
+			return true;
+		else if ((Year % 100) == 0)
+			return false;
+		else
+			return true;
+	}
+	return false;
 }
 
 bool GetDatefromYearSerialDays(int year, int Days, _TCHAR* date, bool nextYearRight)
@@ -113,46 +113,46 @@ bool GetDatefromYearSerialDays(int year, int Days, _TCHAR* date, bool nextYearRi
 	//The date of the day counted from the beginning of the year is returned.
  	//if orver the year then return false.
 
-    int mm;
-    int dd = Days;
-    for (mm=1; mm < 14;mm++)
-    {
-        switch (mm)
-        {
-        case 2:
-            if(IsUrudosi(year))
-                Days-=29;
-            else
-                Days-=28;
-            break;
-        case 4:
-        case 6:
-        case 9:
-        case 11:
-            Days-=30;break;
-        default:
-            Days-=31;
-        }
-        if (Days <= 0)
-            break;
-        dd=Days;
-    }
-    bool ret= true;
-    if ((dd>31)|| (mm==13))
-    {
-        if (nextYearRight)
-        {
-            year += 1;
-            mm = 1;
-        }else
-        {//for old program
-            dd = 31;
-            mm--;
-        }
-        ret= false;
-    }
-    _stprintf(date,_T("%04d/%02d/%02d"), year,mm,dd);
-    return ret;
+	int mm;
+	int dd = Days;
+	for (mm=1; mm < 14;mm++)
+	{
+		switch (mm)
+		{
+		case 2:
+			if(IsUrudosi(year))
+				Days-=29;
+			else
+				Days-=28;
+			break;
+		case 4:
+		case 6:
+		case 9:
+		case 11:
+			Days-=30;break;
+		default:
+			Days-=31;
+		}
+		if (Days <= 0)
+			break;
+		dd=Days;
+	}
+	bool ret= true;
+	if ((dd>31)|| (mm==13))
+	{
+		if (nextYearRight)
+		{
+			year += 1;
+			mm = 1;
+		}else
+		{//for old program
+			dd = 31;
+			mm--;
+		}
+		ret= false;
+	}
+	_stprintf(date,_T("%04d/%02d/%02d"), year,mm,dd);
+	return ret;
 }
 
 //---------------------------------------------------------------------------
@@ -198,22 +198,22 @@ int JDate2NumOLD(const _TCHAR* date)
 //---------------------------------------------------------------------------
 int JDate2Num(const _NTCHAR* date)
 {
-    #ifdef _UNICODE
-        wchar_t buf[20];
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, date, -1, buf, 20);
-    #else
-        char buf[20];
-        wtoa(buf, date, 20);
-    #endif
-    return JDate2Num(buf);
+	#ifdef _UNICODE
+		wchar_t buf[20];
+		MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, date, -1, buf, 20);
+	#else
+		char buf[20];
+		wtoa(buf, date, 20);
+	#endif
+	return JDate2Num(buf);
 }
 #endif
 //---------------------------------------------------------------------------
 int JDate2Num(const _TCHAR* date)
 {//1980/01/01 = 2444240
 	int yy = GetYear(date,false);
-    if (yy < 1980)
-        return JDate2NumOLD(date);
+	if (yy < 1980)
+		return JDate2NumOLD(date);
 
 	int mm = GetMonth(date,false);
 	int dd = GetDate(date);
@@ -288,7 +288,7 @@ const _TCHAR* JNum2Date(int n)
 {//1980/01/01 = 2444240
 	bool uru = true;
 	if (n < 2444240)
-        return JNum2DateOLD(n);
+		return JNum2DateOLD(n);
 
 	int yy = 1980;
 	n -= 2444239;

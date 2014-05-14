@@ -24,55 +24,55 @@ static const short fieldnum_name = 1;
  */
 void changeUserTable(dbdef* def)
 {
-    //change name size
-    tabledef** td = def->tableDefPtr(tablenum_user);
-    fielddef* fd = &(*td)->fieldDefs[fieldnum_name];
-    fd->setLenByCharnum(64);
+	//change name size
+	tabledef** td = def->tableDefPtr(tablenum_user);
+	fielddef* fd = &(*td)->fieldDefs[fieldnum_name];
+	fd->setLenByCharnum(64);
 
-    //add tel field
-    int size = lenByCharnum(ft_mychar, CHARSET_LATIN1, 16);
-    fd = insertField(def, (*td)->id, (*td)->fieldCount, _T("tel"), ft_mychar, size);
-    fd->setCharsetIndex(CHARSET_LATIN1);
+	//add tel field
+	int size = lenByCharnum(ft_mychar, CHARSET_LATIN1, 16);
+	fd = insertField(def, (*td)->id, (*td)->fieldCount, _T("tel"), ft_mychar, size);
+	fd->setCharsetIndex(CHARSET_LATIN1);
 
-    //write user table schema
-    updateTableDef(def, (*td)->id);
+	//write user table schema
+	updateTableDef(def, (*td)->id);
 }
 
 void __stdcall onCopyData(database* db, int recordCount, int count, bool &cancel)
 {
-     if (count == 0)
-         std::cout << std::endl;
-     std::cout << "." ;
+	 if (count == 0)
+		 std::cout << std::endl;
+	 std::cout << "." ;
 
 }
 
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
-    database_ptr db = createDatadaseObject();
-    try
-    {
-        connectParams prams(_T("tdap"), _T("localhost"), _T("test"), _T("test"));
-        prams.setMode(TD_OPEN_EXCLUSIVE);
+	database_ptr db = createDatadaseObject();
+	try
+	{
+		connectParams prams(_T("tdap"), _T("localhost"), _T("test"), _T("test"));
+		prams.setMode(TD_OPEN_EXCLUSIVE);
 
-        openDatabase(db, prams);
+		openDatabase(db, prams);
 
-        //backup current user table schema
-        db->dbDef()->pushBackup(tablenum_user);
+		//backup current user table schema
+		db->dbDef()->pushBackup(tablenum_user);
 
-        changeUserTable(db->dbDef());
+		changeUserTable(db->dbDef());
 
-        //convert table
-        //If an error ouccered then restore the table schema automaticaly.
-        convertTable(db, _T("user"), onCopyData);
+		//convert table
+		//If an error ouccered then restore the table schema automaticaly.
+		convertTable(db, _T("user"), onCopyData);
 
-        std::cout << "change databse success." << std::endl;
-        return 0;
-    }
+		std::cout << "change databse success." << std::endl;
+		return 0;
+	}
 
-    catch(bzs::rtl::exception& e)
-    {
-        std::tcout << *bzs::rtl::getMsg(e) << std::endl;
-    }
-    return 1;
+	catch(bzs::rtl::exception& e)
+	{
+		std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+	}
+	return 1;
 }

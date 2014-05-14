@@ -36,11 +36,11 @@ pragma_pack1
 
 struct SFILEDDF
 {
-    ushort_td id;
-    char tablename[20];
-    char filename[64];
-    ushort_td flag;
-    char filler[9];
+	ushort_td id;
+	char tablename[20];
+	char filename[64];
+	ushort_td flag;
+	char filler[9];
 };
 
 #pragma option -a
@@ -51,29 +51,29 @@ pragma_pop
 class fileDDF : public nstable
 {
 private:
-    _TCHAR m_DataDir[256];
-    SFILEDDF datbuf;
-    void doOpen(const _TCHAR* Dir, char_td mode, const _TCHAR* OwnerName);
-    keylen_td writeKeyData();
-    void writeRecordData();
-    void onReadAfter();
+	_TCHAR m_DataDir[256];
+	SFILEDDF datbuf;
+	void doOpen(const _TCHAR* Dir, char_td mode, const _TCHAR* OwnerName);
+	keylen_td writeKeyData();
+	void writeRecordData();
+	void onReadAfter();
 
 protected:
-    ~fileDDF();
+	~fileDDF();
 
 public:
-    ushort_td id;
-    char tablename[21];
-    char filename[65];
-    ushort_td flag;
-    char filler[9];
+	ushort_td id;
+	char tablename[21];
+	char filename[65];
+	ushort_td flag;
+	char filler[9];
 
 
-    char keybuf[128];
+	char keybuf[128];
 
-    explicit fileDDF(nsdatabase *pbe);
-    void createTable(const _TCHAR* fullpath);
-    using nstable::open;
+	explicit fileDDF(nsdatabase *pbe);
+	void createTable(const _TCHAR* fullpath);
+	using nstable::open;
 
 
 };

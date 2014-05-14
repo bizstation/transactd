@@ -36,38 +36,38 @@ typedef boost::unordered_map<std::_tstring, std::_tstring> aliasMap_type;
 
 class fdNmaeAlias
 {
-    aliasMap_type m_map;
+	aliasMap_type m_map;
 
 public:
 
-    void set(const _TCHAR* src, const _TCHAR* dst)
-    {
-        m_map[src] = dst;
-    }
+	void set(const _TCHAR* src, const _TCHAR* dst)
+	{
+		m_map[src] = dst;
+	}
 
-    const _TCHAR* get(const _TCHAR* src) const
-    {
-        if (m_map.count(src))
-            return m_map.at(src).c_str();
-        return _T("");
-    }
+	const _TCHAR* get(const _TCHAR* src) const
+	{
+		if (m_map.count(src))
+			return m_map.at(src).c_str();
+		return _T("");
+	}
 
-    const _TCHAR* resolv(const _TCHAR* dst) const
-    {
-        aliasMap_type::const_iterator it = m_map.begin();
-        while(it != m_map.end())
-        {
-            if ((*it).second == dst)
-                return (*it).first.c_str();
-            ++it;
-        }
-        return _T("");
+	const _TCHAR* resolv(const _TCHAR* dst) const
+	{
+		aliasMap_type::const_iterator it = m_map.begin();
+		while(it != m_map.end())
+		{
+			if ((*it).second == dst)
+				return (*it).first.c_str();
+			++it;
+		}
+		return _T("");
 
-    }
+	}
 
-    void clear(){m_map.clear();}
+	void clear(){m_map.clear();}
 
-    const aliasMap_type& map() const{return m_map;}
+	const aliasMap_type& map() const{return m_map;}
 
 };
 

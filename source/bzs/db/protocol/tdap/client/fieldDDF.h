@@ -36,14 +36,14 @@ pragma_pack1
 
 struct SFIELDDDF
 {
-    ushort_td fieldid;
-    ushort_td fileid;
-    char name[20];
-    uchar_td type;
-    ushort_td pos;
-    ushort_td len;
-    uchar_td dec;
-    short flag;
+	ushort_td fieldid;
+	ushort_td fileid;
+	char name[20];
+	uchar_td type;
+	ushort_td pos;
+	ushort_td len;
+	uchar_td dec;
+	short flag;
 };
 
 #pragma option -a
@@ -54,32 +54,32 @@ pragma_pop
 class fieldDDF : public nstable
 {
 private:
-    _TCHAR m_DataDir[256];
-    SFIELDDDF datbuf;
+	_TCHAR m_DataDir[256];
+	SFIELDDDF datbuf;
 
-    void doOpen(const _TCHAR* Dir, char_td mode, const _TCHAR* OwnerName);
-    keylen_td writeKeyData();
-    void writeRecordData();
-    void onReadAfter();
+	void doOpen(const _TCHAR* Dir, char_td mode, const _TCHAR* OwnerName);
+	keylen_td writeKeyData();
+	void writeRecordData();
+	void onReadAfter();
 
 protected:
-    ~fieldDDF() {}
+	~fieldDDF() {}
 
 public:
-    ushort_td fieldid;
-    ushort_td fileid;
-    char name[21];
-    uchar_td type;
-    ushort_td pos;
-    ushort_td len;
-    uchar_td dec;
-    short flag;
+	ushort_td fieldid;
+	ushort_td fileid;
+	char name[21];
+	uchar_td type;
+	ushort_td pos;
+	ushort_td len;
+	uchar_td dec;
+	short flag;
 
-    char keybuf[128];
+	char keybuf[128];
 
-    explicit fieldDDF(nsdatabase *pbe);
-    void createTable(const _TCHAR* fullpath);
-    using nstable::open;
+	explicit fieldDDF(nsdatabase *pbe);
+	void createTable(const _TCHAR* fullpath);
+	using nstable::open;
 
 };
 

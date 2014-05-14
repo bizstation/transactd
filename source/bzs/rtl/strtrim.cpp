@@ -46,7 +46,7 @@ char* strtrimA(char* str)
 
 wchar_t*  wcstrim(wchar_t* str)
 {
-    //trim right space
+	//trim right space
 	if (str == NULL)
 		return NULL;
 	int k = (int)wcslen(str) - 1;

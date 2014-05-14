@@ -15,7 +15,7 @@ This program updates some records of a "user" table.
 Change group of user in group 1 to 3
 
 Please execute "create database" , "change schema" and "insert records" example
-    before execute this example.
+	before execute this example.
 
 */
 
@@ -30,33 +30,33 @@ static const char_td keynum_group = 1;
 */
 void showError(const _TCHAR* caption,const _TCHAR* tableName, short statusCode)
 {
-    _TCHAR tmp[1024]={0x00};
-    nstable::tdapErr(0x00, statusCode, tableName, tmp);
-    _tprintf(_T("%s error No.%ld %s\n"),caption, statusCode, tmp);
+	_TCHAR tmp[1024]={0x00};
+	nstable::tdapErr(0x00, statusCode, tableName, tmp);
+	_tprintf(_T("%s error No.%ld %s\n"),caption, statusCode, tmp);
 }
 
 
 bool updateUsers(table* tb)
 {
-    tb->clearBuffer();
-    tb->setKeyNum(keynum_group); //use group key
-    tb->setFV(fieldnum_group, 1);// set group = 1;
-    tb->seekGreater(true /*orEqual*/);
-    while (tb->stat() == 0)
-    {
-        //check group value.
-        if (tb->getFVint(fieldnum_group) != 1)
-            break;
+	tb->clearBuffer();
+	tb->setKeyNum(keynum_group); //use group key
+	tb->setFV(fieldnum_group, 1);// set group = 1;
+	tb->seekGreater(true /*orEqual*/);
+	while (tb->stat() == 0)
+	{
+		//check group value.
+		if (tb->getFVint(fieldnum_group) != 1)
+			break;
 
-        //update group
-        tb->setFV(fieldnum_group, 3);  //change group 1 to 3
-        tb->update(nstable::changeCurrentNcc); //Important ncc=true !
-        if (tb->stat()!=0)
-            showError(_T("update user"), tb->tableDef()->tableName(), tb->stat());
-        else
-            tb->seekNext();
-    }
-    return ((tb->stat() == STATUS_EOF)||(tb->stat()== 0));
+		//update group
+		tb->setFV(fieldnum_group, 3);  //change group 1 to 3
+		tb->update(nstable::changeCurrentNcc); //Important ncc=true !
+		if (tb->stat()!=0)
+			showError(_T("update user"), tb->tableDef()->tableName(), tb->stat());
+		else
+			tb->seekNext();
+	}
+	return ((tb->stat() == STATUS_EOF)||(tb->stat()== 0));
 }
 
 
@@ -65,35 +65,35 @@ bool updateUsers(table* tb)
  */
 bool openDatabase(database* db, const _TCHAR* uri)
 {
-    db->open(uri, TYPE_SCHEMA_BDF);
-    if (db->stat() != 0)
-    {
-        showError(_T("open daatabase"), NULL, db->stat());
-        return false;
-    }
-    return true;
+	db->open(uri, TYPE_SCHEMA_BDF);
+	if (db->stat() != 0)
+	{
+		showError(_T("open daatabase"), NULL, db->stat());
+		return false;
+	}
+	return true;
 }
 
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
-    int result = 0;
-    static const _TCHAR* uri = _T("tdap://localhost/test?dbfile=test.bdf");
-    database* db = database::create();
+	int result = 0;
+	static const _TCHAR* uri = _T("tdap://localhost/test?dbfile=test.bdf");
+	database* db = database::create();
 
-    if (openDatabase(db, uri))
-    {
-        table* tbu = db->openTable(_T("user"));
-        if (db->stat() != 0)
-            showError(_T("open user table"), NULL, db->stat());
-        else
-        {
-             if (updateUsers(tbu))
-                _tprintf(_T("Update records success. \n"));
-             tbu->release();
-        }
-        db->close();
-    }
-    database::destroy(db);
-    return result;
+	if (openDatabase(db, uri))
+	{
+		table* tbu = db->openTable(_T("user"));
+		if (db->stat() != 0)
+			showError(_T("open user table"), NULL, db->stat());
+		else
+		{
+			 if (updateUsers(tbu))
+				_tprintf(_T("Update records success. \n"));
+			 tbu->release();
+		}
+		db->close();
+	}
+	database::destroy(db);
+	return result;
 }

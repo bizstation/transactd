@@ -66,9 +66,9 @@ connections::connections(const char* pipeName):m_pipeName(pipeName)
 #else
 	namespace fs = boost::filesystem;
 	const fs::path path("/etc/transactd.cnf");
-    boost::system::error_code error;
-    const bool result = fs::exists(path, error);
-    if (result && !error) 
+	boost::system::error_code error;
+	const bool result = fs::exists(path, error);
+	if (result && !error) 
 	{
 		boost::property_tree::ptree pt;
 		try

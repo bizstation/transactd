@@ -36,8 +36,8 @@
 	#endif
 
 #else
-    #include <boost/timer.hpp>
-    typedef boost::timer boost_timer;
+	#include <boost/timer.hpp>
+	typedef boost::timer boost_timer;
 
 #endif
 
@@ -48,15 +48,15 @@ namespace rtl
 // single thread only
 class benchmark
 {
-    static boost_timer t;
+	static boost_timer t;
 	#ifdef BOOST_HIGH_RESOL_TIMER_ENABLE
 	static boost_timer::time_point  m_start;
 	#endif
 public:
-    static bool report(boost::function<bool()> func, const char* name);
-    static void report2(boost::function<void()> func, const char* name);
-    static void start();
-    static void showTimeSec(bool result, const char* name);
+	static bool report(boost::function<bool()> func, const char* name);
+	static void report2(boost::function<void()> func, const char* name);
+	static void start();
+	static void showTimeSec(bool result, const char* name);
 
 };
 

@@ -80,12 +80,12 @@
 	char16_t* wmemcpy(char16_t* dest, const char16_t* src, size_t count);
 
 /* operating system */
-    #ifndef _TCHAR
-        #define _TCHAR char
-    #endif
-    #ifndef _T
-        #define _T(A) A
-    #endif
+	#ifndef _TCHAR
+		#define _TCHAR char
+	#endif
+	#ifndef _T
+		#define _T(A) A
+	#endif
 
 	#define PSEPARATOR _T("/")
 	#define PSEPARATOR_A "/"
@@ -101,7 +101,7 @@
 	#define OutputDebugString(A) 
 
 /* muliti byete char */
-    typedef char mbchar;
+	typedef char mbchar;
 	typedef char char_m;
 	
 #else //!defined(LINUX)
@@ -122,16 +122,16 @@
 		#define _ltoa_s(A,B,C,D) _ltoa(A, B, D)
 		#define _ltot_s(A,B,C,D) _ltot(A,B,D)
 		#define _ultot_s(A,B,C,D) _ultot(A,B,D)
-        #define _i64tot_s(A,B,C,D)  _i64tot(A, B, D)
+		#define _i64tot_s(A,B,C,D)  _i64tot(A, B, D)
 		#define _i64tow_s(A,B,C,D)  _i64tow(A, B, D)
 		#define _i64toa_s(A,B,C,D)  _i64toa(A, B, D)
 		#define _strlwr_s(A, B) strlwr(A)
 	#endif
 
-    #if defined(__BORLANDC__)
-        #define _strupr strupr
-        #define _strnicmp strnicmp
-    #endif
+	#if defined(__BORLANDC__)
+		#define _strupr strupr
+		#define _strnicmp strnicmp
+	#endif
 
 	#define wcsnicmp16(A, B, C)	_wcsnicmp((const wchar_t*)(A), (const wchar_t*)(B) , C)
 	#define wcsncmp16(A, B, C)	wcsncmp((const wchar_t*)(A), (const wchar_t*)(B) , C)

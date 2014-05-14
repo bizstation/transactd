@@ -43,7 +43,7 @@ namespace mysql
 #ifdef BOOKMARK_USE_MULTIMAP
 /** The version which can reverse-refer to bookmark from raw ref using multi map 
  *  In order that this system may use a lot of memories
-    , there is a problem in which the fall of performance occurs.
+	, there is a problem in which the fall of performance occurs.
  */
 
 typedef std::vector<unsigned char> charArray;

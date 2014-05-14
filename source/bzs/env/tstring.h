@@ -49,15 +49,15 @@ namespace std {
 
 #ifdef _UNICODE
 	#define tPos Pos
-    #define tcout wcout
+	#define tcout wcout
 #else
 	#define tPos AnsiPos
-    #define tcout cout
+	#define tcout cout
 #endif
 
 
 #ifdef _UNICODE
-    #define _tcsmcmp _tcscmp
+	#define _tcsmcmp _tcscmp
 	#define _tcsmclen _tcsclen
 	#define _tcsmnextc _tcsnextc
 	#define _tcsmrchr _tcsrchr
@@ -81,9 +81,9 @@ namespace std {
 
 inline const char* toChar(char* buf, const _TCHAR* w, int size)
 {   //If w becomes in Ansi, a pointer will be returned without doing anything.
-    #ifdef _UNICODE
-        WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, w, -1, buf, size, NULL, NULL);
-        return buf;
+	#ifdef _UNICODE
+		WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, w, -1, buf, size, NULL, NULL);
+		return buf;
 	#else
 		return w;
 	#endif

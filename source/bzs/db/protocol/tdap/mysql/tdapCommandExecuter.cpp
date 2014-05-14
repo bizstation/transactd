@@ -817,10 +817,22 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 		switch(op)
 		{
 		case TD_GETSERVER_CHARSET:
-			req.data = (void*) global_system_variables.collation_server->csname;
-			req.resultLen = (uint_td)strlen( global_system_variables.collation_server->csname);
-			req.paramMask |= P_MASK_DATA|P_MASK_DATALEN;
+		{
+			if (*req.datalen == sizeof(trdVersiton))
+			{
+				trdVersiton* ver = (trdVersiton*)req.data;
+				strcpy_s(ver->cherserServer, sizeof(ver->cherserServer), global_system_variables.collation_server->csname);
+				ver->srvMajor = TRANSACTD_VER_MAJOR;
+				ver->srvMinor = TRANSACTD_VER_MINOR;
+				ver->srvRelease = TRANSACTD_VER_RELEASE;
+				req.resultLen = sizeof(trdVersiton);
+				//req.data = (void*) global_system_variables.collation_server->csname;
+				//req.resultLen = (uint_td)strlen( global_system_variables.collation_server->csname);
+				req.paramMask |= P_MASK_DATA|P_MASK_DATALEN;
+			}else
+				req.result = SERVER_CLIENT_NOT_COMPATIBLE;
 			break;
+		}
 		case TD_CONNECT:
 			connect(req);
 			break;

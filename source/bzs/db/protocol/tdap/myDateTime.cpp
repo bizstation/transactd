@@ -79,39 +79,39 @@ union myDate
 	
 	int i;
 	
-    inline void setValue(int v, bool btrvValue = false)
-    {
-        if (btrvValue)
-        {
-            btrDate btrd;
-            btrd.i = v;
-            yy = btrd.yy;
-            mm = btrd.mm;
-            dd = btrd.dd;
-            tmp=0;
-        }
-        else
-            i = v;
-    }
-    
-    inline int getValue(bool btrvValue = false)
-    {
-        if (btrvValue)
-        {
-            btrDate btrd;
-         	btrd.yy = yy;
-            btrd.mm = mm;
-            btrd.dd = dd;
-            return btrd.i;
-        }
-        return i;
-    }
-    
+	inline void setValue(int v, bool btrvValue = false)
+	{
+		if (btrvValue)
+		{
+			btrDate btrd;
+			btrd.i = v;
+			yy = btrd.yy;
+			mm = btrd.mm;
+			dd = btrd.dd;
+			tmp=0;
+		}
+		else
+			i = v;
+	}
+	
+	inline int getValue(bool btrvValue = false)
+	{
+		if (btrvValue)
+		{
+			btrDate btrd;
+		 	btrd.yy = yy;
+			btrd.mm = mm;
+			btrd.dd = dd;
+			return btrd.i;
+		}
+		return i;
+	}
+	
 	inline char* toStr(char* p, bool btrvValue)
 	{
-        if (btrvValue)
-            sprintf(p, "%04d/%02d/%02d",yy, mm, dd);
-        else
+		if (btrvValue)
+			sprintf(p, "%04d/%02d/%02d",yy, mm, dd);
+		else
 		    sprintf(p, "%04d-%02d-%02d",yy, mm, dd);
 		return p;
 	}
@@ -119,10 +119,10 @@ union myDate
 #ifdef _WIN32
 	inline wchar_t* toStr(wchar_t* p, bool btrvValue)
 	{
-        if (btrvValue)
-            swprintf_s(p, 11, L"%04d/%02d/%02d",yy, mm, dd);
-        else
-        	swprintf_s(p, 11, L"%04d-%02d-%02d",yy, mm, dd);
+		if (btrvValue)
+			swprintf_s(p, 11, L"%04d/%02d/%02d",yy, mm, dd);
+		else
+			swprintf_s(p, 11, L"%04d-%02d-%02d",yy, mm, dd);
 		return p;
 	}
 #endif
@@ -169,19 +169,19 @@ public:
 	inline void setValue(__int64 v, bool btrvValue = false)
 	{
 
-        if (btrvValue)
-        {
-            btrTime btrt;
-            btrt.i = (int)v;
-            hh = btrt.hh;
-            nn = btrt.nn;
-            ss = btrt.ss;
-            ms = btrt.uu * 10000;
-            tmp=0;
-            sign = 1;
+		if (btrvValue)
+		{
+			btrTime btrt;
+			btrt.i = (int)v;
+			hh = btrt.hh;
+			nn = btrt.nn;
+			ss = btrt.ss;
+			ms = btrt.uu * 10000;
+			tmp=0;
+			sign = 1;
 		    unused = 0;
-            return;
-        }
+			return;
+		}
 		char* p=(char*)&i64;
 		char* src=(char*)&v;
 		if (m_dec)
@@ -211,15 +211,15 @@ public:
 			p[4] = src[1];
 			p[5] = src[0];
 		}
-        if (btrvValue)
-        {
-            btrTime btrt;
-         	btrt.hh = hh;
-            btrt.nn = nn;
-            btrt.ss = ss;
-            btrt.uu = (char)(ms/100000);
-            return btrt.i;
-        }
+		if (btrvValue)
+		{
+			btrTime btrt;
+		 	btrt.hh = hh;
+			btrt.nn = nn;
+			btrt.ss = ss;
+			btrt.uu = (char)(ms/100000);
+			return btrt.i;
+		}
 		return v;
 	}
 	
@@ -462,28 +462,28 @@ public:
 inline int btrdateToMydate(int btrd)
 {
 	myDate myd;
-    myd.setValue(btrd, true);
+	myd.setValue(btrd, true);
 	return myd.getValue(true);
 }
 
 inline __int64 btrtimeToMytime(int btrt)
 {
 	myTime myt(4);
-    myt.setValue(btrt, true);
+	myt.setValue(btrt, true);
 	return myt.getValue(true);
 }
 
 inline int mydateToBtrdate(int mydate)
 {
-    myDate myd;
-    myd.setValue(mydate);
-    return myd.getValue(true);
+	myDate myd;
+	myd.setValue(mydate);
+	return myd.getValue(true);
 }
 
 inline int mytimeToBtrtime(__int64 mytime, int size)
 {
 	myTime myt(size);
-    myt.setValue(mytime);
+	myt.setValue(mytime);
 	return (int)myt.getValue(true);
 }
 #pragma warning(default:4996) 

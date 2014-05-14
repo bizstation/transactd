@@ -22,19 +22,19 @@
 #ifdef __BCPLUSPLUS__
 #pragma warn -8012
 #endif
-    #include <boost/asio/buffer.hpp>
-    #include <boost/asio/windows/stream_handle.hpp>
-    #include <boost/asio/io_service.hpp>
-    #include <boost/asio/windows/basic_handle.hpp>
-    #include <boost/asio/ip/tcp.hpp>
-    #include <boost/asio/read.hpp>
-    #include <boost/asio/write.hpp>
+	#include <boost/asio/buffer.hpp>
+	#include <boost/asio/windows/stream_handle.hpp>
+	#include <boost/asio/io_service.hpp>
+	#include <boost/asio/windows/basic_handle.hpp>
+	#include <boost/asio/ip/tcp.hpp>
+	#include <boost/asio/read.hpp>
+	#include <boost/asio/write.hpp>
 	#include <boost/bind.hpp>
-    #include <boost/asio/placeholders.hpp>
+	#include <boost/asio/placeholders.hpp>
 
 	#include <boost/system/system_error.hpp>
 	#include <boost/thread/mutex.hpp>
-    #include <stdio.h>
+	#include <stdio.h>
 
 #ifdef __BCPLUSPLUS__
 #pragma warn +8012
@@ -125,7 +125,7 @@ public:
 	virtual unsigned int sendBufferSize()=0;
 	virtual buffers* optionalBuffers()=0;
 	virtual char* asyncWriteRead(unsigned int writeSize)=0;
-    virtual unsigned int datalen()const = 0; //additinal info at segment read
+	virtual unsigned int datalen()const = 0; //additinal info at segment read
 	virtual unsigned short rows()const = 0; //additinal info at segment read
 	virtual void setReadBufferSizeIf(size_t size) = 0;
 };
@@ -178,66 +178,66 @@ template <class T>
 class connectionImple : public connectionBase
 {
 protected:
-    unsigned int m_datalen;
-    unsigned short m_rows;
+	unsigned int m_datalen;
+	unsigned short m_rows;
 	T m_socket;
 	buffers m_optionalBuffes;
 
-    unsigned int datalen()const {return m_datalen;}
+	unsigned int datalen()const {return m_datalen;}
 	unsigned short rows() const {return m_rows;}
-    
+	
 	// server send any segment of lower than 0xFFFF data by asyncWrite
-    // last 4byte is 0xFFFFFFFF, that is specify end of data
-    void segmentRead()
-    {
-        bool end = false;
-        unsigned short n;
-        while (!end)
-        {
+	// last 4byte is 0xFFFFFFFF, that is specify end of data
+	void segmentRead()
+	{
+		bool end = false;
+		unsigned short n;
+		while (!end)
+		{
 			boost::asio::read(m_socket, boost::asio::buffer(&n, 2),boost::asio::transfer_all());
 
-            if (m_readLen + n > m_readbuf.size())
-                m_readbuf.resize(m_readLen + n);
-            
+			if (m_readLen + n > m_readbuf.size())
+				m_readbuf.resize(m_readLen + n);
+			
 			m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], n)
 						, boost::asio::transfer_all());
 
 			end = (*((unsigned int*)(&m_readbuf[m_readLen - 4])) == 0xFFFFFFFF);
-        }
-        m_readLen -= 4;
-        //additinal data length info
-        boost::asio::read(m_socket, boost::asio::buffer(&m_datalen, 4)
-                    , boost::asio::transfer_all());
-        boost::asio::read(m_socket, boost::asio::buffer(&m_rows, 2)
-                    , boost::asio::transfer_all());            
-    }
+		}
+		m_readLen -= 4;
+		//additinal data length info
+		boost::asio::read(m_socket, boost::asio::buffer(&m_datalen, 4)
+					, boost::asio::transfer_all());
+		boost::asio::read(m_socket, boost::asio::buffer(&m_rows, 2)
+					, boost::asio::transfer_all());            
+	}
 
 	void read()
 	{
-     	if (!m_connected)
+	 	if (!m_connected)
 			throw system_error(asio::error::not_connected);
 		boost::system::error_code e;
 		m_readLen = 0;
-        m_datalen = 0;
+		m_datalen = 0;
 		m_rows = 0;
 		unsigned int n;
 		m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&n, 4)
-                    , boost::asio::transfer_all());
-        if (n == 0xFFFFFFFF)
+					, boost::asio::transfer_all());
+		if (n == 0xFFFFFFFF)
 		{
-            segmentRead();
+			segmentRead();
 			m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&n, 4), boost::asio::transfer_all());
 		}
-        if (n > m_readbuf.size())
-            m_readbuf.resize(n);
-        if (m_readLen != n)
-            m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], n-m_readLen)
-                , boost::asio::transfer_all());
+		if (n > m_readbuf.size())
+			m_readbuf.resize(n);
+		if (m_readLen != n)
+			m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&m_readbuf[m_readLen], n-m_readLen)
+				, boost::asio::transfer_all());
 	}
 
 	void write(unsigned int writeSize)
 	{
-    	if (!m_connected)
+		if (!m_connected)
 			throw system_error(asio::error::not_connected);
 		m_optionalBuffes.insert(m_optionalBuffes.begin(), asio::buffer(sendBuffer(0), writeSize));
 		boost::asio::write(m_socket, m_optionalBuffes,  boost::asio::transfer_all());
@@ -487,7 +487,7 @@ public:
 
 	char* asyncWriteRead(unsigned int writeSize)
 	{
-        m_datalen = 0;
+		m_datalen = 0;
 		m_rows = 0;
 		SetEvent(m_sendEvent);
 		WaitForSingleObject(m_recvEvent, INFINITE);

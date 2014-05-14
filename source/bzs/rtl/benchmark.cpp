@@ -39,13 +39,13 @@ boost_timer::time_point  benchmark::m_start;
 #endif
 void benchmark::showTimeSec(bool result, const char* name)
 {
-    if (result == true)
+	if (result == true)
 	{
-        #ifdef BOOST_CPUTIMER_ENABLE
+		#ifdef BOOST_CPUTIMER_ENABLE
 		boost::timer::cpu_times elapsed = t.elapsed();
 		printf("%d msec %s\n", (int)(elapsed.wall/1000000), name);
-        printf("%s\r\n", boost::timer::format(elapsed).c_str());
-        #else
+		printf("%s\r\n", boost::timer::format(elapsed).c_str());
+		#else
 		#ifdef BOOST_HIGH_RESOL_TIMER_ENABLE
 			boost_timer::time_point p = boost_timer::now();
 			boost::chrono::nanoseconds ns  = p - m_start;
@@ -56,39 +56,39 @@ void benchmark::showTimeSec(bool result, const char* name)
 		#endif
 	}
 	else
-        printf("Erorr %s\n", name);
+		printf("Erorr %s\n", name);
 }
 bool benchmark::report(boost::function<bool()> func, const char* name)
 {
-    start();
+	start();
 
-    bool ret = func();
-    showTimeSec(ret, name);
-    return ret;
+	bool ret = func();
+	showTimeSec(ret, name);
+	return ret;
 }
 
 void benchmark::report2(boost::function<void()> func, const char* name)
 {
   
-    start();
-    func();
-    showTimeSec(1, name);
+	start();
+	func();
+	showTimeSec(1, name);
 
 }
 
 void benchmark::start()
 {
    
-    #ifdef BOOST_CPUTIMER_ENABLE
-    t.stop();
-    t.start();
-    #else
+	#ifdef BOOST_CPUTIMER_ENABLE
+	t.stop();
+	t.start();
+	#else
 		#ifdef BOOST_HIGH_RESOL_TIMER_ENABLE
 		m_start = boost_timer::now();
 		#else
 		t.restart();
 		#endif
-    #endif
+	#endif
 }
 
 

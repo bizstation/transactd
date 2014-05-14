@@ -35,86 +35,86 @@ namespace client
 
 class bulkInsert
 {
-    char* m_buf;
-    char* m_ptr;
-    int m_count;
-    int m_buflen;
-    int m_maxBuflen;
+	char* m_buf;
+	char* m_ptr;
+	int m_count;
+	int m_buflen;
+	int m_maxBuflen;
 
 public:
-    bulkInsert(int max) : m_maxBuflen(max)
-    {
+	bulkInsert(int max) : m_maxBuflen(max)
+	{
 
-        m_buf = new char[BULKBUFSIZE];
-        m_ptr = m_buf + sizeof(ushort_td);
-        m_count = 0;
-        m_buflen = BULKBUFSIZE;
+		m_buf = new char[BULKBUFSIZE];
+		m_ptr = m_buf + sizeof(ushort_td);
+		m_count = 0;
+		m_buflen = BULKBUFSIZE;
 
-    }
+	}
 
-    ~bulkInsert()
-    {
-        delete [] m_buf;
-    }
+	~bulkInsert()
+	{
+		delete [] m_buf;
+	}
 
-    char* reallocBuffer(char* buf, int oldsize, int newSize)
-    {
-        char* p = new char[newSize];
-        memcpy(p, buf, oldsize);
-        delete [] buf;
+	char* reallocBuffer(char* buf, int oldsize, int newSize)
+	{
+		char* p = new char[newSize];
+		memcpy(p, buf, oldsize);
+		delete [] buf;
 
-        return p;
+		return p;
 
-    }
+	}
 
-    ushort_td insert(const char* p, ushort_td size, nstable* tb)
-    {
-        ushort_td ins_rows = 0;
-        if (m_count == (int)(USHRT_MAX - 3))
-        {
-            ins_rows = tb->commitBulkInsert(true /* auto */);
-            m_ptr = m_buf +sizeof(ushort_td);
-            m_count = 0;
-        }
+	ushort_td insert(const char* p, ushort_td size, nstable* tb)
+	{
+		ushort_td ins_rows = 0;
+		if (m_count == (int)(USHRT_MAX - 3))
+		{
+			ins_rows = tb->commitBulkInsert(true /* auto */);
+			m_ptr = m_buf +sizeof(ushort_td);
+			m_count = 0;
+		}
 
-        // check over run. current size + need size
-        if ((m_ptr - m_buf )+ size + sizeof(ushort_td) > (uint_td)m_buflen)
-        {
-            if ((int)(m_buflen + BULKBUFSIZE) > m_maxBuflen)
-            {
-                ins_rows = tb->commitBulkInsert(true /* auto */);
-                m_ptr = m_buf +sizeof(ushort_td);
-                m_count = 0;
-            }
-            else
-            {
-                size_t pos = m_ptr - m_buf;
-                m_buf = reallocBuffer(m_buf, m_buflen, m_buflen + BULKBUFSIZE);
-                m_buflen += BULKBUFSIZE;
-                m_ptr = m_buf + pos;
-            }
-        }
-        memcpy(m_ptr, &size, sizeof(ushort_td));
-        m_ptr += sizeof(ushort_td);
-        memcpy(m_ptr, p, size);
-        m_ptr += size;
-        m_count++;
-        return ins_rows;
+		// check over run. current size + need size
+		if ((m_ptr - m_buf )+ size + sizeof(ushort_td) > (uint_td)m_buflen)
+		{
+			if ((int)(m_buflen + BULKBUFSIZE) > m_maxBuflen)
+			{
+				ins_rows = tb->commitBulkInsert(true /* auto */);
+				m_ptr = m_buf +sizeof(ushort_td);
+				m_count = 0;
+			}
+			else
+			{
+				size_t pos = m_ptr - m_buf;
+				m_buf = reallocBuffer(m_buf, m_buflen, m_buflen + BULKBUFSIZE);
+				m_buflen += BULKBUFSIZE;
+				m_ptr = m_buf + pos;
+			}
+		}
+		memcpy(m_ptr, &size, sizeof(ushort_td));
+		m_ptr += sizeof(ushort_td);
+		memcpy(m_ptr, p, size);
+		m_ptr += size;
+		m_count++;
+		return ins_rows;
 
-    }
+	}
 
-    void* data()
-    {
-        (*(ushort_td*)m_buf) = (ushort_td)m_count;
-        return m_buf;
-    }
+	void* data()
+	{
+		(*(ushort_td*)m_buf) = (ushort_td)m_count;
+		return m_buf;
+	}
 
-    uint_td dataLen()
-    {
-        return (uint_td)(m_ptr - m_buf);
-    }
+	uint_td dataLen()
+	{
+		return (uint_td)(m_ptr - m_buf);
+	}
 
-    int count() {return m_count;}
+	int count() {return m_count;}
 
 };
 

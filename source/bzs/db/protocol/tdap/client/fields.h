@@ -37,54 +37,54 @@ namespace client
 class fieldsBase
 {
 
-    virtual unsigned char* ptr(int index) const = 0;
+	virtual unsigned char* ptr(int index) const = 0;
 protected:
-    fielddefs& m_fns;
+	fielddefs& m_fns;
 	bool m_invalidRecord;
 public:
 
-    explicit inline fieldsBase(fielddefs& fns):m_fns(fns),m_invalidRecord(false){}
-    virtual ~fieldsBase(){};
+	explicit inline fieldsBase(fielddefs& fns):m_fns(fns),m_invalidRecord(false){}
+	virtual ~fieldsBase(){};
 	void setInvalidRecord(bool v){m_invalidRecord = v;}
 	bool isInvalidRecord()const{return m_invalidRecord;}
 
-    inline field getFieldInternal(short index) const
-    {
-        return field(ptr((short)index), m_fns[(short)index], &m_fns);
-    }
+	inline field getFieldInternal(short index) const
+	{
+		return field(ptr((short)index), m_fns[(short)index], &m_fns);
+	}
 
-    inline field operator[](short index) const
-    {
-        if (m_fns.checkIndex(index))
-            return field(ptr((short)index), m_fns[(short)index], &m_fns);
-        nstable::throwError(_T("Invalid field name or index"), STATUS_INVARID_FIELD_IDX);
-        return field(NULL, dummyFd(), &m_fns);
-    }
+	inline field operator[](short index) const
+	{
+		if (m_fns.checkIndex(index))
+			return field(ptr((short)index), m_fns[(short)index], &m_fns);
+		nstable::throwError(_T("Invalid field name or index"), STATUS_INVARID_FIELD_IDX);
+		return field(NULL, dummyFd(), &m_fns);
+	}
 
-    inline field operator[](const _TCHAR* name) const
-    {
+	inline field operator[](const _TCHAR* name) const
+	{
 		int index = m_fns.indexByName(name);
 		return operator[](index);
 	}
 
-    inline field operator[](const std::_tstring& name) const
-    {
-        return operator[](name.c_str());
-    }
+	inline field operator[](const std::_tstring& name) const
+	{
+		return operator[](name.c_str());
+	}
 
-    inline size_t size() const {return m_fns.size();}
+	inline size_t size() const {return m_fns.size();}
 
 
-    inline field fd(short index) const
-    {
-        return operator[](index);
-    }
-
-    inline field fd(const _TCHAR* name) const
-    {
-        int index = m_fns.indexByName(name);
+	inline field fd(short index) const
+	{
 		return operator[](index);
-    }
+	}
+
+	inline field fd(const _TCHAR* name) const
+	{
+		int index = m_fns.indexByName(name);
+		return operator[](index);
+	}
 
 	inline short indexByName(const _TCHAR* name) const
 	{
@@ -104,28 +104,28 @@ typedef boost::shared_ptr<table>table_ptr;
 
 class fields : public fieldsBase
 {
-    table& m_tb;
-    inline unsigned char* ptr(int index) const
-    {
+	table& m_tb;
+	inline unsigned char* ptr(int index) const
+	{
 	    return (unsigned char*)m_tb.data();
 	}
 
 public:
-    inline explicit fields()
-            :fieldsBase(*((fielddefs*)0)),m_tb(*((table*)0)){}
-    inline explicit fields(table& tb)
-            :fieldsBase(*(tb.m_fddefs)),m_tb(tb){}
+	inline explicit fields()
+			:fieldsBase(*((fielddefs*)0)),m_tb(*((table*)0)){}
+	inline explicit fields(table& tb)
+			:fieldsBase(*(tb.m_fddefs)),m_tb(tb){}
 
-    inline explicit fields(table_ptr tb)
-            :fieldsBase(*((*tb).m_fddefs)),m_tb(*tb){}
+	inline explicit fields(table_ptr tb)
+			:fieldsBase(*((*tb).m_fddefs)),m_tb(*tb){}
 
-    inline void clearValues(){m_tb.clearBuffer();}
-    inline table& tb() const {return m_tb;}
-    inline short inproc_size() const{return m_tb.getCurProcFieldCount();}
-    inline field inproc_fd(short index) const
-    {
-        return operator[]( m_tb.getCurProcFieldIndex(index));
-    }
+	inline void clearValues(){m_tb.clearBuffer();}
+	inline table& tb() const {return m_tb;}
+	inline short inproc_size() const{return m_tb.getCurProcFieldCount();}
+	inline field inproc_fd(short index) const
+	{
+		return operator[]( m_tb.getCurProcFieldIndex(index));
+	}
 
 };
 

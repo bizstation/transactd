@@ -308,31 +308,31 @@ void __attribute__ ((destructor)) onUnloadLibrary(void);
 
 void onLoadLibrary(void)
 {
-     pthread_key_create(&g_tlsiID, NULL);
+	 pthread_key_create(&g_tlsiID, NULL);
 }
 
 void onUnloadLibrary(void)
 {
-     pthread_key_delete(g_tlsiID);  
+	 pthread_key_delete(g_tlsiID);  
 }
 
 #else //WIN32
 
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) 
 { 
-    switch (fdwReason) 
-    {
-    case DLL_PROCESS_ATTACH:
+	switch (fdwReason) 
+	{
+	case DLL_PROCESS_ATTACH:
 		if ((g_tlsiID = TlsAlloc()) == TLS_OUT_OF_INDEXES)
 			return FALSE;
 		break;
-    case DLL_PROCESS_DETACH:
-        TlsFree(g_tlsiID);
-        break;
-    default:
-        break;  
-    }  
-    return TRUE; 
+	case DLL_PROCESS_DETACH:
+		TlsFree(g_tlsiID);
+		break;
+	default:
+		break;  
+	}  
+	return TRUE; 
 }
 
 #endif //__APPLE__
