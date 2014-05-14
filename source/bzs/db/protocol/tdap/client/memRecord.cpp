@@ -89,7 +89,7 @@ autoMemory& autoMemory::operator=(const autoMemory& p)
 //    class memoryRecord
 //---------------------------------------------------------------------------
 
-memoryRecord::memoryRecord(fielddefs& fdinfo): fieldsBase(fdinfo)
+inline memoryRecord::memoryRecord(fielddefs& fdinfo): fieldsBase(fdinfo)
 {
 	m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
 }
@@ -133,11 +133,6 @@ void memoryRecord::copyToBuffer(table* tb, bool updateOnly) const
 				memcpy(tb->fieldPtr(i), ptr(i) + fd.pos, fd.len);
 		}
 	}
-}
-
-void memoryRecord::copyFromBuffer(const table* tb)
-{
-	memcpy(ptr(0), tb->fieldPtr(0), m_fns.totalFieldLen());
 }
 
 memoryRecord* memoryRecord::create(fielddefs& fdinfo)

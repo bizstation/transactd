@@ -507,7 +507,7 @@ void table::btrvGetExtend(ushort_td op)
 	if (m_impl->rc->rowCount() && (!m_impl->exBookMarking))
 	{
 		m_pdata = (void*)m_impl->rc->setRow(0);
-		m_datalen = tableDef()->maxRecordLen;//m_impl->rc->len();
+		m_datalen = tableDef()->maxRecordLen;
 
 		m_stat = m_impl->rc->seekMultiStat();
 	}else if ((m_stat == STATUS_LIMMIT_OF_REJECT) && (m_impl->filterPtr->rejectCount()>=1))

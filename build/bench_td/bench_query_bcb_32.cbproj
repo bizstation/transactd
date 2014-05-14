@@ -1,9 +1,9 @@
 ﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 		<PropertyGroup>
-			<ProjectGuid>{EB31B0F7-D4C3-425D-B9E2-CB9CE8168EA4}</ProjectGuid>
+			<ProjectGuid>{FB3987D6-7CBB-4573-969F-2C212FBFC58B}</ProjectGuid>
 			<ProjectVersion>12.3</ProjectVersion>
 			<Base>True</Base>
-			<Config Condition="'$(Config)'==''">Release Unicode</Config>
+			<Config Condition="'$(Config)'==''">Debug</Config>
 			<Platform>Win32</Platform>
 			<AppType>Console</AppType>
 			<FrameworkType>None</FrameworkType>
@@ -21,88 +21,79 @@
 			<CfgParent>Base</CfgParent>
 			<Base>true</Base>
 		</PropertyGroup>
-		<PropertyGroup Condition="'$(Config)'=='Debug Unicode' or '$(Cfg_3)'!=''">
-			<Cfg_3>true</Cfg_3>
-			<CfgParent>Base</CfgParent>
-			<Base>true</Base>
-		</PropertyGroup>
-		<PropertyGroup Condition="'$(Config)'=='Release Unicode' or '$(Cfg_4)'!=''">
-			<Cfg_4>true</Cfg_4>
-			<CfgParent>Base</CfgParent>
-			<Base>true</Base>
-		</PropertyGroup>
 		<PropertyGroup Condition="'$(Base)'!=''">
-			<BCC_PCHUsage>None</BCC_PCHUsage>
 			<BPILibOutputDir>..\..\lib</BPILibOutputDir>
-			<NoVCL>true</NoVCL>
 			<Defines>TRDCL_AUTOLINK;$(Defines)</Defines>
+			<NoVCL>true</NoVCL>
+			<BCC_wpch>false</BCC_wpch>
+			<BCC_wiip>false</BCC_wiip>
+			<UsePackages>true</UsePackages>
+			<LinkPackageImports>rtl.bpi;vcl.bpi</LinkPackageImports>
 			<Multithreaded>true</Multithreaded>
-			<_TCHARMapping>char</_TCHARMapping>
-			<IncludePath>..\..\source\;$(IncludePath)</IncludePath>
+			<ILINK_LibraryPath>..\..\source\bzs\test\transactdBench\;..\..\source\bzs\db\protocol\tdap\;..\..\source\bzs\rtl\;..\..\source\bzs\db\protocol\tdap\client\;..\..\source\bzs\example\;..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
 			<PackageImports>vcl.bpi;rtl.bpi</PackageImports>
 			<ProjectType>CppConsoleApplication</ProjectType>
+			<IncludePath>..\..\source\bzs\test\transactdBench\;..\..\source\bzs\db\protocol\tdap\;..\..\source\bzs\rtl\;..\..\source\bzs\db\protocol\tdap\client\;..\..\source\bzs\example\;..\..\source;$(IncludePath)</IncludePath>
+			<AllPackageLibs>rtl.lib;vcl.lib</AllPackageLibs>
+			<_TCHARMapping>wchar_t</_TCHARMapping>
 			<OutputExt>exe</OutputExt>
-			<BCC_wiip>false</BCC_wiip>
-			<ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
 			<DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
 			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE</DCC_UnitAlias>
-			<DynamicRTL>false</DynamicRTL>
+			<DynamicRTL>true</DynamicRTL>
 			<IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
 			<FinalOutputDir>..\..\bin</FinalOutputDir>
 			<BCC_wpar>false</BCC_wpar>
 			<BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
 			<BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
-			<ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\release\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
+			<BCC_MonitorGlobalAndStackData>true</BCC_MonitorGlobalAndStackData>
+			<BCC_MonitorThis>true</BCC_MonitorThis>
+			<BCC_MonitorInlinePtrAccess>true</BCC_MonitorInlinePtrAccess>
 			<BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
 			<BCC_DisableOptimizations>true</BCC_DisableOptimizations>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
 			<Defines>_DEBUG;$(Defines)</Defines>
 			<BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
-			<BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
 			<DCC_Define>DEBUG</DCC_Define>
 			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
 			<TASM_DisplaySourceLines>true</TASM_DisplaySourceLines>
-			<BCC_StackFrames>true</BCC_StackFrames>
 			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
 			<TASM_Debugging>Full</TASM_Debugging>
 			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
-			<ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\debug\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
+			<ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+			<DynamicRTL>false</DynamicRTL>
+			<BCC_EliminateDuplicateExpressions>true</BCC_EliminateDuplicateExpressions>
+			<BCC_LoopInductionReduction>true</BCC_LoopInductionReduction>
+			<BCC_ExpandIntrinsics>true</BCC_ExpandIntrinsics>
+			<BCC_OptimizeJumps>true</BCC_OptimizeJumps>
+			<BCC_PentiumInstructionScheduling>true</BCC_PentiumInstructionScheduling>
+			<BCC_EliminateDeadStore>true</BCC_EliminateDeadStore>
+			<BCC_OptimizeVariables>true</BCC_OptimizeVariables>
 			<Defines>NDEBUG;$(Defines)</Defines>
 			<TASM_Debugging>None</TASM_Debugging>
 		</PropertyGroup>
-		<PropertyGroup Condition="'$(Cfg_3)'!=''">
-			<Defines>_UNICODE;$(Defines)</Defines>
-			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
-			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
-			<BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
-			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
-		</PropertyGroup>
-		<PropertyGroup Condition="'$(Cfg_4)'!=''">
-			<BCC_PCHUsage>None</BCC_PCHUsage>
-			<Defines>_UNICODE;$(Defines)</Defines>
-		</PropertyGroup>
 		<ItemGroup>
-			<CppCompile Include="..\..\source\bzs\test\transactdBench\queryData.cpp">
-				<BuildOrder>1</BuildOrder>
+			<CppCompile Include="..\..\source\bzs\rtl\benchmark.cpp">
+				<DependentOn>..\..\source\bzs\rtl\benchmark.h</DependentOn>
+				<BuildOrder>2</BuildOrder>
 			</CppCompile>
-			<CppCompile Include="..\..\source\bzs\test\trdclengn\test_trdclengn.cpp">
-				<BuildOrder>0</BuildOrder>
+			<CppCompile Include="..\..\source\bzs\test\transactdBench\queryData.cpp">
+				<DependentOn>..\..\source\bzs\test\transactdBench\queryData.h</DependentOn>
+				<BuildOrder>2</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\test\transactdBench\query_bench.cpp">
+				<BuildOrder>2</BuildOrder>
 			</CppCompile>
 			<BuildConfiguration Include="Release">
 				<Key>Cfg_2</Key>
-				<CfgParent>Base</CfgParent>
-			</BuildConfiguration>
-			<BuildConfiguration Include="Release Unicode">
-				<Key>Cfg_4</Key>
-				<CfgParent>Base</CfgParent>
-			</BuildConfiguration>
-			<BuildConfiguration Include="Debug Unicode">
-				<Key>Cfg_3</Key>
 				<CfgParent>Base</CfgParent>
 			</BuildConfiguration>
 			<BuildConfiguration Include="Base">
@@ -149,12 +140,13 @@
 					</VersionInfoKeys>
 					<ProjectProperties>
 						<ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
-						<ProjectProperties Name="ManagePaths">False</ProjectProperties>
+						<ProjectProperties Name="ManagePaths">True</ProjectProperties>
 						<ProjectProperties Name="VerifyPackages">True</ProjectProperties>
 					</ProjectProperties>
 					<Parameters>
-						<Parameters Name="RunParams">--show_progress=yes</Parameters>
+						<Parameters Name="RunParams">0 localhost 3 1</Parameters>
 					</Parameters>
+					<VFOLDERS/>
 				</CPlusPlusBuilder.Personality>
 				<Platforms>
 					<Platform value="Win32">True</Platform>

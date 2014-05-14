@@ -90,6 +90,7 @@ public:
 	size_t size() const;
 	size_t totalFieldLen() const;
 	void copyFrom(const class table* tb);
+	bool canUnion(const fielddefs& r) const;
 	static fielddefs* create();
 	static void destroy(fielddefs* p);
 };
@@ -268,7 +269,53 @@ public:
 	inline void* getBin(uint_td& size){return getFVbin(size);};
 
 	int comp(const field& r, char logType) const;
+
+	template <class T>
+	T value(const T) const;
 };
+
+template<>
+__int64 field::value(__int64 ) const
+{
+	return i64();
+}
+
+template<>
+int field::value(int ) const
+{
+	return i();
+}
+
+template<>
+short field::value(short ) const
+{
+	return i();
+}
+
+template<>
+char field::value(char ) const
+{
+	return i();
+}
+
+template<>
+double field::value(double ) const
+{
+	return d();
+}
+
+template<>
+float field::value(float ) const
+{
+	return f();
+}
+
+template<>
+const _TCHAR* field::value(const _TCHAR* ) const
+{
+	return c_str();
+}
+
 
 AGRPACK const fielddef& dummyFd();
 

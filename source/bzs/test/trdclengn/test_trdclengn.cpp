@@ -28,7 +28,8 @@
 #include <bzs/db/protocol/tdap/client/stringConverter.h>
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/filter.h>
-
+#include <bzs/test/transactdBench/queryData.h>
+#include <bzs/db/protocol/tdap/client/memRecordset.h>
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -195,7 +196,7 @@ void testCreateNewDataBase(database* db)
 
 void testVersion(database* db)
 {
-    db->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+	db->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
     BOOST_CHECK_MESSAGE(0 == db->stat(), "Version connect stat = " << db->stat());
     if (0 == db->stat())
     {
@@ -2126,7 +2127,7 @@ void testLogic(database* db)
 
     //compField
     ret = lc.setParam(tb, _T("name"), _T("="), _T("id"), eCend, true);
-    BOOST_CHECK_MESSAGE(ret == true, " logic filed name");
+	BOOST_CHECK_MESSAGE(ret == true, " logic filed name");
     BOOST_CHECK_MESSAGE(lc.type == ft_zstring, " logic.type");
     BOOST_CHECK_MESSAGE(lc.len == 33, " logic.len");
     BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
@@ -2137,11 +2138,11 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(len == 7+2, " logic.writeBuffer");
 
     //invalid filed name
-    ret = lc.setParam(tb, _T("name1"), _T("="), _T("id"), eCend, true);
-    BOOST_CHECK_MESSAGE(ret == false, " logic invalid filed name2");
+	ret = lc.setParam(tb, _T("name1"), _T("="), _T("id"), eCend, true);
+	BOOST_CHECK_MESSAGE(ret == false, " logic invalid filed name2");
 
-    //wildcard
-    ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCend, false);
+	//wildcard
+	lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCend, false);
     BOOST_CHECK_MESSAGE(lc.type == ft_zstring, " logic.type");
     BOOST_CHECK_MESSAGE(lc.len == 3, " logic.len");
     BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
@@ -2152,24 +2153,24 @@ void testLogic(database* db)
     len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7+3, " logic.writeBuffer");
 
-    ret = lc.setParam(tb, _T("name"), _T("="), _T("漢字*"), eCend, false);
-    BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "漢字")==0, " logic.data");
+	lc.setParam(tb, _T("name"), _T("="), _T("漢字*"), eCend, false);
+	BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "漢字")==0, " logic.data");
 
-    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
-    BOOST_CHECK_MESSAGE(len == 7 + (_tcslen(_T("漢字"))*sizeof(_TCHAR))
-                                    , " logic.writeBuffer len =" << len);
+	len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
+	BOOST_CHECK_MESSAGE(len == 7 + (_tcslen(_T("漢字"))*sizeof(_TCHAR))
+									, " logic.writeBuffer len =" << len);
 
 
-    //combine
-    ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCor, false);
-    BOOST_CHECK_MESSAGE(lc.opr == 2, " logic.opr or");
-    ret = lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCand, false);
+	//combine
+	lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCor, false);
+	BOOST_CHECK_MESSAGE(lc.opr == 2, " logic.opr or");
+	lc.setParam(tb, _T("name"), _T("="), _T("abc*"), eCand, false);
     BOOST_CHECK_MESSAGE(lc.opr == 1, " logic.opr and");
 
     //logType
     ret = lc.setParam(tb, _T("name"), _T("!="), _T("abc*"), eCend, false);
     BOOST_CHECK_MESSAGE(lc.logType == 255, " logic.logType !=");
-    BOOST_CHECK_MESSAGE(ret == false, " logic invalid logType");
+	BOOST_CHECK_MESSAGE(ret == false, " logic invalid logType");
 
     //canJoin
 
@@ -2190,7 +2191,7 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.canJoin(false) == true, " logic canJoin");
 
 
-    lc.opr = eCand;
+	lc.opr = eCand;
 
     logic lc2;
     lc2.setParam(tb, _T("id"), _T("="), _T("1"), eCend, false);
@@ -2205,7 +2206,7 @@ void testLogic(database* db)
     lc.joinAfter(&lc2);
     BOOST_CHECK_MESSAGE(lc.len == 8, " logic joinAfter");
 
-    BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic joinAfter");
+	BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic joinAfter");
 
     header hd;
     len = hd.writeBuffer(0, true) - (unsigned char*)0;
@@ -2389,6 +2390,96 @@ void testQuery()
                             ,  "queryString");
 
 }
+
+void testJoin(database* db)
+{
+	queryTable atu(db, _T("user"));
+	queryTable atg(db, _T("groups"));
+	queryTable ate(db, _T("extention"));
+	recordset rs;
+	query q;
+
+	atu.alias(_T("名前"), _T("name"));
+	q.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), 15000);
+	atu.index(0).keyValue(1).read(rs, q);
+	BOOST_CHECK_MESSAGE(rs.size()== 15000, " rs.size()== 15000");
+
+	//Join extention::comment
+	q.reset();
+	ate.index(0).join(rs, q.select(_T("comment")).optimize(queryBase::hasOneJoin), _T("id"));
+	BOOST_CHECK_MESSAGE(rs.size()== 15000, "join  rs.size()== 15000");
+
+	//test reverse
+	row_ptr last = rs.reverse().first();
+	BOOST_CHECK_MESSAGE((*last)[_T("id")].i() == 15000, "last field id == 15000");
+	BOOST_CHECK_MESSAGE(_tstring((*last)[_T("comment")].c_str()) == _tstring(_T("15000 comment"))
+				, "last field comment");
+
+	//Join group::name
+	q.reset();
+	atg.alias(_T("name"), _T("group_name"));
+	atg.index(0).join(rs, q.select(_T("group_name")), _T("group"));
+	BOOST_CHECK_MESSAGE(rs.size()== 15000, "join2  rs.size()== 15000");
+	row_ptr first = rs.last();
+
+	BOOST_CHECK_MESSAGE((*first)[_T("id")].i() == 1, "first field id == 1");
+	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("comment")].c_str()) == _tstring(_T("1 comment"))
+				, "first field comment");
+
+	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
+				, "first field group_name");
+	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
+				, "first field group_name");
+	row_ptr row = rs[15000 - 9];
+
+	BOOST_CHECK_MESSAGE(_tstring((*row)[_T("group_name")].c_str()) == _tstring(_T("9 group"))
+				, "group_name = 9 group ");
+
+	//Test orderby
+	rs.orderBy(_T("group_name"));
+	first = rs[0];
+	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
+				, "group_name = 1 group ");
+
+	//test union
+	recordset rs2;
+	atu.alias(_T("名前"), _T("name"));
+
+	q.reset().select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), 16000);
+	atu.index(0).keyValue(15001).read(rs2, q);
+	ate.index(0).join(rs2, q.reset().select(_T("comment")).optimize(queryBase::hasOneJoin), _T("id"));
+
+	atg.alias(_T("name"), _T("group_name"));
+	atg.index(0).join(rs2, q.reset().select(_T("group_name")), _T("group"));
+	BOOST_CHECK_MESSAGE(rs2.size()== 1000, "join2  rs2.size()== 1000");
+
+	rs += rs2;
+	BOOST_CHECK_MESSAGE(rs.size()== 16000, "union  rs.size()== 16000");
+
+
+	//test group by
+	groupQuery gq;
+	gq.keyField(_T("group"),_T("id")).resultField(_T("count"));
+	rs.groupBy(gq, group_count());
+	BOOST_CHECK_MESSAGE(rs.size()== 16000, "group by  rs.size()== 16000");
+
+	/*for (int i=0;i<100;i++)
+		std::cout << (*rs[i])[_T("group")].i() << "  " << (*rs[i])[_T("id")].i()
+			<< "  " << (*rs[i])[_T("count")].i() << std::endl;*/
+    gq.reset();
+	gq.keyField(_T("group")).resultField(_T("count"));
+	rs.groupBy(gq, group_count());
+	BOOST_CHECK_MESSAGE(rs.size()== 100, "group by2  rs.size()== 100");
+
+	//use sum function object by for each
+	group_sum f;
+	f.setResultKey(rs.fieldDefs()->size()-1);
+	f = std::for_each(rs.begin(),rs.end(), f);
+	BOOST_CHECK_MESSAGE(f.result()== 16000, "sum ");
+
+}
+
+/*
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -2468,7 +2559,7 @@ BOOST_AUTO_TEST_SUITE(convert)
         char u8[256] = "123";
 
         bzs::env::u8tombc(u8, -1, mbc, 256);
-        BOOST_CHECK_MESSAGE(!strcmp(mbc, u8), u8);
+		BOOST_CHECK_MESSAGE(!strcmp(mbc, u8), u8);
 
         strcpy(u8, "漢字");
         char mbcKanji[20] =
@@ -2516,13 +2607,13 @@ BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(kanjiSchema)
 
-    BOOST_FIXTURE_TEST_CASE(knajiCreateSchema, fixture) {testKnajiCreateSchema(db());}
+	BOOST_FIXTURE_TEST_CASE(knajiCreateSchema, fixture) {testKnajiCreateSchema(db());}
 
-    BOOST_FIXTURE_TEST_CASE(insertKanji, fixture) {testInsertKanji(db());}
+	BOOST_FIXTURE_TEST_CASE(insertKanji, fixture) {testInsertKanji(db());}
 
-    BOOST_FIXTURE_TEST_CASE(getEqualKanji, fixture) {testGetEqualKanji(db());}
+	BOOST_FIXTURE_TEST_CASE(getEqualKanji, fixture) {testGetEqualKanji(db());}
 
-    BOOST_FIXTURE_TEST_CASE(dropDatabaseKanji, fixture) {testDropDatabaseKanji(db());}
+	BOOST_FIXTURE_TEST_CASE(dropDatabaseKanji, fixture) {testDropDatabaseKanji(db());}
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -2544,11 +2635,27 @@ BOOST_AUTO_TEST_SUITE(filter)
     {
         testDropDatabase(db());
     }
-    BOOST_FIXTURE_TEST_CASE(fuga, fixture) 
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+*/
+BOOST_AUTO_TEST_SUITE(query)
+
+	BOOST_AUTO_TEST_CASE(join)
+	{
+		database_ptr db = createDatadaseObject();
+		connectParams param(PROTOCOL, HOSTNAME, _T("querytest"), _T("test.bdf"));
+		int ret = prebuiltData(db, param);
+		BOOST_CHECK_MESSAGE(0 == ret, "query data build");
+		if (ret==0)
+			testJoin(db.get());
+	}
+
+	BOOST_AUTO_TEST_CASE(fuga)
 	{
 		BOOST_CHECK_EQUAL(2 * 3, 6);
 	}
-
 BOOST_AUTO_TEST_SUITE_END()
 
 // ------------------------------------------------------------------------

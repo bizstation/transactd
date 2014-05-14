@@ -41,8 +41,8 @@ public:
 	~autoMemory();
 	autoMemory& operator=(const autoMemory& p);
 	unsigned char* ptr;
-	size_t size;
 	short* endFieldIndex;
+	unsigned int size;
 	bool owner;
 };
 
@@ -54,13 +54,16 @@ class AGRPACK memoryRecord : public fieldsBase
 	friend class multiRecordAlocatorImple;
 
 	std::vector<autoMemory > m_memblock;
+
 protected:
-	memoryRecord(fielddefs& fdinfo);
+	inline memoryRecord(fielddefs& fdinfo);
+
 public:
 	virtual ~memoryRecord();
 	void clear();
 	void setRecordData(unsigned char* ptr, size_t size
 			, short* endFieldIndex, bool owner = false);
+
 	/* return memory block first address which not field ptr address */
 	inline unsigned char* memoryRecord::ptr(int index) const
 	{
@@ -85,9 +88,12 @@ public:
 		return (int) m_memblock.size();
 	}
 
-	void copyToBuffer(table* tb, bool updateOnly=false) const;
+	inline void copyFromBuffer(const table* tb)
+	{
+		memcpy(ptr(0), tb->fieldPtr(0), m_fns.totalFieldLen());
+	}
 
-	void copyFromBuffer(const table* tb);
+	void copyToBuffer(table* tb, bool updateOnly=false) const;
 
 	static memoryRecord* create(fielddefs& fdinfo);
 	static void release(memoryRecord* p);
@@ -100,6 +106,7 @@ class AGRPACK writableRecord : public memoryRecord
 	table_ptr m_tb;
 	writableRecord(table_ptr tb, const aliasMap_type* alias);
 	fielddefs* fddefs();
+
 public:
 	~writableRecord();
 	bool read(bool KeysetAlrady=false);

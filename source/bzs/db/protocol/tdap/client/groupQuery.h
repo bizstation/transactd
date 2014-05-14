@@ -31,6 +31,35 @@ namespace tdap
 namespace client
 {
 
+inline int getFieldType(int )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(__int64 )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(short )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(char )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(double )
+{
+	return ft_float;
+}
+
+inline int getFieldType(float )
+{
+	return ft_float;
+}
 
 inline int compByKey(const fieldsBase& l, const fieldsBase& r, const int& s)
 {
@@ -253,11 +282,20 @@ public:
 	{
 		std::vector<typename Container::key_type> keyFields;
 
-		/* convert key value from filed name */
+		/* convert key value from field name */
 		for (int i=0;i<m_keyFields.size();++i)
 			keyFields.push_back(resolvKeyValue(mdls, m_keyFields[i]));
-		typename Container::key_type resultKey = resolvKeyValue(mdls, m_resultField, true);
+
+
+		bool noexception = true;
+		typename Container::key_type resultKey = resolvKeyValue(mdls, m_resultField, noexception);
 		func.setResultKey(resultKey);
+		if (resultKey == mdls.fieldDefs()->size())
+		{
+			FUNC::value_type dummy;
+			mdls.appendCol(m_resultField.c_str(), getFieldType(dummy), sizeof(FUNC::value_type));
+		}
+
 		grouping_comp<typename Container> groupingComp(mdls, keyFields);
 
 		std::vector<int> index;
@@ -273,7 +311,7 @@ public:
 				index.insert(index.begin() + i, n);
 				funcs.insert(funcs.begin() + i, FUNC(func));
 			}
-			funcs[i](*(*it));
+			funcs[i](*it);
 			++n;
 			++it;
 		}

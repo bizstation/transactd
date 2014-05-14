@@ -94,7 +94,7 @@ class recordset
 		for optimazing join.
 		If the first reading is using by unique key , set that field count.
 	*/
-	short m_uniqueReadMaxField; 
+	short m_uniqueReadMaxField;
 public:
 	typedef std::vector<boost::shared_ptr<tdc::memoryRecord> >::iterator iterator;
 
@@ -116,11 +116,12 @@ private:
 		}
 		else 
 		{
-			assert(tb);
+			//assert(tb);
 			m_joinRows = 0;
 			m_mra->setRowOffset(0);
 			m_mra->setCurFirstFiled((int)m_fds->size());
-			m_fds->copyFrom(tb);
+			if (tb)
+				m_fds->copyFrom(tb);
 			if (tb && (addtype == tdc::multiRecordAlocator::mra_nojoin))
 			{
 				const td::keydef& kd = tb->tableDef()->keyDefs[tb->keyNum()];
@@ -246,6 +247,7 @@ public:
 			return index;
 		if (!noexception)
 			THROW_BZS_ERROR_WITH_MSG(_T("groupQuery:Invalid key name"));
+
 		return (key_type)m_fds->size();
 	}
 
@@ -287,9 +289,40 @@ public:
 		return *this;
 	}
 
-	recordset& reverse()
+	inline recordset& reverse()
 	{
 		std::reverse(begin(), end());
+		return *this;
+	}
+
+	void appendCol(const _TCHAR* name, int type, short len)
+	{
+		assert(m_fds->size());
+		td::fielddef fd((*m_fds)[0]);
+		fd.len = len;
+		fd.pos = 0;
+		fd.type = type;
+		fd.setName(name);
+
+		m_fds->push_back(&fd);
+		registerMemoryBlock(NULL, fd.len*size(), fd.len
+					, tdc::multiRecordAlocator::mra_outerjoin);
+
+	}
+
+	recordset& operator+=(const recordset& r)
+	{
+		if (!m_fds->canUnion(*r.m_fds))
+			THROW_BZS_ERROR_WITH_MSG(_T("Recordsets are different format"));
+
+		m_recordset.reserve(m_recordset.size()+r.size());
+		for (size_t i=0;i<r.size();++i)
+		{
+			m_recordset.push_back(r.m_recordset[i]);
+			m_recordset[m_recordset.size()-1]->setFielddefs(*m_fds);
+		}
+		for (size_t i=0;i<r.m_memblock.size();++i)
+			m_memblock.push_back(r.m_memblock[i]);
 		return *this;
 	}
 
@@ -428,7 +461,7 @@ public:
 
 };
 
-template <class row_type=row, class key_type=int, class value_type_=__int64>
+template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
 class sum
 {
 	value_type_ m_value;
@@ -443,7 +476,8 @@ public:
 
 	void operator()(const row_type& row)
 	{
-		m_value += row[m_resultKey].i64();
+        value_type_ tmp;
+		m_value += (*row)[m_resultKey].value(tmp);
 	}
 	value_type_ result()const{return m_value;}
 
@@ -451,8 +485,7 @@ public:
 	typedef typename value_type_ value_type;
 };
 
-
-template <class row_type=row, class key_type=int, class value_type_=__int64>
+template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
 class avg
 {
 	value_type_ m_value;
@@ -469,22 +502,49 @@ public:
 	void operator()(const row_type& row)
 	{
 		++m_count;
+		value_type_ tmp;
+		m_value += (*row)[m_resultKey].value(tmp);
 	}
 
-	value_type_ result()const{return m_value;}
+	value_type_ result()const{return m_value/m_count;}
 
 	void reset(){m_value = 0;m_count=0;}
 	typedef typename value_type_ value_type;
 };
 
+template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
+class count
+{
+	value_type_ m_count;
+	key_type m_resultKey;
+public:
+	count():m_count(0){}
+
+	void setResultKey(key_type key)
+	{
+		m_resultKey = key;
+	}
+
+	void operator()(const row_type& row)
+	{
+		++m_count;
+	}
+
+	value_type_ result()const{return m_count;}
+
+	void reset(){m_count=0;}
+	typedef typename value_type_ value_type;
+};
+
 #undef min
-template <class row_type=row, class key_type=int, class value_type_=__int64 >
+template <class row_type=row_ptr, class key_type=int, class value_type_=__int64 >
 class min
 {
 	value_type_ m_value;
 	key_type m_resultKey;
+	bool m_flag ;
 public:
-	min():m_value(0){}
+	min():m_value(0),m_flag(true){}
 
 	void setResultKey(key_type key)
 	{
@@ -493,23 +553,29 @@ public:
 
 	void operator()(const row_type& row)
 	{
-		//m_value = std::min(m_value, value_get<value_type>(row[m_resultKey]));
+		value_type_ tmp = (*row)[m_resultKey].value(tmp);
+		if (m_flag || m_value > tmp)
+		{
+			m_flag = false;
+			m_value = tmp;
+		}
 	}
 
 	value_type_ result()const{return m_value;}
 
-	void reset(){m_value = 0;}
+	void reset(){m_value = 0;m_flag = true;}
 	typedef typename value_type_ value_type;
 };
 
 #undef max
-template <class row_type=row, class key_type=int, class value_type_=__int64>
+template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
 class max
 {
 	value_type_ m_value;
 	key_type m_resultKey;
+	bool m_flag ;
 public:
-	max():m_value(0){}
+	max():m_value(0),m_flag(true){}
 
 	void setResultKey(key_type key)
 	{
@@ -518,18 +584,24 @@ public:
 
 	void operator()(const row_type& row)
 	{
-	   // m_value = std::max(m_value, value_get<value_type>(row[m_resultKey]));
+		value_type_ tmp = (*row)[m_resultKey].value(tmp);
+		if (m_flag || m_value < tmp)
+		{
+			m_flag = false;
+			m_value = tmp;
+		}
 	}
 
 	value_type_ result()const{return m_value;}
 
-	void reset(){m_value = 0;}
+	void reset(){m_value = 0;m_flag = true;}
 	typedef typename value_type_ value_type;
 };
 
 
-typedef sum<row, int, double> group_sum;
+typedef sum<row_ptr, int, double> group_sum;
 
+typedef count<row_ptr, int, int> group_count;
 
 typedef tdc::activeTable<map_orm> queryTable;
 

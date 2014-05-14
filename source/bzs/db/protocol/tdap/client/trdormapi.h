@@ -36,7 +36,7 @@ namespace tdap
 namespace client
 {
 
-class logic
+class qlogic
 {
 	std::_tstring m_name;
 	std::_tstring m_value;
@@ -45,21 +45,21 @@ class logic
 
 public:
 
-	logic(const _TCHAR* name, const _TCHAR* type, const _TCHAR* value, combineType next)
+	qlogic(const _TCHAR* name, const _TCHAR* type, const _TCHAR* value, combineType next)
 		:m_name(name),m_type(type),m_value(value),m_next(next){}
-	logic(const _TCHAR* name, const _TCHAR* type, int value, combineType next)
+	qlogic(const _TCHAR* name, const _TCHAR* type, int value, combineType next)
 		:m_name(name),m_type(type),m_next(next)
 		{
 			_TCHAR buf[50];
 			m_value = _ltot(value, buf, 10);
 		}
-	logic(const _TCHAR* name, const _TCHAR* type, __int64 value, combineType next)
+	qlogic(const _TCHAR* name, const _TCHAR* type, __int64 value, combineType next)
 		:m_name(name),m_type(type),m_next(next)
 		{
 			_TCHAR buf[50];
 			m_value = _i64tot(value, buf, 10);
 		}
-	logic(const _TCHAR* name, const _TCHAR* type, double value, combineType next)
+	qlogic(const _TCHAR* name, const _TCHAR* type, double value, combineType next)
 		:m_name(name),m_type(type),m_next(next)
 		{
 			_TCHAR buf[50];
@@ -126,39 +126,39 @@ public:
 	}
 
 	template <class T>
-	query& where(const _TCHAR* name, const _TCHAR* logic, T value)
+	query& where(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
-		addLogic(name, logic, boost::lexical_cast<std::_tstring>(value).c_str());
+		addLogic(name, qlogic, boost::lexical_cast<std::_tstring>(value).c_str());
 		return *this;
 	}
 
 	template <class T>
-	query& and(const _TCHAR* name, const _TCHAR* logic, T value)
+	query& and(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
 		if (whereTokens() == 0)
 			throw bzs::rtl::exception(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
 
-		addLogic(_T("and"), name, logic, boost::lexical_cast<std::_tstring>(value).c_str());
+		addLogic(_T("and"), name, qlogic, boost::lexical_cast<std::_tstring>(value).c_str());
  		return *this;
 	}
 
 	template <class T>
-	query& or(const _TCHAR* name, const _TCHAR* logic, T value)
+	query& or(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
 		if (whereTokens() == 0)
 			throw bzs::rtl::exception(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
 
-		addLogic(_T("or"), name, logic, boost::lexical_cast<std::_tstring>(value).c_str());
+		addLogic(_T("or"), name, qlogic, boost::lexical_cast<std::_tstring>(value).c_str());
 		return *this;
 	}
 
 	template <class T>
-	query& in(const _TCHAR* name, const _TCHAR* logic, T value)
+	query& in(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
 		if (whereTokens() == 0)
 			throw bzs::rtl::exception(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
 
-		addLogic(_T("or"), name, logic, boost::lexical_cast<std::_tstring>(value).c_str());
+		addLogic(_T("or"), name, qlogic, boost::lexical_cast<std::_tstring>(value).c_str());
 		return *this;
 	}
 
@@ -648,7 +648,7 @@ public:
 
 	inline void abortBulkInsert(){m_tb->abortBulkInsert();}
 
-	inline ushort_td commitBulkInsert() {m_tb->commitBulkInsert();}
+	inline ushort_td commitBulkInsert() {return m_tb->commitBulkInsert();}
 
 
 	activeTable& index(int v)

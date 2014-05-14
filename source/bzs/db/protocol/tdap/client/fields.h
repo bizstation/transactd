@@ -22,6 +22,7 @@
 #include "table.h"
 #include <boost/shared_ptr.hpp>
 
+
 namespace bzs
 {
 namespace db
@@ -94,6 +95,11 @@ public:
 	inline const fielddefs* fieldDefs() const
 	{
 		return &m_fns;
+	}
+
+	inline void setFielddefs(fielddefs& def)
+	{
+		m_fns = def;
 	}
 
 };

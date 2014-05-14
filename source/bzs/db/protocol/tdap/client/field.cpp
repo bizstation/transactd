@@ -219,7 +219,7 @@ size_t fielddefs::size() const {return m_imple->fields.size();}
 
 size_t fielddefs::totalFieldLen() const
 {
-	const fielddef& fd = m_imple->fields[size() - 1];
+	const fielddef& fd = m_imple->fields[m_imple->fields.size() - 1];
 	return fd.pos + fd.len;
 }
 
@@ -236,6 +236,21 @@ void fielddefs::copyFrom(const table* tb)
 		push_back(&fd);
 		pos += fd.len;
 	}
+}
+
+bool fielddefs::canUnion(const fielddefs& src) const
+{
+	if (size() != src.size()) return false;
+	for (int i=0;i< (int)m_imple->fields.size();++i)
+	{
+		const fielddef& l = m_imple->fields[i];
+		const fielddef& r = src.m_imple->fields[i];
+		if (l.pos != r.pos) return false;
+		if (l.len != r.len) return false;
+		if (l.type != r.type) return false;
+		if (l.charsetIndex() != r.charsetIndex()) return false;
+	}
+	return true;
 }
 
 fielddefs* fielddefs::create()
