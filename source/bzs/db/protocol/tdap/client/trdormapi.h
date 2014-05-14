@@ -132,6 +132,7 @@ public:
 		return *this;
 	}
 
+#ifndef SWIG
 	template <class T>
 	query& and(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
@@ -151,6 +152,7 @@ public:
 		addLogic(_T("or"), name, qlogic, boost::lexical_cast<std::_tstring>(value).c_str());
 		return *this;
 	}
+#endif
 
 	template <class T>
 	query& in(const _TCHAR* name, const _TCHAR* qlogic, T value)
@@ -353,6 +355,7 @@ public:
 };
 
 
+#ifndef SWIG
 template <class T, class RET>
 bool sortFuncBase(T&l, T& r , RET (T::*func1)() const)
 {
@@ -360,6 +363,7 @@ bool sortFuncBase(T&l, T& r , RET (T::*func1)() const)
 	RET retr = (r.*func1)();
 	return retl < retr;
 }
+#endif
 
 template <class T, class FUNC1, class FUNC2, class FUNC3>
 bool sortFunc(T&l, T& r , FUNC1 func1, FUNC2 func2, FUNC3 func3)
@@ -426,6 +430,7 @@ void sort(Container& mdls, FUNC1 func1)
 	std::sort(begin(mdls), end(mdls), functor);
 }
 
+#ifndef SWIG
 template <class T2, class T, class Container>
 inline boost::shared_ptr<std::vector<T> > listup(Container& mdls, T (T2::*func)()const)
 {
@@ -441,6 +446,7 @@ inline boost::shared_ptr<std::vector<T> > listup(Container& mdls, T (T2::*func)(
 	}
 	return mdlst;
 }
+#endif
 
 
 class mraResetter
@@ -977,6 +983,7 @@ public:
 
 	/** Join相当の処理を事前ソートして高速に行います。
 	*/
+#ifndef SWIG
 	template <class BaseContainer, class T2>
 	void readEach(BaseContainer& mdls, T* (T2::*func)()const, queryBase& q)
 	{
@@ -994,6 +1001,7 @@ public:
 		std::sort(refList->begin(), refList->end(), comp);
 		readEach(*refList, q, true, &e);
 	}
+#endif
 
 	/* No use field select */
 	template <class Container>
@@ -1032,6 +1040,7 @@ public:
 	}
 
 	/* No use field select */
+#ifndef SWIG
 	template <class BaseContainer, class T2>
 	void readEach(BaseContainer& mdls, T* (T2::*func)()const)
 	{
@@ -1049,6 +1058,7 @@ public:
 		std::sort(refList->begin(), refList->end(), comp);
 		readEach(*refList, true, &e);
 	}
+#endif
 
 	/*template <class Container, class FUNC>
 	activeTable& groupBy(Container& mdls, groupQuery& gq, FUNC func)

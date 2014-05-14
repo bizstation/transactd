@@ -46,12 +46,12 @@ class multiRecordAlocator
 {
 
 public:
-	const static int mra_nojoin = 0;
-	const static int mra_first = 0;
-	const static int mra_nextrows = 1;
-	const static int mra_innerjoin = 2;
-	const static int mra_outerjoin = 4;
-	const static int mra_current_block = -1;
+	static const int mra_nojoin = 0;
+	static const int mra_first = 0;
+	static const int mra_nextrows = 1;
+	static const int mra_innerjoin = 2;
+	static const int mra_outerjoin = 4;
+	static const int mra_current_block = -1;
 	virtual ~multiRecordAlocator(){}
 	virtual void init(size_t recordCount, size_t recordLen,int addType, const class table* tb) = 0;
 	virtual unsigned char* ptr(size_t row, int stat) = 0;

@@ -30,9 +30,11 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/databaseFactory.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/dbDef.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/errorMessage.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/field.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fieldDDF.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fileDDF.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/indexDDF.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/memRecord.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/nsDatabase.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/nsTable.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/sharedData.cpp

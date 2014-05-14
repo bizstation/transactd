@@ -50,6 +50,7 @@ public:
 	}
 };
 
+#ifndef SWIG
 class multiRecordAlocatorImple : public tdc::multiRecordAlocator
 {
 	class recordset* m_rs;
@@ -69,6 +70,7 @@ public:
 	inline void setJoinRowMap(const std::vector< std::vector<int> >* v/*, size_t size*/){m_joinRowMap = v;/*m_joinMapSize = size;*/}
 	inline const std::vector< std::vector<int> >* joinRowMap()const {return m_joinRowMap;}
 };
+#endif
 
 
 
