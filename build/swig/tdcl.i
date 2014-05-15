@@ -129,7 +129,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore recordset::first;
 %ignore recordset::last;
 
-%ignore bzs::db::protocol::tdap::client::logic;
+%ignore bzs::db::protocol::tdap::client::qlogic;
 %ignore bzs::db::protocol::tdap::client::databaseManager;
 %ignore bzs::db::protocol::tdap::client::query;
 %ignore bzs::db::protocol::tdap::client::begin;

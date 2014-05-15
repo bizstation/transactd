@@ -724,6 +724,14 @@ abstract class transactd {
 		return resolvKeyValue($m,$name,$noexception);
 	}
 
+	static function lexical_cast($v) {
+		return lexical_cast($v);
+	}
+
+	static function getFieldType($arg1) {
+		return getFieldType($arg1);
+	}
+
 	static function new_memoryRecord_p_p() {
 		return new_memoryRecord_p_p();
 	}
@@ -2808,6 +2816,10 @@ class fielddefs {
 		fielddefs_copyFrom($this->_cPtr,$tb);
 	}
 
+	function canUnion($r_) {
+		return fielddefs_canUnion($this->_cPtr,$r_);
+	}
+
 	static function destroy($p) {
 		fielddefs_destroy($p);
 	}
@@ -2945,6 +2957,10 @@ class field {
 		return field_comp($this->_cPtr,$r_,$logType);
 	}
 
+	function value($arg1) {
+		return field_value($this->_cPtr,$arg1);
+	}
+
 	static function createDummyField() {
 		$r=field_createDummyField();
 		if (is_resource($r)) {
@@ -3016,6 +3032,10 @@ abstract class fieldsBase {
 			return new fielddefs($r);
 		}
 		return $r;
+	}
+
+	function setFielddefs($def) {
+		fieldsBase_setFielddefs($this->_cPtr,$def);
 	}
 
 	function getFieldByIndex($index,$return_field) {
@@ -3495,6 +3515,10 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return $r;
 	}
 
+	function appendCol($name,$type,$len) {
+		RecordSet_appendCol($this->_cPtr,$name,$type,$len);
+	}
+
 	function getRow($index,$return_record) {
 		RecordSet_getRow($this->_cPtr,$index,$return_record);
 	}
@@ -3755,8 +3779,8 @@ class ActiveTable {
 		return $r;
 	}
 
-	function createWritableRecord() {
-		$r=ActiveTable_createWritableRecord($this->_cPtr);
+	function getWritableRecord() {
+		$r=ActiveTable_getWritableRecord($this->_cPtr);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
