@@ -283,7 +283,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\groupQuery.h" />
-    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\trdboostapi.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\trdboostapiInternal.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\trdormapi.h" />

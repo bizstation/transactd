@@ -293,7 +293,8 @@ enum eGroupFunc
 	fmax = 0,
     fmin = 1,
 	favg = 2,
-	fsum = 3
+	fsum = 3,
+	fcount = 4
 }eGroupFunc;
 
 typedef
@@ -1087,7 +1088,7 @@ interface IActiveTable : IDispatch
 					,[out, retval] IRecordset** retVal);
 
   [id(0x000000A)]
-  HRESULT _stdcall CreateWritableRecord([out, retval] IWritableRecord** retVal);
+  HRESULT _stdcall GetWritableRecord([out, retval] IWritableRecord** retVal);
   [propget, id(0x000000B)]
   HRESULT _stdcall TableDef([out, retval] ITableDef** Value);
   				

@@ -144,7 +144,7 @@
 						<ProjectProperties Name="VerifyPackages">True</ProjectProperties>
 					</ProjectProperties>
 					<Parameters>
-						<Parameters Name="RunParams">0 localhost 3 1</Parameters>
+						<Parameters Name="RunParams">0 localhost</Parameters>
 					</Parameters>
 					<VFOLDERS/>
 				</CPlusPlusBuilder.Personality>

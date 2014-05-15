@@ -91,7 +91,7 @@ void wirteRecord(databaseManager* mgr)
 {
 	activeTable<map_orm> atemp(*mgr, _T("社員"));
 
-	tdc::writableRecord& rec = atemp.index(0).createWritableRecord();
+	tdc::writableRecord& rec = atemp.index(0).getWritableRecord();
 
 	rec[_T("id")] = 1200;
 	rec[_T("名前")] = _T("矢口");
@@ -123,7 +123,7 @@ void delUser(databaseManager* mgr)
 	//updateでは変更したフィールドだけにしたい
 	//変更フィールドがわかるfieldsが必要
 	//変更フィールドだけを
-	tdc::memoryRecord& rec = atemp.createWritableRecord();
+	tdc::memoryRecord& rec = atemp.getWritableRecord();
 	rec[_T("id")] = 1200;
 	atemp.del(rec);
 }

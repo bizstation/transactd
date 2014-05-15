@@ -2431,7 +2431,6 @@ void testJoin(database* db)
 	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
 				, "first field group_name");
 	row_ptr row = rs[15000 - 9];
-
 	BOOST_CHECK_MESSAGE(_tstring((*row)[_T("group_name")].c_str()) == _tstring(_T("9 group"))
 				, "group_name = 9 group ");
 
@@ -2455,7 +2454,11 @@ void testJoin(database* db)
 
 	rs += rs2;
 	BOOST_CHECK_MESSAGE(rs.size()== 16000, "union  rs.size()== 16000");
-
+	row = rs[15000];
+	BOOST_CHECK_MESSAGE((*row)[_T("id")].i() == 15001,"id = 15001");
+	row = rs.last();
+	BOOST_CHECK_MESSAGE((*row)[_T("id")].i() == 16000,"id = 16000");
+	
 
 	//test group by
 	groupQuery gq;
@@ -2463,23 +2466,83 @@ void testJoin(database* db)
 	rs.groupBy(gq, group_count());
 	BOOST_CHECK_MESSAGE(rs.size()== 16000, "group by  rs.size()== 16000");
 
-	/*for (int i=0;i<100;i++)
-		std::cout << (*rs[i])[_T("group")].i() << "  " << (*rs[i])[_T("id")].i()
-			<< "  " << (*rs[i])[_T("count")].i() << std::endl;*/
-    gq.reset();
+	gq.reset();
 	gq.keyField(_T("group")).resultField(_T("count"));
 	rs.groupBy(gq, group_count());
 	BOOST_CHECK_MESSAGE(rs.size()== 100, "group by2  rs.size()== 100");
 
-	//use sum function object by for each
+	//use sum function object by for_each
 	group_sum f;
-	f.setResultKey(rs.fieldDefs()->size()-1);
+	f.setResultKey((int)rs.fieldDefs()->size()-1);
 	f = std::for_each(rs.begin(),rs.end(), f);
 	BOOST_CHECK_MESSAGE(f.result()== 16000, "sum ");
 
+	//top
+	recordset rs3;
+	rs.top(rs3, 10);
+	BOOST_CHECK_MESSAGE(rs3.size()== 10, "top 10  rs3.size()== 10");
+	
+
 }
 
-/*
+void testWirtableRecord(database* db)
+{
+	queryTable atu(db, _T("user"));
+
+	writableRecord& rec = atu.index(0).getWritableRecord();
+
+	rec[_T("id")] = 120000;
+	rec[_T("名前")] = _T("相葉");
+	rec.save();
+
+	rec.clear();
+	rec[_T("id")] = 120000;
+	rec.read();
+	BOOST_CHECK_MESSAGE(_tstring(rec[_T("名前")].c_str()) == _tstring(_T("相葉"))
+					, "rec 120000 name ");
+
+	rec.clear();
+	rec[_T("id")] = 120001;
+	rec[_T("名前")]  = _T("大野");
+	if (!rec.read())
+		rec.insert();
+
+	rec.clear();
+	rec[_T("id")] = 120001;
+	rec.read();
+	BOOST_CHECK_MESSAGE(_tstring(rec[_T("名前")].c_str()) == _tstring(_T("大野"))
+					, "rec 120001 name ");
+
+	//update changed filed only
+	rec.clear();
+	rec[_T("id")]  = 120001;
+	rec[_T("名前")] = _T("松本");
+	rec.update();
+
+	rec.clear();
+	rec[_T("id")] = 120001;
+	rec.read();
+	BOOST_CHECK_MESSAGE(_tstring(rec[_T("名前")].c_str()) == _tstring(_T("松本"))
+					, "rec 120001 update name ");
+
+	rec.del();
+	rec[_T("id")] = 120000;
+	rec.del();
+
+	rec.clear();
+	rec[_T("id")] = 120001;
+	bool ret = rec.read();
+	BOOST_CHECK_MESSAGE(ret == false, "rec 120001 delete ");
+
+	rec.clear();
+	rec[_T("id")] = 120000;
+	ret = rec.read();
+	BOOST_CHECK_MESSAGE(ret == false, "rec 120000 delete ");
+
+
+}
+
+
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -2554,17 +2617,17 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(convert)
     BOOST_AUTO_TEST_CASE(u8tombc)
-    {
-        char mbc[256];
+	{
+		char mbc[256];
         char u8[256] = "123";
 
-        bzs::env::u8tombc(u8, -1, mbc, 256);
+		bzs::env::u8tombc(u8, -1, mbc, 256);
 		BOOST_CHECK_MESSAGE(!strcmp(mbc, u8), u8);
 
         strcpy(u8, "漢字");
         char mbcKanji[20] =
         {0x8A, 0xBF, 0x8E, 0x9A, 0x00};
-        bzs::env::u8tombc(u8, -1, mbc, 256);
+		bzs::env::u8tombc(u8, -1, mbc, 256);
         BOOST_CHECK_MESSAGE(!strcmp(mbc, mbcKanji), u8);
 
         memset(u8, 0, 256);
@@ -2639,7 +2702,7 @@ BOOST_AUTO_TEST_SUITE(filter)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-*/
+
 BOOST_AUTO_TEST_SUITE(query)
 
 	BOOST_AUTO_TEST_CASE(join)
@@ -2649,7 +2712,10 @@ BOOST_AUTO_TEST_SUITE(query)
 		int ret = prebuiltData(db, param);
 		BOOST_CHECK_MESSAGE(0 == ret, "query data build");
 		if (ret==0)
+		{
 			testJoin(db.get());
+			testWirtableRecord(db.get());
+		}
 	}
 
 	BOOST_AUTO_TEST_CASE(fuga)

@@ -46,6 +46,7 @@ public:
 	bool owner;
 };
 
+#pragma warning(disable:4251)
 
 #define ROW_MEM_BLOCK_RESERVE 4
 
@@ -54,36 +55,35 @@ class AGRPACK memoryRecord : public fieldsBase
 	friend class multiRecordAlocatorImple;
 
 	std::vector<autoMemory > m_memblock;
-
 protected:
 	inline memoryRecord(fielddefs& fdinfo);
-
+	
 public:
-	virtual ~memoryRecord();
 	void clear();
 	void setRecordData(unsigned char* ptr, size_t size
 			, short* endFieldIndex, bool owner = false);
+	void copyToBuffer(table* tb, bool updateOnly=false) const;
 
 	/* return memory block first address which not field ptr address */
-	inline unsigned char* memoryRecord::ptr(int index) const
+	inline unsigned char* ptr(int index) const
 	{
-		for (int i=0;i<(int)m_memblock.size();++i)
+		for (int i=0;i<memBlockSize();++i)
 			if (*(m_memblock[i].endFieldIndex) > index)
 				return 	m_memblock[i].ptr;
 		assert(0);
 		return NULL;
 	}
 
-	inline const autoMemory&  memoryRecord::memBlock(int index) const
+	inline const autoMemory& memBlock(int index) const
 	{
-		for (int i=0;i<(int)m_memblock.size();++i)
+		for (int i=0;i<memBlockSize();++i)
 			if (*(m_memblock[i].endFieldIndex) > index)
 				return m_memblock[i];
 		assert(0);
 		return *((autoMemory*)0);
 	}
 
-	inline int memoryRecord::memBlockSize() const
+	inline int memBlockSize() const
 	{
 		return (int) m_memblock.size();
 	}
@@ -93,18 +93,18 @@ public:
 		memcpy(ptr(0), tb->fieldPtr(0), m_fns.totalFieldLen());
 	}
 
-	void copyToBuffer(table* tb, bool updateOnly=false) const;
-
 	static memoryRecord* create(fielddefs& fdinfo);
 	static void release(memoryRecord* p);
 };
+
+#pragma warning(default:4251)
 
 class AGRPACK writableRecord : public memoryRecord
 {
 	fielddefs* m_fddefs;
 	short m_endIndex;
-	table_ptr m_tb;
-	writableRecord(table_ptr tb, const aliasMap_type* alias);
+	table* m_tb;
+	writableRecord(table* tb, const aliasMap_type* alias);
 	fielddefs* fddefs();
 
 public:
@@ -115,7 +115,7 @@ public:
 	void update();
 	void save();
 
-	static writableRecord* create(table_ptr tb, const aliasMap_type* alias);
+	static writableRecord* create(table* tb, const aliasMap_type* alias);
 
 };
 

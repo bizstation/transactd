@@ -16,9 +16,9 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include "memRecordset.h"
-#include "benchmark.h"
-#include "queryData.h"
+#include <bzs/db/protocol/tdap/client/memRecordset.h>
+#include <bzs/rtl/benchmark.h>
+#include <bzs/example/queryData.h>
 #include <iostream>
 #include <locale.h>
 
@@ -32,33 +32,21 @@ static const char_td primary_key = 0;
 
 void showConsole(recordset& rowset)
 {
-
-	 const tdc::fielddefs& fields = *rowset.fieldDefs();
-	 for (int j=0;j<(int)fields.size();++j)
-		 std::tcout << fields[j].name()  << _T("\t");
-	 std::tcout << _T("\n");
+	const tdc::fielddefs& fields = *rowset.fieldDefs();
+	for (int j=0;j<(int)fields.size();++j)
+		std::tcout << fields[j].name()  << _T("\t");
+	std::tcout << _T("\n");
 
 	for (int i=0;i<(int)rowset.size();++i)
 	{
 		row& m = *rowset[i];
 		for (int j=0;j<(int)m.size();++j)
 		{
-			std::tcout << m[(size_t)j].c_str()  << _T("\t");
+			std::tcout << m[(short)j].c_str()  << _T("\t");
 			if (j == (int)m.size() -1)
 			   std::tcout << _T("\n");
 		}
 	}
-}
-
-
-
-tdc::query q;
-groupQuery gq;
-
-void initQuery()
-{
-	q.reset();
-	gq.reset();
 }
 
 bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep, int kind, int n)
@@ -67,40 +55,42 @@ bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep,
 	queryTable& atg = *atgp;
 	queryTable& ate = *atep;
 	recordset& rs = *rsp;
-
+	tdc::query q;
 
 	for (int i= 0;i<n;++i)
 	{
 		rs.clear();
 		if (kind &1)
 		{
-			initQuery();
+			q.reset();
 			atu.alias(_T("–¼‘O"), _T("name"));
 
-			q.select(_T("id"), _T("name"),_T("group"))
-					.where(_T("id"), _T("<="), i+15000);
-
+			q.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), i+15000);
 			atu.index(0).keyValue(i+1).read(rs, q);
 
 			//Join extention::comment
 			if (kind & 2)
 			{
-				initQuery();
+				q.reset();
 				ate.index(0).join(rs, q.select(_T("comment")).optimize(queryBase::hasOneJoin), _T("id"));
 			}
 			if (kind & 4)
 			{
 				//Join group::name
-				initQuery();
+				q.reset();
 				atg.alias(_T("name"), _T("group_name"));
 				atg.index(0).join(rs, q.select(_T("group_name")), _T("group"));
 			}
 		}
+		if (kind & 8)
+			std::tcout << "." ;
 	}
+	if (kind & 8)
+		std::tcout << std::endl ;
 	return true;
 }
 
-
+#pragma warning(disable:4101)
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -120,7 +110,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (argc >= 3)
 			host = argv[2];
 		if (argc >= 2)
-			makeDatabase = _ttol(argv[1]);
+			makeDatabase = (_ttol(argv[1])!=0);
 
 		connectParams param(_T("tdap"), host, _T("querytest"), _T("test.bdf"));
 		param.setMode(TD_OPEN_NORMAL);
@@ -135,8 +125,10 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		recordset rs;
 
+
 		bzs::rtl::benchmark bm;
 		bm.report(boost::bind(btest, &rs, &atu, &atg, &ate, kind, n), "exec time ");
+
 		return 0;
 
 	}
@@ -147,6 +139,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	return 1;
 }
+#pragma warning(default:4101)
 
 
 

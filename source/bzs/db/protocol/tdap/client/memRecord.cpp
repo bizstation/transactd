@@ -35,7 +35,7 @@ namespace client
 
 
 autoMemory::autoMemory(unsigned char* p, size_t s, short* endIndex, bool own)
-		: ptr(p), size(s),endFieldIndex(NULL), owner(own)
+		: ptr(p), size((unsigned int)s),endFieldIndex(NULL), owner(own)
 
 {
 	if (owner)
@@ -59,7 +59,6 @@ autoMemory::~autoMemory()
 		delete [] ptr;
 		delete endFieldIndex;
 	}
-	
 }
 
 autoMemory::autoMemory(const autoMemory& p)
@@ -68,12 +67,10 @@ autoMemory::autoMemory(const autoMemory& p)
 {
 	const_cast<autoMemory&>(p).owner = false;
 	const_cast<autoMemory&>(p).ptr = NULL;
-
 }
 
 autoMemory& autoMemory::operator=(const autoMemory& p)
 {
-
 	ptr = p.ptr;
 	size = p.size;
 	endFieldIndex = p.endFieldIndex;
@@ -83,20 +80,13 @@ autoMemory& autoMemory::operator=(const autoMemory& p)
 	return *this;
 }
 
-
-
 //---------------------------------------------------------------------------
 //    class memoryRecord
 //---------------------------------------------------------------------------
-
 inline memoryRecord::memoryRecord(fielddefs& fdinfo): fieldsBase(fdinfo)
 {
+	
 	m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
-}
-
-memoryRecord::~memoryRecord()
-{
-
 }
 
 void memoryRecord::clear()
@@ -146,18 +136,17 @@ void memoryRecord::release(memoryRecord* p)
 
 }
 
-
 //---------------------------------------------------------------------------
 //    class writableRecord
 //---------------------------------------------------------------------------
-writableRecord::writableRecord(table_ptr tb, const aliasMap_type* alias):memoryRecord(*fddefs())
+writableRecord::writableRecord(table* tb, const aliasMap_type* alias):memoryRecord(*fddefs())
 		,m_tb(tb)
 {
 	m_tb->setFilter(NULL, 0, 0);
 	m_tb->clearBuffer();
 	m_fddefs->clear();
 	m_fddefs->setAliases(alias);
-	m_fddefs->copyFrom(m_tb.get());
+	m_fddefs->copyFrom(m_tb);
 	setRecordData(0, 0, &m_endIndex, true);
 }
 
@@ -175,55 +164,55 @@ writableRecord::~writableRecord()
 bool writableRecord::read(bool KeysetAlrady)
 {
 	if (!KeysetAlrady)
-		copyToBuffer(m_tb.get());
+		copyToBuffer(m_tb);
 	m_tb->seek();
 	if (m_tb->stat())
 		return false;
-	copyFromBuffer(m_tb.get());
+	copyFromBuffer(m_tb);
 	return true;
 }
 
 void writableRecord::insert()
 {
-	copyToBuffer(m_tb.get());
+	copyToBuffer(m_tb);
 	insertRecord(m_tb);
-	copyFromBuffer(m_tb.get());
+	copyFromBuffer(m_tb);
 }
 
 void writableRecord::del(bool KeysetAlrady)
 {
 	if (!KeysetAlrady)
-		copyToBuffer(m_tb.get());
+		copyToBuffer(m_tb);
 	m_tb->seek();
 	if (m_tb->stat())
 		nstable::throwError(_T("activeTable delete "), m_tb->stat());
-	deleteRecord(m_tb.get());
+	deleteRecord(m_tb);
 }
 
 void writableRecord::update()
 {
-	copyToBuffer(m_tb.get());
+	copyToBuffer(m_tb);
 	m_tb->seek();
 	if (m_tb->stat())
 		nstable::throwError(_T("activeTable update "), m_tb->stat());
-	copyToBuffer(m_tb.get(), true/*only changed*/);
-	updateRecord(m_tb.get());
+	copyToBuffer(m_tb, true/*only changed*/);
+	updateRecord(m_tb);
 }
 
 void writableRecord::save()
 {
-	copyToBuffer(m_tb.get());
+	copyToBuffer(m_tb);
 	m_tb->seek();
 	if (m_tb->stat() == STATUS_NOT_FOUND_TI)
 		insertRecord(m_tb);
 	else
 	{
-		copyToBuffer(m_tb.get());
-		updateRecord(m_tb.get());
+		copyToBuffer(m_tb);
+		updateRecord(m_tb);
 	}
 }
 
-writableRecord* writableRecord::create(table_ptr tb, const aliasMap_type* alias)
+writableRecord* writableRecord::create(table* tb, const aliasMap_type* alias)
 {
 	return new writableRecord(tb, alias);
 }

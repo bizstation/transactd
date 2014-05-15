@@ -22,7 +22,6 @@
 #include "filedNameAlias.h"
 #include "groupQuery.h"
 #include "memRecord.h"
-#include <boost/lexical_cast.hpp>
 #include <boost/shared_array.hpp>
 #include <vector>
 namespace bzs
@@ -36,6 +35,53 @@ namespace tdap
 namespace client
 {
 
+inline std::_tstring lexical_cast(__int64 v)
+{
+	_TCHAR tmp[50];
+	_i64tot_s(v, tmp, 50, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(int v)
+{
+	_TCHAR tmp[50];
+	_ltot_s(v, tmp, 50, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(short v)
+{
+	_TCHAR tmp[50];
+	_ltot_s((int)v, tmp, 50, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(char v)
+{
+	_TCHAR tmp[50];
+	_ltot_s((int)v, tmp, 50, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(double v)
+{
+	_TCHAR tmp[50];
+	_stprintf_s(tmp, 50, _T("%.*f"),15, v);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(float v)
+{
+	_TCHAR tmp[50];
+	_stprintf_s(tmp, 50, _T("%.*f"),15, v);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(const _TCHAR* v)
+{
+	return std::_tstring(v);
+}
+
 class qlogic
 {
 	std::_tstring m_name;
@@ -45,27 +91,12 @@ class qlogic
 
 public:
 
-	qlogic(const _TCHAR* name, const _TCHAR* type, const _TCHAR* value, combineType next)
-		:m_name(name),m_type(type),m_value(value),m_next(next){}
-	qlogic(const _TCHAR* name, const _TCHAR* type, int value, combineType next)
+	template <class T>
+	qlogic(const _TCHAR* name, const _TCHAR* type, T value, combineType next)
 		:m_name(name),m_type(type),m_next(next)
-		{
-			_TCHAR buf[50];
-			m_value = _ltot(value, buf, 10);
-		}
-	qlogic(const _TCHAR* name, const _TCHAR* type, __int64 value, combineType next)
-		:m_name(name),m_type(type),m_next(next)
-		{
-			_TCHAR buf[50];
-			m_value = _i64tot(value, buf, 10);
-		}
-	qlogic(const _TCHAR* name, const _TCHAR* type, double value, combineType next)
-		:m_name(name),m_type(type),m_next(next)
-		{
-			_TCHAR buf[50];
-			_stprintf(buf, _T("%.*f"),15, value);
-			m_value = buf;
-		}
+	{
+		m_value = lexical_cast(value);
+	}
 };
 
 class databaseManager : boost::noncopyable
@@ -128,7 +159,7 @@ public:
 	template <class T>
 	query& where(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
-		addLogic(name, qlogic, boost::lexical_cast<std::_tstring>(value).c_str());
+		addLogic(name, qlogic, lexical_cast(value).c_str());
 		return *this;
 	}
 
@@ -139,7 +170,7 @@ public:
 		if (whereTokens() == 0)
 			throw bzs::rtl::exception(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
 
-		addLogic(_T("and"), name, qlogic, boost::lexical_cast<std::_tstring>(value).c_str());
+		addLogic(_T("and"), name, qlogic, lexical_cast(value).c_str());
  		return *this;
 	}
 
@@ -149,7 +180,7 @@ public:
 		if (whereTokens() == 0)
 			throw bzs::rtl::exception(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
 
-		addLogic(_T("or"), name, qlogic, boost::lexical_cast<std::_tstring>(value).c_str());
+		addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
 		return *this;
 	}
 #endif
@@ -160,7 +191,7 @@ public:
 		if (whereTokens() == 0)
 			throw bzs::rtl::exception(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
 
-		addLogic(_T("or"), name, qlogic, boost::lexical_cast<std::_tstring>(value).c_str());
+		addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
 		return *this;
 	}
 
@@ -169,14 +200,14 @@ public:
 	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
 							,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 	{
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv0).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv1).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv2).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv3).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv4).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv5).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv6).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv7).c_str());
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv5).c_str());
+		addSeekKeyValue(lexical_cast(kv6).c_str());
+		addSeekKeyValue(lexical_cast(kv7).c_str());
 		return *this;
 	}
 	template <class T0, class T1 , class T2, class T3
@@ -184,13 +215,13 @@ public:
 	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
 							,const T4 kv4, const T5 kv5, const T6 kv6)
 	{
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv0).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv1).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv2).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv3).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv4).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv5).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv6).c_str());
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv5).c_str());
+		addSeekKeyValue(lexical_cast(kv6).c_str());
 		return *this;
 	}
 
@@ -199,57 +230,57 @@ public:
 	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
 							,const T4 kv4, const T5 kv5)
 	{
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv0).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv1).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv2).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv3).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv4).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv5).c_str());
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv5).c_str());
 		return *this;
 	}
 
 	template <class T0, class T1 , class T2, class T3, class T4>
 	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3, const T4 kv4)
 	{
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv0).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv1).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv2).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv3).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
 		return *this;
 	}
 
 	template <class T0, class T1 , class T2, class T3>
 	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 	{
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv0).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv1).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv2).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
 		return *this;
 	}
 
 	template <class T0, class T1 , class T2>
 	query& in(const T0 kv0, const T1 kv1, const T2 kv2)
 	{
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv0).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv1).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
 		return *this;
 	}
 
 	template <class T0, class T1>
 	query& in(const T0 kv0, const T1 kv1)
 	{
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv0).c_str());
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
 		return *this;
 	}
 
 	template <class T0>
 	query& in(const T0 kv0)
 	{
-		addSeekKeyValue(boost::lexical_cast<std::_tstring>(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv0).c_str());
 		return *this;
 	}
 
@@ -536,7 +567,7 @@ protected:
 			while(it1 != ite1)
 			{
 				T& mdl = *(mdls[(*it1)[0]]);
-				for (int i=0;i<fieldIndexes.size();++i)
+				for (int i=0;i<(int)fieldIndexes.size();++i)
 					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
 				++it1;
 			}
@@ -546,7 +577,7 @@ protected:
 			while(it != ite)
 			{
 				T& mdl = *(*it);
-				for (int i=0;i<fieldIndexes.size();++i)
+				for (int i=0;i<(int)fieldIndexes.size();++i)
 					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
 				++it;
 			}
@@ -1082,59 +1113,11 @@ public:
 	typedef boost::shared_ptr<writableRecord> record;
 	record m_record;
 
-	inline writableRecord& createWritableRecord()
+	inline writableRecord& getWritableRecord()
 	{
-		m_record.reset(writableRecord::create(m_tb, &m_alias.map()), &writableRecord::release);
+		m_record.reset(writableRecord::create(m_tb.get(), &m_alias.map()), &writableRecord::release);
 		return *m_record.get();
 	}
-	/*
-	bool read(memoryRecord& rec)
-	{
-		rec.copyToBuffer(m_tb.get());
-		m_tb->seek();
-		if (m_tb->stat())
-			return false;
-		rec.copyFromBuffer(m_tb.get());
-		return true;
-	}
-
-	void insert(memoryRecord& rec)
-	{
-		rec.copyToBuffer(m_tb.get());
-		insertRecord(m_tb);
-	}
-
-	void del(memoryRecord& rec)
-	{
-		rec.copyToBuffer(m_tb.get());
-		m_tb->seek();
-		if (m_tb->stat())
-			nstable::throwError(_T("activeTable delete "), m_tb->stat());
-		deleteRecord(m_tb.get());
-	}
-
-	void update(memoryRecord& rec)
-	{
-		rec.copyToBuffer(m_tb.get());
-		m_tb->seek();
-		if (m_tb->stat())
-			nstable::throwError(_T("activeTable update "), m_tb->stat());
-		rec.copyToBuffer(m_tb.get(), true);
-		updateRecord(m_tb.get());
-	}
-
-	void save(memoryRecord& rec)
-	{
-		rec.copyToBuffer(m_tb.get());
-		m_tb->seek();
-		if (m_tb->stat() == STATUS_NOT_FOUND_TI)
-			insertRecord(m_tb);
-		else
-		{
-			rec.copyToBuffer(m_tb.get());
-			updateRecord(m_tb.get());
-		}
-	}*/
 
 	template <class Container>
 	activeTable& join(Container& mdls, queryBase& q, const _TCHAR* name1

@@ -295,14 +295,14 @@ STDMETHODIMP CActiveTable::OuterJoin(IRecordset* rs, IQueryBase* query, BSTR Nam
     }
 }
 
-STDMETHODIMP CActiveTable::CreateWritableRecord(IWritableRecord** retVal)
+STDMETHODIMP CActiveTable::GetWritableRecord(IWritableRecord** retVal)
 {
 
 	if (m_recObj == NULL)
 	{
 		CComObject<CWritableRecord>::CreateInstance(&m_recObj);
 		m_recObj->AddRef();
-		m_recObj->m_rec = &m_at->createWritableRecord();
+		m_recObj->m_rec = &m_at->getWritableRecord();
 	}
 	if (m_recObj)
 	{

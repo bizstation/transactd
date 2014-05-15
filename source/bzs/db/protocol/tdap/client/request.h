@@ -67,7 +67,6 @@ public:
 		if (P_MASK_DATALEN & paramMask)
 		{
 			uint_td tmp = *((uint_td*)p);
-			memset(data, 0, *datalen);
 			if (*datalen < tmp)
 				result = STATUS_BUFFERTOOSMALL;
 			else

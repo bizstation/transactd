@@ -88,6 +88,7 @@ class recordset
 	boost::shared_ptr<multiRecordAlocatorImple> m_mra;
 	std::vector<row_ptr> m_recordset;
 	std::vector<boost::shared_ptr<tdc::autoMemory> > m_memblock;
+	std::vector<boost::shared_ptr<tdc::fielddefs> > m_unionFds;
 
 	/* for registerMemoryBlock temp data */
 	size_t m_joinRows;
@@ -183,16 +184,18 @@ private:
 
 public:
 	recordset():m_fds(tdc::fielddefs::create(), &tdc::fielddefs::destroy)
-		,m_mra(new ::multiRecordAlocatorImple(this)),m_uniqueReadMaxField(0)
+		, m_joinRows(0), m_uniqueReadMaxField(0)
 	{
-
-	};
-
+		m_mra.reset(new ::multiRecordAlocatorImple(this));
+	}
+	
 	~recordset()
 	{
 
 	}
+	
 	inline short uniqueReadMaxField() const{return m_uniqueReadMaxField;}
+	
 	inline void clearRecords()
 	{
 		m_recordset.clear();
@@ -201,7 +204,13 @@ public:
 
 	const tdc::fielddefs* fieldDefs() const {return m_fds.get();}
 
-	inline void clear(){clearRecords();m_fds->clear();m_memblock.clear();}
+	inline void clear()
+	{
+		clearRecords();
+		m_fds->clear();
+		m_unionFds.clear();
+		m_memblock.clear();
+	}
 
 	inline row_ptr& operator[](size_t index){return m_recordset[index];}
 
@@ -209,7 +218,7 @@ public:
 
 	inline row_ptr& last() {return m_recordset[m_recordset.size() - 1];}
 
-	inline recordset top(recordset& c, int n)
+	inline recordset& top(recordset& c, int n)
 	{
 		c = *this;
 		c.clearRecords();
@@ -256,6 +265,9 @@ public:
 	void removeField(int index)
 	{
 		m_fds->remove(index);
+		for(int i=0;i<(int)m_unionFds.size();++i)
+			m_unionFds[i]->remove(index);
+
 		for(int i=0;i<(int)m_memblock.size();++i)
 		{
 			if (*(m_memblock[i]->endFieldIndex) > index)
@@ -305,8 +317,9 @@ public:
 		fd.pos = 0;
 		fd.type = type;
 		fd.setName(name);
-
 		m_fds->push_back(&fd);
+		for(int i=0;i<(int)m_unionFds.size();++i)
+			m_unionFds[i]->push_back(&fd);
 		registerMemoryBlock(NULL, fd.len*size(), fd.len
 					, tdc::multiRecordAlocator::mra_outerjoin);
 
@@ -318,11 +331,9 @@ public:
 			THROW_BZS_ERROR_WITH_MSG(_T("Recordsets are different format"));
 
 		m_recordset.reserve(m_recordset.size()+r.size());
+		m_unionFds.push_back(r.m_fds);
 		for (size_t i=0;i<r.size();++i)
-		{
 			m_recordset.push_back(r.m_recordset[i]);
-			m_recordset[m_recordset.size()-1]->setFielddefs(*m_fds);
-		}
 		for (size_t i=0;i<r.m_memblock.size();++i)
 			m_memblock.push_back(r.m_memblock[i]);
 		return *this;
@@ -408,7 +419,7 @@ class map_orm
 	const map_orm_fdi& m_fdi;
 	short m_autoIncFiled;
 
-	bool comp(row& lm, row& rm, const _TCHAR* name, int index) const
+	int comp(row& lm, row& rm, const _TCHAR* name, int index) const
 	{
 		return lm[index].comp(rm[index], 0);
 	}
@@ -478,7 +489,7 @@ public:
 
 	void operator()(const row_type& row)
 	{
-        value_type_ tmp;
+        value_type_ tmp=0;
 		m_value += (*row)[m_resultKey].value(tmp);
 	}
 	value_type_ result()const{return m_value;}
@@ -504,7 +515,7 @@ public:
 	void operator()(const row_type& row)
 	{
 		++m_count;
-		value_type_ tmp;
+		value_type_ tmp=0;
 		m_value += (*row)[m_resultKey].value(tmp);
 	}
 
@@ -555,7 +566,8 @@ public:
 
 	void operator()(const row_type& row)
 	{
-		value_type_ tmp = (*row)[m_resultKey].value(tmp);
+		value_type_ tmp = 0;
+		tmp = (*row)[m_resultKey].value(tmp);
 		if (m_flag || m_value > tmp)
 		{
 			m_flag = false;
@@ -586,7 +598,8 @@ public:
 
 	void operator()(const row_type& row)
 	{
-		value_type_ tmp = (*row)[m_resultKey].value(tmp);
+		value_type_ tmp = 0;
+		tmp = (*row)[m_resultKey].value(tmp);
 		if (m_flag || m_value < tmp)
 		{
 			m_flag = false;

@@ -84,7 +84,7 @@ public:
 	{
 		const typename Container::row_type& lm = m_mdls[lv] ;
 		const typename Container::row_type& rm = m_mdls[rv] ;
-		for (int i=0;i<m_keys.size();++i)
+		for (int i=0;i<(int)m_keys.size();++i)
 		{
 			const Container::key_type& s = m_keys[i];
 			int ret = compByKey(*lm, *rm, s);
@@ -168,10 +168,10 @@ class groupQuery
 	void removeFileds(typename Container& mdls)
 	{
 		const tdc::fielddefs& fds = *mdls.fieldDefs();
-		for (int i=fds.size()-1;i>=0;--i)
+		for (int i=(int)fds.size()-1;i>=0;--i)
 		{
 			bool enabled = false;
-			for (int j=0;j<m_keyFields.size();++j)
+			for (int j=0;j<(int)m_keyFields.size();++j)
 			{
 				if (m_keyFields[j] == fds[i].name())
 					enabled = true;
@@ -252,7 +252,7 @@ public:
 	void getFieldIndexes(Container& mdls, std::vector<typename Container::key_type>& fieldIndexes)
 	{
 		/* convert field Index from filed name */
-		for (int i=0;i<m_keyFields.size();++i)
+		for (int i=0;i<(int)m_keyFields.size();++i)
 			fieldIndexes.push_back(resolvKeyValue(mdls, m_keyFields[i]));
 	}
 
@@ -264,10 +264,10 @@ public:
 		grouping_comp<typename Container> groupingComp(mdls, keyFields);
 		std::vector<int> index;
 		std::vector<int> tmp;
-		for (int n=0;n<mdls.size();++n)
+		for (int n=0;n<(int)mdls.size();++n)
 		{
 			bool found = false;
-			int i = binary_search(n, index, 0, index.size(), groupingComp, found);
+			int i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
 			if (!found)
 			{
 				index.insert(index.begin() + i, n);
@@ -283,7 +283,7 @@ public:
 		std::vector<typename Container::key_type> keyFields;
 
 		/* convert key value from field name */
-		for (int i=0;i<m_keyFields.size();++i)
+		for (int i=0;i<(int)m_keyFields.size();++i)
 			keyFields.push_back(resolvKeyValue(mdls, m_keyFields[i]));
 
 
@@ -292,7 +292,7 @@ public:
 		func.setResultKey(resultKey);
 		if (resultKey == mdls.fieldDefs()->size())
 		{
-			FUNC::value_type dummy;
+			FUNC::value_type dummy=0;
 			mdls.appendCol(m_resultField.c_str(), getFieldType(dummy), sizeof(FUNC::value_type));
 		}
 
@@ -305,7 +305,7 @@ public:
 		while(it != ite)
 		{
 			bool found = false;
-			i = binary_search(n, index, 0, index.size(), groupingComp, found);
+			i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
 			if (!found)
 			{
 				index.insert(index.begin() + i, n);
@@ -319,8 +319,12 @@ public:
 		typename Container c(mdls);
 
 		clear(mdls);
-		for (int i=0;i<index.size();++i)
+		for (int i=0;i<(int)index.size();++i)
 		{
+			_TCHAR tmp[50];
+			_ltot_s(i,tmp, 50, 10);
+			OutputDebugString(tmp);
+			OutputDebugString(_T("\n"));
 			typename Container::row_type cur = c[index[i]];
 			setValue(*cur, resultKey, funcs[i].result());
 			mdls.push_back(cur);

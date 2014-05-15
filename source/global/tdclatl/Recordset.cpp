@@ -138,13 +138,15 @@ STDMETHODIMP CARecordset::GroupBy(IGroupQuery* igq, enum eGroupFunc func, IRecor
 		{
 			CGroupQuery* gq = dynamic_cast<CGroupQuery*>(igq);
 			if (func == fsum)
-				m_rs->groupBy(gq->m_gq, sum<row, int, double>());
+				m_rs->groupBy(gq->m_gq, sum<row_ptr, int, double>());
 			else if (func == fmin)
-				m_rs->groupBy(gq->m_gq, min<row, int, double>());
+				m_rs->groupBy(gq->m_gq, min<row_ptr, int, double>());
 			else if (func == fmax)
-				m_rs->groupBy(gq->m_gq, max<row, int, double>());
+				m_rs->groupBy(gq->m_gq, max<row_ptr, int, double>());
 			else if (func == favg)
-				m_rs->groupBy(gq->m_gq, avg<row, int, double>());
+				m_rs->groupBy(gq->m_gq, avg<row_ptr, int, double>());
+			else if(func == fcount)
+				m_rs->groupBy(gq->m_gq, count<row_ptr, int, int>());
 		}
 		setResult(retVal);	
 		return S_OK;
