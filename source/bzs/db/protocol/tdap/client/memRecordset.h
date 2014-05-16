@@ -74,11 +74,6 @@ public:
 
 
 
-template <class T>
-void setValue(row& row, key_type key, const T& value)
-{
-	row[key] = value;
-}
 
 
 class recordset
@@ -369,26 +364,28 @@ inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
 namespace bzs{namespace db{namespace protocol{namespace tdap{namespace client
 {
 
-inline recordset::iterator begin(recordset& m){return m.begin();}
-inline recordset::iterator end(recordset& m){return m.end();}
-
-inline void push_back(recordset& m, row_ptr c)
-{
-	//m.push_back(c);
-}
+template<> inline recordset::iterator begin(recordset& m){return m.begin();}
+template<> inline recordset::iterator end(recordset& m){return m.end();}
+template<> inline void push_back(recordset& m, row_ptr c){}
 
 /* for groupby */
-inline void clear(recordset& m)
-{
-	return m.clearRecords();
-}
+template<> inline void clear(recordset& m){return m.clearRecords();}
 
 /* for groupby */
-inline recordset::key_type resolvKeyValue(recordset& m, const std::_tstring& name
-	, bool noexception=false)
+template<> inline recordset::key_type resolvKeyValue(recordset& m
+				, const std::_tstring& name, bool noexception)
 {
 	return m.resolvKeyValue(name, noexception);
 }
+
+/* for groupby */
+template <class T>
+inline void setValue(recordset::row_type& row
+	, recordset::key_type key, const T& value)
+{
+	(*row)[key] = value;
+}
+
 
 }}}}}
 
@@ -495,7 +492,7 @@ public:
 	value_type_ result()const{return m_value;}
 
 	void reset(){m_value = 0;}
-	typedef typename value_type_ value_type;
+	typedef value_type_ value_type;
 };
 
 template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
@@ -522,7 +519,7 @@ public:
 	value_type_ result()const{return m_value/m_count;}
 
 	void reset(){m_value = 0;m_count=0;}
-	typedef typename value_type_ value_type;
+	typedef value_type_ value_type;
 };
 
 template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
@@ -546,7 +543,7 @@ public:
 	value_type_ result()const{return m_count;}
 
 	void reset(){m_count=0;}
-	typedef typename value_type_ value_type;
+	typedef value_type_ value_type;
 };
 
 #undef min
@@ -578,7 +575,7 @@ public:
 	value_type_ result()const{return m_value;}
 
 	void reset(){m_value = 0;m_flag = true;}
-	typedef typename value_type_ value_type;
+	typedef value_type_ value_type;
 };
 
 #undef max
@@ -610,7 +607,7 @@ public:
 	value_type_ result()const{return m_value;}
 
 	void reset(){m_value = 0;m_flag = true;}
-	typedef typename value_type_ value_type;
+	typedef value_type_ value_type;
 };
 
 

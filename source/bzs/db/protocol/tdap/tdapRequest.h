@@ -144,9 +144,10 @@ public:
 	uint_td			resultLen;
 	short_td*		resltPtr;
 	
-	request()
+	request():paramMask(0),op(0),pbk(0),datalen(0),data(0),keylen(0)
+		,keybuf(0),keyNum(0),resultLen(0),resltPtr(0)
 	{
-		memset(this, 0, sizeof(request));
+
 	}
 	
 	virtual ~request(){}

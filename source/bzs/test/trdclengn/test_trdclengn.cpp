@@ -2481,7 +2481,7 @@ void testJoin(database* db)
 	recordset rs3;
 	rs.top(rs3, 10);
 	BOOST_CHECK_MESSAGE(rs3.size()== 10, "top 10  rs3.size()== 10");
-	
+
 
 }
 
@@ -2563,7 +2563,7 @@ BOOST_AUTO_TEST_SUITE(btrv_nativ)
     BOOST_FIXTURE_TEST_CASE(find, fixture) {testFind(db());}
 
     BOOST_FIXTURE_TEST_CASE(findNext, fixture)
-    {
+	{
         testFindNext(db());
         testFindIn(db());
     }
@@ -2576,7 +2576,7 @@ BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
     BOOST_FIXTURE_TEST_CASE(getNext, fixture) {testGetNext(db());}
 
-    BOOST_FIXTURE_TEST_CASE(getPrevious, fixture) {testGetPrevious(db());}
+	BOOST_FIXTURE_TEST_CASE(getPrevious, fixture) {testGetPrevious(db());}
 
     BOOST_FIXTURE_TEST_CASE(getGreater, fixture) {testGetGreater(db());}
 

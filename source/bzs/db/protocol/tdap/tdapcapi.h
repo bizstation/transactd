@@ -440,7 +440,7 @@ struct trdVersiton
 #define CPP_INTERFACE_VER_MINOR "2"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
-#ifdef _WIN32
+#if (_WIN32 || __WIN32__ )
 #define CPP_INTERFACE_VERSTR "_" COMPILER_VERSTR "_" TD_LIB_PART "_" CPP_INTERFACE_VER_MAJOR "_" CPP_INTERFACE_VER_MINOR //use autolink
 #endif
 

@@ -31,6 +31,7 @@ namespace tdap
 namespace client
 {
 
+
 inline int getFieldType(int )
 {
 	return ft_integer;
@@ -86,7 +87,7 @@ public:
 		const typename Container::row_type& rm = m_mdls[rv] ;
 		for (int i=0;i<(int)m_keys.size();++i)
 		{
-			const Container::key_type& s = m_keys[i];
+			typename Container::key_type s = m_keys[i];
 			int ret = compByKey(*lm, *rm, s);
 			if (ret) return ret;
 		}
@@ -98,7 +99,7 @@ public:
 	{
 		for (int i=0;i< m_keys.size();++i)
 		{
-			const Container::key_type& s = m_keys[i];
+			typename Container::key_type s = m_keys[i];
 			int ret = compByKey(*lm, *rm, s);
 			if (ret) return false;
 		}
@@ -157,6 +158,25 @@ functions
 */
 class query;
 
+template <class Container>
+typename Container::key_type resolvKeyValue(Container& m, const std::_tstring& name
+	, bool noexception=false);
+
+template <class Container>
+typename Container::iterator begin(Container& m);
+
+template <class Container>
+typename Container::iterator end(Container& m);
+
+template <class Container>
+void clear(Container& m);
+
+template <class Container>
+void push_back(Container& m, typename Container::row_type c);
+
+template <class ROW_TYPE, class KEY_TYPE, class T>
+void setValue(ROW_TYPE& row, KEY_TYPE key, const T& value);
+
 class groupQuery
 {
 	std::vector<std::_tstring> m_keyFields;
@@ -165,9 +185,9 @@ class groupQuery
 
 	 /* remove none grouping fields */
 	template <class Container>
-	void removeFileds(typename Container& mdls)
+	void removeFileds(Container& mdls)
 	{
-		const tdc::fielddefs& fds = *mdls.fieldDefs();
+		const fielddefs& fds = *mdls.fieldDefs();
 		for (int i=(int)fds.size()-1;i>=0;--i)
 		{
 			bool enabled = false;
@@ -253,7 +273,7 @@ public:
 	{
 		/* convert field Index from filed name */
 		for (int i=0;i<(int)m_keyFields.size();++i)
-			fieldIndexes.push_back(resolvKeyValue(mdls, m_keyFields[i]));
+			fieldIndexes.push_back(resolvKeyValue(mdls, m_keyFields[i], false));
 	}
 
 	template <class Container>
@@ -261,7 +281,7 @@ public:
 				, std::vector<typename Container::key_type>& keyFields)
 	{
 		
-		grouping_comp<typename Container> groupingComp(mdls, keyFields);
+		grouping_comp<Container> groupingComp(mdls, keyFields);
 		std::vector<int> index;
 		std::vector<int> tmp;
 		for (int n=0;n<(int)mdls.size();++n)
@@ -292,14 +312,14 @@ public:
 		func.setResultKey(resultKey);
 		if (resultKey == mdls.fieldDefs()->size())
 		{
-			FUNC::value_type dummy=0;
-			mdls.appendCol(m_resultField.c_str(), getFieldType(dummy), sizeof(FUNC::value_type));
+			typename FUNC::value_type dummy=0;
+			mdls.appendCol(m_resultField.c_str(), getFieldType(dummy), sizeof(typename FUNC::value_type));
 		}
 
-		grouping_comp<typename Container> groupingComp(mdls, keyFields);
-
+		grouping_comp<Container> groupingComp(mdls, keyFields);
 		std::vector<int> index;
 		typename Container::iterator it = begin(mdls), ite = end(mdls);
+
 		std::vector<FUNC> funcs;
 		int i,n = 0;
 		while(it != ite)
@@ -316,17 +336,13 @@ public:
 			++it;
 		}
 		//real sort by index
-		typename Container c(mdls);
+		Container c(mdls);
 
 		clear(mdls);
 		for (int i=0;i<(int)index.size();++i)
 		{
-			_TCHAR tmp[50];
-			_ltot_s(i,tmp, 50, 10);
-			OutputDebugString(tmp);
-			OutputDebugString(_T("\n"));
 			typename Container::row_type cur = c[index[i]];
-			setValue(*cur, resultKey, funcs[i].result());
+			setValue(cur, resultKey, funcs[i].result());
 			mdls.push_back(cur);
 		}
 		removeFileds(mdls);

@@ -165,20 +165,20 @@ public:
 
 #ifndef SWIG
 	template <class T>
-	query& and(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	query& and_(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
 		if (whereTokens() == 0)
-			throw bzs::rtl::exception(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
+			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
 
 		addLogic(_T("and"), name, qlogic, lexical_cast(value).c_str());
- 		return *this;
+		return *this;
 	}
 
 	template <class T>
-	query& or(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	query& or_(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
 		if (whereTokens() == 0)
-			throw bzs::rtl::exception(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
+			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
 
 		addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
 		return *this;
@@ -189,7 +189,7 @@ public:
 	query& in(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
 		if (whereTokens() == 0)
-			throw bzs::rtl::exception(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
+			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
 
 		addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
 		return *this;
@@ -316,8 +316,8 @@ void readBefore(...){}
 */
 template <class MAP
 			, class Container
-			, class T=MAP::mdl_typename
-			, class FDI=MAP::fdi_typename>
+			, class T=typename MAP::mdl_typename
+			, class FDI=typename MAP::fdi_typename>
 class mdlsHandler
 {
 	mdlsHandler();
@@ -331,7 +331,7 @@ protected:
 	template <class mdls_type>
 	void addContainer(T* u, typename mdls_type::item_type* p )
 	{
-		mdls_type::item_type ptr(u);
+		typename mdls_type::item_type ptr(u);
 		push_back(m_mdls, ptr);
 	}
 
@@ -495,7 +495,7 @@ public:
 };
 
 
-template <class MAP, class T=MAP::mdl_typename, class FDI=MAP::fdi_typename>
+template <class MAP, class T=typename MAP::mdl_typename, class FDI=typename MAP::fdi_typename>
 class activeTable : boost::noncopyable
 {
 protected:
@@ -1127,7 +1127,7 @@ public:
 					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
 					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
 	{
-		doJoin<typename Container>(true, mdls, q, name1, name2, name3, name4, name5
+		doJoin<Container>(true, mdls, q, name1, name2, name3, name4, name5
 						, name6, name7, name8, name9, name10, name11);
 		return *this;
 	}
@@ -1140,7 +1140,7 @@ public:
 					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
 					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
 	{
-		doJoin<typename Container>(false, mdls, q, name1, name2, name3, name4, name5
+		doJoin<Container>(false, mdls, q, name1, name2, name3, name4, name5
 						, name6, name7, name8, name9, name10, name11);
 		return *this;
 

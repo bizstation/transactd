@@ -27,7 +27,7 @@ using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
 
-bool showDbdefError(dbdef* def, _TCHAR* msg)
+bool showDbdefError(dbdef* def, const _TCHAR* msg)
 {
 	 std::tcout << msg << _T(" erorr:No.") << def->stat();
 	 return false;

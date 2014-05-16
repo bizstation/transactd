@@ -138,4 +138,8 @@
 #	define COMPILER_VERSTR  "bcb"
 #endif
 
+#if (__BCPLUSPLUS__ >= 0x670 && (__BCPLUSPLUS__ < 0x690))
+#	define COMPILER_VERSTR  "bcb"
+#endif
+
 #endif//BZS_ENV_COMPILER_H

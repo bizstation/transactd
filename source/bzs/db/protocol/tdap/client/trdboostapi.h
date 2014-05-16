@@ -116,18 +116,9 @@ typedef tableIterator<indexFindNavi> findIterator;
 typedef tableIterator<stepNavi> stepIterator;
 
 
-template <> const indexIterator indexIterator::eos=indexIterator();
-template <> const findIterator findIterator::eos=findIterator();
-template <> const stepIterator stepIterator::eos=stepIterator();
-
 typedef tableIterator<indexRvNavi> indexRvIterator;
 typedef tableIterator<indexRvFindNavi> findRvIterator;
 typedef tableIterator<stepRvNavi> stepRvIterator;
-
-
-template <> const indexRvIterator indexRvIterator::eos=indexRvIterator();
-template <> const findRvIterator findRvIterator::eos=findRvIterator();
-template <> const stepRvIterator stepRvIterator::eos=stepRvIterator();
 
 
 
@@ -197,6 +188,15 @@ typedef filterdIterator<stepRvIterator> filterdStepRvIterator;
 typedef filterdIterator<findRvIterator> filterdFindRvIterator;
 
 
+#if (defined(TRD_ITERATOR_EOS) || !(__BCPLUSPLUS__ && __clang__))
+template <> const indexIterator indexIterator::eos=indexIterator();
+template <> const findIterator findIterator::eos=findIterator();
+template <> const stepIterator stepIterator::eos=stepIterator();
+
+template <> const indexRvIterator indexRvIterator::eos=indexRvIterator();
+template <> const findRvIterator findRvIterator::eos=findRvIterator();
+template <> const stepRvIterator stepRvIterator::eos=stepRvIterator();
+
 
 template<> const filterdIndexIterator filterdIndexIterator::eos=filterdIndexIterator();
 template<> const filterdStepIterator filterdStepIterator::eos=filterdStepIterator();
@@ -206,6 +206,7 @@ template<> const filterdIndexRvIterator filterdIndexRvIterator::eos=filterdIndex
 template<> const filterdStepRvIterator filterdStepRvIterator::eos=filterdStepRvIterator();
 template<> const filterdFindRvIterator filterdFindRvIterator::eos=filterdFindRvIterator();
 
+#endif
 
 inline indexIterator readIndex(table_ptr tb, eIndexOpType op)
 {
