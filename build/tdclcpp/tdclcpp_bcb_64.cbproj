@@ -172,6 +172,9 @@
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\errorMessage.cpp">
             <BuildOrder>19</BuildOrder>
         </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\field.cpp">
+            <BuildOrder>20</BuildOrder>
+        </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fieldDDF.cpp">
             <BuildOrder>7</BuildOrder>
         </CppCompile>
@@ -180,6 +183,9 @@
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\indexDDF.cpp">
             <BuildOrder>10</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp">
+            <BuildOrder>22</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsDatabase.cpp">
             <BuildOrder>11</BuildOrder>

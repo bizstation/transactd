@@ -1,13 +1,13 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{EB31B0F7-D4C3-425D-B9E2-CB9CE8168EA4}</ProjectGuid>
+        <ProjectGuid>{97513D88-7F2E-4C69-A5A4-B3E644DDCC76}</ProjectGuid>
         <ProjectVersion>14.4</ProjectVersion>
+        <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release Unicode</Config>
-        <AppType>Console</AppType>
-        <FrameworkType>None</FrameworkType>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <TargetedPlatforms>1</TargetedPlatforms>
+        <AppType>Console</AppType>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -44,12 +44,6 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win64)'!=''">
-        <Cfg_3_Win64>true</Cfg_3_Win64>
-        <CfgParent>Cfg_3</CfgParent>
-        <Cfg_3>true</Cfg_3>
-        <Base>true</Base>
-    </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Release Unicode' or '$(Cfg_4)'!=''">
         <Cfg_4>true</Cfg_4>
         <CfgParent>Base</CfgParent>
@@ -63,36 +57,46 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
         <Defines>TRDCL_AUTOLINK;$(Defines)</Defines>
-        <Manifest_File>None</Manifest_File>
-        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <VerInfo_Locale>1041</VerInfo_Locale>
-        <BPILibOutputDir>..\..\lib</BPILibOutputDir>
         <NoVCL>true</NoVCL>
-        <Multithreaded>true</Multithreaded>
-        <_TCHARMapping>char</_TCHARMapping>
+        <BPILibOutputDir>..\..\lib</BPILibOutputDir>
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
-        <PackageImports>vcl.bpi;rtl.bpi;$(PackageImports)</PackageImports>
-        <ProjectType>CppConsoleApplication</ProjectType>
         <OutputExt>exe</OutputExt>
+        <ILINK_LibraryPath>..\..\source\bzs\rtl\;..\..\..\Lib140\;..\..\source\bzs\test\transactdBench\;..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <BCC_wiip>false</BCC_wiip>
-        <ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
-        <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
         <DynamicRTL>false</DynamicRTL>
-        <IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
+        <Manifest_File>None</Manifest_File>
+        <VerInfo_Locale>1041</VerInfo_Locale>
+        <Multithreaded>true</Multithreaded>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=;CFBundleName=;CFBundleDisplayName=;CFBundleIdentifier=;CFBundleVersion=;CFBundlePackageType=;CFBundleSignature=;CFBundleAllowMixedLocalizations=;CFBundleExecutable=</VerInfo_Keys>
+        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
+        <ProjectType>CppConsoleApplication</ProjectType>
+        <_TCHARMapping>wchar_t</_TCHARMapping>
+        <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
+        <IntermediateOutputDir>.\$(Platform)\$(Config)</IntermediateOutputDir>
         <FinalOutputDir>..\..\bin</FinalOutputDir>
         <BCC_wpar>false</BCC_wpar>
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
         <ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\release\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <Debugger_RunParams>--show_progress=yes</Debugger_RunParams>
-        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
+    <PropertyGroup Condition="'$(Base_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <Debugger_RunParams>tdap://localhost/test?dbfile=test.bdf  0 -1</Debugger_RunParams>
+        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+        <Defines>TRDCL_AUTOLINK;$(Defines)</Defines>
         <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win64)'!=''">
+        <Debugger_RunParams>tdap://localhost/test?dbfile=test.bdf  0 -1</Debugger_RunParams>
+        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <Defines>TRDCL_AUTOLINK;$(Defines)</Defines>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
-        <Manifest_File>None</Manifest_File>
+        <_TCHARMapping>char</_TCHARMapping>
         <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
         <DCC_Optimize>false</DCC_Optimize>
@@ -106,43 +110,60 @@
         <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
         <TASM_Debugging>Full</TASM_Debugging>
         <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+        <BCC_EnableCPPExceptions>true</BCC_EnableCPPExceptions>
+        <BCC_DisableFramePtrElimOpt>true</BCC_DisableFramePtrElimOpt>
+        <BCC_DisableSpellChecking>true</BCC_DisableSpellChecking>
+        <CLANG_UnwindTables>true</CLANG_UnwindTables>
+        <ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\debug\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <Defines>_DEBUG;$(Defines)</Defines>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
-        <VerInfo_Locale>1033</VerInfo_Locale>
         <Defines>_DEBUG;$(Defines)</Defines>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
+        <_TCHARMapping>char</_TCHARMapping>
         <TASM_Debugging>None</TASM_Debugging>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <Defines>NDEBUG;$(Defines)</Defines>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <DynamicRTL>false</DynamicRTL>
         <Defines>NDEBUG;$(Defines)</Defines>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3)'!=''">
-        <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
         <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
+        <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
         <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
         <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">
-        <Manifest_File>None</Manifest_File>
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <Debugger_LoadAllSymbols>false</Debugger_LoadAllSymbols>
-        <Defines>_UNICODE;$(Defines)</Defines>
+    <PropertyGroup Condition="'$(Cfg_3_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_4_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_4_Win64)'!=''">
+        <Debugger_RunParams>tdap://localhost/test?dbfile=test.bdf  0 -1</Debugger_RunParams>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <Debugger_RunParams>--show_progress=yes</Debugger_RunParams>
-        <Defines>_UNICODE;$(Defines)</Defines>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
     </PropertyGroup>
     <ItemGroup>
-        <CppCompile Include="..\..\source\bzs\test\transactdBench\queryData.cpp">
-            <BuildOrder>1</BuildOrder>
+        <CppCompile Include="..\..\source\bzs\rtl\benchmark.cpp">
+            <DependentOn>..\..\source\bzs\rtl\benchmark.h</DependentOn>
+            <BuildOrder>3</BuildOrder>
         </CppCompile>
-        <CppCompile Include="..\..\source\bzs\test\trdclengn\test_trdclengn.cpp">
-            <BuildOrder>0</BuildOrder>
+        <CppCompile Include="..\..\source\bzs\test\transactdBench\queryData.cpp">
+             <DependentOn>..\..\source\bzs\test\transactdBench\queryData.h</DependentOn>
+             <BuildOrder>2</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\test\transactdBench\query_bench.cpp">
+            <BuildOrder>1</BuildOrder>
         </CppCompile>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
@@ -197,20 +218,32 @@
                     <VersionInfoKeys Name="ProductName"/>
                     <VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
                     <VersionInfoKeys Name="Comments"/>
+                    <VersionInfoKeys Name="CFBundleName"/>
+                    <VersionInfoKeys Name="CFBundleDisplayName"/>
+                    <VersionInfoKeys Name="CFBundleIdentifier"/>
+                    <VersionInfoKeys Name="CFBundleVersion"/>
+                    <VersionInfoKeys Name="CFBundlePackageType"/>
+                    <VersionInfoKeys Name="CFBundleSignature"/>
+                    <VersionInfoKeys Name="CFBundleAllowMixedLocalizations"/>
+                    <VersionInfoKeys Name="CFBundleExecutable"/>
                 </VersionInfoKeys>
                 <ProjectProperties>
                     <ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
                     <ProjectProperties Name="ManagePaths">False</ProjectProperties>
                     <ProjectProperties Name="VerifyPackages">True</ProjectProperties>
                 </ProjectProperties>
-                <Parameters>
-                    <Parameters Name="RunParams">--report_level=detailed --show_progress=yes --build_info=yes</Parameters>
-                </Parameters>
                 <Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\bcboffice2k170.bpl">Embarcadero C++Builder Office 2000 サーバー パッケージ</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\bcbofficexp170.bpl">Embarcadero C++Builder Office XP サーバー パッケージ</Excluded_Packages>
                 </Excluded_Packages>
+                <Parameters_Win32>
+                    <Parameters_Win32 Name="RunParams">tdap://localhost/test?dbfile=test.bdf  0 -1</Parameters_Win32>
+                </Parameters_Win32>
+                <Parameters>
+                    <Parameters Name="RunParams">tdap://localhost/test?dbfile=test.bdf  0 -1</Parameters>
+                </Parameters>
             </CPlusPlusBuilder.Personality>
+            <Deployment/>
             <Platforms>
                 <Platform value="Win64">True</Platform>
             </Platforms>
