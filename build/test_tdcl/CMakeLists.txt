@@ -62,6 +62,7 @@ transactd_read_build_number("${TRANSACTD_ROOT}")
 # source files
 # ==========================================================
 set(${this_target}_SOURCE_FILES
+  ${TRANSACTD_ROOT}/source/bzs/example/queryData.cpp
   ${TRANSACTD_ROOT}/source/bzs/test/trdclengn/test_trdclengn.cpp)
 
 

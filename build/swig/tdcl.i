@@ -115,7 +115,6 @@ using namespace bzs::db::protocol::tdap::client;
 
 %ignore recordsetSorter;
 %ignore multiRecordAlocatorImple;
-%ignore bzs::db::protocol::tdap::client::multiRecordAlocator;
 %ignore setValue;
 %ignore create;
 %ignore map_orm_fdi;
@@ -472,5 +471,30 @@ using namespace bzs::db::protocol::tdap::client;
     return (self->operator[](index)).get();
   }
 };
+
+
+/* ===============================================
+  cpointer
+=============================================== */
+#if defined(SWIGRUBY)
+%{
+  static bzs::db::protocol::tdap::client::memoryRecord* *new_memoryRecord_p_p() {
+    return new bzs::db::protocol::tdap::client::memoryRecord*();
+  }
+  static bzs::db::protocol::tdap::client::memoryRecord* *copy_memoryRecord_p_p(bzs::db::protocol::tdap::client::memoryRecord* value) {
+    return new bzs::db::protocol::tdap::client::memoryRecord*(value);
+  }
+  static void delete_memoryRecord_p_p(bzs::db::protocol::tdap::client::memoryRecord* *obj) {
+    if (obj) delete obj;
+  }
+  static void memoryRecord_p_p_assign(bzs::db::protocol::tdap::client::memoryRecord* *obj, bzs::db::protocol::tdap::client::memoryRecord* value) {
+    *obj = value;
+  }
+  static bzs::db::protocol::tdap::client::memoryRecord* memoryRecord_p_p_value(bzs::db::protocol::tdap::client::memoryRecord* *obj) {
+    return *obj;
+  }
+%}
+#else
 %include "cpointer.i"
 %pointer_functions(bzs::db::protocol::tdap::client::memoryRecord*, memoryRecord_p_p)
+#endif

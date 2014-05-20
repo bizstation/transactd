@@ -25,9 +25,9 @@
 
 #include <stdio.h>
 
-#if defined(__GNUC__) 
-	#if !__GNUC_PREREQ(4, 3)
-		#error "GCC Version is too small. 4.3 or above GCC versions are required."
+#if defined(__GNUC__)
+	#if (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 3))
+		#error "Your GCC version is too old. 4.3 or later versions are required."
 	#endif
 #endif
 

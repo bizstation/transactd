@@ -286,6 +286,8 @@ abstract class transactd {
 
 	const ft_autoIncUnsigned = ft_autoIncUnsigned;
 
+	const ft_myfixedbinary = ft_myfixedbinary;
+
 	const ft_nullindicator = ft_nullindicator;
 
 	const equal = 1;
@@ -610,6 +612,30 @@ abstract class transactd {
 
 	const null_str = null_str;
 
+	static function mra_nojoin_get() {
+		return mra_nojoin_get();
+	}
+
+	static function mra_first_get() {
+		return mra_first_get();
+	}
+
+	static function mra_nextrows_get() {
+		return mra_nextrows_get();
+	}
+
+	static function mra_innerjoin_get() {
+		return mra_innerjoin_get();
+	}
+
+	static function mra_outerjoin_get() {
+		return mra_outerjoin_get();
+	}
+
+	static function mra_current_block_get() {
+		return mra_current_block_get();
+	}
+
 	const MAX_CHAR_INFO = MAX_CHAR_INFO;
 
 	const CHARSET_LATIN1 = CHARSET_LATIN1;
@@ -715,14 +741,6 @@ abstract class transactd {
 	}
 
 	const ROW_MEM_BLOCK_RESERVE = ROW_MEM_BLOCK_RESERVE;
-
-	static function clear($m) {
-		clear($m);
-	}
-
-	static function resolvKeyValue($m,$name,$noexception=false) {
-		return resolvKeyValue($m,$name,$noexception);
-	}
 
 	static function lexical_cast($v) {
 		return lexical_cast($v);
@@ -1681,6 +1699,53 @@ class dbdef {
 	}
 }
 
+abstract class multiRecordAlocator {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+	function __construct($h) {
+		$this->_cPtr=$h;
+	}
+
+	function init($recordCount,$recordLen,$addType,$tb) {
+		multiRecordAlocator_init($this->_cPtr,$recordCount,$recordLen,$addType,$tb);
+	}
+
+	function ptr($row,$stat) {
+		return multiRecordAlocator_ptr($this->_cPtr,$row,$stat);
+	}
+
+	function setJoinType($v) {
+		multiRecordAlocator_setJoinType($this->_cPtr,$v);
+	}
+
+	function setInvalidRecord($row,$v) {
+		multiRecordAlocator_setInvalidRecord($this->_cPtr,$row,$v);
+	}
+
+	function setJoinRowMap($v) {
+		multiRecordAlocator_setJoinRowMap($this->_cPtr,$v);
+	}
+
+	function joinRowMap() {
+		return multiRecordAlocator_joinRowMap($this->_cPtr);
+	}
+}
+
 class table extends nstable {
 	public $_cPtr=null;
 
@@ -1785,7 +1850,9 @@ class table extends nstable {
 	}
 
 	function mra() {
-		return table_mra($this->_cPtr);
+		$r=table_mra($this->_cPtr);
+		$this->_cPtr = $r;
+		return $this;
 	}
 
 	function find($type=null) {
