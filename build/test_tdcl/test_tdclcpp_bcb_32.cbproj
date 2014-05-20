@@ -3,7 +3,7 @@
 			<ProjectGuid>{EB31B0F7-D4C3-425D-B9E2-CB9CE8168EA4}</ProjectGuid>
 			<ProjectVersion>12.3</ProjectVersion>
 			<Base>True</Base>
-			<Config Condition="'$(Config)'==''">Release Unicode</Config>
+			<Config Condition="'$(Config)'==''">Debug Unicode</Config>
 			<Platform>Win32</Platform>
 			<AppType>Console</AppType>
 			<FrameworkType>None</FrameworkType>
@@ -87,7 +87,7 @@
 			<Defines>_UNICODE;$(Defines)</Defines>
 		</PropertyGroup>
 		<ItemGroup>
-			<CppCompile Include="..\..\source\bzs\test\transactdBench\queryData.cpp">
+			<CppCompile Include="..\..\source\bzs\example\queryData.cpp">
 				<BuildOrder>1</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\test\trdclengn\test_trdclengn.cpp">
@@ -153,7 +153,7 @@
 						<ProjectProperties Name="VerifyPackages">True</ProjectProperties>
 					</ProjectProperties>
 					<Parameters>
-						<Parameters Name="RunParams">--show_progress=yes</Parameters>
+						<Parameters Name="RunParams">--show_progress=yes --run_test=query</Parameters>
 					</Parameters>
 				</CPlusPlusBuilder.Personality>
 				<Platforms>

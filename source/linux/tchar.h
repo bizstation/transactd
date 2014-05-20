@@ -179,6 +179,7 @@ typedef wchar_t _TUCHAR;
 
 #define _ttoi64     _wtoi64
 #define _i64tot     _i64tow
+#define _i64tot_s   _i64tow_s
 #define _ui64tot    _ui64tow
 #define	_tasctime	_wasctime
 #define	_tctime		_wctime
@@ -394,6 +395,7 @@ typedef char    _TUCHAR;
 /* Not in crtdll.dll. Define macros anyway? */
 #define _ttoi64     _atoi64
 #define _i64tot     _i64toa
+#define _i64tot_s   _i64toa_s
 #define _ui64tot    _ui64toa
 #define _tcsnccoll  _strncoll
 #define _tcsncoll   _strncoll

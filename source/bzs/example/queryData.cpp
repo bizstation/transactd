@@ -1,4 +1,4 @@
-/*=================================================================
+ï»¿/*=================================================================
    Copyright (C) 2014 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
@@ -19,6 +19,7 @@
 #pragma hdrstop
 
 #include "queryData.h"
+#include <bzs/db/protocol/tdap/mysql/characterset.h>
 #include <iostream>
 
 #pragma package(smart_init)
@@ -27,9 +28,21 @@ using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
 
-bool showDbdefError(dbdef* def, _TCHAR* msg)
+bool showDbdefError(dbdef* def, const _TCHAR* msg)
 {
 	 std::tcout << msg << _T(" erorr:No.") << def->stat();
+	 return false;
+}
+
+bool showTableError(table* tb, const _TCHAR* msg)
+{
+	 std::tcout << msg << _T(" erorr:No.") << tb->stat();
+	 return false;
+}
+
+bool showDbError(database* db, const _TCHAR* msg)
+{
+	 std::tcout << msg << _T(" erorr:No.") << db->stat();
 	 return false;
 }
 
@@ -39,12 +52,14 @@ bool createUserTable(dbdef* def)
 	tabledef t;
 	memset(&t, 0, sizeof(t));
 	tabledef* td = &t;
+	td->charsetIndex = mysql::charsetIndex(GetACP());
+	td->schemaCodePage = CP_UTF8;
 	td->id = tableid;
 	td->setTableName(_T("user"));
 	td->setFileName(_T("user"));
 	def->insertTable(td);
 	if (def->stat()!=0)
-	    return showDbdefError(def, _T("user insertTable"));
+		return showDbdefError(def, _T("user insertTable"));
 
 	short filedIndex = 0;
 	fielddef* fd =  def->insertField(tableid, filedIndex);
@@ -54,9 +69,9 @@ bool createUserTable(dbdef* def)
 
 	++filedIndex;
 	fd = def->insertField(tableid, filedIndex);
-	fd->setName(_T("–¼‘O"));
+	fd->setName(_T("åå‰"));
 	fd->type = ft_myvarchar;
-	fd->len = 33;
+	fd->setLenByCharnum(20);
 
 	++filedIndex;
 	fd =  def->insertField(tableid, filedIndex);
@@ -68,7 +83,7 @@ bool createUserTable(dbdef* def)
 	fd =  def->insertField(tableid, filedIndex);
 	fd->setName(_T("tel"));
 	fd->type = ft_myvarchar;
-	fd->len = 21;
+	fd->setLenByCharnum(21);
 
 	char keyNum = 0;
 	keydef* kd = def->insertKey(tableid, keyNum);
@@ -91,7 +106,7 @@ bool createUserTable(dbdef* def)
 
 	def->updateTableDef(tableid);
 	if (def->stat()!=0)
-	    return showDbdefError(def, _T("user updateTableDef"));
+		return showDbdefError(def, _T("user updateTableDef"));
 
 	return true;
 }
@@ -102,6 +117,8 @@ bool createGroupTable(dbdef* def)
 	tabledef t;
 	tabledef* td = &t;
 	memset(&t, 0, sizeof(t));
+	td->charsetIndex = mysql::charsetIndex(GetACP());
+	td->schemaCodePage = CP_UTF8;
 	td->id = tableid;
 	td->setTableName(_T("groups"));
 	td->setFileName(_T("groups"));
@@ -122,12 +139,6 @@ bool createGroupTable(dbdef* def)
 	fd->type = ft_myvarbinary;
 	fd->len = 33;
 
-	++filedIndex;
-	fd =  def->insertField(tableid, filedIndex);
-	fd->setName(_T("name2"));
-	fd->type = ft_myvarbinary;
-	fd->len = 33;
-
 	char keyNum = 0;
 	keydef* kd = def->insertKey(tableid, keyNum);
 	keySegment& seg1 = kd->segments[0];
@@ -138,7 +149,6 @@ bool createGroupTable(dbdef* def)
 
 	td = def->tableDefs(tableid);
 	td->primaryKeyNum = keyNum;
-	td->flags.bit0 = true;
 	def->updateTableDef(tableid);
 	if (def->stat()!=0)
 	    return showDbdefError(def, _T("groups updateTableDef"));
@@ -151,6 +161,8 @@ bool createUserExtTable(dbdef* def)
 	tabledef t;
 	memset(&t, 0, sizeof(t));
 	tabledef* td = &t;
+	td->charsetIndex = mysql::charsetIndex(GetACP());
+	td->schemaCodePage = CP_UTF8;
 	td->id = tableid;
 	td->setTableName(_T("extention"));
 	td->setFileName(_T("extention"));
@@ -169,7 +181,8 @@ bool createUserExtTable(dbdef* def)
 	fd =  def->insertField(tableid, filedIndex);
 	fd->setName(_T("comment"));
 	fd->type = ft_myvarchar;
-	fd->len = 255;
+
+	fd->setLenByCharnum(60);
 
 
 	char keyNum = 0;
@@ -191,6 +204,11 @@ bool insertData(database_ptr db)
 {
 	_TCHAR tmp[256];
 	table* tb = db->openTable(_T("user"), TD_OPEN_NORMAL);
+	if (db->stat())
+	{
+		showDbError(db.get(), _T("openTable user"));
+		return false;
+	}
 	tb->clearBuffer();
 	for (int i= 1;i<= 20000;++i)
 	{
@@ -199,10 +217,17 @@ bool insertData(database_ptr db)
 		tb->setFV(1, tmp);
 		tb->setFV(_T("group"), ((i -1) % 100) + 1);
 		tb->insert();
+		if (tb->stat()!=0)
+			return showTableError(tb, _T("user insert"));
 	}
 	tb->release();
 
 	tb = db->openTable(_T("groups"), TD_OPEN_NORMAL);
+	if (db->stat())
+	{
+		showDbError(db.get(), _T("openTable groups"));
+		return false;
+	}
 	tb->clearBuffer();
 	for (int i= 1;i<= 100;++i)
 	{
@@ -210,9 +235,16 @@ bool insertData(database_ptr db)
 		_stprintf_s(tmp, 256, _T("%d group"), i);
 		tb->setFV(1, tmp);
 		tb->insert();
+		if (tb->stat()!=0)
+			return showTableError(tb, _T("groups insert"));
 	}
 	tb->release();
 	tb = db->openTable(_T("extention"), TD_OPEN_NORMAL);
+	if (db->stat())
+	{
+		showDbError(db.get(), _T("openTable extention"));
+		return false;
+	}
 	tb->clearBuffer();
 	for (int i= 1;i<= 20000;++i)
 	{
@@ -220,6 +252,8 @@ bool insertData(database_ptr db)
 		_stprintf_s(tmp, 256, _T("%d comment"), i);
 		tb->setFV(1, tmp);
 		tb->insert();
+		if (tb->stat()!=0)
+			return showTableError(tb, _T("extention insert"));
 	}
 	tb->release();
 	return true;
@@ -227,17 +261,26 @@ bool insertData(database_ptr db)
 
 int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate)
 {
-	if (db->open(param.uri(), TD_OPEN_NORMAL))
+	try
 	{
-		if(foceCreate)
-			dropDatabase(db);
-		else
-			return 0;
+		if (db->open(param.uri(), TD_OPEN_NORMAL))
+		{
+			if(foceCreate)
+				dropDatabase(db);
+			else
+				return 0;
+		}
+		createDatabase(db, param);
+		openDatabase(db, param);
+		if (!createUserTable(db->dbDef()))return 1;
+		if (!createGroupTable(db->dbDef()))return 1;
+		if (!createUserExtTable(db->dbDef()))return 1;
+		return !insertData(db);
 	}
-	createDatabase(db, param);
-	openDatabase(db, param);
-	if (!createUserTable(db->dbDef()))return 1;
-	if (!createGroupTable(db->dbDef()))return 1;
-	if (!createUserExtTable(db->dbDef()))return 1;
-	return 0;
+	catch(bzs::rtl::exception& e)
+	{
+		std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+		return 1;
+	}
+
 }

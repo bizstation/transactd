@@ -42,16 +42,17 @@ class fields;
 
 #pragma warning(disable:4251)
 
+static const int mra_nojoin = 0;
+static const int mra_first = 0;
+static const int mra_nextrows = 1;
+static const int mra_innerjoin = 2;
+static const int mra_outerjoin = 4;
+static const int mra_current_block = -1;
+
 class multiRecordAlocator
 {
 
 public:
-	static const int mra_nojoin = 0;
-	static const int mra_first = 0;
-	static const int mra_nextrows = 1;
-	static const int mra_innerjoin = 2;
-	static const int mra_outerjoin = 4;
-	static const int mra_current_block = -1;
 	virtual ~multiRecordAlocator(){}
 	virtual void init(size_t recordCount, size_t recordLen,int addType, const class table* tb) = 0;
 	virtual unsigned char* ptr(size_t row, int stat) = 0;
@@ -61,9 +62,6 @@ public:
 	virtual const std::vector<std::vector<int> >* joinRowMap()const  = 0;
 
 };
-
-typedef multiRecordAlocator mra;
-
 
 class AGRPACK table : public nstable
 {

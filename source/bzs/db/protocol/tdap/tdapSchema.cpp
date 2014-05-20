@@ -224,6 +224,7 @@ const _TCHAR* getTypeName(short type)
 	case ft_mytext: return _T("myText");
 	case ft_myblob: return _T("myBlob");
 	case ft_autoIncUnsigned: return _T("AutoIncUnsigned");
+	case ft_myfixedbinary:return _T("myFixedBinary");
 	case ft_nullindicator: return _T("Nullindicator");
 	default: return _T("Unknown");
 	}
@@ -254,6 +255,7 @@ int getTypeAlign(short type)
 	case ft_mydatetime:
 	case ft_mytimestamp:
 	case ft_myblob:
+	case ft_myfixedbinary:
 	case ft_mytext: return BT_AL_LEFT;
 
 	}

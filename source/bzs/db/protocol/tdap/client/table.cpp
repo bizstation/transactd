@@ -140,7 +140,7 @@ class recordCache
 
 public:
 	inline recordCache(table* tb) : m_tb(tb)
-				,m_memblockType(multiRecordAlocator::mra_first){reset();}
+				,m_memblockType(mra_first){reset();}
 
 	inline void reset()
 	{
@@ -150,7 +150,7 @@ public:
 		m_ptr = NULL;
 		m_len = 0;
 		m_tmpPtr = NULL;
-		m_memblockType = multiRecordAlocator::mra_first;
+		m_memblockType = mra_first;
 	}
 
 	inline void setMemblockType(int v){m_memblockType = v;}
@@ -214,7 +214,7 @@ public:
 			//m_bookmark = 0;
 			if (mra)
 			{
-				m_tmpPtr = mra->ptr(m_row, multiRecordAlocator::mra_current_block);
+				m_tmpPtr = mra->ptr(m_row, mra_current_block);
 				mra->setInvalidRecord(m_row, true);
 			}
 			else
@@ -224,7 +224,7 @@ public:
 			m_seekMultiStat = 0;
 
 		if (mra)
-			m_tmpPtr = mra->ptr(m_row, multiRecordAlocator::mra_current_block);
+			m_tmpPtr = mra->ptr(m_row, mra_current_block);
 
 		if (m_pFilter->fieldSelected())
 		{
@@ -663,7 +663,7 @@ void table::doFind( ushort_td op, bool notIncCurrent)
 				|| ((m_impl->exSlideStat == STATUS_LIMMIT_OF_REJECT)
 							&& (m_impl->filterPtr->rejectCount() == 0)))
 			{
-				m_impl->rc->setMemblockType(multiRecordAlocator::mra_nextrows);
+				m_impl->rc->setMemblockType(mra_nextrows);
 				getRecords(op);
 				return;
 			}
@@ -1027,17 +1027,26 @@ uint_td table::pack(char*ptr, size_t size)
 	for (int i = 0; i < m_tableDef->fieldCount; i++)
 	{
 		fielddef& fd = m_tableDef->fieldDefs[i];
-		int blen = fd.varLenBytes();
-		int dl = fd.len; // length
-		if (blen == 1)
-			dl = *((unsigned char*)(pos)) + blen;
-		else if (blen == 2)
-			dl = *((unsigned short*)(pos)) + blen;
-		pos += dl;
-		if ((movelen = fd.len - dl) != 0)
+		if (fd.type == ft_myfixedbinary)
 		{
-			end -= movelen;
-			memmove(pos, pos + movelen, end - pos);
+			memmove(pos + 2, pos, fd.len - 2);      // move as size pace in the field
+			*((unsigned short*)(pos)) =  fd.len - 2;// fixed size
+			pos += fd.len;
+		}
+		else
+		{
+			int blen = fd.varLenBytes();
+			int dl = fd.len; // length
+			if (blen == 1)
+				dl = *((unsigned char*)(pos)) + blen;
+			else if (blen == 2)
+				dl = *((unsigned short*)(pos)) + blen;
+			pos += dl;
+			if ((movelen = fd.len - dl) != 0)
+			{
+				end -= movelen;
+				memmove(pos, pos + movelen, end - pos);
+			}
 		}
 	}
 	m_impl->dataPacked  = true;
@@ -1091,8 +1100,6 @@ uint_td table::doGetWriteImageLen()
 			}
 			len += 2;
 		}
-		else
-			len = FieldDef->len;
 
 		len += FieldDef->pos;
 
@@ -1109,21 +1116,33 @@ uint_td table::unPack(char* ptr, size_t size)
 	for (int i = 0; i < m_tableDef->fieldCount; i++)
 	{
 		fielddef& fd = m_tableDef->fieldDefs[i];
-		int blen = fd.varLenBytes();
-		int dl = fd.len; // length
-		if (blen == 1)
-			dl = *((unsigned char*)(pos)) + blen;
-		else if (blen == 2)
-			dl = *((unsigned short*)(pos)) + blen;
-		if ((movelen = fd.len - dl) != 0)
+		if (fd.type == ft_myfixedbinary)
 		{
-			if (max < end + movelen)
-				return 0;
-			const char* src = pos + dl;
-			memmove(pos + fd.len, src, end - src);
-			end += movelen;
+			int dl = *((unsigned short*)(pos));
+			assert(dl == fd.len-2);
+			memmove(pos, pos+2, dl);
+			pos += dl;
+			*((unsigned short*)(pos)) = 0x00;;
+			pos += 2;
 		}
-		pos += fd.len;
+		else
+		{
+			int blen = fd.varLenBytes();
+			int dl = fd.len; // length
+			if (blen == 1)
+				dl = *((unsigned char*)(pos)) + blen;
+			else if (blen == 2)
+				dl = *((unsigned short*)(pos)) + blen;
+			if ((movelen = fd.len - dl) != 0)
+			{
+				if (max < end + movelen)
+					return 0;
+				const char* src = pos + dl;
+				memmove(pos + fd.len, src, end - src);
+				end += movelen;
+			}
+			pos += fd.len;
+		}
 	}
 	m_impl->dataPacked  = false;
 	return (uint_td)(pos - ptr);

@@ -64,7 +64,7 @@ bool deleteAll(database_ptr db, table_ptr tb, int start, int end)
 	for (int i = start; i < end; i++)
 	{
 		indexIterator it = readIndex_v(tb, eSeekEqual, keynum_id, i);
-		if (it != indexIterator::eos)
+		if (!it.isEnd())
 			deleteRecord(it);
 	}
 	trn.end();
@@ -103,7 +103,7 @@ template <class T>
 void checkFldIdValue(T it, int value)
 {
 	const fields& fds = *it;
-	if ((it == T::eos) || fds[fn_id] != value)
+	if (it.isEnd() || fds[fn_id] != value)
 	{
 		_TCHAR buf[256];
 		_stprintf_s(buf, 256, _T("read error.Can not found value %d = %d\r\n"), value, fds[fn_id].i());

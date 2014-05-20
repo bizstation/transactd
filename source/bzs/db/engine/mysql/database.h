@@ -46,6 +46,13 @@ namespace engine
 namespace mysql
 {
 
+/*
+	Please comment out the following, 
+	when you emulate btrv variable length record of btrv with a server. 
+	
+	#define USE_BTRV_VARIABLE_LEN
+*/
+
 
 #define READ_RECORD_GETNEXT 1
 #define READ_RECORD_GETPREV 2
@@ -174,17 +181,16 @@ public:
 class table : private boost::noncopyable
 {
 	friend class database;
-	
-
 	TABLE*	m_table;
 	std::string m_name;
 	const short m_mode;
-	int m_recordFormatType;
 	int m_id;
 	unsigned short m_nullFields;
 	uint m_recordLenCl;
+	int m_recordFormatType;
+#ifdef USE_BTRV_VARIABLE_LEN
 	uint m_lastVarLenBytes;
-
+#endif
 	database& m_db;
 	table(TABLE* table, database& db, const std::string& name, short mode, int id);
 	char m_keyNum;
@@ -268,6 +274,14 @@ public:
 	void resetInternalTable(TABLE* table);
 	inline const std::string& name()const{return m_name;};
 	inline int recordFormatType()const {return m_recordFormatType;};
+#ifdef USE_BTRV_VARIABLE_LEN
+	inline uint lastVarFiledNum()const{return m_table->s->fields-1-nisFields();}
+	inline const Field* lastVarFiled ()const{return m_table->s->field[lastVarFiledNum()];}
+	unsigned short lastVarLenBytes()const{return m_lastVarLenBytes;};
+	unsigned short lastVarFieldPos()const;
+	inline unsigned short lastVarFieldDataLen()const{return fieldDataLen(lastVarFiledNum());}
+
+#endif	
 	inline int blobFields()const {return m_table->s->blob_fields;};
 
 	/** if call close then table is deleten.
@@ -372,11 +386,6 @@ public:
 	inline unsigned int nisFields()const {return m_nullFields;}
 	inline const char* fieldName(int fieldNum)const {return m_table->s->field[fieldNum]->field_name;};
 	inline const CHARSET_INFO& fieldCharset(int fieldNum)const {return *m_table->s->field[fieldNum]->charset();}
-	inline uint lastVarFiledNum()const{return m_table->s->fields-1-nisFields();}
-	inline const Field* lastVarFiled ()const{return m_table->s->field[lastVarFiledNum()];}
-	unsigned short lastVarLenBytes()const{return m_lastVarLenBytes;};
-	unsigned short lastVarFieldPos()const;
-	inline unsigned short lastVarFieldDataLen()const{return fieldDataLen(lastVarFiledNum());}
 	/*number of key.*/
 	inline unsigned short keys()const{return m_table->s->keys;};
 	inline const KEY&  keyDef(char keyNum)const{return m_table->key_info[keyNum];};

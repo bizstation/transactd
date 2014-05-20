@@ -26,7 +26,7 @@ void deleteUser(table_ptr tb)
 	//Seek record that user id = 3 "satoshi"
 	indexIterator it = readIndex_v(tb, eSeekEqual, keynum_id, 3);
 
-	if (it != indexIterator::eos)
+	if (!it.isEnd())
 		deleteRecord(it);  //delete id = 3
 	else
 	   THROW_BZS_ERROR_WITH_MSG(_T("User id = 3 was not found"));

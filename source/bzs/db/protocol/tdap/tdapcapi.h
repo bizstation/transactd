@@ -208,6 +208,8 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define ft_mytext           50
 #define ft_myblob           51
 #define ft_autoIncUnsigned  52
+#define ft_myfixedbinary    53
+
 #define ft_nullindicator    255
 
 /** compair types

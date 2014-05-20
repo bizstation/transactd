@@ -105,9 +105,9 @@ private:
 		m_memblock.push_back(boost::shared_ptr<tdc::autoMemory>(am));
 		unsigned char* p = am->ptr;
 		//copy fileds
-		if (addtype & tdc::multiRecordAlocator::mra_nextrows)
+		if (addtype & tdc::mra_nextrows)
 		{
-			if (addtype == tdc::multiRecordAlocator::mra_nextrows)
+			if (addtype == tdc::mra_nextrows)
 				m_mra->setRowOffset((int)m_recordset.size()); //no join
 			else
 				m_mra->setRowOffset((int)m_joinRows); //Join
@@ -120,7 +120,7 @@ private:
 			m_mra->setCurFirstFiled((int)m_fds->size());
 			if (tb)
 				m_fds->copyFrom(tb);
-			if (tb && (addtype == tdc::multiRecordAlocator::mra_nojoin))
+			if (tb && (addtype == tdc::mra_nojoin))
 			{
 				const td::keydef& kd = tb->tableDef()->keyDefs[tb->keyNum()];
 				m_uniqueReadMaxField =  (kd.segments[0].flags.bit0 == false) ? (short)m_fds->size():0;
@@ -131,8 +131,8 @@ private:
 		size_t rows = size/recordLen;
 
 		// set record pointer to each record
-		if ((addtype & tdc::multiRecordAlocator::mra_innerjoin)
-						|| (addtype & tdc::multiRecordAlocator::mra_outerjoin))
+		if ((addtype & tdc::mra_innerjoin)
+						|| (addtype & tdc::mra_outerjoin))
 		{
 			//Join optimazing
 			const std::vector< std::vector<int> >* jmap = m_mra->joinRowMap();
@@ -140,7 +140,7 @@ private:
 			if (jmap)
 			{
 				// At Join that if some base records reference to a joined record
-				//		that the joined record pointer is shared by some base records.  
+				//		that the joined record pointer is shared by some base records.
 				for (int i=0;i<(int)rows;++i)
 				{
 					const std::vector<int>& map = (*jmap)[i+m_joinRows];
@@ -316,7 +316,7 @@ public:
 		for(int i=0;i<(int)m_unionFds.size();++i)
 			m_unionFds[i]->push_back(&fd);
 		registerMemoryBlock(NULL, fd.len*size(), fd.len
-					, tdc::multiRecordAlocator::mra_outerjoin);
+					, tdc::mra_outerjoin);
 
 	}
 
@@ -351,7 +351,7 @@ inline void multiRecordAlocatorImple::init(size_t recordCount, size_t recordLen
 
 inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
 {
-	int col = (stat == tdc::mra::mra_current_block) ? m_curFirstFiled : 0;
+	int col = (stat == tdc::mra_current_block) ? m_curFirstFiled : 0;
  	size_t rowNum  = m_joinRowMap ? (*m_joinRowMap)[row+m_rowOffset][0] : row+m_rowOffset;
 	return (*m_rs)[rowNum]->ptr(col);
 }

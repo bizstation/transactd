@@ -158,8 +158,8 @@
             <DependentOn>..\..\source\bzs\rtl\benchmark.h</DependentOn>
             <BuildOrder>3</BuildOrder>
         </CppCompile>
-        <CppCompile Include="..\..\source\bzs\test\transactdBench\queryData.cpp">
-             <DependentOn>..\..\source\bzs\test\transactdBench\queryData.h</DependentOn>
+        <CppCompile Include="..\..\source\bzs\example\queryData.cpp">
+             <DependentOn>..\..\source\bzs\example\queryData.h</DependentOn>
              <BuildOrder>2</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\test\transactdBench\query_bench.cpp">

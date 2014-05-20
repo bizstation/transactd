@@ -3,7 +3,7 @@
 			<ProjectGuid>{38F6FDD0-00C4-4679-8F36-BE1499F35256}</ProjectGuid>
 			<ProjectVersion>12.3</ProjectVersion>
 			<Base>True</Base>
-			<Config Condition="'$(Config)'==''">Release Unicode</Config>
+			<Config Condition="'$(Config)'==''">Debug Unicode</Config>
 			<AppType>Library</AppType>
 			<FrameworkType>None</FrameworkType>
 			<Platform Condition="'$(Platform)'==''">Win32</Platform>

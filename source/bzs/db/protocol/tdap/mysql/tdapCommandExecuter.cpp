@@ -771,9 +771,10 @@ inline void dbExecuter::doStat(request& req)
 	if (req.resultLen >= 6 + sizeof(uint))
 	{
 		ushort_td len = (ushort_td)(m_tb->recordLenCl());
+#ifdef USE_BTRV_VARIABLE_LEN
 		if (m_tb->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
 			len -= m_tb->lastVarFiled()->pack_length() - m_tb->lastVarLenBytes(); 
-				
+#endif				
 		memcpy((char*)req.data, &len, sizeof(ushort_td));
 		uint rows = (uint)m_tb->recordCount((req.keyNum!=0));
 		memcpy((char*)req.data+6, &rows, sizeof(uint));
@@ -977,17 +978,14 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 		case TD_KEY_GE_NEXT_MULTI:
 		case TD_KEY_LE_PREV_MULTI:
 			if (nw->bufferSize() < *(req.datalen)) nw->resize(*(req.datalen));
-			if (doReadMultiWithSeek(req, op, nw) == EXECUTE_RESULT_SUCCESS)
-				return EXECUTE_RESULT_SUCCESS; // Caution Call unUse()
-			break;
+			return doReadMultiWithSeek(req, op, nw);
 		case TD_KEY_SEEK_MULTI:
 		case TD_KEY_NEXT_MULTI:
 		case TD_KEY_PREV_MULTI:
 		case TD_POS_NEXT_MULTI:
 		case TD_POS_PREV_MULTI:
 			if (nw->bufferSize() < *(req.datalen)) nw->resize(*(req.datalen));
-			if (doReadMulti(req, op, nw) == EXECUTE_RESULT_SUCCESS)
-				return EXECUTE_RESULT_SUCCESS; // Caution Call unUse()
+			return doReadMulti(req, op, nw);
 			break;
 		case TD_MOVE_PER:
 			m_tb = getTable(req.pbk->handle);

@@ -144,6 +144,7 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
 		sprintf_s(g_buf, TMP_BUFSIZE, "VARBINARY(%d)", size);
 		return g_buf;
 	case ft_myvarbinary:
+	case ft_myfixedbinary:
 		sprintf_s(g_buf, TMP_BUFSIZE, "VARBINARY(%d)", size);
 		return g_buf;
 	case ft_mywvarbinary:
@@ -365,9 +366,11 @@ std::string sqlCreateTable(const char* name/*utf8*/, tabledef* table, uchar_td c
 {
 	//Duplication of a name is inspected and, in duplication, _1 is added.
 	//It does not correspond to two or more duplications.
+	std::string s = "CREATE TABLE `";
+
 	std::vector<std::string> fdl;
 	std::vector<std::string> fds;
-	char tmp[1024];
+	char tmp[256];
 	char num[10];
 	for (int i=0;i<table->fieldCount;i++)
 	{
@@ -385,7 +388,6 @@ std::string sqlCreateTable(const char* name/*utf8*/, tabledef* table, uchar_td c
 
 	}
 	uint_td schemaCodePage = table->schemaCodePage ? table->schemaCodePage : GetACP();
-	std::string s = "CREATE TABLE `";
 	if ((name && name[0]))
 	{
 		std::string name2 = name;

@@ -221,7 +221,9 @@ enum eFieldType
 	ft_mytimestamp	= 49,
 	ft_mytext 		= 50,
 	ft_myblob 		= 51,
-	ft_nullindicator = 255
+	ft_autoIncUnsigned	= 52,
+	ft_myfixedbinary 	= 53,
+	ft_nullindicator	= 255
 }eFieldType;
 
 typedef

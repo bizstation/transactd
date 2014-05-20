@@ -29,7 +29,6 @@
 #include <bzs/rtl/stl_uty.h>
 #include <boost/shared_array.hpp>
 
-extern int g_useBtrvVariableTable;
 namespace bzs
 {
 namespace db
@@ -548,6 +547,7 @@ unsigned short nisFieldNum(TABLE* tb)
 
 bool table::noKeybufResult = true;
 
+
 table::table(TABLE* myTable, database& db, const std::string& name, short mode, int id)
 		:m_table(myTable),m_db(db),m_name(name), m_mode(mode),m_blobBuffer(NULL)
 		,m_id(id),m_keyNum(-1),m_stat(0)
@@ -561,19 +561,22 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode, 
 {
 	
 	m_table->read_set = &m_table->s->all_set;
+
 	m_recordFormatType = RF_VALIABLE_LEN;
+#ifdef USE_BTRV_VARIABLE_LEN
 	m_lastVarLenBytes = 0;
-	
+#endif	
 	//Is the Nis field included or not? 
 	m_nullFields = nisFieldNum(m_table);
 
 	if (m_table->s->varchar_fields + m_table->s->blob_fields == 0)
 		m_recordFormatType = RF_FIXED_LEN;
-	else if ((m_table->s->varchar_fields == 1) && g_useBtrvVariableTable)
+#ifdef USE_BTRV_VARIABLE_LEN
+	else if (m_table->s->varchar_fields == 1)
 	{
 		Field** fd = m_table->field + lastVarFiledNum();	
-		if (isVarType((*fd)->type()) && ((*fd)->part_of_key.is_clear_all()/* == Bitmap<64>()*/)
-			&& ((*fd)->key_start.is_clear_all()/* == Bitmap<64>()*/)
+		if (isVarType((*fd)->type()) && ((*fd)->part_of_key.is_clear_all())
+			&& ((*fd)->key_start.is_clear_all())
 			&& (((*fd)->charset()) == &my_charset_bin))
 		{
 			m_recordFormatType = RF_FIXED_PLUS_VALIABLE_LEN;
@@ -582,11 +585,14 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode, 
 			m_lastVarLenBytes = lastVarFiled()->field_length < 256 ? 1:2;
 		}
 	}
-	
+#endif	
 	if (m_nullFields)
 		m_recordFormatType |= RF_INCLUDE_NIS;
+#ifdef USE_BTRV_VARIABLE_LEN
 	m_recordLenCl = (uint)(m_table->s->reclength - m_table->s->null_bytes - m_nullFields-m_lastVarLenBytes);
-
+#else
+	m_recordLenCl = (uint)(m_table->s->reclength - m_table->s->null_bytes - m_nullFields);
+#endif
 	//Chash null field
 	if (m_table->s->null_fields)
 	{
@@ -796,8 +802,13 @@ void table::setRecord(void* ptr, unsigned short size, int offset)
 {
 	m_cursor = false;
 	Field* fd = m_table->field[0];//remove null flag segment
-	if (offset + size <= (unsigned short)m_table->s->reclength + lastVarLenBytes())
-	{
+#ifdef USE_BTRV_VARIABLE_LEN
+	if (offset + size <= (unsigned short)m_table->s->reclength + lastVarLenBytes()) {
+#else
+	if (offset + size <= (unsigned short)m_table->s->reclength) {
+
+#endif
+	
 		if (size>0)
 			memcpy(fd->ptr + offset, ptr, size);
 	}
@@ -876,6 +887,8 @@ void table::setBlobFieldPointer(const bzs::db::blobHeader* hd)
 void table::setRecordFromPacked(const uchar* packedPtr, uint size, const bzs::db::blobHeader* hd)
 {
 	const uchar* p = packedPtr;
+
+#ifdef USE_BTRV_VARIABLE_LEN
 	if (recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
 	{
 		int varlenbyte = lastVarLenBytes();
@@ -892,8 +905,11 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size, const bzs::db
 		else
 			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_BUFFERTOOSMALL, "copyDataTo");
 	}else if ((recordFormatType() & RF_VALIABLE_LEN)
-				|| (recordFormatType() & RF_INCLUDE_NIS))
-	{
+				|| (recordFormatType() & RF_INCLUDE_NIS)){
+#else
+	if ((recordFormatType() & RF_VALIABLE_LEN)
+				|| (recordFormatType() & RF_INCLUDE_NIS)){
+#endif
 		//It copies for every field. 
 		for (uint i=0;i<m_table->s->fields;i++)
 		{
@@ -926,6 +942,7 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size, const bzs::db
 uint table::recordPackCopy(char* buf, uint maxsize) 
 {
 	char* p = buf;
+#ifdef USE_BTRV_VARIABLE_LEN
 	if (recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
 	{
 		uint varLenBytes = lastVarLenBytes();
@@ -949,8 +966,11 @@ uint table::recordPackCopy(char* buf, uint maxsize)
 
 	}
 	else if ((recordFormatType() & RF_VALIABLE_LEN)
-			 || (recordFormatType() & RF_INCLUDE_NIS))
-	{
+			 || (recordFormatType() & RF_INCLUDE_NIS)){
+#else
+	if ((recordFormatType() & RF_VALIABLE_LEN)
+			 || (recordFormatType() & RF_INCLUDE_NIS)){
+#endif
 		int blobs = 0;
 		for (uint i=0;i<m_table->s->fields;i++)
 		{
@@ -990,8 +1010,15 @@ ushort table::fieldPackCopy(unsigned char* dest, short filedNum)
 	uint len = fd->pack_length();
 	if (isVarType(fd->type()))
 		len = var_total_len(fd);
-					
-	memcpy(dest, fd->ptr, len);
+#ifdef USE_BTRV_VARIABLE_LEN
+	if (lastVarFiledNum() == filedNum)
+	{
+		len -= lastVarLenBytes();
+		memcpy(dest, fd->ptr + lastVarLenBytes(), len);
+	}
+	else
+#endif
+		memcpy(dest, fd->ptr, len);
 	return (ushort)len;
 }
 
@@ -1800,6 +1827,7 @@ void table::del()
 		m_changed  = true;
 }
 
+#ifdef USE_BTRV_VARIABLE_LEN
 /** The offset position of the last VAR field data
  */
 unsigned short table::lastVarFieldPos()const
@@ -1808,6 +1836,8 @@ unsigned short table::lastVarFieldPos()const
 		return (unsigned short)(lastVarFiled()->ptr - m_table->s->field[0]->ptr);
 	return 0;
 }
+
+#endif
 
 /** The data length of the field 
  */

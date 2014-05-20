@@ -138,7 +138,7 @@
         <Defines>_UNICODE;$(Defines)</Defines>
     </PropertyGroup>
     <ItemGroup>
-        <CppCompile Include="..\..\source\bzs\test\transactdBench\queryData.cpp">
+        <CppCompile Include="..\..\source\bzs\example\queryData.cpp">
             <BuildOrder>1</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\test\trdclengn\test_trdclengn.cpp">

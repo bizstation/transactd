@@ -489,7 +489,7 @@ public:
 	~mraResetter()
 	{
 		if (m_tb->mra())
-			m_tb->mra()->setJoinType( mra::mra_nojoin);
+			m_tb->mra()->setJoinType(mra_nojoin);
 	   m_tb->setMra(NULL);
 	}
 };
@@ -543,6 +543,7 @@ protected:
 	{
 		if (!m_useTransactd)
 			nstable::throwError(_T("activeTable P.SQL can not use this"), (short_td)0);
+		if (mdls.size()==0) return;
 		reverseAliasNamesQuery(q);
 		q.clearSeekKeyValues();
 		fields fds(m_tb);
@@ -595,7 +596,7 @@ protected:
 		map.init(m_option, m_fdi, m_map, m_tb, &m_alias.map());
 		if (m_tb->mra())
 		{
-			m_tb->mra()->setJoinType(innner ? mra::mra_innerjoin : mra::mra_outerjoin);
+			m_tb->mra()->setJoinType(innner ? mra_innerjoin : mra_outerjoin);
 			if (optimize)
 				m_tb->mra()->setJoinRowMap(&joinRowMap);
 		}

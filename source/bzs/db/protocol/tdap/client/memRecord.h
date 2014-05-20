@@ -36,10 +36,11 @@ class AGRPACK autoMemory
 {
 
 public:
+	autoMemory();
 	explicit autoMemory(unsigned char* p, size_t s, short* endIndex, bool own);
-	explicit autoMemory(const autoMemory& p);
+	autoMemory(const autoMemory& p);
 	~autoMemory();
-	autoMemory& operator=(const autoMemory& p);
+	autoMemory& operator=(const bzs::db::protocol::tdap::client::autoMemory& p);
 	unsigned char* ptr;
 	short* endFieldIndex;
 	unsigned int size;

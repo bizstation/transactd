@@ -1,4 +1,4 @@
-/*=================================================================
+Ôªø/*=================================================================
    Copyright (C) 2014 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
@@ -63,7 +63,7 @@ bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep,
 		if (kind &1)
 		{
 			q.reset();
-			atu.alias(_T("ñºëO"), _T("name"));
+			atu.alias(_T("ÂêçÂâç"), _T("name"));
 
 			q.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), i+15000);
 			atu.index(0).keyValue(i+1).read(rs, q);
@@ -98,7 +98,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	database_ptr db = createDatadaseObject();
 	try
 	{
-		_TCHAR* host = _T("localhost");
+		const _TCHAR* host = _T("localhost");
 		int kind = 7;
 		int n = 100;
 		bool makeDatabase = true;

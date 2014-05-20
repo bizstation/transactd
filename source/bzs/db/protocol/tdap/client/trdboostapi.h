@@ -80,11 +80,8 @@ class tableIterator : public std::iterator<std::bidirectional_iterator_tag, fiel
 
 	table& m_tb;
 	fields m_fds;
-	inline tableIterator() : m_tb(*((table*)0)){};
 
 public:
-	static const tableIterator eos;
-
 	inline tableIterator(table& tb) : m_tb(tb), m_fds(tb)
 	{
 		readStatusCheck(tb, _T("tableIterator"));
@@ -110,7 +107,11 @@ public:
 
 	inline bool operator != (const tableIterator& v) {return m_tb.stat() == 0;}
 
+	inline bool isEnd(){return m_tb.stat() != 0;}
+
 };
+
+
 typedef tableIterator<indexNavi> indexIterator;
 typedef tableIterator<indexFindNavi> findIterator;
 typedef tableIterator<stepNavi> stepIterator;
@@ -143,11 +144,7 @@ class filterdIterator : public std::iterator<std::input_iterator_tag, fields, vo
 		return v;
 
 	}
-
 public:
-	static const filterdIterator<T> eos;
-
-	filterdIterator() : m_it(*((T*)0)), m_func(NULL) {}
 
 	filterdIterator(T& it, validationFunc func) : m_it(it), m_func(func)
 	{
@@ -175,8 +172,9 @@ public:
 
 	inline bool operator == (const filterdIterator& v) {return m_it.operator == (v.m_it);}
 
-	inline bool operator != (const filterdIterator& v) {return m_it.operator != (v.m_it);}
+	inline bool operator != (const filterdIterator& v) {return m_it.operator!=(v.m_it);}
 
+	inline bool isEnd(){return m_it.isEnd();}
 };
 
 typedef filterdIterator<indexIterator> filterdIndexIterator;
@@ -186,27 +184,6 @@ typedef filterdIterator<findIterator> filterdFindIterator;
 typedef filterdIterator<indexRvIterator> filterdIndexRvIterator;
 typedef filterdIterator<stepRvIterator> filterdStepRvIterator;
 typedef filterdIterator<findRvIterator> filterdFindRvIterator;
-
-
-#if (defined(TRD_ITERATOR_EOS) || !(__BCPLUSPLUS__ && __clang__))
-template <> const indexIterator indexIterator::eos=indexIterator();
-template <> const findIterator findIterator::eos=findIterator();
-template <> const stepIterator stepIterator::eos=stepIterator();
-
-template <> const indexRvIterator indexRvIterator::eos=indexRvIterator();
-template <> const findRvIterator findRvIterator::eos=findRvIterator();
-template <> const stepRvIterator stepRvIterator::eos=stepRvIterator();
-
-
-template<> const filterdIndexIterator filterdIndexIterator::eos=filterdIndexIterator();
-template<> const filterdStepIterator filterdStepIterator::eos=filterdStepIterator();
-template<> const filterdFindIterator filterdFindIterator::eos=filterdFindIterator();
-
-template<> const filterdIndexRvIterator filterdIndexRvIterator::eos=filterdIndexRvIterator();
-template<> const filterdStepRvIterator filterdStepRvIterator::eos=filterdStepRvIterator();
-template<> const filterdFindRvIterator filterdFindRvIterator::eos=filterdFindRvIterator();
-
-#endif
 
 inline indexIterator readIndex(table_ptr tb, eIndexOpType op)
 {
@@ -599,7 +576,7 @@ inline findIterator getFindIterator(indexIterator it, const filterParams& fp
 					,bool isCurrentValid)
 
 {
-	if (it != indexIterator::eos)
+	if (!it.isEnd())
 	{
 		it.tb().setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
 		if (!isCurrentValid)
@@ -611,7 +588,7 @@ inline findIterator getFindIterator(indexIterator it, const filterParams& fp
 inline findRvIterator getFindIterator(indexRvIterator it, const filterParams& fp
 					,bool isCurrentValid)
 {
-	if (it != indexRvIterator::eos)
+	if (!it.isEnd())
 		it.tb().setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
 	if (!isCurrentValid)
 		it.tb().findPrev(false);
@@ -967,7 +944,7 @@ inline void deleteRecord(const T& it)
 
 
 template<class T, class F>
-void for_each(T iterator, F func) {std::for_each(iterator, T::eos, func);}
+void for_each(T iterator, F func) {std::for_each(iterator, iterator, func);}
 
 class transaction
 {

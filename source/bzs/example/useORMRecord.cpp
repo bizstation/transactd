@@ -61,7 +61,7 @@ bool readUsers(databaseManager* mgr, recordset*  rows)
 
 
 	q.reset().select(prod, amount, wkid)
-				.where(date, L"<=", endDate).and(wkid, L">", 0).reject(disableReject);
+				.where(date, L"<=", endDate).and_(wkid, L">", 0).reject(disableReject);
 	atwm.index(key_date).keyValue(startDate).read(rowset, q);
 
 	//t = timeGetTime() - t;

@@ -42,6 +42,10 @@ namespace tdap
 namespace client
 {
 
+#define FORMAT_VERSON_BTRV_DEF     		0
+#define FORMAT_VERSON_NAME_WIDE_START 	1
+#define FORMAT_VERSON_CURRENT   		1
+
 static const _TUCHAR BDFFORMAT_VERSION[] = _T("2.000.00");
 static const _TUCHAR ow0[11] = {46, 46, 83, 67, 46, 46, 46, 46, 93, 4, 0};
 static const _TUCHAR ow1[11] = {46, 46, 83, 67, 46, 46, 46, 46, 66, 5, 0};
@@ -178,12 +182,13 @@ fielddef* dbdef::getFieldDef(tabledef* p)
 
 void dbdef::setRecordLen(short TableIndex)
 {
-	tableDefs(TableIndex)->maxRecordLen = getRecordLen(TableIndex);
+	tabledef* td = tableDefs(TableIndex);
+	td->maxRecordLen = getRecordLen(TableIndex);
 
 	// If valible length then specifing fixed length.
-	if ((tableDefs(TableIndex)->fixedRecordLen == 0) ||
-		(tableDefs(TableIndex)->flags.bit0 == false))
-		tableDefs(TableIndex)->fixedRecordLen = tableDefs(TableIndex)->maxRecordLen;
+	if ((td->fixedRecordLen == 0) ||
+		(td->flags.bit0 == false))
+		td->fixedRecordLen = td->maxRecordLen;
 
 }
 
@@ -205,7 +210,6 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
 {
 	m_stat = STATUS_SUCCESS;
 	tabledef* td = tableDefs(TableIndex);
-	//short i = (short)(td->fieldCount - 1);
 	short i, j, ret, Fnum;
 	uchar_td type;
 
@@ -251,27 +255,13 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
 			m_stat = STATUS_INVALID_VARIABLETABLE;
 			return;
 		}
-		if((type == ft_myvarchar) || (type == ft_mywvarchar))
+		if ((type == ft_myvarchar) || (type == ft_mywvarchar)
+			|| (type == ft_myvarbinary) || (type == ft_mywvarbinary)
+				|| (type == ft_myfixedbinary))
 			td->optionFlags.bitA = true;
 		if ((type == ft_myblob) || (type == ft_mytext))
 			td->optionFlags.bitB = true;
-		// Check valiable type
 
-		if (i != (short)(td->fieldCount - 1))
-		{
-			if ((type == ft_myvarbinary) || (type == ft_mywvarbinary))
-				td->optionFlags.bitA = true;
-
-		}else
-		{
-			// It is td->flags.bit0 true when the only last field verbin type is specified.
-			if (isUseTransactd() && (td->flags.bit0==false) && ((type == ft_myvarbinary) || (type == ft_mywvarbinary)))
-			{
-				m_stat = STATUS_TRD_NEED_VARLENGTH;
-				return;
-			}
-
-		}
 	}
   
 
@@ -322,7 +312,7 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
 			m_pdata = td;
 			m_buflen = totalDefLength(TableIndex);
 			cacheFieldPos(td);
-			td->formatVersion = 1;
+			td->formatVersion = FORMAT_VERSON_CURRENT;
 			update();
 			m_pdata = m_impl->bdf;
 			m_buflen = m_impl->bdfLen;
@@ -489,7 +479,7 @@ void dbdef::insertTable(tabledef* TableDef)
 			m_impl->tableCount = TableDef->id;
 		return;
 	}
-	TableDef->formatVersion = 1;
+	TableDef->formatVersion = FORMAT_VERSON_CURRENT;
 	if (m_impl->deftype == TYPE_SCHEMA_DDF)
 		saveDDF(TableDef->id, 2);
 	else
@@ -588,13 +578,18 @@ fielddef* dbdef::insertField(short TableIndex, short InsertIndex)
 	setRecordLen(TableIndex);
 	fielddef* fd = &(td->fieldDefs[InsertIndex]);
 	fd->setCharsetIndex(td->charsetIndex);
+	fd->setSchemaCodePage(td->schemaCodePage);
 	return fd;
 }
 
 int dbdef::totalDefLength(short TableIndex)
 {
-	return (int)(sizeof(tabledef) + (sizeof(fielddef) * tableDefs(TableIndex)->fieldCount) +
-		(sizeof(keydef) * tableDefs(TableIndex)->keyCount));
+	tabledef* td = tableDefs(TableIndex);
+	int len = (int)(sizeof(tabledef) + (sizeof(fielddef) * td->fieldCount) +
+		(sizeof(keydef) * td->keyCount));
+	if (isUseTransactd())
+		td->varSize = len - 4;
+	return len;
 }
 
 inline fielddef_t_my& dbdef::convert(fielddef_t_my& fd_my, const fielddef_t_pv& fd_pv)
@@ -608,6 +603,25 @@ inline fielddef_t_my& dbdef::convert(fielddef_t_my& fd_my, const fielddef_t_pv& 
 	 return fd_my;
 }
 
+inline int fixVariableLenBug(bool isUseTransactd, tabledef* src, size_t size)
+{
+	if (isUseTransactd)
+	{// A Transactd server format changed to nosupport FIXED_PLUS_VARIABLELEN
+		if (src->pageSize+4 == size)
+		{ // This is a chagned server
+			if (src->preAlloc && ((src->preAlloc % 512 == 0) || src->fieldCount > 255
+				|| src->keyCount > 127)
+				|| src->fieldCount == 0)
+			{
+				//memmove(((char*)src)+4, ((char*)src)+6, src->pageSize-2);
+				memmove(((char*)src)+2, ((char*)src)+4, src->pageSize);
+				size -= 2;
+			}
+		}
+	}
+	return size;
+}
+
 size_t getNewVersionSize(tabledef* src)
 {
 	return src->fieldCount * sizeof(fielddef) + sizeof(tabledef)
@@ -617,7 +631,8 @@ size_t getNewVersionSize(tabledef* src)
 
 void dbdef::tableDefCopy(tabledef* dest, tabledef* src, size_t size)
 {
-	if (src->formatVersion == 0)
+
+	if (src->formatVersion == FORMAT_VERSON_BTRV_DEF)
 	{
 		size_t len = 0;
 		memcpy(dest, src, sizeof(tabledef));
@@ -632,7 +647,7 @@ void dbdef::tableDefCopy(tabledef* dest, tabledef* src, size_t size)
 			++src_fd;
 		}
 		memcpy(fd, src_fd, size - len);
-		dest->formatVersion = 1;
+		dest->formatVersion = FORMAT_VERSON_CURRENT;
 	}
 	else
 		memcpy(dest, src, size);
@@ -685,6 +700,7 @@ tabledef* dbdef::tableDefs(int index)
 			m_stat = 0;
 			return NULL;
 		}
+		m_datalen = fixVariableLenBug(isUseTransactd(), (tabledef*)m_pdata, m_datalen);
 
 		m_impl->tableDefs[index] = def = (tabledef*)malloc(getNewVersionSize((tabledef*)m_pdata));
 
@@ -809,9 +825,9 @@ ushort_td dbdef::getRecordLen(short TableIndex)
 {
 	ushort_td ret = 0;
 	short i;
-	for (i = 0; i < tableDefs(TableIndex)->fieldCount; i++)
-		ret += tableDefs(TableIndex)->fieldDefs[i].len + tableDefs(TableIndex)
-			->fieldDefs[i].varLenBytes();
+	tabledef* td = tableDefs(TableIndex);
+	for (i = 0; i < td->fieldCount; i++)
+		ret += td->fieldDefs[i].len	+ td->fieldDefs[i].varLenBytes();
 	return ret;
 }
 
@@ -1015,7 +1031,11 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
 		maxlen = 60000;
 		defaultlen = 3;
 		break;
-
+	case ft_myfixedbinary:
+		minlen = 256;
+		maxlen = 60000;
+		defaultlen = 1024;
+		break;
 	case ft_mydate: minlen = 3;
 		maxlen = 3;
 		defaultlen = 3;
@@ -1146,8 +1166,6 @@ bool dbdef::validLen(uchar_td FieldType, uint_td FieldLen)
 
 bool dbdef::isPassKey(uchar_td FieldType)
 {
-	if (FieldType == ft_bit)
-		return false;
 	if (FieldType == ft_wstring)
 		return true;
 	if (FieldType == ft_wzstring)
@@ -1176,7 +1194,11 @@ bool dbdef::isPassKey(uchar_td FieldType)
 		return true;
 	if (FieldType == ft_mydatetime)
 		return true;
+	if (FieldType == ft_myfixedbinary)
+		return false;
 
+	if (FieldType == ft_bit)
+		return false;
 	if (FieldType > ft_numericsts)
 		return false;
 	if (FieldType == ft_note)

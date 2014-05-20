@@ -533,7 +533,13 @@ struct PACKAGE tabledef
 	}
 
 	ushort_td id;         // table id
+
+	union
+	{
 	ushort_td pageSize;   // page size
+	ushort_td varSize;    // second field length
+	};
+
 	ushort_td preAlloc;   // pre alloc page seize
 	ushort_td fieldCount; // Number of field
 	uchar_td keyCount;    // Number of key

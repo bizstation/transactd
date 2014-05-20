@@ -150,12 +150,13 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
 	tdef.fieldCount = (uchar_td)src->fields();
 	tdef.keyCount = (uchar_td)src->keys();
 	tdef.charsetIndex = charsetIndex(src->charset().csname);
-	tdef.flags.bit0 = (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN);//‰Â•Ï’·
-	
 	tdef.primaryKeyNum = (src->primarykey()<tdef.keyCount) ? src->primarykey():-1;
+#ifdef USE_BTRV_VARIABLE_LEN
+	tdef.flags.bit0 = (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN);
 	if (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
 		tdef.fixedRecordLen = (ushort_td)(src->recordLenCl()-src->lastVarFieldDataLen());
 	else
+#endif	
 		tdef.fixedRecordLen = (ushort_td)src->recordLenCl();
 	tdef.maxRecordLen = (ushort_td)src->recordLenCl();
 	tdef.pageSize = 2048;

@@ -50,7 +50,6 @@ static unsigned int g_maxTcpConnections = 200;
 static unsigned int g_pool_threads = 20;
 unsigned int g_pipeCommSharememSize = 3145728;
 int g_tableNmaeLower = 1; //defined in btrvProtocol.h 
-int g_useBtrvVariableTable = 1;
 unsigned int g_lock_wait_timeout = 1;
 char* g_transaction_isolation = NULL;
 
@@ -219,7 +218,6 @@ static MYSQL_SYSVAR_STR(port, g_listenPort, PLUGIN_VAR_READONLY | PLUGIN_VAR_MEM
 static MYSQL_SYSVAR_STR(hostcheck_username, g_hostCheckUserName, PLUGIN_VAR_READONLY | PLUGIN_VAR_MEMALLOC, NULL, NULL, NULL, "root");
 static MYSQL_SYSVAR_UINT(max_tcp_connections, g_maxTcpConnections, PLUGIN_VAR_READONLY, "1..3000", 0, 0, 200, 1,3000, 0);
 static MYSQL_SYSVAR_INT(table_name_lowercase, g_tableNmaeLower, PLUGIN_VAR_READONLY,"", 0, 0, 1, 0,1, 0);
-static MYSQL_SYSVAR_INT(use_btrv_variable_table, g_useBtrvVariableTable, PLUGIN_VAR_READONLY,"", 0, 0, 1, 0,1, 0);
 static MYSQL_SYSVAR_UINT(pool_threads, g_pool_threads, PLUGIN_VAR_READONLY,"1..1000", 0, 0, 20, 1,1000, 0);
 static MYSQL_SYSVAR_UINT(tcp_server_type, g_tcpServerType, PLUGIN_VAR_READONLY,"1..2", 0, 0, TCP_CPT_SERVER, 1,2, 0);
 static MYSQL_SYSVAR_UINT(lock_wait_timeout, g_lock_wait_timeout, PLUGIN_VAR_READONLY,"1..3600", 0, 0, 1, 1,3600, 0);
@@ -245,7 +243,6 @@ static struct st_mysql_sys_var *g_systemVariables[] =
 	MYSQL_SYSVAR(max_tcp_connections),
 	MYSQL_SYSVAR(hostcheck_username),
 	MYSQL_SYSVAR(table_name_lowercase),
-	MYSQL_SYSVAR(use_btrv_variable_table),
 	MYSQL_SYSVAR(pool_threads),
 	MYSQL_SYSVAR(tcp_server_type),
 	MYSQL_SYSVAR(lock_wait_timeout),

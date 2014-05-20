@@ -28,7 +28,7 @@
 #include <bzs/db/protocol/tdap/client/stringConverter.h>
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/filter.h>
-#include <bzs/test/transactdBench/queryData.h>
+#include <bzs/example/queryData.h>
 #include <bzs/db/protocol/tdap/client/memRecordset.h>
 
 using namespace bzs::db::protocol::tdap::client;
@@ -2387,7 +2387,7 @@ void testQuery()
 
     q.queryString(_T("code = &abc"), true);
     BOOST_CHECK_MESSAGE(_tstring(q.toString()) == _T("code = '&&abc'")
-                            ,  "queryString");
+							,  "queryString");
 
 }
 
@@ -2427,18 +2427,18 @@ void testJoin(database* db)
 				, "first field comment");
 
 	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
-				, "first field group_name");
+				, "first field group_name " << string((*first)[_T("group_name")].a_str()));
 	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
-				, "first field group_name");
+				, "first field group_name " << string((*first)[_T("group_name")].a_str()));
 	row_ptr row = rs[15000 - 9];
 	BOOST_CHECK_MESSAGE(_tstring((*row)[_T("group_name")].c_str()) == _tstring(_T("9 group"))
-				, "group_name = 9 group ");
+				, "group_name = 9 group " << string((*row)[_T("group_name")].a_str()));
 
 	//Test orderby
 	rs.orderBy(_T("group_name"));
 	first = rs[0];
 	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
-				, "group_name = 1 group ");
+				, "group_name = 1 group " << string((*first)[_T("group_name")].a_str()));
 
 	//test union
 	recordset rs2;
@@ -2692,7 +2692,7 @@ BOOST_AUTO_TEST_SUITE(filter)
         testResultField(db());
         testResultDef();
         testLogic(db());
-        testQuery();
+		testQuery();
     }
     BOOST_FIXTURE_TEST_CASE(drop, fixture)
     {
@@ -2709,6 +2709,7 @@ BOOST_AUTO_TEST_SUITE(query)
 	{
 		database_ptr db = createDatadaseObject();
 		connectParams param(PROTOCOL, HOSTNAME, _T("querytest"), _T("test.bdf"));
+		param.setMode(TD_OPEN_NORMAL);
 		int ret = prebuiltData(db, param);
 		BOOST_CHECK_MESSAGE(0 == ret, "query data build");
 		if (ret==0)

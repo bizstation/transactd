@@ -33,6 +33,11 @@ namespace tdap
 namespace client
 {
 
+autoMemory::autoMemory()
+		: ptr(0), size(0),endFieldIndex(NULL), owner(false)
+{
+
+}
 
 autoMemory::autoMemory(unsigned char* p, size_t s, short* endIndex, bool own)
 		: ptr(p), size((unsigned int)s),endFieldIndex(NULL), owner(own)
@@ -106,7 +111,8 @@ void memoryRecord::setRecordData(unsigned char* ptr, size_t size
 		size = m_fns.totalFieldLen();
 		*endFieldIndex = (short)m_fns.size();
 	}
-	m_memblock.push_back(autoMemory(ptr, size, endFieldIndex, owner));
+	autoMemory am(ptr, size, endFieldIndex, owner);
+	m_memblock.push_back(am);
 }
 
 void memoryRecord::copyToBuffer(table* tb, bool updateOnly) const
