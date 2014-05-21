@@ -163,10 +163,13 @@ void deleteThdForThread(THD* thd)
 	cp_restore_globals(thd);
 	mysql_mutex_lock(&LOCK_thread_count);
 	--g_openDatabases;
+	
+	if (thd->mdl_context.has_locks())
+		thd->mdl_context.set_transaction_duration_for_all_locks();
+
 	cp_thd_release_resources(thd);
 	cp_remove_global_thread(thd);
 	mysql_mutex_unlock(&LOCK_thread_count);
-
 	releaseTHD(thd);
 	
 }

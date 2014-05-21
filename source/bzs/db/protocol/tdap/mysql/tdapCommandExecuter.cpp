@@ -223,7 +223,7 @@ void dbExecuter::connect(request& req)
 {
 	req.paramMask = 0;
 	if (req.keyNum == LG_SUBOP_DISCONNECT)
-		releaseDatabse(req.cid);
+		dbManager::releaseDatabase(req.cid);
 	else
 	{
 		std::string dbname = getDatabaseName(req);
@@ -245,7 +245,7 @@ void dbExecuter::releaseDatabase(request& req, int op)
 	if ((op == TD_RESET_CLIENT)&&(req.keyNum !=0))
 		req.result = 1;
 	else
-		releaseDatabse(req.cid);
+		dbManager::releaseDatabase(req.cid);
 }
 
 std::string dbExecuter::makeSQLcreateTable(const request& req)

@@ -268,6 +268,7 @@ bool database::open(const _TCHAR* _uri, short type, short mode, const _TCHAR* di
 			m_impl->dbDef = new dbdef(this, type);
 
 		doOpen(_uri, type, mode, ownername);
+		m_impl->isOpened = (m_stat == STATUS_SUCCESS);//important
 		if ((m_stat == STATUS_TABLE_NOTOPEN) && isUseTransactd()
 								&& _tcsstr(_uri, TRANSACTD_SCHEMANAME))
 		{
@@ -604,7 +605,7 @@ void makeChangeInfo( const tabledef* ddef, const tabledef* sdef, filedChnageInfo
 
 }
 
-inline void copyEachFiledData(table* dest, table* src, filedChnageInfo* fci)
+inline void copyEachFieldData(table* dest, table* src, filedChnageInfo* fci)
 {
 	const tabledef* ddef = dest->tableDef();
 	const tabledef* sdef = src->tableDef();
@@ -618,7 +619,7 @@ inline void copyEachFiledData(table* dest, table* src, filedChnageInfo* fci)
 		if (dindex != -1)
 		{
 			//src valiable len and last field;
-			if (fci[i].changed == false)
+			if ((fci[i].changed == false) || (fdd.type == ft_myfixedbinary))
 			{
 				int len = fds.len;
 				if (fds.len > fdd.len)
@@ -743,7 +744,7 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset, s
 			memcpy((char*)dest->fieldPtr(0) + offset, src->fieldPtr(0), src->datalen());
 		}
 		else
-			copyEachFiledData(dest, src, fci);
+			copyEachFieldData(dest, src, fci);
 
 		if (repData)
 		{

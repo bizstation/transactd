@@ -69,7 +69,7 @@ void dbManager::checkNewHandle(int newHandle)const
 			THROW_BZS_ERROR_WITH_CODEMSG(1, "Allready exits handle.");
 }
 
-void dbManager::releaseDatabse(short cid)
+void dbManager::releaseDatabase(short cid)
 {
 	boost::mutex::scoped_lock lck(m_mutex);
 	int index = -1;

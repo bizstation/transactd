@@ -93,7 +93,7 @@ protected:
 	table* m_tb;
 
 	database* createDatabase(const char* dbname, short cid)const;
-	void releaseDatabse(short cid);
+	void releaseDatabase(short cid);
 	handle* getHandle(int handle)const;
 	database* getDatabase(const char* dbname, short cid) const ;
 	database* getDatabaseCid(short cid) const ;

@@ -42,9 +42,9 @@ tls_key g_tlsiID;
 __THREAD client* __THREAD_BCB g_client=NULL;
 #endif
 
-bool chaeckVersion(trdVersiton& ver)
+bool checkVersion(trdVersiton& ver)
 {
-	if ((ver.srvMajor == 1)&& (ver.srvMinor < 3))
+	if ((ver.srvMajor < 1) || ((ver.srvMajor == 1) && (ver.srvMinor < 3)))
 		return false;
 	return true;
 }
@@ -56,6 +56,7 @@ bool client::readServerCharsetIndex()
 		request req = m_req;
 		req.paramMask = P_MASK_POSBLK|P_MASK_DATA|P_MASK_DATALEN;
 		trdVersiton ver;
+		memset(&ver, 0, sizeof(trdVersiton));
 		ver.cherserServer[0] = 0x00;
 		ver.clMajor = (ushort_td)atoi(C_INTERFACE_VER_MAJOR);
 		ver.clMinor = (ushort_td)atoi(C_INTERFACE_VER_MINOR);
@@ -74,7 +75,7 @@ bool client::readServerCharsetIndex()
 		req.parse(p, 0, 0);
 		if (req.result==0)
 		{
-			if (!chaeckVersion(ver)) return false;
+			if (!checkVersion(ver)) return false;
 			m_charsetIndexServer = mysql::charsetIndex(ver.cherserServer);
 			return true;
 		}

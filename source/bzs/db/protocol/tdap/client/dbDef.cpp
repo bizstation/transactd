@@ -1661,8 +1661,22 @@ bool dbdef::compAsBackup(short TableIndex)
 	int len2 = totalDefLength(TableIndex);
 	if (len != len2)
 		return true;
-	else if (memcmp(tableDefs(TABLE_NUM_TMP), tableDefs(TableIndex), len) != 0)
+	tabledef* tds = tableDefs(TableIndex);
+	tabledef* tdo = tableDefs(TABLE_NUM_TMP);
+
+	if (memcmp(tds, tdo, ((char*)(&(tdo->fieldDefs))) - ((char*)tdo)))
 		return true;
+
+	for (int i=0;i<tds->fieldCount;i++)
+	{
+		if (memcmp(&tds->fieldDefs[i], &tdo->fieldDefs[i], sizeof(fielddef)))
+			return true;
+	}
+	for (int i=0;i<tds->keyCount;i++)
+	{
+		if (memcmp(&tds->keyDefs[i], &tdo->keyDefs[i], sizeof(keydef)))
+			return true;
+	}
 	return false;
 }
 
@@ -1676,6 +1690,7 @@ void dbdef::popBackup(short TableIndex)
 
 	updateTableDef(TableIndex);
 }
+
 void dbdef::reopen(char_td mode)
 {
 	close();
