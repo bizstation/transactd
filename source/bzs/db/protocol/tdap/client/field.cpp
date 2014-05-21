@@ -139,6 +139,7 @@ void fielddefs::setAliases(const aliasMap_type* p)
 
 void fielddefs::addAllFileds(tabledef* def)
 {
+    m_imple->fields.clear();
 	for (int i=0;i<def->fieldCount;++i)
 		push_back(&def->fieldDefs[i]);
 }

@@ -436,8 +436,8 @@ void database::closeTable(const std::string& name, bool drop)
 	{
 		if (m_tables[i] && (m_tables[i]->m_name == name))
 		{
-			m_tables[i].reset();
-			DEBUG_WRITELOG_SP1("CLOSE TABLE table id=%d \n", i);
+			closeTable(m_tables[i].get());
+			return;
 		}
 	}
 }
@@ -450,27 +450,26 @@ void database::closeTable(table* tb)
 		{
 			short mode = tb->m_mode;
 			TABLE* src = tb->m_table;
+
 			unUseTable(m_tables[i].get());
 			m_tables[i].reset();
-			//TABLE* tblb = m_thd->open_tables;
 			
-			
-			for (TABLE** tbl = &m_thd->open_tables; *tbl != 0; *tbl = (*tbl)->next)
+			if (mode == TD_OPEN_EXCLUSIVE)
 			{
-				if (*tbl == src)
+				for (TABLE** tbl = &m_thd->open_tables; *tbl != 0; *tbl = (*tbl)->next)
 				{
-					TABLE* tbptr = (*tbl);
-					MDL_ticket* tc = tbptr->mdl_ticket;
-					close_thread_table(m_thd, tbl);
-					if (mode == TD_OPEN_EXCLUSIVE)
+					if (*tbl == src)
 					{
+						TABLE* tbptr = (*tbl);
+						MDL_ticket* tc = tbptr->mdl_ticket;
+						close_thread_table(m_thd, tbl);
 						m_thd->mdl_context.set_explicit_duration_for_all_locks();
 						m_thd->mdl_context.release_all_locks_for_name(tc);
+						m_thd->mdl_context.set_transaction_duration_for_all_locks();
 					}
 					break;
 				}
 			}
-			
 			
 			DEBUG_WRITELOG_SP1("CLOSE TABLE table id=%d \n", i);
 		}
