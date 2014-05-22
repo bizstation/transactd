@@ -113,14 +113,14 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataLen;
 
-%ignore recordsetSorter;
-%ignore multiRecordAlocatorImple;
-%ignore setValue;
-%ignore create;
-%ignore map_orm_fdi;
-%ignore createFdi;
-%ignore destroyFdi;
-%ignore initFdi;
+%ignore ::recordsetSorter;
+%ignore ::multiRecordAlocatorImple;
+%ignore ::setValue;
+%ignore ::create;
+%ignore ::map_orm_fdi;
+%ignore ::createFdi;
+%ignore ::destroyFdi;
+%ignore ::initFdi;
 
 %ignore bzs::db::protocol::tdap::client::fieldShare;
 %ignore bzs::db::protocol::tdap::client::autoMemory;

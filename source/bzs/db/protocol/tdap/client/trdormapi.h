@@ -163,7 +163,6 @@ public:
 		return *this;
 	}
 
-#ifndef SWIG
 	template <class T>
 	query& and_(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
@@ -183,7 +182,6 @@ public:
 		addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
 		return *this;
 	}
-#endif
 
 	template <class T>
 	query& in(const _TCHAR* name, const _TCHAR* qlogic, T value)

@@ -2140,6 +2140,16 @@ class queryBase {
 		queryBase_release($this->_cPtr);
 	}
 
+	static function create() {
+		$r=queryBase_create();
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new queryBase($r);
+		}
+		return $r;
+	}
+
 	function select($value1,$value2=null,$value3=null,$value4=null,$value5=null,$value6=null,$value7=null,$value8=null,$value9=null,$value10=null) {
 		switch (func_num_args()) {
 		case 1: $r=queryBase_select($this->_cPtr,$value1); break;
@@ -2480,6 +2490,13 @@ class database extends nsdatabase {
 			return new database($r);
 		}
 		return $r;
+	}
+
+	function create($uri,$type=null) {
+		switch (func_num_args()) {
+		case 1: database_create($this->_cPtr,$uri); break;
+		default: database_create($this->_cPtr,$uri,$type);
+		}
 	}
 
 	function drop() {
@@ -2885,6 +2902,16 @@ class fielddefs {
 
 	function canUnion($r_) {
 		return fielddefs_canUnion($this->_cPtr,$r_);
+	}
+
+	static function create() {
+		$r=fielddefs_create();
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new fielddefs($r);
+		}
+		return $r;
 	}
 
 	static function destroy($p) {
@@ -3333,6 +3360,16 @@ class writableRecord extends Record {
 
 	function save() {
 		writableRecord_save($this->_cPtr);
+	}
+
+	static function create($tb,$alias) {
+		$r=writableRecord_create($tb,$alias);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new writableRecord($r);
+		}
+		return $r;
 	}
 }
 

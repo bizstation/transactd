@@ -534,11 +534,19 @@ struct PACKAGE tabledef
 
 	ushort_td id;         // table id
 
+#ifdef SWIG
+/* For swig interface 
+   export field names.
+*/
+	ushort_td pageSize;   // page size
+	ushort_td varSize;    // second field length
+#else
 	union
 	{
 	ushort_td pageSize;   // page size
 	ushort_td varSize;    // second field length
 	};
+#endif
 
 	ushort_td preAlloc;   // pre alloc page seize
 	ushort_td fieldCount; // Number of field
