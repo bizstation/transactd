@@ -81,7 +81,7 @@ public:
 	void setOnCopyData(const copyDataFn v);
 	bool open(const _TCHAR* uri, short schemaType = 0, short mode = -2, const _TCHAR* dir = NULL,
 		const _TCHAR* ownerName = NULL);
-	table* openTable(short fileNum, short mode = 0, bool autoCreate = true,
+	table* openTable(short fileNum, short mode = TD_OPEN_NORMAL, bool autoCreate = true,
 		const _TCHAR* ownerName = NULL, const _TCHAR* uri = NULL);
 	table* openTable(const _TCHAR* tableName, short mode = 0, bool autoCreate = true,
 		const _TCHAR* ownerName = NULL, const _TCHAR* uri = NULL);

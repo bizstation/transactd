@@ -421,7 +421,7 @@ public:
 		return compareBlobType(l, r, type==ft_myblob, logType, sizeByte);
 	}
 
-	compFunc logicalField::getCompFunc(int sizeByte)
+	compFunc getCompFunc(int sizeByte)
 	{		
 		switch(type)
 		{

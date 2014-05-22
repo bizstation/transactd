@@ -167,7 +167,7 @@ int filter(engine::mysql::table* tb, request::table::filters_type& filters)
 		if (f.col >= tb->useFields().size())
 			THROW_BZS_ERROR_WITH_MSG("fcol");
 		Field* fd = tb->field(tb->useFields()[f.col]);
-		uchar tmp[1024]={NULL};
+		uchar tmp[1024]={0};
 		if (fd->pack_length() > 1024)
 			THROW_BZS_ERROR_WITH_MSG("field_length > 1024");	
 		memcpy(tmp, fd->ptr, fd->pack_length());

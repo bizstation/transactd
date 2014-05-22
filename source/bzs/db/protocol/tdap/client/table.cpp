@@ -1080,13 +1080,13 @@ uint_td table::doGetWriteImageLen()
 		return pack((char*)m_pdata, m_buflen);
 	else
 	{
-		fielddef* FieldDef = &m_tableDef->fieldDefs[m_tableDef->fieldCount - 1];
+		fielddef* fd = &m_tableDef->fieldDefs[m_tableDef->fieldCount - 1];
 		size_t len = 0;
 		short* pos;
 
-		if (FieldDef->type == ft_note)
+		if (fd->type == ft_note)
 			len = strlen((char*)fieldPtr((short)(m_tableDef->fieldCount - 1))) + 1;
-		else if (FieldDef->type == ft_lvar)
+		else if (fd->type == ft_lvar)
 		{
 			// xx................xx.............00
 			// ln--data----------ln-----data----00
@@ -1099,9 +1099,10 @@ uint_td table::doGetWriteImageLen()
 
 			}
 			len += 2;
-		}
+		}else
+			len = fd->len;
 
-		len += FieldDef->pos;
+		len += fd->pos;
 
 		return (uint_td)len;
 	}
@@ -1137,8 +1138,9 @@ uint_td table::unPack(char* ptr, size_t size)
 			{
 				if (max < end + movelen)
 					return 0;
-				const char* src = pos + dl;
+				char* src = pos + dl;
 				memmove(pos + fd.len, src, end - src);
+				memset(src, 0, movelen);
 				end += movelen;
 			}
 			pos += fd.len;

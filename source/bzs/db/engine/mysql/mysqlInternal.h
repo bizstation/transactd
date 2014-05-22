@@ -123,13 +123,17 @@
 	#define MDL_SHARED_UPGRADABLE MDL_SHARED_WRITE
 	#define	cp_get_sql_error()	stmt_da->sql_errno()
 	#define	cp_isOk()			stmt_da->is_ok()
+	#define	cp_set_overwrite_status(A)	stmt_da->set_overwrite_status(A)
 #elif ((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
 	#define	cp_get_sql_error()	get_stmt_da()->mysql_errno()
 	#define query_cache_invalidate3(A, B, C) query_cache.invalidate(A, B, C)
-	#define	cp_isOk()			get_stmt_da()->is_ok()
+	#define	cp_isOk()					get_stmt_da()->is_ok()
+	#define	cp_set_overwrite_status(A)	get_stmt_da()->set_overwrite_status(A)
 #else
-	#define	cp_get_sql_error()	get_stmt_da()->sql_errno()
-	#define	cp_isOk()			get_stmt_da()->is_ok()
+	#define	cp_get_sql_error()			get_stmt_da()->sql_errno()
+	#define	cp_isOk()					get_stmt_da()->is_ok()
+	#define	cp_set_overwrite_status(A)	get_stmt_da()->set_overwrite_status(A)
+
 #endif
 
 #if (MYSQL_VERSION_NUM < 50600) //MySQL Only

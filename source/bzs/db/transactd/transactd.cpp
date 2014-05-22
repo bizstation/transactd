@@ -25,6 +25,7 @@
 #include <string>
 
 #pragma warning(disable:4800) 
+#undef PACKAGE
 #include <bzs/db/engine/mysql/mysqlInternal.h>
 #pragma warning(default:4800) 
 

@@ -471,7 +471,8 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate, const _TC
 			return NULL;
 		}
 	}
-	tb->init(td, FileNum, regularDir);
+	if (tb->m_stat == 0)
+		tb->init(td, FileNum, regularDir);
 
 	if ((m_stat != 0) || (tb->m_stat != 0) || !onTableOpened(tb, FileNum, mode, NewFile))
 	{

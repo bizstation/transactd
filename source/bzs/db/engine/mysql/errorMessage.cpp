@@ -18,6 +18,7 @@
 =================================================================*/
 
 #include "errorMessage.h"
+#undef PACKAGE
 #include "mysqlInternal.h"
 #include <bzs/db/protocol/tdap/tdapcapi.h>
 

@@ -219,7 +219,7 @@ table* database::useTable(int index, enum_sql_command cmd)
 		reopen();
 	if (tb->m_table==NULL)
 		THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED, "Invalid table id.");
-	bool trn = (m_inTransaction>0) & (tb->mode() != TD_OPEN_READONLY);
+	bool trn = ((m_inTransaction>0) & (tb->mode() != TD_OPEN_READONLY));
 	tb->m_table->reginfo.lock_type = locktype(trn, cmd);
 	if ((tb->mode() == TD_OPEN_READONLY) && (tb->m_table->reginfo.lock_type == TL_WRITE))
 		THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ACCESS_DENIED, "Access denined.");
@@ -369,13 +369,14 @@ TABLE* database::doOpenTable(const std::string& name, short mode, const char* ow
 {
 	TABLE_LIST tables;
 	m_thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
-	tables.init_one_table(m_dbname.c_str(), m_dbname.size(), name.c_str(), name.size(), name.c_str(), TL_READ);
-	Open_table_context ot_act(m_thd, 0);
-	if (mode == TD_OPEN_EXCLUSIVE)
-		tables.mdl_request.set_type(MDL_EXCLUSIVE);
-	else
-		tables.mdl_request.set_type(MDL_SHARED_READ);
-	
+	enum_mdl_type type_arg = (mode == TD_OPEN_EXCLUSIVE) ? MDL_EXCLUSIVE : MDL_SHARED_READ;
+	thr_lock_type locltype = (mode == TD_OPEN_EXCLUSIVE) ? TL_WRITE : TL_READ;
+	tables.init_one_table(m_dbname.c_str(), m_dbname.size(), name.c_str()
+			, name.size(), name.c_str(), locltype);
+	tables.mdl_request.set_type(type_arg);
+
+	Open_table_context ot_act(m_thd, MYSQL_OPEN_GET_NEW_TABLE);
+	m_thd->cp_set_overwrite_status(true);
 	if (cp_open_table(m_thd, &tables, &ot_act))
 	{
 		m_stat = STATUS_TABLE_NOTOPEN;
@@ -415,13 +416,14 @@ table* database::openTable(const std::string& name, short mode, const char* owne
 {
 	if (existsTable(name))
 	{
-		tableRef.addref(m_dbname, name);//addef first then table open.
+		
 		TABLE* t = doOpenTable(name, mode, ownerName);
 		if (t)
 		{
 			boost::shared_ptr<table> tb(new table(t , *this, name, mode, (int)m_tables.size()));
 			m_tables.push_back(tb);
 			m_stat = STATUS_SUCCESS;
+			tableRef.addref(m_dbname, name);//addef first then table open.
 			return tb.get();
 		}
 		return NULL;
@@ -921,7 +923,7 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size, const bzs::db
 		}else if (len == 0)
 			;
 		else
-			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_BUFFERTOOSMALL, "copyDataTo");
+			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_BUFFERTOOSMALL, "setRecordFromPacked");
 	}else if ((recordFormatType() & RF_VALIABLE_LEN)
 				|| (recordFormatType() & RF_INCLUDE_NIS)){
 #else
@@ -939,9 +941,11 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size, const bzs::db
 				int len = fd->pack_length();
 				if (isVarType(fd->type()))
 					len = var_total_len(p, var_bytes(fd));
-				
+				if (size < (uint)len)
+					THROW_BZS_ERROR_WITH_CODEMSG(STATUS_BUFFERTOOSMALL, "setRecordFromPacked");
 				memcpy(fd->ptr, p, len);
 				p += len;
+				size -= len;
 			}
 		}
 		if (m_table->s->blob_fields)

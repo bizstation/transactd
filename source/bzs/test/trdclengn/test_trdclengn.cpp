@@ -83,28 +83,28 @@ class fixture
 public:
     fixture() : m_db(NULL)
     {
-        m_db = database::create();
-        if (!m_db)
-            printf("Error database::create()\n");
-    }
+		m_db = database::create();
+		if (!m_db)
+			printf("Error database::create()\n");
+	}
 
-    ~fixture()
-    {
-        if (m_db)
+	~fixture()
+	{
+		if (m_db)
 			database::destroy(m_db);
     }
 
-    ::database* db() const {return m_db;}
+	::database* db() const {return m_db;}
 };
 
-table* openTable(database* db)
+table* openTable(database* db, short dbmode=TD_OPEN_NORMAL, short tbmode=TD_OPEN_NORMAL)
 {
 
-    db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1" << db->stat());
-    table* tb = db->openTable(_T("user"));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable" << db->stat());
-    return tb;
+	db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF, dbmode);
+	BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1" << db->stat());
+	table* tb = db->openTable(_T("user"), tbmode);
+	BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable" << db->stat());
+	return tb;
 }
 
 void testDropDatabase(database* db)
@@ -729,149 +729,226 @@ void testConflict(database* db)
      -------------------------------------------------- */
     // Change data by another connection
     tb->seekFirst();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
-    tb2->seekFirst();
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
-    tb2->setFV(fdi_name, tb2->getFVint(fdi_name) - 10);
-    tb2->update();
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->update(");
-    /* -------------------------------------------------- */
-    // Change same record data by original connection
-    tb->setFV(fdi_name, tb->getFVint(fdi_name) - 8);
-    tb->update();
-    BOOST_CHECK_MESSAGE(STATUS_CHANGE_CONFLICT == tb->stat(), "tb->update(");
-    /* -------------------------------------------------- */
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+	tb2->seekFirst();
+	BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+	tb2->setFV(fdi_name, tb2->getFVint(fdi_name) - 10);
+	tb2->update();
+	BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->update(");
+	/* -------------------------------------------------- */
+	// Change same record data by original connection
+	tb->setFV(fdi_name, tb->getFVint(fdi_name) - 8);
+	tb->update();
+	BOOST_CHECK_MESSAGE(STATUS_CHANGE_CONFLICT == tb->stat(), "tb->update(");
+	/* -------------------------------------------------- */
 	tb->release();
 	tb2->release();
-    database::destroy(db2);
+	database::destroy(db2);
 }
 
 void testTransactionLock(database* db)
 {
-	
+
 	database* db2 = database::create();
-    db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
-    BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
-    table* tb = openTable(db);
-    table* tb2 = openTable(db2);
+	db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
+	BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
+	table* tb = openTable(db);
+	table* tb2 = openTable(db2);
 
-    // ------------------------------------------------------
-    // Read test that single record lock with read
-    // ------------------------------------------------------
-    db->beginTrn(LOCK_SINGLE_NOWAIT);
-    tb->setKeyNum(0);
-    tb->seekFirst();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+	// ------------------------------------------------------
+	// Read test that single record lock with read
+	// ------------------------------------------------------
+	db->beginTrn(LOCK_SINGLE_NOWAIT);
+	tb->setKeyNum(0);
+	tb->seekFirst();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
 
-    // unlock first record.
-    tb->seekNext();
+	// unlock first record.
+	tb->seekNext();
 
-    tb2->seekFirst();
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekFirst");
+	tb2->seekFirst();
+	BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekFirst");
 
-    db2->beginTrn();
-    tb2->setKeyNum(0);
-    tb2->seekFirst();
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekFirst");
+	db2->beginTrn();
+	tb2->setKeyNum(0);
+	tb2->seekFirst();
+	BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekFirst");
     db2->endTrn();
-    db->endTrn();
+	db->endTrn();
 
     // ------------------------------------------------------
     // Can't read test that multi record lock with read
-    // ------------------------------------------------------
-    db->beginTrn(LOCK_MULTI_NOWAIT);
+	// ------------------------------------------------------
+	db->beginTrn(LOCK_MULTI_NOWAIT);
     tb->setKeyNum(0);
     tb->seekFirst();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
 
-    // move from first record.
+	// move from first record.
     tb->seekNext();
 
     // The no transaction user can not read .
-    tb2->seekFirst();
-    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seekFirst");
+	tb2->seekFirst();
+	BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seekFirst");
 
     // The second transaction user can not lock same record.
     db2->beginTrn();
     tb2->setKeyNum(0);
-    tb2->seekFirst();
+	tb2->seekFirst();
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seekFirst");
     db2->endTrn();
     db->endTrn();
 
-    // ------------------------------------------------------
+	// ------------------------------------------------------
     // Can't read test that single record lock with change
     // ------------------------------------------------------
     db->beginTrn(LOCK_SINGLE_NOWAIT);
     tb->setKeyNum(0);
-    tb->seekFirst();
+	tb->seekFirst();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
     tb->setFV(fdi_name, _T("ABC"));
     tb->update();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
 
     // move from first record.
     tb->seekNext();
 
     tb2->seekFirst();
-    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seekFirst");
+	BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seekFirst");
 
     db2->beginTrn();
     tb2->setKeyNum(0);
-    tb2->seekFirst();
-    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seekFirst");
+	tb2->seekFirst();
+	BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seekFirst");
     db2->endTrn();
     db->endTrn();
 
     // ------------------------------------------------------
-    // Abort test that Single record lock transaction
+	// Abort test that Single record lock transaction
     // ------------------------------------------------------
-    db->beginTrn(LOCK_SINGLE_NOWAIT);
+	db->beginTrn(LOCK_SINGLE_NOWAIT);
     tb->setKeyNum(0);
     tb->seekFirst();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
     tb->setFV(fdi_name, _T("EFG"));
     tb->update();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
 
-    // move from first record.
-    tb->seekNext();
-    db->abortTrn();
+	// move from first record.
+	tb->seekNext();
+	db->abortTrn();
 
-    tb2->setKeyNum(0);
-    tb2->seekFirst();
-    BOOST_CHECK_MESSAGE(_tcscmp(tb2->getFVstr(fdi_name), _T("ABC")) == 0, "tb->seekFirst");
+	tb2->setKeyNum(0);
+	tb2->seekFirst();
+	BOOST_CHECK_MESSAGE(_tcscmp(tb2->getFVstr(fdi_name), _T("ABC")) == 0, "tb->seekFirst");
 
 	tb->release();
 	tb2->release();
-    database::destroy(db2);
+	database::destroy(db2);
 }
+
+
+
+void testExclusive()
+{
+
+	//db mode exclusive
+	database* db = database::create();
+	table* tb = openTable(db, TD_OPEN_EXCLUSIVE);
+
+	// Can not open another connections.
+	database* db2 = database::create();
+	db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
+	BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
+	db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
+	BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat(), "open 1" << db->stat());
+
+	table*  tb2 = db->openTable(_T("user"));
+	BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 2");
+
+	tb->setKeyNum(0);
+	tb->seekFirst();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+
+	tb->setFV(fdi_name, _T("ABC123"));
+	tb->update();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
+
+	tb2->setKeyNum(0);
+	tb2->seekFirst();
+	BOOST_CHECK_MESSAGE(0 == tb2->stat(), "update");
+	tb2->setFV(fdi_name, _T("ABC124"));
+	tb2->update();
+	BOOST_CHECK_MESSAGE(0 == tb2->stat(), "update");
+
+	tb->release();
+	tb2->release();
+	database::destroy(db2);
+	database::destroy(db);
+
+	// table mode exclusive
+	db = database::create();
+	tb = openTable(db, TD_OPEN_READONLY, TD_OPEN_EXCLUSIVE);
+
+	db2 = database::create();
+	db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
+	BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
+	db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
+	BOOST_CHECK_MESSAGE(0 == db2->stat(), "open 1" << db->stat());
+
+	// Can not open another connections.
+	tb2 = db2->openTable(_T("user"));
+	BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat(), "Exclusive opened 2");
+
+	// Can open a same connection.
+	tb2 = db->openTable(_T("user"));
+	BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 2");
+
+	tb->release();
+	database::destroy(db2);
+	database::destroy(db);
+
+	//reopen and update
+	db = database::create();
+	tb = openTable(db);
+
+	tb->setKeyNum(0);
+	tb->seekFirst();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+
+	tb->setFV(fdi_name, _T("ABC123"));
+	tb->update();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
+
+	tb->release();
+	database::destroy(db);
+
+}
+
 
 void testInsert2(database* db)
 {
-    table* tb = openTable(db);
-    int v = 40000;
-    db->beginTrn();
-    tb->clearBuffer();
-    tb->setFV(fdi_id, v);
-    tb->insert();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "insert");
-    v = 10;
-    tb->clearBuffer();
-    tb->setFV((short)0, v);
-    tb->seek();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "GetEqual Ins");
-    tb->seekNext();
-    BOOST_CHECK_MESSAGE(11 == tb->getFVint(fdi_id), "GetEqual InsNext");
-    db->endTrn();
+	table* tb = openTable(db);
+	int v = 40000;
+	db->beginTrn();
+	tb->clearBuffer();
+	tb->setFV(fdi_id, v);
+	tb->insert();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "insert");
+	v = 10;
+	tb->clearBuffer();
+	tb->setFV((short)0, v);
+	tb->seek();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "GetEqual Ins");
+	tb->seekNext();
+	BOOST_CHECK_MESSAGE(11 == tb->getFVint(fdi_id), "GetEqual InsNext");
+	db->endTrn();
 	tb->release();
-
-
 }
 
 void testDelete(database* db)
 {
-    table* tb = openTable(db);
+	table* tb = openTable(db);
 
     // estimate number
     int count = tb->recordCount(true);
@@ -1711,28 +1788,31 @@ void stringFileterCreateTable(database* db, int id, const _TCHAR* name, uchar_td
 
 void doInsertStringFileter(table* tb)
 {
-    tb->beginBulkInsert(BULKBUFSIZE);
+
     tb->clearBuffer();
     int id = 1;
     tb->setFV(_T("id"), id);
     tb->setFV(_T("name"), _T("あいうえおかきくこ"));
     tb->setFV(_T("namew"), _T("あいうえおかきくこ"));
-    tb->insert();
+	tb->insert();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 1");
 
-    tb->clearBuffer();
-    id = 2;
-    tb->setFV(_T("id"), id);
-    tb->setFV(_T("name"), _T("A123456"));
-    tb->setFV(_T("namew"), _T("A123456"));
-    tb->insert();
+	tb->clearBuffer();
+	id = 2;
+	tb->setFV(_T("id"), id);
+	tb->setFV(_T("name"), _T("A123456"));
+	tb->setFV(_T("namew"), _T("A123456"));
+	tb->insert();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 2");
 
-
+	tb->beginBulkInsert(BULKBUFSIZE);
     tb->clearBuffer();
     id = 3;
     tb->setFV(_T("id"), id);
     tb->setFV(_T("name"), _T("あいがあればOKです"));
     tb->setFV(_T("namew"), _T("あいがあればOKです"));
     tb->insert();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 3");
 
     tb->clearBuffer();
     id = 4;
@@ -1740,14 +1820,18 @@ void doInsertStringFileter(table* tb)
     tb->setFV(_T("name"), _T("おはようございます"));
     tb->setFV(_T("namew"), _T("おはようございます"));
     tb->insert();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 3");
 
-    tb->clearBuffer();
-    id = 5;
-    tb->setFV(_T("id"), id);
-    tb->setFV(_T("name"), _T("おめでとうございます。"));
-    tb->setFV(_T("namew"), _T("おめでとうございます。"));
-    tb->insert();
-    tb->commitBulkInsert();
+	tb->clearBuffer();
+	id = 5;
+	tb->setFV(_T("id"), id);
+	tb->setFV(_T("name"), _T("おめでとうございます。"));
+	tb->setFV(_T("namew"), _T("おめでとうございます。"));
+	tb->insert();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 4");
+	tb->commitBulkInsert();
+	BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 5");
+
 }
 
 void doTestReadSF(table* tb)
@@ -1759,14 +1843,16 @@ void doTestReadSF(table* tb)
     tb->seek();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
     BOOST_CHECK_MESSAGE(_tstring(_T("あいうえおかきくこ")) == _tstring(tb->getFVstr(1)), "doTestReadSF2");
+	BOOST_CHECK_MESSAGE(_tstring(_T("あいうえおかきくこ")) == _tstring(tb->getFVstr(1)), "doTestReadSF2b");
 
-    id = 3;
+	id = 3;
     tb->setFV(_T("id"), id);
     tb->seek();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF3");
-    BOOST_CHECK_MESSAGE(_tstring(_T("あいがあればOKです")) == _tstring(tb->getFVstr(1)), "doTestReadSF4");
+	BOOST_CHECK_MESSAGE(_tstring(_T("あいがあればOKです")) == _tstring(tb->getFVstr(1)), "doTestReadSF4");
+	BOOST_CHECK_MESSAGE(_tstring(_T("あいがあればOKです")) == _tstring(tb->getFVstr(2)), "doTestReadSF4b");
 
-    tb->setKeyNum(1);
+	tb->setKeyNum(1);
     tb->clearBuffer();
     tb->setFV(_T("name"), _T("A123456"));
     tb->seek();
@@ -2582,32 +2668,35 @@ BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
     BOOST_FIXTURE_TEST_CASE(getLessThan, fixture) {testGetLessThan(db());}
 
-    BOOST_FIXTURE_TEST_CASE(getFirst, fixture) {testGetFirst(db());}
+	BOOST_FIXTURE_TEST_CASE(getFirst, fixture) {testGetFirst(db());}
 
-    BOOST_FIXTURE_TEST_CASE(getLast, fixture) {testGetLast(db());}
+	BOOST_FIXTURE_TEST_CASE(getLast, fixture) {testGetLast(db());}
 
-    BOOST_FIXTURE_TEST_CASE(movePosition, fixture) {testMovePosition(db());}
+	BOOST_FIXTURE_TEST_CASE(movePosition, fixture) {testMovePosition(db());}
 
-    BOOST_FIXTURE_TEST_CASE(update, fixture) {testUpdate(db());}
+	BOOST_FIXTURE_TEST_CASE(update, fixture) {testUpdate(db());}
 
-    BOOST_FIXTURE_TEST_CASE(snapShot, fixture) {testSnapShot(db());}
+	BOOST_FIXTURE_TEST_CASE(snapShot, fixture) {testSnapShot(db());}
 
-    BOOST_FIXTURE_TEST_CASE(conflict, fixture) {testConflict(db());}
+	BOOST_FIXTURE_TEST_CASE(conflict, fixture) {testConflict(db());}
 
-    BOOST_FIXTURE_TEST_CASE(transactionLock, fixture) {testTransactionLock(db());}
+	BOOST_FIXTURE_TEST_CASE(transactionLock, fixture) {testTransactionLock(db());}
 
-    BOOST_FIXTURE_TEST_CASE(insert2, fixture) {testInsert2(db());}
+	BOOST_AUTO_TEST_CASE(Exclusive) {testExclusive();}
 
-    BOOST_FIXTURE_TEST_CASE(delete_, fixture) {testDelete(db());}
+	BOOST_FIXTURE_TEST_CASE(insert2, fixture) {testInsert2(db());}
 
-    BOOST_FIXTURE_TEST_CASE(setOwner, fixture) {testSetOwner(db());}
+	BOOST_FIXTURE_TEST_CASE(delete_, fixture) {testDelete(db());}
 
-    BOOST_FIXTURE_TEST_CASE(dropIndex, fixture) {testDropIndex(db());}
+	BOOST_FIXTURE_TEST_CASE(setOwner, fixture) {testSetOwner(db());}
 
-    BOOST_FIXTURE_TEST_CASE(dropDatabase, fixture) {testDropDatabase(db());}
+	BOOST_FIXTURE_TEST_CASE(dropIndex, fixture) {testDropIndex(db());}
 
-    BOOST_FIXTURE_TEST_CASE(connect, fixture) {testLogin(db());}
+	BOOST_FIXTURE_TEST_CASE(dropDatabase, fixture) {testDropDatabase(db());}
+
+	BOOST_FIXTURE_TEST_CASE(connect, fixture) {testLogin(db());}
 BOOST_AUTO_TEST_SUITE_END()
+
 
 // ------------------------------------------------------------------------
 

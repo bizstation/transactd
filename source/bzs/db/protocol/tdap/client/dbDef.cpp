@@ -489,6 +489,8 @@ void dbdef::insertTable(tabledef* TableDef)
 
 		memcpy(m_keybuf, &TableDef->id, 2);
 		m_buflen = sizeof(tabledef);
+		if (isUseTransactd())
+			m_impl->bdf->varSize = m_buflen - 4;
 		insert();
 		m_pdata = m_impl->bdf;
 		m_buflen = m_impl->bdfLen;
