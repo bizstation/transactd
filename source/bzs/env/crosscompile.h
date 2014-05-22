@@ -115,6 +115,12 @@
 		#endif
 	#endif
 
+	// define char16_t and char32_t for Visual Studio 2008 or earlier
+	#if defined(_MSC_VER) && _MSC_VER < 1600
+		typedef unsigned __int16 char16_t; // 16bit
+		typedef unsigned __int32 char32_t; // 32bit
+	#endif
+
 /* c c++ runtime library */
 	#include <tchar.h>
 	#if defined(__BORLANDC__) || defined(__MINGW32__)
