@@ -242,6 +242,9 @@ using Transactd clients.
 
 http://www.bizstation.jp/ja/transactd/client/sdk/doc/
 
+The ($installdir)/source/bzs/example folder has easy sample codes. 
+You can actually be built in a build/example folder by project files (Windows)
+according to a compiler, or a make_example.sh (LINUX) script. 
 
 
 Details of the test program

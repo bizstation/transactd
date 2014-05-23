@@ -9,7 +9,7 @@ Transactd Plugin および Transactd クライアントは、Unix上のGCC(64bit
 * Ubuntu 12.10 x86_64
 * gcc 4.7.2
 
-
+ビルドにはgccバージョン4.4以上が必須です。
 
 2. CMakeのインストール
 ------------------------------------------------------------
@@ -67,25 +67,7 @@ mv transactd ~/mysql-5.6.13/plugin/
 ```
 
 
-### 4-3 BOMの削除（gcc 4.3 未満の場合）
-gccのバージョンが4.3未満の場合、UTF-8 BOM付きのソースコードをビルドできない
-ため、BOMを削除します。
-バージョンは以下のコマンドで確認できます。
-```
-gcc --version
-```
-
-gccのバージョンが4.3未満だった場合、以下のコマンドで
-で`transactd/source/bzs/test/trdclengn/test_trdclengn.cpp` のBOMを削除します。
-```
-cd ~/mysql-5.6.13/plugin/transactd/source/bzs/test/trdclengn/
-cp test_trdclengn.cpp test_trdclengn.cpp.backup
-file_length=`wc -c < test_trdclengn.cpp.backup`
-tail -c `expr ${file_length} - 3` test_trdclengn.cpp.backup > test_trdclengn.cpp
-```
-
-
-### 4-4 CMakeの実行
+### 4-3 CMakeの実行
 以下のコマンドを実行します。後述するオプションに注意してください。
 ```
 cd ~/mysql-5.6.13
@@ -108,7 +90,7 @@ cmake .. -DWITH_TRANSACTD_SERVER=ON -DWITH_TRANSACTD_CLIENTS=ON \
   ラムのインストール先です。デフォルトは「/usr/local/transactd」です。
 
 
-### 4-5 ビルド
+### 4-4 ビルド
 CMakeが完了するとMakefileが生成されているので、makeコマンドでビルド・インストール
 します。
 ```
@@ -129,26 +111,7 @@ wget http://www.bizstation.jp/al/transactd/download/transactd-1.1.0/transactd-so
 unzip -q transactd-source-1.1.0.zip
 ```
 
-
-### 5-2 BOMの削除（gcc 4.3 未満の場合）
-gccのバージョンが4.3未満の場合、UTF-8 BOM付きのソースコードをビルドできない
-ため、BOMを削除します。
-バージョンは以下のコマンドで確認できます。
-```
-gcc --version
-```
-
-gccのバージョンが4.3未満だった場合、以下のコマンドで
-`transactd/source/bzs/test/trdclengn/test_trdclengn.cpp` のBOMを削除します。
-```
-cd ~/transactd/source/bzs/test/trdclengn/
-cp test_trdclengn.cpp test_trdclengn.cpp.backup
-file_length=`wc -c < test_trdclengn.cpp.backup`
-tail -c `expr ${file_length} - 3` test_trdclengn.cpp.backup > test_trdclengn.cpp
-```
-
-
-### 5-3 CMakeの実行
+### 5-2 CMakeの実行
 以下のコマンドを実行します。後述するオプションに注意してください。
 ```
 cd ~/transactd
@@ -165,7 +128,7 @@ cmake .. -DWITH_TRANSACTD_SERVER=OFF -DWITH_TRANSACTD_CLIENTS=ON \
   ラムのインストール先です。デフォルトは「/usr/local/transactd」です。
 
 
-### 5-4 ビルド
+### 5-3 ビルド
 CMakeが完了するとMakefileが生成されているので、makeコマンドでビルド・インストール
 します。
 ```

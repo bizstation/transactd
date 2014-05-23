@@ -251,7 +251,9 @@ Transactdクライアントによるアプリケーションの開発は以下�
 
 http://www.bizstation.jp/ja/transactd/client/sdk/doc/
 
-
+source/bzs/exampleフォルダに、簡単なサンプルコードがあります。
+build/exampleフォルダにコンパイラに応じたプロジェクトファイル(Windows)、
+または、make_example.sh(LINUX)スクリプトでこれらを実際にビルドできます。
 
 Testプログラム
 -------------------------------------------------------------------------------
