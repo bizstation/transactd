@@ -65,7 +65,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		//If an error ouccered then restore the table schema automaticaly.
 		convertTable(db, _T("user"), onCopyData);
 
-		std::cout << "change databse success." << std::endl;
+		std::cout << "change schema success." << std::endl;
 		return 0;
 	}
 

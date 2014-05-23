@@ -19,7 +19,6 @@
  02111-1307, USA.
  ================================================================= */
 
-#include "sharedData.h"
 #include <bzs/db/protocol/tdap/tdapSchema.h>
 #ifdef _WIN32
 #include <windows.h>

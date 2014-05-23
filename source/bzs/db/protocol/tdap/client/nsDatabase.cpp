@@ -25,6 +25,7 @@
 #endif
 
 #include "nsDatabase.h"
+#include "sharedData.h"
 #include "nsTable.h"
 #include "stringConverter.h"
 #include <sys/stat.h>

@@ -109,7 +109,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			//restore user table schema
 			db->dbDef()->popBackup(tablenum_user);
 		}else
-			_tprintf(_T("\nchage table success. \n"));
+			_tprintf(_T("\nchange schema success. \n"));
 		db->close();
 	}
 	database::destroy(db);

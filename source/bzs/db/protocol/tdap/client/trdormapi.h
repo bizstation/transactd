@@ -297,7 +297,7 @@ inline typename std::vector<T>::iterator end(std::vector<T>& m){return m.end();}
 template <class T>
 inline void push_back(std::vector<T>& m, T c){return m.push_back(c);}
 
-#if (_MSC_VER || (__BORLANDC__))
+#if (_MSC_VER || (__BCPLUSPLUS__ && !defined(__clang__)))
 
 /* Container has readBefore(table_ptr, alias) function*/
 template <class Container>

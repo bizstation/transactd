@@ -278,7 +278,6 @@
     <ClCompile Include="..\..\source\global\tdclatl\tdclatl.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\tdclatl_i.c" />
     <ClCompile Include="..\..\source\global\tdclatl\TdVersion.cpp" />
-    <ClCompile Include="..\..\source\global\tdclatl\WriteAbleRecord.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.h" />
@@ -307,7 +306,6 @@
     <ClInclude Include="..\..\source\global\tdclatl\targetver.h" />
     <ClInclude Include="..\..\source\global\tdclatl\tdclatl_i.h" />
     <ClInclude Include="..\..\source\global\tdclatl\TdVersion.h" />
-    <ClInclude Include="..\..\source\global\tdclatl\WriteAbleRecord.h" />
     <ClInclude Include="..\..\source\global\tdclatl\_IDatabaseEvents_CP.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

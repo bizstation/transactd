@@ -611,9 +611,11 @@ inline int fixVariableLenBug(bool isUseTransactd, tabledef* src, size_t size)
 	{// A Transactd server format changed to nosupport FIXED_PLUS_VARIABLELEN
 		if (src->pageSize+4 == size)
 		{ // This is a chagned server
-			if (src->preAlloc && ((src->preAlloc % 512 == 0) || src->fieldCount > 255
-				|| src->keyCount > 127)
-				|| src->fieldCount == 0)
+			if (src->preAlloc &&
+				((src->preAlloc % 512 == 0)
+				|| (src->fieldCount > 255)
+				|| (src->keyCount > 127)
+				|| (src->fieldCount == 0)))
 			{
 				//memmove(((char*)src)+4, ((char*)src)+6, src->pageSize-2);
 				memmove(((char*)src)+2, ((char*)src)+4, src->pageSize);

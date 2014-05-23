@@ -297,7 +297,7 @@ inline mdlsIterator begin(mdls& m){return mdlsIterator(&m, 0);}
 template <>
 inline mdlsIterator end(mdls& m){return mdlsIterator(&m, m.size());}
 
-#if (_MSC_VER || (__BORLANDC__))
+#if (_MSC_VER || (__BCPLUSPLUS__ && !defined(__clang__)))
 inline void push_back(mdls& m, user* u){m.add(u);}
 #else
 template <>
