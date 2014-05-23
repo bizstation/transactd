@@ -68,7 +68,7 @@ void showError(const _TCHAR* caption,const _TCHAR* tableName, short statusCode)
 {
 	_TCHAR tmp[1024]={0x00};
 	nstable::tdapErr(0x00, statusCode, tableName, tmp);
-	_tprintf(_T("%s error No.%ld %s\n"),caption, statusCode, tmp);
+	_tprintf(_T("[ERROR] %s No.%ld %s\n"),caption, statusCode, tmp);
 }
 
 /** Create mysql database and empty schema table

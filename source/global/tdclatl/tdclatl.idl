@@ -293,7 +293,7 @@ typedef
 enum eGroupFunc
 {
 	fmax = 0,
-    fmin = 1,
+	fmin = 1,
 	favg = 2,
 	fsum = 3,
 	fcount = 4
@@ -306,7 +306,7 @@ typedef
 enum eOptimize
 {
 	none = 0,
-    hasOneJoin = 1,
+	joinKeyValuesUnique = 1,
 	joinWhereFields = 2
 }eOptimize;
 

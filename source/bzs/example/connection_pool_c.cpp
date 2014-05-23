@@ -135,7 +135,7 @@ public:
 };
 mutex worker::m_mutex;
 
-static const worktime[10] = {5, 1, 3, 5, 4, 1, 2, 5, 4, 1};
+static const int worktime[10] = {5, 1, 3, 5, 4, 1, 2, 5, 4, 1};
 
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
@@ -154,12 +154,14 @@ int _tmain(int argc, _TCHAR* argv[])
 			threads.create_thread( bind(&worker::execute, w));
 		}
 		threads.join_all();
+		std::cout << "Connection pool test success." << std::endl;
+
 		return 0;
 	}
 
 	catch(bzs::rtl::exception& e)
 	{
-		std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+		std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
 	}
 	return 1;
 }

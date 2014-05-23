@@ -810,8 +810,18 @@ void database::doConvertTable(short TableIndex, bool Turbo, const _TCHAR* OwnerN
 	TableDef->flags.bit2 = true;
 
 	_tcscpy(szTempPath, getTableUri(buf, TableIndex));
+	_TCHAR* p = _tcsstr(szTempPath, _T("dbfile="));
+	if (p==0)
+		p = szTempPath;
+	else
+		p+= 7;
 
-	_tcscat(szTempPath, _T("_conv_dest.tmp"));
+	_TCHAR* p2 = _tcschr(p, _T('.'));
+	if (p2==0)
+		p2 =  p + _tcslen(p);
+	*p2=0x00;
+
+	_tcscat(szTempPath, _T("_conv_dest_tmp"));
 
 	createTable(TableIndex, szTempPath);
 	dest = openTable(TableIndex, TD_OPEN_EXCLUSIVE, true, NULL, szTempPath);

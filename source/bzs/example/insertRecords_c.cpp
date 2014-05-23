@@ -105,7 +105,7 @@ void insertPicure(table_ptr tb, short type, int id, const void* img, size_t size
 	fds.clearValues();
 	fds[fieldnum_pic_type] = type;
 	fds[fieldnum_pic_id] = id;
-	fds[fieldnum_pic_pic].setBin(img, size);
+	fds[fieldnum_pic_pic].setBin(img, (int)size);
 	insertRecord(fds);
 
 }
@@ -147,7 +147,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	catch(bzs::rtl::exception& e)
 	{
-		std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+		std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
 	}
 	return 1;
 }

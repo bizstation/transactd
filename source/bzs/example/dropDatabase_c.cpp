@@ -28,7 +28,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	catch(bzs::rtl::exception& e)
 	{
-		std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+		std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
 	}
 	return 1;
 }

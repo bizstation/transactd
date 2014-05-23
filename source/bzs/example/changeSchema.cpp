@@ -27,7 +27,7 @@ void showError(const _TCHAR* caption,const _TCHAR* tableName, short statusCode)
 {
 	_TCHAR tmp[1024]={0x00};
 	nstable::tdapErr(0x00, statusCode, tableName, tmp);
-	_tprintf(_T("%s error No.%ld %s\n"),caption, statusCode, tmp);
+	_tprintf(_T("[ERROR] %s No.%ld %s\n"),caption, statusCode, tmp);
 }
 
 /** Change user table schema
@@ -36,19 +36,19 @@ bool changeUserTable(dbdef* def)
 {
 
 	//change name size
-	tabledef** td = def->tableDefPtr(tablenum_user);
-	fielddef* fd = &(*td)->fieldDefs[fieldnum_name];
+	tabledef* td = def->tableDefs(tablenum_user);
+	fielddef* fd = &td->fieldDefs[fieldnum_name];
 	fd->setLenByCharnum(64);
 
 	//add tel field
-	fd = def->insertField((*td)->id, (*td)->fieldCount);
+	fd = def->insertField(tablenum_user, td->fieldCount);
 	fd->setName(_T("tel"));
 	fd->type = ft_mychar;
 	fd->setCharsetIndex( CHARSET_LATIN1);
 	fd->setLenByCharnum(16);
 
 	//write user table schema
-	def->updateTableDef((*td)->id);
+	def->updateTableDef(tablenum_user);
 	if (def->stat() != 0)
 	{
 		showError(_T("edit schema table"), NULL, def->stat());

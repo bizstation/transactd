@@ -21,6 +21,7 @@
 #include "field.h"
 #include "table.h"
 #include <boost/shared_ptr.hpp>
+#include <stdio.h>
 
 
 namespace bzs
@@ -42,12 +43,29 @@ class fieldsBase
 protected:
 	fielddefs& m_fns;
 	bool m_invalidRecord;
+	virtual table* tbptr() const{return NULL;}
+
+	void throwIndexError(short index) const
+	{
+     	if (tbptr())
+		{
+			tbptr()->setStat(STATUS_INVARID_FIELD_IDX);
+			nstable::throwError(_T("field access"), tbptr());
+		}else
+		{
+			_TCHAR tmp[100];
+			_stprintf_s(tmp, 100, _T("field access index %d of %s")
+				, index, tbptr() ? tbptr()->tableDef()->tableName() : _T(""));
+			nstable::throwError(tmp, STATUS_INVARID_FIELD_IDX);
+		}
+	}
+
 public:
 
 	explicit inline fieldsBase(fielddefs& fns):m_fns(fns),m_invalidRecord(false){}
 	virtual ~fieldsBase(){};
-	void setInvalidRecord(bool v){m_invalidRecord = v;}
-	bool isInvalidRecord()const{return m_invalidRecord;}
+	inline void setInvalidRecord(bool v){m_invalidRecord = v;}
+	inline bool isInvalidRecord()const{return m_invalidRecord;}
 
 	inline field getFieldInternal(short index) const
 	{
@@ -58,7 +76,8 @@ public:
 	{
 		if (m_fns.checkIndex(index))
 			return field(ptr((short)index), m_fns[(short)index], &m_fns);
-		nstable::throwError(_T("Invalid field name or index"), STATUS_INVARID_FIELD_IDX);
+
+		throwIndexError(index);
 		return field(NULL, dummyFd(), &m_fns);
 	}
 
@@ -115,6 +134,7 @@ class fields : public fieldsBase
 	{
 	    return (unsigned char*)m_tb.data();
 	}
+	table* tbptr() const{return &m_tb;}
 
 public:
 	inline explicit fields()

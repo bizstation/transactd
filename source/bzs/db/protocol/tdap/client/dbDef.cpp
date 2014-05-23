@@ -621,7 +621,7 @@ inline int fixVariableLenBug(bool isUseTransactd, tabledef* src, size_t size)
 			}
 		}
 	}
-	return size;
+	return (int)size;
 }
 
 size_t getNewVersionSize(tabledef* src)

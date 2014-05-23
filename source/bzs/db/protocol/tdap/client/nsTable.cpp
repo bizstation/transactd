@@ -811,7 +811,7 @@ short_td nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* TableName, _
 void nstable::throwError(const _TCHAR* caption, short statusCode)
 {
 	_TCHAR tmp[1024]={0x00};
-	nstable::tdapErr(0x00, statusCode, NULL, tmp);
+	nstable::tdapErr(0x00, statusCode, _T("unknown"), tmp);
 	_TCHAR tmp2[1024]={0x00};
 	_stprintf_s(tmp2, 1024, _T("%s\n%s\n"),caption, tmp);
 	THROW_BZS_ERROR_WITH_CODEMSG(statusCode, tmp2);

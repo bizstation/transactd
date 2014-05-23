@@ -239,11 +239,11 @@ class mdlsIterator
 	void increment();
 	void decrement();
 	void advance(size_t n);
-	size_t distance_to(const mdlsIterator &r)const;
+	int distance_to(const mdlsIterator &r)const;
 	bool equal(const mdlsIterator &r) const;
 
 public:
-	mdlsIterator(mdls* m, int index=0);
+	mdlsIterator(mdls* m, size_t index=0);
 
 };
 
@@ -254,7 +254,7 @@ class mdls
 public:
 	void clear(){m_users.clear();}
 
-	user*& item(int index)const {return m_users[index];}
+	user*& item(size_t index)const {return m_users[index];}
 
 	user* add(user* u)
 	{
@@ -282,20 +282,27 @@ user*& mdlsIterator::dereference() const
 void mdlsIterator::increment() {++m_index;}
 void mdlsIterator::decrement() {--m_index;}
 void mdlsIterator::advance(size_t n){m_index+=n;}
-size_t mdlsIterator::distance_to(const mdlsIterator &r)const{return r.m_index - m_index;}
+int mdlsIterator::distance_to(const mdlsIterator &r)const{return (int)(r.m_index - m_index);}
 bool mdlsIterator::equal(const mdlsIterator &r) const {return m_index == r.m_index;}
-mdlsIterator::mdlsIterator(mdls* m, int index):m_index(index),m_mdls(m){}
+mdlsIterator::mdlsIterator(mdls* m, size_t index):m_index(index),m_mdls(m){}
 
 
 /* Implemant global functions of push_back begin end and clear in client namespace */
 namespace bzs{namespace db{namespace protocol{namespace tdap{namespace client
 {
 
+template <>
 inline mdlsIterator begin(mdls& m){return mdlsIterator(&m, 0);}
 
+template <>
 inline mdlsIterator end(mdls& m){return mdlsIterator(&m, m.size());}
 
+#if (_MSC_VER || (__BORLANDC__))
 inline void push_back(mdls& m, user* u){m.add(u);}
+#else
+template <>
+inline void push_back(mdls& m, user* u){m.add(u);}
+#endif
 
 }}}}}
 
@@ -525,9 +532,11 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 	std::sort(begin(m), end(m), &sortFunc2);
 
 	/* Using for_each function */
+	std::cout << "--- vector for each ---" << std::endl;
 	std::for_each(users.begin(), users.end(), dumpUser<user_ptr&>);
 
 	/* Using for_each function of original collection */
+	std::cout << "--- original collection for each ---" << std::endl;
 	std::for_each(begin(m), end(m), dumpUser<user*>);
 
 	/* Using only table operation */
@@ -556,7 +565,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	catch(bzs::rtl::exception& e)
 	{
-		std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+		std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
 	}
 	return 1;
 }

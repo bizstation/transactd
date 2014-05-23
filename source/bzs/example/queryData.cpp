@@ -200,7 +200,7 @@ bool createUserExtTable(dbdef* def)
 	return true;
 }
 
-bool insertData(database_ptr db)
+bool insertData(database_ptr db, int maxId)
 {
 	_TCHAR tmp[256];
 	table* tb = db->openTable(_T("user"), TD_OPEN_NORMAL);
@@ -210,7 +210,7 @@ bool insertData(database_ptr db)
 		return false;
 	}
 	tb->clearBuffer();
-	for (int i= 1;i<= 20000;++i)
+	for (int i= 1;i<= maxId;++i)
 	{
 		tb->setFV((short)0, i);
 		_stprintf_s(tmp, 256, _T("%d user"), i);
@@ -246,7 +246,7 @@ bool insertData(database_ptr db)
 		return false;
 	}
 	tb->clearBuffer();
-	for (int i= 1;i<= 20000;++i)
+	for (int i= 1;i<= maxId;++i)
 	{
 		tb->setFV((short)0, i);
 		_stprintf_s(tmp, 256, _T("%d comment"), i);
@@ -259,7 +259,7 @@ bool insertData(database_ptr db)
 	return true;
 }
 
-int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate)
+int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate, int maxId)
 {
 	try
 	{
@@ -275,7 +275,7 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate)
 		if (!createUserTable(db->dbDef()))return 1;
 		if (!createGroupTable(db->dbDef()))return 1;
 		if (!createUserExtTable(db->dbDef()))return 1;
-		return !insertData(db);
+		return !insertData(db, maxId);
 	}
 	catch(bzs::rtl::exception& e)
 	{

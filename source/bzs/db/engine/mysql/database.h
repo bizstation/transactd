@@ -439,7 +439,8 @@ public:
 	inline void setBlobFieldCount(uint num){m_blobBuffer->setFieldCount(num);};
 	inline void indexInit()
 	{
-		m_table->file->ha_index_or_rnd_end();
+		int ret = m_table->file->ha_index_or_rnd_end();
+		assert(ret==0);
 		if (m_keyNum >= 0)
 			m_table->file->ha_index_init(m_keyNum, true);
 		else

@@ -249,7 +249,7 @@ class AGRPACK queryBase
 	const std::vector<const void*>& getSeekValuesPtr() const;
 	
 public:
-	enum eOptimize{none=0, hasOneJoin=1, joinWhereFields=2};
+	enum eOptimize{none=0, joinKeyValuesUnique=1, joinWhereFields=2};
 
 	queryBase();
 	virtual ~queryBase();

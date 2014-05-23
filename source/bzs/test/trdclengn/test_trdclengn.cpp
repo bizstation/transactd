@@ -2492,7 +2492,7 @@ void testJoin(database* db)
 
 	//Join extention::comment
 	q.reset();
-	ate.index(0).join(rs, q.select(_T("comment")).optimize(queryBase::hasOneJoin), _T("id"));
+	ate.index(0).join(rs, q.select(_T("comment")).optimize(queryBase::joinKeyValuesUnique), _T("id"));
 	BOOST_CHECK_MESSAGE(rs.size()== 15000, "join  rs.size()== 15000");
 
 	//test reverse
@@ -2532,7 +2532,7 @@ void testJoin(database* db)
 
 	q.reset().select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), 16000);
 	atu.index(0).keyValue(15001).read(rs2, q);
-	ate.index(0).join(rs2, q.reset().select(_T("comment")).optimize(queryBase::hasOneJoin), _T("id"));
+	ate.index(0).join(rs2, q.reset().select(_T("comment")).optimize(queryBase::joinKeyValuesUnique), _T("id"));
 
 	atg.alias(_T("name"), _T("group_name"));
 	atg.index(0).join(rs2, q.reset().select(_T("group_name")), _T("group"));

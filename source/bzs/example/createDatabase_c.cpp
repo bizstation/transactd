@@ -80,7 +80,7 @@ void createUserTableSchema(dbdef* def)
 	insertField(def, tableid, ++fieldNum, _T("group"), ft_integer, 4);
 
 	//Insert index
-	short keyNum = 0;
+	uchar_td keyNum = 0;
 	keydef* kd = insertKey(def, tableid, keyNum);
 	keySegment* ks = &kd->segments[0];
 	ks->fieldNum = 0;//id
@@ -120,7 +120,7 @@ void createGroupTableSchema(dbdef* def)
 	insertField(def, tableid, ++fieldNum, _T("name"), ft_myvarchar, size);
 
 	//Insert index
-	short keyNum = 0;
+	uchar_td keyNum = 0;
 	keydef* kd = insertKey(def, tableid, keyNum);
 	keySegment* ks = &kd->segments[0];
 	ks->fieldNum = 0; //id
@@ -150,7 +150,7 @@ void createPictureTableSchema(dbdef* def)
 	insertField(def, tableid, ++fieldNum, _T("picture"), ft_myblob, 11);
 
 	//Insert index
-	short keyNum = 0;
+	uchar_td keyNum = 0;
 	keydef* kd = insertKey(def, tableid, keyNum);
 	keySegment* ks = &kd->segments[0];
 	ks->fieldNum = 0; //type
@@ -196,7 +196,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	catch(bzs::rtl::exception& e)
 	{
-		std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+		std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
 	}
 	return 1;
 }

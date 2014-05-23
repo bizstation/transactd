@@ -17,7 +17,6 @@
    02111-1307, USA.
 =================================================================*/
 #include <bzs/db/protocol/tdap/client/memRecordset.h>
-#include <bzs/rtl/benchmark.h>
 #include <bzs/example/queryData.h>
 #include <iostream>
 #include <locale.h>
@@ -49,72 +48,41 @@ void showConsole(recordset& rowset)
 	}
 }
 
-bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep, int kind, int n)
+void execute(recordset& rs, queryTable& atu, queryTable& atg, queryTable& ate)
 {
-	queryTable& atu = *atup;
-	queryTable& atg = *atgp;
-	queryTable& ate = *atep;
-	recordset& rs = *rsp;
-	tdc::query q;
+	tdc::query query;
 
-	for (int i= 0;i<n;++i)
-	{
-		rs.clear();
-		if (kind &1)
-		{
-			q.reset();
-			atu.alias(_T("名前"), _T("name"));
+	rs.clear();
+	atu.alias(_T("名前"), _T("name"));
 
-			q.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), i+15000);
-			atu.index(0).keyValue(i+1).read(rs, q);
+	query.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), 15);
+	atu.index(0).keyValue(1).read(rs, query);
+	
+	/* Join extention::comment
+	   Use "joinKeyValuesUnique" optimaize option. 
+	   Because this join is has one and atu.index(0) is unique key,
+	   then join key values(id) are all unique.
+	*/ 
+	query.reset().select(_T("comment")).optimize(queryBase::joinKeyValuesUnique);
+	ate.index(0).join(rs, query, _T("id"));
 
-			//Join extention::comment
-			if (kind & 2)
-			{
-				q.reset();
-				ate.index(0).join(rs, q.select(_T("comment")).optimize(queryBase::joinKeyValuesUnique), _T("id"));
-			}
-			if (kind & 4)
-			{
-				//Join group::name
-				q.reset();
-				atg.alias(_T("name"), _T("group_name"));
-				atg.index(0).join(rs, q.select(_T("group_name")), _T("group"));
-			}
-		}
-		if (kind & 8)
-			std::tcout << "." ;
-	}
-	if (kind & 8)
-		std::tcout << std::endl ;
-	return true;
+	//Join group::name
+	atg.alias(_T("name"), _T("group_name"));
+	query.reset().select(_T("group_name"));
+	atg.index(0).join(rs, query, _T("group"));
+
 }
 
 #pragma warning(disable:4101)
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
-	std::locale::global(std::locale("japanese"));
 	database_ptr db = createDatadaseObject();
 	try
 	{
-		const _TCHAR* host = _T("localhost");
-		int kind = 7;
-		int n = 100;
-		bool makeDatabase = true;
-
-		if (argc >= 5)
-			n = _ttol(argv[4]);
-		if (argc >= 4)
-			kind = _ttol(argv[3]);
-		if (argc >= 3)
-			host = argv[2];
-		if (argc >= 2)
-			makeDatabase = (_ttol(argv[1])!=0);
-
-		connectParams param(_T("tdap"), host, _T("querytest"), _T("test.bdf"));
+		connectParams param(_T("tdap"), _T("localhost"), _T("querytest"), _T("test.bdf"));
 		param.setMode(TD_OPEN_NORMAL);
-		if (prebuiltData(db, param, makeDatabase))
+		if (prebuiltData(db, param, false, 20))
 		{
 			std::tcout << "The query data build error." << std::endl;
 			return 1;
@@ -124,13 +92,10 @@ int _tmain(int argc, _TCHAR* argv[])
 		queryTable ate(db, _T("extention"));
 
 		recordset rs;
-
-
-		bzs::rtl::benchmark bm;
-		bm.report(boost::bind(btest, &rs, &atu, &atg, &ate, kind, n), "exec time ");
-
+		execute(rs, atu, atg, ate);
+		showConsole(rs);
+		std::cout << "Execute query success. rs.size = " << rs.size() << std::endl;
 		return 0;
-
 	}
 
 	catch(bzs::rtl::exception& e)

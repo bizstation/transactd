@@ -24,6 +24,9 @@
 #include "memRecord.h"
 #include <boost/shared_array.hpp>
 #include <vector>
+#include <boost/utility/enable_if.hpp>
+
+
 namespace bzs
 {
 namespace db
@@ -294,20 +297,58 @@ inline typename std::vector<T>::iterator end(std::vector<T>& m){return m.end();}
 template <class T>
 inline void push_back(std::vector<T>& m, T c){return m.push_back(c);}
 
+#if (_MSC_VER || (__BORLANDC__))
 
-
-/* Container has readBefore(table_ptr) function*/
+/* Container has readBefore(table_ptr, alias) function*/
 template <class Container>
-void readBefore(typename Container::header_type* dummy, Container& mdls
-				, table_ptr tb, const aliasMap_type* alias)
+inline void readBefore(Container& mdls
+				, table_ptr tb, const aliasMap_type* alias
+				, typename Container::header_type* dummy=0)
 {
 	mdls.readBefore(tb, alias);
 }
 
-/* Container has'nt readBefore(table_ptr) function*/
+/* Container has'nt readBefore(table_ptr, alias) function*/
 template <class Container>
-void readBefore(...){}
+inline void readBefore(...){};
 
+#else
+
+template <class Container>
+void push_back(Container& m, typename Container::item_type c);
+
+template<class T>
+class has_header
+{
+	typedef char yes;
+	typedef struct { char foo[2]; } no;
+
+	template<class C>
+	static  yes test(typename C::header_type* );
+
+	template<class C>
+	static  no test(...);
+	
+public:
+	static const bool value = sizeof(test<T>(0)) == sizeof(char);
+};
+
+/* Container has readBefore(table_ptr, alias) function*/
+template <class Container>
+inline void readBefore(Container& mdls
+			 , table_ptr tb, const aliasMap_type* alias
+			 , typename boost::enable_if<has_header<Container> >::type* = 0)
+
+{
+	mdls.readBefore(tb, alias);
+}
+
+/* Container has'nt readBefore(table_ptr, alias) function*/
+template <class Container>
+inline void readBefore(Container& mdls
+			 , table_ptr tb, const aliasMap_type* alias
+			 , typename boost::disable_if<has_header<Container> >::type* = 0){}
+#endif
 
 /* Container operation handlter
 
@@ -350,8 +391,7 @@ public:
 		m_option = option;
 		m_fdi = fdi;
 		m_map = &map;
-
-		readBefore<Container>(0, m_mdls, tb, alias);
+		readBefore<Container>(m_mdls, tb, alias);
 	}
 
 	void operator()(const fields& fds)
@@ -386,7 +426,7 @@ public:
 
 #ifndef SWIG
 template <class T, class RET>
-bool sortFuncBase(T&l, T& r , RET (T::*func1)() const)
+bool sortFuncBase(const T&l, const T& r , RET (T::*func1)() const)
 {
 	RET retl = (l.*func1)();
 	RET retr = (r.*func1)();
@@ -395,7 +435,7 @@ bool sortFuncBase(T&l, T& r , RET (T::*func1)() const)
 #endif
 
 template <class T, class FUNC1, class FUNC2, class FUNC3>
-bool sortFunc(T&l, T& r , FUNC1 func1, FUNC2 func2, FUNC3 func3)
+bool sortFunc(const T&l, const T& r , FUNC1 func1, FUNC2 func2, FUNC3 func3)
 {
 	bool v = sortFuncBase(l, r, func1);
 	if (func2)
@@ -425,13 +465,13 @@ public:
 	sortFunctor(FUNC1 func1, FUNC2 func2, FUNC3 func3)
 		:m_func1(func1),m_func2(func2), m_func3(func3){}
 	template <class T>
-	bool operator()(T* l, T* r) const
+	bool operator()(const T* l, const T* r) const
 	{
 		return sortFunc(*l, *r, m_func1, m_func2, m_func2);
 	}
 
 	template <class T>
-	bool operator()(boost::shared_ptr<T>& l, boost::shared_ptr<T>& r) const
+	bool operator()(const boost::shared_ptr<T>& l, const boost::shared_ptr<T>& r) const
 	{
 		bool v =  sortFunc(*l, *r, m_func1, m_func2, m_func2);
 		return v;
@@ -548,7 +588,7 @@ protected:
 		mraResetter mras(m_tb);
 		typename Container::iterator it = mdls.begin(),ite = mdls.end();
 
-		bool optimize = !(q.getOptimize() & queryBase::hasOneJoin);
+		bool optimize = !(q.getOptimize() & queryBase::joinKeyValuesUnique);
 		std::vector<std::vector<int> > joinRowMap;
 		std::vector<typename Container::key_type> fieldIndexes;
 		groupQuery gq;

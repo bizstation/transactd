@@ -444,6 +444,18 @@ void database::closeTable(const std::string& name, bool drop)
 	}
 }
 
+int tableUseCount(const std::vector<boost::shared_ptr<table> >& tables, const char* name)
+{
+	int ret = 0;
+	for (int i=(int)tables.size()-1;i>=0;i--)
+	{
+		if (tables[i] && (tables[i]->name() == name))
+			++ret;
+	}
+	return ret;
+}
+
+
 void database::closeTable(table* tb)
 {
 	for (int i=(int)m_tables.size()-1;i>=0;i--)
@@ -455,21 +467,23 @@ void database::closeTable(table* tb)
 
 			unUseTable(m_tables[i].get());
 			m_tables[i].reset();
-			
 			if (mode == TD_OPEN_EXCLUSIVE)
 			{
-				for (TABLE** tbl = &m_thd->open_tables; *tbl != 0; *tbl = (*tbl)->next)
+				if (tableUseCount(m_tables, src->s->table_name.str)==1)
 				{
-					if (*tbl == src)
+					for (TABLE** tbl = &m_thd->open_tables; *tbl != 0; *tbl = (*tbl)->next)
 					{
-						TABLE* tbptr = (*tbl);
-						MDL_ticket* tc = tbptr->mdl_ticket;
-						close_thread_table(m_thd, tbl);
-						m_thd->mdl_context.set_explicit_duration_for_all_locks();
-						m_thd->mdl_context.release_all_locks_for_name(tc);
-						m_thd->mdl_context.set_transaction_duration_for_all_locks();
+						if (*tbl == src)
+						{
+							TABLE* tbptr = (*tbl);
+							MDL_ticket* tc = tbptr->mdl_ticket;
+							close_thread_table(m_thd, tbl);
+							m_thd->mdl_context.set_explicit_duration_for_all_locks();
+							m_thd->mdl_context.release_all_locks_for_name(tc);
+							m_thd->mdl_context.set_transaction_duration_for_all_locks();
+						}
+						break;
 					}
-					break;
 				}
 			}
 			
@@ -489,7 +503,8 @@ void database::closeForReopen()
 	}
 
 	trans_commit_stmt(m_thd);
-	close_thread_tables(m_thd);
+	if (m_thd->mdl_context.has_locks())
+		close_thread_tables(m_thd);
 	m_thd->mdl_context.release_transactional_locks();//It is certainly after close_thread_tables.
 	
 }
