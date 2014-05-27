@@ -31,6 +31,7 @@ namespace tdap
 namespace client
 {
 
+/** @cond INTERNAL */
 
 class AGRPACK autoMemory
 {
@@ -46,6 +47,10 @@ public:
 	unsigned int size;
 	bool owner;
 };
+
+/** @endcond */
+
+
 
 #pragma warning(disable:4251)
 

@@ -374,6 +374,7 @@ enum eCompType
 #define TD_BACKUP_MODE_NOT_PERMIT       (short)41
 #define TD_BACKUP_MODE_SERVER_ERROR     (short)91
 
+/** @cond INTERNAL */
 struct trdVersiton
 {
 	char cherserServer[128];
@@ -384,6 +385,8 @@ struct trdVersiton
 	ushort_td srvMinor;
 	ushort_td srvRelease;
 };
+/** @endcond */
+
 
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.
  If you change this version then you need change The ($TargetName) project options too.

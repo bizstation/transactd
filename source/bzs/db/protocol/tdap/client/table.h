@@ -34,7 +34,7 @@ namespace tdap
 namespace client
 {
 
-
+/** @cond INTERNAL */
 class database;
 class queryBase;
 class fields;
@@ -62,6 +62,8 @@ public:
 	virtual const std::vector<std::vector<int> >* joinRowMap()const  = 0;
 
 };
+
+/** @endcond */
 
 class AGRPACK table : public nstable
 {

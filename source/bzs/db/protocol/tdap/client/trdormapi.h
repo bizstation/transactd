@@ -38,6 +38,8 @@ namespace tdap
 namespace client
 {
 
+/** @cond INTERNAL */
+
 inline std::_tstring lexical_cast(__int64 v)
 {
 	_TCHAR tmp[50];
@@ -101,6 +103,7 @@ public:
 		m_value = lexical_cast(value);
 	}
 };
+/** @endcond */
 
 class databaseManager : boost::noncopyable
 {
@@ -287,6 +290,7 @@ public:
 
 };
 
+/** @cond INTERNAL */
 
 template <class T>
 inline typename std::vector<T>::iterator begin(std::vector<T>& m){return m.begin();}
@@ -558,6 +562,7 @@ int binary_search(int key, const Container& a
 	return left;
 }
 
+/** @endcond */
 
 template <class MAP, class T=typename MAP::mdl_typename, class FDI=typename MAP::fdi_typename>
 class activeTable : boost::noncopyable

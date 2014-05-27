@@ -31,6 +31,7 @@ namespace tdap
 namespace client
 {
 
+/** @cond INTERNAL */
 
 inline int getFieldType(int )
 {
@@ -177,6 +178,8 @@ void push_back(Container& m, typename Container::row_type c);
 template <class ROW_TYPE, class KEY_TYPE, class T>
 void setValue(ROW_TYPE& row, KEY_TYPE key, const T& value);
 
+
+/** @endcond */
 
 class groupQuery
 {

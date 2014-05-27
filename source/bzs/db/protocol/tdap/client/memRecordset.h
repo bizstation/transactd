@@ -35,7 +35,7 @@ class map_orm;
 typedef memoryRecord row;
 typedef boost::shared_ptr<memoryRecord> row_ptr;
 
-
+/** @cond INTERNAL */
 
 class recordsetSorter
 {
@@ -81,7 +81,7 @@ public:
 #endif
 
 
-
+/** @endcond */
 
 
 class recordset
@@ -343,6 +343,8 @@ public:
 	}
 
 };
+
+/** @cond INTERNAL */
 
 inline multiRecordAlocatorImple::multiRecordAlocatorImple(recordset* rs)
 	:m_rs(rs),m_rowOffset(0),m_addType(0),m_curFirstFiled(0),m_joinRowMap(NULL)
@@ -623,6 +625,8 @@ public:
 typedef sum<row_ptr, int, double> group_sum;
 
 typedef count<row_ptr, int, int> group_count;
+
+/** @endcond */
 
 typedef activeTable<map_orm> queryTable;
 

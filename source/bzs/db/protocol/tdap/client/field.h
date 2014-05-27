@@ -103,7 +103,9 @@ class AGRPACK field
 	friend class table;
 	friend class fieldsBase;
 	friend class CField;//atl interface
+	/** @cond INTERNAL */
 	friend int compBlob(const field& l, const field& r, char logType);
+	/** @endcond */
 	fielddef* m_fd;
 	unsigned char* m_ptr;
 	class fielddefs* m_fds;
