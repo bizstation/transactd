@@ -32,7 +32,7 @@ static const char_td primary_key = 0;
 
 void showConsole(recordset& rowset)
 {
-	const tdc::fielddefs& fields = *rowset.fieldDefs();
+	const fielddefs& fields = *rowset.fieldDefs();
 	for (int j=0;j<(int)fields.size();++j)
 		std::tcout << fields[j].name()  << _T("\t");
 	std::tcout << _T("\n");
@@ -66,7 +66,7 @@ bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep,
 	queryTable& atg = *atgp;
 	queryTable& ate = *atep;
 	recordset& rs = *rsp;
-	tdc::query q;
+	query q;
 
 	for (int i= 0;i<n;++i)
 	{

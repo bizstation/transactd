@@ -34,7 +34,7 @@ class ATL_NO_VTABLE CActiveTable :
 {
 	void setResult(IActiveTable** retVal);
 
-	bzs::db::protocol::tdap::client::activeTable<map_orm>* m_at;
+	bzs::db::protocol::tdap::client::activeTable<bzs::db::protocol::tdap::client::map_orm>* m_at;
 	CComObject<CWritableRecord>* m_recObj;
 
 public:

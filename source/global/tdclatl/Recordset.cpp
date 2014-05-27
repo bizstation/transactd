@@ -23,6 +23,7 @@
 #include "GroupQuery.h"
 #include "FieldDefs.h"
 
+using namespace bzs::db::protocol::tdap::client;
 
 CARecordset::CARecordset():m_rs(new recordset()),m_recObj(NULL),m_fieldDefsObj(NULL)
 {
@@ -121,7 +122,7 @@ STDMETHODIMP CARecordset::get_Size(unsigned long* retVal)
 
 STDMETHODIMP CARecordset::RemoveField(short Index, IRecordset** retVal)
 {
-	if (Index >= 0 && Index < m_rs->fieldDefs()->size())
+	if (Index >= 0 && Index < (int)m_rs->fieldDefs()->size())
 	{
 		m_rs->removeField(Index);
 		setResult(retVal);	

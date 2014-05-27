@@ -35,11 +35,11 @@ class ATL_NO_VTABLE CARecordset :
 	CComObject<CRecord>* m_recObj;
 	CComObject<CFieldDefs>* m_fieldDefsObj;
 public:
-    recordset* m_rs;
+    bzs::db::protocol::tdap::client::recordset* m_rs;
 
 	CARecordset();
 	~CARecordset();
-	void setRecordset(recordset* rs){m_rs = rs;}
+	void setRecordset(bzs::db::protocol::tdap::client::recordset* rs){m_rs = rs;}
 
     BEGIN_COM_MAP(CARecordset) 
 		COM_INTERFACE_ENTRY(IRecordset) 

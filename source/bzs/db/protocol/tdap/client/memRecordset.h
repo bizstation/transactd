@@ -20,12 +20,20 @@
 =================================================================*/
 #include "trdormapi.h"
 
-namespace tdc =  bzs::db::protocol::tdap::client;
-namespace td =  bzs::db::protocol::tdap;
+namespace bzs
+{
+namespace db
+{
+namespace protocol
+{
+namespace tdap
+{
+namespace client
+{
+
 class map_orm;
-typedef tdc::memoryRecord row;
-typedef boost::shared_ptr<tdc::memoryRecord> row_ptr;
-typedef int key_type;
+typedef memoryRecord row;
+typedef boost::shared_ptr<memoryRecord> row_ptr;
 
 
 
@@ -51,7 +59,7 @@ public:
 };
 
 #ifndef SWIG
-class multiRecordAlocatorImple : public tdc::multiRecordAlocator
+class multiRecordAlocatorImple : public multiRecordAlocator
 {
 	class recordset* m_rs;
 	int m_rowOffset;
@@ -61,7 +69,7 @@ class multiRecordAlocatorImple : public tdc::multiRecordAlocator
 	
 public:
 	inline multiRecordAlocatorImple(recordset* rs);
-	inline void init(size_t recordCount, size_t recordLen, int addType, const tdc::table* tb);
+	inline void init(size_t recordCount, size_t recordLen, int addType, const table* tb);
 	inline unsigned char* ptr(size_t row, int stat);
 	inline void setRowOffset(int v){m_rowOffset = v;}
 	inline void setJoinType(int v){m_addType = v;}
@@ -79,11 +87,11 @@ public:
 class recordset
 {
 	friend class multiRecordAlocatorImple;
-	boost::shared_ptr<tdc::fielddefs> m_fds;
+	boost::shared_ptr<fielddefs> m_fds;
 	boost::shared_ptr<multiRecordAlocatorImple> m_mra;
 	std::vector<row_ptr> m_recordset;
-	std::vector<boost::shared_ptr<tdc::autoMemory> > m_memblock;
-	std::vector<boost::shared_ptr<tdc::fielddefs> > m_unionFds;
+	std::vector<boost::shared_ptr<autoMemory> > m_memblock;
+	std::vector<boost::shared_ptr<fielddefs> > m_unionFds;
 
 	/* for registerMemoryBlock temp data */
 	size_t m_joinRows;
@@ -94,20 +102,20 @@ class recordset
 	*/
 	short m_uniqueReadMaxField;
 public:
-	typedef std::vector<boost::shared_ptr<tdc::memoryRecord> >::iterator iterator;
+	typedef std::vector<boost::shared_ptr<memoryRecord> >::iterator iterator;
 
 private:
 
 	void registerMemoryBlock(unsigned char* ptr, size_t size, size_t recordLen
-					, int addtype, const tdc::table* tb=NULL)
+					, int addtype, const table* tb=NULL)
 	{
-		tdc::autoMemory* am = new tdc::autoMemory(ptr, size, 0 , true);
-		m_memblock.push_back(boost::shared_ptr<tdc::autoMemory>(am));
+		autoMemory* am = new autoMemory(ptr, size, 0 , true);
+		m_memblock.push_back(boost::shared_ptr<autoMemory>(am));
 		unsigned char* p = am->ptr;
 		//copy fileds
-		if (addtype & tdc::mra_nextrows)
+		if (addtype & mra_nextrows)
 		{
-			if (addtype == tdc::mra_nextrows)
+			if (addtype == mra_nextrows)
 				m_mra->setRowOffset((int)m_recordset.size()); //no join
 			else
 				m_mra->setRowOffset((int)m_joinRows); //Join
@@ -120,9 +128,9 @@ private:
 			m_mra->setCurFirstFiled((int)m_fds->size());
 			if (tb)
 				m_fds->copyFrom(tb);
-			if (tb && (addtype == tdc::mra_nojoin))
+			if (tb && (addtype == mra_nojoin))
 			{
-				const td::keydef& kd = tb->tableDef()->keyDefs[tb->keyNum()];
+				const keydef& kd = tb->tableDef()->keyDefs[tb->keyNum()];
 				m_uniqueReadMaxField =  (kd.segments[0].flags.bit0 == false) ? (short)m_fds->size():0;
 			}
 		}
@@ -131,8 +139,8 @@ private:
 		size_t rows = size/recordLen;
 
 		// set record pointer to each record
-		if ((addtype & tdc::mra_innerjoin)
-						|| (addtype & tdc::mra_outerjoin))
+		if ((addtype & mra_innerjoin)
+						|| (addtype & mra_outerjoin))
 		{
 			//Join optimazing
 			const std::vector< std::vector<int> >* jmap = m_mra->joinRowMap();
@@ -162,7 +170,7 @@ private:
 			m_recordset.reserve(reserveSize);
 			for (int i=0;i<(int)rows;++i)
 			{
-				boost::shared_ptr<tdc::memoryRecord> rec(tdc::memoryRecord::create(*m_fds), &tdc::memoryRecord::release);
+				boost::shared_ptr<memoryRecord> rec(memoryRecord::create(*m_fds), &memoryRecord::release);
  				rec->setRecordData(p + recordLen*i, 0, am->endFieldIndex, false);
 				m_recordset.push_back(rec);
 			}
@@ -178,10 +186,10 @@ private:
 	}
 
 public:
-	recordset():m_fds(tdc::fielddefs::create(), &tdc::fielddefs::destroy)
+	recordset():m_fds(fielddefs::create(), &fielddefs::destroy)
 		, m_joinRows(0), m_uniqueReadMaxField(0)
 	{
-		m_mra.reset(new ::multiRecordAlocatorImple(this));
+		m_mra.reset(new multiRecordAlocatorImple(this));
 	}
 	
 	~recordset()
@@ -197,7 +205,7 @@ public:
 		m_uniqueReadMaxField = 0;
 	}
 
-	const tdc::fielddefs* fieldDefs() const {return m_fds.get();}
+	const fielddefs* fieldDefs() const {return m_fds.get();}
 
 	inline void clear()
 	{
@@ -236,14 +244,14 @@ public:
 
 	inline size_t count()const {return m_recordset.size();}
 
-	void readBefore(const tdc::table_ptr tb, const tdc::aliasMap_type* alias)
+	void readBefore(const table_ptr tb, const aliasMap_type* alias)
 	{
 		 tb->setMra(m_mra.get());
 		 m_fds->setAliases(alias);
 	}
 
-	typedef tdc::fielddefs header_type;
-	typedef ::key_type key_type;
+	typedef fielddefs header_type;
+	typedef int key_type;
 	typedef row_ptr row_type;
 
 	key_type resolvKeyValue(const std::_tstring& name, bool noexception=false)
@@ -274,7 +282,7 @@ public:
 	}
 
 	template <class FUNC>
-	recordset& groupBy(tdc::groupQuery& gq, FUNC func)
+	recordset& groupBy(groupQuery& gq, FUNC func)
 	{
 		gq.grouping(*this, func);
 		return *this;
@@ -307,7 +315,7 @@ public:
 	void appendCol(const _TCHAR* name, int type, short len)
 	{
 		assert(m_fds->size());
-		td::fielddef fd((*m_fds)[0]);
+		fielddef fd((*m_fds)[0]);
 		fd.len = len;
 		fd.pos = 0;
 		fd.type = type;
@@ -316,7 +324,7 @@ public:
 		for(int i=0;i<(int)m_unionFds.size();++i)
 			m_unionFds[i]->push_back(&fd);
 		registerMemoryBlock(NULL, fd.len*size(), fd.len
-					, tdc::mra_outerjoin);
+					, mra_outerjoin);
 
 	}
 
@@ -343,7 +351,7 @@ inline multiRecordAlocatorImple::multiRecordAlocatorImple(recordset* rs)
 }
 
 inline void multiRecordAlocatorImple::init(size_t recordCount, size_t recordLen
-		, int addType, const tdc::table* tb)
+		, int addType, const table* tb)
 {
 	 m_rs->registerMemoryBlock(NULL, recordCount * recordLen
 			, recordLen, addType|m_addType, tb);
@@ -351,8 +359,8 @@ inline void multiRecordAlocatorImple::init(size_t recordCount, size_t recordLen
 
 inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
 {
-	int col = (stat == tdc::mra_current_block) ? m_curFirstFiled : 0;
- 	size_t rowNum  = m_joinRowMap ? (*m_joinRowMap)[row+m_rowOffset][0] : row+m_rowOffset;
+	int col = (stat == mra_current_block) ? m_curFirstFiled : 0;
+	size_t rowNum  = m_joinRowMap ? (*m_joinRowMap)[row+m_rowOffset][0] : row+m_rowOffset;
 	return (*m_rs)[rowNum]->ptr(col);
 }
 
@@ -360,9 +368,6 @@ inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
 {
 	(*m_rs)[row+m_rowOffset]->setInvalidRecord(v);
 }
-
-namespace bzs{namespace db{namespace protocol{namespace tdap{namespace client
-{
 
 template<> inline recordset::iterator begin(recordset& m){return m.begin();}
 template<> inline recordset::iterator end(recordset& m){return m.end();}
@@ -386,30 +391,23 @@ inline void setValue(recordset::row_type& row
 	(*row)[key] = value;
 }
 
-
-}}}}}
-
-
 inline row* create(recordset& m, int)
 {
 	return NULL;
 }
 
 
-
 class map_orm_fdi
 {
 	friend class map_orm;
-	const tdc::table* m_tb;
+	const table* m_tb;
 public:
-	void init(tdc::table* tb) {m_tb = tb;}
+	void init(table* tb) {m_tb = tb;}
 };
 
 inline map_orm_fdi* createFdi(map_orm_fdi * ){return new map_orm_fdi();}
 inline void destroyFdi(map_orm_fdi * p){delete p;}
-inline void initFdi(map_orm_fdi * fdi, tdc::table* tb){fdi->init(tb);}
-
-
+inline void initFdi(map_orm_fdi * fdi, table* tb){fdi->init(tb);}
 
 class map_orm
 {
@@ -427,12 +425,12 @@ public:
 
 	bool compKeyValue(row& l, row& r, int keyNum) const
 	{
-		const td::tabledef* def = m_fdi.m_tb->tableDef();
-		const td::keydef* kd = &def->keyDefs[keyNum];
+		const tabledef* def = m_fdi.m_tb->tableDef();
+		const keydef* kd = &def->keyDefs[keyNum];
 		for (int i=0;i<kd->segmentCount;++i)
 		{
 			short n =  kd->segments[i].fieldNum;
-			const td::fielddef* fd = &def->fieldDefs[n];
+			const fielddef* fd = &def->fieldDefs[n];
 			int ret = comp(l, r, fd->name(), n);
 			if (ret)return (ret < 0);
 
@@ -440,33 +438,33 @@ public:
 		return 0;
 	}
 
-	void setKeyValues(row& m, const tdc::fields& fds, int keyNum)
+	void setKeyValues(row& m, const fields& fds, int keyNum)
 	{
-		const tdc::autoMemory& mb =  m.memBlock(0);
+		const autoMemory& mb =  m.memBlock(0);
 		memcpy(fds.tb().fieldPtr(0), mb.ptr, mb.size);
 
 	}
 
-	void writeMap(row& m, const tdc::fields& fds, int optipn)
+	void writeMap(row& m, const fields& fds, int optipn)
 	{
-		const tdc::autoMemory& mb =  m.memBlock(0);
+		const autoMemory& mb =  m.memBlock(0);
 		memcpy(fds.tb().fieldPtr(0), mb.ptr, mb.size);
 	}
 
 	template <class T>
-	void readMap(T& m, const tdc::fields& fds, int optipn)
+	void readMap(T& m, const fields& fds, int optipn)
 	{
 		//needlessness
 	}
 
-	void readAuntoincValue(row& m, const tdc::fields& fds, int optipn)
+	void readAuntoincValue(row& m, const fields& fds, int optipn)
 	{
 		//needlessness
 	}
 
 	typedef row         mdl_typename;
 	typedef map_orm_fdi fdi_typename;
-	typedef tdc::mdlsHandler< map_orm, recordset> collection_orm_typename;
+	typedef mdlsHandler< map_orm, recordset> collection_orm_typename;
 
 
 };
@@ -615,6 +613,12 @@ typedef sum<row_ptr, int, double> group_sum;
 
 typedef count<row_ptr, int, int> group_count;
 
-typedef tdc::activeTable<map_orm> queryTable;
+typedef activeTable<map_orm> queryTable;
+
+}// namespace client
+}// namespace tdap
+}// namespace protocol
+}// namespace db
+}// namespace bzs
 
 #endif //BZS_DB_PROTOCOL_TDAP_CLIENT_MEMRECORDSET_H
