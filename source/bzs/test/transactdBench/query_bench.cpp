@@ -51,6 +51,17 @@ void showConsole(recordset& rowset)
 
 bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep, int kind, int n)
 {
+#ifdef LINUX
+	const char* fd_name = "名前";
+#else
+	#ifdef _UNICODE
+		const wchar_t* fd_name = L"名前";
+	#else
+		char fd_name[30];
+		WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+	#endif
+#endif
+
 	queryTable& atu = *atup;
 	queryTable& atg = *atgp;
 	queryTable& ate = *atep;
@@ -63,7 +74,7 @@ bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep,
 		if (kind &1)
 		{
 			q.reset();
-			atu.alias(_T("名前"), _T("name"));
+			atu.alias(fd_name, _T("name"));
 
 			q.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), i+15000);
 			atu.index(0).keyValue(i+1).read(rs, q);
