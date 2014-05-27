@@ -113,7 +113,7 @@ struct infoImple
 
 
 
-fielddefs::fielddefs():fieldShare(),m_imple(new infoImple),m_stat(0)
+fielddefs::fielddefs():fieldShare(),m_imple(new infoImple)
 {
 
 }
@@ -1354,7 +1354,10 @@ void field::setFV(const void* data, uint_td size)
 		break;
 
 	}
-	default: m_fds->m_stat = STATUS_FIELDTYPE_NOTSUPPORT; // this field type is not supported.
+	default:
+		size = std::min<uint_td>((uint_td)m_fd->len , size);
+		memset((char*)m_ptr + m_fd->pos, 0, m_fd->len);
+		memcpy((char*)m_ptr + m_fd->pos , data, size);
 	}
 }
 

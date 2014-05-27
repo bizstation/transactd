@@ -74,7 +74,6 @@ class AGRPACK fielddefs : public fieldShare
 	fielddefs();
 	~fielddefs();
 public:
-	short m_stat;
 	void setAliases(const aliasMap_type* p);
 	void addAllFileds(tabledef* def);
 	void push_back(const fielddef* p);
@@ -268,7 +267,7 @@ public:
 	}
 	inline void* getBin(uint_td& size){return getFVbin(size);};
 
-	int comp(const field& r, char logType) const;
+	int comp(const field& r, char logType=CMPLOGICAL_VAR_COMP_ALL) const;
 
 };
 
