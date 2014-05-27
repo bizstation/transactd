@@ -532,6 +532,32 @@ public:
 	}
 };
 
+template <class Container, class FUNC>
+int binary_search(int key, const Container& a
+			, int left, int right, FUNC func, bool& find)
+{
+	find = false;
+	if (right == 0) return 0; // no size
+
+	int mid, tmp, end = right;
+	while(left <= right)
+	{
+		mid = (left + right) / 2;
+		if (mid >= end)
+			return end;
+		if ((tmp = func(a[mid], key)) == 0)
+		{
+			find = true;
+			return mid;
+		}
+		else if (tmp < 0)
+			left = mid + 1;  //keyValue is more large
+		else
+			right = mid - 1; //keyValue is more small
+	}
+	return left;
+}
+
 
 template <class MAP, class T=typename MAP::mdl_typename, class FDI=typename MAP::fdi_typename>
 class activeTable : boost::noncopyable
@@ -571,6 +597,29 @@ protected:
 		}
 	}
 
+
+	template <class Container>
+	void makeJoinMap(Container& mdls, std::vector<std::vector<int> >& joinRowMap
+				, std::vector<typename Container::key_type>& keyFields)
+	{
+
+		grouping_comp<Container> groupingComp(mdls, keyFields);
+		std::vector<int> index;
+		std::vector<int> tmp;
+		for (int n=0;n<(int)mdls.size();++n)
+		{
+			bool found = false;
+			int i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
+			if (!found)
+			{
+				index.insert(index.begin() + i, n);
+				joinRowMap.insert(joinRowMap.begin() + i, tmp);
+			}
+			joinRowMap[i].push_back(n);
+		}
+	}
+
+
 	template <class Container>
 	void doJoin(bool innner, Container& mdls, queryBase& q, const _TCHAR* name1
 					, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
@@ -600,7 +649,7 @@ protected:
 		*/
 		if (optimize)
 		{
-			gq.makeJoinMap(mdls, joinRowMap, fieldIndexes);
+			makeJoinMap(mdls, joinRowMap, fieldIndexes);
 			q.reserveSeekKeyValueSize(joinRowMap.size());
 			std::vector<std::vector<int> >::iterator it1 = joinRowMap.begin(),ite1 = joinRowMap.end();
 			while(it1 != ite1)
@@ -909,15 +958,6 @@ public:
 
 	}
 
-	/*template <class Container>
-	void update(Container& mdls)
-	{
-		typename Container::iterator it = begin(mdls),ite = end(mdls);
-		while (it != ite)
-			update(*it);
-
-	}*/
-
 	// No need object
 	void del()
 	{
@@ -939,15 +979,6 @@ public:
 			nstable::throwError(_T("activeTable delete"), &(*m_tb));
 	}
 
-	/*template <class Container>
-	void del(Container& mdls)
-	{
-		typename Container::iterator it = begin(mdls),ite = end(mdls);
-		while (it != ite)
-			del(*it);
-
-	}*/
-
 	template <class T2>
 	void insert(T2& mdl)
 	{
@@ -956,15 +987,6 @@ public:
 		insertRecord(fds);
 		m_map.readAuntoincValue(mdl, fds, m_option);
 	}
-
-	/*template <class Container>
-	void insert(Container& mdls)
-	{
-		typename Container::iterator it = begin(mdls),ite = end(mdls);
-		while (it != ite)
-			insert(*it);
-
-	}*/
 
 	template <class T2>
 	void save(T2& mdl, bool setKeyValueFromObj=true)
@@ -982,8 +1004,36 @@ public:
 		}
 	}
 
+#ifdef USE_CONTAINER_CUD //default not support
 
+	template <class Container>
+	void update(Container& mdls)
+	{
+		typename Container::iterator it = begin(mdls),ite = end(mdls);
+		while (it != ite)
+			update(*it);
 
+	}
+
+	template <class Container>
+	void del(Container& mdls)
+	{
+		typename Container::iterator it = begin(mdls),ite = end(mdls);
+		while (it != ite)
+			del(*it);
+
+	}
+
+	template <class Container>
+	void insert(Container& mdls)
+	{
+		typename Container::iterator it = begin(mdls),ite = end(mdls);
+		while (it != ite)
+			insert(*it);
+
+	}
+
+#endif
 	/* mdlsがキーフィールドに対応するメンバによってソート済の時は
 	   sortedをtrueにします。検索するレコードと通信量が激減します。
 	*/
@@ -1129,13 +1179,6 @@ public:
 		readEach(*refList, true, &e);
 	}
 #endif
-
-	/*template <class Container, class FUNC>
-	activeTable& groupBy(Container& mdls, groupQuery& gq, FUNC func)
-	{
-		gq.grouping(mdls, func);
-		return *this;
-	}*/
 
 	inline activeTable& alias(const _TCHAR* src, const _TCHAR* dst)
 	{

@@ -177,8 +177,11 @@ void push_back(Container& m, typename Container::row_type c);
 template <class ROW_TYPE, class KEY_TYPE, class T>
 void setValue(ROW_TYPE& row, KEY_TYPE key, const T& value);
 
+
 class groupQuery
 {
+	//friend class recordset;
+
 	std::vector<std::_tstring> m_keyFields;
 	std::_tstring m_resultField;
 	const queryBase* m_having;
@@ -201,32 +204,6 @@ class groupQuery
 			if (!enabled)
 				mdls.removeField(i);
 		}
-	}
-
-	template <class Container, class FUNC>
-	int binary_search(int key, const Container& a
-			, int left, int right, FUNC func, bool& find)
-	{
-		find = false;
-		if (right == 0) return 0; // no size
-
-		int mid, tmp, end = right;
-		while(left <= right)
-		{
-			mid = (left + right) / 2;
-			if (mid >= end)
-				return end;
-			if ((tmp = func(a[mid], key)) == 0)
-			{
-				find = true;
-				return mid;
-			}
-			else if (tmp < 0)
-				left = mid + 1;  //keyValue is more large
-			else
-				right = mid - 1; //keyValue is more small
-		}
-		return left;
 	}
 
 public:
@@ -264,8 +241,11 @@ public:
 	}
 
 	groupQuery& having(const queryBase& q) {m_having = &q;return *this;}
+
 	const std::vector<std::_tstring>& getKeyFields()const {return m_keyFields;}
+
 	const std::_tstring& getResultFields()const {return m_resultField;}
+
 	const queryBase& getHaving() const {return *m_having;}
 
 	template <class Container>
@@ -274,27 +254,6 @@ public:
 		/* convert field Index from filed name */
 		for (int i=0;i<(int)m_keyFields.size();++i)
 			fieldIndexes.push_back(resolvKeyValue(mdls, m_keyFields[i], false));
-	}
-
-	template <class Container>
-	void makeJoinMap(Container& mdls, std::vector<std::vector<int> >& joinRowMap
-				, std::vector<typename Container::key_type>& keyFields)
-	{
-		
-		grouping_comp<Container> groupingComp(mdls, keyFields);
-		std::vector<int> index;
-		std::vector<int> tmp;
-		for (int n=0;n<(int)mdls.size();++n)
-		{
-			bool found = false;
-			int i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
-			if (!found)
-			{
-				index.insert(index.begin() + i, n);
-				joinRowMap.insert(joinRowMap.begin() + i, tmp);
-			}
-			joinRowMap[i].push_back(n);
-		}
 	}
 
 	template <class Container, class FUNC>

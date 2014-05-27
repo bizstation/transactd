@@ -285,7 +285,7 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate, i
 			else
 				return 0;
 		}
-		std::tcout <<  _T("Inserting query test data. Please wait ... ") << std::flush;
+		std::tcout <<  _T("\nInserting query test data. Please wait ... ") << std::flush;
 		createDatabase(db, param);
 		openDatabase(db, param);
 		if (!createUserTable(db->dbDef()))return 1;
