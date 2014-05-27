@@ -266,7 +266,7 @@ void fielddefs::destroy(fielddefs* p)
 //------------------------------------------------------------------------------
 //       class field
 //------------------------------------------------------------------------------
-fielddef fdDummy;
+static fielddef fdDummy;
 
 AGRPACK const fielddef& dummyFd()
 {

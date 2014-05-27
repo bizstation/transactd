@@ -99,20 +99,18 @@ public:
 
 typedef int (*compFieldFunc)(const class field& l, const class field& r, char logType);
 
-class AGRPACK field 
+class AGRPACK field
 {
 	friend class table;
+	friend class fieldsBase;
 	friend class CField;//atl interface
+	friend int compBlob(const field& l, const field& r, char logType);
 	fielddef* m_fd;
 	unsigned char* m_ptr;
 	class fielddefs* m_fds;
 
 	compFieldFunc getCompFunc(char logType)const;
-protected:
-	double getFVnumeric() const;
-	double getFVDecimal() const;
-	void setFVDecimal(double data);
-	void setFVNumeric(double data);
+	int blobLenBytes() const {return m_fd->blobLenBytes();}
 
 private:
 	//  ---- bigin regacy interfaces ----  //
@@ -144,13 +142,20 @@ private:
 	inline const char* getFVstr() const {return getFVAstr();};
 	inline void setFV(const char* data) {setFVA(data);};
 #endif
+	double getFVnumeric() const;
+	double getFVDecimal() const;
+	void setFVDecimal(double data);
+	void setFVNumeric(double data);
+	//  ---- end regacy interfaces ----  //
 
 	inline field()
 			: m_ptr(NULL), m_fd(NULL), m_fds(NULL) {};
 
-	//  ---- end regacy interfaces ----  //
+	inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
+			: m_ptr(ptr), m_fd((fielddef*)&fd), m_fds(fds) {};
+
 public:
-	
+
 	void* ptr() const;
 	inline field& operator=(const field& r)
 	{
@@ -162,11 +167,6 @@ public:
 
 	unsigned char type() const {return m_fd->type;}
 	unsigned short len() const {return m_fd->len;}
-	int varLenBytes() const {return m_fd->varLenBytes();}
-	int blobLenBytes() const {return m_fd->blobLenBytes();}
-
-	inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
-			: m_ptr(ptr), m_fd((fielddef*)&fd), m_fds(fds) {};
 
 	inline const _TCHAR* c_str() const {return getFVstr();}
 

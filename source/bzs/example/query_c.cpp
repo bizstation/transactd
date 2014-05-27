@@ -31,7 +31,7 @@ static const char_td primary_key = 0;
 
 void showConsole(recordset& rowset)
 {
-	const tdc::fielddefs& fields = *rowset.fieldDefs();
+	const fielddefs& fields = *rowset.fieldDefs();
 	for (int j=0;j<(int)fields.size();++j)
 		std::tcout << fields[j].name()  << _T("\t");
 	std::tcout << _T("\n");
@@ -50,7 +50,7 @@ void showConsole(recordset& rowset)
 
 void execute(recordset& rs, queryTable& atu, queryTable& atg, queryTable& ate)
 {
-	tdc::query query;
+	query query;
 
 	rs.clear();
 	atu.alias(_T("名前"), _T("name"));
