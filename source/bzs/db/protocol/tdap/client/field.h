@@ -270,15 +270,6 @@ public:
 
 	int comp(const field& r, char logType) const;
 
-
-	inline __int64 value(__int64 ) const{return i64();}
-	inline int value(int ) const{return i();}
-	inline short value(short ) const{return (short)i();}
-	inline char value(char ) const{return (char)i();}
-	inline double value(double ) const{return d();}
-	inline float value(float ) const{return f();}
-	inline const _TCHAR* value(const _TCHAR* ) const{return c_str();}
-
 };
 
 AGRPACK const fielddef& dummyFd();

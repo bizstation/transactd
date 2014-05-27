@@ -469,6 +469,17 @@ public:
 
 };
 
+
+
+inline __int64 fieldValue(const field& fd, __int64 ) {return fd.i64();}
+inline int fieldValue(const field& fd, int ) {return fd.i();}
+inline short fieldValue(const field& fd, short ) {return (short)fd.i();}
+inline char fieldValue(const field& fd, char ) {return (char)fd.i();}
+inline double fieldValue(const field& fd, double ) {return fd.d();}
+inline float fieldValue(const field& fd, float ) {return fd.f();}
+inline const _TCHAR* fieldValue(const field& fd, const _TCHAR* ) {return fd.c_str();}
+
+
 template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
 class sum
 {
@@ -485,7 +496,7 @@ public:
 	void operator()(const row_type& row)
 	{
         value_type_ tmp=0;
-		m_value += (*row)[m_resultKey].value(tmp);
+		m_value += fieldValue((*row)[m_resultKey], tmp);
 	}
 	value_type_ result()const{return m_value;}
 
@@ -511,7 +522,7 @@ public:
 	{
 		++m_count;
 		value_type_ tmp=0;
-		m_value += (*row)[m_resultKey].value(tmp);
+		m_value += fieldValue((*row)[m_resultKey], tmp);
 	}
 
 	value_type_ result()const{return m_value/m_count;}
@@ -562,7 +573,7 @@ public:
 	void operator()(const row_type& row)
 	{
 		value_type_ tmp = 0;
-		tmp = (*row)[m_resultKey].value(tmp);
+		tmp = fieldValue((*row)[m_resultKey], tmp);
 		if (m_flag || m_value > tmp)
 		{
 			m_flag = false;
@@ -594,7 +605,7 @@ public:
 	void operator()(const row_type& row)
 	{
 		value_type_ tmp = 0;
-		tmp = (*row)[m_resultKey].value(tmp);
+		tmp = fieldValue((*row)[m_resultKey], tmp);
 		if (m_flag || m_value < tmp)
 		{
 			m_flag = false;
