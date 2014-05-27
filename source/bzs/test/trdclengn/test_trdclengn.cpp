@@ -2479,13 +2479,25 @@ void testQuery()
 
 void testJoin(database* db)
 {
+
+#ifdef LINUX
+	const char* fd_name = "名前";
+#else 
+	#ifdef _UNICODE
+		const wchar_t* fd_name = L"名前";
+	#else
+		char fd_name[30];
+		WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+	#endif
+#endif
+
 	queryTable atu(db, _T("user"));
 	queryTable atg(db, _T("groups"));
 	queryTable ate(db, _T("extention"));
 	recordset rs;
 	query q;
 
-	atu.alias(_T("名前"), _T("name"));
+	atu.alias(fd_name, _T("name"));
 	q.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), 15000);
 	atu.index(0).keyValue(1).read(rs, q);
 	BOOST_CHECK_MESSAGE(rs.size()== 15000, " rs.size()== 15000");
@@ -2528,7 +2540,7 @@ void testJoin(database* db)
 
 	//test union
 	recordset rs2;
-	atu.alias(_T("名前"), _T("name"));
+	atu.alias(fd_name, _T("name"));
 
 	q.reset().select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), 16000);
 	atu.index(0).keyValue(15001).read(rs2, q);
@@ -2573,42 +2585,54 @@ void testJoin(database* db)
 
 void testWirtableRecord(database* db)
 {
+
+#ifdef LINUX
+	const char* fd_name = "名前";
+#else 
+	#ifdef _UNICODE
+		const wchar_t* fd_name = L"名前";
+	#else
+		char fd_name[30];
+		WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+	#endif
+#endif
+
 	queryTable atu(db, _T("user"));
 
 	writableRecord& rec = atu.index(0).getWritableRecord();
 
 	rec[_T("id")] = 120000;
-	rec[_T("名前")] = _T("相葉");
+	rec[fd_name] = _T("aiba");
 	rec.save();
 
 	rec.clear();
 	rec[_T("id")] = 120000;
 	rec.read();
-	BOOST_CHECK_MESSAGE(_tstring(rec[_T("名前")].c_str()) == _tstring(_T("相葉"))
+	BOOST_CHECK_MESSAGE(_tstring(rec[fd_name].c_str()) == _tstring(_T("aiba"))
 					, "rec 120000 name ");
 
 	rec.clear();
 	rec[_T("id")] = 120001;
-	rec[_T("名前")]  = _T("大野");
+	rec[fd_name]  = _T("oono");
 	if (!rec.read())
 		rec.insert();
 
 	rec.clear();
 	rec[_T("id")] = 120001;
 	rec.read();
-	BOOST_CHECK_MESSAGE(_tstring(rec[_T("名前")].c_str()) == _tstring(_T("大野"))
+	BOOST_CHECK_MESSAGE(_tstring(rec[fd_name].c_str()) == _tstring(_T("oono"))
 					, "rec 120001 name ");
 
 	//update changed filed only
 	rec.clear();
 	rec[_T("id")]  = 120001;
-	rec[_T("名前")] = _T("松本");
+	rec[fd_name] = _T("matsumoto");
 	rec.update();
 
 	rec.clear();
 	rec[_T("id")] = 120001;
 	rec.read();
-	BOOST_CHECK_MESSAGE(_tstring(rec[_T("名前")].c_str()) == _tstring(_T("松本"))
+	BOOST_CHECK_MESSAGE(_tstring(rec[fd_name].c_str()) == _tstring(_T("matsumoto"))
 					, "rec 120001 update name ");
 
 	rec.del();

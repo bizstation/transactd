@@ -69,7 +69,18 @@ bool createUserTable(dbdef* def)
 
 	++filedIndex;
 	fd = def->insertField(tableid, filedIndex);
-	fd->setName(_T("名前"));
+#ifdef LINUX
+	const char* fd_name = "名前";
+#else 
+	#ifdef _UNICODE
+		const wchar_t* fd_name = L"名前";
+	#else
+		char fd_name[30];
+		WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+	#endif
+#endif
+
+	fd->setName(fd_name);
 	fd->type = ft_myvarchar;
 	fd->setLenByCharnum(20);
 
