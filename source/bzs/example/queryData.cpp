@@ -203,6 +203,9 @@ bool createUserExtTable(dbdef* def)
 bool insertData(database_ptr db, int maxId)
 {
 	_TCHAR tmp[256];
+	transaction trn(db);
+	trn.begin();
+
 	table* tb = db->openTable(_T("user"), TD_OPEN_NORMAL);
 	if (db->stat())
 	{
@@ -256,6 +259,7 @@ bool insertData(database_ptr db, int maxId)
 			return showTableError(tb, _T("extention insert"));
 	}
 	tb->release();
+	trn.end();
 	return true;
 }
 
@@ -270,12 +274,15 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate, i
 			else
 				return 0;
 		}
+		std::tcout <<  _T("Inserting query test data. Please wait ... ") << std::flush;
 		createDatabase(db, param);
 		openDatabase(db, param);
 		if (!createUserTable(db->dbDef()))return 1;
 		if (!createGroupTable(db->dbDef()))return 1;
 		if (!createUserExtTable(db->dbDef()))return 1;
-		return !insertData(db, maxId);
+		if (!insertData(db, maxId)) return 1;
+		std::tcout <<  _T("done!") << std::endl;
+		return 0;
 	}
 	catch(bzs::rtl::exception& e)
 	{

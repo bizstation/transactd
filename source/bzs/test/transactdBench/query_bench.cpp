@@ -83,7 +83,7 @@ bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep,
 			}
 		}
 		if (kind & 8)
-			std::tcout << "." ;
+			std::tcout << "." << std::flush;
 	}
 	if (kind & 8)
 		std::tcout << std::endl ;
