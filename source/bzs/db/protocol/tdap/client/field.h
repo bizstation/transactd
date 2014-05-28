@@ -36,7 +36,7 @@ namespace client
 {
 
 class stringConverter;
-
+/** @cond INTERNAL */
 class AGRPACK fieldShare
 {
 	friend class field;
@@ -53,10 +53,9 @@ private:
 	};
 	struct Imple* m_imple;
 
-
-
-public:
+protected:
 	fieldShare();
+
 	virtual ~fieldShare();
 	stringConverter* cv();
 	bzs::rtl::stringBuffer* strBufs();
@@ -64,8 +63,8 @@ public:
 	void blobClear();
 };
 
-
 typedef boost::unordered_map<std::_tstring, std::_tstring> aliasMap_type;
+/** @endcond */
 
 class AGRPACK fielddefs : public fieldShare
 {
@@ -73,23 +72,29 @@ class AGRPACK fielddefs : public fieldShare
 	void aliasing(fielddef* p) const;
 	fielddefs();
 	~fielddefs();
-public:
-	void setAliases(const aliasMap_type* p);
+	friend class table;
+	friend class recordset;
+	friend class writableRecord;
+	friend class memoryRecord;
+
 	void addAllFileds(tabledef* def);
+	void copyFrom(const class table* tb);
+	bool canUnion(const fielddefs& r) const;
+	size_t totalFieldLen() const;
+	void resetUpdateIndicator();
+	void setAliases(const aliasMap_type* p);
 	void push_back(const fielddef* p);
 	void remove(int index);
 	void reserve(size_t size);
 	void clear();
-	void resetUpdateIndicator();
+
+public:
 	int indexByName(const std::_tstring& name)const;
 	const fielddef& operator[] (int index) const;
 	const fielddef& operator[] (const _TCHAR* name) const;
 	const fielddef& operator[] (const std::_tstring& name)const;
 	bool checkIndex(int index)const;
 	size_t size() const;
-	size_t totalFieldLen() const;
-	void copyFrom(const class table* tb);
-	bool canUnion(const fielddefs& r) const;
 	static fielddefs* create();
 	static void destroy(fielddefs* p);
 };
@@ -152,11 +157,13 @@ private:
 	inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
 			: m_ptr(ptr), m_fd((fielddef*)&fd), m_fds(fds) {};
 
+/** @cond INTERNAL */
 #ifdef SWIG //SWIG Wrapper need public constructor
 public:
 #endif
 	inline field()
 			: m_ptr(NULL), m_fd(NULL), m_fds(NULL) {};
+/** @endcond */
 
 public:
 

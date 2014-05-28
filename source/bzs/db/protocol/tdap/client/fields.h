@@ -41,6 +41,7 @@ class fieldsBase
 
 	virtual unsigned char* ptr(int index) const = 0;
 protected:
+	/** @cond INTERNAL */
 	fielddefs& m_fns;
 	bool m_invalidRecord;
 	virtual table* tbptr() const{return NULL;}
@@ -59,15 +60,26 @@ protected:
 			nstable::throwError(tmp, STATUS_INVARID_FIELD_IDX);
 		}
 	}
+	explicit inline fieldsBase(fielddefs& fns):m_fns(fns),m_invalidRecord(false){}
+
+	inline void setInvalidRecord(bool v){m_invalidRecord = v;}
+
+
+	inline void setFielddefs(fielddefs& def)
+	{
+		m_fns = def;
+	}
+
+	virtual ~fieldsBase(){};
+
+	/** @endcond */
 
 public:
 
-	explicit inline fieldsBase(fielddefs& fns):m_fns(fns),m_invalidRecord(false){}
-	virtual ~fieldsBase(){};
-	inline void setInvalidRecord(bool v){m_invalidRecord = v;}
+
 	inline bool isInvalidRecord()const{return m_invalidRecord;}
 
-	inline field getFieldInternal(short index) const
+	inline field getFieldNoCheck(short index) const
 	{
 		return field(ptr((short)index), m_fns[(short)index], &m_fns);
 	}
@@ -116,10 +128,6 @@ public:
 		return &m_fns;
 	}
 
-	inline void setFielddefs(fielddefs& def)
-	{
-		m_fns = def;
-	}
 
 };
 

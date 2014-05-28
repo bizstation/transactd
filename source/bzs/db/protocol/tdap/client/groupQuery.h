@@ -66,7 +66,7 @@ inline int getFieldType(float )
 inline int compByKey(const fieldsBase& l, const fieldsBase& r, const int& s)
 {
 	assert((s < (int)l.size()) && (s < (int)r.size()));
-	return l.getFieldInternal(s).comp(r.getFieldInternal(s), 0);
+	return l.getFieldNoCheck(s).comp(r.getFieldNoCheck(s), 0);
 }
 
 
