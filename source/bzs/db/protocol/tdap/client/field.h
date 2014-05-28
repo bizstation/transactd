@@ -149,11 +149,14 @@ private:
 	void setFVNumeric(double data);
 	//  ---- end regacy interfaces ----  //
 
-	inline field()
-			: m_ptr(NULL), m_fd(NULL), m_fds(NULL) {};
-
 	inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
 			: m_ptr(ptr), m_fd((fielddef*)&fd), m_fds(fds) {};
+
+#ifdef SWIG //SWIG Wrapper need public constructor
+public:
+#endif
+	inline field()
+			: m_ptr(NULL), m_fd(NULL), m_fds(NULL) {};
 
 public:
 
