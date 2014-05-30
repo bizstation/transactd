@@ -114,7 +114,11 @@ class has_header
 	static  no test(...);
 	
 public:
+#ifdef SWIG
+	static const bool value;
+#else
 	static const bool value = sizeof(test<T>(0)) == sizeof(char);
+#endif
 };
 
 /* Container has readBefore(table_ptr, alias) function*/
@@ -716,6 +720,7 @@ public:
 		return readRange(map, q, func);
 	}
 
+#ifndef SWIG
 	template <class T2>
 	void read(T2& mdl, bool setKeyValueFromObj=true)
 	{
@@ -727,6 +732,7 @@ public:
 			nstable::throwError(_T("activeTable read"), &(*m_tb));
 		m_map.readMap(mdl, fds, m_option);
 	}
+#endif
 
 	template <class T2>
 	void update(T2& mdl, bool setKeyValueFromObj=true)

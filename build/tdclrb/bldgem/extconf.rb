@@ -54,6 +54,7 @@ generator         = arg_config('--generator', '').gsub(/"\n/, '')
 ruby_include_dirs = arg_config('--ruby_include_dirs', '').gsub(/"\n/, '')
 ruby_library_path = arg_config('--ruby_library_path', '').gsub(/"\n/, '')
 install_prefix    = arg_config('--install_prefix', '').gsub(/"\n/, '')
+build_type        = arg_config('--build_type', '').gsub(/"\n/, '')
 
 # boost
 if boost != '' && boost !=~ /^\-DBOOST_ROOT/
@@ -89,6 +90,15 @@ if install_prefix != '' && install_prefix !=~ /^\-DCMAKE_INSTALL_PREFIX/
   install_prefix = '-DTRANSACTD_CLIENTS_PREFIX="' + to_slash_path(install_prefix) + '"'
 end
 
+# build_type
+if build_type !=~ /^\-DCMAKE_BUILD_TYPE/
+  if build_type != ''
+    build_type = '-DCMAKE_BUILD_TYPE=' + build_type
+  else
+    build_type = '-DCMAKE_BUILD_TYPE=Release'
+  end
+end
+
 # ruby executable path
 ruby_executable = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name'])
 ruby_executable = '-DTRANSACTD_RUBY_EXECUTABLE_PATH="' + to_slash_path(ruby_executable) + '"'
@@ -99,7 +109,7 @@ gem_root = '-DTRANSACTD_RUBY_GEM_ROOT_PATH="' + to_slash_path(transactd_gem_root
 # cmake
 cmake_cmd = ['cmake', to_native_path(transactd_gem_root_relative), '-DTRANSACTD_RUBY_GEM=ON',
               generator, boost, ruby_executable, ruby_library_path, ruby_include_dirs,
-              install_prefix, gem_root, '>> cmake_generate.log'].join(' ')
+              install_prefix, gem_root, build_type, '>> cmake_generate.log'].join(' ')
 begin
   f = open('cmake_generate.log', 'w')
   f.puts cmake_cmd

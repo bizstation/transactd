@@ -134,7 +134,7 @@ include_directories(${TRANSACTD_ROOT};${TRANSACTD_RUBY_INCLUDE_PATH})
 # ==========================================================
 tdcl_add_compiler_options()
 foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  bz_add_cxx_flag("-DSWIGRUBY --std=c++0x -U__STRICT_ANSI__" "${build_type}")
+  bz_add_cxx_flag("-DSWIGRUBY -DSWIG_BUILDING --std=c++0x -U__STRICT_ANSI__" "${build_type}")
   if(MSVC)
     bz_set_MBCS_cxx_flag("${build_type}")
   endif()

@@ -742,10 +742,6 @@ abstract class transactd {
 
 	const ROW_MEM_BLOCK_RESERVE = ROW_MEM_BLOCK_RESERVE;
 
-	static function lexical_cast($v) {
-		return lexical_cast($v);
-	}
-
 	static function getFieldType($arg1) {
 		return getFieldType($arg1);
 	}
@@ -1987,7 +1983,7 @@ class queryBase {
 
 	const none = 0;
 
-	const hasOneJoin = 1;
+	const joinKeyValuesUnique = 1;
 
 	const joinWhereFields = 2;
 
@@ -2822,52 +2818,21 @@ class fielddefs {
 	protected $_pData=array();
 
 	function __set($var,$value) {
-		if ($var === 'm_stat') return fielddefs_m_stat_set($this->_cPtr,$value);
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
 		$this->_pData[$var] = $value;
 	}
 
 	function __isset($var) {
-		if (function_exists('fielddefs_'.$var.'_set')) return true;
 		if ($var === 'thisown') return true;
 		return array_key_exists($var, $this->_pData);
 	}
 
 	function __get($var) {
-		if ($var === 'm_stat') return fielddefs_m_stat_get($this->_cPtr);
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
 		return $this->_pData[$var];
 	}
 	function __construct($h) {
 		$this->_cPtr=$h;
-	}
-
-	function setAliases($p) {
-		fielddefs_setAliases($this->_cPtr,$p);
-	}
-
-	function addAllFileds($def) {
-		fielddefs_addAllFileds($this->_cPtr,$def);
-	}
-
-	function push_back($p) {
-		fielddefs_push_back($this->_cPtr,$p);
-	}
-
-	function remove($index) {
-		fielddefs_remove($this->_cPtr,$index);
-	}
-
-	function reserve($size) {
-		fielddefs_reserve($this->_cPtr,$size);
-	}
-
-	function clear() {
-		fielddefs_clear($this->_cPtr);
-	}
-
-	function resetUpdateIndicator() {
-		fielddefs_resetUpdateIndicator($this->_cPtr);
 	}
 
 	function indexByName($name) {
@@ -2890,18 +2855,6 @@ class fielddefs {
 
 	function size() {
 		return fielddefs_size($this->_cPtr);
-	}
-
-	function totalFieldLen() {
-		return fielddefs_totalFieldLen($this->_cPtr);
-	}
-
-	function copyFrom($tb) {
-		fielddefs_copyFrom($this->_cPtr,$tb);
-	}
-
-	function canUnion($r_) {
-		return fielddefs_canUnion($this->_cPtr,$r_);
 	}
 
 	static function create() {
@@ -2979,6 +2932,14 @@ class field {
 		return $this->_pData[$var];
 	}
 
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__field') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_field();
+	}
+
 	function ptr() {
 		return field_ptr($this->_cPtr);
 	}
@@ -2989,22 +2950,6 @@ class field {
 
 	function len() {
 		return field_len($this->_cPtr);
-	}
-
-	function varLenBytes() {
-		return field_varLenBytes($this->_cPtr);
-	}
-
-	function blobLenBytes() {
-		return field_blobLenBytes($this->_cPtr);
-	}
-
-	function __construct($ptr,$fd = null,$fds = null) {
-		if (is_resource($ptr) && get_resource_type($ptr) === '_p_bzs__db__protocol__tdap__client__field') {
-			$this->_cPtr=$ptr;
-			return;
-		}
-		$this->_cPtr=new_field($ptr,$fd,$fds);
 	}
 
 	function c_str() {
@@ -3047,26 +2992,8 @@ class field {
 		return field_getBin($this->_cPtr);
 	}
 
-	function comp($r_,$logType) {
+	function comp($r_,$logType=16) {
 		return field_comp($this->_cPtr,$r_,$logType);
-	}
-
-	function value($arg1) {
-		return field_value($this->_cPtr,$arg1);
-	}
-
-	static function createDummyField() {
-		$r=field_createDummyField();
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new field($r);
-		}
-		return $r;
-	}
-
-	static function deleteField($f) {
-		field_deleteField($f);
 	}
 }
 
@@ -3092,16 +3019,32 @@ abstract class fieldsBase {
 		$this->_cPtr=$h;
 	}
 
-	function setInvalidRecord($v) {
-		fieldsBase_setInvalidRecord($this->_cPtr,$v);
-	}
-
 	function isInvalidRecord() {
 		return fieldsBase_isInvalidRecord($this->_cPtr);
 	}
 
-	function getFieldInternal($index) {
-		$r=fieldsBase_getFieldInternal($this->_cPtr,$index);
+	function getFieldNoCheck($index) {
+		$r=fieldsBase_getFieldNoCheck($this->_cPtr,$index);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new field($r);
+		}
+		return $r;
+	}
+
+	function getFieldByIndex($index) {
+		$r=fieldsBase_getFieldByIndex($this->_cPtr,$index);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new field($r);
+		}
+		return $r;
+	}
+
+	function getFieldByName($name) {
+		$r=fieldsBase_getFieldByName($this->_cPtr,$name);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
@@ -3128,16 +3071,12 @@ abstract class fieldsBase {
 		return $r;
 	}
 
-	function setFielddefs($def) {
-		fieldsBase_setFielddefs($this->_cPtr,$def);
+	function getFieldByIndexRef($index,$return_field) {
+		fieldsBase_getFieldByIndexRef($this->_cPtr,$index,$return_field);
 	}
 
-	function getFieldByIndex($index,$return_field) {
-		fieldsBase_getFieldByIndex($this->_cPtr,$index,$return_field);
-	}
-
-	function getFieldByName($name,$return_field) {
-		fieldsBase_getFieldByName($this->_cPtr,$name,$return_field);
+	function getFieldByNameRef($name,$return_field) {
+		fieldsBase_getFieldByNameRef($this->_cPtr,$name,$return_field);
 	}
 }
 
@@ -3152,12 +3091,8 @@ class RecordIterator implements \Iterator {
 		$this->_record_cPtr = $record_cPtr;
 		$this->_position = 0;
 		$this->_count = fieldsBase_size($record_cPtr);
-		$this->_field = field::createDummyField();
 		$this->_fielddefs = $fielddefs;
-	}
-
-	function __destruct() {
-		field::deleteField($this->_field);
+		$this->_field = new field();
 	}
 
 	public function rewind() {
@@ -3169,7 +3104,7 @@ class RecordIterator implements \Iterator {
 	}
 
 	public function current() {
-		fieldsBase_getFieldByIndex($this->_record_cPtr, $this->_position, $this->_field);
+		fieldsBase_getFieldByIndexRef($this->_record_cPtr, $this->_position, $this->_field);
 		return $this->_field->getFV();
 	}
 
@@ -3187,11 +3122,7 @@ class Record extends fieldsBase implements \ArrayAccess, \Countable, \IteratorAg
 	private $_fielddefs = null;
 
 	function __clone() {
-		$this->_field = field::createDummyField();
-	}
-
-	function __destruct() {
-		field::deleteField($this->_field);
+		$this->_field = new field();
 	}
 
 	// IteratorAggregate
@@ -3214,10 +3145,10 @@ class Record extends fieldsBase implements \ArrayAccess, \Countable, \IteratorAg
 	public function offsetGet($offset) {
 		switch (\gettype($offset)) {
 			case "integer":
-				fieldsBase_getFieldByIndex($this->_cPtr, $offset, $this->_field);
+				fieldsBase_getFieldByIndexRef($this->_cPtr, $offset, $this->_field);
 				break;
 			case "string":
-				fieldsBase_getFieldByName($this->_cPtr, $offset, $this->_field);
+				fieldsBase_getFieldByNameRef($this->_cPtr, $offset, $this->_field);
 				break;
 			default:
 				throw new \OutOfRangeException();
@@ -3249,7 +3180,7 @@ class Record extends fieldsBase implements \ArrayAccess, \Countable, \IteratorAg
 	function values() {
 		$count = fieldsBase_size($this->_cPtr);
 		for ($i = 0; $i < $count; $i++) {
-			fieldsBase_getFieldByIndex($this->_cPtr, $i, $this->_field);
+			fieldsBase_getFieldByIndexRef($this->_cPtr, $i, $this->_field);
 			yield $this->_field->getFV();
 		}
 	}
@@ -3268,7 +3199,7 @@ class Record extends fieldsBase implements \ArrayAccess, \Countable, \IteratorAg
 		$ret = array();
 		$count = fieldsBase_size($this->_cPtr);
 		for ($i = 0; $i < $count; $i++) {
-			fieldsBase_getFieldByIndex($this->_cPtr, $i, $this->_field);
+			fieldsBase_getFieldByIndexRef($this->_cPtr, $i, $this->_field);
 			$ret[] = $this->_field->getFV();
 		}
 		return $ret;
@@ -3278,7 +3209,7 @@ class Record extends fieldsBase implements \ArrayAccess, \Countable, \IteratorAg
 		$ret = array();
 		$count = fieldsBase_size($this->_cPtr);
 		for ($i = 0; $i < $count; $i++) {
-			fieldsBase_getFieldByIndex($this->_cPtr, $i, $this->_field);
+			fieldsBase_getFieldByIndexRef($this->_cPtr, $i, $this->_field);
 			$ret[$this->_fielddefs->getFielddef($i)->nameA()] = $this->_field->getFV();
 		}
 		return $ret;
@@ -3302,8 +3233,8 @@ class Record extends fieldsBase implements \ArrayAccess, \Countable, \IteratorAg
 	}
 	function __construct($h) {
 		$this->_cPtr=$h;
-		$this->_field = field::createDummyField();
 		$this->_fielddefs = $this->fieldDefs();
+		$this->_field = new field();
 	}
 
 	static function createRecord($fdinfo) {
@@ -3512,7 +3443,7 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_recordset') {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__recordset') {
 			$this->_cPtr=$res;
 			$this->_memoryRecord_p_p = new_memoryRecord_p_p();
 			$this->_record = Record::createRecord($this->fieldDefs());
@@ -3604,7 +3535,7 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 		}
 		if (!is_resource($r)) return $r;
 		switch (get_resource_type($r)) {
-		case '_p_recordset': return new RecordSet($r);
+		case '_p_bzs__db__protocol__tdap__client__recordset': return new RecordSet($r);
 		default: return new RecordSet($r);
 		}
 	}
@@ -3658,7 +3589,7 @@ class map_orm {
 	}
 
 	function __construct($fdi) {
-		if (is_resource($fdi) && get_resource_type($fdi) === '_p_map_orm') {
+		if (is_resource($fdi) && get_resource_type($fdi) === '_p_bzs__db__protocol__tdap__client__map_orm') {
 			$this->_cPtr=$fdi;
 			return;
 		}
@@ -3730,32 +3661,12 @@ class groupQuery {
 		return $r;
 	}
 
-	function having($q) {
-		$r=groupQuery_having($this->_cPtr,$q);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new groupQuery($r);
-		}
-		return $r;
-	}
-
 	function getKeyFields() {
 		return groupQuery_getKeyFields($this->_cPtr);
 	}
 
 	function getResultFields() {
 		return groupQuery_getResultFields($this->_cPtr);
-	}
-
-	function getHaving() {
-		$r=groupQuery_getHaving($this->_cPtr);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new queryBase($r);
-		}
-		return $r;
 	}
 
 	function __construct($res=null) {
@@ -3815,8 +3726,8 @@ class ActiveTable {
 		return $this->_pData[$var];
 	}
 
-	function __construct($db,$tableName = null) {
-		if (is_resource($db) && get_resource_type($db) === '_p_bzs__db__protocol__tdap__client__activeTableT_map_orm_map_orm__mdl_typename_map_orm__fdi_typename_t') {
+	function __construct($db,$tableName) {
+		if (is_resource($db) && get_resource_type($db) === '_p_bzs__db__protocol__tdap__client__activeTableT_bzs__db__protocol__tdap__client__map_orm_bzs__db__protocol__tdap__client__map_orm__mdl_typename_bzs__db__protocol__tdap__client__map_orm__fdi_typename_t') {
 			$this->_cPtr=$db;
 			return;
 		}
@@ -3836,13 +3747,8 @@ class ActiveTable {
 	}
 
 	function index($v) {
-		$r=ActiveTable_index($this->_cPtr,$v);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		ActiveTable_index($this->_cPtr,$v);
+		return $this;
 	}
 
 	function table() {
@@ -3850,13 +3756,7 @@ class ActiveTable {
 	}
 
 	function option($v) {
-		$r=ActiveTable_option($this->_cPtr,$v);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_option($this->_cPtr,$v);
 	}
 
 	function del() {
@@ -3864,23 +3764,11 @@ class ActiveTable {
 	}
 
 	function alias($src,$dst) {
-		$r=ActiveTable_alias($this->_cPtr,$src,$dst);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_alias($this->_cPtr,$src,$dst);
 	}
 
 	function resetAlias() {
-		$r=ActiveTable_resetAlias($this->_cPtr);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_resetAlias($this->_cPtr);
 	}
 
 	function getWritableRecord() {
@@ -3894,91 +3782,41 @@ class ActiveTable {
 	}
 
 	function keyValue1($kv0) {
-		$r=ActiveTable_keyValue1($this->_cPtr,$kv0);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_keyValue1($this->_cPtr,$kv0);
 	}
 
 	function keyValue2($kv0,$kv1) {
-		$r=ActiveTable_keyValue2($this->_cPtr,$kv0,$kv1);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_keyValue2($this->_cPtr,$kv0,$kv1);
 	}
 
 	function keyValue3($kv0,$kv1,$kv2) {
-		$r=ActiveTable_keyValue3($this->_cPtr,$kv0,$kv1,$kv2);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_keyValue3($this->_cPtr,$kv0,$kv1,$kv2);
 	}
 
 	function keyValue4($kv0,$kv1,$kv2,$kv3) {
-		$r=ActiveTable_keyValue4($this->_cPtr,$kv0,$kv1,$kv2,$kv3);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_keyValue4($this->_cPtr,$kv0,$kv1,$kv2,$kv3);
 	}
 
 	function keyValue5($kv0,$kv1,$kv2,$kv3,$kv4) {
-		$r=ActiveTable_keyValue5($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_keyValue5($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4);
 	}
 
 	function keyValue6($kv0,$kv1,$kv2,$kv3,$kv4,$kv5) {
-		$r=ActiveTable_keyValue6($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_keyValue6($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5);
 	}
 
 	function keyValue7($kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6) {
-		$r=ActiveTable_keyValue7($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_keyValue7($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6);
 	}
 
 	function keyValue8($kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7) {
-		$r=ActiveTable_keyValue8($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
-		}
-		return $r;
+		return ActiveTable_keyValue8($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
 	}
 
-	function read_rs($mdls,$q) {
-		$r=ActiveTable_read_rs($this->_cPtr,$mdls,$q);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new ActiveTable($r);
+	function read_rs($mdls,$q,$func=null) {
+		switch (func_num_args()) {
+		case 2: $r=ActiveTable_read_rs($this->_cPtr,$mdls,$q); break;
+		default: $r=ActiveTable_read_rs($this->_cPtr,$mdls,$q,$func);
 		}
 		return $r;
 	}
@@ -3997,11 +3835,7 @@ class ActiveTable {
 		case 12: $r=ActiveTable_join($this->_cPtr,$mdls,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9,$name10); break;
 		default: $r=ActiveTable_join($this->_cPtr,$mdls,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9,$name10,$name11);
 		}
-		if (!is_resource($r)) return $r;
-		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__activeTableT_map_orm_map_orm__mdl_typename_map_orm__fdi_typename_t': return new ActiveTable($r);
-		default: return new ActiveTable($r);
-		}
+		return $r;
 	}
 
 	function outerJoin($mdls,$q,$name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null,$name9=null,$name10=null,$name11=null) {
@@ -4018,11 +3852,7 @@ class ActiveTable {
 		case 12: $r=ActiveTable_outerJoin($this->_cPtr,$mdls,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9,$name10); break;
 		default: $r=ActiveTable_outerJoin($this->_cPtr,$mdls,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9,$name10,$name11);
 		}
-		if (!is_resource($r)) return $r;
-		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__activeTableT_map_orm_map_orm__mdl_typename_map_orm__fdi_typename_t': return new ActiveTable($r);
-		default: return new ActiveTable($r);
-		}
+		return $r;
 	}
 
 	function _keyValue($kv0,$kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
@@ -4036,11 +3866,7 @@ class ActiveTable {
 		case 7: $r=ActiveTable__keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6); break;
 		default: $r=ActiveTable__keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
 		}
-		if (!is_resource($r)) return $r;
-		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__activeTableT_map_orm_map_orm__mdl_typename_map_orm__fdi_typename_t': return new ActiveTable($r);
-		default: return new ActiveTable($r);
-		}
+		return $this;
 	}
 }
 

@@ -158,7 +158,7 @@ private:
 			: m_ptr(ptr), m_fd((fielddef*)&fd), m_fds(fds) {};
 
 /** @cond INTERNAL */
-#ifdef SWIG //SWIG Wrapper need public constructor
+#if defined(SWIG) || defined(SWIG_BUILDING) //SWIG Wrapper need public constructor
 public:
 #endif
 	inline field()

@@ -113,20 +113,20 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataLen;
 
-%ignore ::recordsetSorter;
-%ignore ::multiRecordAlocatorImple;
-%ignore ::setValue;
-%ignore ::create;
-%ignore ::map_orm_fdi;
-%ignore ::createFdi;
-%ignore ::destroyFdi;
-%ignore ::initFdi;
+%ignore bzs::db::protocol::tdap::client::recordset::first;
+%ignore bzs::db::protocol::tdap::client::recordset::last;
+%ignore bzs::db::protocol::tdap::client::recordsetSorter;
+%ignore bzs::db::protocol::tdap::client::map_orm_fdi;
+%ignore bzs::db::protocol::tdap::client::multiRecordAlocatorImple;
+%ignore bzs::db::protocol::tdap::client::setValue;
+%ignore bzs::db::protocol::tdap::client::fieldValue;
+%ignore bzs::db::protocol::tdap::client::create;
+%ignore bzs::db::protocol::tdap::client::createFdi;
+%ignore bzs::db::protocol::tdap::client::destroyFdi;
+%ignore bzs::db::protocol::tdap::client::initFdi;
 
 %ignore bzs::db::protocol::tdap::client::fieldShare;
 %ignore bzs::db::protocol::tdap::client::autoMemory;
-
-%ignore recordset::first;
-%ignore recordset::last;
 
 %ignore bzs::db::protocol::tdap::client::qlogic;
 %ignore bzs::db::protocol::tdap::client::databaseManager;
@@ -163,8 +163,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::activeTable::read(collection_vec_type&, queryBase&, validationFunc);
 %ignore bzs::db::protocol::tdap::client::activeTable::read(collection_vec_type&, queryBase&);
 %ignore bzs::db::protocol::tdap::client::activeTable<map_orm>::read(recordset&, queryBase&, validationFunc);
-%ignore bzs::db::protocol::tdap::client::activeTable<map_orm>::read(recordset&, bool);
-%ignore bzs::db::protocol::tdap::client::activeTable<map_orm>::read(recordset&);
 
 %ignore bzs::db::protocol::tdap::client::compByKey;
 %ignore bzs::db::protocol::tdap::client::grouping_comp;
@@ -221,8 +219,10 @@ using namespace bzs::db::protocol::tdap::client;
 %rename(tdapLastErr) bzs::db::protocol::tdap::client::nstable::tdapErr(HWND, _TCHAR*);
 %rename(createRecord) bzs::db::protocol::tdap::client::memoryRecord::create(fielddefs&);
 %rename(Record) bzs::db::protocol::tdap::client::memoryRecord;
-%rename(RecordSet) recordset;
+%rename(RecordSet) bzs::db::protocol::tdap::client::recordset;
 %rename(getFielddef) bzs::db::protocol::tdap::client::fielddefs::operator[] (int index) const;
+%rename(getFieldByIndex) bzs::db::protocol::tdap::client::fieldsBase::operator[](short) const;
+%rename(getFieldByName)  bzs::db::protocol::tdap::client::fieldsBase::operator[](const _TCHAR*) const;
 
 
 /* ===============================================
@@ -447,23 +447,15 @@ using namespace bzs::db::protocol::tdap::client;
 /* ===============================================
       expand field, fieldsBase, recordset
 =============================================== */
-%extend bzs::db::protocol::tdap::client::field {
-  static field* createDummyField() {
-    return new  field(NULL, *((fielddef*)0), NULL);
-  }
-  static void deleteField(field* f) {
-    delete f;
-  }
-};
 %extend bzs::db::protocol::tdap::client::fieldsBase {
-  void getFieldByIndex(short index, field& return_field) const {
+  void getFieldByIndexRef(short index, field& return_field) const {
     return_field = self->operator[](index);
   }
-  void getFieldByName(const _TCHAR* name, field& return_field) const {
+  void getFieldByNameRef(const _TCHAR* name, field& return_field) const {
     return_field = self->operator[](name);
   }
 };
-%extend recordset {
+%extend bzs::db::protocol::tdap::client::recordset {
   void getRow(size_t index, bzs::db::protocol::tdap::client::memoryRecord** return_record){
     *return_record = (self->operator[](index)).get();
   }
@@ -478,17 +470,12 @@ using namespace bzs::db::protocol::tdap::client;
 =============================================== */
 #if defined(SWIGRUBY)
 %{
+  // %pointer_functions(bzs::db::protocol::tdap::client::memoryRecord*, memoryRecord_p_p)
   static bzs::db::protocol::tdap::client::memoryRecord* *new_memoryRecord_p_p() {
     return new bzs::db::protocol::tdap::client::memoryRecord*();
   }
-  static bzs::db::protocol::tdap::client::memoryRecord* *copy_memoryRecord_p_p(bzs::db::protocol::tdap::client::memoryRecord* value) {
-    return new bzs::db::protocol::tdap::client::memoryRecord*(value);
-  }
   static void delete_memoryRecord_p_p(bzs::db::protocol::tdap::client::memoryRecord* *obj) {
     if (obj) delete obj;
-  }
-  static void memoryRecord_p_p_assign(bzs::db::protocol::tdap::client::memoryRecord* *obj, bzs::db::protocol::tdap::client::memoryRecord* value) {
-    *obj = value;
   }
   static bzs::db::protocol::tdap::client::memoryRecord* memoryRecord_p_p_value(bzs::db::protocol::tdap::client::memoryRecord* *obj) {
     return *obj;
