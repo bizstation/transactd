@@ -67,8 +67,10 @@ void readUsers(table_ptr tb, std::vector<user_ptr>& users)
 {
 
 	// Get filterIterator. This filter is execute on server side.
-	filterParams fp( _T("group = 3"), 1 , 0);
-	findIterator itsf = find(tb, keynum_group, fp, 3);
+	query q;
+	q.where(_T("group"), _T("="), _T("3")).reject(0);
+
+	findIterator itsf = find(tb, keynum_group, q, 3);
 
 	// O/R mapping functional object
 	userMappper ormap(users);

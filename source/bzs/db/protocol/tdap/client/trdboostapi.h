@@ -56,6 +56,8 @@ enum eFindCurrntType{
 typedef boost::shared_ptr<database>database_ptr;
 typedef boost::shared_ptr<table>table_ptr;
 
+
+/*
 class filterParams
 {
 	std::_tstring m_str;
@@ -71,6 +73,233 @@ public:
 	inline int rejectCount() const {return m_rejectCount;}
 	inline int maxRecords() const {return m_maxRecords;}
 
+
+};
+
+*/
+
+
+/** @cond INTERNAL */
+
+inline std::_tstring lexical_cast(__int64 v)
+{
+	_TCHAR tmp[50];
+	_i64tot_s(v, tmp, 50, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(int v)
+{
+	_TCHAR tmp[50];
+	_ltot_s(v, tmp, 50, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(short v)
+{
+	_TCHAR tmp[50];
+	_ltot_s((int)v, tmp, 50, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(char v)
+{
+	_TCHAR tmp[50];
+	_ltot_s((int)v, tmp, 50, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(double v)
+{
+	_TCHAR tmp[50];
+	_stprintf_s(tmp, 50, _T("%.*f"),15, v);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(float v)
+{
+	_TCHAR tmp[50];
+	_stprintf_s(tmp, 50, _T("%.*f"),15, v);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(const _TCHAR* v)
+{
+	return std::_tstring(v);
+}
+
+class qlogic
+{
+	std::_tstring m_name;
+	std::_tstring m_value;
+	std::_tstring m_type;
+	combineType m_next;
+
+public:
+
+	template <class T>
+	qlogic(const _TCHAR* name, const _TCHAR* type, T value, combineType next)
+		:m_name(name),m_type(type),m_next(next)
+	{
+		m_value = lexical_cast(value);
+	}
+};
+/** @endcond */
+
+class query : public queryBase
+{
+public:
+	query():queryBase(){}
+	query& reset(){queryBase::reset();return *this;}
+
+	query& select(const TCHAR* name, const TCHAR* name1=NULL, const TCHAR* name2=NULL, const TCHAR* name3=NULL
+				,const TCHAR* name4=NULL, const TCHAR* name5=NULL, const TCHAR* name6=NULL, const TCHAR* name7=NULL
+				,const TCHAR* name8=NULL, const TCHAR* name9=NULL, const TCHAR* name10=NULL)
+	{
+		if (_tcscmp(name, _T("*"))==0)
+		{
+			clearSelectFields();
+			return *this;
+		}
+		addField(name);
+		if (name1) addField(name1);
+		if (name2) addField(name2);
+		if (name3) addField(name3);
+		if (name4) addField(name4);
+		if (name5) addField(name5);
+		if (name6) addField(name6);
+		if (name7) addField(name7);
+		if (name8) addField(name8);
+		if (name9) addField(name9);
+		if (name10) addField(name10);
+		return *this;
+	}
+
+	template <class T>
+	query& where(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	{
+		addLogic(name, qlogic, lexical_cast(value).c_str());
+		return *this;
+	}
+
+	template <class T>
+	query& and_(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	{
+		if (whereTokens() == 0)
+			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
+
+		addLogic(_T("and"), name, qlogic, lexical_cast(value).c_str());
+		return *this;
+	}
+
+	template <class T>
+	query& or_(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	{
+		if (whereTokens() == 0)
+			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
+
+		addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
+		return *this;
+	}
+
+	template <class T>
+	query& in(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	{
+		if (whereTokens() == 0)
+			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
+
+		addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2, class T3
+				,class T4, class T5 , class T6 , class T7>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+							,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv5).c_str());
+		addSeekKeyValue(lexical_cast(kv6).c_str());
+		addSeekKeyValue(lexical_cast(kv7).c_str());
+		return *this;
+	}
+	template <class T0, class T1 , class T2, class T3
+				,class T4, class T5 , class T6>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+							,const T4 kv4, const T5 kv5, const T6 kv6)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv5).c_str());
+		addSeekKeyValue(lexical_cast(kv6).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2, class T3
+				,class T4, class T5>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+							,const T4 kv4, const T5 kv5)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv5).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2, class T3, class T4>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3, const T4 kv4)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2, class T3>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1>
+	query& in(const T0 kv0, const T1 kv1)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		return *this;
+	}
+
+	template <class T0>
+	query& in(const T0 kv0)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		return *this;
+	}
 
 };
 
@@ -411,10 +640,10 @@ inline stepRvIterator readStepRv(table_ptr tb)
 
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::
 			set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
 	tb->find(table::findForword);
@@ -422,80 +651,80 @@ inline findIterator find(table_ptr tb, const char_td keynum, const filterParams&
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
 	tb->find(table::findForword);
 	return findIterator(*tb);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5>
-inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
 	tb->find(table::findForword);
 	return findIterator(*tb);
 }
 
 template <class T0, class T1, class T2, class T3, class T4>
-inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
 	tb->find(table::findForword);
 	return findIterator(*tb);
 }
 
 template <class T0, class T1, class T2, class T3>
-inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
 	tb->find(table::findForword);
 	return findIterator(*tb);
 }
 
 template <class T0, class T1, class T2>
-inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
 	tb->find(table::findForword);
 	return findIterator(*tb);
 }
 
 template <class T0, class T1>
-inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
 	tb->find(table::findForword);
 	return findIterator(*tb);
 }
 
 template <class T0>
-inline findIterator find(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0>::set(tb, keynum, kv0);
 	tb->find(table::findForword);
 	return findIterator(*tb);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::
 			set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
 	tb->find(table::findBackForword);
@@ -503,93 +732,93 @@ inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterPar
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6);
 	tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5>
-inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5);
 	tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
 
 template <class T0, class T1, class T2, class T3, class T4>
-inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3, kv4);
 	tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
 
 template <class T0, class T1, class T2, class T3>
-inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
 	tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
 
 template <class T0, class T1, class T2>
-inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
 	tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
 
 template <class T0, class T1>
-inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
 	tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
 
 template <class T0>
-inline findRvIterator findRv(table_ptr tb, const char_td keynum, const filterParams& fp
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0)
 {
-	tb->setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+	tb->setQuery(&q);
 	keyValueSetter<T0>::set(tb, keynum, kv0);
 	tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
 
-inline findIterator getFindIterator(indexIterator it, const filterParams& fp
+inline findIterator getFindIterator(indexIterator it, const queryBase& q
 					,bool isCurrentValid)
 
 {
 	if (!it.isEnd())
 	{
-		it.tb().setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+		it.tb().setQuery(&q);
 		if (!isCurrentValid)
 			it.tb().findNext(false);
 	}
 	return findIterator(it.tb());
 }
 
-inline findRvIterator getFindIterator(indexRvIterator it, const filterParams& fp
+inline findRvIterator getFindIterator(indexRvIterator it, const queryBase& q
 					,bool isCurrentValid)
 {
 	if (!it.isEnd())
-		it.tb().setFilter(fp.filter(), fp.rejectCount(), fp.maxRecords());
+		it.tb().setQuery(&q);
 	if (!isCurrentValid)
 		it.tb().findPrev(false);
 	return findRvIterator(it.tb());
