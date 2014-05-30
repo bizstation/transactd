@@ -106,7 +106,6 @@ public:
 
 	inline size_t size() const {return m_fns.size();}
 
-
 	inline field fd(short index) const
 	{
 		return operator[](index);

@@ -209,6 +209,14 @@ class groupQuery
 		}
 	}
 
+	template <class Container>
+	bool isHavingRow(const typename Container::row_type& row)
+	{
+		row;
+		//Currently no support having.
+		return true;
+	}
+
 public:
 	groupQuery& reset()
 	{
@@ -243,13 +251,20 @@ public:
 		return *this;
 	}
 
+	/*
+
+	ToDo implement having
 	groupQuery& having(const queryBase& q) {m_having = &q;return *this;}
+
+	const queryBase& getHaving() const {return *m_having;}
+
+	*/
+
 
 	const std::vector<std::_tstring>& getKeyFields()const {return m_keyFields;}
 
 	const std::_tstring& getResultFields()const {return m_resultField;}
 
-	const queryBase& getHaving() const {return *m_having;}
 
 	template <class Container>
 	void getFieldIndexes(Container& mdls, std::vector<typename Container::key_type>& fieldIndexes)
@@ -305,7 +320,8 @@ public:
 		{
 			typename Container::row_type cur = c[index[i]];
 			setValue(cur, resultKey, funcs[i].result());
-			mdls.push_back(cur);
+			if (isHavingRow(cur))
+				mdls.push_back(cur);
 		}
 		removeFileds(mdls);
 	}
