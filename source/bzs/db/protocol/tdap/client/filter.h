@@ -147,15 +147,20 @@ public:
 		return true;
 	}
 
-	unsigned char* writeBuffer(unsigned char* p, bool estimate, bool end)
+	unsigned char* writeBuffer(unsigned char* p, bool estimate, bool end, bool isTransactd) const
 	{
 		int n = sizeof(len);
 		if (!estimate)
 		{
-			memcpy(p, &len, n);
-			memcpy(p+n, data, len);
-		}
-		return p + n + len;
+			if (isTransactd)
+				memcpy(p, &len, n);
+			else
+				n = 0;
+			memcpy(p + n, data, len);
+		}else if (!isTransactd)
+         	n = 0;
+
+		return p  + n + len;
 	}
 
 };
@@ -281,7 +286,7 @@ public:
 		return false;
 	}
 
-	unsigned char* writeBuffer(unsigned char* p, bool estimate, bool end)
+	unsigned char* writeBuffer(unsigned char* p, bool estimate, bool end) const
 	{
 		int n = sizeof(logic) - sizeof(unsigned char*);
 		if (!estimate)
@@ -410,7 +415,7 @@ public:
 			len = size;
 	}
 
-	unsigned char* writeBuffer(unsigned char* p, bool estimate)
+	unsigned char* writeBuffer(unsigned char* p, bool estimate) const
 	{
 		int n = sizeof(header);
 		if (!estimate) memcpy(p, this, n);
@@ -689,7 +694,7 @@ class filter
 		if (m_seeksMode)
 		{
 			for (size_t i=first;i< last;++i)
-				p = m_seeks[i].writeBuffer(p, estimate, (i==(last-1)));
+				p = m_seeks[i].writeBuffer(p, estimate, (i==(last-1)), true);
 			if (!estimate)
 				m_seeksWritedCount += m_hd.logicalCount;
 

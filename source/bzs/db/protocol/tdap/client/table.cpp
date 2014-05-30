@@ -535,6 +535,23 @@ bookmark_td table::bookmarkFindCurrent() const
 
 }
 
+void table::btrvSeekMulti()
+{
+	m_impl->rc->reset();
+	const std::vector<client::seek>& seeks =  m_impl->filterPtr->seeks();
+	const bool transactd = false;
+	for (int i=0;i<(int)seeks.size();++i)
+	{
+		seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, false, true, transactd);
+		m_keylen = seeks[i].len;
+		seek();
+		//move select field
+		// const std::vector<short>& selectFieldIndexes(){return m_selectFieldIndexes;}
+		//if (m_stat == 0)
+	}
+
+}
+
 void table::find(eFindType type)
 {
 	if (!m_impl->filterPtr)
@@ -561,8 +578,8 @@ void table::find(eFindType type)
 	{
 		if (op == TD_KEY_SEEK_MULTI)
 		{
-			//P.SQL not support TD_KEY_SEEK_MULTI
-			m_stat = STATUS_FILTERSTRING_ERROR;
+
+			btrvSeekMulti();
 			return;
 		}
 		if (type == findForword)

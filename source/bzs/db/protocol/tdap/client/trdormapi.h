@@ -38,9 +38,10 @@ namespace tdap
 namespace client
 {
 
+/* Single database inplemantation idatabaseManager
+*/
 
-
-class databaseManager : boost::noncopyable
+class databaseManager : public idatabaseManager, private boost::noncopyable
 {
 	database* m_db;
 	database_ptr m_dbPtr;
@@ -61,11 +62,27 @@ public:
 		if (index !=-1)
 			return  m_tables[index];
 		table_ptr t = openTable(m_db, name);
-		m_tables.push_back(t);
+		if (t)
+			m_tables.push_back(t);
 		return t;
 	}
-	database* db(){return m_db;}
 
+	table_ptr table(short index)
+	{
+		tabledef* td = m_db->dbDef()->tableDefs(index);
+		if (td)
+			return table(td->tableName());
+		return table_ptr();
+	}
+
+	inline void setOption(__int64 /*v*/){};
+	inline __int64 option(){return 0;};
+	inline void beginTrn(short bias){m_db->beginTrn(bias);};
+	inline void endTrn(){m_db->endTrn();}
+	inline void abortTrn(){m_db->abortTrn();}
+	inline bool enableTrn(){m_db->enableTrn();}
+	inline void beginSnapshot(){m_db->beginSnapshot();}
+	inline void endSnapshot(){m_db->endSnapshot();}
 };
 
 
@@ -357,11 +374,10 @@ protected:
 	FDI* m_fdi;
 	MAP m_map;
 	int m_option;
-	bool m_useTransactd;
 	fdNmaeAlias m_alias;
 
 	inline T& getItem(collection_vec_type& mdls, unsigned int index){return *(mdls[index]);}
-	void init(databaseManager& mgr, const _TCHAR* name)
+	void init(idatabaseManager& mgr, const _TCHAR* name)
 	{
 		m_tb = mgr.table(name);
 	}
@@ -417,8 +433,8 @@ protected:
 					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
 					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
 	{
-		if (!m_useTransactd)
-			nstable::throwError(_T("activeTable P.SQL can not use this"), (short_td)0);
+		//if (!m_tb->isUseTransactd())
+		//	nstable::throwError(_T("activeTable P.SQL can not use this"), (short_td)0);
 		if (mdls.size()==0) return;
 		reverseAliasNamesQuery(q);
 		q.clearSeekKeyValues();
@@ -500,11 +516,10 @@ protected:
 
 public:
 
-	explicit activeTable(databaseManager& mgr)
+	explicit activeTable(idatabaseManager& mgr)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
-			,m_useTransactd(mgr.db()->isUseTransactd())
 			{
 				init(mgr, m_map.getTableName());
 				if (table() && m_fdi)
@@ -515,7 +530,6 @@ public:
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
-			,m_useTransactd(db->isUseTransactd())
 			{
 				init(db, m_map.getTableName());
 				if (table() && m_fdi)
@@ -523,11 +537,10 @@ public:
 			}
 
 
-	explicit activeTable(databaseManager& mgr, const _TCHAR* tableName)
+	explicit activeTable(idatabaseManager& mgr, const _TCHAR* tableName)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
-			,m_useTransactd(mgr.db()->isUseTransactd())
 			{
 				init(mgr, tableName);
 				if (table() && m_fdi)
@@ -538,7 +551,6 @@ public:
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
-			,m_useTransactd(db->isUseTransactd())
 			{
 				init(db, tableName);
 				if (table() && m_fdi)
@@ -549,7 +561,6 @@ public:
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
-			,m_useTransactd(db->isUseTransactd())
 			{
 				init(db, tableName);
 				if (table() && m_fdi)
@@ -647,7 +658,7 @@ public:
 	}
 
 	template <class Any_Map_type>
-	activeTable& readRange(Any_Map_type& map, queryBase& q)
+	activeTable& readMap(Any_Map_type& map, queryBase& q)
 	{
 		mraResetter mras(m_tb);
 		reverseAliasNamesQuery(q);
@@ -670,7 +681,7 @@ public:
 	}
 
 	template <class Any_Map_type>
-	activeTable& readRange(Any_Map_type& map, queryBase& q, validationFunc func)
+	activeTable& readMap(Any_Map_type& map, queryBase& q, validationFunc func)
 	{
 		mraResetter mras(m_tb);
 		reverseAliasNamesQuery(q);
@@ -696,20 +707,20 @@ public:
 	activeTable& read(collection_vec_type& mdls, queryBase& q, validationFunc func)
 	{
 		mdlsHandler<MAP, collection_vec_type> map(mdls);
-		return readRange(map, q, func);
+		return readMap(map, q, func);
 	}
 
 	activeTable& read(collection_vec_type& mdls, queryBase& q)
 	{
 		mdlsHandler<MAP, collection_vec_type> map(mdls);
-		return readRange(map, q);
+		return readMap(map, q);
 	}
 
 	template <class Container>
 	activeTable& read(Container& mdls, queryBase& q)
 	{
 		typename MAP::collection_orm_typename map(mdls);
-		return readRange(map, q);
+		return readMap(map, q);
 	}
 
 	
@@ -717,7 +728,7 @@ public:
 	activeTable& read(Container& mdls, queryBase& q, validationFunc func)
 	{
 		typename MAP::collection_orm_typename map(mdls);
-		return readRange(map, q, func);
+		return readMap(map, q, func);
 	}
 
 #ifndef SWIG
@@ -837,7 +848,7 @@ public:
 		typename Container::iterator it = begin(mdls),itb = begin(mdls),ite = end(mdls);
 		it = itb = begin(mdls);
 		T& mdlb = *(*it);
-		if (!m_useTransactd)
+		if (!m_tb->isUseTransactd())
 			nstable::throwError(_T("activeTable P.SQL can not use this"), (short_td)0);
 		while(it != ite)
 		{

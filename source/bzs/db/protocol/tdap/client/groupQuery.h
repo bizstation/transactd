@@ -210,9 +210,9 @@ class groupQuery
 	}
 
 	template <class Container>
-	bool isHavingRow(const typename Container::row_type& row)
+	bool isHavingRow(typename Container::row_type& r)
 	{
-		row;
+		r;
 		//Currently no support having.
 		return true;
 	}
@@ -320,7 +320,7 @@ public:
 		{
 			typename Container::row_type cur = c[index[i]];
 			setValue(cur, resultKey, funcs[i].result());
-			if (isHavingRow(cur))
+			if (isHavingRow<Container>(cur))
 				mdls.push_back(cur);
 		}
 		removeFileds(mdls);

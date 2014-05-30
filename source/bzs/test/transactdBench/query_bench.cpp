@@ -122,8 +122,11 @@ int _tmain(int argc, _TCHAR* argv[])
 			host = argv[2];
 		if (argc >= 2)
 			makeDatabase = (_ttol(argv[1])!=0);
-
-		connectParams param(_T("tdap"), host, _T("querytest"), _T("test.bdf"));
+		#ifndef USE_PSQL_DATABASE
+		connectParams param(_T("tdap"), host, _T("querytest"), _T("test"));
+		#else
+		connectParams param(_T("btrv"), host, _T("querytest"), _T("test"));
+		#endif
 		param.setMode(TD_OPEN_NORMAL);
 		if (prebuiltData(db, param, makeDatabase))
 		{

@@ -58,7 +58,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		openDatabase(db, param);
 
 		table_ptr tb = openTable(db, _T("user"));
-		transaction trn(db);
+		dbTransaction trn(db);
 
 		//start transaction
 		trn.begin();

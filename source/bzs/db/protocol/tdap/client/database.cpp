@@ -453,7 +453,6 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate, const _TC
 			createTable(FileNum, buf);
 			if (m_stat != STATUS_SUCCESS)
 			{
-				m_stat = tb->m_stat;
 				tb->release();
 				return NULL;
 			}

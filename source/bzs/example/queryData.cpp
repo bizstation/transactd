@@ -27,6 +27,17 @@
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
+#ifndef USE_PSQL_DATABASE
+
+#define USER_STRING_TYPE ft_myvarchar
+#define GROUP_STRING_TYPE ft_myvarbinary
+
+#else
+
+#define USER_STRING_TYPE ft_zstring
+#define GROUP_STRING_TYPE ft_zstring
+
+#endif
 
 bool showDbdefError(dbdef* def, const _TCHAR* msg)
 {
@@ -50,13 +61,13 @@ bool createUserTable(dbdef* def)
 {
 	short tableid = 1;
 	tabledef t;
-	memset(&t, 0, sizeof(t));
 	tabledef* td = &t;
 	td->charsetIndex = mysql::charsetIndex(GetACP());
 	td->schemaCodePage = CP_UTF8;
 	td->id = tableid;
 	td->setTableName(_T("user"));
-	td->setFileName(_T("user"));
+	td->setFileName(_T("user.dat"));
+
 	def->insertTable(td);
 	if (def->stat()!=0)
 		return showDbdefError(def, _T("user insertTable"));
@@ -71,7 +82,7 @@ bool createUserTable(dbdef* def)
 	fd = def->insertField(tableid, filedIndex);
 #ifdef LINUX
 	const char* fd_name = "名前";
-#else 
+#else
 	#ifdef _UNICODE
 		const wchar_t* fd_name = L"名前";
 	#else
@@ -81,7 +92,7 @@ bool createUserTable(dbdef* def)
 #endif
 
 	fd->setName(fd_name);
-	fd->type = ft_myvarchar;
+	fd->type = USER_STRING_TYPE;
 	fd->setLenByCharnum(20);
 
 	++filedIndex;
@@ -93,26 +104,26 @@ bool createUserTable(dbdef* def)
 	++filedIndex;
 	fd =  def->insertField(tableid, filedIndex);
 	fd->setName(_T("tel"));
-	fd->type = ft_myvarchar;
+	fd->type = USER_STRING_TYPE;
 	fd->setLenByCharnum(21);
 
 	char keyNum = 0;
 	keydef* kd = def->insertKey(tableid, keyNum);
-	keySegment& seg1 = kd->segments[0];
-	seg1.fieldNum = 0;
-	seg1.flags.bit8 = true;//extended key type
-	seg1.flags.bit1 = true;//chanageable
+	keySegment* seg1 = &kd->segments[0];
+	seg1->fieldNum = 0;
+	seg1->flags.bit8 = true;//extended key type
+	seg1->flags.bit1 = true;//chanageable
 	kd->segmentCount = 1;
 	td = def->tableDefs(tableid);
 	td->primaryKeyNum = keyNum;
 
 	++keyNum;
 	kd = def->insertKey(tableid, keyNum);
-	seg1 = kd->segments[0];
-	seg1.fieldNum = 2;
-	seg1.flags.bit0 = true;
-	seg1.flags.bit8 = true;
-	seg1.flags.bit1 = true;
+	seg1 = &kd->segments[0];
+	seg1->fieldNum = 2;
+	seg1->flags.bit0 = true;
+	seg1->flags.bit8 = true;
+	seg1->flags.bit1 = true;
 	kd->segmentCount = 1;
 
 	def->updateTableDef(tableid);
@@ -127,7 +138,6 @@ bool createGroupTable(dbdef* def)
 	short tableid = 2;
 	tabledef t;
 	tabledef* td = &t;
-	memset(&t, 0, sizeof(t));
 	td->charsetIndex = mysql::charsetIndex(GetACP());
 	td->schemaCodePage = CP_UTF8;
 	td->id = tableid;
@@ -136,7 +146,7 @@ bool createGroupTable(dbdef* def)
 
 	def->insertTable(td);
 	if (def->stat()!=0)
-	    return showDbdefError(def, _T("groups insertTable"));
+		return showDbdefError(def, _T("groups insertTable"));
 
 	short filedIndex = 0;
 	fielddef* fd =  def->insertField(tableid, filedIndex);
@@ -147,22 +157,22 @@ bool createGroupTable(dbdef* def)
 	++filedIndex;
 	fd =  def->insertField(tableid, filedIndex);
 	fd->setName(_T("name"));
-	fd->type = ft_myvarbinary;
+	fd->type = GROUP_STRING_TYPE;
 	fd->len = 33;
 
 	char keyNum = 0;
 	keydef* kd = def->insertKey(tableid, keyNum);
-	keySegment& seg1 = kd->segments[0];
-	seg1.fieldNum = 0;
-	seg1.flags.bit8 = true;//extended key type
-	seg1.flags.bit1 = true;//chanageable
+	keySegment* seg1 = &kd->segments[0];
+	seg1->fieldNum = 0;
+	seg1->flags.bit8 = true;//extended key type
+	seg1->flags.bit1 = true;//chanageable
 	kd->segmentCount = 1;
 
 	td = def->tableDefs(tableid);
 	td->primaryKeyNum = keyNum;
 	def->updateTableDef(tableid);
 	if (def->stat()!=0)
-	    return showDbdefError(def, _T("groups updateTableDef"));
+		return showDbdefError(def, _T("groups updateTableDef"));
 	return true;
 }
 
@@ -170,7 +180,6 @@ bool createUserExtTable(dbdef* def)
 {
 	short tableid = 3;
 	tabledef t;
-	memset(&t, 0, sizeof(t));
 	tabledef* td = &t;
 	td->charsetIndex = mysql::charsetIndex(GetACP());
 	td->schemaCodePage = CP_UTF8;
@@ -180,7 +189,7 @@ bool createUserExtTable(dbdef* def)
 
 	def->insertTable(td);
 	if (def->stat()!=0)
-	    return showDbdefError(def, _T("extention insertTable"));
+		return showDbdefError(def, _T("extention insertTable"));
 
 	short filedIndex = 0;
 	fielddef* fd =  def->insertField(tableid, filedIndex);
@@ -191,17 +200,17 @@ bool createUserExtTable(dbdef* def)
 	++filedIndex;
 	fd =  def->insertField(tableid, filedIndex);
 	fd->setName(_T("comment"));
-	fd->type = ft_myvarchar;
+	fd->type = USER_STRING_TYPE;
 
 	fd->setLenByCharnum(60);
 
 
 	char keyNum = 0;
 	keydef* kd = def->insertKey(tableid, keyNum);
-	keySegment& seg1 = kd->segments[0];
-	seg1.fieldNum = 0;
-	seg1.flags.bit8 = true;//extended key type
-	seg1.flags.bit1 = true;//chanageable
+	keySegment* seg1 = &kd->segments[0];
+	seg1->fieldNum = 0;
+	seg1->flags.bit8 = true;//extended key type
+	seg1->flags.bit1 = true;//chanageable
 	kd->segmentCount = 1;
 	td = def->tableDefs(tableid);
 	td->primaryKeyNum = keyNum;
@@ -214,7 +223,7 @@ bool createUserExtTable(dbdef* def)
 bool insertData(database_ptr db, int maxId)
 {
 	_TCHAR tmp[256];
-	transaction trn(db);
+	dbTransaction trn(db);
 	trn.begin();
 
 	table* tb = db->openTable(_T("user"), TD_OPEN_NORMAL);

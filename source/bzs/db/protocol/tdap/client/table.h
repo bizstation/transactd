@@ -94,14 +94,9 @@ class AGRPACK table : public nstable
 	void doCreateIndex(bool SpecifyKeyNum = false); // orverride
 	uint_td doRecordCount(bool estimate, bool fromCurrent, eFindType direction); // orverride
 	short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf = NULL); // orverride
-
-	//double getFVnumeric(short index);
-	//double getFVDecimal(short index);
-	//void setFVDecimal(short index, double data);
-	//void setFVNumeric(short index, double data);
 	void doFind( ushort_td op, bool notIncCurrent);
 	bool setSeekValueField(int row);
-
+    void btrvSeekMulti();
 protected:
 	explicit table(nsdatabase *pbe); // Inheritance is impossible
 	virtual ~table();

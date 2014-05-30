@@ -58,7 +58,7 @@ void write(fields& fds, int start, int end)
 /* -------------------------------------------------------------------------------- */
 bool deleteAll(database_ptr db, table_ptr tb, int start, int end)
 {
-	transaction trn(db);
+	dbTransaction trn(db);
 	trn.begin();
 
 	for (int i = start; i < end; i++)
@@ -84,7 +84,7 @@ void inserts(database_ptr db, table_ptr tb, int start, int end, int mode, int un
 		en = st + unit;
 		if (mode == USE_TRANS)
 		{
-			transaction trn(db);
+			dbTransaction trn(db);
 			trn.begin();
 			write(fds, st, en);
 			trn.end();
@@ -126,7 +126,7 @@ void read( database_ptr db, table_ptr tb, int start, int end, int shapshot)
 {
 	if (shapshot == USE_SNAPSHOT)
 	{
-		autoSnapshot sn(db);
+		dbSnapshot sn(db);
 		doRead(db, tb, start, end, shapshot);
 	}else
 		doRead(db, tb, start, end, shapshot);
@@ -139,8 +139,10 @@ void doRreads(database_ptr db, table_ptr tb, int start, int end, int unit)
 	int count = total / unit;
 	int st = start;
 	int en = st;
-	filterParams fp( _T("*"), 1 , 20);
-	findIterator itsf = find(tb, keynum_id, fp, st);
+	//filterParams fp( _T("*"), 1 , 20);
+	query q;
+	q.all().reject(2).limit(20);
+	findIterator itsf = find(tb, keynum_id, q, st);
 	while (en != end)
 	{
 		en = st + unit;
@@ -157,7 +159,7 @@ void reads(database_ptr db, table_ptr tb, int start, int end, int unit, int shap
 {
 	if (shapshot == USE_SNAPSHOT)
 	{
-		autoSnapshot sn(db);
+		dbSnapshot sn(db);
 		doRreads(db, tb, start, end, unit);
 	}else
 		doRreads(db, tb, start, end, unit);
@@ -187,7 +189,7 @@ void updates(database_ptr db, table_ptr tb, int start, int end, int tran, int un
 		en = st + unit;
 		if (tran == USE_TRANS)
 		{
-			transaction trn(db);
+			dbTransaction trn(db);
 			trn.begin();
 			doUupdates(tb, st, en, 1);
 			trn.end();

@@ -464,10 +464,10 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 	mdls m;
 	ut.index(keynum_group).keyValue(find_group_id).read(m, q);
 
-	/* When Using other map handler, use readRange method.
+	/* When Using other map handler, use readMap method.
 	*/
 	users_orm users_hdr(m);
-	ut.readRange(users_hdr, q);
+	ut.readMap(users_hdr, q);
 
 
 	/* Using clrient filter exsample.

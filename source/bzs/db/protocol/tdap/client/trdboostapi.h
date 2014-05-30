@@ -1175,34 +1175,72 @@ inline void deleteRecord(const T& it)
 template<class T, class F>
 void for_each(T iterator, F func) {std::for_each(iterator, iterator, func);}
 
-class transaction
-{
-	database_ptr m_db;
-	short m_bias;
-public:
-	transaction(database_ptr db, short bias=LOCK_SINGLE_NOWAIT + PARALLEL_TRN + NOWAIT_WRITE)
-		:m_db(db),m_bias(bias){};
-	~transaction(){if (m_db->enableTrn()) m_db->abortTrn();};
-	void begin(){m_db->beginTrn(m_bias);}
-	void end(){m_db->endTrn();}
-	void abort(){m_db->abortTrn();}
+/* databaseManager interface
+   If use some databases, implemnt a this interface and set the activeTable constructor
+   Create table by name and option from suitable database.
 
+*/
+class idatabaseManager
+{
+
+public:
+	virtual ~idatabaseManager(){};
+	virtual table_ptr table(const _TCHAR* name)=0;
+	virtual table_ptr table(short index)=0;
+	virtual void setOption(__int64 v)=0;
+	virtual __int64 option()=0;
+	virtual void beginTrn(short bias) = 0;
+	virtual void endTrn() = 0;
+	virtual void abortTrn() = 0;
+	virtual bool enableTrn()=0;
+	virtual void beginSnapshot() = 0;
+	virtual void endSnapshot() = 0;
 };
 
-class autoSnapshot
+/* Exception safe trnasction
+	It can use for database  and idatabaseManager.
+*/
+template <class DB>
+class transaction
 {
-	database_ptr m_db;
+	DB m_db;
+	short m_bias;
 public:
-	autoSnapshot(database_ptr db):m_db(db)
+	inline transaction(DB db, short bias=LOCK_SINGLE_NOWAIT + PARALLEL_TRN + NOWAIT_WRITE)
+		:m_db(db),m_bias(bias){};
+	inline ~transaction(){if (m_db->enableTrn()) m_db->abortTrn();};
+	inline void begin(){m_db->beginTrn(m_bias);}
+	inline void end(){m_db->endTrn();}
+	inline void abort(){m_db->abortTrn();}
+};
+
+/* transaction for database */
+typedef transaction<database_ptr>  dbTransaction;
+
+/* transaction for idatabaseManager */
+typedef transaction<idatabaseManager> dbmTransaction;
+
+template <class DB>
+class snapshot
+{
+	DB m_db;
+public:
+	snapshot(DB db):m_db(db)
 	{
 		m_db->beginSnapshot();
 	}
 
-	~autoSnapshot()
+	~snapshot()
 	{
 		m_db->endSnapshot();
 	}
 };
+
+/* snapshot for database */
+typedef snapshot<database_ptr>  dbSnapshot;
+
+/* snapshot for idatabaseManager */
+typedef snapshot<idatabaseManager> dbmSnapshot;
 
 
 class autoBulkinsert
