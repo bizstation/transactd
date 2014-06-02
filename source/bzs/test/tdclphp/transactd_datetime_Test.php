@@ -20,22 +20,23 @@
 mb_internal_encoding('UTF-8');
 
 require_once("transactd.php");
+use BizStation\Transactd as Bz;
 
 class transactdDatetimeTest extends PHPUnit_Framework_TestCase
 {
     public function testGetBtrdate()
     {
-        $i_nowdate = transactd::getNowDate(); // get today as integer
-        $s_i_nowdate  = transactd::btrdtoa($i_nowdate);
-        $s_i_nowdate2 = transactd::btrdtoa($i_nowdate, true);
+        $i_nowdate = Bz\transactd::getNowDate(); // get today as integer
+        $s_i_nowdate  = Bz\transactd::btrdtoa($i_nowdate);
+        $s_i_nowdate2 = Bz\transactd::btrdtoa($i_nowdate, true);
         //print_r($i_nowdate);
         //print_r($s_i_nowdate);
         //print_r($s_i_nowdate2);
-        $nowdate = new btrDate();
+        $nowdate = new Bz\btrDate();
         $nowdate->i = $i_nowdate;              // get today as BtrDate
-        $s_nowdate  = transactd::btrdtoa($nowdate);
-        $s_nowdate2 = transactd::btrdtoa($nowdate, true);
-        $cs_nowdate = transactd::c_str($nowdate);
+        $s_nowdate  = Bz\transactd::btrdtoa($nowdate);
+        $s_nowdate2 = Bz\transactd::btrdtoa($nowdate, true);
+        $cs_nowdate = Bz\transactd::c_str($nowdate);
         //print_r($nowdate);
         //print_r($s_nowdate);
         //print_r($s_nowdate2);
@@ -46,17 +47,17 @@ class transactdDatetimeTest extends PHPUnit_Framework_TestCase
     }
     public function testGetBtrtime()
     {
-        $i_nowtime = transactd::getNowTime(); // get now time as integer
-        $s_i_nowtime  = transactd::btrttoa($i_nowtime);
-        $s_i_nowtime2 = transactd::btrttoa($i_nowtime, true);
+        $i_nowtime = Bz\transactd::getNowTime(); // get now time as integer
+        $s_i_nowtime  = Bz\transactd::btrttoa($i_nowtime);
+        $s_i_nowtime2 = Bz\transactd::btrttoa($i_nowtime, true);
         //print_r($i_nowtime);
         //print_r($s_i_nowtime);
         //print_r($s_i_nowtime2);
-        $nowtime = new btrTime();
+        $nowtime = new Bz\btrTime();
         $nowtime->i = $i_nowtime;  // get now time as BtrTime
-        $s_nowtime  = transactd::btrttoa($nowtime);
-        $s_nowtime2 = transactd::btrttoa($nowtime, true);
-        $cs_nowtime = transactd::c_str($nowtime);
+        $s_nowtime  = Bz\transactd::btrttoa($nowtime);
+        $s_nowtime2 = Bz\transactd::btrttoa($nowtime, true);
+        $cs_nowtime = Bz\transactd::c_str($nowtime);
         //print_r($nowtime);
         //print_r($s_nowtime);
         //print_r($s_nowtime2);
@@ -67,34 +68,34 @@ class transactdDatetimeTest extends PHPUnit_Framework_TestCase
     }
     public function testGetBtrdatetime()
     {
-        $d = transactd::atobtrd("2012-08-22");
+        $d = Bz\transactd::atobtrd("2012-08-22");
         //print_r($d);
-        $s_date = transactd::btrdtoa($d);
+        $s_date = Bz\transactd::btrdtoa($d);
         $this->assertEquals($s_date, '2012/08/22');
         //print_r($s_date);
-        $t = transactd::atobtrt("15:37:00");
-        $s_time = transactd::btrttoa($t);
+        $t = Bz\transactd::atobtrt("15:37:00");
+        $s_time = Bz\transactd::btrttoa($t);
         $this->assertEquals($s_time, '15:37:00');
         //print_r($t);
         //print_r($s_time);
-        $dt = transactd::atobtrs('2012-08-22 15:37:00');
-        $s_datetime  = transactd::btrstoa($dt);
-        $s_datetime2 = transactd::btrstoa($dt, true);
+        $dt = Bz\transactd::atobtrs('2012-08-22 15:37:00');
+        $s_datetime  = Bz\transactd::btrstoa($dt);
+        $s_datetime2 = Bz\transactd::btrstoa($dt, true);
         $this->assertEquals($s_datetime, '2012/08/22 15:37:00');
         $this->assertEquals($s_datetime2, '2012-08-22T15:37:00');
         //print_r($dt);
         //print_r($s_datetime);
         //print_r($s_datetime2);
-        $s_datetime_d = transactd::btrdtoa($dt->date);
-        $s_datetime_t = transactd::btrttoa($dt->time);
+        $s_datetime_d = Bz\transactd::btrdtoa($dt->date);
+        $s_datetime_t = Bz\transactd::btrttoa($dt->time);
         $this->assertEquals($s_datetime_d . ' ' . $s_datetime_t, '2012/08/22 15:37:00');
         //print_r($s_datetime_d . ' ' . $s_datetime_t);
     }
     public function testGetBdate()
     {
-        $bd = transactd::atobtrd('2012-08-22');
-        $bdate  = new bdate($bd->i);
-        $bdate2 = new bdate(transactd::btrdtoa($bd));
+        $bd = Bz\transactd::atobtrd('2012-08-22');
+        $bdate  = new Bz\bdate($bd->i);
+        $bdate2 = new Bz\bdate(Bz\transactd::btrdtoa($bd));
         //print_r($bdate);
         //print_r($bdate2);
         $btrdate  = $bdate->btr_date();
@@ -121,10 +122,10 @@ class transactdDatetimeTest extends PHPUnit_Framework_TestCase
     }
     public function testGetBtrtimestampFromString()
     {
-        $d = transactd::atobtrd('2012-08-22');
-        $t = transactd::atobtrt('15:37:00');
-        $btrts  = new btrTimeStamp('2012-08-22 15:37:00');
-        $btrts2 = new btrTimeStamp($d, $t);
+        $d = Bz\transactd::atobtrd('2012-08-22');
+        $t = Bz\transactd::atobtrt('15:37:00');
+        $btrts  = new Bz\btrTimeStamp('2012-08-22 15:37:00');
+        $btrts2 = new Bz\btrTimeStamp($d, $t);
         $s_btrts  = $btrts->toString();
         $s_btrts2 = $btrts2->toString();
         //print_r($btrts);
@@ -136,15 +137,15 @@ class transactdDatetimeTest extends PHPUnit_Framework_TestCase
     }
     public function testGetBtrtimestampFromBtrdateAndBtrtime()
     {
-        $i_nowdate = transactd::getNowDate();
-        $nowdate = new btrDate();
+        $i_nowdate = Bz\transactd::getNowDate();
+        $nowdate = new Bz\btrDate();
         $nowdate->i = $i_nowdate;
-        $i_nowtime = transactd::getNowTime();
-        $nowtime = new btrTime();
+        $i_nowtime = Bz\transactd::getNowTime();
+        $nowtime = new Bz\btrTime();
         $nowtime->i = $i_nowtime;
-        $nowdatetime = new btrTimeStamp($nowdate, $nowtime);
-        $s_nowdate  = transactd::btrdtoa($nowdate);
-        $s_nowtime  = transactd::btrttoa($nowtime);
+        $nowdatetime = new Bz\btrTimeStamp($nowdate, $nowtime);
+        $s_nowdate  = Bz\transactd::btrdtoa($nowdate);
+        $s_nowtime  = Bz\transactd::btrttoa($nowtime);
         $s_nowdatetime = $nowdatetime->toString();
         $this->assertEquals($s_nowdatetime, $s_nowdate . ' ' . $s_nowtime);
         //print_r($nowdatetime);
@@ -153,20 +154,20 @@ class transactdDatetimeTest extends PHPUnit_Framework_TestCase
     }
     public function testLastYear()
     {
-        $i_nowdate = transactd::getNowDate();
-        $nowdate = new btrDate();
+        $i_nowdate = Bz\transactd::getNowDate();
+        $nowdate = new Bz\btrDate();
         $nowdate->i = $i_nowdate;
         $nowyear_yy = $nowdate->yy;
-        $i_nowtime = transactd::getNowTime();
-        $nowtime = new btrTime();
+        $i_nowtime = Bz\transactd::getNowTime();
+        $nowtime = new Bz\btrTime();
         $nowtime->i = $i_nowtime;
-        $nowdatetime = new btrTimeStamp($nowdate, $nowtime);
+        $nowdatetime = new Bz\btrTimeStamp($nowdate, $nowtime);
         $s_nowdatetime = $nowdatetime->toString();
         $lastyear = $nowdate;
         $lastyear->yy = $lastyear->yy - 1;
         $lastyear_yy = $lastyear->yy;
-        $s_lastyear = transactd::btrdtoa($lastyear);
-        $lastyeardatetime = new btrTimeStamp($lastyear, $nowtime);
+        $s_lastyear = Bz\transactd::btrdtoa($lastyear);
+        $lastyeardatetime = new Bz\btrTimeStamp($lastyear, $nowtime);
         $s_lastyeardatetime = $lastyeardatetime->toString();
         $this->assertEquals($nowyear_yy - 1, $lastyear_yy);
         $this->assertEquals($s_lastyeardatetime, str_replace($nowyear_yy, $lastyear_yy, $s_nowdatetime));
@@ -176,7 +177,7 @@ class transactdDatetimeTest extends PHPUnit_Framework_TestCase
     }
     public function testTypename()
     {
-        $typename = transactd::getTypeName(transactd::ft_integer);
+        $typename = Bz\transactd::getTypeName(Bz\transactd::ft_integer);
         //print_r($typename);
         $this->assertEquals($typename, 'Integer');
     }

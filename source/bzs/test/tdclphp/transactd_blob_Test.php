@@ -20,6 +20,7 @@
 mb_internal_encoding('UTF-8');
 
 require_once("transactd.php");
+use BizStation\Transactd as Bz;
 
 define("HOSTNAME", "localhost/");
 define("URL", "tdap://" . HOSTNAME . "test_blob?dbfile=test.bdf");
@@ -35,7 +36,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
 {
     private function getDbObj()
     {
-        return database::createObject();
+        return Bz\database::createObject();
     }
     private function deleteDbObj($db)
     {
@@ -52,7 +53,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
     private function createDatabase($db, $url)
     {
         $db->create($url);
-        if ($db->stat() == transactd::STATUS_TABLE_EXISTS_ERROR)
+        if ($db->stat() == Bz\transactd::STATUS_TABLE_EXISTS_ERROR)
         {
             $this->dropDatabase($db, $url);
             $db->create($url);
@@ -61,22 +62,22 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
     }
     private function openDatabase($db, $url)
     {
-        $db->open($url, TYPE_SCHEMA_BDF, transactd::TD_OPEN_NORMAL);
+        $db->open($url, TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
     }
     private function createTable($db, $tableid, $tablename)
     {
         $dbdef = $db->dbDef();
         $this->assertNotEquals($dbdef, NULL);
-        $td = new tabledef();
+        $td = new Bz\tabledef();
         // Set table schema codepage to UTF-8
         //   - codepage for field NAME and tableNAME
-        $td->schemaCodePage = transactd::CP_UTF8;
+        $td->schemaCodePage = Bz\transactd::CP_UTF8;
         $td->setTableName($tablename);
         $td->setFileName($tablename . '.dat');
         // Set table default charaset index
         //    - default charset for field VALUE
-        $td->charsetIndex = transactd::charsetIndex(transactd::CP_UTF8);
+        $td->charsetIndex = Bz\transactd::charsetIndex(Bz\transactd::CP_UTF8);
         //
         $td->id = $tableid;
         $td->pageSize = 2048;
@@ -85,28 +86,28 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         // id
         $fd = $dbdef->insertField($tableid, FDI_ID);
         $fd->setName('id');
-        $fd->type = transactd::ft_autoinc;
+        $fd->type = Bz\transactd::ft_autoinc;
         $fd->len = 4;
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
         // user_id
         $fd = $dbdef->insertField($tableid, FDI_USER_ID);
         $fd->setName('user_id');
-        $fd->type = transactd::ft_integer;
+        $fd->type = Bz\transactd::ft_integer;
         $fd->len = 4;
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
         // body
         $fd = $dbdef->insertField($tableid, FDI_BODY);
         $fd->setName('body');
-        $fd->type = transactd::ft_mytext;
+        $fd->type = Bz\transactd::ft_mytext;
         $fd->len = 10; // 9:TYNYTEXT 10:TEXT 11:MIDIUMTEXT 12:LONGTEXT
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
         // image
         $fd = $dbdef->insertField($tableid, FDI_IMAGE);
         $fd->setName('image');
-        $fd->type = transactd::ft_myblob;
+        $fd->type = Bz\transactd::ft_myblob;
         $fd->len = 10; // 9:TYNYBLOB 10:BLOB 11:MIDIUMBLOB 12:LONGBLOB
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
@@ -223,7 +224,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $tb->setFilter('id >= 1 and id < 3', 1, 0);
         $this->assertEquals($tb->stat(), 0);
         $tb->setFV(FDI_ID, 1);
-        $tb->find(table::findForword);
+        $tb->find(Bz\table::findForword);
         $this->assertEquals($tb->stat(), 0);
         $this->assertEquals($tb->getFVint(FDI_ID), 1);
         $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
@@ -236,10 +237,10 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVstr(FDI_BODY), "2\ntest\nテスト\n\nあいうえおあいうえお");
         // 3... but not found because filtered
         $tb->findNext(true);
-        $this->assertEquals($tb->stat(), transactd::STATUS_EOF);
+        $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
         // 2... but changing seek-direction is not allowed
         $tb->findPrev(true);
-        $this->assertEquals($tb->stat(), transactd::STATUS_PROGRAM_ERROR);
+        $this->assertEquals($tb->stat(), Bz\transactd::STATUS_PROGRAM_ERROR);
         // close
         $tb->close();
         $this->deleteDbObj($db);
@@ -311,7 +312,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVstr(FDI_BODY), "3\ntest\nテスト\n\nあいうえおあいうえお");
         // eof
         $tb->seekNext();
-        $this->assertEquals($tb->stat(), transactd::STATUS_EOF);
+        $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
         // close
         $tb->close();
         $this->deleteDbObj($db);
