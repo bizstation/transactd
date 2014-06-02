@@ -63,7 +63,7 @@ STDMETHODIMP CGroupQuery::ResultField(BSTR Name, IGroupQuery** retVal)
 	return S_OK;
 }
 
-STDMETHODIMP CGroupQuery::Having(IQueryBase* query , IGroupQuery** retVal)
+/*STDMETHODIMP CGroupQuery::Having(IQueryBase* query , IGroupQuery** retVal)
 {
 	if (query)
 	{
@@ -73,7 +73,7 @@ STDMETHODIMP CGroupQuery::Having(IQueryBase* query , IGroupQuery** retVal)
 	}
 	setResult(retVal);
 	return S_OK;
-}
+}*/
 
 STDMETHODIMP CGroupQuery::Reset(IGroupQuery** retVal)
 {

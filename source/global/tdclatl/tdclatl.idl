@@ -1202,8 +1202,9 @@ interface IGroupQuery : IDispatch
 
   [id(0x0000002)]
   HRESULT _stdcall ResultField(BSTR Name, [out, retval] IGroupQuery** retVal);
-  [id(0x0000003)]
+  /*[id(0x0000003)]
   HRESULT _stdcall Having(IQueryBase* query, [out, retval] IGroupQuery** retVal);
+  */
   [id(0x0000004)]
   HRESULT _stdcall Reset([out, retval] IGroupQuery** retVal);
 

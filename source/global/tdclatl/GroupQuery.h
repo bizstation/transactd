@@ -54,7 +54,7 @@ public:
 				BSTR Name6, BSTR Name7,	BSTR Name8, BSTR Name9,	BSTR Name10,
 				IGroupQuery** retVal);
   STDMETHOD(ResultField)(BSTR Name, IGroupQuery** retVal);
-  STDMETHOD(Having)(IQueryBase* query , IGroupQuery** retVal);
+  //STDMETHOD(Having)(IQueryBase* query , IGroupQuery** retVal);
   STDMETHOD(Reset)(IGroupQuery** retVal);
 
 };

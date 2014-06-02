@@ -517,7 +517,7 @@ protected:
 					mdls.erase(ignores[i]);	
 			}else
 			{
-				for (int i=mdls.size()-1;i>=0;--i)
+				for (int i=(int)mdls.size()-1;i>=0;--i)
 				{
 					if(mdls[i]->isInvalidRecord())
 						mdls.erase(i);

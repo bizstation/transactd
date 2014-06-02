@@ -202,16 +202,6 @@ public:
 		return *this;
 	}
 
-	template <class T>
-	query& in(const _TCHAR* name, const _TCHAR* qlogic, T value)
-	{
-		if (whereTokens() == 0)
-			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
-
-		addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
-		return *this;
-	}
-
 	template <class T0, class T1 , class T2, class T3
 				,class T4, class T5 , class T6 , class T7>
 	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
