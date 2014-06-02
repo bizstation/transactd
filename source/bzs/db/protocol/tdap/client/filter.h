@@ -861,6 +861,14 @@ public:
 		return resultRowSize(false) - m_hd.bookmarkSize(m_isTransactd) - DATASIZE_BYTE;
 	}
 
+	ushort_td totalSelectFieldLen() const
+	{
+		ushort_td recordLen = 0;
+		for (size_t i=0;i< m_fields.size();++i)
+			recordLen += m_fields[i]->len;
+		return recordLen;
+	}
+
 	ushort_td fieldOffset(int index) const
 	{
 		assert(index < (int)m_fields.size());

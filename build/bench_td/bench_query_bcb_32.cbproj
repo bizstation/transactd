@@ -55,7 +55,7 @@
 			<BCC_DisableOptimizations>true</BCC_DisableOptimizations>
 			<DCC_Optimize>false</DCC_Optimize>
 			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
-			<Defines>_DEBUG;$(Defines)</Defines>
+			<Defines>_DEBUG;__USE_PSQL_DATABASE;$(Defines)</Defines>
 			<BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
 			<DCC_Define>DEBUG</DCC_Define>
 			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
@@ -143,7 +143,7 @@
 						<ProjectProperties Name="VerifyPackages">True</ProjectProperties>
 					</ProjectProperties>
 					<Parameters>
-						<Parameters Name="RunParams">0 localhost</Parameters>
+						<Parameters Name="RunParams">0 localhost 15 1</Parameters>
 					</Parameters>
 					<VFOLDERS/>
 				</CPlusPlusBuilder.Personality>

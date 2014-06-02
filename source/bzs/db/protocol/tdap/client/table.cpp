@@ -537,19 +537,47 @@ bookmark_td table::bookmarkFindCurrent() const
 
 void table::btrvSeekMulti()
 {
-	m_impl->rc->reset();
 	const std::vector<client::seek>& seeks =  m_impl->filterPtr->seeks();
+	const std::vector<short>& fields = m_impl->filterPtr->selectFieldIndexes();
+	bool fieldSelected = m_impl->filterPtr->fieldSelected();
+
+	m_impl->rc->reset();
+	size_t recordLen = m_impl->filterPtr->fieldSelected() ?
+			m_impl->filterPtr->totalSelectFieldLen() : tableDef()->maxRecordLen;
+	m_impl->mraPtr->init(seeks.size(), recordLen, mra_first, this);
+
 	const bool transactd = false;
+
 	for (int i=0;i<(int)seeks.size();++i)
 	{
 		seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, false, true, transactd);
 		m_keylen = seeks[i].len;
-		seek();
-		//move select field
-		// const std::vector<short>& selectFieldIndexes(){return m_selectFieldIndexes;}
-		//if (m_stat == 0)
-	}
+		m_datalen = m_buflen;
+		tdap((ushort_td)(TD_KEY_SEEK));
+		if (m_stat == STATUS_SUCCESS)
+			onReadAfter();
 
+		if (m_stat)
+			m_impl->mraPtr->setInvalidRecord(i, true);
+		else
+		{
+			uchar_td* dst = m_impl->mraPtr->ptr(i, mra_current_block);
+			if (fieldSelected)
+			{
+				int resultOffset = 0;
+
+				for (int j=0;j<fields.size();++j)
+				{
+					fielddef* fd = &tableDef()->fieldDefs[fields[j]];
+					fd->unPackCopy(dst + resultOffset, ((uchar_td*)m_pdata) + fd->pos);
+					dst += fd->len;
+				}
+			}
+			else
+				memcpy(dst, (uchar_td*)m_pdata, m_datalen);
+		}
+	}
+	m_stat = STATUS_EOF;
 }
 
 void table::find(eFindType type)
@@ -579,7 +607,10 @@ void table::find(eFindType type)
 		if (op == TD_KEY_SEEK_MULTI)
 		{
 
-			btrvSeekMulti();
+			if (m_impl->mraPtr)
+				btrvSeekMulti();
+			else
+				m_stat = STATUS_FILTERSTRING_ERROR;//P.SQL not support TD_KEY_SEEK_MULTI
 			return;
 		}
 		if (type == findForword)

@@ -1218,7 +1218,7 @@ public:
 typedef transaction<database_ptr>  dbTransaction;
 
 /* transaction for idatabaseManager */
-typedef transaction<idatabaseManager> dbmTransaction;
+typedef transaction<idatabaseManager*> dbmTransaction;
 
 template <class DB>
 class snapshot
@@ -1240,7 +1240,7 @@ public:
 typedef snapshot<database_ptr>  dbSnapshot;
 
 /* snapshot for idatabaseManager */
-typedef snapshot<idatabaseManager> dbmSnapshot;
+typedef snapshot<idatabaseManager*> dbmSnapshot;
 
 
 class autoBulkinsert

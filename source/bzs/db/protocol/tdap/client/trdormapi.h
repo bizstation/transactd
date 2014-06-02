@@ -433,8 +433,6 @@ protected:
 					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
 					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
 	{
-		//if (!m_tb->isUseTransactd())
-		//	nstable::throwError(_T("activeTable P.SQL can not use this"), (short_td)0);
 		if (mdls.size()==0) return;
 		reverseAliasNamesQuery(q);
 		q.clearSeekKeyValues();
@@ -509,9 +507,23 @@ protected:
 
 		readStatusCheck(*m_tb, _T("join"));
 		m_tb->mra()->setJoinRowMap(NULL);
+
 		/* remove record see ignore list for inner join */
-		for (int i=(int)ignores.size()-1;i>=0;--i)
-			mdls.erase(ignores[i]);
+		if (innner)
+		{
+			if (m_tb->isUseTransactd())
+			{
+				for (int i=(int)ignores.size()-1;i>=0;--i)
+					mdls.erase(ignores[i]);	
+			}else
+			{
+				for (int i=mdls.size()-1;i>=0;--i)
+				{
+					if(mdls[i]->isInvalidRecord())
+						mdls.erase(i);
+				}
+			}
+		}
 	}
 
 public:
