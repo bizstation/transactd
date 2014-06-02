@@ -156,9 +156,9 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::memoryRecord::copyToBuffer;
 %ignore bzs::db::protocol::tdap::client::memoryRecord::copyFromBuffer;
 
-%ignore bzs::db::protocol::tdap::client::activeTable::activeTable(databaseManager&);
+%ignore bzs::db::protocol::tdap::client::activeTable::activeTable(idatabaseManager&);
 %ignore bzs::db::protocol::tdap::client::activeTable::activeTable(database_ptr&);
-%ignore bzs::db::protocol::tdap::client::activeTable::activeTable(databaseManager&, const _TCHAR*);
+%ignore bzs::db::protocol::tdap::client::activeTable::activeTable(idatabaseManager&, const _TCHAR*);
 %ignore bzs::db::protocol::tdap::client::activeTable::activeTable(database_ptr&, const _TCHAR*);
 %ignore bzs::db::protocol::tdap::client::activeTable::read(collection_vec_type&, queryBase&, validationFunc);
 %ignore bzs::db::protocol::tdap::client::activeTable::read(collection_vec_type&, queryBase&);
