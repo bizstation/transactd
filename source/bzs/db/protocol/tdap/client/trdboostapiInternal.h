@@ -37,8 +37,6 @@ namespace tdap
 namespace client
 {
 
-
-
 template<int N>
 struct placeholder
 {
@@ -67,12 +65,12 @@ public:
 		readStatusCheck(tb, _T("Seek next"));
 
 	}
+
 	inline static void decrement(table& tb)
 	{
 		tb.seekPrev();
 		readStatusCheck(tb, _T("Seek prev"));
 	}
-
 };
 
 class indexRvNavi
@@ -85,13 +83,13 @@ public:
 		readStatusCheck(tb, _T("Seek next"));
 
 	}
+
 	inline static void decrement(table& tb)
 	{
 
 		tb.seekNext();
 		readStatusCheck(tb, _T("Seek prev"));
 	}
-
 };
 
 class indexFindNavi
@@ -104,13 +102,13 @@ public:
 		readStatusCheck(tb, _T("Find next"));
 
 	}
+
 	inline static void decrement(table& tb)
 	{
 		tb.findPrev();
 		readStatusCheck(tb, _T("Find prev"));
 
 	}
-
 };
 
 class indexRvFindNavi
@@ -123,13 +121,13 @@ public:
 		readStatusCheck(tb, _T("Find next"));
 
 	}
+
 	inline static void decrement(table& tb)
 	{
 		tb.findNext();
 		readStatusCheck(tb, _T("Find prev"));
 
 	}
-
 };
 
 class stepNavi
@@ -147,7 +145,6 @@ public:
 		tb.stepPrev();
 		readStatusCheck(tb, _T("Step prev"));
 	}
-
 };
 
 class stepRvNavi
@@ -165,7 +162,6 @@ public:
 		tb.stepNext();
 		readStatusCheck(tb, _T("Step prev"));
 	}
-
 };
 
 

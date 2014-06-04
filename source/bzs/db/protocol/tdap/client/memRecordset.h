@@ -19,6 +19,7 @@
    02111-1307, USA.
 =================================================================*/
 #include "trdormapi.h"
+#include "groupQuery.h"
 
 namespace bzs
 {
@@ -95,8 +96,8 @@ class recordset
 
 	/* for registerMemoryBlock temp data */
 	size_t m_joinRows;
-	
-	/* 
+
+	/*
 		for optimazing join.
 		If the first reading is using by unique key , set that field count.
 	*/
@@ -185,20 +186,71 @@ private:
 		fieldNums.push_back(index);
 	}
 
+	int getMemBlockIndex(unsigned char* ptr) const
+	{
+		for (int i=0;i<(int)m_memblock.size();++i)
+		{
+			const boost::shared_ptr<autoMemory>& am = m_memblock[i];
+			if ((ptr >= am->ptr) && (ptr < am->ptr + am->size))
+				return i;
+		}
+		assert(0);
+		return -1;
+	}
+
 public:
 	recordset():m_fds(fielddefs::create(), &fielddefs::destroy)
 		, m_joinRows(0), m_uniqueReadMaxField(0)
 	{
 		m_mra.reset(new multiRecordAlocatorImple(this));
 	}
-	
+
 	~recordset()
 	{
 
 	}
-	
+
+	/* This clone is deep copy.
+	   But text and blob field data memory are shared.
+	*/
+	recordset* clone() const
+	{
+		recordset* p = new recordset();
+		p->m_joinRows = m_joinRows;
+		p->m_uniqueReadMaxField = m_uniqueReadMaxField;
+		p->m_unionFds = m_unionFds;
+		p->m_fds.reset(m_fds->clone(), &fielddefs::destroy);
+
+		std::vector<__int64> offsets;
+		for (int i=0;i<(int)m_memblock.size();++i)
+		{
+			autoMemory* am = new autoMemory(m_memblock[i]->ptr, m_memblock[i]->size, 0 , true);
+			*am->endFieldIndex =  *m_memblock[i]->endFieldIndex;
+			p->m_memblock.push_back(boost::shared_ptr<autoMemory>(am));
+			offsets.push_back((__int64)(am->ptr - m_memblock[i]->ptr));
+		}
+
+		for (int i=0;i<(int)m_recordset.size();++i)
+		{
+			row_ptr row = m_recordset[i];
+			boost::shared_ptr<memoryRecord> rec(memoryRecord::create(*p->m_fds), &memoryRecord::release);
+			p->m_recordset.push_back(rec);
+
+			for (int j=0;j<(int)row->memBlockSize();++j)
+			{
+				const autoMemory& mb =  row->memBlock(j);
+				int index = getMemBlockIndex(mb.ptr);
+				unsigned char* ptr =  mb.ptr + offsets[index];
+				const boost::shared_ptr<autoMemory>& am =  p->m_memblock[index];
+				rec->setRecordData(ptr, mb.size, am->endFieldIndex, mb.owner);
+			}
+		}
+		return p;
+
+	}
+
 	inline short uniqueReadMaxField() const{return m_uniqueReadMaxField;}
-	
+
 	inline void clearRecords()
 	{
 		m_recordset.clear();
@@ -281,10 +333,18 @@ public:
 		}
 	}
 
-	template <class FUNC>
-	recordset& groupBy(groupQuery& gq, FUNC func)
+	recordset& matchBy(recordsetQuery& rq)
 	{
-		gq.grouping(*this, func);
+		rq.init(fieldDefs());
+		for (int i=(int)m_recordset.size()-1;i>=0;--i)
+			if (!rq.match(m_recordset[i]))
+				erase(i);
+		return *this;
+	}
+
+	recordset& groupBy(groupQuery& gq)
+	{
+		gq.grouping(*this);
 		return *this;
 	}
 
@@ -342,6 +402,27 @@ public:
 		return *this;
 	}
 
+#ifdef _DEBUG
+	void dump()
+	{
+		const fielddefs& fields = *fieldDefs();
+		for (int j=0;j<(int)fields.size();++j)
+			std::tcout << fields[j].name()  << _T("\t");
+		std::tcout << _T("\n");
+
+		for (int i=0;i<(int)size();++i)
+		{
+			row& m = *(operator[](i));
+			for (int j=0;j<(int)m.size();++j)
+			{
+				std::tcout << m[(short)j].c_str()  << _T("\t");
+				if (j == (int)m.size() -1)
+				   std::tcout << _T("\n");
+			}
+		}
+	}
+#endif
+
 };
 
 /** @cond INTERNAL */
@@ -385,13 +466,6 @@ template<> inline recordset::key_type resolvKeyValue(recordset& m
 	return m.resolvKeyValue(name, noexception);
 }
 
-/* for groupby */
-template <class T>
-inline void setValue(recordset::row_type& row
-	, recordset::key_type key, const T& value)
-{
-	(*row)[key] = value;
-}
 
 inline row* create(recordset& m, int)
 {
@@ -442,14 +516,14 @@ public:
 
 	void setKeyValues(row& m, const fields& fds, int keyNum)
 	{
-		const autoMemory& mb =  m.memBlock(0);
+		const autoMemory& mb =  m.memBlockByField(0);
 		memcpy(fds.tb().fieldPtr(0), mb.ptr, mb.size);
 
 	}
 
 	void writeMap(row& m, const fields& fds, int optipn)
 	{
-		const autoMemory& mb =  m.memBlock(0);
+		const autoMemory& mb =  m.memBlockByField(0);
 		memcpy(fds.tb().fieldPtr(0), mb.ptr, mb.size);
 	}
 
@@ -471,162 +545,6 @@ public:
 
 };
 
-
-
-inline __int64 fieldValue(const field& fd, __int64 ) {return fd.i64();}
-inline int fieldValue(const field& fd, int ) {return fd.i();}
-inline short fieldValue(const field& fd, short ) {return (short)fd.i();}
-inline char fieldValue(const field& fd, char ) {return (char)fd.i();}
-inline double fieldValue(const field& fd, double ) {return fd.d();}
-inline float fieldValue(const field& fd, float ) {return fd.f();}
-inline const _TCHAR* fieldValue(const field& fd, const _TCHAR* ) {return fd.c_str();}
-
-
-template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
-class sum
-{
-	value_type_ m_value;
-	key_type m_resultKey;
-public:
-	sum():m_value(0){}
-
-	void setResultKey(key_type key)
-	{
-		m_resultKey = key;
-	}
-
-	void operator()(const row_type& row)
-	{
-        value_type_ tmp=0;
-		m_value += fieldValue((*row)[m_resultKey], tmp);
-	}
-	value_type_ result()const{return m_value;}
-
-	void reset(){m_value = 0;}
-	typedef value_type_ value_type;
-};
-
-template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
-class avg
-{
-	value_type_ m_value;
-	value_type_ m_count;
-	key_type m_resultKey;
-public:
-	avg():m_value(0),m_count(0){}
-
-	void setResultKey(key_type key)
-	{
-		m_resultKey = key;
-	}
-
-	void operator()(const row_type& row)
-	{
-		++m_count;
-		value_type_ tmp=0;
-		m_value += fieldValue((*row)[m_resultKey], tmp);
-	}
-
-	value_type_ result()const{return m_value/m_count;}
-
-	void reset(){m_value = 0;m_count=0;}
-	typedef value_type_ value_type;
-};
-
-template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
-class count
-{
-	value_type_ m_count;
-	key_type m_resultKey;
-public:
-	count():m_count(0){}
-
-	void setResultKey(key_type key)
-	{
-		m_resultKey = key;
-	}
-
-	void operator()(const row_type& row)
-	{
-		++m_count;
-	}
-
-	value_type_ result()const{return m_count;}
-
-	void reset(){m_count=0;}
-	typedef value_type_ value_type;
-};
-
-#undef min
-template <class row_type=row_ptr, class key_type=int, class value_type_=__int64 >
-class min
-{
-	value_type_ m_value;
-	key_type m_resultKey;
-	bool m_flag ;
-public:
-	min():m_value(0),m_flag(true){}
-
-	void setResultKey(key_type key)
-	{
-		m_resultKey = key;
-	}
-
-	void operator()(const row_type& row)
-	{
-		value_type_ tmp = 0;
-		tmp = fieldValue((*row)[m_resultKey], tmp);
-		if (m_flag || m_value > tmp)
-		{
-			m_flag = false;
-			m_value = tmp;
-		}
-	}
-
-	value_type_ result()const{return m_value;}
-
-	void reset(){m_value = 0;m_flag = true;}
-	typedef value_type_ value_type;
-};
-
-#undef max
-template <class row_type=row_ptr, class key_type=int, class value_type_=__int64>
-class max
-{
-	value_type_ m_value;
-	key_type m_resultKey;
-	bool m_flag ;
-public:
-	max():m_value(0),m_flag(true){}
-
-	void setResultKey(key_type key)
-	{
-		m_resultKey = key;
-	}
-
-	void operator()(const row_type& row)
-	{
-		value_type_ tmp = 0;
-		tmp = fieldValue((*row)[m_resultKey], tmp);
-		if (m_flag || m_value < tmp)
-		{
-			m_flag = false;
-			m_value = tmp;
-		}
-	}
-
-	value_type_ result()const{return m_value;}
-
-	void reset(){m_value = 0;m_flag = true;}
-	typedef value_type_ value_type;
-};
-
-
-typedef sum<row_ptr, int, double> group_sum;
-
-typedef count<row_ptr, int, int> group_count;
-
-/** @endcond */
 
 typedef activeTable<map_orm> queryTable;
 

@@ -239,7 +239,7 @@ class AGRPACK queryBase
 {
 	friend class filter;
 	struct impl* m_impl;
-
+protected:
 	const std::vector<std::_tstring>& getSelects() const;
 	const std::vector<std::_tstring>& getWheres() const;
 	const std::vector<std::_tstring>& getSeekKeyValues() const;

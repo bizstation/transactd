@@ -76,6 +76,7 @@ class AGRPACK fielddefs : public fieldShare
 	friend class recordset;
 	friend class writableRecord;
 	friend class memoryRecord;
+	friend class recordsetQuery;
 
 	void addAllFileds(tabledef* def);
 	void copyFrom(const class table* tb);
@@ -83,12 +84,13 @@ class AGRPACK fielddefs : public fieldShare
 	size_t totalFieldLen() const;
 	void resetUpdateIndicator();
 	void setAliases(const aliasMap_type* p);
-	void push_back(const fielddef* p);
+	void push_back(const fielddef* p, bool rePosition=false);
 	void remove(int index);
 	void reserve(size_t size);
 	void clear();
 
 public:
+	fielddefs* clone() const;
 	int indexByName(const std::_tstring& name)const;
 	const fielddef& operator[] (int index) const;
 	const fielddef& operator[] (const _TCHAR* name) const;
@@ -280,6 +282,8 @@ public:
 	inline void* getBin(uint_td& size){return getFVbin(size);};
 
 	int comp(const field& r, char logType=CMPLOGICAL_VAR_COMP_ALL) const;
+
+	bool isCompPartAndMakeValue();
 
 };
 

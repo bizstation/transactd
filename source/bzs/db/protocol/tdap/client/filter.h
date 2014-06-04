@@ -19,6 +19,7 @@
  02111-1307, USA.
  ================================================================= */
 #include "table.h"
+#include "fields.h"
 #include <assert.h>
 #include <vector>
 #include <boost/algorithm/string.hpp>
@@ -215,27 +216,6 @@ public:
 		 return false;
 	}
 
-	bool isPart(table* tb, short index)
-	{
-		fielddef* fd = &tb->tableDef()->fieldDefs[index];
-		bool ret = false;
-		if (fd->isStringType())
-		{
-			 _TCHAR* p = (_TCHAR*)tb->getFVstr(index);
-			if (p)
-			{
-				size_t n = _tcslen(p);
-				if (n && ((ret = (p[n-1] == _T('*')))!=0))
-				{
-					p[n-1] = 0x00;
-					tb->setFV(index, p);
-				}
-			}else
-				tb->setFV(index, _T(""));
-		}
-		return ret;
-	}
-
 	void allocBuffer(int size)
 	{
 		 if (data)
@@ -277,8 +257,10 @@ public:
 				ret = setCompFiled(tb, fieldNum, value);// value is field name
 			else
 			{
-				tb->setFV(fieldNum, value);
-				bool part = isPart(tb, fieldNum);
+				fields fds(*tb);
+				field fd =  fds[fieldNum];
+				fd = value;
+				bool part = fd.isCompPartAndMakeValue();
 				copyToBuffer(tb, fieldNum, part);
 			}
 			return ret;

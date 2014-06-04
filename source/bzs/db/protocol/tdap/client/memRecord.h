@@ -80,13 +80,18 @@ public:
 		return NULL;
 	}
 
-	inline const autoMemory& memBlock(int index) const
+	inline const autoMemory& memBlockByField(int index) const
 	{
 		for (int i=0;i<memBlockSize();++i)
 			if (*(m_memblock[i].endFieldIndex) > index)
 				return m_memblock[i];
 		assert(0);
 		return *((autoMemory*)0);
+	}
+
+	inline const autoMemory& memBlock(int index) const
+	{
+		return m_memblock[index];
 	}
 
 	inline int memBlockSize() const

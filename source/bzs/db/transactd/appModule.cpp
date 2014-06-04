@@ -139,10 +139,14 @@ public:
 		m_rows = 0;
 	}
 
+	static const int NON_DATABUF_DATA_SIZE = 4; //paramMask + result
+
 	bool asyncWrite(const char* p, unsigned int size, eWriteMode mode=copyOnly)
 	{
 		unsigned int asyncDataSize = (unsigned int)(m_curPtr - m_data);
-		if (resultBuffer->size() < datalen + asyncDataSize + size)
+
+		//client detabuffer orver flow check. don't use minus unsigned variables 
+		if (resultBuffer->size() + NON_DATABUF_DATA_SIZE < datalen + asyncDataSize + size)
 			return false;
 		m_databufLen += (int)size;
 		if (mode==curSeekOnly)

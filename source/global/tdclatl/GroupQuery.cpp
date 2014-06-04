@@ -19,6 +19,9 @@
 #include "stdafx.h"
 #include "GroupQuery.h"
 #include "QueryBase.h"
+#include "RecordsetQuery.h"
+
+using namespace bzs::db::protocol::tdap::client;
 
 void CGroupQuery::setResult(IGroupQuery** retVal)
 {
@@ -55,25 +58,33 @@ STDMETHODIMP CGroupQuery::KeyField(BSTR Name0, BSTR Name1, BSTR Name2, BSTR Name
 	setResult(retVal);
 	return S_OK;
 }
-
-STDMETHODIMP CGroupQuery::ResultField(BSTR Name, IGroupQuery** retVal)
+ 
+STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, BSTR targetName , BSTR resultName, IRecordsetQuery* iq, IGroupQuery** retVal)
 {
-	m_gq.resultField(Name);
-	setResult(retVal);
-	return S_OK;
-}
-
-/*STDMETHODIMP CGroupQuery::Having(IQueryBase* query , IGroupQuery** retVal)
-{
-	if (query)
+	if (iq)
 	{
-		CQueryBase* p = dynamic_cast<CQueryBase*>(query);
-		if (p)
-			m_gq.having(p->query());
+		CRecordsetQuery* q = dynamic_cast<CRecordsetQuery*>(iq);
+		boost::shared_ptr<groupFuncBase> f;
+
+		if (func == fsum)
+			f.reset(new sum(targetName, resultName));  
+		else if (func == fmin)
+			f.reset(new min(targetName, resultName));  
+		else if (func == fmax)
+			f.reset(new max(targetName, resultName));  
+		else if (func == favg)
+			f.reset(new avg(targetName, resultName));  
+		else if(func == fcount)
+			f.reset(new count(targetName, resultName)); 
+		f->setQuery(&q->m_qb);
+		m_funcs.push_back(f);
+		m_gq.addFunction(f.get());
 	}
 	setResult(retVal);
 	return S_OK;
-}*/
+
+}
+
 
 STDMETHODIMP CGroupQuery::Reset(IGroupQuery** retVal)
 {

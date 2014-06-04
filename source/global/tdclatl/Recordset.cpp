@@ -22,6 +22,7 @@
 #include "Field.h"
 #include "GroupQuery.h"
 #include "FieldDefs.h"
+#include "RecordsetQuery.h"
 
 using namespace bzs::db::protocol::tdap::client;
 
@@ -131,23 +132,34 @@ STDMETHODIMP CARecordset::RemoveField(short Index, IRecordset** retVal)
 	return Error("Invalid field index", IID_IRecordset);	
 }
 
-STDMETHODIMP CARecordset::GroupBy(IGroupQuery* igq, enum eGroupFunc func, IRecordset** retVal)
+
+STDMETHODIMP CARecordset::MatchBy(IRecordsetQuery* irq, IRecordset** retVal)
+{
+	try
+	{
+		if (irq)
+		{
+			CRecordsetQuery* rq = dynamic_cast<CRecordsetQuery*>(irq);
+			m_rs->matchBy(rq->m_qb);
+		}
+		setResult(retVal);	
+		return S_OK;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
+}
+
+
+STDMETHODIMP CARecordset::GroupBy(IGroupQuery* igq, IRecordset** retVal)
 {
 	try
 	{
 		if (igq)
 		{
 			CGroupQuery* gq = dynamic_cast<CGroupQuery*>(igq);
-			if (func == fsum)
-				m_rs->groupBy(gq->m_gq, sum<row_ptr, int, double>());
-			else if (func == fmin)
-				m_rs->groupBy(gq->m_gq, min<row_ptr, int, double>());
-			else if (func == fmax)
-				m_rs->groupBy(gq->m_gq, max<row_ptr, int, double>());
-			else if (func == favg)
-				m_rs->groupBy(gq->m_gq, avg<row_ptr, int, double>());
-			else if(func == fcount)
-				m_rs->groupBy(gq->m_gq, count<row_ptr, int, int>());
+			m_rs->groupBy(gq->m_gq);
 		}
 		setResult(retVal);	
 		return S_OK;

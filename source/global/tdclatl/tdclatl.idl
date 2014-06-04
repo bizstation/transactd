@@ -37,6 +37,7 @@ interface IRecordset;
 interface IRecord;
 interface IWritableRecord;
 interface IGroupQuery;
+interface IRecordsetQuery;
 interface IFieldDefs;
 
 typedef
@@ -1122,7 +1123,7 @@ interface IRecordset : IDispatch
   [id(0x0000008)]
   HRESULT _stdcall RemoveField([in]short Index, [out, retval] IRecordset** retVal);
   [id(0x0000009)]
-  HRESULT _stdcall GroupBy(IGroupQuery* gq, [in] eGroupFunc func, [out, retval] IRecordset** retVal);
+  HRESULT _stdcall GroupBy(IGroupQuery* gq, [out, retval] IRecordset** retVal);
   [id(0x000000A)]
   HRESULT _stdcall OrderBy([in] BSTR name0, [in, defaultvalue("")] BSTR name1, [in, defaultvalue("")] BSTR name2,
 					[in, defaultvalue("")] BSTR name3, [in, defaultvalue("")] BSTR name4, 
@@ -1136,6 +1137,9 @@ interface IRecordset : IDispatch
   HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
   [propget,id(0x000000D)]
   HRESULT _stdcall Size([out, retval]unsigned long* retVal);
+
+  [id(0x000000E)]
+  HRESULT _stdcall MatchBy(IRecordsetQuery* gq, [out, retval] IRecordset** retVal);
 
 };
 
@@ -1201,13 +1205,31 @@ interface IGroupQuery : IDispatch
 				[in, defaultvalue("")] BSTR Name10, [out, retval] IGroupQuery** retVal);
 
   [id(0x0000002)]
-  HRESULT _stdcall ResultField(BSTR Name, [out, retval] IGroupQuery** retVal);
-  /*[id(0x0000003)]
-  HRESULT _stdcall Having(IQueryBase* query, [out, retval] IGroupQuery** retVal);
-  */
+  HRESULT _stdcall AddFunction([in] eGroupFunc func
+	  ,	[in, defaultvalue("")] BSTR targetName , [in, defaultvalue("")] BSTR resultName
+	  , [in, defaultvalue(0)]IRecordsetQuery* q, [out, retval] IGroupQuery** retVal);
+
   [id(0x0000004)]
   HRESULT _stdcall Reset([out, retval] IGroupQuery** retVal);
+};
 
+[
+  object,
+  uuid(B40B2E5A-2E5A-4D76-B392-75CFA9CD89A8),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IRecordsetQuery : IDispatch
+{
+  [id(0x0000004)]
+  HRESULT _stdcall Reset([out, retval] IRecordsetQuery** retVal);
+  [id(0x0000005)]
+  HRESULT _stdcall When([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000006)]
+  HRESULT _stdcall And([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000007)]
+  HRESULT _stdcall Or([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IRecordsetQuery** retVal);
 
 };
 
@@ -1387,6 +1409,14 @@ library transactd
 	coclass GroupQuery
 	{
 		[default] interface IGroupQuery;
+	};
+
+	[
+		uuid(611990AE-89AA-49AC-8B17-B518BF6A7729)		
+	]
+	coclass RecordsetQuery
+	{
+		[default] interface IRecordsetQuery;
 	};
 
 	[

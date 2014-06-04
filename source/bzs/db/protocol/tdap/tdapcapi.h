@@ -216,12 +216,12 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 */
 enum eCompType
 {
-	equal       = 1,
-	greater     = 2,
-	less        = 3,
-	notEq       = 4,
-	greaterEq   = 5,
-	lessEq      = 6
+	eEqual       = 1,
+	eGreater     = 2,
+	eLess        = 3,
+	eNotEq       = 4,
+	eGreaterEq   = 5,
+	eLessEq      = 6
 };
 
 /** charset type number

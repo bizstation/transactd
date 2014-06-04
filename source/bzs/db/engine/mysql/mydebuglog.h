@@ -58,11 +58,13 @@ extern char msg[1024];
 	#define DEBUG_WRITELOG_SP1(FORMAT, PARAM) \
 		sprintf_s(msg,FORMAT, PARAM); \
 		debuglog::get()->write(msg);
+	#define DEBUG_MEMDUMP(MSG, PTR, SIZE) ((debugdb*)debuglog::get())->writeDump(MSG, (const char*)PTR, SIZE);
 
 #else  //DEBUG_LOG
 	#define DEBUG_WRITELOG2(OP, REQ)
 	#define DEBUG_WRITELOG3(OP, REQ, ERR)
 	#define DEBUG_WRITELOG_SP1(FORMAT, PARAM)
+	#define DEBUG_MEMDUMP(MSG, PTR, SIZE)
 #endif //DEBUG_LOG
 
 #ifdef DEBUG_LOG_BINSERT

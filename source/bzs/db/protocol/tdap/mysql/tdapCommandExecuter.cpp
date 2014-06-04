@@ -479,6 +479,7 @@ inline void dbExecuter::doMoveKey(request& req, int op)
 
 inline int dbExecuter::doReadMultiWithSeek(request& req, int op, netsvc::server::netWriter* nw)
 {
+	DEBUG_MEMDUMP("doReadMultiWithSeek ", req.data, (*((short*)req.data)))
 	int ret = 1;
 	m_tb = getTable(req.pbk->handle);
 	char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
@@ -527,6 +528,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, netsvc::server:
 
 inline int dbExecuter::doReadMulti(request& req, int op, netsvc::server::netWriter* nw)
 {
+	DEBUG_MEMDUMP("doReadMulti ", req.data, (*((short*)req.data)))
 	int ret = 1;
 	m_tb = getTable(req.pbk->handle);
 	extRequest* ereq = (extRequest*)req.data;

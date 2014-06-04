@@ -18,6 +18,8 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
+#include "fieldNames.h"
+#include "memRecord.h"
 #include <bzs/db/protocol/tdap/client/trdboostapi.h>
 
 namespace bzs
@@ -30,168 +32,186 @@ namespace tdap
 {
 namespace client
 {
+typedef boost::shared_ptr<memoryRecord> row_type;
+typedef double value_type;
 
-/** @cond INTERNAL */
-
-inline int getFieldType(int )
+class recordsetQuery : protected query
 {
-	return ft_integer;
-}
+	friend class groupFuncBase;
+	friend class recordset;
+	row_type m_row;
+	std::vector<unsigned char> m_compType;
+	std::vector<short> m_indexes;
+	std::vector<char> m_combine;
+	short m_endIndex;
+	fielddefs m_compFields;
 
-inline int getFieldType(__int64 )
-{
-	return ft_integer;
-}
+	void init(const fielddefs* fdinfo)
+	{
+		const std::vector<std::_tstring>& tokns = getWheres();
+		short pos = 0;
+		for (int i=0;i<(int)tokns.size();i+=4)
+		{
+			int index = fdinfo->indexByName(tokns[i]);
+			m_indexes.push_back(index);
+			m_compFields.push_back(&((*fdinfo)[index]), true/*rePosition*/);
+		}
 
-inline int getFieldType(short )
-{
-	return ft_integer;
-}
+		m_row.reset(memoryRecord::create(m_compFields));
+		m_row->setRecordData(0, 0, &m_endIndex, true);
 
-inline int getFieldType(char )
-{
-	return ft_integer;
-}
+		int index = 0;
+		for (int i=0;i<(int)tokns.size();i+=4)
+		{
+			field fd = (*m_row)[index];
+			fd = tokns[i+2].c_str();
+			bool part = fd.isCompPartAndMakeValue();
+			unsigned char ct = getFilterLogicTypeCode(tokns[i+1].c_str());
+			if (!part) ct |= CMPLOGICAL_VAR_COMP_ALL;
 
-inline int getFieldType(double )
-{
-	return ft_float;
-}
+			m_compType.push_back(ct);
+			if (i+3 < (int)tokns.size())
+			{
+				std::_tstring s = tokns[i+3];
+				if (s == _T("or"))
+					m_combine.push_back(eCor);
+				else if (s == _T("and"))
+					m_combine.push_back(eCand);
+			}else
+				m_combine.push_back(eCend);
+			++index;
+		}
 
-inline int getFieldType(float )
-{
-	return ft_float;
-}
+	}
 
-inline int compByKey(const fieldsBase& l, const fieldsBase& r, const int& s)
-{
-	assert((s < (int)l.size()) && (s < (int)r.size()));
-	return l.getFieldNoCheck(s).comp(r.getFieldNoCheck(s), 0);
-}
+	bool isMatch(int ret, unsigned char compType) const
+	{
+		compType &= 0xf;// lower then 15
+		switch ((eCompType)compType)
+		{
+		case eEqual: return (ret == 0);
+		case eGreaterEq: return (ret >= 0);
+		case eLessEq: return (ret <= 0);
+		case eGreater: return (ret > 0);
+		case eLess: return (ret < 0);
+		case eNotEq: return (ret != 0);
+		}
+		return false;
+	}
 
 
-template <class Container>
-class grouping_comp
-{
-	typedef std::vector<typename Container::key_type> key_vec;
-	const key_vec& m_keys;
-	Container& m_mdls;
+	bool match(const row_type row) const
+	{
+		for (int i=0;i<(int)m_indexes.size();++i)
+		{
+			short index =  m_indexes[i];
+			bool ret = isMatch((*row)[index].comp((*m_row)[i]), m_compType[i]);
+			if (m_combine[i] == eCend) return ret;
+			if (ret && m_combine[i] == eCor) return true;
+			if (!ret && m_combine[i] == eCand) return false;
+
+		}
+		assert(0);
+		return false;
+	}
 
 public:
-	grouping_comp(Container& mdls
-			, const std::vector<typename Container::key_type>& keys)
-		:m_mdls(mdls),m_keys(keys) {}
+	using query::reset;
+	using query::and_;
+	using query::or_ ;
 
-	int operator() (int lv, int rv) const
+	template <class T>
+	query& when(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
-		const typename Container::row_type& lm = m_mdls[lv] ;
-		const typename Container::row_type& rm = m_mdls[rv] ;
-		for (int i=0;i<(int)m_keys.size();++i)
-		{
-			typename Container::key_type s = m_keys[i];
-			int ret = compByKey(*lm, *rm, s);
-			if (ret) return ret;
-		}
-		return 0;
+		addLogic(name, qlogic, lexical_cast(value).c_str());
+		return *this;
 	}
 
-	bool isEqual(const typename Container::row_type& lm
-					, const typename Container::row_type& rm)
-	{
-		for (int i=0;i< m_keys.size();++i)
-		{
-			typename Container::key_type s = m_keys[i];
-			int ret = compByKey(*lm, *rm, s);
-			if (ret) return false;
-		}
-		return true;
-	}
 };
 
-/*
-class groupQuery
 
---------------------
-dataset requirements
---------------------
-
-define types
-	dataset::row_type   rowset vector type
-
-	// key_type, if row is object , The key type is a string, a numeric,
-	// a function address, etc. which you decided.
-	dataset::key_type key_type;
-
-
-public functions
-	// Compair with key, which return int value.
-	// row_type& is *row_type. If row_type is shared_ptr<T> then row_type& is T.
-	int compByKey(const row_type& l, const row_type& r, const key_type& s)
-
-	dataset::iterator begin(dataset& m)
-	dataset::iterator end(dataset& m)
-	void push_back(dataset& m, T c)
-	void clear(dataset& m)      //clear rows
-
-	// resolvKeyValue is use for convert to key value from filed name
-	dataset::key_type resolvKeyValue(dataset&, const std::_tstring& name , bool noexception=false)  const
-
-	void setValue(row_type& row, const key_type& resultKey, const result_type& T);
-
---------------------
-dataset options
---------------------
-define types
-
-	// header_type: If this type id defined then
-	// readBefore(const tdc::table_ptr tb) function called automaticaly.
-	// In almost all the cases It is vector<std::_tstring>.
-	dataset:: header_type;
-
-
-functions
-	// This function clled at before reading.
-	// You can make heder name list etc.
-	// If you define header_type, you are necessary to certainly
-	// define this function.
-	void readBefore(const tdc::table_ptr tb)
-
-*/
-class query;
-
-template <class Container>
-typename Container::key_type resolvKeyValue(Container& m, const std::_tstring& name
-	, bool noexception=false);
-
-template <class Container>
-typename Container::iterator begin(Container& m);
-
-template <class Container>
-typename Container::iterator end(Container& m);
-
-template <class Container>
-void clear(Container& m);
-
-template <class Container>
-void push_back(Container& m, typename Container::row_type c);
-
-template <class ROW_TYPE, class KEY_TYPE, class T>
-void setValue(ROW_TYPE& row, KEY_TYPE key, const T& value);
-
-
-/** @endcond */
-
-class groupQuery
+class groupFuncBase
 {
-	//friend class recordset;
+	friend class groupQuery;
 
-	std::vector<std::_tstring> m_keyFields;
-	std::_tstring m_resultField;
-	const queryBase* m_having;
+	const _TCHAR* m_targetName;
+	const _TCHAR* m_resultName;
+protected:
+	int m_resultKey;
+	int m_targetKey;
+	std::vector<value_type> m_values;
+	recordsetQuery* m_query;
 
-	 /* remove none grouping fields */
+	virtual void insertValue(int index)
+	{
+		std::vector<value_type>::iterator it = m_values.begin(); 
+		if (index)
+			it += index;
+		m_values.insert(it, 0.0f);
+	}
+
+	virtual void doCalc(const row_type& row, int groupIndex){};
+
+	void init(const fielddefs* fdinfo)
+	{
+		if (m_query)
+			m_query->init(fdinfo);
+		m_targetKey = m_targetName ? fdinfo->indexByName(m_targetName): -1;
+		m_resultKey = fdinfo->indexByName(m_resultName);
+		if (m_resultKey == -1) m_resultKey = (int)fdinfo->size();
+	}
+
+public:
+	groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName=NULL
+		, recordsetQuery* query=NULL)
+		:m_targetName(targetName),m_query(query)
+	{
+	   m_resultName = ((resultName == NULL) || resultName[0]==0x00)
+									 ? targetName:resultName;
+	   m_values.reserve(10);
+	}
+
+	virtual ~groupFuncBase(){};
+
+	groupFuncBase& setQuery(recordsetQuery* query)
+	{
+		m_query = query;
+		return *this;
+	}
+
+	const _TCHAR* targetName() const {return m_targetName;}
+
+	const _TCHAR* resultName() const {return m_resultName;}
+
+	int resultKey() const {return m_resultKey;}
+
+	void reset(){m_values.clear();};
+
+	void operator()(const row_type& row, int index, bool insert)
+	{
+		if (insert)
+			insertValue(index);// setNullValue
+		if ((!m_query || m_query->match(row)))
+			doCalc(row, index);
+	}
+
+	virtual value_type result(int groupIndex)const{return m_values[groupIndex];};
+
+};
+
+
+inline void setValue(row_type& row, int key, double value)
+{
+	(*row)[key] = value;
+}
+
+class groupQuery : public fieldNames
+{
+	std::vector<groupFuncBase* > m_funcs;
+
+	/* remove none grouping fields */
 	template <class Container>
-	void removeFileds(Container& mdls)
+	void removeFields(Container& mdls)
 	{
 		const fielddefs& fds = *mdls.fieldDefs();
 		for (int i=(int)fds.size()-1;i>=0;--i)
@@ -200,82 +220,44 @@ class groupQuery
 			for (int j=0;j<(int)m_keyFields.size();++j)
 			{
 				if (m_keyFields[j] == fds[i].name())
+				{
 					enabled = true;
+					break;
+				}
 			}
-			if (!enabled && (m_resultField == fds[i].name()))
-				enabled = true;
+			if (!enabled)
+			{
+				for (int j=0;j<(int)m_funcs.size();++j)
+				{
+					if (!enabled && (m_funcs[j]->resultKey() == i))
+					{
+						enabled = true;
+						break;
+					}
+				}
+			}
+
 			if (!enabled)
 				mdls.removeField(i);
 		}
 	}
 
-	template <class Container>
-	bool isHavingRow(typename Container::row_type& r)
-	{
-		r;
-		//Currently no support having.
-		return true;
-	}
-
 public:
-	groupQuery& reset()
+	fieldNames& reset()
 	{
-		m_keyFields.clear();
-		m_resultField = _T("");
-		m_having = NULL;
-		return *this;
+		fieldNames::reset();
+		m_funcs.clear();
+        return *this;
 	}
 
-	groupQuery& keyField(const TCHAR* name, const TCHAR* name1=NULL, const TCHAR* name2=NULL, const TCHAR* name3=NULL
-				,const TCHAR* name4=NULL, const TCHAR* name5=NULL, const TCHAR* name6=NULL, const TCHAR* name7=NULL
-				,const TCHAR* name8=NULL, const TCHAR* name9=NULL, const TCHAR* name10=NULL)
+	groupQuery& addFunction(groupFuncBase* func)
 	{
-		m_keyFields.clear();
-		m_keyFields.push_back(name);
-		if (name1) m_keyFields.push_back(name1);
-		if (name2) m_keyFields.push_back(name2);
-		if (name3) m_keyFields.push_back(name3);
-		if (name4) m_keyFields.push_back(name4);
-		if (name5) m_keyFields.push_back(name5);
-		if (name6) m_keyFields.push_back(name6);
-		if (name7) m_keyFields.push_back(name7);
-		if (name8) m_keyFields.push_back(name8);
-		if (name9) m_keyFields.push_back(name9);
-		if (name10) m_keyFields.push_back(name10);
+		m_funcs.push_back(func);
 		return *this;
 	}
-
-	groupQuery& resultField(const _TCHAR* name)
-	{
-		m_resultField = name;
-		return *this;
-	}
-
-	/*
-
-	ToDo implement having
-	groupQuery& having(const queryBase& q) {m_having = &q;return *this;}
-
-	const queryBase& getHaving() const {return *m_having;}
-
-	*/
-
-
-	const std::vector<std::_tstring>& getKeyFields()const {return m_keyFields;}
-
-	const std::_tstring& getResultFields()const {return m_resultField;}
-
 
 	template <class Container>
-	void getFieldIndexes(Container& mdls, std::vector<typename Container::key_type>& fieldIndexes)
-	{
-		/* convert field Index from filed name */
-		for (int i=0;i<(int)m_keyFields.size();++i)
-			fieldIndexes.push_back(resolvKeyValue(mdls, m_keyFields[i], false));
-	}
-
-	template <class Container, class FUNC>
-	void grouping(Container& mdls,  FUNC func)
+	void grouping(Container& mdls)
 	{
 		std::vector<typename Container::key_type> keyFields;
 
@@ -283,35 +265,36 @@ public:
 		for (int i=0;i<(int)m_keyFields.size();++i)
 			keyFields.push_back(resolvKeyValue(mdls, m_keyFields[i]));
 
-
-		bool noexception = true;
-		typename Container::key_type resultKey = resolvKeyValue(mdls, m_resultField, noexception);
-		func.setResultKey(resultKey);
-		if (resultKey == mdls.fieldDefs()->size())
+		for (int i=0;i<(int)m_funcs.size();++i)
 		{
-			typename FUNC::value_type dummy=0;
-			mdls.appendCol(m_resultField.c_str(), getFieldType(dummy), sizeof(typename FUNC::value_type));
+
+			groupFuncBase* f = m_funcs[i];
+			f->init(mdls.fieldDefs());
+
+			if (f->resultKey() == mdls.fieldDefs()->size())
+			{
+				value_type dummy=0;
+				mdls.appendCol(f->resultName(), getFieldType(dummy), sizeof(dummy));
+			}
 		}
 
 		grouping_comp<Container> groupingComp(mdls, keyFields);
 		std::vector<int> index;
 		typename Container::iterator it = begin(mdls), ite = end(mdls);
 
-		std::vector<FUNC> funcs;
 		int i,n = 0;
 		while(it != ite)
 		{
 			bool found = false;
 			i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
 			if (!found)
-			{
 				index.insert(index.begin() + i, n);
-				funcs.insert(funcs.begin() + i, FUNC(func));
-			}
-			funcs[i](*it);
+			for (int j=0;j<(int)m_funcs.size();++j)
+				(*m_funcs[j])(*it, i, !found);
 			++n;
 			++it;
 		}
+
 		//real sort by index
 		Container c(mdls);
 
@@ -319,13 +302,122 @@ public:
 		for (int i=0;i<(int)index.size();++i)
 		{
 			typename Container::row_type cur = c[index[i]];
-			setValue(cur, resultKey, funcs[i].result());
-			if (isHavingRow<Container>(cur))
-				mdls.push_back(cur);
+			for (int j=0;j<(int)m_funcs.size();++j)
+				setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->result(i));
+			mdls.push_back(cur);
 		}
-		removeFileds(mdls);
+		removeFields(mdls);
 	}
 };
+
+
+inline __int64 fieldValue(const field& fd, __int64 ) {return fd.i64();}
+inline int fieldValue(const field& fd, int ) {return fd.i();}
+inline short fieldValue(const field& fd, short ) {return (short)fd.i();}
+inline char fieldValue(const field& fd, char ) {return (char)fd.i();}
+inline double fieldValue(const field& fd, double ) {return fd.d();}
+inline float fieldValue(const field& fd, float ) {return fd.f();}
+inline const _TCHAR* fieldValue(const field& fd, const _TCHAR* ) {return fd.c_str();}
+
+class sum : public groupFuncBase
+{
+protected:
+	void doCalc(const row_type& row, int index)
+	{
+		value_type tmp=0;
+		m_values[index] += fieldValue((*row)[m_targetKey], tmp);
+	}
+
+public:
+	sum(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL)
+		:groupFuncBase(targetName, resultName, query){}
+};
+
+class count : public groupFuncBase
+{
+protected:
+	void doCalc(const row_type& row, int index)
+	{
+		m_values[index] = m_values[index] + 1;
+	}
+	value_type result(int index)const{return m_values[index];}
+
+public:
+	count(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL)
+		:groupFuncBase(targetName, resultName, query){}
+
+};
+
+
+class avg : public sum
+{
+	std::vector<__int64> m_count;
+	virtual void insertValue(int index)
+	{
+		sum::insertValue(index);
+		m_count.insert(m_count.begin() + index, 0);
+
+	}
+
+	void doCalc(const row_type& row, int index)
+	{
+		sum::doCalc(row, index);
+		m_count[index] = m_count[index] + 1;
+	}
+
+	value_type result(int index)const
+	{
+		return m_values[index]/m_count[index];
+	}
+
+public:
+	avg(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL)
+		:sum(targetName, resultName){}
+
+};
+
+
+#undef min
+class min : public sum
+{
+	bool m_flag ;
+	void doCalc(const row_type& row, int index)
+	{
+		value_type tmp=0;
+		tmp = fieldValue((*row)[m_targetKey], tmp);
+		if (m_flag || m_values[index]  > tmp)
+		{
+			m_flag = false;
+			m_values[index]  = tmp;
+		}
+	}
+
+public:
+	min(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL)
+		:sum(targetName, resultName, query),m_flag(true){}
+};
+
+#undef max
+class max : public sum
+{
+	bool m_flag ;
+	void doCalc(const row_type& row, int index)
+	{
+		value_type tmp=0;
+		tmp = fieldValue((*row)[m_targetKey], tmp);
+		if (m_flag || m_values[index]  < tmp)
+		{
+			m_flag = false;
+			m_values[index]  = tmp;
+		}
+	}
+
+public:
+	max(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL)
+		:sum(targetName, resultName, query),m_flag(true){}
+};
+
+
 
 }// namespace client
 }// namespace tdap

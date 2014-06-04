@@ -63,7 +63,9 @@ public:
   STDMETHOD(get_Count)(unsigned long* retVal);
   STDMETHOD(get_Size)(unsigned long* retVal);
   STDMETHOD(RemoveField)(short Index, IRecordset** retVal);
-  STDMETHOD(GroupBy)(IGroupQuery* gq, enum eGroupFunc func, IRecordset** retVal);
+  STDMETHOD(GroupBy)(IGroupQuery* gq, IRecordset** retVal);
+  STDMETHOD(MatchBy)(IRecordsetQuery* rq, IRecordset** retVal);
+
   STDMETHOD(OrderBy)( BSTR name0,  BSTR name1,  BSTR name2,  BSTR name3,  BSTR name4, 
 					 BSTR name5,  BSTR name6,  BSTR name7,  BSTR name8
 					, IRecordset** retVal);

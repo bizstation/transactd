@@ -132,6 +132,14 @@ fielddefs::~fielddefs()
 	delete m_imple;
 }
 
+fielddefs* fielddefs::clone() const
+{
+	fielddefs* p = new fielddefs();
+	*p->m_imple = *m_imple;
+	return p;
+
+}
+
 void fielddefs::setAliases(const aliasMap_type* p)
 {
 	m_imple->aliasMap = p;
@@ -144,14 +152,25 @@ void fielddefs::addAllFileds(tabledef* def)
 		push_back(&def->fieldDefs[i]);
 }
 
-void fielddefs::push_back(const fielddef* p)
+void fielddefs::push_back(const fielddef* p, bool rePosition)
 {
 	m_imple->fields.push_back(*p);
-	fielddef* pp = &m_imple->fields[m_imple->fields.size() - 1];
+	int index = m_imple->fields.size() - 1;
+	fielddef* pp = &m_imple->fields[index];
+	if (rePosition)
+	{
+		if (index == 0)
+			pp->pos = 0;
+		else
+		{
+			fielddef* bf = &m_imple->fields[index-1];
+			pp->pos = bf->pos + bf->len;
+		}
+	}
 	//reset update indicator
 	pp->enableFlags.bitE = false;
 	aliasing(pp);
-	m_imple->map[pp->name()] = (int)m_imple->fields.size() - 1;
+	m_imple->map[pp->name()] = index;
 }
 
 void fielddefs::remove(int index)
@@ -1757,6 +1776,26 @@ int field::comp(const field& r, char logType) const
 {
 	compFieldFunc f = getCompFunc(logType);
 	return f(*this, r, logType);
+}
+
+bool field::isCompPartAndMakeValue()
+{
+	bool ret = false;
+	if (m_fd->isStringType())
+	{
+		 _TCHAR* p = (_TCHAR*)getFVstr();
+		if (p)
+		{
+			size_t n = _tcslen(p);
+			if (n && ((ret = (p[n-1] == _T('*')))!=0))
+			{
+				p[n-1] = 0x00;
+				setFV(p);
+			}
+		}else
+			setFV(_T(""));
+	}
+	return ret;
 }
 
 }// namespace client

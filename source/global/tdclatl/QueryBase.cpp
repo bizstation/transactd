@@ -21,7 +21,6 @@
 #include "Table.h"
 
 
-
 STDMETHODIMP CQueryBase::Reset(void)
 {
     m_qb.reset();
@@ -241,7 +240,6 @@ STDMETHODIMP CQueryBase::IsAll(VARIANT_BOOL* retVal)
 	return S_OK;
 }
 
-
 STDMETHODIMP CQueryBase::Optimize(eOptimize v, IQueryBase** retVal)
 {
 	m_qb.optimize((bzs::db::protocol::tdap::client::queryBase::eOptimize)v);
@@ -254,7 +252,6 @@ STDMETHODIMP CQueryBase::GetOptimize(eOptimize* retVal)
 	*retVal = (eOptimize)m_qb.getOptimize();
 	return S_OK;
 }
-
 
 STDMETHODIMP CQueryBase::SelectCount(short* retVal)
 {
@@ -285,7 +282,6 @@ STDMETHODIMP CQueryBase::GetWhereToken(short index, BSTR* retVal)
 		return Error("Invalid index", IID_IQueryBase);
 	return S_OK;
 }
-
 
 STDMETHODIMP CQueryBase::BookmarkAlso(VARIANT_BOOL v, IQueryBase** retVal)
 {

@@ -313,28 +313,30 @@ const _TCHAR* btrVersion::moduleVersionShortString(_TCHAR* buf)
 PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr)
 {
 	if (_tcscmp(cmpstr, _T("=")) == 0)
-		return (uchar_td)1;
+		return (uchar_td)eEqual;
 
 	if (_tcscmp(cmpstr, _T(">")) == 0)
-		return (uchar_td)2;
+		return (uchar_td)eGreater;
 
 	if (_tcscmp(cmpstr, _T("<")) == 0)
-		return (uchar_td)3;
+		return (uchar_td)eLess;
 
 	if (_tcscmp(cmpstr, _T("<>")) == 0)
-		return (uchar_td)4;
+		return (uchar_td)eNotEq;
 
 	if (_tcscmp(cmpstr, _T("=>")) == 0)
-		return (uchar_td)5;
+		return (uchar_td)eGreaterEq;
 	if (_tcscmp(cmpstr, _T(">=")) == 0)
-		return (uchar_td)5;
+		return (uchar_td)eGreaterEq;
 
 	if (_tcscmp(cmpstr, _T("=<")) == 0)
-		return (uchar_td)6;
+		return (uchar_td)eLessEq;
 	if (_tcscmp(cmpstr, _T("<=")) == 0)
-		return (uchar_td)6;
+		return (uchar_td)eLessEq;
 	return 255;
 }
+
+
 
 }//namespace tdap
 }//namespace protocol

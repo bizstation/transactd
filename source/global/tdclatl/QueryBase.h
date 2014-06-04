@@ -58,7 +58,7 @@ public:
 
 	void FinalRelease()
 	{
-		//m_qb.release();
+		m_qb.release();
 	}
 
 public:

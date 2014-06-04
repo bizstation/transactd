@@ -20,8 +20,8 @@
 =================================================================*/
 #include "trdboostapi.h"
 #include "filedNameAlias.h"
-#include "groupQuery.h"
 #include "memRecord.h"
+#include "fieldNames.h"
 #include <boost/shared_array.hpp>
 #include <vector>
 #include <boost/utility/enable_if.hpp>
@@ -80,11 +80,109 @@ public:
 	inline void beginTrn(short bias){m_db->beginTrn(bias);};
 	inline void endTrn(){m_db->endTrn();}
 	inline void abortTrn(){m_db->abortTrn();}
-	inline bool enableTrn(){m_db->enableTrn();}
+	inline int enableTrn(){return m_db->enableTrn();}
 	inline void beginSnapshot(){m_db->beginSnapshot();}
 	inline void endSnapshot(){m_db->endSnapshot();}
 };
 
+
+/** @cond INTERNAL */
+
+inline int getFieldType(int )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(__int64 )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(short )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(char )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(double )
+{
+	return ft_float;
+}
+
+inline int getFieldType(float )
+{
+	return ft_float;
+}
+
+inline int compByKey(const fieldsBase& l, const fieldsBase& r, const int& s)
+{
+	assert((s < (int)l.size()) && (s < (int)r.size()));
+	return l.getFieldNoCheck(s).comp(r.getFieldNoCheck(s), 0);
+}
+
+
+template <class Container>
+class grouping_comp
+{
+	typedef std::vector<typename Container::key_type> key_vec;
+	const key_vec& m_keys;
+	Container& m_mdls;
+
+public:
+	grouping_comp(Container& mdls
+			, const std::vector<typename Container::key_type>& keys)
+		:m_mdls(mdls),m_keys(keys) {}
+
+	int operator() (int lv, int rv) const
+	{
+		const typename Container::row_type& lm = m_mdls[lv] ;
+		const typename Container::row_type& rm = m_mdls[rv] ;
+		for (int i=0;i<(int)m_keys.size();++i)
+		{
+			typename Container::key_type s = m_keys[i];
+			int ret = compByKey(*lm, *rm, s);
+			if (ret) return ret;
+		}
+		return 0;
+	}
+
+	bool isEqual(const typename Container::row_type& lm
+					, const typename Container::row_type& rm)
+	{
+		for (int i=0;i< m_keys.size();++i)
+		{
+			typename Container::key_type s = m_keys[i];
+			int ret = compByKey(*lm, *rm, s);
+			if (ret) return false;
+		}
+		return true;
+	}
+};
+
+
+template <class Container>
+typename Container::key_type resolvKeyValue(Container& m, const std::_tstring& name
+	, bool noexception=false);
+
+template <class Container>
+typename Container::iterator begin(Container& m);
+
+template <class Container>
+typename Container::iterator end(Container& m);
+
+template <class Container>
+void clear(Container& m);
+
+template <class Container>
+void push_back(Container& m, typename Container::row_type c);
+
+template <class ROW_TYPE, class KEY_TYPE, class T>
+void setValue(ROW_TYPE& row, KEY_TYPE key, const T& value);
+/** @endcond */
 
 
 /** @cond INTERNAL */
@@ -375,6 +473,7 @@ protected:
 	MAP m_map;
 	int m_option;
 	fdNmaeAlias m_alias;
+	typedef std::vector<std::vector<int> > joinmap_type;
 
 	inline T& getItem(collection_vec_type& mdls, unsigned int index){return *(mdls[index]);}
 	void init(idatabaseManager& mgr, const _TCHAR* name)
@@ -404,7 +503,7 @@ protected:
 
 
 	template <class Container>
-	void makeJoinMap(Container& mdls, std::vector<std::vector<int> >& joinRowMap
+	void makeJoinMap(Container& mdls, joinmap_type& joinRowMap
 				, std::vector<typename Container::key_type>& keyFields)
 	{
 
@@ -424,7 +523,6 @@ protected:
 		}
 	}
 
-
 	template <class Container>
 	void doJoin(bool innner, Container& mdls, queryBase& q, const _TCHAR* name1
 					, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
@@ -441,11 +539,15 @@ protected:
 		typename Container::iterator it = mdls.begin(),ite = mdls.end();
 
 		bool optimize = !(q.getOptimize() & queryBase::joinKeyValuesUnique);
-		std::vector<std::vector<int> > joinRowMap;
+		joinmap_type joinRowMap;
 		std::vector<typename Container::key_type> fieldIndexes;
-		groupQuery gq;
-		gq.keyField(name1, name2, name3, name4, name5, name6, name7, name8, name9, name10, name11);
-		gq.getFieldIndexes(mdls, fieldIndexes);
+
+		fieldNames fns;
+		fns.keyField(name1, name2, name3, name4, name5, name6, name7, name8, name9, name10, name11);
+		const std::vector<std::_tstring>& names = fns.getKeyFields();
+
+		for (int i=0;i<(int)names.size();++i)
+			fieldIndexes.push_back(resolvKeyValue(mdls, names[i], false));
 
 		/* optimizing join
 			If base recordset is made by unique key and join by uniqe field, that can not opitimize.
@@ -1041,7 +1143,6 @@ public:
 		return *this;
 
 	}
-
 
 };
 

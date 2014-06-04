@@ -595,14 +595,14 @@ public:
 			{
 				if (key->key_part[segmentIndex].field->field_index == num)
 				{
-					eCompType comp = (eCompType)(fd->logType);
-					bool gt = (comp == greater)||(comp == greaterEq);
-					bool le = (comp == less)||(comp == lessEq);	
+					eCompType comp = (eCompType)(fd->logType & 0x0f);
+					bool gt = (comp == eGreater)||(comp == eGreaterEq);
+					bool le = (comp == eLess)||(comp == eLessEq);	
 					bool valid = !(forword ? gt:le);	
 					if (valid)
 					{
 						m_keySeg = (unsigned char)segmentIndex+1;
-						m_judgeType =  (comp == equal) ? 2:1;
+						m_judgeType =  (comp == eEqual) ? 2:1;
 					}
 					break;
 				}
@@ -616,11 +616,11 @@ public:
 	{
 		if (m_judge)
 		{
-			if ((log == equal) && m_matched)//==
+			if ((log == eEqual) && m_matched)//==
 				return REC_NOMACTH_NOMORE;
-			else if (typeNext && (log == less || log==lessEq))
+			else if (typeNext && (log == eLess || log==eLessEq))
 				return REC_NOMACTH_NOMORE;
-			else if (!typeNext && (log == greater || log==greaterEq))
+			else if (!typeNext && (log == eGreater || log==eGreaterEq))
 				return REC_NOMACTH_NOMORE;
 		}
 		return REC_NOMACTH;
@@ -760,7 +760,8 @@ class resultWriter
 				int len =  pos->recordPackCopy(m_nw->curPtr(), (uint)m_nw->bufferSpace());
 				if (len == 0)
 					return STATUS_BUFFERTOOSMALL;
-				m_nw->asyncWrite(NULL, len, netsvc::server::netWriter::curSeekOnly);
+				if (!m_nw->asyncWrite(NULL, len, netsvc::server::netWriter::curSeekOnly))
+					return STATUS_BUFFERTOOSMALL;
 				recLen += len;
 			}else
 			{

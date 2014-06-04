@@ -267,6 +267,7 @@
     <ClCompile Include="..\..\source\global\tdclatl\QueryBase.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Record.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Recordset.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\RecordsetQuery.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -299,6 +300,7 @@
     <ClInclude Include="..\..\source\global\tdclatl\QueryBase.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Record.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Recordset.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\RecordsetQuery.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Resource.h" />
     <ClInclude Include="..\..\source\global\tdclatl\stdafx.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Table.h" />
@@ -315,6 +317,7 @@
     <None Include="database.rgs" />
     <None Include="GroupQuery.rgs" />
     <None Include="QueryBase.rgs" />
+    <None Include="RecordsetQuery.rgs" />
     <None Include="tdclatl.rgs" />
   </ItemGroup>
   <ItemGroup>

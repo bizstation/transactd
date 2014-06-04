@@ -76,7 +76,7 @@
 			<TASM_Debugging>None</TASM_Debugging>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_3)'!=''">
-			<Defines>_UNICODE;$(Defines)</Defines>
+			<Defines>_UNICODE;_DEBUG;$(Defines)</Defines>
 			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
 			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
 			<BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>

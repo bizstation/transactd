@@ -31,6 +31,7 @@ class ATL_NO_VTABLE CGroupQuery :
     public IDispatchImpl<IGroupQuery, &IID_IGroupQuery, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
 {
 	void setResult(IGroupQuery** retVal);
+	std::vector<boost::shared_ptr<bzs::db::protocol::tdap::client::groupFuncBase> > m_funcs;
 
 public:
 	bzs::db::protocol::tdap::client::groupQuery m_gq;
@@ -53,8 +54,9 @@ public:
   STDMETHOD(KeyField)(BSTR Name, BSTR Name1, BSTR Name2, BSTR Name3, BSTR Name4, BSTR Name5,
 				BSTR Name6, BSTR Name7,	BSTR Name8, BSTR Name9,	BSTR Name10,
 				IGroupQuery** retVal);
-  STDMETHOD(ResultField)(BSTR Name, IGroupQuery** retVal);
-  //STDMETHOD(Having)(IQueryBase* query , IGroupQuery** retVal);
+  STDMETHOD(AddFunction)(eGroupFunc func, BSTR targetName , BSTR resultName
+					, IRecordsetQuery* q, IGroupQuery** retVal);
+
   STDMETHOD(Reset)(IGroupQuery** retVal);
 
 };

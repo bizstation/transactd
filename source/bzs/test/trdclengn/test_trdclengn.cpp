@@ -901,9 +901,11 @@ void testExclusive()
 	BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat(), "Exclusive opened 2");
 
 	// Can open a same connection.
-	tb2 = db->openTable(_T("user"));
+	table* tb3 = db->openTable(_T("user"));
 	BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 2");
-
+	if (tb2)
+		tb2->release();
+	tb3->release();
 	tb->release();
 	database::destroy(db2);
 	database::destroy(db);
@@ -2560,21 +2562,36 @@ void testJoin(database* db)
 
 	//test group by
 	groupQuery gq;
-	gq.keyField(_T("group"),_T("id")).resultField(_T("count"));
-	rs.groupBy(gq, group_count());
+	gq.keyField(_T("group"),_T("id"));
+
+	client::count count1(NULL, _T("count"));
+	gq.addFunction(&count1);
+
+	recordsetQuery gfq;
+	gfq.when(_T("group") ,_T("="), 1);
+	client::count count2(NULL, _T("gropu1_count"), &gfq);
+
+	gq.addFunction(&count2);
+	rs.groupBy(gq);
 	BOOST_CHECK_MESSAGE(rs.size()== 16000, "group by  rs.size()== 16000");
+	int v = (*rs[0])[_T("gropu1_count")].i();
+	BOOST_CHECK_MESSAGE(v == 1, "gropu1_count = " << v);
+
+	//rs.dump();
+	recordset* rsv = rs.clone();
 
 	gq.reset();
-	gq.keyField(_T("group")).resultField(_T("count"));
-	rs.groupBy(gq, group_count());
+	client::count count3(NULL, _T("count"));
+	gq.addFunction(&count3).keyField(_T("group"));//.resultField(_T("count"));
+	rs.groupBy(gq);
 	BOOST_CHECK_MESSAGE(rs.size()== 100, "group by2  rs.size()== 100");
 
-	//use sum function object by for_each
-	group_sum f;
-	f.setResultKey((int)rs.fieldDefs()->size()-1);
-	f = std::for_each(rs.begin(),rs.end(), f);
-	BOOST_CHECK_MESSAGE(f.result()== 16000, "sum ");
-
+	//having
+	recordsetQuery rq;
+	rq.when(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
+	rsv->matchBy(rq);
+	BOOST_CHECK_MESSAGE(rsv->size()== 160, "matchBy  rsv.size() ==" << rsv->size());
+	delete rsv;
 	//top
 	recordset rs3;
 	rs.top(rs3, 10);

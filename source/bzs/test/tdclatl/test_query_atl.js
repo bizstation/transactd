@@ -158,10 +158,18 @@ var fmax = 0;
 var fmin = 1;
 var favg = 2;
 var fsum = 3;
+var fcount = 4;
+	
 
 var none = 0;
 var hasOneJoin = 1;
 var joinWhereFields = 2;
+
+function createRecordsetQuery()
+{
+    return new ActiveXObject('transactd.recordsetQuery');
+}
+
 	
 function createQuery()
 {
@@ -516,8 +524,21 @@ function test(atu, atg, ate)
  	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "9 group", "group_name = 9 group ");
 	
 	rs.OrderBy("group_name");
- 	checkEqual(rs.Record(0).Field("group_name").Text, "1 group", "group_name = 1 group ");
- 			//var s;
+	checkEqual(rs.Record(0).Field("group_name").Text, "1 group", "group_name = 1 group ");
+	
+	
+	var rq = createRecordsetQuery();
+
+	rq.When("group" ,"=", 1);
+	gq.KeyField("group").AddFunction(fcount, "", "gropu1_count", rq);
+	rs.groupBy(gq);
+	checkEqual(rs.Count, 100, "groupBy rs.Count = 100 ");
+	var row = rs.Record(0);
+	
+	checkEqual(row.Field("gropu1_count").Vlng, 159, "gropu1_count = 159 ");
+	row = rs.Record(1);
+	checkEqual(row.Field("gropu1_count").Vlng, 0, "gropu1_count = 0 ");
+	
 	var count = rs.Count;
 		for (var j= 0;j<count;++j)
 			var s = rs.Record(j);

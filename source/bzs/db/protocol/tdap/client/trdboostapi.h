@@ -1182,7 +1182,7 @@ public:
 	virtual void beginTrn(short bias) = 0;
 	virtual void endTrn() = 0;
 	virtual void abortTrn() = 0;
-	virtual bool enableTrn()=0;
+	virtual int enableTrn()=0;
 	virtual void beginSnapshot() = 0;
 	virtual void endSnapshot() = 0;
 };

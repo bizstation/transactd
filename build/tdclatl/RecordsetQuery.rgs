@@ -1,0 +1,24 @@
+HKCR
+{
+	transactd.recordsetQuery.1 = s 'recordsetQuery Class'
+	{
+		CLSID = s '{611990AE-89AA-49AC-8B17-B518BF6A7729}'
+	}
+	transactd.recordsetQuery = s 'recordsetQuery Class'
+	{		
+		CurVer = s 'transactd.recordsetQuery.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {611990AE-89AA-49AC-8B17-B518BF6A7729} = s 'recordsetQuery Class'
+		{
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}
