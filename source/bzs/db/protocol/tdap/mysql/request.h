@@ -27,7 +27,6 @@
 /** readRecords reserved buffer size
  */
 #define RETBUF_EXT_RESERVE_SIZE 12
-#define RETBUF_EXT_ASYNC_RESERVE_SIZE 8
 
 
 namespace bzs

@@ -98,6 +98,22 @@ STDMETHODIMP CARecordset::Top(unsigned long Num, IRecordset** retVal)
 	return Error("Invalid top number", IID_IRecordset);	
 }
 
+STDMETHODIMP CARecordset::Clone(IRecordset** retVal)
+{
+	CComObject<CARecordset>* rsObj;
+	CComObject<CARecordset>::CreateInstance(&rsObj);
+	if (rsObj)
+	{
+		rsObj->m_rs = m_rs->clone();
+		IRecordset* rs;
+		rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
+		_ASSERTE(rs);
+		*retVal = rs;
+	}
+	return S_OK;
+
+}
+
 STDMETHODIMP CARecordset::Erase(unsigned long Index)
 {
 	if (Index >= 0 && Index < m_rs->size())

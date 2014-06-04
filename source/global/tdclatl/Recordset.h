@@ -71,5 +71,5 @@ public:
 					, IRecordset** retVal);
   STDMETHOD(Reverse)(IRecordset** retVal);
   STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
- 
+  STDMETHOD(Clone)(IRecordset** retVal);
 };

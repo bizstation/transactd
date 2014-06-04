@@ -1141,6 +1141,9 @@ interface IRecordset : IDispatch
   [id(0x000000E)]
   HRESULT _stdcall MatchBy(IRecordsetQuery* gq, [out, retval] IRecordset** retVal);
 
+  [id(0x000000F)]
+  HRESULT _stdcall Clone([out, retval] IRecordset** retVal);
+
 };
 
 [

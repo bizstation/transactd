@@ -105,33 +105,49 @@ public:
 											, bool tpool) = 0;
 };
 
+/* Currently, this writer used by resultWriter and request::serializeForExt only
+*/
 class netWriter
 {
 protected:
 	IResultBuffer* resultBuffer;
 	
 	buffers* m_optionalData;
-	size_t m_offset;
 	char* m_ptr;
 	char* m_curPtr;
+	unsigned int m_clientBuffferSize;
 public:
 	enum eWriteMode{copyOnly, curSeekOnly, netwrite, writeEnd};
-	netWriter():datalen(0),m_offset(0){}
+	netWriter():datalen(0){}
 	virtual ~netWriter(){};
+	inline void setClientBuffferSize(unsigned int v)
+	{
+		m_clientBuffferSize = v;
+		if (bufferSize() < v) resize(v);
+	}
 
 	inline void resize(size_t v){resultBuffer->resize(v);m_ptr = resultBuffer->ptr();};	
 	inline size_t bufferSize()const{return resultBuffer->size();};
 	inline buffers* optionalData(){return m_optionalData;};
 	inline char* ptr()const{return m_ptr;}
 	inline char* curPtr()const{return m_curPtr;}
-	virtual unsigned int resultLen() const {return (unsigned int)(datalen + m_offset);};
+	virtual unsigned int resultLen() const =0;
+
+	/*  At non recordset operations, the datalen variable is a holder of total send data size . 
+		At recordset operations, the datalen variable is specify current send data size - RETBUF_EXT_RESERVE_SIZE.
+	*/
 	size_t datalen ;
-	virtual size_t bufferSpace() const = 0;
+
+	/* Used by recordsetHndler only */
+	virtual size_t bufferSpace() const
+	{
+		return resultBuffer->size() - (curPtr() - m_ptr);
+	}
+
 	virtual void reset(IResultBuffer* retBuf, buffers* optData)
 	{
 		resultBuffer = 	retBuf;
 		m_optionalData = optData;
-		m_offset = 0;
 		datalen = 0;
 		m_ptr = resultBuffer->ptr();
 	}

@@ -63,16 +63,28 @@ namespace transactd
 
 
 #define ASYNCWRITE_DATA_SIZE 16374 //16384 - 10
+#define ASYNC_BUFFER_SIZE (ASYNCWRITE_DATA_SIZE+65536+6)
+
 static const unsigned int segment_mark = 0xFFFFFFFF;
 
+/*
+	segment_mark    4  system  include RETBUF_EXT_RESERVE_SIZE
+	paramMask		2  system  include RETBUF_EXT_RESERVE_SIZE
+	result			2  system  include RETBUF_EXT_RESERVE_SIZE
+	rows			2  data
+	data...   datalen  data
+	datalen         4  system  clients are no count this size
+	rows            2  system  clients are no count this size
+	totallen        4  system  include RETBUF_EXT_RESERVE_SIZE (not include already sent)
 
+
+*/
 class netAsyncWriter : public netWriter
 {
 	iconnection* m_conn;
 	char* m_buf;
 	char* m_data;
 	size_t m_defBuffferPos;
-	int m_databufLen;
 	unsigned short m_rows;
 
 	inline void doWrite()
@@ -85,7 +97,6 @@ class netAsyncWriter : public netWriter
 		
 		*((unsigned short*)(m_data - 2)) =  (unsigned short) size;
 		m_conn->asyncWrite(m_buf, size+offset);
-		datalen += size;
 
 		asyncDataSize -= size;
 		memmove(m_buf + 2, m_data + size, asyncDataSize);
@@ -97,7 +108,7 @@ class netAsyncWriter : public netWriter
 	{
 		memcpy(m_data, &segment_mark , 4);
 		unsigned short tmp = 4;
-		memcpy(m_data + tmp, &m_databufLen , 4);
+		memcpy(m_data + tmp, &datalen , 4);
 		memcpy(m_data + tmp + 4, &m_rows , 2);
 		*((unsigned short*)(m_data - 2)) = tmp;
 		m_conn->asyncWrite(m_buf, tmp+2+4+2);
@@ -109,7 +120,7 @@ public:
 	netAsyncWriter(iconnection* conn)
 		:netWriter(),m_conn(conn),m_defBuffferPos(0)
 	{
-		m_buf = new char[ASYNCWRITE_DATA_SIZE+65536+6];
+		m_buf = new char[ASYNC_BUFFER_SIZE];
 		memcpy(m_buf, &segment_mark, sizeof(unsigned int));
 		m_data = m_buf + 2 + 4;
 	}
@@ -135,20 +146,19 @@ public:
 		asyncWrite((const char*)(&paramMask) , sizeof(ushort_td));
 		asyncWrite((const char*)(&result) , sizeof(short));
 		asyncWrite((const char*)(&m_rows) , sizeof(unsigned short));
-		m_databufLen = sizeof(unsigned short);//rows space;
+		
+		datalen = sizeof(unsigned short);//rows space;
 		m_rows = 0;
 	}
-
-	static const int NON_DATABUF_DATA_SIZE = 4; //paramMask + result
 
 	bool asyncWrite(const char* p, unsigned int size, eWriteMode mode=copyOnly)
 	{
 		unsigned int asyncDataSize = (unsigned int)(m_curPtr - m_data);
 
 		//client detabuffer orver flow check. don't use minus unsigned variables 
-		if (resultBuffer->size() + NON_DATABUF_DATA_SIZE < datalen + asyncDataSize + size)
+		if (m_clientBuffferSize  < datalen + size) 
 			return false;
-		m_databufLen += (int)size;
+		datalen += size;
 		if (mode==curSeekOnly)
 			m_curPtr += size;
 		else if (mode == netwrite)
@@ -171,19 +181,18 @@ public:
 	}
 
 	//write to default buffer
-	bool write(const char* p, size_t n, eWriteMode mode=copyOnly)
+	bool write(const char* p, size_t size, eWriteMode mode=copyOnly)
 	{
 		if (mode >= netwrite) return true;
-		if (resultBuffer->size() < m_defBuffferPos + n) return false;
+		if (resultBuffer->size() < m_defBuffferPos + size) 
+			return false;
 
 		if (mode != curSeekOnly)
-			memcpy(resultBuffer->ptr() + m_defBuffferPos, p, n);
-		m_defBuffferPos += n;
-		datalen += n;
-		m_databufLen += (int)n;
+			memcpy(resultBuffer->ptr() + m_defBuffferPos, p, size);
+		m_defBuffferPos += size;
+		datalen += size;
 		m_curPtr = resultBuffer->ptr() + m_defBuffferPos;
 		return true;
-		
 	}
 
 	void incremetRows()
@@ -193,12 +202,12 @@ public:
 
 	size_t bufferSpace() const
 	{
-		return ASYNCWRITE_DATA_SIZE+65536+6 - (curPtr() - m_buf);
+		return ASYNC_BUFFER_SIZE - (curPtr() - m_buf);
 	}
 
 	unsigned int resultLen() const 
 	{
-		return (unsigned int)m_databufLen + RETBUF_EXT_ASYNC_RESERVE_SIZE;
+		return (unsigned int)datalen + RETBUF_EXT_RESERVE_SIZE;
 	}
 
 	unsigned short getParamMask(bool includeBlob)
@@ -212,13 +221,18 @@ public:
 	}
 	
 	/* Increment total deta size space only.
-	   The header and contents are already sent */
+	   The header and contents are already sent 
+	   This space is include RETBUF_EXT_RESERVE_SIZE.
+	*/
 	void writeHeadar(unsigned short paramMask, short result)
 	{
 		write(NULL, 4, curSeekOnly);
+		datalen -= 4;
 	}
-
-	unsigned int allreadySent()const{return resultLen();}
+	
+	/*  allreadySent is async write size. writeHeadar size is not include. 
+	*/
+	unsigned int allreadySent()const{return resultLen()-4;}
 
 };
 
@@ -231,41 +245,40 @@ public:
 
 	void beginExt(bool includeBlob)
 	{
-		m_offset = RETBUF_EXT_RESERVE_SIZE;
-		m_curPtr = m_ptr + m_offset;
+		m_curPtr = m_ptr + RETBUF_EXT_RESERVE_SIZE;
 		m_rowsPos = (unsigned short*)m_curPtr;
 		(*m_rowsPos) = 0;
 		datalen = sizeof(unsigned short);//rows space;
 		m_curPtr += 2;
 	}
 	
-
-	bool asyncWrite(const char* p, unsigned int n, eWriteMode mode=copyOnly)
+	unsigned int resultLen() const 
+	{
+		return (unsigned int)(datalen + RETBUF_EXT_RESERVE_SIZE);
+	}
+	
+	bool asyncWrite(const char* p, unsigned int size, eWriteMode mode=copyOnly)
 	{
 		if (mode >= netwrite) return true;
-		if (resultBuffer->size() < datalen + m_offset + n) return false;
+		if (m_clientBuffferSize  < datalen + size) 
+			return false;
 
 		if (mode != curSeekOnly)
-			memcpy(m_curPtr, p, n);
-		m_curPtr += n;
-		datalen += n;
+			memcpy(m_curPtr, p, size);
+		m_curPtr += size;
+		datalen += size;
 		
 		return true;
 	}
 	
-	bool write(const char* p, size_t n, eWriteMode mode=copyOnly)
+	bool write(const char* p, size_t size, eWriteMode mode=copyOnly)
 	{
-		return asyncWrite(p, (unsigned int)n, mode);
+		return asyncWrite(p, (unsigned int)size, mode);
 	}
 
 	void incremetRows()
 	{
 		++(*m_rowsPos);
-	}
-
-	size_t bufferSpace() const
-	{
-		return resultBuffer->size() - (m_curPtr - m_ptr);
 	}
 
 	unsigned short getParamMask(bool includeBlob)

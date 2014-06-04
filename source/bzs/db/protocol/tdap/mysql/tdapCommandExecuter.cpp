@@ -979,14 +979,14 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 		}
 		case TD_KEY_GE_NEXT_MULTI:
 		case TD_KEY_LE_PREV_MULTI:
-			if (nw->bufferSize() < *(req.datalen)) nw->resize(*(req.datalen));
+			nw->setClientBuffferSize(*(req.datalen));
 			return doReadMultiWithSeek(req, op, nw);
 		case TD_KEY_SEEK_MULTI:
 		case TD_KEY_NEXT_MULTI:
 		case TD_KEY_PREV_MULTI:
 		case TD_POS_NEXT_MULTI:
 		case TD_POS_PREV_MULTI:
-			if (nw->bufferSize() < *(req.datalen)) nw->resize(*(req.datalen));
+			nw->setClientBuffferSize(*(req.datalen));
 			return doReadMulti(req, op, nw);
 			break;
 		case TD_MOVE_PER:
