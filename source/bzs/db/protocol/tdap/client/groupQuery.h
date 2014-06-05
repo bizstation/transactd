@@ -120,22 +120,22 @@ class recordsetQuery : protected query
 
 public:
 
-	inline template <class T>
-	recordsetQuery& when(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	template <class T>
+	inline recordsetQuery& when(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
 		query::where(name, qlogic, value);
 		return *this;
 	}
 
-	inline template <class T>
-	recordsetQuery& and_(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	template <class T>
+	inline recordsetQuery& and_(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
 		query::and_(name, qlogic, value);
 		return *this;
 	}
 
-	inline template <class T>
-	recordsetQuery& or_(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	template <class T>
+	inline recordsetQuery& or_(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
 		query::or_(name, qlogic, value);
 		return *this;

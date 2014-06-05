@@ -60,7 +60,7 @@ void insertUser(fields& fds, int id, const _TCHAR* name, int groupid
 													, const _TCHAR* tel)
 {
 
-	fds.clearValues();
+	fds.clear();
 	fds[fieldnum_id] = id;
 	fds[fieldnum_name] = name;
 	fds[fieldnum_group] = groupid;
@@ -84,7 +84,7 @@ void insertUsers(table_ptr tb)
 void insertGroup(fields& fds, int id, const _TCHAR* name)
 {
 
-	fds.clearValues();
+	fds.clear();
 	fds[fieldnum_id] = id;
 	fds[fieldnum_name] = name;
 	insertRecord(fds);
@@ -102,7 +102,7 @@ void insertGroups(table_ptr tb)
 void insertPicure(table_ptr tb, short type, int id, const void* img, size_t size)
 {
 	fields fds(tb);
-	fds.clearValues();
+	fds.clear();
 	fds[fieldnum_pic_type] = type;
 	fds[fieldnum_pic_id] = id;
 	fds[fieldnum_pic_pic].setBin(img, (int)size);

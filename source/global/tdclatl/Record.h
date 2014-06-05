@@ -35,7 +35,7 @@ class ATL_NO_VTABLE CRecord :
 	short GetFieldNum(VARIANT* Index);
 
 public:
-	bzs::db::protocol::tdap::client::memoryRecord* m_rec;
+	bzs::db::protocol::tdap::client::fieldsBase* m_rec;
     CRecord():m_fieldObj(NULL){}
 
     BEGIN_COM_MAP(CRecord) 
