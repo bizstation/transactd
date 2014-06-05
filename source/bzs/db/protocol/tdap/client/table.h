@@ -197,13 +197,12 @@ public:
 	void setFV(short index, const void* data, uint_td size);
 	void setFV(const _TCHAR* fieldName, int data);
 	void setFVA(const _TCHAR* fieldName, const char* data);
-	void setFVW(short index, const wchar_t* data);
-	void setFVW(const _TCHAR* fieldName, const wchar_t* data);
 
 #ifdef _WIN32
 	const wchar_t* getFVWstr(const _TCHAR* fieldName);
 	const wchar_t* getFVWstr(short index);
-
+	void setFVW(short index, const wchar_t* data);
+	void setFVW(const _TCHAR* fieldName, const wchar_t* data);
 #endif
 
 #ifdef _UNICODE
@@ -214,10 +213,12 @@ public:
 	inline const char* getFVstr(const char* fieldName) {return getFVAstr(fieldName);};
 #endif
 
-	inline void setFV(short index, const wchar_t* data) {setFVW(index, data);};
 	inline void setFV(short index, const char* data) {setFVA(index, data);};
 	inline void setFV(const _TCHAR* fieldName, const char* data) {setFVA(fieldName, data);};
+#ifdef _WIN32
+	inline void setFV(short index, const wchar_t* data) {setFVW(index, data);};
 	inline void setFV(const _TCHAR* fieldName, const wchar_t* data) {setFVW(fieldName, data);};
+#endif
 
 	void setFV(const _TCHAR* fieldName, double data);
 	void setFV(const _TCHAR* fieldName, float data);
