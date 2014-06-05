@@ -155,7 +155,7 @@ void fielddefs::addAllFileds(tabledef* def)
 void fielddefs::push_back(const fielddef* p, bool rePosition)
 {
 	m_imple->fields.push_back(*p);
-	int index = m_imple->fields.size() - 1;
+	int index = (int)m_imple->fields.size() - 1;
 	fielddef* pp = &m_imple->fields[index];
 	if (rePosition)
 	{

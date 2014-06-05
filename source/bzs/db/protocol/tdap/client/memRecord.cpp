@@ -136,7 +136,7 @@ memoryRecord* memoryRecord::create(fielddefs& fdinfo)
 	return new memoryRecord(fdinfo);
 }
 
-void memoryRecord::release(memoryRecord* p)
+void memoryRecord::release(fieldsBase* p)
 {
 	delete p;
 

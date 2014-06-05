@@ -32,14 +32,16 @@ namespace tdap
 {
 namespace client
 {
-typedef boost::shared_ptr<memoryRecord> row_type;
-typedef double value_type;
+
+typedef fieldsBase row;
+typedef boost::shared_ptr<row> row_ptr;
+
 
 class recordsetQuery : protected query
 {
 	friend class groupFuncBase;
 	friend class recordset;
-	row_type m_row;
+	row_ptr m_row;
 	std::vector<unsigned char> m_compType;
 	std::vector<short> m_indexes;
 	std::vector<char> m_combine;
@@ -56,9 +58,10 @@ class recordsetQuery : protected query
 			m_indexes.push_back(index);
 			m_compFields.push_back(&((*fdinfo)[index]), true/*rePosition*/);
 		}
+		memoryRecord* mr = memoryRecord::create(m_compFields);
+		mr->setRecordData(0, 0, &m_endIndex, true);
+		m_row.reset(mr);
 
-		m_row.reset(memoryRecord::create(m_compFields));
-		m_row->setRecordData(0, 0, &m_endIndex, true);
 
 		int index = 0;
 		for (int i=0;i<(int)tokns.size();i+=4)
@@ -100,7 +103,7 @@ class recordsetQuery : protected query
 	}
 
 
-	bool match(const row_type row) const
+	bool match(const row_ptr row) const
 	{
 		for (int i=0;i<(int)m_indexes.size();++i)
 		{
@@ -116,22 +119,44 @@ class recordsetQuery : protected query
 	}
 
 public:
-	using query::reset;
-	using query::and_;
-	using query::or_ ;
 
-	template <class T>
-	query& when(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	inline template <class T>
+	recordsetQuery& when(const _TCHAR* name, const _TCHAR* qlogic, T value)
 	{
-		addLogic(name, qlogic, lexical_cast(value).c_str());
+		query::where(name, qlogic, value);
 		return *this;
 	}
+
+	inline template <class T>
+	recordsetQuery& and_(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	{
+		query::and_(name, qlogic, value);
+		return *this;
+	}
+
+	inline template <class T>
+	recordsetQuery& or_(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	{
+		query::or_(name, qlogic, value);
+		return *this;
+	}
+
+	inline recordsetQuery& reset()
+	{
+		query::reset();
+		return *this;
+	}
+
 
 };
 
 
 class groupFuncBase
 {
+public:
+	typedef double value_type;
+
+private:
 	friend class groupQuery;
 
 	const _TCHAR* m_targetName;
@@ -142,7 +167,7 @@ protected:
 	std::vector<value_type> m_values;
 	recordsetQuery* m_query;
 
-	virtual void insertValue(int index)
+	virtual void initResultVariable(int index)
 	{
 		std::vector<value_type>::iterator it = m_values.begin(); 
 		if (index)
@@ -150,7 +175,7 @@ protected:
 		m_values.insert(it, 0.0f);
 	}
 
-	virtual void doCalc(const row_type& row, int groupIndex){};
+	virtual void doCalc(const row_ptr& row, int groupIndex){};
 
 	void init(const fielddefs* fdinfo)
 	{
@@ -187,10 +212,10 @@ public:
 
 	void reset(){m_values.clear();};
 
-	void operator()(const row_type& row, int index, bool insert)
+	void operator()(const row_ptr& row, int index, bool insert)
 	{
 		if (insert)
-			insertValue(index);// setNullValue
+			initResultVariable(index);// setNullValue
 		if ((!m_query || m_query->match(row)))
 			doCalc(row, index);
 	}
@@ -200,7 +225,7 @@ public:
 };
 
 
-inline void setValue(row_type& row, int key, double value)
+inline void setValue(row_ptr& row, int key, double value)
 {
 	(*row)[key] = value;
 }
@@ -273,7 +298,7 @@ public:
 
 			if (f->resultKey() == mdls.fieldDefs()->size())
 			{
-				value_type dummy=0;
+				groupFuncBase::value_type dummy=0;
 				mdls.appendCol(f->resultName(), getFieldType(dummy), sizeof(dummy));
 			}
 		}
@@ -322,7 +347,7 @@ inline const _TCHAR* fieldValue(const field& fd, const _TCHAR* ) {return fd.c_st
 class sum : public groupFuncBase
 {
 protected:
-	void doCalc(const row_type& row, int index)
+	void doCalc(const row_ptr& row, int index)
 	{
 		value_type tmp=0;
 		m_values[index] += fieldValue((*row)[m_targetKey], tmp);
@@ -336,15 +361,15 @@ public:
 class count : public groupFuncBase
 {
 protected:
-	void doCalc(const row_type& row, int index)
+	void doCalc(const row_ptr& row, int index)
 	{
 		m_values[index] = m_values[index] + 1;
 	}
 	value_type result(int index)const{return m_values[index];}
 
 public:
-	count(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL)
-		:groupFuncBase(targetName, resultName, query){}
+	count(const _TCHAR* resultName, recordsetQuery* query=NULL)
+		:groupFuncBase(NULL, resultName, query){}
 
 };
 
@@ -352,14 +377,14 @@ public:
 class avg : public sum
 {
 	std::vector<__int64> m_count;
-	virtual void insertValue(int index)
+	void initResultVariable(int index)
 	{
-		sum::insertValue(index);
+		sum::initResultVariable(index);
 		m_count.insert(m_count.begin() + index, 0);
 
 	}
 
-	void doCalc(const row_type& row, int index)
+	void doCalc(const row_ptr& row, int index)
 	{
 		sum::doCalc(row, index);
 		m_count[index] = m_count[index] + 1;
@@ -381,7 +406,7 @@ public:
 class min : public sum
 {
 	bool m_flag ;
-	void doCalc(const row_type& row, int index)
+	void doCalc(const row_ptr& row, int index)
 	{
 		value_type tmp=0;
 		tmp = fieldValue((*row)[m_targetKey], tmp);
@@ -401,7 +426,7 @@ public:
 class max : public sum
 {
 	bool m_flag ;
-	void doCalc(const row_type& row, int index)
+	void doCalc(const row_ptr& row, int index)
 	{
 		value_type tmp=0;
 		tmp = fieldValue((*row)[m_targetKey], tmp);

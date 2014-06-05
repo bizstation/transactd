@@ -20,6 +20,9 @@
 =================================================================*/
 #include "trdormapi.h"
 #include "groupQuery.h"
+#ifdef _DEBUG
+#include <iostream>
+#endif
 
 namespace bzs
 {
@@ -33,8 +36,8 @@ namespace client
 {
 
 class map_orm;
-typedef memoryRecord row;
-typedef boost::shared_ptr<memoryRecord> row_ptr;
+//typedef /*memoryRecord*/ fieldsBase row;
+//typedef boost::shared_ptr<row> row_ptr;
 
 /** @cond INTERNAL */
 
@@ -103,7 +106,7 @@ class recordset
 	*/
 	short m_uniqueReadMaxField;
 public:
-	typedef std::vector<boost::shared_ptr<memoryRecord> >::iterator iterator;
+	typedef std::vector<row_ptr >::iterator iterator;
 
 private:
 
@@ -171,7 +174,7 @@ private:
 			m_recordset.reserve(reserveSize);
 			for (int i=0;i<(int)rows;++i)
 			{
-				boost::shared_ptr<memoryRecord> rec(memoryRecord::create(*m_fds), &memoryRecord::release);
+				row_ptr rec(memoryRecord::create(*m_fds), &memoryRecord::release);
  				rec->setRecordData(p + recordLen*i, 0, am->endFieldIndex, false);
 				m_recordset.push_back(rec);
 			}
@@ -232,8 +235,9 @@ public:
 
 		for (int i=0;i<(int)m_recordset.size();++i)
 		{
-			row_ptr row = m_recordset[i];
-			boost::shared_ptr<memoryRecord> rec(memoryRecord::create(*p->m_fds), &memoryRecord::release);
+			memoryRecord* row = dynamic_cast<memoryRecord*>(m_recordset[i].get());
+			memoryRecord* mr = memoryRecord::create(*p->m_fds);
+			row_ptr rec(mr, &memoryRecord::release);
 			p->m_recordset.push_back(rec);
 
 			for (int j=0;j<(int)row->memBlockSize();++j)
@@ -242,7 +246,7 @@ public:
 				int index = getMemBlockIndex(mb.ptr);
 				unsigned char* ptr =  mb.ptr + offsets[index];
 				const boost::shared_ptr<autoMemory>& am =  p->m_memblock[index];
-				rec->setRecordData(ptr, mb.size, am->endFieldIndex, mb.owner);
+				mr->setRecordData(ptr, mb.size, am->endFieldIndex, mb.owner);
 			}
 		}
 		return p;
@@ -514,26 +518,8 @@ public:
 		return 0;
 	}
 
-	void setKeyValues(row& m, const fields& fds, int keyNum)
-	{
-		const autoMemory& mb =  m.memBlockByField(0);
-		memcpy(fds.tb().fieldPtr(0), mb.ptr, mb.size);
-
-	}
-
-	void writeMap(row& m, const fields& fds, int optipn)
-	{
-		const autoMemory& mb =  m.memBlockByField(0);
-		memcpy(fds.tb().fieldPtr(0), mb.ptr, mb.size);
-	}
-
 	template <class T>
 	void readMap(T& m, const fields& fds, int optipn)
-	{
-		//needlessness
-	}
-
-	void readAuntoincValue(row& m, const fields& fds, int optipn)
 	{
 		//needlessness
 	}

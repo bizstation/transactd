@@ -38,6 +38,7 @@ namespace client
 
 class fieldsBase
 {
+	friend class multiRecordAlocatorImple;
 
 	virtual unsigned char* ptr(int index) const = 0;
 protected:
@@ -62,7 +63,6 @@ protected:
 	}
 	explicit inline fieldsBase(fielddefs& fns):m_fns(fns),m_invalidRecord(false){}
 
-	inline void setInvalidRecord(bool v){m_invalidRecord = v;}
 
 
 	inline void setFielddefs(fielddefs& def)
@@ -70,12 +70,13 @@ protected:
 		m_fns = def;
 	}
 
-	virtual ~fieldsBase(){};
 
 	/** @endcond */
 
 public:
+	virtual ~fieldsBase(){};
 
+	inline void setInvalidRecord(bool v){m_invalidRecord = v;}
 
 	inline bool isInvalidRecord()const{return m_invalidRecord;}
 
@@ -127,6 +128,11 @@ public:
 		return &m_fns;
 	}
 
+	virtual void clear() = 0;
+
+	virtual	void setRecordData(unsigned char* ptr, size_t size
+			, short* endFieldIndex, bool owner = false){};
+
 
 };
 
@@ -139,7 +145,7 @@ class fields : public fieldsBase
 	table& m_tb;
 	inline unsigned char* ptr(int index) const
 	{
-	    return (unsigned char*)m_tb.data();
+		return (unsigned char*)m_tb.data();
 	}
 	table* tbptr() const{return &m_tb;}
 
@@ -152,7 +158,7 @@ public:
 	inline explicit fields(table_ptr tb)
 			:fieldsBase(*((*tb).m_fddefs)),m_tb(*tb){}
 
-	inline void clearValues(){m_tb.clearBuffer();}
+	inline void clear(){m_tb.clearBuffer();}
 	inline table& tb() const {return m_tb;}
 	inline short inproc_size() const{return m_tb.getCurProcFieldCount();}
 	inline field inproc_fd(short index) const

@@ -59,15 +59,13 @@ public:
 class AGRPACK memoryRecord : public fieldsBase
 {
 	friend class multiRecordAlocatorImple;
+	friend class recordset;
 
 	std::vector<autoMemory > m_memblock;
 protected:
+/** @cond INTERNAL */
 	inline memoryRecord(fielddefs& fdinfo);
-	
-public:
-	void clear();
-	void setRecordData(unsigned char* ptr, size_t size
-			, short* endFieldIndex, bool owner = false);
+
 	void copyToBuffer(table* tb, bool updateOnly=false) const;
 
 	/* return memory block first address which not field ptr address */
@@ -103,9 +101,14 @@ public:
 	{
 		memcpy(ptr(0), tb->fieldPtr(0), m_fns.totalFieldLen());
 	}
+/** @endcond */
+public:
+	void clear(); //orverride
+	void setRecordData(unsigned char* ptr, size_t size
+			, short* endFieldIndex, bool owner = false);
 
 	static memoryRecord* create(fielddefs& fdinfo);
-	static void release(memoryRecord* p);
+	static void release(fieldsBase* p);
 };
 
 #pragma warning(default:4251)

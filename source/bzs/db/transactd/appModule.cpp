@@ -67,7 +67,8 @@ namespace transactd
 
 static const unsigned int segment_mark = 0xFFFFFFFF;
 
-/*
+/* netAsyncWriter protocol description
+	
 	segment_mark    4  system  include RETBUF_EXT_RESERVE_SIZE
 	paramMask		2  system  include RETBUF_EXT_RESERVE_SIZE
 	result			2  system  include RETBUF_EXT_RESERVE_SIZE
@@ -76,9 +77,8 @@ static const unsigned int segment_mark = 0xFFFFFFFF;
 	datalen         4  system  clients are no count this size
 	rows            2  system  clients are no count this size
 	totallen        4  system  include RETBUF_EXT_RESERVE_SIZE (not include already sent)
-
-
 */
+
 class netAsyncWriter : public netWriter
 {
 	iconnection* m_conn;

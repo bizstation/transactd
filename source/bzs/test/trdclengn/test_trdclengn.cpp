@@ -2564,12 +2564,12 @@ void testJoin(database* db)
 	groupQuery gq;
 	gq.keyField(_T("group"),_T("id"));
 
-	client::count count1(NULL, _T("count"));
+	client::count count1(_T("count"));
 	gq.addFunction(&count1);
 
 	recordsetQuery gfq;
 	gfq.when(_T("group") ,_T("="), 1);
-	client::count count2(NULL, _T("gropu1_count"), &gfq);
+	client::count count2(_T("gropu1_count"), &gfq);
 
 	gq.addFunction(&count2);
 	rs.groupBy(gq);
@@ -2581,7 +2581,7 @@ void testJoin(database* db)
 	recordset* rsv = rs.clone();
 
 	gq.reset();
-	client::count count3(NULL, _T("count"));
+	client::count count3(_T("count"));
 	gq.addFunction(&count3).keyField(_T("group"));//.resultField(_T("count"));
 	rs.groupBy(gq);
 	BOOST_CHECK_MESSAGE(rs.size()== 100, "group by2  rs.size()== 100");

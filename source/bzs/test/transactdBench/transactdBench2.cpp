@@ -48,7 +48,7 @@ void write(fields& fds, int start, int end)
 {
 	for (int i = start; i < end; i++)
 	{
-		fds.clearValues();
+		fds.clear();
 		fds[fn_id] = i;
 		fds[fn_name] = i;
 		insertRecord(fds);
