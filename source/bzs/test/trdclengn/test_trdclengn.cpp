@@ -29,7 +29,8 @@
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/filter.h>
 #include <bzs/example/queryData.h>
-#include <bzs/db/protocol/tdap/client/memRecordset.h>
+//#include <bzs/db/protocol/tdap/client/memRecordset.h>
+#include <bzs/db/protocol/tdap/client/activeTable.h>
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -2493,9 +2494,9 @@ void testJoin(database* db)
 	#endif
 #endif
 
-	queryTable atu(db, _T("user"));
-	queryTable atg(db, _T("groups"));
-	queryTable ate(db, _T("extention"));
+	activeTable atu(db, _T("user"));
+	activeTable atg(db, _T("groups"));
+	activeTable ate(db, _T("extention"));
 	recordset rs;
 	query q;
 
@@ -2510,9 +2511,11 @@ void testJoin(database* db)
 	BOOST_CHECK_MESSAGE(rs.size()== 15000, "join  rs.size()== 15000");
 
 	//test reverse
-	row_ptr last = rs.reverse().first();
-	BOOST_CHECK_MESSAGE((*last)[_T("id")].i() == 15000, "last field id == 15000");
-	BOOST_CHECK_MESSAGE(_tstring((*last)[_T("comment")].c_str()) == _tstring(_T("15000 comment"))
+
+
+	row& last = rs.reverse().first();
+	BOOST_CHECK_MESSAGE(last[_T("id")].i() == 15000, "last field id == 15000");
+	BOOST_CHECK_MESSAGE(_tstring(last[_T("comment")].c_str()) == _tstring(_T("15000 comment"))
 				, "last field comment");
 
 	//Join group::name
@@ -2520,25 +2523,26 @@ void testJoin(database* db)
 	atg.alias(_T("name"), _T("group_name"));
 	atg.index(0).join(rs, q.select(_T("group_name")), _T("group"));
 	BOOST_CHECK_MESSAGE(rs.size()== 15000, "join2  rs.size()== 15000");
-	row_ptr first = rs.last();
+	row& first = rs.last();
 
-	BOOST_CHECK_MESSAGE((*first)[_T("id")].i() == 1, "first field id == 1");
-	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("comment")].c_str()) == _tstring(_T("1 comment"))
+	BOOST_CHECK_MESSAGE(first[_T("id")].i() == 1, "first field id == 1");
+	BOOST_CHECK_MESSAGE(_tstring(first[_T("comment")].c_str()) == _tstring(_T("1 comment"))
 				, "first field comment");
 
-	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
-				, "first field group_name " << string((*first)[_T("group_name")].a_str()));
-	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
-				, "first field group_name " << string((*first)[_T("group_name")].a_str()));
-	row_ptr row = rs[15000 - 9];
-	BOOST_CHECK_MESSAGE(_tstring((*row)[_T("group_name")].c_str()) == _tstring(_T("9 group"))
-				, "group_name = 9 group " << string((*row)[_T("group_name")].a_str()));
+	BOOST_CHECK_MESSAGE(_tstring(first[_T("group_name")].c_str()) == _tstring(_T("1 group"))
+				, "first field group_name " << string(first[_T("group_name")].a_str()));
+	BOOST_CHECK_MESSAGE(_tstring(first[_T("group_name")].c_str()) == _tstring(_T("1 group"))
+				, "first field group_name " << string(first[_T("group_name")].a_str()));
+	//row_ptr row = rs[15000 - 9];
+	row& rec = rs[15000 - 9];
+	BOOST_CHECK_MESSAGE(_tstring(rec[_T("group_name")].c_str()) == _tstring(_T("9 group"))
+				, "group_name = 9 group " << string((rec)[_T("group_name")].a_str()));
 
 	//Test orderby
 	rs.orderBy(_T("group_name"));
-	first = rs[0];
-	BOOST_CHECK_MESSAGE(_tstring((*first)[_T("group_name")].c_str()) == _tstring(_T("1 group"))
-				, "group_name = 1 group " << string((*first)[_T("group_name")].a_str()));
+	//rec = rs[(size_t)0];
+	BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0][_T("group_name")].c_str()) == _tstring(_T("1 group"))
+				, "group_name = 1 group " << string(rs[(size_t)0][_T("group_name")].a_str()));
 
 	//test union
 	recordset rs2;
@@ -2554,11 +2558,11 @@ void testJoin(database* db)
 
 	rs += rs2;
 	BOOST_CHECK_MESSAGE(rs.size()== 16000, "union  rs.size()== 16000");
-	row = rs[15000];
-	BOOST_CHECK_MESSAGE((*row)[_T("id")].i() == 15001,"id = 15001");
-	row = rs.last();
-	BOOST_CHECK_MESSAGE((*row)[_T("id")].i() == 16000,"id = 16000");
-	
+	//row = rs[15000];
+	BOOST_CHECK_MESSAGE(rs[15000][_T("id")].i() == 15001,"id = 15001");
+	//row = rs.last();
+	BOOST_CHECK_MESSAGE(rs.last()[_T("id")].i() == 16000,"id = 16000");
+
 
 	//test group by
 	groupQuery gq;
@@ -2574,7 +2578,7 @@ void testJoin(database* db)
 	gq.addFunction(&count2);
 	rs.groupBy(gq);
 	BOOST_CHECK_MESSAGE(rs.size()== 16000, "group by  rs.size()== 16000");
-	int v = (*rs[0])[_T("gropu1_count")].i();
+	int v = rs[0][_T("gropu1_count")].i();
 	BOOST_CHECK_MESSAGE(v == 1, "gropu1_count = " << v);
 
 	//rs.dump();
@@ -2614,7 +2618,7 @@ void testWirtableRecord(database* db)
 	#endif
 #endif
 
-	queryTable atu(db, _T("user"));
+	activeTable atu(db, _T("user"));
 
 	writableRecord& rec = atu.index(0).getWritableRecord();
 

@@ -20,7 +20,7 @@
 #include "resource.h"
 
 #include "tdclatl_i.h"
-#include <bzs/db/protocol/tdap/client/memRecordset.h>
+#include <bzs/db/protocol/tdap/client/activeTable.h>
 
 
 using namespace ATL;
@@ -34,7 +34,7 @@ class ATL_NO_VTABLE CActiveTable :
 {
 	void setResult(IActiveTable** retVal);
 
-	bzs::db::protocol::tdap::client::activeTable<bzs::db::protocol::tdap::client::map_orm>* m_at;
+	bzs::db::protocol::tdap::client::activeTable* m_at;
 	CComObject<CWritableRecord>* m_recObj;
 
 public:

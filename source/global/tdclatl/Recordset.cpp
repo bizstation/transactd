@@ -57,7 +57,7 @@ STDMETHODIMP CARecordset::Record(unsigned long Index, IRecord** retVal)
 		}
 		if (m_recObj)
 		{
-			m_recObj->m_rec = (*m_rs)[Index].get(); 
+			m_recObj->m_rec = m_rs->getRow(Index).get(); 
 			IRecord* rec;
 			m_recObj->QueryInterface(IID_IRecord, (void**)&rec);
 			_ASSERTE(rec);

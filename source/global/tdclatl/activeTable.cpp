@@ -51,7 +51,7 @@ STDMETHODIMP CActiveTable::SetDatabase(IDatabase* Value, BSTR tableName)
 			CDatabase* p = dynamic_cast<CDatabase*>(Value);
 			if (p)
 			{	
-				m_at = new activeTable<map_orm>(p->database(), tableName);
+				m_at = new activeTable(p->database(), tableName);
 				m_at->table()->setOptionalData((void*)p->database());
 				return S_OK;
 			}

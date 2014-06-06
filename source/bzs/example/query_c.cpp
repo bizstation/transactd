@@ -16,7 +16,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include <bzs/db/protocol/tdap/client/memRecordset.h>
+#include <bzs/db/protocol/tdap/client/activeTable.h>
 #include <bzs/example/queryData.h>
 #include <iostream>
 #include <locale.h>
@@ -38,7 +38,7 @@ void showConsole(recordset& rowset)
 
 	for (int i=0;i<(int)rowset.size();++i)
 	{
-		row& m = *rowset[i];
+		row& m = rowset[i];
 		for (int j=0;j<(int)m.size();++j)
 		{
 			std::tcout << m[(short)j].c_str()  << _T("\t");
@@ -48,7 +48,7 @@ void showConsole(recordset& rowset)
 	}
 }
 
-void execute(recordset& rs, queryTable& atu, queryTable& atg, queryTable& ate)
+void execute(recordset& rs, activeTable& atu, activeTable& atg, activeTable& ate)
 {
 	query query;
 
@@ -87,9 +87,9 @@ int _tmain(int argc, _TCHAR* argv[])
 			std::tcout << "The query data build error." << std::endl;
 			return 1;
 		}
-		queryTable atu(db, _T("user"));
-		queryTable atg(db, _T("groups"));
-		queryTable ate(db, _T("extention"));
+		activeTable atu(db, _T("user"));
+		activeTable atg(db, _T("groups"));
+		activeTable ate(db, _T("extention"));
 
 		recordset rs;
 		execute(rs, atu, atg, ate);

@@ -287,6 +287,37 @@ public:
 
 };
 
+/* For template tget type num by type.*/
+inline int getFieldType(int )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(__int64 )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(short )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(char )
+{
+	return ft_integer;
+}
+
+inline int getFieldType(double )
+{
+	return ft_float;
+}
+
+inline int getFieldType(float )
+{
+	return ft_float;
+}
+
 AGRPACK const fielddef& dummyFd();
 
 }// namespace client

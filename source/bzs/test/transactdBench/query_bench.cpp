@@ -16,7 +16,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include <bzs/db/protocol/tdap/client/memRecordset.h>
+#include <bzs/db/protocol/tdap/client/activeTable.h>
 #include <bzs/rtl/benchmark.h>
 #include <bzs/example/queryData.h>
 #include <iostream>
@@ -39,7 +39,7 @@ void showConsole(recordset& rowset)
 
 	for (int i=0;i<(int)rowset.size();++i)
 	{
-		row& m = *rowset[i];
+		row& m = rowset[i];
 		for (int j=0;j<(int)m.size();++j)
 		{
 			std::tcout << m[(short)j].c_str()  << _T("\t");
@@ -49,7 +49,7 @@ void showConsole(recordset& rowset)
 	}
 }
 
-bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep, int kind, int n)
+bool btest(recordset* rsp, activeTable* atup, activeTable* atgp, activeTable* atep, int kind, int n)
 {
 #ifdef LINUX
 	const char* fd_name = "名前";
@@ -62,9 +62,9 @@ bool btest(recordset* rsp, queryTable* atup, queryTable* atgp, queryTable* atep,
 	#endif
 #endif
 
-	queryTable& atu = *atup;
-	queryTable& atg = *atgp;
-	queryTable& ate = *atep;
+	activeTable& atu = *atup;
+	activeTable& atg = *atgp;
+	activeTable& ate = *atep;
 	recordset& rs = *rsp;
 	query q;
 
@@ -133,9 +133,9 @@ int _tmain(int argc, _TCHAR* argv[])
 			std::tcout << "The query data build error." << std::endl;
 			return 1;
 		}
-		queryTable atu(db, _T("user"));
-		queryTable atg(db, _T("groups"));
-		queryTable ate(db, _T("extention"));
+		activeTable atu(db, _T("user"));
+		activeTable atg(db, _T("groups"));
+		activeTable ate(db, _T("extention"));
 
 		recordset rs;
 

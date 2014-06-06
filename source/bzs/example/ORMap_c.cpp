@@ -121,8 +121,8 @@ public:
 
 	/*  Define fdi_typename type
 		When fdi is not used , It is define "typedef fdibase fdi_typename;"
-		When other fdi is used, you can the fdi type specify at create activeTable instance
-		 like "activeTable<group, other_fdi>" */
+		When other fdi is used, you can the fdi type specify at create activeObject instance
+		 like "activeObject<group, other_fdi>" */
 	typedef group_fdi   fdi_typename;
 
 	/* Constructor , which a argument of 'fdi_typename fdi&' */
@@ -394,8 +394,8 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 	static const char_td keynum_group = 1;
 	static const char_td primary_key = 0;
 
-	/* Create the activeTable instance of user_orm. */
-	activeTable<user_orm> ut(db);
+	/* Create the activeObject instance of user_orm. */
+	activeObject<user_orm> ut(db);
 
 	//-------------------------------------------------------------------------
 	//   Single model operations
@@ -435,7 +435,7 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 	   Using shared pointer.
 	*/
 	group_ptr grp(group::create(0));
-	activeTable<group_orm> gt(db);
+	activeObject<group_orm> gt(db);
 	gt.index(primary_key).keyValue(2).read(*grp, noKeyValueFromObj);
 
 	/* Using pure pointer. */

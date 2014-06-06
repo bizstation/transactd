@@ -86,83 +86,8 @@ public:
 };
 
 
+
 /** @cond INTERNAL */
-
-inline int getFieldType(int )
-{
-	return ft_integer;
-}
-
-inline int getFieldType(__int64 )
-{
-	return ft_integer;
-}
-
-inline int getFieldType(short )
-{
-	return ft_integer;
-}
-
-inline int getFieldType(char )
-{
-	return ft_integer;
-}
-
-inline int getFieldType(double )
-{
-	return ft_float;
-}
-
-inline int getFieldType(float )
-{
-	return ft_float;
-}
-
-inline int compByKey(const fieldsBase& l, const fieldsBase& r, const int& s)
-{
-	assert((s < (int)l.size()) && (s < (int)r.size()));
-	return l.getFieldNoCheck(s).comp(r.getFieldNoCheck(s), 0);
-}
-
-
-template <class Container>
-class grouping_comp
-{
-	typedef std::vector<typename Container::key_type> key_vec;
-	const key_vec& m_keys;
-	Container& m_mdls;
-
-public:
-	grouping_comp(Container& mdls
-			, const std::vector<typename Container::key_type>& keys)
-		:m_mdls(mdls),m_keys(keys) {}
-
-	int operator() (int lv, int rv) const
-	{
-		const typename Container::row_type& lm = m_mdls[lv] ;
-		const typename Container::row_type& rm = m_mdls[rv] ;
-		for (int i=0;i<(int)m_keys.size();++i)
-		{
-			typename Container::key_type s = m_keys[i];
-			int ret = compByKey(*lm, *rm, s);
-			if (ret) return ret;
-		}
-		return 0;
-	}
-
-	bool isEqual(const typename Container::row_type& lm
-					, const typename Container::row_type& rm)
-	{
-		for (int i=0;i< m_keys.size();++i)
-		{
-			typename Container::key_type s = m_keys[i];
-			int ret = compByKey(*lm, *rm, s);
-			if (ret) return false;
-		}
-		return true;
-	}
-};
-
 
 template <class Container>
 typename Container::key_type resolvKeyValue(Container& m, const std::_tstring& name
@@ -182,10 +107,6 @@ void push_back(Container& m, typename Container::row_type c);
 
 template <class ROW_TYPE, class KEY_TYPE, class T>
 void setValue(ROW_TYPE& row, KEY_TYPE key, const T& value);
-/** @endcond */
-
-
-/** @cond INTERNAL */
 
 template <class T>
 inline typename std::vector<T>::iterator begin(std::vector<T>& m){return m.begin();}
@@ -435,36 +356,12 @@ public:
 	}
 };
 
-template <class Container, class FUNC>
-int binary_search(int key, const Container& a
-			, int left, int right, FUNC func, bool& find)
-{
-	find = false;
-	if (right == 0) return 0; // no size
 
-	int mid, tmp, end = right;
-	while(left <= right)
-	{
-		mid = (left + right) / 2;
-		if (mid >= end)
-			return end;
-		if ((tmp = func(a[mid], key)) == 0)
-		{
-			find = true;
-			return mid;
-		}
-		else if (tmp < 0)
-			left = mid + 1;  //keyValue is more large
-		else
-			right = mid - 1; //keyValue is more small
-	}
-	return left;
-}
 
 /** @endcond */
 
 template <class MAP, class T=typename MAP::mdl_typename, class FDI=typename MAP::fdi_typename>
-class activeTable : boost::noncopyable
+class activeObject : boost::noncopyable
 {
 protected:
 	typedef std::vector<boost::shared_ptr<T> > collection_vec_type;
@@ -473,9 +370,19 @@ protected:
 	MAP m_map;
 	int m_option;
 	fdNmaeAlias m_alias;
-	typedef std::vector<std::vector<int> > joinmap_type;
+
+	inline void reverseAliasNamesQuery(queryBase& q)
+	{
+		aliasMap_type::const_iterator it = m_alias.map().begin();
+		while(it != m_alias.map().end())
+		{
+			q.reverseAliasName((*it).second.c_str(), (*it).first.c_str());
+			++it;
+		}
+	}
 
 	inline T& getItem(collection_vec_type& mdls, unsigned int index){return *(mdls[index]);}
+
 	void init(idatabaseManager& mgr, const _TCHAR* name)
 	{
 		m_tb = mgr.table(name);
@@ -491,146 +398,10 @@ protected:
 		m_tb = openTable(db, name);
 	}
 
-	inline void reverseAliasNamesQuery(queryBase& q)
-	{
-		aliasMap_type::const_iterator it = m_alias.map().begin();
-		while(it != m_alias.map().end())
-		{
-			q.reverseAliasName((*it).second.c_str(), (*it).first.c_str());
-			++it;
-		}
-	}
-
-
-	template <class Container>
-	void makeJoinMap(Container& mdls, joinmap_type& joinRowMap
-				, std::vector<typename Container::key_type>& keyFields)
-	{
-
-		grouping_comp<Container> groupingComp(mdls, keyFields);
-		std::vector<int> index;
-		std::vector<int> tmp;
-		for (int n=0;n<(int)mdls.size();++n)
-		{
-			bool found = false;
-			int i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
-			if (!found)
-			{
-				index.insert(index.begin() + i, n);
-				joinRowMap.insert(joinRowMap.begin() + i, tmp);
-			}
-			joinRowMap[i].push_back(n);
-		}
-	}
-
-	template <class Container>
-	void doJoin(bool innner, Container& mdls, queryBase& q, const _TCHAR* name1
-					, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
-					, const _TCHAR* name4=NULL, const _TCHAR* name5=NULL
-					, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
-					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
-					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
-	{
-		if (mdls.size()==0) return;
-		reverseAliasNamesQuery(q);
-		q.clearSeekKeyValues();
-		fields fds(m_tb);
-		mraResetter mras(m_tb);
-		typename Container::iterator it = mdls.begin(),ite = mdls.end();
-
-		bool optimize = !(q.getOptimize() & queryBase::joinKeyValuesUnique);
-		joinmap_type joinRowMap;
-		std::vector<typename Container::key_type> fieldIndexes;
-
-		fieldNames fns;
-		fns.keyField(name1, name2, name3, name4, name5, name6, name7, name8, name9, name10, name11);
-		const std::vector<std::_tstring>& names = fns.getKeyFields();
-
-		for (int i=0;i<(int)names.size();++i)
-			fieldIndexes.push_back(resolvKeyValue(mdls, names[i], false));
-
-		/* optimizing join
-			If base recordset is made by unique key and join by uniqe field, that can not opitimize.
-		*/
-		if (optimize)
-		{
-			makeJoinMap(mdls, joinRowMap, fieldIndexes);
-			q.reserveSeekKeyValueSize(joinRowMap.size());
-			std::vector<std::vector<int> >::iterator it1 = joinRowMap.begin(),ite1 = joinRowMap.end();
-			while(it1 != ite1)
-			{
-				T& mdl = *(mdls[(*it1)[0]]);
-				for (int i=0;i<(int)fieldIndexes.size();++i)
-					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
-				++it1;
-			}
-		}
-		else
-		{
-			while(it != ite)
-			{
-				T& mdl = *(*it);
-				for (int i=0;i<(int)fieldIndexes.size();++i)
-					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
-				++it;
-			}
-		}
-
-		m_tb->setQuery(&q);
-		if (m_tb->stat() != 0)
-			nstable::throwError(_T("activeTable Join Query"), &(*m_tb));
-
-		typename MAP::collection_orm_typename map(mdls);
-
-		/* ignore list for inner join */
-		std::vector<typename Container::iterator> ignores;
-		it = mdls.begin();
-		map.init(m_option, m_fdi, m_map, m_tb, &m_alias.map());
-		if (m_tb->mra())
-		{
-			m_tb->mra()->setJoinType(innner ? mra_innerjoin : mra_outerjoin);
-			if (optimize)
-				m_tb->mra()->setJoinRowMap(&joinRowMap);
-		}
-		m_tb->find();
-		while(1)
-		{
-			if (m_tb->stat())
-			{
-				if ((m_tb->stat() == STATUS_EOF) ||
-					((m_tb->stat() != STATUS_SUCCESS) && (m_tb->stat() != STATUS_NOT_FOUND_TI)))
-					break;
-				else if (innner)
-					ignores.push_back(it);
-			}
-			++it;
-			m_tb->findNext(); //mra copy value to memrecord
-		}
-
-		readStatusCheck(*m_tb, _T("join"));
-		m_tb->mra()->setJoinRowMap(NULL);
-
-		/* remove record see ignore list for inner join */
-		if (innner)
-		{
-			if (m_tb->isUseTransactd())
-			{
-				for (int i=(int)ignores.size()-1;i>=0;--i)
-					mdls.erase(ignores[i]);	
-			}else
-			{
-				for (int i=(int)mdls.size()-1;i>=0;--i)
-				{
-					if(mdls[i]->isInvalidRecord())
-						mdls.erase(i);
-				}
-			}
-		}
-	}
 
 public:
 
-	explicit activeTable(idatabaseManager& mgr)
+	explicit activeObject(idatabaseManager& mgr)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
@@ -640,7 +411,7 @@ public:
 					initFdi(m_fdi, m_tb.get());
 			}
 
-	explicit activeTable(database_ptr& db)
+	explicit activeObject(database_ptr& db)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
@@ -651,7 +422,7 @@ public:
 			}
 
 
-	explicit activeTable(idatabaseManager& mgr, const _TCHAR* tableName)
+	explicit activeObject(idatabaseManager& mgr, const _TCHAR* tableName)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
@@ -661,7 +432,7 @@ public:
 					initFdi(m_fdi, m_tb.get());
 			}
 
-	explicit activeTable(database_ptr& db, const _TCHAR* tableName)
+	explicit activeObject(database_ptr& db, const _TCHAR* tableName)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
@@ -671,7 +442,7 @@ public:
 					initFdi(m_fdi, m_tb.get());
 			}
 
-	explicit activeTable(database* db, const _TCHAR* tableName)
+	explicit activeObject(database* db, const _TCHAR* tableName)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
@@ -681,7 +452,7 @@ public:
 					initFdi(m_fdi, m_tb.get());
 			}
 
-	~activeTable(){destroyFdi(m_fdi);}
+	~activeObject(){destroyFdi(m_fdi);}
 
 	inline void beginBulkInsert(int maxBuflen){m_tb->beginBulkInsert(maxBuflen);}
 
@@ -690,7 +461,7 @@ public:
 	inline ushort_td commitBulkInsert() {return m_tb->commitBulkInsert();}
 
 
-	activeTable& index(int v)
+	activeObject& index(int v)
 	{
 		m_tb->clearBuffer();
 		m_tb->setKeyNum(v);
@@ -698,35 +469,35 @@ public:
 	}
 
 	template <class T0>
-	activeTable& keyValue(const T0 kv0)
+	activeObject& keyValue(const T0 kv0)
 	{
 		keyValueSetter<T0>::set(m_tb, m_tb->keyNum(), kv0);
 		return *this;
 	}
 
 	template <class T0, class T1>
-	activeTable& keyValue(const T0 kv0, const T1 kv1)
+	activeObject& keyValue(const T0 kv0, const T1 kv1)
 	{
 		keyValueSetter<T0, T1>::set(m_tb, m_tb->keyNum(), kv0, kv1);
 		return *this;
 	}
 
 	template <class T0, class T1 , class T2>
-	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2)
+	activeObject& keyValue(const T0 kv0, const T1 kv1, const T2 kv2)
 	{
 		keyValueSetter<T0, T1, T2>::set(m_tb, m_tb->keyNum(), kv0, kv1, kv2);
 		return *this;
 	}
 
 	template <class T0, class T1 , class T2, class T3>
-	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
+	activeObject& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 	{
 		keyValueSetter<T0, T1, T2, T3>::set(m_tb, m_tb->keyNum(), kv0, kv1, kv2, kv3);
 		return *this;
 	}
 
 	template <class T0, class T1 , class T2, class T3, class T4>
-	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+	activeObject& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
 							,const T4 kv4)
 	{
 		keyValueSetter<T0, T1, T2, T3, T4>
@@ -735,7 +506,7 @@ public:
 	}
 
 	template <class T0, class T1 , class T2, class T3, class T4, class T5 >
-	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+	activeObject& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
 							,const T4 kv4, const T5 kv5)
 	{
 		keyValueSetter<T0, T1, T2, T3, T4, T5>
@@ -744,7 +515,7 @@ public:
 	}
 
 	template <class T0, class T1 , class T2, class T3, class T4, class T5 , class T6>
-	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+	activeObject& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
 							,const T4 kv4, const T5 kv5, const T6 kv6)
 	{
 		keyValueSetter<T0, T1, T2, T3, T4, T5, T6>
@@ -754,7 +525,7 @@ public:
 
 	template <class T0, class T1 , class T2, class T3
 				,class T4, class T5 , class T6 , class T7>
-	activeTable& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+	activeObject& keyValue(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
 							,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 	{
 		keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>
@@ -765,14 +536,14 @@ public:
 	inline table_ptr table() const {return m_tb;};
 
 
-	activeTable& option(int v)
+	activeObject& option(int v)
 	{
 		m_option = v;
 		return *this;
 	}
 
 	template <class Any_Map_type>
-	activeTable& readMap(Any_Map_type& map, queryBase& q)
+	activeObject& readMap(Any_Map_type& map, queryBase& q)
 	{
 		mraResetter mras(m_tb);
 		reverseAliasNamesQuery(q);
@@ -795,7 +566,7 @@ public:
 	}
 
 	template <class Any_Map_type>
-	activeTable& readMap(Any_Map_type& map, queryBase& q, validationFunc func)
+	activeObject& readMap(Any_Map_type& map, queryBase& q, validationFunc func)
 	{
 		mraResetter mras(m_tb);
 		reverseAliasNamesQuery(q);
@@ -818,28 +589,28 @@ public:
 		return *this;
 	}
 
-	activeTable& read(collection_vec_type& mdls, queryBase& q, validationFunc func)
+	activeObject& read(collection_vec_type& mdls, queryBase& q, validationFunc func)
 	{
 		mdlsHandler<MAP, collection_vec_type> map(mdls);
 		return readMap(map, q, func);
 	}
 
-	activeTable& read(collection_vec_type& mdls, queryBase& q)
+	activeObject& read(collection_vec_type& mdls, queryBase& q)
 	{
 		mdlsHandler<MAP, collection_vec_type> map(mdls);
 		return readMap(map, q);
 	}
 
 	template <class Container>
-	activeTable& read(Container& mdls, queryBase& q)
+	activeObject& read(Container& mdls, queryBase& q)
 	{
 		typename MAP::collection_orm_typename map(mdls);
 		return readMap(map, q);
 	}
 
-	
+
 	template <class Container>
-	activeTable& read(Container& mdls, queryBase& q, validationFunc func)
+	activeObject& read(Container& mdls, queryBase& q, validationFunc func)
 	{
 		typename MAP::collection_orm_typename map(mdls);
 		return readMap(map, q, func);
@@ -1095,56 +866,9 @@ public:
 		readEach(*refList, true, &e);
 	}
 #endif
-
-	inline activeTable& alias(const _TCHAR* src, const _TCHAR* dst)
-	{
-		m_alias.set(src, dst);
-		return *this;
-	}
-
-	inline activeTable& resetAlias()
-	{
-		m_alias.clear();
-		return *this;
-	}
-
-	typedef boost::shared_ptr<writableRecord> record;
-	record m_record;
-
-	inline writableRecord& getWritableRecord()
-	{
-		m_record.reset(writableRecord::create(m_tb.get(), &m_alias.map()), &writableRecord::release);
-		return *m_record.get();
-	}
-
-	template <class Container>
-	activeTable& join(Container& mdls, queryBase& q, const _TCHAR* name1
-					, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
-					, const _TCHAR* name4=NULL, const _TCHAR* name5=NULL
-					, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
-					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
-					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
-	{
-		doJoin<Container>(true, mdls, q, name1, name2, name3, name4, name5
-						, name6, name7, name8, name9, name10, name11);
-		return *this;
-	}
-
-	template <class Container>
-	activeTable& outerJoin(Container& mdls, queryBase& q, const _TCHAR* name1
-					, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
-					, const _TCHAR* name4=NULL, const _TCHAR* name5=NULL
-					, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
-					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
-					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
-	{
-		doJoin<Container>(false, mdls, q, name1, name2, name3, name4, name5
-						, name6, name7, name8, name9, name10, name11);
-		return *this;
-
-	}
-
 };
+
+
 
 }// namespace client
 }// namespace tdap

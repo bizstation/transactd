@@ -18,11 +18,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include "trdormapi.h"
 #include "groupQuery.h"
-#ifdef _DEBUG
-#include <iostream>
-#endif
 
 namespace bzs
 {
@@ -35,64 +31,11 @@ namespace tdap
 namespace client
 {
 
-class map_orm;
-//typedef /*memoryRecord*/ fieldsBase row;
-//typedef boost::shared_ptr<row> row_ptr;
-
-/** @cond INTERNAL */
-
-class recordsetSorter
-{
-	const std::vector<int>& m_fieldNums;
-public:
-	recordsetSorter(const std::vector<int>& fieldNums):m_fieldNums(fieldNums)
-	{
-
-	}
-	bool operator()(const row_ptr& l, const row_ptr r) const
-	{
-		std::vector<int>::const_iterator it = m_fieldNums.begin();
-		while (it != m_fieldNums.end())
-		{
-			int ret = (*l)[*it].comp((*r)[*it], 0);
-			if (ret) return (ret < 0);
-			++it;
-		}
-		return false;
-	}
-};
-
-#ifndef SWIG
-class multiRecordAlocatorImple : public multiRecordAlocator
-{
-	class recordset* m_rs;
-	int m_rowOffset;
-	int m_addType;
-	int m_curFirstFiled;
-	const std::vector< std::vector<int> >* m_joinRowMap;
-	
-public:
-	inline multiRecordAlocatorImple(recordset* rs);
-	inline void init(size_t recordCount, size_t recordLen, int addType, const table* tb);
-	inline unsigned char* ptr(size_t row, int stat);
-	inline void setRowOffset(int v){m_rowOffset = v;}
-	inline void setJoinType(int v){m_addType = v;}
-	inline void setInvalidRecord(size_t row, bool v);
-	inline void setCurFirstFiled(int v){m_curFirstFiled = v;}
-	inline void setJoinRowMap(const std::vector< std::vector<int> >* v/*, size_t size*/){m_joinRowMap = v;/*m_joinMapSize = size;*/}
-	inline const std::vector< std::vector<int> >* joinRowMap()const {return m_joinRowMap;}
-};
-#endif
-
-
-/** @endcond */
-
-
-class recordset
+class AGRPACK recordset
 {
 	friend class multiRecordAlocatorImple;
 	boost::shared_ptr<fielddefs> m_fds;
-	boost::shared_ptr<multiRecordAlocatorImple> m_mra;
+	boost::shared_ptr<class multiRecordAlocatorImple> m_mra;
 	std::vector<row_ptr> m_recordset;
 	std::vector<boost::shared_ptr<autoMemory> > m_memblock;
 	std::vector<boost::shared_ptr<fielddefs> > m_unionFds;
@@ -111,428 +54,90 @@ public:
 private:
 
 	void registerMemoryBlock(unsigned char* ptr, size_t size, size_t recordLen
-					, int addtype, const table* tb=NULL)
-	{
-		autoMemory* am = new autoMemory(ptr, size, 0 , true);
-		m_memblock.push_back(boost::shared_ptr<autoMemory>(am));
-		unsigned char* p = am->ptr;
-		//copy fileds
-		if (addtype & mra_nextrows)
-		{
-			if (addtype == mra_nextrows)
-				m_mra->setRowOffset((int)m_recordset.size()); //no join
-			else
-				m_mra->setRowOffset((int)m_joinRows); //Join
-		}
-		else 
-		{
-			//assert(tb);
-			m_joinRows = 0;
-			m_mra->setRowOffset(0);
-			m_mra->setCurFirstFiled((int)m_fds->size());
-			if (tb)
-				m_fds->copyFrom(tb);
-			if (tb && (addtype == mra_nojoin))
-			{
-				const keydef& kd = tb->tableDef()->keyDefs[tb->keyNum()];
-				m_uniqueReadMaxField =  (kd.segments[0].flags.bit0 == false) ? (short)m_fds->size():0;
-			}
-		}
-		
-		*(am->endFieldIndex) = (short)m_fds->size();
-		size_t rows = size/recordLen;
-
-		// set record pointer to each record
-		if ((addtype & mra_innerjoin)
-						|| (addtype & mra_outerjoin))
-		{
-			//Join optimazing
-			const std::vector< std::vector<int> >* jmap = m_mra->joinRowMap();
-			
-			if (jmap)
-			{
-				// At Join that if some base records reference to a joined record
-				//		that the joined record pointer is shared by some base records.
-				for (int i=0;i<(int)rows;++i)
-				{
-					const std::vector<int>& map = (*jmap)[i+m_joinRows];
-					for (int j=0;j<(int)map.size();++j)
-						m_recordset[map[j]]->setRecordData(p + recordLen*i , 0, am->endFieldIndex, false);
-				}
-			}
-			else
-			{
-				for (int i=0;i<(int)rows;++i)
-					m_recordset[i+m_joinRows]->setRecordData(p + recordLen*i , 0, am->endFieldIndex, false);
-			}
-			m_joinRows += rows;
-			
-		}
-		else
-		{	//create new record
-			size_t reserveSize =  m_recordset.size() + rows;
-			m_recordset.reserve(reserveSize);
-			for (int i=0;i<(int)rows;++i)
-			{
-				row_ptr rec(memoryRecord::create(*m_fds), &memoryRecord::release);
- 				rec->setRecordData(p + recordLen*i, 0, am->endFieldIndex, false);
-				m_recordset.push_back(rec);
-			}
-		}
-	}
-
-	void makeSortFields(const _TCHAR* name, std::vector<int>& fieldNums)
-	{
-		int index =  m_fds->indexByName(name);
-		if (index ==-1)
-			THROW_BZS_ERROR_WITH_MSG(_T("oorderBy:Invalid field name"));
-		fieldNums.push_back(index);
-	}
-
-	int getMemBlockIndex(unsigned char* ptr) const
-	{
-		for (int i=0;i<(int)m_memblock.size();++i)
-		{
-			const boost::shared_ptr<autoMemory>& am = m_memblock[i];
-			if ((ptr >= am->ptr) && (ptr < am->ptr + am->size))
-				return i;
-		}
-		assert(0);
-		return -1;
-	}
+					, int addtype, const table* tb=NULL);
+	void makeSortFields(const _TCHAR* name, std::vector<int>& fieldNums);
+	int getMemBlockIndex(unsigned char* ptr) const;
 
 public:
-	recordset():m_fds(fielddefs::create(), &fielddefs::destroy)
-		, m_joinRows(0), m_uniqueReadMaxField(0)
-	{
-		m_mra.reset(new multiRecordAlocatorImple(this));
-	}
+	typedef fielddefs header_type;
+	typedef int key_type;
+	typedef row_ptr row_type;
+	typedef row 	row_pure_type;
 
-	~recordset()
-	{
 
-	}
-
+	recordset();
+	~recordset();
 	/* This clone is deep copy.
 	   But text and blob field data memory are shared.
 	*/
-	recordset* clone() const
-	{
-		recordset* p = new recordset();
-		p->m_joinRows = m_joinRows;
-		p->m_uniqueReadMaxField = m_uniqueReadMaxField;
-		p->m_unionFds = m_unionFds;
-		p->m_fds.reset(m_fds->clone(), &fielddefs::destroy);
-
-		std::vector<__int64> offsets;
-		for (int i=0;i<(int)m_memblock.size();++i)
-		{
-			autoMemory* am = new autoMemory(m_memblock[i]->ptr, m_memblock[i]->size, 0 , true);
-			*am->endFieldIndex =  *m_memblock[i]->endFieldIndex;
-			p->m_memblock.push_back(boost::shared_ptr<autoMemory>(am));
-			offsets.push_back((__int64)(am->ptr - m_memblock[i]->ptr));
-		}
-
-		for (int i=0;i<(int)m_recordset.size();++i)
-		{
-			memoryRecord* row = dynamic_cast<memoryRecord*>(m_recordset[i].get());
-			memoryRecord* mr = memoryRecord::create(*p->m_fds);
-			row_ptr rec(mr, &memoryRecord::release);
-			p->m_recordset.push_back(rec);
-
-			for (int j=0;j<(int)row->memBlockSize();++j)
-			{
-				const autoMemory& mb =  row->memBlock(j);
-				int index = getMemBlockIndex(mb.ptr);
-				unsigned char* ptr =  mb.ptr + offsets[index];
-				const boost::shared_ptr<autoMemory>& am =  p->m_memblock[index];
-				mr->setRecordData(ptr, mb.size, am->endFieldIndex, mb.owner);
-			}
-		}
-		return p;
-
-	}
+	recordset* clone() const;
 
 	inline short uniqueReadMaxField() const{return m_uniqueReadMaxField;}
 
-	inline void clearRecords()
-	{
-		m_recordset.clear();
-		m_uniqueReadMaxField = 0;
-	}
+	inline row_ptr& getRow(size_t index){return m_recordset[index];}
 
-	const fielddefs* fieldDefs() const {return m_fds.get();}
+	inline row& operator[](size_t index){return *m_recordset[index].get();}
 
-	inline void clear()
-	{
-		clearRecords();
-		m_fds->clear();
-		m_unionFds.clear();
-		m_memblock.clear();
-	}
+	inline row& first() {return *m_recordset[0].get();}
 
-	inline row_ptr& operator[](size_t index){return m_recordset[index];}
-
-	inline row_ptr& first() {return m_recordset[0];}
-
-	inline row_ptr& last() {return m_recordset[m_recordset.size() - 1];}
-
-	inline recordset& top(recordset& c, int n)
-	{
-		c = *this;
-		c.clearRecords();
-		for (int i=0;i<n;++i)
-			c.push_back(m_recordset[i]);
-		return c;
-	}
-
-	inline iterator begin(){return m_recordset.begin();}
-
-	inline iterator end(){return m_recordset.end();}
-
-	inline iterator erase(size_t index){return m_recordset.erase(m_recordset.begin()+index);}
-
-	inline iterator erase(const iterator& it){return m_recordset.erase(it);}
-
-	inline void push_back(row_ptr r){m_recordset.push_back(r);};
+	inline row& last() {return *m_recordset[m_recordset.size() - 1].get();}
 
 	inline size_t size()const {return m_recordset.size();}
 
 	inline size_t count()const {return m_recordset.size();}
 
-	void readBefore(const table_ptr tb, const aliasMap_type* alias)
-	{
-		 tb->setMra(m_mra.get());
-		 m_fds->setAliases(alias);
-	}
+	void clearRecords();
+	const fielddefs* fieldDefs() const {return m_fds.get();}
+	void clear();
+	recordset& top(recordset& c, int n);
+	iterator begin();
+	iterator end();
+	iterator erase(size_t index);
+	iterator erase(const iterator& it);
+	void push_back(row_ptr r);
+	void readBefore(const table_ptr tb, const aliasMap_type* alias);
 
-	typedef fielddefs header_type;
-	typedef int key_type;
-	typedef row_ptr row_type;
-
-	key_type resolvKeyValue(const std::_tstring& name, bool noexception=false)
-	{
-		int index = m_fds->indexByName(name);
-		if (index != -1)
-			return index;
-		if (!noexception)
-			THROW_BZS_ERROR_WITH_MSG(_T("groupQuery:Invalid key name"));
-
-		return (key_type)m_fds->size();
-	}
-
-	void removeField(int index)
-	{
-		m_fds->remove(index);
-		for(int i=0;i<(int)m_unionFds.size();++i)
-			m_unionFds[i]->remove(index);
-
-		for(int i=0;i<(int)m_memblock.size();++i)
-		{
-			if (*(m_memblock[i]->endFieldIndex) > index)
-			{
-				short v = *(m_memblock[i]->endFieldIndex) -1;
-				*(m_memblock[i]->endFieldIndex) = v;
-			}
-		}
-	}
-
-	recordset& matchBy(recordsetQuery& rq)
-	{
-		rq.init(fieldDefs());
-		for (int i=(int)m_recordset.size()-1;i>=0;--i)
-			if (!rq.match(m_recordset[i]))
-				erase(i);
-		return *this;
-	}
-
-	recordset& groupBy(groupQuery& gq)
-	{
-		gq.grouping(*this);
-		return *this;
-	}
-
+	key_type resolvKeyValue(const std::_tstring& name, bool noexception=false);
+	void removeField(int index);
+	recordset& matchBy(recordsetQuery& rq);
+	recordset& groupBy(groupQuery& gq);
 	recordset& orderBy(const _TCHAR* name1 , const _TCHAR* name2=NULL,
 					 const _TCHAR* name3=NULL,const _TCHAR* name4=NULL,
 					 const _TCHAR* name5=NULL, const _TCHAR* name6=NULL,
-					 const _TCHAR* name7=NULL, const _TCHAR* name8=NULL)
-	{
-		std::vector<int> fieldNums;
-		makeSortFields(name1, fieldNums);
-		if (name2) makeSortFields(name2, fieldNums);
-		if (name3) makeSortFields(name3, fieldNums);
-		if (name4) makeSortFields(name4, fieldNums);
-		if (name5) makeSortFields(name5, fieldNums);
-		if (name6) makeSortFields(name6, fieldNums);
-		if (name7) makeSortFields(name7, fieldNums);
-		if (name8) makeSortFields(name8, fieldNums);
-		std::sort(begin(), end(), recordsetSorter(fieldNums));
-		return *this;
-	}
-
-	inline recordset& reverse()
-	{
-		std::reverse(begin(), end());
-		return *this;
-	}
-
-	void appendCol(const _TCHAR* name, int type, short len)
-	{
-		assert(m_fds->size());
-		fielddef fd((*m_fds)[0]);
-		fd.len = len;
-		fd.pos = 0;
-		fd.type = type;
-		fd.setName(name);
-		m_fds->push_back(&fd);
-		for(int i=0;i<(int)m_unionFds.size();++i)
-			m_unionFds[i]->push_back(&fd);
-		registerMemoryBlock(NULL, fd.len*size(), fd.len
-					, mra_outerjoin);
-
-	}
-
-	recordset& operator+=(const recordset& r)
-	{
-		if (!m_fds->canUnion(*r.m_fds))
-			THROW_BZS_ERROR_WITH_MSG(_T("Recordsets are different format"));
-
-		m_recordset.reserve(m_recordset.size()+r.size());
-		m_unionFds.push_back(r.m_fds);
-		for (size_t i=0;i<r.size();++i)
-			m_recordset.push_back(r.m_recordset[i]);
-		for (size_t i=0;i<r.m_memblock.size();++i)
-			m_memblock.push_back(r.m_memblock[i]);
-		return *this;
-	}
+					 const _TCHAR* name7=NULL, const _TCHAR* name8=NULL);
+	recordset& reverse();
+	void appendCol(const _TCHAR* name, int type, short len);
+	recordset& operator+=(const recordset& r);
 
 #ifdef _DEBUG
-	void dump()
-	{
-		const fielddefs& fields = *fieldDefs();
-		for (int j=0;j<(int)fields.size();++j)
-			std::tcout << fields[j].name()  << _T("\t");
-		std::tcout << _T("\n");
+	void dump();
 
-		for (int i=0;i<(int)size();++i)
-		{
-			row& m = *(operator[](i));
-			for (int j=0;j<(int)m.size();++j)
-			{
-				std::tcout << m[(short)j].c_str()  << _T("\t");
-				if (j == (int)m.size() -1)
-				   std::tcout << _T("\n");
-			}
-		}
-	}
 #endif
 
 };
 
 /** @cond INTERNAL */
 
-inline multiRecordAlocatorImple::multiRecordAlocatorImple(recordset* rs)
-	:m_rs(rs),m_rowOffset(0),m_addType(0),m_curFirstFiled(0),m_joinRowMap(NULL)
-{
-
-}
-
-inline void multiRecordAlocatorImple::init(size_t recordCount, size_t recordLen
-		, int addType, const table* tb)
-{
-	 m_rs->registerMemoryBlock(NULL, recordCount * recordLen
-			, recordLen, addType|m_addType, tb);
-}
-
-inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
-{
-	int col = (stat == mra_current_block) ? m_curFirstFiled : 0;
-	size_t rowNum  = m_joinRowMap ? (*m_joinRowMap)[row+m_rowOffset][0] : row+m_rowOffset;
-	return (*m_rs)[rowNum]->ptr(col);
-}
-
-inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
-{
-	(*m_rs)[row+m_rowOffset]->setInvalidRecord(v);
-}
-
-template<> inline recordset::iterator begin(recordset& m){return m.begin();}
-template<> inline recordset::iterator end(recordset& m){return m.end();}
-template<> inline void push_back(recordset& m, row_ptr c){}
+inline recordset::iterator begin(recordset& m){return m.begin();}
+inline recordset::iterator end(recordset& m){return m.end();}
+inline void push_back(recordset& m, row_ptr c){}
 
 /* for groupby */
-template<> inline void clear(recordset& m){return m.clearRecords();}
+inline void clear(recordset& m){return m.clearRecords();}
 
 /* for groupby */
-template<> inline recordset::key_type resolvKeyValue(recordset& m
-				, const std::_tstring& name, bool noexception)
+inline recordset::key_type resolvKeyValue(recordset& m
+				, const std::_tstring& name, bool noexception=false)
 {
 	return m.resolvKeyValue(name, noexception);
 }
-
 
 inline row* create(recordset& m, int)
 {
 	return NULL;
 }
 
-
-class map_orm_fdi
-{
-	friend class map_orm;
-	const table* m_tb;
-public:
-	void init(table* tb) {m_tb = tb;}
-};
-
-inline map_orm_fdi* createFdi(map_orm_fdi * ){return new map_orm_fdi();}
-inline void destroyFdi(map_orm_fdi * p){delete p;}
-inline void initFdi(map_orm_fdi * fdi, table* tb){fdi->init(tb);}
-
-class map_orm
-{
-	const map_orm_fdi& m_fdi;
-	short m_autoIncFiled;
-
-	int comp(row& lm, row& rm, const _TCHAR* name, int index) const
-	{
-		return lm[index].comp(rm[index], 0);
-	}
-
-
-public:
-	map_orm(const map_orm_fdi& fdi):m_fdi(fdi),m_autoIncFiled(-2){}
-
-	bool compKeyValue(row& l, row& r, int keyNum) const
-	{
-		const tabledef* def = m_fdi.m_tb->tableDef();
-		const keydef* kd = &def->keyDefs[keyNum];
-		for (int i=0;i<kd->segmentCount;++i)
-		{
-			short n =  kd->segments[i].fieldNum;
-			const fielddef* fd = &def->fieldDefs[n];
-			int ret = comp(l, r, fd->name(), n);
-			if (ret)return (ret < 0);
-
-		}
-		return 0;
-	}
-
-	template <class T>
-	void readMap(T& m, const fields& fds, int optipn)
-	{
-		//needlessness
-	}
-
-	typedef row         mdl_typename;
-	typedef map_orm_fdi fdi_typename;
-	typedef mdlsHandler< map_orm, recordset> collection_orm_typename;
-
-
-};
-
-
-typedef activeTable<map_orm> queryTable;
+/** @endcond */
 
 }// namespace client
 }// namespace tdap
