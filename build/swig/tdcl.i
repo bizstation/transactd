@@ -150,11 +150,6 @@ using namespace bzs::db::protocol::tdap::client;
 
 %ignore bzs::db::protocol::tdap::client::memoryRecord::clear;
 %ignore bzs::db::protocol::tdap::client::memoryRecord::setRecordData;
-%ignore bzs::db::protocol::tdap::client::memoryRecord::ptr;
-%ignore bzs::db::protocol::tdap::client::memoryRecord::memBlock;
-%ignore bzs::db::protocol::tdap::client::memoryRecord::memBlockSize;
-%ignore bzs::db::protocol::tdap::client::memoryRecord::copyToBuffer;
-%ignore bzs::db::protocol::tdap::client::memoryRecord::copyFromBuffer;
 
 %ignore bzs::db::protocol::tdap::client::activeTable::activeTable(idatabaseManager&);
 %ignore bzs::db::protocol::tdap::client::activeTable::activeTable(database_ptr&);
@@ -218,7 +213,7 @@ using namespace bzs::db::protocol::tdap::client;
 =============================================== */
 %rename(tdapLastErr) bzs::db::protocol::tdap::client::nstable::tdapErr(HWND, _TCHAR*);
 %rename(createRecord) bzs::db::protocol::tdap::client::memoryRecord::create(fielddefs&);
-%rename(Record) bzs::db::protocol::tdap::client::memoryRecord;
+%rename(Record) bzs::db::protocol::tdap::client::fieldsBase;
 %rename(RecordSet) bzs::db::protocol::tdap::client::recordset;
 %rename(getFielddef) bzs::db::protocol::tdap::client::fielddefs::operator[] (int index) const;
 %rename(getFieldByIndex) bzs::db::protocol::tdap::client::fieldsBase::operator[](short) const;
@@ -456,11 +451,8 @@ using namespace bzs::db::protocol::tdap::client;
   }
 };
 %extend bzs::db::protocol::tdap::client::recordset {
-  void getRow(size_t index, bzs::db::protocol::tdap::client::memoryRecord** return_record){
+  void getRow(size_t index, bzs::db::protocol::tdap::client::fieldsBase** return_record){
     *return_record = (self->operator[](index)).get();
-  }
-  bzs::db::protocol::tdap::client::memoryRecord* getRecord(size_t index) {
-    return (self->operator[](index)).get();
   }
 };
 
@@ -470,18 +462,18 @@ using namespace bzs::db::protocol::tdap::client;
 =============================================== */
 #if defined(SWIGRUBY)
 %{
-  // %pointer_functions(bzs::db::protocol::tdap::client::memoryRecord*, memoryRecord_p_p)
-  static bzs::db::protocol::tdap::client::memoryRecord* *new_memoryRecord_p_p() {
-    return new bzs::db::protocol::tdap::client::memoryRecord*();
+  // %pointer_functions(bzs::db::protocol::tdap::client::fieldsBase*, fieldsBase_p_p)
+  static bzs::db::protocol::tdap::client::fieldsBase* *new_fieldsBase_p_p() {
+    return new bzs::db::protocol::tdap::client::fieldsBase*();
   }
-  static void delete_memoryRecord_p_p(bzs::db::protocol::tdap::client::memoryRecord* *obj) {
+  static void delete_fieldsBase_p_p(bzs::db::protocol::tdap::client::fieldsBase* *obj) {
     if (obj) delete obj;
   }
-  static bzs::db::protocol::tdap::client::memoryRecord* memoryRecord_p_p_value(bzs::db::protocol::tdap::client::memoryRecord* *obj) {
+  static bzs::db::protocol::tdap::client::fieldsBase* fieldsBase_p_p_value(bzs::db::protocol::tdap::client::fieldsBase* *obj) {
     return *obj;
   }
 %}
 #else
 %include "cpointer.i"
-%pointer_functions(bzs::db::protocol::tdap::client::memoryRecord*, memoryRecord_p_p)
+%pointer_functions(bzs::db::protocol::tdap::client::fieldsBase*, fieldsBase_p_p)
 #endif
