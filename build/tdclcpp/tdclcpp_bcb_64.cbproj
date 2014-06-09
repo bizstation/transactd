@@ -160,6 +160,9 @@
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\btrDate.cpp">
             <BuildOrder>0</BuildOrder>
         </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\activeTable.cpp">
+            <BuildOrder>22</BuildOrder>
+        </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\database.cpp">
             <BuildOrder>3</BuildOrder>
         </CppCompile>
@@ -181,11 +184,17 @@
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fileDDF.cpp">
             <BuildOrder>8</BuildOrder>
         </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\groupQuery.cpp">
+            <BuildOrder>24</BuildOrder>
+        </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\indexDDF.cpp">
             <BuildOrder>10</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp">
             <BuildOrder>22</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecordset.cpp">
+            <BuildOrder>23</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsDatabase.cpp">
             <BuildOrder>11</BuildOrder>

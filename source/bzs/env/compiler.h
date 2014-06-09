@@ -18,7 +18,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-
+// function type
 #if (__BCPLUSPLUS__ && !defined(__clang__))
 #	define __THREAD __thread
 #	define __STDCALL __stdcall
@@ -31,6 +31,7 @@
 #	endif
 #endif
 
+// operating system
 #ifdef _WIN32
 #	ifdef _WIN64
 #		ifndef __x86_64__
@@ -45,11 +46,7 @@
 #	endif
 #endif
 
-
-
-
-#undef PACKAGE
-
+// thread strage
 #ifndef __THREAD_BCB
 #	undef __THREAD
 #	if (__BCPLUSPLUS__ && !defined(__clang__))
@@ -65,8 +62,8 @@
 #	endif
 #endif//__THREAD_BCB
 
-
-
+// export 
+#undef PACKAGE
 #ifdef __BCPLUSPLUS__
 #	ifndef PACKAGE
 #		ifdef __x86_64__
@@ -82,7 +79,6 @@
 #		define PACKAGE
 #	endif
 #endif
-
 
 #ifdef PACKAGE_NO_EXPORT
 #	undef PACKAGE
@@ -100,7 +96,7 @@
 
 
 
-
+// data alignment
 #if (_MSC_VER || (__BORLANDC__ && __clang__))
 #	define pragma_pack1 __pragma(pack(push, 1))
 #	define pragma_pop __pragma(pack(pop))
@@ -114,6 +110,7 @@
 #	endif
 #endif
 
+//compiler name
 #if (_MSC_VER == 1600) 
 #	define COMPILER_VERSTR "vc100"
 #endif

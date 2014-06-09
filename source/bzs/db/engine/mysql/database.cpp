@@ -957,7 +957,7 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size, const bzs::db
 				if (isVarType(fd->type()))
 				{
 					len = var_total_len(p, var_bytes(fd));
-					if (len > fd->pack_length())
+					if (len > (int)fd->pack_length())
 						THROW_BZS_ERROR_WITH_CODEMSG(STATUS_BUFFERTOOSMALL, "setRecordFromPacked");
 				}
 				else if (size < (uint)len)

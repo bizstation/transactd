@@ -37,7 +37,7 @@
 			<BRCC_EnableMultiByte>true</BRCC_EnableMultiByte>
 			<BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
 			<BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
-			<Defines>ARBTREGN_PKG;BOOST_ALL_NO_LIB;$(Defines)</Defines>
+			<Defines>LIB_TDCLCPP;BOOST_ALL_NO_LIB;$(Defines)</Defines>
 			<DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
 			<BCC_wiip>false</BCC_wiip>
 			<BCC_wpch>false</BCC_wpch>
@@ -114,6 +114,9 @@
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\btrDate.cpp">
 				<BuildOrder>0</BuildOrder>
 			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\activeTable.cpp">
+				<BuildOrder>22</BuildOrder>
+			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\database.cpp">
 				<BuildOrder>3</BuildOrder>
 			</CppCompile>
@@ -135,11 +138,20 @@
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fileDDF.cpp">
 				<BuildOrder>8</BuildOrder>
 			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.cpp">
+				<BuildOrder>25</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\groupQuery.cpp">
+				<BuildOrder>24</BuildOrder>
+			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\indexDDF.cpp">
 				<BuildOrder>10</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp">
 				<BuildOrder>22</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecordset.cpp">
+				<BuildOrder>23</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsDatabase.cpp">
 				<BuildOrder>11</BuildOrder>
