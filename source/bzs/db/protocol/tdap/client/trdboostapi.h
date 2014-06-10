@@ -19,6 +19,7 @@
    02111-1307, USA.
 =================================================================*/
 #include "trdboostapiInternal.h"
+#include "export.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <iterator>
@@ -53,8 +54,8 @@ enum eStepOpType {
 enum eFindCurrntType{
 	ePosNeedNext = 1, ePosNeedNone = 0, ePosNeedPrev = -1};
 
-typedef boost::shared_ptr<database>database_ptr;
-typedef boost::shared_ptr<table>table_ptr;
+//typedef boost::shared_ptr<database> database_ptr;
+//typedef boost::shared_ptr<table> table_ptr;
 
 
 /*
@@ -146,10 +147,13 @@ public:
 };
 /** @endcond */
 
-class query : public queryBase
+class DLLLIB query : public queryBase
 {
 public:
 	query():queryBase(){}
+
+	virtual ~query(){}
+
 	query& reset(){queryBase::reset();return *this;}
 
 	query& select(const TCHAR* name, const TCHAR* name1=NULL, const TCHAR* name2=NULL, const TCHAR* name3=NULL

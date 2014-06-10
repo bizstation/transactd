@@ -47,7 +47,7 @@ class dbdef;
 #endif
 
 
-class AGRPACK database : public nsdatabase
+class DLLLIB database : public nsdatabase
 {
 	struct dbimple* m_impl;
 	void setDir(const _TCHAR* directory);

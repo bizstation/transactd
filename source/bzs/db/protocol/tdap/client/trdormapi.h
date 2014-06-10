@@ -22,9 +22,10 @@
 #include "filedNameAlias.h"
 #include "memRecord.h"
 #include "fieldNames.h"
+#include "groupComp.h"
 #include <boost/shared_array.hpp>
 #include <vector>
-#include <boost/utility/enable_if.hpp>
+
 
 
 namespace bzs
@@ -75,7 +76,7 @@ public:
 		return table_ptr();
 	}
 
-	inline void setOption(__int64 /*v*/){};
+	inline void setOption(__int64 ){};
 	inline __int64 option(){return 0;};
 	inline void beginTrn(short bias){m_db->beginTrn(bias);};
 	inline void endTrn(){m_db->endTrn();}
@@ -86,8 +87,6 @@ public:
 };
 
 
-
-/** @cond INTERNAL */
 
 template <class Container>
 typename Container::key_type resolvKeyValue(Container& m, const std::_tstring& name
@@ -107,6 +106,10 @@ void push_back(Container& m, typename Container::row_type c);
 
 template <class ROW_TYPE, class KEY_TYPE, class T>
 void setValue(ROW_TYPE& row, KEY_TYPE key, const T& value);
+/** @endcond */
+
+
+/** @cond INTERNAL */
 
 template <class T>
 inline typename std::vector<T>::iterator begin(std::vector<T>& m){return m.begin();}
@@ -357,9 +360,6 @@ public:
 };
 
 
-
-/** @endcond */
-
 template <class MAP, class T=typename MAP::mdl_typename, class FDI=typename MAP::fdi_typename>
 class activeObject : boost::noncopyable
 {
@@ -370,19 +370,9 @@ protected:
 	MAP m_map;
 	int m_option;
 	fdNmaeAlias m_alias;
-
-	inline void reverseAliasNamesQuery(queryBase& q)
-	{
-		aliasMap_type::const_iterator it = m_alias.map().begin();
-		while(it != m_alias.map().end())
-		{
-			q.reverseAliasName((*it).second.c_str(), (*it).first.c_str());
-			++it;
-		}
-	}
+	typedef std::vector<std::vector<int> > joinmap_type;
 
 	inline T& getItem(collection_vec_type& mdls, unsigned int index){return *(mdls[index]);}
-
 	void init(idatabaseManager& mgr, const _TCHAR* name)
 	{
 		m_tb = mgr.table(name);
@@ -397,9 +387,8 @@ protected:
 	{
 		m_tb = openTable(db, name);
 	}
-
-
 public:
+	
 
 	explicit activeObject(idatabaseManager& mgr)
 			:m_option(0)
@@ -546,12 +535,12 @@ public:
 	activeObject& readMap(Any_Map_type& map, queryBase& q)
 	{
 		mraResetter mras(m_tb);
-		reverseAliasNamesQuery(q);
+		m_alias.reverseAliasNamesQuery(q);
 		m_tb->setQuery(&q);
 		if (m_tb->stat())
 			nstable::throwError(_T("Query is inaccurate"), &(*m_tb));
 
-		map.init(m_option, m_fdi, m_map, m_tb, &m_alias.map());
+		map.init(m_option, m_fdi, m_map, m_tb, &m_alias);
 		m_tb->find(q.getDirection());
 		if (q.getDirection() == table::findForword)
 		{
@@ -569,11 +558,12 @@ public:
 	activeObject& readMap(Any_Map_type& map, queryBase& q, validationFunc func)
 	{
 		mraResetter mras(m_tb);
-		reverseAliasNamesQuery(q);
+		m_alias.reverseAliasNamesQuery(q);
+
 		m_tb->setQuery(&q);
 		if (m_tb->stat())
 			nstable::throwError(_T("Query is inaccurate"), &(*m_tb));
-		map.init(m_option, m_fdi, m_map, m_tb, &m_alias.map());
+		map.init(m_option, m_fdi, m_map, m_tb, &m_alias);
 		m_tb->find(q.getDirection());
 		if (q.getDirection() == table::findForword)
 		{
@@ -608,7 +598,7 @@ public:
 		return readMap(map, q);
 	}
 
-
+	
 	template <class Container>
 	activeObject& read(Container& mdls, queryBase& q, validationFunc func)
 	{
@@ -625,7 +615,7 @@ public:
 			m_map.setKeyValues(mdl, fds, m_tb->keyNum());
 		indexIterator it = readIndex(m_tb, eSeekEqual);
 		if (m_tb->stat() != 0)
-			nstable::throwError(_T("activeTable read"), &(*m_tb));
+			nstable::throwError(_T("activeObject read"), &(*m_tb));
 		m_map.readMap(mdl, fds, m_option);
 	}
 #endif
@@ -638,7 +628,7 @@ public:
 			m_map.setKeyValues(mdl, fds, m_tb->keyNum());
 		indexIterator it = readIndex(m_tb, eSeekEqual);
 		if (m_tb->stat() != 0)
-			nstable::throwError(_T("activeTable update"), &(*m_tb));
+			nstable::throwError(_T("activeObject update"), &(*m_tb));
 
 		m_map.writeMap(mdl, fds, m_option);
 		updateRecord(it);
@@ -650,10 +640,10 @@ public:
 	{
 		readIndex(m_tb, eSeekEqual);
 		if (m_tb->stat() != 0)
-			nstable::throwError(_T("activeTable delete"), &(*m_tb));
+			nstable::throwError(_T("activeObject delete"), &(*m_tb));
 		m_tb->del();
 		if (m_tb->stat() != 0)
-			nstable::throwError(_T("activeTable delete"), &(*m_tb));
+			nstable::throwError(_T("activeObject delete"), &(*m_tb));
 	}
 
 	//Recieve delete record by mdl
@@ -663,7 +653,7 @@ public:
 		read(mdl, setKeyValueFromObj);
 		m_tb->del();
 		if (m_tb->stat() != 0)
-			nstable::throwError(_T("activeTable delete"), &(*m_tb));
+			nstable::throwError(_T("activeObject delete"), &(*m_tb));
 	}
 
 	template <class T2>
@@ -728,13 +718,13 @@ public:
 	void readEach(Container& mdls, queryBase& q, bool sorted=false, bzs::rtl::exception* e=NULL)
 	{
 		mraResetter mras(m_tb);
-		reverseAliasNamesQuery(q);
+		m_alias.reverseAliasNamesQuery(q);
 		fields fds(m_tb);
 		typename Container::iterator it = begin(mdls),itb = begin(mdls),ite = end(mdls);
 		it = itb = begin(mdls);
 		T& mdlb = *(*it);
 		if (!m_tb->isUseTransactd())
-			nstable::throwError(_T("activeTable P.SQL can not use this"), (short_td)0);
+			nstable::throwError(_T("activeObject P.SQL can not use this"), (short_td)0);
 		while(it != ite)
 		{
 			//if mdl has same key value, to be once read access to server
@@ -754,7 +744,7 @@ public:
 		}
 		m_tb->setQuery(&q);
 		if (m_tb->stat() != 0)
-			nstable::throwError(_T("activeTable readEach Query"), &(*m_tb));
+			nstable::throwError(_T("activeObject readEach Query"), &(*m_tb));
 		m_tb->find();
 		//見つからないレコードがあると、その時点でエラーで返る
 		//行ごとにエラーかどうかわかった方がよい。
@@ -763,7 +753,7 @@ public:
 		{
 			if ((m_tb->stat() != STATUS_SUCCESS)
 						&& (m_tb->stat() != STATUS_NOT_FOUND_TI))
-				nstable::throwError(_T("activeTable readEach"), &(*m_tb));
+				nstable::throwError(_T("activeObject readEach"), &(*m_tb));
 			T& mdl = *(*it);
 			if ((it != itb) &&
 				(!sorted
@@ -866,9 +856,24 @@ public:
 		readEach(*refList, true, &e);
 	}
 #endif
+
+	inline activeObject& alias(const _TCHAR* src, const _TCHAR* dst)
+	{
+		m_alias.set(src, dst);
+		return *this;
+	}
+
+	inline activeObject& resetAlias()
+	{
+		m_alias.clear();
+		return *this;
+	}
+
+	typedef boost::shared_ptr<writableRecord> record;
+	record m_record;
+
+
 };
-
-
 
 }// namespace client
 }// namespace tdap

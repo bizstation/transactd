@@ -23,6 +23,7 @@
 #include <bzs/db/protocol/tdap/tdapcapi.h>
 #include <bzs/db/protocol/tdap/tdapSchema.h>
 #include <bzs/rtl/exception.h>
+#include "export.h"
 
 namespace bzs
 {
@@ -43,7 +44,7 @@ class bulkInsert;
 
 
 
-class AGRPACK nstable
+class DLLLIB nstable
 {
 	friend class nsdatabase; // for destroy()
 	friend class filter;

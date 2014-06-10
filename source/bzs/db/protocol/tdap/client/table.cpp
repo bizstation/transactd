@@ -566,7 +566,7 @@ void table::btrvSeekMulti()
 			{
 				int resultOffset = 0;
 
-				for (int j=0;j<fields.size();++j)
+				for (int j=0;j<(int)fields.size();++j)
 				{
 					fielddef* fd = &tableDef()->fieldDefs[fields[j]];
 					fd->unPackCopy(dst + resultOffset, ((uchar_td*)m_pdata) + fd->pos);

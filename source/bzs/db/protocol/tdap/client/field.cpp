@@ -27,6 +27,7 @@
 #include "stringConverter.h"
 #include <bzs/rtl/stringBuffers.h>
 #include <boost/shared_array.hpp>
+#include <boost/unordered_map.hpp>
 
 
 #pragma package(smart_init)
@@ -122,8 +123,9 @@ void fielddefs::aliasing(fielddef* p) const
 {
 	if (m_imple->aliasMap)
 	{
-		if (m_imple->aliasMap->count(p->name()))
-			p->setName(m_imple->aliasMap->at(p->name()).c_str());
+		const _TCHAR* ret = m_imple->aliasMap->get(p->name());
+		if (ret[0])
+			p->setName(ret);
 	}
 }
 
@@ -287,7 +289,7 @@ void fielddefs::destroy(fielddefs* p)
 //------------------------------------------------------------------------------
 static fielddef fdDummy;
 
-AGRPACK const fielddef& dummyFd()
+DLLLIB const fielddef& dummyFd()
 {
 	fdDummy.type = ft_integer;
 	fdDummy.pos = 0;

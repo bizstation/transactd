@@ -20,6 +20,7 @@
  ================================================================= */
 
 #include <bzs/db/protocol/tdap/tdapSchema.h>
+#include "export.h"
 #ifdef _WIN32
 #include <windows.h>
 #ifdef TRDCL_AUTOLINK
@@ -42,7 +43,7 @@ class dbdef;
 class nstable;
 
 
-class AGRPACK nsdatabase
+class DLLLIB nsdatabase
 {
 	friend class nstable;
 	

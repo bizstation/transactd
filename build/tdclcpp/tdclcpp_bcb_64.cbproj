@@ -62,14 +62,18 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
+        <BCC_PCHUsage>None</BCC_PCHUsage>
+        <VerInfo_Keys>FileVersion=1.0.0.0</VerInfo_Keys>
+        <AllPackageLibs>fmx.lib;rtl.lib</AllPackageLibs>
+        <VerInfo_Locale>1041</VerInfo_Locale>
+        <SanitizedProjectName>tdclcpp_bcb_64</SanitizedProjectName>
         <ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <BRCC_EnableMultiByte>true</BRCC_EnableMultiByte>
-        <Defines>ARBTREGN_PKG;$(Defines)</Defines>
+        <Defines>LIB_TDCLCPP;$(Defines)</Defines>
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
         <Manifest_File>None</Manifest_File>
-        <ILINK_AdditionalOptions>/Gl</ILINK_AdditionalOptions>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <BCC_wiip>false</BCC_wiip>
         <TD_VER_MAJOR>1</TD_VER_MAJOR>
@@ -90,13 +94,6 @@
         <BCC_wpar>false</BCC_wpar>
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_OSX32)'!=''">
-        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_Win32)'!=''">
-        <Manifest_File>None</Manifest_File>
-        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
@@ -132,10 +129,13 @@
         <DllSuffix>m_$(DllSuffix)</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3)'!=''">
+        <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+        <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
         <_TCHARMapping>wchar_t</_TCHARMapping>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">
+        <LinkPackageStatics>fmx.lib;rtl.lib</LinkPackageStatics>
         <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
         <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <ILINK_Verbose>true</ILINK_Verbose>
@@ -146,10 +146,10 @@
         <_TCHARMapping>wchar_t</_TCHARMapping>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_4_Win64)'!=''">
+        <VerInfo_Keys>FileVersion=1.0.0.0</VerInfo_Keys>
+        <LinkPackageStatics>fmx.lib;rtl.lib</LinkPackageStatics>
         <BRCC_EnableMultiByte>true</BRCC_EnableMultiByte>
         <BCC_WindowsVersionDefines>NTDDI_VERSION=NTDDI_WINXPSP1;_WIN32_WINNT=_WIN32_WINNT_WINXP</BCC_WindowsVersionDefines>
-        <BCC_OptimizeForSize>true</BCC_OptimizeForSize>
-        <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <DllSuffix>u_$(DllSuffix)</DllSuffix>
     </PropertyGroup>
     <ItemGroup>
@@ -184,6 +184,9 @@
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fileDDF.cpp">
             <BuildOrder>8</BuildOrder>
         </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.cpp">
+            <BuildOrder>25</BuildOrder>
+        </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\groupQuery.cpp">
             <BuildOrder>24</BuildOrder>
         </CppCompile>
@@ -193,14 +196,14 @@
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp">
             <BuildOrder>22</BuildOrder>
         </CppCompile>
-        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecordset.cpp">
-            <BuildOrder>23</BuildOrder>
-        </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsDatabase.cpp">
             <BuildOrder>11</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsTable.cpp">
             <BuildOrder>12</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\recordset.cpp">
+            <BuildOrder>24</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\sharedData.cpp">
             <BuildOrder>13</BuildOrder>
@@ -287,6 +290,7 @@
                     <ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
                     <ProjectProperties Name="ManagePaths">False</ProjectProperties>
                     <ProjectProperties Name="VerifyPackages">True</ProjectProperties>
+                    <ProjectProperties Name="IndexFiles">False</ProjectProperties>
                 </ProjectProperties>
                 <Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\bcboffice2k170.bpl">Embarcadero C++Builder Office 2000 サーバー パッケージ</Excluded_Packages>

@@ -1,5 +1,5 @@
-#ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_FIELDNAMEALIAS_H
-#define BZS_DB_PROTOCOL_TDAP_CLIENT_FIELDNAMEALIAS_H
+#ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_EXPORT_H
+#define BZS_DB_PROTOCOL_TDAP_CLIENT_EXPORT_H
 /*=================================================================
    Copyright (C) 2014 BizStation Corp All rights reserved.
 
@@ -18,44 +18,15 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include <bzs/env/tstring.h>
-#include "table.h"
+#include <bzs/env/compiler.h>
 
-namespace bzs
-{
-namespace db
-{
-namespace protocol
-{
-namespace tdap
-{
-namespace client
-{
+#ifdef LIB_TDCLCPP
+#    define DLLLIB AGRPACK
+#    define DLLTEMPLATE
+#else
+#    define DLLLIB PACKAGE_IMPORT
+#    define DLLTEMPLATE extern
+#endif
 
-class DLLLIB fdNmaeAlias
-{
-	struct fdnImple* m_imple;
+#endif //BZS_DB_PROTOCOL_TDAP_CLIENT_EXPORT_H
 
-public:
-	fdNmaeAlias();
-	fdNmaeAlias(const fdNmaeAlias& r);
-	fdNmaeAlias& operator=(const fdNmaeAlias& r);
-	~fdNmaeAlias();
-	void set(const _TCHAR* src, const _TCHAR* dst);
-	const _TCHAR* get(const _TCHAR* src) const;
-	const _TCHAR* resolv(const _TCHAR* dst) const;
-	void clear();
-	void reverseAliasNamesQuery(queryBase& q) const;
-};
-
-typedef fdNmaeAlias aliasMap_type;
-
-
-
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-
-#endif//BZS_DB_PROTOCOL_TDAP_CLIENT_FIELDNAMEALIAS_H

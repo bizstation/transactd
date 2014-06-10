@@ -39,7 +39,7 @@ enum eFieldQuery {
 	eMinlen, eMaxlen, eDefaultlen, eDecimals};
 
 
-class AGRPACK dbdef : private nstable
+class DLLLIB dbdef : private nstable
 {
 	friend class database;
 	struct dbdimple* m_impl;

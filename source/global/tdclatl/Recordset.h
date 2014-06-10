@@ -20,7 +20,7 @@
 #include "resource.h"
 
 #include "tdclatl_i.h"
-#include <bzs/db/protocol/tdap/client/memRecordset.h>
+#include <bzs/db/protocol/tdap/client/recordset.h>
 using namespace ATL;
 
 class CRecord;
@@ -35,11 +35,11 @@ class ATL_NO_VTABLE CARecordset :
 	CComObject<CRecord>* m_recObj;
 	CComObject<CFieldDefs>* m_fieldDefsObj;
 public:
-    bzs::db::protocol::tdap::client::recordset* m_rs;
+    bzs::db::protocol::tdap::client::recordset::ptr m_rs;
 
 	CARecordset();
 	~CARecordset();
-	void setRecordset(bzs::db::protocol::tdap::client::recordset* rs){m_rs = rs;}
+	void setRecordset(bzs::db::protocol::tdap::client::recordset* rs){m_rs.reset(rs);}
 
     BEGIN_COM_MAP(CARecordset) 
 		COM_INTERFACE_ENTRY(IRecordset) 

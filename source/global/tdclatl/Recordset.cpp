@@ -38,7 +38,6 @@ CARecordset::~CARecordset()
 		m_recObj->Release();
 	if (m_fieldDefsObj)
 		m_fieldDefsObj->Release();
-	delete m_rs;
 }
 
 void CARecordset::setResult(IRecordset** retVal)
@@ -57,7 +56,7 @@ STDMETHODIMP CARecordset::Record(unsigned long Index, IRecord** retVal)
 		}
 		if (m_recObj)
 		{
-			m_recObj->m_rec = m_rs->getRow(Index).get(); 
+			m_recObj->m_rec = &((*m_rs)[Index]); 
 			IRecord* rec;
 			m_recObj->QueryInterface(IID_IRecord, (void**)&rec);
 			_ASSERTE(rec);

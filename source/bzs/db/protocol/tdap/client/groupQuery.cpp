@@ -18,7 +18,7 @@
 =================================================================*/
 #pragma hdrstop
 #include "groupQuery.h"
-#include "memRecordset.h"
+#include "recordsetImple.h"
 
 
 #pragma package(smart_init)
@@ -34,9 +34,27 @@ namespace tdap
 namespace client
 {
 
+
+struct recordsetQueryImple
+{
+	row_ptr row;
+	std::vector<unsigned char> compType;
+	std::vector<short> indexes;
+	std::vector<char> combine;
+	short endIndex;
+	fielddefs compFields;
+	
+};
+
 // ---------------------------------------------------------------------------
 // class recordsetQuery
 // ---------------------------------------------------------------------------
+recordsetQuery::recordsetQuery():query(),m_imple(new recordsetQueryImple){}
+
+recordsetQuery::~recordsetQuery()
+{
+	delete m_imple;
+}
 
 void recordsetQuery::init(const fielddefs* fdinfo)
 {
@@ -44,34 +62,34 @@ void recordsetQuery::init(const fielddefs* fdinfo)
 	short pos = 0;
 	for (int i=0;i<(int)tokns.size();i+=4)
 	{
-		int index = fdinfo->indexByName(tokns[i]);
-		m_indexes.push_back(index);
-		m_compFields.push_back(&((*fdinfo)[index]), true/*rePosition*/);
+		int index = fdinfo->indexByName(tokns[i].c_str());
+		m_imple->indexes.push_back(index);
+		m_imple->compFields.push_back(&((*fdinfo)[index]), true/*rePosition*/);
 	}
-	memoryRecord* mr = memoryRecord::create(m_compFields);
-	mr->setRecordData(0, 0, &m_endIndex, true);
-	m_row.reset(mr);
+	memoryRecord* mr = memoryRecord::create(m_imple->compFields);
+	mr->setRecordData(0, 0, &m_imple->endIndex, true);
+	m_imple->row.reset(mr);
 
 
 	int index = 0;
 	for (int i=0;i<(int)tokns.size();i+=4)
 	{
-		field fd = (*m_row)[index];
+		field fd = (*m_imple->row)[index];
 		fd = tokns[i+2].c_str();
 		bool part = fd.isCompPartAndMakeValue();
 		unsigned char ct = getFilterLogicTypeCode(tokns[i+1].c_str());
 		if (!part) ct |= CMPLOGICAL_VAR_COMP_ALL;
 
-		m_compType.push_back(ct);
+		m_imple->compType.push_back(ct);
 		if (i+3 < (int)tokns.size())
 		{
 			std::_tstring s = tokns[i+3];
 			if (s == _T("or"))
-				m_combine.push_back(eCor);
+				m_imple->combine.push_back(eCor);
 			else if (s == _T("and"))
-				m_combine.push_back(eCand);
+				m_imple->combine.push_back(eCand);
 		}else
-			m_combine.push_back(eCend);
+			m_imple->combine.push_back(eCend);
 		++index;
 	}
 
@@ -94,64 +112,17 @@ bool recordsetQuery::isMatch(int ret, unsigned char compType) const
 
 bool recordsetQuery::match(const row_ptr row) const
 {
-	for (int i=0;i<(int)m_indexes.size();++i)
+	for (int i=0;i<(int)m_imple->indexes.size();++i)
 	{
-		short index =  m_indexes[i];
-		bool ret = isMatch((*row)[index].comp((*m_row)[i]), m_compType[i]);
-		if (m_combine[i] == eCend) return ret;
-		if (ret && m_combine[i] == eCor) return true;
-		if (!ret && m_combine[i] == eCand) return false;
+		short index =  m_imple->indexes[i];
+		bool ret = isMatch((*row)[index].comp((*m_imple->row)[i]), m_imple->compType[i]);
+		if (m_imple->combine[i] == eCend) return ret;
+		if (ret && m_imple->combine[i] == eCor) return true;
+		if (!ret && m_imple->combine[i] == eCand) return false;
 
 	}
 	assert(0);
 	return false;
-}
-
-
-// ---------------------------------------------------------------------------
-// class groupFuncBase
-// ---------------------------------------------------------------------------
-void groupFuncBase::initResultVariable(int index)
-{
-	std::vector<value_type>::iterator it = m_values.begin();
-	if (index)
-		it += index;
-	m_values.insert(it, 0.0f);
-}
-
-void groupFuncBase::init(const fielddefs* fdinfo)
-{
-	if (m_query)
-		m_query->init(fdinfo);
-	m_targetKey = m_targetName ? fdinfo->indexByName(m_targetName): -1;
-	m_resultKey = fdinfo->indexByName(m_resultName);
-	if (m_resultKey == -1) m_resultKey = (int)fdinfo->size();
-}
-
-groupFuncBase::groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName
-	, recordsetQuery* query)
-	:m_targetName(targetName),m_query(query)
-{
-   m_resultName = ((resultName == NULL) || resultName[0]==0x00)
-								 ? targetName:resultName;
-   m_values.reserve(10);
-}
-
-groupFuncBase::~groupFuncBase(){};
-
-void groupFuncBase::reset(){m_values.clear();};
-
-void groupFuncBase::operator()(const row_ptr& row, int index, bool insert)
-{
-	if (insert)
-		initResultVariable(index);// setNullValue
-	if ((!m_query || m_query->match(row)))
-		doCalc(row, index);
-}
-
-groupFuncBase::value_type groupFuncBase::result(int groupIndex) const
-{
-	return m_values[groupIndex];
 }
 
 inline void setValue(row_ptr& row, int key, double value)
@@ -160,200 +131,371 @@ inline void setValue(row_ptr& row, int key, double value)
 }
 
 // ---------------------------------------------------------------------------
-// class groupQuery
+// class groupQueryImple
 // ---------------------------------------------------------------------------
-
-/* remove none grouping fields */
-//template <class Container>
-void groupQuery::removeFields(Container& mdls)
+class groupQueryImple : public fieldNames
 {
-	const fielddefs& fds = *mdls.fieldDefs();
-	for (int i=(int)fds.size()-1;i>=0;--i)
+	std::vector<groupFuncBase* > m_funcs;
+
+	void removeFields(recordsetImple& mdls)
 	{
-		bool enabled = false;
-		for (int j=0;j<(int)m_keyFields.size();++j)
+		const fielddefs& fds = *mdls.fieldDefs();
+		for (int i=(int)fds.size()-1;i>=0;--i)
 		{
-			if (m_keyFields[j] == fds[i].name())
+			bool enabled = false;
+			for (int j=0;j<(int)m_keyFields.size();++j)
 			{
-				enabled = true;
-				break;
-			}
-		}
-		if (!enabled)
-		{
-			for (int j=0;j<(int)m_funcs.size();++j)
-			{
-				if (!enabled && (m_funcs[j]->resultKey() == i))
+				if (m_keyFields[j] == fds[i].name())
 				{
 					enabled = true;
 					break;
 				}
 			}
+			if (!enabled)
+			{
+				for (int j=0;j<(int)m_funcs.size();++j)
+				{
+					if (!enabled && (m_funcs[j]->resultKey() == i))
+					{
+						enabled = true;
+						break;
+					}
+				}
+			}
+
+			if (!enabled)
+				mdls.removeField(i);
+		}
+	}
+
+public:
+	fieldNames& reset()
+	{
+		m_funcs.clear();
+		return fieldNames::reset();
+ 	}
+
+	void addFunction(groupFuncBase* func)
+	{
+		m_funcs.push_back(func);
+	}
+
+	void grouping(recordsetImple& mdls)
+	{
+		std::vector<recordsetImple::key_type> keyFields;
+
+		for (int i=0;i<(int)m_keyFields.size();++i)
+			keyFields.push_back(resolvKeyValue(mdls, m_keyFields[i]));
+
+		for (int i=0;i<(int)m_funcs.size();++i)
+		{
+
+			groupFuncBase* f = m_funcs[i];
+			f->init(mdls.fieldDefs());
+
+			if (f->resultKey() == (int)mdls.fieldDefs()->size())
+			{
+				groupFuncBase::value_type dummy=0;
+				mdls.appendCol(f->resultName(), getFieldType(dummy), sizeof(dummy));
+			}
 		}
 
-		if (!enabled)
-			mdls.removeField(i);
+		grouping_comp<recordsetImple> groupingComp(mdls, keyFields);
+		std::vector<int> index;
+		recordsetImple::iterator it = begin(mdls), ite = end(mdls);
+
+		int i,n = 0;
+		while(it != ite)
+		{
+			bool found = false;
+			i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
+			if (!found)
+				index.insert(index.begin() + i, n);
+			for (int j=0;j<(int)m_funcs.size();++j)
+				(*m_funcs[j])(*it, i, !found);
+			++n;
+			++it;
+		}
+
+		//real sort by index
+		recordsetImple c(mdls);
+
+		clear(mdls);
+		for (int i=0;i<(int)index.size();++i)
+		{
+			recordsetImple::row_type cur = c.getRow(index[i]);
+			for (int j=0;j<(int)m_funcs.size();++j)
+				setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->result(i));
+			mdls.push_back(cur);
+		}
+		removeFields(mdls);
 	}
+};
+
+// ---------------------------------------------------------------------------
+// class groupQuery
+// ---------------------------------------------------------------------------
+groupQuery::groupQuery():m_imple(new groupQueryImple)
+{
+
 }
 
-fieldNames& groupQuery::reset()
+groupQuery::~groupQuery()
 {
-	fieldNames::reset();
-	m_funcs.clear();
+	delete m_imple; 
+}
+
+groupQuery& groupQuery::reset() 
+{
+	m_imple->reset();
 	return *this;
 }
 
 groupQuery& groupQuery::addFunction(groupFuncBase* func)
 {
-	m_funcs.push_back(func);
+	m_imple->addFunction(func);
 	return *this;
 }
 
-void groupQuery::grouping(Container& mdls)
+void groupQuery::grouping(recordsetImple& rs)
 {
-	std::vector<Container::key_type> keyFields;
+	m_imple->grouping(rs);
+}
 
-	/* convert key value from field name */
-	for (int i=0;i<(int)m_keyFields.size();++i)
-		keyFields.push_back(resolvKeyValue(mdls, m_keyFields[i]));
+groupQuery& groupQuery::keyField(const TCHAR* name, const TCHAR* name1, const TCHAR* name2, const TCHAR* name3
+			,const TCHAR* name4, const TCHAR* name5, const TCHAR* name6, const TCHAR* name7
+			,const TCHAR* name8, const TCHAR* name9, const TCHAR* name10)
+{
+	m_imple->keyField(name, name1, name2, name3, name4, name5, name6, name7, name8
+			, name9, name10);
+	return *this;
+}
 
-	for (int i=0;i<(int)m_funcs.size();++i)
-	{
-
-		groupFuncBase* f = m_funcs[i];
-		f->init(mdls.fieldDefs());
-
-		if (f->resultKey() == (int)mdls.fieldDefs()->size())
-		{
-			groupFuncBase::value_type dummy=0;
-			mdls.appendCol(f->resultName(), getFieldType(dummy), sizeof(dummy));
-		}
-	}
-
-	grouping_comp<Container> groupingComp(mdls, keyFields);
-	std::vector<int> index;
-	Container::iterator it = begin(mdls), ite = end(mdls);
-
-	int i,n = 0;
-	while(it != ite)
-	{
-		bool found = false;
-		i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
-		if (!found)
-			index.insert(index.begin() + i, n);
-		for (int j=0;j<(int)m_funcs.size();++j)
-			(*m_funcs[j])(*it, i, !found);
-		++n;
-		++it;
-	}
-
-	//real sort by index
-	Container c(mdls);
-
-	clear(mdls);
-	for (int i=0;i<(int)index.size();++i)
-	{
-		Container::row_type cur = c.getRow(i);//[index[i]];
-		for (int j=0;j<(int)m_funcs.size();++j)
-			setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->result(i));
-		mdls.push_back(cur);
-	}
-	removeFields(mdls);
+const std::vector<std::_tstring>& groupQuery::getKeyFields()const
+{
+	return m_imple->getKeyFields();
 }
 
 
-inline __int64 fieldValue(const field& fd, __int64 ) {return fd.i64();}
-inline int fieldValue(const field& fd, int ) {return fd.i();}
-inline short fieldValue(const field& fd, short ) {return (short)fd.i();}
-inline char fieldValue(const field& fd, char ) {return (char)fd.i();}
-inline double fieldValue(const field& fd, double ) {return fd.d();}
-inline float fieldValue(const field& fd, float ) {return fd.f();}
-inline const _TCHAR* fieldValue(const field& fd, const _TCHAR* ) {return fd.c_str();}
 
 // ---------------------------------------------------------------------------
-// class sum
+// class groupFuncBaseImple
 // ---------------------------------------------------------------------------
+class groupFuncBaseImple
+{
+public:
+	typedef double value_type;
+
+private:
+	friend class groupQueryImple;
+	const _TCHAR* m_targetName;
+	const _TCHAR* m_resultName;
+	int m_resultKey;
+	int m_targetKey;
+
+public:
+	std::vector<value_type> m_values;
+	std::vector<__int64> m_counts;
+	recordsetQuery* m_query;
+
+	inline void initResultVariable(int index)
+	{
+		std::vector<value_type>::iterator it = m_values.begin(); 
+		if (index)
+			it += index;
+		m_values.insert(it, 0.0f);
+	}
+
+	inline void init(const fielddefs* fdinfo)
+	{
+		if (m_query)
+			m_query->init(fdinfo);
+		m_targetKey = m_targetName ? fdinfo->indexByName(m_targetName): -1;
+		m_resultKey = fdinfo->indexByName(m_resultName);
+		if (m_resultKey == -1) m_resultKey = (int)fdinfo->size();
+	}
+	
+	inline groupFuncBaseImple(const _TCHAR* targetName , const _TCHAR* resultName=NULL
+		, recordsetQuery* query=NULL)
+		:m_targetName(targetName),m_query(query)
+	{
+	   m_resultName = ((resultName == NULL) || resultName[0]==0x00)
+									 ? targetName:resultName;
+	   m_values.reserve(10);
+	}
+
+	inline void setQuery(recordsetQuery* query)
+	{
+		m_query = query;
+	}
+
+	inline const _TCHAR* targetName() const {return m_targetName;}
+
+	inline const _TCHAR* resultName() const {return m_resultName;}
+
+	inline int resultKey() const {return m_resultKey;}
+
+	inline void reset(){m_values.clear();};
+
+	inline value_type result(int groupIndex)const{return m_values[groupIndex];};
+
+	inline bool match(const row_ptr row) const 
+	{
+		if (m_query)
+			return m_query->match(row);
+		return false;
+	}
+
+	inline int targetKey()const {return m_targetKey;}
+};
+
+// ---------------------------------------------------------------------------
+// class groupFuncBase
+// ---------------------------------------------------------------------------
+groupFuncBase::groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName
+		, recordsetQuery* query)
+		:m_imple(new groupFuncBaseImple(targetName, resultName, query)){}
+
+groupFuncBase::~groupFuncBase()
+{
+	delete m_imple;
+}
+
+void groupFuncBase::initResultVariable(int index)
+{
+	m_imple->initResultVariable(index);
+}
+
+void groupFuncBase::doCalc(const row_ptr& row, int groupIndex){}
+
+void groupFuncBase::init(const fielddefs* fdinfo)
+{
+	m_imple->init(fdinfo);
+}
+
+groupFuncBase& groupFuncBase::setQuery(recordsetQuery* query)
+{
+	m_imple->setQuery(query);
+	return *this;
+}
+
+const _TCHAR* groupFuncBase::targetName() const
+{
+	return m_imple->targetName();
+}
+
+const _TCHAR* groupFuncBase::resultName() const
+{
+	return m_imple->resultName();
+}
+
+int groupFuncBase::resultKey() const 
+{
+	return m_imple->resultKey();
+}
+
+void groupFuncBase::reset()
+{
+	m_imple->reset();
+}
+
+void groupFuncBase::operator()(const row_ptr& row, int index, bool insert)
+{
+	if (insert)
+		initResultVariable(index);// setNullValue
+	if (m_imple->match(row))
+		doCalc(row, index);
+}
+
+groupFuncBase::value_type groupFuncBase::result(int groupIndex) const
+{
+	return m_imple->result(groupIndex);
+}
+
+
+// ---------------------------------------------------------------------------
+// class groupFuncBase
+// ---------------------------------------------------------------------------
+
+sum::sum(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
+		:groupFuncBase(targetName, resultName, query){}
+
 void sum::doCalc(const row_ptr& row, int index)
 {
 	value_type tmp=0;
-	m_values[index] += fieldValue((*row)[m_targetKey], tmp);
+	m_imple->m_values[index] += fieldValue((*row)[m_imple->targetKey()], tmp);
 }
-
-sum::sum(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
-	:groupFuncBase(targetName, resultName, query){}
-
 
 // ---------------------------------------------------------------------------
 // class count
 // ---------------------------------------------------------------------------
-void count::doCalc(const row_ptr& row, int index)
-{
-	m_values[index] = m_values[index] + 1;
-}
-
-count::value_type count::result(int index)const{return m_values[index];}
-
 count::count(const _TCHAR* resultName, recordsetQuery* query)
 	:groupFuncBase(NULL, resultName, query){}
+
+void count::doCalc(const row_ptr& row, int index)
+{
+	m_imple->m_values[index] = m_imple->m_values[index] + 1;
+}
 
 
 // ---------------------------------------------------------------------------
 // class avg
 // ---------------------------------------------------------------------------
+avg::avg(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
+	:sum(targetName, resultName){}
+
 void avg::initResultVariable(int index)
 {
 	sum::initResultVariable(index);
-	m_count.insert(m_count.begin() + index, 0);
+	m_imple->m_counts.insert(m_imple->m_counts.begin() + index, 0);
 
 }
 
 void avg::doCalc(const row_ptr& row, int index)
 {
 	sum::doCalc(row, index);
-	m_count[index] = m_count[index] + 1;
+	m_imple->m_counts[index] = m_imple->m_counts[index] + 1;
 }
 
 avg::value_type avg::result(int index)const
 {
-	return m_values[index]/m_count[index];
+	return m_imple->m_values[index]/m_imple->m_counts[index];
 }
 
-avg::avg(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
-	:sum(targetName, resultName){}
 
 // ---------------------------------------------------------------------------
 // class min
 // ---------------------------------------------------------------------------
+min::min(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
+	:sum(targetName, resultName, query),m_flag(true){}
+
 void min::doCalc(const row_ptr& row, int index)
 {
 	value_type tmp=0;
-	tmp = fieldValue((*row)[m_targetKey], tmp);
-	if (m_flag || m_values[index]  > tmp)
+	tmp = fieldValue((*row)[m_imple->targetKey()], tmp);
+	if (m_flag || m_imple->m_values[index]  > tmp)
 	{
 		m_flag = false;
-		m_values[index]  = tmp;
+		m_imple->m_values[index]  = tmp;
 	}
 }
-
-min::min(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
-	:sum(targetName, resultName, query),m_flag(true){}
 
 // ---------------------------------------------------------------------------
 // class max
 // ---------------------------------------------------------------------------
+max::max(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
+	:sum(targetName, resultName, query),m_flag(true){}
+
 void max::doCalc(const row_ptr& row, int index)
 {
 	value_type tmp=0;
-	tmp = fieldValue((*row)[m_targetKey], tmp);
-	if (m_flag || m_values[index]  < tmp)
+	tmp = fieldValue((*row)[m_imple->targetKey()], tmp);
+	if (m_flag || m_imple->m_values[index]  < tmp)
 	{
 		m_flag = false;
-		m_values[index]  = tmp;
+		m_imple->m_values[index]  = tmp;
 	}
 }
-
-max::max(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
-	:sum(targetName, resultName, query),m_flag(true){}
 
 
 

@@ -65,7 +65,7 @@ public:
 
 /** @endcond */
 
-class AGRPACK table : public nstable
+class DLLLIB table : public nstable
 {
 	friend class recordCache;
 	friend class database;
@@ -236,7 +236,7 @@ public:
 };
 
 
-class AGRPACK queryBase
+class DLLLIB queryBase
 {
 	friend class filter;
 	struct impl* m_impl;

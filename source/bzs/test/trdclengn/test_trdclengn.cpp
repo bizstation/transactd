@@ -29,7 +29,6 @@
 #include <stdio.h>
 #include <bzs/db/protocol/tdap/client/filter.h>
 #include <bzs/example/queryData.h>
-//#include <bzs/db/protocol/tdap/client/memRecordset.h>
 #include <bzs/db/protocol/tdap/client/activeTable.h>
 
 using namespace bzs::db::protocol::tdap::client;
@@ -2581,8 +2580,8 @@ void testJoin(database* db)
 	int v = rs[0][_T("gropu1_count")].i();
 	BOOST_CHECK_MESSAGE(v == 1, "gropu1_count = " << v);
 
-	//rs.dump();
-	recordset* rsv = rs.clone();
+	//clone
+	recordset::ptr rsv(rs.clone());
 
 	gq.reset();
 	client::count count3(_T("count"));
@@ -2595,7 +2594,8 @@ void testJoin(database* db)
 	rq.when(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
 	rsv->matchBy(rq);
 	BOOST_CHECK_MESSAGE(rsv->size()== 160, "matchBy  rsv.size() ==" << rsv->size());
-	delete rsv;
+	rsv.reset();//delete rsv
+
 	//top
 	recordset rs3;
 	rs.top(rs3, 10);

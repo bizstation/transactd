@@ -19,7 +19,7 @@
    02111-1307, USA.
 =================================================================*/
 #include "nsTable.h"
-#include <boost/unordered_map.hpp>
+#include "filedNameAlias.h"
 
 class CField; //atl interface
 
@@ -37,7 +37,7 @@ namespace client
 
 class stringConverter;
 /** @cond INTERNAL */
-class AGRPACK fieldShare
+class DLLLIB fieldShare
 {
 	friend class field;
 	friend class table;
@@ -63,20 +63,21 @@ protected:
 	void blobClear();
 };
 
-typedef boost::unordered_map<std::_tstring, std::_tstring> aliasMap_type;
 /** @endcond */
 
-class AGRPACK fielddefs : public fieldShare
+
+class DLLLIB fielddefs : public fieldShare
 {
 	struct infoImple* m_imple;
 	void aliasing(fielddef* p) const;
 	fielddefs();
 	~fielddefs();
 	friend class table;
-	friend class recordset;
+	friend class recordsetImple;
 	friend class writableRecord;
 	friend class memoryRecord;
 	friend class recordsetQuery;
+	friend struct recordsetQueryImple;
 
 	void addAllFileds(tabledef* def);
 	void copyFrom(const class table* tb);
@@ -105,7 +106,7 @@ public:
 
 typedef int (*compFieldFunc)(const class field& l, const class field& r, char logType);
 
-class AGRPACK field
+class DLLLIB field
 {
 	friend class table;
 	friend class fieldsBase;
@@ -318,7 +319,22 @@ inline int getFieldType(float )
 	return ft_float;
 }
 
-AGRPACK const fielddef& dummyFd();
+inline __int64 fieldValue(const field& fd, __int64 ) {return fd.i64();}
+
+inline int fieldValue(const field& fd, int ) {return fd.i();}
+
+inline short fieldValue(const field& fd, short ) {return (short)fd.i();}
+
+inline char fieldValue(const field& fd, char ) {return (char)fd.i();}
+
+inline double fieldValue(const field& fd, double ) {return fd.d();}
+
+inline float fieldValue(const field& fd, float ) {return fd.f();}
+
+inline const _TCHAR* fieldValue(const field& fd, const _TCHAR* ) {return fd.c_str();}
+
+
+DLLLIB const fielddef& dummyFd();
 
 }// namespace client
 }// namespace tdap

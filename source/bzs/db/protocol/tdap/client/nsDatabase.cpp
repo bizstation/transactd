@@ -71,7 +71,7 @@ unsigned int g_lastTrnTime = 0;
 unsigned int nsdatabase::m_execCodepage = GetACP();
 
 
-void registEnginsPtr(EnginsFunc func) {engins = func;}
+PACKAGE void registEnginsPtr(EnginsFunc func) {engins = func;}
 
 BTRCALLID_PTR BTRCALLIDX = NULL;
 BTRCALLID_PTR MYTICALLID = NULL;

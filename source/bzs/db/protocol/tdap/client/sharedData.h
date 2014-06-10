@@ -37,7 +37,7 @@ namespace client
 class nsdatabase;
 typedef nsdatabase** (*EnginsFunc)();
 
-#ifdef ARBTREGN_PKG
+#ifdef LIB_TDCLCPP
 	PACKAGE void registEnginsPtr(EnginsFunc func);//If use shared dll then you need Call this function. Implemant at trdclengne
 #else
 	PACKAGE_IMPORT void registEnginsPtr(EnginsFunc func);

@@ -41,6 +41,7 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
+        <SanitizedProjectName>tdclc_64</SanitizedProjectName>
         <Defines>BOOST_ALL_NO_LIB;TRANSACTD;$(Defines)</Defines>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
@@ -54,7 +55,7 @@
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <OutputExt>dll</OutputExt>
-        <PackageImports>vcl.bpi;rtl.bpi</PackageImports>
+        <PackageImports>vcl.bpi;rtl.bpi;$(PackageImports)</PackageImports>
         <Multithreaded>true</Multithreaded>
         <NoVCL>true</NoVCL>
         <ProjectType>VCppStyleDll</ProjectType>

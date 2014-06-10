@@ -17,8 +17,9 @@
    02111-1307, USA.
 =================================================================*/
 #pragma hdrstop
+
 #include "activeTable.h"
-#include "groupComp.h"
+#include "activeTableImple.h"
 
 #pragma package(smart_init)
 
@@ -33,128 +34,100 @@ namespace tdap
 namespace client
 {
 
-void activeTable::makeJoinMap(Container& mdls, joinmap_type& joinRowMap
-			, std::vector<Container::key_type>& keyFields)
+activeTable::activeTable(idatabaseManager& mgr, const _TCHAR* tableName)
+					:m_imple(new activeTableImple(mgr, tableName))
 {
 
-	grouping_comp<Container> groupingComp(mdls, keyFields);
-	std::vector<int> index;
-	std::vector<int> tmp;
-	for (int n=0;n<(int)mdls.size();++n)
-	{
-		bool found = false;
-		int i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
-		if (!found)
-		{
-			index.insert(index.begin() + i, n);
-			joinRowMap.insert(joinRowMap.begin() + i, tmp);
-		}
-		joinRowMap[i].push_back(n);
-	}
 }
 
-void activeTable::doJoin(bool innner, Container& mdls, queryBase& q, const _TCHAR* name1
+activeTable::activeTable(database_ptr& db, const _TCHAR* tableName)
+					:m_imple(new activeTableImple(db, tableName))
+{
+
+}
+
+activeTable::activeTable(database* db, const _TCHAR* tableName)
+					:m_imple(new activeTableImple(db, tableName))
+{
+	
+}
+
+activeTable::~activeTable()
+{
+	delete m_imple;
+}
+
+table_ptr activeTable::table() const
+{
+	return m_imple->table();
+}
+
+activeTable& activeTable::alias(const _TCHAR* src, const _TCHAR* dst)
+{
+	m_imple->alias(src, dst);
+	return *this;
+}
+
+activeTable& activeTable::resetAlias()
+{
+	m_imple->resetAlias();
+	return *this;
+}
+
+
+writableRecord& activeTable::getWritableRecord()
+{
+	return m_imple->getWritableRecord();
+}
+
+activeTable& activeTable::join(recordset& rs, queryBase& q, const _TCHAR* name1
 				, const _TCHAR* name2, const _TCHAR* name3
 				, const _TCHAR* name4, const _TCHAR* name5
 				, const _TCHAR* name6, const _TCHAR* name7
 				, const _TCHAR* name8, const _TCHAR* name9
 				, const _TCHAR* name10, const _TCHAR* name11)
 {
-	if (mdls.size()==0) return;
-	reverseAliasNamesQuery(q);
-	q.clearSeekKeyValues();
-	fields fds(m_tb);
-	mraResetter mras(m_tb);
-	Container::iterator it = mdls.begin(),ite = mdls.end();
+	m_imple->join(*rs.m_imple, q, name1, name2, name3, name4, name5, name6, name7
+					,name8, name9, name10, name11);
+	return *this;
+}
 
-	bool optimize = !(q.getOptimize() & queryBase::joinKeyValuesUnique);
-	joinmap_type joinRowMap;
-	std::vector<Container::key_type> fieldIndexes;
+activeTable& activeTable::outerJoin(recordset& rs, queryBase& q, const _TCHAR* name1
+				, const _TCHAR* name2, const _TCHAR* name3
+				, const _TCHAR* name4, const _TCHAR* name5
+				, const _TCHAR* name6, const _TCHAR* name7
+				, const _TCHAR* name8, const _TCHAR* name9
+				, const _TCHAR* name10, const _TCHAR* name11)
+{
+	m_imple->outerJoin(*rs.m_imple, q, name1, name2, name3, name4, name5, name6, name7
+					,name8, name9, name10, name11);
+	return *this;
 
-	fieldNames fns;
-	fns.keyField(name1, name2, name3, name4, name5, name6, name7, name8, name9, name10, name11);
-	const std::vector<std::_tstring>& names = fns.getKeyFields();
+}
 
-	for (int i=0;i<(int)names.size();++i)
-		fieldIndexes.push_back(resolvKeyValue(mdls, names[i], false));
+activeTable& activeTable::index(int v)
+{
+	m_imple->index(v);
+	return *this;
+}
 
-	/* optimizing join
-		If base recordset is made by unique key and join by uniqe field, that can not opitimize.
-	*/
-	if (optimize)
-	{
-		makeJoinMap(mdls, joinRowMap, fieldIndexes);
-		q.reserveSeekKeyValueSize(joinRowMap.size());
-		std::vector<std::vector<int> >::iterator it1 = joinRowMap.begin(),ite1 = joinRowMap.end();
-		while(it1 != ite1)
-		{
-			map_orm::mdl_typename& mdl = (mdls[(*it1)[0]]);
-			for (int i=0;i<(int)fieldIndexes.size();++i)
-				q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
-			++it1;
-		}
-	}
-	else
-	{
-		while(it != ite)
-		{
-			map_orm::mdl_typename& mdl = *(*it);
-			for (int i=0;i<(int)fieldIndexes.size();++i)
-				q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
-			++it;
-		}
-	}
+activeTable& activeTable::option(int v)
+{
+	m_imple->option(v);
+	return *this;
+}
 
-	m_tb->setQuery(&q);
-	if (m_tb->stat() != 0)
-		nstable::throwError(_T("activeTable Join Query"), &(*m_tb));
+activeTable& activeTable::read(recordset& rs, queryBase& q)
+{
+		
+	m_imple->read(*rs.m_imple, q);
+	return *this;
+}
 
-	map_orm::collection_orm_typename map(mdls);
-
-	/* ignore list for inner join */
-	std::vector<Container::iterator> ignores;
-	it = mdls.begin();
-	map.init(m_option, m_fdi, m_map, m_tb, &m_alias.map());
-	if (m_tb->mra())
-	{
-		m_tb->mra()->setJoinType(innner ? mra_innerjoin : mra_outerjoin);
-		if (optimize)
-			m_tb->mra()->setJoinRowMap(&joinRowMap);
-	}
-	m_tb->find();
-	while(1)
-	{
-		if (m_tb->stat())
-		{
-			if ((m_tb->stat() == STATUS_EOF) ||
-				((m_tb->stat() != STATUS_SUCCESS) && (m_tb->stat() != STATUS_NOT_FOUND_TI)))
-				break;
-			else if (innner)
-				ignores.push_back(it);
-		}
-		++it;
-		m_tb->findNext(); //mra copy value to memrecord
-	}
-
-	readStatusCheck(*m_tb, _T("join"));
-	m_tb->mra()->setJoinRowMap(NULL);
-
-	/* remove record see ignore list for inner join */
-	if (innner)
-	{
-		if (m_tb->isUseTransactd())
-		{
-			for (int i=(int)ignores.size()-1;i>=0;--i)
-				mdls.erase(ignores[i]);
-		}else
-		{
-			for (int i=(int)mdls.size()-1;i>=0;--i)
-			{
-				if(mdls[i].isInvalidRecord())
-					mdls.erase(i);
-			}
-		}
-	}
+activeTable& activeTable::read(recordset& rs, queryBase& q, validationFunc func)
+{
+	m_imple->read(*rs.m_imple, q, func);
+	return *this;
 }
 
 

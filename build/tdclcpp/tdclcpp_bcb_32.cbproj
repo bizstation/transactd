@@ -3,7 +3,7 @@
 			<ProjectGuid>{38F6FDD0-00C4-4679-8F36-BE1499F35256}</ProjectGuid>
 			<ProjectVersion>12.3</ProjectVersion>
 			<Base>True</Base>
-			<Config Condition="'$(Config)'==''">Debug Unicode</Config>
+			<Config Condition="'$(Config)'==''">Release Unicode</Config>
 			<AppType>Library</AppType>
 			<FrameworkType>None</FrameworkType>
 			<Platform Condition="'$(Platform)'==''">Win32</Platform>
@@ -103,6 +103,8 @@
 			<DllSuffix>u_$(DllSuffix)</DllSuffix>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_4)'!=''">
+			<BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
+			<BCC_OptimizeForSize>true</BCC_OptimizeForSize>
 			<_TCHARMapping>wchar_t</_TCHARMapping>
 			<DllSuffix>u_$(DllSuffix)</DllSuffix>
 		</PropertyGroup>
@@ -150,14 +152,14 @@
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp">
 				<BuildOrder>22</BuildOrder>
 			</CppCompile>
-			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecordset.cpp">
-				<BuildOrder>23</BuildOrder>
-			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsDatabase.cpp">
 				<BuildOrder>11</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsTable.cpp">
 				<BuildOrder>12</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\recordset.cpp">
+				<BuildOrder>25</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\sharedData.cpp">
 				<BuildOrder>13</BuildOrder>

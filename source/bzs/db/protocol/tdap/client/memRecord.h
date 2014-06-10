@@ -33,7 +33,7 @@ namespace client
 
 /** @cond INTERNAL */
 
-class AGRPACK autoMemory
+class DLLLIB autoMemory
 {
 
 public:
@@ -56,10 +56,10 @@ public:
 
 #define ROW_MEM_BLOCK_RESERVE 4
 
-class AGRPACK memoryRecord : public fieldsBase
+class DLLLIB memoryRecord : public fieldsBase
 {
 	friend class multiRecordAlocatorImple;
-	friend class recordset;
+	friend class recordsetImple;
 
 	std::vector<autoMemory > m_memblock;
 protected:
@@ -113,7 +113,7 @@ public:
 
 #pragma warning(default:4251)
 
-class AGRPACK writableRecord : public memoryRecord
+class DLLLIB writableRecord : public memoryRecord
 {
 	fielddefs* m_fddefs;
 	short m_endIndex;

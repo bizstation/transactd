@@ -138,6 +138,8 @@ public:
 
 typedef boost::shared_ptr<database>database_ptr;
 typedef boost::shared_ptr<table>table_ptr;
+typedef fieldsBase row;
+typedef boost::shared_ptr<row> row_ptr;
 
 
 class fields : public fieldsBase

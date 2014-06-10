@@ -18,10 +18,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include "fieldNames.h"
-#include "memRecord.h"
 #include <bzs/db/protocol/tdap/client/trdboostapi.h>
-#include "groupComp.h"
 
 namespace bzs
 {
@@ -34,27 +31,19 @@ namespace tdap
 namespace client
 {
 
-typedef fieldsBase row;
-typedef boost::shared_ptr<row> row_ptr;
-
-class AGRPACK recordsetQuery : protected query
+class DLLLIB recordsetQuery : protected query
 {
-	friend class groupFuncBase;
-	friend class recordset;
-	row_ptr m_row;
-	std::vector<unsigned char> m_compType;
-	std::vector<short> m_indexes;
-	std::vector<char> m_combine;
-	short m_endIndex;
-	fielddefs m_compFields;
-
+	friend class groupFuncBaseImple;
+	friend class recordsetImple;
+	
+	struct recordsetQueryImple* m_imple;
 	void init(const fielddefs* fdinfo);
-
 	bool isMatch(int ret, unsigned char compType) const;
-
 	bool match(const row_ptr row) const;
 
 public:
+	recordsetQuery();
+	~recordsetQuery();
 
 	template <class T>
 	inline recordsetQuery& when(const _TCHAR* name, const _TCHAR* qlogic, T value)
@@ -82,72 +71,56 @@ public:
 		query::reset();
 		return *this;
 	}
-
-
 };
 
 
-class AGRPACK groupFuncBase
+class DLLLIB groupFuncBase
 {
-public:
-	typedef double value_type;
-
-private:
-	friend class groupQuery;
-
-	const _TCHAR* m_targetName;
-	const _TCHAR* m_resultName;
 protected:
-	int m_resultKey;
-	int m_targetKey;
-	std::vector<value_type> m_values;
-	recordsetQuery* m_query;
+	friend class groupQueryImple;
 
+	class groupFuncBaseImple* m_imple;
 	virtual void initResultVariable(int index);
-	virtual void doCalc(const row_ptr& row, int groupIndex){};
-
+	virtual void doCalc(const row_ptr& row, int groupIndex);
 	void init(const fielddefs* fdinfo);
 
 public:
+	typedef double value_type;
 	groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName=NULL
 		, recordsetQuery* query=NULL);
 
 	virtual ~groupFuncBase();
 
-	inline groupFuncBase& setQuery(recordsetQuery* query)
-	{
-		m_query = query;
-		return *this;
-	}
-
-	inline const _TCHAR* targetName() const {return m_targetName;}
-
-	inline const _TCHAR* resultName() const {return m_resultName;}
-
-	inline int resultKey() const {return m_resultKey;}
-
+	groupFuncBase& setQuery(recordsetQuery* query);
+	const _TCHAR* targetName() const;
+	const _TCHAR* resultName() const;
+	int resultKey() const ;
 	void reset();
-
 	void operator()(const row_ptr& row, int index, bool insert);
-
 	virtual value_type result(int groupIndex)const;
-
 };
 
+class recordsetImple;
 
-class AGRPACK groupQuery : public fieldNames
+class DLLLIB groupQuery 
 {
-	std::vector<groupFuncBase* > m_funcs;
-	typedef recordset Container;
-	void removeFields(Container& mdls);
+	friend class recordsetImple;
+	class groupQueryImple* m_imple;
+	const std::vector<std::_tstring>& getKeyFields()const;
+	void grouping(recordsetImple& rs);
 public:
-	fieldNames& reset() ;
+	groupQuery();
+	~groupQuery();
+	groupQuery& reset() ;
 	groupQuery& addFunction(groupFuncBase* func);
-	void grouping(Container& mdls);
+	groupQuery& keyField(const TCHAR* name, const TCHAR* name1=NULL, const TCHAR* name2=NULL, const TCHAR* name3=NULL
+				,const TCHAR* name4=NULL, const TCHAR* name5=NULL, const TCHAR* name6=NULL, const TCHAR* name7=NULL
+				,const TCHAR* name8=NULL, const TCHAR* name9=NULL, const TCHAR* name10=NULL);
+
 };
 
 
-class AGRPACK sum : public groupFuncBase
+class DLLLIB sum : public groupFuncBase
 {
 protected:
 	void doCalc(const row_ptr& row, int index);
@@ -156,11 +129,11 @@ public:
 	sum(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL);
 };
 
-class AGRPACK count : public groupFuncBase
+
+class DLLLIB count : public groupFuncBase
 {
 protected:
 	void doCalc(const row_ptr& row, int index);
-	value_type result(int index)const;
 
 public:
 	count(const _TCHAR* resultName, recordsetQuery* query=NULL);
@@ -168,33 +141,35 @@ public:
 };
 
 
-class AGRPACK avg : public sum
+class DLLLIB avg : public sum
 {
-	std::vector<__int64> m_count;
+
 	void initResultVariable(int index);
 	void doCalc(const row_ptr& row, int index);
 	value_type result(int index)const;
 
 public:
 	avg(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL);
+
 };
 
 
 #undef min
-class AGRPACK min : public sum
+class DLLLIB min : public sum
 {
 	bool m_flag ;
 	void doCalc(const row_ptr& row, int index);
+
 public:
 	min(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL);
 };
 
+
 #undef max
-class AGRPACK max : public sum
+class DLLLIB max : public sum
 {
 	bool m_flag ;
 	void doCalc(const row_ptr& row, int index);
-
 public:
 	max(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL);
 };
