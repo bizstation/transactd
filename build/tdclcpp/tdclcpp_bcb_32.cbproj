@@ -58,8 +58,8 @@
 			<FinalOutputDir>..\..\bin\</FinalOutputDir>
 			<BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
 			<BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
-			<TD_VER_MAJOR>1</TD_VER_MAJOR>
-			<TD_VER_MINOR>2</TD_VER_MINOR>
+			<TD_VER_MAJOR>2</TD_VER_MAJOR>
+			<TD_VER_MINOR>0</TD_VER_MINOR>
 			<DllSuffix>$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">

@@ -1,13 +1,13 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{38F6FDD0-00C4-4679-8F36-BE1499F35256}</ProjectGuid>
-        <ProjectVersion>14.4</ProjectVersion>
+        <ProjectVersion>15.4</ProjectVersion>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release Unicode</Config>
         <AppType>Library</AppType>
         <FrameworkType>None</FrameworkType>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
-        <TargetedPlatforms>1</TargetedPlatforms>
+        <TargetedPlatforms>2</TargetedPlatforms>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -73,8 +73,8 @@
         <ILINK_AdditionalOptions>/Gl</ILINK_AdditionalOptions>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <BCC_wiip>false</BCC_wiip>
-        <TD_VER_MAJOR>1</TD_VER_MAJOR>
-        <TD_VER_MINOR>1</TD_VER_MINOR>
+        <TD_VER_MAJOR>2</TD_VER_MAJOR>
+        <TD_VER_MINOR>0</TD_VER_MINOR>
         <DllSuffix>$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
         <Multithreaded>true</Multithreaded>
         <ProjectType>CppDynamicLibrary</ProjectType>
