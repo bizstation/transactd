@@ -19,12 +19,8 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-
-#include "trdboostapi.h"
-#include "filedNameAlias.h"
 #include "recordset.h"
-#include "fieldNames.h"
-
+#include "memRecord.h"
 
 
 namespace bzs
@@ -140,8 +136,6 @@ public:
 				::set(table(), table()->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
 		return *this;
 	}
-
-
 };
 
 }// namespace client

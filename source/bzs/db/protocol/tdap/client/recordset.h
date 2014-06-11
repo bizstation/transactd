@@ -19,7 +19,6 @@
    02111-1307, USA.
 =================================================================*/
 #include "groupQuery.h"
-#include "memRecord.h"
 
 namespace bzs
 {
@@ -41,12 +40,14 @@ class DLLLIB recordset
 	
 public:
 	typedef std::vector<row_ptr >::iterator iterator;
-	static void release(recordset* p);
-	typedef boost::shared_ptr<recordset> ptr;
 
+#ifndef BCB_64
+	static void* operator new(size_t size);
+	static void operator delete(void* p);
+#endif
 	recordset();
 	~recordset();
-	recordset::ptr clone() const;
+	recordset* clone() const;
 	row& operator[](size_t index);
 	row& first();
 	row& last();
@@ -60,7 +61,6 @@ public:
 	iterator end();
 	iterator erase(size_t index);
 	iterator erase(const iterator& it);
-	void push_back(row_ptr r);
 	void removeField(int index);
 	recordset& matchBy(recordsetQuery& rq);
 	recordset& groupBy(groupQuery& gq);
@@ -72,14 +72,11 @@ public:
 	void appendCol(const _TCHAR* name, int type, short len);
 	recordset& operator+=(const recordset& r);
 
-	
-
 #ifdef _DEBUG
 	void dump();
 #endif
 
 };
-
 
 
 }// namespace client

@@ -2581,7 +2581,7 @@ void testJoin(database* db)
 	BOOST_CHECK_MESSAGE(v == 1, "gropu1_count = " << v);
 
 	//clone
-	recordset::ptr rsv(rs.clone());
+	recordset* rsv(rs.clone());
 
 	gq.reset();
 	client::count count3(_T("count"));
@@ -2594,13 +2594,26 @@ void testJoin(database* db)
 	rq.when(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
 	rsv->matchBy(rq);
 	BOOST_CHECK_MESSAGE(rsv->size()== 160, "matchBy  rsv.size() ==" << rsv->size());
-	rsv.reset();//delete rsv
+	delete rsv;
 
 	//top
 	recordset rs3;
 	rs.top(rs3, 10);
 	BOOST_CHECK_MESSAGE(rs3.size()== 10, "top 10  rs3.size()== 10");
 
+
+	//query new / delete
+	recordsetQuery* q1 = new recordsetQuery();
+	q1->when(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
+	delete q1;
+
+	query* q2 = new query();
+	q2->where(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
+	delete q2;
+
+	groupQuery* q3 = new groupQuery();
+	q3->keyField(_T("group"),_T("id"));
+	delete q3;
 
 }
 

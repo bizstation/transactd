@@ -145,15 +145,18 @@ typedef boost::shared_ptr<row> row_ptr;
 class fields : public fieldsBase
 {
 	table& m_tb;
+
 	inline unsigned char* ptr(int index) const
 	{
 		return (unsigned char*)m_tb.data();
 	}
+
 	table* tbptr() const{return &m_tb;}
 
-public:
 	inline explicit fields()
 			:fieldsBase(*((fielddefs*)0)),m_tb(*((table*)0)){}
+
+public:
 	inline explicit fields(table& tb)
 			:fieldsBase(*(tb.m_fddefs)),m_tb(tb){}
 
@@ -161,8 +164,11 @@ public:
 			:fieldsBase(*((*tb).m_fddefs)),m_tb(*tb){}
 
 	inline void clear(){m_tb.clearBuffer();}
+
 	inline table& tb() const {return m_tb;}
+
 	inline short inproc_size() const{return m_tb.getCurProcFieldCount();}
+
 	inline field inproc_fd(short index) const
 	{
 		return operator[]( m_tb.getCurProcFieldIndex(index));

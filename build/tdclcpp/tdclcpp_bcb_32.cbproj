@@ -137,11 +137,11 @@
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fieldDDF.cpp">
 				<BuildOrder>7</BuildOrder>
 			</CppCompile>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fieldNameAlias.cpp">
+				<BuildOrder>25</BuildOrder>
+			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fileDDF.cpp">
 				<BuildOrder>8</BuildOrder>
-			</CppCompile>
-			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.cpp">
-				<BuildOrder>25</BuildOrder>
 			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\groupQuery.cpp">
 				<BuildOrder>24</BuildOrder>

@@ -19,7 +19,7 @@
    02111-1307, USA.
 =================================================================*/
 #include "nsTable.h"
-#include "filedNameAlias.h"
+#include "fieldNameAlias.h"
 
 class CField; //atl interface
 

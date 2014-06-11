@@ -103,7 +103,7 @@ STDMETHODIMP CARecordset::Clone(IRecordset** retVal)
 	CComObject<CARecordset>::CreateInstance(&rsObj);
 	if (rsObj)
 	{
-		rsObj->m_rs = m_rs->clone();
+		rsObj->m_rs.reset(m_rs->clone());
 		IRecordset* rs;
 		rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
 		_ASSERTE(rs);

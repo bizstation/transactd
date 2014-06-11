@@ -622,6 +622,18 @@ pragma_pop
 /*filter cobine type*/
 enum combineType{eCend, eCand, eCor};
 
+/* compair typesÅ@*/
+enum eCompType
+{
+	eEqual       = 1,
+	eGreater     = 2,
+	eLess        = 3,
+	eNotEq       = 4,
+	eGreaterEq   = 5,
+	eLessEq      = 6
+};
+
+
 PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr);
 
 }// namespace tdap

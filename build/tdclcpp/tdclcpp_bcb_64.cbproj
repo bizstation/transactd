@@ -62,10 +62,6 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <BCC_PCHUsage>None</BCC_PCHUsage>
-        <VerInfo_Keys>FileVersion=1.0.0.0</VerInfo_Keys>
-        <AllPackageLibs>fmx.lib;rtl.lib</AllPackageLibs>
-        <VerInfo_Locale>1041</VerInfo_Locale>
         <SanitizedProjectName>tdclcpp_bcb_64</SanitizedProjectName>
         <ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
@@ -74,6 +70,7 @@
         <Defines>LIB_TDCLCPP;$(Defines)</Defines>
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
         <Manifest_File>None</Manifest_File>
+        <ILINK_AdditionalOptions>/Gl</ILINK_AdditionalOptions>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <BCC_wiip>false</BCC_wiip>
         <TD_VER_MAJOR>1</TD_VER_MAJOR>
@@ -129,13 +126,12 @@
         <DllSuffix>m_$(DllSuffix)</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3)'!=''">
-        <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
-        <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
         <_TCHARMapping>wchar_t</_TCHARMapping>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">
-        <LinkPackageStatics>fmx.lib;rtl.lib</LinkPackageStatics>
+        <Debugger_RunParams>--show_progress=yes</Debugger_RunParams>
+        <Debugger_HostApplication>..\..\bin\test_tdclcpp_bcb_64.exe</Debugger_HostApplication>
         <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
         <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <ILINK_Verbose>true</ILINK_Verbose>
@@ -146,10 +142,12 @@
         <_TCHARMapping>wchar_t</_TCHARMapping>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_4_Win64)'!=''">
-        <VerInfo_Keys>FileVersion=1.0.0.0</VerInfo_Keys>
-        <LinkPackageStatics>fmx.lib;rtl.lib</LinkPackageStatics>
+        <Debugger_RunParams>--show_progress=yes</Debugger_RunParams>
+        <Debugger_HostApplication>..\..\bin\test_tdclcpp_bcb_64.exe</Debugger_HostApplication>
         <BRCC_EnableMultiByte>true</BRCC_EnableMultiByte>
         <BCC_WindowsVersionDefines>NTDDI_VERSION=NTDDI_WINXPSP1;_WIN32_WINNT=_WIN32_WINNT_WINXP</BCC_WindowsVersionDefines>
+        <BCC_OptimizeForSize>true</BCC_OptimizeForSize>
+        <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <DllSuffix>u_$(DllSuffix)</DllSuffix>
     </PropertyGroup>
     <ItemGroup>
@@ -181,11 +179,11 @@
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fieldDDF.cpp">
             <BuildOrder>7</BuildOrder>
         </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fieldNameAlias.cpp">
+            <BuildOrder>25</BuildOrder>
+        </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fileDDF.cpp">
             <BuildOrder>8</BuildOrder>
-        </CppCompile>
-        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\filedNameAlias.cpp">
-            <BuildOrder>25</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\groupQuery.cpp">
             <BuildOrder>24</BuildOrder>

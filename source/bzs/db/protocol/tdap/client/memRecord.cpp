@@ -57,6 +57,7 @@ autoMemory::autoMemory(unsigned char* p, size_t s, short* endIndex, bool own)
 	}else
 		endFieldIndex = endIndex;
 }
+
 autoMemory::~autoMemory()
 {
 	if (owner)

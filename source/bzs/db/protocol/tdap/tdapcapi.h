@@ -37,7 +37,7 @@ typedef ushort_td       keylen_td;
 
 /** tdap c interface
  */
-#ifdef ARBTREGN_PKG
+#ifdef LIB_TDCLCPP
 	extern __declspec(dllimport)
 	short_td __stdcall BTRCALLID(ushort_td op, void* posb, void* data, uint_td* datalen
 			, void* keybuf, keylen_td keylen, char_td keyNum, uchar_td* clientID);
@@ -212,17 +212,6 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 
 #define ft_nullindicator    255
 
-/** compair types
-*/
-enum eCompType
-{
-	eEqual       = 1,
-	eGreater     = 2,
-	eLess        = 3,
-	eNotEq       = 4,
-	eGreaterEq   = 5,
-	eLessEq      = 6
-};
 
 /** charset type number
  */

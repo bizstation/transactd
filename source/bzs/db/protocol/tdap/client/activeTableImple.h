@@ -22,6 +22,7 @@
 #include "trdboostapi.h"
 #include "trdormapi.h"
 #include "recordsetImple.h"
+#include "memRecord.h"
 
 namespace bzs
 {
@@ -95,7 +96,6 @@ class  activeTableImple : public activeObject<map_orm>
 
 	typedef recordsetImple Container;
 	typedef boost::shared_ptr<writableRecord> record;
-	
 	typedef activeObject<map_orm> baseClass_type;
 	typedef std::vector<std::vector<int> > joinmap_type;
 	record m_record;
@@ -128,8 +128,7 @@ class  activeTableImple : public activeObject<map_orm>
 					, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
 					, const _TCHAR* name4=NULL, const _TCHAR* name5=NULL
 					, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
-					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
-					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
+					, const _TCHAR* name8=NULL)
 	{
 		if (mdls.size()==0) return;
 		m_alias.reverseAliasNamesQuery(q);
@@ -143,7 +142,7 @@ class  activeTableImple : public activeObject<map_orm>
 		std::vector<typename Container::key_type> fieldIndexes;
 
 		fieldNames fns;
-		fns.keyField(name1, name2, name3, name4, name5, name6, name7, name8, name9, name10, name11);
+		fns.keyField(name1, name2, name3, name4, name5, name6, name7, name8);
 		const std::vector<std::_tstring>& names = fns.getKeyFields();
 
 		for (int i=0;i<(int)names.size();++i)
@@ -247,22 +246,20 @@ public:
 					, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
 					, const _TCHAR* name4=NULL, const _TCHAR* name5=NULL
 					, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
-					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
-					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
+					, const _TCHAR* name8=NULL)
 	{
 		doJoin(true, mdls, q, name1, name2, name3, name4, name5
-						, name6, name7, name8, name9, name10, name11);
+						, name6, name7, name8);
 	}
 
 	inline void outerJoin(Container& mdls, queryBase& q, const _TCHAR* name1
 					, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
 					, const _TCHAR* name4=NULL, const _TCHAR* name5=NULL
 					, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
-					, const _TCHAR* name8=NULL, const _TCHAR* name9=NULL
-					, const _TCHAR* name10=NULL, const _TCHAR* name11=NULL)
+					, const _TCHAR* name8=NULL)
 	{
 		doJoin(false, mdls, q, name1, name2, name3, name4, name5
-						, name6, name7, name8, name9, name10, name11);
+						, name6, name7, name8);
 
 	}
 };

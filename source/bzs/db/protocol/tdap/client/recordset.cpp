@@ -34,33 +34,40 @@ namespace tdap
 namespace client
 {
 
-
-
 // ---------------------------------------------------------------------------
 // class recordset
 // ---------------------------------------------------------------------------
 recordset::recordset():m_imple(new recordsetImple){}
-recordset::~recordset()
-{
-	delete m_imple; 
-}
-
-void recordset::release(recordset* p)
-{
-	delete p;
-}
 
 recordset::recordset(recordsetImple* p):m_imple(p)
 {
 
 }
 
+recordset::~recordset()
+{
+	delete m_imple;
+}
+
+#ifndef BCB_64
+
+void* recordset::operator new(size_t size)
+{
+	return malloc(size);
+}
+
+void recordset::operator delete(void* p)
+{
+	free(p);
+}
+
+#endif
 /* This clone is deep copy.
    But text and blob field data memory are shared.
 */
-recordset::ptr recordset::clone() const
+recordset* recordset::clone() const
 {
-	return recordset::ptr(new recordset(m_imple->clone()), recordset::release);	
+	return /*recordset::ptr(*/new recordset(m_imple->clone());//);
 }
 
 void recordset::clearRecords()
@@ -116,9 +123,6 @@ recordset::iterator recordset::end(){return m_imple->end();}
 recordset::iterator recordset::erase(size_t index){return m_imple->erase(m_imple->begin()+index);}
 
 recordset::iterator recordset::erase(const iterator& it){return m_imple->erase(it);}
-
-void recordset::push_back(row_ptr r){m_imple->push_back(r);};
-
 
 void recordset::removeField(int index)
 {

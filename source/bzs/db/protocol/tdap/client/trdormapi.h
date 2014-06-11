@@ -19,10 +19,11 @@
    02111-1307, USA.
 =================================================================*/
 #include "trdboostapi.h"
-#include "filedNameAlias.h"
+#include "fieldNameAlias.h"
 #include "memRecord.h"
 #include "fieldNames.h"
 #include "groupComp.h"
+#include "databaseManager.h"
 #include <boost/shared_array.hpp>
 #include <vector>
 
@@ -39,55 +40,7 @@ namespace tdap
 namespace client
 {
 
-/* Single database inplemantation idatabaseManager
-*/
-
-class databaseManager : public idatabaseManager, private boost::noncopyable
-{
-	database* m_db;
-	database_ptr m_dbPtr;
-	std::vector<table_ptr> m_tables;
-	int findTable(const _TCHAR* name)
-	{
-		for (int i=0;i<(int)m_tables.size();++i)
-			if (_tcscmp(m_tables[i]->tableDef()->tableName(), name)==0)
-				return i;
-		return -1;
-	}
-public:
-	databaseManager(database_ptr db):m_dbPtr(db),m_db(db.get()){};
-	databaseManager(database* db):m_db(db){};
-	table_ptr table(const _TCHAR* name)
-	{
-		int index =  findTable(name);
-		if (index !=-1)
-			return  m_tables[index];
-		table_ptr t = openTable(m_db, name);
-		if (t)
-			m_tables.push_back(t);
-		return t;
-	}
-
-	table_ptr table(short index)
-	{
-		tabledef* td = m_db->dbDef()->tableDefs(index);
-		if (td)
-			return table(td->tableName());
-		return table_ptr();
-	}
-
-	inline void setOption(__int64 ){};
-	inline __int64 option(){return 0;};
-	inline void beginTrn(short bias){m_db->beginTrn(bias);};
-	inline void endTrn(){m_db->endTrn();}
-	inline void abortTrn(){m_db->abortTrn();}
-	inline int enableTrn(){return m_db->enableTrn();}
-	inline void beginSnapshot(){m_db->beginSnapshot();}
-	inline void endSnapshot(){m_db->endSnapshot();}
-};
-
-
-
+/** @cond INTERNAL */
 template <class Container>
 typename Container::key_type resolvKeyValue(Container& m, const std::_tstring& name
 	, bool noexception=false);
@@ -251,7 +204,7 @@ public:
 };
 
 
-#ifndef SWIG
+
 template <class T, class RET>
 bool sortFuncBase(const T&l, const T& r , RET (T::*func1)() const)
 {
@@ -259,7 +212,6 @@ bool sortFuncBase(const T&l, const T& r , RET (T::*func1)() const)
 	RET retr = (r.*func1)();
 	return retl < retr;
 }
-#endif
 
 template <class T, class FUNC1, class FUNC2, class FUNC3>
 bool sortFunc(const T&l, const T& r , FUNC1 func1, FUNC2 func2, FUNC3 func3)
@@ -326,7 +278,6 @@ void sort(Container& mdls, FUNC1 func1)
 	std::sort(begin(mdls), end(mdls), functor);
 }
 
-#ifndef SWIG
 template <class T2, class T, class Container>
 inline boost::shared_ptr<std::vector<T> > listup(Container& mdls, T (T2::*func)()const)
 {
@@ -342,8 +293,6 @@ inline boost::shared_ptr<std::vector<T> > listup(Container& mdls, T (T2::*func)(
 	}
 	return mdlst;
 }
-#endif
-
 
 class mraResetter
 {
@@ -363,16 +312,6 @@ public:
 template <class MAP, class T=typename MAP::mdl_typename, class FDI=typename MAP::fdi_typename>
 class activeObject : boost::noncopyable
 {
-protected:
-	typedef std::vector<boost::shared_ptr<T> > collection_vec_type;
-	table_ptr m_tb;
-	FDI* m_fdi;
-	MAP m_map;
-	int m_option;
-	fdNmaeAlias m_alias;
-	typedef std::vector<std::vector<int> > joinmap_type;
-
-	inline T& getItem(collection_vec_type& mdls, unsigned int index){return *(mdls[index]);}
 	void init(idatabaseManager& mgr, const _TCHAR* name)
 	{
 		m_tb = mgr.table(name);
@@ -387,8 +326,17 @@ protected:
 	{
 		m_tb = openTable(db, name);
 	}
+
+protected:
+	table_ptr m_tb;
+	FDI* m_fdi;
+	MAP m_map;
+	int m_option;
+	fdNmaeAlias m_alias;
+
 public:
-	
+	typedef std::vector<boost::shared_ptr<T> > collection_vec_type;
+
 
 	explicit activeObject(idatabaseManager& mgr)
 			:m_option(0)
@@ -442,13 +390,6 @@ public:
 			}
 
 	~activeObject(){destroyFdi(m_fdi);}
-
-	inline void beginBulkInsert(int maxBuflen){m_tb->beginBulkInsert(maxBuflen);}
-
-	inline void abortBulkInsert(){m_tb->abortBulkInsert();}
-
-	inline ushort_td commitBulkInsert() {return m_tb->commitBulkInsert();}
-
 
 	activeObject& index(int v)
 	{
@@ -606,7 +547,6 @@ public:
 		return readMap(map, q, func);
 	}
 
-#ifndef SWIG
 	template <class T2>
 	void read(T2& mdl, bool setKeyValueFromObj=true)
 	{
@@ -618,7 +558,6 @@ public:
 			nstable::throwError(_T("activeObject read"), &(*m_tb));
 		m_map.readMap(mdl, fds, m_option);
 	}
-#endif
 
 	template <class T2>
 	void update(T2& mdl, bool setKeyValueFromObj=true)
@@ -780,7 +719,6 @@ public:
 
 	/** Join相当の処理を事前ソートして高速に行います。
 	*/
-#ifndef SWIG
 	template <class BaseContainer, class T2>
 	void readEach(BaseContainer& mdls, T* (T2::*func)()const, queryBase& q)
 	{
@@ -798,7 +736,6 @@ public:
 		std::sort(refList->begin(), refList->end(), comp);
 		readEach(*refList, q, true, &e);
 	}
-#endif
 
 	/* No use field select */
 	template <class Container>
@@ -837,7 +774,6 @@ public:
 	}
 
 	/* No use field select */
-#ifndef SWIG
 	template <class BaseContainer, class T2>
 	void readEach(BaseContainer& mdls, T* (T2::*func)()const)
 	{
@@ -855,7 +791,6 @@ public:
 		std::sort(refList->begin(), refList->end(), comp);
 		readEach(*refList, true, &e);
 	}
-#endif
 
 	inline activeObject& alias(const _TCHAR* src, const _TCHAR* dst)
 	{
@@ -868,11 +803,6 @@ public:
 		m_alias.clear();
 		return *this;
 	}
-
-	typedef boost::shared_ptr<writableRecord> record;
-	record m_record;
-
-
 };
 
 }// namespace client

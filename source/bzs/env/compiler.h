@@ -62,6 +62,10 @@
 #	endif
 #endif//__THREAD_BCB
 
+// BCB_64
+#if (__BCPLUSPLUS__ && defined(__clang__))
+#	define BCB_64
+#endif
 // export 
 #undef PACKAGE
 #ifdef __BCPLUSPLUS__

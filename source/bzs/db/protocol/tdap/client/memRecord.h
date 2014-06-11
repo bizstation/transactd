@@ -118,6 +118,7 @@ class DLLLIB writableRecord : public memoryRecord
 	fielddefs* m_fddefs;
 	short m_endIndex;
 	table* m_tb;
+
 	writableRecord(table* tb, const aliasMap_type* alias);
 	fielddefs* fddefs();
 

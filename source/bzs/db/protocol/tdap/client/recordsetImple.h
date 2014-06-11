@@ -35,9 +35,6 @@ namespace tdap
 namespace client
 {
 
-
-/** @cond INTERNAL */
-
 class recordsetSorter
 {
 	const std::vector<int>& m_fieldNums;
@@ -59,7 +56,6 @@ public:
 	}
 };
 
-#ifndef SWIG
 class multiRecordAlocatorImple : public multiRecordAlocator
 {
 	class recordsetImple* m_rs;
@@ -79,11 +75,6 @@ public:
 	inline void setJoinRowMap(const std::vector< std::vector<int> >* v/*, size_t size*/){m_joinRowMap = v;/*m_joinMapSize = size;*/}
 	inline const std::vector< std::vector<int> >* joinRowMap()const {return m_joinRowMap;}
 };
-#endif
-
-
-/** @endcond */
-
 
 class recordsetImple
 {
@@ -199,13 +190,13 @@ private:
 	}
 
 public:
-	recordsetImple():m_fds(fielddefs::create(), &fielddefs::destroy)
+	inline recordsetImple():m_fds(fielddefs::create(), &fielddefs::destroy)
 		, m_joinRows(0), m_uniqueReadMaxField(0)
 	{
 		m_mra.reset(new multiRecordAlocatorImple(this));
 	}
 
-	~recordsetImple()
+	inline ~recordsetImple()
 	{
 
 	}
@@ -213,7 +204,7 @@ public:
 	/* This clone is deep copy.
 	   But text and blob field data memory are shared.
 	*/
-	recordsetImple* clone() const
+	inline recordsetImple* clone() const
 	{
 		recordsetImple* p = new recordsetImple();
 		p->m_joinRows = m_joinRows;
@@ -261,7 +252,7 @@ public:
 		m_uniqueReadMaxField = 0;
 	}
 
-	const fielddefs* fieldDefs() const {return m_fds.get();}
+	inline const fielddefs* fieldDefs() const {return m_fds.get();}
 
 	inline void clear()
 	{
@@ -324,7 +315,7 @@ public:
 		return (key_type)m_fds->size();
 	}
 
-	void removeField(int index)
+	inline void removeField(int index)
 	{
 		m_fds->remove(index);
 		for(int i=0;i<(int)m_unionFds.size();++i)
@@ -340,7 +331,7 @@ public:
 		}
 	}
 
-	recordsetImple& matchBy(recordsetQuery& rq)
+	inline recordsetImple& matchBy(recordsetQuery& rq)
 	{
 		rq.init(fieldDefs());
 		for (int i=(int)m_recordset.size()-1;i>=0;--i)
@@ -349,13 +340,13 @@ public:
 		return *this;
 	}
 
-	recordsetImple& groupBy(groupQuery& gq)
+	inline recordsetImple& groupBy(groupQuery& gq)
 	{
 		gq.grouping(*this);
 		return *this;
 	}
 
-	recordsetImple& orderBy(const _TCHAR* name1 , const _TCHAR* name2=NULL,
+	inline recordsetImple& orderBy(const _TCHAR* name1 , const _TCHAR* name2=NULL,
 					 const _TCHAR* name3=NULL,const _TCHAR* name4=NULL,
 					 const _TCHAR* name5=NULL, const _TCHAR* name6=NULL,
 					 const _TCHAR* name7=NULL, const _TCHAR* name8=NULL)
@@ -379,7 +370,7 @@ public:
 		return *this;
 	}
 
-	void appendCol(const _TCHAR* name, int type, short len)
+	inline void appendCol(const _TCHAR* name, int type, short len)
 	{
 		assert(m_fds->size());
 		fielddef fd((*m_fds)[0]);
@@ -395,7 +386,7 @@ public:
 
 	}
 
-	recordsetImple& operator+=(const recordsetImple& r)
+	inline recordsetImple& operator+=(const recordsetImple& r)
 	{
 		if (!m_fds->canUnion(*r.m_fds))
 			THROW_BZS_ERROR_WITH_MSG(_T("Recordsets are different format"));
@@ -432,7 +423,6 @@ public:
 
 };
 
-/** @cond INTERNAL */
 
 inline multiRecordAlocatorImple::multiRecordAlocatorImple(recordsetImple* rs)
 	:m_rs(rs),m_rowOffset(0),m_addType(0),m_curFirstFiled(0),m_joinRowMap(NULL)
@@ -472,7 +462,6 @@ template<> inline recordsetImple::key_type resolvKeyValue(recordsetImple& m
 {
 	return m.resolvKeyValue(name, noexception);
 }
-
 
 inline row* create(recordsetImple& m, int)
 {

@@ -33,7 +33,6 @@ namespace client
 
 class database;
 class table;
-class repData;
 class dbdef;
 
 #if defined(__BORLANDC__)

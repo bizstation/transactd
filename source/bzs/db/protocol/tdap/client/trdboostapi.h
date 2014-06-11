@@ -54,31 +54,6 @@ enum eStepOpType {
 enum eFindCurrntType{
 	ePosNeedNext = 1, ePosNeedNone = 0, ePosNeedPrev = -1};
 
-//typedef boost::shared_ptr<database> database_ptr;
-//typedef boost::shared_ptr<table> table_ptr;
-
-
-/*
-class filterParams
-{
-	std::_tstring m_str;
-	int m_rejectCount;
-	int m_maxRecords; 
-public:
-	inline filterParams(const _TCHAR* filter, int rejectCount, int maxRecords)
-		:m_str(filter),m_rejectCount(rejectCount),m_maxRecords(maxRecords)
-	{
-
-	}
-	inline const _TCHAR* filter() const {return m_str.c_str();}
-	inline int rejectCount() const {return m_rejectCount;}
-	inline int maxRecords() const {return m_maxRecords;}
-
-
-};
-
-*/
-
 
 /** @cond INTERNAL */
 
@@ -715,7 +690,7 @@ inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
-inline findRvIterator findRv(table_ptr tb, const char_td keynum, queryBase& q
+inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
 	tb->setQuery(&q);
@@ -1014,40 +989,24 @@ inline void updateTableDef(dbdef* def, short tableid)
 }
 
 template <class T>
-inline void insertRecord(const T& it, bool ncc = true)
-{
-	it.tb().insert(ncc);
-	if (it.tb().stat() != 0)
-		nstable::throwError(std::_tstring(_T("Insert record")).c_str(), &(it.tb()));
+inline table* getTable(T& it){return &(it.tb());}
 
-}
+template <> inline table* getTable(table_ptr& tb){return tb.get();}
 
-inline void insertRecord(table* tb, bool ncc = true)
+template <> inline table* getTable(table* &tb){return tb;}
+
+template <class T>
+inline void insertRecord(T& some, bool ncc = true)
 {
+	table* tb = getTable(some);
 	tb->insert(ncc);
 	if (tb->stat() != 0)
 		nstable::throwError(std::_tstring(_T("Insert record")).c_str(), tb);
 
 }
 
-inline void insertRecord(table_ptr tb, bool ncc = true)
-{
-	tb->insert(ncc);
-	if (tb->stat() != 0)
-		nstable::throwError(std::_tstring(_T("Insert record")).c_str(), tb.get());
 
-}
-
-template <class T>
-inline void updateRecord(const T& it, bool ncc = true)
-{
-	it.tb().update((nstable::eUpdateType)ncc);
-	if (it.tb().stat() != 0)
-		nstable::throwError(std::_tstring(_T("Update record")).c_str(), &(it.tb()));
-
-}
-
-inline void updateRecord(fields& fd, char_td keynum)
+inline void updateRecord(fields& fd, const char_td keynum)
 {
 	fd.tb().setKeyNum(keynum);
 	fd.tb().update(nstable::changeInKey);
@@ -1055,35 +1014,36 @@ inline void updateRecord(fields& fd, char_td keynum)
 		nstable::throwError(std::_tstring(_T("Update record")).c_str(), &(fd.tb()));
 }
 
-inline void updateRecord(table* tb)
+template <class T>
+inline void updateRecord(T& some, bool ncc = true)
 {
-
-	tb->update(nstable::changeCurrentNcc);
+	table* tb = getTable(some);
+	tb->update((nstable::eUpdateType)ncc);
 	if (tb->stat() != 0)
 		nstable::throwError(std::_tstring(_T("Update record")).c_str(), tb);
 }
 
-inline void deleteRecord(fields& fd)
+template <class T>
+inline void deleteRecord(T& some)
 {
-	fd.tb().del(true/*inKey*/);
-	if (fd.tb().stat() != 0)
-		nstable::throwError(std::_tstring(_T("Delete record")).c_str(), &(fd.tb()));
+	table* tb = getTable(some);
+	tb->del(false/*inKey*/);
+	if (tb->stat() != 0)
+		nstable::throwError(std::_tstring(_T("Delete record")).c_str(), tb);
 }
 
-inline void deleteRecord(fields& fd, const char_td keynum)
-{
-	fd.tb().setKeyNum(keynum);
-	fd.tb().del(true/*inKey*/);
-	if (fd.tb().stat() != 0)
-		nstable::throwError(std::_tstring(_T("Delete record")).c_str(), &(fd.tb()));
-}
 
-inline void deleteRecord(table* tb)
+template <class T>
+inline void deleteRecord(T& some, const char_td keynum)
 {
+	table* tb = getTable(some);
+
+	tb->setKeyNum(keynum);
 	tb->del(true/*inKey*/);
 	if (tb->stat() != 0)
 		nstable::throwError(std::_tstring(_T("Delete record")).c_str(), tb);
 }
+
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
 inline void deleteRecord(table_ptr tb, const char_td keynum
@@ -1157,13 +1117,6 @@ inline void deleteRecord(table_ptr tb, const char_td keynum
 	deleteRecord(fd, keynum);
 }
 
-template <class T>
-inline void deleteRecord(const T& it)
-{
-	it.tb().del(false/*inKey*/);
-	if (it.tb().stat() != 0)
-		nstable::throwError(std::_tstring(_T("Delete record")).c_str(), &(it.tb()));
-}
 
 
 template<class T, class F>
@@ -1245,6 +1198,14 @@ public:
 	{
 		m_tb->beginBulkInsert(bufsize);
 	}
+
+	/* For activeObject */
+	template <class T>
+	autoBulkinsert(T& tba, int bufsize = BULKBUFSIZE):m_tb(tba.table())
+	{
+		m_tb->beginBulkInsert(bufsize);
+	}
+	
 	~autoBulkinsert(){m_tb->commitBulkInsert();}
 
 };
