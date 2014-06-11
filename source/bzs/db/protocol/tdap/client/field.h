@@ -103,8 +103,11 @@ public:
 };
 
 
+/** @cond INTERNAL */
 
 typedef int (*compFieldFunc)(const class field& l, const class field& r, char logType);
+
+/** @endcond */
 
 class DLLLIB field
 {
@@ -288,7 +291,9 @@ public:
 
 };
 
+/** @cond INTERNAL */
 /* For template tget type num by type.*/
+
 inline int getFieldType(int )
 {
 	return ft_integer;
@@ -335,6 +340,8 @@ inline const _TCHAR* fieldValue(const field& fd, const _TCHAR* ) {return fd.c_st
 
 
 DLLLIB const fielddef& dummyFd();
+
+/** @endcond */
 
 }// namespace client
 }// namespace tdap

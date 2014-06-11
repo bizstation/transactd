@@ -460,6 +460,8 @@ inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td ke
 	return readIndex(tb, op);
 }
 
+/** @cond INTERNAL */
+
 template <class T0, class T1, class T2, class T3
 		, class T4, class T5, class T6>
 inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td keynum
@@ -520,6 +522,7 @@ inline indexIterator readIndex_v(table_ptr tb, eIndexOpType op, const char_td ke
 	keyValueSetter<T0>::set(tb, keynum, kv0);
 	return readIndex(tb, op);
 }
+/** @endcond */
 
 
 template <class T0, class T1, class T2, class T3
@@ -533,6 +536,8 @@ inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_t
 	return readIndexRv(tb, op);
 }
 
+/** @cond INTERNAL */
+
 template <class T0, class T1, class T2, class T3
 		, class T4, class T5, class T6>
 inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_td keynum
@@ -593,6 +598,7 @@ inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op, const char_t
 	keyValueSetter<T0>::set(tb, keynum, kv0);
 	return readIndexRv(tb, op);
 }
+/** @endcond */
 
 
 inline stepIterator readStep(table_ptr tb)
@@ -619,6 +625,8 @@ inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	return findIterator(*tb);
 }
 
+/** @cond INTERNAL */
+
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
 inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6)
@@ -688,6 +696,7 @@ inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q
 	tb->find(table::findForword);
 	return findIterator(*tb);
 }
+/** @endcond */
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6, class T7>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
@@ -700,6 +709,8 @@ inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase
 	return findRvIterator(*tb);
 }
 
+/** @cond INTERNAL */
+
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase& q
 	,const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,const T4 kv4, const T5 kv5, const T6 kv6)
@@ -769,6 +780,8 @@ inline findRvIterator findRv(table_ptr tb, const char_td keynum, const queryBase
 	tb->find(table::findBackForword);
 	return findRvIterator(*tb);
 }
+
+/** @endcond */
 
 inline findIterator getFindIterator(indexIterator it, const queryBase& q
 					,bool isCurrentValid)
@@ -988,12 +1001,18 @@ inline void updateTableDef(dbdef* def, short tableid)
 	}
 }
 
+
+/** @cond INTERNAL */
+
 template <class T>
 inline table* getTable(T& it){return &(it.tb());}
 
 template <> inline table* getTable(table_ptr& tb){return tb.get();}
 
 template <> inline table* getTable(table* &tb){return tb;}
+
+/** @endcond */
+
 
 template <class T>
 inline void insertRecord(T& some, bool ncc = true)
@@ -1053,6 +1072,7 @@ inline void deleteRecord(table_ptr tb, const char_td keynum
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
+/** @cond INTERNAL */
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
 inline void deleteRecord(table_ptr tb, const char_td keynum
@@ -1116,6 +1136,7 @@ inline void deleteRecord(table_ptr tb, const char_td keynum
 	fields fd(tb);
 	deleteRecord(fd, keynum);
 }
+/** @endcond */
 
 
 
@@ -1161,10 +1182,10 @@ public:
 	inline void abort(){m_db->abortTrn();}
 };
 
-/* transaction for database */
+/** transaction for database */
 typedef transaction<database_ptr>  dbTransaction;
 
-/* transaction for idatabaseManager */
+/** transaction for idatabaseManager */
 typedef transaction<idatabaseManager*> dbmTransaction;
 
 template <class DB>
@@ -1183,10 +1204,10 @@ public:
 	}
 };
 
-/* snapshot for database */
+/** snapshot for database */
 typedef snapshot<database_ptr>  dbSnapshot;
 
-/* snapshot for idatabaseManager */
+/** snapshot for idatabaseManager */
 typedef snapshot<idatabaseManager*> dbmSnapshot;
 
 

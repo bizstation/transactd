@@ -72,6 +72,8 @@ public:
 	activeTable& read(recordset& mdls, queryBase& q);
 	activeTable& read(recordset& mdls, queryBase& q, validationFunc func);
 
+/** @cond INTERNAL */
+
 	template <class T0>
 	activeTable& keyValue(const T0 kv0)
 	{
@@ -126,6 +128,8 @@ public:
 				::set(table(), table()->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6);
 		return *this;
 	}
+	
+/** @endcond */
 
 	template <class T0, class T1 , class T2, class T3
 				,class T4, class T5 , class T6 , class T7>

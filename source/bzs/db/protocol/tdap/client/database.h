@@ -40,9 +40,19 @@ class dbdef;
 	typedef short __stdcall(*schemaMgrFn)(database* db);
 	typedef void __stdcall(*copyDataFn)(database* db, int recordCount, int count, bool &cancel);
 #else
-	typedef bool(__STDCALL *deleteRecordFn)(database* db, table* tb, bool inkey);
+
+/** @cond INTERNAL */
+	/** Callback function on a record was deleted. */
+	typedef bool(__STDCALL *deleteRecordFn)(database* db,table* tb, bool inkey);
+/** @endcond */
+
+	/** Callback function on a database is opening by database::open operation. 
+	    This is use for change a table schema and table data at before database 
+	*/
 	typedef short(__STDCALL *schemaMgrFn)(database* db);
-	typedef void (__STDCALL *copyDataFn)(database* db, int recordCount, int count, bool &cancel);
+
+	/** Callback function on a record was copied by convert table operation. */
+	typedef void(__STDCALL *copyDataFn)(database* db, int recordCount, int count, bool &cancel);
 #endif
 
 

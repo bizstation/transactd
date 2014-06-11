@@ -308,6 +308,7 @@ public:
 	}
 };
 
+/** @endcond */
 
 template <class MAP, class T=typename MAP::mdl_typename, class FDI=typename MAP::fdi_typename>
 class activeObject : boost::noncopyable
@@ -397,6 +398,8 @@ public:
 		m_tb->setKeyNum(v);
 		return *this;
 	}
+	
+/** @cond INTERNAL */
 
 	template <class T0>
 	activeObject& keyValue(const T0 kv0)
@@ -452,6 +455,8 @@ public:
 				::set(m_tb, m_tb->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6);
 		return *this;
 	}
+	
+/** @endcond */
 
 	template <class T0, class T1 , class T2, class T3
 				,class T4, class T5 , class T6 , class T7>
@@ -650,9 +655,7 @@ public:
 	}
 
 #endif
-	/* mdlsがキーフィールドに対応するメンバによってソート済の時は
-	   sortedをtrueにします。検索するレコードと通信量が激減します。
-	*/
+
 	template <class Container>
 	void readEach(Container& mdls, queryBase& q, bool sorted=false, bzs::rtl::exception* e=NULL)
 	{
@@ -685,8 +688,7 @@ public:
 		if (m_tb->stat() != 0)
 			nstable::throwError(_T("activeObject readEach Query"), &(*m_tb));
 		m_tb->find();
-		//見つからないレコードがあると、その時点でエラーで返る
-		//行ごとにエラーかどうかわかった方がよい。
+
 		it = itb = begin(mdls);
 		while(it != ite)
 		{
@@ -717,8 +719,6 @@ public:
 		}
 	}
 
-	/** Join相当の処理を事前ソートして高速に行います。
-	*/
 	template <class BaseContainer, class T2>
 	void readEach(BaseContainer& mdls, T* (T2::*func)()const, queryBase& q)
 	{
