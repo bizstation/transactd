@@ -75,7 +75,7 @@ struct nstimpl
 // -----------------------------------------------------------------
 // class nstable
 // -----------------------------------------------------------------
-extern TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size);
+extern _TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size);
 
 nstable::nstable(nsdatabase *pbe)
 {
@@ -116,7 +116,7 @@ nstable::~nstable()
 	m_impl = MEM_FREED_MAGIC_NUMBER;
 }
 
-TCHAR* nstable::getErrorMessage(int errorCode, _TCHAR* buf, size_t size)
+_TCHAR* nstable::getErrorMessage(int errorCode, _TCHAR* buf, size_t size)
 {
 	return getErrorMessageLocale(errorCode, buf, size);
 

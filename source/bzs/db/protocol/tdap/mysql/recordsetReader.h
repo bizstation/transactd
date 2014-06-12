@@ -20,6 +20,7 @@
 #define BZS_DB_PROTOCOL_TDAP_MYSQL_RECORDSETREADER_H
 
 #include "request.h"
+#include <bzs/db/protocol/tdap/tdapSchema.h>
 #include <bzs/rtl/exception.h>
 #include <bzs/db/engine/mysql/IReadRecords.h>
 #include <bzs/db/engine/mysql/fieldAccess.h>

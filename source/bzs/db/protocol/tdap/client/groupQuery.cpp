@@ -19,7 +19,7 @@
 #pragma hdrstop
 #include "groupQuery.h"
 #include "recordsetImple.h"
-
+#include "fieldNames.h"
 
 #pragma package(smart_init)
 
@@ -262,9 +262,9 @@ void groupQuery::grouping(recordsetImple& rs)
 	m_imple->grouping(rs);
 }
 
-groupQuery& groupQuery::keyField(const TCHAR* name, const TCHAR* name1, const TCHAR* name2, const TCHAR* name3
-			,const TCHAR* name4, const TCHAR* name5, const TCHAR* name6, const TCHAR* name7
-			,const TCHAR* name8, const TCHAR* name9, const TCHAR* name10)
+groupQuery& groupQuery::keyField(const _TCHAR* name, const _TCHAR* name1, const _TCHAR* name2, const _TCHAR* name3
+			,const _TCHAR* name4, const _TCHAR* name5, const _TCHAR* name6, const _TCHAR* name7
+			,const _TCHAR* name8, const _TCHAR* name9, const _TCHAR* name10)
 {
 	m_imple->keyField(name, name1, name2, name3, name4, name5, name6, name7, name8
 			, name9, name10);

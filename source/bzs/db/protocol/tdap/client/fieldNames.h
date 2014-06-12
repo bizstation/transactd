@@ -44,9 +44,9 @@ public:
 		return *this;
 	}
 
-	fieldNames& keyField(const TCHAR* name, const TCHAR* name1=NULL, const TCHAR* name2=NULL, const TCHAR* name3=NULL
-				,const TCHAR* name4=NULL, const TCHAR* name5=NULL, const TCHAR* name6=NULL, const TCHAR* name7=NULL
-				,const TCHAR* name8=NULL, const TCHAR* name9=NULL, const TCHAR* name10=NULL)
+	fieldNames& keyField(const _TCHAR* name, const _TCHAR* name1=NULL, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
+				,const _TCHAR* name4=NULL, const _TCHAR* name5=NULL, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
+				,const _TCHAR* name8=NULL, const _TCHAR* name9=NULL, const _TCHAR* name10=NULL)
 	{
 		m_keyFields.clear();
 		m_keyFields.push_back(name);

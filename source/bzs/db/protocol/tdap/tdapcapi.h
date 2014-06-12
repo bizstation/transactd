@@ -341,8 +341,9 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 
 
 #define TRANSACTD_SCHEMANAME            _T("transactd_schema")
-#define TYPE_SCHEMA_BDF                 (short)0
-#define TYPE_SCHEMA_DDF                 (short)1
+
+static short TYPE_SCHEMA_BDF = 0;
+static short TYPE_SCHEMA_DDF = 0;
 
 #define FILTER_CURRENT_TYPE_NOTINC      0
 #define FILTER_CURRENT_TYPE_INC         1
@@ -355,13 +356,13 @@ typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 #define OWNERNAME_SIZE                  12
 
 
-#define TD_BACKUP_START                 (char_td)0
-#define TD_BACKUP_END                   (char_td)2
-#define TD_BACKUP_MODE_OK               STATUS_SUCCESS
-#define TD_BACKUP_MODE_NOT_SUPPORT      STATUS_PROGRAM_ERROR
-#define TD_BACKUP_MODE_BUSY             STATUS_CANNOT_LOCK_TABLE
-#define TD_BACKUP_MODE_NOT_PERMIT       (short)41
-#define TD_BACKUP_MODE_SERVER_ERROR     (short)91
+static char_td  TD_BACKUP_START = 0;
+static char_td  TD_BACKUP_END = 2;
+static short_td TD_BACKUP_MODE_OK = STATUS_SUCCESS;
+static short_td TD_BACKUP_MODE_NOT_SUPPORT = STATUS_PROGRAM_ERROR;
+static short_td TD_BACKUP_MODE_BUSY = STATUS_CANNOT_LOCK_TABLE;
+static short_td TD_BACKUP_MODE_NOT_PERMIT = 41;
+static short_td TD_BACKUP_MODE_SERVER_ERROR = 91;
 
 /** @cond INTERNAL */
 struct trdVersiton

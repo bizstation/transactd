@@ -609,7 +609,7 @@ inline int fixVariableLenBug(bool isUseTransactd, tabledef* src, size_t size)
 {
 	if (isUseTransactd)
 	{// A Transactd server format changed to nosupport FIXED_PLUS_VARIABLELEN
-		if (src->pageSize+4 == size)
+		if (src->pageSize+4 == (int)size)
 		{ // This is a chagned server
 			if (src->preAlloc &&
 				((src->preAlloc % 512 == 0)

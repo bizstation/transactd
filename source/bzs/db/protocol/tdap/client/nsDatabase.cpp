@@ -482,7 +482,7 @@ void nsdatabase::reset()
 	if (m_nsimpl->tranCount)
 	{
 #ifdef _WIN32
-	#ifdef ARBTREGN_PKG
+	#ifdef LIB_TDCLCPP
 			int ret = MessageBox(NULL, _T("Is an uncompleted transaction aborted?"), NULL, 33);
 	#else
 			int ret = 2;

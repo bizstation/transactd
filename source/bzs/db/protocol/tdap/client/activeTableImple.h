@@ -23,6 +23,7 @@
 #include "trdormapi.h"
 #include "recordsetImple.h"
 #include "memRecord.h"
+#include "fieldNames.h"
 
 namespace bzs
 {
