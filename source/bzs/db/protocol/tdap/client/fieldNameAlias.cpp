@@ -18,7 +18,15 @@
 =================================================================*/
 #pragma hdrstop
 #include "fieldNameAlias.h"
-#include <boost/unordered_map.hpp>
+
+#ifdef BCB_32
+#	pragma option push
+#		pragma option -O1
+#		include <boost/unordered_map.hpp>
+#	pragma option pop
+#else
+#	include <boost/unordered_map.hpp>
+#endif
 
 #pragma package(smart_init)
 

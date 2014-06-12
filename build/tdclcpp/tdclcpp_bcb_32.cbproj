@@ -103,8 +103,6 @@
 			<DllSuffix>u_$(DllSuffix)</DllSuffix>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_4)'!=''">
-			<BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
-			<BCC_OptimizeForSize>true</BCC_OptimizeForSize>
 			<_TCHARMapping>wchar_t</_TCHARMapping>
 			<DllSuffix>u_$(DllSuffix)</DllSuffix>
 		</PropertyGroup>

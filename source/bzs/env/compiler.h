@@ -66,6 +66,12 @@
 #if (__BCPLUSPLUS__ && defined(__clang__))
 #	define BCB_64
 #endif
+
+//BCB32
+#if (__BCPLUSPLUS__ && defined(__x86_32__))
+#	define BCB_32
+#endif
+
 // export 
 #undef PACKAGE
 #ifdef __BCPLUSPLUS__
