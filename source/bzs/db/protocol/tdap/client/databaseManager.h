@@ -38,8 +38,8 @@ namespace client
 
 class databaseManager : public idatabaseManager, private boost::noncopyable
 {
-	database* m_db;
 	database_ptr m_dbPtr;
+	database* m_db;
 	std::vector<table_ptr> m_tables;
 	int findTable(const _TCHAR* name)
 	{
@@ -49,8 +49,21 @@ class databaseManager : public idatabaseManager, private boost::noncopyable
 		return -1;
 	}
 public:
+	databaseManager()
+	{
+		m_dbPtr = createDatadaseObject();
+		m_db = m_dbPtr.get();
+	}
+
 	databaseManager(database_ptr db):m_dbPtr(db),m_db(db.get()){};
+
 	databaseManager(database* db):m_db(db){};
+
+	void connect(const connectParams& param, bool newConnection=false)
+	{
+		connectOpen(m_db, param, newConnection);
+	}
+
 	table_ptr table(const _TCHAR* name)
 	{
 		int index =  findTable(name);
@@ -78,8 +91,23 @@ public:
 	inline int enableTrn(){return m_db->enableTrn();}
 	inline void beginSnapshot(){m_db->beginSnapshot();}
 	inline void endSnapshot(){m_db->endSnapshot();}
+	inline short_td stat() const {return m_db->stat();}
+	inline uchar_td* clientID() const{return m_db->clientID();}
+	inline const _TCHAR* uri() const{return m_db->uri();}
 };
 
+
+template<> inline dbmanager_ptr createDatabaseForConnectionPool(dbmanager_ptr& c)
+{
+	dbmanager_ptr p(new databaseManager());
+	return p;
+}
+
+
+template<> inline void connectOpen(dbmanager_ptr db, const connectParams& connPrams, bool newConnection)
+{
+	db->connect(connPrams, newConnection);
+}
 
 }// namespace client
 }// namespace tdap

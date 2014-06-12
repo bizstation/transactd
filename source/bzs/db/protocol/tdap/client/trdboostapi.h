@@ -911,6 +911,13 @@ inline void openDatabase(Database_Ptr db, const _TCHAR* uri, short schemaType = 
 }
 
 template <class Database_Ptr>
+inline void connectOpen(Database_Ptr db, const connectParams& connPrams, bool newConnection)
+{
+	connect(db, connPrams, newConnection);
+	openDatabase(db, connPrams);
+}
+
+template <class Database_Ptr>
 inline void dropDatabase(Database_Ptr db)
 {
 	db->drop();
@@ -1153,6 +1160,7 @@ class idatabaseManager
 
 public:
 	virtual ~idatabaseManager(){};
+	virtual void connect(const connectParams& param, bool newConnection=false)=0;
 	virtual table_ptr table(const _TCHAR* name)=0;
 	virtual table_ptr table(short index)=0;
 	virtual void setOption(__int64 v)=0;
@@ -1163,7 +1171,26 @@ public:
 	virtual int enableTrn()=0;
 	virtual void beginSnapshot() = 0;
 	virtual void endSnapshot() = 0;
+	virtual short_td stat() const = 0;
+	virtual uchar_td* clientID() const =0;
+	virtual const _TCHAR* uri() const=0;
 };
+
+/** Shared pointer of idatabaseManager.  */
+typedef boost::shared_ptr<idatabaseManager> dbmanager_ptr;
+
+/** For connectionPool::addOne(). */
+template<> inline void openDatabase(dbmanager_ptr db, const connectParams& connPrams, bool newConnection)
+{
+
+}
+
+template <class T> inline T createDatabaseForConnectionPool(T& p);
+
+template<> inline database_ptr createDatabaseForConnectionPool(database_ptr& p)
+{
+	return createDatadaseObject();
+}
 
 /* Exception safe trnasction
 	It can use for database  and idatabaseManager.
