@@ -124,7 +124,7 @@ public:
 	static ushort_td getFieldPosition(tabledef *tableDef, short fieldNum);
 	static void cacheFieldPos(tabledef *tableDef);
 
-
+    using nstable::mode;
 };
 
 }// namespace client

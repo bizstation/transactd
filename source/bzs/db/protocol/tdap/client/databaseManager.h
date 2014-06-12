@@ -94,6 +94,11 @@ public:
 	inline short_td stat() const {return m_db->stat();}
 	inline uchar_td* clientID() const{return m_db->clientID();}
 	inline const _TCHAR* uri() const{return m_db->uri();}
+	inline char_td mode() const
+	{
+		assert(m_db->dbDef());
+		return m_db->dbDef()->mode();
+	}
 };
 
 

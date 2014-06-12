@@ -810,8 +810,8 @@ inline findRvIterator getFindIterator(indexRvIterator it, const queryBase& q
 class connectParams
 {
 	_TCHAR m_buf[MAX_PATH];
-	short m_mode;
 	short m_type;
+	char_td m_mode;
 
 public:
 	inline connectParams(const _TCHAR* protocol, const _TCHAR* hostOrIp, const _TCHAR* dbname,
@@ -826,17 +826,35 @@ public:
 		_tcscpy_s(m_buf, MAX_PATH, uri);
 
 	}
-	inline void setMode(short v){m_mode = v;}
+	inline void setMode(char_td v){m_mode = v;}
 
-	inline void setType(short v){m_type = v;}
+	inline void setType(short v)
+	{
+		if (m_type != v)
+		{
+			m_buf[_tcslen(m_buf) - 3] = 0x00;
+			if (v == TYPE_SCHEMA_BDF)
+				_tcscat(m_buf, _T("bdf"));
+			else
+				_tcscat(m_buf, _T("ddf"));
+		}
+		m_type = v;
+	}
 
 	inline const _TCHAR* uri() const {return m_buf;}
 
-	inline short mode() const {return m_mode;};
+	inline char_td mode() const {return m_mode;};
 
 	inline short type() const {return m_type;};
 
 };
+
+template <class Database_Ptr>
+bool isSameUri(const connectParams* param, const Database_Ptr& db)
+{
+	return (_tcsicmp(param->uri(), db->uri())==0)
+			&& (param->mode() == db->mode());
+}
 
 inline void releaseDatabase(database* db) {database::destroy(db);}
 
@@ -1174,6 +1192,7 @@ public:
 	virtual short_td stat() const = 0;
 	virtual uchar_td* clientID() const =0;
 	virtual const _TCHAR* uri() const=0;
+	virtual char_td mode() const=0;
 };
 
 /** Shared pointer of idatabaseManager.  */

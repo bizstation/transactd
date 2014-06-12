@@ -39,24 +39,24 @@ public:
 		{
 			begin_use_pool_database();
 
-			dbmanager_ptr db = get_pool_database();
+				dbmanager_ptr db = get_pool_database();
 
-			clientID* cid = (clientID*)db->clientID();
+				clientID* cid = (clientID*)db->clientID();
 
-			{
-				mutex::scoped_lock lck(m_mutex);
-				std::cout << "worker strat id = " << m_id
+				{
+					mutex::scoped_lock lck(m_mutex);
+					std::cout << "worker strat id = " << m_id
+								<< " connection = 0x" << std::hex << cid->con << std::endl;
+				}
+
+				Sleep(m_worktime);
+				if (m_id == 4) throw "error";    //throw error example
+
+				{
+					mutex::scoped_lock lck(m_mutex);
+					std::cout << "worker finish id = " << m_id
 							<< " connection = 0x" << std::hex << cid->con << std::endl;
-			}
-
-			Sleep(m_worktime);
-			if (m_id == 4) throw "error";    //throw error example
-
-			{
-				mutex::scoped_lock lck(m_mutex);
-				std::cout << "worker finish id = " << m_id
-						<< " connection = 0x" << std::hex << cid->con << std::endl;
-			}
+				}
 			end_use_pool_database();
 
 			delete this;

@@ -81,7 +81,7 @@ public:
 					if (param)
 					{
 						Database_Ptr db = m_dbs[i];
-						if (_tcsicmp(db->uri(), param->uri())==0)
+						if (isSameUri(param , db))
 							return db;
 					}else
 						return m_dbs[i];
@@ -136,14 +136,16 @@ typedef connectionPool<dbmanager_ptr> stdDbmCconnectionPool;
 typedef stdDbmCconnectionPool stdCconnectionPool;
 #define POLL_MAXCONNECTIONS 100
 
+extern stdCconnectionPool cpool;
+
 void releaseConnection(stdDbmCconnectionPool* pool);
 
-
-extern stdCconnectionPool cpool;
 
 /** Release is indispensable at the end of database operation.
 	This macro set is automatically released using shared_ptr and a variable scope.
 
+
+	// For C++ applications
 	begin_use_pool_database()
 	dbmanager_ptr db = get_pool_database()
 	...
@@ -152,14 +154,17 @@ extern stdCconnectionPool cpool;
 	end_use_pool_database()
 
 */
+
 #define begin_use_pool_database() \
 	boost::shared_ptr<stdCconnectionPool> cpool_ptr(&cpool, releaseConnection); \
 {
 
-#define get_pool_database() \
-	cpool_ptr->get();
+#define get_pool_database(param) cpool_ptr->get(param);
+
 
 #define end_use_pool_database() }
+
+
 
 }//namespace client
 }//namespace tdap

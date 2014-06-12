@@ -29,13 +29,16 @@ namespace tdap
 namespace client
 {
 
+stdCconnectionPool cpool;
+
 void releaseConnection(stdDbmCconnectionPool* pool)
 {
 	pool->releaseOne();
 }
 
 
-stdCconnectionPool cpool;
+
+
 
 
 }//namespace client

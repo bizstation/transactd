@@ -56,7 +56,7 @@ namespace client
 
 struct nstimpl
 {
-	nstimpl():refCount(1), bulkIns(NULL), shared(false), isOpen(false)
+	nstimpl():refCount(1), bulkIns(NULL), shared(false), isOpen(false),mode(0)
 	{
 		posblk[0] = 0x00;
 	}
@@ -68,6 +68,7 @@ struct nstimpl
 	_TCHAR uri[MAX_PATH];
 	uchar_td posblk[POS_BLOCK_SIZE];
 	short tableid;
+	char_td mode;
 	bool shared;
 	bool isOpen;
 };
@@ -308,6 +309,11 @@ void nstable::seekLessThan(bool orEqual, ushort_td LockBias)
 		onReadAfter();
 }
 
+char_td nstable::mode() const
+{
+	return m_impl->mode;
+}
+
 void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
 {
 	void* svm_keybuf = m_keybuf;
@@ -366,7 +372,10 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
 
 	tdap(TD_OPENTABLE);
 	if (m_stat == STATUS_SUCCESS)
+	{
 		m_impl->isOpen = true;
+		m_impl->mode = mode;
+	}
 	m_keybuf = svm_keybuf;
 	m_keynum = svm_keynum;
 	m_keylen = svm_keybuflen;

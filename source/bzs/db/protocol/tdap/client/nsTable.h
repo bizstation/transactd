@@ -186,6 +186,7 @@ public:
 	ushort_td recordLength();
 	void stats(void* databuffer, uint_td buflen, bool estimate = true);
 	void unlock(bookmark_td bm = 0);
+	char_td mode() const;
 	static _TCHAR* getFileName(const _TCHAR* uri, _TCHAR* filename);
 	static short_td tdapErr(HWND hWnd, short_td status, const _TCHAR* tableName = NULL,
 		_TCHAR* retbuf = NULL);
