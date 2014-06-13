@@ -834,9 +834,9 @@ public:
 		{
 			m_buf[_tcslen(m_buf) - 3] = 0x00;
 			if (v == TYPE_SCHEMA_BDF)
-				_tcscat(m_buf, _T("bdf"));
+				_tcscat_s(m_buf, MAX_PATH, _T("bdf"));
 			else
-				_tcscat(m_buf, _T("ddf"));
+				_tcscat_s(m_buf, MAX_PATH, _T("ddf"));
 		}
 		m_type = v;
 	}
@@ -1198,18 +1198,15 @@ public:
 /** Shared pointer of idatabaseManager.  */
 typedef boost::shared_ptr<idatabaseManager> dbmanager_ptr;
 
-/** For connectionPool::addOne(). */
-template<> inline void openDatabase(dbmanager_ptr db, const connectParams& connPrams, bool newConnection)
-{
-
-}
-
 template <class T> inline T createDatabaseForConnectionPool(T& p);
 
+/** @cond INTERNAL */
 template<> inline database_ptr createDatabaseForConnectionPool(database_ptr& p)
 {
 	return createDatadaseObject();
 }
+/** @endcond */
+
 
 /* Exception safe trnasction
 	It can use for database  and idatabaseManager.

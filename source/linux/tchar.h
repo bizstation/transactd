@@ -326,8 +326,8 @@ typedef char    _TUCHAR;
 #define	_tcsstr		strstr
 #define _tcstok		strtok
 #define	_tcsdup		_strdup
-#define	_tcsicmp	_stricmp
-#define	_tcsnicmp	_strnicmp
+#define	_tcsicmp	strcasecmp
+#define	_tcsnicmp	strncasecmp
 #define	_tcsnset	_strnset
 #define	_tcsrev		_strrev
 #define _tcsset		_strset

@@ -55,7 +55,7 @@ class connectionPool
 
 	Database_Ptr addOne(const connectParams& param)
 	{
-		typename Database_Ptr db;
+		Database_Ptr db;
 		db = createDatabaseForConnectionPool(db);
 		connectOpen(db, param, true/* new connection*/);
 		m_dbs.push_back(db);

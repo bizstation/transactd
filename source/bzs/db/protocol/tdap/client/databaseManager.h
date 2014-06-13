@@ -101,6 +101,7 @@ public:
 	}
 };
 
+/** @cond INTERNAL */
 
 template<> inline dbmanager_ptr createDatabaseForConnectionPool(dbmanager_ptr& c)
 {
@@ -113,6 +114,9 @@ template<> inline void connectOpen(dbmanager_ptr db, const connectParams& connPr
 {
 	db->connect(connPrams, newConnection);
 }
+
+/** @endcond */
+
 
 }// namespace client
 }// namespace tdap
