@@ -614,9 +614,9 @@ void table::find(eFindType type)
 			return;
 		}
 		if (type == findForword)
-			seekGreater(false);
+			seekGreater(true);
 		else
-			seekLessThan(false);
+			seekLessThan(true);
 		if (m_stat == 0)
 		{
 			if (type == findForword)

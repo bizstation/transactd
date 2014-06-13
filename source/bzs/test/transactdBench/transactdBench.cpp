@@ -284,8 +284,11 @@ bool createTestDataBase(client::database* db, const _TCHAR* uri)
 
 		fd = def->insertField(td.id, 1);
 		fd->setName(_T("name"));
-		// fd->type = ft_zstring;
-		fd->type = ft_myvarchar;
+		if (db->isUseTransactd())
+			fd->type = ft_myvarchar;
+		else
+			fd->type = ft_zstring;
+
 		fd->len = (ushort_td)100;
 		def->updateTableDef(td.id);
 
