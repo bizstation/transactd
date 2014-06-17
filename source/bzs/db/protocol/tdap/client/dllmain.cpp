@@ -78,8 +78,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 	{
 		#ifdef USETLS
 		delete (bzs::db::protocol::tdap::client::client*)tls_getspecific(g_tlsiID);
+		tls_setspecific(g_tlsiID1, 0);
 		#else
 		delete g_client;
+		g_client = NULL;
 		#endif
 	}
 	else if (reason == DLL_PROCESS_DETACH)

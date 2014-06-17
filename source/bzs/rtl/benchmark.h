@@ -60,6 +60,22 @@ public:
 
 };
 
+
+//Multi thread version. Self measurement.
+class benchmarkMt
+{
+	boost_timer t;
+	#ifdef BOOST_HIGH_RESOL_TIMER_ENABLE
+	boost_timer::time_point  m_start;
+	#endif
+
+public:
+
+	void start();
+	int end();
+};
+
+
 }//namespace rtl
 }//namespace bzs
 #endif

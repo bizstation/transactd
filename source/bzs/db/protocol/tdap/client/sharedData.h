@@ -32,7 +32,7 @@ namespace client
 {
 
 
-#define MAX_BTRENGIN  50
+#define MAX_BTRENGIN  2000
 
 class nsdatabase;
 typedef nsdatabase** (*EnginsFunc)();

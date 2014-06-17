@@ -1013,7 +1013,7 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
 		break;
 	case ft_myvarchar:
 	case ft_myvarbinary: minlen = 1;
-		maxlen = 60000;
+		maxlen = 65535;
 		defaultlen = 2;
 		break;
 	case ft_myblob:
@@ -1032,7 +1032,7 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
 		break;
 	case ft_mywvarchar:
 	case ft_mywvarbinary: minlen = 1;
-		maxlen = 60000;
+		maxlen = 65535;
 		defaultlen = 3;
 		break;
 	case ft_myfixedbinary:
@@ -1170,6 +1170,8 @@ bool dbdef::validLen(uchar_td FieldType, uint_td FieldLen)
 
 bool dbdef::isPassKey(uchar_td FieldType)
 {
+	if (FieldType == ft_autoIncUnsigned)
+		return true;
 	if (FieldType == ft_wstring)
 		return true;
 	if (FieldType == ft_wzstring)

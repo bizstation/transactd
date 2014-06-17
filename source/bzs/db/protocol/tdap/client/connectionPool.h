@@ -72,6 +72,8 @@ public:
 	Database_Ptr get(const connectParams* param=NULL)
 	{
 		boost::mutex::scoped_lock lck(m_mutex);
+		assert((param && m_maxConnections) || m_dbs.size());
+
 		while (1)
 		{
 			for (size_t i = 0;i<m_dbs.size();i++)

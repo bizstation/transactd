@@ -170,26 +170,20 @@ public:
 
 class exitCheckHnadler : public IExitCheckHandler
 {
-	HANDLE m_thread;
+	HANDLE m_procHandle;
 	bool m_cancel;
 	IAppModule* m_module;
 public:
 
-	exitCheckHnadler(DWORD tid):m_cancel(false),m_module(NULL)
+	exitCheckHnadler(DWORD procId):m_cancel(false),m_module(NULL)
 	{
-		m_thread = OpenThread(THREAD_QUERY_LIMITED_INFORMATION /*THREAD_QUERY_INFORMATION*/, FALSE, tid);
-		/*if (!m_thread)
-		{
-			char buf[1024];
-			wsprintf(buf, "OpenThread error :id = %d %s", tid, getWindowsErrMsg(GetLastError()));
-			THROW_BZS_ERROR_WITH_MSG(buf);
-		}*/
+		m_procHandle =  OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, procId); 
 	}
 
 	~exitCheckHnadler()
 	{
-		if (m_thread)
-			CloseHandle(m_thread);
+		if (m_procHandle)
+			CloseHandle(m_procHandle);
 	}
 
 	void setModule(IAppModule* p)
@@ -201,8 +195,9 @@ public:
 	{
 		if (m_cancel)return true;
 		DWORD ExitCode;
-		if (m_thread && GetExitCodeThread(m_thread, &ExitCode))
-			if (STILL_ACTIVE!=ExitCode) return true;
+		if (m_procHandle && GetExitCodeProcess(m_procHandle, &ExitCode))
+		
+		if (STILL_ACTIVE!=ExitCode) return true;
 		if (m_module && m_module->isShutDown())
 			return true;
 		return false;
@@ -366,9 +361,9 @@ class connection  : public iconnection, private noncopyable
 		}
 	}
 	
-	char* getUniqName(DWORD id,__int64 clientid, const char* name, char* buf, int size)
+	char* getUniqName(DWORD id,__int64 processid, const char* name, char* buf, int size)
 	{
-		sprintf_s(buf, size, "%s_%lu_%Lu", name, id, clientid);
+		sprintf_s(buf, size, "%s_%lu_%Lu", name, id, processid);
 		return buf;
 	}
 	
@@ -431,15 +426,15 @@ public:
 		if (len!=16)
 			THROW_BZS_ERROR_WITH_MSG("readThredID error");
 		
-		DWORD clinetThreadID= *((DWORD*)(buf+4));
+		DWORD clinetProcessID= *((DWORD*)(buf+4));
 		__int64 clientid = *((__int64*)(buf+8));
 		sprintf_s(tmp, 50, "Global\\%s", m_pipeName.c_str());
-		m_sharedMem.reset(new sharedMem(getUniqName(clinetThreadID, clientid, tmp , buf, 128), m_shareMemSize));
+		m_sharedMem.reset(new sharedMem(getUniqName(clinetProcessID, clientid, tmp , buf, 128), m_shareMemSize));
 		sprintf_s(tmp, 50, "Global\\%sToSrv", m_pipeName.c_str());
 		sprintf_s(tmp2, 50, "Global\\%sToClnt", m_pipeName.c_str());
-		m_comm.reset(new winEventComm(getUniqName(clinetThreadID, clientid, tmp, buf, 128)
-									, getUniqName(clinetThreadID, clientid, tmp2, buf2, 50)));
-		m_exitHandler.reset(new exitCheckHnadler(clinetThreadID));
+		m_comm.reset(new winEventComm(getUniqName(clinetProcessID, clientid, tmp, buf, 128)
+									, getUniqName(clinetProcessID, clientid, tmp2, buf2, 50)));
+		m_exitHandler.reset(new exitCheckHnadler(clinetProcessID));
 		if (m_module)
 			m_exitHandler->setModule(m_module.get());
 		m_module->onAccept(tmp, 50);

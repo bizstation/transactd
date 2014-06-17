@@ -371,9 +371,9 @@ class pipeConnection : public connectionImple<platform_stream>
 
 		connectionBase::m_readbuf.resize(120);
 		char* p = &connectionBase::m_readbuf[0];
-		DWORD threadId = GetCurrentThreadId();
+		DWORD processId = GetCurrentProcessId();
 		__int64 clientid = (__int64)this;
-		sprintf_s(p, 120, "%s_%u_%Lu", name, threadId, clientid);
+		sprintf_s(p, 120, "%s_%u_%Lu", name, processId, clientid);
 		return p;
 	}
 
@@ -470,13 +470,14 @@ public:
 		m_socket.assign(fd);
 		m_connected = true;
 
-		//send thredid;
-		DWORD threadId = GetCurrentThreadId();
+		//send processId;
+
+		DWORD processId = GetCurrentProcessId();
 		int size = 16;
 		connectionBase::m_readbuf.resize(size);
 		char* p = &connectionBase::m_readbuf[0];
 		memcpy(p, &size, sizeof(int));
-		memcpy(p+4, &threadId, sizeof(DWORD));
+		memcpy(p+4, &processId, sizeof(DWORD));
 		__int64 clientid = (__int64)this;
 		memcpy(p+8, &clientid, sizeof(__int64));
 		boost::asio::write(m_socket, boost::asio::buffer(p, size));

@@ -92,5 +92,37 @@ void benchmark::start()
 }
 
 
+void benchmarkMt::start()
+{
+
+	#ifdef BOOST_CPUTIMER_ENABLE
+	t.stop();
+	t.start();
+	#else
+		#ifdef BOOST_HIGH_RESOL_TIMER_ENABLE
+		m_start = boost_timer::now();
+		#else
+		t.restart();
+		#endif
+	#endif
+}
+
+
+int benchmarkMt::end()
+{
+	#ifdef BOOST_CPUTIMER_ENABLE
+	boost::timer::cpu_times elapsed = t.elapsed();
+	return (int)(elapsed.wall/1000);
+	#else
+		#ifdef BOOST_HIGH_RESOL_TIMER_ENABLE
+			boost_timer::time_point p = boost_timer::now();
+			boost::chrono::nanoseconds ns  = p - m_start;
+			return (int)(ns.count()/1000;
+		#else
+			return  (int)(t.elapsed()*1000000);
+		#endif
+	#endif
+}
+
 }//namespace rtl
 }//namespace bzs

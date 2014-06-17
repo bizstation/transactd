@@ -220,6 +220,51 @@ bool createUserExtTable(dbdef* def)
 	return true;
 }
 
+
+bool createCacheTable(dbdef* def)
+{
+	short tableid = 4;
+	tabledef t;
+	tabledef* td = &t;
+	td->charsetIndex = mysql::charsetIndex(GetACP());
+	td->schemaCodePage = CP_UTF8;
+	td->id = tableid;
+	td->setTableName(_T("cache"));
+	td->setFileName(_T("cache"));
+
+	def->insertTable(td);
+	if (def->stat()!=0)
+		return showDbdefError(def, _T("cache insertTable"));
+
+	short filedIndex = 0;
+	fielddef* fd =  def->insertField(tableid, filedIndex);
+	fd->setName(_T("id"));
+	fd->type = ft_autoinc;
+	fd->len = 4;
+
+	++filedIndex;
+	fd =  def->insertField(tableid, filedIndex);
+	fd->setName(_T("value"));
+	fd->type = GROUP_STRING_TYPE;
+
+	fd->len = 60000;
+
+
+	char keyNum = 0;
+	keydef* kd = def->insertKey(tableid, keyNum);
+	keySegment* seg1 = &kd->segments[0];
+	seg1->fieldNum = 0;
+	seg1->flags.bit8 = true;//extended key type
+	seg1->flags.bit1 = true;//chanageable
+	kd->segmentCount = 1;
+	td = def->tableDefs(tableid);
+	td->primaryKeyNum = keyNum;
+	def->updateTableDef(tableid);
+	if (def->stat()!=0)
+	    return showDbdefError(def, _T("cache updateTableDef"));
+	return true;
+}
+
 bool insertData(database_ptr db, int maxId)
 {
 	_TCHAR tmp[256];
@@ -300,6 +345,7 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate, i
 		if (!createUserTable(db->dbDef()))return 1;
 		if (!createGroupTable(db->dbDef()))return 1;
 		if (!createUserExtTable(db->dbDef()))return 1;
+		
 		if (!insertData(db, maxId)) return 1;
 		std::tcout <<  _T("done!") << std::endl;
 		return 0;
