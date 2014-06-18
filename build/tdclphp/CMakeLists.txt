@@ -67,12 +67,15 @@ set(TDVER_PHP_BUILD "${TRANSACTD_BUILD_NUMBER}")
 
 
 # ==========================================================
-# add tdclc if need
+# add tdclc/tdclcppm if need
 # ==========================================================
 if((NOT TARGET tdclc) AND (NOT MINGW))
   subdirs("../tdclc")
 endif()
-set(TDCL_CPP_CHARSET "m")
+if(NOT TARGET tdclcppm)
+  set(TDCL_CPP_CHARSET "m")
+  subdirs("../tdclcppm")
+endif()
 
 
 # ==========================================================
@@ -103,7 +106,6 @@ add_custom_command (
 # ==========================================================
 # add swig wrapper source file
 # ==========================================================
-tdcl_add_source_files("${TRANSACTD_ROOT}")
 set(${this_target}_SOURCE_FILES
   ${${this_target}_SOURCE_FILES}
   ${PHP_SWIG_WRAPPER_CPP}
@@ -192,6 +194,7 @@ transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
 if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()
+target_link_libraries(${this_target} "tdclcpp${TDCL_CPP_CHARSET}")
 target_link_libraries(${this_target} "${TRANSACTD_PHP_LIBRARY_PATH}")
 if(NOT WIN32)
   target_link_libraries(${this_target} dl)

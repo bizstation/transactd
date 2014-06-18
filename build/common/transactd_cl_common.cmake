@@ -25,6 +25,7 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
     ${${this_target}_SOURCE_FILES}
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/btrDate.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/tdapSchema.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/activeTable.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connMgr.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/database.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/databaseFactory.cpp
@@ -32,11 +33,14 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/errorMessage.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/field.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fieldDDF.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fieldNameAlias.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fileDDF.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/groupQuery.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/indexDDF.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/memRecord.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/nsDatabase.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/nsTable.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/recordset.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/sharedData.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/table.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/characterset.cpp
@@ -84,7 +88,7 @@ macro(tdcl_add_compiler_options)
     bz_remove_cxx_flag("/EHs" "${build_type}")
     bz_remove_cxx_flag("-DPACKAGE_NO_EXPORT" "${build_type}")
     if(MSVC)
-      bz_add_cxx_flag("/EHa /wd4068 /DARBTREGN_PKG /DTRDCL_AUTOLINK_OFF /DTRDCLENGN_EXPORTS" "${build_type}")
+      bz_add_cxx_flag("/EHa /wd4068 /DLIB_TDCLCPP /DTRDCL_AUTOLINK_OFF /DTRDCLENGN_EXPORTS" "${build_type}")
       bz_set_MTMTd_cxx_flag("${build_type}")
     else()
       bz_add_cxx_flag("-fPIC -fabi-version=2 -fexceptions -finput-charset=utf-8" "${build_type}")
