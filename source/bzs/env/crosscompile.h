@@ -24,6 +24,10 @@
 	#endif
 #endif
 
+#if __MINGW32__
+	#define strcat_s(A,B,C)		strcat(A,C)
+#endif
+
 #if __MINGW32__ && ( (defined(__GNUC__) && __GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5) )
 	#define sprintf_s	snprintf
 	#define swprintf_s	swprintf
@@ -33,10 +37,12 @@
 #ifdef _UNICODE
 	#define _stprintf_s	swprintf_s
 	#define _tcscpy_s	wcscpy_s
+	#define _tcscat_s	wcscat_s
 	typedef wchar_t		_TUCHAR;
 #else
 	#define _stprintf_s	snprintf
 	#define _tcscpy_s	strcpy_s
+	#define _tcscat_s	strcat_s
 	typedef char		_TUCHAR;
 #endif
 #endif
