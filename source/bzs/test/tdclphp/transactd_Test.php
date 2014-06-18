@@ -26,12 +26,14 @@ define("HOSTNAME", "localhost/");
 define("DBNAME", "test");
 define("DBNAME_VAR", "testvar");
 define("DBNAME_SF", "testString");
+define("DBNAME_QT", "querytest");
 define("TABLENAME", "user");
 define("PROTOCOL", "tdap://");
 define("BDFNAME", "?dbfile=test.bdf");
 define("URL", PROTOCOL . HOSTNAME . DBNAME . BDFNAME);
 define("URL_VAR", PROTOCOL . HOSTNAME . DBNAME_VAR . BDFNAME);
 define("URL_SF", PROTOCOL . HOSTNAME . DBNAME_SF . BDFNAME);
+define("URL_QT", PROTOCOL . HOSTNAME . DBNAME_QT . BDFNAME);
 define("FDI_ID", 0);
 define("FDI_NAME", 1);
 define("FDI_GROUP", 2);
@@ -40,8 +42,6 @@ define("FDI_NAMEW", 2);
 define("BULKBUFSIZE", 65535 - 1000);
 define("TEST_COUNT", 20000);
 define("FIVE_PERCENT_OF_TEST_COUNT", TEST_COUNT / 20);
-
-define("TYPE_SCHEMA_BDF", 0);
 
 define("ISOLATION_READ_COMMITTED", true);
 define("ISOLATION_REPEATABLE_READ", false);
@@ -52,7 +52,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     {
         return Bz\database::createObject();
     }
-    private function deleteDbObj($db)
+    private function deleteDbObj(&$db)
     {
         $db->close();
         $db = NULL;
@@ -76,7 +76,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     }
     private function openDatabase($db)
     {
-        $db->open(URL, TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
+        $db->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
     }
     private function createTable($db)
@@ -164,6 +164,23 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db = $this->getDbObj();
         $tb = $this->openTable($db);
         $tb->close();
+        $this->deleteDbObj($db);
+    }
+    public function testClone()
+    {
+        $db = $this->getDbObj();
+        $db->open(URL);
+        $this->assertEquals($db->stat(), 0);
+        $this->assertEquals($db->isOpened(), true);
+        $db2 = clone $db;
+        $this->assertEquals($db2->stat(), 0);
+        $this->assertEquals($db2->isOpened(), true);
+        $db2->close();
+        $this->assertEquals($db2->stat(), 0);
+        $this->assertEquals($db2->isOpened(), false);
+        $db2 = NULL;
+        $this->assertEquals($db->stat(), 0);
+        $this->assertEquals($db->isOpened(), true);
         $this->deleteDbObj($db);
     }
     public function testVersion()
@@ -786,6 +803,90 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->deleteDbObj($db);
         $this->deleteDbObj($db2);
     }
+    public function testExclusive()
+    {
+        // db mode exclusive
+        $db = Bz\database::createObject();
+        $db->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_EXCLUSIVE);
+        $this->assertEquals($db->stat(), 0);
+        $tb = $db->openTable(TABLENAME);
+        $this->assertEquals($db->stat(), 0);
+        
+        // Can not open database from other connections.
+        $db2 = Bz\database::createObject();
+        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $this->assertEquals($db2->stat(), 0);
+        $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF);
+        $this->assertEquals($db2->stat(), Bz\transactd::STATUS_CANNOT_LOCK_TABLE);
+        
+        $tb2 = $db->openTable(TABLENAME);
+        $this->assertEquals($db->stat(), 0);
+        
+        $tb->setKeyNum(0);
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat(), 0);
+        
+        $tb->setFV(FDI_NAME, 'ABC123');
+        $tb->update();
+        $this->assertEquals($tb->stat(), 0);
+        
+        $tb2->setKeyNum(0);
+        $tb2->seekFirst();
+        $this->assertEquals($tb2->stat(), 0);
+        $tb2->setFV(FDI_NAME, 'ABC124');
+        $tb2->update();
+        $this->assertEquals($tb2->stat(), 0);
+        
+        $tb->close();
+        $tb2->close();
+        $db->close();
+        $db2->close();
+        
+        // table mode exclusive
+        $db = Bz\database::createObject();
+        $db->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_READONLY);
+        $this->assertEquals($db->stat(), 0);
+        $tb = $db->openTable(TABLENAME, Bz\transactd::TD_OPEN_EXCLUSIVE);
+        $this->assertEquals($db->stat(), 0);
+        
+        $db2 = Bz\database::createObject();
+        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $this->assertEquals($db2->stat(), 0);
+        $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF);
+        $this->assertEquals($db2->stat(), 0);
+        
+        // Can not open table from other connections.
+        $tb2 = $db2->openTable(TABLENAME);
+        $this->assertEquals($db2->stat(), Bz\transactd::STATUS_CANNOT_LOCK_TABLE);
+        
+        // Can open table from the same connection.
+        $tb3 = $db->openTable(TABLENAME);
+        $this->assertEquals($db->stat(), 0);
+        
+        $tb->close();
+        if ($tb2 != NULL) { $tb2->close(); }
+        $tb3->close();
+        $db->close();
+        $db2->close();
+        
+        // reopen and update
+        $db = Bz\database::createObject();
+        $db->open(URL);
+        $this->assertEquals($db->stat(), 0);
+        $tb = $db->openTable(TABLENAME);
+        $this->assertEquals($db->stat(), 0);
+        
+        $tb->setKeyNum(0);
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat(), 0);
+        
+        $tb->setFV(FDI_NAME, 'ABC123');
+        $tb->update();
+        $this->assertEquals($tb->stat(), 0);
+        
+        $tb->close();
+        $db->close();
+    }
     public function testInsert2()
     {
         $db = $this->getDbObj();
@@ -1039,7 +1140,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($db->stat(), 0);
         if (0 == $db->stat())
         {
-            $db->open(URL_VAR, 0, 0);
+            $db->open(URL_VAR, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
             $this->assertEquals($db->stat(), 0);
         }
         if (0 == $db->stat())
@@ -1709,7 +1810,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $db->create(URL_SF);
         }
         $this->assertEquals($db->stat(), 0);
-        $db->open(URL_SF, 0, 0);
+        $db->open(URL_SF, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
         $this->doTestStringFilter($db, 1, 'zstring', Bz\transactd::ft_zstring, Bz\transactd::ft_wzstring);
         if ($this->isUtf16leSupport($db))
@@ -1816,6 +1917,403 @@ class transactdTest extends PHPUnit_Framework_TestCase
     }
     
     /* -----------------------------------------------------
+        ActiveTable
+    ----------------------------------------------------- */
+    
+    private function createQTuser($db)
+    {
+        $dbdef = $db->dbDef();
+        $td = new Bz\tabledef();
+        $td->setTableName('user');
+        $td->setFileName('user.dat');
+        $id = 1;
+        $td->id = $id;
+        $td->pageSize = 2048;
+        $td->schemaCodePage = Bz\transactd::CP_UTF8;
+        $td->charsetIndex = Bz\transactd::CHARSET_UTF8B4;
+        $dbdef->insertTable($td);
+        $this->assertEquals($dbdef->stat(), 0);
+        // id field
+        $fd = $dbdef->insertField($id, 0);
+        $fd->setName('id');
+        $fd->type = Bz\transactd::ft_autoinc;
+        $fd->len = 4;
+        // 名前 field
+        $fd = $dbdef->insertField($id, 1);
+        $fd->setName('名前');
+        $fd->type = Bz\transactd::ft_myvarchar;
+        $fd->setLenByCharnum(20);
+        // group field
+        $fd = $dbdef->insertField($id, 2);
+        $fd->setName('group');
+        $fd->type = Bz\transactd::ft_integer;
+        $fd->len = 4;
+        // tel field
+        $fd = $dbdef->insertField($id, 3);
+        $fd->setName('tel');
+        $fd->type = Bz\transactd::ft_myvarchar;
+        $fd->setLenByCharnum(20);
+        // key 0 (primary) id
+        $kd = $dbdef->insertKey($id, 0);
+        $kd->segment(0)->fieldNum = 0;
+        $kd->segment(0)->flags->bit8 = 1; // extended key type
+        $kd->segment(0)->flags->bit1 = 1; // changeable
+        $kd->segmentCount = 1;
+        $td = $dbdef->tableDefs($id);
+        $td->primaryKeyNum = 0;
+        // key 1 group
+        $kd = $dbdef->insertKey($id, 1);
+        $kd->segment(0)->fieldNum = 2;
+        $kd->segment(0)->flags->bit8 = 1; // extended key type
+        $kd->segment(0)->flags->bit1 = 1; // changeable
+        $kd->segment(0)->flags->bit0 = 1; // duplicatable
+        $kd->segmentCount = 1;
+        // update
+        $dbdef->updateTableDef($id);
+        $this->assertEquals($dbdef->stat(), 0);
+        // open test
+        $tb = $db->openTable($id);
+        $this->assertEquals($db->stat(), 0);
+        if ($tb != NULL) { $tb->close(); }
+        return true;
+    }
+    private function createQTgroups($db)
+    {
+        $dbdef = $db->dbDef();
+        $td = new Bz\tabledef();
+        $td->setTableName('groups');
+        $td->setFileName('groups.dat');
+        $id = 2;
+        $td->id = $id;
+        $td->pageSize = 2048;
+        $td->schemaCodePage = Bz\transactd::CP_UTF8;
+        $td->charsetIndex = Bz\transactd::CHARSET_UTF8B4;
+        $dbdef->insertTable($td);
+        $this->assertEquals($dbdef->stat(), 0);
+        // code field
+        $fd = $dbdef->insertField($id, 0);
+        $fd->setName('code');
+        $fd->type = Bz\transactd::ft_integer;
+        $fd->len = 4;
+        // name field
+        $fd = $dbdef->insertField($id, 1);
+        $fd->setName('name');
+        $fd->type = Bz\transactd::ft_myvarbinary;
+        $fd->len = 33;
+        // key 0 (primary) code
+        $kd = $dbdef->insertKey($id, 0);
+        $kd->segment(0)->fieldNum = 0;
+        $kd->segment(0)->flags->bit8 = 1;  // extended key type
+        $kd->segment(0)->flags->bit1 = 1;  // changeable
+        $kd->segmentCount = 1;
+        $td = $dbdef->tableDefs($id);
+        $td->primaryKeyNum = 0;
+        // update
+        $dbdef->updateTableDef($id);
+        $this->assertEquals($dbdef->stat(), 0);
+        // open test
+        $tb = $db->openTable($id);
+        $this->assertEquals($db->stat(), 0);
+        if ($tb != NULL) { $tb->close(); }
+        return true;
+    }
+    private function createQTextention($db)
+    {
+        $dbdef = $db->dbDef();
+        $td = new Bz\tabledef();
+        $td->setTableName('extention');
+        $td->setFileName('extention.dat');
+        $id = 3;
+        $td->id = $id;
+        $td->pageSize = 2048;
+        $td->schemaCodePage = Bz\transactd::CP_UTF8;
+        $td->charsetIndex = Bz\transactd::CHARSET_UTF8B4;
+        $dbdef->insertTable($td);
+        $this->assertEquals($dbdef->stat(), 0);
+        // id field
+        $fd = $dbdef->insertField($id, 0);
+        $fd->setName('id');
+        $fd->type = Bz\transactd::ft_integer;
+        $fd->len = 4;
+        // comment field
+        $fd = $dbdef->insertField($id, 1);
+        $fd->setName('comment');
+        $fd->type = Bz\transactd::ft_myvarchar;
+        $fd->setLenByCharnum(60);
+        // key 0 (primary) id
+        $kd = $dbdef->insertKey($id, 0);
+        $kd->segment(0)->fieldNum = 0;
+        $kd->segment(0)->flags->bit8 = 1;  // extended key type
+        $kd->segment(0)->flags->bit1 = 1;  // changeable
+        $kd->segmentCount = 1;
+        $td = $dbdef->tableDefs($id);
+        $td->primaryKeyNum = 0;
+        // update
+        $dbdef->updateTableDef($id);
+        $this->assertEquals($dbdef->stat(), 0);
+        // open test
+        $tb = $db->openTable($id);
+        $this->assertEquals($db->stat(), 0);
+        if ($tb != NULL) { $tb->close(); }
+        return true;
+    }
+    private function insertQT($db, $maxId)
+    {
+        $db->beginTrn();
+        // insert user data
+        $tb = $db->openTable('user', Bz\transactd::TD_OPEN_NORMAL);
+        $this->assertEquals($db->stat(), 0);
+        $tb->clearBuffer();
+        for ($i = 1; $i <= $maxId; $i++)
+        {
+            $tb->setFV(0, $i);
+            $tb->setFV(1, "$i user");
+            $tb->setFV('group', (($i - 1) % 100) + 1);
+            $tb->insert();
+            $this->assertEquals($tb->stat(), 0);
+        }
+        $tb->close();
+        // insert groups data
+        $tb = $db->openTable('groups', Bz\transactd::TD_OPEN_NORMAL);
+        $this->assertEquals($db->stat(), 0);
+        $tb->clearBuffer();
+        for ($i = 1; $i <= 100; $i++)
+        {
+            $tb->setFV(0, $i);
+            $tb->setFV(1, "$i group");
+            $tb->insert();
+            $this->assertEquals($tb->stat(), 0);
+        }
+        $tb->close();
+        // insert extention data
+        $tb = $db->openTable('extention', Bz\transactd::TD_OPEN_NORMAL);
+        $this->assertEquals($db->stat(), 0);
+        $tb->clearBuffer();
+        for ($i = 1; $i <= $maxId; $i++)
+        {
+            $tb->setFV(0, $i);
+            $tb->setFV(1, "$i comment");
+            $tb->insert();
+            $this->assertEquals($tb->stat(), 0);
+        }
+        $tb->close();
+        $db->endTrn();
+    }
+    
+    public function testCreateQueryTest()
+    {
+        $db = $this->getDbObj();
+        // check database existence
+        $db->open(URL_QT, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
+        if ($db->stat() === 0) {
+            $db->close();
+            $this->deleteDbObj($db);
+            return;
+        }
+        echo("\nDatabase " . DBNAME_QT . " not found\n");
+        $db->create(URL_QT);
+        $this->assertEquals($db->stat(), 0);
+        $db->open(URL_QT, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
+        $this->assertEquals($db->stat(), 0);
+        // create tables
+        $this->createQTuser($db);
+        $this->createQTgroups($db);
+        $this->createQTextention($db);
+        // insert data
+        $this->insertQT($db, 20000);
+        $db->close();
+        $this->deleteDbObj($db);
+    }
+    public function testJoin()
+    {
+        $db = $this->getDbObj();
+        $db->open(URL_QT);
+        $this->assertEquals($db->stat(), 0);
+        $atu = new Bz\ActiveTable($db, 'user');
+        $atg = new Bz\ActiveTable($db, 'groups');
+        $ate = new Bz\ActiveTable($db, 'extention');
+        $q = new Bz\queryBase();
+        $rs = new Bz\RecordSet();
+        
+        $atu->alias('名前', 'name');
+        $q->select('id', 'name', 'group')->where('id', '<=', 15000);
+        $atu->index(0)->keyValue(1)->read($rs, $q);
+        $this->assertEquals($rs->size(), 15000);
+        
+        // Join extention::comment
+        $q->reset();
+        $ate->index(0)->join($rs,
+            $q->select('comment')->optimize(Bz\queryBase::joinKeyValuesUnique), 'id');
+        $this->assertEquals($rs->size(), 15000);
+        
+        // reverse and get first (so it means 'get last')
+        $last = $rs->reverse()->first();
+        $this->assertEquals($last['id'], 15000);
+        $this->assertEquals($last['comment'], '15000 comment');
+        
+        // Join group::name
+        $q->reset();
+        $atg->alias('name', 'group_name');
+        $atg->index(0)->join($rs, $q->select('group_name'), 'group');
+        $this->assertEquals($rs->size(), 15000);
+        
+        // get last (the rs is reversed, so it means 'get first')
+        $first = $rs->last();
+        $this->assertEquals($first['id'], 1);
+        $this->assertEquals($first['comment'], '1 comment');
+        $this->assertEquals($first['group_name'], '1 group');
+        
+        // row in rs[15000 - 9]
+        $rec = $rs[15000 - 9];
+        $this->assertEquals($rec['group_name'], '9 group');
+        
+        // orderby
+        $rs->orderBy('group_name');
+        for ($i = 0; $i < 15000 / 100; $i++)
+        {
+            $this->assertEquals($rs[$i]['group_name'], '1 group');
+        }
+        $this->assertEquals($rs[15000 / 100]['group_name'], '10 group');
+        $this->assertEquals($rs[(15000 / 100) * 2]['group_name'], '100 group');
+        $this->assertEquals($rs[(15000 / 100) * 3]['group_name'], '11 group');
+        $this->assertEquals($rs[(15000 / 100) * 4]['group_name'], '12 group');
+        
+        // union
+        $rs2 = new Bz\RecordSet();
+        $q->reset()->select('id', 'name', 'group')->where('id', '<=', 16000);
+        $atu->index(0)->keyValue(15001)->read($rs2, $q);
+        $this->assertEquals($rs2->size(), 1000);
+        $ate->index(0)->join($rs2,
+            $q->reset()->select('comment')->optimize(Bz\queryBase::joinKeyValuesUnique), 'id');
+        $this->assertEquals($rs2->size(), 1000);
+        $atg->index(0)->join($rs2, $q->reset()->select('group_name'), 'group');
+        $this->assertEquals($rs2->size(), 1000);
+        $rs->unionRecordSet($rs2);
+        $this->assertEquals($rs->size(), 16000);
+        // row in rs[15000]
+        $this->assertEquals($rs[15000]['id'], 15001);
+        // last
+        $this->assertEquals($rs->last()['id'], 16000);
+        
+        // group by
+        $gq = new Bz\groupQuery();
+        $gq->keyField('group', 'id');
+        $count1 = new Bz\count('count');
+        $gq->addFunction($count1);
+        
+        $gfq = new Bz\recordsetQuery();
+        $gfq->when('group', '=', 1);
+        $counter2 = new Bz\count('group1_count', $gfq);
+        $gq->addFunction($counter2);
+        
+        $rs->groupBy($gq);
+        $this->assertEquals($rs->size(), 16000);
+        $this->assertEquals($rs[0]['group1_count'], 1);
+        
+        // clone
+        $rsv = clone $rs;
+        $gq->reset();
+        $count3 = new Bz\count('count');
+        $gq->addFunction($count3)->keyField('group');
+        $rs->groupBy($gq);
+        $this->assertEquals($rs->size(), 100);
+        $this->assertEquals($rsv->size(), 16000);
+        
+        // having
+        $rq = new Bz\recordsetQuery();
+        $rq->when('group1_count', '=', 1)->or_('group1_count', '=', 2);
+        $rsv->matchBy($rq);
+        $this->assertEquals($rsv->size(), 160);
+        $this->assertEquals(isset($rsv), true);
+        unset($rsv);
+        $this->assertEquals(isset($rsv), false);
+        
+        // top
+        $rs3 = new Bz\RecordSet();
+        $rs->top($rs3, 10);
+        $this->assertEquals($rs3->size(), 10);
+        $this->assertEquals($rs->size(), 100);
+        
+        // query new / delete
+        $q1 = new Bz\recordsetQuery();
+        $q1->when('group1_count', '=', 1)->or_('group1_count', '=', 2);
+        unset($q1);
+        
+        //$q2 = new Bz\query();
+        //$q2->when('group1_count', '=', 1)->or_('group1_count', '=', 2);
+        //unset($q2);
+        
+        $q3 = new Bz\groupQuery();
+        $q3->keyField('group', 'id');
+        unset($q3);
+        
+        $db->close();
+        $this->deleteDbObj($db);
+    }
+    public function testWritableRecord()
+    {
+        $db = $this->getDbObj();
+        $db->open(URL_QT);
+        $this->assertEquals($db->stat(), 0);
+        $atu = new Bz\ActiveTable($db, 'user');
+        
+        $rec = $atu->index(0)->getWritableRecord();
+        $rec['id'] = 120000;
+        $rec['名前'] = 'aiba';
+        $rec->save();
+        
+        $rec->clear();
+        $this->assertNotEquals($rec['id'], 120000);
+        $this->assertNotEquals($rec['名前'], 'aiba');
+        $rec['id'] = 120000;
+        $rec->read();
+        $this->assertEquals($rec['id'], 120000);
+        $this->assertEquals($rec['名前'], 'aiba');
+        
+        $rec->clear();
+        $rec['id'] = 120001;
+        $rec['名前'] = 'oono';
+        if (! $rec->read()) {
+            $rec->insert();
+        }
+        
+        $rec->clear();
+        $rec['id'] = 120001;
+        $rec->read();
+        $this->assertEquals($rec['id'], 120001);
+        $this->assertEquals($rec['名前'], 'oono');
+        
+        // update only changed filed
+        $rec->clear();
+        $rec['id'] = 120001;
+        $rec['名前'] = 'matsumoto';
+        $rec->update();
+        
+        $rec->clear();
+        $rec['id'] = 120001;
+        $rec->read();
+        $this->assertEquals($rec['id'], 120001);
+        $this->assertEquals($rec['名前'], 'matsumoto');
+        
+        $rec->del();
+        $rec['id'] = 120000;
+        $rec->del();
+        
+        $rec->clear();
+        $rec['id'] = 120001;
+        $ret = $rec->read();
+        $this->assertEquals($ret, false);
+        
+        $rec->clear();
+        $rec['id'] = 120000;
+        $ret = $rec->read();
+        $this->assertEquals($ret, false);
+        
+        $db->close();
+        $this->deleteDbObj($db);
+    }
+    
+    /* -----------------------------------------------------
         transactd convert
     ----------------------------------------------------- */
     
@@ -1842,5 +2340,4 @@ class transactdTest extends PHPUnit_Framework_TestCase
                 $this->assertEquals(hexdec(bin2hex($ret{$i})), $u8Kanji[$i]);
         }
     }
-    
 }

@@ -30,8 +30,6 @@ define("FDN_ID", "番号");
 define("FDI_NAME", 1);
 define("FDN_NAME", "名前");
 
-define("TYPE_SCHEMA_BDF", 0);
-
 class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
 {
     private function getDbObj()
@@ -62,7 +60,7 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
     }
     private function openDatabase($db, $url)
     {
-        $db->open($url, TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
+        $db->open($url, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
     }
     private function createTable($db, $tableid, $tablename)
@@ -208,6 +206,12 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
     {
         $db = $this->getDbObj();
         $this->doWhole($db, 2, '漢字テーブル', URL_KANJI);
+        $this->deleteDbObj($db);
+    }
+    public function testDropDatabase()
+    {
+        $db = $this->getDbObj();
+        $this->dropDatabase($db, URL_KANJI);
         $this->deleteDbObj($db);
     }
 }

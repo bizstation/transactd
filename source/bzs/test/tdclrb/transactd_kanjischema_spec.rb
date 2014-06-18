@@ -41,8 +41,6 @@ FDI_NAME = 1
 FDN_NAME = '名前'.encode('UTF-8')
 
 
-TYPE_SCHEMA_BDF = 0
-
 def testDropDatabase(db, url)
   db.open(url)
   expect(db.stat()).to eq 0
@@ -60,7 +58,7 @@ def testCreateDatabase(db, url)
 end
 
 def testOpenDatabase(db, url)
-  db.open(url, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+  db.open(url, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
 end
 
@@ -204,5 +202,9 @@ describe Transactd do
  
   it 'kanji-named table' do
     testWhole(@db, 2, '漢字テーブル', URL_KANJI.encode('UTF-8'))
+  end
+  
+  it 'drop database' do
+    testDropDatabase(@db, URL_KANJI.encode('UTF-8'))
   end
 end

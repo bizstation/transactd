@@ -30,8 +30,6 @@ define("FDI_USER_ID", 1);
 define("FDI_BODY", 2);
 define("FDI_IMAGE", 3);
 
-define("TYPE_SCHEMA_BDF", 0);
-
 class transactdBlobTest extends PHPUnit_Framework_TestCase
 {
     private function getDbObj()
@@ -62,7 +60,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
     }
     private function openDatabase($db, $url)
     {
-        $db->open($url, TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
+        $db->open($url, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
     }
     private function createTable($db, $tableid, $tablename)

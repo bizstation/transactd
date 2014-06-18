@@ -36,12 +36,14 @@ HOSTNAME = getHost()
 DBNAME = 'test'
 DBNAME_VAR = 'testvar'
 DBNAME_SF = 'testString'
+DBNAME_QT = 'querytest'
 TABLENAME = 'user'
 PROTOCOL = 'tdap://'
 BDFNAME = '?dbfile=test.bdf'
 URL = PROTOCOL + HOSTNAME + DBNAME + BDFNAME
 URL_VAR = PROTOCOL + HOSTNAME + DBNAME_VAR + BDFNAME
 URL_SF = PROTOCOL + HOSTNAME + DBNAME_SF + BDFNAME
+URL_QT = PROTOCOL + HOSTNAME + DBNAME_QT + BDFNAME
 FDI_ID = 0
 FDI_NAME = 1
 FDI_GROUP = 2
@@ -50,8 +52,6 @@ FDI_NAMEW = 2
 BULKBUFSIZE = 65535 - 1000
 TEST_COUNT = 20000
 FIVE_PERCENT_OF_TEST_COUNT = TEST_COUNT / 20
-
-TYPE_SCHEMA_BDF = 0
 
 ISOLATION_READ_COMMITTED = true
 ISOLATION_REPEATABLE_READ = false
@@ -73,7 +73,7 @@ def testCreateDatabase(db)
 end
 
 def testOpenDatabase(db)
-  db.open(URL, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+  db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
 end
 
@@ -129,6 +129,22 @@ def testOpenTable(db)
   tb = db.openTable(TABLENAME)
   expect(db.stat()).to eq 0
   return tb
+end
+
+def testClone(db)
+  db.open(URL)
+  expect(db.stat()).to eq 0
+  expect(db.isOpened()).to eq true
+  db2 = db.clone
+  expect(db2.stat).to eq 0
+  expect(db2.isOpened()).to eq true
+  db2.close
+  expect(db2.stat).to eq 0
+  expect(db2.isOpened()).to eq false
+  db2 = nil
+  expect(db.stat).to eq 0
+  expect(db.isOpened()).to eq true
+  db.close
 end
 
 def testVersion(db)
@@ -685,6 +701,90 @@ def testConflict(db)
   db2.close()
 end
 
+def testExclusive()
+  # db mode exclusive
+  db = Transactd::Database::createObject()
+  db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_EXCLUSIVE)
+  expect(db.stat()).to eq 0
+  tb = db.openTable(TABLENAME)
+  expect(db.stat()).to eq 0
+  
+  # Can not open database from other connections.
+  db2 = Transactd::Database::createObject()
+  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  expect(db2.stat()).to eq 0
+  db2.open(URL, Transactd::TYPE_SCHEMA_BDF)
+  expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
+  
+  tb2 = db.openTable(TABLENAME)
+  expect(db.stat()).to eq 0
+  
+  tb.setKeyNum(0)
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  
+  tb.setFV(FDI_NAME, 'ABC123')
+  tb.update()
+  expect(tb.stat()).to eq 0
+  
+  tb2.setKeyNum(0)
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq 0
+  tb2.setFV(FDI_NAME, 'ABC124')
+  tb2.update()
+  expect(tb2.stat()).to eq 0
+  
+  tb.close()
+  tb2.close()
+  db.close()
+  db2.close()
+  
+  # table mode exclusive
+  db = Transactd::Database::createObject()
+  db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_READONLY)
+  expect(db.stat()).to eq 0
+  tb = db.openTable(TABLENAME, Transactd::TD_OPEN_EXCLUSIVE)
+  expect(db.stat()).to eq 0
+  
+  db2 = Transactd::Database::createObject()
+  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  expect(db2.stat()).to eq 0
+  db2.open(URL, Transactd::TYPE_SCHEMA_BDF)
+  expect(db2.stat()).to eq 0
+  
+  # Can not open table from other connections.
+  tb2 = db2.openTable(TABLENAME)
+  expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
+  
+  # Can open table from the same connection.
+  tb3 = db.openTable(TABLENAME)
+  expect(db.stat()).to eq 0
+  
+  tb.close()
+  tb2.close() if tb2 != nil
+  tb3.close()
+  db.close()
+  db2.close()
+  
+  # reopen and update
+  db = Transactd::Database::createObject()
+  db.open(URL)
+  expect(db.stat()).to eq 0
+  tb = db.openTable(TABLENAME)
+  expect(db.stat()).to eq 0
+  
+  tb.setKeyNum(0)
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  
+  tb.setFV(FDI_NAME, 'ABC123')
+  tb.update()
+  expect(tb.stat()).to eq 0
+  
+  tb.close()
+  db.close()
+end
+
 def testInsert2(db)
   tb = testOpenTable(db)
   v = TEST_COUNT * 2
@@ -904,7 +1004,7 @@ def testCreateDatabaseVar(db)
   end
   expect(db.stat()).to eq 0
   if (0 == db.stat())
-    db.open(URL_VAR, 0, 0)
+    db.open(URL_VAR, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
     expect(db.stat()).to eq 0
   end
   if (0 == db.stat())
@@ -916,7 +1016,7 @@ def testCreateDatabaseVar(db)
     testCreateVarTable(db, 4, 'user4', Transactd::Ft_mywvarbinary,  Transactd::CHARSET_CP932)
     testCreateVarTable(db, 5, 'user5', Transactd::Ft_myvarchar,     Transactd::CHARSET_UTF8B4)
     db.close()
-    db.open(PROTOCOL + HOSTNAME + DBNAME_VAR + '?dbfile=transactd_schemaname', 0, 0)
+    db.open(PROTOCOL + HOSTNAME + DBNAME_VAR + '?dbfile=transactd_schemaname')
     expect(db.stat()).to eq 0
   end
 end
@@ -1521,7 +1621,7 @@ def testStringFilter(db)
     db.create(URL_SF)
   end
   expect(db.stat()).to eq 0
-  db.open(URL_SF, 0, 0)
+  db.open(URL_SF, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
   doTestStringFilter(   db, 1, 'zstring',    Transactd::Ft_zstring,    Transactd::Ft_wzstring)
   if (isUtf16leSupport(db))
@@ -1533,7 +1633,7 @@ def testStringFilter(db)
 end
 
 def testDropDatabaseStringFilter(db)
-  db.open(URL_SF, 0, 0)
+  db.open(URL_SF)
   expect(db.stat()).to eq 0
   db.drop()
   expect(db.stat()).to eq 0
@@ -1623,6 +1723,18 @@ def testQuery()
   expect(q.toString()).to eq "in <> '1'"
 end
 
+def testCreateQueryTest
+  db.create(URL_QT)
+  if db.stat() == Transactd::STATUS_TABLE_EXISTS_ERROR
+    db.open(URL_SF)
+    expect(db.stat()).to eq 0
+    db.drop()
+    expect(db.stat()).to eq 0
+    db.create(URL_QT)
+  end
+  expect(db.stat()).to eq 0
+end
+
 
 describe Transactd do
   before :each do
@@ -1641,6 +1753,9 @@ describe Transactd do
   end
   it 'open table' do
     testOpenTable(@db)
+  end
+  it 'clone db object' do
+    testClone(@db)
   end
   it 'version' do
     testVersion(@db)
@@ -1698,6 +1813,9 @@ describe Transactd do
   end
   it 'transaction' do
     testTransactionLock(@db)
+  end
+  it 'exclusive' do
+    testExclusive()
   end
   it 'insert2' do
     testInsert2(@db)

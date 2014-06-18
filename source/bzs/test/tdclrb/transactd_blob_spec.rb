@@ -38,8 +38,6 @@ FDI_USER_ID = 1
 FDI_BODY = 2
 FDI_IMAGE = 3
 
-TYPE_SCHEMA_BDF = 0
-
 def dropDatabase(db)
   db.open(URL)
   expect(db.stat()).to eq 0
@@ -57,7 +55,7 @@ def createDatabase(db)
 end
 
 def openDatabase(db)
-  db.open(URL, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+  db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
 end
 
