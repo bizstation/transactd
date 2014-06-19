@@ -41,6 +41,7 @@ class DLLLIB activeTable
 public:
 
 	explicit activeTable(idatabaseManager& mgr, const _TCHAR* tableName);
+	explicit activeTable(dbmanager_ptr& mgr, const _TCHAR* tableName);
 	explicit activeTable(database_ptr& db, const _TCHAR* tableName);
 	explicit activeTable(database* db, const _TCHAR* tableName);
 

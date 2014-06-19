@@ -536,7 +536,15 @@ inline int dbExecuter::doReadMulti(request& req, int op, netsvc::server::netWrit
 	bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK)!= 0;
 
 	bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
-	
+	if (op == TD_KEY_SEEK_MULTI)
+	{
+		char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
+		if (!m_tb->setKeyNum(keynum))
+		{
+			if (m_tb)m_tb->unUse();
+			return ret;
+		}
+	}
 	//smartReadRecordsHandler scope
 	{
 		smartReadRecordsHandler srrh(m_readHandler);
@@ -548,16 +556,7 @@ inline int dbExecuter::doReadMulti(request& req, int op, netsvc::server::netWrit
 			return ret;
 		}
 		if (op == TD_KEY_SEEK_MULTI)
-		{
-			char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-			if (m_tb->setKeyNum(keynum))
-				req.result = errorCodeSht(seekEach((extRequestSeeks*)req.data));
-			else
-			{
-				if (m_tb)m_tb->unUse();
-				return ret;
-			}
-		}
+			req.result = errorCodeSht(seekEach((extRequestSeeks*)req.data));
 		else
 		{
 			if (op == TD_KEY_NEXT_MULTI)
@@ -593,19 +592,56 @@ inline int dbExecuter::doReadMulti(request& req, int op, netsvc::server::netWrit
 	return ret;
 }
 
+inline __int64 intValue(const unsigned char* p, int len)
+{
+	switch(len)
+	{
+	case 1: return *((char*)p);
+	case 2: return *((short*)p);
+	case 3: return *((int*)p) & 0xFFFFFF;
+	case 4: return *((int*)p);
+	case 8: return *((__int64*)p);
+	}
+	return 0;
+}
+
 inline short dbExecuter::seekEach(extRequestSeeks* ereq)
 {
+	static const int find_next_count=10;
 	short stat = 0;
+	__int64 keyValue = 0;
+	int keylen = m_tb->intKeylen();
+
 	seek* fd = &ereq->seekData;
 	for (int i=0;i<ereq->logicalCount;++i)
 	{
-		m_tb->setKeyValuesPacked(fd->ptr, fd->len);
-		m_tb->seekKey(HA_READ_KEY_EXACT);
+		bool find = false;
+		__int64 v = 0;
+		//find by ha_index_next or ha_index_prev
+		if (keylen)
+		{
+			v = intValue(fd->ptr, fd->len);
+			if (i)
+			{
+				if ((v - keyValue > 0) && (v - keyValue < find_next_count))
+					find = m_tb->findNextKeyValue(fd->ptr, find_next_count);
+				else if ((keyValue - v > 0) && (keyValue - v > find_next_count))
+					find = m_tb->findPrevKeyValue(fd->ptr, find_next_count);
+			}
+		}
+		// find by ha_index_read. this operation is use many cpu resources.
+		if (!find)
+		{
+			m_tb->setKeyValuesPacked(fd->ptr, fd->len);
+			m_tb->seekKey(HA_READ_KEY_EXACT);
+		}
 		if (m_tb->stat() == 0)
 			stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
 		else 
-			stat = m_readHandler->write(NULL, m_tb->posPtrLen()/*, errorCodeSht(m_tb->stat())*/);
+			stat = m_readHandler->write(NULL, m_tb->posPtrLen());
 		if (stat) break;	
+
+		if (keylen)	keyValue = v;
 		fd = fd->next();
 	}
 	if (stat==0)

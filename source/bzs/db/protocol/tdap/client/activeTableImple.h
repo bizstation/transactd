@@ -134,7 +134,7 @@ class  activeTableImple : public activeObject<map_orm>
 		if (mdls.size()==0) return;
 		m_alias.reverseAliasNamesQuery(q);
 		q.clearSeekKeyValues();
-		fields fds(m_tb);
+
 		mraResetter mras(m_tb);
 		typename Container::iterator it = mdls.begin(),ite = mdls.end();
 
@@ -230,6 +230,8 @@ class  activeTableImple : public activeObject<map_orm>
 public:
 
 	explicit activeTableImple(idatabaseManager& mgr, const _TCHAR* tableName)
+		:baseClass_type(mgr, tableName){};
+	explicit activeTableImple(dbmanager_ptr& mgr, const _TCHAR* tableName)
 		:baseClass_type(mgr, tableName){};
 	explicit activeTableImple(database_ptr& db, const _TCHAR* tableName)
 		:baseClass_type(db, tableName){};

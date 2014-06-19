@@ -113,12 +113,12 @@ connection* connections::getConnection(asio::ip::tcp::endpoint& ep)
 
 asio::ip::tcp::endpoint connections::endpoint(const std::string& host)
 {
-	asio::ip::tcp::resolver resolver(m_ios);
-	asio::ip::tcp::resolver::query query(host, port);
+	tcp::resolver resolver(m_ios);
+	tcp::resolver::query query(host, port);
 
-	boost::asio::ip::tcp::resolver::iterator dest = resolver.resolve(query);
-	asio::ip::tcp::endpoint endpoint;
-	while (dest != boost::asio::ip::tcp::resolver::iterator())
+	tcp::resolver::iterator dest = resolver.resolve(query);
+	tcp::endpoint endpoint;
+	while (dest != tcp::resolver::iterator())
 		endpoint = *dest++;
 	return endpoint;
 }
@@ -126,7 +126,7 @@ asio::ip::tcp::endpoint connections::endpoint(const std::string& host)
 connection* connections::getConnection(const std::string& host)
 {
 	mutex::scoped_lock lck(m_mutex);
-	asio::ip::tcp::endpoint ep = endpoint(host);
+	tcp::endpoint ep = endpoint(host);
 	return getConnection(ep);
 }
 

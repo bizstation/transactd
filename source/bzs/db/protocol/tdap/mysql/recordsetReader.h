@@ -872,7 +872,21 @@ public:
 				bm.setReadBitmap(m_position.getFieldNumByPos(fd->pos));
 				fd = fd->next();
 			}
+		}else
+		{
+			const KEY* key = &tb->keyDef(tb->keyNum());
+			if (key)
+			{
+				int sgi = 0;
+				int segments = std::min<uint>(MAX_KEY_SEGMENT, key->user_defined_key_parts);
+				while (sgi < segments)
+				{
+					bm.setReadBitmap(key->key_part[sgi].field->field_index);
+					++sgi;
+				}
+			}
 		}
+
 		//if need bookmark , add primary key fields
 		if (!noBookmark)
 		{

@@ -955,6 +955,15 @@ inline table_ptr openTable(Database_Ptr db, const _TCHAR* name)
 }
 
 template <class Database_Ptr>
+inline void dropTable(Database_Ptr db, const _TCHAR* name)
+{
+	db->dropTable(name);
+	if (db->stat())
+		nstable::throwError((std::_tstring(_T("Drop table ")) + name).c_str(), db->stat());
+}
+
+
+template <class Database_Ptr>
 inline void convertTable(Database_Ptr db, short tableid, copyDataFn func=NULL)
 {
 
@@ -1229,7 +1238,7 @@ public:
 typedef transaction<database_ptr>  dbTransaction;
 
 /** transaction for idatabaseManager */
-typedef transaction<idatabaseManager*> dbmTransaction;
+typedef transaction<dbmanager_ptr> dbmTransaction;
 
 template <class DB>
 class snapshot

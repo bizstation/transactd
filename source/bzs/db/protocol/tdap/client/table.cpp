@@ -210,8 +210,7 @@ public:
 		if ((m_len==0) && m_pFilter->isSeeksMode() && m_pFilter->fieldCount())
 		{
 			/*seek error*/
-			m_seekMultiStat = STATUS_NOT_FOUND_TI ;//m_bookmark;
-			//m_bookmark = 0;
+			m_seekMultiStat = STATUS_NOT_FOUND_TI ;
 			if (mra)
 			{
 				m_tmpPtr = mra->ptr(m_row, mra_current_block);
@@ -345,6 +344,19 @@ fields& table::fields(){return m_impl->fields;}
 void table::setBookMarks(int StartId, void* Data, ushort_td Count)
 {
 	long size = (StartId + Count) * 6;
+
+	if (!m_impl->bookMarks)
+	{
+		m_impl->bookMarks = malloc(BOOKMARK_ALLOC_SIZE);
+		if (m_impl->bookMarks)
+			m_impl->bookMarksMemSize = BOOKMARK_ALLOC_SIZE;
+		else
+		{
+			m_stat = STATUS_CANT_ALLOC_MEMORY;
+			return;
+		}
+	}
+
 	if (m_impl->bookMarksMemSize < size)
 	{
 
@@ -790,18 +802,7 @@ void table::setQuery(const queryBase* query)
 		m_impl->filterPtr = NULL;
 		return;
 	}
-	if (!m_impl->bookMarks)
-	{
-		m_impl->bookMarks = malloc(BOOKMARK_ALLOC_SIZE);
-		if (m_impl->bookMarks)
-			m_impl->bookMarksMemSize = BOOKMARK_ALLOC_SIZE;
-		else
-		{
-			m_stat = STATUS_FILTERSTRING_ERROR;
-			delete m_impl->filterPtr;
-			m_impl->filterPtr = NULL;
-		}
-	}
+	
 }
 
 void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount
