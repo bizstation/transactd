@@ -63,6 +63,7 @@ bool chacheTableFixer( const connectParams& param)
 	if (index == -1 && !createCacheTable(def))
 		return false;
 	dropTable(db, _T("cache"));
+	openTable(db, _T("cache"));
 	//if (!createCacheTable(def))
 	//	return false;
 	
