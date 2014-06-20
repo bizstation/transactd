@@ -33,7 +33,12 @@ namespace mysql
 
 #define USE_SHARED_PREPAREDSTATEMENT
 
-class connectParamMysql
+#define MYSQL_READ_ONE		10
+#define MYSQL_INSERT_ONE	11
+#define MYSQL_QUERY			12
+#define MYSQL_RECORDSET_COUNT 50
+
+class connectParam
 {
 public:
 	std::string hostname;
@@ -43,6 +48,7 @@ public:
 	unsigned long port;
 
 };
+
 const char* readOneQuery = "select * from user where id = ? \n";
 /*const char* queryOneQuery = "select `user`.`id` \n"
 					",`user`.`%s` as `name`  \n"
@@ -67,10 +73,7 @@ const char* queryOneQuery = "select `user`.`id` ,`user`.`%s` as `name`"
 */
 class worker : public workerBase
 {
-    const connectParamMysql& m_parmas;
-	MYSQL* m_mysql;
-
-	struct readResult
+   	struct readResult
 	{
 		int id;
 		char name[41];
@@ -83,16 +86,17 @@ class worker : public workerBase
 		char comment[256];
 	};
 
+	const connectParam& m_parmas;
+	MYSQL* m_mysql;
 	readResult m_result;
 	int m_bindParam;
 	int m_bindParam2;
 	MYSQL_STMT* m_stmt;
 	std::vector<readResult> m_resultset;
 
-
 	void bindParam(MYSQL_STMT *stmt)
 	{
-		if (m_functionNumber == 10)
+		if (m_functionNumber == MYSQL_READ_ONE)
 		{
 			MYSQL_BIND bind[1];
 			memset(bind, 0, sizeof(MYSQL_BIND));
@@ -102,7 +106,7 @@ class worker : public workerBase
 			if (mysql_stmt_bind_param(stmt, bind))
 				printf("error: %s\n", mysql_stmt_error(stmt));
 		}
-		else if (m_functionNumber == 12)
+		else if (m_functionNumber == MYSQL_QUERY)
 		{
 			MYSQL_BIND bind[2];
 			memset(bind, 0, sizeof(MYSQL_BIND)*2);
@@ -131,7 +135,7 @@ class worker : public workerBase
 		result[1].buffer = m_result.name;
 		result[1].buffer_length = 41;
 		result[1].is_null = 0;
-		if (m_functionNumber == 12)
+		if (m_functionNumber == MYSQL_QUERY)
 		{
 			result[2].buffer_type = MYSQL_TYPE_VAR_STRING;
 			result[2].buffer = &m_result.comment;
@@ -161,13 +165,11 @@ class worker : public workerBase
 			WideCharToMultiByte(CP_UTF8, 0, L"–¼‘O", -1, fd_name, 30, NULL, NULL);
 		#endif
 		char tmp[512];
-		if (m_functionNumber == 12)
+		if (m_functionNumber == MYSQL_QUERY)
 		{
 			sprintf(tmp, query, fd_name);
 			query = tmp;
 		}
-
-
 
 		MYSQL_STMT *stmt = mysql_stmt_init(m_mysql);
 		if (!stmt) 
@@ -187,8 +189,6 @@ class worker : public workerBase
 		ret = mysql_stmt_fetch(stmt);
 		if (ret)
 			printf("error: %s\n", mysql_error(m_mysql));
-		
-
 	}
 	
 	void insertOne()
@@ -206,7 +206,7 @@ class worker : public workerBase
 	{
 		int v = rand() % 15000 + 1;
 		m_bindParam =  v ;
-		m_bindParam2 =  v + 50;
+		m_bindParam2 =  v + MYSQL_RECORDSET_COUNT;
 		int ret;
 		ret = mysql_stmt_execute(stmt);
 		if (ret)
@@ -218,16 +218,14 @@ class worker : public workerBase
 			m_resultset.push_back(m_result);
 			++count;
 		}
-		if (count != 50)
+		if (count != MYSQL_RECORDSET_COUNT)
 			printf("query read error! id = %d \n", m_id);
 	}
 
-
 public:
-	worker(int id, int loopCount, int functionNumber, const connectParamMysql& param
+	worker(int id, int loopCount, int functionNumber, const connectParam& param
 			,boost::barrier& sync) 
-			: workerBase(id, loopCount, functionNumber, sync)
-			,m_parmas(param)
+			: workerBase(id, loopCount, functionNumber, sync),m_parmas(param)
 	{
 		boost::mutex::scoped_lock lck(m_mutex);
 		mysql_thread_init();
@@ -243,28 +241,20 @@ public:
 
 	}
 
-	~worker()
-	{
-		
-		
-	}
-	
 	void initExecute()
 	{
 #ifdef USE_SHARED_PREPAREDSTATEMENT
-		if (m_functionNumber == 10)
+		if (m_functionNumber == MYSQL_READ_ONE)
 			m_stmt = init(readOneQuery);
-		else if (m_functionNumber == 12)
+		else if (m_functionNumber == MYSQL_QUERY)
 			m_stmt = init(queryOneQuery);
-
 #endif
-
 	}
 
 	void endExecute()
 	{
 #ifdef USE_SHARED_PREPAREDSTATEMENT
-		if (m_functionNumber != 11)
+		if (m_functionNumber != MYSQL_INSERT_ONE)
 			mysql_stmt_close(m_stmt);
 #endif
 		mysql_close(m_mysql); 	
@@ -273,7 +263,7 @@ public:
 
 	void doExecute()
 	{
-		if (m_functionNumber == 10)
+		if (m_functionNumber == MYSQL_READ_ONE)
 		{
 			for (int i=0;i<m_loopCount;++i)
 			{
@@ -286,11 +276,10 @@ public:
 				#endif
 				
 			}
-		}else if (m_functionNumber == 11)
+		}else if (m_functionNumber == MYSQL_INSERT_ONE)
 		{
 			for (int i=0;i<m_loopCount;++i)
 				insertOne();
-
 		}
 		else
 		{
@@ -303,15 +292,23 @@ public:
 				#ifndef USE_SHARED_PREPAREDSTATEMENT
 				mysql_stmt_close(m_stmt);
 				#endif
-				
 			}
 		}
-		
 	}
-
 };
 
-
+class mysqlInit
+{
+public:
+	mysqlInit()
+	{
+		mysql_library_init(0, NULL, NULL);
+	}
+	~mysqlInit()
+	{
+		mysql_library_end();
+	}
+};
 
 
 

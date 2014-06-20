@@ -607,41 +607,18 @@ inline __int64 intValue(const unsigned char* p, int len)
 
 inline short dbExecuter::seekEach(extRequestSeeks* ereq)
 {
-	static const int find_next_count=10;
 	short stat = 0;
-	__int64 keyValue = 0;
-	int keylen = m_tb->intKeylen();
-
 	seek* fd = &ereq->seekData;
 	for (int i=0;i<ereq->logicalCount;++i)
 	{
-		bool find = false;
-		__int64 v = 0;
-		//find by ha_index_next or ha_index_prev
-		if (keylen)
-		{
-			v = intValue(fd->ptr, fd->len);
-			if (i)
-			{
-				if ((v - keyValue > 0) && (v - keyValue < find_next_count))
-					find = m_tb->findNextKeyValue(fd->ptr, find_next_count);
-				else if ((keyValue - v > 0) && (keyValue - v > find_next_count))
-					find = m_tb->findPrevKeyValue(fd->ptr, find_next_count);
-			}
-		}
-		// find by ha_index_read. this operation is use many cpu resources.
-		if (!find)
-		{
-			m_tb->setKeyValuesPacked(fd->ptr, fd->len);
-			m_tb->seekKey(HA_READ_KEY_EXACT);
-		}
+		m_tb->setKeyValuesPacked(fd->ptr, fd->len);
+		m_tb->seekKey(HA_READ_KEY_EXACT);
 		if (m_tb->stat() == 0)
 			stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
 		else 
 			stat = m_readHandler->write(NULL, m_tb->posPtrLen());
 		if (stat) break;	
 
-		if (keylen)	keyValue = v;
 		fd = fd->next();
 	}
 	if (stat==0)

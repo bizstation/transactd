@@ -39,6 +39,23 @@ using namespace bzs::db::protocol::tdap;
 
 #endif
 
+
+
+
+_TCHAR* name_field_str(_TCHAR* buf)
+{
+	#ifdef LINUX
+		return "名前";
+	#else
+		#ifdef _UNICODE
+			return L"名前";
+		#else
+			WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, buf, 30, NULL, NULL);
+			return buf;
+		#endif
+	#endif
+}
+
 bool showDbdefError(dbdef* def, const _TCHAR* msg)
 {
 	 std::tcout << msg << _T(" erorr:No.") << def->stat();
@@ -80,18 +97,9 @@ bool createUserTable(dbdef* def)
 
 	++filedIndex;
 	fd = def->insertField(tableid, filedIndex);
-#ifdef LINUX
-	const char* fd_name = "名前";
-#else
-	#ifdef _UNICODE
-		const wchar_t* fd_name = L"名前";
-	#else
-		char fd_name[30];
-		WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
-	#endif
-#endif
 
-	fd->setName(fd_name);
+	TCHAR tmp[30];
+	fd->setName(name_field_str(tmp));
 	fd->type = USER_STRING_TYPE;
 	fd->setLenByCharnum(20);
 
@@ -283,7 +291,7 @@ bool insertData(database_ptr db, int maxId)
 		tb->setFV((short)0, i);
 		_stprintf_s(tmp, 256, _T("%d user"), i);
 		tb->setFV(1, tmp);
-		tb->setFV(_T("group"), ((i -1) % 100) + 1);
+		tb->setFV(_T("group"), ((i-1) % 5)+1 );
 		tb->insert();
 		if (tb->stat()!=0)
 			return showTableError(tb, _T("user insert"));

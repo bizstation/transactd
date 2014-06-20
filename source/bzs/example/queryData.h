@@ -12,5 +12,6 @@ int prebuiltData( bzs::db::protocol::tdap::client::database_ptr db
 
 bool createCacheTable(bzs::db::protocol::tdap::client::dbdef* def);
 
+_TCHAR* name_field_str(_TCHAR* buf);
 
 #endif //BZS_EXSAMPLE_QUERYDATA_H

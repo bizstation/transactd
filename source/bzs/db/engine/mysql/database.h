@@ -307,9 +307,6 @@ public:
 	bool setKeyNum(char num, bool sorted = true);
 	inline void setKeyNum(const char* name, bool sorted = true){setKeyNum(keynumByName(name), sorted);};
 	bool isNisKey(char num)const;
-	int  intKeylen(char num=-1) const;
-	bool findNextKeyValue(const unsigned char* v, int n);
-	bool findPrevKeyValue(const unsigned char* v, int n);
 	void seekKey(enum ha_rkey_function find_flag);
 	void getNextSame();
 	void getLast();

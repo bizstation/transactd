@@ -239,9 +239,14 @@ protected:
 	{
 		if (!m_connected)
 			throw system_error(asio::error::not_connected);
-		m_optionalBuffes.insert(m_optionalBuffes.begin(), asio::buffer(sendBuffer(0), writeSize));
-		boost::asio::write(m_socket, m_optionalBuffes,  boost::asio::transfer_all());
-		m_optionalBuffes.clear();
+		if (m_optionalBuffes.size())
+		{
+			m_optionalBuffes.insert(m_optionalBuffes.begin(), asio::buffer(sendBuffer(0), writeSize));
+			boost::asio::write(m_socket, m_optionalBuffes,  boost::asio::transfer_all());
+			m_optionalBuffes.clear();
+		}
+		else
+			boost::asio::write(m_socket, asio::buffer(sendBuffer(0), writeSize),  boost::asio::transfer_all());
 
 	}
 

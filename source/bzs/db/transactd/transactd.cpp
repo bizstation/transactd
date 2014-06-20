@@ -99,7 +99,7 @@ static int transactd_plugin_init(void *p)
 	{
 		if (g_tcpServerType == TCP_CPT_SERVER)
 		{
-			boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(PROTOCOL_TYPE_BTRV|PROTOCOL_TYPE_ASYNCWRITE));
+			boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(PROTOCOL_TYPE_BTRV|PROTOCOL_TYPE_MEMBUFFER));
 			cpt::server* p = new cpt::server(g_maxTcpConnections, g_hostCheckUserName);
 			p->addApplication(app, g_listenAddress, g_listenPort);
 			#ifdef USE_HANDLERSOCKET
@@ -114,7 +114,7 @@ static int transactd_plugin_init(void *p)
 		}
 		else if (g_tcpServerType == TCP_TPOOL_SERVER)
 		{
-			boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(PROTOCOL_TYPE_BTRV|PROTOCOL_TYPE_ASYNCWRITE));
+			boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(PROTOCOL_TYPE_BTRV|PROTOCOL_TYPE_MEMBUFFER));
 			tpool::server* p = new tpool::server(g_pool_threads, g_hostCheckUserName);
 			p->addApplication(app, g_listenAddress, g_listenPort);
 			#ifdef USE_HANDLERSOCKET

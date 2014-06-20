@@ -21,6 +21,7 @@
  ================================================================= */
 #include <bzs/test/transactdBench/workerBase.h>
 #include <bzs/db/protocol/tdap/client/connectionPool.h>
+#include <bzs/db/protocol/tdap/client/pooledDatabaseManager.h>
 #include <bzs/example/queryData.h>
 #include <bzs/db/protocol/tdap/client/activeTable.h>
 #include <tchar.h>
@@ -37,15 +38,20 @@ namespace transactd
 {
 
 #define USE_CONNECTION_POOL 
+#define TRD_READ_ONE		0
+#define TRD_INSERT_ONE		1
+#define TRD_QUERY			2
+#define TRD_RECORDSET_COUNT 50
 
 class worker : public workerBase
 {
 	const connectParams& m_parmas;
 #ifdef USE_CONNECTION_POOL
-	dbmanager_ptr m_db;
+	pooledDbManager m_db_real;
+	pooledDbManager* m_db;
 #else
 	database_ptr m_db;
-
+	
 #endif
 	table_ptr m_tb;
 	boost::shared_ptr<activeTable> m_atu;
@@ -73,16 +79,23 @@ class worker : public workerBase
 		m_rs.clear();
 		query q;
 		int v = (rand() % 15000) + 1;
-		q.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<"), v+50);
+		q.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<"), v+TRD_RECORDSET_COUNT);
 		m_atu->index(0).keyValue(v).read(m_rs, q);
+		q.reset();
 		
-		//q.reset();
 		//m_ate->index(0).join(m_rs, q.select(_T("comment")).optimize(queryBase::joinKeyValuesUnique), _T("id"));
 		
 		//Join group::name
-		q.reset();
+		/*recordset rs2;
+		
+		q.select(_T("group_name"));
+		for (int i=0;i<m_rs.size();++i)
+			q.addSeekKeyValuePtr(m_rs[i][(short)0].ptr());
+		m_atg->table()->setQuery(&q);
+		m_atg->index(0).keyValue(0).read(rs2, q);
+		*/
 		m_atg->index(0).join(m_rs, q.select(_T("group_name")), _T("group"));
-		if (m_rs.size() != 50)
+		if (m_rs.size() != TRD_RECORDSET_COUNT)
 			printf("query read error! id = %d size = %d\n", m_id, m_rs.size() );
 		
 	}
@@ -91,34 +104,24 @@ public:
 	worker(int id, int loopCount, int functionNumber, const connectParams& param
 			,boost::barrier& sync) 
 			: workerBase(id, loopCount, functionNumber, sync)
-			,m_parmas(param){}
+			,m_parmas(param)
+	{
+		m_db = &m_db_real;
+	}
 	
 
 	void initExecute()
 	{
 		#ifdef USE_CONNECTION_POOL
-			m_db = cpool.get(&m_parmas);
-
-			if (m_db == NULL)
-			{
-				printf("Can't get database! %ld\n", m_id);
-				return;
-			}
-			const _TCHAR* tbName = (m_functionNumber == 0) ? _T("user"): _T("cache");
+			m_db->use(&m_parmas);
+			const _TCHAR* tbName = (m_functionNumber == TRD_READ_ONE) ? _T("user"): _T("cache");
 			m_tb = m_db->table(tbName);
-			if (m_tb == NULL)
-			{
-				printf("Can't get table! %ld\n", m_id);
-				return;
-			}
-
-			
 		#else
 			try
 			{
 				m_db = createDatadaseObject();
 				connectOpen(m_db, m_parmas, true); 
-				const _TCHAR* tbName = (m_functionNumber == 0) ? _T("user"): _T("cache");
+				const _TCHAR* tbName = (m_functionNumber == TRD_READ_ONE) ? _T("user"): _T("cache");
 				m_tb = openTable(m_db, tbName);
 				m_tb->setKeyNum(0);
 			}
@@ -130,36 +133,26 @@ public:
 				std::tcout << _T("[ERROR] ") << msg.c_str() << std::endl;
 			}
 		#endif//USE_CONNECTION_POOL 
-		if (m_functionNumber == 2)
+		if (m_functionNumber == TRD_QUERY)
 		{
-			m_atu.reset(new activeTable(m_db, _T("user")));
-			m_atg.reset(new activeTable(m_db, _T("groups")));
-			m_ate.reset(new activeTable(m_db, _T("extention")));
-
-
-			#ifdef LINUX
-				const char* fd_name = "–¼‘O";
-			#else
-				#ifdef _UNICODE
-					const wchar_t* fd_name = L"–¼‘O";
-				#else
-					char fd_name[30];
-					WideCharToMultiByte(CP_UTF8, 0, L"–¼‘O", -1, fd_name, 30, NULL, NULL);
-				#endif
-			#endif
-			m_atu->alias(fd_name, _T("name"));
+			m_atu.reset(new activeTable(*m_db, _T("user")));
+			m_atg.reset(new activeTable(*m_db, _T("groups")));
+			m_ate.reset(new activeTable(*m_db, _T("extention")));
+			
+			TCHAR tmp[30];
+			m_atu->alias(name_field_str(tmp), _T("name"));
 			m_atg->alias(_T("name"), _T("group_name"));
 		}
-		
-		
+	
 	}
 
 	void endExecute()
 	{
 		m_tb.reset();
-		m_db.reset();
 		#ifdef USE_CONNECTION_POOL
-			releaseConnection(&cpool);
+			m_db->unUse();
+		#else
+			m_db.reset();
 		#endif
 	}
 
@@ -167,12 +160,12 @@ public:
 	{
 		try
 		{
-			if (m_functionNumber == 0)
+			if (m_functionNumber == TRD_READ_ONE)
 			{
 				for (int i=0;i<m_loopCount;++i)
 					readOne(m_tb);
 			}
-			else if (m_functionNumber == 1)
+			else if (m_functionNumber == TRD_INSERT_ONE)
 			{
 				for (int i=0;i<m_loopCount;++i)
 					insertOne(m_tb);

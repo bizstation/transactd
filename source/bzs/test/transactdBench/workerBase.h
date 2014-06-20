@@ -30,6 +30,13 @@ namespace test
 namespace worker
 {
 
+extern int g_bench_signal;
+
+#define BENCH_SIGNAL_BREAK 0
+#define BENCH_SIGNAL_GO    1
+#define BENCH_SIGNAL_GREEN 2
+#define BENCH_SIGNAL_BLUE  3
+
 
 class workerBase
 {
@@ -53,12 +60,24 @@ public:
 		initExecute();
 		bzs::rtl::benchmarkMt bm;
 		m_sync.wait();
+		
 		bm.start();
-		doExecute();
-		m_bresult = bm.end();
+		m_bresult = 0;
+		while(g_bench_signal)
+		{
+			doExecute();
+			if (g_bench_signal == BENCH_SIGNAL_GREEN)
+				++m_bresult;
+			else if (g_bench_signal == BENCH_SIGNAL_BLUE)
+			{
+				m_bresult = bm.end();
+				break;
+			}
+		}
+		
 		endExecute();
 	}
-	int totalTime()const {return m_bresult;}
+	int total()const {return m_bresult;}
 };
 
 

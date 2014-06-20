@@ -1101,32 +1101,6 @@ void  table::seekKey(enum ha_rkey_function find_flag)
 		m_stat = HA_ERR_END_OF_FILE;
 }
 
-bool table::findNextKeyValue(const unsigned char* v, int n)
-{
-	Field* fd = m_table->key_info[m_keyNum].key_part[0].field; 
-	for (int i=0;i<10;++i)
-	{
-		m_stat = m_table->file->ha_index_next(m_table->record[0]);
-		if (m_stat) return false;
-		if (memcmp(v, fd->ptr, fd->pack_length())==0)
-			return true;
-	}
-	return false;
-}
-
-bool table::findPrevKeyValue(const unsigned char* v, int n)
-{
-	Field* fd = m_table->key_info[m_keyNum].key_part[0].field; 
-	for (int i=0;i<n;++i)
-	{
-		m_stat = m_table->file->ha_index_prev(m_table->record[0]);
-		if (m_stat) return false;
-		if (memcmp(v, fd->ptr, fd->pack_length())==0)
-			return true;
-	}
-	return false;
-}
-
 void table::moveKey(boost::function<int()> func)
 {
 	m_nonNcc = false;
@@ -1678,24 +1652,6 @@ bool table::isNisKey(char num) const
 			return true;
 	}
 	return false;
-}
-
-int table::intKeylen(char num) const
-{
-	if (num == -1) num = m_keyNum;
-
-	if((num>=0) && (num < (short)m_table->s->keys))
-	{
-		if (m_table->key_info[num].user_defined_key_parts == 1)
-		{
-			Field* fd = m_table->key_info[num].key_part[0].field; //Nis is only in a head segment. 
-			if ((fd->type() == MYSQL_TYPE_TINY)||(fd->type() == MYSQL_TYPE_SHORT)
-				||(fd->type() == MYSQL_TYPE_LONG)||(fd->type() == MYSQL_TYPE_LONGLONG)
-				||(fd->type() == MYSQL_TYPE_INT24))
-				return fd->pack_length();
-		}
-	}	
-	return 0;
 }
 
 bool setNullIf(KEY& key)
