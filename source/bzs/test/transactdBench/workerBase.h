@@ -22,6 +22,7 @@
 #include <boost/thread/barrier.hpp>
 #include <boost/thread/mutex.hpp>
 #include <bzs/rtl/benchmark.h>
+#include <iostream>
 
 namespace bzs
 {

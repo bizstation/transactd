@@ -19,7 +19,7 @@
 #pragma hdrstop
 #include "workerTransactdImple.h"
 #include "workerMysqlImple.h"
-#include <iostream>
+
 
 
 using namespace bzs::test::worker;
