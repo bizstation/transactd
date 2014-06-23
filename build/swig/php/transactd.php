@@ -3010,12 +3010,16 @@ class field {
 			case transactd::ft_time:
 			case transactd::ft_datetime:
 			case transactd::ft_timestamp:
+			case transactd::ft_note:
+			case transactd::ft_zstring:
 				return $this->c_str();
 			case transactd::ft_string:
 			case transactd::ft_myvarbinary:
 			case transactd::ft_mywvarbinary:
 			case transactd::ft_myblob:
 				return $this->getBin();
+			default:
+				return $this->c_str();
 		}
 		return null;
 	}
@@ -4158,6 +4162,138 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 }
 
+class connectParams {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __construct($protocol_or_uri,$hostOrIp=null,$dbname=null,$schemaTable=null) {
+		if (is_resource($protocol_or_uri) && get_resource_type($protocol_or_uri) === '_p_bzs__db__protocol__tdap__client__connectParams') {
+			$this->_cPtr=$protocol_or_uri;
+			return;
+		}
+		switch (func_num_args()) {
+		case 1: $this->_cPtr=new_connectParams($protocol_or_uri); break;
+		case 2: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp); break;
+		case 3: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname); break;
+		default: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname,$schemaTable);
+		}
+	}
+
+	function setMode($v) {
+		connectParams_setMode($this->_cPtr,$v);
+	}
+
+	function setType($v) {
+		connectParams_setType($this->_cPtr,$v);
+	}
+
+	function uri() {
+		return connectParams_uri($this->_cPtr);
+	}
+
+	function mode() {
+		return connectParams_mode($this->_cPtr);
+	}
+
+	function type() {
+		return connectParams_type($this->_cPtr);
+	}
+}
+
+abstract class idatabaseManager {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+	function __construct($h) {
+		$this->_cPtr=$h;
+	}
+
+	function connect($param,$newConnection=false) {
+		idatabaseManager_connect($this->_cPtr,$param,$newConnection);
+	}
+
+	function table($name_or_index) {
+		return idatabaseManager_table($this->_cPtr,$name_or_index);
+	}
+
+	function setOption($v) {
+		idatabaseManager_setOption($this->_cPtr,$v);
+	}
+
+	function option() {
+		return idatabaseManager_option($this->_cPtr);
+	}
+
+	function beginTrn($bias) {
+		idatabaseManager_beginTrn($this->_cPtr,$bias);
+	}
+
+	function endTrn() {
+		idatabaseManager_endTrn($this->_cPtr);
+	}
+
+	function abortTrn() {
+		idatabaseManager_abortTrn($this->_cPtr);
+	}
+
+	function enableTrn() {
+		return idatabaseManager_enableTrn($this->_cPtr);
+	}
+
+	function beginSnapshot() {
+		idatabaseManager_beginSnapshot($this->_cPtr);
+	}
+
+	function endSnapshot() {
+		idatabaseManager_endSnapshot($this->_cPtr);
+	}
+
+	function stat() {
+		return idatabaseManager_stat($this->_cPtr);
+	}
+
+	function clientID() {
+		return idatabaseManager_clientID($this->_cPtr);
+	}
+
+	function uri() {
+		return idatabaseManager_uri($this->_cPtr);
+	}
+
+	function mode() {
+		return idatabaseManager_mode($this->_cPtr);
+	}
+}
+
 class activeTable {
 	function keyValue($kv0,$kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
 		$args = \func_get_args();
@@ -4197,12 +4333,12 @@ class activeTable {
 		return $this->_pData[$var];
 	}
 
-	function __construct($db,$tableName = NULL) {
-		if (is_resource($db) && get_resource_type($db) === '_p_bzs__db__protocol__tdap__client__activeTable') {
-			$this->_cPtr=$db;
+	function __construct($mgr_or_db,$tableName = NULL) {
+		if (is_resource($mgr_or_db) && get_resource_type($mgr_or_db) === '_p_bzs__db__protocol__tdap__client__activeTable') {
+			$this->_cPtr=$mgr_or_db;
 			return;
 		}
-		$this->_cPtr=new_activeTable($db,$tableName);
+		$this->_cPtr=new_activeTable($mgr_or_db,$tableName);
 	}
 
 	function alias($src,$dst) {
@@ -4301,9 +4437,8 @@ class activeTable {
 		return $r;
 	}
 
-	function read($mdls,$q=null,$func=null) {
+	function read($mdls,$q,$func=null) {
 		switch (func_num_args()) {
-		case 1: $q=$mdls; $mdls=new RecordSet();
 		case 2: $r=activeTable_read($this->_cPtr,$mdls,$q); break;
 		default: $r=activeTable_read($this->_cPtr,$mdls,$q,$func);
 		}
@@ -4410,6 +4545,104 @@ class activeTable {
 			return new activeTable($r);
 		}
 		return $r;
+	}
+}
+
+class pooledDbManager extends idatabaseManager {
+	public $_cPtr=null;
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		idatabaseManager::__set($var,$value);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return idatabaseManager::__isset($var);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return idatabaseManager::__get($var);
+	}
+
+	function __construct($param=null) {
+		if (is_resource($param) && get_resource_type($param) === '_p_bzs__db__protocol__tdap__client__pooledDbManager') {
+			$this->_cPtr=$param;
+			return;
+		}
+		switch (func_num_args()) {
+		case 0: $this->_cPtr=new_pooledDbManager(); break;
+		default: $this->_cPtr=new_pooledDbManager($param);
+		}
+	}
+
+	function c_use($param) {
+		pooledDbManager_c_use($this->_cPtr,$param);
+	}
+
+	function unUse() {
+		pooledDbManager_unUse($this->_cPtr);
+	}
+
+	function connect($param,$newConnection=false) {
+		pooledDbManager_connect($this->_cPtr,$param,$newConnection);
+	}
+
+	function table($name_or_index) {
+		return pooledDbManager_table($this->_cPtr,$name_or_index);
+	}
+
+	function setOption($v) {
+		pooledDbManager_setOption($this->_cPtr,$v);
+	}
+
+	function option() {
+		return pooledDbManager_option($this->_cPtr);
+	}
+
+	function beginTrn($bias) {
+		pooledDbManager_beginTrn($this->_cPtr,$bias);
+	}
+
+	function endTrn() {
+		pooledDbManager_endTrn($this->_cPtr);
+	}
+
+	function abortTrn() {
+		pooledDbManager_abortTrn($this->_cPtr);
+	}
+
+	function enableTrn() {
+		return pooledDbManager_enableTrn($this->_cPtr);
+	}
+
+	function beginSnapshot() {
+		pooledDbManager_beginSnapshot($this->_cPtr);
+	}
+
+	function endSnapshot() {
+		pooledDbManager_endSnapshot($this->_cPtr);
+	}
+
+	function stat() {
+		return pooledDbManager_stat($this->_cPtr);
+	}
+
+	function clientID() {
+		return pooledDbManager_clientID($this->_cPtr);
+	}
+
+	function uri() {
+		return pooledDbManager_uri($this->_cPtr);
+	}
+
+	function mode() {
+		return pooledDbManager_mode($this->_cPtr);
+	}
+
+	static function setMaxConnections($maxWorkerNum) {
+		pooledDbManager_setMaxConnections($maxWorkerNum);
 	}
 }
 

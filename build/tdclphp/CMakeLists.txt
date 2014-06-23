@@ -109,6 +109,7 @@ add_custom_command (
 set(${this_target}_SOURCE_FILES
   ${${this_target}_SOURCE_FILES}
   ${PHP_SWIG_WRAPPER_CPP}
+  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connectionPool.cpp
   ${TRANSACTD_ROOT}/source/bzs/rtl/benchmark.cpp
 )
 

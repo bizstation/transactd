@@ -43,7 +43,7 @@ activeTable a(db, "user");
 db.unUse();
 --------------------------------------
 Thread safe
-Method : non thread safe. 
+Method : non thread safe.
 Object : thread safe.
 
 */
@@ -113,7 +113,7 @@ public:
 
 	inline char_td mode() const{return m_db->mode();}
 
-	static void setMaxConnections(int maxWorkerNum){cpool.setMaxConnections(maxWorkerNum);};
+	static void setMaxConnections(int maxWorkerNum){cpool.setMaxConnections(maxWorkerNum);}
 };
 
 
@@ -124,4 +124,3 @@ public:
 }// namespace bzs
 
 #endif	//BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
-

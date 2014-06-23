@@ -102,6 +102,7 @@
 #include <bzs/db/protocol/tdap/client/activeTable.h>
 #include <bzs/db/protocol/tdap/client/fieldNames.h>
 #include <bzs/db/protocol/tdap/client/groupQuery.h>
+#include <bzs/db/protocol/tdap/client/pooledDatabaseManager.h>
 
 using namespace bzs::db::protocol::tdap;
 using namespace bzs::db::protocol::tdap::client;
@@ -112,7 +113,6 @@ using namespace bzs::db::protocol::tdap::client;
       ignore, rename, new/delobject, extend
 =============================================== */
 // * bzs/db/protocol/tdap/client/activeTable.h *
-%ignore bzs::db::protocol::tdap::client::activeTable::activeTable(idatabaseManager&, const _TCHAR*);
 %ignore bzs::db::protocol::tdap::client::activeTable::activeTable(database_ptr&, const _TCHAR*);
   // add method
 %extend bzs::db::protocol::tdap::client::activeTable {
@@ -156,9 +156,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::database::release;
   // add newobject define for table
 %newobject bzs::db::protocol::tdap::client::database::openTable;
-
-// * bzs/db/protocol/tdap/client/databaseManager.h *
-%ignore bzs::db::protocol::tdap::client::databaseManager;
 
 // * bzs/db/protocol/tdap/client/dbDef.h *
 %ignore bzs::db::protocol::tdap::client::dbdef::fieldNumByViewNum;
@@ -330,7 +327,51 @@ using namespace bzs::db::protocol::tdap::client;
 };
 
 // * bzs/db/protocol/tdap/client/trdboostapi.h *
+%ignore bzs::db::protocol::tdap::client::autoBulkinsert;
+%ignore bzs::db::protocol::tdap::client::eFindCurrntType;
+%ignore bzs::db::protocol::tdap::client::eIndexOpType;
+%ignore bzs::db::protocol::tdap::client::eStepOpType;
+%ignore bzs::db::protocol::tdap::client::filterdIterator;
 %ignore bzs::db::protocol::tdap::client::qlogic;
+%ignore bzs::db::protocol::tdap::client::query;
+%ignore bzs::db::protocol::tdap::client::snapshot;
+%ignore bzs::db::protocol::tdap::client::tableIterator;
+%ignore bzs::db::protocol::tdap::client::transaction;
+%ignore bzs::db::protocol::tdap::client::connect;
+%ignore bzs::db::protocol::tdap::client::connectOpen;
+%ignore bzs::db::protocol::tdap::client::convertTable;
+%ignore bzs::db::protocol::tdap::client::createDatabase;
+%ignore bzs::db::protocol::tdap::client::createDatabaseForConnectionPool;
+%ignore bzs::db::protocol::tdap::client::createDatadaseObject;
+%ignore bzs::db::protocol::tdap::client::deleteRecord;
+%ignore bzs::db::protocol::tdap::client::disconnect;
+%ignore bzs::db::protocol::tdap::client::dropDatabase;
+%ignore bzs::db::protocol::tdap::client::find;
+%ignore bzs::db::protocol::tdap::client::findRv;
+%ignore bzs::db::protocol::tdap::client::for_each;
+%ignore bzs::db::protocol::tdap::client::getFindIterator;
+%ignore bzs::db::protocol::tdap::client::getTable;
+%ignore bzs::db::protocol::tdap::client::insertField;
+%ignore bzs::db::protocol::tdap::client::insertKey;
+%ignore bzs::db::protocol::tdap::client::insertRecord;
+%ignore bzs::db::protocol::tdap::client::insertTable;
+%ignore bzs::db::protocol::tdap::client::isSameUri;
+%ignore bzs::db::protocol::tdap::client::lexical_cast;
+%ignore bzs::db::protocol::tdap::client::openDatabase;
+%ignore bzs::db::protocol::tdap::client::openTable;
+%ignore bzs::db::protocol::tdap::client::readIndex;
+%ignore bzs::db::protocol::tdap::client::readIndex_v;
+%ignore bzs::db::protocol::tdap::client::readIndexRv;
+%ignore bzs::db::protocol::tdap::client::readIndexRv_v;
+%ignore bzs::db::protocol::tdap::client::readStep;
+%ignore bzs::db::protocol::tdap::client::readStepRv;
+%ignore bzs::db::protocol::tdap::client::releaseDatabase;
+%ignore bzs::db::protocol::tdap::client::releaseTable;
+%ignore bzs::db::protocol::tdap::client::updateRecord;
+%ignore bzs::db::protocol::tdap::client::updateTableDef;
+%ignore bzs::db::protocol::tdap::client::filter_validate_value;
+%ignore bzs::db::protocol::tdap::client::filter_validate_block;
+%ignore bzs::db::protocol::tdap::client::filter_invalidate_value;
 
 // * bzs/db/protocol/tdap/client/trdormapi.h *
 %ignore bzs::db::protocol::tdap::client::setValue;
@@ -444,7 +485,9 @@ using namespace bzs::db::protocol::tdap::client;
 %include bzs/db/protocol/tdap/client/fieldNames.h
 %include bzs/db/protocol/tdap/client/groupQuery.h
 %include bzs/db/protocol/tdap/client/recordset.h
+%include bzs/db/protocol/tdap/client/trdboostapi.h
 %include bzs/db/protocol/tdap/client/activeTable.h
+%include bzs/db/protocol/tdap/client/pooledDatabaseManager.h
 
 
 /* ===============================================
@@ -459,6 +502,7 @@ using namespace bzs::db::protocol::tdap::client;
 %template(keyValue6) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
 %template(keyValue7) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
 %template(keyValue8) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
+
 // * bzs/db/protocol/tdap/client/groupQuery.h *
 %template(when) bzs::db::protocol::tdap::client::recordsetQuery::when<_TCHAR*>;
 %template(and_) bzs::db::protocol::tdap::client::recordsetQuery::and_<_TCHAR*>;

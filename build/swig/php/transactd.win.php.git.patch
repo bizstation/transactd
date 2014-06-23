@@ -1,5 +1,5 @@
 diff --git b/transactd.win.php a/transactd.win.php
-index 8c83404..9c6e7db 100644
+index 53fb474..57152a2 100644
 --- b/transactd.win.php
 +++ a/transactd.win.php
 @@ -1,4 +1,5 @@
@@ -60,7 +60,7 @@ index 8c83404..9c6e7db 100644
  	public $_cPtr=null;
  	protected $_pData=array();
  
-@@ -2884,6 +2907,47 @@ class fielddefs {
+@@ -2884,6 +2907,51 @@ class fielddefs {
  }
  
  class field {
@@ -95,12 +95,16 @@ index 8c83404..9c6e7db 100644
 +			case transactd::ft_time:
 +			case transactd::ft_datetime:
 +			case transactd::ft_timestamp:
++			case transactd::ft_note:
++			case transactd::ft_zstring:
 +				return $this->c_str();
 +			case transactd::ft_string:
 +			case transactd::ft_myvarbinary:
 +			case transactd::ft_mywvarbinary:
 +			case transactd::ft_myblob:
 +				return $this->getBin();
++			default:
++				return $this->c_str();
 +		}
 +		return null;
 +	}
@@ -108,7 +112,7 @@ index 8c83404..9c6e7db 100644
  	public $_cPtr=null;
  	protected $_pData=array();
  
-@@ -2975,7 +3039,141 @@ class field {
+@@ -2975,7 +3043,141 @@ class field {
  	}
  }
  
@@ -251,7 +255,7 @@ index 8c83404..9c6e7db 100644
  	public $_cPtr=null;
  	protected $_pData=array();
  
-@@ -2995,6 +3193,8 @@ abstract class Record {
+@@ -2995,6 +3197,8 @@ abstract class Record {
  	}
  	function __construct($h) {
  		$this->_cPtr=$h;
@@ -260,7 +264,7 @@ index 8c83404..9c6e7db 100644
  	}
  
  	function setInvalidRecord($v) {
-@@ -3088,6 +3288,7 @@ class memoryRecord extends Record {
+@@ -3088,6 +3292,7 @@ class memoryRecord extends Record {
  		return Record::__get($var);
  	}
  	function __construct($h) {
@@ -268,7 +272,7 @@ index 8c83404..9c6e7db 100644
  		$this->_cPtr=$h;
  	}
  
-@@ -3107,6 +3308,21 @@ class memoryRecord extends Record {
+@@ -3107,6 +3312,21 @@ class memoryRecord extends Record {
  }
  
  class writableRecord extends memoryRecord {
@@ -290,7 +294,7 @@ index 8c83404..9c6e7db 100644
  	public $_cPtr=null;
  
  	function __set($var,$value) {
-@@ -3124,6 +3340,7 @@ class writableRecord extends memoryRecord {
+@@ -3124,6 +3344,7 @@ class writableRecord extends memoryRecord {
  		return memoryRecord::__get($var);
  	}
  	function __construct($h) {
@@ -298,7 +302,7 @@ index 8c83404..9c6e7db 100644
  		$this->_cPtr=$h;
  	}
  
-@@ -3421,6 +3638,8 @@ class groupQuery {
+@@ -3421,6 +3642,8 @@ class groupQuery {
  
  class sum extends groupFuncBase {
  	public $_cPtr=null;
@@ -307,7 +311,7 @@ index 8c83404..9c6e7db 100644
  
  	function __set($var,$value) {
  		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-@@ -3442,15 +3661,18 @@ class sum extends groupFuncBase {
+@@ -3442,15 +3665,18 @@ class sum extends groupFuncBase {
  			$this->_cPtr=$targetName;
  			return;
  		}
@@ -328,7 +332,7 @@ index 8c83404..9c6e7db 100644
  
  	function __set($var,$value) {
  		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-@@ -3472,12 +3694,15 @@ class count extends groupFuncBase {
+@@ -3472,12 +3698,15 @@ class count extends groupFuncBase {
  			$this->_cPtr=$resultName;
  			return;
  		}
@@ -345,7 +349,7 @@ index 8c83404..9c6e7db 100644
  
  	function __set($var,$value) {
  		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-@@ -3499,15 +3724,19 @@ class avg extends sum {
+@@ -3499,15 +3728,19 @@ class avg extends sum {
  			$this->_cPtr=$targetName;
  			return;
  		}
@@ -367,7 +371,7 @@ index 8c83404..9c6e7db 100644
  
  	function __set($var,$value) {
  		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-@@ -3529,15 +3758,19 @@ class min extends sum {
+@@ -3529,15 +3762,19 @@ class min extends sum {
  			$this->_cPtr=$targetName;
  			return;
  		}
@@ -389,7 +393,7 @@ index 8c83404..9c6e7db 100644
  
  	function __set($var,$value) {
  		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-@@ -3559,14 +3792,141 @@ class max extends sum {
+@@ -3559,14 +3796,141 @@ class max extends sum {
  			$this->_cPtr=$targetName;
  			return;
  		}
@@ -534,7 +538,7 @@ index 8c83404..9c6e7db 100644
  	public $_cPtr=null;
  	protected $_pData=array();
  
-@@ -3588,9 +3948,13 @@ class RecordSet {
+@@ -3588,9 +3952,13 @@ class RecordSet {
  	function __construct($res=null) {
  		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__recordset') {
  			$this->_cPtr=$res;
@@ -548,7 +552,7 @@ index 8c83404..9c6e7db 100644
  	}
  
  	function c_clone() {
-@@ -3723,6 +4087,26 @@ class RecordSet {
+@@ -3855,6 +4223,26 @@ abstract class idatabaseManager {
  }
  
  class activeTable {
@@ -575,23 +579,12 @@ index 8c83404..9c6e7db 100644
  	public $_cPtr=null;
  	protected $_pData=array();
  
-@@ -3741,7 +4125,7 @@ class activeTable {
+@@ -3873,7 +4261,7 @@ class activeTable {
  		return $this->_pData[$var];
  	}
  
--	function __construct($db,$tableName) {
-+	function __construct($db,$tableName = NULL) {
- 		if (is_resource($db) && get_resource_type($db) === '_p_bzs__db__protocol__tdap__client__activeTable') {
- 			$this->_cPtr=$db;
+-	function __construct($mgr_or_db,$tableName) {
++	function __construct($mgr_or_db,$tableName = NULL) {
+ 		if (is_resource($mgr_or_db) && get_resource_type($mgr_or_db) === '_p_bzs__db__protocol__tdap__client__activeTable') {
+ 			$this->_cPtr=$mgr_or_db;
  			return;
-@@ -3845,8 +4229,9 @@ class activeTable {
- 		return $r;
- 	}
- 
--	function read($mdls,$q,$func=null) {
-+	function read($mdls,$q=null,$func=null) {
- 		switch (func_num_args()) {
-+		case 1: $q=$mdls; $mdls=new RecordSet();
- 		case 2: $r=activeTable_read($this->_cPtr,$mdls,$q); break;
- 		default: $r=activeTable_read($this->_cPtr,$mdls,$q,$func);
- 		}
