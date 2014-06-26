@@ -127,6 +127,24 @@ public:
 		m_busy.notify_one();
 	}
 
+	// max 5second
+	bool reset(int waitSec=5)
+	{
+		boost::mutex::scoped_lock lck(m_mutex);
+		bool flag;
+		for (int j=0;j<waitSec*100;j++)
+		{
+			flag = false;
+			for (size_t i = 0;i<m_dbs.size();i++)
+				if (m_dbs[i].use_count() != 1)  flag = true;
+			if (!flag)
+				break;
+			Sleep(100 * MCRTOMM);
+		}
+		m_dbs.clear();
+		return flag;
+	}
+
 };
 
 typedef connectionPool<database_ptr> stdDbCconnectionPool;

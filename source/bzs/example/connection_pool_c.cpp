@@ -96,8 +96,11 @@ int _tmain(int argc, _TCHAR* argv[])
 			threads.create_thread( bind(&worker::execute, w));
 		}
 		threads.join_all();
-		std::cout << "Connection pool test success." << std::endl;
 
+		//release all connection.
+		pooledDbManager::reset();
+
+		std::cout << "Connection pool test success." << std::endl;
 		return 0;
 	}
 

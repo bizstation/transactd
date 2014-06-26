@@ -114,6 +114,7 @@ public:
 
 	inline static void setMaxConnections(int maxWorkerNum){cpool.setMaxConnections(maxWorkerNum);};
 	inline static void reserve(size_t size, const connectParams& param){cpool.reserve(size, param);}
+	inline static bool reset(int waitSec=5){return cpool.reset(waitSec);}
 };
 
 
