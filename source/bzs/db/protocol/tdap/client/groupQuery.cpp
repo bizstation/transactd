@@ -343,7 +343,7 @@ public:
 	{
 		if (m_query)
 			return m_query->match(row);
-		return false;
+		return true;
 	}
 
 	inline int targetKey()const {return m_targetKey;}
