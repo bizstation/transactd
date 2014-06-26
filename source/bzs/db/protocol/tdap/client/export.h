@@ -24,7 +24,11 @@
 #    define DLLLIB AGRPACK
 #    define DLLTEMPLATE
 #else
-#    define DLLLIB PACKAGE_IMPORT
+#    ifdef BCB_32
+#    	define DLLLIB AGRPACK
+#    else
+#		define DLLLIB PACKAGE_IMPORT
+#	 endif
 #    define DLLTEMPLATE extern
 #endif
 
