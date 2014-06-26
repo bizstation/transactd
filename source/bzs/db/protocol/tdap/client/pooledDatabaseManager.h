@@ -43,7 +43,7 @@ activeTable a(db, "user");
 db.unUse();
 --------------------------------------
 Thread safe
-Method : non thread safe.
+Method : non thread safe. 
 Object : thread safe.
 
 */
@@ -51,12 +51,6 @@ class pooledDbManager : public idatabaseManager
 {
 	dbmanager_ptr m_db;
 	bool m_inUse;
-	
-protected:
-	inline void connect(const connectParams& param, bool newConnection=false)
-	{
-		m_db->connect(param, newConnection);
-	}
 
 public:
 	inline pooledDbManager():m_inUse(false){};
@@ -72,7 +66,7 @@ public:
 			unUse();
 	}
 
-	inline void use(const connectParams* param)
+	inline void use(const connectParams* param=NULL)
 	{
 		m_db = cpool.get(param);
 		m_inUse = true;
@@ -83,6 +77,11 @@ public:
 		m_db.reset();
 		releaseConnection(&cpool);
 		m_inUse = false;
+	}
+
+	inline void connect(const connectParams& param, bool newConnection=false)
+	{
+		m_db->connect(param, newConnection);
 	}
 
 	inline table_ptr table(const _TCHAR* name){return m_db->table(name);}
@@ -113,7 +112,8 @@ public:
 
 	inline char_td mode() const{return m_db->mode();}
 
-	static void setMaxConnections(int maxWorkerNum){cpool.setMaxConnections(maxWorkerNum);}
+	inline static void setMaxConnections(int maxWorkerNum){cpool.setMaxConnections(maxWorkerNum);};
+	inline static void reserve(size_t size, const connectParams& param){cpool.reserve(size, param);}
 };
 
 
@@ -124,3 +124,4 @@ public:
 }// namespace bzs
 
 #endif	//BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
+

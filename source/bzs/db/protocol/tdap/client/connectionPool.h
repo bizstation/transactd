@@ -135,36 +135,19 @@ typedef connectionPool<dbmanager_ptr> stdDbmCconnectionPool;
 /** stdDbmCconnectionPool is default for connetion pool.
 	pooling database and reuse tables.
 */
-typedef stdDbmCconnectionPool stdCconnectionPool;
-#define POLL_MAXCONNECTIONS 100
+#ifdef USE_DBM_CONNECTION_POOL
+	typedef stdDbmCconnectionPool stdCconnectionPool;
+#else
+	#ifdef USE_DB_CONNECTION_POOL
+		typedef stdDbCconnectionPool stdCconnectionPool;
+	#else
+		#error "Please define the USE_DBM_CONNECTION_POOL when you need a connection pool";
+	#endif
+#endif
 
 extern stdCconnectionPool cpool;
-
 void releaseConnection(stdDbmCconnectionPool* pool);
 
-
-/** Release is indispensable at the end of database operation.
-	This macro set is automatically released using shared_ptr and a variable scope.
-
-
-	// For C++ applications
-	begin_use_pool_database()
-	dbmanager_ptr db = get_pool_database()
-	...
-	... some operations ...
-	...
-	end_use_pool_database()
-
-*/
-
-#define begin_use_pool_database() \
-	boost::shared_ptr<stdCconnectionPool> cpool_ptr(&cpool, releaseConnection); \
-{
-
-#define get_pool_database(param) cpool_ptr->get(param);
-
-
-#define end_use_pool_database() }
 
 
 

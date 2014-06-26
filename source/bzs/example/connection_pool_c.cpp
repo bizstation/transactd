@@ -1,4 +1,4 @@
-#include <bzs/db/protocol/tdap/client/connectionPool.h>
+#include <bzs/db/protocol/tdap/client/pooledDatabaseManager.h>
 #include <iostream>
 
 using namespace bzs::db::protocol::tdap::client;
@@ -37,30 +37,28 @@ public:
 	{
 		try
 		{
-			begin_use_pool_database();
+			pooledDbManager db;
+			db.use();
 
-				dbmanager_ptr db = get_pool_database();
+			clientID* cid = (clientID*)db.clientID();
 
-				clientID* cid = (clientID*)db->clientID();
-
-				{
-					mutex::scoped_lock lck(m_mutex);
-					std::cout << "worker strat id = " << m_id
-								<< " connection = 0x" << std::hex << cid->con << std::endl;
-				}
-
-				Sleep(m_worktime);
-				if (m_id == 4) throw "error";    //throw error example
-
-				{
-					mutex::scoped_lock lck(m_mutex);
-					std::cout << "worker finish id = " << m_id
+			{
+				mutex::scoped_lock lck(m_mutex);
+				std::cout << "worker strat id = " << m_id
 							<< " connection = 0x" << std::hex << cid->con << std::endl;
-				}
-			end_use_pool_database();
+			}
 
+			Sleep(m_worktime);
+			if (m_id == 4) throw "error";    //throw error example
+
+			{
+				mutex::scoped_lock lck(m_mutex);
+				std::cout << "worker finish id = " << m_id
+						<< " connection = 0x" << std::hex << cid->con << std::endl;
+			}
+            db.unUse();
 			delete this;
-		} //call releaseConnection
+		}
 
 		catch(bzs::rtl::exception& e)
 		{
@@ -88,7 +86,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	{
 		connectParams param(_T("tdap"), _T("localhost"), _T("test"), _T("test"));
 		//create four databases
-		cpool.reserve(4, param);
+		pooledDbManager::reserve(4, param);
 
 		//Execute 10 workers with each thread.
 		thread_group threads;

@@ -41,6 +41,31 @@ namespace mysql
 class connectParam
 {
 public:
+	connectParam(){};
+	connectParam(const _TCHAR* host, const _TCHAR* dbname, const _TCHAR* user
+							, const _TCHAR* pass=_T(""))
+
+	{
+		port = 0;
+		#ifdef _UNICODE
+			char tmp[256];
+			WideCharToMultiByte(CP_UTF8, 0, host, -1, tmp, 256, NULL, NULL);
+			hostname = tmp;
+			WideCharToMultiByte(CP_UTF8, 0, dbname, -1, tmp, 256, NULL, NULL);
+			database = tmp;
+			WideCharToMultiByte(CP_UTF8, 0, user, -1, tmp, 256, NULL, NULL);
+			username = tmp;
+			WideCharToMultiByte(CP_UTF8, 0, pass, -1, tmp, 256, NULL, NULL);
+			passwd = tmp;
+		#else
+			hostname = host;
+			database = dbname;
+			username = user;
+			passwd = pass;
+		#endif
+
+	}
+
 	std::string hostname;
 	std::string username;
 	std::string passwd;
@@ -167,14 +192,14 @@ class worker : public workerBase
 		char tmp[512];
 		if (m_functionNumber == MYSQL_QUERY)
 		{
-			sprintf(tmp, query, fd_name);
+			sprintf_s(tmp, 512, query, fd_name);
 			query = tmp;
 		}
 
 		MYSQL_STMT *stmt = mysql_stmt_init(m_mysql);
 		if (!stmt) 
 			printf("error: %s\n", mysql_error(m_mysql));
-		if(mysql_stmt_prepare(stmt, query, strlen(query)))
+		if(mysql_stmt_prepare(stmt, query, (unsigned long)strlen(query)))
 			printf("error: %s\n", mysql_error(m_mysql));
 		bindParam(stmt);
 		bindOutput(stmt);
@@ -194,7 +219,7 @@ class worker : public workerBase
 	void insertOne()
 	{
 		char tmp[256];
-		sprintf(tmp, "insert into cache (value) values(%d)", m_id);
+		sprintf_s(tmp, 256, "insert into cache (value) values(%d)", m_id);
 		int ret;
 		ret = mysql_query(m_mysql, tmp);
 		if (ret)
