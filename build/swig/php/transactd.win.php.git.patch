@@ -1,5 +1,5 @@
 diff --git b/transactd.win.php a/transactd.win.php
-index 53fb474..57152a2 100644
+index 8020a45..0633b2f 100644
 --- b/transactd.win.php
 +++ a/transactd.win.php
 @@ -1,4 +1,5 @@

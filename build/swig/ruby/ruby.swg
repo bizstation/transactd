@@ -18,6 +18,16 @@
 =================================================================*/
 #if defined(SWIGRUBY)  // ======= For RUBY =======
 
+%{
+#if defined(__MINGW32__) && defined(__GNUC__)
+#if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5)
+#define _SYS_TIME_H_
+#else
+#define _GETTIMEOFDAY_DEFINED
+#endif
+#endif
+%}
+
 /* ===============================================
   Suppress warning
 =============================================== */

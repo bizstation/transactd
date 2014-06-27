@@ -118,6 +118,7 @@ add_custom_command (
 set(${this_target}_SOURCE_FILES
   ${${this_target}_SOURCE_FILES}
   ${RUBY_SWIG_WRAPPER_CPP}
+  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connectionPool.cpp
   ${TRANSACTD_ROOT}/source/bzs/rtl/benchmark.cpp
 )
 
@@ -134,7 +135,7 @@ include_directories(${TRANSACTD_ROOT};${TRANSACTD_RUBY_INCLUDE_PATH})
 # ==========================================================
 tdcl_add_compiler_options()
 foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  bz_add_cxx_flag("-DSWIGRUBY -DSWIG_BUILDING --std=c++0x -U__STRICT_ANSI__" "${build_type}")
+  bz_add_cxx_flag("-DSWIGRUBY -DSWIG_BUILDING --std=c++0x -U__STRICT_ANSI__ -DUSE_DBM_CONNECTION_POOL" "${build_type}")
   if(MSVC)
     bz_set_MBCS_cxx_flag("${build_type}")
   endif()

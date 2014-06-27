@@ -4505,7 +4505,7 @@ class pooledDbManager extends idatabaseManager {
 		}
 	}
 
-	function c_use($param) {
+	function c_use($param=null) {
 		pooledDbManager_c_use($this->_cPtr,$param);
 	}
 
@@ -4571,6 +4571,14 @@ class pooledDbManager extends idatabaseManager {
 
 	static function setMaxConnections($maxWorkerNum) {
 		pooledDbManager_setMaxConnections($maxWorkerNum);
+	}
+
+	static function reserve($size,$param) {
+		pooledDbManager_reserve($size,$param);
+	}
+
+	static function reset($waitSec=5) {
+		return pooledDbManager_reset($waitSec);
 	}
 }
 

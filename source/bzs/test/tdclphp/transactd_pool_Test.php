@@ -1,6 +1,6 @@
 <?php
 /* ================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2014 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -30,6 +30,28 @@ define("BDFNAME", '?dbfile=' . SCHEMANAME . '.bdf');
 define("URL", PROTOCOL . '://' . HOSTNAME . '/' . DBNAME . BDFNAME);
 define("TABLENAME", 'user');
 
+// multi thread test if `php_pthreads` exists.
+if(class_exists('Thread')){
+    class SimpleWorker extends Thread
+    {
+        public function __construct($name, $url, $sleep=0)
+        {
+            $this->name = $name;
+            $this->url = $url;
+            $this->sleep = $sleep;
+        }
+        public function run()
+        {
+            //echo ('... waiting to get ' . $this->name . " ...\n");
+            $dbm = new Bz\pooledDbManager(new Bz\connectParams($this->url));
+            //echo ('GOT ' . $this->name . ' !  sleep ' . $this->sleep . "sec ...\n");
+            sleep($this->sleep);
+            $dbm->unUse();
+            //echo ('end ' . $this->name . "\n");
+        }
+    }
+}
+
 class transactdPoolTest extends PHPUnit_Framework_TestCase
 {
     public function testConnectParams()
@@ -39,7 +61,8 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
         $cp = new Bz\connectParams(PROTOCOL, HOSTNAME, DBNAME, SCHEMANAME);
         $this->assertEquals($cp->uri(), URL);
     }
-    public function testUse() {
+    public function testUse()
+    {
         Bz\pooledDbManager::setMaxConnections(3);
         $cp = new Bz\connectParams(URL);
         $this->assertEquals($cp->uri(), URL);
@@ -54,7 +77,8 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
         $dbm1 = new Bz\pooledDbManager($cp);
         $dbm3 = new Bz\pooledDbManager($cp);
     }
-    public function testConnect() {
+    public function testConnect()
+    {
         Bz\pooledDbManager::setMaxConnections(3);
         $cp = new Bz\connectParams(URL);
         $this->assertEquals($cp->uri(), URL);
@@ -66,5 +90,19 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
         $q->select('id', 'name', 'group')->where('id', '<=', 15000);
         $atu->index(0)->keyValue(1)->read($rs, $q);
         $this->assertEquals($rs->size(), 15000);
+    }
+    public function testMultiThreads()
+    {
+        if(! class_exists('Thread')){
+            return;
+        }
+        Bz\pooledDbManager::setMaxConnections(5);
+        $t = array();
+        for ($i = 1; $i <= 12; $i++)
+        {
+            $t[] = new SimpleWorker('dbm' . $i, URL, rand(1, 3));
+            $t[$i - 1]->start();
+        }
+        $this->assertEquals(true, true);
     }
 }
