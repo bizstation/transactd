@@ -107,7 +107,7 @@ public:
 	void reserve(size_t size, const connectParams& param)
 	{
 		boost::mutex::scoped_lock lck(m_mutex);
-		m_maxConnections = size;
+		m_maxConnections = (int)size;
 		for (size_t i =0;i<size;++i)
 			addOne(param);
 	}

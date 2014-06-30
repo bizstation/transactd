@@ -279,6 +279,7 @@ public:
 	const _TCHAR* getSelect(short index) const;
 	short whereTokens() const;
 	const _TCHAR* getWhereToken(short index) const;
+	void setWhereToken(short index, const _TCHAR* v) ;
 	void reverseAliasName(const _TCHAR* alias, const _TCHAR* src);
 
 	void release();

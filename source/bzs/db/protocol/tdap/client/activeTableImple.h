@@ -23,7 +23,6 @@
 #include "trdormapi.h"
 #include "recordsetImple.h"
 #include "memRecord.h"
-#include "fieldNames.h"
 
 namespace bzs
 {
@@ -144,11 +143,12 @@ class  activeTableImple : public activeObject<map_orm>
 
 		fieldNames fns;
 		fns.keyField(name1, name2, name3, name4, name5, name6, name7, name8);
-		const std::vector<std::_tstring>& names = fns.getKeyFields();
 
-		for (int i=0;i<(int)names.size();++i)
-			fieldIndexes.push_back(resolvKeyValue(mdls, names[i], false));
-
+		for (int i=0;i<fns.count();++i)
+		{
+			std::_tstring s = fns.getValue(i);
+			fieldIndexes.push_back(resolvKeyValue(mdls, s, false));
+		}
 		// optimizing join
 		// if base recordsetImple is made by unique key and join by uniqe field, that can not opitimize.
 		//

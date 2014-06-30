@@ -2010,6 +2010,12 @@ const _TCHAR* queryBase::getWhereToken(short index) const
 	return m_impl->m_wheres[index].c_str();
 }
 
+void queryBase::setWhereToken(short index, const _TCHAR* v)
+{
+	assert((index >= 0) && (index < (short)m_impl->m_wheres.size()));
+	m_impl->m_wheres[index] = v;
+}
+
 /* alias field name change to original field name */
 void queryBase::reverseAliasName(const _TCHAR* alias, const _TCHAR* src)
 {
@@ -2051,3 +2057,4 @@ queryBase* queryBase::create()
 }// namespace protocol
 }// namespace db
 }// namespace bzs
+

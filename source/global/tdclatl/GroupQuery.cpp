@@ -76,7 +76,7 @@ STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, BSTR targetName , BSTR re
 			f.reset(new avg(targetName, resultName));  
 		else if(func == fcount)
 			f.reset(new count(resultName)); 
-		f->setQuery(&q->m_qb);
+		*f = (q->m_qb);
 		m_funcs.push_back(f);
 		m_gq.addFunction(f.get());
 	}

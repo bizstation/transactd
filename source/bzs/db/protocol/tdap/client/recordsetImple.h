@@ -173,7 +173,7 @@ private:
 	{
 		int index =  m_fds->indexByName(name);
 		if (index ==-1)
-			THROW_BZS_ERROR_WITH_MSG(_T("oorderBy:Invalid field name"));
+			THROW_BZS_ERROR_WITH_MSG(_T("orderBy:Invalid field name"));
 		fieldNums.push_back(index);
 	}
 
@@ -360,6 +360,15 @@ public:
 		if (name6) makeSortFields(name6, fieldNums);
 		if (name7) makeSortFields(name7, fieldNums);
 		if (name8) makeSortFields(name8, fieldNums);
+		std::sort(begin(), end(), recordsetSorter(fieldNums));
+		return *this;
+	}
+
+	inline recordsetImple& orderBy(fieldNames& fns)
+	{
+		std::vector<int> fieldNums;
+		for (int i=0;i<fns.count();++i)
+			makeSortFields(fns.getValue(i), fieldNums);
 		std::sort(begin(), end(), recordsetSorter(fieldNums));
 		return *this;
 	}

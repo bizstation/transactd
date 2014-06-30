@@ -19,7 +19,6 @@
 #pragma hdrstop
 #include "groupQuery.h"
 #include "recordsetImple.h"
-#include "fieldNames.h"
 
 #pragma package(smart_init)
 
@@ -34,7 +33,71 @@ namespace tdap
 namespace client
 {
 
+// ---------------------------------------------------------------------------
+// struct fieldNamesImple
+// ---------------------------------------------------------------------------
+struct fieldNamesImple
+{
+	std::vector<std::_tstring> keyFields;
+};
 
+// ---------------------------------------------------------------------------
+// class fieldNames
+// ---------------------------------------------------------------------------
+fieldNames::fieldNames():m_impl(new fieldNamesImple)
+{
+
+}
+
+fieldNames::~fieldNames()
+{
+	delete m_impl;
+}
+
+fieldNames& fieldNames::reset()
+{
+	m_impl->keyFields.clear();
+	return *this;
+}
+
+fieldNames& fieldNames::keyField(const _TCHAR* name, const _TCHAR* name1, const _TCHAR* name2, const _TCHAR* name3
+			,const _TCHAR* name4, const _TCHAR* name5, const _TCHAR* name6, const _TCHAR* name7
+			,const _TCHAR* name8, const _TCHAR* name9, const _TCHAR* name10)
+{
+	m_impl->keyFields.clear();
+	m_impl->keyFields.push_back(name);
+	if (name1) m_impl->keyFields.push_back(name1);
+	if (name2) m_impl->keyFields.push_back(name2);
+	if (name3) m_impl->keyFields.push_back(name3);
+	if (name4) m_impl->keyFields.push_back(name4);
+	if (name5) m_impl->keyFields.push_back(name5);
+	if (name6) m_impl->keyFields.push_back(name6);
+	if (name7) m_impl->keyFields.push_back(name7);
+	if (name8) m_impl->keyFields.push_back(name8);
+	if (name9) m_impl->keyFields.push_back(name9);
+	if (name10) m_impl->keyFields.push_back(name10);
+	return *this;
+}
+
+int fieldNames::count()
+{
+	return  (int)m_impl->keyFields.size();
+}
+
+const TCHAR* fieldNames::getValue(int index)
+{
+	assert(index>=0 && index < count());
+	return m_impl->keyFields[index].c_str();
+}
+
+void fieldNames::addValue(const _TCHAR* v)
+{
+	m_impl->keyFields.push_back(v);
+}
+
+// ---------------------------------------------------------------------------
+// struct recordsetQueryImple
+// ---------------------------------------------------------------------------
 struct recordsetQueryImple
 {
 	row_ptr row;
@@ -143,9 +206,9 @@ class groupQueryImple : public fieldNames
 		for (int i=(int)fds.size()-1;i>=0;--i)
 		{
 			bool enabled = false;
-			for (int j=0;j<(int)m_keyFields.size();++j)
+			for (int j=0;j<(int)m_impl->keyFields.size();++j)
 			{
-				if (m_keyFields[j] == fds[i].name())
+				if (m_impl->keyFields[j] == fds[i].name())
 				{
 					enabled = true;
 					break;
@@ -169,6 +232,8 @@ class groupQueryImple : public fieldNames
 	}
 
 public:
+	groupQueryImple():fieldNames(){}
+
 	fieldNames& reset()
 	{
 		m_funcs.clear();
@@ -184,8 +249,8 @@ public:
 	{
 		std::vector<recordsetImple::key_type> keyFields;
 
-		for (int i=0;i<(int)m_keyFields.size();++i)
-			keyFields.push_back(resolvKeyValue(mdls, m_keyFields[i]));
+		for (int i=0;i<(int)m_impl->keyFields.size();++i)
+			keyFields.push_back(resolvKeyValue(mdls, m_impl->keyFields[i]));
 
 		for (int i=0;i<(int)m_funcs.size();++i)
 		{
@@ -230,6 +295,8 @@ public:
 		}
 		removeFields(mdls);
 	}
+
+	const std::vector<groupFuncBase* >& getFunctions() const {return m_funcs;};
 };
 
 // ---------------------------------------------------------------------------
@@ -271,11 +338,21 @@ groupQuery& groupQuery::keyField(const _TCHAR* name, const _TCHAR* name1, const 
 	return *this;
 }
 
-const std::vector<std::_tstring>& groupQuery::getKeyFields()const
+const fieldNames& groupQuery::getKeyFields()const
 {
-	return m_imple->getKeyFields();
+	return *m_imple;
 }
 
+const groupFuncBase* groupQuery::getFunction(int index) const
+{
+	assert(index>=0 && index < functionCount());
+	return m_imple->getFunctions()[index];
+}
+
+int groupQuery::functionCount() const
+{
+	return (int)m_imple->getFunctions().size();
+}
 
 
 // ---------------------------------------------------------------------------
@@ -288,15 +365,15 @@ public:
 
 private:
 	friend class groupQueryImple;
-	const _TCHAR* m_targetName;
-	const _TCHAR* m_resultName;
+	std::_tstring m_targetName;
+	std::_tstring m_resultName;
 	int m_resultKey;
 	int m_targetKey;
+	//recordsetQuery* m_query;
 
 public:
 	std::vector<value_type> m_values;
 	std::vector<__int64> m_counts;
-	recordsetQuery* m_query;
 
 	inline void initResultVariable(int index)
 	{
@@ -308,30 +385,42 @@ public:
 
 	inline void init(const fielddefs* fdinfo)
 	{
-		if (m_query)
-			m_query->init(fdinfo);
-		m_targetKey = m_targetName ? fdinfo->indexByName(m_targetName): -1;
+		m_targetKey = (m_targetName !=_T("")) ? fdinfo->indexByName(m_targetName): -1;
 		m_resultKey = fdinfo->indexByName(m_resultName);
 		if (m_resultKey == -1) m_resultKey = (int)fdinfo->size();
 	}
-	
+
+	inline groupFuncBaseImple()
+	{
+		m_values.reserve(10);
+	}
+
 	inline groupFuncBaseImple(const _TCHAR* targetName , const _TCHAR* resultName=NULL
 		, recordsetQuery* query=NULL)
-		:m_targetName(targetName),m_query(query)
+		:m_targetName(targetName)
 	{
 	   m_resultName = ((resultName == NULL) || resultName[0]==0x00)
 									 ? targetName:resultName;
 	   m_values.reserve(10);
 	}
 
-	inline void setQuery(recordsetQuery* query)
+	inline const _TCHAR* targetName() const {return m_targetName.c_str();}
+
+	inline const _TCHAR* resultName() const {return m_resultName.c_str();}
+
+	inline void setTargetName(const _TCHAR* v)
 	{
-		m_query = query;
+		m_targetName = _T("");
+		if (v && v[0])
+			m_targetName = v;
 	}
 
-	inline const _TCHAR* targetName() const {return m_targetName;}
-
-	inline const _TCHAR* resultName() const {return m_resultName;}
+	inline void setResultName(const _TCHAR* v)
+	{
+		m_resultName = _T("");
+		if (v && v[0])
+			m_resultName = v;
+	}
 
 	inline int resultKey() const {return m_resultKey;}
 
@@ -339,22 +428,16 @@ public:
 
 	inline value_type result(int groupIndex)const{return m_values[groupIndex];};
 
-	inline bool match(const row_ptr row) const 
-	{
-		if (m_query)
-			return m_query->match(row);
-		return true;
-	}
-
 	inline int targetKey()const {return m_targetKey;}
 };
 
 // ---------------------------------------------------------------------------
 // class groupFuncBase
 // ---------------------------------------------------------------------------
-groupFuncBase::groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName
-		, recordsetQuery* query)
-		:m_imple(new groupFuncBaseImple(targetName, resultName, query)){}
+groupFuncBase::groupFuncBase():m_imple(new groupFuncBaseImple()){}
+
+groupFuncBase::groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName)
+		:recordsetQuery(),m_imple(new groupFuncBaseImple(targetName, resultName)){}
 
 groupFuncBase::~groupFuncBase()
 {
@@ -370,12 +453,15 @@ void groupFuncBase::doCalc(const row_ptr& row, int groupIndex){}
 
 void groupFuncBase::init(const fielddefs* fdinfo)
 {
+	if (whereTokens() != 0)
+		recordsetQuery::init(fdinfo);
+
 	m_imple->init(fdinfo);
 }
 
-groupFuncBase& groupFuncBase::setQuery(recordsetQuery* query)
+groupFuncBase& groupFuncBase::operator=(const recordsetQuery& v)
 {
-	m_imple->setQuery(query);
+	recordsetQuery::operator=(v);
 	return *this;
 }
 
@@ -384,9 +470,19 @@ const _TCHAR* groupFuncBase::targetName() const
 	return m_imple->targetName();
 }
 
+void groupFuncBase::setTargetName(const _TCHAR* v)
+{
+	m_imple->setTargetName(v);
+}
+
 const _TCHAR* groupFuncBase::resultName() const
 {
 	return m_imple->resultName();
+}
+
+void groupFuncBase::setResultName(const _TCHAR* v)
+{
+	m_imple->setResultName(v);
 }
 
 int groupFuncBase::resultKey() const 
@@ -403,8 +499,13 @@ void groupFuncBase::operator()(const row_ptr& row, int index, bool insert)
 {
 	if (insert)
 		initResultVariable(index);// setNullValue
-	if (m_imple->match(row))
-		doCalc(row, index);
+	bool flag = (whereTokens() == 0);
+
+	if (!flag)
+		flag = match(row);
+	if (flag)
+	   doCalc(row, index);
+
 }
 
 groupFuncBase::value_type groupFuncBase::result(int groupIndex) const
@@ -417,8 +518,8 @@ groupFuncBase::value_type groupFuncBase::result(int groupIndex) const
 // class groupFuncBase
 // ---------------------------------------------------------------------------
 
-sum::sum(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
-		:groupFuncBase(targetName, resultName, query){}
+sum::sum(const _TCHAR* targetName , const _TCHAR* resultName)
+		:groupFuncBase(targetName, resultName){}
 
 void sum::doCalc(const row_ptr& row, int index)
 {
@@ -429,8 +530,8 @@ void sum::doCalc(const row_ptr& row, int index)
 // ---------------------------------------------------------------------------
 // class count
 // ---------------------------------------------------------------------------
-count::count(const _TCHAR* resultName, recordsetQuery* query)
-	:groupFuncBase(NULL, resultName, query){}
+count::count(const _TCHAR* resultName)
+	:groupFuncBase(NULL, resultName){}
 
 void count::doCalc(const row_ptr& row, int index)
 {
@@ -441,14 +542,13 @@ void count::doCalc(const row_ptr& row, int index)
 // ---------------------------------------------------------------------------
 // class avg
 // ---------------------------------------------------------------------------
-avg::avg(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
+avg::avg(const _TCHAR* targetName , const _TCHAR* resultName)
 	:sum(targetName, resultName){}
 
 void avg::initResultVariable(int index)
 {
 	sum::initResultVariable(index);
 	m_imple->m_counts.insert(m_imple->m_counts.begin() + index, 0);
-
 }
 
 void avg::doCalc(const row_ptr& row, int index)
@@ -466,8 +566,8 @@ avg::value_type avg::result(int index)const
 // ---------------------------------------------------------------------------
 // class min
 // ---------------------------------------------------------------------------
-min::min(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
-	:sum(targetName, resultName, query),m_flag(true){}
+min::min(const _TCHAR* targetName , const _TCHAR* resultName)
+	:sum(targetName, resultName),m_flag(true){}
 
 void min::doCalc(const row_ptr& row, int index)
 {
@@ -483,8 +583,8 @@ void min::doCalc(const row_ptr& row, int index)
 // ---------------------------------------------------------------------------
 // class max
 // ---------------------------------------------------------------------------
-max::max(const _TCHAR* targetName , const _TCHAR* resultName, recordsetQuery* query)
-	:sum(targetName, resultName, query),m_flag(true){}
+max::max(const _TCHAR* targetName , const _TCHAR* resultName)
+	:sum(targetName, resultName),m_flag(true){}
 
 void max::doCalc(const row_ptr& row, int index)
 {

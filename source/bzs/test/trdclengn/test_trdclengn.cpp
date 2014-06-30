@@ -30,6 +30,7 @@
 #include <bzs/db/protocol/tdap/client/filter.h>
 #include <bzs/example/queryData.h>
 #include <bzs/db/protocol/tdap/client/activeTable.h>
+		#include <bzs/db/protocol/tdap/client/serializer.h>
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -2570,9 +2571,8 @@ void testJoin(database* db)
 	client::count count1(_T("count"));
 	gq.addFunction(&count1);
 
-	recordsetQuery gfq;
-	gfq.when(_T("group") ,_T("="), 1);
-	client::count count2(_T("gropu1_count"), &gfq);
+	client::count count2(_T("gropu1_count"));
+	count2.when(_T("group") ,_T("="), 1);
 
 	gq.addFunction(&count2);
 	rs.groupBy(gq);

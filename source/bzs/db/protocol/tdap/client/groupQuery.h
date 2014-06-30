@@ -31,9 +31,29 @@ namespace tdap
 namespace client
 {
 
+class DLLLIB fieldNames
+{
+
+protected:
+	struct fieldNamesImple* m_impl;
+
+public:
+	fieldNames();
+	virtual ~fieldNames();
+	virtual fieldNames& reset();
+	fieldNames& keyField(const _TCHAR* name, const _TCHAR* name1=NULL, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
+				,const _TCHAR* name4=NULL, const _TCHAR* name5=NULL, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
+				,const _TCHAR* name8=NULL, const _TCHAR* name9=NULL, const _TCHAR* name10=NULL);
+
+	int count();
+	const TCHAR* getValue(int index);
+	void addValue(const _TCHAR* v);
+};
+
+
 class DLLLIB recordsetQuery : protected query
 {
-	friend class groupFuncBaseImple;
+	friend class groupFuncBase;
 	friend class recordsetImple;
 	
 	struct recordsetQueryImple* m_imple;
@@ -71,10 +91,12 @@ public:
 		query::reset();
 		return *this;
 	}
+
+	inline query* internalQuery(){return this;}
 };
 
 
-class DLLLIB groupFuncBase
+class DLLLIB groupFuncBase : public recordsetQuery
 {
 protected:
 	friend class groupQueryImple;
@@ -86,14 +108,15 @@ protected:
 
 public:
 	typedef double value_type;
-	groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName=NULL
-		, recordsetQuery* query=NULL);
-
+	groupFuncBase();
+	groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 	virtual ~groupFuncBase();
+	groupFuncBase& operator=(const recordsetQuery& v);
 
-	groupFuncBase& setQuery(recordsetQuery* query);
 	const _TCHAR* targetName() const;
+	void setTargetName(const _TCHAR* v);
 	const _TCHAR* resultName() const;
+	void setResultName(const _TCHAR* v);
 	int resultKey() const ;
 	void reset();
 	void operator()(const row_ptr& row, int index, bool insert);
@@ -106,7 +129,6 @@ class DLLLIB groupQuery
 {
 	friend class recordsetImple;
 	class groupQueryImple* m_imple;
-	const std::vector<std::_tstring>& getKeyFields()const;
 	void grouping(recordsetImple& rs);
 public:
 	groupQuery();
@@ -116,6 +138,9 @@ public:
 	groupQuery& keyField(const _TCHAR* name, const _TCHAR* name1=NULL, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
 				,const _TCHAR* name4=NULL, const _TCHAR* name5=NULL, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
 				,const _TCHAR* name8=NULL, const _TCHAR* name9=NULL, const _TCHAR* name10=NULL);
+	const fieldNames& getKeyFields()const;
+	const groupFuncBase* getFunction(int index) const;
+	int functionCount() const;
 
 };
 
@@ -126,7 +151,8 @@ protected:
 	void doCalc(const row_ptr& row, int index);
 
 public:
-	sum(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL);
+	sum(){}
+	sum(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 };
 
 
@@ -136,7 +162,8 @@ protected:
 	void doCalc(const row_ptr& row, int index);
 
 public:
-	count(const _TCHAR* resultName, recordsetQuery* query=NULL);
+	count(){}
+	count(const _TCHAR* resultName);
 
 };
 
@@ -149,7 +176,8 @@ class DLLLIB avg : public sum
 	value_type result(int index)const;
 
 public:
-	avg(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL);
+	avg(){}
+	avg(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 
 };
 
@@ -161,7 +189,8 @@ class DLLLIB min : public sum
 	void doCalc(const row_ptr& row, int index);
 
 public:
-	min(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL);
+	min(){}
+	min(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 };
 
 
@@ -171,7 +200,8 @@ class DLLLIB max : public sum
 	bool m_flag ;
 	void doCalc(const row_ptr& row, int index);
 public:
-	max(const _TCHAR* targetName , const _TCHAR* resultName=NULL, recordsetQuery* query=NULL);
+	max(){}
+	max(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 };
 
 

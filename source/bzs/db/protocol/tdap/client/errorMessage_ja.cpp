@@ -98,3 +98,4 @@ PACKAGE _TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size)
 }// namespace protocol
 }// namespace db
 }// namespace bzs
+

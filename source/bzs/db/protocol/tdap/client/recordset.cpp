@@ -150,6 +150,12 @@ recordset& recordset::orderBy(const _TCHAR* name1 , const _TCHAR* name2,
 	return *this;
 }
 
+recordset& recordset::orderBy(fieldNames& fns)
+{
+	m_imple->orderBy(fns);
+	return *this;
+}
+
 recordset& recordset::reverse()
 {
 	m_imple->reverse();

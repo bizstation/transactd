@@ -68,6 +68,7 @@ public:
 					 const _TCHAR* name3=NULL,const _TCHAR* name4=NULL,
 					 const _TCHAR* name5=NULL, const _TCHAR* name6=NULL,
 					 const _TCHAR* name7=NULL, const _TCHAR* name8=NULL);
+	recordset& orderBy(fieldNames& fns);
 	recordset& reverse();
 	void appendCol(const _TCHAR* name, int type, short len);
 	recordset& operator+=(const recordset& r);
