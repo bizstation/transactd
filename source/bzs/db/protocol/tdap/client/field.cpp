@@ -117,14 +117,32 @@ struct infoImple
 	std::vector<fielddef> fields;
 	boost::unordered_map<std::_tstring, int> map;
 	const aliasMap_type* aliasMap;
+
 	infoImple():aliasMap(NULL){}
+	infoImple(const infoImple& r)
+		:fields(r.fields),map(r.map),aliasMap(r.aliasMap){};
 };
-
-
 
 fielddefs::fielddefs():fieldShare(),m_imple(new infoImple)
 {
 
+}
+
+//A fieldShare is need no copy member(s)
+fielddefs::fielddefs(const fielddefs& r):fieldShare()
+			,m_imple(new infoImple(*r.m_imple))
+{
+
+}
+
+//A fieldShare is no copy member(s)
+fielddefs& fielddefs::operator=(const fielddefs& r)
+{
+	if (this != &r)
+	{
+		*m_imple = *r.m_imple;
+	}
+	return *this;
 }
 
 void fielddefs::aliasing(fielddef* p) const
@@ -144,8 +162,7 @@ fielddefs::~fielddefs()
 
 fielddefs* fielddefs::clone() const
 {
-	fielddefs* p = new fielddefs();
-	*p->m_imple = *m_imple;
+	fielddefs* p = new fielddefs(*this);
 	return p;
 
 }

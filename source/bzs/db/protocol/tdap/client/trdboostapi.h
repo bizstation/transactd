@@ -126,6 +126,7 @@ class DLLLIB query : public queryBase
 {
 public:
 	query():queryBase(){}
+	query(const query& r):queryBase(r){}
 
 	virtual ~query(){}
 

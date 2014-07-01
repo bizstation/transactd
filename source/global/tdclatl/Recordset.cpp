@@ -216,6 +216,24 @@ STDMETHODIMP CARecordset::OrderBy( BSTR Name0,  BSTR Name1,  BSTR Name2,  BSTR N
     }
 }
 
+STDMETHODIMP CARecordset::OrderByWith(ISortFields* sortFields, IRecordset** retVal)
+{
+	try
+	{
+		if (sortFields)
+		{
+			CSortFields* gq = dynamic_cast<CSortFields*>(sortFields);
+			m_rs->orderBy(gq->m_sortFields);
+		}
+		setResult(retVal);	
+		return S_OK;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
+}
+
 STDMETHODIMP CARecordset::Reverse(IRecordset** retVal)
 {
 	m_rs->reverse();

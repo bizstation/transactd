@@ -35,7 +35,7 @@ namespace tdap
 namespace client
 {
 
-
+/* copyable */
 class fieldsBase
 {
 	friend class multiRecordAlocatorImple;
@@ -141,7 +141,7 @@ typedef boost::shared_ptr<table>table_ptr;
 typedef fieldsBase row;
 typedef boost::shared_ptr<row> row_ptr;
 
-
+/* copyable*/
 class fields : public fieldsBase
 {
 	table& m_tb;

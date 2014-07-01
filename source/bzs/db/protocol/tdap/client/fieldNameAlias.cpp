@@ -49,16 +49,10 @@ struct fdnImple
 };
 
 
-fdNmaeAlias::fdNmaeAlias():m_imple(new fdnImple)
-{
-
-}
+fdNmaeAlias::fdNmaeAlias():m_imple(new fdnImple){}
 
 fdNmaeAlias::fdNmaeAlias(const fdNmaeAlias& r)
-			:m_imple(new fdnImple)
-{
-	*m_imple = *r.m_imple;	
-}
+			:m_imple(new fdnImple(*r.m_imple)){}
 
 fdNmaeAlias& fdNmaeAlias::operator=(const fdNmaeAlias& r)
 {

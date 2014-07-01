@@ -250,6 +250,9 @@ public:
 	enum eOptimize{none=0, joinKeyValuesUnique=1, joinWhereFields=2};
 
 	queryBase();
+	queryBase(const queryBase& r);
+	queryBase& operator=(const queryBase& r);
+
 	virtual ~queryBase();
 	void reset();
 	void clearSeekKeyValues();

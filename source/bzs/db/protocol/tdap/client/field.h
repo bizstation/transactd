@@ -37,6 +37,8 @@ namespace client
 
 class stringConverter;
 /** @cond INTERNAL */
+
+/* non copyable */
 class DLLLIB fieldShare
 {
 	friend class field;
@@ -52,6 +54,8 @@ private:
 	unsigned char logicalToString: 1;
 	};
 	struct Imple* m_imple;
+	fieldShare(const fieldShare&);//no implememt
+	fieldShare& operator=(const fieldShare&);//no implememt
 
 protected:
 	fieldShare();
@@ -72,12 +76,15 @@ class DLLLIB fielddefs : public fieldShare
 	void aliasing(fielddef* p) const;
 	fielddefs();
 	~fielddefs();
+	fielddefs(const fielddefs& r);
+	fielddefs& operator=(const fielddefs& r);
 	friend class table;
 	friend class recordsetImple;
 	friend class writableRecord;
 	friend class memoryRecord;
 	friend class recordsetQuery;
 	friend struct recordsetQueryImple;
+	friend class fieldsBase;
 
 	void addAllFileds(tabledef* def);
 	void copyFrom(const class table* tb);
@@ -173,7 +180,9 @@ public:
 
 public:
 
-	void* ptr() const;
+	//To inline
+	inline field(const field& r):m_fd(r.m_fd),m_ptr(r.m_ptr),m_fds(r.m_fds){}
+
 	inline field& operator=(const field& r)
 	{
 		m_fd = r.m_fd;
@@ -182,7 +191,10 @@ public:
 		return *this;
 	}
 
+	void* ptr() const;
+
 	unsigned char type() const {return m_fd->type;}
+
 	unsigned short len() const {return m_fd->len;}
 
 	inline const _TCHAR* c_str() const {return getFVstr();}

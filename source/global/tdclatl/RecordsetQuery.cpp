@@ -61,4 +61,58 @@ STDMETHODIMP CRecordsetQuery::Or(BSTR Name, BSTR Logic, VARIANT Value, IRecordse
 }
 
 
+STDMETHODIMP CSortField::get_Name( BSTR* Value)
+{
+	return S_OK;
+}
 
+STDMETHODIMP CSortField::put_Name(BSTR Value)
+{
+	return S_OK;
+}
+
+STDMETHODIMP CSortField::get_Asc(VARIANT_BOOL* Value)
+{
+	return S_OK;
+}
+
+STDMETHODIMP CSortField::put_Asc(VARIANT_BOOL Value)
+{
+	return S_OK;
+}
+
+//------------------------------------------------------------------------
+STDMETHODIMP CSortFields::Add(  BSTR Name, VARIANT_BOOL Asc)
+{
+	m_sortFields.add(Name, (Asc==-1));
+	return S_OK;
+}
+
+STDMETHODIMP CSortFields::Size(int* Value)
+{
+	*Value = (int)m_sortFields.size();
+	return S_OK;
+}
+
+STDMETHODIMP CSortFields::Item(int Index, ISortField** retVal)
+{
+	CComObject<CSortField>* obj;
+
+	CComObject<CSortField>::CreateInstance(&obj);
+	if (obj)
+	{
+		obj->m_sortField = m_sortFields[Index];
+		
+		ISortField* fd;
+		obj->QueryInterface(IID_ISortField, (void**)&fd);
+		_ASSERTE(fd);
+		*retVal = fd;
+	}
+	return S_OK;
+}
+
+STDMETHODIMP CSortFields::Clear()
+{
+	m_sortFields.clear();
+	return S_OK;
+}

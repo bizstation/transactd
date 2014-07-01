@@ -113,6 +113,7 @@ public:
 
 #pragma warning(default:4251)
 
+/* non copyable*/
 class DLLLIB writableRecord : public memoryRecord
 {
 	fielddefs* m_fddefs;
@@ -120,6 +121,9 @@ class DLLLIB writableRecord : public memoryRecord
 	table* m_tb;
 
 	writableRecord(table* tb, const aliasMap_type* alias);
+	writableRecord(const writableRecord&);
+	writableRecord& operator=(const writableRecord&);
+
 	fielddefs* fddefs();
 
 public:

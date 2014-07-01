@@ -81,29 +81,54 @@ void serialize(Archive& , executable& , const unsigned int )
 }
 
 template <class Archive>
-void serialize(Archive& ar, groupByStatement& q, const unsigned int version)
+void serialize(Archive& ar, sortField& q, const unsigned int )
 {
-	version;
-	boost::serialization::base_object<executable>(q);
-	ar & boost::serialization::make_nvp("keyFields"
-				, boost::serialization::base_object<fieldNames>(q));
-	ar & boost::serialization::make_nvp("functions" , q.m_statements);
+	ar & boost::serialization::make_nvp("name" , q.name);
+	ar & boost::serialization::make_nvp("asc" , q.asc);
+
 }
 
 template <class Archive>
-void serialize(Archive& ar, matchByStatement& q, const unsigned int version)
+void serialize(Archive& ar, sortFields& q, const unsigned int )
 {
-	version;
+	int count = (int)q.m_params.size();
+	ar & boost::serialization::make_nvp("count" , count);
+	for (int i=0;i<count;i++)
+	{
+		if (Archive::is_loading::value)
+		{
+			sortField f;
+			ar & boost::serialization::make_nvp("field" , f);
+			q.m_params.push_back(f);
+		}
+		else
+			ar & boost::serialization::make_nvp("field" , q.m_params[i]);
+	}
+
+}
+
+template <class Archive>
+void serialize(Archive& ar, groupByStatement& q, const unsigned int /*version*/)
+{
+	boost::serialization::base_object<executable>(q);
+	ar & boost::serialization::make_nvp("keyFields"
+				, boost::serialization::base_object<fieldNames>(q));
+	ar & boost::serialization::make_nvp("functions" , *q.m_statements);
+}
+
+template <class Archive>
+void serialize(Archive& ar, matchByStatement& q, const unsigned int /*version*/)
+{
 	boost::serialization::base_object<executable>(q);
 	ar & make_nvp("matchByStatement", boost::serialization::base_object<recordsetQuery>(q));
 }
 
 template <class Archive>
-void serialize(Archive& ar, orderByStatement& q, const unsigned int version)
+void serialize(Archive& ar, orderByStatement& q, const unsigned int /*version*/)
 {
-	version;
 	boost::serialization::base_object<executable>(q);
-	ar & make_nvp("orderByStatement", boost::serialization::base_object<fieldNames>(q));
+	ar & boost::serialization::make_nvp("sortFields", *q.m_sortFields);
+
 }
 
 template <class Archive>
@@ -113,9 +138,8 @@ void serialize(Archive& /*ar*/, reverseOrderStatement& q, const unsigned int /*v
 }
 
 template <class Archive>
-void serialize(Archive& ar, readStatement& q, const unsigned int version)
+void serialize(Archive& ar, readStatement& q, const unsigned int /*version*/)
 {
-	version;
 	boost::serialization::base_object<executable>(q);
 	ar & boost::serialization::make_nvp("keyFields", boost::serialization::base_object<fieldNames>(q));
 	ar & boost::serialization::make_nvp("query", boost::serialization::base_object<query>(q));
@@ -130,9 +154,8 @@ void serialize(Archive& ar, queryBase& q, const unsigned int version)
 
 
 template<class Archive>
-void save(Archive& ar,  const queryBase& q,  const unsigned int version)
+void save(Archive& ar,  const queryBase& q,  const unsigned int /*version*/)
 {
-	version;
 	std::_tstring s = q.toString();
 
 	ar & make_nvp("queryString", s);
@@ -149,9 +172,8 @@ void save(Archive& ar,  const queryBase& q,  const unsigned int version)
 }
 
 template<class Archive>
-void load(Archive& ar, queryBase& q,  const unsigned int version)
+void load(Archive& ar, queryBase& q,  const unsigned int /*version*/)
 {
-	version;
 	std::_tstring s;
 	int v;
 
@@ -176,9 +198,8 @@ void load(Archive& ar, queryBase& q,  const unsigned int version)
 }
 
 template <class Archive>
-void serialize(Archive& ar, fieldNames& q, const unsigned int version)
+void serialize(Archive& ar, fieldNames& q, const unsigned int /*version*/)
 {
-	version;
 	int count = q.count();
 	ar & boost::serialization::make_nvp("count", count);
 	std::_tstring s;
@@ -199,25 +220,21 @@ void serialize(Archive& ar, fieldNames& q, const unsigned int version)
 
 
 template <class Archive>
-void serialize(Archive& ar, query& q, const unsigned int version)
+void serialize(Archive& ar, query& q, const unsigned int /*version*/)
 {
-	version;
 	ar & make_nvp("readQuery", boost::serialization::base_object<queryBase>(q));
 }
 
 template <class Archive>
-void serialize(Archive& ar, recordsetQuery& q, const unsigned int version)
+void serialize(Archive& ar, recordsetQuery& q, const unsigned int /*version*/)
 {
-	version;
-
 	queryBase* qq = q.internalQuery();
 	ar & make_nvp("recordsetQuery", *qq);
 }
 
 template <class Archive>
-void serialize(Archive& ar, groupFuncBase& q, const unsigned int version)
+void serialize(Archive& ar, groupFuncBase& q, const unsigned int /*version*/)
 {
-	version;
 	ar & boost::serialization::make_nvp("query"
 				, boost::serialization::base_object<recordsetQuery>(q));
 	std::_tstring s;
@@ -245,44 +262,38 @@ void serialize(Archive& ar, groupFuncBase& q, const unsigned int version)
 }
 
 template <class Archive>
-void serialize(Archive& ar, sum& q, const unsigned int version)
+void serialize(Archive& ar, sum& q, const unsigned int /*version*/)
 {
-	 version;
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
-void serialize(Archive& ar, count& q, const unsigned int version)
+void serialize(Archive& ar, count& q, const unsigned int /*version*/)
 {
-	 version;
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
-void serialize(Archive& ar, avg& q, const unsigned int version)
+void serialize(Archive& ar, avg& q, const unsigned int /*version*/)
 {
-	 version;
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
-void serialize(Archive& ar, min& q, const unsigned int version)
+void serialize(Archive& ar, min& q, const unsigned int /*version*/)
 {
-	 version;
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
-void serialize(Archive& ar, max& q, const unsigned int version)
+void serialize(Archive& ar, max& q, const unsigned int /*version*/)
 {
-	 version;
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
-void serialize(Archive& ar, groupQuery& q, const unsigned int version)
+void serialize(Archive& ar, groupQuery& q, const unsigned int /*version*/)
 {
-	version;
 	fieldNames& v = const_cast<fieldNames&>(q.getKeyFields());
 	ar & make_nvp("keyFields", v);
 }
@@ -317,9 +328,13 @@ public:
 //---------------------------------------------------------------------------
 //   class groupByStatement
 //---------------------------------------------------------------------------
+groupByStatement::groupByStatement()
+	:fieldNames(),m_statements(new std::vector< groupFuncBase* >()){}
+
 groupByStatement::~groupByStatement()
 {
 	reset();
+	delete m_statements;
 }
 
 groupFuncBase& groupByStatement::addFunction(eFunc v, const _TCHAR* targetName , const _TCHAR* resultName)
@@ -333,26 +348,26 @@ groupFuncBase& groupByStatement::addFunction(eFunc v, const _TCHAR* targetName ,
 	case fmin:func =   new client::min(targetName, resultName);break;
 	case fmax:func =   new client::max(targetName, resultName);break;
 	};
-	m_statements.push_back(func);
+	m_statements->push_back(func);
 	return *func;
 }
 
 
 groupFuncBase& groupByStatement::function(int index)
 {
-	assert(index >= 0 && index < (int)m_statements.size());
-	return *m_statements[index];
+	assert(index >= 0 && index < (int)m_statements->size());
+	return *((*m_statements)[index]);
 }
 
 fieldNames& groupByStatement::reset()
 {
-	for (int i=0;i<(int)m_statements.size();++i)
-		delete m_statements[i];
-	m_statements.clear();
+	for (int i=0;i<(int)m_statements->size();++i)
+		delete ((*m_statements)[i]);
+	m_statements->clear();
 	return *this;
 }
 
-int groupByStatement::size() const {return (int)m_statements.size();}
+int groupByStatement::size() const {return (int)m_statements->size();}
 
 void groupByStatement::execute(recordset& rs)
 {
@@ -362,16 +377,90 @@ void groupByStatement::execute(recordset& rs)
 	groupQuery q;
 	q.keyField(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5],keys[6], keys[7]);
 
-	for (int i=0;i<(int)m_statements.size();++i)
-		q.addFunction(m_statements[i]);
+	for (int i=0;i<(int)m_statements->size();++i)
+		q.addFunction(((*m_statements)[i]));
 	rs.groupBy(q);
 }
 
+//---------------------------------------------------------------------------
+//   class matchByStatement
+//---------------------------------------------------------------------------
 void matchByStatement::execute(recordset& rs){rs.matchBy(*this);};
 
-void orderByStatement::execute(recordset& rs){rs.orderBy(*this);};
+//---------------------------------------------------------------------------
+//   class orderByStatement
+//---------------------------------------------------------------------------
+orderByStatement::orderByStatement():m_sortFields(new sortFields()){}
 
+orderByStatement::~orderByStatement(){delete m_sortFields;}
+
+void orderByStatement::execute(recordset& rs){rs.orderBy(*m_sortFields);};
+
+void orderByStatement::add(const _TCHAR* name, bool  asc)
+{
+	m_sortFields->add(name, asc);
+}
+
+//---------------------------------------------------------------------------
+//   class reverseOrderStatement
+//---------------------------------------------------------------------------
 void reverseOrderStatement::execute(recordset& rs){rs.reverse();};
+
+
+//---------------------------------------------------------------------------
+//        struct queryStatementsImple
+//---------------------------------------------------------------------------
+struct queryStatementsImple
+{
+	idatabaseManager* dbm;
+	database* db;
+	int id;
+	std::_tstring title;
+	std::_tstring description;
+	std::vector<executable*> statements;
+	prepairedValues pv;
+
+	inline queryStatementsImple():dbm(NULL),db(NULL){};
+
+	~queryStatementsImple()
+	{
+		reset();
+	}
+
+	void reset()
+	{
+		 for(int i=0;i<(int)statements.size();++i)
+			delete statements[i];
+		 statements.clear();
+	}
+
+	inline void execute(recordset& rs)
+	{
+		for (size_t i=0;i<statements.size();++i)
+				statements[i]->execute(rs);
+	}
+
+private:
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version);
+		/*{
+		ar & make_nvp("id", id);
+		ar & make_nvp("title", title);
+		ar & make_nvp("description", description);
+		ar & make_nvp("items", statements);
+
+		if (Archive::is_loading::value)
+		{
+			for (int i=0;i<statements.size();++i)
+			{
+				readStatement* p = dynamic_cast<readStatement*>(statements[i]);
+				if (p)
+					p->m_impl->parent = this;
+			}
+		}
+	}*/
+};
 
 //---------------------------------------------------------------------------
 //   struct queryStatementImple
@@ -453,62 +542,24 @@ template <class Archive>
 void serialize(Archive& ar, readStatement& q, const unsigned int version);
 
 
-
-
-//---------------------------------------------------------------------------
-//        struct queryStatementsImple
-//---------------------------------------------------------------------------
-struct queryStatementsImple
+template <class Archive>
+void queryStatementsImple::serialize(Archive& ar, const unsigned int version)
 {
-	idatabaseManager* dbm;
-	database* db;
-	int id;
-	std::_tstring title;
-	std::_tstring description;
-	std::vector<executable*> statements;
-	prepairedValues pv;
+	ar & make_nvp("id", id);
+	ar & make_nvp("title", title);
+	ar & make_nvp("description", description);
+	ar & make_nvp("items", statements);
 
-	inline queryStatementsImple():dbm(NULL),db(NULL){};
-
-	~queryStatementsImple()
+	if (Archive::is_loading::value)
 	{
-		reset();
-	}
-
-	void reset()
-	{
-		 for(int i=0;i<(int)statements.size();++i)
-			delete statements[i];
-		 statements.clear();
-	}
-
-	inline void execute(recordset& rs)
-	{
-		for (size_t i=0;i<statements.size();++i)
-				statements[i]->execute(rs);
-	}
-
-private:
-	friend class boost::serialization::access;
-	template <class Archive>
-	void serialize(Archive& ar, const unsigned int version)
-	{
-		ar & make_nvp("id", id);
-		ar & make_nvp("title", title);
-		ar & make_nvp("description", description);
-		ar & make_nvp("items", statements);
-
-		if (Archive::is_loading::value)
+		for (int i=0;i<statements.size();++i)
 		{
-			for (int i=0;i<statements.size();++i)
-			{
-				readStatement* p = dynamic_cast<readStatement*>(statements[i]);
-				if (p)
-					p->m_impl->parent = this;
-			}
+			readStatement* p = dynamic_cast<readStatement*>(statements[i]);
+			if (p)
+				p->m_impl->parent = this;
 		}
 	}
-};
+}
 
 //---------------------------------------------------------------------------
 //        class readStatement

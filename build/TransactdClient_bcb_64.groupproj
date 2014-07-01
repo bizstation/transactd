@@ -9,6 +9,9 @@
         <Projects Include="tdclcpp\tdclcpp_bcb_64.cbproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="tdclstmt\tdclstmt_bcb_64.cbproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="test_tdcl\test_tdclcpp_bcb_64.cbproj">
             <Dependencies/>
         </Projects>
@@ -49,6 +52,15 @@
     </Target>
     <Target Name="tdclcpp_bcb_64:Make">
         <MSBuild Projects="tdclcpp\tdclcpp_bcb_64.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="tdclstmt_bcb_64">
+        <MSBuild Projects="tdclstmt\tdclstmt_bcb_64.cbproj"/>
+    </Target>
+    <Target Name="tdclstmt_bcb_64:Clean">
+        <MSBuild Projects="tdclstmt\tdclstmt_bcb_64.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="tdclstmt_bcb_64:Make">
+        <MSBuild Projects="tdclstmt\tdclstmt_bcb_64.cbproj" Targets="Make"/>
     </Target>
     <Target Name="test_tdclcpp_bcb_64">
         <MSBuild Projects="test_tdcl\test_tdclcpp_bcb_64.cbproj"/>
@@ -96,13 +108,13 @@
         <MSBuild Projects="ormsrcgen\ormsrcgen64.cbproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="tdclc_64;tdclcpp_bcb_64;test_tdclcpp_bcb_64;bench_tdclcpp_bcb_64;bench_tdclcpp_c_bcb_64;bench_query_bcb_64;ormsrcgen64"/>
+        <CallTarget Targets="tdclc_64;tdclcpp_bcb_64;tdclstmt_bcb_64;test_tdclcpp_bcb_64;bench_tdclcpp_bcb_64;bench_tdclcpp_c_bcb_64;bench_query_bcb_64;ormsrcgen64"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="tdclc_64:Clean;tdclcpp_bcb_64:Clean;test_tdclcpp_bcb_64:Clean;bench_tdclcpp_bcb_64:Clean;bench_tdclcpp_c_bcb_64:Clean;bench_query_bcb_64:Clean;ormsrcgen64:Clean"/>
+        <CallTarget Targets="tdclc_64:Clean;tdclcpp_bcb_64:Clean;tdclstmt_bcb_64:Clean;test_tdclcpp_bcb_64:Clean;bench_tdclcpp_bcb_64:Clean;bench_tdclcpp_c_bcb_64:Clean;bench_query_bcb_64:Clean;ormsrcgen64:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="tdclc_64:Make;tdclcpp_bcb_64:Make;test_tdclcpp_bcb_64:Make;bench_tdclcpp_bcb_64:Make;bench_tdclcpp_c_bcb_64:Make;bench_query_bcb_64:Make;ormsrcgen64:Make"/>
+        <CallTarget Targets="tdclc_64:Make;tdclcpp_bcb_64:Make;tdclstmt_bcb_64:Make;test_tdclcpp_bcb_64:Make;bench_tdclcpp_bcb_64:Make;bench_tdclcpp_c_bcb_64:Make;bench_query_bcb_64:Make;ormsrcgen64:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

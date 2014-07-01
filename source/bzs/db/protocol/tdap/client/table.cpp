@@ -1737,6 +1737,19 @@ struct impl
 
 queryBase::queryBase():m_impl(new impl){}
 
+queryBase::queryBase(const queryBase& r):m_impl(new impl(*r.m_impl)){}
+
+
+queryBase& queryBase::operator=(const queryBase& r)
+{
+	if (this != &r)
+	{
+		*m_impl = *r.m_impl;
+	}
+	return *this;
+}
+
+
 queryBase::~queryBase()
 {
 	delete m_impl;

@@ -193,6 +193,11 @@ function createActiveTable(db, tableName)
     return at;
 }
 
+function createSortFields()
+{
+    return new ActiveXObject("transactd.sortFields");
+}
+
 
 
 var sep = "-------------------------------------------------------------------------------";
@@ -524,6 +529,15 @@ function test(atu, atg, ate)
  	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "9 group", "group_name = 9 group ");
 	
 	rs.OrderBy("group_name");
+	checkEqual(rs.Record(0).Field("group_name").Text, "1 group", "group_name = 1 group ");
+	
+	var sortFields = createSortFields();
+	sortFields.Add("group_name", false);
+	rs.OrderByWith(sortFields);
+
+	sortFields.Clear();
+	sortFields.Add("group_name", true);
+	rs.OrderByWith(sortFields);
 	checkEqual(rs.Record(0).Field("group_name").Text, "1 group", "group_name = 1 group ");
 	
 	

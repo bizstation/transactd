@@ -39,6 +39,7 @@ namespace client
 struct fieldNamesImple
 {
 	std::vector<std::_tstring> keyFields;
+	fieldNamesImple(){}
 };
 
 // ---------------------------------------------------------------------------
@@ -48,6 +49,21 @@ fieldNames::fieldNames():m_impl(new fieldNamesImple)
 {
 
 }
+
+fieldNames::fieldNames(const fieldNames& r):m_impl(new fieldNamesImple(*r.m_impl))
+{
+
+}
+
+fieldNames& fieldNames::operator=(const fieldNames& r)
+{
+	if (this != &r)
+	{
+		*m_impl = *r.m_impl;
+	}
+	return *this;
+}
+
 
 fieldNames::~fieldNames()
 {
@@ -106,13 +122,33 @@ struct recordsetQueryImple
 	std::vector<char> combine;
 	short endIndex;
 	fielddefs compFields;
-	
+	recordsetQueryImple(){}
+	recordsetQueryImple(const recordsetQueryImple& r)
+		:row(r.row),compType(r.compType),indexes(r.indexes),combine(r.combine)
+		,endIndex(r.endIndex),compFields(r.compFields){}
+
 };
 
 // ---------------------------------------------------------------------------
 // class recordsetQuery
 // ---------------------------------------------------------------------------
 recordsetQuery::recordsetQuery():query(),m_imple(new recordsetQueryImple){}
+
+recordsetQuery::recordsetQuery(const recordsetQuery& r)
+	:query(r),m_imple(new recordsetQueryImple(*r.m_imple))
+{
+
+}
+
+recordsetQuery& recordsetQuery:: operator=(const recordsetQuery& r)
+{
+	if (this != &r)
+	{
+		query::operator=(r);
+		*m_imple = *r.m_imple;
+	}
+	return *this;
+}
 
 recordsetQuery::~recordsetQuery()
 {
@@ -198,6 +234,7 @@ inline void setValue(row_ptr& row, int key, double value)
 // ---------------------------------------------------------------------------
 class groupQueryImple : public fieldNames
 {
+	//not delete by destructor. simple copy is ok;
 	std::vector<groupFuncBase* > m_funcs;
 
 	void removeFields(recordsetImple& mdls)
@@ -307,6 +344,20 @@ groupQuery::groupQuery():m_imple(new groupQueryImple)
 
 }
 
+groupQuery::groupQuery(const groupQuery& r):m_imple(new groupQueryImple(*r.m_imple))
+{
+
+}
+
+groupQuery& groupQuery::operator=(const groupQuery& r)
+{
+	if (this != &r)
+	{
+		*m_imple = *r.m_imple;
+	}
+	return *this;
+}
+
 groupQuery::~groupQuery()
 {
 	delete m_imple; 
@@ -369,11 +420,20 @@ private:
 	std::_tstring m_resultName;
 	int m_resultKey;
 	int m_targetKey;
-	//recordsetQuery* m_query;
+
 
 public:
 	std::vector<value_type> m_values;
 	std::vector<__int64> m_counts;
+
+	inline groupFuncBaseImple(const _TCHAR* targetName , const _TCHAR* resultName=NULL)
+	{
+	   if (targetName && targetName[0])
+			m_targetName = targetName;
+	   m_resultName = ((resultName == NULL) || resultName[0]==0x00)
+									 ? targetName:resultName;
+	   m_values.reserve(10);
+	}
 
 	inline void initResultVariable(int index)
 	{
@@ -395,14 +455,6 @@ public:
 		m_values.reserve(10);
 	}
 
-	inline groupFuncBaseImple(const _TCHAR* targetName , const _TCHAR* resultName=NULL
-		, recordsetQuery* query=NULL)
-		:m_targetName(targetName)
-	{
-	   m_resultName = ((resultName == NULL) || resultName[0]==0x00)
-									 ? targetName:resultName;
-	   m_values.reserve(10);
-	}
 
 	inline const _TCHAR* targetName() const {return m_targetName.c_str();}
 
@@ -438,6 +490,18 @@ groupFuncBase::groupFuncBase():m_imple(new groupFuncBaseImple()){}
 
 groupFuncBase::groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName)
 		:recordsetQuery(),m_imple(new groupFuncBaseImple(targetName, resultName)){}
+
+groupFuncBase::groupFuncBase(const groupFuncBase& r):recordsetQuery(r)
+		,m_imple(new groupFuncBaseImple(*r.m_imple)){}
+
+groupFuncBase& groupFuncBase::operator=(const groupFuncBase& r)
+{
+	if (this != &r)
+	{
+		*m_imple = *r.m_imple;
+	}
+	return *this;
+}
 
 groupFuncBase::~groupFuncBase()
 {

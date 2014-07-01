@@ -23,6 +23,8 @@
 #include <bzs/db/protocol/tdap/client/recordset.h>
 using namespace ATL;
 
+
+
 class CRecord;
 class CFieldDefs;
 
@@ -70,6 +72,8 @@ public:
   STDMETHOD(OrderBy)( BSTR name0,  BSTR name1,  BSTR name2,  BSTR name3,  BSTR name4, 
 					 BSTR name5,  BSTR name6,  BSTR name7,  BSTR name8
 					, IRecordset** retVal);
+
+  STDMETHOD(OrderByWith)(ISortFields* sortFields, IRecordset** retVal);
   STDMETHOD(Reverse)(IRecordset** retVal);
   STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
   STDMETHOD(Clone)(IRecordset** retVal);

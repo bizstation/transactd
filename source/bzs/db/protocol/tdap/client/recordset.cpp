@@ -39,9 +39,24 @@ namespace client
 // ---------------------------------------------------------------------------
 recordset::recordset():m_imple(new recordsetImple){}
 
-recordset::recordset(recordsetImple* p):m_imple(p)
-{
+/* This  is deep copy.
+   But text and blob field data memory are shared.
+*/
+recordset::recordset(const recordset& r):m_imple(r.m_imple->clone()){}
 
+recordset& recordset::operator=(const recordset& r)
+{
+	if (this != &r)
+	{
+		delete m_imple;
+		m_imple = r.m_imple->clone();
+	}
+	return *this;
+}
+
+recordset* recordset::clone() const
+{
+	return new recordset(*this);
 }
 
 recordset::~recordset()
@@ -62,13 +77,6 @@ void recordset::operator delete(void* p)
 }
 
 #endif
-/* This clone is deep copy.
-   But text and blob field data memory are shared.
-*/
-recordset* recordset::clone() const
-{
-	return /*recordset::ptr(*/new recordset(m_imple->clone());//);
-}
 
 void recordset::clearRecords()
 {
@@ -150,9 +158,9 @@ recordset& recordset::orderBy(const _TCHAR* name1 , const _TCHAR* name2,
 	return *this;
 }
 
-recordset& recordset::orderBy(fieldNames& fns)
+recordset& recordset::orderBy(const sortFields& orders)
 {
-	m_imple->orderBy(fns);
+	m_imple->orderBy(orders);
 	return *this;
 }
 

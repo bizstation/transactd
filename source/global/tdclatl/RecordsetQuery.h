@@ -36,8 +36,7 @@ public:
 	bzs::db::protocol::tdap::client::recordsetQuery m_qb;
 	CRecordsetQuery()
 	{
-		 
-    
+   
 	}
 
 	DECLARE_REGISTRY_RESOURCEID(IDR_RECORDSETQUERY)
@@ -72,4 +71,88 @@ public:
 
 };
 
+
+
+
+class ATL_NO_VTABLE CSortField :
+	public CComObjectRootEx<CComSingleThreadModel>,
+	public CComCoClass<CSortField, &CLSID_SortField>,
+	public IDispatchImpl<ISortField, &IID_ISortField, &LIBID_transactd, /*wMajor =*/ 1, /*wMinor =*/ 0>
+{
+	
+
+public:
+	bzs::db::protocol::tdap::client::sortField m_sortField;
+	CSortField()
+	{
+   
+	}
+
+	BEGIN_COM_MAP(CSortField)
+		COM_INTERFACE_ENTRY(ISortField)
+		COM_INTERFACE_ENTRY(IDispatch)
+	END_COM_MAP()
+
+	DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+	HRESULT FinalConstruct()
+	{
+		return S_OK;
+	}
+
+	void FinalRelease()
+	{
+
+	}
+
+public:
+	STDMETHOD(get_Name)( BSTR* Value);
+	STDMETHOD(put_Name)(BSTR Value);
+	STDMETHOD(get_Asc)(VARIANT_BOOL* Value);
+	STDMETHOD(put_Asc)(VARIANT_BOOL Value);
+
+};
+
+class ATL_NO_VTABLE CSortFields :
+	public CComObjectRootEx<CComSingleThreadModel>,
+	public CComCoClass<CSortFields, &CLSID_SortFields>,
+	public IDispatchImpl<ISortFields, &IID_ISortFields, &LIBID_transactd, /*wMajor =*/ 1, /*wMinor =*/ 0>
+{
+	
+public:
+	bzs::db::protocol::tdap::client::sortFields m_sortFields;
+	CSortFields()
+	{
+   
+	}
+
+	DECLARE_REGISTRY_RESOURCEID(IDR_SORTFIELDS)
+
+	BEGIN_COM_MAP(CSortFields)
+		COM_INTERFACE_ENTRY(ISortFields)
+		COM_INTERFACE_ENTRY(IDispatch)
+	END_COM_MAP()
+
+	DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+	HRESULT FinalConstruct()
+	{
+		return S_OK;
+	}
+
+	void FinalRelease()
+	{
+
+	}
+
+public:
+	STDMETHOD(Add)(  BSTR Name, VARIANT_BOOL Asc);
+	STDMETHOD(Size)(int* Value);
+	STDMETHOD(Item)(int Index, ISortField** retVal);
+	STDMETHOD(Clear)();
+
+};
+
+
 OBJECT_ENTRY_AUTO(__uuidof(RecordsetQuery), CRecordsetQuery)
+OBJECT_ENTRY_AUTO(__uuidof(SortFields), CSortFields)

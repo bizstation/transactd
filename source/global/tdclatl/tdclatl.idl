@@ -39,6 +39,9 @@ interface IWritableRecord;
 interface IGroupQuery;
 interface IRecordsetQuery;
 interface IFieldDefs;
+interface ISortField;
+interface ISortFields;
+
 
 typedef
 [
@@ -1130,18 +1133,22 @@ interface IRecordset : IDispatch
 					[in, defaultvalue("")] BSTR name5, [in, defaultvalue("")] BSTR name6,
 					[in, defaultvalue("")] BSTR name7, [in, defaultvalue("")] BSTR name8,
 					[out, retval] IRecordset** retVal);
+
   [id(0x000000B)]
+  HRESULT _stdcall OrderByWith([in] ISortFields* SortFields, [out, retval] IRecordset** retVal);
+
+  [id(0x000000C)]
   HRESULT _stdcall Reverse([out, retval] IRecordset** retVal);
 
-  [propget,id(0x000000C)]
-  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
   [propget,id(0x000000D)]
+  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
+  [propget,id(0x000000E)]
   HRESULT _stdcall Size([out, retval]unsigned long* retVal);
 
-  [id(0x000000E)]
+  [id(0x000000F)]
   HRESULT _stdcall MatchBy(IRecordsetQuery* gq, [out, retval] IRecordset** retVal);
 
-  [id(0x000000F)]
+  [id(0x0000010)]
   HRESULT _stdcall Clone([out, retval] IRecordset** retVal);
 
 };
@@ -1252,6 +1259,47 @@ interface IFieldDefs : IDispatch
   [propget, id(0x0000003)]
   HRESULT _stdcall Size([out, retval] short* retVal);
 };
+
+
+[
+  object,
+  uuid(16781A10-8371-415D-84B2-AD2874D57572),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface ISortField : IDispatch
+{
+  [propget, id(1)]
+  HRESULT _stdcall Name([out, retval] BSTR* Value);
+  [propput, id(1)]
+  HRESULT _stdcall Name([in] BSTR Value);
+  [propget, id(2)]
+  HRESULT _stdcall Asc([out, retval] VARIANT_BOOL* Value);
+  [propput, id(2)]
+  HRESULT _stdcall Asc([in]  VARIANT_BOOL Value);
+
+};
+
+[
+  object,
+  uuid(ED7FA0F0-2A2D-4271-98A6-9FE652353AAE),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface ISortFields : IDispatch
+{
+  [id(1)]
+  HRESULT _stdcall Add([in] BSTR Name, [in] VARIANT_BOOL asc);
+  [id(2)]
+  HRESULT _stdcall Size([out, retval] int* Value);
+  [id(3)]
+  HRESULT _stdcall Item([in] int index, [out, retval] ISortField** retVal);
+  [id(4)]
+  HRESULT _stdcall Clear();
+};
+
 
 [
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
@@ -1430,7 +1478,24 @@ library transactd
 	{
 		[default] interface IFieldDefs;
 	};
-	
+
+	[
+		uuid(7677BF30-C7C5-4AD5-AF86-99A21846A122)
+		,noncreatable
+	]
+	coclass SortField
+	{
+		[default] interface ISortField;
+	};
+
+	[
+		uuid(8C21D933-1DF0-4224-ADCE-8B40ADA9B403)
+	]
+	coclass SortFields
+	{
+		[default] interface ISortFields;
+	};
+
 };
 
 import "shobjidl.idl";

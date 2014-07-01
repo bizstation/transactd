@@ -39,6 +39,9 @@ protected:
 
 public:
 	fieldNames();
+	fieldNames(const fieldNames& r);
+	fieldNames& operator=(const fieldNames& r);
+
 	virtual ~fieldNames();
 	virtual fieldNames& reset();
 	fieldNames& keyField(const _TCHAR* name, const _TCHAR* name1=NULL, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
@@ -48,6 +51,31 @@ public:
 	int count();
 	const TCHAR* getValue(int index);
 	void addValue(const _TCHAR* v);
+};
+
+
+struct sortField
+{
+	std::_tstring name;
+	bool  asc;
+};
+
+
+class sortFields
+{
+	std::vector<sortField> m_params;
+	template <class Archive>
+	friend void serialize(Archive& ar, sortFields& q, const unsigned int );
+
+public:
+	inline void add(const _TCHAR* name, bool  asc)
+	{
+		sortField op ={name, asc};
+		m_params.push_back(op);
+	}
+	inline size_t size() const {return m_params.size();}
+	inline const sortField& operator[](int index) const {return m_params[index];}
+	inline void clear(){m_params.clear();}
 };
 
 
@@ -63,7 +91,10 @@ class DLLLIB recordsetQuery : protected query
 
 public:
 	recordsetQuery();
+	recordsetQuery(const recordsetQuery& r);
 	~recordsetQuery();
+
+	recordsetQuery& operator=(const recordsetQuery& r);
 
 	template <class T>
 	inline recordsetQuery& when(const _TCHAR* name, const _TCHAR* qlogic, T value)
@@ -109,6 +140,8 @@ protected:
 public:
 	typedef double value_type;
 	groupFuncBase();
+	groupFuncBase(const groupFuncBase& v);
+	groupFuncBase& operator=(const groupFuncBase& v);
 	groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 	virtual ~groupFuncBase();
 	groupFuncBase& operator=(const recordsetQuery& v);
@@ -132,6 +165,9 @@ class DLLLIB groupQuery
 	void grouping(recordsetImple& rs);
 public:
 	groupQuery();
+	groupQuery(const groupQuery& r);
+	groupQuery& operator=(const groupQuery& r);
+
 	~groupQuery();
 	groupQuery& reset() ;
 	groupQuery& addFunction(groupFuncBase* func);

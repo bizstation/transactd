@@ -1,0 +1,24 @@
+HKCR
+{
+	transactd.sortFields.1 = s 'sortFields Class'
+	{
+		CLSID = s '{8C21D933-1DF0-4224-ADCE-8B40ADA9B403}'
+	}
+	transactd.sortFields = s 'sortFields Class'
+	{		
+		CurVer = s 'transactd.sortFields.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {8C21D933-1DF0-4224-ADCE-8B40ADA9B403} = s 'sortFields Class'
+		{
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}

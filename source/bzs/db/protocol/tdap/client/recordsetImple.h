@@ -35,21 +35,29 @@ namespace tdap
 namespace client
 {
 
+struct sortDescription
+{
+	short index;
+	bool asc;
+};
+
 class recordsetSorter
 {
-	const std::vector<int>& m_fieldNums;
+	const std::vector<sortDescription>& m_sortDesc;
+
 public:
-	recordsetSorter(const std::vector<int>& fieldNums):m_fieldNums(fieldNums)
+	recordsetSorter(std::vector<sortDescription>& sortDesc):m_sortDesc(sortDesc)
 	{
 
 	}
 	bool operator()(const row_ptr& l, const row_ptr r) const
 	{
-		std::vector<int>::const_iterator it = m_fieldNums.begin();
-		while (it != m_fieldNums.end())
+		std::vector<sortDescription>::const_iterator it = m_sortDesc.begin();
+		while (it != m_sortDesc.end())
 		{
-			int ret = (*l)[*it].comp((*r)[*it], 0);
-			if (ret) return (ret < 0);
+			int ret = (*l)[(*it).index].comp((*r)[(*it).index], 0);
+			if (ret) return ((*it).asc) ? (ret < 0):(ret > 0);
+
 			++it;
 		}
 		return false;
@@ -169,12 +177,15 @@ private:
 		}
 	}
 
-	void makeSortFields(const _TCHAR* name, std::vector<int>& fieldNums)
+	void makeSortFields(const _TCHAR* name, std::vector<sortDescription>& sortDesc
+				, bool asc = true)
 	{
-		int index =  m_fds->indexByName(name);
-		if (index ==-1)
+		sortDescription sd;
+		sd.index =  m_fds->indexByName(name);
+		if (sd.index ==-1)
 			THROW_BZS_ERROR_WITH_MSG(_T("orderBy:Invalid field name"));
-		fieldNums.push_back(index);
+				sd.asc = asc;
+		sortDesc.push_back(sd);
 	}
 
 	int getMemBlockIndex(unsigned char* ptr) const
@@ -351,25 +362,29 @@ public:
 					 const _TCHAR* name5=NULL, const _TCHAR* name6=NULL,
 					 const _TCHAR* name7=NULL, const _TCHAR* name8=NULL)
 	{
-		std::vector<int> fieldNums;
-		makeSortFields(name1, fieldNums);
-		if (name2) makeSortFields(name2, fieldNums);
-		if (name3) makeSortFields(name3, fieldNums);
-		if (name4) makeSortFields(name4, fieldNums);
-		if (name5) makeSortFields(name5, fieldNums);
-		if (name6) makeSortFields(name6, fieldNums);
-		if (name7) makeSortFields(name7, fieldNums);
-		if (name8) makeSortFields(name8, fieldNums);
-		std::sort(begin(), end(), recordsetSorter(fieldNums));
+		std::vector<sortDescription> sds;
+		makeSortFields(name1, sds, true);
+		if (name2) makeSortFields(name2,  sds, true);
+		if (name3) makeSortFields(name3,  sds, true);
+		if (name4) makeSortFields(name4,  sds, true);
+		if (name5) makeSortFields(name5,  sds, true);
+		if (name6) makeSortFields(name6,  sds, true);
+		if (name7) makeSortFields(name7,  sds, true);
+		if (name8) makeSortFields(name8,  sds, true);
+		std::sort(begin(), end(), recordsetSorter(sds));
 		return *this;
 	}
 
-	inline recordsetImple& orderBy(fieldNames& fns)
+
+
+	inline recordsetImple& orderBy(const sortFields& orders)
 	{
-		std::vector<int> fieldNums;
-		for (int i=0;i<fns.count();++i)
-			makeSortFields(fns.getValue(i), fieldNums);
-		std::sort(begin(), end(), recordsetSorter(fieldNums));
+		std::vector<sortDescription> sds;
+
+		for (int i=0;i<(int)orders.size();++i)
+			makeSortFields(orders[i].name.c_str(), sds, orders[i].asc);
+
+		std::sort(begin(), end(), recordsetSorter(sds));
 		return *this;
 	}
 

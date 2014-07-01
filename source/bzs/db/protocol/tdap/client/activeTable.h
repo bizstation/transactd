@@ -37,6 +37,9 @@ namespace client
 class DLLLIB activeTable
 {
 	class activeTableImple* m_imple;
+	activeTable(const activeTable& r);
+	activeTable& operator=(const activeTable& r);
+
 
 public:
 

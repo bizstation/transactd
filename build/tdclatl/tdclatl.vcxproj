@@ -306,6 +306,7 @@
     <None Include="GroupQuery.rgs" />
     <None Include="QueryBase.rgs" />
     <None Include="RecordsetQuery.rgs" />
+    <None Include="sortFields.rgs" />
     <None Include="tdclatl.rgs" />
   </ItemGroup>
   <ItemGroup>

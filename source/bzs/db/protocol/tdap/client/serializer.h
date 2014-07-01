@@ -23,14 +23,12 @@
 
 #ifdef LIB_TDCLSTMT
 #    define DLLLIBSTMT AGRPACK
-#    define DLLTEMPLATE
 #else
 #    ifdef BCB_32
 #    	define DLLLIBSTMT AGRPACK
 #    else
 #		define DLLLIBSTMT PACKAGE_IMPORT
 #	 endif
-#    define DLLTEMPLATE extern
 #endif
 
 namespace bzs
@@ -45,7 +43,7 @@ namespace client
 {
 
 
-class executable
+class DLLLIBSTMT executable
 {
 
 public:
@@ -55,7 +53,7 @@ public:
 
 class DLLLIBSTMT groupByStatement : public fieldNames, public executable
 {
-	std::vector< groupFuncBase* > m_statements;
+	std::vector< groupFuncBase* >* m_statements;
 
 	template <class Archive>
 	friend void serialize(Archive& ar, groupByStatement& q, const unsigned int version);
@@ -63,6 +61,7 @@ class DLLLIBSTMT groupByStatement : public fieldNames, public executable
 
 public:
 	enum eFunc{fsum, fcount, favg, fmin, fmax};
+	groupByStatement();
 	~groupByStatement();
 	groupFuncBase& addFunction(eFunc v, const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 	groupFuncBase& function(int index);
@@ -78,11 +77,17 @@ public:
 	void execute(recordset& rs);
 };
 
-class DLLLIBSTMT orderByStatement : public fieldNames, public executable
+class DLLLIBSTMT orderByStatement : public executable
 {
+	sortFields* m_sortFields;
+	template <class Archive>
+	friend void serialize(Archive& ar, orderByStatement& q, const unsigned int version);
 
 public:
+	orderByStatement();
+	~orderByStatement();
 	void execute(recordset& rs);
+	void add(const _TCHAR* name, bool  asc=true);
 };
 
 class DLLLIBSTMT reverseOrderStatement :  public executable
@@ -94,7 +99,7 @@ public:
 
 class DLLLIBSTMT readStatement : public fieldNames, public query, public executable
 {
-	friend class queryStatementsImple;
+	friend struct queryStatementsImple;
 	friend class queryStatements;
 
 	struct queryStatementImple* m_impl;

@@ -30,7 +30,6 @@
 #include <bzs/db/protocol/tdap/client/filter.h>
 #include <bzs/example/queryData.h>
 #include <bzs/db/protocol/tdap/client/activeTable.h>
-		#include <bzs/db/protocol/tdap/client/serializer.h>
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -2543,6 +2542,17 @@ void testJoin(database* db)
 	//rec = rs[(size_t)0];
 	BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0][_T("group_name")].c_str()) == _tstring(_T("1 group"))
 				, "group_name = 1 group " << string(rs[(size_t)0][_T("group_name")].a_str()));
+
+	orderTypes orderRv;
+	orderRv.add(_T("group_name"),  false);
+	rs.orderBy(orderRv);
+
+	orderTypes order;
+	order.add(_T("group_name"),  true);
+	rs.orderBy(order);
+	BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0][_T("group_name")].c_str()) == _tstring(_T("1 group"))
+				, "group_name = 1 group " << string(rs[(size_t)0][_T("group_name")].a_str()));
+
 
 	//test union
 	recordset rs2;
