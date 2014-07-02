@@ -90,6 +90,10 @@ class DLLLIB recordsetQuery : protected query
 	bool match(const row_ptr row) const;
 
 public:
+
+	static void* operator new(size_t size);
+	static void operator delete(void* p);
+
 	recordsetQuery();
 	recordsetQuery(const recordsetQuery& r);
 	~recordsetQuery();

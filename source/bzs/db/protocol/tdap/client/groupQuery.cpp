@@ -132,6 +132,17 @@ struct recordsetQueryImple
 // ---------------------------------------------------------------------------
 // class recordsetQuery
 // ---------------------------------------------------------------------------
+void* recordsetQuery::operator new(size_t size)
+{
+	return malloc(size);
+}
+
+void recordsetQuery::operator delete(void* p)
+{
+	free(p);
+}
+
+
 recordsetQuery::recordsetQuery():query(),m_imple(new recordsetQueryImple){}
 
 recordsetQuery::recordsetQuery(const recordsetQuery& r)
