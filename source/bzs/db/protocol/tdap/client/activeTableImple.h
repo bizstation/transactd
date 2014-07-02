@@ -229,7 +229,7 @@ class  activeTableImple : public activeObject<map_orm>
 	}
 public:
 
-	explicit activeTableImple(idatabaseManager& mgr, const _TCHAR* tableName)
+	explicit activeTableImple(idatabaseManager* mgr, const _TCHAR* tableName)
 		:baseClass_type(mgr, tableName){};
 	explicit activeTableImple(dbmanager_ptr& mgr, const _TCHAR* tableName)
 		:baseClass_type(mgr, tableName){};

@@ -312,9 +312,9 @@ public:
 template <class MAP, class T=typename MAP::mdl_typename, class FDI=typename MAP::fdi_typename>
 class activeObject : boost::noncopyable
 {
-	void init(idatabaseManager& mgr, const _TCHAR* name)
+	void init(idatabaseManager* mgr, const _TCHAR* name)
 	{
-		m_tb = mgr.table(name);
+		m_tb = mgr->table(name);
 	}
 
 	void init(dbmanager_ptr& mgr, const _TCHAR* name)
@@ -343,7 +343,7 @@ public:
 	typedef std::vector<boost::shared_ptr<T> > collection_vec_type;
 
 
-	explicit activeObject(idatabaseManager& mgr)
+	explicit activeObject(idatabaseManager* mgr)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
@@ -364,7 +364,7 @@ public:
 			}
 
 
-	explicit activeObject(idatabaseManager& mgr, const _TCHAR* tableName)
+	explicit activeObject(idatabaseManager* mgr, const _TCHAR* tableName)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)

@@ -2543,11 +2543,11 @@ void testJoin(database* db)
 	BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0][_T("group_name")].c_str()) == _tstring(_T("1 group"))
 				, "group_name = 1 group " << string(rs[(size_t)0][_T("group_name")].a_str()));
 
-	orderTypes orderRv;
+	sortFields orderRv;
 	orderRv.add(_T("group_name"),  false);
 	rs.orderBy(orderRv);
 
-	orderTypes order;
+	sortFields order;
 	order.add(_T("group_name"),  true);
 	rs.orderBy(order);
 	BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0][_T("group_name")].c_str()) == _tstring(_T("1 group"))

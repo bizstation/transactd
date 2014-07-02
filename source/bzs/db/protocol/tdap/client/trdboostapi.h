@@ -273,6 +273,77 @@ public:
 
 };
 
+
+class connectParams
+{
+	_TCHAR m_buf[MAX_PATH];
+	short m_type;
+	char_td m_mode;
+
+public:
+	inline connectParams(const _TCHAR* protocol, const _TCHAR* hostOrIp, const _TCHAR* dbname,
+		const _TCHAR* schemaTable) : m_mode(TD_OPEN_READONLY), m_type(TYPE_SCHEMA_BDF)
+	{
+		_stprintf_s(m_buf, MAX_PATH, _T("%s://%s/%s?dbfile=%s.bdf")
+					, protocol, hostOrIp, dbname, schemaTable);
+
+	}
+	inline explicit connectParams(const _TCHAR* uri) : m_mode(TD_OPEN_READONLY), m_type(TYPE_SCHEMA_BDF)
+	{
+		_tcscpy_s(m_buf, MAX_PATH, uri);
+
+	}
+	inline void setMode(char_td v){m_mode = v;}
+
+	inline void setType(short v)
+	{
+		if (m_type != v)
+		{
+			m_buf[_tcslen(m_buf) - 3] = 0x00;
+			if (v == TYPE_SCHEMA_BDF)
+				_tcscat_s(m_buf, MAX_PATH, _T("bdf"));
+			else
+				_tcscat_s(m_buf, MAX_PATH, _T("ddf"));
+		}
+		m_type = v;
+	}
+
+	inline const _TCHAR* uri() const {return m_buf;}
+
+	inline char_td mode() const {return m_mode;};
+
+	inline short type() const {return m_type;};
+
+};
+
+/* databaseManager interface
+   If use some databases, implemnt a this interface and set the activeTable constructor
+   Create table by name and option from suitable database.
+
+*/
+class idatabaseManager
+{
+
+public:
+	virtual ~idatabaseManager(){};
+	virtual void connect(const connectParams& param, bool newConnection=false)=0;
+	virtual table_ptr table(const _TCHAR* name)=0;
+	virtual table_ptr table(short index)=0;
+	virtual const database* db(const _TCHAR* name)const=0;
+	virtual void addDbTableMap(const _TCHAR* name, int dbnum)=0;
+	virtual void setOption(__int64 v)=0;
+	virtual __int64 option()=0;
+	virtual void beginTrn(short bias) = 0;
+	virtual void endTrn() = 0;
+	virtual void abortTrn() = 0;
+	virtual int enableTrn()=0;
+	virtual void beginSnapshot() = 0;
+	virtual void endSnapshot() = 0;
+	virtual short_td stat() const = 0;
+	virtual uchar_td* clientID() const =0;
+};
+
+
 template <class T>
 class tableIterator : public std::iterator<std::bidirectional_iterator_tag, fields, void>
 {
@@ -808,47 +879,7 @@ inline findRvIterator getFindIterator(indexRvIterator it, const queryBase& q
 }
 
 
-class connectParams
-{
-	_TCHAR m_buf[MAX_PATH];
-	short m_type;
-	char_td m_mode;
 
-public:
-	inline connectParams(const _TCHAR* protocol, const _TCHAR* hostOrIp, const _TCHAR* dbname,
-		const _TCHAR* schemaTable) : m_mode(TD_OPEN_READONLY), m_type(TYPE_SCHEMA_BDF)
-	{
-		_stprintf_s(m_buf, MAX_PATH, _T("%s://%s/%s?dbfile=%s.bdf")
-					, protocol, hostOrIp, dbname, schemaTable);
-
-	}
-	inline explicit connectParams(const _TCHAR* uri) : m_mode(TD_OPEN_READONLY), m_type(TYPE_SCHEMA_BDF)
-	{
-		_tcscpy_s(m_buf, MAX_PATH, uri);
-
-	}
-	inline void setMode(char_td v){m_mode = v;}
-
-	inline void setType(short v)
-	{
-		if (m_type != v)
-		{
-			m_buf[_tcslen(m_buf) - 3] = 0x00;
-			if (v == TYPE_SCHEMA_BDF)
-				_tcscat_s(m_buf, MAX_PATH, _T("bdf"));
-			else
-				_tcscat_s(m_buf, MAX_PATH, _T("ddf"));
-		}
-		m_type = v;
-	}
-
-	inline const _TCHAR* uri() const {return m_buf;}
-
-	inline char_td mode() const {return m_mode;};
-
-	inline short type() const {return m_type;};
-
-};
 
 template <class Database_Ptr>
 bool isSameUri(const connectParams* param, const Database_Ptr& db)
@@ -871,6 +902,15 @@ template <class Database_Ptr, class ConnectParam_type>
 inline void connect(Database_Ptr db, const ConnectParam_type& connPrams, bool newConnection)
 {
 	db->connect(connPrams.uri(), newConnection);
+	if (db->stat())
+		nstable::throwError((std::_tstring(_T("Connect database ")) + connPrams.uri()).c_str(), db->stat());
+
+}
+
+template <>
+inline void connect(idatabaseManager* db,  const connectParams& connPrams, bool newConnection)
+{
+	db->connect(connPrams, newConnection);
 	if (db->stat())
 		nstable::throwError((std::_tstring(_T("Connect database ")) + connPrams.uri()).c_str(), db->stat());
 
@@ -932,7 +972,8 @@ inline void openDatabase(Database_Ptr db, const _TCHAR* uri, short schemaType = 
 template <class Database_Ptr>
 inline void connectOpen(Database_Ptr db, const connectParams& connPrams, bool newConnection)
 {
-	connect(db, connPrams, newConnection);
+	if (newConnection)
+		connect(db, connPrams, newConnection);
 	openDatabase(db, connPrams);
 }
 
@@ -1178,32 +1219,6 @@ inline void deleteRecord(table_ptr tb, const char_td keynum
 template<class T, class F>
 void for_each(T iterator, F func) {std::for_each(iterator, iterator, func);}
 
-/* databaseManager interface
-   If use some databases, implemnt a this interface and set the activeTable constructor
-   Create table by name and option from suitable database.
-
-*/
-class idatabaseManager
-{
-
-public:
-	virtual ~idatabaseManager(){};
-	virtual void connect(const connectParams& param, bool newConnection=false)=0;
-	virtual table_ptr table(const _TCHAR* name)=0;
-	virtual table_ptr table(short index)=0;
-	virtual void setOption(__int64 v)=0;
-	virtual __int64 option()=0;
-	virtual void beginTrn(short bias) = 0;
-	virtual void endTrn() = 0;
-	virtual void abortTrn() = 0;
-	virtual int enableTrn()=0;
-	virtual void beginSnapshot() = 0;
-	virtual void endSnapshot() = 0;
-	virtual short_td stat() const = 0;
-	virtual uchar_td* clientID() const =0;
-	virtual const _TCHAR* uri() const=0;
-	virtual char_td mode() const=0;
-};
 
 /** Shared pointer of idatabaseManager.  */
 typedef boost::shared_ptr<idatabaseManager> dbmanager_ptr;

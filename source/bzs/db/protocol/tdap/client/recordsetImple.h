@@ -470,7 +470,15 @@ inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
 
 inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
 {
-	(*m_rs)[row+m_rowOffset].setInvalidRecord(v);
+	if (m_joinRowMap)
+	{
+		const std::vector<int>& map = (*m_joinRowMap)[row+m_rowOffset];
+		for (int j=0;j<(int)map.size();++j)
+			(*m_rs)[map[j]].setInvalidRecord(v);
+	}else
+		(*m_rs)[row+m_rowOffset].setInvalidRecord(v);
+
+
 }
 
 template<> inline recordsetImple::iterator begin(recordsetImple& m){return m.begin();}

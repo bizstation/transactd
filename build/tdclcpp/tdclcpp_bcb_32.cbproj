@@ -63,6 +63,7 @@
 			<DllSuffix>$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<Defines>_DEBUG;$(Defines)</Defines>
 			<_TCHARMapping>char</_TCHARMapping>
 			<BCC_wiip>false</BCC_wiip>
 			<BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
@@ -87,6 +88,7 @@
 			<TASM_Debugging>None</TASM_Debugging>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_3)'!=''">
+			<Defines>_DEBUG;$(Defines)</Defines>
 			<BCC_SmartPCHCache>false</BCC_SmartPCHCache>
 			<BCC_MergeDuplicateStrings>true</BCC_MergeDuplicateStrings>
 			<BCC_MonitorThis>true</BCC_MonitorThis>

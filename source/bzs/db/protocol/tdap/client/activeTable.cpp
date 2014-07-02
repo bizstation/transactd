@@ -34,7 +34,7 @@ namespace tdap
 namespace client
 {
 
-activeTable::activeTable(idatabaseManager& mgr, const _TCHAR* tableName)
+activeTable::activeTable(idatabaseManager* mgr, const _TCHAR* tableName)
 					:m_imple(new activeTableImple(mgr, tableName))
 {
 

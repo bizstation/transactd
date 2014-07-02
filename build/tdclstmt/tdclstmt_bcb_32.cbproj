@@ -3,7 +3,7 @@
 			<ProjectGuid>{AF53F7BE-DAE2-4B4B-8D47-EF8B8253A9AF}</ProjectGuid>
 			<ProjectVersion>12.3</ProjectVersion>
 			<Base>True</Base>
-			<Config Condition="'$(Config)'==''">Debug Unicode</Config>
+			<Config Condition="'$(Config)'==''">Release Unicode</Config>
 			<Platform>Win32</Platform>
 			<AppType>Library</AppType>
 			<FrameworkType>None</FrameworkType>
@@ -24,9 +24,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<BPILibOutputDir>..\..\lib\</BPILibOutputDir>
 			<ProjectType>CppDynamicLibrary</ProjectType>
-			<LinkPackageImports>rtl.bpi</LinkPackageImports>
 			<AllPackageLibs>rtl.lib</AllPackageLibs>
-			<PackageImports></PackageImports>
 			<OutputExt>dll</OutputExt>
 			<BCC_wpch>false</BCC_wpch>
 			<BCC_wmls>false</BCC_wmls>
@@ -69,6 +67,7 @@
 			<ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
 		</PropertyGroup>
 		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DynamicRTL>false</DynamicRTL>
 			<Defines>NDEBUG;$(Defines)</Defines>
 			<TASM_Debugging>None</TASM_Debugging>
 		</PropertyGroup>

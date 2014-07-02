@@ -9,7 +9,7 @@
 			<Projects Include="tdclcpp\tdclcpp_bcb_32.cbproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="tdclstmt\tdclstmt.cbproj">
+			<Projects Include="tdclstmt\tdclstmt_bcb_32.cbproj">
 				<Dependencies/>
 			</Projects>
 			<Projects Include="test_tdcl\test_tdclcpp_bcb_32.cbproj">
@@ -25,6 +25,9 @@
 				<Dependencies/>
 			</Projects>
 			<Projects Include="ormsrcgen\ormsrcgen32.cbproj">
+				<Dependencies/>
+			</Projects>
+			<Projects Include="querystmts\querystmts.cbproj">
 				<Dependencies/>
 			</Projects>
 		</ItemGroup>
@@ -53,14 +56,14 @@
 		<Target Name="tdclcpp_bcb_32:Make">
 			<MSBuild Projects="tdclcpp\tdclcpp_bcb_32.cbproj" Targets="Make"/>
 		</Target>
-		<Target Name="tdclstmt">
-			<MSBuild Projects="tdclstmt\tdclstmt.cbproj"/>
+		<Target Name="tdclstmt_bcb_32">
+			<MSBuild Projects="tdclstmt\tdclstmt_bcb_32.cbproj"/>
 		</Target>
-		<Target Name="tdclstmt:Clean">
-			<MSBuild Projects="tdclstmt\tdclstmt.cbproj" Targets="Clean"/>
+		<Target Name="tdclstmt_bcb_32:Clean">
+			<MSBuild Projects="tdclstmt\tdclstmt_bcb_32.cbproj" Targets="Clean"/>
 		</Target>
-		<Target Name="tdclstmt:Make">
-			<MSBuild Projects="tdclstmt\tdclstmt.cbproj" Targets="Make"/>
+		<Target Name="tdclstmt_bcb_32:Make">
+			<MSBuild Projects="tdclstmt\tdclstmt_bcb_32.cbproj" Targets="Make"/>
 		</Target>
 		<Target Name="test_tdclcpp_bcb_32">
 			<MSBuild Projects="test_tdcl\test_tdclcpp_bcb_32.cbproj"/>
@@ -107,14 +110,23 @@
 		<Target Name="ormsrcgen32:Make">
 			<MSBuild Projects="ormsrcgen\ormsrcgen32.cbproj" Targets="Make"/>
 		</Target>
+		<Target Name="querystmts">
+			<MSBuild Projects="querystmts\querystmts.cbproj"/>
+		</Target>
+		<Target Name="querystmts:Clean">
+			<MSBuild Projects="querystmts\querystmts.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="querystmts:Make">
+			<MSBuild Projects="querystmts\querystmts.cbproj" Targets="Make"/>
+		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="tdclc_32;tdclcpp_bcb_32;tdclstmt;test_tdclcpp_bcb_32;bench_tdclcpp_bcb_32;bench_tdclcpp_c_bcb_32;bench_query_bcb_32;ormsrcgen32"/>
+			<CallTarget Targets="tdclc_32;tdclcpp_bcb_32;tdclstmt_bcb_32;test_tdclcpp_bcb_32;bench_tdclcpp_bcb_32;bench_tdclcpp_c_bcb_32;bench_query_bcb_32;ormsrcgen32;querystmts"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="tdclc_32:Clean;tdclcpp_bcb_32:Clean;tdclstmt:Clean;test_tdclcpp_bcb_32:Clean;bench_tdclcpp_bcb_32:Clean;bench_tdclcpp_c_bcb_32:Clean;bench_query_bcb_32:Clean;ormsrcgen32:Clean"/>
+			<CallTarget Targets="tdclc_32:Clean;tdclcpp_bcb_32:Clean;tdclstmt_bcb_32:Clean;test_tdclcpp_bcb_32:Clean;bench_tdclcpp_bcb_32:Clean;bench_tdclcpp_c_bcb_32:Clean;bench_query_bcb_32:Clean;ormsrcgen32:Clean;querystmts:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="tdclc_32:Make;tdclcpp_bcb_32:Make;tdclstmt:Make;test_tdclcpp_bcb_32:Make;bench_tdclcpp_bcb_32:Make;bench_tdclcpp_c_bcb_32:Make;bench_query_bcb_32:Make;ormsrcgen32:Make"/>
+			<CallTarget Targets="tdclc_32:Make;tdclcpp_bcb_32:Make;tdclstmt_bcb_32:Make;test_tdclcpp_bcb_32:Make;bench_tdclcpp_bcb_32:Make;bench_tdclcpp_c_bcb_32:Make;bench_query_bcb_32:Make;ormsrcgen32:Make;querystmts:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>

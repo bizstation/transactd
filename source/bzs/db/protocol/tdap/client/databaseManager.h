@@ -61,8 +61,11 @@ public:
 
 	void connect(const connectParams& param, bool newConnection=false)
 	{
+		if (!newConnection && m_db && m_db->isOpened()) return;
 		connectOpen(m_db, param, newConnection);
 	}
+
+	void addDbTableMap(const _TCHAR* name, int dbnum){};
 
 	table_ptr table(const _TCHAR* name)
 	{
@@ -83,6 +86,11 @@ public:
 		return table_ptr();
 	}
 
+	const database* db(const _TCHAR* name) const
+	{
+		return m_db;
+	}
+
 	inline void setOption(__int64 ){};
 	inline __int64 option(){return 0;};
 	inline void beginTrn(short bias){m_db->beginTrn(bias);};
@@ -93,12 +101,6 @@ public:
 	inline void endSnapshot(){m_db->endSnapshot();}
 	inline short_td stat() const {return m_db->stat();}
 	inline uchar_td* clientID() const{return m_db->clientID();}
-	inline const _TCHAR* uri() const{return m_db->uri();}
-	inline char_td mode() const
-	{
-		assert(m_db->dbDef());
-		return m_db->dbDef()->mode();
-	}
 };
 
 /** @cond INTERNAL */

@@ -29,7 +29,14 @@
 #    else
 #		define DLLLIBSTMT PACKAGE_IMPORT
 #	 endif
-#endif
+#endif //LIB_TDCLSTMT
+
+#if (defined(TRDCL_AUTOLINK) && !defined(LIB_TDCLSTMT))
+#	include "trdclcppautolink.h"
+#	define TD_STMT_LIB_NAME "tdclstmt" CPP_INTERFACE_VERSTR LIB_EXTENTION
+#	pragma comment(lib, TD_STMT_LIB_NAME)
+#endif //TRDCL_AUTOLINK
+
 
 namespace bzs
 {
@@ -57,12 +64,15 @@ class DLLLIBSTMT groupByStatement : public fieldNames, public executable
 
 	template <class Archive>
 	friend void serialize(Archive& ar, groupByStatement& q, const unsigned int version);
+	groupByStatement(const groupByStatement& r);           //no implements
+	groupByStatement& operator=(const groupByStatement& r);//no implements
 
 
 public:
 	enum eFunc{fsum, fcount, favg, fmin, fmax};
 	groupByStatement();
 	~groupByStatement();
+
 	groupFuncBase& addFunction(eFunc v, const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 	groupFuncBase& function(int index);
 	fieldNames& reset();
@@ -82,6 +92,8 @@ class DLLLIBSTMT orderByStatement : public executable
 	sortFields* m_sortFields;
 	template <class Archive>
 	friend void serialize(Archive& ar, orderByStatement& q, const unsigned int version);
+	orderByStatement(const orderByStatement& r);           //no implements
+	orderByStatement& operator=(const orderByStatement& r);//no implements
 
 public:
 	orderByStatement();
@@ -106,6 +118,8 @@ class DLLLIBSTMT readStatement : public fieldNames, public query, public executa
 	queryStatementImple* internalPtr() const;
 	template <class Archive>
 	friend void serialize(Archive& ar, readStatement& q, const unsigned int version);
+	readStatement(const readStatement& r);           //no implements
+	readStatement& operator=(const readStatement& r);//no implements
 
 public:
 	enum eReadType{opRead, opJoin, opOuterJoin};
@@ -132,6 +146,8 @@ class DLLLIBSTMT queryStatements
 	queryStatementsImple* internalPtr() const;
 	template <class Archive>
 	friend void serialize(Archive& ar, queryStatements& q, const unsigned int version);
+	queryStatements(const queryStatements& r);           //no implements
+	queryStatements& operator=(const queryStatements& r);//no implements
 
 public:
 	queryStatements(idatabaseManager& dbm);

@@ -533,17 +533,6 @@ class filter
 		memcpy(m_tb->fieldPtr(filedNum), v, fd.len);
 	}
 
-	/*inline bool setSeekValueDirect(seek& l, const std::_tstring& s, short len)
-	{
-		return l.setParam((uchar_td*)s.c_str(), len);
-			
-	}
-
-	inline bool setSeekValueDirect(seek& l, const void* v, short len)
-	{
-		return l.setParam((uchar_td*)v, len);
-	}*/
-
 	template <class vector_type>
 	bool setSeeks(const vector_type& keyValues)
 	{
@@ -558,19 +547,7 @@ class filter
 		int maxKeylen = 0;
 		for (int j=0;j<kd->segmentCount;++j)
 			maxKeylen += m_tb->tableDef()->fieldDefs[kd->segments[j].fieldNum].len + 2;
-		
-		/*if (kd->segmentCount == 1)
-		{
-			fielddef& fd = m_tb->tableDef()->fieldDefs[kd->segments[0].fieldNum];
-			for (size_t i=0;i<keyValues.size();i+= kd->segmentCount)
-			{
-				if (!setSeekValueDirect(m_seeks[i], keyValues[i], fd.len))
-					return false;
-			}
-			m_seeksMode = true;
-			m_seeksWritedCount = 0;
-			return true;
-		}*/
+
 		// alloc databuffer
 		if (m_seeksDataBuffer)
 			delete [] m_seeksDataBuffer;
@@ -678,7 +655,7 @@ class filter
 		unsigned char* p = (unsigned char*)m_tb->dataBak();
 		unsigned char* start = p;
 
- 	    m_hd.logicalCount = (ushort_td)m_logicalLimitCount;
+		m_hd.logicalCount = (ushort_td)m_logicalLimitCount;
 		if (m_ignoreFields)
 			m_ret.fieldCount = 0;
 		else

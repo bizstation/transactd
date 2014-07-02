@@ -19,34 +19,33 @@
 #pragma hdrstop
 #include "serializer.h"
 
-#if (__BCPLUSPLUS__)
-#   ifdef _WIN64
-#	    pragma comment(lib, "boost_serialization-bcb64-mt-1_50.a")
-#   else
-#		pragma comment(lib, "boost_serialization-bcb-mt-1_39.lib")
-#   endif
-#endif
-
-
-
 #pragma package(smart_init)
 #ifdef BCB_32
 #pragma option push
 #pragma option -Vbr-
+#pragma option -vi-
 #endif
-
-
-
 
 #include <bzs/db/protocol/tdap/client/groupQuery.h>
 #include <bzs/db/protocol/tdap/client/activeTable.h>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/shared_ptr.hpp>
-#include <boost/serialization/utility.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #include <fstream>
+
+#if (__BCPLUSPLUS__)
+#   ifdef _WIN64
+#	    pragma comment(lib, "boost_serialization-bcb64-mt-1_50.a")
+#   else
+#       ifdef _RTLDLL
+#			pragma comment(lib, "boost_serialization-bcb-mt-1_39.lib")
+#   	else
+#			pragma comment(lib, "libboost_serialization-bcb-mt-s-1_39.lib")
+#	   	endif
+#   endif
+#endif
 
 using namespace boost::archive;
 using namespace boost::serialization;
@@ -74,6 +73,41 @@ namespace tdap
 namespace client
 {
 
+void toU8(std::_tstring& src, std::string& dst)
+{
+#ifdef _UNICODE
+	char buf[2048];
+	WideCharToMultiByte(CP_UTF8, 0, src.c_str(), -1, buf, 1024, NULL, NULL);
+	dst = buf;
+	
+#else
+	dst = src;
+#endif
+}
+
+void fromU8(std::string& src, std::_tstring& dst)
+{
+#ifdef _UNICODE
+	wchar_t buf[2048];
+	MultiByteToWideChar(CP_UTF8, 0, src.c_str(), -1, buf, 1024);
+	dst = buf;
+#else
+	dst = src;
+#endif
+
+}
+
+template <class Archive>
+void serialize_string(Archive& ar, const char* name, std::_tstring& v)
+{
+	std::string s;
+	if (!Archive::is_loading::value)
+		toU8(v, s);
+	ar & boost::serialization::make_nvp(name , s);
+	if (Archive::is_loading::value)
+		fromU8(s, v);
+}
+
 template <class Archive>
 void serialize(Archive& , executable& , const unsigned int )
 {
@@ -83,7 +117,8 @@ void serialize(Archive& , executable& , const unsigned int )
 template <class Archive>
 void serialize(Archive& ar, sortField& q, const unsigned int )
 {
-	ar & boost::serialization::make_nvp("name" , q.name);
+	
+	serialize_string(ar, "name" , q.name);
 	ar & boost::serialization::make_nvp("asc" , q.asc);
 
 }
@@ -157,8 +192,8 @@ template<class Archive>
 void save(Archive& ar,  const queryBase& q,  const unsigned int /*version*/)
 {
 	std::_tstring s = q.toString();
-
-	ar & make_nvp("queryString", s);
+	
+	serialize_string(ar, "queryString", s);
 	int v = q.getReject();
 	ar & make_nvp("reject", v);
 	v = q.getLimit();
@@ -178,7 +213,7 @@ void load(Archive& ar, queryBase& q,  const unsigned int /*version*/)
 	int v;
 
 	q.reset();
-	ar & make_nvp("queryString", s);
+	serialize_string(ar, "queryString", s);
 	q.queryString(s.c_str());
 
 	ar & make_nvp("reject", v);
@@ -207,13 +242,13 @@ void serialize(Archive& ar, fieldNames& q, const unsigned int /*version*/)
 	{
 		if (Archive::is_loading::value)
 		{
-			ar & boost::serialization::make_nvp("value", s);
+			serialize_string(ar, "value", s);
 			q.addValue(s.c_str());
 		}
 		else
 		{
 			s = q.getValue(i);
-			ar & boost::serialization::make_nvp("value", s);
+			serialize_string(ar, "value", s);
 		}
 	}
 }
@@ -241,9 +276,9 @@ void serialize(Archive& ar, groupFuncBase& q, const unsigned int /*version*/)
 	if (Archive::is_loading::value)
 	{
 
-		ar & make_nvp("targetName", s);
+		serialize_string(ar, "targetName", s);
 		q.setTargetName(s.c_str());
-		ar & make_nvp("resultName", s);
+		serialize_string(ar, "resultName", s);
 		q.setResultName(s.c_str());
 
 	}else
@@ -252,12 +287,12 @@ void serialize(Archive& ar, groupFuncBase& q, const unsigned int /*version*/)
 			s = q.targetName();
 		else
 			s = _T("");
-		ar & make_nvp("targetName", s);
+		serialize_string(ar, "targetName", s);
 		if (q.resultName())
 			s = q.resultName();
 		else
 			s = _T("");
-		ar & make_nvp("resultName", s);
+		serialize_string(ar, "resultName", s);
 	}
 }
 
@@ -296,6 +331,30 @@ void serialize(Archive& ar, groupQuery& q, const unsigned int /*version*/)
 {
 	fieldNames& v = const_cast<fieldNames&>(q.getKeyFields());
 	ar & make_nvp("keyFields", v);
+}
+
+struct aliasPair
+{
+	std::_tstring first;
+	std::_tstring second;
+	aliasPair(){}
+	aliasPair(const _TCHAR* f, const _TCHAR* s):first(f),second(s){}
+};
+
+typedef aliasPair alias_type;
+
+template <class Archive>
+void serialize(Archive& ar, alias_type& q, const unsigned int /*version*/)
+{
+	std::_tstring s = q.first;
+	std::_tstring s2 = q.second;
+	serialize_string(ar, "first", s);
+	serialize_string(ar, "second", s2);
+	if (Archive::is_loading::value)
+	{
+		q.first = s;
+		q.second = s2;
+	}
 }
 
 //---------------------------------------------------------------------------
@@ -444,23 +503,9 @@ private:
 	friend class boost::serialization::access;
 	template <class Archive>
 	void serialize(Archive& ar, const unsigned int version);
-		/*{
-		ar & make_nvp("id", id);
-		ar & make_nvp("title", title);
-		ar & make_nvp("description", description);
-		ar & make_nvp("items", statements);
-
-		if (Archive::is_loading::value)
-		{
-			for (int i=0;i<statements.size();++i)
-			{
-				readStatement* p = dynamic_cast<readStatement*>(statements[i]);
-				if (p)
-					p->m_impl->parent = this;
-			}
-		}
-	}*/
 };
+
+
 
 //---------------------------------------------------------------------------
 //   struct queryStatementImple
@@ -472,10 +517,10 @@ struct queryStatementImple
 	std::_tstring table;
 	int option;
 	fieldNames* keyFields;
-	query* query;
+	client::query* query;
 	readStatement::eReadType readType;
 	short index;
-	typedef std::pair<std::_tstring, std::_tstring> alias_type;
+	
 	std::vector<alias_type> aliases;
 
 	queryStatementImple(){};
@@ -485,8 +530,19 @@ struct queryStatementImple
 		aliases.push_back(alias_type(src, dst));
 	}
 
+
+	inline const client::database* getDatabase(idatabaseManager* dbm)
+	{
+		return dbm->db(table.c_str());
+	}
+
+	inline const client::database* getDatabase(client::database* db)
+	{
+		return db;
+	}
+
 	template <class Database>
-	inline void execute(recordset& rs, Database& db)
+	inline void execute(recordset& rs, Database db)
 	{
 
 		const _TCHAR* keys[8]={NULL};
@@ -507,11 +563,14 @@ struct queryStatementImple
 			tq = &q;
 		}
 
-		connectParams p(database.c_str());
-
+		if (!getDatabase(db)->isOpened())
+		{
+			connectParams p(database.c_str());
+			connect(db, p, false);
+		}
 		activeTable at(db, table.c_str());
 		at.index(index).option(option);
-		for (int i=0;i<aliases.size();++i)
+		for (int i=0;i<(int)aliases.size();++i)
 			at.alias(aliases[i].first.c_str(), aliases[i].second.c_str());
 		if (readType == readStatement::opRead)
 		{
@@ -530,10 +589,28 @@ private:
 	void serialize(Archive& ar, const unsigned int version)
 	{
 		ar & make_nvp("readType", readType);
-		ar & make_nvp("database", database);
-		ar & make_nvp("table", table);
+
+		if (!Archive::is_loading::value)
+		{
+			if (parent->dbm && getDatabase(parent->dbm)->isOpened()) database = parent->dbm->db(table.c_str())->uri();
+			if (parent->db && getDatabase(parent->db)->isOpened()) database = parent->db->uri();
+		}
+		serialize_string(ar, "database", database);
+		serialize_string(ar, "table", table);
 		ar & make_nvp("index", index);
-		ar & make_nvp("aliases", aliases);
+		//ar & make_nvp("aliases", aliases);
+
+		int count = (int)aliases.size();
+		ar & boost::serialization::make_nvp("alias_count" , count);
+		alias_type a;
+		for (int i=0;i<count;i++)
+		{
+			if (!Archive::is_loading::value)
+				 a = aliases[i];
+			ar & make_nvp("alias", a);
+			if (Archive::is_loading::value)
+				aliases.push_back(a);
+		}
 	}
 };
 
@@ -546,13 +623,12 @@ template <class Archive>
 void queryStatementsImple::serialize(Archive& ar, const unsigned int version)
 {
 	ar & make_nvp("id", id);
-	ar & make_nvp("title", title);
-	ar & make_nvp("description", description);
+	serialize_string(ar, "title", title);
+	serialize_string(ar, "description", description);
 	ar & make_nvp("items", statements);
-
 	if (Archive::is_loading::value)
 	{
-		for (int i=0;i<statements.size();++i)
+		for (int i=0;i<(int)statements.size();++i)
 		{
 			readStatement* p = dynamic_cast<readStatement*>(statements[i]);
 			if (p)
@@ -644,7 +720,7 @@ readStatement& readStatement::alias(const _TCHAR* src, const _TCHAR* dst)
 void readStatement::execute(recordset& rs)
 {
 	if (m_impl->parent->dbm)
-		m_impl->execute(rs, *m_impl->parent->dbm);
+		m_impl->execute(rs, m_impl->parent->dbm);
 	else if (m_impl->parent->db)
 		m_impl->execute(rs, m_impl->parent->db);
 
