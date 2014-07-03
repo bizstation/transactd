@@ -231,10 +231,10 @@ public:
 
 	explicit activeTableImple(idatabaseManager* mgr, const _TCHAR* tableName)
 		:baseClass_type(mgr, tableName){};
-	explicit activeTableImple(dbmanager_ptr& mgr, const _TCHAR* tableName)
-		:baseClass_type(mgr, tableName){};
+
 	explicit activeTableImple(database_ptr& db, const _TCHAR* tableName)
 		:baseClass_type(db, tableName){};
+
 	explicit activeTableImple(database* db, const _TCHAR* tableName)
 		:baseClass_type(db, tableName){};
 

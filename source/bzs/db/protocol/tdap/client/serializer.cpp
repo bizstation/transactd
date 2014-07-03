@@ -77,7 +77,7 @@ void toU8(std::_tstring& src, std::string& dst)
 {
 #ifdef _UNICODE
 	char buf[2048];
-	WideCharToMultiByte(CP_UTF8, 0, src.c_str(), -1, buf, 1024, NULL, NULL);
+	WideCharToMultiByte(CP_UTF8, 0, src.c_str(), -1, buf, 2048, NULL, NULL);
 	dst = buf;
 	
 #else
@@ -89,7 +89,7 @@ void fromU8(std::string& src, std::_tstring& dst)
 {
 #ifdef _UNICODE
 	wchar_t buf[2048];
-	MultiByteToWideChar(CP_UTF8, 0, src.c_str(), -1, buf, 1024);
+	MultiByteToWideChar(CP_UTF8, 0, src.c_str(), -1, buf, 2048);
 	dst = buf;
 #else
 	dst = src;
@@ -520,10 +520,11 @@ struct queryStatementImple
 	client::query* query;
 	readStatement::eReadType readType;
 	short index;
-	
+	int dbIndex;
+
 	std::vector<alias_type> aliases;
 
-	queryStatementImple(){};
+	queryStatementImple():dbIndex(-1){};
 
 	void alias(const _TCHAR* src, const _TCHAR* dst)
 	{
@@ -531,14 +532,18 @@ struct queryStatementImple
 	}
 
 
-	inline const client::database* getDatabase(idatabaseManager* dbm)
+	inline bool isOpened(idatabaseManager* dbm, const connectParams p)
 	{
-		return dbm->db(table.c_str());
+		dbIndex = dbm->findDbIndex(p);
+		if (dbIndex==-1)
+			return false;
+		dbm->setCurDb(dbIndex);
+		return dbm->db()->isOpened();
 	}
 
-	inline const client::database* getDatabase(client::database* db)
+	inline bool isOpened(client::database* db, const connectParams p)
 	{
-		return db;
+		return db->isOpened();
 	}
 
 	template <class Database>
@@ -563,11 +568,10 @@ struct queryStatementImple
 			tq = &q;
 		}
 
-		if (!getDatabase(db)->isOpened())
-		{
-			connectParams p(database.c_str());
-			connect(db, p, false);
-		}
+		connectParams p(database.c_str());
+		if (!isOpened(db, p))      //Change current db in dbm
+			connect(db, p, false); //Change current db in dbm
+
 		activeTable at(db, table.c_str());
 		at.index(index).option(option);
 		for (int i=0;i<(int)aliases.size();++i)
@@ -590,10 +594,16 @@ private:
 	{
 		ar & make_nvp("readType", readType);
 
-		if (!Archive::is_loading::value)
+		if (!Archive::is_loading::value && (database == _T("")))
 		{
-			if (parent->dbm && getDatabase(parent->dbm)->isOpened()) database = parent->dbm->db(table.c_str())->uri();
-			if (parent->db && getDatabase(parent->db)->isOpened()) database = parent->db->uri();
+			if (parent->dbm && (dbIndex != -1))
+			{
+				parent->dbm->setCurDb(dbIndex);
+				if (parent->dbm->db()->isOpened())
+					database = parent->dbm->db()->uri();
+			}
+			if (parent->db && parent->db->isOpened())
+				 database = parent->db->uri();
 		}
 		serialize_string(ar, "database", database);
 		serialize_string(ar, "table", table);

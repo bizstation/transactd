@@ -56,6 +56,8 @@ public:
 	static bool report(boost::function<bool()> func, const char* name);
 	static void report2(boost::function<void()> func, const char* name);
 	static void start();
+	static int  stop();
+	static void showTimes(int result, const char* name);
 	static void showTimeSec(bool result, const char* name);
 
 };

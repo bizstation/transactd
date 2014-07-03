@@ -35,7 +35,7 @@ namespace client
 
 /* Single database inplemantation idatabaseManager
 */
-
+/*
 class databaseManager : public idatabaseManager, private boost::noncopyable
 {
 	database_ptr m_dbPtr;
@@ -59,13 +59,12 @@ public:
 
 	databaseManager(database* db):m_db(db){};
 
-	void connect(const connectParams& param, bool newConnection=false)
+	int connect(const connectParams& param, bool newConnection=false)
 	{
-		if (!newConnection && m_db && m_db->isOpened()) return;
+		if (!newConnection && m_db && m_db->isOpened()) return 0;
 		connectOpen(m_db, param, newConnection);
+		return 0;
 	}
-
-	void addDbTableMap(const _TCHAR* name, int dbnum){};
 
 	table_ptr table(const _TCHAR* name)
 	{
@@ -78,18 +77,16 @@ public:
 		return t;
 	}
 
-	table_ptr table(short index)
-	{
-		tabledef* td = m_db->dbDef()->tableDefs(index);
-		if (td)
-			return table(td->tableName());
-		return table_ptr();
-	}
-
-	const database* db(const _TCHAR* name) const
+	database* db() const
 	{
 		return m_db;
 	}
+
+	int findDbIndex(const connectParams& param)const
+	{
+		return 0;
+	}
+	void setCurDb(int v){};
 
 	inline void setOption(__int64 ){};
 	inline __int64 option(){return 0;};
@@ -102,7 +99,124 @@ public:
 	inline short_td stat() const {return m_db->stat();}
 	inline uchar_td* clientID() const{return m_db->clientID();}
 };
+*/
 
+/* multi database inplemantation idatabaseManager
+*/
+inline void releaseDatabaseDummy(database* p){}
+
+class databaseManager : public idatabaseManager, private boost::noncopyable
+{
+	std::vector<database_ptr> m_dbs;
+	database* m_db;
+
+	std::vector<table_ptr> m_tables;
+	int findTable(const _TCHAR* name)
+	{
+		for (int i=0;i<(int)m_tables.size();++i)
+			if (_tcscmp(m_tables[i]->tableDef()->tableName(), name)==0)
+				return i;
+		return -1;
+	}
+
+public:
+	databaseManager()
+	{
+		database_ptr p( createDatadaseObject());
+		addDb(p);
+	}
+
+	databaseManager(database* db)
+	{
+		database_ptr d(db, releaseDatabaseDummy);
+		addDb(d);
+	}
+
+	databaseManager(database_ptr& db)
+	{
+		addDb(db);
+	}
+
+	//change currnt
+	database_ptr& addDb(database_ptr& db)
+	{
+		m_dbs.push_back(db);
+		m_db = db.get();
+		return db;
+	}
+
+	//change currnt
+	int connect(const connectParams& param, bool newConnection=false)
+	{
+		m_db = NULL;
+		int n = findDbIndex(param);
+		if (n != -1)
+			m_db = m_dbs[n].get();
+
+		if ((m_db==NULL) && !m_dbs[0]->isOpened())
+		{
+			m_db = m_dbs[0].get();
+			n = 0;
+			newConnection = false;
+		}
+		if (newConnection || m_db==NULL)
+		{
+			database_ptr p = createDatadaseObject();
+			addDb(p);
+			m_db = p.get();
+			n = m_dbs.size()-1;
+		}
+		if (m_db->isOpened()) return n;
+		connectOpen(m_db, param, newConnection);
+		return n;
+	}
+
+
+	table_ptr table(const _TCHAR* name)
+	{
+		int index =  findTable(name);
+		if (index !=-1)
+			return  m_tables[index];
+		table_ptr t = openTable(m_db, name);
+		if (t)
+			m_tables.push_back(t);
+		return t;
+	}
+
+
+	database* db() const
+	{
+		return m_db;
+	}
+
+	int findDbIndex(const connectParams& param)const
+	{
+		for (int i=0;i<(int)m_dbs.size();++i)
+		if (m_dbs[i] && m_dbs[i]->isOpened()
+					 && (_tcscmp(m_dbs[i]->uri(), param.uri())==0))
+			return i;
+
+		return -1;
+	}
+
+	void setCurDb(int v)
+	{
+		assert((int)m_dbs.size() > v);
+		m_db = m_dbs[v].get();
+	}
+
+
+	inline void setOption(__int64 ){};
+	inline __int64 option(){return 0;};
+	inline void beginTrn(short bias){m_db->beginTrn(bias);};
+	inline void endTrn(){m_db->endTrn();}
+	inline void abortTrn(){m_db->abortTrn();}
+	inline int enableTrn(){return m_db->enableTrn();}
+	inline void beginSnapshot(){m_db->beginSnapshot();}
+	inline void endSnapshot(){m_db->endSnapshot();}
+	inline short_td stat() const {return m_db->stat();}
+	inline uchar_td* clientID() const{return m_db->clientID();}
+};
 /** @cond INTERNAL */
 
 template<> inline dbmanager_ptr createDatabaseForConnectionPool(dbmanager_ptr& c)

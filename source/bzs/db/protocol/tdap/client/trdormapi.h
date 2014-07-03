@@ -22,7 +22,7 @@
 #include "fieldNameAlias.h"
 #include "memRecord.h"
 #include "groupComp.h"
-#include "databaseManager.h"
+//#include "databaseManager.h"
 #include <boost/shared_array.hpp>
 #include <vector>
 
@@ -317,11 +317,6 @@ class activeObject : boost::noncopyable
 		m_tb = mgr->table(name);
 	}
 
-	void init(dbmanager_ptr& mgr, const _TCHAR* name)
-	{
-		m_tb = mgr->table(name);
-	}
-
 	void init(database_ptr& db, const _TCHAR* name)
 	{
 		m_tb = openTable(db, name);
@@ -374,7 +369,7 @@ public:
 					initFdi(m_fdi, m_tb.get());
 			}
 
-		explicit activeObject(dbmanager_ptr& mgr, const _TCHAR* tableName)
+		/*explicit activeObject(dbmanager_ptr& mgr, const _TCHAR* tableName)
 			:m_option(0)
 			,m_fdi(createFdi(m_fdi))
 			,m_map(*m_fdi)
@@ -383,7 +378,7 @@ public:
 				if (table() && m_fdi)
 					initFdi(m_fdi, m_tb.get());
 			}
-
+		 */
 
 	explicit activeObject(database_ptr& db, const _TCHAR* tableName)
 			:m_option(0)

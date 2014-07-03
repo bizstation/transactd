@@ -58,6 +58,30 @@ void benchmark::showTimeSec(bool result, const char* name)
 	else
 		printf("Erorr %s\n", name);
 }
+
+int  benchmark::stop()
+{
+	#ifdef BOOST_CPUTIMER_ENABLE
+	boost::timer::cpu_times elapsed = t.elapsed();
+	return (int)(elapsed.wall/1000000);
+	#else
+		#ifdef BOOST_HIGH_RESOL_TIMER_ENABLE
+			boost_timer::time_point p = boost_timer::now();
+			boost::chrono::nanoseconds ns  = p - m_start;
+			return (int)(ns.count()/1000000;
+		#else
+			return  (int)(t.elapsed()*1000);
+		#endif
+	#endif
+}
+
+void benchmark::showTimes(int result, const char* name)
+{
+	printf("------------------------------\n");
+	printf("%s%.4f(sec)\n", name, ((double)result)/1000 );
+}
+
+
 bool benchmark::report(boost::function<bool()> func, const char* name)
 {
 	start();

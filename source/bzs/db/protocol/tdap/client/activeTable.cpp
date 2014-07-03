@@ -40,12 +40,6 @@ activeTable::activeTable(idatabaseManager* mgr, const _TCHAR* tableName)
 
 }
 
-activeTable::activeTable(dbmanager_ptr& mgr, const _TCHAR* tableName)
-					:m_imple(new activeTableImple(mgr, tableName))
-{
-
-}
-
 activeTable::activeTable(database_ptr& db, const _TCHAR* tableName)
 					:m_imple(new activeTableImple(db, tableName))
 {
