@@ -35,7 +35,7 @@ namespace client
 
 /* Single database inplemantation idatabaseManager
 */
-/*
+
 class databaseManager : public idatabaseManager, private boost::noncopyable
 {
 	database_ptr m_dbPtr;
@@ -59,11 +59,11 @@ public:
 
 	databaseManager(database* db):m_db(db){};
 
-	int connect(const connectParams& param, bool newConnection=false)
+	void connect(const connectParams& param, bool newConnection=false)
 	{
-		if (!newConnection && m_db && m_db->isOpened()) return 0;
+		if (!newConnection && m_db && m_db->isOpened()) return ;
 		connectOpen(m_db, param, newConnection);
-		return 0;
+
 	}
 
 	table_ptr table(const _TCHAR* name)
@@ -77,16 +77,15 @@ public:
 		return t;
 	}
 
-	database* db() const
+	inline database* db() const{return m_db;}
+	//inline int findDbIndex(const connectParams& param)const{return 0;}
+	//inline void setCurDb(int v){};
+	inline void use(const connectParams* param=NULL)
 	{
-		return m_db;
+		if (param)
+			connect(*param, false);
 	}
-
-	int findDbIndex(const connectParams& param)const
-	{
-		return 0;
-	}
-	void setCurDb(int v){};
+	inline void unUse(){};
 
 	inline void setOption(__int64 ){};
 	inline __int64 option(){return 0;};
@@ -96,16 +95,20 @@ public:
 	inline int enableTrn(){return m_db->enableTrn();}
 	inline void beginSnapshot(){m_db->beginSnapshot();}
 	inline void endSnapshot(){m_db->endSnapshot();}
+	inline const _TCHAR* uri() const{return m_db->uri();}
+	inline char_td mode() const {return m_db->mode();}
+	inline bool isOpened() const{return m_db->isOpened();}
+
 	inline short_td stat() const {return m_db->stat();}
 	inline uchar_td* clientID() const{return m_db->clientID();}
 };
-*/
 
-/* multi database inplemantation idatabaseManager
+
+/* multi databases and a single thread inplemantation idatabaseManager
 */
 inline void releaseDatabaseDummy(database* p){}
 
-class databaseManager : public idatabaseManager, private boost::noncopyable
+class disbDbManager : public idatabaseManager, private boost::noncopyable
 {
 	std::vector<database_ptr> m_dbs;
 	database* m_db;
@@ -119,20 +122,28 @@ class databaseManager : public idatabaseManager, private boost::noncopyable
 		return -1;
 	}
 
+	int findDbIndex(const connectParams* param)const
+	{
+		for (int i=0;i<(int)m_dbs.size();++i)
+			if (isSameUri(param, m_dbs[i]))
+				return i;
+		return -1;
+	}
+
 public:
-	databaseManager()
+	disbDbManager()
 	{
 		database_ptr p( createDatadaseObject());
 		addDb(p);
 	}
 
-	databaseManager(database* db)
+	disbDbManager(database* db)
 	{
 		database_ptr d(db, releaseDatabaseDummy);
 		addDb(d);
 	}
 
-	databaseManager(database_ptr& db)
+	disbDbManager(database_ptr& db)
 	{
 		addDb(db);
 	}
@@ -146,17 +157,16 @@ public:
 	}
 
 	//change currnt
-	int connect(const connectParams& param, bool newConnection=false)
+	void connect(const connectParams& param, bool newConnection=false)
 	{
 		m_db = NULL;
-		int n = findDbIndex(param);
+		int n = findDbIndex(&param);
 		if (n != -1)
 			m_db = m_dbs[n].get();
 
 		if ((m_db==NULL) && !m_dbs[0]->isOpened())
 		{
 			m_db = m_dbs[0].get();
-			n = 0;
 			newConnection = false;
 		}
 		if (newConnection || m_db==NULL)
@@ -164,11 +174,11 @@ public:
 			database_ptr p = createDatadaseObject();
 			addDb(p);
 			m_db = p.get();
-			n = m_dbs.size()-1;
+
 		}
-		if (m_db->isOpened()) return n;
+		if (m_db->isOpened()) return ;
 		connectOpen(m_db, param, newConnection);
-		return n;
+
 	}
 
 
@@ -189,22 +199,27 @@ public:
 		return m_db;
 	}
 
-	int findDbIndex(const connectParams& param)const
+
+	inline void use(const connectParams* param=NULL)
 	{
-		for (int i=0;i<(int)m_dbs.size();++i)
-		if (m_dbs[i] && m_dbs[i]->isOpened()
-					 && (_tcscmp(m_dbs[i]->uri(), param.uri())==0))
-			return i;
+		if (param)
+		{
+			int index = findDbIndex(param);
+			if (index == -1)
+			{
+				connectOpen(m_db, *param, false);
+				index = m_dbs.size()-1;
+			}
+			m_db = m_dbs[index].get();
+		}else
+			m_db = m_dbs[0].get();
 
-		return -1;
 	}
+	inline void unUse(){};
 
-	void setCurDb(int v)
-	{
-		assert((int)m_dbs.size() > v);
-		m_db = m_dbs[v].get();
-	}
-
+	inline const _TCHAR* uri() const{return m_db->uri();}
+	inline char_td mode() const {return m_db->mode();}
+	inline bool isOpened() const{return m_db->isOpened();}
 
 	inline void setOption(__int64 ){};
 	inline __int64 option(){return 0;};

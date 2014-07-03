@@ -326,11 +326,13 @@ class idatabaseManager
 
 public:
 	virtual ~idatabaseManager(){};
-	virtual int connect(const connectParams& param, bool newConnection=false)=0;
+	virtual void connect(const connectParams& param, bool newConnection=false)=0;
 	virtual table_ptr table(const _TCHAR* name)=0;
 	virtual database* db()const=0;
-	virtual int findDbIndex(const connectParams& param)const=0;
-	virtual void setCurDb(int v)=0;
+	//virtual int findDbIndex(const connectParams& param)const=0;
+	//virtual void setCurDb(int v)=0;
+	virtual void use(const connectParams* param=NULL) = 0;
+	virtual void unUse() = 0;
 	virtual void setOption(__int64 v)=0;
 	virtual __int64 option()=0;
 	virtual void beginTrn(short bias) = 0;
@@ -339,6 +341,9 @@ public:
 	virtual int enableTrn()=0;
 	virtual void beginSnapshot() = 0;
 	virtual void endSnapshot() = 0;
+	virtual const _TCHAR* uri() const=0;
+	virtual char_td mode() const=0;
+	virtual bool isOpened() const=0;
 	virtual short_td stat() const = 0;
 	virtual uchar_td* clientID() const =0;
 };
@@ -884,7 +889,9 @@ inline findRvIterator getFindIterator(indexRvIterator it, const queryBase& q
 template <class Database_Ptr>
 bool isSameUri(const connectParams* param, const Database_Ptr& db)
 {
-	return (_tcsicmp(param->uri(), db->uri())==0)
+	return  db
+			&& db->isOpened()
+			&& (_tcsicmp(param->uri(), db->uri())==0)
 			&& (param->mode() == db->mode());
 }
 

@@ -59,7 +59,7 @@ public:
 	{
 		use(param);
 	}
-	
+
 	inline ~pooledDbManager()
 	{
 		if (m_inUse)
@@ -71,7 +71,7 @@ public:
 		m_db = cpool.get(param);
 		m_inUse = true;
 	}
-	
+
 	inline void unUse()
 	{
 		m_db.reset();
@@ -81,12 +81,22 @@ public:
 
 	inline void connect(const connectParams& param, bool newConnection=false)
 	{
-		m_db->connect(param, newConnection);
+		use(&param);
 	}
 
 	inline table_ptr table(const _TCHAR* name){return m_db->table(name);}
 
-	inline table_ptr table(short index){return m_db->table(index);}
+	inline database* db()const {return m_db->db();}
+
+	//inline int findDbIndex(const connectParams& param)const{return m_db->findDbIndex(param);}
+
+	//inline void setCurDb(int v){m_db->setCurDb(v);}
+
+	inline const _TCHAR* uri() const{return m_db->uri();}
+
+	inline char_td mode() const{return m_db->mode();}
+
+	inline bool isOpened() const{return m_db->isOpened();}
 
 	inline void setOption(__int64 v){m_db->setOption(v);};
 
@@ -107,10 +117,6 @@ public:
 	inline short_td stat() const {return m_db->stat();}
 
 	inline uchar_td* clientID() const{return m_db->clientID();}
-
-	inline const _TCHAR* uri() const{return m_db->uri();}
-
-	inline char_td mode() const{return m_db->mode();}
 
 	inline static void setMaxConnections(int maxWorkerNum){cpool.setMaxConnections(maxWorkerNum);};
 	inline static void reserve(size_t size, const connectParams& param){cpool.reserve(size, param);}

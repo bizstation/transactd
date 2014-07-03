@@ -135,9 +135,9 @@ public:
 		#endif//USE_CONNECTION_POOL 
 		if (m_functionNumber == TRD_QUERY)
 		{
-			m_atu.reset(new activeTable(*m_db, _T("user")));
-			m_atg.reset(new activeTable(*m_db, _T("groups")));
-			m_ate.reset(new activeTable(*m_db, _T("extention")));
+			m_atu.reset(new activeTable(m_db, _T("user")));
+			m_atg.reset(new activeTable(m_db, _T("groups")));
+			m_ate.reset(new activeTable(m_db, _T("extention")));
 			
 			TCHAR tmp[30];
 			m_atu->alias(name_field_str(tmp), _T("name"));

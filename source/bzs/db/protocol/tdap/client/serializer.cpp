@@ -520,11 +520,11 @@ struct queryStatementImple
 	client::query* query;
 	readStatement::eReadType readType;
 	short index;
-	int dbIndex;
+	//int dbIndex;
 
 	std::vector<alias_type> aliases;
 
-	queryStatementImple():dbIndex(-1){};
+	queryStatementImple(){};
 
 	void alias(const _TCHAR* src, const _TCHAR* dst)
 	{
@@ -532,18 +532,19 @@ struct queryStatementImple
 	}
 
 
-	inline bool isOpened(idatabaseManager* dbm, const connectParams p)
+	inline void use(idatabaseManager* dbm, const connectParams p)
 	{
-		dbIndex = dbm->findDbIndex(p);
+		/*dbIndex = dbm->findDbIndex(p);
 		if (dbIndex==-1)
-			return false;
-		dbm->setCurDb(dbIndex);
-		return dbm->db()->isOpened();
+			return false;*/
+		dbm->use(&p);
+		//return dbm->db()->isOpened();
 	}
 
-	inline bool isOpened(client::database* db, const connectParams p)
+	inline void use(client::database* db, const connectParams p)
 	{
-		return db->isOpened();
+		if ( db && db->isOpened()) return ;
+		connectOpen(db, p, false);
 	}
 
 	template <class Database>
@@ -569,8 +570,10 @@ struct queryStatementImple
 		}
 
 		connectParams p(database.c_str());
-		if (!isOpened(db, p))      //Change current db in dbm
+		use(db, p);
+		/*if (!isOpened(db, p))      //Change current db in dbm
 			connect(db, p, false); //Change current db in dbm
+		*/
 
 		activeTable at(db, table.c_str());
 		at.index(index).option(option);
@@ -594,9 +597,9 @@ private:
 	{
 		ar & make_nvp("readType", readType);
 
-		if (!Archive::is_loading::value && (database == _T("")))
+		/*if (!Archive::is_loading::value && (database == _T("")))
 		{
-			if (parent->dbm && (dbIndex != -1))
+			if (parent->dbm && parent->dbm->isOpened())
 			{
 				parent->dbm->setCurDb(dbIndex);
 				if (parent->dbm->db()->isOpened())
@@ -604,7 +607,7 @@ private:
 			}
 			if (parent->db && parent->db->isOpened())
 				 database = parent->db->uri();
-		}
+		}*/
 		serialize_string(ar, "database", database);
 		serialize_string(ar, "table", table);
 		ar & make_nvp("index", index);

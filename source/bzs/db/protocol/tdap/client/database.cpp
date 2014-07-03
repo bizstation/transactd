@@ -127,6 +127,12 @@ void database::setLockReadOnly(bool v) {m_impl->lockReadOnly = v;}
 
 bool database::isOpened() const {return m_impl->isOpened;}
 
+char_td database::mode() const
+{
+	assert(m_impl->dbDef);
+	return m_impl->dbDef->mode();
+}
+
 void database::create(const _TCHAR* fullpath, short type)
 {
 	if (!m_impl->dbDef)

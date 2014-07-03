@@ -109,6 +109,7 @@ public:
 	_TCHAR* getTableUri(_TCHAR* buf, short fileNum);
 	void getBtrVersion(btrVersions* versions);
 	bool isOpened() const ;
+	char_td mode() const;
 	virtual int defaultAutoIncSpace() const {return 0;};
 	static database* create();			
 	/* For C++ direct only. don't use by wrapper class for COM or SWIG 
