@@ -119,7 +119,7 @@ public:
 		#else
 			try
 			{
-				m_db = createDatadaseObject();
+				m_db = createDatabaseObject();
 				connectOpen(m_db, m_parmas, true); 
 				const _TCHAR* tbName = (m_functionNumber == TRD_READ_ONE) ? _T("user"): _T("cache");
 				m_tb = openTable(m_db, tbName);

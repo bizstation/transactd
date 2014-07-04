@@ -899,7 +899,7 @@ inline void releaseDatabase(database* db) {database::destroy(db);}
 
 inline void releaseTable(table* p) {if (p) p->release();}
 
-inline database_ptr createDatadaseObject()
+inline database_ptr createDatabaseObject()
 {
 	database_ptr p(database::create(), releaseDatabase);
 	return p;
@@ -1235,7 +1235,7 @@ template <class T> inline T createDatabaseForConnectionPool(T& p);
 /** @cond INTERNAL */
 template<> inline database_ptr createDatabaseForConnectionPool(database_ptr& p)
 {
-	return createDatadaseObject();
+	return createDatabaseObject();
 }
 /** @endcond */
 

@@ -77,7 +77,7 @@ void execute(recordset& rs, activeTable& atu, activeTable& atg, activeTable& ate
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
-	database_ptr db = createDatadaseObject();
+	database_ptr db = createDatabaseObject();
 	try
 	{
 		connectParams param(_T("tdap"), _T("localhost"), _T("querytest"), _T("test.bdf"));

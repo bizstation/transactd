@@ -292,7 +292,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	try
 	{
-		database_ptr db = createDatadaseObject();
+		database_ptr db = createDatabaseObject();
 		connectParams param(argv[1]);
 
 		if (!db->open(param.uri(), param.type(), param.mode()))

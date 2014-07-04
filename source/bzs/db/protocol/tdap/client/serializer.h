@@ -136,6 +136,11 @@ public:
 	eReadType getReadType() const;
 	readStatement& readType(eReadType v);
 	readStatement& alias(const _TCHAR* src, const _TCHAR* dst);
+	readStatement& reset();
+	int aliasCount() const;
+	const _TCHAR* getAliasFirst(int index) const;
+	const _TCHAR* getAliasSecond(int index) const;
+
 	void execute(recordset& rs);
 
 };

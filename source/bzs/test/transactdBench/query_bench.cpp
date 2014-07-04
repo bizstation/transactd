@@ -106,7 +106,7 @@ bool btest(recordset* rsp, activeTable* atup, activeTable* atgp, activeTable* at
 int _tmain(int argc, _TCHAR* argv[])
 {
 	std::locale::global(std::locale("japanese"));
-	database_ptr db = createDatadaseObject();
+	database_ptr db = createDatabaseObject();
 	try
 	{
 		const _TCHAR* host = _T("localhost");

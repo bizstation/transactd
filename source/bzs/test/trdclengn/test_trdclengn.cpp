@@ -2864,7 +2864,7 @@ BOOST_AUTO_TEST_SUITE(query)
 
 	BOOST_AUTO_TEST_CASE(join)
 	{
-		database_ptr db = createDatadaseObject();
+		database_ptr db = createDatabaseObject();
 		connectParams param(PROTOCOL, HOSTNAME, _T("querytest"), _T("test.bdf"));
 		param.setMode(TD_OPEN_NORMAL);
 		int ret = prebuiltData(db, param);

@@ -51,7 +51,7 @@ class databaseManager : public idatabaseManager, private boost::noncopyable
 public:
 	databaseManager()
 	{
-		m_dbPtr = createDatadaseObject();
+		m_dbPtr = createDatabaseObject();
 		m_db = m_dbPtr.get();
 	}
 
@@ -133,7 +133,7 @@ class disbDbManager : public idatabaseManager, private boost::noncopyable
 public:
 	disbDbManager()
 	{
-		database_ptr p( createDatadaseObject());
+		database_ptr p( createDatabaseObject());
 		addDb(p);
 	}
 
@@ -171,7 +171,7 @@ public:
 		}
 		if (newConnection || m_db==NULL)
 		{
-			database_ptr p = createDatadaseObject();
+			database_ptr p = createDatabaseObject();
 			addDb(p);
 			m_db = p.get();
 
@@ -207,10 +207,12 @@ public:
 			int index = findDbIndex(param);
 			if (index == -1)
 			{
+                database_ptr p = createDatabaseObject();
+				addDb(p);
+				m_db = p.get();
 				connectOpen(m_db, *param, false);
-				index = m_dbs.size()-1;
-			}
-			m_db = m_dbs[index].get();
+			}else
+				m_db = m_dbs[index].get();
 		}else
 			m_db = m_dbs[0].get();
 

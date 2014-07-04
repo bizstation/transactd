@@ -730,6 +730,29 @@ readStatement& readStatement::alias(const _TCHAR* src, const _TCHAR* dst)
 	return *this;
 }
 
+readStatement& readStatement::reset()
+{
+	query::reset();
+	fieldNames::reset();
+	m_impl->aliases.clear();
+}
+
+int readStatement::aliasCount() const
+{
+	return m_impl->aliases.size();
+}
+
+const _TCHAR* readStatement::getAliasFirst(int index) const
+{
+	return m_impl->aliases[index].first.c_str();
+
+}
+
+const _TCHAR* readStatement::getAliasSecond(int index) const
+{
+	return m_impl->aliases[index].second.c_str();
+}
+
 void readStatement::execute(recordset& rs)
 {
 	if (m_impl->parent->dbm)

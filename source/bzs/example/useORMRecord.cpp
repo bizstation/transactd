@@ -152,7 +152,7 @@ void showConsole(recordset& rowset)
 int _tmain(int argc, _TCHAR* argv[])
 {
 	std::locale::global(std::locale("japanese"));
-	database_ptr db = createDatadaseObject();
+	database_ptr db = createDatabaseObject();
 	try
 	{
 		connectParams param(_T("tdap"), _T("localhost"), _T("mri"), _T("dj32.bdf"));

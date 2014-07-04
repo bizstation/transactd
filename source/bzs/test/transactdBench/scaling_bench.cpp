@@ -77,7 +77,7 @@ void showResult(const std::vector<transactionSec>& results
 bool tableFixer( const connectParams& param)
 {
 
-	database_ptr db = createDatadaseObject();
+	database_ptr db = createDatabaseObject();
 	openDatabase(db, param);
 	
 	dbdef* def = db->dbDef();

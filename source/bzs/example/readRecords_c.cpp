@@ -83,7 +83,7 @@ void readUsers(table_ptr tb, std::vector<user_ptr>& users)
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
-	database_ptr db = createDatadaseObject();
+	database_ptr db = createDatabaseObject();
 	try
 	{
 		connectParams param(_T("tdap"), _T("localhost"), _T("test"), _T("test"));
