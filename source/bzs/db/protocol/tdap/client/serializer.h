@@ -100,6 +100,7 @@ public:
 	~orderByStatement();
 	void execute(recordset& rs);
 	void add(const _TCHAR* name, bool  asc=true);
+	orderByStatement& reset();
 };
 
 class DLLLIBSTMT reverseOrderStatement :  public executable
@@ -165,6 +166,7 @@ public:
 	const _TCHAR* getDescription() const ;
 	queryStatements& description(const _TCHAR* v);
 	executable* get(int index);
+	void pop_back();
 
 	readStatement* addRead(readStatement::eReadType type);
 	groupByStatement* addGroupBy();

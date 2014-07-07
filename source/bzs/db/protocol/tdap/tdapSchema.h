@@ -443,6 +443,18 @@ public:
 	 */
 	bool isStringType() const ;
 
+	inline bool isNumericType() const
+	{
+		return ((type == ft_integer)|| (type == ft_date)
+			||(type == ft_decimal)|| (type == ft_money)
+			||(type == ft_logical)|| (type == ft_numeric)
+			||(type == ft_bfloat)|| (type == ft_uinteger)
+			||(type == ft_autoinc)|| (type == ft_bit)
+			||(type == ft_numericsts)|| (type == ft_numericsa)
+			||(type == ft_autoIncUnsigned));
+	}
+
+
 	/* Charctor numbers from charset.
 	 */
 	unsigned int charNum() const ;

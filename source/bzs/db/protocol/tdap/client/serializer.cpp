@@ -460,6 +460,8 @@ void orderByStatement::add(const _TCHAR* name, bool  asc)
 	m_sortFields->add(name, asc);
 }
 
+orderByStatement& orderByStatement::reset(){m_sortFields->clear();}
+
 //---------------------------------------------------------------------------
 //   class reverseOrderStatement
 //---------------------------------------------------------------------------
@@ -532,19 +534,20 @@ struct queryStatementImple
 	}
 
 
-	inline void use(idatabaseManager* dbm, const connectParams p)
+	inline void use(idatabaseManager* dbm, const connectParams* p)
 	{
 		/*dbIndex = dbm->findDbIndex(p);
 		if (dbIndex==-1)
 			return false;*/
-		dbm->use(&p);
+		dbm->use(p);
 		//return dbm->db()->isOpened();
 	}
 
-	inline void use(client::database* db, const connectParams p)
+	inline void use(client::database* db, const connectParams* p)
 	{
 		if ( db && db->isOpened()) return ;
-		connectOpen(db, p, false);
+		if (p)
+			connectOpen(db, *p, false);
 	}
 
 	template <class Database>
@@ -568,9 +571,13 @@ struct queryStatementImple
 			}
 			tq = &q;
 		}
+		if (database != _T(""))
+		{
+			connectParams p(database.c_str());
+			use(db, &p);
+		}else
+			use(db, NULL);
 
-		connectParams p(database.c_str());
-		use(db, p);
 		/*if (!isOpened(db, p))      //Change current db in dbm
 			connect(db, p, false); //Change current db in dbm
 		*/
@@ -854,6 +861,11 @@ reverseOrderStatement* queryStatements::addReverseOrder()
 executable* queryStatements::get(int index)
 {
 	return m_impl->statements[index];
+}
+
+void queryStatements::pop_back()
+{
+	m_impl->statements.pop_back();
 }
 
 int queryStatements::size() const
