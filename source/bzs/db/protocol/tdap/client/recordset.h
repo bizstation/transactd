@@ -40,10 +40,6 @@ class DLLLIB recordset
 public:
 	typedef std::vector<row_ptr >::iterator iterator;
 
-#ifndef BCB_64
-	static void* operator new(size_t size);
-	static void operator delete(void* p);
-#endif
 	recordset();
 	recordset(const recordset& r);
 	recordset& operator=(const recordset& r);
@@ -73,6 +69,7 @@ public:
 	recordset& reverse();
 	void appendCol(const _TCHAR* name, int type, short len);
 	recordset& operator+=(const recordset& r);
+	void release();
 
 #ifdef _DEBUG
 	void dump();

@@ -285,7 +285,7 @@ public:
 	void setWhereToken(short index, const _TCHAR* v) ;
 	void reverseAliasName(const _TCHAR* alias, const _TCHAR* src);
 
-	void release();
+	void release(); // don't virtual
 	static queryBase* create();
 };
 

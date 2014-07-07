@@ -404,18 +404,24 @@ struct trdVersiton
 /* Cpp library name prefix */
 #define TD_CPP_LIB_PRE "tdclcpp"
 
+#if  ((defined(_MSC_VER) && defined(_DLL)) ||(defined(__BORLANDC__) && defined(_RTLDLL)))
+#define RTL_PART "r"
+#else
+#define RTL_PART 
+#endif
+
 /* Cpp library name middle part */
 #if (defined( __x86_64__) || defined(LINUX))
 	#ifdef UNICODE
-		#define TD_LIB_PART "64u"
+		#define TD_LIB_PART "64u" RTL_PART
 	#else
-		#define TD_LIB_PART "64m"
+		#define TD_LIB_PART "64m" RTL_PART
 	#endif
 #else  //__x86_32__
 	#ifdef UNICODE
-		#define TD_LIB_PART "32u"
+		#define TD_LIB_PART "32u" RTL_PART
 	#else
-		#define TD_LIB_PART "32m"
+		#define TD_LIB_PART "32m" RTL_PART
 	#endif
 #endif
 

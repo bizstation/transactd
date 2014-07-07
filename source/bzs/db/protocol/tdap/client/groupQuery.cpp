@@ -45,6 +45,17 @@ struct fieldNamesImple
 // ---------------------------------------------------------------------------
 // class fieldNames
 // ---------------------------------------------------------------------------
+
+fieldNames* fieldNames::create()
+{
+	return new fieldNames();
+}
+
+void fieldNames::release()
+{
+	delete this;
+}
+
 fieldNames::fieldNames():m_impl(new fieldNamesImple)
 {
 
@@ -132,16 +143,17 @@ struct recordsetQueryImple
 // ---------------------------------------------------------------------------
 // class recordsetQuery
 // ---------------------------------------------------------------------------
-void* recordsetQuery::operator new(size_t size)
+
+
+recordsetQuery* recordsetQuery::create()
 {
-	return malloc(size);
+	return new recordsetQuery();
 }
 
-void recordsetQuery::operator delete(void* p)
+void recordsetQuery::release()
 {
-	free(p);
+ 	delete this;
 }
-
 
 recordsetQuery::recordsetQuery():query(),m_imple(new recordsetQueryImple){}
 
@@ -350,6 +362,16 @@ public:
 // ---------------------------------------------------------------------------
 // class groupQuery
 // ---------------------------------------------------------------------------
+groupQuery* groupQuery::create()
+{
+	return new groupQuery();
+}
+
+void groupQuery::release()
+{
+	delete this;
+}
+
 groupQuery::groupQuery():m_imple(new groupQueryImple)
 {
 
@@ -590,8 +612,12 @@ groupFuncBase::value_type groupFuncBase::result(int groupIndex) const
 
 
 // ---------------------------------------------------------------------------
-// class groupFuncBase
+// class sum
 // ---------------------------------------------------------------------------
+sum* sum::create(const _TCHAR* targetName , const _TCHAR* resultName)
+{
+	return new sum(targetName , resultName);
+}
 
 sum::sum(const _TCHAR* targetName , const _TCHAR* resultName)
 		:groupFuncBase(targetName, resultName){}
@@ -605,6 +631,11 @@ void sum::doCalc(const row_ptr& row, int index)
 // ---------------------------------------------------------------------------
 // class count
 // ---------------------------------------------------------------------------
+count* count::create(const _TCHAR* resultName)
+{
+	return new count(resultName);
+}
+
 count::count(const _TCHAR* resultName)
 	:groupFuncBase(NULL, resultName){}
 
@@ -617,6 +648,11 @@ void count::doCalc(const row_ptr& row, int index)
 // ---------------------------------------------------------------------------
 // class avg
 // ---------------------------------------------------------------------------
+avg* avg::create(const _TCHAR* targetName , const _TCHAR* resultName)
+{
+	return new avg(targetName , resultName);
+}
+
 avg::avg(const _TCHAR* targetName , const _TCHAR* resultName)
 	:sum(targetName, resultName){}
 
@@ -641,6 +677,11 @@ avg::value_type avg::result(int index)const
 // ---------------------------------------------------------------------------
 // class min
 // ---------------------------------------------------------------------------
+min* min::create(const _TCHAR* targetName , const _TCHAR* resultName)
+{
+	return new min(targetName , resultName);
+}
+
 min::min(const _TCHAR* targetName , const _TCHAR* resultName)
 	:sum(targetName, resultName),m_flag(true){}
 
@@ -658,6 +699,11 @@ void min::doCalc(const row_ptr& row, int index)
 // ---------------------------------------------------------------------------
 // class max
 // ---------------------------------------------------------------------------
+max* max::create(const _TCHAR* targetName , const _TCHAR* resultName)
+{
+	return new max(targetName , resultName);
+}
+
 max::max(const _TCHAR* targetName , const _TCHAR* resultName)
 	:sum(targetName, resultName),m_flag(true){}
 

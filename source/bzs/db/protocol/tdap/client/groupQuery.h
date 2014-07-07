@@ -51,6 +51,8 @@ public:
 	int count();
 	const TCHAR* getValue(int index);
 	void addValue(const _TCHAR* v);
+	static fieldNames* create();
+	void release();
 };
 
 
@@ -91,9 +93,6 @@ class DLLLIB recordsetQuery : protected query
 
 public:
 
-	static void* operator new(size_t size);
-	static void operator delete(void* p);
-
 	recordsetQuery();
 	recordsetQuery(const recordsetQuery& r);
 	~recordsetQuery();
@@ -128,6 +127,9 @@ public:
 	}
 
 	inline query* internalQuery(){return this;}
+	static recordsetQuery* create();
+	void release();
+
 };
 
 
@@ -181,6 +183,8 @@ public:
 	const fieldNames& getKeyFields()const;
 	const groupFuncBase* getFunction(int index) const;
 	int functionCount() const;
+	static groupQuery* create();
+	void release();
 
 };
 
@@ -193,6 +197,7 @@ protected:
 public:
 	sum(){}
 	sum(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	static sum* create(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 };
 
 
@@ -204,6 +209,7 @@ protected:
 public:
 	count(){}
 	count(const _TCHAR* resultName);
+	static count* create(const _TCHAR* resultName);
 
 };
 
@@ -218,6 +224,7 @@ class DLLLIB avg : public sum
 public:
 	avg(){}
 	avg(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	static avg* create(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 
 };
 
@@ -231,6 +238,7 @@ class DLLLIB min : public sum
 public:
 	min(){}
 	min(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	static min* create(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 };
 
 
@@ -242,6 +250,7 @@ class DLLLIB max : public sum
 public:
 	max(){}
 	max(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	static max* create(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 };
 
 

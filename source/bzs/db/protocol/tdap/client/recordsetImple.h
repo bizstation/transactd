@@ -285,6 +285,7 @@ public:
 	{
 		c = *this;
 		c.clearRecords();
+		n = std::min(n, (int)m_recordset.size());
 		for (int i=0;i<n;++i)
 			c.push_back(m_recordset[i]);
 		return c;

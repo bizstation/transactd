@@ -271,6 +271,8 @@ public:
 		return *this;
 	}
 
+	static query* create();  //implemet int activeTable.cpp
+	
 };
 
 

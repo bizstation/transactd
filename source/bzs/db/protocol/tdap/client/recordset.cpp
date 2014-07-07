@@ -64,19 +64,10 @@ recordset::~recordset()
 	delete m_imple;
 }
 
-#ifndef BCB_64
-
-void* recordset::operator new(size_t size)
+void recordset::release()
 {
-	return malloc(size);
+	delete this;
 }
-
-void recordset::operator delete(void* p)
-{
-	free(p);
-}
-
-#endif
 
 void recordset::clearRecords()
 {

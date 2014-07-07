@@ -146,8 +146,6 @@
         <Debugger_HostApplication>..\..\bin\test_tdclcpp_bcb_64.exe</Debugger_HostApplication>
         <BRCC_EnableMultiByte>true</BRCC_EnableMultiByte>
         <BCC_WindowsVersionDefines>NTDDI_VERSION=NTDDI_WINXPSP1;_WIN32_WINNT=_WIN32_WINNT_WINXP</BCC_WindowsVersionDefines>
-        <BCC_OptimizeForSize>true</BCC_OptimizeForSize>
-        <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <DllSuffix>u_$(DllSuffix)</DllSuffix>
     </PropertyGroup>
     <ItemGroup>

@@ -78,11 +78,11 @@ const _TCHAR* makeUri(const _TCHAR* protocol, const _TCHAR* host, const _TCHAR* 
 
 class fixture
 {
-    mutable database* m_db;
+	mutable database* m_db;
 
 public:
-    fixture() : m_db(NULL)
-    {
+	fixture() : m_db(NULL)
+	{
 		m_db = database::create();
 		if (!m_db)
 			printf("Error database::create()\n");
@@ -92,10 +92,36 @@ public:
 	{
 		if (m_db)
 			database::destroy(m_db);
-    }
+	}
 
 	::database* db() const {return m_db;}
 };
+
+class fixtureQuery
+{
+	database_ptr m_db;
+
+public:
+	fixtureQuery()
+	{
+		m_db = createDatabaseObject();
+		if (!m_db)
+			printf("Error database::create()\n");
+		connectParams param(PROTOCOL, HOSTNAME, _T("querytest"), _T("test.bdf"));
+		param.setMode(TD_OPEN_NORMAL);
+
+		prebuiltData(m_db, param);
+	}
+
+	~fixtureQuery()
+	{
+
+	}
+
+	database* db() const {return m_db.get();}
+};
+
+
 
 table* openTable(database* db, short dbmode=TD_OPEN_NORMAL, short tbmode=TD_OPEN_NORMAL)
 {
@@ -2479,6 +2505,130 @@ void testQuery()
 
 }
 
+void teetNewDelete(database* db)
+{
+	//printf("new delete start \n");
+	for (int i=0;i<500;++i)
+	{
+		queryBase qb;
+		qb.reset();
+
+		query q;
+		q.reset();
+
+		recordsetQuery rq;
+		rq.reset();
+
+		groupQuery gq;
+		gq.reset();
+
+		fieldNames f;
+		f.addValue(_T("abc"));
+
+		activeTable atu(db, _T("user"));
+		atu.index(0);
+
+		client::sum s(_T("a"));
+		s.reset();
+
+		client::count c(_T("a"));
+		c.reset();
+
+		client::avg a(_T("a"));
+		a.reset();
+		client::min mi(_T("a"));
+		mi.reset();
+		client::max ma(_T("a"));
+		ma.reset();
+
+		recordset rs;
+		rs.clear();
+
+#ifndef BCB_64
+		queryBase* nqb1 = new queryBase();   //All OK
+		delete nqb1;
+#endif
+		queryBase* nqb = queryBase::create(); //All OK
+		nqb->release();
+
+		query* nqq = query::create(); //All OK
+		nqq->release();
+
+#ifndef BCB_64
+		query* nqq1 = new query();   //bcb64 bad
+		delete nqq1;
+#endif
+		recordsetQuery* nrq = recordsetQuery::create(); //All OK
+		nrq->release();
+
+#ifndef BCB_64
+		recordsetQuery* nrqq = new recordsetQuery(); //bcb64 bad
+		delete nrqq;
+
+		groupQuery* ngq1 = new groupQuery(); //All OK
+		delete ngq1;
+#endif
+		groupQuery* ngq = groupQuery::create(); //All OK
+		ngq->release();
+
+
+		fieldNames* nfn = fieldNames::create();  //All OK
+		nfn->release();
+
+
+#ifndef BCB_64
+		fieldNames* nfn1 = new fieldNames();  //bcb64 bad
+		delete nfn1;
+#endif
+
+		activeTable* at = new activeTable(db, _T("user"));  //All OK
+		delete at;
+
+#ifndef BCB_64
+		client::sum* ns1 = new sum(_T("a")); //bcb64 bad
+		delete  ns1;
+
+		client::count* nc1 = new client::count(_T("a"));//bcb64 bad
+		delete nc1;
+
+		client::avg* na1  = new client::avg(_T("a"));//bcb64 bad
+		delete na1;
+
+		client::min* nmin1 = new client::min(_T("a"));//bcb64 bad
+		delete nmin1;
+
+		client::max* nmax1 = new client::max(_T("a"));//bcb64 bad
+		delete nmax1;
+
+#endif
+
+		client::sum* ns = sum::create(_T("a")); //All OK
+		ns->release();
+
+		client::count* nc = client::count::create(_T("a"));//All OK
+		nc->release();
+
+		client::avg* na  = client::avg::create(_T("a"));//All OK
+		na->release();
+
+		client::min* nmin = client::min::create(_T("a"));//All OK
+		nmin->release();
+
+		client::max* nmax = client::max::create(_T("a"));//All OK
+		nmax->release();
+
+		recordset* r = new recordset();        //All OK
+
+		recordset* rc(r->clone());             //All OK
+		// delete rc;                          //All bad
+		rc->release();
+
+		delete r;                              //All OK
+
+	}
+	//printf("new delete end \n");
+}
+
 void testJoin(database* db)
 {
 
@@ -2486,7 +2636,7 @@ void testJoin(database* db)
 	const char* fd_name = "名前";
 #else 
 	#ifdef _UNICODE
-		const wchar_t* fd_name = L"名前";
+		const wchar_t fd_name[] = {L"名前"};
 	#else
 		char fd_name[30];
 		WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
@@ -2494,7 +2644,9 @@ void testJoin(database* db)
 #endif
 
 	activeTable atu(db, _T("user"));
+
 	activeTable atg(db, _T("groups"));
+
 	activeTable ate(db, _T("extention"));
 	recordset rs;
 	query q;
@@ -2534,8 +2686,8 @@ void testJoin(database* db)
 				, "first field group_name " << string(first[_T("group_name")].a_str()));
 	//row_ptr row = rs[15000 - 9];
 	row& rec = rs[15000 - 9];
-	BOOST_CHECK_MESSAGE(_tstring(rec[_T("group_name")].c_str()) == _tstring(_T("9 group"))
-				, "group_name = 9 group " << string((rec)[_T("group_name")].a_str()));
+	BOOST_CHECK_MESSAGE(_tstring(rec[_T("group_name")].c_str()) == _tstring(_T("4 group"))
+				, "group_name = 4 group " << string((rec)[_T("group_name")].a_str()));
 
 	//Test orderby
 	rs.orderBy(_T("group_name"));
@@ -2597,33 +2749,32 @@ void testJoin(database* db)
 	client::count count3(_T("count"));
 	gq.addFunction(&count3).keyField(_T("group"));//.resultField(_T("count"));
 	rs.groupBy(gq);
-	BOOST_CHECK_MESSAGE(rs.size()== 100, "group by2  rs.size()== 100");
+	BOOST_CHECK_MESSAGE(rs.size()== 5, "group by2  rs.size()==" << rsv->size());
 
 	//having
 	recordsetQuery rq;
 	rq.when(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
 	rsv->matchBy(rq);
-	BOOST_CHECK_MESSAGE(rsv->size()== 160, "matchBy  rsv.size() ==" << rsv->size());
-	delete rsv;
-
+	BOOST_CHECK_MESSAGE(rsv->size()== 3200, "matchBy  rsv.size() ==" << rsv->size());
+	rsv->release();
 	//top
 	recordset rs3;
 	rs.top(rs3, 10);
-	BOOST_CHECK_MESSAGE(rs3.size()== 10, "top 10  rs3.size()== 10");
+	BOOST_CHECK_MESSAGE(rs3.size()== 5, "top 10  rs3.size()== 5");
 
 
 	//query new / delete
-	recordsetQuery* q1 = new recordsetQuery();
+	recordsetQuery* q1 = recordsetQuery::create();
 	q1->when(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
-	delete q1;
+	q1->release();
 
-	query* q2 = new query();
+	query* q2 = query::create();
 	q2->where(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
-	delete q2;
+	q2->release();
 
-	groupQuery* q3 = new groupQuery();
+	groupQuery* q3 = groupQuery::create();
 	q3->keyField(_T("group"),_T("id"));
-	delete q3;
+	q3->release();
 
 }
 
@@ -2634,7 +2785,7 @@ void testWirtableRecord(database* db)
 	const char* fd_name = "名前";
 #else 
 	#ifdef _UNICODE
-		const wchar_t* fd_name = L"名前";
+		const wchar_t fd_name[] = {L"名前"};
 	#else
 		char fd_name[30];
 		WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
@@ -2657,16 +2808,19 @@ void testWirtableRecord(database* db)
 
 	rec.clear();
 	rec[_T("id")] = 120001;
+	bool r = rec.read();
 	rec[fd_name]  = _T("oono");
-	if (!rec.read())
+	if (!r)
 		rec.insert();
+	else
+		rec.update();
 
 	rec.clear();
 	rec[_T("id")] = 120001;
 	rec.read();
-	BOOST_CHECK_MESSAGE(_tstring(rec[fd_name].c_str()) == _tstring(_T("oono"))
-					, "rec 120001 name ");
 
+	BOOST_CHECK_MESSAGE(_tstring(rec[1].c_str()) == _tstring(_T("oono"))
+					, "rec 120001 name ");
 	//update changed filed only
 	rec.clear();
 	rec[_T("id")]  = 120001;
@@ -2696,7 +2850,6 @@ void testWirtableRecord(database* db)
 
 }
 
-
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -2706,7 +2859,7 @@ BOOST_AUTO_TEST_SUITE(btrv_nativ)
 		_tprintf(_T("URI = %s\n"), uri);
 		if (db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME)))
             db()->drop();
-        testCreateNewDataBase(db());
+		testCreateNewDataBase(db());
     }
     BOOST_FIXTURE_TEST_CASE(clone, fixture) {testClone(db());}
 
@@ -2840,7 +2993,7 @@ BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(filter)
 
-    BOOST_FIXTURE_TEST_CASE(resultField, fixture)
+	BOOST_FIXTURE_TEST_CASE(resultField, fixture)
     {
 
 		if (db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME)))
@@ -2859,21 +3012,17 @@ BOOST_AUTO_TEST_SUITE(filter)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-
 BOOST_AUTO_TEST_SUITE(query)
 
-	BOOST_AUTO_TEST_CASE(join)
+	BOOST_FIXTURE_TEST_CASE(new_delete, fixtureQuery)
 	{
-		database_ptr db = createDatabaseObject();
-		connectParams param(PROTOCOL, HOSTNAME, _T("querytest"), _T("test.bdf"));
-		param.setMode(TD_OPEN_NORMAL);
-		int ret = prebuiltData(db, param);
-		BOOST_CHECK_MESSAGE(0 == ret, "query data build");
-		if (ret==0)
-		{
-			testJoin(db.get());
-			testWirtableRecord(db.get());
-		}
+		teetNewDelete(db());
+	}
+
+	BOOST_FIXTURE_TEST_CASE(join, fixtureQuery)
+	{
+		testJoin(db());
+		testWirtableRecord(db());
 	}
 
 	BOOST_AUTO_TEST_CASE(fuga)

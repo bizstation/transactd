@@ -34,6 +34,11 @@ namespace tdap
 namespace client
 {
 
+query* query::create()
+{
+	return new query();
+}
+
 activeTable::activeTable(idatabaseManager* mgr, const _TCHAR* tableName)
 					:m_imple(new activeTableImple(mgr, tableName))
 {
