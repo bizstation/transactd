@@ -2527,6 +2527,8 @@ void teetNewDelete(database* db)
 
 		activeTable atu(db, _T("user"));
 		atu.index(0);
+		activeTable atg(db, _T("groups"));
+		atg.index(0);
 
 		client::sum s(_T("a"));
 		s.reset();
@@ -2545,7 +2547,7 @@ void teetNewDelete(database* db)
 		rs.clear();
 
 #ifndef BCB_64
-		queryBase* nqb1 = new queryBase();   //All OK
+		queryBase* nqb1 = new queryBase();   //bcb64 bad
 		delete nqb1;
 #endif
 		queryBase* nqb = queryBase::create(); //All OK
@@ -2565,7 +2567,7 @@ void teetNewDelete(database* db)
 		recordsetQuery* nrqq = new recordsetQuery(); //bcb64 bad
 		delete nrqq;
 
-		groupQuery* ngq1 = new groupQuery(); //All OK
+		groupQuery* ngq1 = new groupQuery(); //bcb64 bad
 		delete ngq1;
 #endif
 		groupQuery* ngq = groupQuery::create(); //All OK
@@ -2582,6 +2584,8 @@ void teetNewDelete(database* db)
 #endif
 
 		activeTable* at = new activeTable(db, _T("user"));  //All OK
+		activeTable* atg1 = new activeTable(db, _T("groups"));  //All OK
+		delete atg1;
 		delete at;
 
 #ifndef BCB_64

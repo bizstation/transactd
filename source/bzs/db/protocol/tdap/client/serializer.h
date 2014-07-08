@@ -101,6 +101,9 @@ public:
 	void execute(recordset& rs);
 	void add(const _TCHAR* name, bool  asc=true);
 	orderByStatement& reset();
+	int size() const;
+	const sortField& get(int index) const;
+
 };
 
 class DLLLIBSTMT reverseOrderStatement :  public executable

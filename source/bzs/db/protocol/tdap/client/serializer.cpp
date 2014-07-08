@@ -460,6 +460,10 @@ void orderByStatement::add(const _TCHAR* name, bool  asc)
 	m_sortFields->add(name, asc);
 }
 
+int orderByStatement::size() const {return (int)m_sortFields->size();}
+
+const sortField& orderByStatement::get(int index) const {return (*m_sortFields)[index];}
+
 orderByStatement& orderByStatement::reset(){m_sortFields->clear();}
 
 //---------------------------------------------------------------------------

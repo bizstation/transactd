@@ -318,6 +318,58 @@ public:
 
 };
 
+inline const _TCHAR* host(const _TCHAR* uri, _TCHAR* buf)
+{
+	buf[0]=0x00;
+	const _TCHAR* st = _tcsstr(uri, _T("://"));
+	if (st)
+	{
+		const _TCHAR* en = _tcsstr(st+3, _T("/"));
+		if (en)
+		{
+			_tcsncpy(buf, st+3, en - (st+3));
+			buf[en - (st+3)] = 0x00;
+		}
+	}
+	return buf;
+}
+
+inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf)
+{
+	buf[0]=0x00;
+	const _TCHAR* st = _tcsstr(uri, _T("://"));
+	if (st)
+	{
+		st = _tcsstr(st+3, _T("/"));
+		if (st)
+		{
+			const _TCHAR* en = _tcsstr(st+1, _T("?"));
+			if (en)
+			{
+				_tcsncpy(buf, st+1, en - (st+1));
+				buf[en - (st+1)] = 0x00;
+			}
+		}
+	}
+	return buf;
+}
+
+inline const _TCHAR* schemaTable(const _TCHAR* uri, _TCHAR* buf)
+{
+	buf[0]=0x00;
+	const _TCHAR* st = _tcsrchr(uri, _T('='));
+	if (st)
+	{
+		const _TCHAR* en = _tcsrchr(uri, _T('.'));
+		if (en)
+		{
+			_tcsncpy(buf, st+1, en - (st+1));
+			buf[en - (st+1)] = 0x00;
+		}
+	}
+	return buf;
+}
+
 /* databaseManager interface
    If use some databases, implemnt a this interface and set the activeTable constructor
    Create table by name and option from suitable database.

@@ -126,6 +126,8 @@ public:
 		return *this;
 	}
 
+	inline const _TCHAR* toString() const{return queryBase::toString();}
+
 	inline query* internalQuery(){return this;}
 	static recordsetQuery* create();
 	void release();
