@@ -45,6 +45,12 @@ activeTable::activeTable(idatabaseManager* mgr, const _TCHAR* tableName)
 
 }
 
+activeTable::activeTable(dbmanager_ptr& mgr, const _TCHAR* tableName)
+					:m_imple(new activeTableImple(mgr.get(), tableName))
+{
+
+}
+
 activeTable::activeTable(database_ptr& db, const _TCHAR* tableName)
 					:m_imple(new activeTableImple(db, tableName))
 {
@@ -133,6 +139,31 @@ activeTable& activeTable::read(recordset& rs, queryBase& q, validationFunc func)
 {
 	m_imple->read(*rs.m_imple, q, func);
 	return *this;
+}
+
+activeTable* activeTable::create(idatabaseManager* mgr, const _TCHAR* tableName)
+{
+	return new activeTable(mgr, tableName);
+}
+
+activeTable* activeTable::create(dbmanager_ptr& mgr, const _TCHAR* tableName)
+{
+	return new activeTable(mgr, tableName);
+}
+
+activeTable* activeTable::create (database_ptr& db, const _TCHAR* tableName)
+{
+	return new activeTable(db, tableName);
+}
+
+activeTable* activeTable::create(database* db, const _TCHAR* tableName)
+{
+	return new activeTable(db, tableName);
+}
+
+void activeTable::release()
+{
+	delete this;
 }
 
 

@@ -75,7 +75,7 @@ public:
 
 	groupFuncBase& addFunction(eFunc v, const _TCHAR* targetName , const _TCHAR* resultName=NULL);
 	groupFuncBase& function(int index);
-	fieldNames& reset();
+	groupByStatement& reset();
 	int size() const;
 	void execute(recordset& rs);
 };
@@ -149,6 +149,13 @@ public:
 
 };
 
+
+class executeListner
+{
+public:
+	virtual void onExecuted(const executable* e, const recordset& rs) = 0;
+};
+
 class DLLLIBSTMT queryStatements
 {
 	struct queryStatementsImple* m_impl;
@@ -182,7 +189,7 @@ public:
 	void load(const _TCHAR* filename);
 	void save(std::stringstream& sf);
 	void load(std::stringstream& sf);
-	void execute(recordset& rs, const std::vector<std::_tstring>* values=NULL);
+	void execute(recordset& rs, const std::vector<std::_tstring>* values=NULL, executeListner* listner=NULL);
 };
 
 

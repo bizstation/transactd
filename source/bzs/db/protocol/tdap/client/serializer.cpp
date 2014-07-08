@@ -418,11 +418,12 @@ groupFuncBase& groupByStatement::function(int index)
 	return *((*m_statements)[index]);
 }
 
-fieldNames& groupByStatement::reset()
+groupByStatement& groupByStatement::reset()
 {
 	for (int i=0;i<(int)m_statements->size();++i)
 		delete ((*m_statements)[i]);
 	m_statements->clear();
+	fieldNames::reset();
 	return *this;
 }
 
@@ -464,7 +465,11 @@ int orderByStatement::size() const {return (int)m_sortFields->size();}
 
 const sortField& orderByStatement::get(int index) const {return (*m_sortFields)[index];}
 
-orderByStatement& orderByStatement::reset(){m_sortFields->clear();}
+orderByStatement& orderByStatement::reset()
+{
+	m_sortFields->clear();
+	return *this;
+}
 
 //---------------------------------------------------------------------------
 //   class reverseOrderStatement
@@ -499,10 +504,13 @@ struct queryStatementsImple
 		 statements.clear();
 	}
 
-	inline void execute(recordset& rs)
+	inline void execute(recordset& rs, executeListner* listner)
 	{
 		for (size_t i=0;i<statements.size();++i)
-				statements[i]->execute(rs);
+		{
+			statements[i]->execute(rs);
+			if (listner)listner->onExecuted(statements[i], rs);
+		}
 	}
 
 private:
@@ -746,6 +754,7 @@ readStatement& readStatement::reset()
 	query::reset();
 	fieldNames::reset();
 	m_impl->aliases.clear();
+	return *this;
 }
 
 int readStatement::aliasCount() const
@@ -915,10 +924,10 @@ void queryStatements::load(std::stringstream& sf)
 	ia >> BOOST_SERIALIZATION_NVP(queryStatements);
 }
 
-void queryStatements::execute(recordset& rs, const std::vector<std::_tstring>* values)
+void queryStatements::execute(recordset& rs, const std::vector<std::_tstring>* values, executeListner* listner)
 {
 	m_impl->pv.setValues(values);
-	m_impl->execute(rs);
+	m_impl->execute(rs, listner);
 }
 
 

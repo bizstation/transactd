@@ -132,7 +132,7 @@ public:
 				::set(table(), table()->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6);
 		return *this;
 	}
-	
+
 /** @endcond */
 
 	template <class T0, class T1 , class T2, class T3
@@ -144,6 +144,12 @@ public:
 				::set(table(), table()->keyNum(), kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
 		return *this;
 	}
+
+	static activeTable* create(idatabaseManager* mgr, const _TCHAR* tableName);
+	static activeTable* create(dbmanager_ptr& mgr, const _TCHAR* tableName);
+	static activeTable* create (database_ptr& db, const _TCHAR* tableName);
+	static activeTable* create(database* db, const _TCHAR* tableName);
+	void release();
 };
 
 }// namespace client
