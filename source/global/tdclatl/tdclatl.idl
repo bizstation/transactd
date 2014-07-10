@@ -296,11 +296,11 @@ typedef
 ]
 enum eGroupFunc
 {
-	fmax = 0,
-	fmin = 1,
+	fsum = 0,
+	fcount = 1,
 	favg = 2,
-	fsum = 3,
-	fcount = 4
+	fmin = 3,
+	fmax = 4
 }eGroupFunc;
 
 typedef
@@ -1135,7 +1135,7 @@ interface IRecordset : IDispatch
 					[out, retval] IRecordset** retVal);
 
   [id(0x000000B)]
-  HRESULT _stdcall OrderByWith([in] ISortFields* SortFields, [out, retval] IRecordset** retVal);
+  HRESULT _stdcall OrderByEx([in] ISortFields* SortFields, [out, retval] IRecordset** retVal);
 
   [id(0x000000C)]
   HRESULT _stdcall Reverse([out, retval] IRecordset** retVal);
@@ -1217,7 +1217,7 @@ interface IGroupQuery : IDispatch
   [id(0x0000002)]
   HRESULT _stdcall AddFunction([in] eGroupFunc func
 	  ,	[in, defaultvalue("")] BSTR targetName , [in, defaultvalue("")] BSTR resultName
-	  , [in, defaultvalue(0)]IRecordsetQuery* q, [out, retval] IGroupQuery** retVal);
+	  , [in, defaultvalue(NULL)]IRecordsetQuery* q, [out, retval] IGroupQuery** retVal);
 
   [id(0x0000004)]
   HRESULT _stdcall Reset([out, retval] IGroupQuery** retVal);
@@ -1292,7 +1292,7 @@ interface ISortFields : IDispatch
 {
   [id(1)]
   HRESULT _stdcall Add([in] BSTR Name, [in] VARIANT_BOOL asc);
-  [id(2)]
+  [propget, id(2)]
   HRESULT _stdcall Size([out, retval] int* Value);
   [id(3)]
   HRESULT _stdcall Item([in] int index, [out, retval] ISortField** retVal);

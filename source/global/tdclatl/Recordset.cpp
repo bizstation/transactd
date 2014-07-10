@@ -216,7 +216,7 @@ STDMETHODIMP CARecordset::OrderBy( BSTR Name0,  BSTR Name1,  BSTR Name2,  BSTR N
     }
 }
 
-STDMETHODIMP CARecordset::OrderByWith(ISortFields* sortFields, IRecordset** retVal)
+STDMETHODIMP CARecordset::OrderByEx(ISortFields* sortFields, IRecordset** retVal)
 {
 	try
 	{

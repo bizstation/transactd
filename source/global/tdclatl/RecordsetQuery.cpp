@@ -88,7 +88,7 @@ STDMETHODIMP CSortFields::Add(  BSTR Name, VARIANT_BOOL Asc)
 	return S_OK;
 }
 
-STDMETHODIMP CSortFields::Size(int* Value)
+STDMETHODIMP CSortFields::get_Size(int* Value)
 {
 	*Value = (int)m_sortFields.size();
 	return S_OK;

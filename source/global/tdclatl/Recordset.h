@@ -73,7 +73,7 @@ public:
 					 BSTR name5,  BSTR name6,  BSTR name7,  BSTR name8
 					, IRecordset** retVal);
 
-  STDMETHOD(OrderByWith)(ISortFields* sortFields, IRecordset** retVal);
+  STDMETHOD(OrderByEx)(ISortFields* sortFields, IRecordset** retVal);
   STDMETHOD(Reverse)(IRecordset** retVal);
   STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
   STDMETHOD(Clone)(IRecordset** retVal);

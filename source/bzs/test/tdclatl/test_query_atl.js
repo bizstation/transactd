@@ -154,12 +154,12 @@ var COMP_LOG_NOT = 5;
 var DIRECTION_FORWORD = 0;
 var DIRECTION_BACKFORWORD = 1;
 
-var fmax = 0;
-var fmin = 1;
+var fsum = 0;
+var fcount = 1;
 var favg = 2;
-var fsum = 3;
-var fcount = 4;
-	
+var fmin = 3;
+var fmax = 4;
+
 
 var none = 0;
 var hasOneJoin = 1;

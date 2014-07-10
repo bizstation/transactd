@@ -61,25 +61,30 @@ STDMETHODIMP CGroupQuery::KeyField(BSTR Name0, BSTR Name1, BSTR Name2, BSTR Name
  
 STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, BSTR targetName , BSTR resultName, IRecordsetQuery* iq, IGroupQuery** retVal)
 {
+	
+	boost::shared_ptr<groupFuncBase> f;
+
+	if (func == fsum)
+		f.reset(new sum(targetName, resultName));  
+	else if (func == fmin)
+		f.reset(new min(targetName, resultName));  
+	else if (func == fmax)
+		f.reset(new max(targetName, resultName));  
+	else if (func == favg)
+		f.reset(new avg(targetName, resultName));  
+	else if(func == fcount)
+		f.reset(new count(resultName));
 	if (iq)
 	{
 		CRecordsetQuery* q = dynamic_cast<CRecordsetQuery*>(iq);
-		boost::shared_ptr<groupFuncBase> f;
-
-		if (func == fsum)
-			f.reset(new sum(targetName, resultName));  
-		else if (func == fmin)
-			f.reset(new min(targetName, resultName));  
-		else if (func == fmax)
-			f.reset(new max(targetName, resultName));  
-		else if (func == favg)
-			f.reset(new avg(targetName, resultName));  
-		else if(func == fcount)
-			f.reset(new count(resultName)); 
-		*f = (q->m_qb);
-		m_funcs.push_back(f);
-		m_gq.addFunction(f.get());
+		if (q)
+			*f = (q->m_qb);
 	}
+	else
+		f.reset();
+	m_funcs.push_back(f);
+	m_gq.addFunction(f.get());
+
 	setResult(retVal);
 	return S_OK;
 
