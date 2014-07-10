@@ -48,8 +48,8 @@ public:
 				,const _TCHAR* name4=NULL, const _TCHAR* name5=NULL, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
 				,const _TCHAR* name8=NULL, const _TCHAR* name9=NULL, const _TCHAR* name10=NULL);
 
-	int count();
-	const TCHAR* getValue(int index);
+	int count() const;
+	const TCHAR* getValue(int index) const;
 	void addValue(const _TCHAR* v);
 	static fieldNames* create();
 	void release();
@@ -70,10 +70,11 @@ class sortFields
 	friend void serialize(Archive& ar, sortFields& q, const unsigned int );
 
 public:
-	inline void add(const _TCHAR* name, bool  asc)
+	inline sortFields& add(const _TCHAR* name, bool  asc)
 	{
 		sortField op ={name, asc};
 		m_params.push_back(op);
+		return *this;
 	}
 	inline size_t size() const {return m_params.size();}
 	inline const sortField& operator[](int index) const {return m_params[index];}

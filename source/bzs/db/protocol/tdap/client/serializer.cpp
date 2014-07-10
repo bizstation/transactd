@@ -502,6 +502,9 @@ struct queryStatementsImple
 		 for(int i=0;i<(int)statements.size();++i)
 			delete statements[i];
 		 statements.clear();
+		 title= _T("");
+		 description = _T("");
+		 id = 0;
 	}
 
 	inline void execute(recordset& rs, executeListner* listner)
@@ -928,6 +931,11 @@ void queryStatements::execute(recordset& rs, const std::vector<std::_tstring>* v
 {
 	m_impl->pv.setValues(values);
 	m_impl->execute(rs, listner);
+}
+
+void queryStatements::clear()
+{
+	m_impl->reset();
 }
 
 

@@ -80,6 +80,8 @@ public:
 	void execute(recordset& rs);
 };
 
+#define MAX_FUNCTION_SIZE (int)groupByStatement::fmax + 1
+
 
 class DLLLIBSTMT matchByStatement : public recordsetQuery, public executable
 {
@@ -183,7 +185,7 @@ public:
 	orderByStatement* addOrderBy();
 	matchByStatement* addMatchBy();
 	reverseOrderStatement* addReverseOrder();
-
+	void clear();
 	int size() const;
 	void save(const _TCHAR* filename);
 	void load(const _TCHAR* filename);
