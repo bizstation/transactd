@@ -182,8 +182,7 @@ class  activeTableImple : public activeObject<map_orm>
 
 		typename map_orm::collection_orm_typename map(mdls);
 
-		// ignore list for inner join 
-		std::vector<typename Container::iterator> ignores;
+		//std::vector<typename Container::iterator> ignores;
 		it = mdls.begin();
 		map.init(m_option, m_fdi, m_map, m_tb, &m_alias);
 		if (m_tb->mra())
@@ -200,8 +199,6 @@ class  activeTableImple : public activeObject<map_orm>
 				if ((m_tb->stat() == STATUS_EOF) ||
 					((m_tb->stat() != STATUS_SUCCESS) && (m_tb->stat() != STATUS_NOT_FOUND_TI)))
 					break;
-				else if (innner)
-					ignores.push_back(it);
 			}
 			++it;
 			m_tb->findNext(); //mra copy value to memrecord
@@ -210,20 +207,13 @@ class  activeTableImple : public activeObject<map_orm>
 		readStatusCheck(*m_tb, _T("join"));
 		m_tb->mra()->setJoinRowMap(NULL);
 
-		// remove record see ignore list for inner join 
+		// remove record see ignore list for inner join
 		if (innner)
 		{
-			if (m_tb->isUseTransactd())
+			for (int i=(int)mdls.size()-1;i>=0;--i)
 			{
-				for (int i=(int)ignores.size()-1;i>=0;--i)
-					mdls.erase(ignores[i]);	
-			}else
-			{
-				for (int i=(int)mdls.size()-1;i>=0;--i)
-				{
-					if(mdls[i].isInvalidRecord())
-						mdls.erase(i);
-				}
+				if(mdls[i].isInvalidRecord())
+					mdls.erase(i);
 			}
 		}
 	}

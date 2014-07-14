@@ -39,10 +39,10 @@
 namespace std {
 #ifdef _UNICODE
 	typedef wstring _tstring;
-
+	typedef wstringstream _tstringstream;
 #else
 	typedef string _tstring;
-
+	typedef stringstream _tstringstream;
 #endif
 } //std
 

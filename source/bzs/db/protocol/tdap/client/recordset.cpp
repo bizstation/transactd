@@ -84,17 +84,17 @@ const fielddefs* recordset::fieldDefs() const
 	return m_imple->fieldDefs();
 }
 
-row& recordset::operator[](size_t index)
+row& recordset::operator[](size_t index) const
 {
 	return (*m_imple)[index];
 }
 
-row& recordset::first()
+row& recordset::first()const
 {
 	return m_imple->first();
 }
 
-row& recordset::last()
+row& recordset::last() const
 {
 	return m_imple->last();
 }
@@ -109,7 +109,7 @@ size_t recordset::count()const
 	return m_imple->count();
 }
 
-recordset& recordset::top(recordset& c, int n)
+recordset& recordset::top(recordset& c, int n) const
 {
 	m_imple->top(*c.m_imple, n);
 	return c;

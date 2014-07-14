@@ -358,6 +358,11 @@ void serialize(Archive& ar, alias_type& q, const unsigned int /*version*/)
 }
 
 //---------------------------------------------------------------------------
+//   class executable
+//---------------------------------------------------------------------------
+void executable::release(){delete this;};
+
+//---------------------------------------------------------------------------
 //   class groupByStatement
 //---------------------------------------------------------------------------
 class prepairedValues
@@ -387,6 +392,11 @@ public:
 //---------------------------------------------------------------------------
 //   class groupByStatement
 //---------------------------------------------------------------------------
+groupByStatement* groupByStatement::create()
+{
+	return new groupByStatement();
+}
+
 groupByStatement::groupByStatement()
 	:fieldNames(),m_statements(new std::vector< groupFuncBase* >()){}
 
@@ -445,11 +455,21 @@ void groupByStatement::execute(recordset& rs)
 //---------------------------------------------------------------------------
 //   class matchByStatement
 //---------------------------------------------------------------------------
+matchByStatement* matchByStatement::create()
+{
+	return new matchByStatement();
+}
+
 void matchByStatement::execute(recordset& rs){rs.matchBy(*this);};
 
 //---------------------------------------------------------------------------
 //   class orderByStatement
 //---------------------------------------------------------------------------
+orderByStatement* orderByStatement::create()
+{
+	return new orderByStatement();
+}
+
 orderByStatement::orderByStatement():m_sortFields(new sortFields()){}
 
 orderByStatement::~orderByStatement(){delete m_sortFields;}
@@ -474,6 +494,11 @@ orderByStatement& orderByStatement::reset()
 //---------------------------------------------------------------------------
 //   class reverseOrderStatement
 //---------------------------------------------------------------------------
+reverseOrderStatement* reverseOrderStatement::create()
+{
+	return new reverseOrderStatement();
+}
+
 void reverseOrderStatement::execute(recordset& rs){rs.reverse();};
 
 
@@ -500,7 +525,7 @@ struct queryStatementsImple
 	void reset()
 	{
 		 for(int i=0;i<(int)statements.size();++i)
-			delete statements[i];
+			statements[i]->release();
 		 statements.clear();
 		 title= _T("");
 		 description = _T("");
@@ -675,6 +700,11 @@ void queryStatementsImple::serialize(Archive& ar, const unsigned int version)
 //---------------------------------------------------------------------------
 //        class readStatement
 //---------------------------------------------------------------------------
+readStatement* readStatement::create()
+{
+	return new readStatement();
+}
+
 readStatement::readStatement():m_impl(new queryStatementImple)
 {
 	m_impl->keyFields = this;
@@ -788,6 +818,20 @@ void readStatement::execute(recordset& rs)
 //---------------------------------------------------------------------------
 //        class queryExecuter
 //---------------------------------------------------------------------------
+queryStatements* queryStatements::create(idatabaseManager& dbm)
+{
+	return new queryStatements(dbm);
+}
+
+queryStatements* queryStatements::create(database* db)
+{
+	return new queryStatements(db);
+}
+
+void queryStatements::release()
+{
+	delete this;
+}
 
 queryStatements::queryStatements(idatabaseManager& dbm):m_impl(new queryStatementsImple)
 {
@@ -839,7 +883,7 @@ queryStatements& queryStatements::description(const _TCHAR* v)
 
 readStatement* queryStatements::addRead(readStatement::eReadType type)
 {
-	readStatement* p = new readStatement();
+	readStatement* p = readStatement::create();
 	p->readType(type);
 	p->m_impl->parent = this->m_impl;
 	m_impl->statements.push_back(p);
@@ -848,28 +892,28 @@ readStatement* queryStatements::addRead(readStatement::eReadType type)
 
 groupByStatement* queryStatements::addGroupBy()
 {
-	groupByStatement* p = new groupByStatement();
+	groupByStatement* p = groupByStatement::create();
 	m_impl->statements.push_back(p);
 	return p;
 }
 
 orderByStatement* queryStatements::addOrderBy()
 {
-	orderByStatement* p = new orderByStatement();
+	orderByStatement* p = orderByStatement::create();
 	m_impl->statements.push_back(p);
 	return p;
 }
 
 matchByStatement* queryStatements::addMatchBy()
 {
-	matchByStatement* p = new matchByStatement();
+	matchByStatement* p =  matchByStatement::create();
 	m_impl->statements.push_back(p);
 	return p;
 }
 
 reverseOrderStatement* queryStatements::addReverseOrder()
 {
-	reverseOrderStatement* p = new reverseOrderStatement();
+	reverseOrderStatement* p = reverseOrderStatement::create();
 	m_impl->statements.push_back(p);
 	return p;
 }

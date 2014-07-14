@@ -275,13 +275,13 @@ public:
 
 	inline row_ptr& getRow(size_t index){return m_recordset[index];}
 
-	inline row& operator[](size_t index){return *m_recordset[index].get();}
+	inline row& operator[](size_t index)const{return *m_recordset[index].get();}
 
-	inline row& first() {return *m_recordset[0].get();}
+	inline row& first() const {return *m_recordset[0].get();}
 
-	inline row& last() {return *m_recordset[m_recordset.size() - 1].get();}
+	inline row& last() const {return *m_recordset[m_recordset.size() - 1].get();}
 
-	inline recordsetImple& top(recordsetImple& c, int n)
+	inline recordsetImple& top(recordsetImple& c, int n) const
 	{
 		c = *this;
 		c.clearRecords();

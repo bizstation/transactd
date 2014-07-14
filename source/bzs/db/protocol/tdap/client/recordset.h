@@ -36,7 +36,7 @@ class DLLLIB recordset
 	
 	friend class activeTable;
 	class recordsetImple* m_imple;
-	
+
 public:
 	typedef std::vector<row_ptr >::iterator iterator;
 
@@ -45,15 +45,15 @@ public:
 	recordset& operator=(const recordset& r);
 	~recordset();
 	recordset* clone() const;
-	row& operator[](size_t index);
-	row& first();
-	row& last();
+	row& operator[](size_t index)const;
+	row& first() const;
+	row& last() const;
 	size_t size()const;
 	size_t count()const;
 	void clearRecords();
 	const fielddefs* fieldDefs() const;
 	void clear();
-	recordset& top(recordset& c, int n);
+	recordset& top(recordset& c, int n)const;
 	iterator begin();
 	iterator end();
 	iterator erase(size_t index);

@@ -27,7 +27,7 @@
 #    ifdef BCB_32
 #    	define DLLLIBSTMT AGRPACK
 #    else
-#		define DLLLIBSTMT PACKAGE_IMPORT
+#		define DLLLIBSTMT //PACKAGE_IMPORT
 #	 endif
 #endif //LIB_TDCLSTMT
 
@@ -52,10 +52,13 @@ namespace client
 
 class DLLLIBSTMT executable
 {
+	friend class queryStatementsImple;
 
 public:
 	virtual ~executable(){};
 	virtual void execute(recordset& rs)=0;
+	void release();
+
 };
 
 class DLLLIBSTMT groupByStatement : public fieldNames, public executable
@@ -78,6 +81,8 @@ public:
 	groupByStatement& reset();
 	int size() const;
 	void execute(recordset& rs);
+	static groupByStatement* create();
+
 };
 
 #define MAX_FUNCTION_SIZE (int)groupByStatement::fmax + 1
@@ -85,8 +90,11 @@ public:
 
 class DLLLIBSTMT matchByStatement : public recordsetQuery, public executable
 {
+	//~matchByStatement(){};
+	//matchByStatement():recordsetQuery(),executable(){};
 public:
 	void execute(recordset& rs);
+	static matchByStatement* create();
 };
 
 class DLLLIBSTMT orderByStatement : public executable
@@ -96,23 +104,25 @@ class DLLLIBSTMT orderByStatement : public executable
 	friend void serialize(Archive& ar, orderByStatement& q, const unsigned int version);
 	orderByStatement(const orderByStatement& r);           //no implements
 	orderByStatement& operator=(const orderByStatement& r);//no implements
-
 public:
-	orderByStatement();
 	~orderByStatement();
+	orderByStatement();
 	void execute(recordset& rs);
 	void add(const _TCHAR* name, bool  asc=true);
 	orderByStatement& reset();
 	int size() const;
 	const sortField& get(int index) const;
-
+	static orderByStatement* create();
 };
 
 class DLLLIBSTMT reverseOrderStatement :  public executable
 {
+	//~reverseOrderStatement(){};
+	//reverseOrderStatement():executable(){};
 
 public:
 	void execute(recordset& rs);
+	static reverseOrderStatement* create();
 };
 
 class DLLLIBSTMT readStatement : public fieldNames, public query, public executable
@@ -126,11 +136,11 @@ class DLLLIBSTMT readStatement : public fieldNames, public query, public executa
 	friend void serialize(Archive& ar, readStatement& q, const unsigned int version);
 	readStatement(const readStatement& r);           //no implements
 	readStatement& operator=(const readStatement& r);//no implements
-
 public:
-	enum eReadType{opRead, opJoin, opOuterJoin};
-	readStatement();
 	~readStatement();
+	readStatement();
+
+	enum eReadType{opRead, opJoin, opOuterJoin};
 	int getIndex() const ;
 	readStatement& index(int v);
 	int getOption() const;
@@ -148,6 +158,7 @@ public:
 	const _TCHAR* getAliasSecond(int index) const;
 
 	void execute(recordset& rs);
+	static readStatement* create();
 
 };
 
@@ -192,6 +203,11 @@ public:
 	void save(std::stringstream& sf);
 	void load(std::stringstream& sf);
 	void execute(recordset& rs, const std::vector<std::_tstring>* values=NULL, executeListner* listner=NULL);
+	static queryStatements* create(idatabaseManager& dbm);
+	static queryStatements* create(database* db);
+
+	void release();
+
 };
 
 
