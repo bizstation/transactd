@@ -74,7 +74,7 @@ class dbExecuter : public engine::mysql::dbManager
 	inline void doDeleteKey(request& req);
 	inline void doInsertBulk(request& req);
 	inline void doStat(request& req);
-	inline short seekEach(extRequestSeeks* ereq);
+	inline short seekEach(extRequestSeeks* ereq, bool noBookMark);
 public:
 	dbExecuter();
 	~dbExecuter();

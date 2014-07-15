@@ -57,6 +57,7 @@ BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::min, "min");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::max, "max");
 
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::readStatement, "readStatement");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::readHasMany, "readHasMany");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::orderByStatement, "orderByStatement");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::matchByStatement, "matchByStatement");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::groupByStatement, "groupByStatement");
@@ -178,6 +179,14 @@ void serialize(Archive& ar, readStatement& q, const unsigned int /*version*/)
 	boost::serialization::base_object<executable>(q);
 	ar & boost::serialization::make_nvp("keyFields", boost::serialization::base_object<fieldNames>(q));
 	ar & boost::serialization::make_nvp("query", boost::serialization::base_object<query>(q));
+	ar & boost::serialization::make_nvp("params", *q.internalPtr());
+}
+
+template <class Archive>
+void serialize(Archive& ar, readHasMany& q, const unsigned int /*version*/)
+{
+
+	ar & boost::serialization::make_nvp("readStatement", boost::serialization::base_object<readStatement>(q));
 	ar & boost::serialization::make_nvp("params", *q.internalPtr());
 }
 
@@ -643,23 +652,9 @@ private:
 	void serialize(Archive& ar, const unsigned int version)
 	{
 		ar & make_nvp("readType", readType);
-
-		/*if (!Archive::is_loading::value && (database == _T("")))
-		{
-			if (parent->dbm && parent->dbm->isOpened())
-			{
-				parent->dbm->setCurDb(dbIndex);
-				if (parent->dbm->db()->isOpened())
-					database = parent->dbm->db()->uri();
-			}
-			if (parent->db && parent->db->isOpened())
-				 database = parent->db->uri();
-		}*/
 		serialize_string(ar, "database", database);
 		serialize_string(ar, "table", table);
 		ar & make_nvp("index", index);
-		//ar & make_nvp("aliases", aliases);
-
 		int count = (int)aliases.size();
 		ar & boost::serialization::make_nvp("alias_count" , count);
 		alias_type a;
@@ -890,6 +885,13 @@ readStatement* queryStatements::addRead(readStatement::eReadType type)
 	return p;
 }
 
+readHasMany* queryStatements::addHasManyRead()
+{
+	readHasMany* p = readHasMany::create();
+	m_impl->statements.push_back(p);
+	return p;
+}
+
 groupByStatement* queryStatements::addGroupBy()
 {
 	groupByStatement* p = groupByStatement::create();
@@ -977,12 +979,111 @@ void queryStatements::execute(recordset& rs, const std::vector<std::_tstring>* v
 	m_impl->execute(rs, listner);
 }
 
+
 void queryStatements::clear()
 {
 	m_impl->reset();
 }
 
 
+//---------------------------------------------------------------------------
+//        struct readHasManyImple
+//---------------------------------------------------------------------------
+
+struct readHasManyImple
+{
+	fieldNames columns;
+	recordsets rss;
+
+	void reset()
+	{
+		rss.clear();
+		columns.reset();
+	}
+
+	template <class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & make_nvp("columns", columns);
+	}
+};
+
+//---------------------------------------------------------------------------
+//        class readHasMany
+//---------------------------------------------------------------------------
+
+readHasMany::readHasMany():readStatement(),m_readHasManyImpl(new readHasManyImple)
+{
+
+}
+
+readHasMany::~readHasMany()
+{
+	delete m_readHasManyImpl;
+}
+
+readHasManyImple* readHasMany::internalPtr() const
+{
+	return m_readHasManyImpl;
+}
+
+recordsets& readHasMany::recordsets()
+{
+	return m_readHasManyImpl->rss;
+}
+
+void readHasMany::addkeyValueColumn(const _TCHAR* name)
+{
+	 m_readHasManyImpl->columns.addValue(name);
+}
+
+const _TCHAR* readHasMany::getkeyValueColumn(int index) const
+{
+	return m_readHasManyImpl->columns.getValue(index);
+}
+
+int  readHasMany::keyValueColumns() const
+{
+	return m_readHasManyImpl->columns.count();
+}
+
+readHasMany& readHasMany::reset()
+{
+	readStatement::reset();
+	m_readHasManyImpl->reset();
+	return *this;
+}
+
+void readHasMany::execute(recordset& rs)
+{
+	m_readHasManyImpl->rss.clear();
+
+	std::vector<int> indexes;
+	const fielddefs* fds = rs.fieldDefs();
+	for (int i=0;i<m_readHasManyImpl->columns.count();++i)
+		indexes.push_back(fds->indexByName(getkeyValueColumn(i)));
+
+	for (int i=0;i<(int)rs.size();++i)
+	{
+		fieldNames::reset();
+		//setkey values
+		for (int j=0;j<(int)indexes.size();++j)
+		{
+			const _TCHAR* p = rs[i][indexes[j]].c_str();
+			addValue(p);
+			if (j==0)
+				addLogic(getkeyValueColumn(j), _T("="), p);
+			else
+				addLogic(_T("and"), getkeyValueColumn(j), _T("="), p);
+		}
+		recordset* tmp = new recordset();
+		boost::shared_ptr<recordset> r(tmp, boost::bind(&recordset::release, tmp));
+		m_readHasManyImpl->rss.push_back(r);
+		readStatement::execute(*r);
+	}
+}
+
+readHasMany* readHasMany::create(){return new readHasMany();}
 
 
 }// namespace client

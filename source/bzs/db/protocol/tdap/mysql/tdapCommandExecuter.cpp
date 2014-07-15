@@ -439,7 +439,7 @@ inline void dbExecuter::doSeekKey(request& req, int op)
 				flag = HA_READ_BEFORE_KEY;
 			else if (op == TD_KEY_OR_BEFORE)
 				flag = HA_READ_KEY_OR_PREV;
-			m_tb->seekKey(flag);
+			m_tb->seekKey(flag, m_tb->keymap());
 		}
 	}
 	readAfter(req, m_tb, this);
@@ -453,7 +453,7 @@ inline void dbExecuter::doMoveFirst(request& req)
 		if (m_tb->isNisKey(m_tb->keyNum()))
 		{
 			m_tb->clearKeybuf();
-			m_tb->seekKey(HA_READ_KEY_OR_NEXT);
+			m_tb->seekKey(HA_READ_KEY_OR_NEXT, m_tb->keymap());
 		}else
 			m_tb->getFirst();
 	}
@@ -486,7 +486,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, netsvc::server:
 	if (m_tb->setKeyNum(keynum))
 	{
 		m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
-		m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT : HA_READ_KEY_OR_PREV);
+		m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT : HA_READ_KEY_OR_PREV, m_tb->keymap());
 		
 		extRequest* ereq = (extRequest*)req.data;
 		bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK)!= 0;
@@ -556,7 +556,7 @@ inline int dbExecuter::doReadMulti(request& req, int op, netsvc::server::netWrit
 			return ret;
 		}
 		if (op == TD_KEY_SEEK_MULTI)
-			req.result = errorCodeSht(seekEach((extRequestSeeks*)req.data));
+			req.result = errorCodeSht(seekEach((extRequestSeeks*)req.data, noBookmark));
 		else
 		{
 			if (op == TD_KEY_NEXT_MULTI)
@@ -605,19 +605,43 @@ inline __int64 intValue(const unsigned char* p, int len)
 	return 0;
 }
 
-inline short dbExecuter::seekEach(extRequestSeeks* ereq)
+inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
 {
+
 	short stat = 0;
 	seek* fd = &ereq->seekData;
+	short seg = m_tb->setKeyValuesPacked(fd->ptr, fd->len);
+	key_part_map keyMap = m_tb->keymap();
+	if (!noBookmark)
+	{
+		if (seg != -1)
+		{
+			keyMap = 1U << (seg -1); 
+			seg = 1;
+		}else
+			seg = !m_tb->isUniqueKey();
+	}else
+		seg = 0;
+
 	for (int i=0;i<ereq->logicalCount;++i)
 	{
 		m_tb->setKeyValuesPacked(fd->ptr, fd->len);
-		m_tb->seekKey(HA_READ_KEY_EXACT);
+		m_tb->seekKey(HA_READ_KEY_EXACT, keyMap);
 		if (m_tb->stat() == 0)
 			stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
 		else 
 			stat = m_readHandler->write(NULL, m_tb->posPtrLen());
 		if (stat) break;	
+		
+		//for hasOne join
+		if (seg)
+		{
+			while (m_tb->stat() == 0)
+			{
+				m_tb->getNextSame(keyMap);
+				m_readHandler->write((uchar*)&i, 4);// write seek sequential number
+			}
+		}
 
 		fd = fd->next();
 	}
@@ -673,7 +697,7 @@ inline void dbExecuter::doUpdateKey(request& req)
 	if (m_tb->setKeyNum(keynum))
 	{
 		m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
-		m_tb->seekKey(HA_READ_KEY_EXACT);
+		m_tb->seekKey(HA_READ_KEY_EXACT, m_tb->keymap());
 		if (m_tb->stat() == 0)
 		{
 			m_tb->beginUpdate(keynum);
@@ -710,7 +734,7 @@ inline void dbExecuter::doDeleteKey(request& req)
 	if (m_tb->setKeyNum(keynum))
 	{
 		m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
-		m_tb->seekKey(HA_READ_KEY_EXACT);
+		m_tb->seekKey(HA_READ_KEY_EXACT, m_tb->keymap());
 		if (m_tb->stat() == 0)
 		{
 			m_tb->beginDel();

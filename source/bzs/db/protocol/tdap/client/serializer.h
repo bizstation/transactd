@@ -162,6 +162,30 @@ public:
 
 };
 
+typedef std::vector<boost::shared_ptr<recordset> > recordsets;
+
+
+class DLLLIBSTMT readHasMany : public readStatement
+{
+	struct readHasManyImple* m_readHasManyImpl;
+	readHasManyImple* internalPtr() const;
+	template <class Archive>
+	friend void serialize(Archive& ar, readHasMany& q, const unsigned int version);
+	readHasMany(const readHasMany& r);           //no implements
+	readHasMany& operator=(const readHasMany& r);//no implements
+public:
+	~readHasMany();
+	readHasMany();
+	recordsets& recordsets();
+	void addkeyValueColumn(const _TCHAR* name);
+	const _TCHAR* getkeyValueColumn(int index) const;
+	int  keyValueColumns() const;
+	readHasMany& reset();
+	void execute(recordset& rs);
+	static readHasMany* create();
+
+};
+
 
 class executeListner
 {
@@ -191,7 +215,9 @@ public:
 	executable* get(int index);
 	void pop_back();
 
+
 	readStatement* addRead(readStatement::eReadType type);
+	readHasMany* addHasManyRead();
 	groupByStatement* addGroupBy();
 	orderByStatement* addOrderBy();
 	matchByStatement* addMatchBy();

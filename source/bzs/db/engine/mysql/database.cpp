@@ -751,7 +751,7 @@ void table::setKeyValues(const uchar* ptr, int size)
 
 	Client needs to make the right image except for null byte. 
 */
-void table::setKeyValuesPacked(const uchar* ptr, int size)
+short table::setKeyValuesPacked(const uchar* ptr, int size)
 {	
 
 	KEY& key = m_table->key_info[m_keyNum];
@@ -777,6 +777,8 @@ void table::setKeyValuesPacked(const uchar* ptr, int size)
 			int copylen = seg.length;
 			if (seg.key_part_flag & HA_BLOB_PART || seg.key_part_flag & HA_VAR_LENGTH_PART)
 				copylen += 2;
+			if ((from + copylen) - ptr > size)
+				return j;// key data size is too short as whole key_parts length
 			memcpy(&m_keybuf[to], from, copylen);
 			to += copylen;
 			from += copylen;
@@ -785,7 +787,7 @@ void table::setKeyValuesPacked(const uchar* ptr, int size)
 				THROW_BZS_ERROR_WITH_CODEMSG(STATUS_KEYBUFFERTOOSMALL, "");
 		}
 	}
-	
+	return -1;
 }
 
 uint table::keyPackCopy(uchar* ptr)
@@ -1082,13 +1084,13 @@ inline void table::unlockRow()
 /* read by key
  * A key field value is set in advance
  */
-void  table::seekKey(enum ha_rkey_function find_flag)
+void  table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
 {
 	m_nonNcc = false;
 	if(keynumCheck(m_keyNum))
 	{
 		unlockRow();
-		m_stat = m_table->file->ha_index_read_map(m_table->record[0], &m_keybuf[0], keymap(), find_flag);
+		m_stat = m_table->file->ha_index_read_map(m_table->record[0], &m_keybuf[0], keyMap/*keymap()*/, find_flag);
 		m_cursor = m_validCursor = (m_stat == 0);
 		if (m_stat==0)
 		{
@@ -1119,14 +1121,14 @@ void table::moveKey(boost::function<int()> func)
 	
 }
 
-void table::getNextSame()
+void table::getNextSame(key_part_map keyMap)
 {
 	m_nonNcc = false;
 	if(keynumCheck(m_keyNum))
 	{
 		if (m_validCursor && m_db.inTransaction()  && (m_db.transactionType()== 0))
 			m_table->file->unlock_row();
-		m_stat = m_table->file->ha_index_next_same(m_table->record[0], &m_keybuf[0], keymap());
+		m_stat = m_table->file->ha_index_next_same(m_table->record[0], &m_keybuf[0], keyMap/*keymap()*/);
 		m_cursor = m_validCursor = (m_stat == 0);
 		if (m_stat==0)
 			key_copy(&m_keybuf[0], m_table->record[0], &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
@@ -1323,7 +1325,7 @@ void table::getByPercentage(unsigned short per)
 		
 			pk.setKeyValueByPer( per, true);
 		}
-		seekKey(HA_READ_KEY_OR_NEXT);
+		seekKey(HA_READ_KEY_OR_NEXT, keymap());
 	}
 	
 }
@@ -1377,7 +1379,7 @@ void table::calcPercentage()
 	if (m_stat == 0)
 	{	//restore current
 		setKeyValues(keybufCur, 128);
-		seekKey(HA_READ_KEY_EXACT);
+		seekKey(HA_READ_KEY_EXACT, keymap());
 		if (m_stat == 0)
 			m_percentResult =  percentage(keybufFirst,keybufLast, keybufCur);
 	}
@@ -1527,7 +1529,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 //private
 void table::seekPos(const uchar* rawPos) 
 {
-	seekKey(HA_READ_KEY_OR_NEXT);
+	seekKey(HA_READ_KEY_OR_NEXT, keymap());
 	if (m_keyNum == m_table->s->primary_key)
 		return;
 	int cmp;

@@ -217,7 +217,6 @@ class table : private boost::noncopyable
 	bool keyCheckForPercent();
 	inline bool keynumCheck(char num);
 	void preBuildPercent(uchar* first, uchar* last);
-	inline key_part_map keymap(){return (1U << m_table->key_info[m_keyNum].user_defined_key_parts) -1;} 
 	void seekPos(const uchar* pos);
 	int setKeyNullFlags();
 	void setFiledNullFlags();
@@ -292,7 +291,7 @@ public:
 		m_db.closeTable(this);
 	}
 	inline char keyNum()const {return m_keyNum;}
-	
+	inline bool isUniqueKey(){return (m_table->key_info[m_keyNum].flags & HA_NOSAME);}
 	/*
 	 *	Since it differs from the key number which a client specifies
 	 *   , and an internal key number, it changes.
@@ -307,8 +306,9 @@ public:
 	bool setKeyNum(char num, bool sorted = true);
 	inline void setKeyNum(const char* name, bool sorted = true){setKeyNum(keynumByName(name), sorted);};
 	bool isNisKey(char num)const;
-	void seekKey(enum ha_rkey_function find_flag);
-	void getNextSame();
+	inline key_part_map keymap(){return (1U << m_table->key_info[m_keyNum].user_defined_key_parts) -1;} 
+	void seekKey(enum ha_rkey_function find_flag, key_part_map keyMap);
+	void getNextSame(key_part_map keyMap);
 	void getLast();
 	void getFirst();
 	void getNext();
@@ -359,7 +359,7 @@ public:
 	
 	int keynumByName(const char* name)const;
 	int stat(){return m_stat;};
-	void setKeyValuesPacked(const uchar* ptr, int size);
+	short setKeyValuesPacked(const uchar* ptr, int size);
 	void* record()const;
 	
 	uint  keyPackCopy(uchar* ptr);

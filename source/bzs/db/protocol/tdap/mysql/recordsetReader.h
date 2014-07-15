@@ -820,11 +820,13 @@ class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
 	position		m_position;
 	fields			m_fields;
 	engine::mysql::fieldBitmap bm;
+	bool m_seeksMode;
 public:
 	short begin(engine::mysql::table* tb, extRequest* req, bool fieldCache
 		, netsvc::server::netWriter* nw, bool forword, bool noBookmark, bool seeksMode)
 	{
 		short ret = 0;
+		m_seeksMode = seeksMode;
 		m_position.setTable(tb);
 		m_req = req;
 		m_resultDef =  seeksMode ? ((extRequestSeeks*)m_req)->resultDef():m_req->resultDef();

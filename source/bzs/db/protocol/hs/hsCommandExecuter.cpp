@@ -228,7 +228,7 @@ void dbExecuter::doRecordOperation(request& req, engine::mysql::table* tb, resul
 	
 	setKeyValues(req, tb, curInValueIndex);
 	if (curInValueIndex >= 0) ++curInValueIndex;
-	tb->seekKey(req.seekFlag());
+	tb->seekKey(req.seekFlag(), tb->keymap());
 	if (tb->stat()==0)
 	{
 		filterResult = readAfter(req, tb, buf, func); 
@@ -244,11 +244,11 @@ void dbExecuter::doRecordOperation(request& req, engine::mysql::table* tb, resul
 				if (curInValueIndex >= req.table.in.values.size())
 					break;
 				setKeyValues(req, tb, curInValueIndex++);
-				tb->seekKey(req.seekFlag());
+				tb->seekKey(req.seekFlag(), tb->keymap());
 			}else
 			{
 				if (req.naviSame())
-					tb->getNextSame();
+					tb->getNextSame(tb->keymap());
 				else if (req.naviForward())
 					tb->getNext();
 				else
