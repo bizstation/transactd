@@ -32,14 +32,11 @@ describe Transactd, 'datetime' do
     nowdate.i = i_nowdate               # get today as BtrDate
     s_nowdate  = Transactd::btrdtoa(nowdate)
     s_nowdate2 = Transactd::btrdtoa(nowdate, true)
-    cs_nowdate = Transactd::c_str(nowdate)
     #p nowdate
     #p s_nowdate + ' ' + s_nowdate.encoding.to_s
     #p s_nowdate2 + ' ' + s_nowdate2.encoding.to_s
-    #p cs_nowdate + ' ' + cs_nowdate.encoding.to_s
     expect(s_i_nowdate).to eq s_nowdate
     expect(s_i_nowdate2).to eq s_nowdate2
-    expect(cs_nowdate).to eq s_nowdate
   end
   
   it 'get BtrTime' do
@@ -53,14 +50,11 @@ describe Transactd, 'datetime' do
     nowtime.i = i_nowtime                 # get now time as BtrTime
     s_nowtime  = Transactd::btrttoa(nowtime)
     s_nowtime2 = Transactd::btrttoa(nowtime, true)
-    cs_nowtime = Transactd::c_str(nowtime)
     #p nowtime
     #p s_nowtime + ' ' + s_nowtime.encoding.to_s
     #p s_nowtime2 + ' ' + s_nowtime2.encoding.to_s
-    #p cs_nowtime + ' ' + cs_nowtime.encoding.to_s
     expect(s_i_nowtime).to eq s_nowtime
     expect(s_i_nowtime2).to eq s_nowtime2
-    expect(cs_nowtime).to eq s_nowtime
   end
   
   it 'get BtrDateTime' do

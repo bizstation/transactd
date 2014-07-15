@@ -130,7 +130,6 @@ describe Transactd, 'blob' do
     @db = Transactd::Database.createObject()
   end
   after :each do
-    @db.close()
     @db = nil
   end
   
@@ -140,6 +139,7 @@ describe Transactd, 'blob' do
     createTable(@db)
     tb = openTable(@db)
     tb.close()
+    @db.close()
   end
   
   it 'insert' do
@@ -171,6 +171,7 @@ describe Transactd, 'blob' do
     tb.insert()
     expect(tb.stat()).to eq 0
     tb.close()
+    @db.close()
   end
   
   it 'seek' do
@@ -209,6 +210,7 @@ describe Transactd, 'blob' do
     expect(tb.getFVstr(FDI_BODY)).to eq "2\ntest\nテスト\n\nあいうえおあいうえお"
     expect(tb.getFVbin(FDI_IMAGE).force_encoding('UTF-8')).to eq "2\ntest\nテスト\n\nあいうえおあいうえお"
     tb.close()
+    @db.close()
   end
   
   it 'find' do
@@ -242,6 +244,7 @@ describe Transactd, 'blob' do
     tb.findPrev(true)
     expect(tb.stat()).to eq Transactd::STATUS_PROGRAM_ERROR
     tb.close()
+    @db.close()
   end
   
   it 'update' do
@@ -288,6 +291,7 @@ describe Transactd, 'blob' do
     expect(tb.getFVstr(FDI_BODY)).to eq "2\nテスト\ntest\n\nABCDEFG"
     expect(tb.getFVbin(FDI_IMAGE).force_encoding('UTF-8')).to eq "2\ntest\nテスト\n\nあいうえおあいうえお"
     tb.close()
+    @db.close()
   end
   
   it 'delete' do
@@ -322,6 +326,7 @@ describe Transactd, 'blob' do
     tb.seekNext()
     expect(tb.stat()).to eq Transactd::STATUS_EOF
     tb.close()
+    @db.close()
   end
   
   it 'drop' do

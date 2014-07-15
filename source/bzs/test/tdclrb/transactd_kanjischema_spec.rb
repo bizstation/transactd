@@ -55,6 +55,7 @@ def testCreateDatabase(db, url)
     db.create(url)
   end
   expect(db.stat()).to eq 0
+  db.close()
 end
 
 def testOpenDatabase(db, url)
@@ -168,6 +169,7 @@ def testWhole(db, tableid, tablename, url)
   testInsert(db, tablename)
   testGetEqual(db, tablename)
   testFind(db, tablename)
+  db.close()
 end
 
 
@@ -176,7 +178,6 @@ describe Transactd do
     @db = Transactd::Database.createObject()
   end
   after :each do
-    @db.close()
     @db = nil
   end
   

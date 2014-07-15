@@ -802,14 +802,6 @@ abstract class transactd {
 		return $r;
 	}
 
-	static function c_str($d,$type_vb=false) {
-		switch (func_num_args()) {
-		case 1: $r=c_str($d); break;
-		default: $r=c_str($d,$type_vb);
-		}
-		return $r;
-	}
-
 	static function getNowDate() {
 		return getNowDate();
 	}
@@ -833,6 +825,22 @@ abstract class transactd {
 	}
 
 	const ROW_MEM_BLOCK_RESERVE = ROW_MEM_BLOCK_RESERVE;
+
+	static function host($uri,$buf) {
+		return host($uri,$buf);
+	}
+
+	static function dbname($uri,$buf) {
+		return dbname($uri,$buf);
+	}
+
+	static function schemaTable($uri,$buf) {
+		return schemaTable($uri,$buf);
+	}
+
+	static function createDatabaseObject() {
+		return createDatabaseObject();
+	}
 
 	static function new_fieldsBase_p_p() {
 		return new_fieldsBase_p_p();
@@ -1102,6 +1110,10 @@ class fielddef extends fielddef_t_my {
 
 	function isStringType() {
 		return fielddef_isStringType($this->_cPtr);
+	}
+
+	function isNumericType() {
+		return fielddef_isNumericType($this->_cPtr);
 	}
 
 	function charNum() {
@@ -2014,10 +2026,6 @@ class table extends nstable {
 		return table_getFVAstr($this->_cPtr,$index_or_fieldName);
 	}
 
-	function getFVbin($index_or_fieldName) {
-		return table_getFVbin($this->_cPtr,$index_or_fieldName);
-	}
-
 	function setFVA($index_or_fieldName,$data) {
 		table_setFVA($this->_cPtr,$index_or_fieldName,$data);
 	}
@@ -2047,6 +2055,10 @@ class table extends nstable {
 		case 2: table_setFV($this->_cPtr,$index_or_fieldName,$data); break;
 		default: table_setFV($this->_cPtr,$index_or_fieldName,$data,$size);
 		}
+	}
+
+	function getFVbin($index_or_fieldName) {
+		return table_getFVbin($this->_cPtr,$index_or_fieldName);
 	}
 
 	function keyValueDescription() {
@@ -2079,17 +2091,19 @@ class queryBase {
 
 	const joinWhereFields = 2;
 
-	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__queryBase') {
-			$this->_cPtr=$res;
+	function __construct($r_=null) {
+		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__queryBase') {
+			$this->_cPtr=$r_;
 			return;
 		}
-		$this->_cPtr=new_queryBase();
+		switch (func_num_args()) {
+		case 0: $this->_cPtr=new_queryBase(); break;
+		default: $this->_cPtr=new_queryBase($r_);
+		}
 	}
 
 	function reset() {
 		queryBase_reset($this->_cPtr);
-		return $this;
 	}
 
 	function clearSeekKeyValues() {
@@ -2217,6 +2231,10 @@ class queryBase {
 		return queryBase_getWhereToken($this->_cPtr,$index);
 	}
 
+	function setWhereToken($index,$v) {
+		queryBase_setWhereToken($this->_cPtr,$index,$v);
+	}
+
 	function reverseAliasName($alias,$src) {
 		queryBase_reverseAliasName($this->_cPtr,$alias,$src);
 	}
@@ -2265,8 +2283,8 @@ class queryBase {
 		return $r;
 	}
 
-	function andWhere($field,$op,$val) {
-		$r=queryBase_andWhere($this->_cPtr,$field,$op,$val);
+	function and_($field,$op,$val) {
+		$r=queryBase_and_($this->_cPtr,$field,$op,$val);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
@@ -2275,8 +2293,8 @@ class queryBase {
 		return $r;
 	}
 
-	function orWhere($field,$op,$val) {
-		$r=queryBase_orWhere($this->_cPtr,$field,$op,$val);
+	function or_($field,$op,$val) {
+		$r=queryBase_or_($this->_cPtr,$field,$op,$val);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
@@ -2285,18 +2303,16 @@ class queryBase {
 		return $r;
 	}
 
-	function In($value1,$value2=null,$value3=null,$value4=null,$value5=null,$value6=null,$value7=null,$value8=null,$value9=null,$value10=null) {
+	function in($value1,$value2=null,$value3=null,$value4=null,$value5=null,$value6=null,$value7=null,$value8=null) {
 		switch (func_num_args()) {
-		case 1: $r=queryBase_In($this->_cPtr,$value1); break;
-		case 2: $r=queryBase_In($this->_cPtr,$value1,$value2); break;
-		case 3: $r=queryBase_In($this->_cPtr,$value1,$value2,$value3); break;
-		case 4: $r=queryBase_In($this->_cPtr,$value1,$value2,$value3,$value4); break;
-		case 5: $r=queryBase_In($this->_cPtr,$value1,$value2,$value3,$value4,$value5); break;
-		case 6: $r=queryBase_In($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6); break;
-		case 7: $r=queryBase_In($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7); break;
-		case 8: $r=queryBase_In($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7,$value8); break;
-		case 9: $r=queryBase_In($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7,$value8,$value9); break;
-		default: $r=queryBase_In($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7,$value8,$value9,$value10);
+		case 1: $r=queryBase_in($this->_cPtr,$value1); break;
+		case 2: $r=queryBase_in($this->_cPtr,$value1,$value2); break;
+		case 3: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3); break;
+		case 4: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4); break;
+		case 5: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4,$value5); break;
+		case 6: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6); break;
+		case 7: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7); break;
+		default: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7,$value8);
 		}
 		if (!is_resource($r)) return $r;
 		switch (get_resource_type($r)) {
@@ -2489,15 +2505,6 @@ class nsdatabase {
 }
 
 class database extends nsdatabase {
-	function __clone() {
-		$r=database_c_clone($this->_cPtr);
-		if (is_resource($r)) {
-			$this->_cPtr = $r;
-		} else {
-			$this->_cPtr = $r->_cPtr;
-		}
-	}
-	
 	public $_cPtr=null;
 
 	function __set($var,$value) {
@@ -2514,8 +2521,9 @@ class database extends nsdatabase {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
 		return nsdatabase::__get($var);
 	}
-	function __construct($h) {
-		$this->_cPtr=$h;
+
+	function release() {
+		database_release($this->_cPtr);
 	}
 
 	function dbDef() {
@@ -2576,14 +2584,9 @@ class database extends nsdatabase {
 		}
 	}
 
-	function c_clone() {
-		$r=database_c_clone($this->_cPtr);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new database($r);
-		}
-		return $r;
+	function __clone() {
+		$r=database___clone($this->_cPtr);
+		$this->__construct($r);
 	}
 
 	function create($uri,$type=0) {
@@ -2641,8 +2644,20 @@ class database extends nsdatabase {
 		return database_isOpened($this->_cPtr);
 	}
 
+	function mode() {
+		return database_mode($this->_cPtr);
+	}
+
 	function defaultAutoIncSpace() {
 		return database_defaultAutoIncSpace($this->_cPtr);
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__database') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_database();
 	}
 
 	static function createObject() {
@@ -2677,6 +2692,14 @@ class benchmark {
 
 	static function start() {
 		benchmark_start();
+	}
+
+	static function stop() {
+		return benchmark_stop();
+	}
+
+	static function showTimes($result,$name) {
+		benchmark_showTimes($result,$name);
 	}
 
 	static function showTimeSec($result,$name) {
@@ -2901,15 +2924,6 @@ class bdate {
 }
 
 class fielddefs {
-	function __clone() {
-		$r=fielddefs_c_clone($this->_cPtr);
-		if (is_resource($r)) {
-			$this->_cPtr = $r;
-		} else {
-			$this->_cPtr = $r->_cPtr;
-		}
-	}
-	
 	public $_cPtr=null;
 	protected $_pData=array();
 
@@ -2931,28 +2945,13 @@ class fielddefs {
 		$this->_cPtr=$h;
 	}
 
-	function c_clone() {
-		$r=fielddefs_c_clone($this->_cPtr);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new fielddefs($r);
-		}
-		return $r;
+	function __clone() {
+		$r=fielddefs___clone($this->_cPtr);
+		$this->__construct($r);
 	}
 
 	function indexByName($name) {
 		return fielddefs_indexByName($this->_cPtr,$name);
-	}
-
-	function getFielddef($index) {
-		$r=fielddefs_getFielddef($this->_cPtr,$index);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new fielddef($r);
-		}
-		return $r;
 	}
 
 	function checkIndex($index) {
@@ -3042,16 +3041,15 @@ class field {
 		return $this->_pData[$var];
 	}
 
-	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__field') {
-			$this->_cPtr=$res;
+	function __construct($r_=null) {
+		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__field') {
+			$this->_cPtr=$r_;
 			return;
 		}
-		$this->_cPtr=new_field();
-	}
-
-	function ptr() {
-		return field_ptr($this->_cPtr);
+		switch (func_num_args()) {
+		case 0: $this->_cPtr=new_field(); break;
+		default: $this->_cPtr=new_field($r_);
+		}
 	}
 
 	function type() {
@@ -3291,26 +3289,6 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return $r;
 	}
 
-	function getFieldByIndex($index) {
-		$r=Record_getFieldByIndex($this->_cPtr,$index);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new field($r);
-		}
-		return $r;
-	}
-
-	function getFieldByName($name) {
-		$r=Record_getFieldByName($this->_cPtr,$name);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new field($r);
-		}
-		return $r;
-	}
-
 	function size() {
 		return Record_size($this->_cPtr);
 	}
@@ -3451,714 +3429,122 @@ class writableRecord extends memoryRecord {
 	}
 }
 
-class fieldNames {
+class query extends queryBase {
 	public $_cPtr=null;
-	protected $_pData=array();
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
+		queryBase::__set($var,$value);
 	}
 
 	function __isset($var) {
 		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
+		return queryBase::__isset($var);
 	}
 
 	function __get($var) {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
+		return queryBase::__get($var);
+	}
+
+	function __construct($r_=null) {
+		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__query') {
+			$this->_cPtr=$r_;
+			return;
+		}
+		switch (func_num_args()) {
+		case 0: $this->_cPtr=new_query(); break;
+		default: $this->_cPtr=new_query($r_);
+		}
 	}
 
 	function reset() {
-		$r=fieldNames_reset($this->_cPtr);
+		$r=query_reset($this->_cPtr);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new fieldNames($r);
+			return new query($r);
 		}
 		return $r;
 	}
 
-	function keyField($name,$name1=null,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null,$name9=null,$name10=null) {
+	function select($name,$name1=null,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null,$name9=null,$name10=null) {
 		switch (func_num_args()) {
-		case 1: $r=fieldNames_keyField($this->_cPtr,$name); break;
-		case 2: $r=fieldNames_keyField($this->_cPtr,$name,$name1); break;
-		case 3: $r=fieldNames_keyField($this->_cPtr,$name,$name1,$name2); break;
-		case 4: $r=fieldNames_keyField($this->_cPtr,$name,$name1,$name2,$name3); break;
-		case 5: $r=fieldNames_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4); break;
-		case 6: $r=fieldNames_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5); break;
-		case 7: $r=fieldNames_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6); break;
-		case 8: $r=fieldNames_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7); break;
-		case 9: $r=fieldNames_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8); break;
-		case 10: $r=fieldNames_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9); break;
-		default: $r=fieldNames_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9,$name10);
+		case 1: $r=query_select($this->_cPtr,$name); break;
+		case 2: $r=query_select($this->_cPtr,$name,$name1); break;
+		case 3: $r=query_select($this->_cPtr,$name,$name1,$name2); break;
+		case 4: $r=query_select($this->_cPtr,$name,$name1,$name2,$name3); break;
+		case 5: $r=query_select($this->_cPtr,$name,$name1,$name2,$name3,$name4); break;
+		case 6: $r=query_select($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5); break;
+		case 7: $r=query_select($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6); break;
+		case 8: $r=query_select($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7); break;
+		case 9: $r=query_select($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8); break;
+		case 10: $r=query_select($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9); break;
+		default: $r=query_select($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9,$name10);
 		}
 		if (!is_resource($r)) return $r;
 		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__fieldNames': return new fieldNames($r);
-		default: return new fieldNames($r);
+		case '_p_bzs__db__protocol__tdap__client__query': return new query($r);
+		default: return new query($r);
 		}
 	}
 
-	function getKeyFields() {
-		return fieldNames_getKeyFields($this->_cPtr);
-	}
-
-	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__fieldNames') {
-			$this->_cPtr=$res;
-			return;
-		}
-		$this->_cPtr=new_fieldNames();
-	}
-}
-
-class recordsetQuery {
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-
-	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__recordsetQuery') {
-			$this->_cPtr=$res;
-			return;
-		}
-		$this->_cPtr=new_recordsetQuery();
-	}
-
-	function reset() {
-		$r=recordsetQuery_reset($this->_cPtr);
+	static function create() {
+		$r=query_create();
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new recordsetQuery($r);
+			return new query($r);
 		}
 		return $r;
 	}
 
-	function when($name,$qlogic,$value) {
-		$r=recordsetQuery_when($this->_cPtr,$name,$qlogic,$value);
+	function where($name,$qlogic,$value) {
+		$r=query_where($this->_cPtr,$name,$qlogic,$value);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new recordsetQuery($r);
+			return new query($r);
 		}
 		return $r;
 	}
 
 	function and_($name,$qlogic,$value) {
-		$r=recordsetQuery_and_($this->_cPtr,$name,$qlogic,$value);
+		$r=query_and_($this->_cPtr,$name,$qlogic,$value);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new recordsetQuery($r);
+			return new query($r);
 		}
 		return $r;
 	}
 
 	function or_($name,$qlogic,$value) {
-		$r=recordsetQuery_or_($this->_cPtr,$name,$qlogic,$value);
+		$r=query_or_($this->_cPtr,$name,$qlogic,$value);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new recordsetQuery($r);
+			return new query($r);
 		}
 		return $r;
 	}
-}
 
-class groupFuncBase {
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-
-	function __construct($targetName,$resultName=null,$query=null) {
-		if (is_resource($targetName) && get_resource_type($targetName) === '_p_bzs__db__protocol__tdap__client__groupFuncBase') {
-			$this->_cPtr=$targetName;
-			return;
-		}
+	function in($kv0,$kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
 		switch (func_num_args()) {
-		case 1: $this->_cPtr=new_groupFuncBase($targetName); break;
-		default: $this->_cPtr=new_groupFuncBase($targetName,$resultName,$query);
-		}
-	}
-
-	function setQuery($query) {
-		$r=groupFuncBase_setQuery($this->_cPtr,$query);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new groupFuncBase($r);
-		}
-		return $r;
-	}
-
-	function targetName() {
-		return groupFuncBase_targetName($this->_cPtr);
-	}
-
-	function resultName() {
-		return groupFuncBase_resultName($this->_cPtr);
-	}
-
-	function resultKey() {
-		return groupFuncBase_resultKey($this->_cPtr);
-	}
-
-	function reset() {
-		groupFuncBase_reset($this->_cPtr);
-	}
-
-	function result($groupIndex) {
-		return groupFuncBase_result($this->_cPtr,$groupIndex);
-	}
-}
-
-class groupQuery {
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-
-	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__groupQuery') {
-			$this->_cPtr=$res;
-			return;
-		}
-		$this->_cPtr=new_groupQuery();
-	}
-
-	function reset() {
-		$r=groupQuery_reset($this->_cPtr);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new groupQuery($r);
-		}
-		return $r;
-	}
-
-	function addFunction($func) {
-		$r=groupQuery_addFunction($this->_cPtr,$func);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new groupQuery($r);
-		}
-		return $r;
-	}
-
-	function keyField($name,$name1=null,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null,$name9=null,$name10=null) {
-		switch (func_num_args()) {
-		case 1: $r=groupQuery_keyField($this->_cPtr,$name); break;
-		case 2: $r=groupQuery_keyField($this->_cPtr,$name,$name1); break;
-		case 3: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2); break;
-		case 4: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3); break;
-		case 5: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4); break;
-		case 6: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5); break;
-		case 7: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6); break;
-		case 8: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7); break;
-		case 9: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8); break;
-		case 10: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9); break;
-		default: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9,$name10);
+		case 1: $r=query_in($this->_cPtr,$kv0); break;
+		case 2: $r=query_in($this->_cPtr,$kv0,$kv1); break;
+		case 3: $r=query_in($this->_cPtr,$kv0,$kv1,$kv2); break;
+		case 4: $r=query_in($this->_cPtr,$kv0,$kv1,$kv2,$kv3); break;
+		case 5: $r=query_in($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4); break;
+		case 6: $r=query_in($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5); break;
+		case 7: $r=query_in($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6); break;
+		default: $r=query_in($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
 		}
 		if (!is_resource($r)) return $r;
 		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__groupQuery': return new groupQuery($r);
-		default: return new groupQuery($r);
+		case '_p_bzs__db__protocol__tdap__client__query': return new query($r);
+		default: return new query($r);
 		}
-	}
-}
-
-class sum extends groupFuncBase {
-	public $_cPtr=null;
-	private $targetName;
-	private $resultName;
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		groupFuncBase::__set($var,$value);
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return groupFuncBase::__isset($var);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return groupFuncBase::__get($var);
-	}
-
-	function __construct($targetName,$resultName=null,$query=null) {
-		if (is_resource($targetName) && get_resource_type($targetName) === '_p_bzs__db__protocol__tdap__client__sum') {
-			$this->_cPtr=$targetName;
-			return;
-		}
-		$this->targetName = $targetName;
-		$this->resultName = $resultName;
-		switch (func_num_args()) {
-		case 1: $this->_cPtr=new_sum($this->targetName); break;
-		default: $this->_cPtr=new_sum($this->targetName,$this->resultName,$query);
-		}
-	}
-}
-
-class count extends groupFuncBase {
-	public $_cPtr=null;
-	private $resultName;
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		groupFuncBase::__set($var,$value);
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return groupFuncBase::__isset($var);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return groupFuncBase::__get($var);
-	}
-
-	function __construct($resultName,$query=null) {
-		if (is_resource($resultName) && get_resource_type($resultName) === '_p_bzs__db__protocol__tdap__client__count') {
-			$this->_cPtr=$resultName;
-			return;
-		}
-		$this->resultName = $resultName;
-		$this->_cPtr=new_count($this->resultName,$query);
-	}
-}
-
-class avg extends sum {
-	public $_cPtr=null;
-	private $targetName;
-	private $resultName;
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		sum::__set($var,$value);
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return sum::__isset($var);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return sum::__get($var);
-	}
-
-	function __construct($targetName,$resultName=null,$query=null) {
-		if (is_resource($targetName) && get_resource_type($targetName) === '_p_bzs__db__protocol__tdap__client__avg') {
-			$this->_cPtr=$targetName;
-			return;
-		}
-		$this->targetName = $targetName;
-		$this->resultName = $resultName;
-		switch (func_num_args()) {
-		case 1: $this->_cPtr=new_avg($this->targetName); break;
-		default: $this->_cPtr=new_avg($this->targetName,$this->resultName,$query);
-		}
-	}
-}
-
-class min extends sum {
-	public $_cPtr=null;
-	private $targetName;
-	private $resultName;
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		sum::__set($var,$value);
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return sum::__isset($var);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return sum::__get($var);
-	}
-
-	function __construct($targetName,$resultName=null,$query=null) {
-		if (is_resource($targetName) && get_resource_type($targetName) === '_p_bzs__db__protocol__tdap__client__min') {
-			$this->_cPtr=$targetName;
-			return;
-		}
-		$this->targetName = $targetName;
-		$this->resultName = $resultName;
-		switch (func_num_args()) {
-		case 1: $this->_cPtr=new_min($this->targetName); break;
-		default: $this->_cPtr=new_min($this->targetName,$this->resultName,$query);
-		}
-	}
-}
-
-class max extends sum {
-	public $_cPtr=null;
-	private $targetName;
-	private $resultName;
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		sum::__set($var,$value);
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return sum::__isset($var);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return sum::__get($var);
-	}
-
-	function __construct($targetName,$resultName=null,$query=null) {
-		if (is_resource($targetName) && get_resource_type($targetName) === '_p_bzs__db__protocol__tdap__client__max') {
-			$this->_cPtr=$targetName;
-			return;
-		}
-		$this->targetName = $targetName;
-		$this->resultName = $resultName;
-		switch (func_num_args()) {
-		case 1: $this->_cPtr=new_max($this->targetName); break;
-		default: $this->_cPtr=new_max($this->targetName,$this->resultName,$query);
-		}
-	}
-}
-
-class RecordSetIterator implements \SeekableIterator {
-	private $_recordset_cPtr = null;
-	private $_position = 0;
-	private $_fieldsBase_p_p = null;
-	private $_record = null;
-	private $_count = -1;
-
-	function __construct($recordset_cPtr, $fielddefs) {
-		$this->_recordset_cPtr = $recordset_cPtr;
-		$this->_position = 0;
-		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-		$this->_count = RecordSet_count($recordset_cPtr);
-		$this->_record = new Record(memoryRecord::createRecord($fielddefs));
-	}
-
-	function __destruct() {
-		delete_fieldsBase_p_p($this->_fieldsBase_p_p);
-	}
-
-	public function rewind() {
-		$this->_position = 0;
-	}
-
-	public function valid() {
-		return $this->_position < $this->_count;
-	}
-
-	public function current() {
-		RecordSet_getRow($this->_recordset_cPtr, $this->_position, $this->_fieldsBase_p_p);
-		$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
-		return $this->_record;
-	}
-
-	public function key() {
-		return $this->_position;
-	}
-
-	public function next() {
-		$this->_position++;
-	}
-
-	public function seek($position) {
-		if ($position < 0 || $position >= $this->_count) {
-			throw new \OutOfBoundsException("invalid seek position ($position)");
-		}
-		$this->_position = $position;
-	}
-}
-
-class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
-	private $_fieldsBase_p_p = null;
-	private $_record = null;
-
-	function __clone() {
-		$r=RecordSet_c_clone($this->_cPtr);
-		if (is_resource($r)) {
-			$this->_cPtr = $r;
-		} else {
-			$this->_cPtr = $r->_cPtr;
-		}
-		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-		$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
-	}
-
-	function __destruct() {
-		transactd::delete_fieldsBase_p_p($this->_fieldsBase_p_p);
-	}
-
-	// IteratorAggregate
-	public function getIterator() {
-		return new RecordSetIterator($this->_cPtr, $this->fieldDefs());
-	}
-
-	// ArrayAccess
-	public function offsetExists($offset) {
-		return \gettype($offset) !== 'integer' && $offset >= 0 && $offset < $this->count();
-	}
-
-	public function offsetGet($offset) {
-		RecordSet_getRow($this->_cPtr, $offset, $this->_fieldsBase_p_p);
-		$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
-		return $this->_record;
-	}
-
-	public function offsetSet($offset, $value) {
-		throw new \BadMethodCallException();
-	}
-
-	public function offsetUnset($offset) {
-		throw new \BadMethodCallException();
-	}
-
-	// random access
-	function first() {
-		if ($this->count() <= 0) {
-			throw new \OutOfBoundsException('no records in recordset');
-		}
-		return $this->offsetGet(0);
-	}
-
-	function last() {
-		if ($this->count() <= 0) {
-			throw new \OutOfBoundsException('no records in recordset');
-		}
-		return $this->offsetGet($this->count() - 1);
-	}
-
-	// generator
-	function range($start = null, $end = null) {
-		$count = $this->count();
-		if (\gettype($start) !== 'integer' || $start < 0) {
-			$i = 0;
-		} else {
-			$i = $start;
-		}
-		if (\gettype($end) !== 'integer' || $end < 0 || $end >= $count) {
-			$end = $count - 1;
-		}
-		while ($i <= $end) {
-			RecordSet_getRow($this->_cPtr, $i, $this->_fieldsBase_p_p);
-			$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
-			yield $this->_record;
-			$i++;
-		}
-	}
-
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-
-	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__recordset') {
-			$this->_cPtr=$res;
-			$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-			$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
-			return;
-		}
-		$this->_cPtr=new_RecordSet();
-		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-		$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
-	}
-
-	function c_clone() {
-		$r=RecordSet_c_clone($this->_cPtr);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
-		}
-		return $r;
-	}
-
-	function size() {
-		return RecordSet_size($this->_cPtr);
-	}
-
-	function count() {
-		return RecordSet_count($this->_cPtr);
-	}
-
-	function clearRecords() {
-		RecordSet_clearRecords($this->_cPtr);
-	}
-
-	function fieldDefs() {
-		$r=RecordSet_fieldDefs($this->_cPtr);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new fielddefs($r);
-		}
-		return $r;
-	}
-
-	function clear() {
-		RecordSet_clear($this->_cPtr);
-	}
-
-	function top($c_,$n) {
-		$r=RecordSet_top($this->_cPtr,$c_,$n);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
-		}
-		return $r;
-	}
-
-	function begin() {
-		return RecordSet_begin($this->_cPtr);
-	}
-
-	function end() {
-		return RecordSet_end($this->_cPtr);
-	}
-
-	function erase($index_or_it) {
-		return RecordSet_erase($this->_cPtr,$index_or_it);
-	}
-
-	function removeField($index) {
-		RecordSet_removeField($this->_cPtr,$index);
-	}
-
-	function matchBy($rq) {
-		$r=RecordSet_matchBy($this->_cPtr,$rq);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
-		}
-		return $r;
-	}
-
-	function groupBy($gq) {
-		$r=RecordSet_groupBy($this->_cPtr,$gq);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
-		}
-		return $r;
-	}
-
-	function orderBy($name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
-		switch (func_num_args()) {
-		case 1: $r=RecordSet_orderBy($this->_cPtr,$name1); break;
-		case 2: $r=RecordSet_orderBy($this->_cPtr,$name1,$name2); break;
-		case 3: $r=RecordSet_orderBy($this->_cPtr,$name1,$name2,$name3); break;
-		case 4: $r=RecordSet_orderBy($this->_cPtr,$name1,$name2,$name3,$name4); break;
-		case 5: $r=RecordSet_orderBy($this->_cPtr,$name1,$name2,$name3,$name4,$name5); break;
-		case 6: $r=RecordSet_orderBy($this->_cPtr,$name1,$name2,$name3,$name4,$name5,$name6); break;
-		case 7: $r=RecordSet_orderBy($this->_cPtr,$name1,$name2,$name3,$name4,$name5,$name6,$name7); break;
-		default: $r=RecordSet_orderBy($this->_cPtr,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
-		}
-		if (!is_resource($r)) return $r;
-		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__recordset': return new RecordSet($r);
-		default: return new RecordSet($r);
-		}
-	}
-
-	function reverse() {
-		$r=RecordSet_reverse($this->_cPtr);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
-		}
-		return $r;
-	}
-
-	function appendCol($name,$type,$len) {
-		RecordSet_appendCol($this->_cPtr,$name,$type,$len);
-	}
-
-	function unionRecordSet($r_) {
-		$r=RecordSet_unionRecordSet($this->_cPtr,$r_);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
-		}
-		return $r;
-	}
-
-	function getRow($index,$return_record) {
-		RecordSet_getRow($this->_cPtr,$index,$return_record);
 	}
 }
 
@@ -4241,8 +3627,26 @@ abstract class idatabaseManager {
 		idatabaseManager_connect($this->_cPtr,$param,$newConnection);
 	}
 
-	function table($name_or_index) {
-		return idatabaseManager_table($this->_cPtr,$name_or_index);
+	function table($name) {
+		return idatabaseManager_table($this->_cPtr,$name);
+	}
+
+	function db() {
+		$r=idatabaseManager_db($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new database($r);
+		}
+		return $r;
+	}
+
+	function c_use($param=null) {
+		idatabaseManager_c_use($this->_cPtr,$param);
+	}
+
+	function unUse() {
+		idatabaseManager_unUse($this->_cPtr);
 	}
 
 	function setOption($v) {
@@ -4277,14 +3681,6 @@ abstract class idatabaseManager {
 		idatabaseManager_endSnapshot($this->_cPtr);
 	}
 
-	function stat() {
-		return idatabaseManager_stat($this->_cPtr);
-	}
-
-	function clientID() {
-		return idatabaseManager_clientID($this->_cPtr);
-	}
-
 	function uri() {
 		return idatabaseManager_uri($this->_cPtr);
 	}
@@ -4292,27 +3688,529 @@ abstract class idatabaseManager {
 	function mode() {
 		return idatabaseManager_mode($this->_cPtr);
 	}
+
+	function isOpened() {
+		return idatabaseManager_isOpened($this->_cPtr);
+	}
+
+	function stat() {
+		return idatabaseManager_stat($this->_cPtr);
+	}
+
+	function clientID() {
+		return idatabaseManager_clientID($this->_cPtr);
+	}
 }
 
-class activeTable {
-	function keyValue($kv0,$kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
-		$args = \func_get_args();
-		$params = array();
-		$end_args = false;
-		for ($i = 0; $i < \func_num_args(); $i++) {
-			switch (\gettype($args[$i])) {
-				case 'string':
-					$params[] = $args[$i]; break;
-				case 'NULL':
-					$end_args = true; break;
-				default:
-					$params[] = (string) $args[$i]; break;
-			}
-			if ($end_args) {
-				break;
-			}
+class recordsetQuery {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function reset() {
+		$r=recordsetQuery_reset($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new recordsetQuery($r);
 		}
-		return call_user_func_array(array($this, '_keyValue'), $params);
+		return $r;
+	}
+
+	function toString() {
+		return recordsetQuery_toString($this->_cPtr);
+	}
+
+	function internalQuery() {
+		$r=recordsetQuery_internalQuery($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new query($r);
+		}
+		return $r;
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__recordsetQuery') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_recordsetQuery();
+	}
+
+	function when($name,$qlogic,$value) {
+		$r=recordsetQuery_when($this->_cPtr,$name,$qlogic,$value);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new recordsetQuery($r);
+		}
+		return $r;
+	}
+
+	function and_($name,$qlogic,$value) {
+		$r=recordsetQuery_and_($this->_cPtr,$name,$qlogic,$value);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new recordsetQuery($r);
+		}
+		return $r;
+	}
+
+	function or_($name,$qlogic,$value) {
+		$r=recordsetQuery_or_($this->_cPtr,$name,$qlogic,$value);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new recordsetQuery($r);
+		}
+		return $r;
+	}
+}
+
+class groupFuncBase extends recordsetQuery {
+	public $_cPtr=null;
+	private $targetName = '';
+	private $resultName = '';
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		recordsetQuery::__set($var,$value);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return recordsetQuery::__isset($var);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return recordsetQuery::__get($var);
+	}
+
+	function __construct($v_or_targetName=null,$resultName=null) {
+		if (is_resource($v_or_targetName) && get_resource_type($v_or_targetName) === '_p_bzs__db__protocol__tdap__client__groupFuncBase') {
+			$this->_cPtr=$v_or_targetName;
+			return;
+		}
+		$this->targetName = $v_or_targetName;
+		$this->resultName = $resultName;
+		switch (func_num_args()) {
+		case 0: $this->_cPtr=new_groupFuncBase(); break;
+		case 1: $this->_cPtr=new_groupFuncBase($this->targetName); break;
+		default: $this->_cPtr=new_groupFuncBase($this->targetName,$this->resultName);
+		}
+	}
+
+	function targetName() {
+		return groupFuncBase_targetName($this->_cPtr);
+	}
+
+	function setTargetName($v) {
+		$this->targetName = $v;
+		groupFuncBase_setTargetName($this->_cPtr,$this->targetName);
+	}
+
+	function resultName() {
+		return groupFuncBase_resultName($this->_cPtr);
+	}
+
+	function setResultName($v) {
+		$this->resultName = $v;
+		groupFuncBase_setResultName($this->_cPtr,$this->resultName);
+	}
+
+	function resultKey() {
+		return groupFuncBase_resultKey($this->_cPtr);
+	}
+
+	function reset() {
+		groupFuncBase_reset($this->_cPtr);
+	}
+
+	function result($groupIndex) {
+		return groupFuncBase_result($this->_cPtr,$groupIndex);
+	}
+}
+
+class groupQuery {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __construct($r_=null) {
+		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__groupQuery') {
+			$this->_cPtr=$r_;
+			return;
+		}
+		switch (func_num_args()) {
+		case 0: $this->_cPtr=new_groupQuery(); break;
+		default: $this->_cPtr=new_groupQuery($r_);
+		}
+	}
+
+	function reset() {
+		$r=groupQuery_reset($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new groupQuery($r);
+		}
+		return $r;
+	}
+
+	function addFunction($func) {
+		$r=groupQuery_addFunction($this->_cPtr,$func);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new groupQuery($r);
+		}
+		return $r;
+	}
+
+	function keyField($name,$name1=null,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null,$name9=null,$name10=null) {
+		switch (func_num_args()) {
+		case 1: $r=groupQuery_keyField($this->_cPtr,$name); break;
+		case 2: $r=groupQuery_keyField($this->_cPtr,$name,$name1); break;
+		case 3: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2); break;
+		case 4: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3); break;
+		case 5: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4); break;
+		case 6: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5); break;
+		case 7: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6); break;
+		case 8: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7); break;
+		case 9: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8); break;
+		case 10: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9); break;
+		default: $r=groupQuery_keyField($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9,$name10);
+		}
+		if (!is_resource($r)) return $r;
+		switch (get_resource_type($r)) {
+		case '_p_bzs__db__protocol__tdap__client__groupQuery': return new groupQuery($r);
+		default: return new groupQuery($r);
+		}
+	}
+
+	function getKeyFields() {
+		return groupQuery_getKeyFields($this->_cPtr);
+	}
+
+	function getFunction($index) {
+		$r=groupQuery_getFunction($this->_cPtr,$index);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new groupFuncBase($r);
+		}
+		return $r;
+	}
+
+	function functionCount() {
+		return groupQuery_functionCount($this->_cPtr);
+	}
+
+	static function create() {
+		$r=groupQuery_create();
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new groupQuery($r);
+		}
+		return $r;
+	}
+
+	function release() {
+		groupQuery_release($this->_cPtr);
+	}
+}
+
+class sum extends groupFuncBase {
+	public $_cPtr=null;
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		groupFuncBase::__set($var,$value);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return groupFuncBase::__isset($var);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return groupFuncBase::__get($var);
+	}
+
+	function __construct($targetName,$resultName) {
+		if (is_resource($targetName) && get_resource_type($targetName) === '_p_bzs__db__protocol__tdap__client__sum') {
+			$this->_cPtr=$targetName;
+			return;
+		}
+		$this->targetName = $targetName;
+		$this->resultName = $resultName;
+		$this->_cPtr=new_sum($this->targetName,$this->resultName);
+	}
+}
+
+class count extends groupFuncBase {
+	public $_cPtr=null;
+	private $resultName = '';
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		groupFuncBase::__set($var,$value);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return groupFuncBase::__isset($var);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return groupFuncBase::__get($var);
+	}
+
+	function __construct($resultName) {
+		if (is_resource($resultName) && get_resource_type($resultName) === '_p_bzs__db__protocol__tdap__client__count') {
+			$this->_cPtr=$resultName;
+			return;
+		}
+		$this->resultName = $resultName;
+		$this->_cPtr=new_count($this->resultName);
+	}
+}
+
+class avg extends sum {
+	public $_cPtr=null;
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		sum::__set($var,$value);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return sum::__isset($var);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return sum::__get($var);
+	}
+
+	function __construct($targetName,$resultName) {
+		if (is_resource($targetName) && get_resource_type($targetName) === '_p_bzs__db__protocol__tdap__client__avg') {
+			$this->_cPtr=$targetName;
+			return;
+		}
+		$this->targetName = $targetName;
+		$this->resultName = $resultName;
+		$this->_cPtr=new_avg($this->targetName,$this->resultName);
+	}
+}
+
+class min extends sum {
+	public $_cPtr=null;
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		sum::__set($var,$value);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return sum::__isset($var);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return sum::__get($var);
+	}
+
+	function __construct($targetName,$resultName) {
+		if (is_resource($targetName) && get_resource_type($targetName) === '_p_bzs__db__protocol__tdap__client__min') {
+			$this->_cPtr=$targetName;
+			return;
+		}
+		$this->targetName = $targetName;
+		$this->resultName = $resultName;
+		$this->_cPtr=new_min($this->targetName,$this->resultName);
+	}
+}
+
+class max extends sum {
+	public $_cPtr=null;
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		sum::__set($var,$value);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return sum::__isset($var);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return sum::__get($var);
+	}
+
+	function __construct($targetName,$resultName) {
+		if (is_resource($targetName) && get_resource_type($targetName) === '_p_bzs__db__protocol__tdap__client__max') {
+			$this->_cPtr=$targetName;
+			return;
+		}
+		$this->targetName = $targetName;
+		$this->resultName = $resultName;
+		$this->_cPtr=new_max($this->targetName,$this->resultName);
+	}
+}
+
+class RecordSetIterator implements \SeekableIterator {
+	private $_recordset_cPtr = null;
+	private $_position = 0;
+	private $_fieldsBase_p_p = null;
+	private $_record = null;
+	private $_count = -1;
+
+	function __construct($recordset_cPtr, $fielddefs) {
+		$this->_recordset_cPtr = $recordset_cPtr;
+		$this->_position = 0;
+		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
+		$this->_count = RecordSet_count($recordset_cPtr);
+		$this->_record = new Record(memoryRecord::createRecord($fielddefs));
+	}
+
+	function __destruct() {
+		delete_fieldsBase_p_p($this->_fieldsBase_p_p);
+	}
+
+	public function rewind() {
+		$this->_position = 0;
+	}
+
+	public function valid() {
+		return $this->_position < $this->_count;
+	}
+
+	public function current() {
+		RecordSet_getRow($this->_recordset_cPtr, $this->_position, $this->_fieldsBase_p_p);
+		$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
+		return $this->_record;
+	}
+
+	public function key() {
+		return $this->_position;
+	}
+
+	public function next() {
+		$this->_position++;
+	}
+
+	public function seek($position) {
+		if ($position < 0 || $position >= $this->_count) {
+			throw new \OutOfBoundsException("invalid seek position ($position)");
+		}
+		$this->_position = $position;
+	}
+}
+
+class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
+	private $_fieldsBase_p_p = null;
+	private $_record = null;
+
+	function __destruct() {
+		transactd::delete_fieldsBase_p_p($this->_fieldsBase_p_p);
+	}
+
+	// IteratorAggregate
+	public function getIterator() {
+		return new RecordSetIterator($this->_cPtr, $this->fieldDefs());
+	}
+
+	// ArrayAccess
+	public function offsetExists($offset) {
+		return \gettype($offset) !== 'integer' && $offset >= 0 && $offset < $this->count();
+	}
+
+	public function offsetGet($offset) {
+		RecordSet_getRow($this->_cPtr, $offset, $this->_fieldsBase_p_p);
+		$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
+		return $this->_record;
+	}
+
+	public function offsetSet($offset, $value) {
+		throw new \BadMethodCallException();
+	}
+
+	public function offsetUnset($offset) {
+		throw new \BadMethodCallException();
+	}
+
+	// random access
+	function first() {
+		if ($this->count() <= 0) {
+			throw new \OutOfBoundsException('no records in recordset');
+		}
+		return $this->offsetGet(0);
+	}
+
+	function last() {
+		if ($this->count() <= 0) {
+			throw new \OutOfBoundsException('no records in recordset');
+		}
+		return $this->offsetGet($this->count() - 1);
+	}
+
+	// generator
+	function range($start = null, $end = null) {
+		$count = $this->count();
+		if (\gettype($start) !== 'integer' || $start < 0) {
+			$i = 0;
+		} else {
+			$i = $start;
+		}
+		if (\gettype($end) !== 'integer' || $end < 0 || $end >= $count) {
+			$end = $count - 1;
+		}
+		while ($i <= $end) {
+			RecordSet_getRow($this->_cPtr, $i, $this->_fieldsBase_p_p);
+			$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
+			yield $this->_record;
+			$i++;
+		}
 	}
 
 	public $_cPtr=null;
@@ -4333,12 +4231,172 @@ class activeTable {
 		return $this->_pData[$var];
 	}
 
-	function __construct($mgr_or_db,$tableName = NULL) {
-		if (is_resource($mgr_or_db) && get_resource_type($mgr_or_db) === '_p_bzs__db__protocol__tdap__client__activeTable') {
-			$this->_cPtr=$mgr_or_db;
+	function __construct($r_=null) {
+		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__recordset') {
+			$this->_cPtr=$r_;
+			$this->_fieldsBase_p_p = new_fieldsBase_p_p();
+			$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
 			return;
 		}
-		$this->_cPtr=new_activeTable($mgr_or_db,$tableName);
+		switch (func_num_args()) {
+		case 0: $this->_cPtr=new_RecordSet(); break;
+		default: $this->_cPtr=new_RecordSet($r_);
+		}
+		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
+		$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
+	}
+
+	function __clone() {
+		$r=RecordSet___clone($this->_cPtr);
+		if (is_resource($r)) {
+			$this->_cPtr = $r;
+		} else {
+			$this->_cPtr = $r->_cPtr;
+		}
+		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
+		$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
+	}
+
+	function size() {
+		return RecordSet_size($this->_cPtr);
+	}
+
+	function count() {
+		return RecordSet_count($this->_cPtr);
+	}
+
+	function clearRecords() {
+		RecordSet_clearRecords($this->_cPtr);
+	}
+
+	function fieldDefs() {
+		$r=RecordSet_fieldDefs($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new fielddefs($r);
+		}
+		return $r;
+	}
+
+	function clear() {
+		RecordSet_clear($this->_cPtr);
+	}
+
+	function top($c_,$n) {
+		$r=RecordSet_top($this->_cPtr,$c_,$n);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new RecordSet($r);
+		}
+		return $r;
+	}
+
+	function begin() {
+		return RecordSet_begin($this->_cPtr);
+	}
+
+	function end() {
+		return RecordSet_end($this->_cPtr);
+	}
+
+	function erase($index_or_it) {
+		return RecordSet_erase($this->_cPtr,$index_or_it);
+	}
+
+	function removeField($index) {
+		RecordSet_removeField($this->_cPtr,$index);
+	}
+
+	function matchBy($rq) {
+		$r=RecordSet_matchBy($this->_cPtr,$rq);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new RecordSet($r);
+		}
+		return $r;
+	}
+
+	function groupBy($gq) {
+		$r=RecordSet_groupBy($this->_cPtr,$gq);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new RecordSet($r);
+		}
+		return $r;
+	}
+
+	function orderBy($name1_or_orders,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
+		switch (func_num_args()) {
+		case 1: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders); break;
+		case 2: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2); break;
+		case 3: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3); break;
+		case 4: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4); break;
+		case 5: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5); break;
+		case 6: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5,$name6); break;
+		case 7: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5,$name6,$name7); break;
+		default: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
+		}
+		if (!is_resource($r)) return $r;
+		switch (get_resource_type($r)) {
+		case '_p_bzs__db__protocol__tdap__client__recordset': return new RecordSet($r);
+		default: return new RecordSet($r);
+		}
+	}
+
+	function reverse() {
+		$r=RecordSet_reverse($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new RecordSet($r);
+		}
+		return $r;
+	}
+
+	function appendCol($name,$type,$len) {
+		RecordSet_appendCol($this->_cPtr,$name,$type,$len);
+	}
+
+	function unionRecordSet($r_) {
+		$r=RecordSet_unionRecordSet($this->_cPtr,$r_);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new RecordSet($r);
+		}
+		return $r;
+	}
+
+	function release() {
+		RecordSet_release($this->_cPtr);
+	}
+
+	function getRow($index,$return_record) {
+		RecordSet_getRow($this->_cPtr,$index,$return_record);
+	}
+}
+
+class activeTable {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
 	}
 
 	function alias($src,$dst) {
@@ -4449,102 +4507,34 @@ class activeTable {
 		}
 	}
 
-	function _keyValue($kv0,$kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
+	function release() {
+		activeTable_release($this->_cPtr);
+	}
+
+	function __construct($mgr_or_db,$tableName=null) {
+		if (is_resource($mgr_or_db) && get_resource_type($mgr_or_db) === '_p_bzs__db__protocol__tdap__client__activeTable') {
+			$this->_cPtr=$mgr_or_db;
+			return;
+		}
+		$this->_cPtr=new_activeTable($mgr_or_db,$tableName);
+	}
+
+	function keyValue($kv0,$kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
 		switch (func_num_args()) {
-		case 1: $r=activeTable__keyValue($this->_cPtr,$kv0); break;
-		case 2: $r=activeTable__keyValue($this->_cPtr,$kv0,$kv1); break;
-		case 3: $r=activeTable__keyValue($this->_cPtr,$kv0,$kv1,$kv2); break;
-		case 4: $r=activeTable__keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3); break;
-		case 5: $r=activeTable__keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4); break;
-		case 6: $r=activeTable__keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5); break;
-		case 7: $r=activeTable__keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6); break;
-		default: $r=activeTable__keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
+		case 1: $r=activeTable_keyValue($this->_cPtr,$kv0); break;
+		case 2: $r=activeTable_keyValue($this->_cPtr,$kv0,$kv1); break;
+		case 3: $r=activeTable_keyValue($this->_cPtr,$kv0,$kv1,$kv2); break;
+		case 4: $r=activeTable_keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3); break;
+		case 5: $r=activeTable_keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4); break;
+		case 6: $r=activeTable_keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5); break;
+		case 7: $r=activeTable_keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6); break;
+		default: $r=activeTable_keyValue($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
 		}
 		if (!is_resource($r)) return $r;
 		switch (get_resource_type($r)) {
 		case '_p_bzs__db__protocol__tdap__client__activeTable': return new activeTable($r);
 		default: return new activeTable($r);
 		}
-	}
-
-	function keyValue1($kv0) {
-		$r=activeTable_keyValue1($this->_cPtr,$kv0);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new activeTable($r);
-		}
-		return $r;
-	}
-
-	function keyValue2($kv0,$kv1) {
-		$r=activeTable_keyValue2($this->_cPtr,$kv0,$kv1);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new activeTable($r);
-		}
-		return $r;
-	}
-
-	function keyValue3($kv0,$kv1,$kv2) {
-		$r=activeTable_keyValue3($this->_cPtr,$kv0,$kv1,$kv2);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new activeTable($r);
-		}
-		return $r;
-	}
-
-	function keyValue4($kv0,$kv1,$kv2,$kv3) {
-		$r=activeTable_keyValue4($this->_cPtr,$kv0,$kv1,$kv2,$kv3);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new activeTable($r);
-		}
-		return $r;
-	}
-
-	function keyValue5($kv0,$kv1,$kv2,$kv3,$kv4) {
-		$r=activeTable_keyValue5($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new activeTable($r);
-		}
-		return $r;
-	}
-
-	function keyValue6($kv0,$kv1,$kv2,$kv3,$kv4,$kv5) {
-		$r=activeTable_keyValue6($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new activeTable($r);
-		}
-		return $r;
-	}
-
-	function keyValue7($kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6) {
-		$r=activeTable_keyValue7($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new activeTable($r);
-		}
-		return $r;
-	}
-
-	function keyValue8($kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7) {
-		$r=activeTable_keyValue8($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new activeTable($r);
-		}
-		return $r;
 	}
 }
 
@@ -4589,8 +4579,30 @@ class pooledDbManager extends idatabaseManager {
 		pooledDbManager_connect($this->_cPtr,$param,$newConnection);
 	}
 
-	function table($name_or_index) {
-		return pooledDbManager_table($this->_cPtr,$name_or_index);
+	function table($name) {
+		return pooledDbManager_table($this->_cPtr,$name);
+	}
+
+	function db() {
+		$r=pooledDbManager_db($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new database($r);
+		}
+		return $r;
+	}
+
+	function uri() {
+		return pooledDbManager_uri($this->_cPtr);
+	}
+
+	function mode() {
+		return pooledDbManager_mode($this->_cPtr);
+	}
+
+	function isOpened() {
+		return pooledDbManager_isOpened($this->_cPtr);
 	}
 
 	function setOption($v) {
@@ -4631,14 +4643,6 @@ class pooledDbManager extends idatabaseManager {
 
 	function clientID() {
 		return pooledDbManager_clientID($this->_cPtr);
-	}
-
-	function uri() {
-		return pooledDbManager_uri($this->_cPtr);
-	}
-
-	function mode() {
-		return pooledDbManager_mode($this->_cPtr);
 	}
 
 	static function setMaxConnections($maxWorkerNum) {

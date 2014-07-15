@@ -17,68 +17,16 @@
    02111-1307, USA.
 =================================================================*/
 #if defined(SWIGPHP)  // ======= For PHP =======
-
 /* ===============================================
-  ignore functions
+  General settings for PHP
 =============================================== */
-// original callback
-%ignore bzs::db::protocol::tdap::client::database::onCopyData;
-%ignore bzs::db::protocol::tdap::client::database::setOnCopyData;
-%ignore bzs::db::protocol::tdap::client::database::onDeleteRecord;
-%ignore bzs::db::protocol::tdap::client::database::setOnDeleteRecord;
-// overloaded functions
-%ignore bzs::db::protocol::tdap::client::table::setFV(short, float); // use double instead of this
-%ignore bzs::db::protocol::tdap::client::table::setFV(short, unsigned char);  // use __int64 instead of this
-%ignore bzs::db::protocol::tdap::client::table::setFV(short, short);          // use __int64 instead of this
-%ignore bzs::db::protocol::tdap::client::table::setFV(short, int);            // use __int64 instead of this
-%ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR *, float); // use double instead of this
-%ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR *, unsigned char); // use __int64 instead of this
-%ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR *, short);         // use __int64 instead of this
-%ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR *, int);           // use __int64 instead of this
-%ignore bzs::db::protocol::tdap::client::table::setFVW;     // use setFV instead of this
-%ignore bzs::db::protocol::tdap::client::table::getFVWstr;  // use getFVstr instead of this
-%ignore bzs::db::protocol::tdap::btrTimeStamp::btrTimeStamp(const wchar_t *);   // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrTimeStamp::toString(wchar_t *);             // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrTimeStamp::fromString(const wchar_t *);     // use char* instead of this
-%ignore bzs::db::protocol::tdap::atobtrd(const wchar_t *);                  // use char* instead of this
-%ignore bzs::db::protocol::tdap::atobtrt(const wchar_t *);                  // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrdtoa(int, wchar_t *);                   // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrdtoa(int, wchar_t *, bool);             // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrdtoa(const btrDate &, wchar_t *);       // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrdtoa(const btrDate &, wchar_t *, bool); // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrttoa(int, wchar_t *);                   // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrttoa(int, wchar_t *, bool);             // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrttoa(const btrTime &, wchar_t *);       // use char* instead of this
-%ignore bzs::db::protocol::tdap::btrttoa(const btrTime &, wchar_t *, bool); // use char* instead of this
+%{
+#ifdef SWIGPHP
+#undef realloc
+#endif
+%}
 
-
-/* ===============================================
-  Rename functions
-=============================================== */
-// Rename function which has keyword of PHP as its name.
-%rename(andWhere) bzs::db::protocol::tdap::client::queryBase::And;
-%rename(orWhere) bzs::db::protocol::tdap::client::queryBase::Or;
-
-
-/* ===============================================
-  set execCodePage on createObject
-=============================================== */
-%ignore bzs::db::protocol::tdap::client::database::create();
-%extend bzs::db::protocol::tdap::client::database {
-  static bzs::db::protocol::tdap::client::database* createObject()
-  {
-    bzs::db::protocol::tdap::client::nsdatabase::setExecCodePage(CP_UTF8);
-    return bzs::db::protocol::tdap::client::database::create();
-  }
-};
-%newobject bzs::db::protocol::tdap::client::database::createObject;
-%delobject bzs::db::protocol::tdap::client::database::release;
-
-
-/* ===============================================
-  SWIG PHP can't convert String to c++ wchar_t
-  so define _TCHAR as char.
-=============================================== */
+// SWIG PHP can't convert String to c++ wchar_t so define _TCHAR as char.
 #ifdef _UNICODE
   #undef _UNICODE
 #endif
@@ -88,11 +36,7 @@
 typedef char  _TCHAR;
 #define _T(x) x
 
-
-/* ===============================================
-  define strtoll and strtoull
-    for Visual Studio 2008 or lesser
-=============================================== */
+// define strtoll and strtoull for Visual Studio 2008 or lesser
 %{
 #if _MSC_VER
 #define strtoll _strtoi64
@@ -100,42 +44,7 @@ typedef char  _TCHAR;
 #endif
 %}
 
-
-/* ===============================================
-  typemap
-=============================================== */
-%apply short { char_td }
-%typemap(argout) (const char* u8, int u8size, char* mbc, int mbcsize) {
-  ZVAL_STRING(return_value, (char *)$3, 1);
-}
-%typemap(argout) (const char* mbc, int mbcsize, char* u8, int u8size) {
-  ZVAL_STRING(return_value, (char *)$3, 1);
-}
-
-
-/* ===============================================
-  setFV / getFV for binary data
-=============================================== */
-%ignore bzs::db::protocol::tdap::client::table::setFV(short, const void *, uint_td);
-%extend bzs::db::protocol::tdap::client::table {
-  void setFV(short index, const char * data, uint_td size) {
-    return self->setFV(index, (void const *) data, size);
-  }
-  void setFV(const _TCHAR *fieldName, const char * data, uint_td size) {
-    return self->setFV(fieldName, (void const *) data, size);
-  }
-};
-%typemap(in, numinputs=0) (uint_td & size) (uint_td temp) {
-  $1 = &temp;
-}
-%typemap(argout) (uint_td & size) {
-  ZVAL_STRINGL($result, (char *)result, *$1, 1);
-}
-
-
-/* ===============================================
-  phpinfo
-=============================================== */
+// phpinfo
 #ifndef SWIGWIN
 %{
   #define TRANSACTD_PHP_REQUIRED_MODULE_PREFIX "lib"
@@ -152,4 +61,140 @@ typedef char  _TCHAR;
   php_info_print_table_end();
 "
 
+// General typemap
+%apply short { char_td }
+
+// typemaps for encoding support
+%typemap(argout) (const char* u8, int u8size, char* mbc, int mbcsize) {
+  ZVAL_STRING(return_value, (char *)$3, 1);
+}
+%typemap(argout) (const char* mbc, int mbcsize, char* u8, int u8size) {
+  ZVAL_STRING(return_value, (char *)$3, 1);
+}
+
+
+/* ===============================================
+  ignore / rename functions
+=============================================== */
+// * bzs/db/protocol/tdap/client/activeTable.h *
+%newobject bzs::db::protocol::tdap::client::activeTable::activeTable;
+%delobject bzs::db::protocol::tdap::client::activeTable::~activeTable;
+  // add wrappers
+%extend bzs::db::protocol::tdap::client::activeTable {
+  activeTable(idatabaseManager* mgr, const _TCHAR* tableName) {
+    return bzs::db::protocol::tdap::client::activeTable::create(mgr, tableName);
+  }
+  activeTable(database* db, const _TCHAR* tableName) {
+    return bzs::db::protocol::tdap::client::activeTable::create(db, tableName);
+  }
+  ~activeTable() {
+    self->release();
+  }
+};
+  // ignore original functions
+%ignore bzs::db::protocol::tdap::client::activeTable::activeTable;
+%ignore bzs::db::protocol::tdap::client::activeTable::create;
+%ignore bzs::db::protocol::tdap::client::activeTable::~activeTable;
+
+// * bzs/db/protocol/tdap/btrDate.h *
+%ignore bzs::db::protocol::tdap::btrTimeStamp::btrTimeStamp(const wchar_t *);   // use char*
+%ignore bzs::db::protocol::tdap::btrTimeStamp::toString(wchar_t *);             // use char*
+%ignore bzs::db::protocol::tdap::btrTimeStamp::fromString(const wchar_t *);     // use char*
+%ignore bzs::db::protocol::tdap::atobtrd(const wchar_t *);                  // use char*
+%ignore bzs::db::protocol::tdap::atobtrt(const wchar_t *);                  // use char*
+%ignore bzs::db::protocol::tdap::btrdtoa(int, wchar_t *);                   // use char*
+%ignore bzs::db::protocol::tdap::btrdtoa(int, wchar_t *, bool);             // use char*
+%ignore bzs::db::protocol::tdap::btrdtoa(const btrDate &, wchar_t *);       // use char*
+%ignore bzs::db::protocol::tdap::btrdtoa(const btrDate &, wchar_t *, bool); // use char*
+%ignore bzs::db::protocol::tdap::btrttoa(int, wchar_t *);                   // use char*
+%ignore bzs::db::protocol::tdap::btrttoa(int, wchar_t *, bool);             // use char*
+%ignore bzs::db::protocol::tdap::btrttoa(const btrTime &, wchar_t *);       // use char*
+%ignore bzs::db::protocol::tdap::btrttoa(const btrTime &, wchar_t *, bool); // use char*
+
+// * bzs/db/protocol/tdap/client/database.h *
+%ignore bzs::db::protocol::tdap::client::database::onCopyData;
+%ignore bzs::db::protocol::tdap::client::database::setOnCopyData;
+%ignore bzs::db::protocol::tdap::client::database::onDeleteRecord;
+%ignore bzs::db::protocol::tdap::client::database::setOnDeleteRecord;
+  // set execCodePage on createObject
+%ignore bzs::db::protocol::tdap::client::database::create();
+%newobject bzs::db::protocol::tdap::client::database::createObject;
+%extend bzs::db::protocol::tdap::client::database {
+  database()
+  {
+    bzs::db::protocol::tdap::client::nsdatabase::setExecCodePage(CP_UTF8);
+    return bzs::db::protocol::tdap::client::database::create();
+  }
+  static bzs::db::protocol::tdap::client::database* createObject()
+  {
+    bzs::db::protocol::tdap::client::nsdatabase::setExecCodePage(CP_UTF8);
+    return bzs::db::protocol::tdap::client::database::create();
+  }
+};
+
+// * bzs/db/protocol/tdap/client/field.h *
+%ignore bzs::db::protocol::tdap::client::field::operator=(const char*);
+%ignore bzs::db::protocol::tdap::client::field::operator=(const std::string&);
+%ignore bzs::db::protocol::tdap::client::field::operator=(int);
+%ignore bzs::db::protocol::tdap::client::field::operator=(float);
+%rename(setFV) bzs::db::protocol::tdap::client::field::operator=(const _TCHAR*);
+%rename(setFV) bzs::db::protocol::tdap::client::field::operator=(__int64);
+%rename(setFV) bzs::db::protocol::tdap::client::field::operator=(double);
+%rename(setFV) bzs::db::protocol::tdap::client::field::setBin;
+%rename(__clone) bzs::db::protocol::tdap::client::fielddefs::clone;
+  // getBin typemap
+%typemap(in, numinputs=0) (uint_td & size) (uint_td temp) {
+  $1 = &temp;
+}
+%typemap(argout) (uint_td & size) {
+  ZVAL_STRINGL($result, (char *)result, *$1, 1);
+}
+
+// * bzs/db/protocol/tdap/client/nsDatabase.h *
+%rename(__clone) bzs::db::protocol::tdap::client::nsdatabase::clone;
+
+// * bzs/db/protocol/tdap/client/recordset.h *
+%rename(__clone) bzs::db::protocol::tdap::client::recordset::clone;
+
+// * bzs/db/protocol/tdap/client/table.h *
+%ignore bzs::db::protocol::tdap::client::table::setFV(short, float); // use double
+%ignore bzs::db::protocol::tdap::client::table::setFV(short, unsigned char);  // use __int64
+%ignore bzs::db::protocol::tdap::client::table::setFV(short, short);          // use __int64
+%ignore bzs::db::protocol::tdap::client::table::setFV(short, int);            // use __int64
+%ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR *, float); // use double
+%ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR *, unsigned char); // use __int64
+%ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR *, short);         // use __int64
+%ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR *, int);           // use __int64
+%ignore bzs::db::protocol::tdap::client::table::setFVW;     // use setFV
+%ignore bzs::db::protocol::tdap::client::table::getFVWstr;  // use getFVstr
+  // define setFVbin
+%ignore bzs::db::protocol::tdap::client::table::setFV(short, const void *, uint_td);
+%ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR*, const void *, uint_td);
+%extend bzs::db::protocol::tdap::client::table {
+  void setFV(short index, const char * data, uint_td size) {
+    return self->setFV(index, (void const *) data, size);
+  }
+  void setFV(const _TCHAR *fieldName, const char * data, uint_td size) {
+    return self->setFV(fieldName, (void const *) data, size);
+  }
+};
+  // fix getFVbin
+%typemap(in, numinputs=0) (uint_td & table_getFVbin_size) (uint_td temp) {
+  $1 = &temp;
+}
+%typemap(argout) (uint_td & table_getFVbin_size) {
+  ZVAL_STRINGL($result, (char *)result, *$1, 1);
+}
+%extend bzs::db::protocol::tdap::client::table {
+  void* getFVbin(short index, uint_td& table_getFVbin_size)
+  {
+    return self->getFVbin(index, table_getFVbin_size);
+  }
+  void* getFVbin(const _TCHAR *fieldName, uint_td& table_getFVbin_size)
+  {
+    return self->getFVbin(fieldName, table_getFVbin_size);
+  }
+};
+%ignore bzs::db::protocol::tdap::client::table::getFVbin(short, uint_td&);
+%ignore bzs::db::protocol::tdap::client::table::getFVbin(const _TCHAR *, uint_td&);
 #endif // =============== For PHP ===============

@@ -175,6 +175,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db2 = clone $db;
         $this->assertEquals($db2->stat(), 0);
         $this->assertEquals($db2->isOpened(), true);
+        //echo("\ndb->_cPtr  " . $db->_cPtr  . "\ndb2->_cPtr " . $db2->_cPtr . "\n");
         $db2->close();
         $this->assertEquals($db2->stat(), 0);
         $this->assertEquals($db2->isOpened(), false);
@@ -661,10 +662,60 @@ class transactdTest extends PHPUnit_Framework_TestCase
         else
           $this->assertEquals($secondValue, $firstValue);
         // ----------------------------------------------------
-        $tb->close();
         $tb2->close();
-        $this->deleteDbObj($db);
+        $tb->close();
         $this->deleteDbObj($db2);
+        $this->deleteDbObj($db);
+    }
+    public function testConflict()
+    {
+        $db  = $this->getDbObj();
+        $db2 = $this->getDbObj();
+        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $this->assertEquals($db2->stat(), 0);
+        $tb = $this->openTable($db);
+        $this->assertNotEquals($tb, NULL);
+        $tb2 = $this->openTable($db2);
+        $this->assertNotEquals($tb2, NULL);
+        $tb->setKeyNum(0);
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat(), 0);
+        // ----------------------------------------------------
+        //  Change Index field
+        // ----------------------------------------------------
+        // Change data by another connection
+        $tb2->setKeyNum(0);
+        $tb2->seekFirst();
+        $this->assertEquals($tb2->stat(), 0);
+        $tb2->setFV(FDI_ID, $tb2->getFVint(FDI_ID) - 10);
+        $tb2->update();
+        $this->assertEquals($tb2->stat(), 0);
+        // ----------------------------------------------------
+        // Change same record data by original connection
+        $tb->setFV(FDI_ID, $tb->getFVint(FDI_ID) - 8);
+        $tb->update();
+        $this->assertEquals($tb->stat(), Bz\transactd::STATUS_CHANGE_CONFLICT);
+        // ----------------------------------------------------
+        //  Change Non index field
+        // ----------------------------------------------------
+        // Change data by another connection
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat(), 0);
+        $tb2->seekFirst();
+        $this->assertEquals($tb2->stat(), 0);
+        $tb2->setFV(FDI_NAME, $tb2->getFVint(FDI_ID) - 10);
+        $tb2->update();
+        $this->assertEquals($tb2->stat(), 0);
+        // ----------------------------------------------------
+        // Change same record data by original connection
+        $tb->setFV(FDI_NAME, $tb->getFVint(FDI_NAME) - 8);
+        $tb->update();
+        $this->assertEquals($tb->stat(), Bz\transactd::STATUS_CHANGE_CONFLICT);
+        // ----------------------------------------------------
+        $tb2->close();
+        $tb->close();
+        $this->deleteDbObj($db2);
+        $this->deleteDbObj($db);
     }
     public function testTransactionLock()
     {
@@ -748,60 +799,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb2->setKeyNum(0);
         $tb2->seekFirst();
         $this->assertEquals($tb2->getFVstr(FDI_NAME), 'ABC');
-        $tb->close();
         $tb2->close();
-        $this->deleteDbObj($db);
-        $this->deleteDbObj($db2);
-    }
-    public function testConflict()
-    {
-        $db  = $this->getDbObj();
-        $db2 = $this->getDbObj();
-        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
-        $this->assertEquals($db2->stat(), 0);
-        $tb = $this->openTable($db);
-        $this->assertNotEquals($tb, NULL);
-        $tb2 = $this->openTable($db2);
-        $this->assertNotEquals($tb2, NULL);
-        $tb->setKeyNum(0);
-        $tb->seekFirst();
-        $this->assertEquals($tb->stat(), 0);
-        // ----------------------------------------------------
-        //  Change Index field
-        // ----------------------------------------------------
-        // Change data by another connection
-        $tb2->setKeyNum(0);
-        $tb2->seekFirst();
-        $this->assertEquals($tb2->stat(), 0);
-        $tb2->setFV(FDI_ID, $tb2->getFVint(FDI_ID) - 10);
-        $tb2->update();
-        $this->assertEquals($tb2->stat(), 0);
-        // ----------------------------------------------------
-        // Change same record data by original connection
-        $tb->setFV(FDI_ID, $tb->getFVint(FDI_ID) - 8);
-        $tb->update();
-        $this->assertEquals($tb->stat(), Bz\transactd::STATUS_CHANGE_CONFLICT);
-        // ----------------------------------------------------
-        //  Change Non index field
-        // ----------------------------------------------------
-        // Change data by another connection
-        $tb->seekFirst();
-        $this->assertEquals($tb->stat(), 0);
-        $tb2->seekFirst();
-        $this->assertEquals($tb2->stat(), 0);
-        $tb2->setFV(FDI_NAME, $tb2->getFVint(FDI_ID) - 10);
-        $tb2->update();
-        $this->assertEquals($tb2->stat(), 0);
-        // ----------------------------------------------------
-        // Change same record data by original connection
-        $tb->setFV(FDI_NAME, $tb->getFVint(FDI_NAME) - 8);
-        $tb->update();
-        $this->assertEquals($tb->stat(), Bz\transactd::STATUS_CHANGE_CONFLICT);
-        // ----------------------------------------------------
         $tb->close();
-        $tb2->close();
-        $this->deleteDbObj($db);
         $this->deleteDbObj($db2);
+        $this->deleteDbObj($db);
     }
     public function testExclusive()
     {
@@ -1838,21 +1839,21 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($q->toString(), "id = '0' and name = 'Abc efg'");
         
         $q->queryString('');
-        $q->where('id', '=', '0')->andWhere('name', '=', 'Abc efg');
+        $q->where('id', '=', '0')->and_('name', '=', 'Abc efg');
         $this->assertEquals($q->toString(), "id = '0' and name = 'Abc efg'");
         
         $q->queryString("select id,name id = 0 AND name = 'Abc&' efg'");
         $this->assertEquals($q->toString(), "select id,name id = '0' AND name = 'Abc&' efg'");
         
         $q->queryString('');
-        $q->select('id', 'name')->where('id', '=', '0')->andWhere('name', '=', "Abc' efg");
+        $q->select('id', 'name')->where('id', '=', '0')->and_('name', '=', "Abc' efg");
         $this->assertEquals($q->toString(), "select id,name id = '0' and name = 'Abc&' efg'");
         
         $q->queryString("select id,name id = 0 AND name = 'Abc&& efg'");
         $this->assertEquals($q->toString(), "select id,name id = '0' AND name = 'Abc&& efg'");
         
         $q->queryString('');
-        $q->select('id', 'name')->where('id', '=', '0')->andWhere('name', '=', 'Abc& efg');
+        $q->select('id', 'name')->where('id', '=', '0')->and_('name', '=', 'Abc& efg');
         $this->assertEquals($q->toString(), "select id,name id = '0' and name = 'Abc&& efg'");
         
         $q->queryString('*');
@@ -1879,7 +1880,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($q->toString(), "select id,name,fc id = '2' and name = '3'");
         
         $q->queryString('');
-        $q->select('id', 'name', 'fc')->where('id', '=', '2')->andWhere('name', '=', '3');
+        $q->select('id', 'name', 'fc')->where('id', '=', '2')->and_('name', '=', '3');
         $this->assertEquals($q->toString(), "select id,name,fc id = '2' and name = '3'");
         
         // IN include
@@ -2180,13 +2181,16 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         // union
         $rs2 = new Bz\RecordSet();
-        $q->reset()->select('id', 'name', 'group')->where('id', '<=', 16000);
+        $q->reset();
+        $q->select('id', 'name', 'group')->where('id', '<=', 16000);
         $atu->index(0)->keyValue(15001)->read($rs2, $q);
         $this->assertEquals($rs2->size(), 1000);
+        $q->reset();
         $ate->index(0)->join($rs2,
-            $q->reset()->select('comment')->optimize(Bz\queryBase::joinKeyValuesUnique), 'id');
+            $q->select('comment')->optimize(Bz\queryBase::joinKeyValuesUnique), 'id');
         $this->assertEquals($rs2->size(), 1000);
-        $atg->index(0)->join($rs2, $q->reset()->select('group_name'), 'group');
+        $q->reset();
+        $atg->index(0)->join($rs2, $q->select('group_name'), 'group');
         $this->assertEquals($rs2->size(), 1000);
         $rs->unionRecordSet($rs2);
         $this->assertEquals($rs->size(), 16000);
@@ -2201,10 +2205,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $count1 = new Bz\count('count');
         $gq->addFunction($count1);
         
-        $gfq = new Bz\recordsetQuery();
-        $gfq->when('group', '=', 1);
-        $counter2 = new Bz\count('group1_count', $gfq);
-        $gq->addFunction($counter2);
+        $count2 = new Bz\count('group1_count');
+        $count2->when('group', '=', 1);
+        $gq->addFunction($count2);
         
         $rs->groupBy($gq);
         $this->assertEquals($rs->size(), 16000);
@@ -2213,7 +2216,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // clone
         $rsv = clone $rs;
         $gq->reset();
-        $count3 = new Bz\count('count');
+        $count3 = new Bz\count('count3');
         $gq->addFunction($count3)->keyField('group');
         $rs->groupBy($gq);
         $this->assertEquals($rs->size(), 100);
@@ -2239,9 +2242,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $q1->when('group1_count', '=', 1)->or_('group1_count', '=', 2);
         unset($q1);
         
-        //$q2 = new Bz\query();
-        //$q2->when('group1_count', '=', 1)->or_('group1_count', '=', 2);
-        //unset($q2);
+        $q2 = new Bz\query();
+        $q2->where('group1_count', '=', 1)->or_('group1_count', '=', 2);
+        unset($q2);
         
         $q3 = new Bz\groupQuery();
         $q3->keyField('group', 'id');
