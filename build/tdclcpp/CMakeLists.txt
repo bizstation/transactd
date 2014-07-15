@@ -66,16 +66,6 @@ transactd_read_build_number("${TRANSACTD_ROOT}")
 # ==========================================================
 tdcl_add_source_files("${TRANSACTD_ROOT}")
 tdcl_add_include_directory("${TRANSACTD_ROOT}")
-tdcl_add_compiler_options()
-if(MSVC)
-  foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-    if("${TDCL_CPP_CHARSET}" STREQUAL "u")
-      bz_set_UNICODE_cxx_flag("${build_type}")
-    elseif("${TDCL_CPP_CHARSET}" STREQUAL "m")
-      bz_set_MBCS_cxx_flag("${build_type}")
-    endif()
-  endforeach()
-endif()
 
 
 # ==========================================================
@@ -100,6 +90,39 @@ endif()
 # add_library
 # ==========================================================
 add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
+
+
+# ==========================================================
+# Add compile options
+# ==========================================================
+if(NOT MSVC)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
+    " -finput-charset=utf-8 ")
+endif()
+
+
+# ==========================================================
+# Add compile definitions
+# ==========================================================
+if(MSVC)
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    WIN32 _WINDOWS _USRDLL BOOST_ALL_NO_LIB 
+    LIB_TDCLCPP TRDCL_AUTOLINK_OFF TRDCLENGN_EXPORTS _CRT_SECURE_NO_WARNINGS)
+else()
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    PIC BOOST_ALL_NO_LIB)
+  if(NOT MINGW)
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      LINUX)
+  else()
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      WIN32 _WIN32)
+  endif()
+endif()
+if((TARGET tdclrb) OR (TARGET tdclphp))
+  set_property(TARGET tdclcpp${TDCL_CPP_CHARSET} APPEND PROPERTY COMPILE_DEFINITIONS
+    SWIG_BUILDING)
+endif()
 
 
 # ==========================================================

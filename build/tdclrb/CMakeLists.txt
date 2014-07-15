@@ -131,18 +131,6 @@ include_directories(${TRANSACTD_ROOT};${TRANSACTD_RUBY_INCLUDE_PATH})
 
 
 # ==========================================================
-# add compiler / linker options
-# ==========================================================
-tdcl_add_compiler_options()
-foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  bz_add_cxx_flag("-DSWIGRUBY -DSWIG_BUILDING --std=c++0x -U__STRICT_ANSI__ -DUSE_DBM_CONNECTION_POOL" "${build_type}")
-  if(MSVC)
-    bz_set_MBCS_cxx_flag("${build_type}")
-  endif()
-endforeach()
-
-
-# ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
@@ -169,6 +157,32 @@ if(APPLE)
 else()
   add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 endif()
+
+
+# ==========================================================
+# Add compile options
+# ==========================================================
+if(NOT MSVC)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
+    " --std=c++0x -U__STRICT_ANSI__ ")
+endif()
+
+
+# ==========================================================
+# Add compile definitions
+# ==========================================================
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+  SWIGRUBY SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB)
+if(NOT MSVC)
+  if(NOT MINGW)
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      LINUX)
+  else()
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      WIN32 _WIN32)
+  endif()
+endif()
+
 
 # ==========================================================
 # add link / include

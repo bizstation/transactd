@@ -87,30 +87,6 @@ endif()
 
 
 # ==========================================================
-# compiler and linker options
-# ==========================================================
-foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  bz_add_cxx_flag("-DBOOST_ALL_NO_LIB -DPIC" "${build_type}")
-  bz_remove_cxx_flag("-fno-exceptions" "${build_type}")
-  bz_remove_cxx_flag("-fno-rtti" "${build_type}")
-  bz_remove_cxx_flag("-fno-implicit-templates" "${build_type}")
-  bz_remove_cxx_flag("/EHsc" "${build_type}")
-  bz_remove_cxx_flag("/EHs" "${build_type}")
-  if(MSVC)
-    bz_add_cxx_flag("/EHa /wd4068 /D_WIN32_WINNT=0x0501 /DPACKAGE_NO_EXPORT" "${build_type}")
-    bz_set_MTMTd_cxx_flag("${build_type}")
-    bz_set_MBCS_cxx_flag("${build_type}")
-  else()
-    bz_add_cxx_flag("-fPIC -fabi-version=2 -fexceptions -fno-omit-frame-pointer" "${build_type}")
-    bz_add_cxx_flag("-fno-strict-aliasing -fpermissive -frtti" "${build_type}")
-    if(NOT MINGW)
-      bz_add_cxx_flag("-DLINUX" "${build_type}")
-    endif()
-  endif()
-endforeach()
-
-
-# ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
@@ -132,6 +108,22 @@ endif()
 # add_library
 # ==========================================================
 add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
+
+
+# ==========================================================
+# Add compile definitions
+# ==========================================================
+if(MSVC)
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    WIN32 _WIN32_WINNT=0x0501 PACKAGE_NO_EXPORT _WINDOWS _USRDLL BOOST_ALL_NO_LIB)
+else()
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    PIC BOOST_ALL_NO_LIB)
+  if(NOT MINGW)
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      LINUX)
+  endif()
+endif()
 
 
 # ==========================================================

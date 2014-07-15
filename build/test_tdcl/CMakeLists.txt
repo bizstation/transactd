@@ -76,35 +76,6 @@ endif()
 
 
 # ==========================================================
-# compiler and linker options
-# ==========================================================
-foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  bz_add_cxx_flag("-DBOOST_ALL_NO_LIB -DPIC" "${build_type}")
-  bz_remove_cxx_flag("-fno-exceptions" "${build_type}")
-  bz_remove_cxx_flag("-fno-rtti" "${build_type}")
-  bz_remove_cxx_flag("-fno-implicit-templates" "${build_type}")
-  bz_remove_cxx_flag("/EHsc" "${build_type}")
-  bz_remove_cxx_flag("/EHs" "${build_type}")
-  bz_remove_cxx_flag("-DPACKAGE_NO_EXPORT" "${build_type}")
-  if(MSVC)
-    bz_add_cxx_flag("/EHa /wd4068 /DTRDCL_AUTOLINK" "${build_type}")
-    bz_set_MTMTd_cxx_flag("${build_type}")
-    if("${TDCL_CPP_CHARSET}" STREQUAL "u")
-      bz_set_UNICODE_cxx_flag("${build_type}")
-    elseif("${TDCL_CPP_CHARSET}" STREQUAL "m")
-      bz_set_MBCS_cxx_flag("${build_type}")
-    endif()
-  else()
-    bz_add_cxx_flag("-fPIC -fabi-version=2 -fexceptions -finput-charset=utf-8" "${build_type}")
-    bz_add_cxx_flag("-fno-omit-frame-pointer -fno-strict-aliasing -fpermissive -frtti" "${build_type}")
-    if(NOT MINGW)
-      bz_add_cxx_flag("-DLINUX" "${build_type}")
-    endif()
-  endif()
-endforeach()
-
-
-# ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
@@ -127,6 +98,31 @@ endif()
 add_executable(${this_target} ${${this_target}_SOURCE_FILES})
 bz_get_compiler_bitness()
 set_target_properties(${this_target} PROPERTIES OUTPUT_NAME "test_tdcl_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+
+
+# ==========================================================
+# Add compile options
+# ==========================================================
+if(NOT MSVC)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
+    " -finput-charset=utf-8 ")
+endif()
+
+
+# ==========================================================
+# Add compile definitions
+# ==========================================================
+if(MSVC)
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB)
+else()
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    PIC BOOST_ALL_NO_LIB)
+  if(NOT MINGW)
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      LINUX)
+  endif()
+endif()
 
 
 # ==========================================================

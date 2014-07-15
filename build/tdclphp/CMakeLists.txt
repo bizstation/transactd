@@ -129,37 +129,6 @@ include_directories(${TRANSACTD_ROOT}
 
 
 # ==========================================================
-# add compiler / linker options
-# ==========================================================
-tdcl_add_compiler_options()
-bz_get_compiler_bitness()
-if(MSVC90)
-  add_definitions(-D_SECURE_SCL=0)
-endif()
-foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  bz_add_cxx_flag("-DSWIG_BUILDING -DUSE_DBM_CONNECTION_POOL" "${build_type}")
-  if(TRANSACTD_PHP_ZTS)
-    bz_add_cxx_flag("-DZTS=1" "${build_type}")
-  endif()
-  if(("${build_type}" STREQUAL "_DEBUG") OR ("${build_type}" STREQUAL "_RELWITHDEBINFO"))
-    bz_add_cxx_flag("-DZEND_DEBUG=1" "${build_type}")
-  else()
-    bz_add_cxx_flag("-DZEND_DEBUG=0" "${build_type}")
-  endif()
-  if(MSVC)
-    bz_add_cxx_flag("-DZEND_WIN32 -DPHP_WIN32 -DZEND_WIN32_FORCE_INLINE" "${build_type}")
-    bz_set_MBCS_cxx_flag("${build_type}")
-    if(TRANSACTD_PHP_USE_32BIT_TIME_T AND ("${BZ_BITNESS}" STREQUAL "32"))
-      bz_add_cxx_flag("-D_USE_32BIT_TIME_T" "${build_type}")
-    endif()
-  endif()
-  if(MSVC11)
-    bz_add_cxx_flag("-D_ALLOW_KEYWORD_MACROS" "${build_type}")
-  endif()
-endforeach()
-
-
-# ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
@@ -185,6 +154,52 @@ if(APPLE)
   set_target_properties(${this_target} PROPERTIES LINK_FLAGS "-bundle -undefined dynamic_lookup")
 else()
   add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
+endif()
+
+
+# ==========================================================
+# Add compile definitions
+# ==========================================================
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+  SWIGPHP SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB)
+bz_get_compiler_bitness()
+if(MSVC90)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _SECURE_SCL=0)
+elseif(MSVC11)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _ALLOW_KEYWORD_MACROS)
+endif()
+if(TRANSACTD_PHP_ZTS)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    ZTS=1)
+else()
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    ZTS=0)
+endif()
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_DEBUG
+  ZEND_DEBUG=1)
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_RELWITHDEBINFO
+  ZEND_DEBUG=1)
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_RELEASE
+  ZEND_DEBUG=0)
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_MINSIZEREL
+  ZEND_DEBUG=0)
+if(MSVC)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    ZEND_WIN32 PHP_WIN32 ZEND_WIN32_FORCE_INLINE)
+  if(TRANSACTD_PHP_USE_32BIT_TIME_T AND ("${BZ_BITNESS}" STREQUAL "32"))
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      _USE_32BIT_TIME_T)
+  endif()
+else()
+  if(NOT MINGW)
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      LINUX)
+  else()
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      WIN32 _WIN32)
+  endif()
 endif()
 
 
