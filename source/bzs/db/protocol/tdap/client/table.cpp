@@ -160,7 +160,7 @@ public:
 		int rowOffset = 0;
 		int row = 0;  // zero start
 		int count = 0;
-		char* ptr = data + DATASIZE_BYTE;//rowCount
+		char* ptr = (char*)data + DATASIZE_BYTE;//rowCount
 		unsigned short len = 0;
 		for (int i=0;i<(int)rowCount;++i)
 		{
@@ -584,49 +584,91 @@ bookmark_td table::bookmarkFindCurrent() const
 
 }
 
+inline bool checkStatus(short v)
+{
+	return ((v == STATUS_SUCCESS) || (v == STATUS_NOT_FOUND_TI) || (v == STATUS_EOF));
+}
+
+bool table::doSeekMultiAfter(int row)
+{
+	const std::vector<short>& fields = m_impl->filterPtr->selectFieldIndexes();
+
+	if (m_stat == STATUS_SUCCESS)
+		onReadAfter();
+	else if (!checkStatus(m_stat))
+		return false;
+	if (m_stat)
+		m_impl->mraPtr->setInvalidRecord(row, true);
+	else
+	{
+		uchar_td* dst = m_impl->mraPtr->ptr(row, mra_current_block);
+		if (m_impl->filterPtr->fieldSelected())
+		{
+			int resultOffset = 0;
+
+			for (int j=0;j<(int)fields.size();++j)
+			{
+				fielddef* fd = &tableDef()->fieldDefs[fields[j]];
+				fd->unPackCopy(dst + resultOffset, ((uchar_td*)m_pdata) + fd->pos);
+				dst += fd->len;
+			}
+		}
+		else
+			memcpy(dst, (uchar_td*)m_pdata, m_datalen);
+	}
+	return true;
+}
+
 void table::btrvSeekMulti()
 {
 	const std::vector<client::seek>& seeks =  m_impl->filterPtr->seeks();
-	const std::vector<short>& fields = m_impl->filterPtr->selectFieldIndexes();
-	bool fieldSelected = m_impl->filterPtr->fieldSelected();
+	const bool transactd = false;
+	bool hasManyJoin = m_impl->filterPtr->hasManyJoin();
 
 	m_impl->rc->reset();
 	size_t recordLen = m_impl->filterPtr->fieldSelected() ?
 			m_impl->filterPtr->totalSelectFieldLen() : tableDef()->maxRecordLen;
-	m_impl->mraPtr->init(seeks.size(), recordLen, mra_first, this);
+	if (!hasManyJoin)
+		m_impl->mraPtr->init(seeks.size(), recordLen, mra_first, this);
 
-	const bool transactd = false;
-	bool hasManyJoin = m_impl->filterPtr->hasManyJoin();
+
+	m_keylen = m_keybuflen;
+	m_datalen = m_buflen;
+	int type = mra_first;
+    int rowOffset = 0;
 	for (int i=0;i<(int)seeks.size();++i)
 	{
+		// 100% need allocate each row
+		m_impl->mraPtr->init(1, recordLen, type, this);
+		type = mra_nextrows;
 		seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, false, true, transactd);
-		m_keylen = seeks[i].len;
-		m_datalen = m_buflen;
 		if (hasManyJoin)
+		{
 			tdap((ushort_td)(TD_KEY_OR_AFTER));
-		else
-			tdap((ushort_td)(TD_KEY_SEEK));
-		if (m_stat == STATUS_SUCCESS)
-			onReadAfter();
+			if (!checkStatus(m_stat)) return;
 
-		if (m_stat)
-			m_impl->mraPtr->setInvalidRecord(i, true);
+			if (memcmp(seeks[i].data, m_impl->keybuf, seeks[i].len) == 0)
+			{
+				doSeekMultiAfter(0);
+				while (m_stat == 0)
+				{
+					tdap((ushort_td)(TD_KEY_NEXT));
+					if (!checkStatus(m_stat)) return;
+					if (memcmp(seeks[i].data, m_impl->keybuf, seeks[i].len) != 0)
+						break;
+					m_impl->mraPtr->duplicateRow(i+rowOffset, 1);
+					++rowOffset;
+					m_impl->mraPtr->removeLastMemBlock(i+rowOffset);
+					m_impl->mraPtr->init(1, recordLen, type, this);
+					doSeekMultiAfter(0);
+				}
+			}else
+				m_impl->mraPtr->setInvalidRecord(0, true);
+		}
 		else
 		{
-			uchar_td* dst = m_impl->mraPtr->ptr(i, mra_current_block);
-			if (fieldSelected)
-			{
-				int resultOffset = 0;
-
-				for (int j=0;j<(int)fields.size();++j)
-				{
-					fielddef* fd = &tableDef()->fieldDefs[fields[j]];
-					fd->unPackCopy(dst + resultOffset, ((uchar_td*)m_pdata) + fd->pos);
-					dst += fd->len;
-				}
-			}
-			else
-				memcpy(dst, (uchar_td*)m_pdata, m_datalen);
+			tdap((ushort_td)(TD_KEY_SEEK));
+			if (!doSeekMultiAfter(i)) return;
 		}
 	}
 	m_stat = STATUS_EOF;

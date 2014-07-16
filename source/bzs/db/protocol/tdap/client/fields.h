@@ -39,7 +39,7 @@ namespace client
 class fieldsBase
 {
 	friend class multiRecordAlocatorImple;
-
+	friend class recordsetImple;
 	virtual unsigned char* ptr(int index) const = 0;
 protected:
 	/** @cond INTERNAL */
@@ -70,6 +70,10 @@ protected:
 		m_fns = def;
 	}
 
+	virtual void removeLastMemBlock(){};
+
+	virtual	void setRecordData(unsigned char* ptr, size_t size
+			, short* endFieldIndex, bool owner = false){};
 
 	/** @endcond */
 
@@ -130,8 +134,6 @@ public:
 
 	virtual void clear() = 0;
 
-	virtual	void setRecordData(unsigned char* ptr, size_t size
-			, short* endFieldIndex, bool owner = false){};
 
 
 };

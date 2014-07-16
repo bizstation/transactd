@@ -61,7 +61,7 @@ public:
 	virtual void setJoinRowMap(const std::vector< std::vector<int> >* v/*, size_t size*/)=0;
 	virtual const std::vector<std::vector<int> >* joinRowMap()const  = 0;
 	virtual void duplicateRow(int row, int count) = 0;
-
+	virtual void removeLastMemBlock(int row) = 0;
 };
 
 /** @endcond */
@@ -97,7 +97,8 @@ class DLLLIB table : public nstable
 	short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf = NULL); // orverride
 	void doFind( ushort_td op, bool notIncCurrent);
 	bool setSeekValueField(int row);
-    void btrvSeekMulti();
+	void btrvSeekMulti();
+	bool doSeekMultiAfter(int row);
 protected:
 	explicit table(nsdatabase *pbe); // Inheritance is impossible
 	virtual ~table();

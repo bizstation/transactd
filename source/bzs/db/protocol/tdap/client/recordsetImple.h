@@ -83,6 +83,7 @@ public:
 	inline void setJoinRowMap(const std::vector< std::vector<int> >* v/*, size_t size*/){m_joinRowMap = v;/*m_joinMapSize = size;*/}
 	inline const std::vector< std::vector<int> >* joinRowMap()const {return m_joinRowMap;}
 	inline void duplicateRow(int row, int count);
+	inline void removeLastMemBlock(int row);
 };
 
 class recordsetImple
@@ -498,6 +499,11 @@ inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
 inline void multiRecordAlocatorImple::duplicateRow(int row, int count)
 {
 	m_rs->duplicateRow(row, count);
+}
+
+inline void multiRecordAlocatorImple::removeLastMemBlock(int row)
+{
+	(*m_rs)[row].removeLastMemBlock();
 }
 
 template<> inline recordsetImple::iterator begin(recordsetImple& m){return m.begin();}

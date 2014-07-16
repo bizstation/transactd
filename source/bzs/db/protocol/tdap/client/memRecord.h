@@ -101,6 +101,8 @@ protected:
 	{
 		memcpy(ptr(0), tb->fieldPtr(0), m_fns.totalFieldLen());
 	}
+	void removeLastMemBlock(){m_memblock.pop_back();}
+
 /** @endcond */
 public:
 	void clear(); //orverride

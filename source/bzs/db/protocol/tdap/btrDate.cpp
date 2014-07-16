@@ -240,18 +240,18 @@ T* formatDate(T* p, const btrDate& d, bool type_vb);
 template <> char* formatDate(char* p, const btrDate& d, bool type_vb)
 {
 	if (type_vb)
-		sprintf_s(p, 11, dateFormatString_h(p), d.yy, d.mm, d.dd);
+		sprintf_s(p, 20, dateFormatString_h(p), d.yy, d.mm, d.dd);
 	else
-		sprintf_s(p, 11, dateFormatString(p), d.yy, d.mm, d.dd);
+		sprintf_s(p, 20, dateFormatString(p), d.yy, d.mm, d.dd);
 	return p;
 }
 
 template <> wchar_t* formatDate(wchar_t* p, const btrDate& d, bool type_vb)
 {
 	if (type_vb)
-		swprintf_s(p, 11, dateFormatString_h(p), d.yy, d.mm, d.dd);
+		swprintf_s(p, 20, dateFormatString_h(p), d.yy, d.mm, d.dd);
 	else
-		swprintf_s(p, 11, dateFormatString(p), d.yy, d.mm, d.dd);
+		swprintf_s(p, 20, dateFormatString(p), d.yy, d.mm, d.dd);
 	return p;
 }
 
@@ -262,18 +262,18 @@ T* formatTime(T* p, const btrTime& d, bool type_vb);
 template <> char* formatTime(char* p, const btrTime& t, bool type_vb)
 {
 	if (type_vb)
-		sprintf_s(p, 9, timeFormatString_h(p), t.hh, t.nn, t.ss);
+		sprintf_s(p, 20, timeFormatString_h(p), t.hh, t.nn, t.ss);
 	else
-		sprintf_s(p, 9, timeFormatString(p), t.hh, t.nn, t.ss);
+		sprintf_s(p, 20, timeFormatString(p), t.hh, t.nn, t.ss);
 	return p;
 }
 
 template <> wchar_t* formatTime(wchar_t* p, const btrTime& t, bool type_vb)
 {
 	if (type_vb)
-		swprintf_s(p, 9, timeFormatString_h(p), t.hh, t.nn, t.ss);
+		swprintf_s(p, 20, timeFormatString_h(p), t.hh, t.nn, t.ss);
 	else
-		swprintf_s(p, 9, timeFormatString(p), t.hh, t.nn, t.ss);
+		swprintf_s(p, 20, timeFormatString(p), t.hh, t.nn, t.ss);
 	return p;
 }
 
