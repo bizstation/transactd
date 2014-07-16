@@ -83,7 +83,7 @@ bool btest(recordset* rsp, activeTable* atup, activeTable* atgp, activeTable* at
 			if (kind & 2)
 			{
 				q.reset();
-				ate.index(0).join(rs, q.select(_T("comment")).optimize(queryBase::joinKeyValuesUnique), _T("id"));
+				ate.index(0).join(rs, q.select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany), _T("id"));
 			}
 			if (kind & 4)
 			{

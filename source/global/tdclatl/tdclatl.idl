@@ -310,7 +310,7 @@ typedef
 enum eOptimize
 {
 	none = 0,
-	joinKeyValuesUnique = 1,
+	joinHasOneOrHasMany = 1,
 	joinWhereFields = 2
 }eOptimize;
 

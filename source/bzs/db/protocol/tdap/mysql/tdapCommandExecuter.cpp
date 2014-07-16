@@ -616,7 +616,7 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
 	{
 		if (seg != -1)
 		{
-			keyMap = 1U << (seg -1); 
+			keyMap = (1U << seg) - 1; 
 			seg = 1;
 		}else
 			seg = !m_tb->isUniqueKey();
@@ -628,19 +628,27 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
 		m_tb->setKeyValuesPacked(fd->ptr, fd->len);
 		m_tb->seekKey(HA_READ_KEY_EXACT, keyMap);
 		if (m_tb->stat() == 0)
-			stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
+		{
+			if (seg)
+				stat = m_readHandler->write((uchar*)&i, 4);
+			else
+				stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
+		}
 		else 
 			stat = m_readHandler->write(NULL, m_tb->posPtrLen());
 		if (stat) break;	
 		
-		//for hasOne join
+		//for hasMany join
 		if (seg)
 		{
 			while (m_tb->stat() == 0)
 			{
 				m_tb->getNextSame(keyMap);
-				m_readHandler->write((uchar*)&i, 4);// write seek sequential number
+				if (m_tb->stat() == 0)
+					stat = m_readHandler->write((uchar*)&i, 4);// write seek sequential number
+				if (stat) break;
 			}
+			if (stat) break;
 		}
 
 		fd = fd->next();

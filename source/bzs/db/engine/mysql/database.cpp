@@ -753,12 +753,11 @@ void table::setKeyValues(const uchar* ptr, int size)
 */
 short table::setKeyValuesPacked(const uchar* ptr, int size)
 {	
-
 	KEY& key = m_table->key_info[m_keyNum];
 	int to = 0;
 	const uchar* from = ptr;
 	uint key_length = key.key_length;
-
+	int ret = -1;
 	for (int j = 0; j < (int)key.user_defined_key_parts; j++)
 	{   
 		KEY_PART_INFO& seg = key.key_part[j];
@@ -774,20 +773,35 @@ short table::setKeyValuesPacked(const uchar* ptr, int size)
 		}
 		else
 		{
-			int copylen = seg.length;
+			unsigned short copylen = seg.length;// length = store_len - varlen
+			unsigned short copyspace = copylen;
 			if (seg.key_part_flag & HA_BLOB_PART || seg.key_part_flag & HA_VAR_LENGTH_PART)
-				copylen += 2;
+			{
+				copylen += 2;// varlen= allways 2byte
+				copyspace = copylen;
+				unsigned short len = *((unsigned short*)from) + 2;
+				copylen = std::min<unsigned short>(copylen, len);
+				if (copylen != copyspace)
+					memset(&m_keybuf[to], 0, copyspace);
+			}
+			
 			if ((from + copylen) - ptr > size)
-				return j;// key data size is too short as whole key_parts length
-			memcpy(&m_keybuf[to], from, copylen);
-			to += copylen;
-			from += copylen;
+			{
+				if (ret == -1) 
+					ret = j;// key data size is too short as whole key_parts length
+				memset(&m_keybuf[to], 0, copyspace);	
+			}else
+			{
+				memcpy(&m_keybuf[to], from, copylen);
+				from += copyspace;
+			}
+			to += copyspace;
 			
 			if (to>=MAX_KEYLEN)
 				THROW_BZS_ERROR_WITH_CODEMSG(STATUS_KEYBUFFERTOOSMALL, "");
 		}
 	}
-	return -1;
+	return ret;
 }
 
 uint table::keyPackCopy(uchar* ptr)

@@ -83,7 +83,7 @@ class worker : public workerBase
 		m_atu->index(0).keyValue(v).read(m_rs, q);
 		q.reset();
 		
-		//m_ate->index(0).join(m_rs, q.select(_T("comment")).optimize(queryBase::joinKeyValuesUnique), _T("id"));
+		//m_ate->index(0).join(m_rs, q.select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany), _T("id"));
 		
 		//Join group::name
 		/*recordset rs2;

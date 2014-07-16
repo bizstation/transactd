@@ -60,6 +60,7 @@ public:
 	virtual void setInvalidRecord(size_t row, bool v) = 0;
 	virtual void setJoinRowMap(const std::vector< std::vector<int> >* v/*, size_t size*/)=0;
 	virtual const std::vector<std::vector<int> >* joinRowMap()const  = 0;
+	virtual void duplicateRow(int row, int count) = 0;
 
 };
 
@@ -106,7 +107,7 @@ protected:
 	uint_td unPack(char*ptr, size_t size);
 	uint_td pack(char*ptr, size_t size);
 	keylen_td writeKeyData(); // orverride
-	keylen_td writeKeyDataTo(uchar_td* to);
+	keylen_td writeKeyDataTo(uchar_td* to, int keySize);
 
 	void writeRecordData(){};
 
@@ -235,6 +236,12 @@ public:
 
 };
 
+struct DLLLIB keyValuePtr
+{
+	const void* ptr;
+	ushort_td len;
+	keyValuePtr(const void* p, ushort_td l):ptr(p),len(l){}
+};
 
 class DLLLIB queryBase
 {
@@ -244,10 +251,10 @@ protected:
 	const std::vector<std::_tstring>& getSelects() const;
 	const std::vector<std::_tstring>& getWheres() const;
 	const std::vector<std::_tstring>& getSeekKeyValues() const;
-	const std::vector<const void*>& getSeekValuesPtr() const;
-	
+	const std::vector<keyValuePtr>& getSeekValuesPtr() const;
+
 public:
-	enum eOptimize{none=0, joinKeyValuesUnique=1, joinWhereFields=2};
+	enum eOptimize{none=0, joinHasOneOrHasMany=1, joinWhereFields=2};
 
 	queryBase();
 	queryBase(const queryBase& r);
@@ -261,7 +268,7 @@ public:
 	void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
 	void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
 	void addSeekKeyValue(const _TCHAR* value, bool reset=false);
-	void addSeekKeyValuePtr(const void* value, bool reset=false);
+	void addSeekKeyValuePtr(const void* value, ushort_td len, bool reset=false);
 	void reserveSeekKeyValueSize(size_t v);
 	queryBase& queryString(const _TCHAR* str, bool autoEscape = false);
 	queryBase& reject(int v);
@@ -270,12 +277,15 @@ public:
 	queryBase& all();
 	queryBase& optimize(eOptimize v);
 	queryBase& bookmarkAlso(bool v);
+	queryBase& joinKeySize(int v);
+
 
 	const _TCHAR* toString() const;
 	table::eFindType getDirection() const;
 	int getReject()const;
 	int getLimit()const;
 	bool isAll()const;
+	int getJoinKeySize() const;
 	eOptimize getOptimize() const;
 	bool isBookmarkAlso()const;
 	short selectCount() const;

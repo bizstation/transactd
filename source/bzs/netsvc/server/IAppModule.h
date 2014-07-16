@@ -46,6 +46,7 @@ class iconnection;
 #define EXECUTE_RESULT_FORCSE_SYNC  3
 
 typedef std::vector<boost::asio::const_buffer> buffers;
+typedef std::vector<char> vector_buffer;
 
 class IResultBuffer
 {
@@ -57,9 +58,9 @@ public:
 
 class vecBuffer : public IResultBuffer
 {
-	std::vector<char>& m_vecbuf;
+	vector_buffer& m_vecbuf;
 public:
-	vecBuffer(std::vector<char>& v):m_vecbuf(v){}
+	vecBuffer(vector_buffer& v):m_vecbuf(v){}
 	void resize(size_t v){m_vecbuf.resize(v);}	
 	size_t  size()const{return m_vecbuf.size();}
 	virtual char* ptr(){return &m_vecbuf[0];}
@@ -123,7 +124,7 @@ public:
 	inline void setClientBuffferSize(unsigned int v)
 	{
 		m_clientBuffferSize = v;
-		if (bufferSize() < v) resize(v);
+		if (bufferSize()  < v + 100) resize(v + 100);
 	}
 
 	inline void resize(size_t v){resultBuffer->resize(v);m_ptr = resultBuffer->ptr();};	

@@ -60,8 +60,8 @@ class connection  : public iconnection, private boost::noncopyable
 
 	static mutex m_mutex;
 	tcp::socket m_socket;
-	std::vector<char> m_buffer;
-	std::vector<char> m_result;
+	vector_buffer m_buffer;
+	vector_buffer m_result;
 	buffers m_optionalBuffes;
 	shared_ptr<IAppModule> m_module;
 	bool m_segmentWrite;

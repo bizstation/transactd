@@ -72,7 +72,7 @@ autoMemory::autoMemory(const autoMemory& p)
 		,endFieldIndex(p.endFieldIndex), owner(p.owner)
 {
 	const_cast<autoMemory&>(p).owner = false;
-	const_cast<autoMemory&>(p).ptr = NULL;
+	//const_cast<autoMemory&>(p).ptr = NULL;
 }
 
 autoMemory& autoMemory::operator=(const autoMemory& p)
@@ -82,7 +82,7 @@ autoMemory& autoMemory::operator=(const autoMemory& p)
 	endFieldIndex = p.endFieldIndex;
 	owner = p.owner;
 	const_cast<autoMemory&>(p).owner = false;
-	const_cast<autoMemory&>(p).ptr = NULL;
+	//const_cast<autoMemory&>(p).ptr = NULL;
 	return *this;
 }
 
@@ -93,6 +93,12 @@ inline memoryRecord::memoryRecord(fielddefs& fdinfo): fieldsBase(fdinfo)
 {
 	
 	m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
+}
+
+memoryRecord::memoryRecord(const memoryRecord& r):fieldsBase(r.m_fns)
+	,m_memblock(r.m_memblock)
+{
+
 }
 
 void memoryRecord::clear()

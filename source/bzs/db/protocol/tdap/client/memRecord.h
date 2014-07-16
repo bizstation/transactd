@@ -65,7 +65,7 @@ class DLLLIB memoryRecord : public fieldsBase
 protected:
 /** @cond INTERNAL */
 	inline memoryRecord(fielddefs& fdinfo);
-
+	memoryRecord(const memoryRecord& r);
 	void copyToBuffer(table* tb, bool updateOnly=false) const;
 
 	/* return memory block first address which not field ptr address */

@@ -137,21 +137,25 @@ class  activeTableImple : public activeObject<map_orm>
 		mraResetter mras(m_tb);
 		typename Container::iterator it = mdls.begin(),ite = mdls.end();
 
-		bool optimize = !(q.getOptimize() & queryBase::joinKeyValuesUnique);
+		bool optimize = !(q.getOptimize() & queryBase::joinHasOneOrHasMany);
 		joinmap_type joinRowMap;
 		std::vector<typename Container::key_type> fieldIndexes;
+		std::vector<ushort_td> fieldLens;
 
 		fieldNames fns;
 		fns.keyField(name1, name2, name3, name4, name5, name6, name7, name8);
-
+		const fielddefs* fds = mdls.fieldDefs();
 		for (int i=0;i<fns.count();++i)
 		{
 			std::_tstring s = fns.getValue(i);
-			fieldIndexes.push_back(resolvKeyValue(mdls, s, false));
+			ushort_td index = resolvKeyValue(mdls, s, false);
+			fieldIndexes.push_back(index);
+			fieldLens.push_back((*fds)[index].len);
 		}
 		// optimizing join
 		// if base recordsetImple is made by unique key and join by uniqe field, that can not opitimize.
 		//
+		q.joinKeySize(fns.count());
 		if (optimize)
 		{
 			makeJoinMap(mdls, joinRowMap, fieldIndexes);
@@ -161,7 +165,7 @@ class  activeTableImple : public activeObject<map_orm>
 			{
 				row& mdl = *(mdls.getRow((*it1)[0]));
 				for (int i=0;i<(int)fieldIndexes.size();++i)
-					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
+					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr(), fieldLens[i]);
 				++it1;
 			}
 		}
@@ -171,7 +175,7 @@ class  activeTableImple : public activeObject<map_orm>
 			{
 				row& mdl = *(*it);
 				for (int i=0;i<(int)fieldIndexes.size();++i)
-					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr());
+					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr(), fieldLens[i]);
 				++it;
 			}
 		}

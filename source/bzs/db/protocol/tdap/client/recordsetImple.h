@@ -82,6 +82,7 @@ public:
 	inline void setCurFirstFiled(int v){m_curFirstFiled = v;}
 	inline void setJoinRowMap(const std::vector< std::vector<int> >* v/*, size_t size*/){m_joinRowMap = v;/*m_joinMapSize = size;*/}
 	inline const std::vector< std::vector<int> >* joinRowMap()const {return m_joinRowMap;}
+	inline void duplicateRow(int row, int count);
 };
 
 class recordsetImple
@@ -171,7 +172,7 @@ private:
 			for (int i=0;i<(int)rows;++i)
 			{
 				row_ptr rec(memoryRecord::create(*m_fds), &memoryRecord::release);
- 				rec->setRecordData(p + recordLen*i, 0, am->endFieldIndex, false);
+				rec->setRecordData(p + recordLen*i, 0, am->endFieldIndex, false);
 				m_recordset.push_back(rec);
 			}
 		}
@@ -198,6 +199,18 @@ private:
 		}
 		assert(0);
 		return -1;
+	}
+
+	//Duplicate row for hasManyJoin
+	void duplicateRow(int row, int count)
+	{
+		row_ptr& r = m_recordset[row];
+		memoryRecord* p = dynamic_cast<memoryRecord*>(r.get());
+		for (int i=0;i<count;++i)
+		{
+			row_ptr rec(new memoryRecord(*p), &memoryRecord::release);
+			m_recordset.insert(m_recordset.begin() + row, rec);
+		}
 	}
 
 public:
@@ -480,6 +493,11 @@ inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
 		(*m_rs)[row+m_rowOffset].setInvalidRecord(v);
 
 
+}
+
+inline void multiRecordAlocatorImple::duplicateRow(int row, int count)
+{
+	m_rs->duplicateRow(row, count);
 }
 
 template<> inline recordsetImple::iterator begin(recordsetImple& m){return m.begin();}

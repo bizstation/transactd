@@ -131,8 +131,8 @@ struct resultDef
 
 struct seek
 {
-	unsigned short	len;
 	unsigned char*  data;
+	unsigned short	len;
 
 public:
 	size_t getLength()
@@ -428,7 +428,6 @@ public:
 
 class filter
 {
-
 	table* m_tb;
 	header m_hd;
 	resultDef m_ret;
@@ -447,6 +446,7 @@ class filter
 	size_t m_logicalLimitCount;
 	table::eFindType m_direction;
 	bool m_isTransactd;
+	bool m_hasManyJoin;
 	inline int maxDataBuffer()
 	{
 		return m_isTransactd ? TDAP_MAX_DATA_SIZE: BTRV_MAX_DATA_SIZE;
@@ -516,36 +516,53 @@ class filter
 			if (!m_logics[index++].setParam(m_tb, where[i].c_str(), where[i+1].c_str()
 									, value.c_str(), combine, compField))
 				return false;
-		  
 		}
 		return true;
-
 	}
 
-	inline void setSeekValue(short filedNum, const std::_tstring& s)
+	inline void setSeekValue(short fieldNum, const std::_tstring& s)
 	{
-		 m_tb->setFV(filedNum, s.c_str());
+		 m_tb->setFV(fieldNum, s.c_str());
 	}
 
-	inline void setSeekValue(short filedNum, const void* v)
+	inline void setSeekValue(short fieldNum, const keyValuePtr& v)
 	{
-		fielddef& fd = m_tb->tableDef()->fieldDefs[filedNum];
-		memcpy(m_tb->fieldPtr(filedNum), v, fd.len);
+		fielddef& fd = m_tb->tableDef()->fieldDefs[fieldNum];
+		void* p =  m_tb->fieldPtr(fieldNum);
+
+		ushort_td len = std::min<ushort_td>(v.len, fd.len);
+		memset(p, 0, fd.len);
+		memcpy(p, v.ptr, len);
 	}
 
 	template <class vector_type>
-	bool setSeeks(const vector_type& keyValues)
+	bool setSeeks(const vector_type& keyValues, const queryBase* q)
 	{
+		int keySize = q->getJoinKeySize();
 		//Check key values
 		keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
-		if (keyValues.size() % kd->segmentCount)
+		int joinKeySize = kd->segmentCount;
+		if (keySize != 0)
+		{
+			//Check specify key size is smoller than kd->segmentCount or equal
+			if (kd->segmentCount < keySize)
+				return false;
+			joinKeySize = keySize;
+			m_withBookmark = m_hasManyJoin = (kd->segmentCount != joinKeySize);
+
+			//Check when m_hasManyJoin need set joinHasOneOrHasMany
+			if (m_hasManyJoin && !(q->getOptimize() & queryBase::joinHasOneOrHasMany))
+				return false;
+		}
+
+		if (keyValues.size() % joinKeySize)
 			return false;
 		//Check uniqe key
-		if (kd->segments[0].flags.bit0)
+		if (kd->segments[0].flags.bit0 && (joinKeySize == kd->segmentCount))
 			return false;
-		m_seeks.resize(keyValues.size()/kd->segmentCount);
+		m_seeks.resize(keyValues.size()/joinKeySize);
 		int maxKeylen = 0;
-		for (int j=0;j<kd->segmentCount;++j)
+		for (int j=0;j<joinKeySize;++j)
 			maxKeylen += m_tb->tableDef()->fieldDefs[kd->segments[j].fieldNum].len + 2;
 
 		// alloc databuffer
@@ -556,15 +573,17 @@ class filter
 		memset(m_seeksDataBuffer, 0, maxKeylen*m_seeks.size());
 		uchar_td* dataBuf = m_seeksDataBuffer;
 
-		for (size_t i=0;i<keyValues.size();i+= kd->segmentCount)
+		int index = 0;
+		for (size_t i=0;i<keyValues.size();i+= joinKeySize)
 		{
-			for (int j=0;j<kd->segmentCount;++j)
+			for (int j=0;j<joinKeySize;++j)
 				setSeekValue(kd->segments[j].fieldNum, keyValues[i+j]);
-			seek& l = m_seeks[i];
-			ushort_td len = m_tb->writeKeyDataTo(dataBuf);
-			if (!l.setParam(dataBuf, len))
+			seek* l = &m_seeks[index];
+			ushort_td len = m_tb->writeKeyDataTo(dataBuf, joinKeySize);
+			if (!l->setParam(dataBuf, len))
 				return false;
 			dataBuf += len;
+			++index;
 		}
 		m_seeksMode = true;
 		m_seeksWritedCount = 0;
@@ -595,15 +614,9 @@ class filter
 				return false;
 
 			if (q->getSeekKeyValues().size())
-			{
-				//m_withBookmark = true;
-				return setSeeks(q->getSeekKeyValues());
-			}
+				return setSeeks(q->getSeekKeyValues(), q);
 			else if (q->getSeekValuesPtr().size())
-			{
-				//m_withBookmark = true;
-				return setSeeks(q->getSeekValuesPtr());
-			}
+				return setSeeks(q->getSeekValuesPtr(), q);
 			else if (q->getWheres().size())
 				return setWhere(q->getWheres());
 		}
@@ -667,7 +680,10 @@ class filter
 			first = m_seeksWritedCount;
 			last = std::min<size_t>(calcMaxRows() + m_seeksWritedCount, m_logicalLimitCount);
 			m_hd.rejectCount = 0;
-			m_ret.maxRows = m_hd.logicalCount = (ushort_td)(last - first);
+			if (m_hasManyJoin)
+				m_ret.maxRows = 0;
+			else
+				m_ret.maxRows = m_hd.logicalCount = (ushort_td)(last - first);
 		}
 		if (m_ret.maxRows == 0)
 			m_ret.maxRows = (unsigned short)std::min<int>(calcMaxRows(), USHRT_MAX);
@@ -758,7 +774,7 @@ public:
 	filter(table* tb):m_tb(tb),m_ignoreFields(false)
 		,m_seeksMode(false),m_seeksWritedCount(0)
 		,m_useOptimize(true),m_withBookmark(true)
-		,m_seeksDataBuffer(NULL)
+		,m_seeksDataBuffer(NULL),m_hasManyJoin(false)
 	{
 		m_isTransactd = m_tb->isUseTransactd();
 	}
@@ -785,6 +801,7 @@ public:
 		m_useOptimize = true;
 		delete [] m_seeksDataBuffer;
 		m_seeksDataBuffer = NULL;
+		m_hasManyJoin = false;
 	}
 
 	bool setQuery(const queryBase* q)
@@ -800,7 +817,10 @@ public:
 		if (!m_seeksMode) return true;
 		return (m_seeksWritedCount == m_seeks.size());
 	}
-	void resetSeeksWrited(){m_seeksWritedCount = 0;}
+
+	inline bool hasManyJoin() const {return m_hasManyJoin;}
+
+	inline void resetSeeksWrited(){m_seeksWritedCount = 0;}
 
 	void setPositionType(bool incCurrent)
 	{

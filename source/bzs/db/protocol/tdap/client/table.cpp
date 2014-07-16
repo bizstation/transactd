@@ -155,6 +155,40 @@ public:
 
 	inline void setMemblockType(int v){m_memblockType = v;}
 
+	inline void hasManyJoin(int rowCount, uchar_td* data)
+	{
+		int rowOffset = 0;
+		int row = 0;  // zero start
+		int count = 0;
+		char* ptr = data + DATASIZE_BYTE;//rowCount
+		unsigned short len = 0;
+		for (int i=0;i<(int)rowCount;++i)
+		{
+			ptr += len;
+			len = *((unsigned short*)ptr);
+			ptr += DATASIZE_BYTE;
+
+			//get sequential number
+			int tmp = *((int*)(ptr));
+			ptr += sizeof(int);
+			//If len == 0 then next first record read error
+			if ((len == 0) || (tmp != row))
+			{
+				if (count)
+				{
+					m_tb->m_impl->mraPtr->duplicateRow(row+rowOffset, count);
+					rowOffset += count;
+				}
+				++row;
+				count = 0;
+
+			}else if (i != 0)
+				++count;
+		}
+		if (count)
+			m_tb->m_impl->mraPtr->duplicateRow(row+rowOffset, count);
+	}
+
 	inline void reset(filter* p, uchar_td* data, unsigned int totalSize, const blobHeader* hd)
 	{
 		m_pFilter = p;
@@ -171,9 +205,12 @@ public:
 		m_tmpPtr = data + totalSize;
 		if (m_tb->m_impl->mraPtr)
 		{
+			if (m_pFilter->hasManyJoin())
+				hasManyJoin(m_rowCount, data);
 			size_t recordLen = m_pFilter->fieldSelected() ?
-					m_pFilter->totalFieldLen() : m_tb->tableDef()->maxRecordLen;
- 			m_tb->m_impl->mraPtr->init(m_rowCount, recordLen, m_memblockType, m_tb);
+				m_pFilter->totalFieldLen() : m_tb->tableDef()->maxRecordLen;
+			m_tb->m_impl->mraPtr->init(m_rowCount, recordLen, m_memblockType, m_tb);
+
 		}
 		m_hd = const_cast<blobHeader*>(hd);
 	}
@@ -559,13 +596,16 @@ void table::btrvSeekMulti()
 	m_impl->mraPtr->init(seeks.size(), recordLen, mra_first, this);
 
 	const bool transactd = false;
-
+	bool hasManyJoin = m_impl->filterPtr->hasManyJoin();
 	for (int i=0;i<(int)seeks.size();++i)
 	{
 		seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, false, true, transactd);
 		m_keylen = seeks[i].len;
 		m_datalen = m_buflen;
-		tdap((ushort_td)(TD_KEY_SEEK));
+		if (hasManyJoin)
+			tdap((ushort_td)(TD_KEY_OR_AFTER));
+		else
+			tdap((ushort_td)(TD_KEY_SEEK));
 		if (m_stat == STATUS_SUCCESS)
 			onReadAfter();
 
@@ -1044,14 +1084,16 @@ void table::doInit(tabledef* Def, short fnum, bool /*regularDir*/)
 	setTableid(fnum);
 }
 
-keylen_td table::writeKeyDataTo(uchar_td* to)
+keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
 {
 	if (m_tableDef->keyCount)
 	{
 		keydef& keydef = m_tableDef->keyDefs[(short)m_impl->keyNumIndex[m_keynum]];
 		uchar_td* start = to;
+		if (keySize == 0)
+			keySize = keydef.segmentCount;
 
-		for (int j = 0; j < keydef.segmentCount; j++)
+		for (int j = 0; j < keySize; j++)
 		{
 			int fdnum = keydef.segments[j].fieldNum;
 			fielddef& fd = m_tableDef->fieldDefs[fdnum];
@@ -1065,7 +1107,7 @@ keylen_td table::writeKeyDataTo(uchar_td* to)
 
 keylen_td table::writeKeyData()
 {
-	return writeKeyDataTo((uchar_td*)m_impl->keybuf);
+	return writeKeyDataTo((uchar_td*)m_impl->keybuf, 0);
 }
 
 uint_td table::pack(char*ptr, size_t size)
@@ -1580,16 +1622,24 @@ bool table::setSeekValueField(int row)
 	const uchar_td* ptr = (const uchar_td*)keyValues[row].data;
 	const uchar_td* data;
 	ushort_td dataSize;
-	for (int j=0;j<kd->segmentCount;++j)
+	if (ptr)
 	{
-		short filedNum = kd->segments[j].fieldNum;
-		fielddef& fd = tableDef()->fieldDefs[filedNum];
-		ptr = fd.getKeyValueFromKeybuf(ptr, &data, dataSize);
-		if (fd.maxVarDatalen())
-			setFV(filedNum, data, dataSize);
-		else
-			memcpy(fieldPtr(filedNum), data, dataSize);
-	}
+		for (int j=0;j<kd->segmentCount;++j)
+		{
+			short filedNum = kd->segments[j].fieldNum;
+			fielddef& fd = tableDef()->fieldDefs[filedNum];
+			ptr = fd.getKeyValueFromKeybuf(ptr, &data, dataSize);
+			if (data)
+			{
+				if (fd.maxVarDatalen())
+					setFV(filedNum, data, dataSize);
+				else
+					memcpy(fieldPtr(filedNum), data, dataSize);
+			}else
+				setFV(filedNum, _T(""));
+		}
+	}else
+		return false;
 	return true;
 }
 
@@ -1716,23 +1766,27 @@ void analyzeQuery(const _TCHAR* str
 }
 
 
+
 struct impl
 {
 	impl():
 	m_reject(1),m_limit(0),m_direction(table::findForword)
-		,m_nofilter(false),m_optimize(queryBase::none),m_withBookmark(false){}
+		,m_nofilter(false),m_optimize(queryBase::none),m_withBookmark(false)
+		,m_joinKeySize(0){}
 
-	int m_reject;
-	int m_limit;
-	table::eFindType m_direction;
-	bool m_nofilter;
-	queryBase::eOptimize m_optimize;
-	bool m_withBookmark;
 	mutable std::_tstring m_str;
 	std::vector<std::_tstring> m_selects;
 	std::vector<std::_tstring> m_wheres;
 	std::vector<std::_tstring> m_keyValues;
-	std::vector<const void*> m_keyValuesPtr;
+	std::vector<keyValuePtr> m_keyValuesPtr;
+	int m_reject;
+	int m_limit;
+	int m_joinKeySize;
+	queryBase::eOptimize m_optimize;
+	table::eFindType m_direction;
+	bool m_nofilter;
+	bool m_withBookmark;
+
 };
 
 queryBase::queryBase():m_impl(new impl){}
@@ -1815,7 +1869,7 @@ void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
 
 }
 
-void queryBase::addSeekKeyValuePtr(const void* value, bool reset)
+void queryBase::addSeekKeyValuePtr(const void* value, ushort_td len, bool reset)
 {
 	if (reset)
 	{
@@ -1823,7 +1877,7 @@ void queryBase::addSeekKeyValuePtr(const void* value, bool reset)
 		m_impl->m_keyValues.clear();
 		m_impl->m_keyValuesPtr.clear();
 	}
-	m_impl->m_keyValuesPtr.push_back(value);
+	m_impl->m_keyValuesPtr.push_back(keyValuePtr(value, len));
 	m_impl->m_nofilter = false;
 
 }
@@ -1945,6 +1999,16 @@ bool queryBase::isBookmarkAlso() const
 	return m_impl->m_withBookmark;
 }
 
+queryBase& queryBase::joinKeySize(int v)
+{
+	m_impl->m_joinKeySize = v;
+	return *this;
+}
+
+int queryBase::getJoinKeySize() const
+{
+	return m_impl->m_joinKeySize;
+}
 
 table::eFindType queryBase::getDirection() const {return m_impl->m_direction;}
 
@@ -2000,7 +2064,7 @@ bool queryBase::isAll()const{return m_impl->m_nofilter;};
 const std::vector<std::_tstring>& queryBase::getSelects() const {return m_impl->m_selects;}
 const std::vector<std::_tstring>& queryBase::getWheres() const {return m_impl->m_wheres;}
 const std::vector<std::_tstring>& queryBase::getSeekKeyValues() const{return m_impl->m_keyValues;}
-const std::vector<const void*>&queryBase:: getSeekValuesPtr() const{return m_impl->m_keyValuesPtr;}
+const std::vector<keyValuePtr>&queryBase:: getSeekValuesPtr() const{return m_impl->m_keyValuesPtr;}
 short queryBase::selectCount() const
 {
 	return (short)m_impl->m_selects.size();

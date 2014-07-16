@@ -66,8 +66,8 @@ class connection : public boost::enable_shared_from_this<connection>,
 	io_service& m_ios;
 	boost::asio::ip::tcp::socket m_socket;
 	shared_ptr<IAppModule> m_module;
-	std::vector<char> m_buffer;
-	std::vector<char> m_result;
+	vector_buffer m_buffer;
+	vector_buffer m_result;
 	buffers m_optionalBuffes;
 		
 	size_t m_readLen;

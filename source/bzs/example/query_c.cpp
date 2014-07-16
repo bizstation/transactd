@@ -59,11 +59,11 @@ void execute(recordset& rs, activeTable& atu, activeTable& atg, activeTable& ate
 	atu.index(0).keyValue(1).read(rs, query);
 	
 	/* Join extention::comment
-	   Use "joinKeyValuesUnique" optimaize option. 
+	   Use "joinHasOneOrHasMany" optimaize option. 
 	   Because this join is has one and atu.index(0) is unique key,
 	   then join key values(id) are all unique.
 	*/ 
-	query.reset().select(_T("comment")).optimize(queryBase::joinKeyValuesUnique);
+	query.reset().select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany);
 	ate.index(0).join(rs, query, _T("id"));
 
 	//Join group::name
