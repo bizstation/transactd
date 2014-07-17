@@ -22,7 +22,6 @@
 #include "fieldNameAlias.h"
 #include "memRecord.h"
 #include "groupComp.h"
-//#include "databaseManager.h"
 #include <boost/shared_array.hpp>
 #include <vector>
 

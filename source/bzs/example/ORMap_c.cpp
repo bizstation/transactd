@@ -17,6 +17,7 @@
    02111-1307, USA.
 =================================================================*/
 #include <bzs/db/protocol/tdap/client/trdormapi.h>
+#include <bzs/db/protocol/tdap/client/databaseManager.h>
 #include <boost/iterator/iterator_facade.hpp>
 #include <iostream>
 #include <vector>
@@ -395,7 +396,7 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 	static const char_td primary_key = 0;
 
 	/* Create the activeObject instance of user_orm. */
-	activeObject<user_orm> ut(db);
+	activeObject<user_orm> ut(&db);
 
 	//-------------------------------------------------------------------------
 	//   Single model operations
@@ -435,7 +436,7 @@ void readUsers(databaseManager& db, std::vector<user_ptr>& users)
 	   Using shared pointer.
 	*/
 	group_ptr grp(group::create(0));
-	activeObject<group_orm> gt(db);
+	activeObject<group_orm> gt(&db);
 	gt.index(primary_key).keyValue(2).read(*grp, noKeyValueFromObj);
 
 	/* Using pure pointer. */

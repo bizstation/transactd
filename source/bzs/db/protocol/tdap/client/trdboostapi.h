@@ -381,10 +381,9 @@ class idatabaseManager
 public:
 	virtual ~idatabaseManager(){};
 	virtual void connect(const connectParams& param, bool newConnection=false)=0;
+	virtual void disconnectAll()=0;
 	virtual table_ptr table(const _TCHAR* name)=0;
 	virtual database* db()const=0;
-	//virtual int findDbIndex(const connectParams& param)const=0;
-	//virtual void setCurDb(int v)=0;
 	virtual void use(const connectParams* param=NULL) = 0;
 	virtual void unUse() = 0;
 	virtual void setOption(__int64 v)=0;

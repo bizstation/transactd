@@ -66,6 +66,11 @@ public:
 
 	}
 
+	void disconnectAll()
+	{
+		m_db->close();
+	}
+
 	table_ptr table(const _TCHAR* name)
 	{
 		int index =  findTable(name);
@@ -148,6 +153,14 @@ public:
 		addDb(db);
 	}
 
+	void disconnectAll()
+	{
+		m_tables.clear();
+		m_dbs.clear();
+		database_ptr p( createDatabaseObject());
+		addDb(p);
+	}
+
 	//change currnt
 	database_ptr& addDb(database_ptr& db)
 	{
@@ -181,7 +194,6 @@ public:
 
 	}
 
-
 	table_ptr table(const _TCHAR* name)
 	{
 		int index =  findTable(name);
@@ -193,12 +205,10 @@ public:
 		return t;
 	}
 
-
 	database* db() const
 	{
 		return m_db;
 	}
-
 
 	inline void use(const connectParams* param=NULL)
 	{
@@ -220,18 +230,29 @@ public:
 	inline void unUse(){};
 
 	inline const _TCHAR* uri() const{return m_db->uri();}
+
 	inline char_td mode() const {return m_db->mode();}
+
 	inline bool isOpened() const{return m_db->isOpened();}
 
 	inline void setOption(__int64 ){};
+
 	inline __int64 option(){return 0;};
+
 	inline void beginTrn(short bias){m_db->beginTrn(bias);};
+
 	inline void endTrn(){m_db->endTrn();}
+
 	inline void abortTrn(){m_db->abortTrn();}
+
 	inline int enableTrn(){return m_db->enableTrn();}
+
 	inline void beginSnapshot(){m_db->beginSnapshot();}
+
 	inline void endSnapshot(){m_db->endSnapshot();}
+
 	inline short_td stat() const {return m_db->stat();}
+
 	inline uchar_td* clientID() const{return m_db->clientID();}
 };
 /** @cond INTERNAL */

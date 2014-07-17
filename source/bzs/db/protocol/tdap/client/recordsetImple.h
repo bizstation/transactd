@@ -207,11 +207,11 @@ private:
 	{
 		row_ptr& r = m_recordset[row];
 		memoryRecord* p = dynamic_cast<memoryRecord*>(r.get());
+
+		m_recordset.reserve(m_recordset.size()+count);
+		m_recordset.insert(m_recordset.begin() + row, count, row_ptr());
 		for (int i=0;i<count;++i)
-		{
-			row_ptr rec(new memoryRecord(*p), &memoryRecord::release);
-			m_recordset.insert(m_recordset.begin() + row, rec);
-		}
+			m_recordset[i+row].reset(new memoryRecord(*p), &memoryRecord::release);
 	}
 
 public:
@@ -224,6 +224,12 @@ public:
 	inline ~recordsetImple()
 	{
 
+	}
+
+	inline void checkIndex(size_t index)
+	{
+		if (index >= m_recordset.size())
+			THROW_BZS_ERROR_WITH_MSG(_T("Invalid row index of recordset."));
 	}
 
 	/* This clone is deep copy.
@@ -265,9 +271,7 @@ public:
 			}
 		}
 		return p;
-
 	}
-
 
 	inline short uniqueReadMaxField() const{return m_uniqueReadMaxField;}
 
@@ -287,13 +291,29 @@ public:
 		m_memblock.clear();
 	}
 
-	inline row_ptr& getRow(size_t index){return m_recordset[index];}
+	inline row_ptr& getRow(size_t index)
+	{
+		return m_recordset[index];
+	}
 
-	inline row& operator[](size_t index)const{return *m_recordset[index].get();}
+	inline row& operator[](size_t index)const
+	{
+		return *m_recordset[index].get();
+	}
 
-	inline row& first() const {return *m_recordset[0].get();}
+	inline row& first() const
+	{
+		if (m_recordset.size() == 0)
+			THROW_BZS_ERROR_WITH_MSG(_T("Invalid index of recordset."));
+		return *m_recordset[0].get();
+	}
 
-	inline row& last() const {return *m_recordset[m_recordset.size() - 1].get();}
+	inline row& last() const
+	{
+		if (m_recordset.size() == 0)
+			THROW_BZS_ERROR_WITH_MSG(_T("Invalid index of recordset."));
+		return *m_recordset[m_recordset.size() - 1].get();
+	}
 
 	inline recordsetImple& top(recordsetImple& c, int n) const
 	{
@@ -309,7 +329,10 @@ public:
 
 	inline iterator end(){return m_recordset.end();}
 
-	inline iterator erase(size_t index){return m_recordset.erase(m_recordset.begin()+index);}
+	inline iterator erase(size_t index)
+	{
+		return m_recordset.erase(m_recordset.begin()+index);
+	}
 
 	inline iterator erase(const iterator& it){return m_recordset.erase(it);}
 
@@ -359,16 +382,20 @@ public:
 
 	inline recordsetImple& matchBy(recordsetQuery& rq)
 	{
-		rq.init(fieldDefs());
-		for (int i=(int)m_recordset.size()-1;i>=0;--i)
-			if (!rq.match(m_recordset[i]))
-				erase(i);
+		if (m_recordset.size())
+		{
+			rq.init(fieldDefs());
+			for (int i=(int)m_recordset.size()-1;i>=0;--i)
+				if (!rq.match(m_recordset[i]))
+					erase(i);
+		}
 		return *this;
 	}
 
 	inline recordsetImple& groupBy(groupQuery& gq)
 	{
-		gq.grouping(*this);
+		if (m_recordset.size())
+			gq.grouping(*this);
 		return *this;
 	}
 
@@ -377,16 +404,19 @@ public:
 					 const _TCHAR* name5=NULL, const _TCHAR* name6=NULL,
 					 const _TCHAR* name7=NULL, const _TCHAR* name8=NULL)
 	{
-		std::vector<sortDescription> sds;
-		makeSortFields(name1, sds, true);
-		if (name2) makeSortFields(name2,  sds, true);
-		if (name3) makeSortFields(name3,  sds, true);
-		if (name4) makeSortFields(name4,  sds, true);
-		if (name5) makeSortFields(name5,  sds, true);
-		if (name6) makeSortFields(name6,  sds, true);
-		if (name7) makeSortFields(name7,  sds, true);
-		if (name8) makeSortFields(name8,  sds, true);
-		std::sort(begin(), end(), recordsetSorter(sds));
+		if (m_recordset.size())
+		{
+			std::vector<sortDescription> sds;
+			makeSortFields(name1, sds, true);
+			if (name2) makeSortFields(name2,  sds, true);
+			if (name3) makeSortFields(name3,  sds, true);
+			if (name4) makeSortFields(name4,  sds, true);
+			if (name5) makeSortFields(name5,  sds, true);
+			if (name6) makeSortFields(name6,  sds, true);
+			if (name7) makeSortFields(name7,  sds, true);
+			if (name8) makeSortFields(name8,  sds, true);
+			std::sort(begin(), end(), recordsetSorter(sds));
+		}
 		return *this;
 	}
 
@@ -394,12 +424,15 @@ public:
 
 	inline recordsetImple& orderBy(const sortFields& orders)
 	{
-		std::vector<sortDescription> sds;
+		if (m_recordset.size())
+		{
+			std::vector<sortDescription> sds;
 
-		for (int i=0;i<(int)orders.size();++i)
-			makeSortFields(orders[i].name.c_str(), sds, orders[i].asc);
+			for (int i=0;i<(int)orders.size();++i)
+				makeSortFields(orders[i].name.c_str(), sds, orders[i].asc);
 
-		std::sort(begin(), end(), recordsetSorter(sds));
+			std::sort(begin(), end(), recordsetSorter(sds));
+		}
 		return *this;
 	}
 

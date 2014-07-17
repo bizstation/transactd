@@ -86,6 +86,7 @@ const fielddefs* recordset::fieldDefs() const
 
 row& recordset::operator[](size_t index) const
 {
+	m_imple->checkIndex(index);
 	return (*m_imple)[index];
 }
 
@@ -119,9 +120,16 @@ recordset::iterator recordset::begin(){return m_imple->begin();}
 
 recordset::iterator recordset::end(){return m_imple->end();}
 
-recordset::iterator recordset::erase(size_t index){return m_imple->erase(m_imple->begin()+index);}
+recordset::iterator recordset::erase(size_t index)
+{
+	m_imple->checkIndex(index);
+	return m_imple->erase(m_imple->begin()+index);
+}
 
-recordset::iterator recordset::erase(const iterator& it){return m_imple->erase(it);}
+recordset::iterator recordset::erase(const iterator& it)
+{
+	return m_imple->erase(it);
+}
 
 void recordset::removeField(int index)
 {

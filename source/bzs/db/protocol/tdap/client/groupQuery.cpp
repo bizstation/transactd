@@ -92,7 +92,7 @@ fieldNames& fieldNames::keyField(const _TCHAR* name, const _TCHAR* name1, const 
 			,const _TCHAR* name8, const _TCHAR* name9, const _TCHAR* name10)
 {
 	m_impl->keyFields.clear();
-	m_impl->keyFields.push_back(name);
+	if (name) m_impl->keyFields.push_back(name);
 	if (name1) m_impl->keyFields.push_back(name1);
 	if (name2) m_impl->keyFields.push_back(name2);
 	if (name3) m_impl->keyFields.push_back(name3);

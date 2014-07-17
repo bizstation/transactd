@@ -311,7 +311,7 @@ enum eOptimize
 {
 	none = 0,
 	joinHasOneOrHasMany = 1,
-	joinWhereFields = 2
+	combineCondition = 2
 }eOptimize;
 
 

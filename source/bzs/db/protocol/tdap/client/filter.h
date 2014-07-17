@@ -548,7 +548,8 @@ class filter
 			if (kd->segmentCount < keySize)
 				return false;
 			joinKeySize = keySize;
-			m_withBookmark = m_hasManyJoin = (kd->segmentCount != joinKeySize);
+			m_withBookmark = m_hasManyJoin =
+				(kd->segmentCount != joinKeySize) || kd->segments[0].flags.bit0;
 
 			//Check when m_hasManyJoin need set joinHasOneOrHasMany
 			if (m_hasManyJoin && !(q->getOptimize() & queryBase::joinHasOneOrHasMany))
@@ -558,7 +559,7 @@ class filter
 		if (keyValues.size() % joinKeySize)
 			return false;
 		//Check uniqe key
-		if (kd->segments[0].flags.bit0 && (joinKeySize == kd->segmentCount))
+		if (kd->segments[0].flags.bit0 && !queryBase::joinHasOneOrHasMany)
 			return false;
 		m_seeks.resize(keyValues.size()/joinKeySize);
 		int maxKeylen = 0;
@@ -596,7 +597,7 @@ class filter
 		setRejectCount(q->getReject());
 		setMaxRows(q->getLimit());
 		m_direction = q->getDirection();
-		m_useOptimize = ((q->getOptimize() & queryBase::joinWhereFields) == queryBase::joinWhereFields);
+		m_useOptimize = ((q->getOptimize() & queryBase::combineCondition) == queryBase::combineCondition);
 		m_withBookmark = q->isBookmarkAlso();
 		recordBackup recb(m_tb);
 

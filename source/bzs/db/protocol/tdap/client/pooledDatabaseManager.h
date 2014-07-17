@@ -84,13 +84,11 @@ public:
 		use(&param);
 	}
 
+	inline void disconnectAll() {cpool.reset();}
+
 	inline table_ptr table(const _TCHAR* name){return m_db->table(name);}
 
 	inline database* db()const {return m_db->db();}
-
-	//inline int findDbIndex(const connectParams& param)const{return m_db->findDbIndex(param);}
-
-	//inline void setCurDb(int v){m_db->setCurDb(v);}
 
 	inline const _TCHAR* uri() const{return m_db->uri();}
 

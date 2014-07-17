@@ -32,29 +32,31 @@ STDMETHODIMP CGroupQuery::KeyField(BSTR Name0, BSTR Name1, BSTR Name2, BSTR Name
 				BSTR Name6, BSTR Name7,	BSTR Name8, BSTR Name9,	BSTR Name10,
 				IGroupQuery** retVal)
 {
-
-	if (!Name1 || !Name1[0])
-		m_gq.keyField(Name0);	
-	else if (!Name2 || !Name2[0]) 
-		m_gq.keyField(Name0, Name1);	
-	else if (!Name3 || !Name3[0]) 
-		m_gq.keyField(Name0,  Name1, Name2);	
-	else if (!Name4 || !Name4[0]) 
-		m_gq.keyField(Name0,  Name1, Name2, Name3);	
-	else if (!Name5 || !Name5[0]) 
-		m_gq.keyField(Name0,  Name1, Name2, Name3, Name4);	
-	else if (!Name6 || !Name6[0]) 
-		m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5);	
-	else if (!Name7 || !Name7[0]) 
-		m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6);
-	else if (!Name8 || !Name8[0]) 
-		m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6, Name7);
-	else if (!Name9 || !Name9[0]) 
-		m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8);
-	else if (!Name10 || !Name10[0]) 
-		m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9);
-	else
-		m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9, Name10);
+	if (Name0 && Name0[0])
+	{
+		if (!Name1 || !Name1[0])
+			m_gq.keyField(Name0);	
+		else if (!Name2 || !Name2[0]) 
+			m_gq.keyField(Name0, Name1);	
+		else if (!Name3 || !Name3[0]) 
+			m_gq.keyField(Name0,  Name1, Name2);	
+		else if (!Name4 || !Name4[0]) 
+			m_gq.keyField(Name0,  Name1, Name2, Name3);	
+		else if (!Name5 || !Name5[0]) 
+			m_gq.keyField(Name0,  Name1, Name2, Name3, Name4);	
+		else if (!Name6 || !Name6[0]) 
+			m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5);	
+		else if (!Name7 || !Name7[0]) 
+			m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6);
+		else if (!Name8 || !Name8[0]) 
+			m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6, Name7);
+		else if (!Name9 || !Name9[0]) 
+			m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8);
+		else if (!Name10 || !Name10[0]) 
+			m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9);
+		else
+			m_gq.keyField(Name0,  Name1, Name2, Name3, Name4, Name5, Name6, Name7, Name8, Name9, Name10);
+	}
 	setResult(retVal);
 	return S_OK;
 }

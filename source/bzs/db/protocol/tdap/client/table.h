@@ -255,7 +255,7 @@ protected:
 	const std::vector<keyValuePtr>& getSeekValuesPtr() const;
 
 public:
-	enum eOptimize{none=0, joinHasOneOrHasMany=1, joinWhereFields=2};
+	enum eOptimize{none=0, joinHasOneOrHasMany=1, combineCondition=2};
 
 	queryBase();
 	queryBase(const queryBase& r);
