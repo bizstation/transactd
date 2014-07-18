@@ -37,15 +37,29 @@ typedef ushort_td       keylen_td;
 
 /** tdap c interface
  */
+#if defined(__BORLANDC__)
+	typedef short __stdcall(*dllUnloadCallback)();
+#else
+/** @cond INTERNAL */
+	/** Callback function on a record was deleted. */
+	typedef short(__STDCALL *dllUnloadCallback)();
+/** @endcond */
+#endif
+
 #ifdef LIB_TDCLCPP
 	extern __declspec(dllimport)
 	short_td __stdcall BTRCALLID(ushort_td op, void* posb, void* data, uint_td* datalen
 			, void* keybuf, keylen_td keylen, char_td keyNum, uchar_td* clientID);
+
+	extern __declspec(dllimport)
+	short_td __stdcall CallbackRegist(dllUnloadCallback func);	
 #endif
 
 
 typedef short_td  (__STDCALL *BTRCALLID_PTR)(ushort_td,void*,void*, uint_td*
 		,void*,keylen_td,char_td,uchar_td*);
+
+typedef short_td  (__STDCALL *DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 
 /** buffer size
  */

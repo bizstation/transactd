@@ -942,7 +942,14 @@ queryStatementsImple* queryStatements::internalPtr() const
 
 void queryStatements::save(const _TCHAR* filename)
 {
-	std::ofstream file(filename);
+#ifdef _UNICODE
+	char p[MAX_PATH];
+	WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, filename, -1, p, MAX_PATH, NULL, NULL);
+#else
+	const char* p = filename;
+
+#endif
+	std::ofstream file(p);
 	xml_oarchive oa(file);
 	queryStatementsImple& queryStatements = *m_impl;
 	oa << BOOST_SERIALIZATION_NVP(queryStatements);
@@ -950,9 +957,17 @@ void queryStatements::save(const _TCHAR* filename)
 
 void queryStatements::load(const _TCHAR* filename)
 {
-	m_impl->reset();
 
-	std::ifstream file(filename);
+#ifdef _UNICODE
+	char p[MAX_PATH];
+	WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, filename, -1, p, MAX_PATH, NULL, NULL);
+
+#else
+	const char* p = filename;
+
+#endif
+	m_impl->reset();
+	std::ifstream file(p);
 	xml_iarchive ia(file);
 	queryStatementsImple& queryStatements = *m_impl;
 	ia >> BOOST_SERIALIZATION_NVP(queryStatements);

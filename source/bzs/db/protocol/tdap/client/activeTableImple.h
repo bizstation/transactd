@@ -89,6 +89,15 @@ public:
 
 };
 
+struct joinInfo
+{
+	ushort_td len;
+	ushort_td type;
+	std::_tstring fixedValue;
+};
+
+#define JOIN_KEYVALUE_TYPE_PTR 0
+#define JOIN_KEYVALUE_TYPE_STR 1
 
 
 class  activeTableImple : public activeObject<map_orm>
@@ -100,12 +109,89 @@ class  activeTableImple : public activeObject<map_orm>
 	typedef std::vector<std::vector<int> > joinmap_type;
 	record m_record;
 
-	
+	// return can memcpy
+	uchar_td convertFieldType(uchar_td v)
+	{
+		if (v == ft_autoinc)
+			v = ft_integer;
+		else if (v == ft_autoIncUnsigned)
+			 v = ft_integer;
+		else if (v == ft_uinteger)
+			 v = ft_integer;
+		else if (v == ft_logical)
+			v = ft_integer;
+		else if (v == ft_bit)
+			v = ft_integer;
+		return v;
+	}
+
+	template <class Container>
+	inline void makeJoinFieldInfo(Container& mdls
+				   , const fielddefs* fds
+				   , const fieldNames& fns
+				   , std::vector<typename Container::key_type>& fieldIndexes
+				   , std::vector<joinInfo>& joinFields)
+	{
+		joinFields.resize(fns.count());
+		fieldIndexes.resize(fns.count());
+		const tabledef* td = table()->tableDef();
+		const keydef* kd = &td->keyDefs[table()->keyNum()];
+		if (kd->segmentCount < fns.count())
+			THROW_BZS_ERROR_WITH_MSG(_T("Join key fields are too many.\n Check index number and field count."));
+
+		for (int i=0;i<fns.count();++i)
+		{
+			std::_tstring s = fns.getValue(i);
+			if (s[0] == '[')
+			{
+				fieldIndexes[i] = -1;
+				joinFields[i].type = JOIN_KEYVALUE_TYPE_PTR;
+				joinFields[i].len = (ushort_td)(s.size() - 2);
+				joinFields[i].fixedValue = s.substr(1, s.size() -2);
+			}else
+			{
+				ushort_td index = resolvKeyValue(mdls, s, false);
+				fieldIndexes[i] = index;
+				const fielddef& fd = (*fds)[index];
+				//Check the fieldType
+				if (convertFieldType(fd.type) ==
+					convertFieldType(td->fieldDefs[kd->segments[i].fieldNum].type))
+				{
+					joinFields[i].len = fd.len;
+					joinFields[i].type = JOIN_KEYVALUE_TYPE_PTR;
+
+				}else
+				{
+					joinFields[i].len = 0;
+					joinFields[i].type = JOIN_KEYVALUE_TYPE_STR;
+				}
+			}
+		}
+	}
+
+	template <class Container>
+	inline void addSeekValues(row& mdl, queryBase& q
+					, std::vector<typename Container::key_type>& fieldIndexes
+					, std::vector<joinInfo>& joinFields)
+	{
+		for (int i=0;i<(int)fieldIndexes.size();++i)
+		{
+			if (fieldIndexes[i] == -1)
+				q.addSeekKeyValuePtr(joinFields[i].fixedValue.c_str(), joinFields[i].len, KEYVALUE_STR);
+			else if (joinFields[i].type == JOIN_KEYVALUE_TYPE_PTR)
+				q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr(), joinFields[i].len, KEYVALUE_PTR);
+			else
+			{
+				const _TCHAR* p = mdl[fieldIndexes[i]].c_str();
+				q.addSeekKeyValuePtr(p, (ushort_td)_tcslen(p), KEYVALUE_STR_NEED_COPY);
+			}
+		}
+	}
+
 	template <class Container>
 	void makeJoinMap(Container& mdls, joinmap_type& joinRowMap
 				, std::vector<typename Container::key_type>& keyFields)
 	{
-
 		grouping_comp<Container> groupingComp(mdls, keyFields);
 		std::vector<int> index;
 		std::vector<int> tmp;
@@ -121,7 +207,6 @@ class  activeTableImple : public activeObject<map_orm>
 			joinRowMap[i].push_back(n);
 		}
 	}
-	
 	
 	template <class Container>
 	void doJoin(bool innner, Container& mdls, queryBase& q, const _TCHAR* name1
@@ -139,19 +224,16 @@ class  activeTableImple : public activeObject<map_orm>
 
 		bool optimize = !(q.getOptimize() & queryBase::joinHasOneOrHasMany);
 		joinmap_type joinRowMap;
-		std::vector<typename Container::key_type> fieldIndexes;
-		std::vector<ushort_td> fieldLens;
 
 		fieldNames fns;
 		fns.keyField(name1, name2, name3, name4, name5, name6, name7, name8);
+
+		std::vector<typename Container::key_type> fieldIndexes;
+		std::vector<joinInfo> joinFields;
+
 		const fielddefs* fds = mdls.fieldDefs();
-		for (int i=0;i<fns.count();++i)
-		{
-			std::_tstring s = fns.getValue(i);
-			ushort_td index = resolvKeyValue(mdls, s, false);
-			fieldIndexes.push_back(index);
-			fieldLens.push_back((*fds)[index].len);
-		}
+		makeJoinFieldInfo<Container>(mdls, fds, fns, fieldIndexes, joinFields);
+
 		// optimizing join
 		// if base recordsetImple is made by unique key and join by uniqe field, that can not opitimize.
 		//
@@ -159,23 +241,22 @@ class  activeTableImple : public activeObject<map_orm>
 		if (optimize)
 		{
 			makeJoinMap(mdls, joinRowMap, fieldIndexes);
-			q.reserveSeekKeyValueSize(joinRowMap.size());
+			q.reserveSeekKeyValuePtrSize(joinRowMap.size() * fieldIndexes.size());
 			std::vector<std::vector<int> >::iterator it1 = joinRowMap.begin(),ite1 = joinRowMap.end();
 			while(it1 != ite1)
 			{
 				row& mdl = *(mdls.getRow((*it1)[0]));
-				for (int i=0;i<(int)fieldIndexes.size();++i)
-					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr(), fieldLens[i]);
+				addSeekValues<Container>(mdl, q, fieldIndexes, joinFields);
 				++it1;
 			}
 		}
 		else
 		{
+			q.reserveSeekKeyValuePtrSize(mdls.size() * fieldIndexes.size());
 			while(it != ite)
 			{
 				row& mdl = *(*it);
-				for (int i=0;i<(int)fieldIndexes.size();++i)
-					q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr(), fieldLens[i]);
+				addSeekValues<Container>(mdl, q, fieldIndexes, joinFields);
 				++it;
 			}
 		}

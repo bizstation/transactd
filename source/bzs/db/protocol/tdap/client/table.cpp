@@ -1808,6 +1808,27 @@ void analyzeQuery(const _TCHAR* str
 }
 
 
+keyValuePtr::keyValuePtr(const void* p, ushort_td l, short typeStr)
+			:len(l),type(typeStr)
+{
+	if (type & KEYVALUE_NEED_COPY)
+	{
+		_TCHAR* tmp =  new _TCHAR[len+1];
+		_tcsncpy(tmp, (_TCHAR*)p, len);
+		tmp[len] = 0x00;
+		ptr = tmp;
+	}
+	else
+		ptr = p;
+
+}
+
+keyValuePtr::~keyValuePtr()
+{
+	if (type & KEYVALUE_NEED_COPY)
+		delete [] (_TCHAR*)ptr;
+}
+
 
 struct impl
 {
@@ -1894,6 +1915,11 @@ void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name
 void queryBase::reserveSeekKeyValueSize(size_t v)
 {
 	m_impl->m_keyValues.reserve(v);
+
+}
+
+void queryBase::reserveSeekKeyValuePtrSize(size_t v)
+{
 	m_impl->m_keyValuesPtr.reserve(v);
 }
 
@@ -1911,7 +1937,7 @@ void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
 
 }
 
-void queryBase::addSeekKeyValuePtr(const void* value, ushort_td len, bool reset)
+void queryBase::addSeekKeyValuePtr(const void* value, ushort_td len, short typeStr, bool reset)
 {
 	if (reset)
 	{
@@ -1919,7 +1945,7 @@ void queryBase::addSeekKeyValuePtr(const void* value, ushort_td len, bool reset)
 		m_impl->m_keyValues.clear();
 		m_impl->m_keyValuesPtr.clear();
 	}
-	m_impl->m_keyValuesPtr.push_back(keyValuePtr(value, len));
+	m_impl->m_keyValuesPtr.push_back(keyValuePtr(value, len, typeStr));
 	m_impl->m_nofilter = false;
 
 }

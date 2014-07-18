@@ -18,6 +18,18 @@
 =================================================================*/
 #include "connectionPool.h"
 
+#if (__BCPLUSPLUS__)
+#   ifdef _WIN64
+#	    pragma comment(lib, "boost_thread-bcb64-mt-1_50.a")
+#   else
+#       ifdef _RTLDLL
+#	    	pragma comment(lib, "boost_thread-bcb-mt-1_39.lib")
+#		else
+#	    	pragma comment(lib, "libboost_thread-bcb-mt-s-1_39.lib")
+#		endif
+#   endif
+#endif
+
 namespace bzs
 {
 namespace db
@@ -30,6 +42,12 @@ namespace client
 {
 
 stdCconnectionPool cpool;
+
+short __STDCALL dllUnloadCallbackFunc()
+{
+	cpool.reset(0);
+	return 0;
+}
 
 void releaseConnection(stdDbmCconnectionPool* pool)
 {

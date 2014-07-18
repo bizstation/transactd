@@ -31,6 +31,10 @@
 #include <bzs/example/queryData.h>
 #include <bzs/db/protocol/tdap/client/activeTable.h>
 
+#include <bzs/db/protocol/tdap/client/pooledDatabaseManager.h>
+
+
+
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 using namespace std;
@@ -2854,6 +2858,17 @@ void testWirtableRecord(database* db)
 
 }
 
+void testDbPool()
+{
+	pooledDbManager poolMgr;
+	pooledDbManager::setMaxConnections(3);
+
+	connectParams pm(PROTOCOL, HOSTNAME, _T("querytest"), DBNAME);
+	poolMgr.use(&pm);
+	poolMgr.unUse();
+	poolMgr.disconnectAll();
+}
+
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -3013,6 +3028,15 @@ BOOST_AUTO_TEST_SUITE(filter)
         testDropDatabase(db());
     }
 
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(dbPool)
+
+	BOOST_AUTO_TEST_CASE(pool)
+	{
+		testDbPool();
+	}
 
 BOOST_AUTO_TEST_SUITE_END()
 

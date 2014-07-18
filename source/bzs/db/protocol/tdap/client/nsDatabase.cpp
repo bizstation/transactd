@@ -726,6 +726,15 @@ const char* nsdatabase::toServerUri(char* buf, int buflen, const _TCHAR* src, bo
 
 }
 
+DLLUNLOADCALLBACK_PTR nsdatabase::getDllUnloadCallbackFunc()
+{
+	if (hTrsdDLL == NULL)
+		hTrsdDLL = LoadLibraryA(LIB_PREFIX TDCLC_LIBNAME);
+	if (hTrsdDLL)
+		return (DLLUNLOADCALLBACK_PTR)GetProcAddress((HINSTANCE)hTrsdDLL, "CallbackRegist");
+	return NULL;
+}
+
 }// namespace client
 }// namespace tdap
 }// namespace protocol

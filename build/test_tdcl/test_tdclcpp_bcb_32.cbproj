@@ -35,7 +35,7 @@
 			<BCC_PCHUsage>None</BCC_PCHUsage>
 			<BPILibOutputDir>..\..\lib</BPILibOutputDir>
 			<NoVCL>true</NoVCL>
-			<Defines>TRDCL_AUTOLINK;$(Defines)</Defines>
+			<Defines>TRDCL_AUTOLINK;BOOST_ALL_NO_LIB;USE_DBM_CONNECTION_POOL;$(Defines)</Defines>
 			<Multithreaded>true</Multithreaded>
 			<_TCHARMapping>char</_TCHARMapping>
 			<IncludePath>..\..\source\;$(IncludePath)</IncludePath>
@@ -87,6 +87,9 @@
 			<Defines>_UNICODE;$(Defines)</Defines>
 		</PropertyGroup>
 		<ItemGroup>
+			<CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.cpp">
+				<BuildOrder>2</BuildOrder>
+			</CppCompile>
 			<CppCompile Include="..\..\source\bzs\example\queryData.cpp">
 				<BuildOrder>1</BuildOrder>
 			</CppCompile>

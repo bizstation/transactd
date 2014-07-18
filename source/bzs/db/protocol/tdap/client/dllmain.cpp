@@ -48,7 +48,7 @@ using namespace bzs::netsvc::client;
 
 
 void writeErrorLog(int err, const char* msg);
-
+dllUnloadCallback dllUnloadCallbackFunc=NULL;
 
 #ifdef USETLS
 tls_key g_tlsiID1;
@@ -61,6 +61,7 @@ __THREAD bool __THREAD_BCB g_initCid = false;
 
 
 #ifdef _WIN32
+
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 {
@@ -86,6 +87,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 	}
 	else if (reason == DLL_PROCESS_DETACH)
 	{
+		if (dllUnloadCallbackFunc)
+			dllUnloadCallbackFunc();
+		
 		delete m_cons;
 		m_cons=NULL;
 
@@ -113,6 +117,8 @@ void onLoadLibrary(void)
 }
 void onUnloadLibrary(void)
 {
+	if (dllUnloadCallbackFunc)
+		dllUnloadCallbackFunc();
 	delete m_cons;
 	m_cons=NULL;
 	#ifdef USETLS
@@ -464,3 +470,9 @@ extern "C" short_td __STDCALL
 }
 
 
+extern "C" short_td __STDCALL
+	CallbackRegist(dllUnloadCallback func)
+{
+	dllUnloadCallbackFunc = func;
+	return 0;
+}

@@ -44,6 +44,9 @@ namespace client
 	This case need call setMaxConnections() function at start up the process.
 
 */
+
+short __STDCALL dllUnloadCallbackFunc();
+
 template <class Database_Ptr>
 class connectionPool
 {
@@ -64,7 +67,12 @@ class connectionPool
 
 
 public:
-	connectionPool(int maxConnections=0):m_maxConnections(maxConnections){};
+	connectionPool(int maxConnections=0):m_maxConnections(maxConnections)
+	{
+		DLLUNLOADCALLBACK_PTR func = nsdatabase::getDllUnloadCallbackFunc();
+		if (func)
+			func(dllUnloadCallbackFunc);
+	};
 
 	/** Delivery database instance
 		If a connect error is occured then bzs::rtl::exception exception is thrown.

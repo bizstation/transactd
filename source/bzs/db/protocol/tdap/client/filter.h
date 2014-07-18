@@ -527,12 +527,17 @@ class filter
 
 	inline void setSeekValue(short fieldNum, const keyValuePtr& v)
 	{
-		fielddef& fd = m_tb->tableDef()->fieldDefs[fieldNum];
-		void* p =  m_tb->fieldPtr(fieldNum);
+		if (v.type & KEYVALUE_STR)
+			m_tb->setFV(fieldNum, (_TCHAR*)v.ptr);
+		else
+		{
+			fielddef& fd = m_tb->tableDef()->fieldDefs[fieldNum];
+			void* p =  m_tb->fieldPtr(fieldNum);
 
-		ushort_td len = std::min<ushort_td>(v.len, fd.len);
-		memset(p, 0, fd.len);
-		memcpy(p, v.ptr, len);
+			ushort_td len = std::min<ushort_td>(v.len, fd.len);
+			memset(p, 0, fd.len);
+			memcpy(p, v.ptr, len);
+		}
 	}
 
 	template <class vector_type>

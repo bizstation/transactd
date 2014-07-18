@@ -237,11 +237,19 @@ public:
 
 };
 
+#define KEYVALUE_PTR 0
+#define KEYVALUE_STR 1
+#define KEYVALUE_NEED_COPY 2
+#define KEYVALUE_STR_NEED_COPY 3
+
 struct DLLLIB keyValuePtr
 {
+
 	const void* ptr;
 	ushort_td len;
-	keyValuePtr(const void* p, ushort_td l):ptr(p),len(l){}
+	short type;
+	keyValuePtr(const void* p, ushort_td l, short typeStr);
+	~keyValuePtr();
 };
 
 class DLLLIB queryBase
@@ -269,8 +277,9 @@ public:
 	void addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
 	void addLogic(const _TCHAR* combine, const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value);
 	void addSeekKeyValue(const _TCHAR* value, bool reset=false);
-	void addSeekKeyValuePtr(const void* value, ushort_td len, bool reset=false);
+	void addSeekKeyValuePtr(const void* value, ushort_td len, short typeStr, bool reset=false);
 	void reserveSeekKeyValueSize(size_t v);
+	void reserveSeekKeyValuePtrSize(size_t v);
 	queryBase& queryString(const _TCHAR* str, bool autoEscape = false);
 	queryBase& reject(int v);
 	queryBase& limit(int v);
