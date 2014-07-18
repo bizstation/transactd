@@ -46,6 +46,7 @@ stdCconnectionPool cpool;
 short __STDCALL dllUnloadCallbackFunc()
 {
 	cpool.reset(0);
+	cpool.m_regitfunc = NULL;
 	return 0;
 }
 

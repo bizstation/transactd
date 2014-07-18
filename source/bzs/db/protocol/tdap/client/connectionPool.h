@@ -55,6 +55,8 @@ class connectionPool
 	mutable boost::mutex m_mutex2;
 	mutable boost::condition m_busy;
 	int m_maxConnections;
+	DLLUNLOADCALLBACK_PTR m_regitfunc;
+	friend short __STDCALL dllUnloadCallbackFunc();
 
 	Database_Ptr addOne(const connectParams& param)
 	{
@@ -64,15 +66,21 @@ class connectionPool
 		m_dbs.push_back(db);
 		return m_dbs[m_dbs.size()-1];
 	}
-
+	
 
 public:
 	connectionPool(int maxConnections=0):m_maxConnections(maxConnections)
 	{
-		DLLUNLOADCALLBACK_PTR func = nsdatabase::getDllUnloadCallbackFunc();
-		if (func)
-			func(dllUnloadCallbackFunc);
+		m_regitfunc = nsdatabase::getDllUnloadCallbackFunc();
+		if (m_regitfunc)
+			m_regitfunc(dllUnloadCallbackFunc);
 	};
+	
+	~connectionPool()
+	{
+		if (m_regitfunc)
+			m_regitfunc(NULL);
+	}
 
 	/** Delivery database instance
 		If a connect error is occured then bzs::rtl::exception exception is thrown.
