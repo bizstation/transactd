@@ -25,6 +25,23 @@
 #define BOOST_ERROR_CODE_HEADER_ONLY
 #define BOOST_CHRONO_INLINED
 
+#if (__BCPLUSPLUS__)
+#   ifdef _WIN64
+#       ifdef _RTLDLL
+#	    	pragma comment(lib, "boost_system-bcb64-mt-1_50.a")
+#	    	pragma comment(lib, "boost_timer-bcb64-mt-1_50.a")
+#		else
+#	    	pragma comment(lib, "libboost_system-bcb64-mt-s-1_50.a")
+#	    	pragma comment(lib, "libboost_timer-bcb64-mt-s-1_50.a")
+#		endif
+#   else
+#       ifdef _RTLDLL
+#	    	pragma comment(lib, "boost_system-bcb-mt-1_39.lib")
+#		else
+#	    	pragma comment(lib, "libboost_system-bcb-mt-s-1_39.lib")
+#		endif
+#   endif
+#endif
 
 #pragma package(smart_init)
 

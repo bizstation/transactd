@@ -45,8 +45,13 @@ typedef void* HINSTANCE;
 
 #if (__BCPLUSPLUS__)
 #   ifdef _WIN64
-#	    pragma comment(lib, "boost_chrono-bcb64-mt-1_50.a")
-#	    pragma comment(lib, "boost_thread-bcb64-mt-1_50.a")
+#       ifdef _RTLDLL
+#	    	pragma comment(lib, "boost_filesystem-bcb64-mt-1_50.a")
+#	    	pragma comment(lib, "boost_system-bcb64-mt-1_50.a")
+#		else
+#	    	pragma comment(lib, "libboost_filesystem-bcb64-mt-s-1_50.a")
+#	    	pragma comment(lib, "libboost_system-bcb64-mt-s-1_50.a")
+#		endif
 #   else
 #       ifdef _RTLDLL
 #	    	pragma comment(lib, "boost_system-bcb-mt-1_39.lib")

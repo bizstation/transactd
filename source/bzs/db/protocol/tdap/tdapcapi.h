@@ -419,7 +419,7 @@ struct trdVersiton
 #define TD_CPP_LIB_PRE "tdclcpp"
 
 #if  ((defined(_MSC_VER) && defined(_DLL)) ||(defined(__BORLANDC__) && defined(_RTLDLL)))
-#define RTL_PART "r"
+#define RTL_PART //"r"
 #else
 #define RTL_PART 
 #endif

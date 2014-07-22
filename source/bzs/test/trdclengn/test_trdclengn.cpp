@@ -2866,7 +2866,7 @@ void testDbPool()
 	connectParams pm(PROTOCOL, HOSTNAME, _T("querytest"), DBNAME);
 	poolMgr.use(&pm);
 	poolMgr.unUse();
-	poolMgr.disconnectAll();
+	poolMgr.reset(0);
 }
 
 // ------------------------------------------------------------------------

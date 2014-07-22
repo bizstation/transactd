@@ -37,7 +37,11 @@
 
 #if (__BCPLUSPLUS__)
 #   ifdef _WIN64
-#	    pragma comment(lib, "boost_serialization-bcb64-mt-1_50.a")
+#       ifdef _RTLDLL
+#			pragma comment(lib, "boost_serialization-bcb64-mt-1_50.a")
+#   	else
+#			pragma comment(lib, "libboost_serialization-bcb64-mt-s-1_50.a")
+#	   	endif
 #   else
 #       ifdef _RTLDLL
 #			pragma comment(lib, "boost_serialization-bcb-mt-1_39.lib")
@@ -1000,6 +1004,83 @@ void queryStatements::clear()
 	m_impl->reset();
 }
 
+int queryStatements::statementType(int index)
+{
+	if (dynamic_cast<readHasMany*>(m_impl->statements[index]))
+		return 2;
+	if (dynamic_cast<readStatement*>(m_impl->statements[index]))
+		return 1;
+	if (dynamic_cast<groupByStatement*>(m_impl->statements[index]))
+		return 3;
+	if (dynamic_cast<orderByStatement*>(m_impl->statements[index]))
+		return 4;
+	if (dynamic_cast<matchByStatement*>(m_impl->statements[index]))
+		return 5;
+	if (dynamic_cast<reverseOrderStatement*>(m_impl->statements[index]))
+		return 6;
+
+	return 0;
+}
+
+readStatement* queryStatements::getReadStatement(executable* e)
+{
+	return dynamic_cast<readStatement*>(e);
+}
+
+readHasMany* queryStatements::getReadHasMany(executable* e)
+{
+	return dynamic_cast<readHasMany*>(e);
+}
+
+groupByStatement* queryStatements::getGroupByStatement(executable* e)
+{
+	return dynamic_cast<groupByStatement*>(e);
+}
+
+orderByStatement* queryStatements::getOrderByStatement(executable* e)
+{
+	return dynamic_cast<orderByStatement*>(e);
+}
+
+matchByStatement* queryStatements::getMatchByStatement(executable* e)
+{
+	return dynamic_cast<matchByStatement*>(e);
+}
+
+reverseOrderStatement* queryStatements::getReverseOrderStatement(executable* e)
+{
+	return dynamic_cast<reverseOrderStatement*>(e);
+}
+
+const readStatement* queryStatements::getReadStatement(const executable* e)const
+{
+	return dynamic_cast<const readStatement*>(e);
+}
+
+const readHasMany* queryStatements::getReadHasMany(const executable* e)const
+{
+	return dynamic_cast<const readHasMany*>(e);
+}
+
+const groupByStatement* queryStatements::getGroupByStatement(const executable* e)const
+{
+	return dynamic_cast<const groupByStatement*>(e);
+}
+
+const orderByStatement* queryStatements::getOrderByStatement(const executable* e)const
+{
+	return dynamic_cast<const orderByStatement*>(e);
+}
+
+const matchByStatement* queryStatements::getMatchByStatement(const executable* e)const
+{
+	return dynamic_cast<const matchByStatement*>(e);
+}
+
+const reverseOrderStatement* queryStatements::getReverseOrderStatement(const executable* e)const
+{
+	return dynamic_cast<const reverseOrderStatement*>(e);
+}
 
 //---------------------------------------------------------------------------
 //        struct readHasManyImple
@@ -1097,6 +1178,8 @@ void readHasMany::execute(recordset& rs)
 		readStatement::execute(*r);
 	}
 }
+
+
 
 readHasMany* readHasMany::create(){return new readHasMany();}
 

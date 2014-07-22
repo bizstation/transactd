@@ -380,8 +380,7 @@ class idatabaseManager
 
 public:
 	virtual ~idatabaseManager(){};
-	virtual void connect(const connectParams& param, bool newConnection=false)=0;
-	virtual void disconnectAll()=0;
+    virtual void reset(int)=0;
 	virtual table_ptr table(const _TCHAR* name)=0;
 	virtual database* db()const=0;
 	virtual void use(const connectParams* param=NULL) = 0;
@@ -967,14 +966,14 @@ inline void connect(Database_Ptr db, const ConnectParam_type& connPrams, bool ne
 
 }
 
-template <>
+/*template <>
 inline void connect(idatabaseManager* db,  const connectParams& connPrams, bool newConnection)
 {
 	db->connect(connPrams, newConnection);
 	if (db->stat())
 		nstable::throwError((std::_tstring(_T("Connect database ")) + connPrams.uri()).c_str(), db->stat());
 
-}
+}*/
 
 template <class Database_Ptr>
 inline void disconnect(Database_Ptr db, const connectParams& connPrams)

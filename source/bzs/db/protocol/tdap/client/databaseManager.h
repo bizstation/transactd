@@ -48,6 +48,14 @@ class databaseManager : public idatabaseManager, private boost::noncopyable
 				return i;
 		return -1;
 	}
+
+	void connect(const connectParams& param, bool newConnection=false)
+	{
+		if (!newConnection && m_db && m_db->isOpened()) return ;
+		connectOpen(m_db, param, newConnection);
+
+	}
+
 public:
 	databaseManager()
 	{
@@ -59,14 +67,8 @@ public:
 
 	databaseManager(database* db):m_db(db){};
 
-	void connect(const connectParams& param, bool newConnection=false)
-	{
-		if (!newConnection && m_db && m_db->isOpened()) return ;
-		connectOpen(m_db, param, newConnection);
 
-	}
-
-	void disconnectAll()
+	void reset(int)
 	{
 		m_db->close();
 	}
@@ -153,7 +155,7 @@ public:
 		addDb(db);
 	}
 
-	void disconnectAll()
+	void reset(int)
 	{
 		m_tables.clear();
 		m_dbs.clear();
@@ -170,7 +172,7 @@ public:
 	}
 
 	//change currnt
-	void connect(const connectParams& param, bool newConnection=false)
+	/*void connect(const connectParams& param, bool newConnection=false)
 	{
 		m_db = NULL;
 		int n = findDbIndex(&param);
@@ -192,7 +194,8 @@ public:
 		if (m_db->isOpened()) return ;
 		connectOpen(m_db, param, newConnection);
 
-	}
+	}*/
+
 
 	table_ptr table(const _TCHAR* name)
 	{
@@ -266,7 +269,7 @@ template<> inline dbmanager_ptr createDatabaseForConnectionPool(dbmanager_ptr& c
 
 template<> inline void connectOpen(dbmanager_ptr db, const connectParams& connPrams, bool newConnection)
 {
-	db->connect(connPrams, newConnection);
+	db->use(&connPrams);
 }
 
 /** @endcond */

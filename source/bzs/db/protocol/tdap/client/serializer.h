@@ -34,7 +34,7 @@
 #if (defined(TRDCL_AUTOLINK) && !defined(LIB_TDCLSTMT))
 #	include "trdclcppautolink.h"
 #	define TD_STMT_LIB_NAME "tdclstmt" CPP_INTERFACE_VERSTR LIB_EXTENTION
-#	pragma comment(lib, TD_STMT_LIB_NAME)
+//#	pragma comment(lib, TD_STMT_LIB_NAME)
 #endif //TRDCL_AUTOLINK
 
 
@@ -222,6 +222,23 @@ public:
 	orderByStatement* addOrderBy();
 	matchByStatement* addMatchBy();
 	reverseOrderStatement* addReverseOrder();
+	int statementType(int index);
+
+	readStatement* getReadStatement(executable* e);
+	readHasMany* getReadHasMany(executable* e);
+	groupByStatement* getGroupByStatement(executable* e);
+	orderByStatement* getOrderByStatement(executable* e);
+	matchByStatement* getMatchByStatement(executable* e);
+	reverseOrderStatement* getReverseOrderStatement(executable* e);
+
+	const readStatement* getReadStatement(const executable* e)const ;
+	const readHasMany* getReadHasMany(const executable* e)const ;
+	const groupByStatement* getGroupByStatement(const executable* e)const ;
+	const orderByStatement* getOrderByStatement(const executable* e)const ;
+	const matchByStatement* getMatchByStatement(const executable* e)const ;
+	const reverseOrderStatement* getReverseOrderStatement(const executable* e)const ;
+
+
 	void clear();
 	int size() const;
 	void save(const _TCHAR* filename);
