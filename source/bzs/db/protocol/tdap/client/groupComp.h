@@ -84,7 +84,7 @@ public:
 		for (int i=0;i<(int)m_keys.size();++i)
 		{
 			typename Container::key_type s = m_keys[i];
-			int ret = compByKey(lm, rm, s);
+			int ret = (s == -1) ? 0:compByKey(lm, rm, s);
 			if (ret) return ret;
 		}
 		return 0;
@@ -96,7 +96,7 @@ public:
 		for (int i=0;i< m_keys.size();++i)
 		{
 			typename Container::key_type s = m_keys[i];
-			int ret = compByKey(*lm, *rm, s);
+			int ret = (s == -1) ? 0:compByKey(*lm, *rm, s);
 			if (ret) return false;
 		}
 		return true;

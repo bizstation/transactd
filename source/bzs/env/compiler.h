@@ -130,23 +130,27 @@
 #endif
 
 #if (__BCPLUSPLUS__ >= 0x630 && (__BCPLUSPLUS__ < 0x640))
-#	define COMPILER_VERSTR  "bcb"
+#	define COMPILER_VERSTR  "bc150"
 #endif
 
 #if (__BCPLUSPLUS__ >= 0x640 && (__BCPLUSPLUS__ < 0x650))
-#	define COMPILER_VERSTR  "bcb"
+#	define COMPILER_VERSTR  "bc160"
 #endif
 
 #if (__BCPLUSPLUS__ >= 0x650 && (__BCPLUSPLUS__ < 0x660))
-#	define COMPILER_VERSTR  "bcb"
+#  	define COMPILER_VERSTR  "bc170"
 #endif
 
 #if (__BCPLUSPLUS__ >= 0x660 && (__BCPLUSPLUS__ < 0x670))
-#	define COMPILER_VERSTR  "bcb"
+#  	define COMPILER_VERSTR  "bc180"
 #endif
 
-#if (__BCPLUSPLUS__ >= 0x670 && (__BCPLUSPLUS__ < 0x690))
-#	define COMPILER_VERSTR  "bcb"
+#if (__BCPLUSPLUS__ >= 0x670 && (__BCPLUSPLUS__ < 0x680))
+#  	define COMPILER_VERSTR  "bc190"
+#endif
+
+#if (__BCPLUSPLUS__ >= 0x680 && (__BCPLUSPLUS__ < 0x690))
+#  	define COMPILER_VERSTR  "bc200"
 #endif
 
 #endif//BZS_ENV_COMPILER_H

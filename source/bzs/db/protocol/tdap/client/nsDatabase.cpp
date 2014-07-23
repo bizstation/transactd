@@ -19,11 +19,6 @@
 #include <bzs/env/tstring.h>
 #pragma hdrstop
 
-//#define BOOST_THREAD_BUILD_LIB
-#if (__BCPLUSPLUS__  && _WIN64)
-#	define BOOST_ALL_NO_LIB
-#endif
-
 #include "nsDatabase.h"
 #include "sharedData.h"
 #include "nsTable.h"
@@ -45,23 +40,12 @@ typedef void* HINSTANCE;
 
 #if (__BCPLUSPLUS__)
 #   ifdef _WIN64
-#       ifdef _RTLDLL
-#	    	pragma comment(lib, "boost_filesystem-bcb64-mt-1_50.a")
-#	    	pragma comment(lib, "boost_system-bcb64-mt-1_50.a")
-#		else
-#	    	pragma comment(lib, "libboost_filesystem-bcb64-mt-s-1_50.a")
-#	    	pragma comment(lib, "libboost_system-bcb64-mt-s-1_50.a")
-#		endif
+#    	pragma comment(lib, "libboost_filesystem-bcb64-mt-1_50.a")
+#    	pragma comment(lib, "libboost_system-bcb64-mt-1_50.a")
 #   else
-#       ifdef _RTLDLL
-#	    	pragma comment(lib, "boost_system-bcb-mt-1_39.lib")
-#	    	pragma comment(lib, "boost_filesystem-bcb-mt-1_39.lib")
-#	    	pragma comment(lib, "boost_thread-bcb-mt-1_39.lib")
-#		else
-#	    	pragma comment(lib, "libboost_system-bcb-mt-s-1_39.lib")
-#	    	pragma comment(lib, "libboost_filesystem-bcb-mt-s-1_39.lib")
-#	    	pragma comment(lib, "libboost_thread-bcb-mt-s-1_39.lib")
-#		endif
+#    	pragma comment(lib, "libboost_system-bcb-mt-s-1_39.lib")
+#    	pragma comment(lib, "libboost_filesystem-bcb-mt-s-1_39.lib")
+#    	pragma comment(lib, "libboost_thread-bcb-mt-s-1_39.lib")
 #   endif
 #endif
 

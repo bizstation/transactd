@@ -27,19 +27,11 @@
 
 #if (__BCPLUSPLUS__)
 #   ifdef _WIN64
-#       ifdef _RTLDLL
-#	    	pragma comment(lib, "boost_system-bcb64-mt-1_50.a")
-#	    	pragma comment(lib, "boost_timer-bcb64-mt-1_50.a")
-#		else
-#	    	pragma comment(lib, "libboost_system-bcb64-mt-s-1_50.a")
-#	    	pragma comment(lib, "libboost_timer-bcb64-mt-s-1_50.a")
-#		endif
+#    	pragma comment(lib, "libboost_system-bcb64-mt-1_50.a")
+#    	pragma comment(lib, "libboost_timer-bcb64-mt-1_50.a")
+#    	pragma comment(lib, "libboost_chrono-bcb64-mt-1_50.a")
 #   else
-#       ifdef _RTLDLL
-#	    	pragma comment(lib, "boost_system-bcb-mt-1_39.lib")
-#		else
-#	    	pragma comment(lib, "libboost_system-bcb-mt-s-1_39.lib")
-#		endif
+#    	pragma comment(lib, "libboost_system-bcb-mt-s-1_39.lib")
 #   endif
 #endif
 

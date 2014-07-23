@@ -34,7 +34,7 @@
 #if (defined(TRDCL_AUTOLINK) && !defined(LIB_TDCLSTMT))
 #	include "trdclcppautolink.h"
 #	define TD_STMT_LIB_NAME "tdclstmt" CPP_INTERFACE_VERSTR LIB_EXTENTION
-//#	pragma comment(lib, TD_STMT_LIB_NAME)
+#	pragma comment(lib, TD_STMT_LIB_NAME)
 #endif //TRDCL_AUTOLINK
 
 
@@ -49,8 +49,17 @@ namespace tdap
 namespace client
 {
 
+#define ID_READ_STMT				0
+#define ID_READHASMANY_STMT			1
+#define ID_GROUPBY_STMT				2
+#define ID_ORDERBY_STMT				3
+#define ID_REVORDER_STMT			4
+#define ID_MATCHBY_STMT				5
+#define ID_MAX_STMT					6
 
-class DLLLIBSTMT executable
+
+
+class  DLLLIBSTMT  executable
 {
 	friend class queryStatementsImple;
 
@@ -58,6 +67,7 @@ public:
 	virtual ~executable(){};
 	virtual void execute(recordset& rs)=0;
 	void release();
+	virtual const int typeID()const = 0;
 
 };
 
@@ -81,6 +91,7 @@ public:
 	groupByStatement& reset();
 	int size() const;
 	void execute(recordset& rs);
+	const int typeID()const {return ID_GROUPBY_STMT;};
 	static groupByStatement* create();
 
 };
@@ -88,13 +99,14 @@ public:
 #define MAX_FUNCTION_SIZE (int)groupByStatement::fmax + 1
 
 
-class DLLLIBSTMT matchByStatement : public recordsetQuery, public executable
+class DLLLIBSTMT  matchByStatement : public recordsetQuery, public executable
 {
 	//~matchByStatement(){};
 	//matchByStatement():recordsetQuery(),executable(){};
 public:
 	void execute(recordset& rs);
 	static matchByStatement* create();
+	const int typeID()const {return ID_MATCHBY_STMT;};
 };
 
 class DLLLIBSTMT orderByStatement : public executable
@@ -112,6 +124,7 @@ public:
 	orderByStatement& reset();
 	int size() const;
 	const sortField& get(int index) const;
+	const int typeID()const {return ID_ORDERBY_STMT;};
 	static orderByStatement* create();
 };
 
@@ -122,6 +135,7 @@ class DLLLIBSTMT reverseOrderStatement :  public executable
 
 public:
 	void execute(recordset& rs);
+	const int typeID()const {return ID_REVORDER_STMT;};
 	static reverseOrderStatement* create();
 };
 
@@ -158,6 +172,7 @@ public:
 	const _TCHAR* getAliasSecond(int index) const;
 
 	void execute(recordset& rs);
+	const int typeID()const {return ID_READ_STMT;};
 	static readStatement* create();
 
 };
@@ -182,6 +197,7 @@ public:
 	int  keyValueColumns() const;
 	readHasMany& reset();
 	void execute(recordset& rs);
+	const int typeID()const {return ID_READHASMANY_STMT;};
 	static readHasMany* create();
 
 };
@@ -201,7 +217,7 @@ class DLLLIBSTMT queryStatements
 	friend void serialize(Archive& ar, queryStatements& q, const unsigned int version);
 	queryStatements(const queryStatements& r);           //no implements
 	queryStatements& operator=(const queryStatements& r);//no implements
-
+	void* getPtr(const executable* e) const;
 public:
 	queryStatements(idatabaseManager& dbm);
 	queryStatements(database* db);

@@ -20,6 +20,7 @@
  ================================================================= */
 #include "nsTable.h"
 #include <vector>
+#include <stdio.h>
 namespace bzs
 {
 
@@ -309,6 +310,228 @@ public:
 	static queryBase* create();
 };
 
+
+
+/** @cond INTERNAL */
+
+inline std::_tstring lexical_cast(__int64 v)
+{
+	_TCHAR tmp[256];
+	_i64tot_s(v, tmp, 256, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(int v)
+{
+	_TCHAR tmp[256];
+	_ltot_s(v, tmp, 256, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(short v)
+{
+	_TCHAR tmp[256];
+	_ltot_s((int)v, tmp, 256, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(char v)
+{
+	_TCHAR tmp[256];
+	_ltot_s((int)v, tmp, 256, 10);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(double v)
+{
+	_TCHAR tmp[256];
+	_stprintf_s(tmp, 256, _T("%.*f"),15, v);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(float v)
+{
+	_TCHAR tmp[256];
+	_stprintf_s(tmp, 256, _T("%.*f"),15, v);
+	return std::_tstring(tmp);
+}
+
+inline std::_tstring lexical_cast(const _TCHAR* v)
+{
+	return std::_tstring(v);
+}
+
+class qlogic
+{
+	std::_tstring m_name;
+	std::_tstring m_value;
+	std::_tstring m_type;
+	combineType m_next;
+
+public:
+
+	template <class T>
+	qlogic(const _TCHAR* name, const _TCHAR* type, T value, combineType next)
+		:m_name(name),m_type(type),m_next(next)
+	{
+		m_value = lexical_cast(value);
+	}
+};
+/** @endcond */
+
+
+class DLLLIB query : public queryBase
+{
+public:
+	query():queryBase(){}
+	query(const query& r):queryBase(r){}
+
+	virtual ~query(){}
+
+	query& reset(){queryBase::reset();return *this;}
+
+	query& select(const _TCHAR* name, const _TCHAR* name1=NULL, const _TCHAR* name2=NULL, const _TCHAR* name3=NULL
+				,const _TCHAR* name4=NULL, const _TCHAR* name5=NULL, const _TCHAR* name6=NULL, const _TCHAR* name7=NULL
+				,const _TCHAR* name8=NULL, const _TCHAR* name9=NULL, const _TCHAR* name10=NULL)
+	{
+		if (_tcscmp(name, _T("*"))==0)
+		{
+			clearSelectFields();
+			return *this;
+		}
+		addField(name);
+		if (name1) addField(name1);
+		if (name2) addField(name2);
+		if (name3) addField(name3);
+		if (name4) addField(name4);
+		if (name5) addField(name5);
+		if (name6) addField(name6);
+		if (name7) addField(name7);
+		if (name8) addField(name8);
+		if (name9) addField(name9);
+		if (name10) addField(name10);
+		return *this;
+	}
+
+	template <class T>
+	query& where(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	{
+		addLogic(name, qlogic, lexical_cast(value).c_str());
+		return *this;
+	}
+
+	template <class T>
+	query& and_(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	{
+		if (whereTokens() == 0)
+			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
+
+		addLogic(_T("and"), name, qlogic, lexical_cast(value).c_str());
+		return *this;
+	}
+
+	template <class T>
+	query& or_(const _TCHAR* name, const _TCHAR* qlogic, T value)
+	{
+		if (whereTokens() == 0)
+			THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR, _T("Invalid function call."));
+
+		addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2, class T3
+				,class T4, class T5 , class T6 , class T7>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+							,const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv5).c_str());
+		addSeekKeyValue(lexical_cast(kv6).c_str());
+		addSeekKeyValue(lexical_cast(kv7).c_str());
+		return *this;
+	}
+	template <class T0, class T1 , class T2, class T3
+				,class T4, class T5 , class T6>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+							,const T4 kv4, const T5 kv5, const T6 kv6)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv5).c_str());
+		addSeekKeyValue(lexical_cast(kv6).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2, class T3
+				,class T4, class T5>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3
+							,const T4 kv4, const T5 kv5)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		addSeekKeyValue(lexical_cast(kv5).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2, class T3, class T4>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3, const T4 kv4)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		addSeekKeyValue(lexical_cast(kv4).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2, class T3>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		addSeekKeyValue(lexical_cast(kv3).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1 , class T2>
+	query& in(const T0 kv0, const T1 kv1, const T2 kv2)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		addSeekKeyValue(lexical_cast(kv2).c_str());
+		return *this;
+	}
+
+	template <class T0, class T1>
+	query& in(const T0 kv0, const T1 kv1)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		addSeekKeyValue(lexical_cast(kv1).c_str());
+		return *this;
+	}
+
+	template <class T0>
+	query& in(const T0 kv0)
+	{
+		addSeekKeyValue(lexical_cast(kv0).c_str());
+		return *this;
+	}
+
+	static query* create();  //implemet int activeTable.cpp
+
+};
 
 #pragma warning(default:4251)
 

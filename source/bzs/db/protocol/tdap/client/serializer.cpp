@@ -37,28 +37,20 @@
 
 #if (__BCPLUSPLUS__)
 #   ifdef _WIN64
-#       ifdef _RTLDLL
-#			pragma comment(lib, "boost_serialization-bcb64-mt-1_50.a")
-#   	else
-#			pragma comment(lib, "libboost_serialization-bcb64-mt-s-1_50.a")
-#	   	endif
+#		pragma comment(lib, "libboost_serialization-bcb64-mt-1_50.a")
 #   else
-#       ifdef _RTLDLL
-#			pragma comment(lib, "boost_serialization-bcb-mt-1_39.lib")
-#   	else
-#			pragma comment(lib, "libboost_serialization-bcb-mt-s-1_39.lib")
-#	   	endif
+#		pragma comment(lib, "libboost_serialization-bcb-mt-s-1_39.lib")
 #   endif
 #endif
 
 using namespace boost::archive;
 using namespace boost::serialization;
 
-BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::sum, "sum");
-BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::count, "count");
-BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::avg, "avg");
-BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::min, "min");
-BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::max, "max");
+//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::sum, "sum");
+//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::count, "count");
+//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::avg, "avg");
+//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::min, "min");
+//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::max, "max");
 
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::readStatement, "readStatement");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::readHasMany, "readHasMany");
@@ -312,30 +304,36 @@ void serialize(Archive& ar, groupFuncBase& q, const unsigned int /*version*/)
 template <class Archive>
 void serialize(Archive& ar, sum& q, const unsigned int /*version*/)
 {
+	 //ar.register_type<groupFuncBase>();
+	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
 void serialize(Archive& ar, count& q, const unsigned int /*version*/)
 {
+	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
 void serialize(Archive& ar, avg& q, const unsigned int /*version*/)
 {
+	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
 void serialize(Archive& ar, min& q, const unsigned int /*version*/)
 {
+	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
 void serialize(Archive& ar, max& q, const unsigned int /*version*/)
 {
+	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
@@ -674,8 +672,8 @@ private:
 };
 
 
-template <class Archive>
-void serialize(Archive& ar, readStatement& q, const unsigned int version);
+//template <class Archive>
+//void serialize(Archive& ar, readStatement& q, const unsigned int version);
 
 
 template <class Archive>
