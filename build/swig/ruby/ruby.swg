@@ -80,7 +80,7 @@ rb_encoding* rb_enc_find_from_codepage(int codePage)
 %trackobjects;
 %markfunc bzs::db::protocol::tdap::client::activeTable "mark_activeTable";
 %{
-#include <bzs/env/referencecounter.h>
+#include <build/swig/referencecounter.h>
 referenceCounter reference_counter;
 static void mark_activeTable(void* ptr) {
   reference_counter.mark();
