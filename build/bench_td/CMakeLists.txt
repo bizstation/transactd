@@ -114,7 +114,7 @@ endif()
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB)
+    WIN32 _WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
     PIC BOOST_ALL_NO_LIB)
@@ -122,6 +122,13 @@ else()
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
   endif()
+endif()
+if("${TDCL_CPP_CHARSET}" STREQUAL "u")
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    UNICODE _UNICODE)
+else()
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _MBCS)
 endif()
 
 

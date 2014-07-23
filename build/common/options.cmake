@@ -61,42 +61,6 @@ endmacro()
 endif()
 
 # ==========================================================
-#   remove UNICODE or MBCS flag from CXX_FLAGS
-# ==========================================================
-if(NOT COMMAND bz_remove_charset_cxx_flag)
-macro(bz_remove_charset_cxx_flag build_type)
-  bz_remove_cxx_flag("-DUNICODE"  "${build_type}")
-  bz_remove_cxx_flag("/DUNICODE"  "${build_type}")
-  bz_remove_cxx_flag("-D_UNICODE" "${build_type}")
-  bz_remove_cxx_flag("/D_UNICODE" "${build_type}")
-  bz_remove_cxx_flag("-DMBCS"     "${build_type}")
-  bz_remove_cxx_flag("/DMBCS"     "${build_type}")
-  bz_remove_cxx_flag("-D_MBCS"    "${build_type}")
-  bz_remove_cxx_flag("/D_MBCS"    "${build_type}")
-endmacro()
-endif()
-
-# ==========================================================
-#   set UNICODE flag to CXX_FLAGS
-# ==========================================================
-if(NOT COMMAND bz_set_UNICODE_cxx_flag)
-macro(bz_set_UNICODE_cxx_flag build_type)
-  bz_remove_charset_cxx_flag("${build_type}")
-  bz_add_cxx_flag("-DUNICODE -D_UNICODE" "${build_type}")
-endmacro()
-endif()
-
-# ==========================================================
-#   set MBCS flag to CXX_FLAGS
-# ==========================================================
-if(NOT COMMAND bz_set_MBCS_cxx_flag)
-macro(bz_set_MBCS_cxx_flag build_type)
-  bz_remove_charset_cxx_flag("${build_type}")
-  bz_add_cxx_flag("-D_MBCS" "${build_type}")
-endmacro()
-endif()
-
-# ==========================================================
 #   set /MT(d) flag to CXX_FLAGS
 # ==========================================================
 if(NOT COMMAND bz_set_MTMTd_cxx_flag)

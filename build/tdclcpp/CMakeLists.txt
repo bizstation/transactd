@@ -106,7 +106,7 @@ endif()
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WINDOWS _USRDLL BOOST_ALL_NO_LIB 
+    WIN32 _WIN32 _WINDOWS _USRDLL BOOST_ALL_NO_LIB 
     LIB_TDCLCPP TRDCL_AUTOLINK_OFF TRDCLENGN_EXPORTS _CRT_SECURE_NO_WARNINGS)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
@@ -120,8 +120,15 @@ else()
   endif()
 endif()
 if((TARGET tdclrb) OR (TARGET tdclphp))
-  set_property(TARGET tdclcpp${TDCL_CPP_CHARSET} APPEND PROPERTY COMPILE_DEFINITIONS
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     SWIG_BUILDING)
+endif()
+if("${TDCL_CPP_CHARSET}" STREQUAL "u")
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    UNICODE _UNICODE)
+else()
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _MBCS)
 endif()
 
 

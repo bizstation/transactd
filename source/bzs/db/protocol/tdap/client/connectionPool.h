@@ -71,9 +71,11 @@ class connectionPool
 public:
 	connectionPool(int maxConnections=0):m_maxConnections(maxConnections)
 	{
+#ifdef WIN32
 		m_regitfunc = nsdatabase::getDllUnloadCallbackFunc();
 		if (m_regitfunc)
 			m_regitfunc(dllUnloadCallbackFunc);
+#endif
 	};
 	
 	~connectionPool()

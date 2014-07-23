@@ -115,10 +115,10 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32_WINNT=0x0501 PACKAGE_NO_EXPORT _WINDOWS _USRDLL BOOST_ALL_NO_LIB)
+    WIN32 _WIN32 _WINDOWS _WIN32_WINNT=0x0501 PACKAGE_NO_EXPORT _USRDLL BOOST_ALL_NO_LIB _MBCS)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC BOOST_ALL_NO_LIB)
+    PIC BOOST_ALL_NO_LIB _MBCS)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)

@@ -173,7 +173,10 @@ endif()
 # ==========================================================
 set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
   SWIGRUBY SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB)
-if(NOT MSVC)
+if(MSVC)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    WIN32 _WIN32 _WINDOWS)
+else()
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)

@@ -25,7 +25,13 @@
 #endif
 
 #if __MINGW32__
-	#define strcat_s(A,B,C)		strcat(A,C)
+	#define strcat_s(A,B,C)	strcat(A,C)
+	#define	_tcsncpy		strncpy
+	#define _tcschr			strchr
+	#define _tcscmp			strcmp
+	#define	_tcsstr			strstr
+	#define	_tcsrchr		strrchr
+	#define	_tcsicmp		strcasecmp
 #endif
 
 #if __MINGW32__ && ( (defined(__GNUC__) && __GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5) )
@@ -121,8 +127,8 @@
 		#endif
 	#endif
 
-	// define char16_t and char32_t for Visual Studio 2008 or earlier
-	#if defined(_MSC_VER) && _MSC_VER < 1600
+	// define char16_t and char32_t for Visual Studio 2008 or earlier, and MinGW
+	#if (defined(_MSC_VER) && _MSC_VER < 1600) || defined(__MINGW32__)
 		typedef unsigned __int16 char16_t; // 16bit
 		typedef unsigned __int32 char32_t; // 32bit
 	#endif
