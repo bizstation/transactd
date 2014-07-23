@@ -2069,7 +2069,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         {
             $tb->setFV(0, $i);
             $tb->setFV(1, "$i user");
-            $tb->setFV('group', (($i - 1) % 100) + 1);
+            $tb->setFV('group', (($i - 1) % 5) + 1);
             $tb->insert();
             $this->assertEquals($tb->stat(), 0);
         }
@@ -2144,7 +2144,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // Join extention::comment
         $q->reset();
         $ate->index(0)->join($rs,
-            $q->select('comment')->optimize(Bz\queryBase::joinKeyValuesUnique), 'id');
+            $q->select('comment')->optimize(Bz\queryBase::joinHasOneOrHasMany), 'id');
         $this->assertEquals($rs->size(), 15000);
         
         // reverse and get first (so it means 'get last')
@@ -2166,18 +2166,18 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         // row in rs[15000 - 9]
         $rec = $rs[15000 - 9];
-        $this->assertEquals($rec['group_name'], '9 group');
+        $this->assertEquals($rec['group_name'], '4 group');
         
         // orderby
         $rs->orderBy('group_name');
-        for ($i = 0; $i < 15000 / 100; $i++)
+        for ($i = 0; $i < 15000 / 5; $i++)
         {
             $this->assertEquals($rs[$i]['group_name'], '1 group');
         }
-        $this->assertEquals($rs[15000 / 100]['group_name'], '10 group');
-        $this->assertEquals($rs[(15000 / 100) * 2]['group_name'], '100 group');
-        $this->assertEquals($rs[(15000 / 100) * 3]['group_name'], '11 group');
-        $this->assertEquals($rs[(15000 / 100) * 4]['group_name'], '12 group');
+        $this->assertEquals($rs[15000 / 5]['group_name'], '2 group');
+        $this->assertEquals($rs[(15000 / 5) * 2]['group_name'], '3 group');
+        $this->assertEquals($rs[(15000 / 5) * 3]['group_name'], '4 group');
+        $this->assertEquals($rs[(15000 / 5) * 4]['group_name'], '5 group');
         
         // union
         $rs2 = new Bz\RecordSet();
@@ -2187,7 +2187,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($rs2->size(), 1000);
         $q->reset();
         $ate->index(0)->join($rs2,
-            $q->select('comment')->optimize(Bz\queryBase::joinKeyValuesUnique), 'id');
+            $q->select('comment')->optimize(Bz\queryBase::joinHasOneOrHasMany), 'id');
         $this->assertEquals($rs2->size(), 1000);
         $q->reset();
         $atg->index(0)->join($rs2, $q->select('group_name'), 'group');
@@ -2219,14 +2219,14 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $count3 = new Bz\count('count3');
         $gq->addFunction($count3)->keyField('group');
         $rs->groupBy($gq);
-        $this->assertEquals($rs->size(), 100);
+        $this->assertEquals($rs->size(), 5);
         $this->assertEquals($rsv->size(), 16000);
         
         // having
         $rq = new Bz\recordsetQuery();
         $rq->when('group1_count', '=', 1)->or_('group1_count', '=', 2);
         $rsv->matchBy($rq);
-        $this->assertEquals($rsv->size(), 160);
+        $this->assertEquals($rsv->size(), 3200);
         $this->assertEquals(isset($rsv), true);
         unset($rsv);
         $this->assertEquals(isset($rsv), false);
@@ -2234,8 +2234,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // top
         $rs3 = new Bz\RecordSet();
         $rs->top($rs3, 10);
-        $this->assertEquals($rs3->size(), 10);
-        $this->assertEquals($rs->size(), 100);
+        $this->assertEquals($rs3->size(), 5);
+        $rs->top($rs3, 3);
+        $this->assertEquals($rs3->size(), 3);
+        $this->assertEquals($rs->size(), 5);
         
         // query new / delete
         $q1 = new Bz\recordsetQuery();

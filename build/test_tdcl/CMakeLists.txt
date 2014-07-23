@@ -62,6 +62,7 @@ transactd_read_build_number("${TRANSACTD_ROOT}")
 # source files
 # ==========================================================
 set(${this_target}_SOURCE_FILES
+  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connectionPool.cpp
   ${TRANSACTD_ROOT}/source/bzs/example/queryData.cpp
   ${TRANSACTD_ROOT}/source/bzs/test/trdclengn/test_trdclengn.cpp)
 
@@ -114,10 +115,10 @@ endif()
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB)
+    WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB USE_DBM_CONNECTION_POOL)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC BOOST_ALL_NO_LIB)
+    PIC BOOST_ALL_NO_LIB USE_DBM_CONNECTION_POOL)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -136,7 +137,7 @@ else()
   target_link_libraries(${this_target} "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
 endif()
 if(UNIX)
-  target_link_libraries(${this_target} dl)
+  target_link_libraries(${this_target} dl pthread)
 endif()
 
 

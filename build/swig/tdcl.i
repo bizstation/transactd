@@ -39,20 +39,6 @@
 
 
 /* ===============================================
-      exception handler
-=============================================== */
-%exception {
-  try {
-    $action
-  } catch (bzs::rtl::exception& e) {
-    SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-  } catch (std::exception &e) {
-    SWIG_exception(SWIG_RuntimeError, e.what());
-  }
-}
-
-
-/* ===============================================
       type defines
 =============================================== */
 %apply unsigned long long { unsigned __int64 }
@@ -265,6 +251,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::operator=;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::createTable;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrVersion(btrVersions*, uchar_td*);
+%ignore bzs::db::protocol::tdap::client::nsdatabase::getDllUnloadCallbackFunc;
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
 %ignore bzs::db::protocol::tdap::client::nstable::release;
@@ -288,6 +275,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::multiRecordAlocatorImple;
 
 // * bzs/db/protocol/tdap/client/table.h *
+%ignore bzs::db::protocol::tdap::client::keyValuePtr;
 %ignore bzs::db::protocol::tdap::client::queryBase::operator=;
 %ignore bzs::db::protocol::tdap::client::queryBase::addField;
 %ignore bzs::db::protocol::tdap::client::queryBase::addLogic;
@@ -456,6 +444,10 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::sortFunctor;
 %ignore bzs::db::protocol::tdap::client::sort;
 %ignore bzs::db::protocol::tdap::client::mraResetter;
+
+// * bzs/db/protocol/tdap/tdapSchema.h *
+%ignore DLLUNLOADCALLBACK_PTR;
+%ignore dllUnloadCallback;
 
 // * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore bzs::db::protocol::tdap::keySpec;

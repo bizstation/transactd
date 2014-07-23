@@ -1898,7 +1898,7 @@ def insertQT(db, maxId)
   for i in 1..maxId
     tb.setFV(0, i)
     tb.setFV(1, "#{i} user")
-    tb.setFV('group', ((i - 1) % 100) + 1)
+    tb.setFV('group', ((i - 1) % 5) + 1)
     tb.insert()
     expect(tb.stat()).to eq 0
   end
@@ -1966,7 +1966,7 @@ def testJoin(db)
   # Join extention::comment
   q.reset()
   ate.index(0).join(rs,
-    q.select('comment').optimize(Transactd::QueryBase::JoinKeyValuesUnique), 'id')
+    q.select('comment').optimize(Transactd::QueryBase::JoinHasOneOrHasMany), 'id')
   expect(rs.size()).to eq 15000
   
   # reverse and get first (so it means 'get last')
@@ -1988,17 +1988,17 @@ def testJoin(db)
   
   # row in rs[15000 - 9]
   rec = rs[15000 - 9]
-  expect(rec['group_name']).to eq '9 group'
+  expect(rec['group_name']).to eq '4 group'
   
   # orderby
   rs.orderBy('group_name')
-  for i in 0..(15000 / 100 - 1)
+  for i in 0..(15000 / 5 - 1)
     expect(rs[i]['group_name']).to eq '1 group'
   end
-  expect(rs[15000 / 100]['group_name']).to eq '10 group'
-  expect(rs[(15000 / 100) * 2]['group_name']).to eq '100 group'
-  expect(rs[(15000 / 100) * 3]['group_name']).to eq '11 group'
-  expect(rs[(15000 / 100) * 4]['group_name']).to eq '12 group'
+  expect(rs[15000 / 5]['group_name']).to eq '2 group'
+  expect(rs[(15000 / 5) * 2]['group_name']).to eq '3 group'
+  expect(rs[(15000 / 5) * 3]['group_name']).to eq '4 group'
+  expect(rs[(15000 / 5) * 4]['group_name']).to eq '5 group'
   
   # union
   rs2 = Transactd::RecordSet.new()
@@ -2008,7 +2008,7 @@ def testJoin(db)
   expect(rs2.size()).to eq 1000
   q.reset()
   ate.index(0).join(rs2,
-    q.select('comment').optimize(Transactd::QueryBase::JoinKeyValuesUnique), 'id')
+    q.select('comment').optimize(Transactd::QueryBase::JoinHasOneOrHasMany), 'id')
   expect(rs2.size()).to eq 1000
   q.reset()
   atg.index(0).join(rs2, q.select('group_name'), 'group')
@@ -2040,14 +2040,14 @@ def testJoin(db)
   count3 = Transactd::Count.new('count')
   gq.addFunction(count3).keyField('group')
   rs.groupBy(gq)
-  expect(rs.size()).to eq 100
+  expect(rs.size()).to eq 5
   expect(rsv.size()).to eq 16000
   
   # having
   rq = Transactd::RecordsetQuery.new()
   rq.when('group1_count', '=', '1').or_('group1_count', '=', '2')
   rsv.matchBy(rq)
-  expect(rsv.size()).to eq 160
+  expect(rsv.size()).to eq 3200
   expect(rsv).not_to be nil
   rsv = nil
   expect(rsv).to be nil
@@ -2055,8 +2055,10 @@ def testJoin(db)
   # top
   rs3 = Transactd::RecordSet.new()
   rs.top(rs3, 10)
-  expect(rs3.size()).to eq 10
-  expect(rs.size()).to eq 100
+  expect(rs3.size()).to eq 5
+  rs.top(rs3, 3)
+  expect(rs3.size()).to eq 3
+  expect(rs.size()).to eq 5
   
   # query new / delete
   q1 = Transactd::RecordsetQuery.new()
@@ -2132,6 +2134,7 @@ def testWirtableRecord(db)
   ret = rec.read()
   expect(ret).to eq false
   
+  atu.release()
   db.close()
 end
 

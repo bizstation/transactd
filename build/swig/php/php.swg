@@ -18,6 +18,20 @@
 =================================================================*/
 #if defined(SWIGPHP)  // ======= For PHP =======
 /* ===============================================
+      exception handler
+=============================================== */
+%exception {
+  try {
+    $action
+  } catch (bzs::rtl::exception& e) {
+    SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+  } catch (std::exception &e) {
+    SWIG_exception(SWIG_RuntimeError, e.what());
+  }
+}
+
+
+/* ===============================================
   General settings for PHP
 =============================================== */
 %{
@@ -155,6 +169,8 @@ typedef char  _TCHAR;
 
 // * bzs/db/protocol/tdap/client/recordset.h *
 %rename(__clone) bzs::db::protocol::tdap::client::recordset::clone;
+%ignore bzs::db::protocol::tdap::client::recordset::first;
+%ignore bzs::db::protocol::tdap::client::recordset::last;
 
 // * bzs/db/protocol/tdap/client/table.h *
 %ignore bzs::db::protocol::tdap::client::table::setFV(short, float); // use double

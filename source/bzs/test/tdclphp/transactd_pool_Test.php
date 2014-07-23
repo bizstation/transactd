@@ -76,6 +76,11 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
         Bz\pooledDbManager::setMaxConnections(5);
         $dbm1 = new Bz\pooledDbManager($cp);
         $dbm3 = new Bz\pooledDbManager($cp);
+        $dbm1->unUse();
+        $dbm2->unUse();
+        $dbm3->unUse();
+        $dbm4->unUse();
+        $dbm5->unUse();
     }
     public function testConnect()
     {
@@ -90,6 +95,12 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
         $q->select('id', 'name', 'group')->where('id', '<=', 15000);
         $atu->index(0)->keyValue(1)->read($rs, $q);
         $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs[0]['id'], 1);
+        $this->assertEquals($rs[0][0], 1);
+        $this->assertEquals($rs[0]['name'], '1 user');
+        $this->assertEquals($rs[0][1], '1 user');
+        $this->assertEquals($rs[0][2], 1);
+        $dbm->unUse();
     }
     public function testMultiThreads()
     {

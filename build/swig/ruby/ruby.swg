@@ -18,6 +18,22 @@
 =================================================================*/
 #if defined(SWIGRUBY)  // ======= For RUBY =======
 /* ===============================================
+      exception handler
+=============================================== */
+%exception {
+  try {
+    $action
+  } catch (bzs::rtl::exception& e) {
+    static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+    rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+  } catch (std::exception &e) {
+    static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+    rb_raise(cpp_std_error, e.what());
+  }
+}
+
+
+/* ===============================================
   General settings for Ruby
 =============================================== */
 %{
@@ -77,7 +93,7 @@ rb_encoding* rb_enc_find_from_codepage(int codePage)
 /* ===============================================
   mark objects with reference counter
 =============================================== */
-%trackobjects;
+%trackobjects bzs::db::protocol::tdap::client::activeTable;
 %markfunc bzs::db::protocol::tdap::client::activeTable "mark_activeTable";
 %{
 #include <build/swig/referencecounter.h>

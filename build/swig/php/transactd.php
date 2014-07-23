@@ -720,6 +720,14 @@ abstract class transactd {
 		return mra_current_block_get();
 	}
 
+	const KEYVALUE_PTR = KEYVALUE_PTR;
+
+	const KEYVALUE_STR = KEYVALUE_STR;
+
+	const KEYVALUE_NEED_COPY = KEYVALUE_NEED_COPY;
+
+	const KEYVALUE_STR_NEED_COPY = KEYVALUE_STR_NEED_COPY;
+
 	const MAX_CHAR_INFO = MAX_CHAR_INFO;
 
 	const CHARSET_LATIN1 = CHARSET_LATIN1;
@@ -1844,6 +1852,14 @@ abstract class multiRecordAlocator {
 	function joinRowMap() {
 		return multiRecordAlocator_joinRowMap($this->_cPtr);
 	}
+
+	function duplicateRow($row,$count) {
+		multiRecordAlocator_duplicateRow($this->_cPtr,$row,$count);
+	}
+
+	function removeLastMemBlock($row) {
+		multiRecordAlocator_removeLastMemBlock($this->_cPtr,$row);
+	}
 }
 
 class table extends nstable {
@@ -2087,9 +2103,9 @@ class queryBase {
 
 	const none = 0;
 
-	const joinKeyValuesUnique = 1;
+	const joinHasOneOrHasMany = 1;
 
-	const joinWhereFields = 2;
+	const combineCondition = 2;
 
 	function __construct($r_=null) {
 		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__queryBase') {
@@ -2116,6 +2132,10 @@ class queryBase {
 
 	function reserveSeekKeyValueSize($v) {
 		queryBase_reserveSeekKeyValueSize($this->_cPtr,$v);
+	}
+
+	function reserveSeekKeyValuePtrSize($v) {
+		queryBase_reserveSeekKeyValuePtrSize($this->_cPtr,$v);
 	}
 
 	function queryString($str,$autoEscape=false) {
@@ -2187,6 +2207,16 @@ class queryBase {
 		return $r;
 	}
 
+	function joinKeySize($v) {
+		$r=queryBase_joinKeySize($this->_cPtr,$v);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new queryBase($r);
+		}
+		return $r;
+	}
+
 	function toString() {
 		return queryBase_toString($this->_cPtr);
 	}
@@ -2205,6 +2235,10 @@ class queryBase {
 
 	function isAll() {
 		return queryBase_isAll($this->_cPtr);
+	}
+
+	function getJoinKeySize() {
+		return queryBase_getJoinKeySize($this->_cPtr);
 	}
 
 	function getOptimize() {
@@ -3311,10 +3345,6 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 		Record_clear($this->_cPtr);
 	}
 
-	function setRecordData($ptr,$size,$endFieldIndex,$owner=false) {
-		Record_setRecordData($this->_cPtr,$ptr,$size,$endFieldIndex,$owner);
-	}
-
 	function getFieldByIndexRef($index,$return_field) {
 		Record_getFieldByIndexRef($this->_cPtr,$index,$return_field);
 	}
@@ -3623,8 +3653,8 @@ abstract class idatabaseManager {
 		$this->_cPtr=$h;
 	}
 
-	function connect($param,$newConnection=false) {
-		idatabaseManager_connect($this->_cPtr,$param,$newConnection);
+	function reset($arg1) {
+		idatabaseManager_reset($this->_cPtr,$arg1);
 	}
 
 	function table($name) {
@@ -4575,8 +4605,8 @@ class pooledDbManager extends idatabaseManager {
 		pooledDbManager_unUse($this->_cPtr);
 	}
 
-	function connect($param,$newConnection=false) {
-		pooledDbManager_connect($this->_cPtr,$param,$newConnection);
+	function reset($v) {
+		pooledDbManager_reset($this->_cPtr,$v);
 	}
 
 	function table($name) {
@@ -4651,10 +4681,6 @@ class pooledDbManager extends idatabaseManager {
 
 	static function reserve($size,$param) {
 		pooledDbManager_reserve($size,$param);
-	}
-
-	static function reset($waitSec=5) {
-		return pooledDbManager_reset($waitSec);
 	}
 }
 
