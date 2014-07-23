@@ -1,16 +1,25 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{88518A11-802B-49C9-AD5F-F913DCA6EC6F}</ProjectGuid>
+        <ProjectGuid>{395C668A-26DF-4206-B509-C42BFB7C0416}</ProjectGuid>
         <ProjectVersion>14.4</ProjectVersion>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release</Config>
-        <AppType>Library</AppType>
+        <AppType>Console</AppType>
         <FrameworkType>None</FrameworkType>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
-        <TargetedPlatforms>1</TargetedPlatforms>
-        <Platform>Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <TargetedPlatforms>3</TargetedPlatforms>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Base)'=='true') or '$(Base_OSX32)'!=''">
+        <Base_OSX32>true</Base_OSX32>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+        <Base_Win32>true</Base_Win32>
+        <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
@@ -21,6 +30,12 @@
     <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
         <Cfg_1>true</Cfg_1>
         <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
+        <Cfg_1_Win32>true</Cfg_1_Win32>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win64)'!=''">
@@ -34,6 +49,18 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Cfg_2)'=='true') or '$(Cfg_2_OSX32)'!=''">
+        <Cfg_2_OSX32>true</Cfg_2_OSX32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+        <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
         <Cfg_2_Win64>true</Cfg_2_Win64>
         <CfgParent>Cfg_2</CfgParent>
@@ -41,38 +68,46 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <SanitizedProjectName>tdclc_64</SanitizedProjectName>
-        <Defines>BOOST_ALL_NO_LIB;TRANSACTD;$(Defines)</Defines>
-        <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
-        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
-        <DllSuffix>_2_0</DllSuffix>
-        <DynamicRTL>false</DynamicRTL>
-        <BPILibOutputDir>..\..\lib</BPILibOutputDir>
-        <BCC_PCHUsage>None</BCC_PCHUsage>
-        <BCC_wiip>false</BCC_wiip>
-        <BCC_wmls>false</BCC_wmls>
-        <Manifest_File>None</Manifest_File>
-        <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
+        <Defines>TRDCL_AUTOLINK;USE_DBM_CONNECTION_POOL;BOOST_ALL_NO_LIB;$(Defines)</Defines>
+        <VerInfo_Locale>1041</VerInfo_Locale>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <OutputExt>dll</OutputExt>
+        <BCC_wdim>false</BCC_wdim>
+        <BPILibOutputDir>..\..\lib</BPILibOutputDir>
+        <NoVCL>true</NoVCL>
+        <BCC_wpch>false</BCC_wpch>
+        <BCC_wiip>false</BCC_wiip>
         <PackageImports>vcl.bpi;rtl.bpi;$(PackageImports)</PackageImports>
         <Multithreaded>true</Multithreaded>
-        <NoVCL>true</NoVCL>
-        <ProjectType>VCppStyleDll</ProjectType>
-        <ILINK_GenerateImportLibrary>true</ILINK_GenerateImportLibrary>
-        <_TCHARMapping>char</_TCHARMapping>
+        <ILINK_LibraryPath>..\..\source\bzs\db\protocol\tdap\client\;..\..\source\bzs\example\;..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <ProjectType>CppConsoleApplication</ProjectType>
+        <IncludePath>..\..\source\bzs\db\protocol\tdap\client\;..\..\source\bzs\example\;..\..\source;$(IncludePath)</IncludePath>
+        <_TCHARMapping>wchar_t</_TCHARMapping>
+        <OutputExt>exe</OutputExt>
         <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
         <IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
         <FinalOutputDir>..\..\bin</FinalOutputDir>
         <BCC_wpar>false</BCC_wpar>
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
-        <ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\release\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <Manifest_File>None</Manifest_File>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <Defines>_WIN32_WINNT=0x0501;$(Defines)</Defines>
+        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
+        <DynamicRTL>true</DynamicRTL>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <Manifest_File>None</Manifest_File>
+        <UsePackages>true</UsePackages>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
+        <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
         <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
         <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
         <DCC_Optimize>false</DCC_Optimize>
@@ -87,56 +122,34 @@
         <TASM_Debugging>Full</TASM_Debugging>
         <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
         <ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
-        <ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\debug\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <Defines>_DEBUG;$(Defines)</Defines>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
+        <Defines>_DEBUG;$(Defines)</Defines>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <TASM_Debugging>None</TASM_Debugging>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <Defines>NDEBUG;$(Defines)</Defines>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
+        <Defines>NDEBUG;$(Defines)</Defines>
+        <Manifest_File>None</Manifest_File>
+        <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <ItemGroup>
-        <ResourceCompile Include="tdclc.rc">
-             <Form>tdclc.res</Form>
-             <BuildOrder>20</BuildOrder>
-        </ResourceCompile>
-        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\client.cpp">
-            <DependentOn>..\..\source\bzs\db\protocol\tdap\client\Client.h</DependentOn>
-            <BuildOrder>9</BuildOrder>
+        <None Include="connection_pool_c.otares"/>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.cpp">
+            <BuildOrder>1</BuildOrder>
         </CppCompile>
-        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\dllmain.cpp">
-            <BuildOrder>14</BuildOrder>
-        </CppCompile>
-        <None Include="..\..\source\bzs\db\protocol\tdap\client\request.h">
-            <BuildOrder>13</BuildOrder>
-        </None>
-        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\sqlBuilder.cpp">
-            <DependentOn>..\..\source\bzs\db\protocol\tdap\client\sqlBuilder.h</DependentOn>
-            <BuildOrder>9</BuildOrder>
-        </CppCompile>
-        <DefFile Include="..\..\source\bzs\db\protocol\tdap\client\trnsctcl.def">
-            <BuildOrder>14</BuildOrder>
-        </DefFile>
-        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\mysql\characterset.cpp">
-            <DependentOn>..\..\source\bzs\db\protocol\tdap\mysql\characterset.h</DependentOn>
-            <BuildOrder>9</BuildOrder>
-        </CppCompile>
-        <None Include="..\..\source\bzs\db\protocol\tdap\tdapcapi.h">
-            <BuildOrder>11</BuildOrder>
-        </None>
-        <None Include="..\..\source\bzs\db\protocol\tdap\tdapRequest.h">
-            <BuildOrder>13</BuildOrder>
-        </None>
-        <CppCompile Include="..\..\Source\bzs\db\protocol\tdap\tdapSchema.cpp">
-            <BuildOrder>12</BuildOrder>
-        </CppCompile>
-        <CppCompile Include="..\..\source\bzs\netsvc\client\tcpClient.cpp">
-            <DependentOn>..\..\netsvc\client\tcpClient.h</DependentOn>
+        <CppCompile Include="..\..\source\bzs\example\connection_pool_c.cpp">
             <BuildOrder>2</BuildOrder>
-        </CppCompile>
-        <CppCompile Include="..\..\source\bzs\rtl\stl_uty.cpp">
-            <BuildOrder>9</BuildOrder>
         </CppCompile>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
@@ -154,7 +167,7 @@
     <Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
     <ProjectExtensions>
         <Borland.Personality>CPlusPlusBuilder.Personality.12</Borland.Personality>
-        <Borland.ProjectType>VCppStyleDll</Borland.ProjectType>
+        <Borland.ProjectType>CppConsoleApplication</Borland.ProjectType>
         <BorlandProject>
             <CPlusPlusBuilder.Personality>
                 <VersionInfo>
@@ -186,11 +199,17 @@
                 </VersionInfoKeys>
                 <ProjectProperties>
                     <ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
-                    <ProjectProperties Name="ManagePaths">False</ProjectProperties>
+                    <ProjectProperties Name="ManagePaths">True</ProjectProperties>
                     <ProjectProperties Name="VerifyPackages">True</ProjectProperties>
                 </ProjectProperties>
+                <Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k170.bpl">Embarcadero C++Builder Office 2000 サーバー パッケージ</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp170.bpl">Embarcadero C++Builder Office XP サーバー パッケージ</Excluded_Packages>
+                </Excluded_Packages>
             </CPlusPlusBuilder.Personality>
             <Platforms>
+                <Platform value="OSX32">False</Platform>
+                <Platform value="Win32">True</Platform>
                 <Platform value="Win64">True</Platform>
             </Platforms>
         </BorlandProject>
