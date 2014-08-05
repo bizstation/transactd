@@ -53,7 +53,7 @@ public:
 
 
 #pragma warning(disable:4251)
-
+#pragma warning(disable:4275)
 #define ROW_MEM_BLOCK_RESERVE 4
 
 class DLLLIB memoryRecord : public fieldsBase
@@ -113,6 +113,7 @@ public:
 	static void release(fieldsBase* p);
 };
 
+#pragma warning(default:4275)
 #pragma warning(default:4251)
 
 /* non copyable*/

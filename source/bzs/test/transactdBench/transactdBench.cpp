@@ -344,7 +344,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	if (argc < 4)
 	{
-		printf("usage: transactdBench databaseUri processNumber functionNumber\n "
+		printf("usage: bench_tdclcpp_bcb32(64) databaseUri processNumber functionNumber\n "
 			"\t --- Below is list of functionNumber  ---\n"
 			"\t-1: all function\n"
 			"\t 0: Insert\n"
@@ -356,7 +356,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			"\t 6: read range with snapshpot. 20rec x 1000times\n"
 			"\t 7: update\n"
 			"\t 8: update in transaction. 20rec x 1000times\n"
-			"exsample : transactdBench \"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n");
+			"exsample : bench_tdclcpp_bcb32(64) \"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n");
 		return 0;
 	}
 	const _TCHAR* uri = argv[1]; // "tdap://localhost/test?dbfile=test.bdf";

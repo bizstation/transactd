@@ -19,6 +19,7 @@
    02111-1307, USA.
 =================================================================*/
 #include <bzs/db/protocol/tdap/client/databaseManager.h>
+#define BOOST_THREAD_USE_LIB
 #include <boost/thread/thread.hpp>
 #include <boost/thread/condition.hpp>
 #include <vector>

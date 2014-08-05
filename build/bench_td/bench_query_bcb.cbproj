@@ -94,18 +94,15 @@
         <NoVCL>true</NoVCL>
         <BCC_wpch>false</BCC_wpch>
         <BCC_wiip>false</BCC_wiip>
-        <UsePackages>true</UsePackages>
-        <LinkPackageImports>rtl.bpi;vcl.bpi</LinkPackageImports>
+        <UsePackages>false</UsePackages>
         <Multithreaded>true</Multithreaded>
-        <ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
-        <PackageImports>vcl.bpi;rtl.bpi;$(PackageImports)</PackageImports>
+        <ILINK_LibraryPath>..\..\source\bzs\rtl\;..\..\source\bzs\example\;..\..\source\bzs\test\transactdBench\;..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <ProjectType>CppConsoleApplication</ProjectType>
-        <IncludePath>..\..\source;$(IncludePath)</IncludePath>
-        <AllPackageLibs>rtl.lib;vcl.lib</AllPackageLibs>
+        <IncludePath>..\..\source\bzs\rtl\;..\..\source\bzs\example\;..\..\source\bzs\test\transactdBench\;..\..\source;$(IncludePath)</IncludePath>
         <_TCHARMapping>wchar_t</_TCHARMapping>
         <OutputExt>exe</OutputExt>
         <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
-        <DynamicRTL>true</DynamicRTL>
+        <DynamicRTL>false</DynamicRTL>
         <IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
         <FinalOutputDir>..\..\bin</FinalOutputDir>
         <BCC_wpar>false</BCC_wpar>
@@ -131,6 +128,8 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <Manifest_File>None</Manifest_File>
+        <UsePackages>true</UsePackages>
+        <DynamicRTL>true</DynamicRTL>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DllSuffix>64</DllSuffix>

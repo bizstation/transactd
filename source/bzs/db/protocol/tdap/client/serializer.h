@@ -61,7 +61,7 @@ namespace client
 
 class  DLLLIBSTMT  executable
 {
-	friend class queryStatementsImple;
+	friend struct queryStatementsImple;
 
 public:
 	virtual ~executable(){};

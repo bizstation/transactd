@@ -60,7 +60,6 @@
         <Defines>BOOST_ALL_NO_LIB;$(Defines)</Defines>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1041</VerInfo_Locale>
-        <AllPackageLibs>rtl.lib</AllPackageLibs>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <DllSuffix>_2_0</DllSuffix>
@@ -129,12 +128,10 @@
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-        <LinkPackageStatics>rtl.lib</LinkPackageStatics>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <LinkPackageStatics>rtl.lib</LinkPackageStatics>
     </PropertyGroup>
     <ItemGroup>
         <ResourceCompile Include="tdclc.rc">

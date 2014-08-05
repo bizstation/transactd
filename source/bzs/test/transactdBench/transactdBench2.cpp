@@ -257,7 +257,7 @@ void printTail()
 /* -------------------------------------------------------------------------------- */
 void showUsage()
 {
-	printf("usage: transactdBench databaseUri processNumber functionNumber\n "
+	printf("usage: bench_tdclcpp_c_bcb32(64) databaseUri processNumber functionNumber\n "
 		"\t --- Below is list of functionNumber  ---\n"
 		"\t-1: all function\n"
 		"\t 0: Insert\n"
@@ -269,7 +269,7 @@ void showUsage()
 		"\t 6: read range with snapshpot. 20rec x 1000times\n"
 		"\t 7: update\n"
 		"\t 8: update in transaction. 20rec x 1000times\n"
-		"exsample : transactdBench \"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n");
+		"exsample : bench_tdclcpp_c_bcb32(64) \"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n");
 }
 
 /* -------------------------------------------------------------------------------- */

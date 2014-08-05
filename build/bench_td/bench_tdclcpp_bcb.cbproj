@@ -129,13 +129,11 @@
         <NoVCL>true</NoVCL>
         <Defines>TRDCL_AUTOLINK;$(Defines)</Defines>
         <BPILibOutputDir>..\..\lib</BPILibOutputDir>
-        <LinkPackageStatics>rtl.lib;vcl.lib</LinkPackageStatics>
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
-        <AllPackageLibs>rtl.lib;vcl.lib</AllPackageLibs>
-        <PackageImports>vcl.bpi;rtl.bpi;$(PackageImports)</PackageImports>
         <OutputExt>exe</OutputExt>
         <ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <BCC_wiip>false</BCC_wiip>
+        <UsePackages>false</UsePackages>
         <DynamicRTL>false</DynamicRTL>
         <Manifest_File>None</Manifest_File>
         <VerInfo_Locale>1041</VerInfo_Locale>

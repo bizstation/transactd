@@ -129,6 +129,11 @@
 #	define COMPILER_VERSTR "vc110"
 #endif
 
+#if (_MSC_VER == 1800)
+#	define COMPILER_VERSTR "vc120"
+#endif
+
+
 #if (__BCPLUSPLUS__ >= 0x630 && (__BCPLUSPLUS__ < 0x640))
 #	define COMPILER_VERSTR  "bc150"
 #endif

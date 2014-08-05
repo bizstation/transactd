@@ -46,11 +46,11 @@
 using namespace boost::archive;
 using namespace boost::serialization;
 
-//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::sum, "sum");
-//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::count, "count");
-//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::avg, "avg");
-//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::min, "min");
-//BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::max, "max");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::sum, "sum");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::count, "count");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::avg, "avg");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::min, "min");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::max, "max");
 
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::readStatement, "readStatement");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::readHasMany, "readHasMany");
@@ -304,36 +304,30 @@ void serialize(Archive& ar, groupFuncBase& q, const unsigned int /*version*/)
 template <class Archive>
 void serialize(Archive& ar, sum& q, const unsigned int /*version*/)
 {
-	 //ar.register_type<groupFuncBase>();
-	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
 void serialize(Archive& ar, count& q, const unsigned int /*version*/)
 {
-	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
 void serialize(Archive& ar, avg& q, const unsigned int /*version*/)
 {
-	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
 void serialize(Archive& ar, min& q, const unsigned int /*version*/)
 {
-	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 
 template <class Archive>
 void serialize(Archive& ar, max& q, const unsigned int /*version*/)
 {
-	 ar.template register_type<groupFuncBase>();
 	 ar & make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
 

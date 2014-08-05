@@ -110,7 +110,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	try
 	{
 		const _TCHAR* host = _T("localhost");
-		int kind = 7;
+		int kind = 15;
 		int n = 100;
 		bool makeDatabase = true;
 
