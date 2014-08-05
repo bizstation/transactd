@@ -114,6 +114,7 @@ public:
 /* multi databases and a single thread inplemantation idatabaseManager
 */
 inline void releaseDatabaseDummy(database* p){}
+inline void releaseDbManagerDummy(idatabaseManager* p){}
 
 class disbDbManager : public idatabaseManager, private boost::noncopyable
 {
@@ -262,7 +263,11 @@ public:
 
 template<> inline dbmanager_ptr createDatabaseForConnectionPool(dbmanager_ptr& c)
 {
-	dbmanager_ptr p(new databaseManager());
+	#ifdef SWIG_RUBY
+		dbmanager_ptr p(new databaseManager(), releaseDbManagerDummy);
+	#else
+		dbmanager_ptr p(new databaseManager());
+	#endif
 	return p;
 }
 
