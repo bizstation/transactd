@@ -43,14 +43,14 @@ show variables like 'version';
 ```
 ダウンロードするファイルは
 
-  * Windowsの場合 transactd-[platform]-1.1.0_[mysql-version].zip
-  * Linuxの場合 transactd-linux-x86_64-1.1.0_[mysql-version].tar.gz
+  * Windowsの場合 transactd-[platform]-2.0.0_[mysql-version].zip
+  * Linuxの場合 transactd-linux-x86_64-2.0.0_[mysql-version].tar.gz
 
 といった形式です。
 [platform]はwin32またはwin64、[mysql-version]はmysql-5.x.xまたはmariadb-5.5.xです。
 たとえば、Linux-x86_64bit mysql-5.6.14用の完全なURLは以下の通りです。
 
-http://www.bizstation.jp/al/transactd/download/transactd-1.1.0/transactd-linux-x86_64-1.1.0_mysql-5.6.14.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-linux-x86_64-2.0.0_mysql-5.6.14.tar.gz
 
 また、ソースをダウンロードしてビルドすることもできます。その場合は、
 MySQL/MariaDBのソースコードも必要です。ビルド方法はソースコード内の
@@ -95,8 +95,8 @@ shell>cd [TargetFolder]
 
 2. ダウンロードしたtar.gzを解凍し、解凍したフォルダに移動します。
 ```
-shell>tar zxf transactd-linux-x86_64-1.1.0_mysql-5.6.14.tar.gz
-shell>cd transactd-linux-x86_64-1.1.0_mysql-5.6.14
+shell>tar zxf transactd-linux-x86_64-2.0.0_mysql-5.6.14.tar.gz
+shell>cd transactd-linux-x86_64-2.0.0_mysql-5.6.14
 ```
 
 3. [MySQL|MariaDBインストールフォルダ]/lib/pluginに、libtransactd.soをコピー
@@ -127,13 +127,13 @@ Transactd Pluginを介してデータにアクセスするにはTransactdクラ�
 プラットフォームに合ったビルド済Transactdクライアントをダウンロードします。
 ダウンロードするファイルは
 
-  * Windowsの場合 transactd-client-[platform]_with_sdk-1.1.0.msi
-  * Linuxの場合 transactd-client-linux-x86_64_with_sdk-1.1.0.tar.gz
+  * Windowsの場合 transactd-client-[platform]_with_sdk-2.0.0.msi
+  * Linuxの場合 transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
 
 といった形式です。[platform]はwin32またはwin64です。
 たとえば、LINUXの完全なURLは以下の通りです。
 
-http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-1.1.0.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
 
 
 
@@ -141,7 +141,7 @@ Transactdクライアントのインストール
 -------------------------------------------------------------------------------
 
 ### Windowsでのインストール 
-1. transactd-client-[platform]_with_sdk-1.1.0.msiをダブルクリックするとWindows
+1. transactd-client-[platform]_with_sdk-2.0.0.msiをダブルクリックするとWindows
    インストーラによるインストールが始まります。あとは画面に従ってインストールし
    ます。
 
@@ -162,8 +162,8 @@ shell>cd [TargetFolder]
 
 2. ダウンロードしたtar.gzを解凍し、解凍したフォルダに移動します。
 ```
-shell>tar zxf transactd-client-linux-x86_64_with_sdk-1.1.0.tar.gz
-shell>cd transactd-client-linux-x86_64_with_sdk-1.1.0
+shell>tar zxf transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
+shell>cd transactd-client-linux-x86_64_with_sdk-2.0.0
 ```
 
 3. インストールスクリプトを実行します。
@@ -228,13 +228,13 @@ Transactd Pluginとクライアントのインストールが済んだら、テ�
 1. スタートメニューから[すべてのプログラム]-[BizStation]-[Transactd Client]-
    [Test (compiler)(charset)]または[Benchmark local (compiler)]
    をクリックします。
-   (compiler)はVC100またはBCBです。(charset)はUnicodeまたはMultibyteです。
+   (compiler)はVC100またはBC150～200です。(charset)はUnicodeまたはMultibyteです。
 
 
 ### Linuxでの起動
 1. クライアントのインストールで解凍したフォルダに移動します
 ```
-shell>cd transactd-client-linux-x86_64_with_sdk-1.1.0
+shell>cd transactd-client-linux-x86_64_with_sdk-2.0.0
 ```
 
 2. テストの起動
@@ -320,7 +320,7 @@ bench_tdclcpp_xxx.exe databaseUri processNumber functionNumber
 |                |  8: update in transaction. 20rec x 1000times           |
 |----------------|--------------------------------------------------------|
 ex)
-shell>bench_tdclcpp_c_bcb_64.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
+shell>bench_tdclcpp_c_bcb64.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
 ```
 
 

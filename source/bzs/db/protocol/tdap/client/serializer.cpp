@@ -37,9 +37,17 @@
 
 #if (__BCPLUSPLUS__)
 #   ifdef _WIN64
-#		pragma comment(lib, "libboost_serialization-bcb64-mt-1_50.a")
+#		ifdef _RTLDLL
+#			pragma comment(lib, "libboost_serialization-bcb64-mt-1_50.a")
+#   	else
+#			pragma comment(lib, "libboost_serialization-bcb64-mt-s-1_50.a")
+#		endif
 #   else
-#		pragma comment(lib, "libboost_serialization-bcb-mt-s-1_39.lib")
+#		ifdef _RTLDLL
+#			pragma comment(lib, "libboost_serialization-bcb-mt-1_39.lib")
+#   	else
+#			pragma comment(lib, "libboost_serialization-bcb-mt-s-1_39.lib")
+#		endif
 #   endif
 #endif
 

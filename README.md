@@ -43,13 +43,13 @@ mysql>show variables like 'version';
 ```
 The names of file to download are formed under following rules:
 
-  * Windows - transactd-[platform]-1.1.0_[mysql-version].zip
-  * Linux - transactd-linux-x86_64-1.1.0_[mysql-version].tar.gz
+  * Windows - transactd-[platform]-2.0.0_[mysql-version].zip
+  * Linux - transactd-linux-x86_64-2.0.0_[mysql-version].tar.gz
 
 [platform] is win32 or win64, [mysql-version] is mysql-5.x.x or mariadb-5.5.x.
 For example, the URL for Linux-x86_64bit mysql-5.6.14 is as follows:
 
-http://www.bizstation.jp/al/transactd/download/transactd-1.1.0/transactd-linux-x86_64-1.1.0_mysql-5.6.14.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-linux-x86_64-2.0.0_mysql-5.6.14.tar.gz
 
 You also can download source code archive and build from it.
 In this case, the source code of MySQL/MariaDB is also required.
@@ -96,8 +96,8 @@ shell>cd [TargetFolder]
 
 2. Extract the tar.gz file and move into it.
 ```
-shell>tar zxf transactd-linux-x86_64-1.1.0_mysql-5.6.14.tar.gz
-shell>cd transactd-linux-x86_64-1.1.0_mysql-5.6.14
+shell>tar zxf transactd-linux-x86_64-2.0.0_mysql-5.6.14.tar.gz
+shell>cd transactd-linux-x86_64-2.0.0_mysql-5.6.14
 ```
 
 3. Copy libtransactd.so to `[MySQL|MariaDB installed directory]/lib/plugin`.
@@ -128,13 +128,13 @@ The Transactd clients are required to access data through Transactd Plugin.
 Download the Transactd client binaries for your platform.
 The names of file to download are formed under following rules:
 
-  * Windows - transactd-client-[platform]_with_sdk-1.1.0.msi
-  * Linux -  transactd-client-linux-x86_64_with_sdk-1.1.0.tar.gz
+  * Windows - transactd-client-[platform]_with_sdk-2.0.0.msi
+  * Linux -  transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
 
 [platform] is win32 or win64.
 For example, the URL for Linux-x86_64bit is as follows:
 
-http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-1.1.0.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
 
 
 
@@ -142,7 +142,7 @@ Installing Transactd clients
 -------------------------------------------------------------------------------
 
 ### Installing on Windows
-1. Double click transactd-client-[platform]_with_sdk-1.1.0.msi will start
+1. Double click transactd-client-[platform]_with_sdk-2.0.0.msi will start
    installation by Windows installer.
 
 If you want to install the clients for Embarcadero C++Builder XE series, select
@@ -162,8 +162,8 @@ shell>cd [TargetFolder]
 
 2. Extract the tar.gz file and move into it.
 ```
-shell>tar zxf transactd-client-linux-x86_64_with_sdk-1.1.0.tar.gz
-shell>cd transactd-client-linux-x86_64_with_sdk-1.1.0
+shell>tar zxf transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
+shell>cd transactd-client-linux-x86_64_with_sdk-2.0.0
 ```
 
 3. Run the install script.
@@ -225,7 +225,7 @@ See also the detail of the test and the benchmark program topic.
 ### Executing on Linux
 1. Move to the client directory.
 ```
-shell>cd transactd-client-linux-x86_64_with_sdk-1.1.0
+shell>cd transactd-client-linux-x86_64_with_sdk-2.0.0
 ```
 
 2. run test:
@@ -306,7 +306,7 @@ bench_tdclcpp_xxx.exe databaseUri processNumber functionNumber
 |                |  8: update in transaction. 20rec x 1000times           |
 |----------------|--------------------------------------------------------|
 ex)
-shell>bench_tdclcpp_c_bcb_64.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
+shell>bench_tdclcpp_c_bcb64.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
 ```
 
 

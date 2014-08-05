@@ -16,7 +16,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-//#define BOOST_TEST_MAIN
 //#define BOOST_TEST_MODULE
 
 #include <boost/test/included/unit_test.hpp>
@@ -3031,15 +3030,6 @@ BOOST_AUTO_TEST_SUITE(filter)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(dbPool)
-
-	BOOST_AUTO_TEST_CASE(pool)
-	{
-		testDbPool();
-	}
-
-BOOST_AUTO_TEST_SUITE_END()
-
 BOOST_AUTO_TEST_SUITE(query)
 
 	BOOST_FIXTURE_TEST_CASE(new_delete, fixtureQuery)
@@ -3053,10 +3043,20 @@ BOOST_AUTO_TEST_SUITE(query)
 		testWirtableRecord(db());
 	}
 
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(dbPool)
+
+	BOOST_AUTO_TEST_CASE(pool)
+	{
+		testDbPool();
+	}
 	BOOST_AUTO_TEST_CASE(fuga)
 	{
 		BOOST_CHECK_EQUAL(2 * 3, 6);
 	}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // ------------------------------------------------------------------------

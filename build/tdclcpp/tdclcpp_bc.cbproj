@@ -162,6 +162,7 @@
         <TD_CPU>32</TD_CPU>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
+        <BCC_UserSuppliedOptions>-tR</BCC_UserSuppliedOptions>
         <DynamicRTL>true</DynamicRTL>
         <UsePackages>true</UsePackages>
         <TD_CPU>64</TD_CPU>
@@ -396,8 +397,6 @@
                     <Parameters Name="RunParams">--report_level=detailed --show_progress=yes --build_info=yes</Parameters>
                 </Parameters>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k170.bpl">Embarcadero C++Builder Office 2000 サーバー パッケージ</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp170.bpl">Embarcadero C++Builder Office XP サーバー パッケージ</Excluded_Packages>
                 </Excluded_Packages>
             </CPlusPlusBuilder.Personality>
             <Platforms>

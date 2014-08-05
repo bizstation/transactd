@@ -42,7 +42,7 @@ using namespace bzs::db::protocol::tdap;
 
 
 
-_TCHAR* name_field_str(_TCHAR* buf)
+const _TCHAR* name_field_str(_TCHAR* buf)
 {
 	#ifdef LINUX
 		return "名前";
@@ -276,63 +276,68 @@ bool createCacheTable(dbdef* def)
 bool insertData(database_ptr db, int maxId)
 {
 	_TCHAR tmp[256];
-	dbTransaction trn(db);
-	trn.begin();
-
-	table* tb = db->openTable(_T("user"), TD_OPEN_NORMAL);
+	table* tbu = db->openTable(_T("user"), TD_OPEN_NORMAL);
 	if (db->stat())
 	{
 		showDbError(db.get(), _T("openTable user"));
 		return false;
 	}
-	tb->clearBuffer();
-	for (int i= 1;i<= maxId;++i)
-	{
-		tb->setFV((short)0, i);
-		_stprintf_s(tmp, 256, _T("%d user"), i);
-		tb->setFV(1, tmp);
-		tb->setFV(_T("group"), ((i-1) % 5)+1 );
-		tb->insert();
-		if (tb->stat()!=0)
-			return showTableError(tb, _T("user insert"));
-	}
-	tb->release();
 
-	tb = db->openTable(_T("groups"), TD_OPEN_NORMAL);
+	table* tbg = db->openTable(_T("groups"), TD_OPEN_NORMAL);
 	if (db->stat())
 	{
 		showDbError(db.get(), _T("openTable groups"));
 		return false;
 	}
-	tb->clearBuffer();
-	for (int i= 1;i<= 100;++i)
-	{
-		tb->setFV((short)0, i);
-		_stprintf_s(tmp, 256, _T("%d group"), i);
-		tb->setFV(1, tmp);
-		tb->insert();
-		if (tb->stat()!=0)
-			return showTableError(tb, _T("groups insert"));
-	}
-	tb->release();
-	tb = db->openTable(_T("extention"), TD_OPEN_NORMAL);
+
+	table* tbe = db->openTable(_T("extention"), TD_OPEN_NORMAL);
 	if (db->stat())
 	{
 		showDbError(db.get(), _T("openTable extention"));
 		return false;
 	}
-	tb->clearBuffer();
+
+	dbTransaction trn(db);
+	trn.begin();
+
+	tbu->clearBuffer();
 	for (int i= 1;i<= maxId;++i)
 	{
-		tb->setFV((short)0, i);
-		_stprintf_s(tmp, 256, _T("%d comment"), i);
-		tb->setFV(1, tmp);
-		tb->insert();
-		if (tb->stat()!=0)
-			return showTableError(tb, _T("extention insert"));
+		tbu->setFV((short)0, i);
+		_stprintf_s(tmp, 256, _T("%d user"), i);
+		tbu->setFV(1, tmp);
+		tbu->setFV(_T("group"), ((i-1) % 5)+1 );
+		tbu->insert();
+		if (tbu->stat()!=0)
+			return showTableError(tbu, _T("user insert"));
 	}
-	tb->release();
+
+	tbg->clearBuffer();
+	for (int i= 1;i<= 100;++i)
+	{
+		tbg->setFV((short)0, i);
+		_stprintf_s(tmp, 256, _T("%d group"), i);
+		tbg->setFV(1, tmp);
+		tbg->insert();
+		if (tbg->stat()!=0)
+			return showTableError(tbg, _T("groups insert"));
+	}
+
+	tbe->clearBuffer();
+	for (int i= 1;i<= maxId;++i)
+	{
+		tbe->setFV((short)0, i);
+		_stprintf_s(tmp, 256, _T("%d comment"), i);
+		tbe->setFV(1, tmp);
+		tbe->insert();
+		if (tbe->stat()!=0)
+			return showTableError(tbe, _T("extention insert"));
+	}
+
 	trn.end();
+	tbg->release();
+	tbu->release();
+	tbe->release();
 	return true;
 }
 

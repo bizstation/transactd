@@ -5,7 +5,8 @@
 ------------------------------------------------------------
 Transactd Plugin および Transactd クライアントは、Windows上のVisual Studio
 (32bit/64bit)でビルドできます。ここでは、以下の環境でのビルドを想定して進めます
-。
+。(クライアントはEmbacaderoのコンパイラーC++ Builder XEシリーズでもビルドできます。
+[クライアントのみをビルド]の欄をご覧ください）
 
 * Windows 7 (64bit)
 * Visual Studio 2010 Express
@@ -225,7 +226,7 @@ C:\Users\Public\Documents\mysql-5.6.13\bldVC100x64\plugin\transactd\lib
 ```
 C:\Users\Public\Documents
 ```
-
+(EmbacaderoのC++BuilderXEシリーズの場合は[5-4 C++BuilderXEシリーズでのビルド]に進んでください。)
 
 ### 5-2 CMakeの実行
 
@@ -253,4 +254,41 @@ tdcl.slnをVisual Studioで開きます。メニューの[ビルド]-[構成マ�
 ```
 C:\Users\Public\Documents\transactd\bldVC100x64\bin
 C:\Users\Public\Documents\transactd\bldVC100x64\lib
+```
+### 5-4 C++BuilderXEシリーズでのビルド
+EmbacaderoのC++BuilderXEシリーズの場合は
+
+```
+C:\Users\Public\Documents\Build\TransactdClient_bcb.groupproj
+```
+にてXE以降のコンパイラーでコンパイルできます。
+コンパイルにはコンパイラー付属のboostライブラリがインストールされている必要が
+あります。ビルド構成は、Unicode版/Ansi版 Release/Debug 32Bit/64Bit があります。
+出力は、bin libフォルダに生成されます。64Bitの場合は常に動的RTLとリンクが必要です。
+
+以下はバージョンごとの補足事項です。
+
+XE (XE2以降は除く)の場合、boost_program_optionsがコンパイルされていないため、
+```
+build\libboost_program_options-bcb-mt-1_39\libboost_program_options-bcb-mt-1_39.cbproj
+```
+にて事前にlibboost_program_options-bcb-mt-1_39.libを生成してください。
+
+XE2の場合、boost_serializationがコンパイルされていないため、
+```
+build\libboost_serialization-bcb-mt-1_39\libboost_boost_serialization-bcb-mt-1_39.cbproj
+```
+にて事前にlibboost_serialization-bcb-mt-1_39.libを生成してください。
+
+XE4 64Bitの場合、コンパイラバージョンがXE3と同じためtdclcppを使用するアプリケーション
+の自動リンクでtdclcpp_bc170_64x.libを探そうとします。本来XE4の場合bc180のためリンクエラー
+が発生します。XE4 64Bitでtdclcppとtdclstmtをコンパイルした際には、libのファイル名を
+tdclcpp_bc180_64x.libとtdclstmt_bc180_64x.libの180部分を170にリネームしてください。
+
+XE6 64Bitの場合、boost_threadのコンパイルが通らないためboostのソースを修正します。
+ 
+\boost\asio\detail\impl\win_thread.ipp
+52行目 下記のようにapc_function変数の前に(PAPCFUNC)を付けてキャストします。
+```
+   ::QueueUserAPC((PAPCFUNC)apc_function, thread_, 0);
 ```
