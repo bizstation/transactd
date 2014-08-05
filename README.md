@@ -128,7 +128,7 @@ The Transactd clients are required to access data through Transactd Plugin.
 Download the Transactd client binaries for your platform.
 The names of file to download are formed under following rules:
 
-  * Windows - transactd-client-[platform]_with_sdk-2.0.0.msi
+  * Windows - transactd-client-[platform]_with_sdk-2.0.0.zip
   * Linux -  transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
 
 [platform] is win32 or win64.
@@ -142,16 +142,22 @@ Installing Transactd clients
 -------------------------------------------------------------------------------
 
 ### Installing on Windows
-1. Double click transactd-client-[platform]_with_sdk-2.0.0.msi will start
-   installation by Windows installer.
+1. Open the transactd-client-[platform]_with_sdk-2.0.0.zip from explorer.
+2. Seletct the root folder [transactd-client- [platform] -with_sdk-2.0.0] and Copy to the appropriate folder.
+3. Run the "install.cmd" in the transactd-client-[platform]_with_sdk-2.0.0 folder.
+This commnad is registered int the system environment variables of "PATH" "transactd-client-[platform]_with_sdk-2.0.0\bin" folder.
 
-If you want to install the clients for Embarcadero C++Builder XE series, select
-[custom] on setup type selection window. Installable target compiler is:
+C++ client consists of DLL the following three it is placed in the bin folder.
+
+ * tdclc_xx_[version].dll 
+ * tdclcpp_xx_[Compiler]_[version].dll 
+ * tdclstmt_xx_[Compiler]_[version].dll 
+
+In order to export the class of C++, two of the inner bottom is a module that different for every compiler. In addition, the program of the benchmarks, and other test which uses it is also each compiler. They are located in a folder of the name of the compiler in the bin under. 
+If the compiler development have been identified, you can safely delete the unwanted module.
 
   * Microsoft Visual studio 2010 (Include ActiveX(COM) client)
-  * Embarcadero C++Builder XE series
-
-For Microsoft Visual studio is certainly installed.
+  * Embarcadero C++Builder XE～XE6series
 
 
 ### Installing on Linux
@@ -216,11 +222,39 @@ Replace yourUserName to an actual user name.
 Execution of test and benchmark program
 -------------------------------------------------------------------------------
 See also the detail of the test and the benchmark program topic.
+Test script executes, in order the contents of the following.
+ * test_tdclcpp_xx_xxm_xxx.exe   A Multibyte modules test
+ * test_tdclcpp_xx_xxm_xxx.exe   A Unicode module test
+ * bench_tdclcpp_c_xx.exe        Benchmark of Insert read update 
+ * bench_query_xx.exe            Benchmark of aquery
+ * querystmtsxx.exe              Query executer of command line
+
+"querystmtsxx.exe" is executed only if the localshot the target host.
 
 ### Executing on Windows
-1. Click [Start menu]-[All programs]-[BizStation]-[Transactd Client]-
-   [Test (compiler)(charset)] or [Benchmark local (compiler)].
-   (compiler) is VC100 or BCB. (charset) is Unicode or Multibyte.
+1. Move to the client directory.
+```
+shell>cd transactd-client-[platform]_with_sdk-2.0.0
+```
+
+2. run test:
+```
+TestClient.cmd
+```
+Since you will be asked the host name first, please specify the host name 
+of the server Transactd. Localhost will be set automatically if you do not 
+specify anything. 
+Next, please select the number the compiler to test. 
+It is run testing, and benchmark continuously.
+
+You can start with the following command test of ActiveX (COM)
+```
+>TestClient_ATL.cmd
+```
+Since you will be asked the host name first, please specify the host name 
+of the server Transactd. Localhost will be set automatically if you do not 
+specify anything. 
+
 
 ### Executing on Linux
 1. Move to the client directory.
@@ -230,8 +264,13 @@ shell>cd transactd-client-linux-x86_64_with_sdk-2.0.0
 
 2. run test:
 ```
-./exec_test_local.sh
+./exec_test_all.sh
 ```
+Since you will be asked the host name first, please specify the host name 
+of the server Transactd. Localhost will be set automatically if you do not 
+specify anything. 
+Next, please select the number the compiler to test. 
+It is run testing, and benchmark continuously.
 
 
 

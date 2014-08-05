@@ -427,13 +427,13 @@ inline short calcNextReadRecordCount(ushort_td curCount, int eTime)
 	return ret;
 }
 
-uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType direction)
+uint_td table::doRecordCount(bool estimate, bool fromCurrent)
 {
 	uint_td result = 0;
 
 	if (m_impl->filterPtr)
 	{
-		short_td op = (direction == findForword) ? TD_KEY_NEXT_MULTI:TD_KEY_PREV_MULTI;
+		short_td op = (m_impl->filterPtr->direction() == findForword) ? TD_KEY_NEXT_MULTI:TD_KEY_PREV_MULTI;
 
 		if (tableDef()->keyCount == 0)
 			op += TD_POS_NEXT_MULTI - TD_KEY_NEXT_MULTI;// KEY to POS
@@ -512,7 +512,7 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType directio
 			m_stat = 0;
 	}
 	else
-		return nstable::doRecordCount(estimate, fromCurrent, direction);
+		return nstable::doRecordCount(estimate, fromCurrent);
 
 	return result;
 }

@@ -127,7 +127,7 @@ Transactd Pluginを介してデータにアクセスするにはTransactdクラ�
 プラットフォームに合ったビルド済Transactdクライアントをダウンロードします。
 ダウンロードするファイルは
 
-  * Windowsの場合 transactd-client-[platform]_with_sdk-2.0.0.msi
+  * Windowsの場合 transactd-client-[platform]_with_sdk-2.0.0.zip
   * Linuxの場合 transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
 
 といった形式です。[platform]はwin32またはwin64です。
@@ -141,17 +141,29 @@ Transactdクライアントのインストール
 -------------------------------------------------------------------------------
 
 ### Windowsでのインストール 
-1. transactd-client-[platform]_with_sdk-2.0.0.msiをダブルクリックするとWindows
-   インストーラによるインストールが始まります。あとは画面に従ってインストールし
-   ます。
+1. ダウンロードしたtransactd-client-[platform]_with_sdk-2.0.0.zipを開きます。
+2. ルートフォルダーのtransactd-client-[platform]_with_sdk-2.0.0ごと適当なフォルダにコピーしま
+す。
+3. transactd-client-[platform]_with_sdk-2.0.0直下にあるinstall.cmdを実行します。
 
-セットアップタイプの選択画面で[カスタム]を選択するとEmbarcadero C++Builder XE
-シリーズ用のクライアントも選択できます。インストールできるコンパイラターゲットは
+これによりtransactd-client-[platform]_with_sdk-2.0.0\binフォルダをシステ
+ム環境変数 Ptah に追加します。
+C++クライアントは binフォルダに配置された以下の３つのDLLからなります。
+
+ * tdclc_xx_[version].dll 
+ * tdclcpp_xx_[Compiler]_[version].dll 
+ * tdclstmt_xx_[Compiler]_[version].dll 
+
+このうち下の２つはC++のクラスをエクスポートするため、コンパイラごとに異なった
+モジュールです。また、それを利用したテストやベンチマーク、その他のプログラムも
+コンパイラごとです。それらはbin配下にコンパイラの名前のフォルダに配置されていま
+す。開発コンパイラが特定されている場合には、不要なモジュールは削除しても構いま
+せん。
 
   * Microsoft Visual studio 2010用 (ActiveX(COM)クライアントを含みます)
-  * Embarcadero C++Builder XEシリーズ用
+  * Embarcadero C++Builder XE～XE6シリーズ用
 
-の2種類です。Microsoft Visual studio 2010版については必ずインストールされます。
+の７種類です。
 
 
 ### Linuxでのインストール 
@@ -224,11 +236,39 @@ Transactd Pluginとクライアントのインストールが済んだら、テ�
 テストとベンチマークの詳しい内容は、このトピックス以降にあるそれぞれのトピックス
 を参照してください。
 
+テストスクリプトは、以下の内容を順に実行します。
+ * test_tdclcpp_xx_xxm_xxx.exe   マルチバイト版テスト
+ * test_tdclcpp_xx_xxm_xxx.exe   ユニコード版テスト(Windowsのみ)
+ * bench_tdclcpp_c_xx.exe        Insert read update ベンチマーク
+ * bench_query_xx.exe            クエリーのベンチマーク
+ * querystmtsxx.exe              コマンドライン　クエリー実行モジュール
+
+最後の コマンドライン　クエリー実行モジュールは、ターゲットhostが localshot の場合
+にのみ実行されます。
+
+
 ### Windowsでの起動
-1. スタートメニューから[すべてのプログラム]-[BizStation]-[Transactd Client]-
-   [Test (compiler)(charset)]または[Benchmark local (compiler)]
-   をクリックします。
-   (compiler)はVC100またはBC150～200です。(charset)はUnicodeまたはMultibyteです。
+1. クライアントのインストールで解凍したフォルダに移動します
+```
+shell>cd transactd-client-[platform]_with_sdk-2.0.0
+```
+
+2. テストの起動
+```
+>TestClient.cmd
+```
+最初にホスト名を聞かれますので、Transactdサーバーのホスト名を指定します。何も指定しない
+場合は localhostが自動で設定されます。
+次に、テストするコンパイラーを番号で選択します。
+テストおよび、ベンチマークなどが連続して実行されます。
+
+ActiveX(COM)のテストは以下のコマンドで起動します。
+```
+>TestClient_ATL.cmd
+```
+最初にホスト名を聞かれますので、Transactdサーバーのホスト名を指定します。何も指定しない
+場合は localhostが自動で設定されます。
+テストおよび、ベンチマークなどが連続して実行されます。
 
 
 ### Linuxでの起動
@@ -239,8 +279,11 @@ shell>cd transactd-client-linux-x86_64_with_sdk-2.0.0
 
 2. テストの起動
 ```
-./exec_test_local.sh
+./exec_test_all.sh
 ```
+最初にホスト名を聞かれますので、Transactdサーバーのホスト名を指定します。何も指定しない
+場合は localhostが自動で設定されます。
+テストおよび、ベンチマークなどが連続して実行されます。
 
 
 
@@ -254,6 +297,16 @@ http://www.bizstation.jp/ja/transactd/client/sdk/doc/
 source/bzs/exampleフォルダに、簡単なサンプルコードがあります。
 build/exampleフォルダにコンパイラに応じたプロジェクトファイル(Windows)、
 または、make_example.sh(LINUX)スクリプトでこれらを実際にビルドできます。
+尚、Visual C++ 2010のExpress版 64Bitでコンパイルする際は、各プロジェクトの[オプション]
+-[構成プロパティー]-[全般]-[プラットフォームツールセット]を"v100"から"Windows7.1SDK"
+に変更を行ってください。
+C++ Builderの場合は、事前にコンパイラ付属のboostをインストールが必要です。また、[ツール]
+-[オプション]-[環境オプション]-[C++ オプション]-[パスとディレクトリ]の[システムインクルードパス]に
+ 
+ * 32Bitの場合 $(CG_BOOST_ROOT)
+ * 64Bitの場合 $(CG_64_BOOST_ROOT)
+
+を追加します。
 
 Testプログラム
 -------------------------------------------------------------------------------

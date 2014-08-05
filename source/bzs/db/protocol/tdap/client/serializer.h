@@ -48,7 +48,7 @@ namespace tdap
 {
 namespace client
 {
-
+/** @cond INTERNAL */
 #define ID_READ_STMT				0
 #define ID_READHASMANY_STMT			1
 #define ID_GROUPBY_STMT				2
@@ -270,7 +270,7 @@ public:
 };
 
 
-
+/** @endcond */
 
 }// namespace client
 }// namespace tdap

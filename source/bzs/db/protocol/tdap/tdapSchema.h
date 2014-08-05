@@ -445,7 +445,7 @@ public:
 
 	inline bool isNumericType() const
 	{
-		return ((type == ft_integer)|| (type == ft_date)
+		return ((type == ft_integer)
 			||(type == ft_decimal)|| (type == ft_money)
 			||(type == ft_logical)|| (type == ft_numeric)
 			||(type == ft_bfloat)|| (type == ft_uinteger)

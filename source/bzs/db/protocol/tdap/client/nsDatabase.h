@@ -110,8 +110,9 @@ public:
 	static bool trnsactionFlushWaitStatus();
 	static void setExecCodePage(unsigned int codepage);
 	static unsigned int execCodePage() ;
+	/** @cond INTERNAL */
 	static DLLUNLOADCALLBACK_PTR getDllUnloadCallbackFunc();
-
+	/** @endcond */
 };
 
 }// namespace client

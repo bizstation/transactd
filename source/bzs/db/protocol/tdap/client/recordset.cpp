@@ -180,6 +180,7 @@ recordset& recordset::operator+=(const recordset& r)
 	return *this;
 }
 
+recordset* recordset::create(){return new recordset();}
 
 #ifdef _DEBUG
 void recordset::dump()

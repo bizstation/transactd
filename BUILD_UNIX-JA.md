@@ -33,10 +33,9 @@ tar -xzf boost_1_54_0.tar.gz
 以下のコマンドを実行しBoostのビルドを行います。
 ```
 cd ~/boost_1_54_0
-./bootstrap.sh --with-libraries=chrono,filesystem,system,thread,timer
+./bootstrap.sh --with-libraries=chrono,filesystem,system,thread,timer,serialization,program_options
 ./b2 cxxflags=-fPIC
 ```
-
 
 
 4. サーバープラグインとクライアントの両方をビルド

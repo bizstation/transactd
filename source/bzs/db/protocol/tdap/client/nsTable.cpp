@@ -695,7 +695,7 @@ void nstable::stats(void* dataBuf, uint_td len, bool estimate)
 	m_keynum = svm_keynum;
 }
 
-uint_td nstable::doRecordCount(bool estimate, bool fromCurrent, eFindType /*direction*/)
+uint_td nstable::doRecordCount(bool estimate, bool fromCurrent)
 {
 	fileSpec *fs;
 	uint_td Count;

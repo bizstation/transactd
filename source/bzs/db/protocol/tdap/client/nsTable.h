@@ -108,7 +108,7 @@ protected:
 	virtual void doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownername);
 	virtual void doClose();
 	virtual void doCreateIndex(bool specifyKeyNum);
-	virtual uint_td doRecordCount(bool estimate, bool fromCurrent, eFindType direction);
+	virtual uint_td doRecordCount(bool estimate, bool fromCurrent);
 	virtual short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf);
 	virtual ushort_td doCommitBulkInsert(bool autoCommit);
 	virtual void doAbortBulkInsert();
@@ -154,8 +154,8 @@ public:
 	inline ushort_td insert(bool ncc = false) {return doInsert(ncc);};
 	inline void createIndex(bool specifyKeyNum = false) {doCreateIndex(specifyKeyNum);}
 	void dropIndex(bool norenumber = false);
-	inline uint_td recordCount(bool estimate = true, bool fromCurrent = false, eFindType direction = findForword)
-	{return doRecordCount(estimate, fromCurrent, direction);}
+	inline uint_td recordCount(bool estimate = true, bool fromCurrent = false)
+	{return doRecordCount(estimate, fromCurrent);}
 	inline short_td tdapErr(HWND hWnd, _TCHAR* retbuf = NULL) {return doBtrvErr(hWnd, retbuf);}
 	
 	void beginBulkInsert(int maxBuflen);

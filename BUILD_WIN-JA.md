@@ -68,6 +68,8 @@ BoostProインストーラの「Select Default Variants」では以下の項目�
 * system
 * thread
 * timer
+* serialization
+* program_options
 
 インストールができたら、システム環境変数に `TI_BOOST_ROOT_32` および 
 `TI_BOOST_ROOT_64`という変数を追加し、32bitと64bitのフォルダのパスを値として設
@@ -263,20 +265,31 @@ C:\Users\Public\Documents\Build\TransactdClient_bcb.groupproj
 ```
 にてXE以降のコンパイラーでコンパイルできます。
 コンパイルにはコンパイラー付属のboostライブラリがインストールされている必要が
-あります。ビルド構成は、Unicode版/Ansi版 Release/Debug 32Bit/64Bit があります。
+あります。また、C++ Builderの[ツール]-[オプション]-[環境オプション]-[C++ オプション]
+-[パスとディレクトリ]の[システムインクルードパス]に
+ * 32Bitの場合 $(CG_BOOST_ROOT)
+ * 64Bitの場合 $(CG_64_BOOST_ROOT)
+を追加します。
+ビルド構成は、Unicode版/Ansi版 Release/Debug 32Bit/64Bit があります。
 出力は、bin libフォルダに生成されます。64Bitの場合は常に動的RTLとリンクが必要です。
 
 以下はバージョンごとの補足事項です。
 
-XE (XE2以降は除く)の場合、boost_program_optionsがコンパイルされていないため、
+32Bit(すべてのXEバージョン)の場合、boost_program_optionsがコンパイルされていないため、
 ```
-build\libboost_program_options-bcb-mt-1_39\libboost_program_options-bcb-mt-1_39.cbproj
+build\libboost_program_options-bcb1_39\libboost_program_options-bcb-mt-1_39.cbproj
 ```
 にて事前にlibboost_program_options-bcb-mt-1_39.libを生成してください。
+コンパイルの前に、下記のboostのソースの修正が必要です。
+```
+ファイル:$(CG_BOOST_ROOT)\boost_1_39\libs\program_options\src\variables_map.cpp
+71行目  :v = variable_value();  -->  variable_value vr;v = vr;
+115行目 :m[key] = variable_value(def, true);  -->  variable_value vr(def, true);m[key] = vr;
+```
 
 XE2の場合、boost_serializationがコンパイルされていないため、
 ```
-build\libboost_serialization-bcb-mt-1_39\libboost_boost_serialization-bcb-mt-1_39.cbproj
+build\libboost_serialization-bcb-1_39\libboost_boost_serialization-bcb-mt-1_39.cbproj
 ```
 にて事前にlibboost_serialization-bcb-mt-1_39.libを生成してください。
 
@@ -286,9 +299,8 @@ XE4 64Bitの場合、コンパイラバージョンがXE3と同じためtdclcpp�
 tdclcpp_bc180_64x.libとtdclstmt_bc180_64x.libの180部分を170にリネームしてください。
 
 XE6 64Bitの場合、boost_threadのコンパイルが通らないためboostのソースを修正します。
- 
-\boost\asio\detail\impl\win_thread.ipp
-52行目 下記のようにapc_function変数の前に(PAPCFUNC)を付けてキャストします。
+   
 ```
-   ::QueueUserAPC((PAPCFUNC)apc_function, thread_, 0);
+ファイル:$(CG_BOOST_ROOT)\boost_1_50\boost\asio\detail\impl\win_thread.ipp
+52行目:  ::QueueUserAPC(apc_function, thread_, 0); --> ::QueueUserAPC((PAPCFUNC)apc_function, thread_, 0);
 ```

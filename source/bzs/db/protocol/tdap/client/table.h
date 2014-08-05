@@ -94,7 +94,7 @@ class DLLLIB table : public nstable
 	ushort_td doCommitBulkInsert(bool autoCommit = false); // orverride
 	void doAbortBulkInsert(); // orverride
 	void doCreateIndex(bool SpecifyKeyNum = false); // orverride
-	uint_td doRecordCount(bool estimate, bool fromCurrent, eFindType direction); // orverride
+	uint_td doRecordCount(bool estimate, bool fromCurrent); // orverride
 	short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf = NULL); // orverride
 	void doFind( ushort_td op, bool notIncCurrent);
 	bool setSeekValueField(int row);
@@ -243,6 +243,8 @@ public:
 #define KEYVALUE_NEED_COPY 2
 #define KEYVALUE_STR_NEED_COPY 3
 
+/** @cond INTERNAL */
+
 struct DLLLIB keyValuePtr
 {
 
@@ -252,6 +254,8 @@ struct DLLLIB keyValuePtr
 	keyValuePtr(const void* p, ushort_td l, short typeStr);
 	~keyValuePtr();
 };
+/** @endcond */
+
 
 class DLLLIB queryBase
 {

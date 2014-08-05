@@ -70,6 +70,7 @@ public:
 	void appendCol(const _TCHAR* name, int type, short len);
 	recordset& operator+=(const recordset& r);
 	void release();
+	static recordset* create();
 
 #ifdef _DEBUG
 	void dump();

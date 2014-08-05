@@ -66,8 +66,10 @@ struct sortField
 class sortFields
 {
 	std::vector<sortField> m_params;
+	/** @cond INTERNAL */
 	template <class Archive>
 	friend void serialize(Archive& ar, sortFields& q, const unsigned int );
+	/** @endcond */
 
 public:
 	inline sortFields& add(const _TCHAR* name, bool  asc)
