@@ -791,7 +791,7 @@ readStatement& readStatement::reset()
 
 int readStatement::aliasCount() const
 {
-	return m_impl->aliases.size();
+	return (int)m_impl->aliases.size();
 }
 
 const _TCHAR* readStatement::getAliasFirst(int index) const

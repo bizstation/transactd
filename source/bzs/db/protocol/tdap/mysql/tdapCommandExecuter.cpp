@@ -497,7 +497,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op, netsvc::server:
 			req.result = m_readHandler->begin(m_tb, ereq, true
 					, nw, (op == TD_KEY_GE_NEXT_MULTI), noBookmark, false);
 			if (req.result != 0)
-				return 1;
+				return ret;
 			if (m_tb->stat() == 0)
 			{
 				if (op == TD_KEY_GE_NEXT_MULTI)
@@ -1025,14 +1025,17 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 		case TD_KEY_GE_NEXT_MULTI:
 		case TD_KEY_LE_PREV_MULTI:
 			nw->setClientBuffferSize(*(req.datalen));
-			return doReadMultiWithSeek(req, op, nw);
+			if ( doReadMultiWithSeek(req, op, nw)==EXECUTE_RESULT_SUCCESS)
+				return EXECUTE_RESULT_SUCCESS;
+			break;
 		case TD_KEY_SEEK_MULTI:
 		case TD_KEY_NEXT_MULTI:
 		case TD_KEY_PREV_MULTI:
 		case TD_POS_NEXT_MULTI:
 		case TD_POS_PREV_MULTI:
 			nw->setClientBuffferSize(*(req.datalen));
-			return doReadMulti(req, op, nw);
+			if ( doReadMulti(req, op, nw)==EXECUTE_RESULT_SUCCESS)
+				return EXECUTE_RESULT_SUCCESS; 
 			break;
 		case TD_MOVE_PER:
 			m_tb = getTable(req.pbk->handle);

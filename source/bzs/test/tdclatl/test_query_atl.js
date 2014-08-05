@@ -95,6 +95,20 @@ var USE_TRAN = 1;
 var USE_BULKINSERT = 2;
 var USE_SNAPSHOT = 4;
 
+var CHARSET_LATIN1	= 1;
+var CHARSET_CP850	= 4;
+var CHARSET_ASCII	= 9;
+var CHARSET_SJIS	= 11;
+var CHARSET_UTF8	= 22;
+var CHARSET_USC2	= 23;
+var CHARSET_UTF8B4	= 30;
+var CHARSET_UTF16LE	= 33;
+var CHARSET_CP932	= 38;
+var CHARSET_EUCJ	= 40;
+var MAX_CHAR_INFO	= 41;
+
+var CP_UTF8 = 65001;
+	
 // status
 var STATUS_SUCCESS              = 0;
 var STATUS_PROGRAM_ERROR        = 1;
@@ -208,6 +222,10 @@ var FMT_CENTER = 1;
 var FMT_RIGHT = 2;
 var MAGNIFICATION = 100;
 
+var resultCode = 0;
+var q;
+var gq;
+
 WScript.quit(main());
 
 /*--------------------------------------------------------------------------------*/
@@ -219,7 +237,9 @@ function createUserTable(db)
 	var tableDef =  dbdef.InsertTable(tableid);
 	tableDef.TableName = "user";
 	tableDef.FileName = "user";
-	
+	tableDef.CharsetIndex = CHARSET_CP932;
+	tableDef.SchemaCodePage = CP_UTF8;
+		
 	var filedIndex = 0;
 	var fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "id";
@@ -230,7 +250,7 @@ function createUserTable(db)
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "–¼‘O";
 	fd.Type = ft_varchar;
-	fd.Len = 33;
+	fd.SetLenByCharnum(20);
 
 	++filedIndex;
 	fd =  dbdef.InsertField(tableid, filedIndex);
@@ -242,7 +262,7 @@ function createUserTable(db)
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "tel";
 	fd.Type = ft_varchar;
-	fd.Len = 21;
+	fd.SetLenByCharnum(21);
 
 	var keyNum = 0;
 	var key = dbdef.InsertKey(tableid, keyNum);
@@ -281,6 +301,8 @@ function createGroupTable(db)
 	var tableDef =  dbdef.InsertTable(tableid);
 	tableDef.TableName = "groups";
 	tableDef.FileName = "groups";
+	tableDef.CharsetIndex = CHARSET_CP932;
+	tableDef.SchemaCodePage = CP_UTF8;
 	
 	var filedIndex = 0;
 	var fd =  dbdef.InsertField(tableid, filedIndex);
@@ -291,12 +313,6 @@ function createGroupTable(db)
 	++filedIndex;
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "name";
-	fd.Type = ft_varbinary;
-	fd.Len = 33;
-
-	++filedIndex;
-	fd =  dbdef.InsertField(tableid, filedIndex);
-	fd.Name = "name2";
 	fd.Type = ft_varbinary;
 	fd.Len = 33;
 
@@ -329,6 +345,8 @@ function createUserExtTable(db)
 	var tableDef =  dbdef.InsertTable(tableid);
 	tableDef.TableName = "extention";
 	tableDef.FileName = "extention";
+	tableDef.CharsetIndex = CHARSET_CP932;
+	tableDef.SchemaCodePage = CP_UTF8;
 	
 	var filedIndex = 0;
 	var fd =  dbdef.InsertField(tableid, filedIndex);
@@ -340,7 +358,7 @@ function createUserExtTable(db)
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "comment";
 	fd.Type = ft_varchar;
-	fd.Len = 255;
+	fd.SetLenByCharnum(60);
 
 
 	var keyNum = 0;
@@ -382,8 +400,6 @@ function bench()
 }
 
 
-var q;
-var gq;
 
 /*--------------------------------------------------------------------------------*/
 function initQuery()
@@ -417,32 +433,45 @@ function createDatabase(db, uri)
 function insertData(db)
 {
 	var tb = db.OpenTable("user", OPEN_NORMAL); 
-	tb.ClearBuffer();
-	for (var i= 1;i<= 20000;++i)
-	{
-		tb.Vlng(0) = i;
-		tb.Text(1) = i.toString() + " user";
-		tb.Vlng("group") = ((i -1) % 100) + 1;
-		tb.Insert();
-	}
+	var tb2 = db.OpenTable("groups", OPEN_NORMAL);
+	var tb3 = db.OpenTable("extention", OPEN_NORMAL); 
 	
-	tb = db.OpenTable("groups", OPEN_NORMAL);
-	tb.ClearBuffer();
-	for (var i= 1;i<= 100;++i)
+	try
 	{
-		tb.Vlng(0) = i;
-		tb.Text(1) = i.toString() + " group";
-		tb.Insert();
-	} 
-	
-	tb = db.OpenTable("extention", OPEN_NORMAL); 
-	tb.ClearBuffer();
-	for (var i= 1;i<= 20000;++i)
-	{
-		tb.Vlng(0) = i;
-		tb.Text(1) = i.toString() + " comment";
-		tb.Insert();
+		db.BeginTrn();
+		
+		tb.ClearBuffer();
+		for (var i= 1;i<= 20000;++i)
+		{
+			tb.Vlng(0) = i;
+			tb.Text(1) = i.toString() + " user";
+			tb.Vlng("group") = ((i-1) % 5)+1;
+			tb.Insert();
+		}
+		
+		tb2.ClearBuffer();
+		for (var i= 1;i<= 100;++i)
+		{
+			tb2.Vlng(0) = i;
+			tb2.Text(1) = i.toString() + " group";
+			tb2.Insert();
+		} 
+		
+		tb3.ClearBuffer();
+		for (var i= 1;i<= 20000;++i)
+		{
+			tb3.Vlng(0) = i;
+			tb3.Text(1) = i.toString() + " comment";
+			tb3.Insert();
+		}
+		db.EndTrn();
 	}
+	catch(e)
+	{
+		db.AbortTrn();
+		throw e;
+	}
+
 }
 /*--------------------------------------------------------------------------------*/
 function checkEqual(a, b, on)
@@ -526,18 +555,18 @@ function test(atu, atg, ate)
 	checkEqual(first.Field("id").Vlng, 1, "id = 1 ");
 	checkEqual(first.Field("comment").Text, "1 comment", "comment = 1 comment");
 	checkEqual(first.Field("group_name").Text, "1 group", "group_name = 1 group ");
- 	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "9 group", "group_name = 9 group ");
+ 	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "4 group", "group_name = 9 group ");
 	
 	rs.OrderBy("group_name");
 	checkEqual(rs.Record(0).Field("group_name").Text, "1 group", "group_name = 1 group ");
 	
 	var sortFields = createSortFields();
 	sortFields.Add("group_name", false);
-	rs.OrderByWith(sortFields);
+	rs.OrderByEx(sortFields);
 
 	sortFields.Clear();
 	sortFields.Add("group_name", true);
-	rs.OrderByWith(sortFields);
+	rs.OrderByEx(sortFields);
 	checkEqual(rs.Record(0).Field("group_name").Text, "1 group", "group_name = 1 group ");
 	
 	
@@ -546,10 +575,10 @@ function test(atu, atg, ate)
 	rq.When("group" ,"=", 1);
 	gq.KeyField("group").AddFunction(fcount, "", "gropu1_count", rq);
 	rs.groupBy(gq);
-	checkEqual(rs.Count, 100, "groupBy rs.Count = 100 ");
+	checkEqual(rs.Count, 5, "groupBy rs.Count = 5 ");
 	var row = rs.Record(0);
 	
-	checkEqual(row.Field("gropu1_count").Vlng, 159, "gropu1_count = 159 ");
+	checkEqual(row.Field("gropu1_count").Vlng, 3180, "gropu1_count = 3180 ");
 	row = rs.Record(1);
 	checkEqual(row.Field("gropu1_count").Vlng, 0, "gropu1_count = 0 ");
 	
@@ -557,13 +586,13 @@ function test(atu, atg, ate)
 		for (var j= 0;j<count;++j)
 			var s = rs.Record(j);
 			
+	
 	wirteRecord(atg);
 	
 	WScript.Echo(" -- End Test -- ");
 
 }
 
-var resultCode = 0;
 /*--------------------------------------------------------------------------------*/
 function main()
 {
@@ -577,9 +606,6 @@ function main()
     	host = WScript.arguments(1);
     var URI  = "tdap://" + host + "/querytest?dbfile=test.bdf";
 
-    if (WScript.arguments.length > 2)
-    	n = parseInt(WScript.arguments(2), 10);
-    		
     
     WScript.Echo(URI);
 	var b = new bench();
@@ -597,15 +623,22 @@ function main()
 			if (isCreate > 0)
 				database.Drop();
 		}else
+		{
+			if (database.Stat != STATUS_TABLE_NOTOPEN )
+			{
+				WScript.Echo("database erorr: " + database.Stat);
+				return 1;
+			}
 			isCreate = true;
-		
+		}
 		if (isCreate > 0)			
 		{
+    		WScript.Echo("Creating test data. Please wait ...");
     		if (createDatabase(database, URI))
 				insertData(database);
 		}
 	   
-	    if (database.stat !== 0)
+	    if (database.Stat !== 0)
 	    {  
 	        WScript.Echo("open table erorr:No" +  database.stat);
 	        return 2;
@@ -619,6 +652,8 @@ function main()
 	
 	    b.report(test, atu, atg, ate);
 	    b.show();
+	    if (resultCode == 0)
+	    	WScript.Echo("*** No errors detected.");
 	}
 	catch(e)
 	{
