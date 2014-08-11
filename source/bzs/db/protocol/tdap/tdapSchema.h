@@ -262,11 +262,23 @@ struct PACKAGE fielddef : public fielddef_t_my
 	void setChainChar(const wchar_t* s);        // ** internal use only.
 #else
 
+#ifdef MYSQL_DYNAMIC_PLUGIN
+	inline const char* name() const {return m_name;};
+
+	inline const char* chainChar() const {return m_chainChar;};
+
+	inline void setName(const char* s) {strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);};
+
+	inline void setChainChar(const char* s) {strncpy_s(m_chainChar, 2, s, sizeof(m_chainChar) - 1);};
+
+#else
 	const char* name() const;
+	const char* name(char* buf) const;
 	const char* chainChar() const;
 	void setName(const char* s);
 	void setChainChar(const char* s);
-#endif
+#endif //MYSQL_DYNAMIC_PLUGIN
+#endif //_UNICODE
 
 	inline const char* nameA() const {return m_name;};
 
@@ -514,12 +526,23 @@ struct PACKAGE tabledef
 	const char* toChar(char* buf, const wchar_t* s, int size);
 
 #else
+#ifdef MYSQL_DYNAMIC_PLUGIN
+	const char* fileName() const {return m_fileName;};
+
+	const char* tableName() const {return m_tableName;};
+
+	inline void setFileName(const char* s) {setFileNameA(s);};
+
+	inline void setTableName(const char* s) {setTableNameA(s);};
+
+	inline const char* toChar(char* buf, const char* s, int size){strncpy_s(buf, size, s, size-1);return buf;};
+#else
 	const char* fileName() const;
 	const char* tableName() const;
 	void setFileName(const char* s);
 	void setTableName(const char* s);
 	const char* toChar(char* buf, const char* s, int size);
-
+#endif //MYSQL_DYNAMIC_PLUGIN
 #endif
 
 	const char* fileNameA() const {return m_fileName;};

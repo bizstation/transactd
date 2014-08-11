@@ -154,6 +154,21 @@ const char* fielddef::name() const
 	return m_name;
 }
 
+
+const char* fielddef::name(char* buf) const
+{
+#ifdef LINUX
+	if (m_schemaCodePage != CP_UTF8)
+	{
+		mbctou8(m_name, strlen(m_name),  buf, MYSQL_FDNAME_SIZE);
+		return buf;
+	}
+#endif
+	return m_name;
+}
+
+
+
 const char* fielddef::chainChar() const
 {
 #ifdef LINUX
@@ -172,8 +187,9 @@ void fielddef::setName(const char* s)
 #ifdef LINUX
 	if (m_schemaCodePage != CP_UTF8)
 		u8tombc(s, strlen(s), m_name, FIELD_NAME_SIZE);
+	else
 #endif
-	strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);
+		strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);
 }
 
 void fielddef::setChainChar(const char* s)
@@ -181,8 +197,9 @@ void fielddef::setChainChar(const char* s)
 #ifdef LINUX
 	if (m_schemaCodePage != CP_UTF8)
 		u8tombc(s, strlen(s), m_chainChar, 2);
+	else
 #endif
-	strncpy_s(m_chainChar, 2, s, sizeof(m_chainChar) - 1);
+		strncpy_s(m_chainChar, 2, s, sizeof(m_chainChar) - 1);
 }
 
 
@@ -217,8 +234,9 @@ void tabledef::setFileName(const char* s)
 #ifdef LINUX
 	if (schemaCodePage != CP_UTF8)
 		u8tombc(s, strlen(s), m_fileName, FILE_NAME_SIZE);
+	else
 #endif
-	setFileNameA(s);
+		setFileNameA(s);
 }
 
 void tabledef::setTableName(const char* s)
@@ -226,8 +244,9 @@ void tabledef::setTableName(const char* s)
 #ifdef LINUX
 	if (schemaCodePage != CP_UTF8)
 		u8tombc(s, strlen(s), m_tableName, TABLE_NAME_SIZE);
+	else
 #endif
-	setTableNameA(s);
+		setTableNameA(s);
 }
 
 const char* tabledef::toChar(char* buf, const char* s, int size)
