@@ -173,9 +173,6 @@ endif()
 if(TRANSACTD_PHP_ZTS)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     ZTS=1)
-else()
-  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
-    ZTS=0)
 endif()
 set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_DEBUG
   ZEND_DEBUG=1)

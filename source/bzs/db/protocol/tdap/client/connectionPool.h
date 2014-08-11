@@ -18,6 +18,10 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
+#if HAVE_RB_THREAD_CALL_WITHOUT_GVL || HAVE_RB_THREAD_BLOCKING_REGION
+#include <build/swig/ruby/threadBlockRegionWrapper.h>
+#endif
+
 #include <bzs/db/protocol/tdap/client/databaseManager.h>
 #define BOOST_THREAD_USE_LIB
 #include <boost/thread/thread.hpp>
@@ -43,10 +47,7 @@ namespace client
 
 	Otherwise, create new database automaticaly by get() function with connectParams.
 	This case need call setMaxConnections() function at start up the process.
-
 */
-
-short __STDCALL dllUnloadCallbackFunc();
 
 template <class Database_Ptr>
 class connectionPool
@@ -59,111 +60,18 @@ class connectionPool
 	DLLUNLOADCALLBACK_PTR m_regitfunc;
 	friend short __STDCALL dllUnloadCallbackFunc();
 
-	Database_Ptr addOne(const connectParams& param)
-	{
-		Database_Ptr db;
-		db = createDatabaseForConnectionPool(db);
-		connectOpen(db, param, true/* new connection*/);
-		m_dbs.push_back(db);
-		return m_dbs[m_dbs.size()-1];
-	}
-	
+	Database_Ptr addOne(const connectParams& param);
 
 public:
-	connectionPool(int maxConnections=0):m_maxConnections(maxConnections)
-	{
-#ifdef WIN32
-		m_regitfunc = nsdatabase::getDllUnloadCallbackFunc();
-		if (m_regitfunc)
-			m_regitfunc(dllUnloadCallbackFunc);
-#endif
-	};
-	
-	~connectionPool()
-	{
-		if (m_regitfunc)
-			m_regitfunc(NULL);
-	}
+	connectionPool(int maxConnections=0);
+	~connectionPool();
 
-	/** Delivery database instance
-		If a connect error is occured then bzs::rtl::exception exception is thrown.
-	*/
-	Database_Ptr get(const connectParams* param=NULL)
-	{
-		boost::mutex::scoped_lock lck(m_mutex);
-		assert((param && m_maxConnections) || m_dbs.size());
-
-		while (1)
-		{
-			for (size_t i = 0;i<m_dbs.size();i++)
-			{
-				if (m_dbs[i].use_count() == 1)
-				{
-					if (param)
-					{
-						Database_Ptr db = m_dbs[i];
-						if (isSameUri(param , db))
-							return db;
-					}else
-						return m_dbs[i];
-				}
-			}
-
-			//No a free database.
-			// create new a database.
-			if (param && (m_maxConnections > (int)m_dbs.size()))
-				return addOne(*param);
-			//Wait until releaseOne() called
-			boost::mutex::scoped_lock lck(m_mutex2);
-			m_busy.wait(lck);
-
-		}
-	}
-
-	/** Create database and login the server with each connection.
-		If a connect error is occured then bzs::rtl::exception exception is thrown.
-	*/
-	void reserve(size_t size, const connectParams& param)
-	{
-		boost::mutex::scoped_lock lck(m_mutex);
-		m_maxConnections = (int)size;
-		for (size_t i =0;i<size;++i)
-			addOne(param);
-	}
-
-	/** Set max connections.*/
-	void setMaxConnections(int n)
-	{
-		boost::mutex::scoped_lock lck(m_mutex);
-		m_maxConnections = n;
-	}
-
-	/** Return max connections. */
-	int maxConnections() const {return m_maxConnections;}
-
-	void releaseOne()
-	{
-		m_busy.notify_one();
-	}
-
-	// max 5second
-	bool reset(int waitSec=5)
-	{
-		boost::mutex::scoped_lock lck(m_mutex);
-		bool flag;
-		for (int j=0;j<waitSec*100;j++)
-		{
-			flag = false;
-			for (size_t i = 0;i<m_dbs.size();i++)
-				if (m_dbs[i].use_count() != 1)  flag = true;
-			if (!flag)
-				break;
-			Sleep(100 * MCRTOMM);
-		}
-		m_dbs.clear();
-		return flag;
-	}
-
+	Database_Ptr get(const connectParams* param=NULL);
+	void reserve(size_t size, const connectParams& param);
+	void setMaxConnections(int n);
+	int maxConnections() const;
+	void releaseOne();
+	bool reset(int waitSec=5);
 };
 
 typedef connectionPool<database_ptr> stdDbCconnectionPool;
@@ -182,11 +90,10 @@ typedef connectionPool<dbmanager_ptr> stdDbmCconnectionPool;
 	#endif
 #endif
 
-extern stdCconnectionPool cpool;
+short __STDCALL dllUnloadCallbackFunc();
 void releaseConnection(stdDbmCconnectionPool* pool);
 
-
-
+extern stdCconnectionPool cpool;
 
 }//namespace client
 }//namespace tdap
@@ -194,4 +101,4 @@ void releaseConnection(stdDbmCconnectionPool* pool);
 }//namespace db
 }//namespace bzs
 
-#endif//BZS_DB_PROTOCOL_TDAP_CLIENT_CONNECTIONPOOL_H
+#endif //BZS_DB_PROTOCOL_TDAP_CLIENT_CONNECTIONPOOL_H

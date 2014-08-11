@@ -114,6 +114,18 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/protocol/tdap/client/client.h *
 %ignore bzs::db::protocol::tdap::client::create;
 
+// * bzs/db/protocol/tdap/client/connectionPool.h *
+%ignore bzs::db::protocol::tdap::client::busyWaitArguments;
+%ignore bzs::db::protocol::tdap::client::busyWait;
+%ignore bzs::db::protocol::tdap::client::scopedLock;
+%ignore bzs::db::protocol::tdap::client::connectionPool;
+%ignore bzs::db::protocol::tdap::client::stdDbCconnectionPool;
+%ignore bzs::db::protocol::tdap::client::stdDbmCconnectionPool;
+%ignore bzs::db::protocol::tdap::client::stdCconnectionPool;
+%ignore bzs::db::protocol::tdap::client::dllUnloadCallbackFunc;
+%ignore bzs::db::protocol::tdap::client::releaseConnection;
+%ignore bzs::db::protocol::tdap::client::cpool;
+
 // * bzs/db/protocol/tdap/client/database.h *
 %ignore bzs::db::protocol::tdap::client::database::operator=;
 %ignore bzs::db::protocol::tdap::client::database::destroy;

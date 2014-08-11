@@ -53,6 +53,10 @@ set(TRANSACTD_PHP_INCLUDE_PATH      "" CACHE STRING "Include path for PHP")
 option(TRANSACTD_PHP_USE_32BIT_TIME_T 
   "Add _USE_32BIT_TIME_T option for building Transactd client PHP extension"      ON)
 set(TDCL_CPP_CHARSET  "" CACHE STRING "Transactd clients charset m:Multibyte u:Unicode")
+option(TRANSACTD_HAVE_RB_THREAD_CALL_WITHOUT_GVL 
+  "Add HAVE_RB_THREAD_CALL_WITHOUT_GVL option for building Transactd client Ruby gem" ON)
+option(TRANSACTD_HAVE_RB_THREAD_BLOCKING_REGION 
+  "Add HAVE_RB_THREAD_BLOCKING_REGION option for building Transactd client Ruby gem" OFF)
 
 
 # ==========================================================

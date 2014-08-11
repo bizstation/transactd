@@ -55,6 +55,7 @@ ruby_include_dirs = arg_config('--ruby_include_dirs', '').gsub(/"\n/, '')
 ruby_library_path = arg_config('--ruby_library_path', '').gsub(/"\n/, '')
 install_prefix    = arg_config('--install_prefix', '').gsub(/"\n/, '')
 build_type        = arg_config('--build_type', '').gsub(/"\n/, '')
+no_rb_tbr         = arg_config('--without_rb_thread_blocking_region', '').gsub(/"\n/, '').downcase
 
 # boost
 if boost != '' && boost !=~ /^\-DBOOST_ROOT/
@@ -82,7 +83,9 @@ end
 
 # ruby_library_path
 if ruby_library_path != '' && ruby_library_path !=~ /^\-DRUBY_SWIG_LIBRARY_PATH/
-  ruby_library_path = '-DTRANSACTD_RUBY_LIBRARY_PATH="' + to_slash_path(ruby_library_path) + '"'
+  lib_path = to_slash_path(ruby_library_path)
+  $LDFLAGS = $LDFLAGS + ' -libpath:' + File.dirname(lib_path)
+  ruby_library_path = '-DTRANSACTD_RUBY_LIBRARY_PATH="' + lib_path + '"'
 end
 
 # install_prefix
@@ -106,10 +109,22 @@ ruby_executable = '-DTRANSACTD_RUBY_EXECUTABLE_PATH="' + to_slash_path(ruby_exec
 # output dir
 gem_root = '-DTRANSACTD_RUBY_GEM_ROOT_PATH="' + to_slash_path(transactd_gem_root) + '"'
 
+# rb_thread_blocking_region or rb_thread_call_without_gvl
+use_TCWOG = have_func('rb_thread_call_without_gvl', 'ruby/thread.h')
+use_TBR = (! use_TCWOG) && have_func('rb_thread_blocking_region')
+if no_rb_tbr != '' && no_rb_tbr != 'off'
+  use_TCWOG = false
+  use_TBR = false
+end
+rb_tbr = ' -DTRANSACTD_HAVE_RB_THREAD_CALL_WITHOUT_GVL=' +
+  (use_TCWOG ? 'ON' : 'OFF') +
+  ' -DTRANSACTD_HAVE_RB_THREAD_BLOCKING_REGION=' +
+  (use_TBR ? 'ON' : 'OFF')
+
 # cmake
 cmake_cmd = ['cmake', to_native_path(transactd_gem_root_relative), '-DTRANSACTD_RUBY_GEM=ON',
               generator, boost, ruby_executable, ruby_library_path, ruby_include_dirs,
-              install_prefix, gem_root, build_type, '>> cmake_generate.log'].join(' ')
+              install_prefix, gem_root, build_type, rb_tbr, '>> cmake_generate.log'].join(' ')
 begin
   f = open('cmake_generate.log', 'w')
   f.puts cmake_cmd

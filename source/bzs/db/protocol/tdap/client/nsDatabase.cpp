@@ -16,6 +16,10 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
+#if HAVE_RB_THREAD_CALL_WITHOUT_GVL || HAVE_RB_THREAD_BLOCKING_REGION
+#include <build/swig/ruby/threadBlockRegionWrapper.h>
+#endif
+
 #include <bzs/env/tstring.h>
 #pragma hdrstop
 
@@ -69,7 +73,32 @@ BTRCALLID_PTR MYTICALLID = NULL;
 HANDLE hBtrvDLL = NULL;
 HANDLE hTrsdDLL = NULL;
 
+#ifdef TRANSACTD_RB_CALL_WITHOUT_GVL
+BTRCALLID_PTR MYTICALLID_ORIGINAL = NULL;
 
+void BTRCALLIDArgumentWrapper(BTRCALLIDArgs* args)
+{
+	args->result = MYTICALLID_ORIGINAL(args->op, args->pbk, args->data,
+		args->datalen, args->keybuf, args->keylen, args->keyNum, args->cid);
+}
+
+short_td __STDCALL BTRCALLIDForRubyThread(ushort_td op, void* pbk, void* data,
+	uint_td* datalen, void* keybuf, keylen_td keylen, char_td keyNum, uchar_td* cid)
+{
+	BTRCALLIDArgs args;
+	args.op = op;
+	args.pbk = pbk;
+	args.data = data;
+	args.datalen = datalen;
+	args.keybuf = keybuf;
+	args.keylen = keylen;
+	args.keyNum = keyNum;
+	args.cid = cid;
+	args.result = 0;
+	TRANSACTD_RB_CALL_WITHOUT_GVL(BTRCALLIDArgumentWrapper, args);
+	return args.result;
+}
+#endif //TRANSACTD_RB_CALL_WITHOUT_GVL
 
 BTRCALLID_PTR getTrnsctdEntryPoint()
 {
@@ -81,7 +110,15 @@ BTRCALLID_PTR getTrnsctdEntryPoint()
 		hTrsdDLL = LoadLibraryA(LIB_PREFIX TDCLC_LIBNAME);
 
 	if (hTrsdDLL)
+	{
+#ifdef TRANSACTD_RB_CALL_WITHOUT_GVL
+		MYTICALLID_ORIGINAL = (BTRCALLID_PTR)GetProcAddress((HINSTANCE)hTrsdDLL, "BTRCALLID");
+		MYTICALLID = (BTRCALLID_PTR)BTRCALLIDForRubyThread;
+#else
 		MYTICALLID = (BTRCALLID_PTR)GetProcAddress((HINSTANCE)hTrsdDLL, "BTRCALLID");
+#endif
+	}
+
 	return MYTICALLID;
 }
 

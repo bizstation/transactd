@@ -263,7 +263,7 @@ public:
 
 template<> inline dbmanager_ptr createDatabaseForConnectionPool(dbmanager_ptr& c)
 {
-	#ifdef SWIG_RUBY
+	#ifdef SWIGRUBY
 		dbmanager_ptr p(new databaseManager(), releaseDbManagerDummy);
 	#else
 		dbmanager_ptr p(new databaseManager());

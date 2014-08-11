@@ -19,7 +19,7 @@
 ===================================================================
 =end
 require 'transactd'
-require 'parallel'
+require 'thwait'
 
 def getHost()
   hostname = '127.0.0.1/'
@@ -89,16 +89,20 @@ describe Transactd, 'pool' do
   end
   
   it 'can be used in MultiThreads' do
-    max_threads = 5
-    Transactd::PooledDbManager::setMaxConnections(max_threads)
-    Parallel.map(1..12, :in_threads => max_threads - 1) do |i|
-      sleep_sec = rand(3) + 1
-      #puts('... waiting to get dbm' + i.to_s + ' ...')
-      dbm = Transactd::PooledDbManager.new(Transactd::ConnectParams.new(URL))
-      #puts('GOT dbm' + i.to_s + ' !')#  sleep ' + sleep_sec.to_s + 'sec ...')
-      sleep(sleep_sec)
-      dbm.unUse()
-      #puts('end dbm' + i.to_s)
+    Transactd::PooledDbManager::setMaxConnections(5)
+    threads = [];
+    for i in 1..12 do
+      threads.push(Thread.new(i) { |i|
+        #puts('... waiting to get dbm' + i.to_s + ' ...')
+        Thread.pass
+        dbm = Transactd::PooledDbManager.new(Transactd::ConnectParams.new(URL))
+        #puts('GOT dbm' + i.to_s + ' !')
+        sleep(rand(3) + 1)
+        #puts('end dbm' + i.to_s)
+        dbm.unUse()
+      })
     end
+    tw = ThreadsWait.new(*threads)
+    tw.all_waits()
   end
 end

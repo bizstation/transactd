@@ -29,6 +29,8 @@ include(../common/get_boost_libs.cmake)
 include(../common/get_ruby_path.cmake)
 include(../common/smart_install.cmake)
 include(./gem_output.cmake)
+include(../common/check_for_link_iconv.cmake)
+check_for_link_iconv()
 
 
 set(this_target tdclrb)
@@ -82,10 +84,7 @@ set(TDVER_RUBY_BUILD "${TRANSACTD_BUILD_NUMBER}")
 if((NOT TARGET tdclc) AND (NOT MINGW))
   subdirs("../tdclc")
 endif()
-if(NOT TARGET tdclcppm)
-  set(TDCL_CPP_CHARSET "m")
-  subdirs("../tdclcppm")
-endif()
+set(TDCL_CPP_CHARSET "m")
 
 
 # ==========================================================
@@ -115,6 +114,7 @@ add_custom_command (
 # ==========================================================
 # add swig wrapper source file
 # ==========================================================
+tdcl_add_source_files("${TRANSACTD_ROOT}")
 set(${this_target}_SOURCE_FILES
   ${${this_target}_SOURCE_FILES}
   ${RUBY_SWIG_WRAPPER_CPP}
@@ -164,7 +164,7 @@ endif()
 # ==========================================================
 if(NOT MSVC)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
-    " --std=c++0x -U__STRICT_ANSI__ ")
+    " --std=c++0x -U__STRICT_ANSI__ -finput-charset=utf-8 ")
 endif()
 
 
@@ -172,17 +172,28 @@ endif()
 # Add compile definitions
 # ==========================================================
 set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-  SWIGRUBY SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB)
+  SWIGRUBY SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB _MBCS)
+if(TRANSACTD_HAVE_RB_THREAD_BLOCKING_REGION)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    HAVE_RB_THREAD_BLOCKING_REGION)
+endif()
+if(TRANSACTD_HAVE_RB_THREAD_CALL_WITHOUT_GVL)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    HAVE_RB_THREAD_CALL_WITHOUT_GVL)
+endif()
 if(MSVC)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS)
+    WIN32 _WIN32 _WINDOWS _USRDLL BOOST_ALL_NO_LIB 
+    LIB_TDCLCPP TRDCL_AUTOLINK_OFF TRDCLENGN_EXPORTS _CRT_SECURE_NO_WARNINGS)
 else()
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    PIC BOOST_ALL_NO_LIB)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
   else()
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
-      WIN32 _WIN32)
+      WIN32 _WIN32 _SYS_TIME_H_ _GETTIMEOFDAY_DEFINED)
   endif()
 endif()
 
@@ -190,12 +201,13 @@ endif()
 # ==========================================================
 # add link / include
 # ==========================================================
-if(MINGW)
-  transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
-else()
-  transactd_link_boost_libraries("timer")
+transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
+if(CAN_LINK_ICONV)
+  target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()
-target_link_libraries(${this_target} "tdclcpp${TDCL_CPP_CHARSET}")
+if(NOT WIN32)
+  target_link_libraries(${this_target} dl)
+endif()
 target_link_libraries(${this_target} ${TRANSACTD_RUBY_LIBRARY_PATH})
 
 
