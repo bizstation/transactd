@@ -945,13 +945,15 @@ void table::getKeySpec(keySpec* ks, bool SpecifyKeyNum)
 void table::doCreateIndex(bool SpecifyKeyNum)
 {
 	int segmentCount = m_tableDef->keyDefs[m_keynum].segmentCount;
-	keySpec* ks = new keySpec[segmentCount];
+
+	keySpec* ks = (keySpec*)malloc(sizeof(keySpec) * segmentCount);
+	memset(ks, 0, sizeof(keySpec) * segmentCount);
 	getKeySpec(ks, SpecifyKeyNum);
 	m_pdata = ks;
 	m_datalen = sizeof(keySpec) * segmentCount;
 	nstable::doCreateIndex(SpecifyKeyNum);
 	m_pdata = m_impl->dataBak;
-	delete[]ks;
+	free(ks);
 }
 
 void table::smartUpdate()

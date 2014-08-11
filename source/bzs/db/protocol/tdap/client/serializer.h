@@ -191,7 +191,7 @@ class DLLLIBSTMT readHasMany : public readStatement
 public:
 	~readHasMany();
 	readHasMany();
-	recordsets& recordsets();
+	client::recordsets& recordsets();
 	void addkeyValueColumn(const _TCHAR* name);
 	const _TCHAR* getkeyValueColumn(int index) const;
 	int  keyValueColumns() const;

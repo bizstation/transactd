@@ -35,21 +35,12 @@
 #include <boost/archive/xml_iarchive.hpp>
 #include <fstream>
 
-#if (__BCPLUSPLUS__)
-#   ifdef _WIN64
-#		ifdef _RTLDLL
-#			pragma comment(lib, "libboost_serialization-bcb64-mt-1_50.a")
-#   	else
-#			pragma comment(lib, "libboost_serialization-bcb64-mt-s-1_50.a")
-#		endif
-#   else
-#		ifdef _RTLDLL
-#			pragma comment(lib, "libboost_serialization-bcb-mt-1_39.lib")
-#   	else
-#			pragma comment(lib, "libboost_serialization-bcb-mt-s-1_39.lib")
-#		endif
-#   endif
+
+#ifdef __BCPLUSPLUS__
+#	define BZS_LINK_BOOST_SERIALIZATION
+#	include <bzs/env/boost_bcb_link.h>
 #endif
+
 
 using namespace boost::archive;
 using namespace boost::serialization;

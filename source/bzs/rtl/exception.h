@@ -15,14 +15,14 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 
 #include <exception>
 #include <string>
 #include <bzs/env/compiler.h>
-#if (defined(__x86_32__) && defined(__BORLANDC__))
+#if ((defined(__x86_32__) || defined(__APPLE__)) && defined(__BORLANDC__))
 #include <bzs/env/tstring.h>
 #else
 #include <boost/exception/info.hpp>
@@ -36,7 +36,7 @@ namespace rtl
 {
 
 /** C++Builder XE 32bit  can not use boost exception*/
-#if (defined(__x86_32__) && defined(__BORLANDC__))
+#if ((defined(__x86_32__) || defined(__APPLE__)) && defined(__BORLANDC__))
 
 class exception : public std::exception
 {

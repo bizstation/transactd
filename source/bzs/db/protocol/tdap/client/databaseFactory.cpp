@@ -56,7 +56,7 @@ database* database::create()
 
 
 #undef USETLS
-#if ((defined(_WIN32) && _MSC_VER) || __APPLE__)
+#if ((defined(_WIN32) && _MSC_VER) || (__APPLE__ && !defined(__BCPLUSPLUS__)))
 #define USETLS
 #endif
 

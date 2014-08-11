@@ -19,8 +19,8 @@
    02111-1307, USA.
 =================================================================*/
 
-/* For windows client application programs 
-If you need auto link then you define TRDCL_AUTOLINK and assign 
+/* For windows client application programs
+If you need auto link then you define TRDCL_AUTOLINK and assign
 library path in project option.
 
 */
@@ -28,12 +28,7 @@ library path in project option.
 #ifdef TRDCL_AUTOLINK
 #	include <bzs/env/compiler.h>
 #	include <bzs/db/protocol/tdap/tdapcapi.h>
-#	if (__BCPLUSPLUS__ && __clang__)
-#		define LIB_EXTENTION ".a"
-#	else
-#		define LIB_EXTENTION ".lib"
-#	endif
-#	define TD_CPP_LIB_NAME TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR LIB_EXTENTION
+#	define TD_CPP_LIB_NAME LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR SHARED_LIB_EXTENTION
 #	pragma comment(lib, TD_CPP_LIB_NAME)
 #endif //TRDCL_AUTOLINK
 

@@ -39,8 +39,7 @@ using namespace bzs::db::protocol::tdap;
 using namespace std;
 
 #define PROTOCOL _T("tdap")
-static _TCHAR HOSTNAME[MAX_PATH] =
-{_T("127.0.0.1")};
+static _TCHAR HOSTNAME[MAX_PATH] = {_T("127.0.0.1")};
 #define DBNAME	 _T("test")
 #define BDFNAME _T("test.bdf")
 // #define ISOLATION_REPEATABLE_READ
@@ -1684,7 +1683,7 @@ void testFilterVar(database* db)
     {
         const _TCHAR* str = _T("漢字文");
         const _TCHAR* str3 = _T("漢字文字のテ");
-        const _TCHAR* str2 = _T("123");
+		const _TCHAR* str2 = _T("123");
         const _TCHAR* str4 = _T("1232");
         bool utf16leSupport = isUtf16leSupport(db);
 
@@ -1705,7 +1704,10 @@ void testFilterVar(database* db)
         if (utf16leSupport)
             doVarFilter(db, L"user3", CP_ACP, str2, num, key);
         doVarFilter(db, L"user4", CP_ACP, str4, num, key);
-        doVarFilter(db, L"user5", CP_UTF8, str2, num, key);
+		doVarFilter(db, L"user5", CP_UTF8, str2, num, key);
+#else
+		str2;
+		str4;
 #endif
 
         key = 1;

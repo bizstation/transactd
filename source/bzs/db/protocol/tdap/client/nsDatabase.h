@@ -23,9 +23,12 @@
 #include "export.h"
 #ifdef _WIN32
 #include <windows.h>
-#ifdef TRDCL_AUTOLINK
-#include "trdclcppautolink.h"
 #endif
+
+#if (__BCPLUSPLUS__ || _MSC_VER)
+#	ifdef TRDCL_AUTOLINK
+#		include "trdclcppautolink.h"
+#	endif
 #endif
 
 namespace bzs

@@ -19,17 +19,23 @@
    02111-1307, USA.
 =================================================================*/
 // function type
-#if (__BCPLUSPLUS__ && !defined(__clang__))
-#	define __THREAD __thread
-#	define __STDCALL __stdcall
+#if (__BCPLUSPLUS__)
+#	if (defined(__APPLE__) || defined(__clang__))
+#		define __THREAD __declspec(thread)
+#		define __STDCALL
+#	else
+#		define __THREAD __thread
+#		define __STDCALL __stdcall
+#	endif
 #else
 #	define __THREAD __declspec(thread)
-#	if (_MSC_VER || (__BORLANDC__ && __clang__) || __MINGW32__)
+#	if (_MSC_VER || __MINGW32__)
 #		define __STDCALL __stdcall
 #	else
 #		define __STDCALL
 #	endif
 #endif
+
 
 // operating system
 #ifdef _WIN32
@@ -42,10 +48,12 @@
 #	endif
 #else
 #	ifndef LINUX
-#		define LINUX //Support 64bit only
+#		define LINUX 1//Support 64bit only
 #	endif
 #endif
-
+#if (__BCPLUSPLUS__ && defined(__APPLE__))
+#	define __APPLE_32__ 1
+#endif
 // thread strage
 #ifndef __THREAD_BCB
 #	undef __THREAD
@@ -97,8 +105,15 @@
 
 #define AGRPACK PACKAGE
 
+//bcb_osx
+#if (__BCPLUSPLUS__ && defined(__APPLE__) && !defined(__clang__))
+#	define PACKAGE_OSX  PACKAGE
+#else
+#   define PACKAGE_OSX
+#endif
+
 // import
-#if (LINUX || __MINGW32__)
+#if (defined(LINUX) || __MINGW32__)
 #	define PACKAGE_IMPORT
 #else
 #	define PACKAGE_IMPORT __declspec(dllimport)
@@ -107,7 +122,7 @@
 
 
 // data alignment
-#if (_MSC_VER || (__BORLANDC__ && __clang__))
+#if (_MSC_VER || (__BORLANDC__ && __clang__ ))
 #	define pragma_pack1 __pragma(pack(push, 1))
 #	define pragma_pop __pragma(pack(pop))
 #else
@@ -156,6 +171,29 @@
 
 #if (__BCPLUSPLUS__ >= 0x680 && (__BCPLUSPLUS__ < 0x690))
 #  	define COMPILER_VERSTR  "bc200"
+#endif
+
+#if (__APPLE__)
+#	define SHARED_LIB_EXTENTION ".dylib"
+#else
+#	if( defined(LINUX) || (__BORLANDC__ && __clang__))
+#		define LIB_EXTENTION ".so"
+#	else
+#   	define LIB_EXTENTION ".lib"
+#	endif
+#endif
+
+#if( defined(LINUX) || (__BORLANDC__ && __clang__))
+#	define LIB_EXTENTION ".a"
+#else
+#  	define LIB_EXTENTION ".lib"
+#endif
+
+
+#ifdef LINUX
+#	define LIB_PREFIX "lib"
+#else
+#	define LIB_PREFIX
 #endif
 
 #endif//BZS_ENV_COMPILER_H

@@ -73,7 +73,7 @@ public:
 	
 	size_t conv(const char* src, size_t inszie, char* outbuf, size_t outbufsize)
 	{
-		if (inszie == -1)
+		if ((int)inszie == -1)
 			inszie = strlen(src);
 		char* pout = outbuf;
 		
@@ -85,7 +85,7 @@ public:
 	
 	size_t conv(const char* src, size_t inszie, char16_t* outbuf, size_t outbufsize)
 	{
-		if (inszie == -1)
+		if ((int)inszie == -1)
 			inszie = strlen(src);
 		char* pout = (char*)outbuf;
 		size_t len = iconv(m_cd, (char**)&src, &inszie, &pout, &outbufsize);
@@ -97,7 +97,7 @@ public:
 	
 	size_t conv(const char16_t* src, size_t inszie, char* outbuf, size_t outbufsize)
 	{
-		if (inszie == -1)
+		if ((int)inszie == -1)
 			inszie = strlen16(src)*sizeof(char16_t);
 		char* pout = outbuf;
 		size_t len = iconv(m_cd, (char**)&src, &inszie, &pout, &outbufsize);

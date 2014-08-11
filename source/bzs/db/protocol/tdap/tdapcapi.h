@@ -398,18 +398,20 @@ struct trdVersiton
 #define C_INTERFACE_VER_MINOR "0"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
+/*dnamic load library name.
+	The default extention of Mac is ".boudle", Therefore ".so" is popular. */
 #ifdef LINUX
-#ifdef __APPLE__
-#define C_INTERFACE_VERSTR "." C_INTERFACE_VER_MAJOR "." C_INTERFACE_VER_MINOR ".so"//use loadlibrary
+#	ifdef __APPLE__
+#		define C_INTERFACE_VERSTR "." C_INTERFACE_VER_MAJOR "." C_INTERFACE_VER_MINOR ".so"//use loadlibrary
+#	else
+#		define C_INTERFACE_VERSTR ".so." C_INTERFACE_VER_MAJOR "." C_INTERFACE_VER_MINOR//use loadlibrary
+#	endif
 #else
-#define C_INTERFACE_VERSTR ".so." C_INTERFACE_VER_MAJOR "." C_INTERFACE_VER_MINOR//use loadlibrary
-#endif
-#else
-#define C_INTERFACE_VERSTR "_" C_INTERFACE_VER_MAJOR "_" C_INTERFACE_VER_MINOR ".dll"//use loadlibrary
+#	define C_INTERFACE_VERSTR "_" C_INTERFACE_VER_MAJOR "_" C_INTERFACE_VER_MINOR ".dll"//use loadlibrary
 #endif
 
 
-#if (defined( __x86_64__) || defined(LINUX))
+#if (defined( __x86_64__) || (defined(LINUX) && !defined(__BORLANDC__)))
 #define TDCLC_LIBNAME "tdclc_64" C_INTERFACE_VERSTR //use loadlibrary
 #else
 #define TDCLC_LIBNAME "tdclc_32" C_INTERFACE_VERSTR //use loadlibrary
@@ -425,7 +427,7 @@ struct trdVersiton
 #endif
 
 /* Cpp library name middle part */
-#if (defined( __x86_64__) || defined(LINUX))
+#if (defined( __x86_64__) ||  (defined(LINUX) && !defined(__BORLANDC__)))
 	#ifdef _UNICODE
 		#define TD_LIB_PART "64u" RTL_PART
 	#else
@@ -454,7 +456,7 @@ struct trdVersiton
 #define CPP_INTERFACE_VER_MINOR "0"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
-#if (_WIN32 || __WIN32__ )
+#if (__BCPLUSPLUS__ || _MSC_VER)
 #define CPP_INTERFACE_VERSTR "_" COMPILER_VERSTR "_" TD_LIB_PART "_" CPP_INTERFACE_VER_MAJOR "_" CPP_INTERFACE_VER_MINOR //use autolink
 #endif
 

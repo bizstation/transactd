@@ -43,7 +43,7 @@
 using namespace boost;
 using namespace boost::system;
 
-#ifdef WIN32
+#ifdef _WIN32
 	#define USE_PIPE_CLIENT
 #endif
 

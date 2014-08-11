@@ -37,29 +37,14 @@ typedef void* HINSTANCE;
 
 #pragma package(smart_init)
 
-
-#if (__BCPLUSPLUS__)
-#   ifdef _WIN64
-#		ifdef _RTLDLL
-#    		pragma comment(lib, "libboost_filesystem-bcb64-mt-1_50.a")
-#    		pragma comment(lib, "libboost_system-bcb64-mt-1_50.a")
-#		else
-#    		pragma comment(lib, "libboost_filesystem-bcb64-mt-s-1_50.a")
-#    		pragma comment(lib, "libboost_system-bcb64-mt-s-1_50.a")
-#		endif
-#   else
-#		ifdef _RTLDLL
-#	    	pragma comment(lib, "libboost_system-bcb-mt-1_39.lib")
-#   	 	pragma comment(lib, "libboost_filesystem-bcb-mt-1_39.lib")
-#    		pragma comment(lib, "libboost_thread-bcb-mt-1_39.lib")
-#		else
-#	    	pragma comment(lib, "libboost_system-bcb-mt-s-1_39.lib")
-#   	 	pragma comment(lib, "libboost_filesystem-bcb-mt-s-1_39.lib")
-#    		pragma comment(lib, "libboost_thread-bcb-mt-s-1_39.lib")
-#		endif
-#   endif
+#ifdef __BCPLUSPLUS__
+#   ifndef _WIN64
+#		define BZS_LINK_BOOST_THREAD
+#	endif
+#	define BZS_LINK_BOOST_FILESYSTEM
+#	define BZS_LINK_BOOST_SYSTEM
+#	include <bzs/env/boost_bcb_link.h>
 #endif
-
 
 namespace bzs
 {
@@ -84,11 +69,7 @@ BTRCALLID_PTR MYTICALLID = NULL;
 HANDLE hBtrvDLL = NULL;
 HANDLE hTrsdDLL = NULL;
 
-#ifdef LINUX
-#define LIB_PREFIX "lib"
-#else
-#define LIB_PREFIX
-#endif
+
 
 BTRCALLID_PTR getTrnsctdEntryPoint()
 {

@@ -18,30 +18,19 @@
 =================================================================*/
 #include "connectionPool.h"
 
-#if (__BCPLUSPLUS__)
+
+#ifdef __BCPLUSPLUS__
 #   ifdef _WIN64
-#		ifdef _RTLDLL
-#	    	pragma comment(lib, "libboost_thread-bcb64-mt-1_50.a")
-#   	 	pragma comment(lib, "libboost_system-bcb64-mt-1_50.a")
-#    		pragma comment(lib, "libboost_chrono-bcb64-mt-1_50.a")
-#   	else
-#	    	pragma comment(lib, "libboost_thread-bcb64-mt-s-1_50.a")
-#   	 	pragma comment(lib, "libboost_system-bcb64-mt-s-1_50.a")
-#    		pragma comment(lib, "libboost_chrono-bcb64-mt-s-1_50.a")
-#   	endif
+#		define BZS_LINK_BOOST_SYSTEM
+#		define BZS_LINK_BOOST_THREAD
+#		define BZS_LINK_BOOST_CHRONO
 		namespace boost{void tss_cleanup_implemented(){}}
-#   else
-#		ifdef _RTLDLL
-#	    	pragma comment(lib, "libboost_thread-bcb-mt-1_39.lib")
-#   	else
-#	    	pragma comment(lib, "libboost_thread-bcb-mt-s-1_39.lib")
-#   	endif
+#	else
+#		define BZS_LINK_BOOST_THREAD
 		namespace boost{extern "C" void tss_cleanup_implemented(){}}
-#   endif
+#	endif
+#	include <bzs/env/boost_bcb_link.h>
 #endif
-
-
-
 
 
 namespace bzs

@@ -151,7 +151,7 @@ static const int TABLE_NAME_SIZE = 32;
 static const int FILE_NAME_SIZE = 266;
 
 
-#ifdef __x86_32__
+#if (defined(__x86_32__) || __APPLE_32__ )
 static const int TABLEDEF_FILLER_SIZE = 21;//25-4;
 #else
 static const int TABLEDEF_FILLER_SIZE = 9;//17-8;

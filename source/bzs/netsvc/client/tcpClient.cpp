@@ -19,10 +19,12 @@
 
 #include "tcpClient.h"
 #include <bzs/env/crosscompile.h>
-#ifndef _WIN32
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/ini_parser.hpp>
-#include <boost/filesystem.hpp>
+#if (!defined(_WIN32))
+#	include <boost/filesystem.hpp>
+#   if (BOOST_VERSION > 104900)
+#		include <boost/property_tree/ptree.hpp>
+#		include <boost/property_tree/ini_parser.hpp>
+#	endif
 #endif
 
 using namespace boost;
@@ -64,12 +66,14 @@ connections::connections(const char* pipeName):m_pipeName(pipeName)
 
 	}
 #else
+	#if (BOOST_VERSION > 104900)
 	namespace fs = boost::filesystem;
 	const fs::path path("/etc/transactd.cnf");
 	boost::system::error_code error;
 	const bool result = fs::exists(path, error);
-	if (result && !error) 
+	if (result && !error)
 	{
+
 		boost::property_tree::ptree pt;
 		try
 		{
@@ -80,7 +84,9 @@ connections::connections(const char* pipeName):m_pipeName(pipeName)
 			strcpy_s(port, PORTNUMBUF_SIZE, p.c_str());
 		}
 		catch(...){}
+
 	}
+	#endif
 #endif
 
 }

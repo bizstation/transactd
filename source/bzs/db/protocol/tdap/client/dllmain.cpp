@@ -37,23 +37,9 @@ using namespace bzs::netsvc::client;
 #define PIPENAME "Transactd"
 
 #ifdef __BCPLUSPLUS__
-#   ifdef _WIN64
-#		ifdef _RTLDLL
-#			pragma comment(lib, "libboost_system-bcb64-mt-1_50.a")
-#			pragma comment(lib, "libboost_thread-bcb64-mt-1_50.a")
-#   	else
-#			pragma comment(lib, "libboost_system-bcb64-mt-s-1_50.a")
-#			pragma comment(lib, "libboost_thread-bcb64-mt-s-1_50.a")
-#	   	endif
-#   else
-#		ifdef _RTLDLL
-#	    	pragma comment(lib, "libboost_system-bcb-mt-1_39.lib")
-#   	    pragma comment(lib, "libboost_thread-bcb-mt-1_39.lib")
-#   	else
-#	    	pragma comment(lib, "libboost_system-bcb-mt-s-1_39.lib")
-#   	    pragma comment(lib, "libboost_thread-bcb-mt-s-1_39.lib")
-#	   	endif
-#   endif
+#	define BZS_LINK_BOOST_SYSTEM
+#	define BZS_LINK_BOOST_THREAD
+#	include <bzs/env/boost_bcb_link.h>
 #endif
 
 
@@ -116,6 +102,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 void __attribute__ ((constructor)) onLoadLibrary(void);
 void __attribute__ ((destructor)) onUnloadLibrary(void);
 
+#if (__BCPLUSPLUS__ && defined(__APPLE__))
+#	pragma exit onUnloadLibrary
+#	pragma startup onLoadLibrary
+#endif
+
 void onLoadLibrary(void)
 {
 	m_cons = new  connections(PIPENAME);
@@ -138,7 +129,7 @@ void onUnloadLibrary(void)
 }
 #endif
 
-extern "C" short_td  __STDCALL
+extern "C" PACKAGE_OSX short_td  __STDCALL
 	BTRCALLID(ushort_td op, posblk* pbk, void_td* data,
    uint_td* datalen, void_td*   keybuf, keylen_td keylen,
    char_td keyNum, clientID* cid)
@@ -435,7 +426,7 @@ void initCid()
 }
 
 
-extern "C" short_td __STDCALL
+extern "C" PACKAGE_OSX short_td
 	BTRVID(ushort_td op, posblk* pbk, void_td* data,
    uint_td* datalen, void_td* keybuf, char_td keyNum, clientID* cid)
 {
@@ -445,7 +436,7 @@ extern "C" short_td __STDCALL
 	return BTRCALLID(op, pbk, data, datalen, keybuf, keylen, keyNum, cid);
 }
 
-extern "C" short_td __STDCALL
+extern "C" PACKAGE_OSX short_td __STDCALL
 	BTRV(ushort_td op, posblk* pbk, void_td* data,
    uint_td* datalen, void_td* keybuf, char_td keyNum)
 {
@@ -453,7 +444,7 @@ extern "C" short_td __STDCALL
 	return BTRVID(op, pbk, data, datalen, keybuf, keyNum, getCid());
 }
 
-extern "C" short_td __STDCALL
+extern "C" PACKAGE_OSX short_td __STDCALL
 	BTRCALL(ushort_td op, posblk* pbk, void_td* data,
    uint_td* datalen, void_td*   keybuf, keylen_td keylen,
    char_td keyNum)
@@ -462,7 +453,7 @@ extern "C" short_td __STDCALL
 	return BTRCALLID(op, pbk, data, datalen, keybuf, keylen, keyNum, getCid());
 }
 
-extern "C" short_td __STDCALL
+extern "C" PACKAGE_OSX short_td __STDCALL
 	BTRCALL32(ushort_td op, posblk* pbk, void_td* data,
    uint_td* datalen, void_td*   keybuf, keylen_td keylen,
    char_td keyNum)
@@ -471,7 +462,7 @@ extern "C" short_td __STDCALL
 	return BTRCALLID(op, pbk, data, datalen, keybuf, keylen, keyNum, getCid());
 }
 
-extern "C" short_td __STDCALL
+extern "C" PACKAGE_OSX short_td __STDCALL
 	BTRCALLID32(ushort_td op, posblk* pbk, void_td* data,
    uint_td* datalen, void_td*   keybuf, keylen_td keylen,
    char_td keyNum, clientID* cid)
@@ -480,7 +471,7 @@ extern "C" short_td __STDCALL
 }
 
 
-extern "C" short_td __STDCALL
+extern "C" PACKAGE_OSX short_td __STDCALL
 	CallbackRegist(dllUnloadCallback func)
 {
 	dllUnloadCallbackFunc = func;
