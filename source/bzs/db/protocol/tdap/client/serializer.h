@@ -33,7 +33,7 @@
 
 #if (defined(TRDCL_AUTOLINK) && !defined(LIB_TDCLSTMT))
 #	include "trdclcppautolink.h"
-#	define TD_STMT_LIB_NAME "tdclstmt" CPP_INTERFACE_VERSTR LIB_EXTENTION
+#	define TD_STMT_LIB_NAME LIB_PREFIX "tdclstmt" CPP_INTERFACE_VERSTR SHARED_LIB_EXTENTION
 #	pragma comment(lib, TD_STMT_LIB_NAME)
 #endif //TRDCL_AUTOLINK
 

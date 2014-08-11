@@ -190,8 +190,9 @@ public:
 	{
 		m_ios.reset();
 		m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
-		m_socket.set_option(boost::asio::socket_base::receive_buffer_size(512*1024));
-		m_socket.set_option(boost::asio::socket_base::send_buffer_size (1024*1024*10));
+		boost::system::error_code  ec;
+		m_socket.set_option(boost::asio::socket_base::receive_buffer_size(512*1024), ec);
+		m_socket.set_option(boost::asio::socket_base::send_buffer_size (1024*1024*10), ec);
 
 		size_t n = m_module->onAccept(&m_result[0], WRITEBUF_SIZE);
 		if (n)

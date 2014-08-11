@@ -40,7 +40,7 @@ Visual Studio 2010 Express には、64bit版ビルドツール用の Visual Stud
 2. CMakeのダウンロードとインストール
 ------------------------------------------------------------
 [CMake ダウンロードページ](http://www.cmake.org/cmake/resources/software.html)か
-らWindows (Win32 Installer) をダウンロードし実行します。
+らWindows (Win32 Installer)  cmake-2.8.12.2-win32-x86.exe をダウンロードし実行します。
 
 途中、「Add CMake to the system PATH for all(or current) users」を選択し、
 cmakeの実行ファイルにパスが通るようにします。
@@ -49,44 +49,11 @@ cmakeの実行ファイルにパスが通るようにします。
 
 3. Boost C++ Libraries のダウンロードとインストール
 ------------------------------------------------------------
-### 3-a ビルド済みバイナリのダウンロード
-[BoostProのダウンロードページ](http://www.boostpro.com/download)から、
-BoostPro 1.51.0 Installer (64-bit)をダウンロードし、インストールします。
-
-BoostProインストーラの「Select Default Variants」では以下の項目にチェックを入れ
-ます。
-
-* Visual C++ 10.0
-* Mlutithread, static runtime
-* Mlutithread debug, static runtime
-
-次の「Choose Components」では、以下のコンポーネント以外のチェックは外してもかま
-いません。
-
-* chrono
-* filesystem
-* system
-* thread
-* timer
-* serialization
-* program_options
-
-インストールができたら、システム環境変数に `TI_BOOST_ROOT_32` および 
-`TI_BOOST_ROOT_64`という変数を追加し、32bitと64bitのフォルダのパスを値として設
-定します。自分のビルドするbitに合わせた変数が設定されていれば、両方を設定する必
-要はありません。
-```
-TI_BOOST_ROOT_32 = c:\boost\boost_1_51_32
-TI_BOOST_ROOT_64 = c:\boost\boost_1_51_64
-```
-環境変数の追加は、[コントロールパネル]-[システム]-[詳細設定]タブ-[環境変数]から
-行います。
-
-
-### 3-b ソースからのビルド
-自分でboostをビルドする場合は、[Boostのダウンロードページ](
-http://www.boost.org/users/download )からソースコードをダウンロードし、解凍しま
-す。ここでは、以下のフォルダに保存したものとします。
+BoostProのダウンロードページが閉鎖されたため、ビルド済みバイナリをダウンロードするこ
+とはできなくなりました。boostはソースからビルドします。
+### ソースからのビルド
+[Boostのダウンロードページ](http://www.boost.org/users/download )からソースコードを
+ダウンロードし、解凍します。ここでは、以下のフォルダに保存したものとします。
 ```
 C:\Program Files\boost\boost_1_54_0
 ```
@@ -294,9 +261,10 @@ build\libboost_serialization-bcb-1_39\libboost_boost_serialization-bcb-mt-1_39.c
 にて事前にlibboost_serialization-bcb-mt-1_39.libを生成してください。
 
 XE4 64Bitの場合、コンパイラバージョンがXE3と同じためtdclcppを使用するアプリケーション
-の自動リンクでtdclcpp_bc170_64x.libを探そうとします。本来XE4の場合bc180のためリンクエラー
-が発生します。XE4 64Bitでtdclcppとtdclstmtをコンパイルした際には、libのファイル名を
-tdclcpp_bc180_64x.libとtdclstmt_bc180_64x.libの180部分を170にリネームしてください。
+の自動リンクでtdclcpp_bc170_64x.libを探そうとします。XE4で生成されるdllは
+tdclcpp_bc180_64x.dllのためlibが見つからずリンクエラーが発生します。XE4 64Bitでtdclcpp
+とtdclstmtをコンパイルした際には、libのファイル名を
+tdclcpp_bc180_64x_xx.libとtdclstmt_bc180_64x_xx.libの180部分を170にリネームしてください。
 
 XE6 64Bitの場合、boost_threadのコンパイルが通らないためboostのソースを修正します。
    

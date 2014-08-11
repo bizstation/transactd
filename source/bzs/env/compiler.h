@@ -176,10 +176,10 @@
 #if (__APPLE__)
 #	define SHARED_LIB_EXTENTION ".dylib"
 #else
-#	if( defined(LINUX) || (__BORLANDC__ && __clang__))
-#		define LIB_EXTENTION ".so"
+#	if(defined(LINUX) || (__BORLANDC__ && __clang__))
+#		define SHARED_LIB_EXTENTION ".a"
 #	else
-#   	define LIB_EXTENTION ".lib"
+#   	define SHARED_LIB_EXTENTION ".lib"
 #	endif
 #endif
 

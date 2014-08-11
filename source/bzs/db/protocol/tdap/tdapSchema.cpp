@@ -26,15 +26,18 @@
 #ifdef _WIN32
 	#include <windows.h>
 #endif
-
+#ifdef LINUX
+	#include <bzs/env/mbcswchrLinux.h>
+	using namespace bzs::env;
+#endif
 #pragma package(smart_init)
 
 #undef USETLS
-#if ((defined(_WIN32) && _MSC_VER) || __APPLE__)
-#ifdef __APPLE__
-#include <pthread.h>
-#endif
-#define USETLS
+#if ((defined(_WIN32) && _MSC_VER) || (__APPLE__ && !defined(__BCPLUSPLUS__)))
+#	ifdef __APPLE__
+#		include <pthread.h>
+#	endif
+#	define USETLS
 #endif
 
 
@@ -55,23 +58,27 @@ namespace protocol
 namespace tdap
 {
 
-
-#ifdef _UNICODE
-
 inline wchar_t* namebuf()
 {
 	#ifdef USETLS
-		_TCHAR* p = (_TCHAR*)tls_getspecific(g_tlsiID_SC1);
+		wchar_t* p = (wchar_t*)tls_getspecific(g_tlsiID_SC1);
 		if (p == NULL)
 		{
-			p = (_TCHAR*)new wchar_t[256];
+			p = (wchar_t*)new wchar_t[256];
 			tls_setspecific(g_tlsiID_SC1, p);
 		}
-		return p; 
+		return p;
 	#else
 		return g_nameBuf;
 	#endif
 }
+
+inline char* namebufA()
+{
+	return (char*)namebuf();
+}
+
+#ifdef _UNICODE
 const wchar_t* fielddef::name()const
 {
 	return name(namebuf());
@@ -132,6 +139,112 @@ void tabledef::setTableName(const wchar_t* s)
 {
 	WideCharToMultiByte(schemaCodePage, (schemaCodePage == CP_UTF8) ? 0:WC_COMPOSITECHECK, s, -1, m_tableName, TABLE_NAME_SIZE, NULL, NULL);
 }
+#else
+
+const char* fielddef::name() const
+{
+#ifdef LINUX
+	if (m_schemaCodePage != CP_UTF8)
+	{
+		char* p =  namebufA();
+		mbctou8(m_name, strlen(m_name),  p, MYSQL_FDNAME_SIZE);
+		return p;
+	}
+#endif
+	return m_name;
+}
+
+const char* fielddef::chainChar() const
+{
+#ifdef LINUX
+	if (m_schemaCodePage != CP_UTF8)
+	{
+		char* p =  namebufA();
+		mbctou8(m_chainChar, strlen(m_chainChar),  p, 2);
+		return p;
+	}
+#endif
+	return m_chainChar;
+}
+
+void fielddef::setName(const char* s)
+{
+#ifdef LINUX
+	if (m_schemaCodePage != CP_UTF8)
+		u8tombc(s, strlen(s), m_name, FIELD_NAME_SIZE);
+#endif
+	strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);
+}
+
+void fielddef::setChainChar(const char* s)
+{
+#ifdef LINUX
+	if (m_schemaCodePage != CP_UTF8)
+		u8tombc(s, strlen(s), m_chainChar, 2);
+#endif
+	strncpy_s(m_chainChar, 2, s, sizeof(m_chainChar) - 1);
+}
+
+
+const char* tabledef::fileName() const
+{
+#ifdef LINUX
+	if (schemaCodePage != CP_UTF8)
+	{
+		char* p =  namebufA();
+		mbctou8(m_fileName, strlen(m_fileName), p, FILE_NAME_SIZE);
+		return p;
+	}
+#endif
+	return m_fileName;
+}
+
+const char* tabledef::tableName() const
+{
+#ifdef LINUX
+	if (schemaCodePage != CP_UTF8)
+	{
+		char* p =  namebufA();
+		mbctou8(m_tableName, strlen(m_tableName), p, TABLE_NAME_SIZE);
+		return p;
+	}
+#endif
+	return m_tableName;
+}
+
+void tabledef::setFileName(const char* s)
+{
+#ifdef LINUX
+	if (schemaCodePage != CP_UTF8)
+		u8tombc(s, strlen(s), m_fileName, FILE_NAME_SIZE);
+#endif
+	setFileNameA(s);
+}
+
+void tabledef::setTableName(const char* s)
+{
+#ifdef LINUX
+	if (schemaCodePage != CP_UTF8)
+		u8tombc(s, strlen(s), m_tableName, TABLE_NAME_SIZE);
+#endif
+	setTableNameA(s);
+}
+
+const char* tabledef::toChar(char* buf, const char* s, int size)
+{
+#ifdef LINUX
+	if (schemaCodePage != CP_UTF8)
+	{
+		char* p =  namebufA();
+		u8tombc(s, strlen(s), p, size);
+		return p;
+	}
+#endif
+	strncpy_s(buf, size, s, size-1);
+	return buf;
+}
+
+
 #endif //_UNICODE
 bool isStringType(uchar_td type)
 {

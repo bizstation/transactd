@@ -37,7 +37,7 @@ typedef ushort_td       keylen_td;
 
 /** tdap c interface
  */
-#if defined(__BORLANDC__)
+#if (defined(__BORLANDC__) && !defined(__clang__))
 	typedef short __stdcall(*dllUnloadCallback)();
 #else
 /** @cond INTERNAL */
@@ -456,8 +456,13 @@ struct trdVersiton
 #define CPP_INTERFACE_VER_MINOR "0"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
+/* use autolink tdclcpp */
 #if (__BCPLUSPLUS__ || _MSC_VER)
-#define CPP_INTERFACE_VERSTR "_" COMPILER_VERSTR "_" TD_LIB_PART "_" CPP_INTERFACE_VER_MAJOR "_" CPP_INTERFACE_VER_MINOR //use autolink
+#	ifdef __APPLE__
+#		define CPP_INTERFACE_VERSTR "_" COMPILER_VERSTR "_" TD_LIB_PART "." CPP_INTERFACE_VER_MAJOR "." CPP_INTERFACE_VER_MINOR
+#	else
+#		define CPP_INTERFACE_VERSTR "_" COMPILER_VERSTR "_" TD_LIB_PART "_" CPP_INTERFACE_VER_MAJOR "_" CPP_INTERFACE_VER_MINOR
+#	endif
 #endif
 
 #define TRANSACTD_VER_MAJOR 2//##7 Build marker! Don't remove

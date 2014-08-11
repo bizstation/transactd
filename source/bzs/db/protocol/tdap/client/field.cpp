@@ -184,6 +184,10 @@ void fielddefs::push_back(const fielddef* p, bool rePosition)
 	m_imple->fields.push_back(*p);
 	int index = (int)m_imple->fields.size() - 1;
 	fielddef* pp = &m_imple->fields[index];
+
+	// convert field name of table charset to recordset schema charset.
+	pp->setName(p->name());
+
 	if (rePosition)
 	{
 		if (index == 0)
@@ -275,6 +279,7 @@ void fielddefs::copyFrom(const table* tb)
 	int n = tb->getCurProcFieldCount();
 	m_imple->fields.reserve(n + size());
 	const tabledef* def = tb->tableDef();
+	cv()->setCodePage(mysql::codePage(def->charsetIndex));
 	int pos = 0;
 	for (int i=0;i<n;++i)
 	{
@@ -283,6 +288,7 @@ void fielddefs::copyFrom(const table* tb)
 		push_back(&fd);
 		pos += fd.len;
 	}
+
 }
 
 bool fielddefs::canUnion(const fielddefs& src) const
