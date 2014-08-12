@@ -36,8 +36,46 @@
 	#endif
 
 #else
-	#include <boost/timer.hpp>
-	typedef boost::timer boost_timer;
+	#ifdef __APPLE__
+		#include <mach/mach_time.h>
+		#include <limits>
+		namespace boost
+		{
+			#define NANOSEC 1000000000
+			class timer
+			{
+			public:
+				timer()
+				{
+					mach_timebase_info(&_base);
+					_start_time = mach_absolute_time();
+				}
+				void restart() { _start_time = mach_absolute_time(); }
+				double elapsed() const
+				{
+					uint64_t e = mach_absolute_time() - _start_time;
+					int unit =   _base.numer / _base.denom;
+					return  double(e * unit)/NANOSEC; //seconds
+				}
+				double elapsed_max() const
+				{
+					return (double((std::numeric_limits<std::clock_t>::max)())
+					- double(_start_time)) / (double(_base.denom/_base.numer)/NANOSEC);
+				}
+
+				double elapsed_min() const
+				{ return double(1)/double(double(_base.denom/_base.numer)/NANOSEC); }
+
+			private:
+				  uint64_t _start_time;
+				  mach_timebase_info_data_t _base;
+			}; // timer
+
+		}
+	#else
+		#include <boost/timer.hpp>
+	#endif
+		typedef boost::timer boost_timer;
 
 #endif
 

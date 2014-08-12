@@ -57,10 +57,12 @@ class connectionPool
 	mutable boost::mutex m_mutex2;
 	mutable boost::condition m_busy;
 	int m_maxConnections;
+	Database_Ptr addOne(const connectParams& param);
+#ifdef __BCPLUSPLUS__ && __APPLE__
+public:
+#endif
 	DLLUNLOADCALLBACK_PTR m_regitfunc;
 	friend short __STDCALL dllUnloadCallbackFunc();
-
-	Database_Ptr addOne(const connectParams& param);
 
 public:
 	connectionPool(int maxConnections=0);
