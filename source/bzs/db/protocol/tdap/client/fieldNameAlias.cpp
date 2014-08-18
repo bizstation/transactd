@@ -74,9 +74,18 @@ void fdNmaeAlias::set(const _TCHAR* src, const _TCHAR* dst)
 
 const _TCHAR* fdNmaeAlias::get(const _TCHAR* src) const
 {
-	if (m_imple->map.count(src))
-		return m_imple->map.at(src).c_str();
+	try
+	{
+		if (m_imple->map.count(src))
+			return m_imple->map.at(src).c_str();
+		return _T("");
+	}
+	catch(...)
+	{
+
+	}
 	return _T("");
+
 }
 
 const _TCHAR* fdNmaeAlias::resolv(const _TCHAR* dst) const

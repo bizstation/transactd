@@ -41,11 +41,11 @@ pragma_pack1
 
 #ifdef _WIN32
 
-const wchar_t wtime_format_ms[] = L"%02d:%02d:%02d.%d";
+const wchar_t wtime_format_ms[] = L"%02d:%02d:%02d.%u";
 const wchar_t wtime_format[] = L"%02d:%02d:%02d";
-const wchar_t wdatetime_format_ms[] = L"%04d-%02d-%02d %02d:%02d:%02d.%d";
+const wchar_t wdatetime_format_ms[] = L"%04d-%02d-%02d %02d:%02d:%02d.%u";
 const wchar_t wdatetime_format[] = L"%04d-%02d-%02d %02d:%02d:%02d";
-const wchar_t wdatetime_format_ms_i[] = L"%04d-%02d-%02d %02d:%02d:%02d.%d";
+const wchar_t wdatetime_format_ms_i[] = L"%04d-%02d-%02d %02d:%02d:%02d.%u";
 const wchar_t wdatetime_format_i[] = L"%04d-%02d-%02d %02d:%02d:%02d";
 
 inline size_t _ttol_(const wchar_t* v){return _wtol(v);}
@@ -54,11 +54,11 @@ inline wchar_t* _tcsncpy_(wchar_t* d, const wchar_t* s, size_t n){return wcsncpy
 
 #endif
 
-const char time_format_ms[] = "%02d:%02d:%02d.%-*d";
+const char time_format_ms[] = "%02d:%02d:%02d.%u";
 const char time_format[] = "%02d:%02d:%02d";
-const char datetime_format_ms[] = "%04d-%02d-%02d %02d:%02d:%02d.%d";
+const char datetime_format_ms[] = "%04d-%02d-%02d %02d:%02d:%02d.%u";
 const char datetime_format[] = "%04d-%02d-%02d %02d:%02d:%02d";
-const char datetime_format_ms_i[] = "%04d-%02d-%02d %02d:%02d:%02d.%d";
+const char datetime_format_ms_i[] = "%04d-%02d-%02d %02d:%02d:%02d.%u";
 const char datetime_format_i[] = "%04d-%02d-%02d %02d:%02d:%02d";
 
 inline size_t _ttol_(const char* v){return atol(v);}
@@ -226,17 +226,17 @@ public:
 	inline char* toStr(char* p)
 	{
 		if (m_dec)
-			sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss, m_dec, (int)ms);
+			sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss, (unsigned int)ms);
 		else
 			sprintf(p, time_format, (int)hh, (int)nn, (int)ss);
 		return p;
 	}
-	
+
 #ifdef _WIN32
 	inline wchar_t* toStr(wchar_t* p)
 	{
 		if (m_dec)
-			swprintf_s(p, 17, wtime_format_ms, (int)hh, (int)nn, (int)ss, (int)ms);
+			swprintf_s(p, 17, wtime_format_ms, (int)hh, (int)nn, (int)ss, (unsigned int)ms);
 		else
 			swprintf_s(p, 9, wtime_format, (int)hh, (int)nn, (int)ss);
 		return p;
@@ -328,7 +328,7 @@ public:
 	inline char* toStr(char* p)
 	{
 		if (m_dec)
-			sprintf(p, datetime_format_ms ,(int)(yymm/13),(int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss,(int) ms);
+			sprintf(p, datetime_format_ms ,(int)(yymm/13),(int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss,(unsigned int) ms);
 		else
 			sprintf(p, datetime_format, (int)(yymm/13),(int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss);
 		return p;
@@ -338,7 +338,7 @@ public:
 	inline wchar_t* toStr(wchar_t* p)
 	{
 		if (m_dec)
-			swprintf_s(p, 26, wdatetime_format_ms, (int)(yymm/13), (int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss, (int)ms);
+			swprintf_s(p, 26, wdatetime_format_ms, (int)(yymm/13), (int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss, (unsigned int)ms);
 		else
 			swprintf_s(p, 20, wdatetime_format, (int)(yymm/13), (int)(yymm%13), (int)dd, (int)hh, (int)nn, (int)ss);
 		return p;
@@ -432,7 +432,7 @@ public:
 		if (m_dec)
 			swprintf_s(p, 26, wdatetime_format_ms_i
 					,st->tm_year+1900, st->tm_mon+1, st->tm_mday
-					,st->tm_hour, st->tm_min, st->tm_sec, (int)ms);
+					,st->tm_hour, st->tm_min, st->tm_sec, (unsigned int)ms);
 		else
 			swprintf_s(p, 20, wdatetime_format_i
 					,st->tm_year+1900, st->tm_mon+1, st->tm_mday
@@ -450,7 +450,7 @@ public:
 		if (m_dec)
 			sprintf(p, datetime_format_ms_i
 					,st->tm_year+1900, st->tm_mon+1, st->tm_mday
-					,st->tm_hour, st->tm_min, st->tm_sec, (int)ms);
+					,st->tm_hour, st->tm_min, st->tm_sec, (unsigned int)ms);
 		else
 			sprintf(p, datetime_format_i
 					,st->tm_year+1900, st->tm_mon+1, st->tm_mday
