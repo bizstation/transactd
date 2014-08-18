@@ -224,3 +224,25 @@ if(UNIX AND NOT APPLE)
     SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
     VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE})
 endif()
+
+
+# ==========================================================
+# set output directory
+# ==========================================================
+set(TRANSACTD_PHP_FILENAME transactd.php)
+if(WIN32)
+  if(NOT COMMAND tdcl_set_output_win)
+    include(../common/transactd_cl_output.cmake)
+  endif()
+  tdcl_set_output_win(${TRANSACTD_BINARY_ROOT})
+  set(TRANSACTD_PHP_FILENAME transactd.win.php)
+else()
+  set_target_properties(${this_target} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
+    LIBRARY_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
+    ARCHIVE_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin")
+endif()
+add_custom_command(TARGET ${this_target} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${TRANSACTD_ROOT}/build/swig/php/${TRANSACTD_PHP_FILENAME}
+  ${TRANSACTD_BINARY_ROOT}/bin/transactd.php)

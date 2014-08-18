@@ -2134,11 +2134,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $atg = new Bz\ActiveTable($db, 'groups');
         $ate = new Bz\ActiveTable($db, 'extention');
         $q = new Bz\queryBase();
-        $rs = new Bz\RecordSet();
         
         $atu->alias('名前', 'name');
         $q->select('id', 'name', 'group')->where('id', '<=', 15000);
-        $atu->index(0)->keyValue(1)->read($rs, $q);
+        $rs = $atu->index(0)->keyValue(1)->read($q);
         $this->assertEquals($rs->size(), 15000);
         
         // Join extention::comment
@@ -2180,10 +2179,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($rs[(15000 / 5) * 4]['group_name'], '5 group');
         
         // union
-        $rs2 = new Bz\RecordSet();
         $q->reset();
         $q->select('id', 'name', 'group')->where('id', '<=', 16000);
-        $atu->index(0)->keyValue(15001)->read($rs2, $q);
+        $rs2 = $atu->index(0)->keyValue(15001)->read($q);
         $this->assertEquals($rs2->size(), 1000);
         $q->reset();
         $ate->index(0)->join($rs2,

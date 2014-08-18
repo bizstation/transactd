@@ -22,22 +22,28 @@
 if(NOT COMMAND tdcl_set_output)
 macro(tdcl_set_output TRANSACTD_BINARY_ROOT prefix)
   if(WIN32)
-    set_target_properties(${this_target} PROPERTIES
-      RUNTIME_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
-      LIBRARY_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
-      ARCHIVE_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/lib")
-    if(MSVC)
-      transactd_make_msvc_install_file("${TRANSACTD_BINARY_ROOT}")
-      add_custom_command(TARGET ${this_target} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -P
-        ${CMAKE_CURRENT_BINARY_DIR}/msvc_install_$<CONFIGURATION>.cmake)
-    endif()
+    tdcl_set_output_win(${TRANSACTD_BINARY_ROOT})
   else()
     if("${prefix}" STREQUAL "")
       install(TARGETS ${this_target} LIBRARY DESTINATION /usr/lib)
     else()
       install(TARGETS ${this_target} LIBRARY DESTINATION "${prefix}")
     endif()
+  endif()
+endmacro()
+endif()
+
+if(NOT COMMAND tdcl_set_output_win)
+macro(tdcl_set_output_win TRANSACTD_BINARY_ROOT)
+  set_target_properties(${this_target} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
+    LIBRARY_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
+    ARCHIVE_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/lib")
+  if(MSVC)
+    transactd_make_msvc_install_file("${TRANSACTD_BINARY_ROOT}")
+    add_custom_command(TARGET ${this_target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -P
+      ${CMAKE_CURRENT_BINARY_DIR}/msvc_install_$<CONFIGURATION>.cmake)
   endif()
 endmacro()
 endif()

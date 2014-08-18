@@ -101,6 +101,13 @@ using namespace bzs::db::protocol::tdap::client;
 =============================================== */
 // * bzs/db/protocol/tdap/client/activeTable.h *
 %delobject bzs::db::protocol::tdap::client::activeTable::release;
+%extend bzs::db::protocol::tdap::client::activeTable {
+  recordset* read(queryBase& q) {
+    recordset* rs = new recordset();
+    self->read(*rs, q);
+    return rs;
+  }
+};
 
 // * bzs/db/protocol/tdap/client/activeTableImple.h *
 %ignore bzs::db::protocol::tdap::client::map_orm_fdi;
@@ -154,6 +161,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::field::operator!=;
 %ignore bzs::db::protocol::tdap::client::field::operator==;
 %ignore bzs::db::protocol::tdap::client::field::operator=(const std::_tstring&);
+%rename(getFielddef) bzs::db::protocol::tdap::client::fielddefs::operator[] (int index) const;
 
 // * bzs/db/protocol/tdap/client/fields.h *
 %ignore bzs::db::protocol::tdap::client::fields;

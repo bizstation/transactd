@@ -1956,11 +1956,10 @@ def testJoin(db)
   atg = Transactd::ActiveTable.new(db, 'groups')
   ate = Transactd::ActiveTable.new(db, 'extention')
   q = Transactd::QueryBase.new()
-  rs = Transactd::RecordSet.new()
   
   atu.alias('名前', 'name')
   q.select('id', 'name', 'group').where('id', '<=', '15000')
-  atu.index(0).keyValue('1').read(rs, q)
+  rs = atu.index(0).keyValue('1').read(q)
   expect(rs.size()).to eq 15000
   
   # Join extention::comment
@@ -2001,10 +2000,9 @@ def testJoin(db)
   expect(rs[(15000 / 5) * 4]['group_name']).to eq '5 group'
   
   # union
-  rs2 = Transactd::RecordSet.new()
   q.reset()
   q.select('id', 'name', 'group').where('id', '<=', '16000')
-  atu.index(0).keyValue('15001').read(rs2, q)
+  rs2 = atu.index(0).keyValue('15001').read(q)
   expect(rs2.size()).to eq 1000
   q.reset()
   ate.index(0).join(rs2,

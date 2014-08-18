@@ -107,7 +107,11 @@ endif()
 # ==========================================================
 # add_library
 # ==========================================================
-add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
+if(APPLE)
+  add_library(${this_target} MODULE ${${this_target}_SOURCE_FILES})
+else()
+  add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
+endif()
 
 
 # ==========================================================
@@ -152,7 +156,11 @@ else()
   ## Linux libtdclc_[32|64].so.[MAJOR].[MINOR]
   set_target_properties(${this_target} PROPERTIES PREFIX "lib")
   set_target_properties(${this_target} PROPERTIES OUTPUT_NAME "tdclc_${BZ_BITNESS}")
-  set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+  if(APPLE)
+    set_target_properties(${this_target} PROPERTIES SUFFIX ".bundle")
+  else()
+    set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+  endif()
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}
     VERSION   ${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}.${TDVER_C_INTERFACE_VER_RELEASE})

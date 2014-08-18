@@ -160,7 +160,11 @@ else()
   set_target_properties(${this_target} PROPERTIES PREFIX "lib")
   set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
     "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
-  set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+  if(APPLE)
+    set_target_properties(${this_target} PROPERTIES SUFFIX ".dylib")
+  else()
+    set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+  endif()
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
     VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE})
