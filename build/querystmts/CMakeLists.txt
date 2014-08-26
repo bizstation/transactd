@@ -1,5 +1,5 @@
 ##=================================================================
-#   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+#   Copyright (C) 2012-2014 BizStation Corp All rights reserved.
 #
 #   This program is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License
@@ -17,11 +17,12 @@
 #   02111-1307, USA.
 ##=================================================================
 ##
-## Build Transactd client library test program
+## Transactd query statement executor program
 ##
-## *** original file is ../test_tdcl/CMakeLists.txt ***
+## *** original file is ../querystmts/CMakeLists.txt ***
 ##
 cmake_minimum_required(VERSION 2.6)
+
 include(../common/transactd_required.cmake)
 include(../common/transactd_common.cmake)
 include(../common/options.cmake)
@@ -30,7 +31,7 @@ include(../common/get_boost_libs.cmake)
 
 
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE test_tdcl "" TDCL_CPP_CHARSET "${this_target}")
+string(REPLACE querystmts "" TDCL_CPP_CHARSET "${this_target}")
 project(${this_target})
 
 
@@ -62,9 +63,8 @@ transactd_read_build_number("${TRANSACTD_ROOT}")
 # source files
 # ==========================================================
 set(${this_target}_SOURCE_FILES
-  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connectionPool.cpp
-  ${TRANSACTD_ROOT}/source/bzs/example/queryData.cpp
-  ${TRANSACTD_ROOT}/source/bzs/test/trdclengn/test_trdclengn.cpp)
+  ${TRANSACTD_ROOT}/source/bzs/rtl/benchmark.cpp
+  ${TRANSACTD_ROOT}/source/global/querystmts/querystmts.cpp)
 
 
 # ==========================================================
@@ -86,8 +86,8 @@ if(WIN32)
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd CPP Client test program"
-    F_DESC  "Transactd CPP Client test program"
+    P_NAME  "Transactd query statement executor program"
+    F_DESC  "Transactd query statement executor program"
   )
   transactd_add_rc_file()
 endif()
@@ -98,7 +98,8 @@ endif()
 # ==========================================================
 add_executable(${this_target} ${${this_target}_SOURCE_FILES})
 bz_get_compiler_bitness()
-set_target_properties(${this_target} PROPERTIES OUTPUT_NAME "test_tdcl_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+set_target_properties(${this_target} PROPERTIES
+  OUTPUT_NAME "querystmts_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
 
 
 # ==========================================================
@@ -115,10 +116,10 @@ endif()
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB USE_DBM_CONNECTION_POOL)
+    WIN32 _WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC BOOST_ALL_NO_LIB USE_DBM_CONNECTION_POOL)
+    PIC BOOST_ALL_NO_LIB)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -136,15 +137,15 @@ endif()
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("")
+transactd_link_boost_libraries("timer;program_options")
 if(TARGET tdclcpp${TDCL_CPP_CHARSET})
-  target_link_libraries(${this_target} "tdclcpp${TDCL_CPP_CHARSET}")
+  target_link_libraries(${this_target} "tdclstmt${TDCL_CPP_CHARSET}")
 else()
   bz_get_compiler_bitness()
-  target_link_libraries(${this_target} "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+  target_link_libraries(${this_target} "tdclstmt_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
 endif()
 if(UNIX)
-  target_link_libraries(${this_target} dl pthread)
+  target_link_libraries(${this_target} dl)
 endif()
 
 

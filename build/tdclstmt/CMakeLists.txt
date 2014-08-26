@@ -1,5 +1,5 @@
 ##=================================================================
-#   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+#   Copyright (C) 2012-2014 BizStation Corp All rights reserved.
 #
 #   This program is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License
@@ -17,28 +17,29 @@
 #   02111-1307, USA.
 ##=================================================================
 ##
-## Build Transactd client library test program
+## Transactd Statement client
 ##
-## *** original file is ../test_tdcl/CMakeLists.txt ***
+## *** original file is ../tdclstmt/CMakeLists.txt ***
 ##
 cmake_minimum_required(VERSION 2.6)
 include(../common/transactd_required.cmake)
 include(../common/transactd_common.cmake)
+include(../common/transactd_cl_common.cmake)
 include(../common/options.cmake)
 include(../common/system.cmake)
 include(../common/get_boost_libs.cmake)
 
 
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE test_tdcl "" TDCL_CPP_CHARSET "${this_target}")
+string(REPLACE tdclstmt "" TDCL_STMT_CHARSET "${this_target}")
 project(${this_target})
 
 
 # ==========================================================
 # options
 # ==========================================================
-if(NOT TRANSACTD_PREFIX)
-  set(TRANSACTD_PREFIX "/usr/local/transactd" CACHE STRING "Prefix for transactd executables")
+if(NOT TRANSACTD_CLIENTS_PREFIX)
+  set(TRANSACTD_CLIENTS_PREFIX "" CACHE STRING "Prefix for transactd client libraries")
 endif()
 
 
@@ -59,46 +60,36 @@ transactd_read_build_number("${TRANSACTD_ROOT}")
 
 
 # ==========================================================
-# source files
+# add source / include dir , set compiler / linker options
 # ==========================================================
 set(${this_target}_SOURCE_FILES
-  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connectionPool.cpp
-  ${TRANSACTD_ROOT}/source/bzs/example/queryData.cpp
-  ${TRANSACTD_ROOT}/source/bzs/test/trdclengn/test_trdclengn.cpp)
-
-
-# ==========================================================
-# include directories
-# ==========================================================
-include_directories(${TRANSACTD_ROOT}/source;)
-if(UNIX)
-  include_directories(${TRANSACTD_ROOT}/source/linux;)
-endif()
+  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/serializer.cpp
+)
+tdcl_add_include_directory("${TRANSACTD_ROOT}")
 
 
 # ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
+  transactd_ver_info_lic()
   set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd CPP Client test program"
-    F_DESC  "Transactd CPP Client test program"
+    P_NAME  "Transactd Statement Client ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd Statement Client module ${TRANSACTD_VER_POSTFIX}"
   )
   transactd_add_rc_file()
 endif()
 
 
 # ==========================================================
-# add_executable and set output name
+# add_library
 # ==========================================================
-add_executable(${this_target} ${${this_target}_SOURCE_FILES})
-bz_get_compiler_bitness()
-set_target_properties(${this_target} PROPERTIES OUTPUT_NAME "test_tdcl_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 
 
 # ==========================================================
@@ -115,13 +106,16 @@ endif()
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB USE_DBM_CONNECTION_POOL)
+    WIN32 _WIN32 _WINDOWS _USRDLL LIB_TDCLSTMT TRDCL_AUTOLINK)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC BOOST_ALL_NO_LIB USE_DBM_CONNECTION_POOL)
+    PIC BOOST_ALL_NO_LIB)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
+  else()
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      WIN32 _WIN32)
   endif()
 endif()
 if("${TDCL_CPP_CHARSET}" STREQUAL "u")
@@ -136,22 +130,49 @@ endif()
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("")
 if(TARGET tdclcpp${TDCL_CPP_CHARSET})
   target_link_libraries(${this_target} "tdclcpp${TDCL_CPP_CHARSET}")
 else()
   bz_get_compiler_bitness()
   target_link_libraries(${this_target} "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
 endif()
-if(UNIX)
-  target_link_libraries(${this_target} dl pthread)
+transactd_link_boost_libraries("serialization")
+if(NOT WIN32)
+  target_link_libraries(${this_target} dl)
+endif()
+
+
+# ==========================================================
+# set binary name
+# ==========================================================
+bz_get_compiler_bitness()
+if(WIN32)
+  ## Windows tdclstmt[_Compiler]_[32|64][m|u]_[MAJOR]_[MINOR].dll
+  bz_get_compiler()
+  set_target_properties(${this_target} PROPERTIES PREFIX "")
+  set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
+    "tdclstmt${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}_${TDVER_CPP_INTERFACE_VER_MAJOR}_${TDVER_CPP_INTERFACE_VER_MINOR}")
+  set_target_properties(${this_target} PROPERTIES SUFFIX ".dll")
+else()
+  ## Linux   libtdclcpp_[32|64][m|u].so.[MAJOR].[MINOR]
+  set_target_properties(${this_target} PROPERTIES PREFIX "lib")
+  set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
+    "tdclstmt_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+  if(APPLE)
+    set_target_properties(${this_target} PROPERTIES SUFFIX ".dylib")
+  else()
+    set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+  endif()
+  set_target_properties(${this_target} PROPERTIES
+    SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
+    VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE})
 endif()
 
 
 # ==========================================================
 # set output directory
 # ==========================================================
-if(NOT COMMAND transactd_set_exe_output)
+if(NOT COMMAND tdcl_set_output)
   include(../common/transactd_cl_output.cmake)
 endif()
-transactd_set_exe_output("${TRANSACTD_BINARY_ROOT}" "${TRANSACTD_PREFIX}")
+tdcl_set_output("${TRANSACTD_BINARY_ROOT}" "${TRANSACTD_CLIENTS_PREFIX}")

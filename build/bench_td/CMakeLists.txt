@@ -38,7 +38,7 @@ project(${this_target})
 # options
 # ==========================================================
 if(NOT TRANSACTD_PREFIX)
-  set(TRANSACTD_PREFIX "/usr/local/transactd" CACHE STRING "Prefix for transactd executables(test,benchmark)")
+  set(TRANSACTD_PREFIX "/usr/local/transactd" CACHE STRING "Prefix for transactd executables")
 endif()
 
 
