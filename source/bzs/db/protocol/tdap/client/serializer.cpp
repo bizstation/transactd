@@ -462,9 +462,15 @@ void groupByStatement::execute(recordset& rs)
 			keys[i] = getValue(i);
 	groupQuery q;
 	q.keyField(keys[0], keys[1], keys[2], keys[3], keys[4], keys[5],keys[6], keys[7]);
-
+	std::vector<boost::shared_ptr<groupFuncBase> > statements;
 	for (int i=0;i<(int)m_statements->size();++i)
-		q.addFunction(((*m_statements)[i]));
+	{
+		boost::shared_ptr<groupFuncBase> p((*m_statements)[i]->clone());
+		statements.push_back(p);
+		query* pq = p->internalQuery();
+		replaceQueryParams(NULL, *pq, m_parent);
+		q.addFunction(p.get());
+	}
 	rs.groupBy(q);
 }
 
@@ -631,19 +637,9 @@ struct queryStatementImple
 		for (int i=0;i<keyFields->count();++i)
 			keys[i] = parent->pv.replace(keyFields->getValue(i));
 
-		client::query* tq = query;
-		int n = tq->whereTokens();
 		client::query q;
-		if (n)
-		{
-			q = *query;
-			for (int i=0;i<n;++i)
-			{
-				if (_tcscmp(q.getWhereToken(i), _T("?")) == 0)
-					q.setWhereToken(i, parent->pv.replace(q.getWhereToken(i)));
-			}
-			tq = &q;
-		}
+		client::query* tq = replaceQueryParams(query, q, parent);
+
 		if (database != _T(""))
 		{
 			connectParams p(database.c_str());
@@ -1213,24 +1209,29 @@ void readHasMany::execute(recordset& rs)
 	}
 }
 
+
 client::query* replaceQueryParams(client::query* tq, client::query& tmpq, queryStatementsImple* parent)
 {
 
-	int n = tq->whereTokens();
-
+	int n = 0;
+	if (tq)
+		n = tq->whereTokens();
+	else
+		n = tmpq.whereTokens();
 	if (n)
 	{
-		tmpq = *tq;
+		if (tq)
+			tmpq = *tq;
 		for (int i=0;i<n;++i)
 		{
 			if (_tcscmp(tmpq.getWhereToken(i), _T("?")) == 0)
 				tmpq.setWhereToken(i, parent->pv.replace(tmpq.getWhereToken(i)));
 		}
-		tq = &tmpq;
+		return &tmpq;
 	}
 	return tq;
-
 }
+
 
 readHasMany* readHasMany::create(){return new readHasMany();}
 

@@ -546,6 +546,7 @@ groupFuncBase& groupFuncBase::operator=(const groupFuncBase& r)
 	if (this != &r)
 	{
 		*m_imple = *r.m_imple;
+		recordsetQuery::operator=(r);
 	}
 	return *this;
 }
@@ -639,6 +640,13 @@ void sum::doCalc(const row_ptr& row, int index)
 		m_imple->m_values[index] += fieldValue((*row)[m_imple->targetKey(i)], tmp);
 }
 
+groupFuncBase* sum::clone()
+{
+	groupFuncBase* p = new sum();
+	*p = *this;
+	return p;
+}
+
 // ---------------------------------------------------------------------------
 // class count
 // ---------------------------------------------------------------------------
@@ -655,6 +663,13 @@ count::count(const _TCHAR* resultName):groupFuncBase()
 void count::doCalc(const row_ptr& row, int index)
 {
 	m_imple->m_values[index] = m_imple->m_values[index] + 1;
+}
+
+groupFuncBase* count::clone()
+{
+	groupFuncBase* p = new count();
+	*p = *this;
+	return p;
 }
 
 
@@ -686,6 +701,13 @@ avg::value_type avg::result(int index)const
 	return m_imple->m_values[index]/m_imple->m_counts[index];
 }
 
+groupFuncBase* avg::clone()
+{
+	groupFuncBase* p = new avg();
+	*p = *this;
+	return p;
+}
+
 
 // ---------------------------------------------------------------------------
 // class min
@@ -708,6 +730,13 @@ void min::doCalc(const row_ptr& row, int index)
 			m_flag = false;
 		m_imple->m_values[index]  = tmp;
 	}
+}
+
+groupFuncBase* min::clone()
+{
+	groupFuncBase* p = new min();
+	*p = *this;
+	return p;
 }
 
 // ---------------------------------------------------------------------------
@@ -733,6 +762,12 @@ void max::doCalc(const row_ptr& row, int index)
 	}
 }
 
+groupFuncBase* max::clone()
+{
+	groupFuncBase* p = new max();
+	*p = *this;
+	return p;
+}
 
 
 }// namespace client

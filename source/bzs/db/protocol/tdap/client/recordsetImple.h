@@ -382,6 +382,7 @@ public:
 
 	inline recordsetImple& matchBy(recordsetQuery& rq)
 	{
+		m_fds->setAliases(NULL);
 		if (m_recordset.size())
 		{
 			rq.init(fieldDefs());
@@ -394,6 +395,7 @@ public:
 
 	inline recordsetImple& groupBy(groupQuery& gq)
 	{
+		m_fds->setAliases(NULL);
 		if (m_recordset.size())
 			gq.grouping(*this);
 		return *this;

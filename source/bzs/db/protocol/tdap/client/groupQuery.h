@@ -165,6 +165,7 @@ public:
 	void reset();
 	void operator()(const row_ptr& row, int index, bool insert);
 	virtual value_type result(int groupIndex)const;
+	virtual groupFuncBase* clone() = 0;
 };
 
 class recordsetImple;
@@ -202,6 +203,7 @@ protected:
 public:
 	sum(){}
 	sum(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
+	groupFuncBase* clone();
 	static sum* create(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 };
 
@@ -214,6 +216,7 @@ protected:
 public:
 	count(){}
 	count(const _TCHAR* resultName);
+	groupFuncBase* clone();
 	static count* create(const _TCHAR* resultName);
 
 };
@@ -229,6 +232,7 @@ class DLLLIB avg : public sum
 public:
 	avg(){}
 	avg(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
+	groupFuncBase* clone();
 	static avg* create(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 
 };
@@ -243,6 +247,7 @@ class DLLLIB min : public sum
 public:
 	min(){}
 	min(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
+	groupFuncBase* clone();
 	static min* create(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 };
 
@@ -255,6 +260,7 @@ class DLLLIB max : public sum
 public:
 	max(){}
 	max(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
+	groupFuncBase* clone();
 	static max* create(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 };
 
