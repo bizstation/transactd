@@ -239,7 +239,7 @@ bool recordsetQuery::match(const row_ptr row) const
 	for (int i=0;i<(int)m_imple->indexes.size();++i)
 	{
 		short index =  m_imple->indexes[i];
-		bool ret = isMatch((*row)[index].comp((*m_imple->row)[i]), m_imple->compType[i]);
+		bool ret = isMatch((*row)[index].comp((*m_imple->row)[i], m_imple->compType[i]), m_imple->compType[i]);
 		if (m_imple->combine[i] == eCend) return ret;
 		if (ret && m_imple->combine[i] == eCor) return true;
 		if (!ret && m_imple->combine[i] == eCand) return false;
