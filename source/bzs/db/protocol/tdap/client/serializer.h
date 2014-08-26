@@ -73,6 +73,9 @@ public:
 
 class DLLLIBSTMT groupByStatement : public fieldNames, public executable
 {
+	struct queryStatementsImple* m_parent;
+	friend class queryStatements;
+	friend class queryStatementsImple;
 	std::vector< groupFuncBase* >* m_statements;
 
 	template <class Archive>
@@ -86,7 +89,7 @@ public:
 	groupByStatement();
 	~groupByStatement();
 
-	groupFuncBase& addFunction(eFunc v, const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	groupFuncBase& addFunction(eFunc v, const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 	groupFuncBase& function(int index);
 	groupByStatement& reset();
 	int size() const;
@@ -101,8 +104,9 @@ public:
 
 class DLLLIBSTMT  matchByStatement : public recordsetQuery, public executable
 {
-	//~matchByStatement(){};
-	//matchByStatement():recordsetQuery(),executable(){};
+	struct queryStatementsImple* m_parent;
+	friend class queryStatements;
+	friend class queryStatementsImple;
 public:
 	void execute(recordset& rs);
 	static matchByStatement* create();

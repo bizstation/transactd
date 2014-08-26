@@ -58,6 +58,8 @@ BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::matchByStatement, "matc
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::groupByStatement, "groupByStatement");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::reverseOrderStatement, "reverseOrderStatement");
 
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::groupFuncBase, 1)
+
 namespace bzs
 {
 namespace db
@@ -68,6 +70,10 @@ namespace tdap
 {
 namespace client
 {
+
+client::query* replaceQueryParams(client::query* tq, client::query& tmpq
+			, struct queryStatementsImple* parent);
+
 
 void toU8(std::_tstring& src, std::string& dst)
 {
@@ -272,32 +278,37 @@ void serialize(Archive& ar, recordsetQuery& q, const unsigned int /*version*/)
 }
 
 template <class Archive>
-void serialize(Archive& ar, groupFuncBase& q, const unsigned int /*version*/)
+void serialize(Archive& ar, groupFuncBase& q, const unsigned int ver)
 {
 	ar & boost::serialization::make_nvp("query"
 				, boost::serialization::base_object<recordsetQuery>(q));
+
+	fieldNames& fns = q.targetNames();
+	if (ver >= 1)
+		ar & make_nvp("targetNames", fns);
+
 	std::_tstring s;
+
 	if (Archive::is_loading::value)
 	{
-
-		serialize_string(ar, "targetName", s);
-		q.setTargetName(s.c_str());
+		//For compatibility
+		if (ver < 1)
+		{
+			serialize_string(ar, "targetName", s);
+			q.targetNames().addValue(s.c_str());
+		}
 		serialize_string(ar, "resultName", s);
 		q.setResultName(s.c_str());
 
 	}else
 	{
-		if (q.targetName())
-			s = q.targetName();
-		else
-			s = _T("");
-		serialize_string(ar, "targetName", s);
 		if (q.resultName())
 			s = q.resultName();
 		else
 			s = _T("");
 		serialize_string(ar, "resultName", s);
 	}
+
 }
 
 template <class Archive>
@@ -410,16 +421,17 @@ groupByStatement::~groupByStatement()
 	delete m_statements;
 }
 
-groupFuncBase& groupByStatement::addFunction(eFunc v, const _TCHAR* targetName , const _TCHAR* resultName)
+groupFuncBase& groupByStatement::addFunction(eFunc v, const fieldNames& targetNames
+	, const _TCHAR* resultName)
 {
 	groupFuncBase* func;
 	switch(v)
 	{
-	case fsum:func =   new client::sum(targetName, resultName);break;
-	case fcount:func = new client::count(targetName);break;
-	case favg:func =   new client::avg(targetName, resultName);break;
-	case fmin:func =   new client::min(targetName, resultName);break;
-	case fmax:func =   new client::max(targetName, resultName);break;
+	case fsum:func =   new client::sum(targetNames, resultName);break;
+	case fcount:func = new client::count(targetNames[0]);break;
+	case favg:func =   new client::avg(targetNames, resultName);break;
+	case fmin:func =   new client::min(targetNames, resultName);break;
+	case fmax:func =   new client::max(targetNames, resultName);break;
 	};
 	m_statements->push_back(func);
 	return *func;
@@ -456,6 +468,8 @@ void groupByStatement::execute(recordset& rs)
 	rs.groupBy(q);
 }
 
+
+
 //---------------------------------------------------------------------------
 //   class matchByStatement
 //---------------------------------------------------------------------------
@@ -464,7 +478,19 @@ matchByStatement* matchByStatement::create()
 	return new matchByStatement();
 }
 
-void matchByStatement::execute(recordset& rs){rs.matchBy(*this);};
+void matchByStatement::execute(recordset& rs)
+{
+	client::query q;
+	client::query* ret = replaceQueryParams(internalQuery(), q, m_parent);
+	if (ret != internalQuery())
+	{
+		recordsetQuery rq;
+		*rq.internalQuery() = *ret;
+		rs.matchBy(rq);
+	}
+	else
+		rs.matchBy(*this);
+}
 
 //---------------------------------------------------------------------------
 //   class orderByStatement
@@ -478,7 +504,10 @@ orderByStatement::orderByStatement():m_sortFields(new sortFields()){}
 
 orderByStatement::~orderByStatement(){delete m_sortFields;}
 
-void orderByStatement::execute(recordset& rs){rs.orderBy(*m_sortFields);};
+void orderByStatement::execute(recordset& rs)
+{
+	rs.orderBy(*m_sortFields);
+}
 
 void orderByStatement::add(const _TCHAR* name, bool  asc)
 {
@@ -683,6 +712,18 @@ void queryStatementsImple::serialize(Archive& ar, const unsigned int version)
 			readStatement* p = dynamic_cast<readStatement*>(statements[i]);
 			if (p)
 				p->m_impl->parent = this;
+			else
+			{
+				matchByStatement* pm = dynamic_cast<matchByStatement*>(statements[i]);
+				if (pm)
+					pm->m_parent = this;
+				else
+				{
+					groupByStatement* pg = dynamic_cast<groupByStatement*>(statements[i]);
+					if (pg)
+						pg->m_parent = this;
+				}
+			}
 		}
 	}
 }
@@ -890,6 +931,7 @@ readHasMany* queryStatements::addHasManyRead()
 groupByStatement* queryStatements::addGroupBy()
 {
 	groupByStatement* p = groupByStatement::create();
+	p->m_parent = this->m_impl;
 	m_impl->statements.push_back(p);
 	return p;
 }
@@ -904,6 +946,7 @@ orderByStatement* queryStatements::addOrderBy()
 matchByStatement* queryStatements::addMatchBy()
 {
 	matchByStatement* p =  matchByStatement::create();
+	p->m_parent = this->m_impl;
 	m_impl->statements.push_back(p);
 	return p;
 }
@@ -1170,7 +1213,24 @@ void readHasMany::execute(recordset& rs)
 	}
 }
 
+client::query* replaceQueryParams(client::query* tq, client::query& tmpq, queryStatementsImple* parent)
+{
 
+	int n = tq->whereTokens();
+
+	if (n)
+	{
+		tmpq = *tq;
+		for (int i=0;i<n;++i)
+		{
+			if (_tcscmp(tmpq.getWhereToken(i), _T("?")) == 0)
+				tmpq.setWhereToken(i, parent->pv.replace(tmpq.getWhereToken(i)));
+		}
+		tq = &tmpq;
+	}
+	return tq;
+
+}
 
 readHasMany* readHasMany::create(){return new readHasMany();}
 

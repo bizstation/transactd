@@ -76,13 +76,13 @@ const _TCHAR* fdNmaeAlias::get(const _TCHAR* src) const
 {
 	try
 	{
-		if (m_imple->map.count(src))
+		if (m_imple && m_imple->map.count(src))
 			return m_imple->map.at(src).c_str();
 		return _T("");
 	}
 	catch(...)
 	{
-
+		return _T("");
 	}
 	return _T("");
 

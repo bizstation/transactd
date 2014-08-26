@@ -2534,18 +2534,20 @@ void teetNewDelete(database* db)
 		atu.index(0);
 		activeTable atg(db, _T("groups"));
 		atg.index(0);
+		fieldNames fns;
+		fns.keyField(_T("a"));
 
-		client::sum s(_T("a"));
+		client::sum s(fns);
 		s.reset();
 
 		client::count c(_T("a"));
 		c.reset();
 
-		client::avg a(_T("a"));
+		client::avg a(fns);
 		a.reset();
-		client::min mi(_T("a"));
+		client::min mi(fns);
 		mi.reset();
-		client::max ma(_T("a"));
+		client::max ma(fns);
 		ma.reset();
 
 		recordset rs;
@@ -2593,37 +2595,40 @@ void teetNewDelete(database* db)
 		delete atg1;
 		delete at;
 
+
+
 #ifndef BCB_64
-		client::sum* ns1 = new sum(_T("a")); //bcb64 bad
+
+		client::sum* ns1 = new sum(fns); //bcb64 bad
 		delete  ns1;
 
 		client::count* nc1 = new client::count(_T("a"));//bcb64 bad
 		delete nc1;
 
-		client::avg* na1  = new client::avg(_T("a"));//bcb64 bad
+		client::avg* na1  = new client::avg(fns);//bcb64 bad
 		delete na1;
 
-		client::min* nmin1 = new client::min(_T("a"));//bcb64 bad
+		client::min* nmin1 = new client::min(fns);//bcb64 bad
 		delete nmin1;
 
-		client::max* nmax1 = new client::max(_T("a"));//bcb64 bad
+		client::max* nmax1 = new client::max(fns);//bcb64 bad
 		delete nmax1;
 
 #endif
 
-		client::sum* ns = sum::create(_T("a")); //All OK
+		client::sum* ns = sum::create(fns); //All OK
 		ns->release();
 
 		client::count* nc = client::count::create(_T("a"));//All OK
 		nc->release();
 
-		client::avg* na  = client::avg::create(_T("a"));//All OK
+		client::avg* na  = client::avg::create(fns);//All OK
 		na->release();
 
-		client::min* nmin = client::min::create(_T("a"));//All OK
+		client::min* nmin = client::min::create(fns);//All OK
 		nmin->release();
 
-		client::max* nmax = client::max::create(_T("a"));//All OK
+		client::max* nmax = client::max::create(fns);//All OK
 		nmax->release();
 
 		recordset* r = new recordset();        //All OK

@@ -49,8 +49,10 @@ public:
 				,const _TCHAR* name8=NULL, const _TCHAR* name9=NULL, const _TCHAR* name10=NULL);
 
 	int count() const;
+	const TCHAR* operator[](int index) const;
 	const TCHAR* getValue(int index) const;
 	void addValue(const _TCHAR* v);
+	void addValues(const _TCHAR* values, const _TCHAR* delmi); //delmi = boost::is_any_of
 	static fieldNames* create();
 	void release();
 };
@@ -153,12 +155,10 @@ public:
 	groupFuncBase();
 	groupFuncBase(const groupFuncBase& v);
 	groupFuncBase& operator=(const groupFuncBase& v);
-	groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	groupFuncBase(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 	virtual ~groupFuncBase();
 	groupFuncBase& operator=(const recordsetQuery& v);
-
-	const _TCHAR* targetName() const;
-	void setTargetName(const _TCHAR* v);
+	fieldNames&  targetNames() const ;
 	const _TCHAR* resultName() const;
 	void setResultName(const _TCHAR* v);
 	int resultKey() const ;
@@ -201,8 +201,8 @@ protected:
 
 public:
 	sum(){}
-	sum(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
-	static sum* create(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	sum(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
+	static sum* create(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 };
 
 
@@ -228,8 +228,8 @@ class DLLLIB avg : public sum
 
 public:
 	avg(){}
-	avg(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
-	static avg* create(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	avg(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
+	static avg* create(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 
 };
 
@@ -242,8 +242,8 @@ class DLLLIB min : public sum
 
 public:
 	min(){}
-	min(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
-	static min* create(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	min(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
+	static min* create(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 };
 
 
@@ -254,8 +254,8 @@ class DLLLIB max : public sum
 	void doCalc(const row_ptr& row, int index);
 public:
 	max(){}
-	max(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
-	static max* create(const _TCHAR* targetName , const _TCHAR* resultName=NULL);
+	max(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
+	static max* create(const fieldNames& targetNames , const _TCHAR* resultName=NULL);
 };
 
 

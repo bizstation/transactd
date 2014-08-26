@@ -19,6 +19,7 @@
 #pragma hdrstop
 #include "groupQuery.h"
 #include "recordsetImple.h"
+#include <boost/algorithm/string.hpp>
 
 #pragma package(smart_init)
 
@@ -117,9 +118,20 @@ const TCHAR* fieldNames::getValue(int index) const
 	return m_impl->keyFields[index].c_str();
 }
 
+const TCHAR* fieldNames::operator[](int index) const
+{
+	assert(index>=0 && index < count());
+	return m_impl->keyFields[index].c_str();
+}
+
 void fieldNames::addValue(const _TCHAR* v)
 {
 	m_impl->keyFields.push_back(v);
+}
+
+void fieldNames::addValues(const _TCHAR* values, const _TCHAR* delmi)
+{
+	boost::algorithm::split(m_impl->keyFields, values, boost::is_any_of(delmi));
 }
 
 // ---------------------------------------------------------------------------
@@ -451,22 +463,22 @@ public:
 
 private:
 	friend class groupQueryImple;
-	std::_tstring m_targetName;
+	fieldNames m_targetNames;
 	std::_tstring m_resultName;
 	int m_resultKey;
-	int m_targetKey;
+	std::vector<int> m_targetKeys;
 
 
 public:
 	std::vector<value_type> m_values;
 	std::vector<__int64> m_counts;
 
-	inline groupFuncBaseImple(const _TCHAR* targetName , const _TCHAR* resultName=NULL)
+	inline groupFuncBaseImple(const fieldNames& targetNames , const _TCHAR* resultName=NULL)
 	{
-	   if (targetName && targetName[0])
-			m_targetName = targetName;
-	   m_resultName = ((resultName == NULL) || resultName[0]==0x00)
-									 ? targetName:resultName;
+	   m_targetNames = targetNames;
+	   m_resultName = (m_targetNames.count() &&
+							((resultName == NULL) || resultName[0]==0x00))
+									 ? targetNames[0]:resultName;
 	   m_values.reserve(10);
 	}
 
@@ -480,7 +492,9 @@ public:
 
 	inline void init(const fielddefs* fdinfo)
 	{
-		m_targetKey = (m_targetName !=_T("")) ? fdinfo->indexByName(m_targetName): -1;
+		m_targetKeys.clear();
+		for (int i=0;i<m_targetNames.count();++i)
+			m_targetKeys.push_back((m_targetNames[i][0] != 0x00) ? fdinfo->indexByName(m_targetNames[i]): -1);
 		m_resultKey = fdinfo->indexByName(m_resultName);
 		if (m_resultKey == -1) m_resultKey = (int)fdinfo->size();
 	}
@@ -490,17 +504,9 @@ public:
 		m_values.reserve(10);
 	}
 
-
-	inline const _TCHAR* targetName() const {return m_targetName.c_str();}
+	inline fieldNames& targetNames() const {return (fieldNames&)m_targetNames;}
 
 	inline const _TCHAR* resultName() const {return m_resultName.c_str();}
-
-	inline void setTargetName(const _TCHAR* v)
-	{
-		m_targetName = _T("");
-		if (v && v[0])
-			m_targetName = v;
-	}
 
 	inline void setResultName(const _TCHAR* v)
 	{
@@ -515,7 +521,13 @@ public:
 
 	inline value_type result(int groupIndex)const{return m_values[groupIndex];};
 
-	inline int targetKey()const {return m_targetKey;}
+	inline int targetKey(size_t index)const
+	{
+		assert(index < m_targetKeys.size());
+		return m_targetKeys[index];
+	}
+
+	inline int targetKeys()const{return (int)m_targetKeys.size();}
 };
 
 // ---------------------------------------------------------------------------
@@ -523,8 +535,8 @@ public:
 // ---------------------------------------------------------------------------
 groupFuncBase::groupFuncBase():m_imple(new groupFuncBaseImple()){}
 
-groupFuncBase::groupFuncBase(const _TCHAR* targetName , const _TCHAR* resultName)
-		:recordsetQuery(),m_imple(new groupFuncBaseImple(targetName, resultName)){}
+groupFuncBase::groupFuncBase(const fieldNames& targetNames , const _TCHAR* resultName)
+		:recordsetQuery(),m_imple(new groupFuncBaseImple(targetNames, resultName)){}
 
 groupFuncBase::groupFuncBase(const groupFuncBase& r):recordsetQuery(r)
 		,m_imple(new groupFuncBaseImple(*r.m_imple)){}
@@ -564,14 +576,10 @@ groupFuncBase& groupFuncBase::operator=(const recordsetQuery& v)
 	return *this;
 }
 
-const _TCHAR* groupFuncBase::targetName() const
-{
-	return m_imple->targetName();
-}
 
-void groupFuncBase::setTargetName(const _TCHAR* v)
+fieldNames& groupFuncBase::targetNames() const
 {
-	m_imple->setTargetName(v);
+	return 	m_imple->targetNames();
 }
 
 const _TCHAR* groupFuncBase::resultName() const
@@ -616,18 +624,19 @@ groupFuncBase::value_type groupFuncBase::result(int groupIndex) const
 // ---------------------------------------------------------------------------
 // class sum
 // ---------------------------------------------------------------------------
-sum* sum::create(const _TCHAR* targetName , const _TCHAR* resultName)
+sum* sum::create(const fieldNames& targetNames , const _TCHAR* resultName)
 {
-	return new sum(targetName , resultName);
+	return new sum(targetNames , resultName);
 }
 
-sum::sum(const _TCHAR* targetName , const _TCHAR* resultName)
-		:groupFuncBase(targetName, resultName){}
+sum::sum(const fieldNames& targetNames , const _TCHAR* resultName)
+		:groupFuncBase(targetNames, resultName){}
 
 void sum::doCalc(const row_ptr& row, int index)
 {
 	value_type tmp=0;
-	m_imple->m_values[index] += fieldValue((*row)[m_imple->targetKey()], tmp);
+	for (int i=0;i<m_imple->targetKeys();++i)
+		m_imple->m_values[index] += fieldValue((*row)[m_imple->targetKey(i)], tmp);
 }
 
 // ---------------------------------------------------------------------------
@@ -638,8 +647,10 @@ count* count::create(const _TCHAR* resultName)
 	return new count(resultName);
 }
 
-count::count(const _TCHAR* resultName)
-	:groupFuncBase(NULL, resultName){}
+count::count(const _TCHAR* resultName):groupFuncBase()
+{
+	setResultName(resultName);
+}
 
 void count::doCalc(const row_ptr& row, int index)
 {
@@ -650,13 +661,13 @@ void count::doCalc(const row_ptr& row, int index)
 // ---------------------------------------------------------------------------
 // class avg
 // ---------------------------------------------------------------------------
-avg* avg::create(const _TCHAR* targetName , const _TCHAR* resultName)
+avg* avg::create(const fieldNames& targetNames , const _TCHAR* resultName)
 {
-	return new avg(targetName , resultName);
+	return new avg(targetNames , resultName);
 }
 
-avg::avg(const _TCHAR* targetName , const _TCHAR* resultName)
-	:sum(targetName, resultName){}
+avg::avg(const fieldNames& targetNames , const _TCHAR* resultName)
+	:sum(targetNames, resultName){}
 
 void avg::initResultVariable(int index)
 {
@@ -679,21 +690,22 @@ avg::value_type avg::result(int index)const
 // ---------------------------------------------------------------------------
 // class min
 // ---------------------------------------------------------------------------
-min* min::create(const _TCHAR* targetName , const _TCHAR* resultName)
+min* min::create(const fieldNames& targetNames , const _TCHAR* resultName)
 {
-	return new min(targetName , resultName);
+	return new min(targetNames , resultName);
 }
 
-min::min(const _TCHAR* targetName , const _TCHAR* resultName)
-	:sum(targetName, resultName),m_flag(true){}
+min::min(const fieldNames& targetNames , const _TCHAR* resultName)
+	:sum(targetNames, resultName),m_flag(true){}
 
 void min::doCalc(const row_ptr& row, int index)
 {
 	value_type tmp=0;
-	tmp = fieldValue((*row)[m_imple->targetKey()], tmp);
-	if (m_flag || m_imple->m_values[index]  > tmp)
+	for (int i=0;i<m_imple->targetKeys();++i)
 	{
-		m_flag = false;
+		tmp = fieldValue((*row)[m_imple->targetKey(i)], tmp);
+		if (m_flag || m_imple->m_values[index]  > tmp)
+			m_flag = false;
 		m_imple->m_values[index]  = tmp;
 	}
 }
@@ -701,21 +713,22 @@ void min::doCalc(const row_ptr& row, int index)
 // ---------------------------------------------------------------------------
 // class max
 // ---------------------------------------------------------------------------
-max* max::create(const _TCHAR* targetName , const _TCHAR* resultName)
+max* max::create(const fieldNames& targetNames , const _TCHAR* resultName)
 {
-	return new max(targetName , resultName);
+	return new max(targetNames , resultName);
 }
 
-max::max(const _TCHAR* targetName , const _TCHAR* resultName)
-	:sum(targetName, resultName),m_flag(true){}
+max::max(const fieldNames& targetNames , const _TCHAR* resultName)
+	:sum(targetNames, resultName),m_flag(true){}
 
 void max::doCalc(const row_ptr& row, int index)
 {
 	value_type tmp=0;
-	tmp = fieldValue((*row)[m_imple->targetKey()], tmp);
-	if (m_flag || m_imple->m_values[index]  < tmp)
+	for (int i=0;i<m_imple->targetKeys();++i)
 	{
-		m_flag = false;
+		tmp = fieldValue((*row)[m_imple->targetKey(i)], tmp);
+		if (m_flag || m_imple->m_values[index]  < tmp)
+			m_flag = false;
 		m_imple->m_values[index]  = tmp;
 	}
 }
