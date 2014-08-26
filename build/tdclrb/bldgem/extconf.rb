@@ -33,7 +33,7 @@ ruby_exe_path = File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_ins
 # use prebuilt binary
 #
 if has_binary(transactd_gem_root)
-  make_makefile_prebuilt_win32(ruby_bin_path, transactd_gem_root) if RUBY_PLATFORM =~ /mswin/
+  make_makefile_prebuilt_win32(ruby_bin_path, transactd_gem_root) if RUBY_PLATFORM =~ /mswin/ || RUBY_PLATFORM =~ /mingw/
   exit
 end
 

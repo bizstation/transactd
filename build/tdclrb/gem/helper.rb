@@ -110,4 +110,14 @@ EOS
     mkfile.close
     mkfile_dummy.close
   end
+  if RUBY_PLATFORM =~ /mingw/
+    begin
+      mkfile = open('nmake.cmd', 'r')
+      mkfile2 = open('make.cmd', 'w')
+      mkfile2.puts mkfile.read
+    ensure
+      mkfile.close
+      mkfile2.close
+    end
+  end
 end
