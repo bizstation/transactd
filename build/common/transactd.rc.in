@@ -1,5 +1,5 @@
 //=================================================================
-//   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+//   Copyright (C) 2013 BizStation Corp All rights reserved.
 //
 //   This program is free software; you can redistribute it and/or
 //   modify it under the terms of the GNU General Public License
@@ -17,8 +17,16 @@
 //   02111-1307, USA.
 //=================================================================
 
+#ifndef __BCPLUSPLUS__
 #include <windows.h>
+#endif
+
 #define IDC_STATIC -1
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION @TD_RC_F_VER_MAJOR@,@TD_RC_F_VER_MINOR@,@TD_RC_F_VER_RELEASE@,@TD_RC_F_VER_BUILD@
@@ -40,13 +48,15 @@ BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "@TD_RC_F_DESC@"
             VALUE "FileVersion", "@TD_RC_F_VER_MAJOR@.@TD_RC_F_VER_MINOR@.@TD_RC_F_VER_RELEASE@.@TD_RC_F_VER_BUILD@"
-            VALUE "LegalCopyright", "Copyright (C) 2013 BizStation Corp."
-            VALUE "ProductName", "@TD_RC_P_NAME@"
+            VALUE "LegalCopyright", "Copyright(C) 2014 BizStation Corp"
             VALUE "ProductVersion", "@TD_RC_P_VER_MAJOR@.@TD_RC_P_VER_MINOR@.@TD_RC_P_VER_RELEASE@.@TD_RC_P_VER_BUILD@"
+            VALUE "ProductName", "@TD_RC_P_NAME@"
         END
     END
     BLOCK "VarFileInfo"
+
     BEGIN
         VALUE "Translation", 0x409, 1200
     END
 END
+
