@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="5">
+<queryStatements class_id="0" tracking_level="0" version="0">
+	<id>0</id>
+	<title></title>
+	<description></description>
+	<items class_id="1" tracking_level="0" version="0">
+		<count>2</count>
+		<item_version>0</item_version>
+		<item class_id="2" class_name="readStatement" tracking_level="1" version="0" object_id="_0">
+			<keyFields class_id="3" tracking_level="0" version="0">
+				<count>1</count>
+				<value>1</value>
+			</keyFields>
+			<query class_id="4" tracking_level="0" version="0">
+				<readQuery class_id="5" tracking_level="0" version="0">
+					<queryString>select id,名前,group group &lt;= &apos;2&apos;</queryString>
+					<reject>65535</reject>
+					<limit>0</limit>
+					<optimize>0</optimize>
+					<boolmarkAlso>0</boolmarkAlso>
+					<isAll>0</isAll>
+				</readQuery>
+			</query>
+			<params class_id="6" tracking_level="0" version="0">
+				<readType>0</readType>
+				<database>tdap://localhost/querytest?dbfile=test.bdf</database>
+				<table>user</table>
+				<index>1</index>
+				<alias_count>0</alias_count>
+			</params>
+		</item>
+		<item class_id_reference="2" object_id="_1">
+			<keyFields>
+				<count>1</count>
+				<value>group</value>
+			</keyFields>
+			<query>
+				<readQuery>
+					<queryString>select name</queryString>
+					<reject>1</reject>
+					<limit>0</limit>
+					<optimize>0</optimize>
+					<boolmarkAlso>0</boolmarkAlso>
+					<isAll>0</isAll>
+				</readQuery>
+			</query>
+			<params>
+				<readType>1</readType>
+				<database>tdap://localhost/querytest?dbfile=test.bdf</database>
+				<table>groups</table>
+				<index>0</index>
+				<alias_count>0</alias_count>
+			</params>
+		</item>
+	</items>
+</queryStatements>
+</boost_serialization>
+
