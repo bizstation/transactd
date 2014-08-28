@@ -44,12 +44,12 @@ class ATL_NO_VTABLE CDatabase :
 {
     bzs::db::protocol::tdap::client::database* m_db;
     bool m_IsAtatchOK;
+	bool m_needRelese;
 
 public:
-    CDatabase()
+    CDatabase():m_needRelese(true),m_IsAtatchOK(true)
     {
         m_db = bzs::db::protocol::tdap::client::database::create();
-        m_IsAtatchOK = true;
 		m_db->setOptionalData(this);
 		m_db->setOnCopyData(onCopyData);
 		m_db->setOnDeleteRecord(onDeleteRecord);		
@@ -71,14 +71,14 @@ public:
 
     HRESULT FinalConstruct() {return S_OK;}
 
-	void FinalRelease(){if (m_db) m_db->release();};
+	void FinalRelease(){if (m_needRelese && m_db) m_db->release();};
 public:
 	bzs::db::protocol::tdap::client::database* database(){return m_db;};
 
     STDMETHOD(Open)(BSTR Uri, eSchemaType SchemaType, eOpenMode Mode, BSTR Dir, BSTR Ownername, VARIANT_BOOL* Param6);
     STDMETHOD(get_DbDef)(IDbDef** Value);
     STDMETHOD(OpenTable)(VARIANT TableID, eOpenMode Mode, VARIANT_BOOL AutoCreate, BSTR OwnerName, BSTR Uri, ITable** ret);
-    STDMETHOD(AtatchDatabase)(__int64* nativeDatabase);
+    STDMETHOD(AtatchDatabase)(__int64* nativeDatabase,VARIANT_BOOL noRelease = 0);
     STDMETHOD(get_RootDir)(BSTR* Value);
     STDMETHOD(put_RootDir)(BSTR Value);
     STDMETHOD(get_Stat)(eStatus* Value);

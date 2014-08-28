@@ -67,28 +67,28 @@
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\..\source;$(TI_BOOST_ROOT_32);$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_32)\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)../../bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>..\..\source;$(TI_BOOST_ROOT_64);$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_64)\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)../../bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\..\source;$(TI_BOOST_ROOT_32);$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_32)\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)../../bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\..\source;$(TI_BOOST_ROOT_64);$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_64)\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)../../bin/</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -96,7 +96,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;USE_DBM_CONNECTION_POOL;_DEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
       <DisableSpecificWarnings>4068;4800;4819</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <SmallerTypeCheck>false</SmallerTypeCheck>
@@ -133,7 +133,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;_DEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;USE_DBM_CONNECTION_POOL;_CRT_SECURE_NO_WARNINGS;_DEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
       <DisableSpecificWarnings>4068;4800;4819;4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -167,7 +167,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;USE_DBM_CONNECTION_POOL;NDEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
       <DisableSpecificWarnings>4068;4800;4819</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -205,7 +205,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;USE_DBM_CONNECTION_POOL;_CRT_SECURE_NO_WARNINGS;NDEBUG;_USRDLL;%(PreprocessorDefinitions);TRDCL_AUTOLINK</PreprocessorDefinitions>
       <DisableSpecificWarnings>4068;4800;4819;4996</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -237,7 +237,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\activeTable.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\ConnectParams.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Database.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\DbDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\dllmain.cpp">
@@ -257,10 +259,12 @@
     <ClCompile Include="..\..\source\global\tdclatl\Field.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\FieldDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\FieldDefs.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\FieldNames.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Flags.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\GroupQuery.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeyDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeySegment.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\PooledDbManager.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\QueryBase.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Record.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Recordset.cpp" />
@@ -278,17 +282,22 @@
     <ClCompile Include="..\..\source\global\tdclatl\TdVersion.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.h" />
+    <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\pooledDatabaseManager.h" />
     <ClInclude Include="..\..\source\global\tdclatl\activeTable.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\ConnectParams.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Database.h" />
     <ClInclude Include="..\..\source\global\tdclatl\DbDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\dllmain.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Field.h" />
     <ClInclude Include="..\..\source\global\tdclatl\FieldDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\FieldDefs.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\FieldNames.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Flags.h" />
     <ClInclude Include="..\..\source\global\tdclatl\GroupQuery.h" />
     <ClInclude Include="..\..\source\global\tdclatl\KeyDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\keySegment.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\PooledDbManager.h" />
     <ClInclude Include="..\..\source\global\tdclatl\QueryBase.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Record.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Recordset.h" />
@@ -306,8 +315,11 @@
   <ItemGroup>
     <None Include="..\..\source\global\tdclatl\tdclatl.def" />
     <None Include="ActiveTable.rgs" />
+    <None Include="connectParams.rgs" />
     <None Include="database.rgs" />
+    <None Include="fieldNames.rgs" />
     <None Include="GroupQuery.rgs" />
+    <None Include="pooledDbMgr.rgs" />
     <None Include="QueryBase.rgs" />
     <None Include="RecordsetQuery.rgs" />
     <None Include="sortFields.rgs" />

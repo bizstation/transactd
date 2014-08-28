@@ -20,6 +20,7 @@
 #include "GroupQuery.h"
 #include "QueryBase.h"
 #include "RecordsetQuery.h"
+#include "FieldNames.h"
 
 using namespace bzs::db::protocol::tdap::client;
 
@@ -61,29 +62,40 @@ STDMETHODIMP CGroupQuery::KeyField(BSTR Name0, BSTR Name1, BSTR Name2, BSTR Name
 	return S_OK;
 }
  
-STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, BSTR targetName , BSTR resultName, IRecordsetQuery* iq, IGroupQuery** retVal)
+STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, IFieldNames* targetNames , BSTR resultName, VARIANT iq, IGroupQuery** retVal)
 {
 	
+	CFieldNames* fn = dynamic_cast<CFieldNames*>(targetNames);
+	if (!fn)
+		return Error("Invalid targetNames", IID_IGroupQuery);
+
 	boost::shared_ptr<groupFuncBase> f;
+	fieldNames* fns;
+	fns = fn->m_fnsPtr;
 
 	if (func == fsum)
-		f.reset(new sum(targetName, resultName));  
+		f.reset(new sum(*fns, resultName));  
 	else if (func == fmin)
-		f.reset(new min(targetName, resultName));  
+		f.reset(new min(*fns, resultName));  
 	else if (func == fmax)
-		f.reset(new max(targetName, resultName));  
+		f.reset(new max(*fns, resultName));  
 	else if (func == favg)
-		f.reset(new avg(targetName, resultName));  
+		f.reset(new avg(*fns, resultName));  
 	else if(func == fcount)
-		f.reset(new count(resultName));
-	if (iq)
 	{
-		CRecordsetQuery* q = dynamic_cast<CRecordsetQuery*>(iq);
+		if (resultName[0])
+			f.reset(new count(resultName));
+		else
+			f.reset(new count(fns->getValue(0)));
+	}
+	if (iq.vt == VT_DISPATCH)
+	{
+		CRecordsetQuery* q = dynamic_cast<CRecordsetQuery*>(iq.pdispVal);
 		if (q)
 			*f = (q->m_qb);
 	}
 	else
-		f.reset();
+		f->reset();
 	m_funcs.push_back(f);
 	m_gq.addFunction(f.get());
 
@@ -91,6 +103,7 @@ STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, BSTR targetName , BSTR re
 	return S_OK;
 
 }
+
 
 
 STDMETHODIMP CGroupQuery::Reset(IGroupQuery** retVal)

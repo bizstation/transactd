@@ -74,14 +74,13 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode, VARIANT_BOOL 
     
     if (ptb)
     {
-        ptb->m_tb = tb;
-		ptb->m_db = m_db;
+        ptb->m_tb.reset(tb, releaseTable); 
 		tb->setOptionalData((void*)ptb);
-        ITable* tb;
-        ptb->QueryInterface(IID_ITable, (void**)&tb);
-        _ASSERTE(tb);
-        *ret = tb;
-       m_IsAtatchOK = false;
+        ITable* itb;
+        ptb->QueryInterface(IID_ITable, (void**)&itb);
+        _ASSERTE(itb);
+        *ret = itb;
+       	m_IsAtatchOK = false;
     }
     else
         *ret = NULL;
@@ -89,7 +88,7 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode, VARIANT_BOOL 
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::AtatchDatabase(__int64* nativeDatabase)
+STDMETHODIMP CDatabase::AtatchDatabase(__int64* nativeDatabase,VARIANT_BOOL noRelease)
 {
     if ((nativeDatabase) && (m_IsAtatchOK))
     {
@@ -97,9 +96,13 @@ STDMETHODIMP CDatabase::AtatchDatabase(__int64* nativeDatabase)
             reinterpret_cast<bzs::db::protocol::tdap::client::database*>(nativeDatabase);
         if (nativePtr)
         {
-            Close();
-			m_db->release();
-            m_db = nativePtr;
+            if (m_needRelese)
+			{
+				Close();
+				m_db->release();
+			}
+			m_needRelese = (noRelease == 0);
+			m_db = nativePtr;
 			return S_OK;
         }
         return Error("Can not get native database pointer.", IID_IDatabase);
@@ -386,7 +389,7 @@ STDMETHODIMP CDatabase::CopyTableData(ITable* Dest, ITable* Src, VARIANT_BOOL Tu
     _ASSERTE(dest);
     _ASSERTE(dest);
 
-	*Value = m_db->copyTableData(dest->m_tb, src->m_tb, Turbo, KeyNum, MaxSkip);
+	*Value = m_db->copyTableData(dest->m_tb.get(), src->m_tb.get(), Turbo, KeyNum, MaxSkip);
 	return S_OK;
 }
 

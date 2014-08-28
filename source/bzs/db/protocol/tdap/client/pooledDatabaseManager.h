@@ -79,11 +79,6 @@ public:
 		m_inUse = false;
 	}
 
-	/*inline void connect(const connectParams& param, bool newConnection=false)
-	{
-		use(&param);
-	}*/
-
 	inline void reset(int v) {cpool.reset(v);}
 
 	inline table_ptr table(const _TCHAR* name){return m_db->table(name);}
@@ -117,6 +112,7 @@ public:
 	inline uchar_td* clientID() const{return m_db->clientID();}
 
 	inline static void setMaxConnections(int maxWorkerNum){cpool.setMaxConnections(maxWorkerNum);};
+	inline static int  maxConnections(){return cpool.maxConnections();};
 	inline static void reserve(size_t size, const connectParams& param){cpool.reserve(size, param);}
 	//inline static bool reset(int waitSec=5){return cpool.reset(waitSec);}
 };

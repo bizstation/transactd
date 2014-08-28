@@ -145,7 +145,6 @@ STDMETHODIMP CTableTd::get_TableDef(ITableDef** Value)
 	{
 		m_tabledef = const_cast<tabledef*>(m_tb->tableDef());
 		piObj->m_tabledefPtr = &m_tabledef;
-		_ASSERTE(m_db);
 		ITableDef* tbd;
 		piObj->QueryInterface(IID_ITableDef, (void**)&tbd);
 		_ASSERTE(tbd);
@@ -392,22 +391,6 @@ STDMETHODIMP CTableTd::Field(VARIANT Index, IField** retVal)
     if (index < 0)
         return Error("Invalid index", IID_ITable);
 
-    /*CComObject<CField> *piObj;
-    CComObject<CField>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_tb = m_tb;
-		piObj->m_index = index;
-		IField* tbd;
-		piObj->QueryInterface(IID_IField, (void**)&tbd);
-		_ASSERTE(tbd);
-		*Value = piObj;
-	}
-	else
-		*Value = 0;
-*/
-
-	
 	if (m_fieldObj == NULL)
 	{
 		CComObject<CField>::CreateInstance(&m_fieldObj);

@@ -85,8 +85,6 @@ public:
 	}
 
 	inline database* db() const{return m_db;}
-	//inline int findDbIndex(const connectParams& param)const{return 0;}
-	//inline void setCurDb(int v){};
 	inline void use(const connectParams* param=NULL)
 	{
 		if (param)

@@ -21,6 +21,7 @@
 
 #include "tdclatl_i.h"
 #include "Field.h"
+#include <bzs/db/protocol/tdap/client/trdboostapi.h>
 using namespace ATL;
 
 
@@ -37,12 +38,10 @@ class ATL_NO_VTABLE CTableTd : public CComObjectRootEx<CComSingleThreadModel>,
     CComBSTR m_str;
 	CComObject<CField> *m_fieldObj;
 public:
-	CTableTd():m_tb(NULL),m_db(NULL), m_filterRejectCount(1), m_filterGetCount(0)
+	CTableTd():m_filterRejectCount(1), m_filterGetCount(0)
 	,m_fieldObj(NULL){}
 
-
-    bzs::db::protocol::tdap::client::table* m_tb;
-	bzs::db::protocol::tdap::client::database* m_db;
+	bzs::db::protocol::tdap::client::table_ptr m_tb;
 
     BEGIN_COM_MAP(CTableTd) 
 		COM_INTERFACE_ENTRY(ITable) 
@@ -57,8 +56,6 @@ public:
 	{
 		if (m_fieldObj)
 			m_fieldObj->Release();
-		if (m_tb) 
-			m_tb->release();
 	};
 
 public:

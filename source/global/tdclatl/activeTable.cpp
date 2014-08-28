@@ -23,6 +23,7 @@
 #include "Recordset.h"
 #include "Record.h"
 #include "TableDef.h"
+#include "PooledDbManager.h"
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -36,12 +37,11 @@ void CActiveTable::FinalRelease()
 {
 	if (m_recObj)
 		m_recObj->Release();
-	//if (m_rsObj)
-	//	m_rsObj->Release();
 	delete m_at;
 
 
-};  
+}; 
+
 STDMETHODIMP CActiveTable::SetDatabase(IDatabase* Value, BSTR tableName)
 {
 	try
@@ -63,6 +63,29 @@ STDMETHODIMP CActiveTable::SetDatabase(IDatabase* Value, BSTR tableName)
         return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
     }
 }
+
+STDMETHODIMP CActiveTable::SetDbManager(IPooledDbManager* Value, BSTR tableName)
+{
+	try
+	{
+		if (Value)
+		{
+			CPooledDbManager* p = dynamic_cast<CPooledDbManager*>(Value);
+			if (p)
+			{	
+				m_at = new activeTable(&p->m_mgr, tableName);
+				m_at->table()->setOptionalData((void*)NULL);
+				return S_OK;
+			}
+		}
+		return S_FALSE;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+    }
+}
+
 
 STDMETHODIMP CActiveTable::Index(short Value, IActiveTable** retVal)
 {

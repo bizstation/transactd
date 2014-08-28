@@ -41,7 +41,9 @@ interface IRecordsetQuery;
 interface IFieldDefs;
 interface ISortField;
 interface ISortFields;
-
+interface IFieldNames;
+interface IConnectParams;
+interface IPooledDbManager;
 
 typedef
 [
@@ -332,7 +334,7 @@ interface IDatabase : IDispatch
   [id(0x00000002)]
   HRESULT _stdcall OpenTable([in] VARIANT TableID, [in,  defaultvalue(normal)] eOpenMode Mode, [in, defaultvalue(-1)] VARIANT_BOOL AutoCreate, [in, defaultvalue("")] BSTR OwnerName, [in, defaultvalue("")] BSTR Uri, [out, retval] ITable** ret);
   [id(0x00000003), hidden]
-  HRESULT _stdcall AtatchDatabase([in] hyper* nativeDatabase);
+  HRESULT _stdcall AtatchDatabase([in] hyper* nativeDatabase, [in, defaultvalue(0)] VARIANT_BOOL noRelease );
   [propget, id(0x00000004)]
   HRESULT _stdcall RootDir([out, retval] BSTR* Value);
   [propput, id(0x00000004)]
@@ -1061,6 +1063,8 @@ interface IActiveTable : IDispatch
 {
   [id(0x0000001)]
   HRESULT _stdcall SetDatabase([in] IDatabase* Value, [in] BSTR tableName);
+  [id(0x0000011)]
+  HRESULT _stdcall SetDbManager([in] IPooledDbManager* Value, [in] BSTR tableName);
   [id(0x0000002)]
   HRESULT _stdcall Index([in] short Value, [out, retval] IActiveTable** retVal);
   [id(0x0000003)]
@@ -1216,8 +1220,8 @@ interface IGroupQuery : IDispatch
 
   [id(0x0000002)]
   HRESULT _stdcall AddFunction([in] eGroupFunc func
-	  ,	[in, defaultvalue("")] BSTR targetName , [in, defaultvalue("")] BSTR resultName
-	  , [in, defaultvalue(NULL)]IRecordsetQuery* q, [out, retval] IGroupQuery** retVal);
+	  ,	[in] IFieldNames* targetNames , [in, defaultvalue("")] BSTR resultName
+	  , [in, defaultvalue("")]VARIANT q, [out, retval] IGroupQuery** retVal);
 
   [id(0x0000004)]
   HRESULT _stdcall Reset([out, retval] IGroupQuery** retVal);
@@ -1300,6 +1304,113 @@ interface ISortFields : IDispatch
   HRESULT _stdcall Clear();
 };
 
+[
+  object,
+  uuid(5A6DA657-9C4E-4BD1-8724-00480947E79D),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IFieldNames : IDispatch
+{
+  [id(1)]
+  HRESULT _stdcall KeyField([in, defaultvalue("")] BSTR Name, [in, defaultvalue("")] BSTR Name1,
+				[in, defaultvalue("")] BSTR Name2, [in, defaultvalue("")] BSTR Name3,
+                [in, defaultvalue("")] BSTR Name4, [in, defaultvalue("")] BSTR Name5,
+				[in, defaultvalue("")] BSTR Name6, [in, defaultvalue("")] BSTR Name7,
+				[in, defaultvalue("")] BSTR Name8, [in, defaultvalue("")] BSTR Name9,
+				[in, defaultvalue("")] BSTR Name10, [out, retval] IFieldNames** retVal);
+  [propget, id(2)]
+  HRESULT _stdcall Count([out, retval] int* Value);
+  [id(3)]
+  HRESULT _stdcall addValue([in] BSTR val);
+  [propget, id(4)]
+  HRESULT _stdcall Value([in] int index, [out, retval] BSTR* retVal);
+  [id(5)]
+  HRESULT _stdcall addValues([in] BSTR val, [in] BSTR delm);
+  [id(6)]
+  HRESULT _stdcall Reset([out, retval] IFieldNames** retVal);
+};
+
+[
+  object,
+  uuid(CE4EBFCB-EA63-4CC3-AB24-02752C23BB36),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IPooledDbManager : IDispatch
+{
+  [propput, id(0x00000101)]
+  HRESULT _stdcall MaxConnections([in] int n);
+  [propget, id(0x00000101)]
+  HRESULT _stdcall MaxConnections([out, retval] int* retVal);
+  [id(0x00000103)]
+  HRESULT _stdcall Reset([in,defaultvalue(5)] int waitSec);
+  [id(0x00000104)]
+  HRESULT _stdcall Reserve([in] int size, [in] IConnectParams* Uri);
+  [propget, id(0x00000001)]
+  HRESULT _stdcall Stat([out, retval] eStatus* Value);
+  [id(0x00000002)]
+  HRESULT _stdcall BeginTrn([in, defaultvalue(PARA_SINGLE_NOWAIT)] eLockType Bias);
+  [id(0x00000003)]
+  HRESULT _stdcall EndTrn(void);
+  [id(0x00000004)]
+  HRESULT _stdcall AbortTrn(void);
+  [id(0x00000005)]
+  HRESULT _stdcall BeginSnapshot(void);
+  [id(0x00000006)]
+  HRESULT _stdcall EndSnapshot(void);
+  [id(0x00000007)]
+  HRESULT _stdcall Use([in, defaultvalue(NULL)] IConnectParams* Uri);
+  [id(0x00000008)]
+  HRESULT _stdcall Unuse();
+  [propget, id(0x00000009)]
+  HRESULT _stdcall EnableTrn([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000000A)]
+  HRESULT _stdcall Uri( [out, retval] BSTR* Uri);
+  [propget, id(0x0000000B)]
+  HRESULT _stdcall IsOpened([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000000C)]
+  HRESULT _stdcall ClientID([out, retval] short* Value);
+  [id(0x0000000E)]
+  HRESULT _stdcall Table([in] BSTR name, [out, retval]ITable** retVal);
+  [id(0x0000000F)]
+  HRESULT _stdcall Db([out, retval]IDatabase** retVal);
+  [propput, id(0x00000010)]
+  HRESULT _stdcall Option([in] __int64 Value);
+  [propget, id(0x00000010)]
+  HRESULT _stdcall Option([out, retval] __int64* Value);
+  [propget, id(0x00000011)]
+  HRESULT _stdcall Mode([out, retval] short* Value);
+};
+
+[
+  object,
+  uuid(CA38A33C-E2E9-47CA-90F8-BF4112D7CBAC),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IConnectParams : IDispatch
+{
+  [id(1)]
+  HRESULT _stdcall Init([in] BSTR protocol, [in] BSTR hostOrIp, [in] BSTR dbname,
+					[in] BSTR schemaTable);
+  [propput, id(2)]
+  HRESULT _stdcall Uri([in] BSTR val);
+  [propget, id(2)]
+  HRESULT _stdcall Uri([out, retval] BSTR* retVal);
+  [propput, id(3)]
+  HRESULT _stdcall Mode([in] short val);
+  [propget, id(3)]
+  HRESULT _stdcall Mode([out, retval] short* retVal);
+  [propput, id(4)]
+  HRESULT _stdcall Type([in] short val);
+  [propget, id(4)]
+  HRESULT _stdcall Type([out, retval] short* retVal);
+ 
+};
 
 [
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
@@ -1496,6 +1607,30 @@ library transactd
 		[default] interface ISortFields;
 	};
 
+	[
+		uuid(19B74AFC-50A3-4265-A28F-E1B389EDC5AA)
+	]
+	coclass FieldNames
+	{
+		[default] interface IFieldNames;
+	};
+
+	[
+		uuid(44CDEAF9-08CD-4EE8-B039-795A29C06E09)
+	]
+	coclass PooledDbManager
+	{
+		[default] interface IPooledDbManager;
+	};
+
+	[
+		uuid(0FB25FFA-9F0E-4C66-A40E-C5DAD40BC71B)
+	]
+	coclass ConnectParams
+	{
+		[default] interface IConnectParams;
+	};
+		
 };
 
 import "shobjidl.idl";

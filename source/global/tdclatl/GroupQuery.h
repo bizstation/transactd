@@ -54,8 +54,8 @@ public:
   STDMETHOD(KeyField)(BSTR Name, BSTR Name1, BSTR Name2, BSTR Name3, BSTR Name4, BSTR Name5,
 				BSTR Name6, BSTR Name7,	BSTR Name8, BSTR Name9,	BSTR Name10,
 				IGroupQuery** retVal);
-  STDMETHOD(AddFunction)(eGroupFunc func, BSTR targetName , BSTR resultName
-					, IRecordsetQuery* q, IGroupQuery** retVal);
+  STDMETHOD(AddFunction)(eGroupFunc func, IFieldNames* targetNames, BSTR resultName
+					, VARIANT q, IGroupQuery** retVal);
 
   STDMETHOD(Reset)(IGroupQuery** retVal);
 

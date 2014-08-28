@@ -26,7 +26,9 @@ using namespace ATL;
 
 
 
-class ATL_NO_VTABLE CDbDef : public CComObjectRootEx<CComSingleThreadModel>, public CComCoClass<CDbDef, &CLSID_DbDef>,
+class ATL_NO_VTABLE CDbDef : 
+	public CComObjectRootEx<CComSingleThreadModel>, 
+	public CComCoClass<CDbDef, &CLSID_DbDef>,
     public IDispatchImpl<IDbDef, &IID_IDbDef, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
 {
     
