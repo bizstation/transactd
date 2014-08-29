@@ -127,32 +127,6 @@ endif()
 
 
 # ==========================================================
-#   read simple version variables
-#       file format like: VARIABLENAME   VALUE
-#                         VARIABLENAME2  VALUE2
-# ==========================================================
-if(NOT COMMAND transactd_read_variables)
-macro(transactd_read_variables TRANSACTD_VAR_FILE)
-  file(READ "${TRANSACTD_VAR_FILE}" tmp_contents)
-  string(REGEX REPLACE "\n" ";" tmp_contents "${tmp_contents}")
-  string(REGEX REPLACE ";+$" "" tmp_contents "${tmp_contents}")
-  string(REGEX REPLACE " +" " " tmp_contents "${tmp_contents}")
-  foreach(tmp_line ${tmp_contents})
-    string(REGEX REPLACE " " ";" tmp_list "${tmp_line}")
-    list(LENGTH tmp_list tmp_list_len)
-    if("${tmp_list_len}" STREQUAL "2")
-      list (GET tmp_list 0 tmp_varname)
-      string(REGEX REPLACE "^\"(.*)\"$" "\\1" tmp_varname "${tmp_varname}")
-      list (GET tmp_list 1 tmp_value)
-      string(REGEX REPLACE "^\"(.*)\"$" "\\1" tmp_value "${tmp_value}")
-      set(TDREAD_${tmp_varname} "${tmp_value}")
-    endif()
-  endforeach()
-endmacro()
-endif()
-
-
-# ==========================================================
 #   generate rc file
 # ==========================================================
 if(NOT COMMAND transactd_generate_rc_file)
@@ -188,6 +162,70 @@ macro(transactd_add_rc_file)
     set(CMAKE_RC_COMPILE_OBJECT "<CMAKE_RC_COMPILER> -o <OBJECT> <SOURCE>")
     set(${this_target}_SOURCE_FILES
       "${${this_target}_SOURCE_FILES}" "${${this_target}_RC_FILE}")
+  endif()
+endmacro()
+endif()
+
+
+# ==========================================================
+#   transactd_set_MTMD
+# ==========================================================
+if(NOT COMMAND transactd_set_MTMD)
+macro(transactd_set_MTMD MT_OR_MD)
+  if(MSVC)
+    string(TOUPPER "${MT_OR_MD}" MT_OR_MD)
+    if( (NOT ("${MT_OR_MD}" STREQUAL "MT")) AND
+        (NOT ("${MT_OR_MD}" STREQUAL "MD")))
+      message(ERROR "[${MT_OR_MD}] is invalid. Please specify MT or MD.")
+    endif()
+    foreach(build_type "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
+      set(CMAKE_CXX_FLAGS${build_type}_BEFORE_${this_target} "${CMAKE_CXX_FLAGS${build_type}}")
+      string(REGEX REPLACE "/MTd" " "
+        CMAKE_CXX_FLAGS${build_type} "${CMAKE_CXX_FLAGS${build_type}}")
+      string(REGEX REPLACE "/MDd" " "
+        CMAKE_CXX_FLAGS${build_type} "${CMAKE_CXX_FLAGS${build_type}}")
+      string(REGEX REPLACE "/MT" " "
+        CMAKE_CXX_FLAGS${build_type} "${CMAKE_CXX_FLAGS${build_type}}")
+      string(REGEX REPLACE "/MD" " "
+        CMAKE_CXX_FLAGS${build_type} "${CMAKE_CXX_FLAGS${build_type}}")
+      if("${CMAKE_CXX_FLAGS${build_type}}" MATCHES "(.* )?/D_DEBUG( .*)?$")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS${build_type}} /${MT_OR_MD}d")
+      else()
+        set(CMAKE_CXX_FLAGS${build_type} "${CMAKE_CXX_FLAGS${build_type}} /${MT_OR_MD}")
+      endif()
+    endforeach()
+  endif()
+endmacro()
+endif()
+
+
+# ==========================================================
+#   transactd_reset_MTMD
+# ==========================================================
+if(NOT COMMAND transactd_reset_MTMD)
+macro(transactd_reset_MTMD)
+  if(MSVC)
+    foreach(build_type "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
+      set(CMAKE_CXX_FLAGS${build_type} "${CMAKE_CXX_FLAGS${build_type}_BEFORE_${this_target}}")
+    endforeach()
+  endif()
+endmacro()
+endif()
+
+
+# ==========================================================
+#   transactd_has_MTMD_option
+# ==========================================================
+if(NOT COMMAND transactd_has_MTMD_option)
+macro(transactd_has_MTMD_option option_string)
+  set(transactd_has_MTMD_option_return OFF)
+  if(MSVC)
+    if( ("${option_string}" MATCHES "(.* )?/MT( .*)?$") OR
+        ("${option_string}" MATCHES "(.* )?/MTd( .*)?$") OR
+        ("${option_string}" MATCHES "(.* )?/MD( .*)?$") OR
+        ("${option_string}" MATCHES "(.* )?/MDd( .*)?$") )
+      set(transactd_has_MTMD_option_return ON)
+    endif()
   endif()
 endmacro()
 endif()
@@ -236,14 +274,37 @@ macro(transactd_link_boost_libraries boost_components)
     if("${CMAKE_CONFIGURATION_TYPES}" STREQUAL "")
       set(CMAKE_CONFIGURATION_TYPES Debug Release RelWithDebInfo MinSizeRel)
     endif()
+    # find boost libraries with project compile flag
+    get_property(TMP_${this_target}_COMPILE_FLAGS
+      TARGET ${this_target} PROPERTY COMPILE_FLAGS)
+    transactd_has_MTMD_option("${TMP_${this_target}_COMPILE_FLAGS}")
+    if("${transactd_has_MTMD_option_return}" STREQUAL "ON")
+      get_boost_libs_from_compiler_flags("${TMP_${this_target}_COMPILE_FLAGS}")
+      set(boost_libs_for_${this_target} "${get_boost_libs_from_compiler_flags_return}")
+    else()
+      set(boost_libs_for_${this_target} "")
+    endif()
+    set(boost_libs_listlen 0)
     # buildtype-specified libraries
     foreach(BT_NAME "" ${CMAKE_CONFIGURATION_TYPES})
       if(NOT("${BT_NAME}" STREQUAL ""))
         set(BT_NAME "_${BT_NAME}")
         string(TOUPPER "${BT_NAME}" BT_NAME)
       endif()
-      get_boost_libs_from_CXXFLAGS("${CMAKE_CXX_FLAGS${BT_NAME}}")
-      set(boost_libs_for${BT_NAME} "${get_boost_libs_from_CXXFLAGS_return}")
+      transactd_has_MTMD_option("${CMAKE_CXX_FLAGS${BT_NAME}}")
+      if("${transactd_has_MTMD_option_return}" STREQUAL "ON")
+        # find buildtype-specified boost libraries
+        get_boost_libs_from_compiler_flags("${CMAKE_CXX_FLAGS${BT_NAME}}")
+        set(boost_libs_for${BT_NAME} "${get_boost_libs_from_compiler_flags_return}")
+      else()
+        # use project-specified libaries if buildtype-specified option is not set
+        if("${boost_libs_for_${this_target}}" STREQUAL "")
+          set(boost_libs_for${BT_NAME} "${Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME_NO_DEBUG}")
+        else()
+          set(boost_libs_for${BT_NAME} "${boost_libs_for_${this_target}}")
+        endif()
+      endif()
+      # check number of boost libaries
       string(REGEX REPLACE ";$" "" boost_libs_for${BT_NAME} "${boost_libs_for${BT_NAME}}")
       list(LENGTH boost_libs_for${BT_NAME} boost_libs_listlen${BT_NAME})
       if(${boost_libs_listlen${BT_NAME}} GREATER ${boost_libs_listlen})
@@ -260,9 +321,11 @@ macro(transactd_link_boost_libraries boost_components)
             set(BT_NAME "_${BT_NAME}")
             string(TOUPPER "${BT_NAME}" BT_NAME)
           endif()
-          list(GET boost_libs_for${BT_NAME} ${i} boost_lib_tmp)
-          set_property(TARGET boostlibs_for_${this_target}_${idx} PROPERTY
-            IMPORTED_IMPLIB${BT_NAME} "${boost_lib_tmp}")
+          if(NOT("${boost_libs_for${BT_NAME}}" STREQUAL ""))
+            list(GET boost_libs_for${BT_NAME} ${i} boost_lib_tmp)
+            set_property(TARGET boostlibs_for_${this_target}_${idx} PROPERTY
+              IMPORTED_IMPLIB${BT_NAME} "${boost_lib_tmp}")
+          endif()
         endforeach()
         if(NOT "${boost_components}" STREQUAL "")
           target_link_libraries(${this_target} boostlibs_for_${this_target}_${idx})

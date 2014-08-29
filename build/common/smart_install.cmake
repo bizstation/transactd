@@ -17,15 +17,15 @@
 #   02111-1307, USA.
 ##=================================================================
 ## need system.cmake
+set(BZ_SI_SCRIPT "${CMAKE_CURRENT_LIST_FILE}")
+get_filename_component(BZ_SI_WINCMD "${CMAKE_CURRENT_LIST_FILE}" PATH)
+set(BZ_SI_WINCMD "${BZ_SI_WINCMD}/copyifgreater.cmd")
 # ==========================================================
 #   install so/dll if greater
 #     * compare .dll with binary version info
 #     * compere .so with file name suffix
 # ==========================================================
 if(NOT COMMAND bz_smart_install)
-set(BZ_SI_SCRIPT "${CMAKE_CURRENT_LIST_FILE}")
-get_filename_component(BZ_SI_WINCMD "${CMAKE_CURRENT_LIST_FILE}" PATH)
-set(BZ_SI_WINCMD "${BZ_SI_WINCMD}/copyifgreater.cmd")
 macro(bz_smart_install)
   cmake_parse_arguments(BZ_SI
     "TO_WIN_SYSTEMDIR;ADD_ME" "DEST;VER_MAJOR;VER_MINOR;VER_RELEASE" "SOURCES" ${ARGN})

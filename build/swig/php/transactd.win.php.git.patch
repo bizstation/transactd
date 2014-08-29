@@ -1,5 +1,5 @@
 diff --git b/transactd.win.php a/transactd.win.php
-index 62ccc74..383e9ce 100644
+index e780911..6ddfb1f 100644
 --- b/transactd.win.php
 +++ a/transactd.win.php
 @@ -1,4 +1,5 @@
@@ -278,41 +278,15 @@ index 62ccc74..383e9ce 100644
  		$this->_cPtr=$h;
  	}
  
-@@ -3569,6 +3758,8 @@ class recordsetQuery {
+@@ -3661,6 +3850,7 @@ class recordsetQuery {
  
- class groupFuncBase extends recordsetQuery {
+ abstract class groupFuncBase extends recordsetQuery {
  	public $_cPtr=null;
-+	private $targetName = '';
-+	private $resultName = '';
++	protected $resultName = '';
  
  	function __set($var,$value) {
  		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-@@ -3590,10 +3781,12 @@ class groupFuncBase extends recordsetQuery {
- 			$this->_cPtr=$v_or_targetName;
- 			return;
- 		}
-+		$this->targetName = $v_or_targetName;
-+		$this->resultName = $resultName;
- 		switch (func_num_args()) {
- 		case 0: $this->_cPtr=new_groupFuncBase(); break;
--		case 1: $this->_cPtr=new_groupFuncBase($v_or_targetName); break;
--		default: $this->_cPtr=new_groupFuncBase($v_or_targetName,$resultName);
-+		case 1: $this->_cPtr=new_groupFuncBase($this->targetName); break;
-+		default: $this->_cPtr=new_groupFuncBase($this->targetName,$this->resultName);
- 		}
- 	}
- 
-@@ -3602,7 +3795,8 @@ class groupFuncBase extends recordsetQuery {
- 	}
- 
- 	function setTargetName($v) {
--		groupFuncBase_setTargetName($this->_cPtr,$v);
-+		$this->targetName = $v;
-+		groupFuncBase_setTargetName($this->_cPtr,$this->targetName);
- 	}
- 
- 	function resultName() {
-@@ -3610,7 +3804,8 @@ class groupFuncBase extends recordsetQuery {
+@@ -3695,7 +3885,8 @@ abstract class groupFuncBase extends recordsetQuery {
  	}
  
  	function setResultName($v) {
@@ -322,24 +296,29 @@ index 62ccc74..383e9ce 100644
  	}
  
  	function resultKey() {
-@@ -3753,12 +3948,15 @@ class sum extends groupFuncBase {
- 			$this->_cPtr=$targetName;
- 			return;
- 		}
--		$this->_cPtr=new_sum($targetName,$resultName);
-+		$this->targetName = $targetName;
-+		$this->resultName = $resultName;
-+		$this->_cPtr=new_sum($this->targetName,$this->resultName);
- 	}
- }
+@@ -3825,6 +4016,7 @@ class groupQuery {
  
- class count extends groupFuncBase {
+ class sum extends groupFuncBase {
  	public $_cPtr=null;
-+	private $resultName = '';
++	protected $targetNames = null;
  
  	function __set($var,$value) {
  		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-@@ -3780,7 +3978,8 @@ class count extends groupFuncBase {
+@@ -3852,9 +4044,11 @@ class sum extends groupFuncBase {
+ 			$this->_cPtr=$targetNames;
+ 			return;
+ 		}
++		$this->targetNames = $targetNames;
++		$this->resultName = $resultName;
+ 		switch (func_num_args()) {
+-		case 1: $this->_cPtr=new_sum($targetNames); break;
+-		default: $this->_cPtr=new_sum($targetNames,$resultName);
++		case 1: $this->_cPtr=new_sum($this->targetNames); break;
++		default: $this->_cPtr=new_sum($this->targetNames,$this->resultName);
+ 		}
+ 	}
+ }
+@@ -3888,7 +4082,8 @@ class count extends groupFuncBase {
  			$this->_cPtr=$resultName;
  			return;
  		}
@@ -349,36 +328,46 @@ index 62ccc74..383e9ce 100644
  	}
  }
  
-@@ -3807,7 +4006,9 @@ class avg extends sum {
- 			$this->_cPtr=$targetName;
+@@ -3921,9 +4116,11 @@ class avg extends sum {
+ 			$this->_cPtr=$targetNames;
  			return;
  		}
--		$this->_cPtr=new_avg($targetName,$resultName);
-+		$this->targetName = $targetName;
++		$this->targetNames = $targetNames;
 +		$this->resultName = $resultName;
-+		$this->_cPtr=new_avg($this->targetName,$this->resultName);
+ 		switch (func_num_args()) {
+-		case 1: $this->_cPtr=new_avg($targetNames); break;
+-		default: $this->_cPtr=new_avg($targetNames,$resultName);
++		case 1: $this->_cPtr=new_avg($this->targetNames); break;
++		default: $this->_cPtr=new_avg($this->targetNames,$this->resultName);
+ 		}
  	}
  }
- 
-@@ -3834,7 +4035,9 @@ class min extends sum {
- 			$this->_cPtr=$targetName;
+@@ -3957,9 +4154,11 @@ class min extends sum {
+ 			$this->_cPtr=$targetNames;
  			return;
  		}
--		$this->_cPtr=new_min($targetName,$resultName);
-+		$this->targetName = $targetName;
++		$this->targetNames = $targetNames;
 +		$this->resultName = $resultName;
-+		$this->_cPtr=new_min($this->targetName,$this->resultName);
+ 		switch (func_num_args()) {
+-		case 1: $this->_cPtr=new_min($targetNames); break;
+-		default: $this->_cPtr=new_min($targetNames,$resultName);
++		case 1: $this->_cPtr=new_min($this->targetNames); break;
++		default: $this->_cPtr=new_min($this->targetNames,$this->resultName);
+ 		}
  	}
  }
- 
-@@ -3861,11 +4064,127 @@ class max extends sum {
- 			$this->_cPtr=$targetName;
+@@ -3993,14 +4192,130 @@ class max extends sum {
+ 			$this->_cPtr=$targetNames;
  			return;
  		}
--		$this->_cPtr=new_max($targetName,$resultName);
-+		$this->targetName = $targetName;
++		$this->targetNames = $targetNames;
 +		$this->resultName = $resultName;
-+		$this->_cPtr=new_max($this->targetName,$this->resultName);
+ 		switch (func_num_args()) {
+-		case 1: $this->_cPtr=new_max($targetNames); break;
+-		default: $this->_cPtr=new_max($targetNames,$resultName);
++		case 1: $this->_cPtr=new_max($this->targetNames); break;
++		default: $this->_cPtr=new_max($this->targetNames,$this->resultName);
++		}
 +	}
 +}
 +
@@ -426,7 +415,7 @@ index 62ccc74..383e9ce 100644
 +	public function seek($position) {
 +		if ($position < 0 || $position >= $this->_count) {
 +			throw new \OutOfBoundsException("invalid seek position ($position)");
-+		}
+ 		}
 +		$this->_position = $position;
  	}
  }
@@ -501,7 +490,7 @@ index 62ccc74..383e9ce 100644
  	public $_cPtr=null;
  	protected $_pData=array();
  
-@@ -3887,22 +4206,27 @@ class RecordSet {
+@@ -4022,22 +4337,27 @@ class RecordSet {
  	function __construct($r_=null) {
  		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__recordset') {
  			$this->_cPtr=$r_;
@@ -533,7 +522,7 @@ index 62ccc74..383e9ce 100644
  	}
  
  	function size() {
-@@ -4157,7 +4481,7 @@ class activeTable {
+@@ -4292,7 +4612,7 @@ class activeTable {
  		activeTable_release($this->_cPtr);
  	}
  

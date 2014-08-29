@@ -1,5 +1,5 @@
 diff --git transactd.php transactd.php
-index 059af27..cae12fd 100644
+index e740a48..6a04702 100644
 --- transactd.php
 +++ transactd.php
 @@ -1,4 +1,5 @@
@@ -278,41 +278,15 @@ index 059af27..cae12fd 100644
  		$this->_cPtr=$h;
  	}
  
-@@ -3645,6 +3834,8 @@ class recordsetQuery {
+@@ -3737,6 +3926,7 @@ class recordsetQuery {
  
- class groupFuncBase extends recordsetQuery {
+ abstract class groupFuncBase extends recordsetQuery {
  	public $_cPtr=null;
-+	private $targetName = '';
-+	private $resultName = '';
++	protected $resultName = '';
  
  	function __set($var,$value) {
  		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-@@ -3666,10 +3857,12 @@ class groupFuncBase extends recordsetQuery {
- 			$this->_cPtr=$v_or_targetName;
- 			return;
- 		}
-+		$this->targetName = $v_or_targetName;
-+		$this->resultName = $resultName;
- 		switch (func_num_args()) {
- 		case 0: $this->_cPtr=new_groupFuncBase(); break;
--		case 1: $this->_cPtr=new_groupFuncBase($v_or_targetName); break;
--		default: $this->_cPtr=new_groupFuncBase($v_or_targetName,$resultName);
-+		case 1: $this->_cPtr=new_groupFuncBase($this->targetName); break;
-+		default: $this->_cPtr=new_groupFuncBase($this->targetName,$this->resultName);
- 		}
- 	}
- 
-@@ -3678,7 +3871,8 @@ class groupFuncBase extends recordsetQuery {
- 	}
- 
- 	function setTargetName($v) {
--		groupFuncBase_setTargetName($this->_cPtr,$v);
-+		$this->targetName = $v;
-+		groupFuncBase_setTargetName($this->_cPtr,$this->targetName);
- 	}
- 
- 	function resultName() {
-@@ -3686,7 +3880,8 @@ class groupFuncBase extends recordsetQuery {
+@@ -3771,7 +3961,8 @@ abstract class groupFuncBase extends recordsetQuery {
  	}
  
  	function setResultName($v) {
@@ -322,24 +296,29 @@ index 059af27..cae12fd 100644
  	}
  
  	function resultKey() {
-@@ -3829,12 +4024,15 @@ class sum extends groupFuncBase {
- 			$this->_cPtr=$targetName;
- 			return;
- 		}
--		$this->_cPtr=new_sum($targetName,$resultName);
-+		$this->targetName = $targetName;
-+		$this->resultName = $resultName;
-+		$this->_cPtr=new_sum($this->targetName,$this->resultName);
- 	}
- }
+@@ -3901,6 +4092,7 @@ class groupQuery {
  
- class count extends groupFuncBase {
+ class sum extends groupFuncBase {
  	public $_cPtr=null;
-+	private $resultName = '';
++	protected $targetNames = null;
  
  	function __set($var,$value) {
  		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-@@ -3856,7 +4054,8 @@ class count extends groupFuncBase {
+@@ -3928,9 +4120,11 @@ class sum extends groupFuncBase {
+ 			$this->_cPtr=$targetNames;
+ 			return;
+ 		}
++		$this->targetNames = $targetNames;
++		$this->resultName = $resultName;
+ 		switch (func_num_args()) {
+-		case 1: $this->_cPtr=new_sum($targetNames); break;
+-		default: $this->_cPtr=new_sum($targetNames,$resultName);
++		case 1: $this->_cPtr=new_sum($this->targetNames); break;
++		default: $this->_cPtr=new_sum($this->targetNames,$this->resultName);
+ 		}
+ 	}
+ }
+@@ -3964,7 +4158,8 @@ class count extends groupFuncBase {
  			$this->_cPtr=$resultName;
  			return;
  		}
@@ -349,36 +328,46 @@ index 059af27..cae12fd 100644
  	}
  }
  
-@@ -3883,7 +4082,9 @@ class avg extends sum {
- 			$this->_cPtr=$targetName;
+@@ -3997,9 +4192,11 @@ class avg extends sum {
+ 			$this->_cPtr=$targetNames;
  			return;
  		}
--		$this->_cPtr=new_avg($targetName,$resultName);
-+		$this->targetName = $targetName;
++		$this->targetNames = $targetNames;
 +		$this->resultName = $resultName;
-+		$this->_cPtr=new_avg($this->targetName,$this->resultName);
+ 		switch (func_num_args()) {
+-		case 1: $this->_cPtr=new_avg($targetNames); break;
+-		default: $this->_cPtr=new_avg($targetNames,$resultName);
++		case 1: $this->_cPtr=new_avg($this->targetNames); break;
++		default: $this->_cPtr=new_avg($this->targetNames,$this->resultName);
+ 		}
  	}
  }
- 
-@@ -3910,7 +4111,9 @@ class min extends sum {
- 			$this->_cPtr=$targetName;
+@@ -4033,9 +4230,11 @@ class min extends sum {
+ 			$this->_cPtr=$targetNames;
  			return;
  		}
--		$this->_cPtr=new_min($targetName,$resultName);
-+		$this->targetName = $targetName;
++		$this->targetNames = $targetNames;
 +		$this->resultName = $resultName;
-+		$this->_cPtr=new_min($this->targetName,$this->resultName);
+ 		switch (func_num_args()) {
+-		case 1: $this->_cPtr=new_min($targetNames); break;
+-		default: $this->_cPtr=new_min($targetNames,$resultName);
++		case 1: $this->_cPtr=new_min($this->targetNames); break;
++		default: $this->_cPtr=new_min($this->targetNames,$this->resultName);
+ 		}
  	}
  }
- 
-@@ -3937,11 +4140,127 @@ class max extends sum {
- 			$this->_cPtr=$targetName;
+@@ -4069,14 +4268,130 @@ class max extends sum {
+ 			$this->_cPtr=$targetNames;
  			return;
  		}
--		$this->_cPtr=new_max($targetName,$resultName);
-+		$this->targetName = $targetName;
++		$this->targetNames = $targetNames;
 +		$this->resultName = $resultName;
-+		$this->_cPtr=new_max($this->targetName,$this->resultName);
+ 		switch (func_num_args()) {
+-		case 1: $this->_cPtr=new_max($targetNames); break;
+-		default: $this->_cPtr=new_max($targetNames,$resultName);
++		case 1: $this->_cPtr=new_max($this->targetNames); break;
++		default: $this->_cPtr=new_max($this->targetNames,$this->resultName);
++		}
 +	}
 +}
 +
@@ -426,7 +415,7 @@ index 059af27..cae12fd 100644
 +	public function seek($position) {
 +		if ($position < 0 || $position >= $this->_count) {
 +			throw new \OutOfBoundsException("invalid seek position ($position)");
-+		}
+ 		}
 +		$this->_position = $position;
  	}
  }
@@ -501,7 +490,7 @@ index 059af27..cae12fd 100644
  	public $_cPtr=null;
  	protected $_pData=array();
  
-@@ -3963,22 +4282,27 @@ class RecordSet {
+@@ -4098,22 +4413,27 @@ class RecordSet {
  	function __construct($r_=null) {
  		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__recordset') {
  			$this->_cPtr=$r_;
@@ -533,7 +522,7 @@ index 059af27..cae12fd 100644
  	}
  
  	function size() {
-@@ -4233,7 +4557,7 @@ class activeTable {
+@@ -4368,7 +4688,7 @@ class activeTable {
  		activeTable_release($this->_cPtr);
  	}
  

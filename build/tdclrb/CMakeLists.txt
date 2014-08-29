@@ -28,9 +28,6 @@ include(../common/system.cmake)
 include(../common/get_boost_libs.cmake)
 include(../common/get_ruby_path.cmake)
 include(../common/smart_install.cmake)
-include(./gem_output.cmake)
-include(../common/check_for_link_iconv.cmake)
-check_for_link_iconv()
 
 
 set(this_target tdclrb)
@@ -79,15 +76,6 @@ set(TDVER_RUBY_BUILD "${TRANSACTD_BUILD_NUMBER}")
 
 
 # ==========================================================
-# add tdclc/tdclcppm if need
-# ==========================================================
-if((NOT TARGET tdclc) AND (NOT MINGW))
-  subdirs("../tdclc")
-endif()
-set(TDCL_CPP_CHARSET "m")
-
-
-# ==========================================================
 # add custom command for generate swig wrapper
 # ==========================================================
 set(RUBY_SWIG_WRAPPER_CPP "${CMAKE_CURRENT_BINARY_DIR}/tdclrb_wrap.cpp")
@@ -114,7 +102,10 @@ add_custom_command (
 # ==========================================================
 # add swig wrapper source file
 # ==========================================================
-tdcl_add_source_files("${TRANSACTD_ROOT}")
+if(WIN32 AND (NOT MSVC))
+  # Add source files of C++ client to contain it inside.
+  tdcl_add_source_files("${TRANSACTD_ROOT}")
+endif()
 set(${this_target}_SOURCE_FILES
   ${${this_target}_SOURCE_FILES}
   ${RUBY_SWIG_WRAPPER_CPP}
@@ -162,7 +153,10 @@ endif()
 # ==========================================================
 # Add compile options
 # ==========================================================
-if(NOT MSVC)
+if(MSVC)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
+    " /MD ")
+else()
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
     " --std=c++0x -U__STRICT_ANSI__ -finput-charset=utf-8 ")
 endif()
@@ -201,14 +195,17 @@ endif()
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
-if(CAN_LINK_ICONV)
-  target_link_libraries(${this_target} "${ICONV_LIBRARY}")
+target_link_libraries(${this_target} "${TRANSACTD_RUBY_LIBRARY_PATH}")
+if(WIN32 AND (NOT MSVC))
+  transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
+else()
+  transactd_link_boost_libraries("timer")
+  if(MSVC)
+    target_link_libraries(${this_target} "tdclcppmr")
+  else()
+    target_link_libraries(${this_target} "tdclcppm")
+  endif()
 endif()
-if(NOT WIN32)
-  target_link_libraries(${this_target} dl)
-endif()
-target_link_libraries(${this_target} ${TRANSACTD_RUBY_LIBRARY_PATH})
 
 
 # ==========================================================
@@ -229,8 +226,23 @@ endif()
 
 
 # ==========================================================
-# find .dll if MINGW
+# find .dll to install (prebuilt tdclc_*.dll and MinGW runtime)
 # ==========================================================
+# find tdclc_*.dll
+if(WIN32)
+  bz_get_compiler_bitness()
+  file(GLOB tmp_paths "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common/tdclc_${BZ_BITNESS}*.dll")
+  if("${tmp_paths}" STREQUAL "")
+    set(TDCL_CLIB_PATH "")
+  else()
+    list(GET tmp_paths 0 TDCL_CLIB_PATH)
+  endif()
+  file(TO_CMAKE_PATH "${TDCL_CLIB_PATH}" TDCL_CLIB_PATH)
+  message(STATUS "tdclc_${BZ_BITNESS}*.dll   : ${TDCL_CLIB_PATH}")
+else()
+  set(TDCL_CLIB_PATH "")
+endif()
+# find MinGW runtime
 if(MINGW AND WIN32)
   get_filename_component(MINGW_BIN_PATH ${CMAKE_CXX_COMPILER} PATH)
   # find libgcc_*.dll
@@ -247,22 +259,12 @@ if(MINGW AND WIN32)
   else()
     list(GET tmp_paths 0 MINGW_LIBSTDCPP_PATH)
   endif()
-  # find tdclc dll
-  bz_get_compiler_bitness()
-  file(GLOB tmp_paths "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common/tdclc_${BZ_BITNESS}*.dll")
-  if("${tmp_paths}" STREQUAL "")
-    set(TDCL_CLIB_PATH "")
-  else()
-    list(GET tmp_paths 0 TDCL_CLIB_PATH)
-  endif()
   message(STATUS "MinGW bin path  : ${MINGW_BIN_PATH}")
   message(STATUS "libgcc_*.dll    : ${MINGW_LIBGCC_PATH}")
   message(STATUS "libstdc++-*.dll : ${MINGW_LIBSTDCPP_PATH}")
-  message(STATUS "tdclc_${BZ_BITNESS}*.dll   : ${TDCL_CLIB_PATH}")
 else()
   set(MINGW_LIBGCC_PATH "")
   set(MINGW_LIBSTDCPP_PATH "")
-  set(TDCL_CLIB_PATH "")
 endif()
 
 
@@ -280,12 +282,14 @@ file(GLOB rb_files "${TRANSACTD_ROOT}/build/tdclrb/gem/*.rb")
 install(FILES ${rb_files} DESTINATION "${TRANSACTD_RUBY_GEM_ROOT_PATH}/lib/")
 file(GLOB rb_test_files "${TRANSACTD_ROOT}/source/bzs/test/tdclrb/*.rb")
 install(FILES ${rb_test_files} DESTINATION "${TRANSACTD_RUBY_GEM_ROOT_PATH}/test/")
-## install runtime and prebuilt tdclc_*.dll if mingw on win32
-if(MINGW AND WIN32)
-  # libgcc*.dll and libstdc++*.dll -> ruby\bin
-  get_filename_component(RUBY_BIN_PATH "${TRANSACTD_RUBY_EXECUTABLE_PATH}" PATH)
-  bz_smart_install(DEST "${RUBY_BIN_PATH}"
-    SOURCES "${MINGW_LIBGCC_PATH}" "${MINGW_LIBSTDCPP_PATH}")
+## install runtime and prebuilt tdclc_*.dll on win32
+if(WIN32)
+  if(MINGW)
+    # libgcc*.dll and libstdc++*.dll -> ruby\bin
+    get_filename_component(RUBY_BIN_PATH "${TRANSACTD_RUBY_EXECUTABLE_PATH}" PATH)
+    bz_smart_install(DEST "${RUBY_BIN_PATH}"
+      SOURCES "${MINGW_LIBGCC_PATH}" "${MINGW_LIBSTDCPP_PATH}")
+  endif()
   # tdclc_*.dll -> system dir
-  bz_smart_install(TO_WIN_SYSTEMDIR SOURCES "${TDCL_CLIB_PATH}")
+  bz_smart_install(SOURCES "${TDCL_CLIB_PATH}" TO_WIN_SYSTEMDIR)
 endif()

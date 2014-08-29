@@ -32,9 +32,25 @@ include(../common/check_for_link_iconv.cmake)
 check_for_link_iconv()
 
 
+# ==========================================================
+# check project name and options
+# ==========================================================
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE tdclcpp "" TDCL_CPP_CHARSET "${this_target}")
+string(TOLOWER "${this_target}" this_target)
 project(${this_target})
+# m:multibyte u:unicode mr:multibyte-use_rtm
+if("${this_target}" STREQUAL "tdclcppm")
+  set(TDCL_CPP_CHARSET m)
+  set(TDCL_CPP_USE_RUNTIME_LIBS OFF)
+elseif("${this_target}" STREQUAL "tdclcppu")
+  set(TDCL_CPP_CHARSET u)
+  set(TDCL_CPP_USE_RUNTIME_LIBS OFF)
+elseif("${this_target}" STREQUAL "tdclcppmr")
+  set(TDCL_CPP_CHARSET m)
+  set(TDCL_CPP_USE_RUNTIME_LIBS ON)
+else()
+  message(ERROR "Invalid project name ${this_target}")
+endif()
 
 
 # ==========================================================
@@ -95,7 +111,13 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # ==========================================================
 # Add compile options
 # ==========================================================
-if(NOT MSVC)
+if(MSVC)
+  if(TDCL_CPP_USE_RUNTIME_LIBS)
+    transactd_set_MTMD("MD")
+  else()
+    transactd_set_MTMD("MT")
+  endif()
+else()
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
     " -finput-charset=utf-8 ")
 endif()
@@ -119,7 +141,7 @@ else()
       WIN32 _WIN32)
   endif()
 endif()
-if((TARGET tdclrb) OR (TARGET tdclphp))
+if(TRANSACTD_RUBY_GEM OR TRANSACTD_PHP)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     SWIG_BUILDING)
 endif()
@@ -149,11 +171,15 @@ endif()
 # ==========================================================
 bz_get_compiler_bitness()
 if(WIN32)
-  ## Windows tdclcpp[_Compiler]_[32|64][m|u]_[MAJOR]_[MINOR].dll
+  ## Windows tdclcpp[_Compiler]_[32|64][m|u|mr]_[MAJOR]_[MINOR].dll
   bz_get_compiler()
+  set(TDCL_CPP_NAME_TMP "tdclcpp${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+  if(TDCL_CPP_USE_RUNTIME_LIBS)
+    set(TDCL_CPP_NAME_TMP "${TDCL_CPP_NAME_TMP}r")
+  endif()
   set_target_properties(${this_target} PROPERTIES PREFIX "")
   set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
-    "tdclcpp${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}_${TDVER_CPP_INTERFACE_VER_MAJOR}_${TDVER_CPP_INTERFACE_VER_MINOR}")
+    "${TDCL_CPP_NAME_TMP}_${TDVER_CPP_INTERFACE_VER_MAJOR}_${TDVER_CPP_INTERFACE_VER_MINOR}")
   set_target_properties(${this_target} PROPERTIES SUFFIX ".dll")
 else()
   ## Linux   libtdclcpp_[32|64][m|u].so.[MAJOR].[MINOR]
@@ -175,6 +201,10 @@ endif()
 # set output directory
 # ==========================================================
 if(NOT COMMAND tdcl_set_output)
-  include(../common/transactd_cl_output.cmake)
+  if(TRANSACTD_RUBY_GEM)
+    include(../tdclrb/gem_output.cmake)
+  else()
+    include(../common/transactd_cl_output.cmake)
+  endif()
 endif()
 tdcl_set_output("${TRANSACTD_BINARY_ROOT}" "${TRANSACTD_CLIENTS_PREFIX}")

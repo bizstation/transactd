@@ -183,7 +183,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::grouping_comp;
 
 // * bzs/db/protocol/tdap/client/groupQuery.h *
-%ignore bzs::db::protocol::tdap::client::fieldNames;
 %ignore bzs::db::protocol::tdap::client::fieldNames::operator=;
 %ignore bzs::db::protocol::tdap::client::fieldNames::fieldNamesImple;
 %ignore bzs::db::protocol::tdap::client::groupFuncBase::operator=;
@@ -212,8 +211,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::avg::create;
 %newobject bzs::db::protocol::tdap::client::avg::avg;
 %extend bzs::db::protocol::tdap::client::avg {
-  avg(const _TCHAR* targetName , const _TCHAR* resultName) {
-    return bzs::db::protocol::tdap::client::avg::create(targetName, resultName);
+  avg(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
+    return bzs::db::protocol::tdap::client::avg::create(targetNames, resultName);
   }
   ~avg() { self->release(); }
 };
@@ -232,8 +231,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::max::create;
 %newobject bzs::db::protocol::tdap::client::max::max;
 %extend bzs::db::protocol::tdap::client::max {
-  max(const _TCHAR* targetName , const _TCHAR* resultName) {
-    return bzs::db::protocol::tdap::client::max::create(targetName, resultName);
+  max(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
+    return bzs::db::protocol::tdap::client::max::create(targetNames, resultName);
   }
   ~max() { self->release(); }
 };
@@ -242,8 +241,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::min::create;
 %newobject bzs::db::protocol::tdap::client::min::min;
 %extend bzs::db::protocol::tdap::client::min {
-  min(const _TCHAR* targetName , const _TCHAR* resultName) {
-    return bzs::db::protocol::tdap::client::min::create(targetName, resultName);
+  min(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
+    return bzs::db::protocol::tdap::client::min::create(targetNames, resultName);
   }
   ~min() { self->release(); }
 };
@@ -252,8 +251,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::sum::create;
 %newobject bzs::db::protocol::tdap::client::sum::sum;
 %extend bzs::db::protocol::tdap::client::sum {
-  sum(const _TCHAR* targetName , const _TCHAR* resultName) {
-    return bzs::db::protocol::tdap::client::sum::create(targetName, resultName);
+  sum(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
+    return bzs::db::protocol::tdap::client::sum::create(targetNames, resultName);
   }
   ~sum() { self->release(); }
 };

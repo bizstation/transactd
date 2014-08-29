@@ -164,6 +164,14 @@ typedef char  _TCHAR;
   ZVAL_STRINGL($result, (char *)result, *$1, 1);
 }
 
+// * bzs/db/protocol/tdap/client/groupQuery.h *
+%rename(__clone) bzs::db::protocol::tdap::client::groupFuncBase::clone;
+%rename(__clone) bzs::db::protocol::tdap::client::avg::clone;
+%rename(__clone) bzs::db::protocol::tdap::client::count::clone;
+%rename(__clone) bzs::db::protocol::tdap::client::max::clone;
+%rename(__clone) bzs::db::protocol::tdap::client::min::clone;
+%rename(__clone) bzs::db::protocol::tdap::client::sum::clone;
+
 // * bzs/db/protocol/tdap/client/nsDatabase.h *
 %rename(__clone) bzs::db::protocol::tdap::client::nsdatabase::clone;
 

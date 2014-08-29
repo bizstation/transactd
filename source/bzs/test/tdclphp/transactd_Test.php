@@ -1859,6 +1859,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $q->queryString('*');
         $this->assertEquals($q->toString(), '*');
         
+        $q->queryString('');
         $q->all();
         $this->assertEquals($q->toString(), '*');
         
@@ -1915,6 +1916,39 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $q->queryString('');
         $q->where('in', '<>', '1');
         $this->assertEquals($q->toString(), "in <> '1'");
+        
+        // test auto_escape
+        $q->queryString("code = ab'c", true);
+        $this->assertEquals($q->toString(), "code = 'ab&'c'");
+        
+        $q->queryString("code = ab&c", true);
+        $this->assertEquals($q->toString(), "code = 'ab&&c'");
+        
+        $q->queryString("code = abc&", true);
+        $this->assertEquals($q->toString(), "code = 'abc&&'");
+        $q->queryString("code = abc&&", true);
+        $this->assertEquals($q->toString(), "code = 'abc&&&&'");
+        
+        $q->queryString("code = 'abc&'", true);
+        $this->assertEquals($q->toString(), "code = 'abc&&'");
+        $q->queryString("code = 'abc&&'", true);
+        $this->assertEquals($q->toString(), "code = 'abc&&&&'");
+        
+        $q->queryString("code = 'ab'c'", true);
+        $this->assertEquals($q->toString(), "code = 'ab&'c'");
+        
+        $q->queryString("code = 'abc''", true);
+        $this->assertEquals($q->toString(), "code = 'abc&''");
+        
+        $q->queryString("code = abc'", true);
+        $this->assertEquals($q->toString(), "code = 'abc&''");
+        
+        // Invalid single quote (') on the end of statement
+        $q->queryString("code = 'abc", true);
+        $this->assertEquals($q->toString(), "code = 'abc'");
+        
+        $q->queryString("code = &abc", true);
+        $this->assertEquals($q->toString(), "code = '&&abc'");
     }
     
     /* -----------------------------------------------------
@@ -2122,6 +2156,39 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->createQTextention($db);
         // insert data
         $this->insertQT($db, 20000);
+        $db->close();
+        $this->deleteDbObj($db);
+    }
+    public function testNewDelete()
+    {
+        $db = $this->getDbObj();
+        $db->open(URL_QT);
+        for ($i = 0; $i < 500; $i++)
+        {
+            $qb = new Bz\queryBase();
+            $q  = new Bz\query();
+            $rq = new Bz\recordsetQuery();
+            $gq = new Bz\groupQuery();
+            $f  = new Bz\fieldNames();
+            $f->addValue('abc');
+            $atu = new Bz\ActiveTable($db, 'user');
+            $atu->index(0);
+            $atg = new Bz\ActiveTable($db, 'groups');
+            $atg->index(0);
+            $fns = new Bz\fieldNames();
+            $fns->addValue('a');
+            $s = new Bz\sum($fns);
+            $s = new Bz\count('a');
+            $s = new Bz\avg($fns);
+            $s = new Bz\min($fns);
+            $s = new Bz\max($fns);
+            $rs = new Bz\RecordSet();
+            // explicitly release
+            unset($atu);
+            unset($atg);
+            // NOT TO: $atg->release();
+            // NOT TO: $atu->release();
+        }
         $db->close();
         $this->deleteDbObj($db);
     }

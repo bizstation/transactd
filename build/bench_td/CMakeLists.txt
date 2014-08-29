@@ -97,12 +97,14 @@ endif()
 # ==========================================================
 add_executable(${this_target} ${${this_target}_SOURCE_FILES})
 bz_get_compiler_bitness()
-set_target_properties(${this_target} PROPERTIES OUTPUT_NAME "bench_td_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+set_target_properties(${this_target} PROPERTIES
+  OUTPUT_NAME "bench_td_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
 
 
 # ==========================================================
 # Add compile options
 # ==========================================================
+transactd_set_MTMD("MT")
 if(NOT MSVC)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
     " -finput-charset=utf-8 ")

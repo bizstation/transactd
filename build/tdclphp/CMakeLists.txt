@@ -26,8 +26,6 @@ include(../common/transactd_cl_common.cmake)
 include(../common/options.cmake)
 include(../common/system.cmake)
 include(../common/get_boost_libs.cmake)
-include(../common/check_for_link_iconv.cmake)
-check_for_link_iconv()
 
 
 set(this_target tdclphp)
@@ -64,18 +62,6 @@ message(STATUS "  TRANSACTD_PHP_LIBRARY_PATH ${TRANSACTD_PHP_LIBRARY_PATH}")
 transactd_read_version("${TRANSACTD_ROOT}")
 transactd_read_build_number("${TRANSACTD_ROOT}")
 set(TDVER_PHP_BUILD "${TRANSACTD_BUILD_NUMBER}")
-
-
-# ==========================================================
-# add tdclc/tdclcppm if need
-# ==========================================================
-if((NOT TARGET tdclc) AND (NOT MINGW))
-  subdirs("../tdclc")
-endif()
-if(NOT TARGET tdclcppm)
-  set(TDCL_CPP_CHARSET "m")
-  subdirs("../tdclcppm")
-endif()
 
 
 # ==========================================================
@@ -158,6 +144,15 @@ endif()
 
 
 # ==========================================================
+# Add compile options
+# ==========================================================
+if(MSVC)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
+    " /MD ")
+endif()
+
+
+# ==========================================================
 # Add compile definitions
 # ==========================================================
 set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
@@ -203,14 +198,12 @@ endif()
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
-if(CAN_LINK_ICONV)
-  target_link_libraries(${this_target} "${ICONV_LIBRARY}")
-endif()
-target_link_libraries(${this_target} "tdclcpp${TDCL_CPP_CHARSET}")
 target_link_libraries(${this_target} "${TRANSACTD_PHP_LIBRARY_PATH}")
-if(NOT WIN32)
-  target_link_libraries(${this_target} dl)
+transactd_link_boost_libraries("timer")
+if(MSVC)
+  target_link_libraries(${this_target} "tdclcppmr")
+else()
+  target_link_libraries(${this_target} "tdclcppm")
 endif()
 
 

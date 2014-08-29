@@ -1694,6 +1694,7 @@ def testQuery()
   q.queryString('*')
   expect(q.toString()).to eq '*'
   
+  q.queryString('')
   q.all()
   expect(q.toString()).to eq '*'
   
@@ -1750,6 +1751,39 @@ def testQuery()
   q.queryString('')
   q.where('in', '<>', '1')
   expect(q.toString()).to eq "in <> '1'"
+  
+  # test auto_escape
+  q.queryString("code = ab'c", true)
+  expect(q.toString()).to eq "code = 'ab&'c'"
+  
+  q.queryString("code = ab&c", true)
+  expect(q.toString()).to eq "code = 'ab&&c'"
+  
+  q.queryString("code = abc&", true)
+  expect(q.toString()).to eq "code = 'abc&&'"
+  q.queryString("code = abc&&", true)
+  expect(q.toString()).to eq "code = 'abc&&&&'"
+  
+  q.queryString("code = 'abc&'", true)
+  expect(q.toString()).to eq "code = 'abc&&'"
+  q.queryString("code = 'abc&&'", true)
+  expect(q.toString()).to eq "code = 'abc&&&&'"
+  
+  q.queryString("code = 'ab'c'", true)
+  expect(q.toString()).to eq "code = 'ab&'c'"
+  
+  q.queryString("code = 'abc''", true)
+  expect(q.toString()).to eq "code = 'abc&''"
+  
+  q.queryString("code = abc'", true)
+  expect(q.toString()).to eq "code = 'abc&''"
+  
+  # Invalid single quote (') on the end of statement
+  q.queryString("code = 'abc", true)
+  expect(q.toString()).to eq "code = 'abc'"
+  
+  q.queryString("code = &abc", true)
+  expect(q.toString()).to eq "code = '&&abc'"
 end
 
 def createQTuser(db)
@@ -1946,6 +1980,34 @@ def testCreateQueryTest(db)
   createQTextention(db)
   # insert data
   insertQT(db, 20000)
+  db.close()
+end
+
+def testNewDelete(db)
+  db.open(URL_QT)
+  for i in 0..499
+    qb = Transactd::QueryBase.new()
+    q  = Transactd::Query.new()
+    rq = Transactd::RecordsetQuery.new()
+    gq = Transactd::GroupQuery.new()
+    f  = Transactd::FieldNames.new()
+    f.addValue('abc')
+    atu = Transactd::ActiveTable.new(db, 'user')
+    atu.index(0)
+    atg = Transactd::ActiveTable.new(db, 'groups')
+    atg.index(0)
+    fns = Transactd::FieldNames.new()
+    fns.keyField('a')
+    s = Transactd::Sum.new(fns)
+    c = Transactd::Count.new('a')
+    a = Transactd::Avg.new(fns)
+    mi = Transactd::Min.new(fns)
+    ma = Transactd::Max.new(fns)
+    rs = Transactd::RecordSet.new()
+    # have to explicitly release
+    atu.release()
+    atg.release()
+  end
   db.close()
 end
 
@@ -2243,6 +2305,9 @@ describe Transactd do
   end
   it 'create querytest db' do
     testCreateQueryTest(@db)
+  end
+  it 'new and delete objects' do
+    testNewDelete(@db)
   end
   it 'activetable and join' do
     testJoin(@db)

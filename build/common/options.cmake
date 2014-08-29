@@ -59,33 +59,3 @@ macro(bz_add_cxx_flag opt build_type)
   set(CMAKE_CXX_FLAGS${build_type} "${CMAKE_CXX_FLAGS${build_type}} ${opt}")
 endmacro()
 endif()
-
-# ==========================================================
-#   set /MT(d) flag to CXX_FLAGS
-# ==========================================================
-if(NOT COMMAND bz_set_MTMTd_cxx_flag)
-macro(bz_set_MTMTd_cxx_flag build_type)
-  bz_replace_cxx_flag("/MDd" "/MTd" "${build_type}")
-  bz_replace_cxx_flag("/MD"  "/MT"  "${build_type}")
-  if(    "${CMAKE_CXX_FLAGS${build_type}}" MATCHES "(.* )?/MT( .*)?$")
-  elseif("${CMAKE_CXX_FLAGS${build_type}}" MATCHES "(.* )?/MTd( .*)?$")
-  else()
-    bz_add_cxx_flag("/MT" "${build_type}")
-  endif()
-endmacro()
-endif()
-
-# ==========================================================
-#   set /MD(d) flag to CXX_FLAGS
-# ==========================================================
-if(NOT COMMAND bz_set_MDMDd_cxx_flag)
-macro(bz_set_MDMDd_cxx_flag build_type)
-  bz_replace_cxx_flag("/MTd" "/MDd" "${build_type}")
-  bz_replace_cxx_flag("/MT"  "/MD"  "${build_type}")
-  if(    "${CMAKE_CXX_FLAGS${build_type}}" MATCHES "(.* )?/MD( .*)?$")
-  elseif("${CMAKE_CXX_FLAGS${build_type}}" MATCHES "(.* )?/MDd( .*)?$")
-  else()
-    bz_add_cxx_flag("/MD" "${build_type}")
-  endif()
-endmacro()
-endif()

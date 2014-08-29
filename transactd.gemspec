@@ -68,7 +68,7 @@ spec_build = Gem::Specification.new do |s|
     s.files      += Dir.glob('./*')
   else
     #
-    # without prebuilt binary
+    # source code package
     #
     s.platform    = Gem::Platform::RUBY
     s.extensions  = ['build/tdclrb/bldgem/extconf.rb']
@@ -78,6 +78,11 @@ spec_build = Gem::Specification.new do |s|
     s.files      += Dir.glob('build/swig/**/*') + Dir.glob('build/tdclc/**/*')
     s.files      += Dir.glob('build/tdclcpp/**/*') + Dir.glob('build/tdclrb/**/*')
     s.files      += Dir.glob('./*')
+    if RUBY_PLATFORM =~ /mswin/ || RUBY_PLATFORM =~ /mingw/
+      # add prebuilt binary
+      tdclc_file  = File.join('bin', 'common', 'tdclc_*.*')
+      s.files    += Dir.glob(tdclc_file)
+    end
   end
   
   msgs = []
