@@ -63,8 +63,7 @@ public:
 public:
 
  	
-	STDMETHOD(SetDatabase)(IDatabase* Value, BSTR tableName);
-	STDMETHOD(SetDbManager)(IPooledDbManager* Value, BSTR tableName);
+	STDMETHOD(SetDatabase)(VARIANT Value, BSTR tableName);
 
 	STDMETHOD(Index)(short Value, IActiveTable** retVal);
 	STDMETHOD(KeyValue)(VARIANT Value0, VARIANT Value1, VARIANT Value2

@@ -33,6 +33,7 @@ void CActiveTable::setResult(IActiveTable** retVal)
 {
 	this->QueryInterface(IID_IActiveTable, (void**)retVal);
 }
+
 void CActiveTable::FinalRelease()
 {
 	if (m_recObj)
@@ -40,52 +41,36 @@ void CActiveTable::FinalRelease()
 	delete m_at;
 
 
-}; 
+} 
 
-STDMETHODIMP CActiveTable::SetDatabase(IDatabase* Value, BSTR tableName)
+STDMETHODIMP CActiveTable::SetDatabase(VARIANT Value, BSTR tableName)
 {
 	try
 	{
-		if (Value)
-		{
-			CDatabase* p = dynamic_cast<CDatabase*>(Value);
-			if (p)
-			{	
-				m_at = new activeTable(p->database(), tableName);
-				m_at->table()->setOptionalData((void*)p->database());
-				return S_OK;
-			}
+		if (Value.vt != VT_DISPATCH)
+			 return Error(_T("SetDatabase Type error"), IID_IActiveTable);		
+		CPooledDbManager* pm = dynamic_cast<CPooledDbManager*>(Value.pdispVal);
+		if (pm)
+		{	
+			m_at = new activeTable(&pm->m_mgr, tableName);
+			m_at->table()->setOptionalData((void*)NULL);
+			return S_OK;
 		}
-		return S_FALSE;
+
+		CDatabase* p = dynamic_cast<CDatabase*>(Value.pdispVal);
+		if (p)
+		{	
+			m_at = new activeTable(p->database(), tableName);
+			m_at->table()->setOptionalData((void*)p->database());
+			return S_OK;
+		}
+		return Error(_T("SetDatabase Type error"), IID_IActiveTable);	
 	}
 	catch(bzs::rtl::exception& e)
     {
         return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
     }
 }
-
-STDMETHODIMP CActiveTable::SetDbManager(IPooledDbManager* Value, BSTR tableName)
-{
-	try
-	{
-		if (Value)
-		{
-			CPooledDbManager* p = dynamic_cast<CPooledDbManager*>(Value);
-			if (p)
-			{	
-				m_at = new activeTable(&p->m_mgr, tableName);
-				m_at->table()->setOptionalData((void*)NULL);
-				return S_OK;
-			}
-		}
-		return S_FALSE;
-	}
-	catch(bzs::rtl::exception& e)
-    {
-        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
-    }
-}
-
 
 STDMETHODIMP CActiveTable::Index(short Value, IActiveTable** retVal)
 {
@@ -338,7 +323,6 @@ STDMETHODIMP CActiveTable::GetWritableRecord(IWritableRecord** retVal)
 
 	return S_OK;
 }
-
 
 STDMETHODIMP CActiveTable::get_TableDef(ITableDef** Value)
 {

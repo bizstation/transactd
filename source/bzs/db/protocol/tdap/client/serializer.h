@@ -75,7 +75,7 @@ class DLLLIBSTMT groupByStatement : public fieldNames, public executable
 {
 	struct queryStatementsImple* m_parent;
 	friend class queryStatements;
-	friend class queryStatementsImple;
+	friend struct queryStatementsImple;
 	std::vector< groupFuncBase* >* m_statements;
 
 	template <class Archive>
@@ -106,7 +106,7 @@ class DLLLIBSTMT  matchByStatement : public recordsetQuery, public executable
 {
 	struct queryStatementsImple* m_parent;
 	friend class queryStatements;
-	friend class queryStatementsImple;
+	friend struct queryStatementsImple;
 public:
 	void execute(recordset& rs);
 	static matchByStatement* create();

@@ -73,7 +73,6 @@ STDMETHODIMP CRecord::get_IsInvalidRecord( VARIANT_BOOL* retVal)
 	return S_OK;
 }
 
-
 void CWritableRecord::FinalRelease()
 {
 	if (m_fieldObj)
@@ -82,6 +81,7 @@ void CWritableRecord::FinalRelease()
 		m_fieldDefsObj->Release();
 
 }
+
 short CWritableRecord::GetFieldNum(VARIANT* Index)
 {
     short index = -1;

@@ -101,14 +101,14 @@ STDMETHODIMP CPooledDbManager::EndSnapshot(void)
 	return S_OK;
 }
 
-STDMETHODIMP CPooledDbManager::Use(IConnectParams* Uri)
+STDMETHODIMP CPooledDbManager::Use(VARIANT Uri)
 {
 	try
 	{
 		connectParams* p=NULL;
-		if (Uri)
+		if (Uri.vt == VT_DISPATCH)
 		{
-			CConnectParams* cp = dynamic_cast<CConnectParams*>(Uri);
+			CConnectParams* cp = dynamic_cast<CConnectParams*>(Uri.pdispVal);
 			if (cp)
 				p = cp->internalConnectParams();
 		}

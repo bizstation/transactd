@@ -69,6 +69,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 			return FALSE;
 		if ((g_tlsiID1 = TlsAlloc()) == TLS_OUT_OF_INDEXES)
 			return FALSE;
+		if ((g_tlsiID_SC1 = TlsAlloc()) == TLS_OUT_OF_INDEXES)
+			return FALSE;
 		#endif
 
 		m_cons = new  connections(PIPENAME);
@@ -93,7 +95,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  reason, LPVOID lpReserved)
 		#ifdef USETLS
 		TlsFree(g_tlsiID);
 		TlsFree(g_tlsiID1);
-
+		TlsFree(g_tlsiID_SC1);
 		#endif
 	}
 	return TRUE;

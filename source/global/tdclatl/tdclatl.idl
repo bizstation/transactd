@@ -1062,9 +1062,7 @@ interface IQueryBase : IDispatch
 interface IActiveTable : IDispatch
 {
   [id(0x0000001)]
-  HRESULT _stdcall SetDatabase([in] IDatabase* Value, [in] BSTR tableName);
-  [id(0x0000011)]
-  HRESULT _stdcall SetDbManager([in] IPooledDbManager* Value, [in] BSTR tableName);
+  HRESULT _stdcall SetDatabase([in] VARIANT Value, [in] BSTR tableName);
   [id(0x0000002)]
   HRESULT _stdcall Index([in] short Value, [out, retval] IActiveTable** retVal);
   [id(0x0000003)]
@@ -1362,7 +1360,7 @@ interface IPooledDbManager : IDispatch
   [id(0x00000006)]
   HRESULT _stdcall EndSnapshot(void);
   [id(0x00000007)]
-  HRESULT _stdcall Use([in, defaultvalue(NULL)] IConnectParams* Uri);
+  HRESULT _stdcall Use([in, defaultvalue(0L)] VARIANT Uri);
   [id(0x00000008)]
   HRESULT _stdcall Unuse();
   [propget, id(0x00000009)]

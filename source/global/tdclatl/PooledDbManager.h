@@ -66,7 +66,7 @@ public:
 	STDMETHOD(AbortTrn)(void);
 	STDMETHOD(BeginSnapshot)(void);
 	STDMETHOD(EndSnapshot)(void);
-	STDMETHOD(Use)(IConnectParams* Uri = 0);
+	STDMETHOD(Use)(VARIANT Uri);
 	STDMETHOD(Unuse)();
 	STDMETHOD(get_EnableTrn)(VARIANT_BOOL* Value);
 	STDMETHOD(get_Uri)(BSTR* Uri);
