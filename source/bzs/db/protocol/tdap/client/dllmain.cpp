@@ -48,6 +48,7 @@ dllUnloadCallback dllUnloadCallbackFunc=NULL;
 
 #ifdef USETLS
 tls_key g_tlsiID1;
+tls_key g_tlsiID_SC1;
 #else
 __THREAD clientID __THREAD_BCB g_cid;
 __THREAD bool __THREAD_BCB g_initCid = false;
@@ -113,6 +114,7 @@ void onLoadLibrary(void)
 	#ifdef USETLS
 	pthread_key_create(&g_tlsiID, NULL);
 	pthread_key_create(&g_tlsiID1, NULL);
+	pthread_key_create(&g_tlsiID_SC1, NULL);
 	#endif
 
 }
@@ -125,6 +127,7 @@ void onUnloadLibrary(void)
 	#ifdef USETLS
 	pthread_key_delete(g_tlsiID); 
 	pthread_key_delete(g_tlsiID1);
+	pthread_key_delete(g_tlsiID_SC1);
 	#endif
 }
 #endif
