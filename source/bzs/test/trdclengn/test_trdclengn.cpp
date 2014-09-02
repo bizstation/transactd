@@ -1705,9 +1705,7 @@ void testFilterVar(database* db)
             doVarFilter(db, L"user3", CP_ACP, str2, num, key);
         doVarFilter(db, L"user4", CP_ACP, str4, num, key);
 		doVarFilter(db, L"user5", CP_UTF8, str2, num, key);
-#else
-		str2;
-		str4;
+
 #endif
 
         key = 1;

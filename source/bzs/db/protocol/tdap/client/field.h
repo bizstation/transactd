@@ -46,6 +46,7 @@ class DLLLIB fieldShare
 	friend class recordCache;
 
 private:
+	struct Imple* m_imple;
 	struct
 	{
 	unsigned char myDateTimeValueByBtrv: 1;
@@ -53,7 +54,6 @@ private:
 	unsigned char usePadChar: 1;
 	unsigned char logicalToString: 1;
 	};
-	struct Imple* m_imple;
 	fieldShare(const fieldShare&);//no implememt
 	fieldShare& operator=(const fieldShare&);//no implememt
 

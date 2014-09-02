@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 #if defined(__GNUC__)
-	#if (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 3))
+	#if (!defined(__clang__) &&  ((__GNUC__ < 4) || (__GNUC__ == 4 && __GNUC_MINOR__ < 3)))
 		#error "Your GCC version is too old. 4.3 or later versions are required."
 	#endif
 #endif

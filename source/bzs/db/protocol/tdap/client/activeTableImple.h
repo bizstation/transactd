@@ -91,9 +91,9 @@ public:
 
 struct joinInfo
 {
+	std::_tstring fixedValue;
 	ushort_td len;
 	ushort_td type;
-	std::_tstring fixedValue;
 };
 
 #define JOIN_KEYVALUE_TYPE_PTR 0

@@ -43,7 +43,6 @@ namespace client
 {
 
 #define FORMAT_VERSON_BTRV_DEF     		0
-#define FORMAT_VERSON_NAME_WIDE_START 	1
 #define FORMAT_VERSON_CURRENT   		1
 
 static const _TUCHAR BDFFORMAT_VERSION[] = _T("2.000.00");
@@ -65,21 +64,23 @@ static const int BDFMAXBUFFER = 32384;
 
 struct dbdimple
 {
+	tabledef* tableDefs[TABLE_NUM_TMP+1];
 	char keybuf[128];
 	tabledef* bdf;
-	int bdfLen;
-	bool noWriteMode;
-	short deftype;
-	_TCHAR userName[20];
-	tabledef* tableDefs[TABLE_NUM_TMP+1];
-	_TCHAR version[9];
+	void* relateData;
 	ushort_td maxid;
 	short tableCount;
-	void* relateData;
 	short openMode;
+	short deftype;
+	_TCHAR userName[20];
+	int bdfLen;
+	_TCHAR version[9];
+	bool noWriteMode;
 
-	dbdimple() : bdf(NULL), bdfLen(BDFMAXBUFFER), noWriteMode(false), tableCount(0),
-		relateData(NULL), openMode(1), maxid(0)
+
+	dbdimple() : bdf(NULL), relateData(NULL), maxid(0), tableCount(0)
+		, openMode(1),deftype(TYPE_SCHEMA_BDF)
+		, bdfLen(BDFMAXBUFFER), noWriteMode(false)
 	{
 		memset(tableDefs, 0, (TABLE_NUM_TMP+1)*sizeof(tabledef*));
 		_tcscpy(version, (const _TCHAR*)BDFFORMAT_VERSION);

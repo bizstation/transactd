@@ -212,7 +212,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		if (pm.print)
 			printResult(rs);
 		char tmp[120];
-		sprintf_s(tmp, 120, "OK, %u record(s) :", rs.size());
+		sprintf_s(tmp, 120, "OK, %lu record(s) :", rs.size());
 		bzs::rtl::benchmark::showTimes(t, tmp);
 
 		fflush(stdout);

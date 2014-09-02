@@ -45,18 +45,17 @@ namespace client
 
 struct dbimple
 {
-
-	_TCHAR rootDir[MAX_PATH];
-	bool isOpened;
 	dbdef* dbDef;
 	void* optionalData;
-	bool isTableReadOnly;
-	bool lockReadOnly;
+	_TCHAR rootDir[MAX_PATH];
 	deleteRecordFn m_deleteRecordFn;
 	copyDataFn m_copyDataFn;
+	bool isOpened;
+	bool isTableReadOnly;
+	bool lockReadOnly;
 
-	dbimple() : dbDef(NULL), isOpened(false), m_deleteRecordFn(NULL),m_copyDataFn(NULL), optionalData(NULL),
-		isTableReadOnly(false), lockReadOnly(false)
+	dbimple() : dbDef(NULL), optionalData(NULL), m_deleteRecordFn(NULL),m_copyDataFn(NULL)
+		, isOpened(false), isTableReadOnly(false), lockReadOnly(false)
 	{
 		rootDir[0] = 0x00;
 	}

@@ -67,11 +67,11 @@ public:
 class multiRecordAlocatorImple : public multiRecordAlocator
 {
 	class recordsetImple* m_rs;
+	const std::vector< std::vector<int> >* m_joinRowMap;
 	int m_rowOffset;
 	int m_addType;
 	int m_curFirstFiled;
-	const std::vector< std::vector<int> >* m_joinRowMap;
-	
+
 public:
 	inline multiRecordAlocatorImple(recordsetImple* rs);
 	inline void init(size_t recordCount, size_t recordLen, int addType, const table* tb);

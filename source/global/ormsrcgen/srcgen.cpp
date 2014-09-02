@@ -89,7 +89,7 @@ void cppSrcGen::replace(string& source, const char* convTgtStr, const string& re
 
 string cppSrcGen::membaNameGet(string s)
 {
-	char v[2]={NULL};
+	char v[2]={0};
 	if ((s.size()>0) && (m_pm.setPrefix=="get"))
 	{
 		v[0] = s[0] - 32;
@@ -100,7 +100,7 @@ string cppSrcGen::membaNameGet(string s)
 
 string cppSrcGen::membaNameSet(string s)
 {
-	char v[2]={NULL};
+	char v[2]={0};
 
 	if ((s.size()>0) && (m_pm.setPrefix=="set"))
 	{
@@ -113,7 +113,7 @@ string cppSrcGen::membaNameSet(string s)
 string cppSrcGen::membaName(fielddef* fielddef)
 {
 	string s = m_fnames.getName(fielddef->nameA());
-	char v[2]={NULL};
+	char v[2]={0};
 	if ((s.size()>0) && ((s[0] >= 'A') &&  (s[0] <= 'Z')))
 	{
 		v[0] = s[0] + 32;

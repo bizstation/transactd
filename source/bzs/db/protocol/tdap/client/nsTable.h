@@ -65,11 +65,11 @@ private:
 
 protected:
 
-	ushort_td m_op;
 	void* m_pdata;
 	uint_td m_buflen;
 	uint_td m_datalen;
 	void* m_keybuf;
+	ushort_td m_op;
 	keylen_td m_keybuflen;
 	keylen_td m_keylen;
 	mutable short_td m_stat;
@@ -100,7 +100,7 @@ protected:
 	virtual bool onUpdateCheck(eUpdateType type) {return true;};
 	virtual int onUpdateBefore() {writeRecordData();return 0;};
 	virtual void onUpdateAfter(int beforeResult) {};
-	virtual bool onDeleteCheck(bool inkey) {return true;};
+	virtual bool onDeleteCheck(bool in_key) {return true;};
 	virtual void doDel(bool inkey);
 	virtual keylen_td writeKeyData(){return 0;};
 	virtual void onReadAfter()=0;
@@ -150,7 +150,7 @@ public:
 	inline uint_td getWriteImageLen() {return doGetWriteImageLen();};
 	inline void close() {doClose();}
 	inline void update(eUpdateType type = changeCurrentCc) {doUpdate(type);}
-	inline void del(bool inkey=false) {doDel(inkey);}
+	inline void del(bool in_key=false) {doDel(in_key);}
 	inline ushort_td insert(bool ncc = false) {return doInsert(ncc);};
 	inline void createIndex(bool specifyKeyNum = false) {doCreateIndex(specifyKeyNum);}
 	void dropIndex(bool norenumber = false);

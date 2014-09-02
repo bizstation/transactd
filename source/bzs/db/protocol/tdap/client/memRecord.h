@@ -120,8 +120,8 @@ public:
 class DLLLIB writableRecord : public memoryRecord
 {
 	fielddefs* m_fddefs;
-	short m_endIndex;
 	table* m_tb;
+	short m_endIndex;
 
 	writableRecord(table* tb, const aliasMap_type* alias);
 	writableRecord(const writableRecord&);
