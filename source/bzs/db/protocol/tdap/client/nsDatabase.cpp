@@ -100,11 +100,16 @@ short_td __STDCALL BTRCALLIDForRubyThread(ushort_td op, void* pbk, void* data,
 }
 #endif //TRANSACTD_RB_CALL_WITHOUT_GVL
 
+void setTrnsctdEntryPoint(BTRCALLID_PTR p)
+{
+	MYTICALLID = p;
+}
+
 BTRCALLID_PTR getTrnsctdEntryPoint()
 {
 	if (MYTICALLID)
 		return MYTICALLID;
-	
+
 
 	if (hTrsdDLL == NULL)
 		hTrsdDLL = LoadLibraryA(LIB_PREFIX TDCLC_LIBNAME);
@@ -122,7 +127,7 @@ BTRCALLID_PTR getTrnsctdEntryPoint()
 	return MYTICALLID;
 }
 
-BTRCALLID_PTR getBtrvEntryPoint() {return BTRCALLIDX;}
+
 
 int smartLoadLibrary()
 {
@@ -154,6 +159,18 @@ void smartFreeLibrary()
 	hTrsdDLL = NULL;
 	BTRCALLIDX = NULL;
 	MYTICALLID = NULL;
+}
+
+void setBtrvEntryPoint(BTRCALLID_PTR p)
+{
+	BTRCALLIDX = p;
+}
+
+BTRCALLID_PTR getBtrvEntryPoint()
+{
+	if (hBtrvDLL == NULL)
+		smartLoadLibrary();
+	return BTRCALLIDX;
 }
 
 struct nsdbimpl
