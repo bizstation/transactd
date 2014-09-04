@@ -194,8 +194,9 @@ public:
 	static void throwError(const _TCHAR* caption, nstable* tb);
 	static _TCHAR* getDirURI(const _TCHAR* uri, _TCHAR* retbuf);
 	static bool existsFile(const _TCHAR* filename);
+	/** @cond INTERNAL */
 	static bool test(nstable* p);
-	
+	/** @endcond*/
 };
 
 

@@ -223,6 +223,7 @@ struct nsdbimpl
 };
 
 boost::mutex g_mutex;
+static int g_maxEnginIndex = 0;
 
 nsdatabase::nsdatabase() : m_stat(0)
 {
@@ -255,20 +256,20 @@ nsdatabase::nsdatabase() : m_stat(0)
 
 	boost::mutex::scoped_lock lck(g_mutex);
 	// serach empty
-	int i;
-	for (i = 0; i < MAX_BTRENGIN; i++)
-		if (engins()[i] == NULL)
+	int index;
+	for (index = 0; index < MAX_BTRENGIN; index++)
+		if (engins()[index] == NULL)
 			break;
 
-	engins()[i] = this;
-
 	// no empty
-	if (MAX_BTRENGIN == i)
+	if (MAX_BTRENGIN == index)
 	{
 		m_stat = -1;
 		return;
 	}
-	m_nsimpl->setId((unsigned short)i);
+	engins()[index] = this;
+	g_maxEnginIndex = std::max<int>(index, g_maxEnginIndex);
+	m_nsimpl->setId((unsigned short)index);
 
 }
 
@@ -293,6 +294,7 @@ nsdatabase::~nsdatabase()
 	if (m_nsimpl->id != 0)
 		engins()[m_nsimpl->id] = NULL;
 	delete m_nsimpl;
+	m_nsimpl = 0x00;
 #ifdef _WIN32
 	OutputDebugString(_T("delete database\n"));
 #endif
@@ -488,8 +490,7 @@ void nsdatabase::rename(const _TCHAR* pFullPath, const _TCHAR* newName)
 
 void nsdatabase::registerTable(nstable* tb)
 {
-	int i;
-	for (i = 0; i < maxtables; i++)
+	for (int i = 0; i < maxtables; i++)
 	{
 		if (m_nsimpl->tables[i] == NULL)
 		{
@@ -502,8 +503,7 @@ void nsdatabase::registerTable(nstable* tb)
 
 void nsdatabase::unregisterTable(nstable* table)
 {
-	int i;
-	for (i = 0; i < maxtables; i++)
+	for (int i = 0; i < maxtables; i++)
 	{
 		if (m_nsimpl->tables[i] == table)
 		{
@@ -512,6 +512,20 @@ void nsdatabase::unregisterTable(nstable* table)
 			break;
 		}
 	}
+}
+
+
+bool nsdatabase::findTable(nstable* tb)
+{
+	if (m_nsimpl)
+	{
+		for (int i = 0; i < maxtables; i++)
+		{
+			if (m_nsimpl->tables[i] == tb)
+				return true;
+		}
+	}
+	return false;
 }
 
 
@@ -759,6 +773,21 @@ const char* nsdatabase::toServerUri(char* buf, int buflen, const _TCHAR* src, bo
 	#endif
 	return toChar(buf, src, buflen);
 
+}
+
+bool nsdatabase::testTablePtr(nstable* ptr)
+{
+	boost::mutex::scoped_lock lck(g_mutex);
+	for (int i=0; i<g_maxEnginIndex; i++)
+	{
+		nsdatabase* db = engins()[i];
+		if (db != NULL)
+		{
+			if (db->findTable(ptr))
+				return true;
+		}
+	}
+	return false;
 }
 
 DLLUNLOADCALLBACK_PTR nsdatabase::getDllUnloadCallbackFunc()

@@ -71,6 +71,7 @@ protected:
 	virtual ~nsdatabase();
 	void unregisterTable(nstable* tb);
 	void registerTable(nstable* tb);
+	bool findTable(nstable* tb);
 	void addref();
 	void internalRelease(){nsdatabase::release();}
 public:
@@ -119,6 +120,7 @@ public:
 	static unsigned int execCodePage() ;
 	/** @cond INTERNAL */
 	static DLLUNLOADCALLBACK_PTR getDllUnloadCallbackFunc();
+	static bool testTablePtr(nstable* ptr);
 	/** @endcond */
 };
 

@@ -730,7 +730,14 @@ bool isSameUri(const connectParams* param, const Database_Ptr& db)
 
 inline void releaseDatabase(database* db) {database::destroy(db);}
 
-inline void releaseTable(table* p) {if (p) p->release();}
+inline void releaseTable(table* p)
+{
+	if (p)
+	{
+		if (nsdatabase::testTablePtr(p))
+			p->release();
+	}
+}
 
 inline database_ptr createDatabaseObject()
 {

@@ -428,7 +428,7 @@ groupFuncBase& groupByStatement::addFunction(eFunc v, const fieldNames& targetNa
 	switch(v)
 	{
 	case fsum:func =   new client::sum(targetNames, resultName);break;
-	case fcount:func = new client::count(targetNames[0]);break;
+	case fcount:func = new client::count(resultName);break;
 	case favg:func =   new client::avg(targetNames, resultName);break;
 	case fmin:func =   new client::min(targetNames, resultName);break;
 	case fmax:func =   new client::max(targetNames, resultName);break;
