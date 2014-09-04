@@ -105,6 +105,8 @@
         <SanitizedProjectName>test_tdclcpp_bc</SanitizedProjectName>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <Defines>TRDCL_AUTOLINK;BOOST_ALL_NO_LIB;USE_DBM_CONNECTION_POOL;$(Defines)</Defines>
+        <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
+        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <VerInfo_Locale>1041</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <BCC_PCHUsage>None</BCC_PCHUsage>
@@ -202,6 +204,10 @@
         <Manifest_File>None</Manifest_File>
     </PropertyGroup>
     <ItemGroup>
+        <ResourceCompile Include="test_tdclcpp.rc">
+            <Form>test_tdclcpp.res</Form>
+            <BuildOrder>14</BuildOrder>
+        </ResourceCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.cpp">
             <BuildOrder>2</BuildOrder>
         </CppCompile>

@@ -1,6 +1,6 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{F86128F8-C1F3-498D-B699-983F628035E1}</ProjectGuid>
+        <ProjectGuid>{F86128F8-C1F3-498D-B699-983F628035E2}</ProjectGuid>
         <ProjectVersion>15.4</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
@@ -8,6 +8,12 @@
         <AppType>Console</AppType>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <TargetedPlatforms>3</TargetedPlatforms>
+        <BCVER Condition="'$(ProductVersion)'&gt;='8.0' and '$(ProductVersion)' &lt; '9.0'">150</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='9.0' and '$(ProductVersion)' &lt; '10.0'">160</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='10.0' and '$(ProductVersion)' &lt; '11.0'">170</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='11.0' and '$(ProductVersion)' &lt; '12.0'">180</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='12.0' and '$(ProductVersion)' &lt; '13.0'">190</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='14.0' and '$(ProductVersion)' &lt; '15.0'">200</BCVER>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -89,6 +95,18 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win32)'!=''">
+        <Cfg_3_Win32>true</Cfg_3_Win32>
+        <CfgParent>Cfg_3</CfgParent>
+        <Cfg_3>true</Cfg_3>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win64)'!=''">
+        <Cfg_3_Win64>true</Cfg_3_Win64>
+        <CfgParent>Cfg_3</CfgParent>
+        <Cfg_3>true</Cfg_3>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='iOSDevice' and '$(Cfg_3)'=='true') or '$(Cfg_3_iOSDevice)'!=''">
         <Cfg_3_iOSDevice>true</Cfg_3_iOSDevice>
         <CfgParent>Cfg_3</CfgParent>
@@ -118,6 +136,12 @@
         <Cfg_4>true</Cfg_4>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_4)'=='true') or '$(Cfg_4_Win32)'!=''">
+        <Cfg_4_Win32>true</Cfg_4_Win32>
+        <CfgParent>Cfg_4</CfgParent>
+        <Cfg_4>true</Cfg_4>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_4)'=='true') or '$(Cfg_4_Win64)'!=''">
         <Cfg_4_Win64>true</Cfg_4_Win64>
         <CfgParent>Cfg_4</CfgParent>
@@ -125,9 +149,11 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <SanitizedProjectName>bench_tdclcpp_bcb</SanitizedProjectName>
-        <NoVCL>true</NoVCL>
+        <SanitizedProjectName>bench_tdclcpp_c_bc</SanitizedProjectName>
         <Defines>TRDCL_AUTOLINK;$(Defines)</Defines>
+        <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
+        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
+        <NoVCL>true</NoVCL>
         <BPILibOutputDir>..\..\lib</BPILibOutputDir>
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
         <OutputExt>exe</OutputExt>
@@ -149,7 +175,6 @@
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
         <ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\release\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
-        <DllSuffix>32</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_iOSDevice)'!=''">
         <VerInfo_BundleId>$(MSBuildProjectName)</VerInfo_BundleId>
@@ -165,7 +190,6 @@
         <Debugger_RunParams>tdap://localhost/test?dbfile=test.bdf  0 -1</Debugger_RunParams>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <DllSuffix>32</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <UsePackages>true</UsePackages>
@@ -173,7 +197,6 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <DllSuffix>64</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <_TCHARMapping>char</_TCHARMapping>
@@ -202,9 +225,11 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <Defines>_DEBUG;$(Defines)</Defines>
+        <DllSuffix>$(BCVER)_32m</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <Defines>_DEBUG;$(Defines)</Defines>
+        <DllSuffix>$(BCVER)_64m</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <_TCHARMapping>char</_TCHARMapping>
@@ -218,9 +243,11 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
         <Defines>NDEBUG;$(Defines)</Defines>
+        <DllSuffix>$(BCVER)_32m</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
         <Defines>NDEBUG;$(Defines)</Defines>
+        <DllSuffix>$(BCVER)_64m</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3)'!=''">
         <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
@@ -228,11 +255,22 @@
         <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
         <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
+        <Defines>_DEBUG;$(Defines)</Defines>
+        <DllSuffix>$(BCVER)_32u</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">
+        <Defines>_DEBUG;$(Defines)</Defines>
+        <DllSuffix>$(BCVER)_64u</DllSuffix>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_iOSDevice)'!=''">
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_OSX32)'!=''">
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_4)'!=''">
+        <TASM_Debugging>None</TASM_Debugging>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_4_iOSDevice)'!=''">
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
@@ -240,17 +278,25 @@
     <PropertyGroup Condition="'$(Cfg_4_OSX32)'!=''">
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_4_Win32)'!=''">
+        <Defines>NDEBUG;$(Defines)</Defines>
+        <DllSuffix>$(BCVER)_32u</DllSuffix>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_4_Win64)'!=''">
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <LinkPackageImports>rtl.bpi;vcl.bpi</LinkPackageImports>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <DllSuffix>$(BCVER)_64u</DllSuffix>
     </PropertyGroup>
     <ItemGroup>
+        <ResourceCompile Include="bench.rc">
+            <Form>bench.res</Form>
+            <BuildOrder>4</BuildOrder>
+        </ResourceCompile>
         <CppCompile Include="..\..\source\bzs\rtl\benchmark.cpp">
             <DependentOn>..\..\source\bzs\rtl\benchmark.h</DependentOn>
             <BuildOrder>3</BuildOrder>
         </CppCompile>
-        <CppCompile Include="..\..\source\bzs\test\transactdBench\transactdBench.cpp">
+        <CppCompile Include="..\..\source\bzs\test\transactdBench\transactdBench2.cpp">
             <BuildOrder>1</BuildOrder>
         </CppCompile>
         <BuildConfiguration Include="Release">

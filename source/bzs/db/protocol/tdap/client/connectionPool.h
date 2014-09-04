@@ -58,7 +58,7 @@ class connectionPool
 	mutable boost::condition m_busy;
 	int m_maxConnections;
 	Database_Ptr addOne(const connectParams& param);
-#if (__BCPLUSPLUS__ && __APPLE__)
+#if (__BCPLUSPLUS__)
 public:
 #endif
 	DLLUNLOADCALLBACK_PTR m_regitfunc;

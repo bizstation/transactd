@@ -32,58 +32,6 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
-        <Cfg_1>true</Cfg_1>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='iOSDevice' and '$(Cfg_1)'=='true') or '$(Cfg_1_iOSDevice)'!=''">
-        <Cfg_1_iOSDevice>true</Cfg_1_iOSDevice>
-        <CfgParent>Cfg_1</CfgParent>
-        <Cfg_1>true</Cfg_1>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
-        <Cfg_1_Win32>true</Cfg_1_Win32>
-        <CfgParent>Cfg_1</CfgParent>
-        <Cfg_1>true</Cfg_1>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win64)'!=''">
-        <Cfg_1_Win64>true</Cfg_1_Win64>
-        <CfgParent>Cfg_1</CfgParent>
-        <Cfg_1>true</Cfg_1>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
-        <Cfg_2>true</Cfg_2>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='iOSDevice' and '$(Cfg_2)'=='true') or '$(Cfg_2_iOSDevice)'!=''">
-        <Cfg_2_iOSDevice>true</Cfg_2_iOSDevice>
-        <CfgParent>Cfg_2</CfgParent>
-        <Cfg_2>true</Cfg_2>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Cfg_2)'=='true') or '$(Cfg_2_OSX32)'!=''">
-        <Cfg_2_OSX32>true</Cfg_2_OSX32>
-        <CfgParent>Cfg_2</CfgParent>
-        <Cfg_2>true</Cfg_2>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
-        <Cfg_2_Win32>true</Cfg_2_Win32>
-        <CfgParent>Cfg_2</CfgParent>
-        <Cfg_2>true</Cfg_2>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
-        <Cfg_2_Win64>true</Cfg_2_Win64>
-        <CfgParent>Cfg_2</CfgParent>
-        <Cfg_2>true</Cfg_2>
-        <Base>true</Base>
-    </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Debug Unicode' or '$(Cfg_6)'!=''">
         <Cfg_6>true</Cfg_6>
         <CfgParent>Base</CfgParent>
@@ -145,6 +93,7 @@
         <BCC_wiip>false</BCC_wiip>
         <ILINK_LibraryPath>..\..\lib\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
+        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
         <NoVCL>true</NoVCL>
         <_TCHARMapping>char</_TCHARMapping>
@@ -183,51 +132,6 @@
         <Defines>TRANSACTD;$(Defines)</Defines>
         <DllSuffix>64</DllSuffix>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_1)'!=''">
-        <_TCHARMapping>char</_TCHARMapping>
-        <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
-        <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
-        <DCC_Optimize>false</DCC_Optimize>
-        <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
-        <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
-        <BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
-        <DCC_Define>DEBUG</DCC_Define>
-        <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
-        <TASM_DisplaySourceLines>true</TASM_DisplaySourceLines>
-        <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
-        <TASM_Debugging>Full</TASM_Debugging>
-        <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
-        <ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_1_iOSDevice)'!=''">
-        <DCC_RemoteDebug>true</DCC_RemoteDebug>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <Defines>_DEBUG;$(Defines)</Defines>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <Defines>_DEBUG;$(Defines)</Defines>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_2)'!=''">
-        <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
-        <TASM_Debugging>None</TASM_Debugging>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_2_iOSDevice)'!=''">
-        <DCC_RemoteDebug>true</DCC_RemoteDebug>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_2_OSX32)'!=''">
-        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
-        <VerInfo_Locale>1033</VerInfo_Locale>
-        <Defines>NDEBUG;$(Defines)</Defines>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
-        <Defines>NDEBUG;$(Defines)</Defines>
-        <VerInfo_Locale>1033</VerInfo_Locale>
-    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_6)'!=''">
         <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
         <_TCHARMapping>wchar_t</_TCHARMapping>
@@ -259,6 +163,10 @@
         <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <ItemGroup>
+        <ResourceCompile Include="ormsrcgen.rc">
+            <Form>ormsrcgen.res</Form>
+            <BuildOrder>14</BuildOrder>
+        </ResourceCompile>
         <CppCompile Include="..\..\source\bzs\rtl\stl_uty.cpp">
             <BuildOrder>13</BuildOrder>
         </CppCompile>
@@ -276,10 +184,6 @@
             <DependentOn>..\..\source\global\ormsrcgen\srcgen.h</DependentOn>
             <BuildOrder>1</BuildOrder>
         </CppCompile>
-        <BuildConfiguration Include="Release">
-            <Key>Cfg_2</Key>
-            <CfgParent>Base</CfgParent>
-        </BuildConfiguration>
         <BuildConfiguration Include="Debug Unicode">
             <Key>Cfg_6</Key>
             <CfgParent>Base</CfgParent>
@@ -290,10 +194,6 @@
         </BuildConfiguration>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
-        </BuildConfiguration>
-        <BuildConfiguration Include="Debug">
-            <Key>Cfg_1</Key>
-            <CfgParent>Base</CfgParent>
         </BuildConfiguration>
     </ItemGroup>
     <Import Condition="Exists('$(BDS)\Bin\CodeGear.Cpp.Targets')" Project="$(BDS)\Bin\CodeGear.Cpp.Targets"/>

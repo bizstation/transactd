@@ -99,6 +99,7 @@
         <BCC_wiip>false</BCC_wiip>
         <ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
+        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
         <NoVCL>true</NoVCL>
         <_TCHARMapping>wchar_t</_TCHARMapping>
@@ -181,6 +182,10 @@
         <Defines>NDEBUG;$(Defines)</Defines>
     </PropertyGroup>
     <ItemGroup>
+        <ResourceCompile Include="querystmts.rc">
+            <Form>querystmts.res</Form>
+            <BuildOrder>3</BuildOrder>
+        </ResourceCompile>
         <CppCompile Include="..\..\source\bzs\rtl\benchmark.cpp">
             <DependentOn>..\..\source\bzs\rtl\benchmark.h</DependentOn>
             <BuildOrder>1</BuildOrder>

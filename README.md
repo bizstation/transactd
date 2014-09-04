@@ -1,4 +1,4 @@
-﻿Transactd release note
+Transactd release note
 ===============================================================================
 Transactd is plugin which adds NoSQL access to MySQL/MariaDB.
 
@@ -13,6 +13,8 @@ This document consists of the following topics.
   * Development of applications using Transactd clients
   * Details of the test program
   * Details of the benchmark program
+  * C++ O/R mapping source code generator
+  * Query executer
   * About the license of Transactd Plugin
   * About the license of Transactd Client
   * Bug reporting, requests and questions
@@ -224,10 +226,10 @@ Execution of test and benchmark program
 See also the detail of the test and the benchmark program topic.
 Test script executes, in order the contents of the following.
  * test_tdclcpp_xx_xxm_xxx.exe   A Multibyte modules test
- * test_tdclcpp_xx_xxm_xxx.exe   A Unicode module test
- * bench_tdclcpp_c_xx.exe        Benchmark of Insert read update 
+ * test_tdclcpp_xx_xxu_xxx.exe   A Unicode module test(Windows only)
+ * bench_tdclcpp_xx.exe          Benchmark of Insert read update 
  * bench_query_xx.exe            Benchmark of aquery
- * querystmtsxx.exe              Query executer of command line
+ * querystmtsxx.exe              Test of Query executer
 
 "querystmtsxx.exe" is executed only if the localshot the target host.
 
@@ -285,6 +287,16 @@ The ($installdir)/source/bzs/example folder has easy sample codes.
 You can actually be built in a build/example folder by project files (Windows)
 according to a compiler, or a make_example.sh (LINUX) script. 
 
+In addition, when you compile the 64Bit of the Visual C++ 2010 Express edittion, 
+of each project [Options] - [platform toolset] - [configuration properties] - [General]
+make changes to the "Windows7.1SDK" from "v100".
+
+In the case of C++ Builder, installation requires the boost supplied with the compiler
+in advance. In addition, [Tools] - [Options] - [Environment Options] - [C++ Options]
+- [directory and path] - [System Include Path] add the following
+
+ * For 32Bit: $(CG_BOOST_ROOT)
+ * For 64Bit: $(CG_64_BOOST_ROOT)
 
 Details of the test program
 -------------------------------------------------------------------------------
@@ -319,8 +331,12 @@ character-set-server=utf8
 
 Details of the benchmark program
 -------------------------------------------------------------------------------
-By changing processNumber argument, the benchmark program can be ran two or more
-instances simultaneously, and can measure them. The command line option is:
+The benchmark program, there are two types. It is the benchmark of reading 
+SQL-like query benchmarks(bench_query_xxx) and CURD basic operations (bench_tdclcpp_xxx).
+
+The bench_tdclcpp_xxx benchmark program, which can be measured by multiple instances
+running at the same time by changing the processNumber of command line arguments.
+The command line option is:
 ```
 bench_tdclcpp_xxx.exe databaseUri processNumber functionNumber
 
@@ -345,8 +361,74 @@ bench_tdclcpp_xxx.exe databaseUri processNumber functionNumber
 |                |  8: update in transaction. 20rec x 1000times           |
 |----------------|--------------------------------------------------------|
 ex)
-shell>bench_tdclcpp_c_bcb64.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
+shell>bench_tdclcpp_bc200_64u.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
 ```
+
+bench_query_xxx benchmark program to measure the speed of obtaining a similar 
+result with the following SQL.
+```
+select
+   `user`.`id`
+   ,`user`.`name`
+   ,`extention`.`comment`
+   ,`groups`.`name` as `group_name`
+from
+   `user` INNER JOIN `extention` 
+      ON `user`.`id`  = `extention`.`id`
+    LEFT JOIN `groups` 
+      ON `user`.`group`  = `groups`.`code`
+where
+    `user`.`id` > 0 and `user`.`id` <= 15000;
+
+```
+Command line options are as follows.
+```
+bench_query_xxx createdb hostname type n
+|----------------|--------------------------------------------------------|
+| option name    | description                                            |
+|----------------|--------------------------------------------------------|
+| createdb       | Specify 0 or 1 to determine whether or not to create a |
+|                | new test database. The default is 1.                   |
+|----------------|--------------------------------------------------------|
+| hostname       | Specify the name or IP address of the location database|
+|                | .The default is localhost.                             |
+|----------------|--------------------------------------------------------|
+| type           | Specific numbers, the contents of the query.           |
+|                | The default is 15.                                     |
+|                | 1: Read 15,000 records from the user table             |
+|                | 3: JOIN the comment field of the extention table on the| 
+|                |    results of the 1                                    |
+|                | 7: JOIN the name of the table groups the results of the|
+|                |    3                                                   |
+|                | 5: JOIN the name of the groups on the results of the 1 |
+|                |+8: Display the execution progress of repeat            |
+|----------------|--------------------------------------------------------|
+| n              | Specifies the number of executions of the query        |
+|                | specified by type. The default is 100.                 |
+|----------------|--------------------------------------------------------|
+ex)
+bench_query_xxx 0 localhost 15 100
+
+```
+
+
+
+C++ O/R mapping source code generator
+-------------------------------------------------------------------------------
+ormsrcgen (32 | 64) is a source code generator for C++ O/R mapping. You can 
+use this program to generate from the database defines the model class if you 
+want to use the O/R mapping in C++.
+Please refer to the README_ORMSRCGEN.md details.
+
+
+
+Query executer
+-------------------------------------------------------------------------------
+Querystmts is a program for executing the Transactd query that has been described
+in the XML file. If you pass an XML file to Querystmts, and outputs the result to
+the standard output to execute the query according to its contents. 
+XML file(s), created by a Querybuilder. Querybuilder has not been released yet.
+It will be released soon.
 
 
 

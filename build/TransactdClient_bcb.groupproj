@@ -15,13 +15,13 @@
 			<Projects Include="test_tdcl\test_tdclcpp_bc.cbproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="bench_td\bench_tdclcpp_bcb.cbproj">
+			<Projects Include="bench_td\bench_tdclcpp_bc.cbproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="bench_td\bench_tdclcpp_c_bcb.cbproj">
+			<Projects Include="bench_td\bench_tdclcpp_c_bc.cbproj">
 				<Dependencies/>
 			</Projects>
-			<Projects Include="bench_td\bench_query_bcb.cbproj">
+			<Projects Include="bench_td\bench_query_bc.cbproj">
 				<Dependencies/>
 			</Projects>
 			<Projects Include="ormsrcgen\ormsrcgen.cbproj">
@@ -74,32 +74,32 @@
 		<Target Name="test_tdclcpp_bc:Make">
 			<MSBuild Projects="test_tdcl\test_tdclcpp_bc.cbproj" Targets="Make"/>
 		</Target>
-		<Target Name="bench_tdclcpp_bcb">
-			<MSBuild Projects="bench_td\bench_tdclcpp_bcb.cbproj"/>
+		<Target Name="bench_tdclcpp_bc">
+			<MSBuild Projects="bench_td\bench_tdclcpp_bc.cbproj"/>
 		</Target>
-		<Target Name="bench_tdclcpp_bcb:Clean">
-			<MSBuild Projects="bench_td\bench_tdclcpp_bcb.cbproj" Targets="Clean"/>
+		<Target Name="bench_tdclcpp_bc:Clean">
+			<MSBuild Projects="bench_td\bench_tdclcpp_bc.cbproj" Targets="Clean"/>
 		</Target>
-		<Target Name="bench_tdclcpp_bcb:Make">
-			<MSBuild Projects="bench_td\bench_tdclcpp_bcb.cbproj" Targets="Make"/>
+		<Target Name="bench_tdclcpp_bc:Make">
+			<MSBuild Projects="bench_td\bench_tdclcpp_bc.cbproj" Targets="Make"/>
 		</Target>
-		<Target Name="bench_tdclcpp_c_bcb">
-			<MSBuild Projects="bench_td\bench_tdclcpp_c_bcb.cbproj"/>
+		<Target Name="bench_tdclcpp_c_bc">
+			<MSBuild Projects="bench_td\bench_tdclcpp_c_bc.cbproj"/>
 		</Target>
-		<Target Name="bench_tdclcpp_c_bcb:Clean">
-			<MSBuild Projects="bench_td\bench_tdclcpp_c_bcb.cbproj" Targets="Clean"/>
+		<Target Name="bench_tdclcpp_c_bc:Clean">
+			<MSBuild Projects="bench_td\bench_tdclcpp_c_bc.cbproj" Targets="Clean"/>
 		</Target>
-		<Target Name="bench_tdclcpp_c_bcb:Make">
-			<MSBuild Projects="bench_td\bench_tdclcpp_c_bcb.cbproj" Targets="Make"/>
+		<Target Name="bench_tdclcpp_c_bc:Make">
+			<MSBuild Projects="bench_td\bench_tdclcpp_c_bc.cbproj" Targets="Make"/>
 		</Target>
-		<Target Name="bench_query_bcb">
-			<MSBuild Projects="bench_td\bench_query_bcb.cbproj"/>
+		<Target Name="bench_query_bc">
+			<MSBuild Projects="bench_td\bench_query_bc.cbproj"/>
 		</Target>
-		<Target Name="bench_query_bcb:Clean">
-			<MSBuild Projects="bench_td\bench_query_bcb.cbproj" Targets="Clean"/>
+		<Target Name="bench_query_bc:Clean">
+			<MSBuild Projects="bench_td\bench_query_bc.cbproj" Targets="Clean"/>
 		</Target>
-		<Target Name="bench_query_bcb:Make">
-			<MSBuild Projects="bench_td\bench_query_bcb.cbproj" Targets="Make"/>
+		<Target Name="bench_query_bc:Make">
+			<MSBuild Projects="bench_td\bench_query_bc.cbproj" Targets="Make"/>
 		</Target>
 		<Target Name="ormsrcgen">
 			<MSBuild Projects="ormsrcgen\ormsrcgen.cbproj"/>
@@ -120,13 +120,13 @@
 			<MSBuild Projects="querystmts\querystmts.cbproj" Targets="Make"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="tdclc;tdclcpp_bc;tdclstmt_bc;test_tdclcpp_bc;bench_tdclcpp_bcb;bench_tdclcpp_c_bcb;bench_query_bcb;ormsrcgen;querystmts"/>
+			<CallTarget Targets="tdclc;tdclcpp_bc;tdclstmt_bc;test_tdclcpp_bc;bench_tdclcpp_bc;bench_tdclcpp_c_bc;bench_query_bc;ormsrcgen;querystmts"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="tdclc:Clean;tdclcpp_bc:Clean;tdclstmt_bc:Clean;test_tdclcpp_bc:Clean;bench_tdclcpp_bcb:Clean;bench_tdclcpp_c_bcb:Clean;bench_query_bcb:Clean;ormsrcgen:Clean;querystmts:Clean"/>
+			<CallTarget Targets="tdclc:Clean;tdclcpp_bc:Clean;tdclstmt_bc:Clean;test_tdclcpp_bc:Clean;bench_tdclcpp_bc:Clean;bench_tdclcpp_c_bc:Clean;bench_query_bc:Clean;ormsrcgen:Clean;querystmts:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="tdclc:Make;tdclcpp_bc:Make;tdclstmt_bc:Make;test_tdclcpp_bc:Make;bench_tdclcpp_bcb:Make;bench_tdclcpp_c_bcb:Make;bench_query_bcb:Make;ormsrcgen:Make;querystmts:Make"/>
+			<CallTarget Targets="tdclc:Make;tdclcpp_bc:Make;tdclstmt_bc:Make;test_tdclcpp_bc:Make;bench_tdclcpp_bc:Make;bench_tdclcpp_c_bc:Make;bench_query_bc:Make;ormsrcgen:Make;querystmts:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>
