@@ -212,7 +212,10 @@ function createSortFields()
     return new ActiveXObject("transactd.sortFields");
 }
 
-
+function createFieldNames()
+{
+    return new ActiveXObject("transactd.fieldNames");
+}
 
 var sep = "-------------------------------------------------------------------------------";
 
@@ -571,13 +574,13 @@ function test(atu, atg, ate)
 	
 	
 	var rq = createRecordsetQuery();
-
+	var fns = createFieldNames();
 	rq.When("group" ,"=", 1);
-	gq.KeyField("group").AddFunction(fcount, "", "gropu1_count", rq);
+	gq.KeyField("group").AddFunction(fcount, fns, "gropu1_count", rq);
 	rs.groupBy(gq);
 	checkEqual(rs.Count, 5, "groupBy rs.Count = 5 ");
+
 	var row = rs.Record(0);
-	
 	checkEqual(row.Field("gropu1_count").Vlng, 3180, "gropu1_count = 3180 ");
 	row = rs.Record(1);
 	checkEqual(row.Field("gropu1_count").Vlng, 0, "gropu1_count = 0 ");
