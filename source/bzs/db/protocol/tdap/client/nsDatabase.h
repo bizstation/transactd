@@ -121,6 +121,7 @@ public:
 	/** @cond INTERNAL */
 	static DLLUNLOADCALLBACK_PTR getDllUnloadCallbackFunc();
 	static bool testTablePtr(nstable* ptr);
+	static void setCheckTablePtr(bool v);
 	/** @endcond */
 };
 

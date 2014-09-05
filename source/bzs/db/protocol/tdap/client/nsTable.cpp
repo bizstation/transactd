@@ -111,8 +111,11 @@ nstable::~nstable()
 	close();
 
 	if (!m_impl->shared)
+	{
 		m_impl->nsdb->unregisterTable(this);
-	m_impl->nsdb->internalRelease();
+		m_impl->nsdb->release();
+	}
+	
 	delete m_impl;
 	m_impl = MEM_FREED_MAGIC_NUMBER;
 }

@@ -94,12 +94,9 @@ database::~database()
 
 void database::release()
 {
-	if (m_impl->dbDef)
-	{
-		m_impl->dbDef->release();
-		m_impl->dbDef = NULL;
-	}
 	nsdatabase::release();
+	if ((refCount()==1) && m_impl->dbDef && (m_impl->dbDef->nsdb() == this))
+		nsdatabase::release();
 }
 
 dbdef* database::dbDef() const {return m_impl->dbDef;}

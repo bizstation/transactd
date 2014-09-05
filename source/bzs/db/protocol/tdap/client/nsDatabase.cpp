@@ -63,7 +63,7 @@ namespace client
 extern EnginsFunc engins;
 unsigned int g_lastTrnTime = 0;
 unsigned int nsdatabase::m_execCodepage = GetACP();
-
+bool g_checkTablePtr = false;
 
 PACKAGE void registEnginsPtr(EnginsFunc func) {engins = func;}
 
@@ -190,7 +190,7 @@ struct nsdbimpl
 	bool uselongFilename;
 	bool localSharing;
 
-	nsdbimpl() : refCount(1), snapShotCount(0), tranCount(0), uselongFilename(false), tableCount(0),
+	nsdbimpl() : refCount(1), tranCount(0) ,id(0), snapShotCount(0), uselongFilename(false), tableCount(0),
 		lockWaitCount(10), lockWaitTime(100), localSharing(false), uriMode(false)
 	{
 
@@ -269,7 +269,7 @@ nsdatabase::nsdatabase() : m_stat(0)
 	}
 	engins()[index] = this;
 	g_maxEnginIndex = std::max<int>(index, g_maxEnginIndex);
-	m_nsimpl->setId((unsigned short)index);
+	m_nsimpl->setId((unsigned short)index+1);
 
 }
 
@@ -292,7 +292,7 @@ nsdatabase::~nsdatabase()
 
 	boost::mutex::scoped_lock lck(g_mutex);
 	if (m_nsimpl->id != 0)
-		engins()[m_nsimpl->id] = NULL;
+		engins()[m_nsimpl->id-1] = NULL;
 	delete m_nsimpl;
 	m_nsimpl = 0x00;
 #ifdef _WIN32
@@ -777,17 +777,26 @@ const char* nsdatabase::toServerUri(char* buf, int buflen, const _TCHAR* src, bo
 
 bool nsdatabase::testTablePtr(nstable* ptr)
 {
-	boost::mutex::scoped_lock lck(g_mutex);
-	for (int i=0; i<g_maxEnginIndex; i++)
+	if (g_checkTablePtr)
 	{
-		nsdatabase* db = engins()[i];
-		if (db != NULL)
+		boost::mutex::scoped_lock lck(g_mutex);
+		for (int i=0; i<g_maxEnginIndex; i++)
 		{
-			if (db->findTable(ptr))
-				return true;
+			nsdatabase* db = engins()[i];
+			if (db != NULL)
+			{
+				if (db->findTable(ptr))
+					return true;
+			}
 		}
+		return false;
 	}
-	return false;
+	return true;
+}
+
+void nsdatabase::setCheckTablePtr(bool v)
+{
+	g_checkTablePtr = v;
 }
 
 DLLUNLOADCALLBACK_PTR nsdatabase::getDllUnloadCallbackFunc()
