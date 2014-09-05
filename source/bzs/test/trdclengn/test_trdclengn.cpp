@@ -93,7 +93,12 @@ public:
 	~fixture()
 	{
 		if (m_db)
-			database::destroy(m_db);
+		{
+			//Test for SWIG interface
+			m_db->release();
+			//Test for c++
+			//database::destroy(m_db);
+		}	
 	}
 
 	::database* db() const {return m_db;}
@@ -883,6 +888,7 @@ void testExclusive()
 	//db mode exclusive
 	database* db = database::create();
 	table* tb = openTable(db, TD_OPEN_EXCLUSIVE);
+	BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 1 ");
 
 	// Can not open another connections.
 	database* db2 = database::create();
@@ -2202,6 +2208,7 @@ void testResultField(database* db)
 
     size_t len = rf.writeBuffer(0, true) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 4, " resultField.writeBuffer");
+	tb->release();
 
 }
 
@@ -2328,7 +2335,7 @@ void testLogic(database* db)
     header hd;
     len = hd.writeBuffer(0, true) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 8, " header.writeBuffer");
-
+	tb->release();
 
 }
 

@@ -88,15 +88,20 @@ database::database() : nsdatabase()
 
 database::~database()
 {
-	close();
+	doClose();
 	delete m_impl;
 }
 
 void database::release()
 {
-	nsdatabase::release();
-	if ((refCount()==1) && m_impl->dbDef && (m_impl->dbDef->nsdb() == this))
+	if (refCount()==1)
 		nsdatabase::release();
+	else
+	{
+		nsdatabase::release();
+		if ((refCount()==1) && m_impl->dbDef && (m_impl->dbDef->nsdb() == this))
+			nsdatabase::release();
+	}
 }
 
 dbdef* database::dbDef() const {return m_impl->dbDef;}
@@ -296,6 +301,7 @@ bool database::open(const _TCHAR* _uri, short type, short mode, const _TCHAR* di
 	m_impl->isOpened = false;
 	m_impl->dbDef->close();
 	m_impl->dbDef->release();
+	nsdatabase::release();
 	m_impl->dbDef = NULL;
 	return false;
 }
@@ -355,7 +361,12 @@ void database::doClose()
 	m_impl->lockReadOnly = false;
 }
 
-void database::close() {doClose();}
+void database::close() 
+{
+	bool flag = (m_impl->dbDef != NULL);
+	doClose();
+	if (flag) nsdatabase::release();
+}
 
 _TCHAR* database::getTableUri(_TCHAR* buf, short FileNum)
 {
