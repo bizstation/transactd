@@ -340,7 +340,7 @@ table::table(nsdatabase *pbe) : nstable(pbe)
 table::~table()
 {
 	delete m_impl->rc;
-	fielddefs::destroy(m_fddefs);
+	m_fddefs->release();
 	delete m_impl;
 
 }

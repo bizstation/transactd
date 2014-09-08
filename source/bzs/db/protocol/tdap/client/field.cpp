@@ -314,10 +314,11 @@ fielddefs* fielddefs::create()
 	return new fielddefs();
 }
 
-void fielddefs::destroy(fielddefs* p)
+void fielddefs::release()
 {
-	delete p;
+	delete this;
 }
+
 //------------------------------------------------------------------------------
 //       class field
 //------------------------------------------------------------------------------

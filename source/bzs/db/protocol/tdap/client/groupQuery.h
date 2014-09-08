@@ -35,7 +35,9 @@ class DLLLIB fieldNames
 {
 
 protected:
+/** @cond INTERNAL */
 	struct fieldNamesImple* m_impl;
+/** @endcond */
 
 public:
 	fieldNames();

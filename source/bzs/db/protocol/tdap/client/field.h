@@ -105,8 +105,9 @@ public:
 	const fielddef& operator[] (const std::_tstring& name)const;
 	bool checkIndex(int index)const;
 	size_t size() const;
+	void release();
 	static fielddefs* create();
-	static void destroy(fielddefs* p);
+
 };
 
 
@@ -299,7 +300,9 @@ public:
 
 	int comp(const field& r, char logType=CMPLOGICAL_VAR_COMP_ALL) const;
 
+/** @cond INTERNAL */
 	bool isCompPartAndMakeValue();
+/** @endcond */
 
 };
 

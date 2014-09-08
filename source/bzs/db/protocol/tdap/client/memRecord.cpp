@@ -171,7 +171,7 @@ fielddefs* writableRecord::fddefs()
 
 writableRecord::~writableRecord()
 {
-	fielddefs::destroy(m_fddefs);
+	m_fddefs->release();
 }
 
 bool writableRecord::read(bool KeysetAlrady)

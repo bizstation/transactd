@@ -170,32 +170,6 @@ public:
 		return db;
 	}
 
-	//change currnt
-	/*void connect(const connectParams& param, bool newConnection=false)
-	{
-		m_db = NULL;
-		int n = findDbIndex(&param);
-		if (n != -1)
-			m_db = m_dbs[n].get();
-
-		if ((m_db==NULL) && !m_dbs[0]->isOpened())
-		{
-			m_db = m_dbs[0].get();
-			newConnection = false;
-		}
-		if (newConnection || m_db==NULL)
-		{
-			database_ptr p = createDatabaseObject();
-			addDb(p);
-			m_db = p.get();
-
-		}
-		if (m_db->isOpened()) return ;
-		connectOpen(m_db, param, newConnection);
-
-	}*/
-
-
 	table_ptr table(const _TCHAR* name)
 	{
 		int index =  findTable(name);

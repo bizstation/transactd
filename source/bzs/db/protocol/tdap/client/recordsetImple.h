@@ -215,7 +215,7 @@ private:
 	}
 
 public:
-	inline recordsetImple():m_fds(fielddefs::create(), &fielddefs::destroy)
+	inline recordsetImple():m_fds(fielddefs::create(), boost::bind(&fielddefs::release, _1))
 		, m_joinRows(0), m_uniqueReadMaxField(0)
 	{
 		m_mra.reset(new multiRecordAlocatorImple(this));
@@ -241,7 +241,7 @@ public:
 		p->m_joinRows = m_joinRows;
 		p->m_uniqueReadMaxField = m_uniqueReadMaxField;
 		p->m_unionFds = m_unionFds;
-		p->m_fds.reset(m_fds->clone(), &fielddefs::destroy);
+		p->m_fds.reset(m_fds->clone(), boost::bind(&fielddefs::release, _1));
 
 		std::vector<__int64> offsets;
 		for (int i=0;i<(int)m_memblock.size();++i)
