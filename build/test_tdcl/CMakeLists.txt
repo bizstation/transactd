@@ -80,14 +80,15 @@ endif()
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
+  transactd_ver_info_lic()
+  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/test_tdclcpp.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd CPP Client test program"
-    F_DESC  "Transactd CPP Client test program"
+    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd client test program"
   )
   transactd_add_rc_file()
 endif()
@@ -97,9 +98,17 @@ endif()
 # add_executable and set output name
 # ==========================================================
 add_executable(${this_target} ${${this_target}_SOURCE_FILES})
+bz_get_compiler()
 bz_get_compiler_bitness()
-set_target_properties(${this_target} PROPERTIES
-  OUTPUT_NAME "test_tdcl_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+if(WIN32)
+  # test_tdclcpp_[compiler]_[32|64][m|u].exe
+  set_target_properties(${this_target} PROPERTIES
+    OUTPUT_NAME "test_tdclcpp${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+else()
+  # test_tdclcpp_[32|64]m
+  set_target_properties(${this_target} PROPERTIES
+    OUTPUT_NAME "test_tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+endif()
 
 
 # ==========================================================

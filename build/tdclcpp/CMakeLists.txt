@@ -89,14 +89,14 @@ tdcl_add_include_directory("${TRANSACTD_ROOT}")
 # ==========================================================
 if(WIN32)
   transactd_ver_info_lic()
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
+  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/tdclcpp.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd CPP Client ${TRANSACTD_VER_POSTFIX}"
-    F_DESC  "Transactd CPP Client module ${TRANSACTD_VER_POSTFIX}"
+    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd C++ client"
   )
   transactd_add_rc_file()
 endif()
@@ -182,11 +182,12 @@ if(WIN32)
     "${TDCL_CPP_NAME_TMP}_${TDVER_CPP_INTERFACE_VER_MAJOR}_${TDVER_CPP_INTERFACE_VER_MINOR}")
   set_target_properties(${this_target} PROPERTIES SUFFIX ".dll")
 else()
-  ## Linux   libtdclcpp_[32|64][m|u].so.[MAJOR].[MINOR]
+  ## Linux   libtdclcpp_[32|64][m|u].so.[MAJOR].[MINOR].[RELEASE]
   set_target_properties(${this_target} PROPERTIES PREFIX "lib")
   set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
     "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
   if(APPLE)
+  ## Apple   libtdclcpp_[32|64][m|u].[MAJOR].[MINOR].[RELEASE].dylib
     set_target_properties(${this_target} PROPERTIES SUFFIX ".dylib")
   else()
     set_target_properties(${this_target} PROPERTIES SUFFIX ".so")

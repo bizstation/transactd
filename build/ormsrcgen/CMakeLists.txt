@@ -82,14 +82,15 @@ endif()
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
+  transactd_ver_info_lic()
+  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/ormsrcgen.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd ORM source generator program"
-    F_DESC  "Transactd ORM source generator program"
+    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd O/R map source code generator"
   )
   transactd_add_rc_file()
 endif()
@@ -100,8 +101,15 @@ endif()
 # ==========================================================
 add_executable(${this_target} ${${this_target}_SOURCE_FILES})
 bz_get_compiler_bitness()
-set_target_properties(${this_target} PROPERTIES
-  OUTPUT_NAME "ormsrcgen_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+if(WIN32)
+  # ormsrcgen[32|64].exe
+  set_target_properties(${this_target} PROPERTIES
+    OUTPUT_NAME "ormsrcgen${BZ_BITNESS}")
+else()
+  # ormsrcgen
+  set_target_properties(${this_target} PROPERTIES
+    OUTPUT_NAME "ormsrcgen")
+endif()
 
 
 # ==========================================================

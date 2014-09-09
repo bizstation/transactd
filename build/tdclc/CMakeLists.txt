@@ -91,14 +91,14 @@ endif()
 # ==========================================================
 if(WIN32)
   transactd_ver_info_lic()
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
+  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/tdclc.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}.${TDVER_C_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}.${TDVER_C_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd C Client ${TRANSACTD_VER_POSTFIX}"
-    F_DESC  "Transactd C Client module ${TRANSACTD_VER_POSTFIX}"
+    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd C client"
   )
   transactd_add_rc_file()
 endif()
@@ -163,7 +163,13 @@ else()
   set_target_properties(${this_target} PROPERTIES PREFIX "lib")
   set_target_properties(${this_target} PROPERTIES OUTPUT_NAME "tdclc_${BZ_BITNESS}")
   if(APPLE)
-    set_target_properties(${this_target} PROPERTIES SUFFIX ".bundle")
+    if(NOT COMMAND tdcl_set_outputnames_osx)
+      include(../common/transactd_cl_output.cmake)
+    endif()
+    tdcl_set_outputnames_osx(
+      "libtdclc_${BZ_BITNESS}" "${TDVER_C_INTERFACE_VER_MAJOR}"
+      "${TDVER_C_INTERFACE_VER_MINOR}" "${TDVER_C_INTERFACE_VER_RELEASE}"
+      "${TRANSACTD_ROOT}")
   else()
     set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
     set_target_properties(${this_target} PROPERTIES

@@ -130,20 +130,29 @@ endforeach()
 # ==========================================================
 if(WIN32)
   transactd_ver_info_lic()
+  # detect MySQL or MariaDB with $PRODUCTNAME which is set in:
+  #   mysql/cmake/mysql_version.cmake   SET(PRODUCTNAME "MySQL Server")
+  #   mariadb/cmake/mysql_version.cmake SET(PRODUCTNAME "MariaDB Server")
+  string(REGEX MATCH ".*MariaDB.*" TDVER_DB_TMP "${PRODUCTNAME}")
+  if("${TDVER_DB_TMP}" STREQUAL "")
+    set(TDVER_DB_PRODUCT "MySQL")
+  else()
+    set(TDVER_DB_PRODUCT "MariaDB")
+  endif()
   # disable versioninfo_dll.rc (add in MYSQL_ADD_PLUGIN macro)
   #   set file property as "header" then not compiled
   set_source_files_properties(
     ${TRANSACTD_MYSQL_BINARY_ROOT}/versioninfo_dll.rc
     PROPERTIES HEADER_FILE_ONLY TRUE)
   # create / add rc file
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
+  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/transactd.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}.0"
     P_NAME  "Transactd Plugin ${TRANSACTD_VER_POSTFIX}"
-    F_DESC  "Transactd Plugin for MySQL/MariaDB ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd Plugin for ${TDVER_DB_PRODUCT}"
   )
   transactd_add_rc_file()
 endif()
@@ -152,8 +161,9 @@ endif()
 # ==========================================================
 # add_library as MySQL plugin
 # ==========================================================
-set(output_name transactd)
-if(UNIX)
+if(WIN32)
+  set(output_name transactd)
+else()
   set(output_name libtransactd)
 endif()
 MYSQL_ADD_PLUGIN(${this_target} ${${this_target}_SOURCE_FILES}
@@ -167,6 +177,7 @@ if(NOT APPLE)
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE})
 endif()
+
 
 # ==========================================================
 # add boost libraries and include path
