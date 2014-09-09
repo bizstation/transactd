@@ -39,6 +39,7 @@
 	#define _stprintf_s	snprintf
 #endif
 #endif
+	int gettimeofday(struct timeval *, struct timezone *);
 #endif // __MINGW32__
 
 #if (defined(LINUX))
