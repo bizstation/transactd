@@ -166,10 +166,10 @@ else()
     set_target_properties(${this_target} PROPERTIES SUFFIX ".bundle")
   else()
     set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+    set_target_properties(${this_target} PROPERTIES
+      SOVERSION ${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}
+      VERSION   ${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}.${TDVER_C_INTERFACE_VER_RELEASE})
   endif()
-  set_target_properties(${this_target} PROPERTIES
-    SOVERSION ${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}
-    VERSION   ${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}.${TDVER_C_INTERFACE_VER_RELEASE})
 endif()
 
 

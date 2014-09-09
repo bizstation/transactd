@@ -105,7 +105,9 @@ bool btest(recordset* rsp, activeTable* atup, activeTable* atgp, activeTable* at
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
+#ifdef _UNICODE
 	std::locale::global(std::locale(""));
+#endif
 	database_ptr db = createDatabaseObject();
 	try
 	{
