@@ -632,30 +632,6 @@ abstract class transactd {
 
 	const null_str = null_str;
 
-	static function mra_nojoin_get() {
-		return mra_nojoin_get();
-	}
-
-	static function mra_first_get() {
-		return mra_first_get();
-	}
-
-	static function mra_nextrows_get() {
-		return mra_nextrows_get();
-	}
-
-	static function mra_innerjoin_get() {
-		return mra_innerjoin_get();
-	}
-
-	static function mra_outerjoin_get() {
-		return mra_outerjoin_get();
-	}
-
-	static function mra_current_block_get() {
-		return mra_current_block_get();
-	}
-
 	const KEYVALUE_PTR = KEYVALUE_PTR;
 
 	const KEYVALUE_STR = KEYVALUE_STR;
@@ -663,6 +639,22 @@ abstract class transactd {
 	const KEYVALUE_NEED_COPY = KEYVALUE_NEED_COPY;
 
 	const KEYVALUE_STR_NEED_COPY = KEYVALUE_STR_NEED_COPY;
+
+	static function setBtrvEntryPoint($p) {
+		setBtrvEntryPoint($p);
+	}
+
+	static function getBtrvEntryPoint() {
+		return getBtrvEntryPoint();
+	}
+
+	static function setTrnsctdEntryPoint($p) {
+		setTrnsctdEntryPoint($p);
+	}
+
+	static function getTrnsctdEntryPoint() {
+		return getTrnsctdEntryPoint();
+	}
 
 	const MAX_CHAR_INFO = MAX_CHAR_INFO;
 
@@ -758,16 +750,6 @@ abstract class transactd {
 		return getFieldType($arg1);
 	}
 
-	static function dummyFd() {
-		$r=dummyFd();
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new fielddef($r);
-		}
-		return $r;
-	}
-
 	const ROW_MEM_BLOCK_RESERVE = ROW_MEM_BLOCK_RESERVE;
 
 	static function host($uri,$buf,$size) {
@@ -780,10 +762,6 @@ abstract class transactd {
 
 	static function schemaTable($uri,$buf,$size) {
 		return schemaTable($uri,$buf,$size);
-	}
-
-	static function createDatabaseObject() {
-		return createDatabaseObject();
 	}
 
 	static function new_fieldsBase_p_p() {
@@ -1016,14 +994,6 @@ class fielddef extends fielddef_t_my {
 		fielddef_setName($this->_cPtr,$s);
 	}
 
-	function nameA() {
-		return fielddef_nameA($this->_cPtr);
-	}
-
-	function setNameA($s) {
-		fielddef_setNameA($this->_cPtr,$s);
-	}
-
 	function typeName() {
 		return fielddef_typeName($this->_cPtr);
 	}
@@ -1040,20 +1010,12 @@ class fielddef extends fielddef_t_my {
 		return fielddef_codePage($this->_cPtr);
 	}
 
-	function getKeyValueFromKeybuf($from,$data,$size) {
-		return fielddef_getKeyValueFromKeybuf($this->_cPtr,$from,$data,$size);
-	}
-
 	function varLenBytes() {
 		return fielddef_varLenBytes($this->_cPtr);
 	}
 
 	function blobLenBytes() {
 		return fielddef_blobLenBytes($this->_cPtr);
-	}
-
-	function maxVarDatalen() {
-		return fielddef_maxVarDatalen($this->_cPtr);
 	}
 
 	function isStringType() {
@@ -1074,10 +1036,6 @@ class fielddef extends fielddef_t_my {
 
 	function charsetIndex() {
 		return fielddef_charsetIndex($this->_cPtr);
-	}
-
-	function unPackCopy($dest,$src) {
-		return fielddef_unPackCopy($this->_cPtr,$dest,$src);
 	}
 
 	function __construct($res=null) {
@@ -1147,14 +1105,6 @@ class tabledef {
 
 	function toChar($buf,$s,$size) {
 		return tabledef_toChar($this->_cPtr,$buf,$s,$size);
-	}
-
-	function fileNameA() {
-		return tabledef_fileNameA($this->_cPtr);
-	}
-
-	function tableNameA() {
-		return tabledef_tableNameA($this->_cPtr);
 	}
 
 	function setFileNameA($s) {
@@ -1302,14 +1252,6 @@ abstract class nstable {
 
 	const inkey = nstable_inkey;
 
-	function addref() {
-		nstable_addref($this->_cPtr);
-	}
-
-	function refCount() {
-		return nstable_refCount($this->_cPtr);
-	}
-
 	function tableid() {
 		return nstable_tableid($this->_cPtr);
 	}
@@ -1330,20 +1272,8 @@ abstract class nstable {
 		nstable_setAccessRights($this->_cPtr,$curd);
 	}
 
-	function data() {
-		return nstable_data($this->_cPtr);
-	}
-
-	function setData($v) {
-		nstable_setData($this->_cPtr,$v);
-	}
-
 	function buflen() {
 		return nstable_buflen($this->_cPtr);
-	}
-
-	function setBuflen($v) {
-		nstable_setBuflen($this->_cPtr,$v);
 	}
 
 	function datalen() {
@@ -1352,10 +1282,6 @@ abstract class nstable {
 
 	function stat() {
 		return nstable_stat($this->_cPtr);
-	}
-
-	function setStat($v) {
-		nstable_setStat($this->_cPtr,$v);
 	}
 
 	function keyNum() {
@@ -1397,8 +1323,8 @@ abstract class nstable {
 		}
 	}
 
-	function del($inkey=false) {
-		nstable_del($this->_cPtr,$inkey);
+	function del($in_key=false) {
+		nstable_del($this->_cPtr,$in_key);
 	}
 
 	function insert($ncc=false) {
@@ -1545,20 +1471,12 @@ abstract class nstable {
 		return $r;
 	}
 
-	static function throwError($caption,$statusCode_or_tb) {
-		nstable_throwError($caption,$statusCode_or_tb);
-	}
-
 	static function getDirURI($uri,$retbuf) {
 		return nstable_getDirURI($uri,$retbuf);
 	}
 
 	static function existsFile($filename) {
 		return nstable_existsFile($filename);
-	}
-
-	static function test($p) {
-		return nstable_test($p);
 	}
 }
 
@@ -1582,14 +1500,6 @@ class dbdef {
 	}
 	function __construct($h) {
 		$this->_cPtr=$h;
-	}
-
-	function addref() {
-		dbdef_addref($this->_cPtr);
-	}
-
-	function refCount() {
-		return dbdef_refCount($this->_cPtr);
 	}
 
 	function tableCount() {
@@ -1682,10 +1592,6 @@ class dbdef {
 		return dbdef_getRecordLen($this->_cPtr,$tableIndex);
 	}
 
-	function getFileSpec($fs,$tableIndex) {
-		dbdef_getFileSpec($this->_cPtr,$fs,$tableIndex);
-	}
-
 	function findKeynumByFieldNum($tableIndex,$index) {
 		return dbdef_findKeynumByFieldNum($this->_cPtr,$tableIndex,$index);
 	}
@@ -1694,24 +1600,8 @@ class dbdef {
 		return dbdef_fieldNumByName($this->_cPtr,$tableIndex,$name);
 	}
 
-	function allocRelateData($size) {
-		return dbdef_allocRelateData($this->_cPtr,$size);
-	}
-
 	function fieldValidLength($query,$fieldType) {
 		return dbdef_fieldValidLength($this->_cPtr,$query,$fieldType);
-	}
-
-	function pushBackup($tableIndex) {
-		dbdef_pushBackup($this->_cPtr,$tableIndex);
-	}
-
-	function compAsBackup($tableIndex) {
-		return dbdef_compAsBackup($this->_cPtr,$tableIndex);
-	}
-
-	function popBackup($tableIndex) {
-		dbdef_popBackup($this->_cPtr,$tableIndex);
 	}
 
 	function tdapErr($hWnd,$retbuf=null) {
@@ -1726,75 +1616,8 @@ class dbdef {
 		dbdef_reopen($this->_cPtr,$mode);
 	}
 
-	function setStat($v) {
-		dbdef_setStat($this->_cPtr,$v);
-	}
-
-	static function getFieldPosition($tableDef,$fieldNum) {
-		return dbdef_getFieldPosition($tableDef,$fieldNum);
-	}
-
-	static function cacheFieldPos($tableDef) {
-		dbdef_cacheFieldPos($tableDef);
-	}
-
 	function mode() {
 		return dbdef_mode($this->_cPtr);
-	}
-}
-
-abstract class multiRecordAlocator {
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-	function __construct($h) {
-		$this->_cPtr=$h;
-	}
-
-	function init($recordCount,$recordLen,$addType,$tb) {
-		multiRecordAlocator_init($this->_cPtr,$recordCount,$recordLen,$addType,$tb);
-	}
-
-	function ptr($row,$stat) {
-		return multiRecordAlocator_ptr($this->_cPtr,$row,$stat);
-	}
-
-	function setJoinType($v) {
-		multiRecordAlocator_setJoinType($this->_cPtr,$v);
-	}
-
-	function setInvalidRecord($row,$v) {
-		multiRecordAlocator_setInvalidRecord($this->_cPtr,$row,$v);
-	}
-
-	function setJoinRowMap($v) {
-		multiRecordAlocator_setJoinRowMap($this->_cPtr,$v);
-	}
-
-	function joinRowMap() {
-		return multiRecordAlocator_joinRowMap($this->_cPtr);
-	}
-
-	function duplicateRow($row,$count) {
-		multiRecordAlocator_duplicateRow($this->_cPtr,$row,$count);
-	}
-
-	function removeLastMemBlock($row) {
-		multiRecordAlocator_removeLastMemBlock($this->_cPtr,$row);
 	}
 }
 
@@ -1902,9 +1725,7 @@ class table extends nstable {
 	}
 
 	function mra() {
-		$r=table_mra($this->_cPtr);
-		$this->_cPtr = $r;
-		return $this;
+		return table_mra($this->_cPtr);
 	}
 
 	function find($type=null) {
@@ -1986,18 +1807,6 @@ class table extends nstable {
 		return table_getFVstr($this->_cPtr,$index_or_fieldName);
 	}
 
-	function fieldPtr($index) {
-		return table_fieldPtr($this->_cPtr,$index);
-	}
-
-	function getCurProcFieldCount() {
-		return table_getCurProcFieldCount($this->_cPtr);
-	}
-
-	function getCurProcFieldIndex($index) {
-		return table_getCurProcFieldIndex($this->_cPtr,$index);
-	}
-
 	function fields() {
 		return table_fields($this->_cPtr);
 	}
@@ -2015,6 +1824,10 @@ class table extends nstable {
 
 	function keyValueDescription() {
 		return table_keyValueDescription($this->_cPtr);
+	}
+
+	function release() {
+		table_release($this->_cPtr);
 	}
 }
 
@@ -2036,23 +1849,15 @@ class queryBase {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
 		return $this->_pData[$var];
 	}
+	function __construct($h) {
+		$this->_cPtr=$h;
+	}
 
 	const none = 0;
 
 	const joinHasOneOrHasMany = 1;
 
 	const combineCondition = 2;
-
-	function __construct($r_=null) {
-		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__queryBase') {
-			$this->_cPtr=$r_;
-			return;
-		}
-		switch (func_num_args()) {
-		case 0: $this->_cPtr=new_queryBase(); break;
-		default: $this->_cPtr=new_queryBase($r_);
-		}
-	}
 
 	function reset() {
 		queryBase_reset($this->_cPtr);
@@ -2066,12 +1871,12 @@ class queryBase {
 		queryBase_clearSelectFields($this->_cPtr);
 	}
 
-	function reserveSeekKeyValueSize($v) {
-		queryBase_reserveSeekKeyValueSize($this->_cPtr,$v);
+	function addSeekKeyValue($value,$reset=false) {
+		queryBase_addSeekKeyValue($this->_cPtr,$value,$reset);
 	}
 
-	function reserveSeekKeyValuePtrSize($v) {
-		queryBase_reserveSeekKeyValuePtrSize($this->_cPtr,$v);
+	function reserveSeekKeyValueSize($v) {
+		queryBase_reserveSeekKeyValueSize($this->_cPtr,$v);
 	}
 
 	function queryString($str,$autoEscape=false) {
@@ -2208,97 +2013,6 @@ class queryBase {
 	function reverseAliasName($alias,$src) {
 		queryBase_reverseAliasName($this->_cPtr,$alias,$src);
 	}
-
-	function release() {
-		queryBase_release($this->_cPtr);
-	}
-
-	static function create() {
-		$r=queryBase_create();
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new queryBase($r);
-		}
-		return $r;
-	}
-
-	function select($value1,$value2=null,$value3=null,$value4=null,$value5=null,$value6=null,$value7=null,$value8=null,$value9=null,$value10=null) {
-		switch (func_num_args()) {
-		case 1: $r=queryBase_select($this->_cPtr,$value1); break;
-		case 2: $r=queryBase_select($this->_cPtr,$value1,$value2); break;
-		case 3: $r=queryBase_select($this->_cPtr,$value1,$value2,$value3); break;
-		case 4: $r=queryBase_select($this->_cPtr,$value1,$value2,$value3,$value4); break;
-		case 5: $r=queryBase_select($this->_cPtr,$value1,$value2,$value3,$value4,$value5); break;
-		case 6: $r=queryBase_select($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6); break;
-		case 7: $r=queryBase_select($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7); break;
-		case 8: $r=queryBase_select($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7,$value8); break;
-		case 9: $r=queryBase_select($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7,$value8,$value9); break;
-		default: $r=queryBase_select($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7,$value8,$value9,$value10);
-		}
-		if (!is_resource($r)) return $r;
-		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__queryBase': return new queryBase($r);
-		default: return new queryBase($r);
-		}
-	}
-
-	function where($field,$op,$val) {
-		$r=queryBase_where($this->_cPtr,$field,$op,$val);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new queryBase($r);
-		}
-		return $r;
-	}
-
-	function and_($field,$op,$val) {
-		$r=queryBase_and_($this->_cPtr,$field,$op,$val);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new queryBase($r);
-		}
-		return $r;
-	}
-
-	function or_($field,$op,$val) {
-		$r=queryBase_or_($this->_cPtr,$field,$op,$val);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new queryBase($r);
-		}
-		return $r;
-	}
-
-	function in($value1,$value2=null,$value3=null,$value4=null,$value5=null,$value6=null,$value7=null,$value8=null) {
-		switch (func_num_args()) {
-		case 1: $r=queryBase_in($this->_cPtr,$value1); break;
-		case 2: $r=queryBase_in($this->_cPtr,$value1,$value2); break;
-		case 3: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3); break;
-		case 4: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4); break;
-		case 5: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4,$value5); break;
-		case 6: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6); break;
-		case 7: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7); break;
-		default: $r=queryBase_in($this->_cPtr,$value1,$value2,$value3,$value4,$value5,$value6,$value7,$value8);
-		}
-		if (!is_resource($r)) return $r;
-		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__queryBase': return new queryBase($r);
-		default: return new queryBase($r);
-		}
-	}
-
-	function addInValue($value,$reset=false) {
-		$r=queryBase_addInValue($this->_cPtr,$value,$reset);
-		if (!is_resource($r)) return $r;
-		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__queryBase': return new queryBase($r);
-		default: return new queryBase($r);
-		}
-	}
 }
 
 class query extends queryBase {
@@ -2317,17 +2031,6 @@ class query extends queryBase {
 	function __get($var) {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
 		return queryBase::__get($var);
-	}
-
-	function __construct($r_=null) {
-		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__query') {
-			$this->_cPtr=$r_;
-			return;
-		}
-		switch (func_num_args()) {
-		case 0: $this->_cPtr=new_query(); break;
-		default: $this->_cPtr=new_query($r_);
-		}
 	}
 
 	function reset() {
@@ -2361,14 +2064,12 @@ class query extends queryBase {
 		}
 	}
 
-	static function create() {
-		$r=query_create();
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new query($r);
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__query') {
+			$this->_cPtr=$res;
+			return;
 		}
-		return $r;
+		$this->_cPtr=new_query();
 	}
 
 	function where($name,$qlogic,$value) {
@@ -2447,14 +2148,6 @@ class nsdatabase {
 		$this->_cPtr=new_nsdatabase();
 	}
 
-	function release() {
-		nsdatabase_release($this->_cPtr);
-	}
-
-	function refCount() {
-		return nsdatabase_refCount($this->_cPtr);
-	}
-
 	function enableTrn() {
 		return nsdatabase_enableTrn($this->_cPtr);
 	}
@@ -2485,10 +2178,6 @@ class nsdatabase {
 
 	function lockWaitTime() {
 		return nsdatabase_lockWaitTime($this->_cPtr);
-	}
-
-	function localSharing() {
-		return nsdatabase_localSharing($this->_cPtr);
 	}
 
 	function setLockWaitCount($v) {
@@ -2591,6 +2280,10 @@ class nsdatabase {
 	static function execCodePage() {
 		return nsdatabase_execCodePage();
 	}
+
+	static function setCheckTablePtr($v) {
+		nsdatabase_setCheckTablePtr($v);
+	}
 }
 
 class database extends nsdatabase {
@@ -2609,10 +2302,6 @@ class database extends nsdatabase {
 	function __get($var) {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
 		return nsdatabase::__get($var);
-	}
-
-	function release() {
-		database_release($this->_cPtr);
 	}
 
 	function dbDef() {
@@ -2737,26 +2426,12 @@ class database extends nsdatabase {
 		return database_mode($this->_cPtr);
 	}
 
-	function defaultAutoIncSpace() {
-		return database_defaultAutoIncSpace($this->_cPtr);
-	}
-
 	function __construct($res=null) {
 		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__database') {
 			$this->_cPtr=$res;
 			return;
 		}
 		$this->_cPtr=new_database();
-	}
-
-	static function createObject() {
-		$r=database_createObject();
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new database($r);
-		}
-		return $r;
 	}
 }
 
@@ -2946,72 +2621,6 @@ class btrTimeStamp {
 	}
 }
 
-class bdate {
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-
-	function __construct($btrDate_or_date) {
-		if (is_resource($btrDate_or_date) && get_resource_type($btrDate_or_date) === '_p_bzs__db__protocol__tdap__bdate') {
-			$this->_cPtr=$btrDate_or_date;
-			return;
-		}
-		$this->_cPtr=new_bdate($btrDate_or_date);
-	}
-
-	function year_str() {
-		return bdate_year_str($this->_cPtr);
-	}
-
-	function month_str() {
-		return bdate_month_str($this->_cPtr);
-	}
-
-	function date_str() {
-		return bdate_date_str($this->_cPtr);
-	}
-
-	function year() {
-		return bdate_year($this->_cPtr);
-	}
-
-	function date() {
-		return bdate_date($this->_cPtr);
-	}
-
-	function month() {
-		return bdate_month($this->_cPtr);
-	}
-
-	function btr_date() {
-		$r=bdate_btr_date($this->_cPtr);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new btrDate($r);
-		}
-		return $r;
-	}
-
-	function c_str() {
-		return bdate_c_str($this->_cPtr);
-	}
-}
-
 class fielddefs {
 	public $_cPtr=null;
 	protected $_pData=array();
@@ -3029,9 +2638,6 @@ class fielddefs {
 	function __get($var) {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
 		return $this->_pData[$var];
-	}
-	function __construct($h) {
-		$this->_cPtr=$h;
 	}
 
 	function __clone() {
@@ -3061,18 +2667,12 @@ class fielddefs {
 		return fielddefs_size($this->_cPtr);
 	}
 
-	static function create() {
-		$r=fielddefs_create();
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new fielddefs($r);
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__fielddefs') {
+			$this->_cPtr=$res;
+			return;
 		}
-		return $r;
-	}
-
-	static function destroy($p) {
-		fielddefs_destroy($p);
+		$this->_cPtr=new_fielddefs();
 	}
 }
 
@@ -3205,10 +2805,6 @@ class field {
 
 	function comp($r_,$logType=16) {
 		return field_comp($this->_cPtr,$r_,$logType);
-	}
-
-	function isCompPartAndMakeValue() {
-		return field_isCompPartAndMakeValue($this->_cPtr);
 	}
 }
 
@@ -3422,10 +3018,6 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 		$this->_field = new field();
 	}
 
-	function setInvalidRecord($v) {
-		Record_setInvalidRecord($this->_cPtr,$v);
-	}
-
 	function isInvalidRecord() {
 		return Record_isInvalidRecord($this->_cPtr);
 	}
@@ -3488,10 +3080,6 @@ class memoryRecord extends Record {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
 		return Record::__get($var);
 	}
-	function __construct($h) {
-		parent::__construct($h);
-		$this->_cPtr=$h;
-	}
 
 	static function createRecord($fdinfo) {
 		$r=memoryRecord_createRecord($fdinfo);
@@ -3503,8 +3091,14 @@ class memoryRecord extends Record {
 		return $r;
 	}
 
-	static function release($p) {
-		memoryRecord_release($p);
+	function __construct($fds) {
+		if (is_resource($fds) && get_resource_type($fds) === '_p_bzs__db__protocol__tdap__client__memoryRecord') {
+			parent::__construct($fds);
+			$this->_cPtr=$fds;
+			return;
+		}
+		$this->_cPtr=new_memoryRecord($fds);
+		parent::__construct($this->_cPtr);
 	}
 }
 
@@ -3541,8 +3135,9 @@ class writableRecord extends memoryRecord {
 		return memoryRecord::__get($var);
 	}
 	function __construct($h) {
-		parent::__construct($h);
 		$this->_cPtr=$h;
+		$this->_fielddefs = $this->fieldDefs();
+		$this->_field = new field();
 	}
 
 	function read($KeysetAlrady=false) {
@@ -3563,16 +3158,6 @@ class writableRecord extends memoryRecord {
 
 	function save() {
 		writableRecord_save($this->_cPtr);
-	}
-
-	static function create($tb,$alias) {
-		$r=writableRecord_create($tb,$alias);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new writableRecord($r);
-		}
-		return $r;
 	}
 }
 
@@ -3749,17 +3334,6 @@ class fieldNames {
 		return $this->_pData[$var];
 	}
 
-	function __construct($r_=null) {
-		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__fieldNames') {
-			$this->_cPtr=$r_;
-			return;
-		}
-		switch (func_num_args()) {
-		case 0: $this->_cPtr=new_fieldNames(); break;
-		default: $this->_cPtr=new_fieldNames($r_);
-		}
-	}
-
 	function reset() {
 		$r=fieldNames_reset($this->_cPtr);
 		if (is_resource($r)) {
@@ -3807,18 +3381,12 @@ class fieldNames {
 		fieldNames_addValues($this->_cPtr,$values,$delmi);
 	}
 
-	static function create() {
-		$r=fieldNames_create();
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new fieldNames($r);
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__fieldNames') {
+			$this->_cPtr=$res;
+			return;
 		}
-		return $r;
-	}
-
-	function release() {
-		fieldNames_release($this->_cPtr);
+		$this->_cPtr=new_fieldNames();
 	}
 }
 
@@ -3983,17 +3551,6 @@ class groupQuery {
 		return $this->_pData[$var];
 	}
 
-	function __construct($r_=null) {
-		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__groupQuery') {
-			$this->_cPtr=$r_;
-			return;
-		}
-		switch (func_num_args()) {
-		case 0: $this->_cPtr=new_groupQuery(); break;
-		default: $this->_cPtr=new_groupQuery($r_);
-		}
-	}
-
 	function reset() {
 		$r=groupQuery_reset($this->_cPtr);
 		if (is_resource($r)) {
@@ -4055,18 +3612,12 @@ class groupQuery {
 		return groupQuery_functionCount($this->_cPtr);
 	}
 
-	static function create() {
-		$r=groupQuery_create();
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new groupQuery($r);
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__groupQuery') {
+			$this->_cPtr=$res;
+			return;
 		}
-		return $r;
-	}
-
-	function release() {
-		groupQuery_release($this->_cPtr);
+		$this->_cPtr=new_groupQuery();
 	}
 }
 
@@ -4257,7 +3808,7 @@ class max extends sum {
 	}
 }
 
-class RecordSetIterator implements \SeekableIterator {
+class RecordsetIterator implements \SeekableIterator {
 	private $_recordset_cPtr = null;
 	private $_position = 0;
 	private $_fieldsBase_p_p = null;
@@ -4268,7 +3819,7 @@ class RecordSetIterator implements \SeekableIterator {
 		$this->_recordset_cPtr = $recordset_cPtr;
 		$this->_position = 0;
 		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-		$this->_count = RecordSet_count($recordset_cPtr);
+		$this->_count = Recordset_count($recordset_cPtr);
 		$this->_record = new Record(memoryRecord::createRecord($fielddefs));
 	}
 
@@ -4285,7 +3836,7 @@ class RecordSetIterator implements \SeekableIterator {
 	}
 
 	public function current() {
-		RecordSet_getRow($this->_recordset_cPtr, $this->_position, $this->_fieldsBase_p_p);
+		Recordset_getRow($this->_recordset_cPtr, $this->_position, $this->_fieldsBase_p_p);
 		$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
 		return $this->_record;
 	}
@@ -4306,7 +3857,7 @@ class RecordSetIterator implements \SeekableIterator {
 	}
 }
 
-class RecordSetRecordIterator extends RangeIterator {
+class RecordsetRecordIterator extends RangeIterator {
 	private $_recordset_cPtr = null;
 	private $_fieldsBase_p_p = null;
 	private $_record = null;
@@ -4315,7 +3866,7 @@ class RecordSetRecordIterator extends RangeIterator {
 		parent::__construct($start, $end);
 		$this->_recordset_cPtr = $recordset_cPtr;
 		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-		$this->_record = new Record(memoryRecord::createRecord($fielddefs));
+		$this->_record = new Record(memoryRecord::createRecord(memoryRecord::createRecord($fielddefs)));
 	}
 
 	function __destruct() {
@@ -4323,13 +3874,13 @@ class RecordSetRecordIterator extends RangeIterator {
 	}
 
 	public function current() {
-		RecordSet_getRow($this->_recordset_cPtr, $this->_position, $this->_fieldsBase_p_p);
+		Recordset_getRow($this->_recordset_cPtr, $this->_position, $this->_fieldsBase_p_p);
 		$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
 		return $this->_record;
 	}
 }
 
-class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
+class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 	private $_fieldsBase_p_p = null;
 	private $_record = null;
 
@@ -4339,7 +3890,7 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 
 	// IteratorAggregate
 	public function getIterator() {
-		return new RecordSetIterator($this->_cPtr, $this->fieldDefs());
+		return new RecordsetIterator($this->_cPtr, $this->fieldDefs());
 	}
 
 	// ArrayAccess
@@ -4348,7 +3899,7 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	public function offsetGet($offset) {
-		RecordSet_getRow($this->_cPtr, $offset, $this->_fieldsBase_p_p);
+		Recordset_getRow($this->_cPtr, $offset, $this->_fieldsBase_p_p);
 		$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
 		return $this->_record;
 	}
@@ -4387,7 +3938,7 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 		}
 		$start = (int) $start;
 		$end = (int) $end;
-		return new RecordSetRecordIterator($start, $end, $this->_cPtr, $this->fieldDefs());
+		return new RecordsetRecordIterator($start, $end, $this->_cPtr, $this->fieldDefs());
 	}
 
 	public $_cPtr=null;
@@ -4408,23 +3959,8 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return $this->_pData[$var];
 	}
 
-	function __construct($r_=null) {
-		if (is_resource($r_) && get_resource_type($r_) === '_p_bzs__db__protocol__tdap__client__recordset') {
-			$this->_cPtr=$r_;
-			$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-			$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
-			return;
-		}
-		switch (func_num_args()) {
-		case 0: $this->_cPtr=new_RecordSet(); break;
-		default: $this->_cPtr=new_RecordSet($r_);
-		}
-		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-		$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
-	}
-
 	function __clone() {
-		$r=RecordSet___clone($this->_cPtr);
+		$r=Recordset___clone($this->_cPtr);
 		if (is_resource($r)) {
 			$this->_cPtr = $r;
 		} else {
@@ -4435,19 +3971,19 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	function size() {
-		return RecordSet_size($this->_cPtr);
+		return Recordset_size($this->_cPtr);
 	}
 
 	function count() {
-		return RecordSet_count($this->_cPtr);
+		return Recordset_count($this->_cPtr);
 	}
 
 	function clearRecords() {
-		RecordSet_clearRecords($this->_cPtr);
+		Recordset_clearRecords($this->_cPtr);
 	}
 
 	function fieldDefs() {
-		$r=RecordSet_fieldDefs($this->_cPtr);
+		$r=Recordset_fieldDefs($this->_cPtr);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
@@ -4457,113 +3993,111 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	function clear() {
-		RecordSet_clear($this->_cPtr);
+		Recordset_clear($this->_cPtr);
 	}
 
 	function top($c_,$n) {
-		$r=RecordSet_top($this->_cPtr,$c_,$n);
+		$r=Recordset_top($this->_cPtr,$c_,$n);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
+			return new Recordset($r);
 		}
 		return $r;
 	}
 
 	function begin() {
-		return RecordSet_begin($this->_cPtr);
+		return Recordset_begin($this->_cPtr);
 	}
 
 	function end() {
-		return RecordSet_end($this->_cPtr);
+		return Recordset_end($this->_cPtr);
 	}
 
 	function erase($index_or_it) {
-		return RecordSet_erase($this->_cPtr,$index_or_it);
+		return Recordset_erase($this->_cPtr,$index_or_it);
 	}
 
 	function removeField($index) {
-		RecordSet_removeField($this->_cPtr,$index);
+		Recordset_removeField($this->_cPtr,$index);
 	}
 
 	function matchBy($rq) {
-		$r=RecordSet_matchBy($this->_cPtr,$rq);
+		$r=Recordset_matchBy($this->_cPtr,$rq);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
+			return new Recordset($r);
 		}
 		return $r;
 	}
 
 	function groupBy($gq) {
-		$r=RecordSet_groupBy($this->_cPtr,$gq);
+		$r=Recordset_groupBy($this->_cPtr,$gq);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
+			return new Recordset($r);
 		}
 		return $r;
 	}
 
 	function orderBy($name1_or_orders,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
 		switch (func_num_args()) {
-		case 1: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders); break;
-		case 2: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2); break;
-		case 3: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3); break;
-		case 4: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4); break;
-		case 5: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5); break;
-		case 6: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5,$name6); break;
-		case 7: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5,$name6,$name7); break;
-		default: $r=RecordSet_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
+		case 1: $r=Recordset_orderBy($this->_cPtr,$name1_or_orders); break;
+		case 2: $r=Recordset_orderBy($this->_cPtr,$name1_or_orders,$name2); break;
+		case 3: $r=Recordset_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3); break;
+		case 4: $r=Recordset_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4); break;
+		case 5: $r=Recordset_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5); break;
+		case 6: $r=Recordset_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5,$name6); break;
+		case 7: $r=Recordset_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5,$name6,$name7); break;
+		default: $r=Recordset_orderBy($this->_cPtr,$name1_or_orders,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
 		}
 		if (!is_resource($r)) return $r;
 		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__recordset': return new RecordSet($r);
-		default: return new RecordSet($r);
+		case '_p_bzs__db__protocol__tdap__client__recordset': return new Recordset($r);
+		default: return new Recordset($r);
 		}
 	}
 
 	function reverse() {
-		$r=RecordSet_reverse($this->_cPtr);
+		$r=Recordset_reverse($this->_cPtr);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
+			return new Recordset($r);
 		}
 		return $r;
 	}
 
 	function appendCol($name,$type,$len) {
-		RecordSet_appendCol($this->_cPtr,$name,$type,$len);
+		Recordset_appendCol($this->_cPtr,$name,$type,$len);
 	}
 
-	function unionRecordSet($r_) {
-		$r=RecordSet_unionRecordSet($this->_cPtr,$r_);
+	function unionRecordset($r_) {
+		$r=Recordset_unionRecordset($this->_cPtr,$r_);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
-		}
-		return $r;
-	}
-
-	function release() {
-		RecordSet_release($this->_cPtr);
-	}
-
-	static function create() {
-		$r=RecordSet_create();
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new RecordSet($r);
+			return new Recordset($r);
 		}
 		return $r;
 	}
 
 	function getRow($index,$return_record) {
-		RecordSet_getRow($this->_cPtr,$index,$return_record);
+		Recordset_getRow($this->_cPtr,$index,$return_record);
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__recordset') {
+			$this->_cPtr=$res;
+			$this->_fieldsBase_p_p = new_fieldsBase_p_p();
+			$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
+			return;
+		}
+		$this->_cPtr=new_Recordset();
+		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
+		$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
 	}
 }
 
@@ -4682,10 +4216,6 @@ class activeTable {
 		return $r;
 	}
 
-	function release() {
-		activeTable_release($this->_cPtr);
-	}
-
 	function __construct($mgr_or_db,$tableName=null) {
 		if (is_resource($mgr_or_db) && get_resource_type($mgr_or_db) === '_p_bzs__db__protocol__tdap__client__activeTable') {
 			$this->_cPtr=$mgr_or_db;
@@ -4703,8 +4233,12 @@ class activeTable {
 		if (!is_resource($r)) return $r;
 		switch (get_resource_type($r)) {
 		case '_p_bzs__db__protocol__tdap__client__activeTable': return new activeTable($r);
-		default: return new RecordSet($r);
+		default: return new Recordset($r);
 		}
+	}
+
+	function release() {
+		activeTable_release($this->_cPtr);
 	}
 
 	function keyValue($kv0,$kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
@@ -4835,6 +4369,10 @@ class pooledDbManager extends idatabaseManager {
 
 	static function setMaxConnections($maxWorkerNum) {
 		pooledDbManager_setMaxConnections($maxWorkerNum);
+	}
+
+	static function maxConnections() {
+		return pooledDbManager_maxConnections();
 	}
 
 	static function reserve($size,$param) {

@@ -17,23 +17,29 @@
 @REM    02111-1307, USA.
 @REM ===============================================================
 call :GET_TRANSACTD_PHP_PATH "@SWIG_NATIVE_OUTFILE@"
-if not exist "%TDPHPPATH%.correct" call :GENERATE_TRANSACTD_PHP_CORRECT
 
-swig -c++ -php5 -DSWIGWIN -D_WIN32 -I"@SWIG_INC_PATH1@" -I"@SWIG_INC_PATH2@" @SWIG_ADDITONAL_OPTIONS@ -o "@SWIG_NATIVE_OUTFILE@" "@SWIG_INTERFACE_FILE@"
-del "%TDPHPPATH%"
-copy "%TDPHPPATH%.correct" "%TDPHPPATH%"
-
-exit /b 0
-
-:GENERATE_TRANSACTD_PHP_CORRECT
+@REM Generate correct transactd.php
+@REM -- see SWIG bugs:#1350 http://sourceforge.net/p/swig/bugs/1350/
+@REM -- delete %newobject on interface file
   copy "@SWIG_INTERFACE_FILE@" "@SWIG_INTERFACE_FILE@.org"
   findstr /V /B /C:"%%newobject" "@SWIG_INTERFACE_FILE@.org" > "@SWIG_INTERFACE_FILE@"
+@REM -- generate wrapper files
   swig -c++ -php5 -DSWIGWIN -D_WIN32 -I"@SWIG_INC_PATH1@" -I"@SWIG_INC_PATH2@" @SWIG_ADDITONAL_OPTIONS@ -o "@SWIG_NATIVE_OUTFILE@" "@SWIG_INTERFACE_FILE@"
+@REM -- revert interface file
   del "@SWIG_INTERFACE_FILE@"
   copy "@SWIG_INTERFACE_FILE@.org" "@SWIG_INTERFACE_FILE@"
   del "@SWIG_INTERFACE_FILE@.org"
+@REM -- rename transactd.php to transactd.php.correct to use after step
   move "%TDPHPPATH%" "%TDPHPPATH%.correct"
-  exit /b 0
+
+@REM Generate wrappers
+  swig -c++ -php5 -DSWIGWIN -D_WIN32 -I"@SWIG_INC_PATH1@" -I"@SWIG_INC_PATH2@" @SWIG_ADDITONAL_OPTIONS@ -o "@SWIG_NATIVE_OUTFILE@" "@SWIG_INTERFACE_FILE@"
+@REM -- replace correct transactd.php
+  del "%TDPHPPATH%"
+  copy "%TDPHPPATH%.correct" "%TDPHPPATH%"
+  del "%TDPHPPATH%.correct
+
+exit /b 0
 
 :GET_TRANSACTD_PHP_PATH
   setlocal enabledelayedexpansion

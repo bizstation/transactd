@@ -130,21 +130,6 @@ typedef char  _TCHAR;
 %ignore bzs::db::protocol::tdap::client::database::setOnCopyData;
 %ignore bzs::db::protocol::tdap::client::database::onDeleteRecord;
 %ignore bzs::db::protocol::tdap::client::database::setOnDeleteRecord;
-  // set execCodePage on createObject
-%ignore bzs::db::protocol::tdap::client::database::create();
-%newobject bzs::db::protocol::tdap::client::database::createObject;
-%extend bzs::db::protocol::tdap::client::database {
-  database()
-  {
-    bzs::db::protocol::tdap::client::nsdatabase::setExecCodePage(CP_UTF8);
-    return bzs::db::protocol::tdap::client::database::create();
-  }
-  static bzs::db::protocol::tdap::client::database* createObject()
-  {
-    bzs::db::protocol::tdap::client::nsdatabase::setExecCodePage(CP_UTF8);
-    return bzs::db::protocol::tdap::client::database::create();
-  }
-};
 
 // * bzs/db/protocol/tdap/client/field.h *
 %ignore bzs::db::protocol::tdap::client::field::operator=(const char*);
@@ -221,4 +206,12 @@ typedef char  _TCHAR;
 };
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(short, uint_td&);
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(const _TCHAR *, uint_td&);
+
+
+/* ===============================================
+  add code to init section
+=============================================== */
+%init %{
+    bzs::db::protocol::tdap::client::nsdatabase::setCheckTablePtr(true);
+%}
 #endif // =============== For PHP ===============

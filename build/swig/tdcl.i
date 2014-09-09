@@ -107,23 +107,43 @@ using namespace bzs::db::protocol::tdap::client;
 /* ===============================================
       ignore, rename, new/delobject, extend
 =============================================== */
+// common %newobject
+%newobject *::clone;
+%newobject *::create;
+%newobject *::createObject;
+%newobject *::openTable;
+
 // * bzs/db/protocol/tdap/client/activeTable.h *
-%delobject bzs::db::protocol::tdap::client::activeTable::release;
+%ignore bzs::db::protocol::tdap::client::activeTable::create;
+%ignore bzs::db::protocol::tdap::client::activeTable::releaseTable;
+  // activeTable::read returns new object
+%newobject bzs::db::protocol::tdap::client::activeTable::read;
 %extend bzs::db::protocol::tdap::client::activeTable {
   recordset* read(queryBase& q) {
-    recordset* rs = new recordset();
+    recordset* rs = recordset::create();
     self->read(*rs, q);
     return rs;
   }
 };
+  // create and release methods for activeTable class
+%extend bzs::db::protocol::tdap::client::activeTable {
+  activeTable() {
+    return bzs::db::protocol::tdap::client::activeTable::create();
+  }
+  ~activeTable() {
+    self->release();
+  }
+  void release() {
+    self->releaseTable();
+  }
+};
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::activeTable::activeTable;
+%ignore bzs::db::protocol::tdap::client::activeTable::~activeTable;
 
-// * bzs/db/protocol/tdap/client/activeTableImple.h *
-%ignore bzs::db::protocol::tdap::client::map_orm_fdi;
-%ignore bzs::db::protocol::tdap::client::createFdi;
-%ignore bzs::db::protocol::tdap::client::destroyFdi;
-%ignore bzs::db::protocol::tdap::client::initFdi;
 
 // * bzs/db/protocol/tdap/btrDate.h *
+%ignore bzs::db::protocol::tdap::bdate;
 %ignore bzs::db::protocol::tdap::c_str;
 
 // * bzs/db/protocol/tdap/client/client.h *
@@ -143,39 +163,67 @@ using namespace bzs::db::protocol::tdap::client;
 
 // * bzs/db/protocol/tdap/client/database.h *
 %ignore bzs::db::protocol::tdap::client::database::operator=;
-%ignore bzs::db::protocol::tdap::client::database::destroy;
-  // add new/delobject define for database
-%delobject bzs::db::protocol::tdap::client::database::release;
-%delobject bzs::db::protocol::tdap::client::database::~database;
+%ignore bzs::db::protocol::tdap::client::database::defaultAutoIncSpace;
+  // NOTE: ignore * STATIC * create only
+%ignore bzs::db::protocol::tdap::client::database::create();
+  // create and release methods for database class
 %extend bzs::db::protocol::tdap::client::database {
+  database() {
+    bzs::db::protocol::tdap::client::nsdatabase::setExecCodePage(CP_UTF8);
+    return bzs::db::protocol::tdap::client::database::create();
+  }
   ~database() {
     self->release();
   }
 };
-  // add newobject define for table
-%newobject bzs::db::protocol::tdap::client::database::openTable;
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::database::database;
+%ignore bzs::db::protocol::tdap::client::database::~database;
 
 // * bzs/db/protocol/tdap/client/dbDef.h *
+%ignore bzs::db::protocol::tdap::client::dbdef::allocRelateData;
+%ignore bzs::db::protocol::tdap::client::dbdef::cacheFieldPos;
+%ignore bzs::db::protocol::tdap::client::dbdef::compAsBackup;
 %ignore bzs::db::protocol::tdap::client::dbdef::fieldNumByViewNum;
+%ignore bzs::db::protocol::tdap::client::dbdef::getFieldPosition;
+%ignore bzs::db::protocol::tdap::client::dbdef::getFileSpec;
+%ignore bzs::db::protocol::tdap::client::dbdef::popBackup;
+%ignore bzs::db::protocol::tdap::client::dbdef::pushBackup;
+%ignore bzs::db::protocol::tdap::client::dbdef::setStat;
 
 // * bzs/db/protocol/tdap/client/field.h *
 %ignore bzs::db::protocol::tdap::client::compBlob;
+%ignore bzs::db::protocol::tdap::client::dummyFd;
 %ignore bzs::db::protocol::tdap::client::fieldValue;
 %ignore bzs::db::protocol::tdap::client::fieldShare;
 %ignore bzs::db::protocol::tdap::client::field::operator=(const field&);
-%ignore bzs::db::protocol::tdap::client::field::initialize;
-%ignore bzs::db::protocol::tdap::client::field::ptr;
-%ignore bzs::db::protocol::tdap::client::fielddefs::operator[] (const std::_tstring&) const;
 %ignore bzs::db::protocol::tdap::client::field::operator!=;
 %ignore bzs::db::protocol::tdap::client::field::operator==;
 %ignore bzs::db::protocol::tdap::client::field::operator=(const std::_tstring&);
+%ignore bzs::db::protocol::tdap::client::field::initialize;
+%ignore bzs::db::protocol::tdap::client::field::isCompPartAndMakeValue;
+%ignore bzs::db::protocol::tdap::client::field::ptr;
+%ignore bzs::db::protocol::tdap::client::fielddefs::operator[] (const std::_tstring&) const;
+%ignore bzs::db::protocol::tdap::client::fielddefs::create;
 %rename(getFielddef) bzs::db::protocol::tdap::client::fielddefs::operator[] (int index) const;
+  // create and release methods for fielddefs class
+%extend bzs::db::protocol::tdap::client::fielddefs {
+  fielddefs() {
+    return bzs::db::protocol::tdap::client::fielddefs::create();
+  }
+  ~fielddefs() {
+    self->release();
+  }
+};
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::fielddefs::fielddefs;
+%ignore bzs::db::protocol::tdap::client::fielddefs::~fielddefs;
 
 // * bzs/db/protocol/tdap/client/fields.h *
 %ignore bzs::db::protocol::tdap::client::fields;
-%ignore bzs::db::protocol::tdap::client::fieldsBase::fd;
 %ignore bzs::db::protocol::tdap::client::fieldsBase::operator[](const std::_tstring&) const;
-%rename(Record) bzs::db::protocol::tdap::client::fieldsBase;
+%ignore bzs::db::protocol::tdap::client::fieldsBase::fd;
+%ignore bzs::db::protocol::tdap::client::fieldsBase::setInvalidRecord;
   // add methods
 %extend bzs::db::protocol::tdap::client::fieldsBase {
   void getFieldByIndexRef(short index, field& return_field) const {
@@ -185,93 +233,140 @@ using namespace bzs::db::protocol::tdap::client;
     return_field = self->operator[](name);
   }
 };
-
-// * bzs/db/protocol/tdap/client/groupComp.h *
-%ignore bzs::db::protocol::tdap::client::compByKey;
-%ignore bzs::db::protocol::tdap::client::grouping_comp;
+%rename(Record) bzs::db::protocol::tdap::client::fieldsBase;
 
 // * bzs/db/protocol/tdap/client/groupQuery.h *
+%ignore bzs::db::protocol::tdap::client::avg::create;
+%ignore bzs::db::protocol::tdap::client::count::create;
 %ignore bzs::db::protocol::tdap::client::fieldNames::operator=;
-%ignore bzs::db::protocol::tdap::client::fieldNames::fieldNamesImple;
+%ignore bzs::db::protocol::tdap::client::fieldNames::create;
 %ignore bzs::db::protocol::tdap::client::groupFuncBase::operator=;
-%ignore bzs::db::protocol::tdap::client::groupFuncBase::groupFuncBaseImple;
 %ignore bzs::db::protocol::tdap::client::groupQuery::operator=;
-%ignore bzs::db::protocol::tdap::client::groupQuery::groupQueryImple;
-%ignore bzs::db::protocol::tdap::client::recordsetImple;
+%ignore bzs::db::protocol::tdap::client::groupQuery::create;
+%ignore bzs::db::protocol::tdap::client::max::create;
+%ignore bzs::db::protocol::tdap::client::min::create;
 %ignore bzs::db::protocol::tdap::client::recordsetQuery::operator=;
-%ignore bzs::db::protocol::tdap::client::recordsetQuery::recordsetQueryImple;
+%ignore bzs::db::protocol::tdap::client::recordsetQuery::create;
 %ignore bzs::db::protocol::tdap::client::sortField;
 %ignore bzs::db::protocol::tdap::client::sortFields;
 %ignore bzs::db::protocol::tdap::client::sortFields::operator[];
-  // groupFunctions
-    // recordsetQuery
-%ignore bzs::db::protocol::tdap::client::recordsetQuery::create;
-%ignore bzs::db::protocol::tdap::client::recordsetQuery::release;
-%newobject bzs::db::protocol::tdap::client::recordsetQuery::recordsetQuery;
+%ignore bzs::db::protocol::tdap::client::sum::create;
+  // create and release methods for fieldNames class
+%extend bzs::db::protocol::tdap::client::fieldNames {
+  fieldNames() {
+    return bzs::db::protocol::tdap::client::fieldNames::create();
+  }
+  ~fieldNames() {
+    self->release();
+  }
+};
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::fieldNames::fieldNames;
+%ignore bzs::db::protocol::tdap::client::fieldNames::~fieldNames;
+  // create and release methods for groupQuery class
+%extend bzs::db::protocol::tdap::client::groupQuery {
+  groupQuery() {
+    return bzs::db::protocol::tdap::client::groupQuery::create();
+  }
+  ~groupQuery() {
+    self->release();
+  }
+};
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::groupQuery::groupQuery;
+%ignore bzs::db::protocol::tdap::client::groupQuery::~groupQuery;
+  // create and release methods for recordsetQuery class
 %extend bzs::db::protocol::tdap::client::recordsetQuery {
   recordsetQuery() {
     return bzs::db::protocol::tdap::client::recordsetQuery::create();
   }
-  ~recordsetQuery() { self->release(); }
+  ~recordsetQuery() {
+    self->release();
+  }
 };
+  // ignore original methods
 %ignore bzs::db::protocol::tdap::client::recordsetQuery::recordsetQuery;
-    // avg
-%ignore bzs::db::protocol::tdap::client::avg::create;
-%newobject bzs::db::protocol::tdap::client::avg::avg;
+%ignore bzs::db::protocol::tdap::client::recordsetQuery::~recordsetQuery;
+  // create and release methods for avg class
 %extend bzs::db::protocol::tdap::client::avg {
   avg(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
     return bzs::db::protocol::tdap::client::avg::create(targetNames, resultName);
   }
-  ~avg() { self->release(); }
+  ~avg() {
+    self->release();
+  }
 };
+  // ignore original methods
 %ignore bzs::db::protocol::tdap::client::avg::avg;
-    // count
-%ignore bzs::db::protocol::tdap::client::count::create;
-%newobject bzs::db::protocol::tdap::client::count::count;
+%ignore bzs::db::protocol::tdap::client::avg::~avg;
+  // create and release methods for count class
 %extend bzs::db::protocol::tdap::client::count {
   count(const _TCHAR* resultName) {
     return bzs::db::protocol::tdap::client::count::create(resultName);
   }
-  ~count() { self->release(); }
+  ~count() {
+    self->release();
+  }
 };
+  // ignore original methods
 %ignore bzs::db::protocol::tdap::client::count::count;
-    // max
-%ignore bzs::db::protocol::tdap::client::max::create;
-%newobject bzs::db::protocol::tdap::client::max::max;
+%ignore bzs::db::protocol::tdap::client::count::~count;
+  // create and release methods for max class
 %extend bzs::db::protocol::tdap::client::max {
   max(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
     return bzs::db::protocol::tdap::client::max::create(targetNames, resultName);
   }
-  ~max() { self->release(); }
+  ~max() {
+    self->release();
+  }
 };
+  // ignore original methods
 %ignore bzs::db::protocol::tdap::client::max::max;
-    // min
-%ignore bzs::db::protocol::tdap::client::min::create;
-%newobject bzs::db::protocol::tdap::client::min::min;
+%ignore bzs::db::protocol::tdap::client::max::~max;
+  // create and release methods for min class
 %extend bzs::db::protocol::tdap::client::min {
   min(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
     return bzs::db::protocol::tdap::client::min::create(targetNames, resultName);
   }
-  ~min() { self->release(); }
+  ~min() {
+    self->release();
+  }
 };
+  // ignore original methods
 %ignore bzs::db::protocol::tdap::client::min::min;
-    // sum
-%ignore bzs::db::protocol::tdap::client::sum::create;
-%newobject bzs::db::protocol::tdap::client::sum::sum;
+%ignore bzs::db::protocol::tdap::client::min::~min;
+  // create and release methods for sum class
 %extend bzs::db::protocol::tdap::client::sum {
   sum(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
     return bzs::db::protocol::tdap::client::sum::create(targetNames, resultName);
   }
-  ~sum() { self->release(); }
+  ~sum() {
+    self->release();
+  }
 };
+  // ignore original methods
 %ignore bzs::db::protocol::tdap::client::sum::sum;
+%ignore bzs::db::protocol::tdap::client::sum::~sum;
 
 // * bzs/db/protocol/tdap/client/memRecord.h *
 %ignore bzs::db::protocol::tdap::client::autoMemory;
 %ignore bzs::db::protocol::tdap::client::autoMemory::operator=;
 %ignore bzs::db::protocol::tdap::client::memoryRecord::clear;
+%ignore bzs::db::protocol::tdap::client::memoryRecord::create;
 %ignore bzs::db::protocol::tdap::client::memoryRecord::setRecordData;
 %rename(createRecord) bzs::db::protocol::tdap::client::memoryRecord::create(fielddefs&);
+  // create and release methods for memoryRecord class
+%extend bzs::db::protocol::tdap::client::memoryRecord {
+  memoryRecord(fielddefs& fds) {
+    return bzs::db::protocol::tdap::client::memoryRecord::create(fds);
+  }
+  ~memoryRecord() {
+    bzs::db::protocol::tdap::client::memoryRecord::release(self);
+  }
+};
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::memoryRecord::memoryRecord;
+%ignore bzs::db::protocol::tdap::client::memoryRecord::~memoryRecord;
 
 // * bzs/db/protocol/tdap/client/nsDatabase.h *
 %ignore bzs::db::protocol::tdap::client::nsdatabase::btrvFunc;
@@ -279,35 +374,74 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::createTable;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrVersion(btrVersions*, uchar_td*);
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getDllUnloadCallbackFunc;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::localSharing;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::testTablePtr;
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
-%ignore bzs::db::protocol::tdap::client::nstable::release;
+%ignore bzs::db::protocol::tdap::client::nstable::data;
+%ignore bzs::db::protocol::tdap::client::nstable::setBuflen;
+%ignore bzs::db::protocol::tdap::client::nstable::setData;
+%ignore bzs::db::protocol::tdap::client::nstable::setStat;
+%ignore bzs::db::protocol::tdap::client::nstable::test;
+%ignore bzs::db::protocol::tdap::client::nstable::throwError;
 %rename(tdapLastErr) bzs::db::protocol::tdap::client::nstable::tdapErr(HWND, _TCHAR*);
 
 // * bzs/db/protocol/tdap/client/recordset.h *
-%ignore bzs::db::protocol::tdap::client::recordset::operator new;
-%ignore bzs::db::protocol::tdap::client::recordset::operator delete;
 %ignore bzs::db::protocol::tdap::client::recordset::operator=;
-%rename(RecordSet) bzs::db::protocol::tdap::client::recordset;
-%rename(unionRecordSet) bzs::db::protocol::tdap::client::recordset::operator+=;
+%ignore bzs::db::protocol::tdap::client::recordset::create;
+%rename(Recordset) bzs::db::protocol::tdap::client::recordset;
+%rename(unionRecordset) bzs::db::protocol::tdap::client::recordset::operator+=;
   // add method
 %extend bzs::db::protocol::tdap::client::recordset {
   void getRow(size_t index, bzs::db::protocol::tdap::client::fieldsBase** return_record){
     *return_record = &(self->operator[](index));
   }
 };
-
-// * bzs/db/protocol/tdap/client/recordsetImple.h *
-%ignore bzs::db::protocol::tdap::client::recordsetSorter;
-%ignore bzs::db::protocol::tdap::client::multiRecordAlocatorImple;
+  // create and release methods for recordset class
+%extend bzs::db::protocol::tdap::client::recordset {
+  recordset() {
+    return bzs::db::protocol::tdap::client::recordset::create();
+  }
+  ~recordset() {
+    self->release();
+  }
+};
+%ignore bzs::db::protocol::tdap::client::recordset::recordset;
+%ignore bzs::db::protocol::tdap::client::recordset::~recordset;
 
 // * bzs/db/protocol/tdap/client/table.h *
 %ignore bzs::db::protocol::tdap::client::keyValuePtr;
+%ignore bzs::db::protocol::tdap::client::mra_nojoin;
+%ignore bzs::db::protocol::tdap::client::mra_first;
+%ignore bzs::db::protocol::tdap::client::mra_nextrows;
+%ignore bzs::db::protocol::tdap::client::mra_innerjoin;
+%ignore bzs::db::protocol::tdap::client::mra_outerjoin;
+%ignore bzs::db::protocol::tdap::client::mra_current_block;
+%ignore bzs::db::protocol::tdap::client::multiRecordAlocator;
+%ignore bzs::db::protocol::tdap::client::query::create;
 %ignore bzs::db::protocol::tdap::client::queryBase::operator=;
 %ignore bzs::db::protocol::tdap::client::queryBase::addField;
 %ignore bzs::db::protocol::tdap::client::queryBase::addLogic;
-%ignore bzs::db::protocol::tdap::client::queryBase::addSeekKeyValue;
 %ignore bzs::db::protocol::tdap::client::queryBase::addSeekKeyValuePtr;
+%ignore bzs::db::protocol::tdap::client::queryBase::reserveSeekKeyValuePtrSize;
+%ignore bzs::db::protocol::tdap::client::queryBase::queryBase;
+%ignore bzs::db::protocol::tdap::client::queryBase::~queryBase;
+%ignore bzs::db::protocol::tdap::client::queryBase::create;
+%ignore bzs::db::protocol::tdap::client::table::fieldPtr;
+%ignore bzs::db::protocol::tdap::client::table::getCurProcFieldCount;
+%ignore bzs::db::protocol::tdap::client::table::getCurProcFieldIndex;
+  // create and release methods for query class
+%extend bzs::db::protocol::tdap::client::query {
+  query() {
+    return bzs::db::protocol::tdap::client::query::create();
+  }
+  ~query() {
+    self->release();
+  }
+};
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::query::query;
+%ignore bzs::db::protocol::tdap::client::query::~query;
   // ignore keyValueDescription and re-define with expand.
 %ignore bzs::db::protocol::tdap::client::table::keyValueDescription(_TCHAR* buf, int bufsize);
 %typemap(in,numinputs=0) (_TCHAR* keyValueDescription_buf) (_TCHAR tmpbuf[1024 * 8]) {
@@ -319,86 +453,24 @@ using namespace bzs::db::protocol::tdap::client;
     return keyValueDescription_buf;
   }
 };
-  // ignore queryBase destructor. use release instead of it.
-%ignore bzs::db::protocol::tdap::client::queryBase::~queryBase;
-%newobject bzs::db::protocol::tdap::client::queryBase::create;
-%delobject bzs::db::protocol::tdap::client::queryBase::release;
-  // add delobject define for table
-%delobject bzs::db::protocol::tdap::client::table::release;
-%ignore bzs::db::protocol::tdap::client::table::release;
-  // add methods
-%extend bzs::db::protocol::tdap::client::queryBase {
-  queryBase* select(const _TCHAR* value1,
-    const _TCHAR* value2 = NULL, const _TCHAR* value3 = NULL, const _TCHAR* value4 = NULL,
-    const _TCHAR* value5 = NULL, const _TCHAR* value6 = NULL, const _TCHAR* value7 = NULL,
-    const _TCHAR* value8 = NULL, const _TCHAR* value9 = NULL, const _TCHAR* value10 = NULL)
-  {
-    self->addField(value1);
-    if (value2 != NULL)
-      self->addField(value2);
-    if (value3 != NULL)
-      self->addField(value3);
-    if (value4 != NULL)
-      self->addField(value4);
-    if (value5 != NULL)
-      self->addField(value5);
-    if (value6 != NULL)
-      self->addField(value6);
-    if (value7 != NULL)
-      self->addField(value7);
-    if (value8 != NULL)
-      self->addField(value8);
-    if (value9 != NULL)
-      self->addField(value9);
-    if (value10 != NULL)
-      self->addField(value10);
-    return self;
+  // create and release methods for table class
+%extend bzs::db::protocol::tdap::client::table {
+  void release() {
+    if (bzs::db::protocol::tdap::client::nsdatabase::testTablePtr(self))
+      self->release();
   }
-  queryBase* where(const _TCHAR* field, const _TCHAR* op, const _TCHAR* val)
-  {
-    self->addLogic(field, op, val);
-    return self;
-  }
-  queryBase* and_(const _TCHAR* field, const _TCHAR* op, const _TCHAR* val)
-  {
-    self->addLogic(_T("and") ,field, op, val);
-    return self;
-  }
-  queryBase* or_(const _TCHAR* field, const _TCHAR* op, const _TCHAR* val)
-  {
-    self->addLogic(_T("or") ,field, op, val);
-    return self;
-  }
-  queryBase* in(const _TCHAR* value1, const _TCHAR* value2 = NULL,
-    const _TCHAR* value3 = NULL, const _TCHAR* value4 = NULL, const _TCHAR* value5 = NULL,
-    const _TCHAR* value6 = NULL, const _TCHAR* value7 = NULL, const _TCHAR* value8 = NULL)
-  {
-    self->addSeekKeyValue(value1, false);
-    if (value2 != NULL)
-      self->addSeekKeyValue(value2, false);
-    if (value3 != NULL)
-      self->addSeekKeyValue(value3, false);
-    if (value4 != NULL)
-      self->addSeekKeyValue(value4, false);
-    if (value5 != NULL)
-      self->addSeekKeyValue(value5, false);
-    if (value6 != NULL)
-      self->addSeekKeyValue(value6, false);
-    if (value7 != NULL)
-      self->addSeekKeyValue(value7, false);
-    if (value8 != NULL)
-      self->addSeekKeyValue(value8, false);
-    return self;
-  }
-  queryBase* addInValue(const _TCHAR* value, bool reset = false)
-  {
-    self->addSeekKeyValue(value, reset);
-    return self;
+  ~table() {
+    if (bzs::db::protocol::tdap::client::nsdatabase::testTablePtr(self))
+      self->release();
   }
 };
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::table::table;
+%ignore bzs::db::protocol::tdap::client::table::~table;
 
 // * bzs/db/protocol/tdap/client/trdboostapi.h *
 %ignore bzs::db::protocol::tdap::client::autoBulkinsert;
+%ignore bzs::db::protocol::tdap::client::createDatabaseObject;
 %ignore bzs::db::protocol::tdap::client::eFindCurrntType;
 %ignore bzs::db::protocol::tdap::client::eIndexOpType;
 %ignore bzs::db::protocol::tdap::client::eStepOpType;
@@ -479,14 +551,19 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore bzs::db::protocol::tdap::keySpec;
 %ignore bzs::db::protocol::tdap::fileSpec;
-%ignore bzs::db::protocol::tdap::fielddef::dataLen;
-%ignore bzs::db::protocol::tdap::fielddef::keyCopy;
-%ignore bzs::db::protocol::tdap::fielddef::keyData;
-%ignore bzs::db::protocol::tdap::fielddef::keyDataLen;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataLen;
 %ignore bzs::db::protocol::tdap::fielddef::chainChar;
+%ignore bzs::db::protocol::tdap::fielddef::dataLen;
+%ignore bzs::db::protocol::tdap::fielddef::getKeyValueFromKeybuf;
+%ignore bzs::db::protocol::tdap::fielddef::keyCopy;
+%ignore bzs::db::protocol::tdap::fielddef::keyData;
+%ignore bzs::db::protocol::tdap::fielddef::keyDataLen;
+%ignore bzs::db::protocol::tdap::fielddef::maxVarDatalen;
+%ignore bzs::db::protocol::tdap::fielddef::nameA;
 %ignore bzs::db::protocol::tdap::fielddef::setChainChar;
+%ignore bzs::db::protocol::tdap::fielddef::setNameA;
+%ignore bzs::db::protocol::tdap::fielddef::unPackCopy;
 %ignore bzs::db::protocol::tdap::fielddef_t::defValue;
 %ignore bzs::db::protocol::tdap::fielddef_t::defViewWidth;
 %ignore bzs::db::protocol::tdap::fielddef_t::enableFlags;
@@ -501,15 +578,18 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::fielddef_t::viewWidth;
 %ignore bzs::db::protocol::tdap::tabledef::autoIncExSpace;
 %ignore bzs::db::protocol::tdap::tabledef::convertFileNum;
+%ignore bzs::db::protocol::tdap::tabledef::fileNameA;
 %ignore bzs::db::protocol::tdap::tabledef::iconIndex;
 %ignore bzs::db::protocol::tdap::tabledef::iconIndex2;
 %ignore bzs::db::protocol::tdap::tabledef::iconIndex3;
 %ignore bzs::db::protocol::tdap::tabledef::optionFlags;
 %ignore bzs::db::protocol::tdap::tabledef::parentKeyNum;
 %ignore bzs::db::protocol::tdap::tabledef::replicaKeyNum;
+%ignore bzs::db::protocol::tdap::tabledef::tableNameA;
 %ignore bzs::db::protocol::tdap::tabledef::treeIndex;
 %ignore bzs::db::protocol::tdap::tabledef::filler0;
 %ignore bzs::db::protocol::tdap::tabledef::reserved;
+
   // add methods
 %extend bzs::db::protocol::tdap::keydef {
   keySegment* segment(const int index)
@@ -538,6 +618,11 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::rtl::benchmark::report2;
 %ignore bzs::rtl::benchmarkMt;
 
+// common %ignore
+%ignore *::addref;
+%ignore *::destroy;
+%ignore *::refCount;
+%ignore *::release;
 
 /* ===============================================
       external symbols

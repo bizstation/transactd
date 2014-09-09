@@ -137,21 +137,6 @@ static void mark_activeTable(void* ptr) {
 %ignore bzs::db::protocol::tdap::client::database::setOnCopyData;
 %ignore bzs::db::protocol::tdap::client::database::onDeleteRecord;
 %ignore bzs::db::protocol::tdap::client::database::setOnDeleteRecord;
-  // set execCodePage on createObject
-%ignore bzs::db::protocol::tdap::client::database::create();
-%newobject bzs::db::protocol::tdap::client::database::createObject;
-%extend bzs::db::protocol::tdap::client::database {
-  database()
-  {
-    bzs::db::protocol::tdap::client::nsdatabase::setExecCodePage(CP_UTF8);
-    return bzs::db::protocol::tdap::client::database::create();
-  }
-  static bzs::db::protocol::tdap::client::database* createObject()
-  {
-    bzs::db::protocol::tdap::client::nsdatabase::setExecCodePage(CP_UTF8);
-    return bzs::db::protocol::tdap::client::database::create();
-  }
-};
 
 // * bzs/db/protocol/tdap/client/field.h *
 %rename(__getitem__) bzs::db::protocol::tdap::client::fielddefs::operator[] (int) const;
@@ -277,6 +262,7 @@ static void mark_activeTable(void* ptr) {
   add code to init section
 =============================================== */
 %init %{
+    bzs::db::protocol::tdap::client::nsdatabase::setCheckTablePtr(true);
 #if HAVE_RB_THREAD_CALL_WITHOUT_GVL || HAVE_RB_THREAD_BLOCKING_REGION
     if (MYTICALLID_ORIGINAL == NULL)
     {
