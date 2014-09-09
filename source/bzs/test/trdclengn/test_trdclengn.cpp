@@ -85,6 +85,7 @@ class fixture
 public:
 	fixture() : m_db(NULL)
 	{
+		nsdatabase::setCheckTablePtr(true);
 		m_db = database::create();
 		if (!m_db)
 			printf("Error database::create()\n");
@@ -151,10 +152,23 @@ void testDropDatabase(database* db)
 
 void testClone(database* db)
 {
-    database* db2 = db->clone();
+    db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
+
+	database* db2 = db->clone();
     BOOST_CHECK_MESSAGE(db2 != NULL, "createNewDataBase stat = " << db->stat());
+	db2->close();
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
+
+	BOOST_CHECK_MESSAGE(db2->stat() == 0, "db2 close stat = " << db2->stat());
+	db->close();
+    BOOST_CHECK_MESSAGE(db->stat() == 0, "db close stat = " << db->stat());
+	table* tb = db2->openTable(_T("user"), TD_OPEN_NORMAL);
+	BOOST_CHECK_MESSAGE(0 == db2->stat(), "openTable" << db2->stat());
     if (db2)
-		database::destroy(db2);
+		db2->release();
+	nsdatabase::testTablePtr(tb);
+	tb->release();
+		
 }
 
 void testCreateNewDataBase(database* db)
@@ -2645,6 +2659,12 @@ void teetNewDelete(database* db)
 		delete r;                              //All OK
 
 	}
+
+	//activeTable releaseTable
+	activeTable* at = new activeTable(db, _T("user"));
+	at->releaseTable();
+	delete at;
+
 	//printf("new delete end \n");
 }
 

@@ -150,6 +150,7 @@ public:
 	static activeTable* create (database_ptr& db, const _TCHAR* tableName);
 	static activeTable* create(database* db, const _TCHAR* tableName);
 	void release();
+	void releaseTable();
 };
 
 }// namespace client

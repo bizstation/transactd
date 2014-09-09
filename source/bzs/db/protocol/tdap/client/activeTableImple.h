@@ -340,6 +340,11 @@ public:
 						, name6, name7, name8);
 
 	}
+
+	void releaseTable()
+	{
+		m_tb.reset();
+	}
 };
 
 }// namespace client

@@ -223,7 +223,7 @@ struct nsdbimpl
 };
 
 boost::mutex g_mutex;
-static int g_maxEnginIndex = 0;
+static int g_maxEnginIndex = -1;
 
 nsdatabase::nsdatabase() : m_stat(0)
 {
@@ -780,7 +780,7 @@ bool nsdatabase::testTablePtr(nstable* ptr)
 	if (g_checkTablePtr)
 	{
 		boost::mutex::scoped_lock lck(g_mutex);
-		for (int i=0; i<g_maxEnginIndex; i++)
+		for (int i=0; i<=g_maxEnginIndex; i++)
 		{
 			nsdatabase* db = engins()[i];
 			if (db != NULL)

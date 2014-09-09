@@ -195,6 +195,7 @@ database& database:: operator = (const database & rt)
 		nsdatabase::operator=(rt);
 		m_impl->dbimple:: operator=(*(rt.m_impl));
 		rt.m_impl->dbDef->addref();
+		addref();
 	}
 	return *this;
 }

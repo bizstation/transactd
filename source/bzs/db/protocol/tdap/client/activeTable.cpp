@@ -166,6 +166,10 @@ void activeTable::release()
 	delete this;
 }
 
+void activeTable::releaseTable()
+{
+	m_imple->releaseTable();
+}
 
 }// namespace client
 }// namespace tdap
