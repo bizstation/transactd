@@ -112,13 +112,13 @@ int fieldNames::count() const
 	return  (int)m_impl->keyFields.size();
 }
 
-const TCHAR* fieldNames::getValue(int index) const
+const _TCHAR* fieldNames::getValue(int index) const
 {
 	assert(index>=0 && index < count());
 	return m_impl->keyFields[index].c_str();
 }
 
-const TCHAR* fieldNames::operator[](int index) const
+const _TCHAR* fieldNames::operator[](int index) const
 {
 	assert(index>=0 && index < count());
 	return m_impl->keyFields[index].c_str();

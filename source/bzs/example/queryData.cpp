@@ -98,7 +98,7 @@ bool createUserTable(dbdef* def)
 	++filedIndex;
 	fd = def->insertField(tableid, filedIndex);
 
-	TCHAR tmp[30];
+	_TCHAR tmp[30];
 	fd->setName(name_field_str(tmp));
 	fd->type = USER_STRING_TYPE;
 	fd->setLenByCharnum(20);

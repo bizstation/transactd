@@ -139,7 +139,7 @@ public:
 			m_atg.reset(new activeTable(m_db, _T("groups")));
 			m_ate.reset(new activeTable(m_db, _T("extention")));
 			
-			TCHAR tmp[30];
+			_TCHAR tmp[30];
 			m_atu->alias(name_field_str(tmp), _T("name"));
 			m_atg->alias(_T("name"), _T("group_name"));
 		}

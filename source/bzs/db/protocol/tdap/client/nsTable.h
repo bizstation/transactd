@@ -61,7 +61,7 @@ private:
 	const nstable& operator = (const nstable&);
 	void doUpdate(eUpdateType type);
 	ushort_td doInsert(bool ncc);
-	static TCHAR* getErrorMessage(int errorCode, _TCHAR* buf, size_t size);
+	static _TCHAR* getErrorMessage(int errorCode, _TCHAR* buf, size_t size);
 
 protected:
 

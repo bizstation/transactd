@@ -51,8 +51,8 @@ public:
 				,const _TCHAR* name8=NULL, const _TCHAR* name9=NULL, const _TCHAR* name10=NULL);
 
 	int count() const;
-	const TCHAR* operator[](int index) const;
-	const TCHAR* getValue(int index) const;
+	const _TCHAR* operator[](int index) const;
+	const _TCHAR* getValue(int index) const;
 	void addValue(const _TCHAR* v);
 	void addValues(const _TCHAR* values, const _TCHAR* delmi); //delmi = boost::is_any_of
 	static fieldNames* create();

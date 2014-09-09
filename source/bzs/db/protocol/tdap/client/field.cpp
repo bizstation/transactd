@@ -186,7 +186,7 @@ void fielddefs::push_back(const fielddef* p, bool rePosition)
 	fielddef* pp = &m_imple->fields[index];
 
 	// convert field name of table charset to recordset schema charset.
-	TCHAR tmp[FIELD_NAME_SIZE*3];
+	_TCHAR tmp[FIELD_NAME_SIZE*3];
 	pp->setName(p->name(tmp));
 
 	if (rePosition)
