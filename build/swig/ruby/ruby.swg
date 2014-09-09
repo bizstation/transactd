@@ -271,4 +271,20 @@ static void mark_activeTable(void* ptr) {
 
 // * bzs/db/protocol/tdap/client/recordset.h *
 %rename(__getitem__) bzs::db::protocol::tdap::client::recordset::operator[];
+
+
+/* ===============================================
+  add code to init section
+=============================================== */
+%init %{
+#if HAVE_RB_THREAD_CALL_WITHOUT_GVL || HAVE_RB_THREAD_BLOCKING_REGION
+    if (MYTICALLID_ORIGINAL == NULL)
+    {
+        MYTICALLID_ORIGINAL = bzs::db::protocol::tdap::client::getTrnsctdEntryPoint();
+        BTRVCALLID_ORIGINAL = bzs::db::protocol::tdap::client::getBtrvEntryPoint();
+        bzs::db::protocol::tdap::client::setTrnsctdEntryPoint((BTRCALLID_PTR) MYTICALLID_WITHOUT_GVL);
+        bzs::db::protocol::tdap::client::setBtrvEntryPoint(   (BTRCALLID_PTR) BTRVCALLID_WITHOUT_GVL);
+    }
+#endif // HAVE_RB_THREAD_CALL_WITHOUT_GVL || HAVE_RB_THREAD_BLOCKING_REGION
+%}
 #endif // =============== For RUBY ===============

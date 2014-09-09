@@ -97,6 +97,14 @@ using namespace bzs::db::protocol::tdap::client;
 
 
 /* ===============================================
+      Ruby call_without_gvl support
+=============================================== */
+#if defined(SWIGRUBY)
+  %include "ruby/without_gvl.swg"
+#endif
+
+
+/* ===============================================
       ignore, rename, new/delobject, extend
 =============================================== */
 // * bzs/db/protocol/tdap/client/activeTable.h *
