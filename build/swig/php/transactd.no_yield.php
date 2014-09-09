@@ -1,4 +1,8 @@
 <?php
+//
+//  Transactd Client for PHP
+//      ( NO-YIELD-VERSION : for PHP 5.4.x or older )
+//
 namespace BizStation\Transactd;
 
 /* ----------------------------------------------------------------------------
@@ -3321,6 +3325,65 @@ class RecordIterator implements \Iterator {
 	}
 }
 
+abstract class RangeIterator implements \Iterator {
+	protected $_position = 0;
+	protected $_start = -1;
+	protected $_end = -1;
+
+	function __construct($start, $end) {
+		$this->_position = 0;
+		$this->_start = $start;
+		$this->_end = $end;
+	}
+
+	public function rewind() {
+		$this->_position = $this->_start;
+	}
+
+	public function valid() {
+		return $this->_position <= $this->_end;
+	}
+
+	abstract public function current();
+
+	public function key() {
+		return $this->_position;
+	}
+
+	public function next() {
+		$this->_position++;
+	}
+}
+
+class RecordKeyIterator extends RangeIterator {
+	private $_fielddefs = null;
+
+	function __construct($count, $fielddefs) {
+		parent::__construct(0, $count - 1);
+		$this->_fielddefs = $fielddefs;
+	}
+
+	public function current() {
+		return $this->_fielddefs->getFielddef($this->_position)->nameA();
+	}
+}
+
+class RecordValueIterator extends RangeIterator {
+	private $_record_cPtr = null;
+	private $_field = null;
+
+	function __construct($record_cPtr) {
+		parent::__construct(0, Record_size($record_cPtr) - 1);
+		$this->_record_cPtr = $record_cPtr;
+		$this->_field = new field();
+	}
+
+	public function current() {
+		Record_getFieldByIndexRef($this->_record_cPtr, $this->_position, $this->_field);
+		return $this->_field->getFV();
+	}
+}
+
 class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 	protected $_field = null;
 	protected $_fielddefs = null;
@@ -3373,20 +3436,13 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return Record_size($this->_cPtr);
 	}
 
-	// generator
+	// Emulation of Generator with Iterator
 	function keys() {
-		$count = Record_size($this->_cPtr);
-		for ($i = 0; $i < $count; $i++) {
-			yield $this->_fielddefs->getFielddef($i)->nameA();
-		}
+		return new RecordKeyIterator(Record_size($this->_cPtr), $this->_fielddefs);
 	}
 
 	function values() {
-		$count = Record_size($this->_cPtr);
-		for ($i = 0; $i < $count; $i++) {
-			Record_getFieldByIndexRef($this->_cPtr, $i, $this->_field);
-			yield $this->_field->getFV();
-		}
+		return new RecordValueIterator($this->_cPtr);
 	}
 
 	// toArray
@@ -4326,6 +4382,29 @@ class RecordSetIterator implements \SeekableIterator {
 	}
 }
 
+class RecordSetRecordIterator extends RangeIterator {
+	private $_recordset_cPtr = null;
+	private $_fieldsBase_p_p = null;
+	private $_record = null;
+
+	function __construct($start, $end, $recordset_cPtr, $fielddefs) {
+		parent::__construct($start, $end);
+		$this->_recordset_cPtr = $recordset_cPtr;
+		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
+		$this->_record = new Record(memoryRecord::createRecord($fielddefs));
+	}
+
+	function __destruct() {
+		delete_fieldsBase_p_p($this->_fieldsBase_p_p);
+	}
+
+	public function current() {
+		RecordSet_getRow($this->_recordset_cPtr, $this->_position, $this->_fieldsBase_p_p);
+		$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
+		return $this->_record;
+	}
+}
+
 class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 	private $_fieldsBase_p_p = null;
 	private $_record = null;
@@ -4373,23 +4452,18 @@ class RecordSet implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return $this->offsetGet($this->count() - 1);
 	}
 
-	// generator
+	// Emulation of Generator with Iterator
 	function range($start = null, $end = null) {
 		$count = $this->count();
-		if (\gettype($start) !== 'integer' || $start < 0) {
-			$i = 0;
-		} else {
-			$i = $start;
+		if ((! is_numeric($start)) || $start < 0) {
+			$start = 0;
 		}
-		if (\gettype($end) !== 'integer' || $end < 0 || $end >= $count) {
+		if ((! is_numeric($end)) || $end < 0 || $end >= $count) {
 			$end = $count - 1;
 		}
-		while ($i <= $end) {
-			RecordSet_getRow($this->_cPtr, $i, $this->_fieldsBase_p_p);
-			$this->_record->_cPtr = fieldsBase_p_p_value($this->_fieldsBase_p_p);
-			yield $this->_record;
-			$i++;
-		}
+		$start = (int) $start;
+		$end = (int) $end;
+		return new RecordSetRecordIterator($start, $end, $this->_cPtr, $this->fieldDefs());
 	}
 
 	public $_cPtr=null;

@@ -65,6 +65,43 @@ set(TDVER_PHP_BUILD "${TRANSACTD_BUILD_NUMBER}")
 
 
 # ==========================================================
+# read PHP version from header
+# ==========================================================
+file(TO_CMAKE_PATH "${TRANSACTD_PHP_SOURCE_ROOT}/main/php_version.h"
+  TRANSACTD_PHP_VERSION_H_PATH)
+if(EXISTS "${TRANSACTD_PHP_VERSION_H_PATH}")
+  file(READ "${TRANSACTD_PHP_VERSION_H_PATH}" TRANSACTD_PHP_VERSION_H)
+  string(REGEX REPLACE ".*define +PHP_VERSION +\"(.+)\".*" "\\1"
+    TRANSACTD_PHP_VERSION "${TRANSACTD_PHP_VERSION_H}" )
+  if("${TRANSACTD_PHP_VERSION_H}" STREQUAL "${TRANSACTD_PHP_VERSION}")
+    set(TRANSACTD_PHP_VERSION "")
+  endif()
+else()
+  set(TRANSACTD_PHP_VERSION "")
+endif()
+if("${TRANSACTD_PHP_VERSION}" STREQUAL "")
+  message(STATUS "NOTE: PHP_VERSION not found in [${TRANSACTD_PHP_VERSION_H_PATH}].")
+  set(TRANSACTD_PHP_VERSION "5.5.0-(detect)")
+endif()
+message(STATUS "PHP_VERSION : [${TRANSACTD_PHP_VERSION}]")
+string(REGEX REPLACE "([0-9]+).[0-9]+.[0-9]+.*" "\\1"
+  TRANSACTD_PHP_VERSION_MAJOR "${TRANSACTD_PHP_VERSION}" )
+MATH(EXPR TRANSACTD_PHP_VERSION_MAJOR "${TRANSACTD_PHP_VERSION_MAJOR} + 0")
+string(REGEX REPLACE "[0-9]+.([0-9]+).[0-9]+.*" "\\1"
+  TRANSACTD_PHP_VERSION_MINOR "${TRANSACTD_PHP_VERSION}" )
+MATH(EXPR TRANSACTD_PHP_VERSION_MINOR "${TRANSACTD_PHP_VERSION_MINOR} + 0")
+set(TRANSACTD_PHP_HAVE_YIELD OFF)
+if(${TRANSACTD_PHP_VERSION_MAJOR} GREATER 5)
+  set(TRANSACTD_PHP_HAVE_YIELD ON)
+elseif(${TRANSACTD_PHP_VERSION_MAJOR} EQUAL 5)
+  if(${TRANSACTD_PHP_VERSION_MINOR} GREATER 4)
+    set(TRANSACTD_PHP_HAVE_YIELD ON)
+  endif()
+endif()
+message(STATUS "TRANSACTD_PHP_HAVE_YIELD : [${TRANSACTD_PHP_HAVE_YIELD}]")
+
+
+# ==========================================================
 # add custom command for generate swig wrapper
 # ==========================================================
 set(PHP_SWIG_WRAPPER_CPP "${CMAKE_CURRENT_BINARY_DIR}/tdclphp_wrap.cpp")
@@ -222,13 +259,18 @@ endif()
 # ==========================================================
 # set output directory
 # ==========================================================
-set(TRANSACTD_PHP_FILENAME transactd.php)
+if("${TRANSACTD_PHP_HAVE_YIELD}" STREQUAL "ON")
+  set(tdcl_yield ".yield")
+else()
+  set(tdcl_yield ".no_yield")
+endif()
+set(TRANSACTD_PHP_FILENAME "transactd${tdcl_yield}.php")
 if(WIN32)
   if(NOT COMMAND tdcl_set_output_win)
     include(../common/transactd_cl_output.cmake)
   endif()
   tdcl_set_output_win(${TRANSACTD_BINARY_ROOT})
-  set(TRANSACTD_PHP_FILENAME transactd.win.php)
+  set(TRANSACTD_PHP_FILENAME "transactd.win${tdcl_yield}.php")
 else()
   set_target_properties(${this_target} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
