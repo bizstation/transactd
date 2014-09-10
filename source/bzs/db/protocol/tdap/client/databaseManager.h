@@ -246,7 +246,7 @@ template<> inline dbmanager_ptr createDatabaseForConnectionPool(dbmanager_ptr& c
 
 template<> inline void connectOpen(dbmanager_ptr db, const connectParams& connPrams, bool newConnection)
 {
-	db->use(&connPrams);
+	connectOpen(db->db(), connPrams, newConnection);
 }
 
 /** @endcond */

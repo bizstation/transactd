@@ -166,9 +166,13 @@ void testClone(database* db)
 	BOOST_CHECK_MESSAGE(0 == db2->stat(), "openTable" << db2->stat());
     if (db2)
 		db2->release();
-	nsdatabase::testTablePtr(tb);
+	bool ret = nsdatabase::testTablePtr(tb);
+	BOOST_CHECK_MESSAGE(ret == true, "testTablePtr");
 	tb->release();
-		
+	
+	ret = nsdatabase::testTablePtr(tb);
+	BOOST_CHECK_MESSAGE(ret == false, "testTablePtr");
+
 }
 
 void testCreateNewDataBase(database* db)
@@ -2663,9 +2667,8 @@ void teetNewDelete(database* db)
 	//activeTable releaseTable
 	activeTable* at = new activeTable(db, _T("user"));
 	at->releaseTable();
+	BOOST_CHECK_MESSAGE(at->table()== NULL, " activeTable::releaseTable");
 	delete at;
-
-	//printf("new delete end \n");
 }
 
 void testJoin(database* db)
@@ -2892,9 +2895,11 @@ void testWirtableRecord(database* db)
 void testDbPool()
 {
 	pooledDbManager poolMgr;
-	pooledDbManager::setMaxConnections(3);
+	pooledDbManager::setMaxConnections(4);
 
 	connectParams pm(PROTOCOL, HOSTNAME, _T("querytest"), DBNAME);
+	poolMgr.use(&pm);
+	poolMgr.use(&pm);
 	poolMgr.use(&pm);
 	poolMgr.unUse();
 	poolMgr.reset(0);
