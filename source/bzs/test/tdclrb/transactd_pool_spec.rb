@@ -73,11 +73,10 @@ describe Transactd, 'pool' do
     expect(cp.uri()).to eq URL
     dbm = Transactd::PooledDbManager.new(cp)
     atu = Transactd::ActiveTable.new(dbm, 'user')
-    q = Transactd::QueryBase.new()
-    rs = Transactd::RecordSet.new()
+    q = Transactd::Query.new()
     atu.alias('名前', 'name')
     q.select('id', 'name', 'group').where('id', '<=', '15000')
-    atu.index(0).keyValue(1).read(rs, q)
+    rs = atu.index(0).keyValue(1).read(q)
     expect(rs.size()).to eq 15000
     expect(rs[0]['id']).to eq 1
     expect(rs[0][0]).to eq 1

@@ -82,29 +82,6 @@ describe Transactd, 'datetime' do
     #p s_datetime_d + ' ' + s_datetime_t
   end
   
-  it 'get Bdate' do
-    date = Transactd::atobtrd('2012-08-22')
-    bdate  = Transactd::Bdate.new(date.i)
-    bdate2 = Transactd::Bdate.new(Transactd::btrdtoa(date))
-    #p bdate,bdate2
-    btrdate  = bdate.btr_date()
-    btrdate2 = bdate2.btr_date()
-    #p btrdate, btrdate2
-    s_bdate  = bdate.c_str()
-    s_bdate2 = bdate2.c_str()
-    expect(s_bdate).to eq s_bdate2
-    #p s_bdate + ' ' + s_bdate.encoding.to_s
-    #p s_bdate2 + ' ' + s_bdate2.encoding.to_s
-    expect(bdate.year()).to eq 2012
-    expect(bdate.month()).to eq 8
-    expect(bdate.date()).to eq 22
-    expect(bdate.year_str()).to eq '2012'
-    expect(bdate.month_str()).to eq '8'
-    expect(bdate.date_str()).to eq '22'
-    #p bdate.year(), bdate.month(), bdate.date()
-    #p bdate.year_str(), bdate.month_str(), bdate.date_str()
-  end
-  
   it 'get BtrTimeStamp from string' do
     date = Transactd::atobtrd('2012-08-22')
     time = Transactd::atobtrt('15:37:00')

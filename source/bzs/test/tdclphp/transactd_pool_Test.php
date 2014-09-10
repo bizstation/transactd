@@ -89,11 +89,11 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($cp->uri(), URL);
         $dbm = new Bz\pooledDbManager($cp);
         $atu = new Bz\ActiveTable($dbm, 'user');
-        $q = new Bz\queryBase();
+        $q = new Bz\query();
         $rs = new Bz\RecordSet();
         $atu->alias('名前', 'name');
         $q->select('id', 'name', 'group')->where('id', '<=', 15000);
-        $atu->index(0)->keyValue(1)->read($rs, $q);
+        $rs = $atu->index(0)->keyValue(1)->read($q);
         $this->assertEquals($rs->size(), 15000);
         $this->assertEquals($rs[0]['id'], 1);
         $this->assertEquals($rs[0][0], 1);

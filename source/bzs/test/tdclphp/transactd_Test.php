@@ -48,15 +48,6 @@ define("ISOLATION_REPEATABLE_READ", false);
 
 class transactdTest extends PHPUnit_Framework_TestCase
 {
-    private function getDbObj()
-    {
-        return Bz\database::createObject();
-    }
-    private function deleteDbObj(&$db)
-    {
-        $db->close();
-        $db = NULL;
-    }
     private function dropDatabase($db)
     {
         $db->open(URL);
@@ -149,26 +140,70 @@ class transactdTest extends PHPUnit_Framework_TestCase
     
     public function testCreateDatabase()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->createDatabase($db);
-        $this->deleteDbObj($db);
     }
     public function testCreateTable()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->createTable($db);
-        $this->deleteDbObj($db);
     }
-    public function testOpenTable()
+    // open database, not call close explicitly
+    public function testOpenDatabase()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
+        $db->open(URL);
+    }
+    // open database, call close explicitly
+    public function testCloseDatabase()
+    {
+        $db = new Bz\database();
+        $db->open(URL);
+        $db->close();
+    }
+    // open database, open table, not call close explicitly
+    public function testOpenA()
+    {
+        $db = new Bz\database();
+        $db->open(URL);
+        $tb = $this->openTable($db);
+    }
+    // open database, open table, call close explicitly
+    public function testOpenB()
+    {
+        $db = new Bz\database();
+        $db->open(URL);
         $tb = $this->openTable($db);
         $tb->close();
-        $this->deleteDbObj($db);
+        $db->close();
+    }
+    // open database, open table, call database::close explicitly
+    public function testOpenC()
+    {
+        $db = new Bz\database();
+        $db->open(URL);
+        $tb = $this->openTable($db);
+        $db->close();
+    }
+    // open database, open table, call table::close explicitly
+    public function testOpenD()
+    {
+        $db = new Bz\database();
+        $db->open(URL);
+        $tb = $this->openTable($db);
+        $tb->close();
+    }
+    // open database, open table, call table::release explicitly
+    public function testOpenE()
+    {
+        $db = new Bz\database();
+        $db->open(URL);
+        $tb = $this->openTable($db);
+        $tb->release();
     }
     public function testClone()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->open(URL);
         $this->assertEquals($db->stat(), 0);
         $this->assertEquals($db->isOpened(), true);
@@ -179,14 +214,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db2->close();
         $this->assertEquals($db2->stat(), 0);
         $this->assertEquals($db2->isOpened(), false);
-        $db2 = NULL;
+        unset($db2);
         $this->assertEquals($db->stat(), 0);
         $this->assertEquals($db->isOpened(), true);
-        $this->deleteDbObj($db);
     }
     public function testVersion()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->connect(PROTOCOL . HOSTNAME);
         $this->assertEquals($db->stat(), 0);
         $vv = new Bz\btrVersions();
@@ -207,7 +241,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     }
     public function testInsert()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $this->assertEquals($tb->recordCount(), 0);
@@ -234,12 +268,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->commitBulkInsert();
         $this->assertEquals($tb->stat(), 0);
         $db->endTrn();
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testFind()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $tb->setKeyNum(0);
@@ -275,12 +307,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDI_ID, $v);
         $tb->find(Bz\table::findForword);
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testFindNext()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $tb->setKeyNum(0);
@@ -296,23 +326,21 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $this->assertEquals($tb->stat(), 0);
             $this->assertEquals($tb->getFVint(FDI_ID), $i);
         }
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testFindIn()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $tb->setKeyNum(0);
         $tb->clearBuffer();
-        $q = new Bz\queryBase();
-        $q->addInValue('10', true);
-        $q->addInValue('300000');
-        $q->addInValue('50');
-        $q->addInValue('-1');
-        $q->addInValue('80');
-        $q->addInValue('5000');
+        $q = new Bz\query();
+        $q->addSeekKeyValue('10', true);
+        $q->addSeekKeyValue('300000');
+        $q->addSeekKeyValue('50');
+        $q->addSeekKeyValue('-1');
+        $q->addSeekKeyValue('80');
+        $q->addSeekKeyValue('5000');
         
         $tb->setQuery($q);
         $this->assertEquals($tb->stat(), 0);
@@ -341,10 +369,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
         
         // Many params
-        $q->addInValue('1', true);
+        $q->addSeekKeyValue('1', true);
         for($i = 2; $i <= 10000; $i++)
         {
-            $q->addInValue(strval($i));
+            $q->addSeekKeyValue(strval($i));
         }
         $tb->setQuery($q);
         $this->assertEquals($tb->stat(), 0);
@@ -374,13 +402,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         }
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
         $this->assertEquals($i, 10000);
-        
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testGetPercentage()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $tb->clearBuffer();
@@ -390,12 +415,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->stat(), 0);
         $per = $tb->getPercentage();
         $this->assertTrue(abs(5000 - $per) < 500); // 500 = 5%
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testMovePercentage()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $tb->clearBuffer();
@@ -404,12 +427,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $v = $tb->getFVint(FDI_ID);
         $this->assertEquals($tb->stat(), 0);
         $this->assertTrue(abs(TEST_COUNT / 2 + 1 - $v) < FIVE_PERCENT_OF_TEST_COUNT);
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testGetEqual()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $db->beginSnapshot();
@@ -421,12 +442,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $this->assertEquals($tb->getFVint(FDI_ID), $i);
         }
         $db->endSnapshot();
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testGetNext()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $db->beginSnapshot();
@@ -441,12 +460,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $this->assertEquals($tb->getFVint(FDI_ID), $i);
         }
         $db->endSnapshot();
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testGetPrevious()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $db->beginSnapshot();
@@ -463,12 +480,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->seekPrev();
         $this->assertEquals($tb->getFVstr(FDI_NAME), 'kosaka');
         $db->endSnapshot();
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testGetGreater()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $vv = TEST_COUNT * 3 / 4;
@@ -485,12 +500,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVint(FDI_ID), $vv + 1);
         $tb->seekPrev();
         $this->assertEquals($tb->getFVint(FDI_ID), $vv);
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testGetLessThan()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $vv = TEST_COUNT * 3 / 4;
@@ -507,34 +520,28 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVint(FDI_ID), $vv - 1);
         $tb->seekPrev();
         $this->assertEquals($tb->getFVint(FDI_ID), $vv - 2);
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testGetFirst()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $tb->clearBuffer();
         $tb->seekFirst();
         $this->assertEquals($tb->getFVstr(FDI_NAME), 'kosaka');
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testGetLast()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $tb->clearBuffer();
         $tb->seekLast();
         $this->assertEquals($tb->getFVstr(FDI_NAME), '' . (TEST_COUNT + 2));
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testMovePosition()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $vv = TEST_COUNT * 3 / 4;
@@ -554,12 +561,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVint(FDI_ID), $vv - 2);
         $tb->seekByBookmark($ps);
         $this->assertEquals($tb->getFVint(FDI_ID), $ps_vv);
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testUpdate()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $db->beginTrn();
@@ -620,13 +625,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDI_ID, $v);
         $tb->seek();
         $this->assertEquals($tb->getFVstr(FDI_NAME), 'ABC');
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testSnapShot()
     {
-        $db  = $this->getDbObj();
-        $db2 = $this->getDbObj();
+        $db  = new Bz\database();
+        $db2 = new Bz\database();
         $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
         $this->assertEquals($db2->stat(), 0);
         $tb = $this->openTable($db);
@@ -662,15 +665,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         else
           $this->assertEquals($secondValue, $firstValue);
         // ----------------------------------------------------
-        $tb2->close();
-        $tb->close();
-        $this->deleteDbObj($db2);
-        $this->deleteDbObj($db);
     }
     public function testConflict()
     {
-        $db  = $this->getDbObj();
-        $db2 = $this->getDbObj();
+        $db  = new Bz\database();
+        $db2 = new Bz\database();
         $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
         $this->assertEquals($db2->stat(), 0);
         $tb = $this->openTable($db);
@@ -712,15 +711,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->update();
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_CHANGE_CONFLICT);
         // ----------------------------------------------------
-        $tb2->close();
-        $tb->close();
-        $this->deleteDbObj($db2);
-        $this->deleteDbObj($db);
+        $tb2->release();
+        $tb->release();
+        unset($db2);
+        unset($db);
     }
     public function testTransactionLock()
     {
-        $db  = $this->getDbObj();
-        $db2 = $this->getDbObj();
+        $db  = new Bz\database();
+        $db2 = new Bz\database();
         $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
         $this->assertEquals($db2->stat(), 0);
         $tb = $this->openTable($db);
@@ -799,22 +798,18 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb2->setKeyNum(0);
         $tb2->seekFirst();
         $this->assertEquals($tb2->getFVstr(FDI_NAME), 'ABC');
-        $tb2->close();
-        $tb->close();
-        $this->deleteDbObj($db2);
-        $this->deleteDbObj($db);
     }
     public function testExclusive()
     {
         // db mode exclusive
-        $db = Bz\database::createObject();
+        $db = new Bz\database();
         $db->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_EXCLUSIVE);
         $this->assertEquals($db->stat(), 0);
         $tb = $db->openTable(TABLENAME);
         $this->assertEquals($db->stat(), 0);
         
         // Can not open database from other connections.
-        $db2 = Bz\database::createObject();
+        $db2 = new Bz\database();
         $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
         $this->assertEquals($db2->stat(), 0);
         $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF);
@@ -844,13 +839,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db2->close();
         
         // table mode exclusive
-        $db = Bz\database::createObject();
+        $db = new Bz\database();
         $db->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_READONLY);
         $this->assertEquals($db->stat(), 0);
         $tb = $db->openTable(TABLENAME, Bz\transactd::TD_OPEN_EXCLUSIVE);
         $this->assertEquals($db->stat(), 0);
         
-        $db2 = Bz\database::createObject();
+        $db2 = new Bz\database();
         $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
         $this->assertEquals($db2->stat(), 0);
         $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF);
@@ -871,7 +866,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db2->close();
         
         // reopen and update
-        $db = Bz\database::createObject();
+        $db = new Bz\database();
         $db->open(URL);
         $this->assertEquals($db->stat(), 0);
         $tb = $db->openTable(TABLENAME);
@@ -884,13 +879,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDI_NAME, 'ABC123');
         $tb->update();
         $this->assertEquals($tb->stat(), 0);
-        
-        $tb->close();
-        $db->close();
     }
     public function testInsert2()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $v = TEST_COUNT * 2;
@@ -907,12 +899,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->seekNext();
         $this->assertEquals($tb->getFVint(FDI_ID), 11);
         $db->endTrn();
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testDelete()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         // estimate count
@@ -952,49 +942,41 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->stat(), 9);
         $db->endTrn();
         $this->assertEquals($tb->recordCount(false), 0);
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testSetOwner()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $tb->setOwnerName("ABCDEFG");
         $this->assertEquals($tb->stat(), 0);
         $tb->clearOwnerName();
         $this->assertEquals($tb->stat(), 0);
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testDropIndex()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $tb->dropIndex(false);
         $this->assertEquals($tb->stat(), 0);
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testDropDatabase()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->dropDatabase($db);
-        $this->deleteDbObj($db);
     }
     public function testLogin()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->connect(PROTOCOL . HOSTNAME);
         $this->assertEquals($db->stat(), 0);
         if ($db->stat() == 0)
         {
             // second connection
-            $db2 = $this->getDbObj();
+            $db2 = new Bz\database();
             $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
             $this->assertEquals($db->stat(), 0);
-            $this->deleteDbObj($db2);
             $db->disconnect(PROTOCOL . HOSTNAME);
             $this->assertEquals($db->stat(), 0);
         }
@@ -1025,7 +1007,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($db->stat(), 25000 + 1049);
         $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
         $this->assertEquals($db->stat(), 0);
-        $this->deleteDbObj($db);
     }
     
     /* -----------------------------------------------------
@@ -1126,12 +1107,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // open
         $tb = $db->openTable($id);
         $this->assertEquals($db->stat(), 0);
-        $tb->close();
     }
     
     public function testCreateDatabaseVar()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->create(URL_VAR);
         if ($db->stat() == Bz\transactd::STATUS_TABLE_EXISTS_ERROR)
         {
@@ -1156,7 +1136,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $db->open(URL_VAR);
             $this->assertEquals($db->stat(), 0);
         }
-        $this->deleteDbObj($db);
     }
     private function setGetVar($tb, $unicodeField, $varCharField)
     {
@@ -1308,7 +1287,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     }
     public function testVarField()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->open(URL_VAR);
         $this->assertEquals($db->stat(), 0);
         $tb = $db->openTable('user1');
@@ -1339,7 +1318,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // utf8 varchar
         $this->setGetVar($tb, true, true);
         $tb->close();
-        $this->deleteDbObj($db);
     }
     private function doVarInsert($db, $name, $codePage, $str, $startid, $endid, $bulk)
     {
@@ -1358,11 +1336,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         if ($bulk)
             $tb->commitBulkInsert();
         $this->assertEquals($tb->stat(), 0);
-        $tb->close();
     }
     public function testVarInsert()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $startid = 1;
         $bulk = false;
         $str = '漢字文字のテスト'; // too long kanji
@@ -1395,7 +1372,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $this->doVarInsert($db, 'user4', Bz\transactd::CP_ACP,   '', $startid, $endid, $bulk);
             $this->doVarInsert($db, 'user5', Bz\transactd::CP_UTF8,  '', $startid, $endid, $bulk);
         }
-        $this->deleteDbObj($db);
     }
     private function doVarRead($db, $name, $codePage, $str, $num, $ky)
     {
@@ -1420,11 +1396,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($is_valid_value);
         // test read of second field
         $this->assertEquals($tb->getFVint(FDI_GROUP), ($num + 10));
-        $tb->close();
     }
     public function testVarRead()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $str = '漢字文';
         $str3 = '漢字文字のテ';
         $str2 ='123';
@@ -1459,7 +1434,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $this->doVarRead($db, 'user4', Bz\transactd::CP_ACP,   '120', 120, $ky);
             $this->doVarRead($db, 'user5', Bz\transactd::CP_UTF8,  '120', 120, $ky);
         }
-        $this->deleteDbObj($db);
     }
     private function doVarFilter($db, $name, $codePage, $str, $num, $ky)
     {
@@ -1509,11 +1483,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $tb->setFV(FDI_NAME, $str);
             $tb->setFV(FDI_GROUP, $v);
         }
-        $tb->close();
     }
     public function testFilterVar()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->open(URL_VAR);
         $this->assertEquals($db->stat(), 0);
         if (0 == $db->stat())
@@ -1550,16 +1523,14 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $this->doVarFilter($db, 'user4', Bz\transactd::CP_ACP,   '120', 120, $ky);
             $this->doVarFilter($db, 'user5', Bz\transactd::CP_UTF8,  '120', 120, $ky);
         }
-        $this->deleteDbObj($db);
     }
     public function testDropDatabaseVar()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->open(URL_VAR);
         $this->assertEquals($db->stat(), 0);
         $db->drop();
         $this->assertEquals($db->stat(), 0);
-        $this->deleteDbObj($db);
     }
     
     /* -----------------------------------------------------
@@ -1798,12 +1769,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->doTestReadStringFilter($tb);
         $this->doTestSetStringFilter($tb);
         $this->doTestUpdateStringFilter($tb);
-        $tb->close();
     }
     
     public function testStringFilter()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->create(URL_SF);
         if ($db->stat() == Bz\transactd::STATUS_TABLE_EXISTS_ERROR)
         {
@@ -1819,22 +1789,20 @@ class transactdTest extends PHPUnit_Framework_TestCase
         else
             $this->doTestStringFilter($db, 2, 'myvarchar', Bz\transactd::ft_myvarchar, Bz\transactd::ft_myvarchar);
         $this->doTestStringFilter($db, 3, 'mytext', Bz\transactd::ft_mytext, Bz\transactd::ft_myblob);
-        $this->deleteDbObj($db);
     }
     
     public function testDropDatabaseStringFilter()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->open(URL_SF);
         $this->assertEquals($db->stat(), 0);
         $db->drop();
         $this->assertEquals($db->stat(), 0);
-        $this->deleteDbObj($db);
     }
     
     public function testQuery()
     {
-        $q = new Bz\queryBase();
+        $q = new Bz\query();
         $q->queryString("id = 0 and name = 'Abc efg'");
         $this->assertEquals($q->toString(), "id = '0' and name = 'Abc efg'");
         
@@ -2009,7 +1977,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // open test
         $tb = $db->openTable($id);
         $this->assertEquals($db->stat(), 0);
-        if ($tb != NULL) { $tb->close(); }
         return true;
     }
     private function createQTgroups($db)
@@ -2049,7 +2016,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // open test
         $tb = $db->openTable($id);
         $this->assertEquals($db->stat(), 0);
-        if ($tb != NULL) { $tb->close(); }
         return true;
     }
     private function createQTextention($db)
@@ -2089,7 +2055,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // open test
         $tb = $db->openTable($id);
         $this->assertEquals($db->stat(), 0);
-        if ($tb != NULL) { $tb->close(); }
         return true;
     }
     private function insertQT($db, $maxId)
@@ -2137,12 +2102,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
     
     public function testCreateQueryTest()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         // check database existence
         $db->open(URL_QT, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
         if ($db->stat() === 0) {
-            $db->close();
-            $this->deleteDbObj($db);
             return;
         }
         echo("\nDatabase " . DBNAME_QT . " not found\n");
@@ -2156,16 +2119,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->createQTextention($db);
         // insert data
         $this->insertQT($db, 20000);
-        $db->close();
-        $this->deleteDbObj($db);
     }
     public function testNewDelete()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->open(URL_QT);
         for ($i = 0; $i < 500; $i++)
         {
-            $qb = new Bz\queryBase();
             $q  = new Bz\query();
             $rq = new Bz\recordsetQuery();
             $gq = new Bz\groupQuery();
@@ -2182,25 +2142,18 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $s = new Bz\avg($fns);
             $s = new Bz\min($fns);
             $s = new Bz\max($fns);
-            $rs = new Bz\RecordSet();
-            // explicitly release
-            unset($atu);
-            unset($atg);
-            // NOT TO: $atg->release();
-            // NOT TO: $atu->release();
+            $rs = new Bz\Recordset();
         }
-        $db->close();
-        $this->deleteDbObj($db);
     }
     public function testJoin()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->open(URL_QT);
         $this->assertEquals($db->stat(), 0);
         $atu = new Bz\ActiveTable($db, 'user');
         $atg = new Bz\ActiveTable($db, 'groups');
         $ate = new Bz\ActiveTable($db, 'extention');
-        $q = new Bz\queryBase();
+        $q = new Bz\query();
         
         $atu->alias('名前', 'name');
         $q->select('id', 'name', 'group')->where('id', '<=', 15000);
@@ -2257,7 +2210,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $q->reset();
         $atg->index(0)->join($rs2, $q->select('group_name'), 'group');
         $this->assertEquals($rs2->size(), 1000);
-        $rs->unionRecordSet($rs2);
+        $rs->unionRecordset($rs2);
         $this->assertEquals($rs->size(), 16000);
         // row in rs[15000]
         $this->assertEquals($rs[15000]['id'], 15001);
@@ -2297,7 +2250,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(isset($rsv), false);
         
         // top
-        $rs3 = new Bz\RecordSet();
+        $rs3 = new Bz\Recordset();
         $rs->top($rs3, 10);
         $this->assertEquals($rs3->size(), 5);
         $rs->top($rs3, 3);
@@ -2316,13 +2269,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $q3 = new Bz\groupQuery();
         $q3->keyField('group', 'id');
         unset($q3);
-        
-        $db->close();
-        $this->deleteDbObj($db);
     }
     public function testWritableRecord()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $db->open(URL_QT);
         $this->assertEquals($db->stat(), 0);
         $atu = new Bz\ActiveTable($db, 'user');
@@ -2378,9 +2328,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $rec['id'] = 120000;
         $ret = $rec->read();
         $this->assertEquals($ret, false);
-        
-        $db->close();
-        $this->deleteDbObj($db);
     }
     
     /* -----------------------------------------------------

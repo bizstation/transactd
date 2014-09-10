@@ -48,7 +48,8 @@ def testDropDatabase(db, url)
   expect(db.stat()).to eq 0
 end
 
-def testCreateDatabase(db, url)
+def testCreateDatabase(url)
+  db = Transactd::Database.new()
   db.create(url)
   if db.stat() == Transactd::STATUS_TABLE_EXISTS_ERROR
     testDropDatabase(db, url)
@@ -161,7 +162,8 @@ def testFind(db, tablename)
   tb.close()
 end
 
-def testWhole(db, tableid, tablename, url)
+def testWhole(tableid, tablename, url)
+  db = Transactd::Database.new()
   tablename = tablename.encode('UTF-8') # table name must be UTF-8
   testOpenDatabase(db, url)
   testCreateTable(db, tableid, tablename)
@@ -174,38 +176,32 @@ end
 
 
 describe Transactd do
-  before :each do
-    @db = Transactd::Database.createObject()
-  end
-  after :each do
-    @db = nil
-  end
-  
   it 'create database' do
-    testCreateDatabase(@db, URL.encode('UTF-8'))
+    testCreateDatabase(URL.encode('UTF-8'))
   end
   
   it 'table which has kanji-named field' do
-    testWhole(@db, 1, 'kanji-field', URL.encode('UTF-8'))
+    testWhole(1, 'kanji-field', URL.encode('UTF-8'))
   end
   
   it 'kanji-named table' do
-    testWhole(@db, 2, '漢字テーブル', URL)
+    testWhole(2, '漢字テーブル', URL)
   end
   
   it 'create kanji-named database' do
-    testCreateDatabase(@db, URL_KANJI.encode('UTF-8')) # URL must be UTF-8
+    testCreateDatabase(URL_KANJI.encode('UTF-8')) # URL must be UTF-8
   end
  
   it 'table which has kanji-named field' do
-    testWhole(@db, 1, 'kanji-field', URL_KANJI.encode('UTF-8'))
+    testWhole(1, 'kanji-field', URL_KANJI.encode('UTF-8'))
   end
  
   it 'kanji-named table' do
-    testWhole(@db, 2, '漢字テーブル', URL_KANJI.encode('UTF-8'))
+    testWhole(2, '漢字テーブル', URL_KANJI.encode('UTF-8'))
   end
   
   it 'drop database' do
-    testDropDatabase(@db, URL_KANJI.encode('UTF-8'))
+    db = Transactd::Database.new()
+    testDropDatabase(db, URL_KANJI.encode('UTF-8'))
   end
 end

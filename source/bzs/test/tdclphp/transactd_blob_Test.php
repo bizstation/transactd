@@ -32,15 +32,6 @@ define("FDI_IMAGE", 3);
 
 class transactdBlobTest extends PHPUnit_Framework_TestCase
 {
-    private function getDbObj()
-    {
-        return Bz\database::createObject();
-    }
-    private function deleteDbObj($db)
-    {
-        $db->close();
-        $db = NULL;
-    }
     private function dropDatabase($db, $url)
     {
         $db->open($url);
@@ -131,18 +122,16 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
     
     public function testCreate()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->createDatabase($db, URL);
         $this->openDatabase($db, URL);
         $this->createTable($db, 1, TABLENAME);
         $tb = $this->openTable($db, TABLENAME);
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testInsert()
     {
         $image = $this->getTestBinary();
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->openDatabase($db, URL);
         $tb = $this->openTable($db, TABLENAME);
         $this->assertNotEquals($tb, NULL);
@@ -169,13 +158,10 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDI_IMAGE, $str, strlen($str));
         $tb->insert();
         $this->assertEquals($tb->stat(), 0);
-        // close
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testSeek()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->openDatabase($db, URL);
         $tb = $this->openTable($db, TABLENAME);
         $this->assertNotEquals($tb, NULL);
@@ -206,13 +192,10 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
         $this->assertEquals($tb->getFVstr(FDI_BODY), "2\ntest\nテスト\n\nあいうえおあいうえお");
         $this->assertEquals($tb->getFVbin(FDI_IMAGE), "2\ntest\nテスト\n\nあいうえおあいうえお");
-        // close
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testFind()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->openDatabase($db, URL);
         $tb = $this->openTable($db, TABLENAME);
         $this->assertNotEquals($tb, NULL);
@@ -239,13 +222,10 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         // 2... but changing seek-direction is not allowed
         $tb->findPrev(true);
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_PROGRAM_ERROR);
-        // close
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testUpdate()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->openDatabase($db, URL);
         $tb = $this->openTable($db, TABLENAME);
         $this->assertNotEquals($tb, NULL);
@@ -279,13 +259,10 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVint(FDI_ID), 2);
         $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
         $this->assertEquals($tb->getFVstr(FDI_BODY), "2\nテスト\ntest\n\nABCDEFG");
-        // close
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testDelete()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->openDatabase($db, URL);
         $tb = $this->openTable($db, TABLENAME);
         $this->assertNotEquals($tb, NULL);
@@ -311,14 +288,10 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         // eof
         $tb->seekNext();
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
-        // close
-        $tb->close();
-        $this->deleteDbObj($db);
     }
     public function testDrop()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->dropDatabase($db, URL);
-        $this->deleteDbObj($db);
     }
 }

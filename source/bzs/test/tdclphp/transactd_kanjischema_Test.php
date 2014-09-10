@@ -32,15 +32,6 @@ define("FDN_NAME", "名前");
 
 class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
 {
-    private function getDbObj()
-    {
-        return Bz\database::createObject();
-    }
-    private function deleteDbObj($db)
-    {
-        $db->close();
-        $db = NULL;
-    }
     private function dropDatabase($db, $url)
     {
         $db->open($url);
@@ -129,7 +120,6 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDN_NAME, 'ビズステーション');
         $tb->insert();
         $this->assertEquals($tb->stat(), 0);
-        $tb->close();
     }
     private function getEqual($db, $tablename)
     {
@@ -139,7 +129,6 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDN_ID, 1);
         $tb->seek();
         $this->assertEquals($tb->getFVstr(FDN_NAME), '小坂');
-        $tb->close();
     }
     private function find($db, $tablename)
     {
@@ -159,14 +148,13 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVstr(FDN_NAME), '矢口');
         $tb->findNext(true);
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
-        $tb->close();
     }
     private function doWhole($db, $tableid, $tablename, $url)
     {
         $this->openDatabase($db, $url);
         $this->createTable($db, $tableid, $tablename);
         $tb = $this->openTable($db, $tablename);
-        $tb->close();
+        $tb->release();
         $this->insert($db, $tablename);
         $this->getEqual($db, $tablename);
         $this->find($db, $tablename);
@@ -174,44 +162,37 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
     
     public function testCreateDatabase()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->createDatabase($db, URL);
-        $this->deleteDbObj($db);
     }
     public function testTableWhichHasKanjiNamedField()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->doWhole($db, 1, 'kanji-field', URL);
-        $this->deleteDbObj($db);
     }
     public function testKanjiNamedTable()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->doWhole($db, 2, '漢字テーブル', URL);
-        $this->deleteDbObj($db);
     }
     public function testCreateKanjiNamedDatabase()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->createDatabase($db, URL_KANJI); // URL must be UTF-8
-        $this->deleteDbObj($db);
     }
     public function testTableWhichHasKanjiNamedFieldInKanjiNamedDatabase()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->doWhole($db, 1, 'kanji-field', URL_KANJI);
-        $this->deleteDbObj($db);
     }
     public function testKanjiNamedTableInKanjiNamedDatabase()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->doWhole($db, 2, '漢字テーブル', URL_KANJI);
-        $this->deleteDbObj($db);
     }
     public function testDropDatabase()
     {
-        $db = $this->getDbObj();
+        $db = new Bz\database();
         $this->dropDatabase($db, URL_KANJI);
-        $this->deleteDbObj($db);
     }
 }

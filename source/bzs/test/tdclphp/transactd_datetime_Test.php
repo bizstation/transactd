@@ -85,35 +85,6 @@ class transactdDatetimeTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($s_datetime_d . ' ' . $s_datetime_t, '2012/08/22 15:37:00');
         //print_r($s_datetime_d . ' ' . $s_datetime_t);
     }
-    public function testGetBdate()
-    {
-        $bd = Bz\transactd::atobtrd('2012-08-22');
-        $bdate  = new Bz\bdate($bd->i);
-        $bdate2 = new Bz\bdate(Bz\transactd::btrdtoa($bd));
-        //print_r($bdate);
-        //print_r($bdate2);
-        $btrdate  = $bdate->btr_date();
-        $btrdate2 = $bdate2->btr_date();
-        //print_r($btrdate);
-        //print_r($btrdate2);
-        $s_bdate  = $bdate->c_str();
-        $s_bdate2 = $bdate2->c_str();
-        $this->assertEquals($s_bdate, $s_bdate2);
-        //print_r($s_bdate);
-        //print_r($s_bdate2);
-        $this->assertEquals($bdate->year(), 2012);
-        $this->assertEquals($bdate->month(), 8);
-        $this->assertEquals($bdate->date(), 22);
-        $this->assertEquals($bdate->year_str(), '2012');
-        $this->assertEquals($bdate->month_str(), '8');
-        $this->assertEquals($bdate->date_str(), '22');
-        //print_r($bdate->year());
-        //print_r($bdate->month());
-        //print_r($bdate->date());
-        //print_r($bdate->year_str());
-        //print_r($bdate->month_str());
-        //print_r($bdate->date_str());
-    }
     public function testGetBtrtimestampFromString()
     {
         $d = Bz\transactd::atobtrd('2012-08-22');
