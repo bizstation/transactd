@@ -109,8 +109,6 @@ static void mark_activeTable(void* ptr) {
 =============================================== */
 // * bzs/db/protocol/tdap/client/activeTable.h *
   // add wrappers
-%newobject bzs::db::protocol::tdap::client::activeTable::activeTable;
-%delobject bzs::db::protocol::tdap::client::activeTable::~activeTable;
 %extend bzs::db::protocol::tdap::client::activeTable {
   activeTable(idatabaseManager* mgr, const _TCHAR* tableName) {
     bzs::db::protocol::tdap::client::activeTable* a = bzs::db::protocol::tdap::client::activeTable::create(mgr, tableName);
@@ -129,7 +127,6 @@ static void mark_activeTable(void* ptr) {
 };
   // ignore original functions
 %ignore bzs::db::protocol::tdap::client::activeTable::activeTable;
-%ignore bzs::db::protocol::tdap::client::activeTable::create;
 %ignore bzs::db::protocol::tdap::client::activeTable::~activeTable;
 
 // * bzs/db/protocol/tdap/client/database.h *
@@ -267,9 +264,16 @@ static void mark_activeTable(void* ptr) {
     if (MYTICALLID_ORIGINAL == NULL)
     {
         MYTICALLID_ORIGINAL = bzs::db::protocol::tdap::client::getTrnsctdEntryPoint();
+        if (MYTICALLID_ORIGINAL)
+            bzs::db::protocol::tdap::client::setTrnsctdEntryPoint((BTRCALLID_PTR) MYTICALLID_WITHOUT_GVL);
+        else
+            bzs::db::protocol::tdap::client::setTrnsctdEntryPoint((BTRCALLID_PTR) NULL);
+        
         BTRVCALLID_ORIGINAL = bzs::db::protocol::tdap::client::getBtrvEntryPoint();
-        bzs::db::protocol::tdap::client::setTrnsctdEntryPoint((BTRCALLID_PTR) MYTICALLID_WITHOUT_GVL);
-        bzs::db::protocol::tdap::client::setBtrvEntryPoint(   (BTRCALLID_PTR) BTRVCALLID_WITHOUT_GVL);
+        if (BTRVCALLID_ORIGINAL)
+            bzs::db::protocol::tdap::client::setBtrvEntryPoint((BTRCALLID_PTR) BTRVCALLID_WITHOUT_GVL);
+        else
+            bzs::db::protocol::tdap::client::setBtrvEntryPoint((BTRCALLID_PTR) NULL);
     }
 #endif // HAVE_RB_THREAD_CALL_WITHOUT_GVL || HAVE_RB_THREAD_BLOCKING_REGION
 %}
