@@ -864,6 +864,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb3->close();
         $db->close();
         $db2->close();
+        unset($tb);
         
         // reopen and update
         $db = new Bz\database();

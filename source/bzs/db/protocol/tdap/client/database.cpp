@@ -353,10 +353,11 @@ void database::doClose()
 	m_stat = STATUS_SUCCESS;
 
 	if (m_impl->dbDef)
+	{
 		m_impl->dbDef->release();
+		nsdatabase::reset();
+	}
 	m_impl->dbDef = NULL;
-
-	nsdatabase::reset();
 	m_impl->isOpened = false;
 	m_impl->rootDir[0] = 0x00;
 	m_impl->lockReadOnly = false;
