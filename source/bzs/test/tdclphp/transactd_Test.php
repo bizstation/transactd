@@ -842,6 +842,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db = new Bz\database();
         $db->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_READONLY);
         $this->assertEquals($db->stat(), 0);
+        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable(TABLENAME, Bz\transactd::TD_OPEN_EXCLUSIVE);
         $this->assertEquals($db->stat(), 0);
         
@@ -852,6 +853,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($db2->stat(), 0);
         
         // Can not open table from other connections.
+        unset($tb2); // UNSET $tb2 BEFORE REASSIGNMENT
         $tb2 = $db2->openTable(TABLENAME);
         $this->assertEquals($db2->stat(), Bz\transactd::STATUS_CANNOT_LOCK_TABLE);
         
@@ -864,12 +866,12 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb3->close();
         $db->close();
         $db2->close();
-        unset($tb);
         
         // reopen and update
         $db = new Bz\database();
         $db->open(URL);
         $this->assertEquals($db->stat(), 0);
+        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable(TABLENAME);
         $this->assertEquals($db->stat(), 0);
         
@@ -1296,6 +1298,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // acp varchar
         $this->setGetVar($tb, false, true);
         $tb->close();
+        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('user2');
         $this->assertEquals($db->stat(), 0);
         // acp varbinary
@@ -1303,17 +1306,20 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->close();
         if ($this->isUtf16leSupport($db))
         {
+            unset($tb); // UNSET $tb BEFORE REASSIGNMENT
             $tb = $db->openTable('user3');
             $this->assertEquals($db->stat(), 0);
             // unicode varchar
             $this->setGetVar($tb, true, true);
             $tb->close();
         }
+        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('user4');
         $this->assertEquals($db->stat(), 0);
         // unicode varbinary
         $this->setGetVar($tb, true, false);
         $tb->close();
+        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('user5');
         $this->assertEquals($db->stat(), 0);
         // utf8 varchar
@@ -2075,6 +2081,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         }
         $tb->close();
         // insert groups data
+        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('groups', Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
         $tb->clearBuffer();
@@ -2087,6 +2094,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         }
         $tb->close();
         // insert extention data
+        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('extention', Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
         $tb->clearBuffer();

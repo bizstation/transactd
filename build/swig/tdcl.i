@@ -107,11 +107,12 @@ using namespace bzs::db::protocol::tdap::client;
 /* ===============================================
       ignore, rename, new/delobject, extend
 =============================================== */
-// common %newobject
+// common %newobject and %delobject
 %newobject *::clone;
 %newobject *::create;
 %newobject *::createObject;
 %newobject *::openTable;
+%delobject *::release;
 
 // * bzs/db/protocol/tdap/client/activeTable.h *
 %ignore bzs::db::protocol::tdap::client::activeTable::create;
