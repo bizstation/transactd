@@ -184,8 +184,7 @@ endif()
 # Add compile options
 # ==========================================================
 if(MSVC)
-  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
-    " /MD ")
+  transactd_set_MTMD("MD")
 endif()
 
 

@@ -154,8 +154,7 @@ endif()
 # Add compile options
 # ==========================================================
 if(MSVC)
-  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
-    " /MD ")
+  transactd_set_MTMD("MD")
 else()
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
     " --std=c++0x -U__STRICT_ANSI__ -finput-charset=utf-8 ")
