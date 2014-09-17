@@ -53,7 +53,7 @@ def get_common_binary_files(transactd_gem_root)
   windows_bitness = get_windows_bitness()
   ruby_bitness = 32 if windows_bitness == 32
   bin_files = Dir.glob(File.join(transactd_gem_root, 'bin/common/tdclc_' + ruby_bitness.to_s + '_*.dll'))
-  bin_files += Dir.glob(File.join(transactd_gem_root, 'bin/common/tdclcpp_*_' + ruby_bitness.to_s + 'm_*.dll'))
+  bin_files += Dir.glob(File.join(transactd_gem_root, 'bin/common/tdclcpp_*_' + ruby_bitness.to_s + 'mr_*.dll'))
   sysdir = get_windows_sysdir()
   bin_files = bin_files.map{ |i| '"' + to_native_path(i) + '" "' + sysdir + '"' }
   return bin_files

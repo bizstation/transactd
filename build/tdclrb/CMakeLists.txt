@@ -142,12 +142,7 @@ endif()
 # ==========================================================
 # add_library
 # ==========================================================
-if(APPLE)
-  add_library(${this_target} MODULE ${${this_target}_SOURCE_FILES})
-  set_target_properties(${this_target} PROPERTIES LINK_FLAGS "-flat_namespace")
-else()
-  add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
-endif()
+add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 
 
 # ==========================================================
@@ -217,7 +212,7 @@ if(APPLE)
 else()
   set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
 endif()
-if(UNIX AND NOT APPLE)
+if(UNIX)
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
     VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE})
