@@ -88,7 +88,7 @@ class connections
 	boost::asio::io_service m_ios;
 	mutex m_mutex;
 	connection* getConnection(asio::ip::tcp::endpoint& ep);
-	asio::ip::tcp::endpoint endpoint(const std::string& host);
+	asio::ip::tcp::endpoint endpoint(const std::string& host, boost::system::error_code& ec);
 
 	bool isUseNamedPipe(asio::ip::tcp::endpoint& ep);
 	static bool m_usePipedLocal;

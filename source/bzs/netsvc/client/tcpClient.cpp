@@ -117,23 +117,29 @@ connection* connections::getConnection(asio::ip::tcp::endpoint& ep)
 	return NULL;
 }
 
-asio::ip::tcp::endpoint connections::endpoint(const std::string& host)
+asio::ip::tcp::endpoint connections::endpoint(const std::string& host, boost::system::error_code& ec)
 {
 	tcp::resolver resolver(m_ios);
 	tcp::resolver::query query(host, port);
-
-	tcp::resolver::iterator dest = resolver.resolve(query);
+	
+	tcp::resolver::iterator dest = resolver.resolve(query, ec);
 	tcp::endpoint endpoint;
-	while (dest != tcp::resolver::iterator())
-		endpoint = *dest++;
+	if (!ec)
+	{
+		while (dest != tcp::resolver::iterator())
+			endpoint = *dest++;
+	}
 	return endpoint;
 }
 
 connection* connections::getConnection(const std::string& host)
 {
 	mutex::scoped_lock lck(m_mutex);
-	tcp::endpoint ep = endpoint(host);
-	return getConnection(ep);
+	boost::system::error_code ec;
+	tcp::endpoint ep = endpoint(host, ec);
+	if (!ec)
+		return getConnection(ep);
+	return NULL;
 }
 
 #ifdef USE_PIPE_CLIENT
@@ -176,13 +182,14 @@ bool connections::disconnect(connection* c)
  */
 bool connections::isUseNamedPipe(asio::ip::tcp::endpoint& ep)
 {
-	asio::ip::tcp::endpoint local = endpoint("127.0.0.1");
-	if (local == ep)
+	boost::system::error_code ec;
+	asio::ip::tcp::endpoint local = endpoint("127.0.0.1", ec);
+	if (!ec && (local == ep))
 		return true;
 	char buf[MAX_PATH];
 	if (::gethostname(buf, MAX_PATH)==0)
 	{
-		local = endpoint(buf);
+		local = endpoint(buf, ec);
 		if (local == ep)
 			return true;
 	}
@@ -194,7 +201,9 @@ connection* connections::connect(const std::string& host, bool newConnection)
 {
 	mutex::scoped_lock lck(m_mutex);
 	connection* c;
-	asio::ip::tcp::endpoint ep = endpoint(host);
+	boost::system::error_code ec;
+	asio::ip::tcp::endpoint ep = endpoint(host, ec);
+	if (ec) return NULL;
 #ifdef USE_PIPE_CLIENT
 	if (m_usePipedLocal && isUseNamedPipe(ep))
 	{

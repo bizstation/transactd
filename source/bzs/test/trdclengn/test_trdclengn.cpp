@@ -933,10 +933,10 @@ void testExclusive()
 	tb2->update();
 	BOOST_CHECK_MESSAGE(0 == tb2->stat(), "update");
 
-	tb->release();
-	tb2->release();
-	database::destroy(db2);
-	database::destroy(db);
+	tb->close();
+    tb2->close();
+    db->close();
+    db2->close();
 
 	// table mode exclusive
 	db = database::create();
@@ -955,13 +955,16 @@ void testExclusive()
 	// Can open a same connection.
 	table* tb3 = db->openTable(_T("user"));
 	BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 2");
-	if (tb2)
-		tb2->release();
-	tb3->release();
-	tb->release();
-	database::destroy(db2);
-	database::destroy(db);
-
+	
+	
+	tb->close();
+    if (tb2 != NULL) 
+		tb2->close();
+	tb3->close();
+    db->close();
+    db2->close();
+	db->release();
+	db2->release();
 	//reopen and update
 	db = database::create();
 	tb = openTable(db);
@@ -975,7 +978,7 @@ void testExclusive()
 	BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
 
 	tb->release();
-	database::destroy(db);
+	db->release();
 
 }
 

@@ -207,11 +207,18 @@ public:
 				std::string host = getHostName((const char*)m_req.keybuf);
 				if (host=="")
 					m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-				setCon(m_cons->connect(host, (m_req.keyNum == LG_SUBOP_NEWCONNECT))); //if error throw exception
-				if (readServerCharsetIndex() == false)
-					m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
+				bzs::netsvc::client::connection* c = m_cons->connect(host, (m_req.keyNum == LG_SUBOP_NEWCONNECT));
+				if (c)
+				{
+					setCon(c); //if error throw exception
+					if (readServerCharsetIndex() == false)
+						m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
+					else
+						buildDualChasetKeybuf();
+				}
 				else
-				    buildDualChasetKeybuf();
+					m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+				
 			}
 		}else if (m_req.keyNum == LG_SUBOP_DISCONNECT)
 		{
