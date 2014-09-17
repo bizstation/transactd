@@ -32,6 +32,49 @@ namespace tdap
 {
 namespace client
 {
+
+class xaTransaction
+{
+	std::vector<dbmanager_ptr> m_dbs;
+public:
+	void add(dbmanager_ptr& db)
+	{
+		m_dbs.push_back(db);
+	}
+
+	void unUse()
+	{
+		for (int i=(int)m_dbs.size()-1;i>=0;--i)
+		{
+			int ref = m_dbs[i].use_count();
+			m_dbs.erase(m_dbs.begin()+i);
+			if (ref == 2)
+				releaseConnection(&cpool);
+		}
+	}
+
+	void beginTrn(short bias)
+	{
+		for (size_t i=0;i<m_dbs.size();++i)
+			m_dbs[i]->beginTrn(bias);
+	}
+
+	void endTrn()
+	{
+		for (size_t i=0;i<m_dbs.size();++i)
+			m_dbs[i]->endTrn();
+
+	}
+
+	void abortTrn()
+	{
+		for (size_t i=0;i<m_dbs.size();++i)
+			m_dbs[i]->abortTrn();
+
+	}
+
+};
+
 /*
 --------------------------------------
 pooledDbManager::setMaxConnections(n);
@@ -51,6 +94,7 @@ class pooledDbManager : public idatabaseManager
 {
 	dbmanager_ptr m_db;
 	bool m_inUse;
+	xaTransaction m_xa;
 
 public:
 	inline pooledDbManager():m_inUse(false){};
@@ -70,12 +114,14 @@ public:
 	{
 		m_db = cpool.get(param);
 		m_inUse = true;
+		m_xa.add(m_db);
 	}
 
 	inline void unUse()
 	{
 		m_db.reset();
-		releaseConnection(&cpool);
+		m_xa.unUse();
+		//releaseConnection(&cpool);
 		m_inUse = false;
 	}
 
@@ -95,11 +141,11 @@ public:
 
 	inline __int64 option(){return m_db->option();};
 
-	inline void beginTrn(short bias){m_db->beginTrn(bias);};
+	inline void beginTrn(short bias){m_xa.beginTrn(bias);};
 
-	inline void endTrn(){m_db->endTrn();}
+	inline void endTrn(){m_xa.endTrn();}
 
-	inline void abortTrn(){m_db->abortTrn();}
+	inline void abortTrn(){m_xa.abortTrn();}
 
 	inline int enableTrn(){return m_db->enableTrn();}
 
