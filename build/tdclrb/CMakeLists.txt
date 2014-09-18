@@ -150,9 +150,9 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # ==========================================================
 if(MSVC)
   transactd_set_MTMD("MD")
-else()
+#else()
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
-    " --std=c++0x -U__STRICT_ANSI__ -finput-charset=utf-8 ")
+    " --std=c++0x -U__STRICT_ANSI__ ")
 endif()
 
 

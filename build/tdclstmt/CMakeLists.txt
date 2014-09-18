@@ -96,10 +96,10 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # Add compile options
 # ==========================================================
 transactd_set_MTMD("MT")
-if(NOT MSVC)
-  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
-    " -finput-charset=utf-8 ")
-endif()
+#if(NOT MSVC)
+#  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
+#    " -finput-charset=utf-8 ")
+#endif()
 
 
 # ==========================================================

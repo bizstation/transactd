@@ -117,9 +117,9 @@ if(MSVC)
   else()
     transactd_set_MTMD("MT")
   endif()
-else()
-  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
-    " -finput-charset=utf-8 ")
+#else()
+#  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
+#    " -finput-charset=utf-8 ")
 endif()
 
 
