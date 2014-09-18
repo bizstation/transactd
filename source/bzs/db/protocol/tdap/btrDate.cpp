@@ -16,17 +16,19 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
    02111-1307, USA.
 =================================================================*/
+#include <bzs/env/compiler.h>
 #include <bzs/env/tstring.h>
-#pragma hdrstop
-
 #include "btrDate.h"
 #include <bzs/rtl/datetime.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <bzs/env/compiler.h>
+
 #ifdef LINUX
-#include <bzs/env/mbcswchrLinux.h>
+#	include <bzs/env/mbcswchrLinux.h>
+#	if __clang__
+#		include <pthread.h>
+#	endif
 #endif
 
 #pragma package(smart_init)

@@ -49,13 +49,11 @@ class connection;
 class listener;
 class server: public iserver, private boost::noncopyable
 {
-	
 	std::vector<boost::shared_ptr<listener> > m_listeners;
-	bool m_stopping;
-	
 	boost::asio::io_service m_ios;
 	boost::asio::deadline_timer m_timer;
 	const char* m_hostCheckName;
+	bool m_stopping;
 	void startTimer();
 	void doClose();
 	void onCheckInternlShutdown(const boost::system::error_code& e);

@@ -270,7 +270,6 @@ int dbExecuter::commandExec(std::vector<request>& requests, netsvc::server::netW
 	request& req = requests[0];
 	resultBuffer buf(nw->ptr());
 	size_t& size = nw->datalen;
-	netsvc::server::buffers* optionalData = nw->optionalData();
 	try
 	{
 		switch(req.op)

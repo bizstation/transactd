@@ -16,9 +16,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <bzs/env/tstring.h>
-#pragma hdrstop
-
 #include "nsDatabase.h"
 #include "sharedData.h"
 #include "nsTable.h"
@@ -313,9 +310,8 @@ void nsdatabase::setLocalSharing(bool v) {m_nsimpl->localSharing = v;}
 
 bool nsdatabase::setUri(const _TCHAR* Path)
 {
-	_TCHAR buf[MAX_PATH];
-
 #ifdef _WIN32
+	_TCHAR buf[MAX_PATH];
 	_TCHAR* lpFilePart;
 	if (useLongFilename() == false)
 	{

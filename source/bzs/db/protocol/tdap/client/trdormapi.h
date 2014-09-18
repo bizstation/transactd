@@ -339,8 +339,7 @@ public:
 
 	explicit activeObject(idatabaseManager* mgr)
 			:m_fdi(createFdi((FDI*)0))
-			,m_option(0)
-			,m_map(*m_fdi)
+			,m_map(*m_fdi),m_option(0)
 			{
 				init(mgr, m_map.getTableName());
 				if (table() && m_fdi)
@@ -349,8 +348,7 @@ public:
 
 	explicit activeObject(database_ptr& db)
 			:m_fdi(createFdi((FDI*)0))
-			,m_option(0)
-			,m_map(*m_fdi)
+			,m_map(*m_fdi),m_option(0)
 			{
 				init(db, m_map.getTableName());
 				if (table() && m_fdi)
@@ -360,8 +358,7 @@ public:
 
 	explicit activeObject(idatabaseManager* mgr, const _TCHAR* tableName)
 			:m_fdi(createFdi((FDI*)0))
-			,m_option(0)
-			,m_map(*m_fdi)
+			,m_map(*m_fdi),m_option(0)
 			{
 				init(mgr, tableName);
 				if (table() && m_fdi)
@@ -381,8 +378,7 @@ public:
 
 	explicit activeObject(database_ptr& db, const _TCHAR* tableName)
 			:m_fdi(createFdi((FDI*)0))
-			,m_option(0)
-			,m_map(*m_fdi)
+			,m_map(*m_fdi),m_option(0)
 			{
 				init(db, tableName);
 				if (table() && m_fdi)
@@ -391,8 +387,7 @@ public:
 
 	explicit activeObject(database* db, const _TCHAR* tableName)
 			:m_fdi(createFdi((FDI*)0))
-			,m_option(0)
-			,m_map(*m_fdi)
+			,m_map(*m_fdi),m_option(0)
 			{
 				init(db, tableName);
 				if (table() && m_fdi)

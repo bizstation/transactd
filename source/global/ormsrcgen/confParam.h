@@ -49,7 +49,7 @@ public:
 	std::string getPrefix;
 	std::string externWord;
 
-	conf_parmas():lang("cpp"),m_namespaceInit(false)
+	conf_parmas():m_namespaceInit(false),lang("cpp")
 	{
 		file[0] = "ormMapClass_template";
 		file[1] = "ormDataClass_template";

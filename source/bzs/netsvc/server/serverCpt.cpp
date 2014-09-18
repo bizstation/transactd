@@ -135,15 +135,13 @@ class connection  : public iconnection, private boost::noncopyable
 	}
 public:
 	
-	connection(): m_socket(m_ios)
-		,m_readLen(0),m_segmentWrite(false)
+	connection(): m_socket(m_ios), m_segmentWrite(false), m_readLen(0)
 	{
 		m_buffer.resize(READBUF_SIZE);
 		m_result.resize(WRITEBUF_SIZE);
 		mutex::scoped_lock lck(m_mutex);
 		connections.push_back(this);
 		++g_connections;
-		
 	}
 
 	~connection()
@@ -367,7 +365,7 @@ class listener
 public:
 	listener(server* srv, 
 			shared_ptr<IAppModuleBuilder> app, const std::string& address, const std::string& port)
-			:m_srv(srv), m_app(app),m_acceptor(srv->ios())
+			:m_app(app), m_acceptor(srv->ios()), m_srv(srv)
 	{
 
 		m_newConnection.reset(new connection());
@@ -418,7 +416,7 @@ inotifyHandler* server::erh=NULL;
  *	and will go into an infinite loop. 
  */
 server::server(std::size_t max_connections, const char* hostCheckName)
-		: m_maxConnections(max_connections)	,m_timer(m_ios),m_stopped(false)
+		: m_timer(m_ios), m_maxConnections(max_connections), m_stopped(false)
 {
 	worker::hostCheckName = hostCheckName;
 }

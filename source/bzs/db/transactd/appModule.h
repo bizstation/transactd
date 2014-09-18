@@ -44,12 +44,12 @@ class module :public netsvc::server::IAppModule,  private boost::noncopyable
 	friend class connManager;
 	mutable boost::mutex m_mutex;
 	boost::shared_ptr<protocol::ICommandExecuter> m_commandExecuter;
-	bool m_useThreadPool;
 	const boost::asio::ip::tcp::endpoint m_endpoint;
 	bzs::netsvc::server::iconnection* m_connection;
 	const char* m_readBuf;
 	size_t m_readSize;
 	netsvc::server::netWriter* m_nw;
+	bool m_useThreadPool;
 	bool perseLineEnd(const char* p, size_t size)const;
 	size_t onRead(const char* data, size_t size, bool& complete);
 	size_t onAccept(char* message, size_t bufsize);

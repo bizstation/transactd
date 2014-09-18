@@ -191,7 +191,6 @@ void dumpStdErr(int op, request& req, table* tb)
 	{
 		sprintf_s(msg.get(),1024,"[Transactd] Dump key buffer\n");
 		sql_print_error("%s",msg.get());
-		char* p = (char*)req.keybuf;
 		bzs::rtl::debuglog::dump(stderr, (char*)req.keybuf, req.keylen, 256);
 	}
 	//dump databuffer
@@ -428,7 +427,7 @@ inline void dbExecuter::doSeekKey(request& req, int op)
 		m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
 		if (read)
 		{
-			ha_rkey_function flag;
+			ha_rkey_function flag = HA_READ_KEY_EXACT;
 			if (op == TD_KEY_SEEK) 
 				flag = HA_READ_KEY_EXACT; 
 			else if (op == TD_KEY_AFTER)
@@ -1193,10 +1192,7 @@ size_t commandExecuter::perseRequestEnd(const char* p, size_t transfered, bool& 
 
 bool commandExecuter::parse(const char* p, size_t size)
 {
-	const char* end = p + size;
-	memset(&m_req, 0, sizeof(request));
 	m_req.parse(p);
-	
 	return 0;
 }
 

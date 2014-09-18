@@ -652,7 +652,7 @@ public:
 		return ret ? REC_MACTH : checkNomore(typeNext, (eCompType)(m_fd->logType & 0xF)); 
 	}
 	
-	bool operator<(const fieldAdapter& r)
+	bool operator<(const fieldAdapter& r) const
 	{
 		if (m_judgeType != r.m_judgeType)
 			return m_judgeType > r.m_judgeType;

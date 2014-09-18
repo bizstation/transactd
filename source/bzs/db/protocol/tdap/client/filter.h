@@ -334,7 +334,7 @@ private:
 public:
 	unsigned short	rejectCount;
 	unsigned short	logicalCount;
-	header():rejectCount(1),logicalCount(0),len(0)
+	header():len(0), rejectCount(1),logicalCount(0)
 	{
 		type[0] = 0x00;
 		type[1] = 0x00;
@@ -777,10 +777,9 @@ class filter
 	}
 
 public:
-	filter(table* tb):m_tb(tb),m_ignoreFields(false)
-		,m_seeksMode(false),m_seeksWritedCount(0)
-		,m_useOptimize(true),m_withBookmark(true)
-		,m_seeksDataBuffer(NULL),m_hasManyJoin(false)
+	filter(table* tb):m_tb(tb),m_seeksDataBuffer(NULL),m_ignoreFields(false)
+		,m_seeksMode(false),m_useOptimize(true),m_withBookmark(true)
+		,m_seeksWritedCount(0),m_hasManyJoin(false)
 	{
 		m_isTransactd = m_tb->isUseTransactd();
 	}

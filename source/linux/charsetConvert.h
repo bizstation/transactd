@@ -77,7 +77,7 @@ public:
 			inszie = strlen(src);
 		char* pout = outbuf;
 		
-		size_t len = iconv(m_cd, (char**)&src, &inszie, &pout, &outbufsize);
+		/*size_t len =*/iconv(m_cd, (char**)&src, &inszie, &pout, &outbufsize);
 	   	if (outbufsize)
 	   		*pout = 0x00;
 	   	return pout - outbuf;
@@ -88,7 +88,7 @@ public:
 		if ((int)inszie == -1)
 			inszie = strlen(src);
 		char* pout = (char*)outbuf;
-		size_t len = iconv(m_cd, (char**)&src, &inszie, &pout, &outbufsize);
+		/*size_t len = */iconv(m_cd, (char**)&src, &inszie, &pout, &outbufsize);
 	   	
 	   	if (outbufsize)
 	   		*pout = 0x00;
@@ -100,7 +100,7 @@ public:
 		if ((int)inszie == -1)
 			inszie = strlen16(src)*sizeof(char16_t);
 		char* pout = outbuf;
-		size_t len = iconv(m_cd, (char**)&src, &inszie, &pout, &outbufsize);
+		/*size_t len = */iconv(m_cd, (char**)&src, &inszie, &pout, &outbufsize);
 	   	if (outbufsize)
 	   		*pout = 0x00;
 	   	return pout - outbuf;

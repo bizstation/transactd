@@ -450,18 +450,18 @@ public:
 
 class fieldBitmap
 {
-	bool m_keyRead;
 	TABLE* m_table;
+	bool m_keyRead;
 public:
 
-	inline fieldBitmap(TABLE* table):m_table(table),m_keyRead(false)
+	inline fieldBitmap(TABLE* table):m_table(table), m_keyRead(false)
 	{
 		m_table->read_set = &m_table->tmp_set;
 		m_table->write_set = &m_table->tmp_set;
 		bitmap_clear_all(m_table->read_set);
 	}
 
-	inline fieldBitmap():m_table(NULL),m_keyRead(false)
+	inline fieldBitmap():m_table(NULL), m_keyRead(false)
 	{
 	}
 	

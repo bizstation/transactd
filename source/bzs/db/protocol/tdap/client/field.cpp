@@ -16,9 +16,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <bzs/env/tstring.h>
-#pragma hdrstop
-
 #include "field.h"
 #include "fields.h"
 #include "nsDatabase.h"
@@ -1222,7 +1219,7 @@ const char* field::getFVAstr() const
 	case ft_time: return btrttoa(getFVlng(), p);
 	case ft_autoIncUnsigned:
 	case ft_uinteger:
-		sprintf_s(p, 50, "%lu", getFV64());
+		sprintf_s(p, 50, "%llu", (unsigned __int64)getFV64());
 		break;
 
 	case ft_mydate:

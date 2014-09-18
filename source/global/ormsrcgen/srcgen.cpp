@@ -16,7 +16,6 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#pragma hdrstop
 #include "srcgen.h"
 #include <iostream>
 #include <fstream>
@@ -128,7 +127,7 @@ string cppSrcGen::makeFdiMembaString()
 	for (int i=0;i<m_tabledef->fieldCount;i++)
 	{
 		fielddef* fd = &m_tabledef->fieldDefs[i];
-		retVal = retVal + "\tshort " + membaName(fd) + ";"LF;
+		retVal = retVal + "\tshort " + membaName(fd) + ";" LF;
 	}
 	return retVal;
 }
@@ -293,13 +292,13 @@ string cppSrcGen::makeDataMembaInitString()
 			{
 				retVal = retVal + name + "(0),";
 				if ((++n % 4) == 0)
-					retVal += LF"\t\t";
+					retVal += LF "\t\t";
 			}
 		}
 		if ((t==ft_time)|| (t==ft_date))
-			retVal2 = retVal2 + "\t\t" + name + ".i = 0;"LF;
+			retVal2 = retVal2 + "\t\t" + name + ".i = 0;" LF;
 		else if (t==ft_datetime)
-			retVal2 = retVal2 + "\t\t" + name + ".i64 = 0;"LF;
+			retVal2 = retVal2 + "\t\t" + name + ".i64 = 0;" LF;
 
 	}
 	removeEndchar(retVal);
@@ -318,7 +317,7 @@ string cppSrcGen::makeDataMembaString()
 		if (t==ft_lvar)
 			ts =  "vector<char>";
 		string name =  membaName(fd);
-		retVal = retVal + "\t"+ ts + " "+ name + ";"LF;
+		retVal = retVal + "\t"+ ts + " "+ name + ";" LF;
 	}
 	return retVal;
 
@@ -362,7 +361,7 @@ string cppSrcGen::makeDataMembaFuncString()
 			tmp = string() + ts
 					+ string(" ") + m_pm.dataClassName + "::" + membaNameGet(name)
 					+ "(unsigned int& size) const" LF "{" LF "\tsize=m_impl->"
-					+ name + ".size();"LF"\treturn &(m_impl->" + name + "[0]);" LF "}" LF;
+					+ name + ".size();" LF "\treturn &(m_impl->" + name + "[0]);" LF "}" LF;
 			tmp2 = "void " + m_pm.dataClassName + "::" + membaNameSet(name) + "("
 				    + ts + " v, unsigned int size)" LF "{" LF "\tm_impl->"
 					+ name + ".reserve(size);" LF "\tmemcpy(&m_impl->" + name + "[0], v , size);" LF "}";
@@ -475,7 +474,7 @@ string cppSrcGen::makeMapReadStringLine(int i)
 		 _ltoa_s(t, tmp, 30, 10);
 		retVal =  string("unknown type:") + tmp;
 	}
-	retVal +=  string(");"LF);
+	retVal +=  string(");" LF);
 	return retVal;
 
 }
@@ -485,10 +484,7 @@ string cppSrcGen::makeMapReadString()
 	string retVal;
 
 	for (int i=0;i<m_tabledef->fieldCount;i++)
-	{
-		fielddef* FieldDef =  &(m_tabledef->fieldDefs[i]);
 		retVal = retVal + makeMapReadStringLine(i);
-	}
 	removeEndchar(retVal);
 	return retVal;
 }
@@ -498,7 +494,6 @@ string cppSrcGen::makeMapWriteStringLine( int index)
 	fielddef* fd = &m_tabledef->fieldDefs[index];
 	string name =  membaName(fd);
 	int t = typeNum(fd->type);
-	int n = fd->len;
 
 	string s =  "\tfds[m_fdi." + name + "] = m." + membaNameGet(name) + "()";
 	if ((t == ft_time)||(t == ft_date))
@@ -508,8 +503,8 @@ string cppSrcGen::makeMapWriteStringLine( int index)
 	else if (t == ft_lvar)
 	{
 		s =  "\t{" LF "\t\tunsigned int size;" LF;
-		s +=  "\t\tvoid* p = m."  + membaNameGet(name) + "(size);"LF;
-		s +=  "\t\tfds[m_fdi." + name + "].setBin(p, size);"LF"\t}";
+		s +=  "\t\tvoid* p = m."  + membaNameGet(name) + "(size);" LF;
+		s +=  "\t\tfds[m_fdi." + name + "].setBin(p, size);" LF "\t}";
 	}
 	s += string(";" LF);
 	return s;
@@ -519,10 +514,7 @@ string cppSrcGen::makeMapWriteString()
 {
 	string retVal;
 	for (int i=0;i<m_tabledef->fieldCount;i++)
-	{
-		fielddef* fd =  &(m_tabledef->fieldDefs[i]);
 		retVal = retVal + makeMapWriteStringLine(i);
-	}
 	removeEndchar(retVal);
 	return retVal;
 }
@@ -561,39 +553,39 @@ string cppSrcGen::makeMapKeyCompString()
 			if (i != kd->segmentCount-1)
 			{
 				tmp = idt + "if (" + tostr + "l." + s + tostrend + " == "
-					 + tostr + "r." + s + tostrend + ")"LF + idt + "{"LF;
+					 + tostr + "r." + s + tostrend + ")" LF + idt + "{" LF;
 				size = tmp.size();
 				if (i==0)
-					tmp += idt + "}"LF;
+					tmp += idt + "}" LF;
 				else
-					tmp += idt + "}"LF + idt + "else"LF"\t";
+					tmp += idt + "}" LF + idt + "else" LF "\t";
 			}
 			tmp += idt + "return (" + tostr + "l." + s  + tostrend
-							+ " < " + tostr + "r." + s + tostrend + ");"LF;
+							+ " < " + tostr + "r." + s + tostrend + ");" LF;
 			ret.insert(pos, tmp);
 			idt += "\t";
 			pos += size;
 		}
 	}else
-		ret = "\t return true;"LF;
+		ret = "\t return true;" LF;
 	removeEndchar(ret);
 	return ret;
 }
 
 string cppSrcGen::makeMapKeyValueString()
 {
-	string s = "\tswitch (keyNum)"LF"\t{"LF ;
+	string s = "\tswitch (keyNum)" LF "\t{" LF ;
 	char buf[20];
 
 	for (int j=0;j<m_tabledef->keyCount;++j)
 	{
 		_ltoa_s(j, buf, 20, 10);
-		s += "\tcase " + string(buf) + ":"LF;
+		s += "\tcase " + string(buf) + ":" LF;
 		for (int i=0;i<m_tabledef->keyDefs[j].segmentCount;i++)
 			s += "\t" + makeMapWriteStringLine(m_tabledef->keyDefs[j].segments[i].fieldNum);
-		s += "\t\tbreak;"LF;
+		s += "\t\tbreak;" LF;
 	}
-	s += "\t}"LF;
+	s += "\t}" LF;
 	removeEndchar(s);
 	return s;
 }
@@ -628,7 +620,7 @@ string cppSrcGen::makeMapKeyEnumString()
 			s += membaName(fd) + "_";
 		}
 		s.erase(s.end()-1);
-		s+= string(","LF"\t\t");
+		s+= string("," LF "\t\t");
 	}
 	removeEndchar(s);
 	return s;
@@ -651,7 +643,7 @@ string cppSrcGen::makeNameSpaceBegin(const vector<string>& list)
 	vector<string>::const_iterator  it = list.begin();
 	string s;
 	while (it != list.end())
-		s += string("namespace ") + *it++ + LF"{"LF;
+		s += string("namespace ") + *it++ + LF "{" LF;
 	return s;
 }
 

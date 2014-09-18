@@ -16,8 +16,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <bzs/env/tstring.h>
-#pragma hdrstop
 
 #include "table.h"
 #include "field.h"
@@ -88,10 +86,10 @@ struct tbimpl
 	unsigned char dataPacked: 1;
 	};
 
-	tbimpl(table& tb) : bookMarks(NULL),bfAtcPtr(NULL), maxBookMarkedCount(0)
-		, bookMarksMemSize(0), filterPtr(NULL), rc(NULL), dataBak(NULL)
-		, optionalData(NULL), smartUpDate(NULL), smartUpDateFlag(false)
-		, dataPacked(false),mraPtr(NULL),fields(tb)
+	tbimpl(table& tb) : bookMarks(NULL),fields(tb), filterPtr(NULL), rc(NULL)
+		, mraPtr(NULL), dataBak(NULL), smartUpDate(NULL), bfAtcPtr(NULL)
+		, optionalData(NULL), bookMarksMemSize(0), maxBookMarkedCount(0)
+		, smartUpDateFlag(false), dataPacked(false)
 	{
 		memset(&keyNumIndex[0], 0, 128);
 	}
@@ -1834,10 +1832,8 @@ keyValuePtr::~keyValuePtr()
 
 struct impl
 {
-	impl():
-	m_reject(1),m_limit(0),m_direction(table::findForword)
-		,m_nofilter(false),m_optimize(queryBase::none),m_withBookmark(false)
-		,m_joinKeySize(0){}
+	impl():m_reject(1),m_limit(0),m_joinKeySize(0),m_optimize(queryBase::none)
+		,m_direction(table::findForword), m_nofilter(false),m_withBookmark(false){}
 
 	mutable std::_tstring m_str;
 	std::vector<std::_tstring> m_selects;
@@ -1960,7 +1956,6 @@ void queryBase::clearSeekKeyValues()
 
 std::_tstring escape_value(std::_tstring s)
 {
-	std::_tstring::iterator it = s.begin();
 	for (int i=(int)s.size()-1;i>=0;--i)
 	{
 		if (s[i] == _T('&'))
@@ -1973,7 +1968,6 @@ std::_tstring escape_value(std::_tstring s)
 
 std::_tstring& escape_string(std::_tstring& s)
 {
-	std::_tstring::iterator it = s.begin();
 	bool begin = false;
 	for (int i=0; i< (int)s.size();++i)
 	{

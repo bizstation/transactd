@@ -178,7 +178,7 @@ class connection : public boost::enable_shared_from_this<connection>,
 
 	
 public:
-	explicit connection(io_service& ios):m_socket(ios),m_ios(ios)
+	explicit connection(io_service& ios):m_ios(ios), m_socket(ios)
 	{
 		m_buffer.resize(READBUF_SIZE);
 		m_result.resize(WRITEBUF_SIZE);
@@ -270,7 +270,7 @@ class listener
 public:
 	listener(server* srv, 
 			shared_ptr<IAppModuleBuilder> app, const std::string& address, const std::string& port)
-			:m_srv(srv), m_app(app),m_acceptor(srv->ios()),m_newConnection(new connection(srv->ios()))
+			:m_app(app), m_acceptor(srv->ios()),m_newConnection(new connection(srv->ios())),m_srv(srv)
 	{
 		tcp::resolver resolver(srv->ios());
 		tcp::resolver::query query(address, port, resolver_query_base::numeric_service);

@@ -193,7 +193,6 @@ recordsetQuery::~recordsetQuery()
 void recordsetQuery::init(const fielddefs* fdinfo)
 {
 	const std::vector<std::_tstring>& tokns = getWheres();
-	short pos = 0;
 	m_imple->indexes.clear();
 	m_imple->compFields.clear();
 	for (int i=0;i<(int)tokns.size();i+=4)

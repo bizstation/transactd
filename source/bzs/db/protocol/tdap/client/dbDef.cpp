@@ -16,9 +16,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <bzs/env/tstring.h>
-#pragma hdrstop
-
 #include "dbDef.h"
 #include "database.h"
 #include <bzs/rtl/strtrim.h>
@@ -1263,7 +1260,7 @@ void dbdef::saveDDF(short TableIndex, short opration, bool forPsqlDdf)
 	ushort_td keyid;
 	ushort_td segid;
 	ushort_td pos;
-	const _TUCHAR* own[3];
+	const _TCHAR* own[3];
 
 	m_stat = STATUS_SUCCESS;
 	tabledef* TableDef;
@@ -1278,9 +1275,9 @@ void dbdef::saveDDF(short TableIndex, short opration, bool forPsqlDdf)
 	{
 		if (m_impl->userName[0] != 0x00)
 		{
-			own[0] = (const _TUCHAR*)m_impl->userName;
-			own[1] = (const _TUCHAR*)m_impl->userName;
-			own[2] = (const _TUCHAR*)m_impl->userName;
+			own[0] = (const _TCHAR*)m_impl->userName;
+			own[1] = (const _TCHAR*)m_impl->userName;
+			own[2] = (const _TCHAR*)m_impl->userName;
 		}
 		else
 		{

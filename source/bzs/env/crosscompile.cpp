@@ -70,7 +70,7 @@ char* _strlwr(char* s)
 
 char* _i64toa_s(__int64 v, char* tmp, unsigned long size, int radix)
 {
-	snprintf(tmp,size, "%Ld", v);
+	snprintf(tmp,size, "%lld", v);
 	return tmp;
 }
 

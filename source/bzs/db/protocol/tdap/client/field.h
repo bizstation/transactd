@@ -176,7 +176,7 @@ private:
 public:
 #endif
 	inline field()
-			: m_ptr(NULL), m_fd(NULL), m_fds(NULL) {};
+			:m_fd(NULL), m_ptr(NULL), m_fds(NULL) {};
 /** @endcond */
 
 public:

@@ -31,12 +31,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-static const int TYPE_DDF = 1;
 static const int TYPE_BDF = 0;
 static const bool AUTO_CREATE_TABLE = true;
-static const _TCHAR* OWNER_NAME = _T("");
-static const _TCHAR* DIR = _T("");
-
 static const short fn_id = 0;
 static const short fn_name = 1;
 static const int trans_bias = PARALLEL_TRN + LOCK_SINGLE_NOWAIT;
@@ -128,8 +124,6 @@ bool deleteAll(client::database* db, client::table* tb, int start, int end)
 bool Inserts(client::database* db, client::table* tb, int start, int end, int mode, int unit)
 {
 	bool ret = true;
-	int total = end - start;
-	int count = total / unit;
 	int st = start;
 	int en = st;
 	while (en != end)
@@ -180,8 +174,6 @@ bool Read(client::database* db, client::table* tb, int start, int end, int shaps
 bool Reads(client::database* db, client::table* tb, int start, int end, int unit, int shapshot)
 {
 	bool ret = true;
-	int total = end - start;
-	int count = total / unit;
 	int st = start;
 	int en = st;
 	if (shapshot == USE_SNAPSHOT)
@@ -220,8 +212,6 @@ bool Updates(client::database* db, client::table* tb, int start, int end, int tr
 	_TCHAR buf[30];
 	tb->setKeyNum(0);
 
-	int total = end - start;
-	int count = total / unit;
 	int st = start;
 	int en = st;
 	while (en != end)

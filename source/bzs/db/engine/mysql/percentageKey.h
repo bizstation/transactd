@@ -115,7 +115,7 @@ class percentageKey
 	
 public:
 	percentageKey(const KEY& key, uchar* first, uchar* last, uchar* current)
-		:m_key(key),m_first(first),m_last(last),m_current(current),m_curseg(&key.key_part[0])
+		:m_first(first),m_last(last),m_current(current),m_key(key),m_curseg(&key.key_part[0])
 	{
 
 	}
@@ -138,7 +138,6 @@ public:
 		if(!seekDifferentKey())
 			return KEY_ALL_SGMENTS_SAME;
 
-		int varSize = 0;
 		int len = m_curseg->store_length;
 		if (m_curseg->null_bit)
 		{
@@ -231,6 +230,7 @@ public:
 		case HA_KEYTYPE_INT24:
 		case HA_KEYTYPE_UINT24:
 		case HA_KEYTYPE_NUM:
+		case HA_KEYTYPE_END:
 			//no support
 			break;
 		}

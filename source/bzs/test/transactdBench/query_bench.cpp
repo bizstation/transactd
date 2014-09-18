@@ -25,11 +25,6 @@
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
-
-
-static const char_td keynum_group = 1;
-static const char_td primary_key = 0;
-
 void showConsole(recordset& rowset)
 {
 	const fielddefs& fields = *rowset.fieldDefs();

@@ -252,7 +252,7 @@ protected:
 
 public:
 	connectionImple(asio::ip::tcp::endpoint& ep)
-		:connectionBase(ep),m_socket(m_ios),m_datalen(0)
+		:connectionBase(ep),m_datalen(0), m_socket(m_ios)
 	{
 	}
 

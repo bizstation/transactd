@@ -45,6 +45,12 @@ class request : public bzs::db::protocol::tdap::request
 public:
 	
 	ushort_td cid;
+	void clear()
+	{
+		bzs::db::protocol::tdap::request::clear();
+		cid = 0;
+	}
+
 	request():bzs::db::protocol::tdap::request(),cid(0)
 	{
 	
@@ -128,6 +134,7 @@ public:
 
 	inline void parse(const char* p)
 	{
+		clear();
 		p += sizeof(unsigned int);
 		paramMask = *((ushort_td*)p);
 		p += sizeof(ushort_td);

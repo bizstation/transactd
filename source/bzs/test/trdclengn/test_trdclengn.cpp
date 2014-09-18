@@ -1717,8 +1717,6 @@ void testFilterVar(database* db)
     {
         const _TCHAR* str = _T("漢字文");
         const _TCHAR* str3 = _T("漢字文字のテ");
-		const _TCHAR* str2 = _T("123");
-        const _TCHAR* str4 = _T("1232");
         bool utf16leSupport = isUtf16leSupport(db);
 
         int num = 10;
@@ -1732,6 +1730,8 @@ void testFilterVar(database* db)
 
 #ifdef _UNICODE
         // short string
+		const _TCHAR* str2 = _T("123");
+        const _TCHAR* str4 = _T("1232");
         ++num;
         doVarFilter(db, L"user1", CP_ACP, str2, num, key);
         doVarFilter(db, L"user2", CP_ACP, str4, num, key);
@@ -2999,11 +2999,11 @@ BOOST_AUTO_TEST_SUITE(convert)
 		bzs::env::u8tombc(u8, -1, mbc, 256);
 		BOOST_CHECK_MESSAGE(!strcmp(mbc, u8), u8);
 
-        strcpy(u8, "漢字");
-        char mbcKanji[20] =
-        {0x8A, 0xBF, 0x8E, 0x9A, 0x00};
+		strcpy(u8, "漢字");
+		unsigned char mbcKanji[20] =
+		{0x8A, 0xBF, 0x8E, 0x9A, 0x00};
 		bzs::env::u8tombc(u8, -1, mbc, 256);
-        BOOST_CHECK_MESSAGE(!strcmp(mbc, mbcKanji), u8);
+		BOOST_CHECK_MESSAGE(!strcmp(mbc, (const char*)mbcKanji), u8);
 
         memset(u8, 0, 256);
         bzs::env::mbctou8(mbc, -1, u8, 256);

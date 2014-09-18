@@ -18,7 +18,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-
 #include <bzs/env/tstring.h>
 #include <bzs/db/protocol/tdap/tdapcapi.h>
 #include <bzs/db/protocol/tdap/tdapSchema.h>
@@ -91,7 +90,7 @@ protected:
 	const _TCHAR* uri() const ;
 	const uchar_td* posblk() const ;
 	void setIsOpen(bool v);
-	nsdatabase* nsdb() const ;
+
 	bulkInsert* bulkIns() const ;
 	virtual bool isUniqeKey(char_td keynum){return false;}//for chacek updates deletes at key
 	virtual void writeRecordData()=0;
@@ -128,7 +127,7 @@ public:
 	void addref(void);
 	void release();
 	int refCount() const;
-
+	nsdatabase* nsdb() const ;
 	short tableid() const ;
 	void setTableid(short v);
 	bool isOpen() const;

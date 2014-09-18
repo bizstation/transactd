@@ -30,7 +30,7 @@ using namespace std;
 // class CFiledName
 // ---------------------------------------------------------------------------
 CFiledName::CFiledName(string oName, string n)
-	:orignName(oName),name(n)
+	:name(n), orignName(oName)
 
 {
 

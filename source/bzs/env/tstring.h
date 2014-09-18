@@ -34,6 +34,7 @@
 #ifdef LINUX
 #include <bzs/env/mbcswchrLinux.h>
 #endif
+#include <bzs/env/crosscompile.h>
 
 
 namespace std {
@@ -142,18 +143,16 @@ inline const _TCHAR* toTCharCopy(_TCHAR* t, const WCHAR* w, int size)
 	 #endif
 }
 
-#pragma warning(disable:4996)
 inline const char* toCharCpy(char* buf, const _TCHAR* w, int size)
 {   
 	 #ifdef _UNICODE
 		WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, w, -1, buf, size, NULL, NULL);
 		return buf;
 	 #else
-		strncpy(buf, w, size);
+		strncpy_s(buf, size, w, size-1);
 		return buf;
 	 #endif
 }
-#pragma warning(default:4996)
 
 inline const _TCHAR* toTChar(_TCHAR* t, const char* a, int size)
 {
@@ -165,18 +164,16 @@ inline const _TCHAR* toTChar(_TCHAR* t, const char* a, int size)
 	 #endif
 }
 
-#pragma warning(disable:4996)
 inline const _TCHAR* toTCharCopy(_TCHAR* t, const char* a, int size)
 {
 	 #ifdef _UNICODE
 		MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, a, -1, t, size);
 		return t;
 	 #else
-		_tcsncpy(t, a, size);
+		_tcsncpy_s(t, size, a, size-1);
 		return t;
 	 #endif
 }
-#pragma warning(default:4996)
 
 
 #endif //__TSTRING_H

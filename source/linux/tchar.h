@@ -240,11 +240,11 @@ typedef wchar_t _TUCHAR;
  */
 #ifndef _TCHAR_DEFINED
 #ifndef RC_INVOKED
-typedef char	TCHAR;
+typedef char TCHAR;
 #ifndef _TCHAR
-	typedef char	_TCHAR;
+	typedef char _TCHAR;
 #endif
-typedef char    _TUCHAR;
+typedef char _TUCHAR;
 
 #endif
 #define _TCHAR_DEFINED

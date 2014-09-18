@@ -227,7 +227,7 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
 	tdef.varSize = datalen -4;
 	mtb->clearBuffer();
 	mtb->setRecordFromPacked(rec.get(), datalen, NULL);
-	__int64 aincValue = mtb->insert(true);
+	mtb->insert(true);
 	return mtb->stat();
 }
 

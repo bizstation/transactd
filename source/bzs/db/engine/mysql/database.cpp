@@ -103,7 +103,6 @@ void lockTable(THD* thd, TABLE* tb)
 {
 	bool append = (thd->lock!=0);
 	thd->in_lock_tables = 1;
-	MYSQL_LOCK *lockMrg=NULL;
 
 	MYSQL_LOCK *lock = mysql_lock_tables(thd, &tb, 1, 0);
 	if (!append)
@@ -571,7 +570,7 @@ unsigned short nisFieldNum(TABLE* tb)
 	{
 		int offset= 1;
 		
-		for (unsigned int i=tb->s->fields-offset;i>=0;--i)
+		for (int i=tb->s->fields-offset;i>=0;--i)
 			if (isNisField(tb->s->field[i]->field_name)==false)
 				return (unsigned short)(tb->s->fields - i - offset);
 		return tb->s->fields;
@@ -584,14 +583,12 @@ bool table::noKeybufResult = true;
 
 
 table::table(TABLE* myTable, database& db, const std::string& name, short mode, int id)
-		:m_table(myTable),m_db(db),m_name(name), m_mode(mode),m_blobBuffer(NULL)
-		,m_id(id),m_keyNum(-1),m_stat(0)
-		,m_validCursor(true),m_cursor(false)
-		,m_keybuf(new unsigned char[MAX_KEYLEN])
+		:m_table(myTable),m_name(name), m_mode(mode),m_id(id), m_db(db)
+		,m_keyNum(-1),m_keybuf(new unsigned char[MAX_KEYLEN])
 		,m_nonNccKeybuf(new unsigned char[MAX_KEYLEN])
-		,m_nonNcc(false),m_bulkInserting(false)
-		,m_keyconv(m_table->key_info, m_table->s->keys)
-		,m_locked(false),m_changed(false),m_nounlock(false)
+		,m_nonNcc(false),m_stat(0),m_validCursor(true),m_cursor(false)
+		,m_locked(false),m_changed(false),m_nounlock(false),m_bulkInserting(false)
+		,m_keyconv(m_table->key_info, m_table->s->keys),m_blobBuffer(NULL)
 		
 {
 	
@@ -756,7 +753,6 @@ short table::setKeyValuesPacked(const uchar* ptr, int size)
 	KEY& key = m_table->key_info[m_keyNum];
 	int to = 0;
 	const uchar* from = ptr;
-	uint key_length = key.key_length;
 	int ret = -1;
 	for (int j = 0; j < (int)key.user_defined_key_parts; j++)
 	{   
@@ -814,8 +810,6 @@ uint table::keyPackCopy(uchar* ptr)
 	{
 		int from = 0;
 		uchar* to = ptr;
-		uint key_length = key.key_length;
-
 		for (int j = 0; j < (int)key.user_defined_key_parts; j++)
 		{   
 			KEY_PART_INFO& seg = key.key_part[j];
@@ -1634,7 +1628,7 @@ ha_rows table::recordCount(bool estimate)
 		//restore index init
 		if ((inited == (int)handler::INDEX) && (m_keyNum != keynum))
 			setKeyNum(keynum);
-		else if((inited == (int)handler::RND))
+		else if(inited == (int)handler::RND)
 			setNonKey(true/*scan*/);
 	}
 	else
@@ -1653,7 +1647,6 @@ ha_rows table::recordCount(bool estimate)
 
 void table::clearBuffer()
 {
-	unsigned char* p = m_table->record[0];
 	empty_record(m_table);
 }
 

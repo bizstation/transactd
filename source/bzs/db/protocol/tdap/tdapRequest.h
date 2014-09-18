@@ -151,7 +151,17 @@ public:
 	}
 	
 	virtual ~request(){}
-
+	virtual void clear()
+	{
+		pbk = 0;
+		datalen = 0;
+		data = 0;
+		keylen = 0;
+		keybuf = 0;
+		keyNum = 0;
+		resltPtr = 0;
+		reset();
+	}
 	void reset()
 	{
 		paramMask = 0;
