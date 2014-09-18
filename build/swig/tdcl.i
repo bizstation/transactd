@@ -46,6 +46,15 @@
 
 
 /* ===============================================
+  validatable pointer
+=============================================== */
+%{
+#include <build/swig/validatablepointer.h>
+validatablePointerList g_vPtrList;
+%}
+
+
+/* ===============================================
       HEADERS (for cpp compilation)
 =============================================== */
 %{
@@ -128,10 +137,24 @@ using namespace bzs::db::protocol::tdap::client;
 };
   // create and release methods for activeTable class
 %extend bzs::db::protocol::tdap::client::activeTable {
-  activeTable() {
-    return bzs::db::protocol::tdap::client::activeTable::create();
+  activeTable(idatabaseManager* mgr, const _TCHAR* tableName) {
+    bzs::db::protocol::tdap::client::activeTable* p =
+      bzs::db::protocol::tdap::client::activeTable::create(mgr, tableName);
+    g_vPtrList.add(p->table().get());
+    return p;
+  }
+  activeTable(database* db, const _TCHAR* tableName) {
+    bzs::db::protocol::tdap::client::activeTable* p =
+      bzs::db::protocol::tdap::client::activeTable::create(db, tableName);
+    g_vPtrList.add(p->table().get());
+    return p;
   }
   ~activeTable() {
+    if (g_vPtrList.remove(self->table().get()))
+    {
+      if (nsdatabase::testTablePtr(self->table().get()))
+        self->table()->nsdb()->setTestPtrIgnore(true);
+    }
     self->release();
   }
   void release() {
@@ -180,6 +203,27 @@ using namespace bzs::db::protocol::tdap::client;
   // ignore original methods
 %ignore bzs::db::protocol::tdap::client::database::database;
 %ignore bzs::db::protocol::tdap::client::database::~database;
+  // overwrite openTable
+%extend bzs::db::protocol::tdap::client::database {
+  bzs::db::protocol::tdap::client::table* openTable(const _TCHAR* tableName,
+    short mode = 0, bool autoCreate = true, const _TCHAR* ownerName = NULL, const _TCHAR* uri = NULL)
+  {
+    bzs::db::protocol::tdap::client::table* tb =
+      self->openTable(tableName, mode, autoCreate, ownerName, uri);
+    g_vPtrList.add(tb);
+    return tb;
+  }
+  bzs::db::protocol::tdap::client::table* openTable(short fileNum,
+    short mode = TD_OPEN_NORMAL, bool autoCreate = true, const _TCHAR* ownerName = NULL, const _TCHAR* uri = NULL)
+  {
+    bzs::db::protocol::tdap::client::table* tb =
+      self->openTable(fileNum, mode, autoCreate, ownerName, uri);
+    g_vPtrList.add(tb);
+    return tb;
+  }
+};
+  // ignore original method
+%ignore bzs::db::protocol::tdap::client::database::openTable;
 
 // * bzs/db/protocol/tdap/client/dbDef.h *
 %ignore bzs::db::protocol::tdap::client::dbdef::allocRelateData;
@@ -461,8 +505,11 @@ using namespace bzs::db::protocol::tdap::client;
       self->release();
   }
   ~table() {
-    if (bzs::db::protocol::tdap::client::nsdatabase::testTablePtr(self))
-      self->release();
+    if (!g_vPtrList.remove(self))
+    {
+      if (bzs::db::protocol::tdap::client::nsdatabase::testTablePtr(self))
+        self->release();
+    }
   }
 };
   // ignore original methods

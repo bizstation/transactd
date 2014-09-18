@@ -90,26 +90,6 @@ typedef char  _TCHAR;
 /* ===============================================
   ignore / rename functions
 =============================================== */
-// * bzs/db/protocol/tdap/client/activeTable.h *
-%newobject bzs::db::protocol::tdap::client::activeTable::activeTable;
-%delobject bzs::db::protocol::tdap::client::activeTable::~activeTable;
-  // add wrappers
-%extend bzs::db::protocol::tdap::client::activeTable {
-  activeTable(idatabaseManager* mgr, const _TCHAR* tableName) {
-    return bzs::db::protocol::tdap::client::activeTable::create(mgr, tableName);
-  }
-  activeTable(database* db, const _TCHAR* tableName) {
-    return bzs::db::protocol::tdap::client::activeTable::create(db, tableName);
-  }
-  ~activeTable() {
-    self->release();
-  }
-};
-  // ignore original functions
-%ignore bzs::db::protocol::tdap::client::activeTable::activeTable;
-%ignore bzs::db::protocol::tdap::client::activeTable::create;
-%ignore bzs::db::protocol::tdap::client::activeTable::~activeTable;
-
 // * bzs/db/protocol/tdap/btrDate.h *
 %ignore bzs::db::protocol::tdap::btrTimeStamp::btrTimeStamp(const wchar_t *);   // use char*
 %ignore bzs::db::protocol::tdap::btrTimeStamp::toString(wchar_t *);             // use char*

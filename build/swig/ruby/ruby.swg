@@ -97,9 +97,9 @@ rb_encoding* rb_enc_find_from_codepage(int codePage)
 %markfunc bzs::db::protocol::tdap::client::activeTable "mark_activeTable";
 %{
 #include <build/swig/referencecounter.h>
-referenceCounter reference_counter;
+referenceCounter g_refCounter;
 static void mark_activeTable(void* ptr) {
-  reference_counter.mark();
+  g_refCounter.mark();
 }
 %}
 
@@ -111,17 +111,26 @@ static void mark_activeTable(void* ptr) {
   // add wrappers
 %extend bzs::db::protocol::tdap::client::activeTable {
   activeTable(idatabaseManager* mgr, const _TCHAR* tableName) {
-    bzs::db::protocol::tdap::client::activeTable* a = bzs::db::protocol::tdap::client::activeTable::create(mgr, tableName);
-    reference_counter.add(a, mgr);
-    return a;
+    bzs::db::protocol::tdap::client::activeTable* p =
+      bzs::db::protocol::tdap::client::activeTable::create(mgr, tableName);
+    g_refCounter.add(p, mgr);
+    g_vPtrList.add(p->table().get());
+    return p;
   }
   activeTable(database* db, const _TCHAR* tableName) {
-    bzs::db::protocol::tdap::client::activeTable* a = bzs::db::protocol::tdap::client::activeTable::create(db, tableName);
-    reference_counter.add(a, db);
-    return a;
+    bzs::db::protocol::tdap::client::activeTable* p =
+      bzs::db::protocol::tdap::client::activeTable::create(db, tableName);
+    g_refCounter.add(p, db);
+    g_vPtrList.add(p->table().get());
+    return p;
   }
   ~activeTable() {
-    reference_counter.remove(self);
+    if (g_vPtrList.remove(self->table().get()))
+    {
+      if (nsdatabase::testTablePtr(self->table().get()))
+        self->table()->nsdb()->setTestPtrIgnore(true);
+    }
+    g_refCounter.remove(self);
     self->release();
   }
 };
