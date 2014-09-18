@@ -34,14 +34,14 @@ namespace connection
 {	
 	struct record
 	{
-		record():conId(0),dbid(0),cid(0)
+		record():conId(0),cid(0),dbid(0)
 		{
 			name[0] = 0x00;
 			status = 0;
 		}
 		__int64 conId;
-		unsigned int	cid;
-		unsigned short  dbid;
+		unsigned int cid;
+		unsigned short dbid;
 		char name[64];
 		union
 		{

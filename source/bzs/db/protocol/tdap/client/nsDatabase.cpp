@@ -153,9 +153,10 @@ struct nsdbimpl
 	bool uriMode;
 	bool uselongFilename;
 	bool localSharing;
-
-	nsdbimpl() : refCount(1), tranCount(0) ,id(0), snapShotCount(0), uselongFilename(false), tableCount(0),
-		lockWaitCount(10), lockWaitTime(100), localSharing(false), uriMode(false)
+	bool ignoreTestPtr;
+	nsdbimpl() : refCount(1), tranCount(0) ,id(0), snapShotCount(0), tableCount(0)
+		, lockWaitCount(10), lockWaitTime(100), uriMode(false), uselongFilename(false)
+		, localSharing(false), ignoreTestPtr(false)
 	{
 
 	}
@@ -739,6 +740,16 @@ const char* nsdatabase::toServerUri(char* buf, int buflen, const _TCHAR* src, bo
 
 }
 
+void nsdatabase::setTestPtrIgnore(bool v)
+{
+	m_nsimpl->ignoreTestPtr = v;
+}
+
+bool nsdatabase::isTestPtrIgnore() const
+{
+	return m_nsimpl->ignoreTestPtr;
+}
+
 bool nsdatabase::testTablePtr(nstable* ptr)
 {
 	if (g_checkTablePtr)
@@ -750,7 +761,14 @@ bool nsdatabase::testTablePtr(nstable* ptr)
 			if (db != NULL)
 			{
 				if (db->findTable(ptr))
+				{
+					if (db->isTestPtrIgnore())
+					{
+						db->setTestPtrIgnore(false);
+						return false;
+					}
 					return true;
+				}
 			}
 		}
 		return false;

@@ -73,10 +73,8 @@ struct Imple
 };
 
 
-
-
-fieldShare::fieldShare() : myDateTimeValueByBtrv(true), trimPadChar(true),
-		usePadChar(true), logicalToString(false), m_imple(new Imple())
+fieldShare::fieldShare() :m_imple(new Imple()),myDateTimeValueByBtrv(true)
+							, trimPadChar(true), usePadChar(true), logicalToString(false)
 {
 
 }

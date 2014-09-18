@@ -56,7 +56,7 @@ namespace client
 
 struct nstimpl
 {
-	nstimpl():refCount(1), bulkIns(NULL), shared(false), isOpen(false),mode(0)
+	nstimpl():refCount(1), bulkIns(NULL),mode(0), shared(false), isOpen(false)
 	{
 		posblk[0] = 0x00;
 	}
@@ -850,8 +850,8 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
 	else
 #endif
 		_tcscpy(buf, path);
-	_TUCHAR* p = _tcsmrchr((_TUCHAR*)buf, PSEPARATOR_C);
-	_TUCHAR* p2 = _tcsmrchr((_TUCHAR*)buf, '=');
+	_TUCHAR* p = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, PSEPARATOR_C);
+	_TUCHAR* p2 = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, '=');
 	if (p && p2)
 	{
 		if (p2 > p)
@@ -860,9 +860,9 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
 			p2 = NULL;
 	}
 	if (p)
-		* p = 0x00;
+		*p = 0x00;
 	if (p2)
-		* (p2 + 1) = 0x00;
+		*(p2 + 1) = 0x00;
 	return buf;
 }
 
@@ -872,8 +872,8 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
 _TCHAR* nstable::getFileName(const _TCHAR* path, _TCHAR* filename)
 {
 
-	_TUCHAR* p = _tcsmrchr((_TUCHAR*)path, PSEPARATOR_C);
-	_TUCHAR* p2 = _tcsmrchr((_TUCHAR*)path, '=');
+	_TUCHAR* p = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)path, PSEPARATOR_C);
+	_TUCHAR* p2 = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)path, '=');
 	filename[0] = 0x00;
 	if (p2 > p)
 		p = p2;

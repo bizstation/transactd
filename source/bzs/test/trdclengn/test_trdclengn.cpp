@@ -1107,6 +1107,13 @@ void testLogin(database* db)
         BOOST_MESSAGE(buf);
 #endif
     }
+
+	db->open(makeUri(PROTOCOL, _T("localhost123"), DBNAME, BDFNAME), TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
+    f = (db->stat() == ERROR_TD_INVALID_CLINETHOST) || (db->stat() == ERROR_TD_HOSTNAME_NOT_FOUND);
+    BOOST_CHECK_MESSAGE(f, "bad host stat =" << db->stat());
+
+
+
     testCreateNewDataBase(db);
     db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
     BOOST_CHECK_MESSAGE(0 == db->stat(), "databese disconnect db->stat() = " << db->stat());

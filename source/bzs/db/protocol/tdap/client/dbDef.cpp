@@ -45,10 +45,10 @@ namespace client
 #define FORMAT_VERSON_BTRV_DEF     		0
 #define FORMAT_VERSON_CURRENT   		1
 
-static const _TUCHAR BDFFORMAT_VERSION[] = _T("2.000.00");
-static const _TUCHAR ow0[11] = {46, 46, 83, 67, 46, 46, 46, 46, 93, 4, 0};
-static const _TUCHAR ow1[11] = {46, 46, 83, 67, 46, 46, 46, 46, 66, 5, 0};
-static const _TUCHAR ow2[11] = {46, 46, 83, 67, 46, 46, 46, 46, 212, 5, 0};
+static const _TCHAR BDFFORMAT_VERSION[] = _T("2.000.00");
+static const _TCHAR ow0[11] = {46, 46, 83, 67, 46, 46, 46, 46, 93, 4, 0};
+static const _TCHAR ow1[11] = {46, 46, 83, 67, 46, 46, 46, 46, 66, 5, 0};
+static const _TCHAR ow2[11] = {46, 46, 83, 67, 46, 46, 46, 46, -44, 5, 0};
 using namespace bzs::rtl;
 
 class ownerNameSetter : public nstable

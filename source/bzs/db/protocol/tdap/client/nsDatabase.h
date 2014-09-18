@@ -113,12 +113,13 @@ public:
 	void readDatabaseDirectory(_TCHAR* retBuf, uchar_td len);
 	bool connect(const _TCHAR* uri, bool newConnection = false);
 	bool disconnect(const _TCHAR* uri=_T(""));
-
 	static const int maxtables = 50;
 	static bool trnsactionFlushWaitStatus();
 	static void setExecCodePage(unsigned int codepage);
 	static unsigned int execCodePage() ;
 	/** @cond INTERNAL */
+	void setTestPtrIgnore(bool v);
+	bool isTestPtrIgnore() const;
 	static DLLUNLOADCALLBACK_PTR getDllUnloadCallbackFunc();
 	static bool testTablePtr(nstable* ptr);
 	static void setCheckTablePtr(bool v);

@@ -65,13 +65,13 @@ class connectParams
 
 public:
 	inline connectParams(const _TCHAR* protocol, const _TCHAR* hostOrIp, const _TCHAR* dbname,
-		const _TCHAR* schemaTable) : m_mode(TD_OPEN_READONLY), m_type(TYPE_SCHEMA_BDF)
+		const _TCHAR* schemaTable) :  m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
 	{
 		_stprintf_s(m_buf, MAX_PATH, _T("%s://%s/%s?dbfile=%s.bdf")
 					, protocol, hostOrIp, dbname, schemaTable);
 
 	}
-	inline explicit connectParams(const _TCHAR* uri) : m_mode(TD_OPEN_READONLY), m_type(TYPE_SCHEMA_BDF)
+	inline explicit connectParams(const _TCHAR* uri) : m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
 	{
 		_tcscpy_s(m_buf, MAX_PATH, uri);
 

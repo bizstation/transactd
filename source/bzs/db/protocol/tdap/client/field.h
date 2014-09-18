@@ -169,7 +169,7 @@ private:
 	//  ---- end regacy interfaces ----  //
 
 	inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
-			: m_ptr(ptr), m_fd((fielddef*)&fd), m_fds(fds) {};
+			: m_fd((fielddef*)&fd), m_ptr(ptr),  m_fds(fds) {};
 
 /** @cond INTERNAL */
 #if defined(SWIG) || defined(SWIG_BUILDING) //SWIG Wrapper need public constructor

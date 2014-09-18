@@ -75,7 +75,7 @@ class grouping_comp
 public:
 	grouping_comp(Container& mdls
 			, const std::vector<typename Container::key_type>& keys)
-		:m_mdls(mdls),m_keys(keys) {}
+		:m_keys(keys),m_mdls(mdls) {}
 
 	int operator() (int lv, int rv) const
 	{

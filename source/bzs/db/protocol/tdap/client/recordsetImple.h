@@ -499,7 +499,7 @@ public:
 
 
 inline multiRecordAlocatorImple::multiRecordAlocatorImple(recordsetImple* rs)
-	:m_rs(rs),m_rowOffset(0),m_addType(0),m_curFirstFiled(0),m_joinRowMap(NULL)
+	:m_rs(rs),m_joinRowMap(NULL),m_rowOffset(0),m_addType(0),m_curFirstFiled(0)
 {
 
 }

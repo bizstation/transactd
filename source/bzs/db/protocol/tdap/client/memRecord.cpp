@@ -34,13 +34,13 @@ namespace client
 {
 
 autoMemory::autoMemory()
-		: ptr(0), size(0),endFieldIndex(NULL), owner(false)
+		: ptr(0),endFieldIndex(NULL), size(0), owner(false)
 {
 
 }
 
 autoMemory::autoMemory(unsigned char* p, size_t s, short* endIndex, bool own)
-		: ptr(p), size((unsigned int)s),endFieldIndex(NULL), owner(own)
+		: ptr(p),endFieldIndex(NULL), size((unsigned int)s), owner(own)
 
 {
 	if (owner)
@@ -68,8 +68,8 @@ autoMemory::~autoMemory()
 }
 
 autoMemory::autoMemory(const autoMemory& p)
-		 :ptr(p.ptr), size(p.size)
-		,endFieldIndex(p.endFieldIndex), owner(p.owner)
+		 : ptr(p.ptr),endFieldIndex(p.endFieldIndex)
+		 , size(p.size), owner(p.owner)
 {
 	const_cast<autoMemory&>(p).owner = false;
 	//const_cast<autoMemory&>(p).ptr = NULL;

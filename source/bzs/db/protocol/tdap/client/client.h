@@ -162,9 +162,12 @@ public:
 		{
 			std::string host = getHostName((const char*)m_req.keybuf);
 			if (host=="")
-				m_req.result = ERROR_TD_HOSTNAME_NOT_FOUND;
-			setCon(m_cons->connect(host));  //if error throw exception
-
+				m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+			bzs::netsvc::client::connection* c = m_cons->connect(host);
+			if (c)
+				setCon(c);
+			else
+				m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
 		}
 		m_disconnected = !m_req.cid->con;
 	}
