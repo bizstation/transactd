@@ -444,7 +444,7 @@ public:
 		return *this;
 	}
 
-	inline void appendCol(const _TCHAR* name, int type, short len)
+	inline void appendField(const _TCHAR* name, int type, short len)
 	{
 		assert(m_fds->size());
 		fielddef fd((*m_fds)[0]);

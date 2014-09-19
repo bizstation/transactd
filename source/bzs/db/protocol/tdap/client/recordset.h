@@ -67,7 +67,7 @@ public:
 					 const _TCHAR* name7=NULL, const _TCHAR* name8=NULL);
 	recordset& orderBy(const sortFields& orders);
 	recordset& reverse();
-	void appendCol(const _TCHAR* name, int type, short len);
+	void appendField(const _TCHAR* name, int type, short len);
 	recordset& operator+=(const recordset& r);
 	void release();
 	static recordset* create();

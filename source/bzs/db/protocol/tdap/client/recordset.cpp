@@ -169,9 +169,9 @@ recordset& recordset::reverse()
 	return *this;
 }
 
-void recordset::appendCol(const _TCHAR* name, int type, short len)
+void recordset::appendField(const _TCHAR* name, int type, short len)
 {
-	m_imple->appendCol(name, type, len);
+	m_imple->appendField(name, type, len);
 }
 
 recordset& recordset::operator+=(const recordset& r)

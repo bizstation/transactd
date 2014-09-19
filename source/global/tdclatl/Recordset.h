@@ -65,7 +65,8 @@ public:
   STDMETHOD(Erase)(unsigned long Index);
   STDMETHOD(get_Count)(unsigned long* retVal);
   STDMETHOD(get_Size)(unsigned long* retVal);
-  STDMETHOD(RemoveField)(short Index, IRecordset** retVal);
+  STDMETHOD(RemoveField)(short Index);
+  STDMETHOD(AppendField)( BSTR name, eFieldType type, short len);
   STDMETHOD(GroupBy)(IGroupQuery* gq, IRecordset** retVal);
   STDMETHOD(MatchBy)(IRecordsetQuery* rq, IRecordset** retVal);
 

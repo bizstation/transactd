@@ -334,7 +334,7 @@ public:
 			if (f->resultKey() == (int)mdls.fieldDefs()->size())
 			{
 				groupFuncBase::value_type dummy=0;
-				mdls.appendCol(f->resultName(), getFieldType(dummy), sizeof(dummy));
+				mdls.appendField(f->resultName(), getFieldType(dummy), sizeof(dummy));
 			}
 		}
 

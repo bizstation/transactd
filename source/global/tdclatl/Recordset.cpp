@@ -136,15 +136,34 @@ STDMETHODIMP CARecordset::get_Size(unsigned long* retVal)
 }
 
 
-STDMETHODIMP CARecordset::RemoveField(short Index, IRecordset** retVal)
+STDMETHODIMP CARecordset::RemoveField(short Index)
 {
 	if (Index >= 0 && Index < (int)m_rs->fieldDefs()->size())
 	{
-		m_rs->removeField(Index);
-		setResult(retVal);	
-		return S_OK;
+		try
+		{
+			m_rs->removeField(Index);
+			return S_OK;
+		}
+		catch(bzs::rtl::exception& e)
+		{
+			return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+		}
 	}
 	return Error("Invalid field index", IID_IRecordset);	
+}
+
+STDMETHODIMP CARecordset::AppendField( BSTR name, eFieldType type, short len)
+{
+	try
+	{
+		m_rs->appendField(name, (uchar_td)type, len);
+		return S_OK;
+	}
+	catch(bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
 }
 
 

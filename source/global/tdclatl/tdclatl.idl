@@ -1126,7 +1126,7 @@ interface IRecordset : IDispatch
   [propget,id(0x0000007)]
   HRESULT _stdcall Count([out, retval]unsigned long* retVal);
   [id(0x0000008)]
-  HRESULT _stdcall RemoveField([in]short Index, [out, retval] IRecordset** retVal);
+  HRESULT _stdcall RemoveField([in]short Index);
   [id(0x0000009)]
   HRESULT _stdcall GroupBy(IGroupQuery* gq, [out, retval] IRecordset** retVal);
   [id(0x000000A)]
@@ -1152,6 +1152,9 @@ interface IRecordset : IDispatch
 
   [id(0x0000010)]
   HRESULT _stdcall Clone([out, retval] IRecordset** retVal);
+
+  [id(0x0000011)]
+  HRESULT _stdcall AppendField([in] BSTR name, [in] eFieldType type, [in] short len);
 
 };
 
