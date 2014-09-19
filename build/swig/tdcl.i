@@ -116,12 +116,34 @@ using namespace bzs::db::protocol::tdap::client;
 /* ===============================================
       ignore, rename, new/delobject, extend
 =============================================== */
+// ignore definitions
+%ignore LIB_EXTENTION;
+%ignore LIB_PREFIX;
+%ignore LINUX;
+%ignore MBC_CHARSETNAME;
+%ignore MB_PRECOMPOSED;
+%ignore SHARED_LIB_EXTENTION;
+%ignore UTF8_CHARSETNAME;
+%ignore WC_COMPOSITECHECK;
+
 // common %newobject and %delobject
 %newobject *::clone;
 %newobject *::create;
 %newobject *::createObject;
 %newobject *::openTable;
 %delobject *::release;
+
+// * bzs/env/mbcswchrLinux.h *
+%ignore bzs::env::u8mbcvt;
+%ignore bzs::env::mbu8cvt;
+%ignore bzs::env::mbcscvt;
+%ignore bzs::env::wchrcvt;
+%ignore bzs::env::u8wccvt;
+%ignore bzs::env::wcu8cvt;
+%ignore bzs::env::WideCharToMultiByte;
+%ignore bzs::env::MultiByteToWideChar;
+%ignore bzs::env::u8tombc;
+%ignore bzs::env::mbctou8;
 
 // * bzs/db/protocol/tdap/client/activeTable.h *
 %ignore bzs::db::protocol::tdap::client::activeTable::create;
@@ -419,7 +441,9 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::createTable;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrVersion(btrVersions*, uchar_td*);
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getDllUnloadCallbackFunc;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::isTestPtrIgnore;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::localSharing;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::setTestPtrIgnore;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::testTablePtr;
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
@@ -595,8 +619,6 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore DLLUNLOADCALLBACK_PTR;
 %ignore dllUnloadCallback;
-
-// * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore bzs::db::protocol::tdap::keySpec;
 %ignore bzs::db::protocol::tdap::fileSpec;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;
@@ -627,16 +649,18 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::tabledef::autoIncExSpace;
 %ignore bzs::db::protocol::tdap::tabledef::convertFileNum;
 %ignore bzs::db::protocol::tdap::tabledef::fileNameA;
+%ignore bzs::db::protocol::tdap::tabledef::filler0;
 %ignore bzs::db::protocol::tdap::tabledef::iconIndex;
 %ignore bzs::db::protocol::tdap::tabledef::iconIndex2;
 %ignore bzs::db::protocol::tdap::tabledef::iconIndex3;
 %ignore bzs::db::protocol::tdap::tabledef::optionFlags;
 %ignore bzs::db::protocol::tdap::tabledef::parentKeyNum;
 %ignore bzs::db::protocol::tdap::tabledef::replicaKeyNum;
+%ignore bzs::db::protocol::tdap::tabledef::reserved;
 %ignore bzs::db::protocol::tdap::tabledef::tableNameA;
 %ignore bzs::db::protocol::tdap::tabledef::treeIndex;
-%ignore bzs::db::protocol::tdap::tabledef::filler0;
-%ignore bzs::db::protocol::tdap::tabledef::reserved;
+%ignore bzs::db::protocol::tdap::tabledef::setFileNameA;
+%ignore bzs::db::protocol::tdap::tabledef::setTableNameA;
 
   // add methods
 %extend bzs::db::protocol::tdap::keydef {

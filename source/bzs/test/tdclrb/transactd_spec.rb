@@ -2380,27 +2380,3 @@ describe Transactd, 'StringFilter' do
     testDropDatabaseStringFilter(db)
   end
 end
-
-describe Transactd, 'convert' do
-  if !IS_WINDOWS
-    it 'convert char' do
-      dummy = ''
-      u8 = '123'
-      mbcArray = '123'.encode('Shift_JIS').bytes.to_a # bites Shift-JIS '漢字'
-      ret = Transactd::u8tombc(u8, -1, dummy, 256)
-      mbc = ret[1].force_encoding('Shift_JIS')
-      expect(mbc.bytes.to_a).to eq mbcArray
-      
-      u8 = '漢字'
-      mbcArray = '漢字'.encode('Shift_JIS').bytes.to_a # bites Shift-JIS '漢字'
-      ret = Transactd::u8tombc(u8, -1, dummy, 256)
-      mbc = ret[1].force_encoding('Shift_JIS')
-      expect(mbc.bytes.to_a).to eq mbcArray
-      
-      u8Array = '漢字'.encode('UTF-8').bytes.to_a # bites UTF-8 '漢字'
-      ret = Transactd::mbctou8(mbc, -1, dummy , 256)
-      u8 = ret[1].force_encoding('UTF-8')
-      expect(u8.bytes.to_a).to eq u8Array
-    end
-  end
-end

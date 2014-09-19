@@ -26,23 +26,21 @@ else()
   get_filename_component(TRANSACTD_PHP_PATH "@SWIG_NATIVE_OUTFILE@" PATH)
   file(TO_CMAKE_PATH "${TRANSACTD_PHP_PATH}/transactd.php" TRANSACTD_PHP_PATH)
   ## generate correct transactd.php
-  if(NOT EXISTS "${TRANSACTD_PHP_PATH}.correct")
-    MESSAGE("Generating ${TRANSACTD_PHP_PATH}.correct ...")
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "@SWIG_INTERFACE_FILE@" "@SWIG_INTERFACE_FILE@.org")
-    execute_process(
-      COMMAND grep -v "^%newobj" "@SWIG_INTERFACE_FILE@.org"
-      OUTPUT_FILE "@SWIG_INTERFACE_FILE@")
-    execute_process(
-      ERROR_VARIABLE TRANSACTD_GENERATE_ERROR_VAR
-      COMMAND swig -c++ -php5 -I@SWIG_INC_PATH1@ -I@SWIG_INC_PATH2@ -o @SWIG_NATIVE_OUTFILE@ @SWIG_INTERFACE_FILE@)
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "${TRANSACTD_PHP_PATH}" "${TRANSACTD_PHP_PATH}.correct")
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E copy_if_different "@SWIG_INTERFACE_FILE@.org" "@SWIG_INTERFACE_FILE@")
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E remove "@SWIG_INTERFACE_FILE@.org")
-  endif()
+  MESSAGE("Generating ${TRANSACTD_PHP_PATH}.correct ...")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "@SWIG_INTERFACE_FILE@" "@SWIG_INTERFACE_FILE@.org")
+  execute_process(
+    COMMAND grep -v "^%newobj" "@SWIG_INTERFACE_FILE@.org"
+    OUTPUT_FILE "@SWIG_INTERFACE_FILE@")
+  execute_process(
+    ERROR_VARIABLE TRANSACTD_GENERATE_ERROR_VAR
+    COMMAND swig -c++ -php5 -I@SWIG_INC_PATH1@ -I@SWIG_INC_PATH2@ -o @SWIG_NATIVE_OUTFILE@ @SWIG_INTERFACE_FILE@)
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${TRANSACTD_PHP_PATH}" "${TRANSACTD_PHP_PATH}.correct")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "@SWIG_INTERFACE_FILE@.org" "@SWIG_INTERFACE_FILE@")
+  execute_process(
+    COMMAND ${CMAKE_COMMAND} -E remove "@SWIG_INTERFACE_FILE@.org")
   ## generate wrapper cpp
   execute_process(
     ERROR_VARIABLE TRANSACTD_GENERATE_ERROR_VAR

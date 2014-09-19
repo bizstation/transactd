@@ -842,7 +842,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db = new Bz\database();
         $db->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_READONLY);
         $this->assertEquals($db->stat(), 0);
-        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable(TABLENAME, Bz\transactd::TD_OPEN_EXCLUSIVE);
         $this->assertEquals($db->stat(), 0);
         
@@ -853,7 +852,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($db2->stat(), 0);
         
         // Can not open table from other connections.
-        unset($tb2); // UNSET $tb2 BEFORE REASSIGNMENT
         $tb2 = $db2->openTable(TABLENAME);
         $this->assertEquals($db2->stat(), Bz\transactd::STATUS_CANNOT_LOCK_TABLE);
         
@@ -871,7 +869,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db = new Bz\database();
         $db->open(URL);
         $this->assertEquals($db->stat(), 0);
-        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable(TABLENAME);
         $this->assertEquals($db->stat(), 0);
         
@@ -1298,7 +1295,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // acp varchar
         $this->setGetVar($tb, false, true);
         $tb->close();
-        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('user2');
         $this->assertEquals($db->stat(), 0);
         // acp varbinary
@@ -1306,20 +1302,17 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->close();
         if ($this->isUtf16leSupport($db))
         {
-            unset($tb); // UNSET $tb BEFORE REASSIGNMENT
             $tb = $db->openTable('user3');
             $this->assertEquals($db->stat(), 0);
             // unicode varchar
             $this->setGetVar($tb, true, true);
             $tb->close();
         }
-        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('user4');
         $this->assertEquals($db->stat(), 0);
         // unicode varbinary
         $this->setGetVar($tb, true, false);
         $tb->close();
-        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('user5');
         $this->assertEquals($db->stat(), 0);
         // utf8 varchar
@@ -2081,7 +2074,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         }
         $tb->close();
         // insert groups data
-        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('groups', Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
         $tb->clearBuffer();
@@ -2094,7 +2086,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         }
         $tb->close();
         // insert extention data
-        unset($tb); // UNSET $tb BEFORE REASSIGNMENT
         $tb = $db->openTable('extention', Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
         $tb->clearBuffer();
@@ -2152,6 +2143,122 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $s = new Bz\min($fns);
             $s = new Bz\max($fns);
             $rs = new Bz\Recordset();
+        }
+    }
+    public function testLoop()
+    {
+        $db = new Bz\database();
+        $db->open(URL_QT);
+        $this->assertEquals($db->stat(), 0);
+        $atu = new Bz\ActiveTable($db, 'user');
+        $q = new Bz\query();
+        
+        $atu->alias('名前', 'name');
+        $q->where('id', '<=', 15000);
+        $rs = $atu->index(0)->keyValue(1)->read($q);
+        //
+        // loop fielddefs
+        //
+        $fds = $rs->fielddefs();
+        // for
+        for ($field_id = 0; $field_id < count($fds); $field_id++)
+        {
+            $field_name = $fds[$field_id]->name();
+            //echo("$field_id : $field_name\n");
+        }
+        // foreach
+        $field_id = 0;
+        foreach ($fds as $fd)
+        {
+            $field_name = $fd->name();
+            //echo("$field_id : $field_name\n");
+            $field_id++;
+        }
+        // foreach KeyValue
+        foreach ($fds as $field_id => $fd)
+        {
+            $field_name = $fd->name();
+            //echo("$field_id : $field_name\n");
+        }
+        // generator
+        $field_id = 0;
+        foreach ($fds->range() as $fd)
+        {
+            $field_name = $fd->name();
+            //echo("$field_id : $field_name\n");
+            $field_id++;
+        }
+        // generator with range
+        $field_id = 1;
+        foreach ($fds->range(1, 2) as $fd)
+        {
+            $field_name = $fd->name();
+            //echo("$field_id : $field_name\n");
+            $field_id++;
+        }
+        //
+        // loop Recordset and Record
+        //
+        // for
+        for ($row_id = 0; $row_id < count($rs); $row_id++)
+        {
+            $record = $rs[$row_id];
+            // for loop Record
+            for ($field_id = 0; $field_id < count($record); $field_id++) {
+                $field_name = $fds[$field_id]->name();
+                $field_value = $record[$field_id];
+                //if ($row_id < 5) { echo("rs[$row_id][$field_id:$field_name] $field_value\n"); }
+            }
+        }
+        // foreach
+        $row_id = 0;
+        foreach ($rs as $record)
+        {
+            $field_id = 0;
+            foreach ($record as $field_value) {
+                $field_name = $fds[$field_id]->name();
+                //if ($row_id < 5) { echo("rs[$row_id][$field_id:$field_name] $field_value\n"); }
+                $field_id++;
+            }
+            $row_id++;
+        }
+        // foreach KeyValue
+        foreach ($rs as $row_id => $record)
+        {
+            $field_id = 0;
+            foreach ($record as $field_name => $field_value)
+            {
+                //if ($row_id < 5) { echo("rs[$row_id][$field_id:$field_name] $field_value\n"); }
+                $field_id++;
+            }
+        }
+        // generator
+        $row_id = 0;
+        foreach ($rs->range() as $record)
+        {
+            // values generator
+            $field_id = 0;
+            foreach ($record->values() as $field_value)
+            {
+                $field_name = $fds[$field_id]->name();
+                //if ($row_id < 5) { echo("rs[$row_id][$field_id:$field_name] $field_value\n"); }
+                $field_id++;
+            }
+            $row_id++;
+        }
+        // generator with range
+        $row_id = 3;
+        foreach ($rs->range(3, 100) as $record)
+        {
+            // keys generator
+            $field_id = 0;
+            foreach ($record->keys() as $field_name)
+            {
+                $field_value = $record[$field_id];
+                //if ($row_id < 5) { echo("rs[$row_id][$field_id:$field_name] $field_value\n"); }
+                $field_id++;
+            }
+            $row_id++;
         }
     }
     public function testJoin()
@@ -2337,33 +2444,5 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $rec['id'] = 120000;
         $ret = $rec->read();
         $this->assertEquals($ret, false);
-    }
-    
-    /* -----------------------------------------------------
-        transactd convert
-    ----------------------------------------------------- */
-    
-    public function testConvert()
-    {
-        if (! $this->isWindows())
-        {
-            $enc_u8 = 'UTF-8';
-            
-            $u8 = mb_convert_encoding('123', $enc_u8);
-            $ret = Bz\transactd::u8tombc($u8, -1, '', 256);
-            $this->assertEquals($u8, $ret);
-            
-            $mbcKanji = [0x8A, 0xBF, 0x8E, 0x9A, 0x00];
-            $u8 = mb_convert_encoding('漢字', $enc_u8);
-            $ret = Bz\transactd::u8tombc($u8, -1, '', 256);
-            for ($i = 0; $i < strlen($ret); $i++)
-                $this->assertEquals(hexdec(bin2hex($ret{$i})), $mbcKanji[$i]);
-            
-            $mbc = $ret;
-            $u8Kanji = [0xe6 ,0xbc ,0xa2 ,0xe5 ,0xad ,0x97];
-            $ret = Bz\transactd::mbctou8($mbc, -1, '', 256);
-            for ($i = 0; $i < strlen($ret); $i++)
-                $this->assertEquals(hexdec(bin2hex($ret{$i})), $u8Kanji[$i]);
-        }
     }
 }

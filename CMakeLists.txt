@@ -72,6 +72,11 @@ if(TRANSACTD_PHP)
   set(WITH_TRANSACTD_SERVER   OFF)
   set(WITH_TRANSACTD_CLIENTS  OFF)
 endif()
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Type of build")
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+    "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+endif()
 
 
 # ==========================================================

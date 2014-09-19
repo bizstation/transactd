@@ -272,7 +272,6 @@ if(WIN32)
     include(../common/transactd_cl_output.cmake)
   endif()
   tdcl_set_output_win(${TRANSACTD_BINARY_ROOT})
-  set(TRANSACTD_PHP_FILENAME "transactd.win${tdcl_yield}.php")
 else()
   set_target_properties(${this_target} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
