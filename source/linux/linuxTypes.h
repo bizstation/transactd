@@ -22,7 +22,7 @@
 
 
 #ifndef WCHAR
-#	if (!(__APPLE__ && __BORLANDC__))
+#	if (!(__APPLE__ && (__BORLANDC__ || __clang__)))
 		typedef unsigned short char16_t;
 #	endif
 	typedef char16_t WCHAR;
