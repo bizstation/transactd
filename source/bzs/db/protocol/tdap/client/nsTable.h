@@ -82,6 +82,7 @@ protected:
 			uchar_td m_write : 1;
 			uchar_td m_insart : 1;
 			uchar_td m_delete : 1;
+			uchar_td m_reserverd :4;
 		};
 		uchar_td m_curd;
 	};

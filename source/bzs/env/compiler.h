@@ -173,6 +173,10 @@
 #  	define COMPILER_VERSTR  "bc200"
 #endif
 
+#if (__BCPLUSPLUS__ >= 0x690 && (__BCPLUSPLUS__ < 0x700))
+#  	define COMPILER_VERSTR  "bc210"
+#endif
+
 #if (__APPLE__)
 #	define SHARED_LIB_EXTENTION ".dylib"
 #else

@@ -211,11 +211,11 @@ PACKAGE const _TCHAR* btrstoa(const btrDateTime& d, _TCHAR* retbuf = NULL, bool 
 PACKAGE btrDateTime atobtrs(const _TCHAR* p);
 
 
-inline const _TCHAR* c_str(const btrDate& d) {return btrdtoa(d, (_TCHAR*)NULL);};
+inline const _TCHAR* c_str(const btrDate& d) {return btrdtoa(d, (_TCHAR*)NULL);}
 
-inline const _TCHAR* c_str(const btrTime& d) {return btrttoa(d, (_TCHAR*)NULL);};
+inline const _TCHAR* c_str(const btrTime& d) {return btrttoa(d, (_TCHAR*)NULL);}
 
-inline const _TCHAR* c_str(const btrDateTime& d, bool type_vb = false) {return btrstoa(d, (_TCHAR*)NULL, type_vb);};
+inline const _TCHAR* c_str(const btrDateTime& d, bool type_vb = false) {return btrstoa(d, (_TCHAR*)NULL, type_vb);}
 
 PACKAGE int getNowDate();
 PACKAGE int getNowTime();

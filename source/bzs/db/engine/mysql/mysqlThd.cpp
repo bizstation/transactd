@@ -51,13 +51,16 @@ inline void setStackaddr(char* v)
 #endif
 }
 
+#if !(__clang__ && __APPLE__)
+#define noexcept
+#endif
 
 void* operator new(size_t t)
 {   
 	return td_malloc(t, MY_WME);   
 }   
 
-void operator delete(void* p)
+void operator delete(void* p) noexcept
 {   
 	td_free(p);   
 }   
@@ -67,15 +70,7 @@ void* operator new[](size_t t)
 	return td_malloc(t, MY_WME);   
 }  
 
-#ifndef _NOEXCEPT
-	#define _NOEXCEPT
-#endif
-
-#ifndef _LIBCPP_NEW_DELETE_VIS
-	#define _LIBCPP_NEW_DELETE_VIS
-#endif
-
-_LIBCPP_NEW_DELETE_VIS void operator delete[] (void* p) _NOEXCEPT
+void operator delete[] (void* p) noexcept
 {   
 	td_free(p);   
 } 

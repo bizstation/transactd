@@ -67,8 +67,6 @@ public:
 	char filename[65];
 	ushort_td flag;
 	char filler[9];
-
-
 	char keybuf[128];
 
 	explicit fileDDF(nsdatabase *pbe);

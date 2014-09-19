@@ -356,9 +356,9 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
 	char ownerNameBuf[OWNERNAME_SIZE+1] = {0x00};
 	if (NULL != ownerName && 0x00 != ownerName[0])
 	{
-		const char* p = toChar(ownerNameBuf, ownerName, 22);
-		m_pdata = (void*)p;
-		m_datalen = (uint_td)strlen(p) + 1;
+		const char* p2 = toChar(ownerNameBuf, ownerName, 22);
+		m_pdata = (void*)p2;
+		m_datalen = (uint_td)strlen(p2) + 1;
 		if (m_datalen > 11)
 		{
 			m_stat = STATUS_TOO_LONG_OWNERNAME;
