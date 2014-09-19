@@ -111,15 +111,10 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # ==========================================================
 # Add compile options
 # ==========================================================
-if(MSVC)
-  if(TDCL_CPP_USE_RUNTIME_LIBS)
-    transactd_set_MTMD("MD")
-  else()
-    transactd_set_MTMD("MT")
-  endif()
-#else()
-#  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
-#    " -finput-charset=utf-8 ")
+if(TDCL_CPP_USE_RUNTIME_LIBS)
+  transactd_set_MTMD("MD")
+else()
+  transactd_set_MTMD("MT")
 endif()
 
 

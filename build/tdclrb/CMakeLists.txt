@@ -148,12 +148,7 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # ==========================================================
 # Add compile options
 # ==========================================================
-if(MSVC)
-  transactd_set_MTMD("MD")
-#else()
-  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_FLAGS
-    " --std=c++0x -U__STRICT_ANSI__ ")
-endif()
+transactd_set_MTMD("MD")
 
 
 # ==========================================================
