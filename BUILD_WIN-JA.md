@@ -97,19 +97,22 @@ TI_BOOST_ROOT_64 = c:\boost\boost_1_51_64
 ダウンロードした圧縮ファイルを解凍します。ここでは、以下のフォルダに保存したも
 のとします。
 ```
-C:\Users\Public\Documents\mysql-5.6.13
+C:\Users\Public\Documents\mysql-5.6.20
 ```
 
 
 ### 4-2 Transactd Pluginソースコードのダウンロード
 [Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/index.asp)
 からソースコードをダウンロードします。
-
-
-ダウンロードしたソースコードを、4-1で展開したMySQLソースコードのpluginフォルダに
-展開します。ここでは、以下のようなフォルダ構造になります。
+ソースを展開するフォルダ transactd をMySQLのソースツリー内のpluginフォルダに作成
+します。
 ```
-C:\Users\Public\Documents\mysql-5.6.13\plugin\transactd
+md C:\Users\Public\Documents\mysql-5.6.20\plugin\transactd
+```
+ダウンロードしたソースコードを、上記で作成したtransactdフォルダに展開します。
+ここでは、以下のようなフォルダ構造になります。
+```
+C:\Users\Public\Documents\mysql-5.6.20\plugin\transactd
 ```
 
 
@@ -121,15 +124,15 @@ Transactd Pluginソースコードのpatchディレクトリにmysqlのソース
 します。(パッチはmysql/mariadbのバージョンごとに異なる名前になっています。
 パッチ名のバージョンの部分は合ったものに変更してください。)
 ```
-cd C:\Users\Public\Documents\mysql-5.6.13
-copy plugin\transactd\patch\transactd-win-mysql-5.6.13.patch *
+cd C:\Users\Public\Documents\mysql-5.6.20
+copy plugin\transactd\patch\transactd-win-mysql-5.6.20.patch *
 ```
 
 patchコマンドを使用できる環境（Cygwin、Git Bashなど）があるならば、以下の
 コマンドでパッチを適用します。
 ```
-cd C:\Users\Public\Documents\mysql-5.6.13
-patch -p0 -i transactd-win-mysql-5.6.13.patch
+cd C:\Users\Public\Documents\mysql-5.6.20
+patch -p0 -i transactd-win-mysql-5.6.20.patch
 ```
 
 patchコマンドがない場合、[宮坂 賢 氏のGNU patch 2.5.4 (Win32 版)](
@@ -141,8 +144,8 @@ C:\Program Files (x86)\patc254w
 ```
 以下のコマンドでパッチを適用します。
 ```
-cd C:\Users\Public\Documents\mysql-5.6.13
-"C:\Program Files (x86)\patc254w\patch.exe" -p0 --binary -i transactd-win-mysql-5.6.13.patch
+cd C:\Users\Public\Documents\mysql-5.6.20
+"C:\Program Files (x86)\patc254w\patch.exe" -p0 --binary -i transactd-win-mysql-5.6.20.patch
 ```
 
 #### 4-3.2 ソースコードのエンコーディングの修正
@@ -158,7 +161,7 @@ cd C:\Users\Public\Documents\mysql-5.6.13
 ### 4-4 CMakeの実行
 Visual Studioコマンドプロンプトを起動して、以下のコマンドを実行します。
 ```
-cd C:\Users\Public\Documents\mysql-5.6.13
+cd C:\Users\Public\Documents\mysql-5.6.20
 md bldVC100x64
 cd bldVC100x64
 cmake .. -G "Visual Studio 10 Win64" ^
@@ -170,7 +173,7 @@ cmake .. -G "Visual Studio 10 Win64" ^
 ### 4-5 ビルド
 CMakeが完了すると、以下のソリューションファイルが生成されています。
 ```
-C:\Users\Public\Documents\mysql-5.6.13\bldVC100x64\MySQL.sln
+C:\Users\Public\Documents\mysql-5.6.20\bldVC100x64\MySQL.sln
 ```
 MySQL.slnをVisual Studioで開きます。メニューの[ビルド]-[構成マネージャー]から構
 成を「RelWithDebInfo」に変更し、[ビルド]-[ソリューションのビルド]をクリックしま
@@ -178,9 +181,9 @@ MySQL.slnをVisual Studioで開きます。メニューの[ビルド]-[構成マ
 
 バイナリは以下のフォルダに出力されます。
 ```
-C:\Users\Public\Documents\mysql-5.6.13\bldVC100x64\sql\lib\plugin
-C:\Users\Public\Documents\mysql-5.6.13\bldVC100x64\plugin\transactd\bin
-C:\Users\Public\Documents\mysql-5.6.13\bldVC100x64\plugin\transactd\lib
+C:\Users\Public\Documents\mysql-5.6.20\bldVC100x64\sql\lib\plugin
+C:\Users\Public\Documents\mysql-5.6.20\bldVC100x64\plugin\transactd\bin
+C:\Users\Public\Documents\mysql-5.6.20\bldVC100x64\plugin\transactd\lib
 ```
 
 
@@ -193,7 +196,7 @@ C:\Users\Public\Documents\mysql-5.6.13\bldVC100x64\plugin\transactd\lib
 
 ここでは、以下のフォルダに展開したとします。
 ```
-C:\Users\Public\Documents
+C:\Users\Public\Documents\transactd
 ```
 (EmbacaderoのC++BuilderXEシリーズの場合は[5-4 C++BuilderXEシリーズでのビルド]に進んでください。)
 

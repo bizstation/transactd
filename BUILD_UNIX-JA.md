@@ -10,6 +10,8 @@ Transactd Plugin および Transactd クライアントは、Unix上のGCC(64bit
 * gcc 4.7.2
 
 ビルドにはgccバージョン4.4以上が必須です。
+また、CentOS(GCC4.4以上 or clang LLVM 3.4) OSX10.9(GCC4.4以上 or Xcode5.1 LLVM 3.4)でも同様にビルドできます。</p>
+
 
 2. CMakeのインストール
 ------------------------------------------------------------
@@ -18,7 +20,11 @@ Transactd Plugin および Transactd クライアントは、Unix上のGCC(64bit
 sudo aptitude install cmake
 ```
 
-
+CentOSでは
+```
+sudo yum install cmake
+```
+OSXでは、バイナリ配布をアプリケーションフォルダにインストールして、/Applications/CMake.app/Contents/binにパスを通します。
 
 3. Boost C++ Libraries のダウンロードとビルド
 ------------------------------------------------------------
@@ -27,7 +33,7 @@ sudo aptitude install cmake
 ```
 cd ~
 wget http://sourceforge.net/projects/boost/files/boost/1.54.0/boost_1_54_0.tar.gz/download -O boost_1_54_0.tar.gz
-tar -xzf boost_1_54_0.tar.gz
+tar xzf boost_1_54_0.tar.gz
 ```
 
 以下のコマンドを実行しBoostのビルドを行います。
@@ -47,8 +53,8 @@ cd ~/boost_1_54_0
 からソースコードをダウンロードし、解凍します。
 ```
 cd ~
-wget http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.13.tar.gz
-tar -xzf mysql-5.6.13.tar.gz
+wget http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.20.tar.gz
+tar xzf mysql-5.6.20.tar.gz
 ```
 
 
@@ -60,22 +66,23 @@ tar -xzf mysql-5.6.13.tar.gz
 クトリに展開します。
 ```
 cd ~
-wget http://www.bizstation.jp/al/transactd/download/transactd-1.1.0/transactd-source-1.1.0.zip
-unzip -q transactd-source-1.1.0.zip
-mv transactd ~/mysql-5.6.13/plugin/
+wget http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip
+(osxでは curl -O http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip)
+unzip -q transactd-source-2.0.0.zip -d transactd
+mv transactd ~/mysql-5.6.20/plugin/
 ```
 
 
 ### 4-3 CMakeの実行
 以下のコマンドを実行します。後述するオプションに注意してください。
 ```
-cd ~/mysql-5.6.13
+cd ~/mysql-5.6.20
 mkdir bldgccx64
 cd bldgccx64
 cmake .. -DWITH_TRANSACTD_SERVER=ON -DWITH_TRANSACTD_CLIENTS=ON \
   -DBUILD_CONFIG=mysql_release \
   -DBOOST_ROOT=~/boost_1_54_0 \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/mysql-5.6.13 \
+  -DCMAKE_INSTALL_PREFIX=/usr/local/mysql-5.6.20 \
   -DTRANSACTD_CLIENTS_PREFIX=/usr/lib \
   -DTRANSACTD_PREFIX=/usr/local/transactd
 ```
@@ -106,8 +113,9 @@ make install
 からソースコードをダウンロードします。
 ```
 cd ~
-wget http://www.bizstation.jp/al/transactd/download/transactd-1.1.0/transactd-source-1.1.0.zip
-unzip -q transactd-source-1.1.0.zip
+wget http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip
+(osxでは curl -O http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip)
+unzip -q transactd-source-2.0.0.zip -d transactd
 ```
 
 ### 5-2 CMakeの実行
