@@ -4099,8 +4099,8 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return $r;
 	}
 
-	function appendCol($name,$type,$len) {
-		Recordset_appendCol($this->_cPtr,$name,$type,$len);
+	function appendField($name,$type,$len) {
+		Recordset_appendField($this->_cPtr,$name,$type,$len);
 	}
 
 	function unionRecordset($r_) {

@@ -1,5 +1,5 @@
 diff --git b/transactd.yield.php a/transactd.yield.php
-index 750f961..3b5471c 100644
+index 080159f..212ef62 100644
 --- b/transactd.yield.php
 +++ a/transactd.yield.php
 @@ -1,4 +1,9 @@
