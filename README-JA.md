@@ -73,53 +73,53 @@ MySQL/MariaDBのバイナリに変更を加えることなく、所定の位置�
 2. [MySQL|MariaDBインストールフォルダ]/lib/pluginに、transactd.dllをコピーします。
    MySQL|MariaDBインストールフォルダが不明な場合は、MySQL Command Line clientを
    起動し以下のコマンドでplugin_dirを確認してください。
-```
-mysql>show variables like 'Plugin%';
-+---------------+----------------------------------------------------+
-| Variable_name | Value                                              |
-+---------------+----------------------------------------------------+
-| plugin_dir    | C:\Program Files\MySQL\MySQL Server 5.6\lib\plugin |
-+---------------+----------------------------------------------------+
-```
+   ```
+   mysql>show variables like 'Plugin%';
+   +---------------+----------------------------------------------------+
+   | Variable_name | Value                                              |
+   +---------------+----------------------------------------------------+
+   | plugin_dir    | C:\Program Files\MySQL\MySQL Server 5.6\lib\plugin |
+   +---------------+----------------------------------------------------+
+   ```
 
 3. MySQL Command Line clientを起動し、以下のコマンドを実行します。
-```
-mysql>INSTALL PLUGIN transactd SONAME 'transactd.dll';
-```
-これでPluginのインストールは終了です。
+   ```
+   mysql>INSTALL PLUGIN transactd SONAME 'transactd.dll';
+   ```
+   これでPluginのインストールは終了です。
 
 
 ### Linuxでのインストール 
 1. ダウンロードしたtar.gzのあるフォルダに移動します。
-```
-shell>cd [TargetFolder]
-```
+   ```
+   cd [TargetFolder]
+   ```
 
 2. ダウンロードしたtar.gzを解凍し、解凍したフォルダに移動します。
-```
-shell>tar zxf transactd-linux-x86_64-2.0.0_mysql-5.6.14.tar.gz
-shell>cd transactd-linux-x86_64-2.0.0_mysql-5.6.14
-```
+   ```
+   tar zxf transactd-linux-x86_64-2.0.0_mysql-5.6.14.tar.gz
+   cd transactd-linux-x86_64-2.0.0_mysql-5.6.14
+   ```
 
 3. [MySQL|MariaDBインストールフォルダ]/lib/pluginに、libtransactd.soをコピー
    します。MySQL|MariaDBインストールが不明な場合は、mysqlを起動し以下の
    コマンドでplugin_dirを確認してください。
-```
-mysql>show variables like 'plugin%';
-+---------------+-----------------------------+
-| Variable_name | Value                       |
-+---------------+-----------------------------+
-| plugin_dir    | /usr/local/mysql/lib/plugin |
-+---------------+-----------------------------+
-mysql>exit
-shell>cp libtransactd.so /usr/local/mysql/lib/plugin/
-```
+   ```
+   mysql>show variables like 'plugin%';
+   +---------------+-----------------------------+
+   | Variable_name | Value                       |
+   +---------------+-----------------------------+
+   | plugin_dir    | /usr/local/mysql/lib/plugin |
+   +---------------+-----------------------------+
+   mysql>exit
+   cp libtransactd.so /usr/local/mysql/lib/plugin/
+   ```
 
 4. mysqlを起動し、以下のコマンドを実行します。
-```
-  mysql>INSTALL PLUGIN transactd SONAME 'libtransactd.so';
-```
-これでPluginのインストールは終了です。
+   ```
+     mysql>INSTALL PLUGIN transactd SONAME 'libtransactd.so';
+   ```
+   これでPluginのインストールは終了です。
 
 
 
@@ -144,49 +144,47 @@ Transactdクライアントのインストール
 
 ### Windowsでのインストール 
 1. ダウンロードしたtransactd-client-[platform]_with_sdk-2.0.0.zipを開きます。
-2. ルートフォルダーのtransactd-client-[platform]_with_sdk-2.0.0ごと適当なフォルダにコピーしま
-す。
+2. ルートフォルダーのtransactd-client-[platform]_with_sdk-2.0.0ごと適当なフォルダに
+   コピーします。
 3. transactd-client-[platform]_with_sdk-2.0.0直下にあるinstall.cmdを実行します。
+   これによりtransactd-client-[platform]_with_sdk-2.0.0\binフォルダをシステム環境変数
+   PATHに追加します。
 
-これによりtransactd-client-[platform]_with_sdk-2.0.0\binフォルダをシステ
-ム環境変数 Ptah に追加します。
 C++クライアントは binフォルダに配置された以下の３つのDLLからなります。
 
- * tdclc_xx_[version].dll 
- * tdclcpp_xx_[Compiler]_[version].dll 
- * tdclstmt_xx_[Compiler]_[version].dll 
+  * tdclc_xx_[version].dll
+  * tdclcpp_xx_[Compiler]_[version].dll
+  * tdclstmt_xx_[Compiler]_[version].dll
 
-このうち下の２つはC++のクラスをエクスポートするため、コンパイラごとに異なった
+このうち下の２つはC++のクラスをエクスポートするための、コンパイラごとに異なった
 モジュールです。また、それを利用したテストやベンチマーク、その他のプログラムも
-コンパイラごとです。それらはbin配下にコンパイラの名前のフォルダに配置されていま
-す。開発コンパイラが特定されている場合には、不要なモジュールは削除しても構いま
-せん。
+コンパイラごとになっていますです。それらはbin配下にコンパイラの名前のフォルダに
+配置されています。
+開発コンパイラが特定されている場合には、不要なモジュールは削除しても構いません。
 
-ビルド済みバイナリーが含まれるコンパイラは以下のコンパイラです。
+ビルド済みバイナリーが含まれるコンパイラは以下の7種類です。
 
   * Microsoft Visual studio 2010用 (ActiveX(COM)クライアントを含みます)
   * Embarcadero C++Builder XE～XE6シリーズ用
 
-の７種類です。
-
 
 ### Linuxでのインストール 
 1. ダウンロードしたtar.gzのあるフォルダに移動します。
-```
-shell>cd [TargetFolder]
-```
+   ```
+   cd [TargetFolder]
+   ```
 
 2. ダウンロードしたtar.gzを解凍し、解凍したフォルダに移動します。
-```
-shell>tar zxf transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
-shell>cd transactd-client-linux-x86_64_with_sdk-2.0.0
-```
+   ```
+   tar zxf transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
+   cd transactd-client-linux-x86_64_with_sdk-2.0.0
+   ```
 
 3. インストールスクリプトを実行します。
-```
-shell>./install_client.sh
-```
-これでクライアントのインストールは終了です。
+   ```
+   ./install_client.sh
+   ```
+   これでクライアントのインストールは終了です。
 
 
 
@@ -203,21 +201,21 @@ Transactdへアクセスするには、事前にMySQLのuserテーブルにroot@
 ```
 mysql>CREATE USER root@'192.168.0.0/255.255.255.0';
 ```
-この操作はrootでのアクセスを可能にしますので、rootのパスワードが未設定の場合は、
+この操作はrootでのアクセスを可能にするので、rootのパスワードが未設定の場合は、
 必ず設定してください。
 
 
 ### Windowsでのrootパスワードの設定
 コマンドプロンプトを開きます。
 ```
-shell>"C:\Program Files\MySQL\MySQL Server 5.6\bin\mysqladmin" -u root password 'xxxxx'
+"C:\Program Files\MySQL\MySQL Server 5.6\bin\mysqladmin" -u root password 'xxxxx'
 ```
 (xxxxxは実際のパスワードに置き換えてください)
 
 
 ### Linuxでのrootパスワードの設定
 ```
-shell>/usr/local/mysql/bin/mysqladmin -u root password 'xxxxx'
+/usr/local/mysql/bin/mysqladmin -u root password 'xxxxx'
 ```
 (xxxxxは実際のパスワードに置き換えてください)
 
@@ -241,53 +239,57 @@ Transactd Pluginとクライアントのインストールが済んだら、テ�
 を参照してください。
 
 テストスクリプトは、以下の内容を順に実行します。
- * test_tdclcpp_xx_xxm_xxx.exe   マルチバイト版テスト
- * test_tdclcpp_xx_xxm_xxx.exe   ユニコード版テスト(Windowsのみ)
- * bench_tdclcpp_xx.exe          Insert read update ベンチマーク
- * bench_query_xx.exe            クエリーのベンチマーク
- * querystmtsxx.exe              コマンドライン　クエリー実行モジュール
+  * test_tdclcpp_xx_xxm_xxx.exe   マルチバイト版テスト
+  * test_tdclcpp_xx_xxu_xxx.exe   ユニコード版テスト(Windowsのみ)
+  * bench_tdclcpp_xx.exe          Insert read update ベンチマーク
+  * bench_query_xx.exe            クエリーのベンチマーク
+  * querystmtsxx.exe              コマンドライン　クエリー実行モジュール
 
-最後の コマンドライン　クエリー実行モジュールは、ターゲットhostが localshot の場合
+最後の コマンドライン クエリー実行モジュールは、ターゲットhostが localhost の場合
 にのみ実行されます。
 
 
 ### Windowsでの起動
 1. クライアントのインストールで解凍したフォルダに移動します
-```
-shell>cd transactd-client-[platform]_with_sdk-2.0.0
-```
+   ```
+   cd transactd-client-[platform]_with_sdk-2.0.0
+   ```
 
 2. テストの起動
-```
->TestClient.cmd
-```
-最初にホスト名を聞かれますので、Transactdサーバーのホスト名を指定します。何も指定しない
-場合は localhostが自動で設定されます。
-次に、テストするコンパイラーを番号で選択します。
-テストおよび、ベンチマークなどが連続して実行されます。
+   ```
+   TestClient.cmd
+   ```
+   
+   最初にホスト名を聞かれるので、Transactdサーバーのホスト名を指定します。
+   何も指定しない場合は localhostが自動で設定されます。
+   
+   次に、テストするコンパイラーを番号で選択します。
+   テストおよびベンチマークなどが連続して実行されます。
 
-ActiveX(COM)のテストは以下のコマンドで起動します。
-```
->TestClient_ATL.cmd
-```
-最初にホスト名を聞かれますので、Transactdサーバーのホスト名を指定します。何も指定しない
-場合は localhostが自動で設定されます。
-テストおよび、ベンチマークなどが連続して実行されます。
+3. ActiveX(COM)のテストの起動
+   ```
+   TestClient_ATL.cmd
+   ```
+   
+   最初にホスト名を聞かれるので、Transactdサーバーのホスト名を指定します。
+   何も指定しない場合は localhostが自動で設定されます。
+   テストおよびベンチマークなどが連続して実行されます。
 
 
 ### Linuxでの起動
 1. クライアントのインストールで解凍したフォルダに移動します
-```
-shell>cd transactd-client-linux-x86_64_with_sdk-2.0.0
-```
+   ```
+   cd transactd-client-linux-x86_64_with_sdk-2.0.0
+   ```
 
 2. テストの起動
-```
-./exec_test_all.sh
-```
-最初にホスト名を聞かれますので、Transactdサーバーのホスト名を指定します。何も指定しない
-場合は localhostが自動で設定されます。
-テストおよび、ベンチマークなどが連続して実行されます。
+   ```
+   ./exec_test_all.sh
+   ```
+   
+   最初にホスト名を聞かれるので、Transactdサーバーのホスト名を指定します。
+   何も指定しない場合は localhostが自動で設定されます。
+   テストおよびベンチマークなどが連続して実行されます。
 
 
 
@@ -299,18 +301,22 @@ Transactdクライアントによるアプリケーションの開発は以下�
 http://www.bizstation.jp/ja/transactd/client/sdk/doc/
 
 source/bzs/exampleフォルダに、簡単なサンプルコードがあります。
-build/exampleフォルダにコンパイラに応じたプロジェクトファイル(Windows)、
-または、make_example.sh(LINUX)スクリプトでこれらを実際にビルドできます。
-尚、Visual C++ 2010のExpress版 64Bitでコンパイルする際は、各プロジェクトの[オプション]
--[構成プロパティー]-[全般]-[プラットフォームツールセット]を"v100"から"Windows7.1SDK"
-に変更を行ってください。
-C++ Builderの場合は、事前にコンパイラ付属のboostをインストールが必要です。また、[ツール]
--[オプション]-[環境オプション]-[C++ オプション]-[パスとディレクトリ]の[システムインクルードパス]に
- 
- * 32Bitの場合 $(CG_BOOST_ROOT)
- * 64Bitの場合 $(CG_64_BOOST_ROOT)
 
-を追加します。
+build/exampleフォルダにコンパイラに応じたプロジェクトファイル(Windows)があります。
+または、make_example.shスクリプト(Linux)でこれらをビルドできます。
+
+Visual C++ 2010のExpress版 64Bitでコンパイルする際は、各プロジェクトの[オプション]
+-[構成プロパティー]-[全般]-[プラットフォームツールセット]を"v100"から"Windows7.1SDK"
+に変更してください。
+
+C++ Builderの場合は、事前にコンパイラ付属のboostをインストールが必要です。また、
+[ツール]-[オプション]-[環境オプション]-[C++ オプション]-[パスとディレクトリ]の
+[システムインクルードパス]に以下の変数を追加します。
+
+* 32Bitの場合 $(CG_BOOST_ROOT)
+* 64Bitの場合 $(CG_64_BOOST_ROOT)
+
+
 
 Testプログラム
 -------------------------------------------------------------------------------
@@ -347,7 +353,7 @@ character-set-server=utf8
 
 ベンチマークプログラム
 -------------------------------------------------------------------------------
-ベンチマークプログラムは、基本的なCURDオペレーションのベンチマーク(bench_tdclcpp_xxx)
+ベンチマークプログラムは、基本的なCRUDオペレーションのベンチマーク(bench_tdclcpp_xxx)
 と、SQLライクな読み取りクエリーのベンチマーク(bench_query_xxx)の2種類あります。
 
 bench_tdclcpp_xxxベンチマークプログラムは、コマンドライン引数のprocessNumberを
@@ -380,7 +386,7 @@ bench_tdclcpp_xxx.exe databaseUri processNumber functionNumber
 |                |  8: update in transaction. 20rec x 1000times           |
 |----------------|--------------------------------------------------------|
 ex)
-shell>bench_tdclcpp_bc200_64u.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
+bench_tdclcpp_bc200_64u.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
 ```
 
 bench_query_xxxベンチマークプログラムは、以下のSQLと同等な結果を得る速度を計測
@@ -424,7 +430,6 @@ bench_query_xxx createdb hostname type n
 |----------------|--------------------------------------------------------|
 ex)
 bench_query_xxx 0 localhost 15 100
-
 ```
 
 
@@ -434,6 +439,7 @@ C++ O/Rマッピングソースコードジェネレータ
 ormsrcgen(32|64)はC++ O/Rマッピングのためのソースコードジェネレータです。C++で
 O/Rマッピングを利用する場合はこのプログラムを使って、モデルクラスをデータベース
 定義から生成することができます。
+
 詳しくはSDKに付属するREADME_ORMSRCGEN-JA.mdを参照してください。
 
 
@@ -441,6 +447,7 @@ O/Rマッピングを利用する場合はこのプログラムを使って、�
 クエリーエグゼキューター
 -------------------------------------------------------------------------------
 querystmts(32|64)はXMLファイルに記述されたTransactdクエリーの実行プログラムです。
+
 querystmtsにXMLファイルを渡すとその内容に従ってクエリーを実行し、結果を標準出力
 に出力します。XMLファイルは、queryBuilderプログラムにて作成します。queryBuilderは
 現在まだリリースされていません。近日中にリリースされる予定です。

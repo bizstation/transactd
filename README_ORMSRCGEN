@@ -1,104 +1,118 @@
 ormsrcgen C ++ O/R mapping source code generator
 ===============================================================================
-ormsrcgen (32|64) is a source code generator for C++ O/R mapping. C ++ will not 
-be able to define a class dynamically. The model takes the form to compile and 
-generate a model class in the generator.
-You can do O/R mapping fast and easy in C++ With it.
+ormsrcgen (32|64) is a source code generator for C++ O/R mapping.
+
+C++ does not allow to define classes dynamically. So we need to generate model
+classes with the source code generator. You can use O/R mapping fast and easy
+in C++ with it.
+
+
 
 Introduction
 -------------------------------------------------------------------------------
-Related files of the generator has been installed in the 
-source/global/ormsrcgen/template. The role of each file is as follows.
+Related files of the generator is in `source/global/ormsrcgen/template`.
+The descriptions of each files are:
 
- * ormDataClass_template.cpp : Template of C ++ model class.
- * ormDataClass_template.h   : Template of C ++ model class.
- * ormMapClass_template.cpp  : Template of C ++ map class.
- * ormMapClass_template.h    : Template of C ++ map class.
- * template.cnf              : Template of the configuration file
- * feldNameList_sample.txt   : Sample of field name conversion file.
+  * ormDataClass_template.cpp : Template of C ++ model class.
+  * ormDataClass_template.h   : Template of C ++ model class.
+  * ormMapClass_template.cpp  : Template of C ++ map class.
+  * ormMapClass_template.h    : Template of C ++ map class.
+  * template.cnf              : Template of the configuration file
+  * fieldNameList_sample.txt  : Sample file of field name alias.
 
-Of these, and edit it if necessary feldNameList_sample.txt and template.cnf.
+Edit `fieldNameList_sample.txt` and `template.cnf` as needed.
+
+
 
 Command-line options
 -------------------------------------------------------------------------------
-Command line options are as follows.
+Command line options are:
 
+```
 command line option:
-  -d [ --database_uri ] arg database uri ex:tdap://hostname/dbname?dbfile=trnasctd_schema
-  -t [ --table_name ] arg table name
-  -c [ --class_name ] arg class name
-  -f [ --conf_name ] arg configuration filename
+  -d [ --database_uri ] database uri ex:tdap://hostname/dbname?dbfile=trnasctd_schema
+  -t [ --table_name ] table name.
+  -c [ --class_name ] class name.
+  -f [ --conf_name ] configuration file.
 
 -d :Specify the database URI.
--t :Specify the table name of the model to be generated. It is generated for each 
-    table.
--c :Specify the class name of the model that corresponds to the table that is 
-    specified in the -t.
--f :Text file that describes the other settings is (configuration filename).
-    In many cases, it is the common content if table is different. 
-    Template is available as source/global/ormsrcgen/template/template.cnf.
-    You can edit the contents by copying it.
+-t :Specify the table name to generate the model class.
+    The class is generated for each table.
+-c :Specify the name of the model class.
+-f :Specify the path of configuration file.
+```
+
+In many cases, you can use same configuration file even if tables are different.
+Template of configuration file is `source/global/ormsrcgen/template/template.cnf`.
+You can copy and edit it.
 
 
 
-Description of the configuration filename
+Descriptions of the configuration file
 -------------------------------------------------------------------------------
-lang = 
-Specify the language of the code to be generated. It is supported only 'C++' 
-current version.
+* `lang = (language)`
+  
+  Specify the language of the code to be generated. Only `C++` is supported in
+  current version.
 
-files =
-Specify the number of template files required for one model. In the case of 
-C++ is '2'.
+* `files = (number of file)`
+  
+  Specify the number of template files required for a model. In the case of 
+  C++, the number is `2`.
 
-file1 = (file2 = )
-Specifies the path to the template file number that is specified in the 'files='. 
-By default 'file1 = ormDataClass_template, and file2 = ormMapClass_template' is,
-but please be specified in absolute path Add the directory where the file actually.
+* `file1 = (file path) file2 = (file path) ... fileN = (file path)`
+  
+  Specify the path of the template file, with the number that was specified in
+  `files=`.
+  Default values are `file1 = ormDataClass_template` `file2 = ormMapClass_template`,
+  but please specify the absolute path in actually.
 
-saveDir = 
-Specify the folder where you want to save the source code that was generated.
+* `saveDir = (output dir)`
+  
+  Specify the output directory to save generated source code files.
 
-setPrefix = 
-Specify the prefix of the access method name that sets a value to the member 
-variables of the class.For example, if you have a 'set' the setPrefix, member 
-function that sets the value of the 'name' field is as follows.
+* `setPrefix = (setter prefix)`
+  
+  Specify the prefix of the setter method of member variables in the class.
+  If `setPrefix = set`is specified, the setter function for `name` field is:
+  
+  ```
+  setName(const char* v)
+  ```
 
-```
-setName(const char* v)
-```
+* `getPrefix = (getter prefix)`
+  
+  Specify the prefix of the getter method as well as setPrefix.
 
+* `externWord = (extern keyword)`
+  
+  Add export keyword in class declaration when make shared libraries
+  such as `.SO` or `.DLL`.
+  
+  ```
+  class $externWord someModel
+  {
+  ...
+  };
+  ```
 
-getPrefix = 
-Specify the prefix of 'get' method  as well as setPrefix.
+* `fieldRenameList = (alias list file)`
+  
+  Normally, the member variable name of the class is same as the name of
+  field in the table. If you want to change the name, specify fieldRenameList
+  which contains alias list.
+  The fieldRenameList format is:
+  
+  ```
+  originalName1=alias1
+  originalName2=alias2
+  ```
 
-externWord=
-If you want to make shareed libraries, such as SO or DLL the class that has been 
-output,you can add a keyword for export to the after of the class declaration.
-```
-class $externWord someModel
-{
-...
+* `name_space = (namespace of model class)`
+  
+  Specify the namespace of the model class.
 
-};
-```
-
-fieldRenameList = 
-Normally, the member variable name of the class is the same as the names of the 
-fields in the table.If you want to change the name, you can specify a text file 
-containing conversion list in this fieldRenameList.
-Conversion list has the following format.
-```
-beforeName1=ConvertedName1
-beforeName2=ConvertedName2
-
-```
-
-name_space = 
-Specify the name space of the model class.
-
-name_space_map = 
-Specify the name space of the map class.
-Map class is to map the members of the model and the field names in the table
-
-
+* `name_space_map = (namespace of map class)`
+  
+  Specify the namespace of the map class.
+  The map class maps the members of the model class and the fields in the table.

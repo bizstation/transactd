@@ -4,9 +4,10 @@ Transactd ビルドガイド for Windows
 1. コンパイラの準備
 ------------------------------------------------------------
 Transactd Plugin および Transactd クライアントは、Windows上のVisual Studio
-(32bit/64bit)でビルドできます。ここでは、以下の環境でのビルドを想定して進めます
-。(クライアントはEmbacaderoのコンパイラーC++ Builder XEシリーズでもビルドできます。
-[クライアントのみをビルド]の欄をご覧ください）
+(32bit/64bit)でビルドできます。ここでは、以下の環境でのビルドを想定して進めます。
+
+（クライアントはEmbarcaderoのコンパイラーC++ Builder XEシリーズでもビルドできます。
+[クライアントのみをビルド]の項を参照してください。）
 
 * Windows 7 (64bit)
 * Visual Studio 2010 Express
@@ -21,6 +22,7 @@ Visual Studio 2010 Expressで64bitビルドを行うには、別途Windows SDK�
   http://www.microsoft.com/en-us/download/details.aspx?id=8442)
   （GRMSDKX_EN_DVD.iso をダウンロードし、マウントしてインストーラを実行）
 
+
 ### Visual Studioコマンドプロンプトの起動方法
 後述する手順の中で、Visual Studioコマンドプロンプトを開くことがあります。
 [スタートメニュー]-[すべてのプログラム]-[Microsoft Visual Studio 2010 Express]-
@@ -29,8 +31,7 @@ Visual Studio 2010 Expressで64bitビルドを行うには、別途Windows SDK�
 Visual Studio 2010 Express には、64bit版ビルドツール用の Visual Studioコマンド
 プロンプトが付属しません。代わりに、64bit用ビルドツールのパスを設定するための
 バッチファイルを作成し、そこから起動します。
-以下の内容のファイルを作成し、`set64env.cmd`という名前でデスクトップに保存します
-。
+以下の内容のファイルを作成し、`set64env.cmd`という名前でデスクトップに保存します。
 ```
 %comspec% /k "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
 ```
@@ -51,8 +52,9 @@ cmakeの実行ファイルにパスが通るようにします。
 ------------------------------------------------------------
 BoostProのダウンロードページが閉鎖されたため、ビルド済みバイナリをダウンロードするこ
 とはできなくなりました。boostはソースからビルドします。
+
 ### ソースからのビルド
-[Boostのダウンロードページ](http://www.boost.org/users/download )からソースコードを
+[Boostのダウンロードページ](http://www.boost.org/users/download)からソースコードを
 ダウンロードし、解凍します。ここでは、以下のフォルダに保存したものとします。
 ```
 C:\Program Files\boost\boost_1_54_0
@@ -63,21 +65,38 @@ Visual Studioコマンドプロンプトを起動します。以下のコマン�
 ```
 cd C:\Program Files\boost\boost_1_54_0
 bootstrap.bat
+
+@REM 64bitの場合
 bjam.exe toolset=msvc threading=multi address-model=64 architecture=x86 ^
   --with-chrono --with-filesystem --with-system --with-thread --with-timer ^
+  --with-serialization --with-program_options ^
   variant=debug,release link=static runtime-link=static
 bjam.exe toolset=msvc threading=multi address-model=64 architecture=x86 ^
   --with-chrono --with-filesystem --with-system --with-thread --with-timer ^
+  --with-serialization --with-program_options ^
+  variant=debug,release link=static runtime-link=shared
+
+@REM 32bitの場合
+bjam.exe toolset=msvc threading=multi architecture=x86 ^
+  --with-chrono --with-filesystem --with-system --with-thread --with-timer ^
+  --with-serialization --with-program_options ^
+  variant=debug,release link=static runtime-link=static
+bjam.exe toolset=msvc threading=multi architecture=x86 ^
+  --with-chrono --with-filesystem --with-system --with-thread --with-timer ^
+  --with-serialization --with-program_options ^
   variant=debug,release link=static runtime-link=shared
 ```
 
-インストールができたら、システム環境変数に `TI_BOOST_ROOT_32` および 
+ビルドができたら、システム環境変数に `TI_BOOST_ROOT_32` および 
 `TI_BOOST_ROOT_64`という変数を追加し、32bitと64bitのフォルダのパスを値として設
 定します。自分のビルドするbitに合わせた変数が設定されていれば、両方を設定する必
 要はありません。
 ```
-TI_BOOST_ROOT_32 = c:\boost\boost_1_51_32
-TI_BOOST_ROOT_64 = c:\boost\boost_1_51_64
+64bitの場合
+TI_BOOST_ROOT_64 = C:\Program Files\boost\boost_1_54_0
+
+32bitの場合
+TI_BOOST_ROOT_32 = C:\Program Files\boost\boost_1_54_0
 ```
 環境変数の追加は、[コントロールパネル]-[システム]-[詳細設定]タブ-[環境変数]から
 行います。
@@ -198,10 +217,10 @@ C:\Users\Public\Documents\mysql-5.6.20\bldVC100x64\plugin\transactd\lib
 ```
 C:\Users\Public\Documents\transactd
 ```
-(EmbacaderoのC++BuilderXEシリーズの場合は[5-4 C++BuilderXEシリーズでのビルド]に進んでください。)
+（EmbarcaderoのC++BuilderXEシリーズの場合は[5-4 C++BuilderXEシリーズでのビルド]に進んでください。）
+
 
 ### 5-2 CMakeの実行
-
 Visual Studioコマンドプロンプトを起動して、以下のコマンドを実行します。
 ```
 cd C:\Users\Public\Documents\transactd
@@ -227,18 +246,22 @@ tdcl.slnをVisual Studioで開きます。メニューの[ビルド]-[構成マ�
 C:\Users\Public\Documents\transactd\bldVC100x64\bin
 C:\Users\Public\Documents\transactd\bldVC100x64\lib
 ```
-### 5-4 C++BuilderXEシリーズでのビルド
-EmbacaderoのC++BuilderXEシリーズの場合は
 
+
+### 5-4 C++BuilderXEシリーズでのビルド
+EmbarcaderoのC++BuilderXEシリーズの場合は
 ```
 C:\Users\Public\Documents\Build\TransactdClient_bcb.groupproj
 ```
 にてXE以降のコンパイラーでコンパイルできます。
+
 コンパイルにはコンパイラー付属のboostライブラリがインストールされている必要が
 あります。また、C++ Builderの[ツール]-[オプション]-[環境オプション]-[C++ オプション]
 -[パスとディレクトリ]の[システムインクルードパス]に
- * 32Bitの場合 $(CG_BOOST_ROOT)
- * 64Bitの場合 $(CG_64_BOOST_ROOT)
+```
+32Bitの場合 $(CG_BOOST_ROOT)
+64Bitの場合 $(CG_64_BOOST_ROOT)
+```
 を追加します。
 ビルド構成は、Unicode版/Ansi版 Release/Debug 32Bit/64Bit があります。
 出力は、bin libフォルダに生成されます。64Bitの場合は常に動的RTLとリンクが必要です。
@@ -263,14 +286,13 @@ build\libboost_serialization-bcb-1_39\libboost_boost_serialization-bcb-mt-1_39.c
 ```
 にて事前にlibboost_serialization-bcb-mt-1_39.libを生成してください。
 
-XE4 64Bitの場合、コンパイラバージョンがXE3と同じためtdclcppを使用するアプリケーション
-の自動リンクでtdclcpp_bc170_64x.libを探そうとします。XE4で生成されるdllは
-tdclcpp_bc180_64x.dllのためlibが見つからずリンクエラーが発生します。XE4 64Bitでtdclcpp
-とtdclstmtをコンパイルした際には、libのファイル名を
-tdclcpp_bc180_64x_xx.libとtdclstmt_bc180_64x_xx.libの180部分を170にリネームしてください。
+XE4 64Bitの場合、コンパイラバージョンがXE3と同じであるため、tdclcppを使用する
+アプリケーションの自動リンクでtdclcpp_bc170_64x.libを探そうとします。しかしXE4で
+生成されるdllはtdclcpp_bc180_64x.dllのため、libが見つからずリンクエラーが発生します。
+XE4 64Bitでtdclcppとtdclstmtをコンパイルした際には、libのファイル名の180部分を170に
+リネームし`tdclcpp_bc180_64x_xx.lib`と`tdclstmt_bc180_64x_xx.lib`にしてください。
 
 XE6 64Bitの場合、boost_threadのコンパイルが通らないためboostのソースを修正します。
-   
 ```
 ファイル:$(CG_BOOST_ROOT)\boost_1_50\boost\asio\detail\impl\win_thread.ipp
 52行目:  ::QueueUserAPC(apc_function, thread_, 0); --> ::QueueUserAPC((PAPCFUNC)apc_function, thread_, 0);

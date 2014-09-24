@@ -10,7 +10,9 @@ Transactd Plugin および Transactd クライアントは、Unix上のGCC(64bit
 * gcc 4.7.2
 
 ビルドにはgccバージョン4.4以上が必須です。
-また、CentOS(GCC4.4以上 or clang LLVM 3.4) OSX10.9(GCC4.4以上 or Xcode5.1 LLVM 3.4)でも同様にビルドできます。</p>
+また、CentOS(GCC4.4以上 or clang LLVM 3.4)、Mac OS X 10.9(GCC4.4以上
+or Xcode5.1 LLVM 3.4)でも同様にビルドできます。
+
 
 
 2. CMakeのインストール
@@ -24,12 +26,16 @@ CentOSでは
 ```
 sudo yum install cmake
 ```
-OSXでは、バイナリ配布をアプリケーションフォルダにインストールして、/Applications/CMake.app/Contents/binにパスを通します。
+
+Mac OS Xでは、バイナリ配布をアプリケーションフォルダにインストールして
+`/Applications/CMake.app/Contents/bin`にパスを通します。
+
+
 
 3. Boost C++ Libraries のダウンロードとビルド
 ------------------------------------------------------------
-[Boostのダウンロードページ](http://www.boost.org/users/download )からソースコー
-ドをダウンロードし、解凍します。
+[Boostのダウンロードページ](http://www.boost.org/users/download)から
+ソースコードをダウンロードし、解凍します。
 ```
 cd ~
 wget http://sourceforge.net/projects/boost/files/boost/1.54.0/boost_1_54_0.tar.gz/download -O boost_1_54_0.tar.gz
@@ -42,6 +48,7 @@ cd ~/boost_1_54_0
 ./bootstrap.sh --with-libraries=chrono,filesystem,system,thread,timer,serialization,program_options
 ./b2 cxxflags=-fPIC
 ```
+
 
 
 4. サーバープラグインとクライアントの両方をビルド
@@ -62,12 +69,13 @@ tar xzf mysql-5.6.20.tar.gz
 [Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/index.asp)
 からソースコードをダウンロードします。
 
-ダウンロードしたソースコードは、4-1で展開したMySQLソースコードのpluginディレ
-クトリに展開します。
+ダウンロードしたソースコードは、4-1で展開したMySQLソースコードの
+pluginディレクトリに展開します。
 ```
 cd ~
 wget http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip
-(osxでは curl -O http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip)
+#Mac OS Xでは
+#curl -O http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip
 unzip -q transactd-source-2.0.0.zip -d transactd
 mv transactd ~/mysql-5.6.20/plugin/
 ```
@@ -86,14 +94,14 @@ cmake .. -DWITH_TRANSACTD_SERVER=ON -DWITH_TRANSACTD_CLIENTS=ON \
   -DTRANSACTD_CLIENTS_PREFIX=/usr/lib \
   -DTRANSACTD_PREFIX=/usr/local/transactd
 ```
-* CMAKE_INSTALL_PREFIXに指定するのは、これからビルドするMySQLのインストール先で
-  す。
+* `CMAKE_INSTALL_PREFIX` に指定するのは、これからビルドするMySQLのインストール先
+  です。
   ***すでにインストール済みのMySQLがある場合に、それと同じパスを指定すると、上書
   きされてしまいます。上書きしたくないときは異なるパスを指定してください。***
-* TRANSACTD_CLIENTS_PREFIXに指定するのは、これからビルドするクライアントのインス
-  トール先です。デフォルトは「/usr/lib」です。
-* TRANSACTD_PREFIXに指定するのは、これからビルドするテストやベンチマークのプログ
-  ラムのインストール先です。デフォルトは「/usr/local/transactd」です。
+* `TRANSACTD_CLIENTS_PREFIX` に指定するのは、これからビルドするクライアントの
+  インストール先です。デフォルトは`/usr/lib`です。
+* `TRANSACTD_PREFIX`に指定するのは、これからビルドするテストやベンチマークの
+  プログラムのインストール先です。デフォルトは`/usr/local/transactd`です。
 
 
 ### 4-4 ビルド
@@ -114,7 +122,8 @@ make install
 ```
 cd ~
 wget http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip
-(osxでは curl -O http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip)
+#Mac OS Xでは
+#curl curl -O http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-source-2.0.0.zip
 unzip -q transactd-source-2.0.0.zip -d transactd
 ```
 
@@ -129,10 +138,10 @@ cmake .. -DWITH_TRANSACTD_SERVER=OFF -DWITH_TRANSACTD_CLIENTS=ON \
   -DTRANSACTD_CLIENTS_PREFIX=/usr/lib \
   -DTRANSACTD_PREFIX=/usr/local/transactd
 ```
-* TRANSACTD_CLIENTS_PREFIXに指定するのは、これからビルドするクライアントのインス
-  トール先です。デフォルトは「/usr/lib」です。
-* TRANSACTD_PREFIXに指定するのは、これからビルドするテストやベンチマークのプログ
-  ラムのインストール先です。デフォルトは「/usr/local/transactd」です。
+* `TRANSACTD_CLIENTS_PREFIX` に指定するのは、これからビルドするクライアントの
+  インストール先です。デフォルトは`/usr/lib`です。
+* `TRANSACTD_PREFIX`に指定するのは、これからビルドするテストやベンチマークの
+  プログラムのインストール先です。デフォルトは`/usr/local/transactd`です。
 
 
 ### 5-3 ビルド
