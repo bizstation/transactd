@@ -14,7 +14,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
+   along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
@@ -40,84 +40,90 @@ namespace rtl
 
 class exception : public std::exception
 {
-	int m_error;
-	std::_tstring m_message;
-
+    int m_error;
+    std::_tstring m_message;
 
 public:
-	exception(): std::exception(),m_error(0){};
-	exception(int error, const std::_tstring& message): std::exception()
-		,m_error(error),m_message(message){};
-	explicit exception(int error):std::exception(),m_error(error){};
-	explicit exception(const std::_tstring& message): std::exception(),m_message(message){};
-	const std::_tstring& getMessage(){return m_message;}
-	const int& getErrorCode(){return m_error;}
-	exception& operator<<(int error){m_error = error;return *this;}
-	exception& operator<<(const _TCHAR* msg){m_message += msg;return *this;}
-
-
+    exception() : std::exception(), m_error(0){};
+    exception(int error, const std::_tstring& message)
+        : std::exception(), m_error(error), m_message(message){};
+    explicit exception(int error) : std::exception(), m_error(error){};
+    explicit exception(const std::_tstring& message)
+        : std::exception(), m_message(message){};
+    const std::_tstring& getMessage() { return m_message; }
+    const int& getErrorCode() { return m_error; }
+    exception& operator<<(int error)
+    {
+        m_error = error;
+        return *this;
+    }
+    exception& operator<<(const _TCHAR* msg)
+    {
+        m_message += msg;
+        return *this;
+    }
 };
-
 
 #define THROW_BZS_ERROR_WITH_CODE(code) throw bzs::rtl::exception(code)
 #define THROW_BZS_ERROR_WITH_MSG(msg) throw bzs::rtl::exception(msg)
-#define THROW_BZS_ERROR_WITH_CODEMSG(code, msg) throw bzs::rtl::exception(code, msg)
+#define THROW_BZS_ERROR_WITH_CODEMSG(code, msg)                                \
+    throw bzs::rtl::exception(code, msg)
 
-inline const std::_tstring* getMsg(bzs::rtl::exception &e)
+inline const std::_tstring* getMsg(bzs::rtl::exception& e)
 {
-	return &(e.getMessage());
+    return &(e.getMessage());
 }
-inline const int* getCode(bzs::rtl::exception &e)
+inline const int* getCode(bzs::rtl::exception& e)
 {
-	return &e.getErrorCode();
+    return &e.getErrorCode();
 }
 
-inline int errnoCode(int code){return code;}
-inline const _TCHAR* errMessage(const _TCHAR* msg){return msg;}
-
-
+inline int errnoCode(int code)
+{
+    return code;
+}
+inline const _TCHAR* errMessage(const _TCHAR* msg)
+{
+    return msg;
+}
 
 #else // not c++builder 32bit
 
-struct exception_base: virtual std::exception, virtual boost::exception
+struct exception_base : virtual std::exception, virtual boost::exception
 {
 };
-struct exception: virtual bzs::rtl::exception_base
+struct exception : virtual bzs::rtl::exception_base
 {
-
 };
 
 #ifdef _UNICODE
-	typedef std::wstring message_type;
+typedef std::wstring message_type;
 #else
-	typedef std::string message_type;
+typedef std::string message_type;
 #endif
 
 typedef boost::error_info<struct tagCode, int> errnoCode;
 typedef boost::error_info<struct tagMsg, message_type> errMessage;
 
+#define THROW_BZS_ERROR_WITH_CODE(code)                                        \
+    throw bzs::rtl::exception() << bzs::rtl::errnoCode(code)
+#define THROW_BZS_ERROR_WITH_MSG(msg)                                          \
+    throw bzs::rtl::exception() << bzs::rtl::errMessage(msg)
+#define THROW_BZS_ERROR_WITH_CODEMSG(code, msg)                                \
+    throw bzs::rtl::exception() << bzs::rtl::errnoCode(code)                   \
+                                << bzs::rtl::errMessage(msg)
 
-
-#define THROW_BZS_ERROR_WITH_CODE(code) throw bzs::rtl::exception() << bzs::rtl::errnoCode(code)
-#define THROW_BZS_ERROR_WITH_MSG(msg) throw bzs::rtl::exception() << bzs::rtl::errMessage(msg)
-#define THROW_BZS_ERROR_WITH_CODEMSG(code, msg) throw bzs::rtl::exception()		\
-									<< bzs::rtl::errnoCode(code) << bzs::rtl::errMessage(msg)
-
-
-
-inline const message_type* getMsg(bzs::rtl::exception &e)
+inline const message_type* getMsg(bzs::rtl::exception& e)
 {
-	return boost::get_error_info<bzs::rtl::errMessage>(e);
+    return boost::get_error_info<bzs::rtl::errMessage>(e);
 }
-inline const int* getCode(bzs::rtl::exception &e)
+inline const int* getCode(bzs::rtl::exception& e)
 {
-	return boost::get_error_info<bzs::rtl::errnoCode>(e);
+    return boost::get_error_info<bzs::rtl::errnoCode>(e);
 }
 #endif
 
+} // namespace rtl
+} // namespace bzs
 
-}//namespace rtl
-}//namespace bzs
-
-#endif //BZS_RTL_EXCEPTION_H
-
+#endif // BZS_RTL_EXCEPTION_H

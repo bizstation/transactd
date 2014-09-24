@@ -14,8 +14,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 
@@ -27,27 +27,27 @@ namespace bzs
 namespace rtl
 {
 //---------------------------------------------------------------------------
-PACKAGE int   GetYear(const _TCHAR* NowDate, bool PrevMonth);
-PACKAGE int   GetMonth(const _TCHAR* NowDate, bool PrevMonth);
-PACKAGE int   GetDate(const _TCHAR* NowDate);
-PACKAGE bool  IsUrudosi(int Year);
-PACKAGE bool  GetDatefromYearSerialDays(int year, int Days, _TCHAR* date
-											, bool nextYearRight=false);
+PACKAGE int GetYear(const _TCHAR* NowDate, bool PrevMonth);
+PACKAGE int GetMonth(const _TCHAR* NowDate, bool PrevMonth);
+PACKAGE int GetDate(const _TCHAR* NowDate);
+PACKAGE bool IsUrudosi(int Year);
+PACKAGE bool GetDatefromYearSerialDays(int year, int Days, _TCHAR* date,
+                                       bool nextYearRight = false);
 
-PACKAGE int   JDate2Num(const _TCHAR* date);
+PACKAGE int JDate2Num(const _TCHAR* date);
 
 #ifdef _WIN32
-PACKAGE int   JDate2Num(const _NTCHAR* date);
+PACKAGE int JDate2Num(const _NTCHAR* date);
 #endif
 
 PACKAGE const _TCHAR* JNum2Date(int ldate);
 
-PACKAGE long 	StrToLongDate(_TCHAR* pStrDate);
-PACKAGE _TCHAR* LongToStrDate(long , _TCHAR* );
-PACKAGE _TCHAR* LongToStrTime(long , _TCHAR* );
+PACKAGE long StrToLongDate(_TCHAR* pStrDate);
+PACKAGE _TCHAR* LongToStrDate(long, _TCHAR*);
+PACKAGE _TCHAR* LongToStrTime(long, _TCHAR*);
 PACKAGE const char* dateTimeStr(char* buf, unsigned int bufsize);
 
-}//namespace rtl
-}//namespace bzs
+} // namespace rtl
+} // namespace bzs
 
-#endif//BZS_RT_DATETIME_H
+#endif // BZS_RT_DATETIME_H

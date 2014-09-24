@@ -40,56 +40,59 @@ namespace client
 {
 
 /** connection pool class
-	Hold database or databaseManager instance and delivery.
+        Hold database or databaseManager instance and delivery.
 
-	If maxConnections = 0 then not create databases automaticaly at no free a database.
-	This case need call reserve() function at start up the process.\n
+        If maxConnections = 0 then not create databases automaticaly at no free
+   a database.
+        This case need call reserve() function at start up the process.\n
 
-	Otherwise, create new database automaticaly by get() function with connectParams.
-	This case need call setMaxConnections() function at start up the process.
+        Otherwise, create new database automaticaly by get() function with
+   connectParams.
+        This case need call setMaxConnections() function at start up the
+   process.
 */
 
-template <class Database_Ptr>
-class connectionPool
+template <class Database_Ptr> class connectionPool
 {
-	std::vector<Database_Ptr> m_dbs;
-	mutable boost::mutex m_mutex;
-	mutable boost::mutex m_mutex2;
-	mutable boost::condition m_busy;
-	int m_maxConnections;
-	Database_Ptr addOne(const connectParams& param);
+    std::vector<Database_Ptr> m_dbs;
+    mutable boost::mutex m_mutex;
+    mutable boost::mutex m_mutex2;
+    mutable boost::condition m_busy;
+    int m_maxConnections;
+    Database_Ptr addOne(const connectParams& param);
 #if (__BCPLUSPLUS__)
 public:
 #endif
-	DLLUNLOADCALLBACK_PTR m_regitfunc;
-	friend short __STDCALL dllUnloadCallbackFunc();
+    DLLUNLOADCALLBACK_PTR m_regitfunc;
+    friend short __STDCALL dllUnloadCallbackFunc();
 
 public:
-	connectionPool(int maxConnections=0);
-	~connectionPool();
+    connectionPool(int maxConnections = 0);
+    ~connectionPool();
 
-	Database_Ptr get(const connectParams* param=NULL);
-	void reserve(size_t size, const connectParams& param);
-	void setMaxConnections(int n);
-	int maxConnections() const;
-	void releaseOne();
-	bool reset(int waitSec=5);
+    Database_Ptr get(const connectParams* param = NULL);
+    void reserve(size_t size, const connectParams& param);
+    void setMaxConnections(int n);
+    int maxConnections() const;
+    void releaseOne();
+    bool reset(int waitSec = 5);
 };
 
 typedef connectionPool<database_ptr> stdDbCconnectionPool;
 typedef connectionPool<dbmanager_ptr> stdDbmCconnectionPool;
 
 /** stdDbmCconnectionPool is default for connetion pool.
-	pooling database and reuse tables.
+        pooling database and reuse tables.
 */
 #ifdef USE_DBM_CONNECTION_POOL
-	typedef stdDbmCconnectionPool stdCconnectionPool;
+typedef stdDbmCconnectionPool stdCconnectionPool;
 #else
-	#ifdef USE_DB_CONNECTION_POOL
-		typedef stdDbCconnectionPool stdCconnectionPool;
-	#else
-		#error "Please define the USE_DBM_CONNECTION_POOL when you need a connection pool";
-	#endif
+#ifdef USE_DB_CONNECTION_POOL
+typedef stdDbCconnectionPool stdCconnectionPool;
+#else
+#error                                                                         \
+    "Please define the USE_DBM_CONNECTION_POOL when you need a connection pool";
+#endif
 #endif
 
 short __STDCALL dllUnloadCallbackFunc();
@@ -97,10 +100,10 @@ void releaseConnection(stdDbmCconnectionPool* pool);
 
 extern stdCconnectionPool cpool;
 
-}//namespace client
-}//namespace tdap
-}//namespace protocol
-}//namespace db
-}//namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 
-#endif //BZS_DB_PROTOCOL_TDAP_CLIENT_CONNECTIONPOOL_H
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_CONNECTIONPOOL_H

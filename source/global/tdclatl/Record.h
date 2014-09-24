@@ -13,8 +13,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "resource.h"
@@ -25,74 +25,72 @@
 using namespace ATL;
 class CField;
 class CFieldDefs;
-class ATL_NO_VTABLE CRecord : 
-	public CComObjectRootEx<CComSingleThreadModel>, 
-	public CComCoClass<CRecord, &CLSID_Record>,
-    public IDispatchImpl<IRecord, &IID_IRecord, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CRecord
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CRecord, &CLSID_Record>,
+      public IDispatchImpl<IRecord, &IID_IRecord, &LIBID_transactd,
+                           /* wMajor = */ 1, /* wMinor = */ 0>
 {
 
-	CComObject<CField>* m_fieldObj;
-	short GetFieldNum(VARIANT* Index);
+    CComObject<CField>* m_fieldObj;
+    short GetFieldNum(VARIANT* Index);
 
 public:
-	bzs::db::protocol::tdap::client::fieldsBase* m_rec;
-    CRecord():m_fieldObj(NULL){}
+    bzs::db::protocol::tdap::client::fieldsBase* m_rec;
+    CRecord() : m_fieldObj(NULL) {}
 
-    BEGIN_COM_MAP(CRecord) 
-		COM_INTERFACE_ENTRY(IRecord) 
-		COM_INTERFACE_ENTRY(IDispatch) 
-	END_COM_MAP()
+    BEGIN_COM_MAP(CRecord)
+    COM_INTERFACE_ENTRY(IRecord)
+    COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    HRESULT FinalConstruct() {return S_OK;}
+    HRESULT FinalConstruct() { return S_OK; }
 
-	void FinalRelease();
+    void FinalRelease();
 
 public:
-
-  STDMETHOD(get_Size)(short* retVal);
-  STDMETHOD(get_Field)(VARIANT Index, IField** retVal);
-  STDMETHOD(get_IsInvalidRecord)(VARIANT_BOOL* retVal);
-
+    STDMETHOD(get_Size)(short* retVal);
+    STDMETHOD(get_Field)(VARIANT Index, IField** retVal);
+    STDMETHOD(get_IsInvalidRecord)(VARIANT_BOOL* retVal);
 };
 
-
-
-class ATL_NO_VTABLE CWritableRecord : 
-	public CComObjectRootEx<CComSingleThreadModel>, 
-	public CComCoClass<CWritableRecord, &CLSID_Record>,
-    public IDispatchImpl<IWritableRecord, &IID_IWritableRecord, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CWritableRecord
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CWritableRecord, &CLSID_Record>,
+      public IDispatchImpl<IWritableRecord, &IID_IWritableRecord,
+                           &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
 {
 
-	CComObject<CField>* m_fieldObj;
-	short GetFieldNum(VARIANT* Index);
-	CComObject<CFieldDefs>* m_fieldDefsObj;
-public:
-	bzs::db::protocol::tdap::client::writableRecord* m_rec;
-    CWritableRecord():m_fieldObj(NULL),m_fieldDefsObj(NULL){}
+    CComObject<CField>* m_fieldObj;
+    short GetFieldNum(VARIANT* Index);
+    CComObject<CFieldDefs>* m_fieldDefsObj;
 
-    BEGIN_COM_MAP(CWritableRecord) 
-		COM_INTERFACE_ENTRY(IWritableRecord) 
-		COM_INTERFACE_ENTRY(IDispatch) 
-	END_COM_MAP()
+public:
+    bzs::db::protocol::tdap::client::writableRecord* m_rec;
+    CWritableRecord() : m_fieldObj(NULL), m_fieldDefsObj(NULL) {}
+
+    BEGIN_COM_MAP(CWritableRecord)
+    COM_INTERFACE_ENTRY(IWritableRecord)
+    COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    HRESULT FinalConstruct() {return S_OK;}
+    HRESULT FinalConstruct() { return S_OK; }
 
-	void FinalRelease();
+    void FinalRelease();
 
 public:
-  STDMETHOD(Clear)();
-  STDMETHOD(get_Size)(short* retVal);
-  STDMETHOD(get_Field)(VARIANT Index, IField** retVal);
-  STDMETHOD(Save)();
-  STDMETHOD(Insert)();
-  STDMETHOD(Del)(VARIANT_BOOL KeysetAlrady);
-  STDMETHOD(Update)();
-  STDMETHOD(Read)(VARIANT_BOOL KeysetAlrady, VARIANT_BOOL* retVal);
-  STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
-  STDMETHOD(get_IsInvalidRecord)(VARIANT_BOOL* retVal);
-
+    STDMETHOD(Clear)();
+    STDMETHOD(get_Size)(short* retVal);
+    STDMETHOD(get_Field)(VARIANT Index, IField** retVal);
+    STDMETHOD(Save)();
+    STDMETHOD(Insert)();
+    STDMETHOD(Del)(VARIANT_BOOL KeysetAlrady);
+    STDMETHOD(Update)();
+    STDMETHOD(Read)(VARIANT_BOOL KeysetAlrady, VARIANT_BOOL* retVal);
+    STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
+    STDMETHOD(get_IsInvalidRecord)(VARIANT_BOOL* retVal);
 };

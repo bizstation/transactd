@@ -13,8 +13,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "resource.h"
@@ -24,50 +24,49 @@
 #include <bzs/db/protocol/tdap/client/dbDef.h>
 using namespace ATL;
 
-class ATL_NO_VTABLE CFieldDef : public CComObjectRootEx<CComSingleThreadModel>,
-    public CComCoClass<CFieldDef, &CLSID_FieldDef>,
-    public IDispatchImpl<IFieldDef, &IID_IFieldDef, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CFieldDef
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CFieldDef, &CLSID_FieldDef>,
+      public IDispatchImpl<IFieldDef, &IID_IFieldDef, &LIBID_transactd,
+                           /* wMajor = */ 1, /* wMinor = */ 0>
 {
-	bzs::db::protocol::tdap::fielddef* fielddef()
-	{
-		if (m_fielddef)
-			return NULL;
-		return &(*m_tabledefPtr)->fieldDefs[m_index];
-	}
+    bzs::db::protocol::tdap::fielddef* fielddef()
+    {
+        if (m_fielddef)
+            return NULL;
+        return &(*m_tabledefPtr)->fieldDefs[m_index];
+    }
 
-	const bzs::db::protocol::tdap::fielddef* const_fielddef()
-	{
-		if (m_fielddef)
-			return m_fielddef;
-		return &(*m_tabledefPtr)->fieldDefs[m_index];
-	}
-	bool isWritabale()
-	{
-		return (m_tabledefPtr != NULL);
-	}
-	HRESULT write_error()
-	{
-		return Error("This object is no writable.", IID_IFieldDef);
-	}
+    const bzs::db::protocol::tdap::fielddef* const_fielddef()
+    {
+        if (m_fielddef)
+            return m_fielddef;
+        return &(*m_tabledefPtr)->fieldDefs[m_index];
+    }
+    bool isWritabale() { return (m_tabledefPtr != NULL); }
+    HRESULT write_error()
+    {
+        return Error("This object is no writable.", IID_IFieldDef);
+    }
+
 public:
-    CFieldDef():m_tabledefPtr(NULL),m_fielddef(NULL) {}
-	const bzs::db::protocol::tdap::fielddef* m_fielddef;
-	bzs::db::protocol::tdap::tabledef** m_tabledefPtr;
-	short m_index;
+    CFieldDef() : m_tabledefPtr(NULL), m_fielddef(NULL) {}
+    const bzs::db::protocol::tdap::fielddef* m_fielddef;
+    bzs::db::protocol::tdap::tabledef** m_tabledefPtr;
+    short m_index;
 
-    BEGIN_COM_MAP(CFieldDef) 
-		COM_INTERFACE_ENTRY(IFieldDef) 
-		COM_INTERFACE_ENTRY(IDispatch) 
-	END_COM_MAP()
+    BEGIN_COM_MAP(CFieldDef)
+    COM_INTERFACE_ENTRY(IFieldDef)
+    COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    HRESULT FinalConstruct() {return S_OK;}
+    HRESULT FinalConstruct() { return S_OK; }
 
     void FinalRelease() {}
 
 public:
-	
     STDMETHOD(get_Name)(BSTR* Value);
     STDMETHOD(get_Type)(eFieldType* Value);
     STDMETHOD(get_Len)(short* Value);
@@ -96,13 +95,12 @@ public:
     STDMETHOD(get_NullValue)(unsigned short* Value);
     STDMETHOD(put_NullValue)(unsigned short Value);
     STDMETHOD(get_Align)(unsigned int* Value);
-	STDMETHOD(get_TypeName)( BSTR* Value);
-	STDMETHOD(get_IsStringType)( VARIANT_BOOL* Value);
+    STDMETHOD(get_TypeName)(BSTR* Value);
+    STDMETHOD(get_IsStringType)(VARIANT_BOOL* Value);
     STDMETHOD(get_CharsetIndex)(eCharset* Value);
     STDMETHOD(put_CharsetIndex)(eCharset Value);
     STDMETHOD(get_CodePage)(unsigned int* Value);
     STDMETHOD(get_CharNum)(unsigned int* Value);
     STDMETHOD(SetLenByCharnum)(unsigned short Value);
-	STDMETHOD(get_Index)(short* Value);
-
+    STDMETHOD(get_Index)(short* Value);
 };

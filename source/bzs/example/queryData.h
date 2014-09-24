@@ -5,13 +5,12 @@
 //---------------------------------------------------------------------------
 #include <bzs/db/protocol/tdap/client/trdboostapi.h>
 
-
-int prebuiltData( bzs::db::protocol::tdap::client::database_ptr db
-		, const bzs::db::protocol::tdap::client::connectParams& param
-		, bool foceCreate=false, int maxId=20000);
+int prebuiltData(bzs::db::protocol::tdap::client::database_ptr db,
+                 const bzs::db::protocol::tdap::client::connectParams& param,
+                 bool foceCreate = false, int maxId = 20000);
 
 bool createCacheTable(bzs::db::protocol::tdap::client::dbdef* def);
 
 const _TCHAR* name_field_str(_TCHAR* buf);
 
-#endif //BZS_EXSAMPLE_QUERYDATA_H
+#endif // BZS_EXSAMPLE_QUERYDATA_H

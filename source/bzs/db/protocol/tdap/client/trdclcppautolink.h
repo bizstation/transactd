@@ -14,8 +14,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 
@@ -26,10 +26,11 @@ library path in project option.
 */
 
 #ifdef TRDCL_AUTOLINK
-#	include <bzs/env/compiler.h>
-#	include <bzs/db/protocol/tdap/tdapcapi.h>
-#	define TD_CPP_LIB_NAME LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR SHARED_LIB_EXTENTION
-#	pragma comment(lib, TD_CPP_LIB_NAME)
-#endif //TRDCL_AUTOLINK
+#include <bzs/env/compiler.h>
+#include <bzs/db/protocol/tdap/tdapcapi.h>
+#define TD_CPP_LIB_NAME                                                        \
+    LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR SHARED_LIB_EXTENTION
+#pragma comment(lib, TD_CPP_LIB_NAME)
+#endif // TRDCL_AUTOLINK
 
-#endif //BZS_RTL_TRDCLCPPAUTOLINK_H
+#endif // BZS_RTL_TRDCLCPPAUTOLINK_H

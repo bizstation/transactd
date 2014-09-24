@@ -16,97 +16,95 @@ Each worker shows the connection object pointer.
 */
 struct clientID
 {
-	void* con;
-	char_td reserved[12 - sizeof(void*)];//32bit = 8 64bit = 4
-	char_td     aid[2];
-	ushort_td   id;
+    void* con;
+    char_td reserved[12 - sizeof(void*)]; // 32bit = 8 64bit = 4
+    char_td aid[2];
+    ushort_td id;
 };
-
-
-
 
 class worker
 {
-   int m_id;
-   int m_worktime;
-   static mutex m_mutex;
+    int m_id;
+    int m_worktime;
+    static mutex m_mutex;
+
 public:
-	worker(int id, int worktime):m_id(id),m_worktime(worktime){};
+    worker(int id, int worktime) : m_id(id), m_worktime(worktime){};
 
-	void execute()
-	{
-		try
-		{
-			pooledDbManager db;
-			db.use();
+    void execute()
+    {
+        try
+        {
+            pooledDbManager db;
+            db.use();
 
-			clientID* cid = (clientID*)db.clientID();
+            clientID* cid = (clientID*)db.clientID();
 
-			{
-				mutex::scoped_lock lck(m_mutex);
-				std::cout << "worker strat id = " << m_id
-							<< " connection = 0x" << std::hex << cid->con << std::endl;
-			}
+            {
+                mutex::scoped_lock lck(m_mutex);
+                std::cout << "worker strat id = " << m_id << " connection = 0x"
+                          << std::hex << cid->con << std::endl;
+            }
 
-			Sleep(m_worktime);
-			if (m_id == 4) throw "error";    //throw error example
+            Sleep(m_worktime);
+            if (m_id == 4)
+                throw "error"; // throw error example
 
-			{
-				mutex::scoped_lock lck(m_mutex);
-				std::cout << "worker finish id = " << m_id
-						<< " connection = 0x" << std::hex << cid->con << std::endl;
-			}
+            {
+                mutex::scoped_lock lck(m_mutex);
+                std::cout << "worker finish id = " << m_id << " connection = 0x"
+                          << std::hex << cid->con << std::endl;
+            }
             db.unUse();
-			delete this;
-		}
+            delete this;
+        }
 
-		catch(bzs::rtl::exception& e)
-		{
-			std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
-		}
+        catch (bzs::rtl::exception& e)
+        {
+            std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
+        }
 
-		catch(...)
-		{
-			mutex::scoped_lock lck(m_mutex);
-			std::cout << "worker error id = " << m_id << std::endl;
-			delete this;
-		}
-	}
-
+        catch (...)
+        {
+            mutex::scoped_lock lck(m_mutex);
+            std::cout << "worker error id = " << m_id << std::endl;
+            delete this;
+        }
+    }
 };
 mutex worker::m_mutex;
 
-static const int worktime[10] = {5, 1, 3, 5, 4, 1, 2, 5, 4, 1};
-
+static const int worktime[10] = { 5, 1, 3, 5, 4, 1, 2, 5, 4, 1 };
 
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
-	try
-	{
-		connectParams param(_T("tdap"), _T("localhost"), _T("test"), _T("test"));
-		//create four databases
-		pooledDbManager::reserve(4, param);
+    try
+    {
+        connectParams param(_T("tdap"), _T("localhost"), _T("test"),
+                            _T("test"));
+        // create four databases
+        pooledDbManager::reserve(4, param);
 
-		//Execute 10 workers with each thread.
-		thread_group threads;
-		for (int i=0;i<10;++i)
-		{
-			worker* w = new worker(i+1, worktime[i]*100);
-			threads.create_thread( bind(&worker::execute, w));
-		}
-		threads.join_all();
+        // Execute 10 workers with each thread.
+        thread_group threads;
+        for (int i = 0; i < 10; ++i)
+        {
+            worker* w = new worker(i + 1, worktime[i] * 100);
+            threads.create_thread(bind(&worker::execute, w));
+        }
+        threads.join_all();
 
-		//release all connection.
-		pooledDbManager().reset(0);
+        // release all connection.
+        pooledDbManager().reset(0);
 
-		std::cout << "Connection pool test success." << std::endl;
-		return 0;
-	}
+        std::cout << "Connection pool test success." << std::endl;
+        return 0;
+    }
 
-	catch(bzs::rtl::exception& e)
-	{
-		std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
-	}
-	return 1;
+    catch (bzs::rtl::exception& e)
+    {
+        std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
+    }
+    return 1;
 }

@@ -12,13 +12,12 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "stdafx.h"
 #include "Field.h"
-
 
 STDMETHODIMP CField::get_Text(BSTR* Value)
 {
@@ -77,7 +76,7 @@ STDMETHODIMP CField::put_Vbin(BSTR Value)
 {
 
     int len = ::SysStringByteLen(Value);
-	m_fd.setBin(Value, len);
+    m_fd.setBin(Value, len);
     return S_OK;
 }
 
@@ -86,6 +85,3 @@ STDMETHODIMP CField::put_Vdbl(double Value)
     m_fd.operator=(Value);
     return S_OK;
 }
-
-
-

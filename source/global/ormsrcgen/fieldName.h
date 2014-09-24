@@ -25,20 +25,19 @@ class CFiledName
 {
 
 public:
-	CFiledName(std::string oName, std::string name);
-	bool operator < (const CFiledName& rt) const ;
-	std::string name;
-	std::string orignName;
+    CFiledName(std::string oName, std::string name);
+    bool operator<(const CFiledName& rt) const;
+    std::string name;
+    std::string orignName;
 };
 
 class CFiledNameResolver
 {
-	std::vector<CFiledName> m_list;
+    std::vector<CFiledName> m_list;
 
 public:
-	bool loadFromFile(const std::string& filename);
-	std::string getName(const char* orignName);
-
+    bool loadFromFile(const std::string& filename);
+    std::string getName(const char* orignName);
 };
 
 #endif

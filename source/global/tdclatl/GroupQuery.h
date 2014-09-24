@@ -13,8 +13,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "resource.h"
@@ -24,41 +24,42 @@
 
 using namespace ATL;
 
-
-class ATL_NO_VTABLE CGroupQuery : 
-	public CComObjectRootEx<CComSingleThreadModel>, 
-	public CComCoClass<CGroupQuery, &CLSID_GroupQuery>,
-    public IDispatchImpl<IGroupQuery, &IID_IGroupQuery, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CGroupQuery
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CGroupQuery, &CLSID_GroupQuery>,
+      public IDispatchImpl<IGroupQuery, &IID_IGroupQuery, &LIBID_transactd,
+                           /* wMajor = */ 1, /* wMinor = */ 0>
 {
-	void setResult(IGroupQuery** retVal);
-	std::vector<boost::shared_ptr<bzs::db::protocol::tdap::client::groupFuncBase> > m_funcs;
+    void setResult(IGroupQuery** retVal);
+    std::vector<boost::shared_ptr<
+        bzs::db::protocol::tdap::client::groupFuncBase> > m_funcs;
 
 public:
-	bzs::db::protocol::tdap::client::groupQuery m_gq;
-    CGroupQuery(){}
+    bzs::db::protocol::tdap::client::groupQuery m_gq;
+    CGroupQuery() {}
 
-	DECLARE_REGISTRY_RESOURCEID(IDR_GROUPQUERY)
+    DECLARE_REGISTRY_RESOURCEID(IDR_GROUPQUERY)
 
-    BEGIN_COM_MAP(CGroupQuery) 
-		COM_INTERFACE_ENTRY(IGroupQuery) 
-		COM_INTERFACE_ENTRY(IDispatch) 
-	END_COM_MAP()
+    BEGIN_COM_MAP(CGroupQuery)
+    COM_INTERFACE_ENTRY(IGroupQuery)
+    COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    HRESULT FinalConstruct() {return S_OK;}
+    HRESULT FinalConstruct() { return S_OK; }
 
     void FinalRelease(){};
 
 public:
-  STDMETHOD(KeyField)(BSTR Name, BSTR Name1, BSTR Name2, BSTR Name3, BSTR Name4, BSTR Name5,
-				BSTR Name6, BSTR Name7,	BSTR Name8, BSTR Name9,	BSTR Name10,
-				IGroupQuery** retVal);
-  STDMETHOD(AddFunction)(eGroupFunc func, IFieldNames* targetNames, BSTR resultName
-					, VARIANT q, IGroupQuery** retVal);
+    STDMETHOD(KeyField)(BSTR Name, BSTR Name1, BSTR Name2, BSTR Name3,
+                        BSTR Name4, BSTR Name5, BSTR Name6, BSTR Name7,
+                        BSTR Name8, BSTR Name9, BSTR Name10,
+                        IGroupQuery** retVal);
+    STDMETHOD(AddFunction)(eGroupFunc func, IFieldNames* targetNames,
+                           BSTR resultName, VARIANT q, IGroupQuery** retVal);
 
-  STDMETHOD(Reset)(IGroupQuery** retVal);
-
+    STDMETHOD(Reset)(IGroupQuery** retVal);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(GroupQuery), CGroupQuery)

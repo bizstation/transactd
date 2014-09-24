@@ -14,8 +14,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include <bzs/env/compiler.h>
@@ -33,26 +33,33 @@ namespace rtl
 
 class stringBuffer
 {
-	char* m_ptr;
-	size_t m_len;
-	size_t m_pos;
-	size_t m_curSize;
+    char* m_ptr;
+    size_t m_len;
+    size_t m_pos;
+    size_t m_curSize;
+
 public:
-	stringBuffer(size_t size);
-	~stringBuffer();
-	void clear();
-	size_t alloc(size_t size);
-	size_t realloc(size_t size);
-	char* getPtrA(size_t size);
-	WCHAR* getPtrW(size_t size /* charnum */);
-	size_t size()const{return m_curSize;}
-	template <class T> T* getPtr(size_t size){};
+    stringBuffer(size_t size);
+    ~stringBuffer();
+    void clear();
+    size_t alloc(size_t size);
+    size_t realloc(size_t size);
+    char* getPtrA(size_t size);
+    WCHAR* getPtrW(size_t size /* charnum */);
+    size_t size() const { return m_curSize; }
+    template <class T> T* getPtr(size_t size){};
 };
 
-template <> inline WCHAR* stringBuffer::getPtr<WCHAR>(size_t size){return getPtrW(size);};
-template <> inline char* stringBuffer::getPtr<char>(size_t size){return getPtrA(size);};
+template <> inline WCHAR* stringBuffer::getPtr<WCHAR>(size_t size)
+{
+    return getPtrW(size);
+};
+template <> inline char* stringBuffer::getPtr<char>(size_t size)
+{
+    return getPtrA(size);
+};
 
-}//namespace rtl
-}//namespace bzs
+} // namespace rtl
+} // namespace bzs
 
-#endif //BZS_RTL_STRINGBUFFERS_H
+#endif // BZS_RTL_STRINGBUFFERS_H

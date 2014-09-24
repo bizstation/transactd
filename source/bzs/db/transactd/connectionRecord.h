@@ -14,15 +14,15 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include <bzs/env/compiler.h>
 #include <bzs/env/crosscompile.h>
 
-#pragma option -a-
-pragma_pack1
+#pragma pack(push, 1)
+pragma_pack1;
 
 namespace bzs
 {
@@ -31,39 +31,39 @@ namespace db
 namespace transactd
 {
 namespace connection
-{	
-	struct record
-	{
-		record():conId(0),cid(0),dbid(0)
-		{
-			name[0] = 0x00;
-			status = 0;
-		}
-		__int64 conId;
-		unsigned int cid;
-		unsigned short dbid;
-		char name[64];
-		union
-		{
-			char  status;
-			struct
-			{
-				char inTransaction:1;
-				char inSnapshot   :1;
-				char openNormal   :1;
-				char openReadOnly :1;
-				char openEx       :1;
-				char dummy        :3;
-			};
-		};
-	};
+{
+struct record
+{
+    record() : conId(0), cid(0), dbid(0)
+    {
+        name[0] = 0x00;
+        status = 0;
+    }
+    __int64 conId;
+    unsigned int cid;
+    unsigned short dbid;
+    char name[64];
+    union
+    {
+        char status;
+        struct
+        {
+            char inTransaction : 1;
+            char inSnapshot : 1;
+            char openNormal : 1;
+            char openReadOnly : 1;
+            char openEx : 1;
+            char dummy : 3;
+        };
+    };
+};
 
-}//connection
-}//transactd
-}//db
-}//bzs
-	
-#pragma option -a
-pragma_pop
-	
-#endif //BZS_DB_TRANSACTD_CONNECTIONRECORD_H
+} // connection
+} // transactd
+} // db
+} // bzs
+
+#pragma pack(pop)
+pragma_pop;
+
+#endif // BZS_DB_TRANSACTD_CONNECTIONRECORD_H

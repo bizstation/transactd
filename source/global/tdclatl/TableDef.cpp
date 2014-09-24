@@ -12,8 +12,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "stdafx.h"
@@ -27,19 +27,20 @@ STDMETHODIMP CTableDef::get_FieldDef(short Index, IFieldDef** Value)
     if (Index >= (*m_tabledefPtr)->fieldCount)
         return Error("Invalid index.", IID_ITableDef);
 
-    CComObject<CFieldDef> *piObj;
+    CComObject<CFieldDef>* piObj;
     CComObject<CFieldDef>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_tabledefPtr = m_tabledefPtr;
-		piObj->m_index = Index;
-		IFieldDef* fd;
-		piObj->QueryInterface(IID_IFieldDef, (void**)&fd);
-		_ASSERTE(fd);
-		*Value = piObj;
-	}else
-		*Value = 0;
-   return S_OK;
+    if (piObj)
+    {
+        piObj->m_tabledefPtr = m_tabledefPtr;
+        piObj->m_index = Index;
+        IFieldDef* fd;
+        piObj->QueryInterface(IID_IFieldDef, (void**)&fd);
+        _ASSERTE(fd);
+        *Value = piObj;
+    }
+    else
+        *Value = 0;
+    return S_OK;
 }
 
 STDMETHODIMP CTableDef::get_KeyDef(short Index, IKeyDef** Value)
@@ -47,18 +48,19 @@ STDMETHODIMP CTableDef::get_KeyDef(short Index, IKeyDef** Value)
     if (Index >= (*m_tabledefPtr)->keyCount)
         return Error("Invalid index.", IID_ITableDef);
 
-    CComObject<CKeyDef> *piObj;
+    CComObject<CKeyDef>* piObj;
     CComObject<CKeyDef>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_tabledefPtr = m_tabledefPtr;
-		piObj->m_index = Index;
-		IKeyDef* kb;
-		piObj->QueryInterface(IID_IKeyDef, (void**)&kb);
-		_ASSERTE(kb);
-		*Value = piObj;
-	}else
-		*Value = 0;
+    if (piObj)
+    {
+        piObj->m_tabledefPtr = m_tabledefPtr;
+        piObj->m_index = Index;
+        IKeyDef* kb;
+        piObj->QueryInterface(IID_IKeyDef, (void**)&kb);
+        _ASSERTE(kb);
+        *Value = piObj;
+    }
+    else
+        *Value = 0;
     return S_OK;
 }
 
@@ -130,17 +132,18 @@ STDMETHODIMP CTableDef::put_TableName(BSTR Value)
 
 STDMETHODIMP CTableDef::get_Flags(IFlags** Value)
 {
-    CComObject<CFlags> *piObj;
+    CComObject<CFlags>* piObj;
     CComObject<CFlags>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_flags = &((*m_tabledefPtr)->flags);
-		IFlags* fl;
-		piObj->QueryInterface(IID_IFlags, (void**)&fl);
-		_ASSERTE(fl);
-		*Value = piObj;
-	}else
-		*Value = 0;
+    if (piObj)
+    {
+        piObj->m_flags = &((*m_tabledefPtr)->flags);
+        IFlags* fl;
+        piObj->QueryInterface(IID_IFlags, (void**)&fl);
+        _ASSERTE(fl);
+        *Value = piObj;
+    }
+    else
+        *Value = 0;
     return S_OK;
 }
 
@@ -150,37 +153,37 @@ STDMETHODIMP CTableDef::put_Flags(IFlags* Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableDef::get_PrimaryKeyNum( unsigned char* Value)
+STDMETHODIMP CTableDef::get_PrimaryKeyNum(unsigned char* Value)
 {
     *Value = (*m_tabledefPtr)->primaryKeyNum;
     return S_OK;
 }
 
-STDMETHODIMP CTableDef::put_PrimaryKeyNum( unsigned char Value)
+STDMETHODIMP CTableDef::put_PrimaryKeyNum(unsigned char Value)
 {
     (*m_tabledefPtr)->primaryKeyNum = Value;
     return S_OK;
 }
 
-STDMETHODIMP CTableDef::get_ParentKeyNum( unsigned char* Value)
+STDMETHODIMP CTableDef::get_ParentKeyNum(unsigned char* Value)
 {
     *Value = (*m_tabledefPtr)->parentKeyNum;
     return S_OK;
 }
 
-STDMETHODIMP CTableDef::put_ParentKeyNum( unsigned char Value)
+STDMETHODIMP CTableDef::put_ParentKeyNum(unsigned char Value)
 {
     (*m_tabledefPtr)->parentKeyNum = Value;
     return S_OK;
 }
 
-STDMETHODIMP CTableDef::get_ReplicaKeyNum( unsigned char* Value)
+STDMETHODIMP CTableDef::get_ReplicaKeyNum(unsigned char* Value)
 {
     *Value = (*m_tabledefPtr)->replicaKeyNum;
     return S_OK;
 }
 
-STDMETHODIMP CTableDef::put_ReplicaKeyNum( unsigned char Value)
+STDMETHODIMP CTableDef::put_ReplicaKeyNum(unsigned char Value)
 {
     (*m_tabledefPtr)->replicaKeyNum = Value;
     return S_OK;
@@ -188,17 +191,18 @@ STDMETHODIMP CTableDef::put_ReplicaKeyNum( unsigned char Value)
 
 STDMETHODIMP CTableDef::get_OptionFlags(IFlags** Value)
 {
-    CComObject<CFlags> *piObj;
+    CComObject<CFlags>* piObj;
     CComObject<CFlags>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_flags = &((*m_tabledefPtr)->optionFlags);
-		IFlags* fl;
-		piObj->QueryInterface(IID_IFlags, (void**)&fl);
-		_ASSERTE(fl);
-		*Value = piObj;
-	}else
-		*Value = 0;
+    if (piObj)
+    {
+        piObj->m_flags = &((*m_tabledefPtr)->optionFlags);
+        IFlags* fl;
+        piObj->QueryInterface(IID_IFlags, (void**)&fl);
+        _ASSERTE(fl);
+        *Value = piObj;
+    }
+    else
+        *Value = 0;
 
     return S_OK;
 }
@@ -247,45 +251,42 @@ STDMETHODIMP CTableDef::put_Charsetindex(eCharset Value)
 
 STDMETHODIMP CTableDef::get_FixedRecordLen(unsigned short* Value)
 {
-	*Value =  (*m_tabledefPtr)->fixedRecordLen;
+    *Value = (*m_tabledefPtr)->fixedRecordLen;
     return S_OK;
 }
 
 STDMETHODIMP CTableDef::put_FixedRecordLen(unsigned short Value)
 {
-	(*m_tabledefPtr)->fixedRecordLen = Value;
+    (*m_tabledefPtr)->fixedRecordLen = Value;
     return S_OK;
 }
 
 STDMETHODIMP CTableDef::get_MaxRecordLen(unsigned short* Value)
 {
-	*Value =  (*m_tabledefPtr)->maxRecordLen;
+    *Value = (*m_tabledefPtr)->maxRecordLen;
     return S_OK;
 }
 
 STDMETHODIMP CTableDef::put_MaxRecordLen(unsigned short Value)
 {
-	(*m_tabledefPtr)->maxRecordLen = Value;
+    (*m_tabledefPtr)->maxRecordLen = Value;
     return S_OK;
 }
 
 STDMETHODIMP CTableDef::get_SchemaCodePage(unsigned int* Value)
 {
-	*Value =  (*m_tabledefPtr)->schemaCodePage;
+    *Value = (*m_tabledefPtr)->schemaCodePage;
     return S_OK;
 }
 
 STDMETHODIMP CTableDef::put_SchemaCodePage(unsigned int Value)
 {
-	(*m_tabledefPtr)->schemaCodePage = Value;
+    (*m_tabledefPtr)->schemaCodePage = Value;
     return S_OK;
 }
 
 STDMETHODIMP CTableDef::get_Version(unsigned short* Value)
 {
-	*Value =  (*m_tabledefPtr)->version;
-	return S_OK;
+    *Value = (*m_tabledefPtr)->version;
+    return S_OK;
 }
-
-   
-

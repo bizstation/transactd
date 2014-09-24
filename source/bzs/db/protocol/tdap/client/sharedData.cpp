@@ -21,7 +21,6 @@
 
 #pragma package(smart_init)
 
-
 namespace bzs
 {
 namespace db
@@ -33,26 +32,24 @@ namespace tdap
 namespace client
 {
 
-
-static nsdatabase* g_engins[MAX_BTRENGIN]={0};
+static nsdatabase* g_engins[MAX_BTRENGIN] = { 0 };
 
 nsdatabase** enginsInternal()
 {
-	return  g_engins;
+    return g_engins;
 }
 
 #ifdef ARBTREGN_SHARED_DLL
 nsdatabase** enginsShared()
 {
-	return  g_engins;
+    return g_engins;
 }
 #endif
 
-EnginsFunc engins=enginsInternal;
+EnginsFunc engins = enginsInternal;
 
-
-}//namespace client
-}//namespace tdap
-}//namespace protocol
-}//namespace db
-}//namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs

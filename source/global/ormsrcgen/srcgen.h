@@ -28,43 +28,45 @@
 using namespace bzs::db::protocol::tdap;
 typedef std::vector<std::string> strings;
 
-
 class cppSrcGen
 {
-	const tabledef* m_tabledef;
-	conf_parmas& m_pm;
-	CFiledNameResolver m_fnames;
-	int typeNum(int type);
-	std::string typeName(int typeNum, int len);
-	std::string membaName(fielddef* fielddef);
-	void replace(std::string& source, const char* convTgtStr, const std::string& replaceStr);
-	std::string makeFdiMembaString();
-	std::string makeFdiResolverString();
-	std::string makeDataMembaString();
-	std::string makeDataMembaFuncString();
-	std::string makeDataMembaFuncDecString();
-	std::string makeDataMembaInitString();
-	std::string makeMapReadString();
-	std::string makeMapReadStringLine( int index);
-	std::string makeMapKeyCompString();
-	std::string makeMapKeyValueString();
-	std::string makeMapWriteString();
-	std::string makeMapWriteStringLine( int index);
-	std::string makeMapAutoIncString();
-	std::string makeMapKeyEnumString();
+    const tabledef* m_tabledef;
+    conf_parmas& m_pm;
+    CFiledNameResolver m_fnames;
+    int typeNum(int type);
+    std::string typeName(int typeNum, int len);
+    std::string membaName(fielddef* fielddef);
+    void replace(std::string& source, const char* convTgtStr,
+                 const std::string& replaceStr);
+    std::string makeFdiMembaString();
+    std::string makeFdiResolverString();
+    std::string makeDataMembaString();
+    std::string makeDataMembaFuncString();
+    std::string makeDataMembaFuncDecString();
+    std::string makeDataMembaInitString();
+    std::string makeMapReadString();
+    std::string makeMapReadStringLine(int index);
+    std::string makeMapKeyCompString();
+    std::string makeMapKeyValueString();
+    std::string makeMapWriteString();
+    std::string makeMapWriteStringLine(int index);
+    std::string makeMapAutoIncString();
+    std::string makeMapKeyEnumString();
 
-	std::string makeNameSpaceBegin(const std::vector< std::string>& list);
-	std::string makeNameSpaceEnd(const std::vector< std::string>& list);
-	std::string makeIncludeGurdeString(bool data);
-	std::string makeFileName(bool data, bool header);
-	const char* typeString(int type, int size);
-	std::string membaNameSet(std::string s);
-	std::string membaNameGet(std::string s);
-	bool doMake(const std::string templeHeader, const std::string templeCpp, bool data);
+    std::string makeNameSpaceBegin(const std::vector<std::string>& list);
+    std::string makeNameSpaceEnd(const std::vector<std::string>& list);
+    std::string makeIncludeGurdeString(bool data);
+    std::string makeFileName(bool data, bool header);
+    const char* typeString(int type, int size);
+    std::string membaNameSet(std::string s);
+    std::string membaNameGet(std::string s);
+    bool doMake(const std::string templeHeader, const std::string templeCpp,
+                bool data);
+
 public:
-	cppSrcGen(const tabledef* tabledef, conf_parmas& pm);
+    cppSrcGen(const tabledef* tabledef, conf_parmas& pm);
 
-	void  make();
+    void make();
 };
 
-#endif //SRCGENH
+#endif // SRCGENH

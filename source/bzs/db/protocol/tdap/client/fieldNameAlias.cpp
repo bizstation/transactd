@@ -20,12 +20,12 @@
 #include "fieldNameAlias.h"
 
 #ifdef BCB_32
-#	pragma option push
-#		pragma option -O1
-#		include <boost/unordered_map.hpp>
-#	pragma option pop
+#pragma option push
+#pragma option -O1
+#include <boost/unordered_map.hpp>
+#pragma option pop
 #else
-#	include <boost/unordered_map.hpp>
+#include <boost/unordered_map.hpp>
 #endif
 
 #pragma package(smart_init)
@@ -45,78 +45,79 @@ typedef boost::unordered_map<std::_tstring, std::_tstring> map_type;
 
 struct fdnImple
 {
-	map_type map;
+    map_type map;
 };
 
-
-fdNmaeAlias::fdNmaeAlias():m_imple(new fdnImple){}
+fdNmaeAlias::fdNmaeAlias() : m_imple(new fdnImple)
+{
+}
 
 fdNmaeAlias::fdNmaeAlias(const fdNmaeAlias& r)
-			:m_imple(new fdnImple(*r.m_imple)){}
+    : m_imple(new fdnImple(*r.m_imple))
+{
+}
 
 fdNmaeAlias& fdNmaeAlias::operator=(const fdNmaeAlias& r)
 {
-	if (this != &r)
-		*this->m_imple =  *r.m_imple;
-	return *this;
+    if (this != &r)
+        *this->m_imple = *r.m_imple;
+    return *this;
 }
 
 fdNmaeAlias::~fdNmaeAlias()
 {
-	delete m_imple;
+    delete m_imple;
 }
-
 
 void fdNmaeAlias::set(const _TCHAR* src, const _TCHAR* dst)
 {
-	m_imple->map[src] = dst;
+    m_imple->map[src] = dst;
 }
 
 const _TCHAR* fdNmaeAlias::get(const _TCHAR* src) const
 {
-	try
-	{
-		if (m_imple && m_imple->map.count(src))
-			return m_imple->map.at(src).c_str();
-		return _T("");
-	}
-	catch(...)
-	{
-		return _T("");
-	}
-	return _T("");
-
+    try
+    {
+        if (m_imple && m_imple->map.count(src))
+            return m_imple->map.at(src).c_str();
+        return _T("");
+    }
+    catch (...)
+    {
+        return _T("");
+    }
+    return _T("");
 }
 
 const _TCHAR* fdNmaeAlias::resolv(const _TCHAR* dst) const
 {
-	map_type::const_iterator it = m_imple->map.begin();
-	while(it != m_imple->map.end())
-	{
-		if ((*it).second == dst)
-			return (*it).first.c_str();
-		++it;
-	}
-	return _T("");
-
+    map_type::const_iterator it = m_imple->map.begin();
+    while (it != m_imple->map.end())
+    {
+        if ((*it).second == dst)
+            return (*it).first.c_str();
+        ++it;
+    }
+    return _T("");
 }
 
-void fdNmaeAlias::clear(){m_imple->map.clear();}
+void fdNmaeAlias::clear()
+{
+    m_imple->map.clear();
+}
 
 void fdNmaeAlias::reverseAliasNamesQuery(queryBase& q) const
 {
-	map_type::const_iterator it = m_imple->map.begin();
-	while(it != m_imple->map.end())
-	{
-		q.reverseAliasName((*it).second.c_str(), (*it).first.c_str());
-		++it;
-	}
-}	
+    map_type::const_iterator it = m_imple->map.begin();
+    while (it != m_imple->map.end())
+    {
+        q.reverseAliasName((*it).second.c_str(), (*it).first.c_str());
+        ++it;
+    }
+}
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-
-
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs

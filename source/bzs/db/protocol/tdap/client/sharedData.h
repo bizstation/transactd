@@ -31,27 +31,28 @@ namespace tdap
 namespace client
 {
 
-
-#define MAX_BTRENGIN  2000
+#define MAX_BTRENGIN 2000
 
 class nsdatabase;
 typedef nsdatabase** (*EnginsFunc)();
 
 #ifdef LIB_TDCLCPP
-	PACKAGE void registEnginsPtr(EnginsFunc func);//If use shared dll then you need Call this function. Implemant at trdclengne
+PACKAGE void registEnginsPtr(EnginsFunc func); // If use shared dll then you
+// need Call this function.
+// Implemant at trdclengne
 #else
-	PACKAGE_IMPORT void registEnginsPtr(EnginsFunc func);
-	#ifdef ARBTREGN_SHARED_DLL
-		PACKAGE nsdatabase** enginsShared();
-	#else
-		PACKAGE_IMPORT nsdatabase** enginsShared(); //Implemant at ARBtEgn_Shared.dll
-	#endif
+PACKAGE_IMPORT void registEnginsPtr(EnginsFunc func);
+#ifdef ARBTREGN_SHARED_DLL
+PACKAGE nsdatabase** enginsShared();
+#else
+PACKAGE_IMPORT nsdatabase** enginsShared(); // Implemant at ARBtEgn_Shared.dll
+#endif
 #endif
 
-}//namespace client
-}//namespace tdap
-}//namespace protocol
-}//namespace db
-}//namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 
-#endif//BZS_DB_PROTOCOL_TDAP_CLIENT_SHAREDDATA_H
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_SHAREDDATA_H

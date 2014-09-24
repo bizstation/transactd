@@ -22,38 +22,38 @@
 
 #ifdef _UNICODE
 
-	#define _tcsncpy_s	wcsncpy_s
+#define _tcsncpy_s wcsncpy_s
 
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5) // 4.5 and lesser
-	#define _tcscpy_s	wcscpy_s
-	#define _tcscat_s	wcscat_s
-	typedef wchar_t		_TUCHAR;
+#define _tcscpy_s wcscpy_s
+#define _tcscat_s wcscat_s
+typedef wchar_t _TUCHAR;
 #elseif __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) // 4.6 and grater
-	#define _tcsstr wcsstr
-	#define _tcscmp wcscmp
-	#define _tcschr wcschr
-	#define _tcsrchr wcsrchr
-	#define _tcsncpy wcsncpy
-	#define _tcsicmp _wcsicmp
+#define _tcsstr wcsstr
+#define _tcscmp wcscmp
+#define _tcschr wcschr
+#define _tcsrchr wcsrchr
+#define _tcsncpy wcsncpy
+#define _tcsicmp _wcsicmp
 #endif
 
 #else // NOT _UNICODE
 
-	#define _tcsncpy_s	strncpy_s
+#define _tcsncpy_s strncpy_s
 
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5) // 4.5 and lesser
-	#define _tcscpy_s	strcpy_s
-	#define _tcscat_s	strcat_s
-	typedef char		_TUCHAR;
+#define _tcscpy_s strcpy_s
+#define _tcscat_s strcat_s
+typedef char _TUCHAR;
 #elif __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) // 4.6 and grater
-	#define _tcsstr strstr
-	#define _tcscmp strcmp
-	#define _tcschr strchr
-	#define	_tcsrchr strrchr
-	#define	_tcsncpy strncpy
-	#define	_tcsicmp strcasecmp
+#define _tcsstr strstr
+#define _tcscmp strcmp
+#define _tcschr strchr
+#define _tcsrchr strrchr
+#define _tcsncpy strncpy
+#define _tcsicmp strcasecmp
 #endif
 
 #endif // _UNICODE
 #endif // __MINGW32__ && defined(__GNUC__)
-#endif //BZS_ENV_TCHARMINGW_H
+#endif // BZS_ENV_TCHARMINGW_H

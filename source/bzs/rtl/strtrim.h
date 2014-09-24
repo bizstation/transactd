@@ -14,8 +14,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include <bzs/env/compiler.h>
@@ -24,23 +24,21 @@ namespace bzs
 namespace rtl
 {
 
-PACKAGE  char*     strtrimA(char* str);
-PACKAGE  wchar_t*  wcstrim(wchar_t* str);
-PACKAGE  char*     strltrimA(char* str);
-PACKAGE  wchar_t*  wcsltrim(wchar_t* str);
+PACKAGE char* strtrimA(char* str);
+PACKAGE wchar_t* wcstrim(wchar_t* str);
+PACKAGE char* strltrimA(char* str);
+PACKAGE wchar_t* wcsltrim(wchar_t* str);
 #ifdef _UNICODE
-	PACKAGE  int   wcslen_a(wchar_t* str); //half charctor length
+PACKAGE int wcslen_a(wchar_t* str); // half charctor length
 
-	#define strtrim wcstrim
-	#define strltrim wcsltrim
+#define strtrim wcstrim
+#define strltrim wcsltrim
 #else
-	#define strtrim strtrimA
-	#define strltrim strltrimA
+#define strtrim strtrimA
+#define strltrim strltrimA
 #endif
 
-}//namespace rtl
-}//namespace bzs
+} // namespace rtl
+} // namespace bzs
 
-
-#endif//BZS_RTL_STRTRIM_H
- 
+#endif // BZS_RTL_STRTRIM_H

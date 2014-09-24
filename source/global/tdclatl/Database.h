@@ -13,8 +13,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "resource.h"
@@ -22,63 +22,71 @@
 #include <bzs/db/protocol/tdap/client/database.h>
 #include "_IDatabaseEvents_CP.H"
 
-
-
 using namespace ATL;
 
 class CDbDef;
 
+void __stdcall onCopyData(bzs::db::protocol::tdap::client::database* db,
+                          int recordCount, int count, bool& cancel);
+bool __stdcall onDeleteRecord(bzs::db::protocol::tdap::client::database* db,
+                              bzs::db::protocol::tdap::client::table* tb,
+                              bool inkey);
 
-void __stdcall onCopyData(bzs::db::protocol::tdap::client::database *db, int recordCount, int count, bool &cancel);
-bool __stdcall onDeleteRecord(bzs::db::protocol::tdap::client::database *db,
-					bzs::db::protocol::tdap::client::table* tb, bool inkey);
+class ATL_NO_VTABLE CDatabase
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CDatabase, &CLSID_Database>,
+      public IDispatchImpl<IDatabase, &IID_IDatabase, &LIBID_transactd,
+                           /* wMajor = */ 1, /* wMinor = */ 0>,
+      public IConnectionPointContainerImpl<CDatabase>,
+      public CProxy_IDatabaseEvents<CDatabase>
 
-
-class ATL_NO_VTABLE CDatabase : 
-	public CComObjectRootEx<CComSingleThreadModel>,
-    public CComCoClass<CDatabase, &CLSID_Database>,
-	public IDispatchImpl<IDatabase, &IID_IDatabase, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>,
-	public IConnectionPointContainerImpl<CDatabase>,
-	public CProxy_IDatabaseEvents<CDatabase>
-	
 {
     bzs::db::protocol::tdap::client::database* m_db;
     bool m_IsAtatchOK;
-	bool m_needRelese;
+    bool m_needRelese;
 
 public:
-    CDatabase():m_needRelese(true),m_IsAtatchOK(true)
+    CDatabase() : m_needRelese(true), m_IsAtatchOK(true)
     {
         m_db = bzs::db::protocol::tdap::client::database::create();
-		m_db->setOptionalData(this);
-		m_db->setOnCopyData(onCopyData);
-		m_db->setOnDeleteRecord(onDeleteRecord);		
+        m_db->setOptionalData(this);
+        m_db->setOnCopyData(onCopyData);
+        m_db->setOnDeleteRecord(onDeleteRecord);
     }
 
-	DECLARE_REGISTRY_RESOURCEID(IDR_DATABASE)
+    DECLARE_REGISTRY_RESOURCEID(IDR_DATABASE)
 
-	BEGIN_COM_MAP(CDatabase) 
-		COM_INTERFACE_ENTRY(IDatabase) 
-		COM_INTERFACE_ENTRY(IDispatch) 
-		COM_INTERFACE_ENTRY(IConnectionPointContainer)
-	END_COM_MAP()
+    BEGIN_COM_MAP(CDatabase)
+    COM_INTERFACE_ENTRY(IDatabase)
+    COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(IConnectionPointContainer)
+    END_COM_MAP()
 
-	BEGIN_CONNECTION_POINT_MAP(CDatabase)
-		CONNECTION_POINT_ENTRY(__uuidof(_IDatabaseEvents))
-	END_CONNECTION_POINT_MAP()
+    BEGIN_CONNECTION_POINT_MAP(CDatabase)
+    CONNECTION_POINT_ENTRY(__uuidof(_IDatabaseEvents))
+    END_CONNECTION_POINT_MAP()
 
-	DECLARE_PROTECT_FINAL_CONSTRUCT()
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    HRESULT FinalConstruct() {return S_OK;}
+    HRESULT FinalConstruct() { return S_OK; }
 
-	void FinalRelease(){if (m_needRelese && m_db) m_db->release();};
+    void FinalRelease()
+    {
+        if (m_needRelese && m_db)
+            m_db->release();
+    };
+
 public:
-	bzs::db::protocol::tdap::client::database* database(){return m_db;};
+    bzs::db::protocol::tdap::client::database* database() { return m_db; };
 
-    STDMETHOD(Open)(BSTR Uri, eSchemaType SchemaType, eOpenMode Mode, BSTR Dir, BSTR Ownername, VARIANT_BOOL* Param6);
+    STDMETHOD(Open)(BSTR Uri, eSchemaType SchemaType, eOpenMode Mode, BSTR Dir,
+                    BSTR Ownername, VARIANT_BOOL* Param6);
     STDMETHOD(get_DbDef)(IDbDef** Value);
-    STDMETHOD(OpenTable)(VARIANT TableID, eOpenMode Mode, VARIANT_BOOL AutoCreate, BSTR OwnerName, BSTR Uri, ITable** ret);
-    STDMETHOD(AtatchDatabase)(__int64* nativeDatabase,VARIANT_BOOL noRelease = 0);
+    STDMETHOD(OpenTable)(VARIANT TableID, eOpenMode Mode,
+                         VARIANT_BOOL AutoCreate, BSTR OwnerName, BSTR Uri,
+                         ITable** ret);
+    STDMETHOD(AtatchDatabase)(__int64* nativeDatabase,
+                              VARIANT_BOOL noRelease = 0);
     STDMETHOD(get_RootDir)(BSTR* Value);
     STDMETHOD(put_RootDir)(BSTR Value);
     STDMETHOD(get_Stat)(eStatus* Value);
@@ -93,7 +101,8 @@ public:
     STDMETHOD(DropTable)(BSTR TableName);
     STDMETHOD(Create)(BSTR URI, int type);
     STDMETHOD(Close)();
-    STDMETHOD(Connect)(BSTR URI, VARIANT_BOOL newConnection, VARIANT_BOOL* Value);
+    STDMETHOD(Connect)(BSTR URI, VARIANT_BOOL newConnection,
+                       VARIANT_BOOL* Value);
     STDMETHOD(Disconnect)(BSTR URI, VARIANT_BOOL* Param2);
     STDMETHOD(get_EnableTrn)(VARIANT_BOOL* Value);
     STDMETHOD(GetBtrVersion)(int index, ITdVersion** ver);
@@ -116,25 +125,26 @@ public:
     STDMETHOD(TdapErr)(OLE_HANDLE hWnd, BSTR* Value);
     STDMETHOD(Clone)(IDatabase** Value);
     STDMETHOD(AssignSchemaData)(IDbDef* Src, short* Value);
-    STDMETHOD(Continuous)(eContinusOpr Op, VARIANT_BOOL inclideRepfile, eContinusStatus* Value);
-    STDMETHOD(ConvertTable)(short TableIndex, VARIANT_BOOL Turbo, BSTR OwnerName);
-    STDMETHOD(CopyTableData)(ITable* Dest, ITable* Src, VARIANT_BOOL Turbo, int Offset, short KeyNum, int MaxSkip, short* Value);
+    STDMETHOD(Continuous)(eContinusOpr Op, VARIANT_BOOL inclideRepfile,
+                          eContinusStatus* Value);
+    STDMETHOD(ConvertTable)(short TableIndex, VARIANT_BOOL Turbo,
+                            BSTR OwnerName);
+    STDMETHOD(CopyTableData)(ITable* Dest, ITable* Src, VARIANT_BOOL Turbo,
+                             int Offset, short KeyNum, int MaxSkip,
+                             short* Value);
     STDMETHOD(CreateTable)(short FileNum, BSTR Uri, VARIANT_BOOL* Value);
     STDMETHOD(ExistsTableFile)(short TableIndex, BSTR OwnerName);
     STDMETHOD(GetTableUri)(short FileNum, BSTR* Value);
     STDMETHOD(get_IsOpened)(VARIANT_BOOL* Value);
     STDMETHOD(get_TableReadOnly)(VARIANT_BOOL* Value);
     STDMETHOD(put_TableReadOnly)(VARIANT_BOOL Value);
-    STDMETHOD(SwapTablename)(BSTR Uri1,  BSTR Uri2);
-	STDMETHOD(get_ClientID)(short* Value);
-	STDMETHOD(get_RefCount)(int* Value);
-	STDMETHOD(get_TrnsactionFlushWaitStatus)(VARIANT_BOOL* Value);
-	STDMETHOD(put_ExecCodePage)(unsigned int Value);
-    STDMETHOD(get_ExecCodePage)(unsigned int* Value);	
-    STDMETHOD(get_MaxTables)( int* Value);	
-
-	
-
+    STDMETHOD(SwapTablename)(BSTR Uri1, BSTR Uri2);
+    STDMETHOD(get_ClientID)(short* Value);
+    STDMETHOD(get_RefCount)(int* Value);
+    STDMETHOD(get_TrnsactionFlushWaitStatus)(VARIANT_BOOL* Value);
+    STDMETHOD(put_ExecCodePage)(unsigned int Value);
+    STDMETHOD(get_ExecCodePage)(unsigned int* Value);
+    STDMETHOD(get_MaxTables)(int* Value);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)

@@ -24,89 +24,86 @@
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
-
-
 static const char_td keynum_group = 1;
 static const char_td primary_key = 0;
 
 void showConsole(recordset& rowset)
 {
-	const fielddefs& fields = *rowset.fieldDefs();
-	for (int j=0;j<(int)fields.size();++j)
-		std::tcout << fields[j].name()  << _T("\t");
-	std::tcout << _T("\n");
+    const fielddefs& fields = *rowset.fieldDefs();
+    for (int j = 0; j < (int)fields.size(); ++j)
+        std::tcout << fields[j].name() << _T("\t");
+    std::tcout << _T("\n");
 
-	for (int i=0;i<(int)rowset.size();++i)
-	{
-		row& m = rowset[i];
-		for (int j=0;j<(int)m.size();++j)
-		{
-			std::tcout << m[(short)j].c_str()  << _T("\t");
-			if (j == (int)m.size() -1)
-			   std::tcout << _T("\n");
-		}
-	}
+    for (int i = 0; i < (int)rowset.size(); ++i)
+    {
+        row& m = rowset[i];
+        for (int j = 0; j < (int)m.size(); ++j)
+        {
+            std::tcout << m[(short)j].c_str() << _T("\t");
+            if (j == (int)m.size() - 1)
+                std::tcout << _T("\n");
+        }
+    }
 }
 
-void execute(recordset& rs, activeTable& atu, activeTable& atg, activeTable& ate)
+void execute(recordset& rs, activeTable& atu, activeTable& atg,
+             activeTable& ate)
 {
-	query query;
+    query query;
 
-	rs.clear();
-	atu.alias(_T("名前"), _T("name"));
+    rs.clear();
+    atu.alias(_T("名前"), _T("name"));
 
-	query.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), 15);
-	atu.index(0).keyValue(1).read(rs, query);
-	
-	/* Join extention::comment
-	   Use "joinHasOneOrHasMany" optimaize option. 
-	   Because this join is has one and atu.index(0) is unique key,
-	   then join key values(id) are all unique.
-	*/ 
-	query.reset().select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany);
-	ate.index(0).join(rs, query, _T("id"));
+    query.select(_T("id"), _T("name"), _T("group"))
+        .where(_T("id"), _T("<="), 15);
+    atu.index(0).keyValue(1).read(rs, query);
 
-	//Join group::name
-	atg.alias(_T("name"), _T("group_name"));
-	query.reset().select(_T("group_name"));
-	atg.index(0).join(rs, query, _T("group"));
+    /* Join extention::comment
+       Use "joinHasOneOrHasMany" optimaize option.
+       Because this join is has one and atu.index(0) is unique key,
+       then join key values(id) are all unique.
+    */
+    query.reset().select(_T("comment")).optimize(
+        queryBase::joinHasOneOrHasMany);
+    ate.index(0).join(rs, query, _T("id"));
 
+    // Join group::name
+    atg.alias(_T("name"), _T("group_name"));
+    query.reset().select(_T("group_name"));
+    atg.index(0).join(rs, query, _T("group"));
 }
 
-#pragma warning(disable:4101)
+#pragma warning(disable : 4101)
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
-	database_ptr db = createDatabaseObject();
-	try
-	{
-		connectParams param(_T("tdap"), _T("localhost"), _T("querytest"), _T("test.bdf"));
-		param.setMode(TD_OPEN_NORMAL);
-		if (prebuiltData(db, param, false, 20))
-		{
-			std::tcout << "The query data build error." << std::endl;
-			return 1;
-		}
-		activeTable atu(db, _T("user"));
-		activeTable atg(db, _T("groups"));
-		activeTable ate(db, _T("extention"));
+    database_ptr db = createDatabaseObject();
+    try
+    {
+        connectParams param(_T("tdap"), _T("localhost"), _T("querytest"),
+                            _T("test.bdf"));
+        param.setMode(TD_OPEN_NORMAL);
+        if (prebuiltData(db, param, false, 20))
+        {
+            std::tcout << "The query data build error." << std::endl;
+            return 1;
+        }
+        activeTable atu(db, _T("user"));
+        activeTable atg(db, _T("groups"));
+        activeTable ate(db, _T("extention"));
 
-		recordset rs;
-		execute(rs, atu, atg, ate);
-		showConsole(rs);
-		std::cout << "Execute query success. rs.size = " << rs.size() << std::endl;
-		return 0;
-	}
+        recordset rs;
+        execute(rs, atu, atg, ate);
+        showConsole(rs);
+        std::cout << "Execute query success. rs.size = " << rs.size()
+                  << std::endl;
+        return 0;
+    }
 
-	catch(bzs::rtl::exception& e)
-	{
-		std::tcout << *bzs::rtl::getMsg(e) << std::endl;
-	}
-	return 1;
+    catch (bzs::rtl::exception& e)
+    {
+        std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+    }
+    return 1;
 }
-#pragma warning(default:4101)
-
-
-
-
-
+#pragma warning(default : 4101)

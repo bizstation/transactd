@@ -1,6 +1,5 @@
-#pragma once
-#ifndef	BZS_TEST_BENCH_WORKERBASE_H
-#define	BZS_TEST_BENCH_WORKERBASE_H
+#ifndef BZS_TEST_BENCH_WORKERBASE_H
+#define BZS_TEST_BENCH_WORKERBASE_H
 /* =================================================================
  Copyright (C) 20014 BizStation Corp All rights reserved.
 
@@ -34,57 +33,56 @@ namespace worker
 extern int g_bench_signal;
 
 #define BENCH_SIGNAL_BREAK 0
-#define BENCH_SIGNAL_GO    1
+#define BENCH_SIGNAL_GO 1
 #define BENCH_SIGNAL_GREEN 2
-#define BENCH_SIGNAL_BLUE  3
-
+#define BENCH_SIGNAL_BLUE 3
 
 class workerBase
 {
 protected:
-	int m_id;
-	int m_loopCount;
-	int m_functionNumber;
-	boost::barrier& m_sync;
-	static boost::mutex m_mutex;
-	int m_bresult;
-	virtual void doExecute() = 0;
-	virtual void endExecute(){};
-	virtual void initExecute(){};
-public:
-	workerBase(int id, int loopCount, int functionNumber, boost::barrier& sync)
-			:m_id(id),m_loopCount(loopCount),m_functionNumber(functionNumber),m_sync(sync){};
-	virtual ~workerBase(){}
+    int m_id;
+    int m_loopCount;
+    int m_functionNumber;
+    boost::barrier& m_sync;
+    static boost::mutex m_mutex;
+    int m_bresult;
+    virtual void doExecute() = 0;
+    virtual void endExecute(){};
+    virtual void initExecute(){};
 
-	void execute()
-	{
-		initExecute();
-		bzs::rtl::benchmarkMt bm;
-		m_sync.wait();
-		
-		bm.start();
-		m_bresult = 0;
-		while(g_bench_signal)
-		{
-			doExecute();
-			if (g_bench_signal == BENCH_SIGNAL_GREEN)
-				++m_bresult;
-			else if (g_bench_signal == BENCH_SIGNAL_BLUE)
-			{
-				m_bresult = bm.end();
-				break;
-			}
-		}
-		
-		endExecute();
-	}
-	int total()const {return m_bresult;}
+public:
+    workerBase(int id, int loopCount, int functionNumber, boost::barrier& sync)
+        : m_id(id), m_loopCount(loopCount), m_functionNumber(functionNumber),
+          m_sync(sync){};
+    virtual ~workerBase() {}
+
+    void execute()
+    {
+        initExecute();
+        bzs::rtl::benchmarkMt bm;
+        m_sync.wait();
+
+        bm.start();
+        m_bresult = 0;
+        while (g_bench_signal)
+        {
+            doExecute();
+            if (g_bench_signal == BENCH_SIGNAL_GREEN)
+                ++m_bresult;
+            else if (g_bench_signal == BENCH_SIGNAL_BLUE)
+            {
+                m_bresult = bm.end();
+                break;
+            }
+        }
+
+        endExecute();
+    }
+    int total() const { return m_bresult; }
 };
 
+} // namespace worker
+} // namespace test
+} // namespace bzs
 
-}// namespace worker
-}// namespace test
-}// namespace bzs
-
-#endif	//BZS_TEST_BENCH_WORKERBASE_H
-
+#endif // BZS_TEST_BENCH_WORKERBASE_H

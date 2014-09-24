@@ -1,5 +1,5 @@
-#ifndef	BZS_DB_PROTOCOL_TDAP_TDAPSCHEMA_H
-#define	BZS_DB_PROTOCOL_TDAP_TDAPSCHEMA_H
+#ifndef BZS_DB_PROTOCOL_TDAP_TDAPSCHEMA_H
+#define BZS_DB_PROTOCOL_TDAP_TDAPSCHEMA_H
 /* =================================================================
  Copyright (C) 2000-2013 BizStation Corp All rights reserved.
 
@@ -36,112 +36,118 @@ namespace protocol
 namespace tdap
 {
 
-namespace client{class dbdef;}
+namespace client
+{
+class dbdef;
+}
 
-#pragma option -a1
-pragma_pack1
+#pragma pack(push, 1)
+pragma_pack1;
 
 using std::min;
 using std::max;
 
 #ifdef SWIG
-/* For swig interface
-Export names .
-*/
-union FLAGS
-{
-	unsigned short all;
-	unsigned short bit0 : 1;
-	unsigned short bit1 : 1;
-	unsigned short bit2 : 1;
-	unsigned short bit3 : 1;
-	unsigned short bit4 : 1;
-	unsigned short bit5 : 1;
-	unsigned short bit6 : 1;
-	unsigned short bit7 : 1;
-	unsigned short bit8 : 1;
-	unsigned short bit9 : 1;
-	unsigned short bitA : 1;
-	unsigned short bitB : 1;
-	unsigned short bitC : 1;
-	unsigned short bitD : 1;
-	unsigned short bitE : 1;
-	unsigned short bitF : 1;
-};
-#else
-union FLAGS
-{
-	unsigned short all;
 
-	struct
-	{
-		unsigned short bit0 : 1;
-		unsigned short bit1 : 1;
-		unsigned short bit2 : 1;
-		unsigned short bit3 : 1;
-		unsigned short bit4 : 1;
-		unsigned short bit5 : 1;
-		unsigned short bit6 : 1;
-		unsigned short bit7 : 1;
-		unsigned short bit8 : 1;
-		unsigned short bit9 : 1;
-		unsigned short bitA : 1;
-		unsigned short bitB : 1;
-		unsigned short bitC : 1;
-		unsigned short bitD : 1;
-		unsigned short bitE : 1;
-		unsigned short bitF : 1;
-	};
+/* For swig interface
+ Export names .
+ */
+union FLAGS
+{
+    unsigned short all;
+
+    unsigned short bit0 : 1;
+    unsigned short bit1 : 1;
+    unsigned short bit2 : 1;
+    unsigned short bit3 : 1;
+    unsigned short bit4 : 1;
+    unsigned short bit5 : 1;
+    unsigned short bit6 : 1;
+    unsigned short bit7 : 1;
+    unsigned short bit8 : 1;
+    unsigned short bit9 : 1;
+    unsigned short bitA : 1;
+    unsigned short bitB : 1;
+    unsigned short bitC : 1;
+    unsigned short bitD : 1;
+    unsigned short bitE : 1;
+    unsigned short bitF : 1;
 };
-#endif
+#else // NOT SWIG
+
+union FLAGS
+{
+    unsigned short all;
+
+    struct
+    {
+        unsigned short bit0 : 1;
+        unsigned short bit1 : 1;
+        unsigned short bit2 : 1;
+        unsigned short bit3 : 1;
+        unsigned short bit4 : 1;
+        unsigned short bit5 : 1;
+        unsigned short bit6 : 1;
+        unsigned short bit7 : 1;
+        unsigned short bit8 : 1;
+        unsigned short bit9 : 1;
+        unsigned short bitA : 1;
+        unsigned short bitB : 1;
+        unsigned short bitC : 1;
+        unsigned short bitD : 1;
+        unsigned short bitE : 1;
+        unsigned short bitF : 1;
+    };
+};
+#endif // NOT SWIG
+
 /* brief Key infomation for create table operation
  */
 struct keySpec
 {
-	ushort_td keyPos;     /* key position */
-	ushort_td keyLen;     /* key length */
-	FLAGS keyFlag;        /* key flag */
-	uint_td keyCount;     /* key count */
-	uchar_td keyType;     /* key type of extended */
-	uchar_td nullValue;   /* value of null */
-	uchar_td reserve2[2]; /* reserved */
-	uchar_td keyNo;       /* fixed key number */
-	uchar_td acsNo;       /* no acs */
-};                        /* total        16 byte */
+    ushort_td keyPos; /* key position */
+    ushort_td keyLen; /* key length */
+    FLAGS keyFlag; /* key flag */
+    uint_td keyCount; /* key count */
+    uchar_td keyType; /* key type of extended */
+    uchar_td nullValue; /* value of null */
+    uchar_td reserve2[2]; /* reserved */
+    uchar_td keyNo; /* fixed key number */
+    uchar_td acsNo; /* no acs */
+}; /* total        16 byte */
 
 /* brief File infomation for create table operation
  */
 struct fileSpec
 {
-	ushort_td recLen;     /* record length */
-	ushort_td pageSize;   /* page sise */
-	ushort_td indexCount; /* index count */
-	uint_td recCount;     /* record count for stat */
-	FLAGS fileFlag;       /* file flags */
-	uchar_td reserve1[2]; /* reserved */
-	ushort_td preAlloc;   /* page allocation count */
-	keySpec keySpecs[1];  /* key specs */
-};                        /* total  ? byte */
+    ushort_td recLen; /* record length */
+    ushort_td pageSize; /* page sise */
+    ushort_td indexCount; /* index count */
+    uint_td recCount; /* record count for stat */
+    FLAGS fileFlag; /* file flags */
+    uchar_td reserve1[2]; /* reserved */
+    ushort_td preAlloc; /* page allocation count */
+    keySpec keySpecs[1]; /* key specs */
+}; /* total  ? byte */
 
 /* brief A key segment infomation
  */
 struct keySegment
 {
-	uchar_td fieldNum;      // Refarence field buymber
-	FLAGS flags;            // key flags. 11 to 15bit is not use.
-
+    uchar_td fieldNum; // Refarence field buymber
+    FLAGS flags; // key flags. 11 to 15bit is not use.
 };
 
 /* brief A key infomation
  */
 #define MAX_KEY_SEGMENT 8
+
 struct keydef
 {
-	uchar_td segmentCount;					// Number of segment
-	keySegment segments[MAX_KEY_SEGMENT];   // key segments . max 8 segments
-	uchar_td keyNumber;						// key number
+    uchar_td segmentCount; // Number of segment
+    keySegment segments[MAX_KEY_SEGMENT]; // key segments . max 8 segments
+    uchar_td keyNumber; // key number
 };
-// 26byte
 
 static const int MYSQL_FDNAME_SIZE = 64;
 static const int MYSQL_TBNAME_SIZE = 64;
@@ -150,11 +156,10 @@ static const int FIELD_NAME_SIZE = MYSQL_FDNAME_SIZE;
 static const int TABLE_NAME_SIZE = 32;
 static const int FILE_NAME_SIZE = 266;
 
-
-#if (defined(__x86_32__) || __APPLE_32__ )
-static const int TABLEDEF_FILLER_SIZE = 21;//25-4;
+#if (defined(__x86_32__) || __APPLE_32__)
+static const int TABLEDEF_FILLER_SIZE = 21; // 25-4;
 #else
-static const int TABLEDEF_FILLER_SIZE = 9;//17-8;
+static const int TABLEDEF_FILLER_SIZE = 9; // 17-8;
 #endif
 
 #ifndef MYSQL_DYNAMIC_PLUGIN
@@ -164,456 +169,478 @@ static const int TABLEDEF_FILLER_SIZE = 9;//17-8;
 PACKAGE const _TCHAR* getTypeName(short type);
 
 /* A field alignment that specified by a type is returned.
-*/
+ */
 PACKAGE int getTypeAlign(short type);
 
-/*  calcurate byts of char type by charctor number.
-*/
-PACKAGE ushort_td lenByCharnum(uchar_td type, uchar_td charsetIndex
-													, ushort_td charnum);
+/* calcurate byts of char type by charctor number.
+ */
+PACKAGE ushort_td
+    lenByCharnum(uchar_td type, uchar_td charsetIndex, ushort_td charnum);
 
-#endif
+#endif // MYSQL_DYNAMIC_PLUGIN
 
-/* Is field type string ?*/
+/* Is field type string ? */
 PACKAGE bool isStringType(uchar_td type);
 
 /* Mark of ** that BizStation Corp internal use only.
  */
-template <int N>
-struct fielddef_t
+template <int N> struct fielddef_t
 {
 protected:
-	char m_name[N];
+    char m_name[N];
 
 public:
-	uchar_td type;          // type (zstring integer)
-	ushort_td len;          // length
-	uchar_td decimals;      // ** decimals
-	char viewNum;           // ** An order of a list view column
-	ushort_td viewWidth;    // ** view width pix
-	double max;             // ** max value
-	double min;             // ** min value
-	double defValue;        // ** default value
-	uchar_td lookTable;     // ** reference table number
-	uchar_td lookField;     // ** field number of reference table
-	uchar_td lookFields[3]; // ** View fields of reference    bit567
-	ushort_td pos;          // Field offset position from record image
-	ushort_td defViewWidth; // ** default view wifth
+    uchar_td type; // type (zstring integer)
+    ushort_td len; // length
+    uchar_td decimals; // ** decimals
+    char viewNum; // ** An order of a list view column
+    ushort_td viewWidth; // ** view width pix
+    double max; // ** max value
+    double min; // ** min value
+    double defValue; // ** default value
+    uchar_td lookTable; // ** reference table number
+    uchar_td lookField; // ** field number of reference table
+    uchar_td lookFields[3]; // ** View fields of reference    bit567
+    ushort_td pos; // Field offset position from record image
+    ushort_td defViewWidth; // ** default view wifth
 
 protected:
-	char m_chainChar[2];
+    char m_chainChar[2];
 
 public:
-	ushort_td ddfid;       // ddf field id
-	ushort_td filterId;    // ** filter id for reference
-	uchar_td filterKeynum; // ** key number for reference
-	uchar_td nullValue;    // null value
-	ushort_td userOption;  // ** option
-	uchar_td lookDBNum;    // ** database number of reference bitD
-	ushort_td keylen;      // key length for mysql of part key
+    ushort_td ddfid; // ddf field id
+    ushort_td filterId; // ** filter id for reference
+    uchar_td filterKeynum; // ** key number for reference
+    uchar_td nullValue; // null value
+    ushort_td userOption; // ** option
+    uchar_td lookDBNum; // ** database number of reference bitD
+    ushort_td keylen; // key length for mysql of part key
 
 protected:
-	uchar_td m_charsetIndex; // charctor set index of this field data
-	uint_td m_schemaCodePage;
+    uchar_td m_charsetIndex; // charctor set index of this field data
+    uint_td m_schemaCodePage;
 
 public:
-	FLAGS enableFlags;     // ** enable flags. see below
+    FLAGS enableFlags; // ** enable flags. see below
 
 private:
-	inline void setSchemaCodePage(uint_td v){m_schemaCodePage = v;};
-	friend class client::dbdef;
+    inline void setSchemaCodePage(uint_td v) { m_schemaCodePage = v; };
+    friend class client::dbdef;
 };
 
- /* This is only for BizStation Corp internal.
-	 enableFlags
-	 bit0  show list view
-	 bit1  enable max value
-	 bit2  enable min value
-	 bit3  enable default value
-	 bit4  enable lookTable
-	 bit5  enable lookFields[0]
-	 bit6  enable lookFields[1]
-	 bit7  enable lookFields[2]
-	 bit8  It append to a front column.
-	 bit9  enable reference filter
-	 bitA  call field name rename function.
-	 bitB  disbale export this field data.
-	 bitC  not show list view but add select field list
-	 bitD  enable lookDBNum
-	 bitE  field value is changed
+/* This is only for BizStation Corp internal.
+ enableFlags
+ bit0  show list view
+ bit1  enable max value
+ bit2  enable min value
+ bit3  enable default value
+ bit4  enable lookTable
+ bit5  enable lookFields[0]
+ bit6  enable lookFields[1]
+ bit7  enable lookFields[2]
+ bit8  It append to a front column.
+ bit9  enable reference filter
+ bitA  call field name rename function.
+ bitB  disbale export this field data.
+ bitC  not show list view but add select field list
+ bitD  enable lookDBNum
+ bitE  field value is changed
  */
 
 typedef fielddef_t<MYSQL_FDNAME_SIZE> fielddef_t_my;
 typedef fielddef_t<PERVASIVE_FDNAME_SIZE> fielddef_t_pv;
 
-
 #ifdef SWIG
-	%template(fielddef_t_my) fielddef_t<MYSQL_FDNAME_SIZE>;
-#endif
-
+%template(fielddef_t_my) fielddef_t<MYSQL_FDNAME_SIZE>;
+#endif // SWIG
 
 struct PACKAGE fielddef : public fielddef_t_my
 {
 #ifdef _UNICODE
-	const wchar_t* name() const ;               // Return a field name.
-	const wchar_t* name(wchar_t* buf) const ;   // Return a field name to bufffer .
-	const wchar_t* chainChar() const ;          // ** internal use only.
-	void setName(const wchar_t* s);
-	void setChainChar(const wchar_t* s);        // ** internal use only.
-#else
+    const wchar_t* name() const; // Return a field name.
+    const wchar_t* name(wchar_t* buf) const; // Return a field name to bufffer .
+    const wchar_t* chainChar() const; // ** internal use only.
+    void setName(const wchar_t* s);
+    void setChainChar(const wchar_t* s); // ** internal use only.
+#else // NOT _UNICODE
 
 #ifdef MYSQL_DYNAMIC_PLUGIN
-	inline const char* name() const {return m_name;};
 
-	inline const char* chainChar() const {return m_chainChar;};
+    inline const char* name() const { return m_name; };
 
-	inline void setName(const char* s) {strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);};
+    inline const char* chainChar() const { return m_chainChar; };
 
-	inline void setChainChar(const char* s) {strncpy_s(m_chainChar, 2, s, sizeof(m_chainChar) - 1);};
+    inline void setName(const char* s)
+    {
+        strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);
+    };
 
-#else
-	const char* name() const;
-	const char* name(char* buf) const;
-	const char* chainChar() const;
-	void setName(const char* s);
-	void setChainChar(const char* s);
-#endif //MYSQL_DYNAMIC_PLUGIN
-#endif //_UNICODE
+    inline void setChainChar(const char* s)
+    {
+        strncpy_s(m_chainChar, 2, s, sizeof(m_chainChar) - 1);
+    };
 
-	inline const char* nameA() const {return m_name;};
+#else // NOT MYSQL_DYNAMIC_PLUGIN
+    const char* name() const;
+    const char* name(char* buf) const;
+    const char* chainChar() const;
+    void setName(const char* s);
+    void setChainChar(const char* s);
+#endif // NOT MYSQL_DYNAMIC_PLUGIN
+#endif // NOT _UNICODE
 
-	inline void setNameA(const char* s) {strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);};
+    inline const char* nameA() const { return m_name; };
+
+    inline void setNameA(const char* s)
+    {
+        strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);
+    };
 #ifndef MYSQL_DYNAMIC_PLUGIN
 
-	inline const _TCHAR* typeName() const {return getTypeName(type);};
+    inline const _TCHAR* typeName() const { return getTypeName(type); };
 
-	inline int align() const {return getTypeAlign(type);};
+    inline int align() const { return getTypeAlign(type); };
 
-	inline void setLenByCharnum(ushort_td charnum)
-	{
-		len = lenByCharnum(type, m_charsetIndex, charnum);
-	}
+    inline void setLenByCharnum(ushort_td charnum)
+    {
+        len = lenByCharnum(type, m_charsetIndex, charnum);
+    }
 
-#endif
+#endif // MYSQL_DYNAMIC_PLUGIN
 
 private:
+    /* Is variable key type
+     */
+    inline bool isKeyVarType() const
+    {
+        return (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
+                (type == ft_myblob) || (type == ft_mytext));
+    }
 
-	/* Is variable key type
-	 */
-	inline bool isKeyVarType() const
-	{
-		return (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) || (type == ft_myblob) ||
-			(type == ft_mytext));
-	}
+    /* max key segment length. not include sizeBytes.
+     */
+    inline ushort_td maxKeylen() const { return keylen ? keylen : len; };
 
-	/* max key segment length. not include sizeBytes.
-	 */
-	inline ushort_td maxKeylen() const {return keylen ? keylen : len;};
-
-	inline ushort_td keyFromVarlen() const
-	{
-		if ((type >= ft_myvarchar) && (type <= ft_mywvarbinary))
-			return len < 256 ? 1 : 2;
-		else if ((type == ft_myblob) || (type == ft_mytext))
-			return len - 8;
-		return 0;
-	}
+    inline ushort_td keyFromVarlen() const
+    {
+        if ((type >= ft_myvarchar) && (type <= ft_mywvarbinary))
+            return len < 256 ? 1 : 2;
+        else if ((type == ft_myblob) || (type == ft_mytext))
+            return len - 8;
+        return 0;
+    }
 
 public:
+    inline unsigned int codePage() const
+    {
+        return mysql::codePage((unsigned short)m_charsetIndex);
+    }
 
-	inline unsigned int codePage() const {return mysql::codePage((unsigned short)m_charsetIndex);}
+    /* data image for key
+     * param ptr address of record buffer
+     */
+    inline const uchar_td* keyData(const uchar_td* ptr) const
+    {
+        if ((type == ft_myblob) || (type == ft_mytext))
+            return blobDataPtr(ptr);
+        int sizeByte = varLenBytes();
+        return ptr + sizeByte;
+    }
 
-	/* data image for key
-	 * param ptr address of record buffer
-	 */
-	inline const uchar_td* keyData(const uchar_td* ptr) const
-	{
-		if ((type == ft_myblob) || (type == ft_mytext))
-			return blobDataPtr(ptr);
-		int sizeByte = varLenBytes();
-		return ptr + sizeByte;
-	}
+    inline uint_td keyDataLen(const uchar_td* ptr) const
+    {
+        if ((type == ft_myblob) || (type == ft_mytext))
+            return blobDataLen(ptr);
+        return dataLen(ptr);
+    }
 
-	inline uint_td keyDataLen(const uchar_td* ptr) const
-	{
-		if ((type == ft_myblob) || (type == ft_mytext))
-			return blobDataLen(ptr);
-		return dataLen(ptr);
-	}
+    /* copy key data for send to mysql
+     *  return next copy address.
+     */
+    inline uchar_td* keyCopy(uchar_td* to, const uchar_td* from)
+    {
 
-	/* copy key data for send to mysql
-	 *  return next copy address.
-	 */
-	inline uchar_td* keyCopy(uchar_td* to, const uchar_td* from)
-	{
+        ushort_td kl = maxKeylen(); // size of max key segmnet for mysql
+        ushort_td copylen = kl;
+        memset(to, 0x00, kl);
+        ushort_td keyVarlen =
+            keyFromVarlen(); // size of var sizeByte for record.
+        if (keyVarlen)
+        {
+            copylen = (ushort_td)std::min<uint_td>((uint_td)copylen,
+                                                   keyDataLen(from));
+            memcpy(to, &copylen, 2);
+            to += 2;
+            from = keyData(from);
+        }
+        memcpy(to, from, copylen);
+        return to + kl - keyVarlen;
+    }
 
-		ushort_td kl = maxKeylen(); // size of max key segmnet for mysql
-		ushort_td copylen = kl;
-		memset(to, 0x00, kl);
-		ushort_td keyVarlen = keyFromVarlen(); // size of var sizeByte for record.
-		if (keyVarlen)
-		{
-			copylen = (ushort_td)std::min<uint_td>((uint_td)copylen, keyDataLen(from));
-			memcpy(to, &copylen, 2);
-			to += 2;
-			from = keyData(from);
-		}
-		memcpy(to, from, copylen);
-		return to + kl - keyVarlen;
-	}
+    /* Get keyValue from keybuf for seek mode error description
+     *  return next copy key address.
+     */
+    inline const uchar_td* getKeyValueFromKeybuf(const uchar_td* from,
+                                                 const uchar_td** data,
+                                                 ushort_td& size)
+    {
+        ushort_td keyVarlen =
+            keyFromVarlen(); // size of var sizeByte for record.
+        if (keyVarlen)
+        {
+            size = *((ushort_td*)from);
+            *data = from + 2;
+        }
+        else
+        {
+            size = maxKeylen();
+            *data = from;
+        }
+        return *data + size;
+    }
 
-	/*  Get keyValue from keybuf for seek mode error description
-	 *  return next copy key address.
-	 */
-	inline const uchar_td* getKeyValueFromKeybuf(const uchar_td* from, const uchar_td** data, ushort_td& size)
-	{
-		ushort_td keyVarlen = keyFromVarlen(); // size of var sizeByte for record.
-		if (keyVarlen)
-		{
-			size = *((ushort_td*)from);
-			*data = from + 2;
-		}
-		else
-		{
-			size = maxKeylen();
-			*data = from;
-		}
-		return *data + size;
-	}
+    /* length bytes of var field
+     */
+    inline int varLenBytes() const
+    {
+        if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
+            type == ft_lstring)
+            return len < 256 ? 1 : 2;
+        return 0;
+    }
 
-	/* length bytes of var field
-	 */
-	inline int varLenBytes() const
-	{
-		if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) || type == ft_lstring)
-			return len < 256 ? 1 : 2;
-		return 0;
-	}
+    inline uint_td blobLenBytes() const
+    {
+        if ((type == ft_myblob) || (type == ft_mytext))
+            return len - 8;
+        return 0;
+    }
 
-	inline uint_td blobLenBytes() const
-	{
-		if ((type == ft_myblob) || (type == ft_mytext))
-			return len - 8;
-		return 0;
-	}
+    inline int maxVarDatalen() const
+    {
+        if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
+            type == ft_lstring)
+            return (len < 256) ? len - 1 : len - 2;
+        else if (type == ft_lvar)
+            return len - 4;
+        else if ((type == ft_myblob) || (type == ft_mytext))
+        {
+            switch (len - 8)
+            {
+            case 1:
+                return 0xFF;
+            case 2:
+                return 0xFFFF;
+            case 3:
+                return 0xFFFFFF;
+            case 4:
+                return 0xFFFFFFFF;
+            }
+            return 0;
+        }
+        return 0;
+    }
 
-	inline int maxVarDatalen() const
-	{
-		if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) || type == ft_lstring)
-			return (len < 256) ? len-1 : len-2;
-		else if (type == ft_lvar)
-			return len - 4;
-		else  if ((type == ft_myblob) || (type == ft_mytext))
-		{
-			switch(len - 8)
-			{
-			case 1:return 0xFF;
-			case 2:return 0xFFFF;
-			case 3:return 0xFFFFFF;
-			case 4:return 0xFFFFFFFF;
-			}
-			return 0;
-		}
-		return 0;
-	}
-	/* data length
-	 */
-	inline uint_td dataLen(const uchar_td* ptr) const
-	{
-		int blen = varLenBytes();
-		if (blen == 0)
-			return len;
-		else if (blen == 1)
-			return*((unsigned char*)ptr);
-		return *((unsigned short*)ptr);
+    /* data length
+     */
+    inline uint_td dataLen(const uchar_td* ptr) const
+    {
+        int blen = varLenBytes();
+        if (blen == 0)
+            return len;
+        else if (blen == 1)
+            return *((unsigned char*)ptr);
+        return *((unsigned short*)ptr);
+    }
 
-	}
+    inline uint_td blobDataLen(const uchar_td* ptr) const
+    {
+        int blen = blobLenBytes();
+        if (blen == 0)
+            return len;
+        uint_td v = 0;
+        memcpy(&v, ptr, blen);
+        return v;
+    }
 
-	inline uint_td blobDataLen(const uchar_td* ptr) const
-	{
-		int blen = blobLenBytes();
-		if (blen == 0)
-			return len;
-		uint_td v = 0;
-		memcpy(&v, ptr, blen);
-		return v;
-	}
+    inline const uchar_td* blobDataPtr(const uchar_td* ptr) const
+    {
+        int blen = blobLenBytes();
+        if (blen == 0)
+            return NULL;
+        const uchar_td** p = (const uchar_td**)(ptr + blen);
+        return *p;
+    }
 
-	inline const uchar_td* blobDataPtr(const uchar_td* ptr) const
-	{
-		int blen = blobLenBytes();
-		if (blen == 0)
-			return NULL;
-		const uchar_td** p = (const uchar_td * *)(ptr + blen);
-		return *p;
-	}
+    /* Is string type or not.
+     */
+    bool isStringType() const;
 
-	/* Is string type or not.
-	 */
-	bool isStringType() const ;
+    inline bool isNumericType() const
+    {
+        return ((type == ft_integer) || (type == ft_decimal) ||
+                (type == ft_money) || (type == ft_logical) ||
+                (type == ft_numeric) || (type == ft_bfloat) ||
+                (type == ft_uinteger) || (type == ft_autoinc) ||
+                (type == ft_bit) || (type == ft_numericsts) ||
+                (type == ft_numericsa) || (type == ft_autoIncUnsigned));
+    }
 
-	inline bool isNumericType() const
-	{
-		return ((type == ft_integer)
-			||(type == ft_decimal)|| (type == ft_money)
-			||(type == ft_logical)|| (type == ft_numeric)
-			||(type == ft_bfloat)|| (type == ft_uinteger)
-			||(type == ft_autoinc)|| (type == ft_bit)
-			||(type == ft_numericsts)|| (type == ft_numericsa)
-			||(type == ft_autoIncUnsigned));
-	}
+    /* Charctor numbers from charset.
+     */
+    unsigned int charNum() const;
 
+    inline void setCharsetIndex(uchar_td index)
+    {
+        m_charsetIndex = index;
+        if ((type == ft_wstring) || (type == ft_wzstring) ||
+            (type == ft_mywvarchar) || (type == ft_mywvarbinary) ||
+            (type == ft_mywchar))
+            m_charsetIndex = CHARSET_UTF16LE;
+    }
 
-	/* Charctor numbers from charset.
-	 */
-	unsigned int charNum() const ;
+    inline uchar_td charsetIndex() const { return m_charsetIndex; };
 
-	inline void setCharsetIndex(uchar_td index)
-	{
-		m_charsetIndex = index;
-		if ((type == ft_wstring) || (type == ft_wzstring) || (type == ft_mywvarchar) ||
-			(type == ft_mywvarbinary) || (type == ft_mywchar))
-			m_charsetIndex = CHARSET_UTF16LE;
-	}
-
-	inline uchar_td charsetIndex()const {return m_charsetIndex;};
-
-	inline uint_td unPackCopy(uchar_td* dest, const uchar_td* src) const
-	{
-		int clen = varLenBytes();
-		if (clen == 0)
-			clen = len;
-		else if (clen == 1)
-			clen += *((unsigned char*)src);
-		else 
-			clen += *((unsigned short*)src);
-		memcpy(dest, src, clen);
-		return clen;
-	}
-
+    inline uint_td unPackCopy(uchar_td* dest, const uchar_td* src) const
+    {
+        int clen = varLenBytes();
+        if (clen == 0)
+            clen = len;
+        else if (clen == 1)
+            clen += *((unsigned char*)src);
+        else
+            clen += *((unsigned short*)src);
+        memcpy(dest, src, clen);
+        return clen;
+    }
 };
 
-
-
-namespace client{class dbdef;}
+namespace client
+{
+class dbdef;
+}
 
 /* Mark of ** that BizStation Corp internal use only.
  */
 struct PACKAGE tabledef
 {
-	friend class client::dbdef;       //for formatVersion
-	
-	tabledef()
-	{
-		cleanup();
-	}
+    friend class client::dbdef; // for formatVersion
 
-	void cleanup()
-	{
-		memset(this, 0, sizeof(tabledef));
-		formatVersion = 1;
-		primaryKeyNum = -1;
-		parentKeyNum = -1;
-		replicaKeyNum = -1;
-		pageSize = 2048;
-	}
+    tabledef() { cleanup(); }
+
+    void cleanup()
+    {
+        memset(this, 0, sizeof(tabledef));
+        formatVersion = 1;
+        primaryKeyNum = -1;
+        parentKeyNum = -1;
+        replicaKeyNum = -1;
+        pageSize = 2048;
+    }
 
 #ifdef _UNICODE
-	const wchar_t* fileName() const ;  // file name
-	const wchar_t* tableName() const ; // table name
-	void setFileName(const wchar_t* s);
-	void setTableName(const wchar_t* s);
-	const char* toChar(char* buf, const wchar_t* s, int size);
+    const wchar_t* fileName() const; // file name
+    const wchar_t* tableName() const; // table name
+    void setFileName(const wchar_t* s);
+    void setTableName(const wchar_t* s);
+    const char* toChar(char* buf, const wchar_t* s, int size);
 
 #else
 #ifdef MYSQL_DYNAMIC_PLUGIN
-	const char* fileName() const {return m_fileName;};
 
-	const char* tableName() const {return m_tableName;};
+    const char* fileName() const { return m_fileName; };
 
-	inline void setFileName(const char* s) {setFileNameA(s);};
+    const char* tableName() const { return m_tableName; };
 
-	inline void setTableName(const char* s) {setTableNameA(s);};
+    inline void setFileName(const char* s) { setFileNameA(s); };
 
-	inline const char* toChar(char* buf, const char* s, int size){strncpy_s(buf, size, s, size-1);return buf;};
+    inline void setTableName(const char* s) { setTableNameA(s); };
+
+    inline const char* toChar(char* buf, const char* s, int size)
+    {
+        strncpy_s(buf, size, s, size - 1);
+        return buf;
+    };
 #else
-	const char* fileName() const;
-	const char* tableName() const;
-	void setFileName(const char* s);
-	void setTableName(const char* s);
-	const char* toChar(char* buf, const char* s, int size);
-#endif //MYSQL_DYNAMIC_PLUGIN
+    const char* fileName() const;
+    const char* tableName() const;
+    void setFileName(const char* s);
+    void setTableName(const char* s);
+    const char* toChar(char* buf, const char* s, int size);
+#endif // MYSQL_DYNAMIC_PLUGIN
 #endif
 
-	const char* fileNameA() const {return m_fileName;};
+    const char* fileNameA() const { return m_fileName; };
 
-	const char* tableNameA() const {return m_tableName;};
+    const char* tableNameA() const { return m_tableName; };
 
-	inline void setFileNameA(const char* s) 
-	{
-		strncpy_s(m_fileName, FILE_NAME_SIZE, s, FILE_NAME_SIZE - 1);
-	}
+    inline void setFileNameA(const char* s)
+    {
+        strncpy_s(m_fileName, FILE_NAME_SIZE, s, FILE_NAME_SIZE - 1);
+    }
 
-	inline void setTableNameA(const char* s) 
-	{
-		strncpy_s(m_tableName, TABLE_NAME_SIZE, s, sizeof(m_tableName) - 1);
-	}
+    inline void setTableNameA(const char* s)
+    {
+        strncpy_s(m_tableName, TABLE_NAME_SIZE, s, sizeof(m_tableName) - 1);
+    }
 
-	ushort_td id;         // table id
+    ushort_td id; // table id
 
 #ifdef SWIG
-/* For swig interface 
-   export field names.
-*/
-	ushort_td pageSize;   // page size
-	ushort_td varSize;    // second field length
+    /* For swig interface
+     export field names.
+     */
+    ushort_td pageSize; // page size
+    ushort_td varSize; // second field length
 #else
-	union
-	{
-	ushort_td pageSize;   // page size
-	ushort_td varSize;    // second field length
-	};
+
+    union
+    {
+        ushort_td pageSize; // page size
+        ushort_td varSize; // second field length
+    };
 #endif
 
-	ushort_td preAlloc;   // pre alloc page seize
-	ushort_td fieldCount; // Number of field
-	uchar_td keyCount;    // Number of key
+    ushort_td preAlloc; // pre alloc page seize
+    ushort_td fieldCount; // Number of field
+    uchar_td keyCount; // Number of key
 
 private:
-	char m_fileName[FILE_NAME_SIZE];
-	char m_tableName[TABLE_NAME_SIZE];
+    char m_fileName[FILE_NAME_SIZE];
+    char m_tableName[TABLE_NAME_SIZE];
 
 public:
-	short version;            // table version
-	uchar_td charsetIndex;    // SCHARSET_INFO vector index;
-	uchar_td filler0[17];     // reserved
-	FLAGS flags;              // file flags
-	uchar_td primaryKeyNum;      // Primary key number. -1 is no primary.
-	uchar_td parentKeyNum;    // ** Key number for listview. -1 is no use.
-	uchar_td replicaKeyNum;   // ** Key number for repdata. -1 is no use.
-	FLAGS optionFlags;        // ** optional flags
-	ushort_td convertFileNum; // ** not use
-	ushort_td maxRecordLen;   // max record length of var size table.
-	uchar_td treeIndex;       // ** View index for listview.
-	uchar_td iconIndex;       // ** Icon index for listview.
-	ushort_td ddfid;
-	ushort_td fixedRecordLen; // Fixed record length for var size table.
-	int autoIncExSpace;       //
-	uchar_td iconIndex2;      //
-	uchar_td iconIndex3;      //
-	uint_td schemaCodePage;   // Code page of this schema stirng data.
+    short version; // table version
+    uchar_td charsetIndex; // SCHARSET_INFO vector index;
+    uchar_td filler0[17]; // reserved
+    FLAGS flags; // file flags
+    uchar_td primaryKeyNum; // Primary key number. -1 is no primary.
+    uchar_td parentKeyNum; // ** Key number for listview. -1 is no use.
+    uchar_td replicaKeyNum; // ** Key number for repdata. -1 is no use.
+    FLAGS optionFlags; // ** optional flags
+    ushort_td convertFileNum; // ** not use
+    ushort_td maxRecordLen; // max record length of var size table.
+    uchar_td treeIndex; // ** View index for listview.
+    uchar_td iconIndex; // ** Icon index for listview.
+    ushort_td ddfid;
+    ushort_td fixedRecordLen; // Fixed record length for var size table.
+    int autoIncExSpace;
+    uchar_td iconIndex2;
+    uchar_td iconIndex3;
+    uint_td schemaCodePage; // Code page of this schema stirng data.
+
 private:
-	char    formatVersion;    //
-public:
-	client::dbdef* parent; 
-	uchar_td reserved[TABLEDEF_FILLER_SIZE]; // reserved
+    char formatVersion;
 
-	fielddef* fieldDefs; // Pointer cahche of first field.
-	keydef* keyDefs;     // Pointer cahche of first key.
+public:
+    client::dbdef* parent;
+    uchar_td reserved[TABLEDEF_FILLER_SIZE]; // reserved
+
+    fielddef* fieldDefs; // Pointer cahche of first field.
+    keydef* keyDefs; // Pointer cahche of first key.
 };
 
 /* optionFlags   BizStation internal use only.
-
  Bit0 send windows messege.
  Bit1 show tree view.
  Bit2 is master table or not
@@ -626,45 +653,50 @@ public:
  Bit9 Can export this table.
  BitA is this table include valiable fields (varchar or varbinary is used)
  BitB is this table include blob field (Blob is used)
-
  */
 
 struct PACKAGE btrVersion
 {
-	ushort_td majorVersion;
-	ushort_td minorVersion;
-	unsigned char type;
-	const _TCHAR* moduleVersionShortString(_TCHAR* buf);
-	const _TCHAR* moduleTypeString();
+    ushort_td majorVersion;
+    ushort_td minorVersion;
+    unsigned char type;
+
+    const _TCHAR* moduleVersionShortString(_TCHAR* buf);
+    const _TCHAR* moduleTypeString();
 };
 
 struct btrVersions
 {
-	btrVersion versions[4];
+    btrVersion versions[4];
 };
 
-#pragma option -a.
-pragma_pop
+#pragma pack(pop)
+pragma_pop;
 
-/*filter cobine type*/
-enum combineType{eCend, eCand, eCor};
+/* filter cobine type */
+enum combineType
+{
+    eCend,
+    eCand,
+    eCor
+};
 
-/* compair types@*/
+/* compair types */
 enum eCompType
 {
-	eEqual       = 1,
-	eGreater     = 2,
-	eLess        = 3,
-	eNotEq       = 4,
-	eGreaterEq   = 5,
-	eLessEq      = 6
+    eEqual = 1,
+    eGreater = 2,
+    eLess = 3,
+    eNotEq = 4,
+    eGreaterEq = 5,
+    eLessEq = 6
 };
-
 
 PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr);
 
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-#endif //BZS_DB_PROTOCOL_TDAP_TDAPSCHEMA_H
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
+
+#endif // BZS_DB_PROTOCOL_TDAP_TDAPSCHEMA_H

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef	BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
-#define	BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
+#ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
+#define BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
 
 /* =================================================================
  Copyright (C) 20014 BizStation Corp All rights reserved.
@@ -35,44 +35,39 @@ namespace client
 
 class xaTransaction
 {
-	std::vector<dbmanager_ptr> m_dbs;
+    std::vector<dbmanager_ptr> m_dbs;
+
 public:
-	void add(dbmanager_ptr& db)
-	{
-		m_dbs.push_back(db);
-	}
+    void add(dbmanager_ptr& db) { m_dbs.push_back(db); }
 
-	void unUse()
-	{
-		for (int i=(int)m_dbs.size()-1;i>=0;--i)
-		{
-			int ref = m_dbs[i].use_count();
-			m_dbs.erase(m_dbs.begin()+i);
-			if (ref == 2)
-				releaseConnection(&cpool);
-		}
-	}
+    void unUse()
+    {
+        for (int i = (int)m_dbs.size() - 1; i >= 0; --i)
+        {
+            int ref = m_dbs[i].use_count();
+            m_dbs.erase(m_dbs.begin() + i);
+            if (ref == 2)
+                releaseConnection(&cpool);
+        }
+    }
 
-	void beginTrn(short bias)
-	{
-		for (size_t i=0;i<m_dbs.size();++i)
-			m_dbs[i]->beginTrn(bias);
-	}
+    void beginTrn(short bias)
+    {
+        for (size_t i = 0; i < m_dbs.size(); ++i)
+            m_dbs[i]->beginTrn(bias);
+    }
 
-	void endTrn()
-	{
-		for (size_t i=0;i<m_dbs.size();++i)
-			m_dbs[i]->endTrn();
+    void endTrn()
+    {
+        for (size_t i = 0; i < m_dbs.size(); ++i)
+            m_dbs[i]->endTrn();
+    }
 
-	}
-
-	void abortTrn()
-	{
-		for (size_t i=0;i<m_dbs.size();++i)
-			m_dbs[i]->abortTrn();
-
-	}
-
+    void abortTrn()
+    {
+        for (size_t i = 0; i < m_dbs.size(); ++i)
+            m_dbs[i]->abortTrn();
+    }
 };
 
 /*
@@ -86,89 +81,93 @@ activeTable a(db, "user");
 db.unUse();
 --------------------------------------
 Thread safe
-Method : non thread safe. 
+Method : non thread safe.
 Object : thread safe.
 
 */
 class pooledDbManager : public idatabaseManager
 {
-	dbmanager_ptr m_db;
-	bool m_inUse;
-	xaTransaction m_xa;
+    dbmanager_ptr m_db;
+    bool m_inUse;
+    xaTransaction m_xa;
 
 public:
-	inline pooledDbManager():m_inUse(false){};
-	
-	inline pooledDbManager(const connectParams* param):m_inUse(false)
-	{
-		use(param);
-	}
+    inline pooledDbManager() : m_inUse(false){};
 
-	inline ~pooledDbManager()
-	{
-		if (m_inUse)
-			unUse();
-	}
+    inline pooledDbManager(const connectParams* param) : m_inUse(false)
+    {
+        use(param);
+    }
 
-	inline void use(const connectParams* param=NULL)
-	{
-		m_db = cpool.get(param);
-		m_inUse = true;
-		m_xa.add(m_db);
-	}
+    inline ~pooledDbManager()
+    {
+        if (m_inUse)
+            unUse();
+    }
 
-	inline void unUse()
-	{
-		m_db.reset();
-		m_xa.unUse();
-		//releaseConnection(&cpool);
-		m_inUse = false;
-	}
+    inline void use(const connectParams* param = NULL)
+    {
+        m_db = cpool.get(param);
+        m_inUse = true;
+        m_xa.add(m_db);
+    }
 
-	inline void reset(int v) {cpool.reset(v);}
+    inline void unUse()
+    {
+        m_db.reset();
+        m_xa.unUse();
+        // releaseConnection(&cpool);
+        m_inUse = false;
+    }
 
-	inline table_ptr table(const _TCHAR* name){return m_db->table(name);}
+    inline void reset(int v) { cpool.reset(v); }
 
-	inline database* db()const {return m_db->db();}
+    inline table_ptr table(const _TCHAR* name) { return m_db->table(name); }
 
-	inline const _TCHAR* uri() const{return m_db->uri();}
+    inline database* db() const { return m_db->db(); }
 
-	inline char_td mode() const{return m_db->mode();}
+    inline const _TCHAR* uri() const { return m_db->uri(); }
 
-	inline bool isOpened() const{return m_db->isOpened();}
+    inline char_td mode() const { return m_db->mode(); }
 
-	inline void setOption(__int64 v){m_db->setOption(v);};
+    inline bool isOpened() const { return m_db->isOpened(); }
 
-	inline __int64 option(){return m_db->option();};
+    inline void setOption(__int64 v) { m_db->setOption(v); };
 
-	inline void beginTrn(short bias){m_xa.beginTrn(bias);};
+    inline __int64 option() { return m_db->option(); };
 
-	inline void endTrn(){m_xa.endTrn();}
+    inline void beginTrn(short bias) { m_xa.beginTrn(bias); };
 
-	inline void abortTrn(){m_xa.abortTrn();}
+    inline void endTrn() { m_xa.endTrn(); }
 
-	inline int enableTrn(){return m_db->enableTrn();}
+    inline void abortTrn() { m_xa.abortTrn(); }
 
-	inline void beginSnapshot(){m_db->beginSnapshot();}
+    inline int enableTrn() { return m_db->enableTrn(); }
 
-	inline void endSnapshot(){m_db->endSnapshot();}
+    inline void beginSnapshot() { m_db->beginSnapshot(); }
 
-	inline short_td stat() const {return m_db->stat();}
+    inline void endSnapshot() { m_db->endSnapshot(); }
 
-	inline uchar_td* clientID() const{return m_db->clientID();}
+    inline short_td stat() const { return m_db->stat(); }
 
-	inline static void setMaxConnections(int maxWorkerNum){cpool.setMaxConnections(maxWorkerNum);};
-	inline static int  maxConnections(){return cpool.maxConnections();};
-	inline static void reserve(size_t size, const connectParams& param){cpool.reserve(size, param);}
-	//inline static bool reset(int waitSec=5){return cpool.reset(waitSec);}
+    inline uchar_td* clientID() const { return m_db->clientID(); }
+
+    inline static void setMaxConnections(int maxWorkerNum)
+    {
+        cpool.setMaxConnections(maxWorkerNum);
+    };
+    inline static int maxConnections() { return cpool.maxConnections(); };
+    inline static void reserve(size_t size, const connectParams& param)
+    {
+        cpool.reserve(size, param);
+    }
+    // inline static bool reset(int waitSec=5){return cpool.reset(waitSec);}
 };
 
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-
-#endif	//BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
-
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H

@@ -3,45 +3,46 @@
 #include "%className%.h"
 using namespace std;
 
+% nameSpaceBegin %
 
-%nameSpaceBegin%
-
-struct imple
+    struct imple
 {
-%datamemba%
-	imple():%menbaInit%
+    % datamemba % imple() : % menbaInit %
 };
 
+% className % :: % className % (void* owner)
+    : m_impl(new imple()){
 
-%className%::%className%(void* owner):m_impl(new imple())
+      }
+
+      %
+      className % :: % className % (const % className % &rt)
+    : m_impl(new imple())
 {
-
+    *m_impl = *(rt.m_impl);
 }
 
-%className%::%className%(const %className%& rt):m_impl(new imple())
+% className % ::~ % className % () { delete m_impl; }
+
+% className % & % className % ::operator=(const % className % &rt)
 {
-	*m_impl = *(rt.m_impl);	
+    if (this != &rt)
+    {
+        *m_impl = *(rt.m_impl);
+    }
+    return *this;
 }
 
-%className%::~%className%()
+% dataClassMembaFunc %
+
+    % className % * % className % ::create(void* owner)
 {
-	delete m_impl;	
+    return new % className % (owner);
 }
 
-%className%& %className%::operator=(const %className%& rt)
+% className % *create(% className % _ptr_list & mdls, int)
 {
-	if (this != &rt)
-	{
-		*m_impl = *(rt.m_impl);	
-	}
-	return *this;
+    return % className % ::create(&mdls);
 }
 
-%dataClassMembaFunc%
-
-%className%* %className%::create(void* owner){return new %className%(owner);};
-
-%className%* create(%className%_ptr_list& mdls, int){return %className%::create(&mdls);}
-
-
-%nameSpaceEnd%
+% nameSpaceEnd %

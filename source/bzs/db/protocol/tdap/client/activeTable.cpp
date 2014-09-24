@@ -36,148 +36,138 @@ namespace client
 
 query* query::create()
 {
-	return new query();
+    return new query();
 }
 
 activeTable::activeTable(idatabaseManager* mgr, const _TCHAR* tableName)
-					:m_imple(new activeTableImple(mgr, tableName))
+    : m_imple(new activeTableImple(mgr, tableName))
 {
-
 }
 
 activeTable::activeTable(dbmanager_ptr& mgr, const _TCHAR* tableName)
-					:m_imple(new activeTableImple(mgr.get(), tableName))
+    : m_imple(new activeTableImple(mgr.get(), tableName))
 {
-
 }
 
 activeTable::activeTable(database_ptr& db, const _TCHAR* tableName)
-					:m_imple(new activeTableImple(db, tableName))
+    : m_imple(new activeTableImple(db, tableName))
 {
-
 }
 
 activeTable::activeTable(database* db, const _TCHAR* tableName)
-					:m_imple(new activeTableImple(db, tableName))
+    : m_imple(new activeTableImple(db, tableName))
 {
-	
 }
 
 activeTable::~activeTable()
 {
-	delete m_imple;
+    delete m_imple;
 }
 
 table_ptr activeTable::table() const
 {
-	return m_imple->table();
+    return m_imple->table();
 }
 
 activeTable& activeTable::alias(const _TCHAR* src, const _TCHAR* dst)
 {
-	m_imple->alias(src, dst);
-	return *this;
+    m_imple->alias(src, dst);
+    return *this;
 }
 
 activeTable& activeTable::resetAlias()
 {
-	m_imple->resetAlias();
-	return *this;
+    m_imple->resetAlias();
+    return *this;
 }
-
 
 writableRecord& activeTable::getWritableRecord()
 {
-	return m_imple->getWritableRecord();
+    return m_imple->getWritableRecord();
 }
 
-activeTable& activeTable::join(recordset& rs, queryBase& q, const _TCHAR* name1
-				, const _TCHAR* name2, const _TCHAR* name3
-				, const _TCHAR* name4, const _TCHAR* name5
-				, const _TCHAR* name6, const _TCHAR* name7
-				, const _TCHAR* name8, const _TCHAR* name9
-				, const _TCHAR* name10, const _TCHAR* name11)
+activeTable& activeTable::join(recordset& rs, queryBase& q, const _TCHAR* name1,
+                               const _TCHAR* name2, const _TCHAR* name3,
+                               const _TCHAR* name4, const _TCHAR* name5,
+                               const _TCHAR* name6, const _TCHAR* name7,
+                               const _TCHAR* name8, const _TCHAR* name9,
+                               const _TCHAR* name10, const _TCHAR* name11)
 {
-	m_imple->join(*rs.m_imple, q, name1, name2, name3, name4, name5, name6, name7
-					,name8);
-	return *this;
+    m_imple->join(*rs.m_imple, q, name1, name2, name3, name4, name5, name6,
+                  name7, name8);
+    return *this;
 }
 
-activeTable& activeTable::outerJoin(recordset& rs, queryBase& q, const _TCHAR* name1
-				, const _TCHAR* name2, const _TCHAR* name3
-				, const _TCHAR* name4, const _TCHAR* name5
-				, const _TCHAR* name6, const _TCHAR* name7
-				, const _TCHAR* name8, const _TCHAR* name9
-				, const _TCHAR* name10, const _TCHAR* name11)
+activeTable& activeTable::outerJoin(recordset& rs, queryBase& q,
+                                    const _TCHAR* name1, const _TCHAR* name2,
+                                    const _TCHAR* name3, const _TCHAR* name4,
+                                    const _TCHAR* name5, const _TCHAR* name6,
+                                    const _TCHAR* name7, const _TCHAR* name8,
+                                    const _TCHAR* name9, const _TCHAR* name10,
+                                    const _TCHAR* name11)
 {
-	m_imple->outerJoin(*rs.m_imple, q, name1, name2, name3, name4, name5, name6, name7
-					,name8);
-	return *this;
-
+    m_imple->outerJoin(*rs.m_imple, q, name1, name2, name3, name4, name5, name6,
+                       name7, name8);
+    return *this;
 }
 
 activeTable& activeTable::index(int v)
 {
-	m_imple->index(v);
-	return *this;
+    m_imple->index(v);
+    return *this;
 }
 
 activeTable& activeTable::option(int v)
 {
-	m_imple->option(v);
-	return *this;
+    m_imple->option(v);
+    return *this;
 }
 
 activeTable& activeTable::read(recordset& rs, queryBase& q)
 {
-		
-	m_imple->read(*rs.m_imple, q);
-	return *this;
+
+    m_imple->read(*rs.m_imple, q);
+    return *this;
 }
 
 activeTable& activeTable::read(recordset& rs, queryBase& q, validationFunc func)
 {
-	m_imple->read(*rs.m_imple, q, func);
-	return *this;
+    m_imple->read(*rs.m_imple, q, func);
+    return *this;
 }
 
 activeTable* activeTable::create(idatabaseManager* mgr, const _TCHAR* tableName)
 {
-	return new activeTable(mgr, tableName);
+    return new activeTable(mgr, tableName);
 }
 
 activeTable* activeTable::create(dbmanager_ptr& mgr, const _TCHAR* tableName)
 {
-	return new activeTable(mgr, tableName);
+    return new activeTable(mgr, tableName);
 }
 
-activeTable* activeTable::create (database_ptr& db, const _TCHAR* tableName)
+activeTable* activeTable::create(database_ptr& db, const _TCHAR* tableName)
 {
-	return new activeTable(db, tableName);
+    return new activeTable(db, tableName);
 }
 
 activeTable* activeTable::create(database* db, const _TCHAR* tableName)
 {
-	return new activeTable(db, tableName);
+    return new activeTable(db, tableName);
 }
 
 void activeTable::release()
 {
-	delete this;
+    delete this;
 }
 
 void activeTable::releaseTable()
 {
-	m_imple->releaseTable();
+    m_imple->releaseTable();
 }
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-
-
-
-
-
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs

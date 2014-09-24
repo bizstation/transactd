@@ -14,8 +14,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 
@@ -24,10 +24,17 @@
 
 namespace bzs
 {
-	
+
 namespace db
 {
-	namespace engine{namespace mysql{class table;class database;}}	
+namespace engine
+{
+namespace mysql
+{
+class table;
+class database;
+}
+}
 
 namespace protocol
 {
@@ -38,16 +45,18 @@ namespace mysql
 
 class schemaBuilder
 {
-	short insertMetaRecord(engine::mysql::table* mtb, engine::mysql::table* src, int id);
+    short insertMetaRecord(engine::mysql::table* mtb, engine::mysql::table* src,
+                           int id);
+
 public:
-	schemaBuilder();
-	~schemaBuilder();
-	short execute(engine::mysql::database* db, engine::mysql::table* mtb);
+    schemaBuilder();
+    ~schemaBuilder();
+    short execute(engine::mysql::database* db, engine::mysql::table* mtb);
 };
 
-}//namespace mysql
-}//namespace protocol
-}//namespace db
-}//namespace tdap
-}//namespace bzs
-#endif //BZS_DB_PROTOCOL_TDAP_MYSQL_DATABASESCHEMA_H
+} // namespace mysql
+} // namespace protocol
+} // namespace db
+} // namespace tdap
+} // namespace bzs
+#endif // BZS_DB_PROTOCOL_TDAP_MYSQL_DATABASESCHEMA_H

@@ -12,8 +12,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "stdafx.h"
@@ -28,17 +28,18 @@ STDMETHODIMP CKeySegment::get_FieldNum(unsigned char* Value)
 
 STDMETHODIMP CKeySegment::get_Flags(IFlags** Value)
 {
-    CComObject<CFlags> *piObj;
+    CComObject<CFlags>* piObj;
     CComObject<CFlags>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_flags = &(segment()->flags);
-		IFlags* fl;
-		piObj->QueryInterface(IID_IFlags, (void**)&fl);
-		_ASSERTE(fl);
-		*Value = piObj;
-	}else
-		*Value = 0;
+    if (piObj)
+    {
+        piObj->m_flags = &(segment()->flags);
+        IFlags* fl;
+        piObj->QueryInterface(IID_IFlags, (void**)&fl);
+        _ASSERTE(fl);
+        *Value = piObj;
+    }
+    else
+        *Value = 0;
     return S_OK;
 }
 

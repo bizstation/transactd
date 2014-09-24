@@ -12,8 +12,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "stdafx.h"
@@ -34,18 +34,19 @@ STDMETHODIMP CKeyDef::put_SegmentCount(unsigned char Value)
 
 STDMETHODIMP CKeyDef::Segments(short Index, IKeySegment** Value)
 {
-    CComObject<CKeySegment> *piObj;
+    CComObject<CKeySegment>* piObj;
     CComObject<CKeySegment>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_tabledefPtr = m_tabledefPtr;
-		piObj->m_keyIndex = m_index;
-		piObj->m_index = Index;
-		IKeySegment* sg;
-		piObj->QueryInterface(IID_IKeySegment, (void**)&sg);
-		_ASSERTE(sg);
-		*Value = piObj;
-	}else
-		*Value = 0;
+    if (piObj)
+    {
+        piObj->m_tabledefPtr = m_tabledefPtr;
+        piObj->m_keyIndex = m_index;
+        piObj->m_index = Index;
+        IKeySegment* sg;
+        piObj->QueryInterface(IID_IKeySegment, (void**)&sg);
+        _ASSERTE(sg);
+        *Value = piObj;
+    }
+    else
+        *Value = 0;
     return S_OK;
 }

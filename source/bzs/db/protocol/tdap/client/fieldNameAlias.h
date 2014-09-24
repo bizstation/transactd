@@ -33,28 +33,26 @@ namespace client
 
 class DLLLIB fdNmaeAlias
 {
-	struct fdnImple* m_imple;
+    struct fdnImple* m_imple;
 
 public:
-	fdNmaeAlias();
-	fdNmaeAlias(const fdNmaeAlias& r);
-	fdNmaeAlias& operator=(const fdNmaeAlias& r);
-	~fdNmaeAlias();
-	void set(const _TCHAR* src, const _TCHAR* dst);
-	const _TCHAR* get(const _TCHAR* src) const;
-	const _TCHAR* resolv(const _TCHAR* dst) const;
-	void clear();
-	void reverseAliasNamesQuery(queryBase& q) const;
+    fdNmaeAlias();
+    fdNmaeAlias(const fdNmaeAlias& r);
+    fdNmaeAlias& operator=(const fdNmaeAlias& r);
+    ~fdNmaeAlias();
+    void set(const _TCHAR* src, const _TCHAR* dst);
+    const _TCHAR* get(const _TCHAR* src) const;
+    const _TCHAR* resolv(const _TCHAR* dst) const;
+    void clear();
+    void reverseAliasNamesQuery(queryBase& q) const;
 };
 
 typedef fdNmaeAlias aliasMap_type;
 
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 
-
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-
-#endif//BZS_DB_PROTOCOL_TDAP_CLIENT_FIELDNAMEALIAS_H
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_FIELDNAMEALIAS_H

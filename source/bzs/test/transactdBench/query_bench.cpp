@@ -27,132 +27,130 @@ using namespace bzs::db::protocol::tdap;
 
 void showConsole(recordset& rowset)
 {
-	const fielddefs& fields = *rowset.fieldDefs();
-	for (int j=0;j<(int)fields.size();++j)
-		std::tcout << fields[j].name()  << _T("\t");
-	std::tcout << _T("\n");
+    const fielddefs& fields = *rowset.fieldDefs();
+    for (int j = 0; j < (int)fields.size(); ++j)
+        std::tcout << fields[j].name() << _T("\t");
+    std::tcout << _T("\n");
 
-	for (int i=0;i<(int)rowset.size();++i)
-	{
-		row& m = rowset[i];
-		for (int j=0;j<(int)m.size();++j)
-		{
-			std::tcout << m[(short)j].c_str()  << _T("\t");
-			if (j == (int)m.size() -1)
-			   std::tcout << _T("\n");
-		}
-	}
+    for (int i = 0; i < (int)rowset.size(); ++i)
+    {
+        row& m = rowset[i];
+        for (int j = 0; j < (int)m.size(); ++j)
+        {
+            std::tcout << m[(short)j].c_str() << _T("\t");
+            if (j == (int)m.size() - 1)
+                std::tcout << _T("\n");
+        }
+    }
 }
 
-bool btest(recordset* rsp, activeTable* atup, activeTable* atgp, activeTable* atep, int kind, int n)
+bool btest(recordset* rsp, activeTable* atup, activeTable* atgp,
+           activeTable* atep, int kind, int n)
 {
 #ifdef LINUX
-	const char* fd_name = "名前";
+    const char* fd_name = "名前";
 #else
-	#ifdef _UNICODE
-		const wchar_t* fd_name = L"名前";
-	#else
-		char fd_name[30];
-		WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
-	#endif
+#ifdef _UNICODE
+    const wchar_t* fd_name = L"名前";
+#else
+    char fd_name[30];
+    WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+#endif
 #endif
 
-	activeTable& atu = *atup;
-	activeTable& atg = *atgp;
-	activeTable& ate = *atep;
-	recordset& rs = *rsp;
-	query q;
+    activeTable& atu = *atup;
+    activeTable& atg = *atgp;
+    activeTable& ate = *atep;
+    recordset& rs = *rsp;
+    query q;
 
-	for (int i= 0;i<n;++i)
-	{
-		rs.clear();
-		if (kind &1)
-		{
-			q.reset();
-			atu.alias(fd_name, _T("name"));
+    for (int i = 0; i < n; ++i)
+    {
+        rs.clear();
+        if (kind & 1)
+        {
+            q.reset();
+            atu.alias(fd_name, _T("name"));
 
-			q.select(_T("id"), _T("name"),_T("group")).where(_T("id"), _T("<="), i+15000);
-			atu.index(0).keyValue(i+1).read(rs, q);
+            q.select(_T("id"), _T("name"), _T("group"))
+                .where(_T("id"), _T("<="), i + 15000);
+            atu.index(0).keyValue(i + 1).read(rs, q);
 
-			//Join extention::comment
-			if (kind & 2)
-			{
-				q.reset();
-				ate.index(0).join(rs, q.select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany), _T("id"));
-			}
-			if (kind & 4)
-			{
-				//Join group::name
-				q.reset();
-				atg.alias(_T("name"), _T("group_name"));
-				atg.index(0).join(rs, q.select(_T("group_name")), _T("group"));
-			}
-		}
-		if (kind & 8)
-			std::tcout << "." << std::flush;
-	}
-	if (kind & 8)
-		std::tcout << std::endl ;
-	return true;
+            // Join extention::comment
+            if (kind & 2)
+            {
+                q.reset();
+                ate.index(0).join(rs, q.select(_T("comment")).optimize(
+                                          queryBase::joinHasOneOrHasMany),
+                                  _T("id"));
+            }
+            if (kind & 4)
+            {
+                // Join group::name
+                q.reset();
+                atg.alias(_T("name"), _T("group_name"));
+                atg.index(0).join(rs, q.select(_T("group_name")), _T("group"));
+            }
+        }
+        if (kind & 8)
+            std::tcout << "." << std::flush;
+    }
+    if (kind & 8)
+        std::tcout << std::endl;
+    return true;
 }
 
-#pragma warning(disable:4101)
+#pragma warning(disable : 4101)
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
 #ifdef _UNICODE
-	std::locale::global(std::locale(""));
+    std::locale::global(std::locale(""));
 #endif
-	database_ptr db = createDatabaseObject();
-	try
-	{
-		const _TCHAR* host = _T("localhost");
-		int kind = 15;
-		int n = 100;
-		bool makeDatabase = true;
+    database_ptr db = createDatabaseObject();
+    try
+    {
+        const _TCHAR* host = _T("localhost");
+        int kind = 15;
+        int n = 100;
+        bool makeDatabase = true;
 
-		if (argc >= 5)
-			n = _ttol(argv[4]);
-		if (argc >= 4)
-			kind = _ttol(argv[3]);
-		if (argc >= 3)
-			host = argv[2];
-		if (argc >= 2)
-			makeDatabase = (_ttol(argv[1])!=0);
-		#ifndef USE_PSQL_DATABASE
-		connectParams param(_T("tdap"), host, _T("querytest"), _T("test"));
-		#else
-		connectParams param(_T("btrv"), host, _T("querytest"), _T("test"));
-		#endif
-		param.setMode(TD_OPEN_NORMAL);
-		if (prebuiltData(db, param, makeDatabase))
-		{
-			std::tcout << "The query data build error." << std::endl;
-			return 1;
-		}
-		activeTable atu(db, _T("user"));
-		activeTable atg(db, _T("groups"));
-		activeTable ate(db, _T("extention"));
+        if (argc >= 5)
+            n = _ttol(argv[4]);
+        if (argc >= 4)
+            kind = _ttol(argv[3]);
+        if (argc >= 3)
+            host = argv[2];
+        if (argc >= 2)
+            makeDatabase = (_ttol(argv[1]) != 0);
+#ifndef USE_PSQL_DATABASE
+        connectParams param(_T("tdap"), host, _T("querytest"), _T("test"));
+#else
+        connectParams param(_T("btrv"), host, _T("querytest"), _T("test"));
+#endif
+        param.setMode(TD_OPEN_NORMAL);
+        if (prebuiltData(db, param, makeDatabase))
+        {
+            std::tcout << "The query data build error." << std::endl;
+            return 1;
+        }
+        activeTable atu(db, _T("user"));
+        activeTable atg(db, _T("groups"));
+        activeTable ate(db, _T("extention"));
 
-		recordset rs;
+        recordset rs;
 
+        bzs::rtl::benchmark bm;
+        bm.report(boost::bind(btest, &rs, &atu, &atg, &ate, kind, n),
+                  "exec time ");
 
-		bzs::rtl::benchmark bm;
-		bm.report(boost::bind(btest, &rs, &atu, &atg, &ate, kind, n), "exec time ");
+        return 0;
+    }
 
-		return 0;
-
-	}
-
-	catch(bzs::rtl::exception& e)
-	{
-		std::tcout << *bzs::rtl::getMsg(e) << std::endl;
-	}
-	return 1;
+    catch (bzs::rtl::exception& e)
+    {
+        std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+    }
+    return 1;
 }
-#pragma warning(default:4101)
-
-
-
-
-
+#pragma warning(default : 4101)

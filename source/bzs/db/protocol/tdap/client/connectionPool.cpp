@@ -18,20 +18,28 @@
 =================================================================*/
 #include "connectionPool.h"
 
-
 #ifdef __BCPLUSPLUS__
-#   ifdef _WIN64
-#		define BZS_LINK_BOOST_SYSTEM
-#		define BZS_LINK_BOOST_THREAD
-#		define BZS_LINK_BOOST_CHRONO
-		namespace boost{void tss_cleanup_implemented(){}}
-#	else
-#		define BZS_LINK_BOOST_THREAD
-		namespace boost{extern "C" void tss_cleanup_implemented(){}}
-#	endif
-#	include <bzs/env/boost_bcb_link.h>
+#ifdef _WIN64
+#define BZS_LINK_BOOST_SYSTEM
+#define BZS_LINK_BOOST_THREAD
+#define BZS_LINK_BOOST_CHRONO
+namespace boost
+{
+void tss_cleanup_implemented()
+{
+}
+}
+#else
+#define BZS_LINK_BOOST_THREAD
+namespace boost
+{
+extern "C" void tss_cleanup_implemented()
+{
+}
+}
 #endif
-
+#include <bzs/env/boost_bcb_link.h>
+#endif
 
 namespace bzs
 {
@@ -47,173 +55,177 @@ namespace client
 #ifdef TRANSACTD_RB_CALL_WITHOUT_GVL
 struct busyWaitArguments
 {
-	mutable boost::condition* m_busy;
-	mutable boost::mutex* m_mutex2;
+    mutable boost::condition* m_busy;
+    mutable boost::mutex* m_mutex2;
 };
 
 void scopedLock(boost::mutex::scoped_lock* lck)
 {
-	lck->lock();
+    lck->lock();
 }
 
 void busyWait(busyWaitArguments* args)
 {
-	boost::mutex::scoped_lock lck(*(args->m_mutex2));
-	args->m_busy->wait(lck);
+    boost::mutex::scoped_lock lck(*(args->m_mutex2));
+    args->m_busy->wait(lck);
 }
-#endif //TRANSACTD_RB_CALL_WITHOUT_GVL
+#endif // TRANSACTD_RB_CALL_WITHOUT_GVL
 
 short __STDCALL dllUnloadCallbackFunc()
 {
-	cpool.reset(0);
-	cpool.m_regitfunc = NULL;
-	return 0;
+    cpool.reset(0);
+    cpool.m_regitfunc = NULL;
+    return 0;
 }
 
 void releaseConnection(stdDbmCconnectionPool* pool)
 {
-	pool->releaseOne();
+    pool->releaseOne();
 }
 
 template <class Database_Ptr>
-connectionPool<Database_Ptr>::connectionPool(int maxConnections):m_maxConnections(maxConnections)
+connectionPool<Database_Ptr>::connectionPool(int maxConnections)
+    : m_maxConnections(maxConnections)
 {
 #ifdef USE_DLLUNLOAD_CALLBACK
-	m_regitfunc = nsdatabase::getDllUnloadCallbackFunc();
-	if (m_regitfunc)
-		m_regitfunc(dllUnloadCallbackFunc);
+    m_regitfunc = nsdatabase::getDllUnloadCallbackFunc();
+    if (m_regitfunc)
+        m_regitfunc(dllUnloadCallbackFunc);
 #else
-	m_regitfunc = NULL;
+    m_regitfunc = NULL;
 #endif
 }
 
-template <class Database_Ptr>
-connectionPool<Database_Ptr>::~connectionPool()
+template <class Database_Ptr> connectionPool<Database_Ptr>::~connectionPool()
 {
-	if (m_regitfunc)
-		m_regitfunc(NULL);
+    if (m_regitfunc)
+        m_regitfunc(NULL);
 }
 
 template <class Database_Ptr>
 Database_Ptr connectionPool<Database_Ptr>::addOne(const connectParams& param)
 {
-	Database_Ptr db;
-	db = createDatabaseForConnectionPool(db);
-	connectOpen(db, param, true/* new connection*/);
-	m_dbs.push_back(db);
-	return m_dbs[m_dbs.size()-1];
+    Database_Ptr db;
+    db = createDatabaseForConnectionPool(db);
+    connectOpen(db, param, true /* new connection*/);
+    m_dbs.push_back(db);
+    return m_dbs[m_dbs.size() - 1];
 }
 
 /** Delivery database instance
-	If a connect error is occured then bzs::rtl::exception exception is thrown.
+        If a connect error is occured then bzs::rtl::exception exception is
+   thrown.
 */
 template <class Database_Ptr>
 Database_Ptr connectionPool<Database_Ptr>::get(const connectParams* param)
 {
-	boost::mutex::scoped_lock lck(m_mutex, boost::defer_lock);
+    boost::mutex::scoped_lock lck(m_mutex, boost::defer_lock);
 #ifdef TRANSACTD_RB_CALL_WITHOUT_GVL
-	TRANSACTD_RB_CALL_WITHOUT_GVL(scopedLock, lck);
+    TRANSACTD_RB_CALL_WITHOUT_GVL(scopedLock, lck);
 #else
-	lck.lock();
+    lck.lock();
 #endif
-	assert((param && m_maxConnections) || m_dbs.size());
+    assert((param && m_maxConnections) || m_dbs.size());
 
-	while (1)
-	{
-		for (size_t i = 0;i<m_dbs.size();i++)
-		{
-			if (m_dbs[i].use_count() == 1)
-			{
-				if (param)
-				{
-					Database_Ptr db = m_dbs[i];
-					if (isSameUri(param , db))
-						return db;
-				}else
-					return m_dbs[i];
-			}
-		}
-		// create a new database object if there is no free one.
-		if (param && (m_maxConnections > (int)m_dbs.size()))
-			return addOne(*param);
-		// Wait until releaseOne() called
+    while (1)
+    {
+        for (size_t i = 0; i < m_dbs.size(); i++)
+        {
+            if (m_dbs[i].use_count() == 1)
+            {
+                if (param)
+                {
+                    Database_Ptr db = m_dbs[i];
+                    if (isSameUri(param, db))
+                        return db;
+                }
+                else
+                    return m_dbs[i];
+            }
+        }
+        // create a new database object if there is no free one.
+        if (param && (m_maxConnections > (int)m_dbs.size()))
+            return addOne(*param);
+// Wait until releaseOne() called
 #ifdef TRANSACTD_RB_CALL_WITHOUT_GVL
-		busyWaitArguments bwArgs;
-		bwArgs.m_busy = &m_busy;
-		bwArgs.m_mutex2 = &m_mutex2;
-		TRANSACTD_RB_CALL_WITHOUT_GVL(busyWait, bwArgs);
+        busyWaitArguments bwArgs;
+        bwArgs.m_busy = &m_busy;
+        bwArgs.m_mutex2 = &m_mutex2;
+        TRANSACTD_RB_CALL_WITHOUT_GVL(busyWait, bwArgs);
 #else
-		boost::mutex::scoped_lock lck(m_mutex2);
-		m_busy.wait(lck);
+        boost::mutex::scoped_lock lck(m_mutex2);
+        m_busy.wait(lck);
 #endif
-	}
+    }
 }
 
 /** Create database and login the server with each connection.
-	If a connect error is occured then bzs::rtl::exception exception is thrown.
+        If a connect error is occured then bzs::rtl::exception exception is
+   thrown.
 */
 template <class Database_Ptr>
-void connectionPool<Database_Ptr>::reserve(size_t size, const connectParams& param)
+void connectionPool<Database_Ptr>::reserve(size_t size,
+                                           const connectParams& param)
 {
-	boost::mutex::scoped_lock lck(m_mutex, boost::defer_lock);
+    boost::mutex::scoped_lock lck(m_mutex, boost::defer_lock);
 #ifdef TRANSACTD_RB_CALL_WITHOUT_GVL
-	TRANSACTD_RB_CALL_WITHOUT_GVL(scopedLock, lck);
+    TRANSACTD_RB_CALL_WITHOUT_GVL(scopedLock, lck);
 #else
-	lck.lock();
+    lck.lock();
 #endif
-	m_maxConnections = (int)size;
-	for (size_t i =0;i<size;++i)
-		addOne(param);
+    m_maxConnections = (int)size;
+    for (size_t i = 0; i < size; ++i)
+        addOne(param);
 }
 
 /** Set max connections.*/
 template <class Database_Ptr>
 void connectionPool<Database_Ptr>::setMaxConnections(int n)
 {
-	boost::mutex::scoped_lock lck(m_mutex, boost::defer_lock);
+    boost::mutex::scoped_lock lck(m_mutex, boost::defer_lock);
 #ifdef TRANSACTD_RB_CALL_WITHOUT_GVL
-	TRANSACTD_RB_CALL_WITHOUT_GVL(scopedLock, lck);
+    TRANSACTD_RB_CALL_WITHOUT_GVL(scopedLock, lck);
 #else
-	lck.lock();
+    lck.lock();
 #endif
-	m_maxConnections = n;
+    m_maxConnections = n;
 }
 
 /** Return max connections. */
 template <class Database_Ptr>
 int connectionPool<Database_Ptr>::maxConnections() const
 {
-	return m_maxConnections;
+    return m_maxConnections;
 }
 
-template <class Database_Ptr>
-void connectionPool<Database_Ptr>::releaseOne()
+template <class Database_Ptr> void connectionPool<Database_Ptr>::releaseOne()
 {
-	m_busy.notify_one();
+    m_busy.notify_one();
 }
 
 // max 5second
 template <class Database_Ptr>
 bool connectionPool<Database_Ptr>::reset(int waitSec)
 {
-	boost::mutex::scoped_lock lck(m_mutex, boost::defer_lock);
+    boost::mutex::scoped_lock lck(m_mutex, boost::defer_lock);
 #ifdef TRANSACTD_RB_CALL_WITHOUT_GVL
-	TRANSACTD_RB_CALL_WITHOUT_GVL(scopedLock, lck);
+    TRANSACTD_RB_CALL_WITHOUT_GVL(scopedLock, lck);
 #else
-	lck.lock();
+    lck.lock();
 #endif
-	bool flag = true;
-	for (int j=0;j<waitSec*100;j++)
-	{
-		flag = false;
-		for (size_t i = 0;i<m_dbs.size();i++)
-			if (m_dbs[i].use_count() != 1)  flag = true;
-		if (!flag)
-			break;
-		Sleep(100 * MCRTOMM);
-	}
-	m_dbs.clear();
-	return flag;
+    bool flag = true;
+    for (int j = 0; j < waitSec * 100; j++)
+    {
+        flag = false;
+        for (size_t i = 0; i < m_dbs.size(); i++)
+            if (m_dbs[i].use_count() != 1)
+                flag = true;
+        if (!flag)
+            break;
+        Sleep(100 * MCRTOMM);
+    }
+    m_dbs.clear();
+    return flag;
 }
 
 #ifdef USE_DBM_CONNECTION_POOL
@@ -224,8 +236,8 @@ template class connectionPool<database_ptr>;
 
 stdCconnectionPool cpool;
 
-}//namespace client
-}//namespace tdap
-}//namespace protocol
-}//namespace db
-}//namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs

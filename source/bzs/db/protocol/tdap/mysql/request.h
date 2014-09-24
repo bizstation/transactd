@@ -28,11 +28,10 @@
  */
 #define RETBUF_EXT_RESERVE_SIZE 12
 
-
 namespace bzs
 {
 namespace db
-{	
+{
 namespace protocol
 {
 namespace tdap
@@ -43,161 +42,154 @@ namespace mysql
 class request : public bzs::db::protocol::tdap::request
 {
 public:
-	
-	ushort_td cid;
-	void clear()
-	{
-		bzs::db::protocol::tdap::request::clear();
-		cid = 0;
-	}
+    ushort_td cid;
+    void clear()
+    {
+        bzs::db::protocol::tdap::request::clear();
+        cid = 0;
+    }
 
-	request():bzs::db::protocol::tdap::request(),cid(0)
-	{
-	
-	}
-	
-	inline unsigned int serializeForExt(engine::mysql::table* tb, netsvc::server::netWriter* nw)
-	{
-		// The result contents is copied or sent allready.
+    request() : bzs::db::protocol::tdap::request(), cid(0) {}
 
-		paramMask = nw->getParamMask(tb->blobFields()!=0);
-		unsigned int allreadysent = nw->allreadySent();
-		nw->writeHeadar(paramMask, result);
+    inline unsigned int serializeForExt(engine::mysql::table* tb,
+                                        netsvc::server::netWriter* nw)
+    {
+        // The result contents is copied or sent allready.
 
-		if (paramMask & P_MASK_KEYBUF)
-		{
-			keylen = tb->keyPackCopy((uchar*)nw->curPtr() + sizeof(keylen_td));
-			nw->write((const char*)&keylen, sizeof(keylen_td));
-			nw->write(NULL, keylen, netsvc::server::netWriter::curSeekOnly);
-		}
-		//write final ret
-		if (paramMask & P_MASK_FINALRET)
-		{
-			nw->write((const char*)&result, sizeof(short_td));
-			resltPtr = (short_td*)(nw->curPtr() - 2);
-		}
-		unsigned int* totalLen = (unsigned int*)nw->ptr();
-		*totalLen = nw->resultLen();
-	
-		return *totalLen - allreadysent;
-	}
+        paramMask = nw->getParamMask(tb->blobFields() != 0);
+        unsigned int allreadysent = nw->allreadySent();
+        nw->writeHeadar(paramMask, result);
 
-	inline unsigned int serialize(engine::mysql::table* tb, char* buf)
-	{
-		char* p = buf;
-		char* datalenPtr = NULL;
-	
-		p += sizeof(unsigned int);//space of totalLen
-	
-		memcpy(p, (const char*)(&paramMask), sizeof(ushort_td));
-		p += sizeof(ushort_td);
-		
-		memcpy(p, (const char*)(&result), sizeof(short_td));
-		resltPtr = (short_td*)p;
-		p += sizeof(short_td);
-	
-		if (P_MASK_POSBLK & paramMask)
-		{
-			memcpy(p, (const char*)pbk, POSBLK_SIZE);
-			p += POSBLK_SIZE;
-		}
+        if (paramMask & P_MASK_KEYBUF)
+        {
+            keylen = tb->keyPackCopy((uchar*)nw->curPtr() + sizeof(keylen_td));
+            nw->write((const char*)&keylen, sizeof(keylen_td));
+            nw->write(NULL, keylen, netsvc::server::netWriter::curSeekOnly);
+        }
+        // write final ret
+        if (paramMask & P_MASK_FINALRET)
+        {
+            nw->write((const char*)&result, sizeof(short_td));
+            resltPtr = (short_td*)(nw->curPtr() - 2);
+        }
+        unsigned int* totalLen = (unsigned int*)nw->ptr();
+        *totalLen = nw->resultLen();
 
-		if (P_MASK_DATALEN & paramMask)
-		{
-			datalenPtr = p;
-			p += sizeof(uint_td);
-		}
+        return *totalLen - allreadysent;
+    }
 
-		if (P_MASK_DATA & paramMask)
-		{
-			if (tb && (data == tb->record()))
-				resultLen = tb->recordPackCopy(p, 0);
-			else
-				memcpy(p, (const char*)data, resultLen);
-			p += resultLen;
-		}
+    inline unsigned int serialize(engine::mysql::table* tb, char* buf)
+    {
+        char* p = buf;
+        char* datalenPtr = NULL;
 
-		if (P_MASK_DATALEN & paramMask)
-			memcpy(datalenPtr, (const char*)&resultLen, sizeof(uint_td));
-	
-		if (tb && (P_MASK_KEYBUF & paramMask))
-		{
-			keylen = tb->keyPackCopy((uchar*)p + sizeof(keylen_td));
-			memcpy(p, (const char*)&keylen, sizeof(keylen_td));
-			p += sizeof(keylen_td);
-			p += keylen;
-		}
-		unsigned int totallen = (unsigned int)(p - buf);
-		memcpy(buf, &totallen, sizeof(unsigned int));
-		return totallen;
-	}
+        p += sizeof(unsigned int); // space of totalLen
 
-	inline void parse(const char* p)
-	{
-		clear();
-		p += sizeof(unsigned int);
-		paramMask = *((ushort_td*)p);
-		p += sizeof(ushort_td);
-		op = *((ushort_td*)p);
-		p += sizeof(ushort_td);
-	
-		if (P_MASK_POSBLK & paramMask)
-		{
-			pbk = (posblk*)p;
-			p += POSBLK_SIZE;
-		}
-		if (P_MASK_DATALEN & paramMask)
-		{
-			datalen = (uint_td*)p;
-			p += sizeof(uint_td);
-		}
+        memcpy(p, (const char*)(&paramMask), sizeof(ushort_td));
+        p += sizeof(ushort_td);
 
-		if (P_MASK_EX_SENDLEN & paramMask)
-		{
-			data = (void_td*)p;
-			int v = *((int*)p);
-			v &= 0xFFFFFFF; //28bit
-			p += v;
-		}
-		else if (P_MASK_DATA & paramMask)
-		{
-			data = (void_td*)p;
-			p += *datalen;
-		}
-		if (P_MASK_KEYBUF & paramMask)
-		{
-			keylen = *((keylen_td*)p);
-			p += sizeof(keylen_td);
-			keybuf = (void_td*)p;
-			p += keylen + 1;//null terminate for server
-		}
-		if (P_MASK_KEYNUM & paramMask)
-		{
-			keyNum =  *((char_td*)p);
-			p += sizeof(char_td);
-		}
-		cid = *((ushort_td*)p);
-		p += sizeof(ushort_td);
+        memcpy(p, (const char*)(&result), sizeof(short_td));
+        resltPtr = (short_td*)p;
+        p += sizeof(short_td);
 
-		if (paramMask & P_MASK_BLOBBODY)
-		{
-			blobHeader = (const bzs::db::blobHeader*)p;
-			if (blobHeader->rows)
-				blobHeader->resetCur();
-		}
-		else
-			blobHeader = NULL;
-	
-	}
+        if (P_MASK_POSBLK & paramMask)
+        {
+            memcpy(p, (const char*)pbk, POSBLK_SIZE);
+            p += POSBLK_SIZE;
+        }
+
+        if (P_MASK_DATALEN & paramMask)
+        {
+            datalenPtr = p;
+            p += sizeof(uint_td);
+        }
+
+        if (P_MASK_DATA & paramMask)
+        {
+            if (tb && (data == tb->record()))
+                resultLen = tb->recordPackCopy(p, 0);
+            else
+                memcpy(p, (const char*)data, resultLen);
+            p += resultLen;
+        }
+
+        if (P_MASK_DATALEN & paramMask)
+            memcpy(datalenPtr, (const char*)&resultLen, sizeof(uint_td));
+
+        if (tb && (P_MASK_KEYBUF & paramMask))
+        {
+            keylen = tb->keyPackCopy((uchar*)p + sizeof(keylen_td));
+            memcpy(p, (const char*)&keylen, sizeof(keylen_td));
+            p += sizeof(keylen_td);
+            p += keylen;
+        }
+        unsigned int totallen = (unsigned int)(p - buf);
+        memcpy(buf, &totallen, sizeof(unsigned int));
+        return totallen;
+    }
+
+    inline void parse(const char* p)
+    {
+        clear();
+        p += sizeof(unsigned int);
+        paramMask = *((ushort_td*)p);
+        p += sizeof(ushort_td);
+        op = *((ushort_td*)p);
+        p += sizeof(ushort_td);
+
+        if (P_MASK_POSBLK & paramMask)
+        {
+            pbk = (posblk*)p;
+            p += POSBLK_SIZE;
+        }
+        if (P_MASK_DATALEN & paramMask)
+        {
+            datalen = (uint_td*)p;
+            p += sizeof(uint_td);
+        }
+
+        if (P_MASK_EX_SENDLEN & paramMask)
+        {
+            data = (void_td*)p;
+            int v = *((int*)p);
+            v &= 0xFFFFFFF; // 28bit
+            p += v;
+        }
+        else if (P_MASK_DATA & paramMask)
+        {
+            data = (void_td*)p;
+            p += *datalen;
+        }
+        if (P_MASK_KEYBUF & paramMask)
+        {
+            keylen = *((keylen_td*)p);
+            p += sizeof(keylen_td);
+            keybuf = (void_td*)p;
+            p += keylen + 1; // null terminate for server
+        }
+        if (P_MASK_KEYNUM & paramMask)
+        {
+            keyNum = *((char_td*)p);
+            p += sizeof(char_td);
+        }
+        cid = *((ushort_td*)p);
+        p += sizeof(ushort_td);
+
+        if (paramMask & P_MASK_BLOBBODY)
+        {
+            blobHeader = (const bzs::db::blobHeader*)p;
+            if (blobHeader->rows)
+                blobHeader->resetCur();
+        }
+        else
+            blobHeader = NULL;
+    }
 };
 
+} // namespace mysql
+} // namespace protocol
+} // namespace db
+} // namespace tdap
+} // namespace bzs
 
-
-}//namespace mysql
-}//namespace protocol
-}//namespace db
-}//namespace tdap
-}//namespace bzs
-
-
-#endif //BZS_DB_PROTOCOL_TDAP_MYSQL_REQUSET_H
+#endif // BZS_DB_PROTOCOL_TDAP_MYSQL_REQUSET_H

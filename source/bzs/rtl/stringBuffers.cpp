@@ -12,8 +12,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include <stdlib.h>
@@ -31,72 +31,73 @@ namespace rtl
 
 static const int MEMORY_UNIT = 8192;
 
-stringBuffer::stringBuffer(size_t size):m_ptr(NULL),m_len(0),m_pos(0)
+stringBuffer::stringBuffer(size_t size) : m_ptr(NULL), m_len(0), m_pos(0)
 {
-	alloc(size);
+    alloc(size);
 }
 
 stringBuffer::~stringBuffer()
 {
-	if (m_ptr)
-		free(m_ptr);
-	m_ptr = NULL;
+    if (m_ptr)
+        free(m_ptr);
+    m_ptr = NULL;
 }
 
 void stringBuffer::clear()
 {
-	m_pos = 0;
+    m_pos = 0;
 }
 
 size_t stringBuffer::alloc(size_t size)
 {
-	m_ptr = (char*)malloc(size);
-	if (m_ptr)
-		m_len = size;
-	m_pos = 0;
-	return m_len;
+    m_ptr = (char*)malloc(size);
+    if (m_ptr)
+        m_len = size;
+    m_pos = 0;
+    return m_len;
 }
 
 size_t stringBuffer::realloc(size_t size)
 {
-	size = ((size / MEMORY_UNIT) + ((size % MEMORY_UNIT) ? 1:0))*MEMORY_UNIT;
-	m_ptr = (char*)::realloc(m_ptr, size);
-	if (m_ptr)
-		m_len = size;
-	return m_len;
+    size =
+        ((size / MEMORY_UNIT) + ((size % MEMORY_UNIT) ? 1 : 0)) * MEMORY_UNIT;
+    m_ptr = (char*)::realloc(m_ptr, size);
+    if (m_ptr)
+        m_len = size;
+    return m_len;
 }
 
 char* stringBuffer::getPtrA(size_t size)
 {
-	char* p = NULL;
+    char* p = NULL;
 
-	if (m_pos + size > m_len)
-		realloc(m_pos + size + 1);
-	if (m_pos + size <= m_len)
-	{
-		p = m_ptr + m_pos;
-		m_pos += size;
-		m_curSize = size;
-	}
-	assert(p);
-	return p;
+    if (m_pos + size > m_len)
+        realloc(m_pos + size + 1);
+    if (m_pos + size <= m_len)
+    {
+        p = m_ptr + m_pos;
+        m_pos += size;
+        m_curSize = size;
+    }
+    assert(p);
+    return p;
 }
 
 WCHAR* stringBuffer::getPtrW(size_t size /* charnum */)
 {
-	WCHAR* p = NULL;
-	size_t sizetmp = size * sizeof(WCHAR);
-	if (m_pos + sizetmp > m_len)
-		realloc(m_pos + sizetmp + sizeof(WCHAR));
-	if (m_pos + sizetmp <= m_len)
-	{
-		p = (WCHAR*)(m_ptr + m_pos);
-		m_pos += sizetmp;
-		m_curSize = size;
-	}
-	assert(p);
-	return p;
+    WCHAR* p = NULL;
+    size_t sizetmp = size * sizeof(WCHAR);
+    if (m_pos + sizetmp > m_len)
+        realloc(m_pos + sizetmp + sizeof(WCHAR));
+    if (m_pos + sizetmp <= m_len)
+    {
+        p = (WCHAR*)(m_ptr + m_pos);
+        m_pos += sizetmp;
+        m_curSize = size;
+    }
+    assert(p);
+    return p;
 }
 
-}//namespace rtl
-}//namespace bzs
+} // namespace rtl
+} // namespace bzs

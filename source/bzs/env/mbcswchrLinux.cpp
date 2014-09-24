@@ -12,15 +12,13 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 
 #include "mbcswchrLinux.h"
 #include <stdio.h>
-
-
 
 namespace bzs
 {
@@ -33,8 +31,5 @@ cvt mbu8cvt(UTF8_CHARSETNAME, MBC_CHARSETNAME);
 cvt u8wccvt("UTF-16LE", UTF8_CHARSETNAME);
 cvt wcu8cvt(UTF8_CHARSETNAME, "UTF-16LE");
 
-
-}//namespace env
-}//namespace bzs
-
-
+} // namespace env
+} // namespace bzs

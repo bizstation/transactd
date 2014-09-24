@@ -33,56 +33,54 @@ namespace client
 
 class DLLLIB recordset
 {
-	
-	friend class activeTable;
-	class recordsetImple* m_imple;
+
+    friend class activeTable;
+    class recordsetImple* m_imple;
 
 public:
-	typedef std::vector<row_ptr >::iterator iterator;
+    typedef std::vector<row_ptr>::iterator iterator;
 
-	recordset();
-	recordset(const recordset& r);
-	recordset& operator=(const recordset& r);
-	~recordset();
-	recordset* clone() const;
-	row& operator[](size_t index)const;
-	row& first() const;
-	row& last() const;
-	size_t size()const;
-	size_t count()const;
-	void clearRecords();
-	const fielddefs* fieldDefs() const;
-	void clear();
-	recordset& top(recordset& c, int n)const;
-	iterator begin();
-	iterator end();
-	iterator erase(size_t index);
-	iterator erase(const iterator& it);
-	void removeField(int index);
-	recordset& matchBy(recordsetQuery& rq);
-	recordset& groupBy(groupQuery& gq);
-	recordset& orderBy(const _TCHAR* name1 , const _TCHAR* name2=NULL,
-					 const _TCHAR* name3=NULL,const _TCHAR* name4=NULL,
-					 const _TCHAR* name5=NULL, const _TCHAR* name6=NULL,
-					 const _TCHAR* name7=NULL, const _TCHAR* name8=NULL);
-	recordset& orderBy(const sortFields& orders);
-	recordset& reverse();
-	void appendField(const _TCHAR* name, int type, short len);
-	recordset& operator+=(const recordset& r);
-	void release();
-	static recordset* create();
+    recordset();
+    recordset(const recordset& r);
+    recordset& operator=(const recordset& r);
+    ~recordset();
+    recordset* clone() const;
+    row& operator[](size_t index) const;
+    row& first() const;
+    row& last() const;
+    size_t size() const;
+    size_t count() const;
+    void clearRecords();
+    const fielddefs* fieldDefs() const;
+    void clear();
+    recordset& top(recordset& c, int n) const;
+    iterator begin();
+    iterator end();
+    iterator erase(size_t index);
+    iterator erase(const iterator& it);
+    void removeField(int index);
+    recordset& matchBy(recordsetQuery& rq);
+    recordset& groupBy(groupQuery& gq);
+    recordset& orderBy(const _TCHAR* name1, const _TCHAR* name2 = NULL,
+                       const _TCHAR* name3 = NULL, const _TCHAR* name4 = NULL,
+                       const _TCHAR* name5 = NULL, const _TCHAR* name6 = NULL,
+                       const _TCHAR* name7 = NULL, const _TCHAR* name8 = NULL);
+    recordset& orderBy(const sortFields& orders);
+    recordset& reverse();
+    void appendField(const _TCHAR* name, int type, short len);
+    recordset& operator+=(const recordset& r);
+    void release();
+    static recordset* create();
 
 #ifdef _DEBUG
-	void dump();
+    void dump();
 #endif
-
 };
 
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-
-#endif //BZS_DB_PROTOCOL_TDAP_CLIENT_RECORDSET_H
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_RECORDSET_H

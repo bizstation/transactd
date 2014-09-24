@@ -13,8 +13,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "resource.h"
@@ -25,28 +25,30 @@
 
 using namespace ATL;
 
-class ATL_NO_VTABLE CField : public CComObjectRootEx<CComSingleThreadModel>, public CComCoClass<CField, &CLSID_Field>,
-    public IDispatchImpl<IField, &IID_IField, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CField
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CField, &CLSID_Field>,
+      public IDispatchImpl<IField, &IID_IField, &LIBID_transactd,
+                           /* wMajor = */ 1, /* wMinor = */ 0>
 {
 public:
-    CField():m_tb(NULL){}
-	bzs::db::protocol::tdap::client::field m_fd;
+    CField() : m_tb(NULL) {}
+    bzs::db::protocol::tdap::client::field m_fd;
     bzs::db::protocol::tdap::client::table* m_tb;
     short m_index;
 
-    BEGIN_COM_MAP(CField) 
-		COM_INTERFACE_ENTRY(IField) 
-		COM_INTERFACE_ENTRY(IDispatch) 
-	END_COM_MAP()
+    BEGIN_COM_MAP(CField)
+    COM_INTERFACE_ENTRY(IField)
+    COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    HRESULT FinalConstruct() {return S_OK;}
+    HRESULT FinalConstruct() { return S_OK; }
 
     void FinalRelease() {}
 
 public:
-
     STDMETHOD(get_Text)(BSTR* Value);
     STDMETHOD(get_Vlng)(int* Value);
     STDMETHOD(put_Text)(BSTR Value);
@@ -57,5 +59,4 @@ public:
     STDMETHOD(get_Vdbl)(double* Value);
     STDMETHOD(put_Vbin)(BSTR Value);
     STDMETHOD(put_Vdbl)(double Value);
-
 };

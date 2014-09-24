@@ -12,107 +12,107 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "stdafx.h"
 #include "RecordsetQuery.h"
 
-
-
 void CRecordsetQuery::setResult(IRecordsetQuery** retVal)
 {
-	this->QueryInterface(IID_IRecordsetQuery, (void**)retVal);
+    this->QueryInterface(IID_IRecordsetQuery, (void**)retVal);
 }
 
 STDMETHODIMP CRecordsetQuery::Reset(IRecordsetQuery** retVal)
 {
     m_qb.reset();
-	setResult(retVal);
-	return S_OK;
+    setResult(retVal);
+    return S_OK;
 }
 
-STDMETHODIMP CRecordsetQuery::When(BSTR Name, BSTR Logic, VARIANT Value, IRecordsetQuery** retVal)
+STDMETHODIMP CRecordsetQuery::When(BSTR Name, BSTR Logic, VARIANT Value,
+                                   IRecordsetQuery** retVal)
 {
     if (Value.vt != VT_BSTR)
-		VariantChangeType( &Value, &Value, 0, VT_BSTR );
-	m_qb.when(Name, Logic, Value.bstrVal);
-	setResult(retVal);
-	return S_OK;
+        VariantChangeType(&Value, &Value, 0, VT_BSTR);
+    m_qb.when(Name, Logic, Value.bstrVal);
+    setResult(retVal);
+    return S_OK;
 }
 
-STDMETHODIMP CRecordsetQuery::And(BSTR Name, BSTR Logic, VARIANT Value, IRecordsetQuery** retVal)
+STDMETHODIMP CRecordsetQuery::And(BSTR Name, BSTR Logic, VARIANT Value,
+                                  IRecordsetQuery** retVal)
 {
     if (Value.vt != VT_BSTR)
-		VariantChangeType( &Value, &Value, 0, VT_BSTR );
-	m_qb.and_(Name, Logic, Value.bstrVal);
-	setResult(retVal);
-	return S_OK;
+        VariantChangeType(&Value, &Value, 0, VT_BSTR);
+    m_qb.and_(Name, Logic, Value.bstrVal);
+    setResult(retVal);
+    return S_OK;
 }
 
-STDMETHODIMP CRecordsetQuery::Or(BSTR Name, BSTR Logic, VARIANT Value, IRecordsetQuery** retVal)
+STDMETHODIMP CRecordsetQuery::Or(BSTR Name, BSTR Logic, VARIANT Value,
+                                 IRecordsetQuery** retVal)
 {
     if (Value.vt != VT_BSTR)
-		VariantChangeType( &Value, &Value, 0, VT_BSTR );
-	m_qb.or_(Name, Logic, Value.bstrVal);
-	setResult(retVal);
-	return S_OK;
+        VariantChangeType(&Value, &Value, 0, VT_BSTR);
+    m_qb.or_(Name, Logic, Value.bstrVal);
+    setResult(retVal);
+    return S_OK;
 }
 
-
-STDMETHODIMP CSortField::get_Name( BSTR* Value)
+STDMETHODIMP CSortField::get_Name(BSTR* Value)
 {
-	return S_OK;
+    return S_OK;
 }
 
 STDMETHODIMP CSortField::put_Name(BSTR Value)
 {
-	return S_OK;
+    return S_OK;
 }
 
 STDMETHODIMP CSortField::get_Asc(VARIANT_BOOL* Value)
 {
-	return S_OK;
+    return S_OK;
 }
 
 STDMETHODIMP CSortField::put_Asc(VARIANT_BOOL Value)
 {
-	return S_OK;
+    return S_OK;
 }
 
 //------------------------------------------------------------------------
-STDMETHODIMP CSortFields::Add(  BSTR Name, VARIANT_BOOL Asc)
+STDMETHODIMP CSortFields::Add(BSTR Name, VARIANT_BOOL Asc)
 {
-	m_sortFields.add(Name, (Asc==-1));
-	return S_OK;
+    m_sortFields.add(Name, (Asc == -1));
+    return S_OK;
 }
 
 STDMETHODIMP CSortFields::get_Size(int* Value)
 {
-	*Value = (int)m_sortFields.size();
-	return S_OK;
+    *Value = (int)m_sortFields.size();
+    return S_OK;
 }
 
 STDMETHODIMP CSortFields::Item(int Index, ISortField** retVal)
 {
-	CComObject<CSortField>* obj;
+    CComObject<CSortField>* obj;
 
-	CComObject<CSortField>::CreateInstance(&obj);
-	if (obj)
-	{
-		obj->m_sortField = m_sortFields[Index];
-		
-		ISortField* fd;
-		obj->QueryInterface(IID_ISortField, (void**)&fd);
-		_ASSERTE(fd);
-		*retVal = fd;
-	}
-	return S_OK;
+    CComObject<CSortField>::CreateInstance(&obj);
+    if (obj)
+    {
+        obj->m_sortField = m_sortFields[Index];
+
+        ISortField* fd;
+        obj->QueryInterface(IID_ISortField, (void**)&fd);
+        _ASSERTE(fd);
+        *retVal = fd;
+    }
+    return S_OK;
 }
 
 STDMETHODIMP CSortFields::Clear()
 {
-	m_sortFields.clear();
-	return S_OK;
+    m_sortFields.clear();
+    return S_OK;
 }

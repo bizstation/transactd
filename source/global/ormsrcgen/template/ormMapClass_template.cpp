@@ -5,44 +5,47 @@
 using namespace std;
 using namespace bzs::db::protocol::tdap::client;
 
-%nameSpaceMapBegin%
+% nameSpaceMapBegin %
 
-/*  class %className%_fdi */
-void  %className%_fdi::init(table* tb)
+    /*  class %className%_fdi */
+    void % className % _fdi::init(table* tb){ % fdiResolver % }
+
+    % className % _fdi* createFdi(% className % _fdi*)
 {
-%fdiResolver%
+    return new % className % _fdi();
 }
-
-%className%_fdi* createFdi(%className%_fdi *){return new %className%_fdi();}
-void destroyFdi(%className%_fdi * p){delete p;}
-void initFdi(%className%_fdi * fdi, td::client::table* tb){fdi->init(tb);}
-
-
+void destroyFdi(% className % _fdi * p) { delete p; }
+void initFdi(% className % _fdi * fdi, td::client::table * tb)
+{
+    fdi->init(tb);
+}
 
 /*  class %className%_orm */
-bool %className%_orm::compKeyValue(%className%& l, %className%& r, int keyNum) const
+bool % className %
+    _orm::compKeyValue(% className % &l, % className % &r, int keyNum) const
 {
-%keyComp%
+    % keyComp %
 }
 
-void %className%_orm::setKeyValues(%className%& m, const fields& fds, int keyNum)
+void % className %
+    _orm::setKeyValues(% className % &m, const fields& fds, int keyNum)
 {
-%writeKeyValue%
+    % writeKeyValue %
 }
 
-void %className%_orm::writeMap(%className%& m, const fields& fds, int optipn)
+void % className %
+    _orm::writeMap(% className % &m, const fields& fds, int optipn)
 {
-%write%
+    % write %
 }
 
-void %className%_orm::readMap(%className%& m, const fields& fds, int optipn)
+void % className %
+    _orm::readMap(% className % &m, const fields& fds, int optipn)
 {
-%read%
+    % read %
 }
 
-void %className%_orm::readAuntoincValue(%className%& m, const fields& fds, int optipn)
-{
-%autoinc%
-}
+void % className % _orm::readAuntoincValue(% className % &m, const fields& fds,
+                                           int optipn){ % autoinc % }
 
-%nameSpaceMapEnd%
+% nameSpaceMapEnd %

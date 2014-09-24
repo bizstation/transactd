@@ -29,16 +29,13 @@ using namespace std;
 // ---------------------------------------------------------------------------
 // class CFiledName
 // ---------------------------------------------------------------------------
-CFiledName::CFiledName(string oName, string n)
-	:name(n), orignName(oName)
-
+CFiledName::CFiledName(string oName, string n) : name(n), orignName(oName)
 {
-
 }
 
-bool CFiledName:: operator < (const CFiledName& rt) const
+bool CFiledName::operator<(const CFiledName& rt) const
 {
-	return orignName < rt.orignName;
+    return orignName < rt.orignName;
 }
 
 // ---------------------------------------------------------------------------
@@ -47,35 +44,34 @@ bool CFiledName:: operator < (const CFiledName& rt) const
 bool CFiledNameResolver::loadFromFile(const string& filename)
 {
 
-
-	ifstream ifs(filename.c_str());
-	if(ifs.fail())
-	{
-		cerr << "File not exist.\n";
-		return false;
-	}
-	string s;
-	while(getline(ifs, s))
-	{
-		size_t pos = s.find("=");
-		if (pos != string::npos)
-			m_list.push_back(CFiledName(s.substr(0, pos), s.substr(pos+1)));
-		else
-			THROW_BZS_ERROR_WITH_MSG(_T("Filed resolver invalid data."));
-
-	}
-	sort(m_list.begin(), m_list.end());
-	return true;
+    ifstream ifs(filename.c_str());
+    if (ifs.fail())
+    {
+        cerr << "File not exist.\n";
+        return false;
+    }
+    string s;
+    while (getline(ifs, s))
+    {
+        size_t pos = s.find("=");
+        if (pos != string::npos)
+            m_list.push_back(CFiledName(s.substr(0, pos), s.substr(pos + 1)));
+        else
+            THROW_BZS_ERROR_WITH_MSG(_T("Filed resolver invalid data."));
+    }
+    sort(m_list.begin(), m_list.end());
+    return true;
 }
 
 string CFiledNameResolver::getName(const char* orignName)
 {
 
-	if (binary_search(m_list.begin(), m_list.end(), CFiledName(orignName, "")))
-	{
-		std::vector<CFiledName>::iterator p;
-		p = lower_bound(m_list.begin(), m_list.end(), CFiledName(orignName, ""));
-		return (*p).name;
-	}
-	return orignName;
+    if (binary_search(m_list.begin(), m_list.end(), CFiledName(orignName, "")))
+    {
+        std::vector<CFiledName>::iterator p;
+        p = lower_bound(m_list.begin(), m_list.end(),
+                        CFiledName(orignName, ""));
+        return (*p).name;
+    }
+    return orignName;
 }

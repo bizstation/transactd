@@ -13,8 +13,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "resource.h"
@@ -24,34 +24,38 @@
 #include <bzs/db/protocol/tdap/client/dbDef.h>
 using namespace ATL;
 
-class ATL_NO_VTABLE CKeySegment : public CComObjectRootEx<CComSingleThreadModel>,
-    public CComCoClass<CKeySegment, &CLSID_KeySegment>,
-    public IDispatchImpl<IKeySegment, &IID_IKeySegment, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CKeySegment
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CKeySegment, &CLSID_KeySegment>,
+      public IDispatchImpl<IKeySegment, &IID_IKeySegment, &LIBID_transactd,
+                           /* wMajor = */ 1, /* wMinor = */ 0>
 {
-	bzs::db::protocol::tdap::keySegment* segment(){return &(*m_tabledefPtr)->keyDefs[m_keyIndex].segments[m_index];};
+    bzs::db::protocol::tdap::keySegment* segment()
+    {
+        return &(*m_tabledefPtr)->keyDefs[m_keyIndex].segments[m_index];
+    };
+
 public:
-    CKeySegment(): m_tabledefPtr(NULL){}
- 	bzs::db::protocol::tdap::tabledef** m_tabledefPtr;
-	short m_keyIndex;
-	short m_index;
- 
-	BEGIN_COM_MAP(CKeySegment) 
-		COM_INTERFACE_ENTRY(IKeySegment) 
-		COM_INTERFACE_ENTRY(IDispatch) 
-	END_COM_MAP()
+    CKeySegment() : m_tabledefPtr(NULL) {}
+    bzs::db::protocol::tdap::tabledef** m_tabledefPtr;
+    short m_keyIndex;
+    short m_index;
+
+    BEGIN_COM_MAP(CKeySegment)
+    COM_INTERFACE_ENTRY(IKeySegment)
+    COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    HRESULT FinalConstruct() {return S_OK;}
+    HRESULT FinalConstruct() { return S_OK; }
 
     void FinalRelease() {}
 
 public:
-
     STDMETHOD(get_FieldNum)(unsigned char* Value);
     STDMETHOD(get_Flags)(IFlags** Value);
 
     STDMETHOD(put_FieldNum)(unsigned char Value);
     STDMETHOD(put_Flags)(IFlags* Value);
-
 };

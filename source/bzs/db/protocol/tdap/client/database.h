@@ -1,5 +1,5 @@
-#ifndef	BZS_DB_PROTOCOL_TDAP_CLIENT_DATABASE_H
-#define	BZS_DB_PROTOCOL_TDAP_CLIENT_DATABASE_H
+#ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_DATABASE_H
+#define BZS_DB_PROTOCOL_TDAP_CLIENT_DATABASE_H
 /* =================================================================
  Copyright (C) 2000-2013 BizStation Corp All rights reserved.
 
@@ -36,93 +36,106 @@ class table;
 class dbdef;
 
 #if defined(__BORLANDC__)
-	typedef bool __stdcall(*deleteRecordFn)(database* db, table* tb, bool inkey);
-	typedef short __stdcall(*schemaMgrFn)(database* db);
-	typedef void __stdcall(*copyDataFn)(database* db, int recordCount, int count, bool &cancel);
+typedef bool __stdcall (*deleteRecordFn)(database* db, table* tb, bool inkey);
+typedef short __stdcall (*schemaMgrFn)(database* db);
+typedef void __stdcall (*copyDataFn)(database* db, int recordCount, int count,
+                                     bool& cancel);
 #else
-
 /** @cond INTERNAL */
-	/** Callback function on a record was deleted. */
-	typedef bool(__STDCALL *deleteRecordFn)(database* db,table* tb, bool inkey);
+/** Callback function on a record was deleted. */
+typedef bool(__STDCALL* deleteRecordFn)(database* db, table* tb, bool inkey);
 /** @endcond */
 
-	/** Callback function on a database is opening by database::open operation. 
-	    This is use for change a table schema and table data at before database 
-	*/
-	typedef short(__STDCALL *schemaMgrFn)(database* db);
+/** Callback function on a database is opening by database::open operation.
+ This is use for change a table schema and table data at before database
+ */
+typedef short(__STDCALL* schemaMgrFn)(database* db);
 
-	/** Callback function on a record was copied by convert table operation. */
-	typedef void(__STDCALL *copyDataFn)(database* db, int recordCount, int count, bool &cancel);
+/** Callback function on a record was copied by convert table operation. */
+typedef void(__STDCALL* copyDataFn)(database* db, int recordCount, int count,
+                                    bool& cancel);
 #endif
-
 
 class DLLLIB database : public nsdatabase
 {
-	struct dbimple* m_impl;
-	void setDir(const _TCHAR* directory);
-	virtual table* createTableObject();
+    struct dbimple* m_impl;
+
+    void setDir(const _TCHAR* directory);
+    virtual table* createTableObject();
 
 protected:
-	database& operator = (const database&);
-	database();
-	virtual ~database();
-	void setLockReadOnly(bool v);
-	virtual void doClose();
-	virtual void doOpen(const _TCHAR* uri, short type, short mode, const _TCHAR* username);
-	virtual bool onOpenAfter() {return true;};
-	virtual bool onTableOpened(table* tb, short fileNum, short mode, bool isCreated) {return true;};
-	virtual char* getContinuousList(int option);
-	virtual void onCopyDataInternal(table* tb, int recordCount, int count, bool& cancel);
-	virtual void doConvertTable(short tableIndex, bool turbo, const _TCHAR* ownerName);
+    database& operator=(const database&);
+    database();
+    virtual ~database();
+    void setLockReadOnly(bool v);
+    virtual void doClose();
+    virtual void doOpen(const _TCHAR* uri, short type, short mode,
+                        const _TCHAR* username);
+
+    virtual bool onOpenAfter() { return true; };
+
+    virtual bool onTableOpened(table* tb, short fileNum, short mode,
+                               bool isCreated)
+    {
+        return true;
+    };
+    virtual char* getContinuousList(int option);
+    virtual void onCopyDataInternal(table* tb, int recordCount, int count,
+                                    bool& cancel);
+    virtual void doConvertTable(short tableIndex, bool turbo,
+                                const _TCHAR* ownerName);
 
 public:
-	virtual void release();
-	dbdef* dbDef() const ;
-	const _TCHAR* rootDir() const ;
-	void setRootDir(const _TCHAR* directory);
-	void* optionalData() const ;
-	void setOptionalData(void* v);
-	bool tableReadOnly() const ;
-	void setTableReadOnly(bool value);
-	const deleteRecordFn onDeleteRecord() const ;
-	void setOnDeleteRecord(const deleteRecordFn v);
-	const copyDataFn onCopyData() const;
-	void setOnCopyData(const copyDataFn v);
-	bool open(const _TCHAR* uri, short schemaType = 0, short mode = -2, const _TCHAR* dir = NULL,
-		const _TCHAR* ownerName = NULL);
-	table* openTable(short fileNum, short mode = TD_OPEN_NORMAL, bool autoCreate = true,
-		const _TCHAR* ownerName = NULL, const _TCHAR* uri = NULL);
-	table* openTable(const _TCHAR* tableName, short mode = 0, bool autoCreate = true,
-		const _TCHAR* ownerName = NULL, const _TCHAR* uri = NULL);
-	database* clone();
-	bool createTable(short fileNum, const _TCHAR* uri = NULL);
-	void create(const _TCHAR* uri, short type = TYPE_SCHEMA_BDF);
-	void drop();
-	void dropTable(const _TCHAR* tableName);
-	void close();
-	short continuous(char_td op = TD_BACKUP_START, bool inclideRepfile = false);
-	short assignSchemaData(dbdef* src);
-	short copyTableData(table* dest, table* src, bool turbo, int offset = 0, short keyNum = -1,
-		int maxSkip = -1);
-	void convertTable(short tableIndex, bool turbo, const _TCHAR* ownerName=NULL);
-	bool existsTableFile(short tableIndex, const _TCHAR* ownerName=NULL);
-	_TCHAR* getTableUri(_TCHAR* buf, short fileNum);
-	void getBtrVersion(btrVersions* versions);
-	bool isOpened() const ;
-	char_td mode() const;
-	virtual int defaultAutoIncSpace() const {return 0;};
-	static database* create();			
-	/* For C++ direct only. don't use by wrapper class for COM or SWIG 
-	   This method is ignore refarence count of nsdatabse. 	
-		*/
-	static void destroy(database* db);  
+    virtual void release();
+    dbdef* dbDef() const;
+    const _TCHAR* rootDir() const;
+    void setRootDir(const _TCHAR* directory);
+    void* optionalData() const;
+    void setOptionalData(void* v);
+    bool tableReadOnly() const;
+    void setTableReadOnly(bool value);
+    const deleteRecordFn onDeleteRecord() const;
+    void setOnDeleteRecord(const deleteRecordFn v);
+    const copyDataFn onCopyData() const;
+    void setOnCopyData(const copyDataFn v);
+    bool open(const _TCHAR* uri, short schemaType = 0, short mode = -2,
+              const _TCHAR* dir = NULL, const _TCHAR* ownerName = NULL);
+    table* openTable(short fileNum, short mode = TD_OPEN_NORMAL,
+                     bool autoCreate = true, const _TCHAR* ownerName = NULL,
+                     const _TCHAR* uri = NULL);
+    table* openTable(const _TCHAR* tableName, short mode = 0,
+                     bool autoCreate = true, const _TCHAR* ownerName = NULL,
+                     const _TCHAR* uri = NULL);
+    database* clone();
+    bool createTable(short fileNum, const _TCHAR* uri = NULL);
+    void create(const _TCHAR* uri, short type = TYPE_SCHEMA_BDF);
+    void drop();
+    void dropTable(const _TCHAR* tableName);
+    void close();
+    short continuous(char_td op = TD_BACKUP_START, bool inclideRepfile = false);
+    short assignSchemaData(dbdef* src);
+    short copyTableData(table* dest, table* src, bool turbo, int offset = 0,
+                        short keyNum = -1, int maxSkip = -1);
+    void convertTable(short tableIndex, bool turbo,
+                      const _TCHAR* ownerName = NULL);
+    bool existsTableFile(short tableIndex, const _TCHAR* ownerName = NULL);
+    _TCHAR* getTableUri(_TCHAR* buf, short fileNum);
+    void getBtrVersion(btrVersions* versions);
+    bool isOpened() const;
+    char_td mode() const;
 
+    virtual int defaultAutoIncSpace() const { return 0; };
+    static database* create();
+    /* For C++ direct only. don't use by wrapper class for COM or SWIG
+     This method is ignore refarence count of nsdatabse.
+     */
+    static void destroy(database* db);
 };
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 
-#endif//BZS_DB_PROTOCOL_TDAP_CLIENT_DATABASE_H
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_DATABASE_H

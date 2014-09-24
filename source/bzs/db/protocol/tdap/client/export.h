@@ -21,16 +21,15 @@
 #include <bzs/env/compiler.h>
 
 #ifdef LIB_TDCLCPP
-#    define DLLLIB AGRPACK
-#    define DLLTEMPLATE
+#define DLLLIB AGRPACK
+#define DLLTEMPLATE
 #else
-#    ifdef BCB_32
-#    	define DLLLIB AGRPACK
-#    else
-#		define DLLLIB PACKAGE_IMPORT
-#	 endif
-#    define DLLTEMPLATE extern
+#ifdef BCB_32
+#define DLLLIB AGRPACK
+#else
+#define DLLLIB PACKAGE_IMPORT
+#endif
+#define DLLTEMPLATE extern
 #endif
 
-#endif //BZS_DB_PROTOCOL_TDAP_CLIENT_EXPORT_H
-
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_EXPORT_H

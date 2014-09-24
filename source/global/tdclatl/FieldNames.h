@@ -13,61 +13,54 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "resource.h"
 #include "tdclatl_i.h"
 #include <bzs/db/protocol/tdap/client/groupQuery.h>
 
-
-
 using namespace ATL;
 
-class ATL_NO_VTABLE CFieldNames : 
-	public CComObjectRootEx<CComSingleThreadModel>,
-    public CComCoClass<CFieldNames, &CLSID_FieldNames>,
-	public IDispatchImpl<IFieldNames, &IID_IFieldNames, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CFieldNames
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CFieldNames, &CLSID_FieldNames>,
+      public IDispatchImpl<IFieldNames, &IID_IFieldNames, &LIBID_transactd,
+                           /* wMajor = */ 1, /* wMinor = */ 0>
 {
 
     bzs::db::protocol::tdap::client::fieldNames m_fns;
-	void setResult(IFieldNames** retVal);
-public:
-	bzs::db::protocol::tdap::client::fieldNames* m_fnsPtr;
-
-	CFieldNames():m_fnsPtr(NULL)
-    { 
-		m_fnsPtr = &m_fns;
-	}
-
-	DECLARE_REGISTRY_RESOURCEID(IDR_FIELDNAMES)
-
-	BEGIN_COM_MAP(CFieldNames) 
-		COM_INTERFACE_ENTRY(IFieldNames) 
-		COM_INTERFACE_ENTRY(IDispatch) 
-	END_COM_MAP()
-
-	DECLARE_PROTECT_FINAL_CONSTRUCT()
-
-    HRESULT FinalConstruct() 
-	{
-		return S_OK;
-	}
-
-	void FinalRelease(){};
-
+    void setResult(IFieldNames** retVal);
 
 public:
+    bzs::db::protocol::tdap::client::fieldNames* m_fnsPtr;
 
-  STDMETHOD(KeyField)(BSTR Name, BSTR Name1, BSTR Name2, BSTR Name3, BSTR Name4, BSTR Name5,
-				BSTR Name6, BSTR Name7,	BSTR Name8, BSTR Name9, BSTR Name10, IFieldNames** retVal);
-  STDMETHOD(get_Count)(int* Value);
-  STDMETHOD(addValue)(BSTR val);
-  STDMETHOD(get_Value)(int index, BSTR* retVal);
-  STDMETHOD(addValues)(BSTR val, BSTR delm);
-  STDMETHOD(Reset)(IFieldNames** retVal);
+    CFieldNames() : m_fnsPtr(NULL) { m_fnsPtr = &m_fns; }
 
+    DECLARE_REGISTRY_RESOURCEID(IDR_FIELDNAMES)
+
+    BEGIN_COM_MAP(CFieldNames)
+    COM_INTERFACE_ENTRY(IFieldNames)
+    COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
+
+    DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+    HRESULT FinalConstruct() { return S_OK; }
+
+    void FinalRelease(){};
+
+public:
+    STDMETHOD(KeyField)(BSTR Name, BSTR Name1, BSTR Name2, BSTR Name3,
+                        BSTR Name4, BSTR Name5, BSTR Name6, BSTR Name7,
+                        BSTR Name8, BSTR Name9, BSTR Name10,
+                        IFieldNames** retVal);
+    STDMETHOD(get_Count)(int* Value);
+    STDMETHOD(addValue)(BSTR val);
+    STDMETHOD(get_Value)(int index, BSTR* retVal);
+    STDMETHOD(addValues)(BSTR val, BSTR delm);
+    STDMETHOD(Reset)(IFieldNames** retVal);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(FieldNames), CFieldNames)
