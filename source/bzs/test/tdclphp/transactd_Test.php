@@ -42,6 +42,7 @@ define("FDI_NAMEW", 2);
 define("BULKBUFSIZE", 65535 - 1000);
 define("TEST_COUNT", 20000);
 define("FIVE_PERCENT_OF_TEST_COUNT", TEST_COUNT / 20);
+define("ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT", TEST_COUNT / 4);
 
 define("ISOLATION_READ_COMMITTED", true);
 define("ISOLATION_REPEATABLE_READ", false);
@@ -907,7 +908,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertNotEquals($tb, NULL);
         // estimate count
         $count = $tb->recordCount(true);
-        $is_valid_count = (abs($count - TEST_COUNT - 3) < FIVE_PERCENT_OF_TEST_COUNT);
+        $is_valid_count = (abs($count - TEST_COUNT) < ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT);
         $this->assertTrue($is_valid_count);
         if (! $is_valid_count)
           print("true record count = " . (TEST_COUNT + 3) . " and estimate recordCount count = " . $count);

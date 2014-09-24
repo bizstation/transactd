@@ -52,6 +52,7 @@ FDI_NAMEW = 2
 BULKBUFSIZE = 65535 - 1000
 TEST_COUNT = 20000
 FIVE_PERCENT_OF_TEST_COUNT = TEST_COUNT / 20
+ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT = TEST_COUNT / 4
 
 ISOLATION_READ_COMMITTED = true
 ISOLATION_REPEATABLE_READ = false
@@ -850,7 +851,7 @@ def testDelete()
   tb = testOpenTable(db)
   # estimate count
   count = tb.recordCount(true)
-  is_valid_count = ((count - TEST_COUNT - 3).abs < FIVE_PERCENT_OF_TEST_COUNT)
+  is_valid_count = ((count - TEST_COUNT).abs < ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT)
   expect(is_valid_count).to be true
   if !is_valid_count
     puts "true record count = #{(TEST_COUNT + 3).to_s} and estimate recordCount count = #{count.to_s}"

@@ -1007,9 +1007,9 @@ void testDelete(database* db)
 {
 	table* tb = openTable(db);
 
-    // estimate number
+	// estimate number
     int count = tb->recordCount(true);
-    bool c = (abs(count - 20003) < 3000);
+	bool c = (abs(count - 20003) < 5000);
     BOOST_CHECK_MESSAGE(c == true, "RecordCount1");
     if (!c)
     {
