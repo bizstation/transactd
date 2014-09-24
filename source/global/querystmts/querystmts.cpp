@@ -27,23 +27,11 @@
 #include <iostream>
 #include <boost/program_options.hpp>
 
-
-
-#if (__BCPLUSPLUS__)
-#   ifdef _WIN64
-#		ifdef _RTLDLL
-#			pragma comment(lib, "libboost_program_options-bcb64-mt-1_50.a")
-#   	else
-#			pragma comment(lib, "libboost_program_options-bcb64-mt-s-1_50.a")
-#   	endif
-#   else
-#		ifdef _RTLDLL
-#			pragma comment(lib, "libboost_program_options-bcb-mt-1_39.lib")
-#   	else
-#			pragma comment(lib, "libboost_program_options-bcb-mt-s-1_39.lib")
-#   	endif
-#   endif
+#ifdef __BCPLUSPLUS__
+#	define BZS_LINK_BOOST_PROGRAM_OPTIONS
+#	include <bzs/env/boost_bcb_link.h>
 #endif
+
 using namespace bzs::db::protocol::tdap::client;
 using namespace boost::program_options;
 

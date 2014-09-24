@@ -21,43 +21,54 @@
 #ifdef __BCPLUSPLUS__
 #	include <bzs/db/protocol/tdap/tdapcapi.h>
 #	ifdef _WIN64
+#		if (__BCPLUSPLUS__ >= 0x690)
+#			define TD_BOOST_VER_STR "1_55"
+#		else
+#           define TD_BOOST_VER_STR "1_50"
+#		endif
 #		ifdef _RTLDLL
 #			ifdef BZS_LINK_BOOST_SYSTEM
-#				pragma comment(lib, "libboost_system-bcb64-mt-1_50.a")
+#				pragma comment(lib, "libboost_system-bcb64-mt-" TD_BOOST_VER_STR ".a")
 #			endif
 #			ifdef BZS_LINK_BOOST_FILESYSTEM
-#				pragma comment(lib, "libboost_filesystem-bcb64-mt-1_50.a")
+#				pragma comment(lib, "libboost_filesystem-bcb64-mt-" TD_BOOST_VER_STR ".a")
 #			endif
 #			ifdef BZS_LINK_BOOST_SERIALIZATION
-#				pragma comment(lib, "libboost_serialization-bcb64-mt-1_50.a")
+#				pragma comment(lib, "libboost_serialization-bcb64-mt-" TD_BOOST_VER_STR ".a")
 #			endif
 #			ifdef BZS_LINK_BOOST_CHRONO
-#				pragma comment(lib, "libboost_chrono-bcb64-mt-1_50.a")
+#				pragma comment(lib, "libboost_chrono-bcb64-mt-" TD_BOOST_VER_STR ".a")
 #			endif
 #			ifdef BZS_LINK_BOOST_TIMER
-#				pragma comment(lib, "libboost_timer-bcb64-mt-1_50.a")
+#				pragma comment(lib, "libboost_timer-bcb64-mt-" TD_BOOST_VER_STR ".a")
 #			endif
 #			ifdef BZS_LINK_BOOST_THREAD
-#				pragma comment(lib, "libboost_thread-bcb64-mt-1_50.a")
+#				pragma comment(lib, "libboost_thread-bcb64-mt-" TD_BOOST_VER_STR ".a")
+#			endif
+#			ifdef BZS_LINK_BOOST_PROGRAM_OPTIONS
+#				pragma comment(lib, "libboost_program_options-bcb64-mt-" TD_BOOST_VER_STR ".a")
 #			endif
 #		else
 #			ifdef BZS_LINK_BOOST_SYSTEM
-#				pragma comment(lib, "libboost_system-bcb64-mt-s-1_50.a")
+#				pragma comment(lib, "libboost_system-bcb64-mt-s-" TD_BOOST_VER_STR ".a")
 #			endif
 #			ifdef BZS_LINK_BOOST_FILESYSTEM
-#				pragma comment(lib, "libboost_filesystem-bcb64-mt-s-1_50.a)
+#				pragma comment(lib, "libboost_filesystem-bcb64-mt-s-" TD_BOOST_VER_STR ".a)
 #			endif
 #			ifdef BZS_LINK_BOOST_SERIALIZATION
-#				pragma comment(lib, "libboost_serialization-bcb64-mt-s-1_50.a")
+#				pragma comment(lib, "libboost_serialization-bcb64-mt-s-" TD_BOOST_VER_STR ".a")
 #			endif
 #			ifdef BZS_LINK_BOOST_CHRONO
-#				pragma comment(lib, "libboost_chrono-bcb64-mt-s-1_50.a")
+#				pragma comment(lib, "libboost_chrono-bcb64-mt-s-" TD_BOOST_VER_STR ".a")
 #			endif
 #			ifdef BZS_LINK_BOOST_TIMER
-#				pragma comment(lib, "libboost_timer-bcb64-mt-s-1_50.a")
+#				pragma comment(lib, "libboost_timer-bcb64-mt-s-" TD_BOOST_VER_STR ".a")
 #			endif
 #			ifdef BZS_LINK_BOOST_THREAD
-#				pragma comment(lib, "libboost_thread-bcb64-mt-s-1_50.a")
+#				pragma comment(lib, "libboost_thread-bcb64-mt-s-" TD_BOOST_VER_STR ".a")
+#			endif
+#			ifdef BZS_LINK_BOOST_PROGRAM_OPTIONS
+#				pragma comment(lib, "libboost_program_options-bcb64-mt-s-" TD_BOOST_VER_STR ".a")
 #			endif
 #		endif
 #	else
@@ -87,6 +98,9 @@
 #			ifdef BZS_LINK_BOOST_THREAD
 #				pragma comment(lib, "libboost_"THREADNAME"-bcb-mt-1_39"LIB_EXTENTION)
 #			endif
+#			ifdef BZS_LINK_BOOST_PROGRAM_OPTIONS
+#				pragma comment(lib, "libboost_program_options-bcb-mt-1_39"LIB_EXTENTION)
+#			endif
 #		else
 #			ifdef BZS_LINK_BOOST_SYSTEM
 #				pragma comment(lib, "libboost_system-bcb-mt-s-1_39"LIB_EXTENTION)
@@ -105,6 +119,9 @@
 #			endif
 #			ifdef BZS_LINK_BOOST_THREAD
 #				pragma comment(lib, "libboost_"THREADNAME"-bcb-mt-s-1_39"LIB_EXTENTION)
+#			endif
+#			ifdef BZS_LINK_BOOST_PROGRAM_OPTIONS
+#				pragma comment(lib, "libboost_program_options-bcb-mt-s-1_39"LIB_EXTENTION)
 #			endif
 #		endif
 #	endif
