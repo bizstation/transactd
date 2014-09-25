@@ -769,7 +769,7 @@ using namespace bzs::db::protocol::tdap::client;
 %template(and_) bzs::db::protocol::tdap::client::recordsetQuery::and_<_TCHAR*>;
 %template(or_)  bzs::db::protocol::tdap::client::recordsetQuery::or_<_TCHAR*>;
 
-// * bzs/db/protocol/tdap/client/trdboostapi.h *
+// * bzs/db/protocol/tdap/client/table.h *
 %template(where) bzs::db::protocol::tdap::client::query::where<_TCHAR*>;
 %template(and_) bzs::db::protocol::tdap::client::query::and_<_TCHAR*>;
 %template(or_)  bzs::db::protocol::tdap::client::query::or_<_TCHAR*>;

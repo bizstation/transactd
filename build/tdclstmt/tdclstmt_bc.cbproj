@@ -130,7 +130,9 @@
         <BCC_wmls>false</BCC_wmls>
         <BCC_wiip>false</BCC_wiip>
         <ILINK_LibraryPath>..\..\source\bzs\db\protocol\tdap\client\;..\..\lib\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <BRCC_EnableMultiByte>true</BRCC_EnableMultiByte>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
+        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
         <IncludePath>..\..\source\bzs\db\protocol\tdap\client\;..\..\source\;$(IncludePath)</IncludePath>
         <NoVCL>true</NoVCL>
         <ILINK_GenerateImportLibrary>true</ILINK_GenerateImportLibrary>
@@ -229,6 +231,10 @@
         <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)ur_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
     </PropertyGroup>
     <ItemGroup>
+        <ResourceCompile Include="tdclstmt.rc">
+            <Form>tdclstmt.res</Form>
+            <BuildOrder>20</BuildOrder>
+        </ResourceCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\serializer.cpp">
             <BuildOrder>1</BuildOrder>
         </CppCompile>

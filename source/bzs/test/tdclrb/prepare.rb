@@ -23,7 +23,6 @@ require 'transactd'
 FN_ID = 0
 FN_NAME = 1
 
-TYPE_SCHEMA_BDF = 0
 PARALLEL_TRN = 1000
 LOCK_SINGLE_NOWAIT = 200
 TRANS_BIAS = PARALLEL_TRN + LOCK_SINGLE_NOWAIT
@@ -31,31 +30,35 @@ TRANS_BIAS = PARALLEL_TRN + LOCK_SINGLE_NOWAIT
 def createTable(db)
     dbdef = db.dbDef()
     td = Transactd::Tabledef.new()
+    # Set table schema codepage to UTF-8
+    #       - codepage for field NAME and tableNAME
+    td.schemaCodePage = Transactd::CP_UTF8
     td.setTableName('user')
     td.setFileName('user.dat')
+    # Set table default charaset index
+    #        - default charset for field VALUE
+    td.charsetIndex = Transactd::charsetIndex(Transactd::CP_UTF8)
     td.id = 1
     td.pageSize = 2048
     dbdef.insertTable(td)
-    td = dbdef.tableDefs(td.id)
-    
-    fd = dbdef.insertField(td.id, 0)
+    # id
+    fd = dbdef.insertField(td.id, FN_ID)
     fd.setName('id')
     fd.type = Transactd::Ft_integer
     fd.len = 4
     dbdef.updateTableDef(1)
-    
-    fd = dbdef.insertField(td.id, 1)
+    # name
+    fd = dbdef.insertField(td.id, FN_NAME)
     fd.setName('name')
     fd.type = Transactd::Ft_myvarchar
     fd.len = 100
     dbdef.updateTableDef(td.id)
-    
+    # key
     kd = dbdef.insertKey(td.id, 0)
     kd.segment(0).fieldNum = 0
     kd.segment(0).flags.bit8 = 1 # extend key type
     kd.segment(0).flags.bit1 = 1 # changeable
     kd.segmentCount = 1
-    
     td.primaryKeyNum = 0
     dbdef.updateTableDef(td.id)
 end
@@ -107,9 +110,9 @@ def main(argv)
         end
     end
     
-    db = Transactd::Database.createObject()
+    db = Transactd::Database.new()
     
-    if !db.open(uri, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', '')
+    if !db.open(uri, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', '')
         db.create(uri)
         if db.stat() != 0
             puts("create database error No #{db.stat()}")
@@ -118,7 +121,7 @@ def main(argv)
         end
     end
     
-    if !db.open(uri, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', '')
+    if !db.open(uri, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', '')
         puts("open table erorr No #{db.stat().to_s}")
         db.close()
         return
@@ -158,8 +161,8 @@ def main(argv)
     
     if functionNumber == 2
         db.beginTrn(TRANS_BIAS)
-        tb.clearBuffer()
         for i in rangeStart..rangeEnd do
+            tb.clearBuffer()
             tb.setFV(FN_ID, i)
             tb.seek()
             if (tb.stat() == 0)
