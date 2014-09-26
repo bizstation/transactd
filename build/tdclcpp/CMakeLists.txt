@@ -32,9 +32,25 @@ include(../common/check_for_link_iconv.cmake)
 check_for_link_iconv()
 
 
+# ==========================================================
+# check project name and options
+# ==========================================================
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE tdclcpp "" TDCL_CPP_CHARSET "${this_target}")
+string(TOLOWER "${this_target}" this_target)
 project(${this_target})
+# m:multibyte u:unicode mr:multibyte-use_rtm
+if("${this_target}" STREQUAL "tdclcppm")
+  set(TDCL_CPP_CHARSET m)
+  set(TDCL_CPP_USE_RUNTIME_LIBS OFF)
+elseif("${this_target}" STREQUAL "tdclcppu")
+  set(TDCL_CPP_CHARSET u)
+  set(TDCL_CPP_USE_RUNTIME_LIBS OFF)
+elseif("${this_target}" STREQUAL "tdclcppmr")
+  set(TDCL_CPP_CHARSET m)
+  set(TDCL_CPP_USE_RUNTIME_LIBS ON)
+else()
+  message(ERROR "Invalid project name ${this_target}")
+endif()
 
 
 # ==========================================================
@@ -66,30 +82,21 @@ transactd_read_build_number("${TRANSACTD_ROOT}")
 # ==========================================================
 tdcl_add_source_files("${TRANSACTD_ROOT}")
 tdcl_add_include_directory("${TRANSACTD_ROOT}")
-tdcl_add_compiler_options()
-if(MSVC)
-  foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-    if("${TDCL_CPP_CHARSET}" STREQUAL "u")
-      bz_set_UNICODE_cxx_flag("${build_type}")
-    elseif("${TDCL_CPP_CHARSET}" STREQUAL "m")
-      bz_set_MBCS_cxx_flag("${build_type}")
-    endif()
-  endforeach()
-endif()
 
 
 # ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
+  transactd_ver_info_lic()
+  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/tdclcpp.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd CPP Client"
-    F_DESC  "Transactd CPP Client module"
+    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd C++ client"
   )
   transactd_add_rc_file()
 endif()
@@ -102,11 +109,55 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 
 
 # ==========================================================
+# Add compile options
+# ==========================================================
+if(TDCL_CPP_USE_RUNTIME_LIBS)
+  transactd_set_MTMD("MD")
+else()
+  transactd_set_MTMD("MT")
+endif()
+
+
+# ==========================================================
+# Add compile definitions
+# ==========================================================
+if(MSVC)
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    WIN32 _WIN32 _WINDOWS _USRDLL BOOST_ALL_NO_LIB 
+    LIB_TDCLCPP TRDCL_AUTOLINK_OFF TRDCLENGN_EXPORTS _CRT_SECURE_NO_WARNINGS)
+else()
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    PIC BOOST_ALL_NO_LIB)
+  if(NOT MINGW)
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      LINUX)
+  else()
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      WIN32 _WIN32)
+  endif()
+endif()
+if(TRANSACTD_RUBY_GEM OR TRANSACTD_PHP)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    SWIG_BUILDING)
+endif()
+if("${TDCL_CPP_CHARSET}" STREQUAL "u")
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    UNICODE _UNICODE)
+else()
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _MBCS)
+endif()
+
+
+# ==========================================================
 # add link / include
 # ==========================================================
 transactd_link_boost_libraries("filesystem;thread;chrono;system")
 if(CAN_LINK_ICONV)
-  target_link_libraries(${this_target} iconv)
+  target_link_libraries(${this_target} "${ICONV_LIBRARY}")
+endif()
+if(NOT WIN32)
+  target_link_libraries(${this_target} dl)
 endif()
 
 
@@ -115,18 +166,27 @@ endif()
 # ==========================================================
 bz_get_compiler_bitness()
 if(WIN32)
-  ## Windows tdclcpp[_Compiler]_[32|64][m|u]_[MAJOR]_[MINOR].dll
+  ## Windows tdclcpp[_Compiler]_[32|64][m|u|mr]_[MAJOR]_[MINOR].dll
   bz_get_compiler()
+  set(TDCL_CPP_NAME_TMP "tdclcpp${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+  if(TDCL_CPP_USE_RUNTIME_LIBS)
+    set(TDCL_CPP_NAME_TMP "${TDCL_CPP_NAME_TMP}r")
+  endif()
   set_target_properties(${this_target} PROPERTIES PREFIX "")
   set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
-    "tdclcpp${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}_${TDVER_CPP_INTERFACE_VER_MAJOR}_${TDVER_CPP_INTERFACE_VER_MINOR}")
+    "${TDCL_CPP_NAME_TMP}_${TDVER_CPP_INTERFACE_VER_MAJOR}_${TDVER_CPP_INTERFACE_VER_MINOR}")
   set_target_properties(${this_target} PROPERTIES SUFFIX ".dll")
 else()
-  ## Linux   libtdclcpp_[32|64][m|u].so.[MAJOR].[MINOR]
+  ## Linux   libtdclcpp_[32|64][m|u].so.[MAJOR].[MINOR].[RELEASE]
   set_target_properties(${this_target} PROPERTIES PREFIX "lib")
   set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
     "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
-  set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+  if(APPLE)
+  ## Apple   libtdclcpp_[32|64][m|u].[MAJOR].[MINOR].[RELEASE].dylib
+    set_target_properties(${this_target} PROPERTIES SUFFIX ".dylib")
+  else()
+    set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+  endif()
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
     VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE})
@@ -137,6 +197,10 @@ endif()
 # set output directory
 # ==========================================================
 if(NOT COMMAND tdcl_set_output)
-  include(../common/transactd_cl_output.cmake)
+  if(TRANSACTD_RUBY_GEM)
+    include(../tdclrb/gem_output.cmake)
+  else()
+    include(../common/transactd_cl_output.cmake)
+  endif()
 endif()
 tdcl_set_output("${TRANSACTD_BINARY_ROOT}" "${TRANSACTD_CLIENTS_PREFIX}")

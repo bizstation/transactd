@@ -12,8 +12,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "stdafx.h"
@@ -22,46 +22,44 @@
 STDMETHODIMP CField::get_Text(BSTR* Value)
 {
 
-    *Value = ::SysAllocString(m_tb->getFVstr(m_index));
+    *Value = ::SysAllocString(m_fd.getFVstr());
     return S_OK;
 }
 
 STDMETHODIMP CField::get_Vlng(int* Value)
 {
-    *Value = m_tb->getFVint(m_index);
+    *Value = m_fd.getFVint();
     return S_OK;
 }
 
 STDMETHODIMP CField::put_Text(BSTR Value)
 {
-    m_tb->setFVW(m_index, Value);
-    ::SysFreeString(Value);
-
+    m_fd.operator=(Value);
     return S_OK;
 }
 
 STDMETHODIMP CField::put_Vlng(int Value)
 {
-    m_tb->setFV(m_index, Value);
+    m_fd.operator=(Value);
     return S_OK;
 }
 
 STDMETHODIMP CField::get_V64(__int64* Value)
 {
-    *Value = m_tb->getFV64(m_index);
+    *Value = m_fd.getFV64();
     return S_OK;
 }
 
 STDMETHODIMP CField::put_V64(__int64 Value)
 {
-    m_tb->setFV(m_index, Value);
+    m_fd.operator=(Value);
     return S_OK;
 }
 
 STDMETHODIMP CField::get_Vbin(BSTR* Value)
 {
     uint_td size;
-    void* p = m_tb->getFVbin(m_index, size);
+    void* p = m_fd.getFVbin(size);
 
     *Value = ::SysAllocStringByteLen((char*)p, size);
 
@@ -70,7 +68,7 @@ STDMETHODIMP CField::get_Vbin(BSTR* Value)
 
 STDMETHODIMP CField::get_Vdbl(double* Value)
 {
-    *Value = m_tb->getFVdbl(m_index);
+    *Value = m_fd.getFVdbl();
     return S_OK;
 }
 
@@ -78,15 +76,12 @@ STDMETHODIMP CField::put_Vbin(BSTR Value)
 {
 
     int len = ::SysStringByteLen(Value);
-    if (len > m_tb->tableDef()->fieldDefs[m_index].len)
-        len = m_tb->tableDef()->fieldDefs[m_index].len;
-    m_tb->setFV(m_index, Value, len);
-
+    m_fd.setBin(Value, len);
     return S_OK;
 }
 
 STDMETHODIMP CField::put_Vdbl(double Value)
 {
-    m_tb->setFV(m_index, Value);
+    m_fd.operator=(Value);
     return S_OK;
 }

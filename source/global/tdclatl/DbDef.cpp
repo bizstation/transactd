@@ -12,8 +12,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "stdafx.h"
@@ -26,8 +26,6 @@
 
 using namespace bzs::db::protocol::tdap;
 
-
-
 STDMETHODIMP CDbDef::get_TableCount(short* Value)
 {
     *Value = m_dbDef->tableCount();
@@ -39,19 +37,19 @@ STDMETHODIMP CDbDef::TableDef(short Index, ITableDef** Value)
     if (!m_dbDef->tableDefs(Index))
         return Error("Invalid index.", IID_IDbDef);
 
-    CComObject<CTableDef> *piObj = NULL;
+    CComObject<CTableDef>* piObj = NULL;
     CComObject<CTableDef>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_tabledefPtr = m_dbDef->tableDefPtr(Index);
-		ITableDef* tbd;
-		piObj->QueryInterface(IID_ITableDef, (void**)&tbd);
-		_ASSERTE(tbd);
-		*Value = tbd;
-	}
-	else
-		*Value = 0;
-	
+    if (piObj)
+    {
+        piObj->m_tabledefPtr = m_dbDef->tableDefPtr(Index);
+        ITableDef* tbd;
+        piObj->QueryInterface(IID_ITableDef, (void**)&tbd);
+        _ASSERTE(tbd);
+        *Value = tbd;
+    }
+    else
+        *Value = 0;
+
     return S_OK;
 }
 
@@ -73,7 +71,6 @@ STDMETHODIMP CDbDef::InsertTable(short index, ITableDef** Param1)
     m_dbDef->insertTable(&TableDef);
     this->TableDef(index, Param1);
     return S_OK;
-
 }
 
 STDMETHODIMP CDbDef::DeleteField(short TableIndex, short FieldIndex)
@@ -88,47 +85,52 @@ STDMETHODIMP CDbDef::DeleteKey(short TableIndex, short KeyIndex)
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::InsertField(short TableIndex, short InsertIndex, IFieldDef** Param3)
+STDMETHODIMP CDbDef::InsertField(short TableIndex, short InsertIndex,
+                                 IFieldDef** Param3)
 
 {
     fielddef* fdPtr = m_dbDef->insertField(TableIndex, InsertIndex);
     if (!fdPtr)
         return Error("Invalid index.", IID_IDbDef);
 
-    CComObject<CFieldDef> *piObj;
+    CComObject<CFieldDef>* piObj;
     CComObject<CFieldDef>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_tabledefPtr = m_dbDef->tableDefPtr(TableIndex);
-		piObj->m_index = InsertIndex;
-		IFieldDef* fd;
-		piObj->QueryInterface(IID_IFieldDef, (void**)&fd);
-		_ASSERTE(fd);
-		*Param3 = piObj;
-	}else
-		*Param3 = 0;
-		
+    if (piObj)
+    {
+        piObj->m_tabledefPtr = m_dbDef->tableDefPtr(TableIndex);
+        piObj->m_index = InsertIndex;
+        IFieldDef* fd;
+        piObj->QueryInterface(IID_IFieldDef, (void**)&fd);
+        _ASSERTE(fd);
+        *Param3 = piObj;
+    }
+    else
+        *Param3 = 0;
+
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::InsertKey(short TableIndex, short InsertIndex, IKeyDef** Param3)
+STDMETHODIMP CDbDef::InsertKey(short TableIndex, short InsertIndex,
+                               IKeyDef** Param3)
 
 {
     keydef* keyPtr = m_dbDef->insertKey(TableIndex, InsertIndex);
     if (!keyPtr)
         return Error("Invalid index.", IID_IDbDef);
-    CComObject<CKeyDef> *piObj;
+    CComObject<CKeyDef>* piObj;
     CComObject<CKeyDef>::CreateInstance(&piObj);
-	if (piObj)
-	{
-   		piObj->m_tabledefPtr = m_dbDef->tableDefPtr(TableIndex);;
-		piObj->m_index = InsertIndex;
-		IKeyDef* kb;
-		piObj->QueryInterface(IID_IKeyDef, (void**)&kb);
-		_ASSERTE(kb);
-		*Param3 = piObj;
-	}else
-		*Param3 = 0;
+    if (piObj)
+    {
+        piObj->m_tabledefPtr = m_dbDef->tableDefPtr(TableIndex);
+        ;
+        piObj->m_index = InsertIndex;
+        IKeyDef* kb;
+        piObj->QueryInterface(IID_IKeyDef, (void**)&kb);
+        _ASSERTE(kb);
+        *Param3 = piObj;
+    }
+    else
+        *Param3 = 0;
     return S_OK;
 }
 
@@ -156,74 +158,77 @@ STDMETHODIMP CDbDef::TableNumByName(BSTR Name, short* Value)
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::FieldNumByName( short TableIndex, BSTR Name, short* Value)
+STDMETHODIMP CDbDef::FieldNumByName(short TableIndex, BSTR Name, short* Value)
 {
     *Value = m_dbDef->fieldNumByName(TableIndex, Name);
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::FieldValidLength( eFieldQuery Query, short FieldType, unsigned int* Value)
+STDMETHODIMP CDbDef::FieldValidLength(eFieldQuery Query, short FieldType,
+                                      unsigned int* Value)
 {
-    *Value = m_dbDef->fieldValidLength((client::eFieldQuery)Query, (uchar_td)FieldType);
+    *Value = m_dbDef->fieldValidLength((client::eFieldQuery)Query,
+                                       (uchar_td)FieldType);
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::FindKeynumByFieldNum( short TableIndex, short Index, unsigned short* Value)
+STDMETHODIMP CDbDef::FindKeynumByFieldNum(short TableIndex, short Index,
+                                          unsigned short* Value)
 {
     *Value = m_dbDef->findKeynumByFieldNum(TableIndex, Index);
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::GetRecordLen( short TableIndex, unsigned short* Value)
+STDMETHODIMP CDbDef::GetRecordLen(short TableIndex, unsigned short* Value)
 {
     *Value = m_dbDef->getRecordLen(TableIndex);
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::get_OpenMode( eOpenMode* Value)
+STDMETHODIMP CDbDef::get_OpenMode(eOpenMode* Value)
 {
     *Value = (eOpenMode)m_dbDef->openMode();
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::PopBackup( short TableIndex)
+STDMETHODIMP CDbDef::PopBackup(short TableIndex)
 {
-	m_dbDef->popBackup(TableIndex);
+    m_dbDef->popBackup(TableIndex);
     return S_OK;
 }
-STDMETHODIMP CDbDef::PushBackup( short TableIndex)
+STDMETHODIMP CDbDef::PushBackup(short TableIndex)
 {
-	m_dbDef->pushBackup(TableIndex);
-    return S_OK;
-}
-
-STDMETHODIMP CDbDef::RenumberTable( short OldIndex, short NewIndex)
-{
-	m_dbDef->renumberTable(OldIndex, NewIndex);
+    m_dbDef->pushBackup(TableIndex);
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::Reopen( eOpenMode Mode)
+STDMETHODIMP CDbDef::RenumberTable(short OldIndex, short NewIndex)
 {
-	m_dbDef->reopen((char_td)Mode);
+    m_dbDef->renumberTable(OldIndex, NewIndex);
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::get_Version( int* Value)
+STDMETHODIMP CDbDef::Reopen(eOpenMode Mode)
 {
-	*Value = m_dbDef->version();
+    m_dbDef->reopen((char_td)Mode);
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::put_Version( int Value)
+STDMETHODIMP CDbDef::get_Version(int* Value)
 {
-	m_dbDef->setVersion(Value);
+    *Value = m_dbDef->version();
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::get_Stat( eStatus* Value)
+STDMETHODIMP CDbDef::put_Version(int Value)
 {
-	*Value = (eStatus)m_dbDef->stat();
+    m_dbDef->setVersion(Value);
+    return S_OK;
+}
+
+STDMETHODIMP CDbDef::get_Stat(eStatus* Value)
+{
+    *Value = (eStatus)m_dbDef->stat();
     return S_OK;
 }
 
@@ -231,7 +236,7 @@ STDMETHODIMP CDbDef::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
 {
     if (Value)
     {
-        wchar_t tmp[512] = {NULL};
+        wchar_t tmp[512] = { NULL };
         m_dbDef->tdapErr((HWND)hWnd, tmp);
         *Value = ::SysAllocString(tmp);
     }
@@ -239,4 +244,3 @@ STDMETHODIMP CDbDef::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
         m_dbDef->tdapErr((HWND)hWnd);
     return S_OK;
 }
-

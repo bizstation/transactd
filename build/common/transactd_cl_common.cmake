@@ -25,16 +25,22 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
     ${${this_target}_SOURCE_FILES}
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/btrDate.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/tdapSchema.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/activeTable.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connMgr.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/database.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/databaseFactory.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/dbDef.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/errorMessage.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/field.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fieldDDF.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fieldNameAlias.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fileDDF.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/groupQuery.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/indexDDF.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/memRecord.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/nsDatabase.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/nsTable.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/recordset.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/sharedData.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/table.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/characterset.cpp
@@ -69,32 +75,45 @@ endmacro()
 endif()
 
 # ==========================================================
-#   add compiler / linker options macro
+#   set compiler flags macro
 # ==========================================================
-if(NOT COMMAND tdcl_add_compiler_options)
-macro(tdcl_add_compiler_options)
+if(NOT COMMAND tdcl_set_compiler_flags)
+macro(tdcl_set_compiler_flags)
   foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-    bz_add_cxx_flag("-DBOOST_ALL_NO_LIB -DPIC" "${build_type}")
-    bz_remove_cxx_flag("-fno-exceptions" "${build_type}")
-    bz_remove_cxx_flag("-fno-rtti" "${build_type}")
-    bz_remove_cxx_flag("-fno-implicit-templates" "${build_type}")
-    bz_remove_cxx_flag("/EHsc" "${build_type}")
-    bz_remove_cxx_flag("/EHs" "${build_type}")
     bz_remove_cxx_flag("-DPACKAGE_NO_EXPORT" "${build_type}")
     if(MSVC)
-      bz_add_cxx_flag("/EHa /wd4068 /DARBTREGN_PKG /DTRDCL_AUTOLINK_OFF /DTRDCLENGN_EXPORTS" "${build_type}")
-      bz_set_MTMTd_cxx_flag("${build_type}")
+      bz_remove_cxx_flag("/EHsc" "${build_type}")
+      bz_remove_cxx_flag("/EHs" "${build_type}")
+      bz_remove_cxx_flag("/MDd" "${build_type}")
+      bz_remove_cxx_flag("/MTd" "${build_type}")
+      bz_remove_cxx_flag("/MD" "${build_type}")
+      bz_remove_cxx_flag("/MT" "${build_type}")
+      bz_add_cxx_flag(" /nologo /W3 /WX- /Oy- /EHa /errorReport:prompt" "${build_type}")
+      bz_add_cxx_flag(" /fp:precise /Zc:wchar_t /Zc:forScope /GS /Gd" "${build_type}")
+      bz_add_cxx_flag(" /wd4068 /wd4275 /wd4819 /wd4251" "${build_type}")
+      bz_remove_cxx_flag("-DUNICODE"  "${build_type}")
+      bz_remove_cxx_flag("/DUNICODE"  "${build_type}")
+      bz_remove_cxx_flag("-D_UNICODE" "${build_type}")
+      bz_remove_cxx_flag("/D_UNICODE" "${build_type}")
+      bz_remove_cxx_flag("-DMBCS"     "${build_type}")
+      bz_remove_cxx_flag("/DMBCS"     "${build_type}")
+      bz_remove_cxx_flag("-D_MBCS"    "${build_type}")
+      bz_remove_cxx_flag("/D_MBCS"    "${build_type}")
     else()
-      bz_add_cxx_flag("-fPIC -fabi-version=2 -fexceptions -finput-charset=utf-8" "${build_type}")
-      bz_add_cxx_flag("-fno-omit-frame-pointer -fno-strict-aliasing -fpermissive -frtti" "${build_type}")
-      if(NOT MINGW)
-        bz_add_cxx_flag("-DLINUX" "${build_type}")
+      bz_remove_cxx_flag("-fno-exceptions" "${build_type}")
+      bz_remove_cxx_flag("-fno-rtti" "${build_type}")
+      bz_remove_cxx_flag("-fno-implicit-templates" "${build_type}")
+      if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        bz_add_cxx_flag("-std=c++11 -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register" "${build_type}")
       endif()
+      bz_add_cxx_flag("-fPIC -fexceptions -fno-omit-frame-pointer" "${build_type}")
+      bz_add_cxx_flag("-fno-strict-aliasing -fpermissive -frtti" "${build_type}")
+      bz_add_cxx_flag("-D_MBCS" "${build_type}")
     endif()
   endforeach()
-  if(MINGW)
-    add_definitions(-DWIN32)
-    add_definitions(-D_WIN32)
+  if(MSVC)
+    bz_add_cxx_flag(" /ZI /Od /Ob0 /Gm /RTC1" "_DEBUG")
+    bz_add_cxx_flag(" /Zi /Ox /Oi /GL /Gm- /Gy" "_RELEASE")
   endif()
 endmacro()
 endif()

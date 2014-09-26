@@ -16,28 +16,32 @@
 #   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
 #   02111-1307, USA.
 ##=================================================================
+include(../common/system.cmake)
+include(../common/smart_install.cmake)
 # ==========================================================
 #   set install drectory
 # ==========================================================
 if(NOT COMMAND tdcl_set_output)
 macro(tdcl_set_output TRANSACTD_BINARY_ROOT prefix)
-  ## install to gem/common
-  install(TARGETS ${this_target}
-    LIBRARY DESTINATION "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common"
-    RUNTIME DESTINATION "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common"
-    ARCHIVE DESTINATION "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common"
-  )
-  ## install to system dir (copy file if greater)
-  if(WIN32)
-    get_target_property(tmp_var "${this_target}" LOCATION)
-    get_filename_component(tmp_var "${tmp_var}" NAME)
-    file(TO_CMAKE_PATH "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common/${tmp_var}" tmp_var)
-    bz_smart_install(SOURCES "${tmp_var}" TO_WIN_SYSTEMDIR)
-  else()
-    if("${prefix}" STREQUAL "")
-      install(TARGETS ${this_target} LIBRARY DESTINATION /usr/lib)
+  ## install tdclcppmr
+  if((NOT WIN32) OR MSVC)
+    install(TARGETS tdclcppmr
+      LIBRARY DESTINATION "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common"
+      RUNTIME DESTINATION "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common"
+      ARCHIVE DESTINATION "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common"
+    )
+    ## install to system dir (copy file if greater)
+    if(WIN32)
+      get_target_property(tmp_var "tdclcppmr" LOCATION)
+      get_filename_component(tmp_var "${tmp_var}" NAME)
+      file(TO_CMAKE_PATH "${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common/${tmp_var}" tmp_var)
+      bz_smart_install(SOURCES "${tmp_var}" TO_WIN_SYSTEMDIR)
     else()
-      install(TARGETS ${this_target} LIBRARY DESTINATION "${prefix}")
+      if("${prefix}" STREQUAL "")
+        install(TARGETS tdclcppmr LIBRARY DESTINATION /usr/lib)
+      else()
+        install(TARGETS tdclcppmr LIBRARY DESTINATION "${prefix}")
+      endif()
     endif()
   endif()
 endmacro()

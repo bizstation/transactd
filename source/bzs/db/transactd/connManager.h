@@ -14,19 +14,24 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "connectionRecord.h"
 #include <bzs/netsvc/server/IAppModule.h>
 
-
 namespace bzs
 {
 namespace db
 {
-	namespace engine{namespace mysql{class database;}}
+namespace engine
+{
+namespace mysql
+{
+class database;
+}
+}
 namespace transactd
 {
 
@@ -35,26 +40,28 @@ class module;
 class connManager
 {
 public:
+    typedef std::vector<connection::record> records;
 
-	typedef std::vector<connection::record> records;
 private:
-	mutable records m_records;
-	__int64 m_me;
-	void getConnectionList()const;
-	void getDatabaseList(const module* mod) const;
-	const bzs::db::engine::mysql::database* getDatabase(const module* mod, int dbid)const;
-	void doDisconnect(unsigned __int64 conid);
-	void doDisconnectAll();
+    mutable records m_records;
+    unsigned __int64 m_me;
+    void getConnectionList() const;
+    void getDatabaseList(const module* mod) const;
+    const bzs::db::engine::mysql::database* getDatabase(const module* mod,
+                                                        int dbid) const;
+    void doDisconnect(unsigned __int64 conid);
+    void doDisconnectAll();
+
 public:
-	connManager(unsigned __int64 me):m_me(me){};
-	virtual ~connManager();
-	const records& getRecords(unsigned __int64 conid, int dbid) const;
-	void disconnect(unsigned __int64 conid);
-	void disconnectAll();
+    connManager(unsigned __int64 me) : m_me(me){};
+    virtual ~connManager();
+    const records& getRecords(unsigned __int64 conid, int dbid) const;
+    void disconnect(unsigned __int64 conid);
+    void disconnectAll();
 };
 
-}//namespace transactd
-}//namespace db
-}//namespace bzs
+} // namespace transactd
+} // namespace db
+} // namespace bzs
 
-#endif//BZS_DB_TRANSACTD_CONNMANAGER_H
+#endif // BZS_DB_TRANSACTD_CONNMANAGER_H

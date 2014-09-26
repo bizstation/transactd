@@ -3,10 +3,8 @@
 #include <bzs/db/protocol/tdap/client/table.h>
 #include <bzs/db/protocol/tdap/client/dbDef.h>
 
-
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
-
 
 /**
 @brief read and delete example
@@ -14,7 +12,7 @@ using namespace bzs::db::protocol::tdap;
 This program deletes one record of a "user" table.
 
 Please execute "create database" , "change schema" and "insert records" example
-    before execute this example.
+        before execute this example.
 
 */
 
@@ -26,28 +24,25 @@ static const char_td keynum_id = 0;
 
 /** show database operation error
 */
-void showError(const _TCHAR* caption,const _TCHAR* tableName, short statusCode)
+void showError(const _TCHAR* caption, const _TCHAR* tableName, short statusCode)
 {
-    _TCHAR tmp[1024]={0x00};
+    _TCHAR tmp[1024] = { 0x00 };
     nstable::tdapErr(0x00, statusCode, tableName, tmp);
-    _tprintf(_T("%s error No.%ld %s\n"),caption, statusCode, tmp);
+    _tprintf(_T("[ERROR] %s No.%ld %s\n"), caption, statusCode, tmp);
 }
-
 
 bool deleteUser(table* tb)
 {
     tb->clearBuffer();
-    tb->setKeyNum(keynum_id); //use id key
-    tb->setFV(fieldnum_id, 3);//id=3 satoshi
+    tb->setKeyNum(keynum_id); // use id key
+    tb->setFV(fieldnum_id, 3); // id=3 satoshi
     tb->seek();
     if (tb->stat() == 0)
         tb->del();
-    if (tb->stat()!=0)
+    if (tb->stat() != 0)
         showError(_T("update user"), tb->tableDef()->tableName(), tb->stat());
-    return (tb->stat()== 0);
+    return (tb->stat() == 0);
 }
-
-
 
 /** Open database
  */
@@ -76,9 +71,9 @@ int _tmain(int argc, _TCHAR* argv[])
             showError(_T("open user table"), NULL, db->stat());
         else
         {
-             if (deleteUser(tbu))
+            if (deleteUser(tbu))
                 _tprintf(_T("Delete records success. \n"));
-             tbu->release();
+            tbu->release();
         }
         db->close();
     }

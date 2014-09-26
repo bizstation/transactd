@@ -31,8 +31,8 @@ namespace tdap
 namespace client
 {
 
-#pragma option -a1
-pragma_pack1
+#pragma pack(push, 1)
+pragma_pack1;
 
 struct SFILEDDF
 {
@@ -43,10 +43,8 @@ struct SFILEDDF
     char filler[9];
 };
 
-#pragma option -a
-pragma_pop
-
-
+#pragma pack(pop)
+pragma_pop;
 
 class fileDDF : public nstable
 {
@@ -67,20 +65,16 @@ public:
     char filename[65];
     ushort_td flag;
     char filler[9];
-
-
     char keybuf[128];
 
-    explicit fileDDF(nsdatabase *pbe);
+    explicit fileDDF(nsdatabase* pbe);
     void createTable(const _TCHAR* fullpath);
     using nstable::open;
-
-
 };
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-#endif//BZS_DB_PROTOCOL_TDAP_CLIENT_FILEDDF_H
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_FILEDDF_H

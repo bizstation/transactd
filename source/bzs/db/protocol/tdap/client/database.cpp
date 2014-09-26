@@ -16,13 +16,8 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <bzs/env/tstring.h>
-#pragma hdrstop
-
 #include "database.h"
-
 #include "table.h"
-
 #include "dbDef.h"
 #include <limits.h>
 #include <sys/stat.h>
@@ -45,23 +40,24 @@ namespace client
 
 struct dbimple
 {
-
-    _TCHAR rootDir[MAX_PATH];
-    bool isOpened;
     dbdef* dbDef;
     void* optionalData;
-    bool isTableReadOnly;
-    bool lockReadOnly;
+    _TCHAR rootDir[MAX_PATH];
     deleteRecordFn m_deleteRecordFn;
     copyDataFn m_copyDataFn;
+    bool isOpened;
+    bool isTableReadOnly;
+    bool lockReadOnly;
 
-    dbimple() : dbDef(NULL), isOpened(false), m_deleteRecordFn(NULL),m_copyDataFn(NULL), optionalData(NULL),
-        isTableReadOnly(false), lockReadOnly(false)
+    dbimple()
+        : dbDef(NULL), optionalData(NULL), m_deleteRecordFn(NULL),
+          m_copyDataFn(NULL), isOpened(false), isTableReadOnly(false),
+          lockReadOnly(false)
     {
         rootDir[0] = 0x00;
     }
 
-    dbimple& operator = (const dbimple & rt)
+    dbimple& operator=(const dbimple& rt)
     {
         if (&rt != this)
         {
@@ -73,59 +69,105 @@ struct dbimple
             lockReadOnly = rt.lockReadOnly;
             m_deleteRecordFn = rt.m_deleteRecordFn;
             m_copyDataFn = rt.m_copyDataFn;
-
         }
         return *this;
-
     }
 };
 
-void database::destroy(database* db) {delete db;}
-
-database::database() : nsdatabase() 
+void database::destroy(database* db)
 {
-	m_impl = new dbimple();
+    delete db;
+}
+
+database::database() : nsdatabase()
+{
+    m_impl = new dbimple();
 }
 
 database::~database()
 {
-    close();
+    doClose();
     delete m_impl;
 }
 
 void database::release()
 {
-	if (m_impl->dbDef)
-	{
-		m_impl->dbDef->release();
-		m_impl->dbDef = NULL;
-	}
-	nsdatabase::release();
+    if (refCount() == 1)
+        nsdatabase::release();
+    else
+    {
+        nsdatabase::release();
+        if ((refCount() == 1) && m_impl->dbDef &&
+            (m_impl->dbDef->nsdb() == this))
+            nsdatabase::release();
+    }
 }
 
-dbdef* database::dbDef() const {return m_impl->dbDef;}
+dbdef* database::dbDef() const
+{
+    return m_impl->dbDef;
+}
 
-const _TCHAR* database::rootDir() const {return m_impl->rootDir;}
+const _TCHAR* database::rootDir() const
+{
+    return m_impl->rootDir;
+}
 
-void database::setRootDir(const _TCHAR* directory) {setDir(directory);}
+void database::setRootDir(const _TCHAR* directory)
+{
+    setDir(directory);
+}
 
-void* database::optionalData() const {return m_impl->optionalData;}
+void* database::optionalData() const
+{
+    return m_impl->optionalData;
+}
 
-void database::setOptionalData(void* v) {m_impl->optionalData = v;}
+void database::setOptionalData(void* v)
+{
+    m_impl->optionalData = v;
+}
 
-bool database::tableReadOnly() const {return m_impl->isTableReadOnly;}
+bool database::tableReadOnly() const
+{
+    return m_impl->isTableReadOnly;
+}
 
-const deleteRecordFn database::onDeleteRecord() const {return m_impl->m_deleteRecordFn;}
+const deleteRecordFn database::onDeleteRecord() const
+{
+    return m_impl->m_deleteRecordFn;
+}
 
-void database::setOnDeleteRecord(const deleteRecordFn v) {m_impl->m_deleteRecordFn = v;}
+void database::setOnDeleteRecord(const deleteRecordFn v)
+{
+    m_impl->m_deleteRecordFn = v;
+}
 
-const copyDataFn database::onCopyData() const {return m_impl->m_copyDataFn;}
+const copyDataFn database::onCopyData() const
+{
+    return m_impl->m_copyDataFn;
+}
 
-void database::setOnCopyData(const copyDataFn v) {m_impl->m_copyDataFn = v;}
+void database::setOnCopyData(const copyDataFn v)
+{
+    m_impl->m_copyDataFn = v;
+}
 
-void database::setLockReadOnly(bool v) {m_impl->lockReadOnly = v;}
+void database::setLockReadOnly(bool v)
+{
+    m_impl->lockReadOnly = v;
+}
 
-bool database::isOpened() const {return m_impl->isOpened;}
+bool database::isOpened() const
+{
+    return m_impl->isOpened;
+}
+
+char_td database::mode() const
+{
+    assert(m_impl->dbDef);
+    return m_impl->dbDef->mode();
+}
 
 void database::create(const _TCHAR* fullpath, short type)
 {
@@ -140,13 +182,13 @@ void database::drop()
     if (m_impl->dbDef == NULL)
         m_stat = STATUS_DB_YET_OPEN;
     _TCHAR FullPath[MAX_PATH];
-    std::vector<std::_tstring>fileNames;
+    std::vector<std::_tstring> fileNames;
     for (int i = 0; i <= m_impl->dbDef->tableCount(); i++)
     {
         if (m_impl->dbDef->tableDefs(i))
         {
-            _stprintf_s(FullPath, MAX_PATH, _T("%s") PSEPARATOR _T("%s"), rootDir(),
-                m_impl->dbDef->tableDefs(i)->fileName());
+            _stprintf_s(FullPath, MAX_PATH, _T("%s") PSEPARATOR _T("%s"),
+                        rootDir(), m_impl->dbDef->tableDefs(i)->fileName());
             fileNames.push_back(FullPath);
         }
     }
@@ -178,16 +220,17 @@ void database::dropTable(const _TCHAR* TableName)
 
 void database::setDir(const _TCHAR* directory)
 {
-   _tcscpy(m_impl->rootDir, directory);
+    _tcscpy(m_impl->rootDir, directory);
 }
 
-database& database:: operator = (const database & rt)
+database& database::operator=(const database& rt)
 {
     if (&rt != this)
     {
         nsdatabase::operator=(rt);
-        m_impl->dbimple:: operator=(*(rt.m_impl));
+        m_impl->dbimple::operator=(*(rt.m_impl));
         rt.m_impl->dbDef->addref();
+        addref();
     }
     return *this;
 }
@@ -207,9 +250,10 @@ void database::getBtrVersion(btrVersions* versions)
     if (m_impl->dbDef)
         posblk = const_cast<uchar_td*>(m_impl->dbDef->posblk());
     nsdatabase::getBtrVersion(versions, posblk);
-
 }
-void database::onCopyDataInternal(table* tb, int recordCount, int count, bool& cancel)
+
+void database::onCopyDataInternal(table* tb, int recordCount, int count,
+                                  bool& cancel)
 {
     if (m_impl->m_copyDataFn)
         m_impl->m_copyDataFn(this, recordCount, count, cancel);
@@ -221,22 +265,23 @@ void database::setTableReadOnly(bool value)
         m_impl->isTableReadOnly = value;
 }
 
-void database::doOpen(const _TCHAR* uri, short type, short mode, const _TCHAR* ownername)
+void database::doOpen(const _TCHAR* uri, short type, short mode,
+                      const _TCHAR* ownername)
 {
     m_stat = STATUS_SUCCESS;
     m_impl->dbDef->setDefType(type);
     m_impl->dbDef->open(uri, (char_td)mode, ownername);
 
     if ((m_stat == STATUS_SUCCESS) &&
-         (m_impl->dbDef->m_stat == STATUS_INVALID_OWNERNAME) && (type == 0))
+        (m_impl->dbDef->m_stat == STATUS_INVALID_OWNERNAME) && (type == 0))
         m_impl->dbDef->m_stat = STATUS_DIFFERENT_DBVERSION;
 
     m_stat = m_impl->dbDef->m_stat;
-    m_impl->isOpened = (m_stat == STATUS_SUCCESS);//important
+    m_impl->isOpened = (m_stat == STATUS_SUCCESS); // important
 }
 
-bool database::open(const _TCHAR* _uri, short type, short mode, const _TCHAR* dir,
-    const _TCHAR* ownername)
+bool database::open(const _TCHAR* _uri, short type, short mode,
+                    const _TCHAR* dir, const _TCHAR* ownername)
 {
 
     _TCHAR buf[MAX_PATH];
@@ -268,8 +313,9 @@ bool database::open(const _TCHAR* _uri, short type, short mode, const _TCHAR* di
             m_impl->dbDef = new dbdef(this, type);
 
         doOpen(_uri, type, mode, ownername);
-        if ((m_stat == STATUS_TABLE_NOTOPEN) && isUseTransactd()
-                                && _tcsstr(_uri, TRANSACTD_SCHEMANAME))
+        m_impl->isOpened = (m_stat == STATUS_SUCCESS); // important
+        if ((m_stat == STATUS_TABLE_NOTOPEN) && isUseTransactd() &&
+            _tcsstr(_uri, TRANSACTD_SCHEMANAME))
         {
             // Specified TRANSACTD_SCHEMANAME and no table
             // Auto make schema.
@@ -285,7 +331,6 @@ bool database::open(const _TCHAR* _uri, short type, short mode, const _TCHAR* di
                 }
             }
         }
-
     }
     if (m_impl->isOpened && onOpenAfter())
         return true;
@@ -293,6 +338,7 @@ bool database::open(const _TCHAR* _uri, short type, short mode, const _TCHAR* di
     m_impl->isOpened = false;
     m_impl->dbDef->close();
     m_impl->dbDef->release();
+    nsdatabase::release();
     m_impl->dbDef = NULL;
     return false;
 }
@@ -330,10 +376,11 @@ short database::continuous(char_td IsEnd, bool inclideRepfile)
 { // Local databse only.Cnat not use remote database.
     if (!m_impl->isOpened)
         return STATUS_DB_YET_OPEN;
-    char tmp[128] = {0x00};
+    char tmp[128] = { 0x00 };
     char* buf = getContinuousList(inclideRepfile);
     uint_td buflen = (uint_td)strlen(buf) + 1;
-    m_stat = m_btrcallid(TD_BACKUPMODE, tmp, buf, &buflen, 0, 0, IsEnd, clientID());
+    m_stat =
+        m_btrcallid(TD_BACKUPMODE, tmp, buf, &buflen, 0, 0, IsEnd, clientID());
     free(buf);
     return m_stat;
 }
@@ -342,26 +389,35 @@ void database::doClose()
 {
     m_stat = STATUS_SUCCESS;
 
-	if (m_impl->dbDef)
-		m_impl->dbDef->release();
-	m_impl->dbDef = NULL;
-
-	nsdatabase::reset();
-	m_impl->isOpened = false;
-	m_impl->rootDir[0] = 0x00;
-	m_impl->lockReadOnly = false;
+    if (m_impl->dbDef)
+    {
+        m_impl->dbDef->release();
+        nsdatabase::reset();
+    }
+    m_impl->dbDef = NULL;
+    m_impl->isOpened = false;
+    m_impl->rootDir[0] = 0x00;
+    m_impl->lockReadOnly = false;
 }
 
-void database::close() {doClose();}
+void database::close()
+{
+    bool flag = (m_impl->dbDef != NULL);
+    doClose();
+    if (flag)
+        nsdatabase::release();
+}
 
 _TCHAR* database::getTableUri(_TCHAR* buf, short FileNum)
 {
     m_stat = STATUS_SUCCESS;
     if ((m_impl->dbDef) && (m_impl->isOpened))
     {
-        if (_tcsstr(m_impl->dbDef->tableDefs(FileNum)->fileName(), PSEPARATOR) == NULL)
-            _stprintf_s(buf, MAX_PATH, _T("%s") PSEPARATOR _T("%s"), m_impl->rootDir,
-            m_impl->dbDef->tableDefs(FileNum)->fileName());
+        if (_tcsstr(m_impl->dbDef->tableDefs(FileNum)->fileName(),
+                    PSEPARATOR) == NULL)
+            _stprintf_s(buf, MAX_PATH, _T("%s") PSEPARATOR _T("%s"),
+                        m_impl->rootDir,
+                        m_impl->dbDef->tableDefs(FileNum)->fileName());
         else
             _tcscpy(buf, m_impl->dbDef->tableDefs(FileNum)->fileName());
         return buf;
@@ -371,7 +427,7 @@ _TCHAR* database::getTableUri(_TCHAR* buf, short FileNum)
 }
 
 table* database::openTable(const _TCHAR* TableName, short mode, bool AutoCreate,
-    const _TCHAR* OrnerName, const _TCHAR* pPath)
+                           const _TCHAR* OrnerName, const _TCHAR* pPath)
 {
     short filenum;
     m_stat = 0;
@@ -397,21 +453,22 @@ table* database::createTableObject()
     return new table(this);
 }
 
-table* database::openTable(short FileNum, short mode, bool AutoCreate, const _TCHAR* OrnerName,
-    const _TCHAR* path)
+table* database::openTable(short FileNum, short mode, bool AutoCreate,
+                           const _TCHAR* OrnerName, const _TCHAR* path)
 {
     /* Select directory
-    - Fiest, Specify Direct.
-    - Second, specified in filename.
-    - Thard, Smae as schem table.
-    */
+     - Fiest, Specify Direct.
+     - Second, specified in filename.
+     - Thard, Smae as schem table.
+     */
 
     _TCHAR buf[MAX_PATH];
     bool regularDir = false;
     bool NewFile = false;
     m_stat = 0;
 
-    if ((!m_impl->dbDef) || (!m_impl->isOpened)) {
+    if ((!m_impl->dbDef) || (!m_impl->isOpened))
+    {
         m_stat = STATUS_DB_YET_OPEN;
         return NULL;
     }
@@ -429,7 +486,7 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate, const _TC
     table* tb = createTableObject();
     dbdef::cacheFieldPos(td);
 
-    if ((path == NULL) || (path[0]==0x00))
+    if ((path == NULL) || (path[0] == 0x00))
     {
         if (_tcsstr(td->fileName(), PSEPARATOR) == NULL)
         {
@@ -445,14 +502,14 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate, const _TC
     if (m_impl->isTableReadOnly)
         mode = TD_OPEN_READONLY;
     tb->open(buf, (char_td)mode, OrnerName);
-    if ((tb->m_stat == STATUS_TABLE_NOTOPEN) || (tb->m_stat == ERROR_NOSPECIFY_TABLE))
+    if ((tb->m_stat == STATUS_TABLE_NOTOPEN) ||
+        (tb->m_stat == ERROR_NOSPECIFY_TABLE))
     {
         if (AutoCreate)
         {
             createTable(FileNum, buf);
             if (m_stat != STATUS_SUCCESS)
             {
-                m_stat = tb->m_stat;
                 tb->release();
                 return NULL;
             }
@@ -463,16 +520,19 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate, const _TC
                     tb->setOwnerName(OrnerName);
                 NewFile = true;
             }
-        }else
+        }
+        else
         {
             m_stat = tb->m_stat;
             tb->release();
             return NULL;
         }
     }
-    tb->init(td, FileNum, regularDir);
+    if (tb->m_stat == 0)
+        tb->init(td, FileNum, regularDir);
 
-    if ((m_stat != 0) || (tb->m_stat != 0) || !onTableOpened(tb, FileNum, mode, NewFile))
+    if ((m_stat != 0) || (tb->m_stat != 0) ||
+        !onTableOpened(tb, FileNum, mode, NewFile))
     {
         m_stat = tb->m_stat;
         tb->release();
@@ -488,19 +548,20 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
         if (setUseTransactd() == false)
             return false;
 
-        char buf2[MAX_PATH]={0x00};
-        _TCHAR posblk[128] = {0x00};
+        char buf2[MAX_PATH] = { 0x00 };
+        _TCHAR posblk[128] = { 0x00 };
 
         const char* p = toServerUri(buf2, MAX_PATH, FilePath, isUseTransactd());
 
-        m_stat = m_btrcallid(TD_CREATETABLE, posblk, m_impl->dbDef->tableDefs(FileNum),
-            &m_impl->dbDef->m_datalen, (void*)p, (uchar_td)strlen(p), CR_SUBOP_BY_TABLEDEF /* exists check */ ,
-            clientID());
+        m_stat = m_btrcallid(
+            TD_CREATETABLE, posblk, m_impl->dbDef->tableDefs(FileNum),
+            &m_impl->dbDef->m_datalen, (void*)p, (uchar_td)strlen(p),
+            CR_SUBOP_BY_TABLEDEF /* exists check */, clientID());
     }
     else
     {
         const _TCHAR* buf;
-        fileSpec* fs = (fileSpec*) malloc(1024);
+        fileSpec* fs = (fileSpec*)malloc(1024);
         if (fs == NULL)
         {
             m_stat = STATUS_CANT_ALLOC_MEMORY;
@@ -517,7 +578,134 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
     return (m_stat == 0);
 }
 
-int moveVaileRecord(table* src)
+short database::assignSchemaData(dbdef* src)
+{
+    beginTrn();
+    int Count = 1;
+
+    dbdef* defDest = dbDef();
+    int recordCount = src->tableCount();
+
+    for (int i = 0; i <= src->tableCount(); i++)
+    {
+        tabledef* td = src->tableDefs(i);
+        if (td)
+        {
+            tabledef tdtmp = *td;
+            tdtmp.fieldCount = 0;
+            tdtmp.keyCount = 0;
+            defDest->insertTable(&tdtmp);
+            if (defDest->stat())
+                break;
+            for (int j = 0; j < td->fieldCount; ++j)
+            {
+                fielddef& fd = td->fieldDefs[j];
+                *defDest->insertField(td->id, j) = fd;
+            }
+            for (int j = 0; j < td->keyCount; ++j)
+            {
+                keydef& kd = td->keyDefs[j];
+                *defDest->insertKey(td->id, j) = kd;
+            }
+            defDest->updateTableDef(td->id);
+            if (defDest->stat())
+                break;
+        }
+        bool Cancel = false;
+        onCopyDataInternal(NULL, recordCount, Count, Cancel);
+        if (Cancel)
+            return -1;
+        Count++;
+    }
+
+    if ((nstable::tdapErr((HWND)NULL, src->stat()) == 0) &&
+        (defDest->stat() == 0))
+    {
+        endTrn();
+        return 0;
+    }
+    abortTrn();
+    if (nstable::tdapErr((HWND)NULL, src->stat()))
+        return src->stat();
+
+    return defDest->stat();
+}
+
+struct filedChnageInfo
+{
+    filedChnageInfo() : fieldnum(-1), changed(0) {}
+
+    short fieldnum;
+    bool changed;
+};
+
+void makeChangeInfo(const tabledef* ddef, const tabledef* sdef,
+                    filedChnageInfo* fci)
+{
+    for (short i = 0; i < sdef->fieldCount; i++)
+    {
+        fielddef& fds = sdef->fieldDefs[i];
+        for (short j = 0; j < ddef->fieldCount; j++)
+        {
+            fielddef& fdd = ddef->fieldDefs[j];
+            if (strcmp(fdd.nameA(), fds.nameA()) == 0)
+            {
+                fci[i].fieldnum = j;
+                if (fds.type != fdd.type)
+                    fci[i].changed = true; // diffrent type
+                else if (fds.len != fdd.len)
+                    fci[i].changed = true; // different size
+                break;
+            }
+            else
+                fci[i].fieldnum = -1;
+        }
+    }
+}
+
+inline void copyEachFieldData(table* dest, table* src, filedChnageInfo* fci)
+{
+    const tabledef* ddef = dest->tableDef();
+    const tabledef* sdef = src->tableDef();
+
+    for (int i = 0; i < sdef->fieldCount; i++)
+    {
+        int dindex = fci[i].fieldnum;
+        fielddef& fds = sdef->fieldDefs[i];
+        fielddef& fdd = ddef->fieldDefs[dindex];
+
+        if (dindex != -1)
+        {
+            // src valiable len and last field;
+            if ((fci[i].changed == false) || (fdd.type == ft_myfixedbinary))
+            {
+                int len = fds.len;
+                if (fds.len > fdd.len)
+                    len = fdd.len;
+                memcpy(dest->fieldPtr(dindex), src->fieldPtr(i), len);
+            }
+            else
+            {
+                if (fdd.maxVarDatalen() && fds.maxVarDatalen())
+                {
+                    uint_td size;
+                    uint_td maxlen = fdd.maxVarDatalen();
+                    const void* data = src->getFVbin(i, size);
+                    if (maxlen < size)
+                        size = maxlen;
+                    dest->setFV(dindex, data, size);
+                }
+                else
+                {
+                    // If diffrent field type then convert to string then copy.
+                    dest->setFV(dindex, src->getFVstr(i));
+                }
+            }
+        }
+    }
+}
+
+inline int moveVaileRecord(table* src)
 {
     int count = 0;
     bookmark_td bm = 0;
@@ -536,110 +724,46 @@ int moveVaileRecord(table* src)
     return 0;
 }
 
-short database::assignSchemaData(dbdef* src)
+inline void moveNextRecord(table* src, short keyNum)
 {
-    beginTrn();
-    int Count;
-
-    Count = 1;
-
-    dbdef* defDest = dbDef();
-    int recordCount = src->tableCount();
-
-    for (int i=0;i<=src->tableCount();i++)
-    {
-        tabledef* td = src->tableDefs(i);
-        if (td)
-        {
-            tabledef tdtmp = *td;
-            tdtmp.fieldCount = 0;
-            tdtmp.keyCount = 0;
-            defDest->insertTable(&tdtmp);
-            for (int j=0;j<td->fieldCount;++j)
-            {
-                fielddef& fd = td->fieldDefs[j];
-                *defDest->insertField(td->id, j) = fd;
-            }
-            for (int j=0;j<td->keyCount;++j)
-            {
-                keydef& kd = td->keyDefs[j];
-                *defDest->insertKey(td->id, j) = kd;
-            }
-            defDest->updateTableDef(td->id);
-            if (defDest->stat() != 0) break;
-        }
-        bool Cancel = false;
-        onCopyDataInternal(NULL, recordCount, Count, Cancel);
-        if (Cancel)
-            return -1;
-        Count++;
-    }
-    
-
-    if ((nstable::tdapErr((HWND)NULL, src->stat()) == 0) && (defDest->stat() == 0))
-    {
-        endTrn();
-        return 0;
-    }
-    abortTrn();
-    if (nstable::tdapErr((HWND)NULL, src->stat()))
-        return src->stat();
-
-    return defDest->stat();
+    if (keyNum == -1)
+        src->stepNext();
+    else
+        src->seekNext();
 }
 
-/*  Copy from src to dest table.
- * 	Copy as same field name.
- *	If turbo then copy use memcpy and offset dest of first address.
- */
-#pragma warn -8004
-short database::copyTableData(table* dest, table* src, bool turbo, int offset, short keyNum,
-    int maxSkip)
+inline void moveFirstRecord(table* src, short keyNum)
 {
-    ushort_td ins_rows = 0;
-    bool repData = false;
-    if (_tcsstr(dest->tableDef()->fileName(), _T("rep.dat")))
-        repData = true;
-
-    int SkipCount = 0;
-    short NewFieldNum[256] = {-1};
-    int cpytype[256] = {0}; // 0 mem 1 str
-    short i, j;
-    int Count;
-    int recordCount = src->recordCount();
-    for (i = 0; i < src->tableDef()->fieldCount; i++)
-    {
-        for (j = 0; j < dest->tableDef()->fieldCount; j++)
-        {
-            if (strcmp(dest->tableDef()->fieldDefs[j].nameA(),
-                src->tableDef()->fieldDefs[i].nameA()) == 0)
-            {
-                NewFieldNum[i] = j;
-                if (src->tableDef()->fieldDefs[i].type == ft_lvar)
-                    cpytype[i] = 0;
-                else if (src->tableDef()->fieldDefs[i].type != dest->tableDef()
-                    ->fieldDefs[NewFieldNum[i]].type)
-                    cpytype[i] = 1; //diffrent type
-                else if (src->tableDef()->fieldDefs[i].len != dest->tableDef()
-                    ->fieldDefs[NewFieldNum[i]].len)
-                    cpytype[i] = 1; //different size
-                else
-                    cpytype[i] = 0;
-                break;
-            }
-            else
-                NewFieldNum[i] = -1;
-
-        }
-    }
-    src->setKeyNum((char_td)keyNum);
     if (keyNum == -1)
         src->stepFirst();
     else
         src->seekFirst();
-    Count = 1;
+}
 
-    int len;
+/* Copy from src to dest table.
+ * 	Copy as same field name.
+ *	If turbo then copy use memcpy and offset dest of first address.
+ *  if a src field is variable size binary, that dest field needs to be variable
+ *size binary.
+ *  if src and dest fields are different type ,then a text copy is used.
+ */
+#pragma warn -8004
+
+short database::copyTableData(table* dest, table* src, bool turbo, int offset,
+                              short keyNum, int maxSkip)
+{
+    src->setKeyNum((char_td)keyNum);
+    const tabledef* ddef = dest->tableDef();
+    const tabledef* sdef = src->tableDef();
+    ushort_td ins_rows = 0;
+    bool repData = (_tcsstr(ddef->fileName(), _T("rep.dat"))) ? true : false;
+    int skipCount = 0, count = 1;
+    int recordCount = src->recordCount();
+    filedChnageInfo fci[256];
+
+    makeChangeInfo(ddef, sdef, fci);
+    moveFirstRecord(src, keyNum);
+
     while (1)
     {
         if (src->stat())
@@ -648,28 +772,24 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset, s
             {
                 if (maxSkip != -1)
                     break;
-                if (recordCount < SkipCount + Count)
+                if (recordCount < skipCount + count)
                 {
                     if (src->stat() == STATUS_IO_ERROR)
                     {
-                    int n = moveVaileRecord(src);
-                    if (n)
-                    SkipCount = recordCount - n - Count;
-                    else
-                    break;
+                        int n = moveVaileRecord(src);
+                        if (n)
+                            skipCount = recordCount - n - count;
+                        else
+                            break;
                     }
                     else
-                    break;
+                        break;
                 }
-                if (keyNum == -1)
-                    src->stepNext();
-                else
-                    src->seekNext();
+                moveNextRecord(src, keyNum);
 
-                SkipCount++;
+                skipCount++;
                 if (src->stat() == STATUS_SUCCESS)
                     break;
-
             }
             if (src->stat())
                 break;
@@ -681,58 +801,39 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset, s
                 return STATUS_CANT_ALLOC_MEMORY;
             if (offset)
                 memset(dest->fieldPtr(0), 0, offset);
-            memcpy((char*)dest->fieldPtr(0) + offset, src->fieldPtr(0), src->datalen());
+            memcpy((char*)dest->fieldPtr(0) + offset, src->fieldPtr(0),
+                   src->datalen());
         }
         else
-        {
-            for (i = 0; i < src->tableDef()->fieldCount; i++)
-            {
-                if (NewFieldNum[i] != -1)
-                {
-                    // If diffrent field type then convert to string then copy.
-                    if (cpytype[i] != 0)
-                    dest->setFV(NewFieldNum[i], src->getFVstr(i));
-                    else
-                    {
-                    len = src->tableDef()->fieldDefs[i].len;
-                    if (src->tableDef()->fieldDefs[i].len >
-                    dest->tableDef()->fieldDefs[NewFieldNum[i]].len)
-                    len = dest->tableDef()->fieldDefs[NewFieldNum[i]].len;
-                    memcpy(dest->fieldPtr(NewFieldNum[i]), src->fieldPtr(i), len);
-                    }
-                }
-            }
-        }
-        bool Cancel = false;
-        onCopyDataInternal(dest, recordCount, Count, Cancel);
-        if (Cancel)
-            return -1;
-        Count++;
+            copyEachFieldData(dest, src, fci);
 
         if (repData)
         {
-
             dest->m_datalen = src->m_datalen;
             dest->tdap(TD_REC_INSERT);
         }
         else
             ins_rows += dest->insert();
         if (dest->stat() == STATUS_INVALID_VALLEN)
-                SkipCount++;
+            skipCount++;
         else if (dest->stat() == STATUS_DUPPLICATE_KEYVALUE)
-            SkipCount++;
+            skipCount++;
         else if (dest->stat() != STATUS_SUCCESS)
             return dest->stat();
-        if (keyNum == -1)
-            src->stepNext();
         else
-            src->seekNext();
+            count++;
+        bool cancel = false;
+        onCopyDataInternal(dest, recordCount, count, cancel);
+        if (cancel)
+            return -1;
+
+        moveNextRecord(src, keyNum);
     }
-    if ((SkipCount) && (maxSkip == -1))
+    if ((skipCount) && (maxSkip == -1))
     {
-        bool Cancel = false;
-        onCopyDataInternal(dest, recordCount, Count, Cancel);
-        if (Cancel)
+        bool cancel = false;
+        onCopyDataInternal(dest, -1, count, cancel);
+        if (cancel)
             return -1;
     }
 
@@ -742,7 +843,8 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset, s
 }
 #pragma warn .8004
 
-void database::doConvertTable(short TableIndex, bool Turbo, const _TCHAR* OwnerName)
+void database::doConvertTable(short TableIndex, bool Turbo,
+                              const _TCHAR* OwnerName)
 {
     table* src;
     table* dest;
@@ -767,15 +869,23 @@ void database::doConvertTable(short TableIndex, bool Turbo, const _TCHAR* OwnerN
     TableDef = m_impl->dbDef->tableDefs(TableIndex);
     short len = TableDef->maxRecordLen;
 
-    TableDef->preAlloc = (ushort_td)(src->recordCount() / TableDef->pageSize / len);
+    TableDef->preAlloc =
+        (ushort_td)(src->recordCount() / TableDef->pageSize / len);
     TableDef->flags.bit2 = true;
 
     _tcscpy(szTempPath, getTableUri(buf, TableIndex));
+    _TCHAR* p = _tcsstr(szTempPath, _T("dbfile="));
+    if (p == 0)
+        p = szTempPath;
+    else
+        p += 7;
 
-    _TCHAR* pireod = _tcsrchr(szTempPath, '.');
-    if (pireod)
-        * pireod = 0x00;
-    _tcscat(szTempPath, _T("_conv_dest.tmp"));
+    _TCHAR* p2 = _tcschr(p, _T('.'));
+    if (p2 == 0)
+        p2 = p + _tcslen(p);
+    *p2 = 0x00;
+
+    _tcscat(szTempPath, _T("_conv_dest_tmp"));
 
     createTable(TableIndex, szTempPath);
     dest = openTable(TableIndex, TD_OPEN_EXCLUSIVE, true, NULL, szTempPath);
@@ -796,7 +906,6 @@ void database::doConvertTable(short TableIndex, bool Turbo, const _TCHAR* OwnerN
     dest->release();
     src->release();
 
-
     if (ret == 0)
     {
         _TCHAR tmp[MAX_PATH];
@@ -805,10 +914,9 @@ void database::doConvertTable(short TableIndex, bool Turbo, const _TCHAR* OwnerN
             swapTablename(szTempPath, tmp);
         else
         {
-
             _TCHAR* pireod = _tcsrchr(tmp, '.');
             if (pireod)
-                * pireod = 0x00;
+                *pireod = 0x00;
             _tcscat(tmp, _T("_conv_src.tmp"));
             rename(getTableUri(buf, TableIndex), tmp);
             if (m_stat)
@@ -824,10 +932,10 @@ void database::doConvertTable(short TableIndex, bool Turbo, const _TCHAR* OwnerN
     }
     else
         m_stat = ret;
-
 }
 
-void database::convertTable(short tableIndex, bool turbo, const _TCHAR* ownername)
+void database::convertTable(short tableIndex, bool turbo,
+                            const _TCHAR* ownername)
 {
     doConvertTable(tableIndex, turbo, ownername);
 }
@@ -839,14 +947,15 @@ bool database::existsTableFile(short TableIndex, const _TCHAR* OwnerName)
     {
         m_impl->dbDef->tableDefs(TABLE_NUM_TMP)->fieldDefs =
             dbdef::getFieldDef(m_impl->dbDef->tableDefs(TABLE_NUM_TMP));
-        m_impl->dbDef->tableDefs(TABLE_NUM_TMP)->keyDefs = dbdef::getKeyDef(m_impl->dbDef->tableDefs(512));
+        m_impl->dbDef->tableDefs(TABLE_NUM_TMP)->keyDefs =
+            dbdef::getKeyDef(m_impl->dbDef->tableDefs(512));
     }
     table* bao = openTable(TableIndex, TD_OPEN_READONLY, false, OwnerName);
     bool ret = false;
     if (m_stat == STATUS_TABLE_NOTOPEN)
         ret = false;
     else if (m_stat == STATUS_INVALID_OWNERNAME)
-        ret =  true;
+        ret = true;
     else if (m_stat == STATUS_SUCCESS)
         ret = true;
     if (bao)
@@ -855,9 +964,8 @@ bool database::existsTableFile(short TableIndex, const _TCHAR* OwnerName)
     return ret;
 }
 
-
-}// namespace client
-}// namespace btrv
-}// namespace protocol
-}// namespace db
-}// namespace bzs
+} // namespace client
+} // namespace btrv
+} // namespace protocol
+} // namespace db
+} // namespace bzs

@@ -12,16 +12,17 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 
-class CtdclatlModule : public ATL::CAtlDllModuleT< CtdclatlModule >
+class CtdclatlModule : public ATL::CAtlDllModuleT<CtdclatlModule>
 {
-public :
-	DECLARE_LIBID(LIBID_transactd)
-	DECLARE_REGISTRY_APPID_RESOURCEID(IDR_TDCLATL, "{0F94D9C4-FB96-4084-A939-EEC3992454B4}")
+public:
+    DECLARE_LIBID(LIBID_transactd)
+    DECLARE_REGISTRY_APPID_RESOURCEID(IDR_TDCLATL,
+                                      "{0F94D9C4-FB96-4084-A939-EEC3992454B4}")
 };
 
 extern class CtdclatlModule _AtlModule;

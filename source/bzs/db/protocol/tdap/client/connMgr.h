@@ -22,7 +22,6 @@
 #include <bzs/db/transactd/connectionRecord.h>
 #include <vector>
 
-
 namespace bzs
 {
 namespace db
@@ -35,28 +34,28 @@ namespace client
 {
 
 class database;
-#pragma warning(disable:4251)
+#pragma warning(disable : 4251)
 
-class AGRPACK connMgr : private nstable
+class DLLLIB connMgr : private nstable
 {
 public:
-    typedef  bzs::db::transactd::connection::record  record;
-    typedef  std::vector<record> records;
+    typedef bzs::db::transactd::connection::record record;
+    typedef std::vector<record> records;
+
 protected:
-
-
 private:
     std::vector<record> m_records;
-	__int64 m_params[2];
+    __int64 m_params[2];
     database* m_db;
     std::_tstring m_uri;
     void allocBuffer();
     void writeRecordData(){};
     void onReadAfter(){};
 
-     ~connMgr();
+    ~connMgr();
+
 public:
-	explicit connMgr(database* db);
+    explicit connMgr(database* db);
 
     void connect(const _TCHAR* uri);
     void disconnect();
@@ -67,16 +66,15 @@ public:
     void disconnectAll();
     short_td stat();
 
-    database* db()const;
+    database* db() const;
     using nstable::tdapErr;
 };
 
-#pragma warning(default:4251)
+#pragma warning(default : 4251)
 
-
-}//namespace client
-}//namespace tdap
-}//namespace protocol
-}//namespace db
-}//namespace bzs
-#endif //BZS_DB_PROTOCOL_TDAP_CLIENT_CTDCONNMGR_H
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_CTDCONNMGR_H

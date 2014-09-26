@@ -16,32 +16,24 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <bzs/env/tstring.h>
-#pragma hdrstop
 
 #include "table.h"
+#include "field.h"
+#include "fields.h"
 #include "filter.h"
 #include "database.h"
 #include "bulkInsert.h"
-#include "stringConverter.h"
 #include <bzs/rtl/strtrim.h>
-#include <bzs/rtl/stringBuffers.h>
 #include <bzs/db/protocol/tdap/myDateTime.cpp>
 #include <bzs/db/blobStructs.h>
-#include <vector>
-#include <algorithm>
+#include <bzs/rtl/stringBuffers.h>
+#include "stringConverter.h"
 #include <boost/timer.hpp>
-#include <boost/shared_array.hpp>
 
 #pragma package(smart_init)
 
-#ifdef __BCPLUSPLUS__
-#define _strupr strupr
-#endif
-
 using namespace bzs::db;
 using namespace bzs::rtl;
-using namespace bzs::db::protocol::tdap;
 
 namespace bzs
 {
@@ -64,32 +56,20 @@ namespace client
 #define EXEC_CODEPAGE CP_UTF8
 #endif
 
-
-class CFiledNameIndex
-{
-
-public:
-    CFiledNameIndex(short i, std::_tstring n);
-    bool operator < (const CFiledNameIndex& rt) const ;
-
-    short index;
-
-    std::_tstring name;
-};
-
 class recordCache;
-
 
 struct tbimpl
 {
-    stringConverter* cv;
+
     void* bookMarks;
+    client::fields fields;
     filter* filterPtr;
     recordCache* rc;
+    multiRecordAlocator* mraPtr;
     void* dataBak;
     void* smartUpDate;
     void* bfAtcPtr;
-	void* optionalData;
+    void* optionalData;
     int bookMarksMemSize;
     int maxBookMarkedCount;
     char keybuf[MAX_KEYLEN];
@@ -99,31 +79,22 @@ struct tbimpl
 
     struct
     {
-    unsigned char exBookMarking : 1;
-    unsigned char myDateTimeValueByBtrv: 1;
-    unsigned char trimPadChar: 1;
-    unsigned char usePadChar: 1;
-    unsigned char smartUpDateFlag: 1;
-    unsigned char logicalToString: 1;
-    unsigned char dataPacked: 1;
+        unsigned char exBookMarking : 1;
+        unsigned char smartUpDateFlag : 1;
+        unsigned char dataPacked : 1;
     };
 
-    std::vector<boost::shared_array<char> >blobs;
-    ::bzs::rtl::stringBuffer strBufs;
-    std::vector<CFiledNameIndex>fields;
-
-    tbimpl() : strBufs(4096), bookMarks(NULL),bfAtcPtr(NULL), maxBookMarkedCount(0), bookMarksMemSize(0),
-        filterPtr(NULL), rc(NULL), dataBak(NULL), optionalData(NULL),myDateTimeValueByBtrv(true), trimPadChar(true),
-        usePadChar(true), smartUpDate(NULL), smartUpDateFlag(false)
-        , logicalToString(false),dataPacked(false)
+    tbimpl(table& tb)
+        : bookMarks(NULL), fields(tb), filterPtr(NULL), rc(NULL), mraPtr(NULL),
+          dataBak(NULL), smartUpDate(NULL), bfAtcPtr(NULL), optionalData(NULL),
+          bookMarksMemSize(0), maxBookMarkedCount(0), smartUpDateFlag(false),
+          dataPacked(false)
     {
         memset(&keyNumIndex[0], 0, 128);
-
     }
 
     ~tbimpl()
     {
-
         if (dataBak)
             free(dataBak);
         if (smartUpDate)
@@ -139,7 +110,7 @@ struct tbimpl
 // class recordCache
 // ---------------------------------------------------------------------------
 
-unsigned int hash(const char *s, int len)
+unsigned int hash(const char* s, int len)
 {
     unsigned int h = 0;
     for (int i = 0; i < len; i++)
@@ -156,13 +127,17 @@ class recordCache
     unsigned int m_unpackLen;
     unsigned int m_rowCount;
     bookmark_td m_bookmark;
-    char* m_ptr;
-    char* m_tmpPtr;
+    uchar_td* m_ptr;
+    uchar_td* m_tmpPtr;
     blobHeader* m_hd;
     short_td m_seekMultiStat;
+    int m_memblockType;
 
 public:
-    inline recordCache(table* tb) : m_tb(tb) {reset();}
+    inline recordCache(table* tb) : m_tb(tb), m_memblockType(mra_first)
+    {
+        reset();
+    }
 
     inline void reset()
     {
@@ -172,66 +147,140 @@ public:
         m_ptr = NULL;
         m_len = 0;
         m_tmpPtr = NULL;
+        m_memblockType = mra_first;
     }
 
-    inline void reset(filter* p, char* data, unsigned int totalSize, const blobHeader* hd)
+    inline void setMemblockType(int v) { m_memblockType = v; }
+
+    inline void hasManyJoin(int rowCount, uchar_td* data)
+    {
+        int rowOffset = 0;
+        int row = 0; // zero start
+        int count = 0;
+        char* ptr = (char*)data + DATASIZE_BYTE; // rowCount
+        unsigned short len = 0;
+        for (int i = 0; i < (int)rowCount; ++i)
+        {
+            ptr += len;
+            len = *((unsigned short*)ptr);
+            ptr += DATASIZE_BYTE;
+
+            // get sequential number
+            int tmp = *((int*)(ptr));
+            ptr += sizeof(int);
+            // If len == 0 then next first record read error
+            if ((len == 0) || (tmp != row))
+            {
+                if (count)
+                {
+                    m_tb->m_impl->mraPtr->duplicateRow(row + rowOffset, count);
+                    rowOffset += count;
+                }
+                ++row;
+                count = 0;
+            }
+            else if (i != 0)
+                ++count;
+        }
+        if (count)
+            m_tb->m_impl->mraPtr->duplicateRow(row + rowOffset, count);
+    }
+
+    inline void reset(filter* p, uchar_td* data, unsigned int totalSize,
+                      const blobHeader* hd)
     {
         m_pFilter = p;
         m_row = 0;
         m_rowCount = *((unsigned short*)data);
         m_ptr = data + DATASIZE_BYTE;
-        m_len = m_unpackLen = *((unsigned short*)m_ptr); // Not include bookmark and size bytes.
+        m_len = m_unpackLen =
+            *((unsigned short*)m_ptr); // Not include bookmark and size bytes.
         m_ptr += DATASIZE_BYTE;
-        m_bookmark = *((bookmark_td*)(m_ptr));
-        m_ptr += BOOKMARK_SIZE;
+        if (m_pFilter->bookmarkSize())
+        {
+            m_bookmark = *((bookmark_td*)(m_ptr));
+            m_ptr += m_pFilter->bookmarkSize();
+        }
         m_tmpPtr = data + totalSize;
+        if (m_tb->m_impl->mraPtr)
+        {
+            if (m_pFilter->hasManyJoin())
+                hasManyJoin(m_rowCount, data);
+            size_t recordLen = m_pFilter->fieldSelected()
+                                   ? m_pFilter->totalFieldLen()
+                                   : m_tb->tableDef()->maxRecordLen;
+            m_tb->m_impl->mraPtr->init(m_rowCount, recordLen, m_memblockType,
+                                       m_tb);
+        }
         m_hd = const_cast<blobHeader*>(hd);
     }
 
-    inline const char* moveRow(int count)
+    inline const uchar_td* moveRow(int count)
     {
+        // move row data address pointer in result buffer
         for (int i = 0; i < count; i++)
         {
             m_ptr += m_len;
             m_len = m_unpackLen = *((unsigned short*)m_ptr);
             m_ptr += DATASIZE_BYTE;
-            m_bookmark = *((bookmark_td*)(m_ptr));
-            m_ptr += BOOKMARK_SIZE;
+            if (m_pFilter->bookmarkSize())
+            {
+                m_bookmark = *((bookmark_td*)(m_ptr));
+                m_ptr += m_pFilter->bookmarkSize();
+            }
         }
         if (m_hd)
         {
-            //blob pointer is allready point to next row
+            // blob pointer is allready point to next row
             while (m_row - m_hd->curRow)
             {
-                for(int j=0;j<m_hd->fieldCount;++j)
+                for (int j = 0; j < m_hd->fieldCount; ++j)
                     m_hd->nextField = (blobField*)m_hd->nextField->next();
                 ++m_hd->curRow;
             }
         }
 
-        m_tb->m_impl->strBufs.clear();
+        multiRecordAlocator* mra = m_tb->m_impl->mraPtr;
 
-        if ((m_len==0) && m_pFilter->isSeeksMode() && m_pFilter->fieldCount())
+        m_tb->m_fddefs->strBufs()->clear();
+
+        if ((m_len == 0) && m_pFilter->isSeeksMode() && m_pFilter->fieldCount())
         {
             /*seek error*/
-            m_seekMultiStat = m_bookmark;
-            m_bookmark = 0;
-            memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
+            m_seekMultiStat = STATUS_NOT_FOUND_TI;
+            if (mra)
+            {
+                m_tmpPtr = mra->ptr(m_row, mra_current_block);
+                mra->setInvalidRecord(m_row, true);
+            }
+            else
+                memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             return m_tmpPtr;
-        }else
+        }
+        else
             m_seekMultiStat = 0;
+
+        if (mra)
+            m_tmpPtr = mra->ptr(m_row, mra_current_block);
 
         if (m_pFilter->fieldSelected())
         {
-            int offset = 0;
-            memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
+            int resultOffset = 0;
+            uchar_td* fieldPtr = m_ptr;
+            if (!mra)
+                memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             for (int i = 0; i < m_pFilter->fieldCount(); i++)
             {
-                memcpy((char*)m_tmpPtr + m_pFilter->fieldOffset(i), m_ptr + offset,
-                    m_pFilter->fieldLen(i));
-                offset += m_pFilter->fieldLen(i);
+                const fielddef& fd =
+                    m_tb->tableDef()
+                        ->fieldDefs[m_pFilter->selectFieldIndexes()[i]];
+                if (!mra)
+                    resultOffset = fd.pos;
+                fieldPtr += fd.unPackCopy(m_tmpPtr + resultOffset, fieldPtr);
+                if (mra)
+                    resultOffset += fd.len;
             }
-            m_tb->setBlobFieldPointer(m_tmpPtr, m_hd);
+            m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
             return m_tmpPtr;
         }
         else if (m_tb->valiableFormatType())
@@ -239,17 +288,24 @@ public:
             memset(m_tmpPtr, 0, m_tb->tableDef()->maxRecordLen);
             memcpy(m_tmpPtr, m_ptr, m_len);
             m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
-            m_tb->setBlobFieldPointer(m_tmpPtr, m_hd);
+            m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
             return m_tmpPtr;
         }
         else
         {
-            m_tb->setBlobFieldPointer(m_ptr, m_hd);
+            if (mra)
+            {
+                memcpy(m_tmpPtr, m_ptr, m_len);
+                m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
+                return m_tmpPtr;
+            }
+            else
+                m_tb->setBlobFieldPointer((char*)m_ptr, m_hd);
             return m_ptr;
         }
     }
 
-    inline const char* setRow(unsigned int rowNum)
+    inline const uchar_td* setRow(unsigned int rowNum)
     {
         if (rowNum < m_rowCount)
         {
@@ -260,125 +316,26 @@ public:
         return NULL;
     }
 
-    inline unsigned int len() const {return m_unpackLen;};
-    inline bookmark_td bookmarkCurRow() const {return m_bookmark;};
-    inline int row() const {return m_row;}
+    inline unsigned int len() const { return m_unpackLen; };
+    inline bookmark_td bookmarkCurRow() const { return m_bookmark; };
+    inline int row() const { return m_row; }
 
-    inline int rowCount() const {return m_rowCount;}
-    inline bool isEndOfRow(unsigned int row) const {return  (m_rowCount && (row == m_rowCount));}
-	inline bool withinCache(unsigned int row) const {return (row < m_rowCount);}
-    inline short_td seekMultiStat(){return m_seekMultiStat;}
+    inline int rowCount() const { return m_rowCount; }
+    inline bool isEndOfRow(unsigned int row) const
+    {
+        return (m_rowCount && (row == m_rowCount));
+    }
+    inline bool withinCache(unsigned int row) const
+    {
+        return (row < m_rowCount);
+    }
+    inline short_td seekMultiStat() { return m_seekMultiStat; }
 };
 
-// ---------------------------------------------------------------------------
-// class CFiledNameIndex
-// ---------------------------------------------------------------------------
-CFiledNameIndex::CFiledNameIndex(short i, std::_tstring n) : index(i), name(n)
+table::table(nsdatabase* pbe) : nstable(pbe)
 {
-
-}
-
-bool CFiledNameIndex:: operator < (const CFiledNameIndex& rt) const
-{
-    return name < rt.name;
-};
-
-
-inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
-{
-    __int64 ret = 0;
-    switch (fd.type)
-    {
-    case ft_integer:
-    case ft_autoinc:
-        switch (fd.len)
-        {
-        case 1: ret = *((char*)(ptr + fd.pos));
-            break;
-        case 2: ret = *((short*)(ptr + fd.pos));
-            break;
-        case 4: ret = *((int*)(ptr + fd.pos));
-            break;
-        case 8: ret = *((__int64*)(ptr + fd.pos));
-            break;
-        }
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_bit:
-    case ft_currency:
-    case ft_date:
-    case ft_time:
-    case ft_timestamp:
-    case ft_mydate:
-    case ft_mytime:
-    case ft_mydatetime:
-    case ft_mytimestamp:
-        switch (fd.len)
-        {
-        case 1: ret = *((unsigned char*)(ptr + fd.pos));
-            break;
-        case 2: ret = *((unsigned short*)(ptr + fd.pos));
-            break;
-        case 4: ret = *((unsigned int*)(ptr + fd.pos));
-            break;
-        case 3:
-        case 5:
-        case 6:
-        case 7: memcpy(&ret, ptr + fd.pos, fd.len);
-            break;
-        case 8: ret = *((__int64*)(ptr + fd.pos));
-            break;
-        }
-    }
-    return ret;
-}
-
-inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
-{
-    switch (fd.type)
-    {
-    case ft_integer:
-    case ft_autoinc:
-        {
-            switch (fd.len)
-            {
-            case 1: *((char*)(ptr + fd.pos)) = (char)value;
-                break;
-            case 2: *((short*)(ptr + fd.pos)) = (short)value;
-                break;
-            case 4: *((int*)(ptr + fd.pos)) = (int)value;
-                break;
-            case 8: *((__int64*)(ptr + fd.pos)) = value;
-                break;
-            }
-        }
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_bit:
-    case ft_currency:
-    case ft_date:
-    case ft_time:
-    case ft_timestamp:
-    case ft_mytime:
-    case ft_mydate:
-    case ft_mydatetime:
-    case ft_mytimestamp:
-        memcpy(ptr + fd.pos, &value, fd.len);
-        break;
-    }
-}
-
-
-
-
-
-table::table(nsdatabase *pbe) : nstable(pbe)
-{
-    m_impl = new tbimpl();
-
-    m_impl->cv = new stringConverter(nsdatabase::execCodePage(), nsdatabase::execCodePage());
+    m_fddefs = fielddefs::create();
+    m_impl = new tbimpl(*this);
 
     m_impl->rc = new recordCache(this);
 
@@ -386,60 +343,123 @@ table::table(nsdatabase *pbe) : nstable(pbe)
     m_pdata = NULL;
     m_keybuf = &m_impl->keybuf[0];
     m_keynum = 0;
-
 }
 
 table::~table()
 {
     delete m_impl->rc;
-    delete m_impl->cv;
+    m_fddefs->release();
     delete m_impl;
-
 }
 
-inline uchar_td table::charset() const {return m_tableDef->charsetIndex;};
+void table::setMra(multiRecordAlocator* p)
+{
+    m_impl->mraPtr = p;
+}
 
-bool table::trimPadChar() const {return m_impl->trimPadChar;}
+multiRecordAlocator* table::mra() const
+{
+    return m_impl->mraPtr;
+}
 
-void table::setTrimPadChar(bool v) {m_impl->trimPadChar = v;}
+uchar_td table::charset() const
+{
+    return m_tableDef->charsetIndex;
+};
 
-bool table::usePadChar() const {return m_impl->usePadChar;};
+bool table::trimPadChar() const
+{
+    return m_fddefs->trimPadChar;
+}
 
-void table::setUsePadChar(bool v) {m_impl->usePadChar = v;};
+void table::setTrimPadChar(bool v)
+{
+    m_fddefs->trimPadChar = v;
+}
 
-void* table::dataBak() const {return m_impl->dataBak;};
+bool table::usePadChar() const
+{
+    return m_fddefs->usePadChar;
+};
 
-void table::setDataBak(void* v) {m_impl->dataBak = v;};
+void table::setUsePadChar(bool v)
+{
+    m_fddefs->usePadChar = v;
+};
 
-void* table::optionalData() const {return m_impl->optionalData;}
+void* table::dataBak() const
+{
+    return m_impl->dataBak;
+};
 
-void table::setOptionalData(void* v) {m_impl->optionalData = v;}
+void table::setDataBak(void* v)
+{
+    m_impl->dataBak = v;
+};
 
-bool table::myDateTimeValueByBtrv() const {return m_impl->myDateTimeValueByBtrv;}
+void* table::optionalData() const
+{
+    return m_impl->optionalData;
+}
 
-bool table::logicalToString() const {return m_impl->logicalToString;};
+void table::setOptionalData(void* v)
+{
+    m_impl->optionalData = v;
+}
 
-void table::setLogicalToString(bool v) {m_impl->logicalToString = v;}
+bool table::myDateTimeValueByBtrv() const
+{
+    return m_fddefs->myDateTimeValueByBtrv;
+}
+
+bool table::logicalToString() const
+{
+    return m_fddefs->logicalToString;
+};
+
+void table::setLogicalToString(bool v)
+{
+    m_fddefs->logicalToString = v;
+}
+
+fields& table::fields()
+{
+    return m_impl->fields;
+}
 
 void table::setBookMarks(int StartId, void* Data, ushort_td Count)
 {
     long size = (StartId + Count) * 6;
+
+    if (!m_impl->bookMarks)
+    {
+        m_impl->bookMarks = malloc(BOOKMARK_ALLOC_SIZE);
+        if (m_impl->bookMarks)
+            m_impl->bookMarksMemSize = BOOKMARK_ALLOC_SIZE;
+        else
+        {
+            m_stat = STATUS_CANT_ALLOC_MEMORY;
+            return;
+        }
+    }
+
     if (m_impl->bookMarksMemSize < size)
     {
 
-        m_impl->bookMarks = realloc(m_impl->bookMarks, size + BOOKMARK_ALLOC_SIZE);
+        m_impl->bookMarks =
+            realloc(m_impl->bookMarks, size + BOOKMARK_ALLOC_SIZE);
         m_impl->bookMarksMemSize = size + BOOKMARK_ALLOC_SIZE;
     }
     if (m_impl->bookMarks)
     {
         if (StartId + Count - 1 > m_impl->maxBookMarkedCount)
             m_impl->maxBookMarkedCount = StartId + Count - 1;
-        memcpy((void*)((char*)m_impl->bookMarks + ((StartId - 1) * 6)), Data, Count * 6);
+        memcpy((void*)((char*)m_impl->bookMarks + ((StartId - 1) * 6)), Data,
+               Count * 6);
     }
     else
         m_stat = STATUS_CANT_ALLOC_MEMORY;
     return;
-
 }
 
 inline short calcNextReadRecordCount(ushort_td curCount, int eTime)
@@ -457,16 +477,18 @@ inline short calcNextReadRecordCount(ushort_td curCount, int eTime)
     return ret;
 }
 
-uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType direction)
+uint_td table::doRecordCount(bool estimate, bool fromCurrent)
 {
     uint_td result = 0;
 
     if (m_impl->filterPtr)
     {
-        short_td op = (direction == findForword) ? TD_KEY_NEXT_MULTI:TD_KEY_PREV_MULTI;
+        short_td op = (m_impl->filterPtr->direction() == findForword)
+                          ? TD_KEY_NEXT_MULTI
+                          : TD_KEY_PREV_MULTI;
 
         if (tableDef()->keyCount == 0)
-            op += TD_POS_NEXT_MULTI - TD_KEY_NEXT_MULTI;// KEY to POS
+            op += TD_POS_NEXT_MULTI - TD_KEY_NEXT_MULTI; // KEY to POS
         short curStat = m_stat;
         m_impl->exBookMarking = true;
         ushort_td recCountOnce = 100;
@@ -496,11 +518,13 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType directio
             boost::timer t;
             btrvGetExtend(op);
             int eTime = (int)(t.elapsed() * 1000);
-            while ((m_stat == 0) || (m_stat == STATUS_LIMMIT_OF_REJECT) || (m_stat == STATUS_EOF)
-                        || (m_stat == STATUS_REACHED_FILTER_COND))
+            while ((m_stat == 0) || (m_stat == STATUS_LIMMIT_OF_REJECT) ||
+                   (m_stat == STATUS_EOF) ||
+                   (m_stat == STATUS_REACHED_FILTER_COND))
             {
                 bool Complete = false;
-                if ((m_stat == STATUS_EOF) || (m_stat == STATUS_REACHED_FILTER_COND))
+                if ((m_stat == STATUS_EOF) ||
+                    (m_stat == STATUS_REACHED_FILTER_COND))
                 {
                     Complete = true;
                     m_stat = STATUS_EOF;
@@ -517,8 +541,9 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType directio
                 recCountOnce = calcNextReadRecordCount(recCountOnce, eTime);
                 m_impl->filterPtr->setMaxRows(recCountOnce);
                 result += *((ushort_td*)m_impl->dataBak);
-                setBookMarks(m_impl->maxBookMarkedCount + 1, (void*)((char*)m_impl->dataBak + 2),
-                    *((ushort_td*)m_impl->dataBak));
+                setBookMarks(m_impl->maxBookMarkedCount + 1,
+                             (void*)((char*)m_impl->dataBak + 2),
+                             *((ushort_td*)m_impl->dataBak));
                 m_impl->maxBookMarkedCount = result;
                 onRecordCounting(result, Complete);
                 if (Complete)
@@ -542,7 +567,7 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent, eFindType directio
             m_stat = 0;
     }
     else
-        return nstable::doRecordCount(estimate, fromCurrent, direction);
+        return nstable::doRecordCount(estimate, fromCurrent);
 
     return result;
 }
@@ -561,30 +586,37 @@ void table::btrvGetExtend(ushort_td op)
     }
     m_datalen = m_impl->filterPtr->exDataBufLen();
 
-    //cacheing direction
-    if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI)|| (op == TD_POS_PREV_MULTI))
+    // cacheing direction
+    if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI) ||
+        (op == TD_POS_PREV_MULTI))
         m_impl->filterPtr->setDirection(findBackForword);
     else
         m_impl->filterPtr->setDirection(findForword);
 
     tdap(op);
+    if (m_stat && (m_stat != STATUS_LIMMIT_OF_REJECT) &&
+        (m_stat != STATUS_REACHED_FILTER_COND) && (m_stat != STATUS_EOF))
+        return;
     short stat = m_stat;
-    if (!m_impl->filterPtr->isWriteComleted() && (stat == STATUS_REACHED_FILTER_COND))
+    if (!m_impl->filterPtr->isWriteComleted() &&
+        (stat == STATUS_REACHED_FILTER_COND))
         stat = STATUS_LIMMIT_OF_REJECT;
 
-    m_impl->rc->reset(m_impl->filterPtr, (char*)m_impl->dataBak, m_datalen, blobFieldUsed() ?
-        getBlobHeader() : NULL);
+    m_impl->rc->reset(m_impl->filterPtr, (uchar_td*)m_impl->dataBak, m_datalen,
+                      blobFieldUsed() ? getBlobHeader() : NULL);
 
     m_stat = stat;
     m_impl->exSlideStat = m_stat;
-    //There is the right record.
+    // There is the right record.
     if (m_impl->rc->rowCount() && (!m_impl->exBookMarking))
     {
         m_pdata = (void*)m_impl->rc->setRow(0);
-        m_datalen = tableDef()->maxRecordLen;//m_impl->rc->len();
+        m_datalen = tableDef()->maxRecordLen;
 
         m_stat = m_impl->rc->seekMultiStat();
-    }else if ((m_stat == STATUS_LIMMIT_OF_REJECT) && (m_impl->filterPtr->rejectCount()>=1))
+    }
+    else if ((m_stat == STATUS_LIMMIT_OF_REJECT) &&
+             (m_impl->filterPtr->rejectCount() >= 1))
         m_stat = STATUS_EOF;
 }
 
@@ -595,8 +627,10 @@ void table::getRecords(ushort_td op)
         btrvGetExtend(op);
         m_impl->filterPtr->setPosTypeNext(true);
 
-    }while (m_stat == STATUS_LIMMIT_OF_REJECT && (m_impl->filterPtr->rejectCount()==0));
-    if ((m_stat == STATUS_REACHED_FILTER_COND) || (m_stat == STATUS_LIMMIT_OF_REJECT))
+    } while (m_stat == STATUS_LIMMIT_OF_REJECT &&
+             (m_impl->filterPtr->rejectCount() == 0));
+    if ((m_stat == STATUS_REACHED_FILTER_COND) ||
+        (m_stat == STATUS_LIMMIT_OF_REJECT))
         m_stat = STATUS_EOF;
 }
 
@@ -606,11 +640,112 @@ bookmark_td table::bookmarkFindCurrent() const
     if (!m_impl->rc->isEndOfRow(m_impl->rc->row()))
         return m_impl->rc->bookmarkCurRow();
     return 0;
+}
 
+inline bool checkStatus(short v)
+{
+    return ((v == STATUS_SUCCESS) || (v == STATUS_NOT_FOUND_TI) ||
+            (v == STATUS_EOF));
+}
+
+bool table::doSeekMultiAfter(int row)
+{
+    const std::vector<short>& fields = m_impl->filterPtr->selectFieldIndexes();
+
+    if (m_stat == STATUS_SUCCESS)
+        onReadAfter();
+    else if (!checkStatus(m_stat))
+        return false;
+    if (m_stat)
+        m_impl->mraPtr->setInvalidRecord(row, true);
+    else
+    {
+        uchar_td* dst = m_impl->mraPtr->ptr(row, mra_current_block);
+        if (m_impl->filterPtr->fieldSelected())
+        {
+            int resultOffset = 0;
+
+            for (int j = 0; j < (int)fields.size(); ++j)
+            {
+                fielddef* fd = &tableDef()->fieldDefs[fields[j]];
+                fd->unPackCopy(dst + resultOffset,
+                               ((uchar_td*)m_pdata) + fd->pos);
+                dst += fd->len;
+            }
+        }
+        else
+            memcpy(dst, (uchar_td*)m_pdata, m_datalen);
+    }
+    return true;
+}
+
+void table::btrvSeekMulti()
+{
+    const std::vector<client::seek>& seeks = m_impl->filterPtr->seeks();
+    const bool transactd = false;
+    bool hasManyJoin = m_impl->filterPtr->hasManyJoin();
+
+    m_impl->rc->reset();
+    size_t recordLen = m_impl->filterPtr->fieldSelected()
+                           ? m_impl->filterPtr->totalSelectFieldLen()
+                           : tableDef()->maxRecordLen;
+    if (!hasManyJoin)
+        m_impl->mraPtr->init(seeks.size(), recordLen, mra_first, this);
+
+    m_keylen = m_keybuflen;
+    m_datalen = m_buflen;
+    int type = mra_first;
+    int rowOffset = 0;
+    for (int i = 0; i < (int)seeks.size(); ++i)
+    {
+        // 100% need allocate each row
+        m_impl->mraPtr->init(1, recordLen, type, this);
+        type = mra_nextrows;
+        seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, false, true, transactd);
+        if (hasManyJoin)
+        {
+            tdap((ushort_td)(TD_KEY_OR_AFTER));
+            if (!checkStatus(m_stat))
+                return;
+
+            if (memcmp(seeks[i].data, m_impl->keybuf, seeks[i].len) == 0)
+            {
+                doSeekMultiAfter(0);
+                while (m_stat == 0)
+                {
+                    tdap((ushort_td)(TD_KEY_NEXT));
+                    if (!checkStatus(m_stat))
+                        return;
+                    if (memcmp(seeks[i].data, m_impl->keybuf, seeks[i].len) !=
+                        0)
+                        break;
+                    m_impl->mraPtr->duplicateRow(i + rowOffset, 1);
+                    ++rowOffset;
+                    m_impl->mraPtr->removeLastMemBlock(i + rowOffset);
+                    m_impl->mraPtr->init(1, recordLen, type, this);
+                    doSeekMultiAfter(0);
+                }
+            }
+            else
+                m_impl->mraPtr->setInvalidRecord(0, true);
+        }
+        else
+        {
+            tdap((ushort_td)(TD_KEY_SEEK));
+            if (!doSeekMultiAfter(i))
+                return;
+        }
+    }
+    m_stat = STATUS_EOF;
 }
 
 void table::find(eFindType type)
 {
+    if (!m_impl->filterPtr)
+    {
+        m_stat = STATUS_FILTERSTRING_ERROR;
+        return;
+    }
     ushort_td op;
 
     if (m_impl->filterPtr->isSeeksMode())
@@ -619,26 +754,30 @@ void table::find(eFindType type)
         op = TD_KEY_SEEK_MULTI;
     }
     else
-        op = (type == findForword) ? TD_KEY_GE_NEXT_MULTI:TD_KEY_LE_PREV_MULTI;
+        op =
+            (type == findForword) ? TD_KEY_GE_NEXT_MULTI : TD_KEY_LE_PREV_MULTI;
 
-    if (nsdb()->isUseTransactd())
+    if (isUseTransactd())
     {
         m_impl->rc->reset();
-        doFind(op, true/*notIncCurrent*/);
+        doFind(op, true /*notIncCurrent*/);
     }
     else
     {
-
         if (op == TD_KEY_SEEK_MULTI)
         {
-            //P.SQL not support TD_KEY_SEEK_MULTI
-            m_stat = STATUS_FILTERSTRING_ERROR;
+
+            if (m_impl->mraPtr)
+                btrvSeekMulti();
+            else
+                m_stat = STATUS_FILTERSTRING_ERROR; // P.SQL not support
+            // TD_KEY_SEEK_MULTI
             return;
         }
         if (type == findForword)
-            seekGreater(false);
+            seekGreater(true);
         else
-            seekLessThan(false);
+            seekLessThan(true);
         if (m_stat == 0)
         {
             if (type == findForword)
@@ -647,8 +786,6 @@ void table::find(eFindType type)
                 findPrev(false);
         }
     }
-
-
 }
 
 void table::findFirst()
@@ -683,7 +820,7 @@ void table::findLast()
 
 bool table::checkFindDirection(ushort_td op)
 {
-    bool ret ;
+    bool ret;
     if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI))
         ret = (m_impl->filterPtr->direction() == findBackForword);
     else
@@ -696,62 +833,65 @@ bool table::checkFindDirection(ushort_td op)
     return ret;
 }
 
-void table::doFind( ushort_td op, bool notIncCurrent)
+void table::doFind(ushort_td op, bool notIncCurrent)
 {
-        /*
-        First, read from cache.
-        If whole row readed from cache then select operation by m_impl->exSlideStat
+    /*
+    First, read from cache.
+    If whole row readed from cache then select operation by m_impl->exSlideStat
 
-        */
-        m_stat = 0;
-        int row = m_impl->rc->row() + 1;
+    */
+    m_stat = 0;
+    int row = m_impl->rc->row() + 1;
 
-        if (m_impl->rc->withinCache(row) && (!m_impl->exBookMarking))
-        {   /* read from cache */
+    if (m_impl->rc->withinCache(row) && (!m_impl->exBookMarking))
+    { /* read from cache */
 
-            /*Is direction same */
-            if (!checkFindDirection(op))
-                return ;
+        /*Is direction same */
+        if (!checkFindDirection(op))
+            return;
 
-            m_pdata = (void*)m_impl->rc->setRow(row);
-            m_stat = m_impl->rc->seekMultiStat();
+        m_pdata = (void*)m_impl->rc->setRow(row);
+        m_stat = m_impl->rc->seekMultiStat();
 
-            /*set keyvalue for keyValueDescription*/
-            if (m_stat != 0)
-                setSeekValueField(row);
+        /*set keyvalue for keyValueDescription*/
+        if (m_stat != 0)
+            setSeekValueField(row);
 
-            //m_datalen = m_impl->rc->len();
-            m_datalen = tableDef()->maxRecordLen;
-        }
-        else if (m_impl->rc->isEndOfRow(row))
-        {
-            /* whole row readed */
-            /*Is direction same */
-            if (!checkFindDirection(op))
-                return ;
-            /* A special situation that if rejectCount() == 0 and status = STATUS_LIMMIT_OF_REJECT
+        // m_datalen = m_impl->rc->len();
+        m_datalen = tableDef()->maxRecordLen;
+    }
+    else if (m_impl->rc->isEndOfRow(row))
+    {
+        /* whole row readed */
+        /*Is direction same */
+        if (!checkFindDirection(op))
+            return;
+        /* A special situation that if rejectCount() == 0 and status =
+           STATUS_LIMMIT_OF_REJECT
                 then it continues . */
-            if ((m_impl->exSlideStat == 0)
-                || ((m_impl->exSlideStat == STATUS_LIMMIT_OF_REJECT)
-                            && (m_impl->filterPtr->rejectCount() == 0)))
-            {
-                getRecords(op);
-                return;
-            }
-            if ((m_impl->exSlideStat == STATUS_LIMMIT_OF_REJECT) ||
-                    (m_impl->exSlideStat == STATUS_REACHED_FILTER_COND))
-                    m_stat = STATUS_EOF;
-            else
-                m_stat = m_impl->exSlideStat;
-             m_impl->exSlideStat = 0;
-        }
-        else
+        if ((m_impl->exSlideStat == 0) ||
+            ((m_impl->exSlideStat == STATUS_LIMMIT_OF_REJECT) &&
+             (m_impl->filterPtr->rejectCount() == 0)))
         {
-            m_impl->exNext = ((op == TD_KEY_NEXT_MULTI) || (op == TD_KEY_GE_NEXT_MULTI)) ? 1: -1;
-            m_impl->filterPtr->setPosTypeNext(notIncCurrent);
+            m_impl->rc->setMemblockType(mra_nextrows);
             getRecords(op);
+            return;
         }
-
+        if ((m_impl->exSlideStat == STATUS_LIMMIT_OF_REJECT) ||
+            (m_impl->exSlideStat == STATUS_REACHED_FILTER_COND))
+            m_stat = STATUS_EOF;
+        else
+            m_stat = m_impl->exSlideStat;
+        m_impl->exSlideStat = 0;
+    }
+    else
+    {
+        m_impl->exNext =
+            ((op == TD_KEY_NEXT_MULTI) || (op == TD_KEY_GE_NEXT_MULTI)) ? 1
+                                                                        : -1;
+        m_impl->filterPtr->setPosTypeNext(notIncCurrent);
+        getRecords(op);
+    }
 }
 
 void table::findNext(bool notIncCurrent)
@@ -760,7 +900,7 @@ void table::findNext(bool notIncCurrent)
     if (m_impl->filterPtr)
     {
         short op = m_impl->filterPtr->isSeeksMode() ? TD_KEY_SEEK_MULTI
-                    : TD_KEY_NEXT_MULTI;
+                                                    : TD_KEY_NEXT_MULTI;
         doFind(op, notIncCurrent);
     }
     else if (notIncCurrent == true)
@@ -773,7 +913,6 @@ void table::findPrev(bool notIncCurrent)
         doFind(TD_KEY_PREV_MULTI, notIncCurrent);
     else if (notIncCurrent == true)
         seekPrev();
-
 }
 
 void table::setQuery(const queryBase* query)
@@ -800,49 +939,37 @@ void table::setQuery(const queryBase* query)
     {
         m_stat = STATUS_CANT_ALLOC_MEMORY;
         return;
-
+    }
+    bool ret = false;
+    try
+    {
+        ret = m_impl->filterPtr->setQuery(query);
+    }
+    catch (...)
+    {
     }
 
-    if (!m_impl->filterPtr->setQuery(query))
+    if (!ret)
     {
         m_stat = STATUS_FILTERSTRING_ERROR;
         delete m_impl->filterPtr;
         m_impl->filterPtr = NULL;
         return;
     }
-    if (!m_impl->bookMarks)
-    {
-        m_impl->bookMarks = malloc(BOOKMARK_ALLOC_SIZE);
-        if (m_impl->bookMarks)
-            m_impl->bookMarksMemSize = BOOKMARK_ALLOC_SIZE;
-        else
-        {
-            m_stat = STATUS_FILTERSTRING_ERROR;
-            delete m_impl->filterPtr;
-            m_impl->filterPtr = NULL;
-        }
-    }
 }
 
-void table::setFilter(const _TCHAR* str, ushort_td RejectCount, ushort_td CashCount)
+void table::setFilter(const _TCHAR* str, ushort_td RejectCount,
+                      ushort_td CashCount, bool autoEscape)
 {
     if (!str || (str[0] == 0x00))
         setQuery(NULL);
     else
     {
         queryBase q;
-        q.queryString(str).reject(RejectCount).limit(CashCount);
+        q.bookmarkAlso(true);
+        q.queryString(str, autoEscape).reject(RejectCount).limit(CashCount);
         setQuery(&q);
     }
-
-}
-
-const _TCHAR* table::filterStr()
-{
-    if (m_impl->filterPtr)
-        return m_impl->filterPtr->filterStr();
-    else
-        return NULL;
 }
 
 void table::clearBuffer()
@@ -850,9 +977,8 @@ void table::clearBuffer()
     m_impl->rc->reset();
     m_pdata = m_impl->dataBak;
     memset(m_pdata, 0x00, m_buflen);
-    if ((bulkIns()==NULL) && blobFieldUsed())
+    if ((bulkIns() == NULL) && blobFieldUsed())
         resetSendBlob();
-
 }
 
 void table::getKeySpec(keySpec* ks, bool SpecifyKeyNum)
@@ -890,17 +1016,19 @@ void table::getKeySpec(keySpec* ks, bool SpecifyKeyNum)
 void table::doCreateIndex(bool SpecifyKeyNum)
 {
     int segmentCount = m_tableDef->keyDefs[m_keynum].segmentCount;
-    keySpec* ks = new keySpec[segmentCount];
+
+    keySpec* ks = (keySpec*)malloc(sizeof(keySpec) * segmentCount);
+    memset(ks, 0, sizeof(keySpec) * segmentCount);
     getKeySpec(ks, SpecifyKeyNum);
     m_pdata = ks;
     m_datalen = sizeof(keySpec) * segmentCount;
     nstable::doCreateIndex(SpecifyKeyNum);
     m_pdata = m_impl->dataBak;
-    delete[]ks;
+    free(ks);
 }
 
 void table::smartUpdate()
-{ 
+{
     if (!m_impl->smartUpDate)
         m_impl->smartUpDate = malloc(m_buflen);
     if (m_impl->smartUpDate)
@@ -914,7 +1042,7 @@ void table::smartUpdate()
 
 bool table::isUniqeKey(char_td keynum)
 {
-    if ((keynum>=0) && (keynum < m_tableDef->keyCount))
+    if ((keynum >= 0) && (keynum < m_tableDef->keyCount))
     {
         keydef* kd = &m_tableDef->keyDefs[m_keynum];
         return !(kd->segments[0].flags.bit0);
@@ -924,18 +1052,19 @@ bool table::isUniqeKey(char_td keynum)
 
 bool table::onUpdateCheck(eUpdateType type)
 {
-    //Check uniqe key
+    // Check uniqe key
     if (type == changeInKey)
     {
         if (!isUniqeKey(m_keynum))
         {
             m_stat = STATUS_INVALID_KEYNUM;
             return false;
-        }else
+        }
+        else
         {
-            if (nsdb()->isUseTransactd()==false)
+            if (isUseTransactd() == false)
             {
-                //backup update data
+                // backup update data
                 smartUpdate();
                 seek();
                 m_impl->smartUpDateFlag = false;
@@ -964,21 +1093,20 @@ void table::onUpdateAfter(int beforeResult)
 
     if (valiableFormatType() && m_impl->dataPacked)
         m_datalen = unPack((char*)m_pdata, m_datalen);
-
 }
 
 bool table::onDeleteCheck(bool inkey)
 {
-    client::database *db = static_cast<client::database*>(nsdb());
+    client::database* db = static_cast<client::database*>(nsdb());
     deleteRecordFn func = db->onDeleteRecord();
-	if (func)
-	{
-		if (func(db, this, inkey))
-		{
-			m_stat = STATUS_CANT_DEL_FOR_REL;
-			return false;
-		}
-	}
+    if (func)
+    {
+        if (func(db, this, inkey))
+        {
+            m_stat = STATUS_CANT_DEL_FOR_REL;
+            return false;
+        }
+    }
     return true;
 }
 
@@ -1001,7 +1129,7 @@ void table::onInsertAfter(int beforeResult)
 {
     if (valiableFormatType() && m_impl->dataPacked)
         m_datalen = unPack((char*)m_pdata, m_datalen);
-    if ((bulkIns()==NULL) && blobFieldUsed())
+    if ((bulkIns() == NULL) && blobFieldUsed())
         addSendBlob(NULL);
 }
 
@@ -1016,8 +1144,8 @@ void* table::attachBuffer(void* NewPtr, bool unpack, size_t size)
     if (len < m_tableDef->maxRecordLen)
         len = m_tableDef->maxRecordLen;
     if (unpack)
-		len = unPack((char*)m_pdata, size);
-	m_datalen = len;
+        len = unPack((char*)m_pdata, size);
+    m_datalen = len;
     return oldptr;
 }
 
@@ -1026,17 +1154,20 @@ void table::dettachBuffer()
     if (m_impl->bfAtcPtr)
         m_pdata = m_impl->bfAtcPtr;
     m_impl->bfAtcPtr = NULL;
-
 }
 
-void table::init(tabledef* Def, short fnum, bool regularDir) {doInit(Def, fnum, regularDir);}
+void table::init(tabledef* Def, short fnum, bool regularDir)
+{
+    doInit(Def, fnum, regularDir);
+}
 
 void table::doInit(tabledef* Def, short fnum, bool /*regularDir*/)
 {
     m_tableDef = Def;
+    m_fddefs->addAllFileds(m_tableDef);
     ushort_td len;
 
-    m_impl->cv->setCodePage(mysql::codePage(m_tableDef->charsetIndex));
+    m_fddefs->cv()->setCodePage(mysql::codePage(m_tableDef->charsetIndex));
 
     if ((len = recordLength()) < m_tableDef->maxRecordLen)
         len = m_tableDef->maxRecordLen;
@@ -1056,7 +1187,7 @@ void table::doInit(tabledef* Def, short fnum, bool /*regularDir*/)
     }
     if (m_impl->dataBak)
         free(m_impl->dataBak);
-    m_impl->dataBak = (void*) malloc(len);
+    m_impl->dataBak = (void*)malloc(len);
 
     if (m_impl->dataBak == NULL)
     {
@@ -1070,29 +1201,36 @@ void table::doInit(tabledef* Def, short fnum, bool /*regularDir*/)
     m_buflen = len;
     m_datalen = len;
     setTableid(fnum);
-
 }
 
-keylen_td table::writeKeyData()
+keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
 {
     if (m_tableDef->keyCount)
     {
-        keydef& keydef = m_tableDef->keyDefs[(short)m_impl->keyNumIndex[m_keynum]];
-        uchar_td* to = (uchar_td*)m_impl->keybuf;
+        keydef& keydef =
+            m_tableDef->keyDefs[(short)m_impl->keyNumIndex[m_keynum]];
+        uchar_td* start = to;
+        if (keySize == 0)
+            keySize = keydef.segmentCount;
 
-        for (int j = 0; j < keydef.segmentCount; j++)
+        for (int j = 0; j < keySize; j++)
         {
             int fdnum = keydef.segments[j].fieldNum;
             fielddef& fd = m_tableDef->fieldDefs[fdnum];
             uchar_td* from = (uchar_td*)m_pdata + fd.pos;
             to = fd.keyCopy(to, from);
         }
-        return (keylen_td)(to - (uchar_td*)m_impl->keybuf);
+        return (keylen_td)(to - start);
     }
     return 0;
 }
 
-uint_td table::pack(char*ptr, size_t size)
+keylen_td table::writeKeyData()
+{
+    return writeKeyDataTo((uchar_td*)m_impl->keybuf, 0);
+}
+
+uint_td table::pack(char* ptr, size_t size)
 {
     char* pos = ptr;
     char* end = pos + size;
@@ -1100,26 +1238,36 @@ uint_td table::pack(char*ptr, size_t size)
     for (int i = 0; i < m_tableDef->fieldCount; i++)
     {
         fielddef& fd = m_tableDef->fieldDefs[i];
-        int blen = fd.varLenBytes();
-        int dl = fd.len; // length
-        if (blen == 1)
-            dl = *((unsigned char*)(pos)) + blen;
-        else if (blen == 2)
-            dl = *((unsigned short*)(pos)) + blen;
-        pos += dl;
-        if ((movelen = fd.len - dl) != 0)
+        if (fd.type == ft_myfixedbinary)
         {
-            end -= movelen;
-            memmove(pos, pos + movelen, end - pos);
+            memmove(pos + 2, pos, fd.len - 2); // move as size pace in the field
+            *((unsigned short*)(pos)) = fd.len - 2; // fixed size
+            pos += fd.len;
+        }
+        else
+        {
+            int blen = fd.varLenBytes();
+            int dl = fd.len; // length
+            if (blen == 1)
+                dl = *((unsigned char*)(pos)) + blen;
+            else if (blen == 2)
+                dl = *((unsigned short*)(pos)) + blen;
+            pos += dl;
+            if ((movelen = fd.len - dl) != 0)
+            {
+                end -= movelen;
+                memmove(pos, pos + movelen, end - pos);
+            }
         }
     }
-    m_impl->dataPacked  = true;
+    m_impl->dataPacked = true;
     return (uint_td)(pos - ptr);
 }
 
 uint_td table::doGetWriteImageLen()
 {
-    if (!blobFieldUsed() && !valiableFormatType() && (m_tableDef->flags.bit0 == false))
+    if (!blobFieldUsed() && !valiableFormatType() &&
+        (m_tableDef->flags.bit0 == false))
         return m_buflen;
     // Make blob pointer list
     if (blobFieldUsed())
@@ -1144,13 +1292,14 @@ uint_td table::doGetWriteImageLen()
         return pack((char*)m_pdata, m_buflen);
     else
     {
-        fielddef* FieldDef = &m_tableDef->fieldDefs[m_tableDef->fieldCount - 1];
+        fielddef* fd = &m_tableDef->fieldDefs[m_tableDef->fieldCount - 1];
         size_t len = 0;
         short* pos;
 
-        if (FieldDef->type == ft_note)
-            len = strlen((char*)fieldPtr((short)(m_tableDef->fieldCount - 1))) + 1;
-        else if (FieldDef->type == ft_lvar)
+        if (fd->type == ft_note)
+            len = strlen((char*)fieldPtr((short)(m_tableDef->fieldCount - 1))) +
+                  1;
+        else if (fd->type == ft_lvar)
         {
             // xx................xx.............00
             // ln--data----------ln-----data----00
@@ -1160,14 +1309,13 @@ uint_td table::doGetWriteImageLen()
                 len += 2; // size
                 len += *pos;
                 pos = (short*)((char*)pos + (*pos + 2)); // next position
-
             }
             len += 2;
         }
         else
-            len = FieldDef->len;
+            len = fd->len;
 
-        len += FieldDef->pos;
+        len += fd->pos;
 
         return (uint_td)len;
     }
@@ -1182,23 +1330,37 @@ uint_td table::unPack(char* ptr, size_t size)
     for (int i = 0; i < m_tableDef->fieldCount; i++)
     {
         fielddef& fd = m_tableDef->fieldDefs[i];
-        int blen = fd.varLenBytes();
-        int dl = fd.len; // length
-        if (blen == 1)
-            dl = *((unsigned char*)(pos)) + blen;
-        else if (blen == 2)
-            dl = *((unsigned short*)(pos)) + blen;
-        if ((movelen = fd.len - dl) != 0)
+        if (fd.type == ft_myfixedbinary)
         {
-            if (max < end + movelen)
-                return 0;
-            const char* src = pos + dl;
-            memmove(pos + fd.len, src, end - src);
-            end += movelen;
+            int dl = *((unsigned short*)(pos));
+            assert(dl == fd.len - 2);
+            memmove(pos, pos + 2, dl);
+            pos += dl;
+            *((unsigned short*)(pos)) = 0x00;
+            ;
+            pos += 2;
         }
-        pos += fd.len;
+        else
+        {
+            int blen = fd.varLenBytes();
+            int dl = fd.len; // length
+            if (blen == 1)
+                dl = *((unsigned char*)(pos)) + blen;
+            else if (blen == 2)
+                dl = *((unsigned short*)(pos)) + blen;
+            if ((movelen = fd.len - dl) != 0)
+            {
+                if (max < end + movelen)
+                    return 0;
+                char* src = pos + dl;
+                memmove(pos + fd.len, src, end - src);
+                memset(src, 0, movelen);
+                end += movelen;
+            }
+            pos += fd.len;
+        }
     }
-    m_impl->dataPacked  = false;
+    m_impl->dataPacked = false;
     return (uint_td)(pos - ptr);
 }
 
@@ -1213,15 +1375,14 @@ void table::addBlobEndRow()
 void table::resetSendBlob()
 {
     addSendBlob(NULL);
-    m_impl->blobs.clear();
-
+    m_fddefs->blobClear();
 }
 
 void table::addSendBlob(const blob* blob)
 {
     short stat = m_stat;
     /*backup current data buffer*/
-    const void *tmp = data();
+    const void* tmp = data();
     setData((void*)blob);
     tdap(TD_ADD_SENDBLOB);
     /*restore data buffer*/
@@ -1234,7 +1395,7 @@ const blobHeader* table::getBlobHeader()
     short stat = m_stat;
     const blobHeader* p;
     /*backup current data buffer*/
-    const void *tmp = data();
+    const void* tmp = data();
     setData(&p);
     tdap(TD_GET_BLOB_BUF);
     /*restore data buffer*/
@@ -1244,7 +1405,6 @@ const blobHeader* table::getBlobHeader()
     if (stat)
         return NULL;
     return p;
-
 }
 
 void table::setBlobFieldPointer(char* ptr, const blobHeader* hd)
@@ -1266,12 +1426,11 @@ void table::setBlobFieldPointer(char* ptr, const blobHeader* hd)
         ++hd->curRow;
         hd->nextField = (blobField*)f;
     }
-
 }
 
 void table::onReadAfter()
 {
-    m_impl->strBufs.clear();
+    m_fddefs->strBufs()->clear();
     if (valiableFormatType())
     {
         m_datalen = unPack((char*)m_pdata, m_datalen);
@@ -1285,924 +1444,145 @@ void table::onReadAfter()
     }
     if (m_buflen - m_datalen > 0)
         memset((char*)m_pdata + m_datalen, 0, m_buflen - m_datalen);
-
 }
 
 short table::fieldNumByName(const _TCHAR* name)
 {
-    short i=0;
-    if (name == 0) return i;
-    if (m_impl->fields.size() == 0)
-    {
-#ifdef _UNICODE
-        wchar_t buf[74];
-        for (i = 0; i < m_tableDef->fieldCount; i++)
-            m_impl->fields.push_back(CFiledNameIndex(i, m_tableDef->fieldDefs[i].name(buf)));
-#else
-        for (i = 0; i < m_tableDef->fieldCount; i++)
-            m_impl->fields.push_back(CFiledNameIndex(i, m_tableDef->fieldDefs[i].name()));
-#endif
-
-        sort(m_impl->fields.begin(), m_impl->fields.end());
-    }
-    if (binary_search(m_impl->fields.begin(), m_impl->fields.end(), CFiledNameIndex(0, name)))
-    {
-        std::vector<CFiledNameIndex>::iterator p;
-        p = lower_bound(m_impl->fields.begin(), m_impl->fields.end(), CFiledNameIndex(0, name));
-        return m_impl->fields[p - m_impl->fields.begin()].index;
-    }
-
-    return -1;
+    return m_fddefs->indexByName(name);
 }
 
-void* table::fieldPtr(short index)
+void* table::fieldPtr(short index) const
 {
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return NULL;
-    return (void*)((char*) m_pdata + m_tableDef->fieldDefs[index].pos);
+    return m_impl->fields[index].ptr();
 }
 
 void table::setFVA(short index, const char* data)
 {
-
-    __int64 value;
-    double fltValue;
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return;
-    fielddef& fd = m_tableDef->fieldDefs[index];
-
-    char* p = (char*)m_pdata + fd.pos;
-    if (data == NULL)
-    {
-        memset(p, 0, fd.len);
-        return;
-    }
-
-    switch (fd.type)
-    {
-    case ft_string:
-        return store<stringStore, char, char>(p, data, fd, m_impl->cv, m_impl->usePadChar);
-    case ft_note:
-    case ft_zstring: return store<zstringStore, char, char>(p, data, fd, m_impl->cv);
-    case ft_wzstring: return store<wzstringStore, WCHAR, char>(p, data, fd, m_impl->cv);
-    case ft_wstring:
-        return store<wstringStore, WCHAR, char>(p, data, fd, m_impl->cv, m_impl->usePadChar);
-    case ft_mychar: return store<myCharStore, char, char>(p, data, fd, m_impl->cv);
-    case ft_myvarchar: return store<myVarCharStore, char, char>(p, data, fd, m_impl->cv);
-    case ft_lstring:
-    case ft_myvarbinary: return store<myVarBinaryStore, char, char>(p, data, fd, m_impl->cv);
-    case ft_mywchar: return store<myWcharStore, WCHAR, char>(p, data, fd, m_impl->cv);
-    case ft_mywvarchar: return store<myWvarCharStore, WCHAR, char>(p, data, fd, m_impl->cv);
-    case ft_mywvarbinary: return store<myWvarBinaryStore, WCHAR, char>(p, data, fd, m_impl->cv);
-    case ft_myblob:
-    case ft_mytext:
-        {
-            char* tmp = blobStore<char>(p, data, fd, m_impl->cv);
-            m_impl->blobs.push_back(boost::shared_array<char>(tmp));
-            return;
-        }
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_bfloat:
-    case ft_numericsts:
-    case ft_numericsa:
-    case ft_currency: // currecy
-    case ft_float:    // float double
-        fltValue = atof(data);
-        setFV(index, fltValue);
-        return;
-    case ft_lvar: // Lvar
-        return;
-
-    case ft_date: // date mm/dd/yy
-        value = /*StrToBtrDate*/atobtrd((const char*) data).i;
-        break;
-    case ft_time: // time hh:nn:ss
-        value = /*StrToBtrTime*/atobtrt((const char*)data).i;
-        break;
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_integer:
-    case ft_autoinc:
-    case ft_bit: value = _atoi64(data);
-        break;
-    case ft_logical:
-        if (m_impl->logicalToString)
-        {
-            char tmp[5];
-            strncpy(tmp, data, 5);
-            if (strcmp(_strupr(tmp), "YES") == 0)
-                value = 1;
-            else
-                value = 0;
-        }
-        else
-            value = atol(data);
-        break;
-    case ft_timestamp:
-    case ft_mytimestamp: value = 0;
-        break;
-    case ft_mydate:
-        {
-            myDate d;
-            d = data;
-            value = d.getValue();
-            break;
-        }
-    case ft_mytime:
-        {
-            myTime t(fd.len);
-            t = data;
-            value = t.getValue();
-            break;
-        }
-
-    case ft_mydatetime:
-        {
-            myDateTime t(fd.len);
-            t = data;
-            value = t.getValue();
-            break;
-        }
-    default: return;
-    }
-    setValue(fd, (uchar_td*)m_pdata, value);
+    m_impl->fields[index].setFVA(data);
 }
 
 #ifdef _WIN32
 
 void table::setFVW(short index, const wchar_t* data)
 {
-
-    int value;
-    double fltValue;
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return;
-    fielddef& fd = m_tableDef->fieldDefs[index];
-
-    char* p = (char*)m_pdata + fd.pos;
-    if (data == NULL)
-    {
-        memset(p, 0, fd.len);
-        return;
-    }
-
-    switch (fd.type)
-    {
-    case ft_string:
-        return store<stringStore, char, WCHAR>(p, data, fd, m_impl->cv, m_impl->usePadChar);
-    case ft_note:
-    case ft_zstring: return store<zstringStore, char, WCHAR>(p, data, fd, m_impl->cv);
-    case ft_wzstring: return store<wzstringStore, WCHAR, WCHAR>(p, data, fd, m_impl->cv);
-    case ft_wstring:
-        return store<wstringStore, WCHAR, WCHAR>(p, data, fd, m_impl->cv, m_impl->usePadChar);
-    case ft_mychar: return store<myCharStore, char, WCHAR>(p, data, fd, m_impl->cv);
-    case ft_myvarchar: return store<myVarCharStore, char, WCHAR>(p, data, fd, m_impl->cv);
-    case ft_lstring:
-    case ft_myvarbinary: return store<myVarBinaryStore, char, WCHAR>(p, data, fd, m_impl->cv);
-    case ft_mywchar: return store<myWcharStore, WCHAR, WCHAR>(p, data, fd, m_impl->cv);
-    case ft_mywvarchar: return store<myWvarCharStore, WCHAR, WCHAR>(p, data, fd, m_impl->cv);
-    case ft_mywvarbinary: return store<myWvarBinaryStore, WCHAR, WCHAR>(p, data, fd, m_impl->cv);
-    case ft_myblob:
-    case ft_mytext:
-        {
-            char* tmp = blobStore<WCHAR>(p, data, fd, m_impl->cv);
-            m_impl->blobs.push_back(boost::shared_array<char>(tmp));
-            return;
-        }
-
-    case ft_date: // date mm/dd/yy
-        value = /*StrToBtrDate*/atobtrd(data).i;
-        setFV(index, value);
-        break;
-    case ft_time: // time hh:nn:ss
-        value = /*StrToBtrTime*/atobtrt(data).i;
-        setFV(index, value);
-        return;
-
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_integer:
-    case ft_autoinc:
-    case ft_bit:
-        {
-            __int64 v = _wtoi64(data);
-            setFV(index, v);
-            break;
-        }
-    case ft_logical:
-        if (m_impl->logicalToString)
-        {
-            wchar_t tmp[5];
-            wcsncpy(tmp, data, 5);
-
-            if (wcscmp(_wcsupr(tmp), L"YES") == 0)
-                value = 1;
-            else
-                value = 0;
-        }
-        else
-            value = _wtol(data);
-        setFV(index, value);
-        break;
-
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_bfloat:
-    case ft_numericsts:
-    case ft_numericsa:
-    case ft_currency:
-    case ft_float: fltValue = _wtof(data);
-        setFV(index, fltValue);
-        break;
-    case ft_timestamp:
-        {
-            __int64 v = 0;
-            setFV(index, v);
-            return;
-        }
-    case ft_mydate:
-        {
-            myDate d;
-            d = data;
-            setValue(fd, (uchar_td *)m_pdata, d.getValue());
-            return;
-        }
-    case ft_mytime:
-        {
-            myTime t(fd.len);
-            t = data;
-            setValue(fd, (uchar_td*)m_pdata, t.getValue());
-            return;
-        }
-    case ft_mydatetime:
-        {
-            myDateTime t(fd.len);
-            t = data;
-            setFV(index, t.getValue());
-            return;
-        }
-    case ft_mytimestamp:
-    case ft_lvar: break;
-    }
-
+    m_impl->fields[index].setFVW(data);
 }
 
 void table::setFVW(const _TCHAR* FieldName, const wchar_t* data)
 {
     short index = fieldNumByName(FieldName);
-    setFVW(index, data);
+    if (!checkIndex(index))
+        return;
+    m_impl->fields[index].setFVW(data);
 }
 
 #endif //_WIN32
 
 void table::setFV(short index, unsigned char data)
 {
+    if (!checkIndex(index))
+        return;
     int value = (long)data;
     setFV(index, value);
 }
 
 void table::setFV(short index, int data)
 {
-    char buf[20];
-    double d;
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return;
-    int v = data;
-    fielddef& fd = m_tableDef->fieldDefs[index];
-    switch (fd.type)
-    {
-
-    case ft_mydate:
-        {
-            myDate myd;
-            myd.setValue(data, m_impl->myDateTimeValueByBtrv);
-            setValue(fd, (uchar_td*)m_pdata, myd.getValue());
-            break;
-        }
-    case ft_mytime:
-        {
-            myTime myt(fd.len);
-            myt.setValue(data, m_impl->myDateTimeValueByBtrv);
-            setValue(fd, (uchar_td*)m_pdata, myt.getValue());
-            break;
-        }
-    case ft_integer:
-    case ft_date:
-    case ft_time:
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_autoinc:
-    case ft_bit:
-    case ft_mydatetime:
-        switch (m_tableDef->fieldDefs[index].len)
-        {
-        case 1: *((char*)((char*)m_pdata + fd.pos)) = (char) v;
-            break;
-        case 2: *((short*)((char*)m_pdata + fd.pos)) = (short)v;
-            break;
-        case 3: memcpy((char*)m_pdata + fd.pos, &v, 3);
-            break;
-        case 4: *((int*)((char*)m_pdata + fd.pos)) = v;
-            break;
-        case 8: *((__int64*)((char*)m_pdata + fd.pos)) = v;
-            break;
-        }
-        break;
-
-    case ft_timestamp:
-        {
-            __int64 v = 0;
-            setFV(index, v);
-            return;
-        }
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_bfloat:
-    case ft_numericsts:
-    case ft_numericsa:
-
-    case ft_currency:
-    case ft_float: d = (double)data;
-        setFV(index, d);
-        break;
-    case ft_string:
-    case ft_zstring:
-    case ft_note:
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mychar:
-        if (data == 0)
-            setFVA(index, "");
-        else
-        {
-            _ltoa_s(data, buf, 20, 10);
-            setFVA(index, buf);
-        }
-        break;
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_mywchar:
-    case ft_wstring:
-    case ft_wzstring:
-        {
-            if (data == 0)
-                setFV(index, _T(""));
-            else
-            {
-                _TCHAR buf[30];
-                _ltot_s(data, buf, 30, 10);
-                setFV(index, buf);
-            }
-            break;
-        }
-    case ft_lvar: break;
-
-    }
+    m_impl->fields[index].setFV(data);
 }
 
 void table::setFV(short index, double data)
 {
-    char buf[20];
-    __int64 i64;
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return;
-
-    switch (m_tableDef->fieldDefs[index].type)
-    {
-    case ft_currency: // currency
-        i64 = (__int64)(data * 10000 + 0.5);
-        setFV(index, i64);
-        break;
-    case ft_bfloat: // bfloat
-    case ft_float:
-        switch (m_tableDef->fieldDefs[index].len)
-        {
-        case 4: *((float*)((char*)m_pdata + m_tableDef->fieldDefs[index].pos)) = (float)data;
-            break;
-        case 8: *((double*)((char*)m_pdata + m_tableDef->fieldDefs[index].pos)) = data;
-            break;
-        default:
-            break;
-        }
-        break;
-    case ft_decimal:
-    case ft_money: setFVDecimal(index, data);
-        break;
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa: setFVNumeric(index, data);
-        break;
-
-    case ft_integer:
-    case ft_date:
-    case ft_time:
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_autoinc:
-    case ft_timestamp:
-    case ft_bit:
-    case ft_mydate:
-    case ft_mytime:
-    case ft_mydatetime:
-    case ft_mytimestamp: i64 = (__int64)data;
-        setFV(index, i64);
-        break;
-    case ft_string:
-    case ft_zstring:
-    case ft_note:
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mychar:
-        if (data == 0)
-            setFVA(index, "");
-        else
-        {
-            sprintf(buf, "%f", data);
-            setFVA(index, buf);
-            break;
-        }
-    case ft_lvar: break;
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_mywchar:
-    case ft_wstring:
-    case ft_wzstring:
-        {
-            if (data == 0)
-                setFV(index, _T(""));
-            else
-            {
-                _TCHAR buf[40];
-                _stprintf_s(buf, 40, _T("%f"), data);
-                setFV(index, buf);
-            }
-            break;
-        }
-    }
-}
-
-void table::setFV(short index, bool data)
-{
-    int value = (int)data;
-    setFV(index, value);
+    m_impl->fields[index].setFV(data);
 }
 
 void table::setFV(short index, short data)
 {
+    if (!checkIndex(index))
+        return;
     int value = (int)data;
     setFV(index, value);
 }
 
 void table::setFV(short index, float data)
 {
+    if (!checkIndex(index))
+        return;
     double value = (double)data;
     setFV(index, value);
-
 }
 
-short table::getFVsht(short index) {return (short)getFVlng(index);}
+short table::getFVsht(short index)
+{
+    return (short)getFVlng(index);
+}
 
 int table::getFVlng(short index)
 {
-    int ret = 0;
-
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return 0;
-    fielddef& fd = m_tableDef->fieldDefs[index];
-    switch (fd.type)
-    {
-    case ft_integer:
-    case ft_autoinc:
-        switch (fd.len)
-        {
-        case 1: ret = *(((char*)m_pdata + fd.pos));
-            break;
-        case 2: ret = *((short*)((char*)m_pdata + fd.pos));
-            break;
-        case 3: memcpy(&ret, (char*)m_pdata + fd.pos, 3);
-            ret = ((ret & 0xFFFFFF) << 8) / 0x100;
-            break;
-        case 8:
-        case 4: ret = *((int*)((char*)m_pdata + fd.pos));
-            break;
-        }
-        break;
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_bit:
-    case ft_date:
-    case ft_time:
-    case ft_timestamp:
-    case ft_mydatetime:
-    case ft_mytimestamp:
-        switch (fd.len)
-        {
-        case 1: ret = *((unsigned char*)((char*)m_pdata + fd.pos));
-            break;
-        case 2: ret = *((unsigned short*)((char*)m_pdata + fd.pos));
-            break;
-        case 3: memcpy(&ret, (char*)m_pdata + fd.pos, 3);
-            break;
-        case 8:
-        case 4:
-            ret = *((unsigned int*)((char*)m_pdata + fd.pos));
-            break;
-        }
-        break;
-    case ft_mydate:
-        {
-            myDate myd;
-            myd.setValue((int)getValue64(fd, (const uchar_td*)m_pdata));
-            ret = myd.getValue(m_impl->myDateTimeValueByBtrv);
-            break;
-        }
-    case ft_mytime:
-        {
-            myTime myt(fd.len);
-            myt.setValue((int)getValue64(fd, (const uchar_td*)m_pdata));
-            ret = (int)myt.getValue(m_impl->myDateTimeValueByBtrv);
-            break; ;
-        }
-    case ft_string:
-    case ft_zstring:
-    case ft_note:
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mychar: ret = atol(getFVAstr(index));
-        break;
-    case ft_wstring:
-    case ft_wzstring:
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_mywchar: ret = _ttol(getFVstr(index));
-        break;
-    case ft_currency: ret = (long)(*((__int64*)((char*)m_pdata + fd.pos)) / 10000);
-        break;
-    case ft_bfloat:
-    case ft_float: ret = (long)getFVdbl(index);
-        break;
-    case ft_decimal:
-    case ft_money: ret = (long)getFVDecimal(index);
-        break;
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa: ret = (long)getFVnumeric(index);
-        break;
-
-    case ft_lvar: break;
-    default: return 0;
-    }
-    return ret;
+    return m_impl->fields[index].getFVlng();
 }
 
-float table::getFVflt(short index) {return (float) getFVdbl(index);}
+float table::getFVflt(short index)
+{
+    return (float)getFVdbl(index);
+}
 
 double table::getFVdbl(short index)
 {
-    double ret = 0;
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return 0;
-    switch (m_tableDef->fieldDefs[index].type)
-    {
-    case ft_currency:
-        ret = (double) * ((__int64*)((char*)m_pdata + m_tableDef->fieldDefs[index].pos));
-        ret = ret / 10000;
-        break;
-
-    case ft_bfloat:
-    case ft_timestamp:
-    case ft_float:
-        switch (m_tableDef->fieldDefs[index].len)
-        {
-        case 4: ret = (double) * ((float*)((char*)m_pdata + m_tableDef->fieldDefs[index].pos));
-            break;
-        case 10: // long double
-        case 8: ret = (double) * ((double*)((char*)m_pdata + m_tableDef->fieldDefs[index].pos));
-            break;
-        }
-        break;
-    case ft_string:
-    case ft_zstring:
-    case ft_note:
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mychar: ret = atof(getFVAstr(index));
-        break;
-    case ft_wstring:
-    case ft_wzstring:
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_mywchar: ret = _ttof(getFVstr(index));
-        break;
-    case ft_integer:
-    case ft_date:
-    case ft_time:
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_autoinc:
-    case ft_bit:
-    case ft_mydate:
-    case ft_mytime:
-    case ft_mydatetime:
-    case ft_mytimestamp: ret = (double)getFV64(index);
-        break;
-
-    case ft_decimal:
-    case ft_money: ret = getFVDecimal(index);
-        break;
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa: ret = getFVnumeric(index);
-        break;
-    case ft_lvar: break;
-    default: return 0;
-    }
-    return ret;
+    return m_impl->fields[index].getFVdbl();
 }
 
-unsigned char table::getFVbyt(short index) {return (unsigned char)getFVlng(index);}
+unsigned char table::getFVbyt(short index)
+{
+    return (unsigned char)getFVlng(index);
+}
 
 #ifdef _WIN32
 
 const wchar_t* table::getFVWstr(short index)
 {
-
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return NULL;
-
-    fielddef& fd = m_tableDef->fieldDefs[index];
-    char* data = (char*)m_pdata + fd.pos;
-    switch (fd.type)
-    {
-    case ft_string:
-        return read<stringStore, char, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv,
-            m_impl->trimPadChar);
-    case ft_note:
-    case ft_zstring: return read<zstringStore, char, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_wzstring:
-        return read<wzstringStore, WCHAR, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_wstring:
-        return read<wstringStore, WCHAR, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv,
-            m_impl->trimPadChar);
-    case ft_mychar:
-        return read<myCharStore, char, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv,
-            m_impl->trimPadChar);
-    case ft_myvarchar:
-        return read<myVarCharStore, char, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_lstring:
-    case ft_myvarbinary:
-        return read<myVarBinaryStore, char, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_mywchar:
-        return read<myWcharStore, WCHAR, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv,
-            m_impl->trimPadChar);
-    case ft_mywvarchar:
-        return read<myWvarCharStore, WCHAR, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_mywvarbinary:
-        return read<myWvarBinaryStore, WCHAR, WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_myblob:
-    case ft_mytext: return readBlob<WCHAR>(data, &m_impl->strBufs, fd, m_impl->cv);
-    }
-    wchar_t* p = (wchar_t*) m_impl->strBufs.getPtrW(max(fd.len * 2, 50));
-
-	wchar_t buf[10] = L"%0.";
-
-    switch (fd.type)
-    {
-
-    case ft_integer:
-    case ft_bit:
-    case ft_autoinc: _i64tow_s(getFV64(index), p, 50, 10);
-        return p;
-    case ft_logical:
-        if (m_impl->logicalToString)
-        {
-            if (getFVlng(index))
-                return L"Yes";
-            else
-                return L"No";
-        }
-        else
-            _i64tow_s(getFV64(index), p, 50, 10);
-
-    case ft_bfloat:
-    case ft_float:
-    case ft_currency:
-        {
-
-            swprintf_s(p, 50, L"%lf", getFVdbl(index));
-			int k = (int)wcslen(p) - 1;
-			while (k >= 0)
-            {
-                if (p[k] == L'0')
-                    p[k] = 0x00;
-                else if (p[k] == L'.')
-                {
-                    p[k] = 0x00;
-                    break;
-                }
-				else
-                    break;
-                k--;
-            }
-            break;
-        }
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-        swprintf_s(p, 50, L"%lu", getFV64(index));
-        break;
-    case ft_date: return btrdtoa(getFVlng(index), p);
-    case ft_time: return btrttoa(getFVlng(index), p);
-    case ft_mydate:
-        {
-            myDate d;
-            d.setValue((int)getValue64(fd, (const uchar_td*)m_pdata));
-            return d.toStr(p, m_impl->myDateTimeValueByBtrv);
-        }
-    case ft_mytime:
-        {
-
-            myTime t(fd.len);
-            t.setValue(getValue64(fd, (const uchar_td*)m_pdata));
-            return t.toStr(p);
-
-        }
-    case ft_mydatetime:
-        {
-            myDateTime t(fd.len);
-            t.setValue(getFV64(index));
-            return t.toStr(p);
-        }
-    case ft_mytimestamp:
-        {
-            myTimeStamp ts(fd.len);
-            ts.setValue(getFV64(index));
-            return ts.toStr(p);
-        }
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa: _ltow_s(fd.decimals, p, 50, 10);
-        wcscat(buf, p);
-        wcscat(buf, L"lf");
-        swprintf(p, 50, buf, getFVdbl(index));
-        break;
-    case ft_lvar: return NULL;
-    case ft_timestamp: return btrTimeStamp(getFV64(index)).toString(p);
-    default: p[0] = 0x00;
-    }
-    return p;
+    return m_impl->fields[index].getFVWstr();
 }
 
 const wchar_t* table::getFVWstr(const _TCHAR* FieldName)
 {
     short index = fieldNumByName(FieldName);
     return getFVWstr(index);
-
 }
 #endif //_WIN32
 
 const char* table::getFVAstr(short index)
 {
-    char buf[10] = "%0.";
-
-    if (checkIndex(index) == false)
+    if (index == -1)
         return NULL;
-    fielddef& fd = m_tableDef->fieldDefs[index];
-
-    char* data = (char*)m_pdata + fd.pos;
-    switch (fd.type)
-    {
-
-    case ft_string:
-        return read<stringStore, char, char>(data, &m_impl->strBufs, fd, m_impl->cv,
-            m_impl->trimPadChar);
-    case ft_note:
-    case ft_zstring: return read<zstringStore, char, char>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_wzstring:
-        return read<wzstringStore, WCHAR, char>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_wstring:
-        return read<wstringStore, WCHAR, char>(data, &m_impl->strBufs, fd, m_impl->cv,
-            m_impl->trimPadChar);
-    case ft_mychar:
-        return read<myCharStore, char, char>(data, &m_impl->strBufs, fd, m_impl->cv,
-            m_impl->trimPadChar);
-    case ft_myvarchar:
-        return read<myVarCharStore, char, char>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_lstring:
-    case ft_myvarbinary:
-        return read<myVarBinaryStore, char, char>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_mywchar:
-        return read<myWcharStore, WCHAR, char>(data, &m_impl->strBufs, fd, m_impl->cv,
-            m_impl->trimPadChar);
-    case ft_mywvarchar:
-        return read<myWvarCharStore, WCHAR, char>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_mywvarbinary:
-        return read<myWvarBinaryStore, WCHAR, char>(data, &m_impl->strBufs, fd, m_impl->cv);
-    case ft_myblob:
-    case ft_mytext: return readBlob<char>(data, &m_impl->strBufs, fd, m_impl->cv);
-    }
-    char* p = m_impl->strBufs.getPtrA(max(fd.len * 2, 50));
-    switch (fd.type)
-    {
-    case ft_integer:
-    case ft_bit:
-    case ft_autoinc: _i64toa_s(getFV64(index), p, 50, 10);
-        return p;
-    case ft_logical:
-        if (m_impl->logicalToString)
-        {
-            if (getFVlng(index))
-                return "Yes";
-            else
-                return "No";
-        }
-        else
-            _i64toa_s(getFV64(index), p, 50, 10);
-        break;
-    case ft_bfloat:
-    case ft_float:
-    case ft_currency:
-        {
-            sprintf(p, "%lf", getFVdbl(index));
-            size_t k = strlen(p) - 1;
-            while (1)
-            {
-                if (p[k] == '0')
-                    p[k] = 0x00;
-                else if (p[k] == '.')
-                {
-                    p[k] = 0x00;
-                    break;
-                }
-                else
-                    break;
-                k--;
-            }
-            break;
-        }
-    case ft_date: return btrdtoa(getFVlng(index), p);
-    case ft_time: return btrttoa(getFVlng(index), p);
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-        sprintf_s(p, 50, "%lu", getFV64(index));
-        break;
-
-    case ft_mydate:
-        {
-            myDate d;
-            d.setValue((int)getValue64(fd, (const uchar_td*)m_pdata));
-            return d.toStr(p, m_impl->myDateTimeValueByBtrv);
-        }
-    case ft_mytime:
-        {
-            myTime t(fd.len);
-            t.setValue(getValue64(fd, (const uchar_td*)m_pdata));
-            return t.toStr(p);
-        }
-    case ft_mytimestamp:
-        {
-            myTimeStamp ts(fd.len);
-            ts.setValue(getFV64(index));
-            return ts.toStr(p);
-        }
-    case ft_mydatetime:
-        {
-            myDateTime t(fd.len);
-            t.setValue(getFV64(index));
-            return t.toStr(p);
-        }
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa: _ltoa_s(fd.decimals, p, 50, 10);
-        strcat(buf, p);
-        strcat(buf, "lf");
-        sprintf_s(p, 50, buf, getFVdbl(index));
-        break;
-    case ft_lvar: return NULL;
-    case ft_timestamp: return btrTimeStamp(getFV64(index)).toString(p);
-    default: p[0] = 0x00;
-    }
-    return p;
+    return m_impl->fields[index].getFVAstr();
 }
 
-int table::getFVint(short index) {return (int)getFVlng(index);}
+int table::getFVint(short index)
+{
+    return (int)getFVlng(index);
+}
 
 int table::getFVint(const _TCHAR* FieldName)
 {
     short index = fieldNumByName(FieldName);
     return (int)getFVlng(index);
-
 }
 
 int table::getFVlng(const _TCHAR* FieldName)
@@ -2291,106 +1671,16 @@ void table::setFV(const _TCHAR* FieldName, __int64 data)
 
 __int64 table::getFV64(short index)
 {
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return 0;
-    fielddef& fd = m_tableDef->fieldDefs[index];
-
-    switch (fd.len)
-    {
-    case 8:
-        switch (fd.type)
-        {
-        case ft_autoIncUnsigned:
-        case ft_uinteger:
-        case ft_integer:
-        case ft_logical:
-        case ft_autoinc:
-        case ft_bit:
-        case ft_currency:
-        case ft_timestamp:
-        case ft_mydatetime:
-        case ft_mytimestamp: return (__int64) *((__int64*)((char*)m_pdata + fd.pos));
-        }
-        return 0;
-    case 7:
-    case 6:
-    case 5:
-        switch (fd.type)
-        {
-        case ft_mytime:
-        case ft_mydatetime:
-        case ft_mytimestamp:
-            {
-                __int64 v = 0;
-                memcpy(&v, (char*)m_pdata + fd.pos, fd.len);
-                return v;
-            }
-        }
-        return 0;
-    default:
-
-        return (__int64) getFVlng(index);
-    }
-
+    return m_impl->fields[index].getFV64();
 }
 
 void table::setFV(short index, __int64 data)
 {
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return;
-
-    fielddef& fd = m_tableDef->fieldDefs[index];
-    switch (fd.len)
-    {
-    case 8:
-        switch (fd.type)
-        {
-        case ft_autoIncUnsigned:
-        case ft_uinteger:
-        case ft_integer:
-        case ft_logical:
-        case ft_autoinc:
-        case ft_bit:
-        case ft_currency:
-        case ft_mydatetime:
-        case ft_mytimestamp: *((__int64*)((char*)m_pdata + fd.pos)) = data;
-            break;
-        case ft_timestamp:
-            {
-                btrDate d;
-                d.i = getNowDate();
-                btrTime t;
-                t.i = getNowTime();
-                *((__int64*)((char*)m_pdata + fd.pos)) = btrTimeStamp(d, t).i64;
-                break;
-            }
-        case ft_float:
-            {
-                double d = (double)data;
-                setFV(index, d);
-                break;
-            }
-        }
-        break;
-    case 7:
-    case 6:
-    case 5:
-        switch (fd.type)
-        {
-        case ft_mytime:
-        case ft_mydatetime:
-        case ft_mytimestamp: memcpy((char*)m_pdata + fd.pos, &data, fd.len);
-            break;
-        default: break;
-        }
-        break;
-    default:
-        {
-            int value = (int)data;
-            setFV(index, value);
-            break;
-        }
-    }
+    m_impl->fields[index].setFV(data);
 }
 
 void table::setFV(const _TCHAR* FieldName, const void* data, uint_td size)
@@ -2404,38 +1694,9 @@ void table::setFV(const _TCHAR* FieldName, const void* data, uint_td size)
  */
 void table::setFV(short index, const void* data, uint_td size)
 {
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return;
-
-    fielddef& fd = m_tableDef->fieldDefs[index];
-
-    switch (fd.type)
-    {
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_lstring:
-        {
-            int sizeByte = fd.varLenBytes();
-            size = std::min<uint_td>((uint_td)(fd.len - sizeByte), size);
-            memset((char*)m_pdata + fd.pos, 0, fd.len);
-            memcpy((char*)m_pdata + fd.pos, &size, sizeByte);
-            memcpy((char*)m_pdata + fd.pos + sizeByte, data, size);
-            break;
-        }
-    case ft_myblob:
-    case ft_mytext:
-        {
-            int sizeByte = fd.len - 8;
-            memset((char*)m_pdata + fd.pos, 0, fd.len);
-            memcpy((char*)m_pdata + fd.pos, &size, sizeByte);
-            memcpy((char*)m_pdata + fd.pos + sizeByte, &data, sizeof(char*));
-            break;
-
-        }
-    default: m_stat = STATUS_FIELDTYPE_NOTSUPPORT; // this field type is not supported.
-    }
+    m_impl->fields[index].setFV(data, size);
 }
 
 void* table::getFVbin(const _TCHAR* FieldName, uint_td& size)
@@ -2449,38 +1710,12 @@ void* table::getFVbin(const _TCHAR* FieldName, uint_td& size)
  */
 void* table::getFVbin(short index, uint_td& size)
 {
-    if (checkIndex(index) == false)
+    if (!checkIndex(index))
         return NULL;
-
-    fielddef& fd = m_tableDef->fieldDefs[index];
-
-    switch (fd.type)
-    {
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_lstring:
-        {
-            int sizeByte = fd.varLenBytes();
-            size = 0;
-            memcpy(&size, (char*)m_pdata + fd.pos, sizeByte);
-            return (void*)((char*)m_pdata + fd.pos + sizeByte);
-        }
-    case ft_myblob:
-    case ft_mytext:
-        {
-            int sizeByte = fd.len - 8;
-            size = 0;
-            memcpy(&size, (char*)m_pdata + fd.pos, sizeByte);
-            char** ptr = (char**)((char*)m_pdata + fd.pos + sizeByte);
-            return (void*)*ptr;
-        }
-    }
-    return NULL;
+    return m_impl->fields[index].getFVbin(size);
 }
 
-bool table::checkIndex(short index)
+bool table::checkIndex(short index) const
 {
     if ((index >= m_tableDef->fieldCount) || (index < 0))
     {
@@ -2488,206 +1723,6 @@ bool table::checkIndex(short index)
         return false;
     }
     return true;
-}
-
-double table::getFVDecimal(short index)
-{
-    unsigned char buf[20] = {0x00};
-    char result[30] = {0x00};
-    char n[10];
-    int i;
-    char* t;
-    unsigned char sign;
-    int len = m_tableDef->fieldDefs[index].len;
-    result[0] = '+';
-    memcpy(buf, (void*)((char*)m_pdata + m_tableDef->fieldDefs[index].pos), len);
-    sign = (unsigned char)(buf[len - 1] & 0x0F);
-    buf[len - 1] = (unsigned char)(buf[len - 1] & 0xF0);
-    for (i = 0; i < len; i++)
-    {
-        sprintf_s(n, 50, "%02x", buf[i]);
-        strcat(result, n);
-    }
-    i = (int)strlen(result);
-
-    if (sign == 13)
-        result[0] = '-';
-    result[i - 1] = 0x00;
-
-
-    t = result + (m_tableDef->fieldDefs[index].len * 2) - m_tableDef->fieldDefs[index].decimals;
-    strcpy((char*)buf, t);
-    *t = '.';
-    strcpy(t + 1, (char*)buf);
-    return atof(result);
-}
-
-double table::getFVnumeric(short index)
-{
-    char* t;
-    char dp[] = "{ABCDEFGHI}JKLMNOPQR";
-    char dpsa[] = "PQRSTUVWXYpqrstuvwxy";
-    char* pdp = NULL;
-    char i;
-    char buf[20] = {0x00};
-    char dummy[20];
-
-    buf[0] = '+';
-    strncpy(buf + 1, (char*)((char*)m_pdata + m_tableDef->fieldDefs[index].pos),
-        m_tableDef->fieldDefs[index].len);
-
-    t = &(buf[m_tableDef->fieldDefs[index].len]);
-
-    switch (m_tableDef->fieldDefs[index].type)
-    {
-    case ft_numeric: pdp = dp;
-        break;
-    case ft_numericsa: pdp = dpsa;
-        break;
-    case ft_numericsts: buf[0] = *t;
-        *t = 0x00;
-        break;
-    }
-
-    if (pdp)
-    {
-        for (i = 0; i < 21; i++)
-        {
-            if (*t == pdp[i])
-            {
-                if (i > 10)
-                {
-                    buf[0] = '-';
-                    *t = (char)(i + 38);
-                }
-                else
-                    *t = (char)(i + 48);
-                break;
-            }
-        }
-    }
-
-    t = buf + strlen(buf) - m_tableDef->fieldDefs[index].decimals;
-    strcpy(dummy, t);
-    *t = '.';
-    strcpy(t + 1, dummy);
-    return atof(buf);
-}
-
-void table::setFVDecimal(short index, double data)
-{ // Double  -> Decimal
-    char buf[30] = "%+0";
-    char dummy[30];
-    int point;
-    bool sign = false;
-    unsigned char n;
-    int i, k;
-    int strl;
-    bool offset = false; ;
-    point = (m_tableDef->fieldDefs[index].len) * 2;
-    _ltoa_s(point, dummy, 30, 10);
-    strcat(buf, dummy);
-    strcat(buf, ".");
-    _ltoa_s(m_tableDef->fieldDefs[index].decimals, dummy, 30, 10);
-    strcat(buf, dummy);
-    strcat(buf, "lf");
-    sprintf(dummy, buf, data);
-    if (dummy[0] == '-')
-        sign = true;
-
-    strl = (int)strlen(dummy + 1) - 1;
-    if (strl % 2 == 1)
-        strl = strl / 2;
-    else
-    {
-        strl = strl / 2 + 1;
-        offset = true;
-    }
-    memset(buf, 0, 30);
-    k = 0;
-    n = 0;
-    point = (int)strlen(dummy + 1);
-    if (strl <= m_tableDef->fieldDefs[index].len)
-    {
-        for (i = 1; i <= point; i++)
-        {
-            if ((dummy[i] == '-') || (dummy[i] == '.'));
-            else
-            {
-                if (offset)
-                {
-                    n = (unsigned char)(n + dummy[i] - 48);
-                    buf[k] = n;
-                    offset = false;
-                    k++;
-                }
-                else
-                {
-                    n = (unsigned char)(dummy[i] - 48);
-                    n = (unsigned char)(n << 4);
-                    offset = true; ;
-                }
-            }
-        }
-        if (sign)
-            buf[k] += ((unsigned char)(n + 13));
-        else
-            buf[k] += ((unsigned char)(n + 12));
-    }
-    memcpy((void*)((char*)m_pdata + m_tableDef->fieldDefs[index].pos), buf,
-        m_tableDef->fieldDefs[index].len);
-
-}
-
-void table::setFVNumeric(short index, double data)
-{ // Double  -> Numeric
-    char buf[30] = "%+0";
-    char dummy[30];
-    int point;
-    int n;
-    char dp[] = "{ABCDEFGHI}JKLMNOPQR";
-    char dpsa[] = "PQRSTUVWXYpqrstuvwxy";
-    bool sign = false;
-    char* t;
-
-    point = m_tableDef->fieldDefs[index].len + 1;
-
-    _ltoa_s(point, dummy, 30, 10);
-    strcat(buf, dummy);
-    strcat(buf, ".");
-    _ltoa_s(m_tableDef->fieldDefs[index].decimals, dummy, 30, 10);
-    strcat(buf, dummy);
-    strcat(buf, "lf");
-    sprintf(dummy, buf, data);
-    if (dummy[0] == '-')
-        sign = true;
-
-
-    strcpy(buf, &dummy[point - m_tableDef->fieldDefs[index].decimals] + 1);
-    dummy[point - m_tableDef->fieldDefs[index].decimals] = 0x00;
-    strcat(dummy, buf);
-
-    n = atol(&dummy[m_tableDef->fieldDefs[index].len]);
-    if (sign)
-        n += 10;
-    t = dummy + 1;
-    switch (m_tableDef->fieldDefs[index].type)
-    {
-    case ft_numeric: dummy[m_tableDef->fieldDefs[index].len] = dp[n];
-        break;
-    case ft_numericsa: dummy[m_tableDef->fieldDefs[index].len] = dpsa[n];
-        break;
-    case ft_numericsts:
-        if (sign)
-            strcat(dummy, "-");
-        else
-            strcat(dummy, "+");
-        t += 1;
-        break;
-    }
-
-    memcpy((void*)((char*)m_pdata + m_tableDef->fieldDefs[index].pos), t,
-        m_tableDef->fieldDefs[index].len);
 }
 
 unsigned int table::getRecordHash()
@@ -2720,17 +1755,37 @@ short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 /* For keyValueDescription */
 bool table::setSeekValueField(int row)
 {
-    const std::vector<std::_tstring>& keyValues = m_impl->filterPtr->keyValuesCache();
+    const std::vector<client::seek>& keyValues = m_impl->filterPtr->seeks();
     keydef* kd = &tableDef()->keyDefs[keyNum()];
     if (keyValues.size() % kd->segmentCount)
         return false;
-    //Check uniqe key
+    // Check uniqe key
     if (kd->segments[0].flags.bit0)
         return false;
 
-    size_t pos = kd->segmentCount * row;
-    for (int j=0;j<kd->segmentCount;++j)
-        setFV(kd->segments[j].fieldNum, keyValues[pos+j].c_str());
+    const uchar_td* ptr = (const uchar_td*)keyValues[row].data;
+    const uchar_td* data;
+    ushort_td dataSize;
+    if (ptr)
+    {
+        for (int j = 0; j < kd->segmentCount; ++j)
+        {
+            short filedNum = kd->segments[j].fieldNum;
+            fielddef& fd = tableDef()->fieldDefs[filedNum];
+            ptr = fd.getKeyValueFromKeybuf(ptr, &data, dataSize);
+            if (data)
+            {
+                if (fd.maxVarDatalen())
+                    setFV(filedNum, data, dataSize);
+                else
+                    memcpy(fieldPtr(filedNum), data, dataSize);
+            }
+            else
+                setFV(filedNum, _T(""));
+        }
+    }
+    else
+        return false;
     return true;
 }
 
@@ -2738,100 +1793,111 @@ void table::keyValueDescription(_TCHAR* buf, int bufsize)
 {
 
     std::_tstring s;
-	if (stat() == STATUS_NOT_FOUND_TI)
-	{
+    if (stat() == STATUS_NOT_FOUND_TI)
+    {
 
-		for (int i=0;i<tableDef()->keyDefs[keyNum()].segmentCount;i++)
-		{
-			short fnum = tableDef()->keyDefs[keyNum()].segments[i].fieldNum;
-			s += std::_tstring(tableDef()->fieldDefs[fnum].name())
-                + _T(" = ") + getFVstr(fnum) + _T("\n");
-		}
-	}
+        for (int i = 0; i < tableDef()->keyDefs[keyNum()].segmentCount; i++)
+        {
+            short fnum = tableDef()->keyDefs[keyNum()].segments[i].fieldNum;
+            s += std::_tstring(tableDef()->fieldDefs[fnum].name()) + _T(" = ") +
+                 getFVstr(fnum) + _T("\n");
+        }
+    }
     else if (stat() == STATUS_DUPPLICATE_KEYVALUE)
-	{
+    {
         _TCHAR tmp[50];
-		for (int j=0;j<tableDef()->keyCount;j++)
-		{
-			_stprintf_s(tmp, 50, _T("[key%d]\n"), j);
-			s += tmp;
-			for (int i=0;i<tableDef()->keyDefs[j].segmentCount;i++)
-			{
-				short fnum = tableDef()->keyDefs[j].segments[i].fieldNum;
-				s += std::_tstring(tableDef()->fieldDefs[fnum].name())
-                    + _T(" = ") + getFVstr(fnum) + _T("\n");
-			}
-		}
+        for (int j = 0; j < tableDef()->keyCount; j++)
+        {
+            _stprintf_s(tmp, 50, _T("[key%d]\n"), j);
+            s += tmp;
+            for (int i = 0; i < tableDef()->keyDefs[j].segmentCount; i++)
+            {
+                short fnum = tableDef()->keyDefs[j].segments[i].fieldNum;
+                s += std::_tstring(tableDef()->fieldDefs[fnum].name()) +
+                     _T(" = ") + getFVstr(fnum) + _T("\n");
+            }
+        }
+    }
 
-	}
-
-    _stprintf_s(buf, bufsize, _T("table:%s\nstat:%d\n%s")
-                                        ,tableDef()->tableName()
-                                        ,stat()
-                                        ,s.c_str());
+    _stprintf_s(buf, bufsize, _T("table:%s\nstat:%d\n%s"),
+                tableDef()->tableName(), stat(), s.c_str());
 }
 
+short table::getCurProcFieldCount() const
+{
+    if (!m_impl->filterPtr || !m_impl->filterPtr->fieldSelected())
+        return tableDef()->fieldCount;
+    return (short)m_impl->filterPtr->selectFieldIndexes().size();
+}
+
+short table::getCurProcFieldIndex(short index) const
+{
+    if (!m_impl->filterPtr || !m_impl->filterPtr->fieldSelected())
+        return index;
+    return m_impl->filterPtr->selectFieldIndexes()[index];
+}
 
 //-------------------------------------------------------------------
 //      class queryBase
 //-------------------------------------------------------------------
 typedef boost::escaped_list_separator<_TCHAR> esc_sep;
-typedef boost::tokenizer<esc_sep
-        ,std::_tstring::const_iterator
-        ,std::_tstring> tokenizer;
+typedef boost::tokenizer<esc_sep, std::_tstring::const_iterator, std::_tstring>
+    tokenizer;
 
-void analyzeQuery(const _TCHAR* str
-        , std::vector<std::_tstring>& selects
-        , std::vector<std::_tstring>& where
-        , std::vector<std::_tstring>& keyValues
-        ,bool& nofilter)
+void analyzeQuery(const _TCHAR* str, std::vector<std::_tstring>& selects,
+                  std::vector<std::_tstring>& where,
+                  std::vector<std::_tstring>& keyValues, bool& nofilter)
 {
     esc_sep sep(_T('&'), _T(' '), _T('\''));
     std::_tstring s = str;
+    std::_tstring tmp;
     tokenizer tokens(s, sep);
 
     tokenizer::iterator it = tokens.begin();
-    if (it == tokens.end()) return;
+    if (it == tokens.end())
+        return;
     if (*it == _T("*"))
     {
         nofilter = true;
         return;
     }
-    s = *it;
-    boost::algorithm::to_lower(s);
-    if (s == _T("select"))
+    tmp = *it;
+    boost::algorithm::to_lower(tmp);
+    if (tmp == _T("select"))
     {
         tokenizer::iterator itTmp = it;
-        s = *(++it);
-        if (getFilterLogicTypeCode(s.c_str())==255)
+        tmp = *(++it);
+        if (getFilterLogicTypeCode(tmp.c_str()) == 255)
         {
             esc_sep sep(_T('&'), _T(','), _T('\''));
-            tokenizer fields(s, sep);
+            tokenizer fields(tmp, sep);
             tokenizer::iterator itf = fields.begin();
             while (itf != fields.end())
                 selects.push_back(*(itf++));
             ++it;
-        }else
+        }
+        else
             it = itTmp; // field name is select
     }
     if (it == tokens.end())
         return;
-    s = *it;
-    boost::algorithm::to_lower(s);
+    tmp = *it;
+    boost::algorithm::to_lower(tmp);
     bool enableWhere = true;
-    if (s == _T("in"))
+    if (tmp == _T("in"))
     {
         tokenizer::iterator itTmp = it;
-        s = *(++it);
-        if (getFilterLogicTypeCode(s.c_str())==255)
+        tmp = *(++it);
+        if (getFilterLogicTypeCode(tmp.c_str()) == 255)
         {
             enableWhere = false;
             esc_sep sep(_T('&'), _T(','), _T('\''));
-            tokenizer values(s, sep);
+            tokenizer values(tmp, sep);
             tokenizer::iterator itf = values.begin();
             while (itf != values.end())
                 keyValues.push_back(*(itf++));
-        }else
+        }
+        else
             it = itTmp; // field name is in
     }
     if (enableWhere)
@@ -2839,28 +1905,67 @@ void analyzeQuery(const _TCHAR* str
         while (it != tokens.end())
             where.push_back(*(it++));
     }
-
 }
 
+keyValuePtr::keyValuePtr(const void* p, ushort_td l, short typeStr)
+    : len(l), type(typeStr)
+{
+    if (type & KEYVALUE_NEED_COPY)
+    {
+        _TCHAR* tmp = new _TCHAR[len + 1];
+        _tcsncpy(tmp, (_TCHAR*)p, len);
+        tmp[len] = 0x00;
+        ptr = tmp;
+    }
+    else
+        ptr = p;
+}
+
+keyValuePtr::~keyValuePtr()
+{
+    if (type & KEYVALUE_NEED_COPY)
+        delete[](_TCHAR*)ptr;
+}
 
 struct impl
 {
-    impl():
-    m_reject(1),m_limit(0),m_direction(table::findForword)
-        ,m_nofilter(false),m_optimize(false){}
+    impl()
+        : m_reject(1), m_limit(0), m_joinKeySize(0),
+          m_optimize(queryBase::none), m_direction(table::findForword),
+          m_nofilter(false), m_withBookmark(false)
+    {
+    }
 
-	int m_reject;
-	int m_limit;
-    table::eFindType m_direction;
-    bool m_nofilter;
-    bool m_optimize;
     mutable std::_tstring m_str;
     std::vector<std::_tstring> m_selects;
     std::vector<std::_tstring> m_wheres;
     std::vector<std::_tstring> m_keyValues;
+    std::vector<keyValuePtr> m_keyValuesPtr;
+    int m_reject;
+    int m_limit;
+    int m_joinKeySize;
+    queryBase::eOptimize m_optimize;
+    table::eFindType m_direction;
+    bool m_nofilter;
+    bool m_withBookmark;
 };
 
-queryBase::queryBase():m_impl(new impl){}
+queryBase::queryBase() : m_impl(new impl)
+{
+}
+
+queryBase::queryBase(const queryBase& r) : m_impl(new impl(*r.m_impl))
+{
+}
+
+queryBase& queryBase::operator=(const queryBase& r)
+{
+    if (this != &r)
+    {
+        *m_impl = *r.m_impl;
+    }
+    return *this;
+}
 
 queryBase::~queryBase()
 {
@@ -2884,26 +1989,36 @@ void queryBase::addField(const _TCHAR* name)
     m_impl->m_nofilter = false;
 }
 
-void queryBase::addLogic(const _TCHAR* name, const _TCHAR* logic,  const _TCHAR* value)
+void queryBase::addLogic(const _TCHAR* name, const _TCHAR* logic,
+                         const _TCHAR* value)
 {
+    m_impl->m_keyValuesPtr.clear();
     m_impl->m_keyValues.clear();
     m_impl->m_wheres.clear();
     m_impl->m_wheres.push_back(name);
     m_impl->m_wheres.push_back(logic);
     m_impl->m_wheres.push_back(value);
     m_impl->m_nofilter = false;
-
 }
 
-void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name
-    , const _TCHAR* logic,  const _TCHAR* value)
+void queryBase::addLogic(const _TCHAR* combine, const _TCHAR* name,
+                         const _TCHAR* logic, const _TCHAR* value)
 {
     m_impl->m_wheres.push_back(combine);
     m_impl->m_wheres.push_back(name);
     m_impl->m_wheres.push_back(logic);
     m_impl->m_wheres.push_back(value);
     m_impl->m_nofilter = false;
+}
 
+void queryBase::reserveSeekKeyValueSize(size_t v)
+{
+    m_impl->m_keyValues.reserve(v);
+}
+
+void queryBase::reserveSeekKeyValuePtrSize(size_t v)
+{
+    m_impl->m_keyValuesPtr.reserve(v);
 }
 
 void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
@@ -2912,27 +2027,91 @@ void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
     {
         m_impl->m_wheres.clear();
         m_impl->m_keyValues.clear();
+        m_impl->m_keyValuesPtr.clear();
     }
     m_impl->m_keyValues.push_back(value);
-    //m_impl->m_reject = 1;
+    // m_impl->m_reject = 1;
     m_impl->m_nofilter = false;
+}
 
+void queryBase::addSeekKeyValuePtr(const void* value, ushort_td len,
+                                   short typeStr, bool reset)
+{
+    if (reset)
+    {
+        m_impl->m_wheres.clear();
+        m_impl->m_keyValues.clear();
+        m_impl->m_keyValuesPtr.clear();
+    }
+    m_impl->m_keyValuesPtr.push_back(keyValuePtr(value, len, typeStr));
+    m_impl->m_nofilter = false;
 }
 
 void queryBase::clearSeekKeyValues()
 {
     m_impl->m_keyValues.clear();
+    m_impl->m_keyValuesPtr.clear();
 }
 
-queryBase& queryBase::queryString(const _TCHAR* str)
+std::_tstring escape_value(std::_tstring s)
+{
+    for (int i = (int)s.size() - 1; i >= 0; --i)
+    {
+        if (s[i] == _T('&'))
+            s.insert(s.begin() + i, _T('&'));
+        else if (s[i] == _T('\''))
+            s.insert(s.begin() + i, _T('&'));
+    }
+    return s;
+}
+
+std::_tstring& escape_string(std::_tstring& s)
+{
+    bool begin = false;
+    for (int i = 0; i < (int)s.size(); ++i)
+    {
+        if (s[i] == _T('&'))
+        {
+            s.insert(s.begin() + i, _T('&'));
+            ++i;
+        }
+        else if (s[i] == _T('\''))
+        {
+            if (begin)
+            {
+                if ((i == (int)s.size() - 1) || (s[i + 1] == _T(' ')))
+                    begin = false;
+                else
+                    s.insert(s.begin() + i, _T('&'));
+                ++i;
+            }
+            else if ((i == 0) || (s[i - 1] == _T(' ')))
+                begin = true;
+            else
+            {
+                s.insert(s.begin() + i, _T('&'));
+                ++i;
+            }
+        }
+    }
+    return s;
+}
+
+queryBase& queryBase::queryString(const _TCHAR* str, bool autoEscape)
 {
     m_impl->m_selects.clear();
     m_impl->m_wheres.clear();
     m_impl->m_keyValues.clear();
     m_impl->m_nofilter = false;
     if (str && str[0])
-        analyzeQuery(str, m_impl->m_selects, m_impl->m_wheres, m_impl->m_keyValues
-                                                ,m_impl->m_nofilter);
+    {
+        std::_tstring s = str;
+        boost::trim(s);
+        if (autoEscape)
+            escape_string(s);
+        analyzeQuery(s.c_str(), m_impl->m_selects, m_impl->m_wheres,
+                     m_impl->m_keyValues, m_impl->m_nofilter);
+    }
     return *this;
 }
 
@@ -2961,30 +2140,42 @@ queryBase& queryBase::all()
     return *this;
 }
 
-queryBase& queryBase::optimize(bool v)
+queryBase& queryBase::optimize(queryBase::eOptimize v)
 {
     m_impl->m_optimize = v;
-	return *this;
+    return *this;
 }
 
-bool queryBase::isOptimize()const
+queryBase::eOptimize queryBase::getOptimize() const
 {
     return m_impl->m_optimize;
 }
 
-table::eFindType queryBase::getDirection() const {return m_impl->m_direction;}
-
-std::_tstring escape_value(std::_tstring s)
+queryBase& queryBase::bookmarkAlso(bool v)
 {
-    std::_tstring::iterator it = s.begin();
-    for (int i=(int)s.size()-1;i>=0;--i)
-    {
-        if (s[i] == _T('&'))
-            s.insert(s.begin()+i, _T('&'));
-        else if (s[i] == _T('\''))
-            s.insert(s.begin()+i, _T('&'));
-    }
-    return s;
+    m_impl->m_withBookmark = v;
+    return *this;
+}
+
+bool queryBase::isBookmarkAlso() const
+{
+    return m_impl->m_withBookmark;
+}
+
+queryBase& queryBase::joinKeySize(int v)
+{
+    m_impl->m_joinKeySize = v;
+    return *this;
+}
+
+int queryBase::getJoinKeySize() const
+{
+    return m_impl->m_joinKeySize;
+}
+
+table::eFindType queryBase::getDirection() const
+{
+    return m_impl->m_direction;
 }
 
 const _TCHAR* queryBase::toString() const
@@ -3000,43 +2191,118 @@ const _TCHAR* queryBase::toString() const
     if (selects.size())
     {
         s = _T("select ");
-        for (int i= 0;i < (int)selects.size();++i)
+        for (int i = 0; i < (int)selects.size(); ++i)
             s += selects[i] + _T(",");
 
         if (s.size())
-            s.replace(s.size()-1,1, _T(" "));
+            s.replace(s.size() - 1, 1, _T(" "));
     }
 
-    for (size_t i= 0;i < wheres.size();i+=4)
+    for (size_t i = 0; i < wheres.size(); i += 4)
     {
-        s += wheres[i] + _T(" ") + wheres[i+1] + _T(" '")
-             + escape_value(wheres[i+2]) + _T("' ");
-        if (i+3 < wheres.size())
-            s += wheres[i+3] + _T(" ");
+        if (i + 1 < wheres.size())
+            s += wheres[i] + _T(" ") + wheres[i + 1];
+        if (i + 2 < wheres.size())
+            s += _T(" '") + escape_value(wheres[i + 2]) + _T("' ");
+        if (i + 3 < wheres.size())
+            s += wheres[i + 3] + _T(" ");
     }
 
     if (keyValues.size())
     {
         s += _T("in ");
-        for (size_t i= 0;i < keyValues.size();++i)
+        for (size_t i = 0; i < keyValues.size(); ++i)
             s += _T("'") + escape_value(keyValues[i]) + _T("',");
     }
     if (s.size())
-        s.erase(s.end() -1);
-
+        s.erase(s.end() - 1);
 
     return s.c_str();
 }
 
-int queryBase::getReject()const{return m_impl->m_reject;}
+int queryBase::getReject() const
+{
+    return m_impl->m_reject;
+}
 
-int queryBase::getLimit()const{return m_impl->m_limit;}
+int queryBase::getLimit() const
+{
+    return m_impl->m_limit;
+}
 
-bool queryBase::isAll()const{return m_impl->m_nofilter;};
+bool queryBase::isAll() const
+{
+    return m_impl->m_nofilter;
+};
 
-const std::vector<std::_tstring>& queryBase::getSelects() const {return m_impl->m_selects;}
-const std::vector<std::_tstring>& queryBase::getWheres() const {return m_impl->m_wheres;}
-const std::vector<std::_tstring>& queryBase::getSeekKeyValues() const{return m_impl->m_keyValues;}
+const std::vector<std::_tstring>& queryBase::getSelects() const
+{
+    return m_impl->m_selects;
+}
+const std::vector<std::_tstring>& queryBase::getWheres() const
+{
+    return m_impl->m_wheres;
+}
+const std::vector<std::_tstring>& queryBase::getSeekKeyValues() const
+{
+    return m_impl->m_keyValues;
+}
+const std::vector<keyValuePtr>& queryBase::getSeekValuesPtr() const
+{
+    return m_impl->m_keyValuesPtr;
+}
+short queryBase::selectCount() const
+{
+    return (short)m_impl->m_selects.size();
+}
+
+const _TCHAR* queryBase::getSelect(short index) const
+{
+    assert((index >= 0) && (index < (short)m_impl->m_selects.size()));
+    return m_impl->m_selects[index].c_str();
+}
+
+short queryBase::whereTokens() const
+{
+    return (short)m_impl->m_wheres.size();
+}
+
+const _TCHAR* queryBase::getWhereToken(short index) const
+{
+    assert((index >= 0) && (index < (short)m_impl->m_wheres.size()));
+    return m_impl->m_wheres[index].c_str();
+}
+
+void queryBase::setWhereToken(short index, const _TCHAR* v)
+{
+    assert((index >= 0) && (index < (short)m_impl->m_wheres.size()));
+    m_impl->m_wheres[index] = v;
+}
+
+/* alias field name change to original field name */
+void queryBase::reverseAliasName(const _TCHAR* alias, const _TCHAR* src)
+{
+    std::vector<std::_tstring>& selects = m_impl->m_selects;
+    std::vector<std::_tstring>& wheres = m_impl->m_wheres;
+    std::_tstring s;
+    for (size_t i = 0; i < wheres.size(); i += 4)
+    {
+        if (wheres[i] == alias)
+            wheres[i] = src;
+        if (i + 2 < wheres.size())
+        {
+            s = src;
+            s.insert(0, _T("["));
+            s += _T("[");
+            if (wheres[i + 2] == s)
+                wheres[i + 2] = s;
+        }
+    }
+
+    for (size_t i = 0; i < selects.size(); ++i)
+        if (selects[i] == alias)
+            selects[i] = src;
+}
 
 void queryBase::release()
 {
@@ -3046,12 +2312,10 @@ void queryBase::release()
 queryBase* queryBase::create()
 {
     return new queryBase();
-
 }
 
-
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs

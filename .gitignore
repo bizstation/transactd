@@ -1,0 +1,8 @@
+build/bench_td[mu]/CMakeLists.txt
+build/tdclcpp[mu]/CMakeLists.txt
+build/tdclcpp[mu]r/CMakeLists.txt
+build/test_tdcl[mu]/CMakeLists.txt
+build/tdclstmt[mu]/CMakeLists.txt
+build/bench_query[mu]/CMakeLists.txt
+build/ormsrcgen[mu]/CMakeLists.txt
+build/querystmts[mu]/CMakeLists.txt

@@ -16,14 +16,9 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <bzs/env/tstring.h>
-#pragma hdrstop
-
 #include "indexDDF.h"
 #include "nsDatabase.h"
 #pragma package(smart_init)
-
-
 
 namespace bzs
 {
@@ -36,7 +31,10 @@ namespace tdap
 namespace client
 {
 
-indexDDF::indexDDF(nsdatabase *pbe) : nstable(pbe) {m_keybuflen = 128;}
+indexDDF::indexDDF(nsdatabase* pbe) : nstable(pbe)
+{
+    m_keybuflen = 128;
+}
 
 void indexDDF::doOpen(const _TCHAR* Dir, char_td mode, const _TCHAR* OwnerName)
 {
@@ -61,11 +59,12 @@ keylen_td indexDDF::writeKeyData()
     keylen_td len = 2;
     switch (m_keynum)
     {
-    case 0: memcpy(&keybuf[0], &fileid, len);
+    case 0:
+        memcpy(&keybuf[0], &fileid, len);
         break;
-    case 1: memcpy(&keybuf[0], &fieldid, len);
+    case 1:
+        memcpy(&keybuf[0], &fieldid, len);
         break;
-
     }
     return len;
 }
@@ -77,7 +76,6 @@ void indexDDF::writeRecordData()
     datbuf.flag = flag;
     datbuf.keyid = keyid;
     datbuf.segmentnum = segmentnum;
-
 }
 
 void indexDDF::onReadAfter()
@@ -87,12 +85,11 @@ void indexDDF::onReadAfter()
     flag = datbuf.flag;
     keyid = datbuf.keyid;
     segmentnum = datbuf.segmentnum;
-
 }
 
 void indexDDF::createTable(const _TCHAR* fullpath)
 {
-    fileSpec *fs;
+    fileSpec* fs;
     fs = (fileSpec*)malloc(512);
     memset(fs, 512, 0x00);
     fs->recLen = 10;
@@ -130,8 +127,8 @@ void indexDDF::createTable(const _TCHAR* fullpath)
     m_stat = nsdb()->stat();
 }
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs

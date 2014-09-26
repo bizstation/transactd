@@ -12,8 +12,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 
@@ -31,12 +31,8 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 
-static const int TYPE_DDF = 1;
 static const int TYPE_BDF = 0;
 static const bool AUTO_CREATE_TABLE = true;
-static const _TCHAR* OWNER_NAME = _T("");
-static const _TCHAR* DIR = _T("");
-
 static const short fn_id = 0;
 static const short fn_name = 1;
 static const int trans_bias = PARALLEL_TRN + LOCK_SINGLE_NOWAIT;
@@ -49,24 +45,27 @@ static const int USE_SNAPSHOT = 4;
 using namespace bzs::rtl;
 using namespace bzs::db::protocol::tdap;
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 void showTableError(client::table* tb, const _TCHAR* description)
 {
     if (tb->stat() != 0)
-        _tprintf(_T("%s error %s:No.%d\r\n"), description, tb->tableDef()->fileName(), tb->stat());
+        _tprintf(_T("%s error %s:No.%d\r\n"), description,
+                 tb->tableDef()->fileName(), tb->stat());
 }
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 void showEnginError(client::database* db, const _TCHAR* tableName)
 {
     if (db->stat() != 0)
         _tprintf(_T("%s error No.%d\r\n"), tableName, db->stat());
 }
 
-
-
-/* -------------------------------------------------------------------------------- */
-client::table* openTable(client::database* db, const _TCHAR* tableName, short mode)
+/* --------------------------------------------------------------------------------
+ */
+client::table* openTable(client::database* db, const _TCHAR* tableName,
+                         short mode)
 {
     client::table* tb = db->openTable(tableName, mode, AUTO_CREATE_TABLE);
     if (tb == NULL)
@@ -74,14 +73,16 @@ client::table* openTable(client::database* db, const _TCHAR* tableName, short mo
     return tb;
 }
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 bool createDataBase(client::database* db, const _TCHAR* uri)
 {
     db->create(uri);
     return (db->stat() == 0);
 }
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 bool write(client::table* tb, int start, int end)
 {
     tb->setKeyNum(0);
@@ -100,7 +101,8 @@ bool write(client::table* tb, int start, int end)
     return true;
 }
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 bool deleteAll(client::database* db, client::table* tb, int start, int end)
 {
     db->beginTrn(trans_bias);
@@ -124,12 +126,12 @@ bool deleteAll(client::database* db, client::table* tb, int start, int end)
     return true;
 }
 
-/* -------------------------------------------------------------------------------- */
-bool Inserts(client::database* db, client::table* tb, int start, int end, int mode, int unit)
+/* --------------------------------------------------------------------------------
+ */
+bool Inserts(client::database* db, client::table* tb, int start, int end,
+             int mode, int unit)
 {
     bool ret = true;
-    int total = end - start;
-    int count = total / unit;
     int st = start;
     int en = st;
     while (en != end)
@@ -149,11 +151,12 @@ bool Inserts(client::database* db, client::table* tb, int start, int end, int mo
         st = en;
     }
     return ret;
-
 }
 
-/* -------------------------------------------------------------------------------- */
-bool Read(client::database* db, client::table* tb, int start, int end, int shapshot)
+/* --------------------------------------------------------------------------------
+ */
+bool Read(client::database* db, client::table* tb, int start, int end,
+          int shapshot)
 {
     bool ret = true;
     tb->clearBuffer();
@@ -165,7 +168,8 @@ bool Read(client::database* db, client::table* tb, int start, int end, int shaps
         tb->seek();
         if ((tb->stat() != 0) || (tb->getFVlng(fn_id) != i))
         {
-            printf("GetEqual Error stat() = %d  Value %d = %d\r\n", tb->stat(), i, tb->getFVlng(fn_id));
+            printf("GetEqual Error stat() = %d  Value %d = %d\r\n", tb->stat(),
+                   i, tb->getFVlng(fn_id));
             ret = false;
             break;
         }
@@ -176,12 +180,12 @@ bool Read(client::database* db, client::table* tb, int start, int end, int shaps
     return ret;
 }
 
-/* -------------------------------------------------------------------------------- */
-bool Reads(client::database* db, client::table* tb, int start, int end, int unit, int shapshot)
+/* --------------------------------------------------------------------------------
+ */
+bool Reads(client::database* db, client::table* tb, int start, int end,
+           int unit, int shapshot)
 {
     bool ret = true;
-    int total = end - start;
-    int count = total / unit;
     int st = start;
     int en = st;
     if (shapshot == USE_SNAPSHOT)
@@ -198,7 +202,8 @@ bool Reads(client::database* db, client::table* tb, int start, int end, int unit
         {
             if (tb->getFVlng(fn_id) != i)
             {
-                printf("findNext Error stat() = %d  Value %d = %d\r\n", tb->stat(), i, tb->getFVlng(fn_id));
+                printf("findNext Error stat() = %d  Value %d = %d\r\n",
+                       tb->stat(), i, tb->getFVlng(fn_id));
                 ret = false;
                 break;
             }
@@ -207,21 +212,20 @@ bool Reads(client::database* db, client::table* tb, int start, int end, int unit
         if (ret == false)
             break;
         st = en;
-
     }
     if (shapshot == USE_SNAPSHOT)
         db->endSnapshot();
     return ret;
 }
-/* -------------------------------------------------------------------------------- */
-bool Updates(client::database* db, client::table* tb, int start, int end, int tran, int unit)
+/* --------------------------------------------------------------------------------
+ */
+bool Updates(client::database* db, client::table* tb, int start, int end,
+             int tran, int unit)
 {
     bool ret = true;
     _TCHAR buf[30];
     tb->setKeyNum(0);
 
-    int total = end - start;
-    int count = total / unit;
     int st = start;
     int en = st;
     while (en != end)
@@ -233,9 +237,9 @@ bool Updates(client::database* db, client::table* tb, int start, int end, int tr
         for (int i = st; i < en; i++)
         {
             tb->setFV(fn_id, i);
- 			_ltot_s(i + 1 + tran, buf, 30, 10);
+            _ltot_s(i + 1 + tran, buf, 30, 10);
             tb->setFV(fn_name, buf);
-            tb->update(client::nstable::changeInKey); 
+            tb->update(client::nstable::changeInKey);
             if (tb->stat() != 0)
             {
                 ret = false;
@@ -251,7 +255,8 @@ bool Updates(client::database* db, client::table* tb, int start, int end, int tr
     return ret;
 }
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 bool createTestDataBase(client::database* db, const _TCHAR* uri)
 {
     db->create(uri);
@@ -266,7 +271,7 @@ bool createTestDataBase(client::database* db, const _TCHAR* uri)
         client::dbdef* def = db->dbDef();
 
         tabledef td;
-        memset(&td, 0, sizeof(td)); 
+        memset(&td, 0, sizeof(td));
         td.setTableName(_T("user"));
         td.setFileName(_T("user.dat"));
         td.id = 1;
@@ -280,12 +285,15 @@ bool createTestDataBase(client::database* db, const _TCHAR* uri)
         fd->setName(_T("id"));
         fd->type = ft_integer;
         fd->len = (ushort_td)4;
-		def->updateTableDef(1);
+        def->updateTableDef(1);
 
         fd = def->insertField(td.id, 1);
         fd->setName(_T("name"));
-        // fd->type = ft_zstring;
-        fd->type = ft_myvarchar;
+        if (db->isUseTransactd())
+            fd->type = ft_myvarchar;
+        else
+            fd->type = ft_zstring;
+
         fd->len = (ushort_td)100;
         def->updateTableDef(td.id);
 
@@ -304,68 +312,72 @@ bool createTestDataBase(client::database* db, const _TCHAR* uri)
     return false;
 }
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 void printDateTime()
 {
     time_t timer;
 #ifdef LINUX
-	time(&timer);
+    time(&timer);
 #else
     timer = time(NULL);
 #endif
-#pragma warning( disable : 4996 )	
+#pragma warning(disable : 4996)
     printf("%s", ctime(&timer));
-#pragma warning( default : 4996 )	
-
+#pragma warning(default : 4996)
 }
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 void printHeader(const _TCHAR* uri, int count)
 {
     printf("Start Bench mark Insert Items = %d\r\n", count);
     printDateTime();
     _tprintf(_T("%s\r\n"), uri);
-	printf("BOOST_VERSION = %s\r\n", BOOST_LIB_VERSION );
+    printf("BOOST_VERSION = %s\r\n", BOOST_LIB_VERSION);
     printf("----------------------------------------\r\n");
 }
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 void printTail()
 {
     printf("----------------------------------------\r\n");
 }
 
-/* -------------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------------------
+ */
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
     if (argc < 4)
     {
-		printf("usage: transactdBench databaseUri processNumber functionNumber\n "
-			"\t --- Below is list of functionNumber  ---\n"
-			"\t-1: all function\n"
-			"\t 0: Insert\n"
-			"\t 1: Insert in transaction. 20rec x 1000times\n"
-			"\t 2: Insert by bulkmode. 20rec x 1000times\n"
-			"\t 3: read each record\n"
-			"\t 4: read each record with snapshpot\n"
-			"\t 5: read range. 20rec x 1000times\n"
-            "\t 6: read range with snapshpot. 20rec x 1000times\n"
-			"\t 7: update\n"
-			"\t 8: update in transaction. 20rec x 1000times\n"
-			"exsample : transactdBench \"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n");
-		return 0;
-	}
+        printf("usage: bench_tdclcpp_bcb32(64) databaseUri processNumber "
+               "functionNumber\n "
+               "\t --- Below is list of functionNumber  ---\n"
+               "\t-1: all function\n"
+               "\t 0: Insert\n"
+               "\t 1: Insert in transaction. 20rec x 1000times\n"
+               "\t 2: Insert by bulkmode. 20rec x 1000times\n"
+               "\t 3: read each record\n"
+               "\t 4: read each record with snapshpot\n"
+               "\t 5: read range. 20rec x 1000times\n"
+               "\t 6: read range with snapshpot. 20rec x 1000times\n"
+               "\t 7: update\n"
+               "\t 8: update in transaction. 20rec x 1000times\n"
+               "exsample : bench_tdclcpp_bcb32(64) "
+               "\"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n");
+        return 0;
+    }
     const _TCHAR* uri = argv[1]; // "tdap://localhost/test?dbfile=test.bdf";
     int procID = _ttol(argv[2]); // 0
     int count = 20000;
     int start = procID * count + 1;
     int end = start + count;
-    int exeType =  _ttol(argv[3]);// -1
+    int exeType = _ttol(argv[3]); // -1
     bool insertBeforeNoDelete = 0;
     if (argc > 4)
-        insertBeforeNoDelete = (_ttol(argv[4])!=0);
-
+        insertBeforeNoDelete = (_ttol(argv[4]) != 0);
 
     client::database* db = client::database::create();
     if (db->open(uri, TYPE_BDF, TD_OPEN_NORMAL, _T(""), _T("")) == false)
@@ -385,46 +397,58 @@ int _tmain(int argc, _TCHAR* argv[])
     {
         client::table* tb = openTable(db, _T("user"), TD_OPEN_NORMAL);
 
-
         if ((exeType == -1) || (exeType == 0))
         {
             if (insertBeforeNoDelete || deleteAll(db, tb, start, end))
-                benchmark::report(boost::bind(Inserts, db, tb, start, end, USE_NORMAL, 1), ": Insert");
+                benchmark::report(
+                    boost::bind(Inserts, db, tb, start, end, USE_NORMAL, 1),
+                    ": Insert");
             else
-               printf("deleteAll erorr No:%d\r\n", tb->stat());
+                printf("deleteAll erorr No:%d\r\n", tb->stat());
         }
         if ((exeType == -1) || (exeType == 1))
         {
             if (insertBeforeNoDelete || deleteAll(db, tb, start, end))
-                benchmark::report(boost::bind(Inserts, db, tb, start, end, USE_TRANS, 20)
-                        , ": Insert in transaction. 20rec x 1000times.");
+                benchmark::report(
+                    boost::bind(Inserts, db, tb, start, end, USE_TRANS, 20),
+                    ": Insert in transaction. 20rec x 1000times.");
             else
                 printf("deleteAll erorr No:%d\r\n", tb->stat());
         }
         if ((exeType == -1) || (exeType == 2))
         {
             if (insertBeforeNoDelete || deleteAll(db, tb, start, end))
-                benchmark::report(boost::bind(Inserts, db, tb, start, end, USE_BALKINS, 20)
-                        , ": Insert by bulkmode. 20rec x 1000times.");
+                benchmark::report(
+                    boost::bind(Inserts, db, tb, start, end, USE_BALKINS, 20),
+                    ": Insert by bulkmode. 20rec x 1000times.");
             else
                 printf("deleteAll erorr No:%d\r\n", tb->stat());
         }
         if ((exeType == -1) || (exeType == 3))
-            benchmark::report(boost::bind( Read, db, tb, start, end, USE_NORMAL), ": read each record.");
+            benchmark::report(boost::bind(Read, db, tb, start, end, USE_NORMAL),
+                              ": read each record.");
         if ((exeType == -1) || (exeType == 4))
-            benchmark::report(boost::bind( Read, db, tb, start, end, USE_SNAPSHOT), ": read each record with snapshpot.");
+            benchmark::report(
+                boost::bind(Read, db, tb, start, end, USE_SNAPSHOT),
+                ": read each record with snapshpot.");
         if ((exeType == -1) || (exeType == 5))
-            benchmark::report(boost::bind( Reads, db, tb, start, end, 20, USE_NORMAL), ": read range. 20rec x 1000times.");
+            benchmark::report(
+                boost::bind(Reads, db, tb, start, end, 20, USE_NORMAL),
+                ": read range. 20rec x 1000times.");
         if ((exeType == -1) || (exeType == 6))
-            benchmark::report(boost::bind( Reads, db, tb, start, end, 20, USE_SNAPSHOT), ": read range with snapshpot. 20rec x 1000times.");
+            benchmark::report(
+                boost::bind(Reads, db, tb, start, end, 20, USE_SNAPSHOT),
+                ": read range with snapshpot. 20rec x 1000times.");
         if ((exeType == -1) || (exeType == 7))
-            benchmark::report(boost::bind( Updates, db, tb, start, end, USE_NORMAL, 1), ": update.");
+            benchmark::report(
+                boost::bind(Updates, db, tb, start, end, USE_NORMAL, 1),
+                ": update.");
         if ((exeType == -1) || (exeType == 8))
-            benchmark::report(boost::bind( Updates, db, tb, start, end, USE_TRANS, 20), ": update in transaction. 20rec x 1000times.");
-
+            benchmark::report(
+                boost::bind(Updates, db, tb, start, end, USE_TRANS, 20),
+                ": update in transaction. 20rec x 1000times.");
     }
     client::database::destroy(db);
     printTail();
     return 0;
-
 }

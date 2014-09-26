@@ -38,8 +38,6 @@ FDI_USER_ID = 1
 FDI_BODY = 2
 FDI_IMAGE = 3
 
-TYPE_SCHEMA_BDF = 0
-
 def dropDatabase(db)
   db.open(URL)
   expect(db.stat()).to eq 0
@@ -57,7 +55,7 @@ def createDatabase(db)
 end
 
 def openDatabase(db)
-  db.open(URL, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+  db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
 end
 
@@ -128,26 +126,20 @@ def getTestBinary()
 end
 
 describe Transactd, 'blob' do
-  before :each do
-    @db = Transactd::Database.createObject()
-  end
-  after :each do
-    @db.close()
-    @db = nil
-  end
-  
   it 'create' do
-    createDatabase(@db)
-    openDatabase(@db)
-    createTable(@db)
-    tb = openTable(@db)
-    tb.close()
+    db = Transactd::Database.new()
+    createDatabase(db)
+    openDatabase(db)
+    createTable(db)
+    tb = openTable(db)
+    db.close()
   end
   
   it 'insert' do
+    db = Transactd::Database.new()
     image = getTestBinary()
-    openDatabase(@db)
-    tb = openTable(@db)
+    openDatabase(db)
+    tb = openTable(db)
     expect(tb).not_to be nil
     # 1
     tb.clearBuffer()
@@ -172,13 +164,14 @@ describe Transactd, 'blob' do
     tb.setFV(FDI_IMAGE, str, str.bytesize)
     tb.insert()
     expect(tb.stat()).to eq 0
-    tb.close()
+    db.close()
   end
   
   it 'seek' do
+    db = Transactd::Database.new()
     image = getTestBinary()
-    openDatabase(@db)
-    tb = openTable(@db)
+    openDatabase(db)
+    tb = openTable(db)
     expect(tb).not_to be nil
     # 1
     tb.clearBuffer()
@@ -210,13 +203,14 @@ describe Transactd, 'blob' do
     expect(tb.getFVint(FDI_USER_ID)).to eq 1
     expect(tb.getFVstr(FDI_BODY)).to eq "2\ntest\nテスト\n\nあいうえおあいうえお"
     expect(tb.getFVbin(FDI_IMAGE).force_encoding('UTF-8')).to eq "2\ntest\nテスト\n\nあいうえおあいうえお"
-    tb.close()
+    db.close()
   end
   
   it 'find' do
+    db = Transactd::Database.new()
     image = getTestBinary()
-    openDatabase(@db)
-    tb = openTable(@db)
+    openDatabase(db)
+    tb = openTable(db)
     expect(tb).not_to be nil
     # 1
     tb.setKeyNum(0)
@@ -243,13 +237,14 @@ describe Transactd, 'blob' do
     # 2... but changing seek-direction is not allowed
     tb.findPrev(true)
     expect(tb.stat()).to eq Transactd::STATUS_PROGRAM_ERROR
-    tb.close()
+    db.close()
   end
   
   it 'update' do
+    db = Transactd::Database.new()
     image = getTestBinary()
-    openDatabase(@db)
-    tb = openTable(@db)
+    openDatabase(db)
+    tb = openTable(db)
     expect(tb).not_to be nil
     # select 1
     tb.clearBuffer()
@@ -289,13 +284,14 @@ describe Transactd, 'blob' do
     expect(tb.getFVint(FDI_USER_ID)).to eq 1
     expect(tb.getFVstr(FDI_BODY)).to eq "2\nテスト\ntest\n\nABCDEFG"
     expect(tb.getFVbin(FDI_IMAGE).force_encoding('UTF-8')).to eq "2\ntest\nテスト\n\nあいうえおあいうえお"
-    tb.close()
+    db.close()
   end
   
   it 'delete' do
+    db = Transactd::Database.new()
     image = getTestBinary()
-    openDatabase(@db)
-    tb = openTable(@db)
+    openDatabase(db)
+    tb = openTable(db)
     expect(tb).not_to be nil
     # delete 2
     tb.clearBuffer()
@@ -323,10 +319,11 @@ describe Transactd, 'blob' do
     # eof
     tb.seekNext()
     expect(tb.stat()).to eq Transactd::STATUS_EOF
-    tb.close()
+    db.close()
   end
   
   it 'drop' do
-    dropDatabase(@db)
+    db = Transactd::Database.new()
+    dropDatabase(db)
   end
 end

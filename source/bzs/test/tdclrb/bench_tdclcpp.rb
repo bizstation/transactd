@@ -21,8 +21,6 @@
 require 'date'
 require 'transactd'
 
-TYPE_SCHEMA_BDF = 0
-
 USE_NORMAL = 0
 USE_TRANS = 1
 USE_BALKINS = 2
@@ -203,7 +201,7 @@ def createTestDataBase(db, uri)
         puts("createTestDataBase erorr:No.#{db.stat().to_s} #{uri}")
         return false
     end
-    if (db.open(uri, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', ''))
+    if (db.open(uri, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', ''))
         dbdef = db.dbDef()
         td = Transactd::Tabledef.new()
         td.setTableName('user')
@@ -286,8 +284,8 @@ def main(argv)
     exeType = Integer(argv[3]) # -1
     insertBeforeNoDelete = ((argv.length > 4) && (Integer(argv[4]) != 0))
     
-    db = Transactd::Database.createObject()
-    if (db.open(uri, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', '') == false)
+    db = Transactd::Database.new()
+    if (db.open(uri, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', '') == false)
         if (!createTestDataBase(db, uri))
             db.close()
             return
@@ -296,7 +294,7 @@ def main(argv)
     end
     printHeader(uri, count)
     
-    if (!db.open(uri, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', ''))
+    if (!db.open(uri, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', ''))
         puts("open table erorr No:#{db.stat().to_s}")
     else
         tb = openTable(db, 'user', Transactd::TD_OPEN_NORMAL)

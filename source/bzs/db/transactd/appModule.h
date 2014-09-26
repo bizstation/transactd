@@ -14,14 +14,13 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 
 #include <bzs/netsvc/server/IAppModule.h>
 #include <bzs/db/protocol/ICommandExecuter.h>
-
 
 class THD;
 
@@ -39,42 +38,37 @@ namespace transactd
  *  -Execute client command.
  *  -Anser of shutdown.
  */
-class module :public netsvc::server::IAppModule,  private boost::noncopyable 
+class module : public netsvc::server::IAppModule, private boost::noncopyable
 {
-	friend class connManager;
-	mutable boost::mutex m_mutex;
-	boost::shared_ptr<protocol::ICommandExecuter> m_commandExecuter;
-	bool m_useThreadPool;
-	const boost::asio::ip::tcp::endpoint m_endpoint;
-	bzs::netsvc::server::iconnection* m_connection;
-	const char* m_readBuf;
-	size_t m_readSize;
-	bool perseLineEnd(const char* p, size_t size)const;
-	size_t onRead(const char* data, size_t size, bool& complete);
-	size_t onAccept(char* message, size_t bufsize);
+    friend class connManager;
+    mutable boost::mutex m_mutex;
+    boost::shared_ptr<protocol::ICommandExecuter> m_commandExecuter;
+    const boost::asio::ip::tcp::endpoint m_endpoint;
+    bzs::netsvc::server::iconnection* m_connection;
+    const char* m_readBuf;
+    size_t m_readSize;
+    netsvc::server::netWriter* m_nw;
+    bool m_useThreadPool;
+    bool perseLineEnd(const char* p, size_t size) const;
+    size_t onRead(const char* data, size_t size, bool& complete);
+    size_t onAccept(char* message, size_t bufsize);
+
 public:
-	module(const boost::asio::ip::tcp::endpoint& endpoint
-			, bzs::netsvc::server::iconnection* connection
-			, bool tpool,int type);
-	~module();
-	void reset();
-	int execute(char* result, size_t& size, netsvc::server::buffers*  optionalData);
-	void cleanup(){ m_commandExecuter->cleanup();};
-	bool isShutDown(){return m_commandExecuter->isShutDown();}
-	bool checkHost(const char* hostCheckname);
-	void disconnect();
-	boost::mutex& mutex()const{return m_mutex;};
-	
+    module(const boost::asio::ip::tcp::endpoint& endpoint,
+           bzs::netsvc::server::iconnection* connection, bool tpool, int type);
+    ~module();
+    void reset();
+    int execute(netsvc::server::IResultBuffer& result, size_t& size,
+                netsvc::server::buffers* optionalData);
+    void cleanup() { m_commandExecuter->cleanup(); };
+    bool isShutDown() { return m_commandExecuter->isShutDown(); }
+    bool checkHost(const char* hostCheckname);
+    void disconnect();
+    boost::mutex& mutex() const { return m_mutex; };
 };
 
-}//namespace transactd
-}//namespace db
-}//namespace bzs
+} // namespace transactd
+} // namespace db
+} // namespace bzs
 
-
-#endif //BZS_DB_TRANSACTD_APPMODULE_H
-
-
-
-
-
+#endif // BZS_DB_TRANSACTD_APPMODULE_H

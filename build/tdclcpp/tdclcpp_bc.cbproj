@@ -1,0 +1,411 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{38F6FDD0-00C4-4679-8F36-BE1499F35256}</ProjectGuid>
+        <ProjectVersion>15.4</ProjectVersion>
+        <Base>True</Base>
+        <Config Condition="'$(Config)'==''">Release Unicode</Config>
+        <AppType>Library</AppType>
+        <FrameworkType>None</FrameworkType>
+        <TargetedPlatforms>3</TargetedPlatforms>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <BCVER Condition="'$(ProductVersion)'&gt;='8.0' and '$(ProductVersion)' &lt; '9.0'">150</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='9.0' and '$(ProductVersion)' &lt; '10.0'">160</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='10.0' and '$(ProductVersion)' &lt; '11.0'">170</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='11.0' and '$(ProductVersion)' &lt; '12.0'">180</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='12.0' and '$(ProductVersion)' &lt; '13.0'">190</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='14.0' and '$(ProductVersion)' &lt; '15.0'">200</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='15.0' and '$(ProductVersion)' &lt; '16.0'">210</BCVER>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Base)'=='true') or '$(Base_OSX32)'!=''">
+        <Base_OSX32>true</Base_OSX32>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+        <Base_Win32>true</Base_Win32>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
+        <Base_Win64>true</Base_Win64>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+        <Cfg_1>true</Cfg_1>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
+        <Cfg_1_Win32>true</Cfg_1_Win32>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win64)'!=''">
+        <Cfg_1_Win64>true</Cfg_1_Win64>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
+        <Cfg_2>true</Cfg_2>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Cfg_2)'=='true') or '$(Cfg_2_OSX32)'!=''">
+        <Cfg_2_OSX32>true</Cfg_2_OSX32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+        <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
+        <Cfg_2_Win64>true</Cfg_2_Win64>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Debug Unicode' or '$(Cfg_3)'!=''">
+        <Cfg_3>true</Cfg_3>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Cfg_3)'=='true') or '$(Cfg_3_OSX32)'!=''">
+        <Cfg_3_OSX32>true</Cfg_3_OSX32>
+        <CfgParent>Cfg_3</CfgParent>
+        <Cfg_3>true</Cfg_3>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win32)'!=''">
+        <Cfg_3_Win32>true</Cfg_3_Win32>
+        <CfgParent>Cfg_3</CfgParent>
+        <Cfg_3>true</Cfg_3>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win64)'!=''">
+        <Cfg_3_Win64>true</Cfg_3_Win64>
+        <CfgParent>Cfg_3</CfgParent>
+        <Cfg_3>true</Cfg_3>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Release Unicode' or '$(Cfg_4)'!=''">
+        <Cfg_4>true</Cfg_4>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Cfg_4)'=='true') or '$(Cfg_4_OSX32)'!=''">
+        <Cfg_4_OSX32>true</Cfg_4_OSX32>
+        <CfgParent>Cfg_4</CfgParent>
+        <Cfg_4>true</Cfg_4>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_4)'=='true') or '$(Cfg_4_Win32)'!=''">
+        <Cfg_4_Win32>true</Cfg_4_Win32>
+        <CfgParent>Cfg_4</CfgParent>
+        <Cfg_4>true</Cfg_4>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_4)'=='true') or '$(Cfg_4_Win64)'!=''">
+        <Cfg_4_Win64>true</Cfg_4_Win64>
+        <CfgParent>Cfg_4</CfgParent>
+        <Cfg_4>true</Cfg_4>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base)'!=''">
+        <SanitizedProjectName>tdclcpp_bc</SanitizedProjectName>
+        <Manifest_File>None</Manifest_File>
+        <Defines>LIB_TDCLCPP;BOOST_ALL_NO_LIB;$(Defines)</Defines>
+        <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <VerInfo_DLL>true</VerInfo_DLL>
+        <BRCC_EnableMultiByte>true</BRCC_EnableMultiByte>
+        <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
+        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
+        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
+        <BCC_wiip>false</BCC_wiip>
+        <BCC_wpch>false</BCC_wpch>
+        <BCC_wpar>false</BCC_wpar>
+        <Multithreaded>true</Multithreaded>
+        <ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <ProjectType>CppDynamicLibrary</ProjectType>
+        <NoVCL>true</NoVCL>
+        <OutputExt>dll</OutputExt>
+        <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
+        <_TCHARMapping>char</_TCHARMapping>
+        <BPILibOutputDir>..\..\lib\</BPILibOutputDir>
+        <ILINK_GenerateImportLibrary>true</ILINK_GenerateImportLibrary>
+        <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
+        <DynamicRTL>false</DynamicRTL>
+        <UsePackages>false</UsePackages>
+        <IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
+        <FinalOutputDir>..\..\bin\</FinalOutputDir>
+        <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
+        <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
+        <TD_VER_MAJOR>2</TD_VER_MAJOR>
+        <TD_VER_MINOR>0</TD_VER_MINOR>
+        <DllSuffix>$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
+        <TD_CPU>32</TD_CPU>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <TD_CPU>32</TD_CPU>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win64)'!=''">
+        <BCC_UserSuppliedOptions>-tR</BCC_UserSuppliedOptions>
+        <DynamicRTL>true</DynamicRTL>
+        <UsePackages>true</UsePackages>
+        <TD_CPU>64</TD_CPU>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1)'!=''">
+        <Defines>_DEBUG;$(Defines)</Defines>
+        <_TCHARMapping>char</_TCHARMapping>
+        <BCC_wiip>false</BCC_wiip>
+        <DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+        <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
+        <BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
+        <DCC_Define>DEBUG</DCC_Define>
+        <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+        <TASM_DisplaySourceLines>true</TASM_DisplaySourceLines>
+        <DCC_Optimize>false</DCC_Optimize>
+        <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
+        <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+        <BCC_StackFrames>true</BCC_StackFrames>
+        <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+        <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
+        <TASM_Debugging>Full</TASM_Debugging>
+        <ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <DllSuffix>$(BCVER)_$(TD_CPU)m_$(DllSuffix)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)mr_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
+        <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)mr_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2)'!=''">
+        <Defines>NDEBUG;$(Defines)</Defines>
+        <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
+        <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+        <BCC_StackFrames>true</BCC_StackFrames>
+        <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+        <_TCHARMapping>char</_TCHARMapping>
+        <DllSuffix>$(BCVER)_$(TD_CPU)m_$(DllSuffix)</DllSuffix>
+        <TASM_Debugging>None</TASM_Debugging>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)mr_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
+        <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)mr_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3)'!=''">
+        <Defines>_DEBUG;$(Defines)</Defines>
+        <BCC_SmartPCHCache>false</BCC_SmartPCHCache>
+        <BCC_MergeDuplicateStrings>true</BCC_MergeDuplicateStrings>
+        <BCC_MonitorThis>true</BCC_MonitorThis>
+        <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
+        <BCC_MonitorInlinePtrAccess>true</BCC_MonitorInlinePtrAccess>
+        <ILINK_Verbose>true</ILINK_Verbose>
+        <BCC_MonitorGlobalAndStackData>true</BCC_MonitorGlobalAndStackData>
+        <BCC_DisableOptimizations>true</BCC_DisableOptimizations>
+        <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
+        <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+        <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+        <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
+        <_TCHARMapping>wchar_t</_TCHARMapping>
+        <DllSuffix>$(BCVER)_$(TD_CPU)u_$(DllSuffix)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
+        <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)ur_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">
+        <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)ur_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_4)'!=''">
+        <Defines>NDEBUG;$(Defines)</Defines>
+        <_TCHARMapping>wchar_t</_TCHARMapping>
+        <DllSuffix>$(BCVER)_$(TD_CPU)u_$(DllSuffix)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_4_OSX32)'!=''">
+        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_4_Win32)'!=''">
+        <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)ur_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_4_Win64)'!=''">
+        <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)ur_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
+    </PropertyGroup>
+    <ItemGroup>
+        <ResourceCompile Include="tdclcpp.rc">
+            <Form>tdclcpp.res</Form>
+            <BuildOrder>20</BuildOrder>
+        </ResourceCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\btrDate.cpp">
+            <BuildOrder>0</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\activeTable.cpp">
+            <BuildOrder>22</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\database.cpp">
+            <BuildOrder>3</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\databaseFactory.cpp">
+            <BuildOrder>4</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\dbDef.cpp">
+            <BuildOrder>5</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\errorMessage.cpp">
+            <BuildOrder>19</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\field.cpp">
+            <BuildOrder>20</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fieldDDF.cpp">
+            <BuildOrder>7</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fieldNameAlias.cpp">
+            <BuildOrder>25</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\fileDDF.cpp">
+            <BuildOrder>8</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\groupQuery.cpp">
+            <BuildOrder>24</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\indexDDF.cpp">
+            <BuildOrder>10</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp">
+            <BuildOrder>22</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsDatabase.cpp">
+            <BuildOrder>11</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsTable.cpp">
+            <BuildOrder>12</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\recordset.cpp">
+            <BuildOrder>25</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\sharedData.cpp">
+            <BuildOrder>13</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\sqlBuilder.cpp">
+            <BuildOrder>14</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\table.cpp">
+            <BuildOrder>15</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\myDateTime.cpp">
+            <BuildOrder>1</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\mysql\characterset.cpp">
+            <BuildOrder>18</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\tdapSchema.cpp">
+            <BuildOrder>2</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\rtl\datetime.cpp">
+            <BuildOrder>16</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\rtl\stringBuffers.cpp">
+            <BuildOrder>17</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\rtl\strtrim.cpp">
+            <BuildOrder>19</BuildOrder>
+        </CppCompile>
+        <BuildConfiguration Include="Release">
+            <Key>Cfg_2</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Release Unicode">
+            <Key>Cfg_4</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Debug Unicode">
+            <Key>Cfg_3</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Base">
+            <Key>Base</Key>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Debug">
+            <Key>Cfg_1</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+    </ItemGroup>
+    <Import Condition="Exists('$(BDS)\Bin\CodeGear.Cpp.Targets')" Project="$(BDS)\Bin\CodeGear.Cpp.Targets"/>
+    <Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\$(PRODUCTVERSION)\UserTools.proj"/>
+    <ProjectExtensions>
+        <Borland.Personality>CPlusPlusBuilder.Personality.12</Borland.Personality>
+        <Borland.ProjectType>CppDynamicLibrary</Borland.ProjectType>
+        <BorlandProject>
+            <CPlusPlusBuilder.Personality>
+                <VersionInfo>
+                    <VersionInfo Name="IncludeVerInfo">False</VersionInfo>
+                    <VersionInfo Name="AutoIncBuild">False</VersionInfo>
+                    <VersionInfo Name="MajorVer">1</VersionInfo>
+                    <VersionInfo Name="MinorVer">1</VersionInfo>
+                    <VersionInfo Name="Release">0</VersionInfo>
+                    <VersionInfo Name="Build">0</VersionInfo>
+                    <VersionInfo Name="Debug">False</VersionInfo>
+                    <VersionInfo Name="PreRelease">False</VersionInfo>
+                    <VersionInfo Name="Special">False</VersionInfo>
+                    <VersionInfo Name="Private">False</VersionInfo>
+                    <VersionInfo Name="DLL">True</VersionInfo>
+                    <VersionInfo Name="Locale">1033</VersionInfo>
+                    <VersionInfo Name="CodePage">1252</VersionInfo>
+                </VersionInfo>
+                <VersionInfoKeys>
+                    <VersionInfoKeys Name="CompanyName">BizStation Corp</VersionInfoKeys>
+                    <VersionInfoKeys Name="FileDescription"/>
+                    <VersionInfoKeys Name="FileVersion">1.1.0.0</VersionInfoKeys>
+                    <VersionInfoKeys Name="InternalName"/>
+                    <VersionInfoKeys Name="LegalCopyright">Copyright(C) 2013 BizStation Corp</VersionInfoKeys>
+                    <VersionInfoKeys Name="LegalTrademarks"/>
+                    <VersionInfoKeys Name="OriginalFilename"/>
+                    <VersionInfoKeys Name="ProductName">Transactd Client</VersionInfoKeys>
+                    <VersionInfoKeys Name="ProductVersion">1.1.0.0</VersionInfoKeys>
+                    <VersionInfoKeys Name="Comments"/>
+                </VersionInfoKeys>
+                <ProjectProperties>
+                    <ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
+                    <ProjectProperties Name="ManagePaths">False</ProjectProperties>
+                    <ProjectProperties Name="VerifyPackages">True</ProjectProperties>
+                    <ProjectProperties Name="IndexFiles">False</ProjectProperties>
+                </ProjectProperties>
+                <Parameters>
+                    <Parameters Name="HostApplication">..\..\bin\test_tdclcpp_bc_32.exe</Parameters>
+                    <Parameters Name="RunParams">--report_level=detailed --show_progress=yes --build_info=yes</Parameters>
+                </Parameters>
+                <Excluded_Packages>
+                </Excluded_Packages>
+            </CPlusPlusBuilder.Personality>
+            <Platforms>
+                <Platform value="OSX32">False</Platform>
+                <Platform value="Win32">True</Platform>
+                <Platform value="Win64">True</Platform>
+            </Platforms>
+        </BorlandProject>
+        <ProjectFileVersion>12</ProjectFileVersion>
+    </ProjectExtensions>
+</Project>

@@ -14,8 +14,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 
@@ -23,14 +23,13 @@
 
 inline FILE* fileOpen(const char* filename, const char* flag)
 {
-	FILE* fp; 
+    FILE* fp;
 #ifdef LINUX
-	fp = fopen(filename, flag);
+    fp = fopen(filename, flag);
 #else
-	fopen_s(&fp, filename, flag);
+    fopen_s(&fp, filename, flag);
 #endif
-	return fp;
+    return fp;
 }
 
-
-#endif //BZS_ENV_FILEOPEN_H
+#endif // BZS_ENV_FILEOPEN_H

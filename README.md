@@ -1,4 +1,4 @@
-﻿Transactd release note
+Transactd release note
 ===============================================================================
 Transactd is plugin which adds NoSQL access to MySQL/MariaDB.
 
@@ -13,6 +13,8 @@ This document consists of the following topics.
   * Development of applications using Transactd clients
   * Details of the test program
   * Details of the benchmark program
+  * C++ O/R mapping source code generator
+  * Query executer
   * About the license of Transactd Plugin
   * About the license of Transactd Client
   * Bug reporting, requests and questions
@@ -43,13 +45,13 @@ mysql>show variables like 'version';
 ```
 The names of file to download are formed under following rules:
 
-  * Windows - transactd-[platform]-1.1.0_[mysql-version].zip
-  * Linux - transactd-linux-x86_64-1.1.0_[mysql-version].tar.gz
+  * Windows - transactd-[platform]-2.0.0_[mysql-version].zip
+  * Linux - transactd-linux-x86_64-2.0.0_[mysql-version].tar.gz
 
 [platform] is win32 or win64, [mysql-version] is mysql-5.x.x or mariadb-5.5.x.
 For example, the URL for Linux-x86_64bit mysql-5.6.14 is as follows:
 
-http://www.bizstation.jp/al/transactd/download/transactd-1.1.0/transactd-linux-x86_64-1.1.0_mysql-5.6.14.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-2.0.0/transactd-linux-x86_64-2.0.0_mysql-5.6.14.tar.gz
 
 You also can download source code archive and build from it.
 In this case, the source code of MySQL/MariaDB is also required.
@@ -72,53 +74,53 @@ administrator authority.
 2. Copy transactd.dll to `[MySQL|MariaDB installed directory]/lib/plugin`.
    If you don't know where is [MySQL|MariaDB installed directory], start MySQL
    Command Line client and run following command:
-```
-mysql>show variables like 'plugin%';
-+---------------+----------------------------------------------------+
-| Variable_name | Value                                              |
-+---------------+----------------------------------------------------+
-| plugin_dir    | C:\Program Files\MySQL\MySQL Server 5.6\lib\Plugin |
-+---------------+----------------------------------------------------+
-```
+   ```
+   mysql>show variables like 'plugin%';
+   +---------------+----------------------------------------------------+
+   | Variable_name | Value                                              |
+   +---------------+----------------------------------------------------+
+   | plugin_dir    | C:\Program Files\MySQL\MySQL Server 5.6\lib\Plugin |
+   +---------------+----------------------------------------------------+
+   ```
 
 3. Start MySQL Command Line client and run following command:
-```
-mysql>INSTALL PLUGIN transactd SONAME 'transactd.dll';
-```
-Installation of Transactd Plugin is finished now.
+   ```
+   mysql>INSTALL PLUGIN transactd SONAME 'transactd.dll';
+   ```
+   Installation of Transactd Plugin is finished now.
 
 
 ### Installing on Linux
 1. Move to the directory where downloaded tar.gz file is.
-```
-shell>cd [TargetFolder]
-```
+   ```
+   cd [TargetFolder]
+   ```
 
 2. Extract the tar.gz file and move into it.
-```
-shell>tar zxf transactd-linux-x86_64-1.1.0_mysql-5.6.14.tar.gz
-shell>cd transactd-linux-x86_64-1.1.0_mysql-5.6.14
-```
+   ```
+   tar zxf transactd-linux-x86_64-2.0.0_mysql-5.6.14.tar.gz
+   cd transactd-linux-x86_64-2.0.0_mysql-5.6.14
+   ```
 
 3. Copy libtransactd.so to `[MySQL|MariaDB installed directory]/lib/plugin`.
    If you don't know where is [MySQL|MariaDB installed directory], start MySQL
    Command Line client and run following command:
-```
-mysql>show variables like 'plugin%';
-+---------------+-----------------------------+
-| Variable_name | Value                       |
-+---------------+-----------------------------+
-| plugin_dir    | /usr/local/mysql/lib/plugin |
-+---------------+-----------------------------+
-mysql>exit
-shell>cp libtransactd.so /usr/local/mysql/lib/plugin/
-```
+   ```
+   mysql>show variables like 'plugin%';
+   +---------------+-----------------------------+
+   | Variable_name | Value                       |
+   +---------------+-----------------------------+
+   | plugin_dir    | /usr/local/mysql/lib/plugin |
+   +---------------+-----------------------------+
+   mysql>exit
+   cp libtransactd.so /usr/local/mysql/lib/plugin/
+   ```
 
 4. Start mysql client and run following command:
-```
-mysql>INSTALL PLUGIN transactd SONAME 'libtransactd.so';
-```
-Installation of Transactd Plugin is finished now.
+   ```
+   mysql>INSTALL PLUGIN transactd SONAME 'libtransactd.so';
+   ```
+   Installation of Transactd Plugin is finished now.
 
 
 
@@ -128,13 +130,13 @@ The Transactd clients are required to access data through Transactd Plugin.
 Download the Transactd client binaries for your platform.
 The names of file to download are formed under following rules:
 
-  * Windows - transactd-client-[platform]_with_sdk-1.1.0.msi
-  * Linux -  transactd-client-linux-x86_64_with_sdk-1.1.0.tar.gz
+  * Windows - transactd-client-[platform]_with_sdk-2.0.0.zip
+  * Linux -  transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
 
 [platform] is win32 or win64.
 For example, the URL for Linux-x86_64bit is as follows:
 
-http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-1.1.0.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
 
 
 
@@ -142,35 +144,49 @@ Installing Transactd clients
 -------------------------------------------------------------------------------
 
 ### Installing on Windows
-1. Double click transactd-client-[platform]_with_sdk-1.1.0.msi will start
-   installation by Windows installer.
+1. Open transactd-client-[platform]_with_sdk-2.0.0.zip from explorer.
+2. Select the root folder transactd-client-[platform]-with_sdk-2.0.0 and
+   copy to a folder of your choice.
+3. Run the "install.cmd" in the transactd-client-[platform]_with_sdk-2.0.0 folder.
+   This command adds "transactd-client-[platform]_with_sdk-2.0.0\bin" folder to
+   the system environment variables "PATH".
 
-If you want to install the clients for Embarcadero C++Builder XE series, select
-[custom] on setup type selection window. Installable target compiler is:
+C++ clients contains the following three files which is placed in bin folder.
+
+  * tdclc_xx_[version].dll
+  * tdclcpp_xx_[Compiler]_[version].dll
+  * tdclstmt_xx_[Compiler]_[version].dll
+
+The last two of above files are modules that are compiled with each compilers
+in order to export the classes of C++. The benchmark programs and test programs
+are also compiled with each compilers. These files are located in the folder
+which has the compiler name in the bin folder.
+You can safely delete useless files if you can identify the compiler which you
+use to develop.
+
+There are binaries which is compiled with following 7 compilers:
 
   * Microsoft Visual studio 2010 (Include ActiveX(COM) client)
-  * Embarcadero C++Builder XE series
-
-For Microsoft Visual studio is certainly installed.
+  * Embarcadero C++Builder XE～XE6series
 
 
 ### Installing on Linux
 1. Move to the directory where downloaded tar.gz file is.
-```
-shell>cd [TargetFolder]
-```
+   ```
+   cd [TargetFolder]
+   ```
 
 2. Extract the tar.gz file and move into it.
-```
-shell>tar zxf transactd-client-linux-x86_64_with_sdk-1.1.0.tar.gz
-shell>cd transactd-client-linux-x86_64_with_sdk-1.1.0
-```
+   ```
+   tar zxf transactd-client-linux-x86_64_with_sdk-2.0.0.tar.gz
+   cd transactd-client-linux-x86_64_with_sdk-2.0.0
+   ```
 
 3. Run the install script.
-```
-shell>./install_client.sh
-```
-Installation of Transactd client is finished now.
+   ```
+   ./install_client.sh
+   ```
+   Installation of Transactd client is finished now.
 
 
 
@@ -189,18 +205,21 @@ mysql>CREATE USER root@'192.168.0.0/255.255.255.0';
 This operation allow root user to access database. If the root password is not set,
 you MUST SET IT.
 
+
 ### Setup root password on Windows
 Open command prompt and run following command:
 ```
-shell>"C:\Program Files\MySQL\MySQL Server 5.6\bin\mysqladmin" -u root password 'xxxxx'
+"C:\Program Files\MySQL\MySQL Server 5.6\bin\mysqladmin" -u root password 'xxxxx'
 ```
 (Replace xxxxx to your password.)
 
+
 ### Setup root password on Linux
 ```
-shell>/usr/local/mysql/bin/mysqladmin -u root password 'xxxxx'
+/usr/local/mysql/bin/mysqladmin -u root password 'xxxxx'
 ```
 (Replace xxxxx to your password.)
+
 
 ### Using other name than root
 It is also possible to register another user name than "root".
@@ -217,36 +236,88 @@ Execution of test and benchmark program
 -------------------------------------------------------------------------------
 See also the detail of the test and the benchmark program topic.
 
+Test script executes the tests in following order:
+  * test_tdclcpp_xx_xxm_xxx.exe   A Multibyte modules test
+  * test_tdclcpp_xx_xxu_xxx.exe   A Unicode module test(Windows only)
+  * bench_tdclcpp_xx.exe          Benchmark of Insert read update 
+  * bench_query_xx.exe            Benchmark of aquery
+  * querystmtsxx.exe              Test of Query executer
+
+"querystmtsxx.exe" is executed only if the target host is localhost.
+
+
 ### Executing on Windows
-1. Click [Start menu]-[All programs]-[BizStation]-[Transactd Client]-
-   [Test (compiler)(charset)] or [Benchmark local (compiler)].
-   (compiler) is VC100 or BCB. (charset) is Unicode or Multibyte.
+1. Move to the client directory.
+   ```
+   cd transactd-client-[platform]_with_sdk-2.0.0
+   ```
+
+2. run test:
+   ```
+   TestClient.cmd
+   ```
+   
+   Then you will be asked the host name first, please specify
+   the host name of the Transactd server. "localhost" will be set
+   automatically if you do not specify anything.
+   
+   Next, select the number of the compiler to test.
+   Then tests and benchmarks will be executed continuously.
+
+3. run ActiveX(COM) test:
+   ```
+   TestClient_ATL.cmd
+   ```
+   
+   Then you will be asked the host name first, please specify
+   the host name of the Transactd server. "localhost" will be set
+   automatically if you do not specify anything.
+
 
 ### Executing on Linux
 1. Move to the client directory.
-```
-shell>cd transactd-client-linux-x86_64_with_sdk-1.1.0
-```
+   ```
+   cd transactd-client-linux-x86_64_with_sdk-2.0.0
+   ```
 
 2. run test:
-```
-./exec_test_local.sh
-```
+   ```
+   ./exec_test_all.sh
+   ```
+   
+   Then you will be asked the host name first, please specify
+   the host name of the Transactd server. "localhost" will be set
+   automatically if you do not specify anything.
 
 
 
 Development of applications using Transactd clients
 -------------------------------------------------------------------------------
-Refer to the following SDK documents for development of the applications
-using Transactd clients.
+Refer to the SDK documents to develop applications with Transactd clients.
 
 http://www.bizstation.jp/ja/transactd/client/sdk/doc/
+
+There are some simple sample codes in ($installdir)/source/bzs/example.
+
+You can build them with project files in build/example (Windows) or
+make_example.sh script (Linux).
+
+If you compile with the 64Bit version of the Visual C++ 2010 Express edittion,
+change option to "Windows7.1SDK" from "v100" in
+[Options] - [platform toolset] - [configuration properties] - [General].
+
+In the C++ Builder, the boost which has been supplied with the compiler
+are required. In [Tools] - [Options] - [Environment Options] - [C++ Options] -
+[directory and path] - [System Include Path], add the following path:
+
+* For 32Bit: $(CG_BOOST_ROOT)
+* For 64Bit: $(CG_64_BOOST_ROOT)
 
 
 
 Details of the test program
 -------------------------------------------------------------------------------
-The executable file which starts with test_ is a Test program.
+The executable files whose name starts with test_ is test program.
 
 Please be sure to run test with only an instance. It will fail if test runs two or
 more instances.
@@ -277,8 +348,14 @@ character-set-server=utf8
 
 Details of the benchmark program
 -------------------------------------------------------------------------------
-By changing processNumber argument, the benchmark program can be ran two or more
-instances simultaneously, and can measure them. The command line option is:
+There are two types in the benchmark program. One of them is the benchmark which
+read SQL-like query (bench_query_xxx).
+Another is basic CRUD operations benchmark (bench_tdclcpp_xxx).
+
+bench_tdclcpp_xxx can be executed in multiple instances, by changing the
+processNumber in command line arguments.
+
+The command line options are:
 ```
 bench_tdclcpp_xxx.exe databaseUri processNumber functionNumber
 
@@ -303,8 +380,75 @@ bench_tdclcpp_xxx.exe databaseUri processNumber functionNumber
 |                |  8: update in transaction. 20rec x 1000times           |
 |----------------|--------------------------------------------------------|
 ex)
-shell>bench_tdclcpp_c_bcb_64.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
+bench_tdclcpp_bc200_64u.exe "tdap://localhost/test?dbfile=test.bdf" 0 -1
 ```
+
+bench_query_xxx measures the speed of getting a similar result with
+the following SQL:
+```
+select
+   `user`.`id`
+   ,`user`.`name`
+   ,`extention`.`comment`
+   ,`groups`.`name` as `group_name`
+from
+   `user` INNER JOIN `extention` 
+      ON `user`.`id`  = `extention`.`id`
+    LEFT JOIN `groups` 
+      ON `user`.`group`  = `groups`.`code`
+where
+    `user`.`id` > 0 and `user`.`id` <= 15000;
+
+```
+The command line options are:
+```
+bench_query_xxx createdb hostname type n
+|----------------|--------------------------------------------------------|
+| option name    | description                                            |
+|----------------|--------------------------------------------------------|
+| createdb       | Specify 0 or 1 to determine whether or not to create a |
+|                | new test database. The default is 1.                   |
+|----------------|--------------------------------------------------------|
+| hostname       | Specify the name or IP address of the location database|
+|                | .The default is localhost.                             |
+|----------------|--------------------------------------------------------|
+| type           | Specific numbers, the contents of the query.           |
+|                | The default is 15.                                     |
+|                | 1: Read 15,000 records from the user table             |
+|                | 3: JOIN the comment field of the extention table on the| 
+|                |    results of the 1                                    |
+|                | 7: JOIN the name of the table groups the results of the|
+|                |    3                                                   |
+|                | 5: JOIN the name of the groups on the results of the 1 |
+|                |+8: Display the execution progress of repeat            |
+|----------------|--------------------------------------------------------|
+| n              | Specifies the number of executions of the query        |
+|                | specified by type. The default is 100.                 |
+|----------------|--------------------------------------------------------|
+ex)
+bench_query_xxx 0 localhost 15 100
+```
+
+
+
+C++ O/R mapping source code generator
+-------------------------------------------------------------------------------
+ormsrcgen (32 | 64) is a source code generator for C++ O/R mapping. You can
+use this program to generate the model class from the database definition if
+you want to use the O/R mapping in C++.
+
+Please refer to the README_ORMSRCGEN.md.
+
+
+
+Query executer
+-------------------------------------------------------------------------------
+querystmts is a program that execute the Transactd query that has been described
+in XML file. If you pass an XML file to querystmts, it executes the queries and
+outputs the result to the stdout.
+
+To make Transactd query XML file(s), we need the querybuilder program.
+But querybuilder has not been released yet. It will be released soon.
 
 
 

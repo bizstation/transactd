@@ -13,8 +13,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "resource.h"
@@ -24,32 +24,35 @@
 #include <bzs/db/protocol/tdap/client/dbDef.h>
 using namespace ATL;
 
-class ATL_NO_VTABLE CKeyDef : public CComObjectRootEx<CComSingleThreadModel>,
-    public CComCoClass<CKeyDef, &CLSID_KeyDef>,
-    public IDispatchImpl<IKeyDef, &IID_IKeyDef, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CKeyDef
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CKeyDef, &CLSID_KeyDef>,
+      public IDispatchImpl<IKeyDef, &IID_IKeyDef, &LIBID_transactd,
+                           /* wMajor = */ 1, /* wMinor = */ 0>
 {
-	bzs::db::protocol::tdap::keydef* keydef(){return &(*m_tabledefPtr)->keyDefs[m_index];}
-public:
-    CKeyDef():m_tabledefPtr(NULL)  {}
-	bzs::db::protocol::tdap::tabledef** m_tabledefPtr;
-	short m_index;
+    bzs::db::protocol::tdap::keydef* keydef()
+    {
+        return &(*m_tabledefPtr)->keyDefs[m_index];
+    }
 
-    BEGIN_COM_MAP(CKeyDef) 
-		COM_INTERFACE_ENTRY(IKeyDef) 
-		COM_INTERFACE_ENTRY(IDispatch) 
-	END_COM_MAP()
+public:
+    CKeyDef() : m_tabledefPtr(NULL) {}
+    bzs::db::protocol::tdap::tabledef** m_tabledefPtr;
+    short m_index;
+
+    BEGIN_COM_MAP(CKeyDef)
+    COM_INTERFACE_ENTRY(IKeyDef)
+    COM_INTERFACE_ENTRY(IDispatch)
+    END_COM_MAP()
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    HRESULT FinalConstruct() {return S_OK;}
+    HRESULT FinalConstruct() { return S_OK; }
 
     void FinalRelease() {}
 
 public:
-	
-
     STDMETHOD(get_SegmentCount)(unsigned char* Value);
     STDMETHOD(Segments)(short Index, IKeySegment** Value);
     STDMETHOD(put_SegmentCount)(unsigned char Value);
-
 };

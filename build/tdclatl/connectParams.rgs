@@ -1,0 +1,24 @@
+HKCR
+{
+	transactd.connectParams.1 = s 'connectParams Class'
+	{
+		CLSID = s '{0FB25FFA-9F0E-4C66-A40E-C5DAD40BC71B}'
+	}
+	transactd.connectParams = s 'connectParams Class'
+	{		
+		CurVer = s 'transactd.connectParams.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {0FB25FFA-9F0E-4C66-A40E-C5DAD40BC71B} = s 'connectParams Class'
+		{
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}

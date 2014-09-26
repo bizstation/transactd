@@ -6,24 +6,20 @@
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
-
 /**
 @brief drop database example
 
 This program  drop "test" database.
 */
 
-
-
 /** show database operation error
 */
-void showError(const _TCHAR* caption,const _TCHAR* tableName, short statusCode)
+void showError(const _TCHAR* caption, const _TCHAR* tableName, short statusCode)
 {
-    _TCHAR tmp[1024]={0x00};
+    _TCHAR tmp[1024] = { 0x00 };
     nstable::tdapErr(0x00, statusCode, tableName, tmp);
-    _tprintf(_T("%s error No.%ld %s\n"),caption, statusCode, tmp);
+    _tprintf(_T("[ERROR] %s No.%ld %s\n"), caption, statusCode, tmp);
 }
-
 
 /** Open database
  */
@@ -37,7 +33,6 @@ bool openDbExclusive(database* db, const _TCHAR* uri)
     }
     return true;
 }
-
 
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
@@ -55,7 +50,6 @@ int _tmain(int argc, _TCHAR* argv[])
         if (result == 0)
             _tprintf(_T("Drop daatabase success. \n"));
         db->close();
-
     }
     database::destroy(db);
     return result;

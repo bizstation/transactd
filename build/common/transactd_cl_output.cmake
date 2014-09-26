@@ -22,22 +22,64 @@
 if(NOT COMMAND tdcl_set_output)
 macro(tdcl_set_output TRANSACTD_BINARY_ROOT prefix)
   if(WIN32)
-    set_target_properties(${this_target} PROPERTIES
-      RUNTIME_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
-      LIBRARY_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
-      ARCHIVE_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/lib")
-    if(MSVC)
-      transactd_make_msvc_install_file("${TRANSACTD_BINARY_ROOT}")
-      add_custom_command(TARGET ${this_target} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -P
-        ${CMAKE_CURRENT_BINARY_DIR}/msvc_install_$<CONFIGURATION>.cmake)
-    endif()
+    tdcl_set_output_win(${TRANSACTD_BINARY_ROOT})
   else()
+    set(TDCL_TMP_PREFIX "${prefix}")
     if("${prefix}" STREQUAL "")
-      install(TARGETS ${this_target} LIBRARY DESTINATION /usr/lib)
-    else()
-      install(TARGETS ${this_target} LIBRARY DESTINATION "${prefix}")
+      set(TDCL_TMP_PREFIX "/usr/lib")
     endif()
+    install(TARGETS ${this_target} LIBRARY DESTINATION "${TDCL_TMP_PREFIX}")
+    # if APPLE and bundle module, install symlinks
+    if(APPLE AND (NOT ("${${this_target}_CREATE_SIMLINK_CMAKE}" STREQUAL "")))
+      install(PROGRAMS "${${this_target}_LINK_PATH_1}" "${${this_target}_LINK_PATH_2}"
+        DESTINATION "${TDCL_TMP_PREFIX}")
+    endif()
+  endif()
+endmacro()
+endif()
+
+# set install filenames for Mac OSX
+if(NOT COMMAND tdcl_set_outputnames_osx)
+macro(tdcl_set_outputnames_osx TD_OSX_BASE TD_OSX_MAJOR TD_OSX_MINOR TD_OSX_RELEASE TRANSACTD_ROOT)
+  if(APPLE)
+    # set target binary suffix
+    set_target_properties(${this_target} PROPERTIES SUFFIX
+      ".${TD_OSX_MAJOR}.${TD_OSX_MINOR}.${TD_OSX_RELEASE}.so")
+    # get binary output location
+    get_property(${this_target}_BIN_LOC TARGET ${this_target} PROPERTY LOCATION)
+    get_filename_component(TDCL_TMP_BINDIR "${${this_target}_BIN_LOC}" DIRECTORY)
+    # target and symlinks name
+    set(BZ_SYML_TARGET_NAME
+        "${TD_OSX_BASE}.${TD_OSX_MAJOR}.${TD_OSX_MINOR}.${TD_OSX_RELEASE}.so")
+    set(BZ_SYML_LINK_NAME_1
+        "${TD_OSX_BASE}.${TD_OSX_MAJOR}.${TD_OSX_MINOR}.so")
+    file(TO_CMAKE_PATH "${TDCL_TMP_BINDIR}/${BZ_SYML_LINK_NAME_1}" BZ_SYML_LINK_PATH_1)
+    file(TO_CMAKE_PATH "${TDCL_TMP_BINDIR}/${TD_OSX_BASE}.so"      BZ_SYML_LINK_PATH_2)
+    set(${this_target}_LINK_PATH_1 "${BZ_SYML_LINK_PATH_1}")
+    set(${this_target}_LINK_PATH_2 "${BZ_SYML_LINK_PATH_2}")
+    # set post build command to make symlinks
+    set(${this_target}_CREATE_SIMLINK_CMAKE
+      "${CMAKE_CURRENT_BINARY_DIR}/create_symlink.cmake")
+    configure_file("${TRANSACTD_ROOT}/build/common/create_symlink.cmake.in"
+      "${${this_target}_CREATE_SIMLINK_CMAKE}")
+    add_custom_command(TARGET ${this_target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -P ${${this_target}_CREATE_SIMLINK_CMAKE})
+  endif()
+endmacro()
+endif()
+
+# set install pathes for Windows
+if(NOT COMMAND tdcl_set_output_win)
+macro(tdcl_set_output_win TRANSACTD_BINARY_ROOT)
+  set_target_properties(${this_target} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
+    LIBRARY_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
+    ARCHIVE_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/lib")
+  if(MSVC)
+    transactd_make_msvc_install_file("${TRANSACTD_BINARY_ROOT}")
+    add_custom_command(TARGET ${this_target} POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -P
+      ${CMAKE_CURRENT_BINARY_DIR}/msvc_install_$<CONFIGURATION>.cmake)
   endif()
 endmacro()
 endif()

@@ -14,13 +14,14 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "table.h"
 #include "database.h"
 #include "dbDef.h"
+#include "fields.h"
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/type_traits.hpp>
@@ -36,23 +37,20 @@ namespace tdap
 namespace client
 {
 
-
-
-template<int N>
-struct placeholder
+template <int N> struct placeholder
 {
     static boost::arg<N>& get()
     {
-        static boost::arg<N>result;
+        static boost::arg<N> result;
         return result;
     }
 };
 
-static boost::arg<1>&fields_type = placeholder<1>::get();
+static boost::arg<1>& fields_type = placeholder<1>::get();
 inline static void readStatusCheck(table& tb, const _TCHAR* name)
 {
-    if ((tb.stat() != 0) && (tb.stat() != STATUS_EOF)
-                    && (tb.stat() != STATUS_NOT_FOUND_TI))
+    if ((tb.stat() != 0) && (tb.stat() != STATUS_EOF) &&
+        (tb.stat() != STATUS_NOT_FOUND_TI))
         nstable::throwError(name, tb.stat());
 }
 
@@ -64,14 +62,13 @@ public:
     {
         tb.seekNext();
         readStatusCheck(tb, _T("Seek next"));
-
     }
+
     inline static void decrement(table& tb)
     {
         tb.seekPrev();
         readStatusCheck(tb, _T("Seek prev"));
     }
-
 };
 
 class indexRvNavi
@@ -82,15 +79,14 @@ public:
     {
         tb.seekPrev();
         readStatusCheck(tb, _T("Seek next"));
-
     }
+
     inline static void decrement(table& tb)
     {
 
         tb.seekNext();
         readStatusCheck(tb, _T("Seek prev"));
     }
-
 };
 
 class indexFindNavi
@@ -101,15 +97,13 @@ public:
     {
         tb.findNext();
         readStatusCheck(tb, _T("Find next"));
-
     }
+
     inline static void decrement(table& tb)
     {
         tb.findPrev();
         readStatusCheck(tb, _T("Find prev"));
-
     }
-
 };
 
 class indexRvFindNavi
@@ -120,15 +114,13 @@ public:
     {
         tb.findPrev();
         readStatusCheck(tb, _T("Find next"));
-
     }
+
     inline static void decrement(table& tb)
     {
         tb.findNext();
         readStatusCheck(tb, _T("Find prev"));
-
     }
-
 };
 
 class stepNavi
@@ -139,14 +131,12 @@ public:
     {
         tb.stepNext();
         readStatusCheck(tb, _T("Step next"));
-
     }
     inline static void decrement(table& tb)
     {
         tb.stepPrev();
         readStatusCheck(tb, _T("Step prev"));
     }
-
 };
 
 class stepRvNavi
@@ -157,29 +147,26 @@ public:
     {
         tb.stepPrev();
         readStatusCheck(tb, _T("Step next"));
-
     }
     inline static void decrement(table& tb)
     {
         tb.stepNext();
         readStatusCheck(tb, _T("Step prev"));
     }
-
 };
 
-
-template <class T0 = _TCHAR*, class T1 = _TCHAR*, class T2 = _TCHAR*, class T3 = _TCHAR*
-        , class T4 = _TCHAR*, class T5 = _TCHAR*, class T6 = _TCHAR*, class T7 = _TCHAR*>
+template <class T0 = _TCHAR*, class T1 = _TCHAR*, class T2 = _TCHAR*,
+          class T3 = _TCHAR*, class T4 = _TCHAR*, class T5 = _TCHAR*,
+          class T6 = _TCHAR*, class T7 = _TCHAR*>
 class keyValueSetter
 {
 
 public:
     template <class table_ptr>
-    static void set(table_ptr tb, const char_td keynum
-        ,const T0 kv0, const T1 kv1=NULL
-        ,const T2 kv2=NULL, const T3 kv3=NULL
-        ,const T4 kv4=NULL, const T5 kv5=NULL
-        ,const T6 kv6=NULL, const T7 kv7=NULL)
+    static void
+    set(table_ptr tb, const char_td keynum, const T0 kv0, const T1 kv1 = NULL,
+        const T2 kv2 = NULL, const T3 kv3 = NULL, const T4 kv4 = NULL,
+        const T5 kv5 = NULL, const T6 kv6 = NULL, const T7 kv7 = NULL)
     {
         const tabledef& td = *tb->tableDef();
         if (keynum < td.keyCount)
@@ -204,15 +191,13 @@ public:
                 tb->setFV(kd.segments[7].fieldNum, kv7);
         }
         tb->setKeyNum(keynum);
-
     }
 };
 
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 
-
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-#endif//trdboostapiInternalH
+#endif // trdboostapiInternalH

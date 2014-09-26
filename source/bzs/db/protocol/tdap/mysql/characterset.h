@@ -21,19 +21,17 @@
 
 #include <bzs/env/compiler.h>
 
-
-
-#define MAX_CHAR_INFO   41
-#define CHARSET_LATIN1   1
-#define CHARSET_CP850    4
-#define CHARSET_ASCII    9
-#define CHARSET_SJIS	11
-#define CHARSET_UTF8	22
-#define CHARSET_USC2	23
-#define CHARSET_UTF8B4	30
-#define CHARSET_UTF16LE	33
-#define CHARSET_CP932	38
-#define CHARSET_EUCJ	40
+#define MAX_CHAR_INFO 41
+#define CHARSET_LATIN1 1
+#define CHARSET_CP850 4
+#define CHARSET_ASCII 9
+#define CHARSET_SJIS 11
+#define CHARSET_UTF8 22
+#define CHARSET_USC2 23
+#define CHARSET_UTF8B4 30
+#define CHARSET_UTF16LE 33
+#define CHARSET_CP932 38
+#define CHARSET_EUCJ 40
 
 namespace bzs
 {
@@ -52,9 +50,10 @@ PACKAGE unsigned int charsetIndex(const char* name);
 PACKAGE unsigned int charsetIndex(unsigned short codePage);
 PACKAGE unsigned int codePage(unsigned short charsetIndex);
 
-}//namespace mysql
-}//namespace tdap
-}//namespace protocol
-}//namespace db
-}//namespace bzs
-#endif //BZS_DB_PROTOCOL_TDAP_MYSQL_CHARACTERSET_H
+} // namespace mysql
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
+
+#endif // BZS_DB_PROTOCOL_TDAP_MYSQL_CHARACTERSET_H

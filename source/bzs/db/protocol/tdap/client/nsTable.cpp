@@ -16,29 +16,21 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <bzs/env/tstring.h>
-#pragma hdrstop
-
-
 #include "nsTable.h"
 #include "nsDatabase.h"
 #include "bulkInsert.h"
 
 #include <limits.h>
-#include <string.h>								// Required for _fstrstr()
+#include <string.h> // Required for _fstrstr()
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <boost/filesystem.hpp>
 
-
-
-
-
 #pragma package(smart_init)
 
 /* TODO: To be support internal started transction with original flag.*/
-#ifdef __x86_64__ 
+#ifdef __x86_64__
 #define MEM_FREED_MAGIC_NUMBER (nstimpl*)0x0FEEEFEEEFEEEFEEE
 #else
 #define MEM_FREED_MAGIC_NUMBER (nstimpl*)0x0FEEEFEEE
@@ -56,11 +48,12 @@ namespace client
 
 struct nstimpl
 {
-    nstimpl():refCount(1), bulkIns(NULL), shared(false), isOpen(false)
+    nstimpl()
+        : refCount(1), bulkIns(NULL), mode(0), shared(false), isOpen(false)
     {
         posblk[0] = 0x00;
     }
-	int refCount;
+    int refCount;
     bulkInsert* bulkIns;
     nsdatabase* nsdb;
     percentage_td percentage;
@@ -68,6 +61,7 @@ struct nstimpl
     _TCHAR uri[MAX_PATH];
     uchar_td posblk[POS_BLOCK_SIZE];
     short tableid;
+    char_td mode;
     bool shared;
     bool isOpen;
 };
@@ -75,15 +69,15 @@ struct nstimpl
 // -----------------------------------------------------------------
 // class nstable
 // -----------------------------------------------------------------
-extern TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size);
+extern _TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size);
 
-nstable::nstable(nsdatabase *pbe)
+nstable::nstable(nsdatabase* pbe)
 {
     m_impl = new nstimpl();
     m_impl->nsdb = pbe;
 
-	//addref to nsdatabase
-	pbe->addref();
+    // addref to nsdatabase
+    pbe->addref();
     if (pbe->openTableCount() == nsdatabase::maxtables)
     {
         m_stat = STATUS_LMITS_MAX_TABLES;
@@ -100,7 +94,6 @@ nstable::nstable(nsdatabase *pbe)
     m_write = true;
     m_insart = true;
     m_delete = true;
-
 }
 
 nstable::~nstable()
@@ -109,24 +102,26 @@ nstable::~nstable()
         delete m_impl->bulkIns;
     close();
 
-	if (!m_impl->shared)
-		m_impl->nsdb->unregisterTable(this);
-    m_impl->nsdb->internalRelease();
+    if (!m_impl->shared)
+    {
+        m_impl->nsdb->unregisterTable(this);
+        m_impl->nsdb->release();
+    }
+
     delete m_impl;
-	m_impl = MEM_FREED_MAGIC_NUMBER;
+    m_impl = MEM_FREED_MAGIC_NUMBER;
 }
 
-TCHAR* nstable::getErrorMessage(int errorCode, _TCHAR* buf, size_t size)
+_TCHAR* nstable::getErrorMessage(int errorCode, _TCHAR* buf, size_t size)
 {
     return getErrorMessageLocale(errorCode, buf, size);
-
 }
 
 /*  Key number is set by user.
-    KyeNum
-    - -1 = Unlock the record that specified by bm in multi records.
-    - -2 = Unlock all records
-    - { = Unlock single record.
+        KyeNum
+        - -1 = Unlock the record that specified by bm in multi records.
+        - -2 = Unlock all records
+        - { = Unlock single record.
 */
 void nstable::unlock(bookmark_td bm)
 {
@@ -138,23 +133,55 @@ void nstable::unlock(bookmark_td bm)
     m_pdata = db;
 }
 
-void nstable::seekByBookmark() {seekByBookmark(m_impl->bookmark);}
+bool nstable::isUseTransactd() const
+{
+    return nsdb()->isUseTransactd();
+}
 
-const _TCHAR* nstable::uri() const {return m_impl->uri;}
+void nstable::seekByBookmark()
+{
+    seekByBookmark(m_impl->bookmark);
+}
 
-const uchar_td* nstable::posblk() const {return m_impl->posblk;}
+const _TCHAR* nstable::uri() const
+{
+    return m_impl->uri;
+}
 
-nsdatabase* nstable::nsdb() const {return m_impl->nsdb;}
+const uchar_td* nstable::posblk() const
+{
+    return m_impl->posblk;
+}
 
-bulkInsert* nstable::bulkIns() const {return m_impl->bulkIns;}
+nsdatabase* nstable::nsdb() const
+{
+    return m_impl->nsdb;
+}
 
-void nstable::setIsOpen(bool v) {m_impl->isOpen = v;}
+bulkInsert* nstable::bulkIns() const
+{
+    return m_impl->bulkIns;
+}
 
-bool nstable::isOpen() const {return m_impl->isOpen;}
+void nstable::setIsOpen(bool v)
+{
+    m_impl->isOpen = v;
+}
 
-short nstable::tableid() const {return m_impl->tableid;}
+bool nstable::isOpen() const
+{
+    return m_impl->isOpen;
+}
 
-void nstable::setTableid(short v) {m_impl->tableid = v;}
+short nstable::tableid() const
+{
+    return m_impl->tableid;
+}
+
+void nstable::setTableid(short v)
+{
+    m_impl->tableid = v;
+}
 
 void nstable::setShared()
 {
@@ -164,35 +191,39 @@ void nstable::setShared()
 
 int nstable::refCount() const
 {
-	return m_impl->refCount;
+    return m_impl->refCount;
 }
 
 void nstable::addref(void)
 {
-	++m_impl->refCount;
+    ++m_impl->refCount;
 }
 
 void nstable::release()
 {
-	
-	/* If before called database::drop() database::close() etc then nstable::destory called.
-	   Client cache nstable pointer that is invalid.
-	   It test by test method.
-	*/
-	try
-	{
-		if (test(this))
-		{
-			if (--m_impl->refCount == 0)
-				delete this;
-		}
-	}catch(...){}
+
+    /* If before called database::drop() database::close() etc then
+       nstable::destory called.
+       Client cache nstable pointer that is invalid.
+       It test by test method.
+    */
+    try
+    {
+        if (test(this))
+        {
+            if (--m_impl->refCount == 0)
+                delete this;
+        }
+    }
+    catch (...)
+    {
+    }
 }
 
 void nstable::destroy()
 {
-	if (!m_impl->shared)
-		delete this;
+    if (!m_impl->shared)
+        delete this;
 }
 
 void nstable::doClose()
@@ -306,6 +337,11 @@ void nstable::seekLessThan(bool orEqual, ushort_td LockBias)
         onReadAfter();
 }
 
+char_td nstable::mode() const
+{
+    return m_impl->mode;
+}
+
 void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
 {
     void* svm_keybuf = m_keybuf;
@@ -324,7 +360,7 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
     else
 #endif
         if (m_impl->uri != name)
-            _tcscpy_s(m_impl->uri, MAX_PATH, name);
+        _tcscpy_s(m_impl->uri, MAX_PATH, name);
 
     // for trnasctd
     if (m_impl->nsdb->isTransactdUri(m_impl->uri))
@@ -336,8 +372,9 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         }
     }
 
-    char tmpName[MAX_PATH]={0x00};
-    const char* p = nsdatabase::toServerUri(tmpName, MAX_PATH, m_impl->uri, m_impl->nsdb->isUseTransactd());
+    char tmpName[MAX_PATH] = { 0x00 };
+    const char* p = nsdatabase::toServerUri(tmpName, MAX_PATH, m_impl->uri,
+                                            m_impl->nsdb->isUseTransactd());
     m_keybuf = (void*)p;
     m_keylen = (keylen_td)strlen(p) + 1;
 
@@ -346,25 +383,27 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
     else
         m_keynum = mode;
 
-    char ownerNameBuf[OWNERNAME_SIZE+1] = {0x00};
+    char ownerNameBuf[OWNERNAME_SIZE + 1] = { 0x00 };
     if (NULL != ownerName && 0x00 != ownerName[0])
     {
-        const char* p = toChar(ownerNameBuf, ownerName, 22);
-        m_pdata = (void*)p;
-        m_datalen = (uint_td)strlen(p) + 1;
+        const char* p2 = toChar(ownerNameBuf, ownerName, 22);
+        m_pdata = (void*)p2;
+        m_datalen = (uint_td)strlen(p2) + 1;
         if (m_datalen > 11)
         {
             m_stat = STATUS_TOO_LONG_OWNERNAME;
             return;
         }
-
     }
     else
         m_datalen = 0;
 
     tdap(TD_OPENTABLE);
     if (m_stat == STATUS_SUCCESS)
+    {
         m_impl->isOpen = true;
+        m_impl->mode = mode;
+    }
     m_keybuf = svm_keybuf;
     m_keynum = svm_keynum;
     m_keylen = svm_keybuflen;
@@ -379,8 +418,6 @@ void nstable::doUpdate(eUpdateType type)
         return;
     }
 
-
-
     if (onUpdateCheck(type) == false)
         return;
 
@@ -390,7 +427,7 @@ void nstable::doUpdate(eUpdateType type)
     {
         if (trnCount < nsdb()->enableTrn())
             nsdb()->abortTrn();
-        return ;
+        return;
     }
     char_td keynum = m_keynum;
     m_keylen = m_keybuflen;
@@ -416,7 +453,7 @@ void nstable::doDel(bool inkey)
         m_stat = STATUS_NO_ACR_UPDATE_DELETE;
         return;
     }
-    if (onDeleteCheck(inkey)==false)
+    if (onDeleteCheck(inkey) == false)
         return;
 
     m_datalen = m_buflen;
@@ -441,7 +478,6 @@ void nstable::doDel(bool inkey)
         }
         tdap(TD_REC_DELETE);
     }
-
 }
 
 void nstable::onInsertAfter(int beforeResult)
@@ -473,7 +509,8 @@ ushort_td nstable::doInsert(bool ncc)
         m_stat = STATUS_INVALID_VALLEN;
     m_datalen = getWriteImageLen();
     if (m_impl->bulkIns)
-        ins_rows = m_impl->bulkIns->insert((const char*)data(), m_datalen, this);
+        ins_rows =
+            m_impl->bulkIns->insert((const char*)data(), m_datalen, this);
     else
     {
         tdap(TD_REC_INSERT);
@@ -612,7 +649,6 @@ void nstable::seekByPercentage()
     tdap(TD_MOVE_PER);
     if (m_stat == STATUS_SUCCESS)
         onReadAfter();
-
 }
 
 void nstable::seekByPercentage(percentage_td pc)
@@ -627,7 +663,6 @@ void nstable::seekByPercentage(percentage_td pc)
     tdap(TD_MOVE_PER);
     if (m_stat == STATUS_SUCCESS)
         onReadAfter();
-
 }
 
 void nstable::setOwnerName(const _TCHAR* Owner_p, char_td mode)
@@ -660,7 +695,10 @@ void nstable::setOwnerName(const _TCHAR* Owner_p, char_td mode)
     m_keynum = svm_keynum;
 }
 
-void nstable::clearOwnerName() {tdap(TD_CLEAR_OWNERNAME);}
+void nstable::clearOwnerName()
+{
+    tdap(TD_CLEAR_OWNERNAME);
+}
 
 void nstable::stats(void* dataBuf, uint_td len, bool estimate)
 {
@@ -684,9 +722,9 @@ void nstable::stats(void* dataBuf, uint_td len, bool estimate)
     m_keynum = svm_keynum;
 }
 
-uint_td nstable::doRecordCount(bool estimate, bool fromCurrent, eFindType /*direction*/)
+uint_td nstable::doRecordCount(bool estimate, bool fromCurrent)
 {
-    fileSpec *fs;
+    fileSpec* fs;
     uint_td Count;
 
     fs = (fileSpec*)malloc(1920);
@@ -698,7 +736,7 @@ uint_td nstable::doRecordCount(bool estimate, bool fromCurrent, eFindType /*dire
 
 ushort_td nstable::recordLength()
 {
-    fileSpec *fs;
+    fileSpec* fs;
     ushort_td len = 0;
 
     fs = (fileSpec*)malloc(1920);
@@ -716,7 +754,6 @@ void nstable::doCreateIndex(bool specifyKeyNum)
     tdap(TD_BUILD_INDEX);
     if (specifyKeyNum)
         m_keynum -= ((uchar_td)0x80);
-
 }
 
 void nstable::dropIndex(bool NoRenumber)
@@ -726,7 +763,6 @@ void nstable::dropIndex(bool NoRenumber)
     tdap(TD_DROP_INDEX);
     if (NoRenumber)
         m_keynum -= ((uchar_td)0x80);
-
 }
 
 short_td nstable::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
@@ -757,72 +793,77 @@ void nstable::tdap(ushort_td op)
             return;
         }
         BTRCALLID_PTR func = m_impl->nsdb->btrvFunc();
-        m_stat = func(m_op, m_impl->posblk, m_pdata, &m_datalen, m_keybuf, m_keylen, m_keynum,
-            m_impl->nsdb->clientID());
+        m_stat = func(m_op, m_impl->posblk, m_pdata, &m_datalen, m_keybuf,
+                      m_keylen, m_keynum, m_impl->nsdb->clientID());
 
         // Wait for record lock or file lock.
-        //LoopCount++;
+        // LoopCount++;
         switch (m_stat)
         {
-        case STATUS_LOCK_ERROR: Sleep(m_impl->nsdb->lockWaitTime());
+        case STATUS_LOCK_ERROR:
+            Sleep(m_impl->nsdb->lockWaitTime());
             break;
-        case STATUS_FILE_LOCKED: Sleep(m_impl->nsdb->lockWaitTime());
+        case STATUS_FILE_LOCKED:
+            Sleep(m_impl->nsdb->lockWaitTime());
             break;
 
-        default: return;
+        default:
+            return;
         }
-    }
-    while ((m_stat != STATUS_SUCCESS)
-                    && (m_impl->nsdb->lockWaitCount() != LoopCount++));
-
+    } while ((m_stat != STATUS_SUCCESS) &&
+             (m_impl->nsdb->lockWaitCount() != LoopCount++));
 }
 
 /* tdap error handling
  */
-short_td nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* TableName, _TCHAR* retbuf)
+short_td nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* TableName,
+                          _TCHAR* retbuf)
 {
-    if (status == STATUS_SUCCESS) return 0;
-    else if (status == STATUS_EOF) return 0;
-    else if (status == STATUS_NOT_FOUND_TI) return 0;
+    if (status == STATUS_SUCCESS)
+        return 0;
+    else if (status == STATUS_EOF)
+        return 0;
+    else if (status == STATUS_NOT_FOUND_TI)
+        return 0;
 
-	_TCHAR buf[512];
+    _TCHAR buf[512];
     short_td errorCode = status;
-	getErrorMessage(errorCode, buf, 512);
+    getErrorMessage(errorCode, buf, 512);
 
-#pragma warning(disable:4996)
+#pragma warning(disable : 4996)
     if (retbuf)
         _stprintf(retbuf, _T("table_name:%s \n%s"), TableName, buf);
-#pragma warning(default:4996)
+#pragma warning(default : 4996)
 
-    if ((int)hWnd <= 0) return errorCode;
-        
+    if ((int)hWnd <= 0)
+        return errorCode;
+
 #ifdef _WIN32
     if (TableName)
         MessageBox(hWnd, buf, TableName, MB_OK | MB_ICONSTOP | MB_SYSTEMMODAL);
     else
-		MessageBox(hWnd, buf, _T("tdapErr"), MB_OK | MB_ICONSTOP | MB_SYSTEMMODAL);
+        MessageBox(hWnd, buf, _T("tdapErr"),
+                   MB_OK | MB_ICONSTOP | MB_SYSTEMMODAL);
 #endif
     return errorCode;
 }
 
-
 void nstable::throwError(const _TCHAR* caption, short statusCode)
 {
-    _TCHAR tmp[1024]={0x00};
-    nstable::tdapErr(0x00, statusCode, NULL, tmp);
-    _TCHAR tmp2[1024]={0x00};
-    _stprintf_s(tmp2, 1024, _T("%s\n%s\n"),caption, tmp);
+    _TCHAR tmp[1024] = { 0x00 };
+    nstable::tdapErr(0x00, statusCode, _T("unknown"), tmp);
+    _TCHAR tmp2[1024] = { 0x00 };
+    _stprintf_s(tmp2, 1024, _T("%s\n%s\n"), caption, tmp);
     THROW_BZS_ERROR_WITH_CODEMSG(statusCode, tmp2);
 }
 
 void nstable::throwError(const _TCHAR* caption, nstable* tb)
 {
-    _TCHAR tmp[1024]={0x00};
+    _TCHAR tmp[1024] = { 0x00 };
     nstable::tdapErr(0x00, tb->stat(), tb->uri(), tmp);
-    _TCHAR tmp2[1024]={0x00};
-    _stprintf_s(tmp2, 1024, _T("[%s]\n%s\n"),caption, tmp);
+    _TCHAR tmp2[1024] = { 0x00 };
+    _stprintf_s(tmp2, 1024, _T("[%s]\n%s\n"), caption, tmp);
     THROW_BZS_ERROR_WITH_CODEMSG(tb->stat(), tmp2);
-
 }
 
 _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
@@ -836,8 +877,8 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
     else
 #endif
         _tcscpy(buf, path);
-    _TUCHAR* p = _tcsmrchr((_TUCHAR*)buf, PSEPARATOR_C);
-    _TUCHAR* p2 = _tcsmrchr((_TUCHAR*)buf, '=');
+    _TUCHAR* p = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, PSEPARATOR_C);
+    _TUCHAR* p2 = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, '=');
     if (p && p2)
     {
         if (p2 > p)
@@ -846,9 +887,9 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
             p2 = NULL;
     }
     if (p)
-        * p = 0x00;
+        *p = 0x00;
     if (p2)
-        * (p2 + 1) = 0x00;
+        *(p2 + 1) = 0x00;
     return buf;
 }
 
@@ -858,8 +899,8 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
 _TCHAR* nstable::getFileName(const _TCHAR* path, _TCHAR* filename)
 {
 
-    _TUCHAR* p = _tcsmrchr((_TUCHAR*)path, PSEPARATOR_C);
-    _TUCHAR* p2 = _tcsmrchr((_TUCHAR*)path, '=');
+    _TUCHAR* p = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)path, PSEPARATOR_C);
+    _TUCHAR* p2 = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)path, '=');
     filename[0] = 0x00;
     if (p2 > p)
         p = p2;
@@ -883,27 +924,29 @@ bool nstable::existsFile(const _TCHAR* filename)
 
 bool nstable::test(nstable* p)
 {
-	try
-	{
+    try
+    {
 
-	char* pp = (char*)(p);
+        char* pp = (char*)(p);
 #ifdef _WIN32
-	_TCHAR buf[256];
-	wsprintf(buf, _T("test(%p) = %p\n"), p, *((nstimpl**)(pp + 4)));
-	OutputDebugString(buf);
+        _TCHAR buf[256];
+        wsprintf(buf, _T("test(%p) = %p\n"), p, *((nstimpl**)(pp + 4)));
+        OutputDebugString(buf);
 #endif
-#ifdef __x86_64__ 
-	return (MEM_FREED_MAGIC_NUMBER != *((nstimpl**)(pp + sizeof(char*))));
+#ifdef __x86_64__
+        return (MEM_FREED_MAGIC_NUMBER != *((nstimpl**)(pp + sizeof(char*))));
 #else
-	return (MEM_FREED_MAGIC_NUMBER != *((nstimpl**)(pp + sizeof(char*))));
+        return (MEM_FREED_MAGIC_NUMBER != *((nstimpl**)(pp + sizeof(char*))));
 #endif
-	}
-	catch(...){};
-	return false;
+    }
+    catch (...)
+    {
+    };
+    return false;
 }
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs

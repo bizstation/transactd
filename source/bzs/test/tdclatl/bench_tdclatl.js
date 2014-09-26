@@ -74,7 +74,7 @@ var ft_mydatetime   = 48;
 var ft_mytimestamp  = 49;
 var ft_mytext       = 50;
 var ft_myblob       = 51;
-        
+		
 //key flag
 var key_duplicate   = 0;
 var key_changeable  = 1;
@@ -99,352 +99,352 @@ WScript.quit(main());
 /*--------------------------------------------------------------------------------*/
 function showTableError(tb, TableName)
 {
-    if (tb.stat != 0)
-        WScript.Echo(TableName + " error No." + tb.stat);
+	if (tb.stat != 0)
+		WScript.Echo(TableName + " error No." + tb.stat);
 }
 /*--------------------------------------------------------------------------------*/
 function openTable(db, tableName)
 {
-    var ret = db.OpenTable(tableName, OPEN_NORMAL, AUTO_CREATE_TABLE,OWNER_NAME,DIR);
-    if (ret == null)
-        WScript.Echo(tableName + " open erorr:No" + db.stat);
-    return ret;
+	var ret = db.OpenTable(tableName, OPEN_NORMAL, AUTO_CREATE_TABLE,OWNER_NAME,DIR);
+	if (ret == null)
+		WScript.Echo(tableName + " open erorr:No" + db.stat);
+	return ret;
 }
 /*--------------------------------------------------------------------------------*/
 function write(tb, start, end)
 {
-    tb.KeyNum = 0;
-    for (var i=start;i< end;i++)
-    {
-        tb.ClearBuffer();
-        tb.Vlng(fn_id) = i;
-        tb.Text("name") = i;
-        tb.Insert(changeCurrentNcc);
-        if (tb.Stat != 0)
-        {
-            WScript.Echo(tb.Stat);
-            return false;
-        }
-    }
-    return true;
+	tb.KeyNum = 0;
+	for (var i=start;i< end;i++)
+	{
+		tb.ClearBuffer();
+		tb.Vlng(fn_id) = i;
+		tb.Text("name") = i;
+		tb.Insert(changeCurrentNcc);
+		if (tb.Stat != 0)
+		{
+			WScript.Echo(tb.Stat);
+			return false;
+		}
+	}
+	return true;
 }
 /*--------------------------------------------------------------------------------*/
 function deleteAll(db,tb, start, end)
 {
-    db.BeginTrn(trans_bias);
-    for (var i=start;i<end;i++)
-    {
-        tb.Vlng(fn_id) = i;
-        tb.Seek();
-        if (tb.Stat==0)
-        {
-            tb.Delete();
-            if (tb.Stat!=0)
-            {
-                showTableError(tb, "deleteAll");
-                db.EndTrn();
-                return false;
-            }   
-        }
-    }
-    db.EndTrn();
-    return true;
+	db.BeginTrn(trans_bias);
+	for (var i=start;i<end;i++)
+	{
+		tb.Vlng(fn_id) = i;
+		tb.Seek();
+		if (tb.Stat==0)
+		{
+			tb.Delete();
+			if (tb.Stat!=0)
+			{
+				showTableError(tb, "deleteAll");
+				db.EndTrn();
+				return false;
+			}   
+		}
+	}
+	db.EndTrn();
+	return true;
 }
 /*--------------------------------------------------------------------------------*/
 function Inserts(db, tb,  start, end, name, mode, unit)
 {
-    var ret = deleteAll(db,tb, start, end);
-    
-    if (ret == true)
-    {
-        var now = new Date();
-        var ticks = now.getTime();
-        var total = end - start;
-        var count = total/unit;
-        var st = start;
-        var en = st;
-        while (en != end)
-        {
-            en = st + unit;
-            if (mode == USE_TRAN)
-                db.BeginTrn(trans_bias);
-            else if (mode == USE_BULKINSERT)
-                tb.BeginBulkInsert(); 
-            ret = write(tb, st, en);
-            if (mode == USE_BULKINSERT)
-                tb.CommitBulkInsert();
-            else if (mode == USE_TRAN)
-                db.EndTrn();
-            if (ret==false) break;
-            st = en;
-        }
-        if (ret == true)
-        {
-            now = new Date();
-            WScript.Echo((now.getTime() - ticks) + " msec" + name);
-            return;
-        }
-    }
-    WScript.Echo("Erorr " + name);
-    
+	var ret = deleteAll(db,tb, start, end);
+	
+	if (ret == true)
+	{
+		var now = new Date();
+		var ticks = now.getTime();
+		var total = end - start;
+		var count = total/unit;
+		var st = start;
+		var en = st;
+		while (en != end)
+		{
+			en = st + unit;
+			if (mode == USE_TRAN)
+				db.BeginTrn(trans_bias);
+			else if (mode == USE_BULKINSERT)
+				tb.BeginBulkInsert(); 
+			ret = write(tb, st, en);
+			if (mode == USE_BULKINSERT)
+				tb.CommitBulkInsert();
+			else if (mode == USE_TRAN)
+				db.EndTrn();
+			if (ret==false) break;
+			st = en;
+		}
+		if (ret == true)
+		{
+			now = new Date();
+			WScript.Echo((now.getTime() - ticks) + " msec" + name);
+			return;
+		}
+	}
+	WScript.Echo("Erorr " + name);
+	
 }
 /*--------------------------------------------------------------------------------*/
 function Reads(db, tb, start,  end, name, shapshot)
 {
-    var ret = true;
-    var now = new Date();
-    var ticks = now.getTime();
-    if (shapshot==USE_SNAPSHOT) db.BeginSnapShot();
-    for (var i=start;i<end;i++)
-    {
-        tb.Vlng(fn_id) = i;
-        tb.Seek();
-        if ((tb.Stat!=0) || (tb.Vlng(0) !=i))
-        {
-            WScript.Echo("Seek Error Stat = " + tb.Stat + " Value " + i + " = " + tb.Vlng(0));
-            ret = false;
-            break;
-        }   
-    }
-    if (shapshot==USE_SNAPSHOT) db.EndSnapShot();
-    if (ret == true)
-    {
-        now = new Date();
-        WScript.Echo((now.getTime() - ticks) + " msec" + name);
-    }else
-        WScript.Echo("Erorr " + name);
+	var ret = true;
+	var now = new Date();
+	var ticks = now.getTime();
+	if (shapshot==USE_SNAPSHOT) db.BeginSnapShot();
+	for (var i=start;i<end;i++)
+	{
+		tb.Vlng(fn_id) = i;
+		tb.Seek();
+		if ((tb.Stat!=0) || (tb.Vlng(0) !=i))
+		{
+			WScript.Echo("Seek Error Stat = " + tb.Stat + " Value " + i + " = " + tb.Vlng(0));
+			ret = false;
+			break;
+		}   
+	}
+	if (shapshot==USE_SNAPSHOT) db.EndSnapShot();
+	if (ret == true)
+	{
+		now = new Date();
+		WScript.Echo((now.getTime() - ticks) + " msec" + name);
+	}else
+		WScript.Echo("Erorr " + name);
 }
 /*--------------------------------------------------------------------------------*/
 function ReadRange(db, tb, start, end, name, unit, shapshot)
 {
-    var qb = new ActiveXObject('transactd.query');
-    var ret = true;
-    var now = new Date();
-    var ticks = now.getTime();
-    tb.KeyNum = 0;
-    var total = end - start;
-    var count = total/unit;
-    var st = start;
-    if (shapshot == USE_SNAPSHOT) db.BeginSnapShot();
-    var en = st;    
-    while (en != end)
-    {
-        en = st + unit;
-        tb.ClearBuffer();
-        qb.Where("id", ">=", st).And("id", "<", en);
+	var qb = new ActiveXObject('transactd.query');
+	var ret = true;
+	var now = new Date();
+	var ticks = now.getTime();
+	tb.KeyNum = 0;
+	var total = end - start;
+	var count = total/unit;
+	var st = start;
+	if (shapshot == USE_SNAPSHOT) db.BeginSnapShot();
+	var en = st;    
+	while (en != end)
+	{
+		en = st + unit;
+		tb.ClearBuffer();
+		qb.Where("id", ">=", st).And("id", "<", en);
   		tb.SetQuery(qb);
-        tb.Vlng(fn_id) = st;
-        tb.SeekGreater(true/*orEqual*/);
-        for(var i=st;i<en;i++)
-        {
-            if (tb.Vlng(fn_id) != i)
-            {
-                WScript.Echo("FindNext Error Stat = " + tb.Stat + " Value " + i + " = " + tb.Vlng(0));  
-                ret = false;
-                break;
-            }
-            tb.FindNext();  
-        }
-        if (ret==false) break;
-        st = en;
-        
-    }
-    if (shapshot == USE_SNAPSHOT) db.EndSnapShot();
-    if (ret == true)
-    {
-        now = new Date();
-        WScript.Echo((now.getTime() - ticks) + " msec" + name);
-    }else
-        WScript.Echo("Erorr " + name);
+		tb.Vlng(fn_id) = st;
+		tb.SeekGreater(true/*orEqual*/);
+		for(var i=st;i<en;i++)
+		{
+			if (tb.Vlng(fn_id) != i)
+			{
+				WScript.Echo("FindNext Error Stat = " + tb.Stat + " Value " + i + " = " + tb.Vlng(0));  
+				ret = false;
+				break;
+			}
+			tb.FindNext();  
+		}
+		if (ret==false) break;
+		st = en;
+		
+	}
+	if (shapshot == USE_SNAPSHOT) db.EndSnapShot();
+	if (ret == true)
+	{
+		now = new Date();
+		WScript.Echo((now.getTime() - ticks) + " msec" + name);
+	}else
+		WScript.Echo("Erorr " + name);
 }
 /*--------------------------------------------------------------------------------*/
 function Updates(db, tb, start,  end, name,  tran, unit)
 {
-    var ret = true;
-    var now = new Date();
-    var ticks = now.getTime();
-    tb.KeyNum = 0;
-    
-    var total = end - start;
-    var count = total/unit;
-    var st = start;
-    var en = st;
-    while (en != end)
-    {
-        en = st + unit;
-    
-        if (tran==USE_TRAN) db.BeginTrn(trans_bias);
-        for (var i=st;i<en;i++)
-        {
-            tb.Vlng(fn_id) = i;
-            tb.Seek();
-            if ((tb.Stat!=0) || (tb.Vlng(0) !=i))
-            {
-                WScript.Echo("Seek Error Stat = " + tb.Stat + " Value " + i + " = " + tb.Vlng(0));
-                ret = false;    
-                break;
-            }
-            tb.Text("name") = (i+1+tran);
-            tb.UpDate(changeCurrentNcc);
-            if (tb.Stat!=0)
-            {
-                showTableError(tb, name);
-                ret = false;        
-                break;
-            }
-        }
-        if (tran==USE_TRAN) db.EndTrn();
-        if (ret==false) break;
-        st = en;
-    }
-    
-    if (ret == true)
-    {
-        now = new Date();
-        WScript.Echo((now.getTime() - ticks) + " msec" + name);
-    }else
-        WScript.Echo("Erorr " + name);
+	var ret = true;
+	var now = new Date();
+	var ticks = now.getTime();
+	tb.KeyNum = 0;
+	
+	var total = end - start;
+	var count = total/unit;
+	var st = start;
+	var en = st;
+	while (en != end)
+	{
+		en = st + unit;
+	
+		if (tran==USE_TRAN) db.BeginTrn(trans_bias);
+		for (var i=st;i<en;i++)
+		{
+			tb.Vlng(fn_id) = i;
+			tb.Seek();
+			if ((tb.Stat!=0) || (tb.Vlng(0) !=i))
+			{
+				WScript.Echo("Seek Error Stat = " + tb.Stat + " Value " + i + " = " + tb.Vlng(0));
+				ret = false;    
+				break;
+			}
+			tb.Text("name") = (i+1+tran);
+			tb.UpDate(changeCurrentNcc);
+			if (tb.Stat!=0)
+			{
+				showTableError(tb, name);
+				ret = false;        
+				break;
+			}
+		}
+		if (tran==USE_TRAN) db.EndTrn();
+		if (ret==false) break;
+		st = en;
+	}
+	
+	if (ret == true)
+	{
+		now = new Date();
+		WScript.Echo((now.getTime() - ticks) + " msec" + name);
+	}else
+		WScript.Echo("Erorr " + name);
 }
 /*--------------------------------------------------------------------------------*/
 function createTestDataBase(db, uri)
 {
-    db.Create(uri);
-    if (db.Stat!=0)
-    {
-        WScript.Echo("createTestDataBase erorr:No." + db.Stat + " " + uri);
-        return false;
-    }
-    if (db.Open(uri, TYPE_BDF, OPEN_NORMAL, "", ""))
-    {
-        var dbdef = db.DbDef;
-        var tableid = 1;
-        
-        var tableDef =  dbdef.InsertTable(tableid);
-        tableDef.TableName = "user";
-        tableDef.FileName = "user.dat";
-        
-        var filedIndex = 0;
-        var fd =  dbdef.InsertField(tableid, filedIndex);
-        fd.Name = "id";
-        fd.Type = ft_integer;
-        fd.Len = 4;
-    
-        filedIndex = 1;
-        fd =  dbdef.InsertField(tableid, filedIndex);
-        fd.Name = "name";
-        fd.Type = ft_zstring;
-        fd.Len = 33;
-    
-        var keyNum = 0;
-        var key = dbdef.InsertKey(tableid, keyNum);
-        var seg1 = key.Segments(0);
-        seg1.FieldNum = 0;
-        seg1.Flags.Bits(key_extend) = true;    //extended key type
-        seg1.Flags.Bits(key_changeable) = true;//chanageable
-        key.SegmentCount = 1;
-        
-        tableDef.PrimaryKeyNum = keyNum;
-        dbdef.UpDateTableDef(tableid);
-        dbdef = null;
-        return true;
+	db.Create(uri);
+	if (db.Stat!=0)
+	{
+		WScript.Echo("createTestDataBase erorr:No." + db.Stat + " " + uri);
+		return false;
+	}
+	if (db.Open(uri, TYPE_BDF, OPEN_NORMAL, "", ""))
+	{
+		var dbdef = db.DbDef;
+		var tableid = 1;
+		
+		var tableDef =  dbdef.InsertTable(tableid);
+		tableDef.TableName = "user";
+		tableDef.FileName = "user.dat";
+		
+		var filedIndex = 0;
+		var fd =  dbdef.InsertField(tableid, filedIndex);
+		fd.Name = "id";
+		fd.Type = ft_integer;
+		fd.Len = 4;
+	
+		filedIndex = 1;
+		fd =  dbdef.InsertField(tableid, filedIndex);
+		fd.Name = "name";
+		fd.Type = ft_zstring;
+		fd.Len = 33;
+	
+		var keyNum = 0;
+		var key = dbdef.InsertKey(tableid, keyNum);
+		var seg1 = key.Segments(0);
+		seg1.FieldNum = 0;
+		seg1.Flags.Bits(key_extend) = true;    //extended key type
+		seg1.Flags.Bits(key_changeable) = true;//chanageable
+		key.SegmentCount = 1;
+		
+		tableDef.PrimaryKeyNum = keyNum;
+		dbdef.UpDateTableDef(tableid);
+		dbdef = null;
+		return true;
 
-    }
-    WScript.Echo("open daatabse erorr:No" +  db.stat);
-    return false;
+	}
+	WScript.Echo("open daatabse erorr:No" +  db.stat);
+	return false;
 }
 /* -------------------------------------------------------------------------------- */
 function showUsage()
 {
 
    var s = "usage: transactdBench databaseUri processNumber functionNumber\n "
-        + "\t --- Below is list of functionNumber  ---\n"
-        + "\t-1: all function\n"
-        + "\t 0: Insert\n"
-        + "\t 1: Insert in transaction. 20rec x 1000times\n"
-        + "\t 2: Insert by bulkmode. 20rec x 1000times\n"
-        + "\t 3: read each record\n"
-        + "\t 4: read each record with snapshpot\n"
-        + "\t 5: read range. 20rec x 1000times\n"
-        + "\t 6: read range with snapshpot. 20rec x 1000times\n"
-        + "\t 7: update\n"
-        + "\t 8: update in transaction. 20rec x 1000times\n"
-        + "exsample : transactdBench \"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n";
-     WScript.Echo(s);
+		+ "\t --- Below is list of functionNumber  ---\n"
+		+ "\t-1: all function\n"
+		+ "\t 0: Insert\n"
+		+ "\t 1: Insert in transaction. 20rec x 1000times\n"
+		+ "\t 2: Insert by bulkmode. 20rec x 1000times\n"
+		+ "\t 3: read each record\n"
+		+ "\t 4: read each record with snapshpot\n"
+		+ "\t 5: read range. 20rec x 1000times\n"
+		+ "\t 6: read range with snapshpot. 20rec x 1000times\n"
+		+ "\t 7: update\n"
+		+ "\t 8: update in transaction. 20rec x 1000times\n"
+		+ "exsample : transactdBench \"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n";
+	 WScript.Echo(s);
 }
 /*--------------------------------------------------------------------------------*/
 function main()
 {
-    
-    if (WScript.Arguments.length < 3)
-    {
-        showUsage();
-        return 1;   
-    }
-    
-    var URI  = WScript.Arguments(0);//"tdap://localhost/test?dbfile=test.bdf";
-    var db = new ActiveXObject('transactd.database');
-    var procID = parseInt(WScript.Arguments(1), 10);
-    var execType = parseInt(WScript.Arguments(2), 10);
-    
-    var count = 20000;
-    var start = procID * count + 1; 
-    var end = start + count;
-    
-    if (db.Open(URI, TYPE_BDF, OPEN_NORMAL, "", ""))
-    {
-        if (execType < 3)
-        	db.Drop();
-    }
-    if (db.Stat == 3106)
-    {
-        WScript.Echo("Error! Maybe MySQL or Tranasactd is stopping! "); 
-        return 1;
-    }
-    if (execType < 3)
-    {
-    	if (!createTestDataBase(db, URI))
-        	return 1;
+	
+	if (WScript.Arguments.length < 3)
+	{
+		showUsage();
+		return 1;   
 	}
-    var now = new Date();
-    WScript.Echo("Start Bench mark Insert Items = " +  count);
-    WScript.Echo(now);
-    WScript.Echo(URI);
-    WScript.Echo("----------------------------------------");
-    
-    if (db.Open(URI, TYPE_BDF, OPEN_NORMAL, "", ""))
-    {
-        var tb = openTable(db, "user");
-        if (tb != null)
-        {
-            if ((execType == -1) || (execType == 0))
-                Inserts(db, tb, start,  end, ": Insert", USE_NONE, 1);
-            if ((execType == -1) || (execType == 1))
-                Inserts(db, tb, start, end, ": Insert in transaction. 20rec ~ 1000times.", USE_TRAN, 20);
-            if ((execType == -1) || (execType == 2))
-                Inserts(db, tb, start, end, ": Insert by bulkmode. 20rec ~ 1000times.", USE_BULKINSERT, 20)
-            if ((execType == -1) || (execType == 3))
-                Reads(db, tb,  start, end, ": read each record.", USE_NONE);
-            if ((execType == -1) || (execType == 4))
-                Reads(db, tb,  start,end, ": read each record in snapshot.", USE_SNAPSHOT)
-            if ((execType == -1) || (execType == 5))
-                ReadRange(db, tb, start,  end, ": read range. 20rec ~ 1000times.", 20, USE_NONE)
-            if ((execType == -1) || (execType == 6))
-                ReadRange(db, tb, start,  end, ": read range with snapshpot. 20rec x 1000times.", 20, USE_SNAPSHOT)
-            if ((execType == -1) || (execType == 7))
-                Updates(db, tb, start, end, ": update.", USE_NONE, 1);
-            if ((execType == -1) || (execType == 8))
-                Updates(db, tb, start, end, ": update in transaction. 20rec ~ 1000times.", USE_TRAN, 20);
-            tb.Close();
-        }
-        
-    }
-    if (db.stat!=0)
-    {  
-        WScript.Echo("open table erorr:No" +  db.stat);
-        return 1;
-    }
+	
+	var URI  = WScript.Arguments(0);//"tdap://localhost/test?dbfile=test.bdf";
+	var db = new ActiveXObject('transactd.database');
+	var procID = parseInt(WScript.Arguments(1), 10);
+	var execType = parseInt(WScript.Arguments(2), 10);
+	
+	var count = 20000;
+	var start = procID * count + 1; 
+	var end = start + count;
+	
+	if (db.Open(URI, TYPE_BDF, OPEN_NORMAL, "", ""))
+	{
+		if (execType < 3)
+			db.Drop();
+	}
+	if (db.Stat == 3106)
+	{
+		WScript.Echo("Error! Maybe MySQL or Tranasactd is stopping! "); 
+		return 1;
+	}
+	if (execType < 3)
+	{
+		if (!createTestDataBase(db, URI))
+			return 1;
+	}
+	var now = new Date();
+	WScript.Echo("Start Bench mark Insert Items = " +  count);
+	WScript.Echo(now);
+	WScript.Echo(URI);
+	WScript.Echo("----------------------------------------");
+	
+	if (db.Open(URI, TYPE_BDF, OPEN_NORMAL, "", ""))
+	{
+		var tb = openTable(db, "user");
+		if (tb != null)
+		{
+			if ((execType == -1) || (execType == 0))
+				Inserts(db, tb, start,  end, ": Insert", USE_NONE, 1);
+			if ((execType == -1) || (execType == 1))
+				Inserts(db, tb, start, end, ": Insert in transaction. 20rec ~ 1000times.", USE_TRAN, 20);
+			if ((execType == -1) || (execType == 2))
+				Inserts(db, tb, start, end, ": Insert by bulkmode. 20rec ~ 1000times.", USE_BULKINSERT, 20)
+			if ((execType == -1) || (execType == 3))
+				Reads(db, tb,  start, end, ": read each record.", USE_NONE);
+			if ((execType == -1) || (execType == 4))
+				Reads(db, tb,  start,end, ": read each record in snapshot.", USE_SNAPSHOT)
+			if ((execType == -1) || (execType == 5))
+				ReadRange(db, tb, start,  end, ": read range. 20rec ~ 1000times.", 20, USE_NONE)
+			if ((execType == -1) || (execType == 6))
+				ReadRange(db, tb, start,  end, ": read range with snapshpot. 20rec x 1000times.", 20, USE_SNAPSHOT)
+			if ((execType == -1) || (execType == 7))
+				Updates(db, tb, start, end, ": update.", USE_NONE, 1);
+			if ((execType == -1) || (execType == 8))
+				Updates(db, tb, start, end, ": update in transaction. 20rec ~ 1000times.", USE_TRAN, 20);
+			tb.Close();
+		}
+		
+	}
+	if (db.stat!=0)
+	{  
+		WScript.Echo("open table erorr:No" +  db.stat);
+		return 1;
+	}
 
-    db.Close();
-    WScript.Echo("----------------------------------------");
-    return 0;
+	db.Close();
+	WScript.Echo("----------------------------------------");
+	return 0;
 }

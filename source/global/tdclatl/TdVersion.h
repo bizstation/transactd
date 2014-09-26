@@ -13,8 +13,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "resource.h"
@@ -23,24 +23,29 @@
 
 using namespace ATL;
 
-class ATL_NO_VTABLE CTdVersion : public CComObjectRootEx<CComSingleThreadModel>,
-    public CComCoClass<CTdVersion, &CLSID_TdVersion>,
-    public IDispatchImpl<ITdVersion, &IID_ITdVersion, &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
+class ATL_NO_VTABLE CTdVersion
+    : public CComObjectRootEx<CComSingleThreadModel>,
+      public CComCoClass<CTdVersion, &CLSID_TdVersion>,
+      public IDispatchImpl<ITdVersion, &IID_ITdVersion, &LIBID_transactd,
+                           /* wMajor = */ 1, /* wMinor = */ 0>
 {
 
 public:
-    CTdVersion() {memset(&m_ver, 0, sizeof(m_ver));}
+    CTdVersion() { memset(&m_ver, 0, sizeof(m_ver)); }
     bzs::db::protocol::tdap::btrVersion m_ver;
-    BEGIN_COM_MAP(CTdVersion) COM_INTERFACE_ENTRY(ITdVersion) COM_INTERFACE_ENTRY(IDispatch) END_COM_MAP()
+    BEGIN_COM_MAP(CTdVersion) COM_INTERFACE_ENTRY(ITdVersion)
+        COM_INTERFACE_ENTRY(IDispatch) END_COM_MAP()
 
-    DECLARE_PROTECT_FINAL_CONSTRUCT()
+        DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    HRESULT FinalConstruct() {return S_OK;}
+        HRESULT FinalConstruct()
+    {
+        return S_OK;
+    }
 
     void FinalRelease() {}
 
 public:
-
     STDMETHOD(get_MajorVersion)(short* Value);
     STDMETHOD(put_MajorVersion)(short Value);
     STDMETHOD(get_MinorVersion)(short* Value);
@@ -50,5 +55,4 @@ public:
 
     STDMETHOD(ModuleTypeString)(BSTR* Value);
     STDMETHOD(ModuleVersionShortString)(BSTR* Value);
-
 };

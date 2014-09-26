@@ -1,0 +1,24 @@
+HKCR
+{
+	transactd.pooledDbManager.1 = s 'pooledDbManager Class'
+	{
+		CLSID = s '{44CDEAF9-08CD-4EE8-B039-795A29C06E09}'
+	}
+	transactd.pooledDbManager = s 'pooledDbManager Class'
+	{		
+		CurVer = s 'transactd.pooledDbManager.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {44CDEAF9-08CD-4EE8-B039-795A29C06E09} = s 'pooledDbManager Class'
+		{
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}

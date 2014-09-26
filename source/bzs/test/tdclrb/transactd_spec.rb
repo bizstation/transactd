@@ -36,12 +36,14 @@ HOSTNAME = getHost()
 DBNAME = 'test'
 DBNAME_VAR = 'testvar'
 DBNAME_SF = 'testString'
+DBNAME_QT = 'querytest'
 TABLENAME = 'user'
 PROTOCOL = 'tdap://'
 BDFNAME = '?dbfile=test.bdf'
 URL = PROTOCOL + HOSTNAME + DBNAME + BDFNAME
 URL_VAR = PROTOCOL + HOSTNAME + DBNAME_VAR + BDFNAME
 URL_SF = PROTOCOL + HOSTNAME + DBNAME_SF + BDFNAME
+URL_QT = PROTOCOL + HOSTNAME + DBNAME_QT + BDFNAME
 FDI_ID = 0
 FDI_NAME = 1
 FDI_GROUP = 2
@@ -50,8 +52,7 @@ FDI_NAMEW = 2
 BULKBUFSIZE = 65535 - 1000
 TEST_COUNT = 20000
 FIVE_PERCENT_OF_TEST_COUNT = TEST_COUNT / 20
-
-TYPE_SCHEMA_BDF = 0
+ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT = TEST_COUNT / 4
 
 ISOLATION_READ_COMMITTED = true
 ISOLATION_REPEATABLE_READ = false
@@ -73,7 +74,7 @@ def testCreateDatabase(db)
 end
 
 def testOpenDatabase(db)
-  db.open(URL, TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+  db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
 end
 
@@ -131,7 +132,25 @@ def testOpenTable(db)
   return tb
 end
 
-def testVersion(db)
+def testClone()
+  db = Transactd::Database.new()
+  db.open(URL)
+  expect(db.stat()).to eq 0
+  expect(db.isOpened()).to eq true
+  db2 = db.clone
+  expect(db2.stat).to eq 0
+  expect(db2.isOpened()).to eq true
+  db2.close
+  expect(db2.stat).to eq 0
+  expect(db2.isOpened()).to eq false
+  db2 = nil
+  expect(db.stat).to eq 0
+  expect(db.isOpened()).to eq true
+  db.close
+end
+
+def testVersion()
+  db = Transactd::Database.new()
   db.connect(PROTOCOL + HOSTNAME)
   expect(db.stat()).to eq 0
   vv = Transactd::BtrVersions.new()
@@ -149,9 +168,11 @@ def testVersion(db)
   expect(engine_ver.majorVersion.to_s).to eq Transactd::TRANSACTD_VER_MAJOR.to_s
   expect(engine_ver.minorVersion.to_s).to eq Transactd::TRANSACTD_VER_MINOR.to_s
   expect(engine_ver.type.chr).to eq 'T'
+  db.close()
 end
 
-def testInsert(db)
+def testInsert()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   expect(tb).not_to be nil
   if tb.recordCount() == 0
@@ -176,9 +197,11 @@ def testInsert(db)
   db.endTrn()
   expect(tb.stat()).to eq 0
   tb.close()
+  db.close()
 end
 
-def testFind(db)
+def testFind()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.setKeyNum(0)
   tb.clearBuffer()
@@ -212,9 +235,11 @@ def testFind(db)
   tb.find(Transactd::Table::FindForword)
   expect(tb.stat()).to eq Transactd::STATUS_EOF
   tb.close()
+  db.close()
 end
 
-def testFindNext(db)
+def testFindNext()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.setKeyNum(0)
   tb.clearBuffer()
@@ -229,19 +254,21 @@ def testFindNext(db)
     expect(tb.getFVint(FDI_ID)).to eq i
   end
   tb.close()
+  db.close()
 end
 
-def testFindIn(db)
+def testFindIn()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.setKeyNum(0)
   tb.clearBuffer()
-  q = Transactd::QueryBase.new()
-  q.addInValue('10', true)
-  q.addInValue('300000')
-  q.addInValue('50')
-  q.addInValue('-1')
-  q.addInValue('80')
-  q.addInValue('5000')
+  q = Transactd::Query.new()
+  q.addSeekKeyValue('10', true)
+  q.addSeekKeyValue('300000')
+  q.addSeekKeyValue('50')
+  q.addSeekKeyValue('-1')
+  q.addSeekKeyValue('80')
+  q.addSeekKeyValue('5000')
   
   tb.setQuery(q)
   expect(tb.stat()).to eq 0
@@ -270,9 +297,9 @@ def testFindIn(db)
   expect(tb.stat()).to eq Transactd::STATUS_EOF
   
   # Many params
-  q.addInValue('1', true)
+  q.addSeekKeyValue('1', true)
   2.upto(10000) do |i|
-    q.addInValue(i.to_s)
+    q.addSeekKeyValue(i.to_s)
   end
   tb.setQuery(q)
   expect(tb.stat()).to eq 0
@@ -302,9 +329,11 @@ def testFindIn(db)
   expect(i).to eq 10000
   
   tb.close()
+  db.close()
 end
 
-def testGetPercentage(db)
+def testGetPercentage()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.clearBuffer()
   vv = TEST_COUNT / 2 + 1
@@ -314,9 +343,11 @@ def testGetPercentage(db)
   per = tb.getPercentage()
   expect((5000 - per).abs).to be < 500 # 500 = 5%
   tb.close()
+  db.close()
 end
 
-def testMovePercentage(db)
+def testMovePercentage()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.clearBuffer()
   tb.seekByPercentage(5000) # 50%
@@ -325,9 +356,11 @@ def testMovePercentage(db)
   expect(tb.stat()).to eq 0
   expect((TEST_COUNT / 2 + 1 - v).abs).to be < FIVE_PERCENT_OF_TEST_COUNT
   tb.close()
+  db.close()
 end
 
-def testGetEqual(db)
+def testGetEqual()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   db.beginSnapshot()
   vv = 1
@@ -339,9 +372,11 @@ def testGetEqual(db)
   end
   db.endSnapshot()
   tb.close()
+  db.close()
 end
 
-def testGetNext(db)
+def testGetNext()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   db.beginSnapshot()
   vv = 2
@@ -355,9 +390,11 @@ def testGetNext(db)
   end
   db.endSnapshot()
   tb.close()
+  db.close()
 end
 
-def testGetPrevious(db)
+def testGetPrevious()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   db.beginSnapshot()
   vv = TEST_COUNT + 1
@@ -373,9 +410,11 @@ def testGetPrevious(db)
   expect(tb.getFVstr(FDI_NAME)).to eq 'kosaka'
   db.endSnapshot()
   tb.close()
+  db.close()
 end
 
-def testGetGreater(db)
+def testGetGreater()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   vv = TEST_COUNT * 3 / 4
   tb.clearBuffer()
@@ -392,9 +431,11 @@ def testGetGreater(db)
   tb.seekPrev()
   expect(tb.getFVint(FDI_ID)).to eq vv
   tb.close()
+  db.close()
 end
 
-def testGetLessThan(db)
+def testGetLessThan()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   vv = TEST_COUNT * 3 / 4
   tb.clearBuffer()
@@ -411,25 +452,31 @@ def testGetLessThan(db)
   tb.seekPrev()
   expect(tb.getFVint(FDI_ID)).to eq vv - 2
   tb.close()
+  db.close()
 end
 
-def testGetFirst(db)
+def testGetFirst()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.clearBuffer()
   tb.seekFirst()
   expect(tb.getFVstr(FDI_NAME)).to eq 'kosaka'
   tb.close()
+  db.close()
 end
 
-def testGetLast(db)
+def testGetLast()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.clearBuffer()
   tb.seekLast()
   expect(tb.getFVint(FDI_ID)).to eq TEST_COUNT + 2
   tb.close()
+  db.close()
 end
 
-def testMovePosition(db)
+def testMovePosition()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.clearBuffer()
   vv = TEST_COUNT * 3 / 4
@@ -450,9 +497,11 @@ def testMovePosition(db)
   tb.seekByBookmark(pos)
   expect(tb.getFVint(FDI_ID)).to eq pos_vv
   tb.close()
+  db.close()
 end
 
-def testUpdate(db)
+def testUpdate()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   db.beginTrn()
   # test of ncc
@@ -512,10 +561,12 @@ def testUpdate(db)
   tb.seek()
   expect(tb.getFVstr(FDI_NAME)).to eq 'ABC'
   tb.close()
+  db.close()
 end
 
-def testSnapShot(db)
-  db2 = Transactd::Database::createObject()
+def testSnapShot()
+  db = Transactd::Database.new()
+  db2 = Transactd::Database.new()
   db2.connect(PROTOCOL + HOSTNAME + DBNAME , true)
   expect(db2.stat()).to eq 0
   tb = testOpenTable(db)
@@ -551,13 +602,15 @@ def testSnapShot(db)
     expect(secondValue).to eq firstValue
   end
   # ----------------------------------------------------
-  tb.close()
   tb2.close()
+  tb.close()
   db2.close()
+  db.close()
 end
 
-def testTransactionLock(db)
-  db2 = Transactd::Database::createObject()
+def testTransactionLock()
+  db = Transactd::Database.new()
+  db2 = Transactd::Database.new()
   db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
   expect(db2.stat()).to eq 0
   tb = testOpenTable(db)
@@ -634,13 +687,15 @@ def testTransactionLock(db)
   tb2.setKeyNum(0)
   tb2.seekFirst()
   expect(tb2.getFVstr(FDI_NAME)).to eq 'ABC'
-  tb.close()
   tb2.close()
+  tb.close()
   db2.close()
+  db.close()
 end
 
-def testConflict(db)
-  db2 = Transactd::Database::createObject()
+def testConflict()
+  db = Transactd::Database.new()
+  db2 = Transactd::Database.new()
   db2.connect(PROTOCOL + HOSTNAME + DBNAME , true)
   expect(db2.stat()).to eq 0
   tb = testOpenTable(db)
@@ -680,12 +735,98 @@ def testConflict(db)
   tb.update()
   expect(tb.stat()).to eq Transactd::STATUS_CHANGE_CONFLICT
   # ----------------------------------------------------
-  tb.close()
   tb2.close()
+  tb.close()
   db2.close()
+  db.close()
 end
 
-def testInsert2(db)
+def testExclusive()
+  # db mode exclusive
+  db = Transactd::Database.new()
+  db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_EXCLUSIVE)
+  expect(db.stat()).to eq 0
+  tb = db.openTable(TABLENAME)
+  expect(db.stat()).to eq 0
+  
+  # Can not open database from other connections.
+  db2 = Transactd::Database.new()
+  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  expect(db2.stat()).to eq 0
+  db2.open(URL, Transactd::TYPE_SCHEMA_BDF)
+  expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
+  
+  tb2 = db.openTable(TABLENAME)
+  expect(db.stat()).to eq 0
+  
+  tb.setKeyNum(0)
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  
+  tb.setFV(FDI_NAME, 'ABC123')
+  tb.update()
+  expect(tb.stat()).to eq 0
+  
+  tb2.setKeyNum(0)
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq 0
+  tb2.setFV(FDI_NAME, 'ABC124')
+  tb2.update()
+  expect(tb2.stat()).to eq 0
+  
+  tb2.close()
+  tb.close()
+  db2.close()
+  db.close()
+  
+  # table mode exclusive
+  db = Transactd::Database.new()
+  db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_READONLY)
+  expect(db.stat()).to eq 0
+  tb = db.openTable(TABLENAME, Transactd::TD_OPEN_EXCLUSIVE)
+  expect(db.stat()).to eq 0
+  
+  db2 = Transactd::Database.new()
+  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  expect(db2.stat()).to eq 0
+  db2.open(URL, Transactd::TYPE_SCHEMA_BDF)
+  expect(db2.stat()).to eq 0
+  
+  # Can not open table from other connections.
+  tb2 = db2.openTable(TABLENAME)
+  expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
+  
+  # Can open table from the same connection.
+  tb3 = db.openTable(TABLENAME)
+  expect(db.stat()).to eq 0
+  
+  tb3.close()
+  tb2.close() if tb2 != nil
+  tb.close()
+  db2.close()
+  db.close()
+  
+  # reopen and update
+  db = Transactd::Database.new()
+  db.open(URL)
+  expect(db.stat()).to eq 0
+  tb = db.openTable(TABLENAME)
+  expect(db.stat()).to eq 0
+  
+  tb.setKeyNum(0)
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  
+  tb.setFV(FDI_NAME, 'ABC123')
+  tb.update()
+  expect(tb.stat()).to eq 0
+  
+  tb.close()
+  db.close()
+end
+
+def testInsert2()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   v = TEST_COUNT * 2
   db.beginTrn()
@@ -702,13 +843,15 @@ def testInsert2(db)
   expect(tb.getFVint(FDI_ID)).to eq 11
   db.endTrn()
   tb.close()
+  db.close()
 end
 
-def testDelete(db)
+def testDelete()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   # estimate count
   count = tb.recordCount(true)
-  is_valid_count = ((count - TEST_COUNT - 3).abs < FIVE_PERCENT_OF_TEST_COUNT)
+  is_valid_count = ((count - TEST_COUNT).abs < ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT)
   expect(is_valid_count).to be true
   if !is_valid_count
     puts "true record count = #{(TEST_COUNT + 3).to_s} and estimate recordCount count = #{count.to_s}"
@@ -744,30 +887,36 @@ def testDelete(db)
   db.endTrn()
   expect(tb.recordCount(false)).to eq 0
   tb.close()
+  db.close()
 end
 
-def testSetOwner(db)
+def testSetOwner()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.setOwnerName('ABCDEFG')
   expect(tb.stat()).to eq 0
   tb.clearOwnerName()
   expect(tb.stat()).to eq 0
   tb.close()
+  db.close()
 end
 
-def testDropIndex(db)
+def testDropIndex()
+  db = Transactd::Database.new()
   tb = testOpenTable(db)
   tb.dropIndex(false)
   expect(tb.stat()).to eq 0
   tb.close()
+  db.close()
 end
 
-def testLogin(db)
+def testLogin()
+  db = Transactd::Database.new()
   db.connect(PROTOCOL + HOSTNAME)
   expect(db.stat()).to eq 0
   if db.stat() == 0
     # second connection
-    db2 = Transactd::Database::createObject()
+    db2 = Transactd::Database.new()
     db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
     expect(db.stat()).to eq 0
     db2.close()
@@ -802,6 +951,7 @@ def testLogin(db)
   expect(db.stat()).to eq (25000 + 1049)
   db.disconnect(PROTOCOL + HOSTNAME + DBNAME)
   expect(db.stat()).to eq 0
+  db.close()
 end
 
 def isUtf16leSupport(db)
@@ -896,7 +1046,8 @@ def testCreateVarTable(db, id, name, fieldType, charset)
   tb.close() if tb != nil
 end
 
-def testCreateDatabaseVar(db)
+def testCreateDatabaseVar()
+  db = Transactd::Database.new()
   db.create(URL_VAR)
   if db.stat() == Transactd::STATUS_TABLE_EXISTS_ERROR
     testDropDatabaseVar(db)
@@ -904,7 +1055,7 @@ def testCreateDatabaseVar(db)
   end
   expect(db.stat()).to eq 0
   if (0 == db.stat())
-    db.open(URL_VAR, 0, 0)
+    db.open(URL_VAR, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
     expect(db.stat()).to eq 0
   end
   if (0 == db.stat())
@@ -916,9 +1067,10 @@ def testCreateDatabaseVar(db)
     testCreateVarTable(db, 4, 'user4', Transactd::Ft_mywvarbinary,  Transactd::CHARSET_CP932)
     testCreateVarTable(db, 5, 'user5', Transactd::Ft_myvarchar,     Transactd::CHARSET_UTF8B4)
     db.close()
-    db.open(PROTOCOL + HOSTNAME + DBNAME_VAR + '?dbfile=transactd_schemaname', 0, 0)
+    db.open(PROTOCOL + HOSTNAME + DBNAME_VAR + '?dbfile=transactd_schemaname')
     expect(db.stat()).to eq 0
   end
+  db.close()
 end
 
 def testDropDatabaseVar(db)
@@ -1067,7 +1219,8 @@ def testSetGetVar(tb, unicodeField, varCharField)
   expect(tb.getFVAstr(FDI_GROUP)).to eq '68'
 end
 
-def testVarField(db)
+def testVarField()
+  db = Transactd::Database.new()
   db.open(URL_VAR)
   expect(db.stat()).to eq 0
   tb = db.openTable('user1')
@@ -1097,6 +1250,7 @@ def testVarField(db)
   # utf8 varchar
   testSetGetVar(tb, true, true)
   tb.close()
+  db.close()
 end
 
 def doVarInsert(db, name, codePage, str, startid, endid, bulk)
@@ -1114,11 +1268,12 @@ def doVarInsert(db, name, codePage, str, startid, endid, bulk)
   tb.close()
 end
 
-def testVarInsert(db)
+def testVarInsert()
   startid = 1
   bulk = false
   str = '漢字文字のテスト' # too long kanji
   str2 = '123'
+  db = Transactd::Database.new()
   db.open(URL_VAR)
   expect(db.stat()).to eq 0
   if (0 == db.stat())
@@ -1143,6 +1298,7 @@ def testVarInsert(db)
     doVarInsert(db, 'user4', Transactd::CP_ACP,   '', startid, endid, bulk)
     doVarInsert(db, 'user5', Transactd::CP_UTF8,  '', startid, endid, bulk)
   end
+  db.close()
 end
 
 def doVarRead(db, name, codePage, str, num, key)
@@ -1167,11 +1323,12 @@ def doVarRead(db, name, codePage, str, num, key)
   tb.close()
 end
 
-def testVarRead(db)
+def testVarRead()
   str = '漢字文'
   str3 = '漢字文字のテ'
   str2 ='123'
   str4 ='1232'
+  db = Transactd::Database.new()
   db.open(URL_VAR)
   expect(db.stat()).to eq 0
   if (0 == db.stat())
@@ -1198,6 +1355,7 @@ def testVarRead(db)
     doVarRead(db, 'user4', Transactd::CP_ACP,   '120', 120, key)
     doVarRead(db, 'user5', Transactd::CP_UTF8,  '120', 120, key)
   end
+  db.close()
 end
 
 def doVarFilter(db, name, codePage, str, num, key)
@@ -1245,7 +1403,8 @@ def doVarFilter(db, name, codePage, str, num, key)
   tb.close()
 end
 
-def testFilterVar(db)
+def testFilterVar()
+  db = Transactd::Database.new()
   db.open(URL_VAR)
   expect(db.stat()).to eq 0
   if (0 == db.stat())
@@ -1277,8 +1436,8 @@ def testFilterVar(db)
     doVarFilter(db, 'user4', Transactd::CP_ACP,   '120', 120, key)
     doVarFilter(db, 'user5', Transactd::CP_UTF8,  '120', 120, key)
   end
+  db.close()
 end
-
 
 def testCreateTableStringFilter(db, id, name, type, type2)
   # create table
@@ -1514,14 +1673,15 @@ def doTestStringFilter(db, id, name, type, type2)
   tb.close()
 end
 
-def testStringFilter(db)
+def testStringFilter()
+  db = Transactd::Database.new()
   db.create(URL_SF)
   if db.stat() == Transactd::STATUS_TABLE_EXISTS_ERROR
     testDropDatabaseStringFilter(db)
     db.create(URL_SF)
   end
   expect(db.stat()).to eq 0
-  db.open(URL_SF, 0, 0)
+  db.open(URL_SF, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
   doTestStringFilter(   db, 1, 'zstring',    Transactd::Ft_zstring,    Transactd::Ft_wzstring)
   if (isUtf16leSupport(db))
@@ -1530,41 +1690,43 @@ def testStringFilter(db)
     doTestStringFilter( db, 2, 'myvarchar',  Transactd::Ft_myvarchar,  Transactd::Ft_myvarchar)
   end
   doTestStringFilter(   db, 3, 'mytext',     Transactd::Ft_mytext,     Transactd::Ft_myblob)
+  db.close()
 end
 
 def testDropDatabaseStringFilter(db)
-  db.open(URL_SF, 0, 0)
+  db.open(URL_SF)
   expect(db.stat()).to eq 0
   db.drop()
   expect(db.stat()).to eq 0
 end
 
 def testQuery()
-  q = Transactd::QueryBase.new()
+  q = Transactd::Query.new()
   q.queryString("id = 0 and name = 'Abc efg'")
   expect(q.toString()).to eq "id = '0' and name = 'Abc efg'"
   
   q.queryString('')
-  q.where('id', '=', '0').andWhere('name', '=', 'Abc efg')
+  q.where('id', '=', '0').and_('name', '=', 'Abc efg')
   expect(q.toString()).to eq "id = '0' and name = 'Abc efg'"
   
   q.queryString("select id,name id = 0 AND name = 'Abc&' efg'")
   expect(q.toString()).to eq "select id,name id = '0' AND name = 'Abc&' efg'"
   
   q.queryString('')
-  q.select('id', 'name').where('id', '=', '0').andWhere('name', '=', "Abc' efg")
+  q.select('id', 'name').where('id', '=', '0').and_('name', '=', "Abc' efg")
   expect(q.toString()).to eq "select id,name id = '0' and name = 'Abc&' efg'"
   
   q.queryString("select id,name id = 0 AND name = 'Abc&& efg'")
   expect(q.toString()).to eq "select id,name id = '0' AND name = 'Abc&& efg'"
   
   q.queryString('')
-  q.select('id', 'name').where('id', '=', '0').andWhere('name', '=', 'Abc& efg')
+  q.select('id', 'name').where('id', '=', '0').and_('name', '=', 'Abc& efg')
   expect(q.toString()).to eq "select id,name id = '0' and name = 'Abc&& efg'"
   
   q.queryString('*')
   expect(q.toString()).to eq '*'
   
+  q.queryString('')
   q.all()
   expect(q.toString()).to eq '*'
   
@@ -1586,7 +1748,7 @@ def testQuery()
   expect(q.toString()).to eq "select id,name,fc id = '2' and name = '3'"
   
   q.queryString('')
-  q.select('id', 'name', 'fc').where('id', '=', '2').andWhere('name', '=', '3')
+  q.select('id', 'name', 'fc').where('id', '=', '2').and_('name', '=', '3')
   expect(q.toString()).to eq "select id,name,fc id = '2' and name = '3'"
   
   #  IN include
@@ -1594,7 +1756,7 @@ def testQuery()
   expect(q.toString()).to eq "select id,name,fc in '1','2','3'"
   
   q.queryString('')
-  q.select('id', 'name', 'fc').In('1', '2', '3')
+  q.select('id', 'name', 'fc').in('1', '2', '3')
   expect(q.toString()).to eq "select id,name,fc in '1','2','3'"
   
   q.queryString("IN '1','2','3'")
@@ -1604,7 +1766,7 @@ def testQuery()
   expect(q.toString()).to eq "in '1','2','3'"
   
   q.queryString('')
-  q.In('1', '2', '3')
+  q.in('1', '2', '3')
   expect(q.toString()).to eq "in '1','2','3'"
   
   # special field name
@@ -1621,171 +1783,601 @@ def testQuery()
   q.queryString('')
   q.where('in', '<>', '1')
   expect(q.toString()).to eq "in <> '1'"
+  
+  # test auto_escape
+  q.queryString("code = ab'c", true)
+  expect(q.toString()).to eq "code = 'ab&'c'"
+  
+  q.queryString("code = ab&c", true)
+  expect(q.toString()).to eq "code = 'ab&&c'"
+  
+  q.queryString("code = abc&", true)
+  expect(q.toString()).to eq "code = 'abc&&'"
+  q.queryString("code = abc&&", true)
+  expect(q.toString()).to eq "code = 'abc&&&&'"
+  
+  q.queryString("code = 'abc&'", true)
+  expect(q.toString()).to eq "code = 'abc&&'"
+  q.queryString("code = 'abc&&'", true)
+  expect(q.toString()).to eq "code = 'abc&&&&'"
+  
+  q.queryString("code = 'ab'c'", true)
+  expect(q.toString()).to eq "code = 'ab&'c'"
+  
+  q.queryString("code = 'abc''", true)
+  expect(q.toString()).to eq "code = 'abc&''"
+  
+  q.queryString("code = abc'", true)
+  expect(q.toString()).to eq "code = 'abc&''"
+  
+  # Invalid single quote (') on the end of statement
+  q.queryString("code = 'abc", true)
+  expect(q.toString()).to eq "code = 'abc'"
+  
+  q.queryString("code = &abc", true)
+  expect(q.toString()).to eq "code = '&&abc'"
 end
 
+def createQTuser(db)
+  dbdef = db.dbDef()
+  td = Transactd::Tabledef.new()
+  td.setTableName('user')
+  td.setFileName('user.dat')
+  id = 1
+  td.id = id
+  td.pageSize = 2048
+  td.schemaCodePage = Transactd::CP_UTF8
+  td.charsetIndex = Transactd::CHARSET_UTF8B4
+  dbdef.insertTable(td)
+  expect(dbdef.stat()).to eq 0
+  # id field
+  fd = dbdef.insertField(id, 0)
+  fd.setName('id')
+  fd.type = Transactd::Ft_autoinc
+  fd.len = 4
+  # 名前 field
+  fd = dbdef.insertField(id, 1)
+  fd.setName('名前')
+  fd.type = Transactd::Ft_myvarchar
+  fd.setLenByCharnum(20)
+  # group field
+  fd = dbdef.insertField(id, 2)
+  fd.setName('group')
+  fd.type = Transactd::Ft_integer
+  fd.len = 4
+  # tel field
+  fd = dbdef.insertField(id, 3)
+  fd.setName('tel')
+  fd.type = Transactd::Ft_myvarchar
+  fd.setLenByCharnum(20)
+  # key 0 (primary) id
+  kd = dbdef.insertKey(id, 0)
+  kd.segment(0).fieldNum = 0
+  kd.segment(0).flags.bit8 = 1 # extended key type
+  kd.segment(0).flags.bit1 = 1 # changeable
+  kd.segmentCount = 1
+  td = dbdef.tableDefs(id)
+  td.primaryKeyNum = 0
+  # key 1 group
+  kd = dbdef.insertKey(id, 1)
+  kd.segment(0).fieldNum = 2
+  kd.segment(0).flags.bit8 = 1 # extended key type
+  kd.segment(0).flags.bit1 = 1 # changeable
+  kd.segment(0).flags.bit0 = 1 # duplicatable
+  kd.segmentCount = 1
+  # update
+  dbdef.updateTableDef(id)
+  expect(dbdef.stat()).to eq 0
+  # open test
+  tb = db.openTable(id)
+  expect(db.stat()).to eq 0
+  tb.close() if tb != nil
+  return true
+end
+
+def createQTgroups(db)
+  dbdef = db.dbDef()
+  td = Transactd::Tabledef.new()
+  td.setTableName('groups')
+  td.setFileName('groups.dat')
+  id = 2
+  td.id = id
+  td.pageSize = 2048
+  td.schemaCodePage = Transactd::CP_UTF8
+  td.charsetIndex = Transactd::CHARSET_UTF8B4
+  dbdef.insertTable(td)
+  expect(dbdef.stat()).to eq 0
+  # code field
+  fd = dbdef.insertField(id, 0)
+  fd.setName('code')
+  fd.type = Transactd::Ft_integer
+  fd.len = 4
+  # name field
+  fd = dbdef.insertField(id, 1)
+  fd.setName('name')
+  fd.type = Transactd::Ft_myvarbinary
+  fd.len = 33
+  # key 0 (primary) code
+  kd = dbdef.insertKey(id, 0)
+  kd.segment(0).fieldNum = 0
+  kd.segment(0).flags.bit8 = 1  # extended key type
+  kd.segment(0).flags.bit1 = 1  # changeable
+  kd.segmentCount = 1
+  td = dbdef.tableDefs(id)
+  td.primaryKeyNum = 0
+  # update
+  dbdef.updateTableDef(id)
+  expect(dbdef.stat()).to eq 0
+  # open test
+  tb = db.openTable(id)
+  expect(db.stat()).to eq 0
+  tb.close() if tb != nil
+  return true
+end
+
+def createQTextention(db)
+  dbdef = db.dbDef()
+  td = Transactd::Tabledef.new()
+  td.setTableName('extention')
+  td.setFileName('extention.dat')
+  id = 3
+  td.id = id
+  td.pageSize = 2048
+  td.schemaCodePage = Transactd::CP_UTF8
+  td.charsetIndex = Transactd::CHARSET_UTF8B4
+  dbdef.insertTable(td)
+  expect(dbdef.stat()).to eq 0
+  # id field
+  fd = dbdef.insertField(id, 0)
+  fd.setName('id')
+  fd.type = Transactd::Ft_integer
+  fd.len = 4
+  # comment field
+  fd = dbdef.insertField(id, 1)
+  fd.setName('comment')
+  fd.type = Transactd::Ft_myvarchar
+  fd.setLenByCharnum(60)
+  # key 0 (primary) id
+  kd = dbdef.insertKey(id, 0)
+  kd.segment(0).fieldNum = 0
+  kd.segment(0).flags.bit8 = 1  # extended key type
+  kd.segment(0).flags.bit1 = 1  # changeable
+  kd.segmentCount = 1
+  td = dbdef.tableDefs(id)
+  td.primaryKeyNum = 0
+  # update
+  dbdef.updateTableDef(id)
+  expect(dbdef.stat()).to eq 0
+  # open test
+  tb = db.openTable(id)
+  expect(db.stat()).to eq 0
+  tb.close() if tb != nil
+  return true
+end
+
+def insertQT(db, maxId)
+  db.beginTrn()
+  # insert user data
+  tb = db.openTable('user', Transactd::TD_OPEN_NORMAL)
+  expect(db.stat()).to eq 0
+  tb.clearBuffer()
+  for i in 1..maxId
+    tb.setFV(0, i)
+    tb.setFV(1, "#{i} user")
+    tb.setFV('group', ((i - 1) % 5) + 1)
+    tb.insert()
+    expect(tb.stat()).to eq 0
+  end
+  tb.close()
+  # insert groups data
+  tb = db.openTable('groups', Transactd::TD_OPEN_NORMAL)
+  expect(db.stat()).to eq 0
+  tb.clearBuffer()
+  for i in 1..100
+    tb.setFV(0, i)
+    tb.setFV(1, "#{i} group")
+    tb.insert()
+    expect(tb.stat()).to eq 0
+  end
+  tb.close()
+  # insert extention data
+  tb = db.openTable('extention', Transactd::TD_OPEN_NORMAL)
+  expect(db.stat()).to eq 0
+  tb.clearBuffer()
+  for i in 1..maxId
+    tb.setFV(0, i)
+    tb.setFV(1, "#{i} comment")
+    tb.insert()
+    expect(tb.stat()).to eq 0
+  end
+  tb.close()
+  db.endTrn()
+end
+
+def testCreateQueryTest()
+  # check database existence
+  db = Transactd::Database.new()
+  db.open(URL_QT, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+  if (db.stat() === 0)
+      db.close()
+      return
+  end
+  puts "\nDatabase " + DBNAME_QT + " not found\n"
+  db.create(URL_QT)
+  expect(db.stat()).to eq 0
+  db.open(URL_QT, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+  expect(db.stat()).to eq 0
+  # create tables
+  createQTuser(db)
+  createQTgroups(db)
+  createQTextention(db)
+  # insert data
+  insertQT(db, 20000)
+  db.close()
+end
+
+def testNewDelete()
+  db = Transactd::Database.new()
+  db.open(URL_QT)
+  for i in 0..499
+    q  = Transactd::Query.new()
+    rq = Transactd::RecordsetQuery.new()
+    gq = Transactd::GroupQuery.new()
+    f  = Transactd::FieldNames.new()
+    f.addValue('abc')
+    atu = Transactd::ActiveTable.new(db, 'user')
+    atu.index(0)
+    atg = Transactd::ActiveTable.new(db, 'groups')
+    atg.index(0)
+    fns = Transactd::FieldNames.new()
+    fns.keyField('a')
+    s = Transactd::Sum.new(fns)
+    c = Transactd::Count.new('a')
+    a = Transactd::Avg.new(fns)
+    mi = Transactd::Min.new(fns)
+    ma = Transactd::Max.new(fns)
+    rs = Transactd::Recordset.new()
+    # have to explicitly release
+    atu.release()
+    atg.release()
+  end
+  db.close()
+end
+
+def testJoin()
+  db = Transactd::Database.new()
+  db.open(URL_QT)
+  expect(db.stat()).to eq 0
+  atu = Transactd::ActiveTable.new(db, 'user')
+  atg = Transactd::ActiveTable.new(db, 'groups')
+  ate = Transactd::ActiveTable.new(db, 'extention')
+  q = Transactd::Query.new()
+  
+  atu.alias('名前', 'name')
+  q.select('id', 'name', 'group').where('id', '<=', '15000')
+  rs = atu.index(0).keyValue('1').read(q)
+  expect(rs.size()).to eq 15000
+  
+  # Join extention::comment
+  q.reset()
+  ate.index(0).join(rs,
+    q.select('comment').optimize(Transactd::QueryBase::JoinHasOneOrHasMany), 'id')
+  expect(rs.size()).to eq 15000
+  
+  # reverse and get first (so it means 'get last')
+  last = rs.reverse().first()
+  expect(last['id']).to eq 15000
+  expect(last['comment']).to eq '15000 comment'
+  
+  # Join group::name
+  q.reset()
+  atg.alias('name', 'group_name')
+  atg.index(0).join(rs, q.select('group_name'), 'group')
+  expect(rs.size()).to eq 15000
+  
+  # get last (the rs is reversed, so it means 'get first')
+  first = rs.last()
+  expect(first['id']).to eq 1
+  expect(first['comment']).to eq '1 comment'
+  expect(first['group_name']).to eq '1 group'
+  
+  # row in rs[15000 - 9]
+  rec = rs[15000 - 9]
+  expect(rec['group_name']).to eq '4 group'
+  
+  # orderby
+  rs.orderBy('group_name')
+  for i in 0..(15000 / 5 - 1)
+    expect(rs[i]['group_name']).to eq '1 group'
+  end
+  expect(rs[15000 / 5]['group_name']).to eq '2 group'
+  expect(rs[(15000 / 5) * 2]['group_name']).to eq '3 group'
+  expect(rs[(15000 / 5) * 3]['group_name']).to eq '4 group'
+  expect(rs[(15000 / 5) * 4]['group_name']).to eq '5 group'
+  
+  # union
+  q.reset()
+  q.select('id', 'name', 'group').where('id', '<=', '16000')
+  rs2 = atu.index(0).keyValue('15001').read(q)
+  expect(rs2.size()).to eq 1000
+  q.reset()
+  ate.index(0).join(rs2,
+    q.select('comment').optimize(Transactd::QueryBase::JoinHasOneOrHasMany), 'id')
+  expect(rs2.size()).to eq 1000
+  q.reset()
+  atg.index(0).join(rs2, q.select('group_name'), 'group')
+  expect(rs2.size()).to eq 1000
+  rs.unionRecordset(rs2)
+  expect(rs.size()).to eq 16000
+  # row in rs[15000]
+  expect(rs[15000]['id']).to eq 15001
+  # last
+  expect(rs.last()['id']).to eq 16000
+  
+  # group by
+  gq = Transactd::GroupQuery.new()
+  gq.keyField('group', 'id')
+  count1 = Transactd::Count.new('count')
+  gq.addFunction(count1)
+  
+  count2 = Transactd::Count.new('group1_count')
+  count2.when('group', '=', '1')
+  gq.addFunction(count2)
+  
+  rs.groupBy(gq)
+  expect(rs.size()).to eq 16000
+  expect(rs[0]['group1_count']).to eq 1
+  
+  # clone
+  rsv = rs.clone
+  gq.reset()
+  count3 = Transactd::Count.new('count')
+  gq.addFunction(count3).keyField('group')
+  rs.groupBy(gq)
+  expect(rs.size()).to eq 5
+  expect(rsv.size()).to eq 16000
+  
+  # having
+  rq = Transactd::RecordsetQuery.new()
+  rq.when('group1_count', '=', '1').or_('group1_count', '=', '2')
+  rsv.matchBy(rq)
+  expect(rsv.size()).to eq 3200
+  expect(rsv).not_to be nil
+  rsv = nil
+  expect(rsv).to be nil
+  
+  # top
+  rs3 = Transactd::Recordset.new()
+  rs.top(rs3, 10)
+  expect(rs3.size()).to eq 5
+  rs.top(rs3, 3)
+  expect(rs3.size()).to eq 3
+  expect(rs.size()).to eq 5
+  
+  # query new / delete
+  q1 = Transactd::RecordsetQuery.new()
+  q1.when('group1_count', '=', '1').or_('group1_count', '=', '2')
+  q1 = nil
+  
+  q2 = Transactd::Query.new()
+  q2.where('group1_count', '=', '1').or_('group1_count', '=', '2')
+  q2 = nil
+  
+  q3 = Transactd::GroupQuery.new()
+  q3.keyField('group', 'id')
+  q3 = nil
+  
+  atu.release()
+  atg.release()
+  ate.release()
+  db.close()
+end
+
+def testWirtableRecord()
+  db = Transactd::Database.new()
+  db.open(URL_QT)
+  expect(db.stat()).to eq 0
+  atu = Transactd::ActiveTable.new(db, 'user')
+  
+  rec = atu.index(0).getWritableRecord()
+  rec['id'] = 120000
+  rec['名前'] = 'aiba'
+  rec.save()
+  
+  rec.clear()
+  expect(rec['id']).not_to eq 120000
+  expect(rec['名前']).not_to eq 'aiba'
+  rec['id'] = 120000
+  rec.read()
+  expect(rec['id']).to eq 120000
+  expect(rec['名前']).to eq 'aiba'
+  
+  rec.clear()
+  rec['id'] = 120001
+  rec['名前'] = 'oono'
+  rec.insert() unless rec.read()
+  
+  rec.clear()
+  rec['id'] = 120001
+  rec.read()
+  expect(rec['id']).to eq 120001
+  expect(rec['名前']).to eq 'oono'
+  
+  # update only changed filed
+  rec.clear()
+  rec['id'] = 120001
+  rec['名前'] = 'matsumoto'
+  rec.update()
+  
+  rec.clear()
+  rec['id'] = 120001
+  rec.read()
+  expect(rec['id']).to eq 120001
+  expect(rec['名前']).to eq 'matsumoto'
+  
+  rec.del()
+  rec['id'] = 120000
+  rec.del()
+  
+  rec.clear()
+  rec['id'] = 120001
+  ret = rec.read()
+  expect(ret).to eq false
+  
+  rec.clear()
+  rec['id'] = 120000
+  ret = rec.read()
+  expect(ret).to eq false
+  
+  atu.release()
+  db.close()
+end
 
 describe Transactd do
-  before :each do
-    @db = Transactd::Database.createObject()
-  end
-  after :each do
-    @db.close()
-    @db = nil
-  end
   it 'create database' do
-    testCreateDatabase(@db)
+    db = Transactd::Database.new()
+    testCreateDatabase(db)
+    db.close()
   end
   it 'create table' do
-    testCreateDatabase(@db)
-    testCreateTable(@db)
+    db = Transactd::Database.new()
+    testCreateDatabase(db)
+    testCreateTable(db)
+    db.close()
   end
   it 'open table' do
-    testOpenTable(@db)
+    db = Transactd::Database.new()
+    testOpenTable(db)
+    db.close()
+  end
+  it 'clone db object' do
+    testClone()
   end
   it 'version' do
-    testVersion(@db)
+    testVersion()
   end
   it 'insert' do
-    testInsert(@db)
+    testInsert()
   end
   it 'find' do
-    testFind(@db)
+    testFind()
   end
   it 'findNext' do
-    testFindNext(@db)
+    testFindNext()
   end
   it 'findIn' do
-    testFindIn(@db)
+    testFindIn()
   end
   it 'get percentage' do
-    testGetPercentage(@db)
+    testGetPercentage()
   end
   it 'move percentage' do
-    testMovePercentage(@db)
+    testMovePercentage()
   end
   it 'get equal' do
-    testGetEqual(@db)
+    testGetEqual()
   end
   it 'get next' do
-    testGetNext(@db)
+    testGetNext()
   end
   it 'get previous' do
-    testGetPrevious(@db)
+    testGetPrevious()
   end
   it 'get greater' do
-    testGetGreater(@db)
+    testGetGreater()
   end
   it 'get less than' do
-    testGetLessThan(@db)
+    testGetLessThan()
   end
   it 'get first' do
-    testGetFirst(@db)
+    testGetFirst()
   end
   it 'get last' do
-    testGetLast(@db)
+    testGetLast()
   end
   it 'move position' do
-    testMovePosition(@db)
+    testMovePosition()
   end
   it 'update' do
-    testUpdate(@db)
+    testUpdate()
   end
   it 'snapshot' do
-    testSnapShot(@db)
+    testSnapShot()
   end
   it 'send conflict error' do
-    testConflict(@db)
+    testConflict()
   end
   it 'transaction' do
-    testTransactionLock(@db)
+    testTransactionLock()
+  end
+  it 'exclusive' do
+    testExclusive()
   end
   it 'insert2' do
-    testInsert2(@db)
+    testInsert2()
   end
   it 'delete' do
-    testDelete(@db)
+    testDelete()
   end
   it 'set owner' do
-    testSetOwner(@db)
+    testSetOwner()
   end
   it 'drop index' do
-    testDropIndex(@db)
+    testDropIndex()
   end
   it 'drop database' do
-    testDropDatabase(@db)
+    db = Transactd::Database.new()
+    testDropDatabase(db)
+    db.close()
   end
   it 'login' do
-    testLogin(@db)
+    testLogin()
   end
   it 'query' do
     testQuery()
   end
+  it 'create querytest db' do
+    testCreateQueryTest()
+  end
+  it 'new and delete objects' do
+    testNewDelete()
+  end
+  it 'activetable and join' do
+    testJoin()
+  end
+  it 'write with writableRecord' do
+    testWirtableRecord()
+  end
 end
 
 describe Transactd, 'var tables' do
-  before :each do
-    @db = Transactd::Database.createObject()
-  end
-  after :each do
-    @db.close()
-    @db = nil
-  end
   it 'create var database' do
-    testCreateDatabaseVar(@db)
+    testCreateDatabaseVar()
   end
   it 'set kanji char to field' do
-    testVarField(@db)
+    testVarField()
   end
   it 'insert kanji char to field' do
-    testVarInsert(@db)
+    testVarInsert()
   end
   it 'read kanji char from field' do
-    testVarRead(@db)
+    testVarRead()
   end
   it 'filter' do
-    testFilterVar(@db)
+    testFilterVar()
   end
   it 'drop var database' do
-    testDropDatabaseVar(@db)
+    db = Transactd::Database.new()
+    testDropDatabaseVar(db)
   end
 end
 
 describe Transactd, 'StringFilter' do
-  before :each do
-    @db = Transactd::Database.createObject()
-  end
-  after :each do
-    @db.close()
-    @db = nil
-  end
   it 'string filter' do
-    testStringFilter(@db)
+    testStringFilter()
   end
   it 'drop database' do
-    testDropDatabaseStringFilter(@db)
-  end
-end
-
-describe Transactd, 'convert' do
-  if !IS_WINDOWS
-    it 'convert char' do
-      dummy = ''
-      u8 = '123'
-      mbcArray = '123'.encode('Shift_JIS').bytes.to_a # bites Shift-JIS '漢字'
-      ret = Transactd::u8tombc(u8, -1, dummy, 256)
-      mbc = ret[1].force_encoding('Shift_JIS')
-      expect(mbc.bytes.to_a).to eq mbcArray
-      
-      u8 = '漢字'
-      mbcArray = '漢字'.encode('Shift_JIS').bytes.to_a # bites Shift-JIS '漢字'
-      ret = Transactd::u8tombc(u8, -1, dummy, 256)
-      mbc = ret[1].force_encoding('Shift_JIS')
-      expect(mbc.bytes.to_a).to eq mbcArray
-      
-      u8Array = '漢字'.encode('UTF-8').bytes.to_a # bites UTF-8 '漢字'
-      ret = Transactd::mbctou8(mbc, -1, dummy , 256)
-      u8 = ret[1].force_encoding('UTF-8')
-      expect(u8.bytes.to_a).to eq u8Array
-    end
+    db = Transactd::Database.new()
+    testDropDatabaseStringFilter(db)
   end
 end

@@ -1,5 +1,5 @@
-#ifndef	BZS_DB_BLOBSTRUCTS_H
-#define	BZS_DB_BLOBSTRUCTS_H
+#ifndef BZS_DB_BLOBSTRUCTS_H
+#define BZS_DB_BLOBSTRUCTS_H
 /*=================================================================
    Copyright (C) 2013 BizStation Corp All rights reserved.
 
@@ -21,12 +21,12 @@
 #include <bzs/env/compiler.h>
 
 namespace bzs
-{	
+{
 namespace db
 {
 
-#pragma option -a-
-pragma_pack1
+#pragma pack(push, 1)
+pragma_pack1;
 
 /** bolob buffer field
  *  size byte is allways 4byte.
@@ -34,52 +34,52 @@ pragma_pack1
  */
 struct blobField
 {
-	unsigned int size;
-	unsigned short fieldNum;
-	inline const char* data()const{return (const char*)(this+1);}
-	inline const blobField* next()const{return (const blobField*)(data()+size+2);};
+    unsigned int size;
+    unsigned short fieldNum;
+    inline const char* data() const { return (const char*)(this + 1); }
+    inline const blobField* next() const
+    {
+        return (const blobField*)(data() + size + 2);
+    }
 };
 
 struct blob
 {
-	inline blob(unsigned int size, unsigned short fnum, const unsigned char* dataptr)
-			:ptr(dataptr)
-	{
-		bf.fieldNum = fnum;
-		bf.size = size;
-	};
-	blobField bf;
-	const unsigned char* ptr;
+    inline blob(unsigned int size, unsigned short fnum,
+                const unsigned char* dataptr)
+        : ptr(dataptr)
+    {
+        bf.fieldNum = fnum;
+        bf.size = size;
+    }
+    blobField bf;
+    const unsigned char* ptr;
 };
 
 /** blob buffer header
- * 
+ *
  */
 struct blobHeader
 {
-	unsigned short rows;
-	unsigned short fieldCount;
-	mutable unsigned short curRow;
-	mutable blobField* nextField;
+    unsigned short rows;
+    unsigned short fieldCount;
+    mutable unsigned short curRow;
+    mutable blobField* nextField;
 #ifndef __x86_64__
-	blobField*  dymmySpace32; //8byte size space for 32bit
+    blobField* dymmySpace32; // 8byte size space for 32bit
 #endif
 
-	inline void resetCur() const
-	{
-		curRow = 0; 
-		nextField = (blobField*)(this+1);
-	}
+    inline void resetCur() const
+    {
+        curRow = 0;
+        nextField = (blobField*)(this + 1);
+    }
 };
 
-#pragma option -a
-pragma_pop
+#pragma pack(pop)
+pragma_pop;
 
-}//namespace db
-}//namespace bzs	
+} // namespace db
+} // namespace bzs
 
-#endif //BZS_DB_BLOBSTRUCTS_H
-
-
-
-
+#endif // BZS_DB_BLOBSTRUCTS_H

@@ -6,7 +6,6 @@
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
-
 /**
 @brief Insert records example
 
@@ -40,11 +39,9 @@ picture table
  ----------------------------------------
 
 Please execute the "create database" and "change schema" example
-    before execute this example.
+        before execute this example.
 
 */
-
-
 
 static const short fieldnum_id = 0;
 static const short fieldnum_name = 1;
@@ -55,12 +52,11 @@ static const short fieldnum_pic_type = 0;
 static const short fieldnum_pic_id = 1;
 static const short fieldnum_pic_pic = 2;
 
-
-void insertUser(fields& fds, int id, const _TCHAR* name, int groupid
-                                                    , const _TCHAR* tel)
+void insertUser(fields& fds, int id, const _TCHAR* name, int groupid,
+                const _TCHAR* tel)
 {
 
-    fds.clearValues();
+    fds.clear();
     fds[fieldnum_id] = id;
     fds[fieldnum_name] = name;
     fds[fieldnum_group] = groupid;
@@ -72,19 +68,17 @@ void insertUser(fields& fds, int id, const _TCHAR* name, int groupid
 void insertUsers(table_ptr tb)
 {
     fields fds(tb);
-    insertUser(fds, 1, _T("akio")   , 1, _T("81-3-2222-3569"));
-    insertUser(fds, 2, _T("yoko")   , 2, _T("81-263-80-5555"));
+    insertUser(fds, 1, _T("akio"), 1, _T("81-3-2222-3569"));
+    insertUser(fds, 2, _T("yoko"), 2, _T("81-263-80-5555"));
     insertUser(fds, 3, _T("satoshi"), 1, _T("81-3-1111-1234"));
-    insertUser(fds, 4, _T("keiko")  , 2, _T("81-26-222-3569"));
-    insertUser(fds, 5, _T("john")  ,  3, _T("81-26-222-3565"));
-
+    insertUser(fds, 4, _T("keiko"), 2, _T("81-26-222-3569"));
+    insertUser(fds, 5, _T("john"), 3, _T("81-26-222-3565"));
 }
-
 
 void insertGroup(fields& fds, int id, const _TCHAR* name)
 {
 
-    fds.clearValues();
+    fds.clear();
     fds[fieldnum_id] = id;
     fds[fieldnum_name] = name;
     insertRecord(fds);
@@ -98,20 +92,19 @@ void insertGroups(table_ptr tb)
     insertGroup(fds, 3, _T("finance"));
 }
 
-
-void insertPicure(table_ptr tb, short type, int id, const void* img, size_t size)
+void insertPicure(table_ptr tb, short type, int id, const void* img,
+                  size_t size)
 {
     fields fds(tb);
-    fds.clearValues();
+    fds.clear();
     fds[fieldnum_pic_type] = type;
     fds[fieldnum_pic_id] = id;
-    fds[fieldnum_pic_pic].setBin(img, size);
+    fds[fieldnum_pic_pic].setBin(img, (int)size);
     insertRecord(fds);
-
 }
 void readImage(const _TCHAR* path, std::vector<char>& s)
 {
-    std::ifstream ifs(path, std::ios::in | std::ios::binary );
+    std::ifstream ifs(path, std::ios::in | std::ios::binary);
 
     ifs.seekg(0, std::ios::end);
     s.resize(ifs.tellg());
@@ -123,10 +116,11 @@ void readImage(const _TCHAR* path, std::vector<char>& s)
 #pragma argsused
 int _tmain(int argc, _TCHAR* argv[])
 {
-    database_ptr db = createDatadaseObject();
+    database_ptr db = createDatabaseObject();
     try
     {
-        connectParams param(_T("tdap"), _T("localhost"), _T("test"), _T("test"));
+        connectParams param(_T("tdap"), _T("localhost"), _T("test"),
+                            _T("test"));
         openDatabase(db, param);
 
         table_ptr tb = openTable(db, _T("group1"));
@@ -145,9 +139,9 @@ int _tmain(int argc, _TCHAR* argv[])
         return 0;
     }
 
-    catch(bzs::rtl::exception& e)
+    catch (bzs::rtl::exception& e)
     {
-        std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+        std::tcout << _T("[ERROR] ") << *bzs::rtl::getMsg(e) << std::endl;
     }
     return 1;
 }

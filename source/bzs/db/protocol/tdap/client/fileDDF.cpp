@@ -16,9 +16,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <bzs/env/tstring.h>
-#pragma hdrstop
-
 #include "fileDDF.h"
 #include "nsDatabase.h"
 
@@ -35,12 +32,13 @@ namespace tdap
 namespace client
 {
 
-fileDDF::fileDDF(nsdatabase *pbe) : nstable(pbe) {m_keybuflen = 128;
-
+fileDDF::fileDDF(nsdatabase* pbe) : nstable(pbe)
+{
+    m_keybuflen = 128;
 }
 
-fileDDF::~fileDDF() {
-
+fileDDF::~fileDDF()
+{
 }
 
 void fileDDF::doOpen(const _TCHAR* Dir, char_td mode, const _TCHAR* OwnerName)
@@ -66,7 +64,8 @@ keylen_td fileDDF::writeKeyData()
     keylen_td len = 2;
     switch (m_keynum)
     {
-    case 0: memcpy(&keybuf[0], &id, len);
+    case 0:
+        memcpy(&keybuf[0], &id, len);
         break;
     case 1:
         len = 20;
@@ -90,7 +89,6 @@ void fileDDF::writeRecordData()
 
     datbuf.flag = flag;
     memset(datbuf.filler, 0, 9);
-
 }
 
 void fileDDF::onReadAfter()
@@ -101,12 +99,11 @@ void fileDDF::onReadAfter()
     strncpy(filename, datbuf.filename, 64);
     filename[64] = 0x00;
     flag = datbuf.flag;
-
 }
 
 void fileDDF::createTable(const _TCHAR* fullpath)
 {
-    fileSpec *fs;
+    fileSpec* fs;
     fs = (fileSpec*)malloc(512);
     memset(fs, 512, 0x00);
     fs->recLen = 97;
@@ -129,8 +126,8 @@ void fileDDF::createTable(const _TCHAR* fullpath)
     m_stat = nsdb()->stat();
 }
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs

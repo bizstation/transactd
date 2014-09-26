@@ -49,22 +49,17 @@ public:
         m_ptr = m_buf + sizeof(ushort_td);
         m_count = 0;
         m_buflen = BULKBUFSIZE;
-
     }
 
-    ~bulkInsert()
-    {
-        delete [] m_buf;
-    }
+    ~bulkInsert() { delete[] m_buf; }
 
     char* reallocBuffer(char* buf, int oldsize, int newSize)
     {
         char* p = new char[newSize];
         memcpy(p, buf, oldsize);
-        delete [] buf;
+        delete[] buf;
 
         return p;
-
     }
 
     ushort_td insert(const char* p, ushort_td size, nstable* tb)
@@ -73,17 +68,17 @@ public:
         if (m_count == (int)(USHRT_MAX - 3))
         {
             ins_rows = tb->commitBulkInsert(true /* auto */);
-            m_ptr = m_buf +sizeof(ushort_td);
+            m_ptr = m_buf + sizeof(ushort_td);
             m_count = 0;
         }
 
         // check over run. current size + need size
-        if ((m_ptr - m_buf )+ size + sizeof(ushort_td) > (uint_td)m_buflen)
+        if ((m_ptr - m_buf) + size + sizeof(ushort_td) > (uint_td)m_buflen)
         {
             if ((int)(m_buflen + BULKBUFSIZE) > m_maxBuflen)
             {
                 ins_rows = tb->commitBulkInsert(true /* auto */);
-                m_ptr = m_buf +sizeof(ushort_td);
+                m_ptr = m_buf + sizeof(ushort_td);
                 m_count = 0;
             }
             else
@@ -100,7 +95,6 @@ public:
         m_ptr += size;
         m_count++;
         return ins_rows;
-
     }
 
     void* data()
@@ -109,19 +103,15 @@ public:
         return m_buf;
     }
 
-    uint_td dataLen()
-    {
-        return (uint_td)(m_ptr - m_buf);
-    }
+    uint_td dataLen() { return (uint_td)(m_ptr - m_buf); }
 
-    int count() {return m_count;}
-
+    int count() { return m_count; }
 };
 
-}//namespace client
-}//namespace tdap
-}//namespace protocol
-}//namespace db
-}//namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 
-#endif//BZS_DB_PROTOCOL_TDAP_CLIENT_BULKINSERT_H
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_BULKINSERT_H

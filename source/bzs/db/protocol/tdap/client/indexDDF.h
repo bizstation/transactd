@@ -20,7 +20,6 @@
  ================================================================= */
 #include "table.h"
 
-
 namespace bzs
 {
 namespace db
@@ -32,8 +31,8 @@ namespace tdap
 namespace client
 {
 
-#pragma option -a1
-pragma_pack1
+#pragma pack(push, 1)
+pragma_pack1;
 
 struct SIDXDDF
 {
@@ -44,10 +43,8 @@ struct SIDXDDF
     short flag;
 };
 
-#pragma option -a
-pragma_pop
-
-
+#pragma pack(pop)
+pragma_pop;
 
 class indexDDF : public nstable
 {
@@ -71,14 +68,14 @@ public:
 
     char keybuf[128];
 
-    explicit indexDDF(nsdatabase *pbe);
+    explicit indexDDF(nsdatabase* pbe);
     void createTable(const _TCHAR* fullpath);
     using nstable::open;
 };
 
-}// namespace client
-}// namespace tdap
-}// namespace protocol
-}// namespace db
-}// namespace bzs
-#endif//BZS_DB_PROTOCOL_TDAP_CLIENT_INDEXDDF_H
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
+#endif // BZS_DB_PROTOCOL_TDAP_CLIENT_INDEXDDF_H

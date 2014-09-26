@@ -12,8 +12,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include "stdafx.h"
@@ -21,12 +21,10 @@
 #include "Database.h"
 #include "DbDef.h"
 #include "TableDef.h"
-#include "Field.h"
 #include "QueryBase.h"
+#include <bzs/db/protocol/tdap/client/fields.h>
 
 using namespace bzs::db::protocol::tdap;
-
-
 
 short CTableTd::GetFieldNum(VARIANT* Index)
 {
@@ -139,19 +137,19 @@ STDMETHODIMP CTableTd::put_Vbin(VARIANT Index, BSTR Value)
 
 STDMETHODIMP CTableTd::get_TableDef(ITableDef** Value)
 {
-    CComObject<CTableDef> *piObj;
+    CComObject<CTableDef>* piObj;
     CComObject<CTableDef>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		m_tabledef = const_cast<tabledef*>(m_tb->tableDef());
-		piObj->m_tabledefPtr = &m_tabledef;
-		_ASSERTE(m_db);
-		ITableDef* tbd;
-		piObj->QueryInterface(IID_ITableDef, (void**)&tbd);
-		_ASSERTE(tbd);
-		*Value = tbd;
-	}else
-		*Value = 0;
+    if (piObj)
+    {
+        m_tabledef = const_cast<tabledef*>(m_tb->tableDef());
+        piObj->m_tabledefPtr = &m_tabledef;
+        ITableDef* tbd;
+        piObj->QueryInterface(IID_ITableDef, (void**)&tbd);
+        _ASSERTE(tbd);
+        *Value = tbd;
+    }
+    else
+        *Value = 0;
     return S_OK;
 }
 
@@ -211,13 +209,13 @@ STDMETHODIMP CTableTd::Seek(eLockType lockBias)
 
 STDMETHODIMP CTableTd::SeekGreater(VARIANT_BOOL orEqual, eLockType lockBias)
 {
-    m_tb->seekGreater(orEqual,(ushort_td)lockBias);
+    m_tb->seekGreater(orEqual, (ushort_td)lockBias);
     return S_OK;
 }
 
 STDMETHODIMP CTableTd::SeekLessThan(VARIANT_BOOL orEqual, eLockType lockBias)
 {
-    m_tb->seekLessThan(orEqual,(ushort_td)lockBias);
+    m_tb->seekLessThan(orEqual, (ushort_td)lockBias);
     return S_OK;
 }
 
@@ -245,9 +243,10 @@ STDMETHODIMP CTableTd::get_RecordLength(long* Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_RecordCount(long* Value)
+STDMETHODIMP CTableTd::RecordCount(VARIANT_BOOL estimate,
+                                   VARIANT_BOOL fromCurrent, long* Value)
 {
-    *Value = m_tb->recordCount();
+    *Value = m_tb->recordCount((estimate == -1), (fromCurrent == -1));
     return S_OK;
 }
 
@@ -305,12 +304,6 @@ STDMETHODIMP CTableTd::FindPrev(VARIANT_BOOL notIncCurrent)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_Filter(BSTR* Value)
-{
-    *Value = ::SysAllocString(m_tb->filterStr());
-    return S_OK;
-}
-
 STDMETHODIMP CTableTd::put_Filter(BSTR Value)
 {
     m_tb->setFilter(Value, m_filterRejectCount, m_filterGetCount);
@@ -363,7 +356,6 @@ STDMETHODIMP CTableTd::CommitBulkInsert()
 {
     m_tb->commitBulkInsert(false);
     return S_OK;
-
 }
 
 STDMETHODIMP CTableTd::get_FilterGetCount(long* Value)
@@ -390,26 +382,28 @@ STDMETHODIMP CTableTd::put_FilterRejectCount(long Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::Field(VARIANT Index, IField** Value)
+STDMETHODIMP CTableTd::Field(VARIANT Index, IField** retVal)
 {
 
     short index = GetFieldNum(&Index);
     if (index < 0)
         return Error("Invalid index", IID_ITable);
 
-    CComObject<CField> *piObj;
-    CComObject<CField>::CreateInstance(&piObj);
-	if (piObj)
-	{
-		piObj->m_tb = m_tb;
-		piObj->m_index = index;
-		IField* tbd;
-		piObj->QueryInterface(IID_IField, (void**)&tbd);
-		_ASSERTE(tbd);
-		*Value = piObj;
-	}
-	else
-		*Value = 0;
+    if (m_fieldObj == NULL)
+    {
+        CComObject<CField>::CreateInstance(&m_fieldObj);
+        if (m_fieldObj)
+            m_fieldObj->AddRef();
+    }
+    if (m_fieldObj)
+    {
+        client::fields fds(*m_tb);
+        m_fieldObj->m_fd = fds[index];
+        IField* fd;
+        m_fieldObj->QueryInterface(IID_IField, (void**)&fd);
+        _ASSERTE(fd);
+        *retVal = fd;
+    }
     return S_OK;
 }
 
@@ -489,15 +483,13 @@ STDMETHODIMP CTableTd::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
 {
     if (Value)
     {
-        wchar_t tmp[512] =
-        {NULL};
+        wchar_t tmp[512] = { NULL };
         m_tb->tdapErr((HWND)hWnd, tmp);
         *Value = ::SysAllocString(tmp);
     }
     else
         m_tb->tdapErr((HWND)hWnd);
     return S_OK;
-
 }
 
 STDMETHODIMP CTableTd::Unlock_(unsigned int bm)
@@ -602,23 +594,28 @@ STDMETHODIMP CTableTd::SmartUpdate(void)
 
 STDMETHODIMP CTableTd::KeyValueDescription(BSTR* Value)
 {
-	wchar_t tmp[8192];
-	m_tb->keyValueDescription(tmp, 8192);
-	*Value = tmp;
-	return S_OK;
+    wchar_t tmp[8192];
+    m_tb->keyValueDescription(tmp, 8192);
+    *Value = tmp;
+    return S_OK;
 }
 
 STDMETHODIMP CTableTd::SetQuery(IQueryBase* Value)
 {
-	if (Value)
-	{
-		CQueryBase* p = dynamic_cast<CQueryBase*>(Value);
-		if (p)
-		{	
-			m_tb->setQuery(&p->query());
-			return S_OK;
-		}
-	}
-	return S_FALSE;
-	
+    if (Value)
+    {
+        CQueryBase* p = dynamic_cast<CQueryBase*>(Value);
+        if (p)
+        {
+            m_tb->setQuery(&p->query());
+            return S_OK;
+        }
+    }
+    return S_FALSE;
+}
+
+STDMETHODIMP CTableTd::FieldNumByName(BSTR Name, short* Value)
+{
+    *Value = m_tb->fieldNumByName(Name);
+    return S_FALSE;
 }

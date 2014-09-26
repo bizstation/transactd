@@ -12,8 +12,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include <stdlib.h>
@@ -31,7 +31,7 @@ namespace rtl
 
 static const int MEMORY_UNIT = 8192;
 
-stringBuffer::stringBuffer(size_t size):m_ptr(NULL),m_len(0),m_pos(0)
+stringBuffer::stringBuffer(size_t size) : m_ptr(NULL), m_len(0), m_pos(0)
 {
     alloc(size);
 }
@@ -40,6 +40,7 @@ stringBuffer::~stringBuffer()
 {
     if (m_ptr)
         free(m_ptr);
+    m_ptr = NULL;
 }
 
 void stringBuffer::clear()
@@ -58,7 +59,8 @@ size_t stringBuffer::alloc(size_t size)
 
 size_t stringBuffer::realloc(size_t size)
 {
-    size = ((size / MEMORY_UNIT) + ((size % MEMORY_UNIT) ? 1:0))*MEMORY_UNIT;
+    size =
+        ((size / MEMORY_UNIT) + ((size % MEMORY_UNIT) ? 1 : 0)) * MEMORY_UNIT;
     m_ptr = (char*)::realloc(m_ptr, size);
     if (m_ptr)
         m_len = size;
@@ -97,5 +99,5 @@ WCHAR* stringBuffer::getPtrW(size_t size /* charnum */)
     return p;
 }
 
-}//namespace rtl
-}//namespace bzs
+} // namespace rtl
+} // namespace bzs

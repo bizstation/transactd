@@ -1,0 +1,38 @@
+###                                                             ###
+###  Transactd O/R mapper source code generator configurations  ###
+###                                                             ###
+
+## Programing language of the source code which will be generated
+lang = cpp
+
+## Number of the template files
+files = 2
+
+## Paths of the template files
+##  Remove extensions (ex:".cpp" ".h") if the template is C++.
+file1 = ormDataClass_template
+file2 = ormMapClass_template
+
+## Output directory
+saveDir = 
+
+## Prefix of setter
+setPrefix = set
+
+## Prefix of getter
+getPrefix = get
+
+## Export keyword macro for export classes
+##  Uncomment to enable the macro which wraps export keywords
+##  (such as __declspec(dllexport)). If you use the generated
+##  classes in DLL, uncomment below.
+#externWord=AGRPACK
+
+## Path of the file which includes field aliases list
+#fieldRenameList = c:\xxx or ~/xxx
+
+## Namespace of the data class (ex:name_space = bzs)
+#name_space = 
+
+## Namespace of the map class (ex:name_space = bzs/map)
+#name_space_map = 

@@ -6,7 +6,6 @@
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
-
 /** @brief change schema and  convert table example
 
 This program  change "user" table.
@@ -20,14 +19,13 @@ Please execute the "create database" example before execute this example.
 static const short tablenum_user = 1;
 static const short fieldnum_name = 1;
 
-
 /** show database operation error
 */
-void showError(const _TCHAR* caption,const _TCHAR* tableName, short statusCode)
+void showError(const _TCHAR* caption, const _TCHAR* tableName, short statusCode)
 {
-    _TCHAR tmp[1024]={0x00};
+    _TCHAR tmp[1024] = { 0x00 };
     nstable::tdapErr(0x00, statusCode, tableName, tmp);
-    _tprintf(_T("%s error No.%ld %s\n"),caption, statusCode, tmp);
+    _tprintf(_T("[ERROR] %s No.%ld %s\n"), caption, statusCode, tmp);
 }
 
 /** Change user table schema
@@ -35,20 +33,20 @@ void showError(const _TCHAR* caption,const _TCHAR* tableName, short statusCode)
 bool changeUserTable(dbdef* def)
 {
 
-    //change name size
-    tabledef** td = def->tableDefPtr(tablenum_user);
-    fielddef* fd = &(*td)->fieldDefs[fieldnum_name];
+    // change name size
+    tabledef* td = def->tableDefs(tablenum_user);
+    fielddef* fd = &td->fieldDefs[fieldnum_name];
     fd->setLenByCharnum(64);
 
-    //add tel field
-    fd = def->insertField((*td)->id, (*td)->fieldCount);
+    // add tel field
+    fd = def->insertField(tablenum_user, td->fieldCount);
     fd->setName(_T("tel"));
     fd->type = ft_mychar;
-    fd->setCharsetIndex( CHARSET_LATIN1);
+    fd->setCharsetIndex(CHARSET_LATIN1);
     fd->setLenByCharnum(16);
 
-    //write user table schema
-    def->updateTableDef((*td)->id);
+    // write user table schema
+    def->updateTableDef(tablenum_user);
     if (def->stat() != 0)
     {
         showError(_T("edit schema table"), NULL, def->stat());
@@ -70,12 +68,12 @@ bool openDbExclusive(database* db, const _TCHAR* uri)
     return true;
 }
 
-void __STDCALL onCopyData(database* db, int recordCount, int count, bool &cancel)
+void __STDCALL
+    onCopyData(database* db, int recordCount, int count, bool& cancel)
 {
-     if (count == 0)
-         _tprintf(_T("\n"));
-     _tprintf(_T("."));
-
+    if (count == 0)
+        _tprintf(_T("\n"));
+    _tprintf(_T("."));
 }
 
 #pragma argsused
@@ -87,12 +85,12 @@ int _tmain(int argc, _TCHAR* argv[])
 
     if (openDbExclusive(db, uri))
     {
-        //backup current user table schema
+        // backup current user table schema
         db->dbDef()->pushBackup(tablenum_user);
 
         if (changeUserTable(db->dbDef()))
         {
-            //convert table if table exist;
+            // convert table if table exist;
             if (db->existsTableFile(tablenum_user, NULL))
             {
                 db->setOnCopyData(onCopyData);
@@ -106,10 +104,11 @@ int _tmain(int argc, _TCHAR* argv[])
         if (db->stat())
         {
             result = db->stat();
-            //restore user table schema
+            // restore user table schema
             db->dbDef()->popBackup(tablenum_user);
-        }else
-            _tprintf(_T("\nchage table success. \n"));
+        }
+        else
+            _tprintf(_T("\nchange schema success. \n"));
         db->close();
     }
     database::destroy(db);

@@ -14,8 +14,8 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
 #include <bzs/netsvc/server/IAppModule.h>
@@ -26,24 +26,25 @@ namespace db
 {
 namespace protocol
 {
- 
+
 class ICommandExecuter
 {
-		
+
 public:
-	virtual ~ICommandExecuter(){};
-	virtual size_t perseRequestEnd(const char* p, size_t size, bool& comp)const=0;
-	virtual size_t getAcceptMessage(char* message, size_t bufsize)=0;
-	virtual bool parse(const char* p, size_t size)=0;
-	virtual int execute(char* resultBuffer, size_t& size, netsvc::server::buffers* optionalData) = 0;
-	virtual bool isShutDown() = 0;
-	virtual void cleanup() = 0;
+    virtual ~ICommandExecuter(){};
+    virtual size_t perseRequestEnd(const char* p, size_t size,
+                                   bool& comp) const = 0;
+    virtual size_t getAcceptMessage(char* message, size_t bufsize) = 0;
+    virtual bool parse(const char* p, size_t size) = 0;
+    // virtual int execute(netsvc::server::IResultBuffer& resultBuffer, size_t&
+    // size, netsvc::server::buffers* optionalData) = 0;
+    virtual int execute(netsvc::server::netWriter* nw) = 0;
+    virtual bool isShutDown() = 0;
+    virtual void cleanup() = 0;
 };
 
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 
-}//namespace protocol
-}//namespace db
-}//namespace bzs
-
-#endif //BZS_DB_PROTOCOL_ICOMMANDEXECUTER_H
-
+#endif // BZS_DB_PROTOCOL_ICOMMANDEXECUTER_H

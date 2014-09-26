@@ -26,8 +26,6 @@ include(../common/transactd_cl_common.cmake)
 include(../common/options.cmake)
 include(../common/system.cmake)
 include(../common/get_boost_libs.cmake)
-include(../common/check_for_link_iconv.cmake)
-check_for_link_iconv()
 
 
 set(this_target tdclphp)
@@ -67,12 +65,40 @@ set(TDVER_PHP_BUILD "${TRANSACTD_BUILD_NUMBER}")
 
 
 # ==========================================================
-# add tdclc if need
+# read PHP version from header
 # ==========================================================
-if((NOT TARGET tdclc) AND (NOT MINGW))
-  subdirs("../tdclc")
+file(TO_CMAKE_PATH "${TRANSACTD_PHP_SOURCE_ROOT}/main/php_version.h"
+  TRANSACTD_PHP_VERSION_H_PATH)
+if(EXISTS "${TRANSACTD_PHP_VERSION_H_PATH}")
+  file(READ "${TRANSACTD_PHP_VERSION_H_PATH}" TRANSACTD_PHP_VERSION_H)
+  string(REGEX REPLACE ".*define +PHP_VERSION +\"(.+)\".*" "\\1"
+    TRANSACTD_PHP_VERSION "${TRANSACTD_PHP_VERSION_H}" )
+  if("${TRANSACTD_PHP_VERSION_H}" STREQUAL "${TRANSACTD_PHP_VERSION}")
+    set(TRANSACTD_PHP_VERSION "")
+  endif()
+else()
+  set(TRANSACTD_PHP_VERSION "")
 endif()
-set(TDCL_CPP_CHARSET "m")
+if("${TRANSACTD_PHP_VERSION}" STREQUAL "")
+  message(STATUS "NOTE: PHP_VERSION not found in [${TRANSACTD_PHP_VERSION_H_PATH}].")
+  set(TRANSACTD_PHP_VERSION "5.5.0-(detect)")
+endif()
+message(STATUS "PHP_VERSION : [${TRANSACTD_PHP_VERSION}]")
+string(REGEX REPLACE "([0-9]+).[0-9]+.[0-9]+.*" "\\1"
+  TRANSACTD_PHP_VERSION_MAJOR "${TRANSACTD_PHP_VERSION}" )
+MATH(EXPR TRANSACTD_PHP_VERSION_MAJOR "${TRANSACTD_PHP_VERSION_MAJOR} + 0")
+string(REGEX REPLACE "[0-9]+.([0-9]+).[0-9]+.*" "\\1"
+  TRANSACTD_PHP_VERSION_MINOR "${TRANSACTD_PHP_VERSION}" )
+MATH(EXPR TRANSACTD_PHP_VERSION_MINOR "${TRANSACTD_PHP_VERSION_MINOR} + 0")
+set(TRANSACTD_PHP_HAVE_YIELD OFF)
+if(${TRANSACTD_PHP_VERSION_MAJOR} GREATER 5)
+  set(TRANSACTD_PHP_HAVE_YIELD ON)
+elseif(${TRANSACTD_PHP_VERSION_MAJOR} EQUAL 5)
+  if(${TRANSACTD_PHP_VERSION_MINOR} GREATER 4)
+    set(TRANSACTD_PHP_HAVE_YIELD ON)
+  endif()
+endif()
+message(STATUS "TRANSACTD_PHP_HAVE_YIELD : [${TRANSACTD_PHP_HAVE_YIELD}]")
 
 
 # ==========================================================
@@ -103,10 +129,10 @@ add_custom_command (
 # ==========================================================
 # add swig wrapper source file
 # ==========================================================
-tdcl_add_source_files("${TRANSACTD_ROOT}")
 set(${this_target}_SOURCE_FILES
   ${${this_target}_SOURCE_FILES}
   ${PHP_SWIG_WRAPPER_CPP}
+  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connectionPool.cpp
   ${TRANSACTD_ROOT}/source/bzs/rtl/benchmark.cpp
 )
 
@@ -126,47 +152,18 @@ include_directories(${TRANSACTD_ROOT}
 
 
 # ==========================================================
-# add compiler / linker options
-# ==========================================================
-tdcl_add_compiler_options()
-bz_get_compiler_bitness()
-if(MSVC90)
-  add_definitions(-D_SECURE_SCL=0)
-endif()
-foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  if(TRANSACTD_PHP_ZTS)
-    bz_add_cxx_flag("-DZTS=1" "${build_type}")
-  endif()
-  if(("${build_type}" STREQUAL "_DEBUG") OR ("${build_type}" STREQUAL "_RELWITHDEBINFO"))
-    bz_add_cxx_flag("-DZEND_DEBUG=1" "${build_type}")
-  else()
-    bz_add_cxx_flag("-DZEND_DEBUG=0" "${build_type}")
-  endif()
-  if(MSVC)
-    bz_add_cxx_flag("-DZEND_WIN32 -DPHP_WIN32 -DZEND_WIN32_FORCE_INLINE" "${build_type}")
-    bz_set_MBCS_cxx_flag("${build_type}")
-    if(TRANSACTD_PHP_USE_32BIT_TIME_T AND ("${BZ_BITNESS}" STREQUAL "32"))
-      bz_add_cxx_flag("-D_USE_32BIT_TIME_T" "${build_type}")
-    endif()
-  endif()
-  if(MSVC11)
-    bz_add_cxx_flag("-D_ALLOW_KEYWORD_MACROS" "${build_type}")
-  endif()
-endforeach()
-
-
-# ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
+  transactd_ver_info_lic()
+  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/tdclphp.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
-    F_VER   "${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE}.${TDVER_PHP_BUILD}"
-    P_VER   "${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE}.${TDVER_PHP_BUILD}"
-    P_NAME  "Transactd PHP Client"
-    F_DESC  "Transactd PHP Client module"
+    F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TDVER_PHP_BUILD}"
+    P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TDVER_PHP_BUILD}"
+    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd PHP client"
   )
   transactd_add_rc_file()
 endif()
@@ -184,13 +181,64 @@ endif()
 
 
 # ==========================================================
+# Add compile options
+# ==========================================================
+transactd_set_MTMD("MD")
+
+
+# ==========================================================
+# Add compile definitions
+# ==========================================================
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+  SWIGPHP SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB)
+bz_get_compiler_bitness()
+if(MSVC90)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _SECURE_SCL=0)
+elseif(MSVC11)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _ALLOW_KEYWORD_MACROS)
+endif()
+if(TRANSACTD_PHP_ZTS)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    ZTS=1)
+endif()
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_DEBUG
+  ZEND_DEBUG=1)
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_RELWITHDEBINFO
+  ZEND_DEBUG=1)
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_RELEASE
+  ZEND_DEBUG=0)
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_MINSIZEREL
+  ZEND_DEBUG=0)
+if(MSVC)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    WIN32 _WIN32 _WINDOWS ZEND_WIN32 PHP_WIN32 ZEND_WIN32_FORCE_INLINE)
+  if(TRANSACTD_PHP_USE_32BIT_TIME_T AND ("${BZ_BITNESS}" STREQUAL "32"))
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      _USE_32BIT_TIME_T)
+  endif()
+else()
+  if(NOT MINGW)
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      LINUX)
+  else()
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      WIN32 _WIN32)
+  endif()
+endif()
+
+
+# ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
-if(CAN_LINK_ICONV)
-  target_link_libraries(${this_target} iconv)
-endif()
 target_link_libraries(${this_target} "${TRANSACTD_PHP_LIBRARY_PATH}")
+transactd_link_boost_libraries("timer")
+if(MSVC)
+  target_link_libraries(${this_target} "tdclcppmr")
+else()
+  target_link_libraries(${this_target} "tdclcppm")
+endif()
 
 
 # ==========================================================
@@ -198,8 +246,37 @@ target_link_libraries(${this_target} "${TRANSACTD_PHP_LIBRARY_PATH}")
 # ==========================================================
 set_target_properties(${this_target} PROPERTIES PREFIX "")
 set_target_properties(${this_target} PROPERTIES OUTPUT_NAME php_transactd)
+if(NOT WIN32)
+  set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
+endif()
 if(UNIX AND NOT APPLE)
   set_target_properties(${this_target} PROPERTIES
-    SOVERSION ${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}
-    VERSION ${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE})
+    SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
+    VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE})
 endif()
+
+
+# ==========================================================
+# set output directory
+# ==========================================================
+if("${TRANSACTD_PHP_HAVE_YIELD}" STREQUAL "ON")
+  set(tdcl_yield ".yield")
+else()
+  set(tdcl_yield ".no_yield")
+endif()
+set(TRANSACTD_PHP_FILENAME "transactd${tdcl_yield}.php")
+if(WIN32)
+  if(NOT COMMAND tdcl_set_output_win)
+    include(../common/transactd_cl_output.cmake)
+  endif()
+  tdcl_set_output_win(${TRANSACTD_BINARY_ROOT})
+else()
+  set_target_properties(${this_target} PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
+    LIBRARY_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin"
+    ARCHIVE_OUTPUT_DIRECTORY "${TRANSACTD_BINARY_ROOT}/bin")
+endif()
+add_custom_command(TARGET ${this_target} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${TRANSACTD_ROOT}/build/swig/php/${TRANSACTD_PHP_FILENAME}
+  ${TRANSACTD_BINARY_ROOT}/bin/transactd.php)

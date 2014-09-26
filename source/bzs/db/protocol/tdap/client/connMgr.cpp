@@ -16,12 +16,8 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include <bzs/env/tstring.h>
-#pragma hdrstop
-
 #include "connMgr.h"
 #include "database.h"
-
 
 #pragma package(smart_init)
 
@@ -36,17 +32,18 @@ namespace tdap
 namespace client
 {
 
-
-connMgr::connMgr(database* db):nstable(db)
+connMgr::connMgr(database* db) : nstable(db)
 {
     m_db = db;
 }
 
 connMgr::~connMgr()
 {
-
 }
-database*  connMgr::db()const{return m_db;}
+database* connMgr::db() const
+{
+    return m_db;
+}
 
 void connMgr::connect(const _TCHAR* uri)
 {
@@ -67,11 +64,12 @@ void connMgr::disconnect()
     }
 }
 
-void  connMgr::allocBuffer()
+void connMgr::allocBuffer()
 {
-    m_records.resize(64000/sizeof(connMgr::record));
+    m_records.resize(64000 / sizeof(connMgr::record));
 
-    m_datalen = m_buflen = (uint_td)(m_records.size()*sizeof(connMgr::record));
+    m_datalen = m_buflen =
+        (uint_td)(m_records.size() * sizeof(connMgr::record));
     m_pdata = (void*)&m_records[0];
     memset(m_pdata, 0, m_datalen);
     setIsOpen(true);
@@ -87,7 +85,7 @@ const connMgr::records& connMgr::connections()
     m_keynum = TD_STSTCS_READ;
     tdap(TD_STASTISTICS);
     if (m_stat == 0)
-        m_records.resize(m_datalen/sizeof(connMgr::record));
+        m_records.resize(m_datalen / sizeof(connMgr::record));
     return m_records;
 }
 
@@ -99,7 +97,7 @@ const connMgr::records& connMgr::databases(__int64 connid)
     m_params[1] = -1;
     tdap(TD_STASTISTICS);
     if (m_stat == 0)
-        m_records.resize(m_datalen/sizeof(connMgr::record));
+        m_records.resize(m_datalen / sizeof(connMgr::record));
     return m_records;
 }
 
@@ -111,7 +109,7 @@ const connMgr::records& connMgr::tables(__int64 connid, int dbid)
     m_params[1] = dbid;
     tdap(TD_STASTISTICS);
     if (m_stat == 0)
-        m_records.resize(m_datalen/sizeof(connMgr::record));
+        m_records.resize(m_datalen / sizeof(connMgr::record));
     return m_records;
 }
 
@@ -127,7 +125,6 @@ void connMgr::disconnectAll()
 {
     m_keynum = TD_STSTCS_DISCONNECT_ALL;
     tdap(TD_STASTISTICS);
-
 }
 
 short_td connMgr::stat()
@@ -135,10 +132,8 @@ short_td connMgr::stat()
     return m_stat;
 }
 
-
-
-}//namespace client
-}//namespace tdap
-}//namespace protocol
-}//namespace db
-}//namespace bzs
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs

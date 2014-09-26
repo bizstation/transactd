@@ -38,7 +38,7 @@ project(${this_target})
 # options
 # ==========================================================
 if(NOT TRANSACTD_PREFIX)
-  set(TRANSACTD_PREFIX "/usr/local/transactd" CACHE STRING "Prefix for transactd executables(test,benchmark)")
+  set(TRANSACTD_PREFIX "/usr/local/transactd" CACHE STRING "Prefix for transactd executables")
 endif()
 
 
@@ -76,44 +76,18 @@ endif()
 
 
 # ==========================================================
-# compiler and linker options
-# ==========================================================
-foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  bz_add_cxx_flag("-DBOOST_ALL_NO_LIB -DPIC" "${build_type}")
-  bz_remove_cxx_flag("-fno-exceptions" "${build_type}")
-  bz_remove_cxx_flag("-fno-rtti" "${build_type}")
-  bz_remove_cxx_flag("-fno-implicit-templates" "${build_type}")
-  bz_remove_cxx_flag("-DPACKAGE_NO_EXPORT" "${build_type}")
-  if(MSVC)
-    bz_add_cxx_flag("/wd4068 /DTRDCL_AUTOLINK" "${build_type}")
-    bz_set_MTMTd_cxx_flag("${build_type}")
-    if("${TDCL_CPP_CHARSET}" STREQUAL "u")
-      bz_set_UNICODE_cxx_flag("${build_type}")
-    elseif("${TDCL_CPP_CHARSET}" STREQUAL "m")
-      bz_set_MBCS_cxx_flag("${build_type}")
-    endif()
-  else()
-    bz_add_cxx_flag("-fPIC -fabi-version=2 -fexceptions -finput-charset=utf-8" "${build_type}")
-    bz_add_cxx_flag("-fno-omit-frame-pointer -fno-strict-aliasing -fpermissive -frtti" "${build_type}")
-    if(NOT MINGW)
-      bz_add_cxx_flag("-DLINUX" "${build_type}")
-    endif()
-  endif()
-endforeach()
-
-
-# ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
 if(WIN32)
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/${this_target}.rc")
+  transactd_ver_info_lic()
+  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/bench.rc")
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
     F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
     P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd CPP Client benchmark program"
-    F_DESC  "Transactd CPP Client benchmark program"
+    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
+    F_DESC  "Transactd benchmark program"
   )
   transactd_add_rc_file()
 endif()
@@ -123,8 +97,46 @@ endif()
 # add_executable and set output name
 # ==========================================================
 add_executable(${this_target} ${${this_target}_SOURCE_FILES})
+bz_get_compiler()
 bz_get_compiler_bitness()
-set_target_properties(${this_target} PROPERTIES OUTPUT_NAME "bench_td_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+if(WIN32)
+  # bench_tdclcpp_[compiler]_[32|64][m|u].exe
+  set_target_properties(${this_target} PROPERTIES
+    OUTPUT_NAME "bench_tdclcpp${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+else()
+  # bench_tdclcpp_[32|64]m
+  set_target_properties(${this_target} PROPERTIES
+    OUTPUT_NAME "bench_tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+endif()
+
+
+# ==========================================================
+# Add compile options
+# ==========================================================
+transactd_set_MTMD("MT")
+
+
+# ==========================================================
+# Add compile definitions
+# ==========================================================
+if(MSVC)
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    WIN32 _WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB)
+else()
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    PIC BOOST_ALL_NO_LIB)
+  if(NOT MINGW)
+    set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+      LINUX)
+  endif()
+endif()
+if("${TDCL_CPP_CHARSET}" STREQUAL "u")
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    UNICODE _UNICODE)
+else()
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _MBCS)
+endif()
 
 
 # ==========================================================

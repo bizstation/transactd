@@ -9,7 +9,6 @@
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
-
 /**
 @brief Insert records example
 
@@ -44,7 +43,7 @@ picture table
 
 
 Please execute the "create database" and "change schema" example
-    before execute this example.
+        before execute this example.
 
 */
 
@@ -59,15 +58,15 @@ static const short fieldnum_pic_pic = 2;
 
 /** show database operation error
 */
-void showError(const _TCHAR* caption,const _TCHAR* tableName, short statusCode)
+void showError(const _TCHAR* caption, const _TCHAR* tableName, short statusCode)
 {
-    _TCHAR tmp[1024]={0x00};
+    _TCHAR tmp[1024] = { 0x00 };
     nstable::tdapErr(0x00, statusCode, tableName, tmp);
-    _tprintf(_T("%s error No.%ld %s\n"),caption, statusCode, tmp);
+    _tprintf(_T("[ERROR] %s No.%ld %s\n"), caption, statusCode, tmp);
 }
 
-bool insertUser(table* tb, int id, const _TCHAR* name, int groupid
-                                                    , const _TCHAR* tel)
+bool insertUser(table* tb, int id, const _TCHAR* name, int groupid,
+                const _TCHAR* tel)
 {
     tb->clearBuffer();
     tb->setFV(fieldnum_id, id);
@@ -76,29 +75,34 @@ bool insertUser(table* tb, int id, const _TCHAR* name, int groupid
     tb->setFV(fieldnum_tel, tel);
     tb->insert();
     if (tb->stat() != 0)
-        showError(_T("insert user record"), tb->tableDef()->tableName(), tb->stat());
+        showError(_T("insert user record"), tb->tableDef()->tableName(),
+                  tb->stat());
     return (tb->stat() == 0);
 }
 
 bool insertUsers(table* tb)
 {
-    bool ret = insertUser(tb, 1, _T("akio")   , 1, _T("81-3-2222-3569"));
-    if (ret == false) return false;
+    bool ret = insertUser(tb, 1, _T("akio"), 1, _T("81-3-2222-3569"));
+    if (ret == false)
+        return false;
 
-    ret = insertUser(tb, 2, _T("yoko")   , 2, _T("81-263-80-5555"));
-    if (ret == false) return false;
+    ret = insertUser(tb, 2, _T("yoko"), 2, _T("81-263-80-5555"));
+    if (ret == false)
+        return false;
 
     ret = insertUser(tb, 3, _T("satoshi"), 1, _T("81-3-1111-1234"));
-    if (ret == false) return false;
+    if (ret == false)
+        return false;
 
-    ret = insertUser(tb, 4, _T("keiko")  , 2, _T("81-26-222-3569"));
-    if (ret == false) return false;
+    ret = insertUser(tb, 4, _T("keiko"), 2, _T("81-26-222-3569"));
+    if (ret == false)
+        return false;
 
-    ret = insertUser(tb, 5, _T("john")  ,  3, _T("81-26-222-3565"));
-    if (ret == false) return false;
+    ret = insertUser(tb, 5, _T("john"), 3, _T("81-26-222-3565"));
+    if (ret == false)
+        return false;
     return true;
 }
-
 
 bool insertGroup(table* tb, int id, const _TCHAR* name)
 {
@@ -107,20 +111,24 @@ bool insertGroup(table* tb, int id, const _TCHAR* name)
     tb->setFV(fieldnum_name, name);
     tb->insert();
     if (tb->stat() != 0)
-        showError(_T("insert group1 record"), tb->tableDef()->tableName(), tb->stat());
+        showError(_T("insert group1 record"), tb->tableDef()->tableName(),
+                  tb->stat());
     return (tb->stat() == 0);
 }
 
 bool insertGroups(table* tb)
 {
     bool ret = insertGroup(tb, 1, _T("develop"));
-    if (ret == false) return false;
+    if (ret == false)
+        return false;
 
     ret = insertGroup(tb, 2, _T("sales"));
-    if (ret == false) return false;
+    if (ret == false)
+        return false;
 
     ret = insertGroup(tb, 3, _T("finance"));
-    if (ret == false) return false;
+    if (ret == false)
+        return false;
     return true;
 }
 
@@ -133,17 +141,17 @@ bool insertPicure(table* tb, short type, int id, const void* img, size_t size)
     tb->insert();
 
     if (tb->stat() != 0)
-        showError(_T("insert picture record"), tb->tableDef()->tableName(), tb->stat());
+        showError(_T("insert picture record"), tb->tableDef()->tableName(),
+                  tb->stat());
     return (tb->stat() == 0);
-
 }
 
 void readImage(const _TCHAR* path, std::vector<char>& s)
 {
-    std::ifstream ifs(path, std::ios::in | std::ios::binary );
+    std::ifstream ifs(path, std::ios::in | std::ios::binary);
 
     ifs.seekg(0, std::ios::end);
-    s.resize(ifs.tellg());
+    s.resize((unsigned int)ifs.tellg());
 
     ifs.seekg(0, std::ios::beg);
     ifs.read(&s[0], s.size());
@@ -194,7 +202,7 @@ int _tmain(int argc, _TCHAR* argv[])
                             readImage(argv[0], s);
                             if (insertPicure(tbp, 1, 1, &s[0], s.size()))
                             {
-                               _tprintf(_T("Insert records success. \n"));
+                                _tprintf(_T("Insert records success. \n"));
                                 result = 0;
                             }
                             tbp->release();
@@ -202,8 +210,8 @@ int _tmain(int argc, _TCHAR* argv[])
                     }
                     tbu->release();
                 }
-             }
-             tbg->release();
+            }
+            tbg->release();
         }
         db->close();
     }

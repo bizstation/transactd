@@ -26,21 +26,25 @@ if(UNIX)
     set(CMAKE_FIND_LIBRARY_SUFFIXES "\\.so" "\\.a")
   endif()
   # find iconv.h
-  find_path(ICONV_INCLUDE_DIR iconv.h
-    /usr/include
-    /usr/local/include
-    ${CMAKE_SYSTEM_INCLUDE_PATH}
-    "$ENV{ICONV_INCLUDE}"
-    NO_DEFAULT_PATH
-  )
+  if(NOT DEFINED ICONV_INCLUDE_DIR)
+    find_path(ICONV_INCLUDE_DIR iconv.h
+      "$ENV{ICONV_INCLUDE}"
+      ${CMAKE_SYSTEM_INCLUDE_PATH}
+      /usr/include
+      /usr/local/include
+      NO_DEFAULT_PATH
+    )
+  endif()
   # find libiconv
-  find_library(ICONV_LIBRARY NAMES iconv libiconv PATHS
-    /usr/lib
-    /usr/local/lib
-    ${CMAKE_SYSTEM_LIBRARY_PATH}
-    "$ENV{ICONV_LIBRARY}"
-    NO_DEFAULT_PATH
-  )
+  if(NOT DEFINED ICONV_LIBRARY)
+    find_library(ICONV_LIBRARY NAMES iconv libiconv PATHS
+      "$ENV{ICONV_LIBRARY}"
+      ${CMAKE_SYSTEM_LIBRARY_PATH}
+      /usr/lib
+      /usr/local/lib
+      NO_DEFAULT_PATH
+    )
+  endif()
   # if found iconv.h and libiconv then we can use -liconv option
   if(ICONV_INCLUDE_DIR AND ICONV_LIBRARY)
     set(CAN_LINK_ICONV TRUE)

@@ -22,51 +22,51 @@
 #   set(Boost_USE_MULTITHREADED ON)
 #   set(Boost_USE_STATIC_LIBS ON)
 #   get_boost_libs("system;chrono")
-#   message(STATUS "for /MD  ${Boost_LIBRARIES_FOR_MD}")  # =Boost_LIBRARIES_STATIC_RUNTIME_OFF_NO_DEBUG
-#   message(STATUS "for /MDd ${Boost_LIBRARIES_FOR_MDd}") # =Boost_LIBRARIES_STATIC_RUNTIME_OFF_DEBUG
-#   message(STATUS "for /MT  ${Boost_LIBRARIES_FOR_MT}")  # =Boost_LIBRARIES_STATIC_RUNTIME_ON_NO_DEBUG
-#   message(STATUS "for /MTd ${Boost_LIBRARIES_FOR_MTd}") # =Boost_LIBRARIES_STATIC_RUNTIME_ON_DEBUG
-#   get_boost_libs_from_CXXFLAGS("${CMAKE_CXX_FLAGS_DEBUG}")
-#   message(STATUS "for DEBUG BUILD ${get_boost_libs_from_CXXFLAGS_return}")
+#   message(STATUS "for /MD  ${Boost_LIBRARIES_FOR_MD}")  # =Boost_LIBRARIES_STATIC_USE_RUNTIME_NO_DEBUG
+#   message(STATUS "for /MDd ${Boost_LIBRARIES_FOR_MDd}") # =Boost_LIBRARIES_STATIC_USE_RUNTIME_DEBUG
+#   message(STATUS "for /MT  ${Boost_LIBRARIES_FOR_MT}")  # =Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME_NO_DEBUG
+#   message(STATUS "for /MTd ${Boost_LIBRARIES_FOR_MTd}") # =Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME_DEBUG
+#   get_boost_libs_from_compiler_flags("${CMAKE_CXX_FLAGS_DEBUG}")
+#   message(STATUS "for DEBUG BUILD ${get_boost_libs_from_compiler_flags_return}")
 function(get_boost_libs libs)
-  # Get pathes STATIC_RUNTIME_ON
+  # Get pathes STATIC_RUNTIME_ON (for /MT and /MTd)
   set(Boost_USE_STATIC_RUNTIME ON)
   find_package(Boost COMPONENTS ${libs})
   if(NOT Boost_FOUND)
     message(SEND_ERROR "Boost not found. ${libs}")
   endif()
-  set(Boost_LIBRARIES_STATIC_RUNTIME_ON  ${Boost_LIBRARIES})
+  set(Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME  ${Boost_LIBRARIES})
   set(Boost_LIBRARIES "")
-  # Get pathes STATIC_RUNTIME_OFF
+  # Get pathes STATIC_RUNTIME_OFF (for /MD and /MDd)
   set(Boost_USE_STATIC_RUNTIME OFF)
   find_package(Boost COMPONENTS ${libs})
   if(NOT Boost_FOUND)
     message(SEND_ERROR "Boost not found. ${libs}")
   endif()
-  set(Boost_LIBRARIES_STATIC_RUNTIME_OFF ${Boost_LIBRARIES})
+  set(Boost_LIBRARIES_STATIC_USE_RUNTIME ${Boost_LIBRARIES})
   set(Boost_LIBRARIES "")
   # for /MD
-  parse_boost_libs(false "${Boost_LIBRARIES_STATIC_RUNTIME_OFF}")
+  parse_boost_libs(false "${Boost_LIBRARIES_STATIC_USE_RUNTIME}")
   set(Boost_LIBRARIES_FOR_MD "${parse_boost_libs_return}" PARENT_SCOPE)
-  set(Boost_LIBRARIES_STATIC_RUNTIME_OFF_NO_DEBUG "${parse_boost_libs_return}" PARENT_SCOPE)
+  set(Boost_LIBRARIES_STATIC_USE_RUNTIME_NO_DEBUG "${parse_boost_libs_return}" PARENT_SCOPE)
   # for /MDd
-  parse_boost_libs(true  "${Boost_LIBRARIES_STATIC_RUNTIME_OFF}")
+  parse_boost_libs(true  "${Boost_LIBRARIES_STATIC_USE_RUNTIME}")
   set(Boost_LIBRARIES_FOR_MDd "${parse_boost_libs_return}" PARENT_SCOPE)
-  set(Boost_LIBRARIES_STATIC_RUNTIME_OFF_DEBUG "${parse_boost_libs_return}" PARENT_SCOPE)
+  set(Boost_LIBRARIES_STATIC_USE_RUNTIME_DEBUG "${parse_boost_libs_return}" PARENT_SCOPE)
   # for /MT
-  parse_boost_libs(false "${Boost_LIBRARIES_STATIC_RUNTIME_ON}")
+  parse_boost_libs(false "${Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME}")
   set(Boost_LIBRARIES_FOR_MT "${parse_boost_libs_return}" PARENT_SCOPE)
-  set(Boost_LIBRARIES_STATIC_RUNTIME_ON_NO_DEBUG "${parse_boost_libs_return}" PARENT_SCOPE)
+  set(Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME_NO_DEBUG "${parse_boost_libs_return}" PARENT_SCOPE)
   # for /MTd
-  parse_boost_libs(true  "${Boost_LIBRARIES_STATIC_RUNTIME_ON}")
+  parse_boost_libs(true  "${Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME}")
   set(Boost_LIBRARIES_FOR_MTd "${parse_boost_libs_return}" PARENT_SCOPE)
-  set(Boost_LIBRARIES_STATIC_RUNTIME_ON_DEBUG "${parse_boost_libs_return}" PARENT_SCOPE)
+  set(Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME_DEBUG "${parse_boost_libs_return}" PARENT_SCOPE)
   # Boost_INCLUDE_DIRS
   set(Boost_INCLUDE_DIRS "${Boost_INCLUDE_DIRS}" PARENT_SCOPE)
 endfunction()
 
-function(get_boost_libs_from_CXXFLAGS flags)
-  set(get_boost_libs_from_CXXFLAGS_return "" PARENT_SCOPE)
+function(get_boost_libs_from_compiler_flags flags)
+  set(get_boost_libs_from_compiler_flags_return "" PARENT_SCOPE)
   set(Boost_LIBRARIES_BUILD_TYPE "")
   if("${flags}" MATCHES "(.* )?/MD( .*)?$")
     set(Boost_LIBRARIES_BUILD_TYPE "${Boost_LIBRARIES_FOR_MD}")
@@ -76,10 +76,10 @@ function(get_boost_libs_from_CXXFLAGS flags)
     set(Boost_LIBRARIES_BUILD_TYPE "${Boost_LIBRARIES_FOR_MT}")
   elseif("${flags}" MATCHES "(.* )?/MTd( .*)?$")
     set(Boost_LIBRARIES_BUILD_TYPE "${Boost_LIBRARIES_FOR_MTd}")
-  else()
-    set(Boost_LIBRARIES_BUILD_TYPE "${Boost_LIBRARIES_FOR_MD}")
   endif()
-  set(get_boost_libs_from_CXXFLAGS_return "${Boost_LIBRARIES_BUILD_TYPE}" PARENT_SCOPE)
+  if(NOT ("${Boost_LIBRARIES_BUILD_TYPE}" STREQUAL ""))
+    set(get_boost_libs_from_compiler_flags_return "${Boost_LIBRARIES_BUILD_TYPE}" PARENT_SCOPE)
+  endif()
 endfunction()
 
 function(parse_boost_libs with_debug path)

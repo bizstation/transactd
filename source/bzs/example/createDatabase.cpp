@@ -6,13 +6,12 @@
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
-
 /**
 @brief create database example
 
 This program  create "test" database and
 "test" table. The table of "test" has schema data.
-And it call "schaem table".
+And it call "schema table".
 
 database name :  'test'
 
@@ -61,14 +60,13 @@ table 'picture' tableid = 3
 
 */
 
-
 /** show database operation error
 */
-void showError(const _TCHAR* caption,const _TCHAR* tableName, short statusCode)
+void showError(const _TCHAR* caption, const _TCHAR* tableName, short statusCode)
 {
-    _TCHAR tmp[1024]={0x00};
+    _TCHAR tmp[1024] = { 0x00 };
     nstable::tdapErr(0x00, statusCode, tableName, tmp);
-    _tprintf(_T("%s error No.%ld %s\n"),caption, statusCode, tmp);
+    _tprintf(_T("[ERROR] %s No.%ld %s\n"), caption, statusCode, tmp);
 }
 
 /** Create mysql database and empty schema table
@@ -102,11 +100,11 @@ bool openDbExclusive(database* db, const _TCHAR* uri)
 bool createUserTableSchema(dbdef* def)
 {
 
-    //Insert table
+    // Insert table
     tabledef td;
     td.setTableName(_T("user"));
     td.setFileName(_T("user.dat"));
-    td.id =1;
+    td.id = 1;
     td.charsetIndex = CHARSET_UTF8B4;
     def->insertTable(&td);
     if (def->stat() != 0)
@@ -115,41 +113,41 @@ bool createUserTableSchema(dbdef* def)
         return false;
     }
 
-    //Insert field
+    // Insert field
     short fieldNum = 0;
-    fielddef* fd =  def->insertField(td.id, fieldNum);
+    fielddef* fd = def->insertField(td.id, fieldNum);
     fd->setName(_T("id"));
     fd->type = ft_integer;
     fd->len = (ushort_td)4;
 
-    fd =  def->insertField(td.id, ++fieldNum);
+    fd = def->insertField(td.id, ++fieldNum);
     fd->setName(_T("name"));
     fd->type = ft_myvarchar;
     fd->setLenByCharnum(32);
 
-    fd =  def->insertField(td.id, ++fieldNum);
+    fd = def->insertField(td.id, ++fieldNum);
     fd->setName(_T("group"));
     fd->type = ft_integer;
     fd->len = (ushort_td)4;
 
-    //Insert index
+    // Insert index
     uchar_td keyNum = 0;
     keydef* kd = def->insertKey(td.id, keyNum);
     kd->segments[0].fieldNum = 0;
-    kd->segments[0].flags.bit8 = true;//extended type
-    kd->segments[0].flags.bit1 = true;//updateable
+    kd->segments[0].flags.bit8 = true; // extended type
+    kd->segments[0].flags.bit1 = true; // updateable
     kd->segmentCount = 1;
     def->tableDefs(td.id)->primaryKeyNum = keyNum;
 
     keyNum = 1;
     kd = def->insertKey(td.id, keyNum);
-    kd->segments[0].fieldNum = 2;//groupid
-    kd->segments[0].flags.bit8 = true;//extended type
-    kd->segments[0].flags.bit1 = true;//updateable
-    kd->segments[0].flags.bit0 = true;//duplicateable
+    kd->segments[0].fieldNum = 2; // groupid
+    kd->segments[0].flags.bit8 = true; // extended type
+    kd->segments[0].flags.bit1 = true; // updateable
+    kd->segments[0].flags.bit0 = true; // duplicateable
     kd->segmentCount = 1;
 
-    //write schema table
+    // write schema table
     def->updateTableDef(td.id);
     if (def->stat() != 0)
     {
@@ -157,7 +155,6 @@ bool createUserTableSchema(dbdef* def)
         return false;
     }
     return true;
-
 }
 
 /** Create group table schema and write
@@ -165,7 +162,7 @@ bool createUserTableSchema(dbdef* def)
 bool createGroupTableSchema(dbdef* def)
 {
 
-    //Insert table
+    // Insert table
     tabledef td;
     td.setTableName(_T("group1"));
     td.setFileName(_T("group1.dat"));
@@ -178,28 +175,28 @@ bool createGroupTableSchema(dbdef* def)
         return false;
     }
 
-    //Insert field
+    // Insert field
     short fieldNum = 0;
-    fielddef* fd =  def->insertField(td.id, fieldNum);
+    fielddef* fd = def->insertField(td.id, fieldNum);
     fd->setName(_T("id"));
     fd->type = ft_integer;
     fd->len = (ushort_td)4;
 
-    fd =  def->insertField(td.id, ++fieldNum);
+    fd = def->insertField(td.id, ++fieldNum);
     fd->setName(_T("name"));
     fd->type = ft_myvarchar;
     fd->setLenByCharnum(32);
 
-    //Insert index
+    // Insert index
     uchar_td keyNum = 0;
     keydef* kd = def->insertKey(td.id, keyNum);
     kd->segments[0].fieldNum = 0;
-    kd->segments[0].flags.bit8 = true;//extended type
-    kd->segments[0].flags.bit1 = true;//updateable
+    kd->segments[0].flags.bit8 = true; // extended type
+    kd->segments[0].flags.bit1 = true; // updateable
     kd->segmentCount = 1;
     def->tableDefs(td.id)->primaryKeyNum = keyNum;
 
-    //write schema table
+    // write schema table
     def->updateTableDef(td.id);
     if (def->stat() != 0)
     {
@@ -207,14 +204,13 @@ bool createGroupTableSchema(dbdef* def)
         return false;
     }
     return true;
-
 }
 
 /** Create picture table schema and write
  */
 bool createPictureTableSchema(dbdef* def)
 {
-    //Insert table
+    // Insert table
     tabledef td;
     td.setTableName(_T("picture"));
     td.setFileName(_T("picture.dat"));
@@ -227,43 +223,41 @@ bool createPictureTableSchema(dbdef* def)
         return false;
     }
 
-    //Insert 3 fields
+    // Insert 3 fields
     short fieldNum = 0;
-    fielddef* fd =  def->insertField(td.id, fieldNum);
+    fielddef* fd = def->insertField(td.id, fieldNum);
     fd->setName(_T("type"));
     fd->type = ft_integer;
     fd->len = (ushort_td)2;
 
-    fd =  def->insertField(td.id, ++fieldNum);
+    fd = def->insertField(td.id, ++fieldNum);
     fd->setName(_T("id"));
     fd->type = ft_integer;
     fd->len = (ushort_td)4;
 
-
-    fd =  def->insertField(td.id, ++fieldNum);
+    fd = def->insertField(td.id, ++fieldNum);
     fd->setName(_T("picture"));
     fd->type = ft_myblob;
     fd->len = (ushort_td)11;
 
-
-    //Insert index
+    // Insert index
     uchar_td keyNum = 0;
     keydef* kd = def->insertKey(td.id, keyNum);
     keySegment* ks = &kd->segments[0];
-    ks->fieldNum = 0; //type
-    ks->flags.bit8 = true;//extended type
-    ks->flags.bit1 = true;//updateable
-    ks->flags.bit4  = true;//segment part
+    ks->fieldNum = 0; // type
+    ks->flags.bit8 = true; // extended type
+    ks->flags.bit1 = true; // updateable
+    ks->flags.bit4 = true; // segment part
 
     ks = &kd->segments[1];
-    ks->fieldNum = 1; //id
-    ks->flags.bit8 = true;//extended type
-    ks->flags.bit1 = true;//updateable
+    ks->fieldNum = 1; // id
+    ks->flags.bit8 = true; // extended type
+    ks->flags.bit1 = true; // updateable
 
     kd->segmentCount = 2;
     def->tableDefs(td.id)->primaryKeyNum = keyNum;
 
-     //write schema table
+    // write schema table
     def->updateTableDef(td.id);
     if (def->stat() != 0)
     {
@@ -271,7 +265,6 @@ bool createPictureTableSchema(dbdef* def)
         return false;
     }
     return true;
-
 }
 
 #pragma argsused

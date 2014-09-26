@@ -32,14 +32,11 @@ describe Transactd, 'datetime' do
     nowdate.i = i_nowdate               # get today as BtrDate
     s_nowdate  = Transactd::btrdtoa(nowdate)
     s_nowdate2 = Transactd::btrdtoa(nowdate, true)
-    cs_nowdate = Transactd::c_str(nowdate)
     #p nowdate
     #p s_nowdate + ' ' + s_nowdate.encoding.to_s
     #p s_nowdate2 + ' ' + s_nowdate2.encoding.to_s
-    #p cs_nowdate + ' ' + cs_nowdate.encoding.to_s
     expect(s_i_nowdate).to eq s_nowdate
     expect(s_i_nowdate2).to eq s_nowdate2
-    expect(cs_nowdate).to eq s_nowdate
   end
   
   it 'get BtrTime' do
@@ -53,14 +50,11 @@ describe Transactd, 'datetime' do
     nowtime.i = i_nowtime                 # get now time as BtrTime
     s_nowtime  = Transactd::btrttoa(nowtime)
     s_nowtime2 = Transactd::btrttoa(nowtime, true)
-    cs_nowtime = Transactd::c_str(nowtime)
     #p nowtime
     #p s_nowtime + ' ' + s_nowtime.encoding.to_s
     #p s_nowtime2 + ' ' + s_nowtime2.encoding.to_s
-    #p cs_nowtime + ' ' + cs_nowtime.encoding.to_s
     expect(s_i_nowtime).to eq s_nowtime
     expect(s_i_nowtime2).to eq s_nowtime2
-    expect(cs_nowtime).to eq s_nowtime
   end
   
   it 'get BtrDateTime' do
@@ -86,29 +80,6 @@ describe Transactd, 'datetime' do
     s_datetime_t = Transactd::btrttoa(datetime.time)
     expect(s_datetime_d + ' ' + s_datetime_t).to eq '2012/08/22 15:37:00'
     #p s_datetime_d + ' ' + s_datetime_t
-  end
-  
-  it 'get Bdate' do
-    date = Transactd::atobtrd('2012-08-22')
-    bdate  = Transactd::Bdate.new(date.i)
-    bdate2 = Transactd::Bdate.new(Transactd::btrdtoa(date))
-    #p bdate,bdate2
-    btrdate  = bdate.btr_date()
-    btrdate2 = bdate2.btr_date()
-    #p btrdate, btrdate2
-    s_bdate  = bdate.c_str()
-    s_bdate2 = bdate2.c_str()
-    expect(s_bdate).to eq s_bdate2
-    #p s_bdate + ' ' + s_bdate.encoding.to_s
-    #p s_bdate2 + ' ' + s_bdate2.encoding.to_s
-    expect(bdate.year()).to eq 2012
-    expect(bdate.month()).to eq 8
-    expect(bdate.date()).to eq 22
-    expect(bdate.year_str()).to eq '2012'
-    expect(bdate.month_str()).to eq '8'
-    expect(bdate.date_str()).to eq '22'
-    #p bdate.year(), bdate.month(), bdate.date()
-    #p bdate.year_str(), bdate.month_str(), bdate.date_str()
   end
   
   it 'get BtrTimeStamp from string' do

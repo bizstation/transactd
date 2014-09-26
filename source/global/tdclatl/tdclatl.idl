@@ -32,6 +32,18 @@ interface IKeySegment;
 interface IField;
 interface ITdVersion;
 interface IQueryBase;
+interface IActiveTable;
+interface IRecordset;
+interface IRecord;
+interface IWritableRecord;
+interface IGroupQuery;
+interface IRecordsetQuery;
+interface IFieldDefs;
+interface ISortField;
+interface ISortFields;
+interface IFieldNames;
+interface IConnectParams;
+interface IPooledDbManager;
 
 typedef
 [
@@ -63,7 +75,7 @@ typedef
 enum eFindType
 {
   findForword = 0,
-  findBackForword = 0
+  findBackForword = 1
 }eFindType;
 
 
@@ -215,7 +227,9 @@ enum eFieldType
 	ft_mytimestamp	= 49,
 	ft_mytext 		= 50,
 	ft_myblob 		= 51,
-	ft_nullindicator = 255
+	ft_autoIncUnsigned	= 52,
+	ft_myfixedbinary 	= 53,
+	ft_nullindicator	= 255
 }eFieldType;
 
 typedef
@@ -278,6 +292,30 @@ enum eContinusStatus
 	TD_BACKUP_MODE_SERVER_ERROR  = 91	
 }eContinusStatus;
 
+typedef
+[
+  helpstring("Group function")
+]
+enum eGroupFunc
+{
+	fsum = 0,
+	fcount = 1,
+	favg = 2,
+	fmin = 3,
+	fmax = 4
+}eGroupFunc;
+
+typedef
+[
+  helpstring("query optimize option")
+]
+enum eOptimize
+{
+	none = 0,
+	joinHasOneOrHasMany = 1,
+	combineCondition = 2
+}eOptimize;
+
 
 
 [
@@ -296,7 +334,7 @@ interface IDatabase : IDispatch
   [id(0x00000002)]
   HRESULT _stdcall OpenTable([in] VARIANT TableID, [in,  defaultvalue(normal)] eOpenMode Mode, [in, defaultvalue(-1)] VARIANT_BOOL AutoCreate, [in, defaultvalue("")] BSTR OwnerName, [in, defaultvalue("")] BSTR Uri, [out, retval] ITable** ret);
   [id(0x00000003), hidden]
-  HRESULT _stdcall AtatchDatabase([in] hyper* nativeDatabase);
+  HRESULT _stdcall AtatchDatabase([in] hyper* nativeDatabase, [in, defaultvalue(0)] VARIANT_BOOL noRelease );
   [propget, id(0x00000004)]
   HRESULT _stdcall RootDir([out, retval] BSTR* Value);
   [propput, id(0x00000004)]
@@ -518,8 +556,8 @@ interface ITable : IDispatch
   HRESULT _stdcall Percentage([out, retval] long* Value);
   [id(0x00000031)]
   HRESULT _stdcall SeekByPercentage([in] long Value);
-  [propget, id(0x00000024)]
-  HRESULT _stdcall RecordCount([out, retval] long* Value);
+  [id(0x00000024)]
+  HRESULT _stdcall RecordCount([in, defaultvalue(-1)] VARIANT_BOOL estimate, [in, defaultvalue(0)] VARIANT_BOOL fromCurrent, [out, retval] long* Value);
   [propget, id(0x00000025)]
   HRESULT _stdcall RecordLength([out, retval] long* Value);
   [propget, id(0x00000026)]
@@ -538,8 +576,6 @@ interface ITable : IDispatch
   HRESULT _stdcall Vbin([in] VARIANT Index, [out, retval] BSTR* Value);
   [propput, id(0x00000028)]
   HRESULT _stdcall Vbin([in] VARIANT Index, [in] BSTR Value);
-  [propget, id(0x00000029)]
-  HRESULT _stdcall Filter([out, retval] BSTR* Value);
   [propput, id(0x00000029)]
   HRESULT _stdcall Filter([in] BSTR Value);
   [id(0x0000002A)]
@@ -613,7 +649,7 @@ interface ITable : IDispatch
   [propget, id(0x000000F0)]
   HRESULT _stdcall BookMarksCount([out, retval] int* Value);
   [id(0x000000F1)]
-  HRESULT _stdcall Find([in] eFindType FindType);
+  HRESULT _stdcall Find([in, defaultvalue(findForword)] eFindType FindType);
   [propget, id(0x000000F2)]
   HRESULT _stdcall RecordHash([out, retval] unsigned int* Value);
   [propget, id(0x000000F3)]
@@ -640,6 +676,8 @@ interface ITable : IDispatch
   HRESULT _stdcall KeyValueDescription([out, retval] BSTR* Value);
   [id(0x000000FB)]
   HRESULT _stdcall SetQuery([in] IQueryBase* Value);
+  [id(0x000000FC)]
+  HRESULT _stdcall FieldNumByName([in] BSTR Name, [out, retval] short* Value);
 
 };
 [
@@ -799,6 +837,8 @@ interface IFieldDef : IDispatch
   HRESULT _stdcall CharNum([out, retval] unsigned int* Value);
   [id(0x00000014)]
   HRESULT _stdcall SetLenByCharnum([in] unsigned short Value);
+  [propget, id(0x00000015)]
+  HRESULT _stdcall Index([out, retval] short* Value);
 
 
 
@@ -958,7 +998,7 @@ interface IQueryBase : IDispatch
   [id(0x0000007)]
   HRESULT _stdcall Or([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IQueryBase** retVal);
   [id(0x0000008)]
-  HRESULT _stdcall AddInValue([in] VARIANT Value, [in] VARIANT_BOOL Reset);
+  HRESULT _stdcall AddInValue([in] VARIANT Value, [in, defaultvalue(0)] VARIANT_BOOL Reset);
   [id(0x0000009)]
   HRESULT _stdcall In([in] VARIANT Value
 			,[in, defaultvalue("")] VARIANT Value1
@@ -993,16 +1033,390 @@ interface IQueryBase : IDispatch
   [id(0x0000013)]
   HRESULT _stdcall IsAll([out, retval] VARIANT_BOOL* retVal);
   [id(0x0000014)]
-  HRESULT _stdcall Optimize([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
+  HRESULT _stdcall Optimize([in, defaultvalue(none)] eOptimize Value, [out, retval] IQueryBase** retVal);
   [id(0x0000015)]
-  HRESULT _stdcall IsOptimize([out, retval] VARIANT_BOOL* retVal);
+  HRESULT _stdcall GetOptimize([out, retval] eOptimize* retVal);
+  [id(0x0000016)]
+  HRESULT _stdcall SelectCount([out, retval] short* retVal);
+  [id(0x0000017)]
+  HRESULT _stdcall GetSelect([in] short index, [out, retval] BSTR* retVal);
+  [id(0x0000018)]
+  HRESULT _stdcall WhereTokenCount([out, retval] short* retVal);
+  [id(0x0000019)]
+  HRESULT _stdcall GetWhereToken([in] short index, [out, retval] BSTR* retVal);
+  [id(0x000001A)]
+  HRESULT _stdcall BookmarkAlso([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
+  [id(0x000001B)]
+  HRESULT _stdcall IsBookmarkAlso([out, retval] VARIANT_BOOL* retVal);
+
 
 };
+
+[
+  object,
+  uuid(3EE9F43F-99D0-4300-B8A4-3085A2C4DAAB),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IActiveTable : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall SetDatabase([in] VARIANT Value, [in] BSTR tableName);
+  [id(0x0000002)]
+  HRESULT _stdcall Index([in] short Value, [out, retval] IActiveTable** retVal);
+  [id(0x0000003)]
+  HRESULT _stdcall KeyValue([in] VARIANT Value0, [in, defaultvalue("")] VARIANT Value1
+					,[in, defaultvalue("")] VARIANT Value2, [in, defaultvalue("")] VARIANT Value3
+					,[in, defaultvalue("")] VARIANT Value4, [in, defaultvalue("")] VARIANT Value5
+					,[in, defaultvalue("")] VARIANT Value6, [in, defaultvalue("")] VARIANT Value7
+					,[out, retval] IActiveTable** retVal);
+  [id(0x0000004)]
+  HRESULT _stdcall Option([in] int Value, [out, retval] IActiveTable** retVal);
+  [id(0x0000005)]
+  HRESULT _stdcall Read([in, optional] VARIANT query, [out, retval] IRecordset** retVal);
+  [id(0x0000006)]
+  HRESULT _stdcall Alias([in] BSTR Src, [in] BSTR Dst, [out, retval] IActiveTable** retVal);
+  [id(0x0000007)]
+  HRESULT _stdcall ResetAlias([out, retval] IActiveTable** retVal);
+  [id(0x0000008)]
+  HRESULT _stdcall Join([in] IRecordset* rs, [in] IQueryBase* query, [in] BSTR Name0
+					, [in, defaultvalue("")] BSTR Name1, [in, defaultvalue("")] BSTR Name2
+					, [in, defaultvalue("")] BSTR Name3, [in, defaultvalue("")] BSTR Name4
+					, [in, defaultvalue("")] BSTR Name5, [in, defaultvalue("")] BSTR Name6
+					, [in, defaultvalue("")] BSTR Name7
+					,[out, retval] IRecordset** retVal);
+
+  [id(0x0000009)]
+  HRESULT _stdcall OuterJoin([in] IRecordset* rs, [in] IQueryBase* query, [in] BSTR Name0
+					, [in, defaultvalue("")] BSTR Name1, [in, defaultvalue("")] BSTR Name2
+					, [in, defaultvalue("")] BSTR Name3, [in, defaultvalue("")] BSTR Name4
+					, [in, defaultvalue("")] BSTR Name5, [in, defaultvalue("")] BSTR Name6
+					, [in, defaultvalue("")] BSTR Name7
+					,[out, retval] IRecordset** retVal);
+
+  [id(0x000000A)]
+  HRESULT _stdcall GetWritableRecord([out, retval] IWritableRecord** retVal);
+  [propget, id(0x000000B)]
+  HRESULT _stdcall TableDef([out, retval] ITableDef** Value);
+  				
+};
+
+
+[
+  object,
+  uuid(3EE9F43F-99D0-43CC-B8A4-3085A2C4DAAB),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IRecordset : IDispatch
+{
+
+  [id(0x0000002)]
+  HRESULT _stdcall Record([in] unsigned long Index, [out, retval] IRecord** retVal);
+  [id(0x0000003)]
+  HRESULT _stdcall First([out, retval] IRecord** retVal);
+  [id(0x0000004)]
+  HRESULT _stdcall Last([out, retval] IRecord** retVal);
+  [id(0x0000005)]
+  HRESULT _stdcall Top([in]unsigned long Num, [out, retval] IRecordset** retVal);
+  [id(0x0000006)]
+  HRESULT _stdcall Erase([in]unsigned long Index);
+  [propget,id(0x0000007)]
+  HRESULT _stdcall Count([out, retval]unsigned long* retVal);
+  [id(0x0000008)]
+  HRESULT _stdcall RemoveField([in]short Index);
+  [id(0x0000009)]
+  HRESULT _stdcall GroupBy(IGroupQuery* gq, [out, retval] IRecordset** retVal);
+  [id(0x000000A)]
+  HRESULT _stdcall OrderBy([in] BSTR name0, [in, defaultvalue("")] BSTR name1, [in, defaultvalue("")] BSTR name2,
+					[in, defaultvalue("")] BSTR name3, [in, defaultvalue("")] BSTR name4, 
+					[in, defaultvalue("")] BSTR name5, [in, defaultvalue("")] BSTR name6,
+					[in, defaultvalue("")] BSTR name7, [in, defaultvalue("")] BSTR name8,
+					[out, retval] IRecordset** retVal);
+
+  [id(0x000000B)]
+  HRESULT _stdcall OrderByEx([in] ISortFields* SortFields, [out, retval] IRecordset** retVal);
+
+  [id(0x000000C)]
+  HRESULT _stdcall Reverse([out, retval] IRecordset** retVal);
+
+  [propget,id(0x000000D)]
+  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
+  [propget,id(0x000000E)]
+  HRESULT _stdcall Size([out, retval]unsigned long* retVal);
+
+  [id(0x000000F)]
+  HRESULT _stdcall MatchBy(IRecordsetQuery* gq, [out, retval] IRecordset** retVal);
+
+  [id(0x0000010)]
+  HRESULT _stdcall Clone([out, retval] IRecordset** retVal);
+
+  [id(0x0000011)]
+  HRESULT _stdcall AppendField([in] BSTR name, [in] eFieldType type, [in] short len);
+
+};
+
+[
+  object,
+  uuid(1EF8FE71-92AF-4E56-AD0E-30ACF31B090E),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IRecord : IDispatch
+{
+  [propget, id(0x0000001)]
+  HRESULT _stdcall Size([out, retval] short* retVal);
+  [propget, id(0x0000002)]
+  HRESULT _stdcall Field([in] VARIANT Index, [out, retval] IField** retVal);
+  [propget, id(0x0000003)]
+  HRESULT _stdcall IsInvalidRecord( [out, retval] VARIANT_BOOL* retVal);
+
+};
+
+[
+  object,
+  uuid(687452CD-C9D8-4B24-A955-EB3B69BA02C5),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IWritableRecord : IRecord 
+{
+  [id(0x0000010)]
+  HRESULT _stdcall Save(void);
+  [id(0x0000011)]
+  HRESULT _stdcall Insert(void);
+  [id(0x0000013)]
+  HRESULT _stdcall Del([in, defaultvalue(0)]VARIANT_BOOL KeysetAlrady);
+  [id(0x0000014)]
+  HRESULT _stdcall Update(void);
+  [id(0x0000015)]
+  HRESULT _stdcall Read([in, defaultvalue(0)]VARIANT_BOOL KeysetAlrady, [out, retval] VARIANT_BOOL* retVal);
+  [id(0x0000016)]
+  HRESULT _stdcall Clear();
+  [propget,id(0x0000017)]
+  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
+  
+};
+
+[
+  object,
+  uuid(1EF8FE71-92AF-4E56-ADAE-30ACF31B09AE),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IGroupQuery : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall KeyField([in, defaultvalue("")] BSTR Name, [in, defaultvalue("")] BSTR Name1,
+				[in, defaultvalue("")] BSTR Name2, [in, defaultvalue("")] BSTR Name3,
+                [in, defaultvalue("")] BSTR Name4, [in, defaultvalue("")] BSTR Name5,
+				[in, defaultvalue("")] BSTR Name6, [in, defaultvalue("")] BSTR Name7,
+				[in, defaultvalue("")] BSTR Name8, [in, defaultvalue("")] BSTR Name9,
+				[in, defaultvalue("")] BSTR Name10, [out, retval] IGroupQuery** retVal);
+
+  [id(0x0000002)]
+  HRESULT _stdcall AddFunction([in] eGroupFunc func
+	  ,	[in] IFieldNames* targetNames , [in, defaultvalue("")] BSTR resultName
+	  , [in, defaultvalue("")]VARIANT q, [out, retval] IGroupQuery** retVal);
+
+  [id(0x0000004)]
+  HRESULT _stdcall Reset([out, retval] IGroupQuery** retVal);
+};
+
+[
+  object,
+  uuid(B40B2E5A-2E5A-4D76-B392-75CFA9CD89A8),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IRecordsetQuery : IDispatch
+{
+  [id(0x0000004)]
+  HRESULT _stdcall Reset([out, retval] IRecordsetQuery** retVal);
+  [id(0x0000005)]
+  HRESULT _stdcall When([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000006)]
+  HRESULT _stdcall And([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000007)]
+  HRESULT _stdcall Or([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IRecordsetQuery** retVal);
+
+};
+
+[
+  object,
+  uuid(4A38F70D-9D46-474E-B429-DF4EE61CDAA5),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IFieldDefs : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall IndexByName([in] BSTR Name, [out, retval] short* retVal);
+  [propget, id(0x0000002)]
+  HRESULT _stdcall FieldDef([in] VARIANT Name, [out, retval] IFieldDef** retVal);
+  [propget, id(0x0000003)]
+  HRESULT _stdcall Size([out, retval] short* retVal);
+};
+
+
+[
+  object,
+  uuid(16781A10-8371-415D-84B2-AD2874D57572),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface ISortField : IDispatch
+{
+  [propget, id(1)]
+  HRESULT _stdcall Name([out, retval] BSTR* Value);
+  [propput, id(1)]
+  HRESULT _stdcall Name([in] BSTR Value);
+  [propget, id(2)]
+  HRESULT _stdcall Asc([out, retval] VARIANT_BOOL* Value);
+  [propput, id(2)]
+  HRESULT _stdcall Asc([in]  VARIANT_BOOL Value);
+
+};
+
+[
+  object,
+  uuid(ED7FA0F0-2A2D-4271-98A6-9FE652353AAE),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface ISortFields : IDispatch
+{
+  [id(1)]
+  HRESULT _stdcall Add([in] BSTR Name, [in] VARIANT_BOOL asc);
+  [propget, id(2)]
+  HRESULT _stdcall Size([out, retval] int* Value);
+  [id(3)]
+  HRESULT _stdcall Item([in] int index, [out, retval] ISortField** retVal);
+  [id(4)]
+  HRESULT _stdcall Clear();
+};
+
+[
+  object,
+  uuid(5A6DA657-9C4E-4BD1-8724-00480947E79D),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IFieldNames : IDispatch
+{
+  [id(1)]
+  HRESULT _stdcall KeyField([in, defaultvalue("")] BSTR Name, [in, defaultvalue("")] BSTR Name1,
+				[in, defaultvalue("")] BSTR Name2, [in, defaultvalue("")] BSTR Name3,
+                [in, defaultvalue("")] BSTR Name4, [in, defaultvalue("")] BSTR Name5,
+				[in, defaultvalue("")] BSTR Name6, [in, defaultvalue("")] BSTR Name7,
+				[in, defaultvalue("")] BSTR Name8, [in, defaultvalue("")] BSTR Name9,
+				[in, defaultvalue("")] BSTR Name10, [out, retval] IFieldNames** retVal);
+  [propget, id(2)]
+  HRESULT _stdcall Count([out, retval] int* Value);
+  [id(3)]
+  HRESULT _stdcall addValue([in] BSTR val);
+  [propget, id(4)]
+  HRESULT _stdcall Value([in] int index, [out, retval] BSTR* retVal);
+  [id(5)]
+  HRESULT _stdcall addValues([in] BSTR val, [in] BSTR delm);
+  [id(6)]
+  HRESULT _stdcall Reset([out, retval] IFieldNames** retVal);
+};
+
+[
+  object,
+  uuid(CE4EBFCB-EA63-4CC3-AB24-02752C23BB36),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IPooledDbManager : IDispatch
+{
+  [propput, id(0x00000101)]
+  HRESULT _stdcall MaxConnections([in] int n);
+  [propget, id(0x00000101)]
+  HRESULT _stdcall MaxConnections([out, retval] int* retVal);
+  [id(0x00000103)]
+  HRESULT _stdcall Reset([in,defaultvalue(5)] int waitSec);
+  [id(0x00000104)]
+  HRESULT _stdcall Reserve([in] int size, [in] IConnectParams* Uri);
+  [propget, id(0x00000001)]
+  HRESULT _stdcall Stat([out, retval] eStatus* Value);
+  [id(0x00000002)]
+  HRESULT _stdcall BeginTrn([in, defaultvalue(PARA_SINGLE_NOWAIT)] eLockType Bias);
+  [id(0x00000003)]
+  HRESULT _stdcall EndTrn(void);
+  [id(0x00000004)]
+  HRESULT _stdcall AbortTrn(void);
+  [id(0x00000005)]
+  HRESULT _stdcall BeginSnapshot(void);
+  [id(0x00000006)]
+  HRESULT _stdcall EndSnapshot(void);
+  [id(0x00000007)]
+  HRESULT _stdcall Use([in, defaultvalue(0L)] VARIANT Uri);
+  [id(0x00000008)]
+  HRESULT _stdcall Unuse();
+  [propget, id(0x00000009)]
+  HRESULT _stdcall EnableTrn([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000000A)]
+  HRESULT _stdcall Uri( [out, retval] BSTR* Uri);
+  [propget, id(0x0000000B)]
+  HRESULT _stdcall IsOpened([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000000C)]
+  HRESULT _stdcall ClientID([out, retval] short* Value);
+  [id(0x0000000E)]
+  HRESULT _stdcall Table([in] BSTR name, [out, retval]ITable** retVal);
+  [id(0x0000000F)]
+  HRESULT _stdcall Db([out, retval]IDatabase** retVal);
+  [propput, id(0x00000010)]
+  HRESULT _stdcall Option([in] __int64 Value);
+  [propget, id(0x00000010)]
+  HRESULT _stdcall Option([out, retval] __int64* Value);
+  [propget, id(0x00000011)]
+  HRESULT _stdcall Mode([out, retval] short* Value);
+};
+
+[
+  object,
+  uuid(CA38A33C-E2E9-47CA-90F8-BF4112D7CBAC),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IConnectParams : IDispatch
+{
+  [id(1)]
+  HRESULT _stdcall Init([in] BSTR protocol, [in] BSTR hostOrIp, [in] BSTR dbname,
+					[in] BSTR schemaTable);
+  [propput, id(2)]
+  HRESULT _stdcall Uri([in] BSTR val);
+  [propget, id(2)]
+  HRESULT _stdcall Uri([out, retval] BSTR* retVal);
+  [propput, id(3)]
+  HRESULT _stdcall Mode([in] short val);
+  [propget, id(3)]
+  HRESULT _stdcall Mode([out, retval] short* retVal);
+  [propput, id(4)]
+  HRESULT _stdcall Type([in] short val);
+  [propget, id(4)]
+  HRESULT _stdcall Type([out, retval] short* retVal);
+ 
+};
+
 [
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
 	version(1.0),
 ]
-
 library transactd
 {
   importlib("stdole2.tlb");
@@ -1096,6 +1510,7 @@ library transactd
   coclass Field
   {
     [default] interface IField;
+
   };
 	
   [
@@ -1107,8 +1522,6 @@ library transactd
     [default] interface ITdVersion;
   };
   
- 
-
 	[
 		uuid(CA076B05-541B-48EF-AC55-33323FB052F3)		
 	]
@@ -1116,6 +1529,109 @@ library transactd
 	{
 		[default] interface IQueryBase;
 	};
+
+	[
+		uuid(BB90F201-61B3-47F9-A185-343176B046DF)		
+	]
+	coclass ActiveTable
+	{
+		[default] interface IActiveTable;
+	};
+
+	[
+		uuid(3A5A39FA-15EE-459E-BE8C-5769A97DA27B)	
+		,noncreatable
+	]
+	coclass Recordset
+	{
+		[default] interface IRecordset;
+		
+	};
+
+	[
+		uuid(3729705B-AA47-4592-ABE3-844B20E8A141)	
+		,noncreatable
+	]
+	coclass Record
+	{
+		[default] interface IRecord;
+		
+	};
+
+	[
+		uuid(1D51D5EE-41CC-4D83-A8D6-C297D25C3D87)		
+	]
+	coclass WritableRecord
+	{
+		[default] interface IWritableRecord;
+	};
+
+	[
+		uuid(8EB78589-1084-4546-A826-20B615831EFF)		
+	]
+	coclass GroupQuery
+	{
+		[default] interface IGroupQuery;
+	};
+
+	[
+		uuid(611990AE-89AA-49AC-8B17-B518BF6A7729)		
+	]
+	coclass RecordsetQuery
+	{
+		[default] interface IRecordsetQuery;
+	};
+
+	[
+		uuid(4A92626B-03B9-45F8-B952-1E696D23752E)
+		,noncreatable
+	]
+	coclass FieldDefs
+	{
+		[default] interface IFieldDefs;
+	};
+
+	[
+		uuid(7677BF30-C7C5-4AD5-AF86-99A21846A122)
+		,noncreatable
+	]
+	coclass SortField
+	{
+		[default] interface ISortField;
+	};
+
+	[
+		uuid(8C21D933-1DF0-4224-ADCE-8B40ADA9B403)
+	]
+	coclass SortFields
+	{
+		[default] interface ISortFields;
+	};
+
+	[
+		uuid(19B74AFC-50A3-4265-A28F-E1B389EDC5AA)
+	]
+	coclass FieldNames
+	{
+		[default] interface IFieldNames;
+	};
+
+	[
+		uuid(44CDEAF9-08CD-4EE8-B039-795A29C06E09)
+	]
+	coclass PooledDbManager
+	{
+		[default] interface IPooledDbManager;
+	};
+
+	[
+		uuid(0FB25FFA-9F0E-4C66-A40E-C5DAD40BC71B)
+	]
+	coclass ConnectParams
+	{
+		[default] interface IConnectParams;
+	};
+		
 };
 
 import "shobjidl.idl";
