@@ -214,7 +214,7 @@ function readRange($db, $tb) {
     $start = 1;
     while ($start < RECORD_COUNT) {
         $tb->clearBuffer();
-        $tb->setFilter('*', 1, RECORD_COUNT);
+        $tb->setFilter('*', 1, RECORD_UNIT);
         $tb->setFV(FDI_ID, $start);
         $tb->find(Bz\table::findForword);
         for ($i = $start; $i < $start + RECORD_UNIT; $i++) {
@@ -235,7 +235,7 @@ function readRangeSnapshot($db, $tb) {
     $start = 1;
     while ($start < RECORD_COUNT) {
         $tb->clearBuffer();
-        $tb->setFilter('*', 1, RECORD_COUNT);
+        $tb->setFilter('*', 1, RECORD_UNIT);
         $tb->setFV(FDI_ID, $start);
         $tb->find(Bz\table::findForword);
         for ($i = $start; $i < $start + RECORD_UNIT; $i++) {
