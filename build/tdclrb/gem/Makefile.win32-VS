@@ -40,6 +40,8 @@ if ERRORLEVEL 1 (
 
 if "%~1" == "install" goto :INSTALLCMD
 if "%~1" == "site-install" goto :INSTALLCMD
+if "%~2" == "install" goto :INSTALLCMD
+if "%~2" == "site-install" goto :INSTALLCMD
 exit /b 0
 
 :INSTALLCMD
