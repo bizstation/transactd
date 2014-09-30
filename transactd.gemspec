@@ -27,7 +27,7 @@ spec_build = Gem::Specification.new do |s|
   s.homepage    = 'http://www.bizstation.jp/ja/transactd'
   s.license     = 'GPL v2'
   
-  # read version from tdapcapi.h
+  # read major/minor version from tdapcapi.h
   verfile = 'source/bzs/db/protocol/tdap/tdapcapi.h'
   unless File.exist?(verfile)
     raise 'Can not found ' + verfile
@@ -42,13 +42,21 @@ spec_build = Gem::Specification.new do |s|
     }
   }
   unless (versions.has_key?(:CPP_INTERFACE_VER_MAJOR) &&
-          versions.has_key?(:CPP_INTERFACE_VER_MINOR) &&
-          versions.has_key?(:CPP_INTERFACE_VER_RELEASE))
+          versions.has_key?(:CPP_INTERFACE_VER_MINOR))
     raise 'Can not read versions from ' + verfile
   end
+  # read release version from GEM_RELEASE_VERSION
+  verfile = 'build/tdclrb/GEM_RELEASE_VERSION'
+  unless File.exist?(verfile)
+    raise 'Can not found ' + verfile
+  end
+  File.open(verfile, "r") {|f|
+    l = f.read.gsub(/\s\n/, '')
+    versions[:GEM_RELEASE_VERSION] = Integer(l)
+  }
   s.version = versions[:CPP_INTERFACE_VER_MAJOR].to_s + '.' + 
               versions[:CPP_INTERFACE_VER_MINOR].to_s + '.' + 
-              versions[:CPP_INTERFACE_VER_RELEASE].to_s
+              versions[:GEM_RELEASE_VERSION].to_s
   
   binary_file = File.join('bin', RUBY_VERSION.match(/\d+\.\d+/)[0], 'transactd.so')
   binarymode = File.exist?(binary_file)
