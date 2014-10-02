@@ -54,7 +54,6 @@ endif()
 # version info
 # ==========================================================
 transactd_read_version("${TRANSACTD_ROOT}")
-transactd_read_build_number("${TRANSACTD_ROOT}")
 
 
 # ==========================================================
@@ -152,7 +151,7 @@ if(WIN32)
   transactd_generate_rc_file(
     TRANSACTD_ROOT "${TRANSACTD_ROOT}"
     OUTFILE "${${this_target}_RC_FILE}"
-    F_VER   "${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
+    F_VER   "${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE}.0"
     P_VER   "${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION}.0"
     P_NAME  "Transactd Plugin ${TRANSACTD_VER_POSTFIX}"
     F_DESC  "Transactd Plugin for ${TDVER_DB_PRODUCT}"

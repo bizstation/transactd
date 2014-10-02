@@ -70,11 +70,8 @@ endif()
 # ==========================================================
 # version info
 # ==========================================================
-transactd_read_version("${TRANSACTD_ROOT}")
 transactd_read_file_to_int("${TRANSACTD_ROOT}/build/tdclrb/GEM_RELEASE_VERSION")
 set(TDVER_RUBY_RELEASE "${TRANSACTD_READ_FILE_TO_INT_RETURN}")
-transactd_read_build_number("${TRANSACTD_ROOT}")
-set(TDVER_RUBY_BUILD "${TRANSACTD_BUILD_NUMBER}")
 
 
 # ==========================================================
@@ -126,17 +123,9 @@ include_directories(${TRANSACTD_ROOT};${TRANSACTD_RUBY_INCLUDE_PATH})
 # ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
+set(${this_target}_RC_FILE "${TRANSACTD_ROOT}/build/tdclrb/tdclrb.rc")
+transactd_read_rc("${${this_target}_RC_FILE}")
 if(WIN32)
-  transactd_ver_info_lic()
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/tdclrb.rc")
-  transactd_generate_rc_file(
-    TRANSACTD_ROOT "${TRANSACTD_ROOT}"
-    OUTFILE "${${this_target}_RC_FILE}"
-    F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_RUBY_RELEASE}.${TDVER_RUBY_BUILD}"
-    P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_RUBY_RELEASE}.${TDVER_RUBY_BUILD}"
-    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
-    F_DESC  "Transactd Ruby client"
-  )
   transactd_add_rc_file()
 endif()
 
@@ -211,8 +200,8 @@ else()
 endif()
 if(UNIX)
   set_target_properties(${this_target} PROPERTIES
-    SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
-    VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_RUBY_RELEASE})
+    SOVERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}
+    VERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TDVER_RUBY_RELEASE})
 endif()
 
 
