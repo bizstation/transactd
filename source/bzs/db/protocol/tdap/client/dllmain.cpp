@@ -46,10 +46,26 @@ dllUnloadCallback dllUnloadCallbackFunc = NULL;
 #ifdef USETLS
 tls_key g_tlsiID1;
 tls_key g_tlsiID_SC1;
-#else
+
+void cleanupClinet(void* p)
+{
+    delete ((bzs::db::protocol::tdap::client::client*)(p));
+}
+
+void cleanupClientID(void* p)
+{
+    delete ((clientID*)(p));
+}
+
+void cleanupWChar(void* p)
+{
+    delete ((wchar_t*)(p));
+}
+
+#else // NOT USETLS
 __THREAD clientID __THREAD_BCB g_cid;
 __THREAD bool __THREAD_BCB g_initCid = false;
-#endif
+#endif // NOT USETLS
 
 #ifdef _WIN32
 
@@ -71,9 +87,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
     else if (reason == DLL_THREAD_DETACH)
     {
 #ifdef USETLS
-        delete (bzs::db::protocol::tdap::client::client*)tls_getspecific(
-            g_tlsiID);
-        tls_setspecific(g_tlsiID1, 0);
+        cleanupClinet(tls_getspecific(g_tlsiID));
+        cleanupClientID(tls_getspecific(g_tlsiID1));
+        cleanupWChar(tls_getspecific(g_tlsiID_SC1));
 #else
         delete g_client;
         g_client = NULL;
@@ -107,24 +123,30 @@ void __attribute__((destructor)) onUnloadLibrary(void);
 
 void onLoadLibrary(void)
 {
-    m_cons = new connections(PIPENAME);
+    if (m_cons == NULL)
+    {
+        m_cons = new connections(PIPENAME);
 #ifdef USETLS
-    pthread_key_create(&g_tlsiID, NULL);
-    pthread_key_create(&g_tlsiID1, NULL);
-    pthread_key_create(&g_tlsiID_SC1, NULL);
+        pthread_key_create(&g_tlsiID, cleanupClinet);
+        pthread_key_create(&g_tlsiID1, cleanupClientID);
+        pthread_key_create(&g_tlsiID_SC1, cleanupWChar);
 #endif
+    }
 }
 
 void onUnloadLibrary(void)
 {
-    if (dllUnloadCallbackFunc)
-        dllUnloadCallbackFunc();
-    delete m_cons;
-    m_cons = NULL;
+    if (m_cons)
+    {
+        if (dllUnloadCallbackFunc)
+            dllUnloadCallbackFunc();
+        delete m_cons;
+        m_cons = NULL;
 #ifdef USETLS
-    pthread_key_delete(g_tlsiID);
-    pthread_key_delete(g_tlsiID1);
-    pthread_key_delete(g_tlsiID_SC1);
+        pthread_key_delete(g_tlsiID);
+        pthread_key_delete(g_tlsiID1);
+        pthread_key_delete(g_tlsiID_SC1);
+    }
 #endif
 }
 #endif // NOT _WIN32
@@ -412,13 +434,6 @@ inline clientID* getCid()
     }
     return p;
 #else
-    return &g_cid;
-#endif
-}
-
-void initCid()
-{
-#ifndef USETLS
     if (!g_initCid)
     {
         g_initCid = true;
@@ -427,6 +442,7 @@ void initCid()
         g_cid.aid[0] = 'G';
         g_cid.aid[1] = 'X';
     }
+    return &g_cid;
 #endif
 }
 
@@ -444,7 +460,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL BTRV(ushort_td op, posblk* pbk,
                                                void_td* data, uint_td* datalen,
                                                void_td* keybuf, char_td keyNum)
 {
-    initCid();
     return BTRVID(op, pbk, data, datalen, keybuf, keyNum, getCid());
 }
 
@@ -452,7 +467,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL
     BTRCALL(ushort_td op, posblk* pbk, void_td* data, uint_td* datalen,
             void_td* keybuf, keylen_td keylen, char_td keyNum)
 {
-    initCid();
     return BTRCALLID(op, pbk, data, datalen, keybuf, keylen, keyNum, getCid());
 }
 
@@ -460,7 +474,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL
     BTRCALL32(ushort_td op, posblk* pbk, void_td* data, uint_td* datalen,
               void_td* keybuf, keylen_td keylen, char_td keyNum)
 {
-    initCid();
     return BTRCALLID(op, pbk, data, datalen, keybuf, keylen, keyNum, getCid());
 }
 
