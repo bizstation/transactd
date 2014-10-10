@@ -59,9 +59,8 @@ message(STATUS "  TRANSACTD_PHP_LIBRARY_PATH ${TRANSACTD_PHP_LIBRARY_PATH}")
 # ==========================================================
 # version info
 # ==========================================================
-transactd_read_version("${TRANSACTD_ROOT}")
-transactd_read_build_number("${TRANSACTD_ROOT}")
-set(TDVER_PHP_BUILD "${TRANSACTD_BUILD_NUMBER}")
+transactd_read_file_to_int("${TRANSACTD_ROOT}/build/tdclphp/RELEASE_VERSION")
+set(TDVER_PHP_RELEASE "${TRANSACTD_READ_FILE_TO_INT_RETURN}")
 
 
 # ==========================================================
@@ -154,17 +153,9 @@ include_directories(${TRANSACTD_ROOT}
 # ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
+set(${this_target}_RC_FILE "${TRANSACTD_ROOT}/build/tdclphp/tdclphp.rc")
+transactd_read_rc("${${this_target}_RC_FILE}")
 if(WIN32)
-  transactd_ver_info_lic()
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/tdclphp.rc")
-  transactd_generate_rc_file(
-    TRANSACTD_ROOT "${TRANSACTD_ROOT}"
-    OUTFILE "${${this_target}_RC_FILE}"
-    F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TDVER_PHP_BUILD}"
-    P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TDVER_PHP_BUILD}"
-    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
-    F_DESC  "Transactd PHP client"
-  )
   transactd_add_rc_file()
 endif()
 
@@ -251,8 +242,8 @@ if(NOT WIN32)
 endif()
 if(UNIX AND NOT APPLE)
   set_target_properties(${this_target} PROPERTIES
-    SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
-    VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE})
+    SOVERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}
+    VERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TDVER_PHP_RELEASE})
 endif()
 
 

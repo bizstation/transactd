@@ -71,13 +71,6 @@ endif()
 
 
 # ==========================================================
-# version info
-# ==========================================================
-transactd_read_version("${TRANSACTD_ROOT}")
-transactd_read_build_number("${TRANSACTD_ROOT}")
-
-
-# ==========================================================
 # add source / include dir , set compiler / linker options
 # ==========================================================
 tdcl_add_source_files("${TRANSACTD_ROOT}")
@@ -87,17 +80,9 @@ tdcl_add_include_directory("${TRANSACTD_ROOT}")
 # ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
+set(${this_target}_RC_FILE "${TRANSACTD_ROOT}/build/tdclcpp/tdclcpp.rc")
+transactd_read_rc("${${this_target}_RC_FILE}")
 if(WIN32)
-  transactd_ver_info_lic()
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/tdclcpp.rc")
-  transactd_generate_rc_file(
-    TRANSACTD_ROOT "${TRANSACTD_ROOT}"
-    OUTFILE "${${this_target}_RC_FILE}"
-    F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
-    F_DESC  "Transactd C++ client"
-  )
   transactd_add_rc_file()
 endif()
 
@@ -174,7 +159,7 @@ if(WIN32)
   endif()
   set_target_properties(${this_target} PROPERTIES PREFIX "")
   set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
-    "${TDCL_CPP_NAME_TMP}_${TDVER_CPP_INTERFACE_VER_MAJOR}_${TDVER_CPP_INTERFACE_VER_MINOR}")
+    "${TDCL_CPP_NAME_TMP}_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
   set_target_properties(${this_target} PROPERTIES SUFFIX ".dll")
 else()
   ## Linux   libtdclcpp_[32|64][m|u].so.[MAJOR].[MINOR].[RELEASE]
@@ -188,8 +173,8 @@ else()
     set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
   endif()
   set_target_properties(${this_target} PROPERTIES
-    SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
-    VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE})
+    SOVERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}
+    VERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TD_RC_VER_RELEASE})
 endif()
 
 

@@ -51,13 +51,6 @@ endif()
 
 
 # ==========================================================
-# version info
-# ==========================================================
-transactd_read_version("${TRANSACTD_ROOT}")
-transactd_read_build_number("${TRANSACTD_ROOT}")
-
-
-# ==========================================================
 # source files
 # ==========================================================
 set(${this_target}_SOURCE_FILES
@@ -89,17 +82,9 @@ endif()
 # ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
+set(${this_target}_RC_FILE "${TRANSACTD_ROOT}/build/tdclc/tdclc.rc")
+transactd_read_rc("${${this_target}_RC_FILE}")
 if(WIN32)
-  transactd_ver_info_lic()
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/tdclc.rc")
-  transactd_generate_rc_file(
-    TRANSACTD_ROOT "${TRANSACTD_ROOT}"
-    OUTFILE "${${this_target}_RC_FILE}"
-    F_VER   "${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}.${TDVER_C_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_VER   "${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}.${TDVER_C_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
-    F_DESC  "Transactd C client"
-  )
   transactd_add_rc_file()
 endif()
 
@@ -156,7 +141,7 @@ if(WIN32)
   ## Windows tdclc_[32|64]_[MAJOR]_[MINOR].dll
   set_target_properties(${this_target} PROPERTIES PREFIX "")
   set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
-      "tdclc_${BZ_BITNESS}_${TDVER_C_INTERFACE_VER_MAJOR}_${TDVER_C_INTERFACE_VER_MINOR}")
+      "tdclc_${BZ_BITNESS}_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
   set_target_properties(${this_target} PROPERTIES SUFFIX ".dll")
 else()
   ## Linux libtdclc_[32|64].so.[MAJOR].[MINOR]
@@ -167,14 +152,14 @@ else()
       include(../common/transactd_cl_output.cmake)
     endif()
     tdcl_set_outputnames_osx(
-      "libtdclc_${BZ_BITNESS}" "${TDVER_C_INTERFACE_VER_MAJOR}"
-      "${TDVER_C_INTERFACE_VER_MINOR}" "${TDVER_C_INTERFACE_VER_RELEASE}"
+      "libtdclc_${BZ_BITNESS}" "${TD_RC_VER_MAJOR}"
+      "${TD_RC_VER_MINOR}" "${TD_RC_VER_RELEASE}"
       "${TRANSACTD_ROOT}")
   else()
     set_target_properties(${this_target} PROPERTIES SUFFIX ".so")
     set_target_properties(${this_target} PROPERTIES
-      SOVERSION ${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}
-      VERSION   ${TDVER_C_INTERFACE_VER_MAJOR}.${TDVER_C_INTERFACE_VER_MINOR}.${TDVER_C_INTERFACE_VER_RELEASE})
+      SOVERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}
+      VERSION   ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TD_RC_VER_RELEASE})
   endif()
 endif()
 

@@ -1,0 +1,62 @@
+//=================================================================
+//   Copyright (C) 2013 BizStation Corp All rights reserved.
+//
+//   This program is free software; you can redistribute it and/or
+//   modify it under the terms of the GNU General Public License
+//   as published by the Free Software Foundation; either version 2
+//   of the License, or (at your option) any later version.
+//
+//   This program is distributed in the hope that it will be useful,
+//   but WITHOUT ANY WARRANTY; without even the implied warranty of
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//   GNU General Public License for more details.
+//
+//   You should have received a copy of the GNU General Public License
+//   along with this program; if not, write to the Free Software 
+//   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+//   02111-1307, USA.
+//=================================================================
+
+#ifndef __BCPLUSPLUS__
+#include <windows.h>
+#endif
+
+#define IDC_STATIC -1
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,0,0,9
+ PRODUCTVERSION 2,0,0,9
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "BizStation Corp."
+            VALUE "FileDescription", "Transactd O/R map source code generator"
+            VALUE "FileVersion", "2.0.0.9"
+            VALUE "LegalCopyright", "Copyright(C) 2014 BizStation Corp"
+            VALUE "ProductVersion", "2.0.0.9"
+            VALUE "ProductName", "Transactd Client (GPL V2)"
+        END
+    END
+    BLOCK "VarFileInfo"
+
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+

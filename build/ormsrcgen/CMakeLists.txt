@@ -53,13 +53,6 @@ endif()
 
 
 # ==========================================================
-# version info
-# ==========================================================
-transactd_read_version("${TRANSACTD_ROOT}")
-transactd_read_build_number("${TRANSACTD_ROOT}")
-
-
-# ==========================================================
 # source files
 # ==========================================================
 set(${this_target}_SOURCE_FILES
@@ -81,17 +74,9 @@ endif()
 # ==========================================================
 # add resource file (for Windows Visual Studio)
 # ==========================================================
+set(${this_target}_RC_FILE "${TRANSACTD_ROOT}/build/ormsrcgen/ormsrcgen.rc")
+transactd_read_rc("${${this_target}_RC_FILE}")
 if(WIN32)
-  transactd_ver_info_lic()
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/ormsrcgen.rc")
-  transactd_generate_rc_file(
-    TRANSACTD_ROOT "${TRANSACTD_ROOT}"
-    OUTFILE "${${this_target}_RC_FILE}"
-    F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TRANSACTD_BUILD_NUMBER}"
-    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
-    F_DESC  "Transactd O/R map source code generator"
-  )
   transactd_add_rc_file()
 endif()
 
