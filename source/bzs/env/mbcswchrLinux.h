@@ -32,12 +32,40 @@ namespace bzs
 {
 namespace env
 {
-extern cvt u8mbcvt; // utf8 to mbc
-extern cvt mbu8cvt; // mbc to utf8
-extern cvt mbcscvt; // mbc to utf16le
-extern cvt wchrcvt; // utf16le to mbc
-extern cvt u8wccvt; // utf8 to utf16le
-extern cvt wcu8cvt; // utf16le to utf8
+
+void initCvtProcess();
+void deinitCvtProcess();
+cvt& getCvt(int index);
+
+inline cvt& mbcscvt()
+{
+    return getCvt(0);
+}
+
+inline cvt& wchrcvt()
+{
+    return getCvt(1);
+}
+
+inline cvt& u8mbcvt()
+{
+    return getCvt(2);
+}
+
+inline cvt& mbu8cvt()
+{
+    return getCvt(3);
+}
+
+inline cvt& u8wccvt()
+{
+    return getCvt(4);
+}
+
+inline cvt& wcu8cvt()
+{
+    return getCvt(5);
+}
 
 inline int WideCharToMultiByte(unsigned int codepage, unsigned int dwFlags,
                                const char16_t* lpWideCharStr, int cchWideChar,
@@ -46,9 +74,9 @@ inline int WideCharToMultiByte(unsigned int codepage, unsigned int dwFlags,
                                int* lpUsedDefaultChar)
 {
     if (codepage == CP_UTF8)
-        return wcu8cvt.conv(lpWideCharStr, (size_t)(cchWideChar + cchWideChar),
+        return wcu8cvt().conv(lpWideCharStr, (size_t)(cchWideChar + cchWideChar),
                             lpMultiByteStr, (size_t)cchMultiByte);
-    return wchrcvt.conv(lpWideCharStr, (size_t)(cchWideChar + cchWideChar),
+    return wchrcvt().conv(lpWideCharStr, (size_t)(cchWideChar + cchWideChar),
                         lpMultiByteStr, (size_t)cchMultiByte);
 }
 
@@ -57,20 +85,20 @@ inline int MultiByteToWideChar(unsigned int codepage, unsigned int dwFlags,
                                char16_t* lpWideCharStr, int cchWideChar)
 {
     if (codepage == CP_UTF8)
-        return u8wccvt.conv(lpMultiByteStr, (size_t)cchMultiByte, lpWideCharStr,
+        return u8wccvt().conv(lpMultiByteStr, (size_t)cchMultiByte, lpWideCharStr,
                             (size_t)(cchWideChar + cchWideChar));
-    return mbcscvt.conv(lpMultiByteStr, (size_t)cchMultiByte, lpWideCharStr,
+    return mbcscvt().conv(lpMultiByteStr, (size_t)cchMultiByte, lpWideCharStr,
                         (size_t)(cchWideChar + cchWideChar));
 }
 
 inline int u8tombc(const char* u8, int u8size, char* mbc, int mbcsize)
 {
-    return u8mbcvt.conv(u8, (size_t)u8size, mbc, (size_t)mbcsize);
+    return u8mbcvt().conv(u8, (size_t)u8size, mbc, (size_t)mbcsize);
 }
 
 inline int mbctou8(const char* mbc, int mbcsize, char* u8, int u8size)
 {
-    return mbu8cvt.conv(mbc, (size_t)mbcsize, u8, (size_t)u8size);
+    return mbu8cvt().conv(mbc, (size_t)mbcsize, u8, (size_t)u8size);
 }
 
 } // namespace env

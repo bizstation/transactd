@@ -21,7 +21,11 @@
 
 #include "database.h"
 #include <bzs/rtl/exception.h>
-//---------------------------------------------------------------------------
+#ifdef LINUX
+#include <pthread.h>
+#include <bzs/env/crosscompile.h>
+#include <bzs/env/mbcswchrLinux.h>
+#endif
 
 #pragma package(smart_init)
 
@@ -83,29 +87,42 @@ void cleanupTls()
     delete (char*)tls_getspecific(g_tlsiID_SC3);
 }
 
-#ifdef __APPLE__
+void cleanupCharPtr(void* p)
+{
+    delete ((char*)p);
+}
+#endif // USETLS
+
+#ifdef LINUX
 
 #include <pthread.h>
-
 void __attribute__((constructor)) onLoadLibrary(void);
 void __attribute__((destructor)) onUnloadLibrary(void);
 
 void onLoadLibrary(void)
 {
-    pthread_key_create(&g_tlsiID_SC1, NULL);
-    pthread_key_create(&g_tlsiID_SC2, NULL);
-    pthread_key_create(&g_tlsiID_SC3, NULL);
+    bzs::env::initCvtProcess();
+#if (defined(__APPLE__) && defined(USETLS))
+    pthread_key_create(&g_tlsiID_SC1, cleanupCharPtr);
+    pthread_key_create(&g_tlsiID_SC2, cleanupCharPtr);
+    pthread_key_create(&g_tlsiID_SC3, cleanupCharPtr);
+#endif
 }
 
 void onUnloadLibrary(void)
 {
+    bzs::env::deinitCvtProcess();
+#if (defined(__APPLE__) && defined(USETLS))
     cleanupTls();
     pthread_key_delete(g_tlsiID_SC1);
     pthread_key_delete(g_tlsiID_SC2);
     pthread_key_delete(g_tlsiID_SC3);
+#endif
 }
 
-#else
+#endif // LINUX
+
+#if (defined(_WIN32) && defined(USETLS))
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
 {
@@ -136,5 +153,5 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
     }
     return TRUE;
 }
-#endif
-#endif //(_UNICODE && defined(_WIN32) && _MSC_VER)
+#endif //(defined(_WIN32) && defined(USETLS))
+

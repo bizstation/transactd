@@ -705,7 +705,7 @@ void field::setFV(int data)
 {
     if (!m_ptr)
         return;
-    char buf[20];
+    char buf[50];
     double d;
     int v = data;
     switch (m_fd->type)
@@ -781,7 +781,7 @@ void field::setFV(int data)
             setFVA("");
         else
         {
-            _ltoa_s(data, buf, 20, 10);
+            _ltoa_s(data, buf, 50, 10);
             setFVA(buf);
         }
         break;
@@ -795,8 +795,8 @@ void field::setFV(int data)
             setFV(_T(""));
         else
         {
-            _TCHAR buf[30];
-            _ltot_s(data, buf, 30, 10);
+            _TCHAR buf[50];
+            _ltot_s(data, buf, 50, 10);
             setFV(buf);
         }
         break;
@@ -810,7 +810,7 @@ void field::setFV(double data)
 {
     if (!m_ptr)
         return;
-    char buf[20];
+    char buf[50];
     __int64 i64;
     switch (m_fd->type)
     {
@@ -884,8 +884,8 @@ void field::setFV(double data)
             setFV(_T(""));
         else
         {
-            _TCHAR buf[40];
-            _stprintf_s(buf, 40, _T("%f"), data);
+            _TCHAR buf[50];
+            _stprintf_s(buf, 50, _T("%f"), data);
             setFV(buf);
         }
         break;
