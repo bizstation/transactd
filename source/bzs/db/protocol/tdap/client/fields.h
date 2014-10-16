@@ -105,7 +105,9 @@ protected:
     }
     
     virtual void releaseMemory(){}
-
+    /** @endcond */
+public:
+    /* public for swig */
     void release()
     {
         if (m_parent)
@@ -135,8 +137,7 @@ protected:
             }
         }
     }
-    /** @endcond */
-public:
+
     virtual ~fieldsBase(){};
 
     inline void setInvalidRecord(bool v) { m_invalidRecord = v; }
