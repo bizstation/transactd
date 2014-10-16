@@ -6,3 +6,4 @@ build/tdclstmt[mu]/CMakeLists.txt
 build/bench_query[mu]/CMakeLists.txt
 build/ormsrcgen[mu]/CMakeLists.txt
 build/querystmts[mu]/CMakeLists.txt
+bin
