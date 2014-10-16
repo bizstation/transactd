@@ -828,25 +828,25 @@ public:
 
     inline void resetSeeksWrited() { m_seeksWritedCount = 0; }
 
-    void setPositionType(bool incCurrent)
+    inline void setPositionType(bool incCurrent)
     {
         m_hd.setPositionType(incCurrent, m_withBookmark, m_isTransactd);
     }
 
-    bool positionTypeNext() const
+    inline bool positionTypeNext() const
     {
         return m_hd.positionTypeNext(m_isTransactd);
     }
 
-    void setRejectCount(ushort_td v) { m_hd.rejectCount = v; }
-    ushort_td rejectCount() const { return m_hd.rejectCount; }
+    inline void setRejectCount(ushort_td v) { m_hd.rejectCount = v; }
+    inline ushort_td rejectCount() const { return m_hd.rejectCount; }
 
-    void setMaxRows(ushort_td v) { m_ret.maxRows = v; }
-    ushort_td maxRows() const { return m_ret.maxRows; }
+    inline void setMaxRows(ushort_td v) { m_ret.maxRows = v; }
+    inline ushort_td maxRows() const { return m_ret.maxRows; }
 
-    ushort_td recordCount() const { return maxRows(); }
+    inline ushort_td recordCount() const { return maxRows(); }
 
-    void setPosTypeNext(bool v) { setPositionType(!v); }
+    inline void setPosTypeNext(bool v) { setPositionType(!v); }
 
     uint_td exDataBufLen() const
     {
@@ -857,11 +857,11 @@ public:
 
     void init(table* pBao){};
 
-    ushort_td fieldCount() const { return m_ret.fieldCount; }
+    inline ushort_td fieldCount() const { return m_ret.fieldCount; }
 
-    void setFieldCount(ushort_td v) { m_ret.fieldCount = v; }
+    inline void setFieldCount(ushort_td v) { m_ret.fieldCount = v; }
 
-    ushort_td fieldLen(int index) const
+    inline ushort_td fieldLen(int index) const
     {
         assert(index < (int)m_fields.size());
         return m_fields[index]->len;
@@ -881,7 +881,7 @@ public:
         return recordLen;
     }
 
-    ushort_td fieldOffset(int index) const
+    inline ushort_td fieldOffset(int index) const
     {
         assert(index < (int)m_fields.size());
         return m_fields[index]->pos;
@@ -894,7 +894,7 @@ public:
         return false;
     }
 
-    ushort_td extendBuflen() const { return m_extendBuflen; }
+    inline ushort_td extendBuflen() const { return m_extendBuflen; }
 
     bool fieldSelected() const
     {
@@ -903,23 +903,23 @@ public:
                   (ushort_td)m_tb->tableDef()->maxRecordLen));
     }
 
-    bool ignoreFields() const { return m_ignoreFields; }
+    inline bool ignoreFields() const { return m_ignoreFields; }
 
-    int bookmarkSize() const { return m_hd.bookmarkSize(m_isTransactd); }
+    inline int bookmarkSize() const { return m_hd.bookmarkSize(m_isTransactd); }
 
     /* The Ignore fields option don't use with multi seek operation.
        because if a server are not found a record then a server return
        error code in a bookmark field.
     */
-    void setIgnoreFields(bool v) { m_ignoreFields = v; }
-    bool isSeeksMode() const { return m_seeksMode; }
-    table::eFindType direction() const { return m_direction; }
-    void setDirection(table::eFindType v) { m_direction = v; }
-    const std::vector<short>& selectFieldIndexes()
+    inline void setIgnoreFields(bool v) { m_ignoreFields = v; }
+    inline bool isSeeksMode() const { return m_seeksMode; }
+    inline table::eFindType direction() const { return m_direction; }
+    inline void setDirection(table::eFindType v) { m_direction = v; }
+    inline const std::vector<short>& selectFieldIndexes()
     {
         return m_selectFieldIndexes;
     }
-    const std::vector<seek>& seeks() const { return m_seeks; }
+    inline const std::vector<seek>& seeks() const { return m_seeks; }
 };
 
 } // namespace client
