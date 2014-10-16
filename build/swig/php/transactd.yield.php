@@ -482,6 +482,8 @@ abstract class transactd {
 
 	const ERROR_LOAD_CLIBRARY = ERROR_LOAD_CLIBRARY;
 
+	const ERROR_INDEX_RND_INIT = ERROR_INDEX_RND_INIT;
+
 	const SERVER_CLIENT_NOT_COMPATIBLE = SERVER_CLIENT_NOT_COMPATIBLE;
 
 	const NET_BAD_SRB_FORMAT = NET_BAD_SRB_FORMAT;
@@ -3149,7 +3151,7 @@ class memoryRecord extends Record {
 	}
 }
 
-class writableRecord extends memoryRecord {
+class writableRecord extends Record {
 	// override ArrayAccess method (set value).
 	public function offsetSet($offset, $value) {
 		$this->offsetGet($offset);
@@ -3169,17 +3171,17 @@ class writableRecord extends memoryRecord {
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		memoryRecord::__set($var,$value);
+		Record::__set($var,$value);
 	}
 
 	function __isset($var) {
 		if ($var === 'thisown') return true;
-		return memoryRecord::__isset($var);
+		return Record::__isset($var);
 	}
 
 	function __get($var) {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return memoryRecord::__get($var);
+		return Record::__get($var);
 	}
 	function __construct($h) {
 		$this->_cPtr=$h;
@@ -3867,7 +3869,7 @@ class RecordsetIterator implements \SeekableIterator {
 		$this->_position = 0;
 		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
 		$this->_count = Recordset_count($recordset_cPtr);
-		$this->_record = new Record(memoryRecord::createRecord($fielddefs));
+		$this->_record = new Record(memoryRecord_createRecord($fielddefs));
 	}
 
 	function __destruct() {
@@ -3996,7 +3998,7 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 			$this->_cPtr = $r->_cPtr;
 		}
 		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-		$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
+		$this->_record = new Record(memoryRecord_createRecord($this->fieldDefs()));
 	}
 
 	function size() {
@@ -4121,12 +4123,12 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__recordset') {
 			$this->_cPtr=$res;
 			$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-			$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
+			$this->_record = new Record(memoryRecord_createRecord($this->fieldDefs()));
 			return;
 		}
 		$this->_cPtr=new_Recordset();
 		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-		$this->_record = new Record(memoryRecord::createRecord($this->fieldDefs()));
+		$this->_record = new Record(memoryRecord_createRecord($this->fieldDefs()));
 	}
 }
 
@@ -4231,10 +4233,6 @@ class activeTable {
 		return $r;
 	}
 
-	function table() {
-		return activeTable_table($this->_cPtr);
-	}
-
 	function option($v) {
 		$r=activeTable_option($this->_cPtr,$v);
 		if (is_resource($r)) {
@@ -4270,6 +4268,16 @@ class activeTable {
 		activeTable_release($this->_cPtr);
 	}
 
+	function table() {
+		$r=activeTable_table($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new table($r);
+		}
+		return $r;
+	}
+
 	function keyValue($kv0,$kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
 		switch (func_num_args()) {
 		case 1: $r=activeTable_keyValue($this->_cPtr,$kv0); break;
@@ -4286,54 +4294,6 @@ class activeTable {
 		case '_p_bzs__db__protocol__tdap__client__activeTable': return new activeTable($r);
 		default: return new activeTable($r);
 		}
-	}
-}
-
-class xaTransaction {
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-
-	function add($db) {
-		xaTransaction_add($this->_cPtr,$db);
-	}
-
-	function unUse() {
-		xaTransaction_unUse($this->_cPtr);
-	}
-
-	function beginTrn($bias) {
-		xaTransaction_beginTrn($this->_cPtr,$bias);
-	}
-
-	function endTrn() {
-		xaTransaction_endTrn($this->_cPtr);
-	}
-
-	function abortTrn() {
-		xaTransaction_abortTrn($this->_cPtr);
-	}
-
-	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__xaTransaction') {
-			$this->_cPtr=$res;
-			return;
-		}
-		$this->_cPtr=new_xaTransaction();
 	}
 }
 
@@ -4376,10 +4336,6 @@ class pooledDbManager extends idatabaseManager {
 
 	function reset($v) {
 		pooledDbManager_reset($this->_cPtr,$v);
-	}
-
-	function table($name) {
-		return pooledDbManager_table($this->_cPtr,$name);
 	}
 
 	function db() {
@@ -4454,6 +4410,16 @@ class pooledDbManager extends idatabaseManager {
 
 	static function reserve($size,$param) {
 		pooledDbManager_reserve($size,$param);
+	}
+
+	function table($name) {
+		$r=pooledDbManager_table($this->_cPtr,$name);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new table($r);
+		}
+		return $r;
 	}
 }
 

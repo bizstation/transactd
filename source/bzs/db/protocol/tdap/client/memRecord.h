@@ -62,7 +62,6 @@ class DLLLIB memoryRecord : public fieldsBase
 
     std::vector<autoMemory> m_memblock;
 
-    static memoryRecord* create(fielddefs& fdinfo);
     static memoryRecord* create(fielddefs& fdinfo, int n);
     static memoryRecord* create(const memoryRecord& m, int n);
 
@@ -114,6 +113,7 @@ protected:
     /** @endcond */
 public:
     void clear(); // orverride
+    static memoryRecord* create(fielddefs& fdinfo); // For SWIG
 };
 
 #pragma warning(default : 4275)

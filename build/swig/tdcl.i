@@ -134,6 +134,9 @@ using namespace bzs::db::protocol::tdap::client;
 %delobject *::release;
 
 // * bzs/env/mbcswchrLinux.h *
+%ignore bzs::env::initCvtProcess;
+%ignore bzs::env::deinitCvtProcess;
+%ignore bzs::env::getCvt;
 %ignore bzs::env::u8mbcvt;
 %ignore bzs::env::mbu8cvt;
 %ignore bzs::env::mbcscvt;
@@ -182,10 +185,14 @@ using namespace bzs::db::protocol::tdap::client;
   void release() {
     self->releaseTable();
   }
+  table* table() {
+    return self->table().get();
+  }
 };
   // ignore original methods
 %ignore bzs::db::protocol::tdap::client::activeTable::activeTable;
 %ignore bzs::db::protocol::tdap::client::activeTable::~activeTable;
+%ignore bzs::db::protocol::tdap::client::activeTable::table;
 
 
 // * bzs/db/protocol/tdap/btrDate.h *
@@ -287,6 +294,9 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::fielddefs::~fielddefs;
 
 // * bzs/db/protocol/tdap/client/fields.h *
+%ignore bzs::db::protocol::tdap::client::MEM_ALLOC_TYPE_NONE;
+%ignore bzs::db::protocol::tdap::client::MEM_ALLOC_TYPE_ONE;
+%ignore bzs::db::protocol::tdap::client::MEM_ALLOC_TYPE_ARRAY;
 %ignore bzs::db::protocol::tdap::client::fields;
 %ignore bzs::db::protocol::tdap::client::fieldsBase::operator[](const std::_tstring&) const;
 %ignore bzs::db::protocol::tdap::client::fieldsBase::fd;
@@ -428,7 +438,7 @@ using namespace bzs::db::protocol::tdap::client;
     return bzs::db::protocol::tdap::client::memoryRecord::create(fds);
   }
   ~memoryRecord() {
-    bzs::db::protocol::tdap::client::memoryRecord::release(self);
+    self->release();
   }
 };
   // ignore original methods
@@ -454,6 +464,15 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nstable::test;
 %ignore bzs::db::protocol::tdap::client::nstable::throwError;
 %rename(tdapLastErr) bzs::db::protocol::tdap::client::nstable::tdapErr(HWND, _TCHAR*);
+
+// * bzs/db/protocol/tdap/client/pooledDatabaseManager.h *
+%ignore bzs::db::protocol::tdap::client::xaTransaction;
+%extend bzs::db::protocol::tdap::client::pooledDbManager {
+  table* table(const _TCHAR* name) {
+    return self->table(name).get();
+  }
+}
+%ignore bzs::db::protocol::tdap::client::pooledDbManager::table;
 
 // * bzs/db/protocol/tdap/client/recordset.h *
 %ignore bzs::db::protocol::tdap::client::recordset::operator=;
