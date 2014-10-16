@@ -40,7 +40,7 @@ namespace transactd
 #define TRD_READ_ONE 0
 #define TRD_INSERT_ONE 1
 #define TRD_QUERY 2
-#define TRD_RECORDSET_COUNT 50
+#define TRD_RECORDSET_COUNT 30
 
 class worker : public workerBase
 {
@@ -59,7 +59,8 @@ class worker : public workerBase
     recordset m_rs;
     void readOne(table_ptr& tb)
     {
-        int v = (rand() % 15000) + 1;
+        //int v = (rand() % 15000) + 1;
+        int v = m_id % 20000 + 1;
         tb->setFV((short)0, v);
         tb->seek();
         if (tb->stat() != 0)
@@ -68,7 +69,8 @@ class worker : public workerBase
 
     void insertOne(table_ptr& tb)
     {
-        tb->clearBuffer();
+        //tb->clearBuffer();
+        tb->setFV((short)0, (int)0);
         tb->setFV(1, m_id);
         insertRecord(tb);
     }
@@ -77,25 +79,14 @@ class worker : public workerBase
     {
         m_rs.clear();
         query q;
-        int v = (rand() % 15000) + 1;
+        //int v = (rand() % 15000) + 1;
+        int v = m_id % 20000 + 1;
         q.select(_T("id"), _T("name"), _T("group"))
             .where(_T("id"), _T("<"), v + TRD_RECORDSET_COUNT);
         m_atu->index(0).keyValue(v).read(m_rs, q);
+
         q.reset();
-
-        // m_ate->index(0).join(m_rs,
-        // q.select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany),
-        // _T("id"));
-
-        // Join group::name
-        /*recordset rs2;
-
-        q.select(_T("group_name"));
-        for (int i=0;i<m_rs.size();++i)
-                q.addSeekKeyValuePtr(m_rs[i][(short)0].ptr());
-        m_atg->table()->setQuery(&q);
-        m_atg->index(0).keyValue(0).read(rs2, q);
-        */
+        
         m_atg->index(0).join(m_rs, q.select(_T("group_name")), _T("group"));
         if (m_rs.size() != TRD_RECORDSET_COUNT)
             printf("query read error! id = %d size = %d\n", m_id, m_rs.size());
@@ -143,6 +134,7 @@ public:
             _TCHAR tmp[30];
             m_atu->alias(name_field_str(tmp), _T("name"));
             m_atg->alias(_T("name"), _T("group_name"));
+            queryOne();
         }
     }
 

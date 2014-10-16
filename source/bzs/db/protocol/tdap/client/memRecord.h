@@ -58,13 +58,21 @@ class DLLLIB memoryRecord : public fieldsBase
 {
     friend class multiRecordAlocatorImple;
     friend class recordsetImple;
+    friend class recordsetQuery;
 
     std::vector<autoMemory> m_memblock;
 
+    static memoryRecord* create(fielddefs& fdinfo);
+    static memoryRecord* create(fielddefs& fdinfo, int n);
+    static memoryRecord* create(const memoryRecord& m, int n);
+
 protected:
     /** @cond INTERNAL */
+
+    inline memoryRecord();
     inline memoryRecord(fielddefs& fdinfo);
     memoryRecord(const memoryRecord& r);
+    memoryRecord& operator=(const memoryRecord& r);
     void copyToBuffer(table* tb, bool updateOnly = false) const;
 
     /* return memory block first address which not field ptr address */
@@ -99,14 +107,13 @@ protected:
     }
     void removeLastMemBlock() { m_memblock.pop_back(); }
 
+    void setRecordData(unsigned char* ptr, size_t size, short* endFieldIndex,
+                       bool owner = false);
+    void releaseMemory();
+
     /** @endcond */
 public:
     void clear(); // orverride
-    void setRecordData(unsigned char* ptr, size_t size, short* endFieldIndex,
-                       bool owner = false);
-
-    static memoryRecord* create(fielddefs& fdinfo);
-    static void release(fieldsBase* p);
 };
 
 #pragma warning(default : 4275)
@@ -115,25 +122,29 @@ public:
 /* non copyable*/
 class DLLLIB writableRecord : public memoryRecord
 {
+    friend class activeTableImple;
+
     fielddefs* m_fddefs;
     table* m_tb;
     short m_endIndex;
 
+    static writableRecord* create(table* tb, const aliasMap_type* alias);
     writableRecord(table* tb, const aliasMap_type* alias);
     writableRecord(const writableRecord&);
     writableRecord& operator=(const writableRecord&);
 
     fielddefs* fddefs();
+    void releaseMemory();
+    ~writableRecord();
 
 public:
-    ~writableRecord();
+
     bool read(bool KeysetAlrady = false);
     void insert();
     void del(bool KeysetAlrady = false);
     void update();
     void save();
 
-    static writableRecord* create(table* tb, const aliasMap_type* alias);
 };
 
 } // namespace client

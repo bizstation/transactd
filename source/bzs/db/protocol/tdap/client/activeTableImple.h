@@ -108,7 +108,7 @@ class activeTableImple : public activeObject<map_orm>
 {
 
     typedef recordsetImple Container;
-    typedef boost::shared_ptr<writableRecord> record;
+    typedef writableRecord* record;
     typedef activeObject<map_orm> baseClass_type;
     typedef std::vector<std::vector<int> > joinmap_type;
     record m_record;
@@ -322,19 +322,28 @@ class activeTableImple : public activeObject<map_orm>
 
 public:
     explicit activeTableImple(idatabaseManager* mgr, const _TCHAR* tableName)
-        : baseClass_type(mgr, tableName){};
+        : baseClass_type(mgr, tableName), m_record(NULL){};
 
     explicit activeTableImple(database_ptr& db, const _TCHAR* tableName)
-        : baseClass_type(db, tableName){};
+        : baseClass_type(db, tableName), m_record(NULL){};
 
     explicit activeTableImple(database* db, const _TCHAR* tableName)
-        : baseClass_type(db, tableName){};
+        : baseClass_type(db, tableName), m_record(NULL){};
+
+    ~activeTableImple()
+    {
+        if (m_record)
+            m_record->release();
+    }
 
     inline writableRecord& getWritableRecord()
     {
-        m_record.reset(writableRecord::create(m_tb.get(), &m_alias),
-                       &writableRecord::release);
-        return *m_record.get();
+        if (m_record == NULL)
+        {
+            m_record = writableRecord::create(m_tb.get(), &m_alias);
+            m_record->addref();
+        }
+        return *m_record;
     }
 
     inline void join(Container& mdls, queryBase& q, const _TCHAR* name1,

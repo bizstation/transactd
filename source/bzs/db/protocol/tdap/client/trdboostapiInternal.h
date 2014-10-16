@@ -164,7 +164,7 @@ class keyValueSetter
 public:
     template <class table_ptr>
     static void
-    set(table_ptr& tb, const char_td keynum, const T0 kv0, const T1 kv1 = NULL,
+    set(table_ptr tb, const char_td keynum, const T0 kv0, const T1 kv1 = NULL,
         const T2 kv2 = NULL, const T3 kv3 = NULL, const T4 kv4 = NULL,
         const T5 kv5 = NULL, const T6 kv6 = NULL, const T7 kv7 = NULL)
     {

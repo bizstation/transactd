@@ -133,7 +133,6 @@ private:
         }
         else
         {
-            // assert(tb);
             m_joinRows = 0;
             m_mra->setRowOffset(0);
             m_mra->setCurFirstFiled((int)m_fds->size());
@@ -183,13 +182,12 @@ private:
         { // create new record
             size_t reserveSize = m_recordset.size() + rows;
             m_recordset.reserve(reserveSize);
+            memoryRecord* rec = memoryRecord::create(*m_fds, (int)rows);
             for (int i = 0; i < (int)rows; ++i)
             {
-                row_ptr rec(memoryRecord::create(*m_fds),
-                            &memoryRecord::release);
-                rec->setRecordData(p + recordLen * i, 0, am->endFieldIndex,
+                rec[i].setRecordData(p + recordLen * i, 0, am->endFieldIndex,
                                    false);
-                m_recordset.push_back(rec);
+                push_back(&rec[i]);
             }
         }
     }
@@ -221,13 +219,14 @@ private:
     void duplicateRow(int row, int count)
     {
         row_ptr& r = m_recordset[row];
-        memoryRecord* p = dynamic_cast<memoryRecord*>(r.get());
-
+        memoryRecord* p = dynamic_cast<memoryRecord*>(r);
         m_recordset.reserve(m_recordset.size() + count);
-        m_recordset.insert(m_recordset.begin() + row, count, row_ptr());
+        memoryRecord* rec = memoryRecord::create(*p, count);
         for (int i = 0; i < count; ++i)
-            m_recordset[i + row].reset(new memoryRecord(*p),
-                                       &memoryRecord::release);
+        {
+            rec[i].addref();
+            m_recordset.insert(m_recordset.begin() + row + i, &rec[i]);
+        }
     }
 
 public:
@@ -238,12 +237,38 @@ public:
         m_mra.reset(new multiRecordAlocatorImple(this));
     }
 
-    inline ~recordsetImple() {}
+    inline recordsetImple(const recordsetImple& r)
+        : m_fds(r.m_fds),m_mra(r.m_mra), m_recordset(r.m_recordset),
+          m_memblock(r.m_memblock), m_unionFds(r.m_unionFds),
+          m_joinRows(r.m_joinRows), m_uniqueReadMaxField(r.m_uniqueReadMaxField)
+    {
+        for (size_t i = 0; i < m_recordset.size(); ++i)
+            m_recordset[i]->addref();
+    }
+
+    inline ~recordsetImple() { clearRecords(); }
 
     inline void checkIndex(size_t index)
     {
         if (index >= m_recordset.size())
             THROW_BZS_ERROR_WITH_MSG(_T("Invalid row index of recordset."));
+    }
+
+    inline recordsetImple& operator=(const recordsetImple& r)
+    {
+        if (this != &r)
+        {
+            m_fds = r.m_fds;
+            m_mra = r.m_mra;
+            m_recordset = r.m_recordset;
+            m_memblock = r.m_memblock;
+            m_unionFds = r.m_unionFds;
+            m_joinRows = r.m_joinRows;
+            m_uniqueReadMaxField = r.m_uniqueReadMaxField;
+            for (size_t i = 0; i < m_recordset.size(); ++i)
+                m_recordset[i]->addref();
+        }
+        return *this;
     }
 
     /* This clone is deep copy.
@@ -266,24 +291,26 @@ public:
             p->m_memblock.push_back(boost::shared_ptr<autoMemory>(am));
             offsets.push_back((__int64)(am->ptr - m_memblock[i]->ptr));
         }
-
-        for (int i = 0; i < (int)m_recordset.size(); ++i)
+        if (m_recordset.size())
         {
-            memoryRecord* row =
-                dynamic_cast<memoryRecord*>(m_recordset[i].get());
-            memoryRecord* mr = memoryRecord::create(*p->m_fds);
-            row_ptr rec(mr, &memoryRecord::release);
-            p->m_recordset.push_back(rec);
-
-            for (int j = 0; j < (int)row->memBlockSize(); ++j)
+            p->m_recordset.reserve(m_recordset.size());
+            memoryRecord* recs = memoryRecord::create(*p->m_fds, (int)m_recordset.size());
+            for (int i = 0; i < (int)m_recordset.size(); ++i)
             {
-                const autoMemory& mb = row->memBlock(j);
-                int index = getMemBlockIndex(mb.ptr);
+                memoryRecord* mr = recs + i;
+                p->push_back(mr);
+                memoryRecord* row =
+                    dynamic_cast<memoryRecord*>(m_recordset[i]);
+                for (int j = 0; j < (int)row->memBlockSize(); ++j)
+                {
+                    const autoMemory& mb = row->memBlock(j);
+                    int index = getMemBlockIndex(mb.ptr);
 #pragma warn -8072
-                unsigned char* ptr = mb.ptr + offsets[index];
+                    unsigned char* ptr = mb.ptr + offsets[index];
 #pragma warn .8072
-                const boost::shared_ptr<autoMemory>& am = p->m_memblock[index];
-                mr->setRecordData(ptr, mb.size, am->endFieldIndex, mb.owner);
+                    const boost::shared_ptr<autoMemory>& am = p->m_memblock[index];
+                    mr->setRecordData(ptr, mb.size, am->endFieldIndex, mb.owner);
+                }
             }
         }
         return p;
@@ -293,6 +320,8 @@ public:
 
     inline void clearRecords()
     {
+        for (int i = (int)m_recordset.size() - 1; i >= 0; --i)
+            m_recordset[i]->release();
         m_recordset.clear();
         m_uniqueReadMaxField = 0;
     }
@@ -311,21 +340,21 @@ public:
 
     inline row& operator[](size_t index) const
     {
-        return *m_recordset[index].get();
+        return *m_recordset[index];
     }
 
     inline row& first() const
     {
         if (m_recordset.size() == 0)
             THROW_BZS_ERROR_WITH_MSG(_T("Invalid index of recordset."));
-        return *m_recordset[0].get();
+        return *m_recordset[0];
     }
 
     inline row& last() const
     {
         if (m_recordset.size() == 0)
             THROW_BZS_ERROR_WITH_MSG(_T("Invalid index of recordset."));
-        return *m_recordset[m_recordset.size() - 1].get();
+        return *m_recordset[m_recordset.size() - 1];
     }
 
     inline recordsetImple& top(recordsetImple& c, int n) const
@@ -344,12 +373,20 @@ public:
 
     inline iterator erase(size_t index)
     {
-        return m_recordset.erase(m_recordset.begin() + index);
+        return erase(m_recordset.begin() + index);
     }
 
-    inline iterator erase(const iterator& it) { return m_recordset.erase(it); }
+    inline iterator erase(const iterator& it) 
+    { 
+        m_recordset[it - m_recordset.begin()]->release();
+        return m_recordset.erase(it); 
+    }
 
-    inline void push_back(row_ptr r) { m_recordset.push_back(r); };
+    inline void push_back(row_ptr r)
+    {
+        r->addref();
+        m_recordset.push_back(r);
+    }
 
     inline size_t size() const { return m_recordset.size(); }
 
@@ -485,7 +522,7 @@ public:
         m_recordset.reserve(m_recordset.size() + r.size());
         m_unionFds.push_back(r.m_fds);
         for (size_t i = 0; i < r.size(); ++i)
-            m_recordset.push_back(r.m_recordset[i]);
+            push_back(r.m_recordset[i]);
         for (size_t i = 0; i < r.m_memblock.size(); ++i)
             m_memblock.push_back(r.m_memblock[i]);
         return *this;
