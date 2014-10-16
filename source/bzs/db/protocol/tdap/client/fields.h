@@ -22,7 +22,6 @@
 #include "table.h"
 #include <boost/shared_ptr.hpp>
 #include <stdio.h>
-
 namespace bzs
 {
 namespace db
@@ -33,17 +32,31 @@ namespace tdap
 {
 namespace client
 {
+#if (defined(_WIN32) && defined(_DEBUG))
+#define DEBUG_TRACE_FIELDBASE_REFCOUNT
+#endif
+
+#define MEM_ALLOC_TYPE_NONE   0
+#define MEM_ALLOC_TYPE_ONE    1
+#define MEM_ALLOC_TYPE_ARRAY  2
 
 /* copyable */
 class fieldsBase
 {
     friend class multiRecordAlocatorImple;
     friend class recordsetImple;
+    friend class activeTableImple;
+    friend struct recordsetQueryImple;
+    friend class recordsetQuery;
+    friend class groupQueryImple;
     virtual unsigned char* ptr(int index) const = 0;
 
 protected:
     /** @cond INTERNAL */
     fielddefs& m_fns;
+    fieldsBase* m_parent;
+    int m_refCount;
+    int m_allocType;
     bool m_invalidRecord;
     virtual table* tbptr() const { return NULL; }
 
@@ -62,8 +75,10 @@ protected:
             nstable::throwError(tmp, STATUS_INVARID_FIELD_IDX);
         }
     }
+    
     explicit inline fieldsBase(fielddefs& fns)
-        : m_fns(fns), m_invalidRecord(false)
+        : m_fns(fns), m_parent(NULL), m_refCount(0),
+        m_allocType(MEM_ALLOC_TYPE_NONE), m_invalidRecord(false)
     {
     }
 
@@ -74,8 +89,53 @@ protected:
     virtual void setRecordData(unsigned char* ptr, size_t size,
                                short* endFieldIndex, bool owner = false){};
 
-    /** @endcond */
+    inline void setAllocParent(fieldsBase* v) { m_parent = v; }
 
+    void setAllocTypeThis(int v) { m_allocType = v; }
+
+    void addref()
+    {
+        if (m_parent)
+        {
+            assert(m_parent->m_parent == NULL);
+            m_parent->addref();
+        }
+        else if (m_allocType)
+            ++m_refCount;
+    }
+    
+    virtual void releaseMemory(){}
+
+    void release()
+    {
+        if (m_parent)
+            m_parent->release();
+        else
+        {
+            --m_refCount;
+#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
+            if (m_allocType != MEM_ALLOC_TYPE_ONE)
+            {    
+                _TCHAR tmp[100];
+                wsprintf(tmp, _T("m_refCount %ld \t%p\n"), m_refCount, this);
+                OutputDebugString(tmp);
+            }
+#endif
+            if (m_refCount == 0)
+            {
+#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
+                _TCHAR tmp[50];
+                if (m_allocType == MEM_ALLOC_TYPE_ONE)
+                    wsprintf(tmp, _T("fieldsBase release one %p\n"), this);
+                else
+                    wsprintf(tmp, _T("fieldsBase release n %p\n"), this);
+                OutputDebugString(tmp);
+#endif
+                releaseMemory();
+            }
+        }
+    }
+    /** @endcond */
 public:
     virtual ~fieldsBase(){};
 
@@ -131,7 +191,7 @@ public:
 typedef boost::shared_ptr<database> database_ptr;
 typedef boost::shared_ptr<table> table_ptr;
 typedef fieldsBase row;
-typedef boost::shared_ptr<row> row_ptr;
+typedef row* row_ptr;
 
 /* copyable*/
 class fields : public fieldsBase

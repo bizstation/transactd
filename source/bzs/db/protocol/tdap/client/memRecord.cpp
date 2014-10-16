@@ -20,6 +20,8 @@
 
 #include "memRecord.h"
 #include <bzs/db/protocol/tdap/client/trdboostapi.h>
+#include <new>
+
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 namespace bzs
@@ -69,7 +71,6 @@ autoMemory::autoMemory(const autoMemory& p)
     : ptr(p.ptr), endFieldIndex(p.endFieldIndex), size(p.size), owner(p.owner)
 {
     const_cast<autoMemory&>(p).owner = false;
-    // const_cast<autoMemory&>(p).ptr = NULL;
 }
 
 autoMemory& autoMemory::operator=(const autoMemory& p)
@@ -79,22 +80,35 @@ autoMemory& autoMemory::operator=(const autoMemory& p)
     endFieldIndex = p.endFieldIndex;
     owner = p.owner;
     const_cast<autoMemory&>(p).owner = false;
-    // const_cast<autoMemory&>(p).ptr = NULL;
     return *this;
 }
 
 //---------------------------------------------------------------------------
 //    class memoryRecord
 //---------------------------------------------------------------------------
+inline memoryRecord::memoryRecord() : fieldsBase(*((fielddefs*)0))
+{
+    m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
+}
+
 inline memoryRecord::memoryRecord(fielddefs& fdinfo) : fieldsBase(fdinfo)
 {
-
     m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
 }
 
 memoryRecord::memoryRecord(const memoryRecord& r)
     : fieldsBase(r.m_fns), m_memblock(r.m_memblock)
 {
+}
+
+memoryRecord& memoryRecord::operator=(const memoryRecord& r)
+{
+     if (this != &r)
+     {
+         m_fns = r.m_fns;
+         m_memblock = r.m_memblock;
+     }
+     return *this;
 }
 
 void memoryRecord::clear()
@@ -135,12 +149,64 @@ void memoryRecord::copyToBuffer(table* tb, bool updateOnly) const
 
 memoryRecord* memoryRecord::create(fielddefs& fdinfo)
 {
-    return new memoryRecord(fdinfo);
+    memoryRecord* p = new memoryRecord(fdinfo);
+    p->setAllocTypeThis(MEM_ALLOC_TYPE_ONE);
+#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
+    _TCHAR tmp[50];
+    wsprintf(tmp, _T("memoryRecord create one %p\n"), p);
+    OutputDebugString(tmp);
+#endif
+    return p;
 }
 
-void memoryRecord::release(fieldsBase* p)
+memoryRecord* memoryRecord::create(fielddefs& fdinfo, int n)
 {
-    delete p;
+    assert(n);
+    memoryRecord* p =  new memoryRecord[n];
+    new (p) memoryRecord(fdinfo);
+    p->setAllocTypeThis(MEM_ALLOC_TYPE_ARRAY);
+
+    for (int i = 1; i < n ; ++i)
+    {
+        memoryRecord* pp = p + i;
+        new (pp) memoryRecord(fdinfo);
+        pp->setAllocParent(p);
+    }
+#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
+    _TCHAR tmp[50];
+    wsprintf(tmp, _T("memoryRecord create n %p\n"), p);
+    OutputDebugString(tmp);
+#endif
+    return p;
+}
+
+//copy constractor
+memoryRecord* memoryRecord::create(const memoryRecord& m, int n)
+{
+    assert(n);
+    memoryRecord* p =  new memoryRecord[n];
+    new (p) memoryRecord(m);
+    p->setAllocTypeThis(MEM_ALLOC_TYPE_ARRAY);
+    for (int i = 1; i < n ; ++i)
+    {
+        memoryRecord* pp = p + i;
+        new (pp) memoryRecord(m);
+        pp->setAllocParent(p);
+    }
+#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
+    _TCHAR tmp[50];
+    wsprintf(tmp, _T("memoryRecord create copy n %p\n"), p);
+    OutputDebugString(tmp);
+#endif
+    return p;
+}
+
+void memoryRecord::releaseMemory()
+{
+    if (m_allocType == MEM_ALLOC_TYPE_ONE)
+        delete this;
+    else
+        delete [] this;
 }
 
 //---------------------------------------------------------------------------
@@ -221,8 +287,25 @@ void writableRecord::save()
 
 writableRecord* writableRecord::create(table* tb, const aliasMap_type* alias)
 {
-    return new writableRecord(tb, alias);
+    writableRecord* p = new writableRecord(tb, alias);
+    p->setAllocTypeThis(MEM_ALLOC_TYPE_ONE);
+    
+#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
+    _TCHAR tmp[50];
+    wsprintf(tmp, _T("writableRecord create one %p\n"), p);
+    OutputDebugString(tmp);
+#endif
+    return p;
 }
+
+void writableRecord::releaseMemory()
+{
+    if (m_allocType == MEM_ALLOC_TYPE_ONE)
+        delete this;
+    else
+        delete [] this;
+}
+
 
 } // namespace client
 } // namespace tdap

@@ -22,7 +22,12 @@
 #include <boost/thread/mutex.hpp>
 #include <bzs/rtl/benchmark.h>
 #include <iostream>
+#include <bzs/env/tstring.h>
+#include <stdio.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
 namespace bzs
 {
 namespace test
@@ -49,6 +54,21 @@ protected:
     virtual void doExecute() = 0;
     virtual void endExecute(){};
     virtual void initExecute(){};
+    std::_tstring dummyWork()
+    {
+        std::_tstring s;
+        __int64 v = 0; 
+        for (int i=1;i<100;++i)
+        {
+            v+=rand();
+            v = v/i;
+            _TCHAR tmp[30];
+            _stprintf_s(tmp, 30, _T("random number %d ."), v);
+            s += tmp;
+        }
+        return s;
+    }
+  
 
 public:
     workerBase(int id, int loopCount, int functionNumber, boost::barrier& sync)
@@ -72,12 +92,38 @@ public:
             else if (g_bench_signal == BENCH_SIGNAL_BLUE)
             {
                 m_bresult = bm.end();
+                dummyWork(); 
                 break;
             }
         }
 
         endExecute();
     }
+#ifdef _WIN32
+    void execute2(HANDLE hHandle)
+    {
+        initExecute();
+        bzs::rtl::benchmarkMt bm;
+        WaitForSingleObject(hHandle, INFINITE);
+
+        bm.start();
+        m_bresult = 0;
+        while (g_bench_signal)
+        {
+            doExecute();
+            if (g_bench_signal == BENCH_SIGNAL_GREEN)
+                ++m_bresult;
+            else if (g_bench_signal == BENCH_SIGNAL_BLUE)
+            {
+                m_bresult = bm.end();
+                dummyWork(); 
+                break;
+            }
+        }
+
+        endExecute();
+    }
+#endif
     int total() const { return m_bresult; }
 };
 

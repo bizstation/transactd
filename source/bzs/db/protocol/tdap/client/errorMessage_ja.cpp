@@ -1,4 +1,4 @@
-/*=================================================================
+﻿/*=================================================================
    Copyright (C) 2000-2013 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
@@ -40,139 +40,139 @@ PACKAGE _TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size)
     case STATUS_LOCK_ERROR:
     case STATUS_FILE_LOCKED:
     case STATUS_CANNOT_LOCK_TABLE:
-        p = _T("���̃��R�[�h�͊��ɑ��̃��[�U�[�ɂ�胍�b�N����Ă��܂��B");
+        p = _T("このレコードは既に他のユーザーによりロックされています。");
         break;
     case STATUS_CHANGE_CONFLICT:
-        p = _T("���̃��R�[�h�͍��A���̃��[�U�[�ɂ��ύX����܂����B");
+        p = _T("このレコードは今、他のユーザーにより変更されました。");
         break;
     case STATUS_TABLE_YET_OPEN:
-        p = _T("���̃e�[�u���͂܂� OPEN ����Ă��܂���B");
+        p = _T("このテーブルはまだ OPEN されていません。");
         break;
     case STATUS_DURING_TRANSACTION:
-        p = _T("���̃e�[�u���͂܂��g�����U�N�V�������ł��Bclose �ł��܂���B");
+        p = _T("このテーブルはまだトランザクション中です。close できません。");
         break;
     case STATUS_NO_ACR_UPDATE_DELETE:
-        p = _T("�X�V�܂��͍폜�A�N�Z�X��������܂���B");
+        p = _T("更新または削除アクセス権がありません。");
         break;
     case STATUS_NO_ACR_INSERT:
-        p = _T("�ǉ��A�N�Z�X��������܂���B");
+        p = _T("追加アクセス権がありません。");
         break;
     case STATUS_NO_ACR_READ:
-        p = _T("�ǂݎ��A�N�Z�X��������܂���B");
+        p = _T("読み取りアクセス権がありません。");
         break;
     case STATUS_CANT_ALLOC_MEMORY:
-        p = _T("���������m�ۂł��܂���ł����B");
+        p = _T("メモリが確保できませんでした。");
         break;
     case STATUS_USE_KEYFIELD:
-        p = _T("���̃t�B�[���h�̓L�[�Ŏg�p����Ă��邽�ߍ폜�ł��܂���B");
+        p = _T("このフィールドはキーで使用されているため削除できません。");
         break;
     case STATUS_TOO_MANY_TABLES:
-        p = _T("�Ǘ��\�ȃe�[�u�����𒴂��Ă��܂��B");
+        p = _T("管理可能なテーブル数を超えています。");
         break;
     case STATUS_INVARID_PRM_KEY_NUM:
-        p = _T("MainKey�L�[�ԍ����s���ł��B");
+        p = _T("MainKeyキー番号が不正です。");
         break;
     case STATUS_INVARID_PNT_KEY_NUM:
-        p = _T("ParentKey�L�[�ԍ����s���ł��B");
+        p = _T("ParentKeyキー番号が不正です。");
         break;
     case STATUS_INVARID_REP_KEY_NUM:
-        p = _T("ReplicaKey�L�[�ԍ����s���ł��B");
+        p = _T("ReplicaKeyキー番号が不正です。");
         break;
     case STATUS_INVARID_FIELD_IDX:
-        p = _T("�t�B�[���h�C���f�b�N�X���L���͈͂ɂ���܂���B");
+        p = _T("フィールドインデックスが有効範囲にありません。");
         break;
     case STATUS_ALREADY_DELETED:
-        p = _T("���̃A�C�e���͍폜����Ă��܂��B");
+        p = _T("このアイテムは削除されています。");
         break;
     case STATUS_LMITS_MAX_TABLES:
-        p = _T("�I�[�v���ł���e�[�u���̍ő吔�𒴂��Ă��܂��B");
+        p = _T("オープンできるテーブルの最大数を超えています。");
         break;
     case STATUS_DB_YET_OPEN:
-        p = _T("�f�[�^�x�[�X���I�[�v������Ă��܂���B");
+        p = _T("データベースがオープンされていません。");
         break;
     case STATUS_TABLENAME_NOTFOUND:
-        p = _T("�w�肵���e�[�u������������܂���B");
+        p = _T("指定したテーブル名が見つかりません。");
         break;
     case STATUS_DIFFERENT_DBVERSION:
-        p = _T("�f�[�^�x�[�X�̃o�[�W�������Ⴄ���A�j�����Ă��܂��B");
+        p = _T("データベースのバージョンが違うか、破損しています。");
         break;
     case STATUS_DUPLICATE_FIELDNAME:
-        p = _T("�t�B�[���h�����d�����Ă��܂��B");
+        p = _T("フィールド名が重複しています。");
         break;
     case STATUS_INVALID_TABLE_IDX:
-        p = _T("��`����Ȃ��e�[�u���ԍ��ł��B");
+        p = _T("定義されないテーブル番号です。");
         break;
     case STATUS_AUTH_DENIED:
-        p = _T("���[�U�[���܂��̓p�X���[�h���s���ł��B");
+        p = _T("ユーザー名またはパスワードが不正です。");
         break;
     case STATUS_TOO_MANY_FIELDS:
-        p = _T("�Ǘ��\�ȃt�B�[���h���𒴂��Ă��܂��B");
+        p = _T("管理可能なフィールド数を超えています。");
         break;
     case STATUS_FILTERSTRING_ERROR:
-        p = _T("�t�B���^������Ɍ�肪����܂��B");
+        p = _T("フィルタ文字列に誤りがあります。");
         break;
     case STATUS_INVALID_FIELDLENGTH:
-        p = _T("�t�B�[���h�����s���ł��B");
+        p = _T("フィールド長が不正です。");
         break;
     case STATUS_INVALID_KEYTYPE:
-        p = _T("�g�p�ł��Ȃ��L�[�^�C�v���w�肳��Ă��܂��B");
+        p = _T("使用できないキータイプが指定されています。");
         break;
     case STATUS_LVAR_NOTE_NOT_LAST:
-        p = _T("Note�y��Lvar�^�C�v�̓t�B�[���h�̈�ԍŌ�łȂ���΂Ȃ�܂���")
+        p = _T("Note及びLvarタイプはフィールドの一番最後でなければなりません")
             _T("B");
         break;
     case STATUS_INVALID_VARIABLETABLE:
-        p = _T("�ϒ��e�[�u���̍Ō�̃t�B�[���h��Note Lvar ")
-            _T("varbinary�^�C�v���K�v�ł��B");
+        p = _T("可変長テーブルの最後のフィールドはNote Lvar ")
+            _T("varbinaryタイプが必要です。");
         break;
     case STATUS_NODEF_FOR_CONVERT:
-        p = _T("�R���o�[�g����`������܂���B");
+        p = _T("コンバート元定義がありません。");
         break;
     case STATUS_TRD_NEED_VARLENGTH:
-        p = _T("�ϒ��e�[�u���̎w�肪�K�v�ł��B");
+        p = _T("可変長テーブルの指定が必要です。");
         break;
     case STATUS_TOO_LONG_OWNERNAME:
-        p = _T("�I�[�i�[�l�[�����������܂��B");
+        p = _T("オーナーネームが長すぎます。");
         break;
     case STATUS_CANT_DEL_FOR_REL:
-        p = _T("�Q�Ɛ������̂��ߍ폜�ł��܂���B");
+        p = _T("参照整合性のため削除できません。");
         break;
     case STATUS_NO_AUTOINC_SPACE:
-        p = _T("AutoIncEx�̃X�y�[�X������܂���B");
+        p = _T("AutoIncExのスペースがありません。");
         break;
     case STATUS_INVALID_RECLEN:
-        p = _T("���R�[�h����`���s�����A�e�[�u�����I�[�v������Ă��܂���B");
+        p = _T("レコード長定義が不正か、テーブルがオープンされていません。");
         break;
     case STATUS_INVALID_FIELDVALUE:
-        p = _T("�t�B�[���h�̒l���s���ł��B");
+        p = _T("フィールドの値が不正です。");
         break;
     case STATUS_INVALID_VALLEN:
-        p = _T("�ϒ����R�[�h�̒������o�b�t�@�T�C�Y�𒴂��Ă��܂��B");
+        p = _T("可変長レコードの長さがバッファサイズを超えています。");
         break;
     case STATUS_FIELDTYPE_NOTSUPPORT:
         p = _T("This field type is not supported.");
         break;
     case STATUS_DUPPLICATE_KEYVALUE:
-        p = _T("�L�[�l���d�����Ă��邽�ߓo�^�ł��܂���B");
+        p = _T("キー値が重複しているため登録できません。");
         break;
     case STATUS_REQUESTER_DEACTIVE:
-        p = _T("�f�[�^�x�[�X�G���W�������[�h�ł��܂���B\r\nTerminal ")
-            _T("Service�y�сAWindowsXP�̃��[�U�[�؂�ւ�")
+        p = _T("データベースエンジンをロードできません。\r\nTerminal ")
+            _T("Service及び、WindowsXPのユーザー切り替え")
             _T
-			("�ɂ����āA�����ɑ����̃��[�U�[�����p����ɂ́APervasive.SQL 2000i Server�ȏ�̃C���X�g�[�����K�v�ł��B");
+			("において、同時に多数のユーザーが利用するには、Pervasive.SQL 2000i Server以上のインストールが必要です。");
         break;
     case STATUS_ACCESS_DENIED:
-        p = _T("�X�V�̂��߂̃A�N�Z�X��������܂���B\r\n�t�@�C���̓��[�h�I����")
-            _T("�[���p�X���[�h������������܂���B");
+        p = _T("更新のためのアクセス権がありません。\r\nファイルはリードオンリ")
+            _T("ーかパスワードが正しくありません。");
         break;
     case STATUS_CANT_CREATE:
-        p = _T("�f�[�^�x�[�X�̍쐬�Ɏ��s���܂����B���Ƀf�[�^�x�[�X�����݂��Ă�")
-            _T("�Ȃ����m�F���Ă��������B");
+        p = _T("データベースの作成に失敗しました。既にデータベースが存在してい")
+            _T("ないか確認してください。");
         break;
     default:
-        _stprintf_s(buf, 256, _T("�f�[�^�x�[�X�I�y���[�V�����ŃG���[����������")
-                              _T("�����B\r\n�G���[�ԍ��� %d \r\n ")
-                              _T("�����𒆎~���܂��B"),
+        _stprintf_s(buf, 256, _T("データベースオペレーションでエラーが発生しま")
+                              _T("した。\r\nエラー番号は %d \r\n ")
+                              _T("処理を中止します。"),
                     errorCode);
     }
     if (p)

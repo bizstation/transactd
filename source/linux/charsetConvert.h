@@ -39,14 +39,13 @@ inline size_t strlen16(const char16_t* src)
 class cvt
 {
     iconv_t m_cd;
-    int m_stat;
     bool m_isOpend;
 
 public:
-    cvt() : m_stat(ICONV_NO_INIT), m_isOpend(false) {}
+    cvt() : m_isOpend(false) {}
 
     cvt(const char* to, const char* from)
-        : m_stat(ICONV_NO_INIT), m_isOpend(false)
+        : m_isOpend(false)
     {
         setCharset(to, from);
     }
@@ -60,12 +59,13 @@ public:
     int setCharset(const char* to, const char* from)
     {
         m_cd = iconv_open(to, from);
+        int stat = 0;
         if (m_cd == (iconv_t)-1)
-            m_stat = ICONV_OPENRRROR;
+            stat = ICONV_OPENRRROR;
         else
-            m_stat = ICONV_SUCCESS;
-        m_isOpend = (m_stat == ICONV_SUCCESS);
-        return m_stat;
+            stat = ICONV_SUCCESS;
+        m_isOpend = (stat == ICONV_SUCCESS);
+        return stat;
     }
 
     size_t conv(const char* src, size_t inszie, char* outbuf, size_t outbufsize)
