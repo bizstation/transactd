@@ -142,7 +142,7 @@ if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()
 if(NOT WIN32)
-  target_link_libraries(${this_target} dl)
+  target_link_libraries(${this_target} dl pthread)
 endif()
 
 

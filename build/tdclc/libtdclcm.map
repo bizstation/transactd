@@ -1,0 +1,4 @@
+{
+  global: BTRCALLID; BTRV;BTRVID;BTRCALL;BTRCALL32;BTRCALLID32;
+  local: *;
+};

@@ -827,7 +827,6 @@ void table::findLast()
 bool table::checkFindDirection(ushort_td op)
 {
     bool ret=true;
-#ifndef NDEBUG
     if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI))
         ret = (m_impl->filterPtr->direction() == findBackForword);
     else
@@ -837,7 +836,6 @@ bool table::checkFindDirection(ushort_td op)
         assert(0);
         m_stat = 1;
     }
-#endif
     return ret;
 }
 

@@ -108,12 +108,14 @@ transactd_set_MTMD("MT")
 # ==========================================================
 # Add compile definitions
 # ==========================================================
+set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+  PACKAGE_NO_EXPORT BOOST_ALL_NO_LIB _MBCS)
 if(MSVC)
-  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS _WIN32_WINNT=0x0501 PACKAGE_NO_EXPORT _USRDLL BOOST_ALL_NO_LIB _MBCS)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    WIN32 _WIN32 _WINDOWS _WIN32_WINNT=0x0501 _USRDLL)
 else()
-  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC BOOST_ALL_NO_LIB _MBCS)
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    PIC)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -130,6 +132,7 @@ if(CAN_LINK_ICONV)
 endif()
 if(NOT MSVC)
   target_link_libraries(${this_target} pthread)
+  target_link_libraries(${this_target} -Wl,--version-script,"${TRANSACTD_ROOT}/build/tdclc/libtdclcm.map")
 endif()
 
 
