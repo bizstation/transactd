@@ -210,6 +210,8 @@ if(MSVC)
       _USE_32BIT_TIME_T)
   endif()
 else()
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _REENTRANT)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
