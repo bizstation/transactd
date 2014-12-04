@@ -1188,103 +1188,103 @@ class transactdTest extends PHPUnit_Framework_TestCase
         //}
         // Set Ansi Get Wide
         // too long string
-        $tb->setFVA(FDI_NAME, '1234567');
+        $tb->setFV(FDI_NAME, '1234567');
         if ($varCharField)
-            $this->assertEquals($tb->getFVAstr(FDI_NAME), '123');
+            $this->assertEquals($tb->getFVstr(FDI_NAME), '123');
         else
-            $this->assertEquals($tb->getFVAstr(FDI_NAME), '123456');
+            $this->assertEquals($tb->getFVstr(FDI_NAME), '123456');
         //if ($this->isWindows())
         //    $this->assertEquals($tb->getFVWstr(FDI_GROUP), '68');
         //else
-            $this->assertEquals($tb->getFVAstr(FDI_GROUP), '68');
+            $this->assertEquals($tb->getFVstr(FDI_GROUP), '68');
         // short string
-        $tb->setFVA(FDI_NAME, '13 ');
-        $this->assertEquals($tb->getFVAstr(FDI_NAME), '13 ');
+        $tb->setFV(FDI_NAME, '13 ');
+        $this->assertEquals($tb->getFVstr(FDI_NAME), '13 ');
         //if ($this->isWindows())
         //    $this->assertEquals($tb->getFVWstr(FDI_GROUP), '68');
         //else
-            $this->assertEquals($tb->getFVAstr(FDI_GROUP), '68');
+            $this->assertEquals($tb->getFVstr(FDI_GROUP), '68');
         // too long kanji
         if ($unicodeField)
         {
             if ($this->isWindows())
             {
-                $tb->setFVA(FDI_NAME, 'あいうえお𩸽'); // hiragana 'aiueo' kanji 'hokke'
+                $tb->setFV(FDI_NAME, 'あいうえお𩸽'); // hiragana 'aiueo' kanji 'hokke'
                 if ($varCharField)
-                    $this->assertEquals($tb->getFVAstr(FDI_NAME), 'あいう');
+                    $this->assertEquals($tb->getFVstr(FDI_NAME), 'あいう');
                 else
-                    $this->assertEquals($tb->getFVAstr(FDI_NAME), 'あいうえお');
+                    $this->assertEquals($tb->getFVstr(FDI_NAME), 'あいうえお');
             }
         }
         else
         {
-            $tb->setFVA(FDI_NAME, '0松本市'); // numeric '0' kanji 'matumostoshi'
-            $is_valid_value = ($tb->getFVAstr(FDI_NAME) == '0松本');
+            $tb->setFV(FDI_NAME, '0松本市'); // numeric '0' kanji 'matumostoshi'
+            $is_valid_value = ($tb->getFVstr(FDI_NAME) == '0松本');
             $this->assertTrue($is_valid_value);
             if (! $is_valid_value)
-                print_r($tb->getFVAstr(FDI_NAME));
+                print_r($tb->getFVstr(FDI_NAME));
         }
-        $this->assertEquals($tb->getFVAstr(FDI_GROUP), '68');
+        $this->assertEquals($tb->getFVstr(FDI_GROUP), '68');
         //// Set Wide Get Ansi
         //if ($this->isWindows())
         //{
         //    // too long string
         //    $tb->setFVW(FDI_NAME, '1234567');
         //    if ($varCharField)
-        //        $this->assertEquals($tb->getFVAstr(FDI_NAME), '123');
+        //        $this->assertEquals($tb->getFVstr(FDI_NAME), '123');
         //    else
-        //        $this->assertEquals($tb->getFVAstr(FDI_NAME), '123456');
+        //        $this->assertEquals($tb->getFVstr(FDI_NAME), '123456');
         //    $this->assertEquals($tb->getFVWstr(FDI_GROUP), '68');
         //    // short string
         //    $tb->setFVW(1, '23 ');
-        //    $this->assertEquals($tb->getFVAstr(FDI_NAME), '23 ');
+        //    $this->assertEquals($tb->getFVstr(FDI_NAME), '23 ');
         //    $this->assertEquals($tb->getFVWstr(FDI_GROUP), '68');
         //    // too long kanji
         //    if ($unicodeField)
         //    {
         //        $tb->setFVW(FDI_NAME, 'あいうえお𩸽'); // hiragana 'aiueo' kanji 'hokke'
         //        if ($varCharField)
-        //            $this->assertEquals($tb->getFVAstr(FDI_NAME), 'あいう');
+        //            $this->assertEquals($tb->getFVstr(FDI_NAME), 'あいう');
         //        else
-        //            $this->assertEquals($tb->getFVAstr(FDI_NAME), 'あいうえお');
+        //            $this->assertEquals($tb->getFVstr(FDI_NAME), 'あいうえお');
         //    }
         //    else
         //    {
         //        $tb->setFVW(FDI_NAME, '0松本市'); // numeric '0' kanji 'matumostoshi'
-        //        $this->assertEquals($tb->getFVAstr(FDI_NAME), '0松本');
+        //        $this->assertEquals($tb->getFVstr(FDI_NAME), '0松本');
         //    }
         //    $this->assertEquals($tb->getFVWstr(FDI_GROUP), '68');
         //}
         // Set Ansi Get Ansi
         // too long string
-        $tb->setFVA(FDI_NAME, '1234567');
+        $tb->setFV(FDI_NAME, '1234567');
         if ($varCharField)
-            $this->assertEquals($tb->getFVAstr(FDI_NAME), '123');
+            $this->assertEquals($tb->getFVstr(FDI_NAME), '123');
         else
-            $this->assertEquals($tb->getFVAstr(FDI_NAME), '123456');
-        $this->assertEquals($tb->getFVAstr(FDI_GROUP), '68');
+            $this->assertEquals($tb->getFVstr(FDI_NAME), '123456');
+        $this->assertEquals($tb->getFVstr(FDI_GROUP), '68');
         // short string
-        $tb->setFVA(FDI_NAME, '13 ');
-        $this->assertEquals($tb->getFVAstr(FDI_NAME), '13 ');
-        $this->assertEquals($tb->getFVAstr(FDI_GROUP), '68');
+        $tb->setFV(FDI_NAME, '13 ');
+        $this->assertEquals($tb->getFVstr(FDI_NAME), '13 ');
+        $this->assertEquals($tb->getFVstr(FDI_GROUP), '68');
         // too long lanji
         if ($unicodeField)
         {
             if ($this->isWindows())
             {
-                $tb->setFVA(FDI_NAME, 'あいうえお𩸽'); // hiragana 'aiueo' kanji 'hokke'
+                $tb->setFV(FDI_NAME, 'あいうえお𩸽'); // hiragana 'aiueo' kanji 'hokke'
                 if ($varCharField)
-                    $this->assertEquals($tb->getFVAstr(FDI_NAME), 'あいう');
+                    $this->assertEquals($tb->getFVstr(FDI_NAME), 'あいう');
                 else
-                    $this->assertEquals($tb->getFVAstr(FDI_NAME), 'あいうえお');
+                    $this->assertEquals($tb->getFVstr(FDI_NAME), 'あいうえお');
             }
         }
         else
         {
-            $tb->setFVA(FDI_NAME, '0松本市'); // numeric '0' kanji 'matumostoshi'
-            $this->assertEquals($tb->getFVAstr(FDI_NAME), '0松本');
+            $tb->setFV(FDI_NAME, '0松本市'); // numeric '0' kanji 'matumostoshi'
+            $this->assertEquals($tb->getFVstr(FDI_NAME), '0松本');
         }
-        $this->assertEquals($tb->getFVAstr(FDI_GROUP), '68');
+        $this->assertEquals($tb->getFVstr(FDI_GROUP), '68');
     }
     public function testVarField()
     {

@@ -83,17 +83,15 @@ end
 def deleteAll(db, tb, start, endid)
     db.beginTrn(TRANS_BIAS)
     tb.clearBuffer()
-    for i in start..(endid - 1) do
-        tb.setFV(FN_ID, i)
-        tb.seek()
-        if (tb.stat() == 0)
-            tb.del()
-            if (tb.stat() != 0)
-                showTableError(tb, 'deleteAll')
-                db.endTrn()
-                return false
-            end
-        end
+    tb.stepFirst()
+    while tb.stat() == 0
+       tb.del();
+       if (tb.stat() != 0)
+           showTableError(tb, 'deleteAll')
+           db.endTrn()
+           return false
+       end
+       tb.stepNext()
     end
     db.endTrn()
     return true
@@ -297,9 +295,9 @@ def main(argv)
     if (!db.open(uri, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', ''))
         puts("open table erorr No:#{db.stat().to_s}")
     else
-        tb = openTable(db, 'user', Transactd::TD_OPEN_NORMAL)
+        tb = openTable(db, 'users', Transactd::TD_OPEN_NORMAL)
         if tb == nil
-          puts "can not open table 'user'"
+          puts "can not open table 'users'"
           db.close()
           return
         end

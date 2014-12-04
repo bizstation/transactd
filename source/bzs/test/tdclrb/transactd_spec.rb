@@ -24,7 +24,7 @@ require 'rbconfig'
 IS_WINDOWS = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
 
 def getHost()
-  hostname = '127.0.0.1/'
+  hostname = 'localhost/'
   if (ENV['TRANSACTD_RSPEC_HOST'] != nil && ENV['TRANSACTD_RSPEC_HOST'] != '')
     hostname = ENV['TRANSACTD_RSPEC_HOST']
   end
@@ -1125,98 +1125,98 @@ def testSetGetVar(tb, unicodeField, varCharField)
   #end
   ### Set Ansi Get Wide
   # too long string
-  tb.setFVA(FDI_NAME, '1234567')
+  tb.setFV(FDI_NAME, '1234567')
   if (varCharField)
-    expect(tb.getFVAstr(FDI_NAME)).to eq '123'
+    expect(tb.getFVstr(FDI_NAME)).to eq '123'
   else
-    expect(tb.getFVAstr(FDI_NAME)).to eq '123456'
+    expect(tb.getFVstr(FDI_NAME)).to eq '123456'
   end
   #if IS_WINDOWS
   #  expect(tb.getFVWstr(FDI_GROUP)).to eq '68'
   #else
-    expect(tb.getFVAstr(FDI_GROUP)).to eq '68'
+    expect(tb.getFVstr(FDI_GROUP)).to eq '68'
   #end
   # short string
-  tb.setFVA(FDI_NAME, '13 ')
-  expect(tb.getFVAstr(FDI_NAME)).to eq '13 '
+  tb.setFV(FDI_NAME, '13 ')
+  expect(tb.getFVstr(FDI_NAME)).to eq '13 '
   #if IS_WINDOWS
   #  expect(tb.getFVWstr(FDI_GROUP)).to eq '68'
   #else
-    expect(tb.getFVAstr(FDI_GROUP)).to eq '68'
+    expect(tb.getFVstr(FDI_GROUP)).to eq '68'
   #end
   # too long kanji
   if (unicodeField)
     if !IS_WINDOWS
-      tb.setFVA(FDI_NAME, 'あいうえお𩸽') # hiragana 'aiueo' kanji 'hokke'
+      tb.setFV(FDI_NAME, 'あいうえお𩸽') # hiragana 'aiueo' kanji 'hokke'
       if (varCharField)
-        expect(tb.getFVAstr(FDI_NAME)).to eq 'あいう'
+        expect(tb.getFVstr(FDI_NAME)).to eq 'あいう'
       else
-        expect(tb.getFVAstr(FDI_NAME)).to eq 'あいうえお'
+        expect(tb.getFVstr(FDI_NAME)).to eq 'あいうえお'
       end
     end
   else
-    tb.setFVA(FDI_NAME, '0松本市') # numeric '0' kanji 'matumostoshi'
-    is_valid_value = tb.getFVAstr(FDI_NAME) == '0松本'
+    tb.setFV(FDI_NAME, '0松本市') # numeric '0' kanji 'matumostoshi'
+    is_valid_value = tb.getFVstr(FDI_NAME) == '0松本'
     expect(is_valid_value).to be true
-    puts tb.getFVAstr(FDI_NAME) if (!is_valid_value)
+    puts tb.getFVstr(FDI_NAME) if (!is_valid_value)
   end
-  expect(tb.getFVAstr(FDI_GROUP)).to eq '68'
+  expect(tb.getFVstr(FDI_GROUP)).to eq '68'
   ### Set Wide Get Ansi
   #if IS_WINDOWS
   #  # too long string
   #  tb.setFVW(FDI_NAME, '1234567')
   #  if (varCharField)
-  #    expect(tb.getFVAstr(FDI_NAME)).to eq '123'
+  #    expect(tb.getFVstr(FDI_NAME)).to eq '123'
   #  else
-  #    expect(tb.getFVAstr(FDI_NAME)).to eq '123456'
+  #    expect(tb.getFVstr(FDI_NAME)).to eq '123456'
   #  end
   #  expect(tb.getFVWstr(FDI_GROUP)).to eq '68'
   #  # short string
   #  tb.setFVW(1, '23 ')
-  #  expect(tb.getFVAstr(FDI_NAME)).to eq '23 '
+  #  expect(tb.getFVstr(FDI_NAME)).to eq '23 '
   #  expect(tb.getFVWstr(FDI_GROUP)).to eq '68'
   #  # too long kanji
   #  if (unicodeField)
   #    tb.setFVW(FDI_NAME, 'あいうえお𩸽') # hiragana 'aiueo' kanji 'hokke'
   #    if (varCharField)
-  #      expect(tb.getFVAstr(FDI_NAME)).to eq 'あいう'
+  #      expect(tb.getFVstr(FDI_NAME)).to eq 'あいう'
   #    else
-  #      expect(tb.getFVAstr(FDI_NAME)).to eq 'あいうえお'
+  #      expect(tb.getFVstr(FDI_NAME)).to eq 'あいうえお'
   #    end
   #  else
   #    tb.setFVW(FDI_NAME, '0松本市') # numeric '0' kanji 'matumostoshi'
-  #    expect(tb.getFVAstr(FDI_NAME)).to eq '0松本'
+  #    expect(tb.getFVstr(FDI_NAME)).to eq '0松本'
   #  end
   #  expect(tb.getFVWstr(FDI_GROUP)).to eq '68'
   #end
   ### Set Ansi Get Ansi
   # too long string
-  tb.setFVA(FDI_NAME, '1234567')
+  tb.setFV(FDI_NAME, '1234567')
   if (varCharField)
-    expect(tb.getFVAstr(FDI_NAME)).to eq '123'
+    expect(tb.getFVstr(FDI_NAME)).to eq '123'
   else
-    expect(tb.getFVAstr(FDI_NAME)).to eq '123456'
+    expect(tb.getFVstr(FDI_NAME)).to eq '123456'
   end
-  expect(tb.getFVAstr(FDI_GROUP)).to eq '68'
+  expect(tb.getFVstr(FDI_GROUP)).to eq '68'
   # short string
-  tb.setFVA(FDI_NAME, '13 ')
-  expect(tb.getFVAstr(FDI_NAME)).to eq '13 '
-  expect(tb.getFVAstr(FDI_GROUP)).to eq '68'
+  tb.setFV(FDI_NAME, '13 ')
+  expect(tb.getFVstr(FDI_NAME)).to eq '13 '
+  expect(tb.getFVstr(FDI_GROUP)).to eq '68'
   # too long lanji
   if (unicodeField)
     if !IS_WINDOWS
-      tb.setFVA(FDI_NAME, 'あいうえお𩸽') # hiragana 'aiueo' kanji 'hokke'
+      tb.setFV(FDI_NAME, 'あいうえお𩸽') # hiragana 'aiueo' kanji 'hokke'
       if (varCharField)
-        expect(tb.getFVAstr(FDI_NAME)).to eq 'あいう'
+        expect(tb.getFVstr(FDI_NAME)).to eq 'あいう'
       else
-        expect(tb.getFVAstr(FDI_NAME)).to eq 'あいうえお'
+        expect(tb.getFVstr(FDI_NAME)).to eq 'あいうえお'
       end
     end
   else
-    tb.setFVA(FDI_NAME, '0松本市') # numeric '0' kanji 'matumostoshi'
-    expect(tb.getFVAstr(FDI_NAME)).to eq '0松本'
+    tb.setFV(FDI_NAME, '0松本市') # numeric '0' kanji 'matumostoshi'
+    expect(tb.getFVstr(FDI_NAME)).to eq '0松本'
   end
-  expect(tb.getFVAstr(FDI_GROUP)).to eq '68'
+  expect(tb.getFVstr(FDI_GROUP)).to eq '68'
 end
 
 def testVarField()
