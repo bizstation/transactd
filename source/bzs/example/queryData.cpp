@@ -346,6 +346,24 @@ bool insertData(database_ptr db, int maxId)
     return true;
 }
 
+bool checkVersion(database_ptr db)
+{
+    dbdef* def = db->dbDef();
+    if (def)
+    {
+        tabledef* td = def->tableDefs(3);
+        if (td)
+        {
+            if (td->fieldCount == 3)
+            {
+                table_ptr tb = openTable(db, _T("extention"));
+                return (tb->recordCount(false) == 20000);
+            }
+        }
+    }
+    return false;
+}
+
 int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate,
                  int maxId)
 {
@@ -353,7 +371,7 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate,
     {
         if (db->open(param.uri(), TD_OPEN_NORMAL))
         {
-            if (foceCreate)
+            if (foceCreate || !checkVersion(db))
                 dropDatabase(db);
             else
                 return 0;

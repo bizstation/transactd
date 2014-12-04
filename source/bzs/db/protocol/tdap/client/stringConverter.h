@@ -671,19 +671,21 @@ const T* readBlob(char* ptr, ::bzs::rtl::stringBuffer* strBufs,
     if (len)
     {
         char** pc = (char**)(ptr + offset);
-        if ((typeid(T) != typeid(char)) ||
-            (cv->isNeedConvert() && (typeid(T) == typeid(char))))
+
+        if (len)
         {
-            if (len)
-            {
-                size_t olen = len * 2 + 1;
-                result = strBufs->getPtr<T>(olen);
+            size_t olen = len * 2 + 1;
+            result = strBufs->getPtr<T>(olen);
+            if ((typeid(T) != typeid(char)) ||
+                (cv->isNeedConvert() && (typeid(T) == typeid(char))))
                 len = cv->revert(result, olen, *pc, len);
-            }
-            result[len] = 0x00;
+            else if (((T*)(*pc))[len] != 0x00)
+                memcpy(result, *pc, len);
+            else
+                result = (T*)*pc;
         }
-        else
-            result = (T*)*pc;
+        result[len] = 0x00;
+
     }else
     {
         result = strBufs->getPtr<T>(1);

@@ -3237,7 +3237,7 @@ void testServerPrepareJoin(database* db)
     BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1][_T("comment")].i() == NO_RECORD_ID+1, "row of 5 : '6 comment'");
     const _TCHAR* vs = rs[NO_RECORD_ID-1][_T("blob")].c_str();
     bool ret = _tcscmp(vs, _T("6 blob")) == 0;
-    BOOST_CHECK_MESSAGE(ret == true, "row of 5 : '6 blob' = " << rs[NO_RECORD_ID-1][_T("blob")].c_str()); 
+    BOOST_CHECK_MESSAGE(ret == true, "row of 5 : '6 blob'" );
 
     // OuterJoin is no remove record(s) no join target record.
     rs.clear();
