@@ -175,76 +175,76 @@ using namespace bzs::db::protocol::tdap::client;
   // join and outerJoin with preparedQuery.
 #if defined(SWIGPHP)
   // For PHP fixed number of paramatars.
-  activeTable& join(recordset& mdls, preparedQuery* q, const _TCHAR* name1,
+  activeTable& join(recordset& rs, preparedQuery* q, const _TCHAR* name1,
                       const _TCHAR* name2, const _TCHAR* name3,
                       const _TCHAR* name4, const _TCHAR* name5,
                       const _TCHAR* name6, const _TCHAR* name7,
                       const _TCHAR* name8) {
-    self->join(mdls, q->getFilter(), name1, name2, name3, name4, name5, name6,
+    self->join(rs, q->getFilter(), name1, name2, name3, name4, name5, name6,
                name7, name8);
     return *self;
   }
-  activeTable& outerJoin(recordset& mdls, preparedQuery* q, const _TCHAR* name1,
+  activeTable& outerJoin(recordset& rs, preparedQuery* q, const _TCHAR* name1,
                       const _TCHAR* name2, const _TCHAR* name3,
                       const _TCHAR* name4, const _TCHAR* name5,
                       const _TCHAR* name6, const _TCHAR* name7,
                       const _TCHAR* name8) {
-    self->outerJoin(mdls, q->getFilter(), name1, name2, name3, name4, name5, name6,
+    self->outerJoin(rs, q->getFilter(), name1, name2, name3, name4, name5, name6,
                name7, name8);
     return *self;
   }
-  activeTable& join(recordset& mdls, queryBase& q, const _TCHAR* name1,
+  activeTable& join(recordset& rs, queryBase& q, const _TCHAR* name1,
                       const _TCHAR* name2, const _TCHAR* name3,
                       const _TCHAR* name4, const _TCHAR* name5,
                       const _TCHAR* name6, const _TCHAR* name7,
                       const _TCHAR* name8) {
-    self->join(mdls, q, name1, name2, name3, name4, name5, name6,
+    self->join(rs, q, name1, name2, name3, name4, name5, name6,
                name7, name8);
     return *self;
   }
-  activeTable& outerJoin(recordset& mdls, queryBase& q, const _TCHAR* name1,
+  activeTable& outerJoin(recordset& rs, queryBase& q, const _TCHAR* name1,
                       const _TCHAR* name2, const _TCHAR* name3,
                       const _TCHAR* name4, const _TCHAR* name5,
                       const _TCHAR* name6, const _TCHAR* name7,
                       const _TCHAR* name8) {
-    self->outerJoin(mdls, q, name1, name2, name3, name4, name5, name6,
+    self->outerJoin(rs, q, name1, name2, name3, name4, name5, name6,
                name7, name8);
     return *self;
   }
 #else
-  activeTable& join(recordset& mdls, preparedQuery* q, const _TCHAR* name1,
+  activeTable& join(recordset& rs, preparedQuery* q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                       const _TCHAR* name8 = NULL) {
-    self->join(mdls, q->getFilter(), name1, name2, name3, name4, name5, name6,
+    self->join(rs, q->getFilter(), name1, name2, name3, name4, name5, name6,
                name7, name8);
     return *self;
   }
-  activeTable& outerJoin(recordset& mdls, preparedQuery* q, const _TCHAR* name1,
+  activeTable& outerJoin(recordset& rs, preparedQuery* q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                       const _TCHAR* name8 = NULL) {
-    self->outerJoin(mdls, q->getFilter(), name1, name2, name3, name4, name5, name6,
+    self->outerJoin(rs, q->getFilter(), name1, name2, name3, name4, name5, name6,
                name7, name8);
     return *self;
   }
-  activeTable& join(recordset& mdls, queryBase& q, const _TCHAR* name1,
+  activeTable& join(recordset& rs, queryBase& q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                       const _TCHAR* name8 = NULL) {
-    self->join(mdls, q, name1, name2, name3, name4, name5, name6,
+    self->join(rs, q, name1, name2, name3, name4, name5, name6,
                name7, name8);
     return *self;
   }
-  activeTable& outerJoin(recordset& mdls, queryBase& q, const _TCHAR* name1,
+  activeTable& outerJoin(recordset& rs, queryBase& q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                       const _TCHAR* name8 = NULL) {
-    self->outerJoin(mdls, q, name1, name2, name3, name4, name5, name6,
+    self->outerJoin(rs, q, name1, name2, name3, name4, name5, name6,
                name7, name8);
     return *self;
   }
@@ -627,6 +627,9 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::mra;
 %ignore bzs::db::protocol::tdap::client::table::tdap;
 %ignore bzs::db::protocol::tdap::client::table::setMra;
+%ignore bzs::db::protocol::tdap::client::table::setFVA;
+%ignore bzs::db::protocol::tdap::client::table::getFVAstr;
+
   // create and release methods for query class
 %extend bzs::db::protocol::tdap::client::query {
   query() {
@@ -926,34 +929,8 @@ We need to change the wrap_cpp manually to expand template codes.
 */
 
 // * bzs/db/protocol/tdap/client/activeTable.h *
-#if defined(SWIGPHP)
 %template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-#else
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<__int64>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<__int64, __int64>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<__int64, __int64, __int64>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<__int64, __int64, __int64, __int64>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<__int64, __int64, __int64, __int64, __int64>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<__int64, __int64, __int64, __int64, __int64, __int64>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<__int64, __int64, __int64, __int64, __int64, __int64, __int64>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<__int64, __int64, __int64, __int64, __int64, __int64, __int64, __int64>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double, double>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double, double, double>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double, double, double, double>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double, double, double, double, double>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double, double, double, double, double, double>;
-%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double, double, double, double, double, double, double>;
-#endif
+
 // * bzs/db/protocol/tdap/client/groupQuery.h *
 %template(when) bzs::db::protocol::tdap::client::recordsetQuery::when<_TCHAR*>;
 %template(and_) bzs::db::protocol::tdap::client::recordsetQuery::and_<_TCHAR*>;
@@ -963,35 +940,7 @@ We need to change the wrap_cpp manually to expand template codes.
 %template(where) bzs::db::protocol::tdap::client::query::where<_TCHAR*>;
 %template(and_) bzs::db::protocol::tdap::client::query::and_<_TCHAR*>;
 %template(or_)  bzs::db::protocol::tdap::client::query::or_<_TCHAR*>;
-
-#if defined(SWIGPHP)
 %template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-#else
-%template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*, _TCHAR*>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<__int64>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<__int64, __int64>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<__int64, __int64, __int64>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<__int64, __int64, __int64, __int64>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<__int64, __int64, __int64, __int64, __int64>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<__int64, __int64, __int64, __int64, __int64, __int64>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<__int64, __int64, __int64, __int64, __int64, __int64, __int64>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<__int64, __int64, __int64, __int64, __int64, __int64, __int64, __int64>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<double>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<double, double>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<double, double, double>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<double, double, double, double>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<double, double, double, double, double>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<double, double, double, double, double, double>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<double, double, double, double, double, double, double>;
-%template(in)   bzs::db::protocol::tdap::client::query::in<double, double, double, double, double, double, double, double>;
-#endif
 /* ===============================================
       cpointer
 =============================================== */
