@@ -859,6 +859,7 @@ class filter
                 lb.joinAfter(&la);
                 bsize.logic += lb.size();
                 m_logics.erase(m_logics.begin() + i + 1);
+                m_hd.logicalCount--;
             }
         }
     }

@@ -329,8 +329,8 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define STATUS_TABLE_EXISTS_ERROR       59
 #define STATUS_LIMMIT_OF_REJECT         60
 #define STATUS_WARKSPACE_TOO_SMALL      61
-#define STATUS_INVALID_PREPAREID        62
-#define STATUS_LMIT_OF_PREPAREED        63
+#define STATUS_INVALID_EX_DESC          62
+#define STATUS_INVALID_EX_INS           63
 #define STATUS_REACHED_FILTER_COND      64
 #define STATUS_INVALID_FIELD_OFFSET     65
 #define STATUS_CHANGE_CONFLICT          80
@@ -346,6 +346,8 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define ERROR_NOSPECIFY_TABLE           176
 #define ERROR_LOAD_CLIBRARY             200
 #define ERROR_INDEX_RND_INIT            201
+#define STATUS_INVALID_PREPAREID        202
+#define STATUS_LMIT_OF_PREPAREED        203
 #define SERVER_CLIENT_NOT_COMPATIBLE    3003
 #define NET_BAD_SRB_FORMAT              3021
 #define ERROR_TD_HOSTNAME_NOT_FOUND     3103
