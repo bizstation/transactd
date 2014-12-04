@@ -38,12 +38,12 @@ class stringBuffer
     size_t m_pos;
     size_t m_curSize;
 
+    size_t alloc(size_t size);
+    size_t re_alloc(size_t size);
 public:
     stringBuffer(size_t size);
     ~stringBuffer();
     void clear();
-    size_t alloc(size_t size);
-    size_t realloc(size_t size);
     char* getPtrA(size_t size);
     WCHAR* getPtrW(size_t size /* charnum */);
     size_t size() const { return m_curSize; }

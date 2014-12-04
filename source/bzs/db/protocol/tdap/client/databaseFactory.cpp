@@ -75,9 +75,12 @@ tls_key g_tlsiID_SC3;
 
 void initTlsThread()
 {
-    tls_setspecific(g_tlsiID_SC1, new wchar_t[256]);
-    tls_setspecific(g_tlsiID_SC2, new wchar_t[45]);
-    tls_setspecific(g_tlsiID_SC3, new wchar_t[45]);
+    if (tls_getspecific(g_tlsiID_SC1) == NULL)
+        tls_setspecific(g_tlsiID_SC1, new wchar_t[256]);
+    if (tls_getspecific(g_tlsiID_SC2) == NULL)
+        tls_setspecific(g_tlsiID_SC2, new wchar_t[45]);
+    if (tls_getspecific(g_tlsiID_SC3) == NULL)
+        tls_setspecific(g_tlsiID_SC3, new wchar_t[45]);
 }
 
 void cleanupTls()
@@ -85,6 +88,9 @@ void cleanupTls()
     delete (char*)tls_getspecific(g_tlsiID_SC1);
     delete (char*)tls_getspecific(g_tlsiID_SC2);
     delete (char*)tls_getspecific(g_tlsiID_SC3);
+    tls_setspecific(g_tlsiID_SC1, NULL);
+    tls_setspecific(g_tlsiID_SC2, NULL);
+    tls_setspecific(g_tlsiID_SC3, NULL);
 }
 
 void cleanupCharPtr(void* p)
@@ -103,9 +109,13 @@ void onLoadLibrary(void)
 {
     bzs::env::initCvtProcess();
 #if (defined(__APPLE__) && defined(USETLS))
-    pthread_key_create(&g_tlsiID_SC1, cleanupCharPtr);
-    pthread_key_create(&g_tlsiID_SC2, cleanupCharPtr);
-    pthread_key_create(&g_tlsiID_SC3, cleanupCharPtr);
+    if (tls_getspecific(g_tlsiID_SC1) == NULL)
+        pthread_key_create(&g_tlsiID_SC1, cleanupCharPtr);
+    if (tls_getspecific(g_tlsiID_SC2) == NULL)
+        pthread_key_create(&g_tlsiID_SC2, cleanupCharPtr);
+    if (tls_getspecific(g_tlsiID_SC3) == NULL)
+        pthread_key_create(&g_tlsiID_SC3, cleanupCharPtr);
+
 #endif
 }
 
@@ -128,6 +138,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
+#ifdef _MSC_VER
+        _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+        _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
+        _CrtSetBreakAlloc(151);
+#endif
+
         if ((g_tlsiID_SC1 = TlsAlloc()) == TLS_OUT_OF_INDEXES)
             return FALSE;
         if ((g_tlsiID_SC2 = TlsAlloc()) == TLS_OUT_OF_INDEXES)
@@ -150,6 +166,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
         TlsFree(g_tlsiID_SC1);
         TlsFree(g_tlsiID_SC2);
         TlsFree(g_tlsiID_SC3);
+#ifdef _MSC_VER
+        OutputDebugString(_T("After tdclcpp DLL_PROCESS_DETACH \n"));
+        _CrtDumpMemoryLeaks();
+#endif
     }
     return TRUE;
 }

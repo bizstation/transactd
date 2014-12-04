@@ -60,6 +60,7 @@ void showResult(const std::vector<transactionSec>& results, int total,
                 int totalTransactionTime, int totalTransactions,
                 bool stressMode)
 {
+
     std::tcout << _T("----------------------------------") << std::endl;
     std::tcout << _T("Clients \tTransactions/sec") << std::endl;
     std::tcout << _T("----------------------------------") << std::endl;
@@ -270,9 +271,11 @@ int _tmain(int argc, _TCHAR* argv[])
             printf("\n");
             showResult(results, bm.end(), (int)totalTransactionTime,
                        totalTransactions, cmd.stressMode);
-            return 0;
+            pooledDbManager pdb;
+            pdb.reset(0);
+            //return 0;
         }
-        return 1;
+        //return 1;
     }
 
     catch (bzs::rtl::exception& e)
@@ -280,5 +283,8 @@ int _tmain(int argc, _TCHAR* argv[])
         std::_tstring s = *bzs::rtl::getMsg(e);
         std::tcout << _T("[ERROR] ") << s << std::endl;
     }
+#ifdef _MSC_VER
+        _CrtDumpMemoryLeaks();
+#endif
     return 1;
 }

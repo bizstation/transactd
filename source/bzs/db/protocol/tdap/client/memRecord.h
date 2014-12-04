@@ -102,7 +102,7 @@ protected:
 
     inline void copyFromBuffer(const table* tb)
     {
-        memcpy(ptr(0), tb->fieldPtr(0), m_fns.totalFieldLen());
+        memcpy(ptr(0), tb->fieldPtr(0), m_fns->totalFieldLen());
     }
     void removeLastMemBlock() { m_memblock.pop_back(); }
 

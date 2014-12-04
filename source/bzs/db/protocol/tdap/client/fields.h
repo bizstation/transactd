@@ -36,27 +36,84 @@ namespace client
 #define DEBUG_TRACE_FIELDBASE_REFCOUNT
 #endif
 
+/** @cond INTERNAL */
 #define MEM_ALLOC_TYPE_NONE   0
 #define MEM_ALLOC_TYPE_ONE    1
 #define MEM_ALLOC_TYPE_ARRAY  2
+class refarymem
+{
+    refarymem* m_parent;
+    int m_refCount;
+    int m_allocType;
+    virtual void releaseMemory() = 0;
+
+protected:
+
+    inline int allocType() {return m_allocType;}
+
+public:
+
+    refarymem():m_parent(NULL), m_refCount(0), m_allocType(MEM_ALLOC_TYPE_NONE){}
+    
+    inline void setAllocParent(refarymem* v) { m_parent = v; }
+    
+    void setAllocTypeThis(int v) { m_allocType = v; }
+    
+    void addref()
+    {
+        if (m_parent)
+        {
+            assert(m_parent->m_parent == NULL);
+            m_parent->addref();
+        }
+        else if (m_allocType)
+            ++m_refCount;
+    }
+
+    void release()
+    {
+        if (m_parent)
+            m_parent->release();
+        else
+        {
+            --m_refCount;
+#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
+            if (m_allocType != MEM_ALLOC_TYPE_ONE)
+            {    
+                _TCHAR tmp[100];
+                wsprintf(tmp, _T("refarymem::m_refCount %ld \t%p\n"), m_refCount, this);
+                OutputDebugString(tmp);
+            }
+#endif
+            if (m_refCount == 0)
+            {
+#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
+                _TCHAR tmp[50];
+                if (m_allocType == MEM_ALLOC_TYPE_ONE)
+                    wsprintf(tmp, _T("refarymem release one %p\n"), this);
+                else
+                    wsprintf(tmp, _T("refarymem release n %p\n"), this);
+                OutputDebugString(tmp);
+#endif
+                releaseMemory();
+            }
+        }
+    }
+};
+/** @endcond */
 
 /* copyable */
-class fieldsBase
+class fieldsBase : public refarymem
 {
     friend class multiRecordAlocatorImple;
     friend class recordsetImple;
-    friend class activeTableImple;
-    friend struct recordsetQueryImple;
     friend class recordsetQuery;
-    friend class groupQueryImple;
+
     virtual unsigned char* ptr(int index) const = 0;
 
 protected:
     /** @cond INTERNAL */
-    fielddefs& m_fns;
-    fieldsBase* m_parent;
-    int m_refCount;
-    int m_allocType;
+    fielddefs* m_fns;
     bool m_invalidRecord;
     virtual table* tbptr() const { return NULL; }
 
@@ -76,67 +133,19 @@ protected:
         }
     }
     
-    explicit inline fieldsBase(fielddefs& fns)
-        : m_fns(fns), m_parent(NULL), m_refCount(0),
-        m_allocType(MEM_ALLOC_TYPE_NONE), m_invalidRecord(false)
+    explicit inline fieldsBase(fielddefs* fns)
+        : refarymem(), m_fns(fns), m_invalidRecord(false)
     {
     }
 
-    inline void setFielddefs(fielddefs& def) { m_fns = def; }
+    inline void setFielddefs(fielddefs* def) { m_fns = def; }
 
     virtual void removeLastMemBlock(){};
 
     virtual void setRecordData(unsigned char* ptr, size_t size,
                                short* endFieldIndex, bool owner = false){};
-
-    inline void setAllocParent(fieldsBase* v) { m_parent = v; }
-
-    void setAllocTypeThis(int v) { m_allocType = v; }
-
-    void addref()
-    {
-        if (m_parent)
-        {
-            assert(m_parent->m_parent == NULL);
-            m_parent->addref();
-        }
-        else if (m_allocType)
-            ++m_refCount;
-    }
-    
-    virtual void releaseMemory(){}
     /** @endcond */
 public:
-    /* public for swig */
-    void release()
-    {
-        if (m_parent)
-            m_parent->release();
-        else
-        {
-            --m_refCount;
-#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
-            if (m_allocType != MEM_ALLOC_TYPE_ONE)
-            {    
-                _TCHAR tmp[100];
-                wsprintf(tmp, _T("m_refCount %ld \t%p\n"), m_refCount, this);
-                OutputDebugString(tmp);
-            }
-#endif
-            if (m_refCount == 0)
-            {
-#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
-                _TCHAR tmp[50];
-                if (m_allocType == MEM_ALLOC_TYPE_ONE)
-                    wsprintf(tmp, _T("fieldsBase release one %p\n"), this);
-                else
-                    wsprintf(tmp, _T("fieldsBase release n %p\n"), this);
-                OutputDebugString(tmp);
-#endif
-                releaseMemory();
-            }
-        }
-    }
 
     virtual ~fieldsBase(){};
 
@@ -146,21 +155,21 @@ public:
 
     inline field getFieldNoCheck(short index) const
     {
-        return field(ptr((short)index), m_fns[(short)index], &m_fns);
+        return field(ptr((short)index), (*m_fns)[(short)index], m_fns);
     }
 
     inline field operator[](short index) const
     {
-        if (m_fns.checkIndex(index))
-            return field(ptr((short)index), m_fns[(short)index], &m_fns);
+        if (m_fns->checkIndex(index))
+            return field(ptr((short)index), (*m_fns)[(short)index], m_fns);
 
         throwIndexError(index);
-        return field(NULL, dummyFd(), &m_fns);
+        return field(NULL, dummyFd(), m_fns);
     }
 
     inline field operator[](const _TCHAR* name) const
     {
-        int index = m_fns.indexByName(name);
+        int index = m_fns->indexByName(name);
         return operator[](index);
     }
 
@@ -169,22 +178,22 @@ public:
         return operator[](name.c_str());
     }
 
-    inline size_t size() const { return m_fns.size(); }
+    inline size_t size() const { return m_fns->size(); }
 
     inline field fd(short index) const { return operator[](index); }
 
     inline field fd(const _TCHAR* name) const
     {
-        int index = m_fns.indexByName(name);
+        int index = m_fns->indexByName(name);
         return operator[](index);
     }
 
     inline short indexByName(const _TCHAR* name) const
     {
-        return m_fns.indexByName(name);
+        return m_fns->indexByName(name);
     }
 
-    inline const fielddefs* fieldDefs() const { return &m_fns; }
+    inline const fielddefs* fieldDefs() const { return m_fns; }
 
     virtual void clear() = 0;
 };
@@ -199,6 +208,8 @@ class fields : public fieldsBase
 {
     table& m_tb;
 
+    void releaseMemory(){}
+
     inline unsigned char* ptr(int index) const
     {
         return (unsigned char*)m_tb.data();
@@ -206,15 +217,15 @@ class fields : public fieldsBase
 
     table* tbptr() const { return &m_tb; }
 
-    inline explicit fields() : fieldsBase(*((fielddefs*)0)), m_tb(*((table*)0))
+    inline explicit fields() : fieldsBase(NULL), m_tb(*((table*)0))
     {
     }
 
 public:
-    inline explicit fields(table& tb) : fieldsBase(*(tb.m_fddefs)), m_tb(tb) {}
+    inline explicit fields(table& tb) : fieldsBase(tb.m_fddefs), m_tb(tb) {}
 
     inline explicit fields(table_ptr tb)
-        : fieldsBase(*((*tb).m_fddefs)), m_tb(*tb)
+        : fieldsBase((*tb).m_fddefs), m_tb(*tb)
     {
     }
 

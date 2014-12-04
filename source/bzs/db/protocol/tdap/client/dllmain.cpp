@@ -73,6 +73,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
+#ifdef _MSC_VER
+        _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+        _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
+        _CrtSetBreakAlloc(155);
+#endif
+
 #ifdef USETLS
         if ((g_tlsiID = TlsAlloc()) == TLS_OUT_OF_INDEXES)
             return FALSE;
@@ -104,9 +110,16 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
         m_cons = NULL;
 
 #ifdef USETLS
+        cleanupClinet(tls_getspecific(g_tlsiID));
+        cleanupClientID(tls_getspecific(g_tlsiID1));
+        cleanupWChar(tls_getspecific(g_tlsiID_SC1));
         TlsFree(g_tlsiID);
         TlsFree(g_tlsiID1);
         TlsFree(g_tlsiID_SC1);
+#endif
+#ifdef _MSC_VER
+    OutputDebugString(_T("After tdclc DLL_PROCESS_DETACH \n"));
+    _CrtDumpMemoryLeaks();
 #endif
     }
     return TRUE;

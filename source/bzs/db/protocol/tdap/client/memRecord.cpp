@@ -86,12 +86,12 @@ autoMemory& autoMemory::operator=(const autoMemory& p)
 //---------------------------------------------------------------------------
 //    class memoryRecord
 //---------------------------------------------------------------------------
-inline memoryRecord::memoryRecord() : fieldsBase(*((fielddefs*)0))
+inline memoryRecord::memoryRecord() : fieldsBase(NULL)
 {
     m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
 }
 
-inline memoryRecord::memoryRecord(fielddefs& fdinfo) : fieldsBase(fdinfo)
+inline memoryRecord::memoryRecord(fielddefs& fdinfo) : fieldsBase(&fdinfo)
 {
     m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
 }
@@ -116,7 +116,7 @@ void memoryRecord::clear()
     for (int i = 0; i < (int)m_memblock.size(); ++i)
         memset(m_memblock[i].ptr, 0, m_memblock[i].size);
 
-    m_fns.resetUpdateIndicator();
+    m_fns->resetUpdateIndicator();
 }
 
 void memoryRecord::setRecordData(unsigned char* ptr, size_t size,
@@ -124,8 +124,8 @@ void memoryRecord::setRecordData(unsigned char* ptr, size_t size,
 {
     if ((size == 0) && owner)
     {
-        size = m_fns.totalFieldLen();
-        *endFieldIndex = (short)m_fns.size();
+        size = m_fns->totalFieldLen();
+        *endFieldIndex = (short)m_fns->size();
     }
     autoMemory am(ptr, size, endFieldIndex, owner);
     m_memblock.push_back(am);
@@ -134,12 +134,12 @@ void memoryRecord::setRecordData(unsigned char* ptr, size_t size,
 void memoryRecord::copyToBuffer(table* tb, bool updateOnly) const
 {
     if (!updateOnly)
-        memcpy(tb->fieldPtr(0), ptr(0), m_fns.totalFieldLen());
+        memcpy(tb->fieldPtr(0), ptr(0), m_fns->totalFieldLen());
     else
     {
-        for (int i = 0; i < (int)m_fns.size(); ++i)
+        for (int i = 0; i < (int)m_fns->size(); ++i)
         {
-            const fielddef& fd = m_fns[i];
+            const fielddef& fd = (*m_fns)[i];
             // ptr() return memory block first address
             if (fd.enableFlags.bitE)
                 memcpy(tb->fieldPtr(i), ptr(i) + fd.pos, fd.len);
@@ -163,13 +163,13 @@ memoryRecord* memoryRecord::create(fielddefs& fdinfo, int n)
 {
     assert(n);
     memoryRecord* p =  new memoryRecord[n];
-    new (p) memoryRecord(fdinfo);
+    p->setFielddefs(&fdinfo);
     p->setAllocTypeThis(MEM_ALLOC_TYPE_ARRAY);
 
     for (int i = 1; i < n ; ++i)
     {
         memoryRecord* pp = p + i;
-        new (pp) memoryRecord(fdinfo);
+        pp->setFielddefs(&fdinfo);
         pp->setAllocParent(p);
     }
 #ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
@@ -185,12 +185,12 @@ memoryRecord* memoryRecord::create(const memoryRecord& m, int n)
 {
     assert(n);
     memoryRecord* p =  new memoryRecord[n];
-    new (p) memoryRecord(m);
+    *p = m;
     p->setAllocTypeThis(MEM_ALLOC_TYPE_ARRAY);
     for (int i = 1; i < n ; ++i)
     {
         memoryRecord* pp = p + i;
-        new (pp) memoryRecord(m);
+        *pp = m;
         pp->setAllocParent(p);
     }
 #ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
@@ -203,7 +203,7 @@ memoryRecord* memoryRecord::create(const memoryRecord& m, int n)
 
 void memoryRecord::releaseMemory()
 {
-    if (m_allocType == MEM_ALLOC_TYPE_ONE)
+    if (allocType() == MEM_ALLOC_TYPE_ONE)
         delete this;
     else
         delete [] this;
@@ -300,7 +300,7 @@ writableRecord* writableRecord::create(table* tb, const aliasMap_type* alias)
 
 void writableRecord::releaseMemory()
 {
-    if (m_allocType == MEM_ALLOC_TYPE_ONE)
+    if (allocType() == MEM_ALLOC_TYPE_ONE)
         delete this;
     else
         delete [] this;

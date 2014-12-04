@@ -132,6 +132,16 @@
 #endif
 #endif
 
+//memory leak detector
+#ifdef _MSC_VER
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif // _DEBUG
+#endif // _MSC_VER
+
+
 // compiler name
 #if (_MSC_VER == 1600)
 #define COMPILER_VERSTR "vc100"
