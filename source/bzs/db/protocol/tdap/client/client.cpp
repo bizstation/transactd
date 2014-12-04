@@ -43,7 +43,7 @@ __THREAD client* __THREAD_BCB g_client = NULL;
 
 bool checkVersion(trdVersiton& ver)
 {
-    if ((ver.srvMajor < 1) || ((ver.srvMajor == 1) && (ver.srvMinor < 3)))
+    if ((ver.srvMajor < 2) || ((ver.srvMajor == 2) && (ver.srvMinor < 1)))
         return false;
     return true;
 }
