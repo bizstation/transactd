@@ -181,7 +181,7 @@ transactd_set_MTMD("MD")
 # Add compile definitions
 # ==========================================================
 set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-  SWIGPHP SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB)
+  SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB)
 bz_get_compiler_bitness()
 if(MSVC90)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
