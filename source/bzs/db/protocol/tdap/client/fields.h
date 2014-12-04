@@ -83,27 +83,22 @@ public:
         else
         {
             --m_refCount;
-#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
-            if (m_allocType != MEM_ALLOC_TYPE_ONE)
-            {    
-                _TCHAR tmp[100];
-                wsprintf(tmp, _T("refarymem::m_refCount %ld \t%p\n"), m_refCount, this);
-                OutputDebugString(tmp);
-            }
-#endif
             if (m_refCount == 0)
-            {
-#ifdef DEBUG_TRACE_FIELDBASE_REFCOUNT
-                _TCHAR tmp[50];
-                if (m_allocType == MEM_ALLOC_TYPE_ONE)
-                    wsprintf(tmp, _T("refarymem release one %p\n"), this);
-                else
-                    wsprintf(tmp, _T("refarymem release n %p\n"), this);
-                OutputDebugString(tmp);
-#endif
                 releaseMemory();
-            }
         }
+    }
+    
+    int refcount() const { return m_refCount; }
+
+    bool tryFastRelease(int totalRefCount)
+    {
+        if (!m_child && (m_refCount == totalRefCount))
+        {
+            m_refCount = 1;
+            release();
+            return true;
+        }
+        return false;
     }
 };
 /** @endcond */
@@ -177,14 +172,15 @@ public:
 
     inline field operator[](const _TCHAR* name) const
     {
-        int index = m_fns->indexByName(name);
+        int index = m_fns->indexByName(std::_tstring(name));
         return operator[](index);
     }
 
-    inline field operator[](const std::_tstring& name) const
+    /*inline field operator[](const std::_tstring& name) const
     {
-        return operator[](name.c_str());
-    }
+        
+        return operator[](index);
+    }*/
 
     inline size_t size() const { return m_fns->size(); }
 

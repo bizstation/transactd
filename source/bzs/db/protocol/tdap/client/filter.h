@@ -170,6 +170,27 @@ public:
 
     ~logic() { delete[] data;}
 
+    /* Important for vector erase */
+    logic& operator=(const logic& r)
+    {
+        if (this != &r)
+        {
+            if (data != r.data)
+                delete[] data;
+            type = r.type;
+            len = r.len;
+            pos = r.pos;
+            logType = r.logType;
+            opr = r.opr;
+            data = r.data;
+            databuflen = r.databuflen;
+            fieldNum = r.fieldNum;
+            placeHolder = r.placeHolder;
+            const_cast<logic&>(r).data = NULL;  //Important for vector erase
+        }
+        return *this;
+    }
+
     size_t getLength()
     {
         return (size_t)((unsigned char*)&data - &type) + getDatalen();
@@ -238,22 +259,7 @@ public:
             return;
         fielddef fdd = tb->tableDef()->fieldDefs[fieldNum];
         fdd.pos = 0;
-        uchar_td* buf;
-        unsigned int size = fdd.len;
-        if (fdd.blobLenBytes())
-        {
-            size = valueLen(value, size);
-            buf = new uchar_td[size + 8];
-        }
-        else
-        {
-            if (fdd.varLenBytes())
-            {
-                size = valueLen(value, size);
-                size += fdd.varLenBytes();
-            }
-            buf = allocBuffer(size);
-        }
+        uchar_td* buf = allocBuffer(fdd.len);
         field fd(buf, fdd, tb->m_fddefs);
         fd = value;
         bool part = fd.isCompPartAndMakeValue();
@@ -262,7 +268,7 @@ public:
         len = varlen + copylen;
         if (fdd.blobLenBytes())
         {
-            allocBuffer(len);
+            data = new unsigned char[len + 2];
             if (varlen)
                 memcpy(data, buf, varlen);
             memcpy(data + varlen, fdd.keyData(buf), copylen);
@@ -271,7 +277,6 @@ public:
 
         if (!part && (fdd.varLenBytes() || fdd.blobLenBytes()))
             logType |= CMPLOGICAL_VAR_COMP_ALL; // match complate
-        
     }
 
     bool setParam(table* tb, const _TCHAR* name, const _TCHAR* type,
@@ -333,15 +338,19 @@ public:
     {
         assert(src);
         assert(src->data);
-        unsigned char* tmp = data;
-        databuflen = len + src->len + 2; 
-        data = new unsigned char[databuflen];
-        memcpy(data, tmp, len);
-        memcpy(data + len, src->data, src->len);
+        //copy before
+        databuflen = len + src->len + 2;
+        unsigned char* tmp = new unsigned char[databuflen];
+        memcpy(tmp, data, len);
+        delete[] data;
+        //join next
+        memcpy(tmp + len, src->data, src->len);
         len += src->len;
         type = ft_string; // compare by memcmp
         opr = src->opr;
-        delete[] tmp;
+        data = tmp;
+        delete [] src->data;
+        src->data = NULL;
     }
 };
 
@@ -467,7 +476,7 @@ class filter
     table* m_tb;
     header m_hd;
     resultDef m_ret;
-    std::vector<resultField*> m_fields;
+    std::vector<resultField> m_fields;
     std::vector<short> m_selectFieldIndexes;
     std::vector<logic> m_logics;
     std::vector<seek> m_seeks;
@@ -499,31 +508,29 @@ class filter
 
     void addAllFields()
     {
-        resultField* r = new resultField();
-        r->len = (ushort_td)m_tb->tableDef()->maxRecordLen;
-        r->pos = 0;
-        m_fields.push_back(r);
+        m_fields.resize(1);
+        resultField& r = m_fields[0];
+        r.len = (ushort_td)m_tb->tableDef()->maxRecordLen;
+        r.pos = 0;
     }
 
-    bool addSelect(const _TCHAR* name)
+    bool addSelect(resultField& r, const _TCHAR* name)
     {
-        resultField* r = new resultField();
-        int fieldNum = r->setParam(m_tb, name);
+        int fieldNum = r.setParam(m_tb, name);
         if (fieldNum != -1)
         {
-            m_fields.push_back(r);
             m_selectFieldIndexes.push_back(fieldNum);
             return true;
         }
-        delete r;
         return false;
     }
 
     bool setSelect(const std::vector<std::_tstring>& selects)
     {
+        m_fields.resize(selects.size());
         for (size_t i = 0; i < selects.size(); ++i)
         {
-            if (!addSelect(selects[i].c_str()))
+            if (!addSelect(m_fields[i], selects[i].c_str()))
                 return false;
         }
         return true;
@@ -706,7 +713,7 @@ class filter
         if (!ignoreFields)
         {
             for (size_t i = 0; i < m_fields.size(); ++i)
-                recordLen += m_fields[i]->len;
+                recordLen += m_fields[i].len;
         }
         return recordLen;
     }
@@ -728,13 +735,11 @@ class filter
 
         for (int i = (int)m_logics.size() - 2; i >= 0; --i)
         {
-
             logic& la = m_logics[i + 1];
             logic& lb = m_logics[i];
             if (la.canJoin(false) && lb.canJoin(true) && lb.isNextFiled(&la))
             {
                 lb.joinAfter(&la);
-                // delete la;
                 m_logics.erase(m_logics.begin() + i + 1);
             }
         }
@@ -787,7 +792,7 @@ class filter
         if (!m_ignoreFields)
         {
             for (size_t i = 0; i < m_fields.size(); ++i)
-                p = m_fields[i]->writeBuffer(p, estimate);
+                p = m_fields[i].writeBuffer(p, estimate);
         }
 
         // write total length
@@ -856,13 +861,11 @@ class filter
         m_isTransactd = m_tb->isUseTransactd();
     }
 
-    ~filter() { cleanup(); }
+    ~filter() {}
 
 public:
     void cleanup()
     {
-        for (size_t i = 0; i < m_fields.size(); ++i)
-            delete m_fields[i];
         m_selectFieldIndexes.clear();
         m_fields.clear();
         m_logics.clear();
@@ -965,7 +968,7 @@ public:
     inline ushort_td fieldLen(int index) const
     {
         assert(index < (int)m_fields.size());
-        return m_fields[index]->len;
+        return m_fields[index].len;
     }
 
     ushort_td totalFieldLen() const
@@ -978,14 +981,14 @@ public:
     {
         ushort_td recordLen = 0;
         for (size_t i = 0; i < m_fields.size(); ++i)
-            recordLen += m_fields[i]->len;
+            recordLen += m_fields[i].len;
         return recordLen;
     }
 
     inline ushort_td fieldOffset(int index) const
     {
         assert(index < (int)m_fields.size());
-        return m_fields[index]->pos;
+        return m_fields[index].pos;
     }
 
     bool writeBuffer(bool prepare = false)
@@ -1002,8 +1005,8 @@ public:
 
     bool fieldSelected() const
     {
-        return !((m_fields.size() == 1) && (m_fields[0]->pos == 0) &&
-                 (m_fields[0]->len ==
+        return !((m_fields.size() == 1) && (m_fields[0].pos == 0) &&
+                 (m_fields[0].len ==
                   (ushort_td)m_tb->tableDef()->maxRecordLen));
     }
 

@@ -16,6 +16,13 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
+#ifdef _MSC_VER
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif // _DEBUG
+#endif // _MSC_VER
 #include <bzs/db/protocol/tdap/client/activeTable.h>
 #include <bzs/rtl/benchmark.h>
 #include <bzs/example/queryData.h>
@@ -110,6 +117,7 @@ int _tmain(int argc, _TCHAR* argv[])
     database_ptr db = createDatabaseObject();
     try
     {
+        {
         const _TCHAR* host = _T("localhost");
         int kind = 15;
         int n = 100;
@@ -143,7 +151,11 @@ int _tmain(int argc, _TCHAR* argv[])
         bzs::rtl::benchmark bm;
         bm.report(boost::bind(btest, &rs, &atu, &atg, &ate, kind, n),
                   "exec time ");
-
+        db.reset();
+        }
+#ifdef _MSC_VER
+        _CrtDumpMemoryLeaks();
+#endif
         return 0;
     }
 

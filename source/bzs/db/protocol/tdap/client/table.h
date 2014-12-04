@@ -71,6 +71,7 @@ public:
 
 class filter;
 typedef boost::shared_ptr<filter> filter_ptr; 
+
 /** @endcond */
 
 class DLLLIB table : public nstable
@@ -591,6 +592,7 @@ public:
     static query* create(); // implemet int activeTable.cpp
 };
 
+
 int DLLLIB makeSupplyValues(/*in out*/const _TCHAR* values[], int size,
                          const _TCHAR* value, const _TCHAR* value1 = NULL,
                          const _TCHAR* value2 = NULL, const _TCHAR* value3 = NULL,
@@ -599,6 +601,7 @@ int DLLLIB makeSupplyValues(/*in out*/const _TCHAR* values[], int size,
                          const _TCHAR* value8 = NULL, const _TCHAR* value9 = NULL,
                          const _TCHAR* value10 = NULL);
 
+bool DLLLIB supplyValues(filter_ptr& filter, const _TCHAR* values[], int size);
 bool DLLLIB supplyValue(filter_ptr& filter, int index, const _TCHAR* v);
 bool DLLLIB supplyValue(filter_ptr& filter, int index, short v);
 bool DLLLIB supplyValue(filter_ptr& filter, int index, int v);

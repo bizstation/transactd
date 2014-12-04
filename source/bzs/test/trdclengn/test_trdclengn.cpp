@@ -18,6 +18,7 @@
  ================================================================= */
 //#define BOOST_TEST_MODULE
 
+
 #include <boost/test/included/unit_test.hpp>
 #include <bzs/db/protocol/tdap/client/database.h>
 #include <bzs/db/protocol/tdap/client/table.h>
@@ -484,7 +485,9 @@ void testSetQuery(database* db)
     boost::shared_ptr<filter> stmt = tb->setQuery(&q);
     const _TCHAR* vs[2];
     int nn = makeSupplyValues(vs, 2, _T("10"), _T("20000"));
-    stmt->supplyValues(vs, nn);
+    //stmt->supplyValues(vs, nn); Bad
+    supplyValues(stmt, vs, nn);
+
     
     int v = 10;
     tb->setFV((short)0, v);
@@ -498,8 +501,8 @@ void testSetQuery(database* db)
         ++i;
     }
     nn = makeSupplyValues(vs, 2, _T("100"), _T("10000"));
-    stmt->supplyValues(vs, nn);
-
+    //stmt->supplyValues(vs, nn); //Bad
+    supplyValues(stmt, vs, nn);
     tb->setQuery(stmt);
     v = 100;
     tb->setFV((short)0, v);
@@ -2064,9 +2067,15 @@ void doTestSF(table* tb)
     tb->clearBuffer();
 
     tb->setFilter(_T("name = 'あい*'"), 0, 10);
+    
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+
     tb->seekFirst();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    /*
+        If this point segmentation fult. Then drop database teststring. 
+    */
+
     tb->findNext(false);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
     BOOST_CHECK_MESSAGE(_tstring(_T("あいうえおかきくこ")) ==
@@ -2830,7 +2839,7 @@ void teetNewDelete(database* db)
         delete r; // All OK
     }
 
-    // activeTable releaseTable
+    //activeTable releaseTable
     activeTable* at = new activeTable(db, _T("user"));
     at->releaseTable();
     BOOST_CHECK_MESSAGE(at->table() == NULL, " activeTable::releaseTable");

@@ -345,8 +345,15 @@ public:
 
     inline void clearRecords()
     {
-        for (int i = (int)m_recordset.size() - 1; i >= 0; --i)
-            m_recordset[i]->release();
+        if (m_recordset.size())
+        {
+            if (!m_recordset[0]->tryFastRelease((int)m_recordset.size()))
+            {
+                for (int i = (int)m_recordset.size() - 1; i >= 0; --i)
+                    m_recordset[i]->release();
+            }
+        } 
+        
         m_recordset.clear();
         m_uniqueReadMaxField = 0;
     }

@@ -776,8 +776,10 @@ public:
         }
         if (key)
         {
-            fieldAdapter* begin = &m_fields[0], *cur = &m_fields[0],
-                          *end = &m_fields[lastIndex];
+            std::vector<fieldAdapter>::iterator begin = m_fields.begin();
+            std::vector<fieldAdapter>::iterator cur = m_fields.begin();
+            std::vector<fieldAdapter>::iterator end = begin + lastIndex;
+
             char tmpOpr = (lastIndex != req.logicalCount) ? end->m_fd->opr : 0;
             std::sort(begin, end);
             bool flag = true;

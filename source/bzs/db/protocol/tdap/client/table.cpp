@@ -945,7 +945,8 @@ void table::setQuery(filter_ptr stmt)
     m_impl->rc->reset();
     m_impl->exBookMarking = false;
     m_impl->maxBookMarkedCount = 0;
-    m_impl->filterPtr = stmt;
+    if (m_impl->filterPtr != stmt)
+        m_impl->filterPtr = stmt;
 }
 
 filter_ptr table::setQuery(const queryBase* query, bool serverPrepare)
@@ -955,12 +956,10 @@ filter_ptr table::setQuery(const queryBase* query, bool serverPrepare)
     m_impl->rc->reset();
     m_impl->exBookMarking = false;
     m_impl->maxBookMarkedCount = 0;
-
+    m_impl->filterPtr.reset();
     if (query == NULL)
-    {
-        m_impl->filterPtr.reset();
         return m_impl->filterPtr;
-    }
+
     if (!m_impl->filterPtr)
         m_impl->filterPtr.reset(filter::create(this), filter::release);
         
@@ -2247,7 +2246,7 @@ int queryBase::getLimit() const
 bool queryBase::isAll() const
 {
     return m_impl->m_nofilter;
-};
+}
 
 const std::vector<std::_tstring>& queryBase::getSelects() const
 {
@@ -2362,6 +2361,10 @@ int makeSupplyValues(const _TCHAR* values[], int size,
     return 11;
 }
 
+bool supplyValues(filter_ptr& filter, const _TCHAR* values[], int size)
+{
+    return filter->supplyValues(values, size);
+}
 
 bool supplyValue(filter_ptr& filter, int index, const _TCHAR* v)
 {
