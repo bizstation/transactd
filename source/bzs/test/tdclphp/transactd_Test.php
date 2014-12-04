@@ -2276,15 +2276,22 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $q->select('id', 'name', 'group')->where('id', '<=', 15000);
         $rs = $atu->index(0)->keyValue(1)->read($q);
         $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs->fieldDefs()->size(), 3);
         
         // Join extention::comment
         $q->reset();
-        $ate->index(0)->join($rs,
-            $q->select('comment')->optimize(Bz\queryBase::joinHasOneOrHasMany), 'id');
+        $this->assertEquals($q->selectCount(), 0);
+        
+        $q->select('comment')->optimize(Bz\queryBase::joinHasOneOrHasMany);
+        $this->assertEquals($q->selectCount(), 1);
+        $ate->index(0)->join($rs, $q, 'id');
+        $this->assertEquals($q->selectCount(), 1);
         $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs->fieldDefs()->size(), 4);
         
         // reverse and get first (so it means 'get last')
         $last = $rs->reverse()->first();
+        $this->assertEquals($rs->size(), 15000);
         $this->assertEquals($last['id'], 15000);
         $this->assertEquals($last['comment'], '15000 comment');
         
@@ -2350,9 +2357,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         // clone
         $rsv = clone $rs;
+        $this->assertEquals($rsv->size(), 16000);
         $gq->reset();
         $count3 = new Bz\count('count3');
         $gq->addFunction($count3)->keyField('group');
+        $this->assertEquals($gq->functionCount(), 1);
+        $this->assertEquals($gq->getKeyFields()->count(), 1);
+        
         $rs->groupBy($gq);
         $this->assertEquals($rs->size(), 5);
         $this->assertEquals($rsv->size(), 16000);

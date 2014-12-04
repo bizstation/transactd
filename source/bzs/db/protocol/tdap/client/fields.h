@@ -189,7 +189,7 @@ public:
 
     inline field operator[](const std::_tstring& name) const
     {
-        int index = m_fns->indexByName(name);
+        short index = m_fns->indexByName(name);
         return operator[](index);
     }
 

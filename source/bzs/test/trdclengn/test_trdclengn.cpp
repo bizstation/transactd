@@ -2973,6 +2973,7 @@ void testJoin(database* db)
         .where(_T("id"), _T("<="), 15000);
     atu.index(0).keyValue(1).read(rs, q);
     BOOST_CHECK_MESSAGE(rs.size() == 15000, " rs.size() 1500 bad = " << rs.size());
+    BOOST_CHECK_MESSAGE(rs.fieldDefs()->size() == 3, " rs.fieldDefs()->size() 3 bad = " << rs.fieldDefs()->size());
 
     // Join extention::comment
     q.reset();
@@ -2980,6 +2981,7 @@ void testJoin(database* db)
         rs, q.select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany),
         _T("id"));
     BOOST_CHECK_MESSAGE(rs.size() == 15000, "join  rs.size() 1500 bad = " << rs.size());
+    BOOST_CHECK_MESSAGE(rs.fieldDefs()->size() == 4, " rs.fieldDefs()->size() 4 bad = " << rs.fieldDefs()->size());
 
     // test reverse
 

@@ -405,7 +405,9 @@ inline std::_tstring lexical_cast(float v)
 
 inline std::_tstring lexical_cast(const _TCHAR* v)
 {
-    return std::_tstring(v);
+    if (v)
+        return std::_tstring(v);
+    return std::_tstring(_T(""));
 }
 
 class qlogic

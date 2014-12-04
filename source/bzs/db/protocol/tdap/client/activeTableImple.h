@@ -249,7 +249,7 @@ class activeTableImple : public activeObject<map_orm>
         fns[4] = name5; fns[5] = name6; fns[6] = name7; fns[7] = name8;
         
         for (fnsCount = 0; fnsCount < 8; ++fnsCount)
-            if (fns[fnsCount] == NULL)
+            if ((fns[fnsCount] == NULL) || (fns[fnsCount][0] == 0x00))
                 break;
         
         setJoinKeySize(q, fnsCount);
