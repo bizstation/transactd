@@ -2173,6 +2173,67 @@ def testJoin()
   db.close()
 end
 
+def testPrepare()
+  db = Transactd::Database.new()
+  db.open(URL_QT)
+  expect(db.stat()).to eq 0
+  atu = Transactd::ActiveTable.new(db, 'user')
+  atu.alias('名前', 'name')
+
+  atg = Transactd::ActiveTable.new(db, 'groups')
+  atg.alias('name', 'group_name')
+
+  ate = Transactd::ActiveTable.new(db, 'extention')
+  q = Transactd::Query.new()
+  
+  q.select('id', 'name', 'group').where('id', '<=', '?')
+  pq = atu.prepare(q)
+  
+  # integer value
+  rs = atu.index(0).keyValue('1').read(pq, 15000)
+  expect(rs.size()).to eq 15000
+
+  # float value
+  rs = atu.index(0).keyValue('1').read(pq, 15000.000)
+  expect(rs.size()).to eq 15000
+
+  # String value
+  rs = atu.index(0).keyValue('1').read(pq, '15000')
+  expect(rs.size()).to eq 15000
+  
+  # Join extention::comment
+  q.reset().select('comment').optimize(Transactd::QueryBase::JoinHasOneOrHasMany)
+  pq = ate.prepare(q)
+  ate.index(0).join(rs, pq, 'id')
+  expect(rs.size()).to eq 15000
+  
+  # reverse and get first (so it means 'get last')
+  last = rs.reverse().first()
+  expect(last['id']).to eq 15000
+  expect(last['comment']).to eq '15000 comment'
+  
+  # Join group::name
+  q.reset().select('group_name')
+  pq = atg.prepare(q)
+  atg.index(0).join(rs, pq, 'group')
+  expect(rs.size()).to eq 15000
+  
+  # get last (the rs is reversed, so it means 'get first')
+  first = rs.last()
+  expect(first['id']).to eq 1
+  expect(first['comment']).to eq '1 comment'
+  expect(first['group_name']).to eq '1 group'
+  
+  # row in rs[15000 - 9]
+  rec = rs[15000 - 9]
+  expect(rec['group_name']).to eq '4 group'
+
+  atu.release()
+  atg.release()
+  ate.release()
+  db.close()
+end
+
 def testWirtableRecord()
   db = Transactd::Database.new()
   db.open(URL_QT)
@@ -2345,6 +2406,10 @@ describe Transactd do
   it 'activetable and join' do
     testJoin()
   end
+  it 'activetable and prepare' do
+    testPrepare()
+  end
+
   it 'write with writableRecord' do
     testWirtableRecord()
   end

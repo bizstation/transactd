@@ -2961,9 +2961,7 @@ void testJoin(database* db)
 #endif
 
     activeTable atu(db, _T("user"));
-
     activeTable atg(db, _T("groups"));
-
     activeTable ate(db, _T("extention"));
     recordset rs;
     query q;
@@ -2972,7 +2970,7 @@ void testJoin(database* db)
     q.select(_T("id"), _T("name"), _T("group"))
         .where(_T("id"), _T("<="), 15000);
     atu.index(0).keyValue(1).read(rs, q);
-    BOOST_CHECK_MESSAGE(rs.size() == 15000, " rs.size() 1500 bad = " << rs.size());
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, " rs.size() 15000 bad = " << rs.size());
     BOOST_CHECK_MESSAGE(rs.fieldDefs()->size() == 3, " rs.fieldDefs()->size() 3 bad = " << rs.fieldDefs()->size());
 
     // Join extention::comment
@@ -2980,7 +2978,7 @@ void testJoin(database* db)
     ate.index(0).join(
         rs, q.select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany),
         _T("id"));
-    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join  rs.size() 1500 bad = " << rs.size());
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join  rs.size() 15000 bad = " << rs.size());
     BOOST_CHECK_MESSAGE(rs.fieldDefs()->size() == 4, " rs.fieldDefs()->size() 4 bad = " << rs.fieldDefs()->size());
 
     // test reverse
@@ -3109,6 +3107,75 @@ void testJoin(database* db)
     groupQuery* q3 = groupQuery::create();
     q3->keyField(_T("group"), _T("id"));
     q3->release();
+}
+
+void testPrepareJoin(database* db)
+{
+#ifdef LINUX
+    const char* fd_name = "名前";
+#else
+#ifdef _UNICODE
+    const wchar_t fd_name[] = { L"名前" };
+#else
+    char fd_name[30];
+    WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+#endif
+#endif
+
+    activeTable atu(db, _T("user"));
+    atu.alias(fd_name, _T("name"));
+
+    activeTable atg(db, _T("groups"));
+    atg.alias(_T("name"), _T("group_name"));
+
+    activeTable ate(db, _T("extention"));
+    recordset rs;
+    query q;
+
+    
+    q.select(_T("id"), _T("name"), _T("group")).where(_T("id"), _T("<="), _T("?"));
+    pq_handle pq = atu.prepare(q);
+    atu.index(0).keyValue(1).read(rs, pq, 15000);
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, " rs.size() 15000 bad = " << rs.size());
+    BOOST_CHECK_MESSAGE(rs.fieldDefs()->size() == 3, " rs.fieldDefs()->size() 3 bad = " << rs.fieldDefs()->size());
+
+    // Join extention::comment
+    q.reset().select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany);
+    pq = ate.prepare(q);
+    ate.index(0).join(rs, pq, _T("id"));
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join  rs.size() 15000 bad = " << rs.size());
+    BOOST_CHECK_MESSAGE(rs.fieldDefs()->size() == 4, " rs.fieldDefs()->size() 4 bad = " << rs.fieldDefs()->size());
+
+    // test reverse
+    row& last = rs.reverse().first();
+    BOOST_CHECK_MESSAGE(last[_T("id")].i() == 15000, "last field id == 15000");
+    BOOST_CHECK_MESSAGE(_tstring(last[_T("comment")].c_str()) ==
+                            _tstring(_T("15000 comment")),
+                        "last field comment");
+    // Join group::name
+    q.reset().select(_T("group_name"));
+    pq = atg.prepare(q);
+    atg.index(0).join(rs, pq, _T("group"));
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join2  rs.size()== 15000");
+    row& first = rs.last();
+
+    BOOST_CHECK_MESSAGE(first[_T("id")].i() == 1, "first field id == 1");
+    BOOST_CHECK_MESSAGE(_tstring(first[_T("comment")].c_str()) ==
+                            _tstring(_T("1 comment")),
+                        "first field comment");
+
+    BOOST_CHECK_MESSAGE(
+        _tstring(first[_T("group_name")].c_str()) == _tstring(_T("1 group")),
+        "first field group_name " << string(first[_T("group_name")].a_str()));
+    BOOST_CHECK_MESSAGE(
+        _tstring(first[_T("group_name")].c_str()) == _tstring(_T("1 group")),
+        "first field group_name " << string(first[_T("group_name")].a_str()));
+    // row_ptr row = rs[15000 - 9];
+    row& rec = rs[15000 - 9];
+    BOOST_CHECK_MESSAGE(
+        _tstring(rec[_T("group_name")].c_str()) == _tstring(_T("4 group")),
+        "group_name = 4 group " << string((rec)[_T("group_name")].a_str()));
+
 }
 
 void testServerPrepareJoin(database* db)
@@ -3684,6 +3751,7 @@ BOOST_FIXTURE_TEST_CASE(new_delete, fixtureQuery)
 BOOST_FIXTURE_TEST_CASE(join, fixtureQuery)
 {
     testJoin(db());
+    testPrepareJoin(db());
     testServerPrepareJoin(db());
     testWirtableRecord(db());
 }

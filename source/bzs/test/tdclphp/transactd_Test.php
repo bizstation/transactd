@@ -2398,6 +2398,72 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $q3->keyField('group', 'id');
         unset($q3);
     }
+    public function testPrepare()
+    {
+        $db = new Bz\database();
+        $db->open(URL_QT);
+        $this->assertEquals($db->stat(), 0);
+        
+        $atu = new Bz\ActiveTable($db, 'user');
+        $atu->alias('名前', 'name');
+        
+        $atg = new Bz\ActiveTable($db, 'groups');
+        $atg->alias('name', 'group_name');
+        
+        $ate = new Bz\ActiveTable($db, 'extention');
+        $q = new Bz\query();
+
+
+        $q->select('id', 'name', 'group')->where('id', '<=', '?');
+        $pq = $atu->prepare($q);
+
+        //int value
+        $rs = $atu->index(0)->keyValue(1)->read($pq, 15000);
+        $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs->fieldDefs()->size(), 3);
+        //string value
+        $rs = $atu->index(0)->keyValue(1)->read($pq, '15000');
+        $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs->fieldDefs()->size(), 3);
+        //double value
+        $rs = $atu->index(0)->keyValue(1)->read($pq, 15000.000);
+        $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs->fieldDefs()->size(), 3);
+         
+        // Join extention::comment
+        $q->reset();
+        $this->assertEquals($q->selectCount(), 0);
+        $q->select('comment')->optimize(Bz\queryBase::joinHasOneOrHasMany);
+        $this->assertEquals($q->selectCount(), 1);
+        $pq = $ate->prepare($q);
+        
+        $ate->index(0)->join($rs, $pq, 'id');
+        $this->assertEquals($q->selectCount(), 1);
+        $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs->fieldDefs()->size(), 4);
+        // reverse and get first (so it means 'get last')
+        $last = $rs->reverse()->first();
+        $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($last['id'], 15000);
+        $this->assertEquals($last['comment'], '15000 comment');
+        
+        // Join group::name
+        $q->reset()->select('group_name');
+        $pq = $atg->prepare($q);
+        $atg->index(0)->join($rs, $pq, 'group');
+        $this->assertEquals($rs->size(), 15000);
+        
+        // get last (the rs is reversed, so it means 'get first')
+        $first = $rs->last();
+        $this->assertEquals($first['id'], 1);
+        $this->assertEquals($first['comment'], '1 comment');
+        $this->assertEquals($first['group_name'], '1 group');
+        
+        // row in rs[15000 - 9]
+        $rec = $rs[15000 - 9];
+        $this->assertEquals($rec['group_name'], '4 group');
+
+    }
     public function testWritableRecord()
     {
         $db = new Bz\database();
