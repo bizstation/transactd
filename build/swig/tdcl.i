@@ -173,46 +173,82 @@ using namespace bzs::db::protocol::tdap::client;
     return p;
   }
   // join and outerJoin with preparedQuery.
+#if defined(SWIGPHP)
+  // For PHP fixed number of paramatars.
+  activeTable& join(recordset& mdls, preparedQuery* q, const _TCHAR* name1,
+                      const _TCHAR* name2, const _TCHAR* name3,
+                      const _TCHAR* name4, const _TCHAR* name5,
+                      const _TCHAR* name6, const _TCHAR* name7,
+                      const _TCHAR* name8) {
+    self->join(mdls, q->getFilter(), name1, name2, name3, name4, name5, name6,
+               name7, name8);
+    return *self;
+  }
+  activeTable& outerJoin(recordset& mdls, preparedQuery* q, const _TCHAR* name1,
+                      const _TCHAR* name2, const _TCHAR* name3,
+                      const _TCHAR* name4, const _TCHAR* name5,
+                      const _TCHAR* name6, const _TCHAR* name7,
+                      const _TCHAR* name8) {
+    self->outerJoin(mdls, q->getFilter(), name1, name2, name3, name4, name5, name6,
+               name7, name8);
+    return *self;
+  }
+  activeTable& join(recordset& mdls, queryBase& q, const _TCHAR* name1,
+                      const _TCHAR* name2, const _TCHAR* name3,
+                      const _TCHAR* name4, const _TCHAR* name5,
+                      const _TCHAR* name6, const _TCHAR* name7,
+                      const _TCHAR* name8) {
+    self->join(mdls, q, name1, name2, name3, name4, name5, name6,
+               name7, name8);
+    return *self;
+  }
+  activeTable& outerJoin(recordset& mdls, queryBase& q, const _TCHAR* name1,
+                      const _TCHAR* name2, const _TCHAR* name3,
+                      const _TCHAR* name4, const _TCHAR* name5,
+                      const _TCHAR* name6, const _TCHAR* name7,
+                      const _TCHAR* name8) {
+    self->outerJoin(mdls, q, name1, name2, name3, name4, name5, name6,
+               name7, name8);
+    return *self;
+  }
+#else
   activeTable& join(recordset& mdls, preparedQuery* q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
-                      const _TCHAR* name8 = NULL, const _TCHAR* name9 = NULL,
-                      const _TCHAR* name10 = NULL, const _TCHAR* name11 = NULL) {
+                      const _TCHAR* name8 = NULL) {
     self->join(mdls, q->getFilter(), name1, name2, name3, name4, name5, name6,
-               name7, name8, name9, name10, name11);
+               name7, name8);
     return *self;
   }
   activeTable& outerJoin(recordset& mdls, preparedQuery* q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
-                      const _TCHAR* name8 = NULL, const _TCHAR* name9 = NULL,
-                      const _TCHAR* name10 = NULL, const _TCHAR* name11 = NULL) {
+                      const _TCHAR* name8 = NULL) {
     self->outerJoin(mdls, q->getFilter(), name1, name2, name3, name4, name5, name6,
-               name7, name8, name9, name10, name11);
+               name7, name8);
     return *self;
   }
   activeTable& join(recordset& mdls, queryBase& q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
-                      const _TCHAR* name8 = NULL, const _TCHAR* name9 = NULL,
-                      const _TCHAR* name10 = NULL, const _TCHAR* name11 = NULL) {
+                      const _TCHAR* name8 = NULL) {
     self->join(mdls, q, name1, name2, name3, name4, name5, name6,
-               name7, name8, name9, name10, name11);
+               name7, name8);
     return *self;
   }
   activeTable& outerJoin(recordset& mdls, queryBase& q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
-                      const _TCHAR* name8 = NULL, const _TCHAR* name9 = NULL,
-                      const _TCHAR* name10 = NULL, const _TCHAR* name11 = NULL) {
+                      const _TCHAR* name8 = NULL) {
     self->outerJoin(mdls, q, name1, name2, name3, name4, name5, name6,
-               name7, name8, name9, name10, name11);
+               name7, name8);
     return *self;
   }
+#endif
 };
   // ignore original methods
 %ignore bzs::db::protocol::tdap::client::activeTable::read;
@@ -319,6 +355,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::dbdef::fieldNumByViewNum;
 %ignore bzs::db::protocol::tdap::client::dbdef::getFieldPosition;
 %ignore bzs::db::protocol::tdap::client::dbdef::getFileSpec;
+%ignore bzs::db::protocol::tdap::client::dbdef::relateData;
 %ignore bzs::db::protocol::tdap::client::dbdef::popBackup;
 %ignore bzs::db::protocol::tdap::client::dbdef::pushBackup;
 %ignore bzs::db::protocol::tdap::client::dbdef::setStat;
@@ -336,6 +373,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::field::isCompPartAndMakeValue;
 %ignore bzs::db::protocol::tdap::client::field::ptr;
 %ignore bzs::db::protocol::tdap::client::fielddefs::create;
+%ignore bzs::db::protocol::tdap::client::getFieldType;
   // create and release methods for fielddefs class
 %extend bzs::db::protocol::tdap::client::fielddefs {
   fielddefs() {
@@ -355,6 +393,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::MEM_ALLOC_TYPE_ARRAY;
 %ignore bzs::db::protocol::tdap::client::fields;
 %ignore bzs::db::protocol::tdap::client::fieldsBase::fd;
+%ignore bzs::db::protocol::tdap::client::fieldsBase::getFieldNoCheck;
 %ignore bzs::db::protocol::tdap::client::fieldsBase::setInvalidRecord;
   // add methods
 %extend bzs::db::protocol::tdap::client::fieldsBase {
@@ -380,6 +419,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::min::create;
 %ignore bzs::db::protocol::tdap::client::recordsetQuery::operator=;
 %ignore bzs::db::protocol::tdap::client::recordsetQuery::create;
+%ignore bzs::db::protocol::tdap::client::recordsetQuery::internalQuery;
 %ignore bzs::db::protocol::tdap::client::sortField;
 %ignore bzs::db::protocol::tdap::client::sortFields;
 %ignore bzs::db::protocol::tdap::client::sortFields::operator[];
@@ -484,6 +524,7 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/protocol/tdap/client/memRecord.h *
 %ignore bzs::db::protocol::tdap::client::autoMemory;
 %ignore bzs::db::protocol::tdap::client::autoMemory::operator=;
+%ignore bzs::db::protocol::tdap::client::JOINLIMIT_PER_RECORD;
 %ignore bzs::db::protocol::tdap::client::memoryRecord::clear;
 %ignore bzs::db::protocol::tdap::client::memoryRecord::create;
 %ignore bzs::db::protocol::tdap::client::memoryRecord::setRecordData;
@@ -509,14 +550,17 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getDllUnloadCallbackFunc;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::isTestPtrIgnore;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::localSharing;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::maxtables;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::setTestPtrIgnore;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::testTablePtr;
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
+%ignore bzs::db::protocol::tdap::client::nstable::buflen;
 %ignore bzs::db::protocol::tdap::client::nstable::data;
 %ignore bzs::db::protocol::tdap::client::nstable::setBuflen;
 %ignore bzs::db::protocol::tdap::client::nstable::setData;
 %ignore bzs::db::protocol::tdap::client::nstable::setStat;
+%ignore bzs::db::protocol::tdap::client::nstable::tdap;
 %ignore bzs::db::protocol::tdap::client::nstable::test;
 %ignore bzs::db::protocol::tdap::client::nstable::throwError;
 %rename(tdapLastErr) bzs::db::protocol::tdap::client::nstable::tdapErr(HWND, _TCHAR*);
@@ -555,6 +599,7 @@ using namespace bzs::db::protocol::tdap::client;
 
 // * bzs/db/protocol/tdap/client/table.h *
 %ignore bzs::db::protocol::tdap::client::keyValuePtr;
+%ignore bzs::db::protocol::tdap::client::makeSupplyValues;
 %ignore bzs::db::protocol::tdap::client::mra_nojoin;
 %ignore bzs::db::protocol::tdap::client::mra_first;
 %ignore bzs::db::protocol::tdap::client::mra_nextrows;
@@ -567,13 +612,21 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::queryBase::addField;
 %ignore bzs::db::protocol::tdap::client::queryBase::addLogic;
 %ignore bzs::db::protocol::tdap::client::queryBase::addSeekKeyValuePtr;
-%ignore bzs::db::protocol::tdap::client::queryBase::reserveSeekKeyValuePtrSize;
+%ignore bzs::db::protocol::tdap::client::queryBase::create;
+%ignore bzs::db::protocol::tdap::client::queryBase::joinKeySize;
 %ignore bzs::db::protocol::tdap::client::queryBase::queryBase;
 %ignore bzs::db::protocol::tdap::client::queryBase::~queryBase;
-%ignore bzs::db::protocol::tdap::client::queryBase::create;
+%ignore bzs::db::protocol::tdap::client::queryBase::reserveSeekKeyValuePtrSize;
+%ignore bzs::db::protocol::tdap::client::supplyInValues;
+%ignore bzs::db::protocol::tdap::client::supplyValue;
+%ignore bzs::db::protocol::tdap::client::supplyValues;
+%ignore bzs::db::protocol::tdap::client::table::buflen;
 %ignore bzs::db::protocol::tdap::client::table::fieldPtr;
 %ignore bzs::db::protocol::tdap::client::table::getCurProcFieldCount;
 %ignore bzs::db::protocol::tdap::client::table::getCurProcFieldIndex;
+%ignore bzs::db::protocol::tdap::client::table::mra;
+%ignore bzs::db::protocol::tdap::client::table::tdap;
+%ignore bzs::db::protocol::tdap::client::table::setMra;
   // create and release methods for query class
 %extend bzs::db::protocol::tdap::client::query {
   query() {
@@ -634,8 +687,6 @@ using namespace bzs::db::protocol::tdap::client;
   // ignore original methods
 %ignore bzs::db::protocol::tdap::client::table::table;
 %ignore bzs::db::protocol::tdap::client::table::~table;
-%ignore bzs::db::protocol::tdap::client::makeSupplyValues;
-%ignore bzs::db::protocol::tdap::client::supplyValue;
 
 // * bzs/db/protocol/tdap/client/trdboostapi.h *
 %ignore bzs::db::protocol::tdap::client::autoBulkinsert;
@@ -715,6 +766,29 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::sort;
 %ignore bzs::db::protocol::tdap::client::mraResetter;
 
+// * bzs/db/protocol/tdap/tdapcapi.h *
+%ignore BOOKMARK_ALLOC_SIZE;
+%ignore BTRV_MAX_DATA_SIZE;
+%ignore C_INTERFACE_VER_MAJOR;
+%ignore C_INTERFACE_VER_MINOR;
+%ignore C_INTERFACE_VER_RELEASE;
+%ignore C_INTERFACE_VERSTR;
+%ignore FILTER_COMBINE_NOPREPARE;
+%ignore FILTER_COMBINE_PREPARE;
+%ignore FILTER_TYPE_SEEKS;
+%ignore FILTER_TYPE_SUPPLYVALUE;
+%ignore FILTER_TYPE_FORWORD;
+%ignore STATUS_LMIT_OF_PREPAREED;
+%ignore STATUS_INVALID_EX_DESC;
+%ignore STATUS_INVALID_EX_INS;
+%ignore STATUS_INVALID_PREPAREID;
+%ignore STATUS_INVALID_SUPPLYVALUES;
+%ignore TDAP_MAX_DATA_SIZE;
+%ignore TDCLC_LIBNAME;
+%ignore TD_CPP_LIB_PRE;
+%ignore TD_FILTER_PREPARE;
+%ignore TD_LIB_PART;
+
 // * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore DLLUNLOADCALLBACK_PTR;
 %ignore dllUnloadCallback;
@@ -733,6 +807,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::fielddef::setChainChar;
 %ignore bzs::db::protocol::tdap::fielddef::setNameA;
 %ignore bzs::db::protocol::tdap::fielddef::unPackCopy;
+%ignore bzs::db::protocol::tdap::fielddef::varLenByteForKey;
 %ignore bzs::db::protocol::tdap::fielddef_t::defValue;
 %ignore bzs::db::protocol::tdap::fielddef_t::defViewWidth;
 %ignore bzs::db::protocol::tdap::fielddef_t::enableFlags;
@@ -743,6 +818,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::fielddef_t::lookFields;
 %ignore bzs::db::protocol::tdap::fielddef_t::lookTable;
 %ignore bzs::db::protocol::tdap::fielddef_t::userOption;
+%ignore bzs::db::protocol::tdap::fielddef_t::varLenByteForKey;
 %ignore bzs::db::protocol::tdap::fielddef_t::viewNum;
 %ignore bzs::db::protocol::tdap::fielddef_t::viewWidth;
 %ignore bzs::db::protocol::tdap::tabledef::autoIncExSpace;
@@ -760,7 +836,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::tabledef::treeIndex;
 %ignore bzs::db::protocol::tdap::tabledef::setFileNameA;
 %ignore bzs::db::protocol::tdap::tabledef::setTableNameA;
-
   // add methods
 %extend bzs::db::protocol::tdap::keydef {
   keySegment* segment(const int index)
@@ -778,6 +853,13 @@ using namespace bzs::db::protocol::tdap::client;
     return &(self->keyDefs[index]);
   }
 };
+%extend bzs::db::protocol::tdap::fielddef {
+  const char* name() const
+  {
+     return self->name();
+  }
+}
+%ignore bzs::db::protocol::tdap::fielddef::name;
 %extend bzs::db::protocol::tdap::btrVersions {
   btrVersion* version(const int index) {
     return &(self->versions[index]);
@@ -837,7 +919,16 @@ using namespace bzs::db::protocol::tdap::client;
 /* ===============================================
       template
 =============================================== */
+/*
+C++ templates are not supported in SWIG.
+Template methods are declared only one signature pattern here.
+We need to change the wrap_cpp manually to expand template codes.
+*/
+
 // * bzs/db/protocol/tdap/client/activeTable.h *
+#if defined(SWIGPHP)
+%template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
+#else
 %template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*>;
 %template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*>;
 %template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<_TCHAR*, _TCHAR*, _TCHAR*>;
@@ -862,7 +953,7 @@ using namespace bzs::db::protocol::tdap::client;
 %template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double, double, double, double, double>;
 %template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double, double, double, double, double, double>;
 %template(keyValue) bzs::db::protocol::tdap::client::activeTable::keyValue<double, double, double, double, double, double, double, double>;
-
+#endif
 // * bzs/db/protocol/tdap/client/groupQuery.h *
 %template(when) bzs::db::protocol::tdap::client::recordsetQuery::when<_TCHAR*>;
 %template(and_) bzs::db::protocol::tdap::client::recordsetQuery::and_<_TCHAR*>;
@@ -872,6 +963,10 @@ using namespace bzs::db::protocol::tdap::client;
 %template(where) bzs::db::protocol::tdap::client::query::where<_TCHAR*>;
 %template(and_) bzs::db::protocol::tdap::client::query::and_<_TCHAR*>;
 %template(or_)  bzs::db::protocol::tdap::client::query::or_<_TCHAR*>;
+
+#if defined(SWIGPHP)
+%template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*, _TCHAR*>;
+#else
 %template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*>;
 %template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*>;
 %template(in)   bzs::db::protocol::tdap::client::query::in<_TCHAR*, _TCHAR*, _TCHAR*>;
@@ -896,7 +991,7 @@ using namespace bzs::db::protocol::tdap::client;
 %template(in)   bzs::db::protocol::tdap::client::query::in<double, double, double, double, double, double>;
 %template(in)   bzs::db::protocol::tdap::client::query::in<double, double, double, double, double, double, double>;
 %template(in)   bzs::db::protocol::tdap::client::query::in<double, double, double, double, double, double, double, double>;
-
+#endif
 /* ===============================================
       cpointer
 =============================================== */

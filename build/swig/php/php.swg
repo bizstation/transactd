@@ -86,6 +86,19 @@ typedef char  _TCHAR;
   ZVAL_STRING(return_value, (char *)$3, 1);
 }
 
+// const TCHAR* fast convert
+%typemap(in) const _TCHAR* {
+  if ((*$input)->type != IS_NULL) {
+     convert_to_string_ex($input);
+     $1 = (_TCHAR *) Z_STRVAL_PP($input);
+  }
+}
+
+// const TCHAR* fast check
+%typemap(typecheck,precedence=SWIG_TYPECHECK_STRING) const _TCHAR* {
+  $1 = 1;
+}
+
 
 /* ===============================================
   ignore / rename functions
