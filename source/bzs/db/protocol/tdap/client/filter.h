@@ -173,13 +173,15 @@ struct resultField
         }
         return -1;
     }
-    unsigned char* writeBuffer(unsigned char* p, bool estimate)
+    
+    unsigned char* writeBuffer(unsigned char* p)
     {
         int n = sizeof(resultField);
-        if (!estimate)
-            memcpy(p, this, n);
+        memcpy(p, this, n);
         return p + n;
     }
+
+    int size() const { return sizeof(resultField);}
 };
 
 struct resultDef
@@ -192,13 +194,15 @@ struct resultDef
     }
     unsigned short maxRows;
     unsigned short fieldCount;
-    unsigned char* writeBuffer(unsigned char* p, bool estimate)
+    unsigned char* writeBuffer(unsigned char* p)
     {
         int n = sizeof(resultDef);
-        if (!estimate)
-            memcpy(p, this, n);
+        memcpy(p, this, n);
         return p + n;
     }
+    
+    int size() const { return sizeof(resultDef); }
+    
     friend class filter;
 };
 
@@ -208,8 +212,6 @@ struct seek
     unsigned short len;
 
 public:
-    size_t getLength() { return sizeof(len) + len; }
-
     // setParam from keyValue
     bool setParam(uchar_td* buf, ushort_td keylen)
     {
@@ -218,21 +220,22 @@ public:
         return true;
     }
 
-    unsigned char* writeBuffer(unsigned char* p, bool estimate, bool end,
+    int size(bool isTransactd) const 
+    { 
+        if (!isTransactd)
+            return len;
+        return sizeof(len) + len; 
+    }
+
+    unsigned char* writeBuffer(unsigned char* p, bool end,
                                bool isTransactd) const
     {
         int n = sizeof(len);
-        if (!estimate)
-        {
-            if (isTransactd)
-                memcpy(p, &len, n);
-            else
-                n = 0;
-            memcpy(p + n, data, len);
-        }
-        else if (!isTransactd)
+        if (isTransactd)
+            memcpy(p, &len, n);
+        else
             n = 0;
-
+        memcpy(p + n, data, len);
         return p + n + len;
     }
 };
@@ -276,9 +279,9 @@ public:
         return *this;
     }
 
-    size_t getLength()
+    int size() const
     {
-        return (size_t)((unsigned char*)&data - &type) + getDatalen();
+        return (int)((unsigned char*)&data - &type) + getDatalen();
     }
 
     void setFieldParam(fielddef* fd)
@@ -390,22 +393,17 @@ public:
         return false;
     }
 
-    unsigned char* writeBuffer(unsigned char* p, bool estimate, bool end, bool preparingMode) const
+    unsigned char* writeBuffer(unsigned char* p, bool end, bool preparingMode) const
     {
         int n = (int)((unsigned char*)&data - &type);
-        if (!estimate)
-        {
-            memcpy(p, this, n);
-            if (end)
-                *(p + n - 1) = eCend;
-            if (preparingMode && placeHolder)
-                *(p + n - 1) |= FILTER_COMBINE_PREPARE;    
-        }
+        memcpy(p, this, n);
+        if (end)
+            *(p + n - 1) = eCend;
+        if (preparingMode && placeHolder)
+            *(p + n - 1) |= FILTER_COMBINE_PREPARE;    
         p += n;
-
         n = getDatalen();
-        if (!estimate)
-             memcpy(p, data, n);
+        memcpy(p, data, n);
         return p + n;
     }
 
@@ -507,7 +505,6 @@ public:
         if (isTransactd)
             return (itype & FILTER_CURRENT_TYPE_NOBOOKMARK) ? 0 : BOOKMARK_SIZE;
         assert(type[0]);
-        // if (type[1] == 'N') return 0;
         return BOOKMARK_SIZE;
     }
 
@@ -526,17 +523,16 @@ public:
             len = size;
     }
 
-    unsigned char* writeBuffer(unsigned char* p, bool estimate, unsigned short prepareId) const
+    unsigned char* writeBuffer(unsigned char* p, unsigned short prepareId) const
     {
         int n = sizeof(header);
-        if (!estimate)
-        {
-            memcpy(p, this, n);
-            if (prepareId)
-                memcpy(p + 4, &prepareId, sizeof(unsigned short));
-        }
+        memcpy(p, this, n);
+        if (prepareId)
+            memcpy(p + 4, &prepareId, sizeof(unsigned short));
         return p + n;
     }
+
+    inline int size() const { return sizeof(header); }
 };
 #pragma pack(pop)
 pragma_pop;
@@ -574,7 +570,7 @@ class filter
     std::vector<uchar_td> m_seeksDataBuffer;
     std::vector<short> m_placeHolderIndexes;
     size_t m_seeksWritedCount;
-    size_t m_logicalLimitCount;
+    size_t m_seeksLimitIndex;
     std::vector<char> m_recordBackup;
     uchar_td* m_buftmp;
 
@@ -596,6 +592,16 @@ class filter
         
     };
 
+    struct bufSize
+    {
+        bufSize():logic(0), seeks(0), select(0),retRowSize(0) {}
+        void clear() { logic = 0; seeks = 0; select = 0; retRowSize = 0;}
+        int logic;
+        int seeks;
+        int select;
+        int retRowSize;
+    }bsize;
+
     inline int maxDataBuffer()
     {
         //return 2048; //Small buffer test
@@ -608,6 +614,8 @@ class filter
         resultField& r = m_fields[0];
         r.len = (ushort_td)m_tb->tableDef()->maxRecordLen;
         r.pos = 0;
+        bsize.select = r.size();
+        bsize.retRowSize = r.len;
     }
 
     bool addSelect(resultField& r, const _TCHAR* name)
@@ -616,6 +624,8 @@ class filter
         if (fieldNum != -1)
         {
             m_selectFieldIndexes.push_back(fieldNum);
+            bsize.select += r.size();
+            bsize.retRowSize += r.len;
             return true;
         }
         return false;
@@ -639,7 +649,7 @@ class filter
         if (where.size() < 3)
             return false;
         m_logics.resize(m_logics.size() + (where.size() + 1) / 4);
-
+        m_hd.logicalCount = (ushort_td)m_logics.size();
         int index = 0;
         for (size_t i = 0; i < where.size(); i += 4)
         {
@@ -670,6 +680,7 @@ class filter
                 return false;
             if (l.placeHolder)
                 m_placeHolderIndexes.push_back(index);
+            bsize.logic += l.size();
             ++index;
         }
         return true;
@@ -680,7 +691,6 @@ class filter
         if (m_seeksDataBuffer.size() < size)
             m_seeksDataBuffer.resize(size);        
         uchar_td* dataBuf = &m_seeksDataBuffer[0];
-        //memset(dataBuf, 0, size);
         return dataBuf;
     }
 
@@ -694,6 +704,7 @@ class filter
     {
         autoBackup recb(m_tb, m_recordBackup);
         int index = 0;
+        bsize.seeks = 0;
         for (size_t i = 0; i < size; i += joinKeySize)
         {
             for (int j = 0; j < joinKeySize; ++j)
@@ -702,6 +713,7 @@ class filter
             ushort_td len = m_tb->writeKeyDataTo(dataBuf, joinKeySize);
             if (!l.setParam(dataBuf, len))
                 return false;
+            bsize.seeks += l.size(m_isTransactd);
             dataBuf += len;
             ++index;
         }
@@ -712,6 +724,7 @@ class filter
     bool doSsetSeekValues(keydef* kd, int joinKeySize, const std::vector<keyValuePtr>& keyValues, size_t size, uchar_td* dataBuf )
     {
         int index = 0;
+        bsize.seeks = 0;
         fielddef* fds = m_tb->tableDef()->fieldDefs;
         for (size_t i = 0; i < size; i += joinKeySize)
         {
@@ -725,6 +738,7 @@ class filter
             }
             if (!l.setParam(dataBuf, (ushort_td)(to - dataBuf)))
                 return false;
+            bsize.seeks += l.size(m_isTransactd);
             dataBuf = to;
             ++index;
         }
@@ -755,6 +769,9 @@ class filter
 
         // alloc databuffer
         *dataBuf = reallocSeeksDataBuffer(maxKeylen * m_seeks.size());
+        m_hd.rejectCount = 0;
+        m_seeksMode = true;
+        m_seeksWritedCount = 0;
         return true;
     }
 
@@ -771,8 +788,6 @@ class filter
         if (!doSsetSeekValues(kd, keySize, keyValues, keyValues.size(), dataBuf))
             return false;
 
-        m_seeksMode = true;
-        m_seeksWritedCount = 0;
         return true;
     }
 
@@ -812,17 +827,13 @@ class filter
 
     int resultRowSize(bool ignoreFields) const
     {
-
         int recordLen = m_hd.bookmarkSize(m_isTransactd) + DATASIZE_BYTE;
         if (!ignoreFields)
-        {
-            for (size_t i = 0; i < m_fields.size(); ++i)
-                recordLen += m_fields[i].len;
-        }
+            recordLen += bsize.retRowSize;
         return recordLen;
     }
 
-    int calcMaxRows()
+    int calcMaxResultRows()
     {
         return maxDataBuffer() / resultRowSize(m_ignoreFields);
     }
@@ -843,119 +854,128 @@ class filter
             logic& lb = m_logics[i];
             if (la.canJoin(false) && lb.canJoin(true) && lb.isNextFiled(&la))
             {
+                bsize.logic -= lb.size();
+                bsize.logic -= la.size();
                 lb.joinAfter(&la);
+                bsize.logic += lb.size();
                 m_logics.erase(m_logics.begin() + i + 1);
             }
         }
-    }
-
-    int doWriteBuffer(bool estimate)
-    {
-        unsigned char* p = (unsigned char*)m_tb->dataBak();
-        unsigned char* start = p;
-
-        m_hd.logicalCount = (ushort_td)m_logicalLimitCount;
-        if (m_ignoreFields)
-            m_ret.fieldCount = 0;
-        else
-            m_ret.fieldCount = (ushort_td)m_fields.size();
-
-        size_t first = 0, last = m_logicalLimitCount;
-        if (m_seeksMode)
-        {
-            first = m_seeksWritedCount;
-            last = std::min<size_t>(calcMaxRows() + m_seeksWritedCount,
-                                    m_logicalLimitCount);
-            m_hd.rejectCount = 0;
-            if (m_hasManyJoin)
-                m_ret.maxRows = 0;
-            else
-                m_ret.maxRows = m_hd.logicalCount = (ushort_td)(last - first);
-        }
-        if (m_ret.maxRows == 0)
-            m_ret.maxRows =
-                (unsigned short)std::min<int>(calcMaxRows(), USHRT_MAX);
-
-        p = m_hd.writeBuffer(p, estimate, m_preparedId);
-        if (m_seeksMode)
-        {
-            for (size_t i = first; i < last; ++i)
-                p = m_seeks[i].writeBuffer(p, estimate, (i == (last - 1)),
-                                           true);
-            if (!estimate)
-                m_seeksWritedCount += m_hd.logicalCount;
-        }
-        else
-        {
-            for (size_t i = first; i < last; ++i)
-                p = m_logics[i].writeBuffer(p, estimate, (i == (last - 1)), m_preparingMode);
-        }
-        if (!m_preparedId)
-        {
-            p = m_ret.writeBuffer(p, estimate);
-
-            if (!m_ignoreFields)
-            {
-                for (size_t i = 0; i < m_fields.size(); ++i)
-                    p = m_fields[i].writeBuffer(p, estimate);
-            }
-        }
-        // write total length
-        int len = (int)(p - start);
-        if (!estimate)
-        {
-            m_hd.setLen(len, m_isTransactd);
-            m_hd.writeBuffer(start, false, m_preparedId);
-        }
-        return len;
     }
 
     // use seeksMode only
     int calcLogicalCutsize(int oversize)
     {
         int cutsize = 0;
-        for (size_t i = m_hd.logicalCount - 1; i != 0; --i)
+        for (size_t i = m_seeksLimitIndex - 1; i >= m_seeksWritedCount; --i)
         {
-            cutsize += (int)m_seeks[i + m_seeksWritedCount].getLength();
+            cutsize += (int)m_seeks[i].size(m_isTransactd);
             if (oversize - cutsize < 0)
             {
-                m_logicalLimitCount = i + m_seeksWritedCount;
+                m_seeksLimitIndex = i;
                 return cutsize;
             }
         }
         return 0;
     }
 
-    bool allocDataBuffer()
+    // Calc send buffer size and set last index of seeksMode can sent (m_seeksLimitIndex).  
+    int calcSendBuflen()
     {
-        joinLogic();
-        m_logicalLimitCount = m_seeksMode ? m_seeks.size() : m_logics.size();
-        int len = doWriteBuffer(true);
-        if (len > maxDataBuffer())
+        int len = m_hd.size();
+        
+        if (!m_preparedId)
         {
-            if (m_seeksMode)
-                len -= calcLogicalCutsize(len - maxDataBuffer() + 1);
+            len += m_ret.size();
+            if (!m_ignoreFields)
+            {
+                len += bsize.select;
+                m_ret.fieldCount = (ushort_td)m_fields.size();
+            }else
+                m_ret.fieldCount = 0;
+        }
+        if (m_seeksMode)
+        {
+            int maxRows = calcMaxResultRows();
+            m_seeksLimitIndex = std::min<size_t>(maxRows, m_seeks.size() - m_seeksWritedCount) + m_seeksWritedCount;
+            if (m_seeksWritedCount == 0 && m_seeksLimitIndex == m_seeks.size())
+                len += bsize.seeks;
             else
-                return false;
-        }
-        // m_hd.len = len;//lost 2byte data at transactd
-        int resultLen = (int)resultBufferNeedSize();
-        if (resultLen > maxDataBuffer())
-        {
-            /* change the max rows fit to a max buffer size */
-            m_ret.maxRows = calcMaxRows();
-            resultLen = resultBufferNeedSize();
-        }
+                for (size_t i = m_seeksWritedCount; i < m_seeksLimitIndex; ++i)
+                    len += m_seeks[i].size(m_isTransactd);
+            
+            if (len > maxDataBuffer())
+                len -= calcLogicalCutsize(len - maxDataBuffer() + 1);
 
-        m_extendBuflen = std::max<int>((int)len, resultLen);
-        m_extendBuflen =
-            std::max<int>(m_extendBuflen, m_tb->tableDef()->maxRecordLen);
+            if (m_hasManyJoin)
+                m_ret.maxRows = (unsigned short)std::min<int>(maxRows, USHRT_MAX);
+            else
+                m_ret.maxRows = m_hd.logicalCount = (ushort_td)(m_seeksLimitIndex - m_seeksWritedCount);    
+        }
+        else
+        {
+            len += bsize.logic;
+            // change the max rows fit to a max buffer size 
+            if (m_ret.maxRows == 0)
+                m_ret.maxRows =
+                    (unsigned short)std::min<int>(calcMaxResultRows(), USHRT_MAX);
+            else if (resultBufferNeedSize() > maxDataBuffer())
+                m_ret.maxRows = calcMaxResultRows(); 
+        }
+    
+        return len;
+    }
+
+    bool allocDataBuffer(int len)
+    {
+        // m_hd.len = len;//lost 2byte data at transactd
+        m_extendBuflen = (int)resultBufferNeedSize();
         if (fieldSelected() || m_tb->valiableFormatType())
             m_extendBuflen += m_tb->tableDef()->maxRecordLen;
-
         m_tb->reallocDataBuffer(m_ddba ? len : m_extendBuflen);
         return true;
     }
+
+
+    int doWriteBuffer()
+    {
+#ifdef _DEBUG
+        int tmpLen = calcSendBuflen();
+#endif
+        unsigned char* p = (unsigned char*)m_tb->dataBak();
+        unsigned char* start = p;
+        p = m_hd.writeBuffer(p, m_preparedId);
+        if (m_seeksMode)
+        {
+            for (size_t i = m_seeksWritedCount; i < m_seeksLimitIndex; ++i)
+                p = m_seeks[i].writeBuffer(p, (i == (m_seeksLimitIndex - 1)), true);
+            m_seeksWritedCount += m_hd.logicalCount;
+        }
+        else
+        {
+            for (size_t i = 0; i < m_logics.size(); ++i)
+                p = m_logics[i].writeBuffer(p, (i == (m_logics.size() - 1)), m_preparingMode);
+        }
+        if (!m_preparedId)
+        {
+            p = m_ret.writeBuffer(p);
+            if (!m_ignoreFields)
+            {
+                for (size_t i = 0; i < m_fields.size(); ++i)
+                    p = m_fields[i].writeBuffer(p);
+            }
+        }
+        // write total length
+        int len = (int)(p - start);
+        m_hd.setLen(len, m_isTransactd);
+        m_hd.writeBuffer(start, m_preparedId);
+
+#ifdef _DEBUG
+        assert(len == tmpLen);
+#endif
+        return len;
+    }
+    
 
     filter(table* tb)
         : m_tb(tb), m_extendBuflen(0), m_stat(0), m_preparedId(0),
@@ -987,6 +1007,7 @@ public:
         m_preparingMode = false;
         m_preparedId = 0;
         m_stat = 0;
+        bsize.clear();
     }
 
     void clearSeeks() { m_seeks.clear(); m_seeksWritedCount = 0; }
@@ -1003,6 +1024,8 @@ public:
     {
         m_stat = 0;
         bool ret = doSetFilter(q);
+        if (m_placeHolderIndexes.size() && m_useOptimize)
+            ret = false;
         if (!ret)
             cleanup();
         return ret;
@@ -1034,7 +1057,9 @@ public:
             logic& l = m_logics[m_placeHolderIndexes[placeHolderIndex]];
             if (l.placeHolder)
             {
+                bsize.logic -= l.size();
                 l.setValue(m_tb, value);
+                bsize.logic += l.size();
                 return true;
             }
         }
@@ -1066,6 +1091,7 @@ public:
              return false;
         m_seeksMode = true;
         m_seeksWritedCount = 0;
+        bsize.seeks = 0;
         return true;
     }
     
@@ -1084,6 +1110,7 @@ public:
         }
         if (!l.setParam(m_buftmp, (ushort_td)(to - m_buftmp)))
             return false;
+        bsize.seeks += l.size(m_isTransactd);
         m_buftmp = to;
         ++index;
         return true;
@@ -1178,8 +1205,15 @@ public:
             return false;
         if (!m_isTransactd) 
             m_preparingMode = false; 
-        if (allocDataBuffer())
-            return (doWriteBuffer(false) > 0);
+        if (!m_preparedId)
+            joinLogic();
+    
+        int len = calcSendBuflen();
+        if (len > maxDataBuffer())
+            return false; //Too many logics
+
+        if (allocDataBuffer(len))
+            return (doWriteBuffer(/*false*/) > 0);
         return false;
     }
 

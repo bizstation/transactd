@@ -1066,10 +1066,9 @@ public:
                 netsvc::server::netWriter* nw, bool forword, bool noBookmark, prepared* p)
     {
         // Important! cache resultdef first.
-        const extResultDef* srcRd = m_req->resultDef();
+        const extResultDef* srcRd = req->resultDef();
 
         short ret = begin(tb, req, fieldCache, nw, forword, noBookmark);
-
         p->assignResultDef(srcRd);
         p->assignFields(m_fields);
         if (bm.isUsing())

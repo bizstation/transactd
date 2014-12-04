@@ -409,8 +409,8 @@ void* __STDCALL table::DDBA(client::table* tb, uint_td size)
 
 void* table::doDdba(uint_td size)
 {
-    if ( m_impl->filterPtr)
-        size = std::max<uint_td>(m_impl->filterPtr->extendBuflen(), size);
+    if (m_impl->filterPtr)
+        size += tableDef()->maxRecordLen;;
     return reallocDataBuffer(size);
 }
 
@@ -825,7 +825,7 @@ void table::btrvSeekMulti()
         // 100% need allocate each row
         m_impl->mraPtr->init(1, recordLen, type, this);
         type = mra_nextrows;
-        seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, false, true, transactd);
+        seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, true, transactd);
         if (hasManyJoin)
         {
             tdap((ushort_td)(TD_KEY_OR_AFTER));
