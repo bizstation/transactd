@@ -83,6 +83,13 @@ class DLLLIB activeTable
     activeTable(const activeTable& r);
     activeTable& operator=(const activeTable& r);
 
+    template<class T> 
+    inline void _supplyValue(pq_handle& q, int index, const T v)
+    {
+        if (!supplyValue(q, index, v))
+            THROW_BZS_ERROR_WITH_MSG(_T("Prepared query : supply value error."));
+    }
+
 public:
     explicit activeTable(idatabaseManager* mgr, const _TCHAR* tableName);
     explicit activeTable(dbmanager_ptr& mgr, const _TCHAR* tableName);
@@ -141,7 +148,7 @@ public:
     template<class T0>
     activeTable& read(recordset& rs, pq_handle& q, const T0 v0)
     {
-        supplyValue(q, 0, v0);
+        _supplyValue(q, 0, v0);
         read(rs, q);
         return *this;
     }
@@ -149,8 +156,8 @@ public:
     template<class T0, class T1>
     activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1)
     {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
         read(rs, q);
         return *this;
     }
@@ -159,9 +166,9 @@ public:
     activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2)
     {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
-        supplyValue(q, 2, v2);
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
         read(rs, q);
         return *this;
     }
@@ -170,10 +177,10 @@ public:
     activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2, const T3 v3)
     {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
-        supplyValue(q, 2, v2);
-        supplyValue(q, 3, v3);
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
         read(rs, q);
         return *this;
     }
@@ -182,11 +189,11 @@ public:
     activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2, const T3 v3, const T4 v4)
     {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
-        supplyValue(q, 2, v2);
-        supplyValue(q, 3, v3);
-        supplyValue(q, 4, v4);
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
+        _supplyValue(q, 4, v4);
         read(rs, q);
         return *this;
     }
@@ -195,12 +202,12 @@ public:
     activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2, const T3 v3, const T4 v4, const T5 v5)
     {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
-        supplyValue(q, 2, v2);
-        supplyValue(q, 3, v3);
-        supplyValue(q, 4, v4);
-        supplyValue(q, 5, v5);
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
+        _supplyValue(q, 4, v4);
+        _supplyValue(q, 5, v5);
         read(rs, q);
         return *this;
     }
@@ -210,13 +217,13 @@ public:
                         const T2 v2, const T3 v3, const T4 v4, const T5 v5,
                         const T6 v6)
     {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
-        supplyValue(q, 2, v2);
-        supplyValue(q, 3, v3);
-        supplyValue(q, 4, v4);
-        supplyValue(q, 5, v5);
-        supplyValue(q, 6, v6);
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
+        _supplyValue(q, 4, v4);
+        _supplyValue(q, 5, v5);
+        _supplyValue(q, 6, v6);
         read(rs, q);
         return *this;
     }
@@ -227,79 +234,18 @@ public:
                         const T2 v2, const T3 v3, const T4 v4, const T5 v5,
                         const T6 v6, const T7 v7)
     {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
-        supplyValue(q, 2, v2);
-        supplyValue(q, 3, v3);
-        supplyValue(q, 4, v4);
-        supplyValue(q, 5, v5);
-        supplyValue(q, 6, v6);
-        supplyValue(q, 7, v7);
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
+        _supplyValue(q, 4, v4);
+        _supplyValue(q, 5, v5);
+        _supplyValue(q, 6, v6);
+        _supplyValue(q, 7, v7);
         read(rs, q);
         return *this;
     }
-
-    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
-                class T7, class T8>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
-                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
-                        const T6 v6, const T7 v7, const T8 v8)
-    {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
-        supplyValue(q, 2, v2);
-        supplyValue(q, 3, v3);
-        supplyValue(q, 4, v4);
-        supplyValue(q, 5, v5);
-        supplyValue(q, 6, v6);
-        supplyValue(q, 7, v7);
-        supplyValue(q, 8, v8);
-        read(rs, q);
-        return *this;
-    }
-
-    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
-                class T7, class T8, class T9>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
-                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
-                        const T6 v6, const T7 v7, const T8 v8, const T9 v9)
-    {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
-        supplyValue(q, 2, v2);
-        supplyValue(q, 3, v3);
-        supplyValue(q, 4, v4);
-        supplyValue(q, 5, v5);
-        supplyValue(q, 6, v6);
-        supplyValue(q, 7, v7);
-        supplyValue(q, 8, v8);
-        supplyValue(q, 9, v9);
-        read(rs, q);
-        return *this;
-    }
-   /** @endcond */
-    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
-                class T7, class T8, class T9, class T10>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
-                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
-                        const T6 v6, const T7 v7, const T8 v8, const T9 v9,
-                        const T10 v10)
-    {
-        supplyValue(q, 0, v0);
-        supplyValue(q, 1, v1);
-        supplyValue(q, 2, v2);
-        supplyValue(q, 3, v3);
-        supplyValue(q, 4, v4);
-        supplyValue(q, 5, v5);
-        supplyValue(q, 6, v6);
-        supplyValue(q, 7, v7);
-        supplyValue(q, 8, v8);
-        supplyValue(q, 9, v9);
-        supplyValue(q, 10, v10);
-        read(rs, q);
-        return *this;
-    }
-
+    /** @endcond */
 
     /** @cond INTERNAL */
 

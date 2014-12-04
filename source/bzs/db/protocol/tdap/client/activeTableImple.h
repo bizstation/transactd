@@ -342,6 +342,12 @@ class activeTableImple : public activeObject<map_orm>
         }
     }
 
+    inline void checkPreparedQuery(pq_handle& q)
+    {
+        if (!q)
+            THROW_BZS_ERROR_WITH_MSG(_T("Invalid query or prepqredQuery.\n "));
+    }
+
 public:
     explicit activeTableImple(idatabaseManager* mgr, const _TCHAR* tableName)
         : baseClass_type(mgr, tableName), m_record(NULL){};
@@ -379,8 +385,9 @@ public:
         int fnsCount = makeJoinKeys(fns, fnsCount, name1, name2, name3, name4,
                                         name5, name6, name7, name8);
         q.joinKeySize(fnsCount);
-        pq_handle stmt = setQuery(m_tb, q);
-        doJoin(true, mdls, stmt, fns, fnsCount);
+        pq_handle pq = setQuery(m_tb, q);
+        checkPreparedQuery(pq);
+        doJoin(true, mdls, pq, fns, fnsCount);
     }
 
     inline void
@@ -395,8 +402,9 @@ public:
         int fnsCount = makeJoinKeys(fns, fnsCount, name1, name2, name3, name4,
                                         name5, name6, name7, name8);
         q.joinKeySize(fnsCount);
-        pq_handle stmt = setQuery(m_tb, q);
-        doJoin(false, mdls, stmt, fns, fnsCount);
+        pq_handle pq = setQuery(m_tb, q);
+        checkPreparedQuery(pq);
+        doJoin(false, mdls, pq, fns, fnsCount);
 
     }
 
@@ -409,8 +417,9 @@ public:
         const _TCHAR* fns[MAX_JOIN_KEY_SIZE];
         int fnsCount = makeJoinKeys(fns, fnsCount, name1, name2, name3, name4,
                                         name5, name6, name7, name8);
-        pq_handle stmt = setQuery(m_tb, q);
-        doJoin(true, mdls, stmt, fns, fnsCount);    
+        pq_handle pq = setQuery(m_tb, q);
+        checkPreparedQuery(pq);
+        doJoin(true, mdls, pq, fns, fnsCount);    
     }
 
     inline void
@@ -423,8 +432,9 @@ public:
         const _TCHAR* fns[MAX_JOIN_KEY_SIZE];
         int fnsCount = makeJoinKeys(fns, fnsCount, name1, name2, name3, name4,
                                         name5, name6, name7, name8);
-        pq_handle stmt = setQuery(m_tb, q);
-        doJoin(false, mdls, stmt, fns, fnsCount);
+        pq_handle pq = setQuery(m_tb, q);
+        checkPreparedQuery(pq);
+        doJoin(false, mdls, pq, fns, fnsCount);
     }
 
     void releaseTable() { m_tb.reset(); }
