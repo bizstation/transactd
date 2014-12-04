@@ -70,7 +70,7 @@ public:
 };
 
 class filter;
-typedef boost::shared_ptr<filter> filter_ptr; 
+typedef boost::shared_ptr<filter> pq_handle; 
 
 /** @endcond */
 
@@ -137,7 +137,7 @@ protected:
     void init(tabledef* def, short filenum, bool regularDir);
     void* attachBuffer(void* newPtr, bool unpack = false, size_t size = 0);
     void dettachBuffer();
-    bool prepare();
+    bool doPrepare();
 
     virtual void doInit(tabledef* def, short filenum, bool regularDir);
 
@@ -185,13 +185,12 @@ public:
     void findNext(bool notIncCurrent = true);
     void findPrev(bool notIncCurrent = true);
     bookmark_td bookmarkFindCurrent() const;
-    filter_ptr setQuery(const queryBase* query, bool serverPrepare=false);
-    void setQuery(filter_ptr stmt);
-
-    filter_ptr prepare(const queryBase* query, bool serverPrepare=false)
+    pq_handle setQuery(const queryBase* query, bool serverPrepare=false);
+    pq_handle prepare(const queryBase* query, bool serverPrepare=false)
     {
         return setQuery(query, serverPrepare);
     }
+    void setPrepare(const pq_handle stmt);
 
     void setFilter(const _TCHAR* str, ushort_td rejectCount,
                    ushort_td cacheCount, bool autoEscape = true);
@@ -601,15 +600,15 @@ int DLLLIB makeSupplyValues(/*in out*/const _TCHAR* values[], int size,
                          const _TCHAR* value8 = NULL, const _TCHAR* value9 = NULL,
                          const _TCHAR* value10 = NULL);
 
-bool DLLLIB supplyValues(filter_ptr& filter, const _TCHAR* values[], int size);
-bool DLLLIB supplyValue(filter_ptr& filter, int index, const _TCHAR* v);
-bool DLLLIB supplyValue(filter_ptr& filter, int index, short v);
-bool DLLLIB supplyValue(filter_ptr& filter, int index, int v);
-bool DLLLIB supplyValue(filter_ptr& filter, int index, __int64 v);
-bool DLLLIB supplyValue(filter_ptr& filter, int index, float v);
-bool DLLLIB supplyValue(filter_ptr& filter, int index, double v);
+bool DLLLIB supplyValues(pq_handle& filter, const _TCHAR* values[], int size);
+bool DLLLIB supplyValue(pq_handle& filter, int index, const _TCHAR* v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, short v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, int v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, __int64 v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, float v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, double v);
 
-
+bool DLLLIB supplyInValues(pq_handle& filter, const _TCHAR* values[], size_t size, int segments);
 
 
 

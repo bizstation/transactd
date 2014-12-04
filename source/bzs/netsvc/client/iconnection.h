@@ -82,7 +82,11 @@ public:
     virtual void setDirectReadHandler(idirectReadHandler* p) = 0;
     virtual unsigned int directRead(void* buf, unsigned int size) = 0;
     virtual void* directReadRemain(unsigned int size) = 0;
+    virtual bool queryFunction(unsigned int v) = 0;
 };
+
+#define CONNECTION_FUNCTION_DIRECT_READ 1
+
 
 } // namespace client
 } // namespace netsvc

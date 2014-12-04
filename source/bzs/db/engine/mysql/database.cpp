@@ -623,7 +623,7 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
 #ifdef USE_BTRV_VARIABLE_LEN
     else if (m_table->s->varchar_fields == 1)
     {
-        Field** fd = m_table->field + lastVarFiledNum();
+        Field** fd = m_table->field + lastVarFieldNum();
         if (isVarType((*fd)->type()) && ((*fd)->part_of_key.is_clear_all()) &&
             ((*fd)->key_start.is_clear_all()) &&
             (((*fd)->charset()) == &my_charset_bin))
@@ -660,6 +660,8 @@ table::~table()
 {
     resetInternalTable(NULL);
     database::tableRef.release(m_db.name(), m_name);
+    for (size_t i = 0; i < preparedStatements.size(); ++i)
+        preparedStatements[i]->release();
 }
 
 void table::resetTransctionInfo(THD* thd)
@@ -770,6 +772,9 @@ void table::setKeyValues(const uchar* ptr, int size)
  But blob and prefix index is not equal pack_length.
 
  Client needs to make the right image except for null byte.
+
+ @return -1: whole segment copied. 
+          n: number of segments copied. 
  */
 short table::setKeyValuesPacked(const uchar* ptr, int size)
 {
@@ -1100,14 +1105,14 @@ uint table::recordPackCopy(char* buf, uint maxsize)
     return (uint)(p - buf);
 }
 
-ushort table::fieldPackCopy(unsigned char* dest, short filedNum)
+ushort table::fieldPackCopy(unsigned char* dest, short fieldNum)
 {
-    Field* fd = m_table->field[filedNum];
+    Field* fd = m_table->field[fieldNum];
     uint len = fd->pack_length();
     if (isVarType(fd->type()))
         len = var_total_len(fd);
 #ifdef USE_BTRV_VARIABLE_LEN
-    if (lastVarFiledNum() == filedNum)
+    if (lastVarFieldNum() == fieldNum)
     {
         len -= lastVarLenBytes();
         memcpy(dest, fd->ptr + lastVarLenBytes(), len);
@@ -2033,11 +2038,11 @@ void table::endBulkInsert()
     }
 }
 
-const char* table::valStr(int filedNum, int& size)
+const char* table::valStr(int fieldNum, int& size)
 {
-    assert((filedNum >= 0) && (filedNum < (int)m_table->s->fields));
+    assert((fieldNum >= 0) && (fieldNum < (int)m_table->s->fields));
 
-    Field* fd = m_table->field[filedNum];
+    Field* fd = m_table->field[fieldNum];
     size = -1;
     if (fd->is_null())
         return "";

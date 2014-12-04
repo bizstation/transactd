@@ -63,7 +63,7 @@ struct tbimpl
 
     void* bookMarks;
     client::fields fields;
-    boost::shared_ptr<filter> filterPtr;
+    pq_handle filterPtr;
     recordCache* rc;
     multiRecordAlocator* mraPtr;
     void* dataBak;
@@ -503,6 +503,20 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
 
     if (filter)
     {
+        struct smartChangePreparedId
+        {
+            ushort_td m_id;
+            client::filter* m_filter;
+            smartChangePreparedId(client::filter* filter)
+                :m_filter(filter) 
+            { 
+                m_id = m_filter->preparedId(); 
+                m_filter->setServerPreparedId(0);
+            }
+
+            ~smartChangePreparedId(){ m_filter->setServerPreparedId(m_id); }
+        }changePreparedId(filter);
+        
         short_td op = (filter->direction() == findForword)
                           ? TD_KEY_NEXT_MULTI
                           : TD_KEY_PREV_MULTI;
@@ -595,6 +609,13 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
 void table::btrvGetExtend(ushort_td op)
 {
     client::filter* filter = m_impl->filterPtr.get();
+    
+    // cacheing direction
+    if (!filter->setDirectionByOp(op))
+    {
+        m_stat = 1;
+        return ;
+    }
 
     if (op >= TD_KEY_GE_NEXT_MULTI)
         m_keylen = writeKeyData();
@@ -606,9 +627,6 @@ void table::btrvGetExtend(ushort_td op)
         return;
     }
     m_datalen = filter->exDataBufLen();
-
-    // cacheing direction
-    filter->setDirectionByOp(op);
 
     tdap(op);
     if (m_stat && (m_stat != STATUS_LIMMIT_OF_REJECT) &&
@@ -814,7 +832,7 @@ void table::doFind(ushort_td op, bool notIncCurrent)
     }
 }
 
-bool table::prepare()
+bool table::doPrepare()
 {
     m_stat = 0;
     if (!m_impl->filterPtr)
@@ -824,17 +842,21 @@ bool table::prepare()
     }
 
     m_pdata = m_impl->dataBak;
+    m_impl->filterPtr->setPreparingMode(true);
+    m_impl->filterPtr->setPosTypeNext(true);
     if (!m_impl->filterPtr->writeBuffer())
     {
         m_stat = STATUS_WARKSPACE_TOO_SMALL;
+        m_impl->filterPtr->setPreparingMode(false);
         return false;
     }
     m_datalen = m_impl->filterPtr->exDataBufLen();
 
     tdap((ushort_td)(TD_FILTER_PREPARE));
+    m_impl->filterPtr->setPreparingMode(false);
     if (m_stat != STATUS_SUCCESS)
         return false;
-    m_impl->filterPtr->setServerPrepared(*((ushort_td*)m_pdata));
+    m_impl->filterPtr->setServerPreparedId(*((ushort_td*)m_pdata));
     return true;
 }
 
@@ -934,7 +956,7 @@ void table::findPrev(bool notIncCurrent)
         seekPrev();
 }
 
-void table::setQuery(filter_ptr stmt)
+void table::setPrepare(const pq_handle stmt)
 {
     m_stat = 0;
     if (!stmt)
@@ -949,7 +971,7 @@ void table::setQuery(filter_ptr stmt)
         m_impl->filterPtr = stmt;
 }
 
-filter_ptr table::setQuery(const queryBase* query, bool serverPrepare)
+pq_handle table::setQuery(const queryBase* query, bool serverPrepare)
 {
 
     m_stat = 0;
@@ -977,7 +999,7 @@ filter_ptr table::setQuery(const queryBase* query, bool serverPrepare)
         else
         {
             if (serverPrepare && isUseTransactd())
-                ret = prepare();
+                ret = doPrepare();
         }
         if (!ret)
              m_impl->filterPtr.reset();
@@ -2361,41 +2383,45 @@ int makeSupplyValues(const _TCHAR* values[], int size,
     return 11;
 }
 
-bool supplyValues(filter_ptr& filter, const _TCHAR* values[], int size)
+bool supplyValues(pq_handle& filter, const _TCHAR* values[], int size)
 {
     return filter->supplyValues(values, size);
 }
 
-bool supplyValue(filter_ptr& filter, int index, const _TCHAR* v)
+bool supplyValue(pq_handle& filter, int index, const _TCHAR* v)
 {
     return filter->supplyValue(index, v);
 }
 
-bool supplyValue(filter_ptr& filter, int index, short v)
+bool supplyValue(pq_handle& filter, int index, short v)
 {
     return filter->supplyValue(index, v);
 }
 
-bool supplyValue(filter_ptr& filter, int index, int v)
+bool supplyValue(pq_handle& filter, int index, int v)
 {
     return filter->supplyValue(index, v);
 }
 
-bool supplyValue(filter_ptr& filter, int index, __int64 v)
+bool supplyValue(pq_handle& filter, int index, __int64 v)
 {
     return filter->supplyValue(index, v);
 }
 
-bool supplyValue(filter_ptr& filter, int index, float v)
+bool supplyValue(pq_handle& filter, int index, float v)
 {
     return filter->supplyValue(index, v);
 }
 
-bool supplyValue(filter_ptr& filter, int index, double v)
+bool supplyValue(pq_handle& filter, int index, double v)
 {
     return filter->supplyValue(index, v);
 }
 
+bool supplyInValues(pq_handle& filter, const _TCHAR* values[], size_t size, int segments)
+{
+    return filter->supplySeekValues(values, size, segments);
+}
 
 } // namespace client
 } // namespace tdap

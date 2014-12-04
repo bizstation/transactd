@@ -33,12 +33,12 @@ namespace client
 {
 
 /* For php use */
-class prepareStatement
+class preparedQuery
 {
-    filter_ptr m_filter;
+    pq_handle m_filter;
     int m_index;
 public:
-    prepareStatement(filter_ptr filter) : m_filter(filter),m_index(0){}
+    preparedQuery(pq_handle filter) : m_filter(filter),m_index(0){}
     
     inline bool supplyValue(int index, const _TCHAR* v)
     {
@@ -71,8 +71,13 @@ public:
     }
 
     inline void resetAddIndex() { m_index = 0; }
+    
+    inline bool supplyInValues(const _TCHAR* values[], size_t size, int segments)
+    {
+		return client::supplyInValues(m_filter, values, size, segments);
+	}
 
-    inline filter_ptr& getFilter() { return m_filter; };
+    inline pq_handle& getFilter() { return m_filter; };
 };
 
 
@@ -112,61 +117,198 @@ public:
               const _TCHAR* name8 = NULL, const _TCHAR* name9 = NULL,
               const _TCHAR* name10 = NULL, const _TCHAR* name11 = NULL);
 
+    activeTable& join(recordset& mdls, pq_handle& q, const _TCHAR* name1,
+                      const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
+                      const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
+                      const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
+                      const _TCHAR* name8 = NULL, const _TCHAR* name9 = NULL,
+                      const _TCHAR* name10 = NULL, const _TCHAR* name11 = NULL);
+
+    activeTable&
+    outerJoin(recordset& mdls, pq_handle& q, const _TCHAR* name1,
+              const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
+              const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
+              const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
+              const _TCHAR* name8 = NULL, const _TCHAR* name9 = NULL,
+              const _TCHAR* name10 = NULL, const _TCHAR* name11 = NULL);
+
     activeTable& index(int v);
     table_ptr table() const;
     activeTable& option(int v);
-    filter_ptr prepare(queryBase& q, bool serverPrepare = false);
+    pq_handle prepare(queryBase& q, bool serverPrepare = false);
     activeTable& read(recordset& rs, queryBase& q);
     activeTable& read(recordset& rs, queryBase& q, validationFunc func);
-    activeTable& read(recordset& rs, filter_ptr& q);
-    activeTable& read(recordset& rs, filter_ptr& q, validationFunc func);
-    activeTable& read(recordset& rs, filter_ptr& q, 
+    activeTable& read(recordset& rs, pq_handle& q);
+    activeTable& read(recordset& rs, pq_handle& q, validationFunc func);
+    activeTable& read(recordset& rs, pq_handle& q, 
                         const std::vector<std::_tstring>& values);
-    activeTable& read(recordset& rs, filter_ptr& q, 
+    activeTable& read(recordset& rs, pq_handle& q, 
                         validationFunc func,
                         const std::vector<std::_tstring>& values);
 
+    /** @cond INTERNAL */
     template<class T0>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0);
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0)
+    {
+        supplyValue(q, 0, v0);
+        read(rs, q);
+        return *this;
+    }
+
     template<class T0, class T1>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1);
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        read(rs, q);
+        return *this;
+    }
+
     template<class T0, class T1, class T2>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
-                      const T2 v2);
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        supplyValue(q, 2, v2);
+        read(rs, q);
+        return *this;
+    }
+
     template<class T0, class T1, class T2, class T3>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
-                      const T2 v2, const T3 v3);
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        supplyValue(q, 2, v2);
+        supplyValue(q, 3, v3);
+        read(rs, q);
+        return *this;
+    }
+
     template<class T0, class T1, class T2, class T3, class T4>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
-                      const T2 v2, const T3 v3, const T4 v4);
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        supplyValue(q, 2, v2);
+        supplyValue(q, 3, v3);
+        supplyValue(q, 4, v4);
+        read(rs, q);
+        return *this;
+    }
+
     template<class T0, class T1, class T2, class T3, class T4, class T5>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
-                      const T2 v2, const T3 v3, const T4 v4, const T5 v5);
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4, const T5 v5)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        supplyValue(q, 2, v2);
+        supplyValue(q, 3, v3);
+        supplyValue(q, 4, v4);
+        supplyValue(q, 5, v5);
+        read(rs, q);
+        return *this;
+    }
+
     template<class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
-                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
-                      const T6 v6);
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                        const T6 v6)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        supplyValue(q, 2, v2);
+        supplyValue(q, 3, v3);
+        supplyValue(q, 4, v4);
+        supplyValue(q, 5, v5);
+        supplyValue(q, 6, v6);
+        read(rs, q);
+        return *this;
+    }
+
     template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
-             class T7>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
-                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
-                      const T6 v6, const T7 v7);
+                class T7>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                        const T6 v6, const T7 v7)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        supplyValue(q, 2, v2);
+        supplyValue(q, 3, v3);
+        supplyValue(q, 4, v4);
+        supplyValue(q, 5, v5);
+        supplyValue(q, 6, v6);
+        supplyValue(q, 7, v7);
+        read(rs, q);
+        return *this;
+    }
+
     template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
-             class T7, class T8>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
-                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
-                      const T6 v6, const T7 v7, const T8 v8);
+                class T7, class T8>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                        const T6 v6, const T7 v7, const T8 v8)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        supplyValue(q, 2, v2);
+        supplyValue(q, 3, v3);
+        supplyValue(q, 4, v4);
+        supplyValue(q, 5, v5);
+        supplyValue(q, 6, v6);
+        supplyValue(q, 7, v7);
+        supplyValue(q, 8, v8);
+        read(rs, q);
+        return *this;
+    }
+
     template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
-             class T7, class T8, class T9>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
-                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
-                      const T6 v6, const T7 v7, const T8 v8, const T9 v9);
+                class T7, class T8, class T9>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                        const T6 v6, const T7 v7, const T8 v8, const T9 v9)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        supplyValue(q, 2, v2);
+        supplyValue(q, 3, v3);
+        supplyValue(q, 4, v4);
+        supplyValue(q, 5, v5);
+        supplyValue(q, 6, v6);
+        supplyValue(q, 7, v7);
+        supplyValue(q, 8, v8);
+        supplyValue(q, 9, v9);
+        read(rs, q);
+        return *this;
+    }
+   /** @endcond */
     template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
-             class T7, class T8, class T9, class T10>
-    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
-                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
-                      const T6 v6, const T7 v7, const T8 v8, const T9 v9,
-                      const T10 v10);
+                class T7, class T8, class T9, class T10>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                        const T6 v6, const T7 v7, const T8 v8, const T9 v9,
+                        const T10 v10)
+    {
+        supplyValue(q, 0, v0);
+        supplyValue(q, 1, v1);
+        supplyValue(q, 2, v2);
+        supplyValue(q, 3, v3);
+        supplyValue(q, 4, v4);
+        supplyValue(q, 5, v5);
+        supplyValue(q, 6, v6);
+        supplyValue(q, 7, v7);
+        supplyValue(q, 8, v8);
+        supplyValue(q, 9, v9);
+        supplyValue(q, 10, v10);
+        read(rs, q);
+        return *this;
+    }
+
 
     /** @cond INTERNAL */
 

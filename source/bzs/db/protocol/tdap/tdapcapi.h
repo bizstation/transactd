@@ -334,6 +334,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define STATUS_INVALID_LOCKTYPE         83
 #define STATUS_LOCK_ERROR               84
 #define STATUS_FILE_LOCKED              85
+#define STATUS_INVALID_SUPPLYVALUES     86
 #define STATUS_CANNOT_LOCK_TABLE        88
 #define STATUS_INVALID_KEYNAME          STATUS_INVALID_KEYNUM
 #define STATUS_INVALID_DATASIZE         STATUS_BUFFERTOOSMALL
@@ -356,7 +357,13 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define FILTER_CURRENT_TYPE_INC         1
 #define FILTER_CURRENT_TYPE_NOBOOKMARK  2
 #define FILTER_TYPE_SUPPLYVALUE         4
+#define FILTER_TYPE_FORWORD             4 //at preparing only 
+#define FILTER_TYPE_SEEKS               8
 
+
+/* No need export for client */
+#define FILTER_COMBINE_NOPREPARE        0
+#define FILTER_COMBINE_PREPARE          32
 
 
 #define NIS_FILED_NAME                  "$nf"

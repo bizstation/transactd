@@ -71,6 +71,93 @@ inline bool verType(uchar_td type)
 #pragma pack(push, 1)
 pragma_pack1;
 
+/* Structure description of a filter data buffer
+
+Normal Mode
+=============================================================
+-----------------------------------
+header
+-----------------------------------
+    --- P.SQL ---
+    len         2byte   total of databaffer
+    type        2byte   "EG" or "UC"(Include Current record)
+    ---  or (Transatcd) ---
+    ilen        int:28  total of databaffer    
+    itype       int:4   See define FILTER_CURRENT_TYPE_INC
+    ---  end or ---
+    rejectCount 2byte   reject count
+    ---  or (sending supply value to server) ---
+    preparedId  2byte   preparedId
+    ---  end or ---
+    logicalCount 2byte  logical count
+-----------------------------------
+filter
+-----------------------------------
+    --- begin repeat ---
+    type        1byte   data type
+    len         2byte   field length (compare value length)
+    pos         2byte   field position (zero origin)
+    logType     1byte   compare type (=,>,<,<>,>=,<=)
+                        + 16 var type compare whole length
+                        + 32 compare by asc
+                        + 64 copare with other field
+                        + 128 case insensitive
+    opr         1byte   next type 
+                        0 end
+                        1 and 
+                        2 or
+                        +32 prepare placeholder (Only transactd)
+    data        2 or n  field position (if compare type +64) or comapre value
+    --- end repeat   ---
+-----------------------------------
+result
+-----------------------------------
+    maxRows     2byte   max record count
+    fieldCount  2byte   field count of a record
+    --- begin repeat ---
+    len         2byte   field length
+    pos         2byte   field position
+    --- end repeat   ---
+-----------------------------------
+
+Seeks mode
+=============================================================
+-----------------------------------
+header
+-----------------------------------
+    same as normal
+-----------------------------------
+seek values
+-----------------------------------
+    --- begin repeat (key data of one record)---
+    data        2byte   length of key data (multi segments)
+    len         n       key data
+    --- end repeat   ---
+-----------------------------------
+result
+-----------------------------------
+    same as normal
+
+Prepare execute mode
+=============================================================
+-----------------------------------
+header
+-----------------------------------
+    itype   |= FILTER_TYPE_SUPPLYVALUE
+    Onother is same as normal.
+-----------------------------------
+supply values
+-----------------------------------
+    --- begin repeat ---
+    2byte length of value
+    n     value
+    --- end repeat   ---
+-----------------------------------
+result
+-----------------------------------
+    same as normal
+*/
+
 struct resultField
 {
     unsigned short len;
@@ -285,28 +372,27 @@ public:
         logType = getFilterLogicTypeCode(type);
         opr = combine;
         fieldNum = tb->fieldNumByName(name);
+        placeHolder = false;
         if ((logType != 255) && (fieldNum != -1))
         {
             bool ret = true;
             fielddef* fd = &tb->tableDef()->fieldDefs[fieldNum];
             setFieldParam(fd);
 
-            placeHolder = false;
             if (compField)
                 ret = setCompFiled(tb, value); // value is field name
             else
             {
                 if (_tcscmp(value, _T("?"))==0)
                     placeHolder = true;
-                else
-                    setValue(tb, value);
+                setValue(tb, value);
             }
             return ret;
         }
         return false;
     }
 
-    unsigned char* writeBuffer(unsigned char* p, bool estimate, bool end) const
+    unsigned char* writeBuffer(unsigned char* p, bool estimate, bool end, bool preparingMode) const
     {
         int n = (int)((unsigned char*)&data - &type);
         if (!estimate)
@@ -314,12 +400,14 @@ public:
             memcpy(p, this, n);
             if (end)
                 *(p + n - 1) = eCend;
+            if (preparingMode && placeHolder)
+                *(p + n - 1) |= FILTER_COMBINE_PREPARE;    
         }
         p += n;
 
         n = getDatalen();
         if (!estimate)
-            memcpy(p, data, n);
+             memcpy(p, data, n);
         return p + n;
     }
 
@@ -366,13 +454,17 @@ private:
         };
         struct
         {
-            int ilen : 28;
-            int itype : 4;
+            unsigned int ilen : 28;
+            unsigned int itype : 4;
         };
     };
 
 public:
-    unsigned short rejectCount;
+    union
+    {
+        unsigned short rejectCount;
+        unsigned short preparedId;
+    };
     unsigned short logicalCount;
     header() : len(0), rejectCount(1), logicalCount(0)
     {
@@ -389,16 +481,13 @@ public:
         type[1] = 0x00;
     }
 
-    void setPositionType(bool incCurrent, bool withBookmark, bool supplyValue, bool isTransactd)
+    void setPositionType(bool incCurrent, bool isTransactd, int tp)
     {
         if (isTransactd)
         {
             itype = incCurrent ? FILTER_CURRENT_TYPE_INC
                                : FILTER_CURRENT_TYPE_NOTINC;
-            if (!withBookmark)
-                itype |= FILTER_CURRENT_TYPE_NOBOOKMARK;
-            /*if (supplyValue)
-                itype |= FILTER_TYPE_SUPPLYVALUE;*/
+            itype |= tp;
         }
         else
         {
@@ -439,11 +528,15 @@ public:
             len = size;
     }
 
-    unsigned char* writeBuffer(unsigned char* p, bool estimate) const
+    unsigned char* writeBuffer(unsigned char* p, bool estimate, unsigned short prepareId) const
     {
         int n = sizeof(header);
         if (!estimate)
+        {
             memcpy(p, this, n);
+            if (prepareId)
+                memcpy(p + 4, &prepareId, sizeof(unsigned short));
+        }
         return p + n;
     }
 };
@@ -485,11 +578,13 @@ class filter
     size_t m_seeksWritedCount;
     size_t m_logicalLimitCount;
     std::vector<char> m_recordBackup;
+    uchar_td* m_buftmp;
 
     int m_extendBuflen;
     short m_stat;
     ushort_td m_preparedId;
     table::eFindType m_direction;
+    queryBase::eOptimize m_cachedOptimize;
     struct
     {
         bool m_ignoreFields : 1;
@@ -498,6 +593,7 @@ class filter
         bool m_withBookmark : 1;
         bool m_isTransactd : 1;
         bool m_hasManyJoin : 1;
+        bool m_preparingMode : 1;
         
     };
 
@@ -584,18 +680,24 @@ class filter
         if (m_seeksDataBuffer.size() < size)
             m_seeksDataBuffer.resize(size);        
         uchar_td* dataBuf = &m_seeksDataBuffer[0];
-        memset(dataBuf, 0, size);
+        //memset(dataBuf, 0, size);
         return dataBuf;
     }
 
-    bool doSsetSeekValues(keydef* kd, int joinKeySize, const std::vector<std::_tstring>& keyValues, uchar_td* dataBuf )
+    inline const _TCHAR* c_str_v(const _TCHAR* v) const { return v; }
+
+    inline const _TCHAR* c_str_v(const std::_tstring& v) const { return v.c_str(); }
+
+    // Need covert data types
+    template <class T>
+    bool doSsetSeekValues(keydef* kd, int joinKeySize, const T& keyValues, size_t size, uchar_td* dataBuf )
     {
         autoBackup recb(m_tb, m_recordBackup);
         int index = 0;
-        for (size_t i = 0; i < keyValues.size(); i += joinKeySize)
+        for (size_t i = 0; i < size; i += joinKeySize)
         {
             for (int j = 0; j < joinKeySize; ++j)
-                m_tb->setFV(kd->segments[j].fieldNum, keyValues[i + j].c_str());
+                m_tb->setFV(kd->segments[j].fieldNum, c_str_v(keyValues[i + j]));
             seek& l = m_seeks[index];
             ushort_td len = m_tb->writeKeyDataTo(dataBuf, joinKeySize);
             if (!l.setParam(dataBuf, len))
@@ -606,11 +708,12 @@ class filter
         return true;
     }
 
-    bool doSsetSeekValues(keydef* kd, int joinKeySize, const std::vector<keyValuePtr>& keyValues, uchar_td* dataBuf )
+    // no need covert data types
+    bool doSsetSeekValues(keydef* kd, int joinKeySize, const std::vector<keyValuePtr>& keyValues, size_t size, uchar_td* dataBuf )
     {
         int index = 0;
         fielddef* fds = m_tb->tableDef()->fieldDefs;
-        for (size_t i = 0; i < keyValues.size(); i += joinKeySize)
+        for (size_t i = 0; i < size; i += joinKeySize)
         {
             seek& l = m_seeks[index];
             uchar_td* to = dataBuf;
@@ -627,44 +730,45 @@ class filter
         }
         return true;
     }
+    
+    bool prebuiltSeeks( keydef* kd, size_t size, const queryBase* q, int& keySize, uchar_td** dataBuf)
+    {
+        // Check specify key size is smoller than kd->segmentCount or equal
+        if (keySize == 0)
+            keySize = kd->segmentCount;
+        else if (kd->segmentCount < keySize) 
+                return false;
+        if (size % keySize)
+            return false;
+        
+        m_hasManyJoin = (kd->segmentCount != keySize) || kd->segments[0].flags.bit0;
+        if (m_hasManyJoin)
+            m_withBookmark = true;
+        if (q && m_hasManyJoin && 
+                !(q->getOptimize() & queryBase::joinHasOneOrHasMany))
+            return false;
+        m_seeks.resize(size / keySize);
+        int maxKeylen = 0;
+        for (int j = 0; j < keySize; ++j)
+            maxKeylen +=
+                m_tb->tableDef()->fieldDefs[kd->segments[j].fieldNum].len + 2;
+
+        // alloc databuffer
+        *dataBuf = reallocSeeksDataBuffer(maxKeylen * m_seeks.size());
+        return true;
+    }
 
     template <class vector_type>
     bool setSeeks(const vector_type& keyValues, const queryBase* q)
     {
         int keySize = q->getJoinKeySize();
-        // Check key values
+        uchar_td* dataBuf;
         keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
-        int joinKeySize = kd->segmentCount;
-        if (keySize != 0)
-        {
-            // Check specify key size is smoller than kd->segmentCount or equal
-            if (kd->segmentCount < keySize)
-                return false;
-            joinKeySize = keySize;
-            m_withBookmark = m_hasManyJoin =
-                (kd->segmentCount != joinKeySize) || kd->segments[0].flags.bit0;
-
-            // Check when m_hasManyJoin need set joinHasOneOrHasMany
-            if (m_hasManyJoin &&
-                !(q->getOptimize() & queryBase::joinHasOneOrHasMany))
-                return false;
-        }
-
-        if (keyValues.size() % joinKeySize)
-            return false;
-        // Check uniqe key
-        if (kd->segments[0].flags.bit0 && !queryBase::joinHasOneOrHasMany)
-            return false;
-        m_seeks.resize(keyValues.size() / joinKeySize);
-        int maxKeylen = 0;
-        for (int j = 0; j < joinKeySize; ++j)
-            maxKeylen +=
-                m_tb->tableDef()->fieldDefs[kd->segments[j].fieldNum].len + 2;
-
-        // alloc databuffer
-        uchar_td* dataBuf = reallocSeeksDataBuffer(maxKeylen * m_seeks.size());
         
-        if (!doSsetSeekValues(kd, joinKeySize, keyValues, dataBuf))
+        if (!prebuiltSeeks(kd, keyValues.size(), q, keySize, &dataBuf))
+             return false;
+        
+        if (!doSsetSeekValues(kd, keySize, keyValues, keyValues.size(), dataBuf))
             return false;
 
         m_seeksMode = true;
@@ -681,7 +785,7 @@ class filter
         m_useOptimize = ((q->getOptimize() & queryBase::combineCondition) ==
                          queryBase::combineCondition);
         m_withBookmark = q->isBookmarkAlso();
-        
+        m_cachedOptimize = q->getOptimize();
 
         if (q->isAll())
             addAllFields();
@@ -772,7 +876,7 @@ class filter
             m_ret.maxRows =
                 (unsigned short)std::min<int>(calcMaxRows(), USHRT_MAX);
 
-        p = m_hd.writeBuffer(p, estimate);
+        p = m_hd.writeBuffer(p, estimate, m_preparedId);
         if (m_seeksMode)
         {
             for (size_t i = first; i < last; ++i)
@@ -784,23 +888,24 @@ class filter
         else
         {
             for (size_t i = first; i < last; ++i)
-                p = m_logics[i].writeBuffer(p, estimate, (i == (last - 1)));
+                p = m_logics[i].writeBuffer(p, estimate, (i == (last - 1)), m_preparingMode);
         }
-
-        p = m_ret.writeBuffer(p, estimate);
-
-        if (!m_ignoreFields)
+        if (!m_preparedId)
         {
-            for (size_t i = 0; i < m_fields.size(); ++i)
-                p = m_fields[i].writeBuffer(p, estimate);
-        }
+            p = m_ret.writeBuffer(p, estimate);
 
+            if (!m_ignoreFields)
+            {
+                for (size_t i = 0; i < m_fields.size(); ++i)
+                    p = m_fields[i].writeBuffer(p, estimate);
+            }
+        }
         // write total length
         int len = (int)(p - start);
         if (!estimate)
         {
             m_hd.setLen(len, m_isTransactd);
-            m_hd.writeBuffer(start, false);
+            m_hd.writeBuffer(start, false, m_preparedId);
         }
         return len;
     }
@@ -856,7 +961,8 @@ class filter
     filter(table* tb)
         : m_tb(tb), m_extendBuflen(0), m_stat(0), m_preparedId(0),
           m_ignoreFields(false), m_seeksMode(false), m_useOptimize(true),
-          m_withBookmark(true), m_seeksWritedCount(0), m_hasManyJoin(false)
+          m_withBookmark(true), m_seeksWritedCount(0), m_hasManyJoin(false),
+          m_preparingMode(false)
     {
         m_isTransactd = m_tb->isUseTransactd();
     }
@@ -878,11 +984,20 @@ public:
         m_seeksWritedCount = 0;
         m_useOptimize = true;
         m_hasManyJoin = false;
+        m_preparingMode = false;
         m_preparedId = 0;
         m_stat = 0;
     }
 
-    void setServerPrepared(ushort_td v) { m_preparedId = v; }
+    void clearSeeks() { m_seeks.clear(); m_seeksWritedCount = 0; }
+
+    queryBase::eOptimize cachedOptimaize() const { return m_cachedOptimize; }
+
+    void setPreparingMode(bool v){ m_preparingMode = v;}
+
+    void setServerPreparedId(ushort_td v) { m_preparedId = v; }
+
+    ushort_td preparedId() const { return m_preparedId; }
 
     bool setQuery(const queryBase* q)
     {
@@ -895,14 +1010,17 @@ public:
 
     bool supplyValues(const std::vector<std::_tstring>& values)
     {
+        if (m_placeHolderIndexes.size() != values.size())
+            return false;
         for (int i = 0;i< (int)values.size();++i)
             supplyValue(i, values[i].c_str());
         return true;
-
     }
 
     bool supplyValues(const _TCHAR* values[], int size)
     {
+        if (m_placeHolderIndexes.size() != size)
+            return false;
         for (int i = 0;i< size;++i)
             supplyValue(i, values[i]);
         return true;
@@ -923,6 +1041,54 @@ public:
         return false;
     }
 
+    template <class T>
+    bool supplySeekValues(const T& values, size_t size, int keySize)
+    {
+        uchar_td* dataBuf;
+        keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
+
+        if (!prebuiltSeeks(kd, size, NULL, keySize, &dataBuf))
+             return false;
+
+        if (!doSsetSeekValues(kd, keySize, values, size, dataBuf))
+            return false;
+
+        m_seeksMode = true;
+        m_seeksWritedCount = 0;
+        return true;
+    }
+
+    bool beginSupplySeekValues(size_t size, int keySize)
+    {
+        keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
+
+        if (!prebuiltSeeks(kd, size, NULL, keySize, &m_buftmp))
+             return false;
+        m_seeksMode = true;
+        m_seeksWritedCount = 0;
+        return true;
+    }
+    
+    bool supplySeekValue(const uchar_td* ptr[] , int len[], int keySize, int& index)
+    {
+        const tabledef* td = m_tb->tableDef();
+        keydef* kd = &td->keyDefs[m_tb->keyNum()];
+        fielddef* fds = td->fieldDefs;
+
+        seek& l = m_seeks[index];
+        uchar_td* to = m_buftmp;
+        for (int j = 0; j < keySize; ++j)
+        {
+            fielddef& fd = fds[kd->segments[j].fieldNum];
+            to = fd.keyCopy(to, (uchar_td*)ptr[j], len[j]);
+        }
+        if (!l.setParam(m_buftmp, (ushort_td)(to - m_buftmp)))
+            return false;
+        m_buftmp = to;
+        ++index;
+        return true;
+    }
+
     bool isWriteComleted() const
     {
         if (!m_seeksMode)
@@ -936,7 +1102,21 @@ public:
 
     inline void setPositionType(bool incCurrent)
     {
-        m_hd.setPositionType(incCurrent, m_withBookmark, (m_preparedId!=0), m_isTransactd);
+        int type = 0;
+        if (m_isTransactd)
+        {
+            if (m_preparedId)
+                type |= FILTER_TYPE_SUPPLYVALUE;
+            else if (m_preparingMode && (m_direction == table::findForword))
+                type |= FILTER_TYPE_FORWORD;
+
+            if (!m_withBookmark)
+                type |= FILTER_CURRENT_TYPE_NOBOOKMARK;
+            if (m_seeksMode)
+                type |= FILTER_TYPE_SEEKS;
+            
+        }
+        m_hd.setPositionType(incCurrent, m_isTransactd, type);
     }
 
     inline bool positionTypeNext() const
@@ -991,11 +1171,13 @@ public:
         return m_fields[index].pos;
     }
 
-    bool writeBuffer(bool prepare = false)
+    bool writeBuffer()
     {
         // Preapare need not assigned seeks. 
-        if (prepare && m_seeksMode)
+        if (m_preparingMode && m_seeksMode)
             return false;
+        if (!m_isTransactd) 
+            m_preparingMode = false; 
         if (allocDataBuffer())
             return (doWriteBuffer(false) > 0);
         return false;
@@ -1021,7 +1203,12 @@ public:
     inline void setIgnoreFields(bool v) { m_ignoreFields = v; }
     inline bool isSeeksMode() const { return m_seeksMode; }
     inline table::eFindType direction() const { return m_direction; }
-    inline void setDirection(table::eFindType v) { m_direction = v; }
+    inline bool setDirection(table::eFindType v) 
+    { 
+        if (m_preparedId == 0)
+            m_direction = v;
+        return (m_direction == v); 
+    }
     inline const std::vector<short>& selectFieldIndexes()
     {
         return m_selectFieldIndexes;
@@ -1063,11 +1250,11 @@ public:
         return ret;
     }
 
-    void setDirectionByOp(short op)
+    bool setDirectionByOp(short op)
     {
         bool v =  ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI) ||
                     (op == TD_POS_PREV_MULTI));
-        setDirection(v ? table::findBackForword : table::findForword);
+        return setDirection(v ? table::findBackForword : table::findForword);
     }
 
     static filter* create(table* tb)

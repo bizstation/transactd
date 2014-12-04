@@ -554,106 +554,128 @@ inline stepRvIterator readStepRv(table_ptr tb)
     return stepRvIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+
+inline pq_handle setQuery(table_ptr& tb, const queryBase& q) 
+{ 
+    return tb->setQuery(&q);
+}
+
+/** @cond INTERNAL */
+inline pq_handle setQuery(table_ptr& tb, const pq_handle& q) 
+{ 
+    tb->setPrepare(q); 
+    return q;
+}
+/** @endcond */
+
+inline pq_handle prepare(table_ptr& tb, const queryBase& q, bool serverPrepare=false)
+{
+    pq_handle stmt = tb->prepare(&q, serverPrepare);
+    readStatusCheck(*tb, _T("prepare"));
+    return stmt;
+}
+
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5, class T6,
           class T7>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,
                          const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::set(
         tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
+
 /** @cond INTERNAL */
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,
                          const T4 kv4, const T5 kv5, const T6 kv6)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2,
                                                     kv3, kv4, kv5, kv6);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3, class T4, class T5>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,
                          const T4 kv4, const T5 kv5)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3,
                                                 kv4, kv5);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3, class T4>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2, class T3, class T4>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,
                          const T4 kv4)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3,
                                             kv4);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2, class T3>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1, class T2>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0>::set(tb, keynum, kv0);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 /** @endcond */
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5, class T6,
           class T7>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2, const T3 kv3, const T4 kv4,
                              const T5 kv5, const T6 kv6, const T7 kv7)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::set(
         tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
     tb->find(table::findBackForword);
@@ -662,80 +684,80 @@ inline findRvIterator findRv(table_ptr tb, const char_td keynum,
 
 /** @cond INTERNAL */
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5, class T6>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2, const T3 kv3, const T4 kv4,
                              const T5 kv5, const T6 kv6)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2,
                                                     kv3, kv4, kv5, kv6);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3, class T4, class T5>
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5>
 inline findRvIterator
-findRv(table_ptr tb, const char_td keynum, const queryBase& q, const T0 kv0,
+findRv(table_ptr tb, const char_td keynum, const Q& q, const T0 kv0,
        const T1 kv1, const T2 kv2, const T3 kv3, const T4 kv4, const T5 kv5)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3,
                                                 kv4, kv5);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3, class T4>
+template <class Q, class T0, class T1, class T2, class T3, class T4>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2, const T3 kv3, const T4 kv4)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3,
                                             kv4);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3>
+template <class Q, class T0, class T1, class T2, class T3>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2, const T3 kv3)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1, class T2>
+template <class Q, class T0, class T1, class T2>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1>
+template <class Q, class T0, class T1>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1)
+                             const Q& q, const T0 kv0, const T1 kv1)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0>
+template <class Q, class T0>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0)
+                             const Q& q, const T0 kv0)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0>::set(tb, keynum, kv0);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);

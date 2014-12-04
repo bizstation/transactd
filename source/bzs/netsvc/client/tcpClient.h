@@ -177,6 +177,12 @@ protected:
         boost::asio::read(m_socket, boost::asio::buffer(&m_rows, 2),
                           boost::asio::transfer_all());
     }*/
+    bool queryFunction(unsigned int v)
+    {
+        if (v == CONNECTION_FUNCTION_DIRECT_READ)
+            return true;
+        return false;
+    }
 
     unsigned int directRead(void* buf, unsigned int size)
     {
@@ -363,6 +369,13 @@ class pipeConnection : public connectionImple<platform_stream>
     HANDLE m_recvEvent;
     HANDLE m_sendEvent;
     HANDLE m_mapFile;
+
+    bool queryFunction(unsigned int v)
+    {
+        if (v == CONNECTION_FUNCTION_DIRECT_READ)
+            return false;
+        return false;
+    }
 
     char* GetErrorMessage(DWORD ErrorCode)
     {

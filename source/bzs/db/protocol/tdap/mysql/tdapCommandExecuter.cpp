@@ -498,11 +498,22 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
 
         extRequest* ereq = (extRequest*)req.data;
         bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
-
+        bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
         // smartReadRecordsHandler scope
         {
             smartReadRecordsHandler srrh(m_readHandler);
-            req.result = m_readHandler->begin(m_tb, ereq, true, nw,
+
+            if (execPrepared)
+            {
+                if (m_tb->preparedStatements.size() < ereq->preparedId)
+                    req.result = STATUS_INVALID_PREPAREID;
+                else
+                    req.result = m_readHandler->beginPreparExecute(m_tb, ereq, true, nw,
+                                               noBookmark, 
+                                              (prepared*)m_tb->preparedStatements[ereq->preparedId - 1]);
+            }
+            else
+                req.result = m_readHandler->begin(m_tb, ereq, true, nw,
                                               (op == TD_KEY_GE_NEXT_MULTI),
                                               noBookmark);
             if (req.result != 0)
@@ -543,29 +554,32 @@ inline int dbExecuter::doReadMulti(request& req, int op,
     extRequest* ereq = (extRequest*)req.data;
     bool incCurrent = (ereq->itype & FILTER_CURRENT_TYPE_INC) != 0;
     bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
+    bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
 
     bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
     if (op == TD_KEY_SEEK_MULTI)
     {
         char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
         if (!m_tb->setKeyNum(keynum))
-        {
-            if (m_tb)
-                m_tb->unUse();
             return ret;
-        }
     }
     // smartReadRecordsHandler scope
     {
         smartReadRecordsHandler srrh(m_readHandler);
-        req.result = m_readHandler->begin(m_tb, ereq, (op != TD_KEY_SEEK_MULTI),
+        if (execPrepared)
+        {
+            if (m_tb->preparedStatements.size() < ereq->preparedId)
+                req.result = STATUS_INVALID_PREPAREID;
+            else
+                req.result = m_readHandler->beginPreparExecute(m_tb, ereq, (op != TD_KEY_SEEK_MULTI),
+                                          nw, noBookmark, 
+                                          (prepared*)m_tb->preparedStatements[ereq->preparedId - 1]);
+        }
+        else
+            req.result = m_readHandler->begin(m_tb, ereq, (op != TD_KEY_SEEK_MULTI),
                                           nw, forword, noBookmark);
         if (req.result != 0)
-        {
-            if (m_tb)
-                m_tb->unUse();
             return ret;
-        }
         if (op == TD_KEY_SEEK_MULTI)
             req.result =
                 errorCodeSht(seekEach((extRequestSeeks*)req.data, noBookmark));
@@ -641,6 +655,10 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
     else
         seg = 0;
 
+    // Duplicate records need a bookmark.
+    if (seg && noBookmark)
+        return STATUS_INVALID_BOOKMARK;
+
     for (int i = 0; i < ereq->logicalCount; ++i)
     {
         m_tb->setKeyValuesPacked(fd->ptr, fd->len);
@@ -648,13 +666,18 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
         if (m_tb->stat() == 0)
         {
             if (seg)
+            {
+                // If duplicate records , bookmark space is request row number.
                 stat = m_readHandler->write((uchar*)&i, 4);
+            }
+            else if (noBookmark)
+                stat = m_readHandler->write((const unsigned char *)_T("dummy"), 0);
             else
                 stat =
                     m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
         }
         else
-            stat = m_readHandler->write(NULL, m_tb->posPtrLen());
+            stat = m_readHandler->write(NULL, 0);
         if (stat)
             break;
 
@@ -1081,13 +1104,31 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             if (doReadMulti(req, op, nw) == EXECUTE_RESULT_SUCCESS)
                 return EXECUTE_RESULT_SUCCESS;
             break;
-        /*case TD_FILTER_PREPARE:
+        case TD_FILTER_PREPARE:
             m_tb = getTable(req.pbk->handle);
             if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
             {
-                return STATUS_LMIT_OF_PREPAREED;
+                prepared* prp = new prepared();
+                m_tb->preparedStatements.push_back(prp);
+                extRequest* ereq = (extRequest*)req.data;
+                req.result = m_readHandler->prepare(
+                                            m_tb,
+                                            ereq, 
+                                            ((ereq->itype & FILTER_TYPE_SEEKS) == 0),
+                                            nw,
+                                            ((ereq->itype & FILTER_TYPE_FORWORD) != 0),
+                                            ((ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0),
+                                            prp);
+                if (req.result != 0)
+                    m_tb->preparedStatements.pop_back();
+                else
+                {
+                    req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
+                    *((unsigned short*)req.data) = (unsigned short)m_tb->preparedStatements.size();
+                    req.resultLen = 2;
+                }
             }
-            break;*/
+            break;
         case TD_MOVE_PER:
             m_tb = getTable(req.pbk->handle);
             if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))

@@ -329,6 +329,11 @@ class activeObject : boost::noncopyable
     }
 
     void init(database* db, const _TCHAR* name) { m_tb = openTable(db, name); }
+    
+    void prepare(const pq_handle& q)
+    {
+        m_tb->setPrepare(q);
+    }
 
 protected:
     table_ptr m_tb;
@@ -481,17 +486,12 @@ public:
         return *this;
     }
 
-    void prepare(boost::shared_ptr<filter>& q)
-    {
-        m_tb->setQuery(q);
-    }
-
-    table::eFindType direction(boost::shared_ptr<filter>& q)
+    table::eFindType direction(const pq_handle& q)
     {
         return q->direction();
     }
 
-    table::eFindType direction(queryBase& q)
+    table::eFindType direction(const queryBase& q)
     {
         return q.getDirection();
     }
@@ -820,7 +820,7 @@ public:
         return *this;
     }
 
-    filter_ptr prepare(queryBase& q, bool serverPrepare=false)
+    pq_handle prepare(queryBase& q, bool serverPrepare=false)
     {
         m_alias.reverseAliasNamesQuery(q);  
         return m_tb->prepare(&q, serverPrepare);

@@ -159,6 +159,7 @@ public:
 typedef std::vector<boost::shared_ptr<database> > databases;
 
 class IReadRecordsHandler;
+class IPrepare;
 class bookmarks;
 
 /*
@@ -291,6 +292,7 @@ public:
 
 public:
     static bool noKeybufResult;
+    std::vector<IPrepare*> preparedStatements;
 
     ~table();
 
@@ -324,21 +326,21 @@ public:
 
 #ifdef USE_BTRV_VARIABLE_LEN
 
-    inline uint lastVarFiledNum() const
+    inline uint lastVarFieldNum() const
     {
         return m_table->s->fields - 1 - nisFields();
     }
 
     inline const Field* lastVarFiled() const
     {
-        return m_table->s->field[lastVarFiledNum()];
+        return m_table->s->field[lastVarFieldNum()];
     }
 
     unsigned short lastVarLenBytes() const { return m_lastVarLenBytes; }
 
     inline unsigned short lastVarFieldDataLen() const
     {
-        return fieldDataLen(lastVarFiledNum());
+        return fieldDataLen(lastVarFieldNum());
     }
 
     unsigned short lastVarFieldPos() const;
@@ -453,7 +455,7 @@ public:
                              const bzs::db::blobHeader* hd);
     uint recordPackCopy(char* buf, uint maxsize = 0);
 
-    ushort fieldPackCopy(unsigned char* dest, short filedNum);
+    ushort fieldPackCopy(unsigned char* dest, short fieldNum);
 
     inline uint fieldSizeByte(int fieldNum)
     {
@@ -578,6 +580,11 @@ public:
         m_blobBuffer->setFieldCount(num);
     }
 
+    inline uint getBlobFieldCount()
+    {
+        return m_blobBuffer->fieldCount();
+    }
+
     inline void indexInit()
     {
         int ret = m_table->file->ha_index_or_rnd_end();
@@ -651,6 +658,17 @@ public:
         assert(m_table);
         bitmap_set_bit(m_table->read_set, bit);
     }
+
+       
+    inline MY_BITMAP* getReadBitmap()
+    {
+        if (m_table)
+            return m_table->read_set;
+        return NULL;
+    }
+
+    inline bool isUsing() const { return (m_table != NULL); }
+
 };
 
 // smart wrapper for exception

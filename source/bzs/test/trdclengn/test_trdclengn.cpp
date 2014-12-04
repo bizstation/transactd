@@ -331,6 +331,20 @@ void testInsert(database* db)
     tb->release();
 }
 
+void findNextLoop(table* tb, int start, int end)
+{
+    while (start < end)
+    {
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat = " << tb->stat());
+        if (tb->stat()) break;
+            
+        BOOST_CHECK_MESSAGE(start == tb->getFVint(fdi_id), "find value " << tb->getFVint(fdi_id));
+        tb->findNext(true); 
+        ++start;
+    }
+    BOOST_CHECK_MESSAGE(0 != tb->stat(), "findNext end stat = " << tb->stat());
+}
+
 void testFind(database* db)
 {
 
@@ -341,24 +355,18 @@ void testFind(database* db)
     int v = 10;
     tb->setFV((short)0, v);
     tb->find(table::findForword);
-    int i = v;
-    while (i < 20000)
-    {
-        BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat");
-        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "find value " << i);
-        tb->findNext(true); // 11 ～ 19
-        ++i;
-    }
-
+    findNextLoop(tb, v, 20000);
+    
     // backforword
     tb->clearBuffer();
     v = 19999;
     tb->setFV((short)0, v);
     tb->find(table::findBackForword);
-    i = v;
+    int i = v;
     while (i >= 10)
     {
-        BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat");
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat = " << tb->stat());
+        if (tb->stat()) break;
         BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "find value " << i);
         tb->findPrev(true); // 11 ～ 19
         --i;
@@ -385,7 +393,8 @@ void testFindNext(database* db)
     for (int i = v + 1; i < 20000; i++)
     {
         tb->findNext(true); // 11 ～ 19
-        BOOST_CHECK_MESSAGE(0 == tb->stat(), "findNext stat()");
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "findNext stat()" << tb->stat());
+        if (tb->stat()) break;
         BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "findNext value");
     }
     tb->release();
@@ -476,46 +485,36 @@ void testFindIn(database* db)
     tb->release();
 }
 
-void testSetQuery(database* db)
+void testPrepare(database* db)
 {
     table* tb = openTable(db);
     queryBase q;
     q.queryString(_T("id >= ? and id < ?"));
     q.reject(1).limit(0);
-    boost::shared_ptr<filter> stmt = tb->setQuery(&q);
+    pq_handle stmt = tb->prepare(&q);
     const _TCHAR* vs[2];
     int nn = makeSupplyValues(vs, 2, _T("10"), _T("20000"));
-    //stmt->supplyValues(vs, nn); Bad
-    supplyValues(stmt, vs, nn);
-
+    
+    //Test too short supply values
+    bool ret = supplyValues(stmt, vs, nn -1); //stmt->supplyValues(vs, nn); Bad
+    BOOST_CHECK_MESSAGE(ret == false, "supplyValues short");
+    
+    //Test supply values
+    ret = supplyValues(stmt, vs, nn);
+    BOOST_CHECK_MESSAGE(ret == true, "supplyValues true");
     
     int v = 10;
     tb->setFV((short)0, v);
     tb->find(table::findForword);
-    int i = v;
-    while (i < 20000)
-    {
-        BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat");
-        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "find value " << i);
-        tb->findNext(true); // 11 ～ 19
-        ++i;
-    }
-    nn = makeSupplyValues(vs, 2, _T("100"), _T("10000"));
-    //stmt->supplyValues(vs, nn); //Bad
-    supplyValues(stmt, vs, nn);
-    tb->setQuery(stmt);
+    findNextLoop(tb, v, 20000);
+    
+    supplyValues(stmt, vs, makeSupplyValues(vs, 2, _T("100"), _T("10000"))); //stmt->supplyValues(vs, nn); Bad
+    tb->setPrepare(stmt);
     v = 100;
     tb->setFV((short)0, v);
     tb->find(table::findForword);
-    i = v;
-    while (i < 10000)
-    {
-        BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat");
-        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "find value " << i);
-        tb->findNext(true); 
-        ++i;
-    }
-
+    findNextLoop(tb, v, 10000);
+   
     const _TCHAR* values[11];
     int n = makeSupplyValues(values, 11, _T("abc"), _T("efg"), _T("efg")
                                         , _T("abc"), _T("efg"), _T("efg")
@@ -523,6 +522,96 @@ void testSetQuery(database* db)
                                         , _T("abc"), _T("efg"));
 
     BOOST_CHECK_MESSAGE(n == 11, "makeSupplyValues");
+
+    tb->release();
+}
+
+void testPrepareServer(database* db)
+{
+    table* tb = openTable(db);
+    queryBase q;
+    q.queryString(_T("id >= ? and id < ?"));
+    q.reject(0xFFFF).limit(0);
+    pq_handle stmt = tb->prepare(&q, true);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "prepare stat");
+    if (tb->stat()) return ;
+        
+    const _TCHAR* vs[2];
+   
+    bool ret = supplyValues(stmt, vs, makeSupplyValues(vs, 2, _T("10"), _T("200"))); //stmt->supplyValues(vs, nn); Bad
+    BOOST_CHECK_MESSAGE(ret == true, "supplyValues true");
+
+    tb->setPrepare(stmt);
+    BOOST_CHECK_MESSAGE(tb->stat() == 0, "setQuery stmt");
+
+    int v = 10;
+    tb->setFV((short)0, v);
+
+    // Test Bad direction
+    tb->find(table::findBackForword); 
+    BOOST_CHECK_MESSAGE(1 == tb->stat(), "find direction not equal prepare");
+    
+    tb->find(table::findForword);
+    findNextLoop(tb, v, 200);
+
+    ret = supplyValues(stmt, vs, makeSupplyValues(vs, 2, _T("100"), _T("3000"))); 
+    BOOST_CHECK_MESSAGE(ret == true, "supplyValues true");
+
+    tb->setPrepare(stmt);
+    BOOST_CHECK_MESSAGE(tb->stat() == 0, "setQuery stmt");
+
+    v = 100;
+    tb->setFV((short)0, v);
+    tb->find(table::findForword);
+    findNextLoop(tb, v, 3000);
+    
+    // No seek with
+    ret = supplyValues(stmt, vs, makeSupplyValues(vs, 2, _T("50"), _T("100"))); 
+    tb->setPrepare(stmt);
+    v = 50;
+    tb->setFV((short)0, v);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seek");
+    tb->findNext(false);
+    findNextLoop(tb, v, 100);
+
+    // RecordCount
+    ret = supplyValues(stmt, vs, makeSupplyValues(vs, 2, _T("50"), _T("100"))); 
+    tb->setPrepare(stmt);
+    uint_td num = tb->recordCount(false);
+    BOOST_CHECK_MESSAGE(num == 50, "recordCount ");
+
+    // Multi prepare statement
+    q.reset();
+    q.queryString(_T("id < ?"));
+    q.reject(0xFFFF).limit(0);
+    pq_handle stmt2 = tb->prepare(&q, true);
+    ret = supplyValues(stmt2, vs, makeSupplyValues(vs, 1, _T("50"))); 
+    tb->setPrepare(stmt2);
+    v = 1;
+    tb->setFV((short)0, v);
+    tb->find(); 
+    findNextLoop(tb, v, 50);
+    
+    ret = supplyValues(stmt, vs, makeSupplyValues(vs, 2, _T("100"), _T("3000"))); 
+    tb->setPrepare(stmt);
+    v = 100;
+    tb->setFV((short)0, v);
+    tb->find(table::findForword);
+    findNextLoop(tb, v, 3000);
+
+    // Seeks prepare statement 
+    q.reset();
+    q.queryString(_T("select id"));
+    pq_handle stmt3 = tb->prepare(&q, true);
+    const _TCHAR* vsi[6];
+    makeSupplyValues(vsi, 6, _T("10"), _T("11"), _T("12"), _T("13"),
+         _T("14"), _T("15"));
+    int keySegments = 1;
+    supplyInValues(stmt3, vsi, 6, keySegments);
+    tb->setPrepare(stmt3);
+    tb->find(); 
+    findNextLoop(tb, 10, 16);
 
     tb->release();
 }
@@ -2420,7 +2509,7 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
     BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc") == 0, " logic.data");
 
-    size_t len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
+    size_t len = lc.writeBuffer(0, true, false, false) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7 + 33, " logic.writeBuffer");
 
     // compField invalid filed name
@@ -2437,7 +2526,7 @@ void testLogic(database* db)
                         " logic.logType compField");
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
     BOOST_CHECK_MESSAGE(*((short*)lc.data) == 0, " logic.data");
-    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
+    len = lc.writeBuffer(0, true, false, false) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7 + 2, " logic.writeBuffer");
 
     // invalid filed name
@@ -2453,13 +2542,13 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
     BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc") == 0, " logic.data");
 
-    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
+    len = lc.writeBuffer(0, true, false, false) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7 + 3, " logic.writeBuffer");
 
     lc.setParam(tb, _T("name"), _T("="), _T("漢字*"), eCend, false);
     BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "漢字") == 0, " logic.data");
 
-    len = lc.writeBuffer(0, true, false) - (unsigned char*)0;
+    len = lc.writeBuffer(0, true, false, false) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 7 + (_tcslen(_T("漢字")) * sizeof(_TCHAR)),
                         " logic.writeBuffer len =" << len);
 
@@ -2518,7 +2607,7 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.len == 3, "logic setValue");
 
     header hd;
-    len = hd.writeBuffer(0, true) - (unsigned char*)0;
+    len = hd.writeBuffer(0, true, 0) - (unsigned char*)0;
     BOOST_CHECK_MESSAGE(len == 8, " header.writeBuffer");
     tb->release();
 }
@@ -3009,6 +3098,102 @@ void testJoin(database* db)
     q3->release();
 }
 
+void testServerPrepareJoin(database* db)
+{
+#ifdef LINUX
+    const char* fd_name = "名前";
+#else
+#ifdef _UNICODE
+    const wchar_t fd_name[] = { L"名前" };
+#else
+    char fd_name[30];
+    WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+#endif
+#endif
+
+    activeTable atu(db, _T("user"));
+    activeTable atg(db, _T("groups"));
+    activeTable ate(db, _T("extention"));
+    atu.alias(fd_name, _T("name"));
+    atg.alias(_T("name"), _T("group_name"));
+    query q;
+    q.select(_T("id"), _T("name"), _T("group"))
+        .where(_T("id"), _T("<="), _T("?"));
+    pq_handle stmt1 = atu.prepare(q, true);
+    BOOST_CHECK_MESSAGE(stmt1 != NULL, " stmt1");
+    
+    q.reset().select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany);
+    pq_handle stmt2 = ate.prepare(q, true);
+    BOOST_CHECK_MESSAGE(stmt2 != NULL, " stmt2");
+
+    q.reset().select(_T("group_name"));
+    pq_handle stmt3 = atg.prepare(q, true);
+    BOOST_CHECK_MESSAGE(stmt3 != NULL, " stmt3");
+
+    recordset rs;
+    atu.index(0).keyValue(1).read(rs, stmt1, 15000);
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, " rs.size()== 15000 bad " << rs.size());
+
+    // Join extention::comment
+    ate.index(0).join(rs, stmt2, _T("id"));
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join  rs.size()== 15000");
+
+    // test reverse
+    row& last = rs.reverse().first();
+    BOOST_CHECK_MESSAGE(last[_T("id")].i() == 15000, "last field id == 15000");
+    BOOST_CHECK_MESSAGE(_tstring(last[_T("comment")].c_str()) ==
+                            _tstring(_T("15000 comment")),
+                        "last field comment");
+
+    // Join group::name
+    atg.index(0).join(rs, stmt3, _T("group"));
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join2  rs.size()== 15000");
+    row& first = rs.last();
+
+    BOOST_CHECK_MESSAGE(first[_T("id")].i() == 1, "first field id == 1");
+    BOOST_CHECK_MESSAGE(_tstring(first[_T("comment")].c_str()) ==
+                            _tstring(_T("1 comment")),
+                        "first field comment");
+
+    BOOST_CHECK_MESSAGE(
+        _tstring(first[_T("group_name")].c_str()) == _tstring(_T("1 group")),
+        "first field group_name " << string(first[_T("group_name")].a_str()));
+    BOOST_CHECK_MESSAGE(
+        _tstring(first[_T("group_name")].c_str()) == _tstring(_T("1 group")),
+        "first field group_name " << string(first[_T("group_name")].a_str()));
+    // row_ptr row = rs[15000 - 9];
+    row& rec = rs[15000 - 9];
+    BOOST_CHECK_MESSAGE(
+        _tstring(rec[_T("group_name")].c_str()) == _tstring(_T("4 group")),
+        "group_name = 4 group " << string((rec)[_T("group_name")].a_str()));
+
+    // Test orderby
+    rs.orderBy(_T("group_name"));
+    // rec = rs[(size_t)0];
+    BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0][_T("group_name")].c_str()) ==
+                            _tstring(_T("1 group")),
+                        "group_name = 1 group "
+                            << string(rs[(size_t)0][_T("group_name")].a_str()));
+
+    sortFields orderRv;
+    orderRv.add(_T("group_name"), false);
+    rs.orderBy(orderRv);
+
+    sortFields order;
+    order.add(_T("group_name"), true);
+    rs.orderBy(order);
+    BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0][_T("group_name")].c_str()) ==
+                            _tstring(_T("1 group")),
+                        "group_name = 1 group "
+                            << string(rs[(size_t)0][_T("group_name")].a_str()));
+
+    //TODO hasManyJoin
+    //TODO OuterJoin
+
+
+
+}
+
 void testWirtableRecord(database* db)
 {
 
@@ -3128,7 +3313,8 @@ BOOST_FIXTURE_TEST_CASE(findNext, fixture)
 {
     testFindNext(db());
     testFindIn(db());
-    testSetQuery(db());
+    testPrepare(db());
+    testPrepareServer(db());
 }
 
 BOOST_FIXTURE_TEST_CASE(getPercentage, fixture)
@@ -3374,6 +3560,7 @@ BOOST_FIXTURE_TEST_CASE(new_delete, fixtureQuery)
 BOOST_FIXTURE_TEST_CASE(join, fixtureQuery)
 {
     testJoin(db());
+    testServerPrepareJoin(db());
     testWirtableRecord(db());
 }
 

@@ -44,6 +44,15 @@ public:
     virtual unsigned short maxRows() const = 0;
 };
 
+
+class IPrepare
+{
+
+public:
+    virtual ~IPrepare(){};
+    virtual void release() = 0;
+};
+
 } // namespace mysql
 } // namespace engine
 } // namespace db

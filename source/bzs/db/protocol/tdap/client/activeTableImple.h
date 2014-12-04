@@ -112,6 +112,7 @@ class activeTableImple : public activeObject<map_orm>
     typedef activeObject<map_orm> baseClass_type;
     typedef std::vector<std::vector<int> > joinmap_type;
     record m_record;
+    int m_tmpIndex;
 
     // return can memcpy
     uchar_td convertFieldType(uchar_td v)
@@ -132,21 +133,21 @@ class activeTableImple : public activeObject<map_orm>
     template <class Container>
     inline void
     makeJoinFieldInfo(Container& mdls, const fielddefs* fds,
-                      const fieldNames& fns,
+                      const _TCHAR*  fns[], int fnsCount,
                       std::vector<typename Container::key_type>& fieldIndexes,
                       std::vector<joinInfo>& joinFields)
     {
-        joinFields.resize(fns.count());
-        fieldIndexes.resize(fns.count());
+        joinFields.resize(fnsCount);
+        fieldIndexes.resize(fnsCount);
         const tabledef* td = table()->tableDef();
         const keydef* kd = &td->keyDefs[table()->keyNum()];
-        if (kd->segmentCount < fns.count())
+        if (kd->segmentCount < fnsCount)
             THROW_BZS_ERROR_WITH_MSG(_T("Join key fields are too many.\n ")
                                      _T("Check index number and field count."));
 
-        for (int i = 0; i < fns.count(); ++i)
+        for (int i = 0; i < fnsCount; ++i)
         {
-            std::_tstring s = fns.getValue(i);
+            std::_tstring s = fns[i];
             if (s[0] == '[')
             {
                 fieldIndexes[i] = -1;
@@ -177,29 +178,6 @@ class activeTableImple : public activeObject<map_orm>
     }
 
     template <class Container>
-    inline void
-    addSeekValues(row& mdl, queryBase& q,
-                  std::vector<typename Container::key_type>& fieldIndexes,
-                  std::vector<joinInfo>& joinFields)
-    {
-        for (int i = 0; i < (int)fieldIndexes.size(); ++i)
-        {
-            if (fieldIndexes[i] == -1)
-                q.addSeekKeyValuePtr(joinFields[i].fixedValue.c_str(),
-                                     joinFields[i].len, KEYVALUE_STR);
-            else if (joinFields[i].type == JOIN_KEYVALUE_TYPE_PTR)
-                q.addSeekKeyValuePtr(mdl[fieldIndexes[i]].ptr(),
-                                     joinFields[i].len, KEYVALUE_PTR);
-            else
-            {
-                const _TCHAR* p = mdl[fieldIndexes[i]].c_str();
-                q.addSeekKeyValuePtr(p, (ushort_td)_tcslen(p),
-                                     KEYVALUE_STR_NEED_COPY);
-            }
-        }
-    }
-
-    template <class Container>
     void makeJoinMap(Container& mdls, joinmap_type& joinRowMap,
                      std::vector<typename Container::key_type>& keyFields)
     {
@@ -220,64 +198,115 @@ class activeTableImple : public activeObject<map_orm>
         }
     }
 
+
     template <class Container>
-    void doJoin(bool innner, Container& mdls, queryBase& q, const _TCHAR* name1,
+    inline void
+    addSeekValues(row& mdl, pq_handle& q,
+                  std::vector<typename Container::key_type>& fieldIndexes,
+                  std::vector<joinInfo>& joinFields)
+    {
+        const uchar_td* ptr[8];
+        int len[8];
+        for (int i = 0; i < (int)fieldIndexes.size(); ++i)
+        {
+            if (fieldIndexes[i] == -1)
+            {
+                ptr[i] = (const uchar_td*)joinFields[i].fixedValue.c_str();
+                len[i] = joinFields[i].len;
+            }
+            else if (joinFields[i].type == JOIN_KEYVALUE_TYPE_PTR)
+            {    
+                ptr[i] = (const uchar_td*)mdl[fieldIndexes[i]].ptr();
+                len[i] = joinFields[i].len;
+            }
+            else
+            {
+                const _TCHAR* p = mdl[fieldIndexes[i]].c_str();
+                ptr[i] = (const uchar_td*)p;
+                len[i] = (int)_tcslen(p);
+            }
+        }
+    
+        if (!q->supplySeekValue(ptr, len, (int)fieldIndexes.size(), m_tmpIndex))
+            THROW_BZS_ERROR_WITH_MSG(_T("Join key value(s) are invalid at supply values to prepared statement or query.\n ")
+                                     _T("Check prepared statement or query."));
+    }
+
+    inline void setJoinKeySize(queryBase& q, int n) { q.joinKeySize(n); }
+
+    inline void setJoinKeySize(pq_handle& q, int n) { }
+
+    template <class Query>
+    pq_handle prebuiltJoin(const _TCHAR* fns[8], int &fnsCount, Query& q, const _TCHAR* name1,
                 const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                 const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                 const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                 const _TCHAR* name8 = NULL)
     {
-        if (mdls.size() == 0)
-            return;
         m_alias.reverseAliasNamesQuery(q);
-        q.clearSeekKeyValues();
 
+        fns[0] = name1; fns[1] = name2; fns[2] = name3; fns[3] = name4;
+        fns[4] = name5; fns[5] = name6; fns[6] = name7; fns[7] = name8;
+        
+        for (fnsCount = 0; fnsCount < 8; ++fnsCount)
+            if (fns[fnsCount] == NULL)
+                break;
+        
+        setJoinKeySize(q, fnsCount);
+        return setQuery(m_tb, q);
+    }
+
+    inline void reserveSeekSize(pq_handle& q,  size_t size, int keySize)
+    {
+        q->beginSupplySeekValues(size, keySize);
+        m_tmpIndex = 0;
+    }
+
+    template <class Container>
+    void doJoin(bool innner, Container& mdls, pq_handle& stmt, const _TCHAR* fns[8], int fnsCount)
+    {
+        stmt->clearSeeks();
         mraResetter mras(m_tb);
         typename Container::iterator it = mdls.begin(), ite = mdls.end();
 
-        bool optimize = !(q.getOptimize() & queryBase::joinHasOneOrHasMany);
+        bool optimize = !(stmt->cachedOptimaize() & queryBase::joinHasOneOrHasMany);
         joinmap_type joinRowMap;
-
-        fieldNames fns;
-        fns.keyField(name1, name2, name3, name4, name5, name6, name7, name8);
 
         std::vector<typename Container::key_type> fieldIndexes;
         std::vector<joinInfo> joinFields;
 
         const fielddefs* fds = mdls.fieldDefs();
-        makeJoinFieldInfo<Container>(mdls, fds, fns, fieldIndexes, joinFields);
+        makeJoinFieldInfo<Container>(mdls, fds, fns, fnsCount, fieldIndexes, joinFields);
 
         // optimizing join
         // if base recordsetImple is made by unique key and join by uniqe field,
         // that can not opitimize.
         //
-        q.joinKeySize(fns.count());
+        
         if (optimize)
         {
             makeJoinMap(mdls, joinRowMap, fieldIndexes);
-            q.reserveSeekKeyValuePtrSize(joinRowMap.size() *
-                                         fieldIndexes.size());
+            reserveSeekSize(stmt, joinRowMap.size() * fieldIndexes.size(), fnsCount);
             std::vector<std::vector<int> >::iterator it1 = joinRowMap.begin(),
                                                      ite1 = joinRowMap.end();
             while (it1 != ite1)
             {
                 row& mdl = *(mdls.getRow((*it1)[0]));
-                addSeekValues<Container>(mdl, q, fieldIndexes, joinFields);
+                addSeekValues<Container>(mdl, stmt, fieldIndexes, joinFields);
                 ++it1;
             }
         }
         else
         {
-            q.reserveSeekKeyValuePtrSize(mdls.size() * fieldIndexes.size());
+            reserveSeekSize(stmt, mdls.size() * fieldIndexes.size(), fnsCount);
             while (it != ite)
             {
                 row& mdl = *(*it);
-                addSeekValues<Container>(mdl, q, fieldIndexes, joinFields);
+                addSeekValues<Container>(mdl, stmt, fieldIndexes, joinFields);
                 ++it;
             }
         }
 
-        m_tb->setQuery(&q);
         if (m_tb->stat() != 0)
             nstable::throwError(_T("activeObject Join Query"), &(*m_tb));
 
@@ -352,8 +381,11 @@ public:
                      const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                      const _TCHAR* name8 = NULL)
     {
-        doJoin(true, mdls, q, name1, name2, name3, name4, name5, name6, name7,
-               name8);
+        const _TCHAR* fns[8];
+        int fnsCount;
+        pq_handle stmt = prebuiltJoin(fns, fnsCount, q, name1, name2, name3, 
+                        name4, name5, name6, name7, name8);
+        doJoin(true, mdls, stmt, fns, fnsCount);
     }
 
     inline void
@@ -363,8 +395,39 @@ public:
               const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
               const _TCHAR* name8 = NULL)
     {
-        doJoin(false, mdls, q, name1, name2, name3, name4, name5, name6, name7,
-               name8);
+        const _TCHAR* fns[8];
+        int fnsCount;
+        pq_handle stmt = prebuiltJoin(fns, fnsCount, q, name1, name2, name3, 
+                        name4, name5, name6, name7, name8);
+        doJoin(false, mdls, stmt, fns, fnsCount);
+    }
+
+    inline void join(Container& mdls, pq_handle& q, const _TCHAR* name1,
+                     const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
+                     const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
+                     const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
+                     const _TCHAR* name8 = NULL)
+    {
+        const _TCHAR* fns[8];
+        int fnsCount;
+        pq_handle stmt = prebuiltJoin(fns, fnsCount, q, name1, name2, name3, 
+                        name4, name5, name6, name7, name8);
+        doJoin(true, mdls, stmt, fns, fnsCount);
+
+    }
+
+    inline void
+    outerJoin(Container& mdls, pq_handle& q, const _TCHAR* name1,
+              const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
+              const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
+              const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
+              const _TCHAR* name8 = NULL)
+    {
+        const _TCHAR* fns[8];
+        int fnsCount;
+        pq_handle stmt = prebuiltJoin(fns, fnsCount, q, name1, name2, name3, 
+                        name4, name5, name6, name7, name8);
+        doJoin(false, mdls, stmt, fns, fnsCount);
     }
 
     void releaseTable() { m_tb.reset(); }
