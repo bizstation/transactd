@@ -44,6 +44,8 @@ interface ISortFields;
 interface IFieldNames;
 interface IConnectParams;
 interface IPooledDbManager;
+interface IPreparedQuery;
+
 
 typedef
 [
@@ -675,9 +677,13 @@ interface ITable : IDispatch
   [id(0x000000FA)]
   HRESULT _stdcall KeyValueDescription([out, retval] BSTR* Value);
   [id(0x000000FB)]
-  HRESULT _stdcall SetQuery([in] IQueryBase* Value);
+  HRESULT _stdcall SetQuery([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
   [id(0x000000FC)]
   HRESULT _stdcall FieldNumByName([in] BSTR Name, [out, retval] short* Value);
+  [id(0x000000FD)]
+  HRESULT _stdcall Prepare([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
+  [id(0x000000FF)]
+  HRESULT _stdcall SetPrepare([in] IPreparedQuery* Value);
 
 };
 [
@@ -973,7 +979,7 @@ interface ITdVersion : IDispatch
 interface IQueryBase : IDispatch
 {
   [id(0x0000001)]
-  HRESULT _stdcall Reset(void);
+  HRESULT _stdcall Reset([out, retval] IQueryBase** retVal);
   [id(0x0000002)]
   HRESULT _stdcall ClearSeekKeyValues(void);
   [id(0x0000003)]
@@ -1080,7 +1086,7 @@ interface IActiveTable : IDispatch
   [id(0x0000007)]
   HRESULT _stdcall ResetAlias([out, retval] IActiveTable** retVal);
   [id(0x0000008)]
-  HRESULT _stdcall Join([in] IRecordset* rs, [in] IQueryBase* query, [in] BSTR Name0
+  HRESULT _stdcall Join([in] IRecordset* rs, [in] VARIANT query, [in] BSTR Name0
 					, [in, defaultvalue("")] BSTR Name1, [in, defaultvalue("")] BSTR Name2
 					, [in, defaultvalue("")] BSTR Name3, [in, defaultvalue("")] BSTR Name4
 					, [in, defaultvalue("")] BSTR Name5, [in, defaultvalue("")] BSTR Name6
@@ -1088,7 +1094,7 @@ interface IActiveTable : IDispatch
 					,[out, retval] IRecordset** retVal);
 
   [id(0x0000009)]
-  HRESULT _stdcall OuterJoin([in] IRecordset* rs, [in] IQueryBase* query, [in] BSTR Name0
+  HRESULT _stdcall OuterJoin([in] IRecordset* rs, [in] VARIANT query, [in] BSTR Name0
 					, [in, defaultvalue("")] BSTR Name1, [in, defaultvalue("")] BSTR Name2
 					, [in, defaultvalue("")] BSTR Name3, [in, defaultvalue("")] BSTR Name4
 					, [in, defaultvalue("")] BSTR Name5, [in, defaultvalue("")] BSTR Name6
@@ -1099,6 +1105,9 @@ interface IActiveTable : IDispatch
   HRESULT _stdcall GetWritableRecord([out, retval] IWritableRecord** retVal);
   [propget, id(0x000000B)]
   HRESULT _stdcall TableDef([out, retval] ITableDef** Value);
+  [id(0x000000C)]
+  HRESULT _stdcall Prepare([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
+
   				
 };
 
@@ -1363,7 +1372,7 @@ interface IPooledDbManager : IDispatch
   [id(0x00000006)]
   HRESULT _stdcall EndSnapshot(void);
   [id(0x00000007)]
-  HRESULT _stdcall Use([in, defaultvalue(0L)] VARIANT Uri);
+  HRESULT _stdcall Use([in, optional] VARIANT Uri);
   [id(0x00000008)]
   HRESULT _stdcall Unuse();
   [propget, id(0x00000009)]
@@ -1411,6 +1420,23 @@ interface IConnectParams : IDispatch
   [propget, id(4)]
   HRESULT _stdcall Type([out, retval] short* retVal);
  
+};
+
+[
+  object,
+  uuid(33C684B3-E198-431C-9CCC-48EB083E1219),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IPreparedQuery : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall SupplyValue([in] int Index, [in] VARIANT Value, [out, retval] VARIANT_BOOL* retVal);
+  [id(0x0000002)]
+  HRESULT _stdcall AddValue([in] VARIANT Value, [out, retval] VARIANT_BOOL* retVal);
+  [id(0x0000003)]
+  HRESULT _stdcall ResetAddIndex();
 };
 
 [
@@ -1630,6 +1656,16 @@ library transactd
 	coclass ConnectParams
 	{
 		[default] interface IConnectParams;
+	};
+
+    [
+		uuid(E5D3D961-A1CD-42CA-B7E0-640AB0CEB529)	
+		,noncreatable
+	]
+	coclass PreparedQuery
+	{
+		[default] interface IPreparedQuery;
+		
 	};
 		
 };

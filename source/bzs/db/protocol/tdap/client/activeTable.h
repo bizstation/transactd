@@ -72,11 +72,6 @@ public:
 
     inline void resetAddIndex() { m_index = 0; }
     
-    inline bool supplyInValues(const _TCHAR* values[], size_t size, int segments)
-    {
-		return client::supplyInValues(m_filter, values, size, segments);
-	}
-
     inline pq_handle& getFilter() { return m_filter; };
 };
 

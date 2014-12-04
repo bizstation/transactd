@@ -1904,7 +1904,7 @@ void table::beginDel()
             else
                 movePos(position(true), -1, true);
 
-            // Has blob fileds then ignore conflicts.
+            // Has blob fields then ignore conflicts.
             if ((m_table->s->blob_fields == 0) &&
                 cmp_record(m_table, record[1]))
                 m_stat = STATUS_CHANGE_CONFLICT;

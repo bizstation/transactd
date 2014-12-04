@@ -78,7 +78,7 @@ var ft_autoIncUnsigned = 52;
 
 //file flag
 var table_varlen   = 0;
-        
+		
 //key flag
 var key_duplicate   = 0;
 var key_changeable  = 1;
@@ -165,24 +165,24 @@ var joinWhereFields = 2;
 	
 function createQuery()
 {
-    return new ActiveXObject('transactd.query');
+	return new ActiveXObject('transactd.query');
 }
 
 function createDatabaseObject()
 {
-    return new ActiveXObject("transactd.database");
+	return new ActiveXObject("transactd.database");
 }
 
 function createGroupQuery()
 {
-    return new ActiveXObject("transactd.groupQuery");
+	return new ActiveXObject("transactd.groupQuery");
 }
 
 function createActiveTable(db, tableName)
 {
-    var at =  new ActiveXObject("transactd.activeTable");
-    at.SetDatabase(db, tableName);
-    return at;
+	var at =  new ActiveXObject("transactd.activeTable");
+	at.SetDatabase(db, tableName);
+	return at;
 }
 
 
@@ -252,8 +252,8 @@ function createUserTable(db)
 	dbdef.UpDateTableDef(tableid);
 	if (dbdef.Stat!=0)
 	{
-		 WScript.Echo("user UpDateTableDef erorr:No." + dbdef.Stat);
-		 return false;
+		WScript.Echo("user UpDateTableDef erorr:No." + dbdef.Stat);
+		return false;
 	}
 	dbdef = null;
 	return true;
@@ -352,16 +352,16 @@ function createUserExtTable(db)
 /*--------------------------------------------------------------------------------*/
 function bench()
 {
-    var tick=0;
+	var tick=0;
 	
 	this.report = function(func, p1, p2, p3, p4, p5, p6, p7, p8)
 	{
 		var now = new Date();
-	    ticks = now.getTime();
+		ticks = now.getTime();
 		var ret = func(p1, p2, p3, p4, p5, p6, p7, p8);
-	    now = new Date();
+		now = new Date();
 		ticks = (now.getTime() - ticks)/1000;
-	    return ret;
+		return ret;
 	}
 	
 	this.time = function(){return tick;}
@@ -400,53 +400,51 @@ function showConsole(recordset)
 			var s = "";
 			for (var i=0;i<record.Size;++i)
 				s += record.Field(i).Text + "\t";
-	
-			WScript.Echo(s);	
+
+			WScript.Echo(s);
 		}
 	}
 	else 
-		WScript.Echo("No data.");	
+		WScript.Echo("No data.");
 	WScript.Echo(sep);
 }
-
-
 
 function wirteRecord()
 {
 	var rec = ate.Index(0).CreateWritableRecord();
 
- 
-    rec.Field("id").Vlng = 1200;
-    rec.Field("名前").Text = "矢口";
-    if (!rec.Read())
-        rec.Insert();
 
-    rec.Clear();
-    rec.Field("id").Vlng = 1201;
-    rec.Field("名前").Text = "小坂";
-    if (!rec.Read())
-        rec.Insert();
+	rec.Field("id").Vlng = 1200;
+	rec.Field("名前").Text = "矢口";
+	if (!rec.Read())
+		rec.Insert();
 
-    //update changed filed only
-    rec.Clear();
-    rec.Field("id").Vlng = 1201;
-    rec.Field("parent").Vlng = 1240;
-    rec.Update();
+	rec.Clear();
+	rec.Field("id").Vlng = 1201;
+	rec.Field("名前").Text = "小坂";
+	if (!rec.Read())
+		rec.Insert();
 
-    //rec.Del();
-    rec.Field("id").Vlng = 1200;
-    //rec.Del();
+	//update changed filed only
+	rec.Clear();
+	rec.Field("id").Vlng = 1201;
+	rec.Field("parent").Vlng = 1240;
+	rec.Update();
+
+	//rec.Del();
+	rec.Field("id").Vlng = 1200;
+	//rec.Del();
 }
 
 /*--------------------------------------------------------------------------------*/
 function createDatabase(db, uri)
 {
-    db.Create(uri);
+	db.Create(uri);
 	if (db.Stat!=0)
-    {
-        WScript.Echo("createDatabase erorr:No." + db.Stat + " " + uri);
-        return false;
-    }
+	{
+		WScript.Echo("createDatabase erorr:No." + db.Stat + " " + uri);
+		return false;
+	}
 	if (db.Open(uri, TYPE_BDF, OPEN_NORMAL, "", ""))
 	{
 		if (!createUserTable(db))return false;
@@ -454,9 +452,9 @@ function createDatabase(db, uri)
 		if (!createUserExtTable(db))return false;
 		
 		return true;
-    }else
-    	WScript.Echo("open daatabse erorr:No" +  db.stat);
-    return false;
+	}else
+		WScript.Echo("open daatabse erorr:No" +  db.stat);
+	return false;
 }
 /*--------------------------------------------------------------------------------*/
 function insertData(db)
@@ -509,19 +507,18 @@ function checkNotEqual(a, b, on)
 	}
 }
 
-
 /*--------------------------------------------------------------------------------*/
 function test(atu, atg, ate)
 {
 	initQuery();
 	atu.Alias("名前", "name");
-    q.Select("id", "name","group").Where("id", "<=", 15900);
-    var rs = atu.Index(0).KeyValue(1).Read(q);
+	q.Select("id", "name","group").Where("id", "<=", 15900);
+	var rs = atu.Index(0).KeyValue(1).Read(q);
 	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
 	
 	//Join extention::comment
 
-    initQuery();
+	initQuery();
 	//first reverse
 	var last = ate.Index(0).Join(rs, q.Select("comment").Optimize(hasOneJoin), "id").Reverse().First();
 	checkEqual(rs.Count, 15900, "ate rs.Count = 15900 ");
@@ -539,14 +536,14 @@ function test(atu, atg, ate)
 	checkEqual(first.Field("id").Vlng, 1, "id = 1 ");
 	checkEqual(first.Field("comment").Text, "1 comment", "comment = 1 comment");
 	checkEqual(first.Field("group_name").Text, "1 group", "group_name = 1 group ");
- 	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "9 group", "group_name = 9 group ");
+	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "9 group", "group_name = 9 group ");
 	
 	rs.OrderBy("group_name");
- 	checkEqual(rs.Record(0).Field("group_name").Text, "1 group", "group_name = 1 group ");
- 			//var s;
+	checkEqual(rs.Record(0).Field("group_name").Text, "1 group", "group_name = 1 group ");
+
 	var count = rs.Count;
-		for (var j= 0;j<count;++j)
-			var s = rs.Record(j);
+	for (var j= 0;j<count;++j)
+		var s = rs.Record(j);
 
 }
 function btest(atu, atg, ate, n)
@@ -557,9 +554,8 @@ function btest(atu, atg, ate, n)
 		initQuery();
 		atu.Alias("名前", "name");
 	    q.Select("id", "name","group").Where("id", "<=", i+15000);
-
 	    var rs = atu.Index(0).KeyValue(i+1).Read(q);
-		
+
 		//Join extention::comment
 
 	    initQuery();
@@ -585,63 +581,60 @@ var resultCode = 0;
 function main()
 {
 
-    var isCreate = 0;
-    var host = "localhost";
-    var n = 100;
-    if (WScript.arguments.length > 0)
-    	isCreate = 	parseInt(WScript.arguments(0), 10);
-    
-    if (WScript.arguments.length > 1)
-    	host = WScript.arguments(1);
-    var URI  = "tdap://" + host + "/querytest?dbfile=test.bdf";
+	var isCreate = 0;
+	var host = "localhost";
+	var n = 100;
+	if (WScript.arguments.length > 0)
+		isCreate = 	parseInt(WScript.arguments(0), 10);
+	
+	if (WScript.arguments.length > 1)
+		host = WScript.arguments(1);
+	var URI  = "tdap://" + host + "/querytest?dbfile=test.bdf";
 
-    if (WScript.arguments.length > 2)
-    	n = parseInt(WScript.arguments(2), 10);
-    		
-    
-    WScript.Echo(URI);
+	if (WScript.arguments.length > 2)
+		n = parseInt(WScript.arguments(2), 10);
+
+
+	WScript.Echo(URI);
 	var b = new bench();
-    try
-    {	
-    	var database  = createDatabaseObject();
-   	    if (database == null)
-	    {
+	try
+	{	
+		var database  = createDatabaseObject();
+		if (database == null)
+		{
 			WScript.Echo("transactd.database ActiveXObject erorr.");
 			return 1;
-	    }
-	    	
+		}
 		if (isCreate > 0)
 		{
-    		if (database.Open(URI, TYPE_BDF, OPEN_NORMAL, "", ""))
-    			database.Drop();
-    		if (createDatabase(database, URI))
+			if (database.Open(URI, TYPE_BDF, OPEN_NORMAL, "", ""))
+				database.Drop();
+			if (createDatabase(database, URI))
 				insertData(database);	
 		}else 
 			database.Open(URI, TYPE_BDF, OPEN_NORMAL, "", "");
-		
-		
-	   
-	    if (database.stat !== 0)
-	    {  
-	        WScript.Echo("open table erorr:No" +  database.stat);
-	        return 2;
-	    }
-        var atu = createActiveTable(database, "user");
-	    var atg = createActiveTable(database, "groups");
+
+
+		if (database.stat !== 0)
+		{  
+			WScript.Echo("open table erorr:No" +  database.stat);
+			return 2;
+		}
+		var atu = createActiveTable(database, "user");
+		var atg = createActiveTable(database, "groups");
 		var ate = createActiveTable(database, "extention");		
-		
+
 		q = createQuery();;
 		gq = createGroupQuery();
 	
-	    b.report(btest, atu, atg, ate, n);
-	    b.show();
+		b.report(btest, atu, atg, ate, n);
+		b.show();
 	}
 	catch(e)
 	{
-		WScript.Echo("line " + e.name + " " + e.description);
+		WScript.Echo("Error: " + e.name + " " + e.description);
 		return 2;
 	}
-	
-    return resultCode;
+	return resultCode;
 }
 

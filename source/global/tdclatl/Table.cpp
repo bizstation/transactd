@@ -22,6 +22,7 @@
 #include "DbDef.h"
 #include "TableDef.h"
 #include "QueryBase.h"
+#include "PreparedQuery.h"
 #include <bzs/db/protocol/tdap/client/fields.h>
 
 using namespace bzs::db::protocol::tdap;
@@ -390,11 +391,8 @@ STDMETHODIMP CTableTd::Field(VARIANT Index, IField** retVal)
         return Error("Invalid index", IID_ITable);
 
     if (m_fieldObj == NULL)
-    {
         CComObject<CField>::CreateInstance(&m_fieldObj);
-        if (m_fieldObj)
-            m_fieldObj->AddRef();
-    }
+
     if (m_fieldObj)
     {
         client::fields fds(*m_tb);
@@ -600,18 +598,55 @@ STDMETHODIMP CTableTd::KeyValueDescription(BSTR* Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::SetQuery(IQueryBase* Value)
+STDMETHODIMP CTableTd::SetQuery(IQueryBase* Value, VARIANT_BOOL ServerPrepare, IPreparedQuery** retVal)
 {
     if (Value)
     {
         CQueryBase* p = dynamic_cast<CQueryBase*>(Value);
         if (p)
         {
-            m_tb->setQuery(&p->query());
-            return S_OK;
+            CComObject<CPreparedQuery>* rsObj;
+            CComObject<CPreparedQuery>::CreateInstance(&rsObj);
+
+            if (!rsObj)
+                return Error(_T("Can not create preparedQuery"), IID_ITable);
+            client::pq_handle pq = m_tb->setQuery(&p->query(), (bool)ServerPrepare);
+            if (pq)
+            {
+                rsObj->setPqHandle(pq);
+                IPreparedQuery* pd;
+                rsObj->QueryInterface(IID_IPreparedQuery, (void**)&pd);
+                _ASSERTE(pd);
+                *retVal = pd;
+                return S_OK;
+            }else
+            {
+                _TCHAR buf[1024];
+                client::table::tdapErr(NULL, m_tb->stat(), m_tb->tableDef()->tableName(), buf);
+                return Error(buf, IID_ITable);
+            }
         }
     }
     return S_FALSE;
+}
+
+STDMETHODIMP CTableTd::Prepare(IQueryBase* Value, VARIANT_BOOL ServerPrepare, IPreparedQuery** retVal)
+{
+    return SetQuery(Value, ServerPrepare, retVal);
+}
+
+STDMETHODIMP CTableTd::SetPrepare(IPreparedQuery* Value)
+{
+    if (Value)
+    {
+        CPreparedQuery* p = dynamic_cast<CPreparedQuery*>(Value);
+        if (p)
+        {
+            m_tb->setPrepare(p->getFilter());
+            return S_OK;
+        }
+    }
+    return Error(_T("PreparedQuery is NULL"), IID_ITable);
 }
 
 STDMETHODIMP CTableTd::FieldNumByName(BSTR Name, short* Value)
