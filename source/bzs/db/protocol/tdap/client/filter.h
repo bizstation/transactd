@@ -598,6 +598,7 @@ class filter
 
     inline int maxDataBuffer()
     {
+        //return 2048; //Small buffer test
         return m_isTransactd ? TDAP_MAX_DATA_SIZE : BTRV_MAX_DATA_SIZE;
     }
 
@@ -918,7 +919,7 @@ class filter
             cutsize += (int)m_seeks[i + m_seeksWritedCount].getLength();
             if (oversize - cutsize < 0)
             {
-                m_logicalLimitCount = i;
+                m_logicalLimitCount = i + m_seeksWritedCount;
                 return cutsize;
             }
         }

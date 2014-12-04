@@ -150,7 +150,33 @@ public:
 
     inline void setMemblockType(int v) { m_memblockType = v; }
 
-    inline void hasManyJoin(int rowCount, uchar_td* data)
+    inline void moveNextRow(int bookmarkSize)
+    {
+        m_ptr += m_len;
+        m_len = m_unpackLen = *((unsigned short*)m_ptr);
+        m_ptr += DATASIZE_BYTE;
+        if (bookmarkSize)
+        {
+            m_bookmark = *((bookmark_td*)(m_ptr));
+            m_ptr += bookmarkSize;
+        }
+    }
+
+    inline void moveBlobRow(int row)
+    {
+        // blob pointer is allready point to next row
+        if (m_hd)
+        {
+            while (row - m_hd->curRow)
+            {
+                for (int j = 0; j < m_hd->fieldCount; ++j)
+                    m_hd->nextField = (blobField*)m_hd->nextField->next();
+                ++m_hd->curRow;
+            }
+        }
+    }
+
+    inline void hasManyJoinMra(int rowCount, uchar_td* data)
     {
         int rowOffset = 0;
         int row = 0; // zero start
@@ -184,63 +210,102 @@ public:
             m_tb->m_impl->mraPtr->duplicateRow(row + rowOffset, count);
     }
 
+    inline void resetMra(filter* p, uchar_td* data, unsigned int totalSize,
+                      const blobHeader* hd)
+    {
+        //init
+        reset(p, data, totalSize, hd);
+        if (m_rowCount)
+        {
+            if (m_filter->hasManyJoin())
+                hasManyJoinMra(m_rowCount, data);
+            size_t recordLen = m_filter->fieldSelected()
+                                    ? m_filter->totalFieldLen()
+                                    : m_tb->tableDef()->maxRecordLen;
+            m_tb->m_impl->mraPtr->init(m_rowCount, recordLen, m_memblockType,
+                                        m_tb);
+
+            // copy each row data
+            
+            int bookmarkSize = m_filter->bookmarkSize();
+            multiRecordAlocator* mra = m_tb->m_impl->mraPtr;
+            const tabledef* td = m_tb->tableDef();
+            ushort_td fieldCount = m_filter->fieldCount();
+            m_tmpPtr = mra->ptr(m_row, mra_current_block);
+            int resultOffset = 0;
+            while (m_row < m_rowCount)
+            {
+                if ((m_len == 0) && m_filter->isSeeksMode() && fieldCount)
+                    mra->setInvalidRecord(m_row, true);
+                else
+                {
+                    if (m_filter->fieldSelected())
+                    {
+                        uchar_td* fieldPtr = m_ptr;
+                        resultOffset = 0;
+                        for (int i = 0; i < fieldCount; i++)
+                        {
+                            const fielddef& fd =
+                                td->fieldDefs[m_filter->selectFieldIndexes()[i]];
+                            fieldPtr += fd.unPackCopy(m_tmpPtr + resultOffset, fieldPtr);
+                            resultOffset += fd.len;
+                        }
+                    }
+                    else if (m_tb->valiableFormatType())
+                    {
+                        memset(m_tmpPtr, 0, td->maxRecordLen);
+                        memcpy(m_tmpPtr, m_ptr, m_len);
+                        m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
+                        resultOffset = m_unpackLen; 
+                    }
+                    else
+                    {
+                        memcpy(m_tmpPtr, m_ptr, m_len);
+                        resultOffset = m_len;
+                    }
+                    m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
+                    ++m_row;
+                    moveNextRow(bookmarkSize);
+                    moveBlobRow(m_row);
+                    m_tmpPtr += resultOffset;
+                }
+            }
+        }
+        //prebuilt next ead operation
+        setMemblockType(mra_nextrows);
+    }
+
     inline void reset(filter* p, uchar_td* data, unsigned int totalSize,
                       const blobHeader* hd)
     {
         m_filter = p;
         m_row = 0;
         m_rowCount = *((unsigned short*)data);
-        m_ptr = data + DATASIZE_BYTE;
-        m_len = m_unpackLen =
-            *((unsigned short*)m_ptr); // Not include bookmark and size bytes.
-        m_ptr += DATASIZE_BYTE;
-        if (m_filter->bookmarkSize())
+        if (m_rowCount)
         {
-            m_bookmark = *((bookmark_td*)(m_ptr));
-            m_ptr += m_filter->bookmarkSize();
+            m_ptr = data + DATASIZE_BYTE;
+            m_len = m_unpackLen =
+                *((unsigned short*)m_ptr); // Not include bookmark and size bytes.
+        
+            m_ptr += DATASIZE_BYTE;
+            if (m_filter->bookmarkSize())
+            {
+                m_bookmark = *((bookmark_td*)(m_ptr));
+                m_ptr += m_filter->bookmarkSize();
+            }
+            m_tmpPtr = data + totalSize;
+            m_hd = const_cast<blobHeader*>(hd);
         }
-        m_tmpPtr = data + totalSize;
-        if (m_tb->m_impl->mraPtr)
-        {
-            if (m_filter->hasManyJoin())
-                hasManyJoin(m_rowCount, data);
-            size_t recordLen = m_filter->fieldSelected()
-                                   ? m_filter->totalFieldLen()
-                                   : m_tb->tableDef()->maxRecordLen;
-            m_tb->m_impl->mraPtr->init(m_rowCount, recordLen, m_memblockType,
-                                       m_tb);
-        }
-        m_hd = const_cast<blobHeader*>(hd);
     }
 
     inline const uchar_td* moveRow(int count)
     {
         // move row data address pointer in result buffer
-        {
-            int bookmarkSize = m_filter->bookmarkSize();
-            for (int i = 0; i < count; i++)
-            {
-                m_ptr += m_len;
-                m_len = m_unpackLen = *((unsigned short*)m_ptr);
-                m_ptr += DATASIZE_BYTE;
-                if (bookmarkSize)
-                {
-                    m_bookmark = *((bookmark_td*)(m_ptr));
-                    m_ptr += bookmarkSize;
-                }
-            }
-        }
-        if (m_hd)
-        {
-            // blob pointer is allready point to next row
-            while (m_row - m_hd->curRow)
-            {
-                for (int j = 0; j < m_hd->fieldCount; ++j)
-                    m_hd->nextField = (blobField*)m_hd->nextField->next();
-                ++m_hd->curRow;
-            }
-        }
-
+        int bookmarkSize = m_filter->bookmarkSize();
+        for (int i = 0; i < count; i++)
+            moveNextRow(bookmarkSize);
+        moveBlobRow(m_row);
+       
         m_tb->m_fddefs->strBufs()->clear();
         multiRecordAlocator* mra = m_tb->m_impl->mraPtr;
         const tabledef* td = m_tb->tableDef();
@@ -248,61 +313,38 @@ public:
 
         if ((m_len == 0) && m_filter->isSeeksMode() && fieldCount)
         {
-            /*seek error*/
+
             m_seekMultiStat = STATUS_NOT_FOUND_TI;
-            if (mra)
-            {
-                m_tmpPtr = mra->ptr(m_row, mra_current_block);
-                mra->setInvalidRecord(m_row, true);
-            }
-            else
-                memset(m_tmpPtr, 0, td->maxRecordLen);
-            return m_tmpPtr;
-        }
-        else
-            m_seekMultiStat = 0;
-
-        if (mra)
-            m_tmpPtr = mra->ptr(m_row, mra_current_block);
-
-        if (m_filter->fieldSelected())
-        {
-            int resultOffset = 0;
-            uchar_td* fieldPtr = m_ptr;
-            if (!mra)
-                memset(m_tmpPtr, 0, td->maxRecordLen);
-            for (int i = 0; i < fieldCount; i++)
-            {
-                const fielddef& fd =
-                    td->fieldDefs[m_filter->selectFieldIndexes()[i]];
-                if (!mra)
-                    resultOffset = fd.pos;
-                fieldPtr += fd.unPackCopy(m_tmpPtr + resultOffset, fieldPtr);
-                if (mra)
-                    resultOffset += fd.len;
-            }
-            m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
-            return m_tmpPtr;
-        }
-        else if (m_tb->valiableFormatType())
-        {
             memset(m_tmpPtr, 0, td->maxRecordLen);
-            memcpy(m_tmpPtr, m_ptr, m_len);
-            m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
-            m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
             return m_tmpPtr;
         }
         else
         {
-            if (mra)
+            m_seekMultiStat = 0;
+            if (m_filter->fieldSelected())
             {
+                int resultOffset = 0;
+                uchar_td* fieldPtr = m_ptr;
+                memset(m_tmpPtr, 0, td->maxRecordLen);
+                for (int i = 0; i < fieldCount; i++)
+                {
+                    const fielddef& fd =
+                        td->fieldDefs[m_filter->selectFieldIndexes()[i]];
+                    resultOffset = fd.pos;
+                    fieldPtr += fd.unPackCopy(m_tmpPtr + resultOffset, fieldPtr);
+                }
+            }
+            else if (m_tb->valiableFormatType())
+            {
+                memset(m_tmpPtr, 0, td->maxRecordLen);
                 memcpy(m_tmpPtr, m_ptr, m_len);
-                m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
-                return m_tmpPtr;
+                m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
             }
             else
-                m_tb->setBlobFieldPointer((char*)m_ptr, m_hd);
-            return m_ptr;
+                m_tmpPtr = m_ptr;
+
+            m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
+            return m_tmpPtr;
         }
     }
 
@@ -414,18 +456,20 @@ void* table::dataBak() const
 
 void* table::reallocDataBuffer(uint_td v)
 {
-    if (m_impl->dataBak == NULL)
-        m_impl->dataBak = (void*)malloc(v);
-    else if (m_impl->dataBufferLen < v)
-        m_impl->dataBak = (void*)realloc(m_impl->dataBak, v);
-    else
-        v = m_buflen;
-    if (m_impl->dataBak == NULL)
+    if ((m_impl->dataBak == NULL) || (m_impl->dataBufferLen < v))
     {
-        v = 0;
-        m_stat = STATUS_CANT_ALLOC_MEMORY;
+        v = v * 15 / 10;  // 1.5f
+        if (m_impl->dataBak == NULL)
+            m_impl->dataBak = (void*)malloc(v);
+        else
+            m_impl->dataBak = (void*)realloc(m_impl->dataBak, v);
+        if (!m_impl->dataBak)
+        {
+            m_impl->dataBufferLen = 0;
+            m_stat = STATUS_CANT_ALLOC_MEMORY;
+        }else
+            m_impl->dataBufferLen = v;
     }
-    m_impl->dataBufferLen = v;
     setData(m_impl->dataBak);
     return m_impl->dataBak;
 }
@@ -594,10 +638,10 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
                 }
                 recCountOnce = calcNextReadRecordCount(recCountOnce, eTime);
                 filter->setMaxRows(recCountOnce);
-                result += *((ushort_td*)m_impl->dataBak);
+                result += *((ushort_td*)m_pdata/*m_impl->dataBak*/);
                 setBookMarks(m_impl->maxBookMarkedCount + 1,
-                             (void*)((char*)m_impl->dataBak + 2),
-                             *((ushort_td*)m_impl->dataBak));
+                             (void*)((char*)m_pdata/*m_impl->dataBak*/ + 2),
+                             *((ushort_td*)m_pdata/*m_impl->dataBak*/));
                 m_impl->maxBookMarkedCount = result;
                 onRecordCounting(result, Complete);
                 if (Complete)
@@ -655,34 +699,59 @@ void table::btrvGetExtend(ushort_td op)
     short stat = m_stat;
     if (!filter->isWriteComleted() && (stat == STATUS_REACHED_FILTER_COND))
         stat = STATUS_LIMMIT_OF_REJECT;
-
-    m_impl->rc->reset(filter, (uchar_td*)m_pdata, m_datalen,
-                      blobFieldUsed() ? getBlobHeader() : NULL);
-
-    m_stat = stat;
-    m_impl->filterPtr->setStat(m_stat);
-    // There is the right record.
-    if (m_impl->rc->rowCount() && (!m_impl->exBookMarking))
+    if (m_impl->mraPtr)
     {
-        m_pdata = (void*)m_impl->rc->setRow(0);
-        m_datalen = tableDef()->maxRecordLen;
-
-        m_stat = m_impl->rc->seekMultiStat();
+        m_impl->rc->resetMra(filter, (uchar_td*)m_pdata, m_datalen,
+                      blobFieldUsed() ? getBlobHeader() : NULL);
+        m_stat = stat;
+        m_impl->filterPtr->setStat(stat);
     }
-    else if (!filter->isStatContinue())
-        m_stat = STATUS_EOF;
-        
+    else
+    {
+        m_impl->rc->reset(filter, (uchar_td*)m_pdata, m_datalen,
+                          blobFieldUsed() ? getBlobHeader() : NULL);
+
+        m_stat = stat;
+        m_impl->filterPtr->setStat(stat);
+        // There is the right record.
+        if (m_impl->rc->rowCount() && (!m_impl->exBookMarking))
+        {
+            m_pdata = (void*)m_impl->rc->setRow(0);
+            m_datalen = tableDef()->maxRecordLen;
+
+            m_stat = m_impl->rc->seekMultiStat();
+        }else if (!filter->isStatContinue())
+            m_stat = STATUS_EOF;
+    }
+   
+}
+
+bool table::recordsLoop(ushort_td& op)
+{
+    client::filter* filter = m_impl->filterPtr.get();
+    filter->setPosTypeNext(true);
+    bool flag = (m_stat == STATUS_LIMMIT_OF_REJECT && (filter->rejectCount() == 0));
+    if (m_impl->mraPtr && !flag)
+    {
+        flag = m_impl->filterPtr->isStatContinue();
+        if (!flag)       
+            m_stat = m_impl->filterPtr->translateStat();//finish
+    }
+    if (flag)
+    {
+        op = m_impl->filterPtr->isSeeksMode() ? 
+                TD_KEY_SEEK_MULTI : (m_impl->filterPtr->direction() == table::findForword) ?
+                        TD_KEY_NEXT_MULTI : TD_KEY_PREV_MULTI;
+    }
+    return flag;
 }
 
 void table::getRecords(ushort_td op)
 {
-    client::filter* filter = m_impl->filterPtr.get();
     do
     {
         btrvGetExtend(op);
-        filter->setPosTypeNext(true);
-
-    } while (m_stat == STATUS_LIMMIT_OF_REJECT && (filter->rejectCount() == 0));
+    }while (recordsLoop(op));
 
     if ((m_stat == STATUS_REACHED_FILTER_COND) ||
         (m_stat == STATUS_LIMMIT_OF_REJECT))

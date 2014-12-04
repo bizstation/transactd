@@ -69,6 +69,7 @@ class client
     uint_td m_tmplen;
     bool m_logout;
     bool m_disconnected;
+    bool m_connecting;
 
     std::vector<char> m_sendbuf;
 
@@ -84,9 +85,10 @@ class client
         if (!con())
             m_req.result = 1;
         else
+        {
             m_disconnected = m_cons->disconnect(con());
-        if (m_req.result == 0)
             setCon(NULL);
+        }
     }
 
     std::string getHostName(const char* uri)
@@ -122,12 +124,15 @@ class client
                                      std::string& src);
 
 public:
-    client() : m_charsetIndexServer(-1), m_disconnected(true) {}
+    client() : m_charsetIndexServer(-1), m_disconnected(true), m_connecting(false) {}
 
     void cleanup()
     {
+        m_connecting = false;
+        // delete this. Do not change member variables after this line.
         if (m_disconnected)
             setClientThread(NULL);
+        
     }
 
     inline request& req() { return m_req; }
@@ -169,12 +174,16 @@ public:
     {
         if (!m_req.cid->con)
         {
+           
             std::string host = getHostName((const char*)m_req.keybuf);
             if (host == "")
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
             bzs::netsvc::client::connection* c = m_cons->connect(host);
             if (c)
+            {
                 setCon(c);
+                m_connecting = true;
+            }
             else
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
         }
@@ -287,7 +296,7 @@ public:
                 }
                 else
                     m_req.result = stat;
-                if (m_logout)
+                if (m_logout || (m_connecting && m_req.result))
                     disconnect();
                 m_preResult = m_req.result;
             }

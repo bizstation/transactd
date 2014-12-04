@@ -142,6 +142,7 @@ int _tmain(int argc, _TCHAR* argv[])
             std::tcout << "The query data build error." << std::endl;
             return 1;
         }
+
         activeTable atu(db, _T("user"));
         activeTable atg(db, _T("groups"));
         activeTable ate(db, _T("extention"));
@@ -151,8 +152,8 @@ int _tmain(int argc, _TCHAR* argv[])
         bzs::rtl::benchmark bm;
         bm.report(boost::bind(btest, &rs, &atu, &atg, &ate, kind, n),
                   "exec time ");
-        db.reset();
         }
+        db.reset();
 #ifdef _MSC_VER
         _CrtDumpMemoryLeaks();
 #endif

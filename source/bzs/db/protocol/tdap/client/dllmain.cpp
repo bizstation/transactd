@@ -103,10 +103,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
     }
     else if (reason == DLL_PROCESS_DETACH)
     {
+        try
+        {
         if (dllUnloadCallbackFunc)
             dllUnloadCallbackFunc();
-
         delete m_cons;
+        }
+        catch(...){}
         m_cons = NULL;
 
 #ifdef USETLS

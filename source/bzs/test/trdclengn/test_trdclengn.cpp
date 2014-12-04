@@ -343,7 +343,7 @@ void findNextLoop(table* tb, int start, int end)
         BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat = " << tb->stat());
         if (tb->stat()) break;
             
-        BOOST_CHECK_MESSAGE(start == tb->getFVint(fdi_id), "find value " << tb->getFVint(fdi_id));
+        BOOST_CHECK_MESSAGE(start == tb->getFVint(fdi_id), "find value " << start << " bad = " << tb->getFVint(fdi_id));
         tb->findNext(true); 
         ++start;
     }
@@ -450,26 +450,25 @@ void testFindIn(database* db)
 
     // Many params
     _TCHAR buf[20];
-    _ltot_s(1, buf, 20, 10);
-    q.addSeekKeyValue(buf, true);
-
-    for (int i = 2; i <= 10000; ++i)
+    for (int j = 1; j <= 10000; ++j)
     {
-        _ltot_s(i, buf, 20, 10);
-        q.addSeekKeyValue(buf);
+        _ltot_s(j, buf, 20, 10);
+        q.addSeekKeyValue(buf, (j == 1)/* reset */);
     }
     tb->setQuery(&q);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
-
-    tb->find();
     int i = 0;
+    tb->find();
+    
     while (0 == tb->stat())
     {
-
-        BOOST_CHECK_MESSAGE(++i == tb->getFVint(fdi_id), "findNext in value");
+        ++i;
+        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "findNext in value " << i << " = " << tb->getFVint(fdi_id));
+        if (i==9999)
+            i = 9999;
         tb->findNext(true);
     }
-    BOOST_CHECK_MESSAGE(i == 10000, "findNext in count");
+    BOOST_CHECK_MESSAGE(i == 10000, "findNext in count 10000 !=  " << i);
     BOOST_CHECK_MESSAGE(9 == tb->stat(), "find in end stat = " << tb->stat());
 
     // LogicalCountLimit
@@ -2973,14 +2972,14 @@ void testJoin(database* db)
     q.select(_T("id"), _T("name"), _T("group"))
         .where(_T("id"), _T("<="), 15000);
     atu.index(0).keyValue(1).read(rs, q);
-    BOOST_CHECK_MESSAGE(rs.size() == 15000, " rs.size()== 15000");
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, " rs.size() 1500 bad = " << rs.size());
 
     // Join extention::comment
     q.reset();
     ate.index(0).join(
         rs, q.select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany),
         _T("id"));
-    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join  rs.size()== 15000");
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join  rs.size() 1500 bad = " << rs.size());
 
     // test reverse
 

@@ -270,9 +270,10 @@ public:
 
     ~connectionImple()
     {
-        m_ios.stop();
+        
         try
         {
+            m_ios.stop();
             m_socket.close();
         }
         catch (...)

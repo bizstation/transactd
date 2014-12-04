@@ -110,6 +110,7 @@ class DLLLIB table : public nstable
     void btrvSeekMulti();
     bool doSeekMultiAfter(int row);
     void* doDdba(uint_td size);
+    bool recordsLoop(ushort_td& op);
 protected:
     explicit table(nsdatabase* pbe); // Inheritance is impossible
     virtual ~table();

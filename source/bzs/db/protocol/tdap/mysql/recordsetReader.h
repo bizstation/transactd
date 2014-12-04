@@ -694,6 +694,7 @@ public:
     inline void supplyValue(const logicalField* p)
     {
         assert(m_placeHolderNum > 0);
+        const_cast<logicalField*>(p)->opr = m_fd->opr;
         m_fd = p;
     }
 
