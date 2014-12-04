@@ -20,6 +20,7 @@
  ================================================================= */
 
 #include <bzs/db/protocol/tdap/tdapRequest.h>
+#include <bzs/netsvc/client/iconnection.h>
 
 #ifdef USE_DATA_COMPRESS
 #include <bzs/rtl/lzss.h>
@@ -27,13 +28,6 @@
 
 namespace bzs
 {
-namespace netsvc
-{
-namespace client
-{
-class connection;
-}
-}
 
 namespace db
 {
@@ -52,24 +46,77 @@ namespace tdap
 namespace client
 {
 
-class request : public bzs::db::protocol::tdap::request
+class request : public bzs::db::protocol::tdap::request, 
+                public bzs::netsvc::client::idirectReadHandler
 {
 public:
     clientID* cid;
 
     request() : bzs::db::protocol::tdap::request(), cid(NULL){};
 
-    inline void parse(const char* p, unsigned int segmentDataLen,
-                      unsigned short rows)
+    unsigned int onRead(unsigned int size, bzs::netsvc::client::connection* c) // orverride
     {
-        p += sizeof(unsigned int);
-        paramMask = *((ushort_td*)p);
-        p += sizeof(ushort_td);
-
-        result = *((ushort_td*)p);
-        p += sizeof(ushort_td);
-
+        unsigned int readlen = 0;
+        readlen += c->directRead(&paramMask, sizeof(uint_td)); // paramMask and result 
         if (P_MASK_POSBLK & paramMask)
+            readlen += c->directRead(pbk, POSBLK_SIZE);
+        if (P_MASK_DATALEN & paramMask)
+        {
+            uint_td tmp;
+            readlen += c->directRead(&tmp, sizeof(uint_td));
+            if (*datalen < tmp)
+            {
+                result = STATUS_BUFFERTOOSMALL;
+                return readlen;
+            }
+            else
+            {
+                *datalen = tmp;
+                if (P_MASK_DATA & paramMask)
+                    readlen += c->directRead(data, *datalen);
+            }
+        }
+
+        if (P_MASK_KEYBUF & paramMask)
+        {
+            keylen_td tmp;
+            readlen += c->directRead(&tmp, sizeof(keylen_td));
+            if (keylen < tmp)
+            {
+                result = STATUS_KEYBUFFERTOOSMALL;
+                return readlen;
+            }
+            memset(keybuf, 0, keylen);
+            keylen = tmp;
+            readlen += c->directRead(keybuf, keylen);
+        }
+        if (P_MASK_KEYNUM & paramMask)
+            readlen += c->directRead(&keyNum, sizeof(char_td));
+
+        if (paramMask & P_MASK_BLOBBODY)
+        {
+            blobHeader = (const bzs::db::blobHeader*)c->directReadRemain(size - readlen);
+            readlen = size;
+            if (blobHeader->rows)
+                blobHeader->resetCur();
+        }
+        else
+            blobHeader = NULL;
+        assert(readlen == size);
+        return readlen;
+    }
+
+    inline void parse(const char* p/*, unsigned int segmentDataLen,
+                      unsigned short rows*/)
+    {
+        p += sizeof(unsigned int);        //  4 byte read length
+        paramMask = *((ushort_td*)p);     //  2 byte paramMask
+        p += sizeof(ushort_td);
+
+        result = *((ushort_td*)p);        //  2 byte result
+        p += sizeof(ushort_td);
+
+        if (P_MASK_POSBLK & paramMask)    //  4 byte pbk
         {
             memcpy(pbk, p, POSBLK_SIZE);
             p += POSBLK_SIZE;
@@ -79,20 +126,23 @@ public:
         {
             uint_td tmp = *((uint_td*)p);
             if (*datalen < tmp)
+            {
                 result = STATUS_BUFFERTOOSMALL;
+                return ;
+            }
             else
                 *datalen = tmp;
             p += sizeof(uint_td);
         }
 
-        if (P_MASK_FINALDATALEN & paramMask)
+        /*if (P_MASK_FINALDATALEN & paramMask)
         {
             memset(data, 0, *datalen);
             if (*datalen < segmentDataLen)
                 result = STATUS_BUFFERTOOSMALL;
             else
                 *datalen = segmentDataLen;
-        }
+        }*/
 #ifdef USE_DATA_COMPRESS
         if (P_MASK_USELZSS & paramMask)
         {
@@ -104,15 +154,15 @@ public:
         }
         else
 #endif
-            if (P_MASK_DATA & paramMask)
+        if (P_MASK_DATA & paramMask)
         {
             memcpy(data, p, *datalen);
             p += *datalen;
-            if (P_MASK_FINALDATALEN & paramMask)
+            /*if (P_MASK_FINALDATALEN & paramMask)
             {
                 memcpy(data, &rows, 2);
                 p += sizeof(unsigned int);
-            }
+            }*/
         }
         if (P_MASK_KEYBUF & paramMask)
         {
@@ -133,11 +183,11 @@ public:
             p += sizeof(char_td);
         }
 
-        if (P_MASK_FINALRET & paramMask)
+        /*if (P_MASK_FINALRET & paramMask)
         {
             result = *((ushort_td*)p);
             p += sizeof(ushort_td);
-        }
+        }*/
 
         if (paramMask & P_MASK_BLOBBODY)
         {

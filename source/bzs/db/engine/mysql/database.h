@@ -203,37 +203,35 @@ class table : private boost::noncopyable
     std::string m_name;
 
     const short m_mode;
-    int m_id;
     unsigned short m_nullFields;
+    int m_id;
     uint m_recordLenCl;
     int m_recordFormatType;
 #ifdef USE_BTRV_VARIABLE_LEN
     uint m_lastVarLenBytes;
 #endif
     database& m_db;
-    char m_keyNum;
-
     mutable boost::scoped_array<unsigned char> m_keybuf;
     mutable boost::scoped_array<unsigned char> m_nonNccKeybuf;
 
-    bool m_nonNcc;
     int m_stat;
-    bool m_validCursor;
-    bool m_cursor;
-    bool m_locked;
-    bool m_changed;
-    bool m_nounlock;
-    bool m_bulkInserting;
     int m_percentResult;
-
     boost::shared_ptr<bookmarks> m_bms;
-
     String m_str;
     keynumConvert m_keyconv;
     IblobBuffer* m_blobBuffer;
-
     std::vector<Field*> m_nonKeySegNullFields;
-
+    char m_keyNum;
+    struct
+    {
+        bool m_nonNcc : 1;
+        bool m_validCursor : 1;
+        bool m_cursor : 1;
+        bool m_locked : 1;
+        bool m_changed : 1;
+        bool m_nounlock : 1;
+        bool m_bulkInserting : 1;
+    };
     table(TABLE* table, database& db, const std::string& name, short mode,
           int id);
     void moveKey(boost::function<int()> func);
@@ -590,6 +588,7 @@ public:
             ret = m_table->file->ha_rnd_init(true);
         assert(ret == 0);
     }
+    
 };
 
 class fieldBitmap

@@ -18,8 +18,8 @@
  ================================================================= */
 
 #include "database.h"
-#include <boost/bind.hpp>
 #include "IReadRecords.h"
+#include <boost/bind.hpp>
 #include "percentageKey.h"
 #include "mydebuglog.h"
 #include "mysqlThd.h"
@@ -602,12 +602,11 @@ bool table::noKeybufResult = true;
 table::table(TABLE* myTable, database& db, const std::string& name, short mode,
              int id)
     : m_table(myTable), m_name(name), m_mode(mode), m_id(id), m_db(db),
-      m_keyNum(-1), m_keybuf(new unsigned char[MAX_KEYLEN]),
-      m_nonNccKeybuf(new unsigned char[MAX_KEYLEN]), m_nonNcc(false), m_stat(0),
-      m_validCursor(true), m_cursor(false), m_locked(false), m_changed(false),
-      m_nounlock(false), m_bulkInserting(false),
-      m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL)
-
+      m_keybuf(new unsigned char[MAX_KEYLEN]),
+      m_nonNccKeybuf(new unsigned char[MAX_KEYLEN]),
+      m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
+      m_stat(0), m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
+      m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false)
 {
 
     m_table->read_set = &m_table->s->all_set;

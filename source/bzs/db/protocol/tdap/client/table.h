@@ -70,6 +70,7 @@ public:
 };
 
 class filter;
+typedef boost::shared_ptr<filter> filter_ptr; 
 /** @endcond */
 
 class DLLLIB table : public nstable
@@ -78,6 +79,7 @@ class DLLLIB table : public nstable
     friend class database;
     friend class filter;
     friend class fields;
+    friend struct logic;
 
     struct tbimpl* m_impl;
     class fielddefs* m_fddefs;
@@ -134,6 +136,7 @@ protected:
     void init(tabledef* def, short filenum, bool regularDir);
     void* attachBuffer(void* newPtr, bool unpack = false, size_t size = 0);
     void dettachBuffer();
+    bool prepare();
 
     virtual void doInit(tabledef* def, short filenum, bool regularDir);
 
@@ -181,8 +184,14 @@ public:
     void findNext(bool notIncCurrent = true);
     void findPrev(bool notIncCurrent = true);
     bookmark_td bookmarkFindCurrent() const;
-    boost::shared_ptr<filter> setQuery(const queryBase* query);
-    void setQuery(boost::shared_ptr<filter> stmt);
+    filter_ptr setQuery(const queryBase* query, bool serverPrepare=false);
+    void setQuery(filter_ptr stmt);
+
+    filter_ptr prepare(const queryBase* query, bool serverPrepare=false)
+    {
+        return setQuery(query, serverPrepare);
+    }
+
     void setFilter(const _TCHAR* str, ushort_td rejectCount,
                    ushort_td cacheCount, bool autoEscape = true);
     short fieldNumByName(const _TCHAR* name);
@@ -581,6 +590,27 @@ public:
 
     static query* create(); // implemet int activeTable.cpp
 };
+
+int DLLLIB makeSupplyValues(/*in out*/const _TCHAR* values[], int size,
+                         const _TCHAR* value, const _TCHAR* value1 = NULL,
+                         const _TCHAR* value2 = NULL, const _TCHAR* value3 = NULL,
+                         const _TCHAR* value4 = NULL, const _TCHAR* value5 = NULL,
+                         const _TCHAR* value6 = NULL, const _TCHAR* value7 = NULL,
+                         const _TCHAR* value8 = NULL, const _TCHAR* value9 = NULL,
+                         const _TCHAR* value10 = NULL);
+
+bool DLLLIB supplyValue(filter_ptr& filter, int index, const _TCHAR* v);
+bool DLLLIB supplyValue(filter_ptr& filter, int index, short v);
+bool DLLLIB supplyValue(filter_ptr& filter, int index, int v);
+bool DLLLIB supplyValue(filter_ptr& filter, int index, __int64 v);
+bool DLLLIB supplyValue(filter_ptr& filter, int index, float v);
+bool DLLLIB supplyValue(filter_ptr& filter, int index, double v);
+
+
+
+
+
+
 
 #pragma warning(default : 4251)
 

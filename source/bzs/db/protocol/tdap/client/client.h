@@ -65,10 +65,9 @@ class client
     std::string m_sql;
     std::string m_serverCharData;
     std::string m_serverCharData2;
-
+    blobBuffer m_blobBuffer;
     uint_td m_tmplen;
     bool m_logout;
-    blobBuffer m_blobBuffer;
     bool m_disconnected;
 
     std::vector<char> m_sendbuf;
@@ -78,7 +77,7 @@ class client
     inline void setCon(bzs::netsvc::client::connection* con)
     {
         m_req.cid->con = con;
-    };
+    }
 
     inline void disconnect()
     {
@@ -131,7 +130,7 @@ public:
             setClientThread(NULL);
     }
 
-    request& req() { return m_req; }
+    inline request& req() { return m_req; }
 
     inline void setParam(ushort_td op, posblk* pbk, void_td* data,
                          uint_td* datalen, void_td* keybuf, keylen_td keylen,
@@ -257,23 +256,33 @@ public:
     {
         if (result() == 0)
         {
-            if (!con())
+            bzs::netsvc::client::connection* c = con();
+            if (!c)
                 m_preResult = ERROR_TD_NOT_CONNECTED;
             else
             {
-                char* p = con()->sendBuffer(m_req.sendLenEstimate());
+                char* p = c->sendBuffer(m_req.sendLenEstimate());
                 unsigned int size = m_req.serialize(p);
                 short stat = 0;
                 if ((m_req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer.blobs())
                     size = m_req.serializeBlobBody(
-                        &m_blobBuffer, p, size, con()->sendBufferSize(),
-                        con()->optionalBuffers(), stat);
+                        &m_blobBuffer, p, size, c->sendBufferSize(),
+                        c->optionalBuffers(), stat);
                 if (stat == 0)
                 {
-                    if (m_req.paramMask & P_MASK_DATALEN)
-                        con()->setReadBufferSizeIf(*m_req.datalen);
-                    p = con()->asyncWriteRead(size);
-                    m_req.parse(p, con()->datalen(), con()->rows());
+                    if (m_req.paramMask & P_MASK_EX_SENDLEN)
+                    {
+                        c->setDirectReadHandler(&m_req);
+                        p = c->asyncWriteRead(size);
+                        c->setDirectReadHandler(NULL);
+                    }else
+                    {
+                        if (m_req.paramMask & P_MASK_DATALEN)
+                            c->setReadBufferSizeIf(*m_req.datalen);
+                        p = c->asyncWriteRead(size);
+                        m_req.parse(p);
+                    }
+                      
                 }
                 else
                     m_req.result = stat;
@@ -289,7 +298,6 @@ public:
     {
         *data = m_req.blobHeader;
         return *data ? 0 : 1;
-        ;
     }
 
     inline ushort_td addBlob(const blob* data, bool endRow)

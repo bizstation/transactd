@@ -32,6 +32,50 @@ namespace tdap
 namespace client
 {
 
+/* For php use */
+class prepareStatement
+{
+    filter_ptr m_filter;
+    int m_index;
+public:
+    prepareStatement(filter_ptr filter) : m_filter(filter),m_index(0){}
+    
+    inline bool supplyValue(int index, const _TCHAR* v)
+    {
+        return client::supplyValue(m_filter, index, v);
+    }
+    
+    inline bool supplyValue(int index, __int64 v)
+    {
+        return client::supplyValue(m_filter, index, v);
+    }
+
+    inline bool supplyValue(int index, double v)
+    {
+        return client::supplyValue(m_filter, index, v);
+    }
+
+    inline bool addValue(const _TCHAR* v)
+    {
+        return client::supplyValue(m_filter, m_index++, v);
+    }
+    
+    inline bool addValue(__int64 v)
+    {
+        return client::supplyValue(m_filter, m_index++, v);
+    }
+
+    inline bool addValue(double v)
+    {
+        return client::supplyValue(m_filter, m_index++, v);
+    }
+
+    inline void resetAddIndex() { m_index = 0; }
+
+    inline filter_ptr& getFilter() { return m_filter; };
+};
+
+
 class DLLLIB activeTable
 {
     class activeTableImple* m_imple;
@@ -71,11 +115,58 @@ public:
     activeTable& index(int v);
     table_ptr table() const;
     activeTable& option(int v);
-    boost::shared_ptr<filter> prepare(queryBase& q);
-    activeTable& read(recordset& mdls, queryBase& q);
-    activeTable& read(recordset& mdls, queryBase& q, validationFunc func);
-    activeTable& read(recordset& mdls, boost::shared_ptr<filter>& q);
-    activeTable& read(recordset& mdls, boost::shared_ptr<filter>& q, validationFunc func);
+    filter_ptr prepare(queryBase& q, bool serverPrepare = false);
+    activeTable& read(recordset& rs, queryBase& q);
+    activeTable& read(recordset& rs, queryBase& q, validationFunc func);
+    activeTable& read(recordset& rs, filter_ptr& q);
+    activeTable& read(recordset& rs, filter_ptr& q, validationFunc func);
+    activeTable& read(recordset& rs, filter_ptr& q, 
+                        const std::vector<std::_tstring>& values);
+    activeTable& read(recordset& rs, filter_ptr& q, 
+                        validationFunc func,
+                        const std::vector<std::_tstring>& values);
+
+    template<class T0>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0);
+    template<class T0, class T1>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1);
+    template<class T0, class T1, class T2>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
+                      const T2 v2);
+    template<class T0, class T1, class T2, class T3>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
+                      const T2 v2, const T3 v3);
+    template<class T0, class T1, class T2, class T3, class T4>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
+                      const T2 v2, const T3 v3, const T4 v4);
+    template<class T0, class T1, class T2, class T3, class T4, class T5>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
+                      const T2 v2, const T3 v3, const T4 v4, const T5 v5);
+    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
+                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                      const T6 v6);
+    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+             class T7>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
+                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                      const T6 v6, const T7 v7);
+    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+             class T7, class T8>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
+                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                      const T6 v6, const T7 v7, const T8 v8);
+    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+             class T7, class T8, class T9>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
+                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                      const T6 v6, const T7 v7, const T8 v8, const T9 v9);
+    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+             class T7, class T8, class T9, class T10>
+    activeTable& read(recordset& rs, filter_ptr& q, const T0 v0, const T1 v1,
+                      const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                      const T6 v6, const T7 v7, const T8 v8, const T9 v9,
+                      const T10 v10);
 
     /** @cond INTERNAL */
 

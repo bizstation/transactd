@@ -130,6 +130,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TD_REC_DELLETEATKEY             71
 #define TD_KEY_GE_NEXT_MULTI            72
 #define TD_KEY_LE_PREV_MULTI            73
+#define TD_FILTER_PREPARE               74
 #define TD_CONNECT                      78
 #define TD_BEGIN_SHAPSHOT               88
 #define TD_END_SNAPSHOT                 89
@@ -325,6 +326,8 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define STATUS_TABLE_EXISTS_ERROR       59
 #define STATUS_LIMMIT_OF_REJECT         60
 #define STATUS_WARKSPACE_TOO_SMALL      61
+#define STATUS_INVALID_PREPAREID        62
+#define STATUS_LMIT_OF_PREPAREED        63
 #define STATUS_REACHED_FILTER_COND      64
 #define STATUS_INVALID_FIELD_OFFSET     65
 #define STATUS_CHANGE_CONFLICT          80
@@ -352,6 +355,8 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define FILTER_CURRENT_TYPE_NOTINC      0
 #define FILTER_CURRENT_TYPE_INC         1
 #define FILTER_CURRENT_TYPE_NOBOOKMARK  2
+#define FILTER_TYPE_SUPPLYVALUE         4
+
 
 
 #define NIS_FILED_NAME                  "$nf"
@@ -385,7 +390,7 @@ struct trdVersiton
  If you change this version then you need change The ($TargetName) project options too.
  */
 #define C_INTERFACE_VER_MAJOR "2"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "0"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "1"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
@@ -449,7 +454,7 @@ struct trdVersiton
  */
 
 #define CPP_INTERFACE_VER_MAJOR "2"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "0"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "1"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
@@ -466,7 +471,7 @@ struct trdVersiton
 #endif
 
 #define TRANSACTD_VER_MAJOR 2//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 0//##8 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 1//##8 Build marker! Don't remove
 #define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

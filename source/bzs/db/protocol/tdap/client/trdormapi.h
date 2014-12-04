@@ -483,7 +483,6 @@ public:
 
     void prepare(boost::shared_ptr<filter>& q)
     {
-        //m_alias.reverseAliasNamesQuery(q);  
         m_tb->setQuery(q);
     }
 
@@ -553,13 +552,15 @@ public:
         return readMap(map, q, func);
     }
 
-    template <class Query> activeObject& read(collection_vec_type& mdls, Query& q)
+    template <class Query> 
+    activeObject& read(collection_vec_type& mdls, Query& q)
     {
         mdlsHandler<MAP, collection_vec_type> map(mdls);
         return readMap(map, q);
     }
 
-    template <class Container, class Query> activeObject& read(Container& mdls, Query& q)
+    template <class Container, class Query> 
+    activeObject& read(Container& mdls, Query& q)
     {
         typename MAP::collection_orm_typename map(mdls);
         return readMap(map, q);
@@ -819,10 +820,10 @@ public:
         return *this;
     }
 
-    boost::shared_ptr<filter> prepare(queryBase& q)
+    filter_ptr prepare(queryBase& q, bool serverPrepare=false)
     {
         m_alias.reverseAliasNamesQuery(q);  
-        return m_tb->setQuery(&q);
+        return m_tb->prepare(&q, serverPrepare);
     }
 
 };

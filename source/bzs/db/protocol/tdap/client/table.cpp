@@ -756,6 +756,88 @@ void table::btrvSeekMulti()
     m_stat = STATUS_EOF;
 }
 
+void table::doFind(ushort_td op, bool notIncCurrent)
+{
+    /*
+    First, read from cache.
+    If whole row readed from cache then select operation by m_impl->filterPtr->stat()
+
+    */
+    m_stat = 0;
+    int row = m_impl->rc->row() + 1;
+
+    if (m_impl->rc->withinCache(row) && (!m_impl->exBookMarking))
+    { /* read from cache */
+
+        /*Is direction same */
+        if (!m_impl->filterPtr->checkFindDirection(op))
+        {
+            m_stat = 1;
+            return;
+        }
+        m_pdata = (void*)m_impl->rc->setRow(row);
+        m_stat = m_impl->rc->seekMultiStat();
+
+        /*If seek multi error, set keyvalue for keyValueDescription*/
+        if (m_stat != 0)
+            setSeekValueField(row);
+
+        // m_datalen = m_impl->rc->len();
+        m_datalen = tableDef()->maxRecordLen;
+    }
+    else if (m_impl->rc->isEndOfRow(row))
+    {
+        /* whole row readed */
+        /*Is direction same */
+        if (!m_impl->filterPtr->checkFindDirection(op))
+        {
+            m_stat = 1;
+            return;
+        }
+        if (m_impl->filterPtr->isStatContinue())
+        {
+            //continue reading
+            m_impl->rc->setMemblockType(mra_nextrows);
+            getRecords(op);
+        }else
+        {
+            //finish
+            m_stat = m_impl->filterPtr->translateStat();
+            m_impl->filterPtr->setStat(0);
+        }
+    }
+    else
+    {
+        //reading
+        m_impl->filterPtr->setPosTypeNext(notIncCurrent);
+        getRecords(op);
+    }
+}
+
+bool table::prepare()
+{
+    m_stat = 0;
+    if (!m_impl->filterPtr)
+    {
+        m_stat = STATUS_FILTERSTRING_ERROR;
+        return false;
+    }
+
+    m_pdata = m_impl->dataBak;
+    if (!m_impl->filterPtr->writeBuffer())
+    {
+        m_stat = STATUS_WARKSPACE_TOO_SMALL;
+        return false;
+    }
+    m_datalen = m_impl->filterPtr->exDataBufLen();
+
+    tdap((ushort_td)(TD_FILTER_PREPARE));
+    if (m_stat != STATUS_SUCCESS)
+        return false;
+    m_impl->filterPtr->setServerPrepared(*((ushort_td*)m_pdata));
+    return true;
+}
+
 void table::find(eFindType type)
 {
     if (!m_impl->filterPtr)
@@ -831,64 +913,6 @@ void table::findLast()
     }
 }
 
-void table::doFind(ushort_td op, bool notIncCurrent)
-{
-    /*
-    First, read from cache.
-    If whole row readed from cache then select operation by m_impl->filterPtr->stat()
-
-    */
-    m_stat = 0;
-    int row = m_impl->rc->row() + 1;
-
-    if (m_impl->rc->withinCache(row) && (!m_impl->exBookMarking))
-    { /* read from cache */
-
-        /*Is direction same */
-        if (!m_impl->filterPtr->checkFindDirection(op))
-        {
-            m_stat = 1;
-            return;
-        }
-        m_pdata = (void*)m_impl->rc->setRow(row);
-        m_stat = m_impl->rc->seekMultiStat();
-
-        /*If seek multi error, set keyvalue for keyValueDescription*/
-        if (m_stat != 0)
-            setSeekValueField(row);
-
-        // m_datalen = m_impl->rc->len();
-        m_datalen = tableDef()->maxRecordLen;
-    }
-    else if (m_impl->rc->isEndOfRow(row))
-    {
-        /* whole row readed */
-        /*Is direction same */
-        if (!m_impl->filterPtr->checkFindDirection(op))
-        {
-            m_stat = 1;
-            return;
-        }
-        if (m_impl->filterPtr->isStatContinue())
-        {
-            //continue reading
-            m_impl->rc->setMemblockType(mra_nextrows);
-            getRecords(op);
-        }else
-        {
-            //finish
-            m_stat = m_impl->filterPtr->translateStat();
-            m_impl->filterPtr->setStat(0);
-        }
-    }
-    else
-    {
-        //reading
-        m_impl->filterPtr->setPosTypeNext(notIncCurrent);
-        getRecords(op);
-    }
-}
-
 void table::findNext(bool notIncCurrent)
 {
 
@@ -910,7 +934,7 @@ void table::findPrev(bool notIncCurrent)
         seekPrev();
 }
 
-void table::setQuery(boost::shared_ptr<filter> stmt)
+void table::setQuery(filter_ptr stmt)
 {
     m_stat = 0;
     if (!stmt)
@@ -924,7 +948,7 @@ void table::setQuery(boost::shared_ptr<filter> stmt)
     m_impl->filterPtr = stmt;
 }
 
-boost::shared_ptr<filter> table::setQuery(const queryBase* query)
+filter_ptr table::setQuery(const queryBase* query, bool serverPrepare)
 {
 
     m_stat = 0;
@@ -949,12 +973,17 @@ boost::shared_ptr<filter> table::setQuery(const queryBase* query)
     try
     {
         ret = m_impl->filterPtr->setQuery(query);
+        if (!ret)
+            m_stat = STATUS_FILTERSTRING_ERROR;
+        else
+        {
+            if (serverPrepare && isUseTransactd())
+                ret = prepare();
+        }
+        if (!ret)
+             m_impl->filterPtr.reset();
     }
     catch (...)
-    {
-    }
-
-    if (!ret)
     {
         m_stat = STATUS_FILTERSTRING_ERROR;
         m_impl->filterPtr.reset();
@@ -2298,6 +2327,72 @@ queryBase* queryBase::create()
 {
     return new queryBase();
 }
+
+int makeSupplyValues(const _TCHAR* values[], int size,
+                         const _TCHAR* value, const _TCHAR* value1,
+                         const _TCHAR* value2, const _TCHAR* value3,
+                         const _TCHAR* value4, const _TCHAR* value5,
+                         const _TCHAR* value6, const _TCHAR* value7,
+                         const _TCHAR* value8, const _TCHAR* value9,
+                         const _TCHAR* value10)
+{
+    if (size == 0) return 0;
+    memset(values, sizeof(_TCHAR*), size);
+    values[0] = value;
+    if (size < 2 || !value1) return 1;
+    values[1] = value1;
+    if (size < 3 || !value2) return 2; 
+    values[2] = value2;
+    if (size < 4 || !value3) return 3; 
+    values[3] = value3;
+    if (size < 5 || !value4) return 4; 
+    values[4] = value4;
+    if (size < 6 || !value5) return 5; 
+    values[5] = value5;
+    if (size < 7 || !value6) return 6; 
+    values[6] = value6;
+    if (size < 8 || !value7) return 7; 
+    values[7] = value7;
+    if (size < 9 || !value8) return 8; 
+    values[8] = value8;
+    if (size < 10 || !value9) return 9; 
+    values[9] = value9;
+    if (size < 11 || !value10) return 10; 
+    values[10] = value10;
+    return 11;
+}
+
+
+bool supplyValue(filter_ptr& filter, int index, const _TCHAR* v)
+{
+    return filter->supplyValue(index, v);
+}
+
+bool supplyValue(filter_ptr& filter, int index, short v)
+{
+    return filter->supplyValue(index, v);
+}
+
+bool supplyValue(filter_ptr& filter, int index, int v)
+{
+    return filter->supplyValue(index, v);
+}
+
+bool supplyValue(filter_ptr& filter, int index, __int64 v)
+{
+    return filter->supplyValue(index, v);
+}
+
+bool supplyValue(filter_ptr& filter, int index, float v)
+{
+    return filter->supplyValue(index, v);
+}
+
+bool supplyValue(filter_ptr& filter, int index, double v)
+{
+    return filter->supplyValue(index, v);
+}
+
 
 } // namespace client
 } // namespace tdap

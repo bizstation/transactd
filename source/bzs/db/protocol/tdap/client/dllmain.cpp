@@ -76,7 +76,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
 #ifdef _MSC_VER
         _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
         _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
-        _CrtSetBreakAlloc(155);
+        //_CrtSetBreakAlloc(155);
 #endif
 
 #ifdef USETLS
@@ -290,6 +290,8 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_KEY_NEXT_MULTI:
         case TD_KEY_PREV_MULTI:
+        case TD_KEY_SEEK_MULTI:
+        case TD_FILTER_PREPARE:
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_DATA |
                                         P_MASK_DATALEN | P_MASK_EX_SENDLEN |
                                         P_MASK_KEYNUM;
@@ -316,11 +318,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_POS_PREV_MULTI:
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_DATA |
                                         P_MASK_DATALEN | P_MASK_EX_SENDLEN;
-            break;
-        case TD_KEY_SEEK_MULTI:
-            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_DATA |
-                                        P_MASK_KEYNUM | P_MASK_DATALEN |
-                                        P_MASK_EX_SENDLEN;
             break;
         case TD_GETDIRECTORY:
         case TD_SETDIRECTORY:

@@ -321,15 +321,6 @@ private:
      */
     inline ushort_td maxKeylen() const { return keylen ? keylen : len; };
 
-    inline ushort_td keyFromVarlen() const
-    {
-        if ((type >= ft_myvarchar) && (type <= ft_mywvarbinary))
-            return len < 256 ? 1 : 2;
-        else if ((type == ft_myblob) || (type == ft_mytext))
-            return len - 8;
-        return 0;
-    }
-
 public:
     inline unsigned int codePage() const
     {
@@ -356,25 +347,30 @@ public:
 
     /* copy key data for send to mysql
      *  return next copy address.
+     *  If datalen==0xff then From is field formated (string) type.
+     *  If datalen!=0xff then From is none field formated (string) type.
      */
-    inline uchar_td* keyCopy(uchar_td* to, const uchar_td* from)
+    inline uchar_td* keyCopy(uchar_td* to, const uchar_td* from, ushort_td datalen=0xff)
     {
 
         ushort_td kl = maxKeylen(); // size of max key segmnet for mysql
-        ushort_td copylen = kl;
         memset(to, 0x00, kl);
         ushort_td keyVarlen =
-            keyFromVarlen(); // size of var sizeByte for record.
+            varLenByteForKey(); // size of var sizeByte for record.
+        ushort_td copylen = std::min<ushort_td>(kl, datalen);
         if (keyVarlen)
         {
-            copylen = (ushort_td)std::min<uint_td>((uint_td)copylen,
+            if (datalen==0xff)
+                copylen = (ushort_td)std::min<uint_td>((uint_td)copylen,
                                                    keyDataLen(from));
+            // Var size is allways 2byte for key.
             memcpy(to, &copylen, 2);
             to += 2;
-            from = keyData(from);
+            if (datalen==0xff)
+                from = keyData(from);
         }
         memcpy(to, from, copylen);
-        return to + kl - keyVarlen;
+        return to + kl - keyVarlen;// incremnt 2 +  (store_len - varlen)
     }
 
     /* Get keyValue from keybuf for seek mode error description
@@ -385,7 +381,7 @@ public:
                                                  ushort_td& size)
     {
         ushort_td keyVarlen =
-            keyFromVarlen(); // size of var sizeByte for record.
+            varLenByteForKey(); // size of var sizeByte for record.
         if (keyVarlen)
         {
             size = *((ushort_td*)from);
@@ -412,6 +408,16 @@ public:
     inline uint_td blobLenBytes() const
     {
         if ((type == ft_myblob) || (type == ft_mytext))
+            return len - 8;
+        return 0;
+    }
+
+    inline ushort_td varLenByteForKey() const
+    {
+        if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
+            (type == ft_lstring))
+            return len < 256 ? 1 : 2;
+        else if ((type == ft_myblob) || (type == ft_mytext))
             return len - 8;
         return 0;
     }

@@ -169,8 +169,6 @@ private:
     void setFVNumeric(double data);
     //  ---- end regacy interfaces ----  //
 
-    inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
-        : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds){};
 
 /** @cond INTERNAL */
 #if defined(SWIG) ||                                                           \
@@ -181,6 +179,9 @@ public:
     /** @endcond */
 
 public:
+    inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
+        : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds){};
+
     // To inline
     inline field(const field& r) : m_fd(r.m_fd), m_ptr(r.m_ptr), m_fds(r.m_fds)
     {

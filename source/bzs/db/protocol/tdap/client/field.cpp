@@ -23,8 +23,6 @@
 #include <bzs/db/protocol/tdap/fieldComp.h>
 #include "stringConverter.h"
 #include <bzs/rtl/stringBuffers.h>
-#include <boost/shared_array.hpp>
-
 #ifdef BCB_32
 #pragma option push
 #pragma option -O1
@@ -33,6 +31,7 @@
 #else
 #include <boost/unordered_map.hpp>
 #endif
+#include <boost/shared_array.hpp>
 
 #pragma package(smart_init)
 
@@ -1602,7 +1601,7 @@ double field::getFVDecimal() const
     buf[len - 1] = (unsigned char)(buf[len - 1] & 0xF0);
     for (i = 0; i < len; i++)
     {
-        sprintf_s(n, 50, "%02x", buf[i]);
+        sprintf_s(n, 10, "%02x", buf[i]);
         strcat(result, n);
     }
     i = (int)strlen(result);

@@ -479,9 +479,13 @@ void testSetQuery(database* db)
 {
     table* tb = openTable(db);
     queryBase q;
-    q.queryString(_T("id >= 10 and id < 20000"));
+    q.queryString(_T("id >= ? and id < ?"));
     q.reject(1).limit(0);
     boost::shared_ptr<filter> stmt = tb->setQuery(&q);
+    const _TCHAR* vs[2];
+    int nn = makeSupplyValues(vs, 2, _T("10"), _T("20000"));
+    stmt->supplyValues(vs, nn);
+    
     int v = 10;
     tb->setFV((short)0, v);
     tb->find(table::findForword);
@@ -493,18 +497,29 @@ void testSetQuery(database* db)
         tb->findNext(true); // 11 ～ 19
         ++i;
     }
+    nn = makeSupplyValues(vs, 2, _T("100"), _T("10000"));
+    stmt->supplyValues(vs, nn);
+
     tb->setQuery(stmt);
-    v = 10;
+    v = 100;
     tb->setFV((short)0, v);
     tb->find(table::findForword);
     i = v;
-    while (i < 20000)
+    while (i < 10000)
     {
         BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat");
         BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "find value " << i);
-        tb->findNext(true); // 11 ～ 19
+        tb->findNext(true); 
         ++i;
     }
+
+    const _TCHAR* values[11];
+    int n = makeSupplyValues(values, 11, _T("abc"), _T("efg"), _T("efg")
+                                        , _T("abc"), _T("efg"), _T("efg")
+                                        , _T("abc"), _T("efg"), _T("efg")
+                                        , _T("abc"), _T("efg"));
+
+    BOOST_CHECK_MESSAGE(n == 11, "makeSupplyValues");
 
     tb->release();
 }
@@ -2484,6 +2499,14 @@ void testLogic(database* db)
     BOOST_CHECK_MESSAGE(lc.len == 8, " logic joinAfter");
 
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic joinAfter");
+
+    // placeHolder
+    lc.setParam(tb, _T("name"), _T("="), _T("?"), eCand);
+    BOOST_CHECK_MESSAGE(lc.placeHolder == true, " logic placeHolder");
+
+    lc.setValue(tb, _T("abc*"));
+    BOOST_CHECK_MESSAGE(strcmp((const char*)lc.data, "abc") == 0, "logic setValue");
+    BOOST_CHECK_MESSAGE(lc.len == 3, "logic setValue");
 
     header hd;
     len = hd.writeBuffer(0, true) - (unsigned char*)0;

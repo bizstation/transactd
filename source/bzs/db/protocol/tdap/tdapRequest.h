@@ -75,16 +75,6 @@ namespace tdap
     P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN | P_MASK_KEYBUF
 #define P_MASK_INS_AUTOINC P_MASK_MOVPOS
 
-struct req1
-{
-    ushort_td op;
-    void_td* keybuf;
-    uchar_td keylen;
-    short_td keyNum;
-
-    void write(std::ostream& ost);
-};
-
 #pragma pack(push, 1)
 pragma_pack1;
 
