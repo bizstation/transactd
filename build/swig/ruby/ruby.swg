@@ -145,11 +145,14 @@ static void mark_activeTable(void* ptr) {
 %ignore bzs::db::protocol::tdap::client::database::setOnDeleteRecord;
 
 // * bzs/db/protocol/tdap/client/field.h *
-%rename(__getitem__) bzs::db::protocol::tdap::client::fielddefs::operator[] (int) const;
-%rename(__getitem__) bzs::db::protocol::tdap::client::fielddefs::operator[] (const _TCHAR*) const;
+%ignore bzs::db::protocol::tdap::client::fielddefs::operator[] (const std::_tstring&) const;
+%rename(__getitem__) bzs::db::protocol::tdap::client::fielddefs::operator[] (int index) const;
+%rename(__getitem__) bzs::db::protocol::tdap::client::fielddefs::operator[] (const _TCHAR* name) const;
 
 // * bzs/db/protocol/tdap/client/fields.h *
-%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[];
+%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[] (short index) const;
+%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[] (const _TCHAR* name) const;
+%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[] (const std::_tstring&) const;
   // typemap and expand for get field value.
 %typemap(argout) (short fieldsBase_getitem_index) {
   bzs::db::protocol::tdap::client::field f = arg1->operator[]($1);
@@ -198,6 +201,36 @@ static void mark_activeTable(void* ptr) {
 };
 %clear _TCHAR* fieldsBase_getitem_index;
 
+// * bzs/db/protocol/tdap/client/groupQuery.h *
+%rename(__getitem__) bzs::db::protocol::tdap::client::fieldNames::operator[] (int index) const;
+
+// * bzs/db/protocol/tdap/client/memRecord.h *
+%rename(__setitem__) bzs::db::protocol::tdap::client::field::setBin;
+%extend bzs::db::protocol::tdap::client::writableRecord {
+  void __setitem__(short writableRecord_setitem_index, const _TCHAR* v) {
+    self->operator[](writableRecord_setitem_index) = v;
+  }
+  void __setitem__(const _TCHAR* writableRecord_setitem_index, const _TCHAR* v) const {
+    self->operator[](writableRecord_setitem_index) = v;
+  }
+  void __setitem__(short writableRecord_setitem_index, __int64 v) {
+    self->operator[](writableRecord_setitem_index) = v;
+  }
+  void __setitem__(const _TCHAR* writableRecord_setitem_index, __int64 v) const {
+    self->operator[](writableRecord_setitem_index) = v;
+  }
+  void __setitem__(short writableRecord_setitem_index, double v) {
+    self->operator[](writableRecord_setitem_index) = v;
+  }
+  void __setitem__(const _TCHAR* writableRecord_setitem_index, double v) const {
+    self->operator[](writableRecord_setitem_index) = v;
+  }
+  // binary
+};
+
+// * bzs/db/protocol/tdap/client/recordset.h *
+%rename(__getitem__) bzs::db::protocol::tdap::client::recordset::operator[];
+
 // * bzs/db/protocol/tdap/client/table.h *
   // define setFVbin
 %ignore bzs::db::protocol::tdap::client::table::setFV(short, const void *, uint_td);
@@ -235,33 +268,6 @@ static void mark_activeTable(void* ptr) {
 };
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(short, uint_td&);
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(const _TCHAR *, uint_td&);
-
-// * bzs/db/protocol/tdap/client/memRecord.h *
-%rename(__setitem__) bzs::db::protocol::tdap::client::field::setBin;
-%extend bzs::db::protocol::tdap::client::writableRecord {
-  void __setitem__(short writableRecord_setitem_index, const _TCHAR* v) {
-    self->operator[](writableRecord_setitem_index) = v;
-  }
-  void __setitem__(const _TCHAR* writableRecord_setitem_index, const _TCHAR* v) const {
-    self->operator[](writableRecord_setitem_index) = v;
-  }
-  void __setitem__(short writableRecord_setitem_index, __int64 v) {
-    self->operator[](writableRecord_setitem_index) = v;
-  }
-  void __setitem__(const _TCHAR* writableRecord_setitem_index, __int64 v) const {
-    self->operator[](writableRecord_setitem_index) = v;
-  }
-  void __setitem__(short writableRecord_setitem_index, double v) {
-    self->operator[](writableRecord_setitem_index) = v;
-  }
-  void __setitem__(const _TCHAR* writableRecord_setitem_index, double v) const {
-    self->operator[](writableRecord_setitem_index) = v;
-  }
-  // binary
-};
-
-// * bzs/db/protocol/tdap/client/recordset.h *
-%rename(__getitem__) bzs::db::protocol::tdap::client::recordset::operator[];
 
 
 /* ===============================================
