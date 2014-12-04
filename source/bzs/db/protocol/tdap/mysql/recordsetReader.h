@@ -628,6 +628,7 @@ class fieldAdapter
     unsigned char m_keySeg;
     char m_judgeType;
     char m_sizeBytes;
+    char opr;
     struct
     {
     mutable bool m_judge : 1;
@@ -693,8 +694,7 @@ public:
 
     inline void supplyValue(const logicalField* p)
     {
-        assert(m_placeHolderNum > 0);
-        const_cast<logicalField*>(p)->opr = m_fd->opr;
+        const_cast<logicalField*>(p)->opr = opr;
         m_fd = p;
     }
 
@@ -748,12 +748,13 @@ public:
             return this < &r; // no change order
         return m_keySeg < r.m_keySeg;
     }
+    void oprCache() { opr = m_fd->opr; }
 };
 
 class fields
 {
     std::vector<fieldAdapter> m_fields;
-    unsigned short m_placeholders;
+
 public:
 
     void init(const extRequest& req, position& position, const KEY* key, bool forword)
@@ -765,18 +766,13 @@ public:
         if (m_fields.size() != req.logicalCount)
             m_fields.resize(req.logicalCount);
         int lastIndex = req.logicalCount;
-        m_placeholders = 0;
+
         for (int i = 0; i < req.logicalCount; ++i)
         {
             fieldAdapter& fda = m_fields[i];
             fda.init(fd, position, key, forword);
 
-            //placeholder ?
-            if (fda.m_placeHolderNum)
-            {
-                ++m_placeholders;
-                fda.m_placeHolderNum = m_placeholders;
-            }
+            fda.m_placeHolderNum = i;
             
             eCompType log = (eCompType)(fd->logType & 0xF);
             switch (log)
@@ -843,23 +839,33 @@ public:
 
     bool setSupplyValues(const extRequest& req)
     {
-        int n = 0;
         const logicalField* fd = &req.field;
         for (int i = 0; i < req.logicalCount; ++i)
         {
             for (int j=0;j<m_fields.size();++j)
             {
                 fieldAdapter& fa = m_fields[j];
-                if (fa.m_placeHolderNum == i+1)
+                if (fa.m_placeHolderNum == i)
                 {
                     fa.supplyValue(fd);
-                    ++n;
+                    break;
                 }
             }
             fd = fd->next();
         }
-        return (n == m_placeholders);
+        return true;
     }
+
+    void setNextPtr()
+    {
+        for (int i = 0; i < m_fields.size() - 1; ++i)
+        {
+            m_fields[i].m_next = &m_fields[i + 1];
+            m_fields[i].oprCache();
+        }
+        m_fields[m_fields.size() - 1].oprCache(); 
+    }
+    
 };
 
 
@@ -894,7 +900,7 @@ public:
     {
         if (bm)
         {
-            assert(readMap);
+            assert(readMap == NULL);
             readMapSize = ((bm->n_bits + 7)/ 8);
             readMap = new unsigned char[readMapSize];
             memcpy(readMap, (unsigned char*)bm->bitmap, readMapSize);
@@ -903,16 +909,18 @@ public:
 
     void assignResultDef(const extResultDef* src)
     {
-        assert(rd);
+        assert(rd == NULL);
         rd = (extResultDef*)malloc(src->memSize());
         memcpy(rd, src, src->memSize());
     }
 
     void assignFields(const fields* src)
     {
-        assert(fds);
+        assert(fds == NULL);
         fds = new fields();
         *(fds) = *src;
+        fds->setNextPtr();
+        
     }
     
     void release()

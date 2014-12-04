@@ -43,22 +43,23 @@ struct sortDescription
 
 class recordsetSorter
 {
-    const std::vector<sortDescription>& m_sortDesc;
-
+    const sortDescription* m_begin;
+    const sortDescription* m_end;
 public:
-    recordsetSorter(std::vector<sortDescription>& sortDesc)
-        : m_sortDesc(sortDesc)
+
+    recordsetSorter(sortDescription* begin, sortDescription* end)
+        : m_begin(begin), m_end(end)
     {
     }
+
     bool operator()(const row_ptr& l, const row_ptr r) const
     {
-        std::vector<sortDescription>::const_iterator it = m_sortDesc.begin();
-        while (it != m_sortDesc.end())
+        const sortDescription* it = m_begin;
+        while (it != m_end)
         {
-            int ret = (*l)[(*it).index].comp((*r)[(*it).index], 0);
+            int ret = (*l)[it->index].comp((*r)[it->index], 0);
             if (ret)
-                return ((*it).asc) ? (ret < 0) : (ret > 0);
-
+                return it->asc ? (ret < 0) : (ret > 0);
             ++it;
         }
         return false;
@@ -202,15 +203,12 @@ private:
         }
     }
 
-    void makeSortFields(const _TCHAR* name,
-                        std::vector<sortDescription>& sortDesc, bool asc = true)
+    void makeSortFields(const _TCHAR* name, sortDescription* sd, bool asc = true)
     {
-        sortDescription sd;
-        sd.index = m_fds->indexByName(name);
-        if (sd.index == -1)
+        sd->index = m_fds->indexByName(name);
+        if (sd->index == -1)
             THROW_BZS_ERROR_WITH_MSG(_T("orderBy:Invalid field name"));
-        sd.asc = asc;
-        sortDesc.push_back(sd);
+        sd->asc = asc;
     }
 
     int getMemBlockIndex(unsigned char* ptr) const
@@ -489,42 +487,44 @@ public:
             const _TCHAR* name5 = NULL, const _TCHAR* name6 = NULL,
             const _TCHAR* name7 = NULL, const _TCHAR* name8 = NULL)
     {
-        if (m_recordset.size())
+        if (m_recordset.size() > 1)
         {
-            std::vector<sortDescription> sds;
-            makeSortFields(name1, sds, true);
+            sortDescription sds[9];
+            sortDescription* sd = &sds[0];
+            makeSortFields(name1, sd, true);
             if (name2)
-                makeSortFields(name2, sds, true);
+                makeSortFields(name2, ++sd, true);
             if (name3)
-                makeSortFields(name3, sds, true);
+                makeSortFields(name3, ++sd, true);
             if (name4)
-                makeSortFields(name4, sds, true);
+                makeSortFields(name4, ++sd, true);
             if (name5)
-                makeSortFields(name5, sds, true);
+                makeSortFields(name5, ++sd, true);
             if (name6)
-                makeSortFields(name6, sds, true);
+                makeSortFields(name6, ++sd, true);
             if (name7)
-                makeSortFields(name7, sds, true);
+                makeSortFields(name7, ++sd, true);
             if (name8)
-                makeSortFields(name8, sds, true);
-            std::sort(begin(), end(), recordsetSorter(sds));
+                makeSortFields(name8, ++sd, true);
+            std::sort(begin(), end(), recordsetSorter(&sds[0], ++sd));
         }
         return *this;
     }
 
     inline recordsetImple& orderBy(const sortFields& orders)
     {
-        if (m_recordset.size())
+        if (m_recordset.size() > 1)
         {
-            std::vector<sortDescription> sds;
-
+            if (orders.size() > 8)
+                THROW_BZS_ERROR_WITH_MSG(_T("orderBy:Too many keys"));
+            sortDescription sds[9];
             for (int i = 0; i < (int)orders.size(); ++i)
-                makeSortFields(orders[i].name.c_str(), sds, orders[i].asc);
-
-            std::sort(begin(), end(), recordsetSorter(sds));
+                makeSortFields(orders[i].name.c_str(), &sds[i], orders[i].asc);
+            std::sort(begin(), end(), recordsetSorter(&sds[0], &sds[orders.size()]));
         }
         return *this;
     }
+
 
     inline recordsetImple& reverse()
     {

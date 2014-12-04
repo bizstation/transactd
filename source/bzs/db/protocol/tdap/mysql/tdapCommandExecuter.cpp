@@ -1093,7 +1093,10 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_KEY_LE_PREV_MULTI:
             nw->setClientBuffferSize(*(req.datalen));
             if (doReadMultiWithSeek(req, op, nw) == EXECUTE_RESULT_SUCCESS)
+            {
+                m_tb = NULL;
                 return EXECUTE_RESULT_SUCCESS;
+            }
             break;
         case TD_KEY_SEEK_MULTI:
         case TD_KEY_NEXT_MULTI:
@@ -1102,7 +1105,10 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_POS_PREV_MULTI:
             nw->setClientBuffferSize(*(req.datalen));
             if (doReadMulti(req, op, nw) == EXECUTE_RESULT_SUCCESS)
+            {
+                m_tb = NULL;
                 return EXECUTE_RESULT_SUCCESS;
+            }
             break;
         case TD_FILTER_PREPARE:
             m_tb = getTable(req.pbk->handle);
@@ -1152,7 +1158,6 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         }
         if (m_tb)
             m_tb->unUse();
-
         DEBUG_WRITELOG2(op, req)
         size = req.serialize(m_tb, resultBuffer);
         short dymmy = 0;
@@ -1161,6 +1166,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             size = req.serializeBlobBody(m_blobBuffer, resultBuffer, size,
                                          FILE_MAP_SIZE, optionalData, dymmy);
 
+        m_tb = NULL;
         if (transactionResult)
         {
             if ((op == TD_BEGIN_TRANSACTION) || (op == TD_BEGIN_SHAPSHOT))
@@ -1205,6 +1211,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
     DEBUG_WRITELOG3(op, req, true);
     req.paramMask = 0;
     size = req.serialize(NULL, resultBuffer);
+    m_tb = NULL;
     return EXECUTE_RESULT_SUCCESS;
 }
 
