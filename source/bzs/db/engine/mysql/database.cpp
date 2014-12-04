@@ -1865,7 +1865,6 @@ __int64 table::insert(bool ncc)
 void table::beginUpdate(char keyNum)
 {
     m_stat = 0;
-    m_table->file->try_semi_consistent_read(1);
     beginDel();
     if (m_stat == 0)
     {
@@ -1886,6 +1885,7 @@ void table::beginDel()
         m_stat = STATUS_INVALID_LOCKTYPE;
         return;
     }
+    m_table->file->try_semi_consistent_read(1);
     if (m_cursor)
     {
         m_stat = 0;
