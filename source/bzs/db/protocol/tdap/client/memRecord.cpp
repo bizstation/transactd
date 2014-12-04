@@ -78,6 +78,11 @@ autoMemory::~autoMemory()
 
 autoMemory& autoMemory::operator=(const autoMemory& p)
 {
+    if (owner)
+    {
+        delete[] ptr;
+        delete endFieldIndex;
+    }
     ptr = p.ptr;
     size = p.size;
     endFieldIndex = p.endFieldIndex;
@@ -136,7 +141,7 @@ inline memoryRecord::memoryRecord(fielddefs& fdinfo) : fieldsBase(&fdinfo)
 }
 
 memoryRecord::memoryRecord(const memoryRecord& r)
-    : fieldsBase(r.m_fns)//, m_memblock(r.m_memblock)
+    : fieldsBase(r.m_fns)
 {
 #ifdef JOIN_UNLIMIT
     m_memblock = r.m_memblock;

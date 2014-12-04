@@ -39,6 +39,10 @@ namespace client
 #define MEM_ALLOC_TYPE_ONE    1
 #define MEM_ALLOC_TYPE_ARRAY  2
 
+/* This class specify memory allocation type owned. 
+   If copy this object do not copy menbers.
+   Because copy destination allocation type specify destination owned.
+*/
 class refarymem
 {
     union
@@ -53,6 +57,14 @@ class refarymem
     virtual void releaseMemory() = 0;
 
 protected:
+
+    refarymem(const refarymem& r):m_parent(NULL), 
+            m_child(0), m_allocType(MEM_ALLOC_TYPE_NONE){}
+
+    refarymem& operator=(const refarymem& r)
+    {
+        return *this;
+    }
 
     inline int allocType() {return m_allocType;}
 
@@ -172,15 +184,14 @@ public:
 
     inline field operator[](const _TCHAR* name) const
     {
-        int index = m_fns->indexByName(std::_tstring(name));
-        return operator[](index);
+        return operator[](std::_tstring(name));
     }
 
-    /*inline field operator[](const std::_tstring& name) const
+    inline field operator[](const std::_tstring& name) const
     {
-        
+        int index = m_fns->indexByName(name);
         return operator[](index);
-    }*/
+    }
 
     inline size_t size() const { return m_fns->size(); }
 
