@@ -299,7 +299,7 @@ public:
         p->m_unionFds = m_unionFds;
         p->m_fds.reset(m_fds->clone(), boost::bind(&fielddefs::release, _1));
 
-        std::vector<__int64> offsets;
+        std::vector<size_t> offsets;
         if (m_memblock.size())
         {
             autoMemory* ama = autoMemory::create((int)m_memblock.size());
@@ -310,7 +310,7 @@ public:
                 am->setParams(m_memblock[i]->ptr, m_memblock[i]->size, 0, true);
                 *am->endFieldIndex = *m_memblock[i]->endFieldIndex;
                 p->m_memblock.push_back(boost::shared_ptr<autoMemory>(am,  boost::bind(&autoMemory::release, _1)));
-                offsets.push_back((__int64)(am->ptr - m_memblock[i]->ptr));
+                offsets.push_back((am->ptr - m_memblock[i]->ptr));
             }
         }
         if (m_recordset.size())
@@ -332,8 +332,6 @@ public:
                 if (m_fds->operator[](j).blobLenBytes())
                 {
                     blobs.push_back((short)j);
-                    //field& fd = (*m_recordset)[0][j];
-                    //uint_td size;
                     unsigned char* p = (unsigned char*)(*m_recordset[0])[j].ptr()
                                         + m_fds->operator[](j).blobLenBytes();
                     short index = (short)getMemBlockIndex(p);
@@ -361,10 +359,8 @@ public:
                 }
 
                 for (int j = 0; j < (int)blobs.size(); ++j)
-                {
                     row->getFieldNoCheck(blobs[j])
                         .offsetBlobPtr(offsets[offsetIndex[j]]);
-                }
             }
         }
         return p;
@@ -566,11 +562,14 @@ public:
     inline void appendField(const _TCHAR* name, int type, short len)
     {
         assert(m_fds->size());
+        
         fielddef fd((*m_fds)[0]);
         fd.len = len;
         fd.pos = 0;
         fd.type = type;
         fd.setName(name);
+        if (fd.blobLenBytes())
+            THROW_BZS_ERROR_WITH_MSG(_T("Can not append Blob or Text field."));
         m_fds->push_back(&fd);
         for (int i = 0; i < (int)m_unionFds.size(); ++i)
             m_unionFds[i]->push_back(&fd);

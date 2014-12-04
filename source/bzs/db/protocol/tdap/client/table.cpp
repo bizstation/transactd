@@ -2267,7 +2267,9 @@ queryBase& queryBase::direction(table::eFindType v)
 
 queryBase& queryBase::all()
 {
-    reset();
+    m_impl->m_selects.clear();
+    m_impl->m_wheres.clear();
+    m_impl->m_keyValues.clear();
     m_impl->m_nofilter = true;
     return *this;
 }

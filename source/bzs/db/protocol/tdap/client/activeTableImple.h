@@ -131,8 +131,7 @@ class activeTableImple : public activeObject<map_orm>
     }
 
     template <class Container>
-    inline void
-    makeJoinFieldInfo(Container& mdls, const fielddefs* fds,
+    inline bool makeJoinFieldInfo(Container& mdls, const fielddefs* fds,
                       const _TCHAR*  fns[], int fnsCount,
                       std::vector<typename Container::key_type>& fieldIndexes,
                       std::vector<joinInfo>& joinFields)
@@ -144,6 +143,8 @@ class activeTableImple : public activeObject<map_orm>
         if (kd->segmentCount < fnsCount)
             THROW_BZS_ERROR_WITH_MSG(_T("Join key fields are too many.\n ")
                                      _T("Check index number and field count."));
+
+        bool hasMany = ((kd->segmentCount > fnsCount) || kd->segments[0].flags.bit0);/* duplicate key*/
 
         for (int i = 0; i < fnsCount; ++i)
         {
@@ -175,6 +176,7 @@ class activeTableImple : public activeObject<map_orm>
                 }
             }
         }
+        return hasMany;
     }
 
     template <class Container>
@@ -200,8 +202,7 @@ class activeTableImple : public activeObject<map_orm>
 
 
     template <class Container>
-    inline void
-    addSeekValues(row& mdl, pq_handle& q,
+    inline void addSeekValues(row& mdl, pq_handle& q,
                   std::vector<typename Container::key_type>& fieldIndexes,
                   std::vector<joinInfo>& joinFields)
     {
@@ -261,21 +262,21 @@ class activeTableImple : public activeObject<map_orm>
         mraResetter mras(m_tb);
         typename Container::iterator it = mdls.begin(), ite = mdls.end();
 
-        bool optimize = !(stmt->cachedOptimaize() & queryBase::joinHasOneOrHasMany);
         joinmap_type joinRowMap;
 
         std::vector<typename Container::key_type> fieldIndexes;
         std::vector<joinInfo> joinFields;
 
         const fielddefs* fds = mdls.fieldDefs();
-        makeJoinFieldInfo<Container>(mdls, fds, fns, fnsCount, fieldIndexes, joinFields);
+        bool hasMany = makeJoinFieldInfo<Container>(mdls, fds, fns, fnsCount, fieldIndexes, joinFields);
+        if (!hasMany)
+            hasMany = (stmt->cachedOptimaize() & queryBase::joinHasOneOrHasMany);
 
         // optimizing join
         // if base recordsetImple is made by unique key and join by uniqe field,
         // that can not opitimize.
         //
-        
-        if (optimize)
+        if (!hasMany)
         {
             makeJoinMap(mdls, joinRowMap, fieldIndexes);
             reserveSeekSize(stmt, joinRowMap.size() * fieldIndexes.size(), fnsCount);
@@ -310,7 +311,7 @@ class activeTableImple : public activeObject<map_orm>
         if (m_tb->mra())
         {
             m_tb->mra()->setJoinType(innner ? mra_innerjoin : mra_outerjoin);
-            if (optimize)
+            if (!hasMany)
                 m_tb->mra()->setJoinRowMap(&joinRowMap);
         }
         m_tb->find();
