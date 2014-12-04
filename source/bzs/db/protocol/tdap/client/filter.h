@@ -908,10 +908,9 @@ class filter
             if (len > maxDataBuffer())
                 len -= calcLogicalCutsize(len - maxDataBuffer() + 1);
 
+            m_ret.maxRows = m_hd.logicalCount = (ushort_td)(m_seeksLimitIndex - m_seeksWritedCount);    
             if (m_hasManyJoin)
                 m_ret.maxRows = (unsigned short)std::min<int>(maxRows, USHRT_MAX);
-            else
-                m_ret.maxRows = m_hd.logicalCount = (ushort_td)(m_seeksLimitIndex - m_seeksWritedCount);    
         }
         else
         {
@@ -1043,7 +1042,7 @@ public:
 
     bool supplyValues(const _TCHAR* values[], int size)
     {
-        if (m_placeHolderIndexes.size() != size)
+        if ((int)m_placeHolderIndexes.size() != size)
             return false;
         for (int i = 0;i< size;++i)
             supplyValue(i, values[i]);

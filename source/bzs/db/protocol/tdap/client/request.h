@@ -266,7 +266,7 @@ public:
         }
         else
 #endif
-            if (P_MASK_EX_SENDLEN & paramMask)
+        if (P_MASK_EX_SENDLEN & paramMask)
         {
             unsigned int v = *((unsigned int*)data);
             v &= 0xFFFFFFF; // 28bit

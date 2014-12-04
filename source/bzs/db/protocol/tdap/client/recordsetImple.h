@@ -76,17 +76,17 @@ class multiRecordAlocatorImple : public multiRecordAlocator
 
 public:
     inline multiRecordAlocatorImple(recordsetImple* rs);
-    inline void init(size_t recordCount, size_t recordLen, int addType,
-                     const table* tb);
+    inline void init(size_t recordCount, size_t recordLen,
+                     int addType, const table* tb);
+    inline unsigned char* allocBlobBlock(size_t size);
     inline unsigned char* ptr(size_t row, int stat);
     inline void setRowOffset(int v) { m_rowOffset = v; }
     inline void setJoinType(int v) { m_addType = v; }
     inline void setInvalidRecord(size_t row, bool v);
     inline void setCurFirstFiled(int v) { m_curFirstFiled = v; }
-    inline void
-    setJoinRowMap(const std::vector<std::vector<int> >* v /*, size_t size*/)
+    inline void setJoinRowMap(const std::vector<std::vector<int> >* v)
     {
-        m_joinRowMap = v; /*m_joinMapSize = size;*/
+        m_joinRowMap = v;
     }
     inline const std::vector<std::vector<int> >* joinRowMap() const
     {
@@ -118,6 +118,15 @@ public:
     typedef std::vector<row_ptr>::iterator iterator;
 
 private:
+    unsigned char* allocBlobBlock(size_t size)
+    {
+        autoMemory* am = autoMemory::create();
+        am->addref();
+        am->setParams(NULL, size, 0, true);
+        m_memblock.push_back(boost::shared_ptr<autoMemory>(am, boost::bind(&autoMemory::release, _1)));
+        return am->ptr;
+    }
+
     void registerMemoryBlock(unsigned char* ptr, size_t size, size_t recordLen,
                              int addtype, const table* tb = NULL)
     {
@@ -316,12 +325,28 @@ public:
             }
             autoMemory* amar = autoMemory::create(amindex);
             amindex = 0;
+            std::vector<short> blobs;
+            std::vector<short> offsetIndex;
+            for (int j = 0; j < (int)m_fds->size(); ++j)
+            {
+                if (m_fds->operator[](j).blobLenBytes())
+                {
+                    blobs.push_back((short)j);
+                    //field& fd = (*m_recordset)[0][j];
+                    //uint_td size;
+                    unsigned char* p = (unsigned char*)(*m_recordset[0])[j].ptr()
+                                        + m_fds->operator[](j).blobLenBytes();
+                    short index = (short)getMemBlockIndex(p);
+                    offsetIndex.push_back(index);
+                }
+            }
             for (int i = 0; i < (int)m_recordset.size(); ++i)
             {
-                memoryRecord* mr = recs + i;
-                p->push_back(mr);
                 memoryRecord* row =
                     dynamic_cast<memoryRecord*>(m_recordset[i]);
+                memoryRecord* mr = recs + i;
+                p->push_back(mr);
+                mr->m_invalidRecord = row->m_invalidRecord;
                 for (int j = 0; j < (int)row->memBlockSize(); ++j)
                 {
                     const autoMemory& mb = row->memBlock(j);
@@ -333,6 +358,12 @@ public:
                     const boost::shared_ptr<autoMemory>& am = p->m_memblock[index];
                     mr->setRecordData(a, ptr, mb.size, am->endFieldIndex, mb.owner);
                     ++amindex;
+                }
+
+                for (int j = 0; j < (int)blobs.size(); ++j)
+                {
+                    row->getFieldNoCheck(blobs[j])
+                        .offsetBlobPtr(offsets[offsetIndex[j]]);
                 }
             }
         }
@@ -593,6 +624,11 @@ inline void multiRecordAlocatorImple::init(size_t recordCount, size_t recordLen,
 {
     m_rs->registerMemoryBlock(NULL, recordCount * recordLen, recordLen,
                               addType | m_addType, tb);
+}
+
+unsigned char* multiRecordAlocatorImple::allocBlobBlock(size_t size)
+{
+    return m_rs->allocBlobBlock(size);
 }
 
 inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)

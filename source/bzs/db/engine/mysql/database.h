@@ -301,7 +301,7 @@ public:
         m_blobBuffer = blobBuffer;
     }
 
-    inline IblobBuffer* blobBuffer(IblobBuffer* blobBuffer)
+    inline IblobBuffer* blobBuffer() const
     {
         return m_blobBuffer;
     }

@@ -103,7 +103,7 @@ struct joinInfo
 
 #define JOIN_KEYVALUE_TYPE_PTR 0
 #define JOIN_KEYVALUE_TYPE_STR 1
-
+#define MAX_JOIN_KEY_SIZE 8
 class activeTableImple : public activeObject<map_orm>
 {
 
@@ -232,28 +232,20 @@ class activeTableImple : public activeObject<map_orm>
                                      _T("Check prepared statement or query."));
     }
 
-    inline void setJoinKeySize(queryBase& q, int n) { q.joinKeySize(n); }
-
-    inline void setJoinKeySize(pq_handle& q, int n) { }
-
-    template <class Query>
-    pq_handle prebuiltJoin(const _TCHAR* fns[8], int &fnsCount, Query& q, const _TCHAR* name1,
+    int makeJoinKeys(const _TCHAR* fns[MAX_JOIN_KEY_SIZE], int &fnsCount, const _TCHAR* name1,
                 const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                 const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                 const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                 const _TCHAR* name8 = NULL)
     {
-        m_alias.reverseAliasNamesQuery(q);
-
+        int count = 0;
         fns[0] = name1; fns[1] = name2; fns[2] = name3; fns[3] = name4;
         fns[4] = name5; fns[5] = name6; fns[6] = name7; fns[7] = name8;
         
-        for (fnsCount = 0; fnsCount < 8; ++fnsCount)
-            if ((fns[fnsCount] == NULL) || (fns[fnsCount][0] == 0x00))
+        for (count = 0; count < MAX_JOIN_KEY_SIZE; ++count)
+            if ((fns[count] == NULL) || (fns[count][0] == 0x00))
                 break;
-        
-        setJoinKeySize(q, fnsCount);
-        return setQuery(m_tb, q);
+        return count;
     }
 
     inline void reserveSeekSize(pq_handle& q,  size_t size, int keySize)
@@ -381,10 +373,12 @@ public:
                      const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                      const _TCHAR* name8 = NULL)
     {
-        const _TCHAR* fns[8];
-        int fnsCount;
-        pq_handle stmt = prebuiltJoin(fns, fnsCount, q, name1, name2, name3, 
-                        name4, name5, name6, name7, name8);
+        const _TCHAR* fns[MAX_JOIN_KEY_SIZE];
+        m_alias.reverseAliasNamesQuery(q);
+        int fnsCount = makeJoinKeys(fns, fnsCount, name1, name2, name3, name4,
+                                        name5, name6, name7, name8);
+        q.joinKeySize(fnsCount);
+        pq_handle stmt = setQuery(m_tb, q);
         doJoin(true, mdls, stmt, fns, fnsCount);
     }
 
@@ -395,11 +389,14 @@ public:
               const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
               const _TCHAR* name8 = NULL)
     {
-        const _TCHAR* fns[8];
-        int fnsCount;
-        pq_handle stmt = prebuiltJoin(fns, fnsCount, q, name1, name2, name3, 
-                        name4, name5, name6, name7, name8);
+        const _TCHAR* fns[MAX_JOIN_KEY_SIZE];
+        m_alias.reverseAliasNamesQuery(q);
+        int fnsCount = makeJoinKeys(fns, fnsCount, name1, name2, name3, name4,
+                                        name5, name6, name7, name8);
+        q.joinKeySize(fnsCount);
+        pq_handle stmt = setQuery(m_tb, q);
         doJoin(false, mdls, stmt, fns, fnsCount);
+
     }
 
     inline void join(Container& mdls, pq_handle& q, const _TCHAR* name1,
@@ -408,12 +405,11 @@ public:
                      const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                      const _TCHAR* name8 = NULL)
     {
-        const _TCHAR* fns[8];
-        int fnsCount;
-        pq_handle stmt = prebuiltJoin(fns, fnsCount, q, name1, name2, name3, 
-                        name4, name5, name6, name7, name8);
-        doJoin(true, mdls, stmt, fns, fnsCount);
-
+        const _TCHAR* fns[MAX_JOIN_KEY_SIZE];
+        int fnsCount = makeJoinKeys(fns, fnsCount, name1, name2, name3, name4,
+                                        name5, name6, name7, name8);
+        pq_handle stmt = setQuery(m_tb, q);
+        doJoin(true, mdls, stmt, fns, fnsCount);    
     }
 
     inline void
@@ -423,10 +419,10 @@ public:
               const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
               const _TCHAR* name8 = NULL)
     {
-        const _TCHAR* fns[8];
-        int fnsCount;
-        pq_handle stmt = prebuiltJoin(fns, fnsCount, q, name1, name2, name3, 
-                        name4, name5, name6, name7, name8);
+        const _TCHAR* fns[MAX_JOIN_KEY_SIZE];
+        int fnsCount = makeJoinKeys(fns, fnsCount, name1, name2, name3, name4,
+                                        name5, name6, name7, name8);
+        pq_handle stmt = setQuery(m_tb, q);
         doJoin(false, mdls, stmt, fns, fnsCount);
     }
 

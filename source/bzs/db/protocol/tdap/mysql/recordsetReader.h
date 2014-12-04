@@ -59,7 +59,6 @@ public:
     inline char* fieldPtr(const resultField* rf) const;
     inline bool isBlobField(const resultField* rf) const;
     inline void addBlobBuffer(int fieldNum) { m_tb->addBlobBuffer(fieldNum); };
-    inline void setBlobFieldCount(int v) { m_tb->setBlobFieldCount(v); };
     inline unsigned short packLen(const resultField* rf) const;
     inline const char* record() const { return m_record; }
     inline ulong recordLenCl() const { return m_tb->recordLenCl(); }
@@ -1016,6 +1015,7 @@ public:
     }
 
     const char* resultBuffer() { return m_nw->ptr(); }
+
 };
 
 class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
@@ -1053,7 +1053,8 @@ public:
             if (!m_fields->setSupplyValues(*req))
                 return STATUS_INVALID_SUPPLYVALUES;
         }
-        if(m_seeksMode || p->readMapSize)
+
+        if(p->readMapSize)
         {
             bm.setTable(tb);
             if (m_seeksMode)
@@ -1063,9 +1064,11 @@ public:
         }
         
         tb->indexInit();
-        m_position.setBlobFieldCount(p->blobs);
+        tb->blobBuffer()->clear();
+        tb->setBlobFieldCount(p->blobs);
         nw->beginExt(tb->blobFields() != 0);
-        m_writer.init(nw, p->rd, noBookmark);
+        const extResultDef* rd = p->rd;
+        m_writer.init(nw, rd, noBookmark);
         m_maxRows = p->rd->maxRows;
         return 0;
     }
@@ -1181,7 +1184,8 @@ public:
         }
 
         tb->indexInit();
-        m_position.setBlobFieldCount(blobs);
+        tb->blobBuffer()->clear();
+        tb->setBlobFieldCount(blobs);
         return 0;
     }
 

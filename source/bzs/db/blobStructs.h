@@ -61,6 +61,8 @@ struct blob
  */
 struct blobHeader
 {
+    unsigned int dataSize;  // Not include this and blobField::fieldNum
+                            // blobField::size, Only data(s).
     unsigned short rows;
     unsigned short fieldCount;
     mutable unsigned short curRow;

@@ -3200,9 +3200,120 @@ void testServerPrepareJoin(database* db)
                         "group_name = 1 group "
                             << string(rs[(size_t)0][_T("group_name")].a_str()));
 
-    //TODO hasManyJoin
-    //TODO OuterJoin
+    //All fields
+    rs.clear();
+    q.reset().all();
+    q.where(_T("id"), _T("<="), _T("?"));
+    stmt1 = atu.prepare(q, true);
+    atu.keyValue(1).read(rs, stmt1, 15000);
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "read  rs.size()== 15000");
+    if (rs.size() == 15000)
+    {
+        for (int i=0;i<15000;++i)
+            BOOST_CHECK_MESSAGE(rs[i][_T("id")].i() == i+1, "All fields field Value");
+    }
 
+    ate.join(rs, stmt2, _T("id"));
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join  rs.size()== 15000");
+    atg.join(rs, stmt3, _T("group"));
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join2  rs.size()== 15000");
+
+    // OuterJoin
+    #define NO_RECORD_ID 5 
+    table_ptr tb = ate.table();
+    tb->setFV(_T("id"), NO_RECORD_ID);
+    tb->seek();
+    if (tb->stat() == 0)
+        tb->del();
+    BOOST_CHECK_MESSAGE(tb->stat()  == 0, "ate delete id = 5");
+    q.reset().select(_T("comment"), _T("blob")).optimize(queryBase::joinHasOneOrHasMany);
+    stmt2 = ate.prepare(q, true);
+    
+    // Join is remove record(s) no join target record.
+    rs.clear();
+    atu.keyValue(1).read(rs, stmt1, 15000);
+    ate.join(rs, stmt2, _T("id"));
+    BOOST_CHECK_MESSAGE(rs.size() == 14999, "join  rs.size()== 14999");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1][_T("comment")].i() == NO_RECORD_ID+1, "row of 5 : '6 comment'");
+    const _TCHAR* vs = rs[NO_RECORD_ID-1][_T("blob")].c_str();
+    bool ret = _tcscmp(vs, _T("6 blob")) == 0;
+    BOOST_CHECK_MESSAGE(ret == true, "row of 5 : '6 blob' = " << rs[NO_RECORD_ID-1][_T("blob")].c_str()); 
+
+    // OuterJoin is no remove record(s) no join target record.
+    rs.clear();
+    atu.keyValue(1).read(rs, stmt1, 15000);
+    ate.outerJoin(rs, stmt2, _T("id"));
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "outerJoin  rs.size()== 15000");
+    atg.outerJoin(rs, stmt3, _T("group"));
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "join2  rs.size()== 15000");
+
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID][_T("comment")].i() == NO_RECORD_ID+1, "row of 6 = '6 comment'");
+    vs = rs[NO_RECORD_ID][_T("blob")].c_str();
+    ret = _tcscmp(vs, _T("6 blob")) == 0; 
+    BOOST_CHECK_MESSAGE(ret == true, "row of 6 = '6 blob'");
+
+    // OuterJoin All Join fields
+    q.reset().optimize(queryBase::joinHasOneOrHasMany).all();
+    stmt2 = ate.prepare(q, true);
+    rs.clear();
+    atu.keyValue(1).read(rs, stmt1, 15000);
+    ate.outerJoin(rs, stmt2, _T("id"));
+    BOOST_CHECK_MESSAGE(rs.size() == 15000, "outerJoin  rs.size()== 15000");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID][_T("comment")].i() == NO_RECORD_ID+1, "row of 6 = '6 comment'");
+    vs = rs[NO_RECORD_ID][_T("blob")].c_str();
+    ret = _tcscmp(vs, _T("6 blob")) == 0; 
+    BOOST_CHECK_MESSAGE(ret == true, "row of 6 = '6 blob'");
+
+    // Test clone blob field
+    recordset& rs2 = *rs.clone();
+    BOOST_CHECK_MESSAGE(rs2.size() == 15000, "outerJoin  rs2.size()== 15000");
+    BOOST_CHECK_MESSAGE(rs2[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
+    BOOST_CHECK_MESSAGE(rs2[NO_RECORD_ID][_T("comment")].i() == NO_RECORD_ID+1, "row of 6 = '6 comment'");
+    vs = rs2[NO_RECORD_ID][_T("blob")].c_str();
+    ret = _tcscmp(vs, _T("6 blob")) == 0; 
+    BOOST_CHECK_MESSAGE(ret == true, "row of 6 = '6 blob'");
+
+
+
+
+    //hasManyJoin inner
+    rs.clear();
+    q.reset().reject(0xFFFF).limit(0).all();
+    atg.keyValue(1).read(rs, q);
+    BOOST_CHECK_MESSAGE(rs.size() == 100, "hasManyJoin  rs.size()== 100");
+    q.all().optimize(queryBase::joinHasOneOrHasMany);
+    atu.index(1).join(rs, q, _T("code"));
+    BOOST_CHECK_MESSAGE(rs.size() == 20000, "hasManyJoin  rs.size()== 20000");
+
+    //hasManyJoin outer
+    rs.clear();
+    q.reset().reject(0xFFFF).limit(0).all();
+    atg.keyValue(1).read(rs, q);
+    BOOST_CHECK_MESSAGE(rs.size() == 100, "hasManyJoin  rs.size()== 100");
+    q.all().optimize(queryBase::joinHasOneOrHasMany);
+    atu.index(1).outerJoin(rs, q, _T("code"));
+    BOOST_CHECK_MESSAGE(rs.size() == 20095, "hasManyJoin  rs.size()== 20095");
+
+
+    // restore record
+    tb->clearBuffer();
+    tb->setFV(_T("id"), NO_RECORD_ID);
+    tb->setFV(_T("comment"), _T("5 comment"));
+    tb->setFV(_T("blob"), _T("5 blob"));
+    tb->insert();
+    BOOST_CHECK_MESSAGE(tb->stat()  == 0, "ate insert id = 5");
+    if (tb->stat())
+    {
+        atu.release();
+        atg.release();
+        ate.release();
+        db->drop();
+    }
+   
+
+    
 
 
 }

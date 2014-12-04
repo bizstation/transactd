@@ -665,22 +665,30 @@ template <typename T>
 const T* readBlob(char* ptr, ::bzs::rtl::stringBuffer* strBufs,
                   const fielddef& fd, stringConverter* cv)
 {
-
-    int offset = fd.len - 8;
-    T* result = (T*)(ptr + offset);
-    char** pc = (char**)(ptr + fd.blobLenBytes());
-
-    if ((typeid(T) != typeid(char)) ||
-        (cv->isNeedConvert() && (typeid(T) == typeid(char))))
+    int offset = fd.blobLenBytes();
+    size_t len = fd.blobDataLen((const uchar_td*)ptr);
+    T* result;
+    if (len)
     {
-        size_t len = fd.blobDataLen((const uchar_td*)ptr);
-        size_t olen = len * 2 + 1;
-        result = strBufs->getPtr<T>(olen);
-        len = cv->revert(result, olen, *pc, len);
-        result[len] = 0x00;
+        char** pc = (char**)(ptr + offset);
+        if ((typeid(T) != typeid(char)) ||
+            (cv->isNeedConvert() && (typeid(T) == typeid(char))))
+        {
+            if (len)
+            {
+                size_t olen = len * 2 + 1;
+                result = strBufs->getPtr<T>(olen);
+                len = cv->revert(result, olen, *pc, len);
+            }
+            result[len] = 0x00;
+        }
+        else
+            result = (T*)*pc;
+    }else
+    {
+        result = strBufs->getPtr<T>(1);
+        result[0] = 0x00;
     }
-    else
-        result = (T*)*pc;
     return result;
 }
 #pragma warn .8004

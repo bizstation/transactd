@@ -436,7 +436,6 @@ inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
 void* field::ptr() const
 {
     return m_ptr + m_fd->pos;
-    ;
 }
 
 void field::setFVA(const char* data)
@@ -1569,8 +1568,12 @@ void* field::getFVbin(uint_td& size) const
         int sizeByte = m_fd->len - 8;
         size = 0;
         memcpy(&size, (char*)m_ptr + m_fd->pos, sizeByte);
-        char** ptr = (char**)((char*)m_ptr + m_fd->pos + sizeByte);
-        return (void*)*ptr;
+        if (size)
+        {
+            char** ptr = (char**)((char*)m_ptr + m_fd->pos + sizeByte);
+            return (void*)*ptr;
+        }
+        return NULL;
     }
     case ft_lvar:
     {
@@ -1975,6 +1978,13 @@ bool field::isCompPartAndMakeValue()
             setFV(_T(""));
     }
     return ret;
+}
+
+void field::offsetBlobPtr(size_t offset)
+{
+    int size = m_fd->blobLenBytes();
+    char** p = (char**)((char*)m_ptr + size);
+    *p += offset; 
 }
 
 } // namespace client

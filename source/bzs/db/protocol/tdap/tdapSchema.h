@@ -26,6 +26,8 @@
 #include <bzs/env/compiler.h>
 #include <bzs/env/crosscompile.h>
 #include <bzs/db/protocol/tdap/mysql/characterset.h>
+#include <bzs/db/blobStructs.h>
+#include <assert.h>
 
 namespace bzs
 {
@@ -412,6 +414,11 @@ public:
         return 0;
     }
 
+    inline bool isBlob() const 
+    {
+        return (type == ft_myblob) || (type == ft_mytext);
+    }
+
     inline ushort_td varLenByteForKey() const
     {
         if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
@@ -518,6 +525,25 @@ public:
             clen += *((unsigned short*)src);
         memcpy(dest, src, clen);
         return clen;
+    }
+
+    inline  unsigned char* setBlobFieldPointer(uchar_td* dest, const blobHeader* hd,
+                                    unsigned char* blobBlock, int fieldNum) const
+    {
+        assert(hd->curRow < hd->rows);
+        const blobField* f = hd->nextField;
+        int sizeByte = blobLenBytes();
+        unsigned int size = f->size;
+        //Copy data size
+        memcpy(dest, &size, sizeByte);
+        //Copy data 
+        memcpy(blobBlock, f->data(), size);
+        //Copy data ptr
+        memcpy(dest + sizeByte, &blobBlock, sizeof(char*));
+        hd->nextField = (blobField*)f->next();
+        if (fieldNum == hd->fieldCount - 1)
+            ++hd->curRow;
+        return blobBlock + size;
     }
 };
 

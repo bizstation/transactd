@@ -56,7 +56,7 @@ public:
     {
         // The result contents is copied or sent allready.
 
-        paramMask = nw->getParamMask(tb->blobFields() != 0);
+        paramMask = nw->getParamMask(tb->getBlobFieldCount() != 0);
         unsigned int allreadysent = nw->allreadySent();
         nw->writeHeadar(paramMask, result);
 

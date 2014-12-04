@@ -311,6 +311,7 @@ public:
 
     /** @cond INTERNAL */
     bool isCompPartAndMakeValue();
+    void offsetBlobPtr(size_t offset);
     /** @endcond */
 };
 

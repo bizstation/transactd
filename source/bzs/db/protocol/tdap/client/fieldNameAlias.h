@@ -45,11 +45,7 @@ public:
     const _TCHAR* resolv(const _TCHAR* dst) const;
     void clear();
     void reverseAliasNamesQuery(queryBase& q) const;
-    void reverseAliasNamesQuery(pq_handle& q) const
-    {
-        //Prepared query is all ready reversed. 
-        //For activeTable implte temtemplate. 
-    }
+
 };
 
 typedef fdNmaeAlias aliasMap_type;

@@ -26,7 +26,6 @@
 #include <bzs/db/protocol/tdap/tdapRequest.h>
 #include <bzs/rtl/strtrim.h>
 #include <bzs/db/protocol/tdap/myDateTime.cpp>
-#include <bzs/db/blobStructs.h>
 #include <bzs/rtl/stringBuffers.h>
 #include "stringConverter.h"
 #include <boost/timer.hpp>
@@ -213,26 +212,27 @@ public:
     inline void resetMra(filter* p, uchar_td* data, unsigned int totalSize,
                       const blobHeader* hd)
     {
-        //init
         reset(p, data, totalSize, hd);
         if (m_rowCount)
         {
+            multiRecordAlocator* mra = m_tb->m_impl->mraPtr;
+            unsigned char* bd = NULL; //blob data
             if (m_filter->hasManyJoin())
                 hasManyJoinMra(m_rowCount, data);
             size_t recordLen = m_filter->fieldSelected()
                                     ? m_filter->totalFieldLen()
                                     : m_tb->tableDef()->maxRecordLen;
-            m_tb->m_impl->mraPtr->init(m_rowCount, recordLen, m_memblockType,
-                                        m_tb);
-
-            // copy each row data
+            mra->init(m_rowCount, recordLen, m_memblockType, m_tb);
+            if (hd)
+                bd = mra->allocBlobBlock(hd->dataSize);       
             
+            // copy each row data
             int bookmarkSize = m_filter->bookmarkSize();
-            multiRecordAlocator* mra = m_tb->m_impl->mraPtr;
             const tabledef* td = m_tb->tableDef();
             ushort_td fieldCount = m_filter->fieldCount();
             m_tmpPtr = mra->ptr(m_row, mra_current_block);
             int resultOffset = 0;
+
             while (m_row < m_rowCount)
             {
                 if ((m_len == 0) && m_filter->isSeeksMode() && fieldCount)
@@ -243,11 +243,18 @@ public:
                     {
                         uchar_td* fieldPtr = m_ptr;
                         resultOffset = 0;
+                        int blobFieldNum = 0;
                         for (int i = 0; i < fieldCount; i++)
                         {
                             const fielddef& fd =
                                 td->fieldDefs[m_filter->selectFieldIndexes()[i]];
-                            fieldPtr += fd.unPackCopy(m_tmpPtr + resultOffset, fieldPtr);
+                            if (fd.isBlob())
+                            {
+                                bd = fd.setBlobFieldPointer(m_tmpPtr + resultOffset, m_hd, bd, blobFieldNum++);
+                                fieldPtr += fd.len;
+                            }
+                            else
+                                fieldPtr += fd.unPackCopy(m_tmpPtr + resultOffset, fieldPtr);
                             resultOffset += fd.len;
                         }
                     }
@@ -256,6 +263,7 @@ public:
                         memset(m_tmpPtr, 0, td->maxRecordLen);
                         memcpy(m_tmpPtr, m_ptr, m_len);
                         m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
+                        m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
                         resultOffset = m_unpackLen; 
                     }
                     else
@@ -263,12 +271,10 @@ public:
                         memcpy(m_tmpPtr, m_ptr, m_len);
                         resultOffset = m_len;
                     }
-                    m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
-                    ++m_row;
-                    moveNextRow(bookmarkSize);
-                    moveBlobRow(m_row);
-                    m_tmpPtr += resultOffset;
                 }
+                ++m_row;
+                moveNextRow(bookmarkSize);
+                m_tmpPtr += resultOffset;
             }
         }
         //prebuilt next ead operation
@@ -695,22 +701,24 @@ void table::btrvGetExtend(ushort_td op)
     tdap(op);
     if (m_stat && (m_stat != STATUS_LIMMIT_OF_REJECT) &&
         (m_stat != STATUS_REACHED_FILTER_COND) && (m_stat != STATUS_EOF))
+    {
+        m_impl->filterPtr->setStat(m_stat);
         return;
+    }
     short stat = m_stat;
     if (!filter->isWriteComleted() && (stat == STATUS_REACHED_FILTER_COND))
         stat = STATUS_LIMMIT_OF_REJECT;
+
+    const blobHeader* hd = blobFieldUsed() ? getBlobHeader() : NULL;
     if (m_impl->mraPtr)
     {
-        m_impl->rc->resetMra(filter, (uchar_td*)m_pdata, m_datalen,
-                      blobFieldUsed() ? getBlobHeader() : NULL);
+        m_impl->rc->resetMra(filter, (uchar_td*)m_pdata, m_datalen, hd);
         m_stat = stat;
         m_impl->filterPtr->setStat(stat);
     }
     else
     {
-        m_impl->rc->reset(filter, (uchar_td*)m_pdata, m_datalen,
-                          blobFieldUsed() ? getBlobHeader() : NULL);
-
+        m_impl->rc->reset(filter, (uchar_td*)m_pdata, m_datalen, hd);
         m_stat = stat;
         m_impl->filterPtr->setStat(stat);
         // There is the right record.
