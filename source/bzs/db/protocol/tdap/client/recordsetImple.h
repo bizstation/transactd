@@ -120,8 +120,10 @@ private:
     void registerMemoryBlock(unsigned char* ptr, size_t size, size_t recordLen,
                              int addtype, const table* tb = NULL)
     {
-        autoMemory* am = new autoMemory(ptr, size, 0, true);
-        m_memblock.push_back(boost::shared_ptr<autoMemory>(am));
+        autoMemory* am = autoMemory::create();
+        am->addref();
+        am->setParams(ptr, size, 0, true);
+        m_memblock.push_back(boost::shared_ptr<autoMemory>(am, boost::bind(&autoMemory::release, _1)));
         unsigned char* p = am->ptr;
         // copy fileds
         if (addtype & mra_nextrows)
@@ -155,7 +157,7 @@ private:
         {
             // Join optimazing
             const std::vector<std::vector<int> >* jmap = m_mra->joinRowMap();
-
+            autoMemory* ama = autoMemory::create((int)rows);
             if (jmap)
             {
                 // At Join that if some base records reference to a joined
@@ -166,15 +168,21 @@ private:
                 {
                     const std::vector<int>& map = (*jmap)[i + m_joinRows];
                     for (int j = 0; j < (int)map.size(); ++j)
-                        m_recordset[map[j]]->setRecordData(
+                    {
+                        autoMemory* a = ama + i;
+                        m_recordset[map[j]]->setRecordData(a,
                             p + recordLen * i, 0, am->endFieldIndex, false);
+                    }
                 }
             }
             else
             {
                 for (int i = 0; i < (int)rows; ++i)
-                    m_recordset[i + m_joinRows]->setRecordData(
+                {
+                    autoMemory* a = ama + i;
+                    m_recordset[i + m_joinRows]->setRecordData(a,
                         p + recordLen * i, 0, am->endFieldIndex, false);
+                }
             }
             m_joinRows += rows;
         }
@@ -183,9 +191,11 @@ private:
             size_t reserveSize = m_recordset.size() + rows;
             m_recordset.reserve(reserveSize);
             memoryRecord* rec = memoryRecord::create(*m_fds, (int)rows);
+            autoMemory* ama = autoMemory::create((int)rows);
             for (int i = 0; i < (int)rows; ++i)
             {
-                rec[i].setRecordData(p + recordLen * i, 0, am->endFieldIndex,
+                autoMemory* a = ama + i;
+                rec[i].setRecordData(a, p + recordLen * i, 0, am->endFieldIndex,
                                    false);
                 push_back(&rec[i]);
             }
@@ -283,18 +293,31 @@ public:
         p->m_fds.reset(m_fds->clone(), boost::bind(&fielddefs::release, _1));
 
         std::vector<__int64> offsets;
-        for (int i = 0; i < (int)m_memblock.size(); ++i)
+        if (m_memblock.size())
         {
-            autoMemory* am = new autoMemory(m_memblock[i]->ptr,
-                                            m_memblock[i]->size, 0, true);
-            *am->endFieldIndex = *m_memblock[i]->endFieldIndex;
-            p->m_memblock.push_back(boost::shared_ptr<autoMemory>(am));
-            offsets.push_back((__int64)(am->ptr - m_memblock[i]->ptr));
+            autoMemory* ama = autoMemory::create((int)m_memblock.size());
+            for (int i = 0; i < (int)m_memblock.size(); ++i)
+            {
+                autoMemory* am = ama + i;
+                am->addref();
+                am->setParams(m_memblock[i]->ptr, m_memblock[i]->size, 0, true);
+                *am->endFieldIndex = *m_memblock[i]->endFieldIndex;
+                p->m_memblock.push_back(boost::shared_ptr<autoMemory>(am,  boost::bind(&autoMemory::release, _1)));
+                offsets.push_back((__int64)(am->ptr - m_memblock[i]->ptr));
+            }
         }
         if (m_recordset.size())
         {
             p->m_recordset.reserve(m_recordset.size());
             memoryRecord* recs = memoryRecord::create(*p->m_fds, (int)m_recordset.size());
+            int amindex = 0;
+            for (int i = 0; i < (int)m_recordset.size(); ++i)
+            {
+                memoryRecord* row = dynamic_cast<memoryRecord*>(m_recordset[i]);
+                amindex += (int)row->memBlockSize();
+            }
+            autoMemory* amar = autoMemory::create(amindex);
+            amindex = 0;
             for (int i = 0; i < (int)m_recordset.size(); ++i)
             {
                 memoryRecord* mr = recs + i;
@@ -308,8 +331,10 @@ public:
 #pragma warn -8072
                     unsigned char* ptr = mb.ptr + offsets[index];
 #pragma warn .8072
+                    autoMemory* a = amar + amindex;
                     const boost::shared_ptr<autoMemory>& am = p->m_memblock[index];
-                    mr->setRecordData(ptr, mb.size, am->endFieldIndex, mb.owner);
+                    mr->setRecordData(a, ptr, mb.size, am->endFieldIndex, mb.owner);
+                    ++amindex;
                 }
             }
         }

@@ -32,19 +32,24 @@ namespace tdap
 {
 namespace client
 {
-#if (defined(_WIN32) && defined(_DEBUG))
-#define DEBUG_TRACE_FIELDBASE_REFCOUNT
-#endif
+
 
 /** @cond INTERNAL */
 #define MEM_ALLOC_TYPE_NONE   0
 #define MEM_ALLOC_TYPE_ONE    1
 #define MEM_ALLOC_TYPE_ARRAY  2
+
 class refarymem
 {
-    refarymem* m_parent;
-    int m_refCount;
-    int m_allocType;
+    union
+    {
+        refarymem* m_parent;
+        int m_refCount;
+    };
+
+    bool m_child;
+    unsigned char m_allocType;
+
     virtual void releaseMemory() = 0;
 
 protected:
@@ -53,26 +58,27 @@ protected:
 
 public:
 
-    refarymem():m_parent(NULL), m_refCount(0), m_allocType(MEM_ALLOC_TYPE_NONE){}
+    refarymem():m_parent(NULL), m_child(0), m_allocType(MEM_ALLOC_TYPE_NONE){}
     
-    inline void setAllocParent(refarymem* v) { m_parent = v; }
+    inline void setAllocParent(refarymem* v) 
+    { 
+        m_parent = v;
+        m_child = (v != NULL);
+    }
     
-    void setAllocTypeThis(int v) { m_allocType = v; }
+    void setAllocTypeThis(int v) { m_allocType = ( unsigned char)v; }
     
     void addref()
     {
-        if (m_parent)
-        {
-            assert(m_parent->m_parent == NULL);
+        if (m_child)
             m_parent->addref();
-        }
         else if (m_allocType)
             ++m_refCount;
     }
 
     void release()
     {
-        if (m_parent)
+        if (m_child)
             m_parent->release();
         else
         {
@@ -101,6 +107,8 @@ public:
     }
 };
 /** @endcond */
+
+class autoMemory;
 
 /* copyable */
 class fieldsBase : public refarymem
@@ -142,7 +150,7 @@ protected:
 
     virtual void removeLastMemBlock(){};
 
-    virtual void setRecordData(unsigned char* ptr, size_t size,
+    virtual void setRecordData(autoMemory* am, unsigned char* ptr, size_t size,
                                short* endFieldIndex, bool owner = false){};
     /** @endcond */
 public:

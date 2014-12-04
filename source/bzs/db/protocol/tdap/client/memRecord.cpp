@@ -35,14 +35,23 @@ namespace tdap
 namespace client
 {
 
-autoMemory::autoMemory() : ptr(0), endFieldIndex(NULL), size(0), owner(false)
+autoMemory::autoMemory() : refarymem(), ptr(0), endFieldIndex(NULL), size(0),
+                            owner(false)
 {
 }
 
-autoMemory::autoMemory(unsigned char* p, size_t s, short* endIndex, bool own)
-    : ptr(p), endFieldIndex(NULL), size((unsigned int)s), owner(own)
-
+void autoMemory::setParams(unsigned char* p, size_t s, short* endIndex, bool own)
 {
+    if (owner)
+    {
+        delete[] ptr;
+        delete endFieldIndex;
+    }
+
+    ptr = p;
+    size = (unsigned int)s;
+    owner = own; 
+    endFieldIndex = endIndex;
     if (owner)
     {
         ptr = new unsigned char[s];
@@ -54,8 +63,7 @@ autoMemory::autoMemory(unsigned char* p, size_t s, short* endIndex, bool own)
         if (endIndex != NULL)
             *endFieldIndex = *endIndex;
     }
-    else
-        endFieldIndex = endIndex;
+        
 }
 
 autoMemory::~autoMemory()
@@ -67,11 +75,6 @@ autoMemory::~autoMemory()
     }
 }
 
-autoMemory::autoMemory(const autoMemory& p)
-    : ptr(p.ptr), endFieldIndex(p.endFieldIndex), size(p.size), owner(p.owner)
-{
-    const_cast<autoMemory&>(p).owner = false;
-}
 
 autoMemory& autoMemory::operator=(const autoMemory& p)
 {
@@ -83,22 +86,74 @@ autoMemory& autoMemory::operator=(const autoMemory& p)
     return *this;
 }
 
+void autoMemory::releaseMemory()
+{
+    if (allocType() == MEM_ALLOC_TYPE_ONE)
+        delete this;
+    else
+        delete [] this;
+}
+
+autoMemory* autoMemory::create(int n)
+{
+    assert(n);
+    autoMemory* p =  new autoMemory[n];
+    p->setAllocTypeThis(MEM_ALLOC_TYPE_ARRAY);
+    for (int i = 1; i < n ; ++i)
+    {
+        autoMemory* pp = p + i;
+        pp->setAllocParent(p);
+    }
+    return p;
+}
+
+autoMemory* autoMemory::create()
+{
+    autoMemory* p = new autoMemory();
+    p->setAllocTypeThis(MEM_ALLOC_TYPE_ONE);
+    return p;
+}
+
 //---------------------------------------------------------------------------
 //    class memoryRecord
 //---------------------------------------------------------------------------
 inline memoryRecord::memoryRecord() : fieldsBase(NULL)
 {
+#ifdef JOIN_UNLIMIT
     m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
+#else
+    m_memblockSize = 0;
+#endif
 }
 
 inline memoryRecord::memoryRecord(fielddefs& fdinfo) : fieldsBase(&fdinfo)
 {
+#ifdef JOIN_UNLIMIT
     m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
+#else
+    m_memblockSize = 0;
+#endif
 }
 
 memoryRecord::memoryRecord(const memoryRecord& r)
-    : fieldsBase(r.m_fns), m_memblock(r.m_memblock)
+    : fieldsBase(r.m_fns)//, m_memblock(r.m_memblock)
 {
+#ifdef JOIN_UNLIMIT
+    m_memblock = r.m_memblock;
+#else
+    m_memblockSize = r.m_memblockSize;
+    for (int i = 0; i < m_memblockSize; ++i)
+        m_memblock[i] = r.m_memblock[i];
+#endif
+    for (int i = 0; i < memBlockSize(); ++i)
+        m_memblock[i]->addref();
+
+}
+
+memoryRecord::~memoryRecord()
+{
+    for (int i = 0; i < memBlockSize(); ++i)
+        m_memblock[i]->release();
 }
 
 memoryRecord& memoryRecord::operator=(const memoryRecord& r)
@@ -106,29 +161,44 @@ memoryRecord& memoryRecord::operator=(const memoryRecord& r)
      if (this != &r)
      {
          m_fns = r.m_fns;
+#ifdef JOIN_UNLIMIT
          m_memblock = r.m_memblock;
+#endif
+         for (int i = 0; i < memBlockSize(); ++i)
+         {
+#ifndef JOIN_UNLIMIT
+             m_memblock[i] = r.m_memblock[i];
+#endif
+             m_memblock[i]->addref();
+         }
+
      }
      return *this;
 }
 
 void memoryRecord::clear()
 {
-    for (int i = 0; i < (int)m_memblock.size(); ++i)
-        memset(m_memblock[i].ptr, 0, m_memblock[i].size);
-
+    for (int i = 0; i < memBlockSize(); ++i)
+        memset(m_memblock[i]->ptr, 0, m_memblock[i]->size);
     m_fns->resetUpdateIndicator();
 }
 
-void memoryRecord::setRecordData(unsigned char* ptr, size_t size,
-                                 short* endFieldIndex, bool owner)
+void memoryRecord::setRecordData(autoMemory* am, unsigned char* ptr,
+                                 size_t size, short* endFieldIndex, bool owner)
 {
     if ((size == 0) && owner)
     {
         size = m_fns->totalFieldLen();
         *endFieldIndex = (short)m_fns->size();
     }
-    autoMemory am(ptr, size, endFieldIndex, owner);
+    am->setParams(ptr, size, endFieldIndex, owner);
+    am->addref();
+#ifdef JOIN_UNLIMIT
     m_memblock.push_back(am);
+#else
+    m_memblock[m_memblockSize] = am;
+    ++m_memblockSize;
+#endif
 }
 
 void memoryRecord::copyToBuffer(table* tb, bool updateOnly) const
@@ -220,7 +290,7 @@ writableRecord::writableRecord(table* tb, const aliasMap_type* alias)
     m_fddefs->clear();
     m_fddefs->setAliases(alias);
     m_fddefs->copyFrom(m_tb);
-    setRecordData(0, 0, &m_endIndex, true);
+    setRecordData(autoMemory::create(), 0, 0, &m_endIndex, true);
 }
 
 fielddefs* writableRecord::fddefs()

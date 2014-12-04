@@ -141,7 +141,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
 #ifdef _MSC_VER
         _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
         _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
-        _CrtSetBreakAlloc(151);
+        //_CrtSetBreakAlloc(151);
 #endif
 
         if ((g_tlsiID_SC1 = TlsAlloc()) == TLS_OUT_OF_INDEXES)

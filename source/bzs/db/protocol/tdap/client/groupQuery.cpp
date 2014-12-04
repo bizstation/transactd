@@ -224,7 +224,7 @@ void recordsetQuery::init(const fielddefs* fdinfo)
     }
     m_imple->row = memoryRecord::create(m_imple->compFields);
     m_imple->row->addref();
-    m_imple->row->setRecordData(0, 0, &m_imple->endIndex, true);
+    m_imple->row->setRecordData(autoMemory::create(), 0, 0, &m_imple->endIndex, true);
 
     int index = 0;
     for (int i = 0; i < (int)tokns.size(); i += 4)
