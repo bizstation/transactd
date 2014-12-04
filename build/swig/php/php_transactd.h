@@ -310,7 +310,6 @@ ZEND_NAMED_FUNCTION(_wrap_table_prepare);
 ZEND_NAMED_FUNCTION(_wrap_table_setQuery);
 ZEND_NAMED_FUNCTION(_wrap_table_setPrepare);
 ZEND_NAMED_FUNCTION(_wrap_table_release);
-ZEND_NAMED_FUNCTION(_wrap_queryBase_reset);
 ZEND_NAMED_FUNCTION(_wrap_queryBase_clearSeekKeyValues);
 ZEND_NAMED_FUNCTION(_wrap_queryBase_clearSelectFields);
 ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekKeyValue);

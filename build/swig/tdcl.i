@@ -608,6 +608,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::mra_current_block;
 %ignore bzs::db::protocol::tdap::client::multiRecordAlocator;
 %ignore bzs::db::protocol::tdap::client::query::create;
+%ignore bzs::db::protocol::tdap::client::queryBase::reset;
 %ignore bzs::db::protocol::tdap::client::queryBase::operator=;
 %ignore bzs::db::protocol::tdap::client::queryBase::addField;
 %ignore bzs::db::protocol::tdap::client::queryBase::addLogic;

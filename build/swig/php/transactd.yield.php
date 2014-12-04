@@ -1800,10 +1800,6 @@ abstract class queryBase {
 
 	const combineCondition = 2;
 
-	function reset() {
-		queryBase_reset($this->_cPtr);
-	}
-
 	function clearSeekKeyValues() {
 		queryBase_clearSeekKeyValues($this->_cPtr);
 	}

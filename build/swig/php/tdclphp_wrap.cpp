@@ -15363,37 +15363,6 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_queryBase_reset) {
-  bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0 ;
-  zval **args[1];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_reset. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      (arg1)->reset();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
 ZEND_NAMED_FUNCTION(_wrap_queryBase_clearSeekKeyValues) {
   bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0 ;
   zval **args[1];
@@ -33091,9 +33060,6 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_release, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_reset, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_clearseekkeyvalues, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -34412,7 +34378,6 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(table_setquery,_wrap_table_setQuery,swig_arginfo_table_setquery)
  SWIG_ZEND_NAMED_FE(table_setprepare,_wrap_table_setPrepare,swig_arginfo_table_setprepare)
  SWIG_ZEND_NAMED_FE(table_release,_wrap_table_release,swig_arginfo_table_release)
- SWIG_ZEND_NAMED_FE(querybase_reset,_wrap_queryBase_reset,swig_arginfo_querybase_reset)
  SWIG_ZEND_NAMED_FE(querybase_clearseekkeyvalues,_wrap_queryBase_clearSeekKeyValues,swig_arginfo_querybase_clearseekkeyvalues)
  SWIG_ZEND_NAMED_FE(querybase_clearselectfields,_wrap_queryBase_clearSelectFields,swig_arginfo_querybase_clearselectfields)
  SWIG_ZEND_NAMED_FE(querybase_addseekkeyvalue,_wrap_queryBase_addSeekKeyValue,swig_arginfo_querybase_addseekkeyvalue)

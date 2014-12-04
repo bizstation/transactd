@@ -16302,36 +16302,6 @@ free_bzs_db_protocol_tdap_client_table(bzs::db::protocol::tdap::client::table *a
 
 static swig_class SwigClassQueryBase;
 
-SWIGINTERN VALUE
-_wrap_queryBase_reset(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::queryBase *","reset", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(argp1);
-  {
-    try {
-      (arg1)->reset();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  return Qnil;
-fail:
-  return Qnil;
-}
-
 
 SWIGINTERN VALUE
 _wrap_queryBase_clearSeekKeyValues(int argc, VALUE *argv, VALUE self) {
@@ -34686,7 +34656,6 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(SwigClassQueryBase.klass, "None", SWIG_From_int(static_cast< int >(bzs::db::protocol::tdap::client::queryBase::none)));
   rb_define_const(SwigClassQueryBase.klass, "JoinHasOneOrHasMany", SWIG_From_int(static_cast< int >(bzs::db::protocol::tdap::client::queryBase::joinHasOneOrHasMany)));
   rb_define_const(SwigClassQueryBase.klass, "CombineCondition", SWIG_From_int(static_cast< int >(bzs::db::protocol::tdap::client::queryBase::combineCondition)));
-  rb_define_method(SwigClassQueryBase.klass, "reset", VALUEFUNC(_wrap_queryBase_reset), -1);
   rb_define_method(SwigClassQueryBase.klass, "clearSeekKeyValues", VALUEFUNC(_wrap_queryBase_clearSeekKeyValues), -1);
   rb_define_method(SwigClassQueryBase.klass, "clearSelectFields", VALUEFUNC(_wrap_queryBase_clearSelectFields), -1);
   rb_define_method(SwigClassQueryBase.klass, "addSeekKeyValue", VALUEFUNC(_wrap_queryBase_addSeekKeyValue), -1);
