@@ -21,6 +21,8 @@
 #include "nsTable.h"
 #include <vector>
 #include <stdio.h>
+#include <boost/shared_ptr.hpp>
+
 namespace bzs
 {
 
@@ -67,6 +69,7 @@ public:
     virtual void removeLastMemBlock(int row) = 0;
 };
 
+class filter;
 /** @endcond */
 
 class DLLLIB table : public nstable
@@ -81,7 +84,6 @@ class DLLLIB table : public nstable
     tabledef* m_tableDef;
 
     uchar_td charset() const;
-    bool checkFindDirection(ushort_td op);
     bool checkIndex(short index) const;
     void getKeySpec(keySpec* ks, bool SpecifyKeyNum = false);
     const bzs::db::blobHeader* getBlobHeader();
@@ -107,7 +109,8 @@ protected:
     explicit table(nsdatabase* pbe); // Inheritance is impossible
     virtual ~table();
     void* dataBak() const;
-    void setDataBak(void* v);
+    void reallocDataBuffer(int v);
+    int dataBufferLen() const;
     void setBookMarks(int StartId, void* Data, ushort_td Count);
     uint_td unPack(char* ptr, size_t size);
     uint_td pack(char* ptr, size_t size);
@@ -178,7 +181,8 @@ public:
     void findNext(bool notIncCurrent = true);
     void findPrev(bool notIncCurrent = true);
     bookmark_td bookmarkFindCurrent() const;
-    void setQuery(const queryBase* query);
+    boost::shared_ptr<filter> setQuery(const queryBase* query);
+    void setQuery(boost::shared_ptr<filter> stmt);
     void setFilter(const _TCHAR* str, ushort_td rejectCount,
                    ushort_td cacheCount, bool autoEscape = true);
     short fieldNumByName(const _TCHAR* name);

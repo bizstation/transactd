@@ -123,6 +123,11 @@ activeTable& activeTable::option(int v)
     return *this;
 }
 
+boost::shared_ptr<filter> activeTable::prepare(queryBase& q)
+{
+    return m_imple->prepare(q);
+}
+
 activeTable& activeTable::read(recordset& rs, queryBase& q)
 {
 
@@ -131,6 +136,19 @@ activeTable& activeTable::read(recordset& rs, queryBase& q)
 }
 
 activeTable& activeTable::read(recordset& rs, queryBase& q, validationFunc func)
+{
+    m_imple->read(*rs.m_imple, q, func);
+    return *this;
+}
+
+activeTable& activeTable::read(recordset& rs, boost::shared_ptr<filter>& q)
+{
+
+    m_imple->read(*rs.m_imple, q);
+    return *this;
+}
+
+activeTable& activeTable::read(recordset& rs, boost::shared_ptr<filter>& q, validationFunc func)
 {
     m_imple->read(*rs.m_imple, q, func);
     return *this;

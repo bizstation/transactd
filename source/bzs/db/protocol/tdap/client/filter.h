@@ -70,7 +70,7 @@ inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
     return length;
 }
 
-bool verType(uchar_td type)
+inline bool verType(uchar_td type)
 {
     if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
         type == ft_lstring)
@@ -406,13 +406,13 @@ class recordBackup
 public:
     recordBackup(table* tb) : m_tb(tb)
     {
-        m_buf = new char[m_tb->buflen()];
-        memcpy(m_buf, m_tb->fieldPtr(0), m_tb->buflen());
+        m_buf = new char[m_tb->tableDef()->maxRecordLen];
+        memcpy(m_buf, m_tb->fieldPtr(0), m_tb->tableDef()->maxRecordLen);
     }
 
     ~recordBackup()
     {
-        memcpy(m_tb->fieldPtr(0), m_buf, m_tb->buflen());
+        memcpy(m_tb->fieldPtr(0), m_buf, m_tb->tableDef()->maxRecordLen);
         delete[] m_buf;
     }
 };
@@ -429,6 +429,7 @@ class filter
     uchar_td* m_seeksDataBuffer;
 
     int m_extendBuflen;
+    short m_stat;
     bool m_ignoreFields;
     bool m_seeksMode;
     bool m_useOptimize;
@@ -769,17 +770,14 @@ class filter
         m_extendBuflen =
             std::max<int>(m_extendBuflen, m_tb->tableDef()->maxRecordLen);
         if (fieldSelected() || m_tb->valiableFormatType())
-            m_extendBuflen += m_tb->buflen();
+            m_extendBuflen += m_tb->tableDef()->maxRecordLen;
 
-        if ((int)m_tb->buflen() < m_extendBuflen)
-        {
-            m_tb->setDataBak((void*)realloc(m_tb->dataBak(), m_extendBuflen));
-            m_tb->setData(m_tb->dataBak());
-        }
+        if ((int)m_tb->dataBufferLen() < m_extendBuflen)
+            m_tb->reallocDataBuffer(m_extendBuflen);
         return true;
     }
 
-public:
+
     filter(table* tb)
         : m_tb(tb), m_seeksDataBuffer(NULL), m_ignoreFields(false),
           m_seeksMode(false), m_useOptimize(true), m_withBookmark(true),
@@ -790,6 +788,7 @@ public:
 
     ~filter() { cleanup(); }
 
+public:
     void cleanup()
     {
         for (size_t i = 0; i < m_fields.size(); ++i)
@@ -807,10 +806,12 @@ public:
         delete[] m_seeksDataBuffer;
         m_seeksDataBuffer = NULL;
         m_hasManyJoin = false;
+        m_stat = 0;
     }
 
     bool setQuery(const queryBase* q)
     {
+        m_stat = 0;
         bool ret = doSetFilter(q);
         if (!ret)
             cleanup();
@@ -851,11 +852,9 @@ public:
     uint_td exDataBufLen() const
     {
         if (fieldSelected() || m_tb->valiableFormatType())
-            return m_extendBuflen - m_tb->buflen();
+            return m_extendBuflen - m_tb->tableDef()->maxRecordLen;
         return m_extendBuflen;
     }
-
-    void init(table* pBao){};
 
     inline ushort_td fieldCount() const { return m_ret.fieldCount; }
 
@@ -920,6 +919,56 @@ public:
         return m_selectFieldIndexes;
     }
     inline const std::vector<seek>& seeks() const { return m_seeks; }
+    inline short stat() const { return m_stat; };
+    inline void setStat(short v) { m_stat = v; }
+    
+    // convert for table stat
+    inline short translateStat() const 
+    {
+        if ((m_stat == STATUS_LIMMIT_OF_REJECT) ||
+            (m_stat == STATUS_REACHED_FILTER_COND))
+            return STATUS_EOF;
+        else
+            return m_stat;
+    }
+
+    /* A special situation that if rejectCount() == 0 and status =
+           STATUS_LIMMIT_OF_REJECT
+                then it continues . */
+    inline bool isStatContinue() const
+    {
+        if ((m_stat == 0) ||
+           ((m_stat == STATUS_LIMMIT_OF_REJECT) && (rejectCount() == 0)))
+           return true;
+        return false;
+    }
+
+    bool checkFindDirection(ushort_td op)
+    {
+        bool ret=true;
+        if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI))
+            ret = (direction() == table::findBackForword);
+        else
+            ret = (direction() == table::findForword);
+        if (!ret)
+            assert(0);
+        return ret;
+    }
+
+    void setDirectionByOp(short op)
+    {
+        bool v =  ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI) ||
+                    (op == TD_POS_PREV_MULTI));
+        setDirection(v ? table::findBackForword : table::findForword);
+    }
+
+    static filter* create(table* tb)
+    {
+        return new filter(tb);
+    }
+
+    static void release(filter* p){ delete p; }
+                
 };
 
 } // namespace client

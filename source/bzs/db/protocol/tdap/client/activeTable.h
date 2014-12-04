@@ -71,8 +71,11 @@ public:
     activeTable& index(int v);
     table_ptr table() const;
     activeTable& option(int v);
+    boost::shared_ptr<filter> prepare(queryBase& q);
     activeTable& read(recordset& mdls, queryBase& q);
     activeTable& read(recordset& mdls, queryBase& q, validationFunc func);
+    activeTable& read(recordset& mdls, boost::shared_ptr<filter>& q);
+    activeTable& read(recordset& mdls, boost::shared_ptr<filter>& q, validationFunc func);
 
     /** @cond INTERNAL */
 

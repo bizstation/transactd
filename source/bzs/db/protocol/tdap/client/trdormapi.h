@@ -22,6 +22,7 @@
 #include "fieldNameAlias.h"
 #include "memRecord.h"
 #include "groupComp.h"
+#include "filter.h"
 #include <boost/shared_array.hpp>
 #include <vector>
 
@@ -480,18 +481,34 @@ public:
         return *this;
     }
 
-    template <class Any_Map_type>
-    activeObject& readMap(Any_Map_type& map, queryBase& q)
+    void prepare(boost::shared_ptr<filter>& q)
+    {
+        //m_alias.reverseAliasNamesQuery(q);  
+        m_tb->setQuery(q);
+    }
+
+    table::eFindType direction(boost::shared_ptr<filter>& q)
+    {
+        return q->direction();
+    }
+
+    table::eFindType direction(queryBase& q)
+    {
+        return q.getDirection();
+    }
+ 
+    template <class Any_Map_type , class Query>
+    activeObject& readMap(Any_Map_type& map, Query& q)
     {
         mraResetter mras(m_tb);
-        m_alias.reverseAliasNamesQuery(q);
-        m_tb->setQuery(&q);
+        prepare(q);
         if (m_tb->stat())
             nstable::throwError(_T("Query is inaccurate"), &(*m_tb));
 
         map.init(m_option, m_fdi, m_map, m_tb, &m_alias);
-        m_tb->find(q.getDirection());
-        if (q.getDirection() == table::findForword)
+        table::eFindType direc = direction(q);
+        m_tb->find(direc);
+        if (direc == table::findForword)
         {
             findIterator itsf(*m_tb);
             for_each(itsf, map);
@@ -504,18 +521,17 @@ public:
         return *this;
     }
 
-    template <class Any_Map_type>
-    activeObject& readMap(Any_Map_type& map, queryBase& q, validationFunc func)
+   template <class Any_Map_type, class Query>
+    activeObject& readMap(Any_Map_type& map, Query& q, validationFunc func)
     {
         mraResetter mras(m_tb);
-        m_alias.reverseAliasNamesQuery(q);
-
-        m_tb->setQuery(&q);
+        prepare(q);
         if (m_tb->stat())
             nstable::throwError(_T("Query is inaccurate"), &(*m_tb));
         map.init(m_option, m_fdi, m_map, m_tb, &m_alias);
-        m_tb->find(q.getDirection());
-        if (q.getDirection() == table::findForword)
+        table::eFindType direc = direction(q);
+        m_tb->find(direc);
+        if (direc == table::findForword)
         {
             findIterator itsf(*m_tb);
             filterdFindIterator it(itsf, func);
@@ -530,27 +546,27 @@ public:
         return *this;
     }
 
-    activeObject& read(collection_vec_type& mdls, queryBase& q,
+    template <class Query> activeObject& read(collection_vec_type& mdls, Query& q,
                        validationFunc func)
     {
         mdlsHandler<MAP, collection_vec_type> map(mdls);
         return readMap(map, q, func);
     }
 
-    activeObject& read(collection_vec_type& mdls, queryBase& q)
+    template <class Query> activeObject& read(collection_vec_type& mdls, Query& q)
     {
         mdlsHandler<MAP, collection_vec_type> map(mdls);
         return readMap(map, q);
     }
 
-    template <class Container> activeObject& read(Container& mdls, queryBase& q)
+    template <class Container, class Query> activeObject& read(Container& mdls, Query& q)
     {
         typename MAP::collection_orm_typename map(mdls);
         return readMap(map, q);
     }
 
-    template <class Container>
-    activeObject& read(Container& mdls, queryBase& q, validationFunc func)
+    template <class Container, class Query>
+    activeObject& read(Container& mdls, Query& q, validationFunc func)
     {
         typename MAP::collection_orm_typename map(mdls);
         return readMap(map, q, func);
@@ -802,6 +818,13 @@ public:
         m_alias.clear();
         return *this;
     }
+
+    boost::shared_ptr<filter> prepare(queryBase& q)
+    {
+        m_alias.reverseAliasNamesQuery(q);  
+        return m_tb->setQuery(&q);
+    }
+
 };
 
 } // namespace client

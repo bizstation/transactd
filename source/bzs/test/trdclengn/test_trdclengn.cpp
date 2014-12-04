@@ -475,6 +475,40 @@ void testFindIn(database* db)
     tb->release();
 }
 
+void testSetQuery(database* db)
+{
+    table* tb = openTable(db);
+    queryBase q;
+    q.queryString(_T("id >= 10 and id < 20000"));
+    q.reject(1).limit(0);
+    boost::shared_ptr<filter> stmt = tb->setQuery(&q);
+    int v = 10;
+    tb->setFV((short)0, v);
+    tb->find(table::findForword);
+    int i = v;
+    while (i < 20000)
+    {
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat");
+        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "find value " << i);
+        tb->findNext(true); // 11 ～ 19
+        ++i;
+    }
+    tb->setQuery(stmt);
+    v = 10;
+    tb->setFV((short)0, v);
+    tb->find(table::findForword);
+    i = v;
+    while (i < 20000)
+    {
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "find stat");
+        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "find value " << i);
+        tb->findNext(true); // 11 ～ 19
+        ++i;
+    }
+
+    tb->release();
+}
+
 void testGetPercentage(database* db)
 {
     table* tb = openTable(db);
@@ -3062,6 +3096,7 @@ BOOST_FIXTURE_TEST_CASE(findNext, fixture)
 {
     testFindNext(db());
     testFindIn(db());
+    testSetQuery(db());
 }
 
 BOOST_FIXTURE_TEST_CASE(getPercentage, fixture)
