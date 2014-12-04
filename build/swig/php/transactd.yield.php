@@ -1730,14 +1730,6 @@ class table extends nstable {
 		return table_getFVdbl($this->_cPtr,$index_or_fieldName);
 	}
 
-	function getFVAstr($index_or_fieldName) {
-		return table_getFVAstr($this->_cPtr,$index_or_fieldName);
-	}
-
-	function setFVA($index_or_fieldName,$data) {
-		table_setFVA($this->_cPtr,$index_or_fieldName,$data);
-	}
-
 	function getFVstr($index_or_fieldName) {
 		return table_getFVstr($this->_cPtr,$index_or_fieldName);
 	}
@@ -2677,11 +2669,13 @@ class field {
 	protected $_pData=array();
 
 	function __set($var,$value) {
+		if ($var === 'value') return field_setFV($this->_cPtr,$value);
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
 		$this->_pData[$var] = $value;
 	}
 
 	function __get($var) {
+		if ($var === 'value') return getFV();
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
 		return $this->_pData[$var];
 	}
@@ -2691,17 +2685,15 @@ class field {
 		return array_key_exists($var, $this->_pData);
 	}
 
-	function __construct($ptr_or_r=null,$fd=null,$fds=null) {
+	function __construct($ptr_or_r=null) {
 		if (is_resource($ptr_or_r) && get_resource_type($ptr_or_r) === '_p_bzs__db__protocol__tdap__client__field') {
 			$this->_cPtr=$ptr_or_r;
 			return;
 		}
-		switch (func_num_args()) {
-		case 0: $this->_cPtr=new_field(); break;
-		case 1: $this->_cPtr=new_field($ptr_or_r); break;
-		case 2: $this->_cPtr=new_field($ptr_or_r,$fd); break;
-		default: $this->_cPtr=new_field($ptr_or_r,$fd,$fds);
-		}
+		if (func_num_args() == 0)  
+			$this->_cPtr=new_field();
+		else
+			$this->_cPtr=new_field($ptr_or_r);
 	}
 
 	function type() {
@@ -2724,48 +2716,12 @@ class field {
 		return field_getBin($this->_cPtr);
 	}
 
+	function setBin($str) {
+		return field_setFV($this->_cPtr,$st, strlen($str));
+	}
+
 	function comp($r_,$logType=16) {
 		return field_comp($this->_cPtr,$r_,$logType);
-	}
-}
-
-abstract class refarymem {
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __construct($h) {
-		$this->_cPtr=$h;
-	}
-
-	function setAllocParent($v) {
-		refarymem_setAllocParent($this->_cPtr,$v);
-	}
-
-	function setAllocTypeThis($v) {
-		refarymem_setAllocTypeThis($this->_cPtr,$v);
-	}
-
-	function refcount() {
-		return refarymem_refcount($this->_cPtr);
-	}
-
-	function tryFastRelease($totalRefCount) {
-		return refarymem_tryFastRelease($this->_cPtr,$totalRefCount);
 	}
 }
 
@@ -2806,7 +2762,7 @@ class RecordIterator implements \Iterator {
 	}
 }
 
-class Record extends refarymem implements \ArrayAccess, \Countable, \IteratorAggregate {
+class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 	protected $_field = null;
 	protected $_fielddefs = null;
 
@@ -2905,20 +2861,21 @@ class Record extends refarymem implements \ArrayAccess, \Countable, \IteratorAgg
 	}
 
 	public $_cPtr=null;
+	protected $_pData=array();
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		refarymem::__set($var,$value);
+		$this->_pData[$var] = $value;
 	}
 
 	function __get($var) {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return refarymem::__get($var);
+		return $this->_pData[$var];
 	}
 
 	function __isset($var) {
 		if ($var === 'thisown') return true;
-		return refarymem::__isset($var);
+		return array_key_exists($var, $this->_pData);
 	}
 
 	function __construct($h) {
@@ -3078,106 +3035,6 @@ class connectParams {
 
 	function type() {
 		return connectParams_type($this->_cPtr);
-	}
-}
-
-abstract class idatabaseManager {
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __get($var) {
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-
-	function __isset($var) {
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __construct($h) {
-		$this->_cPtr=$h;
-	}
-
-	function reset($arg1) {
-		idatabaseManager_reset($this->_cPtr,$arg1);
-	}
-
-	function table($name) {
-		return idatabaseManager_table($this->_cPtr,$name);
-	}
-
-	function db() {
-		$r=idatabaseManager_db($this->_cPtr);
-		if (is_resource($r)) {
-			return new database($r);
-		}
-		return $r;
-	}
-
-	function c_use($param=null) {
-		idatabaseManager_c_use($this->_cPtr,$param);
-	}
-
-	function unUse() {
-		idatabaseManager_unUse($this->_cPtr);
-	}
-
-	function setOption($v) {
-		idatabaseManager_setOption($this->_cPtr,$v);
-	}
-
-	function option() {
-		return idatabaseManager_option($this->_cPtr);
-	}
-
-	function beginTrn($bias) {
-		idatabaseManager_beginTrn($this->_cPtr,$bias);
-	}
-
-	function endTrn() {
-		idatabaseManager_endTrn($this->_cPtr);
-	}
-
-	function abortTrn() {
-		idatabaseManager_abortTrn($this->_cPtr);
-	}
-
-	function enableTrn() {
-		return idatabaseManager_enableTrn($this->_cPtr);
-	}
-
-	function beginSnapshot() {
-		idatabaseManager_beginSnapshot($this->_cPtr);
-	}
-
-	function endSnapshot() {
-		idatabaseManager_endSnapshot($this->_cPtr);
-	}
-
-	function uri() {
-		return idatabaseManager_uri($this->_cPtr);
-	}
-
-	function mode() {
-		return idatabaseManager_mode($this->_cPtr);
-	}
-
-	function isOpened() {
-		return idatabaseManager_isOpened($this->_cPtr);
-	}
-
-	function stat() {
-		return idatabaseManager_stat($this->_cPtr);
-	}
-
-	function clientID() {
-		return idatabaseManager_clientID($this->_cPtr);
 	}
 }
 
@@ -3881,10 +3738,6 @@ class preparedQuery {
 	function resetAddIndex() {
 		preparedQuery_resetAddIndex($this->_cPtr);
 	}
-
-	function supplyInValues($values,$size,$segments) {
-		return preparedQuery_supplyInValues($this->_cPtr,$values,$size,$segments);
-	}
 }
 
 class activeTable {
@@ -3950,13 +3803,13 @@ class activeTable {
 		return $r;
 	}
 
-	function join($mdls,$q,$name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
-		activeTable_join($this->_cPtr,$mdls,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
+	function join($rs,$q,$name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
+		activeTable_join($this->_cPtr,$rs,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
 		return $this;
 	}
 
-	function outerJoin($mdls,$q,$name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
-		activeTable_outerJoin($this->_cPtr,$mdls,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
+	function outerJoin($rs,$q,$name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
+		activeTable_outerJoin($this->_cPtr,$rs,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
 		return $this;
 	}
 
@@ -3986,22 +3839,23 @@ class activeTable {
 	}
 }
 
-class pooledDbManager extends idatabaseManager {
+class pooledDbManager {
 	public $_cPtr=null;
+	protected $_pData=array();
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		idatabaseManager::__set($var,$value);
+		$this->_pData[$var] = $value;
 	}
 
 	function __get($var) {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return idatabaseManager::__get($var);
+		return $this->_pData[$var];
 	}
 
 	function __isset($var) {
 		if ($var === 'thisown') return true;
-		return idatabaseManager::__isset($var);
+		return array_key_exists($var, $this->_pData);
 	}
 
 	function __construct($param=null) {
