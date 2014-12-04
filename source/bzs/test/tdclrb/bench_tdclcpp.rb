@@ -271,7 +271,7 @@ def main(argv)
         puts("\t 6: read range with snapshpot. 20rec x 1000times")
         puts("\t 7: update")
         puts("\t 8: update in transaction. 20rec x 1000times")
-        puts("example : ruby bench_tdclcpp.rb \"tdap://localhost/test?dbfile=test.bdf\" 0 -1 1")
+        puts("example : ruby bench_tdclcpp.rb \"tdap://localhost/test?dbfile=test.bdf\" 0 -1 0")
         return
     end
     uri = argv[1] # "tdap://localhost/test?dbfile=test.bdf"

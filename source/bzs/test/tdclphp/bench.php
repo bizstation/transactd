@@ -306,7 +306,7 @@ function main($argc, $argv) {
         echo("\t 6: read range with snapshpot. 20rec x 1000times\n");
         echo("\t 7: update\n");
         echo("\t 8: update in transaction. 20rec x 1000times\n");
-        echo("example : php bench.php \"tdap://localhost/test?dbfile=test.bdf\" 0 -1 1\n");
+        echo("example : php bench.php \"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n");
         return;
    }
 
