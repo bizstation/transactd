@@ -2744,16 +2744,6 @@ SWIGINTERN bzs::db::protocol::tdap::client::activeTable *new_bzs_db_protocol_tda
     g_vPtrList.add(p->table().get());
     return p;
   }
-SWIGINTERN bzs::db::protocol::tdap::client::recordset *bzs_db_protocol_tdap_client_activeTable_read__SWIG_0(bzs::db::protocol::tdap::client::activeTable *self,bzs::db::protocol::tdap::client::queryBase &q){
-    recordset* rs = recordset::create();
-    self->read(*rs, q);
-    return rs;
-  }
-SWIGINTERN bzs::db::protocol::tdap::client::recordset *bzs_db_protocol_tdap_client_activeTable_read__SWIG_1(bzs::db::protocol::tdap::client::activeTable *self,bzs::db::protocol::tdap::client::preparedQuery *q){
-    recordset* rs = recordset::create();
-    self->read(*rs, q->getFilter());
-    return rs;
-  }
 SWIGINTERN bzs::db::protocol::tdap::client::preparedQuery *bzs_db_protocol_tdap_client_activeTable_prepare__SWIG_0(bzs::db::protocol::tdap::client::activeTable *self,bzs::db::protocol::tdap::client::queryBase &q,bool serverPrepare=false){
     preparedQuery* p = new preparedQuery(self->prepare(q, serverPrepare));
     return p;
@@ -31740,8 +31730,8 @@ free_bzs_db_protocol_tdap_client_activeTable(bzs::db::protocol::tdap::client::ac
 
 SWIGINTERN VALUE
 _wrap_activeTable_read__SWIG_0(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::activeTable *arg1 = (bzs::db::protocol::tdap::client::activeTable *) 0 ;
-  bzs::db::protocol::tdap::client::queryBase *arg2 = 0 ;
+  bzs::db::protocol::tdap::client::activeTable *arg1 = 0x00 ;
+  bzs::db::protocol::tdap::client::queryBase *arg2 = 0x00 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -31767,7 +31757,8 @@ _wrap_activeTable_read__SWIG_0(int argc, VALUE *argv, VALUE self) {
   arg2 = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(argp2);
   {
     try {
-      result = (bzs::db::protocol::tdap::client::recordset *)bzs_db_protocol_tdap_client_activeTable_read__SWIG_0(arg1,*arg2);
+      result = recordset::create();
+      arg1->read(*result, *arg2);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -31794,7 +31785,7 @@ _wrap_activeTable_read__SWIG_1(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::recordset *result = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 1) || (argc > 1)) {
+  if ((argc < 1) || (argc > 9)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0 |  0 );
@@ -31807,9 +31798,49 @@ _wrap_activeTable_read__SWIG_1(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::preparedQuery *","read", 2, argv[0] )); 
   }
   arg2 = reinterpret_cast< bzs::db::protocol::tdap::client::preparedQuery * >(argp2);
+  
+  {
+    arg2->resetAddIndex();
+    for (int i = 1; i < argc; ++i){
+      VALUE type = TYPE(argv[i]);
+      if ((type == T_FIXNUM) || (type == T_BIGNUM)){
+        long long val = 0;
+        int ecode = SWIG_AsVal_long_SS_long(argv[i], &val);
+        if (!SWIG_IsOK(ecode)) {
+          SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError( "", "__int64","read", i+2, argv[i]));
+        }
+        arg2->addValue((__int64)val);
+      }
+      else if (type == T_STRING){
+        int alloc = 0;
+        char* buf=NULL;
+        int ret = SWIG_AsCharPtrAndSize(argv[i], &buf, NULL, &alloc);
+        if (!SWIG_IsOK(ret)) {
+          SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","read", i+2, argv[i]));
+        }
+        arg2->addValue(buf);
+      }
+      else if (type == T_FLOAT){
+        double val = 0;
+        int ecode = SWIG_AsVal_double(argv[i], &val);
+        if (!SWIG_IsOK(ecode)) {
+          SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError( "", "double","read", i+2, argv[i]));
+        }
+        arg2->addValue(val);
+      }
+      else if (type == T_NIL){
+        break;
+      }
+      else{
+        SWIG_exception_fail(SWIG_TypeError, Ruby_Format_TypeError( "", "integer or float or string","read",i+2, argv[i])); 
+      }
+    }
+  }
+
   {
     try {
-      result = (bzs::db::protocol::tdap::client::recordset *)bzs_db_protocol_tdap_client_activeTable_read__SWIG_1(arg1,arg2);
+      result = recordset::create();
+      arg1->read(*result, arg2->getFilter());
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -31826,47 +31857,35 @@ fail:
 
 
 SWIGINTERN VALUE _wrap_activeTable_read(int nargs, VALUE *args, VALUE self) {
-  int argc;
-  VALUE argv[3];
-  int ii;
-  
-  argc = nargs + 1;
-  argv[0] = self;
-  if (argc > 3) SWIG_fail;
-  for (ii = 1; (ii < argc); ++ii) {
-    argv[ii] = args[ii-1];
-  }
-  if (argc == 2) {
+
+
+  if ((nargs < 1)||(nargs > 9)) SWIG_fail;
+
+  {
     int _v;
     void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0);
+    int res = SWIG_ConvertPtr(self, &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0);
     _v = SWIG_CheckState(res);
     if (_v) {
-      void *vptr = 0;
-      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        return _wrap_activeTable_read__SWIG_0(nargs, args, self);
+      if (nargs == 1) {
+        vptr = 0;
+        int res = SWIG_ConvertPtr(args[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+          return _wrap_activeTable_read__SWIG_0(nargs, args, self);
+        }
       }
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      void *vptr = 0;
-      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0);
+      vptr = 0;
+      int res = SWIG_ConvertPtr(args[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0);
       _v = SWIG_CheckState(res);
       if (_v) {
         return _wrap_activeTable_read__SWIG_1(nargs, args, self);
       }
     }
   }
-  
+
 fail:
-  Ruby_Format_OverloadedError( argc, 3, "read.new", 
+  Ruby_Format_OverloadedError( nargs+1, 3, "read.new", 
     "    read.new(bzs::db::protocol::tdap::client::queryBase &q)\n"
     "    read.new(bzs::db::protocol::tdap::client::preparedQuery *q)\n");
   

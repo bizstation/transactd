@@ -30172,9 +30172,9 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_read__SWIG_0) {
   bzs::db::protocol::tdap::client::queryBase *arg2 = 0 ;
   zval **args[2];
   bzs::db::protocol::tdap::client::recordset *result = 0 ;
-  
+  int argc = ZEND_NUM_ARGS();
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+  if(((argc < 2) ||(argc > 10)) || zend_get_parameters_array_ex(2, args) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -30210,11 +30210,13 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_activeTable_read__SWIG_1) {
   bzs::db::protocol::tdap::client::activeTable *arg1 = (bzs::db::protocol::tdap::client::activeTable *) 0 ;
   bzs::db::protocol::tdap::client::preparedQuery *arg2 = (bzs::db::protocol::tdap::client::preparedQuery *) 0 ;
-  zval **args[2];
+  zval **args[10];
   bzs::db::protocol::tdap::client::recordset *result = 0 ;
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+  int argc = ZEND_NUM_ARGS();
+  
+  if(((argc < 2) ||(argc > 10)) || zend_get_parameters_array_ex(argc, args) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -30229,6 +30231,36 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_read__SWIG_1) {
       SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of activeTable_read. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery");
     }
   }
+  {
+    arg2->resetAddIndex();
+    for (int i = 2; i < argc; ++i){
+      int type = (*args[i])->type;
+      if (type == IS_LONG){
+        convert_to_long_ex(args[i]);
+        __int64 v = (__int64) (*(args[i]))->value.lval;
+        arg2->addValue(v);
+      }
+      else if (type == IS_STRING){
+        convert_to_string_ex(args[i]);
+        char* v  =(char *) Z_STRVAL_PP(args[i]);
+        arg2->addValue(v);
+      }
+      else if (type == IS_DOUBLE){
+        convert_to_double_ex(args[i]);
+        double v  = (double) Z_DVAL_PP(args[i]);
+        arg2->addValue(v);
+      }
+      else if (type == IS_NULL){
+        break;
+      }
+      else{
+        SWIG_PHP_Error(E_ERROR, "Type error in argument after 2 of activeTable_read. Expected int or double or string");
+      }
+    }
+  }
+  
+  
+  
   {
     try {
       result = (bzs::db::protocol::tdap::client::recordset *)bzs_db_protocol_tdap_client_activeTable_read__SWIG_1(arg1,arg2);
@@ -30249,11 +30281,11 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_activeTable_read) {
   int argc;
-  zval **argv[2];
+  zval **argv[10];
   
   argc = ZEND_NUM_ARGS();
   zend_get_parameters_array_ex(argc,argv);
-  if (argc == 2) {
+  if (argc >= 2) {
     int _v;
     {
       void *tmp;
@@ -30269,7 +30301,7 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_read) {
       }
     }
   }
-  if (argc == 2) {
+  if (argc >= 2) {
     int _v;
     {
       void *tmp;
@@ -33971,6 +34003,14 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_activetable_join, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_activetable_read, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()

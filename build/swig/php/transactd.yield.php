@@ -3783,8 +3783,8 @@ class activeTable {
 		return $this;
 	}
 
-	function read($q) {
-		$r=activeTable_read($this->_cPtr,$q);
+	function read($q, $v0=null, $v1=null, $v2=null, $v3=null, $v4=null, $v5=null, $v6=null, $v7=null) {
+		$r=activeTable_read($this->_cPtr,$q, $v0, $v1, $v2, $v3, $v4, $v5, $v6, $v7);
 		if (is_resource($r)) {
 			return new Recordset($r);
 		}

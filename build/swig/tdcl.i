@@ -163,9 +163,11 @@ using namespace bzs::db::protocol::tdap::client;
     self->read(*rs, q);
     return rs;
   }
-  recordset* read(preparedQuery* q) {
+
+  //read(preparedQuery* q) It can give place holder values(0-8)
+  recordset* read(preparedQuery* q, int v) {
     recordset* rs = recordset::create();
-    self->read(*rs, q->getFilter());
+    self->read(*rs, q->getFilter(), v);
     return rs;
   }
   preparedQuery* prepare(queryBase& q, bool serverPrepare=false) {
