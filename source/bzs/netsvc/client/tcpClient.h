@@ -19,18 +19,16 @@
  02111-1307, USA.
  ================================================================= */
 
-#ifdef __BCPLUSPLUS__
-#pragma warn -8012
-#endif
 #include <bzs/netsvc/client/iconnection.h>
+#include <boost/asio/write.hpp>
+#include <boost/asio/read.hpp>
 #include <boost/system/system_error.hpp>
 #include <boost/thread/mutex.hpp>
 #include <stdio.h>
-
-#ifdef __BCPLUSPLUS__
-#pragma warn +8012
-#endif
 #include <vector>
+
+
+
 using namespace boost;
 using namespace boost::system;
 

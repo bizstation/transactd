@@ -16,7 +16,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-
 #include "tcpClient.h"
 #include <bzs/env/crosscompile.h>
 #if (!defined(_WIN32))
@@ -26,6 +25,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 #endif
 #endif
+
 #pragma package(smart_init)
 
 using namespace boost;

@@ -459,7 +459,7 @@ inline clientID* getCid()
 #endif
 }
 
-extern "C" PACKAGE_OSX short_td BTRVID(ushort_td op, posblk* pbk, void_td* data,
+extern "C" PACKAGE_OSX short_td __STDCALL BTRVID(ushort_td op, posblk* pbk, void_td* data,
                                        uint_td* datalen, void_td* keybuf,
                                        char_td keyNum, clientID* cid)
 {

@@ -18,14 +18,24 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include <boost/asio.hpp>
+#ifdef __BCPLUSPLUS__
+#pragma warn -8012
+#endif
 
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/buffer.hpp>
+#include <vector>
+
+#ifdef __BCPLUSPLUS__
+#pragma warn +8012
+#endif
 
 #ifdef _WIN32
 #define USE_PIPE_CLIENT
 #endif
 
 #ifdef USE_PIPE_CLIENT
+#include <boost/asio/windows/stream_handle.hpp>
 using boost::asio::windows::stream_handle;
 typedef stream_handle platform_stream;
 typedef HANDLE platform_descriptor;
