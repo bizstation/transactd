@@ -65,8 +65,11 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
  */
 #define POS_BLOCK_SIZE                  128
 #ifndef MAX_KEYLEN
-#define MAX_KEYLEN                      0X3FF // 1023
+#define MAX_KEYLEN                      0X3FF   // 1023
 #endif
+#define BTRV_MAX_DATA_SIZE              57000
+#define TDAP_MAX_DATA_SIZE              6291456 // 3Mbyte
+#define BOOKMARK_ALLOC_SIZE             40960
 
 /** operation type
  *

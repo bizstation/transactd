@@ -59,7 +59,8 @@ public:
         unsigned int readlen = 0;
         readlen += c->directRead(&paramMask, sizeof(uint_td)); // paramMask and result 
         if (P_MASK_POSBLK & paramMask)
-            readlen += c->directRead(pbk, POSBLK_SIZE);
+            readlen += c->directRead(pbk, TD_POSBLK_TRANSMIT_SIZE);
+
         if (P_MASK_DATALEN & paramMask)
         {
             uint_td tmp;
@@ -71,6 +72,8 @@ public:
             }
             else
             {
+                if (pbk->allocFunc && pbk->tb)
+                    data = pbk->allocFunc(pbk->tb, tmp);
                 *datalen = tmp;
                 if (P_MASK_DATA & paramMask)
                     readlen += c->directRead(data, *datalen);
@@ -106,7 +109,7 @@ public:
         return readlen;
     }
 
-    inline void parse(const char* p/*, unsigned int segmentDataLen,
+    inline void parse(const char* p, bool ex/*, unsigned int segmentDataLen,
                       unsigned short rows*/)
     {
         p += sizeof(unsigned int);        //  4 byte read length
@@ -118,8 +121,8 @@ public:
 
         if (P_MASK_POSBLK & paramMask)    //  4 byte pbk
         {
-            memcpy(pbk, p, POSBLK_SIZE);
-            p += POSBLK_SIZE;
+            memcpy(pbk, p, TD_POSBLK_TRANSMIT_SIZE);
+            p += TD_POSBLK_TRANSMIT_SIZE;
         }
 
         if (P_MASK_DATALEN & paramMask)
@@ -156,6 +159,11 @@ public:
 #endif
         if (P_MASK_DATA & paramMask)
         {
+            if (ex)
+            {
+                if (pbk->allocFunc && pbk->tb)
+                    data = pbk->allocFunc(pbk->tb, *datalen);
+            }
             memcpy(data, p, *datalen);
             p += *datalen;
             /*if (P_MASK_FINALDATALEN & paramMask)
@@ -239,8 +247,8 @@ public:
 
         if (P_MASK_POSBLK & paramMask)
         {
-            memcpy(p, pbk, POSBLK_SIZE);
-            p += POSBLK_SIZE;
+            memcpy(p, pbk, TD_POSBLK_TRANSMIT_SIZE);
+            p += TD_POSBLK_TRANSMIT_SIZE;
         }
 
         if (P_MASK_DATALEN & paramMask)

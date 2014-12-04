@@ -37,7 +37,12 @@ using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 using namespace std;
 
+#define TDAP
+#ifdef TDAP
 #define PROTOCOL _T("tdap")
+#else
+#define PROTOCOL _T("btrv")
+#endif
 static _TCHAR HOSTNAME[MAX_PATH] = { _T("127.0.0.1") };
 #define DBNAME _T("test")
 #define BDFNAME _T("test.bdf")
@@ -2286,9 +2291,23 @@ void doTestStringFileter(database* db, int id, const _TCHAR* name,
     tb->release();
 }
 
+void testDropDataBaseStr(database* db)
+{
+    db->open(makeUri(PROTOCOL, HOSTNAME, _T("testString"), BDFNAME), 0, 0);
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase 1");
+    db->drop();
+    BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "DropDataBaseTestString stat=" << db->stat());
+}
+
 void testStringFileter(database* db)
 {
     db->create(makeUri(PROTOCOL, HOSTNAME, _T("testString"), BDFNAME));
+    if (db->stat() == STATUS_TABLE_EXISTS_ERROR)
+    {
+        testDropDataBaseStr(db);
+        db->create(makeUri(PROTOCOL, HOSTNAME, _T("testString"), BDFNAME));
+    }
     BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase");
 
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testString"), BDFNAME), 0, 0);
@@ -2307,14 +2326,7 @@ void testStringFileter(database* db)
     db->close();
 }
 
-void testDropDataBaseStr(database* db)
-{
-    db->open(makeUri(PROTOCOL, HOSTNAME, _T("testString"), BDFNAME), 0, 0);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase 1");
-    db->drop();
-    BOOST_CHECK_MESSAGE(0 == db->stat(),
-                        "DropDataBaseTestString stat=" << db->stat());
-}
+
 // ------------------------------------------------------------------------
 
 _TCHAR dbNmae[50] = { _T("テスト") };
@@ -3487,7 +3499,7 @@ BOOST_FIXTURE_TEST_CASE(dropDataBaseVar, fixture)
 
 BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
-
+#ifdef TDAP
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(filter)
 
@@ -3503,7 +3515,7 @@ BOOST_FIXTURE_TEST_CASE(dropDataBaseStr, fixture)
 
 BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
-
+#endif
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(kanjiSchema)
 

@@ -76,6 +76,8 @@ typedef boost::shared_ptr<filter> pq_handle;
 
 class DLLLIB table : public nstable
 {
+    static void* __STDCALL DDBA(client::table* tb, uint_td size);
+
     friend class recordCache;
     friend class database;
     friend class filter;
@@ -107,12 +109,12 @@ class DLLLIB table : public nstable
     bool setSeekValueField(int row);
     void btrvSeekMulti();
     bool doSeekMultiAfter(int row);
-
+    void* doDdba(uint_td size);
 protected:
     explicit table(nsdatabase* pbe); // Inheritance is impossible
     virtual ~table();
     void* dataBak() const;
-    void reallocDataBuffer(int v);
+    void* reallocDataBuffer(uint_td v);
     int dataBufferLen() const;
     void setBookMarks(int StartId, void* Data, ushort_td Count);
     uint_td unPack(char* ptr, size_t size);

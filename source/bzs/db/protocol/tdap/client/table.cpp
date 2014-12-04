@@ -23,6 +23,7 @@
 #include "filter.h"
 #include "database.h"
 #include "bulkInsert.h"
+#include <bzs/db/protocol/tdap/tdapRequest.h>
 #include <bzs/rtl/strtrim.h>
 #include <bzs/db/protocol/tdap/myDateTime.cpp>
 #include <bzs/db/blobStructs.h>
@@ -70,7 +71,7 @@ struct tbimpl
     void* smartUpDate;
     void* bfAtcPtr;
     void* optionalData;
-    int dataBufferLen;
+    uint_td dataBufferLen;
     int bookMarksMemSize;
     int maxBookMarkedCount;
     char keybuf[MAX_KEYLEN];
@@ -343,6 +344,13 @@ table::table(nsdatabase* pbe) : nstable(pbe)
     m_pdata = NULL;
     m_keybuf = &m_impl->keybuf[0];
     m_keynum = 0;
+    
+    if (isUseTransactd())
+    {
+        tdap::posblk* pbk = (tdap::posblk*)posblk();
+        pbk->tb = this;
+        pbk->allocFunc = DDBA;
+    }
 }
 
 table::~table()
@@ -350,6 +358,18 @@ table::~table()
     delete m_impl->rc;
     m_fddefs->release();
     delete m_impl;
+}
+
+void* __STDCALL table::DDBA(client::table* tb, uint_td size)
+{
+    return tb->doDdba(size);
+}
+
+void* table::doDdba(uint_td size)
+{
+    if ( m_impl->filterPtr)
+        size = std::max<uint_td>(m_impl->filterPtr->extendBuflen(), size);
+    return reallocDataBuffer(size);
 }
 
 void table::setMra(multiRecordAlocator* p)
@@ -392,7 +412,7 @@ void* table::dataBak() const
     return m_impl->dataBak;
 }
 
-void table::reallocDataBuffer(int v)
+void* table::reallocDataBuffer(uint_td v)
 {
     if (m_impl->dataBak == NULL)
         m_impl->dataBak = (void*)malloc(v);
@@ -407,7 +427,7 @@ void table::reallocDataBuffer(int v)
     }
     m_impl->dataBufferLen = v;
     setData(m_impl->dataBak);
-    
+    return m_impl->dataBak;
 }
 
 int table::dataBufferLen() const
@@ -636,7 +656,7 @@ void table::btrvGetExtend(ushort_td op)
     if (!filter->isWriteComleted() && (stat == STATUS_REACHED_FILTER_COND))
         stat = STATUS_LIMMIT_OF_REJECT;
 
-    m_impl->rc->reset(filter, (uchar_td*)m_impl->dataBak, m_datalen,
+    m_impl->rc->reset(filter, (uchar_td*)m_pdata, m_datalen,
                       blobFieldUsed() ? getBlobHeader() : NULL);
 
     m_stat = stat;

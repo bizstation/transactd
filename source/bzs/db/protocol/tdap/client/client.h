@@ -270,8 +270,8 @@ public:
                         c->optionalBuffers(), stat);
                 if (stat == 0)
                 {
-                    if (c->queryFunction(CONNECTION_FUNCTION_DIRECT_READ) && 
-                            (m_req.paramMask & P_MASK_EX_SENDLEN))
+                    bool ex =  (m_req.paramMask & P_MASK_EX_SENDLEN) != 0;
+                    if (c->queryFunction(CONNECTION_FUNCTION_DIRECT_READ) && ex)
                     {
                         c->setDirectReadHandler(&m_req);
                         p = c->asyncWriteRead(size);
@@ -281,7 +281,7 @@ public:
                         if (m_req.paramMask & P_MASK_DATALEN)
                             c->setReadBufferSizeIf(*m_req.datalen);
                         p = c->asyncWriteRead(size);
-                        m_req.parse(p);
+                        m_req.parse(p, ex);
                     }
                       
                 }

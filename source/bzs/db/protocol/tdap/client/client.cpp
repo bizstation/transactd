@@ -70,7 +70,7 @@ bool client::readServerCharsetIndex()
         char* p = con()->sendBuffer(m_req.sendLenEstimate());
         unsigned int size = req.serialize(p);
         p = con()->asyncWriteRead(size);
-        req.parse(p);
+        req.parse(p, false);
         if (req.result == 0)
         {
             if (!checkVersion(ver))

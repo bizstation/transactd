@@ -51,7 +51,7 @@ struct nstimpl
     nstimpl()
         : refCount(1), bulkIns(NULL), mode(0), shared(false), isOpen(false)
     {
-        posblk[0] = 0x00;
+        memset(posblk, 0 ,POS_BLOCK_SIZE);
     }
     int refCount;
     bulkInsert* bulkIns;

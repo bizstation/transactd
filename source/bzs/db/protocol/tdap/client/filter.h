@@ -36,12 +36,10 @@ namespace tdap
 namespace client
 {
 
-#define BOOKMARK_ALLOC_SIZE 40960
+
 #define BOOKMARK_SIZE 4
 #define DATASIZE_BYTE 2
 
-#define BTRV_MAX_DATA_SIZE 57000
-#define TDAP_MAX_DATA_SIZE 6291456 // 3Mbyte
 
 /** Length of compare
  * if part of string or zstring then return strlen.
@@ -594,6 +592,7 @@ class filter
         bool m_isTransactd : 1;
         bool m_hasManyJoin : 1;
         bool m_preparingMode : 1;
+        bool m_ddba : 1;
         
     };
 
@@ -953,8 +952,7 @@ class filter
         if (fieldSelected() || m_tb->valiableFormatType())
             m_extendBuflen += m_tb->tableDef()->maxRecordLen;
 
-        if ((int)m_tb->dataBufferLen() < m_extendBuflen)
-            m_tb->reallocDataBuffer(m_extendBuflen);
+        m_tb->reallocDataBuffer(m_ddba ? len : m_extendBuflen);
         return true;
     }
 
@@ -962,9 +960,10 @@ class filter
         : m_tb(tb), m_extendBuflen(0), m_stat(0), m_preparedId(0),
           m_ignoreFields(false), m_seeksMode(false), m_useOptimize(true),
           m_withBookmark(true), m_seeksWritedCount(0), m_hasManyJoin(false),
-          m_preparingMode(false)
+          m_preparingMode(false),m_ddba(false)
     {
         m_isTransactd = m_tb->isUseTransactd();
+        m_ddba = m_isTransactd;
     }
 
     ~filter() {}
