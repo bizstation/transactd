@@ -75,30 +75,6 @@ set(TDVER_RUBY_RELEASE "${TRANSACTD_READ_FILE_TO_INT_RETURN}")
 
 
 # ==========================================================
-# add custom command for generate swig wrapper
-# ==========================================================
-set(RUBY_SWIG_WRAPPER_CPP "${CMAKE_CURRENT_BINARY_DIR}/tdclrb_wrap.cpp")
-file(TO_NATIVE_PATH "${TRANSACTD_ROOT}/build/swig/tdcl.i" SWIG_INTERFACE_FILE)
-file(TO_NATIVE_PATH "${RUBY_SWIG_WRAPPER_CPP}"            SWIG_NATIVE_OUTFILE)
-file(TO_NATIVE_PATH "${TRANSACTD_ROOT}"                   SWIG_INC_PATH1)
-file(TO_NATIVE_PATH "${TRANSACTD_ROOT}/source"            SWIG_INC_PATH2)
-# configure generate command file
-if(WIN32)
-  set(SWIG_GEN_CMD_WIN "${CMAKE_CURRENT_BINARY_DIR}/generate.cmd")
-  configure_file("${TRANSACTD_ROOT}/build/swig/ruby/generate.cmd.in" "${SWIG_GEN_CMD_WIN}" @ONLY)
-endif()
-set(SWIG_GEN_CMD "${CMAKE_CURRENT_BINARY_DIR}/generate.cmake")
-configure_file("${TRANSACTD_ROOT}/build/swig/ruby/generate.cmake.in" "${SWIG_GEN_CMD}" @ONLY)
-# add generate command to build time
-add_custom_command (
-  OUTPUT  "${RUBY_SWIG_WRAPPER_CPP}"
-  COMMAND ${CMAKE_COMMAND} -P ${SWIG_GEN_CMD}
-  COMMENT "Generating tdclrb_wrap.cpp"
-  DEPENDS "${TRANSACTD_ROOT}/build/swig/tdcl.i"
-          "${TRANSACTD_ROOT}/build/swig/ruby/ruby.swg")
-
-
-# ==========================================================
 # add swig wrapper source file
 # ==========================================================
 if(WIN32 AND (NOT MSVC))
@@ -107,7 +83,7 @@ if(WIN32 AND (NOT MSVC))
 endif()
 set(${this_target}_SOURCE_FILES
   ${${this_target}_SOURCE_FILES}
-  ${RUBY_SWIG_WRAPPER_CPP}
+  ${TRANSACTD_ROOT}/build/swig/ruby/tdclrb_wrap.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connectionPool.cpp
   ${TRANSACTD_ROOT}/source/bzs/rtl/benchmark.cpp
 )

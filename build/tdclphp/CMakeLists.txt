@@ -101,36 +101,11 @@ message(STATUS "TRANSACTD_PHP_HAVE_YIELD : [${TRANSACTD_PHP_HAVE_YIELD}]")
 
 
 # ==========================================================
-# add custom command for generate swig wrapper
-# ==========================================================
-set(PHP_SWIG_WRAPPER_CPP "${CMAKE_CURRENT_BINARY_DIR}/tdclphp_wrap.cpp")
-file(TO_NATIVE_PATH "${TRANSACTD_ROOT}/build/swig/tdcl.i" SWIG_INTERFACE_FILE)
-file(TO_NATIVE_PATH "${PHP_SWIG_WRAPPER_CPP}"             SWIG_NATIVE_OUTFILE)
-file(TO_NATIVE_PATH "${TRANSACTD_ROOT}"                   SWIG_INC_PATH1)
-file(TO_NATIVE_PATH "${TRANSACTD_ROOT}/source"            SWIG_INC_PATH2)
-set(SWIG_ADDITONAL_OPTIONS "")
-# configure generate command file
-if(WIN32)
-  set(SWIG_GEN_CMD_WIN "${CMAKE_CURRENT_BINARY_DIR}/generate.cmd")
-  configure_file("${TRANSACTD_ROOT}/build/swig/php/generate.cmd.in" "${SWIG_GEN_CMD_WIN}" @ONLY)
-endif()
-set(SWIG_GEN_CMD "${CMAKE_CURRENT_BINARY_DIR}/generate.cmake")
-configure_file("${TRANSACTD_ROOT}/build/swig/php/generate.cmake.in" "${SWIG_GEN_CMD}" @ONLY)
-# add generate command to build time
-add_custom_command (
-  OUTPUT  "${PHP_SWIG_WRAPPER_CPP}"
-  COMMAND ${CMAKE_COMMAND} -P ${SWIG_GEN_CMD}
-  COMMENT "Generating tdclphp_wrap.cpp"
-  DEPENDS "${TRANSACTD_ROOT}/build/swig/tdcl.i"
-          "${TRANSACTD_ROOT}/build/swig/php/php.swg")
-
-
-# ==========================================================
 # add swig wrapper source file
 # ==========================================================
 set(${this_target}_SOURCE_FILES
   ${${this_target}_SOURCE_FILES}
-  ${PHP_SWIG_WRAPPER_CPP}
+  ${TRANSACTD_ROOT}/build/swig/php/tdclphp_wrap.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connectionPool.cpp
   ${TRANSACTD_ROOT}/source/bzs/rtl/benchmark.cpp
 )
