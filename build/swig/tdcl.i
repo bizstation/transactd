@@ -65,15 +65,13 @@ validatablePointerList g_vPtrList;
 #include <bzs/db/blobStructs.h>
 #include <bzs/db/protocol/tdap/mysql/characterset.h>
 #include <bzs/db/transactd/connectionRecord.h>
-%}
-#ifndef SWIGWIN
-%{
+
+#ifdef LINUX
 #include <linux/linuxTypes.h>
 #include <linux/charsetConvert.h>
 #include <bzs/env/mbcswchrLinux.h>
-%}
 #endif
-%{
+
 #include <bzs/env/tstring.h>
 #include <bzs/rtl/benchmark.h>
 #include <bzs/rtl/datetime.h>

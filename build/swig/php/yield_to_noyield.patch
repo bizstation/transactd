@@ -11,7 +11,7 @@ index 9e83862..cc92b95 100644
  //
  namespace BizStation\Transactd;
  
-@@ -2549,25 +2549,18 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
+@@ -2545,25 +2545,18 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
  		return fielddefs_size($this->_cPtr);
  	}
  
@@ -44,7 +44,7 @@ index 9e83862..cc92b95 100644
  	}
  
  	function __set($var,$value) {
-@@ -2762,6 +2755,35 @@ class RecordIterator implements \Iterator {
+@@ -2758,6 +2751,35 @@ class RecordIterator implements \Iterator {
  	}
  }
  
@@ -80,7 +80,7 @@ index 9e83862..cc92b95 100644
  class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
  	protected $_field = null;
  	protected $_fielddefs = null;
-@@ -2814,20 +2836,13 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
+@@ -2810,20 +2832,13 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
  		return Record_size($this->_cPtr);
  	}
  
@@ -104,7 +104,7 @@ index 9e83862..cc92b95 100644
  	}
  
  	// toArray
-@@ -3504,6 +3519,29 @@ class RecordsetIterator implements \SeekableIterator {
+@@ -3500,6 +3515,29 @@ class RecordsetIterator implements \SeekableIterator {
  	}
  }
  
@@ -134,7 +134,7 @@ index 9e83862..cc92b95 100644
  class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
  	private $_fieldsBase_p_p = null;
  	private $_record = null;
-@@ -3551,23 +3589,18 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
+@@ -3547,23 +3585,18 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
  		return $this->offsetGet($this->count() - 1);
  	}
  
