@@ -157,7 +157,7 @@ protected:
 
     template <class mdls_type> void addContainer(T* u, ...)
     {
-        push_back(m_mdls, u);
+        push_back(m_mdls, boost::shared_ptr<T>(u));
     }
 
 public:

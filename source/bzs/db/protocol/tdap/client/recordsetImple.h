@@ -116,7 +116,7 @@ class recordsetImple
 
 public:
     typedef std::vector<row_ptr>::iterator iterator;
-
+    typedef row_ptr item_type;
 private:
     unsigned char* allocBlobBlock(size_t size)
     {
