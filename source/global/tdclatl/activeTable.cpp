@@ -168,6 +168,10 @@ STDMETHODIMP CActiveTable::Option(int Value, IActiveTable** retVal)
 }
 
 STDMETHODIMP CActiveTable::Read(VARIANT query,
+                                    VARIANT Value0, VARIANT Value1,
+                                    VARIANT Value2, VARIANT Value3,
+                                    VARIANT Value4, VARIANT Value5,
+                                    VARIANT Value6, VARIANT Value7,
                                 IRecordset** retVal)
 {
 
@@ -188,6 +192,8 @@ STDMETHODIMP CActiveTable::Read(VARIANT query,
             CQueryBase* p = dynamic_cast<CQueryBase*>(query.pdispVal);
             if (p)
             {
+                if (Value0.vt != VT_ERROR)
+                    return Error(_T("Invalid ActiveTable::Read param 2"), IID_IActiveTable);
                 m_at->read(*rsObj->m_rs, p->query());
                 return S_OK;
             }
@@ -196,6 +202,55 @@ STDMETHODIMP CActiveTable::Read(VARIANT query,
                 CPreparedQuery* pq = dynamic_cast<CPreparedQuery*>(query.pdispVal);
                 if (pq)
                 {
+                    pq->ResetAddIndex();
+                    if (Value0.vt != VT_ERROR)
+                    {
+                        if (Value0.vt != VT_BSTR)
+                            VariantChangeType(&Value0, &Value0, 0, VT_BSTR);
+                        pq->addValue(Value0.bstrVal);
+                    }
+                    if (Value1.vt != VT_ERROR)
+                    {
+                        if (Value1.vt != VT_BSTR)
+                            VariantChangeType(&Value1, &Value1, 0, VT_BSTR);
+                        pq->addValue(Value1.bstrVal);
+                    }
+                    if (Value2.vt != VT_ERROR)
+                    {
+                        if (Value2.vt != VT_BSTR)
+                            VariantChangeType(&Value2, &Value2, 0, VT_BSTR);
+                        pq->addValue(Value2.bstrVal);
+                    }
+                    if (Value3.vt != VT_ERROR)
+                    {
+                        if (Value3.vt != VT_BSTR)
+                            VariantChangeType(&Value3, &Value3, 0, VT_BSTR);
+                        pq->addValue(Value3.bstrVal);
+                    }
+                    if (Value4.vt != VT_ERROR)
+                    {
+                        if (Value4.vt != VT_BSTR)
+                            VariantChangeType(&Value4, &Value4, 0, VT_BSTR);
+                        pq->addValue(Value4.bstrVal);
+                    }
+                    if (Value5.vt != VT_ERROR)
+                    {
+                        if (Value5.vt != VT_BSTR)
+                            VariantChangeType(&Value5, &Value5, 0, VT_BSTR);
+                        pq->addValue(Value5.bstrVal);
+                    }
+                    if (Value6.vt != VT_ERROR)
+                    {
+                        if (Value6.vt != VT_BSTR)
+                            VariantChangeType(&Value6, &Value6, 0, VT_BSTR);
+                        pq->addValue(Value6.bstrVal);
+                    }
+                    if (Value7.vt != VT_ERROR)
+                    {
+                        if (Value7.vt != VT_BSTR)
+                            VariantChangeType(&Value7, &Value7, 0, VT_BSTR);
+                        pq->addValue(Value7.bstrVal);
+                    }
                     m_at->read(*rsObj->m_rs, pq->getFilter());
                     return S_OK; 
                 }

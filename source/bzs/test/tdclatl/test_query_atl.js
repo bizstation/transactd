@@ -641,6 +641,10 @@ function test(atu, atg, ate, db)
 		tb.FindNext();
 	}
 	checkEqual(num, 15900, "num = 15900 ");
+	
+	//test preparedQuery
+	testPrepare(atu, atg, ate)
+	
 	// test wirteRecord
 	wirteRecord(atg);
 
@@ -648,6 +652,60 @@ function test(atu, atg, ate, db)
 
 }
 
+/*--------------------------------------------------------------------------------*/
+function testPrepare(atu, atg, ate)
+{
+
+	initQuery();
+	q.Select("id", "name","group").Where("id", "<=", '?');
+    var pq = atu.Prepare(q);
+    
+	//int value
+	var rs = atu.Index(0).KeyValue(1).Read(pq, 15900);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+	
+	//float value
+	rs.Clear();
+	rs = atu.Index(0).KeyValue(1).Read(pq, 15900.000);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+	
+	//String value
+	rs.Clear();
+	rs = atu.Index(0).KeyValue(1).Read(pq, "15900");
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+	
+	//Using supplyValue value
+	rs.Clear();
+	pq.SupplyValue(0, 15900);
+	rs = atu.Index(0).KeyValue(1).Read(pq);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+
+	//Join extention::comment first reverse
+
+	initQuery();
+	q.Select("comment").Optimize(hasOneJoin);
+	pq = ate.Prepare(q);
+	
+	var last = ate.Index(0).Join(rs, pq, "id").Reverse().First();
+	checkEqual(rs.Count, 15900, "ate rs.Count = 15900 ");
+	checkEqual(last.Field("id").Vlng, 15900, "last.id = 15900 ");
+	checkEqual(last.Field("comment").Text, "15900 comment", "last.comment = 15900 ");
+
+	//Join group::name
+	initQuery();
+	q.Select("group_name");
+	pq = atg.Prepare(q);
+	atg.Index(0).Join(rs, pq, "group");
+
+	//last
+	var first = rs.Last();
+	checkEqual(rs.Count, 15900, "rs.Count = 15900 ");
+	checkEqual(first.Field("id").Vlng, 1, "id = 1 ");
+	checkEqual(first.Field("comment").Text, "1 comment", "comment = 1 comment");
+	checkEqual(first.Field("group_name").Text, "1 group", "group_name = 1 group ");
+	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "4 group", "group_name = 9 group ");
+	
+}
 /*--------------------------------------------------------------------------------*/
 function main()
 {

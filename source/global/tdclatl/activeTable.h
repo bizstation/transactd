@@ -62,7 +62,12 @@ public:
                         VARIANT Value6, VARIANT Value7, IActiveTable** retVal);
 
     STDMETHOD(Option)(int Value, IActiveTable** retVal);
-    STDMETHOD(Read)(VARIANT /*IQueryBase**/ query, IRecordset** retVal);
+    STDMETHOD(Read)(VARIANT /*IQueryBase**/ query, 
+                                    VARIANT Value0, VARIANT Value1,
+                                    VARIANT Value2, VARIANT Value3,
+                                    VARIANT Value4, VARIANT Value5,
+                                    VARIANT Value6, VARIANT Value7,
+                                    IRecordset** retVal);
     STDMETHOD(Alias)(BSTR Src, BSTR Dst, IActiveTable** retVal);
     STDMETHOD(ResetAlias)(IActiveTable** retVal);
     STDMETHOD(Join)(IRecordset* rs, VARIANT query, BSTR Name0, BSTR Name1,

@@ -1080,7 +1080,12 @@ interface IActiveTable : IDispatch
   [id(0x0000004)]
   HRESULT _stdcall Option([in] int Value, [out, retval] IActiveTable** retVal);
   [id(0x0000005)]
-  HRESULT _stdcall Read([in, optional] VARIANT query, [out, retval] IRecordset** retVal);
+  HRESULT _stdcall Read([in, optional] VARIANT query, 
+                    [in, optional] VARIANT Value0, [in, optional] VARIANT Value1,
+                    [in, optional] VARIANT Value2, [in, optional] VARIANT Value3,
+                    [in, optional] VARIANT Value4, [in, optional] VARIANT Value5,
+                    [in, optional] VARIANT Value6, [in, optional] VARIANT Value7,
+                    [out, retval] IRecordset** retVal);
   [id(0x0000006)]
   HRESULT _stdcall Alias([in] BSTR Src, [in] BSTR Dst, [out, retval] IActiveTable** retVal);
   [id(0x0000007)]
@@ -1165,6 +1170,13 @@ interface IRecordset : IDispatch
   [id(0x0000011)]
   HRESULT _stdcall AppendField([in] BSTR name, [in] eFieldType type, [in] short len);
 
+  [id(0x0000012)]
+  HRESULT _stdcall Clear();
+  
+  [id(0x0000014)]
+  HRESULT _stdcall ClearRecords();
+
+  
 };
 
 [

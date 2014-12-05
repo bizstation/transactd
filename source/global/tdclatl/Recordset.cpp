@@ -267,3 +267,17 @@ STDMETHODIMP CARecordset::get_FieldDefs(IFieldDefs** retVal)
     }
     return S_OK;
 }
+
+
+STDMETHODIMP CARecordset::Clear()
+{
+    m_rs->clear();
+    return S_OK;
+}
+
+STDMETHODIMP CARecordset::ClearRecords()
+{
+    m_rs->clearRecords();
+    return S_OK;
+}
+
