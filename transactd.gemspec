@@ -27,36 +27,22 @@ spec_build = Gem::Specification.new do |s|
   s.homepage    = 'http://www.bizstation.jp/ja/transactd'
   s.license     = 'GPL v2'
   
-  # read major/minor version from tdapcapi.h
-  verfile = 'source/bzs/db/protocol/tdap/tdapcapi.h'
-  unless File.exist?(verfile)
-    raise 'Can not found ' + verfile
-  end
-  versions = {}
+  # read version from tdclrb.rc
+  verfile = 'build/tdclrb/tdclrb.rc'
+  raise 'Can not found ' + verfile unless File.exist?(verfile)
+  verpattern = /^[\t ]*VALUE[\t ]+"ProductVersion"[\t ]*,[\t ]*"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"[\t\r ]*$/i
+  ver_str = ''
   File.open(verfile, "r") {|f|
     f.each_line { |l|
-      if l.index("Build marker! Don't remove") != nil
-        l = l.sub(/#define/, '').sub(/\/\/.*$/, '').gsub('"', '').strip().split(/\s/)
-        versions[l[0].to_sym] = Integer(l[1]) if l.length == 2
+      m = verpattern.match(l)
+      if m != nil
+        ver_str = m[1].split('.').slice(0..2).join('.')
+        break
       end
     }
   }
-  unless (versions.has_key?(:CPP_INTERFACE_VER_MAJOR) &&
-          versions.has_key?(:CPP_INTERFACE_VER_MINOR))
-    raise 'Can not read versions from ' + verfile
-  end
-  # read release version from GEM_RELEASE_VERSION
-  verfile = 'build/tdclrb/GEM_RELEASE_VERSION'
-  unless File.exist?(verfile)
-    raise 'Can not found ' + verfile
-  end
-  File.open(verfile, "r") {|f|
-    l = f.read.gsub(/\s\n/, '')
-    versions[:GEM_RELEASE_VERSION] = Integer(l)
-  }
-  s.version = versions[:CPP_INTERFACE_VER_MAJOR].to_s + '.' + 
-              versions[:CPP_INTERFACE_VER_MINOR].to_s + '.' + 
-              versions[:GEM_RELEASE_VERSION].to_s
+  raise 'Can not read versions from ' + verfile + ' (' + ver_str + ')' if ver_str.length == 0
+  s.version = ver_str
   
   binary_file = File.join('bin', RUBY_VERSION.match(/\d+\.\d+/)[0], 'transactd.so')
   binarymode = File.exist?(binary_file)
@@ -83,8 +69,9 @@ spec_build = Gem::Specification.new do |s|
     s.files       = ['CMakeLists.txt']
     s.files      += Dir.glob('bin/common/*.dll') + Dir.glob('bin/common/*.so')
     s.files      += Dir.glob('source/**/*') + Dir.glob('build/common/**/*')
-    s.files      += Dir.glob('build/swig/**/*') + Dir.glob('build/tdclc/**/*')
-    s.files      += Dir.glob('build/tdclcpp/**/*') + Dir.glob('build/tdclrb/**/*')
+    s.files      += Dir.glob('build/swig/*') + Dir.glob('build/swig/ruby/*')
+    s.files      += Dir.glob('build/swig/ruby/**/*') + Dir.glob('build/tdclrb/**/*')
+    s.files      += Dir.glob('build/tdclc/**/*') + Dir.glob('build/tdclcpp/**/*')
     s.files      += Dir.glob('./*')
     if RUBY_PLATFORM =~ /mswin/ || RUBY_PLATFORM =~ /mingw/
       # add prebuilt binary

@@ -57,13 +57,6 @@ message(STATUS "  TRANSACTD_PHP_LIBRARY_PATH ${TRANSACTD_PHP_LIBRARY_PATH}")
 
 
 # ==========================================================
-# version info
-# ==========================================================
-transactd_read_file_to_int("${TRANSACTD_ROOT}/build/tdclphp/RELEASE_VERSION")
-set(TDVER_PHP_RELEASE "${TRANSACTD_READ_FILE_TO_INT_RETURN}")
-
-
-# ==========================================================
 # read PHP version from header
 # ==========================================================
 file(TO_CMAKE_PATH "${TRANSACTD_PHP_SOURCE_ROOT}/main/php_version.h"
@@ -126,7 +119,7 @@ include_directories(${TRANSACTD_ROOT}
 
 
 # ==========================================================
-# add resource file (for Windows Visual Studio)
+# read and add resource file
 # ==========================================================
 set(${this_target}_RC_FILE "${TRANSACTD_ROOT}/build/tdclphp/tdclphp.rc")
 transactd_read_rc("${${this_target}_RC_FILE}")
@@ -220,7 +213,7 @@ endif()
 if(UNIX AND NOT APPLE)
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}
-    VERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TDVER_PHP_RELEASE})
+    VERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TD_RC_VER_RELEASE})
 endif()
 
 

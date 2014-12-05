@@ -46,22 +46,6 @@ endif()
 
 
 # ==========================================================
-#   read file to integer
-# ==========================================================
-if(NOT COMMAND transactd_read_file_to_int)
-macro(transactd_read_file_to_int TD_READ_PATH)
-  set(TRANSACTD_READ_FILE_TO_INT_RETURN -1)
-  if(EXISTS "${TD_READ_PATH}")
-    file(STRINGS "${TD_READ_PATH}" TRANSACTD_READ_FILE_TO_INT_RETURN)
-    MATH(EXPR TRANSACTD_READ_FILE_TO_INT_RETURN "${TRANSACTD_READ_FILE_TO_INT_RETURN} + 0")
-  else()
-    message(STATUS "${TD_READ_PATH} not found.")
-  endif()
-endmacro()
-endif()
-
-
-# ==========================================================
 #   read version from rc file
 # ==========================================================
 if(NOT COMMAND transactd_read_rc)

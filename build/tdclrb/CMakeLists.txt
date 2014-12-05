@@ -68,13 +68,6 @@ endif()
 
 
 # ==========================================================
-# version info
-# ==========================================================
-transactd_read_file_to_int("${TRANSACTD_ROOT}/build/tdclrb/GEM_RELEASE_VERSION")
-set(TDVER_RUBY_RELEASE "${TRANSACTD_READ_FILE_TO_INT_RETURN}")
-
-
-# ==========================================================
 # add swig wrapper source file
 # ==========================================================
 if(WIN32 AND (NOT MSVC))
@@ -97,7 +90,7 @@ include_directories(${TRANSACTD_ROOT};${TRANSACTD_RUBY_INCLUDE_PATH})
 
 
 # ==========================================================
-# add resource file (for Windows Visual Studio)
+# read and add resource file
 # ==========================================================
 set(${this_target}_RC_FILE "${TRANSACTD_ROOT}/build/tdclrb/tdclrb.rc")
 transactd_read_rc("${${this_target}_RC_FILE}")
@@ -177,7 +170,7 @@ endif()
 if(UNIX)
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}
-    VERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TDVER_RUBY_RELEASE})
+    VERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TD_RC_VER_RELEASE})
 endif()
 
 
