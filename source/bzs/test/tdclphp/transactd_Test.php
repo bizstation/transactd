@@ -2429,6 +2429,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $rs = $atu->index(0)->keyValue(1)->read($pq, 15000.000);
         $this->assertEquals($rs->size(), 15000);
         $this->assertEquals($rs->fieldDefs()->size(), 3);
+        //Using supply value
+        $pq->supplyValue(0, 15000);
+        $rs = $atu->index(0)->keyValue(1)->read($pq);
+        $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs->fieldDefs()->size(), 3);
          
         // Join extention::comment
         $q->reset();

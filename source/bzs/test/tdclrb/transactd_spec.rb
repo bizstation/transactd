@@ -2200,6 +2200,11 @@ def testPrepare()
   # String value
   rs = atu.index(0).keyValue('1').read(pq, '15000')
   expect(rs.size()).to eq 15000
+
+  # Using supply value
+  pq.supplyValue(0, 15000)
+  rs = atu.index(0).keyValue('1').read(pq)
+  expect(rs.size()).to eq 15000
   
   # Join extention::comment
   q.reset().select('comment').optimize(Transactd::QueryBase::JoinHasOneOrHasMany)
