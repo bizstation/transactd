@@ -660,20 +660,22 @@ inline void multiRecordAlocatorImple::removeLastMemBlock(int row)
     (*m_rs)[row].removeLastMemBlock();
 }
 
-template <> inline recordsetImple::iterator begin(recordsetImple& m)
+/*template <> */inline recordsetImple::iterator begin(recordsetImple& m)
 {
     return m.begin();
 }
-template <> inline recordsetImple::iterator end(recordsetImple& m)
+/*template <> */inline recordsetImple::iterator end(recordsetImple& m)
 {
     return m.end();
 }
-template <> inline void push_back(recordsetImple& m, row_ptr c)
+
+/* Called from trdormapi.h : mdlsHandler::addContainer() */
+inline void push_back(recordsetImple& m, row_ptr c)
 {
 }
 
 /* for groupby */
-template <> inline void clear(recordsetImple& m)
+inline void clear(recordsetImple& m)
 {
     return m.clearRecords();
 }
@@ -686,6 +688,7 @@ resolvKeyValue(recordsetImple& m, const std::_tstring& name, bool noexception)
     return m.resolvKeyValue(name, noexception);
 }
 
+/* Called from trdormapi.h : mdlsHandler::operator() */
 inline row* create(recordsetImple& m, int)
 {
     return NULL;
