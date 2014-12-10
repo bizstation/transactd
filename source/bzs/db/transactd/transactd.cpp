@@ -16,6 +16,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
+#include <my_config.h>
 #include <bzs/netsvc/server/serverCpt.h>
 #include <bzs/netsvc/server/serverTpool.h>
 #include <bzs/rtl/exception.h>

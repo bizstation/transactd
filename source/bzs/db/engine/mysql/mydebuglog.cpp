@@ -16,9 +16,8 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-
+#include <my_config.h>
 #include "mydebuglog.h"
-#include "dbManager.h"
 #include <bzs/db/protocol/tdap/mysql/tdapCommandExecuter.h>
 #include <bzs/env/crosscompile.h>
 #include <bzs/env/fileopen.h>

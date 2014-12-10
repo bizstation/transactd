@@ -16,6 +16,7 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
+#include <my_config.h>
 #include <boost/filesystem.hpp>
 #include <boost/shared_array.hpp>
 #include <bzs/db/engine/mysql/database.h>
