@@ -565,7 +565,7 @@ void nsdatabase::reset()
         }
     }
     m_nsimpl->lockWaitCount = 10;
-    m_nsimpl->lockWaitTime = 200;
+    m_nsimpl->lockWaitTime = 100;
     m_nsimpl->tableCount = 0;
     m_nsimpl->bdfPath[0] = 0x00;
     if (m_btrcallid)

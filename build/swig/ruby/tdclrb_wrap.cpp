@@ -7,9 +7,9 @@
  * changes to this file unless you know what you are doing--modify the SWIG
  * interface file instead.
  * ----------------------------------------------------------------------------- */
-
+#ifndef SWIGRUBY
 #define SWIGRUBY
-
+#endif
 
 #ifdef __cplusplus
 /* SwigValueWrapper is described in swig.swg */

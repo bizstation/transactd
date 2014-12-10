@@ -81,7 +81,7 @@ bool btest(recordset* rsp, activeTable* atup, activeTable* atgp,
     if (!stmt2) return false;
 
     atg.alias(_T("name"), _T("group_name"));
-    q.reset().select(_T("group_name")), _T("group");
+    q.reset().select(_T("group_name"));
     pq_handle stmt3 = atg.prepare(q, true);            
     if (!stmt3) return false;
 

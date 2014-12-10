@@ -197,14 +197,17 @@ class tableIterator
 
     table& m_tb;
     fields m_fds;
+    ushort_td m_lockBias;
 
 public:
-    inline tableIterator(table& tb) : m_tb(tb), m_fds(tb)
+    inline tableIterator(table& tb, ushort_td lockBias = 0) : m_tb(tb), m_fds(tb),m_lockBias(lockBias)
     {
         readStatusCheck(tb, _T("tableIterator"));
     }
 
     table& tb() const { return m_tb; };
+
+    void setLockBias(ushort_td v) { m_lockBias = v; }
 
     inline fields& operator*() { return m_fds; }
 
@@ -212,13 +215,13 @@ public:
 
     inline tableIterator& operator++()
     {
-        T::increment(m_tb);
+        T::increment(m_tb, m_lockBias);
         return *this;
     }
 
     inline tableIterator& operator--()
     {
-        T::decrement(m_tb);
+        T::decrement(m_tb, m_lockBias);
         return *this;
     }
 
@@ -303,57 +306,57 @@ typedef filterdIterator<indexRvIterator> filterdIndexRvIterator;
 typedef filterdIterator<stepRvIterator> filterdStepRvIterator;
 typedef filterdIterator<findRvIterator> filterdFindRvIterator;
 
-inline indexIterator readIndex(table_ptr tb, eIndexOpType op)
+inline indexIterator readIndex(table_ptr tb, eIndexOpType op, ushort_td lockBias = 0)
 {
 
     switch (op)
     {
     case eSeekEqual:
-        tb->seek();
+        tb->seek(lockBias);
         break;
     case eSeekFirst:
-        tb->seekFirst();
+        tb->seekFirst(lockBias);
         break;
     case eSeekGreaterOrEqual:
-        tb->seekGreater(true);
+        tb->seekGreater(true, lockBias);
         break;
     case eSeekGreater:
-        tb->seekGreater(false);
+        tb->seekGreater(false, lockBias);
         break;
     default:
         assert(0);
         readStatusCheck(*tb, _T("readIndex"));
     }
-    return indexIterator(*tb);
+    return indexIterator(*tb, lockBias);
 }
 
-inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op)
+inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op, ushort_td lockBias = 0)
 {
 
     switch (op)
     {
     case eSeekEqual:
-        tb->seek();
+        tb->seek(lockBias);
         break;
     case eSeekLast:
-        tb->seekLast();
+        tb->seekLast(lockBias);
         break;
     case eSeekLessThanOrEqual:
-        tb->seekLessThan(true);
+        tb->seekLessThan(true, lockBias);
         break;
     case eSeekLessThan:
-        tb->seekLessThan(false);
+        tb->seekLessThan(false, lockBias);
         break;
     default:
         assert(0);
         readStatusCheck(*tb, _T("readIndexRv"));
     }
-    return indexRvIterator(*tb);
+    return indexRvIterator(*tb, lockBias);
 }
 
 template <class T>
 inline indexIterator readIndex(table_ptr tb, eIndexOpType op, char_td keynum,
-                               T func)
+                               T func, ushort_td lockBias = 0)
 {
     tb->setKeyNum(keynum);
     if (&func)
@@ -361,12 +364,12 @@ inline indexIterator readIndex(table_ptr tb, eIndexOpType op, char_td keynum,
         fields fds(*tb);
         func(fds);
     }
-    return readIndex(tb, op);
+    return readIndex(tb, op, lockBias);
 }
 
 template <class T>
 inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op,
-                                   char_td keynum, T func)
+                                   char_td keynum, T func, ushort_td lockBias = 0)
 {
     tb->setKeyNum(keynum);
     if (&func)
@@ -374,7 +377,7 @@ inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op,
         fields fds(*tb);
         func(fds);
     }
-    return readIndexRv(tb, op);
+    return readIndexRv(tb, op, lockBias);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
@@ -541,16 +544,16 @@ inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op,
 }
 /** @endcond */
 
-inline stepIterator readStep(table_ptr tb)
+inline stepIterator readStep(table_ptr tb, ushort_td lockBias = 0)
 {
-    tb->stepFirst();
-    return stepIterator(*tb);
+    tb->stepFirst(lockBias);
+    return stepIterator(*tb, lockBias);
 }
 
-inline stepRvIterator readStepRv(table_ptr tb)
+inline stepRvIterator readStepRv(table_ptr tb, ushort_td lockBias = 0)
 {
-    tb->stepLast();
-    return stepRvIterator(*tb);
+    tb->stepLast(lockBias);
+    return stepRvIterator(*tb, lockBias);
 }
 
 
@@ -919,6 +922,19 @@ inline table_ptr openTable(Database_Ptr db, const _TCHAR* name)
     if (db->stat())
         nstable::throwError((std::_tstring(_T("Open table ")) + name).c_str(),
                             db->stat());
+    return p;
+}
+
+template <class Database_Ptr>
+inline table_ptr openTable(Database_Ptr db, short tableid)
+{
+    table_ptr p(db->openTable(tableid), releaseTable);
+    if (db->stat())
+    {
+        _TCHAR buf[50];
+        _stprintf_s(buf, 50, _T("Open table id = %d"), tableid);
+        nstable::throwError(buf, db->stat());
+    }
     return p;
 }
 

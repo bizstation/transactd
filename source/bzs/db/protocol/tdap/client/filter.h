@@ -1274,13 +1274,12 @@ public:
 
     bool checkFindDirection(ushort_td op)
     {
-        bool ret=true;
+        bool ret;
         if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI))
             ret = (direction() == table::findBackForword);
         else
             ret = (direction() == table::findForword);
-        if (!ret)
-            assert(0);
+        assert(ret == true);
         return ret;
     }
 

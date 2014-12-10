@@ -1087,10 +1087,10 @@ pq_handle table::setQuery(const queryBase* query, bool serverPrepare)
         m_stat = STATUS_CANT_ALLOC_MEMORY;
         return m_impl->filterPtr;
     }
-    bool ret = false;
+
     try
     {
-        ret = m_impl->filterPtr->setQuery(query);
+        bool ret = m_impl->filterPtr->setQuery(query);
         if (!ret)
             m_stat = STATUS_FILTERSTRING_ERROR;
         else

@@ -189,6 +189,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         if (cid == NULL)
             return 1;
 
+        op = op % 100;
         switch (op)
         {
         case TD_GET_BLOB_BUF:
