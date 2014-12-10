@@ -885,10 +885,18 @@ inline void dbExecuter::doStat(request& req)
         req.result = STATUS_BUFFERTOOSMALL;
 }
 
+inline enum_tx_isolation getIsolationLevel(int op)
+{
+    if (op > TRN_ISO_SERIALIZABLE)
+        return ISO_SERIALIZABLE;
+    else if(op > TRN_ISO_REPEATABLE_READ)
+        return ISO_REPEATABLE_READ;
+    return ISO_READ_COMMITTED;
+}
+
 inline short getTrnsactionType(int op)
 {
-    if (op > PARALLEL_TRN) // 1000
-        op -= PARALLEL_TRN;
+    op = op % 1000;
     if (op > NOWAIT_WRITE) // 500
         op -= NOWAIT_WRITE;
     if (op >= 300)
@@ -1005,7 +1013,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_BEGIN_TRANSACTION:
             transactionResult =
-                getDatabaseCid(req.cid)->beginTrn(getTrnsactionType(opTrn));
+                getDatabaseCid(req.cid)->beginTrn(getTrnsactionType(opTrn)
+                                                    ,getIsolationLevel(opTrn));
             break;
         case TD_END_TRANSACTION:
             transactionResult = getDatabaseCid(req.cid)->commitTrn();

@@ -105,6 +105,7 @@ class database : private boost::noncopyable
     int m_inSnapshot;
     int m_stat;
     short m_trnType;
+    enum_tx_isolation m_iso;
 
     std::vector<boost::shared_ptr<table> > m_tables;
     TABLE* doOpenTable(const std::string& name, short mode,
@@ -141,7 +142,7 @@ public:
     table* openTable(const std::string& name, short mode,
                      const char* ownerName);
     table* useTable(int index, enum_sql_command cmd);
-    bool beginTrn(short type);
+    bool beginTrn(short type, enum_tx_isolation iso);
     bool commitTrn();
     bool abortTrn();
     bool existsTable(const std::string& name);
@@ -721,10 +722,11 @@ class smartTransction
     short m_type;
 
 public:
-    smartTransction(database* db, short type = TRN_RECORD_LOCK_SINGLE)
+    smartTransction(database* db, short type = TRN_RECORD_LOCK_SINGLE
+            , enum_tx_isolation iso = ISO_READ_COMMITTED)
         : m_db(db)
     {
-        m_db->beginTrn(type);
+        m_db->beginTrn(type, iso);
     }
 
     void end()

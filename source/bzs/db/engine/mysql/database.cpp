@@ -227,7 +227,12 @@ table* database::useTable(int index, enum_sql_command cmd)
     if (m_thd->lock == 0)
     {
         m_thd->lex->sql_command = cmd;
-        m_thd->tx_isolation = (enum_tx_isolation)m_thd->variables.tx_isolation;
+        if (m_inTransaction)
+            m_thd->tx_isolation = m_iso;
+        else if (m_inSnapshot)
+            m_thd->tx_isolation = ISO_REPEATABLE_READ;
+        else
+            m_thd->tx_isolation = (enum_tx_isolation)m_thd->variables.tx_isolation;
         cp_thd_set_read_only(m_thd);
     }
     lockTable(m_thd, tb->m_table);
@@ -322,12 +327,13 @@ void database::unUseTables(bool rollback)
         closeForReopen();
 }
 
-bool database::beginTrn(short type)
+bool database::beginTrn(short type, enum_tx_isolation iso)
 {
     ++m_inTransaction;
     if (m_inTransaction == 1)
     {
         m_trnType = type;
+        m_iso = iso;
         return true;
     }
     return false;
