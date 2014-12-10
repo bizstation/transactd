@@ -423,7 +423,7 @@ inline void readAfter(request& req, table* tb, dbExecuter* dbm)
     req.result = dbm->errorCodeSht(tb->stat());
 }
 
-inline void dbExecuter::doSeekKey(request& req, int op)
+inline void dbExecuter::doSeekKey(request& req, int op, bool lock)
 {
     bool read = true;
     m_tb = getTable(req.pbk->handle);
@@ -443,17 +443,19 @@ inline void dbExecuter::doSeekKey(request& req, int op)
                 flag = HA_READ_BEFORE_KEY;
             else if (op == TD_KEY_OR_BEFORE)
                 flag = HA_READ_KEY_OR_PREV;
+            m_tb->setSingleRowLock(lock);
             m_tb->seekKey(flag, m_tb->keymap());
         }
     }
     readAfter(req, m_tb, this);
 }
 
-inline void dbExecuter::doMoveFirst(request& req)
+inline void dbExecuter::doMoveFirst(request& req, bool lock)
 {
     m_tb = getTable(req.pbk->handle);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
+        m_tb->setSingleRowLock(lock);
         if (m_tb->isNisKey(m_tb->keyNum()))
         {
             m_tb->clearKeybuf();
@@ -465,11 +467,12 @@ inline void dbExecuter::doMoveFirst(request& req)
     readAfter(req, m_tb, this);
 }
 
-inline void dbExecuter::doMoveKey(request& req, int op)
+inline void dbExecuter::doMoveKey(request& req, int op, bool lock)
 {
     m_tb = getTable(req.pbk->handle);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
+        m_tb->setSingleRowLock(lock);
         if (op == TD_KEY_FIRST)
             m_tb->getFirst();
         else if (op == TD_KEY_LAST)
@@ -704,9 +707,10 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
     return stat;
 }
 
-inline void dbExecuter::doStepRead(request& req, int op)
+inline void dbExecuter::doStepRead(request& req, int op, bool lock)
 {
     m_tb = getTable(req.pbk->handle);
+    m_tb->setSingleRowLock(lock);
     if (op == TD_POS_FIRST)
         m_tb->stepFirst();
     else if (op == TD_POS_LAST)
@@ -892,6 +896,11 @@ inline short getTrnsactionType(int op)
     return TRN_RECORD_LOCK_SINGLE;
 }
 
+inline bool isSingleWaitLock(int op)
+{
+	return ((op > 200) && (op < 300));	
+}
+
 int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 {
     DEBUG_PROFILE_START(1)
@@ -969,15 +978,15 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_KEY_OR_AFTER:
         case TD_KEY_BEFORE:
         case TD_KEY_OR_BEFORE:
-            doSeekKey(req, op);
+            doSeekKey(req, op, isSingleWaitLock(opTrn));
             break;
         case TD_KEY_FIRST:
-            doMoveFirst(req);
+            doMoveFirst(req, isSingleWaitLock(opTrn));
             break;
         case TD_KEY_PREV:
         case TD_KEY_LAST:
         case TD_KEY_NEXT:
-            doMoveKey(req, op);
+            doMoveKey(req, op, isSingleWaitLock(opTrn));
             break;
         case TD_REC_INSERT:
             doInsert(req);
@@ -1017,7 +1026,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_POS_LAST:
         case TD_POS_NEXT:
         case TD_POS_PREV:
-            doStepRead(req, op);
+            doStepRead(req, op, isSingleWaitLock(opTrn));
             break;
         case TD_BOOKMARK:
             m_tb = getTable(req.pbk->handle);
@@ -1027,6 +1036,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_MOVE_BOOKMARK:
             m_tb = getTable(req.pbk->handle);
+            m_tb->setSingleRowLock(isSingleWaitLock(opTrn));
             m_tb->movePos((uchar*)req.data,
                           m_tb->keyNumByMakeOrder(req.keyNum));
             readAfter(req, m_tb, this);
@@ -1189,7 +1199,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.result = 20000;
             sql_print_error("%s", boost::diagnostic_information(e).c_str());
         }
-        printErrorMessage(code, getMsg(e));
+        printWarningMessage(code, getMsg(e));
     }
 
     catch (...)

@@ -153,6 +153,20 @@ public:
     void reopen();
     void cleanTable();
 
+    inline bool canUnlockRow() const
+    {
+        /* inTransaction multi record lock do not unlock */
+        if (m_inTransaction && (m_trnType == TRN_RECORD_LOCK_MUILTI))
+            return false;
+        /* in snapshot do not unlock */
+        return (m_inSnapshot==false);
+    }
+
+    inline bool canConsistentRead() const
+    {
+        return ((m_inSnapshot + m_inTransaction) == 0);
+    }
+
     static tableCacheCounter tableRef;
 };
 
@@ -199,6 +213,7 @@ public:
 class table : private boost::noncopyable
 {
     friend class database;
+    friend struct smartForceConsistantRead;
     TABLE* m_table;
 
     std::string m_name;
@@ -232,7 +247,10 @@ class table : private boost::noncopyable
         bool m_changed : 1;
         bool m_nounlock : 1;
         bool m_bulkInserting : 1;
+        bool m_singleRowLock : 1;
     };
+    bool m_forceConsistentRead;
+
     table(TABLE* table, database& db, const std::string& name, short mode,
           int id);
     void moveKey(boost::function<int()> func);
@@ -260,14 +278,15 @@ class table : private boost::noncopyable
     }
     void setKeyValues(const uchar* ptr, int size);
     void setBlobFieldPointer(const bzs::db::blobHeader* hd);
-    inline void unlockRow();
-
     inline void initHandler()
     {
         if ((m_db.m_inSnapshot == 0) &&
             (m_table->reginfo.lock_type != TL_WRITE))
             m_table->file->init_table_handle_for_HANDLER();
     }
+    
+    inline void unlockRow(bool noConsistent);
+    inline void tryConsistentRead(bool noConsistent);
 
 #ifdef USE_HANDLERSOCKET
     std::vector<int> m_useFields;
@@ -316,7 +335,13 @@ public:
 
     int id() { return m_id; };
 
-    inline void unUse() { m_db.unUseTable(this); }
+    inline void unUse() 
+    { 
+        if (m_singleRowLock)
+            m_singleRowLock = false;
+        else
+            m_db.unUseTable(this); 
+    }
 
     inline const std::string& name() const { return m_name; }
 
@@ -595,6 +620,11 @@ public:
             ret = m_table->file->ha_rnd_init(true);
         assert(ret == 0);
     }
+
+    inline void setSingleRowLock(bool v)
+    {
+        m_singleRowLock = v;
+    }
     
 };
 
@@ -707,6 +737,21 @@ public:
     {
         if (m_db)
             m_db->abortTrn();
+    }
+};
+
+
+struct smartForceConsistantRead
+{
+    table* tb;
+    inline smartForceConsistantRead(table* t):tb(t)
+    {
+        tb->m_forceConsistentRead = true;
+    }
+
+    inline ~smartForceConsistantRead()
+    {
+        tb->m_forceConsistentRead = false;
     }
 };
 

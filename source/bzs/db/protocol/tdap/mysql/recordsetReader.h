@@ -841,7 +841,7 @@ public:
         const logicalField* fd = &req.field;
         for (int i = 0; i < req.logicalCount; ++i)
         {
-            for (int j=0;j<m_fields.size();++j)
+            for (int j=0;j<(int)m_fields.size();++j)
             {
                 fieldAdapter& fa = m_fields[j];
                 if (fa.m_placeHolderNum == i)
@@ -857,7 +857,7 @@ public:
 
     void setNextPtr()
     {
-        for (int i = 0; i < m_fields.size() - 1; ++i)
+        for (int i = 0; i < (int)m_fields.size() - 1; ++i)
         {
             m_fields[i].m_next = &m_fields[i + 1];
             m_fields[i].oprCache();

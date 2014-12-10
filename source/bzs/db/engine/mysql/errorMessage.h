@@ -32,7 +32,7 @@ namespace mysql
 {
 
 const char* errorMessage(int errorCode);
-void printErrorMessage(const int* errorCode, const std::string* msg);
+void printWarningMessage(const int* errorCode, const std::string* msg);
 
 } // namespace mysql
 } // namespace engine

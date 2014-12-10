@@ -55,7 +55,7 @@ const char* errorMessage(int errorCode)
     return "";
 }
 
-void printErrorMessage(const int* errorCode, const std::string* message)
+void printWarningMessage(const int* errorCode, const std::string* message)
 {
     int code = errorCode ? *errorCode : 0;
     std::string msg = errorMessage(code);
@@ -63,9 +63,7 @@ void printErrorMessage(const int* errorCode, const std::string* message)
         msg += " :" + *message;
 
     if ((code != STATUS_TABLE_NOTOPEN) && (code != STATUS_INVALID_BOOKMARK))
-    {
-        sql_print_error("%s", msg.c_str());
-    }
+        sql_print_warning("Transactd: %s", msg.c_str());
 }
 
 } // namespace mysql

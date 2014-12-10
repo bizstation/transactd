@@ -603,10 +603,11 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
              int id)
     : m_table(myTable), m_name(name), m_mode(mode), m_id(id), m_db(db),
       m_keybuf(new unsigned char[MAX_KEYLEN]),
-      m_nonNccKeybuf(new unsigned char[MAX_KEYLEN]),
+      m_nonNccKeybuf(new unsigned char[MAX_KEYLEN]), m_stat(0),
       m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
-      m_stat(0), m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
-      m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false)
+      m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
+      m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false),
+      m_singleRowLock(false),m_forceConsistentRead(false)
 {
 
     m_table->read_set = &m_table->s->all_set;
@@ -1128,14 +1129,24 @@ inline bool table::keynumCheck(char num)
     return ((num >= 0) && (num < (short)m_table->s->keys));
 }
 
-inline void table::unlockRow()
+inline void table::tryConsistentRead(bool noConsistent)
 {
-    if (!m_nounlock && m_validCursor && m_db.inTransaction() &&
-        (m_db.transactionType() == 0))
-    {
+    /* Don't read old version that next operation is write, or inTransaqction. */ 
+    bool const_read = m_forceConsistentRead || 
+                        (
+                            m_db.canConsistentRead() && 
+                            (m_table->reginfo.lock_type != TL_WRITE) && 
+                            !noConsistent
+                        ); 
+    m_table->file->try_semi_consistent_read(const_read);
+}
+
+inline void table::unlockRow(bool noConsistent)
+{
+    if ((m_forceConsistentRead || m_db.canUnlockRow()) && m_validCursor && !m_nounlock)
         m_table->file->unlock_row();
-        m_nounlock = false;
-    }
+    tryConsistentRead(noConsistent);
+    m_nounlock = false;
 }
 
 /* read by key
@@ -1146,7 +1157,7 @@ void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
     m_nonNcc = false;
     if (keynumCheck(m_keyNum))
     {
-        unlockRow();
+        unlockRow(m_singleRowLock);
         m_stat = m_table->file->ha_index_read_map(
             m_table->record[0], &m_keybuf[0], keyMap /* keymap() */, find_flag);
         m_cursor = m_validCursor = (m_stat == 0);
@@ -1168,7 +1179,7 @@ void table::moveKey(boost::function<int()> func)
     m_nonNcc = false;
     if (keynumCheck(m_keyNum))
     {
-        unlockRow();
+        unlockRow(m_singleRowLock);
 
         m_stat = func();
         m_cursor = m_validCursor = (m_stat == 0);
@@ -1187,9 +1198,7 @@ void table::getNextSame(key_part_map keyMap)
     m_nonNcc = false;
     if (keynumCheck(m_keyNum))
     {
-        if (m_validCursor && m_db.inTransaction() &&
-            (m_db.transactionType() == 0))
-            m_table->file->unlock_row();
+        unlockRow(false /*lock*/);
         m_stat = m_table->file->ha_index_next_same(
             m_table->record[0], &m_keybuf[0], keyMap /* keymap() */);
         m_cursor = m_validCursor = (m_stat == 0);
@@ -1303,6 +1312,10 @@ void table::getByPercentage(unsigned short per)
         m_stat = STATUS_INVALID_KEYNUM;
         return;
     }
+
+    /* Use constistant read  force */
+    smartForceConsistantRead SFCR(this);
+
     if (per > 9800)
     {
         getLast();
@@ -1476,6 +1489,7 @@ void table::stepFirst()
     {
         if (setNonKey(true))
         {
+            unlockRow(m_singleRowLock);
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
             m_cursor = m_validCursor = (m_stat == 0);
         }
@@ -1509,12 +1523,14 @@ void table::stepNext()
         {
             if (setNonKey(false))
             {
+                unlockRow(false/*lock*/);
                 m_stat = m_table->file->ha_rnd_pos(m_table->record[0],
                                                    (uchar*)position(true));
                 if (m_stat != 0)
                     return;
             }
         }
+        unlockRow(m_singleRowLock);
         m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         m_cursor = m_validCursor = (m_stat == 0);
     }
@@ -1554,20 +1570,13 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 
     // Is a current position read or not?
     bool read = !includeCurrent;
-    bool unlock = (!m_db.inSnapshot() && !m_db.inTransaction()) ||
-                  (m_db.inTransaction() && (m_db.transactionType() == 0));
     bool forword =
         (type == READ_RECORD_GETNEXT) || (type == READ_RECORD_STEPNEXT);
     while ((reject != 0) && (rows != 0))
     {
         if (read)
         {
-
-            if (unlock && !m_nounlock && m_validCursor)
-            {
-                m_table->file->unlock_row();
-                m_nounlock = false;
-            }
+            unlockRow(false);
 
             if (type == READ_RECORD_GETNEXT)
                 m_stat = m_table->file->ha_index_next(m_table->record[0]);
@@ -1616,6 +1625,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 // private
 void table::seekPos(const uchar* rawPos)
 {
+    
     seekKey(HA_READ_KEY_OR_NEXT, keymap());
     if (m_keyNum == (int)m_table->s->primary_key)
         return;
@@ -1623,7 +1633,7 @@ void table::seekPos(const uchar* rawPos)
     while ((m_stat == 0) &&
            ((cmp = m_table->file->cmp_ref(position(true), rawPos)) != 0))
     {
-        unlockRow();
+        unlockRow(m_singleRowLock);
         m_table->file->ha_index_next_same(m_table->record[0], &m_keybuf[0],
                                           keymap());
     }
@@ -1636,7 +1646,7 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
         rawPos = bms()->getRefByBm(*(unsigned int*)pos);
 
     setNonKey();
-    unlockRow();
+    unlockRow(m_singleRowLock);
     m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
     m_cursor = (m_stat == 0);
     if ((keyNum == -1) || (keyNum == -64) || (keyNum == -2))
@@ -1685,9 +1695,10 @@ ha_rows table::recordCount(bool estimate)
          (HA_HAS_RECORDS | HA_STATS_RECORDS_IS_EXACT)) != 0)
         return m_table->file->records();
     if (estimate)
-    { // Since the answer of innodb is random, 1 returns also 0.
-        // Since it is important, in the case of 1
-        // , whether there is nothing or it is scan and investigate.
+    {   /* Since the answer of innodb is random, 1 returns also 0.
+         Since it is important, in the case of 1
+         , whether there is nothing or it is scan and investigate.
+         info() is update statistics variables */ 
         m_table->file->info(HA_STATUS_VARIABLE | HA_STATUS_NO_LOCK);
         ha_rows rows = m_table->file->records();
         if (rows > 1)
@@ -1702,9 +1713,11 @@ ha_rows table::recordCount(bool estimate)
     if (setKeyNum((char)0, false /* sorted */))
     {
         initHandler();
+        m_table->file->try_semi_consistent_read(true);
         m_stat = m_table->file->ha_index_first(m_table->record[0]);
         while (m_stat == 0)
         {
+            m_table->file->unlock_row();
             n++;
             m_stat = m_table->file->ha_index_next(m_table->record[0]);
         }
@@ -1720,9 +1733,11 @@ ha_rows table::recordCount(bool estimate)
     {
         setNonKey(true /* scan */);
         initHandler();
+        m_table->file->try_semi_consistent_read(true);
         m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         while (m_stat == 0)
         {
+            m_table->file->unlock_row();
             ++n;
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         }
@@ -1855,10 +1870,11 @@ __int64 table::insert(bool ncc)
         else if (!m_bulkInserting)
             key_copy(&m_keybuf[0], m_table->record[0],
                      &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
-        m_cursor = m_validCursor = m_nounlock = (m_stat == 0);
-
+        
+        /* Do not change to m_changed = false */
         m_changed = true;
     }
+    m_cursor = m_validCursor = m_nounlock = (m_stat == 0);
     return autoincValue;
 }
 
@@ -1885,7 +1901,7 @@ void table::beginDel()
         m_stat = STATUS_INVALID_LOCKTYPE;
         return;
     }
-    m_table->file->try_semi_consistent_read(1);
+
     if (m_cursor)
     {
         m_stat = 0;
@@ -1926,7 +1942,6 @@ void table::update(bool ncc)
 {
     if (m_stat == 0)
     {
-
         int nullFieldsOfCurrentKey = setKeyNullFlags();
         setFiledNullFlags();
         m_stat = m_table->file->ha_update_row(m_table->record[1],
@@ -1953,12 +1968,11 @@ void table::update(bool ncc)
                     }
                 }
             }
+            /* Do not change to m_changed = false */
+            if (m_stat == 0) m_changed = true;
             m_cursor = m_validCursor = m_nounlock = (m_stat == 0);
         }
     }
-    if (m_stat == 0)
-        m_changed = true;
-    m_table->file->try_semi_consistent_read(0);
 }
 
 /** del current record.
@@ -1968,9 +1982,15 @@ void table::update(bool ncc)
 void table::del()
 {
     if (m_stat == 0)
+    {
         m_stat = m_table->file->ha_delete_row(m_table->record[0]);
-    if (m_stat == 0)
-        m_changed = true;
+        /* Do not change to m_changed = false */
+        if (m_stat == 0) m_changed = true;
+    }
+
+    //No cursor changed
+    m_nounlock = (m_stat == 0);
+  
 }
 
 #ifdef USE_BTRV_VARIABLE_LEN
@@ -2090,7 +2110,7 @@ void table::setUseFieldList(const std::string& csv)
 {
     std::vector<std::string> values;
     split(values, csv, ",");
-    for (int i = 0; i < values.size(); i++)
+    for (int i = 0; i < (int)values.size(); i++)
         addUseField(fieldIndexByName(values[i].c_str()));
 }
 

@@ -365,7 +365,7 @@ int dbExecuter::commandExec(std::vector<request>& requests,
                 writeError(1, buf, "");
             sql_print_error("%s", boost::diagnostic_information(e).c_str());
         }
-        printErrorMessage(code, msg);
+        printWarningMessage(code, msg);
     }
 
     catch (...)
