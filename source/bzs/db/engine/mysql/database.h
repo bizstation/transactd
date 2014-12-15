@@ -160,8 +160,7 @@ public:
         /* inTransaction multi record lock do not unlock */
         if (m_inTransaction && (m_trnType == TRN_RECORD_LOCK_MUILTI))
             return false;
-        /* in snapshot do not unlock */
-        return (m_inSnapshot==false);
+        return true;
     }
 
     inline bool noUserTransaction() const
@@ -296,6 +295,14 @@ class table : private boost::noncopyable
         if ((m_db.m_inSnapshot == 0) &&
             (m_table->reginfo.lock_type != TL_WRITE))
             m_table->file->init_table_handle_for_HANDLER();
+    }
+    inline bool setCursorStaus()
+    {
+        m_validCursor = (m_stat == 0);
+        m_cursor = (m_stat == 0) ? true : 
+                       ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
+                        (m_stat == HA_ERR_LOCK_DEADLOCK)) ? m_cursor : false;
+        return m_validCursor;
     }
     
     inline void unlockRow(bool noConsistent);
@@ -653,18 +660,13 @@ public:
 
     inline short unlock()
     {
-        if (m_db.inSnapshot())
-        {
-            if (m_validCursor && (m_db.m_iso >= ISO_READ_COMMITTED))
-                m_table->file->unlock_row();
-            else
-                return 1;
-        }else if(m_db.inTransaction())
+        if (m_db.inSnapshot() || m_db.inTransaction())
         {
             if (m_validCursor)
                 m_table->file->unlock_row();
-        }
-        else if (m_db.m_inAutoTransaction == this)
+            else
+                return 1;
+        }else if (m_db.m_inAutoTransaction == this)
             unUse();
         return 0;
     }

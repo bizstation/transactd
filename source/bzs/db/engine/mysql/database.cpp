@@ -1202,7 +1202,7 @@ void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
         unlockRow(m_delayAutoCommit);
         m_stat = m_table->file->ha_index_read_map(
             m_table->record[0], &m_keybuf[0], keyMap /* keymap() */, find_flag);
-        m_cursor = m_validCursor = (m_stat == 0);
+        setCursorStaus();
         if (m_stat == 0)
         {
             m_forword = true;
@@ -1237,7 +1237,7 @@ void table::moveKey(boost::function<int()> func, bool forword)
             }
         }else
             m_stat = func();
-        m_cursor = m_validCursor = (m_stat == 0);
+        setCursorStaus();
         if (m_stat == 0)
             key_copy(&m_keybuf[0], m_table->record[0],
                      &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
@@ -1256,7 +1256,7 @@ void table::getNextSame(key_part_map keyMap)
         unlockRow(false /*lock*/);
         m_stat = m_table->file->ha_index_next_same(
             m_table->record[0], &m_keybuf[0], keyMap /* keymap() */);
-        m_cursor = m_validCursor = (m_stat == 0);
+        setCursorStaus();
         if (m_stat == 0)
         {
             key_copy(&m_keybuf[0], m_table->record[0],
@@ -1553,7 +1553,7 @@ void table::stepFirst()
         {
             unlockRow(m_delayAutoCommit);
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
-            m_cursor = m_validCursor = (m_stat == 0);
+            setCursorStaus();
         }
         else
             m_stat = STATUS_INVALID_KEYNUM;
@@ -1594,7 +1594,7 @@ void table::stepNext()
         }
         unlockRow(m_delayAutoCommit);
         m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
-        m_cursor = m_validCursor = (m_stat == 0);
+        setCursorStaus();
     }
 }
 
@@ -1651,7 +1651,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
                 m_stat = STATUS_NOSUPPORT_OP;
                 return;
             }
-            m_cursor = m_validCursor = (m_stat == 0);
+            setCursorStaus();
         }
         else
             read = true;
@@ -1668,14 +1668,17 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
             if (m_stat)
                 break;
             --rows;
-        }
-        else if (ret == REC_NOMACTH_NOMORE)
+        }else
         {
-            m_stat = STATUS_REACHED_FILTER_COND;
-            return;
+            unlock();
+            if (ret == REC_NOMACTH_NOMORE)
+            {
+                m_stat = STATUS_REACHED_FILTER_COND;
+                return;
+            }
+            else
+                --reject;
         }
-        else
-            --reject;
     }
     if (reject == 0)
         m_stat = STATUS_LIMMIT_OF_REJECT;
@@ -1711,7 +1714,9 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
     setNonKey();
     unlockRow(m_delayAutoCommit);
     m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
-    m_cursor = (m_stat == 0);
+    m_cursor = (m_stat == 0) ? true : 
+                       ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
+                        (m_stat == HA_ERR_LOCK_DEADLOCK)) ? m_cursor : false;
     m_forword = true;
     if ((keyNum == -1) || (keyNum == -64) || (keyNum == -2))
         return;
@@ -1939,7 +1944,7 @@ __int64 table::insert(bool ncc)
         /* Do not change to m_changed = false */
         m_changed = true;
     }
-    m_cursor = m_validCursor = m_nounlock = (m_stat == 0);
+    m_nounlock = setCursorStaus();
     return autoincValue;
 }
 
@@ -1996,7 +2001,7 @@ void table::beginDel()
                 cmp_record(m_table, record[1]))
                 m_stat = STATUS_CHANGE_CONFLICT;
 
-            m_cursor = m_validCursor = (m_stat == 0);
+            setCursorStaus();
             if (m_stat)
                 return;
         }
@@ -2041,7 +2046,7 @@ void table::update(bool ncc)
             }
             /* Do not change to m_changed = false */
             if (m_stat == 0) m_changed = true;
-            m_cursor = m_validCursor = m_nounlock = (m_stat == 0);
+            m_nounlock = setCursorStaus();
         }
     }
 }

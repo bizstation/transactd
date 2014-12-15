@@ -60,7 +60,7 @@ void printWarningMessage(const int* errorCode, const std::string* message)
     int code = errorCode ? *errorCode : 0;
     std::string msg = errorMessage(code);
     if (message)
-        msg += " :" + *message;
+        msg += *message;
 
     if ((code != STATUS_TABLE_NOTOPEN) && (code != STATUS_INVALID_BOOKMARK))
         sql_print_warning("Transactd: %s", msg.c_str());
