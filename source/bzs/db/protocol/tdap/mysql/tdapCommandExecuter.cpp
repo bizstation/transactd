@@ -897,7 +897,9 @@ inline void dbExecuter::doStat(request& req)
 
 inline enum_tx_isolation getIsolationLevel(int op)
 {
-    if (op > TRN_ISO_SERIALIZABLE)
+    if (op > CONSISTENT_READ)
+        return (enum_tx_isolation)0;
+    else if (op > TRN_ISO_SERIALIZABLE)
         return ISO_SERIALIZABLE;
     else if(op > TRN_ISO_REPEATABLE_READ)
         return ISO_REPEATABLE_READ;
@@ -1207,6 +1209,10 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_INSERT_BULK:
             doInsertBulk(req);
+            break;
+        case TD_UNLOCK:
+            m_tb = getTable(req.pbk->handle);
+            req.result = m_tb->unlock() ? STATUS_NO_CURRENT : 0;
             break;
         }
         if (m_tb)

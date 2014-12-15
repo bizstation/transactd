@@ -250,6 +250,8 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             client_t->req().paramMask = P_MASK_NOKEYBUF;
             break;
         case TD_UNLOCK:
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
+            break;
         case TD_UPDATE_PART:
             client_t->cleanup();
             return 0;

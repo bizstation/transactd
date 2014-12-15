@@ -680,7 +680,10 @@ void testGetNext(database* db)
         BOOST_CHECK_MESSAGE(vv == tb->getFVint(fdi_id), "GetNext");
 
         for (int i = 3; i < 20002; i++)
+        {
             tb->seekNext();
+            BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "GetNext");
+        }
         db->endSnapshot();
     }
     tb->release();
@@ -689,6 +692,8 @@ void testGetNext(database* db)
 void testGetPrevious(database* db)
 {
     table* tb = openTable(db);
+
+    // in-snapshot
     db->beginSnapshot();
     int vv = 20001;
     tb->clearBuffer();
@@ -703,8 +708,23 @@ void testGetPrevious(database* db)
     tb->seekPrev();
     BOOST_CHECK_MESSAGE(_tstring(_T("kosaka")) == _tstring(tb->getFVstr(1)),
                         "GetPrevious kosaka");
-
     db->endSnapshot();
+
+    //without snapshot
+    vv = 20001;
+    tb->clearBuffer();
+    tb->setFV((short)0, vv);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(vv == tb->getFVint(fdi_id), "GetPrevious");
+    for (int i = 20000; i > 1; i--)
+    {
+        tb->seekPrev();
+        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "GetPrevious I");
+    }
+    tb->seekPrev();
+    BOOST_CHECK_MESSAGE(_tstring(_T("kosaka")) == _tstring(tb->getFVstr(1)),
+                        "GetPrevious kosaka");
+
     tb->release();
 }
 
@@ -875,7 +895,7 @@ void testSnapshot(database* db)
     db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
     table* tb2 = openTable(db2);
 
-    // Get Shared lock(IS) to read rows but no gap
+    // No locking repeatable read
     db->beginSnapshot();
     BOOST_CHECK_MESSAGE(0 == db->stat(), "beginSnapShot");
     db->beginTrn();
@@ -883,22 +903,26 @@ void testSnapshot(database* db)
 
 
     tb->setKeyNum(0);
-    tb->seekFirst(); //shread lock(S) first row.
+    tb->seekFirst(); 
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekFirst");
-    int firstValue = tb->getFVint(fdi_name);
-    tb->seekNext();//shread lock(S) second row.
+    _tstring firstValue = tb->getFVstr(fdi_name);
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekNext");
+    BOOST_CHECK_MESSAGE(2 == tb->getFVint(fdi_id), "seekNext");
     /* -------------------------------------------------- */
-    // Try change data by another connection
+    // Change data by another connection
     tb2->setKeyNum(0);
-    tb2->seekFirst();//Get shared lock(S), tb and tb2 both OK!
+    tb2->seekFirst();
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
     tb2->setFV(fdi_name, tb2->getFVint(fdi_name) + 1);
     
-    tb2->update(); // Try get exclusive lock(X),  
-    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(),
+    //Change success
+    tb2->update(); 
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(),
                         "tb2->update stat = " << tb2->stat());
+    // in-snapshot repeatable read check same value
     tb->seekFirst();
-    int secondValue = tb->getFVint(fdi_name);
+    _tstring secondValue = tb->getFVstr(fdi_name);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "secondValue");
     BOOST_CHECK_MESSAGE(secondValue == firstValue, "repeatableRead");
 
@@ -911,17 +935,14 @@ void testSnapshot(database* db)
     tb->insert();
     BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb->stat(), "snapshot insert stat = " << tb->stat());
 
-    //test no gap lock
-    tb->seekLast();  // id = 30000
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekLast");
-    tb->seekPrev();  // id = 20002
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekPrev");
-    tb->seekPrev();  // id = 20001
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekPrev");
-
+    //test phantom read
     tb2->setFV(fdi_id, 29999);
     tb2->insert();
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "GAP insert");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "phantom insert");
+    tb->setFV(fdi_id, 29999);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(STATUS_NOT_FOUND_TI == tb->stat(), "phantom read");
+
     // clean up
     tb2->del();
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "del");
@@ -929,6 +950,11 @@ void testSnapshot(database* db)
     db->endSnapshot();
     BOOST_CHECK_MESSAGE(0 == db->stat(), "endSnapShot");
     
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    BOOST_CHECK_MESSAGE(1 == tb->getFVint(fdi_name), "read new value = 1");
+
+
     //test gap lock
     db->beginSnapshot(GAPLOCK);
     tb->seekLast();  // id = 30000
@@ -1386,8 +1412,66 @@ void testRecordLock(database* db)
     tb->del();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->del");
 
+    /* ---------   Unlock test ----------------------------*/
+    // 1 unlock()
+    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+
+    tb->unlock();
+
+    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    tb2->unlock();
+
+    //2 auto tran ended
+    table* tb3 = openTable(db2);
+    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    
+    tb3->seekLast(); //This operation is another table handle, then auto tran ended 
+    BOOST_CHECK_MESSAGE(0 == tb3->stat(), "tb3->seekLast");
+
+    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    tb->unlock();
+
+    // begin trn
+    tb3->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb3->stat(), "tb3->seekFirst");
+
+    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb->stat(), "tb->seekFirst");
+    db2->beginTrn();
+
+    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    db2->endTrn();
+    tb->unlock();
+    // begin snapshot
+    tb3->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb3->stat(), "tb3->seekFirst");
+
+    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb->stat(), "tb->seekFirst");
+    db2->beginSnapshot();
+    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    db2->endSnapshot();
+    tb->unlock();
+     // close Table
+    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+
+    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekFirst");
     tb->release();
+    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    /* ---------   End Unlock test ----------------------------*/
+
+    
     tb2->release();
+    tb3->release();
     database::destroy(db2);
     
 }

@@ -103,7 +103,6 @@ void tableCacheCounter::release(const std::string& dbname,
 void lockTable(THD* thd, TABLE* tb)
 {
     bool append = (thd->lock != 0);
-    thd->in_lock_tables = 1;
 
     MYSQL_LOCK* lock = mysql_lock_tables(thd, &tb, 1, 0);
     if (!append)
@@ -114,7 +113,6 @@ void lockTable(THD* thd, TABLE* tb)
         if (lockMrg)
             thd->lock = lockMrg;
     }
-    thd->in_lock_tables = 0;
     DEBUG_WRITELOG_SP1("LOCK TABLE table =%s\n", tb->s->table_name.str);
 
     return;
@@ -170,7 +168,7 @@ tableCacheCounter database::tableRef;
 
 database::database(const char* name, short cid)
     : m_dbname(name), m_thd(createThdForThread()), m_cid(cid),
-      m_inTransaction(0), m_inSnapshot(0), m_trnType(0)
+      m_inTransaction(0), m_inSnapshot(0), m_trnType(0),m_inAutoTransaction(NULL)
 {
     m_thd->security_ctx->skip_grants();
 }
@@ -219,16 +217,30 @@ table* database::useTable(int index, enum_sql_command cmd)
     if (tb->m_table == NULL)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                      "Invalid table id.");
-    bool trn = ((m_inTransaction > 0) & (tb->mode() != TD_OPEN_READONLY));
+    bool trn = ((m_inTransaction > 0) && (tb->mode() != TD_OPEN_READONLY));
+    if (m_inSnapshot) 
+        cmd = SQLCOM_SELECT;
+        
     tb->m_table->reginfo.lock_type = locktype(trn, cmd);
     if ((tb->mode() == TD_OPEN_READONLY) &&
         (tb->m_table->reginfo.lock_type == TL_WRITE))
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ACCESS_DENIED, "Access denined.");
+    
+    m_thd->in_lock_tables = (tb->m_table->reginfo.lock_type == TL_WRITE);
     if (m_thd->lock == 0)
     {
         m_thd->lex->sql_command = cmd;
-        if (m_inTransaction || m_inSnapshot)
+        if (m_inTransaction)
             m_thd->tx_isolation = m_iso;
+        else if(m_inSnapshot)
+        {
+            if (m_iso)
+            {
+                m_thd->in_lock_tables = 1;// WITH LOCK
+                m_thd->tx_isolation = m_iso;
+            }else
+                m_thd->tx_isolation = ISO_REPEATABLE_READ;
+        }
         else
             m_thd->tx_isolation = (enum_tx_isolation)m_thd->variables.tx_isolation;
         cp_thd_set_read_only(m_thd);
@@ -265,6 +277,15 @@ void database::unUseTable(table* tb)
         bool changed = tb->isChanged();
         tb->resetTransctionInfo(m_thd);
         bool rollback = (!changed && needUnlock);
+
+        //unlock whole tebles, 
+        //  but a table can not know unlocked if a table in-autoTransaction
+        if (m_inAutoTransaction)
+        {
+            if (tb != m_inAutoTransaction)
+                m_inAutoTransaction->resetTransctionInfo(m_thd);
+            m_inAutoTransaction = NULL;
+        }
         if (unlockTables(needUnlock, m_thd, rollback))
         {
             DEBUG_WRITELOG_SP1("UNLOCK TABLE table =%s\n",
@@ -300,6 +321,7 @@ void database::unUseTables(bool rollback)
         (locktype((m_inTransaction > 0), m_thd->lex->sql_command) == TL_WRITE);
     m_inTransaction = 0;
     m_inSnapshot = 0;
+    m_inAutoTransaction = NULL;
     for (int i = 0; i < (int)m_tables.size(); i++)
     {
         if (m_tables[i])
@@ -329,14 +351,18 @@ bool database::beginTrn(short type, enum_tx_isolation iso)
 {
     if (m_inSnapshot)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INSNAPSHOT, "Snapshot is already beginning.");        
-    ++m_inTransaction;
-    if (m_inTransaction == 1)
+    
+    bool ret = false;
+    if (m_inTransaction == 0)
     {
         m_trnType = type;
         m_iso = iso;
-        return true;
+        if (m_inAutoTransaction)
+            m_inAutoTransaction->unUse();
+        ret = true;
     }
-    return false;
+    ++m_inTransaction;
+    return ret;
 }
 
 bool database::commitTrn()
@@ -366,13 +392,16 @@ bool database::beginSnapshot(enum_tx_isolation iso)
     if (m_inTransaction)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Transaction is already beginning.");        
 
-    ++m_inSnapshot;
-    if (m_inSnapshot == 1)
+    bool ret = false;
+    if (m_inSnapshot == 0)
     {
         m_iso = iso;
-        return true;
+        if (m_inAutoTransaction)
+            m_inAutoTransaction->unUse();
+        ret = true;
     }
-    return false;
+    ++m_inSnapshot;
+    return ret;
 }
 
 bool database::endSnapshot()
@@ -492,8 +521,7 @@ void database::closeTable(table* tb)
         {
             short mode = tb->m_mode;
             TABLE* src = tb->m_table;
-
-            unUseTable(m_tables[i].get());
+            m_tables[i]->unUse();
             m_tables[i].reset();
             if (mode == TD_OPEN_EXCLUSIVE)
             {
@@ -621,7 +649,7 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
       m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
       m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
       m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false),
-      m_rowLock(false),m_forceConsistentRead(false),m_rowLocked(false)
+      m_delayAutoCommit(false),m_forceConsistentRead(false)
 {
 
     m_table->read_set = &m_table->s->all_set;
@@ -1148,7 +1176,7 @@ inline void table::tryConsistentRead(bool noConsistent)
     /* Don't read old version that next operation is write, or inTransaqction. */ 
     bool const_read = m_forceConsistentRead || 
                         (
-                            m_db.canConsistentRead() && 
+                            m_db.noUserTransaction() && 
                             (m_table->reginfo.lock_type != TL_WRITE) && 
                             !noConsistent
                         ); 
@@ -1171,12 +1199,13 @@ void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
     m_nonNcc = false;
     if (keynumCheck(m_keyNum))
     {
-        unlockRow(m_rowLock);
+        unlockRow(m_delayAutoCommit);
         m_stat = m_table->file->ha_index_read_map(
             m_table->record[0], &m_keybuf[0], keyMap /* keymap() */, find_flag);
         m_cursor = m_validCursor = (m_stat == 0);
         if (m_stat == 0)
         {
+            m_forword = true;
             if (find_flag != HA_READ_KEY_EXACT)
                 key_copy(&m_keybuf[0], m_table->record[0],
                          &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
@@ -1188,14 +1217,26 @@ void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
         m_stat = HA_ERR_END_OF_FILE;
 }
 
-void table::moveKey(boost::function<int()> func)
+void table::moveKey(boost::function<int()> func, bool forword)
 {
     m_nonNcc = false;
     if (keynumCheck(m_keyNum))
     {
-        unlockRow(m_rowLock);
+        unlockRow(m_delayAutoCommit);
 
-        m_stat = func();
+        // If different direction as before, first operation return same record!!! 
+        if (forword != m_forword)
+        {
+            uchar pos[256];
+            memcpy(pos, position(true), m_table->file->ref_length);
+            while (m_stat == 0)
+            {
+                if (m_table->file->cmp_ref(position(true), pos) != 0)
+                    break;
+                m_stat = func();
+            }
+        }else
+            m_stat = func();
         m_cursor = m_validCursor = (m_stat == 0);
         if (m_stat == 0)
             key_copy(&m_keybuf[0], m_table->record[0],
@@ -1217,8 +1258,11 @@ void table::getNextSame(key_part_map keyMap)
             m_table->record[0], &m_keybuf[0], keyMap /* keymap() */);
         m_cursor = m_validCursor = (m_stat == 0);
         if (m_stat == 0)
+        {
             key_copy(&m_keybuf[0], m_table->record[0],
                      &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
+            m_forword = true;
+        }
     }
     else
         m_stat = STATUS_INVALID_KEYNUM;
@@ -1227,13 +1271,15 @@ void table::getNextSame(key_part_map keyMap)
 void table::getLast()
 {
     moveKey(boost::bind(&handler::ha_index_last, m_table->file,
-                        m_table->record[0]));
+                        m_table->record[0]), m_forword);
+    m_forword = false;
 }
 
 void table::getFirst()
 {
     moveKey(boost::bind(&handler::ha_index_first, m_table->file,
-                        m_table->record[0]));
+                        m_table->record[0]), m_forword);
+    m_forword = true;
 
 #if (defined(DEBUG) && defined(WIN32))
 
@@ -1267,7 +1313,8 @@ void table::getNext()
             return;
     }
     moveKey(boost::bind(&handler::ha_index_next, m_table->file,
-                        m_table->record[0]));
+                        m_table->record[0]), true);
+    m_forword = true;
 }
 
 void table::getPrev()
@@ -1284,7 +1331,8 @@ void table::getPrev()
             return;
     }
     moveKey(boost::bind(&handler::ha_index_prev, m_table->file,
-                        m_table->record[0]));
+                        m_table->record[0]), false);
+    m_forword = false;
 }
 
 bool table::keyCheckForPercent()
@@ -1503,7 +1551,7 @@ void table::stepFirst()
     {
         if (setNonKey(true))
         {
-            unlockRow(m_rowLock);
+            unlockRow(m_delayAutoCommit);
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
             m_cursor = m_validCursor = (m_stat == 0);
         }
@@ -1544,7 +1592,7 @@ void table::stepNext()
                     return;
             }
         }
-        unlockRow(m_rowLock);
+        unlockRow(m_delayAutoCommit);
         m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         m_cursor = m_validCursor = (m_stat == 0);
     }
@@ -1584,7 +1632,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 
     // Is a current position read or not?
     bool read = !includeCurrent;
-    bool forword =
+    m_forword = 
         (type == READ_RECORD_GETNEXT) || (type == READ_RECORD_STEPNEXT);
     while ((reject != 0) && (rows != 0))
     {
@@ -1610,7 +1658,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 
         if (m_stat)
             break;
-        int ret = hdr->match(forword);
+        int ret = hdr->match(m_forword);
         if (ret == REC_MACTH)
         {
 
@@ -1647,10 +1695,11 @@ void table::seekPos(const uchar* rawPos)
     while ((m_stat == 0) &&
            ((cmp = m_table->file->cmp_ref(position(true), rawPos)) != 0))
     {
-        unlockRow(m_rowLock);
+        unlockRow(m_delayAutoCommit);
         m_table->file->ha_index_next_same(m_table->record[0], &m_keybuf[0],
                                           keymap());
     }
+    m_forword = true;
 }
 
 void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
@@ -1660,9 +1709,10 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
         rawPos = bms()->getRefByBm(*(unsigned int*)pos);
 
     setNonKey();
-    unlockRow(m_rowLock);
+    unlockRow(m_delayAutoCommit);
     m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
     m_cursor = (m_stat == 0);
+    m_forword = true;
     if ((keyNum == -1) || (keyNum == -64) || (keyNum == -2))
         return;
     if (m_stat == 0)
@@ -1756,6 +1806,7 @@ ha_rows table::recordCount(bool estimate)
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         }
     }
+    m_forword = true;
     return n;
 }
 
@@ -1916,6 +1967,12 @@ void table::beginDel()
         return;
     }
 
+    if (m_db.m_inAutoTransaction == this)
+    {
+        // Confirmed that hold lock(X) by innodb_lock_monitor
+        indexInit();
+    }
+
     if (m_cursor)
     {
         m_stat = 0;
@@ -2056,6 +2113,11 @@ int table::keynumByName(const char* name) const
 
 void table::startBulkInsert(ha_rows rows)
 {
+    if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type != TL_WRITE))
+    {
+        m_stat = STATUS_INVALID_LOCKTYPE;
+        return ;
+    }
     m_table->file->ha_start_bulk_insert(rows);
     m_bulkInserting = true;
 }

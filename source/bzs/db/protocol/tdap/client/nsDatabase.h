@@ -106,7 +106,7 @@ public:
     // 平行トランザクション
     void endTrn();
     void abortTrn();
-    void beginSnapshot(short bias = NO_GAPLOCK);
+    void beginSnapshot(short bias = CONSISTENT_READ);
     void endSnapshot();
     short_td tdapErr(HWND hWnd, _TCHAR* retbuf = NULL);
     bool useLongFilename();

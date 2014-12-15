@@ -105,6 +105,7 @@ class database : private boost::noncopyable
     int m_inSnapshot;
     int m_stat;
     short m_trnType;
+    table* m_inAutoTransaction;
     enum_tx_isolation m_iso;
 
     std::vector<boost::shared_ptr<table> > m_tables;
@@ -163,7 +164,7 @@ public:
         return (m_inSnapshot==false);
     }
 
-    inline bool canConsistentRead() const
+    inline bool noUserTransaction() const
     {
         return ((m_inSnapshot + m_inTransaction) == 0);
     }
@@ -255,17 +256,17 @@ class table : private boost::noncopyable
         bool m_changed : 1;
         bool m_nounlock : 1;
         bool m_bulkInserting : 1;
-        bool m_rowLock : 1;
+        bool m_delayAutoCommit : 1;
     };
     struct
     {
         bool m_forceConsistentRead : 1;
-        bool m_rowLocked : 1;
+        bool m_forword;
     };
 
     table(TABLE* table, database& db, const std::string& name, short mode,
           int id);
-    void moveKey(boost::function<int()> func);
+    void moveKey(boost::function<int()> func, bool forword);
     void readRecords(IReadRecordsHandler* handler, bool includeCurrent,
                      int type, bool noBookmark);
 
@@ -350,16 +351,13 @@ public:
     /* The singleRowLock is no effects with Transaction or Snapshot. */
     inline void unUse() 
     { 
-        if (m_rowLock)
+        if (m_delayAutoCommit)
         {
-            m_rowLock = false;
-            m_rowLocked = true;
+            m_delayAutoCommit = false;
+            m_db.m_inAutoTransaction = this;
         }
         else
-        {
-            m_rowLocked = false;
             m_db.unUseTable(this);
-        }
     }
 
     inline const std::string& name() const { return m_name; }
@@ -642,14 +640,33 @@ public:
 
     inline void setRowLock(rowLockMode* lck)
     {
-        if (!m_rowLocked)
-            indexInit();
-        m_rowLock = lck->lock;
+        if (lck->lock && m_db.noUserTransaction())
+            m_delayAutoCommit = true;
+        else
+            m_delayAutoCommit = false;
     }
 
     inline void setRowLockError()
     {
-        m_rowLock = false;
+        m_delayAutoCommit = false;
+    }
+
+    inline short unlock()
+    {
+        if (m_db.inSnapshot())
+        {
+            if (m_validCursor && (m_db.m_iso >= ISO_READ_COMMITTED))
+                m_table->file->unlock_row();
+            else
+                return 1;
+        }else if(m_db.inTransaction())
+        {
+            if (m_validCursor)
+                m_table->file->unlock_row();
+        }
+        else if (m_db.m_inAutoTransaction == this)
+            unUse();
+        return 0;
     }
     
 };
