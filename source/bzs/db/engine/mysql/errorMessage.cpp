@@ -38,7 +38,7 @@ const char* errorMessage(int errorCode)
     case STATUS_PROGRAM_ERROR:
         return "Program error";
     case STATUS_CANNOT_LOCK_TABLE:
-        return "Can not open the table Allrady locked";
+        return "Can not open the table already locked";
     case STATUS_TABLE_NOTOPEN:
         return "Can not open the table";
     case STATUS_INVALID_KEYNAME:

@@ -250,6 +250,8 @@ table* database::useTable(int index, enum_sql_command cmd)
     if ((tb->m_table->reginfo.lock_type == TL_WRITE) &&
         (m_thd->variables.sql_log_bin))
         m_thd->set_current_stmt_binlog_format_row();
+    if (!m_thd->in_lock_tables)
+        tb->m_table->file->init_table_handle_for_HANDLER();
     tb->setLocked(true);
     if (g_safe_share_mode)
     {
@@ -1205,7 +1207,6 @@ void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
         setCursorStaus();
         if (m_stat == 0)
         {
-            m_forword = true;
             if (find_flag != HA_READ_KEY_EXACT)
                 key_copy(&m_keybuf[0], m_table->record[0],
                          &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
@@ -1217,26 +1218,14 @@ void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
         m_stat = HA_ERR_END_OF_FILE;
 }
 
-void table::moveKey(boost::function<int()> func, bool forword)
+void table::moveKey(boost::function<int()> func)
 {
     m_nonNcc = false;
     if (keynumCheck(m_keyNum))
     {
         unlockRow(m_delayAutoCommit);
 
-        // If different direction as before, first operation return same record!!! 
-        if (forword != m_forword)
-        {
-            uchar pos[256];
-            memcpy(pos, position(true), m_table->file->ref_length);
-            while (m_stat == 0)
-            {
-                if (m_table->file->cmp_ref(position(true), pos) != 0)
-                    break;
-                m_stat = func();
-            }
-        }else
-            m_stat = func();
+        m_stat = func();
         setCursorStaus();
         if (m_stat == 0)
             key_copy(&m_keybuf[0], m_table->record[0],
@@ -1261,7 +1250,6 @@ void table::getNextSame(key_part_map keyMap)
         {
             key_copy(&m_keybuf[0], m_table->record[0],
                      &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
-            m_forword = true;
         }
     }
     else
@@ -1271,15 +1259,13 @@ void table::getNextSame(key_part_map keyMap)
 void table::getLast()
 {
     moveKey(boost::bind(&handler::ha_index_last, m_table->file,
-                        m_table->record[0]), m_forword);
-    m_forword = false;
+                        m_table->record[0]));
 }
 
 void table::getFirst()
 {
     moveKey(boost::bind(&handler::ha_index_first, m_table->file,
-                        m_table->record[0]), m_forword);
-    m_forword = true;
+                        m_table->record[0]));
 
 #if (defined(DEBUG) && defined(WIN32))
 
@@ -1313,8 +1299,7 @@ void table::getNext()
             return;
     }
     moveKey(boost::bind(&handler::ha_index_next, m_table->file,
-                        m_table->record[0]), true);
-    m_forword = true;
+                        m_table->record[0]));
 }
 
 void table::getPrev()
@@ -1331,8 +1316,7 @@ void table::getPrev()
             return;
     }
     moveKey(boost::bind(&handler::ha_index_prev, m_table->file,
-                        m_table->record[0]), false);
-    m_forword = false;
+                        m_table->record[0]));
 }
 
 bool table::keyCheckForPercent()
@@ -1486,7 +1470,6 @@ void table::getByPercentage(unsigned short per)
 
 int table::percentage(uchar* first, uchar* last, uchar* cur)
 {
-    initHandler();
     KEY& key = m_table->key_info[m_keyNum];
     // 1 cur to last
     key_range minkey;
@@ -1619,7 +1602,6 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
         m_stat = STATUS_NO_CURRENT;
         return;
     }
-    initHandler();
     m_nonNcc = false;
     int reject = (hdr->rejectCount() == 0) ? 4096 : hdr->rejectCount();
     if (reject == 0xFFFF)
@@ -1632,7 +1614,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 
     // Is a current position read or not?
     bool read = !includeCurrent;
-    m_forword = 
+    bool forword = 
         (type == READ_RECORD_GETNEXT) || (type == READ_RECORD_STEPNEXT);
     while ((reject != 0) && (rows != 0))
     {
@@ -1658,7 +1640,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 
         if (m_stat)
             break;
-        int ret = hdr->match(m_forword);
+        int ret = hdr->match(forword);
         if (ret == REC_MACTH)
         {
 
@@ -1702,7 +1684,6 @@ void table::seekPos(const uchar* rawPos)
         m_table->file->ha_index_next_same(m_table->record[0], &m_keybuf[0],
                                           keymap());
     }
-    m_forword = true;
 }
 
 void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
@@ -1717,7 +1698,6 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
     m_cursor = (m_stat == 0) ? true : 
                        ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
                         (m_stat == HA_ERR_LOCK_DEADLOCK)) ? m_cursor : false;
-    m_forword = true;
     if ((keyNum == -1) || (keyNum == -64) || (keyNum == -2))
         return;
     if (m_stat == 0)
@@ -1781,7 +1761,6 @@ ha_rows table::recordCount(bool estimate)
     fb.setKeyRead(true);
     if (setKeyNum((char)0, false /* sorted */))
     {
-        initHandler();
         m_table->file->try_semi_consistent_read(true);
         m_stat = m_table->file->ha_index_first(m_table->record[0]);
         while (m_stat == 0)
@@ -1801,7 +1780,6 @@ ha_rows table::recordCount(bool estimate)
     else
     {
         setNonKey(true /* scan */);
-        initHandler();
         m_table->file->try_semi_consistent_read(true);
         m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         while (m_stat == 0)
@@ -1811,7 +1789,6 @@ ha_rows table::recordCount(bool estimate)
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         }
     }
-    m_forword = true;
     return n;
 }
 

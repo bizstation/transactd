@@ -260,12 +260,11 @@ class table : private boost::noncopyable
     struct
     {
         bool m_forceConsistentRead : 1;
-        bool m_forword;
     };
 
     table(TABLE* table, database& db, const std::string& name, short mode,
           int id);
-    void moveKey(boost::function<int()> func, bool forword);
+    void moveKey(boost::function<int()> func);
     void readRecords(IReadRecordsHandler* handler, bool includeCurrent,
                      int type, bool noBookmark);
 
@@ -290,12 +289,7 @@ class table : private boost::noncopyable
     }
     void setKeyValues(const uchar* ptr, int size);
     void setBlobFieldPointer(const bzs::db::blobHeader* hd);
-    inline void initHandler()
-    {
-        if ((m_db.m_inSnapshot == 0) &&
-            (m_table->reginfo.lock_type != TL_WRITE))
-            m_table->file->init_table_handle_for_HANDLER();
-    }
+    
     inline bool setCursorStaus()
     {
         m_validCursor = (m_stat == 0);

@@ -725,7 +725,9 @@ void testGetNext(database* db)
         for (int i = 3; i < 20002; i++)
         {
             tb->seekNext();
-            BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "GetNext");
+            BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "GetNext id: " << i << " bad = " << tb->getFVint(fdi_id));
+            if (i != tb->getFVint(fdi_id))
+                    break;
         }
         db->endSnapshot();
     }
@@ -746,7 +748,10 @@ void testGetPrevious(database* db)
     for (int i = 20000; i > 1; i--)
     {
         tb->seekPrev();
-        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "GetPrevious I");
+        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "GetPrevious id: " << i << " bad = " << tb->getFVint(fdi_id));
+        if (i != tb->getFVint(fdi_id))
+            break;
+
     }
     tb->seekPrev();
     BOOST_CHECK_MESSAGE(_tstring(_T("kosaka")) == _tstring(tb->getFVstr(1)),
@@ -762,7 +767,9 @@ void testGetPrevious(database* db)
     for (int i = 20000; i > 1; i--)
     {
         tb->seekPrev();
-        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "GetPrevious I");
+        BOOST_CHECK_MESSAGE(i == tb->getFVint(fdi_id), "GetPrevious id: " << i << " bad = " << tb->getFVint(fdi_id));
+        if (i != tb->getFVint(fdi_id))
+            break;
     }
     tb->seekPrev();
     BOOST_CHECK_MESSAGE(_tstring(_T("kosaka")) == _tstring(tb->getFVstr(1)),
