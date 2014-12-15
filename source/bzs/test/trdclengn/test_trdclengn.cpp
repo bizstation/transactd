@@ -904,12 +904,12 @@ void testSnapshot(database* db)
 
     // test update in snapshot
     tb->update();
-    BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb->stat(), "snapshot update");
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb->stat(), "snapshot update stat = " << tb->stat());
 
     // test insert in snapshot
     tb->setFV(fdi_id, 0);
     tb->insert();
-    BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb->stat(), "snapshot insert");
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb->stat(), "snapshot insert stat = " << tb->stat());
 
     //test no gap lock
     tb->seekLast();  // id = 30000

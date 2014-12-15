@@ -1852,7 +1852,7 @@ void table::setFiledNullFlags()
 
 __int64 table::insert(bool ncc)
 {
-    if ((m_mode == TD_OPEN_READONLY) || !cp_is_write_lock(m_table->file))
+    if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type != TL_WRITE))
     {
         m_stat = STATUS_INVALID_LOCKTYPE;
         return 0;
@@ -1910,7 +1910,7 @@ void table::beginUpdate(char keyNum)
 
 void table::beginDel()
 {
-    if ((m_mode == TD_OPEN_READONLY) || !cp_is_write_lock(m_table->file))
+    if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type != TL_WRITE))
     {
         m_stat = STATUS_INVALID_LOCKTYPE;
         return;
