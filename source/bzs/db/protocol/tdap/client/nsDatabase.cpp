@@ -581,10 +581,10 @@ void nsdatabase::reset()
         m_btrcallid = getBtrvEntryPoint();
 }
 
-void nsdatabase::beginSnapshot()
+void nsdatabase::beginSnapshot(short bias)
 {
     if (m_nsimpl->snapShotCount == 0)
-        m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT, NULL, NULL, NULL, NULL, 0, 0,
+        m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, NULL, NULL, NULL, 0, 0,
                              m_nsimpl->clientID);
     m_nsimpl->snapShotCount++;
 }

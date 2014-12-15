@@ -227,10 +227,8 @@ table* database::useTable(int index, enum_sql_command cmd)
     if (m_thd->lock == 0)
     {
         m_thd->lex->sql_command = cmd;
-        if (m_inTransaction)
+        if (m_inTransaction || m_inSnapshot)
             m_thd->tx_isolation = m_iso;
-        else if (m_inSnapshot)
-            m_thd->tx_isolation = ISO_REPEATABLE_READ;
         else
             m_thd->tx_isolation = (enum_tx_isolation)m_thd->variables.tx_isolation;
         cp_thd_set_read_only(m_thd);
@@ -329,6 +327,8 @@ void database::unUseTables(bool rollback)
 
 bool database::beginTrn(short type, enum_tx_isolation iso)
 {
+    if (m_inSnapshot)
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INSNAPSHOT, "Snapshot is already beginning.");        
     ++m_inTransaction;
     if (m_inTransaction == 1)
     {
@@ -361,10 +361,18 @@ bool database::abortTrn()
     return (m_inTransaction == 0);
 }
 
-bool database::beginSnapshot()
+bool database::beginSnapshot(enum_tx_isolation iso)
 {
+    if (m_inTransaction)
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Transaction is already beginning.");        
+
     ++m_inSnapshot;
-    return (m_inSnapshot == 1);
+    if (m_inSnapshot == 1)
+    {
+        m_iso = iso;
+        return true;
+    }
+    return false;
 }
 
 bool database::endSnapshot()
@@ -613,7 +621,7 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
       m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
       m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
       m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false),
-      m_singleRowLock(false),m_forceConsistentRead(false)
+      m_rowLock(false),m_forceConsistentRead(false),m_rowLocked(false)
 {
 
     m_table->read_set = &m_table->s->all_set;
@@ -1163,7 +1171,7 @@ void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
     m_nonNcc = false;
     if (keynumCheck(m_keyNum))
     {
-        unlockRow(m_singleRowLock);
+        unlockRow(m_rowLock);
         m_stat = m_table->file->ha_index_read_map(
             m_table->record[0], &m_keybuf[0], keyMap /* keymap() */, find_flag);
         m_cursor = m_validCursor = (m_stat == 0);
@@ -1185,7 +1193,7 @@ void table::moveKey(boost::function<int()> func)
     m_nonNcc = false;
     if (keynumCheck(m_keyNum))
     {
-        unlockRow(m_singleRowLock);
+        unlockRow(m_rowLock);
 
         m_stat = func();
         m_cursor = m_validCursor = (m_stat == 0);
@@ -1495,7 +1503,7 @@ void table::stepFirst()
     {
         if (setNonKey(true))
         {
-            unlockRow(m_singleRowLock);
+            unlockRow(m_rowLock);
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
             m_cursor = m_validCursor = (m_stat == 0);
         }
@@ -1536,7 +1544,7 @@ void table::stepNext()
                     return;
             }
         }
-        unlockRow(m_singleRowLock);
+        unlockRow(m_rowLock);
         m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         m_cursor = m_validCursor = (m_stat == 0);
     }
@@ -1639,7 +1647,7 @@ void table::seekPos(const uchar* rawPos)
     while ((m_stat == 0) &&
            ((cmp = m_table->file->cmp_ref(position(true), rawPos)) != 0))
     {
-        unlockRow(m_singleRowLock);
+        unlockRow(m_rowLock);
         m_table->file->ha_index_next_same(m_table->record[0], &m_keybuf[0],
                                           keymap());
     }
@@ -1652,7 +1660,7 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
         rawPos = bms()->getRefByBm(*(unsigned int*)pos);
 
     setNonKey();
-    unlockRow(m_singleRowLock);
+    unlockRow(m_rowLock);
     m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
     m_cursor = (m_stat == 0);
     if ((keyNum == -1) || (keyNum == -64) || (keyNum == -2))

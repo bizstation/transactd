@@ -423,10 +423,10 @@ inline void readAfter(request& req, table* tb, dbExecuter* dbm)
     req.result = dbm->errorCodeSht(tb->stat());
 }
 
-inline void dbExecuter::doSeekKey(request& req, int op, bool lock)
+inline void dbExecuter::doSeekKey(request& req, int op, engine::mysql::rowLockMode* lck)
 {
     bool read = true;
-    m_tb = getTable(req.pbk->handle);
+    m_tb = getTable(req.pbk->handle, lck->lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
         m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
@@ -443,19 +443,22 @@ inline void dbExecuter::doSeekKey(request& req, int op, bool lock)
                 flag = HA_READ_BEFORE_KEY;
             else if (op == TD_KEY_OR_BEFORE)
                 flag = HA_READ_KEY_OR_PREV;
-            m_tb->setSingleRowLock(lock);
+            m_tb->setRowLock(lck);
             m_tb->seekKey(flag, m_tb->keymap());
+            if (lck->lock && m_tb->stat())
+                m_tb->setRowLockError();
+
         }
     }
     readAfter(req, m_tb, this);
 }
 
-inline void dbExecuter::doMoveFirst(request& req, bool lock)
+inline void dbExecuter::doMoveFirst(request& req, engine::mysql::rowLockMode* lck)
 {
-    m_tb = getTable(req.pbk->handle);
+    m_tb = getTable(req.pbk->handle, lck->lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
-        m_tb->setSingleRowLock(lock);
+        m_tb->setRowLock(lck);
         if (m_tb->isNisKey(m_tb->keyNum()))
         {
             m_tb->clearKeybuf();
@@ -463,16 +466,18 @@ inline void dbExecuter::doMoveFirst(request& req, bool lock)
         }
         else
             m_tb->getFirst();
+        if (lck->lock && m_tb->stat())
+            m_tb->setRowLockError();
     }
     readAfter(req, m_tb, this);
 }
 
-inline void dbExecuter::doMoveKey(request& req, int op, bool lock)
+inline void dbExecuter::doMoveKey(request& req, int op, engine::mysql::rowLockMode* lck)
 {
-    m_tb = getTable(req.pbk->handle);
+    m_tb = getTable(req.pbk->handle, lck->lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
-        m_tb->setSingleRowLock(lock);
+        m_tb->setRowLock(lck);
         if (op == TD_KEY_FIRST)
             m_tb->getFirst();
         else if (op == TD_KEY_LAST)
@@ -481,6 +486,9 @@ inline void dbExecuter::doMoveKey(request& req, int op, bool lock)
             m_tb->getNext();
         else if (op == TD_KEY_PREV)
             m_tb->getPrev();
+        if (lck->lock && m_tb->stat())
+            m_tb->setRowLockError();
+
     }
     readAfter(req, m_tb, this);
 }
@@ -707,10 +715,10 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
     return stat;
 }
 
-inline void dbExecuter::doStepRead(request& req, int op, bool lock)
+inline void dbExecuter::doStepRead(request& req, int op, engine::mysql::rowLockMode* lck)
 {
-    m_tb = getTable(req.pbk->handle);
-    m_tb->setSingleRowLock(lock);
+    m_tb = getTable(req.pbk->handle, lck->lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
+    m_tb->setRowLock(lck);
     if (op == TD_POS_FIRST)
         m_tb->stepFirst();
     else if (op == TD_POS_LAST)
@@ -719,6 +727,8 @@ inline void dbExecuter::doStepRead(request& req, int op, bool lock)
         m_tb->stepNext();
     else if (op == TD_POS_PREV)
         m_tb->stepPrev();
+    if (lck->lock && m_tb->stat())
+        m_tb->setRowLockError();
     readAfter(req, m_tb, this);
 }
 
@@ -904,9 +914,15 @@ inline short getTrnsactionType(int op)
     return TRN_RECORD_LOCK_SINGLE;
 }
 
-inline bool isSingleWaitLock(int op)
+inline rowLockMode* getRowLockMode(int op, rowLockMode* lck)
 {
-	return ((op > 200) && (op < 300));	
+	lck->lock = false;
+    if (op < NOWAIT_WRITE)
+    {
+        if (op >= LOCK_SINGLE_NOWAIT && op < LOCK_MULTI_NOWAIT)
+            lck->lock = true;
+    }
+    return lck;
 }
 
 int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
@@ -986,16 +1002,25 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_KEY_OR_AFTER:
         case TD_KEY_BEFORE:
         case TD_KEY_OR_BEFORE:
-            doSeekKey(req, op, isSingleWaitLock(opTrn));
+        {
+            rowLockMode lck;
+            doSeekKey(req, op, getRowLockMode(opTrn, &lck));
             break;
+        }
         case TD_KEY_FIRST:
-            doMoveFirst(req, isSingleWaitLock(opTrn));
+        {
+            rowLockMode lck;
+            doMoveFirst(req, getRowLockMode(opTrn, &lck));
             break;
+        }
         case TD_KEY_PREV:
         case TD_KEY_LAST:
         case TD_KEY_NEXT:
-            doMoveKey(req, op, isSingleWaitLock(opTrn));
+        {
+            rowLockMode lck;
+            doMoveKey(req, op, getRowLockMode(opTrn, &lck));
             break;
+        }
         case TD_REC_INSERT:
             doInsert(req);
             break;
@@ -1023,7 +1048,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             transactionResult = getDatabaseCid(req.cid)->abortTrn();
             break;
         case TD_BEGIN_SHAPSHOT:
-            transactionResult = getDatabaseCid(req.cid)->beginSnapshot();
+            transactionResult = getDatabaseCid(req.cid)->beginSnapshot(getIsolationLevel(opTrn));
             break;
         case TD_END_SNAPSHOT:
             transactionResult = getDatabaseCid(req.cid)->endSnapshot();
@@ -1035,8 +1060,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_POS_LAST:
         case TD_POS_NEXT:
         case TD_POS_PREV:
-            doStepRead(req, op, isSingleWaitLock(opTrn));
+        {
+            rowLockMode lck;
+            doStepRead(req, op, getRowLockMode(opTrn, &lck));
             break;
+        }
         case TD_BOOKMARK:
             m_tb = getTable(req.pbk->handle);
             req.paramMask = P_MASK_MOVPOS;
@@ -1044,12 +1072,18 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.resultLen = m_tb->posPtrLen();
             break;
         case TD_MOVE_BOOKMARK:
-            m_tb = getTable(req.pbk->handle);
-            m_tb->setSingleRowLock(isSingleWaitLock(opTrn));
+        {
+            rowLockMode lck;
+            getRowLockMode(opTrn, &lck);
+            m_tb = getTable(req.pbk->handle, lck.lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
+            m_tb->setRowLock(&lck);
             m_tb->movePos((uchar*)req.data,
                           m_tb->keyNumByMakeOrder(req.keyNum));
+            if (lck.lock && m_tb->stat())
+                m_tb->setRowLockError();
             readAfter(req, m_tb, this);
             break;
+        }
         case TD_GETDIRECTORY:
         {
             database* db = getDatabaseCid(req.cid);

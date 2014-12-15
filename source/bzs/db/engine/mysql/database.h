@@ -137,7 +137,7 @@ public:
         return m_tables;
     }
 
-    bool beginSnapshot();
+    bool beginSnapshot(enum_tx_isolation iso);
     bool endSnapshot();
     table* openTable(const std::string& name, short mode,
                      const char* ownerName);
@@ -176,6 +176,13 @@ typedef std::vector<boost::shared_ptr<database> > databases;
 class IReadRecordsHandler;
 class IPrepare;
 class bookmarks;
+
+struct rowLockMode
+{
+    bool lock : 1;
+    //bool multi : 1;
+    //bool write : 1;
+};
 
 /*
  *  Since it differs from the key number which a client specifies
@@ -248,9 +255,13 @@ class table : private boost::noncopyable
         bool m_changed : 1;
         bool m_nounlock : 1;
         bool m_bulkInserting : 1;
-        bool m_singleRowLock : 1;
+        bool m_rowLock : 1;
     };
-    bool m_forceConsistentRead;
+    struct
+    {
+        bool m_forceConsistentRead : 1;
+        bool m_rowLocked : 1;
+    };
 
     table(TABLE* table, database& db, const std::string& name, short mode,
           int id);
@@ -336,12 +347,19 @@ public:
 
     int id() { return m_id; };
 
+    /* The singleRowLock is no effects with Transaction or Snapshot. */
     inline void unUse() 
     { 
-        if (m_singleRowLock)
-            m_singleRowLock = false;
+        if (m_rowLock)
+        {
+            m_rowLock = false;
+            m_rowLocked = true;
+        }
         else
-            m_db.unUseTable(this); 
+        {
+            m_rowLocked = false;
+            m_db.unUseTable(this);
+        }
     }
 
     inline const std::string& name() const { return m_name; }
@@ -622,9 +640,16 @@ public:
         assert(ret == 0);
     }
 
-    inline void setSingleRowLock(bool v)
+    inline void setRowLock(rowLockMode* lck)
     {
-        m_singleRowLock = v;
+        if (!m_rowLocked)
+            indexInit();
+        m_rowLock = lck->lock;
+    }
+
+    inline void setRowLockError()
+    {
+        m_rowLock = false;
     }
     
 };
