@@ -274,7 +274,7 @@ void database::prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* l
     m_thd->lex->sql_command = cmd;
 
     if ((lock_type >= TL_WRITE) &&
-             (tb->isReadOnly() || m_thd->variables.tx_read_only))
+             (tb->isReadOnly() || cp_thd_get_read_only(m_thd)))
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ACCESS_DENIED, "Access denined.");
 
     if ((lock_type >= TL_WRITE) &&
@@ -301,7 +301,29 @@ void database::changeIntentionLock(table* tb, thr_lock_type lock_type)
     }
 }
 
-// locktable
+/*
+How to set the lock value to InnoDB prebuilt->select_lock_type variable.
+
+-- First call
+LOCK_NONE : file->init_table_handle_for_HANDLER();
+LOCK_S    : m_table->reginfo.lock_type = TL_READ and 
+            thd->in_lock_tables = 1;
+LOCK_X    : m_table->reginfo.lock_type = TL_WRITE and
+            thd->in_lock_tables = 1;
+-- Chage type
+LOCK_X -> LOCK_S
+          : thd->variables.option_bits |= OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN;
+            file->ha_external_lock(m_thd, F_UNLCK);
+            file->init_table_handle_for_HANDLER();
+            file->ha_external_lock(m_thd, F_WRLCK);
+            thd->variables.option_bits &= ~(OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN);
+
+LOCK_S -> LOCK_X
+          : thd->variables.option_bits |= OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN;
+            file->ha_external_lock(m_thd, F_UNLCK);
+            file->ha_external_lock(m_thd, F_RDLCK);
+            thd->variables.option_bits &= ~(OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN);
+*/
 table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
 {
     if (index >= (int)m_tables.size())

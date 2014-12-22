@@ -171,6 +171,11 @@ inline void cp_thd_set_read_only(THD* thd)
     ;
 }
 
+inline bool cp_thd_get_read_only(THD* thd)
+{
+    return false;
+}
+
 inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
                           Open_table_context* ot_act)
 {
@@ -207,6 +212,11 @@ inline void cp_restore_globals(THD* thd)
 inline void cp_thd_set_read_only(THD* thd)
 {
     thd->tx_read_only = (thd->variables.tx_read_only != 0);
+}
+
+inline bool cp_thd_get_read_only(THD* thd)
+{
+    return (thd->variables.tx_read_only != 0);
 }
 
 inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
