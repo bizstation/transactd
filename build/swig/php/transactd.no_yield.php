@@ -28,7 +28,6 @@
 //
 namespace BizStation\Transactd;
 
-
 // Try to load our extension if it's not already loaded.
 if (!extension_loaded('transactd')) {
   if (strtolower(substr(PHP_OS, 0, 3)) === 'win') {
@@ -4011,7 +4010,7 @@ class pooledDbManager {
 		}
 		return $r;
 	}
-	
+
 	function usingCount() {
 		return pooledDbManager_usingCount($this->_cPtr);
 	}

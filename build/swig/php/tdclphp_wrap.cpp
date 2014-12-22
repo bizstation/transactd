@@ -33855,8 +33855,6 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(query_and_,_wrap_query_and_,swig_arginfo_query_and_)
  SWIG_ZEND_NAMED_FE(query_or_,_wrap_query_or_,swig_arginfo_query_or_)
  SWIG_ZEND_NAMED_FE(query_in,_wrap_query_in,swig_arginfo_query_in)
- SWIG_ZEND_NAMED_FE(supplyvalues,_wrap_supplyValues,swig_arginfo_supplyvalues)
- SWIG_ZEND_NAMED_FE(supplyinvalues,_wrap_supplyInValues,swig_arginfo_supplyinvalues)
  SWIG_ZEND_NAMED_FE(new_nsdatabase,_wrap_new_nsdatabase,swig_arginfo_new_nsdatabase)
  SWIG_ZEND_NAMED_FE(nsdatabase_enabletrn,_wrap_nsdatabase_enableTrn,swig_arginfo_nsdatabase_enabletrn)
  SWIG_ZEND_NAMED_FE(nsdatabase_stat,_wrap_nsdatabase_stat,swig_arginfo_nsdatabase_stat)
