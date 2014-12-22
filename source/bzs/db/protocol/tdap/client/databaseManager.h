@@ -93,7 +93,7 @@ public:
     inline void endTrn() { m_db->endTrn(); }
     inline void abortTrn() { m_db->abortTrn(); }
     inline int enableTrn() { return m_db->enableTrn(); }
-    inline void beginSnapshot() { m_db->beginSnapshot(); }
+    inline void beginSnapshot(short bias = CONSISTENT_READ) { m_db->beginSnapshot(bias); }
     inline void endSnapshot() { m_db->endSnapshot(); }
     inline const _TCHAR* uri() const { return m_db->uri(); }
     inline char_td mode() const { return m_db->mode(); }
@@ -216,7 +216,7 @@ public:
 
     inline int enableTrn() { return m_db->enableTrn(); }
 
-    inline void beginSnapshot() { m_db->beginSnapshot(); }
+    inline void beginSnapshot(short bias = CONSISTENT_READ) { m_db->beginSnapshot(bias); }
 
     inline void endSnapshot() { m_db->endSnapshot(); }
 

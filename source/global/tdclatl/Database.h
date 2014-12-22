@@ -93,7 +93,7 @@ public:
     STDMETHOD(AbortTrn)();
     STDMETHOD(BeginTrn)(eLockType bias);
     STDMETHOD(EndTrn)();
-    STDMETHOD(BeginSnapshot)();
+    STDMETHOD(BeginSnapshot)(eStLockType bias);
     STDMETHOD(EndSnapshot)();
     STDMETHOD(get_NativeDatabase)(__int64** Value);
 

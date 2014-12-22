@@ -949,7 +949,7 @@ void testSnapshot(database* db)
 
     /*  No locking repeatable read                        */
     /* -------------------------------------------------- */
-    db->beginSnapshot();
+    db->beginSnapshot(); // CONSISTENT_READ is default
     BOOST_CHECK_MESSAGE(0 == db->stat(), "beginSnapShot");
     db->beginTrn();
     BOOST_CHECK_MESSAGE(STATUS_ALREADY_INSNAPSHOT == db->stat(), "Invalid beginSnapshot");
@@ -1023,7 +1023,7 @@ void testSnapshot(database* db)
 
 
     //test gap lock
-    db->beginSnapshot(GAPLOCK);
+    db->beginSnapshot(MULTILOCK_GAP_SHARE);
     tb->seekLast();  // id = 30000
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekLast");
     tb->seekPrev();  // id = 20002
@@ -4141,9 +4141,37 @@ void testDbPool()
 
     connectParams pm(PROTOCOL, HOSTNAME, _T("querytest"), DBNAME);
     poolMgr.use(&pm);
+    BOOST_CHECK_MESSAGE(1 == poolMgr.usingCount(), "usingCount 1");
     poolMgr.use(&pm);
+    BOOST_CHECK_MESSAGE(2 == poolMgr.usingCount(), "usingCount 2");
     poolMgr.use(&pm);
+    BOOST_CHECK_MESSAGE(3 == poolMgr.usingCount(), "usingCount 3");
     poolMgr.unUse();
+    BOOST_CHECK_MESSAGE(0 == poolMgr.usingCount(), "usingCount 0");
+
+    //snapshot method
+    {
+        poolMgr.use(&pm);
+        table_ptr tb2 = openTable(poolMgr.db(), _T("user"));
+
+        poolMgr.use(&pm);
+        table_ptr tb = openTable(poolMgr.db(), _T("user"));
+
+
+        poolMgr.beginSnapshot(MULTILOCK_GAP_SHARE);
+        tb->seekFirst();
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+
+        tb2->seekFirst(ROW_LOCK_X);
+        BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), 
+                    "tb2->seekFirst tb2 stat = " << tb2->stat());
+    
+        poolMgr.endSnapshot();
+    
+        tb2->seekFirst(ROW_LOCK_X);
+        BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    }
+    poolMgr.endSnapshot();
     poolMgr.reset(0);
 }
 

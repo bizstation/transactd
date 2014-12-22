@@ -88,9 +88,9 @@ STDMETHODIMP CPooledDbManager::AbortTrn(void)
     return S_OK;
 }
 
-STDMETHODIMP CPooledDbManager::BeginSnapshot(void)
+STDMETHODIMP CPooledDbManager::BeginSnapshot(eStLockType bias)
 {
-    m_mgr.beginSnapshot();
+    m_mgr.beginSnapshot(bias);
     return S_OK;
 }
 

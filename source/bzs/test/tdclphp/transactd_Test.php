@@ -771,7 +771,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tbg->recordCount(false), 1);
         
         // gap lock
-        $db->beginSnapshot(Bz\transactd::GAPLOCK);
+        $db->beginSnapshot(Bz\transactd::MULTILOCK_GAP_SHARE);
         $tb->seekLast(); // id = 30000
         $this->assertEquals($tb->stat(), 0);
         $tb->seekPrev(); // id = 20002

@@ -112,6 +112,23 @@ Database_Ptr connectionPool<Database_Ptr>::addOne(const connectParams& param)
     return m_dbs[m_dbs.size() - 1];
 }
 
+template <class Database_Ptr>
+int connectionPool<Database_Ptr>::usingCount() const
+{
+    boost::mutex::scoped_lock lck(m_mutex, boost::defer_lock);
+#ifdef TRANSACTD_RB_CALL_WITHOUT_GVL
+    TRANSACTD_RB_CALL_WITHOUT_GVL(scopedLock, lck);
+#else
+    lck.lock();
+#endif
+    int n = 0;
+    for (size_t i = 0; i < m_dbs.size(); i++)
+    {
+        if (m_dbs[i].use_count() > 1)
+            ++n;
+    }
+    return n;
+}
 /** Delivery database instance
         If a connect error is occured then bzs::rtl::exception exception is
    thrown.

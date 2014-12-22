@@ -3,7 +3,7 @@
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
 
 /* =================================================================
- Copyright (C) 20014 BizStation Corp All rights reserved.
+ Copyright (C) 2014 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -116,7 +116,6 @@ public:
     {
         m_db.reset();
         m_xa.unUse();
-        // releaseConnection(&cpool);
         m_inUse = false;
     }
 
@@ -144,7 +143,7 @@ public:
 
     inline int enableTrn() { return m_db->enableTrn(); }
 
-    inline void beginSnapshot() { m_db->beginSnapshot(); }
+    inline void beginSnapshot(short bias = CONSISTENT_READ) { m_db->beginSnapshot(bias); }
 
     inline void endSnapshot() { m_db->endSnapshot(); }
 
@@ -155,13 +154,17 @@ public:
     inline static void setMaxConnections(int maxWorkerNum)
     {
         cpool.setMaxConnections(maxWorkerNum);
-    };
-    inline static int maxConnections() { return cpool.maxConnections(); };
+    }
+
+    inline static int maxConnections() { return cpool.maxConnections(); }
+    
     inline static void reserve(size_t size, const connectParams& param)
     {
         cpool.reserve(size, param);
     }
-    // inline static bool reset(int waitSec=5){return cpool.reset(waitSec);}
+    
+    inline int usingCount() const { return cpool.usingCount(); }
+
 };
 
 } // namespace client

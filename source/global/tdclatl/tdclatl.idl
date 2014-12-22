@@ -99,7 +99,8 @@ enum eOpenMode
 {
 	normal = 0,
     readOnly = -2,
-	exclusive = -4
+	exclusive = -4,
+	exclusive_readOnly = -6
 }eOpenMode;
 
 
@@ -164,18 +165,29 @@ enum eStatus
 	STATUS_INVALID_OWNERNAME	= 51,
 	STATUS_TABLE_EXISTS_ERROR	= 59,
 	STATUS_LIMMIT_OF_REJECT		= 60,
+    STATUS_WARKSPACE_TOO_SMALL  = 61,
+    STATUS_INVALID_EX_DESC      = 62,
+    STATUS_INVALID_EX_INS       = 63,
 	STATUS_REACHED_FILTER_COND	= 64,
 	STATUS_INVALID_FIELD_OFFSET = 65,
 	STATUS_CHANGE_CONFLICT		= 80,
 	STATUS_INVALID_LOCKTYPE		= 83,
 	STATUS_LOCK_ERROR			= 84,
 	STATUS_FILE_LOCKED			= 85,
+	STATUS_INVALID_SUPPLYVALUES	= 86,
 	STATUS_CANNOT_LOCK_TABLE	= 88,
 	TATUS_INVALID_KEYNAME		= 6,
 	STATUS_INVALID_DATASIZE		= 22,
 	STATUS_INVALID_FIELDNAME	= 65,
 	ERROR_TD_INVALID_CLINETHOST	= 171,
 	ERROR_NOSPECIFY_TABLE       = 176,
+    ERROR_LOAD_CLIBRARY         = 200,
+    ERROR_INDEX_RND_INIT        = 201,
+    STATUS_INVALID_PREPAREID    = 202,
+    STATUS_LMIT_OF_PREPAREED    = 203,
+    STATUS_ALREADY_INSNAPSHOT   = 204,
+    STATUS_ALREADY_INTRANSACTION= 205,
+	SERVER_CLIENT_NOT_COMPATIBLE= 3003,
 	NET_BAD_SRB_FORMAT			= 3021,
 	ERROR_TD_HOSTNAME_NOT_FOUND = 3103,
 	ERROR_TD_CONNECTION_FAILURE = 3106,
@@ -268,8 +280,25 @@ enum eLockType
   NOWAIT_WRITE        = 500,
   PARALLEL_TRN        = 1000,
   PARA_SINGLE_NOWAIT  = 1700,
-  PARA_MULTI_NOWAIT   = 1900
+  PARA_MULTI_NOWAIT   = 1900,
+  /* Innodb or transactional engin lock options */
+  ROW_LOCK_X         = 200,   
+  SINGLELOCK_NOGAP   = 200,
+  MULTILOCK_NOGAP    = 400,
+  MULTILOCK_GAP      = 2400
+
 }eLockType;
+
+typedef
+[
+  helpstring("Snapshot lock type Constants")
+]
+enum eStLockType
+{
+  MULTILOCK_NOGAP_SHARE   = 0,
+  MULTILOCK_GAP_SHARE     = 2000,
+  CONSISTENT_READ         = 4000
+}eStLockType;
 
 typedef
 [
@@ -352,7 +381,7 @@ interface IDatabase : IDispatch
   [propget, id(0x0000000A)]
   HRESULT _stdcall NativeDatabase([out, retval] hyper** Value);
   [id(0x000000C9)]
-  HRESULT _stdcall BeginSnapshot(void);
+  HRESULT _stdcall BeginSnapshot([in, defaultvalue(CONSISTENT_READ)] eStLockType Bias);
   [id(0x000000CA)]
   HRESULT _stdcall EndSnapshot(void);
   [id(0x000000CB)]
@@ -1380,7 +1409,7 @@ interface IPooledDbManager : IDispatch
   [id(0x00000004)]
   HRESULT _stdcall AbortTrn(void);
   [id(0x00000005)]
-  HRESULT _stdcall BeginSnapshot(void);
+  HRESULT _stdcall BeginSnapshot([in, defaultvalue(CONSISTENT_READ)] eStLockType Bias);
   [id(0x00000006)]
   HRESULT _stdcall EndSnapshot(void);
   [id(0x00000007)]

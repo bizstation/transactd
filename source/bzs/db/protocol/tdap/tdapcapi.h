@@ -256,19 +256,23 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TRN_ISO_READ_COMMITED           0
 #define TRN_ISO_REPEATABLE_READ         2000
 #define TRN_ISO_SERIALIZABLE            3000
-#define CONSISTENT_READ                 4000
 
 #define SINGLELOCK_READ_COMMITED        LOCK_SINGLE_NOWAIT
 #define MULTILOCK_READ_COMMITED         LOCK_MULTI_NOWAIT
 #define MULTILOCK_REPEATABLE_READ       TRN_ISO_REPEATABLE_READ + LOCK_MULTI_NOWAIT
 #define MULTILOCK_ISO_SERIALIZABLE      TRN_ISO_SERIALIZABLE + LOCK_MULTI_NOWAIT
 
-//For InnoDB names
+/** InnoDB or transactional engin lock options
+*/
+// Transaction
 #define SINGLELOCK_NOGAP                SINGLELOCK_READ_COMMITED
 #define MULTILOCK_NOGAP                 MULTILOCK_READ_COMMITED
 #define MULTILOCK_GAP                   MULTILOCK_REPEATABLE_READ + LOCK_MULTI_NOWAIT
-#define GAPLOCK                         TRN_ISO_REPEATABLE_READ
-#define NO_GAPLOCK                      0
+// Snapshot
+#define CONSISTENT_READ                 4000
+#define MULTILOCK_GAP_SHARE             TRN_ISO_REPEATABLE_READ
+#define MULTILOCK_NOGAP_SHARE           0
+// Read row lock
 #define ROW_LOCK_X                      LOCK_SINGLE_NOWAIT
 
 /** open mode

@@ -181,7 +181,7 @@ public:
     virtual void endTrn() = 0;
     virtual void abortTrn() = 0;
     virtual int enableTrn() = 0;
-    virtual void beginSnapshot() = 0;
+    virtual void beginSnapshot(short bias = CONSISTENT_READ) = 0;
     virtual void endSnapshot() = 0;
     virtual const _TCHAR* uri() const = 0;
     virtual char_td mode() const = 0;
@@ -1221,7 +1221,7 @@ template <class DB> class snapshot
     DB m_db;
 
 public:
-    snapshot(DB db) : m_db(db) { m_db->beginSnapshot(); }
+    snapshot(DB db, short bias = CONSISTENT_READ) : m_db(db) { m_db->beginSnapshot(bias); }
 
     ~snapshot() { m_db->endSnapshot(); }
 };
