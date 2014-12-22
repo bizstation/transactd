@@ -673,22 +673,6 @@ abstract class transactd {
 
 	const KEYVALUE_STR_NEED_COPY = KEYVALUE_STR_NEED_COPY;
 
-	static function setBtrvEntryPoint($p) {
-		setBtrvEntryPoint($p);
-	}
-
-	static function getBtrvEntryPoint() {
-		return getBtrvEntryPoint();
-	}
-
-	static function setTrnsctdEntryPoint($p) {
-		setTrnsctdEntryPoint($p);
-	}
-
-	static function getTrnsctdEntryPoint() {
-		return getTrnsctdEntryPoint();
-	}
-
 	const MAX_CHAR_INFO = MAX_CHAR_INFO;
 
 	const CHARSET_LATIN1 = CHARSET_LATIN1;
@@ -774,18 +758,6 @@ abstract class transactd {
 	}
 
 	const ROW_MEM_BLOCK_RESERVE = ROW_MEM_BLOCK_RESERVE;
-
-	static function host($uri,$buf,$size) {
-		return host($uri,$buf,$size);
-	}
-
-	static function dbname($uri,$buf,$size) {
-		return dbname($uri,$buf,$size);
-	}
-
-	static function schemaTable($uri,$buf,$size) {
-		return schemaTable($uri,$buf,$size);
-	}
 
 	static function new_fieldsBase_p_p() {
 		return new_fieldsBase_p_p();

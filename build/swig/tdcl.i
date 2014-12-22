@@ -554,6 +554,10 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::maxtables;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::setTestPtrIgnore;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::testTablePtr;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::setTrnsctdEntryPoint;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::getTrnsctdEntryPoint;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrvEntryPoint;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::setBtrvEntryPoint;
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
 %ignore bzs::db::protocol::tdap::client::nstable::buflen;
@@ -622,6 +626,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::supplyInValues;
 %ignore bzs::db::protocol::tdap::client::supplyValue;
 %ignore bzs::db::protocol::tdap::client::supplyValues;
+%ignore bzs::db::protocol::tdap::client::supplyInValues;
 %ignore bzs::db::protocol::tdap::client::table::buflen;
 %ignore bzs::db::protocol::tdap::client::table::fieldPtr;
 %ignore bzs::db::protocol::tdap::client::table::getCurProcFieldCount;
@@ -756,6 +761,9 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::filter_validate_value;
 %ignore bzs::db::protocol::tdap::client::filter_validate_block;
 %ignore bzs::db::protocol::tdap::client::filter_invalidate_value;
+%ignore bzs::db::protocol::tdap::client::host;
+%ignore bzs::db::protocol::tdap::client::dbname;
+%ignore bzs::db::protocol::tdap::client::schemaTable;
 
 // * bzs/db/protocol/tdap/client/trdormapi.h *
 %ignore bzs::db::protocol::tdap::client::setValue;
