@@ -45,10 +45,12 @@ namespace client
 class dbdef;
 class nstable;
 
+/** @cond INTERNAL */
 DLLLIB void setBtrvEntryPoint(BTRCALLID_PTR p);
 DLLLIB BTRCALLID_PTR getBtrvEntryPoint();
 DLLLIB void setTrnsctdEntryPoint(BTRCALLID_PTR p);
 DLLLIB BTRCALLID_PTR getTrnsctdEntryPoint();
+/** @endcond */
 
 class DLLLIB nsdatabase
 {

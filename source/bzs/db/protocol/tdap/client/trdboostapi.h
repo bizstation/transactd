@@ -557,9 +557,12 @@ inline stepRvIterator readStepRv(table_ptr tb, ushort_td lockBias = 0)
 }
 
 
-inline pq_handle setQuery(table_ptr& tb, const queryBase& q) 
+inline pq_handle setQuery(table_ptr& tb, const queryBase& q, 
+                          bool serverPrepare = false) 
 { 
-    return tb->setQuery(&q);
+    pq_handle stmt =  tb->setQuery(&q, serverPrepare);
+    readStatusCheck(*tb, _T("setQuery"));
+    return stmt;
 }
 
 /** @cond INTERNAL */

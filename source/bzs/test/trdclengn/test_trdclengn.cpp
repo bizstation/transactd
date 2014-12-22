@@ -652,7 +652,7 @@ void testPrepareServer(database* db)
     findNextLoop(tb, v, 3000);
 
     // Seeks prepare statement 
-    q.reset();
+    /*q.reset();
     q.queryString(_T("select id"));
     pq_handle stmt3 = tb->prepare(&q, true);
     const _TCHAR* vsi[6];
@@ -664,7 +664,7 @@ void testPrepareServer(database* db)
     tb->setPrepare(stmt3);
     tb->find(); 
     findNextLoop(tb, 10, 16);
-
+    */
     tb->release();
 }
 

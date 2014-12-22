@@ -2516,11 +2516,11 @@ bool supplyValue(pq_handle& filter, int index, double v)
 {
     return filter->supplyValue(index, v);
 }
-
+/*
 bool supplyInValues(pq_handle& filter, const _TCHAR* values[], size_t size, int segments)
 {
     return filter->supplySeekValues(values, size, segments);
-}
+}*/
 
 } // namespace client
 } // namespace tdap

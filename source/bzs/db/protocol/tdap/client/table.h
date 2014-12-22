@@ -597,7 +597,7 @@ public:
     static query* create(); // implemet int activeTable.cpp
 };
 
-
+/** @cond INTERNAL */
 int DLLLIB makeSupplyValues(/*in out*/const _TCHAR* values[], int size,
                          const _TCHAR* value, const _TCHAR* value1 = NULL,
                          const _TCHAR* value2 = NULL, const _TCHAR* value3 = NULL,
@@ -605,6 +605,7 @@ int DLLLIB makeSupplyValues(/*in out*/const _TCHAR* values[], int size,
                          const _TCHAR* value6 = NULL, const _TCHAR* value7 = NULL,
                          const _TCHAR* value8 = NULL, const _TCHAR* value9 = NULL,
                          const _TCHAR* value10 = NULL);
+/** @endcond */
 
 bool DLLLIB supplyValues(pq_handle& filter, const _TCHAR* values[], int size);
 bool DLLLIB supplyValue(pq_handle& filter, int index, const _TCHAR* v);
@@ -614,7 +615,7 @@ bool DLLLIB supplyValue(pq_handle& filter, int index, __int64 v);
 bool DLLLIB supplyValue(pq_handle& filter, int index, float v);
 bool DLLLIB supplyValue(pq_handle& filter, int index, double v);
 
-bool DLLLIB supplyInValues(pq_handle& filter, const _TCHAR* values[], size_t size, int segments);
+//bool DLLLIB supplyInValues(pq_handle& filter, const _TCHAR* values[], size_t size, int segments);
 
 
 

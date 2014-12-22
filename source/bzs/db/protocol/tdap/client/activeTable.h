@@ -71,8 +71,9 @@ public:
     }
 
     inline void resetAddIndex() { m_index = 0; }
-    
+/** @cond INTERNAL */
     inline pq_handle& getFilter() { return m_filter; };
+/** @endcond */
 };
 
 

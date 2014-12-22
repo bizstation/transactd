@@ -103,6 +103,7 @@ public:
     inline uchar_td* clientID() const { return m_db->clientID(); }
 };
 
+/** @cond INTERNAL */
 /* multi databases and a single thread inplemantation idatabaseManager
 */
 inline void releaseDatabaseDummy(database* p)
@@ -111,6 +112,7 @@ inline void releaseDatabaseDummy(database* p)
 inline void releaseDbManagerDummy(idatabaseManager* p)
 {
 }
+/** @endcond */
 
 class disbDbManager : public idatabaseManager, private boost::noncopyable
 {
