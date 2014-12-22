@@ -103,7 +103,7 @@ public:
     virtual void dropTable(const _TCHAR* uri);
     void rename(const _TCHAR* oldUri, const _TCHAR* newUri);
     void swapTablename(const _TCHAR* uri1, const _TCHAR* uri2);
-    void beginTrn(short bias = LOCK_SINGLE_NOWAIT + PARALLEL_TRN +
+    void beginTrn(short bias = SINGLELOCK_READ_COMMITED +
                                NOWAIT_WRITE); // NoWit SingleLock
     // 平行トランザクション
     void endTrn();

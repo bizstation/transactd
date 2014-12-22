@@ -171,23 +171,6 @@ activeTable& activeTable::read(recordset& rs, pq_handle& q, validationFunc func)
     return *this;
 }
 
-activeTable& activeTable::read(recordset& rs, pq_handle& q, 
-                        const std::vector< std::_tstring>& values)
-{
-    q->supplyValues(values);
-    m_imple->read(*rs.m_imple, q);
-    return *this;
-}
-
-activeTable& activeTable::read(recordset& rs, pq_handle& q, validationFunc func,
-                        const std::vector< std::_tstring>& values)
-{
-    q->supplyValues(values);
-    m_imple->read(*rs.m_imple, q);
-    return *this;
-}
-
-
 activeTable* activeTable::create(idatabaseManager* mgr, const _TCHAR* tableName)
 {
     return new activeTable(mgr, tableName);

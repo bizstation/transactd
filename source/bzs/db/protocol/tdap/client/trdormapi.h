@@ -545,7 +545,8 @@ public:
         return *this;
     }
 
-    template <class Query> activeObject& read(collection_vec_type& mdls, Query& q,
+    template <class Query> 
+    activeObject& read(collection_vec_type& mdls, Query& q,
                        validationFunc func)
     {
         mdlsHandler<MAP, collection_vec_type> map(mdls);

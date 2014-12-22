@@ -105,27 +105,27 @@ public:
 
     writableRecord& getWritableRecord();
 
-    activeTable& join(recordset& mdls, queryBase& q, const _TCHAR* name1,
+    activeTable& join(recordset& rs, queryBase& q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                       const _TCHAR* name8 = NULL);
 
     activeTable&
-    outerJoin(recordset& mdls, queryBase& q, const _TCHAR* name1,
+    outerJoin(recordset& rs, queryBase& q, const _TCHAR* name1,
               const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
               const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
               const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
               const _TCHAR* name8 = NULL);
 
-    activeTable& join(recordset& mdls, pq_handle& q, const _TCHAR* name1,
+    activeTable& join(recordset& rs, pq_handle& q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                       const _TCHAR* name8 = NULL);
 
     activeTable&
-    outerJoin(recordset& mdls, pq_handle& q, const _TCHAR* name1,
+    outerJoin(recordset& rs, pq_handle& q, const _TCHAR* name1,
               const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
               const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
               const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
@@ -139,11 +139,6 @@ public:
     activeTable& read(recordset& rs, queryBase& q, validationFunc func);
     activeTable& read(recordset& rs, pq_handle& q);
     activeTable& read(recordset& rs, pq_handle& q, validationFunc func);
-    activeTable& read(recordset& rs, pq_handle& q, 
-                        const std::vector<std::_tstring>& values);
-    activeTable& read(recordset& rs, pq_handle& q, 
-                        validationFunc func,
-                        const std::vector<std::_tstring>& values);
 
     /** @cond INTERNAL */
     template<class T0>

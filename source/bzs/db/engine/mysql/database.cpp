@@ -263,6 +263,9 @@ void database::prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* l
             lock_type = (lck->read) ? TL_READ : TL_WRITE;
         else if (!tb->isExclusveMode() && noUserTransaction()) 
         {
+            if (lck->read)
+                THROW_BZS_ERROR_WITH_CODEMSG(STATUS_INVALID_LOCKTYPE, "Invalid lock type.");
+                
             assert(cmd == SQLCOM_SELECT);
             lock_type = TL_WRITE;
             cmd = SQLCOM_UPDATE;

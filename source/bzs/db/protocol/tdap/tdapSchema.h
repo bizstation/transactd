@@ -329,74 +329,35 @@ public:
         return mysql::codePage((unsigned short)m_charsetIndex);
     }
 
-    /* data image for key
-     * param ptr address of record buffer
+    /* Is string type or not.
+    */
+    bool isStringType() const;
+
+    inline bool isNumericType() const
+    {
+        return ((type == ft_integer) || (type == ft_decimal) ||
+                (type == ft_money) || (type == ft_logical) ||
+                (type == ft_numeric) || (type == ft_bfloat) ||
+                (type == ft_uinteger) || (type == ft_autoinc) ||
+                (type == ft_bit) || (type == ft_numericsts) ||
+                (type == ft_numericsa) || (type == ft_autoIncUnsigned));
+    }
+
+    /* Charctor numbers from charset.
      */
-    inline const uchar_td* keyData(const uchar_td* ptr) const
+    unsigned int charNum() const;
+
+    inline void setCharsetIndex(uchar_td index)
     {
-        if ((type == ft_myblob) || (type == ft_mytext))
-            return blobDataPtr(ptr);
-        int sizeByte = varLenBytes();
-        return ptr + sizeByte;
+        m_charsetIndex = index;
+        if ((type == ft_wstring) || (type == ft_wzstring) ||
+            (type == ft_mywvarchar) || (type == ft_mywvarbinary) ||
+            (type == ft_mywchar))
+            m_charsetIndex = CHARSET_UTF16LE;
     }
 
-    inline uint_td keyDataLen(const uchar_td* ptr) const
-    {
-        if ((type == ft_myblob) || (type == ft_mytext))
-            return blobDataLen(ptr);
-        return dataLen(ptr);
-    }
-
-    /* copy key data for send to mysql
-     *  return next copy address.
-     *  If datalen==0xff then From is field formated (string) type.
-     *  If datalen!=0xff then From is none field formated (string) type.
-     */
-    inline uchar_td* keyCopy(uchar_td* to, const uchar_td* from, ushort_td datalen=0xff)
-    {
-
-        ushort_td kl = maxKeylen(); // size of max key segmnet for mysql
-        memset(to, 0x00, kl);
-        ushort_td keyVarlen =
-            varLenByteForKey(); // size of var sizeByte for record.
-        ushort_td copylen = std::min<ushort_td>(kl, datalen);
-        if (keyVarlen)
-        {
-            if (datalen==0xff)
-                copylen = (ushort_td)std::min<uint_td>((uint_td)copylen,
-                                                   keyDataLen(from));
-            // Var size is allways 2byte for key.
-            memcpy(to, &copylen, 2);
-            to += 2;
-            if (datalen==0xff)
-                from = keyData(from);
-        }
-        memcpy(to, from, copylen);
-        return to + kl - keyVarlen;// incremnt 2 +  (store_len - varlen)
-    }
-
-    /* Get keyValue from keybuf for seek mode error description
-     *  return next copy key address.
-     */
-    inline const uchar_td* getKeyValueFromKeybuf(const uchar_td* from,
-                                                 const uchar_td** data,
-                                                 ushort_td& size)
-    {
-        ushort_td keyVarlen =
-            varLenByteForKey(); // size of var sizeByte for record.
-        if (keyVarlen)
-        {
-            size = *((ushort_td*)from);
-            *data = from + 2;
-        }
-        else
-        {
-            size = maxKeylen();
-            *data = from;
-        }
-        return *data + size;
-    }
-
+    inline uchar_td charsetIndex() const { return m_charsetIndex; };
+    
     /* length bytes of var field
      */
     inline int varLenBytes() const
@@ -417,16 +378,6 @@ public:
     inline bool isBlob() const 
     {
         return (type == ft_myblob) || (type == ft_mytext);
-    }
-
-    inline ushort_td varLenByteForKey() const
-    {
-        if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
-            (type == ft_lstring))
-            return len < 256 ? 1 : 2;
-        else if ((type == ft_myblob) || (type == ft_mytext))
-            return len - 8;
-        return 0;
     }
 
     inline int maxVarDatalen() const
@@ -476,6 +427,54 @@ public:
         return v;
     }
 
+    /* data image for key
+     * param ptr address of record buffer
+     */
+    inline const uchar_td* keyData(const uchar_td* ptr) const
+    {
+        if ((type == ft_myblob) || (type == ft_mytext))
+            return blobDataPtr(ptr);
+        int sizeByte = varLenBytes();
+        return ptr + sizeByte;
+    }
+
+    inline uint_td keyDataLen(const uchar_td* ptr) const
+    {
+        if ((type == ft_myblob) || (type == ft_mytext))
+            return blobDataLen(ptr);
+        return dataLen(ptr);
+    }
+
+/** @cond INTERNAL */
+    /* copy key data for send to mysql
+     *  return next copy address.
+     *  If datalen==0xff then From is field formated (string) type.
+     *  If datalen!=0xff then From is none field formated (string) type.
+     */
+    inline uchar_td* keyCopy(uchar_td* to, const uchar_td* from, ushort_td datalen=0xff)
+    {
+
+        ushort_td kl = maxKeylen(); // size of max key segmnet for mysql
+        memset(to, 0x00, kl);
+        ushort_td keyVarlen =
+            varLenByteForKey(); // size of var sizeByte for record.
+        ushort_td copylen = std::min<ushort_td>(kl, datalen);
+        if (keyVarlen)
+        {
+            if (datalen==0xff)
+                copylen = (ushort_td)std::min<uint_td>((uint_td)copylen,
+                                                   keyDataLen(from));
+            // Var size is allways 2byte for key.
+            memcpy(to, &copylen, 2);
+            to += 2;
+            if (datalen==0xff)
+                from = keyData(from);
+        }
+        memcpy(to, from, copylen);
+        return to + kl - keyVarlen;// incremnt 2 +  (store_len - varlen)
+    }
+
+
     inline const uchar_td* blobDataPtr(const uchar_td* ptr) const
     {
         int blen = blobLenBytes();
@@ -484,35 +483,6 @@ public:
         const uchar_td** p = (const uchar_td**)(ptr + blen);
         return *p;
     }
-
-    /* Is string type or not.
-     */
-    bool isStringType() const;
-
-    inline bool isNumericType() const
-    {
-        return ((type == ft_integer) || (type == ft_decimal) ||
-                (type == ft_money) || (type == ft_logical) ||
-                (type == ft_numeric) || (type == ft_bfloat) ||
-                (type == ft_uinteger) || (type == ft_autoinc) ||
-                (type == ft_bit) || (type == ft_numericsts) ||
-                (type == ft_numericsa) || (type == ft_autoIncUnsigned));
-    }
-
-    /* Charctor numbers from charset.
-     */
-    unsigned int charNum() const;
-
-    inline void setCharsetIndex(uchar_td index)
-    {
-        m_charsetIndex = index;
-        if ((type == ft_wstring) || (type == ft_wzstring) ||
-            (type == ft_mywvarchar) || (type == ft_mywvarbinary) ||
-            (type == ft_mywchar))
-            m_charsetIndex = CHARSET_UTF16LE;
-    }
-
-    inline uchar_td charsetIndex() const { return m_charsetIndex; };
 
     inline uint_td unPackCopy(uchar_td* dest, const uchar_td* src) const
     {
@@ -525,6 +495,38 @@ public:
             clen += *((unsigned short*)src);
         memcpy(dest, src, clen);
         return clen;
+    }
+
+    inline ushort_td varLenByteForKey() const
+    {
+        if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
+            (type == ft_lstring))
+            return len < 256 ? 1 : 2;
+        else if ((type == ft_myblob) || (type == ft_mytext))
+            return len - 8;
+        return 0;
+    }
+
+    /* Get keyValue from keybuf for seek mode error description
+     *  return next copy key address.
+     */
+    inline const uchar_td* getKeyValueFromKeybuf(const uchar_td* from,
+                                                 const uchar_td** data,
+                                                 ushort_td& size)
+    {
+        ushort_td keyVarlen =
+            varLenByteForKey(); // size of var sizeByte for record.
+        if (keyVarlen)
+        {
+            size = *((ushort_td*)from);
+            *data = from + 2;
+        }
+        else
+        {
+            size = maxKeylen();
+            *data = from;
+        }
+        return *data + size;
     }
 
     inline  unsigned char* setBlobFieldPointer(uchar_td* dest, const blobHeader* hd,
@@ -545,6 +547,7 @@ public:
             ++hd->curRow;
         return blobBlock + size;
     }
+/** @endcond */
 };
 
 namespace client

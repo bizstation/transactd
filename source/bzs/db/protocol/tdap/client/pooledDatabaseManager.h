@@ -32,7 +32,7 @@ namespace tdap
 {
 namespace client
 {
-
+/** @cond INTERNAL */
 class xaTransaction
 {
     std::vector<dbmanager_ptr> m_dbs;
@@ -47,14 +47,21 @@ public:
             int ref = m_dbs[i].use_count();
             m_dbs.erase(m_dbs.begin() + i);
             if (ref == 2)
-                releaseConnection(&cpool);
+                releaseConnection(&cpool);// Notify release
         }
     }
 
     void beginTrn(short bias)
     {
         for (size_t i = 0; i < m_dbs.size(); ++i)
+        {
             m_dbs[i]->beginTrn(bias);
+            if (m_dbs[i]->stat())
+            {
+                abortTrn();
+                nstable::throwError(m_dbs[i]->uri(), m_dbs[i]->stat());
+            }
+        }
     }
 
     void endTrn()
@@ -69,6 +76,7 @@ public:
             m_dbs[i]->abortTrn();
     }
 };
+/** @endcond */
 
 /*
 --------------------------------------

@@ -80,26 +80,39 @@ public:
     }
 
     inline database* db() const { return m_db; }
+
     inline void use(const connectParams* param = NULL)
     {
         if (param)
             connect(*param, false);
     }
+
     inline void unUse(){};
 
     inline void setOption(__int64){};
+
     inline __int64 option() { return 0; };
+
     inline void beginTrn(short bias) { m_db->beginTrn(bias); };
+
     inline void endTrn() { m_db->endTrn(); }
+
     inline void abortTrn() { m_db->abortTrn(); }
+
     inline int enableTrn() { return m_db->enableTrn(); }
+
     inline void beginSnapshot(short bias = CONSISTENT_READ) { m_db->beginSnapshot(bias); }
+
     inline void endSnapshot() { m_db->endSnapshot(); }
+
     inline const _TCHAR* uri() const { return m_db->uri(); }
+
     inline char_td mode() const { return m_db->mode(); }
+
     inline bool isOpened() const { return m_db->isOpened(); }
 
     inline short_td stat() const { return m_db->stat(); }
+
     inline uchar_td* clientID() const { return m_db->clientID(); }
 };
 
@@ -114,6 +127,7 @@ inline void releaseDbManagerDummy(idatabaseManager* p)
 }
 /** @endcond */
 
+/** Single thread distribution database manager */
 class disbDbManager : public idatabaseManager, private boost::noncopyable
 {
     std::vector<database_ptr> m_dbs;
@@ -145,6 +159,7 @@ public:
 
     disbDbManager(database* db)
     {
+        //No delete , because managing life cycle is db owner.
         database_ptr d(db, releaseDatabaseDummy);
         addDb(d);
     }
@@ -198,6 +213,7 @@ public:
         else
             m_db = m_dbs[0].get();
     }
+
     inline void unUse(){};
 
     inline const _TCHAR* uri() const { return m_db->uri(); }
@@ -210,11 +226,30 @@ public:
 
     inline __int64 option() { return 0; };
 
-    inline void beginTrn(short bias) { m_db->beginTrn(bias); };
+    inline void beginTrn(short bias) 
+    { 
+        for (size_t i = 0; i < m_dbs.size(); ++i)
+        {
+            m_dbs[i]->beginTrn(bias);
+            if (m_dbs[i]->stat())
+            {
+                abortTrn();
+                nstable::throwError(m_dbs[i]->uri(), m_dbs[i]->stat());
+            }
+        }
+    }
 
-    inline void endTrn() { m_db->endTrn(); }
+    inline void endTrn() 
+    { 
+        for (size_t i = 0; i < m_dbs.size(); ++i)
+            m_dbs[i]->endTrn();
+    }
 
-    inline void abortTrn() { m_db->abortTrn(); }
+    inline void abortTrn() 
+    { 
+        for (size_t i = 0; i < m_dbs.size(); ++i)
+            m_dbs[i]->abortTrn();
+    }
 
     inline int enableTrn() { return m_db->enableTrn(); }
 

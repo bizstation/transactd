@@ -33937,8 +33937,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "TRN_ISO_REPEATABLE_READ", SWIG_From_int(static_cast< int >(2000)));
   rb_define_const(mTransactd, "TRN_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(3000)));
   rb_define_const(mTransactd, "CONSISTENT_READ", SWIG_From_int(static_cast< int >(4000)));
-  rb_define_const(mTransactd, "SINGLELOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(200)));
-  rb_define_const(mTransactd, "MULTILOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(400)));
+  rb_define_const(mTransactd, "SINGLELOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(1200)));
+  rb_define_const(mTransactd, "MULTILOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(1400)));
   rb_define_const(mTransactd, "MULTILOCK_REPEATABLE_READ", SWIG_From_int(static_cast< int >(2000+400)));
   rb_define_const(mTransactd, "MULTILOCK_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(3000+400)));
   rb_define_const(mTransactd, "SINGLELOCK_NOGAP", SWIG_From_int(static_cast< int >(200)));

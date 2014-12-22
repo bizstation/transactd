@@ -1672,6 +1672,10 @@ void testRecordLock(database* db)
     tb2->unlock();
     /* ---------   End Unlock test ----------------------------*/
 
+    /* ---------   Invalid lock type test ----------------------------*/
+    tb2->seekFirst(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb2->stat(), "tb2->seekFirst");
+
     tb2->release();
     tb3->release();
     database::destroy(db2);

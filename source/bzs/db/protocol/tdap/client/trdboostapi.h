@@ -1200,7 +1200,7 @@ template <class DB> class transaction
     short m_bias;
 
 public:
-    inline transaction(DB db, short bias = LOCK_SINGLE_NOWAIT + PARALLEL_TRN +
+    inline transaction(DB db, short bias = SINGLELOCK_READ_COMMITED +
                                            NOWAIT_WRITE)
         : m_db(db), m_bias(bias){};
     inline ~transaction()
