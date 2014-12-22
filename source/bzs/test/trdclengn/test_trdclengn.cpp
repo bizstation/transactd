@@ -1141,7 +1141,7 @@ void testTransactionLockRepeatable(database* db)
     /* Test single record lock and Transaction lock                             */
     /* -------------------------------------------------*/
     // lock(X) non-transaction
-    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb2->seekFirst(ROW_LOCK_X);
 
     db->beginTrn(MULTILOCK_REPEATABLE_READ);
     BOOST_CHECK_MESSAGE(0 == db->stat(), "beginTrn");
@@ -1254,7 +1254,7 @@ void testTransactionLockRepeatable(database* db)
     for (int i = 12 ; i <= 16; ++i)
     {
         tb2->setFV(fdi_id, i);
-        tb2->seek(LOCK_SINGLE_NOWAIT);
+        tb2->seek(ROW_LOCK_X);
         BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seek");
     }
     db->endTrn();
@@ -1287,7 +1287,7 @@ void testTransactionLockReadCommited(database* db)
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
 
     // Try lock(X)
-    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb2->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekFirst");
 
     // consistent read
@@ -1347,12 +1347,12 @@ void testTransactionLockReadCommited(database* db)
     /* Test unlock                           */
     /* --------------------------------------*/
     tb2->seekFirst();
-    tb2->seekNext(LOCK_SINGLE_NOWAIT);
+    tb2->seekNext(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekNext");
 
     tb->unlock();
     // retry seekNext. Before operation is failed but do not lost currency.
-    tb2->seekNext(LOCK_SINGLE_NOWAIT);
+    tb2->seekNext(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "unlock");
     tb2->seekNext();
     /* --------------------------------------*/
@@ -1367,7 +1367,7 @@ void testTransactionLockReadCommited(database* db)
     tb->unlock();// Can not unlock updated record
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->unlock");
     tb2->seekFirst();
-    tb2->seekNext(LOCK_SINGLE_NOWAIT);
+    tb2->seekNext(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "undate unlock");
 
     /* ---------------------------------------------------------*/
@@ -1386,7 +1386,7 @@ void testTransactionLockReadCommited(database* db)
     /* Test multi record lock Transaction and non-transaction record lock */
     /* -------------------------------------------------------------------*/
     // lock(X) non-transaction
-    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb2->seekFirst(ROW_LOCK_X);
 
     db->beginTrn(SINGLELOCK_READ_COMMITED);
     BOOST_CHECK_MESSAGE(0 == db->stat(), "beginTrn");
@@ -1485,7 +1485,7 @@ void testTransactionLockReadCommited(database* db)
     //  access to records at SINGLELOCK_READ_COMMITED.
     // No match records are unlocked.
     tb2->setFV(fdi_id, 100);
-    tb2->seek(LOCK_SINGLE_NOWAIT);
+    tb2->seek(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek");
     tb2->unlock();
     db->endTrn();
@@ -1509,15 +1509,13 @@ void testTransactionLockReadCommited(database* db)
     for (int i = 12 ; i <= 16; ++i)
     {
         tb2->setFV(fdi_id, i);
-        tb2->seek(LOCK_SINGLE_NOWAIT);
+        tb2->seek(ROW_LOCK_X);
         if ((i == 16)|| (i == 13)) 
             BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek");
         else
             BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seek");
     }
     db->endTrn();
-
-
     tb->release();
     tb2->release();
     database::destroy(db2);
@@ -1535,45 +1533,45 @@ void testRecordLock(database* db)
     tb2->setKeyNum(0);
 
     //Single record lock
-    tb->seekFirst(LOCK_SINGLE_NOWAIT); // lock(X)
+    tb->seekFirst(ROW_LOCK_X); // lock(X)
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
     tb2->seekFirst();  // Use consistent_read  
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
 
-    tb2->seekFirst(LOCK_SINGLE_NOWAIT);  // Try lock(X) single
+    tb2->seekFirst(ROW_LOCK_X);  // Try lock(X) single
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekFirst");
 
     // try consistent_read. Check ended that before auto transaction  
     tb2->seekFirst();  
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
 
-    tb2->seekNext(LOCK_SINGLE_NOWAIT);  // lock(X) second
+    tb2->seekNext(ROW_LOCK_X);  // lock(X) second
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
 
-    tb2->seekNext(LOCK_SINGLE_NOWAIT);  // lock(X) third  second lock freed
+    tb2->seekNext(ROW_LOCK_X);  // lock(X) third  second lock freed
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
 
     
     tb->seekNext(); // nobody lock second.
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
-    tb->seekNext(LOCK_SINGLE_NOWAIT); // Try lock(X) third
+    tb->seekNext(ROW_LOCK_X); // Try lock(X) third
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb->stat(), "tb->seekFirst");
 
     //Update test change third with lock(X)
     tb2->setFV(fdi_name, _T("The 3rd"));
     tb2->update(); // auto trn commit and unlock all locks
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->update");
-    tb2->seekNext(LOCK_SINGLE_NOWAIT); // lock(X) 4th
+    tb2->seekNext(ROW_LOCK_X); // lock(X) 4th
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekFirst");
     tb2->setFV(fdi_name, _T("The 4th"));
     tb2->update(); // auto trn commit and unlock all locks
 
     // Test unlock all locks, after update
-    tb->seekFirst(LOCK_SINGLE_NOWAIT); // lock(X) first
+    tb->seekFirst(ROW_LOCK_X); // lock(X) first
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekFirst");
-    tb->seekNext(LOCK_SINGLE_NOWAIT); // lock(X) second
+    tb->seekNext(ROW_LOCK_X); // lock(X) second
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekNext");
-    tb->seekNext(LOCK_SINGLE_NOWAIT); // lock(X) third
+    tb->seekNext(ROW_LOCK_X); // lock(X) third
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekNext");
     BOOST_CHECK_MESSAGE(_tcscmp(tb->getFVstr(fdi_name), _T("The 3rd")) == 0,
                         "tb->seekNext");
@@ -1586,59 +1584,60 @@ void testRecordLock(database* db)
 
     /* ---------   Unlock test ----------------------------*/
     // 1 unlock()
-    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
 
     tb->unlock();
 
-    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb2->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
     tb2->unlock();
 
     //2 auto tran ended
     table* tb3 = openTable(db2);
-    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb2->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
     
     tb3->seekLast(); //This operation is another table handle, then auto tran ended 
     BOOST_CHECK_MESSAGE(0 == tb3->stat(), "tb3->seekLast");
 
-    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
     tb->unlock();
 
     // begin trn
-    tb3->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb3->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb3->stat(), "tb3->seekFirst");
 
-    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb->stat(), "tb->seekFirst");
     db2->beginTrn();
 
-    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
     db2->endTrn();
     tb->unlock();
     // begin snapshot
-    tb3->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb3->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb3->stat(), "tb3->seekFirst");
 
-    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb->stat(), "tb->seekFirst");
     db2->beginSnapshot();
-    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
     db2->endSnapshot();
     tb->unlock();
      // close Table
-    tb->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
 
-    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb2->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekFirst");
     tb->release();
-    tb2->seekFirst(LOCK_SINGLE_NOWAIT);
+    tb2->seekFirst(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    tb2->unlock();
     /* ---------   End Unlock test ----------------------------*/
 
     tb2->release();
@@ -1649,9 +1648,11 @@ void testRecordLock(database* db)
 
 void testExclusive()
 {
-
     // db mode exclusive
     database* db = database::create();
+    /* -------------------------------------------------*/
+    /*  database WRITE EXCLUSIVE                        */
+    /* -------------------------------------------------*/
     table* tb = openTable(db, TD_OPEN_EXCLUSIVE);
     BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 1 ");
 
@@ -1660,73 +1661,131 @@ void testExclusive()
     db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
     BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
+    //database open error. Check database::stat()
     BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat(),
-                        "open 1" << db->stat());
-
-    table* tb2 = db->openTable(_T("user"));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 2");
-
-    tb->setKeyNum(0);
-    tb->seekFirst();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
-
-    tb->setFV(fdi_name, _T("ABC123"));
-    tb->update();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
-
-    tb2->setKeyNum(0);
-    tb2->seekFirst();
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "update");
-    tb2->setFV(fdi_name, _T("ABC124"));
-    tb2->update();
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "update");
-
-    tb->close();
-    tb2->close();
-    db->close();
-    db2->close();
-
-    // table mode exclusive
-    db = database::create();
-    tb = openTable(db, TD_OPEN_READONLY, TD_OPEN_EXCLUSIVE);
-
-    db2 = database::create();
-    db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
-    BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
-    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
-    BOOST_CHECK_MESSAGE(0 == db2->stat(), "open 1" << db->stat());
-
-    // Can not open another connections.
-    tb2 = db2->openTable(_T("user"));
-    BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat(),
-                        "Exclusive opened 2");
-
-    // Can open a same connection.
-    table* tb3 = db->openTable(_T("user"));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 2");
-
-    tb->close();
-    if (tb2 != NULL)
-        tb2->close();
-    tb3->close();
-    db->close();
-    db2->close();
-    db->release();
-    db2->release();
-    // reopen and update
-    db = database::create();
-    tb = openTable(db);
-
-    tb->setKeyNum(0);
-    tb->seekFirst();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
-
-    tb->setFV(fdi_name, _T("ABC123"));
-    tb->update();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
-
+                        "open db->stat = " << db->stat());
+    dbdef* def = db->dbDef();
+    tabledef* td = def->tableDefs(1);
+    td->iconIndex = 3;
+    def->updateTableDef(1);
+    BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef");
     tb->release();
-    db->release();
+    db->close();
+    db2->close();
+
+    /* -------------------------------------------------*/
+    /*  database READ EXCLUSIVE                        */
+    /* -------------------------------------------------*/
+    tb = openTable(db, TD_OPEN_READOMLY_EXCLUSIVE);
+    
+    // Normal open
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "nomal open");
+    db2->close();
+
+    // Write Exclusive open
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), 
+            TYPE_SCHEMA_BDF, TD_OPEN_EXCLUSIVE);
+    BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
+                                    , "Write Exclusive open");
+    db2->close();
+
+    // Read Exclusive open
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), 
+            TYPE_SCHEMA_BDF, TD_OPEN_READOMLY_EXCLUSIVE);
+    BOOST_CHECK_MESSAGE(0 == db2->stat()
+                                    , "Read Exclusive open");
+    db2->close();
+    db->close();
+
+    /* -------------------------------------------------*/
+    /*  Nnomal and Exclusive opend tables mix use       */
+    /* -------------------------------------------------*/
+    tb = openTable(db, TD_OPEN_NORMAL);
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
+            
+    table* tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
+    //Check tb2 Exclusive
+    table* tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
+    BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
+                                    , "Write Exclusive open");
+    //if (tb2->recordCount(false) == 0)
+    {
+        for (int i = 1 ; i < 5 ; ++i)
+        {
+            tb2->setFV(fdi_id, i + 1);
+            tb2->setFV(fdi_name, i + 1);
+            tb2->insert();
+            BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->insert");
+        }
+    }
+    tb2->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    tb2->seekLast();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekLast");
+    tb->seekLast();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb2->seekLast");
+    // Normal close first
+    tb->close();
+    tb2->seekLast();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekLast");
+    tb2->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+
+    //Reopen Normal
+    tb = db->openTable(_T("user"));
+    tb2->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    tb2->seekLast();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekLast");
+    tb->seekLast();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb2->seekLast");
+    // Exclusive close first
+    tb2->close();
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    tb->seekLast();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb2->seekLast");
+
+    /* ---------------------------------------------------*/
+    /*  Nnomal and Exclusive opend tables mix transaction */
+    /* ---------------------------------------------------*/
+    tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
+    //Check tb2 Exclusive
+    tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
+    BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
+                                    , "Write Exclusive open");
+    db->beginTrn();
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    tb->setFV(fdi_name, _T("mix trn"));
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->update");
+
+    tb2->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    tb2->setFV(fdi_name, _T("first mix trn tb2"));
+    tb2->update();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->update");
+
+    tb2->seekNext();
+    tb2->setFV(fdi_name, _T("second mix trn tb2"));
+    tb2->update();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->update");
+    db->endTrn();
+    tb2->seekFirst();
+    _tstring v =  tb2->getFVstr(fdi_name);
+    BOOST_CHECK_MESSAGE(v == _T("first mix trn tb2"), "check first");
+    tb2->seekNext();
+    v =  tb2->getFVstr(fdi_name);
+    BOOST_CHECK_MESSAGE(v == _T("second mix trn tb2"), "check second");
+
+    database::destroy(db);
+    database::destroy(db2);
 }
 
 /* Multi database */
@@ -4202,11 +4261,6 @@ BOOST_FIXTURE_TEST_CASE(transactionLock, fixture)
     testTransactionLockReadCommited(db());
 }
 
-BOOST_AUTO_TEST_CASE(Exclusive)
-{
-    testExclusive();
-}
-
 BOOST_FIXTURE_TEST_CASE(RecordLock, fixture)
 {
     testRecordLock(db());
@@ -4215,6 +4269,11 @@ BOOST_FIXTURE_TEST_CASE(RecordLock, fixture)
 BOOST_FIXTURE_TEST_CASE(MultiDatabase, fixture)
 {
     testMultiDatabase(db());
+}
+
+BOOST_AUTO_TEST_CASE(Exclusive)
+{
+    testExclusive();
 }
 
 BOOST_FIXTURE_TEST_CASE(insert2, fixture)

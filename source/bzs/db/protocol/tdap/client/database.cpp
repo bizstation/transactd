@@ -180,7 +180,10 @@ void database::create(const _TCHAR* fullpath, short type)
 void database::drop()
 {
     if (m_impl->dbDef == NULL)
+    {
         m_stat = STATUS_DB_YET_OPEN;
+        return;
+    }
     _TCHAR FullPath[MAX_PATH];
     std::vector<std::_tstring> fileNames;
     for (int i = 0; i <= m_impl->dbDef->tableCount(); i++)

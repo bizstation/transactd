@@ -41,6 +41,20 @@ using namespace std;
 #define KEYLEN_ALLCOPY 0
 #define OPEN_TABLE_TIMEOUT_SEC 2
 
+#if (MODE_READ_ONLY != TD_OPEN_READONLY)
+#error "MODE_READ_ONLY != TD_OPEN_READONLY"
+#endif
+
+#if (MODE_EXCLUSIVE != TD_OPEN_EXCLUSIVE)
+#error "MODE_EXCLUSIVE != TD_OPEN_EXCLUSIVE"
+#endif
+
+#if (MODE_READ_EXCLUSIVE != TD_OPEN_READOMLY_EXCLUSIVE)
+#error "MODE_READ_EXCLUSIVE != TD_OPEN_READOMLY_EXCLUSIVE"
+#endif
+
+
+
 unsigned int hash(const char* s, size_t len)
 {
     unsigned int h = 0;
@@ -100,7 +114,7 @@ void tableCacheCounter::release(const std::string& dbname,
     --m_counts[pos];
 }
 
-void lockTable(THD* thd, TABLE* tb)
+bool lockTable(THD* thd, TABLE* tb)
 {
     bool append = (thd->lock != 0);
 
@@ -115,7 +129,7 @@ void lockTable(THD* thd, TABLE* tb)
     }
     DEBUG_WRITELOG_SP1("LOCK TABLE table =%s\n", tb->s->table_name.str);
 
-    return;
+    return (lock != NULL);
 }
 
 /** The present lock type is returned.
@@ -141,7 +155,8 @@ thr_lock_type locktype(bool trn, enum_sql_command cmd)
     return lock_type;
 }
 
-bool unlockTables(bool releaseStatementLock, THD* thd, bool rollback)
+
+bool unlockTables(bool releaseStatementLock, THD* thd, bool rollback, database::tableList* tables)
 {
     if (thd->lock)
     {
@@ -152,8 +167,16 @@ bool unlockTables(bool releaseStatementLock, THD* thd, bool rollback)
             ret = trans_commit_stmt(thd);
         if (releaseStatementLock)
             thd->mdl_context.release_statement_locks();
-        mysql_unlock_tables(thd, thd->lock);
-        thd->lock = 0;
+        if (tables)
+        {
+            for (int i=0;i<tables->size();++i)
+                mysql_lock_remove(thd, thd->lock, (*tables)[i]->internalTable());
+
+        }else
+        {
+            mysql_unlock_tables(thd, thd->lock);
+            thd->lock = 0;
+        }
         return !ret;
     }
     return false;
@@ -163,12 +186,12 @@ bool unlockTables(bool releaseStatementLock, THD* thd, bool rollback)
 #pragma warning(disable : 4355)
 #endif
 
-bool g_safe_share_mode = false;
 tableCacheCounter database::tableRef;
 
 database::database(const char* name, short cid)
-    : m_dbname(name), m_thd(createThdForThread()), m_cid(cid),
-      m_inTransaction(0), m_inSnapshot(0), m_trnType(0),m_inAutoTransaction(NULL)
+    : m_dbname(name), m_thd(createThdForThread()), 
+      m_inTransaction(0), m_inSnapshot(0), m_stat(0), m_usingExclusive(false),
+      m_inAutoTransaction(NULL), m_trnType(0), m_cid(cid)
 {
     m_thd->security_ctx->skip_grants();
 }
@@ -192,8 +215,69 @@ void database::use() const
     m_thd->clear_error();
 }
 
+void database::prebuildIsoratinMode()
+{
+    cp_thd_set_read_only(m_thd);
+    if (m_inTransaction)
+        m_thd->tx_isolation = m_iso;
+    else if(m_inSnapshot)
+    {
+        if (m_iso)
+        {
+            m_thd->in_lock_tables = 1;// WITH LOCK
+            m_thd->tx_isolation = m_iso;
+        }else
+            m_thd->tx_isolation = ISO_REPEATABLE_READ;
+    }
+    else
+        m_thd->tx_isolation = (enum_tx_isolation)m_thd->variables.tx_isolation;
+}
+
+void database::prebuildExclusieLockMode(table* tb)
+{
+    m_thd->variables.option_bits |= OPTION_TABLE_LOCK;
+    m_thd->lex->sql_command = SQLCOM_LOCK_TABLES;
+    if (tb->mode() == MODE_EXCLUSIVE)
+        tb->m_table->reginfo.lock_type = TL_WRITE;
+    else
+        tb->m_table->reginfo.lock_type = TL_READ_NO_INSERT;
+    m_thd->in_lock_tables = 1;
+  
+}
+
+void database::prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* lck) 
+{
+    bool trn = ((m_inTransaction > 0) && !tb->isReadOnly());
+    if (m_inSnapshot) 
+        cmd = SQLCOM_SELECT;
+    thr_lock_type lock_type; 
+
+    // ExclusveMode and Snapshot can not specify lock type.
+    // Auto transaction can.
+    if (lck && lck->lock && !tb->isExclusveMode() && noUserTransaction())
+    {   
+        assert(cmd == SQLCOM_SELECT);
+        lock_type = TL_WRITE;
+        cmd = SQLCOM_UPDATE;
+    }
+    else
+        lock_type = locktype(trn, cmd); 
+    m_thd->in_lock_tables = (lock_type >= TL_WRITE);
+    m_thd->lex->sql_command = cmd;
+
+    if ((lock_type >= TL_WRITE) &&
+             (tb->isReadOnly() || m_thd->variables.tx_read_only))
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ACCESS_DENIED, "Access denined.");
+
+    if ((lock_type >= TL_WRITE) &&
+        (m_thd->variables.sql_log_bin))
+        m_thd->set_current_stmt_binlog_format_row();
+ 
+    tb->m_table->reginfo.lock_type = lock_type;
+}
+
 // locktable
-table* database::useTable(int index, enum_sql_command cmd)
+table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
 {
     if (index >= (int)m_tables.size())
         THROW_BZS_ERROR_WITH_CODEMSG(1, "Invalid table id.");
@@ -202,72 +286,65 @@ table* database::useTable(int index, enum_sql_command cmd)
     if (tb == NULL)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                      "Invalid table id.");
-
     if (tb->m_blobBuffer)
         tb->m_blobBuffer->clear();
+
+    // Change to shared lock is user tranasction only.
+    if (lck && lck->read && lck->lock && !m_inTransaction)
+            THROW_BZS_ERROR_WITH_CODEMSG(STATUS_INVALID_LOCKTYPE,
+                                         "Invalid lock type."); 
+    
+    // in-transaction or in-snapshort or exclusive or inAutoTransaction(lock delay)
+    //  is opened
     if (tb->islocked())
     {
         if (tb->m_table == NULL)
             THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                          "Invalid table id.");
+        if (tb->isExclusveMode())
+        {
+            prebuildLocktype(tb, cmd, NULL);
+            tb->startStmt();
+        }
         return tb;
     }
-    if (g_safe_share_mode && tb->m_table == NULL)
-        reopen();
+
     if (tb->m_table == NULL)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                      "Invalid table id.");
-    bool trn = ((m_inTransaction > 0) && (tb->mode() != TD_OPEN_READONLY));
-    if (m_inSnapshot) 
-        cmd = SQLCOM_SELECT;
-        
-    tb->m_table->reginfo.lock_type = locktype(trn, cmd);
-    if ((tb->mode() == TD_OPEN_READONLY) &&
-        (tb->m_table->reginfo.lock_type == TL_WRITE))
-        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ACCESS_DENIED, "Access denined.");
+    prebuildLocktype(tb, cmd, lck);
     
-    m_thd->in_lock_tables = (tb->m_table->reginfo.lock_type == TL_WRITE);
     if (m_thd->lock == 0)
-    {
-        m_thd->lex->sql_command = cmd;
-        if (m_inTransaction)
-            m_thd->tx_isolation = m_iso;
-        else if(m_inSnapshot)
-        {
-            if (m_iso)
-            {
-                m_thd->in_lock_tables = 1;// WITH LOCK
-                m_thd->tx_isolation = m_iso;
-            }else
-                m_thd->tx_isolation = ISO_REPEATABLE_READ;
-        }
-        else
-            m_thd->tx_isolation = (enum_tx_isolation)m_thd->variables.tx_isolation;
-        cp_thd_set_read_only(m_thd);
-    }
-    lockTable(m_thd, tb->m_table);
+        prebuildIsoratinMode();
 
-    if ((tb->m_table->reginfo.lock_type == TL_WRITE) &&
-        (m_thd->variables.sql_log_bin))
-        m_thd->set_current_stmt_binlog_format_row();
-    if (!m_thd->in_lock_tables)
-        tb->m_table->file->init_table_handle_for_HANDLER();
+    if (tb->isExclusveMode())
+        prebuildExclusieLockMode(tb);
+    
+    if (!lockTable(m_thd, tb->m_table))
+    {
+        m_thd->in_lock_tables = 0;
+        m_thd->variables.option_bits &= ~OPTION_TABLE_LOCK;
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_CANNOT_LOCK_TABLE,
+                                         "lockTable error.");
+    }
+    if (tb->isExclusveMode())
+        m_thd->variables.option_bits &= ~OPTION_TABLE_LOCK;
+    
+    tb->initForHANDLER();
     tb->setLocked(true);
-    if (g_safe_share_mode)
-    {
-        int ret = 0;
-        tb->m_keyconv.setKey(tb->m_table->key_info);
-        if (tb->keyNum() >= 0)
-            ret =
-                tb->m_table->file->ha_index_init(tb->keyNum(), 1 /* sorted */);
-        else if (tb->keyNum() == -2)
-            ret = tb->m_table->file->ha_rnd_init(false);
-        if (ret)
-            THROW_BZS_ERROR_WITH_CODEMSG(ERROR_INDEX_RND_INIT,
-                                         "UseTable index_init error.");
-    }
-
+    m_thd->in_lock_tables = 0;
     return tb;
+}
+
+size_t database::getNomalOpenTables(tableList& tables)
+{
+    for (int i = (int)m_tables.size() - 1; i >= 0; i--)
+    {
+        boost::shared_ptr<table>& tb = m_tables[i];
+        if (tb && tb->islocked() && tb->isNomalMode())
+            tables.push_back(tb);
+    }
+    return tables.size();
 }
 
 void database::unUseTable(table* tb)
@@ -276,20 +353,28 @@ void database::unUseTable(table* tb)
     { // Only this table is lock release.
         bool needUnlock =
             (locktype(false, m_thd->lex->sql_command) == TL_WRITE);
-        bool changed = tb->isChanged();
-        tb->resetTransctionInfo(m_thd);
-        bool rollback = (!changed && needUnlock);
-
-        //unlock whole tebles, 
-        //  but a table can not know unlocked if a table in-autoTransaction
-        if (m_inAutoTransaction)
+        bool rollback = (!tb->isChanged() && needUnlock);
+        bool ret = true;
+        if(m_usingExclusive)
         {
-            if (tb != m_inAutoTransaction)
-                m_inAutoTransaction->resetTransctionInfo(m_thd);
-            m_inAutoTransaction = NULL;
+            tableList tables;
+            if (getNomalOpenTables(tables))
+                ret = unlockTables(needUnlock, m_thd, rollback, &tables);
         }
-        if (unlockTables(needUnlock, m_thd, rollback))
+        else
+            ret = unlockTables(needUnlock, m_thd, rollback, NULL);
+
+        if (ret)
         {
+            tb->resetTransctionInfo(m_thd);
+            //unlock whole tebles, 
+            //  but a table can not know unlocked if a table in-autoTransaction
+            if (m_inAutoTransaction)
+            {
+                if (tb != m_inAutoTransaction)
+                    m_inAutoTransaction->resetTransctionInfo(m_thd);
+                m_inAutoTransaction = NULL;
+            }
             DEBUG_WRITELOG_SP1("UNLOCK TABLE table =%s\n",
                                tb->m_table->s->table_name.str);
         }
@@ -308,11 +393,6 @@ void database::unUseTable(table* tb)
                                              "Transaction commit error.");
             }
         }
-        if (g_safe_share_mode)
-        {
-            unUseTables(false);
-            closeForReopen();
-        }
     }
 }
 
@@ -324,13 +404,23 @@ void database::unUseTables(bool rollback)
     m_inTransaction = 0;
     m_inSnapshot = 0;
     m_inAutoTransaction = NULL;
-    for (int i = 0; i < (int)m_tables.size(); i++)
+       
+    bool ret = true;
+    if(m_usingExclusive)
     {
-        if (m_tables[i])
-            m_tables[i]->resetTransctionInfo(m_thd);
-    }
-    if (unlockTables(needUnlock, m_thd, rollback))
+        tableList tables;
+        if (getNomalOpenTables(tables))
+            ret = unlockTables(needUnlock, m_thd, rollback, &tables);
+    }else
+        ret = unlockTables(needUnlock, m_thd, rollback, NULL);
+
+    if (ret)
     {
+        for (int i = 0; i < (int)m_tables.size(); i++)
+        {
+            if (m_tables[i])
+                m_tables[i]->resetTransctionInfo(m_thd);
+        }
         DEBUG_WRITELOG("UNLOCK TABLES \n")
     }
     else
@@ -345,8 +435,6 @@ void database::unUseTables(bool rollback)
             THROW_BZS_ERROR_WITH_CODEMSG(m_stat, "Transaction commit error.");
         }
     }
-    if (g_safe_share_mode)
-        closeForReopen();
 }
 
 bool database::beginTrn(short type, enum_tx_isolation iso)
@@ -425,12 +513,9 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
 {
     TABLE_LIST tables;
     m_thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
-    enum_mdl_type type_arg =
-        (mode == TD_OPEN_EXCLUSIVE) ? MDL_EXCLUSIVE : MDL_SHARED_READ;
-    thr_lock_type locltype = (mode == TD_OPEN_EXCLUSIVE) ? TL_WRITE : TL_READ;
     tables.init_one_table(m_dbname.c_str(), m_dbname.size(), name.c_str(),
-                          name.size(), name.c_str(), locltype);
-    tables.mdl_request.set_type(type_arg);
+                          name.size(), name.c_str(), TL_READ);
+    tables.mdl_request.set_type(MDL_SHARED_READ);
 
     Open_table_context ot_act(m_thd, MYSQL_OPEN_GET_NEW_TABLE);
     m_thd->cp_set_overwrite_status(true);
@@ -482,6 +567,8 @@ table* database::openTable(const std::string& name, short mode,
                 new table(t, *this, name, mode, (int)m_tables.size()));
             m_tables.push_back(tb);
             m_stat = STATUS_SUCCESS;
+            if (tb->isExclusveMode())
+                ++m_usingExclusive;
             tableRef.addref(m_dbname, name); // addef first then table open.
             return tb.get();
         }
@@ -523,30 +610,27 @@ void database::closeTable(table* tb)
         {
             short mode = tb->m_mode;
             TABLE* src = tb->m_table;
-            m_tables[i]->unUse();
-            m_tables[i].reset();
-            if (mode == TD_OPEN_EXCLUSIVE)
+            if (tb->isExclusveMode())
             {
-                if (tableUseCount(m_tables, src->s->table_name.str) == 1)
+                --m_usingExclusive;
+                // Chenge to normal, in order to be listed on the normal list.
+                struct ChangeMode
                 {
-                    for (TABLE** tbl = &m_thd->open_tables; *tbl != 0;
-                         *tbl = (*tbl)->next)
+                    table* m_tb;
+                    short m_mode;
+                    ChangeMode(table* tb):m_tb(tb)
                     {
-                        if (*tbl == src)
-                        {
-                            TABLE* tbptr = (*tbl);
-                            MDL_ticket* tc = tbptr->mdl_ticket;
-                            close_thread_table(m_thd, tbl);
-                            m_thd->mdl_context
-                                .set_explicit_duration_for_all_locks();
-                            m_thd->mdl_context.release_all_locks_for_name(tc);
-                            m_thd->mdl_context
-                                .set_transaction_duration_for_all_locks();
-                        }
-                        break;
+                        m_mode = tb->m_mode;
+                        m_tb->m_mode = 0;
                     }
-                }
-            }
+                    ~ChangeMode(){m_tb->m_mode = m_mode;}
+                }modeChanger(tb);
+
+                m_tables[i]->unUse();
+            }else
+                m_tables[i]->unUse();
+            
+            m_tables[i].reset();
 
             DEBUG_WRITELOG_SP1("CLOSE TABLE table id=%d \n", i);
         }
@@ -556,7 +640,6 @@ void database::closeTable(table* tb)
 void database::closeForReopen()
 {
     // A transaction is committed compulsorily.
-
     for (size_t i = 0; i < m_tables.size(); i++)
     {
         if (m_tables[i] && (m_tables[i]->m_table != NULL))
@@ -567,6 +650,7 @@ void database::closeForReopen()
     if (m_thd->mdl_context.has_locks())
         close_thread_tables(m_thd);
     m_thd->mdl_context.release_transactional_locks();
+    m_usingExclusive = 0;
     // It is certainly after close_thread_tables.
 }
 
@@ -719,7 +803,8 @@ void table::resetTransctionInfo(THD* thd)
         m_table->next_number_field = 0;
         m_table->file->next_insert_id = 0;
     }
-    m_locked = false;
+    if (isNomalMode())
+        m_locked = false;
     m_validCursor = false;
     m_nounlock = false;
 }
@@ -1179,7 +1264,7 @@ inline void table::tryConsistentRead(bool noConsistent)
     bool const_read = m_forceConsistentRead || 
                         (
                             m_db.noUserTransaction() && 
-                            (m_table->reginfo.lock_type != TL_WRITE) && 
+                            (m_table->reginfo.lock_type < TL_WRITE) && 
                             !noConsistent
                         ); 
     m_table->file->try_semi_consistent_read(const_read);
@@ -1885,7 +1970,7 @@ void table::setFiledNullFlags()
 
 __int64 table::insert(bool ncc)
 {
-    if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type != TL_WRITE))
+    if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type < TL_WRITE))
     {
         m_stat = STATUS_INVALID_LOCKTYPE;
         return 0;
@@ -1943,7 +2028,7 @@ void table::beginUpdate(char keyNum)
 
 void table::beginDel()
 {
-    if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type != TL_WRITE))
+    if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type < TL_WRITE))
     {
         m_stat = STATUS_INVALID_LOCKTYPE;
         return;
@@ -2095,7 +2180,7 @@ int table::keynumByName(const char* name) const
 
 void table::startBulkInsert(ha_rows rows)
 {
-    if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type != TL_WRITE))
+    if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type < TL_WRITE))
     {
         m_stat = STATUS_INVALID_LOCKTYPE;
         return ;

@@ -396,10 +396,18 @@ inline void dbExecuter::doOpenTable(request& req)
         req.result = db->stat();
         if (m_tb)
         {
-            req.pbk->handle = addHandle(getDatabaseID(req.cid), m_tb->id());
-            m_tb = getTable(req.pbk->handle);
-            m_tb->setBlobBuffer(m_blobBuffer);
-            req.paramMask = P_MASK_POSBLK;
+            try
+            {
+                req.pbk->handle = addHandle(getDatabaseID(req.cid), m_tb->id());
+                m_tb = getTable(req.pbk->handle);
+                m_tb->setBlobBuffer(m_blobBuffer);
+                req.paramMask = P_MASK_POSBLK;
+            }
+            catch (bzs::rtl::exception& e)
+            {
+                m_tb->close();
+                throw e;
+            }
         }
     }
     else
@@ -426,7 +434,7 @@ inline void readAfter(request& req, table* tb, dbExecuter* dbm)
 inline void dbExecuter::doSeekKey(request& req, int op, engine::mysql::rowLockMode* lck)
 {
     bool read = true;
-    m_tb = getTable(req.pbk->handle, lck->lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
+    m_tb = getTable(req.pbk->handle, SQLCOM_SELECT, lck);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
         m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
@@ -447,7 +455,6 @@ inline void dbExecuter::doSeekKey(request& req, int op, engine::mysql::rowLockMo
             m_tb->seekKey(flag, m_tb->keymap());
             if (lck->lock && m_tb->stat())
                 m_tb->setRowLockError();
-
         }
     }
     readAfter(req, m_tb, this);
@@ -455,7 +462,7 @@ inline void dbExecuter::doSeekKey(request& req, int op, engine::mysql::rowLockMo
 
 inline void dbExecuter::doMoveFirst(request& req, engine::mysql::rowLockMode* lck)
 {
-    m_tb = getTable(req.pbk->handle, lck->lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
+    m_tb = getTable(req.pbk->handle, SQLCOM_SELECT, lck);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
         m_tb->setRowLock(lck);
@@ -474,7 +481,7 @@ inline void dbExecuter::doMoveFirst(request& req, engine::mysql::rowLockMode* lc
 
 inline void dbExecuter::doMoveKey(request& req, int op, engine::mysql::rowLockMode* lck)
 {
-    m_tb = getTable(req.pbk->handle, lck->lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
+    m_tb = getTable(req.pbk->handle, SQLCOM_SELECT, lck);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
         m_tb->setRowLock(lck);
@@ -717,7 +724,7 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
 
 inline void dbExecuter::doStepRead(request& req, int op, engine::mysql::rowLockMode* lck)
 {
-    m_tb = getTable(req.pbk->handle, lck->lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
+    m_tb = getTable(req.pbk->handle, SQLCOM_SELECT, lck);
     m_tb->setRowLock(lck);
     if (op == TD_POS_FIRST)
         m_tb->stepFirst();
@@ -919,6 +926,9 @@ inline short getTrnsactionType(int op)
 inline rowLockMode* getRowLockMode(int op, rowLockMode* lck)
 {
 	lck->lock = false;
+    lck->read = false;
+    if (op > 1000)
+    	op = op % 1000;
     if (op < NOWAIT_WRITE)
     {
         if (op >= LOCK_SINGLE_NOWAIT && op < LOCK_MULTI_NOWAIT)

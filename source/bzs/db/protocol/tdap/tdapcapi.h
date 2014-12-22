@@ -269,12 +269,14 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define MULTILOCK_GAP                   MULTILOCK_REPEATABLE_READ + LOCK_MULTI_NOWAIT
 #define GAPLOCK                         TRN_ISO_REPEATABLE_READ
 #define NO_GAPLOCK                      0
+#define ROW_LOCK_X                      LOCK_SINGLE_NOWAIT
 
 /** open mode
  */
 #define TD_OPEN_NORMAL                  0
 #define TD_OPEN_READONLY                -2
 #define TD_OPEN_EXCLUSIVE               -4
+#define TD_OPEN_READOMLY_EXCLUSIVE      (TD_OPEN_READONLY + TD_OPEN_EXCLUSIVE)
 
 /** filed algin
  */

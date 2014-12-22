@@ -65,13 +65,16 @@ namespace mysql
 #define TRN_RECORD_LOCK_SINGLE 0
 #define TRN_RECORD_LOCK_MUILTI 1
 
+#define MODE_READ_ONLY -2
+#define MODE_EXCLUSIVE -4
+#define MODE_READ_EXCLUSIVE -6
+
+
 /** bookmark size
  *  btreive API is MAX 4 byte
  */
 #define REF_SIZE_MAX 4
 class table;
-
-extern bool g_safe_share_mode;
 
 /** Control mysql table cahche
  */
@@ -92,29 +95,45 @@ public:
     void release(const std::string& dbname, const std::string& tbname);
 };
 
+struct rowLockMode
+{
+    bool lock : 1;
+    bool read : 1;
+};
+
 class database : private boost::noncopyable
 {
     friend class table;
     friend class smartDbReopen;
-
+public:
+    typedef std::vector<boost::shared_ptr<table> > tableList;
+private:
     std::string m_dbname;
 
     mutable THD* m_thd;
-    short m_cid;
     int m_inTransaction;
     int m_inSnapshot;
     int m_stat;
-    short m_trnType;
+    int m_usingExclusive;
     table* m_inAutoTransaction;
+    short m_trnType;
+    short m_cid;
     enum_tx_isolation m_iso;
 
-    std::vector<boost::shared_ptr<table> > m_tables;
+    tableList m_tables;
+   
     TABLE* doOpenTable(const std::string& name, short mode,
                        const char* ownerName);
 
     void unUseTable(table* tb);
+    size_t getNomalOpenTables(tableList& tables);
+    void prebuildIsoratinMode();
+    void prebuildExclusieLockMode(table* tb);
+    void prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* lck) ;
 
 public:
+    
+
     database(const char* name, short cid);
     ~database();
 
@@ -142,7 +161,7 @@ public:
     bool endSnapshot();
     table* openTable(const std::string& name, short mode,
                      const char* ownerName);
-    table* useTable(int index, enum_sql_command cmd);
+    table* useTable(int index, enum_sql_command cmd, rowLockMode* lck);
     bool beginTrn(short type, enum_tx_isolation iso);
     bool commitTrn();
     bool abortTrn();
@@ -177,12 +196,6 @@ class IReadRecordsHandler;
 class IPrepare;
 class bookmarks;
 
-struct rowLockMode
-{
-    bool lock : 1;
-    //bool multi : 1;
-    //bool write : 1;
-};
 
 /*
  *  Since it differs from the key number which a client specifies
@@ -226,7 +239,7 @@ class table : private boost::noncopyable
 
     std::string m_name;
 
-    const short m_mode;
+    short m_mode;
     unsigned short m_nullFields;
     int m_id;
     uint m_recordLenCl;
@@ -340,6 +353,16 @@ public:
     }
 
     inline short mode() const { return m_mode; }
+
+    inline bool isReadOnly() const 
+    {
+        return (m_mode == MODE_READ_ONLY) 
+             ||(m_mode == MODE_READ_EXCLUSIVE); 
+    }
+
+    inline bool isExclusveMode() const { return m_mode <= MODE_EXCLUSIVE;}
+
+    inline bool isNomalMode() const { return m_mode > MODE_EXCLUSIVE;}
 
     inline bool islocked() { return m_locked; }
 
@@ -641,7 +664,7 @@ public:
 
     inline void setRowLock(rowLockMode* lck)
     {
-        if (lck->lock && m_db.noUserTransaction())
+        if (lck->lock && m_db.noUserTransaction() && isNomalMode())
             m_delayAutoCommit = true;
         else
             m_delayAutoCommit = false;
@@ -663,6 +686,21 @@ public:
         }else if (m_db.m_inAutoTransaction == this)
             unUse();
         return 0;
+    }
+
+    inline void startStmt()
+    {
+        m_validCursor = false;
+        m_table->file->start_stmt(m_db.m_thd, m_table->reginfo.lock_type);
+    }
+
+    inline void initForHANDLER()
+    {
+        if (!m_db.m_thd->in_lock_tables)
+        {
+            m_table->file->init_table_handle_for_HANDLER();
+            m_validCursor = false;
+        }
     }
     
 };
