@@ -1212,6 +1212,38 @@ void testTransactionLockRepeatable(database* db)
     db->endTrn();
     
     /* -------------------------------------------------*/
+    /* Test use shared lock option                      */
+    /* -------------------------------------------------*/
+
+    db->beginTrn(MULTILOCK_REPEATABLE_READ);
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "beginTrn1");
+    
+    db2->beginTrn(MULTILOCK_REPEATABLE_READ);
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "beginTrn2");
+
+    tb->seekLast(ROW_LOCK_S);  
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekLast");
+    tb2->seekLast(ROW_LOCK_S);  
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekLast");
+
+    tb->seekPrev();//Lock(X)  
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekPrev");
+
+    tb2->seekPrev(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekPrev");
+ 
+    tb->seekPrev(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekPrev");
+    int id = tb->getFVint(fdi_id);
+
+    tb2->setFV(fdi_id, id);
+    tb2->seek(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek");
+
+    db2->endTrn();
+    db->endTrn();
+
+    /* -------------------------------------------------*/
     /* Test Abort                                       */
     /* -------------------------------------------------*/
     db->beginTrn(MULTILOCK_REPEATABLE_READ);

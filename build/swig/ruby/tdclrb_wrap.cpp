@@ -34177,6 +34177,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "LOCK_MULTI_NOWAIT", SWIG_From_int(static_cast< int >(400)));
   rb_define_const(mTransactd, "NOWAIT_WRITE", SWIG_From_int(static_cast< int >(500)));
   rb_define_const(mTransactd, "PARALLEL_TRN", SWIG_From_int(static_cast< int >(1000)));
+  rb_define_const(mTransactd, "ROW_LOCK_S", SWIG_From_int(static_cast< int >(ROW_LOCK_S)));
   rb_define_const(mTransactd, "TD_OPEN_NORMAL", SWIG_From_int(static_cast< int >(0)));
   rb_define_const(mTransactd, "TD_OPEN_READONLY", SWIG_From_int(static_cast< int >(-2)));
   rb_define_const(mTransactd, "TD_OPEN_EXCLUSIVE", SWIG_From_int(static_cast< int >(-4)));

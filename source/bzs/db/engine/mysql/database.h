@@ -130,6 +130,7 @@ private:
     void prebuildIsoratinMode();
     void prebuildExclusieLockMode(table* tb);
     void prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* lck) ;
+    void changeIntentionLock(table* tb, thr_lock_type lock_type);
 
 public:
     

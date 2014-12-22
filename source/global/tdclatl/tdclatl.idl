@@ -282,7 +282,10 @@ enum eLockType
   PARA_SINGLE_NOWAIT  = 1700,
   PARA_MULTI_NOWAIT   = 1900,
   /* Innodb or transactional engin lock options */
-  ROW_LOCK_X         = 200,   
+  // read operation lock options
+  ROW_LOCK_X         = 200,
+  ROW_LOCK_S         = 5200,
+  // transaction options
   SINGLELOCK_NOGAP   = 200,
   MULTILOCK_NOGAP    = 400,
   MULTILOCK_GAP      = 2400

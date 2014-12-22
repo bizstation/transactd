@@ -274,6 +274,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define MULTILOCK_NOGAP_SHARE           0
 // Read row lock
 #define ROW_LOCK_X                      LOCK_SINGLE_NOWAIT
+#define ROW_LOCK_S                      5000 + LOCK_SINGLE_NOWAIT
 
 /** open mode
  */

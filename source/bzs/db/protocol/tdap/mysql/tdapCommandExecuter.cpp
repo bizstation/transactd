@@ -926,7 +926,7 @@ inline short getTrnsactionType(int op)
 inline rowLockMode* getRowLockMode(int op, rowLockMode* lck)
 {
 	lck->lock = false;
-    lck->read = false;
+    lck->read = (op > ROW_LOCK_S);
     if (op > 1000)
     	op = op % 1000;
     if (op < NOWAIT_WRITE)

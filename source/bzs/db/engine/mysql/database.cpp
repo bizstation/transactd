@@ -219,7 +219,10 @@ void database::prebuildIsoratinMode()
 {
     cp_thd_set_read_only(m_thd);
     if (m_inTransaction)
+    {
         m_thd->tx_isolation = m_iso;
+        m_thd->in_lock_tables = 1;// WITH LOCK
+    }
     else if(m_inSnapshot)
     {
         if (m_iso)
@@ -254,11 +257,16 @@ void database::prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* l
 
     // ExclusveMode and Snapshot can not specify lock type.
     // Auto transaction can.
-    if (lck && lck->lock && !tb->isExclusveMode() && noUserTransaction())
+    if (lck && lck->lock)
     {   
-        assert(cmd == SQLCOM_SELECT);
-        lock_type = TL_WRITE;
-        cmd = SQLCOM_UPDATE;
+        if (m_inTransaction)
+            lock_type = lck->read ? TL_READ : TL_WRITE;
+        else if (!tb->isExclusveMode() && noUserTransaction()) 
+        {
+            assert(cmd == SQLCOM_SELECT);
+            lock_type = TL_WRITE;
+            cmd = SQLCOM_UPDATE;
+        }
     }
     else
         lock_type = locktype(trn, cmd); 
@@ -274,6 +282,23 @@ void database::prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* l
         m_thd->set_current_stmt_binlog_format_row();
  
     tb->m_table->reginfo.lock_type = lock_type;
+}
+
+void database::changeIntentionLock(table* tb, thr_lock_type lock_type)
+{  
+    if (lock_type != tb->m_table->reginfo.lock_type)
+    {
+        tb->m_table->reginfo.lock_type = lock_type;
+        m_thd->variables.option_bits |= OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN;
+        tb->m_table->file->ha_external_lock(m_thd, F_UNLCK);
+        if (lock_type == TL_READ)
+            tb->m_table->file->init_table_handle_for_HANDLER();//prebuilt->select_lock_type = LOCK_NONE;
+
+        tb->m_table->file->ha_external_lock(m_thd, 
+                (lock_type == TL_WRITE) ? F_WRLCK : F_RDLCK);
+        m_thd->variables.option_bits &= ~(OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN);
+        tb->m_validCursor = false;
+    }
 }
 
 // locktable
@@ -301,6 +326,9 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
         if (tb->m_table == NULL)
             THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                          "Invalid table id.");
+        if (m_inTransaction && (m_iso >= ISO_REPEATABLE_READ))
+            changeIntentionLock(tb, (lck && lck->lock && lck->read) ? TL_READ : TL_WRITE);
+
         if (tb->isExclusveMode())
         {
             prebuildLocktype(tb, cmd, NULL);
@@ -446,7 +474,11 @@ bool database::beginTrn(short type, enum_tx_isolation iso)
     if (m_inTransaction == 0)
     {
         m_trnType = type;
-        m_iso = iso;
+        // if ISO_REPEATABLE_READ ,change to force ISO_SERIALIZABLE 
+        if (iso == ISO_REPEATABLE_READ)
+            m_iso = ISO_SERIALIZABLE; 
+        else
+            m_iso = iso;
         if (m_inAutoTransaction)
             m_inAutoTransaction->unUse();
         ret = true;

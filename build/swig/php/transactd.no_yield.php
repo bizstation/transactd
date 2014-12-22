@@ -372,6 +372,8 @@ abstract class transactd {
 
 	const ROW_LOCK_X = ROW_LOCK_X;
 
+	const ROW_LOCK_S = ROW_LOCK_S;
+
 	const TD_OPEN_NORMAL = TD_OPEN_NORMAL;
 
 	const TD_OPEN_READONLY = TD_OPEN_READONLY;
