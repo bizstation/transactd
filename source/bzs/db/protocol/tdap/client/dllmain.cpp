@@ -176,18 +176,19 @@ extern "C" PACKAGE_OSX short_td __STDCALL
     short_td ret;
     try
     {
-
         if ((TD_GET_BLOB_BUF != op) && (TD_ADD_SENDBLOB != op))
+        {
+            if (cid == NULL) return 1;
+            
             client_t->setParam(op, pbk, data, datalen, keybuf, keylen, keyNum,
                                cid);
 
-        if (client_t->stop_if())
-        {
-            client_t->cleanup();
-            return 0;
+            if (client_t->stop_if())
+            {
+                client_t->cleanup();
+                return 0;
+            }
         }
-        if (cid == NULL)
-            return 1;
 
         op = op % 100;
         switch (op)
