@@ -38,6 +38,9 @@ using namespace boost::system;
 #define PORTNUMBUF_SIZE 10
 #define CLIENT_ERROR_CANT_CREATEPIPE 3106
 #define CLIENT_ERROR_SHAREMEM_DENIED 3104
+#define CLIENT_ERROR_CONNECTION_FAILURE 3106
+#define TIMEOUT_MILLISEC 3000
+
 
 namespace bzs
 {
@@ -75,6 +78,7 @@ public:
     bool disconnect(connection* c);
 
     static char port[PORTNUMBUF_SIZE];
+    static short timeout;
 
     int connectionCount();
 };
@@ -111,6 +115,7 @@ protected:
     thread_id tid() const { return m_tid; };
 
     int charsetServer() const { return m_charsetServer; };
+
     void setCharsetServer(int v) { m_charsetServer = v; }
 
 public:
@@ -293,7 +298,6 @@ public:
     buffers* optionalBuffers() { return &m_optionalBuffes; }
 };
 
-#define TIMEOUT_SEC 3
 
 /** Implementation of The TCP connection.
  */
@@ -311,7 +315,7 @@ public:
     void setupTimeouts()
     {
 #if defined _WIN32
-        int32_t timeout = TIMEOUT_SEC * 1000;
+        int32_t timeout = connections::timeout;
         setsockopt(m_socket.native(), SOL_SOCKET, SO_RCVTIMEO,
                    (const char*)&timeout, sizeof(timeout));
         setsockopt(m_socket.native(), SOL_SOCKET, SO_SNDTIMEO,
@@ -319,7 +323,7 @@ public:
 #else
         struct timeval timeout;
         timeout.tv_usec = 0;
-        timeout.tv_sec = TIMEOUT_SEC;
+        timeout.tv_sec = connections::timeout;
         setsockopt(m_socket.native(), SOL_SOCKET, SO_RCVTIMEO, &timeout,
                    sizeof(timeout));
         setsockopt(m_socket.native(), SOL_SOCKET, SO_SNDTIMEO, &timeout,
@@ -520,8 +524,12 @@ public:
     {
         //m_datalen = 0;
         //m_rows = 0;
-        SetEvent(m_sendEvent);
-        WaitForSingleObject(m_recvEvent, INFINITE);
+        BOOL ret = SetEvent(m_sendEvent);
+        if (ret == FALSE)
+            throwException("SetEvent", CLIENT_ERROR_CONNECTION_FAILURE);
+        DWORD r = WaitForSingleObject(m_recvEvent, connections::timeout);
+        if (r == WAIT_TIMEOUT)
+            throwException("SetEvent", CLIENT_ERROR_CONNECTION_FAILURE);
         return m_readbuf_p;
     }
 

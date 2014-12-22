@@ -77,7 +77,7 @@ class dbExecuter : public engine::mysql::dbManager
     inline short seekEach(extRequestSeeks* ereq, bool noBookMark);
 
 public:
-    dbExecuter(unsigned __int64 modHandle);
+    dbExecuter();
     ~dbExecuter();
     int commandExec(request& req, netsvc::server::netWriter* nw);
     int errorCode(int ha_error);
@@ -137,11 +137,6 @@ public:
     void cleanup(){};
 
     const engine::mysql::databases& dbs() const { return m_dbExec->dbs(); };
-
-    bool isUsingDatabase(const std::string& name) const 
-    {
-        return m_dbExec->isUsingDatabase(name); 
-    }
 };
 
 } // namespace mysql

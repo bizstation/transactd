@@ -53,6 +53,7 @@ namespace mysql
 
 static const char* TableNameTitle = "dbfile=";
 static const char* BdfNameTitle = ".bdf";
+boost::mutex g_mutex_opentable;
 
 class smartReadRecordsHandler
 {
@@ -205,8 +206,8 @@ void dumpStdErr(int op, request& req, table* tb)
 //  class dbExecuter
 //-------------------------------------------------------------
 
-dbExecuter::dbExecuter(unsigned __int64 modHandle)
-    : dbManager(modHandle), m_readHandler(new ReadRecordsHandler()),
+dbExecuter::dbExecuter()
+    : dbManager(), m_readHandler(new ReadRecordsHandler()),
       m_blobBuffer(new blobBuffer())
 {
 }
@@ -390,18 +391,22 @@ inline void dbExecuter::doOpenTable(request& req)
     std::string dbname = getDatabaseName(req);
     if (dbname != "")
     {
-        if (req.keyNum == TD_OPEN_EXCLUSIVE && isMetaDb(req))
-        {
-            if (isUsingDatabase(dbname) ||
-                        transactd::module::isUsingDatabase(dbname, m_modHandle))
-                THROW_BZS_ERROR_WITH_CODEMSG(STATUS_CANNOT_LOCK_TABLE,
-                                        "lockTable error.");
+        database* db;
+        {// Lock open table by another thread
+            boost::mutex::scoped_lock lck(g_mutex_opentable);
+            if (req.keyNum == TD_OPEN_EXCLUSIVE/* && isMetaDb(req)*/)
+            {
+                if (database::tableRef.count(dbname, getTableName(req)))
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_CANNOT_LOCK_TABLE,
+                                            "lockTable error.");
+            }
+            db = getDatabase(dbname.c_str(), req.cid);
+            m_tb = db->openTable(
+                getTableName(req), req.keyNum,
+                getOwnerName(req)); // if error occured that throw exception
+            req.result = db->stat();
         }
-        database* db = getDatabase(dbname.c_str(), req.cid);
-        m_tb = db->openTable(
-            getTableName(req), req.keyNum,
-            getOwnerName(req)); // if error occured that throw exception
-        req.result = db->stat();
+        
         if (m_tb)
         {
             try
@@ -1353,7 +1358,7 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
 // ---------------------------------------------------------------------------
 commandExecuter::commandExecuter(__int64 parent) : m_modHandle(parent)
 {
-    m_dbExec.reset(new dbExecuter(parent));
+    m_dbExec.reset(new dbExecuter());
 }
 
 commandExecuter::~commandExecuter()

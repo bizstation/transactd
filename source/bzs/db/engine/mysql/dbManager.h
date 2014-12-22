@@ -34,8 +34,6 @@ namespace engine
 namespace mysql
 {
 
-extern boost::mutex g_dbCountMutex;
-
 struct handle
 {
     handle(int i, short d, short t) : id(i), db(d), tb(t), cid(0){};
@@ -49,12 +47,12 @@ struct handle
 
 class dbManager
 {
+    // Lock for isSutdown(), called by another thread
     mutable boost::mutex m_mutex;
 
     int m_autoHandle;
-    
+
 protected:
-    unsigned __int64 m_modHandle;
     mutable databases m_dbs;
 
     mutable std::vector<handle> m_handles;
@@ -98,12 +96,11 @@ protected:
     virtual int errorCode(int ha_error) = 0;
 
 public:
-    dbManager(unsigned __int64 modHandle);
+    dbManager();
     virtual ~dbManager();
     bool isShutDown() const;
 
     const databases& dbs() const { return m_dbs; };
-    bool isUsingDatabase(const std::string& name) const;
 };
 
 class igetDatabases
@@ -111,7 +108,6 @@ class igetDatabases
 public:
     virtual ~igetDatabases(){};
     virtual const engine::mysql::databases& dbs() const = 0;
-    virtual bool isUsingDatabase(const std::string& name) const = 0;
 };
 
 } // namespace mysql

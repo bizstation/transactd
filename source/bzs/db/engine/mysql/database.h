@@ -109,7 +109,6 @@ public:
     typedef std::vector<boost::shared_ptr<table> > tableList;
 private:
     std::string m_dbname;
-
     mutable THD* m_thd;
     int m_inTransaction;
     int m_inSnapshot;
@@ -119,12 +118,10 @@ private:
     short m_trnType;
     short m_cid;
     enum_tx_isolation m_iso;
-
     tableList m_tables;
    
     TABLE* doOpenTable(const std::string& name, short mode,
                        const char* ownerName);
-
     void unUseTable(table* tb);
     size_t getNomalOpenTables(tableList& tables);
     void prebuildIsoratinMode();
