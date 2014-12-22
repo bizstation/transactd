@@ -204,7 +204,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             {
                 if (op == TD_CREATETABLE)
                 {
-                    if (client_t->readServerCharsetIndex())
+                    if (client_t->getServerCharsetIndex() != -1)
                         client_t->create();
                     else
                     {

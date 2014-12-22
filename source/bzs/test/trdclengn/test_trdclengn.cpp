@@ -1964,7 +1964,7 @@ void testLogin(database* db)
         database* db2 = database::create();
         db2->connect(makeUri(PROTOCOL, HOSTNAME, _T("")), true);
         BOOST_CHECK_MESSAGE(
-            0 == db->stat(),
+            0 == db2->stat(),
             "new connection connect  db->stat() = " << db->stat());
         database::destroy(db2);
 

@@ -94,6 +94,7 @@ protected:
     size_t m_readLen;
     int m_refCount;
     thread_id m_tid;
+    int m_charsetServer;
     bool m_connected;
 
 
@@ -109,10 +110,13 @@ protected:
 
     thread_id tid() const { return m_tid; };
 
+    int charsetServer() const { return m_charsetServer; };
+    void setCharsetServer(int v) { m_charsetServer = v; }
+
 public:
     connectionBase(asio::ip::tcp::endpoint& ep)
         : m_ep(ep), m_reader(NULL), m_refCount(0), m_tid(threadid()), 
-          m_connected(false)
+          m_charsetServer(-1), m_connected(false)
     {
     }
 

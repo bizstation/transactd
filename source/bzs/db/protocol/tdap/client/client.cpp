@@ -48,39 +48,42 @@ bool checkVersion(trdVersiton& ver)
     return true;
 }
 
-bool client::readServerCharsetIndex()
+int client::getServerCharsetIndex()
 {
-    if (m_charsetIndexServer == -1)
+    bzs::netsvc::client::connection* c = con();
+    if (!c)
+        return -1;
+    int v = c->charsetServer();
+    if (v != -1)
+        return v;
+        
+    request req = m_req;
+    req.paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN;
+    trdVersiton ver;
+    memset(&ver, 0, sizeof(trdVersiton));
+    ver.cherserServer[0] = 0x00;
+    ver.clMajor = (ushort_td)atoi(C_INTERFACE_VER_MAJOR);
+    ver.clMinor = (ushort_td)atoi(C_INTERFACE_VER_MINOR);
+    ver.clRelease = (ushort_td)atoi(C_INTERFACE_VER_RELEASE);
+
+    uint_td len = sizeof(trdVersiton);
+    req.op = TD_GETSERVER_CHARSET;
+    req.data = &ver;
+    req.datalen = &len;
+
+    mutex::scoped_lock lck(m_mutex);
+    char* p = con()->sendBuffer(m_req.sendLenEstimate());
+    unsigned int size = req.serialize(p);
+    p = con()->asyncWriteRead(size);
+    req.parse(p, false);
+    if (req.result == 0)
     {
-        request req = m_req;
-        req.paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN;
-        trdVersiton ver;
-        memset(&ver, 0, sizeof(trdVersiton));
-        ver.cherserServer[0] = 0x00;
-        ver.clMajor = (ushort_td)atoi(C_INTERFACE_VER_MAJOR);
-        ver.clMinor = (ushort_td)atoi(C_INTERFACE_VER_MINOR);
-        ver.clRelease = (ushort_td)atoi(C_INTERFACE_VER_RELEASE);
-
-        uint_td len = sizeof(trdVersiton);
-        req.op = TD_GETSERVER_CHARSET;
-        req.data = &ver;
-        req.datalen = &len;
-
-        mutex::scoped_lock lck(m_mutex);
-        char* p = con()->sendBuffer(m_req.sendLenEstimate());
-        unsigned int size = req.serialize(p);
-        p = con()->asyncWriteRead(size);
-        req.parse(p, false);
-        if (req.result == 0)
-        {
-            if (!checkVersion(ver))
-                return false;
-            m_charsetIndexServer = mysql::charsetIndex(ver.cherserServer);
-            return true;
-        }
-        return false;
+        if (!checkVersion(ver))
+            return false;
+        c->setCharsetServer(mysql::charsetIndex(ver.cherserServer));
+        return  c->charsetServer();
     }
-    return true;
+    return -1;
 }
 
 void client::addSecondCharsetData(unsigned int destCodePage, std::string& src)
@@ -97,12 +100,13 @@ void client::addSecondCharsetData(unsigned int destCodePage, std::string& src)
 
 bool client::buildDualChasetKeybuf()
 {
-    if (!readServerCharsetIndex())
+    int charsetIndexServer = getServerCharsetIndex();
+    if (charsetIndexServer == -1)
         return false;
-    // m_serverCharData = std::string((char*)m_req.keybuf, m_req.keylen);
+
     m_serverCharData = (char*)m_req.keybuf;
-    if (CHARSET_UTF8 != m_charsetIndexServer)
-        addSecondCharsetData(mysql::codePage(m_charsetIndexServer),
+    if (CHARSET_UTF8 != charsetIndexServer)
+        addSecondCharsetData(mysql::codePage(charsetIndexServer),
                              m_serverCharData);
     else
         m_serverCharData += std::string("\t") + (char*)m_req.keybuf;

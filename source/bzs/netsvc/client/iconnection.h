@@ -93,6 +93,8 @@ public:
     virtual unsigned int directRead(void* buf, unsigned int size) = 0;
     virtual void* directReadRemain(unsigned int size) = 0;
     virtual bool queryFunction(unsigned int v) = 0;
+    virtual int charsetServer() const = 0;
+    virtual void setCharsetServer(int v) = 0;
 };
 
 #define CONNECTION_FUNCTION_DIRECT_READ 1
