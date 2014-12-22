@@ -916,9 +916,9 @@ template <class Database_Ptr> inline void dropDatabase(Database_Ptr db)
 }
 
 template <class Database_Ptr>
-inline table_ptr openTable(Database_Ptr db, const _TCHAR* name)
+inline table_ptr openTable(Database_Ptr db, const _TCHAR* name, short mode = TD_OPEN_NORMAL)
 {
-    table_ptr p(db->openTable(name), releaseTable);
+    table_ptr p(db->openTable(name, mode), releaseTable);
     if (db->stat())
         nstable::throwError((std::_tstring(_T("Open table ")) + name).c_str(),
                             db->stat());
@@ -926,9 +926,9 @@ inline table_ptr openTable(Database_Ptr db, const _TCHAR* name)
 }
 
 template <class Database_Ptr>
-inline table_ptr openTable(Database_Ptr db, short tableid)
+inline table_ptr openTable(Database_Ptr db, short tableid, short mode = TD_OPEN_NORMAL)
 {
-    table_ptr p(db->openTable(tableid), releaseTable);
+    table_ptr p(db->openTable(tableid, mode), releaseTable);
     if (db->stat())
     {
         _TCHAR buf[50];
