@@ -1583,8 +1583,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         {
             // second connection
             $db2 = new Bz\database();
-            $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
-            $this->assertEquals($db->stat(), 0);
+            $db2->connect(PROTOCOL . HOSTNAME, true);
+            $this->assertEquals($db2->stat(), 0);
+            unset($db2);
             $db->disconnect(PROTOCOL . HOSTNAME);
             $this->assertEquals($db->stat(), 0);
         }

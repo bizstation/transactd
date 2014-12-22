@@ -1545,10 +1545,9 @@ def testLogin()
   if db.stat() == 0
     # second connection
     db2 = Transactd::Database.new()
-    db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
-    expect(db.stat()).to eq 0
-    db2.close()
-    db2 = nil
+    db2.connect(PROTOCOL + HOSTNAME, true)
+    expect(db2.stat()).to eq 0
+    db2.disconnect(PROTOCOL + HOSTNAME)
     db.disconnect(PROTOCOL + HOSTNAME)
     expect(db.stat()).to eq 0
   end
