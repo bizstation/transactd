@@ -121,7 +121,7 @@ private:
     tableList m_tables;
    
     TABLE* doOpenTable(const std::string& name, short mode,
-                       const char* ownerName);
+                                const char* ownerName);
     void unUseTable(table* tb);
     size_t getNomalOpenTables(tableList& tables);
     void prebuildIsoratinMode();

@@ -35,12 +35,12 @@ namespace mysql
 
 class smartDbsReopen
 {
-    std::vector<boost::shared_ptr<database> >& m_dbs;
     THD* m_thd;
+    std::vector<boost::shared_ptr<database> >& m_dbs;
 public:
     static std::string removeName;
 
-    smartDbsReopen(THD* thd, std::vector<boost::shared_ptr<database> >& dbs) : m_thd(thd),m_dbs(dbs)
+    smartDbsReopen(THD* thd, std::vector<boost::shared_ptr<database> >& dbs) : m_thd(thd), m_dbs(dbs)
     {
         for (size_t i = 0; i < m_dbs.size(); i++)
         {

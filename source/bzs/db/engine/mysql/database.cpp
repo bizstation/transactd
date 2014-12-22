@@ -169,7 +169,7 @@ bool unlockTables(bool releaseStatementLock, THD* thd, bool rollback, database::
             thd->mdl_context.release_statement_locks();
         if (tables)
         {
-            for (int i=0;i<tables->size();++i)
+            for (size_t i=0;i<tables->size();++i)
                 mysql_lock_remove(thd, thd->lock, (*tables)[i]->internalTable());
 
         }else
@@ -253,14 +253,14 @@ void database::prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* l
     bool trn = ((m_inTransaction > 0) && !tb->isReadOnly());
     if (m_inSnapshot) 
         cmd = SQLCOM_SELECT;
-    thr_lock_type lock_type; 
+    thr_lock_type lock_type = TL_READ; 
 
     // ExclusveMode and Snapshot can not specify lock type.
     // Auto transaction can.
     if (lck && lck->lock)
     {   
         if (m_inTransaction)
-            lock_type = lck->read ? TL_READ : TL_WRITE;
+            lock_type = (lck->read) ? TL_READ : TL_WRITE;
         else if (!tb->isExclusveMode() && noUserTransaction()) 
         {
             assert(cmd == SQLCOM_SELECT);
@@ -662,8 +662,6 @@ void database::closeTable(table* tb)
     {
         if (m_tables[i] && (m_tables[i].get() == tb))
         {
-            short mode = tb->m_mode;
-            TABLE* src = tb->m_table;
             if (tb->isExclusveMode())
             {
                 --m_usingExclusive;
