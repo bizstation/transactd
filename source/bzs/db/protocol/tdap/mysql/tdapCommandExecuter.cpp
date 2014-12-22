@@ -24,6 +24,7 @@
 #include <bzs/db/engine/mysql/errorMessage.h>
 #include <bzs/db/engine/mysql/mydebuglog.h>
 #include <bzs/netsvc/server/IAppModule.h> //lookup for result value
+#include <bzs/db/transactd/appModule.h>
 #include <bzs/rtl/stl_uty.h>
 #include <limits.h>
 #include <boost/algorithm/string.hpp>
@@ -204,8 +205,8 @@ void dumpStdErr(int op, request& req, table* tb)
 //  class dbExecuter
 //-------------------------------------------------------------
 
-dbExecuter::dbExecuter()
-    : dbManager(), m_readHandler(new ReadRecordsHandler()),
+dbExecuter::dbExecuter(unsigned __int64 modHandle)
+    : dbManager(modHandle), m_readHandler(new ReadRecordsHandler()),
       m_blobBuffer(new blobBuffer())
 {
 }
@@ -389,6 +390,13 @@ inline void dbExecuter::doOpenTable(request& req)
     std::string dbname = getDatabaseName(req);
     if (dbname != "")
     {
+        if (req.keyNum == TD_OPEN_EXCLUSIVE && isMetaDb(req))
+        {
+            if (isUsingDatabase(dbname) ||
+                        transactd::module::isUsingDatabase(dbname, m_modHandle))
+                THROW_BZS_ERROR_WITH_CODEMSG(STATUS_CANNOT_LOCK_TABLE,
+                                        "lockTable error.");
+        }
         database* db = getDatabase(dbname.c_str(), req.cid);
         m_tb = db->openTable(
             getTableName(req), req.keyNum,
@@ -1345,7 +1353,7 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
 // ---------------------------------------------------------------------------
 commandExecuter::commandExecuter(__int64 parent) : m_modHandle(parent)
 {
-    m_dbExec.reset(new dbExecuter());
+    m_dbExec.reset(new dbExecuter(parent));
 }
 
 commandExecuter::~commandExecuter()

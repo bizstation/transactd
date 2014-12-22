@@ -430,6 +430,47 @@ void module::disconnect()
     m_connection->close();
 }
 
+/* 
+When database::open with TD_OPEN_EXCLUSIVE mode, this is called.
+*/
+bool module::isUsingDatabase(const std::string& name, unsigned __int64 caller)
+{
+    //lock modules add remove
+    boost::mutex::scoped_lock lck(modulesMutex);
+    using namespace engine::mysql;
+
+    //lock database create new  
+    boost::mutex::scoped_lock lck2(g_dbCountMutex);
+    for (size_t i = 0;i < modules.size(); ++i)
+    {
+        const module* mod = dynamic_cast<module*>(modules[i]);
+        if (mod && mod != (module*)caller)
+        {
+            //lock module execute 
+            //boost::mutex::scoped_lock m(mod->mutex());
+            boost::try_mutex::scoped_try_lock m(mod->mutex(),
+                                                boost::try_to_lock_t());
+            int i = 0;
+            for ( ;i<50 ; ++i)
+            {
+                if (m.owns_lock())
+                {
+                    
+                    igetDatabases* dbs =
+                            dynamic_cast<igetDatabases*>(mod->m_commandExecuter.get());
+                    if (dbs && dbs->isUsingDatabase(name))
+                        return true;
+                    else
+                        break;
+                }
+                Sleep(10);
+            }
+            if (i == 50) return true; // dead lock or slow job or hung-up
+        }
+    }
+    return false;
+}
+
 } // namespace transactd
 } // namespace db
 } // namespace bzs

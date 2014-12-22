@@ -188,6 +188,7 @@ class dbExecuter : public engine::mysql::dbManager
                          resultBuffer& buf, changeFunc func);
 
 public:
+    dbExecuter(unsigned __int64 parent):engine::mysql::dbManager(parent){};
     int commandExec(std::vector<request>& requests,
                     netsvc::server::netWriter* nw);
     int errorCode(int ha_error) { return 0; };
@@ -215,6 +216,11 @@ public:
     void cleanup(){};
     bool isShutDown() { return m_dbExec->isShutDown(); }
     const engine::mysql::databases& dbs() const { return m_dbExec->dbs(); };
+
+    bool isUsingDatabase(const std::string& name) const
+    {
+        return m_dbExec->isUsingDatabase(name);
+    }
 };
 
 } // namespace hs

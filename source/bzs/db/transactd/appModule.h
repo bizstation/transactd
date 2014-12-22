@@ -65,6 +65,7 @@ public:
     bool checkHost(const char* hostCheckname);
     void disconnect();
     boost::mutex& mutex() const { return m_mutex; };
+    static bool isUsingDatabase(const std::string& name, unsigned __int64 caller);
 };
 
 } // namespace transactd

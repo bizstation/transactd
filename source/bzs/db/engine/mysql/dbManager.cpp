@@ -32,6 +32,7 @@ namespace engine
 namespace mysql
 {
 
+boost::mutex g_dbCountMutex;
 
 class smartDbsReopen
 {
@@ -74,7 +75,8 @@ public:
 std::string smartDbsReopen::removeName = "";
 
 
-dbManager::dbManager() : m_autoHandle(0)
+dbManager::dbManager(unsigned __int64 modHandle)
+    : m_autoHandle(0), m_modHandle(modHandle)
 {
 }
 
@@ -138,6 +140,8 @@ database* dbManager::useDataBase(int id) const
 
 database* dbManager::createDatabase(const char* dbname, short cid) const
 {
+
+    boost::mutex::scoped_lock lck(g_dbCountMutex);
     return new database(dbname, cid);
 }
 
@@ -159,6 +163,16 @@ int dbManager::getDatabaseID(short cid) const
             return (int)i;
     }
     return -1;
+}
+
+bool dbManager::isUsingDatabase(const std::string& name) const
+{
+    for (size_t i = 0; i < m_dbs.size(); i++)
+    {
+        if (m_dbs[i] && (m_dbs[i]->name() == name))
+            return true;
+    }
+    return false;
 }
 
 database* dbManager::getDatabaseCid(short cid) const
