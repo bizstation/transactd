@@ -54,8 +54,7 @@ TEST_COUNT = 20000
 FIVE_PERCENT_OF_TEST_COUNT = TEST_COUNT / 20
 ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT = TEST_COUNT / 4
 
-ISOLATION_READ_COMMITTED = true
-ISOLATION_REPEATABLE_READ = false
+NO_RECORD_ID = 5
 
 def testDropDatabase(db)
   db.open(URL)
@@ -95,6 +94,7 @@ def testCreateTable(db)
   fd.len = 4
   dbdef.updateTableDef(1)
   expect(dbdef.stat()).to eq 0
+  
   fd = dbdef.insertField(1, 1)
   fd.setName('name')
   fd.type = Transactd::Ft_zstring
@@ -116,12 +116,44 @@ def testCreateTable(db)
   dbdef.updateTableDef(1)
   expect(dbdef.stat()).to eq 0
   
-  kd = dbdef.insertKey(1,0)
+  kd = dbdef.insertKey(1, 0)
   kd.segment(0).fieldNum = 0
   kd.segment(0).flags.bit8 = 1
   kd.segment(0).flags.bit1 = 1
   kd.segmentCount = 1
   dbdef.updateTableDef(1)
+  expect(dbdef.stat()).to eq 0
+  
+  # group table
+  td = Transactd::Tabledef.new()
+  td.setTableName('group')
+  td.setFileName('group.dat')
+  table_id = 2
+  td.id = table_id
+  td.pageSize = 2048
+  dbdef.insertTable(td)
+  expect(dbdef.stat()).to eq 0
+  
+  fd = dbdef.insertField(table_id, 0)
+  fd.setName('id')
+  fd.type = Transactd::Ft_integer
+  fd.len = 4
+  dbdef.updateTableDef(table_id)
+  expect(dbdef.stat()).to eq 0
+  
+  fd = dbdef.insertField(table_id, 1)
+  fd.setName('name')
+  fd.type = Transactd::Ft_zstring
+  fd.len = 33
+  dbdef.updateTableDef(table_id)
+  expect(dbdef.stat()).to eq 0
+  
+  kd = dbdef.insertKey(table_id, 0)
+  kd.segment(0).fieldNum = 0
+  kd.segment(0).flags.bit8 = 1
+  kd.segment(0).flags.bit1 = 1
+  kd.segmentCount = 1
+  dbdef.updateTableDef(table_id)
   expect(dbdef.stat()).to eq 0
 end
 
@@ -203,6 +235,7 @@ end
 def testFind()
   db = Transactd::Database.new()
   tb = testOpenTable(db)
+  expect(tb).not_to be nil
   tb.setKeyNum(0)
   tb.clearBuffer()
   tb.setFilter('id >= 10 and id < ' + TEST_COUNT.to_s, 1, 0)
@@ -212,6 +245,7 @@ def testFind()
   i = v
   while i < TEST_COUNT do
     expect(tb.stat()).to eq 0
+    break unless tb.stat() == 0
     expect(tb.getFVint(FDI_ID)).to eq i
     tb.findNext(true) # 11 - 19
     i = i + 1
@@ -224,6 +258,7 @@ def testFind()
   i = v
   while i >= 10 do
     expect(tb.stat()).to eq 0
+    break unless tb.stat() == 0
     expect(tb.getFVint(FDI_ID)).to eq i
     tb.findPrev(true) # 11 - 19
     i = i - 1
@@ -250,6 +285,7 @@ def testFindNext()
   expect(tb.getFVint(FDI_ID)).to eq v
   for i in (v + 1)..(TEST_COUNT - 1) do
     tb.findNext(true) # 11 - 19
+    break unless tb.stat() == 0
     expect(tb.stat()).to eq 0
     expect(tb.getFVint(FDI_ID)).to eq i
   end
@@ -297,9 +333,8 @@ def testFindIn()
   expect(tb.stat()).to eq Transactd::STATUS_EOF
   
   # Many params
-  q.addSeekKeyValue('1', true)
-  2.upto(10000) do |i|
-    q.addSeekKeyValue(i.to_s)
+  1.upto(10000) do |i|
+    q.addSeekKeyValue(i.to_s, (i == 1))
   end
   tb.setQuery(q)
   expect(tb.stat()).to eq 0
@@ -387,6 +422,7 @@ def testGetNext()
   for i in 3..(TEST_COUNT + 1)
     tb.seekNext()
     expect(tb.getFVint(FDI_ID)).to eq i
+    break unless tb.getFVint(FDI_ID) == i
   end
   db.endSnapshot()
   tb.close()
@@ -405,10 +441,24 @@ def testGetPrevious()
   for i in TEST_COUNT.downto(2) do
     tb.seekPrev()
     expect(tb.getFVint(FDI_ID)).to eq i
+    break unless tb.getFVint(FDI_ID) == i
   end
   tb.seekPrev()
   expect(tb.getFVstr(FDI_NAME)).to eq 'kosaka'
   db.endSnapshot()
+  # without snapshot
+  vv = TEST_COUNT + 1
+  tb.clearBuffer()
+  tb.setFV(FDI_ID, vv)
+  tb.seek()
+  expect(tb.getFVint(FDI_ID)).to eq vv
+  for i in TEST_COUNT.downto(2) do
+    tb.seekPrev()
+    expect(tb.getFVint(FDI_ID)).to eq i
+    break unless tb.getFVint(FDI_ID) == i
+  end
+  tb.seekPrev()
+  expect(tb.getFVstr(FDI_NAME)).to eq 'kosaka'
   tb.close()
   db.close()
 end
@@ -564,142 +614,681 @@ def testUpdate()
   db.close()
 end
 
-def testSnapShot()
+def testSnapshot()
   db = Transactd::Database.new()
+  tb = testOpenTable(db)
+  expect(tb).not_to be nil
+  tbg = db.openTable('group')
+  expect(db.stat()).to eq 0
+  expect(tbg).not_to be nil
   db2 = Transactd::Database.new()
   db2.connect(PROTOCOL + HOSTNAME + DBNAME , true)
   expect(db2.stat()).to eq 0
-  tb = testOpenTable(db)
   tb2 = testOpenTable(db2)
+  expect(tb2).not_to be nil
+  tbg2 = db2.openTable('group')
+  expect(db2.stat()).to eq 0
+  expect(tbg2).not_to be nil
+  
+  # No locking repeatable read
+  # ----------------------------------------------------
   db.beginSnapshot()
   expect(db.stat()).to eq 0
+  db.beginTrn()
+  expect(db.stat()).to eq Transactd::STATUS_ALREADY_INSNAPSHOT
+  
   tb.setKeyNum(0)
   tb.seekFirst()
   expect(tb.stat()).to eq 0
   firstValue = tb.getFVint(FDI_NAME)
   tb.seekNext()
-  # ----------------------------------------------------
-  #   Change data by another connection
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq 2
+  tbg.seekFirst()
+  expect(tbg.stat()).to eq Transactd::STATUS_EOF
+  expect(tbg.recordCount(false)).to eq 0
+  
+  # Change data on 2 tables by another connection
   tb2.setKeyNum(0)
   tb2.seekFirst()
   expect(tb2.stat()).to eq 0
   tb2.setFV(FDI_NAME, tb2.getFVint(FDI_ID) + 1)
-  tb2.update()
-  if ISOLATION_READ_COMMITTED
-    expect(tb2.stat()).to eq 0
-  elsif ISOLATION_REPEATABLE_READ
-    expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
-  end
-  # ----------------------------------------------------
+  tb2.update() # Change success
+  expect(tb2.stat()).to eq 0
+  tbg2.setFV(FDI_ID, 1)
+  tbg2.setFV(FDI_NAME, 'ABC')
+  tbg2.insert()
+  expect(tbg2.stat()).to eq 0
+  
+  # in-snapshot repeatable read check same value
   tb.seekFirst()
   secondValue = tb.getFVint(FDI_NAME)
   expect(tb.stat()).to eq 0
+  expect(secondValue).to eq firstValue
+  
+  tbg.seekFirst()
+  expect(tbg.stat()).to eq Transactd::STATUS_EOF
+  expect(tbg.recordCount(false)).to eq 0
+  
+  # in-snapshot update
+  tb.update()
+  expect(tb.stat()).to eq Transactd::STATUS_INVALID_LOCKTYPE
+  
+  # in-snapshot insert
+  tb.setFV(FDI_ID, 0)
+  tb.insert()
+  expect(tb.stat()).to eq Transactd::STATUS_INVALID_LOCKTYPE
+  
+  # phantom read
+  tb2.setFV(FDI_ID, 29999)
+  tb2.insert()
+  expect(tb2.stat()).to eq 0
+  tb.setFV(FDI_ID, 29999)
+  tb.seek()
+  expect(tb.stat()).to eq Transactd::STATUS_NOT_FOUND_TI
+  
+  # clean up
+  tb2.del()
+  expect(tb2.stat()).to eq 0
+  
   db.endSnapshot()
   expect(db.stat()).to eq 0
-  if ISOLATION_READ_COMMITTED
-    expect(secondValue).not_to eq firstValue
-  else
-    expect(secondValue).to eq firstValue
-  end
-  # ----------------------------------------------------
+  
+  # After snapshot, db can read new versions.
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq 1
+  tbg.seekFirst()
+  expect(tbg.stat()).to eq 0
+  expect(tbg.recordCount(false)).to eq 1
+  
+  # gap lock
+  db.beginSnapshot(Transactd::GAPLOCK)
+  tb.seekLast() # id = 30000
+  expect(tb.stat()).to eq 0
+  tb.seekPrev() # id = 20002
+  expect(tb.stat()).to eq 0
+  tb.seekPrev() # id = 20001
+  expect(tb.stat()).to eq 0
+  
+  tb2.setFV(FDI_ID, 29999)
+  tb2.insert()
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  db.endSnapshot()
+  tbg2.close()
+  tbg.close()
   tb2.close()
   tb.close()
   db2.close()
   db.close()
 end
 
-def testTransactionLock()
+# isolation Level ISO_REPEATABLE_READ
+def testTransactionLockRepeatable()
   db = Transactd::Database.new()
+  tb = testOpenTable(db)
+  expect(tb).not_to be nil
   db2 = Transactd::Database.new()
   db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
   expect(db2.stat()).to eq 0
-  tb = testOpenTable(db)
   tb2 = testOpenTable(db2)
+  expect(tb2).not_to be nil
+  
+  db.beginTrn(Transactd::MULTILOCK_REPEATABLE_READ)
+  expect(db.stat()).to eq 0
+  # Test Invalid operation
+  db.beginSnapshot()
+  expect(db.stat()).to eq Transactd::STATUS_ALREADY_INTRANSACTION
+  
   # ----------------------------------------------------
-  #   Read test that single record lock with read
+  # Test Read with lock
   # ----------------------------------------------------
-  db.beginTrn(Transactd::LOCK_SINGLE_NOWAIT)
-  tb.setKeyNum(0)
+  # lock(X) the first record
   tb.seekFirst()
   expect(tb.stat()).to eq 0
-  # unlock first record.
+  
+  # Add lock(X) the second record
   tb.seekNext()
+  
+  # No transaction user can read allways. Use consistent_read
   tb2.seekFirst()
   expect(tb2.stat()).to eq 0
-  db2.beginTrn()
-  tb2.setKeyNum(0)
-  tb2.seekFirst()
+  
+  tb2.seekNext()
   expect(tb2.stat()).to eq 0
-  db2.endTrn()
-  db.endTrn()
-  # ----------------------------------------------------
-  #   Can't read test that multi record lock with read
-  # ----------------------------------------------------
-  db.beginTrn(Transactd::LOCK_MULTI_NOWAIT)
-  tb.setKeyNum(0)
-  tb.seekFirst()
-  expect(tb.stat()).to eq 0
-  # move from first record.
-  tb.seekNext()
-  # not transactional user can not read
-  tb2.seekFirst()
-  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
-  # The second transactional user can not lock same record
+  
+  # The second transaction user can not lock same record.
   db2.beginTrn()
   tb2.setKeyNum(0)
+  
+  # Try lock(X)
   tb2.seekFirst()
   expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
   db2.endTrn()
   db.endTrn()
+  
   # ----------------------------------------------------
-  #   Can't read test that single record lock with change
+  # Test single record lock and Transaction lock
   # ----------------------------------------------------
-  db.beginTrn(Transactd::LOCK_SINGLE_NOWAIT)
-  tb.setKeyNum(0)
+  # lock(X) non-transaction
+  tb2.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  
+  db.beginTrn(Transactd::MULTILOCK_REPEATABLE_READ)
+  expect(db.stat()).to eq 0
+  
+  # Try lock(X)
+  tb.seekFirst()
+  expect(tb.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  # Remove lock(X)
+  tb2.seekFirst()
+  
+  # Retry lock(X)
   tb.seekFirst()
   expect(tb.stat()).to eq 0
+  
   tb.setFV(FDI_NAME, 'ABC')
   tb.update()
   expect(tb.stat()).to eq 0
-  # move from first record.
-  tb.seekNext()
+  
+  # No transaction user can read allways. Use consistent_read
   tb2.seekFirst()
-  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  expect(tb2.stat()).to eq 0
+  expect(tb2.getFVstr(FDI_NAME)).not_to eq 'ABC'
+  
+  # ----------------------------------------------------
+  # Test Transaction lock and Transaction lock
+  # ----------------------------------------------------
   db2.beginTrn()
-  tb2.setKeyNum(0)
+  expect(db2.stat()).to eq 0
+  
+  # try lock(X)
   tb2.seekFirst()
   expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  # Try unlock updated record. Can not unlock updated record.
+  tb.unlock()
+  
+  # try lock(X)
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
   db2.endTrn()
   db.endTrn()
+  
   # ----------------------------------------------------
-  #   Abort test that Single record lock transaction
+  # Test phantom read
   # ----------------------------------------------------
-  db.beginTrn(Transactd::LOCK_SINGLE_NOWAIT)
-  tb.setKeyNum(0)
+  db.beginTrn(Transactd::MULTILOCK_REPEATABLE_READ)
+  expect(db.stat()).to eq 0
+  
+  # read last row
+  tb.seekLast() # lock(X) last id = 30000
+  expect(tb.stat()).to eq 0
+  tb.seekPrev() # Add lock(X)
+  expect(tb.stat()).to eq 0
+  last2 = tb.getFVint(FDI_ID)
+  
+  # insert test row
+  tb2.setFV(FDI_ID, 29999)
+  tb2.insert() # Can not insert by gap lock
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  tb.seekLast()
+  expect(tb.stat()).to eq 0
+  tb.seekPrev()
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq last2
+  db.endTrn()
+  
+  # ----------------------------------------------------
+  # Test Abort
+  # ----------------------------------------------------
+  db.beginTrn(Transactd::MULTILOCK_REPEATABLE_READ)
+  expect(db.stat()).to eq 0
+  
+  # lock(X)
   tb.seekFirst()
   expect(tb.stat()).to eq 0
   tb.setFV(FDI_NAME, 'EFG')
   tb.update()
   expect(tb.stat()).to eq 0
+  
   # move from first record.
+  tb.seekNext()
+  db.abortTrn()
+  
+  tb2.setKeyNum(0)
+  tb2.seekFirst()
+  expect(tb2.getFVstr(FDI_NAME)).to eq 'ABC'
+  
+  # ----------------------------------------------------
+  # Test Query and locks Multi record lock
+  # ----------------------------------------------------
+  db.beginTrn(Transactd::MULTILOCK_REPEATABLE_READ)
+  expect(db.stat()).to eq 0
+  
+  # Test find records are lock.
+  q = Transactd::Query.new()
+  q.where('id', '<=', 15).and_('id', '<>', 13).reject(0xFFFF)
+  tb.setQuery(q)
+  tb.setFV(FDI_ID, 12)
+  tb.find()
+  while (tb.stat() == 0) do
+    tb.findNext()
+  end
+  expect(tb.getFVint(FDI_ID)).to eq 15
+  
+  # all records locked
+  for i in 12..16 do
+    tb2.setFV(FDI_ID, i)
+    tb2.seek(Transactd::LOCK_SINGLE_NOWAIT)
+    expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  end
+  db.endTrn()
+  
+  tb2.close()
+  tb.close()
+  db2.close()
+  db.close()
+end
+
+def testTransactionLockReadCommited()
+  db = Transactd::Database.new()
+  tb = testOpenTable(db)
+  expect(tb).not_to be nil
+  db2 = Transactd::Database.new()
+  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  expect(db2.stat()).to eq 0
+  tb2 = testOpenTable(db2)
+  expect(tb2).not_to be nil
+  
+  # ----------------------------------------------------
+  # Test single record lock Transaction and read
+  # ----------------------------------------------------
+  db.beginTrn(Transactd::SINGLELOCK_READ_COMMITED)
+  expect(db.stat()).to eq 0
+  # Test Invalid operation
+  db.beginSnapshot()
+  expect(db.stat()).to eq Transactd::STATUS_ALREADY_INTRANSACTION
+  
+  tb.setKeyNum(0)
+  tb.seekFirst() # lock(X)
+  expect(tb.stat()).to eq 0
+  
+  # Try lock(X)
+  tb2.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  # consistent read
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq 0
+  
+  # Unlock first record. And lock(X) second record
+  tb.seekNext()
+  
+  # test unlocked first record
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq 0
+  tb2.update()
+  expect(tb2.stat()).to eq 0
+  
+  # The second record, consistent read
+  tb2.seekNext()
+  expect(tb2.stat()).to eq 0
+  # Try lock(X) whith lock(IX)
+  tb2.update()
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  # ----------------------------------------------------
+  # Test single record lock Transaction and Transaction lock
+  # ----------------------------------------------------
+  db2.beginTrn()
+  # Try lock(X)
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq 0
+  # Try lock(X)
+  tb2.seekNext()
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  db2.endTrn()
+  db.endTrn()
+  
+  # ----------------------------------------------------
+  # Test multi record lock Transaction and non-transaction read
+  # ----------------------------------------------------
+  db.beginTrn(Transactd::MULTILOCK_READ_COMMITED)
+  expect(db.stat()).to eq 0
+  
+  # lock(X) the first record
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  
+  # Add lock(X) the second record
+  tb.seekNext()
+  
+  # No transaction user read can read allways. Use consistent_read 
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq 0
+  
+  tb2.seekNext()
+  expect(tb2.stat()).to eq 0
+  
+  # ----------------------------------------------------
+  # Test unlock
+  # ----------------------------------------------------
+  tb2.seekFirst()
+  tb2.seekNext(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  tb.unlock()
+  # retry seekNext. Before operation is failed but do not lost currency.
+  tb2.seekNext(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb2.stat()).to eq 0
+  tb2.seekNext()
+  # ----------------------------------------------------
+  # Test undate record unlock
+  # ----------------------------------------------------
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  tb.seekNext()
+  expect(tb.stat()).to eq 0
+  tb.update()
+  expect(tb.stat()).to eq 0
+  tb.unlock() # Can not unlock updated record
+  expect(tb.stat()).to eq 0
+  tb2.seekFirst()
+  tb2.seekNext(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  # ----------------------------------------------------
+  # Test undate record unlock
+  # ----------------------------------------------------
+  db2.beginTrn()
+  expect(db2.stat()).to eq 0
+  
+  # Try lock(X)
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  db2.endTrn()
+  db.endTrn()
+  
+  # ----------------------------------------------------
+  # Test multi record lock Transaction and non-transaction record lock
+  # ----------------------------------------------------
+  # lock(X) non-transaction
+  tb2.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  
+  db.beginTrn(Transactd::SINGLELOCK_READ_COMMITED)
+  expect(db.stat()).to eq 0
+  
+  # Try lock(X)
+  tb.seekFirst()
+  expect(tb.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  # Remove lock(X)
+  tb2.seekFirst()
+  
+  # Retry lock(X)
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  
+  # update in transaction
+  tb.setFV(FDI_NAME, 'ABC')
+  tb.update()
+  expect(tb.stat()).to eq 0
+  
+  # move from first record.
+  tb.seekNext()
+  
+  # No transaction read can read allways. Use consistent_read 
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq 0
+  tb2.update()
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  db.endTrn()
+  
+  # ----------------------------------------------------
+  # Test phantom read
+  # ----------------------------------------------------
+  db.beginTrn(Transactd::MULTILOCK_READ_COMMITED)
+  expect(db.stat()).to eq 0
+  
+  # read last row
+  tb.seekLast() # lock(X) last id = 30000
+  expect(tb.stat()).to eq 0
+  tb.seekPrev() # Add lock(X)
+  expect(tb.stat()).to eq 0
+  last2 = tb.getFVint(FDI_ID)
+  
+  # insert test row
+  tb2.setFV(FDI_ID, 29999)
+  tb2.insert()
+  expect(tb2.stat()).to eq 0
+  
+  tb.seekLast()
+  expect(tb.stat()).to eq 0
+  tb.seekPrev()
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).not_to eq last2
+  db.endTrn()
+  
+  # cleanup
+  tb2.del() # last id = 29999
+  expect(tb.stat()).to eq 0
+  
+  # ----------------------------------------------------
+  # Abort test
+  # ----------------------------------------------------
+  db.beginTrn(Transactd::SINGLELOCK_READ_COMMITED)
+  expect(db.stat()).to eq 0
+  
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  tb.setFV(FDI_NAME, 'EFG')
+  tb.update()
+  expect(tb.stat()).to eq 0
+  
   tb.seekNext()
   db.abortTrn()
   tb2.setKeyNum(0)
   tb2.seekFirst()
   expect(tb2.getFVstr(FDI_NAME)).to eq 'ABC'
+  
+  # ----------------------------------------------------
+  # Test Query and locks Single record lock
+  # ----------------------------------------------------
+  db.beginTrn(Transactd::SINGLELOCK_READ_COMMITED)
+  expect(db.stat()).to eq 0
+  
+  # Test find last record locked
+  q = Transactd::Query.new()
+  q.where('id', '<=', '100')
+  tb.setQuery(q)
+  tb.setFV(FDI_ID, 1)
+  tb.find()
+  while (tb.stat() == 0) do
+    tb.findNext()
+  end
+  expect(tb.getFVint(FDI_ID)).to eq 100
+  
+  # find read last is record of id = 101.
+  # Would be difficult to identify the last 
+  #  access to records at SINGLELOCK_READ_COMMITED.
+  # No match records are unlocked.
+  tb2.setFV(FDI_ID, 100)
+  tb2.seek(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb2.stat()).to eq 0
+  tb2.unlock()
+  db.endTrn()
+  
+  # ----------------------------------------------------
+  # Test Query and locks Multi record lock
+  # ----------------------------------------------------
+  db.beginTrn(Transactd::MULTILOCK_READ_COMMITED)
+  expect(db.stat()).to eq 0
+  
+  # Test find records are lock.
+  q.reset().where('id', '<=', 15).and_('id', '<>', 13).reject(0xFFFF)
+  tb.setQuery(q)
+  tb.setFV(FDI_ID, 12)
+  tb.find()
+  while (tb.stat() == 0) do
+    tb.findNext()
+  end
+  expect(tb.getFVint(FDI_ID)).to eq 15
+  
+  for i in 12..16 do
+    tb2.setFV(FDI_ID, i)
+    tb2.seek(Transactd::LOCK_SINGLE_NOWAIT)
+    if ((i == 16) || (i == 13)) then
+      expect(tb2.stat()).to eq 0
+    else
+      expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+    end
+  end
+  db.endTrn()
+  
   tb2.close()
   tb.close()
+  db2.close()
+  db.close()
+end
+
+def testRecordLock()
+  db = Transactd::Database.new()
+  tb = testOpenTable(db)
+  expect(tb).not_to be nil
+  db2 = Transactd::Database.new()
+  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  expect(db2.stat()).to eq 0
+  tb2 = testOpenTable(db2)
+  expect(tb2).not_to be nil
+  
+  tb.setKeyNum(0)
+  tb2.setKeyNum(0)
+  
+  # Single record lock
+  tb.seekFirst(Transactd::LOCK_SINGLE_NOWAIT) # lock(X)
+  expect(tb.stat()).to eq 0
+  tb2.seekFirst() # Use consistent_read
+  expect(tb2.stat()).to eq 0
+  
+  tb2.seekFirst(Transactd::LOCK_SINGLE_NOWAIT) # Try lock(X) single
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  # try consistent_read. Check ended that before auto transaction
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq 0
+  
+  tb2.seekNext(Transactd::LOCK_SINGLE_NOWAIT) # lock(X) second
+  expect(tb2.stat()).to eq 0
+  
+  tb2.seekNext(Transactd::LOCK_SINGLE_NOWAIT) # lock(X) third, second lock freed
+  expect(tb2.stat()).to eq 0
+  
+  tb.seekNext() # nobody lock second.
+  expect(tb.stat()).to eq 0
+  tb.seekNext(Transactd::LOCK_SINGLE_NOWAIT) # Try lock(X) third
+  expect(tb.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  # Update test change third with lock(X)
+  tb2.setFV(FDI_NAME, 'The 3rd')
+  tb2.update() # auto trn commit and unlock all locks
+  expect(tb2.stat()).to eq 0
+  tb2.seekNext(Transactd::LOCK_SINGLE_NOWAIT) # lock(X) 4th
+  expect(tb2.stat()).to eq 0
+  tb2.setFV(FDI_NAME, 'The 4th')
+  tb2.update() # auto trn commit and unlock all locks
+  
+  # Test unlock all locks, after update
+  tb.seekFirst(Transactd::LOCK_SINGLE_NOWAIT) # lock(X) first
+  expect(tb2.stat()).to eq 0
+  tb.seekNext(Transactd::LOCK_SINGLE_NOWAIT) # lock(X) second
+  expect(tb2.stat()).to eq 0
+  tb.seekNext(Transactd::LOCK_SINGLE_NOWAIT) # lock(X) third
+  expect(tb2.stat()).to eq 0
+  expect(tb.getFVstr(FDI_NAME)).to eq 'The 3rd'
+  
+  # Test Insert, After record lock  operation
+  tb.setFV(FDI_ID, 21000)
+  tb.insert()
+  expect(tb.stat()).to eq 0
+  tb.del()
+  expect(tb.stat()).to eq 0
+  
+  # ---------   Unlock test ----------------------------
+  # 1 unlock()
+  tb.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb.stat()).to eq 0
+  
+  tb.unlock()
+  
+  tb2.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb2.stat()).to eq 0
+  tb2.unlock()
+  
+  # 2 auto tran ended
+  tb3 = testOpenTable(db2)
+  tb2.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb2.stat()).to eq 0
+  
+  tb3.seekLast() #This operation is another table handle, then auto tran ended
+  expect(tb3.stat()).to eq 0
+  
+  tb.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb.stat()).to eq 0
+  tb.unlock()
+  
+  # begin trn
+  tb3.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb3.stat()).to eq 0
+  
+  tb.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  db2.beginTrn()
+  
+  tb.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb.stat()).to eq 0
+  db2.endTrn()
+  tb.unlock()
+  # begin snapshot
+  tb3.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb3.stat()).to eq 0
+  
+  tb.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  db2.beginSnapshot()
+  tb.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb.stat()).to eq 0
+  db2.endSnapshot()
+  tb.unlock()
+  # close Table
+  tb.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb.stat()).to eq 0
+  
+  tb2.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  tb.close()
+  tb2.seekFirst(Transactd::LOCK_SINGLE_NOWAIT)
+  expect(tb2.stat()).to eq 0
+  # ---------   End Unlock test ----------------------------
+  tb3.close()
+  tb2.close()
   db2.close()
   db.close()
 end
 
 def testConflict()
   db = Transactd::Database.new()
+  tb = testOpenTable(db)
   db2 = Transactd::Database.new()
   db2.connect(PROTOCOL + HOSTNAME + DBNAME , true)
   expect(db2.stat()).to eq 0
-  tb = testOpenTable(db)
+  expect(tb).not_to be nil
   tb2 = testOpenTable(db2)
+  expect(tb2).not_to be nil
   tb.setKeyNum(0)
   tb.seekFirst()
   expect(tb.stat()).to eq 0
@@ -822,6 +1411,45 @@ def testExclusive()
   expect(tb.stat()).to eq 0
   
   tb.close()
+  db.close()
+end
+
+def testMultiDatabase()
+  db = Transactd::Database.new()
+  tb = testOpenTable(db)
+  expect(tb).not_to be nil
+  db2 = Transactd::Database.new()
+  testOpenDatabase(db2)
+  expect(db2.stat()).to eq 0
+  tb2 = db2.openTable('group')
+  expect(db2.stat()).to eq 0
+  expect(tb2).not_to be nil
+  
+  db.beginTrn()
+  db2.beginTrn()
+  
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  v = tb.getFVstr(FDI_NAME)
+  tb.setFV(FDI_NAME, 'MultiDatabase')
+  tb.update()
+  
+  tb2.seekFirst()
+  expect(tb2.stat()).to eq 0
+  tb2.setFV(FDI_NAME, 'MultiDatabase')
+  tb2.update()
+  expect(tb2.stat()).to eq 0
+  db2.endTrn()
+  db.abortTrn()
+  
+  tb.seekFirst()
+  expect(tb.stat()).to eq 0
+  v2 = tb.getFVstr(FDI_NAME)
+  expect(v).to eq v2
+  
+  tb2.close()
+  tb.close()
+  db2.close()
   db.close()
 end
 
@@ -1827,7 +2455,7 @@ def createQTuser(db)
   td.id = id
   td.pageSize = 2048
   td.schemaCodePage = Transactd::CP_UTF8
-  td.charsetIndex = Transactd::CHARSET_UTF8B4
+  td.charsetIndex = Transactd::CHARSET_UTF8
   dbdef.insertTable(td)
   expect(dbdef.stat()).to eq 0
   # id field
@@ -1884,7 +2512,7 @@ def createQTgroups(db)
   td.id = id
   td.pageSize = 2048
   td.schemaCodePage = Transactd::CP_UTF8
-  td.charsetIndex = Transactd::CHARSET_UTF8B4
+  td.charsetIndex = Transactd::CHARSET_UTF8
   dbdef.insertTable(td)
   expect(dbdef.stat()).to eq 0
   # code field
@@ -1924,7 +2552,7 @@ def createQTextention(db)
   td.id = id
   td.pageSize = 2048
   td.schemaCodePage = Transactd::CP_UTF8
-  td.charsetIndex = Transactd::CHARSET_UTF8B4
+  td.charsetIndex = Transactd::CHARSET_UTF8
   dbdef.insertTable(td)
   expect(dbdef.stat()).to eq 0
   # id field
@@ -1937,6 +2565,11 @@ def createQTextention(db)
   fd.setName('comment')
   fd.type = Transactd::Ft_myvarchar
   fd.setLenByCharnum(60)
+  # blob field
+  fd = dbdef.insertField(id, 2)
+  fd.setName('blob')
+  fd.type = Transactd::Ft_myblob
+  fd.len = 10
   # key 0 (primary) id
   kd = dbdef.insertKey(id, 0)
   kd.segment(0).fieldNum = 0
@@ -1960,6 +2593,7 @@ def insertQT(db, maxId)
   # insert user data
   tb = db.openTable('user', Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
+  expect(tb).not_to be nil
   tb.clearBuffer()
   for i in 1..maxId
     tb.setFV(0, i)
@@ -1972,6 +2606,7 @@ def insertQT(db, maxId)
   # insert groups data
   tb = db.openTable('groups', Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
+  expect(tb).not_to be nil
   tb.clearBuffer()
   for i in 1..100
     tb.setFV(0, i)
@@ -1983,10 +2618,12 @@ def insertQT(db, maxId)
   # insert extention data
   tb = db.openTable('extention', Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
+  expect(tb).not_to be nil
   tb.clearBuffer()
   for i in 1..maxId
     tb.setFV(0, i)
     tb.setFV(1, "#{i} comment")
+    tb.setFV(2, "#{i} blob")
     tb.insert()
     expect(tb.stat()).to eq 0
   end
@@ -1998,11 +2635,21 @@ def testCreateQueryTest()
   # check database existence
   db = Transactd::Database.new()
   db.open(URL_QT, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
-  if (db.stat() === 0)
-      db.close()
-      return
+  if (db.stat() != 0) then
+    puts "\nDatabase " + DBNAME_QT + " not found\n"
+  else
+    dbdef = db.dbDef()
+    td = dbdef.tableDefs(3)
+    if (td != nil && td.fieldCount == 3) then
+      tb = db.openTable('extention')
+      if (db.stat() == 0 && tb.recordCount(false) == TEST_COUNT)
+        return
+      end
+      tb.close()
+    end
+    db.drop()
   end
-  puts "\nDatabase " + DBNAME_QT + " not found\n"
+  puts "\nCreate database " + DBNAME_QT + "\n"
   db.create(URL_QT)
   expect(db.stat()).to eq 0
   db.open(URL_QT, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
@@ -2173,16 +2820,15 @@ def testJoin()
   db.close()
 end
 
-def testPrepare()
+def testPrepareJoin()
   db = Transactd::Database.new()
   db.open(URL_QT)
   expect(db.stat()).to eq 0
+  
   atu = Transactd::ActiveTable.new(db, 'user')
   atu.alias('名前', 'name')
-
   atg = Transactd::ActiveTable.new(db, 'groups')
   atg.alias('name', 'group_name')
-
   ate = Transactd::ActiveTable.new(db, 'extention')
   q = Transactd::Query.new()
   
@@ -2192,15 +2838,12 @@ def testPrepare()
   # integer value
   rs = atu.index(0).keyValue('1').read(pq, 15000)
   expect(rs.size()).to eq 15000
-
   # float value
   rs = atu.index(0).keyValue('1').read(pq, 15000.000)
   expect(rs.size()).to eq 15000
-
   # String value
   rs = atu.index(0).keyValue('1').read(pq, '15000')
   expect(rs.size()).to eq 15000
-
   # Using supply value
   pq.supplyValue(0, 15000)
   rs = atu.index(0).keyValue('1').read(pq)
@@ -2232,11 +2875,174 @@ def testPrepare()
   # row in rs[15000 - 9]
   rec = rs[15000 - 9]
   expect(rec['group_name']).to eq '4 group'
-
+  
   atu.release()
   atg.release()
   ate.release()
   db.close()
+end
+
+def testServerPrepareJoin()
+  db = Transactd::Database.new()
+  db.open(URL_QT)
+  expect(db.stat()).to eq 0
+  
+  atu = Transactd::ActiveTable.new(db, 'user')
+  atu.alias('名前', 'name')
+  atg = Transactd::ActiveTable.new(db, 'groups')
+  atg.alias('name', 'group_name')
+  ate = Transactd::ActiveTable.new(db, 'extention')
+  q = Transactd::Query.new()
+  
+  q.select('id', 'name', 'group').where('id', '<=', '?')
+  stmt1 = atu.prepare(q, true)
+  expect(stmt1).not_to eq nil
+  
+  q.reset().select('comment').optimize(Transactd::QueryBase::JoinHasOneOrHasMany)
+  stmt2 = ate.prepare(q, true)
+  expect(stmt2).not_to eq nil
+  
+  q.reset().select('group_name')
+  stmt3 = atg.prepare(q, true)
+  expect(stmt3).not_to eq nil
+  
+  rs = atu.index(0).keyValue(1).read(stmt1, 15000)
+  expect(rs.size()).to eq 15000
+  
+  # Join extention::comment
+  ate.index(0).join(rs, stmt2, 'id')
+  expect(rs.size()).to eq 15000
+  
+  # test reverse
+  last = rs.reverse().first()
+  expect(last['id']).to eq 15000
+  expect(last['comment']).to eq '15000 comment'
+  
+  # Join group::name
+  atg.index(0).join(rs, stmt3, 'group')
+  expect(rs.size()).to eq 15000
+  first = rs.last()
+  
+  expect(first['id']).to eq 1
+  expect(first['comment']).to eq '1 comment'
+  expect(first['group_name']).to eq '1 group'
+  
+  # rs[15000 - 9]
+  rec = rs[15000 - 9]
+  expect(rec['group_name']).to eq '4 group'
+  
+  # Test orderby
+  rs.orderBy('group_name')
+  # rs[0]
+  expect(rs[0]['group_name']).to eq '1 group'
+  
+=begin
+sortFields orderRv
+orderRv.add('group_name', false)
+rs.orderBy(orderRv)
+
+sortFields order
+order.add('group_name', true)
+rs.orderBy(order)
+BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0]['group_name'].c_str()) ==
+            _tstring('1 group'),
+        "group_name = 1 group "
+            << string(rs[(size_t)0]['group_name'].a_str()))
+=end
+  
+  # All fields
+  rs.clear()
+  q.reset().all()
+  q.where('id', '<=', '?')
+  stmt1 = atu.prepare(q, true)
+  rs = atu.keyValue(1).read(stmt1, 15000)
+  expect(rs.size()).to eq 15000
+  if (rs.size() == 15000) then
+    for i in 0..14999 do
+      expect(rs[i]['id']).to eq i + 1
+    end
+  end
+  
+  ate.join(rs, stmt2, 'id')
+  expect(rs.size()).to eq 15000
+  atg.join(rs, stmt3, 'group')
+  expect(rs.size()).to eq 15000
+  
+  # OuterJoin
+  tb = ate.table()
+  tb.setFV('id', NO_RECORD_ID)
+  tb.seek()
+  expect(tb.stat()).to eq 0
+  tb.del() if (tb.stat() == 0)
+  expect(tb.stat()).to eq 0
+  q.reset().select('comment', 'blob').optimize(Transactd::QueryBase::JoinHasOneOrHasMany)
+  stmt2 = ate.prepare(q, true)
+  
+  # Join is remove record(s) no join target record.
+  rs.clear()
+  rs = atu.keyValue(1).read(stmt1, 15000)
+  ate.join(rs, stmt2, 'id')
+  expect(rs.size()).to eq 14999
+  expect(rs[NO_RECORD_ID - 1]['id']).to eq (NO_RECORD_ID + 1)
+  expect(rs[NO_RECORD_ID - 1]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
+  expect(rs[NO_RECORD_ID - 1]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
+  
+  # OuterJoin is no remove record(s) no join target record.
+  rs.clear()
+  rs = atu.keyValue(1).read(stmt1, 15000)
+  ate.outerJoin(rs, stmt2, 'id')
+  expect(rs.size()).to eq 15000
+  atg.outerJoin(rs, stmt3, 'group')
+  expect(rs.size()).to eq 15000
+  
+  expect(rs[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
+  expect(rs[NO_RECORD_ID]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
+  expect(rs[NO_RECORD_ID]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
+  
+  # OuterJoin All Join fields
+  q.reset().optimize(Transactd::QueryBase::JoinHasOneOrHasMany).all()
+  stmt2 = ate.prepare(q, true)
+  rs.clear()
+  rs = atu.keyValue(1).read(stmt1, 15000)
+  ate.outerJoin(rs, stmt2, 'id')
+  expect(rs.size()).to eq 15000
+  expect(rs[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
+  expect(rs[NO_RECORD_ID]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
+  expect(rs[NO_RECORD_ID]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
+  
+  # Test clone blob field
+  rs2 = rs.clone()
+  expect(rs2.size()).to eq 15000
+  expect(rs2[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
+  expect(rs2[NO_RECORD_ID]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
+  expect(rs2[NO_RECORD_ID]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
+  
+  # hasManyJoin inner
+  rs.clear()
+  q.reset().reject(0xFFFF).limit(0).all()
+  rs = atg.keyValue(1).read(q)
+  expect(rs.size()).to eq 100
+  q.all().optimize(Transactd::QueryBase::JoinHasOneOrHasMany)
+  atu.index(1).join(rs, q, 'code')
+  expect(rs.size()).to eq 20000
+  
+  # hasManyJoin outer
+  rs.clear()
+  q.reset().reject(0xFFFF).limit(0).all()
+  rs = atg.keyValue(1).read(q)
+  expect(rs.size()).to eq 100
+  q.all().optimize(Transactd::QueryBase::JoinHasOneOrHasMany)
+  atu.index(1).outerJoin(rs, q, 'code')
+  expect(rs.size()).to eq 20095
+  
+  # restore record
+  tb.clearBuffer()
+  tb.setFV('id', NO_RECORD_ID)
+  tb.setFV('comment', '5 comment')
+  tb.setFV('blob', '5 blob')
+  tb.insert()
+  expect(tb.stat()).to eq 0
+  db.drop() unless (tb.stat() == 0)
 end
 
 def testWirtableRecord()
@@ -2368,16 +3174,25 @@ describe Transactd do
     testUpdate()
   end
   it 'snapshot' do
-    testSnapShot()
+    testSnapshot()
   end
   it 'send conflict error' do
     testConflict()
   end
-  it 'transaction' do
-    testTransactionLock()
+  it 'transaction (REPEATABLE_READ)' do
+    testTransactionLockRepeatable()
+  end
+  it 'transaction (READ_COMMITED)' do
+    testTransactionLockReadCommited()
+  end
+  it 'record lock' do
+    testRecordLock()
   end
   it 'exclusive' do
     testExclusive()
+  end
+  it 'multi database' do
+    testMultiDatabase()
   end
   it 'insert2' do
     testInsert2()
@@ -2412,9 +3227,11 @@ describe Transactd do
     testJoin()
   end
   it 'activetable and prepare' do
-    testPrepare()
+    testPrepareJoin()
   end
-
+  it 'activetable and prepare (server)' do
+    testServerPrepareJoin()
+  end
   it 'write with writableRecord' do
     testWirtableRecord()
   end

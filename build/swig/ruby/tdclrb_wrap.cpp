@@ -18747,21 +18747,34 @@ fail:
 }
 
 
-SWIGINTERN VALUE
-_wrap_nsdatabase_beginSnapshot(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
+SWIGINTERN VALUE _wrap_nsdatabase_beginSnapshot(int nargs, VALUE *args, VALUE self) {
+  int argc;
+  VALUE argv[3];
+  int ii;
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0x00;
+  short arg2;
+  short val2;
   
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  argc = nargs + 1;
+  argv[0] = self;
+  if (argc > 3 || argc < 1) SWIG_fail;
+  for (ii = 1; (ii < argc); ++ii) {
+    argv[ii] = args[ii-1];
   }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","beginSnapshot", 1, self )); 
+  // check arg1 (nsdatabase)
+  int _v;
+  void *vptr = 0;
+  int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0);
+  _v = SWIG_CheckState(res);
+  if (! _v) SWIG_fail;
+  if (!SWIG_IsOK(res)) {
+    SWIG_exception_fail(SWIG_ArgError(res),
+      Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","beginSnapshot", 1, argv[0] )); 
   }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
-  {
+  // cast arg1
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(vptr);
+  // call beginSnapshot()
+  if (argc == 1) {
     try {
       (arg1)->beginSnapshot();
     } catch (bzs::rtl::exception& e) {
@@ -18771,9 +18784,36 @@ _wrap_nsdatabase_beginSnapshot(int argc, VALUE *argv, VALUE self) {
       static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
       rb_raise(cpp_std_error, e.what());
     }
+    return Qnil;
   }
-  return Qnil;
+  // check arg2
+  if (argc == 2) {
+    int res = SWIG_AsVal_short(argv[1], &val2);
+    _v = SWIG_CheckState(res);
+    if (! _v) SWIG_fail;
+    if (!SWIG_IsOK(res)) {
+      SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError( "", "short","beginSnapshot", 2, argv[1] ));
+    }
+    // cast arg2
+    arg2 = static_cast< short >(val2);
+    // call beginSnapshot(short bias)
+    try {
+      (arg1)->beginSnapshot(arg2);
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+    return Qnil;
+  }
+  
 fail:
+  Ruby_Format_OverloadedError( argc, 3, "nsdatabase.beginSnapshot", 
+    "    void nsdatabase.beginSnapshot(short bias)\n"
+    "    void nsdatabase.beginSnapshot()\n");
+  
   return Qnil;
 }
 
@@ -34178,6 +34218,19 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "NOWAIT_WRITE", SWIG_From_int(static_cast< int >(500)));
   rb_define_const(mTransactd, "PARALLEL_TRN", SWIG_From_int(static_cast< int >(1000)));
   rb_define_const(mTransactd, "ROW_LOCK_S", SWIG_From_int(static_cast< int >(ROW_LOCK_S)));
+  rb_define_const(mTransactd, "TRN_ISO_READ_COMMITED", SWIG_From_int(static_cast< int >(0)));
+  rb_define_const(mTransactd, "TRN_ISO_REPEATABLE_READ", SWIG_From_int(static_cast< int >(2000)));
+  rb_define_const(mTransactd, "TRN_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(3000)));
+  rb_define_const(mTransactd, "CONSISTENT_READ", SWIG_From_int(static_cast< int >(4000)));
+  rb_define_const(mTransactd, "SINGLELOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(200)));
+  rb_define_const(mTransactd, "MULTILOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(400)));
+  rb_define_const(mTransactd, "MULTILOCK_REPEATABLE_READ", SWIG_From_int(static_cast< int >(2000+400)));
+  rb_define_const(mTransactd, "MULTILOCK_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(3000+400)));
+  rb_define_const(mTransactd, "SINGLELOCK_NOGAP", SWIG_From_int(static_cast< int >(200)));
+  rb_define_const(mTransactd, "MULTILOCK_NOGAP", SWIG_From_int(static_cast< int >(400)));
+  rb_define_const(mTransactd, "MULTILOCK_GAP", SWIG_From_int(static_cast< int >(2000+400+400)));
+  rb_define_const(mTransactd, "GAPLOCK", SWIG_From_int(static_cast< int >(2000)));
+  rb_define_const(mTransactd, "NO_GAPLOCK", SWIG_From_int(static_cast< int >(0)));
   rb_define_const(mTransactd, "TD_OPEN_NORMAL", SWIG_From_int(static_cast< int >(0)));
   rb_define_const(mTransactd, "TD_OPEN_READONLY", SWIG_From_int(static_cast< int >(-2)));
   rb_define_const(mTransactd, "TD_OPEN_EXCLUSIVE", SWIG_From_int(static_cast< int >(-4)));
@@ -34255,6 +34308,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "ERROR_NOSPECIFY_TABLE", SWIG_From_int(static_cast< int >(176)));
   rb_define_const(mTransactd, "ERROR_LOAD_CLIBRARY", SWIG_From_int(static_cast< int >(200)));
   rb_define_const(mTransactd, "ERROR_INDEX_RND_INIT", SWIG_From_int(static_cast< int >(201)));
+  rb_define_const(mTransactd, "STATUS_ALREADY_INSNAPSHOT", SWIG_From_int(static_cast< int >(204)));
+  rb_define_const(mTransactd, "STATUS_ALREADY_INTRANSACTION", SWIG_From_int(static_cast< int >(205)));
   rb_define_const(mTransactd, "SERVER_CLIENT_NOT_COMPATIBLE", SWIG_From_int(static_cast< int >(3003)));
   rb_define_const(mTransactd, "NET_BAD_SRB_FORMAT", SWIG_From_int(static_cast< int >(3021)));
   rb_define_const(mTransactd, "ERROR_TD_HOSTNAME_NOT_FOUND", SWIG_From_int(static_cast< int >(3103)));
