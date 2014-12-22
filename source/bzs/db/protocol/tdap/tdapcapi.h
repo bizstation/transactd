@@ -281,7 +281,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TD_OPEN_NORMAL                  0
 #define TD_OPEN_READONLY                -2
 #define TD_OPEN_EXCLUSIVE               -4
-#define TD_OPEN_READOMLY_EXCLUSIVE      (TD_OPEN_READONLY + TD_OPEN_EXCLUSIVE)
+#define TD_OPEN_READONLY_EXCLUSIVE      (TD_OPEN_READONLY + TD_OPEN_EXCLUSIVE)
 
 /** filed algin
  */

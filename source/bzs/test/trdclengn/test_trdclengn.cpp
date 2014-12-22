@@ -1708,7 +1708,7 @@ void testExclusive()
     /* -------------------------------------------------*/
     /*  database READ EXCLUSIVE                        */
     /* -------------------------------------------------*/
-    tb = openTable(db, TD_OPEN_READOMLY_EXCLUSIVE);
+    tb = openTable(db, TD_OPEN_READONLY_EXCLUSIVE);
     
     // Normal open
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
@@ -1724,7 +1724,7 @@ void testExclusive()
 
     // Read Exclusive open
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), 
-            TYPE_SCHEMA_BDF, TD_OPEN_READOMLY_EXCLUSIVE);
+            TYPE_SCHEMA_BDF, TD_OPEN_READONLY_EXCLUSIVE);
     BOOST_CHECK_MESSAGE(0 == db2->stat()
                                     , "Read Exclusive open");
     db2->close();
