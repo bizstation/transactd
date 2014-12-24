@@ -30,8 +30,8 @@
 #include <bzs/db/protocol/tdap/client/filter.h>
 #include <bzs/example/queryData.h>
 #include <bzs/db/protocol/tdap/client/activeTable.h>
-
 #include <bzs/db/protocol/tdap/client/pooledDatabaseManager.h>
+#include <boost/thread.hpp>
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -1832,6 +1832,7 @@ void testExclusive()
     database::destroy(db2);
 }
 
+
 /* Multi database */
 void testMultiDatabase(database* db)
 {
@@ -1863,6 +1864,74 @@ void testMultiDatabase(database* db)
     _tstring v2 = tb->getFVstr(fdi_name);
     BOOST_CHECK_MESSAGE(v == v2, "check value");
     
+    tb->release();
+    tb2->release();
+    database::destroy(db2);
+}
+
+/* Getting missing value by lock wait */
+void testMissingUpdate(database* db)
+{
+    class worker
+    {
+        table* m_tb;
+    public:
+        worker(table* tb):m_tb(tb){}
+        void run(){m_tb->seekLessThan(false, ROW_LOCK_X);}
+    };
+
+    
+    table* tb = openTable(db);
+    database* db2 = database::create();
+    db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF); 
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2->open");
+    table* tb2 = db2->openTable(_T("user"));
+    {
+        boost::scoped_ptr<worker> w(new worker(tb2));
+    
+        // Inserting  target, The InnoDB is good!
+        tb->setFV(fdi_id, 300000);
+        tb2->setFV(fdi_id, 300000);
+        tb->seekLessThan(false, ROW_LOCK_X);
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekLessThan");
+        if (tb->stat() == 0)
+        {
+            // Get lock(X) same record in parallel.
+            boost::scoped_ptr<boost::thread> t(new boost::thread(bind(&worker::run, w.get())));
+            int v = tb->getFVint(fdi_id);
+            tb->setFV(fdi_id, ++v);
+            tb->insert();
+            t->join();
+            BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->insert");
+            BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekLessThan");
+            int v2 = tb2->getFVint(fdi_id);
+            BOOST_CHECK_MESSAGE(v == v2 , "value v = " << v
+                    << " bad = " << v2);
+            tb2->unlock();
+        }
+        
+        // Deleting  target, The InnoDB is good!
+        tb->setFV(fdi_id, 300000);
+        tb2->setFV(fdi_id, 300000);
+        tb->seekLessThan(false, ROW_LOCK_X);
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekLessThan");
+        if (tb->stat() == 0)
+        {
+            // Get lock(X) same record in parallel.
+            boost::scoped_ptr<boost::thread> t(new boost::thread(bind(&worker::run, w.get())));
+            int v = tb->getFVint(fdi_id);
+            tb->del();
+            t->join();
+            BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->insert");
+            BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekLessThan");
+            int v2 = tb2->getFVint(fdi_id);
+            BOOST_CHECK_MESSAGE(v != v2 , "value v = " << v
+                    << " bad = " << v2);
+            tb2->unlock();
+        }
+    }
     tb->release();
     tb2->release();
     database::destroy(db2);
@@ -4346,6 +4415,11 @@ BOOST_FIXTURE_TEST_CASE(MultiDatabase, fixture)
 BOOST_AUTO_TEST_CASE(Exclusive)
 {
     testExclusive();
+}
+
+BOOST_FIXTURE_TEST_CASE(MissingUpdate, fixture)
+{
+    testMissingUpdate(db());
 }
 
 BOOST_FIXTURE_TEST_CASE(insert2, fixture)
