@@ -33,19 +33,23 @@ namespace client
 
 /** @cond INTERNAL */
 
-class DLLLIB autoMemory
+class autoMemory : public refarymem
 {
+    void releaseMemory();
 
-public:
     autoMemory();
-    explicit autoMemory(unsigned char* p, size_t s, short* endIndex, bool own);
     autoMemory(const autoMemory& p);
     ~autoMemory();
+public:
+    void setParams(unsigned char* p, size_t s, short* endIndex, bool own);
+
     autoMemory& operator=(const bzs::db::protocol::tdap::client::autoMemory& p);
     unsigned char* ptr;
     short* endFieldIndex;
-    unsigned int size;
-    bool owner;
+    unsigned int size ;
+    bool owner ;
+    static autoMemory* create(int n);
+    static autoMemory* create();
 };
 
 /** @endcond */
@@ -54,25 +58,45 @@ public:
 #pragma warning(disable : 4275)
 #define ROW_MEM_BLOCK_RESERVE 4
 
+#ifndef JOINLIMIT_PER_RECORD
+#define JOINLIMIT_PER_RECORD 0
+#endif
+#if (JOINLIMIT_PER_RECORD < 1)
+#define JOIN_UNLIMIT
+#endif
+
 class DLLLIB memoryRecord : public fieldsBase
 {
     friend class multiRecordAlocatorImple;
     friend class recordsetImple;
+    friend class recordsetQuery;
 
-    std::vector<autoMemory> m_memblock;
+#ifdef JOIN_UNLIMIT
+    std::vector<autoMemory*> m_memblock;
+#else
+    autoMemory* m_memblock[JOINLIMIT_PER_RECORD];
+    int m_memblockSize;
+#endif
+
+    static memoryRecord* create(fielddefs& fdinfo, int n);
+    static memoryRecord* create(const memoryRecord& m, int n);
 
 protected:
     /** @cond INTERNAL */
+
+    inline memoryRecord();
     inline memoryRecord(fielddefs& fdinfo);
     memoryRecord(const memoryRecord& r);
+    ~memoryRecord();
+    memoryRecord& operator=(const memoryRecord& r);
     void copyToBuffer(table* tb, bool updateOnly = false) const;
 
     /* return memory block first address which not field ptr address */
     inline unsigned char* ptr(int index) const
     {
         for (int i = 0; i < memBlockSize(); ++i)
-            if (*(m_memblock[i].endFieldIndex) > index)
-                return m_memblock[i].ptr;
+            if (*(m_memblock[i]->endFieldIndex) > index)
+                return m_memblock[i]->ptr;
         assert(0);
         return NULL;
     }
@@ -80,33 +104,47 @@ protected:
     inline const autoMemory& memBlockByField(int index) const
     {
         for (int i = 0; i < memBlockSize(); ++i)
-            if (*(m_memblock[i].endFieldIndex) > index)
-                return m_memblock[i];
+            if (*(m_memblock[i]->endFieldIndex) > index)
+                return *m_memblock[i];
         assert(0);
         return *((autoMemory*)0);
     }
 
     inline const autoMemory& memBlock(int index) const
     {
-        return m_memblock[index];
+        return *m_memblock[index];
     }
-
+#ifdef JOIN_UNLIMIT
     inline int memBlockSize() const { return (int)m_memblock.size(); }
-
+#else
+    inline int memBlockSize() const { return m_memblockSize; }
+#endif
     inline void copyFromBuffer(const table* tb)
     {
-        memcpy(ptr(0), tb->fieldPtr(0), m_fns.totalFieldLen());
+        memcpy(ptr(0), tb->fieldPtr(0), m_fns->totalFieldLen());
     }
-    void removeLastMemBlock() { m_memblock.pop_back(); }
+
+    void removeLastMemBlock() 
+    { 
+        if (memBlockSize())
+        {
+            m_memblock[memBlockSize()-1]->release();
+#ifdef JOIN_UNLIMIT
+            m_memblock.pop_back(); 
+#else
+            --m_memblockSize; 
+#endif
+        }
+    }
+
+    void setRecordData(autoMemory* am, unsigned char* ptr, size_t size,
+                       short* endFieldIndex, bool owner = false);
+    void releaseMemory();
 
     /** @endcond */
 public:
     void clear(); // orverride
-    void setRecordData(unsigned char* ptr, size_t size, short* endFieldIndex,
-                       bool owner = false);
-
-    static memoryRecord* create(fielddefs& fdinfo);
-    static void release(fieldsBase* p);
+    static memoryRecord* create(fielddefs& fdinfo); // For SWIG
 };
 
 #pragma warning(default : 4275)
@@ -115,25 +153,29 @@ public:
 /* non copyable*/
 class DLLLIB writableRecord : public memoryRecord
 {
+    friend class activeTableImple;
+
     fielddefs* m_fddefs;
     table* m_tb;
     short m_endIndex;
 
+    static writableRecord* create(table* tb, const aliasMap_type* alias);
     writableRecord(table* tb, const aliasMap_type* alias);
     writableRecord(const writableRecord&);
     writableRecord& operator=(const writableRecord&);
 
     fielddefs* fddefs();
+    void releaseMemory();
+    ~writableRecord();
 
 public:
-    ~writableRecord();
+
     bool read(bool KeysetAlrady = false);
     void insert();
     void del(bool KeysetAlrady = false);
     void update();
     void save();
 
-    static writableRecord* create(table* tb, const aliasMap_type* alias);
 };
 
 } // namespace client

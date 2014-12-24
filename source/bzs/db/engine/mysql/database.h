@@ -65,13 +65,16 @@ namespace mysql
 #define TRN_RECORD_LOCK_SINGLE 0
 #define TRN_RECORD_LOCK_MUILTI 1
 
+#define MODE_READ_ONLY -2
+#define MODE_EXCLUSIVE -4
+#define MODE_READ_EXCLUSIVE -6
+
+
 /** bookmark size
  *  btreive API is MAX 4 byte
  */
 #define REF_SIZE_MAX 4
 class table;
-
-extern bool g_safe_share_mode;
 
 /** Control mysql table cahche
  */
@@ -92,27 +95,43 @@ public:
     void release(const std::string& dbname, const std::string& tbname);
 };
 
+struct rowLockMode
+{
+    bool lock : 1;
+    bool read : 1;
+};
+
 class database : private boost::noncopyable
 {
     friend class table;
     friend class smartDbReopen;
-
+public:
+    typedef std::vector<boost::shared_ptr<table> > tableList;
+private:
     std::string m_dbname;
-
     mutable THD* m_thd;
-    short m_cid;
     int m_inTransaction;
     int m_inSnapshot;
     int m_stat;
+    int m_usingExclusive;
+    table* m_inAutoTransaction;
     short m_trnType;
-
-    std::vector<boost::shared_ptr<table> > m_tables;
+    short m_cid;
+    enum_tx_isolation m_iso;
+    tableList m_tables;
+   
     TABLE* doOpenTable(const std::string& name, short mode,
-                       const char* ownerName);
-
+                                const char* ownerName);
     void unUseTable(table* tb);
+    size_t getNomalOpenTables(tableList& tables);
+    void prebuildIsoratinMode();
+    void prebuildExclusieLockMode(table* tb);
+    void prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* lck) ;
+    void changeIntentionLock(table* tb, thr_lock_type lock_type);
 
 public:
+    
+
     database(const char* name, short cid);
     ~database();
 
@@ -136,12 +155,12 @@ public:
         return m_tables;
     }
 
-    bool beginSnapshot();
+    bool beginSnapshot(enum_tx_isolation iso);
     bool endSnapshot();
     table* openTable(const std::string& name, short mode,
                      const char* ownerName);
-    table* useTable(int index, enum_sql_command cmd);
-    bool beginTrn(short type);
+    table* useTable(int index, enum_sql_command cmd, rowLockMode* lck);
+    bool beginTrn(short type, enum_tx_isolation iso);
     bool commitTrn();
     bool abortTrn();
     bool existsTable(const std::string& name);
@@ -153,13 +172,28 @@ public:
     void reopen();
     void cleanTable();
 
+    inline bool canUnlockRow() const
+    {
+        /* inSnapshot or inTransaction multi record lock do not unlock */
+        if (m_inSnapshot || (m_inTransaction && (m_trnType == TRN_RECORD_LOCK_MUILTI)))
+            return false;
+        return true;
+    }
+
+    inline bool noUserTransaction() const
+    {
+        return ((m_inSnapshot + m_inTransaction) == 0);
+    }
+
     static tableCacheCounter tableRef;
 };
 
 typedef std::vector<boost::shared_ptr<database> > databases;
 
 class IReadRecordsHandler;
+class IPrepare;
 class bookmarks;
+
 
 /*
  *  Since it differs from the key number which a client specifies
@@ -198,41 +232,46 @@ public:
 class table : private boost::noncopyable
 {
     friend class database;
+    friend struct smartForceConsistantRead;
     TABLE* m_table;
 
     std::string m_name;
 
-    const short m_mode;
-    int m_id;
+    short m_mode;
     unsigned short m_nullFields;
+    int m_id;
     uint m_recordLenCl;
     int m_recordFormatType;
 #ifdef USE_BTRV_VARIABLE_LEN
     uint m_lastVarLenBytes;
 #endif
     database& m_db;
-    char m_keyNum;
-
     mutable boost::scoped_array<unsigned char> m_keybuf;
     mutable boost::scoped_array<unsigned char> m_nonNccKeybuf;
 
-    bool m_nonNcc;
     int m_stat;
-    bool m_validCursor;
-    bool m_cursor;
-    bool m_locked;
-    bool m_changed;
-    bool m_nounlock;
-    bool m_bulkInserting;
     int m_percentResult;
-
     boost::shared_ptr<bookmarks> m_bms;
-
     String m_str;
     keynumConvert m_keyconv;
     IblobBuffer* m_blobBuffer;
-
     std::vector<Field*> m_nonKeySegNullFields;
+    char m_keyNum;
+    struct
+    {
+        bool m_nonNcc : 1;
+        bool m_validCursor : 1;
+        bool m_cursor : 1;
+        bool m_locked : 1;
+        bool m_changed : 1;
+        bool m_nounlock : 1;
+        bool m_bulkInserting : 1;
+        bool m_delayAutoCommit : 1;
+    };
+    struct
+    {
+        bool m_forceConsistentRead : 1;
+    };
 
     table(TABLE* table, database& db, const std::string& name, short mode,
           int id);
@@ -261,14 +300,18 @@ class table : private boost::noncopyable
     }
     void setKeyValues(const uchar* ptr, int size);
     void setBlobFieldPointer(const bzs::db::blobHeader* hd);
-    inline void unlockRow();
-
-    inline void initHandler()
+    
+    inline bool setCursorStaus()
     {
-        if ((m_db.m_inSnapshot == 0) &&
-            (m_table->reginfo.lock_type != TL_WRITE))
-            m_table->file->init_table_handle_for_HANDLER();
+        m_validCursor = (m_stat == 0);
+        m_cursor = (m_stat == 0) ? true : 
+                       ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
+                        (m_stat == HA_ERR_LOCK_DEADLOCK)) ? m_cursor : false;
+        return m_validCursor;
     }
+    
+    inline void unlockRow(bool noConsistent);
+    inline void tryConsistentRead(bool noConsistent);
 
 #ifdef USE_HANDLERSOCKET
     std::vector<int> m_useFields;
@@ -293,6 +336,7 @@ public:
 
 public:
     static bool noKeybufResult;
+    std::vector<IPrepare*> preparedStatements;
 
     ~table();
 
@@ -301,12 +345,22 @@ public:
         m_blobBuffer = blobBuffer;
     }
 
-    inline IblobBuffer* blobBuffer(IblobBuffer* blobBuffer)
+    inline IblobBuffer* blobBuffer() const
     {
         return m_blobBuffer;
     }
 
     inline short mode() const { return m_mode; }
+
+    inline bool isReadOnly() const 
+    {
+        return (m_mode == MODE_READ_ONLY) 
+             ||(m_mode == MODE_READ_EXCLUSIVE); 
+    }
+
+    inline bool isExclusveMode() const { return m_mode <= MODE_EXCLUSIVE;}
+
+    inline bool isNomalMode() const { return m_mode > MODE_EXCLUSIVE;}
 
     inline bool islocked() { return m_locked; }
 
@@ -316,7 +370,17 @@ public:
 
     int id() { return m_id; };
 
-    inline void unUse() { m_db.unUseTable(this); }
+    /* The singleRowLock is no effects with Transaction or Snapshot. */
+    inline void unUse() 
+    { 
+        if (m_delayAutoCommit)
+        {
+            m_delayAutoCommit = false;
+            m_db.m_inAutoTransaction = this;
+        }
+        else
+            m_db.unUseTable(this);
+    }
 
     inline const std::string& name() const { return m_name; }
 
@@ -326,21 +390,21 @@ public:
 
 #ifdef USE_BTRV_VARIABLE_LEN
 
-    inline uint lastVarFiledNum() const
+    inline uint lastVarFieldNum() const
     {
         return m_table->s->fields - 1 - nisFields();
     }
 
     inline const Field* lastVarFiled() const
     {
-        return m_table->s->field[lastVarFiledNum()];
+        return m_table->s->field[lastVarFieldNum()];
     }
 
     unsigned short lastVarLenBytes() const { return m_lastVarLenBytes; }
 
     inline unsigned short lastVarFieldDataLen() const
     {
-        return fieldDataLen(lastVarFiledNum());
+        return fieldDataLen(lastVarFieldNum());
     }
 
     unsigned short lastVarFieldPos() const;
@@ -455,7 +519,7 @@ public:
                              const bzs::db::blobHeader* hd);
     uint recordPackCopy(char* buf, uint maxsize = 0);
 
-    ushort fieldPackCopy(unsigned char* dest, short filedNum);
+    ushort fieldPackCopy(unsigned char* dest, short fieldNum);
 
     inline uint fieldSizeByte(int fieldNum)
     {
@@ -580,6 +644,11 @@ public:
         m_blobBuffer->setFieldCount(num);
     }
 
+    inline uint getBlobFieldCount()
+    {
+        return m_blobBuffer->fieldCount();
+    }
+
     inline void indexInit()
     {
         int ret = m_table->file->ha_index_or_rnd_end();
@@ -590,6 +659,48 @@ public:
             ret = m_table->file->ha_rnd_init(true);
         assert(ret == 0);
     }
+
+    inline void setRowLock(rowLockMode* lck)
+    {
+        if (lck->lock && m_db.noUserTransaction() && isNomalMode())
+            m_delayAutoCommit = true;
+        else
+            m_delayAutoCommit = false;
+    }
+
+    inline void setRowLockError()
+    {
+        m_delayAutoCommit = false;
+    }
+
+    inline short unlock()
+    {
+        if (m_db.inSnapshot() || m_db.inTransaction())
+        {
+            if (m_validCursor)
+                m_table->file->unlock_row();
+            else
+                return 1;
+        }else if (m_db.m_inAutoTransaction == this)
+            unUse();
+        return 0;
+    }
+
+    inline void startStmt()
+    {
+        m_validCursor = false;
+        m_table->file->start_stmt(m_db.m_thd, m_table->reginfo.lock_type);
+    }
+
+    inline void initForHANDLER()
+    {
+        if (!m_db.m_thd->in_lock_tables)
+        {
+            m_table->file->init_table_handle_for_HANDLER();
+            m_validCursor = false;
+        }
+    }
+    
 };
 
 class fieldBitmap
@@ -652,6 +763,17 @@ public:
         assert(m_table);
         bitmap_set_bit(m_table->read_set, bit);
     }
+
+       
+    inline MY_BITMAP* getReadBitmap()
+    {
+        if (m_table)
+            return m_table->read_set;
+        return NULL;
+    }
+
+    inline bool isUsing() const { return (m_table != NULL); }
+
 };
 
 // smart wrapper for exception
@@ -674,10 +796,11 @@ class smartTransction
     short m_type;
 
 public:
-    smartTransction(database* db, short type = TRN_RECORD_LOCK_SINGLE)
+    smartTransction(database* db, short type = TRN_RECORD_LOCK_SINGLE
+            , enum_tx_isolation iso = ISO_READ_COMMITTED)
         : m_db(db)
     {
-        m_db->beginTrn(type);
+        m_db->beginTrn(type, iso);
     }
 
     void end()
@@ -690,6 +813,21 @@ public:
     {
         if (m_db)
             m_db->abortTrn();
+    }
+};
+
+
+struct smartForceConsistantRead
+{
+    table* tb;
+    inline smartForceConsistantRead(table* t):tb(t)
+    {
+        tb->m_forceConsistentRead = true;
+    }
+
+    inline ~smartForceConsistantRead()
+    {
+        tb->m_forceConsistentRead = false;
     }
 };
 

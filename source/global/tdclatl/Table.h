@@ -143,6 +143,8 @@ public:
     STDMETHOD(get_ValiableFormatType)(VARIANT_BOOL* Value);
     STDMETHOD(SmartUpdate)(void);
     STDMETHOD(KeyValueDescription)(BSTR* Value);
-    STDMETHOD(SetQuery)(IQueryBase* Value);
+    STDMETHOD(SetQuery)(IQueryBase* Value, VARIANT_BOOL ServerPrepare, IPreparedQuery** retVal);
+    STDMETHOD(Prepare)(IQueryBase* Value, VARIANT_BOOL ServerPrepare, IPreparedQuery** retVal);
+    STDMETHOD(SetPrepare)(IPreparedQuery* Value);
     STDMETHOD(FieldNumByName)(BSTR Name, short* Value);
 };

@@ -21,6 +21,7 @@
 #include <bzs/netsvc/server/IAppModule.h> //for result value macro.
 #include <bzs/rtl/exception.h>
 #include <time.h>
+#include "mysqlThd.h"
 
 namespace bzs
 {
@@ -31,7 +32,47 @@ namespace engine
 namespace mysql
 {
 
+
+class smartDbsReopen
+{
+    THD* m_thd;
+    std::vector<boost::shared_ptr<database> >& m_dbs;
+public:
+    static std::string removeName;
+
+    smartDbsReopen(THD* thd, std::vector<boost::shared_ptr<database> >& dbs) : m_thd(thd), m_dbs(dbs)
+    {
+        for (size_t i = 0; i < m_dbs.size(); i++)
+        {
+            if (m_dbs[i])
+            {
+                m_dbs[i]->use();
+                m_dbs[i]->unUseTables(false);
+                m_dbs[i]->closeForReopen();
+            }
+        }
+        attachThd(m_thd);
+    }
+
+    ~smartDbsReopen()
+    {
+        for (size_t i = 0; i < m_dbs.size(); i++)
+        {
+            if (m_dbs[i])
+            {
+                if (removeName != m_dbs[i]->name())
+                {
+                    m_dbs[i]->use();
+                    m_dbs[i]->reopen();
+                }
+            }
+        }
+        attachThd(m_thd);
+    }
+};
+
 std::string smartDbsReopen::removeName = "";
+
 
 dbManager::dbManager() : m_autoHandle(0)
 {
@@ -62,6 +103,7 @@ void dbManager::checkNewHandle(int newHandle) const
             THROW_BZS_ERROR_WITH_CODEMSG(1, "Allready exits handle.");
 }
 
+// Lock for isSutdown(), called by another thread
 void dbManager::releaseDatabase(short cid)
 {
     boost::mutex::scoped_lock lck(m_mutex);
@@ -143,11 +185,11 @@ database* dbManager::getDatabase(const char* dbname, short cid) const
     return useDataBase(id);
 }
 
-table* dbManager::getTable(int hdl, enum_sql_command cmd) const
+table* dbManager::getTable(int hdl, enum_sql_command cmd, engine::mysql::rowLockMode* lck) const
 {
     handle* h = getHandle(hdl);
     if (h && (h->db < (int)m_dbs.size()))
-        return useDataBase(h->db)->useTable(h->tb, cmd);
+        return useDataBase(h->db)->useTable(h->tb, cmd, lck);
 
     THROW_BZS_ERROR_WITH_CODEMSG(1, "Invalid handle.");
 }
@@ -163,7 +205,7 @@ int dbManager::addHandle(int dbid, int tableid, int assignid)
 
 int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
 {
-    smartDbsReopen reopen(m_dbs);
+    smartDbsReopen reopen(thd, m_dbs);
 
     thd->clear_error();
     int result = dispatch_command(COM_QUERY, thd, (char*)sql_stmt.c_str(),

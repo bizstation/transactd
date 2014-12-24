@@ -76,6 +76,7 @@ public:
     int maxConnections() const;
     void releaseOne();
     bool reset(int waitSec = 5);
+    int usingCount() const;
 };
 
 typedef connectionPool<database_ptr> stdDbCconnectionPool;

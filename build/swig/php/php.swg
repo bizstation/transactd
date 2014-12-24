@@ -86,6 +86,19 @@ typedef char  _TCHAR;
   ZVAL_STRING(return_value, (char *)$3, 1);
 }
 
+// const TCHAR* fast convert
+%typemap(in) const _TCHAR* {
+  if ((*$input)->type != IS_NULL) {
+     convert_to_string_ex($input);
+     $1 = (_TCHAR *) Z_STRVAL_PP($input);
+  }
+}
+
+// const TCHAR* fast check
+%typemap(typecheck,precedence=SWIG_TYPECHECK_STRING) const _TCHAR* {
+  $1 = 1;
+}
+
 
 /* ===============================================
   ignore / rename functions
@@ -112,6 +125,9 @@ typedef char  _TCHAR;
 %ignore bzs::db::protocol::tdap::client::database::setOnDeleteRecord;
 
 // * bzs/db/protocol/tdap/client/field.h *
+%ignore bzs::db::protocol::tdap::client::fielddefs::operator[] (const std::_tstring&) const;
+%rename(getFielddef) bzs::db::protocol::tdap::client::fielddefs::operator[] (int index) const;
+%rename(getFielddef) bzs::db::protocol::tdap::client::fielddefs::operator[] (const _TCHAR* name) const;
 %ignore bzs::db::protocol::tdap::client::field::operator=(const char*);
 %ignore bzs::db::protocol::tdap::client::field::operator=(const std::string&);
 %ignore bzs::db::protocol::tdap::client::field::operator=(int);
@@ -129,6 +145,11 @@ typedef char  _TCHAR;
   ZVAL_STRINGL($result, (char *)result, *$1, 1);
 }
 
+// * bzs/db/protocol/tdap/client/fields.h *
+%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[](const std::_tstring&) const;
+%rename(getField) bzs::db::protocol::tdap::client::fieldsBase::operator[] (short index) const;
+%rename(getField) bzs::db::protocol::tdap::client::fieldsBase::operator[] (const _TCHAR* name) const;
+
 // * bzs/db/protocol/tdap/client/groupQuery.h *
 %rename(__clone) bzs::db::protocol::tdap::client::groupFuncBase::clone;
 %rename(__clone) bzs::db::protocol::tdap::client::avg::clone;
@@ -136,14 +157,19 @@ typedef char  _TCHAR;
 %rename(__clone) bzs::db::protocol::tdap::client::max::clone;
 %rename(__clone) bzs::db::protocol::tdap::client::min::clone;
 %rename(__clone) bzs::db::protocol::tdap::client::sum::clone;
+%rename(getFieldName) bzs::db::protocol::tdap::client::fieldNames::operator[] (int index) const;
 
 // * bzs/db/protocol/tdap/client/nsDatabase.h *
 %rename(__clone) bzs::db::protocol::tdap::client::nsdatabase::clone;
+
+// * bzs/db/protocol/tdap/client/pooledDatabaseManager.h *
+%rename(c_use) bzs::db::protocol::tdap::client::pooledDbManager::use(const connectParams* param = NULL);
 
 // * bzs/db/protocol/tdap/client/recordset.h *
 %rename(__clone) bzs::db::protocol::tdap::client::recordset::clone;
 %ignore bzs::db::protocol::tdap::client::recordset::first;
 %ignore bzs::db::protocol::tdap::client::recordset::last;
+%rename(getRecord) bzs::db::protocol::tdap::client::recordset::operator[] (size_t index) const;
 
 // * bzs/db/protocol/tdap/client/table.h *
 %ignore bzs::db::protocol::tdap::client::table::setFV(short, float); // use double
@@ -186,6 +212,9 @@ typedef char  _TCHAR;
 };
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(short, uint_td&);
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(const _TCHAR *, uint_td&);
+
+// * bzs/db/protocol/tdap/client/trdboostapi.h *
+%rename(c_use) bzs::db::protocol::tdap::client::idatabaseManager::use(const connectParams* param = NULL);
 
 
 /* ===============================================

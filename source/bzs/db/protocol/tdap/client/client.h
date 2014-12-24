@@ -52,24 +52,24 @@ namespace client
 class client;
 void setClientThread(client* v);
 
+/* client class 
+This instance is created for each thread.
+*/
 class client
 {
-
     mutex m_mutex;
     request m_req;
     posblk m_tmpPbk;
     ushort_td m_op;
     ushort_td m_preResult;
-    int m_charsetIndexServer;
-
     std::string m_sql;
     std::string m_serverCharData;
     std::string m_serverCharData2;
-
+    blobBuffer m_blobBuffer;
     uint_td m_tmplen;
     bool m_logout;
-    blobBuffer m_blobBuffer;
     bool m_disconnected;
+    bool m_connecting;
 
     std::vector<char> m_sendbuf;
 
@@ -78,16 +78,17 @@ class client
     inline void setCon(bzs::netsvc::client::connection* con)
     {
         m_req.cid->con = con;
-    };
+    }
 
     inline void disconnect()
     {
         if (!con())
             m_req.result = 1;
         else
+        {
             m_disconnected = m_cons->disconnect(con());
-        if (m_req.result == 0)
             setCon(NULL);
+        }
     }
 
     std::string getHostName(const char* uri)
@@ -123,15 +124,26 @@ class client
                                      std::string& src);
 
 public:
-    client() : m_charsetIndexServer(-1), m_disconnected(true) {}
+    client() : m_disconnected(true), m_connecting(false) {}
 
     void cleanup()
     {
+        m_connecting = false;
+/* When in win32, delete this object auto maticaly by dllmain function 
+   at reason = DLL_THREAD_DETACH.
+   But in LINUX does not have that mechanism.
+   Each dissconnect delete this object.
+
+*/
+
+#ifndef _WIN32
+        // delete this. Do not change member variables after this line.
         if (m_disconnected)
             setClientThread(NULL);
+#endif
     }
 
-    request& req() { return m_req; }
+    inline request& req() { return m_req; }
 
     inline void setParam(ushort_td op, posblk* pbk, void_td* data,
                          uint_td* datalen, void_td* keybuf, keylen_td keylen,
@@ -170,12 +182,16 @@ public:
     {
         if (!m_req.cid->con)
         {
+           
             std::string host = getHostName((const char*)m_req.keybuf);
             if (host == "")
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
             bzs::netsvc::client::connection* c = m_cons->connect(host);
             if (c)
+            {
                 setCon(c);
+                m_connecting = true;
+            }
             else
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
         }
@@ -192,15 +208,16 @@ public:
         {
             m_req.paramMask &= ~P_MASK_POSBLK;
             std::string name = getTableName((const char*)m_req.keybuf);
+            int charsetIndexServer =  getServerCharsetIndex();
             if ((m_req.keyNum == 1) || (m_req.keyNum == 2)) // make by tabledef
             {
                 m_sql = sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
-                                       m_charsetIndexServer);
+                                       charsetIndexServer);
                 m_req.keyNum -= 2; // 1= exists check 2 = no exists check
             }
             else
                 m_sql = sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,
-                                       m_charsetIndexServer);
+                                       charsetIndexServer);
             m_req.data = (ushort_td*)m_sql.c_str();
             m_tmplen = (uint_td)(m_sql.size() + 1);
             m_req.datalen = &m_tmplen;
@@ -208,9 +225,9 @@ public:
         else if ((m_req.keyNum == CR_SUBOP_SWAPNAME) ||
                  (m_req.keyNum == CR_SUBOP_RENAME))
         {
-            readServerCharsetIndex();
+            int charsetIndexServer =  getServerCharsetIndex();
             m_sql = (char*)m_req.data;
-            addSecondCharsetData(mysql::codePage(m_charsetIndexServer), m_sql);
+            addSecondCharsetData(mysql::codePage(charsetIndexServer), m_sql);
             m_req.data = (ushort_td*)m_sql.c_str();
             m_tmplen = (uint_td)(m_sql.size() + 1);
             m_req.datalen = &m_tmplen;
@@ -234,7 +251,7 @@ public:
                 if (c)
                 {
                     setCon(c); // if error throw exception
-                    if (readServerCharsetIndex() == false)
+                    if (getServerCharsetIndex() == -1)
                         m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
                     else
                         buildDualChasetKeybuf();
@@ -257,27 +274,38 @@ public:
     {
         if (result() == 0)
         {
-            if (!con())
+            bzs::netsvc::client::connection* c = con();
+            if (!c)
                 m_preResult = ERROR_TD_NOT_CONNECTED;
             else
             {
-                char* p = con()->sendBuffer(m_req.sendLenEstimate());
+                char* p = c->sendBuffer(m_req.sendLenEstimate());
                 unsigned int size = m_req.serialize(p);
                 short stat = 0;
                 if ((m_req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer.blobs())
                     size = m_req.serializeBlobBody(
-                        &m_blobBuffer, p, size, con()->sendBufferSize(),
-                        con()->optionalBuffers(), stat);
+                        &m_blobBuffer, p, size, c->sendBufferSize(),
+                        c->optionalBuffers(), stat);
                 if (stat == 0)
                 {
-                    if (m_req.paramMask & P_MASK_DATALEN)
-                        con()->setReadBufferSizeIf(*m_req.datalen);
-                    p = con()->asyncWriteRead(size);
-                    m_req.parse(p, con()->datalen(), con()->rows());
+                    bool ex =  (m_req.paramMask & P_MASK_EX_SENDLEN) != 0;
+                    if (c->queryFunction(CONNECTION_FUNCTION_DIRECT_READ) && ex)
+                    {
+                        c->setDirectReadHandler(&m_req);
+                        p = c->asyncWriteRead(size);
+                        c->setDirectReadHandler(NULL);
+                    }else
+                    {
+                        if (m_req.paramMask & P_MASK_DATALEN)
+                            c->setReadBufferSizeIf(*m_req.datalen);
+                        p = c->asyncWriteRead(size);
+                        m_req.parse(p, ex);
+                    }
+                      
                 }
                 else
                     m_req.result = stat;
-                if (m_logout)
+                if (m_logout || (m_connecting && m_req.result))
                     disconnect();
                 m_preResult = m_req.result;
             }
@@ -289,7 +317,6 @@ public:
     {
         *data = m_req.blobHeader;
         return *data ? 0 : 1;
-        ;
     }
 
     inline ushort_td addBlob(const blob* data, bool endRow)
@@ -306,7 +333,7 @@ public:
             m_blobBuffer.addBlob(*data);
         return 0;
     }
-    bool readServerCharsetIndex();
+    int getServerCharsetIndex();
 
     bool buildDualChasetKeybuf();
 };

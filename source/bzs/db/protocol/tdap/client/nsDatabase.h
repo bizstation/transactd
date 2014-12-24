@@ -45,10 +45,12 @@ namespace client
 class dbdef;
 class nstable;
 
+/** @cond INTERNAL */
 DLLLIB void setBtrvEntryPoint(BTRCALLID_PTR p);
 DLLLIB BTRCALLID_PTR getBtrvEntryPoint();
 DLLLIB void setTrnsctdEntryPoint(BTRCALLID_PTR p);
 DLLLIB BTRCALLID_PTR getTrnsctdEntryPoint();
+/** @endcond */
 
 class DLLLIB nsdatabase
 {
@@ -101,12 +103,12 @@ public:
     virtual void dropTable(const _TCHAR* uri);
     void rename(const _TCHAR* oldUri, const _TCHAR* newUri);
     void swapTablename(const _TCHAR* uri1, const _TCHAR* uri2);
-    void beginTrn(short bias = LOCK_SINGLE_NOWAIT + PARALLEL_TRN +
+    void beginTrn(short bias = SINGLELOCK_READ_COMMITED +
                                NOWAIT_WRITE); // NoWit SingleLock
     // 平行トランザクション
     void endTrn();
     void abortTrn();
-    void beginSnapshot();
+    void beginSnapshot(short bias = CONSISTENT_READ);
     void endSnapshot();
     short_td tdapErr(HWND hWnd, _TCHAR* retbuf = NULL);
     bool useLongFilename();

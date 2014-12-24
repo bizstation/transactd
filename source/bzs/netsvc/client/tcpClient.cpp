@@ -16,7 +16,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-
 #include "tcpClient.h"
 #include <bzs/env/crosscompile.h>
 #if (!defined(_WIN32))
@@ -26,6 +25,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 #endif
 #endif
+
 #pragma package(smart_init)
 
 using namespace boost;
@@ -41,6 +41,12 @@ namespace client
 
 char connections::port[PORTNUMBUF_SIZE] = { "8610" };
 bool connections::m_usePipedLocal = true;
+#ifdef _WIN32
+short connections::timeout = 3000;
+#else
+short connections::timeout = 3;
+#endif
+
 
 connections::connections(const char* pipeName) : m_pipeName(pipeName)
 {
@@ -57,6 +63,9 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName)
         GetPrivateProfileString("transctd_client", "port", "8610", tmp, 30,
                                 buf);
         strcpy_s(port, PORTNUMBUF_SIZE, tmp);
+        GetPrivateProfileString("transctd_client", "timeout", "3000", tmp, 30,
+                                buf);
+        timeout = atol(tmp);
     }
 #else // NOT _WIN32
 #if (BOOST_VERSION > 104900)
@@ -77,6 +86,11 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName)
             if (p == "")
                 p = "8610";
             strcpy_s(port, PORTNUMBUF_SIZE, p.c_str());
+
+            p = pt.get<std::string>("transctd_client.timeout");
+            timeout = atol(p.c_str())/1000;
+            if (timeout == 0)
+                timeout = 3;
         }
         catch (...)
         {

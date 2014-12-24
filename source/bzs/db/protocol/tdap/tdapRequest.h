@@ -43,6 +43,7 @@ namespace protocol
 {
 namespace tdap
 {
+namespace client {class table;}
 
 #define P_MASK_OP 0
 #define P_MASK_POSBLK 1
@@ -75,22 +76,20 @@ namespace tdap
     P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN | P_MASK_KEYBUF
 #define P_MASK_INS_AUTOINC P_MASK_MOVPOS
 
-struct req1
-{
-    ushort_td op;
-    void_td* keybuf;
-    uchar_td keylen;
-    short_td keyNum;
-
-    void write(std::ostream& ost);
-};
-
 #pragma pack(push, 1)
 pragma_pack1;
 
-#define POSBLK_SIZE 4
-#define CLIENTID_SIZE 2
-#define PARAMMASK_SIZE 2
+
+#define CLIENTID_SIZE                   2
+#define PARAMMASK_SIZE                  2
+#define TD_POSBLK_TRANSMIT_SIZE         4
+
+
+/** tdap bosblk
+*/
+
+/* Dynamic data buffer alloc for client */
+typedef void*(__STDCALL* DDBA_PTR)(client::table* tb, uint_td size);
 
 /** tdap version info struct
  */
@@ -106,7 +105,9 @@ struct posblk
 {
     posblk() { memset(this, 0, sizeof(posblk)); }
 
-    int handle;
+    unsigned int handle;
+    client::table* tb;
+    DDBA_PTR allocFunc;
 };
 
 struct clientID

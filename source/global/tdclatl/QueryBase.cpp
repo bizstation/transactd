@@ -20,9 +20,10 @@
 #include "QueryBase.h"
 #include "Table.h"
 
-STDMETHODIMP CQueryBase::Reset(void)
+STDMETHODIMP CQueryBase::Reset(IQueryBase** retVal)
 {
     m_qb.reset();
+    setResult(retVal);
     return S_OK;
 }
 

@@ -51,7 +51,7 @@ struct nstimpl
     nstimpl()
         : refCount(1), bulkIns(NULL), mode(0), shared(false), isOpen(false)
     {
-        posblk[0] = 0x00;
+        memset(posblk, 0 ,POS_BLOCK_SIZE);
     }
     int refCount;
     bulkInsert* bulkIns;
@@ -121,8 +121,11 @@ _TCHAR* nstable::getErrorMessage(int errorCode, _TCHAR* buf, size_t size)
         KyeNum
         - -1 = Unlock the record that specified by bm in multi records.
         - -2 = Unlock all records
-        - Å{ = Unlock single record.
-*/
+        - Å{ = Unlock single record. 
+        (Trasnactd : in-snapshot current record.  Single locked somewhere one record
+                   : bm and keynumber are ingored.
+        )
+ */
 void nstable::unlock(bookmark_td bm)
 {
     void* db = m_pdata;

@@ -16,6 +16,13 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
+#ifdef _MSC_VER
+#ifdef _DEBUG
+#define _CRTDBG_MAP_ALLOC
+#include <stdlib.h>
+#include <crtdbg.h>
+#endif // _DEBUG
+#endif // _MSC_VER
 #include <bzs/db/protocol/tdap/client/activeTable.h>
 #include <bzs/rtl/benchmark.h>
 #include <bzs/example/queryData.h>
@@ -63,33 +70,37 @@ bool btest(recordset* rsp, activeTable* atup, activeTable* atgp,
     activeTable& ate = *atep;
     recordset& rs = *rsp;
     query q;
+    q.select(_T("id"), _T("name"), _T("group"))
+                .where(_T("id"), _T("<="), _T("?"));
+    atu.alias(fd_name, _T("name"));
+    pq_handle stmt = atu.prepare(q, true);
+    if (!stmt) return false;
+
+    q.reset().select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany);
+    pq_handle stmt2 = ate.prepare(q, true);
+    if (!stmt2) return false;
+
+    atg.alias(_T("name"), _T("group_name"));
+    q.reset().select(_T("group_name"));
+    pq_handle stmt3 = atg.prepare(q, true);            
+    if (!stmt3) return false;
 
     for (int i = 0; i < n; ++i)
     {
         rs.clear();
         if (kind & 1)
         {
-            q.reset();
-            atu.alias(fd_name, _T("name"));
-
-            q.select(_T("id"), _T("name"), _T("group"))
-                .where(_T("id"), _T("<="), i + 15000);
-            atu.index(0).keyValue(i + 1).read(rs, q);
-
+            supplyValue(stmt, 0, i + 15000);
+            atu.index(0).keyValue(i + 1).read(rs, stmt);
             // Join extention::comment
             if (kind & 2)
             {
-                q.reset();
-                ate.index(0).join(rs, q.select(_T("comment")).optimize(
-                                          queryBase::joinHasOneOrHasMany),
-                                  _T("id"));
+                ate.index(0).join(rs, stmt2, _T("id"));
             }
             if (kind & 4)
             {
                 // Join group::name
-                q.reset();
-                atg.alias(_T("name"), _T("group_name"));
-                atg.index(0).join(rs, q.select(_T("group_name")), _T("group"));
+                atg.index(0).join(rs, stmt3, _T("group"));
             }
         }
         if (kind & 8)
@@ -110,6 +121,7 @@ int _tmain(int argc, _TCHAR* argv[])
     database_ptr db = createDatabaseObject();
     try
     {
+        {
         const _TCHAR* host = _T("localhost");
         int kind = 15;
         int n = 100;
@@ -134,6 +146,7 @@ int _tmain(int argc, _TCHAR* argv[])
             std::tcout << "The query data build error." << std::endl;
             return 1;
         }
+
         activeTable atu(db, _T("user"));
         activeTable atg(db, _T("groups"));
         activeTable ate(db, _T("extention"));
@@ -143,7 +156,11 @@ int _tmain(int argc, _TCHAR* argv[])
         bzs::rtl::benchmark bm;
         bm.report(boost::bind(btest, &rs, &atu, &atg, &ate, kind, n),
                   "exec time ");
-
+        }
+        db.reset();
+#ifdef _MSC_VER
+        _CrtDumpMemoryLeaks();
+#endif
         return 0;
     }
 

@@ -32,12 +32,64 @@ namespace tdap
 namespace client
 {
 
+/* For php use */
+class preparedQuery
+{
+    pq_handle m_filter;
+    int m_index;
+public:
+    preparedQuery(pq_handle filter) : m_filter(filter),m_index(0){}
+    
+    inline bool supplyValue(int index, const _TCHAR* v)
+    {
+        return client::supplyValue(m_filter, index, v);
+    }
+    
+    inline bool supplyValue(int index, __int64 v)
+    {
+        return client::supplyValue(m_filter, index, v);
+    }
+
+    inline bool supplyValue(int index, double v)
+    {
+        return client::supplyValue(m_filter, index, v);
+    }
+
+    inline bool addValue(const _TCHAR* v)
+    {
+        return client::supplyValue(m_filter, m_index++, v);
+    }
+    
+    inline bool addValue(__int64 v)
+    {
+        return client::supplyValue(m_filter, m_index++, v);
+    }
+
+    inline bool addValue(double v)
+    {
+        return client::supplyValue(m_filter, m_index++, v);
+    }
+
+    inline void resetAddIndex() { m_index = 0; }
+/** @cond INTERNAL */
+    inline pq_handle& getFilter() { return m_filter; };
+/** @endcond */
+};
+
+
 class DLLLIB activeTable
 {
     class activeTableImple* m_imple;
 
     activeTable(const activeTable& r);
     activeTable& operator=(const activeTable& r);
+
+    template<class T> 
+    inline void _supplyValue(pq_handle& q, int index, const T v)
+    {
+        if (!supplyValue(q, index, v))
+            THROW_BZS_ERROR_WITH_MSG(_T("Prepared query : supply value error."));
+    }
 
 public:
     explicit activeTable(idatabaseManager* mgr, const _TCHAR* tableName);
@@ -53,26 +105,143 @@ public:
 
     writableRecord& getWritableRecord();
 
-    activeTable& join(recordset& mdls, queryBase& q, const _TCHAR* name1,
+    activeTable& join(recordset& rs, queryBase& q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
-                      const _TCHAR* name8 = NULL, const _TCHAR* name9 = NULL,
-                      const _TCHAR* name10 = NULL, const _TCHAR* name11 = NULL);
+                      const _TCHAR* name8 = NULL);
 
     activeTable&
-    outerJoin(recordset& mdls, queryBase& q, const _TCHAR* name1,
+    outerJoin(recordset& rs, queryBase& q, const _TCHAR* name1,
               const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
               const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
               const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
-              const _TCHAR* name8 = NULL, const _TCHAR* name9 = NULL,
-              const _TCHAR* name10 = NULL, const _TCHAR* name11 = NULL);
+              const _TCHAR* name8 = NULL);
+
+    activeTable& join(recordset& rs, pq_handle& q, const _TCHAR* name1,
+                      const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
+                      const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
+                      const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
+                      const _TCHAR* name8 = NULL);
+
+    activeTable&
+    outerJoin(recordset& rs, pq_handle& q, const _TCHAR* name1,
+              const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
+              const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
+              const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
+              const _TCHAR* name8 = NULL);
 
     activeTable& index(int v);
     table_ptr table() const;
     activeTable& option(int v);
-    activeTable& read(recordset& mdls, queryBase& q);
-    activeTable& read(recordset& mdls, queryBase& q, validationFunc func);
+    pq_handle prepare(queryBase& q, bool serverPrepare = false);
+    activeTable& read(recordset& rs, queryBase& q);
+    activeTable& read(recordset& rs, queryBase& q, validationFunc func);
+    activeTable& read(recordset& rs, pq_handle& q);
+    activeTable& read(recordset& rs, pq_handle& q, validationFunc func);
+
+    /** @cond INTERNAL */
+    template<class T0>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0)
+    {
+        _supplyValue(q, 0, v0);
+        read(rs, q);
+        return *this;
+    }
+
+    template<class T0, class T1>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1)
+    {
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        read(rs, q);
+        return *this;
+    }
+
+    template<class T0, class T1, class T2>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2)
+    {
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        read(rs, q);
+        return *this;
+    }
+
+    template<class T0, class T1, class T2, class T3>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3)
+    {
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
+        read(rs, q);
+        return *this;
+    }
+
+    template<class T0, class T1, class T2, class T3, class T4>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4)
+    {
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
+        _supplyValue(q, 4, v4);
+        read(rs, q);
+        return *this;
+    }
+
+    template<class T0, class T1, class T2, class T3, class T4, class T5>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4, const T5 v5)
+    {
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
+        _supplyValue(q, 4, v4);
+        _supplyValue(q, 5, v5);
+        read(rs, q);
+        return *this;
+    }
+
+    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                        const T6 v6)
+    {
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
+        _supplyValue(q, 4, v4);
+        _supplyValue(q, 5, v5);
+        _supplyValue(q, 6, v6);
+        read(rs, q);
+        return *this;
+    }
+
+    template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+                class T7>
+    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+                        const T2 v2, const T3 v3, const T4 v4, const T5 v5,
+                        const T6 v6, const T7 v7)
+    {
+        _supplyValue(q, 0, v0);
+        _supplyValue(q, 1, v1);
+        _supplyValue(q, 2, v2);
+        _supplyValue(q, 3, v3);
+        _supplyValue(q, 4, v4);
+        _supplyValue(q, 5, v5);
+        _supplyValue(q, 6, v6);
+        _supplyValue(q, 7, v7);
+        read(rs, q);
+        return *this;
+    }
+    /** @endcond */
 
     /** @cond INTERNAL */
 

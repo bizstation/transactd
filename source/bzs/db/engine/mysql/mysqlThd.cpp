@@ -92,8 +92,19 @@ void endThread()
     setStackaddr(0);
 }
 
+void waitForServerStart()
+{
+    mysql_mutex_lock(&LOCK_server_started);
+    while (!mysqld_server_started)
+        mysql_cond_wait(&COND_server_started, &LOCK_server_started);
+    mysql_mutex_unlock(&LOCK_server_started);
+}
+
 THD* buildTHD()
 {
+    if (!mysqld_server_started)
+        waitForServerStart();
+
     THD* thd = new THD();
     mysql_mutex_lock(&LOCK_thread_count);
     thd->variables.pseudo_thread_id = thread_id++;

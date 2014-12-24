@@ -57,14 +57,6 @@ message(STATUS "  TRANSACTD_PHP_LIBRARY_PATH ${TRANSACTD_PHP_LIBRARY_PATH}")
 
 
 # ==========================================================
-# version info
-# ==========================================================
-transactd_read_version("${TRANSACTD_ROOT}")
-transactd_read_build_number("${TRANSACTD_ROOT}")
-set(TDVER_PHP_BUILD "${TRANSACTD_BUILD_NUMBER}")
-
-
-# ==========================================================
 # read PHP version from header
 # ==========================================================
 file(TO_CMAKE_PATH "${TRANSACTD_PHP_SOURCE_ROOT}/main/php_version.h"
@@ -102,36 +94,11 @@ message(STATUS "TRANSACTD_PHP_HAVE_YIELD : [${TRANSACTD_PHP_HAVE_YIELD}]")
 
 
 # ==========================================================
-# add custom command for generate swig wrapper
-# ==========================================================
-set(PHP_SWIG_WRAPPER_CPP "${CMAKE_CURRENT_BINARY_DIR}/tdclphp_wrap.cpp")
-file(TO_NATIVE_PATH "${TRANSACTD_ROOT}/build/swig/tdcl.i" SWIG_INTERFACE_FILE)
-file(TO_NATIVE_PATH "${PHP_SWIG_WRAPPER_CPP}"             SWIG_NATIVE_OUTFILE)
-file(TO_NATIVE_PATH "${TRANSACTD_ROOT}"                   SWIG_INC_PATH1)
-file(TO_NATIVE_PATH "${TRANSACTD_ROOT}/source"            SWIG_INC_PATH2)
-set(SWIG_ADDITONAL_OPTIONS "")
-# configure generate command file
-if(WIN32)
-  set(SWIG_GEN_CMD_WIN "${CMAKE_CURRENT_BINARY_DIR}/generate.cmd")
-  configure_file("${TRANSACTD_ROOT}/build/swig/php/generate.cmd.in" "${SWIG_GEN_CMD_WIN}" @ONLY)
-endif()
-set(SWIG_GEN_CMD "${CMAKE_CURRENT_BINARY_DIR}/generate.cmake")
-configure_file("${TRANSACTD_ROOT}/build/swig/php/generate.cmake.in" "${SWIG_GEN_CMD}" @ONLY)
-# add generate command to build time
-add_custom_command (
-  OUTPUT  "${PHP_SWIG_WRAPPER_CPP}"
-  COMMAND ${CMAKE_COMMAND} -P ${SWIG_GEN_CMD}
-  COMMENT "Generating tdclphp_wrap.cpp"
-  DEPENDS "${TRANSACTD_ROOT}/build/swig/tdcl.i"
-          "${TRANSACTD_ROOT}/build/swig/php/php.swg")
-
-
-# ==========================================================
 # add swig wrapper source file
 # ==========================================================
 set(${this_target}_SOURCE_FILES
   ${${this_target}_SOURCE_FILES}
-  ${PHP_SWIG_WRAPPER_CPP}
+  ${TRANSACTD_ROOT}/build/swig/php/tdclphp_wrap.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connectionPool.cpp
   ${TRANSACTD_ROOT}/source/bzs/rtl/benchmark.cpp
 )
@@ -152,19 +119,11 @@ include_directories(${TRANSACTD_ROOT}
 
 
 # ==========================================================
-# add resource file (for Windows Visual Studio)
+# read and add resource file
 # ==========================================================
+set(${this_target}_RC_FILE "${TRANSACTD_ROOT}/build/tdclphp/tdclphp.rc")
+transactd_read_rc("${${this_target}_RC_FILE}")
 if(WIN32)
-  transactd_ver_info_lic()
-  set(${this_target}_RC_FILE "${CMAKE_CURRENT_BINARY_DIR}/tdclphp.rc")
-  transactd_generate_rc_file(
-    TRANSACTD_ROOT "${TRANSACTD_ROOT}"
-    OUTFILE "${${this_target}_RC_FILE}"
-    F_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TDVER_PHP_BUILD}"
-    P_VER   "${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE}.${TDVER_PHP_BUILD}"
-    P_NAME  "Transactd Client ${TRANSACTD_VER_POSTFIX}"
-    F_DESC  "Transactd PHP client"
-  )
   transactd_add_rc_file()
 endif()
 
@@ -190,7 +149,7 @@ transactd_set_MTMD("MD")
 # Add compile definitions
 # ==========================================================
 set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-  SWIGPHP SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB)
+  SWIG_BUILDING USE_DBM_CONNECTION_POOL BOOST_ALL_NO_LIB)
 bz_get_compiler_bitness()
 if(MSVC90)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
@@ -219,6 +178,8 @@ if(MSVC)
       _USE_32BIT_TIME_T)
   endif()
 else()
+  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
+    _REENTRANT)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -251,8 +212,8 @@ if(NOT WIN32)
 endif()
 if(UNIX AND NOT APPLE)
   set_target_properties(${this_target} PROPERTIES
-    SOVERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}
-    VERSION ${TDVER_CPP_INTERFACE_VER_MAJOR}.${TDVER_CPP_INTERFACE_VER_MINOR}.${TDVER_CPP_INTERFACE_VER_RELEASE})
+    SOVERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}
+    VERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TD_RC_VER_RELEASE})
 endif()
 
 

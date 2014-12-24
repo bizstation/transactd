@@ -52,6 +52,7 @@ public:
         m_blobs.clear();
         m_bh.fieldCount = 0;
         m_bh.rows = 0;
+        m_bh.dataSize = 0;
         m_data.clear();
         m_datasize = 0;
         m_blobCount = 0;
@@ -85,11 +86,15 @@ public:
         p += 2;
         m_datasize = (unsigned int)(p - &m_data[0]);
         ++m_blobCount;
+        m_bh.dataSize += b.bf.size;
+
     }
 
+    //For client
     void addBlob(const blob& b)
     {
         m_blobs.push_back(b);
+        m_bh.dataSize += b.bf.size;
         ++m_blobCount;
     }
 

@@ -76,7 +76,7 @@ int benchmark::stop()
 #ifdef BOOST_HIGH_RESOL_TIMER_ENABLE
     boost_timer::time_point p = boost_timer::now();
     boost::chrono::nanoseconds ns = p - m_start;
-                        return (int)(ns.count()/1000000;
+                        return (int)(ns.count()/1000000);
 #else
     return (int)(t.elapsed() * 1000);
 #endif
@@ -145,7 +145,7 @@ int benchmarkMt::end()
 #ifdef BOOST_HIGH_RESOL_TIMER_ENABLE
     boost_timer::time_point p = boost_timer::now();
     boost::chrono::nanoseconds ns = p - m_start;
-                        return (int)(ns.count()/1000;
+                        return (int)(ns.count()/1000);
 #else
     return (int)(t.elapsed() * 1000000);
 #endif

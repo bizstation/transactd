@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_TRDBOOSTAPI_H
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_TRDBOOSTAPI_H
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013 2014 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -22,7 +22,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
 #include <iterator>
-
 #include <stdio.h>
 
 #if defined(__GNUC__)
@@ -78,8 +77,11 @@ public:
                          const _TCHAR* dbname, const _TCHAR* schemaTable)
         : m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
     {
-        _stprintf_s(m_buf, MAX_PATH, _T("%s://%s/%s?dbfile=%s.bdf"), protocol,
-                    hostOrIp, dbname, schemaTable);
+        const _TCHAR* ext = _T(".bdf");
+        if (_tcscmp(schemaTable, TRANSACTD_SCHEMANAME)==0)
+            ext = _T("");
+        _stprintf_s(m_buf, MAX_PATH, _T("%s://%s/%s?dbfile=%s%s"), protocol,
+                    hostOrIp, dbname, schemaTable, ext);
     }
     inline explicit connectParams(const _TCHAR* uri)
         : m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
@@ -92,11 +94,14 @@ public:
     {
         if (m_type != v)
         {
-            m_buf[_tcslen(m_buf) - 3] = 0x00;
-            if (v == TYPE_SCHEMA_BDF)
-                _tcscat_s(m_buf, MAX_PATH, _T("bdf"));
-            else
-                _tcscat_s(m_buf, MAX_PATH, _T("ddf"));
+            if ((_tcslen(m_buf) > 3) && m_buf[_tcslen(m_buf) - 3] == _T('.'))
+            {
+                m_buf[_tcslen(m_buf) - 3] = 0x00;
+                if (v == TYPE_SCHEMA_BDF)
+                    _tcscat_s(m_buf, MAX_PATH, _T("bdf"));
+                else
+                    _tcscat_s(m_buf, MAX_PATH, _T("ddf"));
+            }
         }
         m_type = v;
     }
@@ -182,7 +187,7 @@ public:
     virtual void endTrn() = 0;
     virtual void abortTrn() = 0;
     virtual int enableTrn() = 0;
-    virtual void beginSnapshot() = 0;
+    virtual void beginSnapshot(short bias = CONSISTENT_READ) = 0;
     virtual void endSnapshot() = 0;
     virtual const _TCHAR* uri() const = 0;
     virtual char_td mode() const = 0;
@@ -198,14 +203,17 @@ class tableIterator
 
     table& m_tb;
     fields m_fds;
+    ushort_td m_lockBias;
 
 public:
-    inline tableIterator(table& tb) : m_tb(tb), m_fds(tb)
+    inline tableIterator(table& tb, ushort_td lockBias = 0) : m_tb(tb), m_fds(tb),m_lockBias(lockBias)
     {
         readStatusCheck(tb, _T("tableIterator"));
     }
 
     table& tb() const { return m_tb; };
+
+    void setLockBias(ushort_td v) { m_lockBias = v; }
 
     inline fields& operator*() { return m_fds; }
 
@@ -213,13 +221,13 @@ public:
 
     inline tableIterator& operator++()
     {
-        T::increment(m_tb);
+        T::increment(m_tb, m_lockBias);
         return *this;
     }
 
     inline tableIterator& operator--()
     {
-        T::decrement(m_tb);
+        T::decrement(m_tb, m_lockBias);
         return *this;
     }
 
@@ -304,57 +312,57 @@ typedef filterdIterator<indexRvIterator> filterdIndexRvIterator;
 typedef filterdIterator<stepRvIterator> filterdStepRvIterator;
 typedef filterdIterator<findRvIterator> filterdFindRvIterator;
 
-inline indexIterator readIndex(table_ptr tb, eIndexOpType op)
+inline indexIterator readIndex(table_ptr tb, eIndexOpType op, ushort_td lockBias = 0)
 {
 
     switch (op)
     {
     case eSeekEqual:
-        tb->seek();
+        tb->seek(lockBias);
         break;
     case eSeekFirst:
-        tb->seekFirst();
+        tb->seekFirst(lockBias);
         break;
     case eSeekGreaterOrEqual:
-        tb->seekGreater(true);
+        tb->seekGreater(true, lockBias);
         break;
     case eSeekGreater:
-        tb->seekGreater(false);
+        tb->seekGreater(false, lockBias);
         break;
     default:
         assert(0);
         readStatusCheck(*tb, _T("readIndex"));
     }
-    return indexIterator(*tb);
+    return indexIterator(*tb, lockBias);
 }
 
-inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op)
+inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op, ushort_td lockBias = 0)
 {
 
     switch (op)
     {
     case eSeekEqual:
-        tb->seek();
+        tb->seek(lockBias);
         break;
     case eSeekLast:
-        tb->seekLast();
+        tb->seekLast(lockBias);
         break;
     case eSeekLessThanOrEqual:
-        tb->seekLessThan(true);
+        tb->seekLessThan(true, lockBias);
         break;
     case eSeekLessThan:
-        tb->seekLessThan(false);
+        tb->seekLessThan(false, lockBias);
         break;
     default:
         assert(0);
         readStatusCheck(*tb, _T("readIndexRv"));
     }
-    return indexRvIterator(*tb);
+    return indexRvIterator(*tb, lockBias);
 }
 
 template <class T>
 inline indexIterator readIndex(table_ptr tb, eIndexOpType op, char_td keynum,
-                               T func)
+                               T func, ushort_td lockBias = 0)
 {
     tb->setKeyNum(keynum);
     if (&func)
@@ -362,12 +370,12 @@ inline indexIterator readIndex(table_ptr tb, eIndexOpType op, char_td keynum,
         fields fds(*tb);
         func(fds);
     }
-    return readIndex(tb, op);
+    return readIndex(tb, op, lockBias);
 }
 
 template <class T>
 inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op,
-                                   char_td keynum, T func)
+                                   char_td keynum, T func, ushort_td lockBias = 0)
 {
     tb->setKeyNum(keynum);
     if (&func)
@@ -375,7 +383,7 @@ inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op,
         fields fds(*tb);
         func(fds);
     }
-    return readIndexRv(tb, op);
+    return readIndexRv(tb, op, lockBias);
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
@@ -542,118 +550,143 @@ inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op,
 }
 /** @endcond */
 
-inline stepIterator readStep(table_ptr tb)
+inline stepIterator readStep(table_ptr tb, ushort_td lockBias = 0)
 {
-    tb->stepFirst();
-    return stepIterator(*tb);
+    tb->stepFirst(lockBias);
+    return stepIterator(*tb, lockBias);
 }
 
-inline stepRvIterator readStepRv(table_ptr tb)
+inline stepRvIterator readStepRv(table_ptr tb, ushort_td lockBias = 0)
 {
-    tb->stepLast();
-    return stepRvIterator(*tb);
+    tb->stepLast(lockBias);
+    return stepRvIterator(*tb, lockBias);
 }
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+
+inline pq_handle setQuery(table_ptr& tb, const queryBase& q, 
+                          bool serverPrepare = false) 
+{ 
+    pq_handle stmt =  tb->setQuery(&q, serverPrepare);
+    readStatusCheck(*tb, _T("setQuery"));
+    return stmt;
+}
+
+/** @cond INTERNAL */
+inline pq_handle setQuery(table_ptr& tb, const pq_handle& q) 
+{ 
+    tb->setPrepare(q); 
+    return q;
+}
+/** @endcond */
+
+inline pq_handle prepare(table_ptr& tb, const queryBase& q, bool serverPrepare=false)
+{
+    pq_handle stmt = tb->prepare(&q, serverPrepare);
+    readStatusCheck(*tb, _T("prepare"));
+    return stmt;
+}
+
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5, class T6,
           class T7>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,
                          const T4 kv4, const T5 kv5, const T6 kv6, const T7 kv7)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::set(
         tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
+
 /** @cond INTERNAL */
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,
                          const T4 kv4, const T5 kv5, const T6 kv6)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2,
                                                     kv3, kv4, kv5, kv6);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3, class T4, class T5>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,
                          const T4 kv4, const T5 kv5)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3,
                                                 kv4, kv5);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3, class T4>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2, class T3, class T4>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3,
                          const T4 kv4)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3,
                                             kv4);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2, class T3>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2, const T3 kv3)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1, class T2>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1, class T2>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1, const T2 kv2)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0, class T1>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0, class T1>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0, const T1 kv1)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 
-template <class T0>
-inline findIterator find(table_ptr tb, const char_td keynum, const queryBase& q,
+template <class Q, class T0>
+inline findIterator find(table_ptr tb, const char_td keynum, const Q& q,
                          const T0 kv0)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0>::set(tb, keynum, kv0);
     tb->find(table::findForword);
     return findIterator(*tb);
 }
 /** @endcond */
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5, class T6,
           class T7>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2, const T3 kv3, const T4 kv4,
                              const T5 kv5, const T6 kv6, const T7 kv7)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5, T6, T7>::set(
         tb, keynum, kv0, kv1, kv2, kv3, kv4, kv5, kv6, kv7);
     tb->find(table::findBackForword);
@@ -662,80 +695,80 @@ inline findRvIterator findRv(table_ptr tb, const char_td keynum,
 
 /** @cond INTERNAL */
 
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6>
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5, class T6>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2, const T3 kv3, const T4 kv4,
                              const T5 kv5, const T6 kv6)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5, T6>::set(tb, keynum, kv0, kv1, kv2,
                                                     kv3, kv4, kv5, kv6);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3, class T4, class T5>
+template <class Q, class T0, class T1, class T2, class T3, class T4, class T5>
 inline findRvIterator
-findRv(table_ptr tb, const char_td keynum, const queryBase& q, const T0 kv0,
+findRv(table_ptr tb, const char_td keynum, const Q& q, const T0 kv0,
        const T1 kv1, const T2 kv2, const T3 kv3, const T4 kv4, const T5 kv5)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4, T5>::set(tb, keynum, kv0, kv1, kv2, kv3,
                                                 kv4, kv5);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3, class T4>
+template <class Q, class T0, class T1, class T2, class T3, class T4>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2, const T3 kv3, const T4 kv4)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3, T4>::set(tb, keynum, kv0, kv1, kv2, kv3,
                                             kv4);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1, class T2, class T3>
+template <class Q, class T0, class T1, class T2, class T3>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2, const T3 kv3)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2, T3>::set(tb, keynum, kv0, kv1, kv2, kv3);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1, class T2>
+template <class Q, class T0, class T1, class T2>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1,
+                             const Q& q, const T0 kv0, const T1 kv1,
                              const T2 kv2)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1, T2>::set(tb, keynum, kv0, kv1, kv2);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0, class T1>
+template <class Q, class T0, class T1>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0, const T1 kv1)
+                             const Q& q, const T0 kv0, const T1 kv1)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0, T1>::set(tb, keynum, kv0, kv1);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
 }
 
-template <class T0>
+template <class Q, class T0>
 inline findRvIterator findRv(table_ptr tb, const char_td keynum,
-                             const queryBase& q, const T0 kv0)
+                             const Q& q, const T0 kv0)
 {
-    tb->setQuery(&q);
+    setQuery(tb, q); 
     keyValueSetter<T0>::set(tb, keynum, kv0);
     tb->find(table::findBackForword);
     return findRvIterator(*tb);
@@ -892,12 +925,25 @@ template <class Database_Ptr> inline void dropDatabase(Database_Ptr db)
 }
 
 template <class Database_Ptr>
-inline table_ptr openTable(Database_Ptr db, const _TCHAR* name)
+inline table_ptr openTable(Database_Ptr db, const _TCHAR* name, short mode = TD_OPEN_NORMAL)
 {
-    table_ptr p(db->openTable(name), releaseTable);
+    table_ptr p(db->openTable(name, mode), releaseTable);
     if (db->stat())
         nstable::throwError((std::_tstring(_T("Open table ")) + name).c_str(),
                             db->stat());
+    return p;
+}
+
+template <class Database_Ptr>
+inline table_ptr openTable(Database_Ptr db, short tableid, short mode = TD_OPEN_NORMAL)
+{
+    table_ptr p(db->openTable(tableid, mode), releaseTable);
+    if (db->stat())
+    {
+        _TCHAR buf[50];
+        _stprintf_s(buf, 50, _T("Open table id = %d"), tableid);
+        nstable::throwError(buf, db->stat());
+    }
     return p;
 }
 
@@ -1160,7 +1206,7 @@ template <class DB> class transaction
     short m_bias;
 
 public:
-    inline transaction(DB db, short bias = LOCK_SINGLE_NOWAIT + PARALLEL_TRN +
+    inline transaction(DB db, short bias = SINGLELOCK_READ_COMMITED +
                                            NOWAIT_WRITE)
         : m_db(db), m_bias(bias){};
     inline ~transaction()
@@ -1184,7 +1230,7 @@ template <class DB> class snapshot
     DB m_db;
 
 public:
-    snapshot(DB db) : m_db(db) { m_db->beginSnapshot(); }
+    snapshot(DB db, short bias = CONSISTENT_READ) : m_db(db) { m_db->beginSnapshot(bias); }
 
     ~snapshot() { m_db->endSnapshot(); }
 };

@@ -31,12 +31,12 @@ using namespace bzs::db::protocol::tdap;
 
 #define USER_STRING_TYPE ft_myvarchar
 #define GROUP_STRING_TYPE ft_myvarbinary
-
+#define BLOB_TYPE ft_myblob
 #else
 
 #define USER_STRING_TYPE ft_zstring
 #define GROUP_STRING_TYPE ft_zstring
-
+#define BLOB_TYPE ft_blob
 #endif
 
 const _TCHAR* name_field_str(_TCHAR* buf)
@@ -206,8 +206,17 @@ bool createUserExtTable(dbdef* def)
     fd = def->insertField(tableid, filedIndex);
     fd->setName(_T("comment"));
     fd->type = USER_STRING_TYPE;
-
     fd->setLenByCharnum(60);
+
+    ++filedIndex;
+    fd = def->insertField(tableid, filedIndex);
+    fd->setName(_T("blob"));
+    fd->type = BLOB_TYPE;
+#ifndef USE_PSQL_DATABASE
+    fd->len = 10;
+#else
+    fd->len = 16000;
+#endif
 
     char keyNum = 0;
     keydef* kd = def->insertKey(tableid, keyNum);
@@ -323,6 +332,8 @@ bool insertData(database_ptr db, int maxId)
         tbe->setFV((short)0, i);
         _stprintf_s(tmp, 256, _T("%d comment"), i);
         tbe->setFV(1, tmp);
+        _stprintf_s(tmp, 256, _T("%d blob"), i);
+        tbe->setFV(2, tmp);
         tbe->insert();
         if (tbe->stat() != 0)
             return showTableError(tbe, _T("extention insert"));
@@ -335,6 +346,24 @@ bool insertData(database_ptr db, int maxId)
     return true;
 }
 
+bool checkVersion(database_ptr db)
+{
+    dbdef* def = db->dbDef();
+    if (def)
+    {
+        tabledef* td = def->tableDefs(3);
+        if (td)
+        {
+            if (td->fieldCount == 3)
+            {
+                table_ptr tb = openTable(db, _T("extention"));
+                return (tb->recordCount(false) == 20000);
+            }
+        }
+    }
+    return false;
+}
+
 int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate,
                  int maxId)
 {
@@ -342,7 +371,7 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate,
     {
         if (db->open(param.uri(), TD_OPEN_NORMAL))
         {
-            if (foceCreate)
+            if (foceCreate || !checkVersion(db))
                 dropDatabase(db);
             else
                 return 0;

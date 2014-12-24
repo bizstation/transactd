@@ -3,7 +3,7 @@
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
 
 /* =================================================================
- Copyright (C) 20014 BizStation Corp All rights reserved.
+ Copyright (C) 2014 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@ namespace tdap
 {
 namespace client
 {
-
+/** @cond INTERNAL */
 class xaTransaction
 {
     std::vector<dbmanager_ptr> m_dbs;
@@ -47,14 +47,21 @@ public:
             int ref = m_dbs[i].use_count();
             m_dbs.erase(m_dbs.begin() + i);
             if (ref == 2)
-                releaseConnection(&cpool);
+                releaseConnection(&cpool);// Notify release
         }
     }
 
     void beginTrn(short bias)
     {
         for (size_t i = 0; i < m_dbs.size(); ++i)
+        {
             m_dbs[i]->beginTrn(bias);
+            if (m_dbs[i]->stat())
+            {
+                abortTrn();
+                nstable::throwError(m_dbs[i]->uri(), m_dbs[i]->stat());
+            }
+        }
     }
 
     void endTrn()
@@ -69,6 +76,7 @@ public:
             m_dbs[i]->abortTrn();
     }
 };
+/** @endcond */
 
 /*
 --------------------------------------
@@ -116,7 +124,6 @@ public:
     {
         m_db.reset();
         m_xa.unUse();
-        // releaseConnection(&cpool);
         m_inUse = false;
     }
 
@@ -144,7 +151,7 @@ public:
 
     inline int enableTrn() { return m_db->enableTrn(); }
 
-    inline void beginSnapshot() { m_db->beginSnapshot(); }
+    inline void beginSnapshot(short bias = CONSISTENT_READ) { m_db->beginSnapshot(bias); }
 
     inline void endSnapshot() { m_db->endSnapshot(); }
 
@@ -155,13 +162,17 @@ public:
     inline static void setMaxConnections(int maxWorkerNum)
     {
         cpool.setMaxConnections(maxWorkerNum);
-    };
-    inline static int maxConnections() { return cpool.maxConnections(); };
+    }
+
+    inline static int maxConnections() { return cpool.maxConnections(); }
+    
     inline static void reserve(size_t size, const connectParams& param)
     {
         cpool.reserve(size, param);
     }
-    // inline static bool reset(int waitSec=5){return cpool.reset(waitSec);}
+    
+    inline int usingCount() const { return cpool.usingCount(); }
+
 };
 
 } // namespace client

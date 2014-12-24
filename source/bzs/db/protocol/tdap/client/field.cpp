@@ -23,8 +23,6 @@
 #include <bzs/db/protocol/tdap/fieldComp.h>
 #include "stringConverter.h"
 #include <bzs/rtl/stringBuffers.h>
-#include <boost/shared_array.hpp>
-
 #ifdef BCB_32
 #pragma option push
 #pragma option -O1
@@ -33,6 +31,7 @@
 #else
 #include <boost/unordered_map.hpp>
 #endif
+#include <boost/shared_array.hpp>
 
 #pragma package(smart_init)
 
@@ -437,7 +436,6 @@ inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
 void* field::ptr() const
 {
     return m_ptr + m_fd->pos;
-    ;
 }
 
 void field::setFVA(const char* data)
@@ -705,7 +703,7 @@ void field::setFV(int data)
 {
     if (!m_ptr)
         return;
-    char buf[20];
+    char buf[50];
     double d;
     int v = data;
     switch (m_fd->type)
@@ -781,7 +779,7 @@ void field::setFV(int data)
             setFVA("");
         else
         {
-            _ltoa_s(data, buf, 20, 10);
+            _ltoa_s(data, buf, 50, 10);
             setFVA(buf);
         }
         break;
@@ -795,8 +793,8 @@ void field::setFV(int data)
             setFV(_T(""));
         else
         {
-            _TCHAR buf[30];
-            _ltot_s(data, buf, 30, 10);
+            _TCHAR buf[50];
+            _ltot_s(data, buf, 50, 10);
             setFV(buf);
         }
         break;
@@ -810,7 +808,7 @@ void field::setFV(double data)
 {
     if (!m_ptr)
         return;
-    char buf[20];
+    char buf[50];
     __int64 i64;
     switch (m_fd->type)
     {
@@ -884,8 +882,8 @@ void field::setFV(double data)
             setFV(_T(""));
         else
         {
-            _TCHAR buf[40];
-            _stprintf_s(buf, 40, _T("%f"), data);
+            _TCHAR buf[50];
+            _stprintf_s(buf, 50, _T("%f"), data);
             setFV(buf);
         }
         break;
@@ -1570,8 +1568,12 @@ void* field::getFVbin(uint_td& size) const
         int sizeByte = m_fd->len - 8;
         size = 0;
         memcpy(&size, (char*)m_ptr + m_fd->pos, sizeByte);
-        char** ptr = (char**)((char*)m_ptr + m_fd->pos + sizeByte);
-        return (void*)*ptr;
+        if (size)
+        {
+            char** ptr = (char**)((char*)m_ptr + m_fd->pos + sizeByte);
+            return (void*)*ptr;
+        }
+        return NULL;
     }
     case ft_lvar:
     {
@@ -1602,7 +1604,7 @@ double field::getFVDecimal() const
     buf[len - 1] = (unsigned char)(buf[len - 1] & 0xF0);
     for (i = 0; i < len; i++)
     {
-        sprintf_s(n, 50, "%02x", buf[i]);
+        sprintf_s(n, 10, "%02x", buf[i]);
         strcat(result, n);
     }
     i = (int)strlen(result);
@@ -1976,6 +1978,13 @@ bool field::isCompPartAndMakeValue()
             setFV(_T(""));
     }
     return ret;
+}
+
+void field::offsetBlobPtr(size_t offset)
+{
+    int size = m_fd->blobLenBytes();
+    char** p = (char**)((char*)m_ptr + size);
+    *p += offset; 
 }
 
 } // namespace client

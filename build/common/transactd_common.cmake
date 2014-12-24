@@ -31,7 +31,7 @@ endif()
 
 
 # ==========================================================
-#   make subdir, copy CMakeLists.txt and BUILDNUMBER.txt
+#   make subdir, copy CMakeLists.txt
 # ==========================================================
 if(NOT COMMAND transactd_copy_subdir)
 macro(transactd_copy_subdir TRANSACTD_ROOT srcname dstname)
@@ -41,34 +41,42 @@ macro(transactd_copy_subdir TRANSACTD_ROOT srcname dstname)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     ${TRANSACTD_ROOT}/build/${srcname}/CMakeLists.txt
     ${TRANSACTD_ROOT}/build/${dstname}/CMakeLists.txt)
-  if(WIN32 AND NOT EXISTS "${TRANSACTD_ROOT}/build/${dstname}/BUILDNUMBER.txt")
-    execute_process(COMMAND ${CMAKE_COMMAND} -E copy
-      ${TRANSACTD_ROOT}/build/${srcname}/BUILDNUMBER.txt
-      ${TRANSACTD_ROOT}/build/${dstname}/BUILDNUMBER.txt)
-  endif()
 endmacro()
 endif()
 
 
 # ==========================================================
-#   read build number if BUILDNUMBER.txt exists
+#   read version from rc file
 # ==========================================================
-if(NOT COMMAND transactd_read_build_number)
-macro(transactd_read_build_number TRANSACTD_ROOT)
-  if(WIN32)
-    set(${this_target}_BuildNumber_path "${TRANSACTD_ROOT}/build/${this_target}/BUILDNUMBER.txt")
-    if(EXISTS "${${this_target}_BuildNumber_path}")
-      file(STRINGS "${${this_target}_BuildNumber_path}" TRANSACTD_BUILD_NUMBER_PRE)
-      MATH(EXPR TRANSACTD_BUILD_NUMBER "${TRANSACTD_BUILD_NUMBER_PRE} + 1")
-      file(WRITE "${${this_target}_BuildNumber_path}" "${TRANSACTD_BUILD_NUMBER}")
-      message(STATUS "${this_target} increment build number : ${TRANSACTD_BUILD_NUMBER_PRE} -> ${TRANSACTD_BUILD_NUMBER}")
-    else()
-      set(TRANSACTD_BUILD_NUMBER 1)
-      message(STATUS "${this_target} BUILDNUMBER.txt not found so BuildNumber = ${TRANSACTD_BUILD_NUMBER}")
-    endif()
-  else()
-    set(TRANSACTD_BUILD_NUMBER 1)
+if(NOT COMMAND transactd_read_rc)
+macro(transactd_read_rc TD_RC_FILE)
+  if(NOT EXISTS "${TD_RC_FILE}")
+    message(SEND_ERROR "Can not find file ${TD_RC_FILE}")
   endif()
+  set(TD_RC_PATH "${TD_RC_FILE}")
+  if(WIN32 AND NOT MINGW)
+    set(TRANSACTD_VER_CMD_GREP "findstr")
+    file(TO_NATIVE_PATH "${TD_RC_PATH}" TD_RC_PATH)
+  else()
+    set(TRANSACTD_VER_CMD_GREP "grep")
+  endif()
+  # grep "FileVersion"
+  execute_process(
+    COMMAND ${TRANSACTD_VER_CMD_GREP} "FileVersion" "${TD_RC_PATH}"
+    OUTPUT_VARIABLE TD_VER_TMP_VAR
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  string(REGEX REPLACE "[^0-9\\.]" "" TD_VER_TMP_VAR "${TD_VER_TMP_VAR}")
+  string(REPLACE "." ";" TD_VER_TMP_VAR "${TD_VER_TMP_VAR}")
+  # parse to version numbers
+  list(LENGTH TD_VER_TMP_VAR TD_VER_TMP_VAR_LEN)
+  if(NOT ("${TD_VER_TMP_VAR_LEN}" STREQUAL "4"))
+    message(SEND_ERROR "Can not read FileVersion from ${TD_RC_FILE}. TD_VER_TMP_VAR_LEN is ${TD_VER_TMP_VAR_LEN}")
+  endif()
+  list (GET TD_VER_TMP_VAR 0 TD_RC_VER_MAJOR)
+  list (GET TD_VER_TMP_VAR 1 TD_RC_VER_MINOR)
+  list (GET TD_VER_TMP_VAR 2 TD_RC_VER_RELEASE)
+  list (GET TD_VER_TMP_VAR 3 TD_RC_VER_BUILD)
+  message(STATUS "${this_target} FileVersion ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TD_RC_VER_RELEASE}.${TD_RC_VER_BUILD}")
 endmacro()
 endif()
 

@@ -98,6 +98,7 @@ void connManager::getDatabaseList(const module* mod) const
 const connManager::records& connManager::getRecords(unsigned __int64 conid,
                                                     int dbid) const
 {
+    //Lock module count
     boost::mutex::scoped_lock lck(modulesMutex);
 
     if (conid == 0)
@@ -107,6 +108,7 @@ const connManager::records& connManager::getRecords(unsigned __int64 conid,
         const module* mod = getMod(conid);
         if (mod)
         {
+            //Lock module execute
             boost::try_mutex::scoped_try_lock m(mod->mutex(),
                                                 boost::try_to_lock_t());
             if (m.owns_lock())

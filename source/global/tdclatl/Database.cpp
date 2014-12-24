@@ -162,9 +162,9 @@ STDMETHODIMP CDatabase::get_NativeDatabase(__int64** Value)
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::BeginSnapshot()
+STDMETHODIMP CDatabase::BeginSnapshot(eStLockType bias)
 {
-    m_db->beginSnapshot();
+    m_db->beginSnapshot(bias);
     return S_OK;
 }
 

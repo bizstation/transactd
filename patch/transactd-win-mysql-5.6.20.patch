@@ -1,0 +1,51 @@
+--- sql/mysqld.h	2014-07-19 00:48:39.000000000 +0900
++++ sql/mysqld.h	2014-12-01 19:18:26.000000000 +0900
+@@ -177,7 +177,7 @@
+ extern const double log_10[309];
+ extern ulonglong keybuff_size;
+ extern ulonglong thd_startup_options;
+-extern ulong thread_id;
++extern MYSQL_PLUGIN_IMPORT ulong thread_id;
+ extern ulong binlog_cache_use, binlog_cache_disk_use;
+ extern ulong binlog_stmt_cache_use, binlog_stmt_cache_disk_use;
+ extern ulong aborted_threads,aborted_connects;
+@@ -275,7 +275,7 @@
+ extern struct my_option my_long_early_options[];
+ int handle_early_options();
+ void adjust_related_options(ulong *requested_open_files);
+-extern int mysqld_server_started;
++extern MYSQL_PLUGIN_IMPORT int mysqld_server_started;
+ extern "C" MYSQL_PLUGIN_IMPORT int orig_argc;
+ extern "C" MYSQL_PLUGIN_IMPORT char **orig_argv;
+ extern pthread_attr_t connection_attrib;
+@@ -587,8 +587,8 @@
+ #ifdef HAVE_OPENSSL
+ extern mysql_mutex_t LOCK_des_key_file;
+ #endif
+-extern mysql_mutex_t LOCK_server_started;
+-extern mysql_cond_t COND_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_cond_t COND_server_started;
+ extern mysql_rwlock_t LOCK_grant, LOCK_sys_init_connect, LOCK_sys_init_slave;
+ extern mysql_rwlock_t LOCK_system_variables_hash;
+ extern mysql_cond_t COND_manager;
+--- sql/sql_cache.h	2014-07-19 00:48:39.000000000 +0900
++++ sql/sql_cache.h	2014-08-04 16:26:38.000000000 +0900
+@@ -582,5 +582,5 @@
+ #define query_cache_is_cacheable_query(L) 0
+ #endif /*HAVE_QUERY_CACHE*/
+ 
+-extern Query_cache query_cache;
++extern MYSQL_PLUGIN_IMPORT Query_cache query_cache;
+ #endif
+--- sql/global_threads.h	2014-07-19 00:48:39.000000000 +0900
++++ sql/global_threads.h	2014-08-04 16:26:38.000000000 +0900
+@@ -22,7 +22,7 @@
+ 
+ class THD;
+ 
+-extern mysql_mutex_t LOCK_thread_count;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_thread_count;
+ extern mysql_mutex_t LOCK_thd_remove;
+ extern mysql_cond_t COND_thread_count;
+ 

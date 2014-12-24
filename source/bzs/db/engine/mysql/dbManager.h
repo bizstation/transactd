@@ -18,7 +18,7 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-
+#include <my_config.h>
 #include <boost/thread/mutex.hpp>
 #include <bzs/db/engine/mysql/database.h>
 
@@ -44,46 +44,10 @@ struct handle
     short cid;
 };
 
-class smartDbsReopen
-{
-    std::vector<boost::shared_ptr<database> >& m_dbs;
-
-public:
-    static std::string removeName;
-
-    smartDbsReopen(std::vector<boost::shared_ptr<database> >& dbs) : m_dbs(dbs)
-    {
-        for (size_t i = 0; i < m_dbs.size(); i++)
-        {
-            if (m_dbs[i])
-            {
-                m_dbs[i]->use();
-                m_dbs[i]->unUseTables(false);
-                m_dbs[i]->closeForReopen();
-            }
-        }
-    }
-
-    ~smartDbsReopen()
-    {
-        for (size_t i = 0; i < m_dbs.size(); i++)
-        {
-            if (m_dbs[i])
-            {
-                if (removeName != m_dbs[i]->name())
-                {
-                    m_dbs[i]->use();
-                    m_dbs[i]->reopen();
-                }
-            }
-        }
-    }
-};
-
-class dbManager;
 
 class dbManager
 {
+    // Lock for isSutdown(), called by another thread
     mutable boost::mutex m_mutex;
 
     int m_autoHandle;
@@ -101,7 +65,7 @@ protected:
     database* getDatabase(const char* dbname, short cid) const;
     database* getDatabaseCid(short cid) const;
     int getDatabaseID(short cid) const;
-    table* getTable(int handle, enum_sql_command cmd = SQLCOM_SELECT) const;
+    table* getTable(int handle, enum_sql_command cmd = SQLCOM_SELECT, engine::mysql::rowLockMode* lck=NULL) const;
     void checkNewHandle(int newHandle) const;
     int addHandle(int dbid, int tableid, int assignid = -1);
     database* useDataBase(int id) const;

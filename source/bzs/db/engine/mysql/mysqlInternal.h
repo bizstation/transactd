@@ -166,14 +166,14 @@ inline void cp_restore_globals(THD* thd)
     my_pthread_setspecific_ptr(THR_MALLOC, 0);
 }
 
-inline bool cp_is_write_lock(handler* file)
-{
-    return true;
-}
-
 inline void cp_thd_set_read_only(THD* thd)
 {
     ;
+}
+
+inline bool cp_thd_get_read_only(THD* thd)
+{
+    return false;
 }
 
 inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
@@ -209,14 +209,14 @@ inline void cp_restore_globals(THD* thd)
     thd->restore_globals();
 }
 
-inline bool cp_is_write_lock(handler* file)
-{
-    return (file->get_lock_type() == F_WRLCK);
-}
-
 inline void cp_thd_set_read_only(THD* thd)
 {
     thd->tx_read_only = (thd->variables.tx_read_only != 0);
+}
+
+inline bool cp_thd_get_read_only(THD* thd)
+{
+    return (thd->variables.tx_read_only != 0);
 }
 
 inline bool cp_open_table(THD* thd, TABLE_LIST* tables,

@@ -24,6 +24,7 @@
 #include <bzs/db/engine/mysql/errorMessage.h>
 #include <bzs/db/engine/mysql/mydebuglog.h>
 #include <bzs/netsvc/server/IAppModule.h> //lookup for result value
+#include <bzs/db/transactd/appModule.h>
 #include <bzs/rtl/stl_uty.h>
 #include <limits.h>
 #include <boost/algorithm/string.hpp>
@@ -52,6 +53,7 @@ namespace mysql
 
 static const char* TableNameTitle = "dbfile=";
 static const char* BdfNameTitle = ".bdf";
+boost::mutex g_mutex_opentable;
 
 class smartReadRecordsHandler
 {
@@ -389,17 +391,36 @@ inline void dbExecuter::doOpenTable(request& req)
     std::string dbname = getDatabaseName(req);
     if (dbname != "")
     {
-        database* db = getDatabase(dbname.c_str(), req.cid);
-        m_tb = db->openTable(
-            getTableName(req), req.keyNum,
-            getOwnerName(req)); // if error occured that throw exception
-        req.result = db->stat();
+        database* db;
+        {// Lock open table by another thread
+            boost::mutex::scoped_lock lck(g_mutex_opentable);
+            if (req.keyNum == TD_OPEN_EXCLUSIVE/* && isMetaDb(req)*/)
+            {
+                if (database::tableRef.count(dbname, getTableName(req)))
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_CANNOT_LOCK_TABLE,
+                                            "lockTable error.");
+            }
+            db = getDatabase(dbname.c_str(), req.cid);
+            m_tb = db->openTable(
+                getTableName(req), req.keyNum,
+                getOwnerName(req)); // if error occured that throw exception
+            req.result = db->stat();
+        }
+        
         if (m_tb)
         {
-            req.pbk->handle = addHandle(getDatabaseID(req.cid), m_tb->id());
-            m_tb = getTable(req.pbk->handle);
-            m_tb->setBlobBuffer(m_blobBuffer);
-            req.paramMask = P_MASK_POSBLK;
+            try
+            {
+                req.pbk->handle = addHandle(getDatabaseID(req.cid), m_tb->id());
+                m_tb = getTable(req.pbk->handle);
+                m_tb->setBlobBuffer(m_blobBuffer);
+                req.paramMask = P_MASK_POSBLK;
+            }
+            catch (bzs::rtl::exception& e)
+            {
+                m_tb->close();
+                throw e;
+            }
         }
     }
     else
@@ -423,10 +444,10 @@ inline void readAfter(request& req, table* tb, dbExecuter* dbm)
     req.result = dbm->errorCodeSht(tb->stat());
 }
 
-inline void dbExecuter::doSeekKey(request& req, int op)
+inline void dbExecuter::doSeekKey(request& req, int op, engine::mysql::rowLockMode* lck)
 {
     bool read = true;
-    m_tb = getTable(req.pbk->handle);
+    m_tb = getTable(req.pbk->handle, SQLCOM_SELECT, lck);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
         m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
@@ -443,17 +464,21 @@ inline void dbExecuter::doSeekKey(request& req, int op)
                 flag = HA_READ_BEFORE_KEY;
             else if (op == TD_KEY_OR_BEFORE)
                 flag = HA_READ_KEY_OR_PREV;
+            m_tb->setRowLock(lck);
             m_tb->seekKey(flag, m_tb->keymap());
+            if (lck->lock && m_tb->stat())
+                m_tb->setRowLockError();
         }
     }
     readAfter(req, m_tb, this);
 }
 
-inline void dbExecuter::doMoveFirst(request& req)
+inline void dbExecuter::doMoveFirst(request& req, engine::mysql::rowLockMode* lck)
 {
-    m_tb = getTable(req.pbk->handle);
+    m_tb = getTable(req.pbk->handle, SQLCOM_SELECT, lck);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
+        m_tb->setRowLock(lck);
         if (m_tb->isNisKey(m_tb->keyNum()))
         {
             m_tb->clearKeybuf();
@@ -461,15 +486,18 @@ inline void dbExecuter::doMoveFirst(request& req)
         }
         else
             m_tb->getFirst();
+        if (lck->lock && m_tb->stat())
+            m_tb->setRowLockError();
     }
     readAfter(req, m_tb, this);
 }
 
-inline void dbExecuter::doMoveKey(request& req, int op)
+inline void dbExecuter::doMoveKey(request& req, int op, engine::mysql::rowLockMode* lck)
 {
-    m_tb = getTable(req.pbk->handle);
+    m_tb = getTable(req.pbk->handle, SQLCOM_SELECT, lck);
     if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
     {
+        m_tb->setRowLock(lck);
         if (op == TD_KEY_FIRST)
             m_tb->getFirst();
         else if (op == TD_KEY_LAST)
@@ -478,6 +506,9 @@ inline void dbExecuter::doMoveKey(request& req, int op)
             m_tb->getNext();
         else if (op == TD_KEY_PREV)
             m_tb->getPrev();
+        if (lck->lock && m_tb->stat())
+            m_tb->setRowLockError();
+
     }
     readAfter(req, m_tb, this);
 }
@@ -498,13 +529,24 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
 
         extRequest* ereq = (extRequest*)req.data;
         bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
-
+        bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
         // smartReadRecordsHandler scope
         {
             smartReadRecordsHandler srrh(m_readHandler);
-            req.result = m_readHandler->begin(m_tb, ereq, true, nw,
+
+            if (execPrepared)
+            {
+                if (m_tb->preparedStatements.size() < ereq->preparedId)
+                    req.result = STATUS_INVALID_PREPAREID;
+                else
+                    req.result = m_readHandler->beginPreparExecute(m_tb, ereq, true, nw,
+                                               noBookmark, 
+                                              (prepared*)m_tb->preparedStatements[ereq->preparedId - 1]);
+            }
+            else
+                req.result = m_readHandler->begin(m_tb, ereq, true, nw,
                                               (op == TD_KEY_GE_NEXT_MULTI),
-                                              noBookmark, false);
+                                              noBookmark);
             if (req.result != 0)
                 return ret;
             if (m_tb->stat() == 0)
@@ -543,30 +585,32 @@ inline int dbExecuter::doReadMulti(request& req, int op,
     extRequest* ereq = (extRequest*)req.data;
     bool incCurrent = (ereq->itype & FILTER_CURRENT_TYPE_INC) != 0;
     bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
+    bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
 
     bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
     if (op == TD_KEY_SEEK_MULTI)
     {
         char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
         if (!m_tb->setKeyNum(keynum))
-        {
-            if (m_tb)
-                m_tb->unUse();
             return ret;
-        }
     }
     // smartReadRecordsHandler scope
     {
         smartReadRecordsHandler srrh(m_readHandler);
-        req.result = m_readHandler->begin(m_tb, ereq, (op != TD_KEY_SEEK_MULTI),
-                                          nw, forword, noBookmark,
-                                          (op == TD_KEY_SEEK_MULTI));
-        if (req.result != 0)
+        if (execPrepared)
         {
-            if (m_tb)
-                m_tb->unUse();
-            return ret;
+            if (m_tb->preparedStatements.size() < ereq->preparedId)
+                req.result = STATUS_INVALID_PREPAREID;
+            else
+                req.result = m_readHandler->beginPreparExecute(m_tb, ereq, (op != TD_KEY_SEEK_MULTI),
+                                          nw, noBookmark, 
+                                          (prepared*)m_tb->preparedStatements[ereq->preparedId - 1]);
         }
+        else
+            req.result = m_readHandler->begin(m_tb, ereq, (op != TD_KEY_SEEK_MULTI),
+                                          nw, forword, noBookmark);
+        if (req.result != 0)
+            return ret;
         if (op == TD_KEY_SEEK_MULTI)
             req.result =
                 errorCodeSht(seekEach((extRequestSeeks*)req.data, noBookmark));
@@ -642,6 +686,10 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
     else
         seg = 0;
 
+    // Duplicate records need a bookmark.
+    if (seg && noBookmark)
+        return STATUS_INVALID_BOOKMARK;
+
     for (int i = 0; i < ereq->logicalCount; ++i)
     {
         m_tb->setKeyValuesPacked(fd->ptr, fd->len);
@@ -649,13 +697,18 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
         if (m_tb->stat() == 0)
         {
             if (seg)
+            {
+                // If duplicate records , bookmark space is request row number.
                 stat = m_readHandler->write((uchar*)&i, 4);
+            }
+            else if (noBookmark)
+                stat = m_readHandler->write((const unsigned char *)_T("dummy"), 0);
             else
                 stat =
                     m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
         }
         else
-            stat = m_readHandler->write(NULL, m_tb->posPtrLen());
+            stat = m_readHandler->write(NULL, 0);
         if (stat)
             break;
 
@@ -682,9 +735,10 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
     return stat;
 }
 
-inline void dbExecuter::doStepRead(request& req, int op)
+inline void dbExecuter::doStepRead(request& req, int op, engine::mysql::rowLockMode* lck)
 {
-    m_tb = getTable(req.pbk->handle);
+    m_tb = getTable(req.pbk->handle, SQLCOM_SELECT, lck);
+    m_tb->setRowLock(lck);
     if (op == TD_POS_FIRST)
         m_tb->stepFirst();
     else if (op == TD_POS_LAST)
@@ -693,6 +747,8 @@ inline void dbExecuter::doStepRead(request& req, int op)
         m_tb->stepNext();
     else if (op == TD_POS_PREV)
         m_tb->stepPrev();
+    if (lck->lock && m_tb->stat())
+        m_tb->setRowLockError();
     readAfter(req, m_tb, this);
 }
 
@@ -859,15 +915,39 @@ inline void dbExecuter::doStat(request& req)
         req.result = STATUS_BUFFERTOOSMALL;
 }
 
+inline enum_tx_isolation getIsolationLevel(int op)
+{
+    if (op > CONSISTENT_READ)
+        return (enum_tx_isolation)0;
+    else if (op > TRN_ISO_SERIALIZABLE)
+        return ISO_SERIALIZABLE;
+    else if(op > TRN_ISO_REPEATABLE_READ)
+        return ISO_REPEATABLE_READ;
+    return ISO_READ_COMMITTED;
+}
+
 inline short getTrnsactionType(int op)
 {
-    if (op > PARALLEL_TRN) // 1000
-        op -= PARALLEL_TRN;
+    op = op % 1000;
     if (op > NOWAIT_WRITE) // 500
         op -= NOWAIT_WRITE;
     if (op >= 300)
         return TRN_RECORD_LOCK_MUILTI;
     return TRN_RECORD_LOCK_SINGLE;
+}
+
+inline rowLockMode* getRowLockMode(int op, rowLockMode* lck)
+{
+	lck->lock = false;
+    lck->read = (op > ROW_LOCK_S);
+    if (op > 1000)
+    	op = op % 1000;
+    if (op < NOWAIT_WRITE)
+    {
+        if (op >= LOCK_SINGLE_NOWAIT && op < LOCK_MULTI_NOWAIT)
+            lck->lock = true;
+    }
+    return lck;
 }
 
 int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
@@ -947,16 +1027,25 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_KEY_OR_AFTER:
         case TD_KEY_BEFORE:
         case TD_KEY_OR_BEFORE:
-            doSeekKey(req, op);
+        {
+            rowLockMode lck;
+            doSeekKey(req, op, getRowLockMode(opTrn, &lck));
             break;
+        }
         case TD_KEY_FIRST:
-            doMoveFirst(req);
+        {
+            rowLockMode lck;
+            doMoveFirst(req, getRowLockMode(opTrn, &lck));
             break;
+        }
         case TD_KEY_PREV:
         case TD_KEY_LAST:
         case TD_KEY_NEXT:
-            doMoveKey(req, op);
+        {
+            rowLockMode lck;
+            doMoveKey(req, op, getRowLockMode(opTrn, &lck));
             break;
+        }
         case TD_REC_INSERT:
             doInsert(req);
             break;
@@ -974,7 +1063,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_BEGIN_TRANSACTION:
             transactionResult =
-                getDatabaseCid(req.cid)->beginTrn(getTrnsactionType(opTrn));
+                getDatabaseCid(req.cid)->beginTrn(getTrnsactionType(opTrn)
+                                                    ,getIsolationLevel(opTrn));
             break;
         case TD_END_TRANSACTION:
             transactionResult = getDatabaseCid(req.cid)->commitTrn();
@@ -983,7 +1073,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             transactionResult = getDatabaseCid(req.cid)->abortTrn();
             break;
         case TD_BEGIN_SHAPSHOT:
-            transactionResult = getDatabaseCid(req.cid)->beginSnapshot();
+            transactionResult = getDatabaseCid(req.cid)->beginSnapshot(getIsolationLevel(opTrn));
             break;
         case TD_END_SNAPSHOT:
             transactionResult = getDatabaseCid(req.cid)->endSnapshot();
@@ -995,8 +1085,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_POS_LAST:
         case TD_POS_NEXT:
         case TD_POS_PREV:
-            doStepRead(req, op);
+        {
+            rowLockMode lck;
+            doStepRead(req, op, getRowLockMode(opTrn, &lck));
             break;
+        }
         case TD_BOOKMARK:
             m_tb = getTable(req.pbk->handle);
             req.paramMask = P_MASK_MOVPOS;
@@ -1004,11 +1097,18 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.resultLen = m_tb->posPtrLen();
             break;
         case TD_MOVE_BOOKMARK:
-            m_tb = getTable(req.pbk->handle);
+        {
+            rowLockMode lck;
+            getRowLockMode(opTrn, &lck);
+            m_tb = getTable(req.pbk->handle, lck.lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
+            m_tb->setRowLock(&lck);
             m_tb->movePos((uchar*)req.data,
                           m_tb->keyNumByMakeOrder(req.keyNum));
+            if (lck.lock && m_tb->stat())
+                m_tb->setRowLockError();
             readAfter(req, m_tb, this);
             break;
+        }
         case TD_GETDIRECTORY:
         {
             database* db = getDatabaseCid(req.cid);
@@ -1071,7 +1171,10 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_KEY_LE_PREV_MULTI:
             nw->setClientBuffferSize(*(req.datalen));
             if (doReadMultiWithSeek(req, op, nw) == EXECUTE_RESULT_SUCCESS)
+            {
+                m_tb = NULL;
                 return EXECUTE_RESULT_SUCCESS;
+            }
             break;
         case TD_KEY_SEEK_MULTI:
         case TD_KEY_NEXT_MULTI:
@@ -1080,7 +1183,35 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_POS_PREV_MULTI:
             nw->setClientBuffferSize(*(req.datalen));
             if (doReadMulti(req, op, nw) == EXECUTE_RESULT_SUCCESS)
+            {
+                m_tb = NULL;
                 return EXECUTE_RESULT_SUCCESS;
+            }
+            break;
+        case TD_FILTER_PREPARE:
+            m_tb = getTable(req.pbk->handle);
+            if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
+            {
+                prepared* prp = new prepared();
+                m_tb->preparedStatements.push_back(prp);
+                extRequest* ereq = (extRequest*)req.data;
+                req.result = m_readHandler->prepare(
+                                            m_tb,
+                                            ereq, 
+                                            ((ereq->itype & FILTER_TYPE_SEEKS) == 0),
+                                            nw,
+                                            ((ereq->itype & FILTER_TYPE_FORWORD) != 0),
+                                            ((ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0),
+                                            prp);
+                if (req.result != 0)
+                    m_tb->preparedStatements.pop_back();
+                else
+                {
+                    req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
+                    *((unsigned short*)req.data) = (unsigned short)m_tb->preparedStatements.size();
+                    req.resultLen = 2;
+                }
+            }
             break;
         case TD_MOVE_PER:
             m_tb = getTable(req.pbk->handle);
@@ -1102,10 +1233,13 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_INSERT_BULK:
             doInsertBulk(req);
             break;
+        case TD_UNLOCK:
+            m_tb = getTable(req.pbk->handle);
+            req.result = m_tb->unlock() ? STATUS_NO_CURRENT : 0;
+            break;
         }
         if (m_tb)
             m_tb->unUse();
-
         DEBUG_WRITELOG2(op, req)
         size = req.serialize(m_tb, resultBuffer);
         short dymmy = 0;
@@ -1114,6 +1248,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             size = req.serializeBlobBody(m_blobBuffer, resultBuffer, size,
                                          FILE_MAP_SIZE, optionalData, dymmy);
 
+        m_tb = NULL;
         if (transactionResult)
         {
             if ((op == TD_BEGIN_TRANSACTION) || (op == TD_BEGIN_SHAPSHOT))
@@ -1136,7 +1271,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.result = 20000;
             sql_print_error("%s", boost::diagnostic_information(e).c_str());
         }
-        printErrorMessage(code, getMsg(e));
+        printWarningMessage(code, getMsg(e));
     }
 
     catch (...)
@@ -1158,6 +1293,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
     DEBUG_WRITELOG3(op, req, true);
     req.paramMask = 0;
     size = req.serialize(NULL, resultBuffer);
+    m_tb = NULL;
     return EXECUTE_RESULT_SUCCESS;
 }
 

@@ -16,7 +16,7 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-
+#include <my_config.h>
 #include "errorMessage.h"
 #undef PACKAGE
 #include "mysqlInternal.h"
@@ -38,7 +38,7 @@ const char* errorMessage(int errorCode)
     case STATUS_PROGRAM_ERROR:
         return "Program error";
     case STATUS_CANNOT_LOCK_TABLE:
-        return "Can not open the table Allrady locked";
+        return "Can not open the table already locked";
     case STATUS_TABLE_NOTOPEN:
         return "Can not open the table";
     case STATUS_INVALID_KEYNAME:
@@ -55,17 +55,21 @@ const char* errorMessage(int errorCode)
     return "";
 }
 
-void printErrorMessage(const int* errorCode, const std::string* message)
+void printWarningMessage(const int* errorCode, const std::string* message)
 {
     int code = errorCode ? *errorCode : 0;
     std::string msg = errorMessage(code);
     if (message)
-        msg += " :" + *message;
-
-    if ((code != STATUS_TABLE_NOTOPEN) && (code != STATUS_INVALID_BOOKMARK))
     {
-        sql_print_error("%s", msg.c_str());
+        if ((msg != "") && (*message != ""))
+            msg += ": " + *message;
+        else
+            msg += *message;
     }
+    if ((code != STATUS_TABLE_NOTOPEN) && 
+        (code != STATUS_INVALID_BOOKMARK) && 
+        (code != STATUS_CANNOT_LOCK_TABLE))
+        sql_print_warning("Transactd: %s", msg.c_str());
 }
 
 } // namespace mysql

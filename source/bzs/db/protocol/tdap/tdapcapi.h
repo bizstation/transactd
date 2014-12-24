@@ -65,8 +65,11 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
  */
 #define POS_BLOCK_SIZE                  128
 #ifndef MAX_KEYLEN
-#define MAX_KEYLEN                      0X3FF // 1023
+#define MAX_KEYLEN                      0X3FF   // 1023
 #endif
+#define BTRV_MAX_DATA_SIZE              57000
+#define TDAP_MAX_DATA_SIZE              6291456 // 3Mbyte
+#define BOOKMARK_ALLOC_SIZE             40960
 
 /** operation type
  *
@@ -130,6 +133,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TD_REC_DELLETEATKEY             71
 #define TD_KEY_GE_NEXT_MULTI            72
 #define TD_KEY_LE_PREV_MULTI            73
+#define TD_FILTER_PREPARE               74
 #define TD_CONNECT                      78
 #define TD_BEGIN_SHAPSHOT               88
 #define TD_END_SNAPSHOT                 89
@@ -249,13 +253,35 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 
 #define NOWAIT_WRITE                    500
 #define PARALLEL_TRN                    1000
+#define TRN_ISO_READ_COMMITED           0
+#define TRN_ISO_REPEATABLE_READ         2000
+#define TRN_ISO_SERIALIZABLE            3000
 
+#define SINGLELOCK_READ_COMMITED        LOCK_SINGLE_NOWAIT + PARALLEL_TRN
+#define MULTILOCK_READ_COMMITED         LOCK_MULTI_NOWAIT + PARALLEL_TRN
+#define MULTILOCK_REPEATABLE_READ       TRN_ISO_REPEATABLE_READ + LOCK_MULTI_NOWAIT
+#define MULTILOCK_ISO_SERIALIZABLE      TRN_ISO_SERIALIZABLE + LOCK_MULTI_NOWAIT
+
+/** InnoDB or transactional engin lock options
+*/
+// Transaction
+#define SINGLELOCK_NOGAP                SINGLELOCK_READ_COMMITED
+#define MULTILOCK_NOGAP                 MULTILOCK_READ_COMMITED
+#define MULTILOCK_GAP                   MULTILOCK_REPEATABLE_READ + LOCK_MULTI_NOWAIT
+// Snapshot
+#define CONSISTENT_READ                 4000
+#define MULTILOCK_GAP_SHARE             TRN_ISO_REPEATABLE_READ
+#define MULTILOCK_NOGAP_SHARE           0
+// Read row lock
+#define ROW_LOCK_X                      LOCK_SINGLE_NOWAIT
+#define ROW_LOCK_S                      5000 + LOCK_SINGLE_NOWAIT
 
 /** open mode
  */
 #define TD_OPEN_NORMAL                  0
 #define TD_OPEN_READONLY                -2
 #define TD_OPEN_EXCLUSIVE               -4
+#define TD_OPEN_READONLY_EXCLUSIVE      (TD_OPEN_READONLY + TD_OPEN_EXCLUSIVE)
 
 /** filed algin
  */
@@ -325,12 +351,15 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define STATUS_TABLE_EXISTS_ERROR       59
 #define STATUS_LIMMIT_OF_REJECT         60
 #define STATUS_WARKSPACE_TOO_SMALL      61
+#define STATUS_INVALID_EX_DESC          62
+#define STATUS_INVALID_EX_INS           63
 #define STATUS_REACHED_FILTER_COND      64
 #define STATUS_INVALID_FIELD_OFFSET     65
 #define STATUS_CHANGE_CONFLICT          80
 #define STATUS_INVALID_LOCKTYPE         83
 #define STATUS_LOCK_ERROR               84
 #define STATUS_FILE_LOCKED              85
+#define STATUS_INVALID_SUPPLYVALUES     86
 #define STATUS_CANNOT_LOCK_TABLE        88
 #define STATUS_INVALID_KEYNAME          STATUS_INVALID_KEYNUM
 #define STATUS_INVALID_DATASIZE         STATUS_BUFFERTOOSMALL
@@ -339,6 +368,10 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define ERROR_NOSPECIFY_TABLE           176
 #define ERROR_LOAD_CLIBRARY             200
 #define ERROR_INDEX_RND_INIT            201
+#define STATUS_INVALID_PREPAREID        202
+#define STATUS_LMIT_OF_PREPAREED        203
+#define STATUS_ALREADY_INSNAPSHOT       204
+#define STATUS_ALREADY_INTRANSACTION    205
 #define SERVER_CLIENT_NOT_COMPATIBLE    3003
 #define NET_BAD_SRB_FORMAT              3021
 #define ERROR_TD_HOSTNAME_NOT_FOUND     3103
@@ -352,6 +385,14 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define FILTER_CURRENT_TYPE_NOTINC      0
 #define FILTER_CURRENT_TYPE_INC         1
 #define FILTER_CURRENT_TYPE_NOBOOKMARK  2
+#define FILTER_TYPE_SUPPLYVALUE         4
+#define FILTER_TYPE_FORWORD             4 //at preparing only 
+#define FILTER_TYPE_SEEKS               8
+
+
+/* No need export for client */
+#define FILTER_COMBINE_NOPREPARE        0
+#define FILTER_COMBINE_PREPARE          32
 
 
 #define NIS_FILED_NAME                  "$nf"
@@ -385,7 +426,7 @@ struct trdVersiton
  If you change this version then you need change The ($TargetName) project options too.
  */
 #define C_INTERFACE_VER_MAJOR "2"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "0"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "1"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
@@ -449,7 +490,7 @@ struct trdVersiton
  */
 
 #define CPP_INTERFACE_VER_MAJOR "2"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "0"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "1"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
@@ -466,7 +507,7 @@ struct trdVersiton
 #endif
 
 #define TRANSACTD_VER_MAJOR 2//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 0//##8 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 1//##8 Build marker! Don't remove
 #define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

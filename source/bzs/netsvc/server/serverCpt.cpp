@@ -135,12 +135,11 @@ class connection : public iconnection, private boost::noncopyable
             if (m_segmentWrite == false)
             {
                 DEBUG_PROFILE_END(1, "write")
-                async_read(
-                    m_socket, buffer(&m_buffer[0], 4),
-                    boost::asio::transfer_all(),
-                    boost::bind(&connection::handle_read, this,
-                                boost::asio::placeholders::error,
-                                boost::asio::placeholders::bytes_transferred));
+                async_read(m_socket, buffer(&m_buffer[0], m_buffer.size()),
+                           boost::asio::transfer_at_least(4),
+                           boost::bind(&connection::handle_read, this,
+                                       boost::asio::placeholders::error,
+                                       boost::asio::placeholders::bytes_transferred));
             }
         }
     }

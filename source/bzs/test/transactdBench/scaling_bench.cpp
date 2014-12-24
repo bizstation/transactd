@@ -27,9 +27,10 @@ typedef std::vector<boost::shared_ptr<workerBase> > workers;
 
 struct transactionSec
 {
-    transactionSec() : value(0) {}
+    transactionSec() : value(0),timeOne(0) {}
     int workes;
     __int64 value;
+    double timeOne;
 };
 
 struct commandLineParam
@@ -59,13 +60,21 @@ void showResult(const std::vector<transactionSec>& results, int total,
                 int totalTransactionTime, int totalTransactions,
                 bool stressMode)
 {
+
     std::tcout << _T("----------------------------------") << std::endl;
     std::tcout << _T("Clients \tTransactions/sec") << std::endl;
     std::tcout << _T("----------------------------------") << std::endl;
 
     for (int i = 0; i < (int)results.size(); ++i)
-        std::tcout << results[i].workes << _T("\t") << results[i].value
+    {
+        if (!stressMode)
+            std::tcout << results[i].workes << _T("\t") << results[i].value
+                   << _T("\t") << results[i].timeOne
                    << std::endl;
+        else
+            std::tcout << results[i].workes << _T("\t") << results[i].value
+                   << std::endl;
+    }
     if (!stressMode)
     {
         std::tcout << _T("----------------------------------") << std::endl;
@@ -90,7 +99,10 @@ bool tableFixer(const connectParams& param)
     short index = def->tableNumByName(_T("cache"));
     if (index == -1 && !createCacheTable(def))
         return false;
+    try{
     dropTable(db, _T("cache"));
+    }
+    catch(...){}
     openTable(db, _T("cache"));
     return true;
 }
@@ -139,18 +151,22 @@ double executeWorkers(const commandLineParam& cmd, const connectParams param,
         }
         printf("*");
         fflush(stdout);
-        Sleep(200 * MCRTOMM);
+        Sleep(500 * MCRTOMM);
         sync.wait(); // start all workers
         if (cmd.stressMode)
         {
             Sleep(200 * MCRTOMM);
             g_bench_signal = BENCH_SIGNAL_GREEN;
+            //Measurement interval
             Sleep((unsigned int)(BENCH_TIMER_SECONDS * 1000 * MCRTOMM));
             g_bench_signal = BENCH_SIGNAL_BREAK;
         }
         threads.join_all();
         for (int i = 0; i < wn; ++i)
+        {
             t += workers[i]->total();
+            //std::tcout << _T("Execute Workers = ") << wn << " " << workers[i]->total() << std::endl;
+        }
     }
     return t;
 }
@@ -172,11 +188,15 @@ int execute(const commandLineParam& cmd, const connectParams param,
         }
         else
         {
+            int n = wn * cmd.loopCount * cmd.avg_count;
             totalTransactionTime += t;
-            totalTransactions += wn * cmd.loopCount * cmd.avg_count;
+            totalTransactions += n;
             if (t)
+            {
+                ts.timeOne =  t / n / 1000000.0f;
                 ts.value = (__int64)((double)1000000.0f * wn * wn *
-                                     cmd.avg_count * cmd.loopCount / t);
+                                    cmd.avg_count * cmd.loopCount / t);
+            } 
         }
         ts.workes = wn;
         results.push_back(ts);
@@ -251,9 +271,11 @@ int _tmain(int argc, _TCHAR* argv[])
             printf("\n");
             showResult(results, bm.end(), (int)totalTransactionTime,
                        totalTransactions, cmd.stressMode);
-            return 0;
+            pooledDbManager pdb;
+            pdb.reset(0);
+            //return 0;
         }
-        return 1;
+        //return 1;
     }
 
     catch (bzs::rtl::exception& e)
@@ -261,5 +283,8 @@ int _tmain(int argc, _TCHAR* argv[])
         std::_tstring s = *bzs::rtl::getMsg(e);
         std::tcout << _T("[ERROR] ") << s << std::endl;
     }
+#ifdef _MSC_VER
+        _CrtDumpMemoryLeaks();
+#endif
     return 1;
 }

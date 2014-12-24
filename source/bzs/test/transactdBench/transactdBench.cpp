@@ -262,7 +262,7 @@ bool createTestDataBase(client::database* db, const _TCHAR* uri)
     db->create(uri);
     if (db->stat() != 0)
     {
-        printf("createTestDataBase erorr:No.%d %s\r\n", db->stat(), uri);
+        _tprintf(_T("createTestDataBase erorr:No.%d %s\r\n"), db->stat(), uri);
         return false;
     }
     if (db->open(uri, TYPE_BDF, TD_OPEN_NORMAL, _T(""), _T("")))

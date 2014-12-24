@@ -24,7 +24,9 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <bzs/db/protocol/tdap/client/trdboostapi.h>
+#ifndef TRDCL_AUTOLINK
 #define TRDCL_AUTOLINK
+#endif
 #include <bzs/db/protocol/tdap/client/trdclcppautolink.h>
 #include "confParam.h"
 #include "srcgen.h"

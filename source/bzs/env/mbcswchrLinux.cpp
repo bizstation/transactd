@@ -19,17 +19,53 @@
 
 #include "mbcswchrLinux.h"
 #include <stdio.h>
+#include <pthread.h>
+#include <bzs/env/crosscompile.h>
+#include <assert.h>
+
+
+#define CVT_COUNT 6
 
 namespace bzs
 {
 namespace env
 {
-cvt mbcscvt("UTF-16LE", MBC_CHARSETNAME);
-cvt wchrcvt(MBC_CHARSETNAME, "UTF-16LE");
-cvt u8mbcvt(MBC_CHARSETNAME, UTF8_CHARSETNAME);
-cvt mbu8cvt(UTF8_CHARSETNAME, MBC_CHARSETNAME);
-cvt u8wccvt("UTF-16LE", UTF8_CHARSETNAME);
-cvt wcu8cvt(UTF8_CHARSETNAME, "UTF-16LE");
+
+tls_key g_tls1=0;
+
+void cleanupTls(void* p)
+{
+    delete [] ((cvt*)p);
+}
+
+void initCvtProcess()
+{
+    int ret = pthread_key_create(&g_tls1, cleanupTls);
+    assert(ret == 0);
+}
+
+void deinitCvtProcess()
+{
+    pthread_key_delete(g_tls1);
+}
+
+cvt& getCvt(int index)
+{
+    cvt* p = (cvt*)pthread_getspecific(g_tls1);
+    if (p == NULL)
+    {
+        p = new cvt[CVT_COUNT];
+        p[0].setCharset("UTF-16LE", MBC_CHARSETNAME);
+        p[1].setCharset(MBC_CHARSETNAME, "UTF-16LE");
+        p[2].setCharset(MBC_CHARSETNAME, UTF8_CHARSETNAME);
+        p[3].setCharset(UTF8_CHARSETNAME, MBC_CHARSETNAME);
+        p[4].setCharset("UTF-16LE", UTF8_CHARSETNAME);
+        p[5].setCharset(UTF8_CHARSETNAME, "UTF-16LE");
+        pthread_setspecific(g_tls1, p);
+    }
+    return p[index];
+}
+
 
 } // namespace env
 } // namespace bzs

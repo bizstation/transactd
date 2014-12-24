@@ -180,7 +180,10 @@ void database::create(const _TCHAR* fullpath, short type)
 void database::drop()
 {
     if (m_impl->dbDef == NULL)
+    {
         m_stat = STATUS_DB_YET_OPEN;
+        return;
+    }
     _TCHAR FullPath[MAX_PATH];
     std::vector<std::_tstring> fileNames;
     for (int i = 0; i <= m_impl->dbDef->tableCount(); i++)
@@ -322,7 +325,8 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
             create(_uri, TYPE_SCHEMA_BDF);
             if (m_stat == STATUS_SUCCESS)
             {
-                doOpen(_uri, type, mode, ownername);
+                //Open mode force normal
+                doOpen(_uri, type, TD_OPEN_NORMAL, ownername);
                 if (m_stat == STATUS_SUCCESS)
                 {
                     m_impl->dbDef->autoMakeSchema();

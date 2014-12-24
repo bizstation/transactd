@@ -43,22 +43,23 @@ struct sortDescription
 
 class recordsetSorter
 {
-    const std::vector<sortDescription>& m_sortDesc;
-
+    const sortDescription* m_begin;
+    const sortDescription* m_end;
 public:
-    recordsetSorter(std::vector<sortDescription>& sortDesc)
-        : m_sortDesc(sortDesc)
+
+    recordsetSorter(sortDescription* begin, sortDescription* end)
+        : m_begin(begin), m_end(end)
     {
     }
+
     bool operator()(const row_ptr& l, const row_ptr r) const
     {
-        std::vector<sortDescription>::const_iterator it = m_sortDesc.begin();
-        while (it != m_sortDesc.end())
+        const sortDescription* it = m_begin;
+        while (it != m_end)
         {
-            int ret = (*l)[(*it).index].comp((*r)[(*it).index], 0);
+            int ret = (*l)[it->index].comp((*r)[it->index], 0);
             if (ret)
-                return ((*it).asc) ? (ret < 0) : (ret > 0);
-
+                return it->asc ? (ret < 0) : (ret > 0);
             ++it;
         }
         return false;
@@ -75,17 +76,17 @@ class multiRecordAlocatorImple : public multiRecordAlocator
 
 public:
     inline multiRecordAlocatorImple(recordsetImple* rs);
-    inline void init(size_t recordCount, size_t recordLen, int addType,
-                     const table* tb);
+    inline void init(size_t recordCount, size_t recordLen,
+                     int addType, const table* tb);
+    inline unsigned char* allocBlobBlock(size_t size);
     inline unsigned char* ptr(size_t row, int stat);
     inline void setRowOffset(int v) { m_rowOffset = v; }
     inline void setJoinType(int v) { m_addType = v; }
     inline void setInvalidRecord(size_t row, bool v);
     inline void setCurFirstFiled(int v) { m_curFirstFiled = v; }
-    inline void
-    setJoinRowMap(const std::vector<std::vector<int> >* v /*, size_t size*/)
+    inline void setJoinRowMap(const std::vector<std::vector<int> >* v)
     {
-        m_joinRowMap = v; /*m_joinMapSize = size;*/
+        m_joinRowMap = v;
     }
     inline const std::vector<std::vector<int> >* joinRowMap() const
     {
@@ -115,13 +116,24 @@ class recordsetImple
 
 public:
     typedef std::vector<row_ptr>::iterator iterator;
-
+    typedef row_ptr item_type;
 private:
+    unsigned char* allocBlobBlock(size_t size)
+    {
+        autoMemory* am = autoMemory::create();
+        am->addref();
+        am->setParams(NULL, size, 0, true);
+        m_memblock.push_back(boost::shared_ptr<autoMemory>(am, boost::bind(&autoMemory::release, _1)));
+        return am->ptr;
+    }
+
     void registerMemoryBlock(unsigned char* ptr, size_t size, size_t recordLen,
                              int addtype, const table* tb = NULL)
     {
-        autoMemory* am = new autoMemory(ptr, size, 0, true);
-        m_memblock.push_back(boost::shared_ptr<autoMemory>(am));
+        autoMemory* am = autoMemory::create();
+        am->addref();
+        am->setParams(ptr, size, 0, true);
+        m_memblock.push_back(boost::shared_ptr<autoMemory>(am, boost::bind(&autoMemory::release, _1)));
         unsigned char* p = am->ptr;
         // copy fileds
         if (addtype & mra_nextrows)
@@ -133,7 +145,6 @@ private:
         }
         else
         {
-            // assert(tb);
             m_joinRows = 0;
             m_mra->setRowOffset(0);
             m_mra->setCurFirstFiled((int)m_fds->size());
@@ -156,7 +167,7 @@ private:
         {
             // Join optimazing
             const std::vector<std::vector<int> >* jmap = m_mra->joinRowMap();
-
+            autoMemory* ama = autoMemory::create((int)rows);
             if (jmap)
             {
                 // At Join that if some base records reference to a joined
@@ -167,15 +178,21 @@ private:
                 {
                     const std::vector<int>& map = (*jmap)[i + m_joinRows];
                     for (int j = 0; j < (int)map.size(); ++j)
-                        m_recordset[map[j]]->setRecordData(
+                    {
+                        autoMemory* a = ama + i;
+                        m_recordset[map[j]]->setRecordData(a,
                             p + recordLen * i, 0, am->endFieldIndex, false);
+                    }
                 }
             }
             else
             {
                 for (int i = 0; i < (int)rows; ++i)
-                    m_recordset[i + m_joinRows]->setRecordData(
+                {
+                    autoMemory* a = ama + i;
+                    m_recordset[i + m_joinRows]->setRecordData(a,
                         p + recordLen * i, 0, am->endFieldIndex, false);
+                }
             }
             m_joinRows += rows;
         }
@@ -183,26 +200,24 @@ private:
         { // create new record
             size_t reserveSize = m_recordset.size() + rows;
             m_recordset.reserve(reserveSize);
+            memoryRecord* rec = memoryRecord::create(*m_fds, (int)rows);
+            autoMemory* ama = autoMemory::create((int)rows);
             for (int i = 0; i < (int)rows; ++i)
             {
-                row_ptr rec(memoryRecord::create(*m_fds),
-                            &memoryRecord::release);
-                rec->setRecordData(p + recordLen * i, 0, am->endFieldIndex,
+                autoMemory* a = ama + i;
+                rec[i].setRecordData(a, p + recordLen * i, 0, am->endFieldIndex,
                                    false);
-                m_recordset.push_back(rec);
+                push_back(&rec[i]);
             }
         }
     }
 
-    void makeSortFields(const _TCHAR* name,
-                        std::vector<sortDescription>& sortDesc, bool asc = true)
+    void makeSortFields(const _TCHAR* name, sortDescription* sd, bool asc = true)
     {
-        sortDescription sd;
-        sd.index = m_fds->indexByName(name);
-        if (sd.index == -1)
+        sd->index = m_fds->indexByName(name);
+        if (sd->index == -1)
             THROW_BZS_ERROR_WITH_MSG(_T("orderBy:Invalid field name"));
-        sd.asc = asc;
-        sortDesc.push_back(sd);
+        sd->asc = asc;
     }
 
     int getMemBlockIndex(unsigned char* ptr) const
@@ -221,13 +236,14 @@ private:
     void duplicateRow(int row, int count)
     {
         row_ptr& r = m_recordset[row];
-        memoryRecord* p = dynamic_cast<memoryRecord*>(r.get());
-
+        memoryRecord* p = dynamic_cast<memoryRecord*>(r);
         m_recordset.reserve(m_recordset.size() + count);
-        m_recordset.insert(m_recordset.begin() + row, count, row_ptr());
+        memoryRecord* rec = memoryRecord::create(*p, count);
         for (int i = 0; i < count; ++i)
-            m_recordset[i + row].reset(new memoryRecord(*p),
-                                       &memoryRecord::release);
+        {
+            rec[i].addref();
+            m_recordset.insert(m_recordset.begin() + row + i, &rec[i]);
+        }
     }
 
 public:
@@ -238,12 +254,38 @@ public:
         m_mra.reset(new multiRecordAlocatorImple(this));
     }
 
-    inline ~recordsetImple() {}
+    inline recordsetImple(const recordsetImple& r)
+        : m_fds(r.m_fds),m_mra(r.m_mra), m_recordset(r.m_recordset),
+          m_memblock(r.m_memblock), m_unionFds(r.m_unionFds),
+          m_joinRows(r.m_joinRows), m_uniqueReadMaxField(r.m_uniqueReadMaxField)
+    {
+        for (size_t i = 0; i < m_recordset.size(); ++i)
+            m_recordset[i]->addref();
+    }
+
+    inline ~recordsetImple() { clearRecords(); }
 
     inline void checkIndex(size_t index)
     {
         if (index >= m_recordset.size())
             THROW_BZS_ERROR_WITH_MSG(_T("Invalid row index of recordset."));
+    }
+
+    inline recordsetImple& operator=(const recordsetImple& r)
+    {
+        if (this != &r)
+        {
+            m_fds = r.m_fds;
+            m_mra = r.m_mra;
+            m_recordset = r.m_recordset;
+            m_memblock = r.m_memblock;
+            m_unionFds = r.m_unionFds;
+            m_joinRows = r.m_joinRows;
+            m_uniqueReadMaxField = r.m_uniqueReadMaxField;
+            for (size_t i = 0; i < m_recordset.size(); ++i)
+                m_recordset[i]->addref();
+        }
+        return *this;
     }
 
     /* This clone is deep copy.
@@ -257,33 +299,68 @@ public:
         p->m_unionFds = m_unionFds;
         p->m_fds.reset(m_fds->clone(), boost::bind(&fielddefs::release, _1));
 
-        std::vector<__int64> offsets;
-        for (int i = 0; i < (int)m_memblock.size(); ++i)
+        std::vector<size_t> offsets;
+        if (m_memblock.size())
         {
-            autoMemory* am = new autoMemory(m_memblock[i]->ptr,
-                                            m_memblock[i]->size, 0, true);
-            *am->endFieldIndex = *m_memblock[i]->endFieldIndex;
-            p->m_memblock.push_back(boost::shared_ptr<autoMemory>(am));
-            offsets.push_back((__int64)(am->ptr - m_memblock[i]->ptr));
-        }
-
-        for (int i = 0; i < (int)m_recordset.size(); ++i)
-        {
-            memoryRecord* row =
-                dynamic_cast<memoryRecord*>(m_recordset[i].get());
-            memoryRecord* mr = memoryRecord::create(*p->m_fds);
-            row_ptr rec(mr, &memoryRecord::release);
-            p->m_recordset.push_back(rec);
-
-            for (int j = 0; j < (int)row->memBlockSize(); ++j)
+            autoMemory* ama = autoMemory::create((int)m_memblock.size());
+            for (int i = 0; i < (int)m_memblock.size(); ++i)
             {
-                const autoMemory& mb = row->memBlock(j);
-                int index = getMemBlockIndex(mb.ptr);
+                autoMemory* am = ama + i;
+                am->addref();
+                am->setParams(m_memblock[i]->ptr, m_memblock[i]->size, 0, true);
+                *am->endFieldIndex = *m_memblock[i]->endFieldIndex;
+                p->m_memblock.push_back(boost::shared_ptr<autoMemory>(am,  boost::bind(&autoMemory::release, _1)));
+                offsets.push_back((am->ptr - m_memblock[i]->ptr));
+            }
+        }
+        if (m_recordset.size())
+        {
+            p->m_recordset.reserve(m_recordset.size());
+            memoryRecord* recs = memoryRecord::create(*p->m_fds, (int)m_recordset.size());
+            int amindex = 0;
+            for (int i = 0; i < (int)m_recordset.size(); ++i)
+            {
+                memoryRecord* row = dynamic_cast<memoryRecord*>(m_recordset[i]);
+                amindex += (int)row->memBlockSize();
+            }
+            autoMemory* amar = autoMemory::create(amindex);
+            amindex = 0;
+            std::vector<short> blobs;
+            std::vector<short> offsetIndex;
+            for (int j = 0; j < (int)m_fds->size(); ++j)
+            {
+                if (m_fds->operator[](j).blobLenBytes())
+                {
+                    blobs.push_back((short)j);
+                    unsigned char* p = (unsigned char*)(*m_recordset[0])[j].ptr()
+                                        + m_fds->operator[](j).blobLenBytes();
+                    short index = (short)getMemBlockIndex(p);
+                    offsetIndex.push_back(index);
+                }
+            }
+            for (int i = 0; i < (int)m_recordset.size(); ++i)
+            {
+                memoryRecord* row =
+                    dynamic_cast<memoryRecord*>(m_recordset[i]);
+                memoryRecord* mr = recs + i;
+                p->push_back(mr);
+                mr->m_invalidRecord = row->m_invalidRecord;
+                for (int j = 0; j < (int)row->memBlockSize(); ++j)
+                {
+                    const autoMemory& mb = row->memBlock(j);
+                    int index = getMemBlockIndex(mb.ptr);
 #pragma warn -8072
-                unsigned char* ptr = mb.ptr + offsets[index];
+                    unsigned char* ptr = mb.ptr + offsets[index];
 #pragma warn .8072
-                const boost::shared_ptr<autoMemory>& am = p->m_memblock[index];
-                mr->setRecordData(ptr, mb.size, am->endFieldIndex, mb.owner);
+                    autoMemory* a = amar + amindex;
+                    const boost::shared_ptr<autoMemory>& am = p->m_memblock[index];
+                    mr->setRecordData(a, ptr, mb.size, am->endFieldIndex, mb.owner);
+                    ++amindex;
+                }
+
+                for (int j = 0; j < (int)blobs.size(); ++j)
+                    row->getFieldNoCheck(blobs[j])
+                        .offsetBlobPtr(offsets[offsetIndex[j]]);
             }
         }
         return p;
@@ -293,6 +370,15 @@ public:
 
     inline void clearRecords()
     {
+        if (m_recordset.size())
+        {
+            if (!m_recordset[0]->tryFastRelease((int)m_recordset.size()))
+            {
+                for (int i = (int)m_recordset.size() - 1; i >= 0; --i)
+                    m_recordset[i]->release();
+            }
+        } 
+        
         m_recordset.clear();
         m_uniqueReadMaxField = 0;
     }
@@ -311,21 +397,21 @@ public:
 
     inline row& operator[](size_t index) const
     {
-        return *m_recordset[index].get();
+        return *m_recordset[index];
     }
 
     inline row& first() const
     {
         if (m_recordset.size() == 0)
             THROW_BZS_ERROR_WITH_MSG(_T("Invalid index of recordset."));
-        return *m_recordset[0].get();
+        return *m_recordset[0];
     }
 
     inline row& last() const
     {
         if (m_recordset.size() == 0)
             THROW_BZS_ERROR_WITH_MSG(_T("Invalid index of recordset."));
-        return *m_recordset[m_recordset.size() - 1].get();
+        return *m_recordset[m_recordset.size() - 1];
     }
 
     inline recordsetImple& top(recordsetImple& c, int n) const
@@ -344,12 +430,20 @@ public:
 
     inline iterator erase(size_t index)
     {
-        return m_recordset.erase(m_recordset.begin() + index);
+        return erase(m_recordset.begin() + index);
     }
 
-    inline iterator erase(const iterator& it) { return m_recordset.erase(it); }
+    inline iterator erase(const iterator& it) 
+    { 
+        m_recordset[it - m_recordset.begin()]->release();
+        return m_recordset.erase(it); 
+    }
 
-    inline void push_back(row_ptr r) { m_recordset.push_back(r); };
+    inline void push_back(row_ptr r)
+    {
+        r->addref();
+        m_recordset.push_back(r);
+    }
 
     inline size_t size() const { return m_recordset.size(); }
 
@@ -420,42 +514,44 @@ public:
             const _TCHAR* name5 = NULL, const _TCHAR* name6 = NULL,
             const _TCHAR* name7 = NULL, const _TCHAR* name8 = NULL)
     {
-        if (m_recordset.size())
+        if (m_recordset.size() > 1)
         {
-            std::vector<sortDescription> sds;
-            makeSortFields(name1, sds, true);
+            sortDescription sds[9];
+            sortDescription* sd = &sds[0];
+            makeSortFields(name1, sd, true);
             if (name2)
-                makeSortFields(name2, sds, true);
+                makeSortFields(name2, ++sd, true);
             if (name3)
-                makeSortFields(name3, sds, true);
+                makeSortFields(name3, ++sd, true);
             if (name4)
-                makeSortFields(name4, sds, true);
+                makeSortFields(name4, ++sd, true);
             if (name5)
-                makeSortFields(name5, sds, true);
+                makeSortFields(name5, ++sd, true);
             if (name6)
-                makeSortFields(name6, sds, true);
+                makeSortFields(name6, ++sd, true);
             if (name7)
-                makeSortFields(name7, sds, true);
+                makeSortFields(name7, ++sd, true);
             if (name8)
-                makeSortFields(name8, sds, true);
-            std::sort(begin(), end(), recordsetSorter(sds));
+                makeSortFields(name8, ++sd, true);
+            std::sort(begin(), end(), recordsetSorter(&sds[0], ++sd));
         }
         return *this;
     }
 
     inline recordsetImple& orderBy(const sortFields& orders)
     {
-        if (m_recordset.size())
+        if (m_recordset.size() > 1)
         {
-            std::vector<sortDescription> sds;
-
+            if (orders.size() > 8)
+                THROW_BZS_ERROR_WITH_MSG(_T("orderBy:Too many keys"));
+            sortDescription sds[9];
             for (int i = 0; i < (int)orders.size(); ++i)
-                makeSortFields(orders[i].name.c_str(), sds, orders[i].asc);
-
-            std::sort(begin(), end(), recordsetSorter(sds));
+                makeSortFields(orders[i].name.c_str(), &sds[i], orders[i].asc);
+            std::sort(begin(), end(), recordsetSorter(&sds[0], &sds[orders.size()]));
         }
         return *this;
     }
+
 
     inline recordsetImple& reverse()
     {
@@ -466,11 +562,14 @@ public:
     inline void appendField(const _TCHAR* name, int type, short len)
     {
         assert(m_fds->size());
+        
         fielddef fd((*m_fds)[0]);
         fd.len = len;
         fd.pos = 0;
         fd.type = type;
         fd.setName(name);
+        if (fd.blobLenBytes())
+            THROW_BZS_ERROR_WITH_MSG(_T("Can not append Blob or Text field."));
         m_fds->push_back(&fd);
         for (int i = 0; i < (int)m_unionFds.size(); ++i)
             m_unionFds[i]->push_back(&fd);
@@ -485,7 +584,7 @@ public:
         m_recordset.reserve(m_recordset.size() + r.size());
         m_unionFds.push_back(r.m_fds);
         for (size_t i = 0; i < r.size(); ++i)
-            m_recordset.push_back(r.m_recordset[i]);
+            push_back(r.m_recordset[i]);
         for (size_t i = 0; i < r.m_memblock.size(); ++i)
             m_memblock.push_back(r.m_memblock[i]);
         return *this;
@@ -526,6 +625,11 @@ inline void multiRecordAlocatorImple::init(size_t recordCount, size_t recordLen,
                               addType | m_addType, tb);
 }
 
+unsigned char* multiRecordAlocatorImple::allocBlobBlock(size_t size)
+{
+    return m_rs->allocBlobBlock(size);
+}
+
 inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
 {
     int col = (stat == mra_current_block) ? m_curFirstFiled : 0;
@@ -556,20 +660,22 @@ inline void multiRecordAlocatorImple::removeLastMemBlock(int row)
     (*m_rs)[row].removeLastMemBlock();
 }
 
-template <> inline recordsetImple::iterator begin(recordsetImple& m)
+/*template <> */inline recordsetImple::iterator begin(recordsetImple& m)
 {
     return m.begin();
 }
-template <> inline recordsetImple::iterator end(recordsetImple& m)
+/*template <> */inline recordsetImple::iterator end(recordsetImple& m)
 {
     return m.end();
 }
-template <> inline void push_back(recordsetImple& m, row_ptr c)
+
+/* Called from trdormapi.h : mdlsHandler::addContainer() */
+inline void push_back(recordsetImple& m, row_ptr c)
 {
 }
 
 /* for groupby */
-template <> inline void clear(recordsetImple& m)
+inline void clear(recordsetImple& m)
 {
     return m.clearRecords();
 }
@@ -582,6 +688,7 @@ resolvKeyValue(recordsetImple& m, const std::_tstring& name, bool noexception)
     return m.resolvKeyValue(name, noexception);
 }
 
+/* Called from trdormapi.h : mdlsHandler::operator() */
 inline row* create(recordsetImple& m, int)
 {
     return NULL;

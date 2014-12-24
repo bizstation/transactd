@@ -83,17 +83,15 @@ end
 def deleteAll(db, tb, start, endid)
     db.beginTrn(TRANS_BIAS)
     tb.clearBuffer()
-    for i in start..(endid - 1) do
-        tb.setFV(FN_ID, i)
-        tb.seek()
-        if (tb.stat() == 0)
-            tb.del()
-            if (tb.stat() != 0)
-                showTableError(tb, 'deleteAll')
-                db.endTrn()
-                return false
-            end
-        end
+    tb.stepFirst()
+    while tb.stat() == 0
+       tb.del();
+       if (tb.stat() != 0)
+           showTableError(tb, 'deleteAll')
+           db.endTrn()
+           return false
+       end
+       tb.stepNext()
     end
     db.endTrn()
     return true
@@ -273,7 +271,7 @@ def main(argv)
         puts("\t 6: read range with snapshpot. 20rec x 1000times")
         puts("\t 7: update")
         puts("\t 8: update in transaction. 20rec x 1000times")
-        puts("example : ruby bench_tdclcpp.rb \"tdap://localhost/test?dbfile=test.bdf\" 0 -1 1")
+        puts("example : ruby bench_tdclcpp.rb \"tdap://localhost/test?dbfile=test.bdf\" 0 -1 0")
         return
     end
     uri = argv[1] # "tdap://localhost/test?dbfile=test.bdf"
@@ -297,9 +295,9 @@ def main(argv)
     if (!db.open(uri, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', ''))
         puts("open table erorr No:#{db.stat().to_s}")
     else
-        tb = openTable(db, 'user', Transactd::TD_OPEN_NORMAL)
+        tb = openTable(db, 'users', Transactd::TD_OPEN_NORMAL)
         if tb == nil
-          puts "can not open table 'user'"
+          puts "can not open table 'users'"
           db.close()
           return
         end

@@ -56,7 +56,7 @@ public:
     {
         // The result contents is copied or sent allready.
 
-        paramMask = nw->getParamMask(tb->blobFields() != 0);
+        paramMask = nw->getParamMask(tb->getBlobFieldCount() != 0);
         unsigned int allreadysent = nw->allreadySent();
         nw->writeHeadar(paramMask, result);
 
@@ -94,8 +94,8 @@ public:
 
         if (P_MASK_POSBLK & paramMask)
         {
-            memcpy(p, (const char*)pbk, POSBLK_SIZE);
-            p += POSBLK_SIZE;
+            memcpy(p, (const char*)pbk, TD_POSBLK_TRANSMIT_SIZE);
+            p += TD_POSBLK_TRANSMIT_SIZE;
         }
 
         if (P_MASK_DATALEN & paramMask)
@@ -140,7 +140,7 @@ public:
         if (P_MASK_POSBLK & paramMask)
         {
             pbk = (posblk*)p;
-            p += POSBLK_SIZE;
+            p += TD_POSBLK_TRANSMIT_SIZE;
         }
         if (P_MASK_DATALEN & paramMask)
         {

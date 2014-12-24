@@ -35,7 +35,7 @@ class database;
 class table;
 class dbdef;
 
-#if defined(__BORLANDC__)
+#if (defined(__BORLANDC__) && !defined(__clang__))
 typedef bool __stdcall (*deleteRecordFn)(database* db, table* tb, bool inkey);
 typedef short __stdcall (*schemaMgrFn)(database* db);
 typedef void __stdcall (*copyDataFn)(database* db, int recordCount, int count,

@@ -58,33 +58,33 @@ class indexNavi
 {
 
 public:
-    inline static void increment(table& tb)
+    inline static void increment(table& tb, ushort_td lockBias)
     {
-        tb.seekNext();
+        tb.seekNext(lockBias);
         readStatusCheck(tb, _T("Seek next"));
     }
 
-    inline static void decrement(table& tb)
+    inline static void decrement(table& tb, ushort_td lockBias)
     {
-        tb.seekPrev();
+        tb.seekPrev(lockBias);
         readStatusCheck(tb, _T("Seek prev"));
     }
 };
+
 
 class indexRvNavi
 {
 
 public:
-    inline static void increment(table& tb)
+    inline static void increment(table& tb, ushort_td lockBias)
     {
-        tb.seekPrev();
+        tb.seekPrev(lockBias);
         readStatusCheck(tb, _T("Seek next"));
     }
 
-    inline static void decrement(table& tb)
+    inline static void decrement(table& tb, ushort_td lockBias)
     {
-
-        tb.seekNext();
+        tb.seekNext(lockBias);
         readStatusCheck(tb, _T("Seek prev"));
     }
 };
@@ -93,13 +93,13 @@ class indexFindNavi
 {
 
 public:
-    inline static void increment(table& tb)
+    inline static void increment(table& tb, ushort_td /*lockBias*/)
     {
         tb.findNext();
         readStatusCheck(tb, _T("Find next"));
     }
 
-    inline static void decrement(table& tb)
+    inline static void decrement(table& tb, ushort_td /*lockBias*/)
     {
         tb.findPrev();
         readStatusCheck(tb, _T("Find prev"));
@@ -110,13 +110,13 @@ class indexRvFindNavi
 {
 
 public:
-    inline static void increment(table& tb)
+    inline static void increment(table& tb, ushort_td /*lockBias*/)
     {
         tb.findPrev();
         readStatusCheck(tb, _T("Find next"));
     }
 
-    inline static void decrement(table& tb)
+    inline static void decrement(table& tb, ushort_td /*lockBias*/)
     {
         tb.findNext();
         readStatusCheck(tb, _T("Find prev"));
@@ -127,30 +127,30 @@ class stepNavi
 {
 
 public:
-    inline static void increment(table& tb)
+    inline static void increment(table& tb, ushort_td lockBias)
     {
-        tb.stepNext();
+        tb.stepNext(lockBias);
         readStatusCheck(tb, _T("Step next"));
     }
-    inline static void decrement(table& tb)
+    inline static void decrement(table& tb, ushort_td lockBias)
     {
-        tb.stepPrev();
+        tb.stepPrev(lockBias);
         readStatusCheck(tb, _T("Step prev"));
     }
 };
 
 class stepRvNavi
 {
-
+   
 public:
-    inline static void increment(table& tb)
+    inline static void increment(table& tb, ushort_td lockBias)
     {
-        tb.stepPrev();
+        tb.stepPrev(lockBias);
         readStatusCheck(tb, _T("Step next"));
     }
-    inline static void decrement(table& tb)
+    inline static void decrement(table& tb, ushort_td lockBias)
     {
-        tb.stepNext();
+        tb.stepNext(lockBias);
         readStatusCheck(tb, _T("Step prev"));
     }
 };

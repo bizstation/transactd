@@ -53,7 +53,7 @@ public:
 
 public:
     bzs::db::protocol::tdap::client::queryBase& query() { return m_qb; };
-    STDMETHOD(Reset)(void);
+    STDMETHOD(Reset)(IQueryBase** retVal);
     STDMETHOD(ClearSeekKeyValues)(void);
     STDMETHOD(ClearSelectFields)(void);
     STDMETHOD(Select)(BSTR Value, BSTR Value1, BSTR Value2, BSTR Value3,

@@ -46,10 +46,26 @@ dllUnloadCallback dllUnloadCallbackFunc = NULL;
 #ifdef USETLS
 tls_key g_tlsiID1;
 tls_key g_tlsiID_SC1;
-#else
+
+void cleanupClinet(void* p)
+{
+    delete ((bzs::db::protocol::tdap::client::client*)(p));
+}
+
+void cleanupClientID(void* p)
+{
+    delete ((clientID*)(p));
+}
+
+void cleanupWChar(void* p)
+{
+    delete ((wchar_t*)(p));
+}
+
+#else // NOT USETLS
 __THREAD clientID __THREAD_BCB g_cid;
 __THREAD bool __THREAD_BCB g_initCid = false;
-#endif
+#endif // NOT USETLS
 
 #ifdef _WIN32
 
@@ -57,6 +73,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
+#ifdef _MSC_VER
+        _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+        _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
+        //_CrtSetBreakAlloc(155);
+#endif
+
 #ifdef USETLS
         if ((g_tlsiID = TlsAlloc()) == TLS_OUT_OF_INDEXES)
             return FALSE;
@@ -71,9 +93,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
     else if (reason == DLL_THREAD_DETACH)
     {
 #ifdef USETLS
-        delete (bzs::db::protocol::tdap::client::client*)tls_getspecific(
-            g_tlsiID);
-        tls_setspecific(g_tlsiID1, 0);
+        cleanupClinet(tls_getspecific(g_tlsiID));
+        cleanupClientID(tls_getspecific(g_tlsiID1));
+        cleanupWChar(tls_getspecific(g_tlsiID_SC1));
 #else
         delete g_client;
         g_client = NULL;
@@ -81,16 +103,26 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
     }
     else if (reason == DLL_PROCESS_DETACH)
     {
+        try
+        {
         if (dllUnloadCallbackFunc)
             dllUnloadCallbackFunc();
-
         delete m_cons;
+        }
+        catch(...){}
         m_cons = NULL;
 
 #ifdef USETLS
+        cleanupClinet(tls_getspecific(g_tlsiID));
+        cleanupClientID(tls_getspecific(g_tlsiID1));
+        cleanupWChar(tls_getspecific(g_tlsiID_SC1));
         TlsFree(g_tlsiID);
         TlsFree(g_tlsiID1);
         TlsFree(g_tlsiID_SC1);
+#endif
+#ifdef _MSC_VER
+    OutputDebugString(_T("After tdclc DLL_PROCESS_DETACH \n"));
+    _CrtDumpMemoryLeaks();
 #endif
     }
     return TRUE;
@@ -107,24 +139,30 @@ void __attribute__((destructor)) onUnloadLibrary(void);
 
 void onLoadLibrary(void)
 {
-    m_cons = new connections(PIPENAME);
+    if (m_cons == NULL)
+    {
+        m_cons = new connections(PIPENAME);
 #ifdef USETLS
-    pthread_key_create(&g_tlsiID, NULL);
-    pthread_key_create(&g_tlsiID1, NULL);
-    pthread_key_create(&g_tlsiID_SC1, NULL);
+        pthread_key_create(&g_tlsiID, cleanupClinet);
+        pthread_key_create(&g_tlsiID1, cleanupClientID);
+        pthread_key_create(&g_tlsiID_SC1, cleanupWChar);
 #endif
+    }
 }
 
 void onUnloadLibrary(void)
 {
-    if (dllUnloadCallbackFunc)
-        dllUnloadCallbackFunc();
-    delete m_cons;
-    m_cons = NULL;
+    if (m_cons)
+    {
+        if (dllUnloadCallbackFunc)
+            dllUnloadCallbackFunc();
+        delete m_cons;
+        m_cons = NULL;
 #ifdef USETLS
-    pthread_key_delete(g_tlsiID);
-    pthread_key_delete(g_tlsiID1);
-    pthread_key_delete(g_tlsiID_SC1);
+        pthread_key_delete(g_tlsiID);
+        pthread_key_delete(g_tlsiID1);
+        pthread_key_delete(g_tlsiID_SC1);
+    }
 #endif
 }
 #endif // NOT _WIN32
@@ -138,19 +176,21 @@ extern "C" PACKAGE_OSX short_td __STDCALL
     short_td ret;
     try
     {
-
         if ((TD_GET_BLOB_BUF != op) && (TD_ADD_SENDBLOB != op))
+        {
+            if (cid == NULL) return 1;
+            
             client_t->setParam(op, pbk, data, datalen, keybuf, keylen, keyNum,
                                cid);
 
-        if (client_t->stop_if())
-        {
-            client_t->cleanup();
-            return 0;
+            if (client_t->stop_if())
+            {
+                client_t->cleanup();
+                return 0;
+            }
         }
-        if (cid == NULL)
-            return 1;
 
+        op = op % 100;
         switch (op)
         {
         case TD_GET_BLOB_BUF:
@@ -165,7 +205,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             {
                 if (op == TD_CREATETABLE)
                 {
-                    if (client_t->readServerCharsetIndex())
+                    if (client_t->getServerCharsetIndex() != -1)
                         client_t->create();
                     else
                     {
@@ -211,6 +251,8 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             client_t->req().paramMask = P_MASK_NOKEYBUF;
             break;
         case TD_UNLOCK:
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
+            break;
         case TD_UPDATE_PART:
             client_t->cleanup();
             return 0;
@@ -255,6 +297,8 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_KEY_NEXT_MULTI:
         case TD_KEY_PREV_MULTI:
+        case TD_KEY_SEEK_MULTI:
+        case TD_FILTER_PREPARE:
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_DATA |
                                         P_MASK_DATALEN | P_MASK_EX_SENDLEN |
                                         P_MASK_KEYNUM;
@@ -281,11 +325,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_POS_PREV_MULTI:
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_DATA |
                                         P_MASK_DATALEN | P_MASK_EX_SENDLEN;
-            break;
-        case TD_KEY_SEEK_MULTI:
-            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_DATA |
-                                        P_MASK_KEYNUM | P_MASK_DATALEN |
-                                        P_MASK_EX_SENDLEN;
             break;
         case TD_GETDIRECTORY:
         case TD_SETDIRECTORY:
@@ -412,13 +451,6 @@ inline clientID* getCid()
     }
     return p;
 #else
-    return &g_cid;
-#endif
-}
-
-void initCid()
-{
-#ifndef USETLS
     if (!g_initCid)
     {
         g_initCid = true;
@@ -427,10 +459,11 @@ void initCid()
         g_cid.aid[0] = 'G';
         g_cid.aid[1] = 'X';
     }
+    return &g_cid;
 #endif
 }
 
-extern "C" PACKAGE_OSX short_td BTRVID(ushort_td op, posblk* pbk, void_td* data,
+extern "C" PACKAGE_OSX short_td __STDCALL BTRVID(ushort_td op, posblk* pbk, void_td* data,
                                        uint_td* datalen, void_td* keybuf,
                                        char_td keyNum, clientID* cid)
 {
@@ -444,7 +477,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL BTRV(ushort_td op, posblk* pbk,
                                                void_td* data, uint_td* datalen,
                                                void_td* keybuf, char_td keyNum)
 {
-    initCid();
     return BTRVID(op, pbk, data, datalen, keybuf, keyNum, getCid());
 }
 
@@ -452,7 +484,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL
     BTRCALL(ushort_td op, posblk* pbk, void_td* data, uint_td* datalen,
             void_td* keybuf, keylen_td keylen, char_td keyNum)
 {
-    initCid();
     return BTRCALLID(op, pbk, data, datalen, keybuf, keylen, keyNum, getCid());
 }
 
@@ -460,7 +491,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL
     BTRCALL32(ushort_td op, posblk* pbk, void_td* data, uint_td* datalen,
               void_td* keybuf, keylen_td keylen, char_td keyNum)
 {
-    initCid();
     return BTRCALLID(op, pbk, data, datalen, keybuf, keylen, keyNum, getCid());
 }
 

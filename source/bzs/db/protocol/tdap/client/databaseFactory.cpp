@@ -21,7 +21,11 @@
 
 #include "database.h"
 #include <bzs/rtl/exception.h>
-//---------------------------------------------------------------------------
+#ifdef LINUX
+#include <pthread.h>
+#include <bzs/env/crosscompile.h>
+#include <bzs/env/mbcswchrLinux.h>
+#endif
 
 #pragma package(smart_init)
 
@@ -71,9 +75,12 @@ tls_key g_tlsiID_SC3;
 
 void initTlsThread()
 {
-    tls_setspecific(g_tlsiID_SC1, new wchar_t[256]);
-    tls_setspecific(g_tlsiID_SC2, new wchar_t[45]);
-    tls_setspecific(g_tlsiID_SC3, new wchar_t[45]);
+    if (tls_getspecific(g_tlsiID_SC1) == NULL)
+        tls_setspecific(g_tlsiID_SC1, new wchar_t[256]);
+    if (tls_getspecific(g_tlsiID_SC2) == NULL)
+        tls_setspecific(g_tlsiID_SC2, new wchar_t[45]);
+    if (tls_getspecific(g_tlsiID_SC3) == NULL)
+        tls_setspecific(g_tlsiID_SC3, new wchar_t[45]);
 }
 
 void cleanupTls()
@@ -81,36 +88,62 @@ void cleanupTls()
     delete (char*)tls_getspecific(g_tlsiID_SC1);
     delete (char*)tls_getspecific(g_tlsiID_SC2);
     delete (char*)tls_getspecific(g_tlsiID_SC3);
+    tls_setspecific(g_tlsiID_SC1, NULL);
+    tls_setspecific(g_tlsiID_SC2, NULL);
+    tls_setspecific(g_tlsiID_SC3, NULL);
 }
 
-#ifdef __APPLE__
+void cleanupCharPtr(void* p)
+{
+    delete ((char*)p);
+}
+#endif // USETLS
+
+#ifdef LINUX
 
 #include <pthread.h>
-
 void __attribute__((constructor)) onLoadLibrary(void);
 void __attribute__((destructor)) onUnloadLibrary(void);
 
 void onLoadLibrary(void)
 {
-    pthread_key_create(&g_tlsiID_SC1, NULL);
-    pthread_key_create(&g_tlsiID_SC2, NULL);
-    pthread_key_create(&g_tlsiID_SC3, NULL);
+    bzs::env::initCvtProcess();
+#if (defined(__APPLE__) && defined(USETLS))
+    if (tls_getspecific(g_tlsiID_SC1) == NULL)
+        pthread_key_create(&g_tlsiID_SC1, cleanupCharPtr);
+    if (tls_getspecific(g_tlsiID_SC2) == NULL)
+        pthread_key_create(&g_tlsiID_SC2, cleanupCharPtr);
+    if (tls_getspecific(g_tlsiID_SC3) == NULL)
+        pthread_key_create(&g_tlsiID_SC3, cleanupCharPtr);
+
+#endif
 }
 
 void onUnloadLibrary(void)
 {
+    bzs::env::deinitCvtProcess();
+#if (defined(__APPLE__) && defined(USETLS))
     cleanupTls();
     pthread_key_delete(g_tlsiID_SC1);
     pthread_key_delete(g_tlsiID_SC2);
     pthread_key_delete(g_tlsiID_SC3);
+#endif
 }
 
-#else
+#endif // LINUX
+
+#if (defined(_WIN32) && defined(USETLS))
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
 {
     if (reason == DLL_PROCESS_ATTACH)
     {
+#ifdef _MSC_VER
+        _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+        _CrtSetReportMode( _CRT_ERROR, _CRTDBG_MODE_DEBUG );
+        //_CrtSetBreakAlloc(151);
+#endif
+
         if ((g_tlsiID_SC1 = TlsAlloc()) == TLS_OUT_OF_INDEXES)
             return FALSE;
         if ((g_tlsiID_SC2 = TlsAlloc()) == TLS_OUT_OF_INDEXES)
@@ -133,8 +166,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
         TlsFree(g_tlsiID_SC1);
         TlsFree(g_tlsiID_SC2);
         TlsFree(g_tlsiID_SC3);
+#ifdef _MSC_VER
+        OutputDebugString(_T("After tdclcpp DLL_PROCESS_DETACH \n"));
+        _CrtDumpMemoryLeaks();
+#endif
     }
     return TRUE;
 }
-#endif
-#endif //(_UNICODE && defined(_WIN32) && _MSC_VER)
+#endif //(defined(_WIN32) && defined(USETLS))
+

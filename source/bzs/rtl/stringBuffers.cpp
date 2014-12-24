@@ -57,7 +57,7 @@ size_t stringBuffer::alloc(size_t size)
     return m_len;
 }
 
-size_t stringBuffer::realloc(size_t size)
+size_t stringBuffer::re_alloc(size_t size)
 {
     size =
         ((size / MEMORY_UNIT) + ((size % MEMORY_UNIT) ? 1 : 0)) * MEMORY_UNIT;
@@ -72,7 +72,7 @@ char* stringBuffer::getPtrA(size_t size)
     char* p = NULL;
 
     if (m_pos + size > m_len)
-        realloc(m_pos + size + 1);
+        re_alloc(m_pos + size + 1);
     if (m_pos + size <= m_len)
     {
         p = m_ptr + m_pos;
@@ -88,7 +88,7 @@ WCHAR* stringBuffer::getPtrW(size_t size /* charnum */)
     WCHAR* p = NULL;
     size_t sizetmp = size * sizeof(WCHAR);
     if (m_pos + sizetmp > m_len)
-        realloc(m_pos + sizetmp + sizeof(WCHAR));
+        re_alloc(m_pos + sizetmp + sizeof(WCHAR));
     if (m_pos + sizetmp <= m_len)
     {
         p = (WCHAR*)(m_ptr + m_pos);

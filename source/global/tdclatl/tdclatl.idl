@@ -44,6 +44,8 @@ interface ISortFields;
 interface IFieldNames;
 interface IConnectParams;
 interface IPooledDbManager;
+interface IPreparedQuery;
+
 
 typedef
 [
@@ -97,7 +99,8 @@ enum eOpenMode
 {
 	normal = 0,
     readOnly = -2,
-	exclusive = -4
+	exclusive = -4,
+	exclusive_readOnly = -6
 }eOpenMode;
 
 
@@ -162,18 +165,29 @@ enum eStatus
 	STATUS_INVALID_OWNERNAME	= 51,
 	STATUS_TABLE_EXISTS_ERROR	= 59,
 	STATUS_LIMMIT_OF_REJECT		= 60,
+    STATUS_WARKSPACE_TOO_SMALL  = 61,
+    STATUS_INVALID_EX_DESC      = 62,
+    STATUS_INVALID_EX_INS       = 63,
 	STATUS_REACHED_FILTER_COND	= 64,
 	STATUS_INVALID_FIELD_OFFSET = 65,
 	STATUS_CHANGE_CONFLICT		= 80,
 	STATUS_INVALID_LOCKTYPE		= 83,
 	STATUS_LOCK_ERROR			= 84,
 	STATUS_FILE_LOCKED			= 85,
+	STATUS_INVALID_SUPPLYVALUES	= 86,
 	STATUS_CANNOT_LOCK_TABLE	= 88,
 	TATUS_INVALID_KEYNAME		= 6,
 	STATUS_INVALID_DATASIZE		= 22,
 	STATUS_INVALID_FIELDNAME	= 65,
 	ERROR_TD_INVALID_CLINETHOST	= 171,
 	ERROR_NOSPECIFY_TABLE       = 176,
+    ERROR_LOAD_CLIBRARY         = 200,
+    ERROR_INDEX_RND_INIT        = 201,
+    STATUS_INVALID_PREPAREID    = 202,
+    STATUS_LMIT_OF_PREPAREED    = 203,
+    STATUS_ALREADY_INSNAPSHOT   = 204,
+    STATUS_ALREADY_INTRANSACTION= 205,
+	SERVER_CLIENT_NOT_COMPATIBLE= 3003,
 	NET_BAD_SRB_FORMAT			= 3021,
 	ERROR_TD_HOSTNAME_NOT_FOUND = 3103,
 	ERROR_TD_CONNECTION_FAILURE = 3106,
@@ -266,8 +280,28 @@ enum eLockType
   NOWAIT_WRITE        = 500,
   PARALLEL_TRN        = 1000,
   PARA_SINGLE_NOWAIT  = 1700,
-  PARA_MULTI_NOWAIT   = 1900
+  PARA_MULTI_NOWAIT   = 1900,
+  /* Innodb or transactional engin lock options */
+  // read operation lock options
+  ROW_LOCK_X         = 200,
+  ROW_LOCK_S         = 5200,
+  // transaction options
+  SINGLELOCK_NOGAP   = 200,
+  MULTILOCK_NOGAP    = 400,
+  MULTILOCK_GAP      = 2400
+
 }eLockType;
+
+typedef
+[
+  helpstring("Snapshot lock type Constants")
+]
+enum eStLockType
+{
+  MULTILOCK_NOGAP_SHARE   = 0,
+  MULTILOCK_GAP_SHARE     = 2000,
+  CONSISTENT_READ         = 4000
+}eStLockType;
 
 typedef
 [
@@ -350,7 +384,7 @@ interface IDatabase : IDispatch
   [propget, id(0x0000000A)]
   HRESULT _stdcall NativeDatabase([out, retval] hyper** Value);
   [id(0x000000C9)]
-  HRESULT _stdcall BeginSnapshot(void);
+  HRESULT _stdcall BeginSnapshot([in, defaultvalue(CONSISTENT_READ)] eStLockType Bias);
   [id(0x000000CA)]
   HRESULT _stdcall EndSnapshot(void);
   [id(0x000000CB)]
@@ -675,9 +709,13 @@ interface ITable : IDispatch
   [id(0x000000FA)]
   HRESULT _stdcall KeyValueDescription([out, retval] BSTR* Value);
   [id(0x000000FB)]
-  HRESULT _stdcall SetQuery([in] IQueryBase* Value);
+  HRESULT _stdcall SetQuery([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
   [id(0x000000FC)]
   HRESULT _stdcall FieldNumByName([in] BSTR Name, [out, retval] short* Value);
+  [id(0x000000FD)]
+  HRESULT _stdcall Prepare([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
+  [id(0x000000FF)]
+  HRESULT _stdcall SetPrepare([in] IPreparedQuery* Value);
 
 };
 [
@@ -973,7 +1011,7 @@ interface ITdVersion : IDispatch
 interface IQueryBase : IDispatch
 {
   [id(0x0000001)]
-  HRESULT _stdcall Reset(void);
+  HRESULT _stdcall Reset([out, retval] IQueryBase** retVal);
   [id(0x0000002)]
   HRESULT _stdcall ClearSeekKeyValues(void);
   [id(0x0000003)]
@@ -1074,13 +1112,18 @@ interface IActiveTable : IDispatch
   [id(0x0000004)]
   HRESULT _stdcall Option([in] int Value, [out, retval] IActiveTable** retVal);
   [id(0x0000005)]
-  HRESULT _stdcall Read([in, optional] VARIANT query, [out, retval] IRecordset** retVal);
+  HRESULT _stdcall Read([in, optional] VARIANT query, 
+                    [in, optional] VARIANT Value0, [in, optional] VARIANT Value1,
+                    [in, optional] VARIANT Value2, [in, optional] VARIANT Value3,
+                    [in, optional] VARIANT Value4, [in, optional] VARIANT Value5,
+                    [in, optional] VARIANT Value6, [in, optional] VARIANT Value7,
+                    [out, retval] IRecordset** retVal);
   [id(0x0000006)]
   HRESULT _stdcall Alias([in] BSTR Src, [in] BSTR Dst, [out, retval] IActiveTable** retVal);
   [id(0x0000007)]
   HRESULT _stdcall ResetAlias([out, retval] IActiveTable** retVal);
   [id(0x0000008)]
-  HRESULT _stdcall Join([in] IRecordset* rs, [in] IQueryBase* query, [in] BSTR Name0
+  HRESULT _stdcall Join([in] IRecordset* rs, [in] VARIANT query, [in] BSTR Name0
 					, [in, defaultvalue("")] BSTR Name1, [in, defaultvalue("")] BSTR Name2
 					, [in, defaultvalue("")] BSTR Name3, [in, defaultvalue("")] BSTR Name4
 					, [in, defaultvalue("")] BSTR Name5, [in, defaultvalue("")] BSTR Name6
@@ -1088,7 +1131,7 @@ interface IActiveTable : IDispatch
 					,[out, retval] IRecordset** retVal);
 
   [id(0x0000009)]
-  HRESULT _stdcall OuterJoin([in] IRecordset* rs, [in] IQueryBase* query, [in] BSTR Name0
+  HRESULT _stdcall OuterJoin([in] IRecordset* rs, [in] VARIANT query, [in] BSTR Name0
 					, [in, defaultvalue("")] BSTR Name1, [in, defaultvalue("")] BSTR Name2
 					, [in, defaultvalue("")] BSTR Name3, [in, defaultvalue("")] BSTR Name4
 					, [in, defaultvalue("")] BSTR Name5, [in, defaultvalue("")] BSTR Name6
@@ -1099,6 +1142,11 @@ interface IActiveTable : IDispatch
   HRESULT _stdcall GetWritableRecord([out, retval] IWritableRecord** retVal);
   [propget, id(0x000000B)]
   HRESULT _stdcall TableDef([out, retval] ITableDef** Value);
+  [id(0x000000C)]
+  HRESULT _stdcall Prepare([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
+  [id(0x000000D)]
+  HRESULT _stdcall Table([out, retval]ITable** retVal);
+
   				
 };
 
@@ -1156,6 +1204,13 @@ interface IRecordset : IDispatch
   [id(0x0000011)]
   HRESULT _stdcall AppendField([in] BSTR name, [in] eFieldType type, [in] short len);
 
+  [id(0x0000012)]
+  HRESULT _stdcall Clear();
+  
+  [id(0x0000014)]
+  HRESULT _stdcall ClearRecords();
+
+  
 };
 
 [
@@ -1359,11 +1414,11 @@ interface IPooledDbManager : IDispatch
   [id(0x00000004)]
   HRESULT _stdcall AbortTrn(void);
   [id(0x00000005)]
-  HRESULT _stdcall BeginSnapshot(void);
+  HRESULT _stdcall BeginSnapshot([in, defaultvalue(CONSISTENT_READ)] eStLockType Bias);
   [id(0x00000006)]
   HRESULT _stdcall EndSnapshot(void);
   [id(0x00000007)]
-  HRESULT _stdcall Use([in, defaultvalue(0L)] VARIANT Uri);
+  HRESULT _stdcall Use([in, optional] VARIANT Uri);
   [id(0x00000008)]
   HRESULT _stdcall Unuse();
   [propget, id(0x00000009)]
@@ -1411,6 +1466,23 @@ interface IConnectParams : IDispatch
   [propget, id(4)]
   HRESULT _stdcall Type([out, retval] short* retVal);
  
+};
+
+[
+  object,
+  uuid(33C684B3-E198-431C-9CCC-48EB083E1219),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IPreparedQuery : IDispatch
+{
+  [id(0x0000001)]
+  HRESULT _stdcall SupplyValue([in] int Index, [in] VARIANT Value, [out, retval] VARIANT_BOOL* retVal);
+  [id(0x0000002)]
+  HRESULT _stdcall AddValue([in] VARIANT Value, [out, retval] VARIANT_BOOL* retVal);
+  [id(0x0000003)]
+  HRESULT _stdcall ResetAddIndex();
 };
 
 [
@@ -1630,6 +1702,16 @@ library transactd
 	coclass ConnectParams
 	{
 		[default] interface IConnectParams;
+	};
+
+    [
+		uuid(E5D3D961-A1CD-42CA-B7E0-640AB0CEB529)	
+		,noncreatable
+	]
+	coclass PreparedQuery
+	{
+		[default] interface IPreparedQuery;
+		
 	};
 		
 };

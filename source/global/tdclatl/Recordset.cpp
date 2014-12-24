@@ -34,10 +34,6 @@ CARecordset::CARecordset()
 CARecordset::~CARecordset()
 {
 
-    if (m_recObj)
-        m_recObj->Release();
-    if (m_fieldDefsObj)
-        m_fieldDefsObj->Release();
 }
 
 void CARecordset::setResult(IRecordset** retVal)
@@ -50,10 +46,8 @@ STDMETHODIMP CARecordset::Record(unsigned long Index, IRecord** retVal)
     if (Index >= 0 && Index < m_rs->size())
     {
         if (m_recObj == NULL)
-        {
             CComObject<CRecord>::CreateInstance(&m_recObj);
-            m_recObj->AddRef();
-        }
+
         if (m_recObj)
         {
             m_recObj->m_rec = &((*m_rs)[Index]);
@@ -261,10 +255,7 @@ STDMETHODIMP CARecordset::Reverse(IRecordset** retVal)
 STDMETHODIMP CARecordset::get_FieldDefs(IFieldDefs** retVal)
 {
     if (m_fieldDefsObj == NULL)
-    {
         CComObject<CFieldDefs>::CreateInstance(&m_fieldDefsObj);
-        m_fieldDefsObj->AddRef();
-    }
     if (m_fieldDefsObj)
     {
         m_fieldDefsObj->m_fds = m_rs->fieldDefs();
@@ -276,3 +267,17 @@ STDMETHODIMP CARecordset::get_FieldDefs(IFieldDefs** retVal)
     }
     return S_OK;
 }
+
+
+STDMETHODIMP CARecordset::Clear()
+{
+    m_rs->clear();
+    return S_OK;
+}
+
+STDMETHODIMP CARecordset::ClearRecords()
+{
+    m_rs->clearRecords();
+    return S_OK;
+}
+

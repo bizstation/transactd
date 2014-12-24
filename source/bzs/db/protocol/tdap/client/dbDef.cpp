@@ -730,6 +730,8 @@ tabledef* dbdef::tableDefs(int index)
         def->autoIncExSpace = ((database*)nsdb())->defaultAutoIncSpace();
 
         setCodePage(def);
+        //Fix:Bug of maxRecordLen is mistake value saved, recalculate maxRecordLen.
+        setRecordLen(index);
     }
     else if (def == (tabledef*)-1)
         return NULL;
@@ -806,7 +808,7 @@ void dbdef::create(const _TCHAR* fullpath)
     fileSpec* fs;
 
     fs = (fileSpec*)malloc(512);
-    memset(fs, 512, 0x00);
+    memset(fs, 0x00, 512);
     fs->recLen = sizeof(tabledef);
     fs->pageSize = 4096;
     fs->indexCount = 1;
@@ -840,7 +842,7 @@ ushort_td dbdef::getRecordLen(short TableIndex)
     short i;
     tabledef* td = tableDefs(TableIndex);
     for (i = 0; i < td->fieldCount; i++)
-        ret += td->fieldDefs[i].len + td->fieldDefs[i].varLenBytes();
+        ret += td->fieldDefs[i].len/* + td->fieldDefs[i].varLenBytes()*/;
     return ret;
 }
 

@@ -538,7 +538,7 @@ void nsdatabase::reset()
 
     if (m_nsimpl->tranCount)
     {
-#ifdef _WIN32
+#if (defined(_WIN32) && defined(_DEBUG))
 #ifdef LIB_TDCLCPP
         int ret = MessageBox(NULL, _T("Is an uncompleted transaction aborted?"),
                              NULL, 33);
@@ -565,7 +565,7 @@ void nsdatabase::reset()
         }
     }
     m_nsimpl->lockWaitCount = 10;
-    m_nsimpl->lockWaitTime = 200;
+    m_nsimpl->lockWaitTime = 100;
     m_nsimpl->tableCount = 0;
     m_nsimpl->bdfPath[0] = 0x00;
     if (m_btrcallid)
@@ -581,10 +581,10 @@ void nsdatabase::reset()
         m_btrcallid = getBtrvEntryPoint();
 }
 
-void nsdatabase::beginSnapshot()
+void nsdatabase::beginSnapshot(short bias)
 {
     if (m_nsimpl->snapShotCount == 0)
-        m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT, NULL, NULL, NULL, NULL, 0, 0,
+        m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, NULL, NULL, NULL, 0, 0,
                              m_nsimpl->clientID);
     m_nsimpl->snapShotCount++;
 }

@@ -21,6 +21,8 @@
 #include "nsTable.h"
 #include <vector>
 #include <stdio.h>
+#include <boost/shared_ptr.hpp>
+
 namespace bzs
 {
 
@@ -57,6 +59,7 @@ public:
     virtual ~multiRecordAlocator() {}
     virtual void init(size_t recordCount, size_t recordLen, int addType,
                       const class table* tb) = 0;
+    virtual unsigned char* allocBlobBlock(size_t size) = 0;
     virtual unsigned char* ptr(size_t row, int stat) = 0;
     virtual void setJoinType(int v) = 0;
     virtual void setInvalidRecord(size_t row, bool v) = 0;
@@ -67,21 +70,26 @@ public:
     virtual void removeLastMemBlock(int row) = 0;
 };
 
+class filter;
+typedef boost::shared_ptr<filter> pq_handle; 
+
 /** @endcond */
 
 class DLLLIB table : public nstable
 {
+    static void* __STDCALL DDBA(client::table* tb, uint_td size);
+
     friend class recordCache;
     friend class database;
     friend class filter;
     friend class fields;
+    friend struct logic;
 
     struct tbimpl* m_impl;
     class fielddefs* m_fddefs;
     tabledef* m_tableDef;
 
     uchar_td charset() const;
-    bool checkFindDirection(ushort_td op);
     bool checkIndex(short index) const;
     void getKeySpec(keySpec* ks, bool SpecifyKeyNum = false);
     const bzs::db::blobHeader* getBlobHeader();
@@ -102,12 +110,14 @@ class DLLLIB table : public nstable
     bool setSeekValueField(int row);
     void btrvSeekMulti();
     bool doSeekMultiAfter(int row);
-
+    void* doDdba(uint_td size);
+    bool recordsLoop(ushort_td& op);
 protected:
     explicit table(nsdatabase* pbe); // Inheritance is impossible
     virtual ~table();
     void* dataBak() const;
-    void setDataBak(void* v);
+    void* reallocDataBuffer(uint_td v);
+    int dataBufferLen() const;
     void setBookMarks(int StartId, void* Data, ushort_td Count);
     uint_td unPack(char* ptr, size_t size);
     uint_td pack(char* ptr, size_t size);
@@ -131,6 +141,7 @@ protected:
     void init(tabledef* def, short filenum, bool regularDir);
     void* attachBuffer(void* newPtr, bool unpack = false, size_t size = 0);
     void dettachBuffer();
+    bool doPrepare();
 
     virtual void doInit(tabledef* def, short filenum, bool regularDir);
 
@@ -178,7 +189,13 @@ public:
     void findNext(bool notIncCurrent = true);
     void findPrev(bool notIncCurrent = true);
     bookmark_td bookmarkFindCurrent() const;
-    void setQuery(const queryBase* query);
+    pq_handle setQuery(const queryBase* query, bool serverPrepare=false);
+    pq_handle prepare(const queryBase* query, bool serverPrepare=false)
+    {
+        return setQuery(query, serverPrepare);
+    }
+    void setPrepare(const pq_handle stmt);
+
     void setFilter(const _TCHAR* str, ushort_td rejectCount,
                    ushort_td cacheCount, bool autoEscape = true);
     short fieldNumByName(const _TCHAR* name);
@@ -389,7 +406,9 @@ inline std::_tstring lexical_cast(float v)
 
 inline std::_tstring lexical_cast(const _TCHAR* v)
 {
-    return std::_tstring(v);
+    if (v)
+        return std::_tstring(v);
+    return std::_tstring(_T(""));
 }
 
 class qlogic
@@ -577,6 +596,30 @@ public:
 
     static query* create(); // implemet int activeTable.cpp
 };
+
+/** @cond INTERNAL */
+int DLLLIB makeSupplyValues(/*in out*/const _TCHAR* values[], int size,
+                         const _TCHAR* value, const _TCHAR* value1 = NULL,
+                         const _TCHAR* value2 = NULL, const _TCHAR* value3 = NULL,
+                         const _TCHAR* value4 = NULL, const _TCHAR* value5 = NULL,
+                         const _TCHAR* value6 = NULL, const _TCHAR* value7 = NULL,
+                         const _TCHAR* value8 = NULL, const _TCHAR* value9 = NULL,
+                         const _TCHAR* value10 = NULL);
+/** @endcond */
+
+bool DLLLIB supplyValues(pq_handle& filter, const _TCHAR* values[], int size);
+bool DLLLIB supplyValue(pq_handle& filter, int index, const _TCHAR* v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, short v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, int v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, __int64 v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, float v);
+bool DLLLIB supplyValue(pq_handle& filter, int index, double v);
+
+//bool DLLLIB supplyInValues(pq_handle& filter, const _TCHAR* values[], size_t size, int segments);
+
+
+
+
 
 #pragma warning(default : 4251)
 

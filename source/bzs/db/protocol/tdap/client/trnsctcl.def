@@ -2,9 +2,9 @@
 
 EXPORTS
    BTRCALLID	@1
-   BTRCALL		@2
-   BTRVID		@3
-   BTRV			@4
+   BTRCALL	@2
+   BTRVID	@3
+   BTRV		@4
    BTRCALLID32	@5
    BTRCALL32	@6
    CallbackRegist @7

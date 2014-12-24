@@ -157,11 +157,19 @@ struct recordsetQueryImple
     std::vector<char> combine;
     short endIndex;
     fielddefs compFields;
-    recordsetQueryImple() {}
+    recordsetQueryImple() : row(NULL) {}
     recordsetQueryImple(const recordsetQueryImple& r)
         : row(r.row), compType(r.compType), indexes(r.indexes),
           combine(r.combine), endIndex(r.endIndex), compFields(r.compFields)
     {
+        if (row)
+            row->addref();
+    }
+
+    ~recordsetQueryImple()
+    {
+        if (row)
+            row->release();
     }
 };
 
@@ -214,9 +222,9 @@ void recordsetQuery::init(const fielddefs* fdinfo)
         m_imple->indexes.push_back(index);
         m_imple->compFields.push_back(&((*fdinfo)[index]), true /*rePosition*/);
     }
-    memoryRecord* mr = memoryRecord::create(m_imple->compFields);
-    mr->setRecordData(0, 0, &m_imple->endIndex, true);
-    m_imple->row.reset(mr);
+    m_imple->row = memoryRecord::create(m_imple->compFields);
+    m_imple->row->addref();
+    m_imple->row->setRecordData(autoMemory::create(), 0, 0, &m_imple->endIndex, true);
 
     int index = 0;
     for (int i = 0; i < (int)tokns.size(); i += 4)

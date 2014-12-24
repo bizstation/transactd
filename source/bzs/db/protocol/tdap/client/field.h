@@ -169,8 +169,6 @@ private:
     void setFVNumeric(double data);
     //  ---- end regacy interfaces ----  //
 
-    inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
-        : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds){};
 
 /** @cond INTERNAL */
 #if defined(SWIG) ||                                                           \
@@ -178,9 +176,14 @@ private:
 public:
 #endif
     inline field() : m_fd(NULL), m_ptr(NULL), m_fds(NULL){};
-    /** @endcond */
+/** @endcond */
 
 public:
+/** @cond INTERNAL */
+    inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
+        : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds){};
+/** @endcond */
+
     // To inline
     inline field(const field& r) : m_fd(r.m_fd), m_ptr(r.m_ptr), m_fds(r.m_fds)
     {
@@ -310,6 +313,7 @@ public:
 
     /** @cond INTERNAL */
     bool isCompPartAndMakeValue();
+    void offsetBlobPtr(size_t offset);
     /** @endcond */
 };
 

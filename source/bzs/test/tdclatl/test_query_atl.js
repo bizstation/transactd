@@ -1,20 +1,20 @@
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+	 Copyright (C) 2014 BizStation Corp All rights reserved.
 
-   This program is free software; you can redistribute it and/or
-   modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2
-   of the License, or (at your option) any later version.
+	 This program is free software; you can redistribute it and/or
+	 modify it under the terms of the GNU General Public License
+	 as published by the Free Software Foundation; either version 2
+	 of the License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+	 This program is distributed in the hope that it will be useful,
+	 but WITHOUT ANY WARRANTY; without even the implied warranty of
+	 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	 GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
-   02111-1307, USA.
+	 You should have received a copy of the GNU General Public License
+	 along with this program; if not, write to the Free Software 
+	 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+	 02111-1307, USA.
 =================================================================*/
 var TYPE_DDF = 1;
 var TYPE_BDF = 0;
@@ -78,7 +78,7 @@ var ft_autoIncUnsigned = 52;
 
 //file flag
 var table_varlen   = 0;
-        
+				
 //key flag
 var key_duplicate   = 0;
 var key_changeable  = 1;
@@ -181,50 +181,47 @@ var joinWhereFields = 2;
 
 function createRecordsetQuery()
 {
-    return new ActiveXObject('transactd.recordsetQuery');
+	return new ActiveXObject('transactd.recordsetQuery');
 }
 
 	
 function createQuery()
 {
-    return new ActiveXObject('transactd.query');
+	return new ActiveXObject('transactd.query');
 }
 
 function createDatabaseObject()
 {
-    return new ActiveXObject("transactd.database");
+	return new ActiveXObject("transactd.database");
 }
 
 function createGroupQuery()
 {
-    return new ActiveXObject("transactd.groupQuery");
+	return new ActiveXObject("transactd.groupQuery");
 }
 
 function createActiveTable(db, tableName)
 {
-    var at =  new ActiveXObject("transactd.activeTable");
-    at.SetDatabase(db, tableName);
-    return at;
+	var at =  new ActiveXObject("transactd.activeTable");
+	at.SetDatabase(db, tableName);
+	return at;
 }
 
 function createSortFields()
 {
-    return new ActiveXObject("transactd.sortFields");
+	return new ActiveXObject("transactd.sortFields");
 }
 
 function createFieldNames()
 {
-    return new ActiveXObject("transactd.fieldNames");
+	return new ActiveXObject("transactd.fieldNames");
 }
 
 var sep = "-------------------------------------------------------------------------------";
-
-
 var FMT_LEFT = 0;
 var FMT_CENTER = 1;
 var FMT_RIGHT = 2;
 var MAGNIFICATION = 100;
-
 var resultCode = 0;
 var q;
 var gq;
@@ -242,7 +239,7 @@ function createUserTable(db)
 	tableDef.FileName = "user";
 	tableDef.CharsetIndex = CHARSET_CP932;
 	tableDef.SchemaCodePage = CP_UTF8;
-		
+
 	var filedIndex = 0;
 	var fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "id";
@@ -386,18 +383,18 @@ function createUserExtTable(db)
 /*--------------------------------------------------------------------------------*/
 function bench()
 {
-    var tick=0;
-	
+	var tick=0;
+
 	this.report = function(func, p1, p2, p3, p4, p5, p6, p7, p8)
 	{
 		var now = new Date();
-	    ticks = now.getTime();
+		ticks = now.getTime();
 		var ret = func(p1, p2, p3, p4, p5, p6, p7, p8);
-	    now = new Date();
+		now = new Date();
 		ticks = (now.getTime() - ticks)/1000;
-	    return ret;
+		return ret;
 	}
-	
+
 	this.time = function(){return tick;}
 	this.show = function(){WScript.Echo("(exec time " + ticks + " sec)\n");}
 }
@@ -415,22 +412,21 @@ function initQuery()
 /*--------------------------------------------------------------------------------*/
 function createDatabase(db, uri)
 {
-    db.Create(uri);
+	db.Create(uri);
 	if (db.Stat!=0)
-    {
-        WScript.Echo("createDatabase erorr:No." + db.Stat + " " + uri);
-        return false;
-    }
+	{
+		WScript.Echo("createDatabase erorr:No." + db.Stat + " " + uri);
+		return false;
+	}
 	if (db.Open(uri, TYPE_BDF, OPEN_NORMAL, "", ""))
 	{
 		if (!createUserTable(db))return false;
 		if (!createGroupTable(db))return false;
 		if (!createUserExtTable(db))return false;
-		
 		return true;
-    }else
-    	WScript.Echo("open daatabse erorr:No" +  db.stat);
-    return false;
+	}else
+		WScript.Echo("open daatabse erorr:No" +  db.stat);
+	return false;
 }
 /*--------------------------------------------------------------------------------*/
 function insertData(db)
@@ -442,7 +438,6 @@ function insertData(db)
 	try
 	{
 		db.BeginTrn();
-		
 		tb.ClearBuffer();
 		for (var i= 1;i<= 20000;++i)
 		{
@@ -474,7 +469,6 @@ function insertData(db)
 		db.AbortTrn();
 		throw e;
 	}
-
 }
 /*--------------------------------------------------------------------------------*/
 function checkEqual(a, b, on)
@@ -503,44 +497,43 @@ function wirteRecord(atg)
 	atg.ResetAlias();
 	var rec = atg.Index(0).GetWritableRecord();
 
- 
-    rec.Field("code").Vlng = 1200;
-    rec.Field("name").Text = "–îŒû";
-    if (!rec.Read())
-        rec.Insert();
+	rec.Field("code").Vlng = 1200;
+	rec.Field("name").Text = "–îŒû";
+	if (!rec.Read())
+		rec.Insert();
 
-    rec.Clear();
-    rec.Field("code").Vlng = 1201;
-    rec.Field("name").Text = "¬â";
-    if (!rec.Read())
-        rec.Insert();
+	rec.Clear();
+	rec.Field("code").Vlng = 1201;
+	rec.Field("name").Text = "¬â";
+	if (!rec.Read())
+		rec.Insert();
 
-    //update changed filed only
-    rec.Clear();
-    rec.Field("code").Vlng = 1201;
-    rec.Field("name").Vlng = 1240;
-    rec.Update();
+	//update changed filed only
+	rec.Clear();
+	rec.Field("code").Vlng = 1201;
+	rec.Field("name").Vlng = 1240;
+	rec.Update();
 
-    rec.Del();
-    rec.Field("code").Vlng = 1200;
-    rec.Del();
+	rec.Del();
+	rec.Field("code").Vlng = 1200;
+	rec.Del();
 }
 
 
 /*--------------------------------------------------------------------------------*/
-function test(atu, atg, ate)
+function test(atu, atg, ate, db)
 {
 	WScript.Echo(" -- Start Test -- ");
 
 	initQuery();
 	atu.Alias("–¼‘O", "name");
-    q.Select("id", "name","group").Where("id", "<=", 15900);
-    var rs = atu.Index(0).KeyValue(1).Read(q);
+		q.Select("id", "name","group").Where("id", "<=", 15900);
+		var rs = atu.Index(0).KeyValue(1).Read(q);
 	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
 	
 	//Join extention::comment
 
-    initQuery();
+	initQuery();
 	//first reverse
 	var last = ate.Index(0).Join(rs, q.Select("comment").Optimize(hasOneJoin), "id").Reverse().First();
 	checkEqual(rs.Count, 15900, "ate rs.Count = 15900 ");
@@ -558,7 +551,7 @@ function test(atu, atg, ate)
 	checkEqual(first.Field("id").Vlng, 1, "id = 1 ");
 	checkEqual(first.Field("comment").Text, "1 comment", "comment = 1 comment");
 	checkEqual(first.Field("group_name").Text, "1 group", "group_name = 1 group ");
- 	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "4 group", "group_name = 9 group ");
+	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "4 group", "group_name = 9 group ");
 	
 	rs.OrderBy("group_name");
 	checkEqual(rs.Record(0).Field("group_name").Text, "1 group", "group_name = 1 group ");
@@ -586,41 +579,157 @@ function test(atu, atg, ate)
 	checkEqual(row.Field("gropu1_count").Vlng, 0, "gropu1_count = 0 ");
 	
 	var count = rs.Count;
-		for (var j= 0;j<count;++j)
-			var s = rs.Record(j);
-			
+	for (var j= 0;j<count;++j)
+		var s = rs.Record(j);
+
+	//Client preparedQuery test
+	initQuery();
+	q.Select("id", "name","group").Where("id", "<=", "?");
+	var pq = atu.Prepare(q);
+	initQuery();
+	q.Select("group_name");
+	var pq2 = atg.Prepare(q);
+		// use AddValye
+	pq.AddValue(15900);
+	rs = atu.Index(0).KeyValue(1).Read(pq);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+		// use SupplyValue
+	pq.ResetAddIndex();
+	pq.SupplyValue(0, 15900);
+	rs = atu.Index(0).KeyValue(1).Read(pq);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+
+	atg.Index(0).Join(rs, pq2, "group");
+	checkEqual(rs.Count, 15900, "rs.Count = 15900 ");
+	checkEqual(rs.FieldDefs.Size, 4, "rs.FieldDefs.Size = 4 ");
+
+	//Server preparedQuery test
+	initQuery();
+	q.Select("id", "name","group").Where("id", "<=", "?");
+	var pq = atu.Prepare(q, true);
+	initQuery();
+	q.Select("group_name");
+	var pq2 = atg.Prepare(q, true);
+		// use AddValye
+	pq.AddValue(15900);
+	rs = atu.Index(0).KeyValue(1).Read(pq);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+		// use SupplyValue
+	pq.ResetAddIndex();
+	pq.SupplyValue(0, 15900);
+	rs = atu.Index(0).KeyValue(1).Read(pq);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+
+	atg.Index(0).Join(rs, pq2, "group");
+	checkEqual(rs.Count, 15900, "rs.Count = 15900 ");
+	checkEqual(rs.FieldDefs.Size, 4, "rs.FieldDefs.Size = 4 ");
+	checkEqual(rs.FieldDefs.Size, 4, "rs.FieldDefs.Size = 4 ");
+
+	// test table::setPrapare
+	var tb = db.OpenTable("user", OPEN_NORMAL); 
+	q.Reset().Select("id", "–¼‘O","group").Where("id", "<=", "?");
+	pq = tb.Prepare(q, true);
+	pq.AddValue(15900);
+	tb.SetPrepare(pq);
+	tb.ClearBuffer();
+	tb.V64("id") = 1;
+	tb.Find();
+	var num = 0;
+	while (tb.Stat == 0)
+	{
+		++num;
+		tb.FindNext();
+	}
+	checkEqual(num, 15900, "num = 15900 ");
 	
+	//test preparedQuery
+	testPrepare(atu, atg, ate)
+	
+	// test wirteRecord
 	wirteRecord(atg);
-	
+
 	WScript.Echo(" -- End Test -- ");
 
 }
 
 /*--------------------------------------------------------------------------------*/
-function main()
+function testPrepare(atu, atg, ate)
 {
 
-    var isCreate = 0;
-    var host = "localhost";
-    if (WScript.arguments.length > 0)
-    	isCreate = 	parseInt(WScript.arguments(0), 10);
+	initQuery();
+	q.Select("id", "name","group").Where("id", "<=", '?');
+    var pq = atu.Prepare(q);
     
-    if (WScript.arguments.length > 1)
-    	host = WScript.arguments(1);
-    var URI  = "tdap://" + host + "/querytest?dbfile=test.bdf";
+	//int value
+	var rs = atu.Index(0).KeyValue(1).Read(pq, 15900);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+	
+	//float value
+	rs.Clear();
+	rs = atu.Index(0).KeyValue(1).Read(pq, 15900.000);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+	
+	//String value
+	rs.Clear();
+	rs = atu.Index(0).KeyValue(1).Read(pq, "15900");
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
+	
+	//Using supplyValue value
+	rs.Clear();
+	pq.SupplyValue(0, 15900);
+	rs = atu.Index(0).KeyValue(1).Read(pq);
+	checkEqual(rs.Count, 15900, "atu rs.Count = 15900 ");
 
-    
-    WScript.Echo(URI);
+	//Join extention::comment first reverse
+
+	initQuery();
+	q.Select("comment").Optimize(hasOneJoin);
+	pq = ate.Prepare(q);
+	
+	var last = ate.Index(0).Join(rs, pq, "id").Reverse().First();
+	checkEqual(rs.Count, 15900, "ate rs.Count = 15900 ");
+	checkEqual(last.Field("id").Vlng, 15900, "last.id = 15900 ");
+	checkEqual(last.Field("comment").Text, "15900 comment", "last.comment = 15900 ");
+
+	//Join group::name
+	initQuery();
+	q.Select("group_name");
+	pq = atg.Prepare(q);
+	atg.Index(0).Join(rs, pq, "group");
+
+	//last
+	var first = rs.Last();
+	checkEqual(rs.Count, 15900, "rs.Count = 15900 ");
+	checkEqual(first.Field("id").Vlng, 1, "id = 1 ");
+	checkEqual(first.Field("comment").Text, "1 comment", "comment = 1 comment");
+	checkEqual(first.Field("group_name").Text, "1 group", "group_name = 1 group ");
+	checkEqual(rs.Record(15900 - 9).Field("group_name").Text, "4 group", "group_name = 9 group ");
+	
+}
+/*--------------------------------------------------------------------------------*/
+function main()
+{
+	var isCreate = 0;
+	var host = "localhost";
+	if (WScript.arguments.length > 0)
+		isCreate = 	parseInt(WScript.arguments(0), 10);
+
+	if (WScript.arguments.length > 1)
+		host = WScript.arguments(1);
+	var URI  = "tdap://" + host + "/querytest?dbfile=test.bdf";
+
+
+	WScript.Echo(URI);
 	var b = new bench();
-    try
-    {	
-    	var database  = createDatabaseObject();
-   	    if (database == null)
-	    {
+	try
+	{
+		var database  = createDatabaseObject();
+		if (database == null)
+		{
 			WScript.Echo("transactd.database ActiveXObject erorr.");
 			return 1;
-	    }
-	    if (database.Open(URI, TYPE_BDF, OPEN_NORMAL, "", ""))	
+		}
+		if (database.Open(URI, TYPE_BDF, OPEN_NORMAL, "", ""))
 		{
 				
 			if (isCreate > 0)
@@ -634,36 +743,36 @@ function main()
 			}
 			isCreate = true;
 		}
-		if (isCreate > 0)			
+		if (isCreate > 0)
 		{
-    		WScript.Echo("Creating test data. Please wait ...");
-    		if (createDatabase(database, URI))
+			WScript.Echo("Creating test data. Please wait ...");
+			if (createDatabase(database, URI))
 				insertData(database);
 		}
-	   
-	    if (database.Stat !== 0)
-	    {  
-	        WScript.Echo("open table erorr:No" +  database.stat);
-	        return 2;
-	    }
-        var atu = createActiveTable(database, "user");
-	    var atg = createActiveTable(database, "groups");
-		var ate = createActiveTable(database, "extention");		
-		
+
+		if (database.Stat !== 0)
+		{
+			WScript.Echo("open table erorr:No" +  database.stat);
+			return 2;
+		}
+		var atu = createActiveTable(database, "user");
+		var atg = createActiveTable(database, "groups");
+		var ate = createActiveTable(database, "extention");
+
 		q = createQuery();;
 		gq = createGroupQuery();
-	
-	    b.report(test, atu, atg, ate);
-	    b.show();
-	    if (resultCode == 0)
-	    	WScript.Echo("*** No errors detected.");
+
+		b.report(test, atu, atg, ate, database);
+		b.show();
+		if (resultCode == 0)
+			WScript.Echo("*** No errors detected.");
 	}
 	catch(e)
 	{
-		WScript.Echo("line " + e.name + " " + e.description);
+		WScript.Echo("Error:" +  e.name + " " + e.description);
 		return 2;
 	}
-	
-    return resultCode;
+
+	return resultCode;
 }
 

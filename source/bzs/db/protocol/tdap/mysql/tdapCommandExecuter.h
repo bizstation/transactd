@@ -59,13 +59,13 @@ class dbExecuter : public engine::mysql::dbManager
     std::string makeSQLcreateTable(const request& req);
     inline void doCreateTable(request& req);
     inline void doOpenTable(request& req);
-    inline void doSeekKey(request& req, int op);
-    inline void doMoveFirst(request& req);
-    inline void doMoveKey(request& req, int op);
+    inline void doSeekKey(request& req, int op, engine::mysql::rowLockMode* lock);
+    inline void doMoveFirst(request& req, engine::mysql::rowLockMode* lock);
+    inline void doMoveKey(request& req, int op, engine::mysql::rowLockMode* lock);
     inline int doReadMultiWithSeek(request& req, int op,
                                    netsvc::server::netWriter* nw);
     inline int doReadMulti(request& req, int op, netsvc::server::netWriter* nw);
-    inline void doStepRead(request& req, int op);
+    inline void doStepRead(request& req, int op, engine::mysql::rowLockMode* lock);
 
     inline void doInsert(request& req);
     inline void doUpdate(request& req);

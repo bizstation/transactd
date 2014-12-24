@@ -90,8 +90,7 @@ activeTable& activeTable::join(recordset& rs, queryBase& q, const _TCHAR* name1,
                                const _TCHAR* name2, const _TCHAR* name3,
                                const _TCHAR* name4, const _TCHAR* name5,
                                const _TCHAR* name6, const _TCHAR* name7,
-                               const _TCHAR* name8, const _TCHAR* name9,
-                               const _TCHAR* name10, const _TCHAR* name11)
+                               const _TCHAR* name8)
 {
     m_imple->join(*rs.m_imple, q, name1, name2, name3, name4, name5, name6,
                   name7, name8);
@@ -102,9 +101,29 @@ activeTable& activeTable::outerJoin(recordset& rs, queryBase& q,
                                     const _TCHAR* name1, const _TCHAR* name2,
                                     const _TCHAR* name3, const _TCHAR* name4,
                                     const _TCHAR* name5, const _TCHAR* name6,
-                                    const _TCHAR* name7, const _TCHAR* name8,
-                                    const _TCHAR* name9, const _TCHAR* name10,
-                                    const _TCHAR* name11)
+                                    const _TCHAR* name7, const _TCHAR* name8)
+{
+    m_imple->outerJoin(*rs.m_imple, q, name1, name2, name3, name4, name5, name6,
+                       name7, name8);
+    return *this;
+}
+
+activeTable& activeTable::join(recordset& rs, pq_handle& q, const _TCHAR* name1,
+                               const _TCHAR* name2, const _TCHAR* name3,
+                               const _TCHAR* name4, const _TCHAR* name5,
+                               const _TCHAR* name6, const _TCHAR* name7,
+                               const _TCHAR* name8)
+{
+    m_imple->join(*rs.m_imple, q, name1, name2, name3, name4, name5, name6,
+                  name7, name8);
+    return *this;
+}
+
+activeTable& activeTable::outerJoin(recordset& rs, pq_handle& q,
+                                    const _TCHAR* name1, const _TCHAR* name2,
+                                    const _TCHAR* name3, const _TCHAR* name4,
+                                    const _TCHAR* name5, const _TCHAR* name6,
+                                    const _TCHAR* name7, const _TCHAR* name8)
 {
     m_imple->outerJoin(*rs.m_imple, q, name1, name2, name3, name4, name5, name6,
                        name7, name8);
@@ -123,14 +142,30 @@ activeTable& activeTable::option(int v)
     return *this;
 }
 
+pq_handle activeTable::prepare(queryBase& q, bool serverPrepare)
+{
+    return m_imple->prepare(q, serverPrepare);
+}
+
 activeTable& activeTable::read(recordset& rs, queryBase& q)
 {
-
     m_imple->read(*rs.m_imple, q);
     return *this;
 }
 
 activeTable& activeTable::read(recordset& rs, queryBase& q, validationFunc func)
+{
+    m_imple->read(*rs.m_imple, q, func);
+    return *this;
+}
+
+activeTable& activeTable::read(recordset& rs, pq_handle& q)
+{
+    m_imple->read(*rs.m_imple, q);
+    return *this;
+}
+
+activeTable& activeTable::read(recordset& rs, pq_handle& q, validationFunc func)
 {
     m_imple->read(*rs.m_imple, q, func);
     return *this;

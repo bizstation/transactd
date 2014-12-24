@@ -24,6 +24,8 @@
 #include "Record.h"
 #include "TableDef.h"
 #include "PooledDbManager.h"
+#include "PreparedQuery.h"
+#include "Table.h"
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -35,8 +37,6 @@ void CActiveTable::setResult(IActiveTable** retVal)
 
 void CActiveTable::FinalRelease()
 {
-    if (m_recObj)
-        m_recObj->Release();
     delete m_at;
 }
 
@@ -45,7 +45,11 @@ STDMETHODIMP CActiveTable::SetDatabase(VARIANT Value, BSTR tableName)
     try
     {
         if (Value.vt != VT_DISPATCH)
-            return Error(_T("SetDatabase Type error"), IID_IActiveTable);
+        {
+            _TCHAR tmp[256];
+            wsprintf(tmp, _T("SetDatabase Type error type = %d"), Value.vt);
+            return Error(tmp, IID_IActiveTable);
+        }
         CPooledDbManager* pm = dynamic_cast<CPooledDbManager*>(Value.pdispVal);
         if (pm)
         {
@@ -164,41 +168,103 @@ STDMETHODIMP CActiveTable::Option(int Value, IActiveTable** retVal)
     return S_OK;
 }
 
-STDMETHODIMP CActiveTable::Read(VARIANT /*IQueryBase**/ query,
+STDMETHODIMP CActiveTable::Read(VARIANT query,
+                                    VARIANT Value0, VARIANT Value1,
+                                    VARIANT Value2, VARIANT Value3,
+                                    VARIANT Value4, VARIANT Value5,
+                                    VARIANT Value6, VARIANT Value7,
                                 IRecordset** retVal)
 {
 
     CComObject<CARecordset>* rsObj;
     CComObject<CARecordset>::CreateInstance(&rsObj);
 
-    if (rsObj)
-    {
-        IRecordset* rs;
-        rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
-        _ASSERTE(rs);
-        *retVal = rs;
-    }
-    else
-    {
-        *retVal = 0;
-        return S_OK;
-    }
+    if (!rsObj)
+        return Error(_T("Can not create recordset"), IID_IActiveTable);
+    IRecordset* rs;
+    rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
+    _ASSERTE(rs);
+    *retVal = rs;
+        
     try
     {
-        if (query.vt != VT_ERROR)
+        if (query.vt == VT_DISPATCH)
         {
             CQueryBase* p = dynamic_cast<CQueryBase*>(query.pdispVal);
             if (p)
+            {
+                if (Value0.vt != VT_ERROR)
+                    return Error(_T("Invalid ActiveTable::Read param 2"), IID_IActiveTable);
                 m_at->read(*rsObj->m_rs, p->query());
+                return S_OK;
+            }
+            else
+            {
+                CPreparedQuery* pq = dynamic_cast<CPreparedQuery*>(query.pdispVal);
+                if (pq)
+                {
+                    pq->ResetAddIndex();
+                    if (Value0.vt != VT_ERROR)
+                    {
+                        if (Value0.vt != VT_BSTR)
+                            VariantChangeType(&Value0, &Value0, 0, VT_BSTR);
+                        pq->addValue(Value0.bstrVal);
+                    }
+                    if (Value1.vt != VT_ERROR)
+                    {
+                        if (Value1.vt != VT_BSTR)
+                            VariantChangeType(&Value1, &Value1, 0, VT_BSTR);
+                        pq->addValue(Value1.bstrVal);
+                    }
+                    if (Value2.vt != VT_ERROR)
+                    {
+                        if (Value2.vt != VT_BSTR)
+                            VariantChangeType(&Value2, &Value2, 0, VT_BSTR);
+                        pq->addValue(Value2.bstrVal);
+                    }
+                    if (Value3.vt != VT_ERROR)
+                    {
+                        if (Value3.vt != VT_BSTR)
+                            VariantChangeType(&Value3, &Value3, 0, VT_BSTR);
+                        pq->addValue(Value3.bstrVal);
+                    }
+                    if (Value4.vt != VT_ERROR)
+                    {
+                        if (Value4.vt != VT_BSTR)
+                            VariantChangeType(&Value4, &Value4, 0, VT_BSTR);
+                        pq->addValue(Value4.bstrVal);
+                    }
+                    if (Value5.vt != VT_ERROR)
+                    {
+                        if (Value5.vt != VT_BSTR)
+                            VariantChangeType(&Value5, &Value5, 0, VT_BSTR);
+                        pq->addValue(Value5.bstrVal);
+                    }
+                    if (Value6.vt != VT_ERROR)
+                    {
+                        if (Value6.vt != VT_BSTR)
+                            VariantChangeType(&Value6, &Value6, 0, VT_BSTR);
+                        pq->addValue(Value6.bstrVal);
+                    }
+                    if (Value7.vt != VT_ERROR)
+                    {
+                        if (Value7.vt != VT_BSTR)
+                            VariantChangeType(&Value7, &Value7, 0, VT_BSTR);
+                        pq->addValue(Value7.bstrVal);
+                    }
+                    m_at->read(*rsObj->m_rs, pq->getFilter());
+                    return S_OK; 
+                }
+            }
         }
         else
         {
             queryBase q;
             q.reject(1).limit(1);
             m_at->read(*rsObj->m_rs, q);
+            return S_OK;
         }
-
-        return S_OK;
+        return Error(_T("Invalid ActiveTable::Read param 1"), IID_IActiveTable);
     }
     catch (bzs::rtl::exception& e)
     {
@@ -220,45 +286,80 @@ STDMETHODIMP CActiveTable::ResetAlias(IActiveTable** retVal)
     return S_OK;
 }
 
-STDMETHODIMP CActiveTable::Join(IRecordset* rs, IQueryBase* query, BSTR Name0,
+STDMETHODIMP CActiveTable::Join(IRecordset* rs, VARIANT query, BSTR Name0,
                                 BSTR Name1, BSTR Name2, BSTR Name3, BSTR Name4,
                                 BSTR Name5, BSTR Name6, BSTR Name7,
                                 IRecordset** retVal)
 {
     try
     {
-        if (query)
+        if ((query.vt == VT_DISPATCH) && query.pdispVal)
         {
             CARecordset* p = dynamic_cast<CARecordset*>(rs);
-            p->AddRef();
-            p->QueryInterface(IID_IRecordset, (void**)retVal);
-            CQueryBase* qb = dynamic_cast<CQueryBase*>(query);
-            queryBase* q = &qb->query();
-            if (p && q)
+            CQueryBase* qb = dynamic_cast<CQueryBase*>(query.pdispVal);
+            CPreparedQuery* pq = dynamic_cast<CPreparedQuery*>(query.pdispVal);
+            if (p)
             {
-                if (!Name1 || !Name1[0])
-                    m_at->join(*p->m_rs, *q, Name0);
-                else if (!Name2 || !Name2[0])
-                    m_at->join(*p->m_rs, *q, Name0, Name1);
-                else if (!Name3 || !Name3[0])
-                    m_at->join(*p->m_rs, *q, Name0, Name1, Name2);
-                else if (!Name4 || !Name4[0])
-                    m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3);
-                else if (!Name5 || !Name5[0])
-                    m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4);
-                else if (!Name6 || !Name6[0])
-                    m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4,
-                               Name5);
-                else if (!Name7 || !Name7[0])
-                    m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4,
-                               Name5, Name6);
-                else
-                    m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4,
-                               Name5, Name6, Name7);
+                if (qb)
+                {
+                    queryBase* q = &qb->query();
+                    if (q)
+                    {
+                        if (!Name1 || !Name1[0])
+                            m_at->join(*p->m_rs, *q, Name0);
+                        else if (!Name2 || !Name2[0])
+                            m_at->join(*p->m_rs, *q, Name0, Name1);
+                        else if (!Name3 || !Name3[0])
+                            m_at->join(*p->m_rs, *q, Name0, Name1, Name2);
+                        else if (!Name4 || !Name4[0])
+                            m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3);
+                        else if (!Name5 || !Name5[0])
+                            m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4);
+                        else if (!Name6 || !Name6[0])
+                            m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4,
+                                       Name5);
+                        else if (!Name7 || !Name7[0])
+                            m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4,
+                                       Name5, Name6);
+                        else
+                            m_at->join(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4,
+                                       Name5, Name6, Name7);
+                        
+                        p->QueryInterface(IID_IRecordset, (void**)retVal);
+                        return S_OK;
+                    }
+                }
+                else if (pq)
+                {
+                    bzs::db::protocol::tdap::client::pq_handle& stmt = pq->getFilter();
+                    if (stmt)
+                    {
+                        if (!Name1 || !Name1[0])
+                            m_at->join(*p->m_rs, stmt, Name0);
+                        else if (!Name2 || !Name2[0])
+                            m_at->join(*p->m_rs, stmt, Name0, Name1);
+                        else if (!Name3 || !Name3[0])
+                            m_at->join(*p->m_rs, stmt, Name0, Name1, Name2);
+                        else if (!Name4 || !Name4[0])
+                            m_at->join(*p->m_rs, stmt, Name0, Name1, Name2, Name3);
+                        else if (!Name5 || !Name5[0])
+                            m_at->join(*p->m_rs, stmt, Name0, Name1, Name2, Name3, Name4);
+                        else if (!Name6 || !Name6[0])
+                            m_at->join(*p->m_rs, stmt, Name0, Name1, Name2, Name3, Name4,
+                                       Name5);
+                        else if (!Name7 || !Name7[0])
+                            m_at->join(*p->m_rs, stmt, Name0, Name1, Name2, Name3, Name4,
+                                       Name5, Name6);
+                        else
+                            m_at->join(*p->m_rs, stmt, Name0, Name1, Name2, Name3, Name4,
+                                       Name5, Name6, Name7);
+                        p->QueryInterface(IID_IRecordset, (void**)retVal);
+                        return S_OK;
+                    }
+                }
             }
-            p->Release();
         }
-        return S_OK;
+        return Error(_T("Invalid ActiveTable::Join param 2"), IID_IActiveTable);
     }
     catch (bzs::rtl::exception& e)
     {
@@ -266,7 +367,7 @@ STDMETHODIMP CActiveTable::Join(IRecordset* rs, IQueryBase* query, BSTR Name0,
     }
 }
 
-STDMETHODIMP CActiveTable::OuterJoin(IRecordset* rs, IQueryBase* query,
+STDMETHODIMP CActiveTable::OuterJoin(IRecordset* rs, VARIANT query,
                                      BSTR Name0, BSTR Name1, BSTR Name2,
                                      BSTR Name3, BSTR Name4, BSTR Name5,
                                      BSTR Name6, BSTR Name7,
@@ -274,44 +375,105 @@ STDMETHODIMP CActiveTable::OuterJoin(IRecordset* rs, IQueryBase* query,
 {
     try
     {
-        if (query)
+        if ((query.vt == VT_DISPATCH) && query.pdispVal)
         {
             CARecordset* p = dynamic_cast<CARecordset*>(rs);
-            p->QueryInterface(IID_IRecordset, (void**)retVal);
-            CQueryBase* qb = dynamic_cast<CQueryBase*>(query);
-            queryBase* q = &qb->query();
-            if (p && q)
+            CQueryBase* qb = dynamic_cast<CQueryBase*>(query.pdispVal);
+            CPreparedQuery* pq = dynamic_cast<CPreparedQuery*>(query.pdispVal);
+            if (p)
             {
-                if (!Name1 || !Name1[0])
-                    m_at->outerJoin(*p->m_rs, *q, Name0);
-                else if (!Name2 || !Name2[0])
-                    m_at->outerJoin(*p->m_rs, *q, Name0, Name1);
-                else if (!Name3 || !Name3[0])
-                    m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2);
-                else if (!Name4 || !Name4[0])
-                    m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3);
-                else if (!Name5 || !Name5[0])
-                    m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3,
-                                    Name4);
-                else if (!Name6 || !Name6[0])
-                    m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3,
-                                    Name4, Name5);
-                else if (!Name7 || !Name7[0])
-                    m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3,
-                                    Name4, Name5, Name6);
-                else
-                    m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3,
-                                    Name4, Name5, Name6, Name7);
+                if (qb)
+                {
+                    queryBase* q = &qb->query();
+                    if (q)
+                    {
+                        if (!Name1 || !Name1[0])
+                            m_at->outerJoin(*p->m_rs, *q, Name0);
+                        else if (!Name2 || !Name2[0])
+                            m_at->outerJoin(*p->m_rs, *q, Name0, Name1);
+                        else if (!Name3 || !Name3[0])
+                            m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2);
+                        else if (!Name4 || !Name4[0])
+                            m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3);
+                        else if (!Name5 || !Name5[0])
+                            m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4);
+                        else if (!Name6 || !Name6[0])
+                            m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4,
+                                       Name5);
+                        else if (!Name7 || !Name7[0])
+                            m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4,
+                                       Name5, Name6);
+                        else
+                            m_at->outerJoin(*p->m_rs, *q, Name0, Name1, Name2, Name3, Name4,
+                                       Name5, Name6, Name7);
+                        
+                        p->QueryInterface(IID_IRecordset, (void**)retVal);
+                        return S_OK;
+                    }
+                }
+                else if (pq)
+                {
+                    bzs::db::protocol::tdap::client::pq_handle& stmt = pq->getFilter();
+                    if (stmt)
+                    {
+                        if (!Name1 || !Name1[0])
+                            m_at->outerJoin(*p->m_rs, stmt, Name0);
+                        else if (!Name2 || !Name2[0])
+                            m_at->outerJoin(*p->m_rs, stmt, Name0, Name1);
+                        else if (!Name3 || !Name3[0])
+                            m_at->outerJoin(*p->m_rs, stmt, Name0, Name1, Name2);
+                        else if (!Name4 || !Name4[0])
+                            m_at->outerJoin(*p->m_rs, stmt, Name0, Name1, Name2, Name3);
+                        else if (!Name5 || !Name5[0])
+                            m_at->outerJoin(*p->m_rs, stmt, Name0, Name1, Name2, Name3, Name4);
+                        else if (!Name6 || !Name6[0])
+                            m_at->outerJoin(*p->m_rs, stmt, Name0, Name1, Name2, Name3, Name4,
+                                       Name5);
+                        else if (!Name7 || !Name7[0])
+                            m_at->outerJoin(*p->m_rs, stmt, Name0, Name1, Name2, Name3, Name4,
+                                       Name5, Name6);
+                        else
+                            m_at->outerJoin(*p->m_rs, stmt, Name0, Name1, Name2, Name3, Name4,
+                                       Name5, Name6, Name7);
+                        p->QueryInterface(IID_IRecordset, (void**)retVal);
+                        return S_OK;
+                    }
+                }
             }
         }
-        *retVal = rs;
-        return S_OK;
+        return Error(_T("Invalid ActiveTable::OuterJoin param 2"), IID_IActiveTable);
     }
     catch (bzs::rtl::exception& e)
     {
         return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
     }
+
 }
+
+STDMETHODIMP CActiveTable::Prepare(IQueryBase* Value, VARIANT_BOOL ServerPrepare, IPreparedQuery** retVal)
+{
+    if (Value)
+    {
+        CQueryBase* p = dynamic_cast<CQueryBase*>(Value);
+        if (p)
+        {
+            CComObject<CPreparedQuery>* rsObj;
+            CComObject<CPreparedQuery>::CreateInstance(&rsObj);
+
+            if (!rsObj)
+                return Error(_T("Can not create preparedQuery"), IID_ITable);
+
+            rsObj->setPqHandle(m_at->prepare(p->query(), (bool)ServerPrepare));
+            IPreparedQuery* pd;
+            rsObj->QueryInterface(IID_IPreparedQuery, (void**)&pd);
+            _ASSERTE(pd);
+            *retVal = pd;
+            return S_OK;
+        }
+    }
+    return Error(_T("Invalid ActiveTable::Prepare param 1"), IID_IActiveTable);
+}
+
 
 STDMETHODIMP CActiveTable::GetWritableRecord(IWritableRecord** retVal)
 {
@@ -319,7 +481,6 @@ STDMETHODIMP CActiveTable::GetWritableRecord(IWritableRecord** retVal)
     if (m_recObj == NULL)
     {
         CComObject<CWritableRecord>::CreateInstance(&m_recObj);
-        m_recObj->AddRef();
         m_recObj->m_rec = &m_at->getWritableRecord();
     }
     if (m_recObj)
@@ -352,4 +513,31 @@ STDMETHODIMP CActiveTable::get_TableDef(ITableDef** Value)
     else
         *Value = 0;
     return S_OK;
+}
+
+STDMETHODIMP CActiveTable::Table(ITable** retVal)
+{
+    try
+    {
+        CComObject<CTableTd>* ptb;
+        CComObject<CTableTd>::CreateInstance(&ptb);
+
+        if (ptb)
+        {
+            ptb->m_tb = m_at->table();
+            ptb->m_tb->setOptionalData((void*)NULL);
+            ITable* itb;
+            ptb->QueryInterface(IID_ITable, (void**)&itb);
+            _ASSERTE(itb);
+            *retVal = itb;
+        }
+        else
+            *retVal = NULL;
+        return S_OK;
+    }
+
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+    }
 }

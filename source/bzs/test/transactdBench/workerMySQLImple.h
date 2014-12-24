@@ -1,4 +1,4 @@
-#ifndef BZS_TEST_BENCH_WORKERMYSQLIMPLE_H
+Ôªø#ifndef BZS_TEST_BENCH_WORKERMYSQLIMPLE_H
 #define BZS_TEST_BENCH_WORKERMYSQLIMPLE_H
 /* =================================================================
  Copyright (C) 20014 BizStation Corp All rights reserved.
@@ -35,7 +35,7 @@ namespace mysql
 #define MYSQL_READ_ONE 10
 #define MYSQL_INSERT_ONE 11
 #define MYSQL_QUERY 12
-#define MYSQL_RECORDSET_COUNT 50
+#define MYSQL_RECORDSET_COUNT 30
 
 class connectParam
 {
@@ -183,10 +183,10 @@ class worker : public workerBase
     MYSQL_STMT* init(const char* query)
     {
 #ifdef LINUX
-        const char* fd_name = "ñºëO";
+        const char* fd_name = "ÂêçÂâç";
 #else
         char fd_name[30];
-        WideCharToMultiByte(CP_UTF8, 0, L"ñºëO", -1, fd_name, 30, NULL, NULL);
+        WideCharToMultiByte(CP_UTF8, 0, L"ÂêçÂâç", -1, fd_name, 30, NULL, NULL);
 #endif
         char tmp[512];
         if (m_functionNumber == MYSQL_QUERY)
@@ -202,6 +202,7 @@ class worker : public workerBase
             printf("error: %s\n", mysql_error(m_mysql));
         bindParam(stmt);
         bindOutput(stmt);
+        
         return stmt;
     }
 
@@ -209,7 +210,7 @@ class worker : public workerBase
     {
         m_bindParam = m_id % 20000 + 1;
         mysql_stmt_execute(stmt);
-        int ret;
+        int ret=0;
         ret = mysql_stmt_fetch(stmt);
         if (ret)
             printf("error: %s\n", mysql_error(m_mysql));
@@ -251,8 +252,8 @@ public:
         : workerBase(id, loopCount, functionNumber, sync), m_parmas(param)
     {
         boost::mutex::scoped_lock lck(m_mutex);
-        mysql_thread_init();
-
+       
+         
         m_mysql = mysql_init(NULL);
         int v = 1;
         if (NULL == mysql_real_connect(
@@ -261,14 +262,21 @@ public:
                         m_parmas.database.c_str(), m_parmas.port, NULL, 0))
             printf("error: %s\n", mysql_error(m_mysql));
     }
+    
 
     void initExecute()
     {
+        mysql_thread_init();
+        mysql_set_character_set(m_mysql, "utf8"); 
+
 #ifdef USE_SHARED_PREPAREDSTATEMENT
         if (m_functionNumber == MYSQL_READ_ONE)
             m_stmt = init(readOneQuery);
         else if (m_functionNumber == MYSQL_QUERY)
+        {
             m_stmt = init(queryOneQuery);
+            queryOne(m_stmt);
+        }
 #endif
     }
 

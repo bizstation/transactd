@@ -86,7 +86,6 @@ const _TCHAR* fdNmaeAlias::get(const _TCHAR* src) const
     {
         return _T("");
     }
-    return _T("");
 }
 
 const _TCHAR* fdNmaeAlias::resolv(const _TCHAR* dst) const

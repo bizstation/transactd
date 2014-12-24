@@ -21,15 +21,13 @@ mb_internal_encoding('UTF-8');
 
 require_once("transactd.php");
 use BizStation\Transactd as Bz;
-
-define('URL', 'tdap://localhost/test_bench?dbfile=test.bdf');
 define('TABLENAME', 'users');
 define('FDI_ID', 0);
 define('FDI_NAME', 1);
 define('BULKBUFSIZE', 65535 - 1000);
-
 define('RECORD_COUNT', 20000);
 define('RECORD_UNIT', 20);
+
 
 function assertEquals($a, $b, $msg = '') {
     if ($a !== $b) {
@@ -46,19 +44,19 @@ function assertNotEquals($a, $b, $msg = '') {
     return true;
 }
 
-function create($url) {
+function create($URI) {
     // create database
     $db = new Bz\database();
-    $db->create($url);
+    $db->create($URI);
     if ($db->stat() == Bz\transactd::STATUS_TABLE_EXISTS_ERROR) {
-        $db->open($url);
+        $db->open($URI);
         assertEquals($db->stat(), 0);
         $db->drop();
         assertEquals($db->stat(), 0);
-        $db->create($url);
+        $db->create($URI);
     }
     assertEquals($db->stat(), 0);
-    $db->open($url, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
+    $db->open($URI, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
     assertEquals($db->stat(), 0);
     // create table
     $dbdef = $db->dbDef();
@@ -124,8 +122,8 @@ function deleteAll($db, $tb) {
 
 function insert($db, $tb) {
     $tb->setKeyNum(0);
+    $tb->clearBuffer();
     for ($i = 1; $i <= RECORD_COUNT; $i++) {
-        $tb->clearBuffer();
         $tb->setFV(FDI_ID, $i);
         $tb->setFV(FDI_NAME, $i);
         $tb->insert();
@@ -138,15 +136,15 @@ function insert($db, $tb) {
 function insertTransaction($db, $tb) {
     $tb->setKeyNum(0);
     $start = 1;
+    $tb->clearBuffer();
     while ($start < RECORD_COUNT) {
         $db->beginTrn();
         for ($i = $start; $i < $start + RECORD_UNIT; $i++) {
-            $tb->clearBuffer();
             $tb->setFV(FDI_ID, $i);
             $tb->setFV(FDI_NAME, $i);
             $tb->insert();
             if (!assertEquals($tb->stat(), 0, 'insertTransaction')) {
-                $db->endTrn();
+                $db->abortTrn();
                 return false;
             }
         }
@@ -159,10 +157,10 @@ function insertTransaction($db, $tb) {
 function insertBulk($db, $tb) {
     $tb->setKeyNum(0);
     $start = 1;
+    $tb->clearBuffer();
     while ($start < RECORD_COUNT) {
         $tb->beginBulkInsert(BULKBUFSIZE);
         for ($i = $start; $i < $start + RECORD_UNIT; $i++) {
-            $tb->clearBuffer();
             $tb->setFV(FDI_ID, $i);
             $tb->setFV(FDI_NAME, $i);
             $tb->insert();
@@ -179,12 +177,13 @@ function insertBulk($db, $tb) {
 
 function read($db, $tb) {
     $tb->setKeyNum(0);
+    $tb->clearBuffer();
     for ($i = 1; $i <= RECORD_COUNT; $i++) {
-        $tb->clearBuffer();
         $tb->setFV(FDI_ID, $i);
         $tb->seek();
-        if (!assertEquals($tb->stat(), 0, 'read') ||
-            !assertEquals($tb->getFVint(FDI_ID), $i, 'read value')) {
+        if (($tb->stat() !==0) || ($tb->getFVint(FDI_ID) !== $i))
+        {
+            echo("seek stat = ".$tb->stat()." value ".$i." = ".$tb->getFVint(FDI_ID));
             return false;
         }
     }
@@ -192,17 +191,17 @@ function read($db, $tb) {
 }
 
 function readSnapshot($db, $tb) {
-    $ret = true;
     $tb->setKeyNum(0);
     $db->beginSnapshot();
+    $tb->clearBuffer();
     for ($i = 1; $i <= RECORD_COUNT; $i++) {
-        $tb->clearBuffer();
         $tb->setFV(FDI_ID, $i);
         $tb->seek();
-        if (!assertEquals($tb->stat(), 0, 'read') ||
-            !assertEquals($tb->getFVint(FDI_ID), $i, 'read value')) {
-            $ret = false;
-            break;
+        if (($tb->stat() !==0) || ($tb->getFVint(FDI_ID) !== $i))
+        {
+            echo("seek stat = ".$tb->stat()." value ".$i." = ".$tb->getFVint(FDI_ID));
+            $db->endSnapshot();
+            return false;
         }
     }
     $db->endSnapshot();
@@ -210,16 +209,17 @@ function readSnapshot($db, $tb) {
 }
 
 function readRange($db, $tb) {
-    $tb->setKeyNum(0);
     $start = 1;
+    $tb->setKeyNum(0);
+    $tb->clearBuffer();
+    $tb->setFilter('*', 1, RECORD_UNIT);
+    $tb->setFV(FDI_ID, $start);
+    $tb->find(Bz\table::findForword);
     while ($start < RECORD_COUNT) {
-        $tb->clearBuffer();
-        $tb->setFilter('*', 1, RECORD_COUNT);
-        $tb->setFV(FDI_ID, $start);
-        $tb->find(Bz\table::findForword);
         for ($i = $start; $i < $start + RECORD_UNIT; $i++) {
-            if (!assertEquals($tb->stat(), 0, 'readRange') ||
-                !assertEquals($tb->getFVint(FDI_ID), $i, 'readRange value')) {
+            if (/*($tb->stat() !==0) || */($tb->getFVint(FDI_ID) !== $i))
+            {
+                echo("find stat = ".$tb->stat()." value ".$i." = ".$tb->getFVint(FDI_ID));
                 return false;
             }
             $tb->findNext();
@@ -230,17 +230,19 @@ function readRange($db, $tb) {
 }
 
 function readRangeSnapshot($db, $tb) {
-    $tb->setKeyNum(0);
-    $db->beginSnapshot();
     $start = 1;
+    $tb->setKeyNum(0);
+    $tb->clearBuffer();
+    $tb->setFilter('*', 1, RECORD_UNIT);
+    $tb->setFV(FDI_ID, $start);
+    $db->beginSnapshot();
+    $tb->find(Bz\table::findForword);
     while ($start < RECORD_COUNT) {
-        $tb->clearBuffer();
-        $tb->setFilter('*', 1, RECORD_COUNT);
-        $tb->setFV(FDI_ID, $start);
-        $tb->find(Bz\table::findForword);
         for ($i = $start; $i < $start + RECORD_UNIT; $i++) {
-            if (!assertEquals($tb->stat(), 0, 'readRange snapshot') ||
-                !assertEquals($tb->getFVint(FDI_ID), $i, 'readRange snapshot value')) {
+            if (/*($tb->stat() !==0) || */($tb->getFVint(FDI_ID) !== $i))
+            {
+                echo("find stat = ".$tb->stat()." value ".$i." = ".$tb->getFVint(FDI_ID));
+                $db->endSnapshot();
                 return false;
             }
             $tb->findNext();
@@ -253,13 +255,16 @@ function readRangeSnapshot($db, $tb) {
 
 function update($db, $tb) {
     $tb->setKeyNum(0);
+    $tb->clearBuffer();
     for ($i = 1; $i <= RECORD_COUNT; $i++) {
-        $tb->clearBuffer();
         $tb->setFV(FDI_ID, $i);
         $tb->setFV(FDI_NAME, ($i + 1));
         $tb->update(Bz\table::changeInKey);
-        if (!assertEquals($tb->stat(), 0, 'update'))
+        if ($tb->stat() !==0)
+        {
+            echo("update stat = ".$tb->stat());
             return false;
+        }
     }
     return true;
 }
@@ -267,15 +272,17 @@ function update($db, $tb) {
 function updateTransaction($db, $tb) {
     $tb->setKeyNum(0);
     $start = 1;
+    $tb->clearBuffer();
     while ($start < RECORD_COUNT) {
         $db->beginTrn();
         for ($i = $start; $i < $start + RECORD_UNIT; $i++) {
-            $tb->clearBuffer();
             $tb->setFV(FDI_ID, $i);
             $tb->setFV(FDI_NAME, ($i + 2));
             $tb->update(Bz\table::changeInKey);
-            if (!assertEquals($tb->stat(), 0, 'updateTransaction')) {
-                $db->endTrn();
+            if ($tb->stat() !==0)
+            {
+                echo("update stat = ".$tb->stat());
+                $db->abortTrn();
                 return false;
             }
         }
@@ -285,73 +292,91 @@ function updateTransaction($db, $tb) {
     return true;
 }
 
-function main($url) {
-    Bz\benchmark::start();
-    create($url);
-    Bz\benchmark::showTimeSec(true, ': create');
+function main($argc, $argv) {
+   if ($argc < 4) {
+        echo("usage: php bench.php databaseUri processNumber functionNumber\n");
+        echo("\t --- functionNumber list ---\n");
+        echo("\t-1: all function\n");
+        echo("\t 0: Insert\n");
+        echo("\t 1: Insert in transaction. 20rec x 1000times\n");
+        echo("\t 2: Insert by bulkmode. 20rec x 1000times\n");
+        echo("\t 3: read each record\n");
+        echo("\t 4: read each record with snapshot\n");
+        echo("\t 5: read range. 20rec x 1000times\n");
+        echo("\t 6: read range with snapshpot. 20rec x 1000times\n");
+        echo("\t 7: update\n");
+        echo("\t 8: update in transaction. 20rec x 1000times\n");
+        echo("example : php bench.php \"tdap://localhost/test?dbfile=test.bdf\" 0 -1\n");
+        return;
+   }
+
+    $URI = $argv[1];
+    // Currenty $proc is ignored.
+    $proc = (int)$argv[2];
+    $funcNum = (int)$argv[3];
+
+    create($URI);
+    echo("CreateDataBase success.\n");
+    echo("Start Bench mark Insert Items = ".RECORD_COUNT."\n");
+    echo(date(DATE_ATOM)."\n");
+    echo($URI."\n");
+    echo("----------------------------------------\n");
     
     $db = new Bz\database();
-    $db->open($url, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
+    $db->open($URI, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
     assertEquals($db->stat(), 0);
     $tb = $db->openTable(TABLENAME);
     assertEquals($db->stat(), 0);
     
-    echo("--------------------------------\n");
+    if (($funcNum === -1) || ($funcNum === 0)) {
+        deleteAll($db, $tb);
+        Bz\benchmark::start();
+        $ret = insert($db, $tb);
+        Bz\benchmark::showTimeSec($ret, ': insert ' . RECORD_COUNT);
+    }
     
-    deleteAll($db, $tb);
-    Bz\benchmark::start();
-    $ret = insert($db, $tb);
-    Bz\benchmark::showTimeSec($ret, ': insert ' . RECORD_COUNT);
+    if (($funcNum === -1) || ($funcNum === 1)) {
+        deleteAll($db, $tb);
+        Bz\benchmark::start();
+        $ret = insertTransaction($db, $tb);
+        Bz\benchmark::showTimeSec($ret, ': insertTransaction ' . RECORD_COUNT . ' with transaction per ' . RECORD_UNIT);
+    }
     
-    echo("--------------------------------\n");
-    
-    deleteAll($db, $tb);
-    Bz\benchmark::start();
-    $ret = insertTransaction($db, $tb);
-    Bz\benchmark::showTimeSec($ret, ': insertTransaction ' . RECORD_COUNT . ' with transaction per ' . RECORD_UNIT);
-    
-    echo("--------------------------------\n");
-    
-    deleteAll($db, $tb);
-    Bz\benchmark::start();
-    $ret = insertBulk($db, $tb);
-    Bz\benchmark::showTimeSec($ret, ': insertBulk ' . RECORD_COUNT . ' with bulkmode per ' . RECORD_UNIT);
-    
-    echo("--------------------------------\n");
-    
-    Bz\benchmark::start();
-    $ret = read($db, $tb);
-    Bz\benchmark::showTimeSec($ret, ': read ' . RECORD_COUNT);
-    
-    echo("--------------------------------\n");
-    
-    Bz\benchmark::start();
-    $ret = readSnapshot($db, $tb);
-    Bz\benchmark::showTimeSec($ret, ': read with snapshot ' . RECORD_COUNT);
-    
-    echo("--------------------------------\n");
-    
-    Bz\benchmark::start();
-    $ret = readRange($db, $tb);
-    Bz\benchmark::showTimeSec($ret, ': read ' . RECORD_COUNT . ' with range per ' . RECORD_UNIT);
-    
-    echo("--------------------------------\n");
-    
-    Bz\benchmark::start();
-    $ret = readRangeSnapshot($db, $tb);
-    Bz\benchmark::showTimeSec($ret, ': read ' . RECORD_COUNT . ' with snapshot and range per ' . RECORD_UNIT);
-    
-    echo("--------------------------------\n");
-    
-    Bz\benchmark::start();
-    $ret = update($db, $tb);
-    Bz\benchmark::showTimeSec($ret, ': update ' . RECORD_COUNT);
-    
-    echo("--------------------------------\n");
-    
-    Bz\benchmark::start();
-    $ret = updateTransaction($db, $tb);
-    Bz\benchmark::showTimeSec($ret, ': updateTransaction ' . RECORD_COUNT . ' with transaction per ' . RECORD_UNIT);
+    if (($funcNum === -1) || ($funcNum === 2)) {
+        deleteAll($db, $tb);
+        Bz\benchmark::start();
+        $ret = insertBulk($db, $tb);
+        Bz\benchmark::showTimeSec($ret, ': insertBulk ' . RECORD_COUNT . ' with bulkmode per ' . RECORD_UNIT);
+    }
+    if (($funcNum === -1) || ($funcNum === 3)) {
+        Bz\benchmark::start();
+        $ret = read($db, $tb);
+        Bz\benchmark::showTimeSec($ret, ': read ' . RECORD_COUNT);
+    }
+    if (($funcNum === -1) || ($funcNum === 4)) {
+        Bz\benchmark::start();
+        $ret = readSnapshot($db, $tb);
+        Bz\benchmark::showTimeSec($ret, ': read with snapshot ' . RECORD_COUNT);
+    }
+    if (($funcNum === -1) || ($funcNum === 5)) {
+        Bz\benchmark::start();
+        $ret = readRange($db, $tb);
+        Bz\benchmark::showTimeSec($ret, ': read ' . RECORD_COUNT . ' with range per ' . RECORD_UNIT);
+    }
+    if (($funcNum === -1) || ($funcNum === 6)) {
+        Bz\benchmark::start();
+        $ret = readRangeSnapshot($db, $tb);
+        Bz\benchmark::showTimeSec($ret, ': read ' . RECORD_COUNT . ' with snapshot and range per ' . RECORD_UNIT);
+    }
+    if (($funcNum === -1) || ($funcNum === 7)) {
+        Bz\benchmark::start();
+        $ret = update($db, $tb);
+        Bz\benchmark::showTimeSec($ret, ': update ' . RECORD_COUNT);
+    }
+    if (($funcNum === -1) || ($funcNum === 8)) {
+        Bz\benchmark::start();
+        $ret = updateTransaction($db, $tb);
+        Bz\benchmark::showTimeSec($ret, ': updateTransaction ' . RECORD_COUNT . ' with transaction per ' . RECORD_UNIT);
+    }
 }
-
-main(URL);
+main($argc, $argv);

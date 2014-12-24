@@ -265,6 +265,7 @@
     <ClCompile Include="..\..\source\global\tdclatl\KeyDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeySegment.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\PooledDbManager.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\PreparedQuery.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\QueryBase.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Record.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Recordset.cpp" />
@@ -298,6 +299,7 @@
     <ClInclude Include="..\..\source\global\tdclatl\KeyDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\keySegment.h" />
     <ClInclude Include="..\..\source\global\tdclatl\PooledDbManager.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\PreparedQuery.h" />
     <ClInclude Include="..\..\source\global\tdclatl\QueryBase.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Record.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Recordset.h" />
