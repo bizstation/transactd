@@ -1519,6 +1519,9 @@ void testTransactionLockReadCommited(database* db)
     tb2->setFV(fdi_id, 100);
     tb2->seek(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek");
+    tb2->setFV(fdi_id, 101);
+    tb2->seek(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek");
     tb2->unlock();
     db->endTrn();
 

@@ -174,8 +174,8 @@ public:
 
     inline bool canUnlockRow() const
     {
-        /* inTransaction multi record lock do not unlock */
-        if (m_inTransaction && (m_trnType == TRN_RECORD_LOCK_MUILTI))
+        /* inSnapshot or inTransaction multi record lock do not unlock */
+        if (m_inSnapshot || (m_inTransaction && (m_trnType == TRN_RECORD_LOCK_MUILTI)))
             return false;
         return true;
     }
