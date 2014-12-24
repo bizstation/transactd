@@ -3545,7 +3545,7 @@ class RecordsetRecordIterator extends RangeIterator {
 		parent::__construct($start, $end);
 		$this->_recordset_cPtr = $recordset_cPtr;
 		$this->_fieldsBase_p_p = new_fieldsBase_p_p();
-		$this->_record = new Record(memoryRecord::createRecord($fielddefs));
+		$this->_record = new Record(memoryRecord_createRecord($fielddefs));
 	}
 
 	function __destruct() {
