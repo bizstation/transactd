@@ -1144,6 +1144,8 @@ interface IActiveTable : IDispatch
   HRESULT _stdcall TableDef([out, retval] ITableDef** Value);
   [id(0x000000C)]
   HRESULT _stdcall Prepare([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
+  [id(0x000000D)]
+  HRESULT _stdcall Table([out, retval]ITable** retVal);
 
   				
 };

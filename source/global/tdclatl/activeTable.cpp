@@ -25,6 +25,7 @@
 #include "TableDef.h"
 #include "PooledDbManager.h"
 #include "PreparedQuery.h"
+#include "Table.h"
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -512,4 +513,31 @@ STDMETHODIMP CActiveTable::get_TableDef(ITableDef** Value)
     else
         *Value = 0;
     return S_OK;
+}
+
+STDMETHODIMP CActiveTable::Table(ITable** retVal)
+{
+    try
+    {
+        CComObject<CTableTd>* ptb;
+        CComObject<CTableTd>::CreateInstance(&ptb);
+
+        if (ptb)
+        {
+            ptb->m_tb = m_at->table();
+            ptb->m_tb->setOptionalData((void*)NULL);
+            ITable* itb;
+            ptb->QueryInterface(IID_ITable, (void**)&itb);
+            _ASSERTE(itb);
+            *retVal = itb;
+        }
+        else
+            *retVal = NULL;
+        return S_OK;
+    }
+
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+    }
 }

@@ -81,6 +81,8 @@ public:
 
     STDMETHOD(GetWritableRecord)(IWritableRecord** retVal);
     STDMETHOD(get_TableDef)(ITableDef** Value);
+
+    STDMETHOD(Table)(ITable** retVal);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(ActiveTable), CActiveTable)
