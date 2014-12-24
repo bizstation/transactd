@@ -77,8 +77,11 @@ public:
                          const _TCHAR* dbname, const _TCHAR* schemaTable)
         : m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
     {
-        _stprintf_s(m_buf, MAX_PATH, _T("%s://%s/%s?dbfile=%s.bdf"), protocol,
-                    hostOrIp, dbname, schemaTable);
+        const _TCHAR* ext = _T(".bdf");
+        if (_tcscmp(schemaTable, TRANSACTD_SCHEMANAME)==0)
+            ext = _T("");
+        _stprintf_s(m_buf, MAX_PATH, _T("%s://%s/%s?dbfile=%s%s"), protocol,
+                    hostOrIp, dbname, schemaTable, ext);
     }
     inline explicit connectParams(const _TCHAR* uri)
         : m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
@@ -91,11 +94,14 @@ public:
     {
         if (m_type != v)
         {
-            m_buf[_tcslen(m_buf) - 3] = 0x00;
-            if (v == TYPE_SCHEMA_BDF)
-                _tcscat_s(m_buf, MAX_PATH, _T("bdf"));
-            else
-                _tcscat_s(m_buf, MAX_PATH, _T("ddf"));
+            if ((_tcslen(m_buf) > 3) && m_buf[_tcslen(m_buf) - 3] == _T('.'))
+            {
+                m_buf[_tcslen(m_buf) - 3] = 0x00;
+                if (v == TYPE_SCHEMA_BDF)
+                    _tcscat_s(m_buf, MAX_PATH, _T("bdf"));
+                else
+                    _tcscat_s(m_buf, MAX_PATH, _T("ddf"));
+            }
         }
         m_type = v;
     }

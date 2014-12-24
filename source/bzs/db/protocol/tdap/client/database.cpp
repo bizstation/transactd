@@ -325,7 +325,8 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
             create(_uri, TYPE_SCHEMA_BDF);
             if (m_stat == STATUS_SUCCESS)
             {
-                doOpen(_uri, type, mode, ownername);
+                //Open mode force normal
+                doOpen(_uri, type, TD_OPEN_NORMAL, ownername);
                 if (m_stat == STATUS_SUCCESS)
                 {
                     m_impl->dbDef->autoMakeSchema();

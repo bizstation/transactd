@@ -68,6 +68,9 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
 #endif
         }
     }
+    printf("Transactd test ... \nMay look like progress is stopped, \n"
+            "but it is such as record lock test, please wait.\n");
+
     return 0;
 }
 
@@ -1037,6 +1040,26 @@ void testSnapshot(database* db)
 
     db->endSnapshot();
 
+    //test gap lock
+    db->beginSnapshot(MULTILOCK_NOGAP_SHARE);
+    tb->seekLast();  // id = 30000
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekLast");
+    tb->seekPrev();  // id = 20002
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekPrev");
+    tb->seekPrev();  // id = 20001
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekPrev");
+
+    tb2->setFV(fdi_id, 20002);
+    tb2->seek(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "GAP insert");
+
+    
+    tb2->seekLast(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "GAP insert");
+
+
+    db->endSnapshot();
+
     tbg->release();
     tbg2->release();
     tb->release();
@@ -1724,7 +1747,7 @@ void testExclusive()
     
     // Normal open
     db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
-    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), 
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME),
             TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
     BOOST_CHECK_MESSAGE(0 == db2->stat()
                                     , "Normal open");
@@ -1743,6 +1766,7 @@ void testExclusive()
     BOOST_CHECK_MESSAGE(0 == db2->stat()
                                     , "Read Exclusive open");
     db2->close();
+    tb->release();
     db->close();
 
     /* -------------------------------------------------*/
@@ -1872,16 +1896,17 @@ void testMultiDatabase(database* db)
     database::destroy(db2);
 }
 
+class worker
+{
+    table* m_tb;
+public:
+    worker(table* tb):m_tb(tb){}
+    void run(){m_tb->seekLessThan(false, ROW_LOCK_X);}
+};
 /* Getting missing value by lock wait */
 void testMissingUpdate(database* db)
 {
-    class worker
-    {
-        table* m_tb;
-    public:
-        worker(table* tb):m_tb(tb){}
-        void run(){m_tb->seekLessThan(false, ROW_LOCK_X);}
-    };
+
 
     
     table* tb = openTable(db);
@@ -1902,7 +1927,7 @@ void testMissingUpdate(database* db)
         if (tb->stat() == 0)
         {
             // Get lock(X) same record in parallel.
-            boost::scoped_ptr<boost::thread> t(new boost::thread(bind(&worker::run, w.get())));
+            boost::scoped_ptr<boost::thread> t(new boost::thread(boost::bind(&worker::run, w.get())));
             int v = tb->getFVint(fdi_id);
             tb->setFV(fdi_id, ++v);
             tb->insert();
@@ -1923,7 +1948,7 @@ void testMissingUpdate(database* db)
         if (tb->stat() == 0)
         {
             // Get lock(X) same record in parallel.
-            boost::scoped_ptr<boost::thread> t(new boost::thread(bind(&worker::run, w.get())));
+            boost::scoped_ptr<boost::thread> t(new boost::thread(boost::bind(&worker::run, w.get())));
             int v = tb->getFVint(fdi_id);
             tb->del();
             t->join();
