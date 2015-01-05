@@ -716,6 +716,25 @@ def testSnapshot()
   expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
   
   db.endSnapshot()
+  
+  # gap lock
+  db.beginSnapshot(Transactd::MULTILOCK_NOGAP_SHARE)
+  tb.seekLast() # id = 30000
+  expect(tb.stat()).to eq 0
+  tb.seekPrev() # id = 20002
+  expect(tb.stat()).to eq 0
+  tb.seekPrev() # id = 20001
+  expect(tb.stat()).to eq 0
+  
+  tb2.setFV(FDI_ID, 20002)
+  tb2.seek(Transactd::ROW_LOCK_X)
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  tb2.seekLast(Transactd::ROW_LOCK_X)
+  expect(tb2.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  
+  db.endSnapshot()
+  
   tbg2.close()
   tbg.close()
   tb2.close()
@@ -869,6 +888,37 @@ def testTransactionLockRepeatable()
   tb2.setFV(FDI_ID, id)
   tb2.seek(Transactd::ROW_LOCK_S)
   expect(tb2.stat()).to eq 0
+  
+  db2.endTrn()
+  db.endTrn()
+  
+  # ----------------------------------------------------
+  # Test use shared lock option
+  # ----------------------------------------------------
+  db.beginTrn(Transactd::MULTILOCK_REPEATABLE_READ)
+  expect(0).to eq db.stat()
+  
+  db2.beginTrn(Transactd::MULTILOCK_REPEATABLE_READ)
+  expect(0).to eq db2.stat()
+  
+  tb.seekLast(Transactd::ROW_LOCK_S)
+  expect(0).to eq tb.stat()
+  tb2.seekLast(Transactd::ROW_LOCK_S)
+  expect(0).to eq tb2.stat()
+  
+  tb.seekPrev() # Lock(X)
+  expect(0).to eq tb.stat()
+  
+  tb2.seekPrev(Transactd::ROW_LOCK_S)
+  expect(Transactd::STATUS_LOCK_ERROR).to eq tb2.stat()
+  
+  tb.seekPrev(Transactd::ROW_LOCK_S)
+  expect(0).to eq tb.stat()
+  id = tb.getFVint(FDI_ID)
+  
+  tb2.setFV(FDI_ID, id)
+  tb2.seek(Transactd::ROW_LOCK_S)
+  expect(0).to eq tb2.stat()
   
   db2.endTrn()
   db.endTrn()
@@ -1151,6 +1201,9 @@ def testTransactionLockReadCommited()
   tb2.setFV(FDI_ID, 100)
   tb2.seek(Transactd::ROW_LOCK_X)
   expect(tb2.stat()).to eq 0
+  tb2.setFV(FDI_ID, 101)
+  tb2.seek(Transactd::ROW_LOCK_X)
+  expect(tb2.stat()).to eq 0
   tb2.unlock()
   db.endTrn()
   
@@ -1249,7 +1302,7 @@ def testRecordLock()
   tb.del()
   expect(tb.stat()).to eq 0
   
-  # ---------   Unlock test ----------------------------
+  # --------- Unlock test ------------------------------
   # 1 unlock()
   tb.seekFirst(Transactd::ROW_LOCK_X)
   expect(tb.stat()).to eq 0
@@ -1305,7 +1358,12 @@ def testRecordLock()
   tb2.seekFirst(Transactd::ROW_LOCK_X)
   expect(tb2.stat()).to eq 0
   tb2.unlock()
-  # ---------   End Unlock test ----------------------------
+  # --------- End Unlock test --------------------------
+  
+  # --------- Invalid lock type test ----------------
+  tb2.seekFirst(Transactd::ROW_LOCK_S)
+  expect(tb2.stat()).to eq Transactd::STATUS_INVALID_LOCKTYPE
+  
   tb3.close()
   tb2.close()
   db2.close()
@@ -1378,23 +1436,21 @@ def testExclusive()
   db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
   expect(db2.stat()).to eq 0
   db2.open(URL, Transactd::TYPE_SCHEMA_BDF)
+  # database open error. Check database::stat()
   expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
   tb.close()
   db.close()
   db2.close()
   
   # ------------------------------------------------------
-  # database WRITE EXCLUSIVE
+  # database READ EXCLUSIVE
   # ------------------------------------------------------
-  # table mode exclusive
-  db = Transactd::Database.new()
   db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_READONLY_EXCLUSIVE)
   expect(db.stat()).to eq 0
   tb = db.openTable(TABLENAME, Transactd::TD_OPEN_READONLY_EXCLUSIVE)
   expect(db.stat()).to eq 0
   
   # Read only open
-  db2 = Transactd::Database.new()
   db2.open(URL, Transactd::TYPE_SCHEMA_BDF)
   expect(db2.stat()).to eq 0
   db2.close()
@@ -1429,10 +1485,10 @@ def testExclusive()
   
   tb2 = db.openTable('group', Transactd::TD_OPEN_EXCLUSIVE)
   expect(db.stat()).to eq 0
+  
   # Check tb2 Exclusive
   tb3 = db2.openTable('group', Transactd::TD_OPEN_NORMAL)
   expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
-  
   for i in 1..4 do
     tb2.setFV(FDI_ID, i + 1)
     tb2.setFV(FDI_NAME, i + 1)
@@ -1474,10 +1530,10 @@ def testExclusive()
   tb2.close()
   
   # ------------------------------------------------------
-  # Normal and Exclusive opend tables mix transaction
+  # Normal and Exclusive open tables mix transaction
   # ------------------------------------------------------
   tb2 = db.openTable('group', Transactd::TD_OPEN_EXCLUSIVE)
-  expect(tb2.stat()).to eq 0
+  expect(db.stat()).to eq 0
   # Check tb2 Exclusive
   tb3 = db2.openTable('group', Transactd::TD_OPEN_NORMAL)
   expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
@@ -1546,6 +1602,60 @@ def testMultiDatabase()
   v2 = tb.getFVstr(FDI_NAME)
   expect(v).to eq v2
   
+  tb2.close()
+  tb.close()
+  db2.close()
+  db.close()
+end
+
+def testMissingUpdate()
+  db = Transactd::Database.new()
+  tb = testOpenTable(db)
+  db2 = Transactd::Database.new()
+  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  expect(db2.stat()).to eq 0
+  db2.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+  expect(db2.stat()).to eq 0
+  tb2 = db2.openTable('user')
+  expect(db2.stat()).to eq 0
+  # Inserting  target
+  tb.setFV(FDI_ID, 300000)
+  tb2.setFV(FDI_ID, 300000)
+  tb.seekLessThan(false, Transactd::ROW_LOCK_X)
+  if (tb.stat() == 0) then
+    # Get lock(X) same record in parallel.
+    w = Thread.new(tb2) { |tb2|
+      tb2.seekLessThan(false, Transactd::ROW_LOCK_X)
+    }
+    v = tb.getFVint(FDI_ID)
+    v = v + 1
+    tb.setFV(FDI_ID, v)
+    tb.insert()
+    w.join()
+    expect(tb.stat()).to eq 0
+    expect(tb2.stat()).to eq 0
+    v2 = tb2.getFVint(FDI_ID)
+    expect(v).to eq v2
+    tb2.unlock()
+  end
+  # Inserting  target
+  tb.setFV(FDI_ID, 300000)
+  tb2.setFV(FDI_ID, 300000)
+  tb.seekLessThan(false, Transactd::ROW_LOCK_X)
+  if (tb.stat() == 0) then
+    # Get lock(X) same record in parallel.
+    w = Thread.new(tb2) { |tb2|
+      tb2.seekLessThan(false, Transactd::ROW_LOCK_X)
+    }
+    v = tb.getFVint(FDI_ID)
+    tb.del()
+    w.join()
+    expect(tb.stat()).to eq 0
+    expect(tb2.stat()).to eq 0
+    v2 = tb2.getFVint(FDI_ID)
+    expect(v).not_to eq v2
+    tb2.unlock()
+  end
   tb2.close()
   tb.close()
   db2.close()
@@ -3034,20 +3144,6 @@ def testServerPrepareJoin()
   # rs[0]
   expect(rs[0]['group_name']).to eq '1 group'
   
-=begin
-sortFields orderRv
-orderRv.add('group_name', false)
-rs.orderBy(orderRv)
-
-sortFields order
-order.add('group_name', true)
-rs.orderBy(order)
-BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0]['group_name'].c_str()) ==
-            _tstring('1 group'),
-        "group_name = 1 group "
-            << string(rs[(size_t)0]['group_name'].a_str()))
-=end
-  
   # All fields
   rs.clear()
   q.reset().all()
@@ -3291,6 +3387,9 @@ describe Transactd do
   end
   it 'multi database' do
     testMultiDatabase()
+  end
+  it 'missing update' do
+    testMissingUpdate()
   end
   it 'insert2' do
     testInsert2()
