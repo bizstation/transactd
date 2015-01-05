@@ -313,7 +313,6 @@ public:
         moveBlobRow(m_row);
        
         m_tb->m_fddefs->strBufs()->clear();
-        multiRecordAlocator* mra = m_tb->m_impl->mraPtr;
         const tabledef* td = m_tb->tableDef();
         ushort_td fieldCount = m_filter->fieldCount();
 
