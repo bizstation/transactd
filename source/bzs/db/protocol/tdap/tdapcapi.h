@@ -246,6 +246,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 
 /** btrv transaction lock options
  */
+#define LOCK_BIAS_DEFAULT               0
 #define LOCK_SINGLE_WAIT                100
 #define LOCK_SINGLE_NOWAIT              200
 #define LOCK_MULTI_WAIT                 300

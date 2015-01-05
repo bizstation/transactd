@@ -206,7 +206,7 @@ class tableIterator
     ushort_td m_lockBias;
 
 public:
-    inline tableIterator(table& tb, ushort_td lockBias = 0) : m_tb(tb), m_fds(tb),m_lockBias(lockBias)
+    inline tableIterator(table& tb, ushort_td lockBias = LOCK_BIAS_DEFAULT) : m_tb(tb), m_fds(tb),m_lockBias(lockBias)
     {
         readStatusCheck(tb, _T("tableIterator"));
     }
@@ -312,7 +312,7 @@ typedef filterdIterator<indexRvIterator> filterdIndexRvIterator;
 typedef filterdIterator<stepRvIterator> filterdStepRvIterator;
 typedef filterdIterator<findRvIterator> filterdFindRvIterator;
 
-inline indexIterator readIndex(table_ptr tb, eIndexOpType op, ushort_td lockBias = 0)
+inline indexIterator readIndex(table_ptr tb, eIndexOpType op, ushort_td lockBias = LOCK_BIAS_DEFAULT)
 {
 
     switch (op)
@@ -336,7 +336,7 @@ inline indexIterator readIndex(table_ptr tb, eIndexOpType op, ushort_td lockBias
     return indexIterator(*tb, lockBias);
 }
 
-inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op, ushort_td lockBias = 0)
+inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op, ushort_td lockBias = LOCK_BIAS_DEFAULT)
 {
 
     switch (op)
@@ -362,7 +362,7 @@ inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op, ushort_td lock
 
 template <class T>
 inline indexIterator readIndex(table_ptr tb, eIndexOpType op, char_td keynum,
-                               T func, ushort_td lockBias = 0)
+                               T func, ushort_td lockBias = LOCK_BIAS_DEFAULT)
 {
     tb->setKeyNum(keynum);
     if (&func)
@@ -375,7 +375,7 @@ inline indexIterator readIndex(table_ptr tb, eIndexOpType op, char_td keynum,
 
 template <class T>
 inline indexRvIterator readIndexRv(table_ptr tb, eIndexOpType op,
-                                   char_td keynum, T func, ushort_td lockBias = 0)
+                                   char_td keynum, T func, ushort_td lockBias = LOCK_BIAS_DEFAULT)
 {
     tb->setKeyNum(keynum);
     if (&func)
@@ -550,13 +550,13 @@ inline indexRvIterator readIndexRv_v(table_ptr tb, eIndexOpType op,
 }
 /** @endcond */
 
-inline stepIterator readStep(table_ptr tb, ushort_td lockBias = 0)
+inline stepIterator readStep(table_ptr tb, ushort_td lockBias = LOCK_BIAS_DEFAULT)
 {
     tb->stepFirst(lockBias);
     return stepIterator(*tb, lockBias);
 }
 
-inline stepRvIterator readStepRv(table_ptr tb, ushort_td lockBias = 0)
+inline stepRvIterator readStepRv(table_ptr tb, ushort_td lockBias = LOCK_BIAS_DEFAULT)
 {
     tb->stepLast(lockBias);
     return stepRvIterator(*tb, lockBias);
