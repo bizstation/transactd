@@ -162,8 +162,8 @@ void onUnloadLibrary(void)
         pthread_key_delete(g_tlsiID);
         pthread_key_delete(g_tlsiID1);
         pthread_key_delete(g_tlsiID_SC1);
-    }
 #endif
+    }
 }
 #endif // NOT _WIN32
 
