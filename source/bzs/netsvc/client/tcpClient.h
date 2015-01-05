@@ -470,7 +470,7 @@ public:
             while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, connections::timeout))
             {
                 DWORD n = 0;
-                BOOL ret = GetNamedPipeHandleState(m_socket.native_handle(), NULL, &n,
+                BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                                NULL, NULL, NULL, 0);
                 if(ret == FALSE || n == 0)
                     break;
@@ -538,7 +538,7 @@ public:
         while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, connections::timeout))
         {
             DWORD n = 0;
-            ret = GetNamedPipeHandleState(m_socket.native_handle(), NULL, &n,
+            ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                            NULL, NULL, NULL, 0);
             if(ret == FALSE || n == 0)
                 throwException("PipeConnection", CLIENT_ERROR_CONNECTION_FAILURE);

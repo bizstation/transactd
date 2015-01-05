@@ -172,7 +172,7 @@ private:
             {
                 // At Join that if some base records reference to a joined
                 // record
-                //		that the joined record pointer is shared by some
+                //      that the joined record pointer is shared by some
                 // base records.
                 for (int i = 0; i < (int)rows; ++i)
                 {
@@ -466,8 +466,11 @@ public:
         if (index != -1)
             return index;
         if (!noexception)
-            THROW_BZS_ERROR_WITH_MSG(_T("groupQuery:Invalid key name"));
-
+        {
+            _TCHAR tmp[256];
+            _stprintf_s(tmp, 256, _T("groupQuery:Invalid key name '%s'."), name.c_str());
+            THROW_BZS_ERROR_WITH_MSG(tmp);
+        }
         return (key_type)m_fds->size();
     }
 
