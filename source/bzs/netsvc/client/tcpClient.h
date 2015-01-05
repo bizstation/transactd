@@ -465,9 +465,17 @@ public:
     ~pipeConnection()
     {
         memset(m_writebuf_p, 0, sizeof(unsigned int));
-
-        SetEvent(m_sendEvent);
-        WaitForSingleObject(m_recvEvent, INFINITE);
+        if (SetEvent(m_sendEvent))
+        {
+            while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, connections::timeout))
+            {
+                DWORD n = 0;
+                BOOL ret = GetNamedPipeHandleState(m_socket.native_handle(), NULL, &n,
+                                               NULL, NULL, NULL, 0);
+                if(ret == FALSE || n == 0)
+                    break;
+            }
+        }
 
         if (m_recvEvent)
             CloseHandle(m_recvEvent);
@@ -527,9 +535,14 @@ public:
         BOOL ret = SetEvent(m_sendEvent);
         if (ret == FALSE)
             throwException("SetEvent", CLIENT_ERROR_CONNECTION_FAILURE);
-        DWORD r = WaitForSingleObject(m_recvEvent, connections::timeout);
-        if (r == WAIT_TIMEOUT)
-            throwException("SetEvent", CLIENT_ERROR_CONNECTION_FAILURE);
+        while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, connections::timeout))
+        {
+            DWORD n = 0;
+            ret = GetNamedPipeHandleState(m_socket.native_handle(), NULL, &n,
+                                           NULL, NULL, NULL, 0);
+            if(ret == FALSE || n == 0)
+                throwException("PipeConnection", CLIENT_ERROR_CONNECTION_FAILURE);
+        }
         return m_readbuf_p;
     }
 

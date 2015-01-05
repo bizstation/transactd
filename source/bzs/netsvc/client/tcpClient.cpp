@@ -65,7 +65,7 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName)
         strcpy_s(port, PORTNUMBUF_SIZE, tmp);
         GetPrivateProfileString("transctd_client", "timeout", "3000", tmp, 30,
                                 buf);
-        timeout = atol(tmp);
+        timeout = (short)atol(tmp);
     }
 #else // NOT _WIN32
 #if (BOOST_VERSION > 104900)
