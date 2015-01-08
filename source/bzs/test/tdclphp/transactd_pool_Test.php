@@ -90,7 +90,6 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
         $dbm = new Bz\pooledDbManager($cp);
         $atu = new Bz\ActiveTable($dbm, 'user');
         $q = new Bz\query();
-        $rs = new Bz\RecordSet();
         $atu->alias('名前', 'name');
         $q->select('id', 'name', 'group')->where('id', '<=', 15000);
         $rs = $atu->index(0)->keyValue(1)->read($q);

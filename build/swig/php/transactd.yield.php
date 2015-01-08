@@ -331,6 +331,8 @@ abstract class transactd {
 
 	const CMPLOGICAL_CASEINSENSITIVE = CMPLOGICAL_CASEINSENSITIVE;
 
+	const LOCK_BIAS_DEFAULT = LOCK_BIAS_DEFAULT;
+
 	const LOCK_SINGLE_WAIT = LOCK_SINGLE_WAIT;
 
 	const LOCK_SINGLE_NOWAIT = LOCK_SINGLE_NOWAIT;
@@ -349,8 +351,6 @@ abstract class transactd {
 
 	const TRN_ISO_SERIALIZABLE = TRN_ISO_SERIALIZABLE;
 
-	const CONSISTENT_READ = CONSISTENT_READ;
-
 	const SINGLELOCK_READ_COMMITED = SINGLELOCK_READ_COMMITED;
 
 	const MULTILOCK_READ_COMMITED = MULTILOCK_READ_COMMITED;
@@ -364,6 +364,8 @@ abstract class transactd {
 	const MULTILOCK_NOGAP = MULTILOCK_NOGAP;
 
 	const MULTILOCK_GAP = MULTILOCK_GAP;
+
+	const CONSISTENT_READ = CONSISTENT_READ;
 
 	const MULTILOCK_GAP_SHARE = MULTILOCK_GAP_SHARE;
 
@@ -997,14 +999,6 @@ class fielddef extends fielddef_t_my {
 		return fielddef_codePage($this->_cPtr);
 	}
 
-	function varLenBytes() {
-		return fielddef_varLenBytes($this->_cPtr);
-	}
-
-	function blobLenBytes() {
-		return fielddef_blobLenBytes($this->_cPtr);
-	}
-
 	function isStringType() {
 		return fielddef_isStringType($this->_cPtr);
 	}
@@ -1023,6 +1017,14 @@ class fielddef extends fielddef_t_my {
 
 	function charsetIndex() {
 		return fielddef_charsetIndex($this->_cPtr);
+	}
+
+	function varLenBytes() {
+		return fielddef_varLenBytes($this->_cPtr);
+	}
+
+	function blobLenBytes() {
+		return fielddef_blobLenBytes($this->_cPtr);
 	}
 
 	function name() {
@@ -1362,7 +1364,7 @@ abstract class nstable {
 		nstable_seek($this->_cPtr,$lockBias);
 	}
 
-	function seekGreater($orEqual,$lockBias=0) {
+	function seekGreater($orEqual,$lockBias=LOCK_BIAS_DEFAULT) {
 		nstable_seekGreater($this->_cPtr,$orEqual,$lockBias);
 	}
 
