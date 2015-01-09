@@ -276,6 +276,13 @@ int dbManager::ddl_dropTable(database* db, const std::string& tbname,
     return ddl_execSql(db->thd(), cmd);
 }
 
+int dbManager::ddl_addIndex(database* db, const std::string& tbname,
+                        const std::string& cmd)
+{
+    std::string c = "ALTER TABLE `" + db->name() + "`." + cmd;
+    return ddl_execSql(db->thd(), c);
+}
+
 int dbManager::ddl_renameTable(database* db, const std::string& oldName,
                                const std::string& dbSqlName,
                                const std::string& oldSqlName,

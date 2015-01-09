@@ -244,6 +244,23 @@ public:
         m_disconnected = !m_req.cid->con;
     }
 
+    inline void createIndex()
+    {
+        _TCHAR tmp[MAX_PATH*2]={0};
+        m_req.paramMask = P_MASK_NOKEYBUF;
+
+        int charsetIndexServer =  getServerCharsetIndex();
+        unsigned char keynum = m_req.keyNum;
+        bool specifyKeyNum = (keynum >= 0x80);
+        if (keynum >= 0x80)
+            keynum -= 0x80;
+        m_sql = sqlCreateIndex((tabledef*)m_req.data, keynum, 
+                            specifyKeyNum, charsetIndexServer);
+        m_req.data = (ushort_td*)m_sql.c_str();
+        m_tmplen = (uint_td)(m_sql.size() + 1);
+        m_req.datalen = &m_tmplen;
+    }
+
     inline void create()
     {
         m_req.paramMask = P_MASK_ALL;

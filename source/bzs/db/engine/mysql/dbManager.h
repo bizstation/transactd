@@ -81,6 +81,8 @@ protected:
     int ddl_dropTable(database* db, const std::string& tbname,
                       const std::string& sqldbname,
                       const std::string& sqltbname);
+    int ddl_addIndex(database* db, const std::string& tbname,
+                        const std::string& cmd);
     int ddl_renameTable(database* db, const std::string& oldName,
                         const std::string& dbSqlName,
                         const std::string& oldSqlName,

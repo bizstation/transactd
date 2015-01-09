@@ -2079,6 +2079,36 @@ void testSetOwner(database* db)
     tb->release();
 }
 
+void testCreateIndex(database* db)
+{
+    table* tb = openTable(db);
+    dbdef* def = db->dbDef();
+    if (def)
+    {
+        const tabledef* td = tb->tableDef();
+        keydef* kd = def->insertKey(td->id, td->keyCount);
+        kd->segments[0].fieldNum = fdi_name; //name
+        kd->segments[0].flags.bit8 = 1; // extended key type
+        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segments[0].flags.bit0 = 1; // duplicatable
+        kd->segmentCount = 1;
+        // assign keynumber 
+        kd->keyNumber = 5;
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(),
+                            "CreateIndex updateTableDef stat = " << def->stat());
+    }
+    tb->setKeyNum(tb->tableDef()->keyCount-1);
+    tb->createIndex(true);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "CreateIndex");
+    tb->release();
+
+    //test not mysql grant
+    db->aclReload();
+    BOOST_CHECK_MESSAGE(STATUS_DB_YET_OPEN == db->stat(),
+                        "bad grantReload db->stat() = " << db->stat());
+}
+
 void testDropIndex(database* db)
 {
     table* tb = openTable(db);
@@ -4492,6 +4522,11 @@ BOOST_FIXTURE_TEST_CASE(delete_, fixture)
 BOOST_FIXTURE_TEST_CASE(setOwner, fixture)
 {
     testSetOwner(db());
+}
+
+BOOST_FIXTURE_TEST_CASE(createIndex, fixture)
+{
+    testCreateIndex(db());
 }
 
 BOOST_FIXTURE_TEST_CASE(dropIndex, fixture)
