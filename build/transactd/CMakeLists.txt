@@ -117,6 +117,10 @@ foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
   else()
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
       bz_add_cxx_flag("-std=c++11 -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register" "${build_type}")
+    else()
+      set_source_files_properties(
+        "${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/tdapCommandExecuter.cpp"
+        PROPERTIES COMPILE_FLAGS -std=c++0x)
     endif()
     bz_add_cxx_flag("-fPIC -fexceptions -fno-omit-frame-pointer" "${build_type}")
     bz_add_cxx_flag("-fno-strict-aliasing -fpermissive -frtti -D_REENTRANT" "${build_type}")

@@ -21,7 +21,9 @@
 
 #ifndef WCHAR
 #if (!(__APPLE__ && (__BORLANDC__ || __clang__)))
+#if !defined(__GXX_EXPERIMENTAL_CXX0X__)
 typedef unsigned short char16_t;
+#endif
 #endif
 typedef char16_t WCHAR;
 
