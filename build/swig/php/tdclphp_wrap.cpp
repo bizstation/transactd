@@ -25363,11 +25363,14 @@ ZEND_NAMED_FUNCTION(_wrap_new_connectParams__SWIG_0) {
   _TCHAR *arg2 = (_TCHAR *) 0 ;
   _TCHAR *arg3 = (_TCHAR *) 0 ;
   _TCHAR *arg4 = (_TCHAR *) 0 ;
-  zval **args[4];
+  _TCHAR *arg5 = (_TCHAR *) 0 ;
+  _TCHAR *arg6 = (_TCHAR *) 0 ;
+  zval **args[6];
   bzs::db::protocol::tdap::client::connectParams *result = 0 ;
+  int argc = ZEND_NUM_ARGS();
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, args) != SUCCESS) {
+  if((argc < 4) || (argc > 6) || zend_get_parameters_array_ex(argc, args) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -25396,8 +25399,21 @@ ZEND_NAMED_FUNCTION(_wrap_new_connectParams__SWIG_0) {
     }
   }
   {
+    if ((argc > 4) && (*args[4])->type != IS_NULL) {
+      convert_to_string_ex(args[4]);
+      arg5 = (_TCHAR *) Z_STRVAL_PP(args[4]);
+    }
+  }
+  {
+    if ((argc > 5) &&(*args[5])->type != IS_NULL) {
+      convert_to_string_ex(args[5]);
+      arg6 = (_TCHAR *) Z_STRVAL_PP(args[5]);
+    }
+  }
+  {
     try {
-      result = (bzs::db::protocol::tdap::client::connectParams *)new bzs::db::protocol::tdap::client::connectParams((_TCHAR const *)arg1,(_TCHAR const *)arg2,(_TCHAR const *)arg3,(_TCHAR const *)arg4);
+      result = (bzs::db::protocol::tdap::client::connectParams *)new bzs::db::protocol::tdap::client::connectParams((_TCHAR const *)arg1,(_TCHAR const *)arg2,(_TCHAR const *)arg3,(_TCHAR const *)arg4,
+                (_TCHAR const *)arg5,(_TCHAR const *)arg6);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -25449,42 +25465,15 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_new_connectParams) {
   int argc;
-  zval **argv[4];
+  zval **argv[6];
   
   argc = ZEND_NUM_ARGS();
   zend_get_parameters_array_ex(argc,argv);
   if (argc == 1) {
-    int _v;
-    {
-      _v = 1;
-    }
-    if (_v) {
-      _wrap_new_connectParams__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-    }
+    _wrap_new_connectParams__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
   }
-  if (argc == 4) {
-    int _v;
-    {
-      _v = 1;
-    }
-    if (_v) {
-      {
-        _v = 1;
-      }
-      if (_v) {
-        {
-          _v = 1;
-        }
-        if (_v) {
-          {
-            _v = 1;
-          }
-          if (_v) {
-            _wrap_new_connectParams__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-          }
-        }
-      }
-    }
+  if ((argc >= 4) && argc <= 6) {
+    _wrap_new_connectParams__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
   }
   
   SWIG_ErrorCode() = E_ERROR;

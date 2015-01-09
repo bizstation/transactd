@@ -3038,7 +3038,8 @@ class connectParams {
 		return array_key_exists($var, $this->_pData);
 	}
 
-	function __construct($protocol_or_uri,$hostOrIp=null,$dbname=null,$schemaTable=null) {
+	function __construct($protocol_or_uri,$hostOrIp=null,$dbname=null,$schemaTable=null,
+	                        $username=null,$passwd=null) {
 		if (is_resource($protocol_or_uri) && get_resource_type($protocol_or_uri) === '_p_bzs__db__protocol__tdap__client__connectParams') {
 			$this->_cPtr=$protocol_or_uri;
 			return;
@@ -3047,7 +3048,9 @@ class connectParams {
 		case 1: $this->_cPtr=new_connectParams($protocol_or_uri); break;
 		case 2: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp); break;
 		case 3: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname); break;
-		default: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname,$schemaTable);
+		case 4: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname,$schemaTable);break;
+		case 5: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname,$schemaTable,$username);break;
+		default: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname,$schemaTable,$username,$passwd);
 		}
 	}
 

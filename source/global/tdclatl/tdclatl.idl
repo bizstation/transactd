@@ -1452,7 +1452,9 @@ interface IConnectParams : IDispatch
 {
   [id(1)]
   HRESULT _stdcall Init([in] BSTR protocol, [in] BSTR hostOrIp, [in] BSTR dbname,
-					[in] BSTR schemaTable);
+					[in] BSTR schemaTable,
+                    [in, defaultvalue("")] BSTR username,
+                    [in, defaultvalue("")] BSTR passwd);
   [propput, id(2)]
   HRESULT _stdcall Uri([in] BSTR val);
   [propget, id(2)]

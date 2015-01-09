@@ -26932,6 +26932,8 @@ _wrap_new_connectParams__SWIG_0(int argc, VALUE *argv, VALUE self) {
   _TCHAR *arg2 = (_TCHAR *) 0 ;
   _TCHAR *arg3 = (_TCHAR *) 0 ;
   _TCHAR *arg4 = (_TCHAR *) 0 ;
+  _TCHAR *arg5 = (_TCHAR *) 0 ;
+  _TCHAR *arg6 = (_TCHAR *) 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
@@ -26944,10 +26946,16 @@ _wrap_new_connectParams__SWIG_0(int argc, VALUE *argv, VALUE self) {
   int res4 ;
   char *buf4 = 0 ;
   int alloc4 = 0 ;
+  int res5 ;
+  char *buf5 = 0 ;
+  int alloc5 = 0 ;
+  int res6 ;
+  char *buf6 = 0 ;
+  int alloc6 = 0 ;
   bzs::db::protocol::tdap::client::connectParams *result = 0 ;
   
-  if ((argc < 4) || (argc > 4)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 4)",argc); SWIG_fail;
+  if ((argc < 4) || (argc > 6)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 4 to 6)",argc); SWIG_fail;
   }
   res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
@@ -26969,9 +26977,23 @@ _wrap_new_connectParams__SWIG_0(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res4), Ruby_Format_TypeError( "", "_TCHAR const *","connectParams", 4, argv[3] ));
   }
   arg4 = reinterpret_cast< _TCHAR * >(buf4);
+  if (argc > 4) {
+      res5 = SWIG_AsCharPtrAndSize(argv[4], &buf5, NULL, &alloc5);
+      if (!SWIG_IsOK(res5)) {
+        SWIG_exception_fail(SWIG_ArgError(res5), Ruby_Format_TypeError( "", "_TCHAR const *","connectParams", 5, argv[4] ));
+      }
+      arg5 = reinterpret_cast< _TCHAR * >(buf5);
+  }
+  if (argc > 5) {
+      res6 = SWIG_AsCharPtrAndSize(argv[5], &buf6, NULL, &alloc6);
+      if (!SWIG_IsOK(res6)) {
+        SWIG_exception_fail(SWIG_ArgError(res6), Ruby_Format_TypeError( "", "_TCHAR const *","connectParams", 6, argv[5] ));
+      }
+      arg6 = reinterpret_cast< _TCHAR * >(buf6);
+  }
   {
     try {
-      result = (bzs::db::protocol::tdap::client::connectParams *)new bzs::db::protocol::tdap::client::connectParams((_TCHAR const *)arg1,(_TCHAR const *)arg2,(_TCHAR const *)arg3,(_TCHAR const *)arg4);
+      result = (bzs::db::protocol::tdap::client::connectParams *)new bzs::db::protocol::tdap::client::connectParams((_TCHAR const *)arg1,(_TCHAR const *)arg2,(_TCHAR const *)arg3,(_TCHAR const *)arg4,(_TCHAR const *)arg5,(_TCHAR const *)arg6);
       DATA_PTR(self) = result;
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
@@ -26985,12 +27007,16 @@ _wrap_new_connectParams__SWIG_0(int argc, VALUE *argv, VALUE self) {
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
   return self;
 fail:
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
   return Qnil;
 }
 
@@ -27050,11 +27076,11 @@ fail:
 
 SWIGINTERN VALUE _wrap_new_connectParams(int nargs, VALUE *args, VALUE self) {
   int argc;
-  VALUE argv[4];
+  VALUE argv[6];
   int ii;
   
   argc = nargs;
-  if (argc > 4) SWIG_fail;
+  if (argc > 6) SWIG_fail;
   for (ii = 0; (ii < argc); ++ii) {
     argv[ii] = args[ii];
   }
@@ -27066,7 +27092,7 @@ SWIGINTERN VALUE _wrap_new_connectParams(int nargs, VALUE *args, VALUE self) {
       return _wrap_new_connectParams__SWIG_1(nargs, args, self);
     }
   }
-  if (argc == 4) {
+  if (argc >= 4) {
     int _v;
     int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
     _v = SWIG_CheckState(res);
@@ -27079,6 +27105,14 @@ SWIGINTERN VALUE _wrap_new_connectParams(int nargs, VALUE *args, VALUE self) {
         if (_v) {
           int res = SWIG_AsCharPtrAndSize(argv[3], 0, NULL, 0);
           _v = SWIG_CheckState(res);
+          if (_v && (argc > 4)) {
+            int res = SWIG_AsCharPtrAndSize(argv[4], 0, NULL, 0);
+            _v = SWIG_CheckState(res);
+          }
+          if (_v && (argc > 5)) {
+            int res = SWIG_AsCharPtrAndSize(argv[5], 0, NULL, 0);
+            _v = SWIG_CheckState(res);
+          }
           if (_v) {
             return _wrap_new_connectParams__SWIG_0(nargs, args, self);
           }
@@ -34836,4 +34870,3 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassPooledDbManager.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_pooledDbManager;
   SwigClassPooledDbManager.trackObjects = 0;
 }
-
