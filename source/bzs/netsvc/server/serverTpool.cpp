@@ -153,6 +153,12 @@ class connection : public boost::enable_shared_from_this<connection>,
 
                 if (ret == EXECUTE_RESULT_QUIT)
                     return;
+                else if(ret == EXECUTE_RESULT_ACCESS_DNIED)
+                {
+                    boost::asio::write(m_socket,  buffer(&m_result[0], size),
+                           boost::asio::transfer_all());
+                    return;
+                }
 
                 m_optionalBuffes.insert(m_optionalBuffes.begin(),
                                         buffer(&m_result[0], size));
@@ -170,7 +176,6 @@ class connection : public boost::enable_shared_from_this<connection>,
                             boost::bind(&connection::handle_write,
                                         shared_from_this(),
                                         boost::asio::placeholders::error));
-
                 return;
             }
 
@@ -231,6 +236,7 @@ public:
 
     void sendConnectAccept()
     {
+        //send handshake packet
         size_t n = m_module->onAccept(&m_result[0], WRITEBUF_SIZE);
         if (n)
             boost::asio::write(m_socket, buffer(&m_result[0], n),
@@ -313,7 +319,7 @@ public:
             boost::shared_ptr<IAppModule> mod(m_app->createSessionModule(
                 endpoint, m_newConnection.get(), SERVER_TYPE_TPOOL));
             m_newConnection->setModule(mod);
-            if (mod->checkHost(m_srv->hostCheckName()))
+            if (mod->checkHost(m_srv->hostCheckName(), NULL, 0))
             {
                 m_newConnection->sendConnectAccept();
                 m_newConnection->start();

@@ -58,6 +58,9 @@ protected:
     mutable std::vector<handle> m_handles;
 
     table* m_tb;
+    std::string m_user;
+    std::string m_host;
+    bool m_authChecked;
 
     database* createDatabase(const char* dbname, short cid) const;
     void releaseDatabase(short cid);

@@ -34,6 +34,9 @@
 #include "databaseSchema.h"
 #include <bzs/db/transactd/connManager.h>
 #include <bzs/rtl/exception.h>
+#include <random>
+
+
 
 namespace bzs
 {
@@ -206,10 +209,11 @@ void dumpStdErr(int op, request& req, table* tb)
 //  class dbExecuter
 //-------------------------------------------------------------
 
-dbExecuter::dbExecuter()
+dbExecuter::dbExecuter(netsvc::server::IAppModule* mod)
     : dbManager(), m_readHandler(new ReadRecordsHandler()),
-      m_blobBuffer(new blobBuffer())
+      m_blobBuffer(new blobBuffer()), m_mod(mod)
 {
+    m_scramble[0] = 0x00;
 }
 
 dbExecuter::~dbExecuter()
@@ -249,7 +253,6 @@ void dbExecuter::releaseDatabase(request& req, int op)
 std::string dbExecuter::makeSQLcreateTable(const request& req)
 {
     return (const char*)req.data;
-    // return sql;
 }
 
 int dbExecuter::errorCode(int ha_error)
@@ -286,7 +289,6 @@ int dbExecuter::errorCode(int ha_error)
 
 bool isMetaDb(const request& req)
 {
-
     char buf[MAX_PATH];
     strncpy(buf, (char*)req.keybuf, MAX_PATH);
     _strlwr(buf);
@@ -299,7 +301,7 @@ bool isMetaDb(const request& req)
 inline void dbExecuter::doCreateTable(request& req)
 {
     // if table name is mata table and database is nothing
-    //	then cretate database too.
+    //  then cretate database too.
     std::string dbname = getDatabaseName(req);
     std::string dbSqlname = getDatabaseName(req, FOR_SQL);
     if (dbname != "")
@@ -385,6 +387,54 @@ inline void dbExecuter::doCreateTable(request& req)
     req.result = errorCodeSht(req.result);
 }
 
+bool getUserPasswd(request& req, char* &user, char* &pwd)
+{
+    char* p = strchr((char*)req.keybuf, '\t');
+    if (p)
+    {
+        p = strchr(++p, '\t');
+        if (p)
+        {
+            pwd = ++p;
+            user = pwd + MYSQL_SCRAMBLE_LENGTH;
+            while (p < user)
+                if (*p++) return true;
+        }
+        return false;
+    }
+    return false;
+}
+
+bool dbExecuter::doAuthentication(request& req)
+{
+    if (m_authChecked) return true;
+    bool ret = true;
+    if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR)==0)
+    {
+        ret = false;
+        char host[MAX_HOSTNAME];
+        char *user = 0x00;
+        char *pwd = 0x00;
+        bool pwdRecieved = getUserPasswd(req, user, pwd);
+        if (user && user[0] && m_mod->checkHost(user, host, MAX_HOSTNAME))
+        {
+            //uint8* p = find_acl_user_(host, user, FALSE);
+            unsigned char buf[22];
+            unsigned char* p = getUserSha1Passwd(host, user, buf);
+            if (!pwdRecieved && !p) 
+                ret = true;
+            else if (p && pwdRecieved)
+                ret = (FALSE == check_scramble((const unsigned char*)pwd, (const char*)m_scramble, p));
+            if (ret)
+            {
+                m_user = user;
+                m_host = host;
+            }
+        }
+    }
+    m_authChecked = ret;
+    return ret;
+}
 // open table and assign handle
 inline void dbExecuter::doOpenTable(request& req)
 {
@@ -938,10 +988,10 @@ inline short getTrnsactionType(int op)
 
 inline rowLockMode* getRowLockMode(int op, rowLockMode* lck)
 {
-	lck->lock = false;
+    lck->lock = false;
     lck->read = (op > ROW_LOCK_S);
     if (op > 1000)
-    	op = op % 1000;
+        op = op % 1000;
     if (op < NOWAIT_WRITE)
     {
         if (op >= LOCK_SINGLE_NOWAIT && op < LOCK_MULTI_NOWAIT)
@@ -974,6 +1024,12 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         if (pbk == NULL)
             pbk = &tmp;
         req.reset();
+        if (!m_authChecked)
+        {
+          if (op != TD_CONNECT && op != TD_CREATETABLE &&
+              op != TD_OPENTABLE && op != TD_GETSERVER_CHARSET)
+              return EXECUTE_RESULT_ACCESS_DNIED;
+        }
         switch (op)
         {
         case TD_GETSERVER_CHARSET:
@@ -987,10 +1043,6 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 ver->srvMinor = TRANSACTD_VER_MINOR;
                 ver->srvRelease = TRANSACTD_VER_RELEASE;
                 req.resultLen = sizeof(trdVersiton);
-                // req.data = (void*)
-                // global_system_variables.collation_server->csname;
-                // req.resultLen = (uint_td)strlen(
-                // global_system_variables.collation_server->csname);
                 req.paramMask |= P_MASK_DATA | P_MASK_DATALEN;
             }
             else
@@ -998,7 +1050,10 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         }
         case TD_CONNECT:
-            connect(req);
+            if (!doAuthentication(req))
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+            else
+                connect(req);
             break;
         case TD_RESET_CLIENT:
         case TD_STOP_ENGINE: // close all table
@@ -1009,10 +1064,16 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb);
             break;
         case TD_CREATETABLE:
-            doCreateTable(req);
+            if (!doAuthentication(req))
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+            else
+                doCreateTable(req);
             break;
         case TD_OPENTABLE:
-            doOpenTable(req);
+            if (!doAuthentication(req))
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+            else
+                doOpenTable(req);
             break;
         case TD_CLOSETABLE:
             m_tb = getTable(req.pbk->handle);
@@ -1157,14 +1218,12 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         }
         case TD_DROP_INDEX:
-        { // Key name of multi byte charctord is not supported. Use only ascii.
+        { // Key name of multi byte charctor is not supported. Use only ascii.
             database* db = getDatabaseCid(req.cid);
             m_tb = getTable(req.pbk->handle);
-            req.result = ddl_execSql(
-                db->thd(),
-                makeSQLDropIndex(
-                    db->name(), m_tb->name(),
-                    m_tb->keyName(m_tb->keyNumByMakeOrder(req.keyNum))));
+            req.result = ddl_execSql(db->thd(),
+                makeSQLDropIndex(db->name(), m_tb->name(),
+                     m_tb->keyName(m_tb->keyNumByMakeOrder(req.keyNum))));
             break;
         }
         case TD_KEY_GE_NEXT_MULTI:
@@ -1255,6 +1314,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 return EXECUTE_RESULT_FORCSE_SYNC;
             return EXECUTE_RESULT_FORCSE_ASYNC;
         }
+        if (req.result == ERROR_TD_INVALID_CLINETHOST)
+            return EXECUTE_RESULT_ACCESS_DNIED;
         DEBUG_PROFILE_END_OP(1, op)
         return EXECUTE_RESULT_SUCCESS;
     }
@@ -1297,8 +1358,42 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
     return EXECUTE_RESULT_SUCCESS;
 }
 
+void makeRandomKey(unsigned char *buf, unsigned int size)
+{
+  unsigned char *end= buf + size;
+  std::random_device rnd;
+  for (; buf < end; buf++)
+    *buf = (unsigned char)(rnd() * 94 + 33);
+  *buf= 0x00;
+}
+
+size_t dbExecuter::getAcceptMessage(char* message, size_t size)
+{
+    // make handshake packet
+    assert(size >= sizeof(trdVersiton));
+
+    handshale_t* hst = (handshale_t*)message;
+    trdVersiton* ver = &hst->ver;
+    hst->size = sizeof(handshale_t);
+
+    strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
+                global_system_variables.collation_server->csname);
+    ver->srvMajor = TRANSACTD_VER_MAJOR;
+    ver->srvMinor = TRANSACTD_VER_MINOR;
+    ver->srvRelease = TRANSACTD_VER_RELEASE;
+    if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR) == 0)
+    {
+        makeRandomKey(m_scramble, MYSQL_SCRAMBLE_LENGTH);
+        memcpy(hst->scramble, m_scramble, sizeof(m_scramble));
+    }else
+    {
+        hst->scramble[0] = 0x00;
+        hst->size -= sizeof(m_scramble);
+    }
+    return hst->size;
+}
 // ---------------------------------------------------------------------------
-//		class connMgrExecuter
+//      class connMgrExecuter
 // ---------------------------------------------------------------------------
 connMgrExecuter::connMgrExecuter(request& req, unsigned __int64 parent)
     : m_req(req), m_modHandle(parent)
@@ -1354,11 +1449,11 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
 }
 
 // ---------------------------------------------------------------------------
-//		class commandExecuter
+//      class commandExecuter
 // ---------------------------------------------------------------------------
-commandExecuter::commandExecuter(__int64 parent) : m_modHandle(parent)
+commandExecuter::commandExecuter(netsvc::server::IAppModule* mod) 
 {
-    m_dbExec.reset(new dbExecuter());
+    m_dbExec.reset(new dbExecuter(mod));
 }
 
 commandExecuter::~commandExecuter()

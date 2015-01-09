@@ -41,12 +41,6 @@ tls_key g_tlsiID;
 __THREAD client* __THREAD_BCB g_client = NULL;
 #endif
 
-bool checkVersion(trdVersiton& ver)
-{
-    if ((ver.srvMajor < 2) || ((ver.srvMajor == 2) && (ver.srvMinor < 1)))
-        return false;
-    return true;
-}
 
 int client::getServerCharsetIndex()
 {
@@ -65,7 +59,6 @@ int client::getServerCharsetIndex()
     ver.clMajor = (ushort_td)atoi(C_INTERFACE_VER_MAJOR);
     ver.clMinor = (ushort_td)atoi(C_INTERFACE_VER_MINOR);
     ver.clRelease = (ushort_td)atoi(C_INTERFACE_VER_RELEASE);
-
     uint_td len = sizeof(trdVersiton);
     req.op = TD_GETSERVER_CHARSET;
     req.data = &ver;
@@ -79,7 +72,7 @@ int client::getServerCharsetIndex()
     if (req.result == 0)
     {
         if (!checkVersion(ver))
-            return false;
+            return -1;
         c->setCharsetServer(mysql::charsetIndex(ver.cherserServer));
         return  c->charsetServer();
     }
@@ -104,12 +97,21 @@ bool client::buildDualChasetKeybuf()
     if (charsetIndexServer == -1)
         return false;
 
-    m_serverCharData = (char*)m_req.keybuf;
-    if (CHARSET_UTF8 != charsetIndexServer)
-        addSecondCharsetData(mysql::codePage(charsetIndexServer),
-                             m_serverCharData);
-    else
-        m_serverCharData += std::string("\t") + (char*)m_req.keybuf;
+    // remove auth info
+    {
+        _TCHAR tmp[MAX_KEYLEN+128]={0};
+        m_serverCharData = stripAuth((const char*)m_req.keybuf, tmp, MAX_KEYLEN);
+
+        if (CHARSET_UTF8 != charsetIndexServer)
+            addSecondCharsetData(mysql::codePage(charsetIndexServer),
+                                 m_serverCharData);
+        else
+            m_serverCharData += std::string("\t") + tmp;
+    }
+    //Add  Auth infomation
+    if (m_cryptPwd)
+        m_serverCharData += std::string("\t") +
+           std::string(m_cryptPwd, strlen(m_cryptPwd + 20) + MYSQL_SCRAMBLE_LENGTH);
 
     m_req.keybuf = (void_td*)m_serverCharData.c_str();
     m_req.keylen = (keylen_td)m_serverCharData.size() + 1;

@@ -203,7 +203,7 @@ class commandExecuter : public ICommandExecuter,
     mutable std::vector<request> m_requests;
 
 public:
-    commandExecuter(__int64 parent);
+    commandExecuter(netsvc::server::IAppModule* mod);
     ~commandExecuter();
     size_t perseRequestEnd(const char* p, size_t size, bool& comp) const;
     size_t getAcceptMessage(char* message, size_t size) { return 0; };

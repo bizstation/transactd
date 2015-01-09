@@ -23,6 +23,7 @@
 #include <boost/noncopyable.hpp>
 #include <iterator>
 #include <stdio.h>
+#include <bzs/db/protocol/tdap/uri.h>
 
 #if defined(__GNUC__)
 #if (!defined(__clang__) &&                                                    \
@@ -74,14 +75,27 @@ class connectParams
 
 public:
     inline connectParams(const _TCHAR* protocol, const _TCHAR* hostOrIp,
-                         const _TCHAR* dbname, const _TCHAR* schemaTable)
+                         const _TCHAR* dbname, const _TCHAR* schemaTable
+                         ,const _TCHAR* userName=NULL, const _TCHAR* passwd=NULL)
         : m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
     {
-        const _TCHAR* ext = _T(".bdf");
-        if (_tcscmp(schemaTable, TRANSACTD_SCHEMANAME)==0)
-            ext = _T("");
-        _stprintf_s(m_buf, MAX_PATH, _T("%s://%s/%s?dbfile=%s%s"), protocol,
-                    hostOrIp, dbname, schemaTable, ext);
+        _TCHAR dbf[MAX_PATH]={0x00};
+        if (schemaTable && schemaTable[0])
+        {
+            const _TCHAR* ext = _T(".bdf");
+            if (_tcscmp(schemaTable, TRANSACTD_SCHEMANAME)==0)
+                ext = _T("");
+            _stprintf_s(dbf, MAX_PATH, _T("dbfile=%s%s"), schemaTable, ext);   
+        }
+        if (userName == NULL || (userName[0] == 0x00))
+            _stprintf_s(m_buf, MAX_PATH, _T("%s://%s/%s?%s"), protocol,
+                    hostOrIp, dbname, dbf);
+        else
+        {
+            if (!passwd) passwd = _T("");
+            _stprintf_s(m_buf, MAX_PATH, _T("%s://%s@%s/%s?%s&pwd=%s"),
+                protocol, userName, hostOrIp, dbname, dbf, passwd);
+        }
     }
     inline explicit connectParams(const _TCHAR* uri)
         : m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
@@ -106,64 +120,15 @@ public:
         m_type = v;
     }
 
-    inline const _TCHAR* uri() const { return m_buf; }
+    inline const _TCHAR* uri(bool noPasswd=false) const 
+    { 
+        return m_buf; 
+    }
 
     inline char_td mode() const { return m_mode; };
 
     inline short type() const { return m_type; };
 };
-
-inline const _TCHAR* host(const _TCHAR* uri, _TCHAR* buf, size_t size)
-{
-    buf[0] = 0x00;
-    const _TCHAR* st = _tcsstr(uri, _T("://"));
-    if (st)
-    {
-        const _TCHAR* en = _tcsstr(st + 3, _T("/"));
-        if (en)
-        {
-            _tcsncpy_s(buf, size, st + 3, en - (st + 3));
-            buf[en - (st + 3)] = 0x00;
-        }
-    }
-    return buf;
-}
-
-inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf, size_t size)
-{
-    buf[0] = 0x00;
-    const _TCHAR* st = _tcsstr(uri, _T("://"));
-    if (st)
-    {
-        st = _tcsstr(st + 3, _T("/"));
-        if (st)
-        {
-            const _TCHAR* en = _tcsstr(st + 1, _T("?"));
-            if (en)
-            {
-                _tcsncpy_s(buf, size, st + 1, en - (st + 1));
-                buf[en - (st + 1)] = 0x00;
-            }
-        }
-    }
-    return buf;
-}
-
-inline const _TCHAR* schemaTable(const _TCHAR* uri, _TCHAR* buf, size_t size)
-{
-    buf[0] = 0x00;
-    const _TCHAR* st = _tcsrchr(uri, _T('='));
-    if (st)
-    {
-        const _TCHAR* en = _tcsrchr(uri, _T('.'));
-        if (en)
-        {
-            _tcsncpy_s(buf, size, st + 1, en - (st + 1));
-            buf[en - (st + 1)] = 0x00;
-        }
-    }
-    return buf;
-}
 
 /* databaseManager interface
    If use some databases, implemnt a this interface and set the activeTable
@@ -826,28 +791,6 @@ inline database_ptr createDatabaseObject()
     return p;
 }
 
-template <class Database_Ptr, class ConnectParam_type>
-inline void connect(Database_Ptr db, const ConnectParam_type& connPrams,
-                    bool newConnection)
-{
-    db->connect(connPrams.uri(), newConnection);
-    if (db->stat())
-        nstable::throwError(
-            (std::_tstring(_T("Connect database ")) + connPrams.uri()).c_str(),
-            db->stat());
-}
-
-/*template <>
-inline void connect(idatabaseManager* db,  const connectParams& connPrams, bool
-newConnection)
-{
-        db->connect(connPrams, newConnection);
-        if (db->stat())
-                nstable::throwError((std::_tstring(_T("Connect database ")) +
-connPrams.uri()).c_str(), db->stat());
-
-}*/
-
 template <class Database_Ptr>
 inline void disconnect(Database_Ptr db, const connectParams& connPrams)
 {
@@ -866,13 +809,28 @@ template <class Database_Ptr> inline void disconnect(Database_Ptr db)
 }
 
 template <class Database_Ptr>
+inline void throwDbError(Database_Ptr db,  const _TCHAR* caption, const _TCHAR* uri)
+{
+    TCHAR tmp[MAX_PATH];
+    tdap::stripPasswd(uri, tmp, MAX_PATH);
+    nstable::throwError((std::_tstring(caption) + tmp).c_str(), db->stat());
+}
+
+template <class Database_Ptr, class ConnectParam_type>
+inline void connect(Database_Ptr db, const ConnectParam_type& connPrams,
+                    bool newConnection)
+{
+    db->connect(connPrams.uri(), newConnection);
+    if (db->stat())
+        throwDbError(db, _T("Connect database : "), connPrams.uri());
+}
+
+template <class Database_Ptr>
 inline void createDatabase(Database_Ptr db, const connectParams& connPrams)
 {
     db->create(connPrams.uri());
     if (db->stat())
-        nstable::throwError(
-            (std::_tstring(_T("Create database ")) + connPrams.uri()).c_str(),
-            db->stat());
+        throwDbError(db, _T("Create database : "), connPrams.uri());
 }
 
 template <class Database_Ptr>
@@ -880,8 +838,7 @@ inline void createDatabase(Database_Ptr db, const _TCHAR* uri)
 {
     db->create(uri);
     if (db->stat())
-        nstable::throwError(
-            (std::_tstring(_T("Create database ")) + uri).c_str(), db->stat());
+        throwDbError(db, _T("Create database : "), uri);
 }
 
 template <class Database_Ptr, class ConnectParam_type>
@@ -889,9 +846,7 @@ inline void openDatabase(Database_Ptr db, const ConnectParam_type& connPrams)
 {
     db->open(connPrams.uri(), connPrams.type(), connPrams.mode());
     if (db->stat())
-        nstable::throwError(
-            (std::_tstring(_T("Open database ")) + connPrams.uri()).c_str(),
-            db->stat());
+        throwDbError(db, _T("Open database : "), connPrams.uri());
 }
 
 template <class Database_Ptr>
@@ -902,9 +857,7 @@ inline void openDatabase(Database_Ptr db, const _TCHAR* uri,
 {
     db->open(uri, schemaType, mode, dir, ownername);
     if (db->stat())
-        nstable::throwError(
-            (std::_tstring(_T("Open database ")) + std::_tstring(uri)).c_str(),
-            db->stat());
+        throwDbError(db, _T("Open database : "), uri);
 }
 
 template <class Database_Ptr>
@@ -1002,7 +955,6 @@ inline void insertTable(dbdef* def, short id, const _TCHAR* name,
 inline fielddef* insertField(dbdef* def, short tableid, short fieldNum,
                              const _TCHAR* name, uchar_td type, ushort_td len)
 {
-
     fielddef* fd = def->insertField(tableid, fieldNum);
     if (def->stat() != 0)
         nstable::throwError(

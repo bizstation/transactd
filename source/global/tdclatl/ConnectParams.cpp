@@ -22,11 +22,11 @@
 using namespace bzs::db::protocol::tdap::client;
 
 STDMETHODIMP CConnectParams::Init(BSTR protocol, BSTR hostOrIp, BSTR dbname,
-                                  BSTR schemaTable)
+                                  BSTR schemaTable, BSTR username, BSTR passwd)
 {
     if (m_param)
         delete m_param;
-    m_param = new connectParams(protocol, hostOrIp, dbname, schemaTable);
+    m_param = new connectParams(protocol, hostOrIp, dbname, schemaTable, username, passwd);
     return S_OK;
 }
 STDMETHODIMP CConnectParams::put_Uri(BSTR val)

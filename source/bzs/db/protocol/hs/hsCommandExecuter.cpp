@@ -565,7 +565,7 @@ inline void setFilterVal(const std::string& src, int& parseMode, request* req)
     parseMode = PARSEREAD_FL_TYPE;
 }
 
-commandExecuter::commandExecuter(__int64 /*parent*/)
+commandExecuter::commandExecuter(netsvc::server::IAppModule* /*mod*/)
     : m_dbExec(new dbExecuter())
 {
 }

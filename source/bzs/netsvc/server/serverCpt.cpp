@@ -85,9 +85,15 @@ class connection : public iconnection, private boost::noncopyable
                     m_optionalBuffes.clear();
                 vecBuffer vbuf(m_result);
                 bzs::netsvc::server::IResultBuffer& buf = vbuf;
-                if (m_module->execute(buf, size, &m_optionalBuffes) ==
-                    EXECUTE_RESULT_QUIT)
+                int ret = m_module->execute(buf, size, &m_optionalBuffes);
+                if (ret == EXECUTE_RESULT_QUIT)
                     return;
+                else if(ret == EXECUTE_RESULT_ACCESS_DNIED)
+                {
+                    boost::asio::write(m_socket,  buffer(&m_result[0], size),
+                           boost::asio::transfer_all());
+                    return;
+                }
                 else
                 {
                     m_readLen = 0;
@@ -200,6 +206,7 @@ public:
         m_socket.set_option(
             boost::asio::socket_base::send_buffer_size(1024 * 1024 * 10), ec);
 
+        //send handshake packet
         size_t n = m_module->onAccept(&m_result[0], WRITEBUF_SIZE);
         if (n)
             boost::asio::write(m_socket, buffer(&m_result[0], n),
@@ -323,7 +330,7 @@ public:
                         ((IAppModuleBuilder*)app)->createSessionModule(
                             endpoint, m_connection.get(), SERVER_TYPE_CPT));
                     m_connection->setModule(mod);
-                    if (mod->checkHost(hostCheckName))
+                    if (mod->checkHost(hostCheckName, NULL, 0))
                     {
                         m_connection->sendConnectAccept();
                         m_connection->start(); // It does not return, unless a

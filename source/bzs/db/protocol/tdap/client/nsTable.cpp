@@ -19,7 +19,7 @@
 #include "nsTable.h"
 #include "nsDatabase.h"
 #include "bulkInsert.h"
-
+#include <bzs/db/protocol/tdap/uri.h>
 #include <limits.h>
 #include <string.h> // Required for _fstrstr()
 #include <stdio.h>
@@ -362,9 +362,10 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         GetShortPathName(name, m_impl->uri, MAX_PATH);
     else
 #endif
+    {
         if (m_impl->uri != name)
-        _tcscpy_s(m_impl->uri, MAX_PATH, name);
-
+            _tcscpy_s(m_impl->uri, MAX_PATH, name);
+    }
     // for trnasctd
     if (m_impl->nsdb->isTransactdUri(m_impl->uri))
     {
@@ -375,6 +376,7 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         }
     }
 
+    // convert utf8 string
     char tmpName[MAX_PATH] = { 0x00 };
     const char* p = nsdatabase::toServerUri(tmpName, MAX_PATH, m_impl->uri,
                                             m_impl->nsdb->isUseTransactd());
@@ -752,6 +754,7 @@ ushort_td nstable::recordLength()
 
 void nstable::doCreateIndex(bool specifyKeyNum)
 {
+
     if (specifyKeyNum)
         m_keynum += ((uchar_td)0x80);
     tdap(TD_BUILD_INDEX);
@@ -835,7 +838,12 @@ short_td nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* TableName,
 
 #pragma warning(disable : 4996)
     if (retbuf)
-        _stprintf(retbuf, _T("table_name:%s \n%s"), TableName, buf);
+    {
+        if (TableName && TableName[0])
+            _stprintf(retbuf, _T("table_name:%s \n%s"), TableName, buf);
+        else
+            _stprintf(retbuf, _T("%s"), buf);
+    }
 #pragma warning(default : 4996)
 
     if ((int)hWnd <= 0)
@@ -854,7 +862,7 @@ short_td nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* TableName,
 void nstable::throwError(const _TCHAR* caption, short statusCode)
 {
     _TCHAR tmp[1024] = { 0x00 };
-    nstable::tdapErr(0x00, statusCode, _T("unknown"), tmp);
+    nstable::tdapErr(0x00, statusCode, NULL, tmp);
     _TCHAR tmp2[1024] = { 0x00 };
     _stprintf_s(tmp2, 1024, _T("%s\n%s\n"), caption, tmp);
     THROW_BZS_ERROR_WITH_CODEMSG(statusCode, tmp2);
@@ -879,7 +887,7 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
         _tfullpath(buf, path, MAX_PATH);
     else
 #endif
-        _tcscpy(buf, path);
+        stripAuth(path, buf, MAX_PATH);
     _TUCHAR* p = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, PSEPARATOR_C);
     _TUCHAR* p2 = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, '=');
     if (p && p2)

@@ -68,7 +68,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define MAX_KEYLEN                      0X3FF   // 1023
 #endif
 #define BTRV_MAX_DATA_SIZE              57000
-#define TDAP_MAX_DATA_SIZE              6291456 // 3Mbyte
+#define TDAP_MAX_DATA_SIZE              6291456 // 6Mbyte
 #define BOOKMARK_ALLOC_SIZE             40960
 
 /** operation type
@@ -420,6 +420,16 @@ struct trdVersiton
     ushort_td srvMajor;
     ushort_td srvMinor;
     ushort_td srvRelease;
+};
+
+#define MYSQL_SCRAMBLE_LENGTH 20
+#define MYSQL_USERNAME_MAX    16
+
+struct handshale_t
+{
+    unsigned int size;  // size of this
+    trdVersiton ver;
+    unsigned char scramble[MYSQL_SCRAMBLE_LENGTH+1]; //user auth scramble
 };
 /** @endcond */
 

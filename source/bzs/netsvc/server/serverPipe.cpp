@@ -347,13 +347,15 @@ class connection : public iconnection, private noncopyable
             if (complete)
             {
                 size_t size = 0;
-                if (m_module->execute(sharedMemBuffer(*m_sharedMem), size,
-                                      NULL) == EXECUTE_RESULT_QUIT)
+                int ret = m_module->execute(sharedMemBuffer(*m_sharedMem), size, NULL);
+                if (ret == EXECUTE_RESULT_QUIT)
                     return;
                 else
                     m_readLen = 0;
 
                 sentResult = m_comm->send();
+                if (ret == EXECUTE_RESULT_ACCESS_DNIED)
+                    return;
                 m_module->cleanup();
             }
         }
@@ -434,11 +436,13 @@ public:
         m_exitHandler.reset(new exitCheckHnadler(clinetProcessID));
         if (m_module)
             m_exitHandler->setModule(m_module.get());
-        m_module->onAccept(tmp, 50);
-
-        strcpy(tmp, "OK");
-        memcpy(tmp + 3, &m_shareMemSize, 4);
+        tmp[0] = 0x00; // signe of handshakable
+        memcpy(tmp + 3, &m_shareMemSize, sizeof(unsigned int));// sharemem size
         asio::write(m_socket, buffer(tmp, 7), e);
+
+        //send handshake packet
+        m_module->onAccept(m_sharedMem->writeBuffer(), m_sharedMem->size());
+        m_comm->send();
         run();
     }
 
@@ -522,7 +526,6 @@ public:
      */
     static worker* worker::get(const IAppModuleBuilder* app)
     {
-
         worker* p = findWaitThread();
         if (p == NULL)
         {
@@ -565,7 +568,7 @@ public:
                         ((IAppModuleBuilder*)app)->createSessionModule(
                             endpoint, m_connection.get(), SERVER_TYPE_CPT));
                     m_connection->setModule(mod);
-                    if (mod->checkHost(hostCheckName))
+                    if (mod->checkHost(hostCheckName, NULL, 0))
                         m_connection->start(); // It does not return, unless a
                     // connection is close.
                     m_connection.reset();

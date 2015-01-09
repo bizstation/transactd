@@ -45,12 +45,17 @@ using namespace std;
 #endif
 static _TCHAR HOSTNAME[MAX_PATH] = { _T("127.0.0.1") };
 #define DBNAME _T("test")
-#define BDFNAME _T("test.bdf")
+#define BDFNAME _T("test")
 // #define ISOLATION_REPEATABLE_READ
 #define ISOLATION_READ_COMMITTED
 
+static _TCHAR g_uri[MAX_PATH];
+static _TCHAR g_userName[MYSQL_USERNAME_MAX + 1]={0x00};
+static _TCHAR g_password[MAX_PATH]={0x00};
+
 static const short fdi_id = 0;
 static const short fdi_name = 1;
+static const bool user_auth = true;
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]);
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
@@ -67,6 +72,26 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
             strcpy_s(HOSTNAME, MAX_PATH, argv[i] + 7);
 #endif
         }
+        if (strstr(argv[i], "--user=") == argv[i])
+        {
+#ifdef _UNICODE
+            MultiByteToWideChar(CP_ACP,
+                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
+                                argv[i] + 7, -1, g_userName, MYSQL_USERNAME_MAX+1);
+#else
+            strcpy_s(g_userName, MYSQL_USERNAME_MAX+1, argv[i] + 7);
+#endif        
+        }
+                if (strstr(argv[i], "--pwd=") == argv[i])
+        {
+#ifdef _UNICODE
+            MultiByteToWideChar(CP_ACP,
+                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
+                                argv[i] + 6, -1, g_password, MAX_PATH);
+#else
+            strcpy_s(g_password, MAX_PATH, argv[i] + 6);
+#endif        
+        }
     }
     printf("Transactd test ... \nMay look like progress is stopped, \n"
             "but it is such as record lock test, please wait.\n");
@@ -74,16 +99,18 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
     return 0;
 }
 
-static _TCHAR g_uri[MAX_PATH];
+
 
 const _TCHAR* makeUri(const _TCHAR* protocol, const _TCHAR* host,
-                      const _TCHAR* dbname, const _TCHAR* dbfile = NULL)
+                      const _TCHAR* dbname, const _TCHAR* dbfile=_T(""))
 {
-    if (dbfile)
+    connectParams cp(protocol, host, dbname, dbfile, g_userName, g_password);
+    _tcscpy(g_uri, cp.uri());
+    /*if (dbfile)
         _stprintf_s(g_uri, MAX_PATH, _T("%s://%s/%s?dbfile=%s"), protocol, host,
                     dbname, dbfile);
     else
-        _stprintf_s(g_uri, MAX_PATH, _T("%s://%s/%s"), protocol, host, dbname);
+        _stprintf_s(g_uri, MAX_PATH, _T("%s://%s/%s"), protocol, host, dbname);*/
     return g_uri;
 }
 
@@ -125,7 +152,7 @@ public:
         if (!m_db)
             printf("Error database::create()\n");
         connectParams param(PROTOCOL, HOSTNAME, _T("querytest"),
-                            _T("test.bdf"));
+                            _T("test"), g_userName, g_password);
         param.setMode(TD_OPEN_NORMAL);
 
         prebuiltData(m_db, param);
@@ -2245,15 +2272,17 @@ void testCreateDataBaseVar(database* db)
         return;
 
     if (db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME)))
+    {
         db->drop();
-
+        BOOST_CHECK_MESSAGE(0 == db->stat(), "drop testvar db stat = " << db->stat());
+    }
     db->create(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME));
     BOOST_CHECK_MESSAGE(0 == db->stat(),
-                        "createNewDataBase stat = " << db->stat());
+                        "create testvar db stat = " << db->stat());
     if (0 == db->stat())
     {
         db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME), 0, 0);
-        BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase 1");
+        BOOST_CHECK_MESSAGE(0 == db->stat(), "open testvar db stat = " << db->stat());
 
         if (0 == db->stat())
         {
@@ -4280,7 +4309,7 @@ void testDbPool()
     pooledDbManager poolMgr;
     pooledDbManager::setMaxConnections(4);
 
-    connectParams pm(PROTOCOL, HOSTNAME, _T("querytest"), DBNAME);
+    connectParams pm(PROTOCOL, HOSTNAME, _T("querytest"), DBNAME, g_userName, g_password);
     poolMgr.use(&pm);
     BOOST_CHECK_MESSAGE(1 == poolMgr.usingCount(), "usingCount 1");
     poolMgr.use(&pm);
@@ -4321,8 +4350,8 @@ BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
 BOOST_FIXTURE_TEST_CASE(createNewDataBase, fixture)
 {
-    const _TCHAR* uri = makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME);
-    _tprintf(_T("URI = %s\n"), uri);
+    connectParams cp(PROTOCOL, HOSTNAME, DBNAME, BDFNAME, g_userName);
+    _tprintf(_T("URI = %s\n"), cp.uri());
     if (db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME)))
         db()->drop();
     testCreateNewDataBase(db());

@@ -45,7 +45,7 @@ class iconnection;
 #define EXECUTE_RESULT_QUIT 1
 #define EXECUTE_RESULT_FORCSE_ASYNC 2
 #define EXECUTE_RESULT_FORCSE_SYNC 3
-
+#define EXECUTE_RESULT_ACCESS_DNIED 4
 typedef std::vector<boost::asio::const_buffer> buffers;
 typedef std::vector<char> vector_buffer;
 
@@ -80,7 +80,7 @@ public:
     virtual size_t onAccept(char* message, size_t bufsize) = 0;
     virtual void reset() = 0;
     virtual bool isShutDown() = 0;
-    virtual bool checkHost(const char* hostCheckname) = 0;
+    virtual bool checkHost(const char* hostCheckname, /*out*/char* hostName, int size) = 0;
     virtual void cleanup() = 0;
     virtual boost::mutex& mutex() const = 0;
 };

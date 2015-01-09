@@ -95,6 +95,9 @@ public:
     virtual bool queryFunction(unsigned int v) = 0;
     virtual int charsetServer() const = 0;
     virtual void setCharsetServer(int v) = 0;
+    virtual void write(unsigned int writeSize) = 0;
+    virtual char* read() = 0;
+    virtual bool isHandShakable() const = 0;
 };
 
 #define CONNECTION_FUNCTION_DIRECT_READ 1

@@ -155,7 +155,6 @@ connection* connections::getConnection(const std::string& host)
 
 connection* connections::getConnectionPipe()
 {
-
     thread_id tid = threadid();
     for (int i = 0; i < (int)m_conns.size(); i++)
     {
@@ -206,37 +205,90 @@ bool connections::isUseNamedPipe(asio::ip::tcp::endpoint& ep)
     return false;
 }
 
-// The connection of found from connection list of same address is returned.
-connection* connections::connect(const std::string& host, bool newConnection)
+inline connection* connections::createConnection(asio::ip::tcp::endpoint& ep,
+                                     bool namedPipe)
 {
-    mutex::scoped_lock lck(m_mutex);
-    connection* c;
+#ifdef USE_PIPE_CLIENT
+    if (namedPipe)
+        return new pipeConnection(ep, m_pipeName);
+    else
+#endif
+        return new tcpConnection(ep);
+}
+
+inline connection* connections::doConnect(connection* c)
+{
+    try
+    {
+        c->connect();
+        return c;
+    }
+    catch (bzs::netsvc::client::exception& e)
+    {
+        delete c;
+        throw e;
+    }
+    catch (boost::system::system_error& e)
+    {
+        delete c;
+        throw e;
+    }
+    //return NULL;
+}
+
+inline bool connections::doHandShake(connection* c, handshake f, void* data)
+{
+    bool ret = true;
+    try
+    {
+        // 1.0 - 2.1 namepd pipe is not HandShakable.
+        if (c->isHandShakable())
+        {
+            if (!f)
+                c->read();
+            else 
+                ret = f(c, data);
+            if (!ret)
+                delete c;
+        }
+        return ret;
+    }
+    catch (bzs::netsvc::client::exception& e)
+    {
+        delete c;
+        throw e;
+    }
+    catch (boost::system::system_error& e)
+    {
+        delete c;
+        throw e;
+    }
+    //return NULL;
+}
+
+// The connection of found from connection list of same address is returned.
+connection* connections::connect(const std::string& host, handshake f, void* data, bool newConnection)
+{
+    bool namedPipe = false;
     boost::system::error_code ec;
+    connection* c;
+    mutex::scoped_lock lck(m_mutex);
     asio::ip::tcp::endpoint ep = endpoint(host, ec);
     if (ec)
         return NULL;
 #ifdef USE_PIPE_CLIENT
-    if (m_usePipedLocal && isUseNamedPipe(ep))
-    {
+    namedPipe =  (m_usePipedLocal && isUseNamedPipe(ep));
+    if (namedPipe)
         c = newConnection ? NULL : getConnectionPipe();
-        if (!c)
-        {
-            c = new pipeConnection(ep, m_pipeName);
-            c->connect();
-            m_conns.push_back(c);
-        }
-    }
     else
 #endif
-    {
-
         c = newConnection ? NULL : getConnection(ep);
-        if (!c)
-        {
-            c = new tcpConnection(ep);
-            c->connect();
+    if (newConnection || !c)
+    {
+        c = createConnection(ep, namedPipe); 
+        c = doConnect(c);
+        if (doHandShake(c, f, data))
             m_conns.push_back(c);
-        }
     }
     c->addref();
     return c;

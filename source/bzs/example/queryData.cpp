@@ -376,7 +376,7 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate,
             else
                 return 0;
         }
-        std::tcout << _T("\nInserting query test data. Please wait ... ")
+        std::tcout << _T("\nInserting query test data. Please wait... ")
                    << std::flush;
         createDatabase(db, param);
         openDatabase(db, param);
@@ -394,7 +394,7 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate,
     }
     catch (bzs::rtl::exception& e)
     {
-        std::tcout << *bzs::rtl::getMsg(e) << std::endl;
+        std::tcout << _T("\n") << *bzs::rtl::getMsg(e) << std::endl;
         return 1;
     }
 }

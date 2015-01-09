@@ -75,6 +75,7 @@
 #include "sql/sql_db.h"
 #include "sql_acl.h"
 #include "mysqld_error.h"
+#include <password.h>
 
 #if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
 #include "sql/log.h"

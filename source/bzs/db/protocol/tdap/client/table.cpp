@@ -1165,16 +1165,30 @@ void table::getKeySpec(keySpec* ks, bool SpecifyKeyNum)
 
 void table::doCreateIndex(bool SpecifyKeyNum)
 {
-    int segmentCount = m_tableDef->keyDefs[m_keynum].segmentCount;
-
-    keySpec* ks = (keySpec*)malloc(sizeof(keySpec) * segmentCount);
-    memset(ks, 0, sizeof(keySpec) * segmentCount);
-    getKeySpec(ks, SpecifyKeyNum);
-    m_pdata = ks;
-    m_datalen = sizeof(keySpec) * segmentCount;
-    nstable::doCreateIndex(SpecifyKeyNum);
-    m_pdata = m_impl->dataBak;
-    free(ks);
+    if (isUseTransactd())
+    {
+        uint_td len = m_datalen;
+        m_pdata = m_tableDef;  
+        m_datalen = m_tableDef->varSize + 4;
+        // tdclc check datalen, m_pdata is tabledef if bigger than sizeof(keySpec) * 8 
+        if (m_datalen <= sizeof(keySpec) * 8)
+            m_datalen = sizeof(keySpec) * 8 + 10; 
+        nstable::doCreateIndex(SpecifyKeyNum);
+        m_pdata = m_impl->dataBak;
+        m_datalen = len;
+    }
+    else
+    {
+        int segmentCount = m_tableDef->keyDefs[m_keynum].segmentCount;
+        keySpec* ks = (keySpec*)malloc(sizeof(keySpec) * segmentCount);
+        memset(ks, 0, sizeof(keySpec) * segmentCount);
+        getKeySpec(ks, SpecifyKeyNum);
+        m_pdata = ks;
+        m_datalen = sizeof(keySpec) * segmentCount;//max 16 * 8 =128byte
+        nstable::doCreateIndex(SpecifyKeyNum);
+        m_pdata = m_impl->dataBak;
+        free(ks);
+    }
 }
 
 void table::smartUpdate()

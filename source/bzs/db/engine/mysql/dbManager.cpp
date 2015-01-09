@@ -74,7 +74,7 @@ public:
 std::string smartDbsReopen::removeName = "";
 
 
-dbManager::dbManager() : m_autoHandle(0)
+dbManager::dbManager() : m_autoHandle(0), m_authChecked(false)
 {
 }
 
@@ -139,7 +139,13 @@ database* dbManager::useDataBase(int id) const
 
 database* dbManager::createDatabase(const char* dbname, short cid) const
 {
-    return new database(dbname, cid);
+    database* db = new database(dbname, cid);
+    if (m_authChecked)
+    {
+        if (m_host != "")
+            db->setGrant(m_host.c_str(), m_user.c_str());
+    }
+    return db;
 }
 
 handle* dbManager::getHandle(int handle) const
