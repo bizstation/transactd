@@ -829,12 +829,12 @@ void table::btrvSeekMulti()
     int rowOffset = 0;
     for (int i = 0; i < (int)seeks.size(); ++i)
     {
-        // 100% need allocate each row
-        m_impl->mraPtr->init(1, recordLen, type, this);
-        type = mra_nextrows;
+
         seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, true, transactd);
         if (hasManyJoin)
         {
+            m_impl->mraPtr->init(1, recordLen, type, this);
+            type = mra_nextrows;
             tdap((ushort_td)(TD_KEY_OR_AFTER));
             if (!checkStatus(m_stat))
                 return;
