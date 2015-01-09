@@ -258,6 +258,7 @@ class activeTableImple : public activeObject<map_orm>
     template <class Container>
     void doJoin(bool innner, Container& mdls, pq_handle& stmt, const _TCHAR* fns[8], int fnsCount)
     {
+        if (mdls.size() == 0) return;
         stmt->clearSeeks();
         mraResetter mras(m_tb);
         typename Container::iterator it = mdls.begin(), ite = mdls.end();
