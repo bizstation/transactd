@@ -431,7 +431,7 @@ multiRecordAlocator* table::mra() const
 
 uchar_td table::charset() const
 {
-    return m_tableDef->charsetIndex;
+    return (*m_tableDef)->charsetIndex;
 }
 
 bool table::trimPadChar() const
@@ -1136,19 +1136,19 @@ void table::getKeySpec(keySpec* ks, bool SpecifyKeyNum)
     keydef* KeyDef;
     short FieldNum;
     int j;
-
-    KeyDef = &m_tableDef->keyDefs[m_keynum];
+    tabledef* td = (*m_tableDef);
+    KeyDef = &td->keyDefs[m_keynum];
     for (j = 0; j < KeyDef->segmentCount; j++)
     {
         FieldNum = KeyDef->segments[j].fieldNum;
-        ks[j].keyPos = (ushort_td)(m_tableDef->fieldDefs[FieldNum].pos + 1);
-        ks[j].keyLen = m_tableDef->fieldDefs[FieldNum].len;
+        ks[j].keyPos = (ushort_td)(td->fieldDefs[FieldNum].pos + 1);
+        ks[j].keyLen = td->fieldDefs[FieldNum].len;
         ks[j].keyFlag.all = KeyDef->segments[j].flags.all;
         ks[j].keyCount = 0;
-        ks[j].keyType = m_tableDef->fieldDefs[FieldNum].type;
+        ks[j].keyType = td->fieldDefs[FieldNum].type;
 
         if (ks[j].keyFlag.bit3 == true)
-            ks[j].nullValue = m_tableDef->fieldDefs[FieldNum].nullValue;
+            ks[j].nullValue = td->fieldDefs[FieldNum].nullValue;
         else
             ks[j].nullValue = 0;
         ks[j].reserve2[0] = 0;
@@ -1165,11 +1165,12 @@ void table::getKeySpec(keySpec* ks, bool SpecifyKeyNum)
 
 void table::doCreateIndex(bool SpecifyKeyNum)
 {
+    SpecifyKeyNum = false;
     if (isUseTransactd())
     {
         uint_td len = m_datalen;
-        m_pdata = m_tableDef;  
-        m_datalen = m_tableDef->varSize + 4;
+        m_pdata = (*m_tableDef);  
+        m_datalen = (*m_tableDef)->varSize + 4;
         // tdclc check datalen, m_pdata is tabledef if bigger than sizeof(keySpec) * 8 
         if (m_datalen <= sizeof(keySpec) * 8)
             m_datalen = sizeof(keySpec) * 8 + 10; 
@@ -1179,7 +1180,7 @@ void table::doCreateIndex(bool SpecifyKeyNum)
     }
     else
     {
-        int segmentCount = m_tableDef->keyDefs[m_keynum].segmentCount;
+        int segmentCount = (*m_tableDef)->keyDefs[m_keynum].segmentCount;
         keySpec* ks = (keySpec*)malloc(sizeof(keySpec) * segmentCount);
         memset(ks, 0, sizeof(keySpec) * segmentCount);
         getKeySpec(ks, SpecifyKeyNum);
@@ -1194,10 +1195,10 @@ void table::doCreateIndex(bool SpecifyKeyNum)
 void table::smartUpdate()
 {
     if (!m_impl->smartUpDate)
-        m_impl->smartUpDate = malloc(m_tableDef->maxRecordLen);
+        m_impl->smartUpDate = malloc((*m_tableDef)->maxRecordLen);
     if (m_impl->smartUpDate)
     {
-        memcpy(m_impl->smartUpDate, data(), m_tableDef->maxRecordLen);
+        memcpy(m_impl->smartUpDate, data(), (*m_tableDef)->maxRecordLen);
         m_impl->smartUpDateFlag = true;
     }
     else
@@ -1206,9 +1207,9 @@ void table::smartUpdate()
 
 bool table::isUniqeKey(char_td keynum)
 {
-    if ((keynum >= 0) && (keynum < m_tableDef->keyCount))
+    if ((keynum >= 0) && (keynum < (*m_tableDef)->keyCount))
     {
-        keydef* kd = &m_tableDef->keyDefs[m_keynum];
+        keydef* kd = &(*m_tableDef)->keyDefs[m_keynum];
         return !(kd->segments[0].flags.bit0);
     }
     return false;
@@ -1241,7 +1242,7 @@ bool table::onUpdateCheck(eUpdateType type)
     else if (m_impl->smartUpDateFlag)
     {
         m_stat = 0;
-        if (memcmp(m_impl->smartUpDate, data(), m_tableDef->maxRecordLen) == 0)
+        if (memcmp(m_impl->smartUpDate, data(), (*m_tableDef)->maxRecordLen) == 0)
         {
             m_impl->smartUpDateFlag = false;
             return false;
@@ -1304,7 +1305,7 @@ void* table::attachBuffer(void* NewPtr, bool unpack, size_t size)
         m_impl->bfAtcPtr = m_pdata;
     oldptr = m_pdata;
     m_pdata = NewPtr;
-    ushort_td len = m_tableDef->maxRecordLen; 
+    ushort_td len = (*m_tableDef)->maxRecordLen; 
     if (unpack)
         len = unPack((char*)m_pdata, size);
     m_datalen = len;
@@ -1318,27 +1319,28 @@ void table::dettachBuffer()
     m_impl->bfAtcPtr = NULL;
 }
 
-void table::init(tabledef* Def, short fnum, bool regularDir)
+void table::init(tabledef** Def, short fnum, bool regularDir)
 {
     doInit(Def, fnum, regularDir);
 }
 
-void table::doInit(tabledef* Def, short fnum, bool /*regularDir*/)
+void table::doInit(tabledef** Def, short fnum, bool /*regularDir*/)
 {
     m_tableDef = Def;
-    m_fddefs->addAllFileds(m_tableDef);
-    m_fddefs->cv()->setCodePage(mysql::codePage(m_tableDef->charsetIndex));
-    ushort_td len = m_tableDef->maxRecordLen;
+    tabledef* td = *m_tableDef; 
+    m_fddefs->addAllFileds(td);
+    m_fddefs->cv()->setCodePage(mysql::codePage(td->charsetIndex));
+    ushort_td len = td->maxRecordLen;
     if (len == 0)
     {
         m_stat = STATUS_INVALID_RECLEN;
         return;
     }
 
-    for (short i = 0; i < m_tableDef->keyCount; i++)
+    for (short i = 0; i < td->keyCount; i++)
     {
-        if (m_tableDef->flags.bitA == true)
-            m_impl->keyNumIndex[m_tableDef->keyDefs[i].keyNumber] = (char)i;
+        if (td->flags.bitA == true)
+            m_impl->keyNumIndex[td->keyDefs[i].keyNumber] = (char)i;
         else
             m_impl->keyNumIndex[i] = (char)i;
     }
@@ -1350,10 +1352,10 @@ void table::doInit(tabledef* Def, short fnum, bool /*regularDir*/)
 
 keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
 {
-    if (m_tableDef->keyCount)
+    if ((*m_tableDef)->keyCount)
     {
         keydef& keydef =
-            m_tableDef->keyDefs[(short)m_impl->keyNumIndex[m_keynum]];
+            (*m_tableDef)->keyDefs[(short)m_impl->keyNumIndex[m_keynum]];
         uchar_td* start = to;
         if (keySize == 0)
             keySize = keydef.segmentCount;
@@ -1361,7 +1363,7 @@ keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
         for (int j = 0; j < keySize; j++)
         {
             int fdnum = keydef.segments[j].fieldNum;
-            fielddef& fd = m_tableDef->fieldDefs[fdnum];
+            fielddef& fd = (*m_tableDef)->fieldDefs[fdnum];
             uchar_td* from = (uchar_td*)m_pdata + fd.pos;
             to = fd.keyCopy(to, from);
         }
@@ -1380,9 +1382,9 @@ uint_td table::pack(char* ptr, size_t size)
     char* pos = ptr;
     char* end = pos + size;
     int movelen;
-    for (int i = 0; i < m_tableDef->fieldCount; i++)
+    for (int i = 0; i < (*m_tableDef)->fieldCount; i++)
     {
-        fielddef& fd = m_tableDef->fieldDefs[i];
+        fielddef& fd = (*m_tableDef)->fieldDefs[i];
         if (fd.type == ft_myfixedbinary)
         {
             memmove(pos + 2, pos, fd.len - 2); // move as size pace in the field
@@ -1411,15 +1413,16 @@ uint_td table::pack(char* ptr, size_t size)
 
 uint_td table::doGetWriteImageLen()
 {
+    tabledef* td = (*m_tableDef);
     if (!blobFieldUsed() && !valiableFormatType() &&
-        (m_tableDef->flags.bit0 == false))
-        return m_tableDef->maxRecordLen;
+        (td->flags.bit0 == false))
+        return td->maxRecordLen;
     // Make blob pointer list
     if (blobFieldUsed())
     {
-        for (ushort_td i = 0; i < m_tableDef->fieldCount; i++)
+        for (ushort_td i = 0; i < td->fieldCount; i++)
         {
-            fielddef& fd = m_tableDef->fieldDefs[i];
+            fielddef& fd = td->fieldDefs[i];
             uint_td bytes = fd.blobLenBytes();
             if (bytes)
             {
@@ -1434,21 +1437,21 @@ uint_td table::doGetWriteImageLen()
         addSendBlob(NULL);
 
     if (valiableFormatType())
-        return pack((char*)m_pdata, m_tableDef->maxRecordLen);
+        return pack((char*)m_pdata, td->maxRecordLen);
     else
     {
-        fielddef* fd = &m_tableDef->fieldDefs[m_tableDef->fieldCount - 1];
+        fielddef* fd = &td->fieldDefs[td->fieldCount - 1];
         size_t len = 0;
         short* pos;
 
         if (fd->type == ft_note)
-            len = strlen((char*)fieldPtr((short)(m_tableDef->fieldCount - 1))) +
+            len = strlen((char*)fieldPtr((short)(td->fieldCount - 1))) +
                   1;
         else if (fd->type == ft_lvar)
         {
             // xx................xx.............00
             // ln--data----------ln-----data----00
-            pos = (short*)fieldPtr((short)(m_tableDef->fieldCount - 1));
+            pos = (short*)fieldPtr((short)(td->fieldCount - 1));
             while (*pos)
             {
                 len += 2; // size
@@ -1470,11 +1473,12 @@ uint_td table::unPack(char* ptr, size_t size)
 {
     char* pos = ptr;
     const char* end = pos + size;
-    const char* max = pos + m_tableDef->maxRecordLen;
+    tabledef* td = *m_tableDef;
+    const char* max = pos + td->maxRecordLen;
     int movelen;
-    for (int i = 0; i < m_tableDef->fieldCount; i++)
+    for (int i = 0; i < td->fieldCount; i++)
     {
-        fielddef& fd = m_tableDef->fieldDefs[i];
+        fielddef& fd = td->fieldDefs[i];
         if (fd.type == ft_myfixedbinary)
         {
             int dl = *((unsigned short*)(pos));
@@ -1560,7 +1564,7 @@ void table::setBlobFieldPointer(char* ptr, const blobHeader* hd)
         const blobField* f = hd->nextField;
         for (int i = 0; i < hd->fieldCount; i++)
         {
-            fielddef& fd = m_tableDef->fieldDefs[f->fieldNum];
+            fielddef& fd = (*m_tableDef)->fieldDefs[f->fieldNum];
             char* fdptr = ptr + fd.pos;
             int sizeByte = fd.blobLenBytes();
             memcpy(fdptr, &f->size, sizeByte);
@@ -1587,8 +1591,8 @@ void table::onReadAfter()
         const blobHeader* hd = getBlobHeader();
         setBlobFieldPointer((char*)m_pdata, hd);
     }
-    if (m_tableDef->maxRecordLen - m_datalen > 0)
-        memset((char*)m_pdata + m_datalen, 0, m_tableDef->maxRecordLen - m_datalen);
+    if ((*m_tableDef)->maxRecordLen - m_datalen > 0)
+        memset((char*)m_pdata + m_datalen, 0, (*m_tableDef)->maxRecordLen - m_datalen);
 }
 
 short table::fieldNumByName(const _TCHAR* name)
@@ -1862,7 +1866,7 @@ void* table::getFVbin(short index, uint_td& size)
 
 bool table::checkIndex(short index) const
 {
-    if ((index >= m_tableDef->fieldCount) || (index < 0))
+    if ((index >= (*m_tableDef)->fieldCount) || (index < 0))
     {
         m_stat = STATUS_INVARID_FIELD_IDX;
         return false;
@@ -1894,7 +1898,7 @@ void table::moveBookmarksId(long id)
 
 short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 {
-    return nstable::tdapErr(hWnd, m_stat, m_tableDef->tableName(), retbuf);
+    return nstable::tdapErr(hWnd, m_stat, (*m_tableDef)->tableName(), retbuf);
 }
 
 /* For keyValueDescription */

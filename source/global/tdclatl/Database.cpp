@@ -455,6 +455,12 @@ STDMETHODIMP CDatabase::get_RefCount(int* Value)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::AclReload(short* Value)
+{
+    *Value = m_db->aclReload();
+    return S_OK;
+}
+
 STDMETHODIMP CDatabase::get_TrnsactionFlushWaitStatus(VARIANT_BOOL* Value)
 {
     *Value = database::trnsactionFlushWaitStatus();

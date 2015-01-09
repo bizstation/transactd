@@ -1032,57 +1032,6 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         }
         switch (op)
         {
-        case TD_GETSERVER_CHARSET:
-        {
-            if (*req.datalen == sizeof(trdVersiton))
-            {
-                trdVersiton* ver = (trdVersiton*)req.data;
-                strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
-                         global_system_variables.collation_server->csname);
-                ver->srvMajor = TRANSACTD_VER_MAJOR;
-                ver->srvMinor = TRANSACTD_VER_MINOR;
-                ver->srvRelease = TRANSACTD_VER_RELEASE;
-                req.resultLen = sizeof(trdVersiton);
-                req.paramMask |= P_MASK_DATA | P_MASK_DATALEN;
-            }
-            else
-                req.result = SERVER_CLIENT_NOT_COMPATIBLE;
-            break;
-        }
-        case TD_CONNECT:
-            if (!doAuthentication(req))
-                req.result = ERROR_TD_INVALID_CLINETHOST;
-            else
-                connect(req);
-            break;
-        case TD_RESET_CLIENT:
-        case TD_STOP_ENGINE: // close all table
-            releaseDatabase(req, op);
-            break;
-        case TD_AUTOMEKE_SCHEMA:
-            m_tb = getTable(req.pbk->handle, SQLCOM_INSERT);
-            req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb);
-            break;
-        case TD_CREATETABLE:
-            if (!doAuthentication(req))
-                req.result = ERROR_TD_INVALID_CLINETHOST;
-            else
-                doCreateTable(req);
-            break;
-        case TD_OPENTABLE:
-            if (!doAuthentication(req))
-                req.result = ERROR_TD_INVALID_CLINETHOST;
-            else
-                doOpenTable(req);
-            break;
-        case TD_CLOSETABLE:
-            m_tb = getTable(req.pbk->handle);
-            if (m_tb)
-            {
-                m_tb->close();
-                m_tb = NULL;
-            }
-            break;
         case TD_KEY_SEEK:
         case TD_KEY_AFTER:
         case TD_KEY_OR_AFTER:
@@ -1170,62 +1119,6 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             readAfter(req, m_tb, this);
             break;
         }
-        case TD_GETDIRECTORY:
-        {
-            database* db = getDatabaseCid(req.cid);
-            if (db->name().size() < 64)
-            {
-                req.keylen = (uchar_td)db->name().size() + 1;
-                req.keybuf = (void*)db->name().c_str();
-                req.paramMask = P_MASK_KEYBUF;
-            }
-            else
-                req.result = STATUS_BUFFERTOOSMALL;
-            break;
-        }
-        case TD_VERSION:
-            if (*req.datalen >= sizeof(version) * 3)
-            {
-                version* v = (version*)req.data;
-                ++v;
-                v->majorVersion = MYSQL_VERSION_ID / 10000;
-                v->minorVersion = (MYSQL_VERSION_ID / 100) % 100;
-                v->Type = 'M';
-                ++v;
-                v->majorVersion = TRANSACTD_VER_MAJOR;
-                v->minorVersion = TRANSACTD_VER_MINOR;
-                v->Type = 'T';
-                req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
-                req.resultLen = sizeof(version) * 3;
-            }
-            else
-                req.result = STATUS_BUFFERTOOSMALL;
-            break;
-        case TD_CLEAR_OWNERNAME:
-            req.keybuf = (void_td*)"";
-        case TD_SET_OWNERNAME:
-        {
-            database* db = getDatabaseCid(req.cid);
-            m_tb = getTable(req.pbk->handle);
-            int num = (req.keyNum > 1) ? req.keyNum - 2 : req.keyNum;
-            num += '0';
-            std::string s("%@%");
-            s += (const char*)&num;
-            s += (const char*)req.keybuf;
-            req.result = ddl_execSql(
-                db->thd(),
-                makeSQLChangeTableComment(db->name(), m_tb->name(), s.c_str()));
-            break;
-        }
-        case TD_DROP_INDEX:
-        { // Key name of multi byte charctor is not supported. Use only ascii.
-            database* db = getDatabaseCid(req.cid);
-            m_tb = getTable(req.pbk->handle);
-            req.result = ddl_execSql(db->thd(),
-                makeSQLDropIndex(db->name(), m_tb->name(),
-                     m_tb->keyName(m_tb->keyNumByMakeOrder(req.keyNum))));
-            break;
-        }
         case TD_KEY_GE_NEXT_MULTI:
         case TD_KEY_LE_PREV_MULTI:
             nw->setClientBuffferSize(*(req.datalen));
@@ -1296,6 +1189,131 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             m_tb = getTable(req.pbk->handle);
             req.result = m_tb->unlock() ? STATUS_NO_CURRENT : 0;
             break;
+        /* ddl or once at connection
+        */
+        case TD_GETSERVER_CHARSET:
+        {
+            if (*req.datalen == sizeof(trdVersiton))
+            {
+                trdVersiton* ver = (trdVersiton*)req.data;
+                strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
+                         global_system_variables.collation_server->csname);
+                ver->srvMajor = TRANSACTD_VER_MAJOR;
+                ver->srvMinor = TRANSACTD_VER_MINOR;
+                ver->srvRelease = TRANSACTD_VER_RELEASE;
+                req.resultLen = sizeof(trdVersiton);
+                req.paramMask |= P_MASK_DATA | P_MASK_DATALEN;
+            }
+            else
+                req.result = SERVER_CLIENT_NOT_COMPATIBLE;
+            break;
+        }
+        case TD_CONNECT:
+            if (!doAuthentication(req))
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+            else
+                connect(req);
+            break;
+        case TD_RESET_CLIENT:
+        case TD_STOP_ENGINE: // close all table
+            releaseDatabase(req, op);
+            break;
+        case TD_AUTOMEKE_SCHEMA:
+            m_tb = getTable(req.pbk->handle, SQLCOM_INSERT);
+            req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb);
+            break;
+        case TD_CREATETABLE:
+            if (!doAuthentication(req))
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+            else
+                doCreateTable(req);
+            break;
+        case TD_OPENTABLE:
+            if (!doAuthentication(req))
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+            else
+                doOpenTable(req);
+            break;
+        case TD_CLOSETABLE:
+            m_tb = getTable(req.pbk->handle);
+            if (m_tb)
+            {
+                m_tb->close();
+                m_tb = NULL;
+            }
+            break;
+        case TD_BUILD_INDEX:
+        { 
+            database* db = getDatabaseCid(req.cid);
+            m_tb = getTable(req.pbk->handle);
+            std::string cmd((const char*)req.data);
+            std::string tbname = m_tb->name();
+            req.result = ddl_addIndex(db, tbname, cmd);
+            break;
+        }
+        case TD_DROP_INDEX:
+        { // Key name of multi byte charctor is not supported. Use only ascii.
+            database* db = getDatabaseCid(req.cid);
+            m_tb = getTable(req.pbk->handle);
+            req.result = ddl_execSql(db->thd(),
+                makeSQLDropIndex(db->name(), m_tb->name(),
+                     m_tb->keyName(m_tb->keyNumByMakeOrder(req.keyNum))));
+            break;
+        }
+        case TD_GETDIRECTORY:
+        {
+            database* db = getDatabaseCid(req.cid);
+            if (db->name().size() < 64)
+            {
+                req.keylen = (uchar_td)db->name().size() + 1;
+                req.keybuf = (void*)db->name().c_str();
+                req.paramMask = P_MASK_KEYBUF;
+            }
+            else
+                req.result = STATUS_BUFFERTOOSMALL;
+            break;
+        }
+        case TD_VERSION:
+            if (*req.datalen >= sizeof(version) * 3)
+            {
+                version* v = (version*)req.data;
+                ++v;
+                v->majorVersion = MYSQL_VERSION_ID / 10000;
+                v->minorVersion = (MYSQL_VERSION_ID / 100) % 100;
+                v->Type = 'M';
+                ++v;
+                v->majorVersion = TRANSACTD_VER_MAJOR;
+                v->minorVersion = TRANSACTD_VER_MINOR;
+                v->Type = 'T';
+                req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
+                req.resultLen = sizeof(version) * 3;
+            }
+            else
+                req.result = STATUS_BUFFERTOOSMALL;
+            break;
+        case TD_CLEAR_OWNERNAME:
+            req.keybuf = (void_td*)"";
+        case TD_SET_OWNERNAME:
+        {
+            database* db = getDatabaseCid(req.cid);
+            m_tb = getTable(req.pbk->handle);
+            int num = (req.keyNum > 1) ? req.keyNum - 2 : req.keyNum;
+            num += '0';
+            std::string s("%@%");
+            s += (const char*)&num;
+            s += (const char*)req.keybuf;
+            req.result = ddl_execSql(
+                db->thd(),
+                makeSQLChangeTableComment(db->name(), m_tb->name(), s.c_str()));
+            break;
+        }
+        case TD_ACL_RELOAD:
+        {
+            database* db = getDatabaseCid(req.cid);
+            // don't need use()
+            req.result = db->aclReload();
+            break;
+        }
         }
         if (m_tb)
             m_tb->unUse();
@@ -1375,6 +1393,7 @@ size_t dbExecuter::getAcceptMessage(char* message, size_t size)
     handshale_t* hst = (handshale_t*)message;
     trdVersiton* ver = &hst->ver;
     hst->size = sizeof(handshale_t);
+    hst->options = 0;
 
     strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
                 global_system_variables.collation_server->csname);

@@ -2189,6 +2189,16 @@ void testLogin(database* db)
                         "databese disconnect db->stat() = " << db->stat());
 }
 
+void testGrantReload(database* db)
+{
+    db->open(makeUri(PROTOCOL, HOSTNAME, _T("mysql"), TRANSACTD_SCHEMANAME),
+             TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
+    BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "open mysql db->stat() = " << db->stat());
+    db->aclReload();
+    BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "grantReload db->stat() = " << db->stat());
+}
 // ------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------
@@ -4538,6 +4548,12 @@ BOOST_FIXTURE_TEST_CASE(dropDatabase, fixture)
 {
     testDropDatabase(db());
 }
+
+BOOST_FIXTURE_TEST_CASE(grantReload, fixture)
+{
+    testGrantReload(db());
+}
+
 
 BOOST_FIXTURE_TEST_CASE(connect, fixture)
 {

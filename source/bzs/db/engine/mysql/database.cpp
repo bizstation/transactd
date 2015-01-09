@@ -71,6 +71,26 @@ void releaseMysqldb()
     g_mysqldb = NULL;
 }
 
+short aclReload()
+{
+    short ret = STATUS_SUCCESS;
+    boost::mutex::scoped_lock lck(g_mysqlMutex);
+    THD* thdCur = _current_thd();
+    try
+    {
+        if (g_mysqldb == NULL)
+            g_mysqldb = new database("mysql", 1);
+        g_mysqldb->use();
+        acl_reload(g_mysqldb->thd());
+    }
+    catch (...)
+    {
+        ret = 1;
+    }
+    attachThd(thdCur);
+    return ret;
+}
+
 unsigned char* getUserSha1Passwd(const char* host, const char* user, unsigned char* buf)
 {
     table* tb2 = NULL;
@@ -858,6 +878,16 @@ bool database::existsDatabase()
     if (mysql_file_stat(0, tmp, &stat, MYF(0)))
         return true;
     return false;
+}
+
+// for mysql database only
+short database::aclReload()
+{
+    if (name() != "mysql")
+        return STATUS_ACCESS_DENIED;
+    if(!(m_privilege & GRANT_ACL))
+        return STATUS_ACCESS_DENIED;
+    return mysql::aclReload();
 }
 
 class autoincSetup

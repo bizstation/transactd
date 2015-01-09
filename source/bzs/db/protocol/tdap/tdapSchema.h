@@ -216,7 +216,12 @@ public:
     uchar_td nullValue; // null value
     ushort_td userOption; // ** option
     uchar_td lookDBNum; // ** database number of reference bitD
-    ushort_td keylen; // key length for mysql of part key
+    
+    /** The length of the mysql part key
+    
+       If this field is used by two or more keys, and both this length is used. 
+    */
+    ushort_td keylen; 
 
 protected:
     uchar_td m_charsetIndex; // charctor set index of this field data

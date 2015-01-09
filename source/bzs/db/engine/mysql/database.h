@@ -186,7 +186,10 @@ public:
         return ((m_inSnapshot + m_inTransaction) == 0);
     }
 
+    short aclReload();
+
     static tableCacheCounter tableRef;
+
 };
 
 typedef std::vector<boost::shared_ptr<database> > databases;
@@ -196,7 +199,7 @@ class IPrepare;
 class bookmarks;
 
 unsigned char* getUserSha1Passwd(const char* host, const char* user, unsigned char* buf);
-
+short aclReload();
 /*
  *  Since it differs from the key number which a client specifies
  *   , and an internal key number, it changes.

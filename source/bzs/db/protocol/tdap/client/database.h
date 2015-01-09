@@ -112,6 +112,7 @@ public:
     void drop();
     void dropTable(const _TCHAR* tableName);
     void close();
+    short aclReload();
     short continuous(char_td op = TD_BACKUP_START, bool inclideRepfile = false);
     short assignSchemaData(dbdef* src);
     short copyTableData(table* dest, table* src, bool turbo, int offset = 0,

@@ -143,6 +143,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TD_GET_BLOB_BUF                 93
 #define TD_STASTISTICS                  94
 #define TD_KEY_SEEK_MULTI               95
+#define TD_ACL_RELOAD                   96
 
 /** create sub operations
  */
@@ -428,6 +429,7 @@ struct trdVersiton
 struct handshale_t
 {
     unsigned int size;  // size of this
+    unsigned int options;
     trdVersiton ver;
     unsigned char scramble[MYSQL_SCRAMBLE_LENGTH+1]; //user auth scramble
 };

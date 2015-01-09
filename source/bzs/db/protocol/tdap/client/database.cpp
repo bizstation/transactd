@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <vector>
 #include "stringConverter.h"
+#include <bzs/db/protocol/tdap/uri.h>
 
 #pragma package(smart_init)
 
@@ -347,6 +348,20 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
     return false;
 }
 
+short database::aclReload()
+{
+    if (!m_impl->isOpened)
+        return STATUS_DB_YET_OPEN;
+    _TCHAR buf[MAX_PATH];
+    const _TCHAR* p = dbname(rootDir(), buf, MAX_PATH);
+    if (_tcscmp(p, _T("mysql")) != 0)
+        return m_stat = STATUS_DB_YET_OPEN; 
+    _TCHAR posblk[128] = { 0x00 };
+    uint_td buflen = 0;
+    return m_stat =
+        m_btrcallid(TD_ACL_RELOAD, posblk, NULL, &buflen, 0, 0, 0, clientID());
+}
+
 char* database::getContinuousList(int option)
 {
     char* fileList = (char*)malloc(64000);
@@ -533,7 +548,7 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate,
         }
     }
     if (tb->m_stat == 0)
-        tb->init(td, FileNum, regularDir);
+        tb->init(m_impl->dbDef->tableDefPtr(FileNum), FileNum, regularDir);
 
     if ((m_stat != 0) || (tb->m_stat != 0) ||
         !onTableOpened(tb, FileNum, mode, NewFile))
