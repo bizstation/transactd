@@ -801,6 +801,9 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore TD_CPP_LIB_PRE;
 %ignore TD_FILTER_PREPARE;
 %ignore TD_LIB_PART;
+%ignore trdVersiton;
+%ignore handshale_t;
+%ignore MYSQL_SCRAMBLE_LENGTH;
 
 // * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore DLLUNLOADCALLBACK_PTR;
