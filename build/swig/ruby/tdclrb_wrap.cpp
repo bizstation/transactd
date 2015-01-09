@@ -19941,6 +19941,40 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_database_aclReload(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::database *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  short result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::database *","aclReload", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::database * >(argp1);
+  {
+    try {
+      result = (short)arg1->aclReload();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_short(static_cast< short >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_database_continuous__SWIG_0(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
   char_td arg2 ;
@@ -33963,6 +33997,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassDatabase.klass, "drop", VALUEFUNC(_wrap_database_drop), -1);
   rb_define_method(SwigClassDatabase.klass, "dropTable", VALUEFUNC(_wrap_database_dropTable), -1);
   rb_define_method(SwigClassDatabase.klass, "close", VALUEFUNC(_wrap_database_close), -1);
+  rb_define_method(SwigClassDatabase.klass, "aclReload", VALUEFUNC(_wrap_database_aclReload), -1);
   rb_define_method(SwigClassDatabase.klass, "continuous", VALUEFUNC(_wrap_database_continuous), -1);
   rb_define_method(SwigClassDatabase.klass, "assignSchemaData", VALUEFUNC(_wrap_database_assignSchemaData), -1);
   rb_define_method(SwigClassDatabase.klass, "copyTableData", VALUEFUNC(_wrap_database_copyTableData), -1);

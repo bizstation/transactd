@@ -373,6 +373,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_create);
 ZEND_NAMED_FUNCTION(_wrap_database_drop);
 ZEND_NAMED_FUNCTION(_wrap_database_dropTable);
 ZEND_NAMED_FUNCTION(_wrap_database_close);
+ZEND_NAMED_FUNCTION(_wrap_database_aclReload);
 ZEND_NAMED_FUNCTION(_wrap_database_continuous);
 ZEND_NAMED_FUNCTION(_wrap_database_assignSchemaData);
 ZEND_NAMED_FUNCTION(_wrap_database_copyTableData);

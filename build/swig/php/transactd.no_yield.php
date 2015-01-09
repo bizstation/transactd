@@ -2028,6 +2028,10 @@ class database extends nsdatabase {
 		database_close($this->_cPtr);
 	}
 
+	function aclReload() {
+		return database_aclReload($this->_cPtr);
+	}
+
 	function continuous($op=0,$inclideRepfile=false) {
 		return database_continuous($this->_cPtr,$op,$inclideRepfile);
 	}

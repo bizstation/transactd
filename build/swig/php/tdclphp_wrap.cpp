@@ -18530,6 +18530,40 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_database_aclReload) {
+  bzs::db::protocol::tdap::client::database *arg1 = 0 ;
+  zval **args[1];
+  short result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of database_mode. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__database");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (result)arg1->aclReload();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_database_continuous__SWIG_0) {
   bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
   char_td arg2 ;
@@ -32123,6 +32157,9 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_close, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_aclReload, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_continuous, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -33209,6 +33246,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(database_drop,_wrap_database_drop,swig_arginfo_database_drop)
  SWIG_ZEND_NAMED_FE(database_droptable,_wrap_database_dropTable,swig_arginfo_database_droptable)
  SWIG_ZEND_NAMED_FE(database_close,_wrap_database_close,swig_arginfo_database_close)
+ SWIG_ZEND_NAMED_FE(database_aclReload,_wrap_database_aclReload,swig_arginfo_database_aclReload)
  SWIG_ZEND_NAMED_FE(database_continuous,_wrap_database_continuous,swig_arginfo_database_continuous)
  SWIG_ZEND_NAMED_FE(database_assignschemadata,_wrap_database_assignSchemaData,swig_arginfo_database_assignschemadata)
  SWIG_ZEND_NAMED_FE(database_copytabledata,_wrap_database_copyTableData,swig_arginfo_database_copytabledata)

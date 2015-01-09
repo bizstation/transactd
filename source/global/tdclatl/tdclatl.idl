@@ -473,6 +473,8 @@ interface IDatabase : IDispatch
   HRESULT _stdcall ExecCodePage([out, retval] unsigned int* Value);
   [propget, id(0x000000F3)]
   HRESULT _stdcall MaxTables([out, retval]  int* Value);
+  [id(0x000000F4)]
+  HRESULT _stdcall AclReload([out, retval]  short* Value);
  
   
 };
