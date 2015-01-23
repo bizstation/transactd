@@ -136,6 +136,10 @@ public:
     database(const char* name, short cid);
     ~database();
     bool setGrant(const char* host, const char* user);
+
+    unsigned char* getUserSha1Passwd(const char* host, const char* user,
+        unsigned char* buf);
+
     int stat() { return m_stat; }
 
     THD* thd() const { return m_thd; }
@@ -198,8 +202,8 @@ class IReadRecordsHandler;
 class IPrepare;
 class bookmarks;
 
-unsigned char* getUserSha1Passwd(const char* host, const char* user, unsigned char* buf);
-short aclReload();
+//unsigned char* getUserSha1Passwd(const char* host, const char* user, unsigned char* buf);
+//short aclReload();
 /*
  *  Since it differs from the key number which a client specifies
  *   , and an internal key number, it changes.

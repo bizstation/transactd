@@ -222,25 +222,6 @@ dbExecuter::~dbExecuter()
     delete m_readHandler;
 }
 
-void dbExecuter::connect(request& req)
-{
-    req.paramMask = 0;
-    if (req.keyNum == LG_SUBOP_DISCONNECT)
-        dbManager::releaseDatabase(req.cid);
-    else
-    {
-        std::string dbname = getDatabaseName(req);
-        std::string dbSqlname = getDatabaseName(req, FOR_SQL);
-        // exec SQL use database
-        if (dbname != "")
-        {
-            database* db = getDatabase(dbname.c_str(), req.cid);
-            dbSqlname.insert(0, "use ");
-            req.result = ddl_execSql(db->thd(), dbSqlname);
-        }
-    }
-}
-
 void dbExecuter::releaseDatabase(request& req, int op)
 {
     req.paramMask = 0;
@@ -300,17 +281,118 @@ bool isMetaDb(const request& req)
     return (st != NULL);
 }
 
-inline void dbExecuter::doCreateTable(request& req)
+inline bool getUserPasswd(request& req, char* &user, char* &pwd)
+{
+    char* p = strchr((char*)req.keybuf, '\t');
+    if (p)
+    {
+        p = strchr(++p, '\t');
+        if (p)
+        {
+            pwd = ++p;
+            user = pwd + MYSQL_SCRAMBLE_LENGTH;
+            while (p < user)
+                if (*p++) return true;
+        }
+        return false;
+    }
+    return false;
+}
+
+inline bool dbExecuter::doAuthentication(request& req, database* db)
+{
+    if (m_authChecked) return true;
+    bool ret = true;
+    if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR)==0)
+    {
+        ret = false;
+        char host[MAX_HOSTNAME];
+        char *user = 0x00;
+        char *pwd = 0x00;
+        bool pwdRecieved = getUserPasswd(req, user, pwd);
+        if (user && user[0] && m_mod->checkHost(user, host, MAX_HOSTNAME))
+        {
+            //uint8* p = find_acl_user_(host, user, FALSE);
+            unsigned char buf[22];
+            unsigned char* p = db->getUserSha1Passwd(host, user, buf);
+            if (!pwdRecieved && !p) 
+                ret = true;
+            else if (p && pwdRecieved)
+                ret = (FALSE == check_scramble((const unsigned char*)pwd, (const char*)m_scramble, p));
+            if (ret)
+            {
+                m_user = user;
+                m_host = host;
+            }
+        }
+    }
+    m_authChecked = ret;
+    return ret;
+}
+
+/*
+@param connect Is connect command, The database name is not required
+@return 0 auth failed
+        1 success but see req.result
+*/
+bool dbExecuter::getDatabaseWithAuth(request& req, database* &db, bool connect)
+{
+    std::string dbname = getDatabaseName(req);
+    bool ret = false;
+    if (connect && dbname == "")
+        dbname = "mysql";
+    else
+        connect = false;
+    if (dbname != "")
+    {
+        db = getDatabase(dbname.c_str(), req.cid);
+        if (db)
+        {
+            ret = doAuthentication(req, db);
+            if (connect)
+            {
+                dbManager::releaseDatabase(req.cid);
+                db = NULL;
+            }
+        }
+    }else
+        req.result = 1;
+    return ret;
+}
+
+bool dbExecuter::connect(request& req)
+{
+    req.paramMask = 0;
+    if (req.keyNum == LG_SUBOP_DISCONNECT)
+        dbManager::releaseDatabase(req.cid);
+    else
+    {
+        database* db;
+        bool ret = getDatabaseWithAuth(req, db, true);
+        if (ret && req.result == 0)
+        {
+            if (db)
+            {
+                std::string dbSqlname = getDatabaseName(req, FOR_SQL);
+                dbSqlname.insert(0, "use ");
+                req.result = ddl_execSql(db->thd(), dbSqlname);
+            }
+        }
+        return ret;
+    }
+    return true;
+}
+
+inline bool dbExecuter::doCreateTable(request& req)
 {
     // if table name is mata table and database is nothing
     //  then cretate database too.
-    std::string dbname = getDatabaseName(req);
-    std::string dbSqlname = getDatabaseName(req, FOR_SQL);
-    if (dbname != "")
+    database* db;
+    bool ret = getDatabaseWithAuth(req, db);
+    if (ret && req.result == 0)
     {
+        std::string dbSqlname = getDatabaseName(req, FOR_SQL);
         std::string cmd;
-        database* db = getDatabase(dbname.c_str(), req.cid);
-
         if (isMetaDb(req))
         { // for database operation
             if ((req.keyNum == 0) && (db->existsDatabase() == false))
@@ -322,9 +404,9 @@ inline void dbExecuter::doCreateTable(request& req)
                     req.result = ddl_dropTable(db, tableName, dbSqlname,
                                                getTableName(req, FOR_SQL));
                 if (req.result == 0)
-                    req.result = ddl_dropDataBase(db->thd(), dbname, dbSqlname);
+                    req.result = ddl_dropDataBase(db->thd(), db->name(), dbSqlname);
                 req.result = errorCodeSht(req.result);
-                return;
+                return ret;
             }
         }
         if (req.result == 0)
@@ -383,76 +465,28 @@ inline void dbExecuter::doCreateTable(request& req)
                 }
             }
         }
+        req.result = errorCodeSht(req.result);
     }
-    else
-        req.result = 1;
-    req.result = errorCodeSht(req.result);
-}
-
-bool getUserPasswd(request& req, char* &user, char* &pwd)
-{
-    char* p = strchr((char*)req.keybuf, '\t');
-    if (p)
-    {
-        p = strchr(++p, '\t');
-        if (p)
-        {
-            pwd = ++p;
-            user = pwd + MYSQL_SCRAMBLE_LENGTH;
-            while (p < user)
-                if (*p++) return true;
-        }
-        return false;
-    }
-    return false;
-}
-
-bool dbExecuter::doAuthentication(request& req)
-{
-    if (m_authChecked) return true;
-    bool ret = true;
-    if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR)==0)
-    {
-        ret = false;
-        char host[MAX_HOSTNAME];
-        char *user = 0x00;
-        char *pwd = 0x00;
-        bool pwdRecieved = getUserPasswd(req, user, pwd);
-        if (user && user[0] && m_mod->checkHost(user, host, MAX_HOSTNAME))
-        {
-            //uint8* p = find_acl_user_(host, user, FALSE);
-            unsigned char buf[22];
-            unsigned char* p = getUserSha1Passwd(host, user, buf);
-            if (!pwdRecieved && !p) 
-                ret = true;
-            else if (p && pwdRecieved)
-                ret = (FALSE == check_scramble((const unsigned char*)pwd, (const char*)m_scramble, p));
-            if (ret)
-            {
-                m_user = user;
-                m_host = host;
-            }
-        }
-    }
-    m_authChecked = ret;
+    
     return ret;
 }
+
+
 // open table and assign handle
-inline void dbExecuter::doOpenTable(request& req)
+inline bool dbExecuter::doOpenTable(request& req)
 {
-    std::string dbname = getDatabaseName(req);
-    if (dbname != "")
+    database* db;
+    bool ret = getDatabaseWithAuth(req, db);
+    if (ret && req.result == 0)
     {
-        database* db;
         {// Lock open table by another thread
             boost::mutex::scoped_lock lck(g_mutex_opentable);
             if (req.keyNum == TD_OPEN_EXCLUSIVE/* && isMetaDb(req)*/)
             {
-                if (database::tableRef.count(dbname, getTableName(req)))
+                if (database::tableRef.count(db->name(), getTableName(req)))
                     THROW_BZS_ERROR_WITH_CODEMSG(STATUS_CANNOT_LOCK_TABLE,
                                             "lockTable error.");
             }
-            db = getDatabase(dbname.c_str(), req.cid);
             m_tb = db->openTable(
                 getTableName(req), req.keyNum,
                 getOwnerName(req)); // if error occured that throw exception
@@ -475,8 +509,7 @@ inline void dbExecuter::doOpenTable(request& req)
             }
         }
     }
-    else
-        req.result = 1;
+    return ret;
 }
 
 inline void readAfter(request& req, table* tb, dbExecuter* dbm)
@@ -1211,10 +1244,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         }
         case TD_CONNECT:
-            if (!doAuthentication(req))
+            if (!connect(req))
                 req.result = ERROR_TD_INVALID_CLINETHOST;
-            else
-                connect(req);
             break;
         case TD_RESET_CLIENT:
         case TD_STOP_ENGINE: // close all table
@@ -1225,16 +1256,12 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb);
             break;
         case TD_CREATETABLE:
-            if (!doAuthentication(req))
+            if (!doCreateTable(req))
                 req.result = ERROR_TD_INVALID_CLINETHOST;
-            else
-                doCreateTable(req);
             break;
         case TD_OPENTABLE:
-            if (!doAuthentication(req))
+            if (!doOpenTable(req))
                 req.result = ERROR_TD_INVALID_CLINETHOST;
-            else
-                doOpenTable(req);
             break;
         case TD_CLOSETABLE:
             m_tb = getTable(req.pbk->handle);

@@ -42,6 +42,8 @@ namespace bzs
 namespace db
 {
 class blobBuffer;
+namespace engine{namespace mysql{class database;}}
+
 namespace protocol
 {
 namespace tdap
@@ -66,11 +68,11 @@ class dbExecuter : public engine::mysql::dbManager
     blobBuffer* m_blobBuffer;
     unsigned char m_scramble[MYSQL_SCRAMBLE_LENGTH+1];
     netsvc::server::IAppModule* m_mod;
-    void connect(request& req);
     void releaseDatabase(request& req, int op);
     std::string makeSQLcreateTable(const request& req);
-    inline void doCreateTable(request& req);
-    inline void doOpenTable(request& req);
+    bool connect(request& req);
+    inline bool doCreateTable(request& req);
+    inline bool doOpenTable(request& req);
     inline void doSeekKey(request& req, int op, engine::mysql::rowLockMode* lock);
     inline void doMoveFirst(request& req, engine::mysql::rowLockMode* lock);
     inline void doMoveKey(request& req, int op, engine::mysql::rowLockMode* lock);
@@ -87,7 +89,8 @@ class dbExecuter : public engine::mysql::dbManager
     inline void doInsertBulk(request& req);
     inline void doStat(request& req);
     inline short seekEach(extRequestSeeks* ereq, bool noBookMark);
-    bool doAuthentication(request& req);
+    inline bool doAuthentication(request& req, engine::mysql::database* db);
+    bool getDatabaseWithAuth(request& req, engine::mysql::database* &db, bool connect=false);
 public:
     dbExecuter(netsvc::server::IAppModule* mod);
     ~dbExecuter();

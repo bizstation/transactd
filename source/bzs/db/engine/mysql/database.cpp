@@ -53,98 +53,6 @@ using namespace std;
 #error "MODE_READ_EXCLUSIVE != TD_OPEN_READONLY_EXCLUSIVE"
 #endif
 
-static database* g_mysqldb = NULL;
-static boost::mutex g_mysqlMutex;
-static int g_userTableid;
-
-void releaseMysqldb()
-{
-    boost::mutex::scoped_lock lck(g_mysqlMutex);
-    
-    if (g_mysqldb)
-    {
-        THD* thdCur = _current_thd();
-        delete g_mysqldb;
-        //restore
-        attachThd(thdCur);
-    }
-    g_mysqldb = NULL;
-}
-
-short aclReload()
-{
-    short ret = STATUS_SUCCESS;
-    boost::mutex::scoped_lock lck(g_mysqlMutex);
-    THD* thdCur = _current_thd();
-    try
-    {
-        if (g_mysqldb == NULL)
-            g_mysqldb = new database("mysql", 1);
-        g_mysqldb->use();
-        acl_reload(g_mysqldb->thd());
-    }
-    catch (...)
-    {
-        ret = 1;
-    }
-    attachThd(thdCur);
-    return ret;
-}
-
-unsigned char* getUserSha1Passwd(const char* host, const char* user, unsigned char* buf)
-{
-    table* tb2 = NULL;
-    table* tb = NULL;
-    unsigned char* retPtr = NULL;
-
-    boost::mutex::scoped_lock lck(g_mysqlMutex);
-    THD* thdCur = _current_thd();
-    try
-    {
-        if (g_mysqldb == NULL)
-            g_mysqldb = new database("mysql", 1);
-        g_mysqldb->use();
-        tb2 = g_mysqldb->openTable("user", TD_OPEN_READONLY, "");
-        if (tb2)
-        {
-	        g_userTableid = tb2->id();
-	        tb = g_mysqldb->useTable(g_userTableid, SQLCOM_SELECT, NULL);
-	        if (tb)
-	        {
-	            tb->setKeyNum((char)0);
-	            std::vector<std::string> keyValues;
-	            keyValues.push_back(host);
-	            keyValues.push_back(user);
-	            tb->setKeyValues(keyValues, -1, NULL);
-	            tb->seekKey(HA_READ_KEY_EXACT, tb->keymap());
-	            if (tb->stat() == 0)
-	            {
-	                int size;
-	                const char* p =  tb->valStr(MYSQL_USER_FIELD_PASSWORD, size);
-	                if (strlen(p))
-	                {
-	                    get_salt_from_password(buf, p);
-	                    retPtr = buf;
-	                }
-	            }
-	            tb->unUse();
-	        }
-            g_mysqldb->closeTable(tb2);
-        }
-        attachThd(thdCur);
-        return retPtr;
-    }
-    catch (...)
-    {
-    }
-    if (tb)
-        tb->unUse();
-    if (tb2)
-        g_mysqldb->closeTable(tb2);
-    attachThd(thdCur);
-    return retPtr;
-}
-
 unsigned int hash(const char* s, size_t len)
 {
     unsigned int h = 0;
@@ -297,6 +205,58 @@ database::~database()
     deleteThdForThread(m_thd);
 }
 
+unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
+                                            unsigned char* buf)
+{
+    table* tb2 = NULL;
+    table* tb = NULL;
+    unsigned char* retPtr = NULL;
+    std::string dbname = m_dbname;
+    m_dbname = "mysql";
+    try
+    {
+        use();
+        tb2 = openTable("user", TD_OPEN_READONLY, "");
+        if (tb2)
+        {
+	        tb = useTable(tb2->id(), SQLCOM_SELECT, NULL);
+	        if (tb)
+	        {
+	            tb->setKeyNum((char)0);
+	            std::vector<std::string> keyValues;
+	            keyValues.push_back(host);
+	            keyValues.push_back(user);
+	            tb->setKeyValues(keyValues, -1, NULL);
+	            tb->seekKey(HA_READ_KEY_EXACT, tb->keymap());
+	            if (tb->stat() == 0)
+	            {
+	                int size;
+	                const char* p =  tb->valStr(MYSQL_USER_FIELD_PASSWORD, size);
+	                if (strlen(p))
+	                {
+	                    get_salt_from_password(buf, p);
+	                    retPtr = buf;
+	                }
+	            }
+	            tb->unUse();
+	        }
+            closeTable(tb2);
+        }
+        m_dbname = dbname;
+        return retPtr;
+    }
+    catch (...)
+    {
+    }
+    if (tb)
+        tb->unUse();
+    if (tb2)
+        closeTable(tb2);
+    m_dbname = dbname;
+    return retPtr;
+}
+
+
 // true ok false fail
 bool database::setGrant(const char* host, const char* user)
 {
@@ -305,6 +265,34 @@ bool database::setGrant(const char* host, const char* user)
     if (ret)
         check_access(m_thd, SELECT_ACL, m_dbname.c_str(), &m_privilege, NULL, false, true);
                 
+    return ret;
+}
+
+// for mysql database only
+short database::aclReload()
+{
+    if (name() != "mysql")
+        return STATUS_ACCESS_DENIED;
+    if(!(m_privilege & GRANT_ACL))
+        return STATUS_ACCESS_DENIED;
+    short ret = STATUS_SUCCESS;
+
+    THD* thdCur = _current_thd();
+    THD* thd = NULL;
+    try
+    {
+        thd = createThdForThread();
+        attachThd(thd);
+        thd->clear_error();
+        acl_reload(thd);
+    }
+    catch (...)
+    {
+        ret = 1;
+    }
+    if (thd)
+        deleteThdForThread(thd);
+    attachThd(thdCur);
     return ret;
 }
 
@@ -880,15 +868,6 @@ bool database::existsDatabase()
     return false;
 }
 
-// for mysql database only
-short database::aclReload()
-{
-    if (name() != "mysql")
-        return STATUS_ACCESS_DENIED;
-    if(!(m_privilege & GRANT_ACL))
-        return STATUS_ACCESS_DENIED;
-    return mysql::aclReload();
-}
 
 class autoincSetup
 {

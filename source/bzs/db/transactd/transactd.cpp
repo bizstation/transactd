@@ -57,12 +57,7 @@ char* g_transaction_isolation = NULL;
 char* g_auth_type = NULL;
 //int g_grant_apply = 0;//skip
 
-/* Release function
-   Global user authentication database
-*/
-namespace bzs{ namespace db { namespace engine { namespace mysql {
-extern void releaseMysqldb();
-}}}}
+
 /** tcp server
  */
 boost::shared_ptr<iserver> srv;
@@ -218,7 +213,7 @@ void shutdownSrv(boost::shared_ptr<iserver>& srv)
  */
 static int transactd_plugin_deinit(void* p)
 {
-	bzs::db::engine::mysql::releaseMysqldb();
+	
 #ifdef PIPE_SERVER
     shutdownSrv(srv_p);
 #endif
