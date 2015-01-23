@@ -168,7 +168,6 @@ public:
     bool beginTrn(short type, enum_tx_isolation iso);
     bool commitTrn();
     bool abortTrn();
-    //bool existsTable(const std::string& name);
     bool existsDatabase();
     void closeTable(const std::string& name, bool drop);
     void closeTable(table* tb);

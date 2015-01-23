@@ -101,7 +101,6 @@ protected:
     idirectReadHandler* m_reader;
     size_t m_readLen;
     int m_refCount;
-    thread_id m_tid;
     int m_charsetServer;
     bool m_connected;
     bool m_isHandShakable;
@@ -117,15 +116,13 @@ protected:
 
     const asio::ip::tcp::endpoint& endpoint() const { return m_ep; }
 
-    thread_id tid() const { return m_tid; };
-
     int charsetServer() const { return m_charsetServer; };
 
     void setCharsetServer(int v) { m_charsetServer = v; }
 
 public:
     connectionBase(asio::ip::tcp::endpoint& ep)
-        : m_ep(ep), m_reader(NULL), m_refCount(0), m_tid(threadid()), 
+        : m_ep(ep), m_reader(NULL), m_refCount(0),
           m_charsetServer(-1), m_connected(false), m_isHandShakable(true)
     {
     }
@@ -553,7 +550,7 @@ public:
         unsigned int* shareMemSize = (unsigned int*)(p+3);
         m_isHandShakable = (p[0] == 0x00);
         createKernelObjects(*shareMemSize);
-        strcpy(p, "OK! wait");
+        strcpy_s(p, 256, "OK! wait");
         boost::asio::write(m_socket, boost::asio::buffer(p, 9));
     }
 

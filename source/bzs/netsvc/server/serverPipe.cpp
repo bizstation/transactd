@@ -92,14 +92,10 @@ void acceptor::accept(platform_stream& pipe)
     m_fd = CreateNamedPipe(pipeName, // pipe name
                            PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
                            PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-                           PIPE_UNLIMITED_INSTANCES // max. instances
-                           ,
-                           BUFSIZE // output buffer size
-                           ,
-                           BUFSIZE // input buffer size
-                           ,
-                           0 // client time-out
-                           ,
+                           PIPE_UNLIMITED_INSTANCES, // max. instances
+                           BUFSIZE, // output buffer size
+                           BUFSIZE, // input buffer size
+                           0, // client time-out
                            &sa); // default security attribute
     if (m_fd == INVALID_HANDLE_VALUE)
         THROW_BZS_ERROR_WITH_MSG(getWindowsErrMsg(GetLastError()));

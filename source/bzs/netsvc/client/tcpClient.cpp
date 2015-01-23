@@ -116,10 +116,9 @@ connections::~connections()
  */
 connection* connections::getConnection(asio::ip::tcp::endpoint& ep)
 {
-    thread_id tid = threadid();
     for (int i = 0; i < (int)m_conns.size(); i++)
     {
-        if ((m_conns[i]->endpoint() == ep) && (m_conns[i]->tid() == tid))
+        if (m_conns[i]->endpoint() == ep)
             return m_conns[i];
     }
     return NULL;
@@ -155,12 +154,10 @@ connection* connections::getConnection(const std::string& host)
 
 connection* connections::getConnectionPipe()
 {
-    thread_id tid = threadid();
     for (int i = 0; i < (int)m_conns.size(); i++)
     {
         pipeConnection* pc = dynamic_cast<pipeConnection*>(m_conns[i]);
-        if (pc && (pc->tid() == tid))
-            return pc;
+        return pc;
     }
     return NULL;
 }

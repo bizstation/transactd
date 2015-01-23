@@ -407,12 +407,11 @@ inline bool dbExecuter::doCreateTable(request& req)
             }
             else if (req.keyNum == CR_SUBOP_DROP)
             {
-                std::string tableName = getTableName(req);
-                //if (db->existsTable(tableName))
-                //    req.result = ddl_dropTable(db, tableName, dbSqlname,
-                //                               getTableName(req, FOR_SQL));
                 if (req.result == 0)
+                {
                     req.result = ddl_dropDataBase(db->thd(), db->name(), dbSqlname);
+                    if (ER_DB_DROP_EXISTS+ MYSQL_ERROR_OFFSET == req.result) req.result = 0;
+                }
                 return ret;
             }
         }
@@ -424,13 +423,10 @@ inline bool dbExecuter::doCreateTable(request& req)
                 std::string tableName = getTableName(req);
                 if (req.keyNum == CR_SUBOP_DROP) // -128 is delete
                 {
-                    //if (db->existsTable(tableName))
-                    {
-                        req.result = ddl_dropTable(db, tableName, dbSqlname,
-                                                   tableSqlName);
-                        if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
-                            req.result = 0;
-                    }
+                    req.result = ddl_dropTable(db, tableName, dbSqlname,
+                                                tableSqlName);
+                    if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
+                        req.result = 0;
                 }
                 else if (req.keyNum == CR_SUBOP_RENAME)
                 { // rename new is keybuf
@@ -438,10 +434,8 @@ inline bool dbExecuter::doCreateTable(request& req)
                     reqold.keybuf = req.data;
                     reqold.keylen = *req.datalen;
                     req.result = ddl_renameTable(
-                        db, getTableName(reqold) /*oldname*/
-                        ,
-                        dbSqlname, getTableName(reqold, FOR_SQL) /*oldname*/
-                        ,
+                        db, getTableName(reqold), /*oldname*/
+                        dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
                         tableSqlName /*newName*/);
                 }
                 else if (req.keyNum == CR_SUBOP_SWAPNAME)
@@ -450,12 +444,9 @@ inline bool dbExecuter::doCreateTable(request& req)
                     reqold.keybuf = req.data;
                     reqold.keylen = *req.datalen;
                     req.result = ddl_replaceTable(
-                        db, getTableName(reqold) /*oldname*/
-                        ,
-                        tableName /*newName*/
-                        ,
-                        dbSqlname, getTableName(reqold, FOR_SQL) /*oldname*/
-                        ,
+                        db, getTableName(reqold), /*oldname*/
+                        tableName, /*newName*/
+                        dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
                         tableSqlName /*newName*/);
                 }
                 else
@@ -464,8 +455,7 @@ inline bool dbExecuter::doCreateTable(request& req)
                         req.result = 1;
                     else
                     { //-1 is overwrite
-                        if ((req.keyNum == CR_SUB_FLAG_EXISTCHECK)/* &&
-                            (db->existsTable(tableName))*/)
+                        if (req.keyNum == CR_SUB_FLAG_EXISTCHECK)
                         {
                             req.result = ddl_dropTable(db, tableName, dbSqlname,
                                                        tableSqlName);
@@ -480,7 +470,6 @@ inline bool dbExecuter::doCreateTable(request& req)
             }
         }
     }
-    
     return ret;
 }
 

@@ -724,25 +724,19 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
 table* database::openTable(const std::string& name, short mode,
                            const char* ownerName)
 {
-    //if (existsTable(name))
-    //{
-       
-        TABLE* t = doOpenTable(name, mode, ownerName);
-        if (t)
-        {
-            boost::shared_ptr<table> tb(
-                new table(t, *this, name, mode, (int)m_tables.size()));
-            m_tables.push_back(tb);
-            m_stat = STATUS_SUCCESS;
-            if (tb->isExclusveMode())
-                ++m_usingExclusive;
-            tableRef.addref(m_dbname, name); // addef first then table open.
-            return tb.get();
-        }
-        return NULL;
-    //}
-    //m_stat = STATUS_TABLE_NOTOPEN;
-    //return NULL;
+    TABLE* t = doOpenTable(name, mode, ownerName);
+    if (t)
+    {
+        boost::shared_ptr<table> tb(
+            new table(t, *this, name, mode, (int)m_tables.size()));
+        m_tables.push_back(tb);
+        m_stat = STATUS_SUCCESS;
+        if (tb->isExclusveMode())
+            ++m_usingExclusive;
+        tableRef.addref(m_dbname, name); // addef first then table open.
+        return tb.get();
+    }
+    return NULL;
 }
 
 void database::closeTable(const std::string& name, bool drop)
@@ -804,9 +798,7 @@ void database::closeTable(table* tb)
             if (*tbl)
                 close_thread_table(m_thd, tbl);
             m_tables[i].reset();
-
             DEBUG_WRITELOG_SP1("CLOSE TABLE table id=%d \n", i);
-            
         }
     }
 }
@@ -843,41 +835,10 @@ void database::reopen()
         }
     }
 }
-    /*
-bool database::existsTable(const std::string& name)
-{
-    bool exists;
-    TABLE_LIST table;
-    table.init_one_table(m_dbname.c_str(), m_dbname.size(), name.c_str(),
-                          name.size(), name.c_str(), TL_READ);
-    table.mdl_request.set_type(MDL_SHARED_READ);
-    if (!check_if_table_exists(m_thd, &table, &exists))
-        return !exists;
-    return false;
-
-    char tmp[FN_REFLEN + 1];
-
-    build_table_filename(tmp, sizeof(tmp) - 1, m_dbname.c_str(), name.c_str(),
-                         reg_ext, 0);
-    MY_STAT st;
-    if (mysql_file_stat(0, tmp, &st, MYF(0)))
-        return true;
-    return false;
-*/
 
 bool database::existsDatabase()
 {
     return !check_db_dir_existence(m_dbname.c_str());
-
-/*    char tmp[FN_REFLEN + 1];
-    size_t len =
-        build_table_filename(tmp, sizeof(tmp) - 1, m_dbname.c_str(), "", "", 0);
-    tmp[len - 1] = 0x00;
-
-    MY_STAT stat;
-    if (mysql_file_stat(0, tmp, &stat, MYF(0)))
-        return true;
-    return false;*/
 }
 
 
@@ -907,7 +868,6 @@ unsigned short nisFieldNum(TABLE* tb)
                 return (unsigned short)(tb->s->fields - i - offset);
         return tb->s->fields;
     }
-
     return 0;
 }
 

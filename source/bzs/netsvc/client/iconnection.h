@@ -81,7 +81,6 @@ public:
     virtual int refCount() const = 0;
     virtual bool isConnected() const = 0;
     virtual const boost::asio::ip::tcp::endpoint& endpoint() const = 0;
-    virtual thread_id tid() const = 0;
     virtual char* sendBuffer(size_t size) = 0;
     virtual unsigned int sendBufferSize() = 0;
     virtual buffers* optionalBuffers() = 0;
