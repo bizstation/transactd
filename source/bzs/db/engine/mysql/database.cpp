@@ -467,9 +467,6 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
         return tb;
     }
 
-    if (tb->m_table == NULL)
-        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
-                                     "Invalid table id.");
     checkACL(cmd);
     prebuildLocktype(tb, cmd, lck);
     
@@ -680,7 +677,10 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
                           name.size(), name.c_str(), TL_READ);
     if(!(m_privilege & SELECT_ACL) &&
         (check_grant(m_thd, SELECT_ACL, &tables, FALSE, 1, true)))
-        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ACCESS_DENIED, name.c_str());
+    {
+        m_stat = STATUS_ACCESS_DENIED;
+        return NULL;
+    }
     tables.mdl_request.set_type(MDL_SHARED_READ);
 
     Open_table_context ot_act(m_thd, MYSQL_OPEN_GET_NEW_TABLE);
@@ -690,7 +690,7 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
         m_stat = STATUS_TABLE_NOTOPEN;
         if (ER_LOCK_WAIT_TIMEOUT == m_thd->cp_get_sql_error())
             m_stat = STATUS_CANNOT_LOCK_TABLE;
-        THROW_BZS_ERROR_WITH_CODEMSG(m_stat, name.c_str());
+        return NULL;
     }
     
     // Check owner name
@@ -717,6 +717,7 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
     sprintf(buf, "%d", tables.table->field[1]->key_length());
     OutputDebugString(buf);
 #endif
+    m_stat = STATUS_SUCCESS;
     return tables.table;
 }
 
@@ -741,7 +742,7 @@ table* database::openTable(const std::string& name, short mode,
         return NULL;
     }
     m_stat = STATUS_TABLE_NOTOPEN;
-    THROW_BZS_ERROR_WITH_CODEMSG(m_stat, name.c_str());
+    return NULL;
 }
 
 void database::closeTable(const std::string& name, bool drop)

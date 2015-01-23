@@ -90,12 +90,14 @@ class client
 
     inline void disconnect()
     {
-        if (!con())
+        bzs::netsvc::client::connection* c = con();
+        if (!c)
             m_req.result = 1;
         else
         {
-            m_disconnected = m_cons->disconnect(con());
             setCon(NULL);
+            //Release connection refCount
+            m_disconnected = m_cons->disconnect(c);
         }
     }
 
@@ -310,28 +312,25 @@ public:
         if ((m_req.keyNum == LG_SUBOP_CONNECT) ||
             (m_req.keyNum == LG_SUBOP_NEWCONNECT))
         {
-            if (con() && con()->isConnected())
-                m_preResult = 1;
-            else
+            if (con())
+                disconnect();
+            std::string host = getHostName((const char*)m_req.keybuf);
+            if (host == "")
+                m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+            bzs::netsvc::client::connection* c = m_cons->connect(
+                host, handshakeCallback, this,
+                (m_req.keyNum == LG_SUBOP_NEWCONNECT));
+            if (c)
             {
-                std::string host = getHostName((const char*)m_req.keybuf);
-                if (host == "")
-                    m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-                bzs::netsvc::client::connection* c = m_cons->connect(
-                    host, handshakeCallback, this,
-                    (m_req.keyNum == LG_SUBOP_NEWCONNECT));
-                if (c)
-                {
-                    setCon(c); // if error throw exception
-                    m_connecting = true;
-                    if (getServerCharsetIndex() == -1)
-                        m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
-                    else
-                        buildDualChasetKeybuf();
-                }
+                setCon(c); // if error throw exception
+                m_connecting = true;
+                if (getServerCharsetIndex() == -1)
+                    m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
                 else
-                    m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+                    buildDualChasetKeybuf();
             }
+            else
+                m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
         }
         else if (m_req.keyNum == LG_SUBOP_DISCONNECT)
         {

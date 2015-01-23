@@ -484,32 +484,35 @@ inline bool dbExecuter::doOpenTable(request& req)
     bool ret = getDatabaseWithAuth(req, db);
     if (ret && req.result == 0)
     {
+        table* tb = NULL;
         {// Lock open table by another thread
             boost::mutex::scoped_lock lck(g_mutex_opentable);
             if (req.keyNum == TD_OPEN_EXCLUSIVE/* && isMetaDb(req)*/)
             {
                 if (database::tableRef.count(db->name(), getTableName(req)))
-                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_CANNOT_LOCK_TABLE,
-                                            "lockTable error.");
+                {
+                    req.result = STATUS_CANNOT_LOCK_TABLE;
+                    return ret;
+                }
             }
-            m_tb = db->openTable(
-                getTableName(req), req.keyNum,
-                getOwnerName(req)); // if error occured that throw exception
+             // if error occured that throw no exception
+            tb = db->openTable(getTableName(req), req.keyNum, getOwnerName(req)); 
             req.result = db->stat();
         }
         
-        if (m_tb)
+        if (tb)
         {
+            tb->setBlobBuffer(m_blobBuffer);
             try
             {
-                req.pbk->handle = addHandle(getDatabaseID(req.cid), m_tb->id());
-                m_tb = getTable(req.pbk->handle);
-                m_tb->setBlobBuffer(m_blobBuffer);
+                uint hdl = addHandle(getDatabaseID(req.cid), tb->id());
+                m_tb = getTable(hdl);
+                req.pbk->handle = hdl;
                 req.paramMask = P_MASK_POSBLK;
             }
             catch (bzs::rtl::exception& e)
             {
-                m_tb->close();
+                tb->close();
                 throw e;
             }
         }

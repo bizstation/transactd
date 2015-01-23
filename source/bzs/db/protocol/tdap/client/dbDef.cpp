@@ -820,6 +820,8 @@ void dbdef::create(const _TCHAR* fullpath)
     fs->keySpecs[0].keyType = 1; // Integer
     nsdb()->createTable(fs, 412, fullpath, 0);
     free(fs);
+
+    //TODO Create operation include set owner name.
     if (nsdb()->stat() == 0)
     { // set owner name
         ownerNameSetter* bao = new ownerNameSetter(nsdb());

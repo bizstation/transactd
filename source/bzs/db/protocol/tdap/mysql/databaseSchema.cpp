@@ -286,6 +286,8 @@ short schemaBuilder::execute(database* db, table* mtb)
                 filename_to_tablename(it->path().stem().string().c_str(), path,
                                       FN_REFLEN);
                 table* tb = db->openTable(path, TD_OPEN_READONLY, NULL);
+                if (!tb)
+                    return db->stat();
                 if (!tb->isView())
                 {
                     if ((stat = insertMetaRecord(mtb, tb, ++id)) != 0)

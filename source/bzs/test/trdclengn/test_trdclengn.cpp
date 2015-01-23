@@ -1866,6 +1866,7 @@ void testExclusive()
     /*  Nnomal and Exclusive opend tables mix transaction */
     /* ---------------------------------------------------*/
     tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open group stat = " << db->stat()) ;
     //Check tb2 Exclusive
     tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
     BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
@@ -2323,7 +2324,7 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType,
 
     BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 4");
     table* tb = db->openTable(id);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
     if (tb)
         tb->release();
 }
