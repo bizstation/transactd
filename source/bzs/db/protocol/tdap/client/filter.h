@@ -978,9 +978,9 @@ class filter
     
 
     filter(table* tb)
-        : m_tb(tb), m_extendBuflen(0), m_stat(0), m_preparedId(0),
-          m_ignoreFields(false), m_seeksMode(false), m_useOptimize(true),
-          m_withBookmark(true), m_seeksWritedCount(0), m_hasManyJoin(false),
+        : m_tb(tb), m_seeksWritedCount(0), m_extendBuflen(0), m_stat(0),
+          m_preparedId(0),m_ignoreFields(false), m_seeksMode(false),
+          m_useOptimize(true),m_withBookmark(true), m_hasManyJoin(false),
           m_preparingMode(false),m_ddba(false)
     {
         m_isTransactd = m_tb->isUseTransactd();

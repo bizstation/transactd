@@ -132,7 +132,11 @@ if(CAN_LINK_ICONV)
 endif()
 if(NOT MSVC)
   target_link_libraries(${this_target} pthread)
-  target_link_libraries(${this_target} -Wl,--version-script,"${TRANSACTD_ROOT}/build/tdclc/libtdclcm.map")
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    ## target_link_libraries(${this_target} "${TRANSACTD_ROOT}/build/tdclc/libtdclcm.map")
+  else()
+    target_link_libraries(${this_target} -Wl,--version-script,"${TRANSACTD_ROOT}/build/tdclc/libtdclcm.map")
+  endif()
 endif()
 
 

@@ -26,7 +26,10 @@
 #include <boost/thread/mutex.hpp>
 #include <stdio.h>
 #include <vector>
-
+#ifdef LINUX
+#include <pthread.h> 
+#include <signal.h> 
+#endif
 
 
 using namespace boost;
@@ -39,8 +42,7 @@ using namespace boost::system;
 #define CLIENT_ERROR_CANT_CREATEPIPE 3106
 #define CLIENT_ERROR_SHAREMEM_DENIED 3104
 #define CLIENT_ERROR_CONNECTION_FAILURE 3106
-#define TIMEOUT_MILLISEC 3000
-
+#define MAX_DATA_SIZE 10485760 // 10MB
 
 namespace bzs
 {
@@ -49,38 +51,35 @@ namespace netsvc
 namespace client
 {
 
+typedef bool (*handshake)(connection* c, void* data);
 class connections
 {
     std::vector<connection*> m_conns;
     boost::asio::io_service m_ios;
-
     mutex m_mutex;
+    std::string m_pipeName;
+    static bool m_usePipedLocal;
 
     connection* getConnection(asio::ip::tcp::endpoint& ep);
     asio::ip::tcp::endpoint endpoint(const std::string& host,
                                      boost::system::error_code& ec);
-
     bool isUseNamedPipe(asio::ip::tcp::endpoint& ep);
-
-    static bool m_usePipedLocal;
-
-    std::string m_pipeName;
 #ifdef USE_PIPE_CLIENT
     connection* getConnectionPipe();
 #endif
-
+    inline connection* doConnect(connection* c);
+    inline connection* createConnection(asio::ip::tcp::endpoint& ep, bool namedPipe);
+    inline bool doHandShake(connection* c, handshake f, void* data);
 public:
     connections(const char* pipeName);
     ~connections();
-    connection* connect(const std::string& host, bool newConnection = false);
+    connection* connect(const std::string& host, handshake f,
+                        void* data, bool newConnection = false);
     connection* getConnection(const std::string& host);
-
     bool disconnect(connection* c);
-
+    int connectionCount();
     static char port[PORTNUMBUF_SIZE];
     static short timeout;
-
-    int connectionCount();
 };
 
 /** Implementation of Part of the connection interface
@@ -97,10 +96,9 @@ protected:
     idirectReadHandler* m_reader;
     size_t m_readLen;
     int m_refCount;
-    thread_id m_tid;
     int m_charsetServer;
     bool m_connected;
-
+    bool m_isHandShakable;
 
     void addref() { ++m_refCount; }
 
@@ -112,16 +110,14 @@ protected:
 
     const asio::ip::tcp::endpoint& endpoint() const { return m_ep; }
 
-    thread_id tid() const { return m_tid; };
-
     int charsetServer() const { return m_charsetServer; };
 
     void setCharsetServer(int v) { m_charsetServer = v; }
 
 public:
     connectionBase(asio::ip::tcp::endpoint& ep)
-        : m_ep(ep), m_reader(NULL), m_refCount(0), m_tid(threadid()), 
-          m_charsetServer(-1), m_connected(false)
+        : m_ep(ep), m_reader(NULL), m_refCount(0),
+          m_charsetServer(-1), m_connected(false), m_isHandShakable(true)
     {
     }
 
@@ -132,7 +128,7 @@ public:
         if (size > m_sendbuf.size())
             m_sendbuf.resize(size);
         return &m_sendbuf[0];
-    };
+    }
 
     unsigned int sendBufferSize() { return (unsigned int)m_sendbuf.size(); };
 
@@ -141,12 +137,17 @@ public:
         if (m_readbuf.size() < size)
             m_readbuf.resize(size);
     }
+
+    bool isHandShakable() const {return m_isHandShakable;};
 };
 
 /** Implementation of the connection template
  */
 template <class T> class connectionImple : public connectionBase
 {
+#ifdef LINUX
+    sigset_t m_signmask, m_sigomask;
+#endif
 protected:
     //unsigned int m_datalen;
     //unsigned short m_rows;
@@ -210,11 +211,25 @@ protected:
         return &m_readbuf[0];
     }
 
-    void read()
+    template <typename CompletionCondition, typename MutableBufferSequence>
+    size_t doRead(const MutableBufferSequence& buf, CompletionCondition cnd)
+    {
+        boost::system::error_code e;
+#ifdef LINUX
+        pthread_sigmask(SIG_SETMASK, &m_signmask , &m_sigomask); 
+#endif
+        size_t n = boost::asio::read(m_socket, buf, cnd, e);
+#ifdef LINUX
+        pthread_sigmask(SIG_SETMASK, &m_sigomask, NULL); 
+#endif
+        if (e) throw e;
+        return n;    
+    }
+
+    char* read()
     {
         if (!m_connected)
             throw system_error(asio::error::not_connected);
-        boost::system::error_code e;
         m_readLen = 0;
         //m_datalen = 0;
         //m_rows = 0;
@@ -230,26 +245,23 @@ protected:
         }*/
         if (m_reader)
         {
-            m_readLen = boost::asio::read(m_socket, boost::asio::buffer(&n, 4),
-                                       boost::asio::transfer_all());
+            m_readLen = doRead(boost::asio::buffer(&n, 4), boost::asio::transfer_all());
+            
             m_readLen += m_reader->onRead(n - 4, this);
         }else
         {
-            m_readLen = boost::asio::read(m_socket, 
-                                       boost::asio::buffer(&m_readbuf[0],m_readbuf.size()),
-                                       boost::asio::transfer_at_least(4));
+            m_readLen = doRead(boost::asio::buffer(&m_readbuf[0],m_readbuf.size()),
+                    boost::asio::transfer_at_least(4));
             n = *((unsigned int*)(&m_readbuf[0]));
         }
-        if (m_readLen < n)
+        if ((n > m_readLen) && (n < MAX_DATA_SIZE))
         {
             if (n > m_readbuf.size())
                 m_readbuf.resize(n);
-        
-            m_readLen += boost::asio::read(
-                m_socket,
-                boost::asio::buffer(&m_readbuf[m_readLen], n - m_readLen),
-                boost::asio::transfer_all());
+            m_readLen += doRead(boost::asio::buffer(&m_readbuf[m_readLen], n - m_readLen),
+                    boost::asio::transfer_all());
         }
+        return &m_readbuf[0];
     }
 
     void write(unsigned int writeSize)
@@ -273,11 +285,13 @@ public:
     connectionImple(asio::ip::tcp::endpoint& ep)
         : connectionBase(ep)/*, m_datalen(0)*/, m_socket(m_ios)
     {
+#ifdef LINUX
+        sigfillset(&m_signmask);
+#endif
     }
 
     ~connectionImple()
     {
-        
         try
         {
             m_ios.stop();
@@ -291,8 +305,7 @@ public:
     char* asyncWriteRead(unsigned int writeSize)
     {
         write(writeSize);
-        read();
-        return &m_readbuf[0];
+        return read();
     }
 
     buffers* optionalBuffers() { return &m_optionalBuffes; }
@@ -336,8 +349,6 @@ public:
         setupTimeouts();
         m_socket.connect(m_ep);
         m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
-        char tmp[20];
-        m_socket.read_some(boost::asio::buffer(tmp, 10));
         m_connected = true;
     }
 };
@@ -453,6 +464,28 @@ class pipeConnection : public connectionImple<platform_stream>
             throwException("OpenEvent Server", CLIENT_ERROR_SHAREMEM_DENIED);
     }
 
+    void write(unsigned int writeSize)
+    {
+        //m_datalen = 0;
+        //m_rows = 0;
+        BOOL ret = SetEvent(m_sendEvent);
+        if (ret == FALSE)
+            throwException("SetEvent", CLIENT_ERROR_CONNECTION_FAILURE);        
+    }
+
+    char* read()
+    {
+        while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, connections::timeout))
+        {
+            DWORD n = 0;
+            BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
+                                           NULL, NULL, NULL, 0);
+            if(ret == FALSE || n == 0)
+                throwException("PipeConnection", CLIENT_ERROR_CONNECTION_FAILURE);
+        }
+        return m_readbuf_p;
+    }
+
 public:
     pipeConnection(asio::ip::tcp::endpoint& ep, const std::string& pipeName)
         : connectionImple<platform_stream>(ep), m_pipeName(pipeName),
@@ -464,11 +497,22 @@ public:
 
     ~pipeConnection()
     {
-        memset(m_writebuf_p, 0, sizeof(unsigned int));
-
-        SetEvent(m_sendEvent);
-        WaitForSingleObject(m_recvEvent, INFINITE);
-
+        if (m_connected)
+		{
+			if (m_writebuf_p)
+				memset(m_writebuf_p, 0, sizeof(unsigned int));
+			DWORD n = 0;
+			BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
+                                            NULL, NULL, NULL, 0);
+            if(m_sendEvent && ret && n)
+            {
+				SetEvent(m_sendEvent);
+                //Wait for server side close connection
+                while (WAIT_TIMEOUT == 
+                    WaitForSingleObject(m_recvEvent, connections::timeout))
+                    ;
+            }
+		}
         if (m_recvEvent)
             CloseHandle(m_recvEvent);
         if (m_sendEvent)
@@ -504,33 +548,21 @@ public:
         m_socket.assign(fd);
         m_connected = true;
 
-        // send processId;
-
+        // send processId and clientid;
         DWORD processId = GetCurrentProcessId();
         int size = 16;
-        connectionBase::m_readbuf.resize(size);
+        connectionBase::m_readbuf.resize(256);
         char* p = &connectionBase::m_readbuf[0];
         memcpy(p, &size, sizeof(int));
         memcpy(p + 4, &processId, sizeof(DWORD));
         __int64 clientid = (__int64) this;
         memcpy(p + 8, &clientid, sizeof(__int64));
         boost::asio::write(m_socket, boost::asio::buffer(p, size));
-        boost::asio::read(m_socket, boost::asio::buffer(p, 7));
-        unsigned int* shareMemSize = (unsigned int*)(p + 3);
-        createKernelObjects(*shareMemSize);
-    }
 
-    char* asyncWriteRead(unsigned int writeSize)
-    {
-        //m_datalen = 0;
-        //m_rows = 0;
-        BOOL ret = SetEvent(m_sendEvent);
-        if (ret == FALSE)
-            throwException("SetEvent", CLIENT_ERROR_CONNECTION_FAILURE);
-        DWORD r = WaitForSingleObject(m_recvEvent, connections::timeout);
-        if (r == WAIT_TIMEOUT)
-            throwException("SetEvent", CLIENT_ERROR_CONNECTION_FAILURE);
-        return m_readbuf_p;
+        boost::asio::read(m_socket, boost::asio::buffer(p, 7));
+        unsigned int* shareMemSize = (unsigned int*)(p+3);
+        m_isHandShakable = (p[0] == 0x00);
+        createKernelObjects(*shareMemSize);
     }
 
     char* sendBuffer(size_t size) { return m_writebuf_p; }

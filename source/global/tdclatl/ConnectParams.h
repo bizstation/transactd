@@ -58,7 +58,7 @@ public:
 
 public:
     STDMETHOD(Init)(BSTR protocol, BSTR hostOrIp, BSTR dbname,
-                    BSTR schemaTable);
+                    BSTR schemaTable, BSTR username, BSTR passwd);
     STDMETHOD(put_Uri)(BSTR val);
     STDMETHOD(get_Uri)(BSTR* retVal);
     STDMETHOD(put_Mode)(short val);

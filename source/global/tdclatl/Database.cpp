@@ -455,6 +455,12 @@ STDMETHODIMP CDatabase::get_RefCount(int* Value)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::AclReload(short* Value)
+{
+    *Value = m_db->aclReload();
+    return S_OK;
+}
+
 STDMETHODIMP CDatabase::get_TrnsactionFlushWaitStatus(VARIANT_BOOL* Value)
 {
     *Value = database::trnsactionFlushWaitStatus();
@@ -476,6 +482,18 @@ STDMETHODIMP CDatabase::get_ExecCodePage(unsigned int* Value)
 STDMETHODIMP CDatabase::get_MaxTables(int* Value)
 {
     *Value = database::maxtables;
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::get_TrxIsolationServer(eSrvIsorationType* Value)
+{
+    *Value = (eSrvIsorationType)m_db->trxIsolationServer();
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::get_TrxLockWaitTimeoutServer(int* Value)
+{
+    *Value = m_db->trxLockWaitTimeoutServer();
     return S_OK;
 }
 

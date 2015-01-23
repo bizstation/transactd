@@ -58,8 +58,10 @@ class refarymem
 
 protected:
 
-    refarymem(const refarymem& r):m_parent(NULL), 
+    refarymem(const refarymem& r):m_parent(NULL),
             m_child(0), m_allocType(MEM_ALLOC_TYPE_NONE){}
+
+    virtual ~refarymem(){}
 
     refarymem& operator=(const refarymem& r)
     {

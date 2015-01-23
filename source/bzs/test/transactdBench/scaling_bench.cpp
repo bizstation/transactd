@@ -151,14 +151,14 @@ double executeWorkers(const commandLineParam& cmd, const connectParams param,
         }
         printf("*");
         fflush(stdout);
-        Sleep(500 * MCRTOMM);
+        Sleep(500);
         sync.wait(); // start all workers
         if (cmd.stressMode)
         {
-            Sleep(200 * MCRTOMM);
+            Sleep(200);
             g_bench_signal = BENCH_SIGNAL_GREEN;
             //Measurement interval
-            Sleep((unsigned int)(BENCH_TIMER_SECONDS * 1000 * MCRTOMM));
+            Sleep((unsigned int)(BENCH_TIMER_SECONDS * 1000));
             g_bench_signal = BENCH_SIGNAL_BREAK;
         }
         threads.join_all();

@@ -49,176 +49,6 @@ abstract class transactd {
 
 	const CP_UTF8 = CP_UTF8;
 
-	const POS_BLOCK_SIZE = POS_BLOCK_SIZE;
-
-	const MAX_KEYLEN = MAX_KEYLEN;
-
-	const TD_OPENTABLE = TD_OPENTABLE;
-
-	const TD_CLOSETABLE = TD_CLOSETABLE;
-
-	const TD_REC_INSERT = TD_REC_INSERT;
-
-	const TD_REC_UPDATE = TD_REC_UPDATE;
-
-	const TD_REC_DELETE = TD_REC_DELETE;
-
-	const TD_KEY_SEEK = TD_KEY_SEEK;
-
-	const TD_KEY_NEXT = TD_KEY_NEXT;
-
-	const TD_KEY_PREV = TD_KEY_PREV;
-
-	const TD_KEY_AFTER = TD_KEY_AFTER;
-
-	const TD_KEY_OR_AFTER = TD_KEY_OR_AFTER;
-
-	const TD_KEY_BEFORE = TD_KEY_BEFORE;
-
-	const TD_KEY_OR_BEFORE = TD_KEY_OR_BEFORE;
-
-	const TD_KEY_FIRST = TD_KEY_FIRST;
-
-	const TD_KEY_LAST = TD_KEY_LAST;
-
-	const TD_CREATETABLE = TD_CREATETABLE;
-
-	const TD_TABLE_INFO = TD_TABLE_INFO;
-
-	const TD_SETDIRECTORY = TD_SETDIRECTORY;
-
-	const TD_GETDIRECTORY = TD_GETDIRECTORY;
-
-	const TD_BEGIN_TRANSACTION = TD_BEGIN_TRANSACTION;
-
-	const TD_END_TRANSACTION = TD_END_TRANSACTION;
-
-	const TD_ABORT_TRANSACTION = TD_ABORT_TRANSACTION;
-
-	const TD_BOOKMARK = TD_BOOKMARK;
-
-	const TD_MOVE_BOOKMARK = TD_MOVE_BOOKMARK;
-
-	const TD_POS_NEXT = TD_POS_NEXT;
-
-	const TD_STOP_ENGINE = TD_STOP_ENGINE;
-
-	const TD_VERSION = TD_VERSION;
-
-	const TD_UNLOCK = TD_UNLOCK;
-
-	const TD_RESET_CLIENT = TD_RESET_CLIENT;
-
-	const TD_SET_OWNERNAME = TD_SET_OWNERNAME;
-
-	const TD_CLEAR_OWNERNAME = TD_CLEAR_OWNERNAME;
-
-	const TD_BUILD_INDEX = TD_BUILD_INDEX;
-
-	const TD_DROP_INDEX = TD_DROP_INDEX;
-
-	const TD_POS_FIRST = TD_POS_FIRST;
-
-	const TD_POS_LAST = TD_POS_LAST;
-
-	const TD_POS_PREV = TD_POS_PREV;
-
-	const TD_KEY_NEXT_MULTI = TD_KEY_NEXT_MULTI;
-
-	const TD_KEY_PREV_MULTI = TD_KEY_PREV_MULTI;
-
-	const TD_POS_NEXT_MULTI = TD_POS_NEXT_MULTI;
-
-	const TD_POS_PREV_MULTI = TD_POS_PREV_MULTI;
-
-	const TD_INSERT_BULK = TD_INSERT_BULK;
-
-	const TD_BACKUPMODE = TD_BACKUPMODE;
-
-	const TD_MOVE_PER = TD_MOVE_PER;
-
-	const TD_GET_PER = TD_GET_PER;
-
-	const TD_UPDATE_PART = TD_UPDATE_PART;
-
-	const TD_KEY_EQUAL_KO = TD_KEY_EQUAL_KO;
-
-	const TD_KEY_NEXT_KO = TD_KEY_NEXT_KO;
-
-	const TD_KEY_PREV_KO = TD_KEY_PREV_KO;
-
-	const TD_KEY_GT_KO = TD_KEY_GT_KO;
-
-	const TD_KEY_GE_KO = TD_KEY_GE_KO;
-
-	const TD_KEY_LT_KO = TD_KEY_LT_KO;
-
-	const TD_KEY_LE_KO = TD_KEY_LE_KO;
-
-	const TD_KEY_FIRST_KO = TD_KEY_FIRST_KO;
-
-	const TD_KEY_LAST_KO = TD_KEY_LAST_KO;
-
-	const TD_CREATE_TEMP = TD_CREATE_TEMP;
-
-	const TD_TABLE_INFO_EX = TD_TABLE_INFO_EX;
-
-	const TD_REC_UPDATEATKEY = TD_REC_UPDATEATKEY;
-
-	const TD_REC_DELLETEATKEY = TD_REC_DELLETEATKEY;
-
-	const TD_KEY_GE_NEXT_MULTI = TD_KEY_GE_NEXT_MULTI;
-
-	const TD_KEY_LE_PREV_MULTI = TD_KEY_LE_PREV_MULTI;
-
-	const TD_CONNECT = TD_CONNECT;
-
-	const TD_BEGIN_SHAPSHOT = TD_BEGIN_SHAPSHOT;
-
-	const TD_END_SNAPSHOT = TD_END_SNAPSHOT;
-
-	const TD_AUTOMEKE_SCHEMA = TD_AUTOMEKE_SCHEMA;
-
-	const TD_GETSERVER_CHARSET = TD_GETSERVER_CHARSET;
-
-	const TD_ADD_SENDBLOB = TD_ADD_SENDBLOB;
-
-	const TD_GET_BLOB_BUF = TD_GET_BLOB_BUF;
-
-	const TD_STASTISTICS = TD_STASTISTICS;
-
-	const TD_KEY_SEEK_MULTI = TD_KEY_SEEK_MULTI;
-
-	const CR_SUBOP_DROP = CR_SUBOP_DROP;
-
-	const CR_SUBOP_RENAME = CR_SUBOP_RENAME;
-
-	const CR_SUBOP_SWAPNAME = CR_SUBOP_SWAPNAME;
-
-	const CR_SUBOP_BY_FILESPEC = CR_SUBOP_BY_FILESPEC;
-
-	const CR_SUBOP_BY_FILESPEC_NOCKECK = CR_SUBOP_BY_FILESPEC_NOCKECK;
-
-	const CR_SUBOP_BY_TABLEDEF = CR_SUBOP_BY_TABLEDEF;
-
-	const CR_SUBOP_BY_TABLEDEF_NOCKECK = CR_SUBOP_BY_TABLEDEF_NOCKECK;
-
-	const CR_SUB_FLAG_EXISTCHECK = CR_SUB_FLAG_EXISTCHECK;
-
-	const TD_ASBLOB_ENDROW = TD_ASBLOB_ENDROW;
-
-	const TD_STSTCS_READ = TD_STSTCS_READ;
-
-	const TD_STSTCS_DISCONNECT_ONE = TD_STSTCS_DISCONNECT_ONE;
-
-	const TD_STSTCS_DISCONNECT_ALL = TD_STSTCS_DISCONNECT_ALL;
-
-	const LG_SUBOP_CONNECT = LG_SUBOP_CONNECT;
-
-	const LG_SUBOP_DISCONNECT = LG_SUBOP_DISCONNECT;
-
-	const LG_SUBOP_NEWCONNECT = LG_SUBOP_NEWCONNECT;
-
 	const ft_string = ft_string;
 
 	const ft_integer = ft_integer;
@@ -331,6 +161,8 @@ abstract class transactd {
 
 	const CMPLOGICAL_CASEINSENSITIVE = CMPLOGICAL_CASEINSENSITIVE;
 
+	const LOCK_BIAS_DEFAULT = LOCK_BIAS_DEFAULT;
+
 	const LOCK_SINGLE_WAIT = LOCK_SINGLE_WAIT;
 
 	const LOCK_SINGLE_NOWAIT = LOCK_SINGLE_NOWAIT;
@@ -349,8 +181,6 @@ abstract class transactd {
 
 	const TRN_ISO_SERIALIZABLE = TRN_ISO_SERIALIZABLE;
 
-	const CONSISTENT_READ = CONSISTENT_READ;
-
 	const SINGLELOCK_READ_COMMITED = SINGLELOCK_READ_COMMITED;
 
 	const MULTILOCK_READ_COMMITED = MULTILOCK_READ_COMMITED;
@@ -365,6 +195,8 @@ abstract class transactd {
 
 	const MULTILOCK_GAP = MULTILOCK_GAP;
 
+	const CONSISTENT_READ = CONSISTENT_READ;
+
 	const MULTILOCK_GAP_SHARE = MULTILOCK_GAP_SHARE;
 
 	const MULTILOCK_NOGAP_SHARE = MULTILOCK_NOGAP_SHARE;
@@ -372,6 +204,14 @@ abstract class transactd {
 	const ROW_LOCK_X = ROW_LOCK_X;
 
 	const ROW_LOCK_S = ROW_LOCK_S;
+
+	const SRV_ISO_READ_UNCOMMITED = SRV_ISO_READ_UNCOMMITED;
+
+	const SRV_ISO_READ_COMMITED = SRV_ISO_READ_COMMITED;
+
+	const SRV_ISO_REPEATABLE_READ = SRV_ISO_REPEATABLE_READ;
+
+	const SRV_ISO_SERIALIZABLE = SRV_ISO_SERIALIZABLE;
 
 	const TD_OPEN_NORMAL = TD_OPEN_NORMAL;
 
@@ -522,6 +362,8 @@ abstract class transactd {
 	const STATUS_INVALID_FIELDNAME = STATUS_INVALID_FIELDNAME;
 
 	const ERROR_TD_INVALID_CLINETHOST = ERROR_TD_INVALID_CLINETHOST;
+
+	const ERROR_NO_DATABASE = ERROR_NO_DATABASE;
 
 	const ERROR_NOSPECIFY_TABLE = ERROR_NOSPECIFY_TABLE;
 
@@ -783,39 +625,6 @@ abstract class transactd {
 }
 
 /* PHP Proxy Classes */
-class trdVersiton {
-	public $_cPtr=null;
-	protected $_pData=array();
-
-	function __set($var,$value) {
-		$func = 'trdVersiton_'.$var.'_set';
-		if (function_exists($func)) return call_user_func($func,$this->_cPtr,$value);
-		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
-	}
-
-	function __get($var) {
-		$func = 'trdVersiton_'.$var.'_get';
-		if (function_exists($func)) return call_user_func($func,$this->_cPtr);
-		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
-	}
-
-	function __isset($var) {
-		if (function_exists('trdVersiton_'.$var.'_get')) return true;
-		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
-	}
-
-	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_trdVersiton') {
-			$this->_cPtr=$res;
-			return;
-		}
-		$this->_cPtr=new_trdVersiton();
-	}
-}
-
 
 // TODO Is this class true ? Not used $this->_cPtr.
 class FLAGS {
@@ -997,14 +806,6 @@ class fielddef extends fielddef_t_my {
 		return fielddef_codePage($this->_cPtr);
 	}
 
-	function varLenBytes() {
-		return fielddef_varLenBytes($this->_cPtr);
-	}
-
-	function blobLenBytes() {
-		return fielddef_blobLenBytes($this->_cPtr);
-	}
-
 	function isStringType() {
 		return fielddef_isStringType($this->_cPtr);
 	}
@@ -1023,6 +824,14 @@ class fielddef extends fielddef_t_my {
 
 	function charsetIndex() {
 		return fielddef_charsetIndex($this->_cPtr);
+	}
+
+	function varLenBytes() {
+		return fielddef_varLenBytes($this->_cPtr);
+	}
+
+	function blobLenBytes() {
+		return fielddef_blobLenBytes($this->_cPtr);
 	}
 
 	function name() {
@@ -1362,7 +1171,7 @@ abstract class nstable {
 		nstable_seek($this->_cPtr,$lockBias);
 	}
 
-	function seekGreater($orEqual,$lockBias=0) {
+	function seekGreater($orEqual,$lockBias=LOCK_BIAS_DEFAULT) {
 		nstable_seekGreater($this->_cPtr,$orEqual,$lockBias);
 	}
 
@@ -2092,6 +1901,14 @@ class nsdatabase {
 		nsdatabase_endSnapshot($this->_cPtr);
 	}
 
+	function trxIsolationServer() {
+		return nsdatabase_trxIsolationServer($this->_cPtr);
+	}
+
+	function trxLockWaitTimeoutServer() {
+		return nsdatabase_trxLockWaitTimeoutServer($this->_cPtr);
+	}
+
 	function tdapErr($hWnd,$retbuf=null) {
 		switch (func_num_args()) {
 		case 1: $r=nsdatabase_tdapErr($this->_cPtr,$hWnd); break;
@@ -2227,6 +2044,10 @@ class database extends nsdatabase {
 
 	function close() {
 		database_close($this->_cPtr);
+	}
+
+	function aclReload() {
+		return database_aclReload($this->_cPtr);
 	}
 
 	function continuous($op=0,$inclideRepfile=false) {
@@ -3036,7 +2857,8 @@ class connectParams {
 		return array_key_exists($var, $this->_pData);
 	}
 
-	function __construct($protocol_or_uri,$hostOrIp=null,$dbname=null,$schemaTable=null) {
+	function __construct($protocol_or_uri,$hostOrIp=null,$dbname=null,$schemaTable=null,
+	                        $username=null,$passwd=null) {
 		if (is_resource($protocol_or_uri) && get_resource_type($protocol_or_uri) === '_p_bzs__db__protocol__tdap__client__connectParams') {
 			$this->_cPtr=$protocol_or_uri;
 			return;
@@ -3045,7 +2867,9 @@ class connectParams {
 		case 1: $this->_cPtr=new_connectParams($protocol_or_uri); break;
 		case 2: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp); break;
 		case 3: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname); break;
-		default: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname,$schemaTable);
+		case 4: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname,$schemaTable);break;
+		case 5: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname,$schemaTable,$username);break;
+		default: $this->_cPtr=new_connectParams($protocol_or_uri,$hostOrIp,$dbname,$schemaTable,$username,$passwd);
 		}
 	}
 

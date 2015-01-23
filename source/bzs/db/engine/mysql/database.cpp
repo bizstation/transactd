@@ -53,8 +53,6 @@ using namespace std;
 #error "MODE_READ_EXCLUSIVE != TD_OPEN_READONLY_EXCLUSIVE"
 #endif
 
-
-
 unsigned int hash(const char* s, size_t len)
 {
     unsigned int h = 0;
@@ -155,7 +153,6 @@ thr_lock_type locktype(bool trn, enum_sql_command cmd)
     return lock_type;
 }
 
-
 bool unlockTables(bool releaseStatementLock, THD* thd, bool rollback, database::tableList* tables)
 {
     if (thd->lock)
@@ -171,7 +168,6 @@ bool unlockTables(bool releaseStatementLock, THD* thd, bool rollback, database::
         {
             for (size_t i=0;i<tables->size();++i)
                 mysql_lock_remove(thd, thd->lock, (*tables)[i]->internalTable());
-
         }else
         {
             mysql_unlock_tables(thd, thd->lock);
@@ -191,7 +187,7 @@ tableCacheCounter database::tableRef;
 database::database(const char* name, short cid)
     : m_dbname(name), m_thd(createThdForThread()), 
       m_inTransaction(0), m_inSnapshot(0), m_stat(0), m_usingExclusive(false),
-      m_inAutoTransaction(NULL), m_trnType(0), m_cid(cid)
+      m_inAutoTransaction(NULL), m_trnType(0), m_cid(cid), m_privilege(0xFFFF)
 {
     m_thd->security_ctx->skip_grants();
 }
@@ -207,6 +203,97 @@ database::~database()
     closeForReopen();
     m_tables.clear(); // It clears ahead of the destructor of m_trn.
     deleteThdForThread(m_thd);
+}
+
+unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
+                                            unsigned char* buf)
+{
+    table* tb2 = NULL;
+    table* tb = NULL;
+    unsigned char* retPtr = NULL;
+    std::string dbname = m_dbname;
+    m_dbname = "mysql";
+    try
+    {
+        use();
+        tb2 = openTable("user", TD_OPEN_READONLY, "");
+        if (tb2)
+        {
+	        tb = useTable(tb2->id(), SQLCOM_SELECT, NULL);
+	        if (tb)
+	        {
+	            tb->setKeyNum((char)0);
+	            std::vector<std::string> keyValues;
+	            keyValues.push_back(host);
+	            keyValues.push_back(user);
+	            tb->setKeyValues(keyValues, -1, NULL);
+	            tb->seekKey(HA_READ_KEY_EXACT, tb->keymap());
+	            if (tb->stat() == 0)
+	            {
+	                int size;
+	                const char* p =  tb->valStr(MYSQL_USER_FIELD_PASSWORD, size);
+	                if (strlen(p))
+	                {
+	                    get_salt_from_password(buf, p);
+	                    retPtr = buf;
+	                }
+	            }
+	            tb->unUse();
+	        }
+            closeTable(tb2);
+        }
+        m_dbname = dbname;
+        return retPtr;
+    }
+    catch (...)
+    {
+    }
+    if (tb)
+        tb->unUse();
+    if (tb2)
+        closeTable(tb2);
+    m_dbname = dbname;
+    return retPtr;
+}
+
+
+// true ok false fail
+bool database::setGrant(const char* host, const char* user)
+{
+    bool ret =  (acl_getroot(m_thd->security_ctx, my_strdup(user, MYF(0)), 
+           my_strdup(host, MYF(0)), my_strdup(host, MYF(0)), (char*)m_dbname.c_str())) == false;
+    if (ret)
+        check_access(m_thd, SELECT_ACL, m_dbname.c_str(), &m_privilege, NULL, false, true);
+                
+    return ret;
+}
+
+// for mysql database only
+short database::aclReload()
+{
+    if (name() != "mysql")
+        return STATUS_ACCESS_DENIED;
+    if(!(m_privilege & GRANT_ACL))
+        return STATUS_ACCESS_DENIED;
+    short ret = STATUS_SUCCESS;
+
+    THD* thdCur = _current_thd();
+    THD* thd = NULL;
+    try
+    {
+        thd = createThdForThread();
+        attachThd(thd);
+        thd->clear_error();
+        acl_reload(thd);
+    }
+    catch (...)
+    {
+        ret = 1;
+    }
+    if (thd)
+        deleteThdForThread(thd);
+    attachThd(thdCur);
+    return ret;
 }
 
 void database::use() const
@@ -304,6 +391,24 @@ void database::changeIntentionLock(table* tb, thr_lock_type lock_type)
     }
 }
 
+inline void database::checkACL(enum_sql_command cmd)
+{
+    switch(cmd)
+    {
+    case SQLCOM_UPDATE: 
+        if (!(m_privilege & UPDATE_ACL)) THROW_BZS_ERROR_WITH_CODE(STATUS_ACCESS_DENIED); 
+        break;             
+    case SQLCOM_INSERT: 
+        if (!(m_privilege & INSERT_ACL)) THROW_BZS_ERROR_WITH_CODE(STATUS_ACCESS_DENIED); 
+        break;             
+    case SQLCOM_DELETE: 
+        if (!(m_privilege & DELETE_ACL)) THROW_BZS_ERROR_WITH_CODE(STATUS_ACCESS_DENIED); 
+        break;
+    default:
+        break;
+    }
+}
+
 /*
 How to set the lock value to InnoDB prebuilt->select_lock_type variable.
 
@@ -331,7 +436,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
 {
     if (index >= (int)m_tables.size())
         THROW_BZS_ERROR_WITH_CODEMSG(1, "Invalid table id.");
-
+                                     
     table* tb = m_tables[index].get();
     if (tb == NULL)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
@@ -362,9 +467,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
         return tb;
     }
 
-    if (tb->m_table == NULL)
-        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
-                                     "Invalid table id.");
+    checkACL(cmd);
     prebuildLocktype(tb, cmd, lck);
     
     if (m_thd->lock == 0)
@@ -572,6 +675,12 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
     m_thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
     tables.init_one_table(m_dbname.c_str(), m_dbname.size(), name.c_str(),
                           name.size(), name.c_str(), TL_READ);
+    if(!(m_privilege & SELECT_ACL) &&
+        (check_grant(m_thd, SELECT_ACL, &tables, FALSE, 1, true)))
+    {
+        m_stat = STATUS_ACCESS_DENIED;
+        return NULL;
+    }
     tables.mdl_request.set_type(MDL_SHARED_READ);
 
     Open_table_context ot_act(m_thd, MYSQL_OPEN_GET_NEW_TABLE);
@@ -581,9 +690,9 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
         m_stat = STATUS_TABLE_NOTOPEN;
         if (ER_LOCK_WAIT_TIMEOUT == m_thd->cp_get_sql_error())
             m_stat = STATUS_CANNOT_LOCK_TABLE;
-        THROW_BZS_ERROR_WITH_CODEMSG(m_stat, name.c_str());
+        return NULL;
     }
-
+    
     // Check owner name
     if (ownerName && ownerName[0])
     {
@@ -608,31 +717,26 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
     sprintf(buf, "%d", tables.table->field[1]->key_length());
     OutputDebugString(buf);
 #endif
+    m_stat = STATUS_SUCCESS;
     return tables.table;
 }
 
 table* database::openTable(const std::string& name, short mode,
                            const char* ownerName)
 {
-    if (existsTable(name))
+    TABLE* t = doOpenTable(name, mode, ownerName);
+    if (t)
     {
-
-        TABLE* t = doOpenTable(name, mode, ownerName);
-        if (t)
-        {
-            boost::shared_ptr<table> tb(
-                new table(t, *this, name, mode, (int)m_tables.size()));
-            m_tables.push_back(tb);
-            m_stat = STATUS_SUCCESS;
-            if (tb->isExclusveMode())
-                ++m_usingExclusive;
-            tableRef.addref(m_dbname, name); // addef first then table open.
-            return tb.get();
-        }
-        return NULL;
+        boost::shared_ptr<table> tb(
+            new table(t, *this, name, mode, (int)m_tables.size()));
+        m_tables.push_back(tb);
+        m_stat = STATUS_SUCCESS;
+        if (tb->isExclusveMode())
+            ++m_usingExclusive;
+        tableRef.addref(m_dbname, name); // addef first then table open.
+        return tb.get();
     }
-    m_stat = STATUS_TABLE_NOTOPEN;
-    THROW_BZS_ERROR_WITH_CODEMSG(m_stat, name.c_str());
+    return NULL;
 }
 
 void database::closeTable(const std::string& name, bool drop)
@@ -685,8 +789,15 @@ void database::closeTable(table* tb)
             }else
                 m_tables[i]->unUse();
             
-            m_tables[i].reset();
+            m_tables[i]->m_table->file->ha_index_or_rnd_end();
 
+            TABLE** tbl;
+            for (tbl= &m_thd->open_tables; *tbl; tbl= &((*tbl)->next))
+                if(*tbl == m_tables[i]->m_table)
+                    break;
+            if (*tbl)
+                close_thread_table(m_thd, tbl);
+            m_tables[i].reset();
             DEBUG_WRITELOG_SP1("CLOSE TABLE table id=%d \n", i);
         }
     }
@@ -725,30 +836,11 @@ void database::reopen()
     }
 }
 
-bool database::existsTable(const std::string& name)
-{
-    char tmp[FN_REFLEN + 1];
-
-    build_table_filename(tmp, sizeof(tmp) - 1, m_dbname.c_str(), name.c_str(),
-                         reg_ext, 0);
-    MY_STAT st;
-    if (mysql_file_stat(0, tmp, &st, MYF(0)))
-        return true;
-    return false;
-}
-
 bool database::existsDatabase()
 {
-    char tmp[FN_REFLEN + 1];
-    size_t len =
-        build_table_filename(tmp, sizeof(tmp) - 1, m_dbname.c_str(), "", "", 0);
-    tmp[len - 1] = 0x00;
-
-    MY_STAT stat;
-    if (mysql_file_stat(0, tmp, &stat, MYF(0)))
-        return true;
-    return false;
+    return !check_db_dir_existence(m_dbname.c_str());
 }
+
 
 class autoincSetup
 {
@@ -776,7 +868,6 @@ unsigned short nisFieldNum(TABLE* tb)
                 return (unsigned short)(tb->s->fields - i - offset);
         return tb->s->fields;
     }
-
     return 0;
 }
 
@@ -1058,8 +1149,8 @@ void* table::record() const
 }
 
 /** if offset and lastVarLenBytes() is non zero that is
- * m_recordFormatType=RF_FIXED_PLUS_VALIABLE_LEN.
- *  ptr is excluding null flag sgement.
+  @m_recordFormatType=RF_FIXED_PLUS_VALIABLE_LEN.
+    ptr is excluding null flag sgement.
  */
 void table::setRecord(void* ptr, unsigned short size, int offset)
 {
@@ -2290,6 +2381,27 @@ uint table::makeBlobFieldList(int fieldNum)
     return count;
 }
 
+inline void setSegmentValue(const KEY_PART_INFO& segment, const std::string& v)
+{
+    segment.field->set_notnull();
+    if (!((v.size() == 1) && (v[0] == 0x00)))
+        segment.field->store(v.c_str(), (uint)v.size(), &my_charset_bin);
+    else
+        segment.field->set_null();
+}
+
+void table::setKeyValues(const std::vector<std::string>& values, int keypart,
+                         const std::string* inValue)
+{
+    KEY& key = m_table->key_info[m_keyNum];
+    for (int i = 0; i < (int)key.user_defined_key_parts; i++)
+        if (i < (int)values.size())
+            setSegmentValue(key.key_part[i], values[i]);
+    if (keypart != -1)
+        setSegmentValue(key.key_part[keypart], *inValue);
+    key_copy(&m_keybuf[0], m_table->record[0], &key, KEYLEN_ALLCOPY);
+}
+
 #ifdef USE_HANDLERSOCKET
 
 int table::fieldIndexByName(const char* name) const
@@ -2310,27 +2422,6 @@ void table::setUseFieldList(const std::string& csv)
     split(values, csv, ",");
     for (int i = 0; i < (int)values.size(); i++)
         addUseField(fieldIndexByName(values[i].c_str()));
-}
-
-inline void setSegmentValue(const KEY_PART_INFO& segment, const std::string& v)
-{
-    segment.field->set_notnull();
-    if (!((v.size() == 1) && (v[0] == 0x00)))
-        segment.field->store(v.c_str(), (uint)v.size(), &my_charset_bin);
-    else
-        segment.field->set_null();
-}
-
-void table::setKeyValues(const std::vector<std::string>& values, int keypart,
-                         const std::string* inValue)
-{
-    KEY& key = m_table->key_info[m_keyNum];
-    for (int i = 0; i < (int)key.user_defined_key_parts; i++)
-        if (i < (int)values.size())
-            setSegmentValue(key.key_part[i], values[i]);
-    if (keypart != -1)
-        setSegmentValue(key.key_part[keypart], *inValue);
-    key_copy(&m_keybuf[0], m_table->record[0], &key, KEYLEN_ALLCOPY);
 }
 
 void table::setValue(int index, const std::string& v, int type)

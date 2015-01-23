@@ -94,8 +94,7 @@ char16_t* wmemcpy(char16_t* dest, const char16_t* src, size_t count);
 #define PSEPARATOR_C '/'
 typedef int HWND;
 #define MAX_PATH 266
-#define MCRTOMM 1000 // for usleep(É sec) to Sleep(msec)
-#define Sleep usleep
+#define Sleep(A) usleep(A*1000)
 #define LoadLibrary(A) dlopen(A, RTLD_LAZY)
 #define LoadLibraryA(A) dlopen(A, RTLD_LAZY)
 #define GetProcAddress(A, B) dlsym(A, B)
@@ -148,7 +147,6 @@ typedef unsigned __int32 char32_t; // 32bit
 #define strlen16 wcslen
 
 /* operating system */
-#define MCRTOMM 1
 #define PSEPARATOR _T("\\")
 #define PSEPARATOR_A "\\"
 #define PSEPARATOR_C '\\'

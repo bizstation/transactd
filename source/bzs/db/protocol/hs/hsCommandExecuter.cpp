@@ -305,13 +305,18 @@ int dbExecuter::commandExec(std::vector<request>& requests,
         case HS_OP_OPEN:
         {
             checkNewHandle(req.handle);
-            database* db = getDatabase(req.db.name, 0 /*cid*/);
+            bool created;
+            database* db = getDatabase(req.db.name, 0 /*cid*/, created);
             m_tb = db->openTable(req.table.name, req.table.openMode, NULL);
-            addHandle(getDatabaseID(0 /*cid*/), m_tb->id(), req.handle);
-            m_tb = getTable(req.handle);
-            m_tb->setUseFieldList(req.table.fields);
-            m_tb->setKeyNum(req.table.key.name);
-            writeStatus(m_tb->stat(), buf, 1);
+            if (m_tb)
+            {
+                addHandle(getDatabaseID(0 /*cid*/), m_tb->id(), req.handle);
+                m_tb = getTable(req.handle);
+                m_tb->setUseFieldList(req.table.fields);
+                m_tb->setKeyNum(req.table.key.name);
+                writeStatus(m_tb->stat(), buf, 1);
+            }else
+                writeStatus(db->stat(), buf, 1);
             break;
         }
         case HS_OP_INSERT:
@@ -565,7 +570,7 @@ inline void setFilterVal(const std::string& src, int& parseMode, request* req)
     parseMode = PARSEREAD_FL_TYPE;
 }
 
-commandExecuter::commandExecuter(__int64 /*parent*/)
+commandExecuter::commandExecuter(netsvc::server::IAppModule* /*mod*/)
     : m_dbExec(new dbExecuter())
 {
 }

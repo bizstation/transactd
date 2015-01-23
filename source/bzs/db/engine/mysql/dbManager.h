@@ -58,11 +58,14 @@ protected:
     mutable std::vector<handle> m_handles;
 
     table* m_tb;
+    std::string m_user;
+    std::string m_host;
+    bool m_authChecked;
 
     database* createDatabase(const char* dbname, short cid) const;
     void releaseDatabase(short cid);
     handle* getHandle(int handle) const;
-    database* getDatabase(const char* dbname, short cid) const;
+    database* getDatabase(const char* dbname, short cid, bool& created) const;
     database* getDatabaseCid(short cid) const;
     int getDatabaseID(short cid) const;
     table* getTable(int handle, enum_sql_command cmd = SQLCOM_SELECT, engine::mysql::rowLockMode* lck=NULL) const;
@@ -78,6 +81,8 @@ protected:
     int ddl_dropTable(database* db, const std::string& tbname,
                       const std::string& sqldbname,
                       const std::string& sqltbname);
+    int ddl_addIndex(database* db, const std::string& tbname,
+                        const std::string& cmd);
     int ddl_renameTable(database* db, const std::string& oldName,
                         const std::string& dbSqlName,
                         const std::string& oldSqlName,

@@ -104,6 +104,10 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
         if ((flags & UNSIGNED_FLAG) || (type == MYSQL_TYPE_YEAR))
             return ft_uinteger;
         return ft_integer;
+    case MYSQL_TYPE_ENUM:
+        return ft_integer;
+    case MYSQL_TYPE_SET:
+        return ft_uinteger;
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
         return ft_float;
@@ -187,9 +191,10 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
             fd.setName(src->fieldName(i));
             fd.len = src->fieldLen(i); // filed->pack_length();
             fd.pos = pos;
-            fd.type = convFieldType(src->fieldType(i), src->fieldFlags(i),
+            fd.type = convFieldType(src->fieldRealType(i), src->fieldFlags(i),
                                     isBinary(src->fieldCharset(i)),
                                     isUnicode(src->fieldCharset(i)));
+            fd.setCharsetIndex(charsetIndex(src->fieldCharset(i).csname));
             pos += fd.len;
             datalen =
                 copyToRecordImage(rec.get(), &fd, sizeof(fielddef), datalen);
@@ -281,6 +286,8 @@ short schemaBuilder::execute(database* db, table* mtb)
                 filename_to_tablename(it->path().stem().string().c_str(), path,
                                       FN_REFLEN);
                 table* tb = db->openTable(path, TD_OPEN_READONLY, NULL);
+                if (!tb)
+                    return db->stat();
                 if (!tb->isView())
                 {
                     if ((stat = insertMetaRecord(mtb, tb, ++id)) != 0)

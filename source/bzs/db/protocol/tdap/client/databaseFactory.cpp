@@ -115,7 +115,6 @@ void onLoadLibrary(void)
         pthread_key_create(&g_tlsiID_SC2, cleanupCharPtr);
     if (tls_getspecific(g_tlsiID_SC3) == NULL)
         pthread_key_create(&g_tlsiID_SC3, cleanupCharPtr);
-
 #endif
 }
 
@@ -123,7 +122,6 @@ void onUnloadLibrary(void)
 {
     bzs::env::deinitCvtProcess();
 #if (defined(__APPLE__) && defined(USETLS))
-    cleanupTls();
     pthread_key_delete(g_tlsiID_SC1);
     pthread_key_delete(g_tlsiID_SC2);
     pthread_key_delete(g_tlsiID_SC3);

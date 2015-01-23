@@ -2771,432 +2771,7 @@ SWIGINTERN bzs::db::protocol::tdap::client::table *bzs_db_protocol_tdap_client_a
 SWIGINTERN bzs::db::protocol::tdap::client::table *bzs_db_protocol_tdap_client_pooledDbManager_table(bzs::db::protocol::tdap::client::pooledDbManager *self,_TCHAR const *name){
     return self->table(name).get();
   }
-static swig_class SwigClassTrdVersiton;
 
-SWIGINTERN VALUE
-_wrap_trdVersiton_cherserServer_set(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  char *arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  char temp2[128] ;
-  int res2 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","cherserServer", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  res2 = SWIG_AsCharArray(argv[0], temp2, 128);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char [128]","cherserServer", 2, argv[0] ));
-  }
-  arg2 = reinterpret_cast< char * >(temp2);
-  if (arg2) memcpy(arg1->cherserServer,arg2,128*sizeof(char));
-  else memset(arg1->cherserServer,0,128*sizeof(char));
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_cherserServer_get(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  char *result = 0 ;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","cherserServer", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  result = (char *)(char *) ((arg1)->cherserServer);
-  {
-    size_t size = SWIG_strnlen(result, 128);
-    
-    
-    
-    vresult = SWIG_FromCharPtrAndSize(result, size);
-  }
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_clMajor_set(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  ushort_td arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned short val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","clMajor", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_short(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "ushort_td","clMajor", 2, argv[0] ));
-  } 
-  arg2 = static_cast< ushort_td >(val2);
-  if (arg1) (arg1)->clMajor = arg2;
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_clMajor_get(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  ushort_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","clMajor", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  result = (ushort_td) ((arg1)->clMajor);
-  vresult = SWIG_From_unsigned_SS_short(static_cast< unsigned short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_clMinor_set(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  ushort_td arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned short val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","clMinor", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_short(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "ushort_td","clMinor", 2, argv[0] ));
-  } 
-  arg2 = static_cast< ushort_td >(val2);
-  if (arg1) (arg1)->clMinor = arg2;
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_clMinor_get(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  ushort_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","clMinor", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  result = (ushort_td) ((arg1)->clMinor);
-  vresult = SWIG_From_unsigned_SS_short(static_cast< unsigned short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_clRelease_set(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  ushort_td arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned short val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","clRelease", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_short(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "ushort_td","clRelease", 2, argv[0] ));
-  } 
-  arg2 = static_cast< ushort_td >(val2);
-  if (arg1) (arg1)->clRelease = arg2;
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_clRelease_get(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  ushort_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","clRelease", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  result = (ushort_td) ((arg1)->clRelease);
-  vresult = SWIG_From_unsigned_SS_short(static_cast< unsigned short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_srvMajor_set(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  ushort_td arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned short val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","srvMajor", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_short(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "ushort_td","srvMajor", 2, argv[0] ));
-  } 
-  arg2 = static_cast< ushort_td >(val2);
-  if (arg1) (arg1)->srvMajor = arg2;
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_srvMajor_get(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  ushort_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","srvMajor", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  result = (ushort_td) ((arg1)->srvMajor);
-  vresult = SWIG_From_unsigned_SS_short(static_cast< unsigned short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_srvMinor_set(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  ushort_td arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned short val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","srvMinor", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_short(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "ushort_td","srvMinor", 2, argv[0] ));
-  } 
-  arg2 = static_cast< ushort_td >(val2);
-  if (arg1) (arg1)->srvMinor = arg2;
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_srvMinor_get(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  ushort_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","srvMinor", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  result = (ushort_td) ((arg1)->srvMinor);
-  vresult = SWIG_From_unsigned_SS_short(static_cast< unsigned short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_srvRelease_set(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  ushort_td arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned short val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","srvRelease", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_short(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "ushort_td","srvRelease", 2, argv[0] ));
-  } 
-  arg2 = static_cast< ushort_td >(val2);
-  if (arg1) (arg1)->srvRelease = arg2;
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_trdVersiton_srvRelease_get(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *arg1 = (trdVersiton *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  ushort_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_trdVersiton, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "trdVersiton *","srvRelease", 1, self )); 
-  }
-  arg1 = reinterpret_cast< trdVersiton * >(argp1);
-  result = (ushort_td) ((arg1)->srvRelease);
-  vresult = SWIG_From_unsigned_SS_short(static_cast< unsigned short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-#ifdef HAVE_RB_DEFINE_ALLOC_FUNC
-SWIGINTERN VALUE
-_wrap_trdVersiton_allocate(VALUE self) {
-#else
-  SWIGINTERN VALUE
-  _wrap_trdVersiton_allocate(int argc, VALUE *argv, VALUE self) {
-#endif
-    
-    
-    VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_trdVersiton);
-#ifndef HAVE_RB_DEFINE_ALLOC_FUNC
-    rb_obj_call_init(vresult, argc, argv);
-#endif
-    return vresult;
-  }
-  
-
-SWIGINTERN VALUE
-_wrap_new_trdVersiton(int argc, VALUE *argv, VALUE self) {
-  trdVersiton *result = 0 ;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  {
-    try {
-      result = (trdVersiton *)new trdVersiton();
-      DATA_PTR(self) = result;
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  return self;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN void
-free_trdVersiton(trdVersiton *arg1) {
-    delete arg1;
-}
 
 static swig_class SwigClassFLAGS;
 
@@ -9798,10 +9373,10 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_nstable_seekGreater__SWIG_0(int argc, VALUE *argv, VALUE self) {
+_wrap_nstable_seekGreater(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
   bool arg2 ;
-  ushort_td arg3 ;
+  ushort_td arg3 = LOCK_BIAS_DEFAULT;
   void *argp1 = 0 ;
   int res1 = 0 ;
   bool val2 ;
@@ -9809,8 +9384,8 @@ _wrap_nstable_seekGreater__SWIG_0(int argc, VALUE *argv, VALUE self) {
   unsigned short val3 ;
   int ecode3 = 0 ;
   
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  if ((argc < 1) || (argc > 2)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1 or 2)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
@@ -9822,11 +9397,13 @@ _wrap_nstable_seekGreater__SWIG_0(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","seekGreater", 2, argv[0] ));
   } 
   arg2 = static_cast< bool >(val2);
-  ecode3 = SWIG_AsVal_unsigned_SS_short(argv[1], &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "ushort_td","seekGreater", 3, argv[1] ));
-  } 
-  arg3 = static_cast< ushort_td >(val3);
+  if (argc == 2) {
+    ecode3 = SWIG_AsVal_unsigned_SS_short(argv[1], &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "ushort_td","seekGreater", 3, argv[1] ));
+    } 
+    arg3 = static_cast< ushort_td >(val3);
+  }
   {
     try {
       (arg1)->seekGreater(arg2,arg3);
@@ -9839,97 +9416,6 @@ _wrap_nstable_seekGreater__SWIG_0(int argc, VALUE *argv, VALUE self) {
     }
   }
   return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_nstable_seekGreater__SWIG_1(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  bool arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bool val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nstable *","seekGreater", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-  ecode2 = SWIG_AsVal_bool(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","seekGreater", 2, argv[0] ));
-  } 
-  arg2 = static_cast< bool >(val2);
-  {
-    try {
-      (arg1)->seekGreater(arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE _wrap_nstable_seekGreater(int nargs, VALUE *args, VALUE self) {
-  int argc;
-  VALUE argv[4];
-  int ii;
-  
-  argc = nargs + 1;
-  argv[0] = self;
-  if (argc > 4) SWIG_fail;
-  for (ii = 1; (ii < argc); ++ii) {
-    argv[ii] = args[ii-1];
-  }
-  if (argc == 2) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      {
-        int res = SWIG_AsVal_bool(argv[1], NULL);
-        _v = SWIG_CheckState(res);
-      }
-      if (_v) {
-        return _wrap_nstable_seekGreater__SWIG_1(nargs, args, self);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      {
-        int res = SWIG_AsVal_bool(argv[1], NULL);
-        _v = SWIG_CheckState(res);
-      }
-      if (_v) {
-        {
-          int res = SWIG_AsVal_unsigned_SS_short(argv[2], NULL);
-          _v = SWIG_CheckState(res);
-        }
-        if (_v) {
-          return _wrap_nstable_seekGreater__SWIG_0(nargs, args, self);
-        }
-      }
-    }
-  }
   
 fail:
   Ruby_Format_OverloadedError( argc, 4, "nstable.seekGreater", 
@@ -9941,10 +9427,10 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_nstable_seekLessThan__SWIG_0(int argc, VALUE *argv, VALUE self) {
+_wrap_nstable_seekLessThan(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
   bool arg2 ;
-  ushort_td arg3 ;
+  ushort_td arg3 = LOCK_BIAS_DEFAULT;
   void *argp1 = 0 ;
   int res1 = 0 ;
   bool val2 ;
@@ -9952,8 +9438,8 @@ _wrap_nstable_seekLessThan__SWIG_0(int argc, VALUE *argv, VALUE self) {
   unsigned short val3 ;
   int ecode3 = 0 ;
   
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  if ((argc < 1) || (argc > 2)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1 or 2)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
@@ -9965,11 +9451,13 @@ _wrap_nstable_seekLessThan__SWIG_0(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","seekLessThan", 2, argv[0] ));
   } 
   arg2 = static_cast< bool >(val2);
-  ecode3 = SWIG_AsVal_unsigned_SS_short(argv[1], &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "ushort_td","seekLessThan", 3, argv[1] ));
-  } 
-  arg3 = static_cast< ushort_td >(val3);
+  if (argc == 2) {
+    ecode3 = SWIG_AsVal_unsigned_SS_short(argv[1], &val3);
+    if (!SWIG_IsOK(ecode3)) {
+      SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "ushort_td","seekLessThan", 3, argv[1] ));
+    } 
+    arg3 = static_cast< ushort_td >(val3);
+  }
   {
     try {
       (arg1)->seekLessThan(arg2,arg3);
@@ -9982,97 +9470,6 @@ _wrap_nstable_seekLessThan__SWIG_0(int argc, VALUE *argv, VALUE self) {
     }
   }
   return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_nstable_seekLessThan__SWIG_1(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  bool arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bool val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nstable *","seekLessThan", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-  ecode2 = SWIG_AsVal_bool(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","seekLessThan", 2, argv[0] ));
-  } 
-  arg2 = static_cast< bool >(val2);
-  {
-    try {
-      (arg1)->seekLessThan(arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE _wrap_nstable_seekLessThan(int nargs, VALUE *args, VALUE self) {
-  int argc;
-  VALUE argv[4];
-  int ii;
-  
-  argc = nargs + 1;
-  argv[0] = self;
-  if (argc > 4) SWIG_fail;
-  for (ii = 1; (ii < argc); ++ii) {
-    argv[ii] = args[ii-1];
-  }
-  if (argc == 2) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      {
-        int res = SWIG_AsVal_bool(argv[1], NULL);
-        _v = SWIG_CheckState(res);
-      }
-      if (_v) {
-        return _wrap_nstable_seekLessThan__SWIG_1(nargs, args, self);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      {
-        int res = SWIG_AsVal_bool(argv[1], NULL);
-        _v = SWIG_CheckState(res);
-      }
-      if (_v) {
-        {
-          int res = SWIG_AsVal_unsigned_SS_short(argv[2], NULL);
-          _v = SWIG_CheckState(res);
-        }
-        if (_v) {
-          return _wrap_nstable_seekLessThan__SWIG_0(nargs, args, self);
-        }
-      }
-    }
-  }
   
 fail:
   Ruby_Format_OverloadedError( argc, 4, "nstable.seekLessThan", 
@@ -18754,6 +18151,74 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_nsdatabase_trxIsolationServer(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned short result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase const *","trxIsolationServer", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
+  {
+    try {
+      result = arg1->trxIsolationServer();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_long(result);
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_nsdatabase_trxLockWaitTimeoutServer(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned short result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase const *","trxLockWaitTimeoutServer", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
+  {
+    try {
+      result = arg1->trxLockWaitTimeoutServer();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_long(result);
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_nsdatabase_tdapErr__SWIG_0(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
   HWND arg2 ;
@@ -20538,6 +20003,40 @@ _wrap_database_close(int argc, VALUE *argv, VALUE self) {
     }
   }
   return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_database_aclReload(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::database *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  short result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::database *","aclReload", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::database * >(argp1);
+  {
+    try {
+      result = (short)arg1->aclReload();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_short(static_cast< short >(result));
+  return vresult;
 fail:
   return Qnil;
 }
@@ -27110,6 +26609,8 @@ _wrap_new_connectParams__SWIG_0(int argc, VALUE *argv, VALUE self) {
   _TCHAR *arg2 = (_TCHAR *) 0 ;
   _TCHAR *arg3 = (_TCHAR *) 0 ;
   _TCHAR *arg4 = (_TCHAR *) 0 ;
+  _TCHAR *arg5 = (_TCHAR *) 0 ;
+  _TCHAR *arg6 = (_TCHAR *) 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
@@ -27122,10 +26623,16 @@ _wrap_new_connectParams__SWIG_0(int argc, VALUE *argv, VALUE self) {
   int res4 ;
   char *buf4 = 0 ;
   int alloc4 = 0 ;
+  int res5 ;
+  char *buf5 = 0 ;
+  int alloc5 = 0 ;
+  int res6 ;
+  char *buf6 = 0 ;
+  int alloc6 = 0 ;
   bzs::db::protocol::tdap::client::connectParams *result = 0 ;
   
-  if ((argc < 4) || (argc > 4)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 4)",argc); SWIG_fail;
+  if ((argc < 4) || (argc > 6)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 4 to 6)",argc); SWIG_fail;
   }
   res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
@@ -27147,9 +26654,23 @@ _wrap_new_connectParams__SWIG_0(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res4), Ruby_Format_TypeError( "", "_TCHAR const *","connectParams", 4, argv[3] ));
   }
   arg4 = reinterpret_cast< _TCHAR * >(buf4);
+  if (argc > 4) {
+      res5 = SWIG_AsCharPtrAndSize(argv[4], &buf5, NULL, &alloc5);
+      if (!SWIG_IsOK(res5)) {
+        SWIG_exception_fail(SWIG_ArgError(res5), Ruby_Format_TypeError( "", "_TCHAR const *","connectParams", 5, argv[4] ));
+      }
+      arg5 = reinterpret_cast< _TCHAR * >(buf5);
+  }
+  if (argc > 5) {
+      res6 = SWIG_AsCharPtrAndSize(argv[5], &buf6, NULL, &alloc6);
+      if (!SWIG_IsOK(res6)) {
+        SWIG_exception_fail(SWIG_ArgError(res6), Ruby_Format_TypeError( "", "_TCHAR const *","connectParams", 6, argv[5] ));
+      }
+      arg6 = reinterpret_cast< _TCHAR * >(buf6);
+  }
   {
     try {
-      result = (bzs::db::protocol::tdap::client::connectParams *)new bzs::db::protocol::tdap::client::connectParams((_TCHAR const *)arg1,(_TCHAR const *)arg2,(_TCHAR const *)arg3,(_TCHAR const *)arg4);
+      result = (bzs::db::protocol::tdap::client::connectParams *)new bzs::db::protocol::tdap::client::connectParams((_TCHAR const *)arg1,(_TCHAR const *)arg2,(_TCHAR const *)arg3,(_TCHAR const *)arg4,(_TCHAR const *)arg5,(_TCHAR const *)arg6);
       DATA_PTR(self) = result;
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
@@ -27163,12 +26684,16 @@ _wrap_new_connectParams__SWIG_0(int argc, VALUE *argv, VALUE self) {
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
   return self;
 fail:
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
   return Qnil;
 }
 
@@ -27228,11 +26753,11 @@ fail:
 
 SWIGINTERN VALUE _wrap_new_connectParams(int nargs, VALUE *args, VALUE self) {
   int argc;
-  VALUE argv[4];
+  VALUE argv[6];
   int ii;
   
   argc = nargs;
-  if (argc > 4) SWIG_fail;
+  if (argc > 6) SWIG_fail;
   for (ii = 0; (ii < argc); ++ii) {
     argv[ii] = args[ii];
   }
@@ -27244,7 +26769,7 @@ SWIGINTERN VALUE _wrap_new_connectParams(int nargs, VALUE *args, VALUE self) {
       return _wrap_new_connectParams__SWIG_1(nargs, args, self);
     }
   }
-  if (argc == 4) {
+  if (argc >= 4) {
     int _v;
     int res = SWIG_AsCharPtrAndSize(argv[0], 0, NULL, 0);
     _v = SWIG_CheckState(res);
@@ -27257,6 +26782,14 @@ SWIGINTERN VALUE _wrap_new_connectParams(int nargs, VALUE *args, VALUE self) {
         if (_v) {
           int res = SWIG_AsCharPtrAndSize(argv[3], 0, NULL, 0);
           _v = SWIG_CheckState(res);
+          if (_v && (argc > 4)) {
+            int res = SWIG_AsCharPtrAndSize(argv[4], 0, NULL, 0);
+            _v = SWIG_CheckState(res);
+          }
+          if (_v && (argc > 5)) {
+            int res = SWIG_AsCharPtrAndSize(argv[5], 0, NULL, 0);
+            _v = SWIG_CheckState(res);
+          }
           if (_v) {
             return _wrap_new_connectParams__SWIG_0(nargs, args, self);
           }
@@ -33871,296 +33404,198 @@ SWIGEXPORT void Init_transactd(void) {
   }
 #endif // HAVE_RB_THREAD_CALL_WITHOUT_GVL || HAVE_RB_THREAD_BLOCKING_REGION
   
-  rb_define_const(mTransactd, "CP_UTF8", SWIG_From_int(static_cast< int >(65001)));
+  rb_define_const(mTransactd, "CP_UTF8", SWIG_From_int(static_cast< int >(CP_UTF8)));
 #ifdef _WIN32
   rb_define_const(mTransactd, "CP_ACP", SWIG_From_int(static_cast< int >(0)));
 #else
   rb_define_const(mTransactd, "CP_ACP", SWIG_From_int(static_cast< int >(65001)));
 #endif
-  rb_define_const(mTransactd, "POS_BLOCK_SIZE", SWIG_From_int(static_cast< int >(128)));
-  rb_define_const(mTransactd, "MAX_KEYLEN", SWIG_From_int(static_cast< int >(0X3FF)));
-  rb_define_const(mTransactd, "TD_OPENTABLE", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "TD_CLOSETABLE", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "TD_REC_INSERT", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "TD_REC_UPDATE", SWIG_From_int(static_cast< int >(3)));
-  rb_define_const(mTransactd, "TD_REC_DELETE", SWIG_From_int(static_cast< int >(4)));
-  rb_define_const(mTransactd, "TD_KEY_SEEK", SWIG_From_int(static_cast< int >(5)));
-  rb_define_const(mTransactd, "TD_KEY_NEXT", SWIG_From_int(static_cast< int >(6)));
-  rb_define_const(mTransactd, "TD_KEY_PREV", SWIG_From_int(static_cast< int >(7)));
-  rb_define_const(mTransactd, "TD_KEY_AFTER", SWIG_From_int(static_cast< int >(8)));
-  rb_define_const(mTransactd, "TD_KEY_OR_AFTER", SWIG_From_int(static_cast< int >(9)));
-  rb_define_const(mTransactd, "TD_KEY_BEFORE", SWIG_From_int(static_cast< int >(10)));
-  rb_define_const(mTransactd, "TD_KEY_OR_BEFORE", SWIG_From_int(static_cast< int >(11)));
-  rb_define_const(mTransactd, "TD_KEY_FIRST", SWIG_From_int(static_cast< int >(12)));
-  rb_define_const(mTransactd, "TD_KEY_LAST", SWIG_From_int(static_cast< int >(13)));
-  rb_define_const(mTransactd, "TD_CREATETABLE", SWIG_From_int(static_cast< int >(14)));
-  rb_define_const(mTransactd, "TD_TABLE_INFO", SWIG_From_int(static_cast< int >(15)));
-  rb_define_const(mTransactd, "TD_SETDIRECTORY", SWIG_From_int(static_cast< int >(17)));
-  rb_define_const(mTransactd, "TD_GETDIRECTORY", SWIG_From_int(static_cast< int >(18)));
-  rb_define_const(mTransactd, "TD_BEGIN_TRANSACTION", SWIG_From_int(static_cast< int >(19)));
-  rb_define_const(mTransactd, "TD_END_TRANSACTION", SWIG_From_int(static_cast< int >(20)));
-  rb_define_const(mTransactd, "TD_ABORT_TRANSACTION", SWIG_From_int(static_cast< int >(21)));
-  rb_define_const(mTransactd, "TD_BOOKMARK", SWIG_From_int(static_cast< int >(22)));
-  rb_define_const(mTransactd, "TD_MOVE_BOOKMARK", SWIG_From_int(static_cast< int >(23)));
-  rb_define_const(mTransactd, "TD_POS_NEXT", SWIG_From_int(static_cast< int >(24)));
-  rb_define_const(mTransactd, "TD_STOP_ENGINE", SWIG_From_int(static_cast< int >(25)));
-  rb_define_const(mTransactd, "TD_VERSION", SWIG_From_int(static_cast< int >(26)));
-  rb_define_const(mTransactd, "TD_UNLOCK", SWIG_From_int(static_cast< int >(27)));
-  rb_define_const(mTransactd, "TD_RESET_CLIENT", SWIG_From_int(static_cast< int >(28)));
-  rb_define_const(mTransactd, "TD_SET_OWNERNAME", SWIG_From_int(static_cast< int >(29)));
-  rb_define_const(mTransactd, "TD_CLEAR_OWNERNAME", SWIG_From_int(static_cast< int >(30)));
-  rb_define_const(mTransactd, "TD_BUILD_INDEX", SWIG_From_int(static_cast< int >(31)));
-  rb_define_const(mTransactd, "TD_DROP_INDEX", SWIG_From_int(static_cast< int >(32)));
-  rb_define_const(mTransactd, "TD_POS_FIRST", SWIG_From_int(static_cast< int >(33)));
-  rb_define_const(mTransactd, "TD_POS_LAST", SWIG_From_int(static_cast< int >(34)));
-  rb_define_const(mTransactd, "TD_POS_PREV", SWIG_From_int(static_cast< int >(35)));
-  rb_define_const(mTransactd, "TD_KEY_NEXT_MULTI", SWIG_From_int(static_cast< int >(36)));
-  rb_define_const(mTransactd, "TD_KEY_PREV_MULTI", SWIG_From_int(static_cast< int >(37)));
-  rb_define_const(mTransactd, "TD_POS_NEXT_MULTI", SWIG_From_int(static_cast< int >(38)));
-  rb_define_const(mTransactd, "TD_POS_PREV_MULTI", SWIG_From_int(static_cast< int >(39)));
-  rb_define_const(mTransactd, "TD_INSERT_BULK", SWIG_From_int(static_cast< int >(40)));
-  rb_define_const(mTransactd, "TD_BACKUPMODE", SWIG_From_int(static_cast< int >(42)));
-  rb_define_const(mTransactd, "TD_MOVE_PER", SWIG_From_int(static_cast< int >(44)));
-  rb_define_const(mTransactd, "TD_GET_PER", SWIG_From_int(static_cast< int >(45)));
-  rb_define_const(mTransactd, "TD_UPDATE_PART", SWIG_From_int(static_cast< int >(53)));
-  rb_define_const(mTransactd, "TD_KEY_EQUAL_KO", SWIG_From_int(static_cast< int >(55)));
-  rb_define_const(mTransactd, "TD_KEY_NEXT_KO", SWIG_From_int(static_cast< int >(56)));
-  rb_define_const(mTransactd, "TD_KEY_PREV_KO", SWIG_From_int(static_cast< int >(57)));
-  rb_define_const(mTransactd, "TD_KEY_GT_KO", SWIG_From_int(static_cast< int >(58)));
-  rb_define_const(mTransactd, "TD_KEY_GE_KO", SWIG_From_int(static_cast< int >(59)));
-  rb_define_const(mTransactd, "TD_KEY_LT_KO", SWIG_From_int(static_cast< int >(60)));
-  rb_define_const(mTransactd, "TD_KEY_LE_KO", SWIG_From_int(static_cast< int >(61)));
-  rb_define_const(mTransactd, "TD_KEY_FIRST_KO", SWIG_From_int(static_cast< int >(62)));
-  rb_define_const(mTransactd, "TD_KEY_LAST_KO", SWIG_From_int(static_cast< int >(63)));
-  rb_define_const(mTransactd, "TD_CREATE_TEMP", SWIG_From_int(static_cast< int >(64)));
-  rb_define_const(mTransactd, "TD_TABLE_INFO_EX", SWIG_From_int(static_cast< int >(65)));
-  rb_define_const(mTransactd, "TD_REC_UPDATEATKEY", SWIG_From_int(static_cast< int >(70)));
-  rb_define_const(mTransactd, "TD_REC_DELLETEATKEY", SWIG_From_int(static_cast< int >(71)));
-  rb_define_const(mTransactd, "TD_KEY_GE_NEXT_MULTI", SWIG_From_int(static_cast< int >(72)));
-  rb_define_const(mTransactd, "TD_KEY_LE_PREV_MULTI", SWIG_From_int(static_cast< int >(73)));
-  rb_define_const(mTransactd, "TD_CONNECT", SWIG_From_int(static_cast< int >(78)));
-  rb_define_const(mTransactd, "TD_BEGIN_SHAPSHOT", SWIG_From_int(static_cast< int >(88)));
-  rb_define_const(mTransactd, "TD_END_SNAPSHOT", SWIG_From_int(static_cast< int >(89)));
-  rb_define_const(mTransactd, "TD_AUTOMEKE_SCHEMA", SWIG_From_int(static_cast< int >(90)));
-  rb_define_const(mTransactd, "TD_GETSERVER_CHARSET", SWIG_From_int(static_cast< int >(91)));
-  rb_define_const(mTransactd, "TD_ADD_SENDBLOB", SWIG_From_int(static_cast< int >(92)));
-  rb_define_const(mTransactd, "TD_GET_BLOB_BUF", SWIG_From_int(static_cast< int >(93)));
-  rb_define_const(mTransactd, "TD_STASTISTICS", SWIG_From_int(static_cast< int >(94)));
-  rb_define_const(mTransactd, "TD_KEY_SEEK_MULTI", SWIG_From_int(static_cast< int >(95)));
-  rb_define_const(mTransactd, "CR_SUBOP_DROP", SWIG_From_int(static_cast< int >(-128)));
-  rb_define_const(mTransactd, "CR_SUBOP_RENAME", SWIG_From_int(static_cast< int >(-127)));
-  rb_define_const(mTransactd, "CR_SUBOP_SWAPNAME", SWIG_From_int(static_cast< int >(-126)));
-  rb_define_const(mTransactd, "CR_SUBOP_BY_FILESPEC", SWIG_From_int(static_cast< int >(-1)));
-  rb_define_const(mTransactd, "CR_SUBOP_BY_FILESPEC_NOCKECK", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "CR_SUBOP_BY_TABLEDEF", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "CR_SUBOP_BY_TABLEDEF_NOCKECK", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "CR_SUB_FLAG_EXISTCHECK", SWIG_From_int(static_cast< int >(-1)));
-  rb_define_const(mTransactd, "TD_ASBLOB_ENDROW", SWIG_From_int(static_cast< int >(-125)));
-  rb_define_const(mTransactd, "TD_STSTCS_READ", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "TD_STSTCS_DISCONNECT_ONE", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "TD_STSTCS_DISCONNECT_ALL", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "LG_SUBOP_CONNECT", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "LG_SUBOP_DISCONNECT", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "LG_SUBOP_NEWCONNECT", SWIG_From_int(static_cast< int >(3)));
-  rb_define_const(mTransactd, "Ft_string", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "Ft_integer", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "Ft_float", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "Ft_date", SWIG_From_int(static_cast< int >(3)));
-  rb_define_const(mTransactd, "Ft_time", SWIG_From_int(static_cast< int >(4)));
-  rb_define_const(mTransactd, "Ft_decimal", SWIG_From_int(static_cast< int >(5)));
-  rb_define_const(mTransactd, "Ft_money", SWIG_From_int(static_cast< int >(6)));
-  rb_define_const(mTransactd, "Ft_logical", SWIG_From_int(static_cast< int >(7)));
-  rb_define_const(mTransactd, "Ft_numeric", SWIG_From_int(static_cast< int >(8)));
-  rb_define_const(mTransactd, "Ft_bfloat", SWIG_From_int(static_cast< int >(9)));
-  rb_define_const(mTransactd, "Ft_lstring", SWIG_From_int(static_cast< int >(10)));
-  rb_define_const(mTransactd, "Ft_zstring", SWIG_From_int(static_cast< int >(11)));
-  rb_define_const(mTransactd, "Ft_note", SWIG_From_int(static_cast< int >(12)));
-  rb_define_const(mTransactd, "Ft_lvar", SWIG_From_int(static_cast< int >(13)));
-  rb_define_const(mTransactd, "Ft_uinteger", SWIG_From_int(static_cast< int >(14)));
-  rb_define_const(mTransactd, "Ft_autoinc", SWIG_From_int(static_cast< int >(15)));
-  rb_define_const(mTransactd, "Ft_bit", SWIG_From_int(static_cast< int >(16)));
-  rb_define_const(mTransactd, "Ft_numericsts", SWIG_From_int(static_cast< int >(17)));
-  rb_define_const(mTransactd, "Ft_numericsa", SWIG_From_int(static_cast< int >(18)));
-  rb_define_const(mTransactd, "Ft_currency", SWIG_From_int(static_cast< int >(19)));
-  rb_define_const(mTransactd, "Ft_timestamp", SWIG_From_int(static_cast< int >(20)));
-  rb_define_const(mTransactd, "Ft_blob", SWIG_From_int(static_cast< int >(21)));
-  rb_define_const(mTransactd, "Ft_reserve22", SWIG_From_int(static_cast< int >(22)));
-  rb_define_const(mTransactd, "Ft_reserve23", SWIG_From_int(static_cast< int >(23)));
-  rb_define_const(mTransactd, "Ft_reserve24", SWIG_From_int(static_cast< int >(24)));
-  rb_define_const(mTransactd, "Ft_wstring", SWIG_From_int(static_cast< int >(25)));
-  rb_define_const(mTransactd, "Ft_wzstring", SWIG_From_int(static_cast< int >(26)));
-  rb_define_const(mTransactd, "Ft_guid", SWIG_From_int(static_cast< int >(27)));
-  rb_define_const(mTransactd, "Ft_datetime", SWIG_From_int(static_cast< int >(30)));
-  rb_define_const(mTransactd, "Ft_myvarchar", SWIG_From_int(static_cast< int >(40)));
-  rb_define_const(mTransactd, "Ft_myvarbinary", SWIG_From_int(static_cast< int >(41)));
-  rb_define_const(mTransactd, "Ft_mywvarchar", SWIG_From_int(static_cast< int >(42)));
-  rb_define_const(mTransactd, "Ft_mywvarbinary", SWIG_From_int(static_cast< int >(43)));
-  rb_define_const(mTransactd, "Ft_mychar", SWIG_From_int(static_cast< int >(44)));
-  rb_define_const(mTransactd, "Ft_mywchar", SWIG_From_int(static_cast< int >(45)));
-  rb_define_const(mTransactd, "Ft_mydate", SWIG_From_int(static_cast< int >(46)));
-  rb_define_const(mTransactd, "Ft_mytime", SWIG_From_int(static_cast< int >(47)));
-  rb_define_const(mTransactd, "Ft_mydatetime", SWIG_From_int(static_cast< int >(48)));
-  rb_define_const(mTransactd, "Ft_mytimestamp", SWIG_From_int(static_cast< int >(49)));
-  rb_define_const(mTransactd, "Ft_mytext", SWIG_From_int(static_cast< int >(50)));
-  rb_define_const(mTransactd, "Ft_myblob", SWIG_From_int(static_cast< int >(51)));
-  rb_define_const(mTransactd, "Ft_autoIncUnsigned", SWIG_From_int(static_cast< int >(52)));
-  rb_define_const(mTransactd, "Ft_myfixedbinary", SWIG_From_int(static_cast< int >(53)));
-  rb_define_const(mTransactd, "Ft_nullindicator", SWIG_From_int(static_cast< int >(255)));
-  rb_define_const(mTransactd, "Charset_none", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "Charset_latin1", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "Charset_ascii", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "Charset_sjis", SWIG_From_int(static_cast< int >(3)));
-  rb_define_const(mTransactd, "Charset_cp932", SWIG_From_int(static_cast< int >(4)));
-  rb_define_const(mTransactd, "Charset_utf8", SWIG_From_int(static_cast< int >(100)));
-  rb_define_const(mTransactd, "Charset_utf8mb4", SWIG_From_int(static_cast< int >(101)));
-  rb_define_const(mTransactd, "Charset_usc2", SWIG_From_int(static_cast< int >(102)));
-  rb_define_const(mTransactd, "CMPLOGICAL_VAR_COMP_ALL", SWIG_From_int(static_cast< int >(16)));
-  rb_define_const(mTransactd, "CMPLOGICAL_CMPACS", SWIG_From_int(static_cast< int >(32)));
-  rb_define_const(mTransactd, "CMPLOGICAL_FIELD", SWIG_From_int(static_cast< int >(64)));
-  rb_define_const(mTransactd, "CMPLOGICAL_CASEINSENSITIVE", SWIG_From_int(static_cast< int >(128)));
-  rb_define_const(mTransactd, "LOCK_SINGLE_WAIT", SWIG_From_int(static_cast< int >(100)));
-  rb_define_const(mTransactd, "LOCK_SINGLE_NOWAIT", SWIG_From_int(static_cast< int >(200)));
-  rb_define_const(mTransactd, "LOCK_MULTI_WAIT", SWIG_From_int(static_cast< int >(300)));
-  rb_define_const(mTransactd, "LOCK_MULTI_NOWAIT", SWIG_From_int(static_cast< int >(400)));
-  rb_define_const(mTransactd, "NOWAIT_WRITE", SWIG_From_int(static_cast< int >(500)));
-  rb_define_const(mTransactd, "PARALLEL_TRN", SWIG_From_int(static_cast< int >(1000)));
-  rb_define_const(mTransactd, "TRN_ISO_READ_COMMITED", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "TRN_ISO_REPEATABLE_READ", SWIG_From_int(static_cast< int >(2000)));
-  rb_define_const(mTransactd, "TRN_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(3000)));
-  rb_define_const(mTransactd, "SINGLELOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(1200)));
-  rb_define_const(mTransactd, "MULTILOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(1400)));
-  rb_define_const(mTransactd, "MULTILOCK_REPEATABLE_READ", SWIG_From_int(static_cast< int >(2000+400)));
-  rb_define_const(mTransactd, "MULTILOCK_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(3000+400)));
-  rb_define_const(mTransactd, "SINGLELOCK_NOGAP", SWIG_From_int(static_cast< int >(200)));
-  rb_define_const(mTransactd, "MULTILOCK_NOGAP", SWIG_From_int(static_cast< int >(400)));
-  rb_define_const(mTransactd, "MULTILOCK_GAP", SWIG_From_int(static_cast< int >(2000+400+400)));
-  rb_define_const(mTransactd, "CONSISTENT_READ", SWIG_From_int(static_cast< int >(4000)));
-  rb_define_const(mTransactd, "MULTILOCK_GAP_SHARE", SWIG_From_int(static_cast< int >(2000)));
-  rb_define_const(mTransactd, "MULTILOCK_NOGAP_SHARE", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "ROW_LOCK_X", SWIG_From_int(static_cast< int >(200)));
-  rb_define_const(mTransactd, "ROW_LOCK_S", SWIG_From_int(static_cast< int >(5000+200)));
-  rb_define_const(mTransactd, "TD_OPEN_NORMAL", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "TD_OPEN_READONLY", SWIG_From_int(static_cast< int >(-2)));
-  rb_define_const(mTransactd, "TD_OPEN_EXCLUSIVE", SWIG_From_int(static_cast< int >(-4)));
-  rb_define_const(mTransactd, "TD_OPEN_READONLY_EXCLUSIVE", SWIG_From_int(static_cast< int >((-2+-4))));
-  rb_define_const(mTransactd, "BT_AL_LEFT", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "BT_AL_CENTER", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "BT_AL_RIGHT", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "STATUS_TABLE_YET_OPEN", SWIG_From_int(static_cast< int >(-3)));
-  rb_define_const(mTransactd, "STATUS_DURING_TRANSACTION", SWIG_From_int(static_cast< int >(-4)));
-  rb_define_const(mTransactd, "STATUS_NO_ACR_UPDATE_DELETE", SWIG_From_int(static_cast< int >(-5)));
-  rb_define_const(mTransactd, "STATUS_NO_ACR_INSERT", SWIG_From_int(static_cast< int >(-6)));
-  rb_define_const(mTransactd, "STATUS_NO_ACR_READ", SWIG_From_int(static_cast< int >(-7)));
-  rb_define_const(mTransactd, "STATUS_CANT_ALLOC_MEMORY", SWIG_From_int(static_cast< int >(-8)));
-  rb_define_const(mTransactd, "STATUS_USE_KEYFIELD", SWIG_From_int(static_cast< int >(-9)));
-  rb_define_const(mTransactd, "STATUS_TOO_MANY_TABLES", SWIG_From_int(static_cast< int >(-10)));
-  rb_define_const(mTransactd, "STATUS_INVARID_PRM_KEY_NUM", SWIG_From_int(static_cast< int >(-11)));
-  rb_define_const(mTransactd, "STATUS_INVARID_PNT_KEY_NUM", SWIG_From_int(static_cast< int >(-12)));
-  rb_define_const(mTransactd, "STATUS_INVARID_REP_KEY_NUM", SWIG_From_int(static_cast< int >(-13)));
-  rb_define_const(mTransactd, "STATUS_INVARID_FIELD_IDX", SWIG_From_int(static_cast< int >(-14)));
-  rb_define_const(mTransactd, "STATUS_ALREADY_DELETED", SWIG_From_int(static_cast< int >(-15)));
-  rb_define_const(mTransactd, "STATUS_LMITS_MAX_TABLES", SWIG_From_int(static_cast< int >(-16)));
-  rb_define_const(mTransactd, "STATUS_DB_YET_OPEN", SWIG_From_int(static_cast< int >(-17)));
-  rb_define_const(mTransactd, "STATUS_TABLENAME_NOTFOUND", SWIG_From_int(static_cast< int >(-18)));
-  rb_define_const(mTransactd, "STATUS_DIFFERENT_DBVERSION", SWIG_From_int(static_cast< int >(-19)));
-  rb_define_const(mTransactd, "STATUS_DUPLICATE_FIELDNAME", SWIG_From_int(static_cast< int >(-20)));
-  rb_define_const(mTransactd, "STATUS_INVALID_TABLE_IDX", SWIG_From_int(static_cast< int >(-21)));
-  rb_define_const(mTransactd, "STATUS_AUTH_DENIED", SWIG_From_int(static_cast< int >(-22)));
-  rb_define_const(mTransactd, "STATUS_TOO_MANY_FIELDS", SWIG_From_int(static_cast< int >(-23)));
-  rb_define_const(mTransactd, "STATUS_FILTERSTRING_ERROR", SWIG_From_int(static_cast< int >(-24)));
-  rb_define_const(mTransactd, "STATUS_INVALID_FIELDLENGTH", SWIG_From_int(static_cast< int >(-25)));
-  rb_define_const(mTransactd, "STATUS_INVALID_KEYTYPE", SWIG_From_int(static_cast< int >(-26)));
-  rb_define_const(mTransactd, "STATUS_LVAR_NOTE_NOT_LAST", SWIG_From_int(static_cast< int >(-27)));
-  rb_define_const(mTransactd, "STATUS_NODEF_FOR_CONVERT", SWIG_From_int(static_cast< int >(-28)));
-  rb_define_const(mTransactd, "STATUS_TRD_NEED_VARLENGTH", SWIG_From_int(static_cast< int >(-29)));
-  rb_define_const(mTransactd, "STATUS_INVALID_VARIABLETABLE", SWIG_From_int(static_cast< int >(-30)));
-  rb_define_const(mTransactd, "STATUS_AUTOINC_SPACE_ERROR", SWIG_From_int(static_cast< int >(-31)));
-  rb_define_const(mTransactd, "STATUS_TOO_LONG_OWNERNAME", SWIG_From_int(static_cast< int >(-32)));
-  rb_define_const(mTransactd, "STATUS_CANT_DEL_FOR_REL", SWIG_From_int(static_cast< int >(-33)));
-  rb_define_const(mTransactd, "STATUS_NO_AUTOINC_SPACE", SWIG_From_int(static_cast< int >(-34)));
-  rb_define_const(mTransactd, "STATUS_INVALID_RECLEN", SWIG_From_int(static_cast< int >(-35)));
-  rb_define_const(mTransactd, "STATUS_INVALID_FIELDVALUE", SWIG_From_int(static_cast< int >(-36)));
-  rb_define_const(mTransactd, "STATUS_INVALID_VALLEN", SWIG_From_int(static_cast< int >(-37)));
-  rb_define_const(mTransactd, "STATUS_FIELDTYPE_NOTSUPPORT", SWIG_From_int(static_cast< int >(-42)));
-  rb_define_const(mTransactd, "STATUS_SUCCESS", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "STATUS_PROGRAM_ERROR", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "STATUS_IO_ERROR", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "STATUS_FILE_NOT_OPENED", SWIG_From_int(static_cast< int >(3)));
-  rb_define_const(mTransactd, "STATUS_NOT_FOUND_TI", SWIG_From_int(static_cast< int >(4)));
-  rb_define_const(mTransactd, "STATUS_DUPPLICATE_KEYVALUE", SWIG_From_int(static_cast< int >(5)));
-  rb_define_const(mTransactd, "STATUS_INVALID_KEYNUM", SWIG_From_int(static_cast< int >(6)));
-  rb_define_const(mTransactd, "STATUS_NO_CURRENT", SWIG_From_int(static_cast< int >(8)));
-  rb_define_const(mTransactd, "STATUS_EOF", SWIG_From_int(static_cast< int >(9)));
-  rb_define_const(mTransactd, "STATUS_TABLE_NOTOPEN", SWIG_From_int(static_cast< int >(12)));
-  rb_define_const(mTransactd, "STATUS_REQUESTER_DEACTIVE", SWIG_From_int(static_cast< int >(20)));
-  rb_define_const(mTransactd, "STATUS_KEYBUFFERTOOSMALL", SWIG_From_int(static_cast< int >(21)));
-  rb_define_const(mTransactd, "STATUS_BUFFERTOOSMALL", SWIG_From_int(static_cast< int >(22)));
-  rb_define_const(mTransactd, "STATUS_CANT_CREATE", SWIG_From_int(static_cast< int >(25)));
-  rb_define_const(mTransactd, "STATUS_NOSUPPORT_OP", SWIG_From_int(static_cast< int >(41)));
-  rb_define_const(mTransactd, "STATUS_INVALID_BOOKMARK", SWIG_From_int(static_cast< int >(43)));
-  rb_define_const(mTransactd, "STATUS_ACCESS_DENIED", SWIG_From_int(static_cast< int >(46)));
-  rb_define_const(mTransactd, "STATUS_INVALID_OWNERNAME", SWIG_From_int(static_cast< int >(51)));
-  rb_define_const(mTransactd, "STATUS_TABLE_EXISTS_ERROR", SWIG_From_int(static_cast< int >(59)));
-  rb_define_const(mTransactd, "STATUS_LIMMIT_OF_REJECT", SWIG_From_int(static_cast< int >(60)));
-  rb_define_const(mTransactd, "STATUS_WARKSPACE_TOO_SMALL", SWIG_From_int(static_cast< int >(61)));
-  rb_define_const(mTransactd, "STATUS_REACHED_FILTER_COND", SWIG_From_int(static_cast< int >(64)));
-  rb_define_const(mTransactd, "STATUS_INVALID_FIELD_OFFSET", SWIG_From_int(static_cast< int >(65)));
-  rb_define_const(mTransactd, "STATUS_CHANGE_CONFLICT", SWIG_From_int(static_cast< int >(80)));
-  rb_define_const(mTransactd, "STATUS_INVALID_LOCKTYPE", SWIG_From_int(static_cast< int >(83)));
-  rb_define_const(mTransactd, "STATUS_LOCK_ERROR", SWIG_From_int(static_cast< int >(84)));
-  rb_define_const(mTransactd, "STATUS_FILE_LOCKED", SWIG_From_int(static_cast< int >(85)));
-  rb_define_const(mTransactd, "STATUS_CANNOT_LOCK_TABLE", SWIG_From_int(static_cast< int >(88)));
-  rb_define_const(mTransactd, "STATUS_INVALID_KEYNAME", SWIG_From_int(static_cast< int >(6)));
-  rb_define_const(mTransactd, "STATUS_INVALID_DATASIZE", SWIG_From_int(static_cast< int >(22)));
-  rb_define_const(mTransactd, "STATUS_INVALID_FIELDNAME", SWIG_From_int(static_cast< int >(65)));
-  rb_define_const(mTransactd, "ERROR_TD_INVALID_CLINETHOST", SWIG_From_int(static_cast< int >(171)));
-  rb_define_const(mTransactd, "ERROR_NOSPECIFY_TABLE", SWIG_From_int(static_cast< int >(176)));
-  rb_define_const(mTransactd, "ERROR_LOAD_CLIBRARY", SWIG_From_int(static_cast< int >(200)));
-  rb_define_const(mTransactd, "ERROR_INDEX_RND_INIT", SWIG_From_int(static_cast< int >(201)));
-  rb_define_const(mTransactd, "STATUS_ALREADY_INSNAPSHOT", SWIG_From_int(static_cast< int >(204)));
-  rb_define_const(mTransactd, "STATUS_ALREADY_INTRANSACTION", SWIG_From_int(static_cast< int >(205)));
-  rb_define_const(mTransactd, "SERVER_CLIENT_NOT_COMPATIBLE", SWIG_From_int(static_cast< int >(3003)));
-  rb_define_const(mTransactd, "NET_BAD_SRB_FORMAT", SWIG_From_int(static_cast< int >(3021)));
-  rb_define_const(mTransactd, "ERROR_TD_HOSTNAME_NOT_FOUND", SWIG_From_int(static_cast< int >(3103)));
-  rb_define_const(mTransactd, "ERROR_TD_CONNECTION_FAILURE", SWIG_From_int(static_cast< int >(3106)));
-  rb_define_const(mTransactd, "ERROR_TD_NOT_CONNECTED", SWIG_From_int(static_cast< int >(3110)));
-  rb_define_const(mTransactd, "TRANSACTD_SCHEMANAME", SWIG_FromCharPtr("transactd_schema"));
-  rb_define_const(mTransactd, "TYPE_SCHEMA_BDF", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "TYPE_SCHEMA_DDF", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "FILTER_CURRENT_TYPE_NOTINC", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "FILTER_CURRENT_TYPE_INC", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "FILTER_CURRENT_TYPE_NOBOOKMARK", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "NIS_FILED_NAME", SWIG_FromCharPtr("$nf"));
-  rb_define_const(mTransactd, "OWNERNAME_SIZE", SWIG_From_int(static_cast< int >(12)));
-  rb_define_const(mTransactd, "TD_BACKUP_START", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "TD_BACKUP_END", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "TD_BACKUP_MODE_OK", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "TD_BACKUP_MODE_NOT_SUPPORT", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "TD_BACKUP_MODE_BUSY", SWIG_From_int(static_cast< int >(88)));
-  rb_define_const(mTransactd, "TD_BACKUP_MODE_NOT_PERMIT", SWIG_From_int(static_cast< int >(41)));
-  rb_define_const(mTransactd, "TD_BACKUP_MODE_SERVER_ERROR", SWIG_From_int(static_cast< int >(91)));
-  
-  SwigClassTrdVersiton.klass = rb_define_class_under(mTransactd, "TrdVersiton", rb_cObject);
-  SWIG_TypeClientData(SWIGTYPE_p_trdVersiton, (void *) &SwigClassTrdVersiton);
-  rb_define_alloc_func(SwigClassTrdVersiton.klass, _wrap_trdVersiton_allocate);
-  rb_define_method(SwigClassTrdVersiton.klass, "initialize", VALUEFUNC(_wrap_new_trdVersiton), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "cherserServer=", VALUEFUNC(_wrap_trdVersiton_cherserServer_set), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "cherserServer", VALUEFUNC(_wrap_trdVersiton_cherserServer_get), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "clMajor=", VALUEFUNC(_wrap_trdVersiton_clMajor_set), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "clMajor", VALUEFUNC(_wrap_trdVersiton_clMajor_get), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "clMinor=", VALUEFUNC(_wrap_trdVersiton_clMinor_set), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "clMinor", VALUEFUNC(_wrap_trdVersiton_clMinor_get), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "clRelease=", VALUEFUNC(_wrap_trdVersiton_clRelease_set), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "clRelease", VALUEFUNC(_wrap_trdVersiton_clRelease_get), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "srvMajor=", VALUEFUNC(_wrap_trdVersiton_srvMajor_set), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "srvMajor", VALUEFUNC(_wrap_trdVersiton_srvMajor_get), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "srvMinor=", VALUEFUNC(_wrap_trdVersiton_srvMinor_set), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "srvMinor", VALUEFUNC(_wrap_trdVersiton_srvMinor_get), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "srvRelease=", VALUEFUNC(_wrap_trdVersiton_srvRelease_set), -1);
-  rb_define_method(SwigClassTrdVersiton.klass, "srvRelease", VALUEFUNC(_wrap_trdVersiton_srvRelease_get), -1);
-  SwigClassTrdVersiton.mark = 0;
-  SwigClassTrdVersiton.destroy = (void (*)(void *)) free_trdVersiton;
-  SwigClassTrdVersiton.trackObjects = 0;
+  rb_define_const(mTransactd, "TD_ACL_RELOAD", SWIG_From_int(static_cast< int >(TD_ACL_RELOAD)));  
+  rb_define_const(mTransactd, "Ft_string", SWIG_From_int(static_cast< int >(ft_string)));
+  rb_define_const(mTransactd, "Ft_integer", SWIG_From_int(static_cast< int >(ft_integer)));
+  rb_define_const(mTransactd, "Ft_float", SWIG_From_int(static_cast< int >(ft_float)));
+  rb_define_const(mTransactd, "Ft_date", SWIG_From_int(static_cast< int >(ft_date)));
+  rb_define_const(mTransactd, "Ft_time", SWIG_From_int(static_cast< int >(ft_time)));
+  rb_define_const(mTransactd, "Ft_decimal", SWIG_From_int(static_cast< int >(ft_decimal)));
+  rb_define_const(mTransactd, "Ft_money", SWIG_From_int(static_cast< int >(ft_money)));
+  rb_define_const(mTransactd, "Ft_logical", SWIG_From_int(static_cast< int >(ft_logical)));
+  rb_define_const(mTransactd, "Ft_numeric", SWIG_From_int(static_cast< int >(ft_numeric)));
+  rb_define_const(mTransactd, "Ft_bfloat", SWIG_From_int(static_cast< int >(ft_bfloat)));
+  rb_define_const(mTransactd, "Ft_lstring", SWIG_From_int(static_cast< int >(ft_lstring)));
+  rb_define_const(mTransactd, "Ft_zstring", SWIG_From_int(static_cast< int >(ft_zstring)));
+  rb_define_const(mTransactd, "Ft_note", SWIG_From_int(static_cast< int >(ft_note)));
+  rb_define_const(mTransactd, "Ft_lvar", SWIG_From_int(static_cast< int >(ft_lvar)));
+  rb_define_const(mTransactd, "Ft_uinteger", SWIG_From_int(static_cast< int >(ft_uinteger)));
+  rb_define_const(mTransactd, "Ft_autoinc", SWIG_From_int(static_cast< int >(ft_autoinc)));
+  rb_define_const(mTransactd, "Ft_bit", SWIG_From_int(static_cast< int >(ft_bit)));
+  rb_define_const(mTransactd, "Ft_numericsts", SWIG_From_int(static_cast< int >(ft_numericsts)));
+  rb_define_const(mTransactd, "Ft_numericsa", SWIG_From_int(static_cast< int >(ft_numericsa)));
+  rb_define_const(mTransactd, "Ft_currency", SWIG_From_int(static_cast< int >(ft_currency)));
+  rb_define_const(mTransactd, "Ft_timestamp", SWIG_From_int(static_cast< int >(ft_timestamp)));
+  rb_define_const(mTransactd, "Ft_blob", SWIG_From_int(static_cast< int >(ft_blob)));
+  rb_define_const(mTransactd, "Ft_reserve22", SWIG_From_int(static_cast< int >(ft_reserve22)));
+  rb_define_const(mTransactd, "Ft_reserve23", SWIG_From_int(static_cast< int >(ft_reserve23)));
+  rb_define_const(mTransactd, "Ft_reserve24", SWIG_From_int(static_cast< int >(ft_reserve24)));
+  rb_define_const(mTransactd, "Ft_wstring", SWIG_From_int(static_cast< int >(ft_wstring)));
+  rb_define_const(mTransactd, "Ft_wzstring", SWIG_From_int(static_cast< int >(ft_wzstring)));
+  rb_define_const(mTransactd, "Ft_guid", SWIG_From_int(static_cast< int >(ft_guid)));
+  rb_define_const(mTransactd, "Ft_datetime", SWIG_From_int(static_cast< int >(ft_datetime)));
+  rb_define_const(mTransactd, "Ft_myvarchar", SWIG_From_int(static_cast< int >(ft_myvarchar)));
+  rb_define_const(mTransactd, "Ft_myvarbinary", SWIG_From_int(static_cast< int >(ft_myvarbinary)));
+  rb_define_const(mTransactd, "Ft_mywvarchar", SWIG_From_int(static_cast< int >(ft_mywvarchar)));
+  rb_define_const(mTransactd, "Ft_mywvarbinary", SWIG_From_int(static_cast< int >(ft_mywvarbinary)));
+  rb_define_const(mTransactd, "Ft_mychar", SWIG_From_int(static_cast< int >(ft_mychar)));
+  rb_define_const(mTransactd, "Ft_mywchar", SWIG_From_int(static_cast< int >(ft_mywchar)));
+  rb_define_const(mTransactd, "Ft_mydate", SWIG_From_int(static_cast< int >(ft_mydate)));
+  rb_define_const(mTransactd, "Ft_mytime", SWIG_From_int(static_cast< int >(ft_mytime)));
+  rb_define_const(mTransactd, "Ft_mydatetime", SWIG_From_int(static_cast< int >(ft_mydatetime)));
+  rb_define_const(mTransactd, "Ft_mytimestamp", SWIG_From_int(static_cast< int >(ft_mytimestamp)));
+  rb_define_const(mTransactd, "Ft_mytext", SWIG_From_int(static_cast< int >(ft_mytext)));
+  rb_define_const(mTransactd, "Ft_myblob", SWIG_From_int(static_cast< int >(ft_myblob)));
+  rb_define_const(mTransactd, "Ft_autoIncUnsigned", SWIG_From_int(static_cast< int >(ft_autoIncUnsigned)));
+  rb_define_const(mTransactd, "Ft_myfixedbinary", SWIG_From_int(static_cast< int >(ft_myfixedbinary)));
+  rb_define_const(mTransactd, "Ft_nullindicator", SWIG_From_int(static_cast< int >(ft_nullindicator)));
+  rb_define_const(mTransactd, "Charset_none", SWIG_From_int(static_cast< int >(charset_none)));
+  rb_define_const(mTransactd, "Charset_latin1", SWIG_From_int(static_cast< int >(charset_latin1)));
+  rb_define_const(mTransactd, "Charset_ascii", SWIG_From_int(static_cast< int >(charset_ascii)));
+  rb_define_const(mTransactd, "Charset_sjis", SWIG_From_int(static_cast< int >(charset_sjis)));
+  rb_define_const(mTransactd, "Charset_cp932", SWIG_From_int(static_cast< int >(charset_cp932)));
+  rb_define_const(mTransactd, "Charset_utf8", SWIG_From_int(static_cast< int >(charset_utf8)));
+  rb_define_const(mTransactd, "Charset_utf8mb4", SWIG_From_int(static_cast< int >(charset_utf8mb4)));
+  rb_define_const(mTransactd, "Charset_usc2", SWIG_From_int(static_cast< int >(charset_usc2)));
+  rb_define_const(mTransactd, "CMPLOGICAL_VAR_COMP_ALL", SWIG_From_int(static_cast< int >(CMPLOGICAL_VAR_COMP_ALL)));
+  rb_define_const(mTransactd, "CMPLOGICAL_CMPACS", SWIG_From_int(static_cast< int >(CMPLOGICAL_CMPACS)));
+  rb_define_const(mTransactd, "CMPLOGICAL_FIELD", SWIG_From_int(static_cast< int >(CMPLOGICAL_FIELD)));
+  rb_define_const(mTransactd, "CMPLOGICAL_CASEINSENSITIVE", SWIG_From_int(static_cast< int >(CMPLOGICAL_CASEINSENSITIVE)));
+  rb_define_const(mTransactd, "LOCK_BIAS_DEFAULT", SWIG_From_int(static_cast< int >(LOCK_BIAS_DEFAULT)));  
+  rb_define_const(mTransactd, "LOCK_SINGLE_WAIT", SWIG_From_int(static_cast< int >(LOCK_SINGLE_WAIT)));
+  rb_define_const(mTransactd, "LOCK_SINGLE_NOWAIT", SWIG_From_int(static_cast< int >(LOCK_SINGLE_NOWAIT)));
+  rb_define_const(mTransactd, "LOCK_MULTI_WAIT", SWIG_From_int(static_cast< int >(LOCK_MULTI_WAIT)));
+  rb_define_const(mTransactd, "LOCK_MULTI_NOWAIT", SWIG_From_int(static_cast< int >(LOCK_MULTI_NOWAIT)));
+  rb_define_const(mTransactd, "NOWAIT_WRITE", SWIG_From_int(static_cast< int >(NOWAIT_WRITE)));
+  rb_define_const(mTransactd, "PARALLEL_TRN", SWIG_From_int(static_cast< int >(PARALLEL_TRN)));
+  rb_define_const(mTransactd, "TRN_ISO_READ_COMMITED", SWIG_From_int(static_cast< int >(TRN_ISO_READ_COMMITED)));
+  rb_define_const(mTransactd, "TRN_ISO_REPEATABLE_READ", SWIG_From_int(static_cast< int >(TRN_ISO_REPEATABLE_READ)));
+  rb_define_const(mTransactd, "TRN_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(TRN_ISO_SERIALIZABLE)));
+  rb_define_const(mTransactd, "SINGLELOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(SINGLELOCK_READ_COMMITED)));
+  rb_define_const(mTransactd, "MULTILOCK_READ_COMMITED", SWIG_From_int(static_cast< int >(MULTILOCK_READ_COMMITED)));
+  rb_define_const(mTransactd, "MULTILOCK_REPEATABLE_READ", SWIG_From_int(static_cast< int >(MULTILOCK_REPEATABLE_READ)));
+  rb_define_const(mTransactd, "MULTILOCK_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(MULTILOCK_ISO_SERIALIZABLE)));
+  rb_define_const(mTransactd, "SINGLELOCK_NOGAP", SWIG_From_int(static_cast< int >(SINGLELOCK_NOGAP)));
+  rb_define_const(mTransactd, "MULTILOCK_NOGAP", SWIG_From_int(static_cast< int >(MULTILOCK_NOGAP)));
+  rb_define_const(mTransactd, "MULTILOCK_GAP", SWIG_From_int(static_cast< int >(MULTILOCK_GAP)));
+  rb_define_const(mTransactd, "CONSISTENT_READ", SWIG_From_int(static_cast< int >(CONSISTENT_READ)));
+  rb_define_const(mTransactd, "MULTILOCK_GAP_SHARE", SWIG_From_int(static_cast< int >(MULTILOCK_GAP_SHARE)));
+  rb_define_const(mTransactd, "MULTILOCK_NOGAP_SHARE", SWIG_From_int(static_cast< int >(MULTILOCK_NOGAP_SHARE)));
+  rb_define_const(mTransactd, "ROW_LOCK_X", SWIG_From_int(static_cast< int >(ROW_LOCK_X)));
+  rb_define_const(mTransactd, "ROW_LOCK_S", SWIG_From_int(static_cast< int >(ROW_LOCK_S)));
+  rb_define_const(mTransactd, "SRV_ISO_READ_UNCOMMITED", SWIG_From_int(static_cast< int >(SRV_ISO_READ_UNCOMMITED)));
+  rb_define_const(mTransactd, "SRV_ISO_READ_COMMITED", SWIG_From_int(static_cast< int >(SRV_ISO_READ_COMMITED)));
+  rb_define_const(mTransactd, "SRV_ISO_REPEATABLE_READ", SWIG_From_int(static_cast< int >(SRV_ISO_REPEATABLE_READ)));
+  rb_define_const(mTransactd, "SRV_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(SRV_ISO_SERIALIZABLE)));
+  rb_define_const(mTransactd, "TD_OPEN_NORMAL", SWIG_From_int(static_cast< int >(TD_OPEN_NORMAL)));
+  rb_define_const(mTransactd, "TD_OPEN_READONLY", SWIG_From_int(static_cast< int >(TD_OPEN_READONLY)));
+  rb_define_const(mTransactd, "TD_OPEN_EXCLUSIVE", SWIG_From_int(static_cast< int >(TD_OPEN_EXCLUSIVE)));
+  rb_define_const(mTransactd, "TD_OPEN_READONLY_EXCLUSIVE", SWIG_From_int(static_cast< int >(TD_OPEN_READONLY_EXCLUSIVE)));
+  rb_define_const(mTransactd, "BT_AL_LEFT", SWIG_From_int(static_cast< int >(BT_AL_LEFT)));
+  rb_define_const(mTransactd, "BT_AL_CENTER", SWIG_From_int(static_cast< int >(BT_AL_CENTER)));
+  rb_define_const(mTransactd, "BT_AL_RIGHT", SWIG_From_int(static_cast< int >(BT_AL_RIGHT)));
+  rb_define_const(mTransactd, "STATUS_TABLE_YET_OPEN", SWIG_From_int(static_cast< int >(STATUS_TABLE_YET_OPEN)));
+  rb_define_const(mTransactd, "STATUS_DURING_TRANSACTION", SWIG_From_int(static_cast< int >(STATUS_DURING_TRANSACTION)));
+  rb_define_const(mTransactd, "STATUS_NO_ACR_UPDATE_DELETE", SWIG_From_int(static_cast< int >(STATUS_NO_ACR_UPDATE_DELETE)));
+  rb_define_const(mTransactd, "STATUS_NO_ACR_INSERT", SWIG_From_int(static_cast< int >(STATUS_NO_ACR_INSERT)));
+  rb_define_const(mTransactd, "STATUS_NO_ACR_READ", SWIG_From_int(static_cast< int >(STATUS_NO_ACR_READ)));
+  rb_define_const(mTransactd, "STATUS_CANT_ALLOC_MEMORY", SWIG_From_int(static_cast< int >(STATUS_CANT_ALLOC_MEMORY)));
+  rb_define_const(mTransactd, "STATUS_USE_KEYFIELD", SWIG_From_int(static_cast< int >(STATUS_USE_KEYFIELD)));
+  rb_define_const(mTransactd, "STATUS_TOO_MANY_TABLES", SWIG_From_int(static_cast< int >(STATUS_TOO_MANY_TABLES)));
+  rb_define_const(mTransactd, "STATUS_INVARID_PRM_KEY_NUM", SWIG_From_int(static_cast< int >(STATUS_INVARID_PRM_KEY_NUM)));
+  rb_define_const(mTransactd, "STATUS_INVARID_PNT_KEY_NUM", SWIG_From_int(static_cast< int >(STATUS_INVARID_PNT_KEY_NUM)));
+  rb_define_const(mTransactd, "STATUS_INVARID_REP_KEY_NUM", SWIG_From_int(static_cast< int >(STATUS_INVARID_REP_KEY_NUM)));
+  rb_define_const(mTransactd, "STATUS_INVARID_FIELD_IDX", SWIG_From_int(static_cast< int >(STATUS_INVARID_FIELD_IDX)));
+  rb_define_const(mTransactd, "STATUS_ALREADY_DELETED", SWIG_From_int(static_cast< int >(STATUS_ALREADY_DELETED)));
+  rb_define_const(mTransactd, "STATUS_LMITS_MAX_TABLES", SWIG_From_int(static_cast< int >(STATUS_LMITS_MAX_TABLES)));
+  rb_define_const(mTransactd, "STATUS_DB_YET_OPEN", SWIG_From_int(static_cast< int >(STATUS_DB_YET_OPEN)));
+  rb_define_const(mTransactd, "STATUS_TABLENAME_NOTFOUND", SWIG_From_int(static_cast< int >(STATUS_TABLENAME_NOTFOUND)));
+  rb_define_const(mTransactd, "STATUS_DIFFERENT_DBVERSION", SWIG_From_int(static_cast< int >(STATUS_DIFFERENT_DBVERSION)));
+  rb_define_const(mTransactd, "STATUS_DUPLICATE_FIELDNAME", SWIG_From_int(static_cast< int >(STATUS_DUPLICATE_FIELDNAME)));
+  rb_define_const(mTransactd, "STATUS_INVALID_TABLE_IDX", SWIG_From_int(static_cast< int >(STATUS_INVALID_TABLE_IDX)));
+  rb_define_const(mTransactd, "STATUS_AUTH_DENIED", SWIG_From_int(static_cast< int >(STATUS_AUTH_DENIED)));
+  rb_define_const(mTransactd, "STATUS_TOO_MANY_FIELDS", SWIG_From_int(static_cast< int >(STATUS_TOO_MANY_FIELDS)));
+  rb_define_const(mTransactd, "STATUS_FILTERSTRING_ERROR", SWIG_From_int(static_cast< int >(STATUS_FILTERSTRING_ERROR)));
+  rb_define_const(mTransactd, "STATUS_INVALID_FIELDLENGTH", SWIG_From_int(static_cast< int >(STATUS_INVALID_FIELDLENGTH)));
+  rb_define_const(mTransactd, "STATUS_INVALID_KEYTYPE", SWIG_From_int(static_cast< int >(STATUS_INVALID_KEYTYPE)));
+  rb_define_const(mTransactd, "STATUS_LVAR_NOTE_NOT_LAST", SWIG_From_int(static_cast< int >(STATUS_LVAR_NOTE_NOT_LAST)));
+  rb_define_const(mTransactd, "STATUS_NODEF_FOR_CONVERT", SWIG_From_int(static_cast< int >(STATUS_NODEF_FOR_CONVERT)));
+  rb_define_const(mTransactd, "STATUS_TRD_NEED_VARLENGTH", SWIG_From_int(static_cast< int >(STATUS_TRD_NEED_VARLENGTH)));
+  rb_define_const(mTransactd, "STATUS_INVALID_VARIABLETABLE", SWIG_From_int(static_cast< int >(STATUS_INVALID_VARIABLETABLE)));
+  rb_define_const(mTransactd, "STATUS_AUTOINC_SPACE_ERROR", SWIG_From_int(static_cast< int >(STATUS_AUTOINC_SPACE_ERROR)));
+  rb_define_const(mTransactd, "STATUS_TOO_LONG_OWNERNAME", SWIG_From_int(static_cast< int >(STATUS_TOO_LONG_OWNERNAME)));
+  rb_define_const(mTransactd, "STATUS_CANT_DEL_FOR_REL", SWIG_From_int(static_cast< int >(STATUS_CANT_DEL_FOR_REL)));
+  rb_define_const(mTransactd, "STATUS_NO_AUTOINC_SPACE", SWIG_From_int(static_cast< int >(STATUS_NO_AUTOINC_SPACE)));
+  rb_define_const(mTransactd, "STATUS_INVALID_RECLEN", SWIG_From_int(static_cast< int >(STATUS_INVALID_RECLEN)));
+  rb_define_const(mTransactd, "STATUS_INVALID_FIELDVALUE", SWIG_From_int(static_cast< int >(STATUS_INVALID_FIELDVALUE)));
+  rb_define_const(mTransactd, "STATUS_INVALID_VALLEN", SWIG_From_int(static_cast< int >(STATUS_INVALID_VALLEN)));
+  rb_define_const(mTransactd, "STATUS_FIELDTYPE_NOTSUPPORT", SWIG_From_int(static_cast< int >(STATUS_FIELDTYPE_NOTSUPPORT)));
+  rb_define_const(mTransactd, "STATUS_SUCCESS", SWIG_From_int(static_cast< int >(STATUS_SUCCESS)));
+  rb_define_const(mTransactd, "STATUS_PROGRAM_ERROR", SWIG_From_int(static_cast< int >(STATUS_PROGRAM_ERROR)));
+  rb_define_const(mTransactd, "STATUS_IO_ERROR", SWIG_From_int(static_cast< int >(STATUS_IO_ERROR)));
+  rb_define_const(mTransactd, "STATUS_FILE_NOT_OPENED", SWIG_From_int(static_cast< int >(STATUS_FILE_NOT_OPENED)));
+  rb_define_const(mTransactd, "STATUS_NOT_FOUND_TI", SWIG_From_int(static_cast< int >(STATUS_NOT_FOUND_TI)));
+  rb_define_const(mTransactd, "STATUS_DUPPLICATE_KEYVALUE", SWIG_From_int(static_cast< int >(STATUS_DUPPLICATE_KEYVALUE)));
+  rb_define_const(mTransactd, "STATUS_INVALID_KEYNUM", SWIG_From_int(static_cast< int >(STATUS_INVALID_KEYNUM)));
+  rb_define_const(mTransactd, "STATUS_NO_CURRENT", SWIG_From_int(static_cast< int >(STATUS_NO_CURRENT)));
+  rb_define_const(mTransactd, "STATUS_EOF", SWIG_From_int(static_cast< int >(STATUS_EOF)));
+  rb_define_const(mTransactd, "STATUS_TABLE_NOTOPEN", SWIG_From_int(static_cast< int >(STATUS_TABLE_NOTOPEN)));
+  rb_define_const(mTransactd, "STATUS_REQUESTER_DEACTIVE", SWIG_From_int(static_cast< int >(STATUS_REQUESTER_DEACTIVE)));
+  rb_define_const(mTransactd, "STATUS_KEYBUFFERTOOSMALL", SWIG_From_int(static_cast< int >(STATUS_KEYBUFFERTOOSMALL)));
+  rb_define_const(mTransactd, "STATUS_BUFFERTOOSMALL", SWIG_From_int(static_cast< int >(STATUS_BUFFERTOOSMALL)));
+  rb_define_const(mTransactd, "STATUS_CANT_CREATE", SWIG_From_int(static_cast< int >(STATUS_CANT_CREATE)));
+  rb_define_const(mTransactd, "STATUS_NOSUPPORT_OP", SWIG_From_int(static_cast< int >(STATUS_NOSUPPORT_OP)));
+  rb_define_const(mTransactd, "STATUS_INVALID_BOOKMARK", SWIG_From_int(static_cast< int >(STATUS_INVALID_BOOKMARK)));
+  rb_define_const(mTransactd, "STATUS_ACCESS_DENIED", SWIG_From_int(static_cast< int >(STATUS_ACCESS_DENIED)));
+  rb_define_const(mTransactd, "STATUS_INVALID_OWNERNAME", SWIG_From_int(static_cast< int >(STATUS_INVALID_OWNERNAME)));
+  rb_define_const(mTransactd, "STATUS_TABLE_EXISTS_ERROR", SWIG_From_int(static_cast< int >(STATUS_TABLE_EXISTS_ERROR)));
+  rb_define_const(mTransactd, "STATUS_LIMMIT_OF_REJECT", SWIG_From_int(static_cast< int >(STATUS_LIMMIT_OF_REJECT)));
+  rb_define_const(mTransactd, "STATUS_WARKSPACE_TOO_SMALL", SWIG_From_int(static_cast< int >(STATUS_WARKSPACE_TOO_SMALL)));
+  rb_define_const(mTransactd, "STATUS_REACHED_FILTER_COND", SWIG_From_int(static_cast< int >(STATUS_REACHED_FILTER_COND)));
+  rb_define_const(mTransactd, "STATUS_INVALID_FIELD_OFFSET", SWIG_From_int(static_cast< int >(STATUS_INVALID_FIELD_OFFSET)));
+  rb_define_const(mTransactd, "STATUS_CHANGE_CONFLICT", SWIG_From_int(static_cast< int >(STATUS_CHANGE_CONFLICT)));
+  rb_define_const(mTransactd, "STATUS_INVALID_LOCKTYPE", SWIG_From_int(static_cast< int >(STATUS_INVALID_LOCKTYPE)));
+  rb_define_const(mTransactd, "STATUS_LOCK_ERROR", SWIG_From_int(static_cast< int >(STATUS_LOCK_ERROR)));
+  rb_define_const(mTransactd, "STATUS_FILE_LOCKED", SWIG_From_int(static_cast< int >(STATUS_FILE_LOCKED)));
+  rb_define_const(mTransactd, "STATUS_CANNOT_LOCK_TABLE", SWIG_From_int(static_cast< int >(STATUS_CANNOT_LOCK_TABLE)));
+  rb_define_const(mTransactd, "STATUS_INVALID_KEYNAME", SWIG_From_int(static_cast< int >(STATUS_INVALID_KEYNAME)));
+  rb_define_const(mTransactd, "STATUS_INVALID_DATASIZE", SWIG_From_int(static_cast< int >(STATUS_INVALID_DATASIZE)));
+  rb_define_const(mTransactd, "STATUS_INVALID_FIELDNAME", SWIG_From_int(static_cast< int >(STATUS_INVALID_FIELDNAME)));
+  rb_define_const(mTransactd, "ERROR_TD_INVALID_CLINETHOST", SWIG_From_int(static_cast< int >(ERROR_TD_INVALID_CLINETHOST)));
+  rb_define_const(mTransactd, "ERROR_NO_DATABASE", SWIG_From_int(static_cast< int >(ERROR_NO_DATABASE)));
+  rb_define_const(mTransactd, "ERROR_NOSPECIFY_TABLE", SWIG_From_int(static_cast< int >(ERROR_NOSPECIFY_TABLE)));
+  rb_define_const(mTransactd, "ERROR_LOAD_CLIBRARY", SWIG_From_int(static_cast< int >(ERROR_LOAD_CLIBRARY)));
+  rb_define_const(mTransactd, "ERROR_INDEX_RND_INIT", SWIG_From_int(static_cast< int >(ERROR_INDEX_RND_INIT)));
+  rb_define_const(mTransactd, "STATUS_ALREADY_INSNAPSHOT", SWIG_From_int(static_cast< int >(STATUS_ALREADY_INSNAPSHOT)));
+  rb_define_const(mTransactd, "STATUS_ALREADY_INTRANSACTION", SWIG_From_int(static_cast< int >(STATUS_ALREADY_INTRANSACTION)));
+  rb_define_const(mTransactd, "SERVER_CLIENT_NOT_COMPATIBLE", SWIG_From_int(static_cast< int >(SERVER_CLIENT_NOT_COMPATIBLE)));
+  rb_define_const(mTransactd, "NET_BAD_SRB_FORMAT", SWIG_From_int(static_cast< int >(NET_BAD_SRB_FORMAT)));
+  rb_define_const(mTransactd, "ERROR_TD_HOSTNAME_NOT_FOUND", SWIG_From_int(static_cast< int >(ERROR_TD_HOSTNAME_NOT_FOUND)));
+  rb_define_const(mTransactd, "ERROR_TD_CONNECTION_FAILURE", SWIG_From_int(static_cast< int >(ERROR_TD_CONNECTION_FAILURE)));
+  rb_define_const(mTransactd, "ERROR_TD_NOT_CONNECTED", SWIG_From_int(static_cast< int >(ERROR_TD_NOT_CONNECTED)));
+  rb_define_const(mTransactd, "TRANSACTD_SCHEMANAME", SWIG_FromCharPtr(TRANSACTD_SCHEMANAME));
+  rb_define_const(mTransactd, "TYPE_SCHEMA_BDF", SWIG_From_int(static_cast< int >(TYPE_SCHEMA_BDF)));
+  rb_define_const(mTransactd, "TYPE_SCHEMA_DDF", SWIG_From_int(static_cast< int >(TYPE_SCHEMA_DDF)));
+  rb_define_const(mTransactd, "FILTER_CURRENT_TYPE_NOTINC", SWIG_From_int(static_cast< int >(FILTER_CURRENT_TYPE_NOTINC)));
+  rb_define_const(mTransactd, "FILTER_CURRENT_TYPE_INC", SWIG_From_int(static_cast< int >(FILTER_CURRENT_TYPE_INC)));
+  rb_define_const(mTransactd, "FILTER_CURRENT_TYPE_NOBOOKMARK", SWIG_From_int(static_cast< int >(FILTER_CURRENT_TYPE_NOBOOKMARK)));
+  rb_define_const(mTransactd, "NIS_FILED_NAME", SWIG_FromCharPtr(NIS_FILED_NAME));
+  rb_define_const(mTransactd, "OWNERNAME_SIZE", SWIG_From_int(static_cast< int >(OWNERNAME_SIZE)));
+  rb_define_const(mTransactd, "TD_BACKUP_START", SWIG_From_int(static_cast< int >(TD_BACKUP_START)));
+  rb_define_const(mTransactd, "TD_BACKUP_END", SWIG_From_int(static_cast< int >(TD_BACKUP_END)));
+  rb_define_const(mTransactd, "TD_BACKUP_MODE_OK", SWIG_From_int(static_cast< int >(TD_BACKUP_MODE_OK)));
+  rb_define_const(mTransactd, "TD_BACKUP_MODE_NOT_SUPPORT", SWIG_From_int(static_cast< int >(TD_BACKUP_MODE_NOT_SUPPORT)));
+  rb_define_const(mTransactd, "TD_BACKUP_MODE_BUSY", SWIG_From_int(static_cast< int >(TD_BACKUP_MODE_BUSY)));
+  rb_define_const(mTransactd, "TD_BACKUP_MODE_NOT_PERMIT", SWIG_From_int(static_cast< int >(TD_BACKUP_MODE_NOT_PERMIT)));
+  rb_define_const(mTransactd, "TD_BACKUP_MODE_SERVER_ERROR", SWIG_From_int(static_cast< int >(TD_BACKUP_MODE_SERVER_ERROR)));
+  rb_define_const(mTransactd, "MYSQL_USERNAME_MAX", SWIG_From_int(static_cast< int >(MYSQL_USERNAME_MAX)));
+  rb_define_const(mTransactd, "HST_OPTION_NO_SCRAMBLE", SWIG_From_int(static_cast< int >(HST_OPTION_NO_SCRAMBLE)));
   rb_define_const(mTransactd, "CPP_INTERFACE_VER_MAJOR", SWIG_FromCharPtr(CPP_INTERFACE_VER_MAJOR));
   rb_define_const(mTransactd, "CPP_INTERFACE_VER_MINOR", SWIG_FromCharPtr(CPP_INTERFACE_VER_MINOR));
   rb_define_const(mTransactd, "CPP_INTERFACE_VER_RELEASE", SWIG_FromCharPtr(CPP_INTERFACE_VER_RELEASE));
@@ -34221,7 +33656,7 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassKeySegment.mark = 0;
   SwigClassKeySegment.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_keySegment;
   SwigClassKeySegment.trackObjects = 0;
-  rb_define_const(mTransactd, "MAX_KEY_SEGMENT", SWIG_From_int(static_cast< int >(8)));
+  rb_define_const(mTransactd, "MAX_KEY_SEGMENT", SWIG_From_int(static_cast< int >(MAX_KEY_SEGMENT)));
   
   SwigClassKeydef.klass = rb_define_class_under(mTransactd, "Keydef", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__keydef, (void *) &SwigClassKeydef);
@@ -34284,13 +33719,13 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassFielddef.klass, "align", VALUEFUNC(_wrap_fielddef_align), -1);
   rb_define_method(SwigClassFielddef.klass, "setLenByCharnum", VALUEFUNC(_wrap_fielddef_setLenByCharnum), -1);
   rb_define_method(SwigClassFielddef.klass, "codePage", VALUEFUNC(_wrap_fielddef_codePage), -1);
-  rb_define_method(SwigClassFielddef.klass, "varLenBytes", VALUEFUNC(_wrap_fielddef_varLenBytes), -1);
-  rb_define_method(SwigClassFielddef.klass, "blobLenBytes", VALUEFUNC(_wrap_fielddef_blobLenBytes), -1);
   rb_define_method(SwigClassFielddef.klass, "isStringType", VALUEFUNC(_wrap_fielddef_isStringType), -1);
   rb_define_method(SwigClassFielddef.klass, "isNumericType", VALUEFUNC(_wrap_fielddef_isNumericType), -1);
   rb_define_method(SwigClassFielddef.klass, "charNum", VALUEFUNC(_wrap_fielddef_charNum), -1);
   rb_define_method(SwigClassFielddef.klass, "setCharsetIndex", VALUEFUNC(_wrap_fielddef_setCharsetIndex), -1);
   rb_define_method(SwigClassFielddef.klass, "charsetIndex", VALUEFUNC(_wrap_fielddef_charsetIndex), -1);
+  rb_define_method(SwigClassFielddef.klass, "varLenBytes", VALUEFUNC(_wrap_fielddef_varLenBytes), -1);
+  rb_define_method(SwigClassFielddef.klass, "blobLenBytes", VALUEFUNC(_wrap_fielddef_blobLenBytes), -1);
   rb_define_method(SwigClassFielddef.klass, "name", VALUEFUNC(_wrap_fielddef_name), -1);
   SwigClassFielddef.mark = 0;
   SwigClassFielddef.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_fielddef;
@@ -34445,7 +33880,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_singleton_method(SwigClassNstable.klass, "existsFile", VALUEFUNC(_wrap_nstable_existsFile), -1);
   SwigClassNstable.mark = 0;
   SwigClassNstable.trackObjects = 0;
-  rb_define_const(mTransactd, "TABLE_NUM_TMP", SWIG_From_int(static_cast< int >(512)));
+  rb_define_const(mTransactd, "TABLE_NUM_TMP", SWIG_From_int(static_cast< int >(TABLE_NUM_TMP)));
   rb_define_const(mTransactd, "EMinlen", SWIG_From_int(static_cast< int >(bzs::db::protocol::tdap::client::eMinlen)));
   rb_define_const(mTransactd, "EMaxlen", SWIG_From_int(static_cast< int >(bzs::db::protocol::tdap::client::eMaxlen)));
   rb_define_const(mTransactd, "EDefaultlen", SWIG_From_int(static_cast< int >(bzs::db::protocol::tdap::client::eDefaultlen)));
@@ -34479,7 +33914,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassDbdef.klass, "mode", VALUEFUNC(_wrap_dbdef_mode), -1);
   SwigClassDbdef.mark = 0;
   SwigClassDbdef.trackObjects = 0;
-  rb_define_const(mTransactd, "Null_str", SWIG_FromCharPtr(""));
+  rb_define_const(mTransactd, "Null_str", SWIG_FromCharPtr(null_str));
   
   SwigClassTable.klass = rb_define_class_under(mTransactd, "Table", ((swig_class *) SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable->clientdata)->klass);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__table, (void *) &SwigClassTable);
@@ -34529,10 +33964,10 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassTable.mark = 0;
   SwigClassTable.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_table;
   SwigClassTable.trackObjects = 0;
-  rb_define_const(mTransactd, "KEYVALUE_PTR", SWIG_From_int(static_cast< int >(0)));
-  rb_define_const(mTransactd, "KEYVALUE_STR", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "KEYVALUE_NEED_COPY", SWIG_From_int(static_cast< int >(2)));
-  rb_define_const(mTransactd, "KEYVALUE_STR_NEED_COPY", SWIG_From_int(static_cast< int >(3)));
+  rb_define_const(mTransactd, "KEYVALUE_PTR", SWIG_From_int(static_cast< int >(KEYVALUE_PTR)));
+  rb_define_const(mTransactd, "KEYVALUE_STR", SWIG_From_int(static_cast< int >(KEYVALUE_STR)));
+  rb_define_const(mTransactd, "KEYVALUE_NEED_COPY", SWIG_From_int(static_cast< int >(KEYVALUE_NEED_COPY)));
+  rb_define_const(mTransactd, "KEYVALUE_STR_NEED_COPY", SWIG_From_int(static_cast< int >(KEYVALUE_STR_NEED_COPY)));
   
   SwigClassQueryBase.klass = rb_define_class_under(mTransactd, "QueryBase", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, (void *) &SwigClassQueryBase);
@@ -34605,6 +34040,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassNsdatabase.klass, "abortTrn", VALUEFUNC(_wrap_nsdatabase_abortTrn), -1);
   rb_define_method(SwigClassNsdatabase.klass, "beginSnapshot", VALUEFUNC(_wrap_nsdatabase_beginSnapshot), -1);
   rb_define_method(SwigClassNsdatabase.klass, "endSnapshot", VALUEFUNC(_wrap_nsdatabase_endSnapshot), -1);
+  rb_define_method(SwigClassNsdatabase.klass, "trxIsolationServer", VALUEFUNC(_wrap_nsdatabase_trxIsolationServer), -1);
+  rb_define_method(SwigClassNsdatabase.klass, "trxLockWaitTimeoutServer", VALUEFUNC(_wrap_nsdatabase_trxLockWaitTimeoutServer), -1);
   rb_define_method(SwigClassNsdatabase.klass, "tdapErr", VALUEFUNC(_wrap_nsdatabase_tdapErr), -1);
   rb_define_method(SwigClassNsdatabase.klass, "useLongFilename", VALUEFUNC(_wrap_nsdatabase_useLongFilename), -1);
   rb_define_method(SwigClassNsdatabase.klass, "setUseLongFilename", VALUEFUNC(_wrap_nsdatabase_setUseLongFilename), -1);
@@ -34638,6 +34075,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassDatabase.klass, "drop", VALUEFUNC(_wrap_database_drop), -1);
   rb_define_method(SwigClassDatabase.klass, "dropTable", VALUEFUNC(_wrap_database_dropTable), -1);
   rb_define_method(SwigClassDatabase.klass, "close", VALUEFUNC(_wrap_database_close), -1);
+  rb_define_method(SwigClassDatabase.klass, "aclReload", VALUEFUNC(_wrap_database_aclReload), -1);
   rb_define_method(SwigClassDatabase.klass, "continuous", VALUEFUNC(_wrap_database_continuous), -1);
   rb_define_method(SwigClassDatabase.klass, "assignSchemaData", VALUEFUNC(_wrap_database_assignSchemaData), -1);
   rb_define_method(SwigClassDatabase.klass, "copyTableData", VALUEFUNC(_wrap_database_copyTableData), -1);
@@ -34663,17 +34101,17 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassBenchmark.mark = 0;
   SwigClassBenchmark.destroy = (void (*)(void *)) free_bzs_rtl_benchmark;
   SwigClassBenchmark.trackObjects = 0;
-  rb_define_const(mTransactd, "MAX_CHAR_INFO", SWIG_From_int(static_cast< int >(41)));
-  rb_define_const(mTransactd, "CHARSET_LATIN1", SWIG_From_int(static_cast< int >(1)));
-  rb_define_const(mTransactd, "CHARSET_CP850", SWIG_From_int(static_cast< int >(4)));
-  rb_define_const(mTransactd, "CHARSET_ASCII", SWIG_From_int(static_cast< int >(9)));
-  rb_define_const(mTransactd, "CHARSET_SJIS", SWIG_From_int(static_cast< int >(11)));
-  rb_define_const(mTransactd, "CHARSET_UTF8", SWIG_From_int(static_cast< int >(22)));
-  rb_define_const(mTransactd, "CHARSET_USC2", SWIG_From_int(static_cast< int >(23)));
-  rb_define_const(mTransactd, "CHARSET_UTF8B4", SWIG_From_int(static_cast< int >(30)));
-  rb_define_const(mTransactd, "CHARSET_UTF16LE", SWIG_From_int(static_cast< int >(33)));
-  rb_define_const(mTransactd, "CHARSET_CP932", SWIG_From_int(static_cast< int >(38)));
-  rb_define_const(mTransactd, "CHARSET_EUCJ", SWIG_From_int(static_cast< int >(40)));
+  rb_define_const(mTransactd, "MAX_CHAR_INFO", SWIG_From_int(static_cast< int >(MAX_CHAR_INFO)));
+  rb_define_const(mTransactd, "CHARSET_LATIN1", SWIG_From_int(static_cast< int >(CHARSET_LATIN1)));
+  rb_define_const(mTransactd, "CHARSET_CP850", SWIG_From_int(static_cast< int >(CHARSET_CP850)));
+  rb_define_const(mTransactd, "CHARSET_ASCII", SWIG_From_int(static_cast< int >(CHARSET_ASCII)));
+  rb_define_const(mTransactd, "CHARSET_SJIS", SWIG_From_int(static_cast< int >(CHARSET_SJIS)));
+  rb_define_const(mTransactd, "CHARSET_UTF8", SWIG_From_int(static_cast< int >(CHARSET_UTF8)));
+  rb_define_const(mTransactd, "CHARSET_USC2", SWIG_From_int(static_cast< int >(CHARSET_USC2)));
+  rb_define_const(mTransactd, "CHARSET_UTF8B4", SWIG_From_int(static_cast< int >(CHARSET_UTF8B4)));
+  rb_define_const(mTransactd, "CHARSET_UTF16LE", SWIG_From_int(static_cast< int >(CHARSET_UTF16LE)));
+  rb_define_const(mTransactd, "CHARSET_CP932", SWIG_From_int(static_cast< int >(CHARSET_CP932)));
+  rb_define_const(mTransactd, "CHARSET_EUCJ", SWIG_From_int(static_cast< int >(CHARSET_EUCJ)));
   rb_define_module_function(mTransactd, "charsize", VALUEFUNC(_wrap_charsize), -1);
   rb_define_module_function(mTransactd, "charsetName", VALUEFUNC(_wrap_charsetName), -1);
   rb_define_module_function(mTransactd, "charsetIndex", VALUEFUNC(_wrap_charsetIndex), -1);
@@ -34795,7 +34233,7 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassRecord.mark = 0;
   SwigClassRecord.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_fieldsBase;
   SwigClassRecord.trackObjects = 0;
-  rb_define_const(mTransactd, "ROW_MEM_BLOCK_RESERVE", SWIG_From_int(static_cast< int >(4)));
+  rb_define_const(mTransactd, "ROW_MEM_BLOCK_RESERVE", SWIG_From_int(static_cast< int >(ROW_MEM_BLOCK_RESERVE)));
     
   SwigClassWritableRecord.klass = rb_define_class_under(mTransactd, "WritableRecord", ((swig_class *) SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase->clientdata)->klass);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, (void *) &SwigClassWritableRecord);
@@ -35013,4 +34451,3 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassPooledDbManager.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_pooledDbManager;
   SwigClassPooledDbManager.trackObjects = 0;
 }
-

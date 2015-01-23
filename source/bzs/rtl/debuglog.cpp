@@ -74,12 +74,26 @@ void debuglog::dump(FILE* fp, const char* p, int size, int limit)
     size = std::min<int>(size, limit);
     for (int i = 0; i < size; i += 16)
     {
-
-        for (int j = 0; j < 16; j++)
-            fprintf(fp, "%02X ", *((unsigned char*)(p + i + j)));
+        const char* pp = p + i;
+        int max = std::min<int>(size - i, 16);
+        for (int j = 0; j < max; j++)
+            fprintf(fp, "%02X ", *((unsigned char*)(pp + j)));
+        
+        if (max != 16)
+        {
+            for (int j = 0; j < 16 - max; j++)
+                fprintf(fp, "   ");
+        }
+        
         fprintf(fp, " ");
-        for (int j = 0; j < 16; j++)
-            fprintf(fp, "%c", *((unsigned char*)(p + i + j)));
+        for (int j = 0; j < max; j++)
+        {
+            const char* p1 = pp + j;
+            if (*p1 >= ' ' && *p1 <= '~')
+                fprintf(fp, "%c", *p1);
+            else
+                fprintf(fp, " ");
+        }
         fprintf(fp, "\n");
     }
     fprintf(fp, "\n");
@@ -91,6 +105,8 @@ void debuglog::writeDump(const char* msg, const char* ptr, int size)
     FILE* fp = fileOpen(logfilename, "a+");
     if (fp)
     {
+        fputs(dateTime(), fp);
+        fputs(" ", fp);
         fputs(msg, fp);
         fputs("\n", fp);
         dump(fp, ptr, size, INT_MAX);

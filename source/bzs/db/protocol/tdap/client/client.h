@@ -25,6 +25,7 @@
 #include <bzs/db/protocol/tdap/tdapSchema.h>
 #include <bzs/netsvc/client/tcpClient.h>
 #include <bzs/db/protocol/tdap/tdapcapi.h>
+#include <bzs/db/protocol/tdap/uri.h>
 #include <bzs/db/protocol/tdap/mysql/characterset.h>
 #include <bzs/env/compiler.h>
 #include <bzs/rtl/stl_uty.h>
@@ -64,7 +65,7 @@ class client
     ushort_td m_preResult;
     std::string m_sql;
     std::string m_serverCharData;
-    std::string m_serverCharData2;
+    char* m_cryptPwd;
     blobBuffer m_blobBuffer;
     uint_td m_tmplen;
     bool m_logout;
@@ -72,6 +73,13 @@ class client
     bool m_connecting;
 
     std::vector<char> m_sendbuf;
+
+    bool checkVersion(trdVersiton& ver)
+    {
+        if ((ver.srvMajor < 2) || ((ver.srvMajor == 2) && (ver.srvMinor < 1)))
+            return false;
+        return true;
+    }
 
     inline bzs::netsvc::client::connection* con() { return m_req.cid->con; };
 
@@ -82,22 +90,21 @@ class client
 
     inline void disconnect()
     {
-        if (!con())
+        bzs::netsvc::client::connection* c = con();
+        if (!c)
             m_req.result = 1;
         else
         {
-            m_disconnected = m_cons->disconnect(con());
             setCon(NULL);
+            //Release connection refCount
+            m_disconnected = m_cons->disconnect(c);
         }
     }
 
     std::string getHostName(const char* uri)
     {
-        std::vector<std::string> ss;
-        split(ss, uri, "/"); /* btrv://serverName/dbName?dbfile=xxx */
-        if (ss.size() < 3)
-            return "";
-        return ss[2];
+        _TCHAR tmp[MAX_PATH];
+        return hostName(uri, tmp, MAX_PATH);
     }
 
     std::string getTableName(const char* uri)
@@ -123,8 +130,57 @@ class client
     static void addSecondCharsetData(unsigned int destCodePage,
                                      std::string& src);
 
+    bool handshake(bzs::netsvc::client::connection* c)
+    {
+        //Implements handshake here
+        handshale_t* hst  = (handshale_t*)c->read();
+        bool auth = (hst->size == sizeof(handshale_t));
+        bool min = (hst->size == (sizeof(handshale_t) 
+         									-  sizeof(hst->scramble)));
+        
+        if (min || auth)
+        {
+            if (!checkVersion(hst->ver))
+                return false;
+            c->setCharsetServer(mysql::charsetIndex(hst->ver.cherserServer));
+            m_req.cid->lock_wait_timeout = hst->lock_wait_timeout;
+            m_req.cid->transaction_isolation = hst->transaction_isolation;
+        }
+        if (auth)
+        {
+            char user[50];
+            char pwd[MAX_PATH];
+            char* p = (char*)m_req.keybuf;
+            userName(p, user, 50);
+            if (m_cryptPwd == NULL)
+                m_cryptPwd = new char[70];
+            passwd((const char*)m_req.keybuf, pwd, MAX_PATH);
+            if (pwd[0])
+                mysqlCryptPwd(m_cryptPwd, pwd, hst->scramble);
+            else
+                memset(m_cryptPwd, 0, MYSQL_SCRAMBLE_LENGTH);
+            strcpy_s(m_cryptPwd + MYSQL_SCRAMBLE_LENGTH, 50, user);
+        }else
+        {   // No auth
+            if (m_cryptPwd)
+                delete [] m_cryptPwd;
+            m_cryptPwd = NULL;
+        }
+        return true;
+    }
+
+    static bool handshakeCallback(bzs::netsvc::client::connection* c, void* data)
+    {
+        return ((client*)data)->handshake(c);
+    }
+
 public:
-    client() : m_disconnected(true), m_connecting(false) {}
+    client() : m_cryptPwd(NULL), m_disconnected(true), m_connecting(false) {}
+    ~client()
+    {
+        if (m_cryptPwd)
+            delete [] m_cryptPwd;
+    }
 
     void cleanup()
     {
@@ -182,11 +238,11 @@ public:
     {
         if (!m_req.cid->con)
         {
-           
             std::string host = getHostName((const char*)m_req.keybuf);
             if (host == "")
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-            bzs::netsvc::client::connection* c = m_cons->connect(host);
+            bzs::netsvc::client::connection* c = m_cons->connect(host, 
+                                                  client::handshakeCallback, this);
             if (c)
             {
                 setCon(c);
@@ -198,6 +254,21 @@ public:
         m_disconnected = !m_req.cid->con;
     }
 
+    inline void createIndex()
+    {
+        m_req.paramMask = P_MASK_NOKEYBUF;
+        int charsetIndexServer =  getServerCharsetIndex();
+        unsigned char keynum = m_req.keyNum;
+        bool specifyKeyNum = (keynum >= 0x80);
+        if (keynum >= 0x80)
+            keynum -= 0x80;
+        m_sql = sqlCreateIndex((tabledef*)m_req.data, keynum, 
+                            specifyKeyNum, charsetIndexServer);
+        m_req.data = (ushort_td*)m_sql.c_str();
+        m_tmplen = (uint_td)(m_sql.size() + 1);
+        m_req.datalen = &m_tmplen;
+    }
+
     inline void create()
     {
         m_req.paramMask = P_MASK_ALL;
@@ -206,8 +277,10 @@ public:
         else if (m_req.keyNum >
                  CR_SUBOP_SWAPNAME) // -126 swap -127 is rename. -128 is drop.
         {
+             _TCHAR tmp[MAX_PATH*2]={0};
+            stripAuth((const char*)m_req.keybuf, tmp, MAX_PATH);
             m_req.paramMask &= ~P_MASK_POSBLK;
-            std::string name = getTableName((const char*)m_req.keybuf);
+            std::string name = getTableName(tmp);
             int charsetIndexServer =  getServerCharsetIndex();
             if ((m_req.keyNum == 1) || (m_req.keyNum == 2)) // make by tabledef
             {
@@ -239,26 +312,25 @@ public:
         if ((m_req.keyNum == LG_SUBOP_CONNECT) ||
             (m_req.keyNum == LG_SUBOP_NEWCONNECT))
         {
-            if (con() && con()->isConnected())
-                m_preResult = 1;
-            else
+            if (con())
+                disconnect();
+            std::string host = getHostName((const char*)m_req.keybuf);
+            if (host == "")
+                m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+            bzs::netsvc::client::connection* c = m_cons->connect(
+                host, handshakeCallback, this,
+                (m_req.keyNum == LG_SUBOP_NEWCONNECT));
+            if (c)
             {
-                std::string host = getHostName((const char*)m_req.keybuf);
-                if (host == "")
-                    m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-                bzs::netsvc::client::connection* c = m_cons->connect(
-                    host, (m_req.keyNum == LG_SUBOP_NEWCONNECT));
-                if (c)
-                {
-                    setCon(c); // if error throw exception
-                    if (getServerCharsetIndex() == -1)
-                        m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
-                    else
-                        buildDualChasetKeybuf();
-                }
+                setCon(c); // if error throw exception
+                m_connecting = true;
+                if (getServerCharsetIndex() == -1)
+                    m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
                 else
-                    m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+                    buildDualChasetKeybuf();
             }
+            else
+                m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
         }
         else if (m_req.keyNum == LG_SUBOP_DISCONNECT)
         {
@@ -301,13 +373,13 @@ public:
                         p = c->asyncWriteRead(size);
                         m_req.parse(p, ex);
                     }
-                      
                 }
                 else
                     m_req.result = stat;
                 if (m_logout || (m_connecting && m_req.result))
                     disconnect();
                 m_preResult = m_req.result;
+                m_connecting = false;
             }
         }
         return result();

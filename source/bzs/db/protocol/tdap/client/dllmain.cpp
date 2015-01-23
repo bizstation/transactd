@@ -162,8 +162,8 @@ void onUnloadLibrary(void)
         pthread_key_delete(g_tlsiID);
         pthread_key_delete(g_tlsiID1);
         pthread_key_delete(g_tlsiID_SC1);
-    }
 #endif
+    }
 }
 #endif // NOT _WIN32
 
@@ -198,45 +198,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_ADD_SENDBLOB:
             return client_t->addBlob((const bzs::db::blob*)data,
                                      (keyNum == TD_ASBLOB_ENDROW));
-        case TD_OPENTABLE:
-        case TD_CREATETABLE:
-            client_t->connect();
-            if (client_t->result() == 0)
-            {
-                if (op == TD_CREATETABLE)
-                {
-                    if (client_t->getServerCharsetIndex() != -1)
-                        client_t->create();
-                    else
-                    {
-                        client_t->cleanup();
-                        return 1;
-                    }
-                }
-                else if (op == TD_OPENTABLE)
-                    client_t->req().paramMask = P_MASK_ALL;
-                if (!client_t->buildDualChasetKeybuf())
-                {
-                    client_t->cleanup();
-                    return SERVER_CLIENT_NOT_COMPATIBLE;
-                }
-            }
-            break;
-        case TD_CONNECT:
-        {
-            client_t->cmdConnect();
-            break;
-        }
-        case TD_STASTISTICS:
-            client_t->req().paramMask =
-                P_MASK_DATALEN | P_MASK_KEYBUF | P_MASK_KEYNUM;
-            break;
-        case TD_RESET_CLIENT:
-            client_t->req().paramMask = P_MASK_KEYONLY;
-            break;
-        case TD_DROP_INDEX:
-            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
-            break;
         case TD_REC_INSERT:
         case TD_INSERT_BULK:
         case TD_REC_UPDATE:
@@ -247,8 +208,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_MOVE_BOOKMARK:
         case TD_MOVE_PER:
-        case TD_BUILD_INDEX:
-            client_t->req().paramMask = P_MASK_NOKEYBUF;
+			client_t->req().paramMask = P_MASK_NOKEYBUF;
             break;
         case TD_UNLOCK:
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
@@ -349,6 +309,51 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             }
             break;
         }
+        case TD_OPENTABLE:
+        case TD_CREATETABLE:
+            client_t->connect();
+            if (client_t->result() == 0)
+            {
+                if (op == TD_CREATETABLE)
+                {
+                    if (client_t->getServerCharsetIndex() != -1)
+                        client_t->create();
+                    else
+                    {
+                        client_t->cleanup();
+                        return 1;
+                    }
+                }
+                else if (op == TD_OPENTABLE)
+                    client_t->req().paramMask = P_MASK_ALL;
+                if (!client_t->buildDualChasetKeybuf())
+                {
+                    client_t->cleanup();
+                    return SERVER_CLIENT_NOT_COMPATIBLE;
+                }
+            }
+            break;
+        case TD_CONNECT:
+        {
+            client_t->cmdConnect();
+            break;
+        }
+        case TD_STASTISTICS:
+            client_t->req().paramMask =
+                P_MASK_DATALEN | P_MASK_KEYBUF | P_MASK_KEYNUM;
+            break;
+        case TD_RESET_CLIENT:
+            client_t->req().paramMask = P_MASK_KEYONLY;
+            break;
+        case TD_BUILD_INDEX:
+            client_t->createIndex();
+            break;
+        case TD_DROP_INDEX:
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
+            break;
+        case TD_ACL_RELOAD:
+            client_t->req().paramMask = 0;
+            break;
         }
         short_td ret = client_t->execute();
         client_t->cleanup();

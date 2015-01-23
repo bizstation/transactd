@@ -308,12 +308,12 @@ module::module(const boost::asio::ip::tcp::endpoint& endpoint,
     : m_endpoint(endpoint), m_connection(connection), m_useThreadPool(tpool)
 {
     if (type & PROTOCOL_TYPE_BTRV)
-        m_commandExecuter.reset(new protocol::tdap::mysql::commandExecuter(
-            (unsigned __int64) this));
+        m_commandExecuter.reset(new protocol::tdap::mysql::commandExecuter(this));
+            
 #ifdef USE_HANDLERSOCKET
     else if (type & PROTOCOL_TYPE_HS)
         m_commandExecuter.reset(
-            new protocol::hs::commandExecuter((unsigned __int64) this));
+            new protocol::hs::commandExecuter(this));
 #endif
     boost::mutex::scoped_lock lck(modulesMutex);
     modules.push_back(this);
@@ -361,8 +361,8 @@ size_t module::onAccept(char* message, size_t bufsize)
 
 static const char* addressMasks[3] = { ".0.0.0/255.0.0.0", ".0.0/255.255.0.0",
                                        ".0/255.255.255.0" };
-
-char* addressClass(char* buf, int bufsize, const char* host, int type)
+static const char* addressWildcard[3] = { ".%", ".%", ".%" };
+char* addressClass(char* buf, int bufsize, const char* host, int type, const char* ar[] )
 {
     strcpy_s(buf, bufsize, host);
     for (int i = 3; i >= type; i--)
@@ -372,42 +372,67 @@ char* addressClass(char* buf, int bufsize, const char* host, int type)
             return buf;
         *p = 0x00;
     }
-    strcat_s(buf, bufsize, addressMasks[type - 1]);
+    strcat_s(buf, bufsize, ar[type - 1]);
     return buf;
 }
 
-bool isAclUser(const char* host, const char* user)
+bool isAclUser(const char* &host, const char* user, char* buf, int size)
 {
     bool ret = is_acl_user(host, user);
     if (ret)
         return true;
-    for (int i = 1; i <= 3; i++)
+    
+    for (int i = 3; i >= 1; --i)
     {
-        char buf[256];
-        ret = is_acl_user(addressClass(buf, 256, host, i), user);
+        ret = is_acl_user(addressClass(buf, size, host, i, addressMasks), user);
         if (ret)
+        {
+            host = buf;
             return true;
+        }
+    }
+    for (int i = 3; i >= 1; --i)
+    {
+        ret = is_acl_user(addressClass(buf, size, host, i, addressWildcard), user);
+        if (ret)
+        {
+            host = buf;
+            return true;
+        }
     }
     return false;
 }
 
-bool module::checkHost(const char* hostCheckname)
+bool module::checkHost(const char* hostCheckname, /*out*/char* hostName, int size)
 {
+    // if size=0 called by server, size !=0 called by user auth
+    if ((size == 0) && (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR)==0))
+        return true;
     std::string addr = m_endpoint.address().to_string();
     size_t pos = addr.find_last_of(":");
     if (pos != std::string::npos)
         addr = addr.substr(pos + 1);
-
+    const char* p = addr.c_str();
     bool ret = true;
-    if (!isAclUser(addr.c_str(), hostCheckname))
+    char buf[256];
+    if (!isAclUser(p, hostCheckname, buf, 256))
     {
-        ret =
-            isAclUser(m_endpoint.address().to_string().c_str(), hostCheckname);
+        p = m_endpoint.address().to_string().c_str();
+        ret = isAclUser(p, hostCheckname, buf, 256);
         if (!ret && m_endpoint.address().is_v4())
         {
             if (addr == std::string("127.0.0.1"))
-                ret = isAclUser("localhost", hostCheckname);
+            {
+                p = "localhost";
+                ret = isAclUser(p, hostCheckname, buf, 256);
+            }
         }
+    }
+    if (hostName && (size > (int)strlen(p)))
+    {
+        if (strcmp(p , "127.0.0.1") == 0)
+            p = "localhost";
+        strcpy(hostName, p);
     }
     return ret;
 }

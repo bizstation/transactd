@@ -65,7 +65,7 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName)
         strcpy_s(port, PORTNUMBUF_SIZE, tmp);
         GetPrivateProfileString("transctd_client", "timeout", "3000", tmp, 30,
                                 buf);
-        timeout = atol(tmp);
+        timeout = (short)atol(tmp);
     }
 #else // NOT _WIN32
 #if (BOOST_VERSION > 104900)
@@ -76,7 +76,6 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName)
     const bool result = fs::exists(path, error);
     if (result && !error)
     {
-
         boost::property_tree::ptree pt;
         try
         {
@@ -116,10 +115,9 @@ connections::~connections()
  */
 connection* connections::getConnection(asio::ip::tcp::endpoint& ep)
 {
-    thread_id tid = threadid();
     for (int i = 0; i < (int)m_conns.size(); i++)
     {
-        if ((m_conns[i]->endpoint() == ep) && (m_conns[i]->tid() == tid))
+        if (m_conns[i]->endpoint() == ep)
             return m_conns[i];
     }
     return NULL;
@@ -155,13 +153,10 @@ connection* connections::getConnection(const std::string& host)
 
 connection* connections::getConnectionPipe()
 {
-
-    thread_id tid = threadid();
     for (int i = 0; i < (int)m_conns.size(); i++)
     {
         pipeConnection* pc = dynamic_cast<pipeConnection*>(m_conns[i]);
-        if (pc && (pc->tid() == tid))
-            return pc;
+        return pc;
     }
     return NULL;
 }
@@ -206,37 +201,89 @@ bool connections::isUseNamedPipe(asio::ip::tcp::endpoint& ep)
     return false;
 }
 
-// The connection of found from connection list of same address is returned.
-connection* connections::connect(const std::string& host, bool newConnection)
+inline connection* connections::createConnection(asio::ip::tcp::endpoint& ep,
+                                     bool namedPipe)
 {
-    mutex::scoped_lock lck(m_mutex);
-    connection* c;
+#ifdef USE_PIPE_CLIENT
+    if (namedPipe)
+        return new pipeConnection(ep, m_pipeName);
+    else
+#endif
+        return new tcpConnection(ep);
+}
+
+inline connection* connections::doConnect(connection* c)
+{
+    try
+    {
+        c->connect();
+        return c;
+    }
+    catch (bzs::netsvc::client::exception& /*e*/)
+    {
+        delete c;
+        throw;
+    }
+    catch (boost::system::system_error& /*e*/)
+    {
+        delete c;
+        throw;
+    }
+}
+
+inline bool connections::doHandShake(connection* c, handshake f, void* data)
+{
+    bool ret = true;
+    try
+    {
+        // 1.0 - 2.1 namepd pipe is not HandShakable.
+        if (c->isHandShakable())
+        {
+            if (!f)
+                c->read();
+            else 
+                ret = f(c, data);
+            if (!ret)
+                delete c;
+        }
+        return ret;
+    }
+    catch (bzs::netsvc::client::exception& /*e*/)
+    {
+        delete c;
+        throw;
+    }
+    catch (boost::system::system_error& /*e*/)
+    {
+        delete c;
+        throw;
+    }
+}
+
+// The connection of found from connection list of same address is returned.
+connection* connections::connect(const std::string& host, handshake f, void* data, bool newConnection)
+{
+    bool namedPipe = false;
     boost::system::error_code ec;
+    connection* c;
+    mutex::scoped_lock lck(m_mutex);
     asio::ip::tcp::endpoint ep = endpoint(host, ec);
     if (ec)
         return NULL;
 #ifdef USE_PIPE_CLIENT
-    if (m_usePipedLocal && isUseNamedPipe(ep))
-    {
+    namedPipe =  (m_usePipedLocal && isUseNamedPipe(ep));
+    if (namedPipe)
         c = newConnection ? NULL : getConnectionPipe();
-        if (!c)
-        {
-            c = new pipeConnection(ep, m_pipeName);
-            c->connect();
-            m_conns.push_back(c);
-        }
-    }
     else
 #endif
-    {
-
         c = newConnection ? NULL : getConnection(ep);
-        if (!c)
-        {
-            c = new tcpConnection(ep);
-            c->connect();
-            m_conns.push_back(c);
-        }
+    if (newConnection || !c)
+    {
+        c = createConnection(ep, namedPipe); 
+        c = doConnect(c);
+        if (!c || !doHandShake(c, f, data))
+            return NULL;
+        m_conns.push_back(c);
     }
     c->addref();
     return c;

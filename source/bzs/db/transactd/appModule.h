@@ -52,7 +52,6 @@ class module : public netsvc::server::IAppModule, private boost::noncopyable
     bool perseLineEnd(const char* p, size_t size) const;
     size_t onRead(const char* data, size_t size, bool& complete);
     size_t onAccept(char* message, size_t bufsize);
-
 public:
     module(const boost::asio::ip::tcp::endpoint& endpoint,
            bzs::netsvc::server::iconnection* connection, bool tpool, int type);
@@ -62,7 +61,7 @@ public:
                 netsvc::server::buffers* optionalData);
     void cleanup() { m_commandExecuter->cleanup(); };
     bool isShutDown() { return m_commandExecuter->isShutDown(); }
-    bool checkHost(const char* hostCheckname);
+    bool checkHost(const char* hostCheckname, /*out*/char* hostName, int size);
     void disconnect();
     boost::mutex& mutex() const { return m_mutex; };
 };

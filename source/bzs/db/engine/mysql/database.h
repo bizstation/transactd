@@ -119,6 +119,7 @@ private:
     short m_cid;
     enum_tx_isolation m_iso;
     tableList m_tables;
+    ulong m_privilege;
    
     TABLE* doOpenTable(const std::string& name, short mode,
                                 const char* ownerName);
@@ -128,12 +129,16 @@ private:
     void prebuildExclusieLockMode(table* tb);
     void prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* lck) ;
     void changeIntentionLock(table* tb, thr_lock_type lock_type);
-
+    void checkACL(enum_sql_command cmd);
 public:
     
 
     database(const char* name, short cid);
     ~database();
+    bool setGrant(const char* host, const char* user);
+
+    unsigned char* getUserSha1Passwd(const char* host, const char* user,
+        unsigned char* buf);
 
     int stat() { return m_stat; }
 
@@ -163,7 +168,6 @@ public:
     bool beginTrn(short type, enum_tx_isolation iso);
     bool commitTrn();
     bool abortTrn();
-    bool existsTable(const std::string& name);
     bool existsDatabase();
     void closeTable(const std::string& name, bool drop);
     void closeTable(table* tb);
@@ -185,7 +189,10 @@ public:
         return ((m_inSnapshot + m_inTransaction) == 0);
     }
 
+    short aclReload();
+
     static tableCacheCounter tableRef;
+
 };
 
 typedef std::vector<boost::shared_ptr<database> > databases;
@@ -194,7 +201,8 @@ class IReadRecordsHandler;
 class IPrepare;
 class bookmarks;
 
-
+//unsigned char* getUserSha1Passwd(const char* host, const char* user, unsigned char* buf);
+//short aclReload();
 /*
  *  Since it differs from the key number which a client specifies
  *   , and an internal key number, it changes.
@@ -323,8 +331,6 @@ class table : private boost::noncopyable
 public:
     std::vector<int>& useFields() { return m_useFields; };
     void setUseFieldList(const std::string& csv);
-    void setKeyValues(const std::vector<std::string>& values, int keypart,
-                      const std::string* inValue = NULL);
     void setValue(int index, const std::string& v, int type);
     void setUseValues(const std::vector<std::string>& values, int type);
 
@@ -547,6 +553,11 @@ public:
         return m_table->field[fieldNum]->type();
     }
 
+    inline enum enum_field_types fieldRealType(int fieldNum) const
+    {
+        return m_table->field[fieldNum]->real_type();
+    }
+
     inline unsigned int fieldFlags(int fieldNum) const
     {
         return m_table->field[fieldNum]->flags;
@@ -700,6 +711,9 @@ public:
             m_validCursor = false;
         }
     }
+    void setKeyValues(const std::vector<std::string>& values, int keypart,
+                    const std::string* inValue = NULL);
+
     
 };
 

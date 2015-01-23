@@ -87,7 +87,7 @@ class DLLLIB table : public nstable
 
     struct tbimpl* m_impl;
     class fielddefs* m_fddefs;
-    tabledef* m_tableDef;
+    tabledef** m_tableDef;
 
     uchar_td charset() const;
     bool checkIndex(short index) const;
@@ -138,12 +138,12 @@ protected:
 
     void onInsertAfter(int beforeResult); // orverride
     bool isUniqeKey(char_td keynum); // orverride
-    void init(tabledef* def, short filenum, bool regularDir);
+    void init(tabledef** def, short filenum, bool regularDir);
     void* attachBuffer(void* newPtr, bool unpack = false, size_t size = 0);
     void dettachBuffer();
     bool doPrepare();
 
-    virtual void doInit(tabledef* def, short filenum, bool regularDir);
+    virtual void doInit(tabledef** def, short filenum, bool regularDir);
 
     virtual void onRecordCounting(size_t count, bool& complate){};
 
@@ -152,18 +152,18 @@ protected:
 public:
     using nstable::eFindType;
 
-    inline const tabledef* tableDef() const { return m_tableDef; };
+    inline const tabledef* tableDef() const { return *m_tableDef; };
     inline const tabledef** tableDefPtr() const
     {
-        return const_cast<const tabledef**>(&m_tableDef);
-    };
+        return const_cast<const tabledef**>(m_tableDef);
+    }
 
     inline bool valiableFormatType() const
     {
-        return m_tableDef->optionFlags.bitA;
+        return (*m_tableDef)->optionFlags.bitA;
     }
 
-    inline bool blobFieldUsed() const { return m_tableDef->optionFlags.bitB; }
+    inline bool blobFieldUsed() const { return (*m_tableDef)->optionFlags.bitB; }
 
     bool logicalToString() const;
     void setLogicalToString(bool v);

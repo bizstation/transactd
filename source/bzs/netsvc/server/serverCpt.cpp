@@ -47,7 +47,7 @@ namespace cpt // connection per thread
 unsigned int g_connections = 0;
 unsigned int g_waitThread = 0;
 // ---------------------------------------------------------------------------
-//		connection
+//      connection
 // ---------------------------------------------------------------------------
 #define READBUF_SIZE 66000
 #define WRITEBUF_SIZE 66000
@@ -85,9 +85,15 @@ class connection : public iconnection, private boost::noncopyable
                     m_optionalBuffes.clear();
                 vecBuffer vbuf(m_result);
                 bzs::netsvc::server::IResultBuffer& buf = vbuf;
-                if (m_module->execute(buf, size, &m_optionalBuffes) ==
-                    EXECUTE_RESULT_QUIT)
+                int ret = m_module->execute(buf, size, &m_optionalBuffes);
+                if (ret == EXECUTE_RESULT_QUIT)
                     return;
+                else if(ret == EXECUTE_RESULT_ACCESS_DNIED)
+                {
+                    boost::asio::write(m_socket,  buffer(&m_result[0], size),
+                           boost::asio::transfer_all());
+                    return;
+                }
                 else
                 {
                     m_readLen = 0;
@@ -200,6 +206,7 @@ public:
         m_socket.set_option(
             boost::asio::socket_base::send_buffer_size(1024 * 1024 * 10), ec);
 
+        //send handshake packet
         size_t n = m_module->onAccept(&m_result[0], WRITEBUF_SIZE);
         if (n)
             boost::asio::write(m_socket, buffer(&m_result[0], n),
@@ -235,7 +242,7 @@ std::vector<connection*> connection::connections;
 mutex connection::m_mutex;
 
 // ---------------------------------------------------------------------------
-//		worker
+//      worker
 // ---------------------------------------------------------------------------
 
 class worker : private boost::noncopyable
@@ -323,7 +330,7 @@ public:
                         ((IAppModuleBuilder*)app)->createSessionModule(
                             endpoint, m_connection.get(), SERVER_TYPE_CPT));
                     m_connection->setModule(mod);
-                    if (mod->checkHost(hostCheckName))
+                    if (mod->checkHost(hostCheckName, NULL, 0))
                     {
                         m_connection->sendConnectAccept();
                         m_connection->start(); // It does not return, unless a
@@ -372,7 +379,7 @@ std::vector<boost::shared_ptr<boost::thread> > worker::m_threads;
 std::vector<worker*> worker::m_workers;
 
 // ---------------------------------------------------------------------------
-//		listener
+//      listener
 // ---------------------------------------------------------------------------
 
 class listener
@@ -429,13 +436,13 @@ public:
 };
 
 // ---------------------------------------------------------------------------
-//		server
+//      server
 // ---------------------------------------------------------------------------
 inotifyHandler* server::erh = NULL;
 
 /** server
- *	If it starts, a server will create the exclusive thread for accpter
- *	and will go into an infinite loop.
+ *  If it starts, a server will create the exclusive thread for accpter
+ *  and will go into an infinite loop.
  */
 server::server(std::size_t max_connections, const char* hostCheckName)
     : m_timer(m_ios), m_maxConnections(max_connections), m_stopped(false)
@@ -467,7 +474,7 @@ bool server::checkConnections()
 {
     while (connection::connections.size() > m_maxConnections)
     {
-        Sleep(100 * MCRTOMM);
+        Sleep(100);
         if (m_stopped)
             return false;
     }

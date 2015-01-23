@@ -45,12 +45,17 @@ using namespace std;
 #endif
 static _TCHAR HOSTNAME[MAX_PATH] = { _T("127.0.0.1") };
 #define DBNAME _T("test")
-#define BDFNAME _T("test.bdf")
+#define BDFNAME _T("test")
 // #define ISOLATION_REPEATABLE_READ
 #define ISOLATION_READ_COMMITTED
 
+static _TCHAR g_uri[MAX_PATH];
+static _TCHAR g_userName[MYSQL_USERNAME_MAX + 1]={0x00};
+static _TCHAR g_password[MAX_PATH]={0x00};
+
 static const short fdi_id = 0;
 static const short fdi_name = 1;
+
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]);
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
@@ -67,6 +72,26 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
             strcpy_s(HOSTNAME, MAX_PATH, argv[i] + 7);
 #endif
         }
+        if (strstr(argv[i], "--user=") == argv[i])
+        {
+#ifdef _UNICODE
+            MultiByteToWideChar(CP_ACP,
+                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
+                                argv[i] + 7, -1, g_userName, MYSQL_USERNAME_MAX+1);
+#else
+            strcpy_s(g_userName, MYSQL_USERNAME_MAX+1, argv[i] + 7);
+#endif        
+        }
+                if (strstr(argv[i], "--pwd=") == argv[i])
+        {
+#ifdef _UNICODE
+            MultiByteToWideChar(CP_ACP,
+                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
+                                argv[i] + 6, -1, g_password, MAX_PATH);
+#else
+            strcpy_s(g_password, MAX_PATH, argv[i] + 6);
+#endif        
+        }
     }
     printf("Transactd test ... \nMay look like progress is stopped, \n"
             "but it is such as record lock test, please wait.\n");
@@ -74,16 +99,18 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
     return 0;
 }
 
-static _TCHAR g_uri[MAX_PATH];
+
 
 const _TCHAR* makeUri(const _TCHAR* protocol, const _TCHAR* host,
-                      const _TCHAR* dbname, const _TCHAR* dbfile = NULL)
+                      const _TCHAR* dbname, const _TCHAR* dbfile=_T(""))
 {
-    if (dbfile)
+    connectParams cp(protocol, host, dbname, dbfile, g_userName, g_password);
+    _tcscpy(g_uri, cp.uri());
+    /*if (dbfile)
         _stprintf_s(g_uri, MAX_PATH, _T("%s://%s/%s?dbfile=%s"), protocol, host,
                     dbname, dbfile);
     else
-        _stprintf_s(g_uri, MAX_PATH, _T("%s://%s/%s"), protocol, host, dbname);
+        _stprintf_s(g_uri, MAX_PATH, _T("%s://%s/%s"), protocol, host, dbname);*/
     return g_uri;
 }
 
@@ -125,7 +152,7 @@ public:
         if (!m_db)
             printf("Error database::create()\n");
         connectParams param(PROTOCOL, HOSTNAME, _T("querytest"),
-                            _T("test.bdf"));
+                            _T("test"), g_userName, g_password);
         param.setMode(TD_OPEN_NORMAL);
 
         prebuiltData(m_db, param);
@@ -142,19 +169,18 @@ table* openTable(database* db, short dbmode = TD_OPEN_NORMAL,
 
     db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,
              dbmode);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1" << db->stat());
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
     table* tb = db->openTable(_T("user"), tbmode);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable" << db->stat());
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
     return tb;
 }
 
 void testDropDatabase(database* db)
 {
     db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "DropDatabase 1");
-
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
     db->drop();
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "drop 2");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "drop stat = " << db->stat());
 }
 
 void testClone(database* db)
@@ -297,9 +323,6 @@ void testCreateNewDataBase(database* db)
         def->updateTableDef(2);
         BOOST_CHECK_MESSAGE(0 == def->stat(),
                             "updateTableDef 3 stat = " << def->stat());
-
-
-
     }
 }
 
@@ -1010,8 +1033,11 @@ void testSnapshot(database* db)
     BOOST_CHECK_MESSAGE(STATUS_NOT_FOUND_TI == tb->stat(), "phantom read");
 
     // clean up
+    tb2->setFV(fdi_id, 29999);
+    tb2->seek();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "seek stat = " << tb2->stat());
     tb2->del();
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "del");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "del stat = " << tb2->stat());
 
     db->endSnapshot();
     BOOST_CHECK_MESSAGE(0 == db->stat(), "endSnapShot");
@@ -1036,7 +1062,8 @@ void testSnapshot(database* db)
 
     tb2->setFV(fdi_id, 29999);
     tb2->insert();
-    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "GAP insert");
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), 
+                        "GAP insert stat = " << tb2->stat());
 
     db->endSnapshot();
 
@@ -1488,13 +1515,14 @@ void testTransactionLockReadCommited(database* db)
     //insert test row
     tb2->setFV(fdi_id, 29999);
     tb2->insert();
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->insert");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->insert stat = " << tb2->stat());
 
     tb->seekLast();  
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekLast");
     tb->seekPrev();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekPrev");
-    BOOST_CHECK_MESSAGE(last2 != tb->getFVint(fdi_id), "phantom read");
+    BOOST_CHECK_MESSAGE(last2 != tb->getFVint(fdi_id), "phantom read id = " 
+                        << tb->getFVint(fdi_id));
     db->endTrn();
     
     //cleanup
@@ -1610,8 +1638,13 @@ void testRecordLock(database* db)
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
 
     
-    tb->seekNext(); // nobody lock second.
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst");
+    tb->seekNext(); // nobody lock second. but REPEATABLE_READ tb2 lock all(no unlock)
+    if (db->trxIsolationServer() == SRV_ISO_REPEATABLE_READ)
+        BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb->stat(), "tb->seekFirst stat = "
+                            <<  tb->stat() );
+    else
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekFirst stat = " <<  
+                            tb->stat() );
     tb->seekNext(ROW_LOCK_X); // Try lock(X) third
     BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb->stat(), "tb->seekFirst");
 
@@ -1637,8 +1670,11 @@ void testRecordLock(database* db)
     tb->setFV(fdi_id, 21000);
     tb->insert();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->insert");
+    tb->setFV(fdi_id, 21000);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seek stat = " <<  tb->stat() );
     tb->del();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->del");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->del stat = " <<  tb->stat() );
 
     /* ---------   Unlock test ----------------------------*/
     // 1 unlock()
@@ -1826,6 +1862,7 @@ void testExclusive()
     /*  Nnomal and Exclusive opend tables mix transaction */
     /* ---------------------------------------------------*/
     tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open group stat = " << db->stat()) ;
     //Check tb2 Exclusive
     tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
     BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
@@ -1906,9 +1943,6 @@ public:
 /* Getting missing value by lock wait */
 void testMissingUpdate(database* db)
 {
-
-
-    
     table* tb = openTable(db);
     database* db2 = database::create();
     db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
@@ -1926,17 +1960,42 @@ void testMissingUpdate(database* db)
         BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seekLessThan");
         if (tb->stat() == 0)
         {
-            // Get lock(X) same record in parallel.
+            tb2->seekLessThan(false, ROW_LOCK_X);
+            BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekLessThan");
+            // Get lock(X) same record in parallel. The InnoDB is good!
             boost::scoped_ptr<boost::thread> t(new boost::thread(boost::bind(&worker::run, w.get())));
-            int v = tb->getFVint(fdi_id);
-            tb->setFV(fdi_id, ++v);
+            Sleep(5);
+            int v = tb->getFVint(fdi_id);//v = 30000
+            tb->setFV(fdi_id, ++v);      //v = 30001
             tb->insert();
             t->join();
-            BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->insert");
-            BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekLessThan");
-            int v2 = tb2->getFVint(fdi_id);
-            BOOST_CHECK_MESSAGE(v == v2 , "value v = " << v
-                    << " bad = " << v2);
+            
+            if (db->trxIsolationServer() == SRV_ISO_REPEATABLE_READ)
+            {   /* When SRV_ISO_REPEATABLE_READ tb2 get gap lock first,
+                   tb can not insert, it is dedlock! 
+                */
+                BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb->stat(), "tb->insert stat= "
+                                    << tb->stat());
+            }
+            else
+            {   /* When SRV_ISO_READ_COMMITED, tb2 get lock after insert. 
+                   But no retry loop then lock id = 30000 !!!!!!!. Oh no!
+                   This is not READ_COMMITED !. 
+                */
+                BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekLessThan  stat= " 
+                                    << tb2->stat());
+                int v2 = tb2->getFVint(fdi_id);
+                BOOST_CHECK_MESSAGE(v2 == v-1 , "value v-1 = " << v-1 << " bad = " 
+                                    << v2);
+                
+                //cleanup
+                tb->setFV(fdi_id, v);
+                tb->seek();
+                BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seek");
+                tb->del();
+                BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->del");
+            }
+                    
             tb2->unlock();
         }
         
@@ -1949,6 +2008,7 @@ void testMissingUpdate(database* db)
         {
             // Get lock(X) same record in parallel.
             boost::scoped_ptr<boost::thread> t(new boost::thread(boost::bind(&worker::run, w.get())));
+            Sleep(5);
             int v = tb->getFVint(fdi_id);
             tb->del();
             t->join();
@@ -2046,17 +2106,47 @@ void testSetOwner(database* db)
 {
     table* tb = openTable(db);
     tb->setOwnerName(_T("ABCDEFG"));
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner stat = " << tb->stat());
     tb->clearOwnerName();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner stat = " << tb->stat());
     tb->release();
+}
+
+void testCreateIndex(database* db)
+{
+    table* tb = openTable(db);
+    dbdef* def = db->dbDef();
+    if (def)
+    {
+        const tabledef* td = tb->tableDef();
+        keydef* kd = def->insertKey(td->id, td->keyCount);
+        kd->segments[0].fieldNum = fdi_name; //name
+        kd->segments[0].flags.bit8 = 1; // extended key type
+        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segments[0].flags.bit0 = 1; // duplicatable
+        kd->segmentCount = 1;
+        // assign keynumber 
+        kd->keyNumber = 5;
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(),
+                            "CreateIndex updateTableDef stat = " << def->stat());
+    }
+    tb->setKeyNum(tb->tableDef()->keyCount-1);
+    tb->createIndex(true);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "CreateIndex");
+    tb->release();
+
+    //test not mysql grant
+    db->aclReload();
+    BOOST_CHECK_MESSAGE(STATUS_DB_YET_OPEN == db->stat(),
+                        "bad grantReload db->stat() = " << db->stat());
 }
 
 void testDropIndex(database* db)
 {
     table* tb = openTable(db);
     tb->dropIndex(false);
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "DropIndex");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "DropIndex stat = " << tb->stat());
     tb->release();
 }
 
@@ -2077,7 +2167,7 @@ void testLogin(database* db)
             "new connection connect  db->stat() = " << db->stat());
         database::destroy(db2);
 
-        db->disconnect(makeUri(PROTOCOL, HOSTNAME, _T("")));
+        db->disconnect();
         BOOST_CHECK_MESSAGE(0 == db->stat(),
                             "disconnect  db->stat() = " << db->stat());
     }
@@ -2102,10 +2192,10 @@ void testLogin(database* db)
         (db->stat() == ERROR_TD_HOSTNAME_NOT_FOUND);
     BOOST_CHECK_MESSAGE(f, "bad host stat =" << db->stat());
 
-    testCreateNewDataBase(db);
-    db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+    testCreateNewDataBase(db); //with open
+    db->close(); // disconnected
     BOOST_CHECK_MESSAGE(0 == db->stat(),
-                        "databese disconnect db->stat() = " << db->stat());
+                        "databese close db->stat() = " << db->stat());
 
     // true database name
     db->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
@@ -2113,25 +2203,36 @@ void testLogin(database* db)
                         "databese  connect db->stat() = " << db->stat());
     if (db->stat() == 0)
     {
-        db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+        db->disconnect();
         BOOST_CHECK_MESSAGE(0 == db->stat(),
                             "databese disconnect db->stat() = " << db->stat());
     }
     // invalid database name
     testDropDatabase(db);
-    db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+    db->disconnect();
     BOOST_CHECK_MESSAGE(0 == db->stat(),
                         "databese disconnect db->stat() = " << db->stat());
 
     db->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-    BOOST_CHECK_MESSAGE(25000 + 1049 == db->stat(),
+    BOOST_CHECK_MESSAGE(ERROR_NO_DATABASE == db->stat(),
                         "databese connect db->stat() = " << db->stat());
 
-    db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(),
+    //connect is failed, no need disconnet.
+    db->disconnect();
+    BOOST_CHECK_MESSAGE(1 == db->stat(),
                         "databese disconnect db->stat() = " << db->stat());
 }
 
+void testGrantReload(database* db)
+{
+    db->open(makeUri(PROTOCOL, HOSTNAME, _T("mysql"), TRANSACTD_SCHEMANAME),
+             TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
+    BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "open mysql db->stat() = " << db->stat());
+    db->aclReload();
+    BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "grantReload db->stat() = " << db->stat());
+}
 // ------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------
@@ -2219,7 +2320,7 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType,
 
     BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 4");
     table* tb = db->openTable(id);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
     if (tb)
         tb->release();
 }
@@ -2245,15 +2346,17 @@ void testCreateDataBaseVar(database* db)
         return;
 
     if (db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME)))
+    {
         db->drop();
-
+        BOOST_CHECK_MESSAGE(0 == db->stat(), "drop testvar db stat = " << db->stat());
+    }
     db->create(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME));
     BOOST_CHECK_MESSAGE(0 == db->stat(),
-                        "createNewDataBase stat = " << db->stat());
+                        "create testvar db stat = " << db->stat());
     if (0 == db->stat())
     {
         db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME), 0, 0);
-        BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase 1");
+        BOOST_CHECK_MESSAGE(0 == db->stat(), "open testvar db stat = " << db->stat());
 
         if (0 == db->stat())
         {
@@ -2555,6 +2658,7 @@ void doVarInsert(database* db, const _TCHAR* name, unsigned int codePage,
         v = i + 10;
         tb->setFV((short)2, v);
         tb->insert();
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "insert");
     }
     if (bulk)
         tb->commitBulkInsert();
@@ -2572,7 +2676,7 @@ void testVarInsert(database* db)
     const _TCHAR* str2 = _T("123");
 
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1 stat = " << db->stat());
     if (0 == db->stat())
     {
         bool utf16leSupport = isUtf16leSupport(db);
@@ -2609,7 +2713,7 @@ void doVarRead(database* db, const _TCHAR* name, unsigned int codePage,
 {
 
     table* tb = db->openTable(name);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
     tb->clearBuffer();
     tb->setKeyNum(key);
 
@@ -2646,7 +2750,7 @@ void testVarRead(database* db)
     const _TCHAR* str4 = _T("1232");
 
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
     if (0 == db->stat())
     {
         bool utf16leSupport = isUtf16leSupport(db);
@@ -2683,7 +2787,7 @@ void doVarFilter(database* db, const _TCHAR* name, unsigned int codePage,
                  const _TCHAR* str, int num, char_td key)
 {
     table* tb = db->openTable(name);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
     tb->clearBuffer();
     tb->setKeyNum(key);
 
@@ -2745,7 +2849,7 @@ void testFilterVar(database* db)
         return;
 
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
     if (0 == db->stat())
     {
         const _TCHAR* str = _T("漢字文");
@@ -3112,7 +3216,7 @@ void doTestStringFileter(database* db, int id, const _TCHAR* name,
 void testDropDataBaseStr(database* db)
 {
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testString"), BDFNAME), 0, 0);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
     db->drop();
     BOOST_CHECK_MESSAGE(0 == db->stat(),
                         "DropDataBaseTestString stat=" << db->stat());
@@ -4280,7 +4384,7 @@ void testDbPool()
     pooledDbManager poolMgr;
     pooledDbManager::setMaxConnections(4);
 
-    connectParams pm(PROTOCOL, HOSTNAME, _T("querytest"), DBNAME);
+    connectParams pm(PROTOCOL, HOSTNAME, _T("querytest"), DBNAME, g_userName, g_password);
     poolMgr.use(&pm);
     BOOST_CHECK_MESSAGE(1 == poolMgr.usingCount(), "usingCount 1");
     poolMgr.use(&pm);
@@ -4321,8 +4425,8 @@ BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
 BOOST_FIXTURE_TEST_CASE(createNewDataBase, fixture)
 {
-    const _TCHAR* uri = makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME);
-    _tprintf(_T("URI = %s\n"), uri);
+    connectParams cp(PROTOCOL, HOSTNAME, DBNAME, BDFNAME, g_userName);
+    _tprintf(_T("URI = %s\n"), cp.uri());
     if (db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME)))
         db()->drop();
     testCreateNewDataBase(db());
@@ -4465,6 +4569,11 @@ BOOST_FIXTURE_TEST_CASE(setOwner, fixture)
     testSetOwner(db());
 }
 
+BOOST_FIXTURE_TEST_CASE(createIndex, fixture)
+{
+    testCreateIndex(db());
+}
+
 BOOST_FIXTURE_TEST_CASE(dropIndex, fixture)
 {
     testDropIndex(db());
@@ -4474,6 +4583,12 @@ BOOST_FIXTURE_TEST_CASE(dropDatabase, fixture)
 {
     testDropDatabase(db());
 }
+
+BOOST_FIXTURE_TEST_CASE(grantReload, fixture)
+{
+    testGrantReload(db());
+}
+
 
 BOOST_FIXTURE_TEST_CASE(connect, fixture)
 {

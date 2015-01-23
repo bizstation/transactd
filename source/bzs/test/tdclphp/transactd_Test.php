@@ -42,7 +42,32 @@ define("FDI_NAMEW", 2);
 define("BULKBUFSIZE", 65535 - 1000);
 define("TEST_COUNT", 20000);
 define("FIVE_PERCENT_OF_TEST_COUNT", TEST_COUNT / 20);
-define("ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT", TEST_COUNT / 4);
+
+// multi thread test if `php_pthreads` exists.
+if(class_exists('Thread')){
+    class SeekLessThanWorker extends Thread
+    {
+        public function __construct()
+        {
+            $this->value = -1;
+        }
+        public function run()
+        {
+            $dbm = new Bz\pooledDbManager(new Bz\connectParams(URL));
+            $tb = $dbm->table('user');
+            $tb->setFV(FDI_ID, 300000);
+            $tb->seekLessThan(false, Bz\transactd::ROW_LOCK_X);
+            $this->value = $tb->getFVint(FDI_ID);
+            $tb->unlock();
+            $tb->close();
+            $dbm->unUse();
+        }
+        public function getResult()
+        {
+            return $this->value;
+        }
+    }
+}
 
 class transactdTest extends PHPUnit_Framework_TestCase
 {
@@ -263,8 +288,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($client_ver->majorVersion, Bz\transactd::CPP_INTERFACE_VER_MAJOR);
         $this->assertEquals($client_ver->minorVersion, Bz\transactd::CPP_INTERFACE_VER_MINOR);
         $this->assertEquals(chr($client_ver->type), 'N');
-        $this->assertTrue($server_ver->majorVersion >= 5);
-        $this->assertTrue($server_ver->majorVersion != 5 || $server_ver->minorVersion >= 5);
+        $my5x = ($server_ver->majorVersion == 5) && ($server_ver->minorVersion >= 5);
+        $maria10 = ($server_ver->majorVersion == 10) && ($server_ver->minorVersion == 0);
+        $this->assertTrue($my5x || $maria10);
         $this->assertEquals(chr($server_ver->type), 'M');
         $this->assertEquals($engine_ver->majorVersion, Bz\transactd::TRANSACTD_VER_MAJOR);
         $this->assertEquals($engine_ver->minorVersion, Bz\transactd::TRANSACTD_VER_MINOR);
@@ -756,6 +782,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_NOT_FOUND_TI);
         
         // clean up
+        $tb2->setFV(FDI_ID, 29999);
+        $tb2->seek();
+        $this->assertEquals($tb2->stat(), 0);
         $tb2->del();
         $this->assertEquals($tb2->stat(), 0);
         
@@ -781,6 +810,24 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         $tb2->setFV(FDI_ID, 29999);
         $tb2->insert();
+        $this->assertEquals($tb2->stat(), Bz\transactd::STATUS_LOCK_ERROR);
+        
+        $db->endSnapshot();
+        
+        // gap lock
+        $db->beginSnapshot(Bz\transactd::MULTILOCK_NOGAP_SHARE);
+        $tb->seekLast(); // id = 30000
+        $this->assertEquals($tb->stat(), 0);
+        $tb->seekPrev(); // id = 20002
+        $this->assertEquals($tb->stat(), 0);
+        $tb->seekPrev(); // id = 20001
+        $this->assertEquals($tb->stat(), 0);
+        
+        $tb2->setFV(FDI_ID, 20002);
+        $tb2->seek(Bz\transactd::ROW_LOCK_X);
+        $this->assertEquals($tb2->stat(), Bz\transactd::STATUS_LOCK_ERROR);
+        
+        $tb2->seekLast(Bz\transactd::ROW_LOCK_X);
         $this->assertEquals($tb2->stat(), Bz\transactd::STATUS_LOCK_ERROR);
         
         $db->endSnapshot();
@@ -952,6 +999,37 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->seekPrev();
         $this->assertEquals($tb->stat(), 0);
         $this->assertEquals($tb->getFVint(FDI_ID), $last2);
+        $db->endTrn();
+        
+        // ----------------------------------------------------
+        //  Test use shared lock option
+        // ----------------------------------------------------
+        $db->beginTrn(Bz\transactd::MULTILOCK_REPEATABLE_READ);
+        $this->assertEquals(0, $db->stat());
+        
+        $db2->beginTrn(Bz\transactd::MULTILOCK_REPEATABLE_READ);
+        $this->assertEquals(0, $db2->stat());
+        
+        $tb->seekLast(Bz\transactd::ROW_LOCK_S);
+        $this->assertEquals(0, $tb->stat());
+        $tb2->seekLast(Bz\transactd::ROW_LOCK_S);
+        $this->assertEquals(0, $tb2->stat());
+        
+        $tb->seekPrev(); // Lock(X)
+        $this->assertEquals(0, $tb->stat());
+        
+        $tb2->seekPrev(Bz\transactd::ROW_LOCK_S);
+        $this->assertEquals(Bz\transactd::STATUS_LOCK_ERROR, $tb2->stat());
+        
+        $tb->seekPrev(Bz\transactd::ROW_LOCK_S);
+        $this->assertEquals(0, $tb->stat());
+        $id = $tb->getFVint(FDI_ID);
+        
+        $tb2->setFV(FDI_ID, $id);
+        $tb2->seek(Bz\transactd::ROW_LOCK_S);
+        $this->assertEquals(0, $tb2->stat());
+        
+        $db2->endTrn();
         $db->endTrn();
         
         // ----------------------------------------------------
@@ -1255,6 +1333,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // No match records are unlocked.
         $tb2->setFV(FDI_ID, 100);
         $tb2->seek(Bz\transactd::ROW_LOCK_X);
+        $this->assertEquals(0, $tb2->stat());
+        $tb2->setFV(FDI_ID, 101);
+        $tb2->seek(Bz\transactd::ROW_LOCK_X);
         $this->assertEquals($tb2->stat(), 0);
         $tb2->unlock();
         $db->endTrn();
@@ -1318,8 +1399,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb2->seekNext(Bz\transactd::ROW_LOCK_X); // lock(X) third, second lock freed
         $this->assertEquals($tb2->stat(), 0);
         
-        $tb->seekNext(); // nobody lock second.
-        $this->assertEquals($tb->stat(), 0);
+        $tb->seekNext(); // nobody lock second. But REPEATABLE_READ tb2 lock all(no unlock)
+        if ($db->trxIsolationServer() == Bz\transactd::SRV_ISO_REPEATABLE_READ)
+            $this->assertEquals($tb->stat(), Bz\transactd::STATUS_LOCK_ERROR);
+        else
+            $this->assertEquals($tb->stat(), 0);
         $tb->seekNext(Bz\transactd::ROW_LOCK_X); // Try lock(X) third
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_LOCK_ERROR);
         
@@ -1345,10 +1429,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDI_ID, 21000);
         $tb->insert();
         $this->assertEquals($tb->stat(), 0);
+        
+        //cleanup
+        $tb->setFV(FDI_ID, 21000);
+        $tb->seek();
+        $this->assertEquals($tb->stat(), 0);
         $tb->del();
         $this->assertEquals($tb->stat(), 0);
         
-        // ---------   Unlock test ----------------------------
+        // --------- Unlock test ---------------------------
         // 1 unlock()
         $tb->seekFirst(Bz\transactd::ROW_LOCK_X);
         $this->assertEquals($tb->stat(), 0);
@@ -1404,7 +1493,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb2->seekFirst(Bz\transactd::ROW_LOCK_X);
         $this->assertEquals($tb2->stat(), 0);
         $tb2->unlock();
-        // ---------   End Unlock test ----------------------------
+        // --------- End Unlock test -----------------------
+        
+        // --------- Invalid lock type test ----------------
+        $tb2->seekFirst(Bz\transactd::ROW_LOCK_S);
+        $this->assertEquals(Bz\transactd::STATUS_INVALID_LOCKTYPE, $tb2->stat());
     }
     public function testExclusive()
     {
@@ -1423,23 +1516,21 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
         $this->assertEquals($db2->stat(), 0);
         $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF);
+        // database open error. Check database::stat()
         $this->assertEquals($db2->stat(), Bz\transactd::STATUS_CANNOT_LOCK_TABLE);
         $tb->close();
         $db->close();
         $db2->close();
         
         // ------------------------------------------------------
-        // database WRITE EXCLUSIVE
+        // database READ EXCLUSIVE
         // ------------------------------------------------------
-        // table mode exclusive
-        $db = new Bz\database();
         $db->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_READONLY_EXCLUSIVE);
         $this->assertEquals($db->stat(), 0);
         $tb = $db->openTable(TABLENAME, Bz\transactd::TD_OPEN_READONLY_EXCLUSIVE);
         $this->assertEquals($db->stat(), 0);
         
         // Read only open
-        $db2 = new Bz\database();
         $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF);
         $this->assertEquals($db2->stat(), 0);
         $db2->close();
@@ -1459,6 +1550,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_READONLY_EXCLUSIVE);
         $this->assertEquals($db2->stat(), 0);
         $db2->close();
+        $tb->close();
         $db->close();
         
         // ------------------------------------------------------
@@ -1473,10 +1565,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         $tb2 = $db->openTable('group', Bz\transactd::TD_OPEN_EXCLUSIVE);
         $this->assertEquals($db->stat(), 0);
+        
         // Check tb2 Exclusive
         $tb3 = $db2->openTable('group', Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db2->stat(), Bz\transactd::STATUS_CANNOT_LOCK_TABLE);
-        
         for ($i = 1; $i < 5; $i++)
         {
             $tb2->setFV(FDI_ID, $i + 1);
@@ -1517,10 +1609,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->stat(), 0);
         
         // ------------------------------------------------------
-        // Normal and Exclusive opend tables mix transaction
+        // Normal and Exclusive open tables mix transaction
         // ------------------------------------------------------
         $tb2 = $db->openTable('group', Bz\transactd::TD_OPEN_EXCLUSIVE);
-        $this->assertEquals($tb2->stat(), 0);
+        $this->assertEquals($db->stat(), 0);
         // Check tb2 Exclusive
         $tb3 = $db2->openTable('group', Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db2->stat(), Bz\transactd::STATUS_CANNOT_LOCK_TABLE);
@@ -1586,6 +1678,70 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $v2 = $tb->getFVstr(FDI_NAME);
         $this->assertEquals($v, $v2);
     }
+    public function testMissingUpdate()
+    {
+        if(! class_exists('Thread'))
+        {
+            echo(' * class Thread not found! * ');
+            return;
+        }
+        $db = new Bz\database();
+        $tb = $this->openTable($db);
+        Bz\pooledDbManager::setMaxConnections(3);
+        // Lock last record and insert to next of it
+        $w = new SeekLessThanWorker();
+        $tb->setFV(FDI_ID, 300000);
+        $tb->seekLessThan(false, Bz\transactd::ROW_LOCK_X);
+        $this->assertEquals($tb->stat(), 0);
+        if ($tb->stat() == 0)
+        {
+            // Get lock(X) same record in parallel.
+            $w->start();
+            usleep(5000);
+            $v = $tb->getFVint(FDI_ID);
+            $tb->setFV(FDI_ID, ++$v);
+            $tb->insert();
+            $this->assertEquals($tb->stat(), 0);
+            $w->join();
+            $v2 = $w->getResult();
+            
+            if ($db->trxIsolationServer() == Bz\transactd::SRV_ISO_REPEATABLE_READ)
+            {   // $tb can not insert because $tb2 got gap lock with SRV_ISO_REPEATABLE_READ.
+                // It is deadlock!
+                $this->assertEquals($tb->stat(), Bz\transactd::STATUS_LOCK_ERROR);
+            }
+            else
+            {   // When SRV_ISO_READ_COMMITED set, $tb2 get lock after $tb->insert.
+                // But this is not READ_COMMITED !
+                $this->assertEquals($tb->stat(), 0);
+                $this->assertEquals($v2, $v - 1);
+                // cleanup
+                $tb->setFV(FDI_ID, $v);
+                $tb->seek();
+                $this->assertEquals($tb->stat(), 0);
+                $tb->del();
+                $this->assertEquals($tb->stat(), 0);
+            }
+        }
+        // Lock last record and delete it
+        $w = new SeekLessThanWorker();
+        $tb->setFV(FDI_ID, 300000);
+        $tb->seekLessThan(false, Bz\transactd::ROW_LOCK_X);
+        $this->assertEquals($tb->stat(), 0);
+        if ($tb->stat() == 0)
+        {
+            // Get lock(X) same record in parallel.
+            $w->start();
+            usleep(5000);
+            $v = $tb->getFVint(FDI_ID);
+            $tb->del();
+            $this->assertEquals($tb->stat(), 0);
+            $w->join();
+            $v2 = $w->getResult();
+            $this->assertNotEquals($v, $v2);
+        }
+        (new Bz\pooledDbManager())->reset(0);
+    }
     public function testInsert2()
     {
         $db = new Bz\database();
@@ -1611,13 +1767,16 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
+        $expected_count = 20003;
+        if(! class_exists('Thread'))
+          $expected_count = $expected_count + 1;
         // estimate count
         $count = $tb->recordCount(true);
-        $is_valid_count = (abs($count - TEST_COUNT) < ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT);
+        $is_valid_count = (abs($count - $expected_count) < 5000);
         $this->assertTrue($is_valid_count);
         if (! $is_valid_count)
-          print("true record count = " . (TEST_COUNT + 3) . " and estimate recordCount count = " . $count);
-        $this->assertEquals($tb->recordCount(false), TEST_COUNT + 3); // true count
+          print("true record count = " . $expected_count . " and estimate recordCount count = " . $count);
+        $this->assertEquals($tb->recordCount(false), $expected_count); // true count
         $vv = TEST_COUNT * 3 / 4 + 1;
         $tb->clearBuffer();
         $tb->setFV(FDI_ID, $vv);
@@ -1684,7 +1843,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $db2->connect(PROTOCOL . HOSTNAME, true);
             $this->assertEquals($db2->stat(), 0);
             unset($db2);
-            $db->disconnect(PROTOCOL . HOSTNAME);
+            $db->disconnect();
             $this->assertEquals($db->stat(), 0);
         }
         // invalid host name
@@ -1696,24 +1855,24 @@ class transactdTest extends PHPUnit_Framework_TestCase
             print('bad host $db->stat() = ' . $db->stat());
         $this->createDatabase($db);
         $this->createTable($db);
-        $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
+        $db->close();
         $this->assertEquals($db->stat(), 0);
         // true database name
         $db->connect(PROTOCOL . HOSTNAME . DBNAME);
         $this->assertEquals($db->stat(), 0);
         if ($db->stat() == 0)
         {
-            $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
+            $db->disconnect();
             $this->assertEquals($db->stat(), 0);
         }
         // invalid database name
         $this->dropDatabase($db);
-        $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
+        $db->disconnect();
         $this->assertEquals($db->stat(), 0);
         $db->connect(PROTOCOL . HOSTNAME . DBNAME);
-        $this->assertEquals($db->stat(), 25000 + 1049);
-        $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
-        $this->assertEquals($db->stat(), 0);
+        $this->assertEquals($db->stat(), Bz\transactd::ERROR_NO_DATABASE);
+        $db->disconnect();
+        $this->assertEquals($db->stat(), 1);
     }
     
     /* -----------------------------------------------------
@@ -3242,19 +3401,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // $rs[0];
         $this->assertEquals($rs[0]['group_name'], '1 group');
         
-/*
-        sortFields orderRv;
-        orderRv.add('group_name', false);
-        rs.orderBy(orderRv);
-
-        sortFields order;
-        order.add('group_name', true);
-        rs.orderBy(order);
-        BOOST_CHECK_MESSAGE(_tstring(rs[(size_t)0]['group_name'].c_str()) ==
-                                _tstring('1 group'),
-                            "group_name = 1 group "
-                                << string(rs[(size_t)0]['group_name'].a_str()));
-*/
         // All fields
         $rs->clear();
         $q->reset()->all();

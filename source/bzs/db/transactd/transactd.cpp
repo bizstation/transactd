@@ -54,6 +54,9 @@ unsigned int g_pipeCommSharememSize = 3145728;
 int g_tableNmaeLower = 1; // defined in btrvProtocol.h
 unsigned int g_lock_wait_timeout = 1;
 char* g_transaction_isolation = NULL;
+char* g_auth_type = NULL;
+//int g_grant_apply = 0;//skip
+
 
 /** tcp server
  */
@@ -210,6 +213,7 @@ void shutdownSrv(boost::shared_ptr<iserver>& srv)
  */
 static int transactd_plugin_deinit(void* p)
 {
+	
 #ifdef PIPE_SERVER
     shutdownSrv(srv_p);
 #endif
@@ -245,7 +249,12 @@ static MYSQL_SYSVAR_UINT(lock_wait_timeout, g_lock_wait_timeout,
 static MYSQL_SYSVAR_STR(transaction_isolation, g_transaction_isolation,
                         PLUGIN_VAR_READONLY | PLUGIN_VAR_MEMALLOC, NULL, NULL,
                         NULL, "READ-COMMITTED");
-
+static MYSQL_SYSVAR_STR(auth_type, g_auth_type,
+                        PLUGIN_VAR_READONLY | PLUGIN_VAR_MEMALLOC, NULL, NULL,
+                        NULL, "none"); //or "mysql_native"
+/*static MYSQL_SYSVAR_INT(grant_apply, g_grant_apply,
+                        PLUGIN_VAR_READONLY, "0..1 0:none 1:all", 0, 0, 0, 0, 1, 0);
+*/
 #ifdef PIPE_SERVER
 static MYSQL_SYSVAR_UINT(pipe_comm_sharemem_size, g_pipeCommSharememSize,
                          PLUGIN_VAR_READONLY, "66000..52428800", 0, 0, 3145728,
@@ -266,18 +275,26 @@ static MYSQL_SYSVAR_INT(use_handlersocket, g_use_hs, PLUGIN_VAR_READONLY, "", 0,
 
 /** system valiables struct.
  */
-static struct st_mysql_sys_var* g_systemVariables[] = {
-    MYSQL_SYSVAR(address),                 MYSQL_SYSVAR(port),
-    MYSQL_SYSVAR(max_tcp_connections),     MYSQL_SYSVAR(hostcheck_username),
-    MYSQL_SYSVAR(table_name_lowercase),    MYSQL_SYSVAR(pool_threads),
-    MYSQL_SYSVAR(tcp_server_type),         MYSQL_SYSVAR(lock_wait_timeout),
+static struct st_mysql_sys_var* g_systemVariables[] = 
+{
+    MYSQL_SYSVAR(address),                 
+    MYSQL_SYSVAR(port),
+    MYSQL_SYSVAR(max_tcp_connections),     
+    MYSQL_SYSVAR(hostcheck_username),
+    MYSQL_SYSVAR(table_name_lowercase),    
+    MYSQL_SYSVAR(pool_threads),
+    MYSQL_SYSVAR(tcp_server_type),         
+    MYSQL_SYSVAR(lock_wait_timeout),
     MYSQL_SYSVAR(transaction_isolation),
+    MYSQL_SYSVAR(auth_type),
 #ifdef PIPE_SERVER
-    MYSQL_SYSVAR(pipe_comm_sharemem_size), MYSQL_SYSVAR(max_pipe_connections),
+    MYSQL_SYSVAR(pipe_comm_sharemem_size), 
+    MYSQL_SYSVAR(max_pipe_connections),
     MYSQL_SYSVAR(use_piped_local),
 #endif
 #ifdef USE_HANDLERSOCKET
-    MYSQL_SYSVAR(use_handlersocket),       MYSQL_SYSVAR(hs_port),
+    MYSQL_SYSVAR(use_handlersocket),       
+    MYSQL_SYSVAR(hs_port),
 #endif
     0
 };
@@ -302,12 +319,18 @@ static st_mysql_show_var g_showVariables[] = {
  */
 mysql_declare_plugin(transactd)
 {
-    MYSQL_DAEMON_PLUGIN, &transactd_info,
-        "transactd", // this is plugin name for mysql.
-        "Hisashi Yaguchi at BizStation Corp",
-        "Transactional access demon for mysql", PLUGIN_LICENSE_GPL,
-        transactd_plugin_init, transactd_plugin_deinit, 0x0100, g_showVariables,
-        g_systemVariables, NULL
+    MYSQL_DAEMON_PLUGIN, 
+    &transactd_info,
+    "transactd", // this is plugin name for mysql.
+    "Hisashi Yaguchi at BizStation Corp",
+    "Transactional access demon for mysql",
+    PLUGIN_LICENSE_GPL,
+    transactd_plugin_init,
+    transactd_plugin_deinit, 
+    0x0100, 
+    g_showVariables,
+    g_systemVariables,
+    NULL
 }
 
 mysql_declare_plugin_end;

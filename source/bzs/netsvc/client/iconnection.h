@@ -22,8 +22,7 @@
 #pragma warn -8012
 #endif
 
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/buffer.hpp>
+#include <boost/asio.hpp>
 #include <vector>
 
 #ifdef __BCPLUSPLUS__
@@ -81,7 +80,6 @@ public:
     virtual int refCount() const = 0;
     virtual bool isConnected() const = 0;
     virtual const boost::asio::ip::tcp::endpoint& endpoint() const = 0;
-    virtual thread_id tid() const = 0;
     virtual char* sendBuffer(size_t size) = 0;
     virtual unsigned int sendBufferSize() = 0;
     virtual buffers* optionalBuffers() = 0;
@@ -95,6 +93,9 @@ public:
     virtual bool queryFunction(unsigned int v) = 0;
     virtual int charsetServer() const = 0;
     virtual void setCharsetServer(int v) = 0;
+    virtual void write(unsigned int writeSize) = 0;
+    virtual char* read() = 0;
+    virtual bool isHandShakable() const = 0;
 };
 
 #define CONNECTION_FUNCTION_DIRECT_READ 1

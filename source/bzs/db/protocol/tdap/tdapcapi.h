@@ -68,7 +68,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define MAX_KEYLEN                      0X3FF   // 1023
 #endif
 #define BTRV_MAX_DATA_SIZE              57000
-#define TDAP_MAX_DATA_SIZE              6291456 // 3Mbyte
+#define TDAP_MAX_DATA_SIZE              6291456 // 6Mbyte
 #define BOOKMARK_ALLOC_SIZE             40960
 
 /** operation type
@@ -143,6 +143,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TD_GET_BLOB_BUF                 93
 #define TD_STASTISTICS                  94
 #define TD_KEY_SEEK_MULTI               95
+#define TD_ACL_RELOAD                   96
 
 /** create sub operations
  */
@@ -246,6 +247,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 
 /** btrv transaction lock options
  */
+#define LOCK_BIAS_DEFAULT               0
 #define LOCK_SINGLE_WAIT                100
 #define LOCK_SINGLE_NOWAIT              200
 #define LOCK_MULTI_WAIT                 300
@@ -275,6 +277,12 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 // Read row lock
 #define ROW_LOCK_X                      LOCK_SINGLE_NOWAIT
 #define ROW_LOCK_S                      5000 + LOCK_SINGLE_NOWAIT
+
+//Server isoration
+#define SRV_ISO_READ_UNCOMMITED   0
+#define SRV_ISO_READ_COMMITED     1
+#define SRV_ISO_REPEATABLE_READ   2
+#define SRV_ISO_SERIALIZABLE      3
 
 /** open mode
  */
@@ -365,6 +373,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define STATUS_INVALID_DATASIZE         STATUS_BUFFERTOOSMALL
 #define STATUS_INVALID_FIELDNAME        STATUS_INVALID_FIELD_OFFSET
 #define ERROR_TD_INVALID_CLINETHOST     171
+#define ERROR_NO_DATABASE               172
 #define ERROR_NOSPECIFY_TABLE           176
 #define ERROR_LOAD_CLIBRARY             200
 #define ERROR_INDEX_RND_INIT            201
@@ -420,13 +429,29 @@ struct trdVersiton
     ushort_td srvMinor;
     ushort_td srvRelease;
 };
+
+#define MYSQL_SCRAMBLE_LENGTH 20
+#define MYSQL_USERNAME_MAX    16
+
+struct handshale_t
+{
+    unsigned int size;  // size of this
+    unsigned int options;
+    trdVersiton ver;
+    unsigned short transaction_isolation;
+    unsigned short lock_wait_timeout;
+    unsigned char scramble[MYSQL_SCRAMBLE_LENGTH+1]; //user auth scramble
+};
+
+#define HST_OPTION_NO_SCRAMBLE 1
+
 /** @endcond */
 
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.
  If you change this version then you need change The ($TargetName) project options too.
  */
 #define C_INTERFACE_VER_MAJOR "2"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "1"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "2"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
@@ -490,7 +515,7 @@ struct trdVersiton
  */
 
 #define CPP_INTERFACE_VER_MAJOR "2"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "1"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "2"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
@@ -507,7 +532,7 @@ struct trdVersiton
 #endif
 
 #define TRANSACTD_VER_MAJOR 2//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 1//##8 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 2//##8 Build marker! Don't remove
 #define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

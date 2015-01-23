@@ -42,6 +42,9 @@ std::string sqlCreateTable(const char* name, tabledef* table,
 std::string sqlCreateTable(const char* fileName, fileSpec* fs,
                            uchar_td charsetIndexServer);
 
+std::string sqlCreateIndex(const tabledef* table, int keyNum,
+                  bool specifyKeyNum, uchar_td charsetIndexServer);
+
 } // namespace client
 } // namespace tdap
 } // namespace protocol

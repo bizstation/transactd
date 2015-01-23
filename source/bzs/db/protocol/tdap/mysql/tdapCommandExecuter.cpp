@@ -34,6 +34,11 @@
 #include "databaseSchema.h"
 #include <bzs/db/transactd/connManager.h>
 #include <bzs/rtl/exception.h>
+#include <random>
+
+
+extern unsigned int getTransactdIsolation();
+extern unsigned int getTransactdLockWaitTimeout();
 
 namespace bzs
 {
@@ -205,36 +210,18 @@ void dumpStdErr(int op, request& req, table* tb)
 //-------------------------------------------------------------
 //  class dbExecuter
 //-------------------------------------------------------------
-
-dbExecuter::dbExecuter()
+#define MYSQL_ERROR_OFFSET 25000
+dbExecuter::dbExecuter(netsvc::server::IAppModule* mod)
     : dbManager(), m_readHandler(new ReadRecordsHandler()),
-      m_blobBuffer(new blobBuffer())
+      m_blobBuffer(new blobBuffer()), m_mod(mod)
 {
+    m_scramble[0] = 0x00;
 }
 
 dbExecuter::~dbExecuter()
 {
     delete m_blobBuffer;
     delete m_readHandler;
-}
-
-void dbExecuter::connect(request& req)
-{
-    req.paramMask = 0;
-    if (req.keyNum == LG_SUBOP_DISCONNECT)
-        dbManager::releaseDatabase(req.cid);
-    else
-    {
-        std::string dbname = getDatabaseName(req);
-        std::string dbSqlname = getDatabaseName(req, FOR_SQL);
-        // exec SQL use database
-        if (dbname != "")
-        {
-            database* db = getDatabase(dbname.c_str(), req.cid);
-            dbSqlname.insert(0, "use ");
-            req.result = ddl_execSql(db->thd(), dbSqlname);
-        }
-    }
 }
 
 void dbExecuter::releaseDatabase(request& req, int op)
@@ -249,11 +236,10 @@ void dbExecuter::releaseDatabase(request& req, int op)
 std::string dbExecuter::makeSQLcreateTable(const request& req)
 {
     return (const char*)req.data;
-    // return sql;
 }
 
 int dbExecuter::errorCode(int ha_error)
-{ // see mysqld_error.h or my_base.h or dbManager.h
+{ // see mysqld_error.h or my_base.h or dbManager.h share/errmsg.txt
 
     if (ha_error < HA_ERR_FIRST)
         return ha_error;
@@ -281,12 +267,13 @@ int dbExecuter::errorCode(int ha_error)
         return STATUS_TABLE_EXISTS_ERROR;
     else if (ha_error == DBM_ERROR_TABLE_USED)
         return STATUS_CANNOT_LOCK_TABLE;
-    return 25000 + ha_error;
+    else if(ha_error == ER_BAD_DB_ERROR)
+        return ERROR_NO_DATABASE;
+    return MYSQL_ERROR_OFFSET + ha_error;
 }
 
 bool isMetaDb(const request& req)
 {
-
     char buf[MAX_PATH];
     strncpy(buf, (char*)req.keybuf, MAX_PATH);
     _strlwr(buf);
@@ -296,31 +283,136 @@ bool isMetaDb(const request& req)
     return (st != NULL);
 }
 
-inline void dbExecuter::doCreateTable(request& req)
+inline bool getUserPasswd(request& req, char* &user, char* &pwd)
 {
-    // if table name is mata table and database is nothing
-    //	then cretate database too.
-    std::string dbname = getDatabaseName(req);
-    std::string dbSqlname = getDatabaseName(req, FOR_SQL);
+    char* p = strchr((char*)req.keybuf, '\t');
+    if (p)
+    {
+        p = strchr(++p, '\t');
+        if (p)
+        {
+            pwd = ++p;
+            user = pwd + MYSQL_SCRAMBLE_LENGTH;
+            while (p < user)
+                if (*p++) return true;
+        }
+        return false;
+    }
+    return false;
+}
+
+inline bool dbExecuter::doAuthentication(request& req, database* db)
+{
+    if (m_authChecked) return true;
+    bool ret = true;
+    if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR)==0)
+    {
+        ret = false;
+        char host[MAX_HOSTNAME];
+        char *user = 0x00;
+        char *pwd = 0x00;
+        bool pwdRecieved = getUserPasswd(req, user, pwd);
+        if (user && user[0] && m_mod->checkHost(user, host, MAX_HOSTNAME))
+        {
+            //uint8* p = find_acl_user_(host, user, FALSE);
+            unsigned char buf[22];
+            unsigned char* p = db->getUserSha1Passwd(host, user, buf);
+            if (!pwdRecieved && !p) 
+                ret = true;
+            else if (p && pwdRecieved)
+                ret = (FALSE == check_scramble((const unsigned char*)pwd, (const char*)m_scramble, p));
+            if (ret)
+            {
+                m_user = user;
+                m_host = host;
+            }
+        }
+    }
+    m_authChecked = ret;
+    return ret;
+}
+
+/*
+@param connect Is connect command, The database name is not required
+@return 0 auth failed
+        1 success but see req.result
+*/
+bool dbExecuter::getDatabaseWithAuth(request& req, database** db, bool connect)
+{
+    *db = NULL;
+    bool created = false;
+	std::string dbname = getDatabaseName(req);
+    bool ret = false;
+    if (connect && dbname == "")
+        dbname = "mysql";
+    else
+        connect = false;
     if (dbname != "")
     {
-        std::string cmd;
-        database* db = getDatabase(dbname.c_str(), req.cid);
+        *db = getDatabase(dbname.c_str(), req.cid, created);
+        if (*db)
+			ret = doAuthentication(req, *db);
+        if (connect || (created && !ret))
+        {
+            dbManager::releaseDatabase(req.cid);
+		    *db = NULL;
+        }
+    }else
+        req.result = 1;
 
+    return ret;
+}
+
+/* When connect failed, Delete database object.
+
+*/
+bool dbExecuter::connect(request& req)
+{
+    req.paramMask = 0;
+    if (req.keyNum == LG_SUBOP_DISCONNECT)
+    {
+		dbManager::releaseDatabase(req.cid);
+		return true;
+	}
+    database* db = NULL;
+    bool ret = getDatabaseWithAuth(req, &db, true);
+    if (ret &&  (req.result == 0) && db)
+    {
+        std::string dbSqlname = getDatabaseName(req, FOR_SQL);
+        dbSqlname.insert(0, "use ");
+        req.result = ddl_execSql(db->thd(), dbSqlname);
+    }
+    if (db && (!ret || req.result))
+        dbManager::releaseDatabase(req.cid);
+    return ret;
+}
+
+inline bool dbExecuter::doCreateTable(request& req)
+{
+    // if table name is mata table and database is nothing
+    //  then cretate database too.
+    database* db;
+    bool ret = getDatabaseWithAuth(req, &db);
+    if (ret && req.result == 0)
+    {
+        std::string dbSqlname = getDatabaseName(req, FOR_SQL);
+        std::string cmd;
         if (isMetaDb(req))
         { // for database operation
             if ((req.keyNum == 0) && (db->existsDatabase() == false))
+            {
                 req.result = ddl_createDataBase(db->thd(), dbSqlname);
+                if (req.result == ER_DB_CREATE_EXISTS + MYSQL_ERROR_OFFSET)
+                    req.result = 0;
+            }
             else if (req.keyNum == CR_SUBOP_DROP)
             {
-                std::string tableName = getTableName(req);
-                if (db->existsTable(tableName))
-                    req.result = ddl_dropTable(db, tableName, dbSqlname,
-                                               getTableName(req, FOR_SQL));
                 if (req.result == 0)
-                    req.result = ddl_dropDataBase(db->thd(), dbname, dbSqlname);
-                req.result = errorCodeSht(req.result);
-                return;
+                {
+                    req.result = ddl_dropDataBase(db->thd(), db->name(), dbSqlname);
+                    if (ER_DB_DROP_EXISTS+ MYSQL_ERROR_OFFSET == req.result) req.result = 0;
+                }
+                return ret;
             }
         }
         if (req.result == 0)
@@ -331,10 +423,10 @@ inline void dbExecuter::doCreateTable(request& req)
                 std::string tableName = getTableName(req);
                 if (req.keyNum == CR_SUBOP_DROP) // -128 is delete
                 {
-
-                    if (db->existsTable(tableName))
-                        req.result = ddl_dropTable(db, tableName, dbSqlname,
-                                                   tableSqlName);
+                    req.result = ddl_dropTable(db, tableName, dbSqlname,
+                                                tableSqlName);
+                    if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
+                        req.result = 0;
                 }
                 else if (req.keyNum == CR_SUBOP_RENAME)
                 { // rename new is keybuf
@@ -342,10 +434,8 @@ inline void dbExecuter::doCreateTable(request& req)
                     reqold.keybuf = req.data;
                     reqold.keylen = *req.datalen;
                     req.result = ddl_renameTable(
-                        db, getTableName(reqold) /*oldname*/
-                        ,
-                        dbSqlname, getTableName(reqold, FOR_SQL) /*oldname*/
-                        ,
+                        db, getTableName(reqold), /*oldname*/
+                        dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
                         tableSqlName /*newName*/);
                 }
                 else if (req.keyNum == CR_SUBOP_SWAPNAME)
@@ -354,12 +444,9 @@ inline void dbExecuter::doCreateTable(request& req)
                     reqold.keybuf = req.data;
                     reqold.keylen = *req.datalen;
                     req.result = ddl_replaceTable(
-                        db, getTableName(reqold) /*oldname*/
-                        ,
-                        tableName /*newName*/
-                        ,
-                        dbSqlname, getTableName(reqold, FOR_SQL) /*oldname*/
-                        ,
+                        db, getTableName(reqold), /*oldname*/
+                        tableName, /*newName*/
+                        dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
                         tableSqlName /*newName*/);
                 }
                 else
@@ -368,10 +455,13 @@ inline void dbExecuter::doCreateTable(request& req)
                         req.result = 1;
                     else
                     { //-1 is overwrite
-                        if ((req.keyNum == CR_SUB_FLAG_EXISTCHECK) &&
-                            (db->existsTable(tableName)))
+                        if (req.keyNum == CR_SUB_FLAG_EXISTCHECK)
+                        {
                             req.result = ddl_dropTable(db, tableName, dbSqlname,
                                                        tableSqlName);
+                            if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
+                                req.result = 0;
+                        }
                         if (req.result == 0)
                             req.result =
                                 ddl_execSql(db->thd(), makeSQLcreateTable(req));
@@ -380,51 +470,51 @@ inline void dbExecuter::doCreateTable(request& req)
             }
         }
     }
-    else
-        req.result = 1;
-    req.result = errorCodeSht(req.result);
+    return ret;
 }
 
+
 // open table and assign handle
-inline void dbExecuter::doOpenTable(request& req)
+inline bool dbExecuter::doOpenTable(request& req)
 {
-    std::string dbname = getDatabaseName(req);
-    if (dbname != "")
+    database* db;
+    bool ret = getDatabaseWithAuth(req, &db);
+    if (ret && req.result == 0)
     {
-        database* db;
+        table* tb = NULL;
         {// Lock open table by another thread
             boost::mutex::scoped_lock lck(g_mutex_opentable);
             if (req.keyNum == TD_OPEN_EXCLUSIVE/* && isMetaDb(req)*/)
             {
-                if (database::tableRef.count(dbname, getTableName(req)))
-                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_CANNOT_LOCK_TABLE,
-                                            "lockTable error.");
+                if (database::tableRef.count(db->name(), getTableName(req)))
+                {
+                    req.result = STATUS_CANNOT_LOCK_TABLE;
+                    return ret;
+                }
             }
-            db = getDatabase(dbname.c_str(), req.cid);
-            m_tb = db->openTable(
-                getTableName(req), req.keyNum,
-                getOwnerName(req)); // if error occured that throw exception
+             // if error occured that throw no exception
+            tb = db->openTable(getTableName(req), req.keyNum, getOwnerName(req)); 
             req.result = db->stat();
         }
         
-        if (m_tb)
+        if (tb)
         {
+            tb->setBlobBuffer(m_blobBuffer);
             try
             {
-                req.pbk->handle = addHandle(getDatabaseID(req.cid), m_tb->id());
-                m_tb = getTable(req.pbk->handle);
-                m_tb->setBlobBuffer(m_blobBuffer);
+                uint hdl = addHandle(getDatabaseID(req.cid), tb->id());
+                m_tb = getTable(hdl);
+                req.pbk->handle = hdl;
                 req.paramMask = P_MASK_POSBLK;
             }
             catch (bzs::rtl::exception& e)
             {
-                m_tb->close();
+                tb->close();
                 throw e;
             }
         }
     }
-    else
-        req.result = 1;
+    return ret;
 }
 
 inline void readAfter(request& req, table* tb, dbExecuter* dbm)
@@ -767,7 +857,6 @@ inline void dbExecuter::doInsert(request& req)
     m_tb->clearBuffer();
     m_tb->setRecordFromPacked((const uchar*)req.data, *(req.datalen),
                               req.blobHeader);
-    smartBulkInsert sbi(m_tb, 1);
     __int64 aincValue = m_tb->insert(ncc);
     req.result = errorCodeSht(m_tb->stat());
     if (aincValue)
@@ -894,6 +983,11 @@ inline void dbExecuter::doInsertBulk(request& req)
         req.result = errorCodeSht(m_tb->stat());
 }
 
+/**
+@result 
+         2byte recordLength
+         4byte esitimate recordCount
+*/
 inline void dbExecuter::doStat(request& req)
 {
     m_tb = getTable(req.pbk->handle);
@@ -938,10 +1032,10 @@ inline short getTrnsactionType(int op)
 
 inline rowLockMode* getRowLockMode(int op, rowLockMode* lck)
 {
-	lck->lock = false;
+    lck->lock = false;
     lck->read = (op > ROW_LOCK_S);
     if (op > 1000)
-    	op = op % 1000;
+        op = op % 1000;
     if (op < NOWAIT_WRITE)
     {
         if (op >= LOCK_SINGLE_NOWAIT && op < LOCK_MULTI_NOWAIT)
@@ -974,54 +1068,14 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         if (pbk == NULL)
             pbk = &tmp;
         req.reset();
+        if (!m_authChecked)
+        {
+          if (op != TD_CONNECT && op != TD_CREATETABLE &&
+              op != TD_OPENTABLE && op != TD_GETSERVER_CHARSET)
+              return EXECUTE_RESULT_ACCESS_DNIED;
+        }
         switch (op)
         {
-        case TD_GETSERVER_CHARSET:
-        {
-            if (*req.datalen == sizeof(trdVersiton))
-            {
-                trdVersiton* ver = (trdVersiton*)req.data;
-                strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
-                         global_system_variables.collation_server->csname);
-                ver->srvMajor = TRANSACTD_VER_MAJOR;
-                ver->srvMinor = TRANSACTD_VER_MINOR;
-                ver->srvRelease = TRANSACTD_VER_RELEASE;
-                req.resultLen = sizeof(trdVersiton);
-                // req.data = (void*)
-                // global_system_variables.collation_server->csname;
-                // req.resultLen = (uint_td)strlen(
-                // global_system_variables.collation_server->csname);
-                req.paramMask |= P_MASK_DATA | P_MASK_DATALEN;
-            }
-            else
-                req.result = SERVER_CLIENT_NOT_COMPATIBLE;
-            break;
-        }
-        case TD_CONNECT:
-            connect(req);
-            break;
-        case TD_RESET_CLIENT:
-        case TD_STOP_ENGINE: // close all table
-            releaseDatabase(req, op);
-            break;
-        case TD_AUTOMEKE_SCHEMA:
-            m_tb = getTable(req.pbk->handle, SQLCOM_INSERT);
-            req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb);
-            break;
-        case TD_CREATETABLE:
-            doCreateTable(req);
-            break;
-        case TD_OPENTABLE:
-            doOpenTable(req);
-            break;
-        case TD_CLOSETABLE:
-            m_tb = getTable(req.pbk->handle);
-            if (m_tb)
-            {
-                m_tb->close();
-                m_tb = NULL;
-            }
-            break;
         case TD_KEY_SEEK:
         case TD_KEY_AFTER:
         case TD_KEY_OR_AFTER:
@@ -1109,64 +1163,6 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             readAfter(req, m_tb, this);
             break;
         }
-        case TD_GETDIRECTORY:
-        {
-            database* db = getDatabaseCid(req.cid);
-            if (db->name().size() < 64)
-            {
-                req.keylen = (uchar_td)db->name().size() + 1;
-                req.keybuf = (void*)db->name().c_str();
-                req.paramMask = P_MASK_KEYBUF;
-            }
-            else
-                req.result = STATUS_BUFFERTOOSMALL;
-            break;
-        }
-        case TD_VERSION:
-            if (*req.datalen >= sizeof(version) * 3)
-            {
-                version* v = (version*)req.data;
-                ++v;
-                v->majorVersion = MYSQL_VERSION_ID / 10000;
-                v->minorVersion = (MYSQL_VERSION_ID / 100) % 100;
-                v->Type = 'M';
-                ++v;
-                v->majorVersion = TRANSACTD_VER_MAJOR;
-                v->minorVersion = TRANSACTD_VER_MINOR;
-                v->Type = 'T';
-                req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
-                req.resultLen = sizeof(version) * 3;
-            }
-            else
-                req.result = STATUS_BUFFERTOOSMALL;
-            break;
-        case TD_CLEAR_OWNERNAME:
-            req.keybuf = (void_td*)"";
-        case TD_SET_OWNERNAME:
-        {
-            database* db = getDatabaseCid(req.cid);
-            m_tb = getTable(req.pbk->handle);
-            int num = (req.keyNum > 1) ? req.keyNum - 2 : req.keyNum;
-            num += '0';
-            std::string s("%@%");
-            s += (const char*)&num;
-            s += (const char*)req.keybuf;
-            req.result = ddl_execSql(
-                db->thd(),
-                makeSQLChangeTableComment(db->name(), m_tb->name(), s.c_str()));
-            break;
-        }
-        case TD_DROP_INDEX:
-        { // Key name of multi byte charctord is not supported. Use only ascii.
-            database* db = getDatabaseCid(req.cid);
-            m_tb = getTable(req.pbk->handle);
-            req.result = ddl_execSql(
-                db->thd(),
-                makeSQLDropIndex(
-                    db->name(), m_tb->name(),
-                    m_tb->keyName(m_tb->keyNumByMakeOrder(req.keyNum))));
-            break;
-        }
         case TD_KEY_GE_NEXT_MULTI:
         case TD_KEY_LE_PREV_MULTI:
             nw->setClientBuffferSize(*(req.datalen));
@@ -1237,10 +1233,128 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             m_tb = getTable(req.pbk->handle);
             req.result = m_tb->unlock() ? STATUS_NO_CURRENT : 0;
             break;
+        /* ddl or once at connection
+        */
+        case TD_GETSERVER_CHARSET:
+        {
+            if (*req.datalen == sizeof(trdVersiton))
+            {
+                trdVersiton* ver = (trdVersiton*)req.data;
+                strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
+                         global_system_variables.collation_server->csname);
+                ver->srvMajor = TRANSACTD_VER_MAJOR;
+                ver->srvMinor = TRANSACTD_VER_MINOR;
+                ver->srvRelease = TRANSACTD_VER_RELEASE;
+                req.resultLen = sizeof(trdVersiton);
+                req.paramMask |= P_MASK_DATA | P_MASK_DATALEN;
+            }
+            else
+                req.result = SERVER_CLIENT_NOT_COMPATIBLE;
+            break;
+        }
+        case TD_CONNECT:
+            if (!connect(req))
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+            break;
+        case TD_RESET_CLIENT:
+        case TD_STOP_ENGINE: // close all table
+            releaseDatabase(req, op);
+            break;
+        case TD_AUTOMEKE_SCHEMA:
+            m_tb = getTable(req.pbk->handle, SQLCOM_INSERT);
+            req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb);
+            break;
+        case TD_CREATETABLE:
+            if (!doCreateTable(req))
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+            break;
+        case TD_OPENTABLE:
+            if (!doOpenTable(req))
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+            break;
+        case TD_CLOSETABLE:
+            m_tb = getTable(req.pbk->handle);
+            if (m_tb)
+            {
+                m_tb->close();
+                m_tb = NULL;
+            }
+            break;
+        case TD_BUILD_INDEX:
+        { 
+            database* db = getDatabaseCid(req.cid);
+            m_tb = getTable(req.pbk->handle);
+            std::string cmd((const char*)req.data);
+            std::string tbname = m_tb->name();
+            req.result = ddl_addIndex(db, tbname, cmd);
+            break;
+        }
+        case TD_DROP_INDEX:
+        { // Key name of multi byte charctor is not supported. Use only ascii.
+            database* db = getDatabaseCid(req.cid);
+            m_tb = getTable(req.pbk->handle);
+            req.result = ddl_execSql(db->thd(),
+                makeSQLDropIndex(db->name(), m_tb->name(),
+                     m_tb->keyName(m_tb->keyNumByMakeOrder(req.keyNum))));
+            break;
+        }
+        case TD_GETDIRECTORY:
+        {
+            database* db = getDatabaseCid(req.cid);
+            if (db->name().size() < 64)
+            {
+                req.keylen = (uchar_td)db->name().size() + 1;
+                req.keybuf = (void*)db->name().c_str();
+                req.paramMask = P_MASK_KEYBUF;
+            }
+            else
+                req.result = STATUS_BUFFERTOOSMALL;
+            break;
+        }
+        case TD_VERSION:
+            if (*req.datalen >= sizeof(version) * 3)
+            {
+                version* v = (version*)req.data;
+                ++v;
+                v->majorVersion = MYSQL_VERSION_ID / 10000;
+                v->minorVersion = (MYSQL_VERSION_ID / 100) % 100;
+                v->Type = 'M';
+                ++v;
+                v->majorVersion = TRANSACTD_VER_MAJOR;
+                v->minorVersion = TRANSACTD_VER_MINOR;
+                v->Type = 'T';
+                req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
+                req.resultLen = sizeof(version) * 3;
+            }
+            else
+                req.result = STATUS_BUFFERTOOSMALL;
+            break;
+        case TD_CLEAR_OWNERNAME:
+            req.keybuf = (void_td*)"";
+        case TD_SET_OWNERNAME:
+        {
+            database* db = getDatabaseCid(req.cid);
+            m_tb = getTable(req.pbk->handle);
+            int num = (req.keyNum > 1) ? req.keyNum - 2 : req.keyNum;
+            num += '0';
+            std::string s("%@%");
+            s += (const char*)&num;
+            s += (const char*)req.keybuf;
+            req.result = ddl_execSql(
+                db->thd(),
+                makeSQLChangeTableComment(db->name(), m_tb->name(), s.c_str()));
+            break;
+        }
+        case TD_ACL_RELOAD:
+            req.result = getDatabaseCid(req.cid)->aclReload();
+            break;
         }
         if (m_tb)
             m_tb->unUse();
         DEBUG_WRITELOG2(op, req)
+        DEBUG_ERROR_MEMDUMP(req.result, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
+           
+
         size = req.serialize(m_tb, resultBuffer);
         short dymmy = 0;
         if ((req.result == 0) && (req.paramMask & P_MASK_BLOBBODY) &&
@@ -1255,15 +1369,20 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 return EXECUTE_RESULT_FORCSE_SYNC;
             return EXECUTE_RESULT_FORCSE_ASYNC;
         }
+        if (req.result == ERROR_TD_INVALID_CLINETHOST)
+            return EXECUTE_RESULT_ACCESS_DNIED;
         DEBUG_PROFILE_END_OP(1, op)
         return EXECUTE_RESULT_SUCCESS;
     }
 
     catch (bzs::rtl::exception& e)
     {
-        clenupNoException();
-        req.reset();
         const int* code = getCode(e);
+        clenupNoException();
+        DEBUG_ERROR_MEMDUMP(*code, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
+
+        req.reset();
+        
         if (code)
             req.result = *code;
         else
@@ -1277,6 +1396,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
     catch (...)
     {
         clenupNoException();
+        DEBUG_ERROR_MEMDUMP(20001, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
         req.reset();
         req.result = 20001;
         dumpStdErr(op, req, m_tb);
@@ -1297,8 +1417,48 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
     return EXECUTE_RESULT_SUCCESS;
 }
 
+void makeRandomKey(unsigned char *buf, unsigned int size)
+{
+  unsigned char *end= buf + size;
+  std::random_device rnd;
+  for (; buf < end; buf++)
+    *buf = (unsigned char)(rnd() * 94 + 33);
+  *buf= 0x00;
+}
+
+size_t dbExecuter::getAcceptMessage(char* message, size_t size)
+{
+    // make handshake packet
+	m_authChecked = false;
+    assert(size >= sizeof(trdVersiton));
+
+    handshale_t* hst = (handshale_t*)message;
+    hst->options = 0;
+    trdVersiton* ver = &hst->ver;
+    hst->size = sizeof(handshale_t);
+
+    strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
+                global_system_variables.collation_server->csname);
+    ver->srvMajor = TRANSACTD_VER_MAJOR;
+    ver->srvMinor = TRANSACTD_VER_MINOR;
+    ver->srvRelease = TRANSACTD_VER_RELEASE;
+    hst->transaction_isolation = getTransactdIsolation();
+    hst->lock_wait_timeout = getTransactdLockWaitTimeout();
+    if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR) == 0)
+    {
+        makeRandomKey(m_scramble, MYSQL_SCRAMBLE_LENGTH);
+        memcpy(hst->scramble, m_scramble, sizeof(hst->scramble));
+        
+    }else
+    {
+        hst->scramble[0] = 0x00;
+        hst->options |= HST_OPTION_NO_SCRAMBLE;
+        hst->size -= sizeof(m_scramble);
+    }
+    return hst->size;
+}
 // ---------------------------------------------------------------------------
-//		class connMgrExecuter
+//      class connMgrExecuter
 // ---------------------------------------------------------------------------
 connMgrExecuter::connMgrExecuter(request& req, unsigned __int64 parent)
     : m_req(req), m_modHandle(parent)
@@ -1354,11 +1514,11 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
 }
 
 // ---------------------------------------------------------------------------
-//		class commandExecuter
+//      class commandExecuter
 // ---------------------------------------------------------------------------
-commandExecuter::commandExecuter(__int64 parent) : m_modHandle(parent)
+commandExecuter::commandExecuter(netsvc::server::IAppModule* mod) 
 {
-    m_dbExec.reset(new dbExecuter());
+    m_dbExec.reset(new dbExecuter(mod));
 }
 
 commandExecuter::~commandExecuter()

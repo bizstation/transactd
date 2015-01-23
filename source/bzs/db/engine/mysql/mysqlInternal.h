@@ -50,9 +50,11 @@
 #endif
 
 #include <my_config.h>
-#include <mysql/plugin.h>
 #include <mysql_version.h>
 #include <sql/sql_const.h>
+#include "my_global.h"
+#include "sql/sql_class.h"
+#include <mysql/plugin.h>
 #include "sql/mysqld.h"
 
 #if ((MYSQL_VERSION_ID >= 50600) && !defined(MARIADB_BASE_VERSION))
@@ -63,11 +65,9 @@
 #include "sql/sql_cache.h"
 #include "sql/structs.h"
 #include "sql/sql_priv.h"
-#include "sql/sql_class.h"
 #include "sql/unireg.h"
 #include "sql/lock.h"
 #include "sql/key.h"
-#include "my_global.h"
 #include "sql/transaction.h"
 #include "sql/sql_base.h"
 #include "sql/sql_parse.h"
@@ -75,6 +75,13 @@
 #include "sql/sql_db.h"
 #include "sql_acl.h"
 #include "mysqld_error.h"
+#include <password.h>
+
+/* mysql.user password field index */
+#ifndef MYSQL_USER_FIELD_PASSWORD
+#define MYSQL_USER_FIELD_PASSWORD 2
+#endif
+
 
 #if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
 #include "sql/log.h"

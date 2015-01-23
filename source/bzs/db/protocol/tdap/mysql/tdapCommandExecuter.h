@@ -24,6 +24,17 @@
 #include "request.h"
 #include <bzs/env/crosscompile.h>
 
+
+#define GRANT_APPLY_NONE 0
+#define GRANT_APPLY_ALL  1
+
+#define AUTH_TYPE_NONE_STR  "none"
+#define AUTH_TYPE_MYSQL_STR  "mysql_native"
+
+#define AUTH_TYPE_NONE  0
+#define AUTH_TYPE_MYSQL 1
+
+extern char* g_auth_type;
 extern int g_tableNmaeLower;
 
 namespace bzs
@@ -31,6 +42,8 @@ namespace bzs
 namespace db
 {
 class blobBuffer;
+namespace engine{namespace mysql{class database;}}
+
 namespace protocol
 {
 namespace tdap
@@ -53,12 +66,13 @@ class dbExecuter : public engine::mysql::dbManager
 {
     ReadRecordsHandler* m_readHandler;
     blobBuffer* m_blobBuffer;
-
-    void connect(request& req);
+    unsigned char m_scramble[MYSQL_SCRAMBLE_LENGTH+1];
+    netsvc::server::IAppModule* m_mod;
     void releaseDatabase(request& req, int op);
     std::string makeSQLcreateTable(const request& req);
-    inline void doCreateTable(request& req);
-    inline void doOpenTable(request& req);
+    bool connect(request& req);
+    inline bool doCreateTable(request& req);
+    inline bool doOpenTable(request& req);
     inline void doSeekKey(request& req, int op, engine::mysql::rowLockMode* lock);
     inline void doMoveFirst(request& req, engine::mysql::rowLockMode* lock);
     inline void doMoveKey(request& req, int op, engine::mysql::rowLockMode* lock);
@@ -75,16 +89,19 @@ class dbExecuter : public engine::mysql::dbManager
     inline void doInsertBulk(request& req);
     inline void doStat(request& req);
     inline short seekEach(extRequestSeeks* ereq, bool noBookMark);
-
+    inline bool doAuthentication(request& req, engine::mysql::database* db);
+    bool getDatabaseWithAuth(request& req, engine::mysql::database** db, bool connect=false);
 public:
-    dbExecuter();
+    dbExecuter(netsvc::server::IAppModule* mod);
     ~dbExecuter();
     int commandExec(request& req, netsvc::server::netWriter* nw);
+    size_t getAcceptMessage(char* message, size_t size);
     int errorCode(int ha_error);
     short_td errorCodeSht(int ha_error)
     {
         return (short_td)errorCode(ha_error);
-    };
+    }
+    netsvc::server::IAppModule* mod() { return m_mod; };
 };
 
 /** Command dispatcher for connectionManager
@@ -110,17 +127,15 @@ class commandExecuter : public ICommandExecuter,
 
     int readStatistics(char* buf, size_t& size);
     int cmdStatistics(char* buf, size_t& size);
-    unsigned __int64 m_modHandle;
 
 public:
-    commandExecuter(__int64 parent);
+    commandExecuter(netsvc::server::IAppModule* mod);
     ~commandExecuter();
     size_t perseRequestEnd(const char* p, size_t size, bool& comp) const;
 
     size_t getAcceptMessage(char* message, size_t size)
     {
-        strcpy_s(message, size, "200 OK\n");
-        return strlen(message);
+        return m_dbExec->getAcceptMessage(message, size);
     }
 
     bool parse(const char* p, size_t size);
@@ -128,7 +143,8 @@ public:
     int execute(netsvc::server::netWriter* nw)
     {
         if (m_req.op == TD_STASTISTICS)
-            return connMgrExecuter(m_req, m_modHandle).commandExec(nw);
+            return connMgrExecuter(m_req, (unsigned __int64)m_dbExec->mod())
+                                            .commandExec(nw);
         return m_dbExec->commandExec(m_req, nw);
     }
 

@@ -191,11 +191,11 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
     return "";
 }
 
-FLAGS getKeyFlags(tabledef* table, short fieldNum)
+FLAGS getKeyFlags(const tabledef* table, short fieldNum)
 {
     for (int i = 0; i < table->keyCount; i++)
     {
-        keydef& key = table->keyDefs[i];
+        const keydef& key = table->keyDefs[i];
         for (int j = 0; j < key.segmentCount; j++)
         {
             if (key.segments[j].fieldNum == fieldNum)
@@ -217,12 +217,12 @@ bool isNumericFieldName(const char* name)
     return false;
 }
 
-bool isNULLKeySegment(tabledef* table, short fieldIndex)
+bool isNULLKeySegment(const tabledef* table, short fieldIndex)
 {
     bool ret = 0;
     for (int i = 0; i < table->keyCount; i++)
     {
-        keydef& key = table->keyDefs[i];
+        const keydef& key = table->keyDefs[i];
         for (int j = 0; j < key.segmentCount; j++)
         {
             if (key.segments[j].fieldNum == fieldIndex)
@@ -243,13 +243,13 @@ bool isNULLKeySegment(tabledef* table, short fieldIndex)
     return ret;
 }
 
-std::string getFiledList(tabledef* table, std::vector<std::string>& fdl)
+std::string getFiledList(const tabledef* table, std::vector<std::string>& fdl)
 {
     std::string s;
     int len;
     for (int i = 0; i < table->fieldCount; i++)
     {
-        fielddef& fd = table->fieldDefs[i];
+        const fielddef& fd = table->fieldDefs[i];
         s += "`";
         s += fdl[i];
         s += "` ";
@@ -260,7 +260,7 @@ std::string getFiledList(tabledef* table, std::vector<std::string>& fdl)
          characters in MySQL.
          Moreover, unicode cannot be specified by charset of the field. */
         if (fd.charsetIndex() == 0)
-            fd.setCharsetIndex(table->charsetIndex);
+            const_cast<fielddef&>(fd).setCharsetIndex(table->charsetIndex);
         if ((fd.type == ft_myvarchar) || (fd.type == ft_mychar))
             len /= mysql::charsize(fd.charsetIndex());
         else if ((fd.type == ft_mywvarchar) || (fd.type == ft_mywchar))
@@ -283,7 +283,7 @@ std::string getFiledList(tabledef* table, std::vector<std::string>& fdl)
     return s;
 }
 
-void insertNisFields(tabledef* table, std::vector<std::string>& fdl,
+void insertNisFields(const tabledef* table, std::vector<std::string>& fdl,
                      std::string& s)
 {
     char buf[20];
@@ -291,7 +291,7 @@ void insertNisFields(tabledef* table, std::vector<std::string>& fdl,
     {
         _ltoa_s(i, buf, 20, 10);
         std::string fddef = "";
-        keydef& key = table->keyDefs[i];
+        const keydef& key = table->keyDefs[i];
         if (key.segmentCount > 1)
         {
             if (key.segments[0].flags.bit9)
@@ -306,64 +306,71 @@ void insertNisFields(tabledef* table, std::vector<std::string>& fdl,
     }
 }
 
-std::string getKeyList(tabledef* table, std::vector<std::string>& fdl)
+std::string& getKey(const tabledef* table, std::vector<std::string>& fdl, 
+                                    int index, std::string& s, bool specifyKeyNum=false)
 {
     char buf[20];
-    std::string s;
-
-    for (int i = 0; i < table->keyCount; i++)
+    const keydef& key = table->keyDefs[index];
+    if (specifyKeyNum)
+        _ltoa_s(key.keyNumber, buf, 20, 10);     
+    else
+        _ltoa_s(index, buf, 20, 10);
+    if ((table->primaryKeyNum == index) &&
+        (fdl[key.segments[0].fieldNum] == "auto_id_field"))
+        s += " PRIMARY KEY ";
+    else
     {
-        keydef& key = table->keyDefs[i];
-        _ltoa_s(i, buf, 20, 10);
-        if ((table->primaryKeyNum == i) &&
-            (fdl[key.segments[0].fieldNum] == "auto_id_field"))
-            s += " PRIMARY KEY ";
+        if (key.segments[0].flags.bit0 == false)
+            s += " UNIQUE ";
         else
-        {
-            if (key.segments[0].flags.bit0 == false)
-                s += " UNIQUE ";
-            else
-                s += " INDEX ";
-            s += "key";
+            s += " INDEX ";
+        s += "key";
 
+        s += buf;
+    }
+    s += "(";
+
+    // "nf" segment is added to a head.
+    if (key.segmentCount > 1)
+    {
+        // If a first segment is not 1 byte of Logical
+        const fielddef& fd = table->fieldDefs[key.segments[0].fieldNum];
+        if (!((fd.len == 1) && (fd.type == ft_logical)))
+        {
+            if (key.segments[0].flags.bit9)
+                s += std::string("`") + "$nfn" + buf + "`,";
+            else if (key.segments[0].flags.bit3)
+                s += std::string("`") + "$nfa" + buf + "`,";
+        }
+    }
+    for (int j = 0; j < key.segmentCount; j++)
+    {
+        s += "`";
+        s += fdl[key.segments[j].fieldNum];
+        s += "`";
+
+        // part key
+        const fielddef& fd = table->fieldDefs[key.segments[j].fieldNum];
+        if (fd.keylen && ((fd.keylen != fd.len) || fd.blobLenBytes()))
+        {
+            sprintf_s(buf, 20, "(%d)", fd.keylen);
             s += buf;
         }
-        s += "(";
 
-        // "nf" segment is added to a head.
-        if (key.segmentCount > 1)
-        {
-            // If a first segment is not 1 byte of Logical
-            fielddef& fd = table->fieldDefs[key.segments[0].fieldNum];
-            if (!((fd.len == 1) && (fd.type == ft_logical)))
-            {
-                if (key.segments[0].flags.bit9)
-                    s += std::string("`") + "$nfn" + buf + "`,";
-                else if (key.segments[0].flags.bit3)
-                    s += std::string("`") + "$nfa" + buf + "`,";
-            }
-        }
-        for (int j = 0; j < key.segmentCount; j++)
-        {
-            s += "`";
-            s += fdl[key.segments[j].fieldNum];
-            s += "`";
-
-            // part key
-            fielddef& fd = table->fieldDefs[key.segments[j].fieldNum];
-            if (fd.keylen && ((fd.keylen != fd.len) || fd.blobLenBytes()))
-            {
-                sprintf_s(buf, 20, "(%d)", fd.keylen);
-                s += buf;
-            }
-
-            if (key.segments[j].flags.bit6)
-                s += " DESC";
-            s += ",";
-        }
-        s.erase(s.end() - 1);
-        s += "),";
+        if (key.segments[j].flags.bit6)
+            s += " DESC";
+        s += ",";
     }
+    s.erase(s.end() - 1);
+    s += "),";
+    return s;
+}
+
+std::string getKeyList(const tabledef* table, std::vector<std::string>& fdl)
+{
+    std::string s;
+    for (int i = 0; i < table->keyCount; i++)
+        getKey(table, fdl, i, s);
     return s;
 }
 
@@ -381,15 +388,10 @@ std::string convertString(unsigned int toPage, unsigned int fromPage,
     return s;
 }
 
-std::string sqlCreateTable(const char* name /* utf8 */, tabledef* table,
-                           uchar_td charsetIndexServer)
+// suffix added names list
+void makeSuffixNamesList(const tabledef* table, std::vector<std::string>& fds)
 {
-    // Duplication of a name is inspected and, in duplication, _1 is added.
-    // It does not correspond to two or more duplications.
-    std::string s = "CREATE TABLE `";
-
-    std::vector<std::string> fdl;
-    std::vector<std::string> fds;
+    std::vector<std::string> fdl;// lower case names list.
     char tmp[256];
     char num[10];
     for (int i = 0; i < table->fieldCount; i++)
@@ -407,6 +409,18 @@ std::string sqlCreateTable(const char* name /* utf8 */, tabledef* table,
             fds.push_back(fd.nameA());
         fdl.push_back(tmp);
     }
+}
+
+std::string sqlCreateTable(const char* name /* utf8 */, tabledef* table,
+                           uchar_td charsetIndexServer)
+{
+    // Duplication of a name is inspected and, in duplication, _1 is added.
+    // It does not correspond to two or more duplications.
+    std::string s = "CREATE TABLE `";
+
+    std::vector<std::string> fds;// suffix added names list
+    makeSuffixNamesList(table, fds);
+
     uint_td schemaCodePage =
         table->schemaCodePage ? table->schemaCodePage : GetACP();
     if ((name && name[0]))
@@ -426,6 +440,29 @@ std::string sqlCreateTable(const char* name /* utf8 */, tabledef* table,
     s += ") ENGINE=InnoDB default charset=" +
          std::string(mysql::charsetName(table->charsetIndex));
 
+    // create statement charset must be server default charset.
+    // server default charset writen in my.cnf.
+    if (schemaCodePage != mysql::codePage(charsetIndexServer))
+        s = convertString(mysql::codePage(charsetIndexServer), schemaCodePage,
+                          s.c_str());
+    return s;
+}
+
+std::string sqlCreateIndex(const tabledef* table, int keyNum,
+        bool specifyKeyNum, uchar_td charsetIndexServer)
+{
+    std::string s;
+    std::vector<std::string> fds;// suffix added names list
+    makeSuffixNamesList(table, fds);
+    uint_td schemaCodePage =
+        table->schemaCodePage ? table->schemaCodePage : GetACP();
+    s += getFiledList(table, fds);
+    insertNisFields(table, fds, s);
+    s = "`";
+    s+= getFileName(table->fileNameA());
+    s += "` ADD";
+    getKey(table, fds, keyNum, s, specifyKeyNum); 
+    s.erase(s.end() - 1);
     // create statement charset must be server default charset.
     // server default charset writen in my.cnf.
     if (schemaCodePage != mysql::codePage(charsetIndexServer))

@@ -74,7 +74,7 @@ public:
 std::string smartDbsReopen::removeName = "";
 
 
-dbManager::dbManager() : m_autoHandle(0)
+dbManager::dbManager() : m_autoHandle(0), m_authChecked(false)
 {
 }
 
@@ -139,7 +139,13 @@ database* dbManager::useDataBase(int id) const
 
 database* dbManager::createDatabase(const char* dbname, short cid) const
 {
-    return new database(dbname, cid);
+    database* db = new database(dbname, cid);
+    if (m_authChecked)
+    {
+        if (m_host != "")
+            db->setGrant(m_host.c_str(), m_user.c_str());
+    }
+    return db;
 }
 
 handle* dbManager::getHandle(int handle) const
@@ -149,7 +155,9 @@ handle* dbManager::getHandle(int handle) const
         if (m_handles[i].id == handle)
             return &m_handles[i];
     }
-    THROW_BZS_ERROR_WITH_CODEMSG(1, "Invalid handle.");
+    char tmp[256];
+    sprintf(tmp, "Invalid handle. handle = %d", handle);
+    THROW_BZS_ERROR_WITH_CODEMSG(1, tmp);
 }
 
 int dbManager::getDatabaseID(short cid) const
@@ -166,21 +174,26 @@ database* dbManager::getDatabaseCid(short cid) const
 {
     int id = getDatabaseID(cid);
     if (id == -1)
-        THROW_BZS_ERROR_WITH_CODEMSG(1, "Can not create database object.");
-
+    {
+        char tmp[256];
+        sprintf(tmp, "Can not get database object. cid = %d", cid);
+        THROW_BZS_ERROR_WITH_CODEMSG(1, tmp);
+    }
     return useDataBase(id);
 }
 
-database* dbManager::getDatabase(const char* dbname, short cid) const
+database* dbManager::getDatabase(const char* dbname, short cid, bool& created) const
 {
+    created = false;
     int id = getDatabaseID(cid);
     if (id == -1)
     {
         boost::shared_ptr<database> db(createDatabase(dbname, cid));
         if (db == NULL)
             THROW_BZS_ERROR_WITH_CODEMSG(1, "Can not create database object.");
+        id = (int)m_dbs.size();
         m_dbs.push_back(db);
-        id = (int)m_dbs.size() - 1;
+        created = true;
     }
     return useDataBase(id);
 }
@@ -188,10 +201,12 @@ database* dbManager::getDatabase(const char* dbname, short cid) const
 table* dbManager::getTable(int hdl, enum_sql_command cmd, engine::mysql::rowLockMode* lck) const
 {
     handle* h = getHandle(hdl);
-    if (h && (h->db < (int)m_dbs.size()))
+    if ((h->db < (int)m_dbs.size()))
         return useDataBase(h->db)->useTable(h->tb, cmd, lck);
 
-    THROW_BZS_ERROR_WITH_CODEMSG(1, "Invalid handle.");
+    char tmp[256];
+    sprintf(tmp, "Invalid handle. handle = %d db = %d tb = %d", hdl, h->db, h->tb);
+    THROW_BZS_ERROR_WITH_CODEMSG(1, tmp);
 }
 
 int dbManager::addHandle(int dbid, int tableid, int assignid)
@@ -210,8 +225,8 @@ int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
     thd->clear_error();
     int result = dispatch_command(COM_QUERY, thd, (char*)sql_stmt.c_str(),
                                   (uint)sql_stmt.size());
-    if (!thd->cp_isOk())
-        result = 1;
+    //if (!thd->cp_isOk())
+    //    result = 1;
     if (thd->is_error())
         result = errorCode(thd->cp_get_sql_error());
     return result;
@@ -268,6 +283,13 @@ int dbManager::ddl_dropTable(database* db, const std::string& tbname,
     db->thd()->variables.lock_wait_timeout = 0;
     std::string cmd = "drop table `" + dbSqlname + "`.`" + tbSqlname + "`";
     return ddl_execSql(db->thd(), cmd);
+}
+
+int dbManager::ddl_addIndex(database* db, const std::string& tbname,
+                        const std::string& cmd)
+{
+    std::string c = "ALTER TABLE `" + db->name() + "`." + cmd;
+    return ddl_execSql(db->thd(), c);
 }
 
 int dbManager::ddl_renameTable(database* db, const std::string& oldName,

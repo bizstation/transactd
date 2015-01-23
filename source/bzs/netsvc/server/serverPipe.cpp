@@ -92,14 +92,10 @@ void acceptor::accept(platform_stream& pipe)
     m_fd = CreateNamedPipe(pipeName, // pipe name
                            PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
                            PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT,
-                           PIPE_UNLIMITED_INSTANCES // max. instances
-                           ,
-                           BUFSIZE // output buffer size
-                           ,
-                           BUFSIZE // input buffer size
-                           ,
-                           0 // client time-out
-                           ,
+                           PIPE_UNLIMITED_INSTANCES, // max. instances
+                           BUFSIZE, // output buffer size
+                           BUFSIZE, // input buffer size
+                           0, // client time-out
                            &sa); // default security attribute
     if (m_fd == INVALID_HANDLE_VALUE)
         THROW_BZS_ERROR_WITH_MSG(getWindowsErrMsg(GetLastError()));
@@ -190,9 +186,10 @@ public:
             return true;
         DWORD ExitCode;
         if (m_procHandle && GetExitCodeProcess(m_procHandle, &ExitCode))
-
+        {
             if (STILL_ACTIVE != ExitCode)
                 return true;
+        }
         if (m_module && m_module->isShutDown())
             return true;
         return false;
@@ -235,11 +232,13 @@ public:
 
     bool recv(int checkTimeSpan, IExitCheckHandler* handler)
     {
-        DWORD wait;
+        DWORD wait = WAIT_TIMEOUT;
         do
         {
+            if (wait == WAIT_ABANDONED)
+                return false;    
             if (m_cancel || (handler && (handler->isExit())))
-                return 0;
+                return false;
         } while (WAIT_OBJECT_0 !=
                  (wait = WaitForSingleObject(m_recv, checkTimeSpan)));
         m_sent = false;
@@ -341,19 +340,23 @@ class connection : public iconnection, private noncopyable
                 return;
             bool complete = false;
             m_readLen = *((unsigned int*)m_sharedMem->readBuffer());
+            //When readLen = 0 , close connection
             if (m_readLen == 0)
                 return;
             m_module->onRead(m_sharedMem->readBuffer(), m_readLen, complete);
             if (complete)
             {
                 size_t size = 0;
-                if (m_module->execute(sharedMemBuffer(*m_sharedMem), size,
-                                      NULL) == EXECUTE_RESULT_QUIT)
+                int ret = m_module->execute(sharedMemBuffer(*m_sharedMem), size, NULL);
+                if (ret == EXECUTE_RESULT_QUIT)
                     return;
                 else
                     m_readLen = 0;
 
                 sentResult = m_comm->send();
+                //When named pipe, dissconnect from local client.
+                //if (ret == EXECUTE_RESULT_ACCESS_DNIED)
+                //    return;
                 m_module->cleanup();
             }
         }
@@ -434,10 +437,15 @@ public:
         m_exitHandler.reset(new exitCheckHnadler(clinetProcessID));
         if (m_module)
             m_exitHandler->setModule(m_module.get());
-        m_module->onAccept(tmp, 50);
-
-        strcpy(tmp, "OK");
-        memcpy(tmp + 3, &m_shareMemSize, 4);
+        tmp[0] = 0x00; // signe of handshakable
+        memcpy(tmp + 3, &m_shareMemSize, sizeof(unsigned int));// sharemem size
+        //asio::write(m_socket, buffer(tmp, 7), e);
+        //len = asio::read(m_socket, buffer(buf, 9), e);
+        //if (len != 9)
+        //    THROW_BZS_ERROR_WITH_MSG("handshake error");
+        //send handshake packet
+        m_module->onAccept(m_sharedMem->writeBuffer(), m_sharedMem->size());
+        m_comm->send();
         asio::write(m_socket, buffer(tmp, 7), e);
         run();
     }
@@ -522,7 +530,6 @@ public:
      */
     static worker* worker::get(const IAppModuleBuilder* app)
     {
-
         worker* p = findWaitThread();
         if (p == NULL)
         {
@@ -565,7 +572,7 @@ public:
                         ((IAppModuleBuilder*)app)->createSessionModule(
                             endpoint, m_connection.get(), SERVER_TYPE_CPT));
                     m_connection->setModule(mod);
-                    if (mod->checkHost(hostCheckName))
+                    if (mod->checkHost(hostCheckName, NULL, 0))
                         m_connection->start(); // It does not return, unless a
                     // connection is close.
                     m_connection.reset();
