@@ -194,8 +194,9 @@ def testVersion()
   expect(client_ver.majorVersion.to_s).to eq Transactd::CPP_INTERFACE_VER_MAJOR.to_s
   expect(client_ver.minorVersion.to_s).to eq Transactd::CPP_INTERFACE_VER_MINOR.to_s
   expect(client_ver.type.chr).to eq 'N'
-  expect(server_ver.majorVersion).to be >= 5
-  expect(server_ver.minorVersion).to be >= 5
+  my5x = (server_ver.majorVersion == 5) && (server_ver.minorVersion >= 5)
+  maria10 = (server_ver.majorVersion == 10) && (server_ver.minorVersion == 0)
+  expect(my5x || maria10).to be true
   expect(server_ver.type.chr).to eq 'M'
   expect(engine_ver.majorVersion.to_s).to eq Transactd::TRANSACTD_VER_MAJOR.to_s
   expect(engine_ver.minorVersion.to_s).to eq Transactd::TRANSACTD_VER_MINOR.to_s
@@ -1621,29 +1622,33 @@ end
 def testMissingUpdate()
   db = Transactd::Database.new()
   tb = testOpenTable(db)
-  db2 = Transactd::Database.new()
-  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
-  expect(db2.stat()).to eq 0
-  db2.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
-  expect(db2.stat()).to eq 0
-  tb2 = db2.openTable('user')
-  expect(db2.stat()).to eq 0
   # Lock last record and insert to next of it
   tb.setFV(FDI_ID, 300000)
-  tb2.setFV(FDI_ID, 300000)
   tb.seekLessThan(false, Transactd::ROW_LOCK_X)
   if (tb.stat() == 0) then
     # Get lock(X) same record in parallel.
-    w = Thread.new(tb2) { |tb2|
+    w = Thread.new {
+      db2 = Transactd::Database.new()
+      db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+      expect(db2.stat()).to eq 0
+      db2.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+      expect(db2.stat()).to eq 0
+      tb2 = db2.openTable('user')
+      expect(db2.stat()).to eq 0
+      tb2.setFV(FDI_ID, 300000)
       tb2.seekLessThan(false, Transactd::ROW_LOCK_X)
+      v2 = tb2.getFVint(FDI_ID)
+      tb2.unlock()
+      tb2.close()
+      db2.close()
+      v2
     }
-    sleep(0.005)
+    sleep(0.05)
     v = tb.getFVint(FDI_ID)
     v = v + 1
     tb.setFV(FDI_ID, v)
     tb.insert()
-    w.join()
-    v2 = tb2.getFVint(FDI_ID)
+    v2 = w.join().value
     if (db.trxIsolationServer() == Transactd::SRV_ISO_REPEATABLE_READ)
       # $tb can not insert because $tb2 got gap lock with SRV_ISO_REPEATABLE_READ.
       # It is deadlock!
@@ -1660,30 +1665,37 @@ def testMissingUpdate()
       tb.del()
       expect(tb.stat()).to eq 0
     end
-    tb2.unlock()
   end
   # Lock last record and delete it
   tb.setFV(FDI_ID, 300000)
-  tb2.setFV(FDI_ID, 300000)
   tb.seekLessThan(false, Transactd::ROW_LOCK_X)
   if (tb.stat() == 0) then
     # Get lock(X) same record in parallel.
-    w = Thread.new(tb2) { |tb2|
+    w = Thread.new {
+      db2 = Transactd::Database.new()
+      db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+      expect(db2.stat()).to eq 0
+      db2.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
+      expect(db2.stat()).to eq 0
+      tb2 = db2.openTable('user')
+      expect(db2.stat()).to eq 0
+      tb2.setFV(FDI_ID, 300000)
       tb2.seekLessThan(false, Transactd::ROW_LOCK_X)
+      expect(tb2.stat()).to eq 0
+      v2 = tb2.getFVint(FDI_ID)
+      tb2.unlock()
+      tb2.close()
+      db2.close()
+      v2
     }
-    sleep(0.005)
+    sleep(0.05)
     v = tb.getFVint(FDI_ID)
     tb.del()
-    w.join()
+    v2 = w.join().value
     expect(tb.stat()).to eq 0
-    expect(tb2.stat()).to eq 0
-    v2 = tb2.getFVint(FDI_ID)
     expect(v).not_to eq v2
-    tb2.unlock()
   end
-  tb2.close()
   tb.close()
-  db2.close()
   db.close()
 end
 
@@ -1709,16 +1721,17 @@ def testInsert2()
 end
 
 def testDelete()
+  expected_count = 20003
   db = Transactd::Database.new()
   tb = testOpenTable(db)
   # estimate count
   count = tb.recordCount(true)
-  is_valid_count = ((count - 20003).abs < 5000)
+  is_valid_count = ((count - expected_count).abs < 5000)
   expect(is_valid_count).to be true
   if !is_valid_count
-    puts "true record count = 20003 and estimate recordCount count = #{count.to_s}"
+    puts "true record count = #{expected_count.to_s} and estimate recordCount count = #{count.to_s}"
   end
-  expect(tb.recordCount(false)).to eq 20003 # true count
+  expect(tb.recordCount(false)).to eq expected_count # true count
   vv = TEST_COUNT * 3 / 4 + 1
   tb.clearBuffer()
   tb.setFV(FDI_ID, vv)
@@ -2876,6 +2889,8 @@ def testCreateQueryTest()
     if (td != nil && td.fieldCount == 3) then
       tb = db.openTable('extention')
       if (db.stat() == 0 && tb.recordCount(false) == TEST_COUNT)
+        tb.close()
+        db.close()
         return
       end
       tb.close()
@@ -3261,7 +3276,12 @@ def testServerPrepareJoin()
   tb.setFV('blob', '5 blob')
   tb.insert()
   expect(tb.stat()).to eq 0
-  db.drop() unless (tb.stat() == 0)
+  status = tb.stat()
+  atu.release()
+  atg.release()
+  ate.release()
+  db.drop() unless (status == 0)
+  db.close()
 end
 
 def testWirtableRecord()

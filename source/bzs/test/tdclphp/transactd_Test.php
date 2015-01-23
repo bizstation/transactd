@@ -288,8 +288,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($client_ver->majorVersion, Bz\transactd::CPP_INTERFACE_VER_MAJOR);
         $this->assertEquals($client_ver->minorVersion, Bz\transactd::CPP_INTERFACE_VER_MINOR);
         $this->assertEquals(chr($client_ver->type), 'N');
-        $this->assertTrue($server_ver->majorVersion >= 5);
-        $this->assertTrue($server_ver->majorVersion != 5 || $server_ver->minorVersion >= 5);
+        $my5x = ($server_ver->majorVersion == 5) && ($server_ver->minorVersion >= 5);
+        $maria10 = ($server_ver->majorVersion == 10) && ($server_ver->minorVersion == 0);
+        $this->assertTrue($my5x || $maria10);
         $this->assertEquals(chr($server_ver->type), 'M');
         $this->assertEquals($engine_ver->majorVersion, Bz\transactd::TRANSACTD_VER_MAJOR);
         $this->assertEquals($engine_ver->minorVersion, Bz\transactd::TRANSACTD_VER_MINOR);
@@ -1681,7 +1682,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     {
         if(! class_exists('Thread'))
         {
-            echo(' * class Tread not found! * ');
+            echo(' * class Thread not found! * ');
             return;
         }
         $db = new Bz\database();
@@ -1766,13 +1767,16 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
+        $expected_count = 20003;
+        if(! class_exists('Thread'))
+          $expected_count = $expected_count + 1;
         // estimate count
         $count = $tb->recordCount(true);
-        $is_valid_count = (abs($count - 20003) < 5000);
+        $is_valid_count = (abs($count - $expected_count) < 5000);
         $this->assertTrue($is_valid_count);
         if (! $is_valid_count)
-          print("true record count = 20003 and estimate recordCount count = " . $count);
-        $this->assertEquals($tb->recordCount(false), 20003); // true count
+          print("true record count = " . $expected_count . " and estimate recordCount count = " . $count);
+        $this->assertEquals($tb->recordCount(false), $expected_count); // true count
         $vv = TEST_COUNT * 3 / 4 + 1;
         $tb->clearBuffer();
         $tb->setFV(FDI_ID, $vv);

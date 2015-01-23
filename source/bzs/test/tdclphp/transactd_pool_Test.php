@@ -104,7 +104,7 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
     public function testMultiThreads()
     {
         if(! class_exists('Thread')){
-            echo(' * class Tread not found! * ');
+            echo(' * class Thread not found! * ');
             return;
         }
         Bz\pooledDbManager::setMaxConnections(5);
