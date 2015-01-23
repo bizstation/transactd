@@ -155,7 +155,9 @@ handle* dbManager::getHandle(int handle) const
         if (m_handles[i].id == handle)
             return &m_handles[i];
     }
-    THROW_BZS_ERROR_WITH_CODEMSG(1, "Invalid handle.");
+    char tmp[256];
+    sprintf(tmp, "Invalid handle. handle = %d", handle);
+    THROW_BZS_ERROR_WITH_CODEMSG(1, tmp);
 }
 
 int dbManager::getDatabaseID(short cid) const
@@ -172,21 +174,26 @@ database* dbManager::getDatabaseCid(short cid) const
 {
     int id = getDatabaseID(cid);
     if (id == -1)
-        THROW_BZS_ERROR_WITH_CODEMSG(1, "Can not create database object.");
-
+    {
+        char tmp[256];
+        sprintf(tmp, "Can not get database object. cid = %d", cid);
+        THROW_BZS_ERROR_WITH_CODEMSG(1, tmp);
+    }
     return useDataBase(id);
 }
 
-database* dbManager::getDatabase(const char* dbname, short cid) const
+database* dbManager::getDatabase(const char* dbname, short cid, bool& created) const
 {
+    created = false;
     int id = getDatabaseID(cid);
     if (id == -1)
     {
         boost::shared_ptr<database> db(createDatabase(dbname, cid));
         if (db == NULL)
             THROW_BZS_ERROR_WITH_CODEMSG(1, "Can not create database object.");
+        id = (int)m_dbs.size();
         m_dbs.push_back(db);
-        id = (int)m_dbs.size() - 1;
+        created = true;
     }
     return useDataBase(id);
 }
@@ -194,10 +201,12 @@ database* dbManager::getDatabase(const char* dbname, short cid) const
 table* dbManager::getTable(int hdl, enum_sql_command cmd, engine::mysql::rowLockMode* lck) const
 {
     handle* h = getHandle(hdl);
-    if (h && (h->db < (int)m_dbs.size()))
+    if ((h->db < (int)m_dbs.size()))
         return useDataBase(h->db)->useTable(h->tb, cmd, lck);
 
-    THROW_BZS_ERROR_WITH_CODEMSG(1, "Invalid handle.");
+    char tmp[256];
+    sprintf(tmp, "Invalid handle. handle = %d db = %d tb = %d", hdl, h->db, h->tb);
+    THROW_BZS_ERROR_WITH_CODEMSG(1, tmp);
 }
 
 int dbManager::addHandle(int dbid, int tableid, int assignid)
@@ -216,8 +225,8 @@ int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
     thd->clear_error();
     int result = dispatch_command(COM_QUERY, thd, (char*)sql_stmt.c_str(),
                                   (uint)sql_stmt.size());
-    if (!thd->cp_isOk())
-        result = 1;
+    //if (!thd->cp_isOk())
+    //    result = 1;
     if (thd->is_error())
         result = errorCode(thd->cp_get_sql_error());
     return result;

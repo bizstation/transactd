@@ -169,19 +169,19 @@ table* openTable(database* db, short dbmode = TD_OPEN_NORMAL,
 
     db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,
              dbmode);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1" << db->stat());
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
     table* tb = db->openTable(_T("user"), tbmode);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable" << db->stat());
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
     return tb;
 }
 
 void testDropDatabase(database* db)
 {
     db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "DropDatabase 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
 
     db->drop();
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "drop 2");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "drop stat = " << db->stat());
 }
 
 void testClone(database* db)
@@ -2110,9 +2110,9 @@ void testSetOwner(database* db)
 {
     table* tb = openTable(db);
     tb->setOwnerName(_T("ABCDEFG"));
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner stat = " << tb->stat());
     tb->clearOwnerName();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner stat = " << tb->stat());
     tb->release();
 }
 

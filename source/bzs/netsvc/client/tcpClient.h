@@ -553,6 +553,8 @@ public:
         unsigned int* shareMemSize = (unsigned int*)(p+3);
         m_isHandShakable = (p[0] == 0x00);
         createKernelObjects(*shareMemSize);
+        strcpy(p, "OK! wait");
+        boost::asio::write(m_socket, boost::asio::buffer(p, 9));
     }
 
     char* sendBuffer(size_t size) { return m_writebuf_p; }

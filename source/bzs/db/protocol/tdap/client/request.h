@@ -286,6 +286,7 @@ public:
 
             memcpy(p, keybuf, keylen);
             p += keylen;
+            // increment 1 byte
             *p = 0x00;
             ++p;
         }

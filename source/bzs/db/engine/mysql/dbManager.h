@@ -65,7 +65,7 @@ protected:
     database* createDatabase(const char* dbname, short cid) const;
     void releaseDatabase(short cid);
     handle* getHandle(int handle) const;
-    database* getDatabase(const char* dbname, short cid) const;
+    database* getDatabase(const char* dbname, short cid, bool& created) const;
     database* getDatabaseCid(short cid) const;
     int getDatabaseID(short cid) const;
     table* getTable(int handle, enum_sql_command cmd = SQLCOM_SELECT, engine::mysql::rowLockMode* lck=NULL) const;

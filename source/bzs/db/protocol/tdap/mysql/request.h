@@ -43,6 +43,9 @@ class request : public bzs::db::protocol::tdap::request
 {
 public:
     ushort_td cid;
+#ifdef DEBUG_LOG_ERR
+    const char* m_readBuffer;
+#endif
     void clear()
     {
         bzs::db::protocol::tdap::request::clear();
@@ -131,6 +134,9 @@ public:
     inline void parse(const char* p)
     {
         clear();
+#ifdef DEBUG_LOG_ERR
+        m_readBuffer = p;
+#endif
         p += sizeof(unsigned int);
         paramMask = *((ushort_td*)p);
         p += sizeof(ushort_td);

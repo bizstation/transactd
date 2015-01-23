@@ -724,8 +724,8 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
 table* database::openTable(const std::string& name, short mode,
                            const char* ownerName)
 {
-    if (existsTable(name))
-    {
+    //if (existsTable(name))
+    //{
        
         TABLE* t = doOpenTable(name, mode, ownerName);
         if (t)
@@ -740,9 +740,9 @@ table* database::openTable(const std::string& name, short mode,
             return tb.get();
         }
         return NULL;
-    }
-    m_stat = STATUS_TABLE_NOTOPEN;
-    return NULL;
+    //}
+    //m_stat = STATUS_TABLE_NOTOPEN;
+    //return NULL;
 }
 
 void database::closeTable(const std::string& name, bool drop)
@@ -843,9 +843,18 @@ void database::reopen()
         }
     }
 }
-
+    /*
 bool database::existsTable(const std::string& name)
 {
+    bool exists;
+    TABLE_LIST table;
+    table.init_one_table(m_dbname.c_str(), m_dbname.size(), name.c_str(),
+                          name.size(), name.c_str(), TL_READ);
+    table.mdl_request.set_type(MDL_SHARED_READ);
+    if (!check_if_table_exists(m_thd, &table, &exists))
+        return !exists;
+    return false;
+
     char tmp[FN_REFLEN + 1];
 
     build_table_filename(tmp, sizeof(tmp) - 1, m_dbname.c_str(), name.c_str(),
@@ -854,11 +863,13 @@ bool database::existsTable(const std::string& name)
     if (mysql_file_stat(0, tmp, &st, MYF(0)))
         return true;
     return false;
-}
+*/
 
 bool database::existsDatabase()
 {
-    char tmp[FN_REFLEN + 1];
+    return !check_db_dir_existence(m_dbname.c_str());
+
+/*    char tmp[FN_REFLEN + 1];
     size_t len =
         build_table_filename(tmp, sizeof(tmp) - 1, m_dbname.c_str(), "", "", 0);
     tmp[len - 1] = 0x00;
@@ -866,7 +877,7 @@ bool database::existsDatabase()
     MY_STAT stat;
     if (mysql_file_stat(0, tmp, &stat, MYF(0)))
         return true;
-    return false;
+    return false;*/
 }
 
 

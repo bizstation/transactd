@@ -114,7 +114,7 @@ bool client::buildDualChasetKeybuf()
            std::string(m_cryptPwd, strlen(m_cryptPwd + 20) + MYSQL_SCRAMBLE_LENGTH);
 
     m_req.keybuf = (void_td*)m_serverCharData.c_str();
-    m_req.keylen = (keylen_td)m_serverCharData.size() + 1;
+    m_req.keylen = (keylen_td)m_serverCharData.size();
     return true;
 }
 

@@ -305,7 +305,8 @@ int dbExecuter::commandExec(std::vector<request>& requests,
         case HS_OP_OPEN:
         {
             checkNewHandle(req.handle);
-            database* db = getDatabase(req.db.name, 0 /*cid*/);
+            bool created;
+            database* db = getDatabase(req.db.name, 0 /*cid*/, created);
             m_tb = db->openTable(req.table.name, req.table.openMode, NULL);
             if (m_tb)
             {

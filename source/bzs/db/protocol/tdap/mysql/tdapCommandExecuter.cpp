@@ -210,7 +210,7 @@ void dumpStdErr(int op, request& req, table* tb)
 //-------------------------------------------------------------
 //  class dbExecuter
 //-------------------------------------------------------------
-
+#define MYSQL_ERROR_OFFSET 25000
 dbExecuter::dbExecuter(netsvc::server::IAppModule* mod)
     : dbManager(), m_readHandler(new ReadRecordsHandler()),
       m_blobBuffer(new blobBuffer()), m_mod(mod)
@@ -239,7 +239,7 @@ std::string dbExecuter::makeSQLcreateTable(const request& req)
 }
 
 int dbExecuter::errorCode(int ha_error)
-{ // see mysqld_error.h or my_base.h or dbManager.h
+{ // see mysqld_error.h or my_base.h or dbManager.h share/errmsg.txt
 
     if (ha_error < HA_ERR_FIRST)
         return ha_error;
@@ -269,7 +269,7 @@ int dbExecuter::errorCode(int ha_error)
         return STATUS_CANNOT_LOCK_TABLE;
     else if(ha_error == ER_BAD_DB_ERROR)
         return ERROR_NO_DATABASE;
-    return 25000 + ha_error;
+    return MYSQL_ERROR_OFFSET + ha_error;
 }
 
 bool isMetaDb(const request& req)
@@ -337,9 +337,10 @@ inline bool dbExecuter::doAuthentication(request& req, database* db)
 @return 0 auth failed
         1 success but see req.result
 */
-bool dbExecuter::getDatabaseWithAuth(request& req, database* &db, bool connect)
+bool dbExecuter::getDatabaseWithAuth(request& req, database** db, bool connect)
 {
-    db = NULL;
+    *db = NULL;
+    bool created = false;
 	std::string dbname = getDatabaseName(req);
     bool ret = false;
     if (connect && dbname == "")
@@ -348,18 +349,17 @@ bool dbExecuter::getDatabaseWithAuth(request& req, database* &db, bool connect)
         connect = false;
     if (dbname != "")
     {
-        db = getDatabase(dbname.c_str(), req.cid);
-        if (db)
+        *db = getDatabase(dbname.c_str(), req.cid, created);
+        if (*db)
+			ret = doAuthentication(req, *db);
+        if (connect || (created && !ret))
         {
-			ret = doAuthentication(req, db);
-			if (connect || !ret || req.result)
-			{
-				dbManager::releaseDatabase(req.cid);
-				db = NULL;
-			}
+            dbManager::releaseDatabase(req.cid);
+		    *db = NULL;
         }
     }else
         req.result = 1;
+
     return ret;
 }
 
@@ -374,17 +374,16 @@ bool dbExecuter::connect(request& req)
 		dbManager::releaseDatabase(req.cid);
 		return true;
 	}
-    database* db;
-    bool ret = getDatabaseWithAuth(req, db, true);
+    database* db = NULL;
+    bool ret = getDatabaseWithAuth(req, &db, true);
     if (ret &&  (req.result == 0) && db)
     {
         std::string dbSqlname = getDatabaseName(req, FOR_SQL);
         dbSqlname.insert(0, "use ");
         req.result = ddl_execSql(db->thd(), dbSqlname);
-        if (req.result)
-            dbManager::releaseDatabase(req.cid);
-        
     }
+    if (db && (!ret || req.result))
+        dbManager::releaseDatabase(req.cid);
     return ret;
 }
 
@@ -393,7 +392,7 @@ inline bool dbExecuter::doCreateTable(request& req)
     // if table name is mata table and database is nothing
     //  then cretate database too.
     database* db;
-    bool ret = getDatabaseWithAuth(req, db);
+    bool ret = getDatabaseWithAuth(req, &db);
     if (ret && req.result == 0)
     {
         std::string dbSqlname = getDatabaseName(req, FOR_SQL);
@@ -401,16 +400,19 @@ inline bool dbExecuter::doCreateTable(request& req)
         if (isMetaDb(req))
         { // for database operation
             if ((req.keyNum == 0) && (db->existsDatabase() == false))
+            {
                 req.result = ddl_createDataBase(db->thd(), dbSqlname);
+                if (req.result == ER_DB_CREATE_EXISTS + MYSQL_ERROR_OFFSET)
+                    req.result = 0;
+            }
             else if (req.keyNum == CR_SUBOP_DROP)
             {
                 std::string tableName = getTableName(req);
-                if (db->existsTable(tableName))
-                    req.result = ddl_dropTable(db, tableName, dbSqlname,
-                                               getTableName(req, FOR_SQL));
+                //if (db->existsTable(tableName))
+                //    req.result = ddl_dropTable(db, tableName, dbSqlname,
+                //                               getTableName(req, FOR_SQL));
                 if (req.result == 0)
                     req.result = ddl_dropDataBase(db->thd(), db->name(), dbSqlname);
-                req.result = errorCodeSht(req.result);
                 return ret;
             }
         }
@@ -422,10 +424,13 @@ inline bool dbExecuter::doCreateTable(request& req)
                 std::string tableName = getTableName(req);
                 if (req.keyNum == CR_SUBOP_DROP) // -128 is delete
                 {
-
-                    if (db->existsTable(tableName))
+                    //if (db->existsTable(tableName))
+                    {
                         req.result = ddl_dropTable(db, tableName, dbSqlname,
                                                    tableSqlName);
+                        if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
+                            req.result = 0;
+                    }
                 }
                 else if (req.keyNum == CR_SUBOP_RENAME)
                 { // rename new is keybuf
@@ -459,10 +464,14 @@ inline bool dbExecuter::doCreateTable(request& req)
                         req.result = 1;
                     else
                     { //-1 is overwrite
-                        if ((req.keyNum == CR_SUB_FLAG_EXISTCHECK) &&
-                            (db->existsTable(tableName)))
+                        if ((req.keyNum == CR_SUB_FLAG_EXISTCHECK)/* &&
+                            (db->existsTable(tableName))*/)
+                        {
                             req.result = ddl_dropTable(db, tableName, dbSqlname,
                                                        tableSqlName);
+                            if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
+                                req.result = 0;
+                        }
                         if (req.result == 0)
                             req.result =
                                 ddl_execSql(db->thd(), makeSQLcreateTable(req));
@@ -470,7 +479,6 @@ inline bool dbExecuter::doCreateTable(request& req)
                 }
             }
         }
-        req.result = errorCodeSht(req.result);
     }
     
     return ret;
@@ -481,7 +489,7 @@ inline bool dbExecuter::doCreateTable(request& req)
 inline bool dbExecuter::doOpenTable(request& req)
 {
     database* db;
-    bool ret = getDatabaseWithAuth(req, db);
+    bool ret = getDatabaseWithAuth(req, &db);
     if (ret && req.result == 0)
     {
         table* tb = NULL;
@@ -1349,16 +1357,15 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         }
         case TD_ACL_RELOAD:
-        {
-            database* db = getDatabaseCid(req.cid);
-            // don't need use()
-            req.result = db->aclReload();
+            req.result = getDatabaseCid(req.cid)->aclReload();
             break;
-        }
         }
         if (m_tb)
             m_tb->unUse();
         DEBUG_WRITELOG2(op, req)
+        DEBUG_ERROR_MEMDUMP(req.result, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
+           
+
         size = req.serialize(m_tb, resultBuffer);
         short dymmy = 0;
         if ((req.result == 0) && (req.paramMask & P_MASK_BLOBBODY) &&
@@ -1381,9 +1388,12 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 
     catch (bzs::rtl::exception& e)
     {
-        clenupNoException();
-        req.reset();
         const int* code = getCode(e);
+        clenupNoException();
+        DEBUG_ERROR_MEMDUMP(*code, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
+
+        req.reset();
+        
         if (code)
             req.result = *code;
         else
@@ -1397,6 +1407,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
     catch (...)
     {
         clenupNoException();
+        DEBUG_ERROR_MEMDUMP(20001, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
         req.reset();
         req.result = 20001;
         dumpStdErr(op, req, m_tb);

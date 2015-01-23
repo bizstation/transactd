@@ -61,7 +61,7 @@ public:
 #define DEBUG_WRITELOG(MSG)
 #endif // DEBUG_LOG
 
-#if defined(DEBUG_PROFILE) || defined(DEBUG_LOG)
+#if defined(DEBUG_PROFILE) || defined(DEBUG_LOG) || defined(DEBUG_LOG_ERR)
 #define DEBUG_PROFILE_INIT() bzs::rtl::debuglog::get()->init();
 #define DEBUG_PROFILE_DEINIT() bzs::rtl::debuglog::get()->stop();
 #else

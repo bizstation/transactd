@@ -89,6 +89,18 @@ extern char msg[1024];
 #define DEBUG_RECORDS_END(WRITER)
 #endif
 
+
+#ifdef DEBUG_LOG_ERR
+#define DEBUG_ERROR_MEMDUMP(RESULT, MSG, PTR, SIZE)                            \
+    if (RESULT)                                                                \
+    {                                                                          \
+        char tmp[50];                                                          \
+        sprintf(tmp, "error %d", RESULT);                                      \
+        ((debugdb*)debuglog::get())->writeDump(tmp, (const char*)PTR, SIZE);   \
+    }
+#else
+#define DEBUG_ERROR_MEMDUMP(RESULT, MSG, PTR, SIZE)
+#endif
 } // namespace mysql
 } // namespace engine
 } // namespace db

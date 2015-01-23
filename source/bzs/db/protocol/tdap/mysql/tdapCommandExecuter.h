@@ -90,7 +90,7 @@ class dbExecuter : public engine::mysql::dbManager
     inline void doStat(request& req);
     inline short seekEach(extRequestSeeks* ereq, bool noBookMark);
     inline bool doAuthentication(request& req, engine::mysql::database* db);
-    bool getDatabaseWithAuth(request& req, engine::mysql::database* &db, bool connect=false);
+    bool getDatabaseWithAuth(request& req, engine::mysql::database** db, bool connect=false);
 public:
     dbExecuter(netsvc::server::IAppModule* mod);
     ~dbExecuter();
