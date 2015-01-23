@@ -33060,13 +33060,13 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(fielddef_align,_wrap_fielddef_align,swig_arginfo_fielddef_align)
  SWIG_ZEND_NAMED_FE(fielddef_setlenbycharnum,_wrap_fielddef_setLenByCharnum,swig_arginfo_fielddef_setlenbycharnum)
  SWIG_ZEND_NAMED_FE(fielddef_codepage,_wrap_fielddef_codePage,swig_arginfo_fielddef_codepage)
- SWIG_ZEND_NAMED_FE(fielddef_varlenbytes,_wrap_fielddef_varLenBytes,swig_arginfo_fielddef_varlenbytes)
- SWIG_ZEND_NAMED_FE(fielddef_bloblenbytes,_wrap_fielddef_blobLenBytes,swig_arginfo_fielddef_bloblenbytes)
  SWIG_ZEND_NAMED_FE(fielddef_isstringtype,_wrap_fielddef_isStringType,swig_arginfo_fielddef_isstringtype)
  SWIG_ZEND_NAMED_FE(fielddef_isnumerictype,_wrap_fielddef_isNumericType,swig_arginfo_fielddef_isnumerictype)
  SWIG_ZEND_NAMED_FE(fielddef_charnum,_wrap_fielddef_charNum,swig_arginfo_fielddef_charnum)
  SWIG_ZEND_NAMED_FE(fielddef_setcharsetindex,_wrap_fielddef_setCharsetIndex,swig_arginfo_fielddef_setcharsetindex)
  SWIG_ZEND_NAMED_FE(fielddef_charsetindex,_wrap_fielddef_charsetIndex,swig_arginfo_fielddef_charsetindex)
+ SWIG_ZEND_NAMED_FE(fielddef_varlenbytes,_wrap_fielddef_varLenBytes,swig_arginfo_fielddef_varlenbytes)
+ SWIG_ZEND_NAMED_FE(fielddef_bloblenbytes,_wrap_fielddef_blobLenBytes,swig_arginfo_fielddef_bloblenbytes)
  SWIG_ZEND_NAMED_FE(fielddef_name,_wrap_fielddef_name,swig_arginfo_fielddef_name)
  SWIG_ZEND_NAMED_FE(new_fielddef,_wrap_new_fielddef,swig_arginfo_new_fielddef)
  SWIG_ZEND_NAMED_FE(new_tabledef,_wrap_new_tabledef,swig_arginfo_new_tabledef)
@@ -33520,8 +33520,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(pooleddbmanager_setmaxconnections,_wrap_pooledDbManager_setMaxConnections,swig_arginfo_pooleddbmanager_setmaxconnections)
  SWIG_ZEND_NAMED_FE(pooleddbmanager_maxconnections,_wrap_pooledDbManager_maxConnections,swig_arginfo_pooleddbmanager_maxconnections)
  SWIG_ZEND_NAMED_FE(pooleddbmanager_reserve,_wrap_pooledDbManager_reserve,swig_arginfo_pooleddbmanager_reserve)
- SWIG_ZEND_NAMED_FE(pooleddbmanager_table,_wrap_pooledDbManager_table,swig_arginfo_pooleddbmanager_table)
  SWIG_ZEND_NAMED_FE(pooleddbmanager_usingCount,_wrap_pooledDbManager_usingCount,swig_arginfo_pooleddbmanager_usingCount)
+ SWIG_ZEND_NAMED_FE(pooleddbmanager_table,_wrap_pooledDbManager_table,swig_arginfo_pooleddbmanager_table)
  SWIG_ZEND_NAMED_FE(new_fieldsbase_p_p,_wrap_new_fieldsBase_p_p,swig_arginfo_new_fieldsbase_p_p)
  SWIG_ZEND_NAMED_FE(copy_fieldsbase_p_p,_wrap_copy_fieldsBase_p_p,swig_arginfo_copy_fieldsbase_p_p)
  SWIG_ZEND_NAMED_FE(delete_fieldsbase_p_p,_wrap_delete_fieldsBase_p_p,swig_arginfo_delete_fieldsbase_p_p)
@@ -33844,10 +33844,10 @@ le_swig__p_boost__timer=zend_register_list_destructors_ex(_wrap_destroy_p_boost_
 SWIG_TypeClientData(SWIGTYPE_p_boost__timer,&le_swig__p_boost__timer);
 le_swig__p_bzs__db__protocol__tdap__client__groupQuery=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__groupQuery,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__groupQuery->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__groupQuery,&le_swig__p_bzs__db__protocol__tdap__client__groupQuery);
-le_swig__p_p_bzs__db__protocol__tdap__tabledef=zend_register_list_destructors_ex(_wrap_destroy_p_p_bzs__db__protocol__tdap__tabledef,NULL,(char *)(SWIGTYPE_p_p_bzs__db__protocol__tdap__tabledef->name),module_number);
-SWIG_TypeClientData(SWIGTYPE_p_p_bzs__db__protocol__tdap__tabledef,&le_swig__p_p_bzs__db__protocol__tdap__tabledef);
 le_swig__p_bzs__db__protocol__tdap__tabledef=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__tabledef,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__tabledef->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__tabledef,&le_swig__p_bzs__db__protocol__tdap__tabledef);
+le_swig__p_p_bzs__db__protocol__tdap__tabledef=zend_register_list_destructors_ex(_wrap_destroy_p_p_bzs__db__protocol__tdap__tabledef,NULL,(char *)(SWIGTYPE_p_p_bzs__db__protocol__tdap__tabledef->name),module_number);
+SWIG_TypeClientData(SWIGTYPE_p_p_bzs__db__protocol__tdap__tabledef,&le_swig__p_p_bzs__db__protocol__tdap__tabledef);
 le_swig__p_bzs__db__protocol__tdap__client__groupFuncBase=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__groupFuncBase,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase,&le_swig__p_bzs__db__protocol__tdap__client__groupFuncBase);
 le_swig__p_bzs__db__protocol__tdap__client__fieldsBase=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__fieldsBase,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase->name),module_number);
@@ -33908,8 +33908,6 @@ le_swig__p_bzs__db__protocol__tdap__btrTimeStamp=zend_register_list_destructors_
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__btrTimeStamp,&le_swig__p_bzs__db__protocol__tdap__btrTimeStamp);
 le_swig__p_bzs__db__protocol__tdap__client__max=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__max,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__max->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__max,&le_swig__p_bzs__db__protocol__tdap__client__max);
-le_swig__p_p_char=zend_register_list_destructors_ex(_wrap_destroy_p_p_char,NULL,(char *)(SWIGTYPE_p_p_char->name),module_number);
-SWIG_TypeClientData(SWIGTYPE_p_p_char,&le_swig__p_p_char);
 le_swig__p_char=zend_register_list_destructors_ex(_wrap_destroy_p_char,NULL,(char *)(SWIGTYPE_p_char->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_char,&le_swig__p_char);
 le_swig__p_bzs__db__protocol__tdap__keySegment=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__keySegment,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__keySegment->name),module_number);
@@ -33988,6 +33986,7 @@ SWIG_LONG_CONSTANT(CP_ACP, 65001);
 #endif
 // ---- patch end ---
 SWIG_LONG_CONSTANT(CP_UTF8, CP_UTF8);
+SWIG_LONG_CONSTANT(TD_ACL_RELOAD, TD_ACL_RELOAD); 
 SWIG_LONG_CONSTANT(ft_string, ft_string);
 SWIG_LONG_CONSTANT(ft_integer, ft_integer);
 SWIG_LONG_CONSTANT(ft_float, ft_float);
@@ -34171,6 +34170,8 @@ SWIG_LONG_CONSTANT(TD_BACKUP_MODE_NOT_SUPPORT, TD_BACKUP_MODE_NOT_SUPPORT);
 SWIG_LONG_CONSTANT(TD_BACKUP_MODE_BUSY, TD_BACKUP_MODE_BUSY);
 SWIG_LONG_CONSTANT(TD_BACKUP_MODE_NOT_PERMIT, TD_BACKUP_MODE_NOT_PERMIT);
 SWIG_LONG_CONSTANT(TD_BACKUP_MODE_SERVER_ERROR, TD_BACKUP_MODE_SERVER_ERROR);
+SWIG_LONG_CONSTANT(MYSQL_USERNAME_MAX, MYSQL_USERNAME_MAX);
+SWIG_LONG_CONSTANT(HST_OPTION_NO_SCRAMBLE, HST_OPTION_NO_SCRAMBLE);
 SWIG_STRING_CONSTANT(CPP_INTERFACE_VER_MAJOR, CPP_INTERFACE_VER_MAJOR);
 SWIG_STRING_CONSTANT(CPP_INTERFACE_VER_MINOR, CPP_INTERFACE_VER_MINOR);
 SWIG_STRING_CONSTANT(CPP_INTERFACE_VER_RELEASE, CPP_INTERFACE_VER_RELEASE);
@@ -34206,7 +34207,6 @@ SWIG_LONG_CONSTANT(KEYVALUE_STR_NEED_COPY, KEYVALUE_STR_NEED_COPY);
 SWIG_LONG_CONSTANT(queryBase_none, bzs::db::protocol::tdap::client::queryBase::none);
 SWIG_LONG_CONSTANT(queryBase_joinHasOneOrHasMany, bzs::db::protocol::tdap::client::queryBase::joinHasOneOrHasMany);
 SWIG_LONG_CONSTANT(queryBase_combineCondition, bzs::db::protocol::tdap::client::queryBase::combineCondition);
-SWIG_LONG_CONSTANT(nsdatabase_maxtables, bzs::db::protocol::tdap::client::nsdatabase::maxtables);
 SWIG_LONG_CONSTANT(MAX_CHAR_INFO, MAX_CHAR_INFO);
 SWIG_LONG_CONSTANT(CHARSET_LATIN1, CHARSET_LATIN1);
 SWIG_LONG_CONSTANT(CHARSET_CP850, CHARSET_CP850);
@@ -34219,7 +34219,6 @@ SWIG_LONG_CONSTANT(CHARSET_UTF16LE, CHARSET_UTF16LE);
 SWIG_LONG_CONSTANT(CHARSET_CP932, CHARSET_CP932);
 SWIG_LONG_CONSTANT(CHARSET_EUCJ, CHARSET_EUCJ);
 SWIG_LONG_CONSTANT(ROW_MEM_BLOCK_RESERVE, ROW_MEM_BLOCK_RESERVE);
-SWIG_LONG_CONSTANT(JOINLIMIT_PER_RECORD, JOINLIMIT_PER_RECORD);
 /* end cinit subsection */
 
     return SUCCESS;

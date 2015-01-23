@@ -42,7 +42,6 @@ define("FDI_NAMEW", 2);
 define("BULKBUFSIZE", 65535 - 1000);
 define("TEST_COUNT", 20000);
 define("FIVE_PERCENT_OF_TEST_COUNT", TEST_COUNT / 20);
-define("ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT", TEST_COUNT / 4);
 
 // multi thread test if `php_pthreads` exists.
 if(class_exists('Thread')){
@@ -1680,14 +1679,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
     }
     public function testMissingUpdate()
     {
-        if(! class_exists('Thread')){
+        if(! class_exists('Thread'))
+        {
             echo(' * class Tread not found! * ');
             return;
         }
         $db = new Bz\database();
         $tb = $this->openTable($db);
         Bz\pooledDbManager::setMaxConnections(3);
-        // Lock last record and insert after it
+        // Lock last record and insert to next of it
         $w = new SeekLessThanWorker();
         $tb->setFV(FDI_ID, 300000);
         $tb->seekLessThan(false, Bz\transactd::ROW_LOCK_X);
@@ -1705,10 +1705,21 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $v2 = $w->getResult();
             
             if ($db->trxIsolationServer() == Bz\transactd::SRV_ISO_REPEATABLE_READ)
+            {   // $tb can not insert because $tb2 got gap lock with SRV_ISO_REPEATABLE_READ.
+                // It is deadlock!
                 $this->assertEquals($tb->stat(), Bz\transactd::STATUS_LOCK_ERROR);
-            else {
+            }
+            else
+            {   // When SRV_ISO_READ_COMMITED set, $tb2 get lock after $tb->insert.
+                // But this is not READ_COMMITED !
                 $this->assertEquals($tb->stat(), 0);
                 $this->assertEquals($v2, $v - 1);
+                // cleanup
+                $tb->setFV(FDI_ID, $v);
+                $tb->seek();
+                $this->assertEquals($tb->stat(), 0);
+                $tb->del();
+                $this->assertEquals($tb->stat(), 0);
             }
         }
         // Lock last record and delete it
@@ -1757,11 +1768,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertNotEquals($tb, NULL);
         // estimate count
         $count = $tb->recordCount(true);
-        $is_valid_count = (abs($count - TEST_COUNT) < ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT);
+        $is_valid_count = (abs($count - 20003) < 5000);
         $this->assertTrue($is_valid_count);
         if (! $is_valid_count)
-          print("true record count = " . (TEST_COUNT + 3) . " and estimate recordCount count = " . $count);
-        $this->assertEquals($tb->recordCount(false), TEST_COUNT + 3); // true count
+          print("true record count = 20003 and estimate recordCount count = " . $count);
+        $this->assertEquals($tb->recordCount(false), 20003); // true count
         $vv = TEST_COUNT * 3 / 4 + 1;
         $tb->clearBuffer();
         $tb->setFV(FDI_ID, $vv);
@@ -1855,9 +1866,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
         $this->assertEquals($db->stat(), 0);
         $db->connect(PROTOCOL . HOSTNAME . DBNAME);
-        $this->assertEquals($db->stat(), 25000 + 1049);
+        $this->assertEquals($db->stat(), Bz\transactd::ERROR_NO_DATABASE);
         $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
-        $this->assertEquals($db->stat(), 0);
+        $this->assertEquals($db->stat(), 1);
     }
     
     /* -----------------------------------------------------

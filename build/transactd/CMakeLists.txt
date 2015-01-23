@@ -118,6 +118,9 @@ foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
       bz_add_cxx_flag("-std=c++11 -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register" "${build_type}")
     else()
+      # Add c++0x option to some files.
+      # The option could not be added to whole project because the GCC bug:
+      # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48406
       set_source_files_properties(
         "${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/tdapCommandExecuter.cpp"
         PROPERTIES COMPILE_FLAGS "-std=c++0x -std=gnu++0x")

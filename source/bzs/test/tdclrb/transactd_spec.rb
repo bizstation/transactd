@@ -1628,7 +1628,7 @@ def testMissingUpdate()
   expect(db2.stat()).to eq 0
   tb2 = db2.openTable('user')
   expect(db2.stat()).to eq 0
-  # Inserting  target
+  # Lock last record and insert to next of it
   tb.setFV(FDI_ID, 300000)
   tb2.setFV(FDI_ID, 300000)
   tb.seekLessThan(false, Transactd::ROW_LOCK_X)
@@ -1645,14 +1645,24 @@ def testMissingUpdate()
     w.join()
     v2 = tb2.getFVint(FDI_ID)
     if (db.trxIsolationServer() == Transactd::SRV_ISO_REPEATABLE_READ)
+      # $tb can not insert because $tb2 got gap lock with SRV_ISO_REPEATABLE_READ.
+      # It is deadlock!
       expect(tb.stat()).to eq Transactd::STATUS_LOCK_ERROR
     else
+      # When SRV_ISO_READ_COMMITED set, $tb2 get lock after $tb->insert.
+      # But this is not READ_COMMITED !
       expect(tb.stat()).to eq 0
       expect(v2).to eq (v - 1);
+      # cleanup
+      tb.setFV(FDI_ID, v)
+      tb.seek()
+      expect(tb.stat()).to eq 0
+      tb.del()
+      expect(tb.stat()).to eq 0
     end
     tb2.unlock()
   end
-  # Inserting  target
+  # Lock last record and delete it
   tb.setFV(FDI_ID, 300000)
   tb2.setFV(FDI_ID, 300000)
   tb.seekLessThan(false, Transactd::ROW_LOCK_X)
@@ -1703,12 +1713,12 @@ def testDelete()
   tb = testOpenTable(db)
   # estimate count
   count = tb.recordCount(true)
-  is_valid_count = ((count - TEST_COUNT).abs < ALLOWABLE_ERROR_DISTANCE_IN_ESTIMATE_COUNT)
+  is_valid_count = ((count - 20003).abs < 5000)
   expect(is_valid_count).to be true
   if !is_valid_count
-    puts "true record count = #{(TEST_COUNT + 3).to_s} and estimate recordCount count = #{count.to_s}"
+    puts "true record count = 20003 and estimate recordCount count = #{count.to_s}"
   end
-  expect(tb.recordCount(false)).to eq TEST_COUNT + 3 # true count
+  expect(tb.recordCount(false)).to eq 20003 # true count
   vv = TEST_COUNT * 3 / 4 + 1
   tb.clearBuffer()
   tb.setFV(FDI_ID, vv)
@@ -1799,9 +1809,9 @@ def testLogin()
   db.disconnect(PROTOCOL + HOSTNAME + DBNAME)
   expect(db.stat()).to eq 0
   db.connect(PROTOCOL + HOSTNAME + DBNAME)
-  expect(db.stat()).to eq (25000 + 1049)
+  expect(db.stat()).to eq (Transactd::ERROR_NO_DATABASE)
   db.disconnect(PROTOCOL + HOSTNAME + DBNAME)
-  expect(db.stat()).to eq 0
+  expect(db.stat()).to eq 1
   db.close()
 end
 

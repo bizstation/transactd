@@ -33410,6 +33410,7 @@ SWIGEXPORT void Init_transactd(void) {
 #else
   rb_define_const(mTransactd, "CP_ACP", SWIG_From_int(static_cast< int >(65001)));
 #endif
+  rb_define_const(mTransactd, "TD_ACL_RELOAD", SWIG_From_int(static_cast< int >(TD_ACL_RELOAD)));  
   rb_define_const(mTransactd, "Ft_string", SWIG_From_int(static_cast< int >(ft_string)));
   rb_define_const(mTransactd, "Ft_integer", SWIG_From_int(static_cast< int >(ft_integer)));
   rb_define_const(mTransactd, "Ft_float", SWIG_From_int(static_cast< int >(ft_float)));
@@ -33578,13 +33579,13 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "ERROR_TD_HOSTNAME_NOT_FOUND", SWIG_From_int(static_cast< int >(ERROR_TD_HOSTNAME_NOT_FOUND)));
   rb_define_const(mTransactd, "ERROR_TD_CONNECTION_FAILURE", SWIG_From_int(static_cast< int >(ERROR_TD_CONNECTION_FAILURE)));
   rb_define_const(mTransactd, "ERROR_TD_NOT_CONNECTED", SWIG_From_int(static_cast< int >(ERROR_TD_NOT_CONNECTED)));
-  rb_define_const(mTransactd, "TRANSACTD_SCHEMANAME", SWIG_FromCharPtr("transactd_schema"));
+  rb_define_const(mTransactd, "TRANSACTD_SCHEMANAME", SWIG_FromCharPtr(TRANSACTD_SCHEMANAME));
   rb_define_const(mTransactd, "TYPE_SCHEMA_BDF", SWIG_From_int(static_cast< int >(TYPE_SCHEMA_BDF)));
   rb_define_const(mTransactd, "TYPE_SCHEMA_DDF", SWIG_From_int(static_cast< int >(TYPE_SCHEMA_DDF)));
   rb_define_const(mTransactd, "FILTER_CURRENT_TYPE_NOTINC", SWIG_From_int(static_cast< int >(FILTER_CURRENT_TYPE_NOTINC)));
   rb_define_const(mTransactd, "FILTER_CURRENT_TYPE_INC", SWIG_From_int(static_cast< int >(FILTER_CURRENT_TYPE_INC)));
   rb_define_const(mTransactd, "FILTER_CURRENT_TYPE_NOBOOKMARK", SWIG_From_int(static_cast< int >(FILTER_CURRENT_TYPE_NOBOOKMARK)));
-  rb_define_const(mTransactd, "NIS_FILED_NAME", SWIG_FromCharPtr("$nf"));
+  rb_define_const(mTransactd, "NIS_FILED_NAME", SWIG_FromCharPtr(NIS_FILED_NAME));
   rb_define_const(mTransactd, "OWNERNAME_SIZE", SWIG_From_int(static_cast< int >(OWNERNAME_SIZE)));
   rb_define_const(mTransactd, "TD_BACKUP_START", SWIG_From_int(static_cast< int >(TD_BACKUP_START)));
   rb_define_const(mTransactd, "TD_BACKUP_END", SWIG_From_int(static_cast< int >(TD_BACKUP_END)));
@@ -33593,6 +33594,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "TD_BACKUP_MODE_BUSY", SWIG_From_int(static_cast< int >(TD_BACKUP_MODE_BUSY)));
   rb_define_const(mTransactd, "TD_BACKUP_MODE_NOT_PERMIT", SWIG_From_int(static_cast< int >(TD_BACKUP_MODE_NOT_PERMIT)));
   rb_define_const(mTransactd, "TD_BACKUP_MODE_SERVER_ERROR", SWIG_From_int(static_cast< int >(TD_BACKUP_MODE_SERVER_ERROR)));
+  rb_define_const(mTransactd, "MYSQL_USERNAME_MAX", SWIG_From_int(static_cast< int >(MYSQL_USERNAME_MAX)));
+  rb_define_const(mTransactd, "HST_OPTION_NO_SCRAMBLE", SWIG_From_int(static_cast< int >(HST_OPTION_NO_SCRAMBLE)));
   rb_define_const(mTransactd, "CPP_INTERFACE_VER_MAJOR", SWIG_FromCharPtr(CPP_INTERFACE_VER_MAJOR));
   rb_define_const(mTransactd, "CPP_INTERFACE_VER_MINOR", SWIG_FromCharPtr(CPP_INTERFACE_VER_MINOR));
   rb_define_const(mTransactd, "CPP_INTERFACE_VER_RELEASE", SWIG_FromCharPtr(CPP_INTERFACE_VER_RELEASE));
@@ -33911,7 +33914,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassDbdef.klass, "mode", VALUEFUNC(_wrap_dbdef_mode), -1);
   SwigClassDbdef.mark = 0;
   SwigClassDbdef.trackObjects = 0;
-  rb_define_const(mTransactd, "Null_str", SWIG_FromCharPtr(""));
+  rb_define_const(mTransactd, "Null_str", SWIG_FromCharPtr(null_str));
   
   SwigClassTable.klass = rb_define_class_under(mTransactd, "Table", ((swig_class *) SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable->clientdata)->klass);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__table, (void *) &SwigClassTable);
