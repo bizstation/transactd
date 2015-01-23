@@ -278,6 +278,12 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define ROW_LOCK_X                      LOCK_SINGLE_NOWAIT
 #define ROW_LOCK_S                      5000 + LOCK_SINGLE_NOWAIT
 
+//Server isoration
+#define SRV_ISO_READ_UNCOMMITED   0
+#define SRV_ISO_READ_COMMITED     1
+#define SRV_ISO_REPEATABLE_READ   2
+#define SRV_ISO_SERIALIZABLE      3
+
 /** open mode
  */
 #define TD_OPEN_NORMAL                  0
@@ -432,8 +438,13 @@ struct handshale_t
     unsigned int size;  // size of this
     unsigned int options;
     trdVersiton ver;
+    unsigned short transaction_isolation;
+    unsigned short lock_wait_timeout;
     unsigned char scramble[MYSQL_SCRAMBLE_LENGTH+1]; //user auth scramble
 };
+
+#define HST_OPTION_NO_SCRAMBLE 1
+
 /** @endcond */
 
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.

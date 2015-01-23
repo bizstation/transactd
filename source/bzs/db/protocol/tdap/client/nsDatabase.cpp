@@ -638,6 +638,21 @@ void nsdatabase::abortTrn()
 #endif
 }
 
+ushort_td nsdatabase::trxIsolationServer() const 
+{
+    if (!isUseTransactd())
+        return 0xFFFF;
+    return *((ushort_td*)(m_nsimpl->clientID + sizeof(char*)));
+}
+
+ushort_td nsdatabase::trxLockWaitTimeoutServer() const
+{
+    if (!isUseTransactd())
+        return 0xFFFF;
+    return *((ushort_td*)(m_nsimpl->clientID + sizeof(char*) + sizeof(ushort_td)));
+}
+
+
 short_td nsdatabase::tdapErr(HWND hWnd, _TCHAR* retbuf)
 {
     return nstable::tdapErr(hWnd, m_stat, _T("Engin"), retbuf);
@@ -713,7 +728,7 @@ bool nsdatabase::isTransactdUri(const _TCHAR* uri)
     return (_tcsstr(uri, _T("tdap://")) != NULL);
 }
 
-bool nsdatabase::isUseTransactd()
+bool nsdatabase::isUseTransactd() const
 {
     return (m_btrcallid == getTrnsctdEntryPoint());
 }

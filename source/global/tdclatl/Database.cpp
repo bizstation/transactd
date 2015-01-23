@@ -485,6 +485,18 @@ STDMETHODIMP CDatabase::get_MaxTables(int* Value)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::get_TrxIsolationServer(eSrvIsorationType* Value)
+{
+    *Value = (eSrvIsorationType)m_db->trxIsolationServer();
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::get_TrxLockWaitTimeoutServer(int* Value)
+{
+    *Value = m_db->trxLockWaitTimeoutServer();
+    return S_OK;
+}
+
 void __stdcall onCopyData(database* db, int recordCount, int count,
                           bool& cancel)
 {

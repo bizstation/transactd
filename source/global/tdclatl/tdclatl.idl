@@ -295,6 +295,19 @@ enum eLockType
 
 typedef
 [
+  helpstring("Server isoration type")
+]
+enum eSrvIsorationType
+{
+  SRV_ISO_READ_UNCOMMITED  = 0,
+  SRV_ISO_READ_COMMITED    = 1,
+  SRV_ISO_REPEATABLE_READ  = 2,
+  SRV_ISO_SERIALIZABLE     = 3,
+
+}eSrvIsorationType;
+
+typedef
+[
   helpstring("Snapshot lock type Constants")
 ]
 enum eStLockType
@@ -476,6 +489,10 @@ interface IDatabase : IDispatch
   HRESULT _stdcall MaxTables([out, retval]  int* Value);
   [id(0x000000F4)]
   HRESULT _stdcall AclReload([out, retval]  short* Value);
+  [propget, id(0x000000F5)]
+  HRESULT _stdcall TrxIsolationServer([out, retval]  eSrvIsorationType* Value);
+  [propget, id(0x000000F6)]
+  HRESULT _stdcall TrxLockWaitTimeoutServer([out, retval]  int* Value);
  
   
 };

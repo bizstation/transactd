@@ -115,13 +115,14 @@ struct clientID
 
 #ifdef __x86_64__
     bzs::netsvc::client::connection* con;
-
-    char_td reserved[4];
+    unsigned short transaction_isolation;
+    unsigned short lock_wait_timeout;
 #else // NOT __x86_64__
 
     bzs::netsvc::client::connection* con;
-
-    char_td reserved[8];
+    unsigned short transaction_isolation;
+    unsigned short lock_wait_timeout;
+    char_td reserved[4];
 #endif // NOT __x86_64__
     char_td aid[2];
     ushort_td id;

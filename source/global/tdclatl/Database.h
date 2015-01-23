@@ -146,6 +146,9 @@ public:
     STDMETHOD(put_ExecCodePage)(unsigned int Value);
     STDMETHOD(get_ExecCodePage)(unsigned int* Value);
     STDMETHOD(get_MaxTables)(int* Value);
+    STDMETHOD(get_TrxIsolationServer)(eSrvIsorationType* Value);
+    STDMETHOD(get_TrxLockWaitTimeoutServer)(int* Value);
+
 
 };
 

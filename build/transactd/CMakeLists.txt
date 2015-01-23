@@ -120,7 +120,10 @@ foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
     else()
       set_source_files_properties(
         "${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/tdapCommandExecuter.cpp"
-        PROPERTIES COMPILE_FLAGS -std=c++0x)
+        PROPERTIES COMPILE_FLAGS "-std=c++0x -std=gnu++0x")
+      set_source_files_properties(
+        "${TRANSACTD_ROOT}/source/bzs/env/crosscompile.cpp"
+        PROPERTIES COMPILE_FLAGS "-std=c++0x -std=gnu++0x")
     endif()
     bz_add_cxx_flag("-fPIC -fexceptions -fno-omit-frame-pointer" "${build_type}")
     bz_add_cxx_flag("-fno-strict-aliasing -fpermissive -frtti -D_REENTRANT" "${build_type}")

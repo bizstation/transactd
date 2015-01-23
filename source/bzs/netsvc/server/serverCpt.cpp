@@ -47,7 +47,7 @@ namespace cpt // connection per thread
 unsigned int g_connections = 0;
 unsigned int g_waitThread = 0;
 // ---------------------------------------------------------------------------
-//		connection
+//      connection
 // ---------------------------------------------------------------------------
 #define READBUF_SIZE 66000
 #define WRITEBUF_SIZE 66000
@@ -242,7 +242,7 @@ std::vector<connection*> connection::connections;
 mutex connection::m_mutex;
 
 // ---------------------------------------------------------------------------
-//		worker
+//      worker
 // ---------------------------------------------------------------------------
 
 class worker : private boost::noncopyable
@@ -379,7 +379,7 @@ std::vector<boost::shared_ptr<boost::thread> > worker::m_threads;
 std::vector<worker*> worker::m_workers;
 
 // ---------------------------------------------------------------------------
-//		listener
+//      listener
 // ---------------------------------------------------------------------------
 
 class listener
@@ -436,13 +436,13 @@ public:
 };
 
 // ---------------------------------------------------------------------------
-//		server
+//      server
 // ---------------------------------------------------------------------------
 inotifyHandler* server::erh = NULL;
 
 /** server
- *	If it starts, a server will create the exclusive thread for accpter
- *	and will go into an infinite loop.
+ *  If it starts, a server will create the exclusive thread for accpter
+ *  and will go into an infinite loop.
  */
 server::server(std::size_t max_connections, const char* hostCheckName)
     : m_timer(m_ios), m_maxConnections(max_connections), m_stopped(false)
@@ -474,7 +474,7 @@ bool server::checkConnections()
 {
     while (connection::connections.size() > m_maxConnections)
     {
-        Sleep(100 * MCRTOMM);
+        Sleep(100);
         if (m_stopped)
             return false;
     }

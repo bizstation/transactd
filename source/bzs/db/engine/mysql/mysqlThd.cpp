@@ -25,6 +25,7 @@ unsigned int g_openDatabases = 0;
 
 extern unsigned int g_lock_wait_timeout;
 extern char* g_transaction_isolation;
+static unsigned int transaction_isolation_cache = -1;
 
 #ifdef USETLS
 tls_key g_tlsiID;
@@ -100,6 +101,24 @@ void waitForServerStart()
     mysql_mutex_unlock(&LOCK_server_started);
 }
 
+unsigned int getTransactdIsolation()
+{
+    if (transaction_isolation_cache != -1) 
+        return transaction_isolation_cache;
+    else if (strcmp(g_transaction_isolation, "READ-COMMITTED") == 0)
+        return transaction_isolation_cache = ISO_READ_COMMITTED;
+    else if (strcmp(g_transaction_isolation, "REPEATABLE-READ") == 0)
+        return transaction_isolation_cache = ISO_REPEATABLE_READ;
+    else if (strcmp(g_transaction_isolation, "SERIALIZABLE") == 0)
+        return transaction_isolation_cache = ISO_SERIALIZABLE;
+    return transaction_isolation_cache = ISO_READ_UNCOMMITTED;
+}
+
+unsigned int getTransactdLockWaitTimeout()
+{
+    return g_lock_wait_timeout;
+}
+
 THD* buildTHD()
 {
     if (!mysqld_server_started)
@@ -121,14 +140,7 @@ THD* buildTHD()
     thd->net = v;
 
     thd->variables.option_bits |= OPTION_BIN_LOG;
-    if (strcmp(g_transaction_isolation, "READ-COMMITTED") == 0)
-        thd->variables.tx_isolation = ISO_READ_COMMITTED;
-    else if (strcmp(g_transaction_isolation, "REPEATABLE-READ") == 0)
-        thd->variables.tx_isolation = ISO_REPEATABLE_READ;
-    else if (strcmp(g_transaction_isolation, "READ-UNCOMMITTED") == 0)
-        thd->variables.tx_isolation = ISO_READ_UNCOMMITTED;
-    else if (strcmp(g_transaction_isolation, "SERIALIZABLE") == 0)
-        thd->variables.tx_isolation = ISO_SERIALIZABLE;
+    thd->variables.tx_isolation = getTransactdIsolation();
 
     thd->clear_error();
     char tmp[256];

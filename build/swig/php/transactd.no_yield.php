@@ -205,6 +205,14 @@ abstract class transactd {
 
 	const ROW_LOCK_S = ROW_LOCK_S;
 
+	const SRV_ISO_READ_UNCOMMITED = SRV_ISO_READ_UNCOMMITED;
+
+	const SRV_ISO_READ_COMMITED = SRV_ISO_READ_COMMITED;
+
+	const SRV_ISO_REPEATABLE_READ = SRV_ISO_REPEATABLE_READ;
+
+	const SRV_ISO_SERIALIZABLE = SRV_ISO_SERIALIZABLE;
+
 	const TD_OPEN_NORMAL = TD_OPEN_NORMAL;
 
 	const TD_OPEN_READONLY = TD_OPEN_READONLY;
@@ -1891,6 +1899,14 @@ class nsdatabase {
 
 	function endSnapshot() {
 		nsdatabase_endSnapshot($this->_cPtr);
+	}
+
+	function trxIsolationServer() {
+		return nsdatabase_trxIsolationServer($this->_cPtr);
+	}
+
+	function trxLockWaitTimeoutServer() {
+		return nsdatabase_trxLockWaitTimeoutServer($this->_cPtr);
 	}
 
 	function tdapErr($hWnd,$retbuf=null) {

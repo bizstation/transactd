@@ -239,7 +239,7 @@ bool connectionPool<Database_Ptr>::reset(int waitSec)
                 flag = true;
         if (!flag)
             break;
-        Sleep(100 * MCRTOMM);
+        Sleep(100);
     }
     m_dbs.clear();
     return flag;

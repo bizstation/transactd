@@ -37,6 +37,8 @@
 #include <random>
 
 
+extern unsigned int getTransactdIsolation();
+extern unsigned int getTransactdLockWaitTimeout();
 
 namespace bzs
 {
@@ -337,7 +339,8 @@ inline bool dbExecuter::doAuthentication(request& req, database* db)
 */
 bool dbExecuter::getDatabaseWithAuth(request& req, database* &db, bool connect)
 {
-    std::string dbname = getDatabaseName(req);
+    db = NULL;
+	std::string dbname = getDatabaseName(req);
     bool ret = false;
     if (connect && dbname == "")
         dbname = "mysql";
@@ -348,39 +351,41 @@ bool dbExecuter::getDatabaseWithAuth(request& req, database* &db, bool connect)
         db = getDatabase(dbname.c_str(), req.cid);
         if (db)
         {
-            ret = doAuthentication(req, db);
-            if (connect)
-            {
-                dbManager::releaseDatabase(req.cid);
-                db = NULL;
-            }
+			ret = doAuthentication(req, db);
+			if (connect || !ret || req.result)
+			{
+				dbManager::releaseDatabase(req.cid);
+				db = NULL;
+			}
         }
     }else
         req.result = 1;
     return ret;
 }
 
+/* When connect failed, Delete database object.
+
+*/
 bool dbExecuter::connect(request& req)
 {
     req.paramMask = 0;
     if (req.keyNum == LG_SUBOP_DISCONNECT)
-        dbManager::releaseDatabase(req.cid);
-    else
     {
-        database* db;
-        bool ret = getDatabaseWithAuth(req, db, true);
-        if (ret && req.result == 0)
-        {
-            if (db)
-            {
-                std::string dbSqlname = getDatabaseName(req, FOR_SQL);
-                dbSqlname.insert(0, "use ");
-                req.result = ddl_execSql(db->thd(), dbSqlname);
-            }
-        }
-        return ret;
+		dbManager::releaseDatabase(req.cid);
+		return true;
+	}
+    database* db;
+    bool ret = getDatabaseWithAuth(req, db, true);
+    if (ret &&  (req.result == 0) && db)
+    {
+        std::string dbSqlname = getDatabaseName(req, FOR_SQL);
+        dbSqlname.insert(0, "use ");
+        req.result = ddl_execSql(db->thd(), dbSqlname);
+        if (req.result)
+            dbManager::releaseDatabase(req.cid);
+        
     }
-    return true;
+    return ret;
 }
 
 inline bool dbExecuter::doCreateTable(request& req)
@@ -852,7 +857,6 @@ inline void dbExecuter::doInsert(request& req)
     m_tb->clearBuffer();
     m_tb->setRecordFromPacked((const uchar*)req.data, *(req.datalen),
                               req.blobHeader);
-    smartBulkInsert sbi(m_tb, 1);
     __int64 aincValue = m_tb->insert(ncc);
     req.result = errorCodeSht(m_tb->stat());
     if (aincValue)
@@ -979,6 +983,11 @@ inline void dbExecuter::doInsertBulk(request& req)
         req.result = errorCodeSht(m_tb->stat());
 }
 
+/**
+@result 
+         2byte recordLength
+         4byte esitimate recordCount
+*/
 inline void dbExecuter::doStat(request& req)
 {
     m_tb = getTable(req.pbk->handle);
@@ -1417,25 +1426,30 @@ void makeRandomKey(unsigned char *buf, unsigned int size)
 size_t dbExecuter::getAcceptMessage(char* message, size_t size)
 {
     // make handshake packet
+	m_authChecked = false;
     assert(size >= sizeof(trdVersiton));
 
     handshale_t* hst = (handshale_t*)message;
+    hst->options = 0;
     trdVersiton* ver = &hst->ver;
     hst->size = sizeof(handshale_t);
-    hst->options = 0;
 
     strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
                 global_system_variables.collation_server->csname);
     ver->srvMajor = TRANSACTD_VER_MAJOR;
     ver->srvMinor = TRANSACTD_VER_MINOR;
     ver->srvRelease = TRANSACTD_VER_RELEASE;
+    hst->transaction_isolation = getTransactdIsolation();
+    hst->lock_wait_timeout = getTransactdLockWaitTimeout();
     if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR) == 0)
     {
         makeRandomKey(m_scramble, MYSQL_SCRAMBLE_LENGTH);
-        memcpy(hst->scramble, m_scramble, sizeof(m_scramble));
+        memcpy(hst->scramble, m_scramble, sizeof(hst->scramble));
+        
     }else
     {
         hst->scramble[0] = 0x00;
+        hst->options |= HST_OPTION_NO_SCRAMBLE;
         hst->size -= sizeof(m_scramble);
     }
     return hst->size;

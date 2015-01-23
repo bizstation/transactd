@@ -16882,6 +16882,74 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_trxIsolationServer) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
+  zval **args[1];
+  unsigned short result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nsdatabase_trxIsolationServer. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = arg1->trxIsolationServer();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_trxLockWaitTimeoutServer) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
+  zval **args[1];
+  unsigned short result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nsdatabase_trxLockWaitTimeoutServer. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = arg1->trxLockWaitTimeoutServer();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_tdapErr__SWIG_0) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
   HWND arg2 ;
@@ -18548,7 +18616,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_aclReload) {
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      result = (result)arg1->aclReload();
+      result = (short)arg1->aclReload();
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -32069,6 +32137,12 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_endsnapshot, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_trxIsolationServer, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_trxLockWaitTimeoutServer, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_tdaperr, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
@@ -33220,6 +33294,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(nsdatabase_aborttrn,_wrap_nsdatabase_abortTrn,swig_arginfo_nsdatabase_aborttrn)
  SWIG_ZEND_NAMED_FE(nsdatabase_beginsnapshot,_wrap_nsdatabase_beginSnapshot,swig_arginfo_nsdatabase_beginsnapshot)
  SWIG_ZEND_NAMED_FE(nsdatabase_endsnapshot,_wrap_nsdatabase_endSnapshot,swig_arginfo_nsdatabase_endsnapshot)
+ SWIG_ZEND_NAMED_FE(nsdatabase_trxIsolationServer,_wrap_nsdatabase_trxIsolationServer,swig_arginfo_nsdatabase_trxIsolationServer)
+ SWIG_ZEND_NAMED_FE(nsdatabase_trxLockWaitTimeoutServer,_wrap_nsdatabase_trxLockWaitTimeoutServer,swig_arginfo_nsdatabase_trxLockWaitTimeoutServer)
  SWIG_ZEND_NAMED_FE(nsdatabase_tdaperr,_wrap_nsdatabase_tdapErr,swig_arginfo_nsdatabase_tdaperr)
  SWIG_ZEND_NAMED_FE(nsdatabase_uselongfilename,_wrap_nsdatabase_useLongFilename,swig_arginfo_nsdatabase_uselongfilename)
  SWIG_ZEND_NAMED_FE(nsdatabase_setuselongfilename,_wrap_nsdatabase_setUseLongFilename,swig_arginfo_nsdatabase_setuselongfilename)
@@ -33990,6 +34066,10 @@ SWIG_LONG_CONSTANT(MULTILOCK_GAP_SHARE, MULTILOCK_GAP_SHARE);
 SWIG_LONG_CONSTANT(MULTILOCK_NOGAP_SHARE, MULTILOCK_NOGAP_SHARE);
 SWIG_LONG_CONSTANT(ROW_LOCK_X, ROW_LOCK_X);
 SWIG_LONG_CONSTANT(ROW_LOCK_S, ROW_LOCK_S);
+SWIG_LONG_CONSTANT(SRV_ISO_READ_UNCOMMITED, SRV_ISO_READ_UNCOMMITED);
+SWIG_LONG_CONSTANT(SRV_ISO_READ_COMMITED, SRV_ISO_READ_COMMITED);
+SWIG_LONG_CONSTANT(SRV_ISO_REPEATABLE_READ, SRV_ISO_REPEATABLE_READ);
+SWIG_LONG_CONSTANT(SRV_ISO_SERIALIZABLE, SRV_ISO_SERIALIZABLE);
 SWIG_LONG_CONSTANT(TD_OPEN_NORMAL, TD_OPEN_NORMAL);
 SWIG_LONG_CONSTANT(TD_OPEN_READONLY, TD_OPEN_READONLY);
 SWIG_LONG_CONSTANT(TD_OPEN_EXCLUSIVE, TD_OPEN_EXCLUSIVE);

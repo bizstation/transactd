@@ -50,9 +50,14 @@
 #endif
 
 #include <my_config.h>
-#include <mysql/plugin.h>
 #include <mysql_version.h>
 #include <sql/sql_const.h>
+#include "my_global.h"
+#ifndef my_isfinite
+#include <math.h>
+#endif
+#include "sql/sql_class.h"
+#include <mysql/plugin.h>
 #include "sql/mysqld.h"
 
 #if ((MYSQL_VERSION_ID >= 50600) && !defined(MARIADB_BASE_VERSION))
@@ -63,11 +68,9 @@
 #include "sql/sql_cache.h"
 #include "sql/structs.h"
 #include "sql/sql_priv.h"
-#include "sql/sql_class.h"
 #include "sql/unireg.h"
 #include "sql/lock.h"
 #include "sql/key.h"
-#include "my_global.h"
 #include "sql/transaction.h"
 #include "sql/sql_base.h"
 #include "sql/sql_parse.h"

@@ -354,8 +354,9 @@ class connection : public iconnection, private noncopyable
                     m_readLen = 0;
 
                 sentResult = m_comm->send();
-                if (ret == EXECUTE_RESULT_ACCESS_DNIED)
-                    return;
+                //When named pipe, dissconnect from local client.
+                //if (ret == EXECUTE_RESULT_ACCESS_DNIED)
+                //    return;
                 m_module->cleanup();
             }
         }

@@ -105,18 +105,19 @@ public:
     void swapTablename(const _TCHAR* uri1, const _TCHAR* uri2);
     void beginTrn(short bias = SINGLELOCK_READ_COMMITED +
                                NOWAIT_WRITE); // NoWit SingleLock
-    // 平行トランザクション
     void endTrn();
     void abortTrn();
     void beginSnapshot(short bias = CONSISTENT_READ);
     void endSnapshot();
+    ushort_td trxIsolationServer() const ;
+    ushort_td trxLockWaitTimeoutServer() const ;
     short_td tdapErr(HWND hWnd, _TCHAR* retbuf = NULL);
     bool useLongFilename();
     void setUseLongFilename(bool value);
     void getBtrVersion(btrVersions* versions, uchar_td* posblk);
     bool setUseTransactd();
     bool isTransactdUri(const _TCHAR* uri);
-    bool isUseTransactd();
+    bool isUseTransactd() const;
     void readDatabaseDirectory(_TCHAR* retBuf, uchar_td len);
     bool connect(const _TCHAR* uri, bool newConnection = false);
     bool disconnect(const _TCHAR* uri = _T(""));

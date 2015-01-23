@@ -782,6 +782,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_NOT_FOUND_TI);
         
         // clean up
+        $tb2->setFV(FDI_ID, 29999);
+        $tb2->seek();
+        $this->assertEquals($tb2->stat(), 0);
         $tb2->del();
         $this->assertEquals($tb2->stat(), 0);
         
@@ -1396,8 +1399,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb2->seekNext(Bz\transactd::ROW_LOCK_X); // lock(X) third, second lock freed
         $this->assertEquals($tb2->stat(), 0);
         
-        $tb->seekNext(); // nobody lock second.
-        $this->assertEquals($tb->stat(), 0);
+        $tb->seekNext(); // nobody lock second. But REPEATABLE_READ tb2 lock all(no unlock)
+        if ($db->trxIsolationServer() == Bz\transactd::SRV_ISO_REPEATABLE_READ)
+            $this->assertEquals($tb->stat(), Bz\transactd::STATUS_LOCK_ERROR);
+        else
+            $this->assertEquals($tb->stat(), 0);
         $tb->seekNext(Bz\transactd::ROW_LOCK_X); // Try lock(X) third
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_LOCK_ERROR);
         
@@ -1422,6 +1428,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // Test Insert, After record lock  operation
         $tb->setFV(FDI_ID, 21000);
         $tb->insert();
+        $this->assertEquals($tb->stat(), 0);
+        
+        //cleanup
+        $tb->setFV(FDI_ID, 21000);
+        $tb->seek();
         $this->assertEquals($tb->stat(), 0);
         $tb->del();
         $this->assertEquals($tb->stat(), 0);
@@ -1685,13 +1696,20 @@ class transactdTest extends PHPUnit_Framework_TestCase
         {
             // Get lock(X) same record in parallel.
             $w->start();
+            usleep(5000);
             $v = $tb->getFVint(FDI_ID);
             $tb->setFV(FDI_ID, ++$v);
             $tb->insert();
             $this->assertEquals($tb->stat(), 0);
             $w->join();
             $v2 = $w->getResult();
-            $this->assertEquals($v, $v2);
+            
+            if ($db->trxIsolationServer() == Bz\transactd::SRV_ISO_REPEATABLE_READ)
+                $this->assertEquals($tb->stat(), Bz\transactd::STATUS_LOCK_ERROR);
+            else {
+                $this->assertEquals($tb->stat(), 0);
+                $this->assertEquals($v2, $v - 1);
+            }
         }
         // Lock last record and delete it
         $w = new SeekLessThanWorker();
@@ -1702,6 +1720,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         {
             // Get lock(X) same record in parallel.
             $w->start();
+            usleep(5000);
             $v = $tb->getFVint(FDI_ID);
             $tb->del();
             $this->assertEquals($tb->stat(), 0);

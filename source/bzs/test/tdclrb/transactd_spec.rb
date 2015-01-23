@@ -688,6 +688,9 @@ def testSnapshot()
   expect(tb.stat()).to eq Transactd::STATUS_NOT_FOUND_TI
   
   # clean up
+  tb2.setFV(FDI_ID, 29999)
+  tb2.seek()
+  expect(tb2.stat()).to eq 0
   tb2.del()
   expect(tb2.stat()).to eq 0
   
@@ -1272,8 +1275,12 @@ def testRecordLock()
   tb2.seekNext(Transactd::ROW_LOCK_X) # lock(X) third, second lock freed
   expect(tb2.stat()).to eq 0
   
-  tb.seekNext() # nobody lock second.
-  expect(tb.stat()).to eq 0
+  tb.seekNext() # nobody lock second. But REPEATABLE_READ tb2 lock all(no unlock)
+  if (db.trxIsolationServer() == Transactd::SRV_ISO_REPEATABLE_READ)
+     expect(tb.stat()).to eq Transactd::STATUS_LOCK_ERROR
+  else
+     expect(tb.stat()).to eq 0
+  end
   tb.seekNext(Transactd::ROW_LOCK_X) # Try lock(X) third
   expect(tb.stat()).to eq Transactd::STATUS_LOCK_ERROR
   
@@ -1298,6 +1305,9 @@ def testRecordLock()
   # Test Insert, After record lock  operation
   tb.setFV(FDI_ID, 21000)
   tb.insert()
+  expect(tb.stat()).to eq 0
+  tb.setFV(FDI_ID, 21000)
+  tb.seek()
   expect(tb.stat()).to eq 0
   tb.del()
   expect(tb.stat()).to eq 0
@@ -1627,15 +1637,19 @@ def testMissingUpdate()
     w = Thread.new(tb2) { |tb2|
       tb2.seekLessThan(false, Transactd::ROW_LOCK_X)
     }
+    sleep(0.005)
     v = tb.getFVint(FDI_ID)
     v = v + 1
     tb.setFV(FDI_ID, v)
     tb.insert()
     w.join()
-    expect(tb.stat()).to eq 0
-    expect(tb2.stat()).to eq 0
     v2 = tb2.getFVint(FDI_ID)
-    expect(v).to eq v2
+    if (db.trxIsolationServer() == Transactd::SRV_ISO_REPEATABLE_READ)
+      expect(tb.stat()).to eq Transactd::STATUS_LOCK_ERROR
+    else
+      expect(tb.stat()).to eq 0
+      expect(v2).to eq (v - 1);
+    end
     tb2.unlock()
   end
   # Inserting  target
@@ -1647,6 +1661,7 @@ def testMissingUpdate()
     w = Thread.new(tb2) { |tb2|
       tb2.seekLessThan(false, Transactd::ROW_LOCK_X)
     }
+    sleep(0.005)
     v = tb.getFVint(FDI_ID)
     tb.del()
     w.join()

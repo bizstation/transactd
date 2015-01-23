@@ -18151,6 +18151,74 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_nsdatabase_trxIsolationServer(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned short result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase const *","trxIsolationServer", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
+  {
+    try {
+      result = arg1->trxIsolationServer();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_long(result);
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_nsdatabase_trxLockWaitTimeoutServer(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned short result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase const *","trxLockWaitTimeoutServer", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
+  {
+    try {
+      result = arg1->trxLockWaitTimeoutServer();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_long(result);
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_nsdatabase_tdapErr__SWIG_0(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
   HWND arg2 ;
@@ -33420,6 +33488,10 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "MULTILOCK_NOGAP_SHARE", SWIG_From_int(static_cast< int >(MULTILOCK_NOGAP_SHARE)));
   rb_define_const(mTransactd, "ROW_LOCK_X", SWIG_From_int(static_cast< int >(ROW_LOCK_X)));
   rb_define_const(mTransactd, "ROW_LOCK_S", SWIG_From_int(static_cast< int >(ROW_LOCK_S)));
+  rb_define_const(mTransactd, "SRV_ISO_READ_UNCOMMITED", SWIG_From_int(static_cast< int >(SRV_ISO_READ_UNCOMMITED)));
+  rb_define_const(mTransactd, "SRV_ISO_READ_COMMITED", SWIG_From_int(static_cast< int >(SRV_ISO_READ_COMMITED)));
+  rb_define_const(mTransactd, "SRV_ISO_REPEATABLE_READ", SWIG_From_int(static_cast< int >(SRV_ISO_REPEATABLE_READ)));
+  rb_define_const(mTransactd, "SRV_ISO_SERIALIZABLE", SWIG_From_int(static_cast< int >(SRV_ISO_SERIALIZABLE)));
   rb_define_const(mTransactd, "TD_OPEN_NORMAL", SWIG_From_int(static_cast< int >(TD_OPEN_NORMAL)));
   rb_define_const(mTransactd, "TD_OPEN_READONLY", SWIG_From_int(static_cast< int >(TD_OPEN_READONLY)));
   rb_define_const(mTransactd, "TD_OPEN_EXCLUSIVE", SWIG_From_int(static_cast< int >(TD_OPEN_EXCLUSIVE)));
@@ -33965,6 +34037,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassNsdatabase.klass, "abortTrn", VALUEFUNC(_wrap_nsdatabase_abortTrn), -1);
   rb_define_method(SwigClassNsdatabase.klass, "beginSnapshot", VALUEFUNC(_wrap_nsdatabase_beginSnapshot), -1);
   rb_define_method(SwigClassNsdatabase.klass, "endSnapshot", VALUEFUNC(_wrap_nsdatabase_endSnapshot), -1);
+  rb_define_method(SwigClassNsdatabase.klass, "trxIsolationServer", VALUEFUNC(_wrap_nsdatabase_trxIsolationServer), -1);
+  rb_define_method(SwigClassNsdatabase.klass, "trxLockWaitTimeoutServer", VALUEFUNC(_wrap_nsdatabase_trxLockWaitTimeoutServer), -1);
   rb_define_method(SwigClassNsdatabase.klass, "tdapErr", VALUEFUNC(_wrap_nsdatabase_tdapErr), -1);
   rb_define_method(SwigClassNsdatabase.klass, "useLongFilename", VALUEFUNC(_wrap_nsdatabase_useLongFilename), -1);
   rb_define_method(SwigClassNsdatabase.klass, "setUseLongFilename", VALUEFUNC(_wrap_nsdatabase_setUseLongFilename), -1);

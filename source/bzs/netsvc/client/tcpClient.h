@@ -493,24 +493,25 @@ public:
     ~pipeConnection()
     {
         if (m_connected)
-        {
-            memset(m_writebuf_p, 0, sizeof(unsigned int));
-            DWORD n = 0;
-            BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
-                                               NULL, NULL, NULL, 0);
-            if(ret && n)
-                SetEvent(m_sendEvent);
-            if (m_recvEvent)
-                CloseHandle(m_recvEvent);
-            if (m_sendEvent)
-                CloseHandle(m_sendEvent);
-            if (m_writebuf_p)
-                UnmapViewOfFile(m_writebuf_p);
-            if (m_readbuf_p)
-                UnmapViewOfFile(m_readbuf_p);
-            if (m_mapFile)
-                CloseHandle(m_mapFile);
-        }
+		{
+			if (m_writebuf_p)
+				memset(m_writebuf_p, 0, sizeof(unsigned int));
+			DWORD n = 0;
+			BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
+                                            NULL, NULL, NULL, 0);
+			if(m_sendEvent && ret && n)
+				SetEvent(m_sendEvent);
+		}
+        if (m_recvEvent)
+            CloseHandle(m_recvEvent);
+        if (m_sendEvent)
+            CloseHandle(m_sendEvent);
+        if (m_writebuf_p)
+            UnmapViewOfFile(m_writebuf_p);
+        if (m_readbuf_p)
+            UnmapViewOfFile(m_readbuf_p);
+        if (m_mapFile)
+            CloseHandle(m_mapFile);
     }
 
     void connect()

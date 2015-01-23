@@ -132,12 +132,20 @@ class client
     {
         //Implements handshake here
         handshale_t* hst  = (handshale_t*)c->read();
-        if (hst->size == sizeof(handshale_t))
+        bool auth = (hst->size == sizeof(handshale_t));
+        bool min = (hst->size == (sizeof(handshale_t) 
+         									-  sizeof(hst->scramble)));
+        
+        if (min || auth)
         {
             if (!checkVersion(hst->ver))
                 return false;
             c->setCharsetServer(mysql::charsetIndex(hst->ver.cherserServer));
-
+            m_req.cid->lock_wait_timeout = hst->lock_wait_timeout;
+            m_req.cid->transaction_isolation = hst->transaction_isolation;
+        }
+        if (auth)
+        {
             char user[50];
             char pwd[MAX_PATH];
             char* p = (char*)m_req.keybuf;

@@ -347,6 +347,8 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_endTrn);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_abortTrn);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_beginSnapshot);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_endSnapshot);
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_trxIsolationServer);
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_trxLockWaitTimeoutServer);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_tdapErr);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_useLongFilename);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_setUseLongFilename);
