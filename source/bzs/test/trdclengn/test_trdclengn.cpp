@@ -55,7 +55,7 @@ static _TCHAR g_password[MAX_PATH]={0x00};
 
 static const short fdi_id = 0;
 static const short fdi_name = 1;
-static const bool user_auth = true;
+
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]);
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])

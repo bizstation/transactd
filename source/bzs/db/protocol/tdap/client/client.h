@@ -246,9 +246,7 @@ public:
 
     inline void createIndex()
     {
-        _TCHAR tmp[MAX_PATH*2]={0};
         m_req.paramMask = P_MASK_NOKEYBUF;
-
         int charsetIndexServer =  getServerCharsetIndex();
         unsigned char keynum = m_req.keyNum;
         bool specifyKeyNum = (keynum >= 0x80);
