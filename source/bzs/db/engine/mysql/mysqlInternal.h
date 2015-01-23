@@ -53,9 +53,6 @@
 #include <mysql_version.h>
 #include <sql/sql_const.h>
 #include "my_global.h"
-#ifndef my_isfinite
-#include <math.h>
-#endif
 #include "sql/sql_class.h"
 #include <mysql/plugin.h>
 #include "sql/mysqld.h"

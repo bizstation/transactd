@@ -305,13 +305,10 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
         }
         else
         {
-            if (m_impl->rootDir[0] == 0x00)
-            {
-                nstable::getDirURI(uri(), buf);
-                setDir(buf);
-                if (m_stat)
-                    return false;
-            }
+            nstable::getDirURI(uri(), buf);
+            setDir(buf);
+            if (m_stat)
+                return false;
         }
         if (!m_impl->dbDef)
             m_impl->dbDef = new dbdef(this, type);

@@ -55,7 +55,6 @@ static _TCHAR g_password[MAX_PATH]={0x00};
 
 static const short fdi_id = 0;
 static const short fdi_name = 1;
-static unsigned int g_trxIsolationServer;
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]);
 
@@ -171,8 +170,6 @@ table* openTable(database* db, short dbmode = TD_OPEN_NORMAL,
     db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,
              dbmode);
     BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1" << db->stat());
-    if (0 == db->stat())
-        g_trxIsolationServer = db->trxIsolationServer();
     table* tb = db->openTable(_T("user"), tbmode);
     BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable" << db->stat());
     return tb;
@@ -1646,7 +1643,7 @@ void testRecordLock(database* db)
 
     
     tb->seekNext(); // nobody lock second. but REPEATABLE_READ tb2 lock all(no unlock)
-    if (g_trxIsolationServer == SRV_ISO_REPEATABLE_READ)
+    if (db->trxIsolationServer() == SRV_ISO_REPEATABLE_READ)
         BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb->stat(), "tb->seekFirst stat = "
                             <<  tb->stat() );
     else
@@ -1976,7 +1973,7 @@ void testMissingUpdate(database* db)
             tb->insert();
             t->join();
             
-            if (g_trxIsolationServer == SRV_ISO_REPEATABLE_READ)
+            if (db->trxIsolationServer() == SRV_ISO_REPEATABLE_READ)
             {   /* When SRV_ISO_REPEATABLE_READ tb2 get gap lock first,
                    tb can not insert, it is dedlock! 
                 */
@@ -2664,6 +2661,7 @@ void doVarInsert(database* db, const _TCHAR* name, unsigned int codePage,
         v = i + 10;
         tb->setFV((short)2, v);
         tb->insert();
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "insert");
     }
     if (bulk)
         tb->commitBulkInsert();
@@ -2681,7 +2679,7 @@ void testVarInsert(database* db)
     const _TCHAR* str2 = _T("123");
 
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1 stat = " << db->stat());
     if (0 == db->stat())
     {
         bool utf16leSupport = isUtf16leSupport(db);
@@ -2718,7 +2716,7 @@ void doVarRead(database* db, const _TCHAR* name, unsigned int codePage,
 {
 
     table* tb = db->openTable(name);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
     tb->clearBuffer();
     tb->setKeyNum(key);
 
@@ -2755,7 +2753,7 @@ void testVarRead(database* db)
     const _TCHAR* str4 = _T("1232");
 
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
     if (0 == db->stat())
     {
         bool utf16leSupport = isUtf16leSupport(db);
@@ -2792,7 +2790,7 @@ void doVarFilter(database* db, const _TCHAR* name, unsigned int codePage,
                  const _TCHAR* str, int num, char_td key)
 {
     table* tb = db->openTable(name);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
     tb->clearBuffer();
     tb->setKeyNum(key);
 
@@ -2854,7 +2852,7 @@ void testFilterVar(database* db)
         return;
 
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testvar"), BDFNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
     if (0 == db->stat())
     {
         const _TCHAR* str = _T("漢字文");
