@@ -284,6 +284,8 @@ int dbExecuter::errorCode(int ha_error)
         return STATUS_TABLE_EXISTS_ERROR;
     else if (ha_error == DBM_ERROR_TABLE_USED)
         return STATUS_CANNOT_LOCK_TABLE;
+    else if(ha_error == ER_BAD_DB_ERROR)
+        return ERROR_NO_DATABASE;
     return 25000 + ha_error;
 }
 

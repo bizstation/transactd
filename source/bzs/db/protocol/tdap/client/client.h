@@ -317,6 +317,7 @@ public:
                 if (c)
                 {
                     setCon(c); // if error throw exception
+                    m_connecting = true;
                     if (getServerCharsetIndex() == -1)
                         m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
                     else
@@ -373,6 +374,7 @@ public:
                 if (m_logout || (m_connecting && m_req.result))
                     disconnect();
                 m_preResult = m_req.result;
+                m_connecting = false;
             }
         }
         return result();

@@ -33495,6 +33495,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "STATUS_INVALID_DATASIZE", SWIG_From_int(static_cast< int >(STATUS_INVALID_DATASIZE)));
   rb_define_const(mTransactd, "STATUS_INVALID_FIELDNAME", SWIG_From_int(static_cast< int >(STATUS_INVALID_FIELDNAME)));
   rb_define_const(mTransactd, "ERROR_TD_INVALID_CLINETHOST", SWIG_From_int(static_cast< int >(ERROR_TD_INVALID_CLINETHOST)));
+  rb_define_const(mTransactd, "ERROR_NO_DATABASE", SWIG_From_int(static_cast< int >(ERROR_NO_DATABASE)));
   rb_define_const(mTransactd, "ERROR_NOSPECIFY_TABLE", SWIG_From_int(static_cast< int >(ERROR_NOSPECIFY_TABLE)));
   rb_define_const(mTransactd, "ERROR_LOAD_CLIBRARY", SWIG_From_int(static_cast< int >(ERROR_LOAD_CLIBRARY)));
   rb_define_const(mTransactd, "ERROR_INDEX_RND_INIT", SWIG_From_int(static_cast< int >(ERROR_INDEX_RND_INIT)));

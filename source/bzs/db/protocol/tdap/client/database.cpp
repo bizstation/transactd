@@ -288,7 +288,7 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
                     const _TCHAR* dir, const _TCHAR* ownername)
 {
 
-    _TCHAR buf[MAX_PATH];
+    _TCHAR buf[MAX_PATH+50];
     m_stat = STATUS_SUCCESS;
     if (!m_impl->isOpened)
     {

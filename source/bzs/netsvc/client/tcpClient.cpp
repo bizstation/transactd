@@ -223,15 +223,15 @@ inline connection* connections::doConnect(connection* c)
         c->connect();
         return c;
     }
-    catch (bzs::netsvc::client::exception& e)
+    catch (bzs::netsvc::client::exception& /*e*/)
     {
         delete c;
-        throw e;
+        throw;
     }
-    catch (boost::system::system_error& e)
+    catch (boost::system::system_error& /*e*/)
     {
         delete c;
-        throw e;
+        throw;
     }
     //return NULL;
 }
@@ -253,15 +253,15 @@ inline bool connections::doHandShake(connection* c, handshake f, void* data)
         }
         return ret;
     }
-    catch (bzs::netsvc::client::exception& e)
+    catch (bzs::netsvc::client::exception& /*e*/)
     {
         delete c;
-        throw e;
+        throw;
     }
-    catch (boost::system::system_error& e)
+    catch (boost::system::system_error& /*e*/)
     {
         delete c;
-        throw e;
+        throw;
     }
     //return NULL;
 }

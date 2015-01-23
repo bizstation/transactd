@@ -28,6 +28,7 @@
 #else
 #include <global/boost/sha1.hpp>
 #endif
+#include <bzs/db/protocol/tdap/tdapcapi.h>
 
 namespace bzs
 {
@@ -37,6 +38,19 @@ namespace protocol
 {
 namespace tdap
 {
+
+inline const _TCHAR* protocol(const _TCHAR* uri)
+{
+    const _TCHAR* st = _tcsstr(uri, _T("tdap://"));
+    if (st)
+        return _T("tdap");
+    else
+    {
+        st = _tcsstr(uri, _T("btrv://"));
+        return _T("btrv");
+    }
+    return _T("");
+}
 
 inline const _TCHAR* hostName(const _TCHAR* uri, _TCHAR* buf, size_t size)
 {
@@ -84,15 +98,17 @@ inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf, size_t size)
 inline const _TCHAR* schemaTable(const _TCHAR* uri, _TCHAR* buf, size_t size)
 {
     buf[0] = 0x00;
-    const _TCHAR* st = _tcsrchr(uri, _T('='));
+    const _TCHAR* st = _tcsstr(uri, _T("dbfile="));
     if (st)
     {
+        st+= 7;
         const _TCHAR* en = _tcsrchr(uri, _T('.'));
         if (en)
         {
-            _tcsncpy_s(buf, size, st + 1, en - (st + 1));
-            buf[en - (st + 1)] = 0x00;
-        }
+            _tcsncpy_s(buf, size, st, en - st);
+            buf[en - st] = 0x00;
+        }else if (_tcsstr(st, TRANSACTD_SCHEMANAME))
+            _tcscpy_s(buf, size, TRANSACTD_SCHEMANAME);
     }
     return buf;
 }
@@ -160,6 +176,25 @@ inline const _TCHAR* stripPasswd(const _TCHAR* uri, _TCHAR* buf, size_t size)
     return buf;
 }
 
+inline const _TCHAR* stripPasswdParam(const _TCHAR* uri, _TCHAR* buf, size_t size)
+{
+    _tcscpy_s(buf, size, uri);
+    _TCHAR* st = _tcsstr(buf, _T("://"));
+    if (st)
+    {
+        _TCHAR* st2 = _tcsstr(st, _T("&pwd="));
+        if (st2)
+            *(st2) = 0x00;
+        else
+        {
+            st2 = _tcsstr(st, _T("?pwd="));
+            if (st2)
+                *(st2) = 0x00;
+        }
+    }
+    return buf;
+}
+
 inline void reorder_digest(boost::uuids::detail::sha1::digest_type val)
 {
     for (int i=0;i<5;++i)
@@ -216,21 +251,43 @@ inline void mysqlCryptPwd(char *retVal, const char* src, const unsigned char *sc
                         MYSQL_SCRAMBLE_LENGTH);
 }
 
-// in 20byte out 40byte + 1
-/*inline char* binToHexSha1(char* retVal, const unsigned char *src)
+// binary to ascii return bytes = size * 2
+inline char* binToHex(char* retVal, const unsigned char *src, int size)
 {
-    const unsigned char* end = src + MYSQL_SCRAMBLE_LENGTH;
+    const unsigned char* end = src + size;
     char* p = retVal;
-    for (unsigned char* n = src; n != end; ++n)
+    for (const unsigned char* n = src; n != end; ++n)
     {
-	    unsigned int v = *n / 16;
-	    *p++ = (v < 10) ? '0' + v : *p = 'A';
-	    v = *n % 16;
-	    *p++ = (v < 10) ? '0' + v : *p = 'A';
+	    unsigned int v = (*n >> 4);
+	    *p++ = (v < 10) ? '0' + v : 'A' + (v - 10);
+	    v = *n & 0x0F;
+	    *p++ = (v < 10) ? '0' + v : 'A' + (v - 10);
     }
     *p = 0x00;
     return retVal;
-}*/
+}
+
+// ascii to binary return bytes = size / 2
+inline unsigned char* hexTobin(unsigned char* retVal, const char *src, int size)
+{
+    const char* end = src + size;
+    unsigned char* p = retVal;
+    for (const char* n = src; n != end; ++n)
+    {
+        if (*n >= '0' && *n <= '9')
+            *p = *n - '0';
+        else
+            *p = (*n - 'A')+10;
+        ++n;
+        *p = *p << 4;
+        if (*n >= '0' && *n <= '9')
+            *p += *n - '0';
+        else
+            *p += (*n - 'A')+10;
+        ++p;
+    }
+    return retVal;
+}
 
 
 } // namespace tdap

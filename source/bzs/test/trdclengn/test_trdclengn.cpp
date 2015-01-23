@@ -2181,11 +2181,12 @@ void testLogin(database* db)
                         "databese disconnect db->stat() = " << db->stat());
 
     db->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-    BOOST_CHECK_MESSAGE(25000 + 1049 == db->stat(),
+    BOOST_CHECK_MESSAGE(ERROR_NO_DATABASE == db->stat(),
                         "databese connect db->stat() = " << db->stat());
 
+    //connect is failed, no need disconnet.
     db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
-    BOOST_CHECK_MESSAGE(0 == db->stat(),
+    BOOST_CHECK_MESSAGE(1 == db->stat(),
                         "databese disconnect db->stat() = " << db->stat());
 }
 
