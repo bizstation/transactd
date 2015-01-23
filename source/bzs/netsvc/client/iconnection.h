@@ -22,8 +22,7 @@
 #pragma warn -8012
 #endif
 
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/buffer.hpp>
+#include <boost/asio.hpp>
 #include <vector>
 
 #ifdef __BCPLUSPLUS__

@@ -26,7 +26,10 @@
 #include <boost/thread/mutex.hpp>
 #include <stdio.h>
 #include <vector>
-
+#ifdef LINUX
+#include <pthread.h> 
+#include <signal.h> 
+#endif
 
 
 using namespace boost;
@@ -39,7 +42,6 @@ using namespace boost::system;
 #define CLIENT_ERROR_CANT_CREATEPIPE 3106
 #define CLIENT_ERROR_SHAREMEM_DENIED 3104
 #define CLIENT_ERROR_CONNECTION_FAILURE 3106
-#define TIMEOUT_MILLISEC 3000
 #define MAX_DATA_SIZE 10485760 // 10MB
 
 namespace bzs
@@ -126,7 +128,7 @@ public:
         if (size > m_sendbuf.size())
             m_sendbuf.resize(size);
         return &m_sendbuf[0];
-    };
+    }
 
     unsigned int sendBufferSize() { return (unsigned int)m_sendbuf.size(); };
 
@@ -143,6 +145,9 @@ public:
  */
 template <class T> class connectionImple : public connectionBase
 {
+#ifdef LINUX
+    sigset_t m_signmask, m_sigomask;
+#endif
 protected:
     //unsigned int m_datalen;
     //unsigned short m_rows;
@@ -206,11 +211,25 @@ protected:
         return &m_readbuf[0];
     }
 
+    template <typename CompletionCondition, typename MutableBufferSequence>
+    size_t doRead(const MutableBufferSequence& buf, CompletionCondition cnd)
+    {
+        boost::system::error_code e;
+#ifdef LINUX
+        pthread_sigmask(SIG_SETMASK, &m_signmask , &m_sigomask); 
+#endif
+        size_t n = boost::asio::read(m_socket, buf, cnd, e);
+#ifdef LINUX
+        pthread_sigmask(SIG_SETMASK, &m_sigomask, NULL); 
+#endif
+        if (e) throw e;
+        return n;    
+    }
+
     char* read()
     {
         if (!m_connected)
             throw system_error(asio::error::not_connected);
-        boost::system::error_code e;
         m_readLen = 0;
         //m_datalen = 0;
         //m_rows = 0;
@@ -226,25 +245,21 @@ protected:
         }*/
         if (m_reader)
         {
-            m_readLen = boost::asio::read(m_socket, boost::asio::buffer(&n, 4),
-                                       boost::asio::transfer_all());
+            m_readLen = doRead(boost::asio::buffer(&n, 4), boost::asio::transfer_all());
+            
             m_readLen += m_reader->onRead(n - 4, this);
         }else
         {
-            m_readLen = boost::asio::read(m_socket, 
-                                       boost::asio::buffer(&m_readbuf[0],m_readbuf.size()),
-                                       boost::asio::transfer_at_least(4));
+            m_readLen = doRead(boost::asio::buffer(&m_readbuf[0],m_readbuf.size()),
+                    boost::asio::transfer_at_least(4));
             n = *((unsigned int*)(&m_readbuf[0]));
         }
         if ((n > m_readLen) && (n < MAX_DATA_SIZE))
         {
             if (n > m_readbuf.size())
                 m_readbuf.resize(n);
-        
-            m_readLen += boost::asio::read(
-                m_socket,
-                boost::asio::buffer(&m_readbuf[m_readLen], n - m_readLen),
-                boost::asio::transfer_all());
+            m_readLen += doRead(boost::asio::buffer(&m_readbuf[m_readLen], n - m_readLen),
+                    boost::asio::transfer_all());
         }
         return &m_readbuf[0];
     }
@@ -270,6 +285,9 @@ public:
     connectionImple(asio::ip::tcp::endpoint& ep)
         : connectionBase(ep)/*, m_datalen(0)*/, m_socket(m_ios)
     {
+#ifdef LINUX
+        sigfillset(&m_signmask);
+#endif
     }
 
     ~connectionImple()
