@@ -77,6 +77,12 @@
 #include "mysqld_error.h"
 #include <password.h>
 
+/* mysql.user password field index */
+#ifndef MYSQL_USER_FIELD_PASSWORD
+#define MYSQL_USER_FIELD_PASSWORD 2
+#endif
+
+
 #if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
 #include "sql/log.h"
 #endif
