@@ -1781,8 +1781,8 @@ def testLogin()
     db2 = Transactd::Database.new()
     db2.connect(PROTOCOL + HOSTNAME, true)
     expect(db2.stat()).to eq 0
-    db2.disconnect(PROTOCOL + HOSTNAME)
-    db.disconnect(PROTOCOL + HOSTNAME)
+    db2.disconnect()
+    db.disconnect()
     expect(db.stat()).to eq 0
   end
   # invalid host name
@@ -1795,22 +1795,22 @@ def testLogin()
   end
   testCreateDatabase(db)
   testCreateTable(db)
-  db.disconnect(PROTOCOL + HOSTNAME + DBNAME)
+  db.close()
   expect(db.stat()).to eq 0
   # true database name
   db.connect(PROTOCOL + HOSTNAME + DBNAME)
   expect(db.stat()).to eq 0
   if (db.stat() == 0)
-    db.disconnect(PROTOCOL + HOSTNAME + DBNAME)
+    db.disconnect()
     expect(db.stat()).to eq 0
   end
   # invalid database name
   testDropDatabase(db)
-  db.disconnect(PROTOCOL + HOSTNAME + DBNAME)
+  db.disconnect()
   expect(db.stat()).to eq 0
   db.connect(PROTOCOL + HOSTNAME + DBNAME)
   expect(db.stat()).to eq (Transactd::ERROR_NO_DATABASE)
-  db.disconnect(PROTOCOL + HOSTNAME + DBNAME)
+  db.disconnect()
   expect(db.stat()).to eq 1
   db.close()
 end

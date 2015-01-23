@@ -179,7 +179,6 @@ void testDropDatabase(database* db)
 {
     db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
     BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
-
     db->drop();
     BOOST_CHECK_MESSAGE(0 == db->stat(), "drop stat = " << db->stat());
 }
@@ -324,9 +323,6 @@ void testCreateNewDataBase(database* db)
         def->updateTableDef(2);
         BOOST_CHECK_MESSAGE(0 == def->stat(),
                             "updateTableDef 3 stat = " << def->stat());
-
-
-
     }
 }
 
@@ -2150,7 +2146,7 @@ void testDropIndex(database* db)
 {
     table* tb = openTable(db);
     tb->dropIndex(false);
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "DropIndex");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "DropIndex stat = " << tb->stat());
     tb->release();
 }
 
@@ -2171,7 +2167,7 @@ void testLogin(database* db)
             "new connection connect  db->stat() = " << db->stat());
         database::destroy(db2);
 
-        db->disconnect(makeUri(PROTOCOL, HOSTNAME, _T("")));
+        db->disconnect();
         BOOST_CHECK_MESSAGE(0 == db->stat(),
                             "disconnect  db->stat() = " << db->stat());
     }
@@ -2196,10 +2192,10 @@ void testLogin(database* db)
         (db->stat() == ERROR_TD_HOSTNAME_NOT_FOUND);
     BOOST_CHECK_MESSAGE(f, "bad host stat =" << db->stat());
 
-    testCreateNewDataBase(db);
-    db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+    testCreateNewDataBase(db); //with open
+    db->close(); // disconnected
     BOOST_CHECK_MESSAGE(0 == db->stat(),
-                        "databese disconnect db->stat() = " << db->stat());
+                        "databese close db->stat() = " << db->stat());
 
     // true database name
     db->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
@@ -2207,13 +2203,13 @@ void testLogin(database* db)
                         "databese  connect db->stat() = " << db->stat());
     if (db->stat() == 0)
     {
-        db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+        db->disconnect();
         BOOST_CHECK_MESSAGE(0 == db->stat(),
                             "databese disconnect db->stat() = " << db->stat());
     }
     // invalid database name
     testDropDatabase(db);
-    db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+    db->disconnect();
     BOOST_CHECK_MESSAGE(0 == db->stat(),
                         "databese disconnect db->stat() = " << db->stat());
 
@@ -2222,7 +2218,7 @@ void testLogin(database* db)
                         "databese connect db->stat() = " << db->stat());
 
     //connect is failed, no need disconnet.
-    db->disconnect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+    db->disconnect();
     BOOST_CHECK_MESSAGE(1 == db->stat(),
                         "databese disconnect db->stat() = " << db->stat());
 }
@@ -3220,7 +3216,7 @@ void doTestStringFileter(database* db, int id, const _TCHAR* name,
 void testDropDataBaseStr(database* db)
 {
     db->open(makeUri(PROTOCOL, HOSTNAME, _T("testString"), BDFNAME), 0, 0);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "createNewDataBase 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "open stat = " << db->stat());
     db->drop();
     BOOST_CHECK_MESSAGE(0 == db->stat(),
                         "DropDataBaseTestString stat=" << db->stat());

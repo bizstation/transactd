@@ -439,13 +439,14 @@ public:
             m_exitHandler->setModule(m_module.get());
         tmp[0] = 0x00; // signe of handshakable
         memcpy(tmp + 3, &m_shareMemSize, sizeof(unsigned int));// sharemem size
-        asio::write(m_socket, buffer(tmp, 7), e);
-        len = asio::read(m_socket, buffer(buf, 9), e);
-        if (len != 9)
-            THROW_BZS_ERROR_WITH_MSG("handshake error");
+        //asio::write(m_socket, buffer(tmp, 7), e);
+        //len = asio::read(m_socket, buffer(buf, 9), e);
+        //if (len != 9)
+        //    THROW_BZS_ERROR_WITH_MSG("handshake error");
         //send handshake packet
         m_module->onAccept(m_sharedMem->writeBuffer(), m_sharedMem->size());
         m_comm->send();
+        asio::write(m_socket, buffer(tmp, 7), e);
         run();
     }
 

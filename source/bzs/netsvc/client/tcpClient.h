@@ -54,18 +54,14 @@ class connections
 {
     std::vector<connection*> m_conns;
     boost::asio::io_service m_ios;
-
     mutex m_mutex;
+    std::string m_pipeName;
+    static bool m_usePipedLocal;
 
     connection* getConnection(asio::ip::tcp::endpoint& ep);
     asio::ip::tcp::endpoint endpoint(const std::string& host,
                                      boost::system::error_code& ec);
-
     bool isUseNamedPipe(asio::ip::tcp::endpoint& ep);
-
-    static bool m_usePipedLocal;
-
-    std::string m_pipeName;
 #ifdef USE_PIPE_CLIENT
     connection* getConnectionPipe();
 #endif
@@ -78,13 +74,10 @@ public:
     connection* connect(const std::string& host, handshake f,
                         void* data, bool newConnection = false);
     connection* getConnection(const std::string& host);
-
     bool disconnect(connection* c);
-
+    int connectionCount();
     static char port[PORTNUMBUF_SIZE];
     static short timeout;
-
-    int connectionCount();
 };
 
 /** Implementation of Part of the connection interface
@@ -104,7 +97,6 @@ protected:
     int m_charsetServer;
     bool m_connected;
     bool m_isHandShakable;
-
 
     void addref() { ++m_refCount; }
 
@@ -282,7 +274,6 @@ public:
 
     ~connectionImple()
     {
-        
         try
         {
             m_ios.stop();
@@ -297,7 +288,6 @@ public:
     {
         write(writeSize);
         return read();
-        
     }
 
     buffers* optionalBuffers() { return &m_optionalBuffes; }
@@ -496,8 +486,14 @@ public:
 			DWORD n = 0;
 			BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                             NULL, NULL, NULL, 0);
-			if(m_sendEvent && ret && n)
+            if(m_sendEvent && ret && n)
+            {
 				SetEvent(m_sendEvent);
+                //Wait for server side close connection
+                while (WAIT_TIMEOUT == 
+                    WaitForSingleObject(m_recvEvent, connections::timeout))
+                    ;
+            }
 		}
         if (m_recvEvent)
             CloseHandle(m_recvEvent);
@@ -534,8 +530,7 @@ public:
         m_socket.assign(fd);
         m_connected = true;
 
-        // send processId;
-
+        // send processId and clientid;
         DWORD processId = GetCurrentProcessId();
         int size = 16;
         connectionBase::m_readbuf.resize(256);
@@ -550,8 +545,6 @@ public:
         unsigned int* shareMemSize = (unsigned int*)(p+3);
         m_isHandShakable = (p[0] == 0x00);
         createKernelObjects(*shareMemSize);
-        strcpy_s(p, 256, "OK! wait");
-        boost::asio::write(m_socket, boost::asio::buffer(p, 9));
     }
 
     char* sendBuffer(size_t size) { return m_writebuf_p; }

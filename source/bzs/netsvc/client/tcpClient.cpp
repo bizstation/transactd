@@ -76,7 +76,6 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName)
     const bool result = fs::exists(path, error);
     if (result && !error)
     {
-
         boost::property_tree::ptree pt;
         try
         {
@@ -230,7 +229,6 @@ inline connection* connections::doConnect(connection* c)
         delete c;
         throw;
     }
-    //return NULL;
 }
 
 inline bool connections::doHandShake(connection* c, handshake f, void* data)
@@ -260,7 +258,6 @@ inline bool connections::doHandShake(connection* c, handshake f, void* data)
         delete c;
         throw;
     }
-    //return NULL;
 }
 
 // The connection of found from connection list of same address is returned.
@@ -284,8 +281,9 @@ connection* connections::connect(const std::string& host, handshake f, void* dat
     {
         c = createConnection(ep, namedPipe); 
         c = doConnect(c);
-        if (doHandShake(c, f, data))
-            m_conns.push_back(c);
+        if (!c || !doHandShake(c, f, data))
+            return NULL;
+        m_conns.push_back(c);
     }
     c->addref();
     return c;

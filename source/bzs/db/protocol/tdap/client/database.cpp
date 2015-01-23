@@ -219,7 +219,17 @@ void database::dropTable(const _TCHAR* TableName)
         m_stat = STATUS_TABLENAME_NOTFOUND;
     else
         _tcscat(FullPath, m_impl->dbDef->tableDefs(index)->fileName());
-    nsdatabase::dropTable(FullPath);
+
+    int i = 0;
+    while (1)
+    {
+        nsdatabase::dropTable(FullPath);
+        if (m_stat != STATUS_LOCK_ERROR)
+            break;
+        if (++i == 10) 
+            break;
+        Sleep(50);
+    } 
 }
 
 void database::setDir(const _TCHAR* directory)

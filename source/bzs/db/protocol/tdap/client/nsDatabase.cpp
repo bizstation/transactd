@@ -769,7 +769,8 @@ bool nsdatabase::disconnect(const _TCHAR* URI)
     char uri_a[MAX_PATH];
     const char* p = toServerUri(uri_a, MAX_PATH, URI, isUseTransactd());
     m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, (void*)p,
-                         (keylen_td)(strlen(p) + 1), 1, clientID());
+                         (keylen_td)(strlen(p) + 1), LG_SUBOP_DISCONNECT,
+                         clientID());
     if (m_stat)
         return false;
     return true;

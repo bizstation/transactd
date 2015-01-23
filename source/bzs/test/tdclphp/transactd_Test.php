@@ -1839,7 +1839,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $db2->connect(PROTOCOL . HOSTNAME, true);
             $this->assertEquals($db2->stat(), 0);
             unset($db2);
-            $db->disconnect(PROTOCOL . HOSTNAME);
+            $db->disconnect();
             $this->assertEquals($db->stat(), 0);
         }
         // invalid host name
@@ -1851,23 +1851,23 @@ class transactdTest extends PHPUnit_Framework_TestCase
             print('bad host $db->stat() = ' . $db->stat());
         $this->createDatabase($db);
         $this->createTable($db);
-        $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
+        $db->close();
         $this->assertEquals($db->stat(), 0);
         // true database name
         $db->connect(PROTOCOL . HOSTNAME . DBNAME);
         $this->assertEquals($db->stat(), 0);
         if ($db->stat() == 0)
         {
-            $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
+            $db->disconnect();
             $this->assertEquals($db->stat(), 0);
         }
         // invalid database name
         $this->dropDatabase($db);
-        $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
+        $db->disconnect();
         $this->assertEquals($db->stat(), 0);
         $db->connect(PROTOCOL . HOSTNAME . DBNAME);
         $this->assertEquals($db->stat(), Bz\transactd::ERROR_NO_DATABASE);
-        $db->disconnect(PROTOCOL . HOSTNAME . DBNAME);
+        $db->disconnect();
         $this->assertEquals($db->stat(), 1);
     }
     
