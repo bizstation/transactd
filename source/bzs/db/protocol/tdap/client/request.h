@@ -51,7 +51,6 @@ class request : public bzs::db::protocol::tdap::request,
 {
 public:
     clientID* cid;
-
     request() : bzs::db::protocol::tdap::request(), cid(NULL){};
 
     unsigned int onRead(unsigned int size, bzs::netsvc::client::connection* c) // orverride
@@ -123,7 +122,18 @@ public:
         {
             memcpy(pbk, p, TD_POSBLK_TRANSMIT_SIZE);
             p += TD_POSBLK_TRANSMIT_SIZE;
+            if (P_MASK_PB_BOOKMARK & paramMask)
+            {
+                unsigned char len =  *((unsigned char*)p);
+                // copy sizeByte and bookmark
+                pbk->bookmarkLen = len;
+                pbk->lock = ((paramMask & P_MASK_PB_LOCKED) != 0);
+                memcpy(pbk->bookmark, ++p , len);
+                p += len;
+            }
         }
+        if (P_MASK_PB_ERASE_BM & paramMask)
+             pbk->bookmarkLen = 0; 
 
         if (P_MASK_DATALEN & paramMask)
         {

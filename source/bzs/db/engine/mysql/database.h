@@ -358,6 +358,8 @@ public:
 
     inline short mode() const { return m_mode; }
 
+    inline bool cursor() const {return m_cursor;}
+
     inline bool isReadOnly() const 
     {
         return (m_mode == MODE_READ_ONLY) 
@@ -621,6 +623,11 @@ public:
     /** bookmark length */
     uint posPtrLen() const;
 
+    inline uint posPtrLenRaw() const
+    {
+        return m_table->file->ref_length;
+    }
+
     /** bookmark */
     const uchar* position(bool raw = false);
     const char* keyName(char keyNum);
@@ -682,6 +689,11 @@ public:
     inline void setRowLockError()
     {
         m_delayAutoCommit = false;
+    }
+
+    inline bool isDelayAutoCommit() const
+    {
+        return m_delayAutoCommit;
     }
 
     inline short unlock()

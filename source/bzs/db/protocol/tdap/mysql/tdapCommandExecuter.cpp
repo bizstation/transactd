@@ -530,7 +530,8 @@ inline void readAfter(request& req, table* tb, dbExecuter* dbm)
                 req.paramMask |= P_MASK_BLOBBODY;
             req.data = tb->record();
         }
-    }
+    }else if (!tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
     req.result = dbm->errorCodeSht(tb->stat());
 }
 
@@ -647,6 +648,8 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
                     m_tb->getPrevExt(m_readHandler, true, noBookmark);
             }
             req.result = errorCodeSht(m_tb->stat());
+            if (!m_tb->cursor())
+                req.paramMask |= P_MASK_PB_ERASE_BM;
             DEBUG_WRITELOG2(op, req);
         }
         short dummy = 0;
@@ -716,6 +719,8 @@ inline int dbExecuter::doReadMulti(request& req, int op,
                 m_tb->stepPrevExt(m_readHandler, incCurrent, noBookmark);
             req.result = errorCodeSht(m_tb->stat());
         }
+        if (!m_tb->cursor())
+            req.paramMask |= P_MASK_PB_ERASE_BM;
         DEBUG_WRITELOG2(op, req);
     }
 
@@ -859,13 +864,18 @@ inline void dbExecuter::doInsert(request& req)
                               req.blobHeader);
     __int64 aincValue = m_tb->insert(ncc);
     req.result = errorCodeSht(m_tb->stat());
-    if (aincValue)
+    if (m_tb->stat() == 0)
     {
-        req.paramMask = P_MASK_INS_AUTOINC;
-        req.data = m_tb->record();
+        if (aincValue)
+        {
+            req.paramMask = P_MASK_INS_AUTOINC;
+            req.data = m_tb->record();
+        }
+        else
+            req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
     }
-    else
-        req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doUpdateKey(request& req)
@@ -889,6 +899,8 @@ inline void dbExecuter::doUpdateKey(request& req)
     }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doUpdate(request& req)
@@ -904,6 +916,8 @@ inline void dbExecuter::doUpdate(request& req)
     }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doDeleteKey(request& req)
@@ -923,6 +937,8 @@ inline void dbExecuter::doDeleteKey(request& req)
     }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doDelete(request& req)
@@ -933,6 +949,8 @@ inline void dbExecuter::doDelete(request& req)
         m_tb->del();
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doInsertBulk(request& req)
@@ -981,6 +999,8 @@ inline void dbExecuter::doInsertBulk(request& req)
     }
     else
         req.result = errorCodeSht(m_tb->stat());
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 /**
@@ -1072,7 +1092,10 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         {
           if (op != TD_CONNECT && op != TD_CREATETABLE &&
               op != TD_OPENTABLE && op != TD_GETSERVER_CHARSET)
+          {
+              req.result = STATUS_ACCESS_DENIED;
               return EXECUTE_RESULT_ACCESS_DNIED;
+          }
         }
         switch (op)
         {
@@ -1150,6 +1173,22 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.data = (void*)m_tb->position();
             req.resultLen = m_tb->posPtrLen();
             break;
+        case TD_RECONNECT:
+
+            if (!doOpenTable(req))
+            {
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+                break;
+            }
+            {
+                char* p = (char*)req.data;
+                req.keyNum = *p;
+                if (*(++p) == 0)
+                    break;
+                req.data = ((char*)req.data) + 2;
+                if (m_tb) m_tb->unUse();
+            }
+            //fall through  restore position 
         case TD_MOVE_BOOKMARK:
         {
             rowLockMode lck;
@@ -1221,7 +1260,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.result = errorCodeSht(m_tb->stat());
             if (m_tb->stat() == 0)
             {
-                req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
+                req.paramMask = P_MASK_DATA | P_MASK_DATALEN ;
                 req.data = m_tb->percentResult();
                 req.resultLen = sizeof(int);
             }
@@ -1252,6 +1291,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 req.result = SERVER_CLIENT_NOT_COMPATIBLE;
             break;
         }
+        
         case TD_CONNECT:
             if (!connect(req))
                 req.result = ERROR_TD_INVALID_CLINETHOST;
@@ -1349,13 +1389,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.result = getDatabaseCid(req.cid)->aclReload();
             break;
         }
-        if (m_tb)
-            m_tb->unUse();
         DEBUG_WRITELOG2(op, req)
         DEBUG_ERROR_MEMDUMP(req.result, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
-           
-
         size = req.serialize(m_tb, resultBuffer);
+        if (m_tb)
+            m_tb->unUse();
         short dymmy = 0;
         if ((req.result == 0) && (req.paramMask & P_MASK_BLOBBODY) &&
             m_blobBuffer->fieldCount())

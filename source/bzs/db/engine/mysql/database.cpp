@@ -199,7 +199,7 @@ database::database(const char* name, short cid)
 database::~database()
 {
     use();
-    unUseTables(false);
+    unUseTables(true/*rollback*/);
     closeForReopen();
     m_tables.clear(); // It clears ahead of the destructor of m_trn.
     deleteThdForThread(m_thd);
@@ -682,6 +682,7 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
         return NULL;
     }
     tables.mdl_request.set_type(MDL_SHARED_READ);
+    tables.mdl_request.duration = MDL_EXPLICIT;
 
     Open_table_context ot_act(m_thd, MYSQL_OPEN_GET_NEW_TABLE);
     m_thd->cp_set_overwrite_status(true);
@@ -690,8 +691,10 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
         m_stat = STATUS_TABLE_NOTOPEN;
         if (ER_LOCK_WAIT_TIMEOUT == m_thd->cp_get_sql_error())
             m_stat = STATUS_CANNOT_LOCK_TABLE;
+        m_thd->mdl_context.release_lock(tables.mdl_request.ticket);
         return NULL;
     }
+    m_thd->mdl_context.set_transaction_duration_for_all_locks();
     
     // Check owner name
     if (ownerName && ownerName[0])
@@ -811,13 +814,11 @@ void database::closeForReopen()
         if (m_tables[i] && (m_tables[i]->m_table != NULL))
             m_tables[i]->resetInternalTable(NULL);
     }
-
     trans_commit_stmt(m_thd);
     if (m_thd->mdl_context.has_locks())
         close_thread_tables(m_thd);
     m_thd->mdl_context.release_transactional_locks();
     m_usingExclusive = 0;
-    // It is certainly after close_thread_tables.
 }
 
 void database::reopen()
@@ -1903,7 +1904,6 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 // private
 void table::seekPos(const uchar* rawPos)
 {
-    
     seekKey(HA_READ_KEY_OR_NEXT, keymap());
     if (m_keyNum == (int)m_table->s->primary_key)
         return;
@@ -1926,9 +1926,7 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
     setNonKey();
     unlockRow(m_delayAutoCommit);
     m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
-    m_cursor = (m_stat == 0) ? true : 
-                       ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
-                        (m_stat == HA_ERR_LOCK_DEADLOCK)) ? m_cursor : false;
+    setCursorStaus();
     if ((keyNum == -1) || (keyNum == -64) || (keyNum == -2))
         return;
     if (m_stat == 0)

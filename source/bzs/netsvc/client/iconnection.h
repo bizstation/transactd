@@ -75,6 +75,8 @@ class connection
 public:
     virtual ~connection(){};
     virtual void connect() = 0;
+    virtual void reconnect(boost::asio::ip::tcp::endpoint& ep) = 0;
+    virtual void cleanup() = 0;
     virtual void addref() = 0;
     virtual void release() = 0;
     virtual int refCount() const = 0;

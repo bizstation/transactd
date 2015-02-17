@@ -213,6 +213,18 @@ STDMETHODIMP CDatabase::Disconnect(BSTR URI, VARIANT_BOOL* Param2)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::DisconectForReconnectTest(VARIANT_BOOL* Param2)
+{
+    *Param2 = m_db->disconectForReconnectTest();
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::Reconnect(VARIANT_BOOL* Param2)
+{
+    *Param2 = m_db->reconnect();
+    return S_OK;
+}
+
 STDMETHODIMP CDatabase::get_EnableTrn(VARIANT_BOOL* Value)
 {
     *Value = m_db->enableTrn();

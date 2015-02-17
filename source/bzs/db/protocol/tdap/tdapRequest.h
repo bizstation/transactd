@@ -51,12 +51,18 @@ namespace client {class table;}
 #define P_MASK_DATALEN 4
 #define P_MASK_KEYBUF 8
 #define P_MASK_KEYNUM 16
-#define P_MASK_EX_SENDLEN                                                      \
-    32 //< The data length which transmits to a client is described at 2 bytes
-// of the data buffer head.
+
+/** The data length which transmits to a client 
+ *  is described at 2 bytes of the data buffer head.
+ */
+#define P_MASK_EX_SENDLEN 32    
 #define P_MASK_BLOBBODY 64
-#define P_MASK_FINALRET 128 // server sent final result
+#define P_MASK_FINALRET 128     // server sent final result
 #define P_MASK_FINALDATALEN 256 // server sent final result
+#define P_MASK_PB_BOOKMARK 512  // posblk bookmark writen
+#define P_MASK_PB_ERASE_BM 1024 // posblk bookmark erase command
+#define P_MASK_PB_LOCKED   2048 // posblk row locked
+
 
 #define P_MASK_ALL                                                             \
     P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN | P_MASK_KEYBUF | P_MASK_KEYNUM
@@ -101,6 +107,9 @@ struct version
     uchar_td Type;
 };
 
+#pragma pack(push, 1)
+pragma_pack1;
+
 struct posblk
 {
     posblk() { memset(this, 0, sizeof(posblk)); }
@@ -108,7 +117,12 @@ struct posblk
     unsigned int handle;
     client::table* tb;
     DDBA_PTR allocFunc;
+    unsigned char lock;
+    unsigned char bookmarkLen;
+    char bookmark[1]; //dummy array
 };
+#pragma pack(pop)
+pragma_pop;
 
 struct clientID
 {

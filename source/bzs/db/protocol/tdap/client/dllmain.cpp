@@ -335,7 +335,19 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_CONNECT:
         {
-            client_t->cmdConnect();
+            if (client_t->req().keyNum == LG_SUBOP_RECONNECT)
+            {
+                client_t->reconnect();
+                client_t->req().paramMask = P_MASK_KEYONLY;
+            }else
+                client_t->cmdConnect();
+            if (client_t->req().keyNum == LG_SUBOP_DISCONNECT_EX)
+                return 0;
+            break;
+        }
+        case TD_RECONNECT:
+        {
+            client_t->req().paramMask = P_MASK_ALL;
             break;
         }
         case TD_STASTISTICS:
@@ -367,8 +379,21 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case 11001:
             ret = ERROR_TD_HOSTNAME_NOT_FOUND;
             break;
+        case 10060:
+        case 10057: //blocking fire wall
+        case 110:   //connect: Connection timed out
+        case 121:   //timeout sema
+        case 11:    //EAGAIN
+            ret = ERROR_TD_NET_TIMEOUT;
+            break;
+        case 32:    //write:brokn pipe
+        case 111:   //connect: Connection refused
         case 10061:
             ret = ERROR_TD_CONNECTION_FAILURE;
+            break;
+        case 104:   //write: Connection reset by peer
+        case 10054:
+            ret = ERROR_TD_NET_REMOTE_DISCONNECT;
             break;
         case 232:
         case 109:
@@ -377,10 +402,12 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             ret = ERROR_TD_INVALID_CLINETHOST;
             break;
         default:
-            ret = e.code().value() + 20000;
+            ret = ERROR_TD_NET_OTHER;
         }
         OutputDebugString(e.what());
-        writeErrorLog(ret, e.what());
+        char tmp[512];
+        sprintf_s(tmp, 512, "%d %s", e.code().value(), e.what());
+        writeErrorLog(ret, tmp);
     }
     catch (bzs::netsvc::client::exception& e)
     {
@@ -390,9 +417,14 @@ extern "C" PACKAGE_OSX short_td __STDCALL
     }
     catch (std::exception& e)
     {
-        ret = 1;
+        ret = ERROR_TD_C_CLIENT_UNKNOWN;
         OutputDebugString(e.what());
-        writeErrorLog(30000, e.what());
+        writeErrorLog(ret, e.what());
+    }
+    catch (...)
+    {
+        ret = ERROR_TD_C_CLIENT_UNKNOWN;
+        writeErrorLog(ret, "Unknown error");
     }
     return ret;
 }

@@ -385,6 +385,18 @@ abstract class transactd {
 
 	const ERROR_TD_NOT_CONNECTED = ERROR_TD_NOT_CONNECTED;
 
+	const ERROR_TD_NET_TIMEOUT = ERROR_TD_NET_TIMEOUT;
+
+	const ERROR_TD_NET_REMOTE_DISCONNECT = ERROR_TD_NET_REMOTE_DISCONNECT;
+
+	const ERROR_TD_NET_TOO_BIGDATA = ERROR_TD_NET_TOO_BIGDATA;
+
+	const ERROR_TD_NET_OTHER = ERROR_TD_NET_OTHER;
+
+	const ERROR_TD_C_CLIENT_UNKNOWN = ERROR_TD_C_CLIENT_UNKNOWN;
+
+	const ERROR_TD_RECONNECTED = ERROR_TD_RECONNECTED;
+
 	const TRANSACTD_SCHEMANAME = TRANSACTD_SCHEMANAME;
 
 	const TYPE_SCHEMA_BDF = TYPE_SCHEMA_BDF;
@@ -1947,6 +1959,14 @@ class nsdatabase {
 
 	function disconnect($uri="") {
 		return nsdatabase_disconnect($this->_cPtr,$uri);
+	}
+
+	function disconectForReconnectTest() {
+		return nsdatabase_disconectForReconnectTest($this->_cPtr);
+	}
+
+	function reconnect() {
+		return nsdatabase_reconnect($this->_cPtr);
 	}
 
 	static function trnsactionFlushWaitStatus() {

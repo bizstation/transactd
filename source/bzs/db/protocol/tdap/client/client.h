@@ -307,6 +307,20 @@ public:
         }
     }
 
+    inline void reconnect()
+    {
+        bzs::netsvc::client::connection* c = con();
+        if (!c)
+        {
+            m_preResult = ERROR_TD_NOT_CONNECTED;
+            return;
+        }
+        std::string host = getHostName((const char*)m_req.keybuf);
+        if ((host == "") || !m_cons->reconnect(c, host, handshakeCallback, this))
+            m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+                
+    }
+
     inline void cmdConnect()
     {
         if ((m_req.keyNum == LG_SUBOP_CONNECT) ||
@@ -338,7 +352,12 @@ public:
                 m_logout = true;
             else if (m_op == TD_CONNECT)
                 m_preResult = 1;
+        }else if (m_req.keyNum == LG_SUBOP_DISCONNECT_EX)
+        {
+            if (con())
+                con()->cleanup();
         }
+            
         m_req.paramMask = P_MASK_KEYONLY;
     }
 

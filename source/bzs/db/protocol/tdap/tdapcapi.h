@@ -144,6 +144,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TD_STASTISTICS                  94
 #define TD_KEY_SEEK_MULTI               95
 #define TD_ACL_RELOAD                   96
+#define TD_RECONNECT                    97
 
 /** create sub operations
  */
@@ -173,8 +174,8 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define LG_SUBOP_CONNECT                0
 #define LG_SUBOP_DISCONNECT             1
 #define LG_SUBOP_NEWCONNECT             3
-
-
+#define LG_SUBOP_RECONNECT              4 
+#define LG_SUBOP_DISCONNECT_EX          5 //for reconnect test
 /** field types
  */
 #define ft_string                       0
@@ -386,6 +387,13 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define ERROR_TD_HOSTNAME_NOT_FOUND     3103
 #define ERROR_TD_CONNECTION_FAILURE     3106
 #define ERROR_TD_NOT_CONNECTED          3110
+#define ERROR_TD_NET_TIMEOUT            3800
+#define ERROR_TD_NET_REMOTE_DISCONNECT  3801
+#define ERROR_TD_NET_TOO_BIGDATA        3802
+#define ERROR_TD_NET_OTHER              3810
+#define ERROR_TD_C_CLIENT_UNKNOWN       3811
+#define ERROR_TD_RECONNECTED            3900
+
 
 #define TRANSACTD_SCHEMANAME            _T("transactd_schema")
 #define TYPE_SCHEMA_BDF                 0

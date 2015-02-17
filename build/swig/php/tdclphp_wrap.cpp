@@ -17571,6 +17571,74 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconnect) {
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconectForReconnectTest) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
+  zval **args[1];
+  bool result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nsdatabase_disconectForReconnectTest. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = arg1->disconectForReconnectTest();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_BOOL(return_value, result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_reconnect) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
+  zval **args[1];
+  bool result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nsdatabase_reconnect. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = arg1->reconnect();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_BOOL(return_value, result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_trnsactionFlushWaitStatus) {
   bool result;
   
@@ -32176,6 +32244,12 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_disconnect, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_disconectForReconnectTest, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_reconnect, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_trnsactionflushwaitstatus, 0, 0, 0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_setexeccodepage, 0, 0, 0)
@@ -33305,6 +33379,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(nsdatabase_readdatabasedirectory,_wrap_nsdatabase_readDatabaseDirectory,swig_arginfo_nsdatabase_readdatabasedirectory)
  SWIG_ZEND_NAMED_FE(nsdatabase_connect,_wrap_nsdatabase_connect,swig_arginfo_nsdatabase_connect)
  SWIG_ZEND_NAMED_FE(nsdatabase_disconnect,_wrap_nsdatabase_disconnect,swig_arginfo_nsdatabase_disconnect)
+ SWIG_ZEND_NAMED_FE(nsdatabase_disconectForReconnectTest,_wrap_nsdatabase_disconectForReconnectTest,swig_arginfo_nsdatabase_disconectForReconnectTest)
+ SWIG_ZEND_NAMED_FE(nsdatabase_reconnect,_wrap_nsdatabase_reconnect,swig_arginfo_nsdatabase_reconnect)
  SWIG_ZEND_NAMED_FE(nsdatabase_trnsactionflushwaitstatus,_wrap_nsdatabase_trnsactionFlushWaitStatus,swig_arginfo_nsdatabase_trnsactionflushwaitstatus)
  SWIG_ZEND_NAMED_FE(nsdatabase_setexeccodepage,_wrap_nsdatabase_setExecCodePage,swig_arginfo_nsdatabase_setexeccodepage)
  SWIG_ZEND_NAMED_FE(nsdatabase_execcodepage,_wrap_nsdatabase_execCodePage,swig_arginfo_nsdatabase_execcodepage)
@@ -34155,6 +34231,12 @@ SWIG_LONG_CONSTANT(NET_BAD_SRB_FORMAT, NET_BAD_SRB_FORMAT);
 SWIG_LONG_CONSTANT(ERROR_TD_HOSTNAME_NOT_FOUND, ERROR_TD_HOSTNAME_NOT_FOUND);
 SWIG_LONG_CONSTANT(ERROR_TD_CONNECTION_FAILURE, ERROR_TD_CONNECTION_FAILURE);
 SWIG_LONG_CONSTANT(ERROR_TD_NOT_CONNECTED, ERROR_TD_NOT_CONNECTED);
+SWIG_LONG_CONSTANT(ERROR_TD_NET_TIMEOUT, ERROR_TD_NET_TIMEOUT);
+SWIG_LONG_CONSTANT(ERROR_TD_NET_REMOTE_DISCONNECT, ERROR_TD_NET_REMOTE_DISCONNECT);
+SWIG_LONG_CONSTANT(ERROR_TD_NET_TOO_BIGDATA, ERROR_TD_NET_TOO_BIGDATA);
+SWIG_LONG_CONSTANT(ERROR_TD_NET_OTHER, ERROR_TD_NET_OTHER);
+SWIG_LONG_CONSTANT(ERROR_TD_C_CLIENT_UNKNOWN, ERROR_TD_C_CLIENT_UNKNOWN);
+SWIG_LONG_CONSTANT(ERROR_TD_RECONNECTED, ERROR_TD_RECONNECTED);
 SWIG_STRING_CONSTANT(TRANSACTD_SCHEMANAME, TRANSACTD_SCHEMANAME);
 SWIG_LONG_CONSTANT(TYPE_SCHEMA_BDF, TYPE_SCHEMA_BDF);
 SWIG_LONG_CONSTANT(TYPE_SCHEMA_DDF, TYPE_SCHEMA_DDF);

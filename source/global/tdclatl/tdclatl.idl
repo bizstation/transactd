@@ -192,7 +192,13 @@ enum eStatus
 	NET_BAD_SRB_FORMAT			= 3021,
 	ERROR_TD_HOSTNAME_NOT_FOUND = 3103,
 	ERROR_TD_CONNECTION_FAILURE = 3106,
-	ERROR_TD_NOT_CONNECTED      = 3110
+	ERROR_TD_NOT_CONNECTED      = 3110,
+    ERROR_TD_NET_TIMEOUT        = 3800,
+    ERROR_TD_NET_REMOTE_DISCONNECT=  3801,
+    ERROR_TD_NET_TOO_BIGDATA    = 3802,
+    ERROR_TD_NET_OTHER          = 3810,
+    ERROR_TD_C_CLIENT_UNKNOWN   = 3811,
+    ERROR_TD_RECONNECTED        = 3900
 }eStatus;
 
 typedef
@@ -493,7 +499,10 @@ interface IDatabase : IDispatch
   HRESULT _stdcall TrxIsolationServer([out, retval]  eSrvIsorationType* Value);
   [propget, id(0x000000F6)]
   HRESULT _stdcall TrxLockWaitTimeoutServer([out, retval]  int* Value);
- 
+  [id(0x000000F7)]
+  HRESULT _stdcall DisconectForReconnectTest([out, retval] VARIANT_BOOL* Value);
+  [id(0x000000F8)]
+  HRESULT _stdcall Reconnect([out, retval] VARIANT_BOOL* Value);
   
 };
 

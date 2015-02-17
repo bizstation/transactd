@@ -358,6 +358,8 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_isUseTransactd);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_readDatabaseDirectory);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_connect);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconnect);
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconectForReconnectTest);
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_reconnect);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_trnsactionFlushWaitStatus);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_setExecCodePage);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_execCodePage);

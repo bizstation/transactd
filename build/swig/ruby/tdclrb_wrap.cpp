@@ -18888,6 +18888,74 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_nsdatabase_disconectForReconnectTest(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","disconectForReconnectTest", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
+  {
+    try {
+      result = (bool)(arg1)->disconectForReconnectTest();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_bool(static_cast< bool >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_nsdatabase_reconnect(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","reconnect", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
+  {
+    try {
+      result = (bool)(arg1)->reconnect();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_bool(static_cast< bool >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_nsdatabase_trnsactionFlushWaitStatus(int argc, VALUE *argv, VALUE self) {
   bool result;
   VALUE vresult = Qnil;
@@ -33579,6 +33647,12 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "ERROR_TD_HOSTNAME_NOT_FOUND", SWIG_From_int(static_cast< int >(ERROR_TD_HOSTNAME_NOT_FOUND)));
   rb_define_const(mTransactd, "ERROR_TD_CONNECTION_FAILURE", SWIG_From_int(static_cast< int >(ERROR_TD_CONNECTION_FAILURE)));
   rb_define_const(mTransactd, "ERROR_TD_NOT_CONNECTED", SWIG_From_int(static_cast< int >(ERROR_TD_NOT_CONNECTED)));
+  rb_define_const(mTransactd, "ERROR_TD_NET_TIMEOUT", SWIG_From_int(static_cast< int >(ERROR_TD_NET_TIMEOUT)));
+  rb_define_const(mTransactd, "ERROR_TD_NET_REMOTE_DISCONNECT", SWIG_From_int(static_cast< int >(ERROR_TD_NET_REMOTE_DISCONNECT)));
+  rb_define_const(mTransactd, "ERROR_TD_NET_TOO_BIGDATA", SWIG_From_int(static_cast< int >(ERROR_TD_NET_TOO_BIGDATA)));
+  rb_define_const(mTransactd, "ERROR_TD_NET_OTHER", SWIG_From_int(static_cast< int >(ERROR_TD_NET_OTHER)));
+  rb_define_const(mTransactd, "ERROR_TD_C_CLIENT_UNKNOWN", SWIG_From_int(static_cast< int >(ERROR_TD_C_CLIENT_UNKNOWN)));
+  rb_define_const(mTransactd, "ERROR_TD_RECONNECTED", SWIG_From_int(static_cast< int >(ERROR_TD_RECONNECTED)));
   rb_define_const(mTransactd, "TRANSACTD_SCHEMANAME", SWIG_FromCharPtr(TRANSACTD_SCHEMANAME));
   rb_define_const(mTransactd, "TYPE_SCHEMA_BDF", SWIG_From_int(static_cast< int >(TYPE_SCHEMA_BDF)));
   rb_define_const(mTransactd, "TYPE_SCHEMA_DDF", SWIG_From_int(static_cast< int >(TYPE_SCHEMA_DDF)));
@@ -34051,6 +34125,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassNsdatabase.klass, "readDatabaseDirectory", VALUEFUNC(_wrap_nsdatabase_readDatabaseDirectory), -1);
   rb_define_method(SwigClassNsdatabase.klass, "connect", VALUEFUNC(_wrap_nsdatabase_connect), -1);
   rb_define_method(SwigClassNsdatabase.klass, "disconnect", VALUEFUNC(_wrap_nsdatabase_disconnect), -1);
+  rb_define_method(SwigClassNsdatabase.klass, "disconectForReconnectTest", VALUEFUNC(_wrap_nsdatabase_disconectForReconnectTest), -1);
+  rb_define_method(SwigClassNsdatabase.klass, "reconnect", VALUEFUNC(_wrap_nsdatabase_reconnect), -1);
   rb_define_singleton_method(SwigClassNsdatabase.klass, "trnsactionFlushWaitStatus", VALUEFUNC(_wrap_nsdatabase_trnsactionFlushWaitStatus), -1);
   rb_define_singleton_method(SwigClassNsdatabase.klass, "setExecCodePage", VALUEFUNC(_wrap_nsdatabase_setExecCodePage), -1);
   rb_define_singleton_method(SwigClassNsdatabase.klass, "execCodePage", VALUEFUNC(_wrap_nsdatabase_execCodePage), -1);

@@ -1569,10 +1569,10 @@ void testTransactionLockReadCommited(database* db)
     // No match records are unlocked.
     tb2->setFV(fdi_id, 100);
     tb2->seek(ROW_LOCK_X);
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek stat = " << tb2->stat());
     tb2->setFV(fdi_id, 101);
     tb2->seek(ROW_LOCK_X);
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek stat = " << tb2->stat());
     tb2->unlock();
     db->endTrn();
 
@@ -2110,6 +2110,42 @@ void testSetOwner(database* db)
     tb->clearOwnerName();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner stat = " << tb->stat());
     tb->release();
+}
+
+void testReconnect(database* db)
+{
+    table* tb = openTable(db);
+
+    database* db2 = database::create();
+    db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF); 
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2->open");
+    table* tb2 = db2->openTable(_T("user"));
+    
+    //lock row
+    tb->setFV(fdi_id, 10);
+    tb->seek(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seek stat = " << tb->stat());
+    db->disconectForReconnectTest();
+    db->reconnect();
+    
+    //Check restore lock
+    tb2->setFV(fdi_id, 10);
+    tb2->seek(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seek stat = " << tb2->stat());
+
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seek stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(11 == tb->getFVint(fdi_id), "getFVint 11 bad = " << tb->getFVint(fdi_id));
+
+    tb2->setFV(fdi_id, 11);
+    tb2->seek(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seek stat = " << tb2->stat());
+
+    tb->release();
+    tb2->release();
+    database::destroy(db2);
 }
 
 void testCreateIndex(database* db)
@@ -4554,6 +4590,11 @@ BOOST_FIXTURE_TEST_CASE(MissingUpdate, fixture)
     testMissingUpdate(db());
 }
 
+BOOST_FIXTURE_TEST_CASE(reconnect, fixture)
+{
+    testReconnect(db());
+}
+
 BOOST_FIXTURE_TEST_CASE(insert2, fixture)
 {
     testInsert2(db());
@@ -4568,6 +4609,7 @@ BOOST_FIXTURE_TEST_CASE(setOwner, fixture)
 {
     testSetOwner(db());
 }
+
 
 BOOST_FIXTURE_TEST_CASE(createIndex, fixture)
 {
