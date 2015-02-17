@@ -20,17 +20,20 @@
  ================================================================= */
 
 #include <bzs/netsvc/client/iconnection.h>
+
 #include <boost/asio/write.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/system/system_error.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
+#if (BOOST_VERSION > 104900)
 #include <boost/asio/deadline_timer.hpp>
+#endif
 #include <stdio.h>
 #include <vector>
 #ifdef LINUX
 #include <pthread.h> 
-#include <signal.h> 
+#include <signal.h>
 #endif
 
 
@@ -209,6 +212,11 @@ public:
 #define MSG_EOR 0
 #define MSG_MORE 0
 #endif
+#if (BOOST_VERSION > 104900)
+#define SYSTEM_CATEGORY system_category()
+#else
+#define SYSTEM_CATEGORY system_category
+#endif
 
 template <class T>
 class native_tcp_io
@@ -221,9 +229,9 @@ public:
     {
         errno = 0;
         size_t n = 0;
-        n = recv(m_socket.native_handle(), buf, (int)size, MSG_WAITALL);
+        n = recv(m_socket.native(), buf, (int)size, MSG_WAITALL);
         if (errno)
-            throw system_error(error_code(errno, system_category()));
+            throw system_error(error_code(errno, SYSTEM_CATEGORY));
         return n;
     }
 
@@ -231,20 +239,20 @@ public:
     {
         errno = 0;
         size_t n = 0;
-        n = recv(m_socket.native_handle(), buf, (int)size, 0);
+        n = recv(m_socket.native(), buf, (int)size, 0);
         if (errno)
-            throw system_error(error_code(errno, system_category()));
+            throw system_error(error_code(errno, SYSTEM_CATEGORY));
         return n;
     }
 
     void write(const char* buf, size_t size, int flag)
     {
         errno = 0;
-        send(m_socket.native_handle(), buf, (int)size, flag);
+        send(m_socket.native(), buf, (int)size, flag);
         if (errno)
         {
             printf("write error : len=%d %d", (int)size, errno);
-            throw system_error(error_code(errno, system_category()));
+            throw system_error(error_code(errno, SYSTEM_CATEGORY));
         }
     }
 
@@ -269,7 +277,7 @@ public:
         ioctl(m_socket.native_handle(), FIONBIO, &val);
     #else
         u_long val = 0;
-        ioctlsocket(m_socket.native_handle(), FIONBIO, &val);
+        ioctlsocket(m_socket.native(), FIONBIO, &val);
     #endif
     }
 };
@@ -344,11 +352,14 @@ public:
 
 /** Implementation of The TCP connection.
  */
+
 template <class T>
 class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 {
     T s_io;
+#if (BOOST_VERSION > 104900)
     asio::deadline_timer m_timer;
+#endif
     std::vector<char> m_readbuf;
     std::vector<char> m_sendbuf;
 
@@ -359,7 +370,7 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
         if (n > m_readbuf.size())
             m_readbuf.resize(n);
     }
-    
+
     char* sendBuffer(size_t size)
     {
         if (size > m_sendbuf.size())
@@ -384,9 +395,12 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 
     void cleanup()
     {
+#if (BOOST_VERSION > 104900)
         m_timer.cancel();
-        connectionImple::cleanup();
+#endif
+        connectionImple<asio::ip::tcp::socket>::cleanup();
     }
+#if (BOOST_VERSION > 104900)
     void setTimer(int time)
     {
 #ifdef _WIN32
@@ -396,10 +410,13 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
         m_timer.expires_from_now(boost::posix_time::seconds(time));
         m_timer.async_wait(boost::bind(&tcpConnection::on_timer, this, _1));
     }
+#endif
 
     void on_connect(const boost::system::error_code& e)
     {
+#if (BOOST_VERSION > 104900)
         m_timer.cancel();
+#endif
         checkError(e);
         s_io.on_connected(); 
         m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
@@ -426,7 +443,7 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
                    sizeof(timeout));
         ret = ret;
     }
-
+#if (BOOST_VERSION > 104900)
     void connect()
     {
         m_socket.async_connect(m_ep,
@@ -435,6 +452,16 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
         m_ios.run();
         m_ios.reset();
     }
+#else
+    void connect()
+    {
+        setTimeouts(connections::connectTimeout);
+        m_socket.connect(m_ep);
+        boost::system::error_code e;
+        on_connect(e);
+        m_ios.reset();
+    }
+#endif
 
     unsigned int directRead(void* buf, unsigned int size)
     {
@@ -489,7 +516,10 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
     }
 public:
     tcpConnection(asio::ip::tcp::endpoint& ep)
-        : connectionImple<asio::ip::tcp::socket>(ep),s_io(m_socket), m_timer(m_ios)
+        : connectionImple<asio::ip::tcp::socket>(ep),s_io(m_socket)
+#if (BOOST_VERSION > 104900)
+        , m_timer(m_ios)
+#endif
     {
         m_readbuf.resize(READBUF_SIZE);
         m_sendbuf.resize(WRITEBUF_SIZE);
