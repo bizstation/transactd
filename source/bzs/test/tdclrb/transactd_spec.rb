@@ -1643,7 +1643,7 @@ def testMissingUpdate()
       db2.close()
       v2
     }
-    sleep(0.05)
+    sleep(0.5)
     v = tb.getFVint(FDI_ID)
     v = v + 1
     tb.setFV(FDI_ID, v)
@@ -1688,7 +1688,7 @@ def testMissingUpdate()
       db2.close()
       v2
     }
-    sleep(0.05)
+    sleep(0.5)
     v = tb.getFVint(FDI_ID)
     tb.del()
     v2 = w.join().value
