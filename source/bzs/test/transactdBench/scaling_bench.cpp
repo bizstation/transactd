@@ -52,7 +52,7 @@ struct commandLineParam
         avg_count = _ttol(argv[5]);
         stressMode = (loopCount == -1) ? true : false;
         if (stressMode)
-            loopCount = 1;
+            loopCount = 10;
     }
 };
 
@@ -123,7 +123,7 @@ void makeMysqlParam(bzs::test::worker::mysql::connectParam& param,
     param.port = 0;
 }
 
-#define BENCH_TIMER_SECONDS 1.5f
+#define BENCH_TIMER_SECONDS 2.0f
 double executeWorkers(const commandLineParam& cmd, const connectParams param,
                       const bzs::test::worker::mysql::connectParam& paramMysql,
                       int wn)
@@ -151,11 +151,11 @@ double executeWorkers(const commandLineParam& cmd, const connectParams param,
         }
         printf("*");
         fflush(stdout);
-        Sleep(500);
+        Sleep(1000);
         sync.wait(); // start all workers
         if (cmd.stressMode)
         {
-            Sleep(200);
+            Sleep(500);
             g_bench_signal = BENCH_SIGNAL_GREEN;
             //Measurement interval
             Sleep((unsigned int)(BENCH_TIMER_SECONDS * 1000));
@@ -184,7 +184,7 @@ int execute(const commandLineParam& cmd, const connectParams param,
         if (cmd.stressMode)
         {
             if (t)
-                ts.value = (__int64)(t / BENCH_TIMER_SECONDS);
+                ts.value = (__int64)(t / BENCH_TIMER_SECONDS) * cmd.loopCount;
         }
         else
         {

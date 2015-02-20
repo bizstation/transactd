@@ -667,7 +667,7 @@ public:
     int autoIncExSpace;
     uchar_td iconIndex2;
     uchar_td iconIndex3;
-    uint_td schemaCodePage; // Code page of this schema stirng data.
+    uint_td schemaCodePage; // Code page of this schema string data.
 
 private:
     char formatVersion;
