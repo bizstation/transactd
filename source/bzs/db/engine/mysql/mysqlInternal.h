@@ -173,12 +173,12 @@ inline void cp_restore_globals(THD* thd)
     my_pthread_setspecific_ptr(THR_MALLOC, 0);
 }
 
-inline void cp_thd_set_read_only(THD* thd)
+inline void cp_thd_set_read_only(THD* thd, bool v)
 {
     ;
 }
 
-inline bool cp_thd_get_read_only(THD* thd)
+inline bool cp_thd_get_global_read_only(THD* thd)
 {
     return false;
 }
@@ -216,12 +216,12 @@ inline void cp_restore_globals(THD* thd)
     thd->restore_globals();
 }
 
-inline void cp_thd_set_read_only(THD* thd)
+inline void cp_thd_set_read_only(THD* thd, bool v)
 {
-    thd->tx_read_only = (thd->variables.tx_read_only != 0);
+    thd->tx_read_only = (v || thd->variables.tx_read_only);
 }
 
-inline bool cp_thd_get_read_only(THD* thd)
+inline bool cp_thd_get_global_read_only(THD* thd)
 {
     return (thd->variables.tx_read_only != 0);
 }

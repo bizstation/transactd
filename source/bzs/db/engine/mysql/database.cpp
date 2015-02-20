@@ -304,7 +304,7 @@ void database::use() const
 
 void database::prebuildIsoratinMode()
 {
-    cp_thd_set_read_only(m_thd);
+    cp_thd_set_read_only(m_thd, m_inSnapshot != 0);
     if (m_inTransaction)
     {
         m_thd->tx_isolation = m_iso;
@@ -364,7 +364,7 @@ void database::prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* l
     m_thd->lex->sql_command = cmd;
 
     if ((lock_type >= TL_WRITE) &&
-             (tb->isReadOnly() || cp_thd_get_read_only(m_thd)))
+             (tb->isReadOnly() || cp_thd_get_global_read_only(m_thd)))
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ACCESS_DENIED, "Access denined.");
 
     if ((lock_type >= TL_WRITE) &&
