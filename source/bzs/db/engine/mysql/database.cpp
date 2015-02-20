@@ -53,6 +53,38 @@ using namespace std;
 #error "MODE_READ_EXCLUSIVE != TD_OPEN_READONLY_EXCLUSIVE"
 #endif
 
+/* If you want to be able to specify the lock type in READ_COMMITTED
+   By applying the following patch to MySQL, and enable the 
+   HA_EXTRA_ROW_LOCK_ENABLE
+   
+   
+   +++ my_base.h
+    enum ha_extra_function {
+    ...
+    + HA_EXTRA_ROW_LOCK_S,
+    + HA_EXTRA_ROW_LOCK_X
+    };
+ 
+    +++ ha_innodb.cc
+    int  ha_innobase::extra()
+    {
+        ....
+    +    case HA_EXTRA_ROW_LOCK_S:
+    +        prebuilt->select_lock_type = LOCK_S;
+    +        prebuilt->stored_select_lock_type = LOCK_S;
+    +        break;
+    +    case HA_EXTRA_ROW_LOCK_X:
+    +        prebuilt->select_lock_type = LOCK_X;
+    +        prebuilt->stored_select_lock_type = LOCK_X;
+    +        prebuilt->template_type = ROW_MYSQL_WHOLE_ROW;
+    +        break;
+        ....
+    }
+
+    #define HA_EXTRA_ROW_LOCK_ENABLE
+*/
+
+
 unsigned int hash(const char* s, size_t len)
 {
     unsigned int h = 0;
@@ -378,6 +410,7 @@ void database::changeIntentionLock(table* tb, thr_lock_type lock_type)
 {  
     if (lock_type != tb->m_table->reginfo.lock_type)
     {
+
         tb->m_table->reginfo.lock_type = lock_type;
         m_thd->variables.option_bits |= OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN;
         tb->m_table->file->ha_external_lock(m_thd, F_UNLCK);
@@ -386,8 +419,13 @@ void database::changeIntentionLock(table* tb, thr_lock_type lock_type)
 
         tb->m_table->file->ha_external_lock(m_thd, 
                 (lock_type == TL_WRITE) ? F_WRLCK : F_RDLCK);
+#ifdef HA_EXTRA_ROW_LOCK_ENABLE
+        tb->m_table->file->extra((lock_type == TL_READ) 
+                    ? HA_EXTRA_ROW_LOCK_S : HA_EXTRA_ROW_LOCK_X);
+#endif
         m_thd->variables.option_bits &= ~(OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN);
         tb->m_validCursor = false;
+
     }
 }
 
@@ -445,8 +483,13 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
         tb->m_blobBuffer->clear();
 
     // Change to shared lock is user tranasction only.
+#ifdef HA_EXTRA_ROW_LOCK_ENABLE
     if (lck && lck->read && lck->lock && !m_inTransaction)
-            THROW_BZS_ERROR_WITH_CODEMSG(STATUS_INVALID_LOCKTYPE,
+#else
+    if (lck && lck->read && lck->lock && 
+                    (!m_inTransaction || m_iso < ISO_REPEATABLE_READ))
+#endif
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_INVALID_LOCKTYPE,
                                          "Invalid lock type."); 
     
     // in-transaction or in-snapshort or exclusive or inAutoTransaction(lock delay)
@@ -456,7 +499,11 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
         if (tb->m_table == NULL)
             THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                          "Invalid table id.");
+#ifdef HA_EXTRA_ROW_LOCK_ENABLE
+        if (m_inTransaction && (m_iso >= ISO_READ_COMMITTED))
+#else
         if (m_inTransaction && (m_iso >= ISO_REPEATABLE_READ))
+#endif
             changeIntentionLock(tb, (lck && lck->lock && lck->read) ? TL_READ : TL_WRITE);
 
         if (tb->isExclusveMode())
@@ -468,6 +515,14 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
     }
 
     checkACL(cmd);
+#ifdef HA_EXTRA_ROW_LOCK_ENABLE
+    bool changeLocktype = false;
+    if (m_inTransaction && lck && lck->read && m_iso == ISO_READ_COMMITTED)
+    {
+        changeLocktype = true;
+        lck->read = false;  //force change TL_WRITE
+    }
+#endif
     prebuildLocktype(tb, cmd, lck);
     
     if (m_thd->lock == 0)
@@ -489,6 +544,14 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
     tb->initForHANDLER();
     tb->setLocked(true);
     m_thd->in_lock_tables = 0;
+
+#ifdef HA_EXTRA_ROW_LOCK_ENABLE
+    if (changeLocktype == true)
+    {
+        lck->read = true; 
+        changeIntentionLock(tb, TL_READ);
+    }
+#endif
     return tb;
 }
 
