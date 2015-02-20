@@ -42,12 +42,15 @@ namespace client
 char connections::port[PORTNUMBUF_SIZE] = { "8610" };
 bool connections::m_usePipedLocal = true;
 #ifdef _WIN32
-int connections::connectTimeout = 3000;
-int connections::netTimeout = 20000;
+int connections::connectTimeout = 20000;
+int connections::netTimeout = 180000;
 #else
-int connections::connectTimeout = 3;
-int connections::netTimeout = 20;
+int connections::connectTimeout = 20;
+int connections::netTimeout = 180;
 #endif
+
+#define DEFAULT_CONNECT_TIMEOUT "20"
+#define DEFAULT_NET_TIMEOUT "180"
 
 
 connections::connections(const char* pipeName) : m_pipeName(pipeName),m_resolver(m_ios)
@@ -66,12 +69,12 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName),m_resolver
         GetPrivateProfileString("transctd_client", "port", "8610", tmp, 30,
                                 buf);
         strcpy_s(port, PORTNUMBUF_SIZE, tmp);
-        GetPrivateProfileString("transctd_client", "connectTimeout", "3", tmp, 30,
-                                buf);
-        connectTimeout = (short)atol(tmp)*1000;
-        GetPrivateProfileString("transctd_client", "netTimeout", "20", tmp, 30,
-                                buf);
-        netTimeout = (short)atol(tmp)*1000;
+        GetPrivateProfileString("transctd_client", "connectTimeout", 
+            DEFAULT_CONNECT_TIMEOUT, tmp, 30, buf);
+        connectTimeout = atoi(tmp)*1000;
+        GetPrivateProfileString("transctd_client", "netTimeout", 
+            DEFAULT_NET_TIMEOUT, tmp, 30, buf);
+        netTimeout = atoi(tmp)*1000;
     }
 #else // NOT _WIN32
 #if (BOOST_VERSION > 104900)
@@ -95,11 +98,11 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName),m_resolver
             p = pt.get<std::string>("transctd_client.connectTimeout");
             connectTimeout = atol(p.c_str());
             if (connectTimeout == 0)
-                connectTimeout = 3;
+                connectTimeout = atoi(DEFAULT_CONNECT_TIMEOUT);
             p = pt.get<std::string>("transctd_client.netTimeout");
             netTimeout = atol(p.c_str());
             if (netTimeout == 0)
-                netTimeout = 20;
+                netTimeout = atoi(DEFAULT_NET_TIMEOUT);
         }
         catch (...)
         {

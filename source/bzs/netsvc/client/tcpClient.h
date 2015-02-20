@@ -211,6 +211,8 @@ public:
 #define MSG_WAITALL 0x8 
 #define MSG_EOR 0
 #define MSG_MORE 0
+#else
+#define SOCKET_ERROR -1
 #endif
 #if (BOOST_VERSION > 104900)
 #define SYSTEM_CATEGORY system_category()
@@ -222,38 +224,64 @@ template <class T>
 class native_tcp_io
 {
     T& m_socket;
+    int getErrorCode()
+    {
+#ifndef _WIN32
+        return errno;
+#else
+        return WSAGetLastError();
+#endif
+    }
+
 public:
     native_tcp_io(T& socket):m_socket(socket){}
+
+#ifdef _WIN32
+    size_t readAll2(char* buf, size_t size)
+    {
+        int n = 0;
+        do 
+        {
+            int nn = recv(m_socket.native(), buf + n, (int)size - n, 0);
+            if (n == SOCKET_ERROR)
+                throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+            n += nn;
+        }while (n != size);
+        return (size_t)n;
+    }
+#endif
 
     size_t readAll(char* buf, size_t size)
     {
         errno = 0;
-        size_t n = 0;
-        n = recv(m_socket.native(), buf, (int)size, MSG_WAITALL);
-        if (errno)
-            throw system_error(error_code(errno, SYSTEM_CATEGORY));
-        return n;
+        int n = recv(m_socket.native(), buf, (int)size, MSG_WAITALL);
+        if (n == SOCKET_ERROR)
+        {
+#ifdef _WIN32
+            if (WSAEOPNOTSUPP == getErrorCode())
+                return readAll2(buf, size);
+            else
+#endif
+                throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+        }
+        return (size_t)n;
     }
 
     size_t readSome(char* buf, size_t size, size_t minimum)
     {
         errno = 0;
-        size_t n = 0;
-        n = recv(m_socket.native(), buf, (int)size, 0);
-        if (errno)
-            throw system_error(error_code(errno, SYSTEM_CATEGORY));
-        return n;
+        int n = recv(m_socket.native(), buf, (int)size, 0);
+        if (n == SOCKET_ERROR)
+            throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+        return (size_t)n;
     }
 
     void write(const char* buf, size_t size, int flag)
     {
         errno = 0;
-        send(m_socket.native(), buf, (int)size, flag);
-        if (errno)
-        {
-            printf("write error : len=%d %d", (int)size, errno);
-            throw system_error(error_code(errno, SYSTEM_CATEGORY));
-        }
+        int n = send(m_socket.native(), buf, (int)size, flag);
+        if (n == SOCKET_ERROR)
+            throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
     }
 
     template <typename MutableBufferSequence>
@@ -274,7 +302,7 @@ public:
     {
     #ifndef _WIN32
         int val = 0;
-        ioctl(m_socket.native_handle(), FIONBIO, &val);
+        ioctl(m_socket.native(), FIONBIO, &val);
     #else
         u_long val = 0;
         ioctlsocket(m_socket.native(), FIONBIO, &val);
@@ -421,7 +449,7 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
         s_io.on_connected(); 
         m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
         m_connected = true;
-        setTimeouts(connections::connectTimeout);
+        setTimeouts(connections::netTimeout);
     }
 
     void on_timer(const boost::system::error_code& e) 
