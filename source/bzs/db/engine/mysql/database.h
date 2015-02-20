@@ -701,7 +701,10 @@ public:
         if (m_db.inSnapshot() || m_db.inTransaction())
         {
             if (m_validCursor)
+            {
                 m_table->file->unlock_row();
+                m_nounlock = true;
+            }
             else
                 return 1;
         }else if (m_db.m_inAutoTransaction == this)
