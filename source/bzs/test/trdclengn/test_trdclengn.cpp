@@ -121,6 +121,7 @@ class fixture
 public:
     fixture() : m_db(NULL)
     {
+
         nsdatabase::setCheckTablePtr(true);
         m_db = database::create();
         if (!m_db)
@@ -140,6 +141,35 @@ public:
 
     ::database* db() const { return m_db; }
 };
+
+#ifdef _WIN32
+class fixtureKanji
+{
+    mutable database* m_db;
+
+public:
+    fixtureKanji() : m_db(NULL)
+    {
+        nsdatabase::setExecCodePage(932);
+        nsdatabase::setCheckTablePtr(true);
+        m_db = database::create();
+        if (!m_db)
+            printf("Error database::create()\n");
+    }
+
+    ~fixtureKanji()
+    {
+        if (m_db)
+            m_db->release();
+    }
+    ::database* db() const { return m_db; }
+};
+#else
+typedef fixture fixtureKanji;
+#endif
+
+
+
 
 class fixtureQuery
 {
@@ -239,6 +269,12 @@ void testCreateNewDataBase(database* db)
         td.parentKeyNum = -1;
         td.replicaKeyNum = -1;
         td.pageSize = 2048;
+#ifdef _WIN32
+        td.charsetIndex = CHARSET_CP932;
+#else
+        td.charsetIndex = CHARSET_UTF8;
+#endif
+
         def->insertTable(&td);
         BOOST_CHECK_MESSAGE(0 == def->stat(),
                             "insertTable stat = " << def->stat());
@@ -1347,6 +1383,52 @@ void testTransactionLockRepeatable(database* db)
     database::destroy(db2);
 }
 
+
+void testBug_015(database* db)
+{
+    table* tb = openTable(db);
+    db->beginTrn(SINGLELOCK_NOGAP);
+    tb->seekFirst(); // lock(X)
+    tb->unlock();
+    tb->seekNext();
+    /* Here! InnoDB issues an error message, please check the MySQL error log. 
+       [InnoDB: Error: unlock row could not find a 3 mode lock on the record]   
+    */
+    db->endTrn();
+    tb->release();
+}
+
+#ifdef HA_EXTRA_ROW_LOCK_ENABLE
+/* READ_COMMITTED support select lock type */
+void testIssue_016(database* db)
+{
+    table* tb = openTable(db);
+    db->beginTrn(MULTILOCK_NOGAP);
+    tb->seekFirst(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekFirst S");
+    tb->seekNext(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekNext S");
+    tb->seekNext(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekNext X");
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
+    db->endTrn();
+    tb->release();
+
+}
+#else
+/* READ_COMMITTED not support select lock type */ 
+void testIssue_016(database* db)
+{
+    table* tb = openTable(db);
+    db->beginTrn(MULTILOCK_NOGAP);
+    tb->seekFirst(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb->stat(), "seekFirst S");
+    db->endTrn();
+    tb->release();
+}
+#endif
+
 /* isoration Level ISO_READ_COMMITED */
 void testTransactionLockReadCommited(database* db)
 {
@@ -1737,6 +1819,12 @@ void testRecordLock(database* db)
     /* ---------   Invalid lock type test ----------------------------*/
     tb2->seekFirst(ROW_LOCK_S);
     BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb2->stat(), "tb2->seekFirst");
+
+    /* ---------   Invalid unlock  test ----------------------------*/
+    tb2->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    tb2->unlock();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
 
     tb2->release();
     tb3->release();
@@ -3302,15 +3390,15 @@ void initKanjiName()
     if (!nameInited)
     {
         wchar_t tmp[50];
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, dbNmae, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, dbNmae, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, dbNmae, 50, NULL, NULL);
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, bdfNmae, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, bdfNmae, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, bdfNmae, 50, NULL, NULL);
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, tableNmae, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, tableNmae, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, tableNmae, 50, NULL, NULL);
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, fdName1, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, fdName1, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, fdName1, 50, NULL, NULL);
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, fdName2, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, fdName2, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, fdName2, 50, NULL, NULL);
         nameInited = true;
     }
@@ -3320,14 +3408,15 @@ void initKanjiName()
 void testDropDatabaseKanji(database* db)
 {
     db->open(makeUri(PROTOCOL, HOSTNAME, dbNmae, bdfNmae));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "DropDataBaseKanji 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "db->open stat = " << db->stat());
 
     db->drop();
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "DropDataBaseKanji 2");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "db->drop() stat = " << db->stat());
 }
 
 void testKnajiCreateSchema(database* db)
 {
+
     initKanjiName();
     db->create(makeUri(PROTOCOL, HOSTNAME, dbNmae, bdfNmae));
     if (db->stat() == STATUS_TABLE_EXISTS_ERROR)
@@ -3350,6 +3439,10 @@ void testKnajiCreateSchema(database* db)
         memset(&td, 0, sizeof(tabledef));
 #ifndef _UNICODE
         td.schemaCodePage = CP_UTF8;
+        td.charsetIndex = CHARSET_UTF8;
+#else
+        td.schemaCodePage = CP_UTF8;
+        td.charsetIndex = CHARSET_CP932;
 #endif
         td.setTableName(tableNmae);
         td.setFileName(tableNmae);
@@ -3396,14 +3489,15 @@ table* openKnajiTable(database* db)
 
     db->open(makeUri(PROTOCOL, HOSTNAME, dbNmae, bdfNmae), TYPE_SCHEMA_BDF,
              TD_OPEN_NORMAL);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openKnajiTable 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openKnajiTable 1 stat = " << db->stat());
     table* tb = db->openTable(tableNmae);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openKnajiTable 2");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openKnajiTable 2 stat = " << db->stat());
     return tb;
 }
 
 void testInsertKanji(database* db)
 {
+
     table* tb = openKnajiTable(db);
 
     tb->clearBuffer();
@@ -3422,6 +3516,7 @@ void testInsertKanji(database* db)
 
 void testGetEqualKanji(database* db)
 {
+
     table* tb = openKnajiTable(db);
     tb->clearBuffer();
     tb->setFV((short)0, 1);
@@ -4565,6 +4660,17 @@ BOOST_FIXTURE_TEST_CASE(transactionLockRepeatable, fixture)
     testTransactionLockRepeatable(db());
 }
 
+BOOST_FIXTURE_TEST_CASE(bug_015, fixture)
+{
+    testBug_015(db());
+}
+
+BOOST_FIXTURE_TEST_CASE(issue_016, fixture)
+{
+    testIssue_016(db());
+}
+
+
 BOOST_FIXTURE_TEST_CASE(transactionLock, fixture)
 {
     testTransactionLockReadCommited(db());
@@ -4670,32 +4776,32 @@ BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(var_field)
 
-BOOST_FIXTURE_TEST_CASE(createDataBaseVar, fixture)
+BOOST_FIXTURE_TEST_CASE(createDataBaseVar, fixtureKanji)
 {
     testCreateDataBaseVar(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(varField, fixture)
+BOOST_FIXTURE_TEST_CASE(varField, fixtureKanji)
 {
     testVarField(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(varInsert, fixture)
+BOOST_FIXTURE_TEST_CASE(varInsert, fixtureKanji)
 {
     testVarInsert(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(varRead, fixture)
+BOOST_FIXTURE_TEST_CASE(varRead, fixtureKanji)
 {
     testVarRead(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(filterVar, fixture)
+BOOST_FIXTURE_TEST_CASE(filterVar, fixtureKanji)
 {
     testFilterVar(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(dropDataBaseVar, fixture)
+BOOST_FIXTURE_TEST_CASE(dropDataBaseVar, fixtureKanji)
 {
     testDropDataBaseVar(db());
 }
@@ -4706,12 +4812,12 @@ BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(filter)
 
-BOOST_FIXTURE_TEST_CASE(stringFileter, fixture)
+BOOST_FIXTURE_TEST_CASE(stringFileter, fixtureKanji)
 {
     testStringFileter(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(dropDataBaseStr, fixture)
+BOOST_FIXTURE_TEST_CASE(dropDataBaseStr, fixtureKanji)
 {
     testDropDataBaseStr(db());
 }
@@ -4720,24 +4826,25 @@ BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
 #endif
 // ------------------------------------------------------------------------
+
 BOOST_AUTO_TEST_SUITE(kanjiSchema)
 
-BOOST_FIXTURE_TEST_CASE(knajiCreateSchema, fixture)
+BOOST_FIXTURE_TEST_CASE(knajiCreateSchema, fixtureKanji)
 {
     testKnajiCreateSchema(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(insertKanji, fixture)
+BOOST_FIXTURE_TEST_CASE(insertKanji, fixtureKanji)
 {
     testInsertKanji(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(getEqualKanji, fixture)
+BOOST_FIXTURE_TEST_CASE(getEqualKanji, fixtureKanji)
 {
     testGetEqualKanji(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(dropDatabaseKanji, fixture)
+BOOST_FIXTURE_TEST_CASE(dropDatabaseKanji, fixtureKanji)
 {
     testDropDatabaseKanji(db());
 }
