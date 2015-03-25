@@ -4429,10 +4429,42 @@ void testServerPrepareJoin(database* db)
         ate.release();
         db->drop();
     }
-   
+}
 
+void testReadMore(database* db)
+{
+#ifdef LINUX
+    const char* fd_name = "名前";
+#else
+#ifdef _UNICODE
+    const wchar_t fd_name[] = { L"名前" };
+#else
+    char fd_name[30];
+    WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+#endif
+#endif
+
+    activeTable atu(db, _T("user"));
+    activeTable atg(db, _T("groups"));
+    atu.alias(fd_name, _T("name"));
+    atg.alias(_T("name"), _T("group_name"));
+    query q;
+    q.select(_T("id"), _T("name"), _T("group"))
+        .where(_T("name"), _T("="), _T("1*"))
+        .reject(70).limit(8).stopAtLimit(true);
+    pq_handle stmt1 = atu.prepare(q, true);
+    BOOST_CHECK_MESSAGE(stmt1 != NULL, " stmt1");
     
+    recordset rs;
+    atu.index(0).keyValue(18).read(rs, stmt1);
+    BOOST_CHECK_MESSAGE(rs.size() == 2, "read");
 
+    recordset rs2;
+    atu.readMore(rs2);
+    BOOST_CHECK_MESSAGE(rs2.size() == 8, "readMore");
+
+    rs += rs2;
+    BOOST_CHECK_MESSAGE(rs.size() == 10, "union");
 
 }
 
@@ -4884,7 +4916,13 @@ BOOST_FIXTURE_TEST_CASE(join, fixtureQuery)
     testWirtableRecord(db());
 }
 
+BOOST_FIXTURE_TEST_CASE(readMore, fixtureQuery)
+{
+    testReadMore(db());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
+
 
 BOOST_AUTO_TEST_SUITE(dbPool)
 
