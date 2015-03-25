@@ -350,3 +350,20 @@ STDMETHODIMP CARecordset::ClearRecords()
     }
 }
 
+STDMETHODIMP CARecordset::UnionRecordset(IRecordset* rs, IRecordset** retVal)
+{
+    try
+    {
+        CARecordset* p = dynamic_cast<CARecordset*>(rs);
+        if (!p)
+            return Error(_T("Invalid ActiveTable::UnionRecordset param 1"), IID_IRecordset);
+        *m_rs += *(p->m_rs);
+        setResult(retVal);
+        return S_OK;        
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
+}
+

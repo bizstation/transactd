@@ -1246,6 +1246,10 @@ interface IRecordset : IDispatch
   [id(0x0000014)]
   HRESULT _stdcall ClearRecords();
 
+  [id(0x0000015)]
+  HRESULT _stdcall UnionRecordset([in] IRecordset* rs, [out, retval] IRecordset** retVal);
+  
+
   
 };
 

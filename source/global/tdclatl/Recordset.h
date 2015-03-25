@@ -82,5 +82,6 @@ public:
     STDMETHOD(Clone)(IRecordset** retVal);
     STDMETHOD(Clear)();
     STDMETHOD(ClearRecords)();
+    STDMETHOD(UnionRecordset)(IRecordset* rs, IRecordset** retVal);
 
 };
