@@ -97,8 +97,18 @@ def testCreateTable(db)
   
   fd = dbdef.insertField(1, 1)
   fd.setName('name')
-  fd.type = Transactd::Ft_zstring
   fd.len = 33
+  
+  #test padChar
+  fd.type = Transactd::Ft_string
+  fd.setPadCharSettings(true, false)
+  expect(fd.usePadChar()).to eq true;
+  expect(fd.trimPadChar()).to eq false;
+  fd.setPadCharSettings(false, true)
+  expect(fd.usePadChar()).to eq false;
+  expect(fd.trimPadChar()).to eq true;
+  
+  fd.type = Transactd::Ft_zstring
   dbdef.updateTableDef(1)
   expect(dbdef.stat()).to eq 0
   

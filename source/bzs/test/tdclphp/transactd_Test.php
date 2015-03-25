@@ -122,8 +122,18 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         $fd = $dbdef->insertField($tableid, 1);
         $fd->setName('name');
-        $fd->type = Bz\transactd::ft_zstring;
         $fd->len = 33;
+        
+        //test padChar only string or wstring
+        $fd->type = Bz\transactd::ft_string;
+        $fd->setPadCharSettings(true, false);
+        $this->assertEquals($fd->usePadChar()), true);
+        $this->assertEquals($fd->trimPadChar()), false);
+        $fd->setPadCharSettings(false, true);
+        $this->assertEquals($fd->usePadChar()), false);
+        $this->assertEquals($fd->trimPadChar()), true);
+        
+        $fd->type = Bz\transactd::ft_zstring;
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
         // Set field charset index
