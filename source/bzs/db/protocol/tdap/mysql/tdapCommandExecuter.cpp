@@ -611,59 +611,64 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
     int ret = 1;
     m_tb = getTable(req.pbk->handle);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-    if (m_tb->setKeyNum(keynum))
+    if (!m_tb->setKeyNum(keynum))
     {
-        m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
-        m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
-                                                   : HA_READ_KEY_OR_PREV,
-                      m_tb->keymap());
-
-        extRequest* ereq = (extRequest*)req.data;
-        bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
-        bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
-        // smartReadRecordsHandler scope
-        {
-            smartReadRecordsHandler srrh(m_readHandler);
-
-            if (execPrepared)
-            {
-                if (m_tb->preparedStatements.size() < ereq->preparedId)
-                    req.result = STATUS_INVALID_PREPAREID;
-                else
-                    req.result = m_readHandler->beginPreparExecute(m_tb, ereq, true, nw,
-                                               noBookmark, 
-                                              (prepared*)m_tb->preparedStatements[ereq->preparedId - 1]);
-            }
-            else
-                req.result = m_readHandler->begin(m_tb, ereq, true, nw,
-                                              (op == TD_KEY_GE_NEXT_MULTI),
-                                              noBookmark);
-            if (req.result != 0)
-                return ret;
-            if (m_tb->stat() == 0)
-            {
-                if (op == TD_KEY_GE_NEXT_MULTI)
-                    m_tb->getNextExt(m_readHandler, true, noBookmark);
-                else if (op == TD_KEY_LE_PREV_MULTI)
-                    m_tb->getPrevExt(m_readHandler, true, noBookmark);
-            }
-            req.result = errorCodeSht(m_tb->stat());
-            if (!m_tb->cursor())
-                req.paramMask |= P_MASK_PB_ERASE_BM;
-            DEBUG_WRITELOG2(op, req);
-        }
-        short dummy = 0;
-        size_t& size = nw->datalen;
-        size = req.serializeForExt(m_tb, nw);
-        char* resultBuffer = nw->ptr();
-        netsvc::server::buffers* optionalData = nw->optionalData();
-        if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
-            size = req.serializeBlobBody(m_blobBuffer, resultBuffer, size,
-                                         FILE_MAP_SIZE, optionalData, dummy);
-
-        DEBUG_PROFILE_END_OP(1, op)
-        ret = EXECUTE_RESULT_SUCCESS;
+        req.result = m_tb->stat();
+        return ret;
     }
+
+    m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
+    m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
+                                                : HA_READ_KEY_OR_PREV,
+                    m_tb->keymap());
+
+    extRequest* ereq = (extRequest*)req.data;
+    bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
+    bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
+    // smartReadRecordsHandler scope
+    {
+        smartReadRecordsHandler srrh(m_readHandler);
+
+        if (execPrepared)
+        {
+            if (m_tb->preparedStatements.size() < ereq->preparedId)
+                req.result = STATUS_INVALID_PREPAREID;
+            else
+                req.result = m_readHandler->beginPreparExecute(m_tb, ereq, true, nw,
+                                            noBookmark, 
+                                            (prepared*)m_tb->preparedStatements[ereq->preparedId - 1]);
+        }
+        else
+            req.result = m_readHandler->begin(m_tb, ereq, true, nw,
+                                            (op == TD_KEY_GE_NEXT_MULTI),
+                                            noBookmark);
+        if (req.result != 0)
+            return ret;
+        if (m_tb->stat() == 0)
+        {
+            if (op == TD_KEY_GE_NEXT_MULTI)
+                m_tb->getNextExt(m_readHandler, true, noBookmark);
+            else if (op == TD_KEY_LE_PREV_MULTI)
+                m_tb->getPrevExt(m_readHandler, true, noBookmark);
+        }
+        req.result = errorCodeSht(m_tb->stat());
+        if (!m_tb->cursor())
+            req.paramMask |= P_MASK_PB_ERASE_BM;
+        DEBUG_WRITELOG2(op, req);
+    }
+    short dummy = 0;
+    size_t& size = nw->datalen;
+    size = req.serializeForExt(m_tb, nw);
+    char* resultBuffer = nw->ptr();
+    netsvc::server::buffers* optionalData = nw->optionalData();
+    if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
+        size = req.serializeBlobBody(m_blobBuffer, resultBuffer, size,
+                                        FILE_MAP_SIZE, optionalData, dummy);
+
+    DEBUG_PROFILE_END_OP(1, op)
+    ret = EXECUTE_RESULT_SUCCESS;
+
+        
     if (m_tb)
         m_tb->unUse();
     return ret;
@@ -685,7 +690,10 @@ inline int dbExecuter::doReadMulti(request& req, int op,
     {
         char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
         if (!m_tb->setKeyNum(keynum))
+        {
+            req.result = m_tb->stat();
             return ret;
+        }
     }
     // smartReadRecordsHandler scope
     {
@@ -1209,7 +1217,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             {
                 m_tb = NULL;
                 return EXECUTE_RESULT_SUCCESS;
-            }
+            }else
+                resultBuffer = nw->ptr();
             break;
         case TD_KEY_SEEK_MULTI:
         case TD_KEY_NEXT_MULTI:
@@ -1221,7 +1230,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             {
                 m_tb = NULL;
                 return EXECUTE_RESULT_SUCCESS;
-            }
+            }else
+                resultBuffer = nw->ptr();
             break;
         case TD_FILTER_PREPARE:
             m_tb = getTable(req.pbk->handle);
@@ -1246,7 +1256,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                     *((unsigned short*)req.data) = (unsigned short)m_tb->preparedStatements.size();
                     req.resultLen = 2;
                 }
-            }
+            }else
+                req.result = m_tb->stat();
             break;
         case TD_MOVE_PER:
             m_tb = getTable(req.pbk->handle);
