@@ -56,7 +56,8 @@ public:
     enum eFindType
     {
         findForword,
-        findBackForword
+        findBackForword,
+        findContinue
     };
     static const bool inkey = true;
 

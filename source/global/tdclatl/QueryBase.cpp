@@ -309,3 +309,17 @@ STDMETHODIMP CQueryBase::IsBookmarkAlso(VARIANT_BOOL* retVal)
     *retVal = m_qb.isBookmarkAlso();
     return S_OK;
 }
+
+STDMETHODIMP CQueryBase::StopAtLimit(VARIANT_BOOL v, IQueryBase** retVal)
+{
+    m_qb.stopAtLimit(v == -1);
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::IsStopAtLimit(VARIANT_BOOL* retVal)
+{
+    *retVal = m_qb.isStopAtLimit();
+    return S_OK;
+}
+

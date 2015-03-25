@@ -1049,6 +1049,8 @@ abstract class nstable {
 
 	const findBackForword = nstable_findBackForword;
 
+	const findContinue = nstable_findContinue;
+
 	const inkey = nstable_inkey;
 
 	function nsdb() {
@@ -1532,6 +1534,14 @@ class table extends nstable {
 		table_findPrev($this->_cPtr,$notIncCurrent);
 	}
 
+	function statReasonOfFind() {
+		return table_statReasonOfFind($this->_cPtr);
+	}
+	
+	function lastFindDirection() {
+		return table_lastFindDirection($this->_cPtr);
+	}
+
 	function bookmarkFindCurrent() {
 		return table_bookmarkFindCurrent($this->_cPtr);
 	}
@@ -1748,6 +1758,16 @@ abstract class queryBase {
 	function reverseAliasName($alias,$src) {
 		queryBase_reverseAliasName($this->_cPtr,$alias,$src);
 	}
+	
+	function stopAtLimit($v) {
+		queryBase_stopAtLimit($this->_cPtr,$v);
+		return $this;
+	}
+	
+	function isStopAtLimit() {
+		return queryBase_isStopAtLimit($this->_cPtr);
+	}
+
 }
 
 class query extends queryBase {
@@ -3732,6 +3752,11 @@ class activeTable {
 			return new Recordset($r);
 		}
 		return $r;
+	}
+
+	function readMore($rs) {
+		activeTable_readMore($this->_cPtr, $rs);
+		return $this;
 	}
 
 	function prepare($q,$serverPrepare=false) {

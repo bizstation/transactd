@@ -541,3 +541,21 @@ STDMETHODIMP CActiveTable::Table(ITable** retVal)
         return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
     }
 }
+
+STDMETHODIMP CActiveTable::ReadMore(IRecordset* rs, IRecordset** retVal)
+{
+    try
+    {
+        CARecordset* p = dynamic_cast<CARecordset*>(rs);
+        if (!p)
+            return Error(_T("Invalid ActiveTable::ReadMore param 1"), IID_IActiveTable);
+        m_at->readMore(*p->m_rs);
+        p->QueryInterface(IID_IRecordset, (void**)retVal);
+        return S_OK;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+    }
+}
+

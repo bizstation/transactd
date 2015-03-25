@@ -147,4 +147,7 @@ public:
     STDMETHOD(Prepare)(IQueryBase* Value, VARIANT_BOOL ServerPrepare, IPreparedQuery** retVal);
     STDMETHOD(SetPrepare)(IPreparedQuery* Value);
     STDMETHOD(FieldNumByName)(BSTR Name, short* Value);
+    STDMETHOD(get_StatReasonOfFind)(short* Value);
+    STDMETHOD(get_LastFindDirection)(short* Value);
+
 };

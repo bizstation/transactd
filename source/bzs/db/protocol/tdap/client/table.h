@@ -111,7 +111,8 @@ class DLLLIB table : public nstable
     void btrvSeekMulti();
     bool doSeekMultiAfter(int row);
     void* doDdba(uint_td size);
-    bool recordsLoop(ushort_td& op);
+    bool isReadContinue(ushort_td& op);
+
 protected:
     explicit table(nsdatabase* pbe); // Inheritance is impossible
     virtual ~table();
@@ -188,6 +189,8 @@ public:
     void findLast();
     void findNext(bool notIncCurrent = true);
     void findPrev(bool notIncCurrent = true);
+    short statReasonOfFind() const ;
+    eFindType lastFindDirection() const;
     bookmark_td bookmarkFindCurrent() const;
     pq_handle setQuery(const queryBase* query, bool serverPrepare=false);
     pq_handle prepare(const queryBase* query, bool serverPrepare=false)
@@ -340,7 +343,7 @@ public:
     queryBase& optimize(eOptimize v);
     queryBase& bookmarkAlso(bool v);
     queryBase& joinKeySize(int v);
-
+    queryBase& stopAtLimit(bool v);
     const _TCHAR* toString() const;
     table::eFindType getDirection() const;
     int getReject() const;
@@ -348,6 +351,7 @@ public:
     bool isAll() const;
     int getJoinKeySize() const;
     eOptimize getOptimize() const;
+    bool isStopAtLimit() const;
     bool isBookmarkAlso() const;
     short selectCount() const;
     const _TCHAR* getSelect(short index) const;

@@ -77,7 +77,8 @@ typedef
 enum eFindType
 {
   findForword = 0,
-  findBackForword = 1
+  findBackForword = 1,
+  findContinue = 2
 }eFindType;
 
 
@@ -747,6 +748,10 @@ interface ITable : IDispatch
   HRESULT _stdcall Prepare([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
   [id(0x000000FF)]
   HRESULT _stdcall SetPrepare([in] IPreparedQuery* Value);
+  [propget, id(0x000000E1)]
+  HRESULT _stdcall StatReasonOfFind([out, retval] short* Value);
+  [propget, id(0x000000E2)]
+  HRESULT _stdcall LastFindDirection([out, retval] short* Value);
 
 };
 [
@@ -1117,6 +1122,10 @@ interface IQueryBase : IDispatch
   HRESULT _stdcall BookmarkAlso([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
   [id(0x000001B)]
   HRESULT _stdcall IsBookmarkAlso([out, retval] VARIANT_BOOL* retVal);
+  [id(0x000001C)]
+  HRESULT _stdcall StopAtLimit([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
+  [id(0x000001D)]
+  HRESULT _stdcall IsStopAtLimit([out, retval] VARIANT_BOOL* retVal);
 
 
 };
@@ -1177,8 +1186,9 @@ interface IActiveTable : IDispatch
   HRESULT _stdcall Prepare([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
   [id(0x000000D)]
   HRESULT _stdcall Table([out, retval]ITable** retVal);
-
-  				
+  [id(0x000000E)]
+  HRESULT _stdcall ReadMore([in] IRecordset* rs, [out, retval] IRecordset** retVal);
+ 				
 };
 
 

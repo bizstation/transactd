@@ -13652,6 +13652,74 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_table_lastFindDirection(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::table *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  short_td result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::table const *","lastFindDirection", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::table * >(argp1);
+  {
+    try {
+      result = (short_td)((bzs::db::protocol::tdap::client::table const *)arg1)->lastFindDirection();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_short(static_cast< short >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_table_statReasonOfFind(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::table *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  short_td result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::table const *","statReasonOfFind", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::table * >(argp1);
+  {
+    try {
+      result = (short_td)((bzs::db::protocol::tdap::client::table const *)arg1)->statReasonOfFind();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_short(static_cast< short >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_table_bookmarkFindCurrent(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
   void *argp1 = 0 ;
@@ -16865,6 +16933,79 @@ _wrap_queryBase_reverseAliasName(int argc, VALUE *argv, VALUE self) {
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_queryBase_stopAtLimit(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::queryBase *arg1 = 0 ;
+  bool arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::queryBase *","stopAtLimit", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(argp1);
+  ecode2 = SWIG_AsVal_bool(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","stopAtLimit", 2, argv[0] ));
+  } 
+  arg2 = static_cast< bool >(val2);
+  {
+    try {
+      arg1->stopAtLimit(arg2);
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  return self;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_queryBase_isStopAtLimit(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::queryBase *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::queryBase const *","isStopAtLimit", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(argp1);
+  {
+    try {
+      result = (bool)((bzs::db::protocol::tdap::client::queryBase const *)arg1)->isStopAtLimit();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_bool(static_cast< bool >(result));
+  return vresult;
+fail:
   return Qnil;
 }
 
@@ -31661,6 +31802,55 @@ fail:
 }
 
 
+SWIGINTERN VALUE _wrap_activeTable_readMore(int nargs, VALUE *args, VALUE self) {
+  bzs::db::protocol::tdap::client::activeTable *arg1 =  0x00 ;
+  bzs::db::protocol::tdap::client::recordset *arg2 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 = 0 ;
+  int res2 = 0 ;
+
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  
+  //Get activeTable ptr
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::activeTable *","readMore", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::activeTable * >(argp1);
+
+  //Get recordset ptr
+  res2 = SWIG_ConvertPtr(args[0], &argp2, SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset,  0 );
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::recordset &","readMore", 2, args[0] )); 
+  }
+  if (!argp2) {
+    SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bzs::db::protocol::tdap::client::recordset &","readMore", 2, args[0])); 
+  }
+  arg2 = reinterpret_cast< bzs::db::protocol::tdap::client::recordset * >(argp2);
+
+  {
+    try {
+      arg1->readMore(*arg2);
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+    return self;
+  }
+
+fail:
+  Ruby_Format_OverloadedError( nargs+1, 11, "readMore", "    bzs::db::protocol::tdap::client::activeTable & join ");
+  return Qnil;
+
+}
+
+
 SWIGINTERN VALUE
 _wrap_activeTable_prepare__SWIG_0(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::activeTable *arg1 = (bzs::db::protocol::tdap::client::activeTable *) 0 ;
@@ -34427,6 +34617,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassTable.klass, "findLast", VALUEFUNC(_wrap_table_findLast), -1);
   rb_define_method(SwigClassTable.klass, "findNext", VALUEFUNC(_wrap_table_findNext), -1);
   rb_define_method(SwigClassTable.klass, "findPrev", VALUEFUNC(_wrap_table_findPrev), -1);
+  rb_define_method(SwigClassTable.klass, "statReasonOfFind", VALUEFUNC(_wrap_table_statReasonOfFind), -1);
+  rb_define_method(SwigClassTable.klass, "lastFindDirection", VALUEFUNC(_wrap_table_lastFindDirection), -1);
   rb_define_method(SwigClassTable.klass, "bookmarkFindCurrent", VALUEFUNC(_wrap_table_bookmarkFindCurrent), -1);
   rb_define_method(SwigClassTable.klass, "setFilter", VALUEFUNC(_wrap_table_setFilter), -1);
   rb_define_method(SwigClassTable.klass, "fieldNumByName", VALUEFUNC(_wrap_table_fieldNumByName), -1);
@@ -34485,6 +34677,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassQueryBase.klass, "getWhereToken", VALUEFUNC(_wrap_queryBase_getWhereToken), -1);
   rb_define_method(SwigClassQueryBase.klass, "setWhereToken", VALUEFUNC(_wrap_queryBase_setWhereToken), -1);
   rb_define_method(SwigClassQueryBase.klass, "reverseAliasName", VALUEFUNC(_wrap_queryBase_reverseAliasName), -1);
+  rb_define_method(SwigClassQueryBase.klass, "stopAtLimit", VALUEFUNC(_wrap_queryBase_stopAtLimit), -1);
+  rb_define_method(SwigClassQueryBase.klass, "isStopAtLimit", VALUEFUNC(_wrap_queryBase_isStopAtLimit), -1);
   SwigClassQueryBase.mark = 0;
   SwigClassQueryBase.trackObjects = 0;
   
@@ -34898,6 +35092,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassActiveTable.klass, "index", VALUEFUNC(_wrap_activeTable_index), -1);
   rb_define_method(SwigClassActiveTable.klass, "option", VALUEFUNC(_wrap_activeTable_option), -1);
   rb_define_method(SwigClassActiveTable.klass, "read", VALUEFUNC(_wrap_activeTable_read), -1);
+  rb_define_method(SwigClassActiveTable.klass, "readMore", VALUEFUNC(_wrap_activeTable_readMore), -1);
   rb_define_method(SwigClassActiveTable.klass, "prepare", VALUEFUNC(_wrap_activeTable_prepare), -1);
   rb_define_method(SwigClassActiveTable.klass, "join", VALUEFUNC(_wrap_activeTable_join), -1);
   rb_define_method(SwigClassActiveTable.klass, "outerJoin", VALUEFUNC(_wrap_activeTable_outerJoin), -1);

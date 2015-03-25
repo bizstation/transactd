@@ -592,6 +592,12 @@ class filter
         
     };
 
+    struct
+    {
+        bool m_stopAtLimit : 1;
+
+    };
+
     struct bufSize
     {
         bufSize():logic(0), seeks(0), select(0),retRowSize(0) {}
@@ -801,6 +807,8 @@ class filter
                          queryBase::combineCondition);
         m_withBookmark = q->isBookmarkAlso();
         m_cachedOptimize = q->getOptimize();
+        m_stopAtLimit = q->isStopAtLimit();
+
 
         if (q->isAll())
             addAllFields();
@@ -981,7 +989,7 @@ class filter
         : m_tb(tb), m_seeksWritedCount(0), m_extendBuflen(0), m_stat(0),
           m_preparedId(0),m_ignoreFields(false), m_seeksMode(false),
           m_useOptimize(true),m_withBookmark(true), m_hasManyJoin(false),
-          m_preparingMode(false),m_ddba(false)
+          m_preparingMode(false),m_ddba(false),m_stopAtLimit(false)
     {
         m_isTransactd = m_tb->isUseTransactd();
         m_ddba = m_isTransactd;
@@ -1271,6 +1279,8 @@ public:
            return true;
         return false;
     }
+
+    inline bool isStopAtLimit() const {return m_stopAtLimit; }
 
     bool checkFindDirection(ushort_td op)
     {

@@ -147,6 +147,12 @@ pq_handle activeTable::prepare(queryBase& q, bool serverPrepare)
     return m_imple->prepare(q, serverPrepare);
 }
 
+activeTable& activeTable::readMore(recordset& rs)
+{
+    m_imple->readMore(*rs.m_imple);
+    return *this;
+}
+
 activeTable& activeTable::read(recordset& rs, queryBase& q)
 {
     m_imple->read(*rs.m_imple, q);

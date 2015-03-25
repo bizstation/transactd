@@ -394,12 +394,12 @@ inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
             switch (fd.len)
             {
             case 4:
-                ret = *((float*)((char*)ptr + fd.pos));
+                ret = (__int64)*((float*)((char*)ptr + fd.pos));
                 break;
             case 8:
-                ret = *((double*)((char*)ptr + fd.pos));
+                ret = (__int64)*((double*)((char*)ptr + fd.pos));
             case 10: // long double
-                ret = *((long double*)((char*)ptr + fd.pos));
+                ret = (__int64)*((long double*)((char*)ptr + fd.pos));
                 break;
             }
             break;
@@ -1428,7 +1428,7 @@ __int64 field::getFV64() const
         case ft_mytimestamp:
             return (__int64) * ((__int64*)((char*)m_ptr + m_fd->pos));
         case ft_float:
-            return *((double*)((char*)m_ptr + m_fd->pos));
+            return (__int64) *((double*)((char*)m_ptr + m_fd->pos));
         }
         return 0;
     case 7:

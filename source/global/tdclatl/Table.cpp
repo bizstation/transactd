@@ -654,3 +654,16 @@ STDMETHODIMP CTableTd::FieldNumByName(BSTR Name, short* Value)
     *Value = m_tb->fieldNumByName(Name);
     return S_FALSE;
 }
+
+STDMETHODIMP CTableTd::get_StatReasonOfFind(short* Value)
+{
+    *Value = m_tb->statReasonOfFind();
+    return S_FALSE;
+}
+
+STDMETHODIMP CTableTd::get_LastFindDirection(short* Value)
+{
+    *Value = (short)m_tb->lastFindDirection();
+    return S_FALSE;
+}
+
