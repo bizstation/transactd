@@ -436,26 +436,6 @@ uchar_td table::charset() const
     return (*m_tableDef)->charsetIndex;
 }
 
-bool table::trimPadChar() const
-{
-    return m_fddefs->trimPadChar;
-}
-
-void table::setTrimPadChar(bool v)
-{
-    m_fddefs->trimPadChar = v;
-}
-
-bool table::usePadChar() const
-{
-    return m_fddefs->usePadChar;
-}
-
-void table::setUsePadChar(bool v)
-{
-    m_fddefs->usePadChar = v;
-}
-
 void* table::dataBak() const
 {
     return m_impl->dataBak;

@@ -53,8 +53,6 @@ private:
     struct
     {
         unsigned char myDateTimeValueByBtrv : 1;
-        unsigned char trimPadChar : 1;
-        unsigned char usePadChar : 1;
         unsigned char logicalToString : 1;
     };
     fieldShare(const fieldShare&); // no implememt

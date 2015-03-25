@@ -184,6 +184,12 @@ PACKAGE ushort_td
 /* Is field type string ? */
 PACKAGE bool isStringType(uchar_td type);
 
+/** @cond INTERNAL */
+#define PAD_CHAR_OPTION_SAVED   1
+#define USE_PAD_CHAR            2
+#define TRIM_PAD_CHAR           4
+/** @endcond */
+
 /* Mark of ** that BizStation Corp internal use only.
  */
 template <int N> struct fielddef_t
@@ -225,13 +231,13 @@ public:
 
 protected:
     uchar_td m_charsetIndex; // charctor set index of this field data
-    uint_td m_schemaCodePage;
-
+    ushort_td m_schemaCodePage;
+    ushort_td m_padCharOptions;
 public:
     FLAGS enableFlags; // ** enable flags. see below
 
 private:
-    inline void setSchemaCodePage(uint_td v) { m_schemaCodePage = v; };
+    inline void setSchemaCodePage(uint_td v) { m_schemaCodePage = (ushort_td)v; };
     friend class client::dbdef;
 };
 
@@ -552,6 +558,56 @@ public:
             ++hd->curRow;
         return blobBlock + size;
     }
+
+    inline void setPadCharDefaultSettings()
+    {
+        if (!padCharOptionSaved())
+        {
+            // For compatibility with conventional.
+            if ((type == ft_string) || (type == ft_wstring) ||
+                (type == ft_mychar) || (type == ft_mywchar))
+            {
+                m_padCharOptions |= USE_PAD_CHAR;
+                m_padCharOptions |= TRIM_PAD_CHAR;
+            }
+        }
+        else if ((type == ft_mychar) || (type == ft_mywchar))
+            m_padCharOptions |= USE_PAD_CHAR;
+    }
+
+    inline void setPadCharSettings(bool use, bool trim)
+    {
+        m_padCharOptions = 0;
+        m_padCharOptions |= PAD_CHAR_OPTION_SAVED;
+        if ((type == ft_mychar) || (type == ft_mywchar))
+        {
+            m_padCharOptions |= USE_PAD_CHAR;
+            if (trim)
+                m_padCharOptions |= TRIM_PAD_CHAR;
+        }    // For compatibility with conventional.
+        else if ((type == ft_string) || (type == ft_wstring))
+        {
+             if (use)
+                m_padCharOptions |= USE_PAD_CHAR;
+             if (trim)
+                m_padCharOptions |= TRIM_PAD_CHAR;
+        }
+    }
+
+    /* PadChar options are saved at schema.
+        This is for compatibility with conventional.*/
+    bool padCharOptionSaved() const
+    {
+        return (m_padCharOptions & PAD_CHAR_OPTION_SAVED) == PAD_CHAR_OPTION_SAVED;
+    }
+
+    /* When ft_string or ft_wstring, fill by pad char at write. */
+    bool usePadChar() const {return (m_padCharOptions & USE_PAD_CHAR) == USE_PAD_CHAR;};
+
+    /* When ft_string or ft_wstring or ft_mychar or  ft_mywchar,
+       remove pad char at read.*/
+    bool trimPadChar() const {return (m_padCharOptions & TRIM_PAD_CHAR) == TRIM_PAD_CHAR;};
+
 /** @endcond */
 };
 

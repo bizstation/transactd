@@ -65,8 +65,7 @@ struct Imple
 };
 
 fieldShare::fieldShare()
-    : m_imple(new Imple()), myDateTimeValueByBtrv(true), trimPadChar(true),
-      usePadChar(true), logicalToString(false)
+    : m_imple(new Imple()), myDateTimeValueByBtrv(true), logicalToString(false)
 {
 }
 
@@ -160,7 +159,11 @@ void fielddefs::addAllFileds(tabledef* def)
 {
     m_imple->fields.clear();
     for (int i = 0; i < def->fieldCount; ++i)
-        push_back(&def->fieldDefs[i]);
+    {
+        fielddef* fd = &def->fieldDefs[i];
+        fd->setPadCharDefaultSettings();
+        push_back(fd);
+    }
 }
 
 void fielddefs::push_back(const fielddef* p, bool rePosition)
@@ -472,16 +475,22 @@ void field::setFVA(const char* data)
     switch (m_fd->type)
     {
     case ft_string:
-        return store<stringStore, char, char>(p, data, *m_fd, m_fds->cv(),
-                                              m_fds->usePadChar);
+        if (m_fd->usePadChar())
+            return store<stringStore, char, char>(p, data, *m_fd, m_fds->cv(),
+                                         true);
+        return store<binaryStore, char, char>(p, data, *m_fd, m_fds->cv(),
+                                         true);
     case ft_note:
     case ft_zstring:
         return store<zstringStore, char, char>(p, data, *m_fd, m_fds->cv());
     case ft_wzstring:
         return store<wzstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
-        return store<wstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv(),
-                                                m_fds->usePadChar);
+        if (m_fd->usePadChar())
+            return store<wstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv(),
+                                          true);
+        return store<wbinaryStore, WCHAR, char>(p, data, *m_fd, m_fds->cv(),
+                                          true);
     case ft_mychar:
         return store<myCharStore, char, char>(p, data, *m_fd, m_fds->cv());
     case ft_myvarchar:
@@ -594,16 +603,22 @@ void field::setFVW(const wchar_t* data)
     switch (m_fd->type)
     {
     case ft_string:
-        return store<stringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv(),
-                                               m_fds->usePadChar);
+        if (m_fd->usePadChar())
+            return store<stringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv(),
+                                               true);
+        return store<binaryStore, char, WCHAR>(p, data, *m_fd, m_fds->cv(),
+                                               true);
     case ft_note:
     case ft_zstring:
         return store<zstringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_wzstring:
         return store<wzstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
-        return store<wstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv(),
-                                                 m_fds->usePadChar);
+        if (m_fd->usePadChar())
+            return store<wstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv(),
+                                                 true);
+        return store<wbinaryStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv(),
+                                                 true);
     case ft_mychar:
         return store<myCharStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_myvarchar:
@@ -1127,7 +1142,7 @@ const wchar_t* field::getFVWstr() const
     {
     case ft_string:
         return read<stringStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
-                                              m_fds->cv(), m_fds->trimPadChar);
+                                              m_fds->cv(), m_fd->trimPadChar());
     case ft_note:
     case ft_zstring:
         return read<zstringStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
@@ -1137,10 +1152,10 @@ const wchar_t* field::getFVWstr() const
                                                  m_fds->cv());
     case ft_wstring:
         return read<wstringStore, WCHAR, WCHAR>(
-            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fds->trimPadChar);
+            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->trimPadChar());
     case ft_mychar:
         return read<myCharStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
-                                              m_fds->cv(), m_fds->trimPadChar);
+                                              m_fds->cv(), m_fd->trimPadChar());
     case ft_myvarchar:
         return read<myVarCharStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
                                                  m_fds->cv());
@@ -1150,7 +1165,7 @@ const wchar_t* field::getFVWstr() const
                                                    *m_fd, m_fds->cv());
     case ft_mywchar:
         return read<myWcharStore, WCHAR, WCHAR>(
-            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fds->trimPadChar);
+            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->trimPadChar());
     case ft_mywvarchar:
         return read<myWvarCharStore, WCHAR, WCHAR>(data, m_fds->strBufs(),
                                                    *m_fd, m_fds->cv());
@@ -1274,7 +1289,7 @@ const char* field::getFVAstr() const
 
     case ft_string:
         return read<stringStore, char, char>(data, m_fds->strBufs(), *m_fd,
-                                             m_fds->cv(), m_fds->trimPadChar);
+                                             m_fds->cv(), m_fd->trimPadChar());
     case ft_note:
     case ft_zstring:
         return read<zstringStore, char, char>(data, m_fds->strBufs(), *m_fd,
@@ -1284,10 +1299,10 @@ const char* field::getFVAstr() const
                                                 m_fds->cv());
     case ft_wstring:
         return read<wstringStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
-                                               m_fds->cv(), m_fds->trimPadChar);
+                                               m_fds->cv(), m_fd->trimPadChar());
     case ft_mychar:
         return read<myCharStore, char, char>(data, m_fds->strBufs(), *m_fd,
-                                             m_fds->cv(), m_fds->trimPadChar);
+                                             m_fds->cv(), m_fd->trimPadChar());
     case ft_myvarchar:
         return read<myVarCharStore, char, char>(data, m_fds->strBufs(), *m_fd,
                                                 m_fds->cv());
@@ -1297,7 +1312,7 @@ const char* field::getFVAstr() const
                                                   m_fds->cv());
     case ft_mywchar:
         return read<myWcharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
-                                               m_fds->cv(), m_fds->trimPadChar);
+                                               m_fds->cv(), m_fd->trimPadChar());
     case ft_mywvarchar:
         return read<myWvarCharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
                                                   m_fds->cv());
@@ -1837,27 +1852,27 @@ inline int compNumberU24(const field& l, const field& r, char logType)
 
 inline int compMem(const field& l, const field& r, char logType)
 {
-    return memcmp((const char*)l.ptr(), (const char*)r.ptr(), l.len());
+    return memcmp((const char*)l.ptr(), (const char*)r.ptr(), r.len());
 }
 
 inline int compString(const field& l, const field& r, char logType)
 {
-    return strncmp((const char*)l.ptr(), (const char*)r.ptr(), l.len());
+    return strncmp((const char*)l.ptr(), (const char*)r.ptr(), r.len());
 }
 
 inline int compiString(const field& l, const field& r, char logType)
 {
-    return _strnicmp((const char*)l.ptr(), (const char*)r.ptr(), l.len());
+    return _strnicmp((const char*)l.ptr(), (const char*)r.ptr(), r.len());
 }
 
 inline int compWString(const field& l, const field& r, char logType)
 {
-    return wcsncmp16((char16_t*)l.ptr(), (char16_t*)r.ptr(), l.len());
+    return wcsncmp16((char16_t*)l.ptr(), (char16_t*)r.ptr(), r.len());
 }
 
 inline int compiWString(const field& l, const field& r, char logType)
 {
-    return wcsnicmp16((char16_t*)l.ptr(), (char16_t*)r.ptr(), l.len());
+    return wcsnicmp16((char16_t*)l.ptr(), (char16_t*)r.ptr(), r.len());
 }
 
 template <class T>
@@ -1983,18 +1998,29 @@ bool field::isCompPartAndMakeValue()
     bool ret = false;
     if (m_fd->isStringType())
     {
+        bool trim = m_fd->trimPadChar();
+        bool use = m_fd->usePadChar();
+        bool sp = (!trim && use);
+        if (sp)
+            m_fd->setPadCharSettings(false, true);
         _TCHAR* p = (_TCHAR*)getFVstr();
         if (p)
         {
             size_t n = _tcslen(p);
-            if (n && ((ret = (p[n - 1] == _T('*'))) != 0))
+            if (n)
             {
-                p[n - 1] = 0x00;
-                setFV(p);
+                if (p[n - 1] == _T('*'))
+                {
+                    p[n - 1] = 0x00;
+                    setFV(p);
+                    ret = true;
+                }
             }
         }
         else
             setFV(_T(""));
+        if (sp)
+            m_fd->setPadCharSettings(use, trim);
     }
     return ret;
 }

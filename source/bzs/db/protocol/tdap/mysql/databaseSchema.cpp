@@ -194,6 +194,8 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
             fd.type = convFieldType(src->fieldRealType(i), src->fieldFlags(i),
                                     isBinary(src->fieldCharset(i)),
                                     isUnicode(src->fieldCharset(i)));
+            bool usePadChar = ((fd.type == ft_mychar) || (fd.type == ft_mywchar)); 
+            fd.setPadCharSettings(usePadChar, true);
             fd.setCharsetIndex(charsetIndex(src->fieldCharset(i).csname));
             pos += fd.len;
             datalen =

@@ -19,6 +19,7 @@
 #pragma hdrstop
 #include "groupQuery.h"
 #include "recordsetImple.h"
+#include "filter.h"
 #include <boost/algorithm/string.hpp>
 
 #pragma package(smart_init)
@@ -235,6 +236,9 @@ void recordsetQuery::init(const fielddefs* fdinfo)
         unsigned char ct = getFilterLogicTypeCode(tokns[i + 1].c_str());
         if (!part)
             ct |= CMPLOGICAL_VAR_COMP_ALL;
+        const_cast<fielddef&>(m_imple->compFields[index]).len =
+                        compDataLen(m_imple->compFields[index],
+                                    (const uchar_td*)fd.ptr(), part);
 
         m_imple->compType.push_back(ct);
         if (i + 3 < (int)tokns.size())

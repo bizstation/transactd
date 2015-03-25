@@ -168,10 +168,6 @@ public:
 
     bool logicalToString() const;
     void setLogicalToString(bool v);
-    bool trimPadChar() const;
-    void setTrimPadChar(bool v);
-    bool usePadChar() const;
-    void setUsePadChar(bool v);
     void* optionalData() const;
     void setOptionalData(void* v);
     bool myDateTimeValueByBtrv() const;
