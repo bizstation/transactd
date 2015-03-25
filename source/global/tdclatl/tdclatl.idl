@@ -722,14 +722,6 @@ interface ITable : IDispatch
   HRESULT _stdcall LogicalToString([out, retval] VARIANT_BOOL* Value);
   [propput, id(0x000000F3)]
   HRESULT _stdcall LogicalToString([in] VARIANT_BOOL Value);
-  [propget, id(0x000000F4)]
-  HRESULT _stdcall TrimPadChar([out, retval] VARIANT_BOOL* Value);
-  [propput, id(0x000000F4)]
-  HRESULT _stdcall TrimPadChar([in] VARIANT_BOOL Value);
-  [propget, id(0x000000F5)]
-  HRESULT _stdcall UsePadChar([out, retval] VARIANT_BOOL* Value);
-  [propput, id(0x000000F5)]
-  HRESULT _stdcall UsePadChar([in] VARIANT_BOOL Value);
   [id(0x000000F6)]
   HRESULT _stdcall MoveBookmarksId([in] long Value);
   [propget, id(0x000000F7)]
@@ -913,9 +905,12 @@ interface IFieldDef : IDispatch
   HRESULT _stdcall SetLenByCharnum([in] unsigned short Value);
   [propget, id(0x00000015)]
   HRESULT _stdcall Index([out, retval] short* Value);
-
-
-
+  [id(0x00000016)]
+  HRESULT _stdcall SetPadCharSettings([in] VARIANT_BOOL set, [in] VARIANT_BOOL trim);
+  [propget, id(0x00000017)]
+  HRESULT _stdcall UsePadChar([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x00000018)]
+  HRESULT _stdcall TrimPadChar([out, retval] VARIANT_BOOL* Value);
 };
 [
 	object,

@@ -5353,6 +5353,124 @@ fail:
 }
 
 
+SWIGINTERN VALUE
+_wrap_fielddef_trimPadChar(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::fielddef *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddef, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::fielddef const *","trimPadChar", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::fielddef * >(argp1);
+  {
+    try {
+      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->trimPadChar();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_bool(static_cast< bool >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_fielddef_usePadChar(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::fielddef *arg1 = (bzs::db::protocol::tdap::fielddef *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddef, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::fielddef const *","usePadChar", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::fielddef * >(argp1);
+  {
+    try {
+      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->usePadChar();
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_From_bool(static_cast< bool >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_fielddef_setPadCharSettings(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::fielddef *arg1 = 0 ;
+  bool arg2 ;
+  bool arg3 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  bool val3 ;
+  int ecode3 = 0 ;
+  
+  if ((argc < 2) || (argc > 2)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddef, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::fielddef *","setUsePadChar", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::fielddef * >(argp1);
+  
+  ecode2 = SWIG_AsVal_bool(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","setPadCharSettings", 2, argv[0] ));
+  } 
+  arg2 = static_cast< bool >(val2);
+  
+  ecode3 = SWIG_AsVal_bool(argv[1], &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "bool","setPadCharSettings", 3, argv[1] ));
+  } 
+  arg3 = static_cast< bool >(val3);
+  
+  {
+    try {
+      (arg1)->setPadCharSettings(arg2, arg3);
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
 #ifdef HAVE_RB_DEFINE_ALLOC_FUNC
 SWIGINTERN VALUE
 _wrap_fielddef_allocate(VALUE self) {
@@ -12803,152 +12921,6 @@ _wrap_table_setLogicalToString(int argc, VALUE *argv, VALUE self) {
   {
     try {
       (arg1)->setLogicalToString(arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_table_trimPadChar(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bool result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::table const *","trimPadChar", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::table * >(argp1);
-  {
-    try {
-      result = (bool)((bzs::db::protocol::tdap::client::table const *)arg1)->trimPadChar();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_From_bool(static_cast< bool >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_table_setTrimPadChar(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
-  bool arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bool val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::table *","setTrimPadChar", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::table * >(argp1);
-  ecode2 = SWIG_AsVal_bool(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","setTrimPadChar", 2, argv[0] ));
-  } 
-  arg2 = static_cast< bool >(val2);
-  {
-    try {
-      (arg1)->setTrimPadChar(arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_table_usePadChar(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bool result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::table const *","usePadChar", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::table * >(argp1);
-  {
-    try {
-      result = (bool)((bzs::db::protocol::tdap::client::table const *)arg1)->usePadChar();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_From_bool(static_cast< bool >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_table_setUsePadChar(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
-  bool arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bool val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::table *","setUsePadChar", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::table * >(argp1);
-  ecode2 = SWIG_AsVal_bool(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","setUsePadChar", 2, argv[0] ));
-  } 
-  arg2 = static_cast< bool >(val2);
-  {
-    try {
-      (arg1)->setUsePadChar(arg2);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -31493,7 +31465,7 @@ SWIGINTERN VALUE _wrap_activeTable_readMore(int nargs, VALUE *args, VALUE self) 
   {
     try {
       result = recordset::create();
-	  arg1->readMore(*result);
+      arg1->readMore(*result);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -34070,6 +34042,9 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassFielddef.klass, "varLenBytes", VALUEFUNC(_wrap_fielddef_varLenBytes), -1);
   rb_define_method(SwigClassFielddef.klass, "blobLenBytes", VALUEFUNC(_wrap_fielddef_blobLenBytes), -1);
   rb_define_method(SwigClassFielddef.klass, "name", VALUEFUNC(_wrap_fielddef_name), -1);
+  rb_define_method(SwigClassFielddef.klass, "trimPadChar", VALUEFUNC(_wrap_fielddef_trimPadChar), -1);
+  rb_define_method(SwigClassFielddef.klass, "usePadChar", VALUEFUNC(_wrap_fielddef_usePadChar), -1);
+  rb_define_method(SwigClassFielddef.klass, "setPadCharSettings", VALUEFUNC(_wrap_fielddef_setPadCharSettings), -1);
   SwigClassFielddef.mark = 0;
   SwigClassFielddef.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_fielddef;
   SwigClassFielddef.trackObjects = 0;
@@ -34268,10 +34243,6 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassTable.klass, "blobFieldUsed", VALUEFUNC(_wrap_table_blobFieldUsed), -1);
   rb_define_method(SwigClassTable.klass, "logicalToString", VALUEFUNC(_wrap_table_logicalToString), -1);
   rb_define_method(SwigClassTable.klass, "setLogicalToString", VALUEFUNC(_wrap_table_setLogicalToString), -1);
-  rb_define_method(SwigClassTable.klass, "trimPadChar", VALUEFUNC(_wrap_table_trimPadChar), -1);
-  rb_define_method(SwigClassTable.klass, "setTrimPadChar", VALUEFUNC(_wrap_table_setTrimPadChar), -1);
-  rb_define_method(SwigClassTable.klass, "usePadChar", VALUEFUNC(_wrap_table_usePadChar), -1);
-  rb_define_method(SwigClassTable.klass, "setUsePadChar", VALUEFUNC(_wrap_table_setUsePadChar), -1);
   rb_define_method(SwigClassTable.klass, "optionalData", VALUEFUNC(_wrap_table_optionalData), -1);
   rb_define_method(SwigClassTable.klass, "setOptionalData", VALUEFUNC(_wrap_table_setOptionalData), -1);
   rb_define_method(SwigClassTable.klass, "myDateTimeValueByBtrv", VALUEFUNC(_wrap_table_myDateTimeValueByBtrv), -1);

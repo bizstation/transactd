@@ -275,3 +275,22 @@ STDMETHODIMP CFieldDef::get_Index(short* Value)
     *Value = m_index;
     return S_OK;
 }
+
+
+STDMETHODIMP CFieldDef::SetPadCharSettings(VARIANT_BOOL set, VARIANT_BOOL trim)
+{
+	fielddef()->setPadCharSettings(set, trim);
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_UsePadChar(VARIANT_BOOL* Value)
+{
+	*Value = fielddef()->usePadChar();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_TrimPadChar(VARIANT_BOOL* Value)
+{
+	*Value = fielddef()->trimPadChar();
+    return S_OK;
+}

@@ -456,6 +456,33 @@ public:
         return dataLen(ptr);
     }
 
+	inline void setPadCharSettings(bool set, bool trim)
+    {
+        m_padCharOptions = 0;
+        m_padCharOptions |= PAD_CHAR_OPTION_SAVED;
+        if ((type == ft_mychar) || (type == ft_mywchar))
+        {
+            m_padCharOptions |= USE_PAD_CHAR;
+            if (trim)
+                m_padCharOptions |= TRIM_PAD_CHAR;
+        }    // For compatibility with conventional.
+        else if ((type == ft_string) || (type == ft_wstring))
+        {
+             if (set)
+                m_padCharOptions |= USE_PAD_CHAR;
+             if (trim)
+                m_padCharOptions |= TRIM_PAD_CHAR;
+        }
+    }
+	
+	/* When ft_string or ft_wstring, fill by pad char at write. */
+    bool usePadChar() const {return (m_padCharOptions & USE_PAD_CHAR) == USE_PAD_CHAR;}
+
+    /* When ft_string or ft_wstring or ft_mychar or  ft_mywchar,
+       remove pad char at read.*/
+    bool trimPadChar() const {return (m_padCharOptions & TRIM_PAD_CHAR) == TRIM_PAD_CHAR;}
+
+
 /** @cond INTERNAL */
     /* copy key data for send to mysql
      *  return next copy address.
@@ -575,38 +602,12 @@ public:
             m_padCharOptions |= USE_PAD_CHAR;
     }
 
-    inline void setPadCharSettings(bool use, bool trim)
-    {
-        m_padCharOptions = 0;
-        m_padCharOptions |= PAD_CHAR_OPTION_SAVED;
-        if ((type == ft_mychar) || (type == ft_mywchar))
-        {
-            m_padCharOptions |= USE_PAD_CHAR;
-            if (trim)
-                m_padCharOptions |= TRIM_PAD_CHAR;
-        }    // For compatibility with conventional.
-        else if ((type == ft_string) || (type == ft_wstring))
-        {
-             if (use)
-                m_padCharOptions |= USE_PAD_CHAR;
-             if (trim)
-                m_padCharOptions |= TRIM_PAD_CHAR;
-        }
-    }
-
     /* PadChar options are saved at schema.
         This is for compatibility with conventional.*/
     bool padCharOptionSaved() const
     {
         return (m_padCharOptions & PAD_CHAR_OPTION_SAVED) == PAD_CHAR_OPTION_SAVED;
     }
-
-    /* When ft_string or ft_wstring, fill by pad char at write. */
-    bool usePadChar() const {return (m_padCharOptions & USE_PAD_CHAR) == USE_PAD_CHAR;};
-
-    /* When ft_string or ft_wstring or ft_mychar or  ft_mywchar,
-       remove pad char at read.*/
-    bool trimPadChar() const {return (m_padCharOptions & TRIM_PAD_CHAR) == TRIM_PAD_CHAR;};
 
 /** @endcond */
 };

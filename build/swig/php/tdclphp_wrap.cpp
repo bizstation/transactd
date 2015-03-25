@@ -4834,6 +4834,115 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_fielddef_trimPadChar) {
+  bzs::db::protocol::tdap::fielddef *arg1 = 0;
+  zval **args[1];
+  bool result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddef, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_trimPadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddef");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->trimPadChar();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_fielddef_usePadChar) {
+  bzs::db::protocol::tdap::fielddef *arg1 = (bzs::db::protocol::tdap::fielddef *) 0 ;
+  zval **args[1];
+  bool result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddef, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_usePadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddef");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->usePadChar();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_fielddef_setPadCharSettings) {
+  bzs::db::protocol::tdap::fielddef *arg1 = (bzs::db::protocol::tdap::fielddef *) 0 ;
+  bool arg2 ;
+  bool arg3 ;
+  zval **args[3];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddef, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_setUsePadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddef");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,2,CONVERT_BOOL_IN@*/
+  convert_to_boolean_ex(args[1]);
+  arg2 = (bool) Z_LVAL_PP(args[1]);
+  convert_to_boolean_ex(args[2]);
+  arg3 = (bool) Z_LVAL_PP(args[2]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      (arg1)->setPadCharSettings(arg2, arg3);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_new_fielddef) {
   bzs::db::protocol::tdap::fielddef *result = 0 ;
   
@@ -11950,150 +12059,6 @@ ZEND_NAMED_FUNCTION(_wrap_table_setLogicalToString) {
   {
     try {
       (arg1)->setLogicalToString(arg2);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_table_trimPadChar) {
-  bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
-  zval **args[1];
-  bool result;
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_trimPadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      result = (bool)((bzs::db::protocol::tdap::client::table const *)arg1)->trimPadChar();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  {
-    ZVAL_BOOL(return_value,(result)?1:0);
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_table_setTrimPadChar) {
-  bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
-  bool arg2 ;
-  zval **args[2];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setTrimPadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,2,CONVERT_BOOL_IN@*/
-  convert_to_boolean_ex(args[1]);
-  arg2 = (bool) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  {
-    try {
-      (arg1)->setTrimPadChar(arg2);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_table_usePadChar) {
-  bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
-  zval **args[1];
-  bool result;
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_usePadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      result = (bool)((bzs::db::protocol::tdap::client::table const *)arg1)->usePadChar();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  {
-    ZVAL_BOOL(return_value,(result)?1:0);
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_table_setUsePadChar) {
-  bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
-  bool arg2 ;
-  zval **args[2];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setUsePadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,2,CONVERT_BOOL_IN@*/
-  convert_to_boolean_ex(args[1]);
-  arg2 = (bool) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  {
-    try {
-      (arg1)->setUsePadChar(arg2);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -31622,6 +31587,17 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_name, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_trimpadchar, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_usepadchar, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_setpadcharsettings, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_fielddef, 0, 0, 0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_tabledef, 0, 0, 0)
@@ -32101,20 +32077,6 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_logicaltostring, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_setlogicaltostring, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_trimpadchar, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_settrimpadchar, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_usepadchar, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_setusepadchar, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -33412,6 +33374,9 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(fielddef_varlenbytes,_wrap_fielddef_varLenBytes,swig_arginfo_fielddef_varlenbytes)
  SWIG_ZEND_NAMED_FE(fielddef_bloblenbytes,_wrap_fielddef_blobLenBytes,swig_arginfo_fielddef_bloblenbytes)
  SWIG_ZEND_NAMED_FE(fielddef_name,_wrap_fielddef_name,swig_arginfo_fielddef_name)
+ SWIG_ZEND_NAMED_FE(fielddef_trimpadchar,_wrap_fielddef_trimPadChar,swig_arginfo_fielddef_trimpadchar)
+ SWIG_ZEND_NAMED_FE(fielddef_usepadchar,_wrap_fielddef_usePadChar,swig_arginfo_fielddef_usepadchar)
+ SWIG_ZEND_NAMED_FE(fielddef_setpadcharsettings,_wrap_fielddef_setPadCharSettings,swig_arginfo_fielddef_setpadcharsettings)
  SWIG_ZEND_NAMED_FE(new_fielddef,_wrap_new_fielddef,swig_arginfo_new_fielddef)
  SWIG_ZEND_NAMED_FE(new_tabledef,_wrap_new_tabledef,swig_arginfo_new_tabledef)
  SWIG_ZEND_NAMED_FE(tabledef_cleanup,_wrap_tabledef_cleanup,swig_arginfo_tabledef_cleanup)
@@ -33550,10 +33515,6 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(table_blobfieldused,_wrap_table_blobFieldUsed,swig_arginfo_table_blobfieldused)
  SWIG_ZEND_NAMED_FE(table_logicaltostring,_wrap_table_logicalToString,swig_arginfo_table_logicaltostring)
  SWIG_ZEND_NAMED_FE(table_setlogicaltostring,_wrap_table_setLogicalToString,swig_arginfo_table_setlogicaltostring)
- SWIG_ZEND_NAMED_FE(table_trimpadchar,_wrap_table_trimPadChar,swig_arginfo_table_trimpadchar)
- SWIG_ZEND_NAMED_FE(table_settrimpadchar,_wrap_table_setTrimPadChar,swig_arginfo_table_settrimpadchar)
- SWIG_ZEND_NAMED_FE(table_usepadchar,_wrap_table_usePadChar,swig_arginfo_table_usepadchar)
- SWIG_ZEND_NAMED_FE(table_setusepadchar,_wrap_table_setUsePadChar,swig_arginfo_table_setusepadchar)
  SWIG_ZEND_NAMED_FE(table_optionaldata,_wrap_table_optionalData,swig_arginfo_table_optionaldata)
  SWIG_ZEND_NAMED_FE(table_setoptionaldata,_wrap_table_setOptionalData,swig_arginfo_table_setoptionaldata)
  SWIG_ZEND_NAMED_FE(table_mydatetimevaluebybtrv,_wrap_table_myDateTimeValueByBtrv,swig_arginfo_table_mydatetimevaluebybtrv)

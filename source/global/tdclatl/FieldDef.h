@@ -103,4 +103,8 @@ public:
     STDMETHOD(get_CharNum)(unsigned int* Value);
     STDMETHOD(SetLenByCharnum)(unsigned short Value);
     STDMETHOD(get_Index)(short* Value);
+	STDMETHOD(SetPadCharSettings)(VARIANT_BOOL set, VARIANT_BOOL trim);
+	STDMETHOD(get_UsePadChar)(VARIANT_BOOL* Value);
+	STDMETHOD(get_TrimPadChar)(VARIANT_BOOL* Value);
+
 };

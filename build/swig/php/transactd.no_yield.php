@@ -849,6 +849,18 @@ class fielddef extends fielddef_t_my {
 	function name() {
 		return fielddef_name($this->_cPtr);
 	}
+	
+	function trimPadChar() {
+		return fielddef_trimPadChar($this->_cPtr);
+	}
+
+	function usePadChar() {
+		return fielddef_usePadChar($this->_cPtr);
+	}
+
+	function setPadCharSettings($set, $trim) {
+		fielddef_setPadCharSettings($this->_cPtr, $set, $trim);
+	}
 
 	function __construct($res=null) {
 		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__fielddef') {
@@ -1461,22 +1473,6 @@ class table extends nstable {
 
 	function setLogicalToString($v) {
 		table_setLogicalToString($this->_cPtr,$v);
-	}
-
-	function trimPadChar() {
-		return table_trimPadChar($this->_cPtr);
-	}
-
-	function setTrimPadChar($v) {
-		table_setTrimPadChar($this->_cPtr,$v);
-	}
-
-	function usePadChar() {
-		return table_usePadChar($this->_cPtr);
-	}
-
-	function setUsePadChar($v) {
-		table_setUsePadChar($this->_cPtr,$v);
 	}
 
 	function optionalData() {

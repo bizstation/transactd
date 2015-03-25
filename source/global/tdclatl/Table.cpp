@@ -549,30 +549,6 @@ STDMETHODIMP CTableTd::put_LogicalToString(VARIANT_BOOL Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_TrimPadChar(VARIANT_BOOL* Value)
-{
-    *Value = m_tb->trimPadChar();
-    return S_OK;
-}
-
-STDMETHODIMP CTableTd::put_TrimPadChar(VARIANT_BOOL Value)
-{
-    m_tb->setTrimPadChar(Value);
-    return S_OK;
-}
-
-STDMETHODIMP CTableTd::get_UsePadChar(VARIANT_BOOL* Value)
-{
-    *Value = m_tb->usePadChar();
-    return S_OK;
-}
-
-STDMETHODIMP CTableTd::put_UsePadChar(VARIANT_BOOL Value)
-{
-    m_tb->setUsePadChar(Value);
-    return S_OK;
-}
-
 STDMETHODIMP CTableTd::MoveBookmarksId(long Value)
 {
     m_tb->moveBookmarksId(Value);

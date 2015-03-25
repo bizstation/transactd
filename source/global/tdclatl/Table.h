@@ -134,10 +134,6 @@ public:
     STDMETHOD(get_RecordHash)(unsigned int* Value);
     STDMETHOD(get_LogicalToString)(VARIANT_BOOL* Value);
     STDMETHOD(put_LogicalToString)(VARIANT_BOOL Value);
-    STDMETHOD(get_TrimPadChar)(VARIANT_BOOL* Value);
-    STDMETHOD(put_TrimPadChar)(VARIANT_BOOL Value);
-    STDMETHOD(get_UsePadChar)(VARIANT_BOOL* Value);
-    STDMETHOD(put_UsePadChar)(VARIANT_BOOL Value);
     STDMETHOD(MoveBookmarksId)(long Value);
     STDMETHOD(get_MyDateTimeValueByBtrv)(VARIANT_BOOL* Value);
     STDMETHOD(get_ValiableFormatType)(VARIANT_BOOL* Value);
