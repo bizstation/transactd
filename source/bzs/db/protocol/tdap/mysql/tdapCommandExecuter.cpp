@@ -1203,11 +1203,15 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             getRowLockMode(opTrn, &lck);
             m_tb = getTable(req.pbk->handle, lck.lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
             m_tb->setRowLock(&lck);
-            char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-            if (!m_tb->keynumCheck(keynum))
+            char keynum = req.keyNum;
+            if (keynum != -1)
             {
-                req.result = STATUS_INVALID_KEYNUM;
-                break;
+                keynum = m_tb->keyNumByMakeOrder(req.keyNum);
+                if (!m_tb->keynumCheck(keynum))
+                {
+                    req.result = STATUS_INVALID_KEYNUM;
+                    break;
+                }
             }
             m_tb->movePos((uchar*)req.data, keynum);
             if (lck.lock && m_tb->stat())
