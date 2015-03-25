@@ -154,6 +154,7 @@ protected:
     class groupFuncBaseImple* m_imple;
     virtual void initResultVariable(int index);
     virtual void doCalc(const row_ptr& row, int groupIndex);
+    virtual void doReset();
     void init(const fielddefs* fdinfo);
 
 public:
@@ -269,6 +270,35 @@ public:
     max(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     groupFuncBase* clone();
     static max* create(const fieldNames& targetNames,
+                       const _TCHAR* resultName = NULL);
+};
+
+
+class DLLLIB first : public groupFuncBase
+{
+    bool m_readed;
+protected:
+    void doCalc(const row_ptr& row, int index);
+    void doReset();
+public:
+    first() {}
+    first(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
+    groupFuncBase* clone();
+    static first* create(const fieldNames& targetNames,
+                       const _TCHAR* resultName = NULL);
+};
+
+
+class DLLLIB last : public groupFuncBase
+{
+protected:
+    void doCalc(const row_ptr& row, int index);
+
+public:
+    last() {}
+    last(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
+    groupFuncBase* clone();
+    static last* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
 

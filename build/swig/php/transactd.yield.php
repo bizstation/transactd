@@ -3168,6 +3168,84 @@ class sum extends groupFuncBase {
 	}
 }
 
+class first extends groupFuncBase {
+	public $_cPtr=null;
+	protected $targetNames = null;
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		groupFuncBase::__set($var,$value);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return groupFuncBase::__get($var);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return groupFuncBase::__isset($var);
+	}
+
+	function __clone() {
+		$r=first___clone($this->_cPtr);
+		$this->_cPtr = $r;
+		return $this;
+	}
+
+	function __construct($targetNames,$resultName=null) {
+		if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__db__protocol__tdap__client__first') {
+			$this->_cPtr=$targetNames;
+			return;
+		}
+		$this->targetNames = $targetNames;
+		$this->resultName = $resultName;
+		switch (func_num_args()) {
+		case 1: $this->_cPtr=new_first($this->targetNames); break;
+		default: $this->_cPtr=new_first($this->targetNames,$this->resultName);
+		}
+	}
+}
+
+class last extends groupFuncBase {
+	public $_cPtr=null;
+	protected $targetNames = null;
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		groupFuncBase::__set($var,$value);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return groupFuncBase::__get($var);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return groupFuncBase::__isset($var);
+	}
+
+	function __clone() {
+		$r=last___clone($this->_cPtr);
+		$this->_cPtr = $r;
+		return $this;
+	}
+
+	function __construct($targetNames,$resultName=null) {
+		if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__db__protocol__tdap__client__last') {
+			$this->_cPtr=$targetNames;
+			return;
+		}
+		$this->targetNames = $targetNames;
+		$this->resultName = $resultName;
+		switch (func_num_args()) {
+		case 1: $this->_cPtr=new_last($this->targetNames); break;
+		default: $this->_cPtr=new_last($this->targetNames,$this->resultName);
+		}
+	}
+}
+
 class count extends groupFuncBase {
 	public $_cPtr=null;
 

@@ -1119,8 +1119,11 @@ static void SWIG_Php_SetModule(swig_module_info *pointer) {
 #define SWIGTYPE_p_unsigned_short swig_types[89]
 #define SWIGTYPE_p_value_type swig_types[90]
 #define SWIGTYPE_p_void swig_types[91]
-static swig_type_info *swig_types[93];
-static swig_module_info swig_module = {swig_types, 92, 0, 0, 0, 0};
+#define SWIGTYPE_p_bzs__db__protocol__tdap__client__first swig_types[92]
+#define SWIGTYPE_p_bzs__db__protocol__tdap__client__last swig_types[93]
+
+static swig_type_info *swig_types[95];
+static swig_module_info swig_module = {swig_types, 94, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1392,6 +1395,18 @@ SWIGINTERN bzs::db::protocol::tdap::client::sum *new_bzs_db_protocol_tdap_client
 SWIGINTERN void delete_bzs_db_protocol_tdap_client_sum(bzs::db::protocol::tdap::client::sum *self){
     self->release();
   }
+SWIGINTERN bzs::db::protocol::tdap::client::first *new_bzs_db_protocol_tdap_client_first__SWIG_0(bzs::db::protocol::tdap::client::fieldNames const &targetNames,_TCHAR const *resultName=NULL){
+    return bzs::db::protocol::tdap::client::first::create(targetNames, resultName);
+  }
+SWIGINTERN void delete_bzs_db_protocol_tdap_client_first(bzs::db::protocol::tdap::client::first *self){
+    self->release();
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::last *new_bzs_db_protocol_tdap_client_last__SWIG_0(bzs::db::protocol::tdap::client::fieldNames const &targetNames,_TCHAR const *resultName=NULL){
+    return bzs::db::protocol::tdap::client::last::create(targetNames, resultName);
+  }
+SWIGINTERN void delete_bzs_db_protocol_tdap_client_last(bzs::db::protocol::tdap::client::last *self){
+    self->release();
+  }
 SWIGINTERN bzs::db::protocol::tdap::client::count *new_bzs_db_protocol_tdap_client_count(_TCHAR const *resultName){
     return bzs::db::protocol::tdap::client::count::create(resultName);
   }
@@ -1528,6 +1543,12 @@ static void *_p_bzs__db__protocol__tdap__client__sumTo_p_bzs__db__protocol__tdap
 static void *_p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__groupFuncBase(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((bzs::db::protocol::tdap::client::groupFuncBase *)  ((bzs::db::protocol::tdap::client::count *) x));
 }
+static void *_p_bzs__db__protocol__tdap__client__firstTo_p_bzs__db__protocol__tdap__client__groupFuncBase(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((bzs::db::protocol::tdap::client::groupFuncBase *)  ((bzs::db::protocol::tdap::client::first *) x));
+}
+static void *_p_bzs__db__protocol__tdap__client__lastTo_p_bzs__db__protocol__tdap__client__groupFuncBase(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((bzs::db::protocol::tdap::client::groupFuncBase *)  ((bzs::db::protocol::tdap::client::last *) x));
+}
 static void *_p_bzs__db__protocol__tdap__client__memoryRecordTo_p_bzs__db__protocol__tdap__client__fieldsBase(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((bzs::db::protocol::tdap::client::fieldsBase *)  ((bzs::db::protocol::tdap::client::memoryRecord *) x));
 }
@@ -1594,6 +1615,13 @@ static void *_p_bzs__db__protocol__tdap__client__groupFuncBaseTo_p_bzs__db__prot
 static void *_p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__recordsetQuery(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((bzs::db::protocol::tdap::client::recordsetQuery *) (bzs::db::protocol::tdap::client::groupFuncBase *) ((bzs::db::protocol::tdap::client::count *) x));
 }
+static void *_p_bzs__db__protocol__tdap__client__firstTo_p_bzs__db__protocol__tdap__client__recordsetQuery(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((bzs::db::protocol::tdap::client::recordsetQuery *) (bzs::db::protocol::tdap::client::groupFuncBase *) ((bzs::db::protocol::tdap::client::first *) x));
+}
+static void *_p_bzs__db__protocol__tdap__client__lastTo_p_bzs__db__protocol__tdap__client__recordsetQuery(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((bzs::db::protocol::tdap::client::recordsetQuery *) (bzs::db::protocol::tdap::client::groupFuncBase *) ((bzs::db::protocol::tdap::client::last *) x));
+}
+
 static swig_type_info _swigt__bool = {"_bool", "bool", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__int = {"_int", "int", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_HWND = {"_p_HWND", "HWND *", 0, 0, (void*)0, 0};
@@ -1628,9 +1656,11 @@ static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__filterdIterator
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_indexRvNavi_t_t = {"_p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_indexRvNavi_t_t", "bzs::db::protocol::tdap::client::filterdIterator< bzs::db::protocol::tdap::client::tableIterator< indexRvNavi > > *|bzs::db::protocol::tdap::client::filterdIndexRvIterator *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepNavi_t_t = {"_p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepNavi_t_t", "bzs::db::protocol::tdap::client::filterdIterator< bzs::db::protocol::tdap::client::tableIterator< stepNavi > > *|bzs::db::protocol::tdap::client::filterdStepIterator *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepRvNavi_t_t = {"_p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepRvNavi_t_t", "bzs::db::protocol::tdap::client::filterdIterator< bzs::db::protocol::tdap::client::tableIterator< stepRvNavi > > *|bzs::db::protocol::tdap::client::filterdStepRvIterator *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__first = {"_p_bzs__db__protocol__tdap__client__first", "bzs::db::protocol::tdap::client::first *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__groupFuncBase = {"_p_bzs__db__protocol__tdap__client__groupFuncBase", "bzs::db::protocol::tdap::client::groupFuncBase *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__groupQuery = {"_p_bzs__db__protocol__tdap__client__groupQuery", "bzs::db::protocol::tdap::client::groupQuery *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__idatabaseManager = {"_p_bzs__db__protocol__tdap__client__idatabaseManager", "bzs::db::protocol::tdap::client::idatabaseManager *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__last = {"_p_bzs__db__protocol__tdap__client__last", "bzs::db::protocol::tdap::client::last *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__max = {"_p_bzs__db__protocol__tdap__client__max", "bzs::db::protocol::tdap::client::max *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__memoryRecord = {"_p_bzs__db__protocol__tdap__client__memoryRecord", "bzs::db::protocol::tdap::client::memoryRecord *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__min = {"_p_bzs__db__protocol__tdap__client__min", "bzs::db::protocol::tdap::client::min *", 0, 0, (void*)0, 0};
@@ -1780,6 +1810,9 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_unsigned_short,
   &_swigt__p_value_type,
   &_swigt__p_void,
+  &_swigt__p_bzs__db__protocol__tdap__client__first,
+  &_swigt__p_bzs__db__protocol__tdap__client__last,
+
 };
 
 static swig_cast_info _swigc__bool[] = {  {&_swigt__bool, 0, 0, 0},{0, 0, 0, 0}};
@@ -1816,7 +1849,7 @@ static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__filterdIterator
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_indexRvNavi_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_indexRvNavi_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepNavi_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepNavi_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepRvNavi_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepRvNavi_t_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__groupFuncBase[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sum, _p_bzs__db__protocol__tdap__client__sumTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, _p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__groupFuncBase[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sum, _p_bzs__db__protocol__tdap__client__sumTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, _p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__first, _p_bzs__db__protocol__tdap__client__firstTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},{&_swigt__p_bzs__db__protocol__tdap__client__last, _p_bzs__db__protocol__tdap__client__lastTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0}, {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__groupQuery[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__groupQuery, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__idatabaseManager[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__idatabaseManager, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__pooledDbManager, _p_bzs__db__protocol__tdap__client__pooledDbManagerTo_p_bzs__db__protocol__tdap__client__idatabaseManager, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__max[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__max, 0, 0, 0},{0, 0, 0, 0}};
@@ -1826,10 +1859,10 @@ static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__nsdatabase[] = 
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__nstable[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__table, _p_bzs__db__protocol__tdap__client__tableTo_p_bzs__db__protocol__tdap__client__nstable, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__dbdef, _p_bzs__db__protocol__tdap__client__dbdefTo_p_bzs__db__protocol__tdap__client__nstable, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__nstable, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__pooledDbManager[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__pooledDbManager, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__preparedQuery[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__preparedQuery, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__query[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, _p_bzs__db__protocol__tdap__client__recordsetQueryTo_p_bzs__db__protocol__tdap__client__query, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__query, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__queryBase[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__query, _p_bzs__db__protocol__tdap__client__queryTo_p_bzs__db__protocol__tdap__client__queryBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__queryBase, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__query[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, _p_bzs__db__protocol__tdap__client__recordsetQueryTo_p_bzs__db__protocol__tdap__client__query, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__first, 0, 0, 0},{&_swigt__p_bzs__db__protocol__tdap__client__last, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__query, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__queryBase[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__first, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__last, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__query, _p_bzs__db__protocol__tdap__client__queryTo_p_bzs__db__protocol__tdap__client__queryBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__queryBase, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__recordset[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordset, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__recordsetQuery[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, _p_bzs__db__protocol__tdap__client__sumTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, _p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, _p_bzs__db__protocol__tdap__client__groupFuncBaseTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__recordsetQuery[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, _p_bzs__db__protocol__tdap__client__sumTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__first, _p_bzs__db__protocol__tdap__client__firstTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__last, _p_bzs__db__protocol__tdap__client__lastTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, _p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, _p_bzs__db__protocol__tdap__client__groupFuncBaseTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__autoMemory[] = {{&_swigt__p_bzs__db__protocol__tdap__client__autoMemory, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__refarymem[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__refarymem, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__fieldsBase, _p_bzs__db__protocol__tdap__client__fieldsBaseTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__memoryRecord, _p_bzs__db__protocol__tdap__client__memoryRecordTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__writableRecord, _p_bzs__db__protocol__tdap__client__writableRecordTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__autoMemory, _p_bzs__db__protocol__tdap__client__autoMemoryTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__fields, _p_bzs__db__protocol__tdap__client__fieldsTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -1968,6 +2001,9 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_unsigned_short,
   _swigc__p_value_type,
   _swigc__p_void,
+  _swigc__p_bzs__db__protocol__tdap__client__first,
+  _swigc__p_bzs__db__protocol__tdap__client__last,
+
 };
 
 
@@ -2004,6 +2040,8 @@ static int le_swig__p_bzs__db__protocol__tdap__client__count=0; /* handle for co
 static int le_swig__p_void=0; /* handle for _p_void */
 static int le_swig__p_p_void=0; /* handle for _p_p_void */
 static int le_swig__p_bzs__db__protocol__tdap__client__sum=0; /* handle for sum */
+static int le_swig__p_bzs__db__protocol__tdap__client__first=0; /* handle for first */
+static int le_swig__p_bzs__db__protocol__tdap__client__last=0; /* handle for last */
 static int le_swig__p_int=0; /* handle for _p_int */
 static int le_swig__p_bzs__db__protocol__tdap__client__avg=0; /* handle for avg */
 static int le_swig__p_bzs__db__protocol__tdap__client__queryBase=0; /* handle for queryBase */
@@ -26862,6 +26900,350 @@ fail:
 }
 
 
+cZEND_NAMED_FUNCTION(_wrap_first___clone) {
+  bzs::db::protocol::tdap::client::first *arg1 = (bzs::db::protocol::tdap::client::first *) 0 ;
+  zval **args[1];
+  bzs::db::protocol::tdap::client::groupFuncBase *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__first, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of first___clone. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__first");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::groupFuncBase *)(arg1)->clone();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_first__SWIG_0) {
+  bzs::db::protocol::tdap::client::fieldNames *arg1 = 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  zval **args[2];
+  bzs::db::protocol::tdap::client::first *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) < 0 || arg1 == NULL) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of new_first. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames");
+    }
+  }
+  {
+    if ((*args[1])->type != IS_NULL) {
+      convert_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::first *)new_bzs_db_protocol_tdap_client_first__SWIG_0((bzs::db::protocol::tdap::client::fieldNames const &)*arg1,(char const *)arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__first, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_first__SWIG_1) {
+  bzs::db::protocol::tdap::client::fieldNames *arg1 = 0 ;
+  zval **args[1];
+  bzs::db::protocol::tdap::client::first *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) < 0 || arg1 == NULL) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of new_first. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames");
+    }
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::first *)new_bzs_db_protocol_tdap_client_first__SWIG_0((bzs::db::protocol::tdap::client::fieldNames const &)*arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__first, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_first) {
+  int argc;
+  zval **argv[2];
+  
+  argc = ZEND_NUM_ARGS();
+  zend_get_parameters_array_ex(argc,argv);
+  if (argc == 1) {
+    int _v;
+    {
+      void *tmp;
+      _v = (SWIG_ConvertPtr(*argv[0], (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+    }
+    if (_v) {
+      _wrap_new_first__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    {
+      void *tmp;
+      _v = (SWIG_ConvertPtr(*argv[0], (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+    }
+    if (_v) {
+      {
+        _v = 1;
+      }
+      if (_v) {
+        _wrap_new_first__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
+      }
+    }
+  }
+  
+  SWIG_ErrorCode() = E_ERROR;
+  SWIG_ErrorMsg() = "No matching function for overloaded 'new_first'";
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+/* This function is designed to be called by the zend list destructors */
+/* to typecast and do the actual destruction */
+static void __wrap_delete_first(zend_rsrc_list_entry *rsrc, const char *type_name TSRMLS_DC) {
+  swig_object_wrapper *value=(swig_object_wrapper *) rsrc->ptr ;
+  void *ptr=value->ptr ;
+  int newobject=value->newobject ;
+  bzs::db::protocol::tdap::client::first *arg1 = (bzs::db::protocol::tdap::client::first *) 0 ;
+  
+  efree(value);
+  if (! newobject) return; /* can't delete it! */
+  arg1 = (bzs::db::protocol::tdap::client::first *)SWIG_ZTS_ConvertResourceData(ptr,type_name,SWIGTYPE_p_bzs__db__protocol__tdap__client__first TSRMLS_CC);
+  if (! arg1) zend_error(E_ERROR, "bzs::db::protocol::tdap::client::first resource already free'd");
+  {
+    try {
+      delete_bzs_db_protocol_tdap_client_first(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_last___clone) {
+  bzs::db::protocol::tdap::client::last *arg1 = (bzs::db::protocol::tdap::client::last *) 0 ;
+  zval **args[1];
+  bzs::db::protocol::tdap::client::groupFuncBase *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__last, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of last___clone. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__last");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::groupFuncBase *)(arg1)->clone();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_last__SWIG_0) {
+  bzs::db::protocol::tdap::client::fieldNames *arg1 = 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  zval **args[2];
+  bzs::db::protocol::tdap::client::last *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) < 0 || arg1 == NULL) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of new_last. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames");
+    }
+  }
+  {
+    if ((*args[1])->type != IS_NULL) {
+      convert_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::last *)new_bzs_db_protocol_tdap_client_last__SWIG_0((bzs::db::protocol::tdap::client::fieldNames const &)*arg1,(char const *)arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__last, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_last__SWIG_1) {
+  bzs::db::protocol::tdap::client::fieldNames *arg1 = 0 ;
+  zval **args[1];
+  bzs::db::protocol::tdap::client::last *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) < 0 || arg1 == NULL) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of new_last. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames");
+    }
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::last *)new_bzs_db_protocol_tdap_client_last__SWIG_0((bzs::db::protocol::tdap::client::fieldNames const &)*arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__last, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_last) {
+  int argc;
+  zval **argv[2];
+  
+  argc = ZEND_NUM_ARGS();
+  zend_get_parameters_array_ex(argc,argv);
+  if (argc == 1) {
+    int _v;
+    {
+      void *tmp;
+      _v = (SWIG_ConvertPtr(*argv[0], (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+    }
+    if (_v) {
+      _wrap_new_last__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    {
+      void *tmp;
+      _v = (SWIG_ConvertPtr(*argv[0], (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+    }
+    if (_v) {
+      {
+        _v = 1;
+      }
+      if (_v) {
+        _wrap_new_last__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
+      }
+    }
+  }
+  
+  SWIG_ErrorCode() = E_ERROR;
+  SWIG_ErrorMsg() = "No matching function for overloaded 'new_last'";
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+/* This function is designed to be called by the zend list destructors */
+/* to typecast and do the actual destruction */
+static void __wrap_delete_last(zend_rsrc_list_entry *rsrc, const char *type_name TSRMLS_DC) {
+  swig_object_wrapper *value=(swig_object_wrapper *) rsrc->ptr ;
+  void *ptr=value->ptr ;
+  int newobject=value->newobject ;
+  bzs::db::protocol::tdap::client::last *arg1 = (bzs::db::protocol::tdap::client::last *) 0 ;
+  
+  efree(value);
+  if (! newobject) return; /* can't delete it! */
+  arg1 = (bzs::db::protocol::tdap::client::last *)SWIG_ZTS_ConvertResourceData(ptr,type_name,SWIGTYPE_p_bzs__db__protocol__tdap__client__last TSRMLS_CC);
+  if (! arg1) zend_error(E_ERROR, "bzs::db::protocol::tdap::client::last resource already free'd");
+  {
+    try {
+      delete_bzs_db_protocol_tdap_client_last(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_count___clone) {
   bzs::db::protocol::tdap::client::count *arg1 = (bzs::db::protocol::tdap::client::count *) 0 ;
   zval **args[1];
@@ -30871,6 +31253,13 @@ static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_p_void) {
 static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__protocol__tdap__client__sum) {
   __wrap_delete_sum(rsrc, SWIGTYPE_p_bzs__db__protocol__tdap__client__sum->name TSRMLS_CC);
 }
+static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__protocol__tdap__client__first) {
+  __wrap_delete_first(rsrc, SWIGTYPE_p_bzs__db__protocol__tdap__client__first->name TSRMLS_CC);
+}
+static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__protocol__tdap__client__last) {
+  __wrap_delete_last(rsrc, SWIGTYPE_p_bzs__db__protocol__tdap__client__last->name TSRMLS_CC);
+}
+
 static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_int) {
   /* No destructor for simple type _p_int */
   efree(rsrc->ptr);
@@ -32765,6 +33154,18 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_sum, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_first___clone, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_first, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_last___clone, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_last, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_count___clone, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -33530,6 +33931,10 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(new_groupquery,_wrap_new_groupQuery,swig_arginfo_new_groupquery)
  SWIG_ZEND_NAMED_FE(sum___clone,_wrap_sum___clone,swig_arginfo_sum___clone)
  SWIG_ZEND_NAMED_FE(new_sum,_wrap_new_sum,swig_arginfo_new_sum)
+ SWIG_ZEND_NAMED_FE(first___clone,_wrap_first___clone,swig_arginfo_first___clone)
+ SWIG_ZEND_NAMED_FE(new_first,_wrap_new_first,swig_arginfo_new_first)
+ SWIG_ZEND_NAMED_FE(last___clone,_wrap_last___clone,swig_arginfo_last___clone)
+ SWIG_ZEND_NAMED_FE(new_last,_wrap_new_last,swig_arginfo_new_last)
  SWIG_ZEND_NAMED_FE(count___clone,_wrap_count___clone,swig_arginfo_count___clone)
  SWIG_ZEND_NAMED_FE(new_count,_wrap_new_count,swig_arginfo_new_count)
  SWIG_ZEND_NAMED_FE(avg___clone,_wrap_avg___clone,swig_arginfo_avg___clone)
@@ -33940,6 +34345,10 @@ le_swig__p_p_void=zend_register_list_destructors_ex(_wrap_destroy_p_p_void,NULL,
 SWIG_TypeClientData(SWIGTYPE_p_p_void,&le_swig__p_p_void);
 le_swig__p_bzs__db__protocol__tdap__client__sum=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__sum,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__sum->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__sum,&le_swig__p_bzs__db__protocol__tdap__client__sum);
+le_swig__p_bzs__db__protocol__tdap__client__first=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__first,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__first->name),module_number);
+SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__first,&le_swig__p_bzs__db__protocol__tdap__client__first);
+le_swig__p_bzs__db__protocol__tdap__client__last=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__last,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__last->name),module_number);
+SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__last,&le_swig__p_bzs__db__protocol__tdap__client__last);
 le_swig__p_int=zend_register_list_destructors_ex(_wrap_destroy_p_int,NULL,(char *)(SWIGTYPE_p_int->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_int,&le_swig__p_int);
 le_swig__p_bzs__db__protocol__tdap__client__avg=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__avg,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__avg->name),module_number);

@@ -48,6 +48,8 @@ BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::count, "count");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::avg, "avg");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::min, "min");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::max, "max");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::first, "first");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::last, "last");
 
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::readStatement,
                         "readStatement");
@@ -343,6 +345,18 @@ void serialize(Archive& ar, max& q, const unsigned int /*version*/)
 }
 
 template <class Archive>
+void serialize(Archive& ar, first& q, const unsigned int /*version*/)
+{
+    ar& make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
+}
+
+template <class Archive>
+void serialize(Archive& ar, last& q, const unsigned int /*version*/)
+{
+    ar& make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
+}
+
+template <class Archive>
 void serialize(Archive& ar, groupQuery& q, const unsigned int /*version*/)
 {
     fieldNames& v = const_cast<fieldNames&>(q.getKeyFields());
@@ -448,6 +462,12 @@ groupFuncBase& groupByStatement::addFunction(eFunc v,
         break;
     case fmax:
         func = new client::max(targetNames, resultName);
+        break;
+    case ffirst:
+        func = new client::first(targetNames, resultName);
+        break;
+    case flast:
+        func = new client::last(targetNames, resultName);
         break;
     };
     m_statements->push_back(func);

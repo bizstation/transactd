@@ -645,6 +645,11 @@ int groupFuncBase::resultKey() const
 
 void groupFuncBase::reset()
 {
+    doReset();
+}
+
+void groupFuncBase::doReset()
+{
     m_imple->reset();
 }
 
@@ -818,6 +823,77 @@ groupFuncBase* max::clone()
     *p = *this;
     return p;
 }
+
+
+// ---------------------------------------------------------------------------
+// class first
+// ---------------------------------------------------------------------------
+first* first::create(const fieldNames& targetNames, const _TCHAR* resultName)
+{
+    return new first(targetNames, resultName);
+}
+
+first::first(const fieldNames& targetNames, const _TCHAR* resultName)
+    : groupFuncBase(targetNames, resultName),m_readed(false)
+{
+
+}
+
+void first::doCalc(const row_ptr& row, int index)
+{
+    if (m_readed == false)
+    {
+        value_type tmp = 0;
+        for (int i = 0; i < m_imple->targetKeys(); ++i)
+            m_imple->m_values[index] =
+                fieldValue((*row)[m_imple->targetKey(i)], tmp);
+       m_readed = true;
+    }
+}
+
+groupFuncBase* first::clone()
+{
+    groupFuncBase* p = new first();
+    *p = *this;
+    return p;
+}
+
+void  first::doReset()
+{
+    m_readed = false;
+    groupFuncBase::reset();
+}
+
+
+// ---------------------------------------------------------------------------
+// class last
+// ---------------------------------------------------------------------------
+last* last::create(const fieldNames& targetNames, const _TCHAR* resultName)
+{
+    return new last(targetNames, resultName);
+}
+
+last::last(const fieldNames& targetNames, const _TCHAR* resultName)
+    : groupFuncBase(targetNames, resultName)
+{
+
+}
+
+void last::doCalc(const row_ptr& row, int index)
+{
+    value_type tmp = 0;
+    for (int i = 0; i < m_imple->targetKeys(); ++i)
+        m_imple->m_values[index] =
+            fieldValue((*row)[m_imple->targetKey(i)], tmp);
+}
+
+groupFuncBase* last::clone()
+{
+    groupFuncBase* p = new last();
+    *p = *this;
+    return p;
+}
+
 
 } // namespace client
 } // namespace tdap

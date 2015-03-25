@@ -356,7 +356,9 @@ enum eGroupFunc
 	fcount = 1,
 	favg = 2,
 	fmin = 3,
-	fmax = 4
+	fmax = 4,
+    ffirst = 5,
+    flast = 6
 }eGroupFunc;
 
 typedef

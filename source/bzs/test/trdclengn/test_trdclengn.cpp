@@ -1397,8 +1397,6 @@ void testBug_015(database* db)
     db->endTrn();
     tb->release();
 }
-
-#ifdef HA_EXTRA_ROW_LOCK_ENABLE
 /* READ_COMMITTED support select lock type */
 void testIssue_016(database* db)
 {
@@ -1413,21 +1411,20 @@ void testIssue_016(database* db)
     tb->update();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
     db->endTrn();
+
+    db->beginTrn(MULTILOCK_GAP);
+    tb->seekFirst(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekFirst S");
+    tb->seekNext(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekNext S");
+    tb->seekNext(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekNext X");
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
+    db->endTrn();
     tb->release();
 
 }
-#else
-/* READ_COMMITTED not support select lock type */ 
-void testIssue_016(database* db)
-{
-    table* tb = openTable(db);
-    db->beginTrn(MULTILOCK_NOGAP);
-    tb->seekFirst(ROW_LOCK_S);
-    BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb->stat(), "seekFirst S");
-    db->endTrn();
-    tb->release();
-}
-#endif
 
 /* isoration Level ISO_READ_COMMITED */
 void testTransactionLockReadCommited(database* db)
@@ -4896,7 +4893,7 @@ BOOST_AUTO_TEST_CASE(pool)
     testDbPool();
 }
 BOOST_AUTO_TEST_CASE(fuga)
-{
+ {
     BOOST_CHECK_EQUAL(2 * 3, 6);
 }
 

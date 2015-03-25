@@ -89,6 +89,10 @@ STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, IFieldNames* targetNames,
         f.reset(new max(*fns, resultName));
     else if (func == favg)
         f.reset(new avg(*fns, resultName));
+    else if (func == ffirst)
+        f.reset(new first(*fns, resultName));
+    else if (func == flast)
+        f.reset(new last(*fns, resultName));
     else if (func == fcount)
     {
         if (resultName[0])
