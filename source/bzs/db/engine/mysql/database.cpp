@@ -588,16 +588,13 @@ void database::unUseTables(bool rollback)
     }else
         ret = unlockTables(needUnlock, m_thd, rollback, NULL);
 
-    if (ret)
+    for (int i = 0; i < (int)m_tables.size(); i++)
     {
-        for (int i = 0; i < (int)m_tables.size(); i++)
-        {
-            if (m_tables[i])
-                m_tables[i]->resetTransctionInfo(m_thd);
-        }
-        DEBUG_WRITELOG("UNLOCK TABLES \n")
+        if (m_tables[i])
+            m_tables[i]->resetTransctionInfo(m_thd);
     }
-    else
+
+    if (!ret)
     {
         if (m_thd->is_error())
         {
@@ -608,6 +605,10 @@ void database::unUseTables(bool rollback)
                 m_stat = m_thd->cp_get_sql_error();
             THROW_BZS_ERROR_WITH_CODEMSG(m_stat, "Transaction commit error.");
         }
+    }else
+    {
+        ;
+        DEBUG_WRITELOG("UNLOCK TABLES \n")
     }
 }
 
