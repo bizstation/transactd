@@ -335,16 +335,25 @@ class groupQueryImple : public fieldNames
         }
     }
 
+    void cleanup()
+    {
+        for (int i=0; i< (int)m_funcs.size() ; ++i)
+            delete m_funcs[i];
+        m_funcs.clear();
+    }
+
 public:
     groupQueryImple() : fieldNames() {}
 
+    ~groupQueryImple() { cleanup(); }
+
     fieldNames& reset()
     {
-        m_funcs.clear();
+        cleanup();
         return fieldNames::reset();
     }
 
-    void addFunction(groupFuncBase* func) { m_funcs.push_back(func); }
+    void addFunction(groupFuncBase* func) { m_funcs.push_back(func->clone()); }
 
     void grouping(recordsetImple& mdls)
     {
@@ -361,7 +370,7 @@ public:
 
             if (f->resultKey() == (int)mdls.fieldDefs()->size())
             {
-                groupFuncBase::value_type dummy = 0;
+                groupFuncBase::numeric_type dummy = 0;
                 mdls.appendField(f->resultName(), getFieldType(dummy),
                                  sizeof(dummy));
             }
@@ -389,11 +398,20 @@ public:
         recordsetImple c(mdls);
 
         clear(mdls);
+
         for (int i = 0; i < (int)index.size(); ++i)
         {
             recordsetImple::row_type cur = c.getRow(index[i]);
+
             for (int j = 0; j < (int)m_funcs.size(); ++j)
-                setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->result(i));
+            {
+                if (m_funcs[j]->resultType() == groupFuncBase::numeric)
+                    setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->numericResult(i));
+                else
+                    memcpy((*cur)[m_funcs[j]->resultKey()].ptr() ,
+                            m_funcs[j]->stringResult(i),
+                            m_funcs[j]->stringResultLen());
+            }
             mdls.push_back(cur);
         }
         removeFields(mdls);
@@ -486,21 +504,28 @@ int groupQuery::functionCount() const
 // ---------------------------------------------------------------------------
 // class groupFuncBaseImple
 // ---------------------------------------------------------------------------
+
 class groupFuncBaseImple
 {
-public:
-    typedef double value_type;
-
 private:
     friend class groupQueryImple;
     fieldNames m_targetNames;
     std::_tstring m_resultName;
     int m_resultKey;
     std::vector<int> m_targetKeys;
-
+    ushort_td m_stringTypeLen;
+    groupFuncBase::result_type m_resultType;
+    void clearStrings()
+    {
+        std::vector<unsigned char*>::iterator it = m_strings.begin();
+        while (it != m_strings.end())
+            delete [] *(it++);
+        m_strings.clear();
+    }
 public:
-    std::vector<value_type> m_values;
+    std::vector<groupFuncBase::numeric_type> m_values;
     std::vector<__int64> m_counts;
+    std::vector<unsigned char*> m_strings;
 
     inline groupFuncBaseImple(const fieldNames& targetNames,
                               const _TCHAR* resultName = NULL)
@@ -510,15 +535,46 @@ public:
                         ((resultName == NULL) || resultName[0] == 0x00))
                            ? targetNames[0]
                            : resultName;
-        m_values.reserve(10);
+        m_resultType = groupFuncBase::numeric;
+        m_stringTypeLen = 0;
+    }
+
+    ~groupFuncBaseImple()
+    {
+        clearStrings();
+    }
+
+    inline void setStringResultType(ushort_td len)
+    {
+        m_resultType = groupFuncBase::string;
+        m_stringTypeLen = len;
+    }
+
+    inline groupFuncBase::result_type resultType() { return m_resultType; }
+
+    inline ushort_td stringResultLen() { return m_stringTypeLen; }
+
+    inline void appendStringBuffer(int index)
+    {
+        unsigned char* p = new unsigned char[m_stringTypeLen];
+        memset(p, 0, m_stringTypeLen);
+        std::vector<unsigned char*>::iterator it = m_strings.begin();
+        if (index)
+            it += index;
+        m_strings.insert(it, p);
     }
 
     inline void initResultVariable(int index)
     {
-        std::vector<value_type>::iterator it = m_values.begin();
-        if (index)
-            it += index;
-        m_values.insert(it, 0.0f);
+        if (m_resultType == groupFuncBase::numeric)
+        {
+            std::vector<groupFuncBase::numeric_type>::iterator it = m_values.begin();
+            if (index)
+                it += index;
+            m_values.insert(it, 0.0f);
+        }
+        else
+            appendStringBuffer(index);
     }
 
     inline void init(const fielddefs* fdinfo)
@@ -533,7 +589,7 @@ public:
             m_resultKey = (int)fdinfo->size();
     }
 
-    inline groupFuncBaseImple() { m_values.reserve(10); }
+    inline groupFuncBaseImple() { /*m_values.reserve(10);*/ }
 
     inline fieldNames& targetNames() const
     {
@@ -551,12 +607,12 @@ public:
 
     inline int resultKey() const { return m_resultKey; }
 
-    inline void reset() { m_values.clear(); };
-
-    inline value_type result(int groupIndex) const
+    inline void reset()
     {
-        return m_values[groupIndex];
-    };
+        m_values.clear();
+        m_counts.clear();
+        clearStrings();
+    }
 
     inline int targetKey(size_t index) const
     {
@@ -609,12 +665,17 @@ void groupFuncBase::doCalc(const row_ptr& row, int groupIndex)
 {
 }
 
-void groupFuncBase::init(const fielddefs* fdinfo)
+void groupFuncBase::doInit(const fielddefs* fdinfo)
 {
     if (whereTokens() != 0)
         recordsetQuery::init(fdinfo);
 
     m_imple->init(fdinfo);
+}
+
+void groupFuncBase::init(const fielddefs* fdinfo)
+{
+    doInit(fdinfo);
 }
 
 groupFuncBase& groupFuncBase::operator=(const recordsetQuery& v)
@@ -665,9 +726,24 @@ void groupFuncBase::operator()(const row_ptr& row, int index, bool insert)
         doCalc(row, index);
 }
 
-groupFuncBase::value_type groupFuncBase::result(int groupIndex) const
+groupFuncBase::numeric_type groupFuncBase::numericResult(int groupIndex) const
 {
-    return m_imple->result(groupIndex);
+    return m_imple->m_values[groupIndex];
+}
+
+unsigned char* groupFuncBase::stringResult(int groupIndex) const
+{
+    return m_imple->m_strings[groupIndex];
+}
+
+ushort_td groupFuncBase::stringResultLen() const
+{
+    return m_imple->stringResultLen();
+}
+
+groupFuncBase::result_type groupFuncBase::resultType() const
+{
+    return m_imple->resultType();
 }
 
 // ---------------------------------------------------------------------------
@@ -685,7 +761,7 @@ sum::sum(const fieldNames& targetNames, const _TCHAR* resultName)
 
 void sum::doCalc(const row_ptr& row, int index)
 {
-    value_type tmp = 0;
+    numeric_type tmp = 0;
     for (int i = 0; i < m_imple->targetKeys(); ++i)
         m_imple->m_values[index] +=
             fieldValue((*row)[m_imple->targetKey(i)], tmp);
@@ -748,7 +824,7 @@ void avg::doCalc(const row_ptr& row, int index)
     m_imple->m_counts[index] = m_imple->m_counts[index] + 1;
 }
 
-avg::value_type avg::result(int index) const
+avg::numeric_type avg::numericResult(int index) const
 {
     return m_imple->m_values[index] / m_imple->m_counts[index];
 }
@@ -775,7 +851,7 @@ min::min(const fieldNames& targetNames, const _TCHAR* resultName)
 
 void min::doCalc(const row_ptr& row, int index)
 {
-    value_type tmp = 0;
+    numeric_type tmp = 0;
     for (int i = 0; i < m_imple->targetKeys(); ++i)
     {
         tmp = fieldValue((*row)[m_imple->targetKey(i)], tmp);
@@ -807,7 +883,7 @@ max::max(const fieldNames& targetNames, const _TCHAR* resultName)
 
 void max::doCalc(const row_ptr& row, int index)
 {
-    value_type tmp = 0;
+    numeric_type tmp = 0;
     for (int i = 0; i < m_imple->targetKeys(); ++i)
     {
         tmp = fieldValue((*row)[m_imple->targetKey(i)], tmp);
@@ -824,6 +900,55 @@ groupFuncBase* max::clone()
     return p;
 }
 
+// ---------------------------------------------------------------------------
+// class last
+// ---------------------------------------------------------------------------
+last* last::create(const fieldNames& targetNames, const _TCHAR* resultName)
+{
+    return new last(targetNames, resultName);
+}
+
+last::last(const fieldNames& targetNames, const _TCHAR* resultName)
+    : groupFuncBase(targetNames, resultName)
+{
+
+}
+
+void last::doInit(const fielddefs* fdinfo)
+{
+    groupFuncBase::doInit(fdinfo);
+    int size = m_imple->targetKeys();
+    if (size)
+    {
+        const fielddef& fd = (*fdinfo)[m_imple->targetKey(0)];
+        if (fd.isStringType() && !fd.isBlob())
+            m_imple->setStringResultType(fd.len);
+    }
+}
+
+void last::doCalc(const row_ptr& row, int index)
+{
+    if (m_imple->targetKeys())
+    {
+        numeric_type tmp = 0;
+        if (m_imple->resultType() == groupFuncBase::numeric)
+            m_imple->m_values[index] =
+                fieldValue((*row)[m_imple->targetKey(0)], tmp);
+        else
+        {
+            ushort_td len = m_imple->stringResultLen();
+            unsigned char* p = m_imple->m_strings[index];
+            memcpy(p, (*row)[m_imple->targetKey(0)].ptr(), len);
+        }
+    }
+}
+
+groupFuncBase* last::clone()
+{
+    groupFuncBase* p = new last();
+    *p = *this;
+    return p;
+}
 
 // ---------------------------------------------------------------------------
 // class first
@@ -834,7 +959,7 @@ first* first::create(const fieldNames& targetNames, const _TCHAR* resultName)
 }
 
 first::first(const fieldNames& targetNames, const _TCHAR* resultName)
-    : groupFuncBase(targetNames, resultName),m_readed(false)
+    : last(targetNames, resultName),m_readed(false)
 {
 
 }
@@ -843,11 +968,20 @@ void first::doCalc(const row_ptr& row, int index)
 {
     if (m_readed == false)
     {
-        value_type tmp = 0;
-        for (int i = 0; i < m_imple->targetKeys(); ++i)
-            m_imple->m_values[index] =
-                fieldValue((*row)[m_imple->targetKey(i)], tmp);
-       m_readed = true;
+        if (m_imple->targetKeys())
+        {
+            numeric_type tmp = 0;
+            if (m_imple->resultType() == groupFuncBase::numeric)
+                m_imple->m_values[index] =
+                    fieldValue((*row)[m_imple->targetKey(0)], tmp);
+            else
+            {
+                ushort_td len = m_imple->stringResultLen();
+                unsigned char* p = m_imple->m_strings[index];
+                memcpy(p, (*row)[m_imple->targetKey(0)].ptr(), len);
+            }
+        }
+        m_readed = true;
     }
 }
 
@@ -865,34 +999,6 @@ void  first::doReset()
 }
 
 
-// ---------------------------------------------------------------------------
-// class last
-// ---------------------------------------------------------------------------
-last* last::create(const fieldNames& targetNames, const _TCHAR* resultName)
-{
-    return new last(targetNames, resultName);
-}
-
-last::last(const fieldNames& targetNames, const _TCHAR* resultName)
-    : groupFuncBase(targetNames, resultName)
-{
-
-}
-
-void last::doCalc(const row_ptr& row, int index)
-{
-    value_type tmp = 0;
-    for (int i = 0; i < m_imple->targetKeys(); ++i)
-        m_imple->m_values[index] =
-            fieldValue((*row)[m_imple->targetKey(i)], tmp);
-}
-
-groupFuncBase* last::clone()
-{
-    groupFuncBase* p = new last();
-    *p = *this;
-    return p;
-}
 
 
 } // namespace client

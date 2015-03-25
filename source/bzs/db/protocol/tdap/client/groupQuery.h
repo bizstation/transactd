@@ -155,10 +155,13 @@ protected:
     virtual void initResultVariable(int index);
     virtual void doCalc(const row_ptr& row, int groupIndex);
     virtual void doReset();
+    virtual void doInit(const fielddefs* fdinfo);
     void init(const fielddefs* fdinfo);
 
 public:
-    typedef double value_type;
+    enum result_type { numeric, string };
+
+    typedef double numeric_type;
     groupFuncBase();
     groupFuncBase(const groupFuncBase& v);
     groupFuncBase& operator=(const groupFuncBase& v);
@@ -172,7 +175,13 @@ public:
     int resultKey() const;
     void reset();
     void operator()(const row_ptr& row, int index, bool insert);
-    virtual value_type result(int groupIndex) const;
+    unsigned char* stringResult(int groupIndex) const;
+
+    result_type resultType() const;
+
+
+    ushort_td stringResultLen() const;
+    virtual numeric_type numericResult(int groupIndex) const;
     virtual groupFuncBase* clone() = 0;
 };
 
@@ -235,7 +244,7 @@ class DLLLIB avg : public sum
 
     void initResultVariable(int index);
     void doCalc(const row_ptr& row, int index);
-    value_type result(int index) const;
+    numeric_type numericResult(int index) const;
 
 public:
     avg() {}
@@ -274,7 +283,21 @@ public:
 };
 
 
-class DLLLIB first : public groupFuncBase
+class DLLLIB last : public groupFuncBase
+{
+protected:
+    void doCalc(const row_ptr& row, int index);
+    void doInit(const fielddefs* fdinfo);
+public:
+    last() {}
+    last(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
+    groupFuncBase* clone();
+    static last* create(const fieldNames& targetNames,
+                       const _TCHAR* resultName = NULL);
+};
+
+
+class DLLLIB first : public last
 {
     bool m_readed;
 protected:
@@ -289,18 +312,6 @@ public:
 };
 
 
-class DLLLIB last : public groupFuncBase
-{
-protected:
-    void doCalc(const row_ptr& row, int index);
-
-public:
-    last() {}
-    last(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
-    groupFuncBase* clone();
-    static last* create(const fieldNames& targetNames,
-                       const _TCHAR* resultName = NULL);
-};
 
 } // namespace client
 } // namespace tdap
