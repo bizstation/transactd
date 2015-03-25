@@ -65,6 +65,7 @@ BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::reverseOrderStatement,
                         "reverseOrderStatement");
 
 BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::groupFuncBase, 1)
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::queryBase, 1)
 
 namespace bzs
 {
@@ -203,7 +204,7 @@ void serialize(Archive& ar, queryBase& q, const unsigned int version)
 }
 
 template <class Archive>
-void save(Archive& ar, const queryBase& q, const unsigned int /*version*/)
+void save(Archive& ar, const queryBase& q, const unsigned int version)
 {
     std::_tstring s = q.toString();
 
@@ -216,12 +217,18 @@ void save(Archive& ar, const queryBase& q, const unsigned int /*version*/)
     ar& make_nvp("optimize", v);
     v = q.isBookmarkAlso();
     ar& make_nvp("boolmarkAlso", v);
+
+    if (version >= 1)
+    {
+        v = q.getDirection();
+        ar& make_nvp("direction", v);
+    }
     v = q.isAll();
     ar& make_nvp("isAll", v);
 }
 
 template <class Archive>
-void load(Archive& ar, queryBase& q, const unsigned int /*version*/)
+void load(Archive& ar, queryBase& q, const unsigned int version)
 {
     std::_tstring s;
     int v;
@@ -242,6 +249,11 @@ void load(Archive& ar, queryBase& q, const unsigned int /*version*/)
     ar& make_nvp("boolmarkAlso", v);
     q.bookmarkAlso(v != 0);
 
+    if (version >= 1)
+    {
+        ar& make_nvp("direction", v);
+        q.direction((table::eFindType)v);
+    }
     ar& make_nvp("isAll", v);
     if (v)
         q.all();
