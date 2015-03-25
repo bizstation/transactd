@@ -542,15 +542,19 @@ STDMETHODIMP CActiveTable::Table(ITable** retVal)
     }
 }
 
-STDMETHODIMP CActiveTable::ReadMore(IRecordset* rs, IRecordset** retVal)
+STDMETHODIMP CActiveTable::ReadMore(IRecordset** retVal)
 {
     try
     {
-        CARecordset* p = dynamic_cast<CARecordset*>(rs);
-        if (!p)
-            return Error(_T("Invalid ActiveTable::ReadMore param 1"), IID_IActiveTable);
-        m_at->readMore(*p->m_rs);
-        p->QueryInterface(IID_IRecordset, (void**)retVal);
+        CComObject<CARecordset>* rsObj;
+        CComObject<CARecordset>::CreateInstance(&rsObj);
+        if (!rsObj)
+            return Error(_T("Can not create recordset"), IID_IActiveTable);
+        IRecordset* rs;
+        rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
+        _ASSERTE(rs);
+        *retVal = rs;
+        m_at->readMore(*rsObj->m_rs);
         return S_OK;
     }
     catch (bzs::rtl::exception& e)
