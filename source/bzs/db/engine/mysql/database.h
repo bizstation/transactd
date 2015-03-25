@@ -233,7 +233,7 @@ public:
         for (int i = 0; i < m_keyCount; i++)
             if (strstr(m_key[i].name, "key") && m_key[i].name[3] == num + '0')
                 return m_convNum = i;
-        return m_convNum = num; // If not found, a value as it is is returned.
+        return m_convNum = num; // If not found, a value as it is returned.
     }
 };
 
@@ -288,7 +288,6 @@ class table : private boost::noncopyable
                      int type, bool noBookmark);
 
     bool keyCheckForPercent();
-    inline bool keynumCheck(char num);
     void preBuildPercent(uchar* first, uchar* last);
     void seekPos(const uchar* pos);
     int setKeyNullFlags();
@@ -444,6 +443,11 @@ public:
     inline char keyNumByMakeOrder(char num)
     {
         return m_keyconv.keyNumByMakeOrder(num);
+    }
+
+    inline bool keynumCheck(char num)
+    {
+        return ((num >= 0) && (num < (short)m_table->s->keys));
     }
 
     bool setKeyNum(char num, bool sorted = true);

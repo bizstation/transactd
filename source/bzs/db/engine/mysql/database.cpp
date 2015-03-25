@@ -1418,11 +1418,6 @@ ushort table::fieldPackCopy(unsigned char* dest, short fieldNum)
     return (ushort)len;
 }
 
-inline bool table::keynumCheck(char num)
-{
-    return ((num >= 0) && (num < (short)m_table->s->keys));
-}
-
 inline void table::tryConsistentRead(bool noConsistent)
 {
     /* Don't read old version that next operation is write, or inTransaqction. */ 

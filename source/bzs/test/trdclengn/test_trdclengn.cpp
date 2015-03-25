@@ -289,8 +289,18 @@ void testCreateNewDataBase(database* db)
 
         fd = def->insertField(1, 1);
         fd->setName(_T("name"));
-        fd->type = ft_zstring;
         fd->len = (ushort_td)33;
+
+        //test padChar only string or wstring
+        fd->type = ft_string;
+        fd->setPadCharSettings(true, false);
+        BOOST_CHECK(fd->usePadChar() ==  true);
+        BOOST_CHECK(fd->trimPadChar() == false);
+        fd->setPadCharSettings(false, true);
+        BOOST_CHECK(fd->usePadChar() ==  false);
+        BOOST_CHECK(fd->trimPadChar() == true);
+
+        fd->type = ft_zstring;
         def->updateTableDef(1);
         BOOST_CHECK_MESSAGE(0 == def->stat(),
                             "updateTableDef 2 stat = " << def->stat());
@@ -418,6 +428,13 @@ void testInsert(database* db)
         tb->insert();
         BOOST_CHECK_MESSAGE(0 == tb->stat(), "insert");
     }
+    //test invalid keyNum
+    tb->clearBuffer();
+    tb->setFV((short)0, _T("2"));
+    tb->setKeyNum(10);
+    tb->insert();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum insert");
+    tb->setKeyNum(0);
 
     db->beginTrn();
     int n = 1;
@@ -459,10 +476,21 @@ void testFind(database* db)
 {
 
     table* tb = openTable(db);
+
+    //test invalid keyNum
+    tb->clearBuffer();
+    tb->setKeyNum(10);
+    tb->setFilter(_T("id >= 10 and id < 20000"), 1, 0);
+    int v = 10;
+    tb->setFV((short)0, v);
+    tb->find(table::findForword);
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum find");
+
+   
     tb->setKeyNum(0);
     tb->clearBuffer();
     tb->setFilter(_T("id >= 10 and id < 20000"), 1, 0);
-    int v = 10;
+    v = 10;
     tb->setFV((short)0, v);
     tb->find(table::findForword);
     findNextLoop(tb, v, 20000);
@@ -514,9 +542,21 @@ void testFindIn(database* db)
 {
 
     table* tb = openTable(db);
-    tb->setKeyNum(0);
+
+    //test invalid keyNum
     tb->clearBuffer();
     queryBase q;
+    q.addSeekKeyValue(_T("10"), true);
+    tb->setQuery(&q);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
+    tb->setKeyNum(10);
+    tb->find();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum seekKeyValue");
+
+
+    tb->setKeyNum(0);
+    tb->clearBuffer();
+    q.reset();
     q.addSeekKeyValue(_T("10"), true);
     q.addSeekKeyValue(_T("300000"));
     q.addSeekKeyValue(_T("50"));
@@ -639,9 +679,16 @@ void testPrepareServer(database* db)
 {
     table* tb = openTable(db);
     queryBase q;
-    q.queryString(_T("id >= ? and id < ?"));
-    q.reject(0xFFFF).limit(0);
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->clearBuffer();
+    q.queryString(_T("id >= ? and id < ?")).reject(0xFFFF).limit(0);
     pq_handle stmt = tb->prepare(&q, true);
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum prepare");
+
+    tb->setKeyNum(0);
+    stmt = tb->prepare(&q, true);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "prepare stat");
     if (tb->stat()) return ;
         
@@ -713,20 +760,6 @@ void testPrepareServer(database* db)
     tb->find(table::findForword);
     findNextLoop(tb, v, 3000);
 
-    // Seeks prepare statement 
-    /*q.reset();
-    q.queryString(_T("select id"));
-    pq_handle stmt3 = tb->prepare(&q, true);
-    const _TCHAR* vsi[6];
-    makeSupplyValues(vsi, 6, _T("10"), _T("11"), _T("12"), _T("13"),
-         _T("14"), _T("15"));
-    int keySegments = 1;
-    ret = supplyInValues(stmt3, vsi, 6, keySegments);
-    BOOST_CHECK_MESSAGE(ret == true, "supplyValues ");
-    tb->setPrepare(stmt3);
-    tb->find(); 
-    findNextLoop(tb, 10, 16);
-    */
     tb->release();
 }
 
@@ -748,6 +781,13 @@ void testMovePercentage(database* db)
 {
     table* tb = openTable(db);
     tb->clearBuffer();
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->seekByPercentage(5000); // 50%
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum prepare");
+
+    tb->setKeyNum(0);
     tb->seekByPercentage(5000); // 50%
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "MovePercentage");
     // If mainus is less than 500 then ok.
@@ -759,7 +799,16 @@ void testMovePercentage(database* db)
 void testGetEqual(database* db)
 {
     table* tb = openTable(db);
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->clearBuffer();
+    tb->setFV((short)0, 10);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum seek");
+
     db->beginSnapshot();
+    tb->setKeyNum(0);
     for (int i = 2; i < 20002; i++)
     {
         tb->clearBuffer();
@@ -888,6 +937,13 @@ void testGetFirst(database* db)
 {
     table* tb = openTable(db);
     tb->clearBuffer();
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum seekFirst");
+
+    tb->setKeyNum(0);
     tb->seekFirst();
     BOOST_CHECK_MESSAGE(_tstring(_T("kosaka")) == _tstring(tb->getFVstr(1)),
                         "GetFirst");
@@ -898,6 +954,13 @@ void testGetLast(database* db)
 {
     table* tb = openTable(db);
     tb->clearBuffer();
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->seekLast();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum seekFirst");
+ 
+    tb->setKeyNum(0);
     tb->seekLast();
     BOOST_CHECK_MESSAGE(20002 == tb->getFVint(fdi_id), "GetLast");
     tb->release();
@@ -906,7 +969,6 @@ void testGetLast(database* db)
 void testMovePosition(database* db)
 {
     table* tb = openTable(db);
-    tb->clearBuffer();
     int vv = 15000;
     tb->clearBuffer();
     tb->setFV(fdi_id, vv);
@@ -927,6 +989,13 @@ void testMovePosition(database* db)
 
     tb->seekByBookmark(pos);
     BOOST_CHECK_MESSAGE(15000 == tb->getFVint(fdi_id), "MovePosition");
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->seekByBookmark(pos);
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), 
+            "Invalid keynum seekByBookmark stat = " << tb->stat());
+ 
     tb->release();
 }
 
@@ -4680,7 +4749,7 @@ const _TCHAR* fdf_names[] =
     _T("ft_mywvarbinary"),
 };
 
-const char fdf_types[] = 
+char fdf_types[] = 
 {
     ft_string,
     ft_wstring,
@@ -4714,9 +4783,22 @@ const _TCHAR* fd_values[15] =
     _T("A90-xxxx-xxx"),
 };
 
+void intFieldTypes(database* db)
+{
+    if (!isUtf16leSupport(db))
+    {
+        for (int i = 0; i < 10; i++) 
+        {
+            if ((i % 2) == 1)
+                fdf_types[i] = fdf_types[i-1];
+        }
+    }
+}
 
 void inserFilterTestRecords(database* db)
 {
+
+
     table* tb = db->openTable(_T("user"), TD_OPEN_NORMAL);
     BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
     db->beginTrn();
@@ -4758,6 +4840,8 @@ void createFilterTestDb(database* db)
              TD_OPEN_NORMAL);
     BOOST_CHECK_MESSAGE(0 == db->stat(),
                         "createFilterTestDb 1 stat = " << db->stat());
+
+    intFieldTypes(db);
 
     dbdef* def = db->dbDef();
     if (def)
@@ -4844,6 +4928,8 @@ void doTestReadByQuery(int num, activeTable& at, recordset& rs, Q& q,
 
 void testFilterOfServer(database* db)
 {
+    intFieldTypes(db);
+
     {
         activeTable atu(db, _T("user"));
         recordset rs;
@@ -4954,9 +5040,9 @@ void doTestMatchBy(int num, recordset& rs, recordsetQuery& rq, int compSize, con
     rss->release();
 }
 
-
 void testFilterOfMatchBy(database* db)
 {
+    intFieldTypes(db);
     {
         activeTable atu(db, _T("user"));
         query q;

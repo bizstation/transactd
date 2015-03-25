@@ -1203,8 +1203,13 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             getRowLockMode(opTrn, &lck);
             m_tb = getTable(req.pbk->handle, lck.lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
             m_tb->setRowLock(&lck);
-            m_tb->movePos((uchar*)req.data,
-                          m_tb->keyNumByMakeOrder(req.keyNum));
+            char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
+            if (!m_tb->keynumCheck(keynum))
+            {
+                req.result = STATUS_INVALID_KEYNUM;
+                break;
+            }
+            m_tb->movePos((uchar*)req.data, keynum);
             if (lck.lock && m_tb->stat())
                 m_tb->setRowLockError();
             readAfter(req, m_tb, this);
@@ -1444,13 +1449,17 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 
     catch (...)
     {
-        clenupNoException();
-        DEBUG_ERROR_MEMDUMP(20001, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
-        req.reset();
-        req.result = 20001;
-        dumpStdErr(op, req, m_tb);
         try
         {
+            try
+            {
+                clenupNoException();
+                DEBUG_ERROR_MEMDUMP(20001, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
+                req.reset();
+                req.result = 20001;
+                dumpStdErr(op, req, m_tb);
+            }
+            catch(...){}
             if (m_tb)
                 m_tb->close();
         }
