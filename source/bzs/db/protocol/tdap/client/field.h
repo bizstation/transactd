@@ -64,8 +64,8 @@ protected:
     fieldShare();
 
     virtual ~fieldShare();
-    stringConverter* cv();
-    bzs::rtl::stringBuffer* strBufs();
+    stringConverter* cv() const;
+    bzs::rtl::stringBuffer* strBufs() const;
     void blobPushBack(char* p);
     void blobClear();
 };
@@ -128,7 +128,7 @@ class DLLLIB field
     /** @endcond */
     fielddef* m_fd;
     unsigned char* m_ptr;
-    class fielddefs* m_fds;
+    const class fielddefs* m_fds;
 
     compFieldFunc getCompFunc(char logType) const;
     int blobLenBytes() const { return m_fd->blobLenBytes(); }
@@ -180,7 +180,7 @@ public:
 
 public:
 /** @cond INTERNAL */
-    inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
+    inline field(unsigned char* ptr, const fielddef& fd, const fielddefs* fds)
         : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds){};
 /** @endcond */
 

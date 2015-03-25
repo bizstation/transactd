@@ -75,12 +75,12 @@ fieldShare::~fieldShare()
     delete m_imple;
 }
 
-stringConverter* fieldShare::cv()
+stringConverter* fieldShare::cv() const
 {
     return m_imple->cv;
 }
 
-bzs::rtl::stringBuffer* fieldShare::strBufs()
+bzs::rtl::stringBuffer* fieldShare::strBufs() const
 {
     return &m_imple->strBufs;
 }
@@ -483,7 +483,7 @@ void field::setFVA(const char* data)
     case ft_mytext:
     {
         char* tmp = blobStore<char>(p, data, *m_fd, m_fds->cv());
-        m_fds->blobPushBack(tmp);
+        const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
         return;
     }
     case ft_decimal:
@@ -607,7 +607,7 @@ void field::setFVW(const wchar_t* data)
     case ft_mytext:
     {
         char* tmp = blobStore<WCHAR>(p, data, *m_fd, m_fds->cv());
-        m_fds->blobPushBack(tmp);
+        const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
         return;
     }
 
