@@ -264,6 +264,10 @@ class table : private boost::noncopyable
     keynumConvert m_keyconv;
     IblobBuffer* m_blobBuffer;
     std::vector<Field*> m_nonKeySegNullFields;
+    int m_readCount;
+    int m_updCount;
+    int m_delCount;
+    int m_insCount;
     char m_keyNum;
     struct
     {
@@ -310,10 +314,17 @@ class table : private boost::noncopyable
     
     inline bool setCursorStaus()
     {
-        m_validCursor = (m_stat == 0);
-        m_cursor = (m_stat == 0) ? true : 
-                       ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
+        if (m_stat == 0)
+        {
+            ++m_readCount;
+            m_validCursor = true;
+            m_cursor = true;
+        }else
+        {
+            m_validCursor = false;
+            m_cursor = ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
                         (m_stat == HA_ERR_LOCK_DEADLOCK)) ? m_cursor : false;
+        }
         return m_validCursor;
     }
     

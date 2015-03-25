@@ -630,6 +630,14 @@ bool database::beginTrn(short type, enum_tx_isolation iso)
         ret = true;
     }
     ++m_inTransaction;
+    if (m_thd->variables.sql_log_bin && (m_inTransaction==1))
+    {
+        for (int i = 0; i < (int)m_tables.size(); ++i)
+        {
+            if (m_tables[i])
+                useTable(i, SQLCOM_SELECT, NULL);
+        }
+    }    
     return ret;
 }
 
@@ -898,6 +906,7 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
       m_keybuf(new unsigned char[MAX_KEYLEN]),
       m_nonNccKeybuf(new unsigned char[MAX_KEYLEN]), m_stat(0),
       m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
+      m_readCount(0), m_updCount(0), m_delCount(0), m_insCount(0),
       m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
       m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false),
       m_delayAutoCommit(false),m_forceConsistentRead(false)
@@ -972,6 +981,7 @@ void table::resetTransctionInfo(THD* thd)
         m_locked = false;
     m_validCursor = false;
     m_nounlock = false;
+    m_readCount = m_updCount = m_delCount = m_insCount = 0;
 }
 
 void table::resetInternalTable(TABLE* table)
@@ -2008,7 +2018,8 @@ ha_rows table::recordCount(bool estimate)
         while (m_stat == 0)
         {
             m_table->file->unlock_row();
-            n++;
+            ++n;
+            ++m_readCount;
             m_stat = m_table->file->ha_index_next(m_table->record[0]);
         }
         fb.setKeyRead(false);
@@ -2028,6 +2039,7 @@ ha_rows table::recordCount(bool estimate)
         {
             m_table->file->unlock_row();
             ++n;
+            ++m_readCount;
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         }
     }
@@ -2154,6 +2166,7 @@ __int64 table::insert(bool ncc)
 
     if (m_stat == 0)
     {
+        ++m_insCount;
         if (!ncc) // innodb default is ncc=-1.
             m_nonNcc = true;
         else if (!m_bulkInserting)
@@ -2264,7 +2277,11 @@ void table::update(bool ncc)
                 }
             }
             /* Do not change to m_changed = false */
-            if (m_stat == 0) m_changed = true;
+            if (m_stat == 0)
+            {
+                ++m_updCount;
+                m_changed = true;
+            }
             m_nounlock = setCursorStaus();
         }
     }
@@ -2280,7 +2297,11 @@ void table::del()
     {
         m_stat = m_table->file->ha_delete_row(m_table->record[0]);
         /* Do not change to m_changed = false */
-        if (m_stat == 0) m_changed = true;
+        if (m_stat == 0)
+        {
+            ++m_delCount;
+            m_changed = true;
+        }
     }
 
     //No cursor changed
