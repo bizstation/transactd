@@ -424,7 +424,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::recordsetQuery::create;
 %ignore bzs::db::protocol::tdap::client::recordsetQuery::internalQuery;
 %ignore bzs::db::protocol::tdap::client::sortField;
-%ignore bzs::db::protocol::tdap::client::sortFields;
 %ignore bzs::db::protocol::tdap::client::sortFields::operator[];
 %ignore bzs::db::protocol::tdap::client::sum::create;
   // create and release methods for fieldNames class

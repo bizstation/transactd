@@ -850,10 +850,6 @@ class fielddef extends fielddef_t_my {
 		return fielddef_name($this->_cPtr);
 	}
 
-	function name() {
-		return fielddef_name($this->_cPtr);
-	}
-	
 	function trimPadChar() {
 		return fielddef_trimPadChar($this->_cPtr);
 	}
@@ -2531,8 +2527,8 @@ class field {
 			case transactd::ft_timestamp:
 			case transactd::ft_note:
 			case transactd::ft_zstring:
-				return field_c_str($this->_cPtr);
 			case transactd::ft_string:
+				return field_c_str($this->_cPtr);
 			case transactd::ft_myvarbinary:
 			case transactd::ft_mywvarbinary:
 			case transactd::ft_myblob:
@@ -2974,6 +2970,48 @@ class fieldNames {
 			return;
 		}
 		$this->_cPtr=new_fieldNames();
+	}
+}
+
+class sortFields {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function add($name,$asc) {
+		sortFields_add($this->_cPtr,$name,$asc);
+		return $this;
+	}
+
+	function size() {
+		return sortFields_size($this->_cPtr);
+	}
+
+	function clear() {
+		sortFields_clear($this->_cPtr);
+		return $this;
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__sortFields') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_sortFields();
 	}
 }
 
