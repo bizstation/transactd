@@ -689,7 +689,11 @@ public:
                     bool gt = (comp == eGreater) || (comp == eGreaterEq);
                     bool le = (comp == eLess) || (comp == eLessEq);
                     bool valid = !(forword ? gt : le);
-                    if (valid)
+                    
+                    // case in-sencitive, Index judge need clinet and server are same option.
+                    bool is_cl = ((fd->logType & CMPLOGICAL_CASEINSENSITIVE) != 0);
+                    bool is_srv = ((key->key_part[segmentIndex].field->flags & BINARY_FLAG) == 0);
+                    if (valid && (is_cl == is_srv))
                     {
                         m_keySeg = (unsigned char)segmentIndex + 1;
                         m_judgeType = (comp == eEqual) ? 2 : 1;

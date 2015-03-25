@@ -307,18 +307,17 @@ unsigned int fielddef::charNum(/* int index */) const
 
 ushort_td lenByCharnum(uchar_td type, uchar_td charsetIndex, ushort_td charnum)
 {
-    ushort_td len;
-    if (charsetIndex && ((type == ft_mychar) || (type == ft_mywchar) ||
-                         (type == ft_myvarchar) || (type == ft_mywvarchar)))
-    {
+    ushort_td len = charnum;
+    if ((type == ft_wstring) || (type == ft_wzstring) || (type == ft_mywchar) ||
+                    (type == ft_mywvarchar)|| (type == ft_mywvarbinary))
+        len = (ushort_td)(mysql::charsize(CHARSET_UTF16LE) * charnum);
+    else if (charsetIndex && ((type == ft_mychar) || (type == ft_myvarchar)|| 
+            (type == ft_string) || (type == ft_zstring)|| (type == ft_myvarbinary) ))
         len = (ushort_td)(mysql::charsize(charsetIndex) * charnum);
-        if ((type == ft_myvarchar) || (type == ft_mywvarchar))
-            len += ((len >= 256) ? 2 : 1);
-        else
-            len = std::min<ushort_td>(len, 255);
-    }
+    if ((type == ft_myvarchar) || (type == ft_mywvarchar) || (type == ft_myvarbinary) || (type == ft_mywvarbinary))
+        len += ((len >= 256) ? 2 : 1);
     else
-        len = charnum;
+        len = std::min<ushort_td>(len, 255);
     return len;
 }
 
@@ -512,25 +511,36 @@ PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr)
 {
     if (_tcscmp(cmpstr, _T("=")) == 0)
         return (uchar_td)eEqual;
-
-    if (_tcscmp(cmpstr, _T(">")) == 0)
+    else if (_tcscmp(cmpstr, _T(">")) == 0)
         return (uchar_td)eGreater;
-
-    if (_tcscmp(cmpstr, _T("<")) == 0)
+    else if (_tcscmp(cmpstr, _T("<")) == 0)
         return (uchar_td)eLess;
-
-    if (_tcscmp(cmpstr, _T("<>")) == 0)
+    else if (_tcscmp(cmpstr, _T("<>")) == 0)
         return (uchar_td)eNotEq;
-
-    if (_tcscmp(cmpstr, _T("=>")) == 0)
+    else if (_tcscmp(cmpstr, _T("=>")) == 0)
         return (uchar_td)eGreaterEq;
-    if (_tcscmp(cmpstr, _T(">=")) == 0)
+    else if (_tcscmp(cmpstr, _T(">=")) == 0)
         return (uchar_td)eGreaterEq;
-
-    if (_tcscmp(cmpstr, _T("=<")) == 0)
+    else if (_tcscmp(cmpstr, _T("=<")) == 0)
         return (uchar_td)eLessEq;
-    if (_tcscmp(cmpstr, _T("<=")) == 0)
+    else if (_tcscmp(cmpstr, _T("<=")) == 0)
         return (uchar_td)eLessEq;
+    else if (_tcscmp(cmpstr, _T("=i")) == 0)
+        return (uchar_td)eEqual | CMPLOGICAL_CASEINSENSITIVE;
+    else if (_tcscmp(cmpstr, _T(">i")) == 0)
+        return (uchar_td)eGreater | CMPLOGICAL_CASEINSENSITIVE;
+    else if (_tcscmp(cmpstr, _T("<i")) == 0)
+        return (uchar_td)eLess | CMPLOGICAL_CASEINSENSITIVE;
+    else if (_tcscmp(cmpstr, _T("<>i")) == 0)
+        return (uchar_td)eNotEq | CMPLOGICAL_CASEINSENSITIVE;
+    else if (_tcscmp(cmpstr, _T("=>i")) == 0)
+        return (uchar_td)eGreaterEq | CMPLOGICAL_CASEINSENSITIVE;
+    else if (_tcscmp(cmpstr, _T(">=i")) == 0)
+        return (uchar_td)eGreaterEq | CMPLOGICAL_CASEINSENSITIVE;
+    else if (_tcscmp(cmpstr, _T("=<i")) == 0)
+        return (uchar_td)eLessEq | CMPLOGICAL_CASEINSENSITIVE;
+    else if (_tcscmp(cmpstr, _T("<=i")) == 0)
+        return (uchar_td)eLessEq | CMPLOGICAL_CASEINSENSITIVE;
     return 255;
 }
 

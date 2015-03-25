@@ -232,7 +232,7 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
                         isBinary(src->fieldCharset(i)),
                         isUnicode(src->fieldCharset(sg.fieldNum)))))
                     sg.flags.bitA =
-                        !(src->fieldFlags(sg.fieldNum) & BINCMP_FLAG);
+                        !(src->fieldFlags(sg.fieldNum) & BINARY_FLAG);// case in-sencitive
                 if (src->fieldDataLen(sg.fieldNum) != ks.length)
                 {
                     fielddef& fd = tdef.fieldDefs[sg.fieldNum];
