@@ -376,6 +376,8 @@ public:
         if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
             type == ft_lstring)
             return len < 256 ? 1 : 2;
+        else if (type == ft_lvar)
+            return 2;
         return 0;
     }
 

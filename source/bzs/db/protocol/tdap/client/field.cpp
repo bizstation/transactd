@@ -1608,6 +1608,9 @@ void* field::getFVbin(uint_td& size) const
         memcpy(&size, (char*)m_ptr + m_fd->pos, sizeByte);
         return (void*)((char*)m_ptr + m_fd->pos + sizeByte);
     }
+    default:
+        size = m_fd->len;
+        return (void*)((char*)m_ptr + m_fd->pos);
     }
     return NULL;
 }
