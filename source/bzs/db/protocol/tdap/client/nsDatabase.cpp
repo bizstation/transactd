@@ -778,7 +778,7 @@ bool nsdatabase::disconnect(const _TCHAR* URI)
 }
 
 
-bool nsdatabase::disconectForReconnectTest()
+bool nsdatabase::disconnectForReconnectTest()
 {
     //Transactd only
     if (!isUseTransactd())
