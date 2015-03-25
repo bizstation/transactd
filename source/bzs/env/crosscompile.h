@@ -143,6 +143,7 @@ typedef unsigned __int32 char32_t; // 32bit
 #define wcsnicmp16(A, B, C)                                                    \
     _wcsnicmp((const wchar_t*)(A), (const wchar_t*)(B), C)
 #define wcsncmp16(A, B, C) wcsncmp((const wchar_t*)(A), (const wchar_t*)(B), C)
+#define wmemcmp16(A, B, C) wmemcmp((const wchar_t*)(A), (const wchar_t*)(B), C)
 #define wmemset16 wmemset
 #define strlen16(A) wcslen((const wchar_t*)(A))
 
