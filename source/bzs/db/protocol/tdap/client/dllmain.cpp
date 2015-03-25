@@ -336,10 +336,8 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_CONNECT:
         {
             if (client_t->req().keyNum == LG_SUBOP_RECONNECT)
-            {
                 client_t->reconnect();
-                client_t->req().paramMask = P_MASK_KEYONLY;
-            }else
+            else
                 client_t->cmdConnect();
             if (client_t->req().keyNum == LG_SUBOP_DISCONNECT_EX)
                 return 0;

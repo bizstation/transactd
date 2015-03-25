@@ -316,9 +316,19 @@ public:
             return;
         }
         std::string host = getHostName((const char*)m_req.keybuf);
-        if ((host == "") || !m_cons->reconnect(c, host, handshakeCallback, this))
-            m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-                
+        m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+        if (host == "") return;
+        if (!m_cons->reconnect(c, host, handshakeCallback, this))
+            return;
+        m_connecting = true;
+        if (getServerCharsetIndex() == -1)
+            m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
+        else
+        {
+            m_preResult = 0;
+            buildDualChasetKeybuf();
+        }
+        m_req.paramMask = P_MASK_KEYONLY;
     }
 
     inline void cmdConnect()
