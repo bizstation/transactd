@@ -42,7 +42,7 @@ namespace client
 
 
 /** Length of compare
- * if part of string or zstring then return strlen.
+ * if part of string or zstring then return strlen * sizeof(char or wchar).
  */
 inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
 {
@@ -50,13 +50,15 @@ inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
     if (part)
     {
         if ((fd.type == ft_string) || (fd.type == ft_zstring) ||
-            (fd.type == ft_note))
+                        (fd.type == ft_note) || (fd.type == ft_mychar))
             length = (uint_td)strlen((const char*)ptr);
-        else if ((fd.type == ft_wstring) || (fd.type == ft_wzstring))
-            length = (uint_td)wcslen((const wchar_t*)ptr);
+        else if ((fd.type == ft_wstring) || (fd.type == ft_wzstring) ||
+                        (fd.type == ft_mywchar))
+            length = (uint_td)wcslen((const wchar_t*)ptr)*sizeof(wchar_t);
     }
     return length;
 }
+
 
 inline bool verType(uchar_td type)
 {
@@ -362,9 +364,11 @@ public:
             memcpy(data + varlen, fdd.keyData(buf), copylen);
             delete [] buf;
         }
-
+        
         if (!part && (fdd.varLenBytes() || fdd.blobLenBytes()))
             logType |= CMPLOGICAL_VAR_COMP_ALL; // match complate
+        else
+            logType &= ~CMPLOGICAL_VAR_COMP_ALL;
     }
 
     bool setParam(table* tb, const _TCHAR* name, const _TCHAR* type,

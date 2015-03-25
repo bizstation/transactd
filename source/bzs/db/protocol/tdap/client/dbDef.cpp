@@ -593,6 +593,7 @@ fielddef* dbdef::insertField(short TableIndex, short InsertIndex)
     fielddef* fd = &(td->fieldDefs[InsertIndex]);
     fd->setCharsetIndex(td->charsetIndex);
     fd->setSchemaCodePage(td->schemaCodePage);
+    fd->setPadCharSettings(false, true);
     return fd;
 }
 

@@ -113,6 +113,8 @@ public:
 
 typedef int (*compFieldFunc)(const class field& l, const class field& r,
                              char logType);
+extern int compWString(const field& l, const field& r, char logType);
+extern int compiWString(const field& l, const field& r, char logType);
 
 /** @endcond */
 
@@ -128,7 +130,6 @@ class DLLLIB field
     unsigned char* m_ptr;
     const class fielddefs* m_fds;
 
-    compFieldFunc getCompFunc(char logType) const;
     int blobLenBytes() const { return m_fd->blobLenBytes(); }
 
 private:
@@ -312,6 +313,7 @@ public:
     /** @cond INTERNAL */
     bool isCompPartAndMakeValue();
     void offsetBlobPtr(size_t offset);
+    compFieldFunc getCompFunc(char logType) const;
     /** @endcond */
 };
 

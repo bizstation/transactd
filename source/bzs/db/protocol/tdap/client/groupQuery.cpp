@@ -153,15 +153,20 @@ void fieldNames::addValues(const _TCHAR* values, const _TCHAR* delmi)
 struct recordsetQueryImple
 {
     row_ptr row;
-    std::vector<unsigned char> compType;
-    std::vector<short> indexes;
-    std::vector<char> combine;
+    struct compItem
+    {
+        compFieldFunc compFunc;
+        short index;
+        unsigned char compType;
+        char combine;
+    };
+    std::vector<compItem> compItems;
+
     short endIndex;
     fielddefs compFields;
     recordsetQueryImple() : row(NULL) {}
     recordsetQueryImple(const recordsetQueryImple& r)
-        : row(r.row), compType(r.compType), indexes(r.indexes),
-          combine(r.combine), endIndex(r.endIndex), compFields(r.compFields)
+        : row(r.row), compItems(r.compItems), compFields(r.compFields)
     {
         if (row)
             row->addref();
@@ -215,13 +220,14 @@ recordsetQuery::~recordsetQuery()
 void recordsetQuery::init(const fielddefs* fdinfo)
 {
     const std::vector<std::_tstring>& tokns = getWheres();
-    m_imple->indexes.clear();
     m_imple->compFields.clear();
+    m_imple->compItems.clear();
     for (int i = 0; i < (int)tokns.size(); i += 4)
     {
-        int index = fdinfo->indexByName(tokns[i].c_str());
-        m_imple->indexes.push_back(index);
-        m_imple->compFields.push_back(&((*fdinfo)[index]), true /*rePosition*/);
+        recordsetQueryImple::compItem itm;
+        itm.index = fdinfo->indexByName(tokns[i].c_str());
+        m_imple->compItems.push_back(itm);
+        m_imple->compFields.push_back(&((*fdinfo)[itm.index]), true /*rePosition*/);
     }
     m_imple->row = memoryRecord::create(m_imple->compFields);
     m_imple->row->addref();
@@ -230,27 +236,32 @@ void recordsetQuery::init(const fielddefs* fdinfo)
     int index = 0;
     for (int i = 0; i < (int)tokns.size(); i += 4)
     {
+        recordsetQueryImple::compItem& itm = m_imple->compItems[index];
         field fd = (*m_imple->row)[index];
         fd = tokns[i + 2].c_str();
         bool part = fd.isCompPartAndMakeValue();
-        unsigned char ct = getFilterLogicTypeCode(tokns[i + 1].c_str());
+        itm.compType = getFilterLogicTypeCode(tokns[i + 1].c_str());
         if (!part)
-            ct |= CMPLOGICAL_VAR_COMP_ALL;
-        const_cast<fielddef&>(m_imple->compFields[index]).len =
-                        compDataLen(m_imple->compFields[index],
+            itm.compType |= CMPLOGICAL_VAR_COMP_ALL;
+        fielddef& fdd = const_cast<fielddef&>(m_imple->compFields[index]);
+        fdd.len = compDataLen(m_imple->compFields[index],
                                     (const uchar_td*)fd.ptr(), part);
+        itm.compFunc = fd.getCompFunc(itm.compType);
 
-        m_imple->compType.push_back(ct);
+        // When use wide string functions, len convert to wide char num. 
+        if ((itm.compFunc == compiWString) || (itm.compFunc == compWString))
+            fdd.len /= sizeof(char16_t);
+
         if (i + 3 < (int)tokns.size())
         {
             std::_tstring s = tokns[i + 3];
             if (s == _T("or"))
-                m_imple->combine.push_back(eCor);
+                itm.combine = eCor;
             else if (s == _T("and"))
-                m_imple->combine.push_back(eCand);
+                itm.combine = eCand;
         }
         else
-            m_imple->combine.push_back(eCend);
+            itm.combine = eCend;
         ++index;
     }
 }
@@ -278,17 +289,18 @@ bool recordsetQuery::isMatch(int ret, unsigned char compType) const
 
 bool recordsetQuery::match(const row_ptr row) const
 {
-    for (int i = 0; i < (int)m_imple->indexes.size(); ++i)
+    for (int i = 0; i < (int)m_imple->compItems.size(); ++i)
     {
-        short index = m_imple->indexes[i];
+        recordsetQueryImple::compItem& itm = m_imple->compItems[i];
         bool ret = isMatch(
-            (*row)[index].comp((*m_imple->row)[i], m_imple->compType[i]),
-            m_imple->compType[i]);
-        if (m_imple->combine[i] == eCend)
+                itm.compFunc((*row)[itm.index], (*m_imple->row)[i], itm.compType)
+                ,itm.compType);
+
+        if (itm.combine == eCend)
             return ret;
-        if (ret && m_imple->combine[i] == eCor)
+        if (ret && itm.combine == eCor)
             return true;
-        if (!ret && m_imple->combine[i] == eCand)
+        if (!ret && itm.combine == eCand)
             return false;
     }
     assert(0);
@@ -333,7 +345,6 @@ class groupQueryImple : public fieldNames
                     }
                 }
             }
-
             if (!enabled)
                 mdls.removeField(i);
         }

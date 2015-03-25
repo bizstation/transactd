@@ -4661,6 +4661,363 @@ void testDbPool()
     poolMgr.reset(0);
 }
 
+//--------------------------------------------------------------------------------------
+//   filter test
+//--------------------------------------------------------------------------------------
+#define FILTER_DB _T("filter_test")
+
+const _TCHAR* fdf_names[] = 
+{
+    _T("ft_string"),
+    _T("ft_wstring"),
+    _T("ft_zstring"),
+    _T("ft_wzstring"),
+    _T("ft_mychar"),
+    _T("ft_mywchar"),
+    _T("ft_myvarchar"),
+    _T("ft_mywvarchar"),
+    _T("ft_myvarbinary"),
+    _T("ft_mywvarbinary"),
+};
+
+const char fdf_types[] = 
+{
+    ft_string,
+    ft_wstring,
+    ft_zstring,
+    ft_wzstring,
+    ft_mychar,
+    ft_mywchar,
+    ft_myvarchar,
+    ft_mywvarchar,
+    ft_myvarbinary,
+    ft_mywvarbinary,
+};
+
+#define FILTER_RECORDS 15
+const _TCHAR* fd_values[15] = 
+{
+    _T("090-xxxx-xxx"),
+    _T("090-xxxx-xxx"),
+    _T(" "),
+    _T("090-xxxx-xxx"),
+    _T("080-xxxx-xxx"),
+    _T("0"),
+    _T(""),
+    _T(""),
+    _T("09"),
+    _T("070"),
+    _T(""),
+    _T("090-xxxx-xxx"),
+    _T("a90-xxxx-xxx"),
+    _T("Aa0-xxxx-xxx"),
+    _T("A90-xxxx-xxx"),
+};
+
+
+void inserFilterTestRecords(database* db)
+{
+    table* tb = db->openTable(_T("user"), TD_OPEN_NORMAL);
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
+    db->beginTrn();
+    for (int i = 0; i < FILTER_RECORDS; ++i)
+    {
+        tb->clearBuffer();
+        tb->setFV((short)0, i);
+        //set AllFields smae value
+        for (int j=0;j<10;++j)
+            tb->setFV(j+1, fd_values[i]);
+        tb->insert();
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "insert stat = " << tb->stat());
+
+    }
+    db->endTrn();
+    tb->release();
+}
+
+void createFilterTestDb(database* db)
+{
+
+    db->create(makeUri(PROTOCOL, HOSTNAME, FILTER_DB, BDFNAME));
+    if (db->stat() == STATUS_TABLE_EXISTS_ERROR)
+    {
+        db->open(makeUri(PROTOCOL, HOSTNAME, FILTER_DB, BDFNAME), TYPE_SCHEMA_BDF,
+             TD_OPEN_NORMAL);
+        BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "open stat = " << db->stat());
+        db->drop();
+        BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "drop stat = " << db->stat());
+        db->create(makeUri(PROTOCOL, HOSTNAME, FILTER_DB, BDFNAME));
+    }
+    
+    BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "createFilterTestDb stat = " << db->stat());
+    // create table
+    db->open(makeUri(PROTOCOL, HOSTNAME, FILTER_DB, BDFNAME), TYPE_SCHEMA_BDF,
+             TD_OPEN_NORMAL);
+    BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "createFilterTestDb 1 stat = " << db->stat());
+
+    dbdef* def = db->dbDef();
+    if (def)
+    {
+        /*  user table */
+        tabledef td;
+        memset(&td, 0, sizeof(tabledef));
+        td.setTableName(_T("user"));
+        td.setFileName(_T("user.dat"));
+        td.id = 1;
+        td.primaryKeyNum = -1;
+        td.parentKeyNum = -1;
+        td.replicaKeyNum = -1;
+        td.pageSize = 2048;
+#ifdef _WIN32
+        td.charsetIndex = CHARSET_CP932;
+#else
+        td.charsetIndex = CHARSET_UTF8;
+#endif
+
+        def->insertTable(&td);
+        BOOST_CHECK_MESSAGE(0 == def->stat(),
+                            "insertTable stat = " << def->stat());
+
+        fielddef* fd = def->insertField(1, 0);
+        fd->setName(_T("id"));
+        fd->type = ft_integer;
+        fd->len = (ushort_td)4;
+
+        for (int i=0;i<10;++i)
+        {
+            fielddef* fd = def->insertField(1, i+1);
+            fd->setName(fdf_names[i]);
+            fd->type = fdf_types[i];
+            fd->setLenByCharnum(20);
+        }
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(),
+                            "updateTableDef 1 stat = " << def->stat());
+
+        keydef* kd = def->insertKey(1, 0);
+        kd->segments[0].fieldNum = 0;
+        kd->segments[0].flags.bit8 = 1; // extended key type
+        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segmentCount = 1;
+
+        for (int i=0;i<10;++i)
+        {
+            kd = def->insertKey(1, i+1);
+            kd->segments[0].fieldNum = i+1;
+            kd->segments[0].flags.bit0 = 1; // duplicate
+            kd->segments[0].flags.bit8 = 1; // extended key type
+            kd->segments[0].flags.bit1 = 1; // changeable
+            kd->segmentCount = 1;
+        }
+
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(),
+                            "updateTableDef 3 stat = " << def->stat());
+        
+        inserFilterTestRecords(db);
+    }
+}
+
+void setReject(query& q)
+{
+    q.reject(0).limit(0);
+}
+
+void setReject(pq_handle& q)
+{
+    
+}
+
+template<class Q>
+void doTestReadByQuery(int num, activeTable& at, recordset& rs, Q& q, 
+                    int compSize, const _TCHAR* msg)
+{
+    setReject(q);
+    at.index(0).keyValue(0).read(rs, q);
+    BOOST_CHECK_MESSAGE(compSize == rs.size(), 
+            num << _T(" ") << msg << " rs.size() = " << rs.size());
+}
+
+void testFilterOfServer(database* db)
+{
+    {
+        activeTable atu(db, _T("user"));
+        recordset rs;
+        query q;
+        for (int i = 0; i < 10; ++i)
+        {
+            // empty string
+            
+            q.reset().where(fdf_names[i], _T("="), _T(""));
+            int n = 3;
+            if (atu.table()->tableDef()->fieldDefs[i+1].usePadChar())
+                n += 1;
+            doTestReadByQuery(i, atu, rs, q, n, _T(""));
+            q.where(fdf_names[i], _T("=i"), _T(""));
+            doTestReadByQuery(i, atu, rs, q, n, _T("=i"));
+
+            // match complate 
+            q.where(fdf_names[i], _T("="), _T("070"));
+            doTestReadByQuery(i, atu, rs, q, 1, _T("= 070"));
+
+            q.where(fdf_names[i], _T("=i"), _T("070"));
+            doTestReadByQuery(i, atu, rs, q, 1, _T("=i 070"));
+
+            // match complate
+            q.where(fdf_names[i], _T("<"), _T("09"));
+            doTestReadByQuery(i, atu, rs, q, 7, _T("< 09"));
+
+            q.where(fdf_names[i], _T("<i"), _T("09"));
+            doTestReadByQuery(i, atu, rs, q, 7, _T("<i 09"));
+
+            // wildcard and prerare
+            // 0:noprepare 1:prepare 2:prepareServer
+            for (int j = 0 ; j < 3; ++j)
+            {
+                q.reset().reject(0).limit(0);
+                if (j > 0)
+                {
+                    q.where(fdf_names[i], _T("="), _T("?"));
+                    pq_handle pq = atu.prepare(q, (j == 2));
+                    supplyValue(pq, 0, _T("09*"));
+                    doTestReadByQuery(i, atu, rs, pq, 5, _T("prepare = 09*"));
+
+                    q.where(fdf_names[i], _T("=i"), _T("?"));
+                    pq_handle pq1 = atu.prepare(q, (j == 2));
+                    supplyValue(pq1, 0, _T("09*"));
+                    doTestReadByQuery(i, atu, rs, pq1, 5, _T("prepare =i 09*"));
+
+                }else
+                {
+                    q.where(fdf_names[i], _T("="), _T("09*"));
+                    doTestReadByQuery(i, atu, rs, q, 5, _T("= 09*"));
+
+                    q.where(fdf_names[i], _T("=i"), _T("09*"));
+                    doTestReadByQuery(i, atu, rs, q, 5, _T("=i 09*"));
+                }
+            }
+
+            // ascii
+            q.where(fdf_names[i], _T("="), _T("a*"));
+            doTestReadByQuery(i, atu, rs, q, 1, _T(" = a*"));
+
+            q.where(fdf_names[i], _T("=i"), _T("a*"));
+            doTestReadByQuery(i, atu, rs, q, 3, _T(" =i a*"));
+
+            q.where(fdf_names[i], _T("="), _T("A*"));
+            doTestReadByQuery(i, atu, rs, q, 2, _T(" = A*"));
+
+            q.where(fdf_names[i], _T("=i"), _T("A*"));
+            doTestReadByQuery(i, atu, rs, q, 3, _T(" =i A*"));
+
+            q.where(fdf_names[i], _T("="), _T("AA0*"));
+            doTestReadByQuery(i, atu, rs, q, 0, _T(" = AA0*"));
+
+            q.where(fdf_names[i], _T("=i"), _T("AA0*"));
+            doTestReadByQuery(i, atu, rs, q, 1, _T(" =i Aa0*"));
+
+            //case in-sencitive index no jaudge
+            
+            for (int i = 0 ; i < 10 ; ++i)
+            {
+                q.where(fdf_names[i], _T("="), _T("A*"));
+                setReject(q);
+                atu.index(i+1).keyValue(_T("A")).read(rs, q);
+                BOOST_CHECK_MESSAGE(2 == rs.size(), 
+                    i << _T(" ") <<  _T("jaudge = A*") << " rs.size() = " << rs.size());
+                BOOST_CHECK_MESSAGE(atu.table()->statReasonOfFind() == STATUS_REACHED_FILTER_COND, 
+                    i << _T(" ") <<  _T("jaudge = A* FILTER_COND"));
+
+                q.where(fdf_names[i], _T("=i"), _T("A*"));
+                setReject(q);
+                atu.index(i+1).keyValue(_T("A")).read(rs, q);
+                BOOST_CHECK_MESSAGE(3 == rs.size(), 
+                    i << _T(" ") <<  _T("jaudge = A*") << " rs.size() = " << rs.size());
+                BOOST_CHECK_MESSAGE(atu.table()->statReasonOfFind() == STATUS_EOF, 
+                    i << _T(" ") <<  _T("jaudge = A* STATUS_EOF"));
+
+            }
+        }
+    }
+}
+
+void doTestMatchBy(int num, recordset& rs, recordsetQuery& rq, int compSize, const _TCHAR* msg)
+{
+    recordset* rss = rs.clone();
+    rss->matchBy(rq);
+    BOOST_CHECK_MESSAGE(compSize == rss->size(), 
+                num << msg << _T(" rss->size = ") << rss->size());
+    rss->release();
+}
+
+
+void testFilterOfMatchBy(database* db)
+{
+    {
+        activeTable atu(db, _T("user"));
+        query q;
+        recordset rs;
+        atu.index(0).keyValue(0).read(rs, q.all());
+        BOOST_CHECK_MESSAGE(FILTER_RECORDS == rs.size(), " rs.size() = " << rs.size());
+        for (int i = 0; i < 10; ++i)
+        {
+            // empty string
+            recordsetQuery rq;
+            rq.when(fdf_names[i], _T("="), _T(""));
+            int n = 3;
+            if (atu.table()->tableDef()->fieldDefs[i+1].usePadChar())
+                n += 1;
+            doTestMatchBy(i, rs, rq, n, _T(" = "));
+            rq.reset().when(fdf_names[i], _T("=i"), _T(""));
+            doTestMatchBy(i, rs, rq, n, _T(" =i "));
+
+            
+            // wildcard
+            rq.reset().when(fdf_names[i], _T("="), _T("09*"));
+            doTestMatchBy(i, rs, rq, 5, _T(" = 09*"));
+            rq.reset().when(fdf_names[i], _T("=i"), _T("09*"));
+            doTestMatchBy(i, rs, rq, 5, _T(" =i 09*"));
+            
+            // match complate
+            rq.reset().when(fdf_names[i], _T("="), _T("070"));
+            doTestMatchBy(i, rs, rq, 1, _T(" = 070"));
+            rq.reset().when(fdf_names[i], _T("=i"), _T("070"));
+            doTestMatchBy(i, rs, rq, 1, _T(" =i 070"));
+
+            // match complate
+            rq.reset().when(fdf_names[i], _T("<"), _T("09"));
+            doTestMatchBy(i, rs, rq, 7, _T(" < 09"));
+
+            rq.reset().when(fdf_names[i], _T("<i"), _T("09"));
+            doTestMatchBy(i, rs, rq, 7, _T(" <i 09"));
+
+            // ascii
+            rq.reset().when(fdf_names[i], _T("="), _T("a*"));
+            doTestMatchBy(i, rs, rq, 1, _T(" = a*"));
+
+            rq.reset().when(fdf_names[i], _T("=i"), _T("a*"));
+            doTestMatchBy(i, rs, rq, 3, _T(" =i a*"));
+
+            rq.reset().when(fdf_names[i], _T("=i"), _T("A*"));
+            doTestMatchBy(i, rs, rq, 3, _T(" =i A*"));
+
+            rq.reset().when(fdf_names[i], _T("="), _T("AA0*"));
+            doTestMatchBy(i, rs, rq, 0, _T(" = AA0*"));
+
+            rq.reset().when(fdf_names[i], _T("=i"), _T("AA0*"));
+            doTestMatchBy(i, rs, rq, 1, _T(" =i Aa0*"));
+
+            
+            BOOST_CHECK_MESSAGE(FILTER_RECORDS == rs.size(), " rs.size() = " << rs.size());
+        }
+    }
+    db->drop();
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "drop stat = " << db->stat());
+}
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -5020,11 +5377,26 @@ BOOST_AUTO_TEST_CASE(pool)
 {
     testDbPool();
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_AUTO_TEST_SUITE(filter)
+
+BOOST_FIXTURE_TEST_CASE(serverFilter, fixture)
+{
+    createFilterTestDb(db());
+    testFilterOfServer(db());
+    testFilterOfMatchBy(db());
+   
+}
+
 BOOST_AUTO_TEST_CASE(fuga)
  {
     BOOST_CHECK_EQUAL(2 * 3, 6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+    
 
 // ------------------------------------------------------------------------

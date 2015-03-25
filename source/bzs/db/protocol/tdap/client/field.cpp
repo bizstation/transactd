@@ -476,10 +476,8 @@ void field::setFVA(const char* data)
     {
     case ft_string:
         if (m_fd->usePadChar())
-            return store<stringStore, char, char>(p, data, *m_fd, m_fds->cv(),
-                                         true);
-        return store<binaryStore, char, char>(p, data, *m_fd, m_fds->cv(),
-                                         true);
+            return store<stringStore, char, char>(p, data, *m_fd, m_fds->cv());
+        return store<binaryStore, char, char>(p, data, *m_fd, m_fds->cv());
     case ft_note:
     case ft_zstring:
         return store<zstringStore, char, char>(p, data, *m_fd, m_fds->cv());
@@ -487,10 +485,8 @@ void field::setFVA(const char* data)
         return store<wzstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
         if (m_fd->usePadChar())
-            return store<wstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv(),
-                                          true);
-        return store<wbinaryStore, WCHAR, char>(p, data, *m_fd, m_fds->cv(),
-                                          true);
+            return store<wstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
+        return store<wbinaryStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_mychar:
         return store<myCharStore, char, char>(p, data, *m_fd, m_fds->cv());
     case ft_myvarchar:
@@ -604,10 +600,8 @@ void field::setFVW(const wchar_t* data)
     {
     case ft_string:
         if (m_fd->usePadChar())
-            return store<stringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv(),
-                                               true);
-        return store<binaryStore, char, WCHAR>(p, data, *m_fd, m_fds->cv(),
-                                               true);
+            return store<stringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
+        return store<binaryStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_note:
     case ft_zstring:
         return store<zstringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
@@ -615,10 +609,8 @@ void field::setFVW(const wchar_t* data)
         return store<wzstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
         if (m_fd->usePadChar())
-            return store<wstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv(),
-                                                 true);
-        return store<wbinaryStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv(),
-                                                 true);
+            return store<wstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
+        return store<wbinaryStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_mychar:
         return store<myCharStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_myvarchar:
@@ -1865,12 +1857,12 @@ inline int compiString(const field& l, const field& r, char logType)
     return _strnicmp((const char*)l.ptr(), (const char*)r.ptr(), r.len());
 }
 
-inline int compWString(const field& l, const field& r, char logType)
+int compWString(const field& l, const field& r, char logType)
 {
     return wcsncmp16((char16_t*)l.ptr(), (char16_t*)r.ptr(), r.len());
 }
 
-inline int compiWString(const field& l, const field& r, char logType)
+int compiWString(const field& l, const field& r, char logType)
 {
     return wcsnicmp16((char16_t*)l.ptr(), (char16_t*)r.ptr(), r.len());
 }
@@ -1998,11 +1990,12 @@ bool field::isCompPartAndMakeValue()
     bool ret = false;
     if (m_fd->isStringType())
     {
-        bool trim = m_fd->trimPadChar();
+        m_fd->setPadCharSettings(false, true);
+        /*bool trim = m_fd->trimPadChar();
         bool use = m_fd->usePadChar();
-        bool sp = (!trim && use);
+        bool sp = (!trim || use);
         if (sp)
-            m_fd->setPadCharSettings(false, true);
+            m_fd->setPadCharSettings(false, true);*/
         _TCHAR* p = (_TCHAR*)getFVstr();
         if (p)
         {
@@ -2012,15 +2005,21 @@ bool field::isCompPartAndMakeValue()
                 if (p[n - 1] == _T('*'))
                 {
                     p[n - 1] = 0x00;
+                    if (m_fd->type == ft_mychar)
+                        m_fd->type = ft_string;
+                    else if (m_fd->type == ft_mywchar)
+                        m_fd->type = ft_wstring;
+                    m_fd->setPadCharSettings(false, true);
                     setFV(p);
+
                     ret = true;
                 }
             }
         }
         else
             setFV(_T(""));
-        if (sp)
-            m_fd->setPadCharSettings(use, trim);
+        /*if (sp)
+            m_fd->setPadCharSettings(use, trim); */
     }
     return ret;
 }
