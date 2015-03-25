@@ -2931,6 +2931,8 @@ def testNewDelete()
     a = Transactd::Avg.new(fns)
     mi = Transactd::Min.new(fns)
     ma = Transactd::Max.new(fns)
+    la = Transactd::Last.new(fns)
+    fa = Transactd::First.new(fns)
     rs = Transactd::Recordset.new()
     # have to explicitly release
     atu.release()
@@ -3284,6 +3286,64 @@ def testServerPrepareJoin()
   db.close()
 end
 
+def testReadMore()
+  db = Transactd::Database.new()
+  db.open(URL_QT)
+  expect(db.stat()).to eq 0
+  
+  atu = Transactd::ActiveTable.new(db, 'user')
+  atu.alias('名前', 'name')
+  q = Transactd::Query.new()
+  
+  #isStopAtLimit
+  expect(q.isStopAtLimit()).to eq false
+  
+  q.select('id', 'name', 'group')
+        .where('name', '=', '1*')
+        .reject(70).limit(8).stopAtLimit(true)
+  expect(q.isStopAtLimit()).to eq true
+  
+  stmt1 = atu.prepare(q)
+  expect(stmt1).not_to eq nil
+  rs = atu.index(0).keyValue(18).read(stmt1)
+  expect(rs.size()).to eq 2
+  
+  #readMore
+  rs2 = atu.readMore()
+  expect(rs2.size()).to eq 8
+  rs.unionRecordset(rs2)
+  expect(rs.size()).to eq 10
+end
+
+def testFirstLastGroupFunction()
+  db = Transactd::Database.new()
+  db.open(URL_QT)
+  expect(db.stat()).to eq 0
+  
+  atu = Transactd::ActiveTable.new(db, 'user')
+  atu.alias('名前', 'name')
+  q = Transactd::Query.new()
+  q.select('id', 'name', 'group')
+        .where('name', '=', '1*')
+        .reject(70).limit(8).stopAtLimit(true)
+  stmt1 = atu.prepare(q)
+  expect(stmt1).not_to eq nil
+  rs = atu.index(0).keyValue(0).read(stmt1)
+  expect(rs.size()).to eq 8
+  
+  #grouping first and last
+  gq = Transactd::GroupQuery.new()
+  target = Transactd::FieldNames.new()
+  target.addValue('name');
+  last = Transactd::Last.new(target, 'last_rec_name')
+  first = Transactd::First.new(target, 'first_rec_name')
+  gq.addFunction(last);
+  gq.addFunction(first);
+  rs.groupBy(gq);
+  expect(rs[0]['first_rec_name']).to eq "1 user";
+  expect(rs[0]['last_rec_name']).to eq "16 user";
+end
+
 def testWirtableRecord()
   db = Transactd::Database.new()
   db.open(URL_QT)
@@ -3473,6 +3533,12 @@ describe Transactd do
   end
   it 'activetable and prepare (server)' do
     testServerPrepareJoin()
+  end
+  it 'activetable and readMore' do
+    testReadMore()
+  end
+  it 'Grouping and first and last' do
+    testFirstLastGroupFunction()
   end
   it 'write with writableRecord' do
     testWirtableRecord()
