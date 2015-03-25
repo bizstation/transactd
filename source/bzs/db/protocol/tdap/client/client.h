@@ -76,7 +76,7 @@ class client
 
     bool checkVersion(trdVersiton& ver)
     {
-        if ((ver.srvMajor < 2) || ((ver.srvMajor == 2) && (ver.srvMinor < 1)))
+        if ((ver.srvMajor < 2) || ((ver.srvMajor == 2) && (ver.srvMinor < 3)))
             return false;
         return true;
     }

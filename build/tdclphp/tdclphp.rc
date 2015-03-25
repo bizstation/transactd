@@ -29,8 +29,8 @@
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,0,10
- PRODUCTVERSION 2,2,0,10
+ FILEVERSION 2,3,0,11
+ PRODUCTVERSION 2,3,0,11
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -47,9 +47,9 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "Transactd PHP client"
-            VALUE "FileVersion", "2.2.0.10"
+            VALUE "FileVersion", "2.3.0.11"
             VALUE "LegalCopyright", "Copyright(C) 2014 BizStation Corp"
-            VALUE "ProductVersion", "2.2.0.10"
+            VALUE "ProductVersion", "2.3.0.11"
             VALUE "ProductName", "Transactd Client (GPL V2)"
         END
     END

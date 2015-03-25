@@ -147,7 +147,7 @@
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
         <TD_VER_MAJOR>2</TD_VER_MAJOR>
-        <TD_VER_MINOR>2</TD_VER_MINOR>
+        <TD_VER_MINOR>3</TD_VER_MINOR>
         <DllSuffix>$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
         <TD_CPU>32</TD_CPU>
     </PropertyGroup>
