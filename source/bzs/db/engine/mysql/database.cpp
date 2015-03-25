@@ -754,6 +754,11 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
 table* database::openTable(const std::string& name, short mode,
                            const char* ownerName)
 {
+    if (m_thd->variables.sql_log_bin && m_inTransaction)
+    {
+        m_stat = STATUS_ALREADY_INTRANSACTION;
+        return NULL;
+    }
     TABLE* t = doOpenTable(name, mode, ownerName);
     if (t)
     {
