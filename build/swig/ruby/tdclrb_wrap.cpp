@@ -1906,8 +1906,11 @@ int SWIG_Ruby_arity( VALUE proc, int minimal )
 #define SWIGTYPE_p_unsigned_short swig_types[85]
 #define SWIGTYPE_p_value_type swig_types[86]
 #define SWIGTYPE_p_void swig_types[87]
-static swig_type_info *swig_types[89];
-static swig_module_info swig_module = {swig_types, 88, 0, 0, 0, 0};
+#define SWIGTYPE_p_bzs__db__protocol__tdap__client__last swig_types[88]
+#define SWIGTYPE_p_bzs__db__protocol__tdap__client__first swig_types[89]
+
+static swig_type_info *swig_types[91];
+static swig_module_info swig_module = {swig_types, 90, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -2738,11 +2741,11 @@ SWIGINTERN bzs::db::protocol::tdap::client::min *new_bzs_db_protocol_tdap_client
 SWIGINTERN bzs::db::protocol::tdap::client::max *new_bzs_db_protocol_tdap_client_max__SWIG_0(bzs::db::protocol::tdap::client::fieldNames const &targetNames,_TCHAR const *resultName=NULL){
     return bzs::db::protocol::tdap::client::max::create(targetNames, resultName);
   }
-SWIGINTERN bzs::db::protocol::tdap::client::first *new_bzs_db_protocol_tdap_client_first__SWIG_0(bzs::db::protocol::tdap::client::fieldNames const &targetNames,_TCHAR const *resultName=NULL){
-    return bzs::db::protocol::tdap::client::first::create(targetNames, resultName);
-  }
 SWIGINTERN bzs::db::protocol::tdap::client::last *new_bzs_db_protocol_tdap_client_last__SWIG_0(bzs::db::protocol::tdap::client::fieldNames const &targetNames,_TCHAR const *resultName=NULL){
     return bzs::db::protocol::tdap::client::last::create(targetNames, resultName);
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::first *new_bzs_db_protocol_tdap_client_first__SWIG_0(bzs::db::protocol::tdap::client::fieldNames const &targetNames,_TCHAR const *resultName=NULL){
+    return bzs::db::protocol::tdap::client::first::create(targetNames, resultName);
   }
 SWIGINTERN void bzs_db_protocol_tdap_client_recordset_getRow(bzs::db::protocol::tdap::client::recordset *self,size_t index,bzs::db::protocol::tdap::client::fieldsBase **return_record){
     *return_record = &(self->operator[](index));
@@ -28093,48 +28096,6 @@ fail:
 }
 
 
-SWIGINTERN VALUE
-_wrap_groupFuncBase_result(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::groupFuncBase *arg1 = (bzs::db::protocol::tdap::client::groupFuncBase *) 0 ;
-  int arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int val2 ;
-  int ecode2 = 0 ;
-  bzs::db::protocol::tdap::client::groupFuncBase::value_type result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::groupFuncBase const *","result", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::groupFuncBase * >(argp1);
-  ecode2 = SWIG_AsVal_int(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "int","result", 2, argv[0] ));
-  } 
-  arg2 = static_cast< int >(val2);
-  {
-    try {
-      result = (bzs::db::protocol::tdap::client::groupFuncBase::value_type)((bzs::db::protocol::tdap::client::groupFuncBase const *)arg1)->result(arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_From_double(static_cast< double >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
 
 /*
   Document-method: Transactd::groupFuncBase.clone
@@ -28460,47 +28421,6 @@ free_bzs_db_protocol_tdap_client_groupQuery(bzs::db::protocol::tdap::client::gro
 static swig_class SwigClassSum;
 
 
-/*
-  Document-method: Transactd::sum.clone
-
-  call-seq:
-    clone -> groupFuncBase
-
-Create a duplicate of the class.
-*/
-SWIGINTERN VALUE
-_wrap_sum_clone(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::sum *arg1 = (bzs::db::protocol::tdap::client::sum *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bzs::db::protocol::tdap::client::groupFuncBase *result = 0 ;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__sum, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::sum *","clone", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::sum * >(argp1);
-  {
-    try {
-      result = (bzs::db::protocol::tdap::client::groupFuncBase *)(arg1)->clone();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, SWIG_POINTER_OWN |  0 );
-  return vresult;
-fail:
-  return Qnil;
-}
-
 
 SWIGINTERN VALUE
 _wrap_new_sum__SWIG_0(int argc, VALUE *argv, VALUE self) {
@@ -28655,48 +28575,6 @@ free_bzs_db_protocol_tdap_client_sum(bzs::db::protocol::tdap::client::sum *arg1)
 static swig_class SwigClassCount;
 
 
-/*
-  Document-method: Transactd::count.clone
-
-  call-seq:
-    clone -> groupFuncBase
-
-Create a duplicate of the class.
-*/
-SWIGINTERN VALUE
-_wrap_count_clone(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::count *arg1 = (bzs::db::protocol::tdap::client::count *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bzs::db::protocol::tdap::client::groupFuncBase *result = 0 ;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__count, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::count *","clone", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::count * >(argp1);
-  {
-    try {
-      result = (bzs::db::protocol::tdap::client::groupFuncBase *)(arg1)->clone();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, SWIG_POINTER_OWN |  0 );
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
 #ifdef HAVE_RB_DEFINE_ALLOC_FUNC
 SWIGINTERN VALUE
 _wrap_count_allocate(VALUE self) {
@@ -28758,49 +28636,8 @@ free_bzs_db_protocol_tdap_client_count(bzs::db::protocol::tdap::client::count *a
     delete_bzs_db_protocol_tdap_client_count(arg1);
 }
 
+
 static swig_class SwigClassFirst;
-
-
-/*
-  Document-method: Transactd::first.clone
-
-  call-seq:
-    clone -> groupFuncBase
-
-Create a duplicate of the class.
-*/
-SWIGINTERN VALUE
-_wrap_first_clone(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::first *arg1 = (bzs::db::protocol::tdap::client::first *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bzs::db::protocol::tdap::client::groupFuncBase *result = 0 ;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__first, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::first *","clone", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::first * >(argp1);
-  {
-    try {
-      result = (bzs::db::protocol::tdap::client::groupFuncBase *)(arg1)->clone();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, SWIG_POINTER_OWN |  0 );
-  return vresult;
-fail:
-  return Qnil;
-}
 
 
 SWIGINTERN VALUE
@@ -28865,7 +28702,7 @@ _wrap_first_allocate(VALUE self) {
 #endif
     return vresult;
   }
-  
+ 
 
 SWIGINTERN VALUE
 _wrap_new_first__SWIG_1(int argc, VALUE *argv, VALUE self) {
@@ -28951,51 +28788,10 @@ SWIGINTERN void delete_bzs_db_protocol_tdap_client_first(bzs::db::protocol::tdap
 SWIGINTERN void
 free_bzs_db_protocol_tdap_client_first(bzs::db::protocol::tdap::client::first *arg1) {
     delete_bzs_db_protocol_tdap_client_first(arg1);
+}
 
 
 static swig_class SwigClassLast;
-
-
-/*
-  Document-method: Transactd::last.clone
-
-  call-seq:
-    clone -> groupFuncBase
-
-Create a duplicate of the class.
-*/
-SWIGINTERN VALUE
-_wrap_last_clone(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::last *arg1 = (bzs::db::protocol::tdap::client::last *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bzs::db::protocol::tdap::client::groupFuncBase *result = 0 ;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__last, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::last *","clone", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::last * >(argp1);
-  {
-    try {
-      result = (bzs::db::protocol::tdap::client::groupFuncBase *)(arg1)->clone();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, SWIG_POINTER_OWN |  0 );
-  return vresult;
-fail:
-  return Qnil;
-}
 
 
 SWIGINTERN VALUE
@@ -29146,51 +28942,10 @@ SWIGINTERN void delete_bzs_db_protocol_tdap_client_last(bzs::db::protocol::tdap:
 SWIGINTERN void
 free_bzs_db_protocol_tdap_client_last(bzs::db::protocol::tdap::client::last *arg1) {
     delete_bzs_db_protocol_tdap_client_last(arg1);
+}
 
 
 static swig_class SwigClassAvg;
-
-
-/*
-  Document-method: Transactd::avg.clone
-
-  call-seq:
-    clone -> groupFuncBase
-
-Create a duplicate of the class.
-*/
-SWIGINTERN VALUE
-_wrap_avg_clone(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::avg *arg1 = (bzs::db::protocol::tdap::client::avg *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bzs::db::protocol::tdap::client::groupFuncBase *result = 0 ;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__avg, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::avg *","clone", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::avg * >(argp1);
-  {
-    try {
-      result = (bzs::db::protocol::tdap::client::groupFuncBase *)(arg1)->clone();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, SWIG_POINTER_OWN |  0 );
-  return vresult;
-fail:
-  return Qnil;
-}
 
 
 SWIGINTERN VALUE
@@ -29346,48 +29101,6 @@ free_bzs_db_protocol_tdap_client_avg(bzs::db::protocol::tdap::client::avg *arg1)
 static swig_class SwigClassMin;
 
 
-/*
-  Document-method: Transactd::min.clone
-
-  call-seq:
-    clone -> groupFuncBase
-
-Create a duplicate of the class.
-*/
-SWIGINTERN VALUE
-_wrap_min_clone(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::min *arg1 = (bzs::db::protocol::tdap::client::min *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bzs::db::protocol::tdap::client::groupFuncBase *result = 0 ;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__min, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::min *","clone", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::min * >(argp1);
-  {
-    try {
-      result = (bzs::db::protocol::tdap::client::groupFuncBase *)(arg1)->clone();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, SWIG_POINTER_OWN |  0 );
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
 SWIGINTERN VALUE
 _wrap_new_min__SWIG_0(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::fieldNames *arg1 = 0 ;
@@ -29539,48 +29252,6 @@ free_bzs_db_protocol_tdap_client_min(bzs::db::protocol::tdap::client::min *arg1)
 }
 
 static swig_class SwigClassMax;
-
-
-/*
-  Document-method: Transactd::max.clone
-
-  call-seq:
-    clone -> groupFuncBase
-
-Create a duplicate of the class.
-*/
-SWIGINTERN VALUE
-_wrap_max_clone(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::max *arg1 = (bzs::db::protocol::tdap::client::max *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  bzs::db::protocol::tdap::client::groupFuncBase *result = 0 ;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 0) || (argc > 0)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__max, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::max *","clone", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::max * >(argp1);
-  {
-    try {
-      result = (bzs::db::protocol::tdap::client::groupFuncBase *)(arg1)->clone();
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase, SWIG_POINTER_OWN |  0 );
-  return vresult;
-fail:
-  return Qnil;
-}
 
 
 SWIGINTERN VALUE
@@ -31804,15 +31475,13 @@ fail:
 
 SWIGINTERN VALUE _wrap_activeTable_readMore(int nargs, VALUE *args, VALUE self) {
   bzs::db::protocol::tdap::client::activeTable *arg1 =  0x00 ;
-  bzs::db::protocol::tdap::client::recordset *arg2 = 0 ;
+  bzs::db::protocol::tdap::client::recordset *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
 
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
+  VALUE vresult = Qnil;
+
+  if (nargs != 0) SWIG_fail;
   
   //Get activeTable ptr
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0 |  0 );
@@ -31820,20 +31489,11 @@ SWIGINTERN VALUE _wrap_activeTable_readMore(int nargs, VALUE *args, VALUE self) 
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::activeTable *","readMore", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::activeTable * >(argp1);
-
-  //Get recordset ptr
-  res2 = SWIG_ConvertPtr(args[0], &argp2, SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset,  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::recordset &","readMore", 2, args[0] )); 
-  }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bzs::db::protocol::tdap::client::recordset &","readMore", 2, args[0])); 
-  }
-  arg2 = reinterpret_cast< bzs::db::protocol::tdap::client::recordset * >(argp2);
-
+  
   {
     try {
-      arg1->readMore(*arg2);
+      result = recordset::create();
+	  arg1->readMore(*result);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -31841,11 +31501,11 @@ SWIGINTERN VALUE _wrap_activeTable_readMore(int nargs, VALUE *args, VALUE self) 
       static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
       rb_raise(cpp_std_error, e.what());
     }
-    return self;
   }
-
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset, SWIG_POINTER_OWN |  0 );
+  return vresult;
 fail:
-  Ruby_Format_OverloadedError( nargs+1, 11, "readMore", "    bzs::db::protocol::tdap::client::activeTable & join ");
+  Ruby_Format_OverloadedError( nargs+1, 11, "readMore", "    bzs::db::protocol::tdap::client::activeTable & readMore ");
   return Qnil;
 
 }
@@ -33616,6 +33276,8 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_unsigned_short,
   &_swigt__p_value_type,
   &_swigt__p_void,
+  &_swigt__p_bzs__db__protocol__tdap__client__last,
+  &_swigt__p_bzs__db__protocol__tdap__client__first,
 };
 
 static swig_cast_info _swigc__p_HWND[] = {  {&_swigt__p_HWND, 0, 0, 0},{0, 0, 0, 0}};
@@ -33650,9 +33312,11 @@ static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__filterdIterator
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_indexRvNavi_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_indexRvNavi_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepNavi_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepNavi_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepRvNavi_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__filterdIteratorT_bzs__db__protocol__tdap__client__tableIteratorT_stepRvNavi_t_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__groupFuncBase[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sum, _p_bzs__db__protocol__tdap__client__sumTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, _p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__first[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__first, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__groupFuncBase[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sum, _p_bzs__db__protocol__tdap__client__sumTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, _p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__last, _p_bzs__db__protocol__tdap__client__lastTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__first, _p_bzs__db__protocol__tdap__client__firstTo_p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__groupQuery[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__groupQuery, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__idatabaseManager[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__idatabaseManager, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__pooledDbManager, _p_bzs__db__protocol__tdap__client__pooledDbManagerTo_p_bzs__db__protocol__tdap__client__idatabaseManager, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__last[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__last, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__max[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__max, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__memoryRecord[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__memoryRecord, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__writableRecord, _p_bzs__db__protocol__tdap__client__writableRecordTo_p_bzs__db__protocol__tdap__client__memoryRecord, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__min[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__min, 0, 0, 0},{0, 0, 0, 0}};
@@ -33663,7 +33327,7 @@ static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__preparedQuery[]
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__query[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, _p_bzs__db__protocol__tdap__client__recordsetQueryTo_p_bzs__db__protocol__tdap__client__query, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__query, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__queryBase[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__query, _p_bzs__db__protocol__tdap__client__queryTo_p_bzs__db__protocol__tdap__client__queryBase, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__queryBase, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__recordset[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordset, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__recordsetQuery[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, _p_bzs__db__protocol__tdap__client__sumTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, _p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, _p_bzs__db__protocol__tdap__client__groupFuncBaseTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__recordsetQuery[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, _p_bzs__db__protocol__tdap__client__sumTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, _p_bzs__db__protocol__tdap__client__countTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__last, _p_bzs__db__protocol__tdap__client__lastTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__first, _p_bzs__db__protocol__tdap__client__firstTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, _p_bzs__db__protocol__tdap__client__groupFuncBaseTo_p_bzs__db__protocol__tdap__client__recordsetQuery, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__autoMemory[] = {{&_swigt__p_bzs__db__protocol__tdap__client__autoMemory, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__refarymem[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__refarymem, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__fieldsBase, _p_bzs__db__protocol__tdap__client__fieldsBaseTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__memoryRecord, _p_bzs__db__protocol__tdap__client__memoryRecordTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__writableRecord, _p_bzs__db__protocol__tdap__client__writableRecordTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__autoMemory, _p_bzs__db__protocol__tdap__client__autoMemoryTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__fields, _p_bzs__db__protocol__tdap__client__fieldsTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t, 0, 0, 0},{0, 0, 0, 0}};
@@ -33706,6 +33370,8 @@ static swig_cast_info _swigc__p_unsigned_int[] = {  {&_swigt__p_unsigned_int, 0,
 static swig_cast_info _swigc__p_unsigned_short[] = {  {&_swigt__p_unsigned_short, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_value_type[] = {  {&_swigt__p_value_type, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
+
+
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_HWND,
@@ -33796,6 +33462,8 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_unsigned_short,
   _swigc__p_value_type,
   _swigc__p_void,
+  _swigc__p_bzs__db__protocol__tdap__client__last,
+  _swigc__p_bzs__db__protocol__tdap__client__first,
 };
 
 
@@ -34977,7 +34645,6 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassGroupFuncBase.klass, "setResultName", VALUEFUNC(_wrap_groupFuncBase_setResultName), -1);
   rb_define_method(SwigClassGroupFuncBase.klass, "resultKey", VALUEFUNC(_wrap_groupFuncBase_resultKey), -1);
   rb_define_method(SwigClassGroupFuncBase.klass, "reset", VALUEFUNC(_wrap_groupFuncBase_reset), -1);
-  rb_define_method(SwigClassGroupFuncBase.klass, "result", VALUEFUNC(_wrap_groupFuncBase_result), -1);
   rb_define_method(SwigClassGroupFuncBase.klass, "clone", VALUEFUNC(_wrap_groupFuncBase_clone), -1);
   SwigClassGroupFuncBase.mark = 0;
   SwigClassGroupFuncBase.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_groupFuncBase;
@@ -35001,7 +34668,6 @@ SWIGEXPORT void Init_transactd(void) {
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__sum, (void *) &SwigClassSum);
   rb_define_alloc_func(SwigClassSum.klass, _wrap_sum_allocate);
   rb_define_method(SwigClassSum.klass, "initialize", VALUEFUNC(_wrap_new_sum), -1);
-  rb_define_method(SwigClassSum.klass, "clone", VALUEFUNC(_wrap_sum_clone), -1);
   SwigClassSum.mark = 0;
   SwigClassSum.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_sum;
   SwigClassSum.trackObjects = 0;
@@ -35010,16 +34676,30 @@ SWIGEXPORT void Init_transactd(void) {
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__count, (void *) &SwigClassCount);
   rb_define_alloc_func(SwigClassCount.klass, _wrap_count_allocate);
   rb_define_method(SwigClassCount.klass, "initialize", VALUEFUNC(_wrap_new_count), -1);
-  rb_define_method(SwigClassCount.klass, "clone", VALUEFUNC(_wrap_count_clone), -1);
   SwigClassCount.mark = 0;
   SwigClassCount.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_count;
   SwigClassCount.trackObjects = 0;
+  
+  SwigClassLast.klass = rb_define_class_under(mTransactd, "Last", ((swig_class *) SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase->clientdata)->klass);
+  SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__last, (void *) &SwigClassLast);
+  rb_define_alloc_func(SwigClassLast.klass, _wrap_last_allocate);
+  rb_define_method(SwigClassLast.klass, "initialize", VALUEFUNC(_wrap_new_last), -1);
+  SwigClassLast.mark = 0;
+  SwigClassLast.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_last;
+  SwigClassLast.trackObjects = 0;
+
+  SwigClassFirst.klass = rb_define_class_under(mTransactd, "First", ((swig_class *) SWIGTYPE_p_bzs__db__protocol__tdap__client__groupFuncBase->clientdata)->klass);
+  SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__first, (void *) &SwigClassFirst);
+  rb_define_alloc_func(SwigClassFirst.klass, _wrap_first_allocate);
+  rb_define_method(SwigClassFirst.klass, "initialize", VALUEFUNC(_wrap_new_first), -1);
+  SwigClassFirst.mark = 0;
+  SwigClassFirst.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_first;
+  SwigClassFirst.trackObjects = 0;
   
   SwigClassAvg.klass = rb_define_class_under(mTransactd, "Avg", ((swig_class *) SWIGTYPE_p_bzs__db__protocol__tdap__client__sum->clientdata)->klass);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__avg, (void *) &SwigClassAvg);
   rb_define_alloc_func(SwigClassAvg.klass, _wrap_avg_allocate);
   rb_define_method(SwigClassAvg.klass, "initialize", VALUEFUNC(_wrap_new_avg), -1);
-  rb_define_method(SwigClassAvg.klass, "clone", VALUEFUNC(_wrap_avg_clone), -1);
   SwigClassAvg.mark = 0;
   SwigClassAvg.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_avg;
   SwigClassAvg.trackObjects = 0;
@@ -35028,7 +34708,6 @@ SWIGEXPORT void Init_transactd(void) {
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__min, (void *) &SwigClassMin);
   rb_define_alloc_func(SwigClassMin.klass, _wrap_min_allocate);
   rb_define_method(SwigClassMin.klass, "initialize", VALUEFUNC(_wrap_new_min), -1);
-  rb_define_method(SwigClassMin.klass, "clone", VALUEFUNC(_wrap_min_clone), -1);
   SwigClassMin.mark = 0;
   SwigClassMin.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_min;
   SwigClassMin.trackObjects = 0;
@@ -35037,7 +34716,6 @@ SWIGEXPORT void Init_transactd(void) {
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__max, (void *) &SwigClassMax);
   rb_define_alloc_func(SwigClassMax.klass, _wrap_max_allocate);
   rb_define_method(SwigClassMax.klass, "initialize", VALUEFUNC(_wrap_new_max), -1);
-  rb_define_method(SwigClassMax.klass, "clone", VALUEFUNC(_wrap_max_clone), -1);
   SwigClassMax.mark = 0;
   SwigClassMax.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_max;
   SwigClassMax.trackObjects = 0;

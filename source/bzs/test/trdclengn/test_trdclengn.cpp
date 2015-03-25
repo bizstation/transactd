@@ -4445,9 +4445,7 @@ void testReadMore(database* db)
 #endif
 
     activeTable atu(db, _T("user"));
-    activeTable atg(db, _T("groups"));
     atu.alias(fd_name, _T("name"));
-    atg.alias(_T("name"), _T("group_name"));
     query q;
     q.select(_T("id"), _T("name"), _T("group"))
         .where(_T("name"), _T("="), _T("1*"))
@@ -4465,6 +4463,48 @@ void testReadMore(database* db)
 
     rs += rs2;
     BOOST_CHECK_MESSAGE(rs.size() == 10, "union");
+
+}
+
+void testFirstLastGroupFunction(database* db)
+{
+#ifdef LINUX
+    const char* fd_name = "名前";
+#else
+#ifdef _UNICODE
+    const wchar_t fd_name[] = { L"名前" };
+#else
+    char fd_name[30];
+    WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+#endif
+#endif
+
+    activeTable atu(db, _T("user"));
+    atu.alias(fd_name, _T("name"));
+    query q;
+    q.select(_T("id"), _T("name"), _T("group"))
+        .where(_T("name"), _T("="), _T("1*"))
+        .reject(70).limit(8).stopAtLimit(true);
+    pq_handle stmt1 = atu.prepare(q, true);
+    BOOST_CHECK_MESSAGE(stmt1 != NULL, " stmt1");
+    
+    recordset rs;
+    atu.index(0).keyValue(0).read(rs, stmt1);
+    BOOST_CHECK_MESSAGE(rs.size() == 8, "read");
+
+    groupQuery gq;
+    fieldNames target;
+    target.addValue(_T("name"));
+    client::last last(target, _T("last_rec_name"));
+    client::first first(target, _T("first_rec_name"));
+    gq.addFunction(&last);
+    gq.addFunction(&first);
+
+    rs.groupBy(gq);
+    BOOST_CHECK_MESSAGE(rs.size() == 1, "read");
+    
+    BOOST_CHECK_MESSAGE(rs[0][_T("first_rec_name")].c_str() == std::_tstring(_T("1 user")), "first_rec_name");
+    BOOST_CHECK_MESSAGE(rs[0][_T("last_rec_name")].c_str() == std::_tstring(_T("16 user")), "last_rec_name");
 
 }
 
@@ -4920,6 +4960,14 @@ BOOST_FIXTURE_TEST_CASE(readMore, fixtureQuery)
 {
     testReadMore(db());
 }
+
+BOOST_FIXTURE_TEST_CASE(firstLastGropuFunction, fixtureQuery)
+{
+    testFirstLastGroupFunction(db());
+}
+
+
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

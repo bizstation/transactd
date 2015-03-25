@@ -380,8 +380,8 @@ public:
             if (f->resultKey() == (int)mdls.fieldDefs()->size())
             {
                 groupFuncBase::numeric_type dummy = 0;
-                mdls.appendField(f->resultName(), getFieldType(dummy),
-                                 sizeof(dummy));
+                mdls.appendField(f->resultName(), f->resultType(),
+                                  f->resultLen());
             }
         }
 
@@ -414,12 +414,12 @@ public:
 
             for (int j = 0; j < (int)m_funcs.size(); ++j)
             {
-                if (m_funcs[j]->resultType() == groupFuncBase::numeric)
+                if (m_funcs[j]->resultType() == ft_float)
                     setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->numericResult(i));
                 else
                     memcpy((*cur)[m_funcs[j]->resultKey()].ptr() ,
                             m_funcs[j]->stringResult(i),
-                            m_funcs[j]->stringResultLen());
+                            m_funcs[j]->resultLen());
             }
             mdls.push_back(cur);
         }
@@ -522,8 +522,8 @@ private:
     std::_tstring m_resultName;
     int m_resultKey;
     std::vector<int> m_targetKeys;
-    ushort_td m_stringTypeLen;
-    groupFuncBase::result_type m_resultType;
+    ushort_td m_resultLen;
+    uchar_td m_resultType;
     void clearStrings()
     {
         std::vector<unsigned char*>::iterator it = m_strings.begin();
@@ -537,8 +537,8 @@ private:
         std::vector<unsigned char*>::const_iterator it = r.begin();
         while (it != r.end())
         {
-            unsigned char* p = new unsigned char[m_stringTypeLen];
-            memcpy(p, *(it++), m_stringTypeLen);
+            unsigned char* p = new unsigned char[m_resultLen];
+            memcpy(p, *(it++), m_resultLen);
             m_strings.push_back(p);
         }
     }
@@ -549,16 +549,16 @@ public:
     std::vector<unsigned char*> m_strings;
 
     inline groupFuncBaseImple() : m_resultKey(-1),
-                               m_stringTypeLen(0),
-                               m_resultType(groupFuncBase::numeric)
+                               m_resultLen(sizeof(double)),
+                               m_resultType(ft_float)
     {
     }
 
     inline groupFuncBaseImple(const fieldNames& targetNames,
                               const _TCHAR* resultName = NULL)
                              : m_resultKey(-1),
-                               m_stringTypeLen(0),
-                               m_resultType(groupFuncBase::numeric)
+                               m_resultLen(sizeof(double)),
+                               m_resultType(ft_float)
     {
         m_targetNames = targetNames;
         m_resultName = (m_targetNames.count() &&
@@ -570,7 +570,7 @@ public:
     inline groupFuncBaseImple(const groupFuncBaseImple& r)
         : m_targetNames(r.m_targetNames), m_resultName(r.m_resultName),
           m_resultKey(r.m_resultKey), m_resultType(r.m_resultType), 
-          m_stringTypeLen(r.m_stringTypeLen),
+          m_resultLen(r.m_resultLen),
           m_values(r.m_values), m_counts(r.m_counts)
     {
         copyStrings(r.m_strings);  
@@ -584,7 +584,7 @@ public:
             m_resultName = r.m_resultName;
             m_resultKey = r.m_resultKey;
             m_resultType = r.m_resultType; 
-            m_stringTypeLen = r.m_stringTypeLen;
+            m_resultLen = r.m_resultLen;
             m_values = r.m_values;
             m_counts = r.m_counts;
             m_strings.clear();
@@ -598,20 +598,20 @@ public:
         clearStrings();
     }
 
-    inline void setStringResultType(ushort_td len)
+    inline void setStringResultType(ushort_td len, uchar_td type)
     {
-        m_resultType = groupFuncBase::string;
-        m_stringTypeLen = len;
+        m_resultType = type;
+        m_resultLen = len;
     }
 
-    inline groupFuncBase::result_type resultType() { return m_resultType; }
+    inline uchar_td resultType() { return m_resultType; }
 
-    inline ushort_td stringResultLen() { return m_stringTypeLen; }
+    inline ushort_td resultLen() { return m_resultLen; }
 
     inline void appendStringBuffer(int index)
     {
-        unsigned char* p = new unsigned char[m_stringTypeLen];
-        memset(p, 0, m_stringTypeLen);
+        unsigned char* p = new unsigned char[m_resultLen];
+        memset(p, 0, m_resultLen);
         std::vector<unsigned char*>::iterator it = m_strings.begin();
         if (index)
             it += index;
@@ -620,7 +620,7 @@ public:
 
     inline void initResultVariable(int index)
     {
-        if (m_resultType == groupFuncBase::numeric)
+        if (m_resultType == ft_float)
         {
             std::vector<groupFuncBase::numeric_type>::iterator it = m_values.begin();
             if (index)
@@ -788,12 +788,12 @@ unsigned char* groupFuncBase::stringResult(int groupIndex) const
     return m_imple->m_strings[groupIndex];
 }
 
-ushort_td groupFuncBase::stringResultLen() const
+ushort_td groupFuncBase::resultLen() const
 {
-    return m_imple->stringResultLen();
+    return m_imple->resultLen();
 }
 
-groupFuncBase::result_type groupFuncBase::resultType() const
+uchar_td groupFuncBase::resultType() const
 {
     return m_imple->resultType();
 }
@@ -995,7 +995,7 @@ void last::doInit(const fielddefs* fdinfo)
     {
         const fielddef& fd = (*fdinfo)[m_imple->targetKey(0)];
         if (fd.isStringType() && !fd.isBlob())
-            m_imple->setStringResultType(fd.len);
+            m_imple->setStringResultType(fd.len, fd.type);
     }
 }
 
@@ -1004,12 +1004,12 @@ void last::doCalc(const row_ptr& row, int index)
     if (m_imple->targetKeys())
     {
         numeric_type tmp = 0;
-        if (m_imple->resultType() == groupFuncBase::numeric)
+        if (m_imple->resultType() == ft_float)
             m_imple->m_values[index] =
                 fieldValue((*row)[m_imple->targetKey(0)], tmp);
         else
         {
-            ushort_td len = m_imple->stringResultLen();
+            ushort_td len = m_imple->resultLen();
             unsigned char* p = m_imple->m_strings[index];
             memcpy(p, (*row)[m_imple->targetKey(0)].ptr(), len);
         }
@@ -1044,12 +1044,12 @@ void first::doCalc(const row_ptr& row, int index)
         if (m_imple->targetKeys())
         {
             numeric_type tmp = 0;
-            if (m_imple->resultType() == groupFuncBase::numeric)
+            if (m_imple->resultType() == ft_float)
                 m_imple->m_values[index] =
                     fieldValue((*row)[m_imple->targetKey(0)], tmp);
             else
             {
-                ushort_td len = m_imple->stringResultLen();
+                ushort_td len = m_imple->resultLen();
                 unsigned char* p = m_imple->m_strings[index];
                 memcpy(p, (*row)[m_imple->targetKey(0)].ptr(), len);
             }

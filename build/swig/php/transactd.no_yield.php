@@ -3092,10 +3092,6 @@ abstract class groupFuncBase extends recordsetQuery {
 		groupFuncBase_reset($this->_cPtr);
 	}
 
-	function result($groupIndex) {
-		return groupFuncBase_result($this->_cPtr,$groupIndex);
-	}
-
 	function __clone() {
 		$r=groupFuncBase___clone($this->_cPtr);
 		$this->_cPtr = $r;
@@ -3787,8 +3783,8 @@ class activeTable {
 		return $r;
 	}
 	
-	function readMore($rs) {
-		activeTable_readMore($this->_cPtr, $rs);
+	function readMore() {
+		activeTable_readMore($this->_cPtr);
 		return $this;
 	}
 
