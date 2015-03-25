@@ -147,6 +147,11 @@ asio::ip::tcp::endpoint connections::endpoint(const std::string& host,
     {
         while (dest != tcp::resolver::iterator())
             endpoint = *dest++;
+    }else if (host == "localhost") 
+    {
+        endpoint.address(ip::address::from_string("127.0.0.1"));
+        endpoint.port((unsigned short)atoi(port));
+        ec.clear();
     }
     return endpoint;
 }
