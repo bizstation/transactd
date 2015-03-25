@@ -2845,11 +2845,11 @@ def createQTextention(db)
 end
 
 def insertQT(db, maxId)
-  db.beginTrn()
   # insert user data
   tb = db.openTable('user', Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
   expect(tb).not_to be nil
+  db.beginTrn()
   tb.clearBuffer()
   for i in 1..maxId
     tb.setFV(0, i)

@@ -2939,10 +2939,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
     }
     private function insertQT($db, $maxId)
     {
-        $db->beginTrn();
         // insert user data
         $tb = $db->openTable('user', Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
+        $db->beginTrn();
         $tb->clearBuffer();
         for ($i = 1; $i <= $maxId; $i++)
         {

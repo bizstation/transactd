@@ -2505,7 +2505,7 @@ class field {
 			case transactd::ft_numericsa:
 			case transactd::ft_currency:
 				return field_d($this->_cPtr);
-			case transactd::ft_mychar:
+			/*case transactd::ft_mychar:
 			case transactd::ft_myvarchar:
 			case transactd::ft_mywchar:
 			case transactd::ft_mywvarchar:
@@ -2521,11 +2521,11 @@ class field {
 			case transactd::ft_note:
 			case transactd::ft_zstring:
 			case transactd::ft_string:
-				return field_c_str($this->_cPtr);
 			case transactd::ft_myvarbinary:
 			case transactd::ft_mywvarbinary:
+				return field_c_str($this->_cPtr);
 			case transactd::ft_myblob:
-				return field_getBin($this->_cPtr);
+				return field_getBin($this->_cPtr);*/
 			default:
 				return field_c_str($this->_cPtr);
 		}

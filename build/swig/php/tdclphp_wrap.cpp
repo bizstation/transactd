@@ -25937,7 +25937,6 @@ ZEND_NAMED_FUNCTION(_wrap_sortFields_add) {
   _TCHAR *arg2 = (_TCHAR *) 0 ;
   bool arg3 ;
   zval **args[3];
-  bzs::db::protocol::tdap::client::sortFields *result = 0 ;
   
   SWIG_ResetError(TSRMLS_C);
   if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, args) != SUCCESS) {
@@ -25964,15 +25963,13 @@ ZEND_NAMED_FUNCTION(_wrap_sortFields_add) {
   
   {
     try {
-      result = (bzs::db::protocol::tdap::client::sortFields *) &(arg1)->add((_TCHAR const *)arg2,arg3);
+      (arg1)->add((_TCHAR const *)arg2,arg3);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  
-  //SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortFields, 0);
   
   return;
 fail:

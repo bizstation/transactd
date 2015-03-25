@@ -27544,8 +27544,6 @@ _wrap_sortFields_add(int argc, VALUE *argv, VALUE self) {
   int alloc2 = 0 ;
   bool val3 ;
   int ecode3 = 0 ;
-  bzs::db::protocol::tdap::client::sortFields *result = 0 ;
-  VALUE vresult = Qnil;
   
   if ((argc < 2) || (argc > 2)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
@@ -27567,7 +27565,7 @@ _wrap_sortFields_add(int argc, VALUE *argv, VALUE self) {
   arg3 = static_cast< bool >(val3);
   {
     try {
-      result = (bzs::db::protocol::tdap::client::sortFields *) &(arg1)->add((_TCHAR const *)arg2,arg3);
+      (arg1)->add((_TCHAR const *)arg2,arg3);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -27576,9 +27574,6 @@ _wrap_sortFields_add(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
-//  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__sortFields, 0 |  0 );
-//  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-//  return vresult;
   return self;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;

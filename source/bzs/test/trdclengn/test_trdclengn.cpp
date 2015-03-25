@@ -2118,12 +2118,12 @@ void testMissingUpdate(database* db)
             BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekLessThan");
             // Get lock(X) same record in parallel. The InnoDB is good!
             boost::scoped_ptr<boost::thread> t(new boost::thread(boost::bind(&worker::run, w.get())));
-            Sleep(5);
+            Sleep(3);
             int v = tb->getFVint(fdi_id);//v = 30000
             tb->setFV(fdi_id, ++v);      //v = 30001
             tb->insert();
             t->join();
-            
+            Sleep(1);
             if (db->trxIsolationServer() == SRV_ISO_REPEATABLE_READ)
             {   /* When SRV_ISO_REPEATABLE_READ tb2 get gap lock first,
                    tb can not insert, it is dedlock! 
@@ -5104,6 +5104,54 @@ void testFilterOfMatchBy(database* db)
     db->drop();
     BOOST_CHECK_MESSAGE(0 == db->stat(), "drop stat = " << db->stat());
 }
+
+unsigned char field_types[] = 
+{
+    ft_myvarbinary,
+    ft_mywvarbinary,
+    ft_myvarchar,
+    ft_mywvarchar,
+    ft_string,
+    ft_wstring,
+    ft_lstring,
+    ft_lvar,
+    ft_myblob,
+    ft_mytext
+};
+
+void testBinaryField()
+{
+    unsigned char data[255], buf[255];
+    for (int i = 0; i < 255 ;++i)
+        data[i] = i;
+    
+    fielddef fdd;
+    fdd.type = ft_string;
+    fdd.len = 255;
+    fdd.pos = 0;
+
+    client::field fd(buf, fdd, NULL);
+    for (int i = 0 ; i < 10; ++i)
+    {
+        fdd.type = field_types[i];
+        int len = fdd.len - fdd.varLenBytes(); 
+        if (i > 7)
+        {
+            fdd.len = 9; //blob type
+            len = 255;
+        } 
+        fd.setBin(data, len);
+        uint_td size;
+        void* p = fd.getBin(size);
+        BOOST_CHECK_MESSAGE(len == size, "binary size type = " << i);
+
+        BOOST_CHECK_MESSAGE(p != NULL, "binary ret type = " << i);
+        int ret = memcmp(p, data, len);
+        BOOST_CHECK_MESSAGE(0 == ret, "binary memcmp type = " << i);
+    }
+}
+
+
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -5451,9 +5499,6 @@ BOOST_FIXTURE_TEST_CASE(firstLastGropuFunction, fixtureQuery)
     testFirstLastGroupFunction(db());
 }
 
-
-
-
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -5476,9 +5521,17 @@ BOOST_FIXTURE_TEST_CASE(serverFilter, fixture)
     testFilterOfMatchBy(db());
    
 }
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(field)
+
+BOOST_AUTO_TEST_CASE(binary)
+{
+    testBinaryField();    
+}
 
 BOOST_AUTO_TEST_CASE(fuga)
- {
+{
     BOOST_CHECK_EQUAL(2 * 3, 6);
 }
 
