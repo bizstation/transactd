@@ -3997,6 +3997,47 @@ void teetNewDelete(database* db)
     delete at;
 }
 
+void testRecordsetClone(database* db)
+{
+
+#ifdef LINUX
+    const char* fd_name = "名前";
+#else
+#ifdef _UNICODE
+    const wchar_t fd_name[] = { L"名前" };
+#else
+    char fd_name[30];
+    WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+#endif
+#endif
+
+    activeTable atu(db, _T("user"));
+    //activeTable atg(db, _T("groups"));
+    activeTable ate(db, _T("extention"));
+    recordset* rs = recordset::create();
+    query q;
+
+    atu.alias(fd_name, _T("name"));
+    q.select(_T("id"), _T("name"), _T("group"))
+        .where(_T("id"), _T("<="), 15000);
+    atu.index(0).keyValue(1).read(*rs, q);
+    BOOST_CHECK_MESSAGE(rs->size() == 15000, " rs.size() 15000 bad = " << rs->size());
+    BOOST_CHECK_MESSAGE(rs->fieldDefs()->size() == 3, " rs.fieldDefs()->size() 3 bad = " << rs->fieldDefs()->size());
+
+    // Join extention::comment
+    q.reset();
+    ate.index(0).join(
+        *rs, q.select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany),
+        _T("id"));
+    BOOST_CHECK_MESSAGE(rs->size() == 15000, "join  rs.size() 15000 bad = " << rs->size());
+    BOOST_CHECK_MESSAGE(rs->fieldDefs()->size() == 4, " rs.fieldDefs()->size() 4 bad = " << rs->fieldDefs()->size());
+
+    recordset* rs2 = rs->clone();
+    rs->release();
+    rs2->release();
+    
+}
+
 void testJoin(database* db)
 {
 
@@ -4951,6 +4992,7 @@ BOOST_FIXTURE_TEST_CASE(new_delete, fixtureQuery)
 BOOST_FIXTURE_TEST_CASE(join, fixtureQuery)
 {
     testJoin(db());
+    testRecordsetClone(db());
     testPrepareJoin(db());
     testServerPrepareJoin(db());
     testWirtableRecord(db());
