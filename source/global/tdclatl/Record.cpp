@@ -23,6 +23,8 @@
 
 void CRecord::FinalRelease()
 {
+    if (m_fieldObj != NULL)
+        m_fieldObj->Release();
 }
 short CRecord::GetFieldNum(VARIANT* Index)
 {
@@ -47,8 +49,10 @@ STDMETHODIMP CRecord::get_Field(VARIANT Index, IField** retVal)
         return Error("Invalid index", IID_ITable);
 
     if (m_fieldObj == NULL)
+    {
         CComObject<CField>::CreateInstance(&m_fieldObj);
-
+        m_fieldObj->AddRef();
+    }
     if (m_fieldObj)
     {
         m_fieldObj->m_fd = (*m_rec)[index];

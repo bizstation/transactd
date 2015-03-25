@@ -31,9 +31,15 @@ CARecordset::CARecordset()
 {
 }
 
+void CARecordset::FinalRelease()
+{
+   if (m_recObj != NULL)
+        m_recObj->Release();
+}
+
 CARecordset::~CARecordset()
 {
-
+ 
 }
 
 void CARecordset::setResult(IRecordset** retVal)
@@ -46,8 +52,10 @@ STDMETHODIMP CARecordset::Record(unsigned long Index, IRecord** retVal)
     if (Index >= 0 && Index < m_rs->size())
     {
         if (m_recObj == NULL)
+        {
             CComObject<CRecord>::CreateInstance(&m_recObj);
-
+            m_recObj->AddRef();
+        }
         if (m_recObj)
         {
             m_recObj->m_rec = &((*m_rs)[Index]);
