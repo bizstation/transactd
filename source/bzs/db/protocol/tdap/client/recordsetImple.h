@@ -567,6 +567,7 @@ public:
         assert(m_fds->size());
         
         fielddef fd((*m_fds)[0]);
+        memset(&fd, 0, sizeof(fielddef));
         fd.len = len;
         fd.pos = 0;
         fd.type = type;
