@@ -54,7 +54,7 @@ inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
             length = (uint_td)strlen((const char*)ptr);
         else if ((fd.type == ft_wstring) || (fd.type == ft_wzstring) ||
                         (fd.type == ft_mywchar))
-            length = (uint_td)wcslen((const wchar_t*)ptr)*sizeof(wchar_t);
+            length = (uint_td)strlen16((char16_t*)ptr)*sizeof(char16_t);
     }
     return length;
 }

@@ -78,8 +78,10 @@ char16_t* _strlwr16(char16_t* s);
 size_t strlen16(const char16_t* src);
 int wcsnicmp16(const char16_t* sl, const char16_t* sr, size_t n);
 int wcsncmp16(const char16_t* sl, const char16_t* sr, size_t n);
+int wmemcmp16(const char16_t* sl, const char16_t* sr, size_t n);
 char16_t* wmemset16(char16_t* p, char16_t c, size_t n);
 char16_t* wmemcpy(char16_t* dest, const char16_t* src, size_t count);
+
 
 /* operating system */
 #ifndef _TCHAR

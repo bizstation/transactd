@@ -114,6 +114,23 @@ int wcsncmp16(const char16_t* sl, const char16_t* sr, size_t n)
     return 0 - *sr;
 }
 
+int wmemcmp16(const char16_t* sl, const char16_t* sr, size_t n)
+{
+    if (n == 0)
+        return 0;
+    while (1)
+    {
+        if (*sl != *sr)
+            return (int)(*sl - *sr);
+        if (--n == 0)
+            return 0;
+        ++sl;
+        ++sr;
+    }
+    return 0 - *sr;
+}
+
+
 char16_t* wmemset16(char16_t* p, char16_t c, size_t n)
 {
     char16_t* end = p + n;

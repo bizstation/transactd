@@ -4834,12 +4834,12 @@ void setReject(pq_handle& q)
 
 template<class Q>
 void doTestReadByQuery(int num, activeTable& at, recordset& rs, Q& q, 
-                    int compSize, const _TCHAR* msg)
+                    int compSize, const char* msg)
 {
     setReject(q);
     at.index(0).keyValue(0).read(rs, q);
     BOOST_CHECK_MESSAGE(compSize == rs.size(), 
-            num << _T(" ") << msg << " rs.size() = " << rs.size());
+            num << " " << msg << " rs.size() = " << rs.size());
 }
 
 void testFilterOfServer(database* db)
@@ -4856,23 +4856,23 @@ void testFilterOfServer(database* db)
             int n = 3;
             if (atu.table()->tableDef()->fieldDefs[i+1].usePadChar())
                 n += 1;
-            doTestReadByQuery(i, atu, rs, q, n, _T(""));
+            doTestReadByQuery(i, atu, rs, q, n, "");
             q.where(fdf_names[i], _T("=i"), _T(""));
-            doTestReadByQuery(i, atu, rs, q, n, _T("=i"));
+            doTestReadByQuery(i, atu, rs, q, n, "=i");
 
             // match complate 
             q.where(fdf_names[i], _T("="), _T("070"));
-            doTestReadByQuery(i, atu, rs, q, 1, _T("= 070"));
+            doTestReadByQuery(i, atu, rs, q, 1, "= 070");
 
             q.where(fdf_names[i], _T("=i"), _T("070"));
-            doTestReadByQuery(i, atu, rs, q, 1, _T("=i 070"));
+            doTestReadByQuery(i, atu, rs, q, 1, "=i 070");
 
             // match complate
             q.where(fdf_names[i], _T("<"), _T("09"));
-            doTestReadByQuery(i, atu, rs, q, 7, _T("< 09"));
+            doTestReadByQuery(i, atu, rs, q, 7, "< 09");
 
             q.where(fdf_names[i], _T("<i"), _T("09"));
-            doTestReadByQuery(i, atu, rs, q, 7, _T("<i 09"));
+            doTestReadByQuery(i, atu, rs, q, 7, "<i 09");
 
             // wildcard and prerare
             // 0:noprepare 1:prepare 2:prepareServer
@@ -4884,41 +4884,41 @@ void testFilterOfServer(database* db)
                     q.where(fdf_names[i], _T("="), _T("?"));
                     pq_handle pq = atu.prepare(q, (j == 2));
                     supplyValue(pq, 0, _T("09*"));
-                    doTestReadByQuery(i, atu, rs, pq, 5, _T("prepare = 09*"));
+                    doTestReadByQuery(i, atu, rs, pq, 5, "prepare = 09*");
 
                     q.where(fdf_names[i], _T("=i"), _T("?"));
                     pq_handle pq1 = atu.prepare(q, (j == 2));
                     supplyValue(pq1, 0, _T("09*"));
-                    doTestReadByQuery(i, atu, rs, pq1, 5, _T("prepare =i 09*"));
+                    doTestReadByQuery(i, atu, rs, pq1, 5, "prepare =i 09*");
 
                 }else
                 {
                     q.where(fdf_names[i], _T("="), _T("09*"));
-                    doTestReadByQuery(i, atu, rs, q, 5, _T("= 09*"));
+                    doTestReadByQuery(i, atu, rs, q, 5, "= 09*");
 
                     q.where(fdf_names[i], _T("=i"), _T("09*"));
-                    doTestReadByQuery(i, atu, rs, q, 5, _T("=i 09*"));
+                    doTestReadByQuery(i, atu, rs, q, 5, "=i 09*");
                 }
             }
 
             // ascii
             q.where(fdf_names[i], _T("="), _T("a*"));
-            doTestReadByQuery(i, atu, rs, q, 1, _T(" = a*"));
+            doTestReadByQuery(i, atu, rs, q, 1, " = a*");
 
             q.where(fdf_names[i], _T("=i"), _T("a*"));
-            doTestReadByQuery(i, atu, rs, q, 3, _T(" =i a*"));
+            doTestReadByQuery(i, atu, rs, q, 3, " =i a*");
 
             q.where(fdf_names[i], _T("="), _T("A*"));
-            doTestReadByQuery(i, atu, rs, q, 2, _T(" = A*"));
+            doTestReadByQuery(i, atu, rs, q, 2, " = A*");
 
             q.where(fdf_names[i], _T("=i"), _T("A*"));
-            doTestReadByQuery(i, atu, rs, q, 3, _T(" =i A*"));
+            doTestReadByQuery(i, atu, rs, q, 3, " =i A*");
 
             q.where(fdf_names[i], _T("="), _T("AA0*"));
-            doTestReadByQuery(i, atu, rs, q, 0, _T(" = AA0*"));
+            doTestReadByQuery(i, atu, rs, q, 0, " = AA0*");
 
             q.where(fdf_names[i], _T("=i"), _T("AA0*"));
-            doTestReadByQuery(i, atu, rs, q, 1, _T(" =i Aa0*"));
+            doTestReadByQuery(i, atu, rs, q, 1, " =i Aa0*");
 
             //case in-sencitive index no jaudge
             
@@ -4928,17 +4928,17 @@ void testFilterOfServer(database* db)
                 setReject(q);
                 atu.index(i+1).keyValue(_T("A")).read(rs, q);
                 BOOST_CHECK_MESSAGE(2 == rs.size(), 
-                    i << _T(" ") <<  _T("jaudge = A*") << " rs.size() = " << rs.size());
+                    i << " " <<  "jaudge = A*" << " rs.size() = " << rs.size());
                 BOOST_CHECK_MESSAGE(atu.table()->statReasonOfFind() == STATUS_REACHED_FILTER_COND, 
-                    i << _T(" ") <<  _T("jaudge = A* FILTER_COND"));
+                    i << " " <<  "jaudge = A* FILTER_COND");
 
                 q.where(fdf_names[i], _T("=i"), _T("A*"));
                 setReject(q);
                 atu.index(i+1).keyValue(_T("A")).read(rs, q);
                 BOOST_CHECK_MESSAGE(3 == rs.size(), 
-                    i << _T(" ") <<  _T("jaudge = A*") << " rs.size() = " << rs.size());
+                    i << " " <<  "jaudge = A*" << " rs.size() = " << rs.size());
                 BOOST_CHECK_MESSAGE(atu.table()->statReasonOfFind() == STATUS_EOF, 
-                    i << _T(" ") <<  _T("jaudge = A* STATUS_EOF"));
+                    i << " " <<  "jaudge = A* STATUS_EOF");
 
             }
         }

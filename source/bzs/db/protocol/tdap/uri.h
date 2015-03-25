@@ -66,7 +66,7 @@ inline const _TCHAR* hostName(const _TCHAR* uri, _TCHAR* buf, size_t size)
     if (st)
     {
         const _TCHAR* en = _tcsstr(st, _T("/"));
-        if (en)
+        if (en && en > st)
         {
             _tcsncpy_s(buf, size, st, en - st);
             buf[en - st] = 0x00;
@@ -85,7 +85,7 @@ inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf, size_t size)
         if (st)
         {
             const _TCHAR* en = _tcsstr(st + 1, _T("?"));
-            if (en)
+            if (en && en > st)
             {
                 _tcsncpy_s(buf, size, st + 1, en - (st + 1));
                 buf[en - (st + 1)] = 0x00;
@@ -103,7 +103,7 @@ inline const _TCHAR* schemaTable(const _TCHAR* uri, _TCHAR* buf, size_t size)
     {
         st+= 7;
         const _TCHAR* en = _tcsrchr(uri, _T('.'));
-        if (en)
+        if (en && en > st)
         {
             _tcsncpy_s(buf, size, st, en - st);
             buf[en - st] = 0x00;
@@ -122,7 +122,7 @@ inline const _TCHAR* userName(const _TCHAR* uri, _TCHAR* buf, size_t size)
     if (st)
     {
         const _TCHAR* en = _tcsstr(st, _T("@"));
-        if (en)
+        if (en && en > st)
         {
             _tcsncpy_s(buf, size, st, en - st);
             buf[en - st] = 0x00;
