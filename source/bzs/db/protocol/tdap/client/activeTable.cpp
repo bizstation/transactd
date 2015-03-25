@@ -149,30 +149,35 @@ pq_handle activeTable::prepare(queryBase& q, bool serverPrepare)
 
 activeTable& activeTable::readMore(recordset& rs)
 {
+    rs.clear();
     m_imple->readMore(*rs.m_imple);
     return *this;
 }
 
 activeTable& activeTable::read(recordset& rs, queryBase& q)
 {
+    rs.clear();
     m_imple->read(*rs.m_imple, q);
     return *this;
 }
 
 activeTable& activeTable::read(recordset& rs, queryBase& q, validationFunc func)
 {
+    rs.clear();
     m_imple->read(*rs.m_imple, q, func);
     return *this;
 }
 
 activeTable& activeTable::read(recordset& rs, pq_handle& q)
 {
+    rs.clear();
     m_imple->read(*rs.m_imple, q);
     return *this;
 }
 
 activeTable& activeTable::read(recordset& rs, pq_handle& q, validationFunc func)
 {
+    rs.clear();
     m_imple->read(*rs.m_imple, q, func);
     return *this;
 }
