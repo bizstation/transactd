@@ -35,9 +35,7 @@ class ATL_NO_VTABLE CARecordset
     void setResult(IRecordset** retVal);
     CComObject<CRecord>* m_recObj;
     CComObject<CFieldDefs>* m_fieldDefsObj;
-    typedef boost::shared_ptr<bzs::db::protocol::tdap::client::recordset>
-        internal_ptr;
-
+    typedef bzs::db::protocol::tdap::client::recordset* internal_ptr;
 public:
     internal_ptr m_rs;
 
@@ -45,7 +43,9 @@ public:
     ~CARecordset();
     void setRecordset(bzs::db::protocol::tdap::client::recordset* rs)
     {
-        m_rs.reset(rs);
+        if (m_rs)
+        	m_rs->release();
+        m_rs = rs;
     }
 
     BEGIN_COM_MAP(CARecordset)

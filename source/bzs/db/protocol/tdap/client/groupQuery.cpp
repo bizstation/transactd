@@ -678,7 +678,7 @@ public:
 // ---------------------------------------------------------------------------
 // class groupFuncBase
 // ---------------------------------------------------------------------------
-groupFuncBase::groupFuncBase() : m_imple(new groupFuncBaseImple())
+groupFuncBase::groupFuncBase() : recordsetQuery(), m_imple(new groupFuncBaseImple())
 {
 }
 
@@ -758,6 +758,7 @@ int groupFuncBase::resultKey() const
 
 void groupFuncBase::reset()
 {
+    recordsetQuery::reset();
     doReset();
 }
 

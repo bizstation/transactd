@@ -385,15 +385,18 @@ STDMETHODIMP CTableTd::put_FilterRejectCount(long Value)
 
 STDMETHODIMP CTableTd::Field(VARIANT Index, IField** retVal)
 {
-
     short index = GetFieldNum(&Index);
     if (index < 0)
         return Error("Invalid index", IID_ITable);
 
     if (m_fieldObj == NULL)
+    {
         CComObject<CField>::CreateInstance(&m_fieldObj);
-
-    if (m_fieldObj)
+        if (!m_fieldObj)
+            return Error("CreateInstance Field", IID_ITable);
+        m_fieldObj->AddRef();
+    }
+    try
     {
         client::fields fds(*m_tb);
         m_fieldObj->m_fd = fds[index];
@@ -401,8 +404,12 @@ STDMETHODIMP CTableTd::Field(VARIANT Index, IField** retVal)
         m_fieldObj->QueryInterface(IID_IField, (void**)&fd);
         _ASSERTE(fd);
         *retVal = fd;
+        return S_OK;
     }
-    return S_OK;
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_ITable);
+    }
 }
 
 STDMETHODIMP CTableTd::get_CanDelete(VARIANT_BOOL* Value)

@@ -56,7 +56,7 @@ public:
                         BSTR Name4, BSTR Name5, BSTR Name6, BSTR Name7,
                         BSTR Name8, BSTR Name9, BSTR Name10,
                         IGroupQuery** retVal);
-    STDMETHOD(AddFunction)(eGroupFunc func, IFieldNames* targetNames,
+    STDMETHOD(AddFunction)(eGroupFunc func, VARIANT targetNames,
                            BSTR resultName, VARIANT q, IGroupQuery** retVal);
 
     STDMETHOD(Reset)(IGroupQuery** retVal);

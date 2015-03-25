@@ -1317,7 +1317,7 @@ interface IGroupQuery : IDispatch
 
   [id(0x0000002)]
   HRESULT _stdcall AddFunction([in] eGroupFunc func
-	  ,	[in] IFieldNames* targetNames , [in, defaultvalue("")] BSTR resultName
+	  ,	[in] VARIANT targetNames , [in, defaultvalue("")] BSTR resultName
 	  , [in, defaultvalue("")]VARIANT q, [out, retval] IGroupQuery** retVal);
 
   [id(0x0000004)]

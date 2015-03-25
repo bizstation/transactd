@@ -48,6 +48,7 @@ class ATL_NO_VTABLE CDatabase
 public:
     CDatabase() : m_needRelese(true), m_IsAtatchOK(true)
     {
+        bzs::db::protocol::tdap::client::nsdatabase::setCheckTablePtr(true);
         m_db = bzs::db::protocol::tdap::client::database::create();
         m_db->setOptionalData(this);
         m_db->setOnCopyData(onCopyData);
