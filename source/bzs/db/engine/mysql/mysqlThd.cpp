@@ -25,7 +25,7 @@ unsigned int g_openDatabases = 0;
 
 extern unsigned int g_lock_wait_timeout;
 extern char* g_transaction_isolation;
-static unsigned int transaction_isolation_cache = -1;
+static int transaction_isolation_cache = -1;
 
 #ifdef USETLS
 tls_key g_tlsiID;
@@ -101,7 +101,7 @@ void waitForServerStart()
     mysql_mutex_unlock(&LOCK_server_started);
 }
 
-unsigned int getTransactdIsolation()
+int getTransactdIsolation()
 {
     if (transaction_isolation_cache != -1) 
         return transaction_isolation_cache;
@@ -140,7 +140,7 @@ THD* buildTHD()
     thd->net = v;
 
     thd->variables.option_bits |= OPTION_BIN_LOG;
-    thd->variables.tx_isolation = getTransactdIsolation();
+    thd->variables.tx_isolation = (ulong)getTransactdIsolation();
 
     thd->clear_error();
     char tmp[256];

@@ -388,7 +388,7 @@ template <class T>
 class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 {
     T s_io;
-#if USE_CONNECT_TIMER
+#ifdef USE_CONNECT_TIMER
     asio::deadline_timer m_timer;
 #endif
     std::vector<char> m_readbuf;
@@ -426,12 +426,12 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 
     void cleanup()
     {
-#if USE_CONNECT_TIMER
+#ifdef USE_CONNECT_TIMER
         m_timer.cancel();
 #endif
         connectionImple<asio::ip::tcp::socket>::cleanup();
     }
-#if USE_CONNECT_TIMER
+#ifdef USE_CONNECT_TIMER
     void setTimer(int time)
     {
 #ifdef _WIN32
@@ -445,7 +445,7 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 
     void on_connect(const boost::system::error_code& e)
     {
-#if USE_CONNECT_TIMER
+#ifdef USE_CONNECT_TIMER
         m_timer.cancel();
 #endif
         checkError(e);
@@ -474,7 +474,7 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
                    sizeof(timeout));
         ret = ret;
     }
-#if USE_CONNECT_TIMER
+#ifdef USE_CONNECT_TIMER
     void connect()
     {
         m_socket.async_connect(m_ep,
@@ -548,7 +548,7 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 public:
     tcpConnection(asio::ip::tcp::endpoint& ep)
         : connectionImple<asio::ip::tcp::socket>(ep),s_io(m_socket)
-#if USE_CONNECT_TIMER
+#ifdef USE_CONNECT_TIMER
         , m_timer(m_ios)
 #endif
     {

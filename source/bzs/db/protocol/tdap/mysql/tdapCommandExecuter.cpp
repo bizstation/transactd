@@ -37,7 +37,7 @@
 #include <random>
 
 
-extern unsigned int getTransactdIsolation();
+extern int getTransactdIsolation();
 extern unsigned int getTransactdLockWaitTimeout();
 
 namespace bzs
@@ -1491,7 +1491,7 @@ size_t dbExecuter::getAcceptMessage(char* message, size_t size)
     ver->srvMajor = TRANSACTD_VER_MAJOR;
     ver->srvMinor = TRANSACTD_VER_MINOR;
     ver->srvRelease = TRANSACTD_VER_RELEASE;
-    hst->transaction_isolation = getTransactdIsolation();
+    hst->transaction_isolation = (unsigned short)getTransactdIsolation();
     hst->lock_wait_timeout = getTransactdLockWaitTimeout();
     if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR) == 0)
     {
