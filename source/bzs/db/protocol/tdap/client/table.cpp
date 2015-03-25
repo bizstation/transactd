@@ -1001,14 +1001,14 @@ void table::find(eFindType type)
         return;
     }
     bool isContinue = (type == findContinue);
+    ushort_td op;
     if (isContinue)
     {
         type = m_impl->filterPtr->direction();
+        op =(type == findForword) ? TD_KEY_NEXT_MULTI : TD_KEY_PREV_MULTI;
         m_stat = 0;
     }
-    ushort_td op;
-
-    if (m_impl->filterPtr->isSeeksMode())
+    else if (m_impl->filterPtr->isSeeksMode())
     {
         m_impl->filterPtr->resetSeeksWrited();
         op = TD_KEY_SEEK_MULTI;
