@@ -3497,6 +3497,67 @@ class transactdTest extends PHPUnit_Framework_TestCase
         if ($tb->stat() != 0)
             $db->drop();
     }
+    
+    public function testReadMore()
+    {
+        $db = new Bz\database();
+        $db->open(URL_QT);
+
+        $this->assertEquals($db->stat(), 0);
+        $atu = new Bz\activeTable($db, 'user');
+        $atu->alias('名前', 'name');
+        $q = new Bz\query();
+        
+        //isStopAtLimit
+        $this->assertEquals($q->isStopAtLimit(), 0);
+        $q->select('id', 'name', 'group')
+            ->where('name', '=', '1*')
+            ->reject(70)->limit(8)->stopAtLimit(true);
+        $this->assertEquals($q->isStopAtLimit(), true);
+        $stmt1 = $atu->prepare($q);
+        $this->assertEquals($atu->table()->stat(), 0);
+        $this->assertNotEquals($stmt1, null);
+        $rs = $atu->index(0)->keyValue(18)->read($stmt1);
+        $this->assertEquals($rs->size(), 2);
+        
+        //readMore
+        $rs2 = $atu->readMore();
+        $this->assertEquals($rs2->size(), 8);
+        $rs->unionRecordset($rs2);
+        $this->assertEquals($rs->size(), 10);
+    }
+
+    public function testFirstLastGroupFunction()
+    {
+        $db = new Bz\database();
+        $db->open(URL_QT);
+        $this->assertEquals($db->stat(), 0);
+        
+        $atu = new Bz\activeTable($db, 'user');
+        $atu->alias('名前', 'name');
+        $q = new Bz\query();
+        $q->select('id', 'name', 'group')
+              ->where('name', '=', '1*')
+              ->reject(70)->limit(8)->stopAtLimit(true);
+        $stmt1 = $atu->prepare($q);
+        $this->assertNotEquals($stmt1, null);
+        
+        $rs = $atu->index(0)->keyValue(0)->read($stmt1);
+        $this->assertEquals($rs->size(), 8);
+        
+        #grouping first and last
+        $gq = new Bz\groupQuery();
+        $target = new Bz\fieldNames();
+        $target->addValue('name');
+        $last = new Bz\last($target, 'last_rec_name');
+        $first = new Bz\first($target, 'first_rec_name');
+        $gq->addFunction($last);
+        $gq->addFunction($first);
+        $rs->groupBy($gq);
+        $this->assertEquals($rs[0]['first_rec_name'], "1 user");
+        $this->assertEquals($rs[0]['last_rec_name'], "16 user");
+    }
+
     public function testWritableRecord()
     {
         $db = new Bz\database();

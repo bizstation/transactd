@@ -3751,8 +3751,11 @@ class activeTable {
 	}
 
 	function readMore() {
-		activeTable_readMore($this->_cPtr);
-		return $this;
+		$r = activeTable_readMore($this->_cPtr);
+		if (is_resource($r)) {
+			return new Recordset($r);
+		}
+		return $r;
 	}
 
 	function prepare($q,$serverPrepare=false) {
