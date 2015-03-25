@@ -299,9 +299,9 @@ inline void setValue(row_ptr& row, int key, double value)
 // ---------------------------------------------------------------------------
 // class groupQueryImple
 // ---------------------------------------------------------------------------
+//#define USE_CLONE_FUNCTION
 class groupQueryImple : public fieldNames
 {
-    // not delete by destructor. simple copy is ok;
     std::vector<groupFuncBase*> m_funcs;
 
     void removeFields(recordsetImple& mdls)
@@ -337,8 +337,10 @@ class groupQueryImple : public fieldNames
 
     void cleanup()
     {
+#ifdef USE_CLONE_FUNCTION
         for (int i=0; i< (int)m_funcs.size() ; ++i)
             delete m_funcs[i];
+#endif
         m_funcs.clear();
     }
 
@@ -353,7 +355,14 @@ public:
         return fieldNames::reset();
     }
 
-    void addFunction(groupFuncBase* func) { m_funcs.push_back(func->clone()); }
+    void addFunction(groupFuncBase* func) 
+    { 
+#ifdef USE_CLONE_FUNCTION
+        m_funcs.push_back(func->clone());
+#else
+        m_funcs.push_back(func);
+#endif
+    }
 
     void grouping(recordsetImple& mdls)
     {
@@ -522,21 +531,66 @@ private:
             delete [] *(it++);
         m_strings.clear();
     }
+
+    void copyStrings(const std::vector<unsigned char*>& r)
+    {
+        std::vector<unsigned char*>::const_iterator it = r.begin();
+        while (it != r.end())
+        {
+            unsigned char* p = new unsigned char[m_stringTypeLen];
+            memcpy(p, *(it++), m_stringTypeLen);
+            m_strings.push_back(p);
+        }
+    }
+
 public:
     std::vector<groupFuncBase::numeric_type> m_values;
     std::vector<__int64> m_counts;
     std::vector<unsigned char*> m_strings;
 
+    inline groupFuncBaseImple() : m_resultKey(-1),
+                               m_stringTypeLen(0),
+                               m_resultType(groupFuncBase::numeric)
+    {
+    }
+
     inline groupFuncBaseImple(const fieldNames& targetNames,
                               const _TCHAR* resultName = NULL)
+                             : m_resultKey(-1),
+                               m_stringTypeLen(0),
+                               m_resultType(groupFuncBase::numeric)
     {
         m_targetNames = targetNames;
         m_resultName = (m_targetNames.count() &&
                         ((resultName == NULL) || resultName[0] == 0x00))
                            ? targetNames[0]
                            : resultName;
-        m_resultType = groupFuncBase::numeric;
-        m_stringTypeLen = 0;
+    }
+
+    inline groupFuncBaseImple(const groupFuncBaseImple& r)
+        : m_targetNames(r.m_targetNames), m_resultName(r.m_resultName),
+          m_resultKey(r.m_resultKey), m_resultType(r.m_resultType), 
+          m_stringTypeLen(r.m_stringTypeLen),
+          m_values(r.m_values), m_counts(r.m_counts)
+    {
+        copyStrings(r.m_strings);  
+    }
+
+    groupFuncBaseImple& operator=(const groupFuncBaseImple& r)
+    {
+        if (this != &r)
+        {
+            m_targetNames = r.m_targetNames;
+            m_resultName = r.m_resultName;
+            m_resultKey = r.m_resultKey;
+            m_resultType = r.m_resultType; 
+            m_stringTypeLen = r.m_stringTypeLen;
+            m_values = r.m_values;
+            m_counts = r.m_counts;
+            m_strings.clear();
+            copyStrings(r.m_strings); 
+        }
+        return *this;
     }
 
     ~groupFuncBaseImple()
@@ -588,8 +642,6 @@ public:
         if (m_resultKey == -1)
             m_resultKey = (int)fdinfo->size();
     }
-
-    inline groupFuncBaseImple() { /*m_values.reserve(10);*/ }
 
     inline fieldNames& targetNames() const
     {
@@ -769,7 +821,7 @@ void sum::doCalc(const row_ptr& row, int index)
 
 groupFuncBase* sum::clone()
 {
-    groupFuncBase* p = new sum();
+    sum* p = new sum();
     *p = *this;
     return p;
 }
@@ -794,7 +846,7 @@ void count::doCalc(const row_ptr& row, int index)
 
 groupFuncBase* count::clone()
 {
-    groupFuncBase* p = new count();
+    count* p = new count();
     *p = *this;
     return p;
 }
@@ -831,7 +883,7 @@ avg::numeric_type avg::numericResult(int index) const
 
 groupFuncBase* avg::clone()
 {
-    groupFuncBase* p = new avg();
+    avg* p = new avg();
     *p = *this;
     return p;
 }
@@ -863,9 +915,20 @@ void min::doCalc(const row_ptr& row, int index)
 
 groupFuncBase* min::clone()
 {
-    groupFuncBase* p = new min();
+    min* p = new min();
     *p = *this;
     return p;
+}
+
+min& min::operator=(const min& r)
+{
+    if (this != &r)
+    {
+        m_flag = r.m_flag;
+        groupFuncBase::operator=(r);
+    }
+    return *this;
+
 }
 
 // ---------------------------------------------------------------------------
@@ -895,9 +958,19 @@ void max::doCalc(const row_ptr& row, int index)
 
 groupFuncBase* max::clone()
 {
-    groupFuncBase* p = new max();
+    max* p = new max();
     *p = *this;
     return p;
+}
+
+max& max::operator=(const max& r)
+{
+    if (this != &r)
+    {
+        m_flag = r.m_flag;
+        groupFuncBase::operator=(r);
+    }
+    return *this;
 }
 
 // ---------------------------------------------------------------------------
@@ -945,7 +1018,7 @@ void last::doCalc(const row_ptr& row, int index)
 
 groupFuncBase* last::clone()
 {
-    groupFuncBase* p = new last();
+    last* p = new last();
     *p = *this;
     return p;
 }
@@ -987,7 +1060,7 @@ void first::doCalc(const row_ptr& row, int index)
 
 groupFuncBase* first::clone()
 {
-    groupFuncBase* p = new first();
+    first* p = new first();
     *p = *this;
     return p;
 }
@@ -998,7 +1071,15 @@ void  first::doReset()
     groupFuncBase::reset();
 }
 
-
+first& first::operator=(const first& r)
+{
+    if (this != &r)
+    {
+        m_readed = r.m_readed;
+        last::operator=(r);
+    }
+    return *this;
+}
 
 
 } // namespace client

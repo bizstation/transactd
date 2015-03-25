@@ -264,6 +264,7 @@ public:
     min() {}
     min(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     groupFuncBase* clone();
+    min& operator=(const min& r);
     static min* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
@@ -278,6 +279,7 @@ public:
     max() {}
     max(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     groupFuncBase* clone();
+    max& operator=(const max& r);
     static max* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
@@ -307,6 +309,7 @@ public:
     first() {}
     first(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     groupFuncBase* clone();
+    first& operator=(const first& r);
     static first* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
