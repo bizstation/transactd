@@ -222,6 +222,10 @@ void save(Archive& ar, const queryBase& q, const unsigned int version)
     {
         v = q.getDirection();
         ar& make_nvp("direction", v);
+
+        v = q.isStopAtLimit();
+        ar& make_nvp("stopAtLimit", v);
+
     }
     v = q.isAll();
     ar& make_nvp("isAll", v);
@@ -253,6 +257,8 @@ void load(Archive& ar, queryBase& q, const unsigned int version)
     {
         ar& make_nvp("direction", v);
         q.direction((table::eFindType)v);
+        ar& make_nvp("stopAtLimit", v);
+        q.stopAtLimit(v == 1);
     }
     ar& make_nvp("isAll", v);
     if (v)
