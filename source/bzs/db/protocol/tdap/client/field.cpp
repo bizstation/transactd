@@ -357,7 +357,6 @@ inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
         case ft_uinteger:
         case ft_logical:
         case ft_bit:
-        case ft_currency:
         case ft_date:
         case ft_time:
         case ft_timestamp:
@@ -386,6 +385,24 @@ inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
                 ret = *((__int64*)(ptr + fd.pos));
                 break;
             }
+            break;
+        case ft_currency:
+            ret = (*((__int64*)((char*)ptr + fd.pos)) / 10000);
+            break;
+        case ft_bfloat:
+        case ft_float:
+            switch (fd.len)
+            {
+            case 4:
+                ret = *((float*)((char*)ptr + fd.pos));
+                break;
+            case 8:
+                ret = *((double*)((char*)ptr + fd.pos));
+            case 10: // long double
+                ret = *((long double*)((char*)ptr + fd.pos));
+                break;
+            }
+            break;
         }
     }
     return ret;
@@ -1410,6 +1427,8 @@ __int64 field::getFV64() const
         case ft_mydatetime:
         case ft_mytimestamp:
             return (__int64) * ((__int64*)((char*)m_ptr + m_fd->pos));
+        case ft_float:
+            return *((double*)((char*)m_ptr + m_fd->pos));
         }
         return 0;
     case 7:
