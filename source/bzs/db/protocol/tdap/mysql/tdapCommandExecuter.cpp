@@ -1032,6 +1032,7 @@ inline void dbExecuter::doStat(request& req)
         memcpy((char*)req.data, &len, sizeof(ushort_td));
         uint rows = (uint)m_tb->recordCount((req.keyNum != 0));
         memcpy((char*)req.data + 6, &rows, sizeof(uint));
+		req.result = errorCodeSht(m_tb->stat());
     }
     else
         req.result = STATUS_BUFFERTOOSMALL;

@@ -1898,14 +1898,25 @@ void testRecordLock(database* db)
     
 }
 
+bool isMySQL5_7(database* db)
+{
+    btrVersions vv;
+    db->getBtrVersion(&vv);
+    return (db->stat() == 0) && 
+        ((5 == vv.versions[1].majorVersion) &&
+        (7 == vv.versions[1].minorVersion));
+  
+}
+
 void testExclusive()
 {
+   
     // db mode exclusive
     database* db = database::create();
     /* -------------------------------------------------*/
     /*  database WRITE EXCLUSIVE                        */
     /* -------------------------------------------------*/
-    table* tb = openTable(db, TD_OPEN_EXCLUSIVE);
+    table* tb = openTable(db, TD_OPEN_EXCLUSIVE);//DB TD_OPEN_EXCLUSIVE
     BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 1 ");
 
     // Can not open another connections.
@@ -1915,7 +1926,7 @@ void testExclusive()
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
     //database open error. Check database::stat()
     BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat(),
-                        "open db->stat = " << db->stat());
+                        "open db2->stat = " << db2->stat());
     dbdef* def = db->dbDef();
     tabledef* td = def->tableDefs(1);
     td->iconIndex = 3;
@@ -1929,17 +1940,25 @@ void testExclusive()
     /*  database READ EXCLUSIVE                        */
     /* -------------------------------------------------*/
     tb = openTable(db, TD_OPEN_READONLY_EXCLUSIVE);
-    
+
+    // read mysql version
+    bool MySQL5_7 = isMySQL5_7(db);
+
     // Read only open
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
-    BOOST_CHECK_MESSAGE(0 == db2->stat(), "read only open");
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), 
+                    "read only open " << db2->stat());
     db2->close();
     
     // Normal open
     db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME),
             TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
-    BOOST_CHECK_MESSAGE(0 == db2->stat()
+    if (MySQL5_7)
+        BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
+                                    , "Normal open");
+    else
+        BOOST_CHECK_MESSAGE(0 == db2->stat()
                                     , "Normal open");
     db2->close();
 
@@ -2281,7 +2300,7 @@ void testReconnect(database* db)
     tb->setFV(fdi_id, 10);
     tb->seek(ROW_LOCK_X);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seek stat = " << tb->stat());
-    db->disconectForReconnectTest();
+    db->disconnectForReconnectTest();
     db->reconnect();
     
     //Check restore lock

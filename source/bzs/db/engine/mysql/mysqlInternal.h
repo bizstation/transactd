@@ -47,23 +47,46 @@
 #pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 #pragma warning(disable : 4805)
-#endif
+#pragma warning(disable : 4005)
 
+#define NOMINMAX 
+#endif
+#include <math.h>
 #include <my_config.h>
 #include <mysql_version.h>
 #include <sql/sql_const.h>
 #include "my_global.h"
+
+#if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
+// Not use malloc service
+#define MYSQL_SERVICE_MYSQL_ALLOC_INCLUDED
+typedef unsigned int PSI_memory_key;
+typedef int myf_t;
+extern "C" {
+	extern void * my_malloc(PSI_memory_key key, size_t size, myf_t flags);
+	extern void * my_realloc(PSI_memory_key key, void *ptr, size_t size, myf_t flags);
+	extern void my_free(void *ptr);
+	extern void * my_memdup(PSI_memory_key key, const void *from, size_t length, myf_t flags);
+	extern char * my_strdup(PSI_memory_key key, const char *from, myf_t flags);
+	extern char * my_strndup(PSI_memory_key key, const char *from, size_t length, myf_t flags);
+}
+#include "sql/log.h"
+#endif //For MYSQL 5.7
+
 #include "sql/sql_class.h"
 #include <mysql/plugin.h>
 #include "sql/mysqld.h"
 
-#if ((MYSQL_VERSION_ID >= 50600) && !defined(MARIADB_BASE_VERSION))
+#if ((MYSQL_VERSION_ID >= 50600) && (MYSQL_VERSION_ID < 50700) && !defined(MARIADB_BASE_VERSION))
 #include "sql/global_threads.h"
 #endif
 
 #include "sql/sql_plugin.h"
 #include "sql/sql_cache.h"
+#if (MYSQL_VERSION_ID < 50700)
 #include "sql/structs.h"
+#endif
+
 #include "sql/sql_priv.h"
 #include "sql/unireg.h"
 #include "sql/lock.h"
@@ -82,13 +105,7 @@
 #define MYSQL_USER_FIELD_PASSWORD 2
 #endif
 
-
-#if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
-#include "sql/log.h"
-#endif
-
 #undef test
-
 #undef sleep
 #ifdef ERROR
 #define ERROR 0
@@ -99,6 +116,7 @@
 #pragma warning(default : 4267)
 #pragma warning(default : 4800)
 #pragma warning(default : 4805)
+#pragma warning(default : 4005)
 #endif
 
 #undef min
@@ -152,16 +170,6 @@
 
 #if ((MYSQL_VERSION_NUM < 50600) || defined(MARIADB_BASE_VERSION))
 
-inline void cp_add_global_thread(THD* thd)
-{
-    ;
-}
-
-inline void cp_remove_global_thread(THD* thd)
-{
-    ;
-}
-
 inline void cp_thd_release_resources(THD* thd)
 {
     ;
@@ -191,15 +199,6 @@ inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
 #define set_mysys_var(A)
 #else
 
-inline void cp_add_global_thread(THD* thd)
-{
-    add_global_thread(thd);
-}
-
-inline void cp_remove_global_thread(THD* thd)
-{
-    remove_global_thread(thd);
-}
 
 inline void cp_thd_release_resources(THD* thd)
 {
@@ -208,7 +207,11 @@ inline void cp_thd_release_resources(THD* thd)
 
 inline void cp_set_mysys_var(st_my_thread_var* var)
 {
+#if(MYSQL_VERSION_NUM < 50700)
     set_mysys_var(var);
+#else
+	set_mysys_thread_var(var);
+#endif
 }
 
 inline void cp_restore_globals(THD* thd)
@@ -237,32 +240,114 @@ inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
 #define ha_index_read_map index_read_map
 #endif
 
-/* memory management */
-#if ((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
+
+extern unsigned int g_openDatabases;
+#if((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
+#define OPEN_TABLE_FLAG_TYPE 0
+
 #define td_malloc(A, B) my_malloc(PSI_NOT_INSTRUMENTED, A, B)
 #define td_realloc(A, B, C) my_realloc(PSI_NOT_INSTRUMENTED, A, B, C)
 #define td_strdup(A, B) my_strdup(PSI_NOT_INSTRUMENTED, A, B)
 #define td_free(A) my_free(A)
 
 /* On Windows,
- "operator delete()" function is implemented in mysqld.
- But "operator new" operation implement in transactd.dll.
- Therefore, memory managers differ. */
+"operator delete()" function is implemented in mysqld.
+But "operator new" operation implement in transactd.dll.
+Therefore, memory managers differ. */
 #ifdef _WIN32
 
 inline void releaseTHD(THD* thd)
 {
-    thd->~THD();
-    operator delete((void*)thd);
+	thd->~THD();
+	operator delete((void*)thd);
 }
 #else
 
 inline void releaseTHD(THD* thd)
 {
-    delete thd;
+	delete thd;
 }
 #endif
-#else
+
+#include <boost/thread/mutex.hpp>
+extern boost::mutex g_db_count_mutex;
+extern void global_thd_manager_add_thd(THD *thd);
+extern void global_thd_manager_remove_thd(THD *thd);
+
+inline void  cp_set_new_thread_id(THD* thd) 
+{
+    thd->set_new_thread_id();
+	global_thd_manager_add_thd(thd);
+	boost::mutex::scoped_lock lck(g_db_count_mutex);
+    ++g_openDatabases;
+}
+
+inline void cp_dec_dbcount(THD* thd)
+{
+	{
+		boost::mutex::scoped_lock lck(g_db_count_mutex);
+		--g_openDatabases;
+	}
+	global_thd_manager_remove_thd(thd);
+}
+
+inline Security_context* cp_security_ctx(THD* thd)
+{
+	return thd->security_context();
+}
+
+inline int cp_record_count(handler* file, ha_rows* rows)
+{
+	return file->ha_records(rows);
+}
+
+#define cp_strdup(A, B) my_strdup(PSI_INSTRUMENT_ME, (A), (B))
+#define cp_set_mysys_var(A) set_mysys_thread_var(A)
+inline void cp_set_db(THD* thd, char* p)
+{
+	thd->set_db(to_lex_cstring(p));
+}
+
+
+inline THD* cp_thread_get_THR_THD()
+{
+	return my_thread_get_THR_THD();
+	return NULL;
+}
+
+inline int cp_thread_set_THR_THD(THD* thd)
+{
+	return my_thread_set_THR_THD(thd);
+	return 0;
+}
+
+inline void cp_set_transaction_duration_for_all_locks(THD* /*thd*/)
+{
+	;
+}
+
+inline void cp_set_mdl_request_types(TABLE_LIST& tables, short mode)
+{
+	if (mode == -2 /* TD_OPEN_READONLY */)
+		tables.mdl_request.set_type(MDL_SHARED_READ);
+	else if (mode == -4 /* TD_OPEN_EXCLUSIVE */)
+		tables.mdl_request.set_type(MDL_SHARED_NO_READ_WRITE);
+	else if (mode == -6 /* TD_OPEN_READONLY_EXCLUSIVE */)
+		tables.mdl_request.set_type(MDL_SHARED_READ_ONLY);
+	else
+		tables.mdl_request.set_type(MDL_SHARED_WRITE);
+	
+	tables.mdl_request.duration = MDL_TRANSACTION;
+}
+
+inline void cp_open_error_release(THD* /*thd*/, TABLE_LIST& /*tables*/)
+{
+    ;
+}
+
+#else //Not MySQL 5.7
+#define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
+
 #define td_malloc(A, B) my_malloc(A, B)
 #define td_realloc(A, B, C) my_realloc(A, B, C)
 #define td_strdup(A, B) my_strdup(A, B)
@@ -270,8 +355,70 @@ inline void releaseTHD(THD* thd)
 
 inline void releaseTHD(THD* thd)
 {
-    delete thd;
+	delete thd;
 }
+inline  void cp_set_new_thread_id(THD* thd)
+{
+    mysql_mutex_lock(&LOCK_thread_count);
+    ++g_openDatabases;
+    thd->variables.pseudo_thread_id = thread_id++;
+	add_global_thread(thd);
+    mysql_mutex_unlock(&LOCK_thread_count);
+    thd->thread_id = thd->variables.pseudo_thread_id;
+}
+inline void cp_dec_dbcount(THD* thd)
+{
+    mysql_mutex_lock(&LOCK_thread_count);
+    --g_openDatabases;
+    mysql_mutex_unlock(&LOCK_thread_count);
+	remove_global_thread(thd);
+}
+inline Security_context* cp_security_ctx(THD* thd)
+{
+	return thd->security_ctx;
+}
+
+inline int cp_record_count(handler* file, ha_rows* rows)
+{
+	*rows = file->records();
+	return 0;
+}
+#define cp_strdup(A, B) my_strdup((A), (B))
+#define cp_set_mysys_var(A) set_mysys_var(A)
+
+inline void cp_set_db(THD* thd, char* p)
+{
+	td_free(thd->db);
+	thd->db = p;
+}
+
+inline THD* cp_thread_get_THR_THD()
+{
+	return (THD*)my_pthread_getspecific(THD*, THR_THD);
+}
+
+inline int cp_thread_set_THR_THD(THD* thd)
+{
+	my_pthread_setspecific_ptr(THR_THD, thd);
+	return 0;
+}
+
+inline void cp_set_transaction_duration_for_all_locks(THD* thd)
+{
+	thd->mdl_context.set_transaction_duration_for_all_locks();
+}
+
+inline void cp_set_mdl_request_types(TABLE_LIST& tables, short mode)
+{
+	tables.mdl_request.set_type(MDL_SHARED_READ);
+    tables.mdl_request.duration = MDL_EXPLICIT;
+}
+
+inline void cp_open_error_release(THD* thd, TABLE_LIST& tables)
+{
+    thd->mdl_context.release_lock(tables.mdl_request.ticket);
+}
+
 #endif
 
 #endif // BZS_DB_ENGINE_MYSQL_MYSQLINTERNAL_H

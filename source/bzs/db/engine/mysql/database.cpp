@@ -190,7 +190,7 @@ database::database(const char* name, short cid)
       m_inTransaction(0), m_inSnapshot(0), m_stat(0), m_usingExclusive(false),
       m_inAutoTransaction(NULL), m_trnType(0), m_cid(cid), m_privilege(0xFFFF)
 {
-    m_thd->security_ctx->skip_grants();
+	cp_security_ctx(m_thd)->skip_grants();
 }
 
 #ifdef _MSC_VER
@@ -261,8 +261,8 @@ unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
 // true ok false fail
 bool database::setGrant(const char* host, const char* user)
 {
-    bool ret =  (acl_getroot(m_thd->security_ctx, my_strdup(user, MYF(0)), 
-           my_strdup(host, MYF(0)), my_strdup(host, MYF(0)), (char*)m_dbname.c_str())) == false;
+	bool ret = (acl_getroot(cp_security_ctx(m_thd), cp_strdup(user, MYF(0)),
+		cp_strdup(host, MYF(0)), cp_strdup(host, MYF(0)), (char*)m_dbname.c_str())) == false;
     if (ret)
         check_access(m_thd, SELECT_ACL, m_dbname.c_str(), &m_privilege, NULL, false, true);
                 
@@ -701,27 +701,27 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
     TABLE_LIST tables;
     m_thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
     tables.init_one_table(m_dbname.c_str(), m_dbname.size(), name.c_str(),
-                          name.size(), name.c_str(), TL_READ);
+		name.size(), name.c_str(), TL_READ);
     if(!(m_privilege & SELECT_ACL) &&
         (check_grant(m_thd, SELECT_ACL, &tables, FALSE, 1, true)))
     {
         m_stat = STATUS_ACCESS_DENIED;
         return NULL;
     }
-    tables.mdl_request.set_type(MDL_SHARED_READ);
-    tables.mdl_request.duration = MDL_EXPLICIT;
+	cp_set_mdl_request_types(tables, mode);
 
-    Open_table_context ot_act(m_thd, MYSQL_OPEN_GET_NEW_TABLE);
+    Open_table_context ot_act(m_thd, OPEN_TABLE_FLAG_TYPE);
     m_thd->cp_set_overwrite_status(true);
-    if (cp_open_table(m_thd, &tables, &ot_act))
+	if (cp_open_table(m_thd, &tables, &ot_act))
     {
         m_stat = STATUS_TABLE_NOTOPEN;
         if (ER_LOCK_WAIT_TIMEOUT == m_thd->cp_get_sql_error())
             m_stat = STATUS_CANNOT_LOCK_TABLE;
-        m_thd->mdl_context.release_lock(tables.mdl_request.ticket);
+        else
+            cp_open_error_release(m_thd, tables);
         return NULL;
     }
-    m_thd->mdl_context.set_transaction_duration_for_all_locks();
+	cp_set_transaction_duration_for_all_locks(m_thd);
     
     // Check owner name
     if (ownerName && ownerName[0])
@@ -1998,19 +1998,25 @@ uint table::posPtrLen() const
 
 ha_rows table::recordCount(bool estimate)
 {
-    if ((m_table->file->ha_table_flags() &
-         (HA_HAS_RECORDS | HA_STATS_RECORDS_IS_EXACT)) != 0)
-        return m_table->file->records();
+	ha_rows rows = 0;
+	m_stat = 0;
+	if ((m_table->file->ha_table_flags() &
+		(HA_HAS_RECORDS | HA_STATS_RECORDS_IS_EXACT)) != 0)
+	{
+		m_stat = cp_record_count(m_table->file, &rows);
+		return rows;
+	}
     if (estimate)
     {   /* Since the answer of innodb is random, 1 returns also 0.
          Since it is important, in the case of 1
          , whether there is nothing or it is scan and investigate.
          info() is update statistics variables */ 
         m_table->file->info(HA_STATUS_VARIABLE | HA_STATUS_NO_LOCK);
-        ha_rows rows = m_table->file->records();
-        if (rows > 1)
+		m_stat = cp_record_count(m_table->file, &rows);
+		if (m_stat || rows > 1)
             return rows;
     }
+	
     uint n = 0;
     fieldBitmap fb(m_table);
     char keynum = m_keyNum;
@@ -2395,7 +2401,7 @@ const char* table::valStr(int fieldNum, int& size)
         return "";
     else
         fd->val_str(&m_str, &m_str);
-    size = m_str.length();
+    size = (int)m_str.length();
     return m_str.c_ptr();
 }
 
