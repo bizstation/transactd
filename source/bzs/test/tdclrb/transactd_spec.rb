@@ -23,16 +23,24 @@ require 'transactd'
 require 'rbconfig'
 IS_WINDOWS = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
 
+def getEnv(valuename)
+  return ENV[valuename] if ENV[valuename] != nil
+  return ''
+end
+
 def getHost()
-  hostname = 'localhost/'
-  if (ENV['TRANSACTD_RSPEC_HOST'] != nil && ENV['TRANSACTD_RSPEC_HOST'] != '')
-    hostname = ENV['TRANSACTD_RSPEC_HOST']
-  end
+  hostname = getEnv('TRANSACTD_RSPEC_HOST')
+  hostname = '127.0.0.1/' if hostname == ''
   hostname = hostname + '/' unless (hostname =~ /\/$/)
   return hostname
 end
 
 HOSTNAME = getHost()
+USERNAME = getEnv('TRANSACTD_RSPEC_USER')
+USERPART = USERNAME == '' ? '' : USERNAME + '@'
+PASSWORD = getEnv('TRANSACTD_RSPEC_PASS')
+PASSPART = PASSWORD == '' ? '' : '&pwd=' + PASSWORD
+PASSPART2 = PASSWORD == '' ? '' : '?pwd=' + PASSWORD
 DBNAME = 'test'
 DBNAME_VAR = 'testvar'
 DBNAME_SF = 'testString'
@@ -40,10 +48,12 @@ DBNAME_QT = 'querytest'
 TABLENAME = 'user'
 PROTOCOL = 'tdap://'
 BDFNAME = '?dbfile=test.bdf'
-URL = PROTOCOL + HOSTNAME + DBNAME + BDFNAME
-URL_VAR = PROTOCOL + HOSTNAME + DBNAME_VAR + BDFNAME
-URL_SF = PROTOCOL + HOSTNAME + DBNAME_SF + BDFNAME
-URL_QT = PROTOCOL + HOSTNAME + DBNAME_QT + BDFNAME
+URL = PROTOCOL + USERPART + HOSTNAME + DBNAME + BDFNAME + PASSPART
+URL_VAR = PROTOCOL + USERPART + HOSTNAME + DBNAME_VAR + BDFNAME + PASSPART
+URL_SF = PROTOCOL + USERPART + HOSTNAME + DBNAME_SF + BDFNAME + PASSPART
+URL_QT = PROTOCOL + USERPART + HOSTNAME + DBNAME_QT + BDFNAME + PASSPART
+URL_HOST = PROTOCOL + USERPART + HOSTNAME + PASSPART2
+URL_DB = PROTOCOL + USERPART + HOSTNAME + DBNAME + PASSPART2
 FDI_ID = 0
 FDI_NAME = 1
 FDI_GROUP = 2
@@ -193,7 +203,7 @@ end
 
 def testVersion()
   db = Transactd::Database.new()
-  db.connect(PROTOCOL + HOSTNAME)
+  db.connect(URL_HOST)
   expect(db.stat()).to eq 0
   vv = Transactd::BtrVersions.new()
   db.getBtrVersion(vv)
@@ -633,7 +643,7 @@ def testSnapshot()
   expect(db.stat()).to eq 0
   expect(tbg).not_to be nil
   db2 = Transactd::Database.new()
-  db2.connect(PROTOCOL + HOSTNAME + DBNAME , true)
+  db2.connect(URL_DB, true)
   expect(db2.stat()).to eq 0
   tb2 = testOpenTable(db2)
   expect(tb2).not_to be nil
@@ -763,7 +773,7 @@ def testTransactionLockRepeatable()
   tb = testOpenTable(db)
   expect(tb).not_to be nil
   db2 = Transactd::Database.new()
-  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  db2.connect(URL_DB, true)
   expect(db2.stat()).to eq 0
   tb2 = testOpenTable(db2)
   expect(tb2).not_to be nil
@@ -994,7 +1004,7 @@ def testTransactionLockReadCommited()
   tb = testOpenTable(db)
   expect(tb).not_to be nil
   db2 = Transactd::Database.new()
-  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  db2.connect(URL_DB, true)
   expect(db2.stat()).to eq 0
   tb2 = testOpenTable(db2)
   expect(tb2).not_to be nil
@@ -1259,7 +1269,7 @@ def testRecordLock()
   tb = testOpenTable(db)
   expect(tb).not_to be nil
   db2 = Transactd::Database.new()
-  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  db2.connect(URL_DB, true)
   expect(db2.stat()).to eq 0
   tb2 = testOpenTable(db2)
   expect(tb2).not_to be nil
@@ -1395,7 +1405,7 @@ def testConflict()
   db = Transactd::Database.new()
   tb = testOpenTable(db)
   db2 = Transactd::Database.new()
-  db2.connect(PROTOCOL + HOSTNAME + DBNAME , true)
+  db2.connect(URL_DB, true)
   expect(db2.stat()).to eq 0
   expect(tb).not_to be nil
   tb2 = testOpenTable(db2)
@@ -1454,7 +1464,7 @@ def testExclusive()
   
   # Can not open database from other connections.
   db2 = Transactd::Database.new()
-  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  db2.connect(URL_DB, true)
   expect(db2.stat()).to eq 0
   db2.open(URL, Transactd::TYPE_SCHEMA_BDF)
   # database open error. Check database::stat()
@@ -1477,7 +1487,7 @@ def testExclusive()
   db2.close()
   
   # Normal open
-  db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+  db2.connect(URL_DB, true)
   db2.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db2.stat()).to eq 0
   db2.close()
@@ -1639,7 +1649,7 @@ def testMissingUpdate()
     # Get lock(X) same record in parallel.
     w = Thread.new {
       db2 = Transactd::Database.new()
-      db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+      db2.connect(URL_DB, true)
       expect(db2.stat()).to eq 0
       db2.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
       expect(db2.stat()).to eq 0
@@ -1683,7 +1693,7 @@ def testMissingUpdate()
     # Get lock(X) same record in parallel.
     w = Thread.new {
       db2 = Transactd::Database.new()
-      db2.connect(PROTOCOL + HOSTNAME + DBNAME, true)
+      db2.connect(URL_DB, true)
       expect(db2.stat()).to eq 0
       db2.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
       expect(db2.stat()).to eq 0
@@ -1797,12 +1807,12 @@ end
 
 def testLogin()
   db = Transactd::Database.new()
-  db.connect(PROTOCOL + HOSTNAME)
+  db.connect(URL_HOST)
   expect(db.stat()).to eq 0
   if db.stat() == 0
     # second connection
     db2 = Transactd::Database.new()
-    db2.connect(PROTOCOL + HOSTNAME, true)
+    db2.connect(URL_HOST, true)
     expect(db2.stat()).to eq 0
     db2.disconnect()
     db.disconnect()
@@ -1821,7 +1831,7 @@ def testLogin()
   db.close()
   expect(db.stat()).to eq 0
   # true database name
-  db.connect(PROTOCOL + HOSTNAME + DBNAME)
+  db.connect(URL_DB)
   expect(db.stat()).to eq 0
   if (db.stat() == 0)
     db.disconnect()
@@ -1831,7 +1841,7 @@ def testLogin()
   testDropDatabase(db)
   db.disconnect()
   expect(db.stat()).to eq 0
-  db.connect(PROTOCOL + HOSTNAME + DBNAME)
+  db.connect(URL_DB)
   expect(db.stat()).to eq (Transactd::ERROR_NO_DATABASE)
   db.disconnect()
   expect(db.stat()).to eq 1
@@ -2858,11 +2868,13 @@ def insertQT(db, maxId)
     tb.insert()
     expect(tb.stat()).to eq 0
   end
+  db.endTrn()
   tb.close()
   # insert groups data
   tb = db.openTable('groups', Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
   expect(tb).not_to be nil
+  db.beginTrn()
   tb.clearBuffer()
   for i in 1..100
     tb.setFV(0, i)
@@ -2870,11 +2882,13 @@ def insertQT(db, maxId)
     tb.insert()
     expect(tb.stat()).to eq 0
   end
+  db.endTrn()
   tb.close()
   # insert extention data
   tb = db.openTable('extention', Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
   expect(tb).not_to be nil
+  db.beginTrn()
   tb.clearBuffer()
   for i in 1..maxId
     tb.setFV(0, i)
@@ -2883,8 +2897,8 @@ def insertQT(db, maxId)
     tb.insert()
     expect(tb.stat()).to eq 0
   end
-  tb.close()
   db.endTrn()
+  tb.close()
 end
 
 def testCreateQueryTest()

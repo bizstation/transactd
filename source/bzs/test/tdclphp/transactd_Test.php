@@ -22,7 +22,26 @@ mb_internal_encoding('UTF-8');
 require_once("transactd.php");
 use BizStation\Transactd as Bz;
 
-define("HOSTNAME", "localhost/");
+function getHost()
+{
+    $host = getenv('TRANSACTD_PHPUNIT_HOST');
+    if (strlen($host) == 0)
+    {
+        $host = '127.0.0.1/';
+    }
+    if ($host[strlen($host) - 1] != '/')
+    {
+        $host = $host . '/';
+    }
+    return $host;
+}
+
+define("HOSTNAME", getHost());
+define("USERNAME", getenv('TRANSACTD_PHPUNIT_USER'));
+define("USERPART", strlen(USERNAME) == 0 ? '' : USERNAME . '@');
+define("PASSWORD", getenv('TRANSACTD_PHPUNIT_PASS'));
+define("PASSPART", strlen(PASSWORD) == 0 ? '' : '&pwd=' . PASSWORD);
+define("PASSPART2", strlen(PASSWORD) == 0 ? '' : '?pwd=' . PASSWORD);
 define("DBNAME", "test");
 define("DBNAME_VAR", "testvar");
 define("DBNAME_SF", "testString");
@@ -30,10 +49,12 @@ define("DBNAME_QT", "querytest");
 define("TABLENAME", "user");
 define("PROTOCOL", "tdap://");
 define("BDFNAME", "?dbfile=test.bdf");
-define("URL", PROTOCOL . HOSTNAME . DBNAME . BDFNAME);
-define("URL_VAR", PROTOCOL . HOSTNAME . DBNAME_VAR . BDFNAME);
-define("URL_SF", PROTOCOL . HOSTNAME . DBNAME_SF . BDFNAME);
-define("URL_QT", PROTOCOL . HOSTNAME . DBNAME_QT . BDFNAME);
+define("URL", PROTOCOL . USERPART . HOSTNAME . DBNAME . BDFNAME . PASSPART);
+define("URL_VAR", PROTOCOL . USERPART . HOSTNAME . DBNAME_VAR . BDFNAME . PASSPART);
+define("URL_SF", PROTOCOL . USERPART . HOSTNAME . DBNAME_SF . BDFNAME . PASSPART);
+define("URL_QT", PROTOCOL . USERPART . HOSTNAME . DBNAME_QT . BDFNAME . PASSPART);
+define("URL_HOST", PROTOCOL . USERPART . HOSTNAME . PASSPART2);
+define("URL_DB", PROTOCOL . USERPART . HOSTNAME . DBNAME . PASSPART2);
 define("FDI_ID", 0);
 define("FDI_NAME", 1);
 define("FDI_GROUP", 2);
@@ -287,7 +308,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     public function testVersion()
     {
         $db = new Bz\database();
-        $db->connect(PROTOCOL . HOSTNAME);
+        $db->connect(URL_HOST);
         $this->assertEquals($db->stat(), 0);
         $vv = new Bz\btrVersions();
         $db->getBtrVersion($vv);
@@ -727,7 +748,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertNotEquals($tbg, NULL);
         $db2 = new Bz\database();
         $this->assertEquals($db2->stat(), 0);
-        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $db2->connect(URL_DB, true);
         $tb2 = $this->openTable($db2);
         $this->assertNotEquals($tb2, NULL);
         $tbg2 = $db2->openTable('group');
@@ -847,7 +868,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db  = new Bz\database();
         $tb = $this->openTable($db);
         $db2 = new Bz\database();
-        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $db2->connect(URL_DB, true);
         $this->assertEquals($db2->stat(), 0);
         $this->assertNotEquals($tb, NULL);
         $tb2 = $this->openTable($db2);
@@ -899,7 +920,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $db2 = new Bz\database();
-        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $db2->connect(URL_DB, true);
         $this->assertEquals($db2->stat(), 0);
         $tb2 = $this->openTable($db2);
         $this->assertNotEquals($tb2, NULL);
@@ -1094,7 +1115,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $db2 = new Bz\database();
-        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $db2->connect(URL_DB, true);
         $this->assertEquals($db2->stat(), 0);
         $tb2 = $this->openTable($db2);
         $this->assertNotEquals($tb2, NULL);
@@ -1382,7 +1403,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
         $db2 = new Bz\database();
-        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $db2->connect(URL_DB, true);
         $this->assertEquals($db2->stat(), 0);
         $tb2 = $this->openTable($db2);
         $this->assertNotEquals($tb2, NULL);
@@ -1523,7 +1544,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         // Can not open database from other connections.
         $db2 = new Bz\database();
-        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $db2->connect(URL_DB, true);
         $this->assertEquals($db2->stat(), 0);
         $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF);
         // database open error. Check database::stat()
@@ -1546,7 +1567,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db2->close();
         
         // Normal open
-        $db2->connect(PROTOCOL . HOSTNAME . DBNAME, true);
+        $db2->connect(URL_DB, true);
         $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db2->stat(), 0);
         $db2->close();
@@ -1844,13 +1865,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
     public function testLogin()
     {
         $db = new Bz\database();
-        $db->connect(PROTOCOL . HOSTNAME);
+        $db->connect(URL_HOST);
         $this->assertEquals($db->stat(), 0);
         if ($db->stat() == 0)
         {
             // second connection
             $db2 = new Bz\database();
-            $db2->connect(PROTOCOL . HOSTNAME, true);
+            $db2->connect(URL_HOST, true);
             $this->assertEquals($db2->stat(), 0);
             unset($db2);
             $db->disconnect();
@@ -1868,7 +1889,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db->close();
         $this->assertEquals($db->stat(), 0);
         // true database name
-        $db->connect(PROTOCOL . HOSTNAME . DBNAME);
+        $db->connect(URL_DB);
         $this->assertEquals($db->stat(), 0);
         if ($db->stat() == 0)
         {
@@ -1879,7 +1900,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->dropDatabase($db);
         $db->disconnect();
         $this->assertEquals($db->stat(), 0);
-        $db->connect(PROTOCOL . HOSTNAME . DBNAME);
+        $db->connect(URL_DB);
         $this->assertEquals($db->stat(), Bz\transactd::ERROR_NO_DATABASE);
         $db->disconnect();
         $this->assertEquals($db->stat(), 1);
@@ -2952,10 +2973,12 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $tb->insert();
             $this->assertEquals($tb->stat(), 0);
         }
+        $db->endTrn();
         $tb->close();
         // insert groups data
         $tb = $db->openTable('groups', Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
+        $db->beginTrn();
         $tb->clearBuffer();
         for ($i = 1; $i <= 100; $i++)
         {
@@ -2964,10 +2987,12 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $tb->insert();
             $this->assertEquals($tb->stat(), 0);
         }
+        $db->endTrn();
         $tb->close();
         // insert extention data
         $tb = $db->openTable('extention', Bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
+        $db->beginTrn();
         $tb->clearBuffer();
         for ($i = 1; $i <= $maxId; $i++)
         {

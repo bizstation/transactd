@@ -21,17 +21,24 @@
 require 'transactd'
 require 'base64'
 
+def getEnv(valuename)
+  return ENV[valuename] if ENV[valuename] != nil
+  return ''
+end
+
 def getHost()
-  hostname = '127.0.0.1/'
-  if (ENV['TRANSACTD_RSPEC_HOST'] != nil && ENV['TRANSACTD_RSPEC_HOST'] != '')
-    hostname = ENV['TRANSACTD_RSPEC_HOST']
-  end
+  hostname = getEnv('TRANSACTD_RSPEC_HOST')
+  hostname = '127.0.0.1/' if hostname == ''
   hostname = hostname + '/' unless (hostname =~ /\/$/)
   return hostname
 end
 
 HOSTNAME = getHost()
-URL = 'tdap://' + HOSTNAME + 'test_blob?dbfile=test.bdf'
+USERNAME = getEnv('TRANSACTD_RSPEC_USER')
+USERPART = USERNAME == '' ? '' : USERNAME + '@'
+PASSWORD = getEnv('TRANSACTD_RSPEC_PASS')
+PASSPART = PASSWORD == '' ? '' : '&pwd=' + PASSWORD
+URL = 'tdap://' + USERPART + HOSTNAME + 'test_blob?dbfile=test.bdf' + PASSPART
 TABLENAME = 'comments'
 FDI_ID = 0
 FDI_USER_ID = 1
@@ -234,9 +241,6 @@ describe Transactd, 'blob' do
     # 3... but not found because filtered
     tb.findNext(true)
     expect(tb.stat()).to eq Transactd::STATUS_EOF
-    # 2... but changing seek-direction is not allowed
-    tb.findPrev(true)
-    expect(tb.stat()).to eq Transactd::STATUS_PROGRAM_ERROR
     db.close()
   end
   

@@ -23,18 +23,25 @@ require 'transactd'
 require 'rbconfig'
 IS_WINDOWS = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
 
+def getEnv(valuename)
+  return ENV[valuename] if ENV[valuename] != nil
+  return ''
+end
+
 def getHost()
-  hostname = '127.0.0.1/'
-  if (ENV['TRANSACTD_RSPEC_HOST'] != nil && ENV['TRANSACTD_RSPEC_HOST'] != '')
-    hostname = ENV['TRANSACTD_RSPEC_HOST']
-  end
+  hostname = getEnv('TRANSACTD_RSPEC_HOST')
+  hostname = '127.0.0.1/' if hostname == ''
   hostname = hostname + '/' unless (hostname =~ /\/$/)
   return hostname
 end
 
 HOSTNAME = getHost()
-URL = 'tdap://' + HOSTNAME + 'test?dbfile=test.bdf'
-URL_KANJI = 'tdap://' + HOSTNAME + 'テスト?dbfile=構成.bdf'
+USERNAME = getEnv('TRANSACTD_RSPEC_USER')
+USERPART = USERNAME == '' ? '' : USERNAME + '@'
+PASSWORD = getEnv('TRANSACTD_RSPEC_PASS')
+PASSPART = PASSWORD == '' ? '' : '&pwd=' + PASSWORD
+URL = 'tdap://' + USERPART + HOSTNAME + 'test?dbfile=test.bdf' + PASSPART
+URL_KANJI = 'tdap://' + USERPART + HOSTNAME + 'テスト?dbfile=構成.bdf' + PASSPART
 FDI_ID = 0
 FDN_ID = '番号'.encode('UTF-8')
 FDI_NAME = 1
