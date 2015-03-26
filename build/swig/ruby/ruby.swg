@@ -203,6 +203,7 @@ static void mark_activeTable(void* ptr) {
 
 // * bzs/db/protocol/tdap/client/groupQuery.h *
 %rename(__getitem__) bzs::db::protocol::tdap::client::fieldNames::operator[] (int index) const;
+%rename(__getitem__) bzs::db::protocol::tdap::client::sortFields::operator[];
 
 // * bzs/db/protocol/tdap/client/memRecord.h *
 %rename(__setitem__) bzs::db::protocol::tdap::client::field::setBin;

@@ -2973,6 +2973,39 @@ class fieldNames {
 	}
 }
 
+class sortField {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'name') return sortField_name_set($this->_cPtr,$value);
+		if ($var === 'asc') return sortField_asc_set($this->_cPtr,$value);
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		if ($var === 'name') return sortField_name_get($this->_cPtr);
+		if ($var === 'asc') return sortField_asc_get($this->_cPtr);
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if (function_exists('sortField_'.$var.'_get')) return true;
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__sortField') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_sortField();
+	}
+}
+
 class sortFields {
 	public $_cPtr=null;
 	protected $_pData=array();
@@ -2999,6 +3032,16 @@ class sortFields {
 
 	function size() {
 		return sortFields_size($this->_cPtr);
+	}
+
+	function getSortField($index) {
+		$r=sortFields_getSortField($this->_cPtr,$index);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new sortField($r);
+		}
+		return $r;
 	}
 
 	function clear() {

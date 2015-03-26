@@ -1908,9 +1908,9 @@ int SWIG_Ruby_arity( VALUE proc, int minimal )
 #define SWIGTYPE_p_void swig_types[87]
 #define SWIGTYPE_p_bzs__db__protocol__tdap__client__last swig_types[88]
 #define SWIGTYPE_p_bzs__db__protocol__tdap__client__first swig_types[89]
-
-static swig_type_info *swig_types[91];
-static swig_module_info swig_module = {swig_types, 90, 0, 0, 0, 0};
+#define SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField swig_types[90]
+static swig_type_info *swig_types[92];
+static swig_module_info swig_module = {swig_types, 91, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -27530,6 +27530,167 @@ free_bzs_db_protocol_tdap_client_fieldNames(bzs::db::protocol::tdap::client::fie
     delete_bzs_db_protocol_tdap_client_fieldNames(arg1);
 }
 
+static swig_class SwigClassSortField;
+
+SWIGINTERN VALUE
+_wrap_sortField_name_set(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::sortField *arg1 = (bzs::db::protocol::tdap::client::sortField *) 0 ;
+  std::_tstring arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  void *argp2 ;
+  int res2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::sortField *","name", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::sortField * >(argp1);
+  {
+    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_std___tstring,  0 );
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "std::_tstring","name", 2, argv[0] )); 
+    }  
+    if (!argp2) {
+      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "std::_tstring","name", 2, argv[0]));
+    } else {
+      arg2 = *(reinterpret_cast< std::_tstring * >(argp2));
+    }
+  }
+  if (arg1) (arg1)->name = arg2;
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_sortField_name_get(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::sortField *arg1 = (bzs::db::protocol::tdap::client::sortField *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  std::_tstring result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::sortField *","name", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::sortField * >(argp1);
+  result =  ((arg1)->name);
+  vresult = SWIG_NewPointerObj((new std::_tstring(static_cast< const std::_tstring& >(result))), SWIGTYPE_p_std___tstring, SWIG_POINTER_OWN |  0 );
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_sortField_asc_set(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::sortField *arg1 = (bzs::db::protocol::tdap::client::sortField *) 0 ;
+  bool arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::sortField *","asc", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::sortField * >(argp1);
+  ecode2 = SWIG_AsVal_bool(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","asc", 2, argv[0] ));
+  } 
+  arg2 = static_cast< bool >(val2);
+  if (arg1) (arg1)->asc = arg2;
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_sortField_asc_get(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::sortField *arg1 = (bzs::db::protocol::tdap::client::sortField *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  bool result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::sortField *","asc", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::sortField * >(argp1);
+  result = (bool) ((arg1)->asc);
+  vresult = SWIG_From_bool(static_cast< bool >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+#ifdef HAVE_RB_DEFINE_ALLOC_FUNC
+SWIGINTERN VALUE
+_wrap_sortField_allocate(VALUE self) {
+#else
+  SWIGINTERN VALUE
+  _wrap_sortField_allocate(int argc, VALUE *argv, VALUE self) {
+#endif
+    
+    
+    VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField);
+#ifndef HAVE_RB_DEFINE_ALLOC_FUNC
+    rb_obj_call_init(vresult, argc, argv);
+#endif
+    return vresult;
+  }
+  
+
+SWIGINTERN VALUE
+_wrap_new_sortField(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::sortField *result = 0 ;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::sortField *)new bzs::db::protocol::tdap::client::sortField();
+      DATA_PTR(self) = result;
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  return self;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN void
+free_bzs_db_protocol_tdap_client_sortField(bzs::db::protocol::tdap::client::sortField *arg1) {
+    delete arg1;
+}
+
 static swig_class SwigClassSortFields;
 
 SWIGINTERN VALUE
@@ -27618,6 +27779,48 @@ _wrap_sortFields_size(int argc, VALUE *argv, VALUE self) {
     }
   }
   vresult = SWIG_From_size_t(static_cast< size_t >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_sortFields___getitem__(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::sortFields *arg1 = (bzs::db::protocol::tdap::client::sortFields *) 0 ;
+  int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
+  bzs::db::protocol::tdap::client::sortField *result = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__sortFields, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::sortFields const *","operator []", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::sortFields * >(argp1);
+  ecode2 = SWIG_AsVal_int(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "int","operator []", 2, argv[0] ));
+  } 
+  arg2 = static_cast< int >(val2);
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::sortField *) &((bzs::db::protocol::tdap::client::sortFields const *)arg1)->operator [](arg2);
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0 |  0 );
   return vresult;
 fail:
   return Qnil;
@@ -33293,6 +33496,7 @@ static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__refarymem = {"_
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__autoMemory = {"_p_bzs__db__protocol__tdap__client__autoMemory", 0, 0, 0, 0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t = {"_p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t", "bzs::db::protocol::tdap::client::dbSnapshot *|bzs::db::protocol::tdap::client::snapshot< boost::shared_ptr< bzs::db::protocol::tdap::client::database > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t = {"_p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t", "bzs::db::protocol::tdap::client::snapshot< bzs::db::protocol::tdap::client::idatabaseManager * > *|bzs::db::protocol::tdap::client::dbmSnapshot *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__sortField = {"_p_bzs__db__protocol__tdap__client__sortField", "bzs::db::protocol::tdap::client::sortField *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__sortFields = {"_p_bzs__db__protocol__tdap__client__sortFields", "bzs::db::protocol::tdap::client::sortFields *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__sum = {"_p_bzs__db__protocol__tdap__client__sum", "bzs::db::protocol::tdap::client::sum *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__table = {"_p_bzs__db__protocol__tdap__client__table", "bzs::db::protocol::tdap::client::table *", 0, 0, (void*)0, 0};
@@ -33383,6 +33587,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_bzs__db__protocol__tdap__client__refarymem,
   &_swigt__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t,
   &_swigt__p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t,
+  &_swigt__p_bzs__db__protocol__tdap__client__sortField,
   &_swigt__p_bzs__db__protocol__tdap__client__sortFields,
   &_swigt__p_bzs__db__protocol__tdap__client__sum,
   &_swigt__p_bzs__db__protocol__tdap__client__table,
@@ -33477,6 +33682,7 @@ static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__autoMemory[] = 
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__refarymem[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__refarymem, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__fieldsBase, _p_bzs__db__protocol__tdap__client__fieldsBaseTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__memoryRecord, _p_bzs__db__protocol__tdap__client__memoryRecordTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__writableRecord, _p_bzs__db__protocol__tdap__client__writableRecordTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__autoMemory, _p_bzs__db__protocol__tdap__client__autoMemoryTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__fields, _p_bzs__db__protocol__tdap__client__fieldsTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__sortField[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sortField, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__sortFields[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sortFields, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__sum[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sum, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__sum, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__sum, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__sum, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__table[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__table, 0, 0, 0},{0, 0, 0, 0}};
@@ -33569,6 +33775,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_bzs__db__protocol__tdap__client__refarymem,
   _swigc__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t,
   _swigc__p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t,
+  _swigc__p_bzs__db__protocol__tdap__client__sortField,
   _swigc__p_bzs__db__protocol__tdap__client__sortFields,
   _swigc__p_bzs__db__protocol__tdap__client__sum,
   _swigc__p_bzs__db__protocol__tdap__client__table,
@@ -34768,12 +34975,25 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassFieldNames.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_fieldNames;
   SwigClassFieldNames.trackObjects = 0;
   
+  SwigClassSortField.klass = rb_define_class_under(mTransactd, "SortField", rb_cObject);
+  SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, (void *) &SwigClassSortField);
+  rb_define_alloc_func(SwigClassSortField.klass, _wrap_sortField_allocate);
+  rb_define_method(SwigClassSortField.klass, "initialize", VALUEFUNC(_wrap_new_sortField), -1);
+  rb_define_method(SwigClassSortField.klass, "name=", VALUEFUNC(_wrap_sortField_name_set), -1);
+  rb_define_method(SwigClassSortField.klass, "name", VALUEFUNC(_wrap_sortField_name_get), -1);
+  rb_define_method(SwigClassSortField.klass, "asc=", VALUEFUNC(_wrap_sortField_asc_set), -1);
+  rb_define_method(SwigClassSortField.klass, "asc", VALUEFUNC(_wrap_sortField_asc_get), -1);
+  SwigClassSortField.mark = 0;
+  SwigClassSortField.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_sortField;
+  SwigClassSortField.trackObjects = 0;
+  
   SwigClassSortFields.klass = rb_define_class_under(mTransactd, "SortFields", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__sortFields, (void *) &SwigClassSortFields);
   rb_define_alloc_func(SwigClassSortFields.klass, _wrap_sortFields_allocate);
   rb_define_method(SwigClassSortFields.klass, "initialize", VALUEFUNC(_wrap_new_sortFields), -1);
   rb_define_method(SwigClassSortFields.klass, "add", VALUEFUNC(_wrap_sortFields_add), -1);
   rb_define_method(SwigClassSortFields.klass, "size", VALUEFUNC(_wrap_sortFields_size), -1);
+  rb_define_method(SwigClassSortFields.klass, "[]", VALUEFUNC(_wrap_sortFields___getitem__), -1);
   rb_define_method(SwigClassSortFields.klass, "clear", VALUEFUNC(_wrap_sortFields_clear), -1);
   SwigClassSortFields.mark = 0;
   SwigClassSortFields.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_sortFields;

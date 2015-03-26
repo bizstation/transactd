@@ -1120,9 +1120,9 @@ static void SWIG_Php_SetModule(swig_module_info *pointer) {
 #define SWIGTYPE_p_void swig_types[90]
 #define SWIGTYPE_p_bzs__db__protocol__tdap__client__first swig_types[91]
 #define SWIGTYPE_p_bzs__db__protocol__tdap__client__last swig_types[92]
-
-static swig_type_info *swig_types[94];
-static swig_module_info swig_module = {swig_types, 93, 0, 0, 0, 0};
+#define SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField swig_types[93]
+static swig_type_info *swig_types[95];
+static swig_module_info swig_module = {swig_types, 94, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1675,6 +1675,7 @@ static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__refarymem = {"_
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__autoMemory = {"_p_bzs__db__protocol__tdap__client__autoMemory", 0, 0, 0, 0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t = {"_p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t", "bzs::db::protocol::tdap::client::dbSnapshot *|bzs::db::protocol::tdap::client::snapshot< boost::shared_ptr< bzs::db::protocol::tdap::client::database > > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t = {"_p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t", "bzs::db::protocol::tdap::client::snapshot< bzs::db::protocol::tdap::client::idatabaseManager * > *|bzs::db::protocol::tdap::client::dbmSnapshot *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__sortField = {"_p_bzs__db__protocol__tdap__client__sortField", "bzs::db::protocol::tdap::client::sortField *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__sortFields = {"_p_bzs__db__protocol__tdap__client__sortFields", "bzs::db::protocol::tdap::client::sortFields *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__sum = {"_p_bzs__db__protocol__tdap__client__sum", "bzs::db::protocol::tdap::client::sum *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__table = {"_p_bzs__db__protocol__tdap__client__table", "bzs::db::protocol::tdap::client::table *", 0, 0, (void*)0, 0};
@@ -1809,7 +1810,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_void,
   &_swigt__p_bzs__db__protocol__tdap__client__first,
   &_swigt__p_bzs__db__protocol__tdap__client__last,
-
+  &_swigt__p_bzs__db__protocol__tdap__client__sortField,
 };
 
 static swig_cast_info _swigc__bool[] = {  {&_swigt__bool, 0, 0, 0},{0, 0, 0, 0}};
@@ -1864,6 +1865,7 @@ static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__autoMemory[] = 
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__refarymem[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__refarymem, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__fieldsBase, _p_bzs__db__protocol__tdap__client__fieldsBaseTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__memoryRecord, _p_bzs__db__protocol__tdap__client__memoryRecordTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__writableRecord, _p_bzs__db__protocol__tdap__client__writableRecordTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__autoMemory, _p_bzs__db__protocol__tdap__client__autoMemoryTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__fields, _p_bzs__db__protocol__tdap__client__fieldsTo_p_bzs__db__protocol__tdap__client__refarymem, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__snapshotT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__snapshotT_bzs__db__protocol__tdap__client__idatabaseManager_p_t, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__sortField[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sortField, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__sortFields[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sortFields, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__sum[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__sum, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, _p_bzs__db__protocol__tdap__client__maxTo_p_bzs__db__protocol__tdap__client__sum, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, _p_bzs__db__protocol__tdap__client__avgTo_p_bzs__db__protocol__tdap__client__sum, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, _p_bzs__db__protocol__tdap__client__minTo_p_bzs__db__protocol__tdap__client__sum, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__table[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__table, 0, 0, 0},{0, 0, 0, 0}};
@@ -2000,7 +2002,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_void,
   _swigc__p_bzs__db__protocol__tdap__client__first,
   _swigc__p_bzs__db__protocol__tdap__client__last,
-
+  _swigc__p_bzs__db__protocol__tdap__client__sortField,
 };
 
 
@@ -2021,6 +2023,7 @@ static int le_swig__p_bzs__db__protocol__tdap__fielddef_tT_64_t=0; /* handle for
 static int le_swig__p_bzs__db__protocol__tdap__client__fieldShare=0; /* handle for _p_bzs__db__protocol__tdap__client__fieldShare */
 static int le_swig__p_bzs__db__protocol__tdap__client__pooledDbManager=0; /* handle for pooledDbManager */
 static int le_swig__p_bzs__db__protocol__tdap__fielddef_tT_20_t=0; /* handle for _p_bzs__db__protocol__tdap__fielddef_tT_20_t */
+static int le_swig__p_bzs__db__protocol__tdap__client__sortField=0; /* handle for sortField */
 static int le_swig__p_unsigned_short=0; /* handle for _p_unsigned_short */
 static int le_swig__p_short=0; /* handle for _p_short */
 static int le_swig__p_bzs__db__protocol__tdap__client__recordset=0; /* handle for Recordset */
@@ -25932,6 +25935,173 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_sortField_name_set) {
+  bzs::db::protocol::tdap::client::sortField *arg1 = (bzs::db::protocol::tdap::client::sortField *) 0 ;
+  std::_tstring arg2 ;
+  std::_tstring *tmp2 ;
+  zval **args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of sortField_name_set. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if(SWIG_ConvertPtr(*args[1], (void **) &tmp2, SWIGTYPE_p_std___tstring, 0) < 0 || tmp2 == NULL) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of sortField_name_set. Expected SWIGTYPE_p_std___tstring");
+    }
+    arg2 = *tmp2;
+  }
+  if (arg1) (arg1)->name = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_sortField_name_get) {
+  bzs::db::protocol::tdap::client::sortField *arg1 = (bzs::db::protocol::tdap::client::sortField *) 0 ;
+  zval **args[1];
+  std::_tstring result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of sortField_name_get. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result =  ((arg1)->name);
+  {
+    std::_tstring * resultobj = new std::_tstring((const std::_tstring &) result);
+    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_std___tstring, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_sortField_asc_set) {
+  bzs::db::protocol::tdap::client::sortField *arg1 = (bzs::db::protocol::tdap::client::sortField *) 0 ;
+  bool arg2 ;
+  zval **args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of sortField_asc_set. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,2,CONVERT_BOOL_IN@*/
+  convert_to_boolean_ex(args[1]);
+  arg2 = (bool) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->asc = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_sortField_asc_get) {
+  bzs::db::protocol::tdap::client::sortField *arg1 = (bzs::db::protocol::tdap::client::sortField *) 0 ;
+  zval **args[1];
+  bool result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of sortField_asc_get. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (bool) ((arg1)->asc);
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_sortField) {
+  bzs::db::protocol::tdap::client::sortField *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 0) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::sortField *)new bzs::db::protocol::tdap::client::sortField();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+/* This function is designed to be called by the zend list destructors */
+/* to typecast and do the actual destruction */
+static void __wrap_delete_sortField(zend_rsrc_list_entry *rsrc, const char *type_name TSRMLS_DC) {
+  swig_object_wrapper *value=(swig_object_wrapper *) rsrc->ptr ;
+  void *ptr=value->ptr ;
+  int newobject=value->newobject ;
+  bzs::db::protocol::tdap::client::sortField *arg1 = (bzs::db::protocol::tdap::client::sortField *) 0 ;
+  
+  efree(value);
+  if (! newobject) return; /* can't delete it! */
+  arg1 = (bzs::db::protocol::tdap::client::sortField *)SWIG_ZTS_ConvertResourceData(ptr,type_name,SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField TSRMLS_CC);
+  if (! arg1) zend_error(E_ERROR, "bzs::db::protocol::tdap::client::sortField resource already free'd");
+  {
+    try {
+      delete arg1;
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_sortFields_add) {
   bzs::db::protocol::tdap::client::sortFields *arg1 = (bzs::db::protocol::tdap::client::sortFields *) 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
@@ -26005,6 +26175,47 @@ ZEND_NAMED_FUNCTION(_wrap_sortFields_size) {
   {
     ZVAL_LONG(return_value,result);
   }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_sortFields_getSortField) {
+  bzs::db::protocol::tdap::client::sortFields *arg1 = (bzs::db::protocol::tdap::client::sortFields *) 0 ;
+  int arg2 ;
+  zval **args[2];
+  bzs::db::protocol::tdap::client::sortField *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortFields, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of sortFields_getSortField. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__sortFields");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  convert_to_long_ex(args[1]);
+  arg2 = (int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::sortField *) &((bzs::db::protocol::tdap::client::sortFields const *)arg1)->operator [](arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField, 0);
+  
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
@@ -31185,6 +31396,9 @@ static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__protocol__tdap__fielddef_tT_
   /* No destructor for simple type _p_bzs__db__protocol__tdap__fielddef_tT_20_t */
   efree(rsrc->ptr);
 }
+static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__protocol__tdap__client__sortField) {
+  __wrap_delete_sortField(rsrc, SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField->name TSRMLS_CC);
+}
 static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_unsigned_short) {
   /* No destructor for simple type _p_unsigned_short */
   efree(rsrc->ptr);
@@ -33069,12 +33283,32 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fieldnames_addvalues, 0, 0, 0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_fieldnames, 0, 0, 0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_sortfield_name_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_sortfield_name_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_sortfield_asc_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_sortfield_asc_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_sortfield, 0, 0, 0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_sortfields_add, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_sortfields_size, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_sortfields_getsortfield, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_sortfields_clear, 0, 0, 0)
@@ -33918,8 +34152,14 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(fieldnames_addvalue,_wrap_fieldNames_addValue,swig_arginfo_fieldnames_addvalue)
  SWIG_ZEND_NAMED_FE(fieldnames_addvalues,_wrap_fieldNames_addValues,swig_arginfo_fieldnames_addvalues)
  SWIG_ZEND_NAMED_FE(new_fieldnames,_wrap_new_fieldNames,swig_arginfo_new_fieldnames)
+ SWIG_ZEND_NAMED_FE(sortfield_name_set,_wrap_sortField_name_set,swig_arginfo_sortfield_name_set)
+ SWIG_ZEND_NAMED_FE(sortfield_name_get,_wrap_sortField_name_get,swig_arginfo_sortfield_name_get)
+ SWIG_ZEND_NAMED_FE(sortfield_asc_set,_wrap_sortField_asc_set,swig_arginfo_sortfield_asc_set)
+ SWIG_ZEND_NAMED_FE(sortfield_asc_get,_wrap_sortField_asc_get,swig_arginfo_sortfield_asc_get)
+ SWIG_ZEND_NAMED_FE(new_sortfield,_wrap_new_sortField,swig_arginfo_new_sortfield)
  SWIG_ZEND_NAMED_FE(sortfields_add,_wrap_sortFields_add,swig_arginfo_sortfields_add)
  SWIG_ZEND_NAMED_FE(sortfields_size,_wrap_sortFields_size,swig_arginfo_sortfields_size)
+ SWIG_ZEND_NAMED_FE(sortfields_getsortfield,_wrap_sortFields_getSortField,swig_arginfo_sortfields_getsortfield)
  SWIG_ZEND_NAMED_FE(sortfields_clear,_wrap_sortFields_clear,swig_arginfo_sortfields_clear)
  SWIG_ZEND_NAMED_FE(new_sortfields,_wrap_new_sortFields,swig_arginfo_new_sortfields)
  SWIG_ZEND_NAMED_FE(recordsetquery_reset,_wrap_recordsetQuery_reset,swig_arginfo_recordsetquery_reset)
@@ -34318,6 +34558,8 @@ le_swig__p_bzs__db__protocol__tdap__client__pooledDbManager=zend_register_list_d
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__pooledDbManager,&le_swig__p_bzs__db__protocol__tdap__client__pooledDbManager);
 le_swig__p_bzs__db__protocol__tdap__fielddef_tT_20_t=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__fielddef_tT_20_t,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__fielddef_tT_20_t->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__fielddef_tT_20_t,&le_swig__p_bzs__db__protocol__tdap__fielddef_tT_20_t);
+le_swig__p_bzs__db__protocol__tdap__client__sortField=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__sortField,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField->name),module_number);
+SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField,&le_swig__p_bzs__db__protocol__tdap__client__sortField);
 le_swig__p_unsigned_short=zend_register_list_destructors_ex(_wrap_destroy_p_unsigned_short,NULL,(char *)(SWIGTYPE_p_unsigned_short->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_unsigned_short,&le_swig__p_unsigned_short);
 le_swig__p_short=zend_register_list_destructors_ex(_wrap_destroy_p_short,NULL,(char *)(SWIGTYPE_p_short->name),module_number);

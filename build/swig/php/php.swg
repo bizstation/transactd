@@ -158,6 +158,7 @@ typedef char  _TCHAR;
 %rename(__clone) bzs::db::protocol::tdap::client::min::clone;
 %rename(__clone) bzs::db::protocol::tdap::client::sum::clone;
 %rename(getFieldName) bzs::db::protocol::tdap::client::fieldNames::operator[] (int index) const;
+%rename(getSortField) bzs::db::protocol::tdap::client::sortFields::operator[];
 
 // * bzs/db/protocol/tdap/client/nsDatabase.h *
 %rename(__clone) bzs::db::protocol::tdap::client::nsdatabase::clone;
