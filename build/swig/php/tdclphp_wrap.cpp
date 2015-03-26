@@ -17710,7 +17710,7 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconnect) {
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconectForReconnectTest) {
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconnectForReconnectTest) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
   zval **args[1];
   bool result;
@@ -17722,13 +17722,13 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconectForReconnectTest) {
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nsdatabase_disconectForReconnectTest. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nsdatabase_disconnectForReconnectTest. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      result = arg1->disconectForReconnectTest();
+      result = arg1->disconnectForReconnectTest();
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -32626,7 +32626,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_disconnect, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_disconectForReconnectTest, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_disconnectForReconnectTest, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_reconnect, 0, 0, 0)
@@ -33789,7 +33789,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(nsdatabase_readdatabasedirectory,_wrap_nsdatabase_readDatabaseDirectory,swig_arginfo_nsdatabase_readdatabasedirectory)
  SWIG_ZEND_NAMED_FE(nsdatabase_connect,_wrap_nsdatabase_connect,swig_arginfo_nsdatabase_connect)
  SWIG_ZEND_NAMED_FE(nsdatabase_disconnect,_wrap_nsdatabase_disconnect,swig_arginfo_nsdatabase_disconnect)
- SWIG_ZEND_NAMED_FE(nsdatabase_disconectForReconnectTest,_wrap_nsdatabase_disconectForReconnectTest,swig_arginfo_nsdatabase_disconectForReconnectTest)
+ SWIG_ZEND_NAMED_FE(nsdatabase_disconnectForReconnectTest,_wrap_nsdatabase_disconnectForReconnectTest,swig_arginfo_nsdatabase_disconnectForReconnectTest)
  SWIG_ZEND_NAMED_FE(nsdatabase_reconnect,_wrap_nsdatabase_reconnect,swig_arginfo_nsdatabase_reconnect)
  SWIG_ZEND_NAMED_FE(nsdatabase_trnsactionflushwaitstatus,_wrap_nsdatabase_trnsactionFlushWaitStatus,swig_arginfo_nsdatabase_trnsactionflushwaitstatus)
  SWIG_ZEND_NAMED_FE(nsdatabase_setexeccodepage,_wrap_nsdatabase_setExecCodePage,swig_arginfo_nsdatabase_setexeccodepage)

@@ -105,7 +105,7 @@ public:
     STDMETHOD(Connect)(BSTR URI, VARIANT_BOOL newConnection,
                        VARIANT_BOOL* Value);
     STDMETHOD(Disconnect)(BSTR URI, VARIANT_BOOL* Param2);
-    STDMETHOD(DisconectForReconnectTest)(VARIANT_BOOL* Param2);
+    STDMETHOD(DisconnectForReconnectTest)(VARIANT_BOOL* Param2);
     STDMETHOD(Reconnect)(VARIANT_BOOL* Param2);
 
     STDMETHOD(get_EnableTrn)(VARIANT_BOOL* Value);

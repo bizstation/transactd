@@ -503,7 +503,7 @@ interface IDatabase : IDispatch
   [propget, id(0x000000F6)]
   HRESULT _stdcall TrxLockWaitTimeoutServer([out, retval]  int* Value);
   [id(0x000000F7)]
-  HRESULT _stdcall DisconectForReconnectTest([out, retval] VARIANT_BOOL* Value);
+  HRESULT _stdcall DisconnectForReconnectTest([out, retval] VARIANT_BOOL* Value);
   [id(0x000000F8)]
   HRESULT _stdcall Reconnect([out, retval] VARIANT_BOOL* Value);
   

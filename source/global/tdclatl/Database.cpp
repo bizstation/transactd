@@ -213,9 +213,9 @@ STDMETHODIMP CDatabase::Disconnect(BSTR URI, VARIANT_BOOL* Param2)
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::DisconectForReconnectTest(VARIANT_BOOL* Param2)
+STDMETHODIMP CDatabase::DisconnectForReconnectTest(VARIANT_BOOL* Param2)
 {
-    *Param2 = m_db->disconectForReconnectTest();
+    *Param2 = m_db->disconnectForReconnectTest();
     return S_OK;
 }
 

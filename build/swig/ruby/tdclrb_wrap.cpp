@@ -19010,7 +19010,7 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_nsdatabase_disconectForReconnectTest(int argc, VALUE *argv, VALUE self) {
+_wrap_nsdatabase_disconnectForReconnectTest(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -19022,12 +19022,12 @@ _wrap_nsdatabase_disconectForReconnectTest(int argc, VALUE *argv, VALUE self) {
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","disconectForReconnectTest", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","disconnectForReconnectTest", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
   {
     try {
-      result = (bool)(arg1)->disconectForReconnectTest();
+      result = (bool)(arg1)->disconnectForReconnectTest();
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -34542,7 +34542,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassNsdatabase.klass, "readDatabaseDirectory", VALUEFUNC(_wrap_nsdatabase_readDatabaseDirectory), -1);
   rb_define_method(SwigClassNsdatabase.klass, "connect", VALUEFUNC(_wrap_nsdatabase_connect), -1);
   rb_define_method(SwigClassNsdatabase.klass, "disconnect", VALUEFUNC(_wrap_nsdatabase_disconnect), -1);
-  rb_define_method(SwigClassNsdatabase.klass, "disconectForReconnectTest", VALUEFUNC(_wrap_nsdatabase_disconectForReconnectTest), -1);
+  rb_define_method(SwigClassNsdatabase.klass, "disconnectForReconnectTest", VALUEFUNC(_wrap_nsdatabase_disconnectForReconnectTest), -1);
   rb_define_method(SwigClassNsdatabase.klass, "reconnect", VALUEFUNC(_wrap_nsdatabase_reconnect), -1);
   rb_define_singleton_method(SwigClassNsdatabase.klass, "trnsactionFlushWaitStatus", VALUEFUNC(_wrap_nsdatabase_trnsactionFlushWaitStatus), -1);
   rb_define_singleton_method(SwigClassNsdatabase.klass, "setExecCodePage", VALUEFUNC(_wrap_nsdatabase_setExecCodePage), -1);

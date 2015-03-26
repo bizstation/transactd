@@ -1977,8 +1977,8 @@ class nsdatabase {
 		return nsdatabase_disconnect($this->_cPtr,$uri);
 	}
 
-	function disconectForReconnectTest() {
-		return nsdatabase_disconectForReconnectTest($this->_cPtr);
+	function disconnectForReconnectTest() {
+		return nsdatabase_disconnectForReconnectTest($this->_cPtr);
 	}
 
 	function reconnect() {
