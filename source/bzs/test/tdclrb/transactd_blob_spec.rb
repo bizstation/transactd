@@ -326,6 +326,20 @@ describe Transactd, 'blob' do
     db.close()
   end
   
+  it 'use recordset' do
+    image = getTestBinary()
+    db = Transactd::Database.new()
+    openDatabase(db)
+    at = Transactd::ActiveTable.new(db, TABLENAME)
+    q = Transactd::Query.new()
+    q.where('id', '=', 1)
+    rs = at.index(0).keyValue(1).read(q)
+    expect(rs.count()).to eq 1
+    f = rs[0].getField(FDI_IMAGE);
+    expect(f.getBin()).to eq image
+    db.close()
+  end
+  
   it 'drop' do
     db = Transactd::Database.new()
     dropDatabase(db)

@@ -148,11 +148,18 @@ static void mark_activeTable(void* ptr) {
 %ignore bzs::db::protocol::tdap::client::fielddefs::operator[] (const std::_tstring&) const;
 %rename(__getitem__) bzs::db::protocol::tdap::client::fielddefs::operator[] (int index) const;
 %rename(__getitem__) bzs::db::protocol::tdap::client::fielddefs::operator[] (const _TCHAR* name) const;
+  // getBin typemap
+%typemap(in, numinputs=0) (uint_td & size) (uint_td temp) {
+  $1 = &temp;
+}
+%typemap(argout) (uint_td & size) {
+  $result = rb_str_new((const char *)result, *$1);
+}
 
 // * bzs/db/protocol/tdap/client/fields.h *
-%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[] (short index) const;
-%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[] (const _TCHAR* name) const;
 %ignore bzs::db::protocol::tdap::client::fieldsBase::operator[] (const std::_tstring&) const;
+%rename(getField) bzs::db::protocol::tdap::client::fieldsBase::operator[] (short index) const;
+%rename(getField) bzs::db::protocol::tdap::client::fieldsBase::operator[] (const _TCHAR* name) const;
   // typemap and expand for get field value.
 %typemap(argout) (short fieldsBase_getitem_index) {
   bzs::db::protocol::tdap::client::field f = arg1->operator[]($1);
@@ -180,13 +187,6 @@ static void mark_activeTable(void* ptr) {
       tmp_d = f.d();
       $result = SWIG_From_double(static_cast< double >(tmp_d));
       break;
-      /*
-    case ft_string:
-    case ft_myvarbinary:
-    case ft_mywvarbinary:
-    case ft_myblob:
-      return f.getBin();
-      */
     default:
       tmp_c_str = f.c_str();
       $result = rb_enc_str_new(tmp_c_str, strlen(tmp_c_str), rb_enc_find_from_codepage(CP_UTF8));

@@ -146,7 +146,7 @@ typedef char  _TCHAR;
 }
 
 // * bzs/db/protocol/tdap/client/fields.h *
-%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[](const std::_tstring&) const;
+%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[] (const std::_tstring&) const;
 %rename(getField) bzs::db::protocol::tdap::client::fieldsBase::operator[] (short index) const;
 %rename(getField) bzs::db::protocol::tdap::client::fieldsBase::operator[] (const _TCHAR* name) const;
 

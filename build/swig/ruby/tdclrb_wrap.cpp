@@ -25650,27 +25650,21 @@ _wrap_field_getBin(int argc, VALUE *argv, VALUE self) {
   uint_td *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 = 0 ;
-  int res2 = 0 ;
+  uint_td temp2 ;
   void *result = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  {
+    arg2 = &temp2;
+  }
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::field *","getBin", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::field * >(argp1);
-  res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_unsigned_int,  0 );
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "uint_td &","getBin", 2, argv[0] )); 
-  }
-  if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "uint_td &","getBin", 2, argv[0])); 
-  }
-  arg2 = reinterpret_cast< uint_td * >(argp2);
   {
     try {
       result = (void *)(arg1)->getBin(*arg2);
@@ -25683,6 +25677,9 @@ _wrap_field_getBin(int argc, VALUE *argv, VALUE self) {
     }
   }
   vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_void, 0 |  0 );
+  {
+    vresult = rb_str_new((const char *)result, *arg2);
+  }
   return vresult;
 fail:
   return Qnil;
@@ -25884,6 +25881,142 @@ _wrap_Record_isInvalidRecord(int argc, VALUE *argv, VALUE self) {
   vresult = SWIG_From_bool(static_cast< bool >(result));
   return vresult;
 fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_Record_getField__SWIG_0(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::fieldsBase *arg1 = (bzs::db::protocol::tdap::client::fieldsBase *) 0 ;
+  short arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  short val2 ;
+  int ecode2 = 0 ;
+  bzs::db::protocol::tdap::client::field result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::fieldsBase const *","operator []", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::fieldsBase * >(argp1);
+  ecode2 = SWIG_AsVal_short(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "short","operator []", 2, argv[0] ));
+  } 
+  arg2 = static_cast< short >(val2);
+  {
+    try {
+      result = ((bzs::db::protocol::tdap::client::fieldsBase const *)arg1)->operator [](arg2);
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_NewPointerObj((new bzs::db::protocol::tdap::client::field(static_cast< const bzs::db::protocol::tdap::client::field& >(result))), SWIGTYPE_p_bzs__db__protocol__tdap__client__field, SWIG_POINTER_OWN |  0 );
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_Record_getField__SWIG_1(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::fieldsBase *arg1 = (bzs::db::protocol::tdap::client::fieldsBase *) 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+  bzs::db::protocol::tdap::client::field result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::fieldsBase const *","operator []", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::fieldsBase * >(argp1);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","operator []", 2, argv[0] ));
+  }
+  arg2 = reinterpret_cast< _TCHAR * >(buf2);
+  {
+    try {
+      result = ((bzs::db::protocol::tdap::client::fieldsBase const *)arg1)->operator []((_TCHAR const *)arg2);
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  vresult = SWIG_NewPointerObj((new bzs::db::protocol::tdap::client::field(static_cast< const bzs::db::protocol::tdap::client::field& >(result))), SWIGTYPE_p_bzs__db__protocol__tdap__client__field, SWIG_POINTER_OWN |  0 );
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return vresult;
+fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE _wrap_Record_getField(int nargs, VALUE *args, VALUE self) {
+  int argc;
+  VALUE argv[3];
+  int ii;
+  
+  argc = nargs + 1;
+  argv[0] = self;
+  if (argc > 3) SWIG_fail;
+  for (ii = 1; (ii < argc); ++ii) {
+    argv[ii] = args[ii-1];
+  }
+  if (argc == 2) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      {
+        int res = SWIG_AsVal_short(argv[1], NULL);
+        _v = SWIG_CheckState(res);
+      }
+      if (_v) {
+        return _wrap_Record_getField__SWIG_0(nargs, args, self);
+      }
+    }
+  }
+  if (argc == 2) {
+    int _v;
+    void *vptr = 0;
+    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+        return _wrap_Record_getField__SWIG_1(nargs, args, self);
+      }
+    }
+  }
+  
+fail:
+  Ruby_Format_OverloadedError( argc, 3, "Record.getField", 
+    "    bzs::db::protocol::tdap::client::field Record.getField(short index)\n"
+    "    bzs::db::protocol::tdap::client::field Record.getField(_TCHAR const *name)\n");
+  
   return Qnil;
 }
 
@@ -26111,13 +26244,6 @@ _wrap_Record___getitem____SWIG_0(int argc, VALUE *argv, VALUE self) {
       tmp_d = f.d();
       vresult = SWIG_From_double(static_cast< double >(tmp_d));
       break;
-      /*
-          case ft_string:
-          case ft_myvarbinary:
-          case ft_mywvarbinary:
-          case ft_myblob:
-            return f.getBin();
-            */
     default:
       tmp_c_str = f.c_str();
       vresult = rb_enc_str_new(tmp_c_str, strlen(tmp_c_str), rb_enc_find_from_codepage(CP_UTF8));
@@ -26190,13 +26316,6 @@ _wrap_Record___getitem____SWIG_1(int argc, VALUE *argv, VALUE self) {
       tmp_d = f.d();
       vresult = SWIG_From_double(static_cast< double >(tmp_d));
       break;
-      /*
-          case ft_string:
-          case ft_myvarbinary:
-          case ft_mywvarbinary:
-          case ft_myblob:
-            return f.getBin();
-            */
     default:
       tmp_c_str = f.c_str();
       vresult = rb_enc_str_new(tmp_c_str, strlen(tmp_c_str), rb_enc_find_from_codepage(CP_UTF8));
@@ -34923,6 +35042,7 @@ SWIGEXPORT void Init_transactd(void) {
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, (void *) &SwigClassRecord);
   rb_undef_alloc_func(SwigClassRecord.klass);
   rb_define_method(SwigClassRecord.klass, "isInvalidRecord", VALUEFUNC(_wrap_Record_isInvalidRecord), -1);
+  rb_define_method(SwigClassRecord.klass, "getField", VALUEFUNC(_wrap_Record_getField), -1);
   rb_define_method(SwigClassRecord.klass, "size", VALUEFUNC(_wrap_Record_size), -1);
   rb_define_method(SwigClassRecord.klass, "indexByName", VALUEFUNC(_wrap_Record_indexByName), -1);
   rb_define_method(SwigClassRecord.klass, "fieldDefs", VALUEFUNC(_wrap_Record_fieldDefs), -1);

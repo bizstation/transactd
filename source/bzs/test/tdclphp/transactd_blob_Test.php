@@ -304,6 +304,19 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $tb->seekNext();
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
     }
+    public function testRecord()
+    {
+        $image = $this->getTestBinary();
+        $db = new Bz\database();
+        $this->openDatabase($db, URL);
+        $at = new Bz\ActiveTable($db, TABLENAME);
+        $q = new Bz\query();
+        $q->where('id', '=', 1);
+        $rs = $at->index(0)->keyValue(1)->read($q);
+        $this->assertEquals(count($rs), 1);
+        $f = $rs[0]->getField(FDI_IMAGE);
+        $this->assertEquals($f->getBin(), $image);
+    }
     public function testDrop()
     {
         $db = new Bz\database();
