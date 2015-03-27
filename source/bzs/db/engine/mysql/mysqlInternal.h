@@ -39,24 +39,19 @@
 #undef ERROR
 #endif
 
-#ifdef NOMINMAX
-#undef NOMINMAX
-#endif
 #ifdef _MSC_VER
 #pragma warning(disable : 4800)
 #pragma warning(disable : 4267)
 #pragma warning(disable : 4996)
 #pragma warning(disable : 4805)
 #pragma warning(disable : 4005)
-
 #define NOMINMAX 
 #endif
-#include <math.h>
 #include <my_config.h>
 #include <mysql_version.h>
 #include <sql/sql_const.h>
 #include "my_global.h"
-
+#include <math.h>
 #if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
 // Not use malloc service
 #define MYSQL_SERVICE_MYSQL_ALLOC_INCLUDED
@@ -169,6 +164,16 @@ extern "C" {
 #endif
 
 #if ((MYSQL_VERSION_NUM < 50600) || defined(MARIADB_BASE_VERSION))
+
+inline void add_global_thread(THD* thd)
+{
+    ;
+}
+
+inline void remove_global_thread(THD* thd)
+{
+    ;
+}
 
 inline void cp_thd_release_resources(THD* thd)
 {
