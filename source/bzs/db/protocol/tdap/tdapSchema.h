@@ -569,6 +569,12 @@ public:
         return *data + size;
     }
 
+    /* copy blob data for recordset 
+
+      @param blobBlock copy to adddres
+      @return new copy to address
+        
+    */
     inline  unsigned char* setBlobFieldPointer(uchar_td* dest, const blobHeader* hd,
                                     unsigned char* blobBlock, int fieldNum) const
     {

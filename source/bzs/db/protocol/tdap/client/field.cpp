@@ -1527,6 +1527,7 @@ void field::setFV(const void* data, uint_td size)
 {
     if (!m_ptr)
         return;
+    char* p = (char*)m_ptr + m_fd->pos;
     switch (m_fd->type)
     {
     case ft_myvarbinary:
@@ -1537,33 +1538,33 @@ void field::setFV(const void* data, uint_td size)
     {
         int sizeByte = m_fd->varLenBytes();
         size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
-        memset((char*)m_ptr + m_fd->pos, 0, m_fd->len);
-        memcpy((char*)m_ptr + m_fd->pos, &size, sizeByte);
-        memcpy((char*)m_ptr + m_fd->pos + sizeByte, data, size);
+        memset(p, 0, m_fd->len);
+        memcpy(p, &size, sizeByte);
+        memcpy(p + sizeByte, data, size);
         break;
     }
     case ft_myblob:
     case ft_mytext:
     {
         int sizeByte = m_fd->len - 8;
-        memset((char*)m_ptr + m_fd->pos, 0, m_fd->len);
-        memcpy((char*)m_ptr + m_fd->pos, &size, sizeByte);
-        memcpy((char*)m_ptr + m_fd->pos + sizeByte, &data, sizeof(char*));
+        memset(p, 0, m_fd->len);
+        memcpy(p, &size, sizeByte);
+        memcpy(p + sizeByte, &data, sizeof(char*));
         break;
     }
     case ft_lvar:
     {
         int sizeByte = 2;
         size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
-        memset((char*)m_ptr + m_fd->pos, 0, m_fd->len);
-        memcpy((char*)m_ptr + m_fd->pos, &size, sizeByte);
-        memcpy((char*)m_ptr + m_fd->pos + sizeByte, data, size);
+        memset(p, 0, m_fd->len);
+        memcpy(p, &size, sizeByte);
+        memcpy(p + sizeByte, data, size);
         break;
     }
     default:
         size = std::min<uint_td>((uint_td)m_fd->len, size);
-        memset((char*)m_ptr + m_fd->pos, 0, m_fd->len);
-        memcpy((char*)m_ptr + m_fd->pos, data, size);
+        memset(p, 0, m_fd->len);
+        memcpy(p, data, size);
     }
 }
 
@@ -1575,6 +1576,7 @@ void* field::getFVbin(uint_td& size) const
     if (!m_ptr)
         return 0;
 
+    char* p = (char*)m_ptr + m_fd->pos;
     switch (m_fd->type)
     {
     case ft_myvarbinary:
@@ -1585,18 +1587,18 @@ void* field::getFVbin(uint_td& size) const
     {
         int sizeByte = m_fd->varLenBytes();
         size = 0;
-        memcpy(&size, (char*)m_ptr + m_fd->pos, sizeByte);
-        return (void*)((char*)m_ptr + m_fd->pos + sizeByte);
+        memcpy(&size, p, sizeByte);
+        return (void*)(p + sizeByte);
     }
     case ft_myblob:
     case ft_mytext:
     {
         int sizeByte = m_fd->len - 8;
         size = 0;
-        memcpy(&size, (char*)m_ptr + m_fd->pos, sizeByte);
+        memcpy(&size, p, sizeByte);
         if (size)
         {
-            char** ptr = (char**)((char*)m_ptr + m_fd->pos + sizeByte);
+            char** ptr = (char**)(p + sizeByte);
             return (void*)*ptr;
         }
         return NULL;
@@ -1605,12 +1607,12 @@ void* field::getFVbin(uint_td& size) const
     {
         int sizeByte = 2;
         size = 0;
-        memcpy(&size, (char*)m_ptr + m_fd->pos, sizeByte);
-        return (void*)((char*)m_ptr + m_fd->pos + sizeByte);
+        memcpy(&size, p, sizeByte);
+        return (void*)(p + sizeByte);
     }
     default:
         size = m_fd->len;
-        return (void*)((char*)m_ptr + m_fd->pos);
+        return (void*)(p);
     }
     return NULL;
 }

@@ -2137,10 +2137,11 @@ void testMissingUpdate(database* db)
             BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekLessThan");
             // Get lock(X) same record in parallel. The InnoDB is good!
             boost::scoped_ptr<boost::thread> t(new boost::thread(boost::bind(&worker::run, w.get())));
-            Sleep(3);
+            Sleep(100);
             int v = tb->getFVint(fdi_id);//v = 30000
             tb->setFV(fdi_id, ++v);      //v = 30001
             tb->insert();
+            Sleep(1);
             t->join();
             Sleep(1);
             if (db->trxIsolationServer() == SRV_ISO_REPEATABLE_READ)
@@ -4512,6 +4513,10 @@ void testServerPrepareJoin(database* db)
     vs = rs[NO_RECORD_ID][_T("blob")].c_str();
     ret = _tcscmp(vs, _T("6 blob")) == 0; 
     BOOST_CHECK_MESSAGE(ret == true, "row of 6 = '6 blob'");
+    field fd = rs[NO_RECORD_ID][_T("binary")];
+    ret = compBlobField(NO_RECORD_ID + 1, fd);
+    BOOST_CHECK_MESSAGE(ret == true, "row of 6 = 'binary 256 byte'");
+
 
     // Test clone blob field
     recordset& rs2 = *rs.clone();
@@ -4545,10 +4550,12 @@ void testServerPrepareJoin(database* db)
 
 
     // restore record
+    unsigned char bin[256];
     tb->clearBuffer();
     tb->setFV(_T("id"), NO_RECORD_ID);
     tb->setFV(_T("comment"), _T("5 comment"));
     tb->setFV(_T("blob"), _T("5 blob"));
+    fillBlobField(3, NO_RECORD_ID, tb.get(), bin);
     tb->insert();
     BOOST_CHECK_MESSAGE(tb->stat()  == 0, "ate insert id = 5");
     if (tb->stat())
@@ -4635,6 +4642,36 @@ void testFirstLastGroupFunction(database* db)
     BOOST_CHECK_MESSAGE(rs[0][_T("first_rec_name")].c_str() == std::_tstring(_T("1 user")), "first_rec_name");
     BOOST_CHECK_MESSAGE(rs[0][_T("last_rec_name")].c_str() == std::_tstring(_T("16 user")), "last_rec_name");
 
+}
+
+void testBlobOnlyTable(database* db)
+{
+    // table access test
+    table* tb = db->openTable(_T("blobonly"));
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
+    tb->clearBuffer();
+    static const int id = 1;
+    tb->setFV((short)0, id);
+    tb->seek();
+    field fd = tb->fields()[_T("binary")];
+
+    bool ret = compBlobField(id, fd);
+    BOOST_CHECK_MESSAGE(ret == true, "tb->seek binary 256 byte");
+    tb->release();
+
+    // activeTable test
+    activeTable at(db, _T("blobonly"));
+    recordset rs;
+    client::query q;
+    q.where(_T("id"), _T("<"), 10);
+    at.index(0).keyValue(1).read(rs, q);
+    BOOST_CHECK_MESSAGE(rs.size() == 9, " rs.size() 9 bad = " << rs.size());
+    for (int i= 0; i < 9; ++i)
+    {
+        fd = rs[i][_T("binary")];
+        ret = compBlobField(i+1, fd);
+        BOOST_CHECK_MESSAGE(ret == true, "rs[n][binary] binary 256 byte");
+    }   
 }
 
 void testWirtableRecord(database* db)
@@ -5518,6 +5555,11 @@ BOOST_FIXTURE_TEST_CASE(firstLastGropuFunction, fixtureQuery)
     testFirstLastGroupFunction(db());
 }
 
+BOOST_FIXTURE_TEST_CASE(blobOnly, fixtureQuery)
+{
+    testBlobOnlyTable(db());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -5540,6 +5582,7 @@ BOOST_FIXTURE_TEST_CASE(serverFilter, fixture)
     testFilterOfMatchBy(db());
    
 }
+
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(field)

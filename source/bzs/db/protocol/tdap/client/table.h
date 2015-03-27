@@ -93,7 +93,8 @@ class DLLLIB table : public nstable
     bool checkIndex(short index) const;
     void getKeySpec(keySpec* ks, bool SpecifyKeyNum = false);
     const bzs::db::blobHeader* getBlobHeader();
-    void setBlobFieldPointer(char* ptr, const ::bzs::db::blobHeader* p);
+    unsigned char* setBlobFieldPointer(char* ptr, const ::bzs::db::blobHeader* p,
+                                        unsigned char* to=NULL);
     void addSendBlob(const bzs::db::blob* blob);
     void addBlobEndRow();
     void resetSendBlob();

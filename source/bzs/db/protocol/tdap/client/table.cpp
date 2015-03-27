@@ -260,18 +260,22 @@ public:
                             resultOffset += fd.len;
                         }
                     }
-                    else if (m_tb->valiableFormatType())
-                    {
-                        memset(m_tmpPtr, 0, td->maxRecordLen);
-                        memcpy(m_tmpPtr, m_ptr, m_len);
-                        m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
-                        m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
-                        resultOffset = m_unpackLen; 
-                    }
                     else
                     {
-                        memcpy(m_tmpPtr, m_ptr, m_len);
-                        resultOffset = m_len;
+                        if (m_tb->valiableFormatType())
+                        {
+                            memset(m_tmpPtr, 0, td->maxRecordLen);
+                            memcpy(m_tmpPtr, m_ptr, m_len);
+                            m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
+                            resultOffset = m_unpackLen; 
+                        }
+                        else
+                        {
+                            memcpy(m_tmpPtr, m_ptr, m_len);
+                            resultOffset = m_len;
+                        }
+                        if (bd)
+                            bd = m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd, bd);
                     }
                 }
                 ++m_row;
@@ -1580,7 +1584,7 @@ const blobHeader* table::getBlobHeader()
     return p;
 }
 
-void table::setBlobFieldPointer(char* ptr, const blobHeader* hd)
+unsigned char* table::setBlobFieldPointer(char* ptr, const blobHeader* hd, unsigned char* to)
 {
     if (hd)
     {
@@ -1591,14 +1595,25 @@ void table::setBlobFieldPointer(char* ptr, const blobHeader* hd)
             fielddef& fd = (*m_tableDef)->fieldDefs[f->fieldNum];
             char* fdptr = ptr + fd.pos;
             int sizeByte = fd.blobLenBytes();
+
+            //copy size byte
             memcpy(fdptr, &f->size, sizeByte);
             const char* data = f->data();
+            //copy data
+            if (to)
+            {
+                memcpy(to, data, f->size);
+                data = (char*)to;
+                to += f->size;
+            }
+            //copy address
             memcpy(fdptr + sizeByte, &data, sizeof(char*));
             f = f->next();
         }
         ++hd->curRow;
         hd->nextField = (blobField*)f;
     }
+    return to;
 }
 
 void table::onReadAfter()

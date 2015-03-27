@@ -228,7 +228,7 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
     uchar_td type;
 
     td->optionFlags.bitA = false; // reset valiable type
-
+    td->optionFlags.bitB = false;
     for (i = 0; i < td->fieldCount; ++i)
     {
         ret = fieldNumByName(TableIndex, td->fieldDefs[i].name());

@@ -214,6 +214,12 @@ bool createUserExtTable(dbdef* def)
     fd->type = BLOB_TYPE;
 #ifndef USE_PSQL_DATABASE
     fd->len = 10;
+        ++filedIndex;
+    fd = def->insertField(tableid, filedIndex);
+    fd->setName(_T("binary"));
+    fd->type = BLOB_TYPE;
+    fd->len = 10;
+
 #else
     fd->len = 16000;
 #endif
@@ -276,6 +282,69 @@ bool createCacheTable(dbdef* def)
     return true;
 }
 
+bool createBlobOnlyTable(dbdef* def)
+{
+    short tableid = 4;
+    tabledef t;
+    tabledef* td = &t;
+    td->charsetIndex = mysql::charsetIndex(GetACP());
+    td->schemaCodePage = CP_UTF8;
+    td->id = tableid;
+    td->setTableName(_T("blobonly"));
+    td->setFileName(_T("blobonly"));
+
+    def->insertTable(td);
+    if (def->stat() != 0)
+        return showDbdefError(def, _T("blobonly insertTable"));
+
+    short filedIndex = 0;
+    fielddef* fd = def->insertField(tableid, filedIndex);
+    fd->setName(_T("id"));
+    fd->type = ft_integer;
+    fd->len = 4;
+
+    ++filedIndex;
+    fd = def->insertField(tableid, filedIndex);
+    fd->setName(_T("binary"));
+    fd->type = BLOB_TYPE;
+    fd->len = 10;
+
+    char keyNum = 0;
+    keydef* kd = def->insertKey(tableid, keyNum);
+    keySegment* seg1 = &kd->segments[0];
+    seg1->fieldNum = 0;
+    seg1->flags.bit8 = true; // extended key type
+    seg1->flags.bit1 = true; // chanageable
+    kd->segmentCount = 1;
+    td = def->tableDefs(tableid);
+    td->primaryKeyNum = keyNum;
+    def->updateTableDef(tableid);
+    if (def->stat() != 0)
+        return showDbdefError(def, _T("blobonly updateTableDef"));
+    return true;
+}
+
+void fillBlobField(short fieldNum, int id, table* tb, unsigned char* buf)
+{
+    for (int j = 0 ; j < 256 ; ++j)
+        buf[j] = (unsigned char)(j + id);
+    tb->setFV(fieldNum, buf, 256);
+}
+
+bool compBlobField(int id, field& fd)
+{
+    uint_td size;
+    unsigned char* p = (unsigned char*)fd.getBin(size);
+    if (size != 256) return false;
+
+    for (int j = 0 ; j < 256 ; ++j)
+    {
+        if (p[j] != (unsigned char)(j + id))
+            return false;
+    } 
+    return true;    
+}
+
 bool insertData(database_ptr db, int maxId)
 {
     _TCHAR tmp[256];
@@ -297,6 +366,13 @@ bool insertData(database_ptr db, int maxId)
     if (db->stat())
     {
         showDbError(db.get(), _T("openTable extention"));
+        return false;
+    }
+
+    table* tbb = db->openTable(_T("blobonly"), TD_OPEN_NORMAL);
+    if (db->stat())
+    {
+        showDbError(db.get(), _T("openTable blobonly"));
         return false;
     }
 
@@ -326,6 +402,7 @@ bool insertData(database_ptr db, int maxId)
             return showTableError(tbg, _T("groups insert"));
     }
 
+    unsigned char bin[256];
     tbe->clearBuffer();
     for (int i = 1; i <= maxId; ++i)
     {
@@ -334,15 +411,27 @@ bool insertData(database_ptr db, int maxId)
         tbe->setFV(1, tmp);
         _stprintf_s(tmp, 256, _T("%d blob"), i);
         tbe->setFV(2, tmp);
+        fillBlobField(3, i, tbe, bin);
         tbe->insert();
         if (tbe->stat() != 0)
             return showTableError(tbe, _T("extention insert"));
+    }
+
+    tbb->clearBuffer();
+    for (int i = 1; i <= 10; ++i)
+    {
+        tbb->setFV((short)0, i);
+        fillBlobField(1, i, tbb, bin);
+        tbb->insert();
+        if (tbb->stat() != 0)
+            return showTableError(tbb, _T("blobonly insert"));
     }
 
     trn.end();
     tbg->release();
     tbu->release();
     tbe->release();
+    tbb->release();
     return true;
 }
 
@@ -354,7 +443,7 @@ bool checkVersion(database_ptr db)
         tabledef* td = def->tableDefs(3);
         if (td)
         {
-            if (td->fieldCount == 3)
+            if (td->fieldCount == 4)
             {
                 table_ptr tb = openTable(db, _T("extention"));
                 return (tb->recordCount(false) == 20000);
@@ -386,7 +475,8 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate,
             return 1;
         if (!createUserExtTable(db->dbDef()))
             return 1;
-
+        if (!createBlobOnlyTable(db->dbDef()))
+            return 1;
         if (!insertData(db, maxId))
             return 1;
         std::tcout << _T("done!") << std::endl;
