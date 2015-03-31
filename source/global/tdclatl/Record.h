@@ -64,8 +64,8 @@ class ATL_NO_VTABLE CWritableRecord
 {
 
     CComObject<CField>* m_fieldObj;
-    short GetFieldNum(VARIANT* Index);
     CComObject<CFieldDefs>* m_fieldDefsObj;
+    short GetFieldNum(VARIANT* Index);
 
 public:
     bzs::db::protocol::tdap::client::writableRecord* m_rec;

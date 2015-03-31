@@ -42,7 +42,7 @@ namespace client
 
 
 /** Length of compare
- * if part of string or zstring then return strlen.
+ * if part of string or zstring then return strlen * sizeof(char or wchar).
  */
 inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
 {
@@ -50,13 +50,15 @@ inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
     if (part)
     {
         if ((fd.type == ft_string) || (fd.type == ft_zstring) ||
-            (fd.type == ft_note))
+                        (fd.type == ft_note) || (fd.type == ft_mychar))
             length = (uint_td)strlen((const char*)ptr);
-        else if ((fd.type == ft_wstring) || (fd.type == ft_wzstring))
-            length = (uint_td)wcslen((const wchar_t*)ptr);
+        else if ((fd.type == ft_wstring) || (fd.type == ft_wzstring) ||
+                        (fd.type == ft_mywchar))
+            length = (uint_td)strlen16((char16_t*)ptr)*sizeof(char16_t);
     }
     return length;
 }
+
 
 inline bool verType(uchar_td type)
 {
@@ -362,9 +364,11 @@ public:
             memcpy(data + varlen, fdd.keyData(buf), copylen);
             delete [] buf;
         }
-
+        
         if (!part && (fdd.varLenBytes() || fdd.blobLenBytes()))
             logType |= CMPLOGICAL_VAR_COMP_ALL; // match complate
+        else
+            logType &= ~CMPLOGICAL_VAR_COMP_ALL;
     }
 
     bool setParam(table* tb, const _TCHAR* name, const _TCHAR* type,
@@ -592,6 +596,12 @@ class filter
         
     };
 
+    struct
+    {
+        bool m_stopAtLimit : 1;
+
+    };
+
     struct bufSize
     {
         bufSize():logic(0), seeks(0), select(0),retRowSize(0) {}
@@ -801,6 +811,8 @@ class filter
                          queryBase::combineCondition);
         m_withBookmark = q->isBookmarkAlso();
         m_cachedOptimize = q->getOptimize();
+        m_stopAtLimit = q->isStopAtLimit();
+
 
         if (q->isAll())
             addAllFields();
@@ -981,7 +993,7 @@ class filter
         : m_tb(tb), m_seeksWritedCount(0), m_extendBuflen(0), m_stat(0),
           m_preparedId(0),m_ignoreFields(false), m_seeksMode(false),
           m_useOptimize(true),m_withBookmark(true), m_hasManyJoin(false),
-          m_preparingMode(false),m_ddba(false)
+          m_preparingMode(false),m_ddba(false),m_stopAtLimit(false)
     {
         m_isTransactd = m_tb->isUseTransactd();
         m_ddba = m_isTransactd;
@@ -1271,6 +1283,8 @@ public:
            return true;
         return false;
     }
+
+    inline bool isStopAtLimit() const {return m_stopAtLimit; }
 
     bool checkFindDirection(ushort_td op)
     {

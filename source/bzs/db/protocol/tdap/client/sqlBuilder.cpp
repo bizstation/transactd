@@ -144,6 +144,7 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
         if (size == 8)
             return "DOUBLE";
     case ft_string:
+    case ft_wstring:
         sprintf_s(g_buf, TMP_BUFSIZE, "BINARY(%d)", size);
         return g_buf;
     case ft_zstring:

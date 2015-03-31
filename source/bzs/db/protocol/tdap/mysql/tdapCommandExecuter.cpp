@@ -37,7 +37,7 @@
 #include <random>
 
 
-extern unsigned int getTransactdIsolation();
+extern int getTransactdIsolation();
 extern unsigned int getTransactdLockWaitTimeout();
 
 namespace bzs
@@ -530,7 +530,8 @@ inline void readAfter(request& req, table* tb, dbExecuter* dbm)
                 req.paramMask |= P_MASK_BLOBBODY;
             req.data = tb->record();
         }
-    }
+    }else if (!tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
     req.result = dbm->errorCodeSht(tb->stat());
 }
 
@@ -610,57 +611,64 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
     int ret = 1;
     m_tb = getTable(req.pbk->handle);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-    if (m_tb->setKeyNum(keynum))
+    if (!m_tb->setKeyNum(keynum))
     {
-        m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
-        m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
-                                                   : HA_READ_KEY_OR_PREV,
-                      m_tb->keymap());
-
-        extRequest* ereq = (extRequest*)req.data;
-        bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
-        bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
-        // smartReadRecordsHandler scope
-        {
-            smartReadRecordsHandler srrh(m_readHandler);
-
-            if (execPrepared)
-            {
-                if (m_tb->preparedStatements.size() < ereq->preparedId)
-                    req.result = STATUS_INVALID_PREPAREID;
-                else
-                    req.result = m_readHandler->beginPreparExecute(m_tb, ereq, true, nw,
-                                               noBookmark, 
-                                              (prepared*)m_tb->preparedStatements[ereq->preparedId - 1]);
-            }
-            else
-                req.result = m_readHandler->begin(m_tb, ereq, true, nw,
-                                              (op == TD_KEY_GE_NEXT_MULTI),
-                                              noBookmark);
-            if (req.result != 0)
-                return ret;
-            if (m_tb->stat() == 0)
-            {
-                if (op == TD_KEY_GE_NEXT_MULTI)
-                    m_tb->getNextExt(m_readHandler, true, noBookmark);
-                else if (op == TD_KEY_LE_PREV_MULTI)
-                    m_tb->getPrevExt(m_readHandler, true, noBookmark);
-            }
-            req.result = errorCodeSht(m_tb->stat());
-            DEBUG_WRITELOG2(op, req);
-        }
-        short dummy = 0;
-        size_t& size = nw->datalen;
-        size = req.serializeForExt(m_tb, nw);
-        char* resultBuffer = nw->ptr();
-        netsvc::server::buffers* optionalData = nw->optionalData();
-        if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
-            size = req.serializeBlobBody(m_blobBuffer, resultBuffer, size,
-                                         FILE_MAP_SIZE, optionalData, dummy);
-
-        DEBUG_PROFILE_END_OP(1, op)
-        ret = EXECUTE_RESULT_SUCCESS;
+        req.result = m_tb->stat();
+        return ret;
     }
+
+    m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
+    m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
+                                                : HA_READ_KEY_OR_PREV,
+                    m_tb->keymap());
+
+    extRequest* ereq = (extRequest*)req.data;
+    bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
+    bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
+    // smartReadRecordsHandler scope
+    {
+        smartReadRecordsHandler srrh(m_readHandler);
+
+        if (execPrepared)
+        {
+            if (m_tb->preparedStatements.size() < ereq->preparedId)
+                req.result = STATUS_INVALID_PREPAREID;
+            else
+                req.result = m_readHandler->beginPreparExecute(m_tb, ereq, true, nw,
+                                            noBookmark, 
+                                            (prepared*)m_tb->preparedStatements[ereq->preparedId - 1]);
+        }
+        else
+            req.result = m_readHandler->begin(m_tb, ereq, true, nw,
+                                            (op == TD_KEY_GE_NEXT_MULTI),
+                                            noBookmark);
+        if (req.result != 0)
+            return ret;
+        if (m_tb->stat() == 0)
+        {
+            if (op == TD_KEY_GE_NEXT_MULTI)
+                m_tb->getNextExt(m_readHandler, true, noBookmark);
+            else if (op == TD_KEY_LE_PREV_MULTI)
+                m_tb->getPrevExt(m_readHandler, true, noBookmark);
+        }
+        req.result = errorCodeSht(m_tb->stat());
+        if (!m_tb->cursor())
+            req.paramMask |= P_MASK_PB_ERASE_BM;
+        DEBUG_WRITELOG2(op, req);
+    }
+    short dummy = 0;
+    size_t& size = nw->datalen;
+    size = req.serializeForExt(m_tb, nw);
+    char* resultBuffer = nw->ptr();
+    netsvc::server::buffers* optionalData = nw->optionalData();
+    if ((req.paramMask & P_MASK_BLOBBODY) && m_blobBuffer->fieldCount())
+        size = req.serializeBlobBody(m_blobBuffer, resultBuffer, size,
+                                        FILE_MAP_SIZE, optionalData, dummy);
+
+    DEBUG_PROFILE_END_OP(1, op)
+    ret = EXECUTE_RESULT_SUCCESS;
+
+        
     if (m_tb)
         m_tb->unUse();
     return ret;
@@ -682,7 +690,10 @@ inline int dbExecuter::doReadMulti(request& req, int op,
     {
         char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
         if (!m_tb->setKeyNum(keynum))
+        {
+            req.result = m_tb->stat();
             return ret;
+        }
     }
     // smartReadRecordsHandler scope
     {
@@ -716,6 +727,8 @@ inline int dbExecuter::doReadMulti(request& req, int op,
                 m_tb->stepPrevExt(m_readHandler, incCurrent, noBookmark);
             req.result = errorCodeSht(m_tb->stat());
         }
+        if (!m_tb->cursor())
+            req.paramMask |= P_MASK_PB_ERASE_BM;
         DEBUG_WRITELOG2(op, req);
     }
 
@@ -859,13 +872,18 @@ inline void dbExecuter::doInsert(request& req)
                               req.blobHeader);
     __int64 aincValue = m_tb->insert(ncc);
     req.result = errorCodeSht(m_tb->stat());
-    if (aincValue)
+    if (m_tb->stat() == 0)
     {
-        req.paramMask = P_MASK_INS_AUTOINC;
-        req.data = m_tb->record();
+        if (aincValue)
+        {
+            req.paramMask = P_MASK_INS_AUTOINC;
+            req.data = m_tb->record();
+        }
+        else
+            req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
     }
-    else
-        req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doUpdateKey(request& req)
@@ -889,6 +907,8 @@ inline void dbExecuter::doUpdateKey(request& req)
     }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doUpdate(request& req)
@@ -904,6 +924,8 @@ inline void dbExecuter::doUpdate(request& req)
     }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doDeleteKey(request& req)
@@ -923,6 +945,8 @@ inline void dbExecuter::doDeleteKey(request& req)
     }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doDelete(request& req)
@@ -933,6 +957,8 @@ inline void dbExecuter::doDelete(request& req)
         m_tb->del();
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK;
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 inline void dbExecuter::doInsertBulk(request& req)
@@ -981,6 +1007,8 @@ inline void dbExecuter::doInsertBulk(request& req)
     }
     else
         req.result = errorCodeSht(m_tb->stat());
+    if (!m_tb->cursor())
+        req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
 /**
@@ -1004,6 +1032,7 @@ inline void dbExecuter::doStat(request& req)
         memcpy((char*)req.data, &len, sizeof(ushort_td));
         uint rows = (uint)m_tb->recordCount((req.keyNum != 0));
         memcpy((char*)req.data + 6, &rows, sizeof(uint));
+		req.result = errorCodeSht(m_tb->stat());
     }
     else
         req.result = STATUS_BUFFERTOOSMALL;
@@ -1072,7 +1101,10 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         {
           if (op != TD_CONNECT && op != TD_CREATETABLE &&
               op != TD_OPENTABLE && op != TD_GETSERVER_CHARSET)
+          {
+              req.result = STATUS_ACCESS_DENIED;
               return EXECUTE_RESULT_ACCESS_DNIED;
+          }
         }
         switch (op)
         {
@@ -1150,14 +1182,39 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.data = (void*)m_tb->position();
             req.resultLen = m_tb->posPtrLen();
             break;
+        case TD_RECONNECT:
+
+            if (!doOpenTable(req))
+            {
+                req.result = ERROR_TD_INVALID_CLINETHOST;
+                break;
+            }
+            {
+                char* p = (char*)req.data;
+                req.keyNum = *p;
+                if (*(++p) == 0)
+                    break;
+                req.data = ((char*)req.data) + 2;
+                if (m_tb) m_tb->unUse();
+            }
+            //fall through  restore position 
         case TD_MOVE_BOOKMARK:
         {
             rowLockMode lck;
             getRowLockMode(opTrn, &lck);
             m_tb = getTable(req.pbk->handle, lck.lock ? SQLCOM_UPDATE : SQLCOM_SELECT);
             m_tb->setRowLock(&lck);
-            m_tb->movePos((uchar*)req.data,
-                          m_tb->keyNumByMakeOrder(req.keyNum));
+            char keynum = req.keyNum;
+            if (keynum != -1)
+            {
+                keynum = m_tb->keyNumByMakeOrder(req.keyNum);
+                if (!m_tb->keynumCheck(keynum))
+                {
+                    req.result = STATUS_INVALID_KEYNUM;
+                    break;
+                }
+            }
+            m_tb->movePos((uchar*)req.data, keynum);
             if (lck.lock && m_tb->stat())
                 m_tb->setRowLockError();
             readAfter(req, m_tb, this);
@@ -1170,7 +1227,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             {
                 m_tb = NULL;
                 return EXECUTE_RESULT_SUCCESS;
-            }
+            }else
+                resultBuffer = nw->ptr();
             break;
         case TD_KEY_SEEK_MULTI:
         case TD_KEY_NEXT_MULTI:
@@ -1182,7 +1240,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             {
                 m_tb = NULL;
                 return EXECUTE_RESULT_SUCCESS;
-            }
+            }else
+                resultBuffer = nw->ptr();
             break;
         case TD_FILTER_PREPARE:
             m_tb = getTable(req.pbk->handle);
@@ -1207,7 +1266,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                     *((unsigned short*)req.data) = (unsigned short)m_tb->preparedStatements.size();
                     req.resultLen = 2;
                 }
-            }
+            }else
+                req.result = m_tb->stat();
             break;
         case TD_MOVE_PER:
             m_tb = getTable(req.pbk->handle);
@@ -1221,7 +1281,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.result = errorCodeSht(m_tb->stat());
             if (m_tb->stat() == 0)
             {
-                req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
+                req.paramMask = P_MASK_DATA | P_MASK_DATALEN ;
                 req.data = m_tb->percentResult();
                 req.resultLen = sizeof(int);
             }
@@ -1252,6 +1312,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 req.result = SERVER_CLIENT_NOT_COMPATIBLE;
             break;
         }
+        
         case TD_CONNECT:
             if (!connect(req))
                 req.result = ERROR_TD_INVALID_CLINETHOST;
@@ -1349,13 +1410,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.result = getDatabaseCid(req.cid)->aclReload();
             break;
         }
-        if (m_tb)
-            m_tb->unUse();
         DEBUG_WRITELOG2(op, req)
         DEBUG_ERROR_MEMDUMP(req.result, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
-           
-
         size = req.serialize(m_tb, resultBuffer);
+        if (m_tb)
+            m_tb->unUse();
         short dymmy = 0;
         if ((req.result == 0) && (req.paramMask & P_MASK_BLOBBODY) &&
             m_blobBuffer->fieldCount())
@@ -1395,13 +1454,17 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 
     catch (...)
     {
-        clenupNoException();
-        DEBUG_ERROR_MEMDUMP(20001, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
-        req.reset();
-        req.result = 20001;
-        dumpStdErr(op, req, m_tb);
         try
         {
+            try
+            {
+                clenupNoException();
+                DEBUG_ERROR_MEMDUMP(20001, "error", req.m_readBuffer, *((unsigned int*)req.m_readBuffer))
+                req.reset();
+                req.result = 20001;
+                dumpStdErr(op, req, m_tb);
+            }
+            catch(...){}
             if (m_tb)
                 m_tb->close();
         }
@@ -1442,7 +1505,7 @@ size_t dbExecuter::getAcceptMessage(char* message, size_t size)
     ver->srvMajor = TRANSACTD_VER_MAJOR;
     ver->srvMinor = TRANSACTD_VER_MINOR;
     ver->srvRelease = TRANSACTD_VER_RELEASE;
-    hst->transaction_isolation = getTransactdIsolation();
+    hst->transaction_isolation = (unsigned short)getTransactdIsolation();
     hst->lock_wait_timeout = getTransactdLockWaitTimeout();
     if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR) == 0)
     {

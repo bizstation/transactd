@@ -68,33 +68,39 @@ STDMETHODIMP CGroupQuery::KeyField(BSTR Name0, BSTR Name1, BSTR Name2,
     return S_OK;
 }
 
-STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, IFieldNames* targetNames,
+STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, VARIANT targetNames,
                                       BSTR resultName, VARIANT iq,
                                       IGroupQuery** retVal)
 {
-
-    CFieldNames* fn = dynamic_cast<CFieldNames*>(targetNames);
-    if (!fn)
+    fieldNames* fns = NULL;
+    CFieldNames* fn = NULL;
+    if (targetNames.vt == VT_DISPATCH)
+        fn = dynamic_cast<CFieldNames*>(targetNames.pdispVal);
+        
+    if ((func != fcount) && !fn)
         return Error("Invalid targetNames", IID_IGroupQuery);
-
+    if (fn)
+        fns = fn->m_fnsPtr;
     boost::shared_ptr<groupFuncBase> f;
-    fieldNames* fns;
-    fns = fn->m_fnsPtr;
-
+    
     if (func == fsum)
-        f.reset(new sum(*fns, resultName));
+        f.reset(sum::create(*fns, resultName), boost::bind(&sum::release, _1));
     else if (func == fmin)
-        f.reset(new min(*fns, resultName));
+        f.reset(min::create(*fns, resultName), boost::bind(&min::release, _1));
     else if (func == fmax)
-        f.reset(new max(*fns, resultName));
+        f.reset(max::create(*fns, resultName), boost::bind(&max::release, _1));
     else if (func == favg)
-        f.reset(new avg(*fns, resultName));
+        f.reset(avg::create(*fns, resultName), boost::bind(&avg::release, _1));
+    else if (func == ffirst)
+        f.reset(first::create(*fns, resultName), boost::bind(&first::release, _1));
+    else if (func == flast)
+        f.reset(last::create(*fns, resultName), boost::bind(&last::release, _1));
     else if (func == fcount)
     {
         if (resultName[0])
-            f.reset(new count(resultName));
+            f.reset(count::create(resultName), boost::bind(&count::release, _1));
         else
-            f.reset(new count(fns->getValue(0)));
+            f.reset(count::create(fns->getValue(0)), boost::bind(&count::release, _1));
     }
     if (iq.vt == VT_DISPATCH)
     {
@@ -102,8 +108,7 @@ STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, IFieldNames* targetNames,
         if (q)
             *f = (q->m_qb);
     }
-    else
-        f->reset();
+
     m_funcs.push_back(f);
     m_gq.addFunction(f.get());
 

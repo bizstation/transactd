@@ -22,8 +22,15 @@
 #pragma warn -8012
 #endif
 
+#include <boost/version.hpp>
+#if (BOOST_VERSION > 104900)
 #include <boost/asio.hpp>
+#else
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/buffer.hpp>
+#endif
 #include <vector>
+
 
 #ifdef __BCPLUSPLUS__
 #pragma warn +8012
@@ -75,6 +82,8 @@ class connection
 public:
     virtual ~connection(){};
     virtual void connect() = 0;
+    virtual void reconnect(boost::asio::ip::tcp::endpoint& ep) = 0;
+    virtual void cleanup() = 0;
     virtual void addref() = 0;
     virtual void release() = 0;
     virtual int refCount() const = 0;

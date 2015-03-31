@@ -44,7 +44,7 @@ spec_build = Gem::Specification.new do |s|
   raise 'Can not read versions from ' + verfile + ' (' + ver_str + ')' if ver_str.length == 0
   s.version = ver_str
   
-  binary_file = File.join('bin', RUBY_VERSION.match(/\d+\.\d+/)[0], 'transactd.so')
+  binary_file = File.join('bin', RUBY_VERSION.sub(/(\d+\.\d+)\..*/, '\1'), 'transactd.so')
   binarymode = File.exist?(binary_file)
   
   if binarymode

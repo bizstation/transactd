@@ -150,28 +150,38 @@ class DLLLIB groupFuncBase : public recordsetQuery
 {
 protected:
     friend class groupQueryImple;
+    friend class groupFuncBaseImple;
+
+    typedef double numeric_type;
 
     class groupFuncBaseImple* m_imple;
+
+    void init(const fielddefs* fdinfo);
+    unsigned char* stringResult(int groupIndex) const;
+    uchar_td resultType() const;
+    ushort_td resultLen() const;
+    void operator()(const row_ptr& row, int index, bool insert);
+
     virtual void initResultVariable(int index);
     virtual void doCalc(const row_ptr& row, int groupIndex);
-    void init(const fielddefs* fdinfo);
+    virtual void doReset();
+    virtual void doInit(const fielddefs* fdinfo);
+    virtual numeric_type numericResult(int groupIndex) const;
+    
 
 public:
-    typedef double value_type;
     groupFuncBase();
     groupFuncBase(const groupFuncBase& v);
-    groupFuncBase& operator=(const groupFuncBase& v);
     groupFuncBase(const fieldNames& targetNames,
                   const _TCHAR* resultName = NULL);
     virtual ~groupFuncBase();
+    groupFuncBase& operator=(const groupFuncBase& v);
     groupFuncBase& operator=(const recordsetQuery& v);
     fieldNames& targetNames() const;
     const _TCHAR* resultName() const;
     void setResultName(const _TCHAR* v);
     int resultKey() const;
     void reset();
-    void operator()(const row_ptr& row, int index, bool insert);
-    virtual value_type result(int groupIndex) const;
     virtual groupFuncBase* clone() = 0;
 };
 
@@ -208,11 +218,10 @@ class DLLLIB sum : public groupFuncBase
 {
 protected:
     void doCalc(const row_ptr& row, int index);
-
+    groupFuncBase* clone();
 public:
     sum() {}
     sum(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
-    groupFuncBase* clone();
     static sum* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
@@ -220,26 +229,25 @@ public:
 class DLLLIB count : public groupFuncBase
 {
 protected:
+    groupFuncBase* clone();
     void doCalc(const row_ptr& row, int index);
 
 public:
     count() {}
     count(const _TCHAR* resultName);
-    groupFuncBase* clone();
     static count* create(const _TCHAR* resultName);
 };
 
 class DLLLIB avg : public sum
 {
-
     void initResultVariable(int index);
     void doCalc(const row_ptr& row, int index);
-    value_type result(int index) const;
+    numeric_type numericResult(int index) const;
+    groupFuncBase* clone();
 
 public:
     avg() {}
     avg(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
-    groupFuncBase* clone();
     static avg* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
@@ -247,13 +255,15 @@ public:
 #undef min
 class DLLLIB min : public sum
 {
+protected:
     bool m_flag;
     void doCalc(const row_ptr& row, int index);
+    groupFuncBase* clone();
+    min& operator=(const min& r);
 
 public:
     min() {}
     min(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
-    groupFuncBase* clone();
     static min* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
@@ -263,14 +273,47 @@ class DLLLIB max : public sum
 {
     bool m_flag;
     void doCalc(const row_ptr& row, int index);
+    groupFuncBase* clone();
+    max& operator=(const max& r);
 
 public:
     max() {}
     max(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
-    groupFuncBase* clone();
     static max* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
+
+
+class DLLLIB last : public groupFuncBase
+{
+protected:
+    void doCalc(const row_ptr& row, int index);
+    void doInit(const fielddefs* fdinfo);
+    groupFuncBase* clone();
+public:
+    last() {}
+    last(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
+    static last* create(const fieldNames& targetNames,
+                       const _TCHAR* resultName = NULL);
+};
+
+
+class DLLLIB first : public last
+{
+    bool m_readed;
+protected:
+    void doCalc(const row_ptr& row, int index);
+    void doReset();
+    groupFuncBase* clone();
+    first& operator=(const first& r);
+public:
+    first() {}
+    first(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
+    static first* create(const fieldNames& targetNames,
+                       const _TCHAR* resultName = NULL);
+};
+
+
 
 } // namespace client
 } // namespace tdap

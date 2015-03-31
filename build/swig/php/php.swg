@@ -146,7 +146,7 @@ typedef char  _TCHAR;
 }
 
 // * bzs/db/protocol/tdap/client/fields.h *
-%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[](const std::_tstring&) const;
+%ignore bzs::db::protocol::tdap::client::fieldsBase::operator[] (const std::_tstring&) const;
 %rename(getField) bzs::db::protocol::tdap::client::fieldsBase::operator[] (short index) const;
 %rename(getField) bzs::db::protocol::tdap::client::fieldsBase::operator[] (const _TCHAR* name) const;
 
@@ -158,6 +158,7 @@ typedef char  _TCHAR;
 %rename(__clone) bzs::db::protocol::tdap::client::min::clone;
 %rename(__clone) bzs::db::protocol::tdap::client::sum::clone;
 %rename(getFieldName) bzs::db::protocol::tdap::client::fieldNames::operator[] (int index) const;
+%rename(getSortField) bzs::db::protocol::tdap::client::sortFields::operator[];
 
 // * bzs/db/protocol/tdap/client/nsDatabase.h *
 %rename(__clone) bzs::db::protocol::tdap::client::nsdatabase::clone;

@@ -87,6 +87,8 @@ public:
     STDMETHOD(GetWhereToken)(short index, BSTR* retVal);
     STDMETHOD(BookmarkAlso)(VARIANT_BOOL Value, IQueryBase** retVal);
     STDMETHOD(IsBookmarkAlso)(VARIANT_BOOL* retVal);
+    STDMETHOD(StopAtLimit)(VARIANT_BOOL Value, IQueryBase** retVal);
+    STDMETHOD(IsStopAtLimit)(VARIANT_BOOL* retVal);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(QueryBase), CQueryBase)

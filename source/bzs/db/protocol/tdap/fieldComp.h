@@ -93,7 +93,7 @@ inline int compareWvartype(const char* l, const char* r, bool bin, char logType)
                          tmp);
     else if (bin)
         tmp =
-            memcmp((char16_t*)(l + sizeof(T)), (char16_t*)(r + sizeof(T)), tmp);
+            wmemcmp16((char16_t*)(l + sizeof(T)), (char16_t*)(r + sizeof(T)), tmp);
     else
         tmp = wcsncmp16((char16_t*)(l + sizeof(T)), (char16_t*)(r + sizeof(T)),
                         tmp);

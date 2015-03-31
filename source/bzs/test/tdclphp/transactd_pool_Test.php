@@ -22,12 +22,26 @@ mb_internal_encoding('UTF-8');
 require_once("transactd.php");
 use BizStation\Transactd as Bz;
 
+function getHost()
+{
+    $host = getenv('TRANSACTD_PHPUNIT_HOST');
+    if (strlen($host) == 0)
+    {
+        $host = '127.0.0.1';
+    }
+    return $host;
+}
+
 define("PROTOCOL", 'tdap');
-define("HOSTNAME", 'localhost');
+define("HOSTNAME", getHost());
+define("USERNAME", getenv('TRANSACTD_PHPUNIT_USER'));
+define("USERPART", strlen(USERNAME) == 0 ? '' : USERNAME . '@');
+define("PASSWORD", getenv('TRANSACTD_PHPUNIT_PASS'));
+define("PASSPART", strlen(PASSWORD) == 0 ? '' : '&pwd=' . PASSWORD);
 define("DBNAME", 'querytest');
 define("SCHEMANAME", 'test');
 define("BDFNAME", '?dbfile=' . SCHEMANAME . '.bdf');
-define("URL", PROTOCOL . '://' . HOSTNAME . '/' . DBNAME . BDFNAME);
+define("URL", PROTOCOL . '://' . USERPART . HOSTNAME . '/' . DBNAME . BDFNAME . PASSPART);
 define("TABLENAME", 'user');
 
 // multi thread test if `php_pthreads` exists.
@@ -58,7 +72,7 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
     {
         $cp = new Bz\connectParams(URL);
         $this->assertEquals($cp->uri(), URL);
-        $cp = new Bz\connectParams(PROTOCOL, HOSTNAME, DBNAME, SCHEMANAME);
+        $cp = new Bz\connectParams(PROTOCOL, HOSTNAME, DBNAME, SCHEMANAME, USERNAME, PASSWORD);
         $this->assertEquals($cp->uri(), URL);
     }
     public function testUse()

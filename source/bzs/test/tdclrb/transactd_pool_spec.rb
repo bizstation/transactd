@@ -21,28 +21,34 @@
 require 'transactd'
 require 'thwait'
 
+def getEnv(valuename)
+  return ENV[valuename] if ENV[valuename] != nil
+  return ''
+end
+
 def getHost()
-  hostname = '127.0.0.1/'
-  if (ENV['TRANSACTD_RSPEC_HOST'] != nil && ENV['TRANSACTD_RSPEC_HOST'] != '')
-    hostname = ENV['TRANSACTD_RSPEC_HOST']
-  end
-  hostname = hostname + '/' unless (hostname =~ /\/$/)
+  hostname = getEnv('TRANSACTD_RSPEC_HOST')
+  hostname = '127.0.0.1' if hostname == ''
   return hostname
 end
 
 PROTOCOL = 'tdap'
-HOSTNAME = getHost().sub(/\/$/, '')
+HOSTNAME = getHost()
+USERNAME = getEnv('TRANSACTD_RSPEC_USER')
+USERPART = USERNAME == '' ? '' : USERNAME + '@'
+PASSWORD = getEnv('TRANSACTD_RSPEC_PASS')
+PASSPART = PASSWORD == '' ? '' : '&pwd=' + PASSWORD
 DBNAME = 'querytest'
 SCHEMANAME = 'test'
 BDFNAME = '?dbfile=' + SCHEMANAME + '.bdf'
-URL = PROTOCOL + '://' + HOSTNAME + '/' + DBNAME + BDFNAME
+URL = PROTOCOL + '://' + USERPART + HOSTNAME + '/' + DBNAME + BDFNAME + PASSPART
 TABLENAME = 'user'
 
 describe Transactd, 'pool' do
   it 'create ConnectParams' do
     cp = Transactd::ConnectParams.new(URL)
     expect(cp.uri()).to eq URL
-    cp = Transactd::ConnectParams.new(PROTOCOL, HOSTNAME, DBNAME, SCHEMANAME)
+    cp = Transactd::ConnectParams.new(PROTOCOL, HOSTNAME, DBNAME, SCHEMANAME, USERNAME, PASSWORD)
     expect(cp.uri()).to eq URL
   end
   

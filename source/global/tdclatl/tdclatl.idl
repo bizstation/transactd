@@ -77,7 +77,8 @@ typedef
 enum eFindType
 {
   findForword = 0,
-  findBackForword = 1
+  findBackForword = 1,
+  findContinue = 2
 }eFindType;
 
 
@@ -192,7 +193,13 @@ enum eStatus
 	NET_BAD_SRB_FORMAT			= 3021,
 	ERROR_TD_HOSTNAME_NOT_FOUND = 3103,
 	ERROR_TD_CONNECTION_FAILURE = 3106,
-	ERROR_TD_NOT_CONNECTED      = 3110
+	ERROR_TD_NOT_CONNECTED      = 3110,
+    ERROR_TD_NET_TIMEOUT        = 3800,
+    ERROR_TD_NET_REMOTE_DISCONNECT=  3801,
+    ERROR_TD_NET_TOO_BIGDATA    = 3802,
+    ERROR_TD_NET_OTHER          = 3810,
+    ERROR_TD_C_CLIENT_UNKNOWN   = 3811,
+    ERROR_TD_RECONNECTED        = 3900
 }eStatus;
 
 typedef
@@ -350,7 +357,9 @@ enum eGroupFunc
 	fcount = 1,
 	favg = 2,
 	fmin = 3,
-	fmax = 4
+	fmax = 4,
+    ffirst = 5,
+    flast = 6
 }eGroupFunc;
 
 typedef
@@ -493,7 +502,10 @@ interface IDatabase : IDispatch
   HRESULT _stdcall TrxIsolationServer([out, retval]  eSrvIsorationType* Value);
   [propget, id(0x000000F6)]
   HRESULT _stdcall TrxLockWaitTimeoutServer([out, retval]  int* Value);
- 
+  [id(0x000000F7)]
+  HRESULT _stdcall DisconnectForReconnectTest([out, retval] VARIANT_BOOL* Value);
+  [id(0x000000F8)]
+  HRESULT _stdcall Reconnect([out, retval] VARIANT_BOOL* Value);
   
 };
 
@@ -710,14 +722,6 @@ interface ITable : IDispatch
   HRESULT _stdcall LogicalToString([out, retval] VARIANT_BOOL* Value);
   [propput, id(0x000000F3)]
   HRESULT _stdcall LogicalToString([in] VARIANT_BOOL Value);
-  [propget, id(0x000000F4)]
-  HRESULT _stdcall TrimPadChar([out, retval] VARIANT_BOOL* Value);
-  [propput, id(0x000000F4)]
-  HRESULT _stdcall TrimPadChar([in] VARIANT_BOOL Value);
-  [propget, id(0x000000F5)]
-  HRESULT _stdcall UsePadChar([out, retval] VARIANT_BOOL* Value);
-  [propput, id(0x000000F5)]
-  HRESULT _stdcall UsePadChar([in] VARIANT_BOOL Value);
   [id(0x000000F6)]
   HRESULT _stdcall MoveBookmarksId([in] long Value);
   [propget, id(0x000000F7)]
@@ -736,6 +740,10 @@ interface ITable : IDispatch
   HRESULT _stdcall Prepare([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
   [id(0x000000FF)]
   HRESULT _stdcall SetPrepare([in] IPreparedQuery* Value);
+  [propget, id(0x000000E1)]
+  HRESULT _stdcall StatReasonOfFind([out, retval] short* Value);
+  [propget, id(0x000000E2)]
+  HRESULT _stdcall LastFindDirection([out, retval] short* Value);
 
 };
 [
@@ -897,9 +905,12 @@ interface IFieldDef : IDispatch
   HRESULT _stdcall SetLenByCharnum([in] unsigned short Value);
   [propget, id(0x00000015)]
   HRESULT _stdcall Index([out, retval] short* Value);
-
-
-
+  [id(0x00000016)]
+  HRESULT _stdcall SetPadCharSettings([in] VARIANT_BOOL set, [in] VARIANT_BOOL trim);
+  [propget, id(0x00000017)]
+  HRESULT _stdcall UsePadChar([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x00000018)]
+  HRESULT _stdcall TrimPadChar([out, retval] VARIANT_BOOL* Value);
 };
 [
 	object,
@@ -1106,6 +1117,10 @@ interface IQueryBase : IDispatch
   HRESULT _stdcall BookmarkAlso([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
   [id(0x000001B)]
   HRESULT _stdcall IsBookmarkAlso([out, retval] VARIANT_BOOL* retVal);
+  [id(0x000001C)]
+  HRESULT _stdcall StopAtLimit([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
+  [id(0x000001D)]
+  HRESULT _stdcall IsStopAtLimit([out, retval] VARIANT_BOOL* retVal);
 
 
 };
@@ -1166,8 +1181,9 @@ interface IActiveTable : IDispatch
   HRESULT _stdcall Prepare([in] IQueryBase* Value, [in, defaultvalue(0)] VARIANT_BOOL ServerPrepare, [out, retval] IPreparedQuery** retVal);
   [id(0x000000D)]
   HRESULT _stdcall Table([out, retval]ITable** retVal);
-
-  				
+  [id(0x000000E)]
+  HRESULT _stdcall ReadMore([out, retval] IRecordset** retVal);
+ 				
 };
 
 
@@ -1229,6 +1245,10 @@ interface IRecordset : IDispatch
   
   [id(0x0000014)]
   HRESULT _stdcall ClearRecords();
+
+  [id(0x0000015)]
+  HRESULT _stdcall UnionRecordset([in] IRecordset* rs, [out, retval] IRecordset** retVal);
+  
 
   
 };
@@ -1296,7 +1316,7 @@ interface IGroupQuery : IDispatch
 
   [id(0x0000002)]
   HRESULT _stdcall AddFunction([in] eGroupFunc func
-	  ,	[in] IFieldNames* targetNames , [in, defaultvalue("")] BSTR resultName
+	  ,	[in] VARIANT targetNames , [in, defaultvalue("")] BSTR resultName
 	  , [in, defaultvalue("")]VARIANT q, [out, retval] IGroupQuery** retVal);
 
   [id(0x0000004)]

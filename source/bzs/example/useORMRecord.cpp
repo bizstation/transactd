@@ -156,11 +156,17 @@ int _tmain(int argc, _TCHAR* argv[])
     {
         connectParams param(_T("tdap"), _T("localhost"), _T("mri"),
                             _T("dj32.bdf"));
-        openDatabase(db, param);
+        /******************************************************
+         !!!  Important   !!!
+         When using a multi-threaded, 
+         please request a new connection for each database. 
+        *******************************************************/
+        // When using a multi-threaded, set to true.
+        bool newConnection = false;          
+        connectOpen(db, param, newConnection);
+
         databaseManager mgr(db);
-
         recordset rowset;
-
         bzs::rtl::benchmark bm;
         bm.report(boost::bind(readUsers, &mgr, &rowset), "exec time ");
         showConsole(rowset);

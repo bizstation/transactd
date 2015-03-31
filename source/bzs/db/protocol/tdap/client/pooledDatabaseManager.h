@@ -98,9 +98,10 @@ class pooledDbManager : public idatabaseManager
     dbmanager_ptr m_db;
     bool m_inUse;
     xaTransaction m_xa;
+    bool m_use_xa;
 
 public:
-    inline pooledDbManager() : m_inUse(false){};
+    inline pooledDbManager() : m_inUse(false),m_use_xa(false){};
 
     inline pooledDbManager(const connectParams* param) : m_inUse(false)
     {
@@ -112,6 +113,10 @@ public:
         if (m_inUse)
             unUse();
     }
+
+    inline bool isUseXa() const {return m_use_xa;}
+
+    inline void setUseXa(bool v) {m_use_xa = v;}
 
     inline void use(const connectParams* param = NULL)
     {
@@ -139,15 +144,24 @@ public:
 
     inline bool isOpened() const { return m_db->isOpened(); }
 
-    inline void setOption(__int64 v) { m_db->setOption(v); };
+    inline void setOption(__int64 v) { m_db->setOption(v); }
 
-    inline __int64 option() { return m_db->option(); };
+    inline __int64 option() { return m_db->option(); }
 
-    inline void beginTrn(short bias) { m_xa.beginTrn(bias); };
+    inline void beginTrn(short bias) 
+    { 
+        (m_use_xa == true) ? m_xa.beginTrn(bias) : m_db->beginTrn(bias); 
+    }
 
-    inline void endTrn() { m_xa.endTrn(); }
+    inline void endTrn() 
+    { 
+        (m_use_xa == true) ? m_xa.endTrn() : m_db->endTrn(); 
+    }
 
-    inline void abortTrn() { m_xa.abortTrn(); }
+    inline void abortTrn() 
+    { 
+        (m_use_xa == true) ? m_xa.abortTrn() : m_db->abortTrn(); 
+    }
 
     inline int enableTrn() { return m_db->enableTrn(); }
 

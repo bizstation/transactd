@@ -93,7 +93,8 @@ class DLLLIB table : public nstable
     bool checkIndex(short index) const;
     void getKeySpec(keySpec* ks, bool SpecifyKeyNum = false);
     const bzs::db::blobHeader* getBlobHeader();
-    void setBlobFieldPointer(char* ptr, const ::bzs::db::blobHeader* p);
+    unsigned char* setBlobFieldPointer(char* ptr, const ::bzs::db::blobHeader* p,
+                                        unsigned char* to=NULL);
     void addSendBlob(const bzs::db::blob* blob);
     void addBlobEndRow();
     void resetSendBlob();
@@ -111,7 +112,8 @@ class DLLLIB table : public nstable
     void btrvSeekMulti();
     bool doSeekMultiAfter(int row);
     void* doDdba(uint_td size);
-    bool recordsLoop(ushort_td& op);
+    bool isReadContinue(ushort_td& op);
+
 protected:
     explicit table(nsdatabase* pbe); // Inheritance is impossible
     virtual ~table();
@@ -167,10 +169,6 @@ public:
 
     bool logicalToString() const;
     void setLogicalToString(bool v);
-    bool trimPadChar() const;
-    void setTrimPadChar(bool v);
-    bool usePadChar() const;
-    void setUsePadChar(bool v);
     void* optionalData() const;
     void setOptionalData(void* v);
     bool myDateTimeValueByBtrv() const;
@@ -188,6 +186,8 @@ public:
     void findLast();
     void findNext(bool notIncCurrent = true);
     void findPrev(bool notIncCurrent = true);
+    short statReasonOfFind() const ;
+    eFindType lastFindDirection() const;
     bookmark_td bookmarkFindCurrent() const;
     pq_handle setQuery(const queryBase* query, bool serverPrepare=false);
     pq_handle prepare(const queryBase* query, bool serverPrepare=false)
@@ -340,7 +340,7 @@ public:
     queryBase& optimize(eOptimize v);
     queryBase& bookmarkAlso(bool v);
     queryBase& joinKeySize(int v);
-
+    queryBase& stopAtLimit(bool v);
     const _TCHAR* toString() const;
     table::eFindType getDirection() const;
     int getReject() const;
@@ -348,6 +348,7 @@ public:
     bool isAll() const;
     int getJoinKeySize() const;
     eOptimize getOptimize() const;
+    bool isStopAtLimit() const;
     bool isBookmarkAlso() const;
     short selectCount() const;
     const _TCHAR* getSelect(short index) const;

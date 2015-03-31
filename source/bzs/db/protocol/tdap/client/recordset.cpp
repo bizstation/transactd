@@ -186,6 +186,13 @@ void recordset::appendField(const _TCHAR* name, int type, short len)
 
 recordset& recordset::operator+=(const recordset& r)
 {
+    if (r.size() == 0)
+        return *this;
+    if ((size() == 0) && r.size())
+    {
+        *this = r;
+        return *this;
+    }
     m_imple->operator+=(*r.m_imple);
     return *this;
 }

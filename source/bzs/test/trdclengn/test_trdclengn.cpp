@@ -121,6 +121,7 @@ class fixture
 public:
     fixture() : m_db(NULL)
     {
+
         nsdatabase::setCheckTablePtr(true);
         m_db = database::create();
         if (!m_db)
@@ -140,6 +141,35 @@ public:
 
     ::database* db() const { return m_db; }
 };
+
+#ifdef _WIN32
+class fixtureKanji
+{
+    mutable database* m_db;
+
+public:
+    fixtureKanji() : m_db(NULL)
+    {
+        nsdatabase::setExecCodePage(932);
+        nsdatabase::setCheckTablePtr(true);
+        m_db = database::create();
+        if (!m_db)
+            printf("Error database::create()\n");
+    }
+
+    ~fixtureKanji()
+    {
+        if (m_db)
+            m_db->release();
+    }
+    ::database* db() const { return m_db; }
+};
+#else
+typedef fixture fixtureKanji;
+#endif
+
+
+
 
 class fixtureQuery
 {
@@ -239,6 +269,12 @@ void testCreateNewDataBase(database* db)
         td.parentKeyNum = -1;
         td.replicaKeyNum = -1;
         td.pageSize = 2048;
+#ifdef _WIN32
+        td.charsetIndex = CHARSET_CP932;
+#else
+        td.charsetIndex = CHARSET_UTF8;
+#endif
+
         def->insertTable(&td);
         BOOST_CHECK_MESSAGE(0 == def->stat(),
                             "insertTable stat = " << def->stat());
@@ -253,8 +289,18 @@ void testCreateNewDataBase(database* db)
 
         fd = def->insertField(1, 1);
         fd->setName(_T("name"));
-        fd->type = ft_zstring;
         fd->len = (ushort_td)33;
+
+        //test padChar only string or wstring
+        fd->type = ft_string;
+        fd->setPadCharSettings(true, false);
+        BOOST_CHECK(fd->usePadChar() ==  true);
+        BOOST_CHECK(fd->trimPadChar() == false);
+        fd->setPadCharSettings(false, true);
+        BOOST_CHECK(fd->usePadChar() ==  false);
+        BOOST_CHECK(fd->trimPadChar() == true);
+
+        fd->type = ft_zstring;
         def->updateTableDef(1);
         BOOST_CHECK_MESSAGE(0 == def->stat(),
                             "updateTableDef 2 stat = " << def->stat());
@@ -382,6 +428,13 @@ void testInsert(database* db)
         tb->insert();
         BOOST_CHECK_MESSAGE(0 == tb->stat(), "insert");
     }
+    //test invalid keyNum
+    tb->clearBuffer();
+    tb->setFV((short)0, _T("2"));
+    tb->setKeyNum(10);
+    tb->insert();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum insert");
+    tb->setKeyNum(0);
 
     db->beginTrn();
     int n = 1;
@@ -423,10 +476,21 @@ void testFind(database* db)
 {
 
     table* tb = openTable(db);
+
+    //test invalid keyNum
+    tb->clearBuffer();
+    tb->setKeyNum(10);
+    tb->setFilter(_T("id >= 10 and id < 20000"), 1, 0);
+    int v = 10;
+    tb->setFV((short)0, v);
+    tb->find(table::findForword);
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum find");
+
+   
     tb->setKeyNum(0);
     tb->clearBuffer();
     tb->setFilter(_T("id >= 10 and id < 20000"), 1, 0);
-    int v = 10;
+    v = 10;
     tb->setFV((short)0, v);
     tb->find(table::findForword);
     findNextLoop(tb, v, 20000);
@@ -478,9 +542,21 @@ void testFindIn(database* db)
 {
 
     table* tb = openTable(db);
-    tb->setKeyNum(0);
+
+    //test invalid keyNum
     tb->clearBuffer();
     queryBase q;
+    q.addSeekKeyValue(_T("10"), true);
+    tb->setQuery(&q);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "find in stat = " << tb->stat());
+    tb->setKeyNum(10);
+    tb->find();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum seekKeyValue");
+
+
+    tb->setKeyNum(0);
+    tb->clearBuffer();
+    q.reset();
     q.addSeekKeyValue(_T("10"), true);
     q.addSeekKeyValue(_T("300000"));
     q.addSeekKeyValue(_T("50"));
@@ -603,9 +679,16 @@ void testPrepareServer(database* db)
 {
     table* tb = openTable(db);
     queryBase q;
-    q.queryString(_T("id >= ? and id < ?"));
-    q.reject(0xFFFF).limit(0);
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->clearBuffer();
+    q.queryString(_T("id >= ? and id < ?")).reject(0xFFFF).limit(0);
     pq_handle stmt = tb->prepare(&q, true);
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum prepare");
+
+    tb->setKeyNum(0);
+    stmt = tb->prepare(&q, true);
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "prepare stat");
     if (tb->stat()) return ;
         
@@ -677,20 +760,6 @@ void testPrepareServer(database* db)
     tb->find(table::findForword);
     findNextLoop(tb, v, 3000);
 
-    // Seeks prepare statement 
-    /*q.reset();
-    q.queryString(_T("select id"));
-    pq_handle stmt3 = tb->prepare(&q, true);
-    const _TCHAR* vsi[6];
-    makeSupplyValues(vsi, 6, _T("10"), _T("11"), _T("12"), _T("13"),
-         _T("14"), _T("15"));
-    int keySegments = 1;
-    ret = supplyInValues(stmt3, vsi, 6, keySegments);
-    BOOST_CHECK_MESSAGE(ret == true, "supplyValues ");
-    tb->setPrepare(stmt3);
-    tb->find(); 
-    findNextLoop(tb, 10, 16);
-    */
     tb->release();
 }
 
@@ -712,6 +781,13 @@ void testMovePercentage(database* db)
 {
     table* tb = openTable(db);
     tb->clearBuffer();
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->seekByPercentage(5000); // 50%
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum prepare");
+
+    tb->setKeyNum(0);
     tb->seekByPercentage(5000); // 50%
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "MovePercentage");
     // If mainus is less than 500 then ok.
@@ -723,7 +799,16 @@ void testMovePercentage(database* db)
 void testGetEqual(database* db)
 {
     table* tb = openTable(db);
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->clearBuffer();
+    tb->setFV((short)0, 10);
+    tb->seek();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum seek");
+
     db->beginSnapshot();
+    tb->setKeyNum(0);
     for (int i = 2; i < 20002; i++)
     {
         tb->clearBuffer();
@@ -852,6 +937,13 @@ void testGetFirst(database* db)
 {
     table* tb = openTable(db);
     tb->clearBuffer();
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum seekFirst");
+
+    tb->setKeyNum(0);
     tb->seekFirst();
     BOOST_CHECK_MESSAGE(_tstring(_T("kosaka")) == _tstring(tb->getFVstr(1)),
                         "GetFirst");
@@ -862,6 +954,13 @@ void testGetLast(database* db)
 {
     table* tb = openTable(db);
     tb->clearBuffer();
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->seekLast();
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), "Invalid keynum seekFirst");
+ 
+    tb->setKeyNum(0);
     tb->seekLast();
     BOOST_CHECK_MESSAGE(20002 == tb->getFVint(fdi_id), "GetLast");
     tb->release();
@@ -870,7 +969,6 @@ void testGetLast(database* db)
 void testMovePosition(database* db)
 {
     table* tb = openTable(db);
-    tb->clearBuffer();
     int vv = 15000;
     tb->clearBuffer();
     tb->setFV(fdi_id, vv);
@@ -891,6 +989,13 @@ void testMovePosition(database* db)
 
     tb->seekByBookmark(pos);
     BOOST_CHECK_MESSAGE(15000 == tb->getFVint(fdi_id), "MovePosition");
+
+    //test invalid keyNum
+    tb->setKeyNum(10);
+    tb->seekByBookmark(pos);
+    BOOST_CHECK_MESSAGE(STATUS_INVALID_KEYNUM == tb->stat(), 
+            "Invalid keynum seekByBookmark stat = " << tb->stat());
+ 
     tb->release();
 }
 
@@ -1347,6 +1452,49 @@ void testTransactionLockRepeatable(database* db)
     database::destroy(db2);
 }
 
+
+void testBug_015(database* db)
+{
+    table* tb = openTable(db);
+    db->beginTrn(SINGLELOCK_NOGAP);
+    tb->seekFirst(); // lock(X)
+    tb->unlock();
+    tb->seekNext();
+    /* Here! InnoDB issues an error message, please check the MySQL error log. 
+       [InnoDB: Error: unlock row could not find a 3 mode lock on the record]   
+    */
+    db->endTrn();
+    tb->release();
+}
+/* READ_COMMITTED support select lock type */
+void testIssue_016(database* db)
+{
+    table* tb = openTable(db);
+    db->beginTrn(MULTILOCK_NOGAP);
+    tb->seekFirst(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekFirst S");
+    tb->seekNext(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekNext S");
+    tb->seekNext(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekNext X");
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
+    db->endTrn();
+
+    db->beginTrn(MULTILOCK_GAP);
+    tb->seekFirst(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekFirst S");
+    tb->seekNext(ROW_LOCK_S);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekNext S");
+    tb->seekNext(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seekNext X");
+    tb->update();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "update");
+    db->endTrn();
+    tb->release();
+
+}
+
 /* isoration Level ISO_READ_COMMITED */
 void testTransactionLockReadCommited(database* db)
 {
@@ -1569,10 +1717,10 @@ void testTransactionLockReadCommited(database* db)
     // No match records are unlocked.
     tb2->setFV(fdi_id, 100);
     tb2->seek(ROW_LOCK_X);
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek stat = " << tb2->stat());
     tb2->setFV(fdi_id, 101);
     tb2->seek(ROW_LOCK_X);
-    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seek stat = " << tb2->stat());
     tb2->unlock();
     db->endTrn();
 
@@ -1738,20 +1886,37 @@ void testRecordLock(database* db)
     tb2->seekFirst(ROW_LOCK_S);
     BOOST_CHECK_MESSAGE(STATUS_INVALID_LOCKTYPE == tb2->stat(), "tb2->seekFirst");
 
+    /* ---------   Invalid unlock  test ----------------------------*/
+    tb2->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+    tb2->unlock();
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
+
     tb2->release();
     tb3->release();
     database::destroy(db2);
     
 }
 
+bool isMySQL5_7(database* db)
+{
+    btrVersions vv;
+    db->getBtrVersion(&vv);
+    return (db->stat() == 0) && 
+        ((5 == vv.versions[1].majorVersion) &&
+        (7 == vv.versions[1].minorVersion));
+  
+}
+
 void testExclusive()
 {
+   
     // db mode exclusive
     database* db = database::create();
     /* -------------------------------------------------*/
     /*  database WRITE EXCLUSIVE                        */
     /* -------------------------------------------------*/
-    table* tb = openTable(db, TD_OPEN_EXCLUSIVE);
+    table* tb = openTable(db, TD_OPEN_EXCLUSIVE);//DB TD_OPEN_EXCLUSIVE
     BOOST_CHECK_MESSAGE(0 == db->stat(), "Exclusive opened 1 ");
 
     // Can not open another connections.
@@ -1761,7 +1926,7 @@ void testExclusive()
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
     //database open error. Check database::stat()
     BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat(),
-                        "open db->stat = " << db->stat());
+                        "open db2->stat = " << db2->stat());
     dbdef* def = db->dbDef();
     tabledef* td = def->tableDefs(1);
     td->iconIndex = 3;
@@ -1775,17 +1940,25 @@ void testExclusive()
     /*  database READ EXCLUSIVE                        */
     /* -------------------------------------------------*/
     tb = openTable(db, TD_OPEN_READONLY_EXCLUSIVE);
-    
+
+    // read mysql version
+    bool MySQL5_7 = isMySQL5_7(db);
+
     // Read only open
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
-    BOOST_CHECK_MESSAGE(0 == db2->stat(), "read only open");
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), 
+                    "read only open " << db2->stat());
     db2->close();
     
     // Normal open
     db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME),
             TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
-    BOOST_CHECK_MESSAGE(0 == db2->stat()
+    if (MySQL5_7)
+        BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
+                                    , "Normal open");
+    else
+        BOOST_CHECK_MESSAGE(0 == db2->stat()
                                     , "Normal open");
     db2->close();
 
@@ -1964,12 +2137,13 @@ void testMissingUpdate(database* db)
             BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->seekLessThan");
             // Get lock(X) same record in parallel. The InnoDB is good!
             boost::scoped_ptr<boost::thread> t(new boost::thread(boost::bind(&worker::run, w.get())));
-            Sleep(5);
+            Sleep(100);
             int v = tb->getFVint(fdi_id);//v = 30000
             tb->setFV(fdi_id, ++v);      //v = 30001
             tb->insert();
+            Sleep(1);
             t->join();
-            
+            Sleep(1);
             if (db->trxIsolationServer() == SRV_ISO_REPEATABLE_READ)
             {   /* When SRV_ISO_REPEATABLE_READ tb2 get gap lock first,
                    tb can not insert, it is dedlock! 
@@ -2110,6 +2284,42 @@ void testSetOwner(database* db)
     tb->clearOwnerName();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "SetOwner stat = " << tb->stat());
     tb->release();
+}
+
+void testReconnect(database* db)
+{
+    table* tb = openTable(db);
+
+    database* db2 = database::create();
+    db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF); 
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2->open");
+    table* tb2 = db2->openTable(_T("user"));
+    
+    //lock row
+    tb->setFV(fdi_id, 10);
+    tb->seek(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seek stat = " << tb->stat());
+    db->disconnectForReconnectTest();
+    db->reconnect();
+    
+    //Check restore lock
+    tb2->setFV(fdi_id, 10);
+    tb2->seek(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seek stat = " << tb2->stat());
+
+    tb->seekNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seek stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(11 == tb->getFVint(fdi_id), "getFVint 11 bad = " << tb->getFVint(fdi_id));
+
+    tb2->setFV(fdi_id, 11);
+    tb2->seek(ROW_LOCK_X);
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seek stat = " << tb2->stat());
+
+    tb->release();
+    tb2->release();
+    database::destroy(db2);
 }
 
 void testCreateIndex(database* db)
@@ -3266,15 +3476,15 @@ void initKanjiName()
     if (!nameInited)
     {
         wchar_t tmp[50];
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, dbNmae, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, dbNmae, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, dbNmae, 50, NULL, NULL);
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, bdfNmae, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, bdfNmae, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, bdfNmae, 50, NULL, NULL);
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, tableNmae, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, tableNmae, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, tableNmae, 50, NULL, NULL);
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, fdName1, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, fdName1, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, fdName1, 50, NULL, NULL);
-        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, fdName2, -1, tmp, 50);
+        MultiByteToWideChar(932, MB_PRECOMPOSED, fdName2, -1, tmp, 50);
         WideCharToMultiByte(CP_UTF8, 0, tmp, -1, fdName2, 50, NULL, NULL);
         nameInited = true;
     }
@@ -3284,14 +3494,15 @@ void initKanjiName()
 void testDropDatabaseKanji(database* db)
 {
     db->open(makeUri(PROTOCOL, HOSTNAME, dbNmae, bdfNmae));
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "DropDataBaseKanji 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "db->open stat = " << db->stat());
 
     db->drop();
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "DropDataBaseKanji 2");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "db->drop() stat = " << db->stat());
 }
 
 void testKnajiCreateSchema(database* db)
 {
+
     initKanjiName();
     db->create(makeUri(PROTOCOL, HOSTNAME, dbNmae, bdfNmae));
     if (db->stat() == STATUS_TABLE_EXISTS_ERROR)
@@ -3314,6 +3525,10 @@ void testKnajiCreateSchema(database* db)
         memset(&td, 0, sizeof(tabledef));
 #ifndef _UNICODE
         td.schemaCodePage = CP_UTF8;
+        td.charsetIndex = CHARSET_UTF8;
+#else
+        td.schemaCodePage = CP_UTF8;
+        td.charsetIndex = CHARSET_CP932;
 #endif
         td.setTableName(tableNmae);
         td.setFileName(tableNmae);
@@ -3360,14 +3575,15 @@ table* openKnajiTable(database* db)
 
     db->open(makeUri(PROTOCOL, HOSTNAME, dbNmae, bdfNmae), TYPE_SCHEMA_BDF,
              TD_OPEN_NORMAL);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openKnajiTable 1");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openKnajiTable 1 stat = " << db->stat());
     table* tb = db->openTable(tableNmae);
-    BOOST_CHECK_MESSAGE(0 == db->stat(), "openKnajiTable 2");
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openKnajiTable 2 stat = " << db->stat());
     return tb;
 }
 
 void testInsertKanji(database* db)
 {
+
     table* tb = openKnajiTable(db);
 
     tb->clearBuffer();
@@ -3386,6 +3602,7 @@ void testInsertKanji(database* db)
 
 void testGetEqualKanji(database* db)
 {
+
     table* tb = openKnajiTable(db);
     tb->clearBuffer();
     tb->setFV((short)0, 1);
@@ -3869,6 +4086,47 @@ void teetNewDelete(database* db)
     delete at;
 }
 
+void testRecordsetClone(database* db)
+{
+
+#ifdef LINUX
+    const char* fd_name = "名前";
+#else
+#ifdef _UNICODE
+    const wchar_t fd_name[] = { L"名前" };
+#else
+    char fd_name[30];
+    WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+#endif
+#endif
+
+    activeTable atu(db, _T("user"));
+    //activeTable atg(db, _T("groups"));
+    activeTable ate(db, _T("extention"));
+    recordset* rs = recordset::create();
+    query q;
+
+    atu.alias(fd_name, _T("name"));
+    q.select(_T("id"), _T("name"), _T("group"))
+        .where(_T("id"), _T("<="), 15000);
+    atu.index(0).keyValue(1).read(*rs, q);
+    BOOST_CHECK_MESSAGE(rs->size() == 15000, " rs.size() 15000 bad = " << rs->size());
+    BOOST_CHECK_MESSAGE(rs->fieldDefs()->size() == 3, " rs.fieldDefs()->size() 3 bad = " << rs->fieldDefs()->size());
+
+    // Join extention::comment
+    q.reset();
+    ate.index(0).join(
+        *rs, q.select(_T("comment")).optimize(queryBase::joinHasOneOrHasMany),
+        _T("id"));
+    BOOST_CHECK_MESSAGE(rs->size() == 15000, "join  rs.size() 15000 bad = " << rs->size());
+    BOOST_CHECK_MESSAGE(rs->fieldDefs()->size() == 4, " rs.fieldDefs()->size() 4 bad = " << rs->fieldDefs()->size());
+
+    recordset* rs2 = rs->clone();
+    rs->release();
+    rs2->release();
+    
+}
+
 void testJoin(database* db)
 {
 
@@ -4255,6 +4513,10 @@ void testServerPrepareJoin(database* db)
     vs = rs[NO_RECORD_ID][_T("blob")].c_str();
     ret = _tcscmp(vs, _T("6 blob")) == 0; 
     BOOST_CHECK_MESSAGE(ret == true, "row of 6 = '6 blob'");
+    field fd = rs[NO_RECORD_ID][_T("binary")];
+    ret = compBlobField(NO_RECORD_ID + 1, fd);
+    BOOST_CHECK_MESSAGE(ret == true, "row of 6 = 'binary 256 byte'");
+
 
     // Test clone blob field
     recordset& rs2 = *rs.clone();
@@ -4288,10 +4550,12 @@ void testServerPrepareJoin(database* db)
 
 
     // restore record
+    unsigned char bin[256];
     tb->clearBuffer();
     tb->setFV(_T("id"), NO_RECORD_ID);
     tb->setFV(_T("comment"), _T("5 comment"));
     tb->setFV(_T("blob"), _T("5 blob"));
+    fillBlobField(3, NO_RECORD_ID, tb.get(), bin);
     tb->insert();
     BOOST_CHECK_MESSAGE(tb->stat()  == 0, "ate insert id = 5");
     if (tb->stat())
@@ -4301,11 +4565,113 @@ void testServerPrepareJoin(database* db)
         ate.release();
         db->drop();
     }
-   
+}
 
+void testReadMore(database* db)
+{
+#ifdef LINUX
+    const char* fd_name = "名前";
+#else
+#ifdef _UNICODE
+    const wchar_t fd_name[] = { L"名前" };
+#else
+    char fd_name[30];
+    WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+#endif
+#endif
+
+    activeTable atu(db, _T("user"));
+    atu.alias(fd_name, _T("name"));
+    query q;
+    q.select(_T("id"), _T("name"), _T("group"))
+        .where(_T("name"), _T("="), _T("1*"))
+        .reject(70).limit(8).stopAtLimit(true);
+    pq_handle stmt1 = atu.prepare(q, true);
+    BOOST_CHECK_MESSAGE(stmt1 != NULL, " stmt1");
     
+    recordset rs;
+    atu.index(0).keyValue(18).read(rs, stmt1);
+    BOOST_CHECK_MESSAGE(rs.size() == 2, "read");
 
+    recordset rs2;
+    atu.readMore(rs2);
+    BOOST_CHECK_MESSAGE(rs2.size() == 8, "readMore");
 
+    rs += rs2;
+    BOOST_CHECK_MESSAGE(rs.size() == 10, "union");
+
+}
+
+void testFirstLastGroupFunction(database* db)
+{
+#ifdef LINUX
+    const char* fd_name = "名前";
+#else
+#ifdef _UNICODE
+    const wchar_t fd_name[] = { L"名前" };
+#else
+    char fd_name[30];
+    WideCharToMultiByte(CP_UTF8, 0, L"名前", -1, fd_name, 30, NULL, NULL);
+#endif
+#endif
+
+    activeTable atu(db, _T("user"));
+    atu.alias(fd_name, _T("name"));
+    query q;
+    q.select(_T("id"), _T("name"), _T("group"))
+        .where(_T("name"), _T("="), _T("1*"))
+        .reject(70).limit(8).stopAtLimit(true);
+    pq_handle stmt1 = atu.prepare(q, true);
+    BOOST_CHECK_MESSAGE(stmt1 != NULL, " stmt1");
+    
+    recordset rs;
+    atu.index(0).keyValue(0).read(rs, stmt1);
+    BOOST_CHECK_MESSAGE(rs.size() == 8, "read");
+
+    groupQuery gq;
+    fieldNames target;
+    target.addValue(_T("name"));
+    client::last last(target, _T("last_rec_name"));
+    client::first first(target, _T("first_rec_name"));
+    gq.addFunction(&last);
+    gq.addFunction(&first);
+
+    rs.groupBy(gq);
+    BOOST_CHECK_MESSAGE(rs.size() == 1, "read");
+    
+    BOOST_CHECK_MESSAGE(rs[0][_T("first_rec_name")].c_str() == std::_tstring(_T("1 user")), "first_rec_name");
+    BOOST_CHECK_MESSAGE(rs[0][_T("last_rec_name")].c_str() == std::_tstring(_T("16 user")), "last_rec_name");
+
+}
+
+void testBlobOnlyTable(database* db)
+{
+    // table access test
+    table* tb = db->openTable(_T("blobonly"));
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
+    tb->clearBuffer();
+    static const int id = 1;
+    tb->setFV((short)0, id);
+    tb->seek();
+    field fd = tb->fields()[_T("binary")];
+
+    bool ret = compBlobField(id, fd);
+    BOOST_CHECK_MESSAGE(ret == true, "tb->seek binary 256 byte");
+    tb->release();
+
+    // activeTable test
+    activeTable at(db, _T("blobonly"));
+    recordset rs;
+    client::query q;
+    q.where(_T("id"), _T("<"), 10);
+    at.index(0).keyValue(1).read(rs, q);
+    BOOST_CHECK_MESSAGE(rs.size() == 9, " rs.size() 9 bad = " << rs.size());
+    for (int i= 0; i < 9; ++i)
+    {
+        fd = rs[i][_T("binary")];
+        ret = compBlobField(i+1, fd);
+        BOOST_CHECK_MESSAGE(ret == true, "rs[n][binary] binary 256 byte");
+    }   
 }
 
 void testWirtableRecord(database* db)
@@ -4420,6 +4786,428 @@ void testDbPool()
     poolMgr.reset(0);
 }
 
+//--------------------------------------------------------------------------------------
+//   filter test
+//--------------------------------------------------------------------------------------
+#define FILTER_DB _T("filter_test")
+
+const _TCHAR* fdf_names[] = 
+{
+    _T("ft_string"),
+    _T("ft_wstring"),
+    _T("ft_zstring"),
+    _T("ft_wzstring"),
+    _T("ft_mychar"),
+    _T("ft_mywchar"),
+    _T("ft_myvarchar"),
+    _T("ft_mywvarchar"),
+    _T("ft_myvarbinary"),
+    _T("ft_mywvarbinary"),
+};
+
+char fdf_types[] = 
+{
+    ft_string,
+    ft_wstring,
+    ft_zstring,
+    ft_wzstring,
+    ft_mychar,
+    ft_mywchar,
+    ft_myvarchar,
+    ft_mywvarchar,
+    ft_myvarbinary,
+    ft_mywvarbinary,
+};
+
+#define FILTER_RECORDS 15
+const _TCHAR* fd_values[15] = 
+{
+    _T("090-xxxx-xxx"),
+    _T("090-xxxx-xxx"),
+    _T(" "),
+    _T("090-xxxx-xxx"),
+    _T("080-xxxx-xxx"),
+    _T("0"),
+    _T(""),
+    _T(""),
+    _T("09"),
+    _T("070"),
+    _T(""),
+    _T("090-xxxx-xxx"),
+    _T("a90-xxxx-xxx"),
+    _T("Aa0-xxxx-xxx"),
+    _T("A90-xxxx-xxx"),
+};
+
+void intFieldTypes(database* db)
+{
+    if (!isUtf16leSupport(db))
+    {
+        for (int i = 0; i < 10; i++) 
+        {
+            if ((i % 2) == 1)
+                fdf_types[i] = fdf_types[i-1];
+        }
+    }
+}
+
+void inserFilterTestRecords(database* db)
+{
+
+
+    table* tb = db->openTable(_T("user"), TD_OPEN_NORMAL);
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable stat = " << db->stat());
+    db->beginTrn();
+    for (int i = 0; i < FILTER_RECORDS; ++i)
+    {
+        tb->clearBuffer();
+        tb->setFV((short)0, i);
+        //set AllFields smae value
+        for (int j=0;j<10;++j)
+            tb->setFV(j+1, fd_values[i]);
+        tb->insert();
+        BOOST_CHECK_MESSAGE(0 == tb->stat(), "insert stat = " << tb->stat());
+
+    }
+    db->endTrn();
+    tb->release();
+}
+
+void createFilterTestDb(database* db)
+{
+
+    db->create(makeUri(PROTOCOL, HOSTNAME, FILTER_DB, BDFNAME));
+    if (db->stat() == STATUS_TABLE_EXISTS_ERROR)
+    {
+        db->open(makeUri(PROTOCOL, HOSTNAME, FILTER_DB, BDFNAME), TYPE_SCHEMA_BDF,
+             TD_OPEN_NORMAL);
+        BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "open stat = " << db->stat());
+        db->drop();
+        BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "drop stat = " << db->stat());
+        db->create(makeUri(PROTOCOL, HOSTNAME, FILTER_DB, BDFNAME));
+    }
+    
+    BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "createFilterTestDb stat = " << db->stat());
+    // create table
+    db->open(makeUri(PROTOCOL, HOSTNAME, FILTER_DB, BDFNAME), TYPE_SCHEMA_BDF,
+             TD_OPEN_NORMAL);
+    BOOST_CHECK_MESSAGE(0 == db->stat(),
+                        "createFilterTestDb 1 stat = " << db->stat());
+
+    intFieldTypes(db);
+
+    dbdef* def = db->dbDef();
+    if (def)
+    {
+        /*  user table */
+        tabledef td;
+        memset(&td, 0, sizeof(tabledef));
+        td.setTableName(_T("user"));
+        td.setFileName(_T("user.dat"));
+        td.id = 1;
+        td.primaryKeyNum = -1;
+        td.parentKeyNum = -1;
+        td.replicaKeyNum = -1;
+        td.pageSize = 2048;
+#ifdef _WIN32
+        td.charsetIndex = CHARSET_CP932;
+#else
+        td.charsetIndex = CHARSET_UTF8;
+#endif
+
+        def->insertTable(&td);
+        BOOST_CHECK_MESSAGE(0 == def->stat(),
+                            "insertTable stat = " << def->stat());
+
+        fielddef* fd = def->insertField(1, 0);
+        fd->setName(_T("id"));
+        fd->type = ft_integer;
+        fd->len = (ushort_td)4;
+
+        for (int i=0;i<10;++i)
+        {
+            fielddef* fd = def->insertField(1, i+1);
+            fd->setName(fdf_names[i]);
+            fd->type = fdf_types[i];
+            fd->setLenByCharnum(20);
+        }
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(),
+                            "updateTableDef 1 stat = " << def->stat());
+
+        keydef* kd = def->insertKey(1, 0);
+        kd->segments[0].fieldNum = 0;
+        kd->segments[0].flags.bit8 = 1; // extended key type
+        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segmentCount = 1;
+
+        for (int i=0;i<10;++i)
+        {
+            kd = def->insertKey(1, i+1);
+            kd->segments[0].fieldNum = i+1;
+            kd->segments[0].flags.bit0 = 1; // duplicate
+            kd->segments[0].flags.bit8 = 1; // extended key type
+            kd->segments[0].flags.bit1 = 1; // changeable
+            kd->segmentCount = 1;
+        }
+
+        def->updateTableDef(1);
+        BOOST_CHECK_MESSAGE(0 == def->stat(),
+                            "updateTableDef 3 stat = " << def->stat());
+        
+        inserFilterTestRecords(db);
+    }
+}
+
+void setReject(query& q)
+{
+    q.reject(0).limit(0);
+}
+
+void setReject(pq_handle& q)
+{
+    
+}
+
+template<class Q>
+void doTestReadByQuery(int num, activeTable& at, recordset& rs, Q& q, 
+                    int compSize, const char* msg)
+{
+    setReject(q);
+    at.index(0).keyValue(0).read(rs, q);
+    BOOST_CHECK_MESSAGE(compSize == (int)rs.size(),
+            num << " " << msg << " rs.size() = " << rs.size());
+}
+
+void testFilterOfServer(database* db)
+{
+    intFieldTypes(db);
+
+    {
+        activeTable atu(db, _T("user"));
+        recordset rs;
+        query q;
+        for (int i = 0; i < 10; ++i)
+        {
+            // empty string
+            
+            q.reset().where(fdf_names[i], _T("="), _T(""));
+            int n = 3;
+            if (atu.table()->tableDef()->fieldDefs[i+1].usePadChar())
+                n += 1;
+            doTestReadByQuery(i, atu, rs, q, n, "");
+            q.where(fdf_names[i], _T("=i"), _T(""));
+            doTestReadByQuery(i, atu, rs, q, n, "=i");
+
+            // match complate 
+            q.where(fdf_names[i], _T("="), _T("070"));
+            doTestReadByQuery(i, atu, rs, q, 1, "= 070");
+
+            q.where(fdf_names[i], _T("=i"), _T("070"));
+            doTestReadByQuery(i, atu, rs, q, 1, "=i 070");
+
+            // match complate
+            q.where(fdf_names[i], _T("<"), _T("09"));
+            doTestReadByQuery(i, atu, rs, q, 7, "< 09");
+
+            q.where(fdf_names[i], _T("<i"), _T("09"));
+            doTestReadByQuery(i, atu, rs, q, 7, "<i 09");
+
+            // wildcard and prerare
+            // 0:noprepare 1:prepare 2:prepareServer
+            for (int j = 0 ; j < 3; ++j)
+            {
+                q.reset().reject(0).limit(0);
+                if (j > 0)
+                {
+                    q.where(fdf_names[i], _T("="), _T("?"));
+                    pq_handle pq = atu.prepare(q, (j == 2));
+                    supplyValue(pq, 0, _T("09*"));
+                    doTestReadByQuery(i, atu, rs, pq, 5, "prepare = 09*");
+
+                    q.where(fdf_names[i], _T("=i"), _T("?"));
+                    pq_handle pq1 = atu.prepare(q, (j == 2));
+                    supplyValue(pq1, 0, _T("09*"));
+                    doTestReadByQuery(i, atu, rs, pq1, 5, "prepare =i 09*");
+
+                }else
+                {
+                    q.where(fdf_names[i], _T("="), _T("09*"));
+                    doTestReadByQuery(i, atu, rs, q, 5, "= 09*");
+
+                    q.where(fdf_names[i], _T("=i"), _T("09*"));
+                    doTestReadByQuery(i, atu, rs, q, 5, "=i 09*");
+                }
+            }
+
+            // ascii
+            q.where(fdf_names[i], _T("="), _T("a*"));
+            doTestReadByQuery(i, atu, rs, q, 1, " = a*");
+
+            q.where(fdf_names[i], _T("=i"), _T("a*"));
+            doTestReadByQuery(i, atu, rs, q, 3, " =i a*");
+
+            q.where(fdf_names[i], _T("="), _T("A*"));
+            doTestReadByQuery(i, atu, rs, q, 2, " = A*");
+
+            q.where(fdf_names[i], _T("=i"), _T("A*"));
+            doTestReadByQuery(i, atu, rs, q, 3, " =i A*");
+
+            q.where(fdf_names[i], _T("="), _T("AA0*"));
+            doTestReadByQuery(i, atu, rs, q, 0, " = AA0*");
+
+            q.where(fdf_names[i], _T("=i"), _T("AA0*"));
+            doTestReadByQuery(i, atu, rs, q, 1, " =i Aa0*");
+
+            //case in-sencitive index no jaudge
+            
+            for (int i = 0 ; i < 10 ; ++i)
+            {
+                q.where(fdf_names[i], _T("="), _T("A*"));
+                setReject(q);
+                atu.index(i+1).keyValue(_T("A")).read(rs, q);
+                BOOST_CHECK_MESSAGE(2 == rs.size(), 
+                    i << " " <<  "jaudge = A*" << " rs.size() = " << rs.size());
+                BOOST_CHECK_MESSAGE(atu.table()->statReasonOfFind() == STATUS_REACHED_FILTER_COND, 
+                    i << " " <<  "jaudge = A* FILTER_COND");
+
+                q.where(fdf_names[i], _T("=i"), _T("A*"));
+                setReject(q);
+                atu.index(i+1).keyValue(_T("A")).read(rs, q);
+                BOOST_CHECK_MESSAGE(3 == rs.size(), 
+                    i << " " <<  "jaudge = A*" << " rs.size() = " << rs.size());
+                BOOST_CHECK_MESSAGE(atu.table()->statReasonOfFind() == STATUS_EOF, 
+                    i << " " <<  "jaudge = A* STATUS_EOF");
+
+            }
+        }
+    }
+}
+
+void doTestMatchBy(int num, recordset& rs, recordsetQuery& rq, int compSize, const _TCHAR* msg)
+{
+    recordset* rss = rs.clone();
+    rss->matchBy(rq);
+    BOOST_CHECK_MESSAGE(compSize == (int)rss->size(),
+                num << msg << _T(" rss->size = ") << rss->size());
+    rss->release();
+}
+
+void testFilterOfMatchBy(database* db)
+{
+    intFieldTypes(db);
+    {
+        activeTable atu(db, _T("user"));
+        query q;
+        recordset rs;
+        atu.index(0).keyValue(0).read(rs, q.all());
+        BOOST_CHECK_MESSAGE(FILTER_RECORDS == rs.size(), " rs.size() = " << rs.size());
+        for (int i = 0; i < 10; ++i)
+        {
+            // empty string
+            recordsetQuery rq;
+            rq.when(fdf_names[i], _T("="), _T(""));
+            int n = 3;
+            if (atu.table()->tableDef()->fieldDefs[i+1].usePadChar())
+                n += 1;
+            doTestMatchBy(i, rs, rq, n, _T(" = "));
+            rq.reset().when(fdf_names[i], _T("=i"), _T(""));
+            doTestMatchBy(i, rs, rq, n, _T(" =i "));
+
+            
+            // wildcard
+            rq.reset().when(fdf_names[i], _T("="), _T("09*"));
+            doTestMatchBy(i, rs, rq, 5, _T(" = 09*"));
+            rq.reset().when(fdf_names[i], _T("=i"), _T("09*"));
+            doTestMatchBy(i, rs, rq, 5, _T(" =i 09*"));
+            
+            // match complate
+            rq.reset().when(fdf_names[i], _T("="), _T("070"));
+            doTestMatchBy(i, rs, rq, 1, _T(" = 070"));
+            rq.reset().when(fdf_names[i], _T("=i"), _T("070"));
+            doTestMatchBy(i, rs, rq, 1, _T(" =i 070"));
+
+            // match complate
+            rq.reset().when(fdf_names[i], _T("<"), _T("09"));
+            doTestMatchBy(i, rs, rq, 7, _T(" < 09"));
+
+            rq.reset().when(fdf_names[i], _T("<i"), _T("09"));
+            doTestMatchBy(i, rs, rq, 7, _T(" <i 09"));
+
+            // ascii
+            rq.reset().when(fdf_names[i], _T("="), _T("a*"));
+            doTestMatchBy(i, rs, rq, 1, _T(" = a*"));
+
+            rq.reset().when(fdf_names[i], _T("=i"), _T("a*"));
+            doTestMatchBy(i, rs, rq, 3, _T(" =i a*"));
+
+            rq.reset().when(fdf_names[i], _T("=i"), _T("A*"));
+            doTestMatchBy(i, rs, rq, 3, _T(" =i A*"));
+
+            rq.reset().when(fdf_names[i], _T("="), _T("AA0*"));
+            doTestMatchBy(i, rs, rq, 0, _T(" = AA0*"));
+
+            rq.reset().when(fdf_names[i], _T("=i"), _T("AA0*"));
+            doTestMatchBy(i, rs, rq, 1, _T(" =i Aa0*"));
+
+            
+            BOOST_CHECK_MESSAGE(FILTER_RECORDS == rs.size(), " rs.size() = " << rs.size());
+        }
+    }
+    db->drop();
+    BOOST_CHECK_MESSAGE(0 == db->stat(), "drop stat = " << db->stat());
+}
+
+unsigned char field_types[] = 
+{
+    ft_myvarbinary,
+    ft_mywvarbinary,
+    ft_myvarchar,
+    ft_mywvarchar,
+    ft_string,
+    ft_wstring,
+    ft_lstring,
+    ft_lvar,
+    ft_myblob,
+    ft_mytext
+};
+
+void testBinaryField()
+{
+    unsigned char data[255], buf[255];
+    for (int i = 0; i < 255 ;++i)
+        data[i] = i;
+    
+    fielddef fdd;
+    fdd.type = ft_string;
+    fdd.len = 255;
+    fdd.pos = 0;
+
+    client::field fd(buf, fdd, NULL);
+    for (int i = 0 ; i < 10; ++i)
+    {
+        fdd.type = field_types[i];
+        int len = fdd.len - fdd.varLenBytes(); 
+        if (i > 7)
+        {
+            fdd.len = 9; //blob type
+            len = 255;
+        } 
+        fd.setBin(data, len);
+        uint_td size;
+        void* p = fd.getBin(size);
+        BOOST_CHECK_MESSAGE(len == (int)size, "binary size type = " << i);
+
+        BOOST_CHECK_MESSAGE(p != NULL, "binary ret type = " << i);
+        int ret = memcmp(p, data, len);
+        BOOST_CHECK_MESSAGE(0 == ret, "binary memcmp type = " << i);
+    }
+}
+
+
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
 
@@ -4529,6 +5317,17 @@ BOOST_FIXTURE_TEST_CASE(transactionLockRepeatable, fixture)
     testTransactionLockRepeatable(db());
 }
 
+BOOST_FIXTURE_TEST_CASE(bug_015, fixture)
+{
+    testBug_015(db());
+}
+
+BOOST_FIXTURE_TEST_CASE(issue_016, fixture)
+{
+    testIssue_016(db());
+}
+
+
 BOOST_FIXTURE_TEST_CASE(transactionLock, fixture)
 {
     testTransactionLockReadCommited(db());
@@ -4554,6 +5353,11 @@ BOOST_FIXTURE_TEST_CASE(MissingUpdate, fixture)
     testMissingUpdate(db());
 }
 
+BOOST_FIXTURE_TEST_CASE(reconnect, fixture)
+{
+    testReconnect(db());
+}
+
 BOOST_FIXTURE_TEST_CASE(insert2, fixture)
 {
     testInsert2(db());
@@ -4568,6 +5372,7 @@ BOOST_FIXTURE_TEST_CASE(setOwner, fixture)
 {
     testSetOwner(db());
 }
+
 
 BOOST_FIXTURE_TEST_CASE(createIndex, fixture)
 {
@@ -4628,32 +5433,32 @@ BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(var_field)
 
-BOOST_FIXTURE_TEST_CASE(createDataBaseVar, fixture)
+BOOST_FIXTURE_TEST_CASE(createDataBaseVar, fixtureKanji)
 {
     testCreateDataBaseVar(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(varField, fixture)
+BOOST_FIXTURE_TEST_CASE(varField, fixtureKanji)
 {
     testVarField(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(varInsert, fixture)
+BOOST_FIXTURE_TEST_CASE(varInsert, fixtureKanji)
 {
     testVarInsert(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(varRead, fixture)
+BOOST_FIXTURE_TEST_CASE(varRead, fixtureKanji)
 {
     testVarRead(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(filterVar, fixture)
+BOOST_FIXTURE_TEST_CASE(filterVar, fixtureKanji)
 {
     testFilterVar(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(dropDataBaseVar, fixture)
+BOOST_FIXTURE_TEST_CASE(dropDataBaseVar, fixtureKanji)
 {
     testDropDataBaseVar(db());
 }
@@ -4664,12 +5469,12 @@ BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(filter)
 
-BOOST_FIXTURE_TEST_CASE(stringFileter, fixture)
+BOOST_FIXTURE_TEST_CASE(stringFileter, fixtureKanji)
 {
     testStringFileter(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(dropDataBaseStr, fixture)
+BOOST_FIXTURE_TEST_CASE(dropDataBaseStr, fixtureKanji)
 {
     testDropDataBaseStr(db());
 }
@@ -4678,24 +5483,25 @@ BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------
 #endif
 // ------------------------------------------------------------------------
+
 BOOST_AUTO_TEST_SUITE(kanjiSchema)
 
-BOOST_FIXTURE_TEST_CASE(knajiCreateSchema, fixture)
+BOOST_FIXTURE_TEST_CASE(knajiCreateSchema, fixtureKanji)
 {
     testKnajiCreateSchema(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(insertKanji, fixture)
+BOOST_FIXTURE_TEST_CASE(insertKanji, fixtureKanji)
 {
     testInsertKanji(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(getEqualKanji, fixture)
+BOOST_FIXTURE_TEST_CASE(getEqualKanji, fixtureKanji)
 {
     testGetEqualKanji(db());
 }
 
-BOOST_FIXTURE_TEST_CASE(dropDatabaseKanji, fixture)
+BOOST_FIXTURE_TEST_CASE(dropDatabaseKanji, fixtureKanji)
 {
     testDropDatabaseKanji(db());
 }
@@ -4733,12 +5539,29 @@ BOOST_FIXTURE_TEST_CASE(new_delete, fixtureQuery)
 BOOST_FIXTURE_TEST_CASE(join, fixtureQuery)
 {
     testJoin(db());
+    testRecordsetClone(db());
     testPrepareJoin(db());
     testServerPrepareJoin(db());
     testWirtableRecord(db());
 }
 
+BOOST_FIXTURE_TEST_CASE(readMore, fixtureQuery)
+{
+    testReadMore(db());
+}
+
+BOOST_FIXTURE_TEST_CASE(firstLastGropuFunction, fixtureQuery)
+{
+    testFirstLastGroupFunction(db());
+}
+
+BOOST_FIXTURE_TEST_CASE(blobOnly, fixtureQuery)
+{
+    testBlobOnlyTable(db());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
+
 
 BOOST_AUTO_TEST_SUITE(dbPool)
 
@@ -4746,11 +5569,35 @@ BOOST_AUTO_TEST_CASE(pool)
 {
     testDbPool();
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+BOOST_AUTO_TEST_SUITE(filter)
+
+BOOST_FIXTURE_TEST_CASE(serverFilter, fixture)
+{
+    createFilterTestDb(db());
+    testFilterOfServer(db());
+    testFilterOfMatchBy(db());
+   
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(field)
+
+BOOST_AUTO_TEST_CASE(binary)
+{
+    testBinaryField();    
+}
+
 BOOST_AUTO_TEST_CASE(fuga)
 {
     BOOST_CHECK_EQUAL(2 * 3, 6);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+    
 
 // ------------------------------------------------------------------------

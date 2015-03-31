@@ -37,7 +37,10 @@ void CActiveTable::setResult(IActiveTable** retVal)
 
 void CActiveTable::FinalRelease()
 {
-    delete m_at;
+    if (m_recObj)
+        m_recObj->Release();
+    if (m_at)
+        m_at->release();
 }
 
 STDMETHODIMP CActiveTable::SetDatabase(VARIANT Value, BSTR tableName)
@@ -53,7 +56,7 @@ STDMETHODIMP CActiveTable::SetDatabase(VARIANT Value, BSTR tableName)
         CPooledDbManager* pm = dynamic_cast<CPooledDbManager*>(Value.pdispVal);
         if (pm)
         {
-            m_at = new activeTable(&pm->m_mgr, tableName);
+            m_at = activeTable::create(&pm->m_mgr, tableName);
             m_at->table()->setOptionalData((void*)NULL);
             return S_OK;
         }
@@ -61,7 +64,7 @@ STDMETHODIMP CActiveTable::SetDatabase(VARIANT Value, BSTR tableName)
         CDatabase* p = dynamic_cast<CDatabase*>(Value.pdispVal);
         if (p)
         {
-            m_at = new activeTable(p->database(), tableName);
+            m_at = activeTable::create(p->database(), tableName);
             m_at->table()->setOptionalData((void*)p->database());
             return S_OK;
         }
@@ -75,9 +78,16 @@ STDMETHODIMP CActiveTable::SetDatabase(VARIANT Value, BSTR tableName)
 
 STDMETHODIMP CActiveTable::Index(short Value, IActiveTable** retVal)
 {
-    m_at->index(Value);
-    setResult(retVal);
-    return S_OK;
+    try
+    {
+        m_at->index(Value);
+        setResult(retVal);
+        return S_OK;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+    }
 }
 
 STDMETHODIMP CActiveTable::KeyValue(VARIANT Value0, VARIANT Value1,
@@ -87,78 +97,85 @@ STDMETHODIMP CActiveTable::KeyValue(VARIANT Value0, VARIANT Value1,
                                     IActiveTable** retVal)
 {
 
-    if (Value0.vt != VT_BSTR)
-        VariantChangeType(&Value0, &Value0, 0, VT_BSTR);
+    try
+    {
+        if (Value0.vt != VT_BSTR)
+            VariantChangeType(&Value0, &Value0, 0, VT_BSTR);
 
-    if (Value1.vt != VT_BSTR)
-        VariantChangeType(&Value1, &Value1, 0, VT_BSTR);
-    if (!Value1.bstrVal || !Value1.bstrVal[0])
-    {
-        m_at->keyValue(Value0.bstrVal);
-        setResult(retVal);
-        return S_OK;
-    }
+        if (Value1.vt != VT_BSTR)
+            VariantChangeType(&Value1, &Value1, 0, VT_BSTR);
+        if (!Value1.bstrVal || !Value1.bstrVal[0])
+        {
+            m_at->keyValue(Value0.bstrVal);
+            setResult(retVal);
+            return S_OK;
+        }
 
-    if (Value2.vt != VT_BSTR)
-        VariantChangeType(&Value2, &Value2, 0, VT_BSTR);
-    if (!Value2.bstrVal || !Value2.bstrVal[0])
-    {
-        m_at->keyValue(Value0.bstrVal, Value1.bstrVal);
-        setResult(retVal);
-        return S_OK;
-    }
-    if (Value3.vt != VT_BSTR)
-        VariantChangeType(&Value3, &Value3, 0, VT_BSTR);
-    if (!Value3.bstrVal || !Value3.bstrVal[0])
-    {
-        m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal);
-        setResult(retVal);
-        return S_OK;
-    }
-    if (Value4.vt != VT_BSTR)
-        VariantChangeType(&Value4, &Value4, 0, VT_BSTR);
-    if (!Value4.bstrVal || !Value4.bstrVal[0])
-    {
-        m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
-                       Value3.bstrVal);
-        setResult(retVal);
-        return S_OK;
-    }
+        if (Value2.vt != VT_BSTR)
+            VariantChangeType(&Value2, &Value2, 0, VT_BSTR);
+        if (!Value2.bstrVal || !Value2.bstrVal[0])
+        {
+            m_at->keyValue(Value0.bstrVal, Value1.bstrVal);
+            setResult(retVal);
+            return S_OK;
+        }
+        if (Value3.vt != VT_BSTR)
+            VariantChangeType(&Value3, &Value3, 0, VT_BSTR);
+        if (!Value3.bstrVal || !Value3.bstrVal[0])
+        {
+            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal);
+            setResult(retVal);
+            return S_OK;
+        }
+        if (Value4.vt != VT_BSTR)
+            VariantChangeType(&Value4, &Value4, 0, VT_BSTR);
+        if (!Value4.bstrVal || !Value4.bstrVal[0])
+        {
+            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
+                           Value3.bstrVal);
+            setResult(retVal);
+            return S_OK;
+        }
 
-    if (Value5.vt != VT_BSTR)
-        VariantChangeType(&Value5, &Value5, 0, VT_BSTR);
-    if (!Value5.bstrVal || !Value5.bstrVal[0])
-    {
-        m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
-                       Value3.bstrVal, Value4.bstrVal);
-        setResult(retVal);
-        return S_OK;
-    }
-    if (Value6.vt != VT_BSTR)
-        VariantChangeType(&Value6, &Value6, 0, VT_BSTR);
-    if (!Value6.bstrVal || !Value6.bstrVal[0])
-    {
-        m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
-                       Value3.bstrVal, Value4.bstrVal, Value5.bstrVal);
-        setResult(retVal);
-        return S_OK;
-    }
+        if (Value5.vt != VT_BSTR)
+            VariantChangeType(&Value5, &Value5, 0, VT_BSTR);
+        if (!Value5.bstrVal || !Value5.bstrVal[0])
+        {
+            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
+                           Value3.bstrVal, Value4.bstrVal);
+            setResult(retVal);
+            return S_OK;
+        }
+        if (Value6.vt != VT_BSTR)
+            VariantChangeType(&Value6, &Value6, 0, VT_BSTR);
+        if (!Value6.bstrVal || !Value6.bstrVal[0])
+        {
+            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
+                           Value3.bstrVal, Value4.bstrVal, Value5.bstrVal);
+            setResult(retVal);
+            return S_OK;
+        }
 
-    if (Value7.vt != VT_BSTR)
-        VariantChangeType(&Value7, &Value7, 0, VT_BSTR);
-    if (!Value7.bstrVal || !Value7.bstrVal[0])
-    {
+        if (Value7.vt != VT_BSTR)
+            VariantChangeType(&Value7, &Value7, 0, VT_BSTR);
+        if (!Value7.bstrVal || !Value7.bstrVal[0])
+        {
+            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
+                           Value3.bstrVal, Value4.bstrVal, Value5.bstrVal,
+                           Value6.bstrVal);
+            setResult(retVal);
+            return S_OK;
+        }
         m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
                        Value3.bstrVal, Value4.bstrVal, Value5.bstrVal,
-                       Value6.bstrVal);
+                       Value6.bstrVal, Value7.bstrVal);
         setResult(retVal);
         return S_OK;
     }
-    m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
-                   Value3.bstrVal, Value4.bstrVal, Value5.bstrVal,
-                   Value6.bstrVal, Value7.bstrVal);
-    setResult(retVal);
-    return S_OK;
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+    }
 }
 
 STDMETHODIMP CActiveTable::Option(int Value, IActiveTable** retVal)
@@ -447,7 +464,6 @@ STDMETHODIMP CActiveTable::OuterJoin(IRecordset* rs, VARIANT query,
     {
         return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
     }
-
 }
 
 STDMETHODIMP CActiveTable::Prepare(IQueryBase* Value, VARIANT_BOOL ServerPrepare, IPreparedQuery** retVal)
@@ -459,21 +475,25 @@ STDMETHODIMP CActiveTable::Prepare(IQueryBase* Value, VARIANT_BOOL ServerPrepare
         {
             CComObject<CPreparedQuery>* rsObj;
             CComObject<CPreparedQuery>::CreateInstance(&rsObj);
-
             if (!rsObj)
-                return Error(_T("Can not create preparedQuery"), IID_ITable);
-
-            rsObj->setPqHandle(m_at->prepare(p->query(), (bool)ServerPrepare));
-            IPreparedQuery* pd;
-            rsObj->QueryInterface(IID_IPreparedQuery, (void**)&pd);
-            _ASSERTE(pd);
-            *retVal = pd;
-            return S_OK;
+                return Error(_T("CreateInstance PreparedQuery"), IID_ITable);
+            try
+            {
+                rsObj->setPqHandle(m_at->prepare(p->query(), (bool)ServerPrepare));
+                IPreparedQuery* pd;
+                rsObj->QueryInterface(IID_IPreparedQuery, (void**)&pd);
+                _ASSERTE(pd);
+                *retVal = pd;
+                return S_OK;
+            }
+            catch (bzs::rtl::exception& e)
+            {
+                return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+            }
         }
     }
     return Error(_T("Invalid ActiveTable::Prepare param 1"), IID_IActiveTable);
 }
-
 
 STDMETHODIMP CActiveTable::GetWritableRecord(IWritableRecord** retVal)
 {
@@ -481,26 +501,33 @@ STDMETHODIMP CActiveTable::GetWritableRecord(IWritableRecord** retVal)
     if (m_recObj == NULL)
     {
         CComObject<CWritableRecord>::CreateInstance(&m_recObj);
-        m_recObj->m_rec = &m_at->getWritableRecord();
+        if (!m_recObj)
+            return Error("CreateInstance WritableRecord", IID_IActiveTable);
+        m_recObj->AddRef();
     }
-    if (m_recObj)
+    try
     {
-
+        m_recObj->m_rec = &m_at->getWritableRecord();
         IWritableRecord* wrec;
         m_recObj->QueryInterface(IID_IWritableRecord, (void**)&wrec);
         _ASSERTE(wrec);
         *retVal = wrec;
+        return S_OK;
     }
-
-    return S_OK;
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+    }
 }
 
 STDMETHODIMP CActiveTable::get_TableDef(ITableDef** Value)
 {
-    CComObject<CTableDef>* piObj;
-    CComObject<CTableDef>::CreateInstance(&piObj);
-    if (piObj)
+    try
     {
+        CComObject<CTableDef>* piObj;
+        CComObject<CTableDef>::CreateInstance(&piObj);
+        if (!piObj)
+            return Error(_T("CreateInstance TableDef"), IID_IActiveTable);
 
         piObj->m_tabledefPtr =
             const_cast<tabledef**>(m_at->table()->tableDefPtr());
@@ -509,10 +536,12 @@ STDMETHODIMP CActiveTable::get_TableDef(ITableDef** Value)
         piObj->QueryInterface(IID_ITableDef, (void**)&tbd);
         _ASSERTE(tbd);
         *Value = tbd;
+        return S_OK;
     }
-    else
-        *Value = 0;
-    return S_OK;
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+    }
 }
 
 STDMETHODIMP CActiveTable::Table(ITable** retVal)
@@ -521,23 +550,40 @@ STDMETHODIMP CActiveTable::Table(ITable** retVal)
     {
         CComObject<CTableTd>* ptb;
         CComObject<CTableTd>::CreateInstance(&ptb);
-
-        if (ptb)
-        {
-            ptb->m_tb = m_at->table();
-            ptb->m_tb->setOptionalData((void*)NULL);
-            ITable* itb;
-            ptb->QueryInterface(IID_ITable, (void**)&itb);
-            _ASSERTE(itb);
-            *retVal = itb;
-        }
-        else
-            *retVal = NULL;
+        if (!ptb)
+            return Error(_T("CreateInstance Table"), IID_IActiveTable);
+        ptb->m_tb = m_at->table();
+        ptb->m_tb->setOptionalData((void*)NULL);
+        ITable* itb;
+        ptb->QueryInterface(IID_ITable, (void**)&itb);
+        _ASSERTE(itb);
+        *retVal = itb;
         return S_OK;
     }
-
     catch (bzs::rtl::exception& e)
     {
         return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
     }
 }
+
+STDMETHODIMP CActiveTable::ReadMore(IRecordset** retVal)
+{
+    try
+    {
+        CComObject<CARecordset>* rsObj;
+        CComObject<CARecordset>::CreateInstance(&rsObj);
+        if (!rsObj)
+            return Error(_T("CreateInstance Recordset"), IID_IActiveTable);
+        IRecordset* rs;
+        rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
+        _ASSERTE(rs);
+        *retVal = rs;
+        m_at->readMore(*rsObj->m_rs);
+        return S_OK;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IActiveTable);
+    }
+}
+

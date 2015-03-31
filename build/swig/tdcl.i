@@ -412,18 +412,17 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::count::create;
 %ignore bzs::db::protocol::tdap::client::fieldNames::operator=;
 %ignore bzs::db::protocol::tdap::client::fieldNames::create;
+%ignore bzs::db::protocol::tdap::client::first::create;
 %ignore bzs::db::protocol::tdap::client::groupFuncBase::operator=;
 %ignore bzs::db::protocol::tdap::client::groupFuncBase::operator();
 %ignore bzs::db::protocol::tdap::client::groupQuery::operator=;
 %ignore bzs::db::protocol::tdap::client::groupQuery::create;
+%ignore bzs::db::protocol::tdap::client::last::create;
 %ignore bzs::db::protocol::tdap::client::max::create;
 %ignore bzs::db::protocol::tdap::client::min::create;
 %ignore bzs::db::protocol::tdap::client::recordsetQuery::operator=;
 %ignore bzs::db::protocol::tdap::client::recordsetQuery::create;
 %ignore bzs::db::protocol::tdap::client::recordsetQuery::internalQuery;
-%ignore bzs::db::protocol::tdap::client::sortField;
-%ignore bzs::db::protocol::tdap::client::sortFields;
-%ignore bzs::db::protocol::tdap::client::sortFields::operator[];
 %ignore bzs::db::protocol::tdap::client::sum::create;
   // create and release methods for fieldNames class
 %extend bzs::db::protocol::tdap::client::fieldNames {
@@ -482,9 +481,37 @@ using namespace bzs::db::protocol::tdap::client;
     self->release();
   }
 };
+  // create and release methods for first class
+%extend bzs::db::protocol::tdap::client::first {
+  first(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
+    return bzs::db::protocol::tdap::client::first::create(targetNames, resultName);
+  }
+  ~first() {
+    self->release();
+  }
+};
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::first::first;
+%ignore bzs::db::protocol::tdap::client::first::~first;
+
   // ignore original methods
 %ignore bzs::db::protocol::tdap::client::count::count;
 %ignore bzs::db::protocol::tdap::client::count::~count;
+
+  // create and release methods for last class
+%extend bzs::db::protocol::tdap::client::last {
+  last(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {
+    return bzs::db::protocol::tdap::client::last::create(targetNames, resultName);
+  }
+  ~last() {
+    self->release();
+  }
+};
+
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::last::last;
+%ignore bzs::db::protocol::tdap::client::last::~last;
+
   // create and release methods for max class
 %extend bzs::db::protocol::tdap::client::max {
   max(const fieldNames& targetNames, const _TCHAR* resultName = NULL) {

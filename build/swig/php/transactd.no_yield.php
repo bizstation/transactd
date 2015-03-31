@@ -385,6 +385,18 @@ abstract class transactd {
 
 	const ERROR_TD_NOT_CONNECTED = ERROR_TD_NOT_CONNECTED;
 
+	const ERROR_TD_NET_TIMEOUT = ERROR_TD_NET_TIMEOUT;
+
+	const ERROR_TD_NET_REMOTE_DISCONNECT = ERROR_TD_NET_REMOTE_DISCONNECT;
+
+	const ERROR_TD_NET_TOO_BIGDATA = ERROR_TD_NET_TOO_BIGDATA;
+
+	const ERROR_TD_NET_OTHER = ERROR_TD_NET_OTHER;
+
+	const ERROR_TD_C_CLIENT_UNKNOWN = ERROR_TD_C_CLIENT_UNKNOWN;
+
+	const ERROR_TD_RECONNECTED = ERROR_TD_RECONNECTED;
+
 	const TRANSACTD_SCHEMANAME = TRANSACTD_SCHEMANAME;
 
 	const TYPE_SCHEMA_BDF = TYPE_SCHEMA_BDF;
@@ -837,6 +849,18 @@ class fielddef extends fielddef_t_my {
 	function name() {
 		return fielddef_name($this->_cPtr);
 	}
+	
+	function trimPadChar() {
+		return fielddef_trimPadChar($this->_cPtr);
+	}
+
+	function usePadChar() {
+		return fielddef_usePadChar($this->_cPtr);
+	}
+
+	function setPadCharSettings($set, $trim) {
+		fielddef_setPadCharSettings($this->_cPtr, $set, $trim);
+	}
 
 	function __construct($res=null) {
 		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__fielddef') {
@@ -1036,6 +1060,8 @@ abstract class nstable {
 	const findForword = 0;
 
 	const findBackForword = nstable_findBackForword;
+
+	const findContinue = nstable_findContinue;
 
 	const inkey = nstable_inkey;
 
@@ -1449,22 +1475,6 @@ class table extends nstable {
 		table_setLogicalToString($this->_cPtr,$v);
 	}
 
-	function trimPadChar() {
-		return table_trimPadChar($this->_cPtr);
-	}
-
-	function setTrimPadChar($v) {
-		table_setTrimPadChar($this->_cPtr,$v);
-	}
-
-	function usePadChar() {
-		return table_usePadChar($this->_cPtr);
-	}
-
-	function setUsePadChar($v) {
-		table_setUsePadChar($this->_cPtr,$v);
-	}
-
 	function optionalData() {
 		return table_optionalData($this->_cPtr);
 	}
@@ -1518,6 +1528,14 @@ class table extends nstable {
 
 	function findPrev($notIncCurrent=true) {
 		table_findPrev($this->_cPtr,$notIncCurrent);
+	}
+	
+	function statReasonOfFind() {
+		return table_statReasonOfFind($this->_cPtr);
+	}
+	
+	function lastFindDirection() {
+		return table_lastFindDirection($this->_cPtr);
 	}
 
 	function bookmarkFindCurrent() {
@@ -1736,6 +1754,16 @@ abstract class queryBase {
 	function reverseAliasName($alias,$src) {
 		queryBase_reverseAliasName($this->_cPtr,$alias,$src);
 	}
+	
+	function stopAtLimit($v) {
+		queryBase_stopAtLimit($this->_cPtr,$v);
+		return $this;
+	}
+	
+	function isStopAtLimit() {
+		return queryBase_isStopAtLimit($this->_cPtr);
+	}
+
 }
 
 class query extends queryBase {
@@ -1947,6 +1975,14 @@ class nsdatabase {
 
 	function disconnect($uri="") {
 		return nsdatabase_disconnect($this->_cPtr,$uri);
+	}
+
+	function disconnectForReconnectTest() {
+		return nsdatabase_disconnectForReconnectTest($this->_cPtr);
+	}
+
+	function reconnect() {
+		return nsdatabase_reconnect($this->_cPtr);
 	}
 
 	static function trnsactionFlushWaitStatus() {
@@ -2469,27 +2505,6 @@ class field {
 			case transactd::ft_numericsa:
 			case transactd::ft_currency:
 				return field_d($this->_cPtr);
-			case transactd::ft_mychar:
-			case transactd::ft_myvarchar:
-			case transactd::ft_mywchar:
-			case transactd::ft_mywvarchar:
-			case transactd::ft_mytext:
-			case transactd::ft_mydate:
-			case transactd::ft_mytime:
-			case transactd::ft_mydatetime:
-			case transactd::ft_mytimestamp:
-			case transactd::ft_date:
-			case transactd::ft_time:
-			case transactd::ft_datetime:
-			case transactd::ft_timestamp:
-			case transactd::ft_note:
-			case transactd::ft_zstring:
-				return field_c_str($this->_cPtr);
-			case transactd::ft_string:
-			case transactd::ft_myvarbinary:
-			case transactd::ft_mywvarbinary:
-			case transactd::ft_myblob:
-				return field_getBin($this->_cPtr);
 			default:
 				return field_c_str($this->_cPtr);
 		}
@@ -2952,6 +2967,91 @@ class fieldNames {
 	}
 }
 
+class sortField {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'name') return sortField_name_set($this->_cPtr,$value);
+		if ($var === 'asc') return sortField_asc_set($this->_cPtr,$value);
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		if ($var === 'name') return sortField_name_get($this->_cPtr);
+		if ($var === 'asc') return sortField_asc_get($this->_cPtr);
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if (function_exists('sortField_'.$var.'_get')) return true;
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__sortField') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_sortField();
+	}
+}
+
+class sortFields {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function add($name,$asc) {
+		sortFields_add($this->_cPtr,$name,$asc);
+		return $this;
+	}
+
+	function size() {
+		return sortFields_size($this->_cPtr);
+	}
+
+	function getSortField($index) {
+		$r=sortFields_getSortField($this->_cPtr,$index);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new sortField($r);
+		}
+		return $r;
+	}
+
+	function clear() {
+		sortFields_clear($this->_cPtr);
+		return $this;
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__sortFields') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_sortFields();
+	}
+}
+
 class recordsetQuery {
 	public $_cPtr=null;
 	protected $_pData=array();
@@ -3050,10 +3150,6 @@ abstract class groupFuncBase extends recordsetQuery {
 
 	function reset() {
 		groupFuncBase_reset($this->_cPtr);
-	}
-
-	function result($groupIndex) {
-		return groupFuncBase_result($this->_cPtr,$groupIndex);
 	}
 
 	function __clone() {
@@ -3159,6 +3255,84 @@ class sum extends groupFuncBase {
 		switch (func_num_args()) {
 		case 1: $this->_cPtr=new_sum($this->targetNames); break;
 		default: $this->_cPtr=new_sum($this->targetNames,$this->resultName);
+		}
+	}
+}
+
+class first extends groupFuncBase {
+	public $_cPtr=null;
+	protected $targetNames = null;
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		groupFuncBase::__set($var,$value);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return groupFuncBase::__get($var);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return groupFuncBase::__isset($var);
+	}
+
+	function __clone() {
+		$r=first___clone($this->_cPtr);
+		$this->_cPtr = $r;
+		return $this;
+	}
+
+	function __construct($targetNames,$resultName=null) {
+		if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__db__protocol__tdap__client__first') {
+			$this->_cPtr=$targetNames;
+			return;
+		}
+		$this->targetNames = $targetNames;
+		$this->resultName = $resultName;
+		switch (func_num_args()) {
+		case 1: $this->_cPtr=new_first($this->targetNames); break;
+		default: $this->_cPtr=new_first($this->targetNames,$this->resultName);
+		}
+	}
+}
+
+class last extends groupFuncBase {
+	public $_cPtr=null;
+	protected $targetNames = null;
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		groupFuncBase::__set($var,$value);
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return groupFuncBase::__get($var);
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return groupFuncBase::__isset($var);
+	}
+
+	function __clone() {
+		$r=last___clone($this->_cPtr);
+		$this->_cPtr = $r;
+		return $this;
+	}
+
+	function __construct($targetNames,$resultName=null) {
+		if (is_resource($targetNames) && get_resource_type($targetNames) === '_p_bzs__db__protocol__tdap__client__last') {
+			$this->_cPtr=$targetNames;
+			return;
+		}
+		$this->targetNames = $targetNames;
+		$this->resultName = $resultName;
+		switch (func_num_args()) {
+		case 1: $this->_cPtr=new_last($this->targetNames); break;
+		default: $this->_cPtr=new_last($this->targetNames,$this->resultName);
 		}
 	}
 }
@@ -3663,6 +3837,14 @@ class activeTable {
 
 	function read($q, $v0=null, $v1=null, $v2=null, $v3=null, $v4=null, $v5=null, $v6=null, $v7=null) {
 		$r=activeTable_read($this->_cPtr,$q, $v0, $v1, $v2, $v3, $v4, $v5, $v6, $v7);
+		if (is_resource($r)) {
+			return new Recordset($r);
+		}
+		return $r;
+	}
+	
+	function readMore() {
+		$r = activeTable_readMore($this->_cPtr);
 		if (is_resource($r)) {
 			return new Recordset($r);
 		}

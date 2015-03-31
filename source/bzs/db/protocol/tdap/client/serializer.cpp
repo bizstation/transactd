@@ -48,6 +48,8 @@ BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::count, "count");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::avg, "avg");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::min, "min");
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::max, "max");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::first, "first");
+BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::last, "last");
 
 BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::readStatement,
                         "readStatement");
@@ -63,6 +65,7 @@ BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::reverseOrderStatement,
                         "reverseOrderStatement");
 
 BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::groupFuncBase, 1)
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::queryBase, 1)
 
 namespace bzs
 {
@@ -201,7 +204,7 @@ void serialize(Archive& ar, queryBase& q, const unsigned int version)
 }
 
 template <class Archive>
-void save(Archive& ar, const queryBase& q, const unsigned int /*version*/)
+void save(Archive& ar, const queryBase& q, const unsigned int version)
 {
     std::_tstring s = q.toString();
 
@@ -214,12 +217,22 @@ void save(Archive& ar, const queryBase& q, const unsigned int /*version*/)
     ar& make_nvp("optimize", v);
     v = q.isBookmarkAlso();
     ar& make_nvp("boolmarkAlso", v);
+
+    if (version >= 1)
+    {
+        v = q.getDirection();
+        ar& make_nvp("direction", v);
+
+        v = q.isStopAtLimit();
+        ar& make_nvp("stopAtLimit", v);
+
+    }
     v = q.isAll();
     ar& make_nvp("isAll", v);
 }
 
 template <class Archive>
-void load(Archive& ar, queryBase& q, const unsigned int /*version*/)
+void load(Archive& ar, queryBase& q, const unsigned int version)
 {
     std::_tstring s;
     int v;
@@ -240,6 +253,13 @@ void load(Archive& ar, queryBase& q, const unsigned int /*version*/)
     ar& make_nvp("boolmarkAlso", v);
     q.bookmarkAlso(v != 0);
 
+    if (version >= 1)
+    {
+        ar& make_nvp("direction", v);
+        q.direction((table::eFindType)v);
+        ar& make_nvp("stopAtLimit", v);
+        q.stopAtLimit(v == 1);
+    }
     ar& make_nvp("isAll", v);
     if (v)
         q.all();
@@ -338,6 +358,18 @@ void serialize(Archive& ar, min& q, const unsigned int /*version*/)
 
 template <class Archive>
 void serialize(Archive& ar, max& q, const unsigned int /*version*/)
+{
+    ar& make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
+}
+
+template <class Archive>
+void serialize(Archive& ar, first& q, const unsigned int /*version*/)
+{
+    ar& make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
+}
+
+template <class Archive>
+void serialize(Archive& ar, last& q, const unsigned int /*version*/)
 {
     ar& make_nvp("param", boost::serialization::base_object<groupFuncBase>(q));
 }
@@ -448,6 +480,12 @@ groupFuncBase& groupByStatement::addFunction(eFunc v,
         break;
     case fmax:
         func = new client::max(targetNames, resultName);
+        break;
+    case ffirst:
+        func = new client::first(targetNames, resultName);
+        break;
+    case flast:
+        func = new client::last(targetNames, resultName);
         break;
     };
     m_statements->push_back(func);

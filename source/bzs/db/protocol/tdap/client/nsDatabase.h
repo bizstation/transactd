@@ -77,7 +77,7 @@ protected:
     bool findTable(nstable* tb);
     void addref();
     void internalRelease() { nsdatabase::release(); }
-
+    void doReconnect(nstable* tb);
 public:
     nsdatabase();
     virtual void release();
@@ -121,6 +121,9 @@ public:
     void readDatabaseDirectory(_TCHAR* retBuf, uchar_td len);
     bool connect(const _TCHAR* uri, bool newConnection = false);
     bool disconnect(const _TCHAR* uri = _T(""));
+    bool disconnectForReconnectTest(); //for connection brokn emulate
+	bool reconnect();
+
     static const int maxtables = 50;
     static bool trnsactionFlushWaitStatus();
     static void setExecCodePage(unsigned int codepage);

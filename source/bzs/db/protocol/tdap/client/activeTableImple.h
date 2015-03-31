@@ -94,9 +94,10 @@ public:
     typedef mdlsHandler<map_orm, recordsetImple> collection_orm_typename;
 };
 
+#define FIXED_VALUE_BUF_SIZE 256
 struct joinInfo
 {
-    std::_tstring fixedValue;
+    unsigned char fixedValue[FIXED_VALUE_BUF_SIZE];
     ushort_td len;
     ushort_td type;
 };
@@ -152,9 +153,15 @@ class activeTableImple : public activeObject<map_orm>
             if (s[0] == '[')
             {
                 fieldIndexes[i] = -1;
+                const fielddef& f = td->fieldDefs[kd->segments[i].fieldNum];
+                if (f.len > FIXED_VALUE_BUF_SIZE)
+                    THROW_BZS_ERROR_WITH_MSG(_T("Join fixed key field is too long")
+                                     _T(" field.\n This field can not use join."));
+                field fd(joinFields[i].fixedValue, f, fds);
+                fd = s.c_str() +1;
+                joinFields[i].len = f.len;
                 joinFields[i].type = JOIN_KEYVALUE_TYPE_PTR;
-                joinFields[i].len = (ushort_td)(s.size() - 2);
-                joinFields[i].fixedValue = s.substr(1, s.size() - 2);
+
             }
             else
             {
@@ -212,7 +219,7 @@ class activeTableImple : public activeObject<map_orm>
         {
             if (fieldIndexes[i] == -1)
             {
-                ptr[i] = (const uchar_td*)joinFields[i].fixedValue.c_str();
+                ptr[i] = joinFields[i].fixedValue;
                 len[i] = joinFields[i].len;
             }
             else if (joinFields[i].type == JOIN_KEYVALUE_TYPE_PTR)

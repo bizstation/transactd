@@ -209,13 +209,15 @@ public:
             m_tb->m_impl->mraPtr->duplicateRow(row + rowOffset, count);
     }
 
-    inline void resetMra(filter* p, uchar_td* data, unsigned int totalSize,
+    inline void reset(filter* p, uchar_td* data, unsigned int totalSize,
                       const blobHeader* hd)
     {
-        reset(p, data, totalSize, hd);
+        doReset(p, data, totalSize, hd);
+        multiRecordAlocator* mra = m_tb->m_impl->mraPtr;
+        if (!mra) return;
         if (m_rowCount)
         {
-            multiRecordAlocator* mra = m_tb->m_impl->mraPtr;
+
             unsigned char* bd = NULL; //blob data
             if (m_filter->hasManyJoin())
                 hasManyJoinMra(m_rowCount, data);
@@ -258,18 +260,22 @@ public:
                             resultOffset += fd.len;
                         }
                     }
-                    else if (m_tb->valiableFormatType())
-                    {
-                        memset(m_tmpPtr, 0, td->maxRecordLen);
-                        memcpy(m_tmpPtr, m_ptr, m_len);
-                        m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
-                        m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
-                        resultOffset = m_unpackLen; 
-                    }
                     else
                     {
-                        memcpy(m_tmpPtr, m_ptr, m_len);
-                        resultOffset = m_len;
+                        if (m_tb->valiableFormatType())
+                        {
+                            memset(m_tmpPtr, 0, td->maxRecordLen);
+                            memcpy(m_tmpPtr, m_ptr, m_len);
+                            m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
+                            resultOffset = m_unpackLen; 
+                        }
+                        else
+                        {
+                            memcpy(m_tmpPtr, m_ptr, m_len);
+                            resultOffset = m_len;
+                        }
+                        if (bd)
+                            bd = m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd, bd);
                     }
                 }
                 ++m_row;
@@ -281,7 +287,7 @@ public:
         setMemblockType(mra_nextrows);
     }
 
-    inline void reset(filter* p, uchar_td* data, unsigned int totalSize,
+    inline void doReset(filter* p, uchar_td* data, unsigned int totalSize,
                       const blobHeader* hd)
     {
         m_filter = p;
@@ -432,26 +438,6 @@ multiRecordAlocator* table::mra() const
 uchar_td table::charset() const
 {
     return (*m_tableDef)->charsetIndex;
-}
-
-bool table::trimPadChar() const
-{
-    return m_fddefs->trimPadChar;
-}
-
-void table::setTrimPadChar(bool v)
-{
-    m_fddefs->trimPadChar = v;
-}
-
-bool table::usePadChar() const
-{
-    return m_fddefs->usePadChar;
-}
-
-void table::setUsePadChar(bool v)
-{
-    m_fddefs->usePadChar = v;
 }
 
 void* table::dataBak() const
@@ -709,18 +695,16 @@ void table::btrvGetExtend(ushort_td op)
         stat = STATUS_LIMMIT_OF_REJECT;
 
     const blobHeader* hd = blobFieldUsed() ? getBlobHeader() : NULL;
-    if (m_impl->mraPtr)
+
+    // When using MRA,the read data is then copied all to recordset.
+    m_impl->rc->reset(filter, (uchar_td*)m_pdata, m_datalen, hd);
+
+    m_stat = stat;
+    m_impl->filterPtr->setStat(stat);
+
+    if (!m_impl->mraPtr)
     {
-        m_impl->rc->resetMra(filter, (uchar_td*)m_pdata, m_datalen, hd);
-        m_stat = stat;
-        m_impl->filterPtr->setStat(stat);
-    }
-    else
-    {
-        m_impl->rc->reset(filter, (uchar_td*)m_pdata, m_datalen, hd);
-        m_stat = stat;
-        m_impl->filterPtr->setStat(stat);
-        // There is the right record.
+        // When read one or more record(s), then stat set to 0.
         if (m_impl->rc->rowCount() && (!m_impl->exBookMarking))
         {
             m_pdata = (void*)m_impl->rc->setRow(0);
@@ -733,24 +717,47 @@ void table::btrvGetExtend(ushort_td op)
    
 }
 
-bool table::recordsLoop(ushort_td& op)
+/*
+  Reading continued control
+
+  When MRA enabled and reject=0 and m_stat = STATUS_LIMMIT_OF_REJECT,
+  continuing find operation automaticaly.
+  And when MRA enabled stat=0 too, continuing find operation automaticaly.
+
+  When MRA not enabled, only reject=0 and m_stat = STATUS_LIMMIT_OF_REJECT
+   continuing find operation automaticaly. When stat=0, not continue.
+
+*/
+
+bool table::isReadContinue(ushort_td& op)
 {
     client::filter* filter = m_impl->filterPtr.get();
     filter->setPosTypeNext(true);
-    bool flag = (m_stat == STATUS_LIMMIT_OF_REJECT && (filter->rejectCount() == 0));
-    if (m_impl->mraPtr && !flag)
+
+    //reject count control
+    bool isContinue = (m_stat == STATUS_LIMMIT_OF_REJECT &&
+                            (filter->rejectCount() == 0));
+    if (m_impl->mraPtr && !isContinue)
+        isContinue = filter->isStatContinue();
+
+    // limit count control
+    if (isContinue)
     {
-        flag = m_impl->filterPtr->isStatContinue();
-        if (!flag)       
-            m_stat = m_impl->filterPtr->translateStat();//finish
-    }
-    if (flag)
-    {
-        op = m_impl->filterPtr->isSeeksMode() ? 
-                TD_KEY_SEEK_MULTI : (m_impl->filterPtr->direction() == table::findForword) ?
+        if (filter->isStopAtLimit() && m_impl->rc->rowCount() == filter->maxRows())
+        {
+            m_stat = STATUS_LIMMIT_OF_REJECT;
+            return false;
+        }
+
+        // set next operation type and status
+        op = filter->isSeeksMode() ?
+                TD_KEY_SEEK_MULTI : (filter->direction() == table::findForword) ?
                         TD_KEY_NEXT_MULTI : TD_KEY_PREV_MULTI;
+        return true;
     }
-    return flag;
+    if (m_impl->mraPtr)
+        m_stat = filter->translateStat();
+    return false;
 }
 
 void table::getRecords(ushort_td op)
@@ -758,11 +765,18 @@ void table::getRecords(ushort_td op)
     do
     {
         btrvGetExtend(op);
-    }while (recordsLoop(op));
+    }while (isReadContinue(op));
 
     if ((m_stat == STATUS_REACHED_FILTER_COND) ||
         (m_stat == STATUS_LIMMIT_OF_REJECT))
         m_stat = STATUS_EOF;
+}
+
+short table::statReasonOfFind() const
+{
+    if (m_impl->filterPtr)
+        return m_impl->filterPtr->stat();
+    return stat();
 }
 
 bookmark_td table::bookmarkFindCurrent() const
@@ -870,6 +884,13 @@ void table::btrvSeekMulti()
     m_stat = STATUS_EOF;
 }
 
+nstable::eFindType table::lastFindDirection() const
+{
+    if (m_impl->filterPtr)
+        return m_impl->filterPtr->direction();
+    return findForword;
+}
+
 void table::doFind(ushort_td op, bool notIncCurrent)
 {
     /*
@@ -963,9 +984,15 @@ void table::find(eFindType type)
         m_stat = STATUS_FILTERSTRING_ERROR;
         return;
     }
+    bool isContinue = (type == findContinue);
     ushort_td op;
-
-    if (m_impl->filterPtr->isSeeksMode())
+    if (isContinue)
+    {
+        type = m_impl->filterPtr->direction();
+        op =(type == findForword) ? TD_KEY_NEXT_MULTI : TD_KEY_PREV_MULTI;
+        m_stat = 0;
+    }
+    else if (m_impl->filterPtr->isSeeksMode())
     {
         m_impl->filterPtr->resetSeeksWrited();
         op = TD_KEY_SEEK_MULTI;
@@ -974,11 +1001,9 @@ void table::find(eFindType type)
         op =
             (type == findForword) ? TD_KEY_GE_NEXT_MULTI : TD_KEY_LE_PREV_MULTI;
 
+    m_impl->rc->reset();
     if (isUseTransactd())
-    {
-        m_impl->rc->reset();
         doFind(op, true /*notIncCurrent*/);
-    }
     else
     {
         if (op == TD_KEY_SEEK_MULTI)
@@ -991,10 +1016,13 @@ void table::find(eFindType type)
             // TD_KEY_SEEK_MULTI
             return;
         }
-        if (type == findForword)
-            seekGreater(true);
-        else
-            seekLessThan(true);
+        if (!isContinue)
+        {
+            if (type == findForword)
+                seekGreater(true);
+            else if (type == findBackForword)
+                seekLessThan(true);
+        }
         if (m_stat == 0)
         {
             if (type == findForword)
@@ -1556,7 +1584,7 @@ const blobHeader* table::getBlobHeader()
     return p;
 }
 
-void table::setBlobFieldPointer(char* ptr, const blobHeader* hd)
+unsigned char* table::setBlobFieldPointer(char* ptr, const blobHeader* hd, unsigned char* to)
 {
     if (hd)
     {
@@ -1567,14 +1595,25 @@ void table::setBlobFieldPointer(char* ptr, const blobHeader* hd)
             fielddef& fd = (*m_tableDef)->fieldDefs[f->fieldNum];
             char* fdptr = ptr + fd.pos;
             int sizeByte = fd.blobLenBytes();
+
+            //copy size byte
             memcpy(fdptr, &f->size, sizeByte);
             const char* data = f->data();
+            //copy data
+            if (to)
+            {
+                memcpy(to, data, f->size);
+                data = (char*)to;
+                to += f->size;
+            }
+            //copy address
             memcpy(fdptr + sizeByte, &data, sizeof(char*));
             f = f->next();
         }
         ++hd->curRow;
         hd->nextField = (blobField*)f;
     }
+    return to;
 }
 
 void table::onReadAfter()
@@ -2081,7 +2120,7 @@ struct impl
     impl()
         : m_reject(1), m_limit(0), m_joinKeySize(0),
           m_optimize(queryBase::none), m_direction(table::findForword),
-          m_nofilter(false), m_withBookmark(false)
+          m_nofilter(false), m_withBookmark(false), m_stopAtLimit(false)
     {
     }
 
@@ -2096,7 +2135,11 @@ struct impl
     queryBase::eOptimize m_optimize;
     table::eFindType m_direction;
     bool m_nofilter;
-    bool m_withBookmark;
+    struct
+    {
+        bool m_withBookmark : 1;
+        bool m_stopAtLimit : 1;
+    };
 };
 
 queryBase::queryBase() : m_impl(new impl)
@@ -2179,7 +2222,6 @@ void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
         m_impl->m_keyValuesPtr.clear();
     }
     m_impl->m_keyValues.push_back(value);
-    // m_impl->m_reject = 1;
     m_impl->m_nofilter = false;
 }
 
@@ -2384,6 +2426,17 @@ int queryBase::getLimit() const
 bool queryBase::isAll() const
 {
     return m_impl->m_nofilter;
+}
+
+bool queryBase::isStopAtLimit() const
+{
+    return m_impl->m_stopAtLimit;
+}
+
+queryBase& queryBase::stopAtLimit(bool v)
+{
+    m_impl->m_stopAtLimit = v;
+    return *this;
 }
 
 const std::vector<std::_tstring>& queryBase::getSelects() const

@@ -42,14 +42,20 @@ namespace client
 char connections::port[PORTNUMBUF_SIZE] = { "8610" };
 bool connections::m_usePipedLocal = true;
 #ifdef _WIN32
-short connections::timeout = 3000;
+int connections::connectTimeout = 20000;
+int connections::netTimeout = 180000;
 #else
-short connections::timeout = 3;
+int connections::connectTimeout = 20;
+int connections::netTimeout = 180;
 #endif
 
+#define DEFAULT_CONNECT_TIMEOUT "20"
+#define DEFAULT_NET_TIMEOUT "180"
 
-connections::connections(const char* pipeName) : m_pipeName(pipeName)
+
+connections::connections(const char* pipeName) : m_pipeName(pipeName),m_resolver(m_ios)
 {
+
 #ifdef _WIN32
     DWORD len = MAX_PATH;
     char buf[MAX_PATH];
@@ -63,9 +69,12 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName)
         GetPrivateProfileString("transctd_client", "port", "8610", tmp, 30,
                                 buf);
         strcpy_s(port, PORTNUMBUF_SIZE, tmp);
-        GetPrivateProfileString("transctd_client", "timeout", "3000", tmp, 30,
-                                buf);
-        timeout = (short)atol(tmp);
+        GetPrivateProfileString("transctd_client", "connectTimeout", 
+            DEFAULT_CONNECT_TIMEOUT, tmp, 30, buf);
+        connectTimeout = atoi(tmp)*1000;
+        GetPrivateProfileString("transctd_client", "netTimeout", 
+            DEFAULT_NET_TIMEOUT, tmp, 30, buf);
+        netTimeout = atoi(tmp)*1000;
     }
 #else // NOT _WIN32
 #if (BOOST_VERSION > 104900)
@@ -86,10 +95,14 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName)
                 p = "8610";
             strcpy_s(port, PORTNUMBUF_SIZE, p.c_str());
 
-            p = pt.get<std::string>("transctd_client.timeout");
-            timeout = atol(p.c_str())/1000;
-            if (timeout == 0)
-                timeout = 3;
+            p = pt.get<std::string>("transctd_client.connectTimeout");
+            connectTimeout = atol(p.c_str());
+            if (connectTimeout == 0)
+                connectTimeout = atoi(DEFAULT_CONNECT_TIMEOUT);
+            p = pt.get<std::string>("transctd_client.netTimeout");
+            netTimeout = atol(p.c_str());
+            if (netTimeout == 0)
+                netTimeout = atoi(DEFAULT_NET_TIMEOUT);
         }
         catch (...)
         {
@@ -126,15 +139,19 @@ connection* connections::getConnection(asio::ip::tcp::endpoint& ep)
 asio::ip::tcp::endpoint connections::endpoint(const std::string& host,
                                               boost::system::error_code& ec)
 {
-    tcp::resolver resolver(m_ios);
     tcp::resolver::query query(host, port);
 
-    tcp::resolver::iterator dest = resolver.resolve(query, ec);
+    tcp::resolver::iterator dest = m_resolver.resolve(query, ec);
     tcp::endpoint endpoint;
     if (!ec)
     {
         while (dest != tcp::resolver::iterator())
             endpoint = *dest++;
+    }else if (host == "localhost") 
+    {
+        endpoint.address(ip::address::from_string("127.0.0.1"));
+        endpoint.port((unsigned short)atoi(port));
+        ec.clear();
     }
     return endpoint;
 }
@@ -209,7 +226,11 @@ inline connection* connections::createConnection(asio::ip::tcp::endpoint& ep,
         return new pipeConnection(ep, m_pipeName);
     else
 #endif
-        return new tcpConnection(ep);
+#ifdef __APPLE__
+        return new asio_tcpConnection(ep);
+#else
+        return new native_tcpConnection(ep);
+#endif
 }
 
 inline connection* connections::doConnect(connection* c)
@@ -219,12 +240,22 @@ inline connection* connections::doConnect(connection* c)
         c->connect();
         return c;
     }
-    catch (bzs::netsvc::client::exception& /*e*/)
+    catch (bzs::netsvc::client::exception& e)
     {
         delete c;
-        throw;
+        throw e;
     }
-    catch (boost::system::system_error& /*e*/)
+    catch (boost::system::system_error& e)
+    {
+        delete c;
+        throw e;
+    }
+    catch (std::exception& e)
+    {
+        delete c;
+        throw e;
+    }
+    catch (...)
     {
         delete c;
         throw;
@@ -287,6 +318,20 @@ connection* connections::connect(const std::string& host, handshake f, void* dat
     }
     c->addref();
     return c;
+}
+
+bool connections::reconnect(connection* c, const std::string& host,
+                        handshake f, void* data)
+{
+    boost::system::error_code ec;
+    mutex::scoped_lock lck(m_mutex);
+    asio::ip::tcp::endpoint ep = endpoint(host, ec);
+    if (ec)
+        return false;
+    c->reconnect(ep);
+    if (!c || !doHandShake(c, f, data))
+        return false;
+    return true;
 }
 
 int connections::connectionCount()

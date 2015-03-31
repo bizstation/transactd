@@ -92,7 +92,7 @@ public:
             else if (g_bench_signal == BENCH_SIGNAL_BLUE)
             {
                 m_bresult = bm.end();
-                dummyWork(); 
+                //dummyWork(); 
                 break;
             }
         }
@@ -116,7 +116,7 @@ public:
             else if (g_bench_signal == BENCH_SIGNAL_BLUE)
             {
                 m_bresult = bm.end();
-                dummyWork(); 
+                //dummyWork(); 
                 break;
             }
         }

@@ -48,6 +48,7 @@ class ATL_NO_VTABLE CDatabase
 public:
     CDatabase() : m_needRelese(true), m_IsAtatchOK(true)
     {
+        bzs::db::protocol::tdap::client::nsdatabase::setCheckTablePtr(true);
         m_db = bzs::db::protocol::tdap::client::database::create();
         m_db->setOptionalData(this);
         m_db->setOnCopyData(onCopyData);
@@ -104,6 +105,9 @@ public:
     STDMETHOD(Connect)(BSTR URI, VARIANT_BOOL newConnection,
                        VARIANT_BOOL* Value);
     STDMETHOD(Disconnect)(BSTR URI, VARIANT_BOOL* Param2);
+    STDMETHOD(DisconnectForReconnectTest)(VARIANT_BOOL* Param2);
+    STDMETHOD(Reconnect)(VARIANT_BOOL* Param2);
+
     STDMETHOD(get_EnableTrn)(VARIANT_BOOL* Value);
     STDMETHOD(GetBtrVersion)(int index, ITdVersion** ver);
 

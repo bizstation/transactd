@@ -20,15 +20,20 @@
  ================================================================= */
 
 #include <bzs/netsvc/client/iconnection.h>
+
 #include <boost/asio/write.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/system/system_error.hpp>
+#include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
+#if (BOOST_VERSION > 104900)
+#include <boost/asio/deadline_timer.hpp>
+#endif
 #include <stdio.h>
 #include <vector>
 #ifdef LINUX
 #include <pthread.h> 
-#include <signal.h> 
+#include <signal.h>
 #endif
 
 
@@ -39,9 +44,10 @@ using namespace boost::system;
 #define WRITEBUF_SIZE 66000
 
 #define PORTNUMBUF_SIZE 10
-#define CLIENT_ERROR_CANT_CREATEPIPE 3106
-#define CLIENT_ERROR_SHAREMEM_DENIED 3104
+#define CLIENT_ERROR_CANT_CREATEPIPE    3106
+#define CLIENT_ERROR_SHAREMEM_DENIED    3104
 #define CLIENT_ERROR_CONNECTION_FAILURE 3106
+#define ERROR_TD_NET_TOO_BIGDATA        3802
 #define MAX_DATA_SIZE 10485760 // 10MB
 
 namespace bzs
@@ -51,13 +57,52 @@ namespace netsvc
 namespace client
 {
 
+#ifndef _WIN32
+
+class signalmask
+{
+    sigset_t m_signmask, m_sigomask;
+public:
+    signalmask()
+    {
+        sigfillset(&m_signmask);
+        sigdelset(&m_signmask, SIGQUIT | SIGKILL | SIGHUP | SIGINT |SIGTERM); 
+        pthread_sigmask(SIG_SETMASK, &m_signmask , &m_sigomask);
+    }
+
+    ~signalmask()
+    {
+        pthread_sigmask(SIG_SETMASK, &m_sigomask, NULL); 
+    }
+};
+#endif
+
+class exception : public std::exception
+{
+    int m_error;
+    std::string m_msg;
+
+public:
+    exception(int errorCode, const char* const& message)
+        : std::exception(), m_error(errorCode), m_msg(message)
+    {
+    }
+
+    ~exception() throw() {}
+
+    const char* what() const throw() { return m_msg.c_str(); }
+
+    int error() { return m_error; }
+};
+
 typedef bool (*handshake)(connection* c, void* data);
 class connections
 {
     std::vector<connection*> m_conns;
-    boost::asio::io_service m_ios;
-    mutex m_mutex;
     std::string m_pipeName;
+    boost::asio::io_service m_ios;
+    boost::asio::ip::tcp::resolver m_resolver;
+    mutex m_mutex;
     static bool m_usePipedLocal;
 
     connection* getConnection(asio::ip::tcp::endpoint& ep);
@@ -75,11 +120,15 @@ public:
     ~connections();
     connection* connect(const std::string& host, handshake f,
                         void* data, bool newConnection = false);
+    bool reconnect(connection* c, const std::string& host,
+                        handshake f, void* data);
+
     connection* getConnection(const std::string& host);
     bool disconnect(connection* c);
     int connectionCount();
     static char port[PORTNUMBUF_SIZE];
-    static short timeout;
+    static int connectTimeout;
+    static int netTimeout;
 };
 
 /** Implementation of Part of the connection interface
@@ -91,8 +140,6 @@ protected:
 
     asio::io_service m_ios;
     asio::ip::tcp::endpoint m_ep;
-    std::vector<char> m_readbuf;
-    std::vector<char> m_sendbuf;
     idirectReadHandler* m_reader;
     size_t m_readLen;
     int m_refCount;
@@ -113,15 +160,251 @@ protected:
     int charsetServer() const { return m_charsetServer; };
 
     void setCharsetServer(int v) { m_charsetServer = v; }
-
+  
 public:
     connectionBase(asio::ip::tcp::endpoint& ep)
         : m_ep(ep), m_reader(NULL), m_refCount(0),
           m_charsetServer(-1), m_connected(false), m_isHandShakable(true)
     {
     }
-
     void setDirectReadHandler(idirectReadHandler* p){ m_reader = p; }
+    bool isHandShakable() const {return m_isHandShakable;};
+};
+
+
+template <class T>
+class asio_tcp_io
+{
+    T& m_socket;
+public:
+    asio_tcp_io(T& socket):m_socket(socket){}
+
+    size_t readAll(char* buf, size_t size)
+    {
+        return asio::read(m_socket, asio::buffer(buf, size),
+                            asio::transfer_all());
+    }
+
+    size_t readSome(char* buf, size_t size, size_t minimum)
+    {
+        return asio::read(m_socket, asio::buffer(buf, size),
+                            asio::transfer_at_least(minimum));
+    }
+
+    void write(const char* buf, size_t size, int /*flag*/)
+    {
+        asio::write(m_socket, asio::buffer(buf, size),
+                            asio::transfer_all());
+    }
+
+    template <typename MutableBufferSequence>
+    void writeMultibuffer(const MutableBufferSequence& buffer)
+    {
+        asio::write(m_socket, buffer, asio::transfer_all());
+    }
+
+    void on_connected() {}
+
+};
+
+#if (defined(_WIN32))
+#define MSG_WAITALL 0x8
+#define MSG_EOR 0
+#define MSG_MORE 0
+#endif
+
+#ifdef LINUX
+#define SOCKET_ERROR -1
+#endif
+
+#if (BOOST_VERSION > 104900)
+#define SYSTEM_CATEGORY system_category()
+#else
+#define SYSTEM_CATEGORY system_category
+#endif
+
+#ifndef __APPLE__
+template <class T>
+class native_tcp_io
+{
+    T& m_socket;
+    int getErrorCode()
+    {
+#ifndef _WIN32
+        return errno;
+#else
+        return WSAGetLastError();
+#endif
+    }
+
+public:
+    native_tcp_io(T& socket):m_socket(socket){}
+
+#ifdef _WIN32
+    size_t readAll2(char* buf, size_t size)
+    {
+        int n = 0;
+        do 
+        {
+            int nn = recv(m_socket.native(), buf + n, (int)size - n, 0);
+            if (n == SOCKET_ERROR)
+                throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+            n += nn;
+        }while (n != size);
+        return (size_t)n;
+    }
+#endif
+
+    size_t readAll(char* buf, size_t size)
+    {
+        errno = 0;
+        int n = recv(m_socket.native(), buf, (int)size, MSG_WAITALL);
+        if (n == SOCKET_ERROR)
+        {
+#ifdef _WIN32
+            if (WSAEOPNOTSUPP == getErrorCode())
+                return readAll2(buf, size);
+            else
+#endif
+                throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+        }
+        return (size_t)n;
+    }
+
+    size_t readSome(char* buf, size_t size, size_t minimum)
+    {
+        errno = 0;
+        int n = recv(m_socket.native(), buf, (int)size, 0);
+        if (n == SOCKET_ERROR)
+            throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+        return (size_t)n;
+    }
+
+    void write(const char* buf, size_t size, int flag)
+    {
+        errno = 0;
+        int n = send(m_socket.native(), buf, (int)size, flag);
+        if (n == SOCKET_ERROR)
+            throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+    }
+
+    template <typename MutableBufferSequence>
+    void writeMultibuffer(const MutableBufferSequence& buffer)
+    {
+        buffers::const_iterator it = buffer.begin();
+        buffers::const_iterator ite = buffer.end();
+        while (it != ite)
+        {
+            std::size_t s = asio::buffer_size(*it);
+            const char* p = asio::buffer_cast<const char*>(*it);
+            write(p, s, (it == (ite - 1)) ? MSG_EOR : MSG_MORE);
+            ++it;
+        }
+    }
+
+    void on_connected() 
+    {
+    #ifndef _WIN32
+        int val = 0;
+        ioctl(m_socket.native(), FIONBIO, &val);
+    #else
+        u_long val = 0;
+        ioctlsocket(m_socket.native(), FIONBIO, &val);
+    #endif
+    }
+};
+#endif
+
+template <class T> class connectionImple : public connectionBase
+{
+protected:
+    T m_socket;
+    buffers m_optionalBuffes;
+
+    void checkError(const system::error_code& e)
+    {
+        if (e) 
+        {
+            if (e == asio::error::operation_aborted)
+                throw system_error(asio::error::timed_out);
+           throw system_error(e);
+        }
+    }
+
+    void cleanup()
+    {
+        if (m_connected)
+        {
+            try
+            {
+                m_ios.stop();
+                m_socket.close();
+                m_ios.reset();
+            }
+            catch (...)
+            {
+            }
+            m_connected = false;
+        }
+    }
+
+    ~connectionImple()
+    {
+        cleanup();
+    }
+
+    char* asyncWriteRead(unsigned int writeSize)
+    {
+#ifndef _WIN32 
+        signalmask smask;
+#endif
+        write(writeSize);
+        return read();
+    }
+
+    buffers* optionalBuffers() { return &m_optionalBuffes; }
+
+    void reconnect(asio::ip::tcp::endpoint& ep)
+    {
+        cleanup();
+        m_ios.reset();
+        m_ep = ep;
+        connect();
+    }
+
+public:
+    connectionImple(asio::ip::tcp::endpoint& ep)
+        : connectionBase(ep)/*, m_datalen(0)*/, m_socket(m_ios)
+    {
+    }
+};
+
+#define _size_holder asio::placeholders::bytes_transferred 
+#define _error_holder asio::placeholders::error 
+
+/** Implementation of The TCP connection.
+ */
+#if (defined(LINUX) && (BOOST_VERSION > 104900))
+#define USE_CONNECT_TIMER
+#endif
+
+template <class T>
+class tcpConnection : public connectionImple<asio::ip::tcp::socket>
+{
+    T s_io;
+#ifdef USE_CONNECT_TIMER
+    asio::deadline_timer m_timer;
+#endif
+    std::vector<char> m_readbuf;
+    std::vector<char> m_sendbuf;
+
+    void resizeReadBuffer(unsigned int n)
+    {
+        if (n > MAX_DATA_SIZE)
+            throw exception(ERROR_TD_NET_TOO_BIGDATA, "read");
+        if (n > m_readbuf.size())
+            m_readbuf.resize(n);
+    }
 
     char* sendBuffer(size_t size)
     {
@@ -138,53 +421,6 @@ public:
             m_readbuf.resize(size);
     }
 
-    bool isHandShakable() const {return m_isHandShakable;};
-};
-
-/** Implementation of the connection template
- */
-template <class T> class connectionImple : public connectionBase
-{
-#ifdef LINUX
-    sigset_t m_signmask, m_sigomask;
-#endif
-protected:
-    //unsigned int m_datalen;
-    //unsigned short m_rows;
-    T m_socket;
-    buffers m_optionalBuffes;
-
-    //unsigned int datalen() const { return m_datalen; }
-
-    //unsigned short rows() const { return m_rows; }
-
-    // server send any segment of lower than 0xFFFF data by asyncWrite
-    // last 4byte is 0xFFFFFFFF, that is specify end of data
-    /*void segmentRead()
-    {
-        bool end = false;
-        unsigned short n;
-        while (!end)
-        {
-            boost::asio::read(m_socket, boost::asio::buffer(&n, 2),
-                              boost::asio::transfer_all());
-
-            if (m_readLen + n > m_readbuf.size())
-                m_readbuf.resize(m_readLen + n);
-
-            m_readLen += boost::asio::read(
-                m_socket, boost::asio::buffer(&m_readbuf[m_readLen], n),
-                boost::asio::transfer_all());
-
-            end = (*((unsigned int*)(&m_readbuf[m_readLen - 4])) == 0xFFFFFFFF);
-        }
-        m_readLen -= 4;
-        // additinal data length info
-        boost::asio::read(m_socket, boost::asio::buffer(&m_datalen, 4),
-                          boost::asio::transfer_all());
-        boost::asio::read(m_socket, boost::asio::buffer(&m_rows, 2),
-                          boost::asio::transfer_all());
-    }*/
     bool queryFunction(unsigned int v)
     {
         if (v == CONNECTION_FUNCTION_DIRECT_READ)
@@ -192,38 +428,86 @@ protected:
         return false;
     }
 
+    void cleanup()
+    {
+#ifdef USE_CONNECT_TIMER
+        m_timer.cancel();
+#endif
+        connectionImple<asio::ip::tcp::socket>::cleanup();
+    }
+#ifdef USE_CONNECT_TIMER
+    void setTimer(int time)
+    {
+#ifdef _WIN32
+        time /= 1000;
+#endif
+        m_timer.cancel();
+        m_timer.expires_from_now(boost::posix_time::seconds(time));
+        m_timer.async_wait(boost::bind(&tcpConnection::on_timer, this, _1));
+    }
+#endif
+
+    void on_connect(const boost::system::error_code& e)
+    {
+#ifdef USE_CONNECT_TIMER
+        m_timer.cancel();
+#endif
+        checkError(e);
+        s_io.on_connected(); 
+        m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
+        m_connected = true;
+        setTimeouts(connections::netTimeout);
+    }
+
+    void on_timer(const boost::system::error_code& e) 
+    {
+        if (e) return;
+        #pragma warning(disable : 4996)
+        try{ m_socket.cancel(); } catch (...) {}
+        #pragma warning(default : 4996)
+    }
+
+    void setTimeouts(int time)
+    {
+        struct timeval timeout;
+        timeout.tv_usec = 0;
+        timeout.tv_sec = time;
+        int ret = setsockopt(m_socket.native(), SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout,
+                   sizeof(timeout));
+        ret = setsockopt(m_socket.native(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout,
+                   sizeof(timeout));
+    }
+#ifdef USE_CONNECT_TIMER
+    void connect()
+    {
+        m_socket.async_connect(m_ep,
+            bind(&tcpConnection::on_connect, this, _error_holder));
+        setTimer(connections::connectTimeout);
+        m_ios.run();
+        m_ios.reset();
+    }
+#else
+    void connect()
+    {
+        setTimeouts(connections::connectTimeout);
+        m_socket.connect(m_ep);
+        boost::system::error_code e;
+        on_connect(e);
+        m_ios.reset();
+    }
+#endif
+
     unsigned int directRead(void* buf, unsigned int size)
     {
-        return (unsigned int)boost::asio::read(m_socket, 
-                                                boost::asio::buffer(buf, size),
-                                                boost::asio::transfer_all());
+        return (unsigned int)s_io.readAll((char*)buf, size);
     }
     
     void* directReadRemain(unsigned int size)
     {
         if (size > m_readbuf.size())
             m_readbuf.resize(size);
-        
-        m_readLen += boost::asio::read(
-            m_socket,
-            boost::asio::buffer(&m_readbuf[0], size),
-            boost::asio::transfer_all());
+        m_readLen += s_io.readAll(&m_readbuf[0], size);
         return &m_readbuf[0];
-    }
-
-    template <typename CompletionCondition, typename MutableBufferSequence>
-    size_t doRead(const MutableBufferSequence& buf, CompletionCondition cnd)
-    {
-        boost::system::error_code e;
-#ifdef LINUX
-        pthread_sigmask(SIG_SETMASK, &m_signmask , &m_sigomask); 
-#endif
-        size_t n = boost::asio::read(m_socket, buf, cnd, e);
-#ifdef LINUX
-        pthread_sigmask(SIG_SETMASK, &m_sigomask, NULL); 
-#endif
-        if (e) throw e;
-        return n;    
     }
 
     char* read()
@@ -231,35 +515,21 @@ protected:
         if (!m_connected)
             throw system_error(asio::error::not_connected);
         m_readLen = 0;
-        //m_datalen = 0;
-        //m_rows = 0;
         unsigned int n;
-
-        //m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&n, 4),
-        //                               boost::asio::transfer_all());
-        /*if (n == 0xFFFFFFFF)
-        {
-            segmentRead();
-            m_readLen += boost::asio::read(m_socket, boost::asio::buffer(&n, 4),
-                                           boost::asio::transfer_all());
-        }*/
         if (m_reader)
         {
-            m_readLen = doRead(boost::asio::buffer(&n, 4), boost::asio::transfer_all());
-            
+            m_readLen = s_io.readAll((char*)&n, 4);
             m_readLen += m_reader->onRead(n - 4, this);
         }else
         {
-            m_readLen = doRead(boost::asio::buffer(&m_readbuf[0],m_readbuf.size()),
-                    boost::asio::transfer_at_least(4));
+            m_readLen = s_io.readSome(&m_readbuf[0], m_readbuf.size(), 4);
             n = *((unsigned int*)(&m_readbuf[0]));
         }
-        if ((n > m_readLen) && (n < MAX_DATA_SIZE))
+
+        if (n > m_readLen)
         {
-            if (n > m_readbuf.size())
-                m_readbuf.resize(n);
-            m_readLen += doRead(boost::asio::buffer(&m_readbuf[m_readLen], n - m_readLen),
-                    boost::asio::transfer_all());
+            resizeReadBuffer(n);
+            m_readLen += s_io.readAll(&m_readbuf[m_readLen], n - m_readLen);
         }
         return &m_readbuf[0];
     }
@@ -272,105 +542,28 @@ protected:
         {
             m_optionalBuffes.insert(m_optionalBuffes.begin(),
                                     asio::buffer(sendBuffer(0), writeSize));
-            boost::asio::write(m_socket, m_optionalBuffes,
-                               boost::asio::transfer_all());
+            s_io.writeMultibuffer(m_optionalBuffes);
             m_optionalBuffes.clear();
         }
         else
-            boost::asio::write(m_socket, asio::buffer(sendBuffer(0), writeSize),
-                               boost::asio::transfer_all());
+            s_io.write(sendBuffer(0), writeSize, MSG_EOR);
     }
-
-public:
-    connectionImple(asio::ip::tcp::endpoint& ep)
-        : connectionBase(ep)/*, m_datalen(0)*/, m_socket(m_ios)
-    {
-#ifdef LINUX
-        sigfillset(&m_signmask);
-#endif
-    }
-
-    ~connectionImple()
-    {
-        try
-        {
-            m_ios.stop();
-            m_socket.close();
-        }
-        catch (...)
-        {
-        }
-    }
-
-    char* asyncWriteRead(unsigned int writeSize)
-    {
-        write(writeSize);
-        return read();
-    }
-
-    buffers* optionalBuffers() { return &m_optionalBuffes; }
-};
-
-
-/** Implementation of The TCP connection.
- */
-class tcpConnection : public connectionImple<asio::ip::tcp::socket>
-{
-
 public:
     tcpConnection(asio::ip::tcp::endpoint& ep)
-        : connectionImple<asio::ip::tcp::socket>(ep)
+        : connectionImple<asio::ip::tcp::socket>(ep),s_io(m_socket)
+#ifdef USE_CONNECT_TIMER
+        , m_timer(m_ios)
+#endif
     {
         m_readbuf.resize(READBUF_SIZE);
         m_sendbuf.resize(WRITEBUF_SIZE);
     }
-
-    void setupTimeouts()
-    {
-#if defined _WIN32
-        int32_t timeout = connections::timeout;
-        setsockopt(m_socket.native(), SOL_SOCKET, SO_RCVTIMEO,
-                   (const char*)&timeout, sizeof(timeout));
-        setsockopt(m_socket.native(), SOL_SOCKET, SO_SNDTIMEO,
-                   (const char*)&timeout, sizeof(timeout));
+};
+#ifdef __APPLE__
+    typedef tcpConnection<asio_tcp_io<asio::ip::tcp::socket> > asio_tcpConnection;
 #else
-        struct timeval timeout;
-        timeout.tv_usec = 0;
-        timeout.tv_sec = connections::timeout;
-        setsockopt(m_socket.native(), SOL_SOCKET, SO_RCVTIMEO, &timeout,
-                   sizeof(timeout));
-        setsockopt(m_socket.native(), SOL_SOCKET, SO_SNDTIMEO, &timeout,
-                   sizeof(timeout));
+    typedef tcpConnection<native_tcp_io<asio::ip::tcp::socket> > native_tcpConnection;
 #endif
-    }
-
-    void connect()
-    {
-        setupTimeouts();
-        m_socket.connect(m_ep);
-        m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
-        m_connected = true;
-    }
-};
-
-class exception : public std::exception
-{
-    int m_error;
-
-    std::string m_msg;
-
-public:
-    exception(int errorCode, const char* const& message)
-        : std::exception(), m_error(errorCode), m_msg(message)
-    {
-    }
-
-    ~exception() throw() {}
-
-    const char* what() const throw() { return m_msg.c_str(); }
-
-    int error() { return m_error; }
-};
 
 #ifdef USE_PIPE_CLIENT
 
@@ -387,6 +580,18 @@ class pipeConnection : public connectionImple<platform_stream>
     HANDLE m_recvEvent;
     HANDLE m_sendEvent;
     HANDLE m_mapFile;
+
+    unsigned int directRead(void* buf, unsigned int size)
+    {
+        assert(0);
+        return 0;
+    }
+    
+    void* directReadRemain(unsigned int size)
+    {
+        assert(0);
+        return NULL;
+    }
 
     bool queryFunction(unsigned int v)
     {
@@ -418,10 +623,9 @@ class pipeConnection : public connectionImple<platform_stream>
         throw exception(errorCode, buf);
     }
 
-    char* getUniqName(const char* name)
+    char* getUniqName(const char* name, char* buf)
     {
-        connectionBase::m_readbuf.resize(120);
-        char* p = &connectionBase::m_readbuf[0];
+        char* p = buf;
         DWORD processId = GetCurrentProcessId();
         __int64 clientid = (__int64) this;
         sprintf_s(p, 120, "%s_%u_%Lu", name, processId, clientid);
@@ -431,6 +635,7 @@ class pipeConnection : public connectionImple<platform_stream>
     void createKernelObjects(unsigned int shareMemSize)
     {
         char tmp[50];
+        char buf[120];
         SYSTEM_INFO SystemInfo;
         GetSystemInfo(&SystemInfo);
         int size = shareMemSize / SystemInfo.dwAllocationGranularity + 1;
@@ -439,7 +644,7 @@ class pipeConnection : public connectionImple<platform_stream>
         sprintf_s(tmp, 50, "Global\\%s", m_pipeName.c_str());
         m_mapFile =
             CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0,
-                              m_sendBufferSize * 2, getUniqName(tmp));
+                              m_sendBufferSize * 2, getUniqName(tmp, buf));
         if (m_mapFile == NULL)
             throwException("CreateFileMapping", CLIENT_ERROR_SHAREMEM_DENIED);
 
@@ -454,12 +659,12 @@ class pipeConnection : public connectionImple<platform_stream>
             throwException("MapViewOfFile W", CLIENT_ERROR_SHAREMEM_DENIED);
 
         sprintf_s(tmp, 50, "Global\\%sToClnt", m_pipeName.c_str());
-        m_recvEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, getUniqName(tmp));
+        m_recvEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, getUniqName(tmp, buf));
         if (m_recvEvent == NULL)
             throwException("OpenEvent Client", CLIENT_ERROR_SHAREMEM_DENIED);
 
         sprintf_s(tmp, 50, "Global\\%sToSrv", m_pipeName.c_str());
-        m_sendEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, getUniqName(tmp));
+        m_sendEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, getUniqName(tmp, buf));
         if (m_sendEvent == NULL)
             throwException("OpenEvent Server", CLIENT_ERROR_SHAREMEM_DENIED);
     }
@@ -475,7 +680,7 @@ class pipeConnection : public connectionImple<platform_stream>
 
     char* read()
     {
-        while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, connections::timeout))
+        while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, connections::netTimeout))
         {
             DWORD n = 0;
             BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
@@ -486,33 +691,29 @@ class pipeConnection : public connectionImple<platform_stream>
         return m_readbuf_p;
     }
 
-public:
-    pipeConnection(asio::ip::tcp::endpoint& ep, const std::string& pipeName)
-        : connectionImple<platform_stream>(ep), m_pipeName(pipeName),
-          m_mapFile(NULL), m_recvEvent(NULL), m_sendEvent(NULL),
-          m_writebuf_p(NULL), m_readbuf_p(NULL), m_sendBufferSize(0)
-
-    {
-    }
-
     ~pipeConnection()
     {
+       cleanup();
+    }
+
+    void cleanup()
+    {
         if (m_connected)
-		{
-			if (m_writebuf_p)
-				memset(m_writebuf_p, 0, sizeof(unsigned int));
-			DWORD n = 0;
-			BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
+        {
+            if (m_writebuf_p)
+                memset(m_writebuf_p, 0, sizeof(unsigned int));
+            DWORD n = 0;
+            BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                             NULL, NULL, NULL, 0);
             if(m_sendEvent && ret && n)
             {
-				SetEvent(m_sendEvent);
+                SetEvent(m_sendEvent);
                 //Wait for server side close connection
                 while (WAIT_TIMEOUT == 
-                    WaitForSingleObject(m_recvEvent, connections::timeout))
+                    WaitForSingleObject(m_recvEvent, connections::connectTimeout))
                     ;
             }
-		}
+        }
         if (m_recvEvent)
             CloseHandle(m_recvEvent);
         if (m_sendEvent)
@@ -523,6 +724,12 @@ public:
             UnmapViewOfFile(m_readbuf_p);
         if (m_mapFile)
             CloseHandle(m_mapFile);
+        m_sendEvent = NULL;
+        m_recvEvent = NULL;
+        m_writebuf_p = NULL;
+        m_readbuf_p = NULL;
+        m_mapFile = NULL;
+        connectionImple<platform_stream>::cleanup();
     }
 
     void connect()
@@ -551,8 +758,8 @@ public:
         // send processId and clientid;
         DWORD processId = GetCurrentProcessId();
         int size = 16;
-        connectionBase::m_readbuf.resize(256);
-        char* p = &connectionBase::m_readbuf[0];
+        char buf[256];
+        char* p = buf;
         memcpy(p, &size, sizeof(int));
         memcpy(p + 4, &processId, sizeof(DWORD));
         __int64 clientid = (__int64) this;
@@ -572,6 +779,15 @@ public:
     buffers* optionalBuffers() { return NULL; } // not support
 
     void setReadBufferSizeIf(size_t size) {} // not support
+
+public:
+    pipeConnection(asio::ip::tcp::endpoint& ep, const std::string& pipeName)
+        : connectionImple<platform_stream>(ep), m_pipeName(pipeName),
+          m_mapFile(NULL), m_recvEvent(NULL), m_sendEvent(NULL),
+          m_writebuf_p(NULL), m_readbuf_p(NULL), m_sendBufferSize(0)
+
+    {
+    }
 };
 #endif // NOT WIN32
 

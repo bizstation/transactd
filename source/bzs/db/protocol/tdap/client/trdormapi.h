@@ -495,6 +495,25 @@ public:
     {
         return q.getDirection();
     }
+
+    template <class Any_Map_type>
+    activeObject& readMapMore(Any_Map_type& map)
+    {
+        mraResetter mras(m_tb);
+        map.init(m_option, m_fdi, m_map, m_tb, &m_alias);
+        m_tb->find(table::findContinue);
+        if (m_tb->lastFindDirection() == table::findForword)
+        {
+            findIterator itsf(*m_tb);
+            for_each(itsf, map);
+        }
+        else
+        {
+            findRvIterator itsf(*m_tb);
+            for_each(itsf, map);
+        }
+        return *this;
+    }
  
     template <class Any_Map_type , class Query>
     activeObject& readMap(Any_Map_type& map, Query& q)
@@ -520,7 +539,7 @@ public:
         return *this;
     }
 
-   template <class Any_Map_type, class Query>
+    template <class Any_Map_type, class Query>
     activeObject& readMap(Any_Map_type& map, Query& q, validationFunc func)
     {
         mraResetter mras(m_tb);
@@ -551,6 +570,19 @@ public:
     {
         mdlsHandler<MAP, collection_vec_type> map(mdls);
         return readMap(map, q, func);
+    }
+
+    activeObject& readMore(collection_vec_type& mdls)
+    {
+        mdlsHandler<MAP, collection_vec_type> map(mdls);
+        return readMapMore(map);
+    }
+
+    template <class Container>
+    activeObject& readMore(Container& mdls)
+    {
+        typename MAP::collection_orm_typename map(mdls);
+        return readMapMore(map);
     }
 
     template <class Query> 

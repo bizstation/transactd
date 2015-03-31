@@ -88,7 +88,9 @@ public:
         fcount,
         favg,
         fmin,
-        fmax
+        fmax,
+        ffirst,
+        flast
     };
     groupByStatement();
     ~groupByStatement();
@@ -103,7 +105,7 @@ public:
     static groupByStatement* create();
 };
 
-#define MAX_FUNCTION_SIZE (int) groupByStatement::fmax + 1
+#define MAX_FUNCTION_SIZE (int) groupByStatement::flast + 1
 
 class DLLLIBSTMT matchByStatement : public recordsetQuery, public executable
 {

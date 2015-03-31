@@ -22,6 +22,8 @@
 
 void CFieldDefs::FinalRelease()
 {
+    if (m_fieldDefObj)
+        m_fieldDefObj->Release();
 }
 
 short CFieldDefs::GetFieldNum(VARIANT* Index)
@@ -43,24 +45,20 @@ STDMETHODIMP CFieldDefs::IndexByName(BSTR Name, short* retVal)
 STDMETHODIMP CFieldDefs::get_FieldDef(VARIANT Name, IFieldDef** retVal)
 {
     short index = GetFieldNum(&Name);
-    if (index >= 0)
-    {
-        if (m_fieldDefObj == NULL)
-        {
-            CComObject<CFieldDef>::CreateInstance(&m_fieldDefObj);
-        }
-        if (m_fieldDefObj)
-        {
-            m_fieldDefObj->m_fielddef = &((*m_fds)[index]);
-
-            IFieldDef* fd;
-            m_fieldDefObj->QueryInterface(IID_IFieldDef, (void**)&fd);
-            _ASSERTE(fd);
-            *retVal = fd;
-        }
-    }
-    else
+    if (index < 0)
         return Error("Invalid index", IID_IFieldDefs);
+    if (m_fieldDefObj == NULL)
+    {
+        CComObject<CFieldDef>::CreateInstance(&m_fieldDefObj);
+        if (!m_fieldDefObj)
+            return Error("CreateInstance FieldDef", IID_IFieldDefs);
+        m_fieldDefObj->AddRef();
+    }
+    m_fieldDefObj->m_fielddef = &((*m_fds)[index]);
+    IFieldDef* fd;
+    m_fieldDefObj->QueryInterface(IID_IFieldDef, (void**)&fd);
+    _ASSERTE(fd);
+    *retVal = fd;
     return S_OK;
 }
 

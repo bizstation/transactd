@@ -78,8 +78,10 @@ char16_t* _strlwr16(char16_t* s);
 size_t strlen16(const char16_t* src);
 int wcsnicmp16(const char16_t* sl, const char16_t* sr, size_t n);
 int wcsncmp16(const char16_t* sl, const char16_t* sr, size_t n);
+int wmemcmp16(const char16_t* sl, const char16_t* sr, size_t n);
 char16_t* wmemset16(char16_t* p, char16_t c, size_t n);
 char16_t* wmemcpy(char16_t* dest, const char16_t* src, size_t count);
+
 
 /* operating system */
 #ifndef _TCHAR
@@ -143,8 +145,9 @@ typedef unsigned __int32 char32_t; // 32bit
 #define wcsnicmp16(A, B, C)                                                    \
     _wcsnicmp((const wchar_t*)(A), (const wchar_t*)(B), C)
 #define wcsncmp16(A, B, C) wcsncmp((const wchar_t*)(A), (const wchar_t*)(B), C)
+#define wmemcmp16(A, B, C) wmemcmp((const wchar_t*)(A), (const wchar_t*)(B), C)
 #define wmemset16 wmemset
-#define strlen16 wcslen
+#define strlen16(A) wcslen((const wchar_t*)(A))
 
 /* operating system */
 #define PSEPARATOR _T("\\")

@@ -184,6 +184,12 @@ PACKAGE ushort_td
 /* Is field type string ? */
 PACKAGE bool isStringType(uchar_td type);
 
+/** @cond INTERNAL */
+#define PAD_CHAR_OPTION_SAVED   1
+#define USE_PAD_CHAR            2
+#define TRIM_PAD_CHAR           4
+/** @endcond */
+
 /* Mark of ** that BizStation Corp internal use only.
  */
 template <int N> struct fielddef_t
@@ -225,13 +231,13 @@ public:
 
 protected:
     uchar_td m_charsetIndex; // charctor set index of this field data
-    uint_td m_schemaCodePage;
-
+    ushort_td m_schemaCodePage;
+    ushort_td m_padCharOptions;
 public:
     FLAGS enableFlags; // ** enable flags. see below
 
 private:
-    inline void setSchemaCodePage(uint_td v) { m_schemaCodePage = v; };
+    inline void setSchemaCodePage(uint_td v) { m_schemaCodePage = (ushort_td)v; };
     friend class client::dbdef;
 };
 
@@ -370,6 +376,8 @@ public:
         if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
             type == ft_lstring)
             return len < 256 ? 1 : 2;
+        else if (type == ft_lvar)
+            return 2;
         return 0;
     }
 
@@ -449,6 +457,33 @@ public:
             return blobDataLen(ptr);
         return dataLen(ptr);
     }
+
+	inline void setPadCharSettings(bool set, bool trim)
+    {
+        m_padCharOptions = 0;
+        m_padCharOptions |= PAD_CHAR_OPTION_SAVED;
+        if ((type == ft_mychar) || (type == ft_mywchar))
+        {
+            m_padCharOptions |= USE_PAD_CHAR;
+            if (trim)
+                m_padCharOptions |= TRIM_PAD_CHAR;
+        }    // For compatibility with conventional.
+        else if ((type == ft_string) || (type == ft_wstring))
+        {
+             if (set)
+                m_padCharOptions |= USE_PAD_CHAR;
+             if (trim)
+                m_padCharOptions |= TRIM_PAD_CHAR;
+        }
+    }
+	
+	/* When ft_string or ft_wstring, fill by pad char at write. */
+    bool usePadChar() const {return (m_padCharOptions & USE_PAD_CHAR) == USE_PAD_CHAR;}
+
+    /* When ft_string or ft_wstring or ft_mychar or  ft_mywchar,
+       remove pad char at read.*/
+    bool trimPadChar() const {return (m_padCharOptions & TRIM_PAD_CHAR) == TRIM_PAD_CHAR;}
+
 
 /** @cond INTERNAL */
     /* copy key data for send to mysql
@@ -534,6 +569,12 @@ public:
         return *data + size;
     }
 
+    /* copy blob data for recordset 
+
+      @param blobBlock copy to adddres
+      @return new copy to address
+        
+    */
     inline  unsigned char* setBlobFieldPointer(uchar_td* dest, const blobHeader* hd,
                                     unsigned char* blobBlock, int fieldNum) const
     {
@@ -552,6 +593,30 @@ public:
             ++hd->curRow;
         return blobBlock + size;
     }
+
+    inline void setPadCharDefaultSettings()
+    {
+        if (!padCharOptionSaved())
+        {
+            // For compatibility with conventional.
+            if ((type == ft_string) || (type == ft_wstring) ||
+                (type == ft_mychar) || (type == ft_mywchar))
+            {
+                m_padCharOptions |= USE_PAD_CHAR;
+                m_padCharOptions |= TRIM_PAD_CHAR;
+            }
+        }
+        else if ((type == ft_mychar) || (type == ft_mywchar))
+            m_padCharOptions |= USE_PAD_CHAR;
+    }
+
+    /* PadChar options are saved at schema.
+        This is for compatibility with conventional.*/
+    bool padCharOptionSaved() const
+    {
+        return (m_padCharOptions & PAD_CHAR_OPTION_SAVED) == PAD_CHAR_OPTION_SAVED;
+    }
+
 /** @endcond */
 };
 
@@ -667,7 +732,7 @@ public:
     int autoIncExSpace;
     uchar_td iconIndex2;
     uchar_td iconIndex3;
-    uint_td schemaCodePage; // Code page of this schema stirng data.
+    uint_td schemaCodePage; // Code page of this schema string data.
 
 private:
     char formatVersion;

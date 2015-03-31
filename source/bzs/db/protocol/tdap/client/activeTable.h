@@ -139,7 +139,7 @@ public:
     activeTable& read(recordset& rs, queryBase& q, validationFunc func);
     activeTable& read(recordset& rs, pq_handle& q);
     activeTable& read(recordset& rs, pq_handle& q, validationFunc func);
-
+    activeTable& readMore(recordset& rs);
     /** @cond INTERNAL */
     template<class T0>
     activeTable& read(recordset& rs, pq_handle& q, const T0 v0)

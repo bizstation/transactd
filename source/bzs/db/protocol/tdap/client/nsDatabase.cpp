@@ -31,6 +31,7 @@
 typedef void* HANDLE;
 typedef void* HINSTANCE;
 #endif
+#include <bzs/db/protocol/tdap/tdapRequest.h>
 
 #pragma package(smart_init)
 
@@ -762,18 +763,95 @@ bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
 
 bool nsdatabase::disconnect(const _TCHAR* URI)
 {
-    if (isTransactdUri(URI))
+    if (!URI || (URI[0] == 0x00) || isTransactdUri(URI))
         if (!setUseTransactd())
             return false;
     uint_td datalen = 0;
-    char uri_a[MAX_PATH];
-    const char* p = toServerUri(uri_a, MAX_PATH, URI, isUseTransactd());
-    m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, (void*)p,
-                         (keylen_td)(strlen(p) + 1), LG_SUBOP_DISCONNECT,
+
+    //Transactd not use uri.
+    m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, (void*)URI,
+                         (keylen_td)(_tcslen(URI) + 1), LG_SUBOP_DISCONNECT,
                          clientID());
     if (m_stat)
         return false;
     return true;
+}
+
+
+bool nsdatabase::disconnectForReconnectTest()
+{
+    //Transactd only
+    if (!isUseTransactd())
+        return false;
+
+    uint_td datalen = 0;
+    m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, NULL,
+                         0, LG_SUBOP_DISCONNECT_EX,
+                         clientID());
+    if (m_stat)
+        return false;
+    return true;
+}
+
+/* TD_RECONNECT data buffer structure
+   
+   1 byte keynum
+   1 byte bookmark size
+   n byte bookmark
+
+*/
+void nsdatabase::doReconnect(nstable* tb)
+{
+    uint_td datalen = 0;
+    char uri_a[MAX_PATH] = { 0x00 };
+    tb->abortBulkInsert();
+    datalen = tb->buflen();
+    tdap::posblk* pb = (tdap::posblk*)tb->posblk(); 
+    char* databuf = new char[datalen];
+    databuf[0] = tb->keyNum();
+    memcpy(databuf + 1, &pb->bookmarkLen, pb->bookmarkLen + 1);
+    const char* p = toServerUri(uri_a, MAX_PATH, tb->uri(), true);
+    short offset = (pb->lock) ? ROW_LOCK_X : 0;
+    m_stat = m_btrcallid(TD_RECONNECT + offset, pb, databuf, &datalen, (void*)p,
+                    (keylen_td)(strlen(p) + 1), tb->mode(), clientID());
+    delete [] databuf;
+}
+
+bool nsdatabase::reconnect()
+{
+    //Transactd only
+    if (!isUseTransactd())
+        return false;
+    m_nsimpl->tranCount = 0;
+    m_nsimpl->snapShotCount = 0;
+
+   
+    uint_td datalen = 0;
+    char uri_a[MAX_PATH] = { 0x00 };
+    const char* p = toServerUri(uri_a, MAX_PATH, m_nsimpl->bdfPath, true);
+    m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, (void*)p,
+                         (keylen_td)(strlen(p) + 1), 
+                         LG_SUBOP_RECONNECT, clientID());
+    if (m_stat) return false;
+
+    //Whole table, restore position.
+    nstable* lockedTable = NULL; //This is only one.
+    for (int i=0;i<m_nsimpl->tableCount;++i)
+    {
+        nstable* tb = m_nsimpl->tables[i];
+        if (tb && tb->isOpen())
+        {
+            tdap::posblk* pb = (tdap::posblk*)tb->posblk();
+            if (pb->lock)
+                lockedTable = tb;
+            else
+                doReconnect(tb);
+            if (m_stat != 0) break;
+        }
+    }
+    if (lockedTable)
+        doReconnect(lockedTable);
+    return (m_stat == 0);
 }
 
 bool nsdatabase::trnsactionFlushWaitStatus()

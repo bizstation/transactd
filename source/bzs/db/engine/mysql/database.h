@@ -233,7 +233,7 @@ public:
         for (int i = 0; i < m_keyCount; i++)
             if (strstr(m_key[i].name, "key") && m_key[i].name[3] == num + '0')
                 return m_convNum = i;
-        return m_convNum = num; // If not found, a value as it is is returned.
+        return m_convNum = num; // If not found, a value as it is returned.
     }
 };
 
@@ -264,6 +264,10 @@ class table : private boost::noncopyable
     keynumConvert m_keyconv;
     IblobBuffer* m_blobBuffer;
     std::vector<Field*> m_nonKeySegNullFields;
+    int m_readCount;
+    int m_updCount;
+    int m_delCount;
+    int m_insCount;
     char m_keyNum;
     struct
     {
@@ -288,7 +292,6 @@ class table : private boost::noncopyable
                      int type, bool noBookmark);
 
     bool keyCheckForPercent();
-    inline bool keynumCheck(char num);
     void preBuildPercent(uchar* first, uchar* last);
     void seekPos(const uchar* pos);
     int setKeyNullFlags();
@@ -311,10 +314,17 @@ class table : private boost::noncopyable
     
     inline bool setCursorStaus()
     {
-        m_validCursor = (m_stat == 0);
-        m_cursor = (m_stat == 0) ? true : 
-                       ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
+        if (m_stat == 0)
+        {
+            ++m_readCount;
+            m_validCursor = true;
+            m_cursor = true;
+        }else
+        {
+            m_validCursor = false;
+            m_cursor = ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
                         (m_stat == HA_ERR_LOCK_DEADLOCK)) ? m_cursor : false;
+        }
         return m_validCursor;
     }
     
@@ -357,6 +367,8 @@ public:
     }
 
     inline short mode() const { return m_mode; }
+
+    inline bool cursor() const {return m_cursor;}
 
     inline bool isReadOnly() const 
     {
@@ -442,6 +454,11 @@ public:
     inline char keyNumByMakeOrder(char num)
     {
         return m_keyconv.keyNumByMakeOrder(num);
+    }
+
+    inline bool keynumCheck(char num)
+    {
+        return ((num >= 0) && (num < (short)m_table->s->keys));
     }
 
     bool setKeyNum(char num, bool sorted = true);
@@ -621,6 +638,11 @@ public:
     /** bookmark length */
     uint posPtrLen() const;
 
+    inline uint posPtrLenRaw() const
+    {
+        return m_table->file->ref_length;
+    }
+
     /** bookmark */
     const uchar* position(bool raw = false);
     const char* keyName(char keyNum);
@@ -684,12 +706,20 @@ public:
         m_delayAutoCommit = false;
     }
 
+    inline bool isDelayAutoCommit() const
+    {
+        return m_delayAutoCommit;
+    }
+
     inline short unlock()
     {
         if (m_db.inSnapshot() || m_db.inTransaction())
         {
             if (m_validCursor)
+            {
                 m_table->file->unlock_row();
+                m_nounlock = true;
+            }
             else
                 return 1;
         }else if (m_db.m_inAutoTransaction == this)

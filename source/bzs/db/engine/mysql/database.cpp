@@ -53,6 +53,7 @@ using namespace std;
 #error "MODE_READ_EXCLUSIVE != TD_OPEN_READONLY_EXCLUSIVE"
 #endif
 
+
 unsigned int hash(const char* s, size_t len)
 {
     unsigned int h = 0;
@@ -189,7 +190,7 @@ database::database(const char* name, short cid)
       m_inTransaction(0), m_inSnapshot(0), m_stat(0), m_usingExclusive(false),
       m_inAutoTransaction(NULL), m_trnType(0), m_cid(cid), m_privilege(0xFFFF)
 {
-    m_thd->security_ctx->skip_grants();
+	cp_security_ctx(m_thd)->skip_grants();
 }
 
 #ifdef _MSC_VER
@@ -199,7 +200,7 @@ database::database(const char* name, short cid)
 database::~database()
 {
     use();
-    unUseTables(false);
+    unUseTables(true/*rollback*/);
     closeForReopen();
     m_tables.clear(); // It clears ahead of the destructor of m_trn.
     deleteThdForThread(m_thd);
@@ -260,8 +261,8 @@ unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
 // true ok false fail
 bool database::setGrant(const char* host, const char* user)
 {
-    bool ret =  (acl_getroot(m_thd->security_ctx, my_strdup(user, MYF(0)), 
-           my_strdup(host, MYF(0)), my_strdup(host, MYF(0)), (char*)m_dbname.c_str())) == false;
+	bool ret = (acl_getroot(cp_security_ctx(m_thd), cp_strdup(user, MYF(0)),
+		cp_strdup(host, MYF(0)), cp_strdup(host, MYF(0)), (char*)m_dbname.c_str())) == false;
     if (ret)
         check_access(m_thd, SELECT_ACL, m_dbname.c_str(), &m_privilege, NULL, false, true);
                 
@@ -304,7 +305,7 @@ void database::use() const
 
 void database::prebuildIsoratinMode()
 {
-    cp_thd_set_read_only(m_thd);
+    cp_thd_set_read_only(m_thd, m_inSnapshot != 0);
     if (m_inTransaction)
     {
         m_thd->tx_isolation = m_iso;
@@ -364,7 +365,7 @@ void database::prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* l
     m_thd->lex->sql_command = cmd;
 
     if ((lock_type >= TL_WRITE) &&
-             (tb->isReadOnly() || cp_thd_get_read_only(m_thd)))
+             (tb->isReadOnly() || cp_thd_get_global_read_only(m_thd)))
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ACCESS_DENIED, "Access denined.");
 
     if ((lock_type >= TL_WRITE) &&
@@ -383,11 +384,28 @@ void database::changeIntentionLock(table* tb, thr_lock_type lock_type)
         tb->m_table->file->ha_external_lock(m_thd, F_UNLCK);
         if (lock_type == TL_READ)
             tb->m_table->file->init_table_handle_for_HANDLER();//prebuilt->select_lock_type = LOCK_NONE;
-
+        m_thd->in_lock_tables = 1;
         tb->m_table->file->ha_external_lock(m_thd, 
                 (lock_type == TL_WRITE) ? F_WRLCK : F_RDLCK);
+        
+        if  (m_iso == ISO_READ_COMMITTED)
+        {
+            if (lock_type == TL_READ)
+            {
+                THR_LOCK_DATA* to[2] = {NULL};
+                tb->m_table->file->store_lock(m_thd, to, lock_type);
+            }
+        }
+        // For call build_tmplate()
+        tb->m_table->file->ha_index_or_rnd_end();
+        if (tb->keyNum() >= 0)
+            tb->m_table->file->ha_index_init(tb->keyNum(), true);
+        else
+            tb->m_table->file->ha_rnd_init(true);
+            
         m_thd->variables.option_bits &= ~(OPTION_NOT_AUTOCOMMIT | OPTION_BEGIN);
         tb->m_validCursor = false;
+        m_thd->in_lock_tables = 0;
     }
 }
 
@@ -446,7 +464,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
 
     // Change to shared lock is user tranasction only.
     if (lck && lck->read && lck->lock && !m_inTransaction)
-            THROW_BZS_ERROR_WITH_CODEMSG(STATUS_INVALID_LOCKTYPE,
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_INVALID_LOCKTYPE,
                                          "Invalid lock type."); 
     
     // in-transaction or in-snapshort or exclusive or inAutoTransaction(lock delay)
@@ -456,7 +474,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
         if (tb->m_table == NULL)
             THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                          "Invalid table id.");
-        if (m_inTransaction && (m_iso >= ISO_REPEATABLE_READ))
+        if (m_inTransaction && (m_iso >= ISO_READ_COMMITTED))
             changeIntentionLock(tb, (lck && lck->lock && lck->read) ? TL_READ : TL_WRITE);
 
         if (tb->isExclusveMode())
@@ -570,16 +588,13 @@ void database::unUseTables(bool rollback)
     }else
         ret = unlockTables(needUnlock, m_thd, rollback, NULL);
 
-    if (ret)
+    for (int i = 0; i < (int)m_tables.size(); i++)
     {
-        for (int i = 0; i < (int)m_tables.size(); i++)
-        {
-            if (m_tables[i])
-                m_tables[i]->resetTransctionInfo(m_thd);
-        }
-        DEBUG_WRITELOG("UNLOCK TABLES \n")
+        if (m_tables[i])
+            m_tables[i]->resetTransctionInfo(m_thd);
     }
-    else
+
+    if (!ret)
     {
         if (m_thd->is_error())
         {
@@ -590,6 +605,10 @@ void database::unUseTables(bool rollback)
                 m_stat = m_thd->cp_get_sql_error();
             THROW_BZS_ERROR_WITH_CODEMSG(m_stat, "Transaction commit error.");
         }
+    }else
+    {
+        ;
+        DEBUG_WRITELOG("UNLOCK TABLES \n")
     }
 }
 
@@ -612,6 +631,14 @@ bool database::beginTrn(short type, enum_tx_isolation iso)
         ret = true;
     }
     ++m_inTransaction;
+    if (m_thd->variables.sql_log_bin && (m_inTransaction==1))
+    {
+        for (int i = 0; i < (int)m_tables.size(); ++i)
+        {
+            if (m_tables[i])
+                useTable(i, SQLCOM_SELECT, NULL);
+        }
+    }    
     return ret;
 }
 
@@ -674,24 +701,27 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
     TABLE_LIST tables;
     m_thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
     tables.init_one_table(m_dbname.c_str(), m_dbname.size(), name.c_str(),
-                          name.size(), name.c_str(), TL_READ);
+		name.size(), name.c_str(), TL_READ);
     if(!(m_privilege & SELECT_ACL) &&
         (check_grant(m_thd, SELECT_ACL, &tables, FALSE, 1, true)))
     {
         m_stat = STATUS_ACCESS_DENIED;
         return NULL;
     }
-    tables.mdl_request.set_type(MDL_SHARED_READ);
+	cp_set_mdl_request_types(tables, mode);
 
-    Open_table_context ot_act(m_thd, MYSQL_OPEN_GET_NEW_TABLE);
+    Open_table_context ot_act(m_thd, OPEN_TABLE_FLAG_TYPE);
     m_thd->cp_set_overwrite_status(true);
-    if (cp_open_table(m_thd, &tables, &ot_act))
+	if (cp_open_table(m_thd, &tables, &ot_act))
     {
         m_stat = STATUS_TABLE_NOTOPEN;
         if (ER_LOCK_WAIT_TIMEOUT == m_thd->cp_get_sql_error())
             m_stat = STATUS_CANNOT_LOCK_TABLE;
+        else
+            cp_open_error_release(m_thd, tables);
         return NULL;
     }
+	cp_set_transaction_duration_for_all_locks(m_thd);
     
     // Check owner name
     if (ownerName && ownerName[0])
@@ -724,6 +754,11 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
 table* database::openTable(const std::string& name, short mode,
                            const char* ownerName)
 {
+    if (m_thd->variables.sql_log_bin && m_inTransaction)
+    {
+        m_stat = STATUS_ALREADY_INTRANSACTION;
+        return NULL;
+    }
     TABLE* t = doOpenTable(name, mode, ownerName);
     if (t)
     {
@@ -811,13 +846,11 @@ void database::closeForReopen()
         if (m_tables[i] && (m_tables[i]->m_table != NULL))
             m_tables[i]->resetInternalTable(NULL);
     }
-
     trans_commit_stmt(m_thd);
     if (m_thd->mdl_context.has_locks())
         close_thread_tables(m_thd);
     m_thd->mdl_context.release_transactional_locks();
     m_usingExclusive = 0;
-    // It is certainly after close_thread_tables.
 }
 
 void database::reopen()
@@ -879,6 +912,7 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
       m_keybuf(new unsigned char[MAX_KEYLEN]),
       m_nonNccKeybuf(new unsigned char[MAX_KEYLEN]), m_stat(0),
       m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
+      m_readCount(0), m_updCount(0), m_delCount(0), m_insCount(0),
       m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
       m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false),
       m_delayAutoCommit(false),m_forceConsistentRead(false)
@@ -953,6 +987,7 @@ void table::resetTransctionInfo(THD* thd)
         m_locked = false;
     m_validCursor = false;
     m_nounlock = false;
+    m_readCount = m_updCount = m_delCount = m_insCount = 0;
 }
 
 void table::resetInternalTable(TABLE* table)
@@ -1397,11 +1432,6 @@ ushort table::fieldPackCopy(unsigned char* dest, short fieldNum)
 #endif
         memcpy(dest, fd->ptr, len);
     return (ushort)len;
-}
-
-inline bool table::keynumCheck(char num)
-{
-    return ((num >= 0) && (num < (short)m_table->s->keys));
 }
 
 inline void table::tryConsistentRead(bool noConsistent)
@@ -1903,7 +1933,6 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 // private
 void table::seekPos(const uchar* rawPos)
 {
-    
     seekKey(HA_READ_KEY_OR_NEXT, keymap());
     if (m_keyNum == (int)m_table->s->primary_key)
         return;
@@ -1926,9 +1955,7 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
     setNonKey();
     unlockRow(m_delayAutoCommit);
     m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
-    m_cursor = (m_stat == 0) ? true : 
-                       ((m_stat == HA_ERR_LOCK_WAIT_TIMEOUT) ||
-                        (m_stat == HA_ERR_LOCK_DEADLOCK)) ? m_cursor : false;
+    setCursorStaus();
     if ((keyNum == -1) || (keyNum == -64) || (keyNum == -2))
         return;
     if (m_stat == 0)
@@ -1971,19 +1998,25 @@ uint table::posPtrLen() const
 
 ha_rows table::recordCount(bool estimate)
 {
-    if ((m_table->file->ha_table_flags() &
-         (HA_HAS_RECORDS | HA_STATS_RECORDS_IS_EXACT)) != 0)
-        return m_table->file->records();
+	ha_rows rows = 0;
+	m_stat = 0;
+	if ((m_table->file->ha_table_flags() &
+		(HA_HAS_RECORDS | HA_STATS_RECORDS_IS_EXACT)) != 0)
+	{
+		m_stat = cp_record_count(m_table->file, &rows);
+		return rows;
+	}
     if (estimate)
     {   /* Since the answer of innodb is random, 1 returns also 0.
          Since it is important, in the case of 1
          , whether there is nothing or it is scan and investigate.
          info() is update statistics variables */ 
         m_table->file->info(HA_STATUS_VARIABLE | HA_STATUS_NO_LOCK);
-        ha_rows rows = m_table->file->records();
-        if (rows > 1)
+		m_stat = cp_record_count(m_table->file, &rows);
+		if (m_stat || rows > 1)
             return rows;
     }
+	
     uint n = 0;
     fieldBitmap fb(m_table);
     char keynum = m_keyNum;
@@ -1997,7 +2030,8 @@ ha_rows table::recordCount(bool estimate)
         while (m_stat == 0)
         {
             m_table->file->unlock_row();
-            n++;
+            ++n;
+            ++m_readCount;
             m_stat = m_table->file->ha_index_next(m_table->record[0]);
         }
         fb.setKeyRead(false);
@@ -2017,6 +2051,7 @@ ha_rows table::recordCount(bool estimate)
         {
             m_table->file->unlock_row();
             ++n;
+            ++m_readCount;
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         }
     }
@@ -2143,6 +2178,7 @@ __int64 table::insert(bool ncc)
 
     if (m_stat == 0)
     {
+        ++m_insCount;
         if (!ncc) // innodb default is ncc=-1.
             m_nonNcc = true;
         else if (!m_bulkInserting)
@@ -2253,7 +2289,11 @@ void table::update(bool ncc)
                 }
             }
             /* Do not change to m_changed = false */
-            if (m_stat == 0) m_changed = true;
+            if (m_stat == 0)
+            {
+                ++m_updCount;
+                m_changed = true;
+            }
             m_nounlock = setCursorStaus();
         }
     }
@@ -2269,7 +2309,11 @@ void table::del()
     {
         m_stat = m_table->file->ha_delete_row(m_table->record[0]);
         /* Do not change to m_changed = false */
-        if (m_stat == 0) m_changed = true;
+        if (m_stat == 0)
+        {
+            ++m_delCount;
+            m_changed = true;
+        }
     }
 
     //No cursor changed
@@ -2357,7 +2401,7 @@ const char* table::valStr(int fieldNum, int& size)
         return "";
     else
         fd->val_str(&m_str, &m_str);
-    size = m_str.length();
+    size = (int)m_str.length();
     return m_str.c_ptr();
 }
 

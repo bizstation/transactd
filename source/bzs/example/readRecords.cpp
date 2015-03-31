@@ -98,6 +98,19 @@ bool readUsers(table* tb, std::vector<user*>& users)
  */
 bool openDatabase(database* db, const _TCHAR* uri)
 {
+    /******************************************************
+     !!!  Important   !!!
+     When using a multi-threaded, 
+     please request a new connection for each database. 
+    *******************************************************/
+    // When using a multi-threaded, set to true.
+    bool newConnection = false; 
+    if (!db->connect(uri, newConnection))
+    {
+        showError(_T("connect daatabase"), NULL, db->stat());
+        return false;
+    }
+
     db->open(uri, TYPE_SCHEMA_BDF);
     if (db->stat() != 0)
     {

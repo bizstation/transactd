@@ -319,7 +319,7 @@ public:
     char* ptr() { return m_buf.writeBuffer(); }
 };
 
-class connection : public iconnection, private noncopyable
+class connection : public iconnection, private boost::noncopyable
 {
     mutable io_service m_ios;
     static mutex m_mutex;
@@ -483,7 +483,7 @@ unsigned int connection::m_shareMemSize;
 //		worker
 // ---------------------------------------------------------------------------
 
-class worker : private noncopyable
+class worker : private boost::noncopyable
 {
 
     static mutex m_mutex;

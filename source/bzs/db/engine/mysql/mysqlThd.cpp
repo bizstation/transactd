@@ -25,7 +25,13 @@ unsigned int g_openDatabases = 0;
 
 extern unsigned int g_lock_wait_timeout;
 extern char* g_transaction_isolation;
-static unsigned int transaction_isolation_cache = -1;
+static int transaction_isolation_cache = -1;
+
+#if((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
+boost::mutex g_db_count_mutex;
+LEX_CSTRING NULL_CSTR = { NULL, 0 };
+#endif
+
 
 #ifdef USETLS
 tls_key g_tlsiID;
@@ -101,7 +107,7 @@ void waitForServerStart()
     mysql_mutex_unlock(&LOCK_server_started);
 }
 
-unsigned int getTransactdIsolation()
+int getTransactdIsolation()
 {
     if (transaction_isolation_cache != -1) 
         return transaction_isolation_cache;
@@ -125,22 +131,19 @@ THD* buildTHD()
         waitForServerStart();
 
     THD* thd = new THD();
-    mysql_mutex_lock(&LOCK_thread_count);
-    thd->variables.pseudo_thread_id = thread_id++;
-    ++g_openDatabases;
-    cp_add_global_thread(thd);
-    mysql_mutex_unlock(&LOCK_thread_count);
-    thd->thread_id = thd->variables.pseudo_thread_id;
+    
+    cp_set_new_thread_id(thd);
+    
     thd->thread_stack = reinterpret_cast<char*>(&thd);
     thd->store_globals();
     assert(thd->mysys_var);
-    set_mysys_var(thd->mysys_var);
+	cp_set_mysys_var(thd->mysys_var);
     thd->system_thread = NON_SYSTEM_THREAD;
     const NET v = { 0 };
     thd->net = v;
 
     thd->variables.option_bits |= OPTION_BIN_LOG;
-    thd->variables.tx_isolation = getTransactdIsolation();
+    thd->variables.tx_isolation = (ulong)getTransactdIsolation();
 
     thd->clear_error();
     char tmp[256];
@@ -148,8 +151,8 @@ THD* buildTHD()
               g_lock_wait_timeout);
     dispatch_command(COM_QUERY, thd, tmp, (uint)strlen(tmp));
 
-    td_free(thd->db);
-    thd->db = td_strdup("bizstation", MYF(0));
+	
+	cp_set_db(thd, td_strdup("bizstation", MYF(0)));
     if (thd->variables.sql_log_bin)
         thd->set_current_stmt_binlog_format_row();
     return thd;
@@ -157,10 +160,10 @@ THD* buildTHD()
 
 THD* attachThd(THD* thd)
 {
-    THD* curThd = my_pthread_getspecific(THD*, THR_THD);
+	THD* curThd = cp_thread_get_THR_THD();
 
-    if (!thd)
-        my_pthread_setspecific_ptr(THR_THD, thd);
+	if (!thd)
+		cp_thread_set_THR_THD(thd);
     else
     {
         initThread(thd);
@@ -168,7 +171,7 @@ THD* attachThd(THD* thd)
         if (curThd != thd)
         {
             thd->store_globals();
-            set_mysys_var(thd->mysys_var);
+			cp_set_mysys_var(thd->mysys_var);
         }
     }
     return curThd;
@@ -186,10 +189,7 @@ THD* createThdForThread()
 void deleteThdForThread(THD* thd)
 {
     cp_restore_globals(thd);
-    mysql_mutex_lock(&LOCK_thread_count);
-    --g_openDatabases;
-    mysql_mutex_unlock(&LOCK_thread_count);
-    cp_thd_release_resources(thd);
-    cp_remove_global_thread(thd);
+	cp_thd_release_resources(thd);
+	cp_dec_dbcount(thd);
     releaseTHD(thd);
 }

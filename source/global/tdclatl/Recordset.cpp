@@ -27,13 +27,23 @@
 using namespace bzs::db::protocol::tdap::client;
 
 CARecordset::CARecordset()
-    : m_rs(new recordset()), m_recObj(NULL), m_fieldDefsObj(NULL)
+    : m_rs(recordset::create()), m_recObj(NULL), m_fieldDefsObj(NULL)
 {
+}
+
+void CARecordset::FinalRelease()
+{
+
+    if (m_recObj)
+        m_recObj->Release();
+    if (m_fieldDefsObj)
+        m_fieldDefsObj->Release();
+    m_rs->release();
 }
 
 CARecordset::~CARecordset()
 {
-
+ 
 }
 
 void CARecordset::setResult(IRecordset** retVal)
@@ -46,17 +56,25 @@ STDMETHODIMP CARecordset::Record(unsigned long Index, IRecord** retVal)
     if (Index >= 0 && Index < m_rs->size())
     {
         if (m_recObj == NULL)
+        {
             CComObject<CRecord>::CreateInstance(&m_recObj);
-
-        if (m_recObj)
+            if (!m_recObj)
+                return Error("CreateInstance Record", IID_IRecordset);
+            m_recObj->AddRef();
+        }
+        try
         {
             m_recObj->m_rec = &((*m_rs)[Index]);
             IRecord* rec;
             m_recObj->QueryInterface(IID_IRecord, (void**)&rec);
             _ASSERTE(rec);
             *retVal = rec;
+            return S_OK;
         }
-        return S_OK;
+        catch (bzs::rtl::exception& e)
+        {
+            return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+        }
     }
     return Error("Invalid index", IID_IRecordset);
 }
@@ -77,15 +95,23 @@ STDMETHODIMP CARecordset::Top(unsigned long Num, IRecordset** retVal)
     {
         CComObject<CARecordset>* rsObj;
         CComObject<CARecordset>::CreateInstance(&rsObj);
-        if (rsObj)
+        try
         {
-            m_rs->top(*rsObj->m_rs, Num);
-            IRecordset* rs;
-            rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
-            _ASSERTE(rs);
-            *retVal = rs;
+            if (rsObj)
+            {
+                m_rs->top(*rsObj->m_rs, Num);
+                IRecordset* rs;
+                rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
+                _ASSERTE(rs);
+                *retVal = rs;
+                return S_OK;
+            }
+            return Error("CreateInstance Recordset", IID_IRecordset);
         }
-        return S_OK;
+        catch (bzs::rtl::exception& e)
+        {
+            return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+        }
     }
     return Error("Invalid top number", IID_IRecordset);
 }
@@ -96,21 +122,36 @@ STDMETHODIMP CARecordset::Clone(IRecordset** retVal)
     CComObject<CARecordset>::CreateInstance(&rsObj);
     if (rsObj)
     {
-        rsObj->m_rs.reset(m_rs->clone());
-        IRecordset* rs;
-        rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
-        _ASSERTE(rs);
-        *retVal = rs;
+        try
+        {
+            rsObj->setRecordset(m_rs->clone());
+            IRecordset* rs;
+            rsObj->QueryInterface(IID_IRecordset, (void**)&rs);
+            _ASSERTE(rs);
+            *retVal = rs;
+            return S_OK;
+        }
+        catch (bzs::rtl::exception& e)
+        {
+            return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+        }
     }
-    return S_OK;
+    return Error("CreateInstance Recordset", IID_IRecordset);
 }
 
 STDMETHODIMP CARecordset::Erase(unsigned long Index)
 {
     if (Index >= 0 && Index < m_rs->size())
     {
-        m_rs->erase(Index);
-        return S_OK;
+        try
+        {
+            m_rs->erase(Index);
+            return S_OK;
+        }
+        catch (bzs::rtl::exception& e)
+        {
+            return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+        }
     }
     return Error("Invalid index", IID_IRecordset);
 }
@@ -247,37 +288,82 @@ STDMETHODIMP CARecordset::OrderByEx(ISortFields* sortFields,
 
 STDMETHODIMP CARecordset::Reverse(IRecordset** retVal)
 {
-    m_rs->reverse();
-    setResult(retVal);
-    return S_OK;
+    try
+    {
+        m_rs->reverse();
+        setResult(retVal);
+        return S_OK;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
 }
 
 STDMETHODIMP CARecordset::get_FieldDefs(IFieldDefs** retVal)
 {
     if (m_fieldDefsObj == NULL)
+    {
         CComObject<CFieldDefs>::CreateInstance(&m_fieldDefsObj);
-    if (m_fieldDefsObj)
+        if (!m_fieldDefsObj)
+            return Error("CreateInstance FieldDefs", IID_IRecordset);
+        m_fieldDefsObj->AddRef();
+    }
+    try
     {
         m_fieldDefsObj->m_fds = m_rs->fieldDefs();
-
         IFieldDefs* fds;
         m_fieldDefsObj->QueryInterface(IID_IFieldDefs, (void**)&fds);
         _ASSERTE(fds);
         *retVal = fds;
+        return S_OK;
     }
-    return S_OK;
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
 }
-
 
 STDMETHODIMP CARecordset::Clear()
 {
-    m_rs->clear();
-    return S_OK;
+    try
+    {
+        m_rs->clear();
+        return S_OK;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
 }
 
 STDMETHODIMP CARecordset::ClearRecords()
 {
-    m_rs->clearRecords();
-    return S_OK;
+    try
+    {
+        m_rs->clearRecords();
+        return S_OK;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
+}
+
+STDMETHODIMP CARecordset::UnionRecordset(IRecordset* rs, IRecordset** retVal)
+{
+    try
+    {
+        CARecordset* p = dynamic_cast<CARecordset*>(rs);
+        if (!p)
+            return Error(_T("Invalid ActiveTable::UnionRecordset param 1"), IID_IRecordset);
+        *m_rs += *(p->m_rs);
+        setResult(retVal);
+        return S_OK;        
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecordset);
+    }
 }
 

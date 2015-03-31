@@ -22,8 +22,26 @@ mb_internal_encoding('UTF-8');
 require_once("transactd.php");
 use BizStation\Transactd as Bz;
 
-define("HOSTNAME", "localhost/");
-define("URL", "tdap://" . HOSTNAME . "test_blob?dbfile=test.bdf");
+function getHost()
+{
+    $host = getenv('TRANSACTD_PHPUNIT_HOST');
+    if (strlen($host) == 0)
+    {
+        $host = '127.0.0.1/';
+    }
+    if ($host[strlen($host) - 1] != '/')
+    {
+        $host = $host . '/';
+    }
+    return $host;
+}
+
+define("HOSTNAME", getHost());
+define("USERNAME", getenv('TRANSACTD_PHPUNIT_USER'));
+define("USERPART", strlen(USERNAME) == 0 ? '' : USERNAME . '@');
+define("PASSWORD", getenv('TRANSACTD_PHPUNIT_PASS'));
+define("PASSPART", strlen(PASSWORD) == 0 ? '' : '&pwd=' . PASSWORD);
+define("URL", "tdap://" . USERPART . HOSTNAME . "test_blob?dbfile=test.bdf" . PASSPART);
 define("TABLENAME", "comments");
 define("FDI_ID", 0);
 define("FDI_USER_ID", 1);
@@ -219,9 +237,6 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         // 3... but not found because filtered
         $tb->findNext(true);
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
-        // 2... but changing seek-direction is not allowed
-        $tb->findPrev(true);
-        $this->assertEquals($tb->stat(), Bz\transactd::STATUS_PROGRAM_ERROR);
     }
     public function testUpdate()
     {
@@ -288,6 +303,19 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         // eof
         $tb->seekNext();
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
+    }
+    public function testRecord()
+    {
+        $image = $this->getTestBinary();
+        $db = new Bz\database();
+        $this->openDatabase($db, URL);
+        $at = new Bz\ActiveTable($db, TABLENAME);
+        $q = new Bz\query();
+        $q->where('id', '=', 1);
+        $rs = $at->index(0)->keyValue(1)->read($q);
+        $this->assertEquals(count($rs), 1);
+        $f = $rs[0]->getField(FDI_IMAGE);
+        $this->assertEquals($f->getBin(), $image);
     }
     public function testDrop()
     {

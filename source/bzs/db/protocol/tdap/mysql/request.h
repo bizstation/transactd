@@ -88,6 +88,13 @@ public:
 
         p += sizeof(unsigned int); // space of totalLen
 
+        //add posblk bookmark
+        if ((P_MASK_POSBLK & paramMask) && tb->cursor())
+        {
+            paramMask |= P_MASK_PB_BOOKMARK;
+            if (tb->isDelayAutoCommit())
+                paramMask |= P_MASK_PB_LOCKED;
+        }
         memcpy(p, (const char*)(&paramMask), sizeof(ushort_td));
         p += sizeof(ushort_td);
 
@@ -99,6 +106,13 @@ public:
         {
             memcpy(p, (const char*)pbk, TD_POSBLK_TRANSMIT_SIZE);
             p += TD_POSBLK_TRANSMIT_SIZE;
+            if (P_MASK_PB_BOOKMARK & paramMask)
+            {
+                uint v = tb->posPtrLenRaw();
+                memcpy(p++, &v, 1);
+                memcpy(p, tb->position(true), v);
+                p += v;
+            }
         }
 
         if (P_MASK_DATALEN & paramMask)

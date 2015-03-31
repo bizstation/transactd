@@ -22,9 +22,27 @@ mb_internal_encoding('UTF-8');
 require_once("transactd.php");
 use BizStation\Transactd as Bz;
 
-define("HOSTNAME", "localhost/");
-define("URL", "tdap://" . HOSTNAME . "test?dbfile=test.bdf");
-define("URL_KANJI", "tdap://" . HOSTNAME . "テスト?dbfile=構成.bdf");
+function getHost()
+{
+    $host = getenv('TRANSACTD_PHPUNIT_HOST');
+    if (strlen($host) == 0)
+    {
+        $host = '127.0.0.1/';
+    }
+    if ($host[strlen($host) - 1] != '/')
+    {
+        $host = $host . '/';
+    }
+    return $host;
+}
+
+define("HOSTNAME", getHost());
+define("USERNAME", getenv('TRANSACTD_PHPUNIT_USER'));
+define("USERPART", strlen(USERNAME) == 0 ? '' : USERNAME . '@');
+define("PASSWORD", getenv('TRANSACTD_PHPUNIT_PASS'));
+define("PASSPART", strlen(PASSWORD) == 0 ? '' : '&pwd=' . PASSWORD);
+define("URL", "tdap://" . USERPART . HOSTNAME . "test?dbfile=test.bdf" . PASSPART);
+define("URL_KANJI", "tdap://" . USERPART . HOSTNAME . "テスト?dbfile=構成.bdf" . PASSPART);
 define("FDI_ID", 0);
 define("FDN_ID", "番号");
 define("FDI_NAME", 1);

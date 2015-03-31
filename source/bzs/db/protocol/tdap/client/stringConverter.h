@@ -418,12 +418,12 @@ public:
 typedef myVarBinaryStoreBase myWvarBinaryStore;
 typedef myVarBinaryStoreBase myVarBinaryStore;
 
-class myBinaryStoreBase
+class binaryStoreBase
 {
     const fielddef& m_fd;
 
 public:
-    inline myBinaryStoreBase(const fielddef& fd) : m_fd(fd){};
+    inline binaryStoreBase(const fielddef& fd) : m_fd(fd){};
 
     inline size_t maxStoreBytes() const { return m_fd.len; };
 
@@ -436,8 +436,8 @@ public:
     inline bool isNeedReadCopy() const { return true; }
 };
 
-typedef myBinaryStoreBase myWbinaryStore;
-typedef myBinaryStoreBase myBinaryStore;
+typedef binaryStoreBase wbinaryStore;
+typedef binaryStoreBase binaryStore;
 
 class zstringStore
 {

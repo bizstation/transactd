@@ -53,8 +53,6 @@ private:
     struct
     {
         unsigned char myDateTimeValueByBtrv : 1;
-        unsigned char trimPadChar : 1;
-        unsigned char usePadChar : 1;
         unsigned char logicalToString : 1;
     };
     fieldShare(const fieldShare&); // no implememt
@@ -64,8 +62,8 @@ protected:
     fieldShare();
 
     virtual ~fieldShare();
-    stringConverter* cv();
-    bzs::rtl::stringBuffer* strBufs();
+    stringConverter* cv() const;
+    bzs::rtl::stringBuffer* strBufs() const;
     void blobPushBack(char* p);
     void blobClear();
 };
@@ -115,6 +113,8 @@ public:
 
 typedef int (*compFieldFunc)(const class field& l, const class field& r,
                              char logType);
+extern int compWString(const field& l, const field& r, char logType);
+extern int compiWString(const field& l, const field& r, char logType);
 
 /** @endcond */
 
@@ -128,9 +128,8 @@ class DLLLIB field
     /** @endcond */
     fielddef* m_fd;
     unsigned char* m_ptr;
-    class fielddefs* m_fds;
+    const class fielddefs* m_fds;
 
-    compFieldFunc getCompFunc(char logType) const;
     int blobLenBytes() const { return m_fd->blobLenBytes(); }
 
 private:
@@ -180,7 +179,7 @@ public:
 
 public:
 /** @cond INTERNAL */
-    inline field(unsigned char* ptr, const fielddef& fd, fielddefs* fds)
+    inline field(unsigned char* ptr, const fielddef& fd, const fielddefs* fds)
         : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds){};
 /** @endcond */
 
@@ -314,6 +313,7 @@ public:
     /** @cond INTERNAL */
     bool isCompPartAndMakeValue();
     void offsetBlobPtr(size_t offset);
+    compFieldFunc getCompFunc(char logType) const;
     /** @endcond */
 };
 

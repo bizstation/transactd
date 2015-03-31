@@ -206,7 +206,7 @@ inline int compareWvartype(const char* l, const char* r, bool bin, char logType)
                          tmp);
     else if (bin)
         tmp =
-            memcmp((char16_t*)(l + sizeof(T)), (char16_t*)(r + sizeof(T)), tmp);
+            wmemcmp16((const char16_t*)(l + sizeof(T)), (const char16_t*)(r + sizeof(T)), tmp);
     else
         tmp = wcsncmp16((char16_t*)(l + sizeof(T)), (char16_t*)(r + sizeof(T)),
                         tmp);
@@ -365,10 +365,10 @@ public:
         case ft_wstring:
         case ft_wzstring:
             if (logType & CMPLOGICAL_CASEINSENSITIVE)
-                return wcsnicmp16((char16_t*)l, (char16_t*)r, len);
+                return wcsnicmp16((char16_t*)l, (char16_t*)r, len/sizeof(char16_t));
             if ((type == ft_wstring) || (type == ft_mywchar))
                 return memcmp(l, r, len);
-            return wcsncmp16((char16_t*)l, (char16_t*)r, len);
+            return wcsncmp16((char16_t*)l, (char16_t*)r, len/sizeof(char16_t));
         case ft_lstring:
         case ft_myvarchar:
         case ft_myvarbinary:
@@ -633,6 +633,16 @@ class fieldAdapter
     mutable bool m_judge : 1;
     mutable bool m_matched : 1;
     };
+#ifdef COMP_USE_FUNCTION_POINTER
+    void setWstringCompLen()
+    {
+        if ((m_compFunc == &logicalField::compiWString) ||
+            (m_compFunc == &logicalField::compWString))
+            const_cast<logicalField*>(m_fd)->len /= sizeof(char16_t);
+    }
+#else
+    void setWstringCompLen(){};
+#endif
 public:
     friend class fields;
 
@@ -659,6 +669,7 @@ public:
             const_cast<logicalField*>(fd)->opr &= ~FILTER_COMBINE_PREPARE;
 #ifdef COMP_USE_FUNCTION_POINTER
         m_compFunc = fd->getCompFunc(m_sizeBytes);
+        setWstringCompLen();
 #endif
         if (fd->opr == 2)
         {
@@ -678,7 +689,11 @@ public:
                     bool gt = (comp == eGreater) || (comp == eGreaterEq);
                     bool le = (comp == eLess) || (comp == eLessEq);
                     bool valid = !(forword ? gt : le);
-                    if (valid)
+                    
+                    // case in-sencitive, Index judge need clinet and server are same option.
+                    bool is_cl = ((fd->logType & CMPLOGICAL_CASEINSENSITIVE) != 0);
+                    bool is_srv = ((key->key_part[segmentIndex].field->flags & BINARY_FLAG) == 0);
+                    if (valid && (is_cl == is_srv))
                     {
                         m_keySeg = (unsigned char)segmentIndex + 1;
                         m_judgeType = (comp == eEqual) ? 2 : 1;
@@ -695,6 +710,7 @@ public:
     {
         const_cast<logicalField*>(p)->opr = opr;
         m_fd = p;
+        setWstringCompLen();
     }
 
     inline int checkNomore(bool typeNext, eCompType log) const

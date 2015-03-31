@@ -194,6 +194,8 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
             fd.type = convFieldType(src->fieldRealType(i), src->fieldFlags(i),
                                     isBinary(src->fieldCharset(i)),
                                     isUnicode(src->fieldCharset(i)));
+            bool usePadChar = ((fd.type == ft_mychar) || (fd.type == ft_mywchar)); 
+            fd.setPadCharSettings(usePadChar, true);
             fd.setCharsetIndex(charsetIndex(src->fieldCharset(i).csname));
             pos += fd.len;
             datalen =
@@ -230,7 +232,7 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
                         isBinary(src->fieldCharset(i)),
                         isUnicode(src->fieldCharset(sg.fieldNum)))))
                     sg.flags.bitA =
-                        !(src->fieldFlags(sg.fieldNum) & BINCMP_FLAG);
+                        !(src->fieldFlags(sg.fieldNum) & BINARY_FLAG);// case in-sencitive
                 if (src->fieldDataLen(sg.fieldNum) != ks.length)
                 {
                     fielddef& fd = tdef.fieldDefs[sg.fieldNum];

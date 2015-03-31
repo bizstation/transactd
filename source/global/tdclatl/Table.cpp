@@ -385,15 +385,18 @@ STDMETHODIMP CTableTd::put_FilterRejectCount(long Value)
 
 STDMETHODIMP CTableTd::Field(VARIANT Index, IField** retVal)
 {
-
     short index = GetFieldNum(&Index);
     if (index < 0)
         return Error("Invalid index", IID_ITable);
 
     if (m_fieldObj == NULL)
+    {
         CComObject<CField>::CreateInstance(&m_fieldObj);
-
-    if (m_fieldObj)
+        if (!m_fieldObj)
+            return Error("CreateInstance Field", IID_ITable);
+        m_fieldObj->AddRef();
+    }
+    try
     {
         client::fields fds(*m_tb);
         m_fieldObj->m_fd = fds[index];
@@ -401,8 +404,12 @@ STDMETHODIMP CTableTd::Field(VARIANT Index, IField** retVal)
         m_fieldObj->QueryInterface(IID_IField, (void**)&fd);
         _ASSERTE(fd);
         *retVal = fd;
+        return S_OK;
     }
-    return S_OK;
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_ITable);
+    }
 }
 
 STDMETHODIMP CTableTd::get_CanDelete(VARIANT_BOOL* Value)
@@ -542,30 +549,6 @@ STDMETHODIMP CTableTd::put_LogicalToString(VARIANT_BOOL Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_TrimPadChar(VARIANT_BOOL* Value)
-{
-    *Value = m_tb->trimPadChar();
-    return S_OK;
-}
-
-STDMETHODIMP CTableTd::put_TrimPadChar(VARIANT_BOOL Value)
-{
-    m_tb->setTrimPadChar(Value);
-    return S_OK;
-}
-
-STDMETHODIMP CTableTd::get_UsePadChar(VARIANT_BOOL* Value)
-{
-    *Value = m_tb->usePadChar();
-    return S_OK;
-}
-
-STDMETHODIMP CTableTd::put_UsePadChar(VARIANT_BOOL Value)
-{
-    m_tb->setUsePadChar(Value);
-    return S_OK;
-}
-
 STDMETHODIMP CTableTd::MoveBookmarksId(long Value)
 {
     m_tb->moveBookmarksId(Value);
@@ -654,3 +637,16 @@ STDMETHODIMP CTableTd::FieldNumByName(BSTR Name, short* Value)
     *Value = m_tb->fieldNumByName(Name);
     return S_FALSE;
 }
+
+STDMETHODIMP CTableTd::get_StatReasonOfFind(short* Value)
+{
+    *Value = m_tb->statReasonOfFind();
+    return S_FALSE;
+}
+
+STDMETHODIMP CTableTd::get_LastFindDirection(short* Value)
+{
+    *Value = (short)m_tb->lastFindDirection();
+    return S_FALSE;
+}
+

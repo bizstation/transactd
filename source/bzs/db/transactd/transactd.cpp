@@ -35,8 +35,9 @@
 
 /** tcp server type
  */
-#define TCP_CPT_SERVER 1
-#define TCP_TPOOL_SERVER 2
+#define TCP_CPT_SERVER       1
+#define TCP_TPOOL_SERVER     2
+#define PIPE_SHARE_MEM_SIZE  6292480 // 6Mbyte + 1024
 
 using namespace bzs::netsvc::server;
 
@@ -50,7 +51,7 @@ static unsigned int g_tcpServerType = TCP_CPT_SERVER;
 
 static unsigned int g_maxTcpConnections = 200;
 static unsigned int g_pool_threads = 20;
-unsigned int g_pipeCommSharememSize = 3145728;
+unsigned int g_pipeCommSharememSize = PIPE_SHARE_MEM_SIZE;
 int g_tableNmaeLower = 1; // defined in btrvProtocol.h
 unsigned int g_lock_wait_timeout = 1;
 char* g_transaction_isolation = NULL;
@@ -257,8 +258,8 @@ static MYSQL_SYSVAR_STR(auth_type, g_auth_type,
 */
 #ifdef PIPE_SERVER
 static MYSQL_SYSVAR_UINT(pipe_comm_sharemem_size, g_pipeCommSharememSize,
-                         PLUGIN_VAR_READONLY, "66000..52428800", 0, 0, 3145728,
-                         66000, 52428800, 0);
+                         PLUGIN_VAR_READONLY, "66000..52428800 ", 0, 0, PIPE_SHARE_MEM_SIZE,
+                         66000, 52428800, 0);  
 static MYSQL_SYSVAR_UINT(max_pipe_connections, g_maxPipeConnections,
                          PLUGIN_VAR_READONLY, "1..100", 0, 0, 50, 1, 100, 0);
 static MYSQL_SYSVAR_INT(use_piped_local, g_usePipedLocal, PLUGIN_VAR_READONLY,
