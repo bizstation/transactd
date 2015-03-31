@@ -207,19 +207,23 @@ public:
 
 };
 
-#ifdef _WIN32
-#define MSG_WAITALL 0x8 
+#if (defined(_WIN32))
+#define MSG_WAITALL 0x8
 #define MSG_EOR 0
 #define MSG_MORE 0
-#else
+#endif
+
+#ifdef LINUX
 #define SOCKET_ERROR -1
 #endif
+
 #if (BOOST_VERSION > 104900)
 #define SYSTEM_CATEGORY system_category()
 #else
 #define SYSTEM_CATEGORY system_category
 #endif
 
+#ifndef __APPLE__
 template <class T>
 class native_tcp_io
 {
@@ -309,7 +313,7 @@ public:
     #endif
     }
 };
-
+#endif
 
 template <class T> class connectionImple : public connectionBase
 {
@@ -380,7 +384,7 @@ public:
 
 /** Implementation of The TCP connection.
  */
-#ifdef LINUX
+#if (defined(LINUX) && (BOOST_VERSION > 104900))
 #define USE_CONNECT_TIMER
 #endif
 
@@ -472,7 +476,6 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
                    sizeof(timeout));
         ret = setsockopt(m_socket.native(), SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout,
                    sizeof(timeout));
-        ret = ret;
     }
 #ifdef USE_CONNECT_TIMER
     void connect()
@@ -556,10 +559,11 @@ public:
         m_sendbuf.resize(WRITEBUF_SIZE);
     }
 };
-
-typedef tcpConnection<native_tcp_io<asio::ip::tcp::socket> > native_tcpConnection;
-//typedef tcpConnection<asio_tcp_io<asio::ip::tcp::socket> > asio_tcpConnection;
-
+#ifdef __APPLE__
+    typedef tcpConnection<asio_tcp_io<asio::ip::tcp::socket> > asio_tcpConnection;
+#else
+    typedef tcpConnection<native_tcp_io<asio::ip::tcp::socket> > native_tcpConnection;
+#endif
 
 #ifdef USE_PIPE_CLIENT
 

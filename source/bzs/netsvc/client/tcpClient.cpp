@@ -226,8 +226,11 @@ inline connection* connections::createConnection(asio::ip::tcp::endpoint& ep,
         return new pipeConnection(ep, m_pipeName);
     else
 #endif
+#ifdef __APPLE__
+        return new asio_tcpConnection(ep);
+#else
         return new native_tcpConnection(ep);
-        //return new asio_tcpConnection(ep);
+#endif
 }
 
 inline connection* connections::doConnect(connection* c)

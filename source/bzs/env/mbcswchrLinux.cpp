@@ -42,6 +42,7 @@ void initCvtProcess()
 {
     int ret = pthread_key_create(&g_tls1, cleanupTls);
     assert(ret == 0);
+    pthread_setspecific(g_tls1, NULL);
 }
 
 void deinitCvtProcess()
@@ -51,6 +52,8 @@ void deinitCvtProcess()
 
 cvt& getCvt(int index)
 {
+    if (g_tls1 == 0)
+        initCvtProcess();
     cvt* p = (cvt*)pthread_getspecific(g_tls1);
     if (p == NULL)
     {

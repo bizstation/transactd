@@ -4978,7 +4978,7 @@ void doTestReadByQuery(int num, activeTable& at, recordset& rs, Q& q,
 {
     setReject(q);
     at.index(0).keyValue(0).read(rs, q);
-    BOOST_CHECK_MESSAGE(compSize == rs.size(), 
+    BOOST_CHECK_MESSAGE(compSize == (int)rs.size(),
             num << " " << msg << " rs.size() = " << rs.size());
 }
 
@@ -5091,7 +5091,7 @@ void doTestMatchBy(int num, recordset& rs, recordsetQuery& rq, int compSize, con
 {
     recordset* rss = rs.clone();
     rss->matchBy(rq);
-    BOOST_CHECK_MESSAGE(compSize == rss->size(), 
+    BOOST_CHECK_MESSAGE(compSize == (int)rss->size(),
                 num << msg << _T(" rss->size = ") << rss->size());
     rss->release();
 }
@@ -5199,7 +5199,7 @@ void testBinaryField()
         fd.setBin(data, len);
         uint_td size;
         void* p = fd.getBin(size);
-        BOOST_CHECK_MESSAGE(len == size, "binary size type = " << i);
+        BOOST_CHECK_MESSAGE(len == (int)size, "binary size type = " << i);
 
         BOOST_CHECK_MESSAGE(p != NULL, "binary ret type = " << i);
         int ret = memcmp(p, data, len);
