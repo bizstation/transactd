@@ -1010,6 +1010,7 @@ class resultWriter
     }
 
 public:
+    resultWriter() : m_nw(NULL), m_def(NULL){}
 
     void init(netsvc::server::netWriter* nw, const extResultDef* def,
                  bool noBookmark)
@@ -1026,8 +1027,12 @@ public:
 
     inline unsigned int end()
     {
-        m_nw->asyncWrite(NULL, 0, netsvc::server::netWriter::writeEnd);
-        return m_nw->resultLen();
+        if (m_nw)
+        {
+            m_nw->asyncWrite(NULL, 0, netsvc::server::netWriter::writeEnd);
+            return m_nw->resultLen();
+        }
+        return 0;
     }
 
     const char* resultBuffer() { return m_nw->ptr(); }

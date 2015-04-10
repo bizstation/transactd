@@ -84,6 +84,7 @@ protected:
                                     bool& cancel);
     virtual void doConvertTable(short tableIndex, bool turbo,
                                 const _TCHAR* ownerName);
+    virtual bool doReopenDatabaseSchema();
 
 public:
     virtual void release();

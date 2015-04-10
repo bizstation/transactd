@@ -213,8 +213,12 @@ public:
         return m_dbExec->commandExec(m_requests, nw);
     }
     void cleanup(){};
+
     bool isShutDown() { return m_dbExec->isShutDown(); }
-    const engine::mysql::databases& dbs() const { return m_dbExec->dbs(); };
+    
+    const engine::mysql::databases& dbs() const { return m_dbExec->dbs(); }
+    
+    boost::mutex& mutex() { return m_dbExec->mutex(); }
 };
 
 } // namespace hs

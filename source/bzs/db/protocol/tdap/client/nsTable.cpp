@@ -812,7 +812,14 @@ void nstable::tdap(ushort_td op)
         case STATUS_FILE_LOCKED:
             Sleep(m_impl->nsdb->lockWaitTime());
             break;
-
+#ifdef TEST_RECONNECT
+        case ERROR_TD_NET_TIMEOUT:
+            m_impl->nsdb->reconnect();
+            if (m_stat) return;
+            m_stat = ERROR_TD_NET_TIMEOUT;
+            LoopCount = -1;
+            break;
+#endif
         default:
             return;
         }

@@ -55,11 +55,11 @@ DLLLIB BTRCALLID_PTR getTrnsctdEntryPoint();
 class DLLLIB nsdatabase
 {
     friend class nstable;
-
+    friend bool reconnectSharedConnection(const void* ptr);
     struct nsdbimpl* m_nsimpl;
     nsdatabase(const nsdatabase&);
     static unsigned int m_execCodepage;
-
+    bool doReopenTables();
 protected:
     BTRCALLID_PTR m_btrcallid;
     short m_stat;
@@ -78,6 +78,8 @@ protected:
     void addref();
     void internalRelease() { nsdatabase::release(); }
     void doReconnect(nstable* tb);
+    virtual bool doReopenDatabaseSchema(){ return true; }
+    
 public:
     nsdatabase();
     virtual void release();
@@ -123,6 +125,7 @@ public:
     bool disconnect(const _TCHAR* uri = _T(""));
     bool disconnectForReconnectTest(); //for connection brokn emulate
 	bool reconnect();
+    bool isReconnected() const;
 
     static const int maxtables = 50;
     static bool trnsactionFlushWaitStatus();

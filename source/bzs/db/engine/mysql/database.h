@@ -93,6 +93,7 @@ public:
     void addref(const std::string& dbname, const std::string& tbname);
     int count(const std::string& dbname, const std::string& tbname);
     void release(const std::string& dbname, const std::string& tbname);
+    boost::mutex& mutex() { return m_mutex; }
 };
 
 struct rowLockMode
@@ -130,6 +131,7 @@ private:
     void prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* lck) ;
     void changeIntentionLock(table* tb, thr_lock_type lock_type);
     void checkACL(enum_sql_command cmd);
+    void releaseTable(size_t index);
 public:
     
 
@@ -152,6 +154,8 @@ public:
     bool inTransaction() const { return (m_inTransaction != 0); }
 
     short transactionType() const { return m_trnType; }
+
+    enum_tx_isolation transactionIsolation() const { return m_iso; }
 
     bool inSnapshot() const { return m_inSnapshot != 0; }
 
@@ -264,10 +268,10 @@ class table : private boost::noncopyable
     keynumConvert m_keyconv;
     IblobBuffer* m_blobBuffer;
     std::vector<Field*> m_nonKeySegNullFields;
-    int m_readCount;
-    int m_updCount;
-    int m_delCount;
-    int m_insCount;
+    unsigned int m_readCount;
+    unsigned int m_updCount;
+    unsigned int m_delCount;
+    unsigned int m_insCount;
     char m_keyNum;
     struct
     {
@@ -744,7 +748,13 @@ public:
     void setKeyValues(const std::vector<std::string>& values, int keypart,
                     const std::string* inValue = NULL);
 
-    
+    inline  unsigned int readCount() const { return m_readCount; }
+
+    inline  unsigned int updCount() const { return m_updCount; }
+
+    inline  unsigned int delCount() const { return m_delCount; }
+
+    inline  unsigned int insCount() const { return m_insCount; }
 };
 
 class fieldBitmap

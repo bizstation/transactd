@@ -79,17 +79,42 @@ void connManager::getDatabaseList(const module* mod) const
 {
     igetDatabases* dbm =
         dynamic_cast<igetDatabases*>(mod->m_commandExecuter.get());
+
     const databases& dbs = dbm->dbs();
     for (size_t j = 0; j < dbs.size(); j++)
     {
-
         if (dbs[j])
         {
+            const database* db = dbs[j].get(); 
             m_records.push_back(connection::record());
             connection::record& rec = m_records[m_records.size() - 1];
             rec.conId = (unsigned __int64)mod;
-            rec.cid = dbs[j]->clientID();
+            rec.cid = db->clientID();
             rec.dbid = (unsigned short)j;
+            rec.status = 0;
+            rec.inTransaction = db->inTransaction();
+            rec.inSnapshot = db->inSnapshot();
+            if (rec.inTransaction)
+            {
+                if (db->transactionIsolation() == ISO_REPEATABLE_READ)
+                    rec.trnType = MULTILOCK_GAP;
+                else if (db->transactionIsolation() == ISO_READ_COMMITTED)
+                {
+                    if (db->transactionType() == TRN_RECORD_LOCK_SINGLE)
+                        rec.trnType = SINGLELOCK_NOGAP;
+                    else
+                        rec.trnType = MULTILOCK_NOGAP;
+                }
+            }
+            if (rec.inSnapshot)
+            {
+                if (db->transactionIsolation() == 0)
+                    rec.trnType = CONSISTENT_READ;
+                else if (db->transactionIsolation() == ISO_REPEATABLE_READ)
+                    rec.trnType = MULTILOCK_GAP_SHARE;
+                else if (db->transactionIsolation() == ISO_READ_COMMITTED)
+                    rec.trnType = MULTILOCK_NOGAP_SHARE;
+            }
             strncpy_s(rec.name, 64, dbs[j]->name().c_str(), 64);
         }
     }
@@ -108,33 +133,44 @@ const connManager::records& connManager::getRecords(unsigned __int64 conid,
         const module* mod = getMod(conid);
         if (mod)
         {
-            //Lock module execute
-            boost::try_mutex::scoped_try_lock m(mod->mutex(),
-                                                boost::try_to_lock_t());
-            if (m.owns_lock())
-            {
-                if (dbid < 0)
-                    getDatabaseList(mod);
-                else
-                {
-                    const database* db = getDatabase(mod, dbid);
-                    if (db)
-                    {
-                        const std::vector<boost::shared_ptr<table> >& tables =
-                            db->tables();
-                        for (size_t k = 0; k < tables.size(); k++)
-                        {
-                            const table* tb = tables[k].get();
-                            if (tb)
-                            {
-                                m_records.push_back(connection::record());
-                                connection::record& rec =
-                                    m_records[m_records.size() - 1];
-                                rec.conId = (unsigned __int64)mod;
-                                rec.cid = db->clientID();
+            igetDatabases* dbm =
+                dynamic_cast<igetDatabases*>(mod->m_commandExecuter.get());
 
-                                strncpy_s(rec.name, 64, tb->name().c_str(), 64);
-                            }
+            //Lock database add remove
+            boost::mutex::scoped_lock lck(dbm->mutex());
+ 
+            if (dbid < 0)
+                getDatabaseList(mod);
+            else
+            {
+                const database* db = getDatabase(mod, dbid);
+                if (db)
+                {
+                    const std::vector<boost::shared_ptr<table> >& tables =
+                        db->tables();
+
+                    //Lock table add release in the db
+                    boost::mutex::scoped_lock lckt(database::tableRef.mutex());
+                    for (size_t k = 0; k < tables.size(); k++)
+                    {
+                        const table* tb = tables[k].get();
+                        if (tb)
+                        {
+                            m_records.push_back(connection::record());
+                            connection::record& rec =
+                                m_records[m_records.size() - 1];
+                            rec.conId = (unsigned __int64)mod;
+                            rec.cid = db->clientID();
+                            rec.readCount = tb->readCount();
+                            rec.updCount = tb->updCount();
+                            rec.delCount = tb->delCount();
+                            rec.insCount = tb->insCount();
+                            rec.status = 0;
+                            rec.openNormal = (tb->mode() == TD_OPEN_NORMAL);
+                            rec.openReadOnly = (tb->mode() == TD_OPEN_READONLY);
+                            rec.openEx = (tb->mode() == TD_OPEN_EXCLUSIVE);
+                            rec.openReadOnlyEx = (tb->mode() == TD_OPEN_READONLY_EXCLUSIVE);
+                            strncpy_s(rec.name, 64, tb->name().c_str(), 64);
                         }
                     }
                 }
@@ -179,7 +215,8 @@ void connManager::doDisconnectAll()
     for (size_t i = 0; i < modules.size(); i++)
     {
         const module* mod = dynamic_cast<module*>(modules[i]);
-        doDisconnect((unsigned __int64)mod);
+        if (mod && ((unsigned __int64)mod != m_me))
+            doDisconnect((unsigned __int64)mod);
     }
 }
 

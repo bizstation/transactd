@@ -92,7 +92,6 @@ void tableCacheCounter::addref(const std::string& dbname,
                                const std::string& tbname)
 {
 
-    boost::mutex::scoped_lock lck(m_mutex);
     size_t pos = getCounterIndex(dbname, tbname);
     ++m_counts[pos];
 }
@@ -108,7 +107,6 @@ int tableCacheCounter::count(const std::string& dbname,
 void tableCacheCounter::release(const std::string& dbname,
                                 const std::string& tbname)
 {
-    boost::mutex::scoped_lock lck(m_mutex);
     size_t pos = getCounterIndex(dbname, tbname);
     --m_counts[pos];
 }
@@ -202,7 +200,15 @@ database::~database()
     use();
     unUseTables(true/*rollback*/);
     closeForReopen();
-    m_tables.clear(); // It clears ahead of the destructor of m_trn.
+    {
+        boost::mutex::scoped_lock lck(tableRef.mutex());
+        for (size_t i = 0 ; i < m_tables.size(); ++i)
+        {
+            if (m_tables[i])
+                database::tableRef.release(name(), m_tables[i]->m_name);
+        }
+        m_tables.clear(); // It clears ahead of the destructor of m_trn.
+    }
     deleteThdForThread(m_thd);
 }
 
@@ -459,7 +465,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
     if (tb == NULL)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                      "Invalid table id.");
-    if (tb->m_blobBuffer)
+    if (tb->blobFields())
         tb->m_blobBuffer->clear();
 
     // Change to shared lock is user tranasction only.
@@ -764,11 +770,15 @@ table* database::openTable(const std::string& name, short mode,
     {
         boost::shared_ptr<table> tb(
             new table(t, *this, name, mode, (int)m_tables.size()));
-        m_tables.push_back(tb);
+        {
+            boost::mutex::scoped_lock lck(tableRef.mutex());
+            m_tables.push_back(tb);
+            tableRef.addref(m_dbname, name); // addef first then table open.
+        }
         m_stat = STATUS_SUCCESS;
         if (tb->isExclusveMode())
             ++m_usingExclusive;
-        tableRef.addref(m_dbname, name); // addef first then table open.
+        
         return tb.get();
     }
     return NULL;
@@ -832,10 +842,17 @@ void database::closeTable(table* tb)
                     break;
             if (*tbl)
                 close_thread_table(m_thd, tbl);
-            m_tables[i].reset();
+            releaseTable(i);
             DEBUG_WRITELOG_SP1("CLOSE TABLE table id=%d \n", i);
         }
     }
+}
+
+void database::releaseTable(size_t index)
+{
+    boost::mutex::scoped_lock lck(database::tableRef.mutex());
+    database::tableRef.release(name(), m_tables[index]->m_name);
+    m_tables[index].reset();
 }
 
 void database::closeForReopen()
@@ -864,7 +881,7 @@ void database::reopen()
             if (table)
                 m_tables[i]->resetInternalTable(table);
             else
-                m_tables[i].reset();
+                releaseTable(i);
         }
     }
 }
@@ -968,7 +985,6 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
 table::~table()
 {
     resetInternalTable(NULL);
-    database::tableRef.release(m_db.name(), m_name);
     for (size_t i = 0; i < preparedStatements.size(); ++i)
         preparedStatements[i]->release();
 }
@@ -987,7 +1003,6 @@ void table::resetTransctionInfo(THD* thd)
         m_locked = false;
     m_validCursor = false;
     m_nounlock = false;
-    m_readCount = m_updCount = m_delCount = m_insCount = 0;
 }
 
 void table::resetInternalTable(TABLE* table)
@@ -1098,13 +1113,13 @@ short table::setKeyValuesPacked(const uchar* ptr, int size)
         KEY_PART_INFO& seg = key.key_part[j];
         if (seg.null_bit)
         {
-            m_keybuf[to++] = 0x00;
-            seg.field->set_notnull();
+            m_keybuf[to++] = 0x00;   // set null to mysql null indicator. 
+            seg.field->set_notnull();// Ignore null for read.
         }
         if (seg.null_bit && isNisField(seg.field->field_name))
         {
-            m_keybuf[to++] = 0x00;
-            seg.field->set_notnull();
+            m_keybuf[to++] = 0x00; // set null to nis field. 
+            //continue next segment
         }
         else
         {
@@ -2068,11 +2083,7 @@ bool table::isNisKey(char num) const
     if ((num >= 0) && (num < (short)m_table->s->keys))
     {
         Field* fd = m_table->key_info[num].key_part[0].field;
-        // Nis is only in a head segment.
-        if (isNisField(fd->field_name))
-            return true;
-        else if ((fd->pack_length() == 1) && (fd->type() == MYSQL_TYPE_TINY) &&
-                 fd->null_bit)
+        if (fd->null_bit)
             return true;
     }
     return false;

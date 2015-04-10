@@ -82,7 +82,6 @@ public:
     virtual bool isShutDown() = 0;
     virtual bool checkHost(const char* hostCheckname, /*out*/char* hostName, int size) = 0;
     virtual void cleanup() = 0;
-    virtual boost::mutex& mutex() const = 0;
 };
 
 // Defines at Implementing of IAppModule , two variables below.

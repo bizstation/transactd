@@ -34,10 +34,10 @@ namespace connection
 {
 struct record
 {
-    record() : conId(0), cid(0), dbid(0)
+    record() : conId(0), cid(0), dbid(0), status(0), readCount(0), 
+        updCount(0), delCount(0), insCount(0), trnType(0)
     {
         name[0] = 0x00;
-        status = 0;
     }
     __int64 conId;
     unsigned int cid;
@@ -53,9 +53,16 @@ struct record
             char openNormal : 1;
             char openReadOnly : 1;
             char openEx : 1;
-            char dummy : 3;
+            char openReadOnlyEx : 1;
+            char dummy : 2;
         };
     };
+    unsigned int readCount;
+    unsigned int updCount;
+    unsigned int delCount;
+    unsigned int insCount;
+    short trnType;
+
 };
 
 } // connection

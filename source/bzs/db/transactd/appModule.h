@@ -41,7 +41,6 @@ namespace transactd
 class module : public netsvc::server::IAppModule, private boost::noncopyable
 {
     friend class connManager;
-    mutable boost::mutex m_mutex;
     boost::shared_ptr<protocol::ICommandExecuter> m_commandExecuter;
     const boost::asio::ip::tcp::endpoint m_endpoint;
     bzs::netsvc::server::iconnection* m_connection;
@@ -63,7 +62,6 @@ public:
     bool isShutDown() { return m_commandExecuter->isShutDown(); }
     bool checkHost(const char* hostCheckname, /*out*/char* hostName, int size);
     void disconnect();
-    boost::mutex& mutex() const { return m_mutex; };
 };
 
 } // namespace transactd

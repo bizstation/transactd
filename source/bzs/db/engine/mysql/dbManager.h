@@ -105,7 +105,9 @@ public:
     virtual ~dbManager();
     bool isShutDown() const;
 
-    const databases& dbs() const { return m_dbs; };
+    const databases& dbs() const { return m_dbs; }
+
+    boost::mutex& mutex() { return m_mutex; }
 };
 
 class igetDatabases
@@ -113,6 +115,7 @@ class igetDatabases
 public:
     virtual ~igetDatabases(){};
     virtual const engine::mysql::databases& dbs() const = 0;
+    virtual boost::mutex& mutex() = 0;
 };
 
 } // namespace mysql

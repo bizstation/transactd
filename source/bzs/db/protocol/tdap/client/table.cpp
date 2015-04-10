@@ -1093,6 +1093,8 @@ void table::setPrepare(const pq_handle stmt)
     m_impl->maxBookMarkedCount = 0;
     if (m_impl->filterPtr != stmt)
         m_impl->filterPtr = stmt;
+    if (nsdb()->isReconnected())
+        m_impl->filterPtr->setServerPreparedId(0);
 }
 
 pq_handle table::setQuery(const queryBase* query, bool serverPrepare)

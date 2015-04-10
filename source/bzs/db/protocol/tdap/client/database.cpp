@@ -434,6 +434,16 @@ void database::close()
         nsdatabase::release();
 }
 
+bool database::doReopenDatabaseSchema()
+{
+    if (m_impl->dbDef && m_impl->dbDef->isOpen())
+    {
+        doReconnect(m_impl->dbDef);
+        return (m_stat == 0);
+    }
+    return true;
+}
+
 _TCHAR* database::getTableUri(_TCHAR* buf, short FileNum)
 {
     m_stat = STATUS_SUCCESS;

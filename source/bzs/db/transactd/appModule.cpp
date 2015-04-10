@@ -442,7 +442,6 @@ int module::execute(netsvc::server::IResultBuffer& result, size_t& size,
 {
     m_commandExecuter->parse(m_readBuf, m_readSize);
     m_nw->reset(&result, optionalData);
-    boost::mutex::scoped_lock lck(m_mutex);
     int ret = m_commandExecuter->execute(m_nw);
     if (m_useThreadPool)
         cleanup();

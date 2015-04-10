@@ -687,6 +687,8 @@ class pipeConnection : public connectionImple<platform_stream>
                                            NULL, NULL, NULL, 0);
             if(ret == FALSE || n == 0)
                 throwException("PipeConnection", CLIENT_ERROR_CONNECTION_FAILURE);
+            else
+                throw system_error(asio::error::timed_out);
         }
         return m_readbuf_p;
     }
@@ -706,13 +708,7 @@ class pipeConnection : public connectionImple<platform_stream>
             BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                             NULL, NULL, NULL, 0);
             if(m_sendEvent && ret && n)
-            {
                 SetEvent(m_sendEvent);
-                //Wait for server side close connection
-                while (WAIT_TIMEOUT == 
-                    WaitForSingleObject(m_recvEvent, connections::connectTimeout))
-                    ;
-            }
         }
         if (m_recvEvent)
             CloseHandle(m_recvEvent);

@@ -150,9 +150,11 @@ public:
 
     bool isShutDown() { return m_dbExec->isShutDown(); }
 
-    void cleanup(){};
+    void cleanup(){}
 
-    const engine::mysql::databases& dbs() const { return m_dbExec->dbs(); };
+    const engine::mysql::databases& dbs() const { return m_dbExec->dbs(); }
+
+    boost::mutex& mutex() { return m_dbExec->mutex(); }
 };
 
 } // namespace mysql
