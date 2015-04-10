@@ -596,7 +596,7 @@ void nsdatabase::beginSnapshot(short bias)
         m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, NULL, NULL, NULL, 0, 0,
                              m_nsimpl->cidPtr);
 #ifdef TEST_RECONNECT
-        if (m_stat == ERROR_TD_NET_TIMEOUT)
+        if (canRecoverNetError(m_stat))
         {
             reconnect();
             if (m_stat) return;

@@ -448,6 +448,7 @@ public:
         m_comm->send();
         asio::write(m_socket, buffer(tmp, 7), e);
         run();
+        DisconnectNamedPipe(m_socket.native());
     }
 
     void cancel()

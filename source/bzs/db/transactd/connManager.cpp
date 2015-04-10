@@ -160,7 +160,7 @@ const connManager::records& connManager::getRecords(unsigned __int64 conid,
                             connection::record& rec =
                                 m_records[m_records.size() - 1];
                             rec.conId = (unsigned __int64)mod;
-                            rec.cid = db->clientID();
+                            rec.cid = tb->id();
                             rec.readCount = tb->readCount();
                             rec.updCount = tb->updCount();
                             rec.delCount = tb->delCount();

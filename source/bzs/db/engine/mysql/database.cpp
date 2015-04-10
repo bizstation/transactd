@@ -465,7 +465,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
     if (tb == NULL)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                      "Invalid table id.");
-    if (tb->blobFields())
+    if (tb->m_blobBuffer && tb->blobFields())
         tb->m_blobBuffer->clear();
 
     // Change to shared lock is user tranasction only.

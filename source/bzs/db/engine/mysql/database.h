@@ -390,7 +390,7 @@ public:
 
     inline bool isChanged() { return m_changed; }
 
-    int id() { return m_id; };
+    int id() const { return m_id; };
 
     /* The singleRowLock is no effects with Transaction or Snapshot. */
     inline void unUse() 

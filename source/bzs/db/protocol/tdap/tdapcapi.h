@@ -394,6 +394,13 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define ERROR_TD_C_CLIENT_UNKNOWN       3811
 #define ERROR_TD_RECONNECTED            3900
 
+inline bool canRecoverNetError(short code)
+{
+    return (code >= ERROR_TD_CONNECTION_FAILURE) &&
+        (code < ERROR_TD_RECONNECTED) &&
+        (code != ERROR_TD_NET_TOO_BIGDATA);
+}
+
 
 #define TRANSACTD_SCHEMANAME            _T("transactd_schema")
 #define TYPE_SCHEMA_BDF                 0

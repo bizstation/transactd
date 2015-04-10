@@ -49,7 +49,6 @@ inline const _TCHAR* protocol(const _TCHAR* uri)
         st = _tcsstr(uri, _T("btrv://"));
         return _T("btrv");
     }
-    return _T("");
 }
 
 inline const _TCHAR* hostName(const _TCHAR* uri, _TCHAR* buf, size_t size)

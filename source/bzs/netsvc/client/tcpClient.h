@@ -680,14 +680,16 @@ class pipeConnection : public connectionImple<platform_stream>
 
     char* read()
     {
-        while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, connections::netTimeout))
+        int t = 0;
+        while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, 1000))
         {
+            t += 1000;
             DWORD n = 0;
             BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                            NULL, NULL, NULL, 0);
-            if(ret == FALSE || n == 0)
+            if(ret == FALSE || n < 2)
                 throwException("PipeConnection", CLIENT_ERROR_CONNECTION_FAILURE);
-            else
+            else if (connections::netTimeout == t)
                 throw system_error(asio::error::timed_out);
         }
         return m_readbuf_p;
