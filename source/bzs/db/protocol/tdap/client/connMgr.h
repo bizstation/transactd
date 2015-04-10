@@ -68,6 +68,8 @@ public:
 
     database* db() const;
     using nstable::tdapErr;
+    using nstable::release;
+    static connMgr* create(database* db);
 };
 
 #pragma warning(default : 4251)

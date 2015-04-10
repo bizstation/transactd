@@ -47,11 +47,8 @@ const module* getMod(unsigned __int64 conid)
     return NULL;
 }
 
-const database* connManager::getDatabase(const module* mod, int dbid) const
+const database* connManager::getDatabase(igetDatabases* dbm, int dbid) const
 {
-
-    igetDatabases* dbm =
-        dynamic_cast<igetDatabases*>(mod->m_commandExecuter.get());
     const databases& dbs = dbm->dbs();
     if (dbid < (int)dbs.size())
         return dbs[dbid].get();
@@ -75,11 +72,8 @@ void connManager::getConnectionList() const
     }
 }
 
-void connManager::getDatabaseList(const module* mod) const
+void connManager::getDatabaseList(igetDatabases* dbm, const module* mod) const
 {
-    igetDatabases* dbm =
-        dynamic_cast<igetDatabases*>(mod->m_commandExecuter.get());
-
     const databases& dbs = dbm->dbs();
     for (size_t j = 0; j < dbs.size(); j++)
     {
@@ -140,10 +134,10 @@ const connManager::records& connManager::getRecords(unsigned __int64 conid,
             boost::mutex::scoped_lock lck(dbm->mutex());
  
             if (dbid < 0)
-                getDatabaseList(mod);
+                getDatabaseList(dbm, mod);
             else
             {
-                const database* db = getDatabase(mod, dbid);
+                const database* db = getDatabase(dbm, dbid);
                 if (db)
                 {
                     const std::vector<boost::shared_ptr<table> >& tables =

@@ -76,6 +76,7 @@ namespace mysql
 #define REF_SIZE_MAX 4
 class table;
 
+
 /** Control mysql table cahche
  */
 class tableCacheCounter
@@ -883,6 +884,15 @@ struct smartForceConsistantRead
     {
         tb->m_forceConsistentRead = false;
     }
+};
+
+
+class igetDatabases
+{
+public:
+    virtual ~igetDatabases(){};
+    virtual const databases& dbs() const = 0;
+    virtual boost::mutex& mutex() = 0;
 };
 
 #define BUILINSERT_SCOPE

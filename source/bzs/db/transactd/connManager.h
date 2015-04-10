@@ -30,6 +30,7 @@ namespace engine
 namespace mysql
 {
 class database;
+class igetDatabases;
 }
 }
 namespace transactd
@@ -46,9 +47,10 @@ private:
     mutable records m_records;
     unsigned __int64 m_me;
     void getConnectionList() const;
-    void getDatabaseList(const module* mod) const;
-    const bzs::db::engine::mysql::database* getDatabase(const module* mod,
-                                                        int dbid) const;
+    void getDatabaseList(bzs::db::engine::mysql::igetDatabases* dbm, 
+                            const module* mod) const;
+    const bzs::db::engine::mysql::database* getDatabase(
+                bzs::db::engine::mysql::igetDatabases* dbm, int dbid) const;
     void doDisconnect(unsigned __int64 conid);
     void doDisconnectAll();
 

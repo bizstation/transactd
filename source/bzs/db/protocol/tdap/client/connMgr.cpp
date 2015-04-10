@@ -132,6 +132,12 @@ short_td connMgr::stat()
     return m_stat;
 }
 
+
+connMgr* connMgr::create(database* db)
+{
+    return new connMgr(db);
+}
+
 } // namespace client
 } // namespace tdap
 } // namespace protocol

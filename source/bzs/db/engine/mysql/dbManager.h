@@ -110,14 +110,6 @@ public:
     boost::mutex& mutex() { return m_mutex; }
 };
 
-class igetDatabases
-{
-public:
-    virtual ~igetDatabases(){};
-    virtual const engine::mysql::databases& dbs() const = 0;
-    virtual boost::mutex& mutex() = 0;
-};
-
 } // namespace mysql
 } // namespace engine
 } // namespace db
