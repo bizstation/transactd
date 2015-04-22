@@ -43,7 +43,7 @@ macro(get_ruby_path RUBY_EXE_PATH)
                   OUTPUT_VARIABLE RUBY_VERSION)
   string(STRIP "${RUBY_VERSION}" RUBY_VERSION)
   # RUBY_VERSION_GEM
-  execute_process(COMMAND ${tmp_ruby} -e "puts RUBY_VERSION.sub(/(\\d+\\.\\d+)\\..*/, '\\1')"
+  execute_process(COMMAND ${tmp_ruby} -e "puts RUBY_VERSION.sub(/\\.\\d+$/, '')"
                   OUTPUT_VARIABLE RUBY_VERSION_FOR_GEM)
   string(STRIP "${RUBY_VERSION_FOR_GEM}" RUBY_VERSION_FOR_GEM)
   # excec ruby command (rbconfig)
