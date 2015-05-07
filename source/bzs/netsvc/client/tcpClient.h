@@ -107,6 +107,7 @@ class connections
 
     connection* getConnection(asio::ip::tcp::endpoint& ep);
     asio::ip::tcp::endpoint endpoint(const std::string& host,
+                                     const char* port,
                                      boost::system::error_code& ec);
     bool isUseNamedPipe(asio::ip::tcp::endpoint& ep);
 #ifdef USE_PIPE_CLIENT
@@ -118,15 +119,15 @@ class connections
 public:
     connections(const char* pipeName);
     ~connections();
-    connection* connect(const std::string& host, handshake f,
+    connection* connect(const std::string& host, const char* port, handshake f,
                         void* data, bool newConnection = false);
-    bool reconnect(connection* c, const std::string& host,
+    bool reconnect(connection* c, const std::string& host, const char* port,
                         handshake f, void* data);
 
-    connection* getConnection(const std::string& host);
+    connection* getConnection(const std::string& host, const char* port);
     bool disconnect(connection* c);
     int connectionCount();
-    static char port[PORTNUMBUF_SIZE];
+    static char m_port[PORTNUMBUF_SIZE];
     static int connectTimeout;
     static int netTimeout;
 };
@@ -735,7 +736,10 @@ class pipeConnection : public connectionImple<platform_stream>
         platform_descriptor fd;
 #ifdef WIN32
         char pipeName[100];
-        sprintf_s(pipeName, 100, "\\\\.\\pipe\\%s", m_pipeName.c_str());
+        if (m_ep.port() != 8610)
+            sprintf_s(pipeName, 100, "\\\\.\\pipe\\%s%u", m_pipeName.c_str(), m_ep.port());
+        else
+            sprintf_s(pipeName, 100, "\\\\.\\pipe\\%s", m_pipeName.c_str());
         int i = 1000;
         while (--i)
         {

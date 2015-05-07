@@ -29,6 +29,7 @@
 #include <bzs/rtl/stringBuffers.h>
 #include "stringConverter.h"
 #include <boost/timer.hpp>
+#include <boost/thread/mutex.hpp>
 
 #pragma package(smart_init)
 
@@ -60,8 +61,8 @@ class recordCache;
 
 struct tbimpl
 {
-
-    void* bookMarks;
+    boost::mutex bookmarkMutex;
+    uchar_td* bookMarks;
     client::fields fields;
     pq_handle filterPtr;
     recordCache* rc;
@@ -71,8 +72,9 @@ struct tbimpl
     void* bfAtcPtr;
     void* optionalData;
     uint_td dataBufferLen;
-    int bookMarksMemSize;
-    int maxBookMarkedCount;
+    unsigned int bookMarksMemSize;
+    unsigned int maxBookMarkedCount;
+    recordCountFn onRecordCountFunc;
     char keybuf[MAX_KEYLEN];
     char keyNumIndex[128];
 
@@ -87,7 +89,7 @@ struct tbimpl
         : bookMarks(NULL), fields(tb), rc(NULL), mraPtr(NULL),
           dataBak(NULL), smartUpDate(NULL), bfAtcPtr(NULL), optionalData(NULL),
           dataBufferLen(0), bookMarksMemSize(0), maxBookMarkedCount(0),
-          smartUpDateFlag(false), dataPacked(false)
+          onRecordCountFunc(NULL), smartUpDateFlag(false), dataPacked(false)
     {
         memset(&keyNumIndex[0], 0, 128);
     }
@@ -101,6 +103,62 @@ struct tbimpl
         if (bookMarks)
             free(bookMarks);
     }
+
+    inline void resetBookmarks()
+    {
+        boost::mutex::scoped_lock lck(bookmarkMutex);
+        maxBookMarkedCount = 0;
+    }
+
+    inline uchar_td* bookmarks(unsigned int index, ushort_td len)
+    {
+        boost::mutex::scoped_lock lck(bookmarkMutex);
+        unsigned int pos = index * (len + 2) + 2;
+        if ((index < maxBookMarkedCount) && bookMarks)
+            return bookMarks + pos;
+        return NULL;
+    }
+
+    /*inline bookmark_td* bookmarksPtr(unsigned int index)
+    {
+        boost::mutex::scoped_lock lck(bookmarkMutex);
+        unsigned int pos = index * 6 + 2;
+        if ((index < maxBookMarkedCount) && bookMarks)
+            return (bookmark_td*)((char*)bookMarks + pos);
+        return NULL;
+    }*/
+
+    inline short insertBookmarks(unsigned int start, void* data, ushort_td len,
+                         ushort_td count)
+    {
+        unsigned int size = (start + count) * (2 + len);
+        boost::mutex::scoped_lock lck(bookmarkMutex);
+        if (!bookMarks)
+        {
+            bookMarks = (uchar_td*)malloc(BOOKMARK_ALLOC_SIZE);
+            if (bookMarks)
+                bookMarksMemSize = BOOKMARK_ALLOC_SIZE;
+            else
+                return STATUS_CANT_ALLOC_MEMORY;
+        }
+
+        if (bookMarksMemSize < size)
+        {
+            bookMarks = (uchar_td*)realloc(bookMarks, size + BOOKMARK_ALLOC_SIZE);
+            bookMarksMemSize = size + BOOKMARK_ALLOC_SIZE;
+        }
+        if (bookMarks)
+        {
+            //if (start + count > m_impl->maxBookMarkedCount)
+            memcpy(bookMarks + (start * (2 + len)), data,
+                                                count * (2 + len));
+            maxBookMarkedCount = start + count;
+        }
+        else
+            return STATUS_CANT_ALLOC_MEMORY;
+        return STATUS_SUCCESS;
+    }
+
 };
 
 // ---------------------------------------------------------------------------
@@ -123,7 +181,7 @@ class recordCache
     unsigned int m_len;
     unsigned int m_unpackLen;
     unsigned int m_rowCount;
-    bookmark_td m_bookmark;
+    uchar_td* m_bookmark;
     uchar_td* m_ptr;
     uchar_td* m_tmpPtr;
     blobHeader* m_hd;
@@ -156,7 +214,7 @@ public:
         m_ptr += DATASIZE_BYTE;
         if (bookmarkSize)
         {
-            m_bookmark = *((bookmark_td*)(m_ptr));
+            m_bookmark = m_ptr;
             m_ptr += bookmarkSize;
         }
     }
@@ -302,7 +360,7 @@ public:
             m_ptr += DATASIZE_BYTE;
             if (m_filter->bookmarkSize())
             {
-                m_bookmark = *((bookmark_td*)(m_ptr));
+                m_bookmark = m_ptr;
                 m_ptr += m_filter->bookmarkSize();
             }
             m_tmpPtr = data + totalSize;
@@ -371,7 +429,7 @@ public:
     }
 
     inline unsigned int len() const { return m_unpackLen; };
-    inline bookmark_td bookmarkCurRow() const { return m_bookmark; };
+    inline uchar_td* bookmarkCurRow() const { return m_bookmark; };
     inline int row() const { return m_row; }
 
     inline int rowCount() const { return m_rowCount; }
@@ -500,41 +558,6 @@ fields& table::fields()
     return m_impl->fields;
 }
 
-void table::setBookMarks(int StartId, void* Data, ushort_td Count)
-{
-    long size = (StartId + Count) * 6;
-
-    if (!m_impl->bookMarks)
-    {
-        m_impl->bookMarks = malloc(BOOKMARK_ALLOC_SIZE);
-        if (m_impl->bookMarks)
-            m_impl->bookMarksMemSize = BOOKMARK_ALLOC_SIZE;
-        else
-        {
-            m_stat = STATUS_CANT_ALLOC_MEMORY;
-            return;
-        }
-    }
-
-    if (m_impl->bookMarksMemSize < size)
-    {
-
-        m_impl->bookMarks =
-            realloc(m_impl->bookMarks, size + BOOKMARK_ALLOC_SIZE);
-        m_impl->bookMarksMemSize = size + BOOKMARK_ALLOC_SIZE;
-    }
-    if (m_impl->bookMarks)
-    {
-        if (StartId + Count - 1 > m_impl->maxBookMarkedCount)
-            m_impl->maxBookMarkedCount = StartId + Count - 1;
-        memcpy((void*)((char*)m_impl->bookMarks + ((StartId - 1) * 6)), Data,
-               Count * 6);
-    }
-    else
-        m_stat = STATUS_CANT_ALLOC_MEMORY;
-    return;
-}
-
 inline short calcNextReadRecordCount(ushort_td curCount, int eTime)
 {
     ushort_td ret = curCount;
@@ -548,6 +571,22 @@ inline short calcNextReadRecordCount(ushort_td curCount, int eTime)
     if (ret == 0)
         return 1;
     return ret;
+}
+
+void table::setOnRecordCount(const recordCountFn v)
+{
+    m_impl->onRecordCountFunc = v;
+}
+
+recordCountFn table::onRecordCount() const
+{
+    return m_impl->onRecordCountFunc;
+}
+
+void table::onRecordCounting(size_t count, bool& complate)
+{
+    if (m_impl->onRecordCountFunc)
+        m_impl->onRecordCountFunc(this, (int)count, complate);
 }
 
 uint_td table::doRecordCount(bool estimate, bool fromCurrent)
@@ -584,11 +623,12 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
 
         bookmark_td bm = bookmark();
 
+
         ushort_td tmpRejectCount = filter->rejectCount();
         ushort_td tmpRecCount = filter->recordCount();
 
         filter->setIgnoreFields(true);
-        m_impl->maxBookMarkedCount = 0;
+        m_impl->resetBookmarks();
         if (fromCurrent)
             m_stat = curStat;
         else if (op == TD_KEY_NEXT_MULTI)
@@ -629,11 +669,10 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
                 }
                 recCountOnce = calcNextReadRecordCount(recCountOnce, eTime);
                 filter->setMaxRows(recCountOnce);
-                result += *((ushort_td*)m_pdata/*m_impl->dataBak*/);
-                setBookMarks(m_impl->maxBookMarkedCount + 1,
-                             (void*)((char*)m_pdata/*m_impl->dataBak*/ + 2),
-                             *((ushort_td*)m_pdata/*m_impl->dataBak*/));
-                m_impl->maxBookMarkedCount = result;
+                result += *((ushort_td*)m_pdata);
+                insertBookmarks(m_impl->maxBookMarkedCount,
+                             (void*)((char*)m_pdata + 2), *((ushort_td*)m_pdata));
+
                 onRecordCounting(result, Complete);
                 if (Complete)
                     break;
@@ -648,7 +687,7 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
         filter->setIgnoreFields(false);
         filter->setMaxRows(tmpRecCount);
 
-        if (bm)
+        if (!bm.empty)
             seekByBookmark(bm);
         m_impl->exBookMarking = false;
         m_stat = tmpStat;
@@ -781,10 +820,13 @@ short table::statReasonOfFind() const
 
 bookmark_td table::bookmarkFindCurrent() const
 {
-
+    bookmark_td bm;
     if (!m_impl->rc->isEndOfRow(m_impl->rc->row()))
-        return m_impl->rc->bookmarkCurRow();
-    return 0;
+    {
+        memcpy(bm.val, m_impl->rc->bookmarkCurRow(), bookmarkLen());
+        bm.empty = false;
+    }
+    return bm;
 }
 
 inline bool checkStatus(short v)
@@ -876,7 +918,13 @@ void table::btrvSeekMulti()
         }
         else
         {
-            tdap((ushort_td)(TD_KEY_SEEK));
+            if (m_impl->filterPtr->isSeekByBookmarks())
+            {
+                memcpy(m_pdata, m_impl->keybuf, bookmarkLen());
+                m_datalen = m_buflen;
+                tdap((ushort_td)(TD_MOVE_BOOKMARK));
+            }else    
+                tdap((ushort_td)(TD_KEY_SEEK));
             if (!doSeekMultiAfter(i))
                 return;
         }
@@ -1090,7 +1138,7 @@ void table::setPrepare(const pq_handle stmt)
     }
     m_impl->rc->reset();
     m_impl->exBookMarking = false;
-    m_impl->maxBookMarkedCount = 0;
+    m_impl->resetBookmarks();
     if (m_impl->filterPtr != stmt)
         m_impl->filterPtr = stmt;
     if (nsdb()->isReconnected())
@@ -1103,7 +1151,6 @@ pq_handle table::setQuery(const queryBase* query, bool serverPrepare)
     m_stat = 0;
     m_impl->rc->reset();
     m_impl->exBookMarking = false;
-    m_impl->maxBookMarkedCount = 0;
     m_impl->filterPtr.reset();
     if (query == NULL)
         return m_impl->filterPtr;
@@ -1920,22 +1967,33 @@ unsigned int table::getRecordHash()
     return hash((const char*)fieldPtr(0), datalen());
 }
 
-int table::bookMarksCount() const
+void table::insertBookmarks(unsigned int start, void* data, ushort_td count)
 {
-    int ret;
-    ret = m_impl->maxBookMarkedCount;
-    return ret;
+    m_stat =  m_impl->insertBookmarks(start, data, bookmarkLen(), count);
 }
 
-void table::moveBookmarksId(long id)
+int table::bookmarksCount() const
 {
-    long Point = (id - 1) * 6 + 2;
-
-    if ((id <= m_impl->maxBookMarkedCount) && (m_impl->bookMarks))
-        seekByBookmark(*((bookmark_td*)((char*)m_impl->bookMarks + Point)));
-    else
-        seekByBookmark(0);
+    return m_impl->maxBookMarkedCount;
 }
+
+void table::moveBookmarks(unsigned int index)
+{
+    seekByBookmark((bookmark_td*)m_impl->bookmarks(index, bookmarkLen()));
+}
+
+bookmark_td table::bookmarks(unsigned int index) const
+{
+    bookmark_td bm;
+    memcpy(bm.val, m_impl->bookmarks(index, bookmarkLen()), bookmarkLen());
+    bm.empty = false;
+    return bm;
+}
+
+/*bookmark_td* table::bookmarksPtr(unsigned int index) const
+{
+    return m_impl->bookmarksPtr(index);
+}*/
 
 short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 {
@@ -2122,7 +2180,8 @@ struct impl
     impl()
         : m_reject(1), m_limit(0), m_joinKeySize(0),
           m_optimize(queryBase::none), m_direction(table::findForword),
-          m_nofilter(false), m_withBookmark(false), m_stopAtLimit(false)
+          m_nofilter(false), m_withBookmark(false), m_stopAtLimit(false),
+          m_seekByBookmarks(false)
     {
     }
 
@@ -2141,6 +2200,7 @@ struct impl
     {
         bool m_withBookmark : 1;
         bool m_stopAtLimit : 1;
+        bool m_seekByBookmarks : 1;
     };
 };
 
@@ -2440,6 +2500,18 @@ queryBase& queryBase::stopAtLimit(bool v)
     m_impl->m_stopAtLimit = v;
     return *this;
 }
+
+queryBase& queryBase::seekByBookmarks(bool v)
+{
+    m_impl->m_seekByBookmarks = v;
+    return *this;
+}
+
+bool queryBase::isSeekByBookmarks() const
+{
+    return m_impl->m_seekByBookmarks;
+}
+
 
 const std::vector<std::_tstring>& queryBase::getSelects() const
 {

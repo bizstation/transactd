@@ -32,6 +32,7 @@ typedef void* HANDLE;
 typedef void* HINSTANCE;
 #endif
 #include <bzs/db/protocol/tdap/tdapRequest.h>
+#include <bzs/db/transactd/connectionRecord.h>
 
 #pragma package(smart_init)
 
@@ -769,9 +770,16 @@ void nsdatabase::readDatabaseDirectory(_TCHAR* retBuf, uchar_td buflen)
 bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
 {
     if (isTransactdUri(URI))
+    {
         if (!setUseTransactd())
             return false;
+    }else
+    {
+        m_stat = 0;
+        if (_tcsstr(URI, _T("://")) == NULL)
+            return true;
 
+    }
     uint_td datalen = 0;
 
     char uri_a[MAX_PATH] = { 0x00 };

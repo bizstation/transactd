@@ -241,7 +241,7 @@ bool createUserExtTable(dbdef* def)
 
 bool createCacheTable(dbdef* def)
 {
-    short tableid = 4;
+    short tableid = 5;
     tabledef t;
     tabledef* td = &t;
     td->charsetIndex = mysql::charsetIndex(GetACP());

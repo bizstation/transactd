@@ -80,9 +80,8 @@ extern "C" {
 #include "sql/sql_cache.h"
 #if (MYSQL_VERSION_ID < 50700)
 #include "sql/structs.h"
-#endif
-
 #include "sql/sql_priv.h"
+#endif
 #include "sql/unireg.h"
 #include "sql/lock.h"
 #include "sql/key.h"
@@ -92,6 +91,7 @@ extern "C" {
 #include "sql/sql_table.h"
 #include "sql/sql_db.h"
 #include "sql_acl.h"
+#include "sql/sql_show.h"
 #include "mysqld_error.h"
 #include <password.h>
 

@@ -143,7 +143,7 @@ protected:
     */
     void destroy();
     void setShared();
-
+    void seekByBookmark(bookmark_td* bm, ushort_td lockBias = LOCK_BIAS_DEFAULT);
 public:
     explicit nstable(nsdatabase* pbe);
     void addref(void);
@@ -205,18 +205,20 @@ public:
     void stepLast(ushort_td lockBias = LOCK_BIAS_DEFAULT);
     void stepPrev(ushort_td lockBias = LOCK_BIAS_DEFAULT);
     void stepNext(ushort_td lockBias = LOCK_BIAS_DEFAULT);
+    ushort_td bookmarkLen() const ;
     bookmark_td bookmark();
-    void seekByBookmark(bookmark_td bm, ushort_td lockBias = LOCK_BIAS_DEFAULT);
+    void seekByBookmark(bookmark_td& bm, ushort_td lockBias = LOCK_BIAS_DEFAULT);
     void seekByBookmark();
     percentage_td getPercentage();
-    percentage_td getPercentage(bookmark_td bm);
+    percentage_td getPercentage(bookmark_td& bm);
     void seekByPercentage();
     void seekByPercentage(percentage_td pc);
     void setOwnerName(const _TCHAR* name, char_td enctype = 0);
     void clearOwnerName();
     ushort_td recordLength();
     void stats(void* databuffer, uint_td buflen, bool estimate = true);
-    void unlock(bookmark_td bm = 0);
+    void unlock(bookmark_td& bm);
+    void unlock();
     char_td mode() const;
     static _TCHAR* getFileName(const _TCHAR* uri, _TCHAR* filename);
     static short_td tdapErr(HWND hWnd, short_td status,

@@ -53,6 +53,14 @@ namespace client
 class client;
 void setClientThread(client* v);
 
+#define PORT_BUFSIZE 16
+
+struct endpoint_t
+{
+    char host[MAX_PATH];
+    char port[PORT_BUFSIZE];
+};
+
 /* client class 
 This instance is created for each thread.
 */
@@ -105,6 +113,12 @@ class client
     {
         _TCHAR tmp[MAX_PATH];
         return hostName(uri, tmp, MAX_PATH);
+    }
+
+    endpoint_t* endPoint(const char* uri, endpoint_t* ep)
+    {
+        tdap::endPoint(uri, ep->host, MAX_PATH, ep->port, PORT_BUFSIZE);
+        return ep;
     }
 
     std::string getTableName(const char* uri)
@@ -238,10 +252,11 @@ public:
     {
         if (!m_req.cid->con)
         {
-            std::string host = getHostName((const char*)m_req.keybuf);
-            if (host == "")
+            endpoint_t ep;
+            endPoint((const char*)m_req.keybuf, &ep);
+            if (ep.host[0] == 0x00)
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-            bzs::netsvc::client::connection* c = m_cons->connect(host, 
+            bzs::netsvc::client::connection* c = m_cons->connect(ep.host, ep.port,
                                                   client::handshakeCallback, this);
             if (c)
             {
@@ -315,10 +330,13 @@ public:
             m_preResult = ERROR_TD_NOT_CONNECTED;
             return;
         }
-        std::string host = getHostName((const char*)m_req.keybuf);
+        endpoint_t ep;
+        endPoint((const char*)m_req.keybuf, &ep);
+     
         m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-        if (host == "") return;
-        if (!m_cons->reconnect(c, host, handshakeCallback, this))
+        if (ep.host[0] == 0x00) return;
+
+        if (!m_cons->reconnect(c, ep.host, ep.port, handshakeCallback, this))
             return;
         m_connecting = true;
         if (getServerCharsetIndex() == -1)
@@ -338,11 +356,12 @@ public:
         {
             if (con())
                 disconnect();
-            std::string host = getHostName((const char*)m_req.keybuf);
-            if (host == "")
+            endpoint_t ep;
+            endPoint((const char*)m_req.keybuf, &ep);
+            if (ep.host[0] == 0x00)
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
             bzs::netsvc::client::connection* c = m_cons->connect(
-                host, handshakeCallback, this,
+                ep.host, ep.port, handshakeCallback, this,
                 (m_req.keyNum == LG_SUBOP_NEWCONNECT));
             if (c)
             {

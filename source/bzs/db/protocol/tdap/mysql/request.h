@@ -108,7 +108,7 @@ public:
             p += TD_POSBLK_TRANSMIT_SIZE;
             if (P_MASK_PB_BOOKMARK & paramMask)
             {
-                uint v = tb->posPtrLenRaw();
+                uint v = tb->posPtrLen();
                 memcpy(p++, &v, 1);
                 memcpy(p, tb->position(true), v);
                 p += v;

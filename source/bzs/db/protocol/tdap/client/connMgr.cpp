@@ -35,6 +35,10 @@ namespace client
 connMgr::connMgr(database* db) : nstable(db)
 {
     m_db = db;
+    m_keybuf = &m_params[0];
+    m_params[0] = 0;
+    m_params[1] = 0;
+    m_keylen = sizeof(m_params);
 }
 
 connMgr::~connMgr()
@@ -73,48 +77,57 @@ void connMgr::allocBuffer()
     m_pdata = (void*)&m_records[0];
     memset(m_pdata, 0, m_datalen);
     setIsOpen(true);
-    m_keybuf = &m_params[0];
-    m_params[0] = 0;
-    m_params[1] = 0;
-    m_keylen = sizeof(m_params);
+
+}
+
+const connMgr::records& connMgr::getRecords()
+{
+    allocBuffer();
+    tdap(TD_STASTISTICS);
+    if (m_stat == 0)
+        m_records.resize(m_datalen / sizeof(connMgr::record));
+    return m_records;
+}
+
+const connMgr::records& connMgr::definedDatabases()
+{
+    m_keynum = TD_STSTCS_DATABASE_LIST;
+    return getRecords();
+}
+
+const connMgr::records& connMgr::sysvars()
+{
+    m_keynum = TD_STSTCS_SYSTEM_VARIABLES;
+    return getRecords();
 }
 
 const connMgr::records& connMgr::connections()
 {
-    allocBuffer();
     m_keynum = TD_STSTCS_READ;
-    tdap(TD_STASTISTICS);
-    if (m_stat == 0)
-        m_records.resize(m_datalen / sizeof(connMgr::record));
-    return m_records;
+    m_params[0] = 0;
+    m_params[1] = 0;
+    return getRecords();
 }
 
 const connMgr::records& connMgr::databases(__int64 connid)
 {
-    allocBuffer();
     m_keynum = TD_STSTCS_READ;
     m_params[0] = connid;
     m_params[1] = -1;
-    tdap(TD_STASTISTICS);
-    if (m_stat == 0)
-        m_records.resize(m_datalen / sizeof(connMgr::record));
-    return m_records;
+    return getRecords();
 }
 
 const connMgr::records& connMgr::tables(__int64 connid, int dbid)
 {
-    allocBuffer();
     m_keynum = TD_STSTCS_READ;
     m_params[0] = connid;
     m_params[1] = dbid;
-    tdap(TD_STASTISTICS);
-    if (m_stat == 0)
-        m_records.resize(m_datalen / sizeof(connMgr::record));
-    return m_records;
+    return getRecords();
 }
 
 void connMgr::disconnectOne(__int64 connid)
 {
+    allocBuffer();
     m_keynum = TD_STSTCS_DISCONNECT_ONE;
     record& rec = m_records[0];
     rec.conId = connid;

@@ -277,7 +277,8 @@ short schemaBuilder::execute(database* db, table* mtb)
     fs::directory_iterator end;
     int id = 0;
     short stat = 0;
-    smartTransction trn(db);
+    std::vector<table*> tables;
+    
     for (fs::directory_iterator it(p); it != end; ++it)
     {
         if (!is_directory(*it))
@@ -288,17 +289,28 @@ short schemaBuilder::execute(database* db, table* mtb)
                 filename_to_tablename(it->path().stem().string().c_str(), path,
                                       FN_REFLEN);
                 table* tb = db->openTable(path, TD_OPEN_READONLY, NULL);
-                if (!tb)
-                    return db->stat();
+                if (!tb) break;
                 if (!tb->isView())
-                {
-                    if ((stat = insertMetaRecord(mtb, tb, ++id)) != 0)
-                        return stat;
-                }
+                    tables.push_back(tb);
+                else
+                    db->closeTable(tb);
             }
         }
     }
-    trn.end();
+    if (db->stat()) return db->stat();
+
+    {
+        smartTransction trn(db);
+        for (size_t i = 0; i < tables.size(); ++i)
+        {
+            if ((stat = insertMetaRecord(mtb, tables[i], ++id)) != 0)
+                    break;
+        }
+        if (stat == 0) trn.end();
+            
+    }
+    for (size_t i = 0; i < tables.size(); ++i)
+        db->closeTable(tables[i]);
     return stat;
 }
 

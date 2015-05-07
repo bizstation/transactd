@@ -43,7 +43,6 @@ namespace db
 {
 class blobBuffer;
 namespace engine{namespace mysql{class database;}}
-
 namespace protocol
 {
 namespace tdap
@@ -72,7 +71,7 @@ class dbExecuter : public engine::mysql::dbManager
     std::string makeSQLcreateTable(const request& req);
     bool connect(request& req);
     inline bool doCreateTable(request& req);
-    inline bool doOpenTable(request& req);
+    inline bool doOpenTable(request& req, bool reconnect=false);
     inline void doSeekKey(request& req, int op, engine::mysql::rowLockMode* lock);
     inline void doMoveFirst(request& req, engine::mysql::rowLockMode* lock);
     inline void doMoveKey(request& req, int op, engine::mysql::rowLockMode* lock);
@@ -89,6 +88,7 @@ class dbExecuter : public engine::mysql::dbManager
     inline void doInsertBulk(request& req);
     inline void doStat(request& req);
     inline short seekEach(extRequestSeeks* ereq, bool noBookMark);
+    inline short seekBookmarkEach(extRequestSeeks* ereq, bool noBookmark);
     inline bool doAuthentication(request& req, engine::mysql::database* db);
     bool getDatabaseWithAuth(request& req, engine::mysql::database** db, bool connect=false);
 public:
@@ -117,6 +117,8 @@ public:
     int disconnectOne(char* buf, size_t& size);
     int disconnectAll(char* buf, size_t& size);
     int commandExec(netsvc::server::netWriter* nw);
+    int definedDatabaseList(char* buf, size_t& size);
+    int systemVariables(char* buf, size_t& size);
 };
 
 class commandExecuter : public ICommandExecuter,

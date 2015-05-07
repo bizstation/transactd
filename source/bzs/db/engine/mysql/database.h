@@ -73,7 +73,7 @@ namespace mysql
 /** bookmark size
  *  btreive API is MAX 4 byte
  */
-#define REF_SIZE_MAX 4
+#define REF_SIZE_MAX 112
 class table;
 
 

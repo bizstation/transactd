@@ -57,7 +57,9 @@ private:
 public:
     connManager(unsigned __int64 me) : m_me(me){};
     virtual ~connManager();
+    const connManager::records& systemVariables() const;
     const records& getRecords(unsigned __int64 conid, int dbid) const;
+    const records& getDefinedDatabaseList() const;
     void disconnect(unsigned __int64 conid);
     void disconnectAll();
 };

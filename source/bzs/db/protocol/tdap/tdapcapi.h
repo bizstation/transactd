@@ -29,10 +29,22 @@ typedef void           void_td;
 typedef short          short_td;
 typedef unsigned char  uchar_td;
 typedef char           char_td;
-typedef uint_td        bookmark_td;
 typedef int            percentage_td;
-
 typedef ushort_td      keylen_td;
+
+/* Wnen change MAX_BOOKMARK_SIZE, database.h REF_SIZE_MAX too */
+#define MAX_BOOKMARK_SIZE 112     // innodb unique key max 767 byte
+struct BOOKMARK
+{
+    uchar_td val[MAX_BOOKMARK_SIZE];
+    bool empty;
+    BOOKMARK():empty(true){}
+    bool isEmpty()
+    {
+        return empty;
+    }
+};
+typedef BOOKMARK bookmark_td;
 
 /** tdap c interface
  */
@@ -64,6 +76,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 /** buffer size
  */
 #define POS_BLOCK_SIZE                  128
+#define BTRV_BOOKMARK_SIZE                4
 #ifndef MAX_KEYLEN
 #define MAX_KEYLEN                      0X3FF   // 1023
 #endif
@@ -167,6 +180,8 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TD_STSTCS_READ                  0
 #define TD_STSTCS_DISCONNECT_ONE        1
 #define TD_STSTCS_DISCONNECT_ALL        2
+#define TD_STSTCS_DATABASE_LIST         3
+#define TD_STSTCS_SYSTEM_VARIABLES      4
 
 /** connect sub operation
  */
@@ -408,6 +423,7 @@ inline bool canRecoverNetError(short code)
 
 #define FILTER_CURRENT_TYPE_NOTINC      0
 #define FILTER_CURRENT_TYPE_INC         1
+#define FILTER_TYPE_SEEKS_BOOKMARKS     1 //with FILTER_TYPE_SEEKS only 
 #define FILTER_CURRENT_TYPE_NOBOOKMARK  2
 #define FILTER_TYPE_SUPPLYVALUE         4
 #define FILTER_TYPE_FORWORD             4 //at preparing only 
@@ -459,6 +475,24 @@ struct handshale_t
 };
 
 #define HST_OPTION_NO_SCRAMBLE 1
+
+/* server system variables index */
+#define TD_VAR_LISTENADDRESS      0
+#define TD_VAR_LISTENPORT         1
+#define TD_VAR_HOSTCHECKNAME      2
+#define TD_VAR_MAXTCPCONNECTIONS  3
+#define TD_VAR_TABLENAMELOWER     4
+#define TD_VAR_POOLTHREADS        5
+#define TD_VAR_TCPSERVERTYPE      6
+#define TD_VAR_LOCKWAITTIMEOUT    7
+#define TD_VAR_ISOLATION          8
+#define TD_VAR_AUTHTYPE           9
+#define TD_VAR_PIPESHAREMEMSIZE   10
+#define TD_VAR_MAXPIPECONNECTIONS 11
+#define TD_VAR_USEPIPE            12
+#define TD_VAR_HSLISTENPORT       13
+#define TD_VAR_USEHS              14
+#define TD_VAR_SIZE               15
 
 /** @endcond */
 

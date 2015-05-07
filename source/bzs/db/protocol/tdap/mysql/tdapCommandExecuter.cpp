@@ -475,7 +475,7 @@ inline bool dbExecuter::doCreateTable(request& req)
 
 
 // open table and assign handle
-inline bool dbExecuter::doOpenTable(request& req)
+inline bool dbExecuter::doOpenTable(request& req, bool reconnect)
 {
     database* db;
     bool ret = getDatabaseWithAuth(req, &db);
@@ -505,7 +505,14 @@ inline bool dbExecuter::doOpenTable(request& req)
                 uint hdl = addHandle(getDatabaseID(req.cid), tb->id());
                 m_tb = getTable(hdl);
                 req.pbk->handle = hdl;
-                req.paramMask = P_MASK_POSBLK;
+                if (!reconnect)
+                {
+                    ushort_td len = (ushort_td)m_tb->posPtrLen();
+                    memcpy(req.data, &len , sizeof(ushort_td));
+                    req.resultLen = sizeof(ushort_td);
+                    req.paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN;
+                }else
+                    req.paramMask = P_MASK_POSBLK;
             }
             catch (bzs::rtl::exception& e)
             {
@@ -713,8 +720,14 @@ inline int dbExecuter::doReadMulti(request& req, int op,
         if (req.result != 0)
             return ret;
         if (op == TD_KEY_SEEK_MULTI)
-            req.result =
-                errorCodeSht(seekEach((extRequestSeeks*)req.data, noBookmark));
+        {
+            if (ereq->itype & FILTER_TYPE_SEEKS_BOOKMARKS)
+                req.result =
+                    errorCodeSht(seekBookmarkEach((extRequestSeeks*)req.data, noBookmark));
+            else
+                req.result =
+                    errorCodeSht(seekEach((extRequestSeeks*)req.data, noBookmark));
+        }
         else
         {
             if (op == TD_KEY_NEXT_MULTI)
@@ -767,6 +780,34 @@ inline __int64 intValue(const unsigned char* p, int len)
         return *((__int64*)p);
     }
     return 0;
+}
+
+//FILTER_TYPE_SEEKS_BOOKMARKS
+inline short dbExecuter::seekBookmarkEach(extRequestSeeks* ereq, bool noBookmark)
+{
+    short stat = 0;
+    seek* fd = &ereq->seekData;
+
+    for (int i = 0; i < ereq->logicalCount; ++i)
+    {
+        m_tb->movePos((uchar*)fd->ptr, -1);
+        if (m_tb->stat() == 0)
+        {
+            if (noBookmark)
+                stat = m_readHandler->write((const unsigned char *)_T("dummy"), 0);
+            else
+                stat =
+                    m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
+        }
+        else
+            stat = m_readHandler->write(NULL, 0);
+        if (stat)
+            break;
+        fd = fd->next();
+    }
+    if (stat == 0)
+        stat = STATUS_REACHED_FILTER_COND;
+    return stat;
 }
 
 inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
@@ -1184,7 +1225,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_RECONNECT:
 
-            if (!doOpenTable(req))
+            if (!doOpenTable(req, true))
             {
                 req.result = ERROR_TD_INVALID_CLINETHOST;
                 break;
@@ -1528,21 +1569,36 @@ connMgrExecuter::connMgrExecuter(request& req, unsigned __int64 parent)
 {
 }
 
+int serialize(request& req, char* buf, size_t& size, const connManager::records& records)
+{
+    req.reset();
+    req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
+    if (records.size())
+        req.data = (void*)&records[0];
+    else
+        req.paramMask = P_MASK_DATALEN;
+    req.resultLen = (uint_td)(sizeof(record) * records.size());
+    size = req.serialize(NULL, buf);
+    return EXECUTE_RESULT_SUCCESS;
+}
+
 int connMgrExecuter::read(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
     unsigned __int64* mod = (unsigned __int64*)m_req.keybuf;
+    return serialize(m_req, buf, size, st.getRecords(mod[0], (int)mod[1]));
+}
 
-    const connManager::records& records = st.getRecords(mod[0], (int)mod[1]);
-    m_req.reset();
-    m_req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
-    if (records.size())
-        m_req.data = (void*)&records[0];
-    else
-        m_req.paramMask = P_MASK_DATALEN;
-    m_req.resultLen = (uint_td)(sizeof(record) * records.size());
-    size = m_req.serialize(NULL, buf);
-    return EXECUTE_RESULT_SUCCESS;
+int connMgrExecuter::definedDatabaseList(char* buf, size_t& size)
+{
+    connManager st(m_modHandle);
+    return serialize(m_req, buf, size, st.getDefinedDatabaseList());
+}
+
+int connMgrExecuter::systemVariables(char* buf, size_t& size)
+{
+    connManager st(m_modHandle);
+    return serialize(m_req, buf, size, st.systemVariables());
 }
 
 int connMgrExecuter::disconnectOne(char* buf, size_t& size)
@@ -1558,7 +1614,6 @@ int connMgrExecuter::disconnectOne(char* buf, size_t& size)
 int connMgrExecuter::disconnectAll(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-
     st.disconnectAll();
     m_req.reset();
     size = m_req.serialize(NULL, buf);
@@ -1573,6 +1628,10 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
         return disconnectOne(nw->ptr(), nw->datalen);
     else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ALL)
         return disconnectAll(nw->ptr(), nw->datalen);
+    else if(m_req.keyNum == TD_STSTCS_DATABASE_LIST)
+        return definedDatabaseList(nw->ptr(), nw->datalen);
+    else if(m_req.keyNum == TD_STSTCS_SYSTEM_VARIABLES)
+        return systemVariables(nw->ptr(), nw->datalen);
     return 0;
 }
 

@@ -950,7 +950,7 @@ class resultWriter
     const extResultDef* m_def;
     bool m_noBookmark;
 
-    short doWrite(position* pos, unsigned int bookmark)
+    short doWrite(position* pos, const unsigned char* bookmark, int bmlen)
     {
         // write recLength space;
         unsigned short recLen = 0;
@@ -959,7 +959,7 @@ class resultWriter
 
         // write bookmark
         if (!m_noBookmark)
-            m_nw->asyncWrite((const char*)&bookmark, 4);
+            m_nw->asyncWrite((const char*)bookmark, bmlen);
 
         // if pos ==NULL , that is not found record in a TD_KEY_SEEK_MULTI
         // operation
@@ -1020,9 +1020,9 @@ public:
          m_noBookmark = noBookmark;
     }
 
-    short write(position* pos, unsigned int bookmark)
+    short write(position* pos, const unsigned char* bookmark, int len)
     {
-        return doWrite(pos, bookmark);
+        return doWrite(pos, bookmark, len);
     }
 
     inline unsigned int end()
@@ -1225,39 +1225,20 @@ public:
         return REC_MACTH;
     }
 
-    short write(const unsigned char* bmPtr,
+    short write(const unsigned char* bookmarkPtr,
                 unsigned int bmlen /*, short stat=0*/)
     {
         unsigned int bookmark = 0;
         // if bmPtr ==NULL , that is not found record in a TD_KEY_SEEK_MULTI
         // operation
         // and set error code to bookmark also STATUS_NOT_FOUND_TI
-        if (bmPtr == NULL)
+        if (bookmarkPtr == NULL)
         {
             // bookmark = stat;
-            return m_writer.write(NULL, bookmark);
+            return m_writer.write(NULL, (const unsigned char*)&bookmark, sizeof(bookmark));
         }
         else
-        {
-            switch (bmlen)
-            {
-            case 4:
-                bookmark = *((unsigned int*)bmPtr);
-                break;
-            case 2:
-                bookmark = *((unsigned short*)bmPtr);
-                break;
-            case 3:
-                bookmark = *((unsigned int*)bmPtr) & 0x0FFFFFF;
-                break;
-            case 1:
-                bookmark = *((unsigned short*)bmPtr) & 0x0FF;
-                break;
-            default:
-                break;
-            }
-            return m_writer.write(&m_position, bookmark);
-        }
+            return m_writer.write(&m_position, bookmarkPtr, bmlen);
     }
     unsigned short rejectCount() const { return m_req->rejectCount; };
     unsigned short maxRows() const { return m_maxRows; };

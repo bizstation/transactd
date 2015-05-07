@@ -123,7 +123,7 @@ void makeMysqlParam(bzs::test::worker::mysql::connectParam& param,
     param.port = 0;
 }
 
-#define BENCH_TIMER_SECONDS 2.0f
+#define BENCH_TIMER_SECONDS 5.0f
 double executeWorkers(const commandLineParam& cmd, const connectParams param,
                       const bzs::test::worker::mysql::connectParam& paramMysql,
                       int wn)

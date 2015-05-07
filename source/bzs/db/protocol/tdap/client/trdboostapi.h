@@ -878,9 +878,13 @@ template <class Database_Ptr> inline void dropDatabase(Database_Ptr db)
 }
 
 template <class Database_Ptr>
-inline table_ptr openTable(Database_Ptr db, const _TCHAR* name, short mode = TD_OPEN_NORMAL)
+inline table_ptr openTable(Database_Ptr db, const _TCHAR* name,
+        short mode = TD_OPEN_NORMAL,
+        bool autoCreate = true, const _TCHAR* ownerName = NULL,
+                     const _TCHAR* uri = NULL)
 {
-    table_ptr p(db->openTable(name, mode), releaseTable);
+    table_ptr p(db->openTable(name, mode, autoCreate, ownerName, uri),
+                releaseTable);
     if (db->stat())
         nstable::throwError((std::_tstring(_T("Open table ")) + name).c_str(),
                             db->stat());
@@ -888,9 +892,14 @@ inline table_ptr openTable(Database_Ptr db, const _TCHAR* name, short mode = TD_
 }
 
 template <class Database_Ptr>
-inline table_ptr openTable(Database_Ptr db, short tableid, short mode = TD_OPEN_NORMAL)
+inline table_ptr openTable(Database_Ptr db, short tableid,
+        short mode = TD_OPEN_NORMAL,
+        bool autoCreate = true, const _TCHAR* ownerName = NULL,
+                     const _TCHAR* uri = NULL)
 {
-    table_ptr p(db->openTable(tableid, mode), releaseTable);
+    table_ptr p(db->openTable(tableid, mode, autoCreate, ownerName, uri),
+                releaseTable);
+
     if (db->stat())
     {
         _TCHAR buf[50];
@@ -952,6 +961,23 @@ inline void insertTable(dbdef* def, short id, const _TCHAR* name,
             def->stat());
 }
 
+inline void deleteTable(dbdef* def, short id)
+{
+    def->deleteTable(id);
+    if (def->stat() != 0)
+        nstable::throwError(_T("Delete tabledef "), def->stat());
+
+}
+
+
+inline void renumberTable(dbdef* def, short id, short newid)
+{
+    def->renumberTable(id, newid);
+    if (def->stat() != 0)
+        nstable::throwError(_T("Renumber table id "), def->stat());
+
+}
+
 inline fielddef* insertField(dbdef* def, short tableid, short fieldNum,
                              const _TCHAR* name, uchar_td type, ushort_td len)
 {
@@ -967,6 +993,13 @@ inline fielddef* insertField(dbdef* def, short tableid, short fieldNum,
     return fd;
 }
 
+inline void deleteField(dbdef* def, short tableid, short fieldNum)
+{
+    def->deleteField(tableid, fieldNum);
+    if (def->stat() != 0)
+        nstable::throwError(_T("Delete fielddef "), def->stat());
+}
+
 inline keydef* insertKey(dbdef* def, short tableid, short insertIndex)
 {
     keydef* kd = def->insertKey(tableid, insertIndex);
@@ -974,6 +1007,26 @@ inline keydef* insertKey(dbdef* def, short tableid, short insertIndex)
         nstable::throwError(std::_tstring(_T("Insert keydef ")).c_str(),
                             def->stat());
     return kd;
+}
+
+inline void deleteKey(dbdef* def, short tableid, short keynum)
+{
+    def->deleteKey(tableid, keynum);
+    if (def->stat() != 0)
+        nstable::throwError(_T("Delete keydef "), def->stat());
+}
+
+inline void validateTableDef(dbdef* def, short tableid)
+{
+    def->validateTableDef(tableid);
+    if (def->stat() != 0)
+    {
+        std::_tstring s;
+        if (def->tableDefs(tableid))
+            s = def->tableDefs(tableid)->tableName();
+        nstable::throwError((std::_tstring(_T("Validate tabledef ")) + s).c_str(),
+                            def->stat());
+    }
 }
 
 inline void updateTableDef(dbdef* def, short tableid)

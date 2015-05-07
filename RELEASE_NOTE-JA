@@ -10,10 +10,21 @@ Version 2.4.0 2015/04/02
   が実装されました。テーブル情報では、テーブルをオープンしてからの読み取り、更新
   、追加、削除したレコード数も得ることができます。
 
+・bookmarkリストによるレコードセットの取得を可能にしました。
+  queryBase::baseseekByBookmarksにtrueをセットし、queryBase::addSeekKeyValuePtrを
+  使って複数のbookmarkをセットすることで可能です。
+
+・以下の３つの関数を、フリースレッド対応しました。
+  table::insertBookmarks
+  table::moveBookmarksId  --> table::moveBookmarks
+  table::bookMarksCount   --> table::bookmarksCount
+
 その他の修正と変更点
 --------------------------------------------------------------------------------
 ・P.SQL互換のヌルキーアクセスにおいて、ヌルキーかどうかの判定ミスすることがある不
   具合を修正しました。
+
+・既存のテーブルの自動スキーマ生成がうまくいかない場合がある不具合を修正しました。
 
 ・Transactd Monitorのためのサーバー側ロック制御をより範囲の狭いもの変更してモニタ
   リング時の同時実効性を向上させました。
@@ -29,6 +40,45 @@ Version 2.4.0 2015/04/02
 ・無効なプリペアードクエリハンドル受取ったときに、無効なポインタ操作してしまうバグ
   を修正しました。
 
+・メソッドの追加
+  dbdef::validateTableDef
+  nstable::bookmarkLen
+  recordCountFnコールバックファンクション
+  table::setOnRecordCount
+  table::onRecordCount
+  queryBase::seekByBookmarks
+  queryBase::isSeekByBookmarks
+
+
+・メソッド名の変更 
+  table::setBookMarks     --> table::insertBookmarks
+  table::moveBookmarksId  --> table::moveBookmarks
+  table::bookMarksCount   --> table::bookmarksCount
+
+・bookmark_td型の変更 unsigned int から
+        struct BOOKMARK
+        {
+            uchar_td val[MAX_BOOKMARK_SIZE];
+            bool empty;
+            BOOKMARK():empty(true){ }
+            bool isEmpty(){ return empty; }
+            void set(uchar_td* p, int len)
+            {
+                memcpy(val, p, len);
+                empty = false;
+            }
+        };
+
+・bookmark_td型を引数に取る関数で、bookmark_td型を参照に変更。
+
+・コンビニエンスAPIのopenTableの引数をフル引数対応しました。
+
+・コンビニエンスAPIに以下の関数を追加しました。
+  void deleteTable(dbdef* def, short id)
+  void renumberTable(dbdef* def, short id, short newid)
+  void deleteField(dbdef* def, short tableid, short fieldNum)
+  void deleteKey(dbdef* def, short tableid, short keynum)
+  void validateTableDef(dbdef* def, short tableid)
 
 ================================================================================
 Version 2.3.0 2015/03/20

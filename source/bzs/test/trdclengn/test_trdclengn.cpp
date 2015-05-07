@@ -4537,7 +4537,7 @@ void testServerPrepareJoin(database* db)
     BOOST_CHECK_MESSAGE(rs.size() == 100, "hasManyJoin  rs.size()== 100");
     q.all().optimize(queryBase::joinHasOneOrHasMany);
     atu.index(1).join(rs, q, _T("code"));
-    BOOST_CHECK_MESSAGE(rs.size() == 20000, "hasManyJoin  rs.size()== 20000");
+    BOOST_CHECK_MESSAGE(rs.size() == 20000, "hasManyJoin  rs.size()== 20000 size = " << rs.size());
 
     //hasManyJoin outer
     rs.clear();
@@ -4546,7 +4546,7 @@ void testServerPrepareJoin(database* db)
     BOOST_CHECK_MESSAGE(rs.size() == 100, "hasManyJoin  rs.size()== 100");
     q.all().optimize(queryBase::joinHasOneOrHasMany);
     atu.index(1).outerJoin(rs, q, _T("code"));
-    BOOST_CHECK_MESSAGE(rs.size() == 20095, "hasManyJoin  rs.size()== 20095");
+    BOOST_CHECK_MESSAGE(rs.size() == 20095, "hasManyJoin  rs.size()== 20095 size = " << rs.size());
 
 
     // restore record
@@ -5539,7 +5539,7 @@ BOOST_FIXTURE_TEST_CASE(new_delete, fixtureQuery)
 BOOST_FIXTURE_TEST_CASE(join, fixtureQuery)
 {
     testJoin(db());
-    testRecordsetClone(db());
+    //testRecordsetClone(db());
     testPrepareJoin(db());
     testServerPrepareJoin(db());
     testWirtableRecord(db());

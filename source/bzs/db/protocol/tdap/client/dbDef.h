@@ -99,7 +99,7 @@ public:
     int version() const;
 
     inline short_td stat() const { return m_stat; }
-
+    short validateTableDef(short TableIndex);
     void updateTableDef(short tableIndex, bool forPsqlDdf = true);
     fielddef* insertField(short tableIndex, short insertIndex);
     void deleteField(short tableIndex, short deleteIndex);

@@ -80,7 +80,8 @@ class server : public iserver, private boost::noncopyable
 
 public:
     server(boost::shared_ptr<IAppModuleBuilder>, const std::string& name,
-           std::size_t max_connections, unsigned int shareMemSize,
+        const char* port,   
+        std::size_t max_connections, unsigned int shareMemSize,
            const char* hostCheckName);
     void start();
     void stop();

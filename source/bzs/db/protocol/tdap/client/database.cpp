@@ -744,11 +744,13 @@ inline void copyEachFieldData(table* dest, table* src, filedChnageInfo* fci)
 inline int moveVaileRecord(table* src)
 {
     int count = 0;
-    bookmark_td bm = 0;
+    bookmark_td bm;
     src->stepLast();
     while (src->stat() == STATUS_SUCCESS)
     {
         bm = src->bookmark();
+        if (src->stat() != STATUS_SUCCESS)
+        	break;
         ++count;
         src->stepPrev();
     }

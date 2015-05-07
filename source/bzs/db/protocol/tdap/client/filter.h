@@ -37,7 +37,6 @@ namespace client
 {
 
 
-#define BOOKMARK_SIZE 4
 #define DATASIZE_BYTE 2
 
 
@@ -504,12 +503,11 @@ public:
         }
     }
 
-    int bookmarkSize(bool isTransactd) const
+    int bookmarkSize(bool isTransactd, ushort_td bmlen) const
     {
         if (isTransactd)
-            return (itype & FILTER_CURRENT_TYPE_NOBOOKMARK) ? 0 : BOOKMARK_SIZE;
-        assert(type[0]);
-        return BOOKMARK_SIZE;
+            return (itype & FILTER_CURRENT_TYPE_NOBOOKMARK) ? 0 : bmlen;
+        return bmlen;
     }
 
     bool positionTypeNext(bool isTransactd) const
@@ -599,7 +597,7 @@ class filter
     struct
     {
         bool m_stopAtLimit : 1;
-
+        bool m_seekByBookmarks : 1;
     };
 
     struct bufSize
@@ -740,11 +738,20 @@ class filter
         {
             seek& l = m_seeks[index];
             uchar_td* to = dataBuf;
-            for (int j = 0; j < joinKeySize; ++j)
+            if (m_seekByBookmarks)
             {
-                const keyValuePtr& v = keyValues[i + j];
-                fielddef& fd = fds[kd->segments[j].fieldNum];
-                to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len);
+                const keyValuePtr& v = keyValues[i];
+                memcpy(to, (uchar_td*)v.ptr, v.len);
+                to += v.len;
+            }
+            else
+            {
+                for (int j = 0; j < joinKeySize; ++j)
+                {
+                    const keyValuePtr& v = keyValues[i + j];
+                    fielddef& fd = fds[kd->segments[j].fieldNum];
+                    to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len);
+                }
             }
             if (!l.setParam(dataBuf, (ushort_td)(to - dataBuf)))
                 return false;
@@ -758,25 +765,34 @@ class filter
     bool prebuiltSeeks( keydef* kd, size_t size, const queryBase* q, int& keySize, uchar_td** dataBuf)
     {
         // Check specify key size is smoller than kd->segmentCount or equal
-        if (keySize == 0)
-            keySize = kd->segmentCount;
-        else if (kd->segmentCount < keySize) 
-                return false;
-        if (size % keySize)
-            return false;
-        
-        m_hasManyJoin = (kd->segmentCount != keySize) || kd->segments[0].flags.bit0;
-        if (m_hasManyJoin)
-            m_withBookmark = true;
-        if (q && m_hasManyJoin && 
-                !(q->getOptimize() & queryBase::joinHasOneOrHasMany))
-            return false;
-        m_seeks.resize(size / keySize);
         int maxKeylen = 0;
-        for (int j = 0; j < keySize; ++j)
-            maxKeylen +=
-                m_tb->tableDef()->fieldDefs[kd->segments[j].fieldNum].len + 2;
+        if (m_seekByBookmarks)
+        {
+            maxKeylen = m_tb->bookmarkLen();
+            m_hasManyJoin = false;
+            keySize = 1;
+            m_seeks.resize(size);
+        }
+        else
+        {
+            if (keySize == 0)
+                keySize = kd->segmentCount;
+            else if (kd->segmentCount < keySize)
+                    return false;
+            if (size % keySize)
+                return false;
 
+            m_hasManyJoin = (kd->segmentCount != keySize) || kd->segments[0].flags.bit0;
+            if (m_hasManyJoin)
+                m_withBookmark = true;
+            if (q && m_hasManyJoin &&
+                    !(q->getOptimize() & queryBase::joinHasOneOrHasMany))
+                return false;
+            m_seeks.resize(size / keySize);
+            for (int j = 0; j < keySize; ++j)
+                maxKeylen +=
+                    m_tb->tableDef()->fieldDefs[kd->segments[j].fieldNum].len + 2;
+        }
         // alloc databuffer
         *dataBuf = reallocSeeksDataBuffer(maxKeylen * m_seeks.size());
         m_hd.rejectCount = 0;
@@ -812,7 +828,7 @@ class filter
         m_withBookmark = q->isBookmarkAlso();
         m_cachedOptimize = q->getOptimize();
         m_stopAtLimit = q->isStopAtLimit();
-
+        m_seekByBookmarks = q->isSeekByBookmarks(); 
 
         if (q->isAll())
             addAllFields();
@@ -839,7 +855,7 @@ class filter
 
     int resultRowSize(bool ignoreFields) const
     {
-        int recordLen = m_hd.bookmarkSize(m_isTransactd) + DATASIZE_BYTE;
+        int recordLen = bookmarkSize() + DATASIZE_BYTE;
         if (!ignoreFields)
             recordLen += bsize.retRowSize;
         return recordLen;
@@ -1152,8 +1168,12 @@ public:
             if (!m_withBookmark)
                 type |= FILTER_CURRENT_TYPE_NOBOOKMARK;
             if (m_seeksMode)
+            {
+                incCurrent = false;
                 type |= FILTER_TYPE_SEEKS;
-            
+                if (m_seekByBookmarks)
+                    type |= FILTER_TYPE_SEEKS_BOOKMARKS;
+            }
         }
         m_hd.setPositionType(incCurrent, m_isTransactd, type);
     }
@@ -1192,8 +1212,7 @@ public:
 
     ushort_td totalFieldLen() const
     {
-        return resultRowSize(false) - m_hd.bookmarkSize(m_isTransactd) -
-               DATASIZE_BYTE;
+        return resultRowSize(false) - bookmarkSize() - DATASIZE_BYTE;
     }
 
     ushort_td totalSelectFieldLen() const
@@ -1240,7 +1259,12 @@ public:
 
     inline bool ignoreFields() const { return m_ignoreFields; }
 
-    inline int bookmarkSize() const { return m_hd.bookmarkSize(m_isTransactd); }
+    inline int bookmarkSize() const
+    {
+        ushort_td bmlen = (m_seeksMode && m_hasManyJoin) ?
+                             4 : m_tb->bookmarkLen();
+        return m_hd.bookmarkSize(m_isTransactd, bmlen);
+    }
 
     /* The Ignore fields option don't use with multi seek operation.
        because if a server are not found a record then a server return
@@ -1248,6 +1272,7 @@ public:
     */
     inline void setIgnoreFields(bool v) { m_ignoreFields = v; }
     inline bool isSeeksMode() const { return m_seeksMode; }
+    inline bool isSeekByBookmarks() const { return m_seekByBookmarks; }
     inline table::eFindType direction() const { return m_direction; }
     inline bool setDirection(table::eFindType v) 
     { 
