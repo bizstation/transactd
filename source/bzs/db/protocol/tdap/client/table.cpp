@@ -1151,6 +1151,7 @@ pq_handle table::setQuery(const queryBase* query, bool serverPrepare)
     m_stat = 0;
     m_impl->rc->reset();
     m_impl->exBookMarking = false;
+    m_impl->resetBookmarks();
     m_impl->filterPtr.reset();
     if (query == NULL)
         return m_impl->filterPtr;

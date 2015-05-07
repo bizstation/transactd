@@ -5,19 +5,20 @@ Version 2.4.0 2015/04/02
 ================================================================================
 新機能
 --------------------------------------------------------------------------------
-・Transactd Monitor
+・Transactd studio
   Transactdを使用中のコネクション、データベース、テーブル情報を表示するためのAPI
   が実装されました。テーブル情報では、テーブルをオープンしてからの読み取り、更新
   、追加、削除したレコード数も得ることができます。
 
-・bookmarkリストによるレコードセットの取得を可能にしました。
+・activeTableでbookmarkからのrecordsetの取得を可能にしました。
   queryBase::baseseekByBookmarksにtrueをセットし、queryBase::addSeekKeyValuePtrを
-  使って複数のbookmarkをセットすることで可能です。
+  使って複数のbookmarkをセットできます。
 
-・以下の３つの関数を、フリースレッド対応しました。
+・以下の３つの関数を、フリースレッド対応しました。以下のメソッドは複数のスレッド
+  から同時アクセス可能です。
   table::insertBookmarks
-  table::moveBookmarksId  --> table::moveBookmarks
-  table::bookMarksCount   --> table::bookmarksCount
+  table::moveBookmarks
+  table::bookmarksCount
 
 その他の修正と変更点
 --------------------------------------------------------------------------------

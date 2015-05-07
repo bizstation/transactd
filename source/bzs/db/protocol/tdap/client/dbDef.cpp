@@ -722,10 +722,9 @@ tabledef* dbdef::tableDefs(int index)
         }
         m_datalen =
             fixVariableLenBug(isUseTransactd(), (tabledef*)m_pdata, m_datalen);
-
-        m_impl->tableDefs[index] = def =
-            (tabledef*)malloc(getNewVersionSize((tabledef*)m_pdata));
-
+        size_t size = getNewVersionSize((tabledef*)m_pdata);
+        def = (tabledef*)malloc(size);
+        m_impl->tableDefs[index] = def;
         if (def == NULL)
         {
             m_stat = STATUS_CANT_ALLOC_MEMORY;

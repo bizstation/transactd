@@ -354,10 +354,6 @@ char_td nstable::mode() const
 
 void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
 {
-    void* svm_keybuf = m_keybuf;
-    char_td svm_keynum = m_keynum;
-    keylen_td svm_keybuflen = m_keylen;
-
     if (m_impl->nsdb == NULL)
     {
         m_stat = STATUS_LMITS_MAX_TABLES;
@@ -382,7 +378,11 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
             return;
         }
     }
-        
+
+    void* svm_keybuf = m_keybuf;
+    char_td svm_keynum = m_keynum;
+    keylen_td svm_keybuflen = m_keylen;
+    void* data_bak = m_pdata;
 
     // convert utf8 string
     char tmpName[MAX_PATH] = { 0x00 };
@@ -397,6 +397,7 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         m_keynum = mode;
 
     char ownerNameBuf[OWNERNAME_SIZE] = { 0x00 };
+
     if (NULL != ownerName && 0x00 != ownerName[0])
     {
         const char* p2 = toChar(ownerNameBuf, ownerName, OWNERNAME_SIZE);
@@ -405,7 +406,7 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         if (m_datalen > 11)
         {
             m_stat = STATUS_TOO_LONG_OWNERNAME;
-            return;
+            goto clean;
         }
         if (m_datalen < sizeof(unsigned int))
             m_datalen = sizeof(unsigned int);/* for bookmarklen*/
@@ -424,9 +425,11 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         if (!isUseTransactd())
             m_impl->bookmarkLen = BTRV_BOOKMARK_SIZE;
     }
+clean:
     m_keybuf = svm_keybuf;
     m_keynum = svm_keynum;
     m_keylen = svm_keybuflen;
+    m_pdata = data_bak;
 }
 
 void nstable::doUpdate(eUpdateType type)
