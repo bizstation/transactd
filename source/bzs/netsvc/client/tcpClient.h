@@ -28,7 +28,14 @@
 #include <boost/thread/mutex.hpp>
 #if (BOOST_VERSION > 104900)
 #include <boost/asio/deadline_timer.hpp>
+#else
+#ifdef __APPLE__
+#include <boost/asio.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #endif
+#endif
+
+
 #include <stdio.h>
 #include <vector>
 #ifdef LINUX
@@ -322,14 +329,18 @@ protected:
     T m_socket;
     buffers m_optionalBuffes;
 
-    void checkError(const system::error_code& e)
+    bool checkError(const system::error_code& e)
     {
         if (e) 
         {
+            #ifdef __APPLE__
+                return false;
+            #endif
             if (e == asio::error::operation_aborted)
                 throw system_error(asio::error::timed_out);
-           throw system_error(e);
+            throw system_error(e);
         }
+        return true;
     }
 
     void cleanup()
@@ -385,7 +396,7 @@ public:
 
 /** Implementation of The TCP connection.
  */
-#if (defined(LINUX) && (BOOST_VERSION > 104900))
+#if defined(LINUX)
 #define USE_CONNECT_TIMER
 #endif
 
@@ -453,7 +464,8 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 #ifdef USE_CONNECT_TIMER
         m_timer.cancel();
 #endif
-        checkError(e);
+        if (!checkError(e))
+            return ;
         s_io.on_connected(); 
         m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
         m_connected = true;
@@ -481,9 +493,9 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 #ifdef USE_CONNECT_TIMER
     void connect()
     {
+        setTimer(connections::connectTimeout);
         m_socket.async_connect(m_ep,
             bind(&tcpConnection::on_connect, this, _error_holder));
-        setTimer(connections::connectTimeout);
         m_ios.run();
         m_ios.reset();
     }

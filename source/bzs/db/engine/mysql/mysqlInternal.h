@@ -49,6 +49,10 @@
 #endif
 #include <my_config.h>
 #include <mysql_version.h>
+#if defined(MARIADB_BASE_VERSION) && (MYSQL_VERSION_ID > 100000)
+#define MARIADDB_10_0 MYSQL_VERSION_ID
+#endif
+
 #include <sql/sql_const.h>
 #include "my_global.h"
 #include <math.h>
@@ -135,25 +139,25 @@ extern "C" {
 #define THD_NOT_KILLED NOT_KILLED
 #endif
 
-#if (MYSQL_VERSION_ID < 50600) // MySQL and MariaDB both
+#if (MYSQL_VERSION_ID < 50600) // MySQL and MariaDB both  5.5
 #define user_defined_key_parts key_parts
 #define MDL_SHARED_UPGRADABLE MDL_SHARED_WRITE
 #define cp_get_sql_error() stmt_da->sql_errno()
 #define cp_isOk() stmt_da->is_ok()
 #define cp_set_overwrite_status(A) stmt_da->can_overwrite_status = A
-#elif((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
+#elif((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION)) // MySQL 5.7
 #define cp_get_sql_error() get_stmt_da()->mysql_errno()
 #define query_cache_invalidate3(A, B, C) query_cache.invalidate(A, B, C)
 #define cp_isOk() get_stmt_da()->is_ok()
 #define cp_set_overwrite_status(A) get_stmt_da()->set_overwrite_status(A)
-#else
+#else                                                               // MySQL 5.6 Mariadb 10.0
 #define cp_get_sql_error() get_stmt_da()->sql_errno()
 #define cp_isOk() get_stmt_da()->is_ok()
 #define cp_set_overwrite_status(A) get_stmt_da()->set_overwrite_status(A)
 
 #endif
 
-#if (MYSQL_VERSION_NUM < 50600) // MySQL Only
+#if (MYSQL_VERSION_NUM < 50600) // MySQL 5.5 Only
 #define ha_index_next index_next
 #define ha_index_prev index_prev
 #define ha_index_first index_first
@@ -424,6 +428,34 @@ inline void cp_open_error_release(THD* thd, TABLE_LIST& tables)
     thd->mdl_context.release_lock(tables.mdl_request.ticket);
 }
 
+#endif
+
+/* find_files is static function in maridb. 
+   make_db_list function is not static, but it is not list in sql_show.h.  
+*/
+
+#ifdef MARIADDB_10_0
+    typedef Dynamic_array<LEX_STRING*> SQL_Strings;
+    typedef struct st_lookup_field_values
+    {
+        LEX_STRING db_value, table_value;
+        bool wild_db_value, wild_table_value;
+    } LOOKUP_FIELD_VALUES;
+
+    extern int make_db_list(THD *thd, Dynamic_array<LEX_STRING*> *files,
+                 LOOKUP_FIELD_VALUES *lookup_field_vals);
+    inline int db_list(THD *thd, SQL_Strings *files)
+    {
+        LOOKUP_FIELD_VALUES lv;
+        memset(&lv, 0 ,sizeof(LOOKUP_FIELD_VALUES));
+        return make_db_list(thd, files, &lv);
+    }
+#else
+    typedef List<LEX_STRING> SQL_Strings;
+    inline int db_list(THD *thd, SQL_Strings *files)
+    {
+        return find_files(thd, files, NullS,  mysql_data_home, "", true);
+    }
 #endif
 
 #endif // BZS_DB_ENGINE_MYSQL_MYSQLINTERNAL_H

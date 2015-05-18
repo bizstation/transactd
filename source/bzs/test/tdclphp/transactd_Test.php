@@ -1291,7 +1291,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         // cleanup
         $tb2->del(); // last id = 29999
-        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb2->stat(), 0);
         
         // ------------------------------------------------------
         // Test use shared lock option
@@ -1798,7 +1798,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db = new Bz\database();
         $tb = $this->openTable($db);
         $this->assertNotEquals($tb, NULL);
-        $expected_count = 20003;
+        $expected_count = 20002;
         if(! class_exists('Thread'))
           $expected_count = $expected_count + 1;
         // estimate count

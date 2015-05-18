@@ -536,9 +536,9 @@ ushort_td nstable::doInsert(bool ncc)
             m_impl->bulkIns->insert((const char*)data(), m_datalen, this);
     else
     {
-        tdap(TD_REC_INSERT);
         if (ncc)
             m_keynum = -1;
+        tdap(TD_REC_INSERT);
         if (m_stat == STATUS_SUCCESS)
             ins_rows = 1;
     }
@@ -615,6 +615,11 @@ void nstable::seekByBookmark(bookmark_td& bm, ushort_td lockBias)
 void nstable::seekByBookmark(bookmark_td* bm, ushort_td lockBias)
 {
     int count = 0;
+    if (m_buflen < m_impl->bookmarkLen)
+    {
+        m_buflen = m_impl->bookmarkLen;
+        m_pdata = realloc(m_pdata, m_buflen);
+    }
     memcpy(m_pdata, bm, m_impl->bookmarkLen);
     m_datalen = m_buflen;
     m_keylen = m_keybuflen;

@@ -171,6 +171,7 @@ class DLLLIB writableRecord : public memoryRecord
 public:
 
     bool read(bool KeysetAlrady = false);
+    bool read(bookmark_td& bm);
     void insert();
     void del(bool KeysetAlrady = false);
     void update();

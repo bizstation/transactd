@@ -579,6 +579,12 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate,
 
 bool database::createTable(short FileNum, const _TCHAR* FilePath)
 {
+    tabledef* td = m_impl->dbDef->tableDefs(FileNum);
+    if (!td || td->fieldCount == 0)
+    {
+        m_stat = STATUS_INVALID_FIELD_OFFSET;
+        return false;
+    }
     if (isTransactdUri(FilePath))
     {
         if (setUseTransactd() == false)
@@ -590,7 +596,7 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
         const char* p = toServerUri(buf2, MAX_PATH, FilePath, isUseTransactd());
 
         m_stat = m_btrcallid(
-            TD_CREATETABLE, posblk, m_impl->dbDef->tableDefs(FileNum),
+            TD_CREATETABLE, posblk, td,
             &m_impl->dbDef->m_datalen, (void*)p, (uchar_td)strlen(p),
             CR_SUBOP_BY_TABLEDEF /* exists check */, clientID());
     }
@@ -607,7 +613,7 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
         if (FilePath)
             buf = FilePath;
         else
-            buf = m_impl->dbDef->tableDefs(FileNum)->fileName();
+            buf = td->fileName();
         nsdatabase::createTable(fs, 1024, buf, CR_SUBOP_BY_FILESPEC);
         free(fs);
     }
@@ -791,6 +797,7 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset,
                               short keyNum, int maxSkip)
 {
     src->setKeyNum((char_td)keyNum);
+    dest->setKeyNum(-1);
     const tabledef* ddef = dest->tableDef();
     const tabledef* sdef = src->tableDef();
     ushort_td ins_rows = 0;
@@ -851,7 +858,7 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset,
             dest->tdap(TD_REC_INSERT);
         }
         else
-            ins_rows += dest->insert();
+            ins_rows += dest->insert(true);
         if (dest->stat() == STATUS_INVALID_VALLEN)
             skipCount++;
         else if (dest->stat() == STATUS_DUPPLICATE_KEYVALUE)

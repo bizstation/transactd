@@ -507,7 +507,9 @@ inline bool dbExecuter::doOpenTable(request& req, bool reconnect)
                 req.pbk->handle = hdl;
                 if (!reconnect)
                 {
-                    ushort_td len = (ushort_td)m_tb->posPtrLen();
+                    ushort_td len = m_tb->posPtrLen();
+                    if ((m_tb->tableFlags() & HA_PRIMARY_KEY_REQUIRED_FOR_POSITION) && !m_tb->primaryKey())
+                        len = 0;
                     memcpy(req.data, &len , sizeof(ushort_td));
                     req.resultLen = sizeof(ushort_td);
                     req.paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN;
@@ -693,7 +695,7 @@ inline int dbExecuter::doReadMulti(request& req, int op,
     bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
 
     bool forword = (op == TD_KEY_NEXT_MULTI) || (op == TD_POS_NEXT_MULTI);
-    if (op == TD_KEY_SEEK_MULTI)
+    if (op == TD_KEY_SEEK_MULTI && !(ereq->itype & FILTER_TYPE_SEEKS_BOOKMARKS))
     {
         char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
         if (!m_tb->setKeyNum(keynum))

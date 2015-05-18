@@ -260,7 +260,6 @@ class table : private boost::noncopyable
 #endif
     database& m_db;
     mutable boost::scoped_array<unsigned char> m_keybuf;
-    mutable boost::scoped_array<unsigned char> m_nonNccKeybuf;
 
     int m_stat;
     int m_percentResult;
@@ -478,6 +477,7 @@ public:
     {
         return (1U << m_table->key_info[m_keyNum].user_defined_key_parts) - 1;
     }
+    unsigned long long tableFlags() const { return m_table->file->ha_table_flags();}
     void seekKey(enum ha_rkey_function find_flag, key_part_map keyMap);
     void getNextSame(key_part_map keyMap);
     void getLast();

@@ -477,22 +477,24 @@ struct handshale_t
 #define HST_OPTION_NO_SCRAMBLE 1
 
 /* server system variables index */
-#define TD_VAR_LISTENADDRESS      0
-#define TD_VAR_LISTENPORT         1
-#define TD_VAR_HOSTCHECKNAME      2
-#define TD_VAR_MAXTCPCONNECTIONS  3
-#define TD_VAR_TABLENAMELOWER     4
-#define TD_VAR_POOLTHREADS        5
-#define TD_VAR_TCPSERVERTYPE      6
-#define TD_VAR_LOCKWAITTIMEOUT    7
-#define TD_VAR_ISOLATION          8
-#define TD_VAR_AUTHTYPE           9
-#define TD_VAR_PIPESHAREMEMSIZE   10
-#define TD_VAR_MAXPIPECONNECTIONS 11
-#define TD_VAR_USEPIPE            12
-#define TD_VAR_HSLISTENPORT       13
-#define TD_VAR_USEHS              14
-#define TD_VAR_SIZE               15
+#define TD_VER_DB                 0 
+#define TD_VER_SERVER             1
+#define TD_VAR_LISTENADDRESS      2
+#define TD_VAR_LISTENPORT         3
+#define TD_VAR_HOSTCHECKNAME      4
+#define TD_VAR_MAXTCPCONNECTIONS  5
+#define TD_VAR_TABLENAMELOWER     6
+#define TD_VAR_POOLTHREADS        7
+#define TD_VAR_TCPSERVERTYPE      8
+#define TD_VAR_LOCKWAITTIMEOUT    9
+#define TD_VAR_ISOLATION          10
+#define TD_VAR_AUTHTYPE           11
+#define TD_VAR_PIPESHAREMEMSIZE   12
+#define TD_VAR_MAXPIPECONNECTIONS 13
+#define TD_VAR_USEPIPE            14
+#define TD_VAR_HSLISTENPORT       15
+#define TD_VAR_USEHS              16
+#define TD_VAR_SIZE               17
 
 /** @endcond */
 

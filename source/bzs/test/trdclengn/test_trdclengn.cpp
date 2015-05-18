@@ -452,9 +452,13 @@ void testInsert(database* db)
         tb->insert();
     }
     tb->commitBulkInsert();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "Insert2");
     db->endTrn();
 
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "Insert2");
+    int v = tb->recordCount(false);
+    BOOST_CHECK_MESSAGE((uint_td)20002 == v,
+                        "RecordCount count = " << v);
+
     tb->release();
 }
 
@@ -1662,7 +1666,7 @@ void testTransactionLockReadCommited(database* db)
     
     //insert test row
     tb2->setFV(fdi_id, 29999);
-    tb2->insert();
+    tb2->insert(false);
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->insert stat = " << tb2->stat());
 
     tb->seekLast();  
@@ -1675,7 +1679,7 @@ void testTransactionLockReadCommited(database* db)
     
     //cleanup
     tb2->del(); // last id = 29999
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->del");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->del");
 
     /* -------------------------------------------------*/
     /* TAbort test                                      */
@@ -2124,8 +2128,9 @@ void testMissingUpdate(database* db)
     BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2->open");
     table* tb2 = db2->openTable(_T("user"));
     {
+
         boost::scoped_ptr<worker> w(new worker(tb2));
-    
+#ifdef TEST_SEEK_RETRY    
         // Inserting  target, The InnoDB is good!
         tb->setFV(fdi_id, 300000);
         tb2->setFV(fdi_id, 300000);
@@ -2172,6 +2177,7 @@ void testMissingUpdate(database* db)
                     
             tb2->unlock();
         }
+#endif
         
         // Deleting  target, The InnoDB is good!
         tb->setFV(fdi_id, 300000);
@@ -2225,20 +2231,21 @@ void testDelete(database* db)
 
     // estimate number
     int count = tb->recordCount(true);
-    bool c = (abs(count - 20003) < 5000);
+    bool c = (abs(count - 20002) < 5000);
     BOOST_CHECK_MESSAGE(c == true, "RecordCount1");
     if (!c)
     {
         char tmp[256];
         sprintf_s(
             tmp, 256,
-            "true record count = 20003 as estimate recordCount count = %d ",
+            "true record count = 20002 as estimate recordCount count = %d ",
             count);
         BOOST_CHECK_MESSAGE(false, tmp);
     }
     // true number
-    BOOST_CHECK_MESSAGE((uint_td)20003 == tb->recordCount(false),
-                        "RecordCount2");
+    int v = tb->recordCount(false);
+    BOOST_CHECK_MESSAGE((uint_td)20002 == v,
+                        "RecordCount2 count = " << v);
     int vv = 15001;
     tb->clearBuffer();
     tb->setFV(fdi_id, vv);

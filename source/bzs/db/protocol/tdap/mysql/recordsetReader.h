@@ -1078,7 +1078,7 @@ public:
         if(p->readMapSize)
         {
             bm.setTable(tb);
-            if (m_seeksMode)
+            if (m_seeksMode && !(req->itype & FILTER_TYPE_SEEKS_BOOKMARKS))
                 addKeysegFieldMap(tb);
             if (p->readMapSize)
                 p->copyBitmapTo(bm.getReadBitmap());
@@ -1131,7 +1131,8 @@ public:
         if ((rd->fieldCount > 1) ||
             ((rd->fieldCount == 1) &&
              (rd->field[0].len < m_position.recordLenCl())))
-            ret = convResultPosToFieldNum(tb, noBookmark, rd, m_seeksMode);
+            ret = convResultPosToFieldNum(tb, noBookmark, rd, m_seeksMode, 
+                            (req->itype & FILTER_TYPE_SEEKS_BOOKMARKS) != 0);
 
         nw->beginExt(tb->blobFields() != 0);
         m_writer.init(nw, rd, noBookmark);
@@ -1159,7 +1160,7 @@ public:
 
     // TODO This convert is move to client. but legacy app is need this
     short convResultPosToFieldNum(engine::mysql::table* tb, bool noBookmark,
-                                  const extResultDef* rd, bool seeksMode)
+                                  const extResultDef* rd, bool seeksMode, bool seekBookmark)
     {
         int blobs = 0;
         bm.setTable(tb);
@@ -1184,7 +1185,7 @@ public:
                 fd = fd->next();
             }
         }
-        else
+        else if (!seekBookmark)
             addKeysegFieldMap(tb);
 
         // if need bookmark , add primary key fields

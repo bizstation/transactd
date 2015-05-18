@@ -1560,9 +1560,8 @@ uint_td table::unPack(char* ptr, size_t size)
         if (fd.type == ft_myfixedbinary)
         {
             int dl = *((unsigned short*)(pos));
-            assert(dl == fd.len - 2);
             memmove(pos, pos + 2, dl);
-            pos += dl;
+            pos += fd.len - 2;
             *((unsigned short*)(pos)) = 0x00;
             ;
             pos += 2;

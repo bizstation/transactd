@@ -1181,7 +1181,7 @@ def testTransactionLockReadCommited()
   
   # cleanup
   tb2.del() # last id = 29999
-  expect(tb.stat()).to eq 0
+  expect(tb2.stat()).to eq 0
   
   # ----------------------------------------------------
   # Abort test
@@ -1741,7 +1741,7 @@ def testInsert2()
 end
 
 def testDelete()
-  expected_count = 20003
+  expected_count = 20002
   db = Transactd::Database.new()
   tb = testOpenTable(db)
   # estimate count

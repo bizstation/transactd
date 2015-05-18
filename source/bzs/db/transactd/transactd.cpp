@@ -301,29 +301,32 @@ static struct st_mysql_sys_var* g_systemVariables[] =
     0
 };
 
-char* get_trd_sys_var(int index)
+const char* get_trd_sys_var(int index)
 {
     switch(index)
     {
     case TD_VAR_LISTENADDRESS:return g_listenAddress;
     case TD_VAR_LISTENPORT:return g_listenPort;
     case TD_VAR_HOSTCHECKNAME:return g_hostCheckUserName;
-    case TD_VAR_MAXTCPCONNECTIONS:return (char*)&g_maxTcpConnections;
-    case TD_VAR_TABLENAMELOWER:return (char*)&g_tableNmaeLower;
-    case TD_VAR_POOLTHREADS:return (char*)&g_pool_threads;
-    case TD_VAR_TCPSERVERTYPE:return (char*)&g_tcpServerType;
-    case TD_VAR_LOCKWAITTIMEOUT:return (char*)&g_lock_wait_timeout;
+    case TD_VAR_MAXTCPCONNECTIONS:return (const char*)&g_maxTcpConnections;
+    case TD_VAR_TABLENAMELOWER:return (const char*)&g_tableNmaeLower;
+    case TD_VAR_POOLTHREADS:return (const char*)&g_pool_threads;
+    case TD_VAR_TCPSERVERTYPE:return (const char*)&g_tcpServerType;
+    case TD_VAR_LOCKWAITTIMEOUT:return (const char*)&g_lock_wait_timeout;
     case TD_VAR_ISOLATION:return g_transaction_isolation;
     case TD_VAR_AUTHTYPE:return g_auth_type;
 #ifdef PIPE_SERVER
-    case TD_VAR_PIPESHAREMEMSIZE:return (char*)&g_pipeCommSharememSize;
-    case TD_VAR_MAXPIPECONNECTIONS:return (char*)&g_maxPipeConnections;
-    case TD_VAR_USEPIPE:return (char*)&g_usePipedLocal;
+    case TD_VAR_PIPESHAREMEMSIZE:return (const char*)&g_pipeCommSharememSize;
+    case TD_VAR_MAXPIPECONNECTIONS:return (const char*)&g_maxPipeConnections;
+    case TD_VAR_USEPIPE:return (const char*)&g_usePipedLocal;
 #endif
 #ifdef USE_HANDLERSOCKET
     case TD_VAR_HSLISTENPORT:return g_hs_listenPort;
-    case TD_VAR_USEHS:return (char*)&g_use_hs;
+    case TD_VAR_USEHS:return (const char*)&g_use_hs;
 #endif
+    case TD_VER_DB: return MYSQL_SERVER_VERSION;
+    case TD_VER_SERVER:return "";
+
     };
     return NULL;
 }

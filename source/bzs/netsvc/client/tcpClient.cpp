@@ -241,7 +241,10 @@ inline connection* connections::doConnect(connection* c)
     try
     {
         c->connect();
-        return c;
+        if (c->isConnected())
+            return c;
+        delete c;
+        return NULL;
     }
     catch (bzs::netsvc::client::exception& e)
     {

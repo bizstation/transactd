@@ -927,7 +927,7 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
              int id)
     : m_table(myTable), m_name(name), m_mode(mode), m_id(id), m_db(db),
       m_keybuf(new unsigned char[MAX_KEYLEN]),
-      m_nonNccKeybuf(new unsigned char[MAX_KEYLEN]), m_stat(0),
+      m_stat(0),
       m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
       m_readCount(0), m_updCount(0), m_delCount(0), m_insCount(0),
       m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
@@ -1808,6 +1808,7 @@ void table::stepFirst()
     }
     else
     {
+        m_keyNum = -1;
         if (setNonKey(true))
         {
             unlockRow(m_delayAutoCommit);
@@ -2171,9 +2172,6 @@ __int64 table::insert(bool ncc)
 
     {
         autoincSetup setup(m_table);
-        if (!ncc)
-            key_copy(&m_nonNccKeybuf[0], m_table->record[1],
-                     &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
         setKeyNullFlags();
         setFiledNullFlags();
 
@@ -2190,9 +2188,9 @@ __int64 table::insert(bool ncc)
     if (m_stat == 0)
     {
         ++m_insCount;
-        if (!ncc) // innodb default is ncc=-1.
-            m_nonNcc = true;
-        else if (!m_bulkInserting)
+        // innodb default is ncc=-1.
+        m_nonNcc = !ncc;
+        if (!ncc && !m_bulkInserting)
             key_copy(&m_keybuf[0], m_table->record[0],
                      &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
         
@@ -2210,15 +2208,10 @@ void table::beginUpdate(char keyNum)
     if (m_stat == 0)
     {
         if (keyNum >= 0)
-        {
-            key_copy(&m_nonNccKeybuf[0], m_table->record[0],
-                     &m_table->key_info[keyNum], KEYLEN_ALLCOPY);
-            setKeyNum(keyNum);
-        }
+           setKeyNum(keyNum);
         store_record(m_table, record[1]);
     }
 }
-
 void table::beginDel()
 {
     if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type < TL_WRITE))
@@ -2289,14 +2282,11 @@ void table::update(bool ncc)
                     const KEY& key = m_table->key_info[m_keyNum];
                     key_copy(&m_keybuf[0], m_table->record[0], (KEY*)&key,
                              KEYLEN_ALLCOPY);
-                    if (memcmp(&m_nonNccKeybuf[0], &m_keybuf[0],
-                               key.key_length))
-                    {
-                        // Since the NULL key was set, a current position is
-                        // lost.
-                        if (nullFieldsOfCurrentKey == 0)
-                            m_nonNcc = true;
-                    }
+
+                    // Since the NULL key was set, a current position is
+                    // lost.
+                    if (nullFieldsOfCurrentKey == 0)
+                        m_nonNcc = true;
                 }
             }
             /* Do not change to m_changed = false */

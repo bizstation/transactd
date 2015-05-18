@@ -23,7 +23,7 @@
 #include <bzs/db/engine/mysql/mysqlThd.h>
 
 /* implemnts in transactd.cpp */
-extern char* get_trd_sys_var(int index);
+extern const char* get_trd_sys_var(int index);
 
 namespace bzs
 {
@@ -183,7 +183,7 @@ const connManager::records& connManager::systemVariables() const
     m_records.clear();
     for (int i = 0 ; i < TD_VAR_SIZE; ++i)
     {
-        char* p =  ::get_trd_sys_var(i);
+        const char* p =  ::get_trd_sys_var(i);
         if (p)
         {
             m_records.push_back(connection::record());
@@ -191,6 +191,7 @@ const connManager::records& connManager::systemVariables() const
             rec.value_id = i;
             switch(i)
             {
+            case TD_VER_DB:
             case TD_VAR_LISTENADDRESS:
             case TD_VAR_LISTENPORT:
             case TD_VAR_HOSTCHECKNAME:
@@ -199,6 +200,9 @@ const connManager::records& connManager::systemVariables() const
             case TD_VAR_HSLISTENPORT:
                 strncpy(rec.value, p , 65);
                 break;
+            case TD_VER_SERVER:
+                sprintf_s(rec.value, 65, "%d.%d.%d", TRANSACTD_VER_MAJOR, TRANSACTD_VER_MINOR, TRANSACTD_VER_RELEASE);
+                break;
             default:
                 _ltoa_s(*((unsigned int*)p), rec.value, 65, 10);
                 break;
@@ -206,6 +210,14 @@ const connManager::records& connManager::systemVariables() const
         }
     }
     return m_records;
+}
+
+inline void appenDbList(connManager::records& recs, LEX_STRING* db_name)
+{
+    recs.push_back(connection::record());
+    connection::record& rec = recs[recs.size() - 1];
+    strncpy(rec.name, db_name->str, 64);
+    rec.name[64] = 0x00;
 }
 
 const connManager::records& connManager::getDefinedDatabaseList() const
@@ -217,17 +229,17 @@ const connManager::records& connManager::getDefinedDatabaseList() const
         if (thd)
         {
             cp_security_ctx(thd)->skip_grants();
-            List<LEX_STRING> files;
-            int ret = find_files(thd, &files, NullS,  mysql_data_home, "", true);
+            SQL_Strings files;
+            db_list(thd, &files);
+#ifdef MARIADDB_10_0
+            for (int i = 0; i < (int)files.elements(); ++i)
+                appenDbList(m_records, files.at(i));
+#else
             List_iterator_fast<LEX_STRING> it(files);
             LEX_STRING* db_name;
             while ((db_name = it++))
-            {
-                m_records.push_back(connection::record());
-                connection::record& rec = m_records[m_records.size() - 1];
-                strncpy(rec.name, db_name->str, 64);
-                rec.name[64] = 0x00;
-            }
+                appenDbList(m_records, db_name);
+#endif
             deleteThdForThread(thd);
         }
     }
