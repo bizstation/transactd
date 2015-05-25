@@ -101,7 +101,7 @@ public:
     STDMETHOD(Drop)();
     STDMETHOD(DropTable)(BSTR TableName);
     STDMETHOD(Create)(BSTR URI, int type);
-    STDMETHOD(Close)();
+    STDMETHOD(Close)(VARIANT_BOOL withDropDefaultSchema = 0);
     STDMETHOD(Connect)(BSTR URI, VARIANT_BOOL newConnection,
                        VARIANT_BOOL* Value);
     STDMETHOD(Disconnect)(BSTR URI, VARIANT_BOOL* Param2);
@@ -152,8 +152,6 @@ public:
     STDMETHOD(get_MaxTables)(int* Value);
     STDMETHOD(get_TrxIsolationServer)(eSrvIsorationType* Value);
     STDMETHOD(get_TrxLockWaitTimeoutServer)(int* Value);
-
-
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)

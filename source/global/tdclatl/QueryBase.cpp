@@ -323,3 +323,15 @@ STDMETHODIMP CQueryBase::IsStopAtLimit(VARIANT_BOOL* retVal)
     return S_OK;
 }
 
+STDMETHODIMP CQueryBase::SeekByBookmarks(VARIANT_BOOL v, IQueryBase** retVal)
+{
+    m_qb.seekByBookmarks(v == -1);
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::IsSeekByBookmarks(VARIANT_BOOL* retVal)
+{
+    *retVal = m_qb.isSeekByBookmarks();
+    return S_OK;
+}

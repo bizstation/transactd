@@ -509,7 +509,7 @@ inline bool dbExecuter::doOpenTable(request& req, bool reconnect)
                 {
                     ushort_td len = m_tb->posPtrLen();
                     if ((m_tb->tableFlags() & HA_PRIMARY_KEY_REQUIRED_FOR_POSITION) && !m_tb->primaryKey())
-                        len = 0;
+                        len = 0xFFFF;
                     memcpy(req.data, &len , sizeof(ushort_td));
                     req.resultLen = sizeof(ushort_td);
                     req.paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN;

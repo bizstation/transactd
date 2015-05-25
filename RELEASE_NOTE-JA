@@ -42,19 +42,22 @@ Version 2.4.0 2015/04/02
   を修正しました。
 
 ・メソッドの追加
-  dbdef::validateTableDef
-  nstable::bookmarkLen
-  recordCountFnコールバックファンクション
+  short dbdef::validateTableDef(short TableIndex)
+  ushort_td nstable::bookmarkLen() const
+  recordCountFn Call back function
   table::setOnRecordCount
   table::onRecordCount
-  queryBase::seekByBookmarks
-  queryBase::isSeekByBookmarks
-
+  queryBase& queryBase::seekByBookmarks(bool v);
+  bool queryBase::isSeekByBookmarks() const;
+  bool writableRecord::read(bookmark_td& bm);
 
 ・メソッド名の変更 
   table::setBookMarks     --> table::insertBookmarks
   table::moveBookmarksId  --> table::moveBookmarks
   table::bookMarksCount   --> table::bookmarksCount
+
+・メソッドパラメータの変更
+  void database::close(bool withDropDefaultSchema = false)
 
 ・bookmark_td型の変更 unsigned int から
         struct BOOKMARK

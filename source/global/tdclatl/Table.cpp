@@ -24,6 +24,7 @@
 #include "QueryBase.h"
 #include "PreparedQuery.h"
 #include <bzs/db/protocol/tdap/client/fields.h>
+#include "Bookmark.h"
 
 using namespace bzs::db::protocol::tdap;
 
@@ -220,16 +221,29 @@ STDMETHODIMP CTableTd::SeekLessThan(VARIANT_BOOL orEqual, eLockType lockBias)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_BookMark(long* Value)
+STDMETHODIMP CTableTd::get_Bookmark(IBookmark** retVal)
 {
-    *Value = m_tb->bookmark();
+    CComObject<CBookmark>* bm;
+    CComObject<CBookmark>::CreateInstance(&bm);
+    if (!bm)
+        return Error("CreateInstance Bookmark", IID_ITable);
+    bm->set(m_tb->bookmark());
+    IBookmark* b;
+    bm->QueryInterface(IID_IBookmark, (void**)&b);
+    _ASSERTE(b);
+    *retVal = b;
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::SeekByBookMark(long Value, eLockType lockBias)
+STDMETHODIMP CTableTd::SeekByBookmark(IBookmark* bm, eLockType lockBias)
 {
-    m_tb->seekByBookmark(Value, (ushort_td)lockBias);
-    return S_OK;
+    CBookmark* cb = dynamic_cast<CBookmark*>(bm);
+    if (cb)
+    {   
+        m_tb->seekByBookmark(cb->internalBookmark(), (ushort_td)lockBias);
+        return S_OK;
+    }
+    return Error("Invalid param bookmark", IID_ITable);
 }
 
 STDMETHODIMP CTableTd::get_Percentage(long* Value)
@@ -247,6 +261,9 @@ STDMETHODIMP CTableTd::get_RecordLength(long* Value)
 STDMETHODIMP CTableTd::RecordCount(VARIANT_BOOL estimate,
                                    VARIANT_BOOL fromCurrent, long* Value)
 {
+    m_tb->setOnRecordCount(onRecordCount);
+    m_tb->setOptionalData(this);
+
     *Value = m_tb->recordCount((estimate == -1), (fromCurrent == -1));
     return S_OK;
 }
@@ -497,9 +514,9 @@ STDMETHODIMP CTableTd::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::Unlock_(unsigned int bm)
+STDMETHODIMP CTableTd::Unlock_()
 {
-    m_tb->unlock(bm);
+    m_tb->unlock();
     return S_OK;
 }
 
@@ -509,17 +526,24 @@ STDMETHODIMP CTableTd::get_BlobFieldUsed(VARIANT_BOOL* Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_BookmarkFindCurrent(unsigned int* Value)
+STDMETHODIMP CTableTd::get_BookmarkFindCurrent(IBookmark** retVal)
 {
-
-    *Value = m_tb->bookmarkFindCurrent();
+    CComObject<CBookmark>* bm;
+    CComObject<CBookmark>::CreateInstance(&bm);
+    if (!bm)
+        return Error("CreateInstance Bookmark", IID_ITable);
+    bm->set(m_tb->bookmarkFindCurrent());
+    IBookmark* b;
+    bm->QueryInterface(IID_IBookmark, (void**)&b);
+    _ASSERTE(b);
+    *retVal = b;
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_BookMarksCount(int* Value)
+STDMETHODIMP CTableTd::get_BookmarksCount(int* Value)
 {
 
-    *Value = m_tb->bookMarksCount();
+    *Value = m_tb->bookmarksCount();
     return S_OK;
 }
 
@@ -549,9 +573,9 @@ STDMETHODIMP CTableTd::put_LogicalToString(VARIANT_BOOL Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::MoveBookmarksId(long Value)
+STDMETHODIMP CTableTd::MoveBookmarks(long Value)
 {
-    m_tb->moveBookmarksId(Value);
+    m_tb->moveBookmarks(Value);
     return S_OK;
 }
 
@@ -648,5 +672,24 @@ STDMETHODIMP CTableTd::get_LastFindDirection(short* Value)
 {
     *Value = (short)m_tb->lastFindDirection();
     return S_FALSE;
+}
+
+STDMETHODIMP CTableTd::get_BookmarkLen(unsigned short* Value)
+{
+    *Value = m_tb->bookmarkLen();
+    return S_FALSE;
+}
+
+
+void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
+                          int count, bool& cancel)
+{
+    CTableTd* ctb = reinterpret_cast<CTableTd*>(tb->optionalData());
+    ITable* tbPtr = dynamic_cast<ITable*>(ctb);
+    _ASSERTE(tbPtr);
+    VARIANT_BOOL tmp = 0;
+    ctb->Fire_OnRecordCount(tbPtr, count, &tmp);
+    if (tmp)
+        cancel = true;
 }
 

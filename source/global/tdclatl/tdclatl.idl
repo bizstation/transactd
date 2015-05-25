@@ -45,7 +45,7 @@ interface IFieldNames;
 interface IConnectParams;
 interface IPooledDbManager;
 interface IPreparedQuery;
-
+interface IBookmark;
 
 typedef
 [
@@ -421,7 +421,7 @@ interface IDatabase : IDispatch
   [id(0x000000CF)]
   HRESULT _stdcall Disconnect([in] BSTR Uri, [out, retval] VARIANT_BOOL* Param2);
   [id(0x000000D0)]
-  HRESULT _stdcall Close(void);
+  HRESULT _stdcall Close([in, defaultvalue(0)] VARIANT_BOOL withDropDefaultSchema);
   [propget, id(0x000000D1)]
   HRESULT _stdcall EnableTrn([out, retval] VARIANT_BOOL* Value);
   [id(0x000000D2)]
@@ -570,6 +570,9 @@ interface IDbDef : IDispatch
   HRESULT _stdcall Stat([out, retval] eStatus* Value);
   [id(0x000000DE)]
   HRESULT _stdcall TdapErr([in]OLE_HANDLE hWnd, [out, retval] BSTR* Value);
+  [id(0x000000DF)]
+  HRESULT _stdcall ValidateTableDef([in]short TableIndex, [out, retval] short* Value);
+  
 };
 [
 	object,
@@ -615,9 +618,9 @@ interface ITable : IDispatch
   [id(0x00000020)]
   HRESULT _stdcall SeekLessThan([in] VARIANT_BOOL orEqual, [in, defaultvalue(LOCK_NONE)] eLockType lockBias);
   [propget, id(0x00000030)]
-  HRESULT _stdcall BookMark([out, retval] long* Value);
+  HRESULT _stdcall Bookmark([out, retval] IBookmark** Value);
   [id(0x00000022)]
-  HRESULT _stdcall SeekByBookMark([in] long Value, [in, defaultvalue(LOCK_NONE)] eLockType lockBias);
+  HRESULT _stdcall SeekByBookmark([in] IBookmark* bm, [in, defaultvalue(LOCK_NONE)] eLockType lockBias);
   [propget, id(0x00000023)]
   HRESULT _stdcall Percentage([out, retval] long* Value);
   [id(0x00000031)]
@@ -707,13 +710,13 @@ interface ITable : IDispatch
   [id(0x000000DB)]
   HRESULT _stdcall TdapErr([in]OLE_HANDLE hWnd, [out, retval] BSTR* Value);
   [id(0x000000DC)]
-  HRESULT _stdcall Unlock_([in, defaultvalue(0)] unsigned int bm);
+  HRESULT _stdcall Unlock_();
   [propget, id(0x000000DD)]
   HRESULT _stdcall BlobFieldUsed([out, retval] VARIANT_BOOL* Value);
   [propget, id(0x000000DF)]
-  HRESULT _stdcall BookmarkFindCurrent([out, retval] unsigned int* Value);
+  HRESULT _stdcall BookmarkFindCurrent([out, retval] IBookmark** Value);
   [propget, id(0x000000F0)]
-  HRESULT _stdcall BookMarksCount([out, retval] int* Value);
+  HRESULT _stdcall BookmarksCount([out, retval] int* Value);
   [id(0x000000F1)]
   HRESULT _stdcall Find([in, defaultvalue(findForword)] eFindType FindType);
   [propget, id(0x000000F2)]
@@ -723,7 +726,7 @@ interface ITable : IDispatch
   [propput, id(0x000000F3)]
   HRESULT _stdcall LogicalToString([in] VARIANT_BOOL Value);
   [id(0x000000F6)]
-  HRESULT _stdcall MoveBookmarksId([in] long Value);
+  HRESULT _stdcall MoveBookmarks([in] long Value);
   [propget, id(0x000000F7)]
   HRESULT _stdcall MyDateTimeValueByBtrv([out, retval] VARIANT_BOOL* Value);
   [propget, id(0x000000F8)]
@@ -744,6 +747,10 @@ interface ITable : IDispatch
   HRESULT _stdcall StatReasonOfFind([out, retval] short* Value);
   [propget, id(0x000000E2)]
   HRESULT _stdcall LastFindDirection([out, retval] short* Value);
+  [propget, id(0x000000E3)]
+  HRESULT _stdcall BookmarkLen([out, retval] unsigned short* Value);
+
+  
 
 };
 [
@@ -1121,8 +1128,11 @@ interface IQueryBase : IDispatch
   HRESULT _stdcall StopAtLimit([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
   [id(0x000001D)]
   HRESULT _stdcall IsStopAtLimit([out, retval] VARIANT_BOOL* retVal);
-
-
+  [id(0x000001E)]
+  HRESULT _stdcall SeekByBookmarks([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
+  [id(0x000001F)]
+  HRESULT _stdcall IsSeekByBookmarks([out, retval] VARIANT_BOOL* retVal);
+ 
 };
 
 [
@@ -1289,7 +1299,7 @@ interface IWritableRecord : IRecord
   [id(0x0000014)]
   HRESULT _stdcall Update(void);
   [id(0x0000015)]
-  HRESULT _stdcall Read([in, defaultvalue(0)]VARIANT_BOOL KeysetAlrady, [out, retval] VARIANT_BOOL* retVal);
+  HRESULT _stdcall Read([in, defaultvalue(0)]VARIANT KeysetAlradyOrBookmark, [out, retval] VARIANT_BOOL* retVal);
   [id(0x0000016)]
   HRESULT _stdcall Clear();
   [propget,id(0x0000017)]
@@ -1528,6 +1538,20 @@ interface IPreparedQuery : IDispatch
 };
 
 [
+  object,
+  uuid(C71E721F-75FE-45E9-A4A3-0C4C29C2D4A3),
+  dual,
+  nonextensible,
+  pointer_default(unique)
+]
+interface IBookmark : IDispatch
+{
+  [propget, id(0x0000001)]
+  HRESULT _stdcall IsEmpty([out, retval] VARIANT_BOOL* retVal);
+};
+
+
+[
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
 	version(1.0),
 ]
@@ -1548,6 +1572,18 @@ library transactd
 		[id(3)] 
 		HRESULT OnSchemaMgrFn(IDatabase* db, short* Value);
   };
+
+  [
+	uuid(439578EB-226B-41EB-9FDB-AB27915298C7)		
+  ]
+  dispinterface _ITableEvents
+  {	
+	properties:
+	methods:
+		[id(1)] 
+		HRESULT OnRecordCount(ITable* tb, int count, VARIANT_BOOL* cancel);
+  };
+
   [
     uuid(1DF73F19-D216-47A4-847D-8CD1279E1077)
   ]
@@ -1753,6 +1789,16 @@ library transactd
 	coclass PreparedQuery
 	{
 		[default] interface IPreparedQuery;
+		
+	};
+
+    [
+		uuid(35784CBB-E66D-4097-A4BB-C32EF8E3006D)	
+		,noncreatable
+	]
+	coclass Bookmark
+	{
+		[default] interface IBookmark;
 		
 	};
 		

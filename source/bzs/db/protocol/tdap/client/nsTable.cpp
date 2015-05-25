@@ -424,6 +424,10 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         m_impl->mode = mode;
         if (!isUseTransactd())
             m_impl->bookmarkLen = BTRV_BOOKMARK_SIZE;
+        else if (m_impl->bookmarkLen == 0)
+            m_impl->bookmarkLen = BTRV_BOOKMARK_SIZE;
+        else if (m_impl->bookmarkLen == 0xFFFF) //No primary
+            m_impl->bookmarkLen = 0;
     }
 clean:
     m_keybuf = svm_keybuf;

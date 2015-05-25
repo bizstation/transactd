@@ -193,9 +193,9 @@ STDMETHODIMP CDatabase::Create(BSTR URI, int type)
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::Close()
+STDMETHODIMP CDatabase::Close(VARIANT_BOOL withDropDefaultSchema)
 {
-    m_db->close();
+    m_db->close(withDropDefaultSchema == -1);
     return S_OK;
 }
 

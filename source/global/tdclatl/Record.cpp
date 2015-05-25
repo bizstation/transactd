@@ -20,6 +20,7 @@
 #include "Record.h"
 #include "Field.h"
 #include "FieldDefs.h"
+#include "Bookmark.h"
 
 void CRecord::FinalRelease()
 {
@@ -188,12 +189,23 @@ STDMETHODIMP CWritableRecord::Update()
     }
 }
 
-STDMETHODIMP CWritableRecord::Read(VARIANT_BOOL KeysetAlrady,
+STDMETHODIMP CWritableRecord::Read(VARIANT param,
                                    VARIANT_BOOL* retVal)
 {
     try
     {
-        *retVal = m_rec->read(KeysetAlrady);
+        if ((param.vt == VT_DISPATCH) && param.pdispVal)
+        {
+            CBookmark* bm = dynamic_cast<CBookmark*>(param.pdispVal);
+            if (bm)
+                m_rec->read(bm->internalBookmark());
+            else
+                return Error("Invalid param 1 not IBookmark", IID_IWritableRecord);
+        }
+        else if (param.vt == VT_BOOL) 
+            *retVal = m_rec->read(param.boolVal);    
+        else
+            return Error("Invalid param 1 not BOOL", IID_IWritableRecord);
         return S_OK;
     }
     catch (bzs::rtl::exception& e)
