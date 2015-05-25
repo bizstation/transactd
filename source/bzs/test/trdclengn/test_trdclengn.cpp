@@ -3220,7 +3220,7 @@ void doInsertStringFileter(table* tb)
     tb->setFV(_T("name"), _T("あいうえおかきくこ"));
     tb->setFV(_T("namew"), _T("あいうえおかきくこ"));
     tb->insert();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 1");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 1 stst = " << tb->stat());
 
     tb->clearBuffer();
     id = 2;

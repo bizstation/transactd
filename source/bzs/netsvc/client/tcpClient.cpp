@@ -243,26 +243,31 @@ inline connection* connections::doConnect(connection* c)
         c->connect();
         if (c->isConnected())
             return c;
+        m_e = c->error();
         delete c;
         return NULL;
     }
     catch (bzs::netsvc::client::exception& e)
     {
+        m_e = boost::system::error_code(e.error(), get_system_category());
         delete c;
         throw e;
     }
     catch (boost::system::system_error& e)
     {
+        m_e = e.code();
         delete c;
         throw e;
     }
     catch (std::exception& e)
     {
+        m_e = boost::system::error_code(1, get_system_category());
         delete c;
         throw e;
     }
     catch (...)
     {
+        m_e = boost::system::error_code(1, get_system_category());
         delete c;
         throw;
     }
@@ -278,8 +283,12 @@ inline bool connections::doHandShake(connection* c, handshake f, void* data)
         {
             if (!f)
                 c->read();
-            else 
+            else
                 ret = f(c, data);
+            if (c->error())
+                m_e = asio::error::connection_refused;
+            else if (!ret)
+                m_e = asio::error::no_permission;
             if (!ret)
                 delete c;
         }
@@ -304,11 +313,10 @@ inline bool connections::doHandShake(connection* c, handshake f, void* data)
 connection* connections::connect(const std::string& host, const char* port, handshake f, void* data, bool newConnection)
 {
     bool namedPipe = false;
-    boost::system::error_code ec;
     connection* c;
     mutex::scoped_lock lck(m_mutex);
-    asio::ip::tcp::endpoint ep = endpoint(host, port, ec);
-    if (ec)
+    asio::ip::tcp::endpoint ep = endpoint(host, port, m_e);
+    if (m_e)
         return NULL;
 #ifdef USE_PIPE_CLIENT
     namedPipe =  (m_usePipedLocal && isUseNamedPipe(ep));

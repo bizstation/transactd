@@ -148,6 +148,7 @@ class client
     {
         //Implements handshake here
         handshale_t* hst  = (handshale_t*)c->read();
+        if (c->error()) return false;
         bool auth = (hst->size == sizeof(handshale_t));
         bool min = (hst->size == (sizeof(handshale_t) 
          									-  sizeof(hst->scramble)));
@@ -337,7 +338,10 @@ public:
         if (ep.host[0] == 0x00) return;
 
         if (!m_cons->reconnect(c, ep.host, ep.port, handshakeCallback, this))
+        {
+            m_preResult = errorCode(m_cons->connectError());
             return;
+        }
         m_connecting = true;
         if (getServerCharsetIndex() == -1)
             m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
@@ -373,7 +377,7 @@ public:
                     buildDualChasetKeybuf();
             }
             else
-                m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+                m_preResult = errorCode(m_cons->connectError());
         }
         else if (m_req.keyNum == LG_SUBOP_DISCONNECT)
         {
@@ -414,11 +418,13 @@ public:
                         c->setDirectReadHandler(&m_req);
                         p = c->asyncWriteRead(size);
                         c->setDirectReadHandler(NULL);
+                        if (c->error()) return errorCode(c->error());
                     }else
                     {
                         if (m_req.paramMask & P_MASK_DATALEN)
                             c->setReadBufferSizeIf(*m_req.datalen);
                         p = c->asyncWriteRead(size);
+                        if (c->error()) return errorCode(c->error());
                         m_req.parse(p, ex);
                     }
                 }
