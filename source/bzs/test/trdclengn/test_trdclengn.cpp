@@ -18,8 +18,14 @@
  ================================================================= */
 //#define BOOST_TEST_MODULE
 
-
+#if defined(__BCPLUSPLUS__)
+#pragma warn -8012
+#endif
 #include <boost/test/included/unit_test.hpp>
+#if defined(__BCPLUSPLUS__)
+#pragma warn .8012
+#endif
+
 #include <bzs/db/protocol/tdap/client/database.h>
 #include <bzs/db/protocol/tdap/client/table.h>
 #include <bzs/db/protocol/tdap/client/dbDef.h>
@@ -455,8 +461,8 @@ void testInsert(database* db)
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "Insert2");
     db->endTrn();
 
-    int v = tb->recordCount(false);
-    BOOST_CHECK_MESSAGE((uint_td)20002 == v,
+    uint_td v = tb->recordCount(false);
+    BOOST_CHECK_MESSAGE(20002 == v,
                         "RecordCount count = " << v);
 
     tb->release();
@@ -1991,6 +1997,7 @@ void testExclusive()
     table* tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
     //Check tb2 Exclusive
     table* tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
+    tb3;// For don't use tb3 warning
     BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
                                     , "Write Exclusive open");
     //if (tb2->recordCount(false) == 0)
@@ -2243,8 +2250,8 @@ void testDelete(database* db)
         BOOST_CHECK_MESSAGE(false, tmp);
     }
     // true number
-    int v = tb->recordCount(false);
-    BOOST_CHECK_MESSAGE((uint_td)20002 == v,
+    uint_td v = tb->recordCount(false);
+    BOOST_CHECK_MESSAGE(20002 == v,
                         "RecordCount2 count = " << v);
     int vv = 15001;
     tb->clearBuffer();

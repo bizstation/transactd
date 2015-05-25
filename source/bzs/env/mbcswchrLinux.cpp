@@ -42,6 +42,7 @@ void initCvtProcess()
 {
     int ret = pthread_key_create(&g_tls1, cleanupTls);
     assert(ret == 0);
+    ret;
     pthread_setspecific(g_tls1, NULL);
 }
 

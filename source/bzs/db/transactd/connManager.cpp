@@ -21,6 +21,8 @@
 #include <bzs/db/protocol/tdap/mysql/tdapCommandExecuter.h>
 #include "connManager.h"
 #include <bzs/db/engine/mysql/mysqlThd.h>
+#include <bzs/db/protocol/tdap/mysql/databaseSchema.h>
+#include <bzs/db/engine/mysql/errorMessage.h>
 
 /* implemnts in transactd.cpp */
 extern const char* get_trd_sys_var(int index);
@@ -243,10 +245,69 @@ const connManager::records& connManager::getDefinedDatabaseList() const
             deleteThdForThread(thd);
         }
     }
-    catch(...)
+    catch (bzs::rtl::exception& e)
     {
         if (thd)
             deleteThdForThread(thd);
+        const int* code = getCode(e);
+        if (code)
+            m_stat = *code;
+        else
+        {
+            m_stat = 20000;
+            sql_print_error("%s", boost::diagnostic_information(e).c_str());
+        }
+        printWarningMessage(code, getMsg(e));
+    }
+    catch (...)
+    {
+        try
+        {
+            m_stat = 20001;
+            deleteThdForThread(thd);
+        }
+        catch(...){}
+    }
+    return m_records;
+}
+
+const connManager::records& connManager::schemaTableList(const char* dbname)
+{
+    try
+    {    
+        m_records.clear();
+        if (dbname && dbname[0])
+        {
+            boost::shared_ptr<database> db(new database(dbname, 1));
+            if (db)
+            {
+                std::vector<std::string> tablelist;
+                schemaBuilder::listSchemaTable(db.get(), tablelist);
+                for (int i = 0; i < (int)tablelist.size(); ++i)
+                {
+                    m_records.push_back(connection::record());
+                    connection::record& rec = m_records[m_records.size() - 1];
+                    strncpy(rec.name, tablelist[i].c_str(), 64);
+                    rec.name[64] = 0x00;
+                }
+            }
+        }
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        const int* code = getCode(e);
+        if (code)
+            m_stat = *code;
+        else
+        {
+            m_stat = 20000;
+            sql_print_error("%s", boost::diagnostic_information(e).c_str());
+        }
+        printWarningMessage(code, getMsg(e));
+    }
+    catch (...)
+    {
+        m_stat = 20001;
     }
     return m_records;
 }

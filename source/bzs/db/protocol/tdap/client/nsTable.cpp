@@ -615,7 +615,7 @@ void nstable::seekByBookmark(bookmark_td& bm, ushort_td lockBias)
 void nstable::seekByBookmark(bookmark_td* bm, ushort_td lockBias)
 {
     int count = 0;
-    if (m_buflen < m_impl->bookmarkLen)
+    if (m_buflen < (uint_td)m_impl->bookmarkLen)
     {
         m_buflen = m_impl->bookmarkLen;
         m_pdata = realloc(m_pdata, m_buflen);

@@ -95,6 +95,23 @@ const connMgr::records& connMgr::definedDatabases()
     return getRecords();
 }
 
+const connMgr::records& connMgr::schemaTables(const char* dbname)
+{
+    m_keynum = TD_STSTCS_SCHEMA_TABLE_LIST;
+    allocBuffer();
+    char tmp[128];
+    strcpy_s(tmp, 128, dbname);
+    m_keybuf = tmp;
+    m_keylen = 128;
+    tdap(TD_STASTISTICS);
+    if (m_stat == 0)
+        m_records.resize(m_datalen / sizeof(connMgr::record));
+    m_keybuf = &m_params[0];
+    m_keylen = sizeof(m_params);
+    return m_records;
+
+}
+
 const connMgr::records& connMgr::sysvars()
 {
     m_keynum = TD_STSTCS_SYSTEM_VARIABLES;

@@ -21,6 +21,7 @@
 
 #include <bzs/db/protocol/tdap/tdapSchema.h>
 #include <string>
+#include <vector>
 
 namespace bzs
 {
@@ -52,6 +53,7 @@ public:
     schemaBuilder();
     ~schemaBuilder();
     short execute(engine::mysql::database* db, engine::mysql::table* mtb);
+    static void listSchemaTable(engine::mysql::database* db, std::vector<std::string>& shcemaNames);
 };
 
 } // namespace mysql

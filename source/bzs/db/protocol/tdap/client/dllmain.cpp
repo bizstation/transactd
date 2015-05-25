@@ -211,13 +211,13 @@ extern "C" PACKAGE_OSX short_td __STDCALL
 			client_t->req().paramMask = P_MASK_NOKEYBUF;
             break;
         case TD_UNLOCK:
+        case TD_CLOSETABLE:
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
             break;
         case TD_UPDATE_PART:
             client_t->cleanup();
             return 0;
         case TD_REC_DELETE:
-        case TD_CLOSETABLE:
         case TD_CLEAR_OWNERNAME:
         case TD_AUTOMEKE_SCHEMA:
             client_t->req().paramMask = P_MASK_POSBLK;

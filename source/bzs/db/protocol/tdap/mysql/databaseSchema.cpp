@@ -252,10 +252,10 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
     return mtb->stat();
 }
 
-bool isFrmFile(const std::string& name)
+bool isFrmFile(const std::string& name, bool notschema=true)
 {
     size_t pos = name.find(TRANSACTD_SCHEMANAME);
-    if (pos != std::string::npos)
+    if (pos != std::string::npos && notschema)
         return false;
     // First of name is '#' that is alter table temp file.
     if (name.size() && name[0] == '#')
@@ -264,6 +264,50 @@ bool isFrmFile(const std::string& name)
     if (pos != std::string::npos)
         return pos == name.size() - 4;
     return false;
+}
+
+void schemaBuilder::listSchemaTable(database* db, std::vector<std::string>& shcemaNames)
+{
+    char path[FN_REFLEN + 1];
+    build_table_filename(path, sizeof(path) - 1, db->name().c_str(), "", "", 0);
+    std::string s = path;
+    fs::path p = s;
+    fs::directory_iterator it(p);
+    fs::directory_iterator end;
+    int id = 0;
+    short stat = 0;
+    shcemaNames.clear();
+    
+    for (fs::directory_iterator it(p); it != end; ++it)
+    {
+        if (!is_directory(*it))
+        {
+            std::string s = it->path().filename().string();
+            if (isFrmFile(s, false))
+            {
+                filename_to_tablename(it->path().stem().string().c_str(), path,
+                                      FN_REFLEN);
+                table* tb = NULL;
+                try
+                {
+                    tb = db->openTable(path, TD_OPEN_READONLY, NULL);
+                }
+                catch(...){}
+                if (!tb) break;
+                if (!tb->isView())
+                {
+                    LEX_STRING& comment = tb->internalTable()->s->comment; 
+                    const char* p = comment.str;
+                    if ((comment.length > 8) && strstr(p,"%@%02.000") &&              
+                        (tb->fields() == 2) && (tb->keys() == 1))
+                    {
+                        shcemaNames.push_back(tb->name());    
+                    }
+                }
+                db->closeTable(tb);
+            }
+        }
+    }
 }
 
 short schemaBuilder::execute(database* db, table* mtb)

@@ -112,7 +112,7 @@ public:
     void create(const _TCHAR* uri, short type = TYPE_SCHEMA_BDF);
     void drop();
     void dropTable(const _TCHAR* tableName);
-    void close();
+    void close(bool withDropDefaultSchema = false);
     short aclReload();
     short continuous(char_td op = TD_BACKUP_START, bool inclideRepfile = false);
     short assignSchemaData(dbdef* src);

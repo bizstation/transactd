@@ -297,6 +297,9 @@ inline bool connections::doHandShake(connection* c, handshake f, void* data)
     }
 }
 
+#if defined(__APPLE__) && defined(__BCPLUSPLUS__)
+#pragma warn -8004
+#endif
 // The connection of found from connection list of same address is returned.
 connection* connections::connect(const std::string& host, const char* port, handshake f, void* data, bool newConnection)
 {
@@ -325,6 +328,9 @@ connection* connections::connect(const std::string& host, const char* port, hand
     c->addref();
     return c;
 }
+#if defined(__APPLE__) && defined(__BCPLUSPLUS__)
+#pragma warn .8004
+#endif
 
 bool connections::reconnect(connection* c, const std::string& host, const char* port,
                         handshake f, void* data)

@@ -1380,8 +1380,15 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             m_tb = getTable(req.pbk->handle);
             if (m_tb)
             {
+                std::string tbname = m_tb->name();
                 m_tb->close();
                 m_tb = NULL;
+                if ((req.keyNum == CR_SUBOP_DROP) && (tbname == TRANSACTD_SCHEMANAME))
+                {
+                    database* db = getDatabaseCid(req.cid);
+                    req.result = ddl_dropTable(db, tbname, db->name(), tbname);
+                }
+                
             }
             break;
         case TD_BUILD_INDEX:
@@ -1571,7 +1578,7 @@ connMgrExecuter::connMgrExecuter(request& req, unsigned __int64 parent)
 {
 }
 
-int serialize(request& req, char* buf, size_t& size, const connManager::records& records)
+int serialize(request& req, char* buf, size_t& size, const connManager::records& records, short stat)
 {
     req.reset();
     req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
@@ -1580,6 +1587,7 @@ int serialize(request& req, char* buf, size_t& size, const connManager::records&
     else
         req.paramMask = P_MASK_DATALEN;
     req.resultLen = (uint_td)(sizeof(record) * records.size());
+    req.result = stat;
     size = req.serialize(NULL, buf);
     return EXECUTE_RESULT_SUCCESS;
 }
@@ -1588,19 +1596,25 @@ int connMgrExecuter::read(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
     unsigned __int64* mod = (unsigned __int64*)m_req.keybuf;
-    return serialize(m_req, buf, size, st.getRecords(mod[0], (int)mod[1]));
+    return serialize(m_req, buf, size, st.getRecords(mod[0], (int)mod[1]), st.stat());
 }
 
 int connMgrExecuter::definedDatabaseList(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-    return serialize(m_req, buf, size, st.getDefinedDatabaseList());
+    return serialize(m_req, buf, size, st.getDefinedDatabaseList(), st.stat());
 }
 
 int connMgrExecuter::systemVariables(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-    return serialize(m_req, buf, size, st.systemVariables());
+    return serialize(m_req, buf, size, st.systemVariables(), st.stat());
+}
+
+int connMgrExecuter::schemaTableList(char* buf, size_t& size)
+{
+    connManager st(m_modHandle);
+    return serialize(m_req, buf, size, st.schemaTableList((const char*)m_req.keybuf), st.stat());
 }
 
 int connMgrExecuter::disconnectOne(char* buf, size_t& size)
@@ -1634,6 +1648,8 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
         return definedDatabaseList(nw->ptr(), nw->datalen);
     else if(m_req.keyNum == TD_STSTCS_SYSTEM_VARIABLES)
         return systemVariables(nw->ptr(), nw->datalen);
+    else if(m_req.keyNum == TD_STSTCS_SCHEMA_TABLE_LIST)
+        return schemaTableList(nw->ptr(), nw->datalen);
     return 0;
 }
 

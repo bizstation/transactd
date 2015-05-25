@@ -60,6 +60,7 @@ public:
     void connect(const _TCHAR* uri);
     void disconnect();
     const records& definedDatabases();
+    const records& schemaTables(const char* dbname);
     const records& sysvars();
     const records& connections();
     const records& databases(__int64 connid);

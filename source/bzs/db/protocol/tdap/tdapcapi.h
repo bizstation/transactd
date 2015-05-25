@@ -182,7 +182,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TD_STSTCS_DISCONNECT_ALL        2
 #define TD_STSTCS_DATABASE_LIST         3
 #define TD_STSTCS_SYSTEM_VARIABLES      4
-
+#define TD_STSTCS_SCHEMA_TABLE_LIST     5
 /** connect sub operation
  */
 

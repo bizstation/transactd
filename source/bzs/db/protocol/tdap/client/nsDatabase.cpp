@@ -291,7 +291,9 @@ nsdatabase& nsdatabase::operator=(const nsdatabase& rt)
 
 int nsdatabase::enableTrn() const
 {
-    return m_nsimpl->tranCount;
+    if (m_nsimpl)
+        return m_nsimpl->tranCount;
+    return 0;
 }
 
 bool nsdatabase::isReconnected() const

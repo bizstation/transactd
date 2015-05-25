@@ -426,9 +426,11 @@ void database::doClose()
     m_impl->lockReadOnly = false;
 }
 
-void database::close()
+void database::close(bool withDropDefaultSchema)
 {
     bool flag = (m_impl->dbDef != NULL);
+    if (m_impl && m_impl->dbDef)
+        m_impl->dbDef->setKeyNum(withDropDefaultSchema ? CR_SUBOP_DROP : 0);
     doClose();
     if (flag)
         nsdatabase::release();

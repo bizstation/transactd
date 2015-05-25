@@ -111,14 +111,15 @@ class connMgrExecuter
     request& m_req;
     __int64 m_modHandle;
 
-public:
-    connMgrExecuter(request& req, unsigned __int64 parent);
+    int definedDatabaseList(char* buf, size_t& size);
+    int schemaTableList(char* buf, size_t& size);
+    int systemVariables(char* buf, size_t& size);
     int read(char* buf, size_t& size);
     int disconnectOne(char* buf, size_t& size);
     int disconnectAll(char* buf, size_t& size);
+public:
+    connMgrExecuter(request& req, unsigned __int64 parent);
     int commandExec(netsvc::server::netWriter* nw);
-    int definedDatabaseList(char* buf, size_t& size);
-    int systemVariables(char* buf, size_t& size);
 };
 
 class commandExecuter : public ICommandExecuter,
