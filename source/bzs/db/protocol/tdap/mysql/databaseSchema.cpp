@@ -66,26 +66,6 @@ uint_td copyToRecordImage(uchar* rec, void* p, uint_td size, uint_td offset)
     return offset + size;
 }
 
-bool isStringType(char type)
-{
-    switch (type)
-    {
-    case ft_zstring:
-    case ft_string:
-    case ft_mychar:
-    case ft_myvarchar:
-    case ft_myvarbinary:
-    case ft_wzstring:
-    case ft_wstring:
-    case ft_mywchar:
-    case ft_mywvarchar:
-    case ft_mywvarbinary:
-        return true;
-    default:
-        return false;
-    }
-}
-
 uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
                        bool unicode)
 {
@@ -226,7 +206,7 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
                 sg.flags.bit4 = (j != kd.segmentCount - 1); // segment
                 sg.flags.bit8 = 1; // extend key type
                 sg.flags.bit9 = ks.null_bit ? 1 : 0; // null key
-                if (isStringType(convFieldType(
+                if (isStringTypeForIndex(convFieldType(
                         src->fieldType(sg.fieldNum),
                         src->fieldFlags(sg.fieldNum),
                         isBinary(src->fieldCharset(i)),

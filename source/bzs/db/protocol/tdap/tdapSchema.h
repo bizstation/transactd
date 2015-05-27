@@ -182,7 +182,37 @@ PACKAGE ushort_td
 #endif // MYSQL_DYNAMIC_PLUGIN
 
 /* Is field type string ? */
-PACKAGE bool isStringType(uchar_td type);
+inline bool isStringTypeForIndex(uchar_td type)
+{
+    switch (type)
+    {
+    case ft_string:
+    case ft_zstring:
+    case ft_wstring:
+    case ft_wzstring:
+    case ft_mychar:
+    case ft_mywchar:
+    case ft_myvarchar:
+    case ft_myvarbinary:
+    case ft_mywvarchar:
+    case ft_mywvarbinary:
+        return true;
+    }
+    return false;
+}
+
+inline bool isStringType(uchar_td type)
+{
+    switch (type)
+    {
+    case ft_myblob:
+    case ft_mytext:
+    case ft_lstring:
+    case ft_note:
+        return true;
+    }
+    return isStringTypeForIndex(type);
+}
 
 /** @cond INTERNAL */
 #define PAD_CHAR_OPTION_SAVED   1

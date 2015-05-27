@@ -691,9 +691,10 @@ public:
                     bool valid = !(forword ? gt : le);
                     
                     // case in-sencitive, Index judge need clinet and server are same option.
-                    bool is_cl = ((fd->logType & CMPLOGICAL_CASEINSENSITIVE) != 0);
-                    bool is_srv = ((key->key_part[segmentIndex].field->flags & BINARY_FLAG) == 0);
-                    if (valid && (is_cl == is_srv))
+                    bool is_cl_casein = ((fd->logType & CMPLOGICAL_CASEINSENSITIVE) != 0);
+                    bool is_srv_casein = ((key->key_part[segmentIndex].field->flags & BINARY_FLAG) == 0) && 
+                                            isStringType(fd->type);
+                    if (valid && (is_cl_casein == is_srv_casein))
                     {
                         m_keySeg = (unsigned char)segmentIndex + 1;
                         m_judgeType = (comp == eEqual) ? 2 : 1;
