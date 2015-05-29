@@ -47,13 +47,13 @@ mysql>show variables like 'version';
 ```
 The names of file to download are formed under following rules:
 
-  * Windows - transactd-[platform]-2.3.0_[mysql-version].zip
-  * Linux - transactd-linux-x86_64-2.3.0_[mysql-version].tar.gz
+  * Windows - transactd-[platform]-2.4.0_[mysql-version].zip
+  * Linux - transactd-linux-x86_64-2.4.0_[mysql-version].tar.gz
 
 [platform] is win32 or win64, [mysql-version] is mysql-5.x.x or mariadb-5.5.x.
 For example, the URL for Linux-x86_64bit mysql-5.6.14 is as follows:
 
-http://www.bizstation.jp/al/transactd/download/transactd-2.3.0/transactd-linux-x86_64-2.3.0_mysql-5.6.14.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-2.4.0/transactd-linux-x86_64-2.4.0_mysql-5.6.14.tar.gz
 
 You also can download source code archive and build from it.
 In this case, the source code of MySQL/MariaDB is also required.
@@ -100,8 +100,8 @@ administrator authority.
 
 2. Extract the tar.gz file and move into it.
    ```
-   tar zxf transactd-linux-x86_64-2.3.0_mysql-5.6.14.tar.gz
-   cd transactd-linux-x86_64-2.3.0_mysql-5.6.14
+   tar zxf transactd-linux-x86_64-2.4.0_mysql-5.6.14.tar.gz
+   cd transactd-linux-x86_64-2.4.0_mysql-5.6.14
    ```
 
 3. Copy libtransactd.so to `[MySQL|MariaDB installed directory]/lib/plugin`.
@@ -132,13 +132,13 @@ The Transactd clients are required to access data through Transactd Plugin.
 Download the Transactd client binaries for your platform.
 The names of file to download are formed under following rules:
 
-  * Windows - transactd-client-[platform]_with_sdk-2.3.0.zip
-  * Linux -  transactd-client-linux-x86_64_with_sdk-2.3.0.tar.gz
+  * Windows - transactd-client-[platform]_with_sdk-2.4.0.zip
+  * Linux -  transactd-client-linux-x86_64_with_sdk-2.4.0.tar.gz
 
 [platform] is win32 or win64.
 For example, the URL for Linux-x86_64bit is as follows:
 
-http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-2.3.0.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-2.4.0.tar.gz
 
 
 
@@ -146,11 +146,11 @@ Installing Transactd clients
 -------------------------------------------------------------------------------
 
 ### Installing on Windows
-1. Open transactd-client-[platform]_with_sdk-2.3.0.zip from explorer.
-2. Select the root folder transactd-client-[platform]-with_sdk-2.3.0 and
+1. Open transactd-client-[platform]_with_sdk-2.4.0.zip from explorer.
+2. Select the root folder transactd-client-[platform]-with_sdk-2.4.0 and
    copy to a folder of your choice.
-3. Run the "install.cmd" in the transactd-client-[platform]_with_sdk-2.3.0 folder.
-   This command adds "transactd-client-[platform]_with_sdk-2.3.0\bin" folder to
+3. Run the "install.cmd" in the transactd-client-[platform]_with_sdk-2.4.0 folder.
+   This command adds "transactd-client-[platform]_with_sdk-2.4.0\bin" folder to
    the system environment variables "PATH".
 
 C++ clients contains the following three files which is placed in bin folder.
@@ -177,8 +177,8 @@ http://www.bizstation.jp/en/transactd/documents/BUILD_WIN.html
 
 2. Extract the tar.gz file and move into it.
    ```
-   tar zxf transactd-client-linux-x86_64_with_sdk-2.3.0.tar.gz
-   cd transactd-client-linux-x86_64_with_sdk-2.3.0
+   tar zxf transactd-client-linux-x86_64_with_sdk-2.4.0.tar.gz
+   cd transactd-client-linux-x86_64_with_sdk-2.4.0
    ```
 
 3. Run the install script.
@@ -248,7 +248,7 @@ Test script executes the tests in following order:
 ### Executing on Windows
 1. Move to the client directory.
    ```
-   cd transactd-client-[platform]_with_sdk-2.3.0
+   cd transactd-client-[platform]_with_sdk-2.4.0
    ```
 
 2. run test:
@@ -276,7 +276,7 @@ Test script executes the tests in following order:
 ### Executing on Linux
 1. Move to the client directory.
    ```
-   cd transactd-client-linux-x86_64_with_sdk-2.3.0
+   cd transactd-client-linux-x86_64_with_sdk-2.4.0
    ```
 
 2. run test:
