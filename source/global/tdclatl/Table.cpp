@@ -680,6 +680,19 @@ STDMETHODIMP CTableTd::get_BookmarkLen(unsigned short* Value)
     return S_FALSE;
 }
 
+STDMETHODIMP CTableTd::get_Bookmarks(long index, IBookmark** retVal)
+{
+    CComObject<CBookmark>* bm;
+    CComObject<CBookmark>::CreateInstance(&bm);
+    if (!bm)
+        return Error("CreateInstance Bookmark", IID_ITable);
+    bm->set(m_tb->bookmarks((unsigned int)index));
+    IBookmark* b;
+    bm->QueryInterface(IID_IBookmark, (void**)&b);
+    _ASSERTE(b);
+    *retVal = b;
+    return S_OK;
+}
 
 void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
                           int count, bool& cancel)

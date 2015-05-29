@@ -663,6 +663,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::setMra;
 %ignore bzs::db::protocol::tdap::client::table::setFVA;
 %ignore bzs::db::protocol::tdap::client::table::getFVAstr;
+%ignore bzs::db::protocol::tdap::client::table::insertBookmarks;
 
   // create and release methods for query class
 %extend bzs::db::protocol::tdap::client::query {
@@ -760,6 +761,11 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::insertKey;
 %ignore bzs::db::protocol::tdap::client::insertRecord;
 %ignore bzs::db::protocol::tdap::client::insertTable;
+%ignore bzs::db::protocol::tdap::client::deleteTable
+%ignore bzs::db::protocol::tdap::client::renumberTable
+%ignore bzs::db::protocol::tdap::client::deleteField
+%ignore bzs::db::protocol::tdap::client::deleteKey
+%ignore bzs::db::protocol::tdap::client::validateTableDef
 %ignore bzs::db::protocol::tdap::client::isSameUri;
 %ignore bzs::db::protocol::tdap::client::lexical_cast;
 %ignore bzs::db::protocol::tdap::client::openDatabase;
@@ -807,6 +813,9 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::mraResetter;
 
 // * bzs/db/protocol/tdap/tdapcapi.h *
+#ignore BOOKMARK::val;
+#ignore BOOKMARK::empty;
+#ignore MAX_BOOKMARK_SIZE
 %ignore BOOKMARK_ALLOC_SIZE;
 %ignore BTRV_MAX_DATA_SIZE;
 %ignore POS_BLOCK_SIZE;
@@ -879,6 +888,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore TD_GET_BLOB_BUF;
 %ignore TD_STASTISTICS;
 %ignore TD_KEY_SEEK_MULTI;
+%ignore TD_ACL_RELOAD;
+%ignore TD_RECONNECT;
 %ignore CR_SUBOP_DROP;
 %ignore CR_SUBOP_RENAME;
 %ignore CR_SUBOP_SWAPNAME;
@@ -891,9 +902,18 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore TD_STSTCS_READ;
 %ignore TD_STSTCS_DISCONNECT_ONE;
 %ignore TD_STSTCS_DISCONNECT_ALL;
+%ignore TD_STSTCS_DATABASE_LIST;
+%ignore TD_STSTCS_SYSTEM_VARIABLES;
+%ignore TD_STSTCS_SCHEMA_TABLE_LIST;
 %ignore LG_SUBOP_CONNECT;
 %ignore LG_SUBOP_DISCONNECT;
 %ignore LG_SUBOP_NEWCONNECT;
+%ignore LG_SUBOP_RECONNECT;
+%ignore LG_SUBOP_DISCONNECT_EX;
+%ignore CMPLOGICAL_VAR_COMP_ALL;
+%ignore CMPLOGICAL_CMPACS;
+%ignore CMPLOGICAL_FIELD;
+%ignore CMPLOGICAL_CASEINSENSITIVE;
 %ignore C_INTERFACE_VER_MAJOR;
 %ignore C_INTERFACE_VER_MINOR;
 %ignore C_INTERFACE_VER_RELEASE;

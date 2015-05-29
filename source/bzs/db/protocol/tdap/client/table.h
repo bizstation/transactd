@@ -50,10 +50,7 @@ typedef void __stdcall(* recordCountFn)(table* tb, int count, bool& complate);
 /** @cond INTERNAL */
 /** Callback function on a record was record count. */
 typedef void(__STDCALL* recordCountFn)(table* tb, int count, bool& complate);
-/** @endcond */
 #endif
-
-
 
 #define null_str _T("")
 

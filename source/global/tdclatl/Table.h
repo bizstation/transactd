@@ -160,6 +160,6 @@ public:
     STDMETHOD(get_StatReasonOfFind)(short* Value);
     STDMETHOD(get_LastFindDirection)(short* Value);
     STDMETHOD(get_BookmarkLen)(unsigned short* Value);
-  
+    STDMETHOD(get_Bookmarks)(long index, IBookmark** Value);
 
 };

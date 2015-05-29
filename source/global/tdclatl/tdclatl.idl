@@ -749,6 +749,8 @@ interface ITable : IDispatch
   HRESULT _stdcall LastFindDirection([out, retval] short* Value);
   [propget, id(0x000000E3)]
   HRESULT _stdcall BookmarkLen([out, retval] unsigned short* Value);
+  [propget, id(0x000000E4)]
+  HRESULT _stdcall Bookmarks([in] long index, [out, retval] IBookmark** Value);
 
   
 

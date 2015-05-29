@@ -186,6 +186,8 @@ typedef char  _TCHAR;
   // define setFVbin
 %ignore bzs::db::protocol::tdap::client::table::setFV(short, const void *, uint_td);
 %ignore bzs::db::protocol::tdap::client::table::setFV(const _TCHAR*, const void *, uint_td);
+%ignore bzs::db::protocol::tdap::client::table::setOnRecordCount;
+%ignore bzs::db::protocol::tdap::client::table::onRecordCount;
 %extend bzs::db::protocol::tdap::client::table {
   void setFV(short index, const char * data, uint_td size) {
     return self->setFV(index, (void const *) data, size);
