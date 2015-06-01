@@ -32166,6 +32166,11 @@ static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__protocol__tdap__client__tran
   /* No destructor for simple type _p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t */
   efree(rsrc->ptr);
 }
+static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_BOOKMARK) {
+  /* No destructor for simple type _p_BOOKMARK */
+  __wrap_delete_BOOKMARK(rsrc, SWIGTYPE_p_BOOKMARK->name TSRMLS_CC);
+}
+
 /* end wrapper section */
 /* class entry subsection */
 
@@ -35245,6 +35250,7 @@ le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs_
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__idatabaseManager_t_t,&le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__idatabaseManager_t_t);
 le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t,&le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t);
+le_swig__p_BOOKMARK=zend_register_list_destructors_ex(_wrap_destroy_p_BOOKMARK,NULL,(char *)(SWIGTYPE_p_BOOKMARK->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_BOOKMARK, &le_swig__p_BOOKMARK);
 CG(active_class_entry) = NULL;
 /* end oinit subsection */
