@@ -205,7 +205,7 @@ STDMETHODIMP CWritableRecord::Read(VARIANT param,
         else if (param.vt == VT_BOOL) 
             *retVal = m_rec->read(param.boolVal);    
         else
-            return Error("Invalid param 1 not BOOL", IID_IWritableRecord);
+            *retVal = m_rec->read();
         return S_OK;
     }
     catch (bzs::rtl::exception& e)
