@@ -254,8 +254,6 @@ void schemaBuilder::listSchemaTable(database* db, std::vector<std::string>& shce
     fs::path p = s;
     fs::directory_iterator it(p);
     fs::directory_iterator end;
-    int id = 0;
-    short stat = 0;
     shcemaNames.clear();
     
     for (fs::directory_iterator it(p); it != end; ++it)

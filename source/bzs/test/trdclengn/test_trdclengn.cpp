@@ -1997,8 +1997,11 @@ void testExclusive()
     table* tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
     //Check tb2 Exclusive
     table* tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
-    tb3;// For don't use tb3 warning
-    BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
+    if (tb3) //For don't use tb3;
+        BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
+                                    , "Write Exclusive open");
+    else
+        BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
                                     , "Write Exclusive open");
     //if (tb2->recordCount(false) == 0)
     {
