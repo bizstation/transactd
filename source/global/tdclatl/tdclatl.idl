@@ -375,6 +375,7 @@ enum eOptimize
 
 
 
+
 [
   object,
   uuid(3EE9F43F-99D0-4300-B8A4-3085A2C4D00B),
@@ -537,7 +538,6 @@ interface IDbDef : IDispatch
   HRESULT _stdcall DeleteKey([in] short TableIndex, [in] short KeyIndex);
   [id(0x000000CF)]
   HRESULT _stdcall TableDef([in] short Index, [out, retval] ITableDef** Value);
-
   [id(0x000000D0)]
   HRESULT _stdcall CompAsBackup([in] short TableIndex, [out, retval] VARIANT_BOOL* Value);
   [id(0x000000D1)]
@@ -622,7 +622,7 @@ interface ITable : IDispatch
   [id(0x00000022)]
   HRESULT _stdcall SeekByBookmark([in] IBookmark* bm, [in, defaultvalue(LOCK_NONE)] eLockType lockBias);
   [propget, id(0x00000023)]
-  HRESULT _stdcall Percentage([out, retval] long* Value);
+  HRESULT _stdcall Percentage([in] VARIANT param, [out, retval] long* Value);
   [id(0x00000031)]
   HRESULT _stdcall SeekByPercentage([in] long Value);
   [id(0x00000024)]

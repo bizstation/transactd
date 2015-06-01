@@ -28,7 +28,6 @@ using namespace ATL;
 void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
                           int count, bool& cancel);
 
-
 class ATL_NO_VTABLE CTableTd
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CTableTd, &CLSID_Table>,
@@ -93,7 +92,7 @@ public:
     STDMETHOD(SeekLessThan)(VARIANT_BOOL orEqual, eLockType lockBias);
     STDMETHOD(get_Bookmark)(IBookmark** Value);
     STDMETHOD(SeekByBookmark)(IBookmark* bm, eLockType lockBias);
-    STDMETHOD(get_Percentage)(long* Value);
+    STDMETHOD(get_Percentage)(VARIANT param, long* Value);
     STDMETHOD(get_RecordLength)(long* Value);
     STDMETHOD(RecordCount)(VARIANT_BOOL estimate, VARIANT_BOOL fromCurrent,
                            long* Value);

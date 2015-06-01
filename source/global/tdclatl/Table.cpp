@@ -246,9 +246,17 @@ STDMETHODIMP CTableTd::SeekByBookmark(IBookmark* bm, eLockType lockBias)
     return Error("Invalid param bookmark", IID_ITable);
 }
 
-STDMETHODIMP CTableTd::get_Percentage(long* Value)
+STDMETHODIMP CTableTd::get_Percentage(VARIANT param, long* Value)
 {
-    *Value = m_tb->getPercentage();
+    if ((param.vt == VT_DISPATCH) && param.pdispVal)
+    {
+        CBookmark* bm = dynamic_cast<CBookmark*>(param.pdispVal);
+        if (bm)
+            *Value = m_tb->getPercentage(bm->internalBookmark());
+        else
+            return Error("Invalid param 1 not IBookmark", IID_ITable);
+    }else
+        *Value = m_tb->getPercentage();
     return S_OK;
 }
 
