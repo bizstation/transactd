@@ -163,13 +163,10 @@ The last two of above files are modules that are compiled with each compilers
 in order to export the classes of C++. The benchmark programs and test programs
 are also compiled with each compilers. These files are located in the folder
 which has the compiler name in the bin folder.
-You can safely delete useless files if you can identify the compiler which you
-use to develop.
-
-There are binaries which is compiled with following 7 compilers:
-
-  * Microsoft Visual studio 2010 (Include ActiveX(COM) client)
-  * Embarcadero C++Builder XE～XE6series
+These binaries have been built by the Microsoft Visual studio 2010.
+If you want to use in the Embarcadero C ++ Builder.
+Please see following information.
+http://www.bizstation.jp/en/transactd/documents/BUILD_WIN.html
 
 
 ### Installing on Linux

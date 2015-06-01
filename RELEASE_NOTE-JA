@@ -1,24 +1,36 @@
 リリースノート
 
 ================================================================================
-Version 2.4.0 2015/04/02
+Version 2.4.0 2015/06/03
 ================================================================================
+バージョンアップ上の注意点
+--------------------------------------------------------------------------------
+・サーバー クライアントのバージョン互換性
+  Version 2.3系からのバージョンアップは特に注意する点はありません。サーバー、クラ
+  イアントともに、2.4系との相互運用が可能です。（但し、2.4の新機能を除く）
+
+Version 2.3より前のバージョンからのアップグレードは以前のリリースノートを確認して
+ください。
+
 新機能
 --------------------------------------------------------------------------------
 ・Transactd studio
-  Transactdを使用中のコネクション、データベース、テーブル情報を表示するためのAPI
-  が実装されました。テーブル情報では、テーブルをオープンしてからの読み取り、更新
-  、追加、削除したレコード数も得ることができます。
+  Transactdに、使用中のコネクション、データベース、テーブル情報を表示するための
+  APIが実装されました。テーブル情報では、テーブルをオープンしてからの読み取り、更
+  新、追加、削除したレコード数などを得ることができます。
 
 ・activeTableでbookmarkからのrecordsetの取得を可能にしました。
   queryBase::baseseekByBookmarksにtrueをセットし、queryBase::addSeekKeyValuePtrを
-  使って複数のbookmarkをセットできます。
+  使って複数のbookmarkをセットできます。tableオブジェクトにqueryをセットしてから、
+  table::recordCount()を呼び出すと条件にマッチしたレコード数を数えるのと同時に、
+  table::bookmarks()でそれらのbookmarkを取得できます。
 
-・以下の３つの関数を、フリースレッド対応しました。以下のメソッドは複数のスレッド
-  から同時アクセス可能です。
+・C++APIにおいて以下のメソッドを、フリースレッド対応しました。複数のスレッドから
+  同時アクセス可能です。
   table::insertBookmarks
   table::moveBookmarks
   table::bookmarksCount
+  table::bookmarks
 
 その他の修正と変更点
 --------------------------------------------------------------------------------
@@ -27,11 +39,11 @@ Version 2.4.0 2015/04/02
 
 ・既存のテーブルの自動スキーマ生成がうまくいかない場合がある不具合を修正しました。
 
-・Transactd Monitorのためのサーバー側ロック制御をより範囲の狭いもの変更してモニタ
-  リング時の同時実効性を向上させました。
+・サーバー統計情報を取得するためのロック制御を改善しました。モニタリング時の同時実
+  効性を向上させました。
 
-・サーバーへの再接続 recconnected を行ったかどうかを示す、
-  nsdatabase::isReconnected()メソッドを追加しました。
+・nsdatabase::isReconnected()メソッドを追加しました。
+  サーバーへの再接続を行ったかどうかを示します。
 
 ・１つの接続で複数データベースを使用した場合の reconnectをサポートしました。
 
@@ -44,6 +56,7 @@ Version 2.4.0 2015/04/02
 ・メソッドの追加
   short dbdef::validateTableDef(short TableIndex)
   ushort_td nstable::bookmarkLen() const
+  bookmark_td tabale::bookmarks(unsigned int index) const
   recordCountFn Call back function
   table::setOnRecordCount
   table::onRecordCount
@@ -73,7 +86,7 @@ Version 2.4.0 2015/04/02
             }
         };
 
-・bookmark_td型を引数に取る関数で、bookmark_td型を参照に変更。
+・bookmark_td型を引数に取る関数で、bookmark_td型を参照に変更しました。
 
 ・コンビニエンスAPIのopenTableの引数をフル引数対応しました。
 
@@ -83,6 +96,13 @@ Version 2.4.0 2015/04/02
   void deleteField(dbdef* def, short tableid, short fieldNum)
   void deleteKey(dbdef* def, short tableid, short keynum)
   void validateTableDef(dbdef* def, short tableid)
+
+・Trasnactd Client with SDK のWindows版に、Embarcadero C++Builder用バイナリは
+  含まれなくなりました。Embarcadero C++Builderで使用する場合は、ソースからビルド
+  することで引き続き利用可能です。
+  http://www.bizstation.jp/ja/transactd/documents/BUILD_WIN.html
+
+
 
 ================================================================================
 Version 2.3.0 2015/03/20

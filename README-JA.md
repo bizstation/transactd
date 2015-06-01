@@ -161,13 +161,11 @@ C++クライアントは binフォルダに配置された以下の３つのDLL�
 このうち下の２つはC++のクラスをエクスポートするための、コンパイラごとに異なった
 モジュールです。また、それを利用したテストやベンチマーク、その他のプログラムも
 コンパイラごとになっていますです。それらはbin配下にコンパイラの名前のフォルダに
-配置されています。
-開発コンパイラが特定されている場合には、不要なモジュールは削除しても構いません。
+配置されています。これらのバイナリーはMicrosoft Visual studio 2010にてビルドされ
+ています。
+Embarcadero C++Builderで使用する場合は、下記をご覧ください。
+http://www.bizstation.jp/ja/transactd/documents/BUILD_WIN.html
 
-ビルド済みバイナリーが含まれるコンパイラは以下の7種類です。
-
-  * Microsoft Visual studio 2010用 (ActiveX(COM)クライアントを含みます)
-  * Embarcadero C++Builder XE～XE6シリーズ用
 
 
 ### Linuxでのインストール 

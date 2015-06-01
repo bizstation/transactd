@@ -1,6 +1,121 @@
 Release note
 
 ================================================================================
+Version 2.4.0 2015/06/03
+================================================================================
+Upgrade Notes
+--------------------------------------------------------------------------------
+* Compatibility between server plugin and clients.
+  Upgrade from the Version 2.3 is easy.
+  Server plug-ins, clients, it is both compatible with 2.4.
+  (However, except the new features of the 2.4)
+
+Upgrade from a previous version than Version 2.3, please check the previous 
+release notes.
+
+New Features
+--------------------------------------------------------------------------------
+* Transactd studio
+  The following information API has been added to the Transactd.
+     Connection in use
+     Database in use
+     Table in use
+     
+  In the table information, it will be examined following number of records from 
+  the open table.
+     read,update,insert,delete
+
+* ActiveTable, It was now possible to obtain a recordset from bookmarks.
+  Set to true queryBase::seekByBookmarks, and you can set multiple bookmark using 
+  the queryBase::addSeekKeyValuePtr method.
+  
+  After you set the query to the table object, and at the same time and count the 
+  number of records that match the conditions when you call the table::recordCount()
+  , you can get them of bookmark by the table::bookmarks().
+
+* The following methods in C ++ API, it has to allow simultaneous access from 
+  multiple threads.
+  table::insertBookmarks
+  table::moveBookmarks
+  table::bookmarksCount
+  table::bookmarks
+
+Other Modifications
+--------------------------------------------------------------------------------
+* Fixed, In null key access P.SQL compatible, that may be whether the judgment 
+  mistake or null key.
+
+* Fixed, Sometimes automatic schema generation does not work.
+
+* Improved, lock control to get the server statistics. Improve the simultaneous 
+  effectiveness at the time of monitoring.
+
+* Added, the nsdatabase::isReconnected() method.
+  It indicates whether went to reconnect to the server.
+
+* Supported, The reconnect in the case of using multiple databases in a single 
+  connection.
+
+* Fixed, If there is a null key to when the table is created, may cause by adding
+  unnecessary internal null field.
+
+* Fixed, invalid pointer operations when it receives an invalid prepared query 
+  handle.
+
+* Adding Methods
+  short dbdef::validateTableDef(short TableIndex)
+  ushort_td nstable::bookmarkLen() const
+  bookmark_td tabale::bookmarks(unsigned int index) const
+  recordCountFn Call back function
+  table::setOnRecordCount
+  table::onRecordCount
+  queryBase& queryBase::seekByBookmarks(bool v);
+  bool queryBase::isSeekByBookmarks() const;
+  bool writableRecord::read(bookmark_td& bm);
+
+* Changing the method name
+  table::setBookMarks     --> table::insertBookmarks
+  table::moveBookmarksId  --> table::moveBookmarks
+  table::bookMarksCount   --> table::bookmarksCount
+
+* Change of method parameters
+  void database::close(bool withDropDefaultSchema = false)
+
+* Change of bookmark_td type from unsigned int.
+        struct BOOKMARK
+        {
+            uchar_td val[MAX_BOOKMARK_SIZE];
+            bool empty;
+            BOOKMARK():empty(true){ }
+            bool isEmpty(){ return empty; }
+            void set(uchar_td* p, int len)
+            {
+                memcpy(val, p, len);
+                empty = false;
+            }
+        };
+
+* A function that takes a bookmark_td type argument, it was changed to refer 
+  to the bookmark_td type.
+
+* The argument of openTable of C++ convenience API it was all arguments 
+  correspondence.
+
+* We added the following function in a C++ convenience API.
+  void deleteTable(dbdef* def, short id)
+  void renumberTable(dbdef* def, short id, short newid)
+  void deleteField(dbdef* def, short tableid, short fieldNum)
+  void deleteKey(dbdef* def, short tableid, short keynum)
+  void validateTableDef(dbdef* def, short tableid)
+
+* Trasnactd Client with SDK for Windows, binary for Embarcadero C ++ Builder is 
+  no longer included. If you want to use in the Embarcadero C ++ Builder, 
+  it is still available at that to build from source.
+  http://www.bizstation.jp/ja/transactd/documents/BUILD_WIN.html
+
+
+
+================================================================================
 Version 2.3.0 2015-03-20
 ================================================================================
 
