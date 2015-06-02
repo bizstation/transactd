@@ -20,10 +20,12 @@
 
 #if defined(__BCPLUSPLUS__)
 #pragma warn -8012
+#pragma warn -8022
 #endif
 #include <boost/test/included/unit_test.hpp>
 #if defined(__BCPLUSPLUS__)
 #pragma warn .8012
+#pragma warn .8022
 #endif
 
 #include <bzs/db/protocol/tdap/client/database.h>
@@ -1917,7 +1919,9 @@ bool isMySQL5_7(database* db)
         (7 == vv.versions[1].minorVersion));
   
 }
-
+#if defined(__BCPLUSPLUS__)
+#pragma warn -8004
+#endif
 void testExclusive()
 {
    
@@ -2051,7 +2055,9 @@ void testExclusive()
     tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
     BOOST_CHECK_MESSAGE(0 == db->stat(), "open group stat = " << db->stat()) ;
     //Check tb2 Exclusive
+
     tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
+
     BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
                                     , "Write Exclusive open");
     db->beginTrn();
@@ -2082,8 +2088,9 @@ void testExclusive()
     database::destroy(db);
     database::destroy(db2);
 }
-
-
+#if defined(__BCPLUSPLUS__)
+#pragma warn .8004
+#endif
 /* Multi database */
 void testMultiDatabase(database* db)
 {

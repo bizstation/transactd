@@ -41,7 +41,9 @@ tls_key g_tlsiID;
 __THREAD client* __THREAD_BCB g_client = NULL;
 #endif
 
-
+#if defined(__BCPLUSPLUS__)
+#pragma warn -8004
+#endif
 short errorCode(const boost::system::error_code& e)
 {
     short ret = 0;
@@ -78,6 +80,9 @@ short errorCode(const boost::system::error_code& e)
     }
     return ret;
 }
+#if defined(__BCPLUSPLUS__)
+#pragma warn .8004
+#endif
 
 int client::getServerCharsetIndex()
 {
