@@ -360,11 +360,17 @@ public:
     explicit activeTableImple(idatabaseManager* mgr, const _TCHAR* tableName)
         : baseClass_type(mgr, tableName), m_record(NULL){};
 
-    explicit activeTableImple(database_ptr& db, const _TCHAR* tableName)
-        : baseClass_type(db, tableName), m_record(NULL){};
+    explicit activeTableImple(database_ptr& db, const _TCHAR* tableName, short mode)
+        : baseClass_type(db, tableName, mode), m_record(NULL){};
 
-    explicit activeTableImple(database* db, const _TCHAR* tableName)
-        : baseClass_type(db, tableName), m_record(NULL){};
+    explicit activeTableImple(database* db, const _TCHAR* tableName, short mode)
+        : baseClass_type(db, tableName, mode), m_record(NULL){};
+
+    explicit activeTableImple(database_ptr& db, short tableIndex, short mode)
+        : baseClass_type(db, tableIndex, mode), m_record(NULL){};
+
+    explicit activeTableImple(database* db, short tableIndex, short mode)
+        : baseClass_type(db, tableIndex, mode), m_record(NULL){};
 
     ~activeTableImple()
     {

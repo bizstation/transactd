@@ -49,13 +49,27 @@ activeTable::activeTable(dbmanager_ptr& mgr, const _TCHAR* tableName)
 {
 }
 
-activeTable::activeTable(database_ptr& db, const _TCHAR* tableName)
-    : m_imple(new activeTableImple(db, tableName))
+activeTable::activeTable(database_ptr& db, const _TCHAR* tableName,
+                                            short mode)
+    : m_imple(new activeTableImple(db, tableName, mode))
 {
 }
 
-activeTable::activeTable(database* db, const _TCHAR* tableName)
-    : m_imple(new activeTableImple(db, tableName))
+activeTable::activeTable(database* db, const _TCHAR* tableName,
+                                            short mode)
+    : m_imple(new activeTableImple(db, tableName, mode))
+{
+}
+
+activeTable::activeTable(database_ptr& db, short tableIndex,
+                                            short mode)
+    : m_imple(new activeTableImple(db, tableIndex, mode))
+{
+}
+
+activeTable::activeTable(database* db, short tableIndex,
+                                            short mode)
+    : m_imple(new activeTableImple(db, tableIndex, mode))
 {
 }
 
@@ -192,14 +206,24 @@ activeTable* activeTable::create(dbmanager_ptr& mgr, const _TCHAR* tableName)
     return new activeTable(mgr, tableName);
 }
 
-activeTable* activeTable::create(database_ptr& db, const _TCHAR* tableName)
+activeTable* activeTable::create(database_ptr& db, const _TCHAR* tableName, short mode)
 {
-    return new activeTable(db, tableName);
+    return new activeTable(db, tableName, mode);
 }
 
-activeTable* activeTable::create(database* db, const _TCHAR* tableName)
+activeTable* activeTable::create(database* db, const _TCHAR* tableName, short mode)
 {
-    return new activeTable(db, tableName);
+    return new activeTable(db, tableName, mode);
+}
+
+activeTable* activeTable::create(database_ptr& db, short tableIndex, short mode)
+{
+    return new activeTable(db, tableIndex, mode);
+}
+
+activeTable* activeTable::create(database* db, short tableIndex, short mode)
+{
+    return new activeTable(db, tableIndex, mode);
 }
 
 void activeTable::release()

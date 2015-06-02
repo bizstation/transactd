@@ -53,6 +53,8 @@ Version 2.3より前のバージョンからのアップグレードは以前の
 ・無効なプリペアードクエリハンドル受取ったときに、無効なポインタ操作してしまうバグ
   を修正しました。
 
+・SQLアクセスによるロックと共存できないことがある不具合を修正しました。
+
 ・メソッドの追加
   short dbdef::validateTableDef(short TableIndex)
   ushort_td nstable::bookmarkLen() const
@@ -69,8 +71,12 @@ Version 2.3より前のバージョンからのアップグレードは以前の
   table::moveBookmarksId  --> table::moveBookmarks
   table::bookMarksCount   --> table::bookmarksCount
 
-・メソッドパラメータの変更
+・メソッドパラメータの追加
   void database::close(bool withDropDefaultSchema = false)
+  activeTable::activeTable(database* db, short tableIndex, 
+                                  short mode = TD_OPEN_NORMAL)
+  static activeTable* create(database* db, short tableIndex,
+                                  short mode = TD_OPEN_NORMAL);
 
 ・bookmark_td型の変更 unsigned int から
         struct BOOKMARK

@@ -323,13 +323,31 @@ class activeObject : boost::noncopyable
         m_tb = mgr->table(name);
     }
 
-    void init(database_ptr& db, const _TCHAR* name)
+    void init(database_ptr& db, const _TCHAR* name, short mode)
     {
-        m_tb = openTable(db, name);
+        m_tb = openTable(db, name, mode);
     }
 
-    void init(database* db, const _TCHAR* name) { m_tb = openTable(db, name); }
-    
+    void init(database* db, const _TCHAR* name, short mode)
+    {
+        m_tb = openTable(db, name, mode);
+    }
+
+    /*void init(idatabaseManager* mgr, short tableindex)
+    {
+        m_tb = mgr->table(tableindex);
+    }*/
+
+    void init(database_ptr& db, short tableindex, short mode)
+    {
+        m_tb = openTable(db, tableindex, mode);
+    }
+
+    void init(database* db, short tableindex, short mode)
+    {
+        m_tb = openTable(db, tableindex, mode);
+    }
+
     void prepare(const pq_handle& q)
     {
         m_tb->setPrepare(q);
@@ -345,18 +363,18 @@ protected:
 public:
     typedef std::vector<boost::shared_ptr<T> > collection_vec_type;
 
-    explicit activeObject(idatabaseManager* mgr)
+    explicit activeObject(idatabaseManager* mgr, short mode = TD_OPEN_NORMAL)
         : m_fdi(createFdi((FDI*)0)), m_map(*m_fdi), m_option(0)
     {
-        init(mgr, m_map.getTableName());
+        init(mgr, m_map.getTableName(), mode);
         if (table() && m_fdi)
             initFdi(m_fdi, m_tb.get());
     }
 
-    explicit activeObject(database_ptr& db)
+    explicit activeObject(database_ptr& db, short mode = TD_OPEN_NORMAL)
         : m_fdi(createFdi((FDI*)0)), m_map(*m_fdi), m_option(0)
     {
-        init(db, m_map.getTableName());
+        init(db, m_map.getTableName(), mode);
         if (table() && m_fdi)
             initFdi(m_fdi, m_tb.get());
     }
@@ -369,29 +387,46 @@ public:
             initFdi(m_fdi, m_tb.get());
     }
 
-    /*explicit activeObject(dbmanager_ptr& mgr, const _TCHAR* tableName)
-            :m_option(0)
-            ,m_fdi(createFdi(m_fdi))
-            ,m_map(*m_fdi)
-            {
-                    init(mgr, tableName);
-                    if (table() && m_fdi)
-                            initFdi(m_fdi, m_tb.get());
-            }
-     */
-
-    explicit activeObject(database_ptr& db, const _TCHAR* tableName)
+    /*explicit activeObject(idatabaseManager* mgr, short tableIndex)
         : m_fdi(createFdi((FDI*)0)), m_map(*m_fdi), m_option(0)
     {
-        init(db, tableName);
+        init(mgr, tableIndex);
+        if (table() && m_fdi)
+            initFdi(m_fdi, m_tb.get());
+    }*/
+
+    explicit activeObject(database_ptr& db, const _TCHAR* tableName,
+                                         short mode = TD_OPEN_NORMAL)
+        : m_fdi(createFdi((FDI*)0)), m_map(*m_fdi), m_option(0)
+    {
+        init(db, tableName, mode);
         if (table() && m_fdi)
             initFdi(m_fdi, m_tb.get());
     }
 
-    explicit activeObject(database* db, const _TCHAR* tableName)
+    explicit activeObject(database* db, const _TCHAR* tableName,
+                                         short mode = TD_OPEN_NORMAL)
         : m_fdi(createFdi((FDI*)0)), m_map(*m_fdi), m_option(0)
     {
-        init(db, tableName);
+        init(db, tableName, mode);
+        if (table() && m_fdi)
+            initFdi(m_fdi, m_tb.get());
+    }
+
+    explicit activeObject(database_ptr& db, short tableIndex,
+                                         short mode = TD_OPEN_NORMAL)
+        : m_fdi(createFdi((FDI*)0)), m_map(*m_fdi), m_option(0)
+    {
+        init(db, tableIndex, mode);
+        if (table() && m_fdi)
+            initFdi(m_fdi, m_tb.get());
+    }
+
+    explicit activeObject(database* db, short tableIndex,
+                                         short mode = TD_OPEN_NORMAL)
+        : m_fdi(createFdi((FDI*)0)), m_map(*m_fdi), m_option(0)
+    {
+        init(db, tableIndex, mode);
         if (table() && m_fdi)
             initFdi(m_fdi, m_tb.get());
     }

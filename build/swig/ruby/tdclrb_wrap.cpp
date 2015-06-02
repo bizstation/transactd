@@ -2761,9 +2761,9 @@ SWIGINTERN bzs::db::protocol::tdap::client::activeTable *new_bzs_db_protocol_tda
     g_vPtrList.add(p->table().get());
     return p;
   }
-SWIGINTERN bzs::db::protocol::tdap::client::activeTable *new_bzs_db_protocol_tdap_client_activeTable__SWIG_1(bzs::db::protocol::tdap::client::database *db,_TCHAR const *tableName){
+SWIGINTERN bzs::db::protocol::tdap::client::activeTable *new_bzs_db_protocol_tdap_client_activeTable__SWIG_1(bzs::db::protocol::tdap::client::database *db,_TCHAR const *tableName, short mode){
     bzs::db::protocol::tdap::client::activeTable* p =
-      bzs::db::protocol::tdap::client::activeTable::create(db, tableName);
+      bzs::db::protocol::tdap::client::activeTable::create(db, tableName, mode);
     g_refCounter.add(p, db);
     g_vPtrList.add(p->table().get());
     return p;
@@ -32174,6 +32174,7 @@ SWIGINTERN VALUE
 _wrap_new_activeTable__SWIG_1(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
+  short arg3 = TD_OPEN_NORMAL;
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
@@ -32181,7 +32182,7 @@ _wrap_new_activeTable__SWIG_1(int argc, VALUE *argv, VALUE self) {
   int alloc2 = 0 ;
   bzs::db::protocol::tdap::client::activeTable *result = 0 ;
   
-  if ((argc < 2) || (argc > 2)) {
+  if ((argc < 2) || (argc > 3)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(argv[0], &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0 |  0 );
@@ -32189,14 +32190,29 @@ _wrap_new_activeTable__SWIG_1(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::database *","activeTable", 1, argv[0] )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::database * >(argp1);
+  
   res2 = SWIG_AsCharPtrAndSize(argv[1], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","activeTable", 2, argv[1] ));
   }
   arg2 = reinterpret_cast< _TCHAR * >(buf2);
+
+  if (argc == 3)
+  {
+	  VALUE type = TYPE(argv[2]);
+	  if ((type == T_FIXNUM) || (type == T_BIGNUM))
+	  {
+		  long long val = 0;
+		  int ecode = SWIG_AsVal_long_SS_long(argv[2], &val);
+		  if (!SWIG_IsOK(ecode))
+			  SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError("", "short", "mode", 3, argv[2]));
+		  arg3 = (short)val;
+	  }
+  }
+
   {
     try {
-      result = (bzs::db::protocol::tdap::client::activeTable *)new_bzs_db_protocol_tdap_client_activeTable__SWIG_1(arg1,(char const *)arg2);
+      result = (bzs::db::protocol::tdap::client::activeTable *)new_bzs_db_protocol_tdap_client_activeTable__SWIG_1(arg1,(char const *)arg2, arg3);
       DATA_PTR(self) = result;
       SWIG_RubyAddTracking(result, self);
     } catch (bzs::rtl::exception& e) {
@@ -32221,7 +32237,7 @@ SWIGINTERN VALUE _wrap_new_activeTable(int nargs, VALUE *args, VALUE self) {
   int ii;
   
   argc = nargs;
-  if (argc > 2) SWIG_fail;
+  if (argc > 3) SWIG_fail;
   for (ii = 0; (ii < argc); ++ii) {
     argv[ii] = args[ii];
   }
@@ -32250,6 +32266,20 @@ SWIGINTERN VALUE _wrap_new_activeTable(int nargs, VALUE *args, VALUE self) {
         return _wrap_new_activeTable__SWIG_1(nargs, args, self);
       }
     }
+  }
+
+  if (argc == 3) {
+	  int _v;
+	  void *vptr = 0;
+	  int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0);
+	  _v = SWIG_CheckState(res);
+	  if (_v) {
+		  int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
+		  _v = SWIG_CheckState(res);
+		  if (_v) {
+			  return _wrap_new_activeTable__SWIG_1(nargs, args, self);
+		  }
+	  }
   }
   
 fail:

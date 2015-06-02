@@ -622,7 +622,7 @@ interface ITable : IDispatch
   [id(0x00000022)]
   HRESULT _stdcall SeekByBookmark([in] IBookmark* bm, [in, defaultvalue(LOCK_NONE)] eLockType lockBias);
   [propget, id(0x00000023)]
-  HRESULT _stdcall Percentage([in] VARIANT param, [out, retval] long* Value);
+  HRESULT _stdcall Percentage([in, optional] VARIANT param, [out, retval] long* Value);
   [id(0x00000031)]
   HRESULT _stdcall SeekByPercentage([in] long Value);
   [id(0x00000024)]
@@ -1147,7 +1147,7 @@ interface IQueryBase : IDispatch
 interface IActiveTable : IDispatch
 {
   [id(0x0000001)]
-  HRESULT _stdcall SetDatabase([in] VARIANT Value, [in] BSTR tableName);
+  HRESULT _stdcall SetDatabase([in] VARIANT Value, [in] BSTR tableName, [in, defaultvalue(normal)] short mode);
   [id(0x0000002)]
   HRESULT _stdcall Index([in] short Value, [out, retval] IActiveTable** retVal);
   [id(0x0000003)]
@@ -1301,7 +1301,7 @@ interface IWritableRecord : IRecord
   [id(0x0000014)]
   HRESULT _stdcall Update(void);
   [id(0x0000015)]
-  HRESULT _stdcall Read([in, defaultvalue(0)]VARIANT KeysetAlradyOrBookmark, [out, retval] VARIANT_BOOL* retVal);
+  HRESULT _stdcall Read([in, optional]VARIANT KeysetAlradyOrBookmark, [out, retval] VARIANT_BOOL* retVal);
   [id(0x0000016)]
   HRESULT _stdcall Clear();
   [propget,id(0x0000017)]

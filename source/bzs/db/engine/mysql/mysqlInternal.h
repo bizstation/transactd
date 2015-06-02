@@ -411,7 +411,7 @@ inline int cp_thread_set_THR_THD(THD* thd)
 	my_pthread_setspecific_ptr(THR_THD, thd);
 	return 0;
 }
-
+/*
 inline void cp_set_transaction_duration_for_all_locks(THD* thd)
 {
 	thd->mdl_context.set_transaction_duration_for_all_locks();
@@ -427,6 +427,31 @@ inline void cp_open_error_release(THD* thd, TABLE_LIST& tables)
 {
     thd->mdl_context.release_lock(tables.mdl_request.ticket);
 }
+*/
+
+inline void cp_set_transaction_duration_for_all_locks(THD* thd)
+{
+}
+
+inline void cp_set_mdl_request_types(TABLE_LIST& tables, short mode)
+{
+	if (mode == -2 /* TD_OPEN_READONLY */)
+		tables.mdl_request.set_type(MDL_SHARED_READ);
+	else if (mode == -4 /* TD_OPEN_EXCLUSIVE */)
+		tables.mdl_request.set_type(MDL_SHARED_NO_READ_WRITE);
+	else if (mode == -6 /* TD_OPEN_READONLY_EXCLUSIVE */)
+		tables.mdl_request.set_type(MDL_SHARED_READ);
+	else
+		tables.mdl_request.set_type(MDL_SHARED_WRITE);
+	
+	tables.mdl_request.duration = MDL_TRANSACTION;
+}
+
+inline void cp_open_error_release(THD* thd, TABLE_LIST& tables)
+{
+   
+}
+
 
 #endif
 

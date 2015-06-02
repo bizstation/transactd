@@ -263,9 +263,9 @@ using namespace bzs::db::protocol::tdap::client;
     g_vPtrList.add(p->table().get());
     return p;
   }
-  activeTable(database* db, const _TCHAR* tableName) {
+  activeTable(database* db, const _TCHAR* tableName, short mode) {
     bzs::db::protocol::tdap::client::activeTable* p =
-      bzs::db::protocol::tdap::client::activeTable::create(db, tableName);
+      bzs::db::protocol::tdap::client::activeTable::create(db, tableName, mode);
     g_vPtrList.add(p->table().get());
     return p;
   }
