@@ -251,25 +251,25 @@ inline connection* connections::doConnect(connection* c)
     {
         m_e = boost::system::error_code(e.error(), get_system_category());
         delete c;
-        throw e;
+        return NULL;
     }
     catch (boost::system::system_error& e)
     {
         m_e = e.code();
         delete c;
-        throw e;
+        return NULL;
     }
-    catch (std::exception& e)
+    catch (std::exception& /*e*/)
     {
         m_e = boost::system::error_code(1, get_system_category());
         delete c;
-        throw e;
+        return NULL;
     }
     catch (...)
     {
         m_e = boost::system::error_code(1, get_system_category());
         delete c;
-        throw;
+        return NULL;
     }
 }
 
@@ -294,15 +294,17 @@ inline bool connections::doHandShake(connection* c, handshake f, void* data)
         }
         return ret;
     }
-    catch (bzs::netsvc::client::exception& /*e*/)
+    catch (bzs::netsvc::client::exception& e)
     {
         delete c;
-        throw;
+        m_e = boost::system::error_code(e.error(), get_system_category());
+        return false;
     }
-    catch (boost::system::system_error& /*e*/)
+    catch (boost::system::system_error& e)
     {
+        m_e = e.code();
         delete c;
-        throw;
+        return false;
     }
 }
 

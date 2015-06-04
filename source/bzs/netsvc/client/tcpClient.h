@@ -800,7 +800,7 @@ class pipeConnection : public connectionImple<platform_stream>
             throwException("CreateFile", CLIENT_ERROR_CANT_CREATEPIPE);
 #endif // NOT WIN32
         m_socket.assign(fd);
-        m_connected = true;
+        
 
         // send processId and clientid;
         DWORD processId = GetCurrentProcessId();
@@ -811,12 +811,18 @@ class pipeConnection : public connectionImple<platform_stream>
         memcpy(p + 4, &processId, sizeof(DWORD));
         __int64 clientid = (__int64) this;
         memcpy(p + 8, &clientid, sizeof(__int64));
-        boost::asio::write(m_socket, boost::asio::buffer(p, size));
-
-        boost::asio::read(m_socket, boost::asio::buffer(p, 7));
-        unsigned int* shareMemSize = (unsigned int*)(p+3);
-        m_isHandShakable = (p[0] == 0x00);
-        createKernelObjects(*shareMemSize);
+        boost::asio::write(m_socket, boost::asio::buffer(p, size), m_e);
+        if (!m_e)
+        {
+            boost::asio::read(m_socket, boost::asio::buffer(p, 7), m_e);
+            if (!m_e)
+            {
+                unsigned int* shareMemSize = (unsigned int*)(p+3);
+                m_isHandShakable = (p[0] == 0x00);
+                createKernelObjects(*shareMemSize);
+                m_connected = true;
+            }
+        }
     }
 
     char* sendBuffer(size_t size) { return m_writebuf_p; }

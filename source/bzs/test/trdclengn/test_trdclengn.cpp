@@ -1997,16 +1997,17 @@ void testExclusive()
     /* -------------------------------------------------*/
     tb = openTable(db, TD_OPEN_NORMAL);
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2 open stat = " << db2->stat());
             
     table* tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
     //Check tb2 Exclusive
     table* tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
     if (tb3) //For don't use tb3;
         BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
-                                    , "Write Exclusive open");
+                                    , "Write Exclusive open" << db2->stat());
     else
         BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
-                                    , "Write Exclusive open");
+                                    , "Write Exclusive open" << db2->stat());
     //if (tb2->recordCount(false) == 0)
     {
         for (int i = 1 ; i < 5 ; ++i)
@@ -2142,7 +2143,7 @@ void testMissingUpdate(database* db)
     db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
     BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF); 
-    BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2->open");
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2->open stat = " << db2->stat());
     table* tb2 = db2->openTable(_T("user"));
     {
 
@@ -2496,7 +2497,7 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType,
     td.charsetIndex = charset;
 
     def->insertTable(&td);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "insertTable");
+    BOOST_CHECK_MESSAGE(0 == def->stat(), "insertTable stat = " << def->stat());
 
     fielddef* fd = def->insertField(id, 0);
     fd->setName(_T("id"));
