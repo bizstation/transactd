@@ -97,7 +97,7 @@ public:
     int commandExec(request& req, netsvc::server::netWriter* nw);
     size_t getAcceptMessage(char* message, size_t size);
     int errorCode(int ha_error);
-    short_td errorCodeSht(int ha_error)
+    inline short_td errorCodeSht(int ha_error)
     {
         return (short_td)errorCode(ha_error);
     }

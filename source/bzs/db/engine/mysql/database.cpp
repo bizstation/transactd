@@ -724,7 +724,10 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
         if (ER_LOCK_WAIT_TIMEOUT == m_thd->cp_get_sql_error())
             m_stat = STATUS_CANNOT_LOCK_TABLE;
         else
+        {
+            m_stat = m_thd->cp_get_sql_error();
             cp_open_error_release(m_thd, tables);
+        }
         return NULL;
     }
 	cp_set_transaction_duration_for_all_locks(m_thd);

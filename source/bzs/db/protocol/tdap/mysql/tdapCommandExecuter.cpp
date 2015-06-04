@@ -269,6 +269,8 @@ int dbExecuter::errorCode(int ha_error)
         return STATUS_CANNOT_LOCK_TABLE;
     else if(ha_error == ER_BAD_DB_ERROR)
         return ERROR_NO_DATABASE;
+    else if(ha_error == ER_NO_SUCH_TABLE)
+        return STATUS_TABLE_NOTOPEN;
     return MYSQL_ERROR_OFFSET + ha_error;
 }
 
@@ -494,7 +496,8 @@ inline bool dbExecuter::doOpenTable(request& req, bool reconnect)
             }
              // if error occured that throw no exception
             tb = db->openTable(getTableName(req), req.keyNum, getOwnerName(req)); 
-            req.result = db->stat();
+            if (db->stat())
+                req.result = (short_td)errorCode(db->stat());
         }
         
         if (tb)

@@ -811,17 +811,21 @@ class pipeConnection : public connectionImple<platform_stream>
         memcpy(p + 4, &processId, sizeof(DWORD));
         __int64 clientid = (__int64) this;
         memcpy(p + 8, &clientid, sizeof(__int64));
-        boost::asio::write(m_socket, boost::asio::buffer(p, size), m_e);
+        try
+        {
+            boost::asio::write(m_socket, boost::asio::buffer(p, size));
+            boost::asio::read(m_socket, boost::asio::buffer(p, 7));
+        }
+        catch (boost::system::system_error& e)
+        {
+            m_e = e.code();
+        }
         if (!m_e)
         {
-            boost::asio::read(m_socket, boost::asio::buffer(p, 7), m_e);
-            if (!m_e)
-            {
-                unsigned int* shareMemSize = (unsigned int*)(p+3);
-                m_isHandShakable = (p[0] == 0x00);
-                createKernelObjects(*shareMemSize);
-                m_connected = true;
-            }
+            unsigned int* shareMemSize = (unsigned int*)(p+3);
+            m_isHandShakable = (p[0] == 0x00);
+            createKernelObjects(*shareMemSize);
+            m_connected = true;
         }
     }
 
