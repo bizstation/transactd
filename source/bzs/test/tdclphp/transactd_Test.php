@@ -216,6 +216,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
+        $this->assertEquals($dbdef->validateTableDef($tableid), 0);
     }
     private function openTable($db)
     {
@@ -520,6 +521,57 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $v = $tb->getFVint(FDI_ID);
         $this->assertEquals($tb->stat(), 0);
         $this->assertTrue(abs(TEST_COUNT / 2 + 1 - $v) < FIVE_PERCENT_OF_TEST_COUNT);
+    }
+    public function testBookmark()
+    {
+        $min_id = 5;
+        $max_id = 15;
+        $cur_id = 10;
+        $db = new Bz\database();
+        $tb = $this->openTable($db);
+        $this->assertNotEquals($tb, NULL);
+        $tb->setKeyNum(0);
+        
+        $tb->clearBuffer();
+        $tb->setFV(FDI_ID, $cur_id);
+        $q = new Bz\query();
+        $q->where('id', '<=', $max_id)->and_('id', '>=', $min_id)->reject(0xFFFF);
+        $q->bookmarkAlso(true);
+        $tb->setQuery($q);
+        $cnt = $tb->recordCount();
+        $this->assertEquals($tb->stat(), 0);
+        $bmCnt = $tb->bookmarksCount();
+        $this->assertEquals($cnt, $bmCnt);
+        $tb->moveBookmarks($bmCnt - 1);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), $max_id);
+        $tb->moveBookmarks(0);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), $min_id);
+        
+        $tb->clearBuffer();
+        $tb->setFV(FDI_ID, $cur_id);
+        $tb->setFilter('id >= ' . $min_id . ' and id <= ' . $max_id, 0, 0);
+        $cnt = $tb->recordCount();
+        $this->assertEquals($tb->stat(), 0);
+        $bmCnt = $tb->bookmarksCount();
+        $this->assertEquals($cnt, $bmCnt);
+        $tb->moveBookmarks($bmCnt - 1);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), $max_id);
+        $tb->moveBookmarks(0);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), $min_id);
+        
+        $atu = new Bz\ActiveTable($db, 'user');
+        $rec = $atu->index(0)->getWritableRecord();
+        $rec->read($tb->bookmarks($bmCnt - 1));
+        $this->assertEquals($rec[FDI_ID], $max_id);
+        $rec->read($tb->bookmarks(0));
+        $this->assertEquals($rec[FDI_ID], $min_id);
+        
+        $tb->close();
+        $db->close();
     }
     public function testGetEqual()
     {

@@ -175,6 +175,7 @@ def testCreateTable(db)
   kd.segmentCount = 1
   dbdef.updateTableDef(table_id)
   expect(dbdef.stat()).to eq 0
+  expect(dbdef.validateTableDef(td.id)).to eq 0
 end
 
 def testOpenTable(db)
@@ -411,6 +412,58 @@ def testMovePercentage()
   v = tb.getFVint(FDI_ID)
   expect(tb.stat()).to eq 0
   expect((TEST_COUNT / 2 + 1 - v).abs).to be < FIVE_PERCENT_OF_TEST_COUNT
+  tb.close()
+  db.close()
+end
+
+def testBookmark()
+  min_id = 5
+  max_id = 15
+  cur_id = 10
+  db = Transactd::Database.new()
+  tb = testOpenTable(db)
+  expect(tb).not_to be nil
+  tb.setKeyNum(0)
+  tb.clearBuffer()
+  
+  q = Transactd::Query.new()
+  q.where('id', '<=', max_id).and_('id', '>=', min_id).reject(0xFFFF)
+  q.bookmarkAlso(true)
+  tb.setQuery(q)
+  cnt = tb.recordCount()
+  expect(tb.stat()).to eq 0
+  bmCnt = tb.bookmarksCount()
+  expect(cnt).to eq bmCnt
+  tb.moveBookmarks(bmCnt - 1)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq max_id
+  tb.moveBookmarks(0)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq min_id
+  
+  tb.setKeyNum(0)
+  tb.clearBuffer()
+  tb.setFV(FDI_ID, cur_id)
+  tb.setFilter('id >= ' + min_id.to_s + ' and id <= ' + max_id.to_s, 0, 0)
+  cnt = tb.recordCount()
+  expect(tb.stat()).to eq 0
+  bmCnt = tb.bookmarksCount()
+  expect(cnt).to eq bmCnt
+  tb.moveBookmarks(bmCnt - 1)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq max_id
+  tb.moveBookmarks(0)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq min_id
+  
+  atu = Transactd::ActiveTable.new(db, 'user')
+  rec = atu.index(0).getWritableRecord()
+  rec.read(tb.bookmarks(bmCnt - 1))
+  expect(rec[FDI_ID]).to eq max_id
+  rec.read(tb.bookmarks(0))
+  expect(rec[FDI_ID]).to eq min_id
+  
+  atu.release()
   tb.close()
   db.close()
 end
@@ -3468,6 +3521,9 @@ describe Transactd do
   end
   it 'move percentage' do
     testMovePercentage()
+  end
+  it 'bookmark' do
+    testBookmark()
   end
   it 'get equal' do
     testGetEqual()
