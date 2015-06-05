@@ -227,7 +227,7 @@ STDMETHODIMP CTableTd::get_Bookmark(IBookmark** retVal)
     CComObject<CBookmark>::CreateInstance(&bm);
     if (!bm)
         return Error("CreateInstance Bookmark", IID_ITable);
-    bm->set(m_tb->bookmark());
+    bm->set(m_tb->bookmark(), m_tb->bookmarkLen());
     IBookmark* b;
     bm->QueryInterface(IID_IBookmark, (void**)&b);
     _ASSERTE(b);
@@ -540,7 +540,7 @@ STDMETHODIMP CTableTd::get_BookmarkFindCurrent(IBookmark** retVal)
     CComObject<CBookmark>::CreateInstance(&bm);
     if (!bm)
         return Error("CreateInstance Bookmark", IID_ITable);
-    bm->set(m_tb->bookmarkFindCurrent());
+    bm->set(m_tb->bookmarkFindCurrent(), m_tb->bookmarkLen());
     IBookmark* b;
     bm->QueryInterface(IID_IBookmark, (void**)&b);
     _ASSERTE(b);
@@ -694,7 +694,7 @@ STDMETHODIMP CTableTd::get_Bookmarks(long index, IBookmark** retVal)
     CComObject<CBookmark>::CreateInstance(&bm);
     if (!bm)
         return Error("CreateInstance Bookmark", IID_ITable);
-    bm->set(m_tb->bookmarks((unsigned int)index));
+    bm->set(m_tb->bookmarks((unsigned int)index), m_tb->bookmarkLen());
     IBookmark* b;
     bm->QueryInterface(IID_IBookmark, (void**)&b);
     _ASSERTE(b);

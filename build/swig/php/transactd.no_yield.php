@@ -1709,8 +1709,8 @@ abstract class queryBase {
 		queryBase_clearSelectFields($this->_cPtr);
 	}
 
-	function addSeekKeyValue($value,$reset=false) {
-		queryBase_addSeekKeyValue($this->_cPtr,$value,$reset);
+	function addSeekKeyValue($valueOrBookmark, $resetOrLen=0, $reset=false) {
+		queryBase_addSeekKeyValue($this->_cPtr,$valueOrBookmark,$resetOrLen, $reset);
 	}
 
 	function reserveSeekKeyValueSize($v) {

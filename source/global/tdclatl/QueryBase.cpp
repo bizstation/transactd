@@ -19,6 +19,7 @@
 #include "stdafx.h"
 #include "QueryBase.h"
 #include "Table.h"
+#include "Bookmark.h"
 
 STDMETHODIMP CQueryBase::Reset(IQueryBase** retVal)
 {
@@ -102,9 +103,20 @@ STDMETHODIMP CQueryBase::Or(BSTR Name, BSTR Logic, VARIANT Value,
 
 STDMETHODIMP CQueryBase::AddInValue(VARIANT Value, VARIANT_BOOL Reset)
 {
-    if (Value.vt != VT_BSTR)
-        VariantChangeType(&Value, &Value, 0, VT_BSTR);
-    m_qb.addSeekKeyValue(Value.bstrVal, (Reset == -1));
+    if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
+    {
+        CBookmark* bm = dynamic_cast<CBookmark*>(Value.pdispVal);
+        if (bm)
+            m_qb.addSeekKeyValuePtr(bm->internalBookmark().val, bm->bookmarkLen(), KEYVALUE_PTR,
+                                    (Reset == -1));
+        else
+            return Error("Invalid param 1 not IBookmark", IID_IQueryBase);
+    }else
+    {
+        if (Value.vt != VT_BSTR)
+            VariantChangeType(&Value, &Value, 0, VT_BSTR);
+        m_qb.addSeekKeyValue(Value.bstrVal, (Reset == -1));
+    }
     return S_OK;
 }
 

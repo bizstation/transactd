@@ -15056,133 +15056,171 @@ fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
+/* 
+#define INIT_PRAMS(ARGS_MIN, ARGS_MAX) \
+	zval **args[ARGS_MAX + 1];         \
+    int argc = ZEND_NUM_ARGS();        \
+    SWIG_ResetError(TSRMLS_C);         \
+    if ((ARGS_MIN + 1 > 4) || (ARGS_MIN + 1 < 2) || zend_get_parameters_array_ex(argc, args) != SUCCESS){ \
+		WRONG_PARAM_COUNT;                                                                                \
+	}
 
-ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekKeyValue__SWIG_0) {
-  bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0 ;
-  _TCHAR *arg2 = (_TCHAR *) 0 ;
-  bool arg3 ;
-  zval **args[3];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_addSeekKeyValue. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    if ((*args[1])->type != IS_NULL) {
-      convert_to_string_ex(args[1]);
-      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
-    }
-  }
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,2,CONVERT_BOOL_IN@*/
-  convert_to_boolean_ex(args[2]);
-  arg3 = (bool) Z_LVAL_PP(args[2]);
-  /*@SWIG@*/;
-  
-  {
-    try {
-      (arg1)->addSeekKeyValue((_TCHAR const *)arg2,arg3);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
+#define GET_TYPED_PRAMS(ARG_NUM, ARGS, VAR, TYPE_NAME)                             \
+if (SWIG_ConvertPtr(*(ARGS[ARG_NUM]), (void **)(&(VAR)), (TYPE_NAME), 0) < 0) {    \
+	SWIG_PHP_Error(E_ERROR, "Type error in argument " #ARG_NUM " of " #TYPE_NAME); \
+}                                                                                  \
+if (!VAR) SWIG_PHP_Error(E_ERROR, #TYPE_NAME " pointer is NULL");
 
+#define GET_STRING(ARG_NUM, ARGS, VAR) \
+{convert_to_string_ex(ARGS[ARG_NUM]); VAR = (_TCHAR *)Z_STRVAL_PP(ARGS[ARG_NUM]); }
 
-ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekKeyValue__SWIG_1) {
-  bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0 ;
-  _TCHAR *arg2 = (_TCHAR *) 0 ;
-  zval **args[2];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_addSeekKeyValue. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    if ((*args[1])->type != IS_NULL) {
-      convert_to_string_ex(args[1]);
-      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
-    }
-  }
-  {
-    try {
-      (arg1)->addSeekKeyValue((_TCHAR const *)arg2);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
+#define GET_INT(ARG_NUM, ARGS, VAR) \
+{	convert_to_long_ex(ARGS[ARG_NUM]); VAR = (int)(*(ARGS[ARG_NUM]))->value.lval; }
+
+#define GET_INT64(ARG_NUM, ARGS, VAR) \
+{	convert_to_long_ex(ARGS[ARG_NUM]); VAR = (__int64)(*(ARGS[ARG_NUM]))->value.lval; }
+
+#define GET_BOOL(ARG_NUM, ARGS, VAR) \
+{	convert_to_boolean_ex(ARGS[ARG_NUM]); VAR = (bool)Z_LVAL_PP(ARGS[ARG_NUM]); }
+
+#define GET_DOUBLE(ARG_NUM, ARGS, VAR) \
+{	convert_to_double_ex(ARGS[ARG_NUM]); VAR = (*(ARGS[ARG_NUM]))->value.dval;
+
+#define SWIG_CELENUP(FUNC_NAME) \
+fail2:                      \
+SWIG_ErrorCode() = E_ERROR; \
+	SWIG_ErrorMsg() = "No matching function for overloaded '" #FUNC_NAME "'"; \
+fail:                       \
+SWIG_FAIL(TSRMLS_C);        
+
+ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekKeyValue) {
+	bzs::db::protocol::tdap::client::queryBase *q = 0;
+	_TCHAR *buf = 0;
+	bookmark_td *bm = 0;
+	int len = 0;
+	bool reset = false;
+	int type = 0;
+
+	INIT_PRAMS(1, 3);
+	GET_TYPED_PRAMS(0, args, q, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase);
+
+	type = (*args[1])->type;
+	if ((type == IS_LONG) || (type == IS_STRING) || (type == IS_DOUBLE)) 
+	{
+		GET_STRING(1, args, buf);
+	}
+	else if ((type != IS_NULL) && (argc > 2))
+	{
+		GET_TYPED_PRAMS(1, args, bm, SWIGTYPE_p_BOOKMARK);
+		GET_INT(2, args, len);
+		if (argc == 4)
+			GET_BOOL(3, args, reset);
+	}
+	else
+		goto fail2;
+
+	if (bm == NULL && argc >= 3)
+		GET_BOOL(2, args, reset);
+
+	try 
+	{
+		if ((type == IS_LONG) || (type == IS_STRING) || (type == IS_DOUBLE))
+			q->addSeekKeyValue(buf, reset);
+		else
+			q->addSeekKeyValue(*bm, len, reset);
+	}
+	catch (bzs::rtl::exception& e) {
+		SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+	}
+	catch (std::exception &e) {
+		SWIG_exception(SWIG_RuntimeError, e.what());
+	}
+	return;
+
+	SWIG_CELENUP(queryBase_addSeekKeyValue);
+
+}*/
 
 
 ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekKeyValue) {
-  int argc;
-  zval **argv[3];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc,argv);
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(*argv[0], (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
-    }
-    if (_v) {
-      {
-        _v = 1;
-      }
-      if (_v) {
-        _wrap_queryBase_addSeekKeyValue__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(*argv[0], (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
-    }
-    if (_v) {
-      {
-        _v = 1;
-      }
-      if (_v) {
-        _v = (Z_TYPE_PP(argv[2]) == IS_BOOL); 
-        if (_v) {
-          _wrap_queryBase_addSeekKeyValue__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-        }
-      }
-    }
-  }
-  
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'queryBase_addSeekKeyValue'";
-  SWIG_FAIL(TSRMLS_C);
+	zval **args[4];
+	bzs::db::protocol::tdap::client::queryBase *q = 0;
+	_TCHAR *buf = 0;
+	bookmark_td *bm = 0;
+	int len = 0;
+	bool reset = false;
+	int type = 0;
+	int argc = ZEND_NUM_ARGS();
+
+	SWIG_ResetError(TSRMLS_C);
+	if ((argc > 4) || (argc < 2) || zend_get_parameters_array_ex(argc, args) != SUCCESS) {
+		WRONG_PARAM_COUNT;
+	}
+	
+	{
+		if (SWIG_ConvertPtr(*args[0], (void **)&q, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) < 0) {
+			SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_addSeekKeyValue. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase");
+		}
+	}
+	if (!q) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+
+	type = (*args[1])->type;
+	{
+		if ((type == IS_LONG) || (type == IS_STRING) || (type == IS_DOUBLE)) {
+			convert_to_string_ex(args[1]);
+			buf = (_TCHAR *)Z_STRVAL_PP(args[1]);
+		}
+		else if ((type != IS_NULL) && (argc > 2)) {
+			if (SWIG_ConvertPtr(*args[1], (void **)&bm, SWIGTYPE_p_BOOKMARK, 0) < 0) {
+				SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_addSeekKeyValue. Expected SWIGTYPE_p_BOOKMARK");
+			}
+			if (!bm) SWIG_PHP_Error(E_ERROR, "bookmark pointer is NULL");
+			{
+				convert_to_long_ex(args[2]);
+				len = (int)(*(args[2]))->value.lval;
+			}
+			if (argc == 4)
+			{
+				convert_to_boolean_ex(args[3]);
+				reset = (bool)Z_LVAL_PP(args[3]);
+			}
+		}
+		else
+			goto fail2;
+	}
+
+	{
+		if (bm == NULL && argc >= 3)
+		{
+			convert_to_boolean_ex(args[2]);
+			reset = (bool)Z_LVAL_PP(args[2]);
+		}
+	}
+
+	{
+		try {
+			if ((type == IS_LONG) || (type == IS_STRING) || (type == IS_DOUBLE))
+				q->addSeekKeyValue(buf, reset);
+			else
+				q->addSeekKeyValue(*bm, len, reset);
+		}
+		catch (bzs::rtl::exception& e) {
+			SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+		}
+		catch (std::exception &e) {
+			SWIG_exception(SWIG_RuntimeError, e.what());
+		}
+	}
+
+return;
+
+fail2:
+SWIG_ErrorCode() = E_ERROR;
+SWIG_ErrorMsg() = "No matching function for overloaded 'queryBase_addSeekKeyValue'";
+fail:
+SWIG_FAIL(TSRMLS_C);
+
 }
 
 

@@ -2300,6 +2300,11 @@ void queryBase::addSeekKeyValuePtr(const void* value, ushort_td len,
     m_impl->m_nofilter = false;
 }
 
+void queryBase::addSeekKeyValue(bookmark_td& bm, ushort_td len, bool reset)
+{
+    addSeekKeyValuePtr(&bm, len, KEYVALUE_PTR, reset);
+}
+
 void queryBase::clearSeekKeyValues()
 {
     m_impl->m_keyValues.clear();

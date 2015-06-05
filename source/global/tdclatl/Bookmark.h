@@ -31,15 +31,19 @@ class ATL_NO_VTABLE CBookmark
 {
 
     bookmark_td m_bm;
-
+    short m_len;
 public:
     CBookmark(){}
 
-    void set(bookmark_td& b){ m_bm = b;}
+    void set(bookmark_td& b, short len){ m_bm = b; m_len = len;}
 
     bookmark_td& internalBookmark()
     {
         return m_bm;
+    }
+    short bookmarkLen()
+    {
+        return m_len;
     }
     //DECLARE_REGISTRY_RESOURCEID(IDR_CONNECTPARAM)
 

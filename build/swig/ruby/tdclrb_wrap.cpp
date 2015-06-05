@@ -48,6 +48,18 @@ template <typename T> T SwigValueInit() {
 }
 #endif
 
+
+struct SWIG_CHAR
+{
+	int alloc;
+	char* str;
+	SWIG_CHAR() :alloc(0), str(0){}
+	~SWIG_CHAR()
+	{
+		if (alloc) delete[] str;
+	}
+};
+
 /* -----------------------------------------------------------------------------
  *  This section contains generic SWIG labels for method/variable
  *  declarations/attributes, and other compiler dependent labels.
@@ -15391,13 +15403,12 @@ _wrap_table_setFV(int argc, VALUE *argv, VALUE self) {
       }
       index = (short)v;
     }else if (type == T_STRING){
-      int alloc = 0;
-      char* v=NULL;
-      int ret = SWIG_AsCharPtrAndSize(argv[0], &v, NULL, &alloc);
+	  SWIG_CHAR v1;
+	  int ret = SWIG_AsCharPtrAndSize(argv[0], &v1.str, NULL, &v1.alloc);
       if (!SWIG_IsOK(ret)) {
         SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","setFV", 2, argv[0]));
       }
-      index = arg1->fieldNumByName(v);
+      index = arg1->fieldNumByName(v1.str);
     }
   }
   {
@@ -15411,21 +15422,22 @@ _wrap_table_setFV(int argc, VALUE *argv, VALUE self) {
       arg1->setFV(index, v);
     }
     else if (type == T_STRING){
-      int alloc = 0;
-      char* v=NULL;
-      int ret = SWIG_AsCharPtrAndSize(argv[1], &v, NULL, &alloc);
+	  SWIG_CHAR v2;
+	  int ret = 0;
+	  
+	  SWIG_AsCharPtrAndSize(argv[1], &v2.str, NULL, &v2.alloc);
       if (!SWIG_IsOK(ret)) {
         SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","setFV", 3, argv[1]));
       }
       if (argc == 2)
-        arg1->setFV(index, v);
+        arg1->setFV(index, v2.str);
       else {
         unsigned int val4 ;
         int ecode4 = SWIG_AsVal_unsigned_SS_int(argv[2], &val4);
         if (!SWIG_IsOK(ecode4)) {
           SWIG_exception_fail(SWIG_ArgError(ecode4), Ruby_Format_TypeError( "", "uint_td","setFV", 4, argv[2] ));
         }
-        arg1->setFV(index, v, val4);
+		arg1->setFV(index, v2.str, val4);
       }
     }
     else if (type == T_FLOAT){
@@ -16081,148 +16093,107 @@ fail:
 }
 
 
-SWIGINTERN VALUE
-_wrap_queryBase_addSeekKeyValue__SWIG_0(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0 ;
-  _TCHAR *arg2 = (_TCHAR *) 0 ;
-  bool arg3 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  bool val3 ;
-  int ecode3 = 0 ;
-  
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::queryBase *","addSeekKeyValue", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","addSeekKeyValue", 2, argv[0] ));
-  }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  ecode3 = SWIG_AsVal_bool(argv[1], &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "bool","addSeekKeyValue", 3, argv[1] ));
-  } 
-  arg3 = static_cast< bool >(val3);
-  {
-    try {
-      (arg1)->addSeekKeyValue((_TCHAR const *)arg2,arg3);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return Qnil;
-fail:
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_queryBase_addSeekKeyValue__SWIG_1(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0 ;
-  _TCHAR *arg2 = (_TCHAR *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::queryBase *","addSeekKeyValue", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","addSeekKeyValue", 2, argv[0] ));
-  }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  {
-    try {
-      (arg1)->addSeekKeyValue((_TCHAR const *)arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return Qnil;
-fail:
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return Qnil;
-}
-
-
 SWIGINTERN VALUE _wrap_queryBase_addSeekKeyValue(int nargs, VALUE *args, VALUE self) {
-  int argc;
-  VALUE argv[4];
-  int ii;
-  
-  argc = nargs + 1;
-  argv[0] = self;
-  if (argc > 4) SWIG_fail;
-  for (ii = 1; (ii < argc); ++ii) {
-    argv[ii] = args[ii-1];
-  }
-  if (argc == 2) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        return _wrap_queryBase_addSeekKeyValue__SWIG_1(nargs, args, self);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        {
-          int res = SWIG_AsVal_bool(argv[2], NULL);
-          _v = SWIG_CheckState(res);
-        }
-        if (_v) {
-          return _wrap_queryBase_addSeekKeyValue__SWIG_0(nargs, args, self);
-        }
-      }
-    }
-  }
-  
+	long long lv = 0;
+	double dv = 0;
+	bookmark_td *bm = 0;
+	int len = 0;
+	bool reset = false;
+	SWIG_CHAR buf;
+	int res = 0;
+	bzs::db::protocol::tdap::client::queryBase *q = 0;
+	void* q_tmp;
+
+	if (nargs < 1) goto fail2;
+
+	if (nargs > 3) goto fail2;
+	
+	res = SWIG_ConvertPtr(self, &q_tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
+	if (!SWIG_IsOK(res)) {
+		SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::queryBase *", "addSeekKeyValue", 1, self));
+	}
+	q = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(q_tmp);
+
+	try
+	{
+
+		VALUE type = TYPE(args[0]);
+		if ((type == T_FIXNUM) || (type == T_BIGNUM)){
+			res = SWIG_AsVal_long_SS_long(args[0], &lv);
+			if (!SWIG_IsOK(res)) {
+				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "__int64", "addSeekKeyValue", 2, args[0]));
+			}
+		}
+		else if (type == T_STRING){
+			res = SWIG_AsCharPtrAndSize(args[0], &buf.str, NULL, &buf.alloc);
+			if (!SWIG_IsOK(res)) {
+				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "char *const", "addSeekKeyValue", 2, args[0]));
+			}
+		}
+		else if (type == T_FLOAT){
+			res = SWIG_AsVal_double(args[0], &dv);
+			if (!SWIG_IsOK(res)) {
+				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "double", "addSeekKeyValue", 2, args[0]));
+			}
+		}
+		else if (nargs > 1) {
+			void* bm_tmp = 0;
+			res = SWIG_ConvertPtr(args[0], &bm_tmp, SWIGTYPE_p_BOOKMARK, 0);
+			if (!SWIG_IsOK(res)) {
+				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bookmark_td *", "addSeekKeyValue", 2, args[0]));
+			}
+			bm = reinterpret_cast< bookmark_td* >(bm_tmp);
+
+			res = SWIG_AsVal_int(args[1], &len);
+			if (!SWIG_IsOK(res)) {
+				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "int", "addSeekKeyValue", 3, args[1]));
+			}
+			if (nargs > 2)
+			{
+				res = SWIG_AsVal_bool(args[2], &reset);
+				if (!SWIG_IsOK(res)) {
+					SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bool", "addSeekKeyValue", 4, args[2]));
+				}
+			}
+		}
+		else
+			goto fail2;
+
+		if (nargs > 1 && bm == NULL)
+		{
+			res = SWIG_AsVal_bool(args[1], &reset);
+			if (!SWIG_IsOK(res)) {
+				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bool", "addSeekKeyValue", 3, args[1]));
+			}
+		}
+		if ((type == T_FIXNUM) || (type == T_BIGNUM))
+			q->addSeekKeyValue(lexical_cast(lv).c_str(), reset);
+		else if (type == T_STRING)
+			q->addSeekKeyValue(buf.str, reset);
+		else if (type == T_FLOAT)
+			q->addSeekKeyValue(lexical_cast(dv).c_str(), reset);
+		else
+			q->addSeekKeyValue(*bm, len, reset);
+	}
+	catch (bzs::rtl::exception& e)
+	{
+		static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+		rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+	}
+	catch (std::exception &e)
+	{
+		static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+		rb_raise(cpp_std_error, e.what());
+	}
+	return Qnil;
 fail:
-  Ruby_Format_OverloadedError( argc, 4, "queryBase.addSeekKeyValue", 
-    "    void queryBase.addSeekKeyValue(_TCHAR const *value, bool reset)\n"
-    "    void queryBase.addSeekKeyValue(_TCHAR const *value)\n");
-  
-  return Qnil;
+	return Qnil;
+fail2:
+	Ruby_Format_OverloadedError(nargs + 1, 5, "queryBase.addSeekKeyValue",
+		"    void queryBase.addSeekKeyValue(const T value, bool reset)\n"
+		"    void queryBase.addSeekKeyValue(const T value)\n");
+
+	return Qnil;
 }
 
 
@@ -17471,12 +17442,10 @@ _wrap_query_where(int argc, VALUE *argv, VALUE self) {
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  
+  int res3;
+  SWIG_CHAR buf2;
+  SWIG_CHAR buf3;
+
   if ((argc < 3) || (argc > 3)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 3)",argc); SWIG_fail;
   }
@@ -17485,16 +17454,16 @@ _wrap_query_where(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::query *","where<(p._TCHAR)>", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::query * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2.str, NULL, &buf2.alloc);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","where<(p._TCHAR)>", 2, argv[0] ));
   }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+  arg2 = reinterpret_cast< _TCHAR * >(buf2.str);
+  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3.str, NULL, &buf3.alloc);
   if (!SWIG_IsOK(res3)) {
     SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR const *","where<(p._TCHAR)>", 3, argv[1] ));
   }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
+  arg3 = reinterpret_cast< _TCHAR * >(buf3.str);
   {
     try {
       VALUE type = TYPE(argv[2]);
@@ -17507,13 +17476,12 @@ _wrap_query_where(int argc, VALUE *argv, VALUE self) {
         arg1->where(arg2, arg3, v);
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* v=NULL;
-        int ret = SWIG_AsCharPtrAndSize(argv[2], &v, NULL, &alloc);
+		SWIG_CHAR buf4;
+		int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","where", 3, argv[2]));
         }
-        arg1->where(arg2, arg3, v);
+		arg1->where(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -17550,12 +17518,10 @@ _wrap_query_and_(int argc, VALUE *argv, VALUE self) {
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
   int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  
+  SWIG_CHAR buf2;
+  SWIG_CHAR buf3;
+
   if ((argc < 3) || (argc > 3)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 3)",argc); SWIG_fail;
   }
@@ -17564,16 +17530,18 @@ _wrap_query_and_(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::query *","and_<(p._TCHAR)>", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::query * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2.str, NULL, &buf2.alloc);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","and_<(p._TCHAR)>", 2, argv[0] ));
   }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+  arg2 = reinterpret_cast< _TCHAR * >(buf2.str);
+  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3.str, NULL, &buf3.alloc);
   if (!SWIG_IsOK(res3)) {
     SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR const *","and_<(p._TCHAR)>", 3, argv[1] ));
   }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
+  arg3 = reinterpret_cast< _TCHAR * >(buf3.str);
+
+
   {
     try {
       VALUE type = TYPE(argv[2]);
@@ -17586,13 +17554,13 @@ _wrap_query_and_(int argc, VALUE *argv, VALUE self) {
         arg1->and_(arg2, arg3, v);
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* v=NULL;
-        int ret = SWIG_AsCharPtrAndSize(argv[2], &v, NULL, &alloc);
+		SWIG_CHAR buf4;
+		int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","and_", 3, argv[2]));
         }
-        arg1->and_(arg2, arg3, v);
+		arg1->and_(arg2, arg3, buf4.str);
+
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -17629,12 +17597,9 @@ _wrap_query_or_(int argc, VALUE *argv, VALUE self) {
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  
+  int res3;
+  SWIG_CHAR buf2;
+  SWIG_CHAR buf3;
   if ((argc < 3) || (argc > 3)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 3)",argc); SWIG_fail;
   }
@@ -17643,17 +17608,17 @@ _wrap_query_or_(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::query *","or_<(p._TCHAR)>", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::query * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2.str, NULL, &buf2.alloc);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","or_<(p._TCHAR)>", 2, argv[0] ));
   }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+  arg2 = reinterpret_cast< _TCHAR * >(buf2.str);
+  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3.str, NULL, &buf3.alloc);
   if (!SWIG_IsOK(res3)) {
     SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR const *","or_<(p._TCHAR)>", 3, argv[1] ));
   }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
-  
+  arg3 = reinterpret_cast< _TCHAR * >(buf3.str);
+
   {
     try {
       VALUE type = TYPE(argv[2]);
@@ -17666,13 +17631,12 @@ _wrap_query_or_(int argc, VALUE *argv, VALUE self) {
         arg1->or_(arg2, arg3, v);
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* v=NULL;
-        int ret = SWIG_AsCharPtrAndSize(argv[2], &v, NULL, &alloc);
+		SWIG_CHAR buf4;
+		int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","or_", 3, argv[2]));
         }
-        arg1->or_(arg2, arg3, v);
+		arg1->or_(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -17705,7 +17669,7 @@ _wrap_query_in(int nargs, VALUE *args, VALUE self) {
   bzs::db::protocol::tdap::client::query *arg1 = 0x00 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  
+
   if (nargs > 8) SWIG_fail;
   {
     res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__query, 0 |  0 );
@@ -17714,7 +17678,8 @@ _wrap_query_in(int nargs, VALUE *args, VALUE self) {
     }
     arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::query * >(argp1);
   }
-  
+
+
   // addSeekKeyValues 
   {
     for (int i = 0; i < nargs; ++i){
@@ -17728,13 +17693,12 @@ _wrap_query_in(int nargs, VALUE *args, VALUE self) {
         arg1->addSeekKeyValue(lexical_cast(v).c_str());
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* v=NULL;
-        int ret = SWIG_AsCharPtrAndSize(args[i], &v, NULL, &alloc);
+		  SWIG_CHAR buf;
+		  int ret = SWIG_AsCharPtrAndSize(args[i], &buf.str, NULL, &buf.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","in", i+1, args[i]));
         }
-        arg1->addSeekKeyValue(lexical_cast(v).c_str());
+		arg1->addSeekKeyValue(buf.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -27344,14 +27308,13 @@ _wrap_writableRecord___setitem__(int argc, VALUE *argv, VALUE self) {
           SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError( "", "uint_td","__setitem__", 2, argv[0] ));
         }
     }else if (type == T_STRING){
-      int alloc = 0;
-      char* v=NULL;
-      int ret = SWIG_AsCharPtrAndSize(argv[0], &v, NULL, &alloc);
+		SWIG_CHAR buf;
+		int ret = SWIG_AsCharPtrAndSize(argv[0], &buf.str, NULL, &buf.alloc);
       if (!SWIG_IsOK(ret)) {
         SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","__setitem__", 2, argv[0]));
       }
       try {
-        index = arg1->indexByName(v);
+		  index = arg1->indexByName(buf.str);
       }
       catch (bzs::rtl::exception& e) {
         static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
@@ -27371,29 +27334,28 @@ _wrap_writableRecord___setitem__(int argc, VALUE *argv, VALUE self) {
         long long v = 0;
         int ecode = SWIG_AsVal_long_SS_long(argv[1], &v);
         if (!SWIG_IsOK(ecode)) {
-          SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError( "", "__int64","setFV", 3, argv[1]));
+          SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError( "", "__int64","__setitem__", 3, argv[1]));
         }
         arg1->operator[]((short)index) = v;
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* v=NULL;
-        int ret = SWIG_AsCharPtrAndSize(argv[1], &v, NULL, &alloc);
+		  SWIG_CHAR buf;
+		  int ret = SWIG_AsCharPtrAndSize(argv[1], &buf.str, NULL, &buf.alloc);
         if (!SWIG_IsOK(ret)) {
-          SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","setFV", 3, argv[1]));
+          SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","__setitem__", 3, argv[1]));
         }
-        arg1->operator[]((short)index) = v;
+		arg1->operator[]((short)index) = buf.str;
       }
       else if (type == T_FLOAT){
         double v = 0;
         int ecode = SWIG_AsVal_double(argv[1], &v);
         if (!SWIG_IsOK(ecode)) {
-          SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError( "", "double","setFV", 3, argv[1]));
+          SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError( "", "double","__setitem__", 3, argv[1]));
         }
         arg1->operator[]((short)index) = v;
       }
       else{
-        SWIG_exception_fail(SWIG_TypeError, Ruby_Format_TypeError( "", "__int64 or char *const or double","setFV", 3, argv[1]));
+        SWIG_exception_fail(SWIG_TypeError, Ruby_Format_TypeError( "", "__int64 or char *const or double","__setitem__", 3, argv[1]));
       }
     }
     catch (bzs::rtl::exception& e) {
@@ -28654,12 +28616,9 @@ _wrap_recordsetQuery_when(int argc, VALUE *argv, VALUE self) {
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-
+  int res3;
+  SWIG_CHAR buf2;
+  SWIG_CHAR buf3;
   if ((argc < 3) || (argc > 3)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 3)",argc); SWIG_fail;
   }
@@ -28668,16 +28627,16 @@ _wrap_recordsetQuery_when(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::recordsetQuery *","when<(p._TCHAR)>", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::recordsetQuery * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2.str, NULL, &buf2.alloc);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","when<(p._TCHAR)>", 2, argv[0] ));
   }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+  arg2 = reinterpret_cast< _TCHAR * >(buf2.str);
+  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3.str, NULL, &buf3.alloc);
   if (!SWIG_IsOK(res3)) {
     SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR const *","when<(p._TCHAR)>", 3, argv[1] ));
   }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
+  arg3 = reinterpret_cast< _TCHAR * >(buf3.str);
   {
     try {
       VALUE type = TYPE(argv[2]);
@@ -28690,13 +28649,12 @@ _wrap_recordsetQuery_when(int argc, VALUE *argv, VALUE self) {
         arg1->when(arg2, arg3, v);
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* v=NULL;
-        int ret = SWIG_AsCharPtrAndSize(argv[2], &v, NULL, &alloc);
+		  SWIG_CHAR buf4;
+		  int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","when", 3, argv[2]));
         }
-        arg1->when(arg2, arg3, v);
+		arg1->when(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -28733,12 +28691,9 @@ _wrap_recordsetQuery_and_(int argc, VALUE *argv, VALUE self) {
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  
+  int res3;
+  SWIG_CHAR buf2;
+  SWIG_CHAR buf3;
   if ((argc < 3) || (argc > 3)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 3)",argc); SWIG_fail;
   }
@@ -28747,16 +28702,16 @@ _wrap_recordsetQuery_and_(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::recordsetQuery *","and_<(p._TCHAR)>", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::recordsetQuery * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2.str, NULL, &buf2.alloc);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","and_<(p._TCHAR)>", 2, argv[0] ));
   }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+  arg2 = reinterpret_cast< _TCHAR * >(buf2.str);
+  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3.str, NULL, &buf3.alloc);
   if (!SWIG_IsOK(res3)) {
     SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR const *","and_<(p._TCHAR)>", 3, argv[1] ));
   }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
+  arg3 = reinterpret_cast< _TCHAR * >(buf3.str);
   {
     try {
       VALUE type = TYPE(argv[2]);
@@ -28769,13 +28724,12 @@ _wrap_recordsetQuery_and_(int argc, VALUE *argv, VALUE self) {
         arg1->and_(arg2, arg3, v);
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* v=NULL;
-        int ret = SWIG_AsCharPtrAndSize(argv[2], &v, NULL, &alloc);
+		  SWIG_CHAR buf4;
+		  int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","and_", 3, argv[2]));
         }
-        arg1->and_(arg2, arg3, v);
+		arg1->and_(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -28812,12 +28766,9 @@ _wrap_recordsetQuery_or_(int argc, VALUE *argv, VALUE self) {
   void *argp1 = 0 ;
   int res1 = 0 ;
   int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  
+  int res3;
+  SWIG_CHAR buf2;
+  SWIG_CHAR buf3;
   if ((argc < 3) || (argc > 3)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 3)",argc); SWIG_fail;
   }
@@ -28826,16 +28777,16 @@ _wrap_recordsetQuery_or_(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::recordsetQuery *","or_<(p._TCHAR)>", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::recordsetQuery * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2.str, NULL, &buf2.alloc);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","or_<(p._TCHAR)>", 2, argv[0] ));
   }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
+  arg2 = reinterpret_cast< _TCHAR * >(buf2.str);
+  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3.str, NULL, &buf3.alloc);
   if (!SWIG_IsOK(res3)) {
     SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR const *","or_<(p._TCHAR)>", 3, argv[1] ));
   }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
+  arg3 = reinterpret_cast< _TCHAR * >(buf3.str);
   {
     try {
       VALUE type = TYPE(argv[2]);
@@ -28848,13 +28799,12 @@ _wrap_recordsetQuery_or_(int argc, VALUE *argv, VALUE self) {
         arg1->or_(arg2, arg3, v);
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* v=NULL;
-        int ret = SWIG_AsCharPtrAndSize(argv[2], &v, NULL, &alloc);
+		  SWIG_CHAR buf4;
+		  int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","or_", 3, argv[2]));
         }
-        arg1->or_(arg2, arg3, v);
+		arg1->or_(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -32360,6 +32310,7 @@ _wrap_activeTable_read__SWIG_1(int argc, VALUE *argv, VALUE self) {
   int res1 = 0 ;
   void *argp2 = 0 ;
   int res2 = 0 ;
+
   bzs::db::protocol::tdap::client::recordset *result = 0 ;
   VALUE vresult = Qnil;
   
@@ -32390,13 +32341,12 @@ _wrap_activeTable_read__SWIG_1(int argc, VALUE *argv, VALUE self) {
         arg2->addValue((__int64)val);
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* buf=NULL;
-        int ret = SWIG_AsCharPtrAndSize(argv[i], &buf, NULL, &alloc);
+		  SWIG_CHAR buf;
+		  int ret = SWIG_AsCharPtrAndSize(argv[i], &buf.str, NULL, &buf.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","read", i+2, argv[i]));
         }
-        arg2->addValue(buf);
+        arg2->addValue(buf.str);
       }
       else if (type == T_FLOAT){
         double val = 0;
@@ -32953,13 +32903,12 @@ SWIGINTERN VALUE _wrap_activeTable_keyValue(int nargs, VALUE *args, VALUE self) 
         tb->setFV(fnum, (__int64)val);
       }
       else if (type == T_STRING){
-        int alloc = 0;
-        char* buf=NULL;
-        int ret = SWIG_AsCharPtrAndSize(args[i], &buf, NULL, &alloc);
+		  SWIG_CHAR buf;
+		  int ret = SWIG_AsCharPtrAndSize(args[i], &buf.str, NULL, &buf.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","keyValue", i+1, args[i]));
         }
-        tb->setFV(fnum, buf);
+        tb->setFV(fnum, buf.str);
       }
       else if (type == T_FLOAT){
         double val = 0;

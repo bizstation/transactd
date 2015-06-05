@@ -519,6 +519,30 @@ function wirteRecord(atg)
 	rec.Del();
 }
 
+/*--------------------------------------------------------------------------------*/
+function testBookmarks(atg)
+{
+	var tb = atg.Table();
+	initQuery();
+	q.All();
+	q.BookmarkAlso(true);
+	tb.SetQuery(q, false);
+	var num = tb.RecordCount();
+	checkEqual(num, 100, "RecotdCount = 100 ");
+	
+	checkEqual(tb.BookmarksCount, 100, "BookmarkCount = 100 ");
+	
+	initQuery();
+	q.AddInValue(tb.Bookmarks(0));
+	q.AddInValue(tb.Bookmarks(10));
+	q.AddInValue(tb.Bookmarks(20));
+
+	var rs = atg.Read(q.SeekByBookmarks(true));
+	checkEqual(rs.Count, 3, "atg rs.Count = 3 ");
+	checkEqual(rs.Record(0).Field("code").Vlng, 1, "rs.Record(0).code = 1 ");
+	checkEqual(rs.Record(1).Field("code").Vlng, 11, "rs.Record(0).code = 11 ");
+	checkEqual(rs.Record(2).Field("code").Vlng, 21, "rs.Record(0).code = 21 ");
+}
 
 /*--------------------------------------------------------------------------------*/
 function test(atu, atg, ate, db)
@@ -647,6 +671,9 @@ function test(atu, atg, ate, db)
 	
 	// test wirteRecord
 	wirteRecord(atg);
+	
+	//test ver 2.4 added changed method
+	testBookmarks(atg);
 
 	WScript.Echo(" -- End Test -- ");
 
