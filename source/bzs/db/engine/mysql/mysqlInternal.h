@@ -165,6 +165,15 @@ extern "C" {
 #define ha_index_next_same index_next_same
 #define ha_rnd_next rnd_next
 #define ha_rnd_pos rnd_pos
+#   if (MYSQL_VERSION_NUM >= 50544)
+#       define FINDFILE_6PRAMS
+#   endif
+#endif // MySQL 5.5 Only
+
+#if ((MYSQL_VERSION_NUM > 50600) && (MYSQL_VERSION_NUM < 50700)) // MySQL 5.6 Only
+#   if (MYSQL_VERSION_NUM >= 50625)
+#       define FINDFILE_6PRAMS
+#   endif
 #endif
 
 #if ((MYSQL_VERSION_NUM < 50600) || defined(MARIADB_BASE_VERSION))
@@ -479,7 +488,13 @@ inline void cp_open_error_release(THD* thd, TABLE_LIST& tables)
     typedef List<LEX_STRING> SQL_Strings;
     inline int db_list(THD *thd, SQL_Strings *files)
     {
+#ifdef FINDFILE_6PRAMS
+        MEM_ROOT tmp_mem_root;
+        init_sql_alloc(&tmp_mem_root, TABLE_ALLOC_BLOCK_SIZE, 0);
+        return find_files(thd, files, NullS,  mysql_data_home, "", true, &tmp_mem_root);
+#else
         return find_files(thd, files, NullS,  mysql_data_home, "", true);
+#endif        
     }
 #endif
 
