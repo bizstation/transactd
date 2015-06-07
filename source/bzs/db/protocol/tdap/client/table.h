@@ -342,7 +342,7 @@ public:
     void addLogic(const _TCHAR* combine, const _TCHAR* name,
                   const _TCHAR* logic, const _TCHAR* value);
     void addSeekKeyValue(const _TCHAR* value, bool reset = false);
-    void addSeekKeyValue(bookmark_td& bm, ushort_td len, bool reset = false);
+    void addSeekBookmark(bookmark_td& bm, ushort_td len, bool reset = false);
     void addSeekKeyValuePtr(const void* value, ushort_td len, short typeStr,
                             bool reset = false);
     void reserveSeekKeyValueSize(size_t v);
@@ -356,7 +356,6 @@ public:
     queryBase& bookmarkAlso(bool v);
     queryBase& joinKeySize(int v);
     queryBase& stopAtLimit(bool v);
-    queryBase& seekByBookmarks(bool v);
     const _TCHAR* toString() const;
     table::eFindType getDirection() const;
     int getReject() const;

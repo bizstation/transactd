@@ -363,10 +363,10 @@ protected:
 public:
     typedef std::vector<boost::shared_ptr<T> > collection_vec_type;
 
-    explicit activeObject(idatabaseManager* mgr, short mode = TD_OPEN_NORMAL)
+    explicit activeObject(idatabaseManager* mgr)
         : m_fdi(createFdi((FDI*)0)), m_map(*m_fdi), m_option(0)
     {
-        init(mgr, m_map.getTableName(), mode);
+        init(mgr, m_map.getTableName());
         if (table() && m_fdi)
             initFdi(m_fdi, m_tb.get());
     }

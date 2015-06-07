@@ -20,10 +20,10 @@ Version 2.3より前のバージョンからのアップグレードは以前の
   新、追加、削除したレコード数などを得ることができます。
 
 ・activeTableでbookmarkからのrecordsetの取得を可能にしました。
-  queryBase::baseseekByBookmarksにtrueをセットし、queryBase::addSeekKeyValuePtrを
-  使って複数のbookmarkをセットできます。tableオブジェクトにqueryをセットしてから、
-  table::recordCount()を呼び出すと条件にマッチしたレコード数を数えるのと同時に、
-  table::bookmarks()でそれらのbookmarkを取得できます。
+  queryBase::addSeekBookmarkを使って複数のbookmarkをセットできます。
+  tableオブジェクトにqueryをセットしてから、table::recordCount()を呼び出すと条件
+  にマッチしたレコード数を数えるのと同時に、table::bookmarks()でそれらのbookmarkを
+  取得できます。
 
 ・C++APIにおいて以下のメソッドを、フリースレッド対応しました。複数のスレッドから
   同時アクセス可能です。
@@ -62,9 +62,9 @@ Version 2.3より前のバージョンからのアップグレードは以前の
   recordCountFn Call back function
   table::setOnRecordCount
   table::onRecordCount
-  queryBase& queryBase::seekByBookmarks(bool v);
-  bool queryBase::isSeekByBookmarks() const;
-  bool writableRecord::read(bookmark_td& bm);
+  bool queryBase::isSeekByBookmarks() const
+  void queryBase::addSeekBookmark(bookmark_td& bm, ushort_td len, bool reset=false)
+  bool writableRecord::read(bookmark_td& bm)
 
 ・メソッド名の変更 
   table::setBookMarks     --> table::insertBookmarks

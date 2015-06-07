@@ -629,6 +629,8 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
 
         filter->setIgnoreFields(true);
         m_impl->resetBookmarks();
+        bool withBookmark = filter->withBookmark();
+
         if (fromCurrent)
             m_stat = curStat;
         else if (op == TD_KEY_NEXT_MULTI)
@@ -670,7 +672,8 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
                 recCountOnce = calcNextReadRecordCount(recCountOnce, eTime);
                 filter->setMaxRows(recCountOnce);
                 result += *((ushort_td*)m_pdata);
-                insertBookmarks(m_impl->maxBookMarkedCount,
+                if (withBookmark)
+                    insertBookmarks(m_impl->maxBookMarkedCount,
                              (void*)((char*)m_pdata + 2), *((ushort_td*)m_pdata));
 
                 onRecordCounting(result, Complete);
@@ -1985,8 +1988,16 @@ void table::moveBookmarks(unsigned int index)
 bookmark_td table::bookmarks(unsigned int index) const
 {
     bookmark_td bm;
-    memcpy(bm.val, m_impl->bookmarks(index, bookmarkLen()), bookmarkLen());
-    bm.empty = false;
+    uchar_td* p = m_impl->bookmarks(index, bookmarkLen());
+    if (p)
+    {
+        memcpy(bm.val, p, bookmarkLen());
+        bm.empty = false;
+    }else
+    {
+        bm.empty = true;
+        m_stat = STATUS_PROGRAM_ERROR;
+    }
     return bm;
 }
 
@@ -2285,6 +2296,7 @@ void queryBase::addSeekKeyValue(const _TCHAR* value, bool reset)
     }
     m_impl->m_keyValues.push_back(value);
     m_impl->m_nofilter = false;
+    m_impl->m_seekByBookmarks = false;
 }
 
 void queryBase::addSeekKeyValuePtr(const void* value, ushort_td len,
@@ -2298,11 +2310,13 @@ void queryBase::addSeekKeyValuePtr(const void* value, ushort_td len,
     }
     m_impl->m_keyValuesPtr.push_back(keyValuePtr(value, len, typeStr));
     m_impl->m_nofilter = false;
+    m_impl->m_seekByBookmarks = false;
 }
 
-void queryBase::addSeekKeyValue(bookmark_td& bm, ushort_td len, bool reset)
+void queryBase::addSeekBookmark(bookmark_td& bm, ushort_td len, bool reset)
 {
     addSeekKeyValuePtr(&bm, len, KEYVALUE_PTR, reset);
+    m_impl->m_seekByBookmarks = true;
 }
 
 void queryBase::clearSeekKeyValues()
@@ -2503,12 +2517,6 @@ bool queryBase::isStopAtLimit() const
 queryBase& queryBase::stopAtLimit(bool v)
 {
     m_impl->m_stopAtLimit = v;
-    return *this;
-}
-
-queryBase& queryBase::seekByBookmarks(bool v)
-{
-    m_impl->m_seekByBookmarks = v;
     return *this;
 }
 

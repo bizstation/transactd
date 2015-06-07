@@ -1131,9 +1131,11 @@ interface IQueryBase : IDispatch
   [id(0x000001D)]
   HRESULT _stdcall IsStopAtLimit([out, retval] VARIANT_BOOL* retVal);
   [id(0x000001E)]
-  HRESULT _stdcall SeekByBookmarks([in] VARIANT_BOOL Value, [out, retval] IQueryBase** retVal);
-  [id(0x000001F)]
   HRESULT _stdcall IsSeekByBookmarks([out, retval] VARIANT_BOOL* retVal);
+  [id(0x000001F)]
+  HRESULT _stdcall AddSeekKeyValue([in] VARIANT Value, [in, defaultvalue(0)] VARIANT_BOOL Reset);
+  [id(0x0000020)]
+  HRESULT _stdcall AddSeekBookmark([in] VARIANT Value, [in, defaultvalue(0)] VARIANT_BOOL Reset);
  
 };
 

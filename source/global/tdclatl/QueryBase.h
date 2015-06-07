@@ -89,8 +89,9 @@ public:
     STDMETHOD(IsBookmarkAlso)(VARIANT_BOOL* retVal);
     STDMETHOD(StopAtLimit)(VARIANT_BOOL Value, IQueryBase** retVal);
     STDMETHOD(IsStopAtLimit)(VARIANT_BOOL* retVal);
-    STDMETHOD(SeekByBookmarks)(VARIANT_BOOL Value, IQueryBase** retVal);
     STDMETHOD(IsSeekByBookmarks)(VARIANT_BOOL* retVal);
+    STDMETHOD(AddSeekKeyValue)(VARIANT Value, VARIANT_BOOL Reset);
+    STDMETHOD(AddSeekBookmark)(VARIANT Value, VARIANT_BOOL Reset);
 
 };
 

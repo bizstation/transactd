@@ -16096,8 +16096,6 @@ fail:
 SWIGINTERN VALUE _wrap_queryBase_addSeekKeyValue(int nargs, VALUE *args, VALUE self) {
 	long long lv = 0;
 	double dv = 0;
-	bookmark_td *bm = 0;
-	int len = 0;
 	bool reset = false;
 	SWIG_CHAR buf;
 	int res = 0;
@@ -16106,7 +16104,7 @@ SWIGINTERN VALUE _wrap_queryBase_addSeekKeyValue(int nargs, VALUE *args, VALUE s
 
 	if (nargs < 1) goto fail2;
 
-	if (nargs > 3) goto fail2;
+	if (nargs > 2) goto fail2;
 	
 	res = SWIG_ConvertPtr(self, &q_tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
 	if (!SWIG_IsOK(res)) {
@@ -16136,30 +16134,10 @@ SWIGINTERN VALUE _wrap_queryBase_addSeekKeyValue(int nargs, VALUE *args, VALUE s
 				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "double", "addSeekKeyValue", 2, args[0]));
 			}
 		}
-		else if (nargs > 1) {
-			void* bm_tmp = 0;
-			res = SWIG_ConvertPtr(args[0], &bm_tmp, SWIGTYPE_p_BOOKMARK, 0);
-			if (!SWIG_IsOK(res)) {
-				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bookmark_td *", "addSeekKeyValue", 2, args[0]));
-			}
-			bm = reinterpret_cast< bookmark_td* >(bm_tmp);
-
-			res = SWIG_AsVal_int(args[1], &len);
-			if (!SWIG_IsOK(res)) {
-				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "int", "addSeekKeyValue", 3, args[1]));
-			}
-			if (nargs > 2)
-			{
-				res = SWIG_AsVal_bool(args[2], &reset);
-				if (!SWIG_IsOK(res)) {
-					SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bool", "addSeekKeyValue", 4, args[2]));
-				}
-			}
-		}
 		else
 			goto fail2;
 
-		if (nargs > 1 && bm == NULL)
+		if (nargs > 1)
 		{
 			res = SWIG_AsVal_bool(args[1], &reset);
 			if (!SWIG_IsOK(res)) {
@@ -16172,8 +16150,7 @@ SWIGINTERN VALUE _wrap_queryBase_addSeekKeyValue(int nargs, VALUE *args, VALUE s
 			q->addSeekKeyValue(buf.str, reset);
 		else if (type == T_FLOAT)
 			q->addSeekKeyValue(lexical_cast(dv).c_str(), reset);
-		else
-			q->addSeekKeyValue(*bm, len, reset);
+
 	}
 	catch (bzs::rtl::exception& e)
 	{
@@ -16192,6 +16169,68 @@ fail2:
 	Ruby_Format_OverloadedError(nargs + 1, 5, "queryBase.addSeekKeyValue",
 		"    void queryBase.addSeekKeyValue(const T value, bool reset)\n"
 		"    void queryBase.addSeekKeyValue(const T value)\n");
+
+	return Qnil;
+}
+
+SWIGINTERN VALUE _wrap_queryBase_addSeekBookmark(int nargs, VALUE *args, VALUE self) {
+	bookmark_td *bm = 0;
+	int len = 0;
+	bool reset = false;
+	int res = 0;
+	bzs::db::protocol::tdap::client::queryBase *q = 0;
+	void* q_tmp;
+
+	if (nargs < 2) goto fail2;
+
+	if (nargs > 3) goto fail2;
+
+	res = SWIG_ConvertPtr(self, &q_tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
+	if (!SWIG_IsOK(res)) {
+		SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::queryBase *", "addSeekBookmark", 1, self));
+	}
+	q = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(q_tmp);
+
+	try
+	{
+		void* bm_tmp = 0;
+		res = SWIG_ConvertPtr(args[0], &bm_tmp, SWIGTYPE_p_BOOKMARK, 0);
+		if (!SWIG_IsOK(res)) {
+			SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bookmark_td *", "addSeekBookmark", 2, args[0]));
+		}
+		bm = reinterpret_cast< bookmark_td* >(bm_tmp);
+
+		res = SWIG_AsVal_int(args[1], &len);
+		if (!SWIG_IsOK(res)) {
+			SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "int", "addSeekBookmark", 3, args[1]));
+		}
+		if (nargs > 2)
+		{
+			res = SWIG_AsVal_bool(args[2], &reset);
+			if (!SWIG_IsOK(res)) {
+				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bool", "addSeekBookmark", 4, args[2]));
+			}
+		}
+
+		q->addSeekBookmark(*bm, len, reset);
+	}
+	catch (bzs::rtl::exception& e)
+	{
+		static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+		rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+	}
+	catch (std::exception &e)
+	{
+		static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+		rb_raise(cpp_std_error, e.what());
+	}
+	return Qnil;
+fail:
+	return Qnil;
+fail2:
+	Ruby_Format_OverloadedError(nargs + 1, 5, "queryBase.addSeekBookmark",
+		"    void queryBase.addSeekBookmark(const T value, bool reset)\n"
+		"    void queryBase.addSeekBookmark(const T value)\n");
 
 	return Qnil;
 }
@@ -17219,50 +17258,6 @@ _wrap_queryBase_isStopAtLimit(int argc, VALUE *argv, VALUE self) {
   return vresult;
 fail:
   return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_queryBase_seekByBookmarks(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0;
-	bool arg2;
-	void *argp1 = 0;
-	int res1 = 0;
-	bool val2;
-	int ecode2 = 0;
-	bzs::db::protocol::tdap::client::queryBase *result = 0;
-	VALUE vresult = Qnil;
-
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::queryBase *", "seekByBookmarks", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(argp1);
-	ecode2 = SWIG_AsVal_bool(argv[0], &val2);
-	if (!SWIG_IsOK(ecode2)) {
-		SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError("", "bool", "seekByBookmarks", 2, argv[0]));
-	}
-	arg2 = static_cast< bool >(val2);
-	{
-		try {
-			result = (bzs::db::protocol::tdap::client::queryBase *) &(arg1)->seekByBookmarks(arg2);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0 | 0);
-	return vresult;
-fail:
-	return Qnil;
 }
 
 
@@ -35285,6 +35280,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassQueryBase.klass, "clearSeekKeyValues", VALUEFUNC(_wrap_queryBase_clearSeekKeyValues), -1);
   rb_define_method(SwigClassQueryBase.klass, "clearSelectFields", VALUEFUNC(_wrap_queryBase_clearSelectFields), -1);
   rb_define_method(SwigClassQueryBase.klass, "addSeekKeyValue", VALUEFUNC(_wrap_queryBase_addSeekKeyValue), -1);
+  rb_define_method(SwigClassQueryBase.klass, "addSeekBookmark", VALUEFUNC(_wrap_queryBase_addSeekBookmark), -1);
   rb_define_method(SwigClassQueryBase.klass, "reserveSeekKeyValueSize", VALUEFUNC(_wrap_queryBase_reserveSeekKeyValueSize), -1);
   rb_define_method(SwigClassQueryBase.klass, "queryString", VALUEFUNC(_wrap_queryBase_queryString), -1);
   rb_define_method(SwigClassQueryBase.klass, "reject", VALUEFUNC(_wrap_queryBase_reject), -1);
@@ -35309,7 +35305,6 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassQueryBase.klass, "reverseAliasName", VALUEFUNC(_wrap_queryBase_reverseAliasName), -1);
   rb_define_method(SwigClassQueryBase.klass, "stopAtLimit", VALUEFUNC(_wrap_queryBase_stopAtLimit), -1);
   rb_define_method(SwigClassQueryBase.klass, "isStopAtLimit", VALUEFUNC(_wrap_queryBase_isStopAtLimit), -1);
-  rb_define_method(SwigClassQueryBase.klass, "seekByBookmarks", VALUEFUNC(_wrap_queryBase_seekByBookmarks), -1);
   rb_define_method(SwigClassQueryBase.klass, "isSeekByBookmarks", VALUEFUNC(_wrap_queryBase_isSeekByBookmarks), -1);
   SwigClassQueryBase.mark = 0;
   SwigClassQueryBase.trackObjects = 0;

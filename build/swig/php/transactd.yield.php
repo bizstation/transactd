@@ -1675,6 +1675,7 @@ class table extends nstable {
 abstract class queryBase {
 	public $_cPtr=null;
 	protected $_pData=array();
+	protected $_bookmarks=array();
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
@@ -1703,14 +1704,25 @@ abstract class queryBase {
 
 	function clearSeekKeyValues() {
 		queryBase_clearSeekKeyValues($this->_cPtr);
+		$this->_bookmarks=array();
 	}
 
 	function clearSelectFields() {
 		queryBase_clearSelectFields($this->_cPtr);
 	}
 
-	function addSeekKeyValue($valueOrBookmark, $resetOrLen=0, $reset=false) {
-		queryBase_addSeekKeyValue($this->_cPtr,$valueOrBookmark,$resetOrLen, $reset);
+	function addSeekKeyValue($value, $reset=false) {
+		$this->_bookmarks=array();
+		queryBase_addSeekKeyValue($this->_cPtr,$value,$reset);
+	}
+	
+	function addSeekBookmark($bookmark, $len, $reset=false) {
+		if ($reset === true)
+		{
+			$this->_bookmarks=array();
+		}
+		queryBase_addSeekBookmark($this->_cPtr,$bookmark,$len,$reset);
+		array_push($this->_bookmarks, $bookmark);
 	}
 
 	function reserveSeekKeyValueSize($v) {
@@ -1817,16 +1829,6 @@ abstract class queryBase {
 		return $this;
 	}
 
-	function seekByBookmarks($v) {
-		$r=queryBase_seekByBookmarks($this->_cPtr,$v);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new queryBase($r);
-		}
-		return $r;
-	}
-	
 	function isStopAtLimit() {
 		return queryBase_isStopAtLimit($this->_cPtr);
 	}
@@ -1853,6 +1855,7 @@ class query extends queryBase {
 
 	function reset() {
 		query_reset($this->_cPtr);
+		$this->_bookmarks=array();
 		return $this;
 	}
 
@@ -3686,9 +3689,7 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	function getRecord($index) {
-		$r=Recordset_getRecord($this->_cPtr,$index);
-		$this->_cPtr = $r;
-		return $this;
+		return offsetGet($index);
 	}
 
 	function size() {

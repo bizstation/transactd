@@ -522,57 +522,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->stat(), 0);
         $this->assertTrue(abs(TEST_COUNT / 2 + 1 - $v) < FIVE_PERCENT_OF_TEST_COUNT);
     }
-    public function testBookmark()
-    {
-        $min_id = 5;
-        $max_id = 15;
-        $cur_id = 10;
-        $db = new Bz\database();
-        $tb = $this->openTable($db);
-        $this->assertNotEquals($tb, NULL);
-        $tb->setKeyNum(0);
-        
-        $tb->clearBuffer();
-        $tb->setFV(FDI_ID, $cur_id);
-        $q = new Bz\query();
-        $q->where('id', '<=', $max_id)->and_('id', '>=', $min_id)->reject(0xFFFF);
-        $q->bookmarkAlso(true);
-        $tb->setQuery($q);
-        $cnt = $tb->recordCount();
-        $this->assertEquals($tb->stat(), 0);
-        $bmCnt = $tb->bookmarksCount();
-        $this->assertEquals($cnt, $bmCnt);
-        $tb->moveBookmarks($bmCnt - 1);
-        $this->assertEquals($tb->stat(), 0);
-        $this->assertEquals($tb->getFVint(FDI_ID), $max_id);
-        $tb->moveBookmarks(0);
-        $this->assertEquals($tb->stat(), 0);
-        $this->assertEquals($tb->getFVint(FDI_ID), $min_id);
-        
-        $tb->clearBuffer();
-        $tb->setFV(FDI_ID, $cur_id);
-        $tb->setFilter('id >= ' . $min_id . ' and id <= ' . $max_id, 0, 0);
-        $cnt = $tb->recordCount();
-        $this->assertEquals($tb->stat(), 0);
-        $bmCnt = $tb->bookmarksCount();
-        $this->assertEquals($cnt, $bmCnt);
-        $tb->moveBookmarks($bmCnt - 1);
-        $this->assertEquals($tb->stat(), 0);
-        $this->assertEquals($tb->getFVint(FDI_ID), $max_id);
-        $tb->moveBookmarks(0);
-        $this->assertEquals($tb->stat(), 0);
-        $this->assertEquals($tb->getFVint(FDI_ID), $min_id);
-        
-        $atu = new Bz\ActiveTable($db, 'user');
-        $rec = $atu->index(0)->getWritableRecord();
-        $rec->read($tb->bookmarks($bmCnt - 1));
-        $this->assertEquals($rec[FDI_ID], $max_id);
-        $rec->read($tb->bookmarks(0));
-        $this->assertEquals($rec[FDI_ID], $min_id);
-        
-        $tb->close();
-        $db->close();
-    }
+    
     public function testGetEqual()
     {
         $db = new Bz\database();
@@ -1958,9 +1908,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($db->stat(), 1);
     }
     
-    /* -----------------------------------------------------
-        transactd var tables
-    ----------------------------------------------------- */
+    //-----------------------------------------------------
+    //    transactd var tables
+    //----------------------------------------------------- 
     
     private function isWindows()
     {
@@ -2481,9 +2431,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($db->stat(), 0);
     }
     
-    /* -----------------------------------------------------
-        transactd StringFilter
-    ----------------------------------------------------- */
+    //-----------------------------------------------------
+    //    transactd StringFilter
+    //-----------------------------------------------------
     
     private function createTableStringFilter($db, $id, $name, $type, $type2)
     {
@@ -2867,9 +2817,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($q->toString(), "code = '&&abc'");
     }
     
-    /* -----------------------------------------------------
-        ActiveTable
-    ----------------------------------------------------- */
+    //-----------------------------------------------------
+    //    ActiveTable
+    //----------------------------------------------------- 
     
     private function createQTuser($db)
     {
@@ -3703,5 +3653,121 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $rec['id'] = 120000;
         $ret = $rec->read();
         $this->assertEquals($ret, false);
+    }
+    
+    public function testBookmark1()
+    {
+        $min_id = 5;
+        $max_id = 15;
+        $db = new Bz\database();
+        $db->open(URL_QT);
+        $this->assertEquals($db->stat(), 0);
+        $tb = $db->openTable('user');
+        $this->assertEquals($db->stat(), 0);
+
+        $tb->clearBuffer();
+        $tb->setKeyNum(0);
+        $tb->setFilter('id >= ' . $min_id . ' and id <= ' . $max_id, 0, 0);
+        $cnt = $tb->recordCount();
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($cnt, $tb->bookmarksCount());
+        $tb->moveBookmarks($cnt - 1);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), $max_id);
+        $tb->moveBookmarks(0);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), $min_id);
+        
+        $q = new Bz\query();
+        $q->where('id', '>=', $min_id)->and_('id', '<=', $max_id)->reject(0xFFFF);
+        $tb->clearBuffer();
+        $tb->setQuery($q->bookmarkAlso(true));
+        $cnt = $tb->recordCount();
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($cnt, $tb->bookmarksCount());
+        $tb->moveBookmarks($cnt - 1);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), $max_id);
+        $tb->moveBookmarks(0);
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), $min_id);
+        
+        
+        $atu = new Bz\ActiveTable($db, 'user');
+        $qb = new Bz\query();
+        $len = $atu->table()->bookmarkLen();
+        // Hold bookmark objects to reading.
+        $bm1 = $tb->bookmarks(0);
+        $bm2 = $tb->bookmarks(2);
+        $bm3 = $tb->bookmarks(4);
+        
+        $qb->addSeekBookmark($bm1, $len);
+        $qb->addSeekBookmark($bm2, $len);
+        $qb->addSeekBookmark($bm3, $len);
+        $this->assertEquals($qb->isSeekByBookmarks(), true);
+        $rs = $atu->read($qb);
+        
+        $this->assertEquals($cnt, $tb->bookmarksCount());
+        $this->assertEquals(count($rs), 3);
+        $this->assertEquals($rs[0][FDI_ID], 5);
+        $this->assertEquals($rs[1][FDI_ID], 7);
+        $this->assertEquals($rs[2][FDI_ID], 9);
+
+        //read by WritableRecord
+        $rec = $atu->getWritableRecord();
+        $rec->read($tb->bookmarks($cnt - 1));
+        $this->assertEquals($rec[FDI_ID], $max_id);
+        $rec->read($tb->bookmarks(0));
+        $this->assertEquals($rec[FDI_ID], $min_id);
+
+        $db->close();
+    }
+    public function testBookmark2()
+    {
+        $db = new Bz\database();
+        $db->open(URL_QT);
+        $this->assertEquals($db->stat(), 0);
+        $atu = new Bz\ActiveTable($db, 'user');
+        
+        $tb = $atu->table();
+        $q = new Bz\query();
+        $tb->setQuery($q->all()->bookmarkAlso(true));
+        $num = $tb->recordCount();
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($num, $tb->bookmarksCount());
+        
+        $q->reset();
+        $len = $tb->bookmarkLen();
+        $this->assertEquals($len, 4);
+        
+        // Hold bookmark objects to reading.
+        $bm1 = $tb->bookmarks(0);
+        $bm2 = $tb->bookmarks(10);
+        $bm3 = $tb->bookmarks(20);
+
+        $q->addSeekBookmark($bm1, $len);
+        $q->addSeekBookmark($bm2, $len);
+        $q->addSeekBookmark($bm3, $len);
+        $rs = $atu->read($q);
+        $this->assertEquals($rs->count(), 3);
+        
+        $this->assertEquals($rs[0][FDI_ID], 1);
+        $this->assertEquals($rs[1][FDI_ID], 11);
+        $this->assertEquals($rs[2][FDI_ID], 21);
+        
+        //Read by table
+        $tb->setQuery($q, false);
+        $tb->find();
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), 1);
+        $tb->findNext();
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), 11);
+        $tb->findNext();
+        $this->assertEquals($tb->stat(), 0);
+        $this->assertEquals($tb->getFVint(FDI_ID), 21);
+        $tb->findNext();
+        $this->assertEquals($tb->stat(), 9);
+        
     }
 }

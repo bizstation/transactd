@@ -15146,14 +15146,12 @@ ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekKeyValue) {
 	zval **args[4];
 	bzs::db::protocol::tdap::client::queryBase *q = 0;
 	_TCHAR *buf = 0;
-	bookmark_td *bm = 0;
-	int len = 0;
 	bool reset = false;
 	int type = 0;
 	int argc = ZEND_NUM_ARGS();
 
 	SWIG_ResetError(TSRMLS_C);
-	if ((argc > 4) || (argc < 2) || zend_get_parameters_array_ex(argc, args) != SUCCESS) {
+	if ((argc > 3) || (argc < 2) || zend_get_parameters_array_ex(argc, args) != SUCCESS) {
 		WRONG_PARAM_COUNT;
 	}
 	
@@ -15171,55 +15169,90 @@ ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekKeyValue) {
 			convert_to_string_ex(args[1]);
 			buf = (_TCHAR *)Z_STRVAL_PP(args[1]);
 		}
-		else if ((type != IS_NULL) && (argc > 2)) {
-			if (SWIG_ConvertPtr(*args[1], (void **)&bm, SWIGTYPE_p_BOOKMARK, 0) < 0) {
-				SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_addSeekKeyValue. Expected SWIGTYPE_p_BOOKMARK");
-			}
-			if (!bm) SWIG_PHP_Error(E_ERROR, "bookmark pointer is NULL");
-			{
-				convert_to_long_ex(args[2]);
-				len = (int)(*(args[2]))->value.lval;
-			}
-			if (argc == 4)
-			{
-				convert_to_boolean_ex(args[3]);
-				reset = (bool)Z_LVAL_PP(args[3]);
-			}
-		}
 		else
 			goto fail2;
 	}
 
+	if (argc > 2)
 	{
-		if (bm == NULL && argc >= 3)
-		{
-			convert_to_boolean_ex(args[2]);
-			reset = (bool)Z_LVAL_PP(args[2]);
-		}
+		convert_to_boolean_ex(args[2]);
+		reset = (bool)Z_LVAL_PP(args[2]);
 	}
 
-	{
-		try {
-			if ((type == IS_LONG) || (type == IS_STRING) || (type == IS_DOUBLE))
-				q->addSeekKeyValue(buf, reset);
-			else
-				q->addSeekKeyValue(*bm, len, reset);
-		}
-		catch (bzs::rtl::exception& e) {
-			SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			SWIG_exception(SWIG_RuntimeError, e.what());
-		}
+	try {
+		q->addSeekKeyValue(buf, reset);
+	}
+	catch (bzs::rtl::exception& e) {
+		SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+	}
+	catch (std::exception &e) {
+		SWIG_exception(SWIG_RuntimeError, e.what());
 	}
 
-return;
+	return;
 
 fail2:
 SWIG_ErrorCode() = E_ERROR;
 SWIG_ErrorMsg() = "No matching function for overloaded 'queryBase_addSeekKeyValue'";
 fail:
 SWIG_FAIL(TSRMLS_C);
+
+}
+
+ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekBookmark) {
+	zval **args[4];
+	bzs::db::protocol::tdap::client::queryBase *q = 0;
+	bookmark_td *bm = 0;
+	int len = 0;
+	bool reset = false;
+	int argc = ZEND_NUM_ARGS();
+
+	SWIG_ResetError(TSRMLS_C);
+	if ((argc > 4) || (argc < 3) || zend_get_parameters_array_ex(argc, args) != SUCCESS) {
+		WRONG_PARAM_COUNT;
+	}
+
+	{
+		if (SWIG_ConvertPtr(*args[0], (void **)&q, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) < 0) {
+			SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_addSeekBookmark. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase");
+		}
+	}
+	if (!q) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+	if ((*args[1])->type != IS_NULL)  {
+		if (SWIG_ConvertPtr(*args[1], (void **)&bm, SWIGTYPE_p_BOOKMARK, 0) < 0) {
+			SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_addSeekBookmark. Expected SWIGTYPE_p_BOOKMARK");
+		}
+		if (!bm) SWIG_PHP_Error(E_ERROR, "bookmark pointer is NULL");
+		{
+			convert_to_long_ex(args[2]);
+			len = (int)(*(args[2]))->value.lval;
+		}
+		if (argc == 4)
+		{
+			convert_to_boolean_ex(args[3]);
+			reset = (bool)Z_LVAL_PP(args[3]);
+		}
+	}
+	else
+		goto fail2;
+
+	try {
+		q->addSeekBookmark(*bm, len, reset);
+	}
+	catch (bzs::rtl::exception& e) {
+		SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+	}
+	catch (std::exception &e) {
+		SWIG_exception(SWIG_RuntimeError, e.what());
+	}
+
+	return;
+fail2:
+	SWIG_ErrorCode() = E_ERROR;
+	SWIG_ErrorMsg() = "No matching function for overloaded 'queryBase_addSeekBookmark'";
+fail:
+	SWIG_FAIL(TSRMLS_C);
 
 }
 
@@ -15885,48 +15918,6 @@ ZEND_NAMED_FUNCTION(_wrap_queryBase_isBookmarkAlso) {
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
-}
-
-ZEND_NAMED_FUNCTION(_wrap_queryBase_seekByBookmarks) {
-    bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0;
-    bool arg2;
-    zval **args[2];
-    bzs::db::protocol::tdap::client::queryBase *result = 0;
-
-    SWIG_ResetError(TSRMLS_C);
-    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-        WRONG_PARAM_COUNT;
-    }
-
-    {
-        if (SWIG_ConvertPtr(*args[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) < 0) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_seekByBookmarks. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase");
-        }
-    }
-    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-
-    /*@SWIG:E:\bindings\swigwin-3.0.2\Lib\php\utils.i,2,CONVERT_BOOL_IN@*/
-    convert_to_boolean_ex(args[1]);
-    arg2 = (bool)Z_LVAL_PP(args[1]);
-    /*@SWIG@*/;
-
-    {
-        try {
-            result = (bzs::db::protocol::tdap::client::queryBase *) &(arg1)->seekByBookmarks(arg2);
-        }
-        catch (bzs::rtl::exception& e) {
-            SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
-        }
-        catch (std::exception &e) {
-            SWIG_exception(SWIG_RuntimeError, e.what());
-        }
-    }
-
-    SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
-
-    return;
-fail:
-    SWIG_FAIL(TSRMLS_C);
 }
 
 
@@ -33182,6 +33173,10 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_addseekkeyvalue, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_addseekbookmark, 0, 0, 0)
+ZEND_ARG_PASS_INFO(0)
+ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_reserveseekkeyvaluesize, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
@@ -33236,10 +33231,6 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_getoptimize, 0, 0, 0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_isbookmarkalso, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_seekbybookmarks, 0, 0, 0)
-ZEND_ARG_PASS_INFO(0)
-ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_isseekbybookmarks, 0, 0, 0)
 ZEND_ARG_PASS_INFO(0)
@@ -34567,6 +34558,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(querybase_clearseekkeyvalues,_wrap_queryBase_clearSeekKeyValues,swig_arginfo_querybase_clearseekkeyvalues)
  SWIG_ZEND_NAMED_FE(querybase_clearselectfields,_wrap_queryBase_clearSelectFields,swig_arginfo_querybase_clearselectfields)
  SWIG_ZEND_NAMED_FE(querybase_addseekkeyvalue,_wrap_queryBase_addSeekKeyValue,swig_arginfo_querybase_addseekkeyvalue)
+ SWIG_ZEND_NAMED_FE(querybase_addseekbookmark, _wrap_queryBase_addSeekBookmark, swig_arginfo_querybase_addseekbookmark)
  SWIG_ZEND_NAMED_FE(querybase_reserveseekkeyvaluesize,_wrap_queryBase_reserveSeekKeyValueSize,swig_arginfo_querybase_reserveseekkeyvaluesize)
  SWIG_ZEND_NAMED_FE(querybase_querystring,_wrap_queryBase_queryString,swig_arginfo_querybase_querystring)
  SWIG_ZEND_NAMED_FE(querybase_reject,_wrap_queryBase_reject,swig_arginfo_querybase_reject)
@@ -34583,7 +34575,6 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(querybase_getjoinkeysize,_wrap_queryBase_getJoinKeySize,swig_arginfo_querybase_getjoinkeysize)
  SWIG_ZEND_NAMED_FE(querybase_getoptimize,_wrap_queryBase_getOptimize,swig_arginfo_querybase_getoptimize)
  SWIG_ZEND_NAMED_FE(querybase_isbookmarkalso,_wrap_queryBase_isBookmarkAlso,swig_arginfo_querybase_isbookmarkalso)
- SWIG_ZEND_NAMED_FE(querybase_seekbybookmarks, _wrap_queryBase_seekByBookmarks, swig_arginfo_querybase_seekbybookmarks)
  SWIG_ZEND_NAMED_FE(querybase_isseekbybookmarks, _wrap_queryBase_isSeekByBookmarks, swig_arginfo_querybase_isseekbybookmarks)
  SWIG_ZEND_NAMED_FE(querybase_selectcount, _wrap_queryBase_selectCount, swig_arginfo_querybase_selectcount)
  SWIG_ZEND_NAMED_FE(querybase_getselect,_wrap_queryBase_getSelect,swig_arginfo_querybase_getselect)

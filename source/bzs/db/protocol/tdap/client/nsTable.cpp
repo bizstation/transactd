@@ -618,6 +618,12 @@ void nstable::seekByBookmark(bookmark_td& bm, ushort_td lockBias)
 
 void nstable::seekByBookmark(bookmark_td* bm, ushort_td lockBias)
 {
+    if (!bm)
+    {
+        m_stat = STATUS_INVALID_BOOKMARK;
+        return;
+    }
+
     int count = 0;
     if (m_buflen < (uint_td)m_impl->bookmarkLen)
     {

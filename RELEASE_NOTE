@@ -26,8 +26,7 @@ New Features
      read,update,insert,delete
 
 * ActiveTable, It was now possible to obtain a recordset from bookmarks.
-  Set to true queryBase::seekByBookmarks, and you can set multiple bookmark using 
-  the queryBase::addSeekKeyValuePtr method.
+  You can set multiple bookmark using the queryBase::addSeekBookmark method.
   
   After you set the query to the table object, and at the same time and count the 
   number of records that match the conditions when you call the table::recordCount()
@@ -71,9 +70,9 @@ Other Modifications
   recordCountFn Call back function
   table::setOnRecordCount
   table::onRecordCount
-  queryBase& queryBase::seekByBookmarks(bool v);
-  bool queryBase::isSeekByBookmarks() const;
-  bool writableRecord::read(bookmark_td& bm);
+  bool queryBase::isSeekByBookmarks() const
+  void queryBase::addSeekBookmark(bookmark_td& bm, ushort_td len, bool reset=false)
+  bool writableRecord::read(bookmark_td& bm)
 
 * Changing the method name
   table::setBookMarks     --> table::insertBookmarks

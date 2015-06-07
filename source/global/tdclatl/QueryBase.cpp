@@ -103,19 +103,31 @@ STDMETHODIMP CQueryBase::Or(BSTR Name, BSTR Logic, VARIANT Value,
 
 STDMETHODIMP CQueryBase::AddInValue(VARIANT Value, VARIANT_BOOL Reset)
 {
+    return AddSeekKeyValue(Value, Reset);
+}
+
+STDMETHODIMP CQueryBase::AddSeekKeyValue(VARIANT Value, VARIANT_BOOL Reset)
+{
+    if (Value.vt != VT_BSTR)
+        VariantChangeType(&Value, &Value, 0, VT_BSTR);
+    m_qb.addSeekKeyValue(Value.bstrVal, (Reset == -1));
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::AddSeekBookmark(VARIANT Value, VARIANT_BOOL Reset)
+{
     if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
     {
         CBookmark* bm = dynamic_cast<CBookmark*>(Value.pdispVal);
         if (bm)
-            m_qb.addSeekKeyValuePtr(bm->internalBookmark().val, bm->bookmarkLen(), KEYVALUE_PTR,
-                                    (Reset == -1));
+        {
+            if(!bm->internalBookmark().empty)
+                m_qb.addSeekBookmark(bm->internalBookmark(), bm->bookmarkLen(), (Reset == -1));
+            else
+                return Error("Bookmark is empty", IID_IQueryBase);
+        }
         else
             return Error("Invalid param 1 not IBookmark", IID_IQueryBase);
-    }else
-    {
-        if (Value.vt != VT_BSTR)
-            VariantChangeType(&Value, &Value, 0, VT_BSTR);
-        m_qb.addSeekKeyValue(Value.bstrVal, (Reset == -1));
     }
     return S_OK;
 }
@@ -332,13 +344,6 @@ STDMETHODIMP CQueryBase::StopAtLimit(VARIANT_BOOL v, IQueryBase** retVal)
 STDMETHODIMP CQueryBase::IsStopAtLimit(VARIANT_BOOL* retVal)
 {
     *retVal = m_qb.isStopAtLimit();
-    return S_OK;
-}
-
-STDMETHODIMP CQueryBase::SeekByBookmarks(VARIANT_BOOL v, IQueryBase** retVal)
-{
-    m_qb.seekByBookmarks(v == -1);
-    setResult(retVal);
     return S_OK;
 }
 

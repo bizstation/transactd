@@ -1329,6 +1329,8 @@ public:
         return setDirection(v ? table::findBackForword : table::findForword);
     }
 
+    bool withBookmark() const { return m_withBookmark; }
+
     static filter* create(table* tb)
     {
         return new filter(tb);
