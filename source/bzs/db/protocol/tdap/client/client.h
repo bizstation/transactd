@@ -372,7 +372,12 @@ public:
                 setCon(c); // if error throw exception
                 m_connecting = true;
                 if (getServerCharsetIndex() == -1)
-                    m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
+                {
+                    if (c->error() || (m_req.resultLen == 0))
+                        m_preResult = ERROR_TD_INVALID_CLINETHOST;
+                    else
+                        m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
+                }
                 else
                     buildDualChasetKeybuf();
             }

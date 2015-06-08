@@ -652,18 +652,6 @@ class pipeConnection : public connectionImple<platform_stream>
         return (char*)lpMsgBuf;
     }
 
-    void throwException(const char* msg, int errorCode)
-    {
-        char buf[4096];
-        char user[128];
-        char* p = GetErrorMessage(GetLastError());
-        DWORD size = 128;
-        GetUserName(user, &size);
-        sprintf_s(buf, 4096, "User:%s %s %d %s", user, msg, GetLastError(), p);
-        LocalFree(p);
-        throw exception(errorCode, buf);
-    }
-
     char* getUniqName(const char* name, char* buf)
     {
         char* p = buf;
@@ -687,27 +675,39 @@ class pipeConnection : public connectionImple<platform_stream>
             CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0,
                               m_sendBufferSize * 2, getUniqName(tmp, buf));
         if (m_mapFile == NULL)
-            throwException("CreateFileMapping", CLIENT_ERROR_SHAREMEM_DENIED);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
+            return;
+        }
 
         m_writebuf_p = (char*)MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0,
                                             0, m_sendBufferSize);
         if (m_writebuf_p == NULL)
-            throwException("MapViewOfFile R", CLIENT_ERROR_SHAREMEM_DENIED);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
+            return;
+        }
 
         m_readbuf_p = (char*)MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0,
                                            m_sendBufferSize, m_sendBufferSize);
         if (m_readbuf_p == NULL)
-            throwException("MapViewOfFile W", CLIENT_ERROR_SHAREMEM_DENIED);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
+            return;
+        }
 
         sprintf_s(tmp, 50, "Global\\%sToClnt", m_pipeName.c_str());
         m_recvEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, getUniqName(tmp, buf));
         if (m_recvEvent == NULL)
-            throwException("OpenEvent Client", CLIENT_ERROR_SHAREMEM_DENIED);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
+            return;
+        }
 
         sprintf_s(tmp, 50, "Global\\%sToSrv", m_pipeName.c_str());
         m_sendEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, getUniqName(tmp, buf));
         if (m_sendEvent == NULL)
-            throwException("OpenEvent Server", CLIENT_ERROR_SHAREMEM_DENIED);
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
     }
 
     void write(unsigned int writeSize)
@@ -730,9 +730,8 @@ class pipeConnection : public connectionImple<platform_stream>
             DWORD n = 0;
             BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                            NULL, NULL, NULL, 0);
-            
             if(ret == FALSE || n < 2)
-                m_e = asio::error::connection_aborted;//throwException("PipeConnection", CLIENT_ERROR_CONNECTION_FAILURE);
+                m_e = boost::system::error_code(CLIENT_ERROR_CONNECTION_FAILURE, get_system_category());
             else if (connections::netTimeout == t)
                 m_e = asio::error::timed_out;
             if (m_e) break;
@@ -754,9 +753,15 @@ class pipeConnection : public connectionImple<platform_stream>
             DWORD n = 0;
             BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                             NULL, NULL, NULL, 0);
-            if(m_sendEvent && ret && n)
+            if(m_sendEvent && ret && n > 1)
+            {
                 SetEvent(m_sendEvent);
+                while (WAIT_TIMEOUT ==  
+                    WaitForSingleObject(m_recvEvent, 1000))
+                    ;
+            }
         }
+
         if (m_recvEvent)
             CloseHandle(m_recvEvent);
         if (m_sendEvent)
@@ -797,11 +802,14 @@ class pipeConnection : public connectionImple<platform_stream>
             Sleep(1);
         }
         if (fd == INVALID_HANDLE_VALUE)
-            throwException("CreateFile", CLIENT_ERROR_CANT_CREATEPIPE);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_CANT_CREATEPIPE, get_system_category());
+            return;
+        }
 #endif // NOT WIN32
+
         m_socket.assign(fd);
         
-
         // send processId and clientid;
         DWORD processId = GetCurrentProcessId();
         int size = 16;
@@ -824,8 +832,8 @@ class pipeConnection : public connectionImple<platform_stream>
         {
             unsigned int* shareMemSize = (unsigned int*)(p+3);
             m_isHandShakable = (p[0] == 0x00);
-            createKernelObjects(*shareMemSize);
             m_connected = true;
+            createKernelObjects(*shareMemSize);
         }
     }
 

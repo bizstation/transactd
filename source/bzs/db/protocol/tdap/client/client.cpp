@@ -113,7 +113,7 @@ int client::getServerCharsetIndex()
     if (!con()->error())
     {
         req.parse(p, false);
-        if (req.result == 0)
+        if (req.result == 0 && req.resultLen)
         {
             if (!checkVersion(ver))
                 return -1;
