@@ -303,7 +303,9 @@ http://www.bizstation.jp/ja/transactd/client/sdk/doc/
 source/bzs/exampleフォルダに、簡単なサンプルコードがあります。
 
 build/exampleフォルダにコンパイラに応じたプロジェクトファイル(Windows)があります。
-または、make_example.shスクリプト(Linux)でこれらをビルドできます。
+または、make_example.shスクリプト(Linux)でこれらをビルドできます。(Linuxでのビルド
+の際にはMakefileのTI_BOOST_ROOTの値をインストールされたboostのフォルダに変更してく
+ださい。)
 
 Visual C++ 2010のExpress版 64Bitでコンパイルする際は、各プロジェクトの[オプション]
 -[構成プロパティー]-[全般]-[プラットフォームツールセット]を"v100"から"Windows7.1SDK"

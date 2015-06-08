@@ -299,7 +299,8 @@ http://www.bizstation.jp/ja/transactd/client/sdk/doc/
 There are some simple sample codes in ($installdir)/source/bzs/example.
 
 You can build them with project files in build/example (Windows) or
-make_example.sh script (Linux).
+make_example.sh script (Linux). On Linux, please change to the folder of boost 
+that is installed the value of TI_BOOST_ROOT of the Makefile when building.
 
 If you compile with the 64Bit version of the Visual C++ 2010 Express edittion,
 change option to "Windows7.1SDK" from "v100" in
