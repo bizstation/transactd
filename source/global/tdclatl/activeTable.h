@@ -54,7 +54,7 @@ public:
     void FinalRelease();
 
 public:
-    STDMETHOD(SetDatabase)(VARIANT Value, BSTR tableName);
+    STDMETHOD(SetDatabase)(VARIANT Value, BSTR tableName, short mode);
 
     STDMETHOD(Index)(short Value, IActiveTable** retVal);
     STDMETHOD(KeyValue)(VARIANT Value0, VARIANT Value1, VARIANT Value2,

@@ -51,7 +51,7 @@ private:
     void allocBuffer();
     void writeRecordData(){};
     void onReadAfter(){};
-
+    const records& getRecords();
     ~connMgr();
 
 public:
@@ -59,6 +59,9 @@ public:
 
     void connect(const _TCHAR* uri);
     void disconnect();
+    const records& definedDatabases();
+    const records& schemaTables(const char* dbname);
+    const records& sysvars();
     const records& connections();
     const records& databases(__int64 connid);
     const records& tables(__int64 connid, int dbid);
@@ -68,6 +71,8 @@ public:
 
     database* db() const;
     using nstable::tdapErr;
+    using nstable::release;
+    static connMgr* create(database* db);
 };
 
 #pragma warning(default : 4251)

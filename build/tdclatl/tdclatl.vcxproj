@@ -239,6 +239,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\activeTable.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\Bookmark.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\ConnectParams.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Database.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\DbDef.cpp" />
@@ -286,6 +287,7 @@
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\pooledDatabaseManager.h" />
     <ClInclude Include="..\..\source\global\tdclatl\activeTable.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\Bookmark.h" />
     <ClInclude Include="..\..\source\global\tdclatl\ConnectParams.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Database.h" />
     <ClInclude Include="..\..\source\global\tdclatl\DbDef.h" />

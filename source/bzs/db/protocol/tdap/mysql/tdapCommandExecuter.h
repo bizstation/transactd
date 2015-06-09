@@ -43,7 +43,6 @@ namespace db
 {
 class blobBuffer;
 namespace engine{namespace mysql{class database;}}
-
 namespace protocol
 {
 namespace tdap
@@ -72,7 +71,7 @@ class dbExecuter : public engine::mysql::dbManager
     std::string makeSQLcreateTable(const request& req);
     bool connect(request& req);
     inline bool doCreateTable(request& req);
-    inline bool doOpenTable(request& req);
+    inline bool doOpenTable(request& req, bool reconnect=false);
     inline void doSeekKey(request& req, int op, engine::mysql::rowLockMode* lock);
     inline void doMoveFirst(request& req, engine::mysql::rowLockMode* lock);
     inline void doMoveKey(request& req, int op, engine::mysql::rowLockMode* lock);
@@ -89,6 +88,7 @@ class dbExecuter : public engine::mysql::dbManager
     inline void doInsertBulk(request& req);
     inline void doStat(request& req);
     inline short seekEach(extRequestSeeks* ereq, bool noBookMark);
+    inline short seekBookmarkEach(extRequestSeeks* ereq, bool noBookmark);
     inline bool doAuthentication(request& req, engine::mysql::database* db);
     bool getDatabaseWithAuth(request& req, engine::mysql::database** db, bool connect=false);
 public:
@@ -97,7 +97,7 @@ public:
     int commandExec(request& req, netsvc::server::netWriter* nw);
     size_t getAcceptMessage(char* message, size_t size);
     int errorCode(int ha_error);
-    short_td errorCodeSht(int ha_error)
+    inline short_td errorCodeSht(int ha_error)
     {
         return (short_td)errorCode(ha_error);
     }
@@ -111,11 +111,14 @@ class connMgrExecuter
     request& m_req;
     __int64 m_modHandle;
 
-public:
-    connMgrExecuter(request& req, unsigned __int64 parent);
+    int definedDatabaseList(char* buf, size_t& size);
+    int schemaTableList(char* buf, size_t& size);
+    int systemVariables(char* buf, size_t& size);
     int read(char* buf, size_t& size);
     int disconnectOne(char* buf, size_t& size);
     int disconnectAll(char* buf, size_t& size);
+public:
+    connMgrExecuter(request& req, unsigned __int64 parent);
     int commandExec(netsvc::server::netWriter* nw);
 };
 
@@ -150,9 +153,11 @@ public:
 
     bool isShutDown() { return m_dbExec->isShutDown(); }
 
-    void cleanup(){};
+    void cleanup(){}
 
-    const engine::mysql::databases& dbs() const { return m_dbExec->dbs(); };
+    const engine::mysql::databases& dbs() const { return m_dbExec->dbs(); }
+
+    boost::mutex& mutex() { return m_dbExec->mutex(); }
 };
 
 } // namespace mysql

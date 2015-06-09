@@ -691,9 +691,10 @@ public:
                     bool valid = !(forword ? gt : le);
                     
                     // case in-sencitive, Index judge need clinet and server are same option.
-                    bool is_cl = ((fd->logType & CMPLOGICAL_CASEINSENSITIVE) != 0);
-                    bool is_srv = ((key->key_part[segmentIndex].field->flags & BINARY_FLAG) == 0);
-                    if (valid && (is_cl == is_srv))
+                    bool is_cl_casein = ((fd->logType & CMPLOGICAL_CASEINSENSITIVE) != 0);
+                    bool is_srv_casein = ((key->key_part[segmentIndex].field->flags & BINARY_FLAG) == 0) && 
+                                            isStringType(fd->type);
+                    if (valid && (is_cl_casein == is_srv_casein))
                     {
                         m_keySeg = (unsigned char)segmentIndex + 1;
                         m_judgeType = (comp == eEqual) ? 2 : 1;
@@ -950,7 +951,7 @@ class resultWriter
     const extResultDef* m_def;
     bool m_noBookmark;
 
-    short doWrite(position* pos, unsigned int bookmark)
+    short doWrite(position* pos, const unsigned char* bookmark, int bmlen)
     {
         // write recLength space;
         unsigned short recLen = 0;
@@ -959,7 +960,7 @@ class resultWriter
 
         // write bookmark
         if (!m_noBookmark)
-            m_nw->asyncWrite((const char*)&bookmark, 4);
+            m_nw->asyncWrite((const char*)bookmark, bmlen);
 
         // if pos ==NULL , that is not found record in a TD_KEY_SEEK_MULTI
         // operation
@@ -1010,6 +1011,7 @@ class resultWriter
     }
 
 public:
+    resultWriter() : m_nw(NULL), m_def(NULL){}
 
     void init(netsvc::server::netWriter* nw, const extResultDef* def,
                  bool noBookmark)
@@ -1019,15 +1021,19 @@ public:
          m_noBookmark = noBookmark;
     }
 
-    short write(position* pos, unsigned int bookmark)
+    short write(position* pos, const unsigned char* bookmark, int len)
     {
-        return doWrite(pos, bookmark);
+        return doWrite(pos, bookmark, len);
     }
 
     inline unsigned int end()
     {
-        m_nw->asyncWrite(NULL, 0, netsvc::server::netWriter::writeEnd);
-        return m_nw->resultLen();
+        if (m_nw)
+        {
+            m_nw->asyncWrite(NULL, 0, netsvc::server::netWriter::writeEnd);
+            return m_nw->resultLen();
+        }
+        return 0;
     }
 
     const char* resultBuffer() { return m_nw->ptr(); }
@@ -1073,7 +1079,7 @@ public:
         if(p->readMapSize)
         {
             bm.setTable(tb);
-            if (m_seeksMode)
+            if (m_seeksMode && !(req->itype & FILTER_TYPE_SEEKS_BOOKMARKS))
                 addKeysegFieldMap(tb);
             if (p->readMapSize)
                 p->copyBitmapTo(bm.getReadBitmap());
@@ -1126,7 +1132,8 @@ public:
         if ((rd->fieldCount > 1) ||
             ((rd->fieldCount == 1) &&
              (rd->field[0].len < m_position.recordLenCl())))
-            ret = convResultPosToFieldNum(tb, noBookmark, rd, m_seeksMode);
+            ret = convResultPosToFieldNum(tb, noBookmark, rd, m_seeksMode, 
+                            (req->itype & FILTER_TYPE_SEEKS_BOOKMARKS) != 0);
 
         nw->beginExt(tb->blobFields() != 0);
         m_writer.init(nw, rd, noBookmark);
@@ -1154,7 +1161,7 @@ public:
 
     // TODO This convert is move to client. but legacy app is need this
     short convResultPosToFieldNum(engine::mysql::table* tb, bool noBookmark,
-                                  const extResultDef* rd, bool seeksMode)
+                                  const extResultDef* rd, bool seeksMode, bool seekBookmark)
     {
         int blobs = 0;
         bm.setTable(tb);
@@ -1179,7 +1186,7 @@ public:
                 fd = fd->next();
             }
         }
-        else
+        else if (!seekBookmark)
             addKeysegFieldMap(tb);
 
         // if need bookmark , add primary key fields
@@ -1220,39 +1227,20 @@ public:
         return REC_MACTH;
     }
 
-    short write(const unsigned char* bmPtr,
+    short write(const unsigned char* bookmarkPtr,
                 unsigned int bmlen /*, short stat=0*/)
     {
         unsigned int bookmark = 0;
         // if bmPtr ==NULL , that is not found record in a TD_KEY_SEEK_MULTI
         // operation
         // and set error code to bookmark also STATUS_NOT_FOUND_TI
-        if (bmPtr == NULL)
+        if (bookmarkPtr == NULL)
         {
             // bookmark = stat;
-            return m_writer.write(NULL, bookmark);
+            return m_writer.write(NULL, (const unsigned char*)&bookmark, sizeof(bookmark));
         }
         else
-        {
-            switch (bmlen)
-            {
-            case 4:
-                bookmark = *((unsigned int*)bmPtr);
-                break;
-            case 2:
-                bookmark = *((unsigned short*)bmPtr);
-                break;
-            case 3:
-                bookmark = *((unsigned int*)bmPtr) & 0x0FFFFFF;
-                break;
-            case 1:
-                bookmark = *((unsigned short*)bmPtr) & 0x0FF;
-                break;
-            default:
-                break;
-            }
-            return m_writer.write(&m_position, bookmark);
-        }
+            return m_writer.write(&m_position, bookmarkPtr, bmlen);
     }
     unsigned short rejectCount() const { return m_req->rejectCount; };
     unsigned short maxRows() const { return m_maxRows; };

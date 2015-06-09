@@ -41,6 +41,17 @@ namespace client
 class database;
 class queryBase;
 class fields;
+class table;
+/** @endcond */
+
+#if (defined(__BORLANDC__) && !defined(__clang__))
+typedef void __stdcall(* recordCountFn)(table* tb, int count, bool& complate);
+#else
+/** @cond INTERNAL */
+/** Callback function on a record was record count. */
+typedef void(__STDCALL* recordCountFn)(table* tb, int count, bool& complate);
+#endif
+
 #define null_str _T("")
 
 #pragma warning(disable : 4251)
@@ -120,7 +131,6 @@ protected:
     void* dataBak() const;
     void* reallocDataBuffer(uint_td v);
     int dataBufferLen() const;
-    void setBookMarks(int StartId, void* Data, ushort_td Count);
     uint_td unPack(char* ptr, size_t size);
     uint_td pack(char* ptr, size_t size);
     keylen_td writeKeyData(); // orverride
@@ -147,7 +157,7 @@ protected:
 
     virtual void doInit(tabledef** def, short filenum, bool regularDir);
 
-    virtual void onRecordCounting(size_t count, bool& complate){};
+    virtual void onRecordCounting(size_t count, bool& cancel);
 
     virtual void setNoUpdateTimeStamp(bool v){};
 
@@ -172,8 +182,10 @@ public:
     void* optionalData() const;
     void setOptionalData(void* v);
     bool myDateTimeValueByBtrv() const;
-    int bookMarksCount() const;
-    void moveBookmarksId(long Id);
+    void insertBookmarks(unsigned int start, void* data, ushort_td count);
+    int bookmarksCount() const;
+    void moveBookmarks(unsigned int index);
+    bookmark_td bookmarks(unsigned int index) const;
     void clearBuffer();
     unsigned int getRecordHash();
     void smartUpdate();
@@ -275,6 +287,8 @@ public:
     void keyValueDescription(_TCHAR* buf, int bufsize);
     short getCurProcFieldCount() const;
     short getCurProcFieldIndex(short index) const;
+    void setOnRecordCount(const recordCountFn v);
+    recordCountFn onRecordCount() const;
     client::fields& fields();
 };
 
@@ -328,6 +342,7 @@ public:
     void addLogic(const _TCHAR* combine, const _TCHAR* name,
                   const _TCHAR* logic, const _TCHAR* value);
     void addSeekKeyValue(const _TCHAR* value, bool reset = false);
+    void addSeekBookmark(bookmark_td& bm, ushort_td len, bool reset = false);
     void addSeekKeyValuePtr(const void* value, ushort_td len, short typeStr,
                             bool reset = false);
     void reserveSeekKeyValueSize(size_t v);
@@ -350,13 +365,13 @@ public:
     eOptimize getOptimize() const;
     bool isStopAtLimit() const;
     bool isBookmarkAlso() const;
+    bool isSeekByBookmarks() const;
     short selectCount() const;
     const _TCHAR* getSelect(short index) const;
     short whereTokens() const;
     const _TCHAR* getWhereToken(short index) const;
     void setWhereToken(short index, const _TCHAR* v);
     void reverseAliasName(const _TCHAR* alias, const _TCHAR* src);
-
     void release(); // don't virtual
     static queryBase* create();
 };

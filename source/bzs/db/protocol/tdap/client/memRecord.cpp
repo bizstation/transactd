@@ -320,6 +320,15 @@ bool writableRecord::read(bool KeysetAlrady)
     return true;
 }
 
+bool writableRecord::read(bookmark_td& bm)
+{
+    m_tb->seekByBookmark(bm);
+    if (m_tb->stat())
+        return false;
+    copyFromBuffer(m_tb);
+    return true;
+}
+
 void writableRecord::insert()
 {
     copyToBuffer(m_tb);

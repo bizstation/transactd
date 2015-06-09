@@ -637,6 +637,38 @@ abstract class transactd {
 }
 
 /* PHP Proxy Classes */
+class BOOKMARK {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if (function_exists('BOOKMARK_'.$var.'_get')) return true;
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_BOOKMARK') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_BOOKMARK();
+	}
+
+	function isEmpty() {
+		return BOOKMARK_isEmpty($this->_cPtr);
+	}
+}
 
 // TODO Is this class true ? Not used $this->_cPtr.
 class FLAGS {
@@ -1221,6 +1253,10 @@ abstract class nstable {
 		nstable_stepNext($this->_cPtr,$lockBias);
 	}
 
+	function bookmarkLen() {
+		return nstable_bookmarkLen($this->_cPtr);
+	}
+
 	function bookmark() {
 		return nstable_bookmark($this->_cPtr);
 	}
@@ -1263,8 +1299,11 @@ abstract class nstable {
 		nstable_stats($this->_cPtr,$databuffer,$buflen,$estimate);
 	}
 
-	function unlock($bm=0) {
-		nstable_unlock($this->_cPtr,$bm);
+	function unlock($bm=null) {
+		switch (func_num_args()) {
+		case 0: nstable_unlock($this->_cPtr); break;
+		default: nstable_unlock($this->_cPtr,$bm);
+		}
 	}
 
 	function mode() {
@@ -1346,6 +1385,10 @@ class dbdef {
 
 	function stat() {
 		return dbdef_stat($this->_cPtr);
+	}
+
+	function validateTableDef($TableIndex) {
+		return dbdef_validateTableDef($this->_cPtr,$TableIndex);
 	}
 
 	function updateTableDef($tableIndex,$forPsqlDdf=true) {
@@ -1487,12 +1530,22 @@ class table extends nstable {
 		return table_myDateTimeValueByBtrv($this->_cPtr);
 	}
 
-	function bookMarksCount() {
-		return table_bookMarksCount($this->_cPtr);
+	function bookmarksCount() {
+		return table_bookmarksCount($this->_cPtr);
 	}
 
-	function moveBookmarksId($Id) {
-		table_moveBookmarksId($this->_cPtr,$Id);
+	function moveBookmarks($Id) {
+		table_moveBookmarks($this->_cPtr,$Id);
+	}
+
+	function bookmarks($index) {
+		$r=table_bookmarks($this->_cPtr,$index);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new BOOKMARK($r);
+		}
+		return $r;
 	}
 
 	function clearBuffer() {
@@ -1622,6 +1675,7 @@ class table extends nstable {
 abstract class queryBase {
 	public $_cPtr=null;
 	protected $_pData=array();
+	protected $_bookmarks=array();
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
@@ -1650,14 +1704,25 @@ abstract class queryBase {
 
 	function clearSeekKeyValues() {
 		queryBase_clearSeekKeyValues($this->_cPtr);
+		$this->_bookmarks=array();
 	}
 
 	function clearSelectFields() {
 		queryBase_clearSelectFields($this->_cPtr);
 	}
 
-	function addSeekKeyValue($value,$reset=false) {
+	function addSeekKeyValue($value, $reset=false) {
+		$this->_bookmarks=array();
 		queryBase_addSeekKeyValue($this->_cPtr,$value,$reset);
+	}
+	
+	function addSeekBookmark($bookmark, $len, $reset=false) {
+		if ($reset === true)
+		{
+			$this->_bookmarks=array();
+		}
+		queryBase_addSeekBookmark($this->_cPtr,$bookmark,$len,$reset);
+		array_push($this->_bookmarks, $bookmark);
 	}
 
 	function reserveSeekKeyValueSize($v) {
@@ -1731,6 +1796,10 @@ abstract class queryBase {
 		return queryBase_isBookmarkAlso($this->_cPtr);
 	}
 
+	function isSeekByBookmarks() {
+		return queryBase_isSeekByBookmarks($this->_cPtr);
+	}
+
 	function selectCount() {
 		return queryBase_selectCount($this->_cPtr);
 	}
@@ -1759,7 +1828,7 @@ abstract class queryBase {
 		queryBase_stopAtLimit($this->_cPtr,$v);
 		return $this;
 	}
-	
+
 	function isStopAtLimit() {
 		return queryBase_isStopAtLimit($this->_cPtr);
 	}
@@ -1786,6 +1855,7 @@ class query extends queryBase {
 
 	function reset() {
 		query_reset($this->_cPtr);
+		$this->_bookmarks=array();
 		return $this;
 	}
 
@@ -2078,8 +2148,8 @@ class database extends nsdatabase {
 		database_dropTable($this->_cPtr,$tableName);
 	}
 
-	function close() {
-		database_close($this->_cPtr);
+	function close($withDropDefaultSchema=false) {
+		database_close($this->_cPtr,$withDropDefaultSchema);
 	}
 
 	function aclReload() {
@@ -2817,8 +2887,12 @@ class writableRecord extends Record {
 		$this->_field = new field();
 	}
 
-	function read($KeysetAlrady=false) {
-		return writableRecord_read($this->_cPtr,$KeysetAlrady);
+	function read($KeysetAlrady_or_bm=null) {
+		switch (func_num_args()) {
+		case 0: $r=writableRecord_read($this->_cPtr); break;
+		default: $r=writableRecord_read($this->_cPtr,$KeysetAlrady_or_bm);
+		}
+		return $r;
 	}
 
 	function insert() {
@@ -3615,9 +3689,7 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	function getRecord($index) {
-		$r=Recordset_getRecord($this->_cPtr,$index);
-		$this->_cPtr = $r;
-		return $this;
+		return offsetGet($index);
 	}
 
 	function size() {

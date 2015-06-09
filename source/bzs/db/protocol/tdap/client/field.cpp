@@ -1614,7 +1614,6 @@ void* field::getFVbin(uint_td& size) const
         size = m_fd->len;
         return (void*)(p);
     }
-    return NULL;
 }
 
 double field::getFVDecimal() const

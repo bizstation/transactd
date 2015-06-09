@@ -22,13 +22,20 @@
 #include "tdclatl_i.h"
 #include "Field.h"
 #include <bzs/db/protocol/tdap/client/trdboostapi.h>
+#include "_IDatabaseEvents_CP.H"
+
 using namespace ATL;
+void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
+                          int count, bool& cancel);
 
 class ATL_NO_VTABLE CTableTd
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CTableTd, &CLSID_Table>,
       public IDispatchImpl<ITable, &IID_ITable, &LIBID_transactd,
-                           /* wMajor = */ 1, /* wMinor = */ 0>
+                           /* wMajor = */ 1, /* wMinor = */ 0>,
+      public IConnectionPointContainerImpl<CTableTd>,
+      public CProxy_ITableEvents<CTableTd>
+
 {
 
     int m_filterRejectCount;
@@ -48,7 +55,13 @@ public:
     BEGIN_COM_MAP(CTableTd)
     COM_INTERFACE_ENTRY(ITable)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(IConnectionPointContainer)
     END_COM_MAP()
+
+    BEGIN_CONNECTION_POINT_MAP(CTableTd)
+    CONNECTION_POINT_ENTRY(__uuidof(_ITableEvents))
+    END_CONNECTION_POINT_MAP()
+
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
@@ -77,9 +90,9 @@ public:
     STDMETHOD(Seek)(eLockType lockBias);
     STDMETHOD(SeekGreater)(VARIANT_BOOL orEqual, eLockType lockBias);
     STDMETHOD(SeekLessThan)(VARIANT_BOOL orEqual, eLockType lockBias);
-    STDMETHOD(get_BookMark)(long* Value);
-    STDMETHOD(SeekByBookMark)(long Value, eLockType lockBias);
-    STDMETHOD(get_Percentage)(long* Value);
+    STDMETHOD(get_Bookmark)(IBookmark** Value);
+    STDMETHOD(SeekByBookmark)(IBookmark* bm, eLockType lockBias);
+    STDMETHOD(get_Percentage)(VARIANT param, long* Value);
     STDMETHOD(get_RecordLength)(long* Value);
     STDMETHOD(RecordCount)(VARIANT_BOOL estimate, VARIANT_BOOL fromCurrent,
                            long* Value);
@@ -126,15 +139,15 @@ public:
     STDMETHOD(SetAccessRights)(unsigned char curd);
     STDMETHOD(SetOwnerName)(BSTR* name, short enctype);
     STDMETHOD(TdapErr)(OLE_HANDLE hWnd, BSTR* Value);
-    STDMETHOD(Unlock_)(unsigned int bm);
+    STDMETHOD(Unlock_)();
     STDMETHOD(get_BlobFieldUsed)(VARIANT_BOOL* Value);
-    STDMETHOD(get_BookmarkFindCurrent)(unsigned int* Value);
-    STDMETHOD(get_BookMarksCount)(int* Value);
+    STDMETHOD(get_BookmarkFindCurrent)(IBookmark** Value);
+    STDMETHOD(get_BookmarksCount)(int* Value);
     STDMETHOD(Find)(eFindType FindType);
     STDMETHOD(get_RecordHash)(unsigned int* Value);
     STDMETHOD(get_LogicalToString)(VARIANT_BOOL* Value);
     STDMETHOD(put_LogicalToString)(VARIANT_BOOL Value);
-    STDMETHOD(MoveBookmarksId)(long Value);
+    STDMETHOD(MoveBookmarks)(long Value);
     STDMETHOD(get_MyDateTimeValueByBtrv)(VARIANT_BOOL* Value);
     STDMETHOD(get_ValiableFormatType)(VARIANT_BOOL* Value);
     STDMETHOD(SmartUpdate)(void);
@@ -145,5 +158,7 @@ public:
     STDMETHOD(FieldNumByName)(BSTR Name, short* Value);
     STDMETHOD(get_StatReasonOfFind)(short* Value);
     STDMETHOD(get_LastFindDirection)(short* Value);
+    STDMETHOD(get_BookmarkLen)(unsigned short* Value);
+    STDMETHOD(get_Bookmarks)(long index, IBookmark** Value);
 
 };

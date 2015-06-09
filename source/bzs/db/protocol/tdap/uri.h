@@ -49,12 +49,14 @@ inline const _TCHAR* protocol(const _TCHAR* uri)
         st = _tcsstr(uri, _T("btrv://"));
         return _T("btrv");
     }
-    return _T("");
 }
 
-inline const _TCHAR* hostName(const _TCHAR* uri, _TCHAR* buf, size_t size)
+inline void endPoint(const _TCHAR* uri, 
+                                _TCHAR* host, size_t hostSize, 
+                                _TCHAR* port, size_t portSize)
 {
-    buf[0] = 0x00;
+    if (host) host[0] = 0x00;
+    if (port) port[0] = 0x00;
     const _TCHAR* st = _tcsstr(uri, _T("@"));
     if (st) 
         ++st;
@@ -65,13 +67,46 @@ inline const _TCHAR* hostName(const _TCHAR* uri, _TCHAR* buf, size_t size)
     }
     if (st)
     {
-        const _TCHAR* en = _tcsstr(st, _T("/"));
+        const _TCHAR* en = _tcsstr(st, _T(":"));
         if (en && en > st)
         {
-            _tcsncpy_s(buf, size, st, en - st);
-            buf[en - st] = 0x00;
+            if (host)
+            {
+                _tcsncpy_s(host, hostSize, st, en - st);
+                host[en - st] = 0x00;
+            }
+            if (port)
+            {
+                st = en + 1;
+                en = _tcsstr(st, _T("/"));
+                if (en && en > st)
+                {
+                    _tcsncpy_s(port, portSize, st, en - st);
+                    port[en - st] = 0x00;
+                }
+            }
+        }
+        else if (host)
+        {
+            en = _tcsstr(st, _T("/"));
+            if (en && en > st)
+            {
+                _tcsncpy_s(host, hostSize, st, en - st);
+                host[en - st] = 0x00;
+            }
         }
     }
+}
+
+inline const _TCHAR* hostName(const _TCHAR* uri, _TCHAR* buf, size_t size)
+{
+    endPoint(uri, buf, size, NULL, 0);
+    return buf;
+}
+
+inline const _TCHAR* port(const _TCHAR* uri, _TCHAR* buf, size_t size)
+{
+    endPoint(uri, NULL, 0, buf, size);
     return buf;
 }
 

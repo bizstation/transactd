@@ -39,7 +39,7 @@ namespace netsvc
 namespace client
 {
 
-char connections::port[PORTNUMBUF_SIZE] = { "8610" };
+char connections::m_port[PORTNUMBUF_SIZE] = { "8610" };
 bool connections::m_usePipedLocal = true;
 #ifdef _WIN32
 int connections::connectTimeout = 20000;
@@ -68,7 +68,7 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName),m_resolver
         m_usePipedLocal = (atol(tmp) != 0);
         GetPrivateProfileString("transctd_client", "port", "8610", tmp, 30,
                                 buf);
-        strcpy_s(port, PORTNUMBUF_SIZE, tmp);
+        strcpy_s(m_port, PORTNUMBUF_SIZE, tmp);
         GetPrivateProfileString("transctd_client", "connectTimeout", 
             DEFAULT_CONNECT_TIMEOUT, tmp, 30, buf);
         connectTimeout = atoi(tmp)*1000;
@@ -93,7 +93,7 @@ connections::connections(const char* pipeName) : m_pipeName(pipeName),m_resolver
             std::string p = pt.get<std::string>("transctd_client.port");
             if (p == "")
                 p = "8610";
-            strcpy_s(port, PORTNUMBUF_SIZE, p.c_str());
+            strcpy_s(m_port, PORTNUMBUF_SIZE, p.c_str());
 
             p = pt.get<std::string>("transctd_client.connectTimeout");
             connectTimeout = atol(p.c_str());
@@ -137,8 +137,11 @@ connection* connections::getConnection(asio::ip::tcp::endpoint& ep)
 }
 
 asio::ip::tcp::endpoint connections::endpoint(const std::string& host,
+                                              const char* port,
                                               boost::system::error_code& ec)
 {
+
+    if (!port || port[0] == 0x00) port = m_port;
     tcp::resolver::query query(host, port);
 
     tcp::resolver::iterator dest = m_resolver.resolve(query, ec);
@@ -156,11 +159,11 @@ asio::ip::tcp::endpoint connections::endpoint(const std::string& host,
     return endpoint;
 }
 
-connection* connections::getConnection(const std::string& host)
+connection* connections::getConnection(const std::string& host, const char* port)
 {
     mutex::scoped_lock lck(m_mutex);
     boost::system::error_code ec;
-    tcp::endpoint ep = endpoint(host, ec);
+    tcp::endpoint ep = endpoint(host, port, ec);
     if (!ec)
         return getConnection(ep);
     return NULL;
@@ -204,14 +207,14 @@ bool connections::disconnect(connection* c)
  */
 bool connections::isUseNamedPipe(asio::ip::tcp::endpoint& ep)
 {
-    boost::system::error_code ec;
-    asio::ip::tcp::endpoint local = endpoint("127.0.0.1", ec);
-    if (!ec && (local == ep))
+    asio::ip::tcp::endpoint local(ip::address::from_string("127.0.0.1"), ep.port()); 
+    if (local == ep)
         return true;
     char buf[MAX_PATH];
     if (::gethostname(buf, MAX_PATH) == 0)
     {
-        local = endpoint(buf, ec);
+        boost::system::error_code ec;
+        local = endpoint(buf, m_port, ec);
         if (local == ep)
             return true;
     }
@@ -238,27 +241,35 @@ inline connection* connections::doConnect(connection* c)
     try
     {
         c->connect();
-        return c;
+        if (c->isConnected())
+            return c;
+        m_e = c->error();
+        delete c;
+        return NULL;
     }
     catch (bzs::netsvc::client::exception& e)
     {
+        m_e = boost::system::error_code(e.error(), get_system_category());
         delete c;
-        throw e;
+        return NULL;
     }
     catch (boost::system::system_error& e)
     {
+        m_e = e.code();
         delete c;
-        throw e;
+        return NULL;
     }
-    catch (std::exception& e)
+    catch (std::exception& /*e*/)
     {
+        m_e = boost::system::error_code(1, get_system_category());
         delete c;
-        throw e;
+        return NULL;
     }
     catch (...)
     {
+        m_e = boost::system::error_code(1, get_system_category());
         delete c;
-        throw;
+        return NULL;
     }
 }
 
@@ -272,34 +283,42 @@ inline bool connections::doHandShake(connection* c, handshake f, void* data)
         {
             if (!f)
                 c->read();
-            else 
+            else
                 ret = f(c, data);
+            if (c->error())
+                m_e = asio::error::connection_refused;
+            else if (!ret)
+                m_e = asio::error::no_permission;
             if (!ret)
                 delete c;
         }
         return ret;
     }
-    catch (bzs::netsvc::client::exception& /*e*/)
+    catch (bzs::netsvc::client::exception& e)
     {
         delete c;
-        throw;
+        m_e = boost::system::error_code(e.error(), get_system_category());
+        return false;
     }
-    catch (boost::system::system_error& /*e*/)
+    catch (boost::system::system_error& e)
     {
+        m_e = e.code();
         delete c;
-        throw;
+        return false;
     }
 }
 
+#if defined(__BCPLUSPLUS__)
+#pragma warn -8004
+#endif
 // The connection of found from connection list of same address is returned.
-connection* connections::connect(const std::string& host, handshake f, void* data, bool newConnection)
+connection* connections::connect(const std::string& host, const char* port, handshake f, void* data, bool newConnection)
 {
     bool namedPipe = false;
-    boost::system::error_code ec;
     connection* c;
     mutex::scoped_lock lck(m_mutex);
-    asio::ip::tcp::endpoint ep = endpoint(host, ec);
-    if (ec)
+    asio::ip::tcp::endpoint ep = endpoint(host, port, m_e);
+    if (m_e)
         return NULL;
 #ifdef USE_PIPE_CLIENT
     namedPipe =  (m_usePipedLocal && isUseNamedPipe(ep));
@@ -319,13 +338,16 @@ connection* connections::connect(const std::string& host, handshake f, void* dat
     c->addref();
     return c;
 }
+#if defined(__BCPLUSPLUS__)
+#pragma warn .8004
+#endif
 
-bool connections::reconnect(connection* c, const std::string& host,
+bool connections::reconnect(connection* c, const std::string& host, const char* port,
                         handshake f, void* data)
 {
     boost::system::error_code ec;
     mutex::scoped_lock lck(m_mutex);
-    asio::ip::tcp::endpoint ep = endpoint(host, ec);
+    asio::ip::tcp::endpoint ep = endpoint(host, port, ec);
     if (ec)
         return false;
     c->reconnect(ep);

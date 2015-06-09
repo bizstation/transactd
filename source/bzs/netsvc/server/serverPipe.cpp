@@ -448,6 +448,7 @@ public:
         m_comm->send();
         asio::write(m_socket, buffer(tmp, 7), e);
         run();
+        DisconnectNamedPipe(m_socket.native());
     }
 
     void cancel()
@@ -628,6 +629,7 @@ inotifyHandler* server::erh = NULL;
  *	and will go into an infinite loop.
  */
 server::server(shared_ptr<IAppModuleBuilder> app, const std::string& name,
+               const char* port,
                std::size_t max_connections, unsigned int shareMemSize,
                const char* hostCheckName)
     : m_app(app), m_maxConnections(max_connections), m_stopped(false)
@@ -637,7 +639,9 @@ server::server(shared_ptr<IAppModuleBuilder> app, const std::string& name,
     m_newConnection.reset(new connection());
     connection::m_pipeName = name;
     connection::m_shareMemSize = shareMemSize;
-    m_acceptor.open(name);
+    std::string tmp = name;
+    tmp += port;
+    m_acceptor.open(tmp);
 }
 
 /** Start the server

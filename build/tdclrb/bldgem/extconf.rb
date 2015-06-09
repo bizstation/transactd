@@ -56,6 +56,7 @@ ruby_library_path = arg_config('--ruby_library_path', '').gsub(/"\n/, '')
 install_prefix    = arg_config('--install_prefix', '').gsub(/"\n/, '')
 build_type        = arg_config('--build_type', '').gsub(/"\n/, '')
 no_rb_tbr         = arg_config('--without_rb_thread_blocking_region', '').gsub(/"\n/, '').downcase
+no_c_cpp          = arg_config('--without_c_cpp_clients')
 
 # boost
 if boost != '' && boost !=~ /^\-DBOOST_ROOT/
@@ -121,10 +122,13 @@ rb_tbr = ' -DTRANSACTD_HAVE_RB_THREAD_CALL_WITHOUT_GVL=' +
   ' -DTRANSACTD_HAVE_RB_THREAD_BLOCKING_REGION=' +
   (use_TBR ? 'ON' : 'OFF')
 
+# no_c_cpp
+no_c_cpp = no_c_cpp ? ' -DTRANSACTD_WITHOUT_C_CPP_CLIENTS=ON' : ''
+
 # cmake
 cmake_cmd = ['cmake', to_native_path(transactd_gem_root_relative), '-DTRANSACTD_RUBY_GEM=ON',
               generator, boost, ruby_executable, ruby_library_path, ruby_include_dirs,
-              install_prefix, gem_root, build_type, rb_tbr, '>> cmake_generate.log'].join(' ')
+              install_prefix, gem_root, build_type, rb_tbr, no_c_cpp, '>> cmake_generate.log'].join(' ')
 begin
   f = open('cmake_generate.log', 'w')
   f.puts cmake_cmd

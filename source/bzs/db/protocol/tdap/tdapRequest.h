@@ -82,8 +82,6 @@ namespace client {class table;}
     P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN | P_MASK_KEYBUF
 #define P_MASK_INS_AUTOINC P_MASK_MOVPOS
 
-#pragma pack(push, 1)
-pragma_pack1;
 
 
 #define CLIENTID_SIZE                   2
@@ -99,6 +97,8 @@ typedef void*(__STDCALL* DDBA_PTR)(client::table* tb, uint_td size);
 
 /** tdap version info struct
  */
+#pragma pack(push, 1)
+pragma_pack1;
 
 struct version
 {
@@ -106,9 +106,6 @@ struct version
     ushort_td minorVersion;
     uchar_td Type;
 };
-
-#pragma pack(push, 1)
-pragma_pack1;
 
 struct posblk
 {
@@ -121,8 +118,6 @@ struct posblk
     unsigned char bookmarkLen;
     char bookmark[1]; //dummy array
 };
-#pragma pack(pop)
-pragma_pop;
 
 struct clientID
 {

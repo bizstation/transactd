@@ -21,6 +21,7 @@
 #include <bzs/netsvc/server/serverTpool.h>
 #include <bzs/rtl/exception.h>
 #include <bzs/rtl/debuglog.h>
+#include <bzs/db/protocol/tdap/tdapcapi.h>
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -46,16 +47,14 @@ using namespace bzs::netsvc::server;
 static char* g_listenAddress = NULL;
 static char* g_listenPort = NULL;
 static char* g_hostCheckUserName = NULL;
-
 static unsigned int g_tcpServerType = TCP_CPT_SERVER;
-
 static unsigned int g_maxTcpConnections = 200;
 static unsigned int g_pool_threads = 20;
-unsigned int g_pipeCommSharememSize = PIPE_SHARE_MEM_SIZE;
 int g_tableNmaeLower = 1; // defined in btrvProtocol.h
 unsigned int g_lock_wait_timeout = 1;
 char* g_transaction_isolation = NULL;
 char* g_auth_type = NULL;
+unsigned int g_pipeCommSharememSize = PIPE_SHARE_MEM_SIZE;
 //int g_grant_apply = 0;//skip
 
 
@@ -145,7 +144,9 @@ static int transactd_plugin_init(void* p)
         {
             boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(
                 PROTOCOL_TYPE_BTRV | PROTOCOL_TYPE_MEMBUFFER));
-            srv_p.reset(new pipe::server(app, PIPE_NAME, g_maxPipeConnections,
+            srv_p.reset(new pipe::server(app, PIPE_NAME, 
+                                         ((strcmp(g_listenPort, "8610") == 0) ? "": g_listenPort),
+                                         g_maxPipeConnections,
                                          g_pipeCommSharememSize,
                                          g_hostCheckUserName));
             srv_p->registerErrorHandler(&srvErh);
@@ -226,7 +227,7 @@ static struct st_mysql_daemon transactd_info = {
     MYSQL_DAEMON_INTERFACE_VERSION
 };
 
-/** system valiable define
+/** system variables define
  */
 static MYSQL_SYSVAR_STR(address, g_listenAddress,
                         PLUGIN_VAR_READONLY | PLUGIN_VAR_MEMALLOC,
@@ -300,9 +301,39 @@ static struct st_mysql_sys_var* g_systemVariables[] =
     0
 };
 
-/** show valiables struct.
+const char* get_trd_sys_var(int index)
+{
+    switch(index)
+    {
+    case TD_VAR_LISTENADDRESS:return g_listenAddress;
+    case TD_VAR_LISTENPORT:return g_listenPort;
+    case TD_VAR_HOSTCHECKNAME:return g_hostCheckUserName;
+    case TD_VAR_MAXTCPCONNECTIONS:return (const char*)&g_maxTcpConnections;
+    case TD_VAR_TABLENAMELOWER:return (const char*)&g_tableNmaeLower;
+    case TD_VAR_POOLTHREADS:return (const char*)&g_pool_threads;
+    case TD_VAR_TCPSERVERTYPE:return (const char*)&g_tcpServerType;
+    case TD_VAR_LOCKWAITTIMEOUT:return (const char*)&g_lock_wait_timeout;
+    case TD_VAR_ISOLATION:return g_transaction_isolation;
+    case TD_VAR_AUTHTYPE:return g_auth_type;
+#ifdef PIPE_SERVER
+    case TD_VAR_PIPESHAREMEMSIZE:return (const char*)&g_pipeCommSharememSize;
+    case TD_VAR_MAXPIPECONNECTIONS:return (const char*)&g_maxPipeConnections;
+    case TD_VAR_USEPIPE:return (const char*)&g_usePipedLocal;
+#endif
+#ifdef USE_HANDLERSOCKET
+    case TD_VAR_HSLISTENPORT:return g_hs_listenPort;
+    case TD_VAR_USEHS:return (const char*)&g_use_hs;
+#endif
+    case TD_VER_DB: return MYSQL_SERVER_VERSION;
+    case TD_VER_SERVER:return "";
+
+    };
+    return NULL;
+}
+
+/** show status struct.
  */
-static st_mysql_show_var g_showVariables[] = {
+static st_mysql_show_var g_statusVariables[] = {
     { "trnsctd_tcp_connections", (char*)&cpt::g_connections, SHOW_INT },
     { "trnsctd_tcp_wait_threads", (char*)&cpt::g_waitThread, SHOW_INT },
     { "trnsctd_tpool_connections", (char*)&tpool::g_connections, SHOW_INT },
@@ -329,7 +360,7 @@ mysql_declare_plugin(transactd)
     transactd_plugin_init,
     transactd_plugin_deinit, 
     0x0100, 
-    g_showVariables,
+    g_statusVariables,
     g_systemVariables,
     NULL
 }

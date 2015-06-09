@@ -426,12 +426,24 @@ void database::doClose()
     m_impl->lockReadOnly = false;
 }
 
-void database::close()
+void database::close(bool withDropDefaultSchema)
 {
     bool flag = (m_impl->dbDef != NULL);
+    if (m_impl && m_impl->dbDef)
+        m_impl->dbDef->setKeyNum(withDropDefaultSchema ? CR_SUBOP_DROP : 0);
     doClose();
     if (flag)
         nsdatabase::release();
+}
+
+bool database::doReopenDatabaseSchema()
+{
+    if (m_impl->dbDef && m_impl->dbDef->isOpen())
+    {
+        doReconnect(m_impl->dbDef);
+        return (m_stat == 0);
+    }
+    return true;
 }
 
 _TCHAR* database::getTableUri(_TCHAR* buf, short FileNum)
@@ -569,6 +581,12 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate,
 
 bool database::createTable(short FileNum, const _TCHAR* FilePath)
 {
+    tabledef* td = m_impl->dbDef->tableDefs(FileNum);
+    if (!td || td->fieldCount == 0)
+    {
+        m_stat = STATUS_INVALID_FIELD_OFFSET;
+        return false;
+    }
     if (isTransactdUri(FilePath))
     {
         if (setUseTransactd() == false)
@@ -580,7 +598,7 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
         const char* p = toServerUri(buf2, MAX_PATH, FilePath, isUseTransactd());
 
         m_stat = m_btrcallid(
-            TD_CREATETABLE, posblk, m_impl->dbDef->tableDefs(FileNum),
+            TD_CREATETABLE, posblk, td,
             &m_impl->dbDef->m_datalen, (void*)p, (uchar_td)strlen(p),
             CR_SUBOP_BY_TABLEDEF /* exists check */, clientID());
     }
@@ -597,7 +615,7 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
         if (FilePath)
             buf = FilePath;
         else
-            buf = m_impl->dbDef->tableDefs(FileNum)->fileName();
+            buf = td->fileName();
         nsdatabase::createTable(fs, 1024, buf, CR_SUBOP_BY_FILESPEC);
         free(fs);
     }
@@ -734,11 +752,13 @@ inline void copyEachFieldData(table* dest, table* src, filedChnageInfo* fci)
 inline int moveVaileRecord(table* src)
 {
     int count = 0;
-    bookmark_td bm = 0;
+    bookmark_td bm;
     src->stepLast();
     while (src->stat() == STATUS_SUCCESS)
     {
         bm = src->bookmark();
+        if (src->stat() != STATUS_SUCCESS)
+        	break;
         ++count;
         src->stepPrev();
     }
@@ -779,6 +799,7 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset,
                               short keyNum, int maxSkip)
 {
     src->setKeyNum((char_td)keyNum);
+    dest->setKeyNum(-1);
     const tabledef* ddef = dest->tableDef();
     const tabledef* sdef = src->tableDef();
     ushort_td ins_rows = 0;
@@ -839,7 +860,7 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset,
             dest->tdap(TD_REC_INSERT);
         }
         else
-            ins_rows += dest->insert();
+            ins_rows += dest->insert(true);
         if (dest->stat() == STATUS_INVALID_VALLEN)
             skipCount++;
         else if (dest->stat() == STATUS_DUPPLICATE_KEYVALUE)

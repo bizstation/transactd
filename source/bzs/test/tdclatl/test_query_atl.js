@@ -519,6 +519,107 @@ function wirteRecord(atg)
 	rec.Del();
 }
 
+/*--------------------------------------------------------------------------------*/
+function testBookmarks(atg)
+{
+	var tb = atg.Table();
+	initQuery();
+	q.All();
+	q.BookmarkAlso(true);
+	tb.SetQuery(q, false);
+	var num = tb.RecordCount();
+	checkEqual(num, 100, "RecotdCount = 100 ");
+	
+	checkEqual(tb.BookmarksCount, 100, "BookmarkCount = 100 ");
+	
+	initQuery();
+
+    // Hold bookmark objects to reading.
+	var bm1 = tb.Bookmarks(0);
+	var bm2 = tb.Bookmarks(10);
+	var bm3 = tb.Bookmarks(20);
+	q.AddSeekBookmark(bm1);
+	q.AddSeekBookmark(bm2);
+	q.AddSeekBookmark(bm3);
+	var rs = atg.Read(q);
+
+	checkEqual(rs.Count, 3, "atg rs.Count = 3 ");
+	checkEqual(rs.Record(0).Field("code").Vlng, 1, "rs.Record(0).code = 1 ");
+	checkEqual(rs.Record(1).Field("code").Vlng, 11, "rs.Record(1).code = 11 ");
+	checkEqual(rs.Record(2).Field("code").Vlng, 21, "rs.Record(2).code = 21 ");
+	
+	//Read by table
+	tb.SetQuery(q, false);
+	tb.Find();
+	checkEqual(tb.Stat, 0, "tb.Stat = 0 ");
+	checkEqual(tb.Vlng("code"), 1, "First.code = 1 ");
+	tb.FindNext();
+	checkEqual(tb.Stat, 0, "tb.Stat = 0 ");
+	checkEqual(tb.Vlng("code"), 11, "Second.code = 11 ");
+	tb.FindNext();
+	checkEqual(tb.Stat, 0, "tb.Stat = 0 ");
+	checkEqual(tb.Vlng("code"), 21, "Third.code = 21 ");
+	tb.FindNext();
+	checkEqual(tb.Stat, 9, "tb.Stat = 9 ");
+}
+/*--------------------------------------------------------------------------------*/
+
+function testBookmarks2(db)
+{
+	var min_id = 5;
+	var max_id = 15;
+	var FDI_ID = 0;
+	
+	var tb = db.OpenTable("user");
+	checkEqual(db.Stat, 0, "");
+	tb.KeyNum = 0;
+	tb.ClearBuffer();
+
+	var qq = new ActiveXObject('transactd.query');
+	qq.Where('id', '>=', min_id).And('id', '<=', max_id).Reject(0xFFFF);
+	tb.setQuery(qq.BookmarkAlso(true));
+	
+	var cnt = tb.RecordCount();
+	checkEqual(tb.Stat, 0, "");
+	checkEqual(cnt, 11, "count ");
+	var bmCnt = tb.BookmarksCount;
+	checkEqual(cnt, bmCnt, "");
+
+	tb.MoveBookmarks(bmCnt - 1);
+	checkEqual(tb.Stat, 0, "");
+	checkEqual(tb.Vlng(FDI_ID), max_id);
+	tb.MoveBookmarks(0);
+	checkEqual(tb.Stat, 0, "");
+	checkEqual(tb.Vlng(FDI_ID), min_id);
+	
+	var qb = new ActiveXObject('transactd.query');
+	// Hold bookmark objects to reading.
+	var bm1 = tb.Bookmarks(0);
+	var bm2 = tb.Bookmarks(2);
+	var bm3 = tb.Bookmarks(4);
+	qb.AddSeekBookmark(bm1);
+	qb.AddSeekBookmark(bm2);
+	qb.AddSeekBookmark(bm3);bm1
+	
+	var atu = createActiveTable(db, "user");
+	var rs = atu.Read(qb);
+	checkEqual(rs.Size, 3);
+	
+	checkEqual(rs.Record(0).Field(FDI_ID).Vlng, 5);
+	checkEqual(rs.Record(1).Field(FDI_ID).Vlng, 7);
+	checkEqual(rs.Record(2).Field(FDI_ID).Vlng, 9);
+	
+	//read by wriableRecord
+	var rec = atu.GetWritableRecord();
+	rec.Read(tb.Bookmarks(1));
+	checkEqual(rec.Field(FDI_ID).Vlng, 6);
+	rec.Read(tb.Bookmarks(3));
+	checkEqual(rec.Field(FDI_ID).Vlng, 8);
+	rec.Read(tb.Bookmarks(5));
+	checkEqual(rec.Field(FDI_ID).Vlng, 10);
+	
+	tb.Close();
+}
 
 /*--------------------------------------------------------------------------------*/
 function test(atu, atg, ate, db)
@@ -647,6 +748,10 @@ function test(atu, atg, ate, db)
 	
 	// test wirteRecord
 	wirteRecord(atg);
+	
+	//test ver 2.4 added changed method
+	testBookmarks(atg);
+	testBookmarks2(db);
 
 	WScript.Echo(" -- End Test -- ");
 

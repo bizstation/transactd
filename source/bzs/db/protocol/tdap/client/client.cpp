@@ -41,6 +41,48 @@ tls_key g_tlsiID;
 __THREAD client* __THREAD_BCB g_client = NULL;
 #endif
 
+#if defined(__BCPLUSPLUS__)
+#pragma warn -8004
+#endif
+short errorCode(const boost::system::error_code& e)
+{
+    short ret = 0;
+    switch (e.value())
+    {
+    case 11004:
+    case 11001:
+        ret = ERROR_TD_HOSTNAME_NOT_FOUND;
+        break;
+    case 10060:
+    case 10057: //blocking fire wall
+    case 110:   //connect: Connection timed out
+    case 121:   //timeout sema
+    case 11:    //EAGAIN
+        ret = ERROR_TD_NET_TIMEOUT;
+        break;
+    case 32:    //write:brokn pipe
+    case 111:   //connect: Connection refused
+    case 10061:
+        ret = ERROR_TD_CONNECTION_FAILURE;
+        break;
+    case 104:   //write: Connection reset by peer
+    case 10054:
+        ret = ERROR_TD_NET_REMOTE_DISCONNECT;
+        break;
+    case 232:
+    case 109:
+    case 2:
+    case 1:
+        ret = ERROR_TD_INVALID_CLINETHOST;
+        break;
+    default:
+        ret = ERROR_TD_NET_OTHER;
+    }
+    return ret;
+}
+#if defined(__BCPLUSPLUS__)
+#pragma warn .8004
+#endif
 
 int client::getServerCharsetIndex()
 {
@@ -68,13 +110,16 @@ int client::getServerCharsetIndex()
     char* p = con()->sendBuffer(m_req.sendLenEstimate());
     unsigned int size = req.serialize(p);
     p = con()->asyncWriteRead(size);
-    req.parse(p, false);
-    if (req.result == 0)
+    if (!con()->error())
     {
-        if (!checkVersion(ver))
-            return -1;
-        c->setCharsetServer(mysql::charsetIndex(ver.cherserServer));
-        return  c->charsetServer();
+        req.parse(p, false);
+        if (req.result == 0 && req.resultLen)
+        {
+            if (!checkVersion(ver))
+                return -1;
+            c->setCharsetServer(mysql::charsetIndex(ver.cherserServer));
+            return  c->charsetServer();
+        }
     }
     return -1;
 }

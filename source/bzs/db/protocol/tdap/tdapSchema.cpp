@@ -275,15 +275,7 @@ const char* tabledef::toChar(char* buf, const char* s, int size)
 
 #endif // NOT _UNICODE
 
-bool isStringType(uchar_td type)
-{
-    return ((type == ft_string) || (type == ft_zstring) ||
-            (type == ft_wstring) || (type == ft_wzstring) ||
-            (type == ft_myvarchar) || (type == ft_myvarbinary) ||
-            (type == ft_mywvarchar) || (type == ft_mywvarbinary) ||
-            (type == ft_myblob) || (type == ft_mytext) || (type == ft_mychar) ||
-            (type == ft_mywchar) || (type == ft_lstring) || (type == ft_note));
-}
+
 
 bool fielddef::isStringType() const
 {

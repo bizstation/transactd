@@ -175,6 +175,7 @@ def testCreateTable(db)
   kd.segmentCount = 1
   dbdef.updateTableDef(table_id)
   expect(dbdef.stat()).to eq 0
+  expect(dbdef.validateTableDef(td.id)).to eq 0
 end
 
 def testOpenTable(db)
@@ -1181,7 +1182,7 @@ def testTransactionLockReadCommited()
   
   # cleanup
   tb2.del() # last id = 29999
-  expect(tb.stat()).to eq 0
+  expect(tb2.stat()).to eq 0
   
   # ----------------------------------------------------
   # Abort test
@@ -1741,7 +1742,7 @@ def testInsert2()
 end
 
 def testDelete()
-  expected_count = 20003
+  expected_count = 20002
   db = Transactd::Database.new()
   tb = testOpenTable(db)
   # estimate count
@@ -3428,6 +3429,73 @@ def testWirtableRecord()
   db.close()
 end
 
+def testBookmark()
+  min_id = 5
+  max_id = 15
+  db = Transactd::Database.new()
+  db.open(URL_QT)
+  expect(db.stat()).to eq 0
+  tb = db.openTable('user')
+  expect(db.stat()).to eq 0
+  tb.setKeyNum(0)
+  
+  tb.clearBuffer()
+  tb.setFilter('id >= ' + min_id.to_s + ' and id <= ' + max_id.to_s, 0, 0)
+  cnt = tb.recordCount()
+  expect(tb.stat()).to eq 0
+  bmCnt = tb.bookmarksCount()
+  expect(cnt).to eq bmCnt
+  tb.moveBookmarks(bmCnt - 1)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq max_id
+  tb.moveBookmarks(0)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq min_id
+  
+  q = Transactd::Query.new()
+  q.where('id', '>=', min_id).and_('id', '<=', max_id).reject(0xFFFF)
+  
+  tb.setQuery(q.bookmarkAlso(true))
+  cnt = tb.recordCount()
+  expect(tb.stat()).to eq 0
+  bmCnt = tb.bookmarksCount()
+  expect(cnt).to eq bmCnt
+  tb.moveBookmarks(bmCnt - 1)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq max_id
+  tb.moveBookmarks(0)
+  expect(tb.stat()).to eq 0
+  expect(tb.getFVint(FDI_ID)).to eq min_id
+  
+  qb = Transactd::Query.new()
+  atu = Transactd::ActiveTable.new(db, 'user')
+
+  # Hold bookmark objects to reading.
+  bm1 = tb.bookmarks(0)
+  bm2 = tb.bookmarks(2)
+  bm3 = tb.bookmarks(4)
+  
+  qb.addSeekBookmark(bm1, tb.bookmarkLen(), false)
+  qb.addSeekBookmark(bm2, tb.bookmarkLen(), false)
+  qb.addSeekBookmark(bm3, tb.bookmarkLen(), false)
+  rs = atu.read(qb)
+  
+  expect(rs.size()).to eq 3
+  expect(rs[0][FDI_ID]).to eq min_id
+  expect(rs[1][FDI_ID]).to eq min_id + 2
+  expect(rs[2][FDI_ID]).to eq min_id + 4
+  
+  rec = atu.index(0).getWritableRecord()
+  rec.read(tb.bookmarks(bmCnt - 1))
+  expect(rec[FDI_ID]).to eq max_id
+  rec.read(tb.bookmarks(0))
+  expect(rec[FDI_ID]).to eq min_id
+  
+  atu.release()
+  tb.close()
+  db.close()
+end
+
 describe Transactd do
   it 'create database' do
     db = Transactd::Database.new()
@@ -3567,6 +3635,10 @@ describe Transactd do
   it 'write with writableRecord' do
     testWirtableRecord()
   end
+  it 'bookmark' do
+    testBookmark()
+  end
+
 end
 
 describe Transactd, 'var tables' do

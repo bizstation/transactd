@@ -31,13 +31,7 @@ namespace bzs
 
 namespace db
 {
-namespace engine
-{
-namespace mysql
-{
-class table;
-}
-}
+namespace engine{ namespace mysql { class table; } }
 
 namespace protocol
 {
@@ -46,9 +40,17 @@ namespace tdap
 namespace client
 {
 
+short errorCode(const boost::system::error_code& e);
+
 class request : public bzs::db::protocol::tdap::request, 
                 public bzs::netsvc::client::idirectReadHandler
 {
+
+    unsigned int handleError(const boost::system::error_code& e)
+    {
+        result = errorCode(e);
+        return 0;
+    }
 public:
     clientID* cid;
     request() : bzs::db::protocol::tdap::request(), cid(NULL){};
@@ -56,14 +58,20 @@ public:
     unsigned int onRead(unsigned int size, bzs::netsvc::client::connection* c) // orverride
     {
         unsigned int readlen = 0;
-        readlen += c->directRead(&paramMask, sizeof(uint_td)); // paramMask and result 
-        if (P_MASK_POSBLK & paramMask)
-            readlen += c->directRead(pbk, TD_POSBLK_TRANSMIT_SIZE);
+        readlen += c->directRead(&paramMask, sizeof(uint_td)); // paramMask and result
+        if (c->error()) return handleError(c->error());
 
+        if (P_MASK_POSBLK & paramMask)
+        {
+            readlen += c->directRead(pbk, TD_POSBLK_TRANSMIT_SIZE);
+            if (c->error()) return handleError(c->error());
+        }
         if (P_MASK_DATALEN & paramMask)
         {
             uint_td tmp;
             readlen += c->directRead(&tmp, sizeof(uint_td));
+            if (c->error()) return handleError(c->error());
+
             if (*datalen < tmp)
             {
                 result = STATUS_BUFFERTOOSMALL;
@@ -75,7 +83,10 @@ public:
                     data = pbk->allocFunc(pbk->tb, tmp);
                 *datalen = tmp;
                 if (P_MASK_DATA & paramMask)
+                {
                     readlen += c->directRead(data, *datalen);
+                    if (c->error()) return handleError(c->error());
+                }
             }
         }
 
@@ -83,6 +94,7 @@ public:
         {
             keylen_td tmp;
             readlen += c->directRead(&tmp, sizeof(keylen_td));
+            if (c->error()) return handleError(c->error());
             if (keylen < tmp)
             {
                 result = STATUS_KEYBUFFERTOOSMALL;
@@ -91,13 +103,18 @@ public:
             memset(keybuf, 0, keylen);
             keylen = tmp;
             readlen += c->directRead(keybuf, keylen);
+            if (c->error()) return handleError(c->error());
         }
         if (P_MASK_KEYNUM & paramMask)
+        {
             readlen += c->directRead(&keyNum, sizeof(char_td));
-
+            if (c->error()) return handleError(c->error());
+        }
         if (paramMask & P_MASK_BLOBBODY)
         {
-            blobHeader = (const bzs::db::blobHeader*)c->directReadRemain(size - readlen);
+            blobHeader =
+                (const bzs::db::blobHeader*)c->directReadRemain(size - readlen);
+            if (c->error()) return handleError(c->error());
             readlen = size;
             if (blobHeader->rows)
                 blobHeader->resetCur();

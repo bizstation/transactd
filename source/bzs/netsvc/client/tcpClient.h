@@ -23,12 +23,18 @@
 
 #include <boost/asio/write.hpp>
 #include <boost/asio/read.hpp>
-#include <boost/system/system_error.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #if (BOOST_VERSION > 104900)
 #include <boost/asio/deadline_timer.hpp>
+#else
+#ifdef __APPLE__
+#include <boost/asio.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #endif
+#endif
+
+
 #include <stdio.h>
 #include <vector>
 #ifdef LINUX
@@ -103,10 +109,12 @@ class connections
     boost::asio::io_service m_ios;
     boost::asio::ip::tcp::resolver m_resolver;
     mutex m_mutex;
+    boost::system::error_code m_e;
     static bool m_usePipedLocal;
 
     connection* getConnection(asio::ip::tcp::endpoint& ep);
     asio::ip::tcp::endpoint endpoint(const std::string& host,
+                                     const char* port,
                                      boost::system::error_code& ec);
     bool isUseNamedPipe(asio::ip::tcp::endpoint& ep);
 #ifdef USE_PIPE_CLIENT
@@ -118,15 +126,16 @@ class connections
 public:
     connections(const char* pipeName);
     ~connections();
-    connection* connect(const std::string& host, handshake f,
+    connection* connect(const std::string& host, const char* port, handshake f,
                         void* data, bool newConnection = false);
-    bool reconnect(connection* c, const std::string& host,
+    bool reconnect(connection* c, const std::string& host, const char* port,
                         handshake f, void* data);
 
-    connection* getConnection(const std::string& host);
+    connection* getConnection(const std::string& host, const char* port);
     bool disconnect(connection* c);
     int connectionCount();
-    static char port[PORTNUMBUF_SIZE];
+    const boost::system::error_code& connectError() const { return m_e; };
+    static char m_port[PORTNUMBUF_SIZE];
     static int connectTimeout;
     static int netTimeout;
 };
@@ -146,6 +155,7 @@ protected:
     int m_charsetServer;
     bool m_connected;
     bool m_isHandShakable;
+    boost::system::error_code m_e;
 
     void addref() { ++m_refCount; }
 
@@ -169,9 +179,10 @@ public:
     }
     void setDirectReadHandler(idirectReadHandler* p){ m_reader = p; }
     bool isHandShakable() const {return m_isHandShakable;};
+    const boost::system::error_code& error() const { return m_e; };
 };
 
-
+#ifdef __APPLE__
 template <class T>
 class asio_tcp_io
 {
@@ -179,37 +190,43 @@ class asio_tcp_io
 public:
     asio_tcp_io(T& socket):m_socket(socket){}
 
-    size_t readAll(char* buf, size_t size)
+    size_t readAll(char* buf, size_t size, system::error_code& e)
     {
         return asio::read(m_socket, asio::buffer(buf, size),
-                            asio::transfer_all());
+                            asio::transfer_all(), e);
     }
 
-    size_t readSome(char* buf, size_t size, size_t minimum)
+    size_t readSome(char* buf, size_t size, size_t minimum,
+                            boost::system::error_code& e)
     {
         return asio::read(m_socket, asio::buffer(buf, size),
-                            asio::transfer_at_least(minimum));
+                            asio::transfer_at_least(minimum), e);
     }
 
-    void write(const char* buf, size_t size, int /*flag*/)
+    void write(const char* buf, size_t size, int /*flag*/, boost::system::error_code& e)
     {
         asio::write(m_socket, asio::buffer(buf, size),
-                            asio::transfer_all());
+                            asio::transfer_all(), e);
     }
 
     template <typename MutableBufferSequence>
-    void writeMultibuffer(const MutableBufferSequence& buffer)
+    void writeMultibuffer(const MutableBufferSequence& buffer,
+                                                boost::system::error_code& e)
     {
-        asio::write(m_socket, buffer, asio::transfer_all());
+        asio::write(m_socket, buffer, asio::transfer_all(), e);
     }
 
     void on_connected() {}
 
 };
+#else // __APPLE__  (not __APPLE__)
 
 #if (defined(_WIN32))
 #define MSG_WAITALL 0x8
 #define MSG_EOR 0
+#endif
+
+#ifndef MSG_MORE
 #define MSG_MORE 0
 #endif
 
@@ -223,39 +240,42 @@ public:
 #define SYSTEM_CATEGORY system_category
 #endif
 
-#ifndef __APPLE__
+inline int getErrorCode()
+{
+#ifndef _WIN32
+    return errno;
+#else
+    return WSAGetLastError();
+#endif
+}
+
 template <class T>
 class native_tcp_io
 {
     T& m_socket;
-    int getErrorCode()
-    {
-#ifndef _WIN32
-        return errno;
-#else
-        return WSAGetLastError();
-#endif
-    }
 
 public:
     native_tcp_io(T& socket):m_socket(socket){}
 
 #ifdef _WIN32
-    size_t readAll2(char* buf, size_t size)
+    size_t readAll2(char* buf, size_t size, system::error_code& e)
     {
         int n = 0;
-        do 
+        do
         {
             int nn = recv(m_socket.native(), buf + n, (int)size - n, 0);
             if (n == SOCKET_ERROR)
-                throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+            {
+                e = error_code(getErrorCode(), SYSTEM_CATEGORY);
+                break;
+            }
             n += nn;
         }while (n != size);
         return (size_t)n;
     }
 #endif
 
-    size_t readAll(char* buf, size_t size)
+    size_t readAll(char* buf, size_t size, system::error_code& e)
     {
         errno = 0;
         int n = recv(m_socket.native(), buf, (int)size, MSG_WAITALL);
@@ -263,33 +283,34 @@ public:
         {
 #ifdef _WIN32
             if (WSAEOPNOTSUPP == getErrorCode())
-                return readAll2(buf, size);
+                return readAll2(buf, size, e);
             else
 #endif
-                throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+                e = error_code(getErrorCode(), SYSTEM_CATEGORY);
         }
         return (size_t)n;
     }
 
-    size_t readSome(char* buf, size_t size, size_t minimum)
+    size_t readSome(char* buf, size_t size, size_t minimum,
+                                                boost::system::error_code& e)
     {
         errno = 0;
         int n = recv(m_socket.native(), buf, (int)size, 0);
         if (n == SOCKET_ERROR)
-            throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+            e = error_code(getErrorCode(), SYSTEM_CATEGORY);
         return (size_t)n;
     }
 
-    void write(const char* buf, size_t size, int flag)
+    void write(const char* buf, size_t size, int flag, boost::system::error_code& e)
     {
         errno = 0;
         int n = send(m_socket.native(), buf, (int)size, flag);
         if (n == SOCKET_ERROR)
-            throw system_error(error_code(getErrorCode(), SYSTEM_CATEGORY));
+            e = error_code(getErrorCode(), SYSTEM_CATEGORY);
     }
 
     template <typename MutableBufferSequence>
-    void writeMultibuffer(const MutableBufferSequence& buffer)
+    void writeMultibuffer(const MutableBufferSequence& buffer, boost::system::error_code& e)
     {
         buffers::const_iterator it = buffer.begin();
         buffers::const_iterator ite = buffer.end();
@@ -297,12 +318,13 @@ public:
         {
             std::size_t s = asio::buffer_size(*it);
             const char* p = asio::buffer_cast<const char*>(*it);
-            write(p, s, (it == (ite - 1)) ? MSG_EOR : MSG_MORE);
+            write(p, s, (it == (ite - 1)) ? MSG_EOR : MSG_MORE, e);
+            if (e) break;
             ++it;
         }
     }
 
-    void on_connected() 
+    void on_connected()
     {
     #ifndef _WIN32
         int val = 0;
@@ -313,7 +335,7 @@ public:
     #endif
     }
 };
-#endif
+#endif // __APPLE__
 
 template <class T> class connectionImple : public connectionBase
 {
@@ -321,14 +343,11 @@ protected:
     T m_socket;
     buffers m_optionalBuffes;
 
-    void checkError(const system::error_code& e)
+    bool checkError(const system::error_code& e)
     {
-        if (e) 
-        {
-            if (e == asio::error::operation_aborted)
-                throw system_error(asio::error::timed_out);
-           throw system_error(e);
-        }
+        if (e)
+            return false;
+        return true;
     }
 
     void cleanup()
@@ -355,11 +374,13 @@ protected:
 
     char* asyncWriteRead(unsigned int writeSize)
     {
-#ifndef _WIN32 
+#ifndef _WIN32
         signalmask smask;
 #endif
         write(writeSize);
-        return read();
+        if (m_e) return NULL;
+        char* p = read();
+        return p;
     }
 
     buffers* optionalBuffers() { return &m_optionalBuffes; }
@@ -379,12 +400,12 @@ public:
     }
 };
 
-#define _size_holder asio::placeholders::bytes_transferred 
-#define _error_holder asio::placeholders::error 
+#define _size_holder asio::placeholders::bytes_transferred
+#define _error_holder asio::placeholders::error
 
 /** Implementation of The TCP connection.
  */
-#if (defined(LINUX) && (BOOST_VERSION > 104900))
+#if defined(LINUX)
 #define USE_CONNECT_TIMER
 #endif
 
@@ -452,7 +473,9 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 #ifdef USE_CONNECT_TIMER
         m_timer.cancel();
 #endif
-        checkError(e);
+        m_e = e;
+        if (!checkError(e))
+            return ;
         s_io.on_connected(); 
         m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
         m_connected = true;
@@ -461,7 +484,11 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 
     void on_timer(const boost::system::error_code& e) 
     {
-        if (e) return;
+        if (e)
+        {
+            m_e = asio::error::timed_out;
+            return;
+        }
         #pragma warning(disable : 4996)
         try{ m_socket.cancel(); } catch (...) {}
         #pragma warning(default : 4996)
@@ -480,9 +507,9 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 #ifdef USE_CONNECT_TIMER
     void connect()
     {
+        setTimer(connections::connectTimeout);
         m_socket.async_connect(m_ep,
             bind(&tcpConnection::on_connect, this, _error_holder));
-        setTimer(connections::connectTimeout);
         m_ios.run();
         m_ios.reset();
     }
@@ -491,45 +518,55 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
     {
         setTimeouts(connections::connectTimeout);
         m_socket.connect(m_ep);
-        boost::system::error_code e;
-        on_connect(e);
+        m_e = error_code(getErrorCode(), SYSTEM_CATEGORY);
+        on_connect(m_e);
         m_ios.reset();
     }
 #endif
 
     unsigned int directRead(void* buf, unsigned int size)
     {
-        return (unsigned int)s_io.readAll((char*)buf, size);
+        m_e.clear();
+        unsigned int len = (unsigned int)s_io.readAll((char*)buf, size, m_e);
+        return len;
     }
-    
+
     void* directReadRemain(unsigned int size)
     {
         if (size > m_readbuf.size())
             m_readbuf.resize(size);
-        m_readLen += s_io.readAll(&m_readbuf[0], size);
+        m_e.clear();
+        m_readLen += s_io.readAll(&m_readbuf[0], size, m_e);
         return &m_readbuf[0];
     }
 
     char* read()
     {
-        if (!m_connected)
-            throw system_error(asio::error::not_connected);
         m_readLen = 0;
+        if (!m_connected)
+        {
+            m_e = asio::error::not_connected;
+            return &m_readbuf[0];
+        }
         unsigned int n;
+        m_e.clear();
         if (m_reader)
         {
-            m_readLen = s_io.readAll((char*)&n, 4);
+            m_readLen = s_io.readAll((char*)&n, 4, m_e);
             m_readLen += m_reader->onRead(n - 4, this);
         }else
         {
-            m_readLen = s_io.readSome(&m_readbuf[0], m_readbuf.size(), 4);
+            m_readLen = s_io.readSome(&m_readbuf[0], m_readbuf.size(), 4, m_e);
             n = *((unsigned int*)(&m_readbuf[0]));
         }
-
-        if (n > m_readLen)
+        if (!m_e)
         {
-            resizeReadBuffer(n);
-            m_readLen += s_io.readAll(&m_readbuf[m_readLen], n - m_readLen);
+
+            if (n > m_readLen)
+            {
+                resizeReadBuffer(n);
+                m_readLen += s_io.readAll(&m_readbuf[m_readLen], n - m_readLen, m_e);
+            }
         }
         return &m_readbuf[0];
     }
@@ -537,16 +574,20 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
     void write(unsigned int writeSize)
     {
         if (!m_connected)
-            throw system_error(asio::error::not_connected);
+        {
+            m_e = asio::error::not_connected;
+            return;
+        }
+        m_e.clear();
         if (m_optionalBuffes.size())
         {
             m_optionalBuffes.insert(m_optionalBuffes.begin(),
                                     asio::buffer(sendBuffer(0), writeSize));
-            s_io.writeMultibuffer(m_optionalBuffes);
+            s_io.writeMultibuffer(m_optionalBuffes, m_e);
             m_optionalBuffes.clear();
         }
         else
-            s_io.write(sendBuffer(0), writeSize, MSG_EOR);
+            s_io.write(sendBuffer(0), writeSize, 0/*MSG_EOR*/, m_e);
     }
 public:
     tcpConnection(asio::ip::tcp::endpoint& ep)
@@ -611,18 +652,6 @@ class pipeConnection : public connectionImple<platform_stream>
         return (char*)lpMsgBuf;
     }
 
-    void throwException(const char* msg, int errorCode)
-    {
-        char buf[4096];
-        char user[128];
-        char* p = GetErrorMessage(GetLastError());
-        DWORD size = 128;
-        GetUserName(user, &size);
-        sprintf_s(buf, 4096, "User:%s %s %d %s", user, msg, GetLastError(), p);
-        LocalFree(p);
-        throw exception(errorCode, buf);
-    }
-
     char* getUniqName(const char* name, char* buf)
     {
         char* p = buf;
@@ -646,47 +675,66 @@ class pipeConnection : public connectionImple<platform_stream>
             CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0,
                               m_sendBufferSize * 2, getUniqName(tmp, buf));
         if (m_mapFile == NULL)
-            throwException("CreateFileMapping", CLIENT_ERROR_SHAREMEM_DENIED);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
+            return;
+        }
 
         m_writebuf_p = (char*)MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0,
                                             0, m_sendBufferSize);
         if (m_writebuf_p == NULL)
-            throwException("MapViewOfFile R", CLIENT_ERROR_SHAREMEM_DENIED);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
+            return;
+        }
 
         m_readbuf_p = (char*)MapViewOfFile(m_mapFile, FILE_MAP_ALL_ACCESS, 0,
                                            m_sendBufferSize, m_sendBufferSize);
         if (m_readbuf_p == NULL)
-            throwException("MapViewOfFile W", CLIENT_ERROR_SHAREMEM_DENIED);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
+            return;
+        }
 
         sprintf_s(tmp, 50, "Global\\%sToClnt", m_pipeName.c_str());
         m_recvEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, getUniqName(tmp, buf));
         if (m_recvEvent == NULL)
-            throwException("OpenEvent Client", CLIENT_ERROR_SHAREMEM_DENIED);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
+            return;
+        }
 
         sprintf_s(tmp, 50, "Global\\%sToSrv", m_pipeName.c_str());
         m_sendEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, getUniqName(tmp, buf));
         if (m_sendEvent == NULL)
-            throwException("OpenEvent Server", CLIENT_ERROR_SHAREMEM_DENIED);
+            m_e = boost::system::error_code(CLIENT_ERROR_SHAREMEM_DENIED, get_system_category());
     }
 
     void write(unsigned int writeSize)
     {
         //m_datalen = 0;
         //m_rows = 0;
+        m_e.clear();
         BOOL ret = SetEvent(m_sendEvent);
         if (ret == FALSE)
-            throwException("SetEvent", CLIENT_ERROR_CONNECTION_FAILURE);        
+            m_e = asio::error::connection_aborted;
     }
 
     char* read()
     {
-        while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, connections::netTimeout))
+        int t = 0;
+        m_e.clear();
+        while (WAIT_TIMEOUT == WaitForSingleObject(m_recvEvent, 1000))
         {
+            t += 1000;
             DWORD n = 0;
             BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                            NULL, NULL, NULL, 0);
-            if(ret == FALSE || n == 0)
-                throwException("PipeConnection", CLIENT_ERROR_CONNECTION_FAILURE);
+            if(ret == FALSE || n < 2)
+                m_e = boost::system::error_code(CLIENT_ERROR_CONNECTION_FAILURE, get_system_category());
+            else if (connections::netTimeout == t)
+                m_e = asio::error::timed_out;
+            if (m_e) break;
         }
         return m_readbuf_p;
     }
@@ -705,15 +753,15 @@ class pipeConnection : public connectionImple<platform_stream>
             DWORD n = 0;
             BOOL ret = GetNamedPipeHandleState(m_socket.native(), NULL, &n,
                                             NULL, NULL, NULL, 0);
-            if(m_sendEvent && ret && n)
+            if(m_sendEvent && ret && n > 1)
             {
                 SetEvent(m_sendEvent);
-                //Wait for server side close connection
-                while (WAIT_TIMEOUT == 
-                    WaitForSingleObject(m_recvEvent, connections::connectTimeout))
+                while (WAIT_TIMEOUT ==  
+                    WaitForSingleObject(m_recvEvent, 1000))
                     ;
             }
         }
+
         if (m_recvEvent)
             CloseHandle(m_recvEvent);
         if (m_sendEvent)
@@ -736,8 +784,12 @@ class pipeConnection : public connectionImple<platform_stream>
     {
         platform_descriptor fd;
 #ifdef WIN32
+        m_e.clear();
         char pipeName[100];
-        sprintf_s(pipeName, 100, "\\\\.\\pipe\\%s", m_pipeName.c_str());
+        if (m_ep.port() != 8610)
+            sprintf_s(pipeName, 100, "\\\\.\\pipe\\%s%u", m_pipeName.c_str(), m_ep.port());
+        else
+            sprintf_s(pipeName, 100, "\\\\.\\pipe\\%s", m_pipeName.c_str());
         int i = 1000;
         while (--i)
         {
@@ -750,11 +802,14 @@ class pipeConnection : public connectionImple<platform_stream>
             Sleep(1);
         }
         if (fd == INVALID_HANDLE_VALUE)
-            throwException("CreateFile", CLIENT_ERROR_CANT_CREATEPIPE);
+        {
+            m_e = boost::system::error_code(CLIENT_ERROR_CANT_CREATEPIPE, get_system_category());
+            return;
+        }
 #endif // NOT WIN32
-        m_socket.assign(fd);
-        m_connected = true;
 
+        m_socket.assign(fd);
+        
         // send processId and clientid;
         DWORD processId = GetCurrentProcessId();
         int size = 16;
@@ -764,12 +819,22 @@ class pipeConnection : public connectionImple<platform_stream>
         memcpy(p + 4, &processId, sizeof(DWORD));
         __int64 clientid = (__int64) this;
         memcpy(p + 8, &clientid, sizeof(__int64));
-        boost::asio::write(m_socket, boost::asio::buffer(p, size));
-
-        boost::asio::read(m_socket, boost::asio::buffer(p, 7));
-        unsigned int* shareMemSize = (unsigned int*)(p+3);
-        m_isHandShakable = (p[0] == 0x00);
-        createKernelObjects(*shareMemSize);
+        try
+        {
+            boost::asio::write(m_socket, boost::asio::buffer(p, size));
+            boost::asio::read(m_socket, boost::asio::buffer(p, 7));
+        }
+        catch (boost::system::system_error& e)
+        {
+            m_e = e.code();
+        }
+        if (!m_e)
+        {
+            unsigned int* shareMemSize = (unsigned int*)(p+3);
+            m_isHandShakable = (p[0] == 0x00);
+            m_connected = true;
+            createKernelObjects(*shareMemSize);
+        }
     }
 
     char* sendBuffer(size_t size) { return m_writebuf_p; }

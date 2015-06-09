@@ -192,6 +192,7 @@ database* dbManager::getDatabase(const char* dbname, short cid, bool& created) c
         if (db == NULL)
             THROW_BZS_ERROR_WITH_CODEMSG(1, "Can not create database object.");
         id = (int)m_dbs.size();
+        boost::mutex::scoped_lock lck(m_mutex);
         m_dbs.push_back(db);
         created = true;
     }
@@ -245,6 +246,7 @@ int dbManager::ddl_dropDataBase(THD* thd, const std::string& dbname,
     smartDbsReopen::removeName = dbname;
     int ret = ddl_execSql(thd, cmd);
     smartDbsReopen::removeName = "";
+    boost::mutex::scoped_lock lck(m_mutex);
     for (int i = (int)m_dbs.size() - 1; i >= 0; i--)
     {
         if (m_dbs[i] && (m_dbs[i]->name() == dbname))

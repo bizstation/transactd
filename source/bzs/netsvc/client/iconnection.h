@@ -29,6 +29,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/buffer.hpp>
 #endif
+#include <boost/system/system_error.hpp>
 #include <vector>
 
 
@@ -105,6 +106,7 @@ public:
     virtual void write(unsigned int writeSize) = 0;
     virtual char* read() = 0;
     virtual bool isHandShakable() const = 0;
+    virtual const boost::system::error_code& error() const = 0;
 };
 
 #define CONNECTION_FUNCTION_DIRECT_READ 1

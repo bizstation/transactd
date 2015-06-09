@@ -71,6 +71,8 @@ char g_buf[TMP_BUFSIZE];
 #define NOTE_TYPE 12
 #define VAR_TYPE 13
 
+#define NIS_FD_KEYSEG_LIMIT 1
+
 const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
                              const char* charsetName)
 {
@@ -284,6 +286,17 @@ std::string getFiledList(const tabledef* table, std::vector<std::string>& fdl)
     return s;
 }
 
+bool isNeedNis(const tabledef* table, const keydef& key)
+{
+    if (key.segmentCount > NIS_FD_KEYSEG_LIMIT)
+    {
+        // If a first segment is not 1 byte of Logical
+        const fielddef& fd = table->fieldDefs[key.segments[0].fieldNum];
+        return (!((fd.len == 1) && (fd.type == ft_logical)));
+    }
+    return false;
+}
+
 void insertNisFields(const tabledef* table, std::vector<std::string>& fdl,
                      std::string& s)
 {
@@ -293,7 +306,7 @@ void insertNisFields(const tabledef* table, std::vector<std::string>& fdl,
         _ltoa_s(i, buf, 20, 10);
         std::string fddef = "";
         const keydef& key = table->keyDefs[i];
-        if (key.segmentCount > 1)
+        if (isNeedNis(table, key))
         {
             if (key.segments[0].flags.bit9)
                 fddef = std::string("`") + "$nfn" + buf +
@@ -332,17 +345,12 @@ std::string& getKey(const tabledef* table, std::vector<std::string>& fdl,
     s += "(";
 
     // "nf" segment is added to a head.
-    if (key.segmentCount > 1)
+    if (isNeedNis(table, key))
     {
-        // If a first segment is not 1 byte of Logical
-        const fielddef& fd = table->fieldDefs[key.segments[0].fieldNum];
-        if (!((fd.len == 1) && (fd.type == ft_logical)))
-        {
-            if (key.segments[0].flags.bit9)
-                s += std::string("`") + "$nfn" + buf + "`,";
-            else if (key.segments[0].flags.bit3)
-                s += std::string("`") + "$nfa" + buf + "`,";
-        }
+        if (key.segments[0].flags.bit9)
+            s += std::string("`") + "$nfn" + buf + "`,";
+        else if (key.segments[0].flags.bit3)
+            s += std::string("`") + "$nfa" + buf + "`,";
     }
     for (int j = 0; j < key.segmentCount; j++)
     {

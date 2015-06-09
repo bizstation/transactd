@@ -92,7 +92,6 @@ void tableCacheCounter::addref(const std::string& dbname,
                                const std::string& tbname)
 {
 
-    boost::mutex::scoped_lock lck(m_mutex);
     size_t pos = getCounterIndex(dbname, tbname);
     ++m_counts[pos];
 }
@@ -108,7 +107,6 @@ int tableCacheCounter::count(const std::string& dbname,
 void tableCacheCounter::release(const std::string& dbname,
                                 const std::string& tbname)
 {
-    boost::mutex::scoped_lock lck(m_mutex);
     size_t pos = getCounterIndex(dbname, tbname);
     --m_counts[pos];
 }
@@ -202,7 +200,15 @@ database::~database()
     use();
     unUseTables(true/*rollback*/);
     closeForReopen();
-    m_tables.clear(); // It clears ahead of the destructor of m_trn.
+    {
+        boost::mutex::scoped_lock lck(tableRef.mutex());
+        for (size_t i = 0 ; i < m_tables.size(); ++i)
+        {
+            if (m_tables[i])
+                database::tableRef.release(name(), m_tables[i]->m_name);
+        }
+        m_tables.clear(); // It clears ahead of the destructor of m_trn.
+    }
     deleteThdForThread(m_thd);
 }
 
@@ -459,7 +465,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
     if (tb == NULL)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                      "Invalid table id.");
-    if (tb->m_blobBuffer)
+    if (tb->m_blobBuffer && tb->blobFields())
         tb->m_blobBuffer->clear();
 
     // Change to shared lock is user tranasction only.
@@ -718,7 +724,10 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
         if (ER_LOCK_WAIT_TIMEOUT == m_thd->cp_get_sql_error())
             m_stat = STATUS_CANNOT_LOCK_TABLE;
         else
+        {
+            m_stat = m_thd->cp_get_sql_error();
             cp_open_error_release(m_thd, tables);
+        }
         return NULL;
     }
 	cp_set_transaction_duration_for_all_locks(m_thd);
@@ -764,11 +773,15 @@ table* database::openTable(const std::string& name, short mode,
     {
         boost::shared_ptr<table> tb(
             new table(t, *this, name, mode, (int)m_tables.size()));
-        m_tables.push_back(tb);
+        {
+            boost::mutex::scoped_lock lck(tableRef.mutex());
+            m_tables.push_back(tb);
+            tableRef.addref(m_dbname, name); // addef first then table open.
+        }
         m_stat = STATUS_SUCCESS;
         if (tb->isExclusveMode())
             ++m_usingExclusive;
-        tableRef.addref(m_dbname, name); // addef first then table open.
+        
         return tb.get();
     }
     return NULL;
@@ -832,10 +845,17 @@ void database::closeTable(table* tb)
                     break;
             if (*tbl)
                 close_thread_table(m_thd, tbl);
-            m_tables[i].reset();
+            releaseTable(i);
             DEBUG_WRITELOG_SP1("CLOSE TABLE table id=%d \n", i);
         }
     }
+}
+
+void database::releaseTable(size_t index)
+{
+    boost::mutex::scoped_lock lck(database::tableRef.mutex());
+    database::tableRef.release(name(), m_tables[index]->m_name);
+    m_tables[index].reset();
 }
 
 void database::closeForReopen()
@@ -864,7 +884,7 @@ void database::reopen()
             if (table)
                 m_tables[i]->resetInternalTable(table);
             else
-                m_tables[i].reset();
+                releaseTable(i);
         }
     }
 }
@@ -910,7 +930,7 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
              int id)
     : m_table(myTable), m_name(name), m_mode(mode), m_id(id), m_db(db),
       m_keybuf(new unsigned char[MAX_KEYLEN]),
-      m_nonNccKeybuf(new unsigned char[MAX_KEYLEN]), m_stat(0),
+      m_stat(0),
       m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
       m_readCount(0), m_updCount(0), m_delCount(0), m_insCount(0),
       m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
@@ -968,7 +988,6 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
 table::~table()
 {
     resetInternalTable(NULL);
-    database::tableRef.release(m_db.name(), m_name);
     for (size_t i = 0; i < preparedStatements.size(); ++i)
         preparedStatements[i]->release();
 }
@@ -987,7 +1006,6 @@ void table::resetTransctionInfo(THD* thd)
         m_locked = false;
     m_validCursor = false;
     m_nounlock = false;
-    m_readCount = m_updCount = m_delCount = m_insCount = 0;
 }
 
 void table::resetInternalTable(TABLE* table)
@@ -1098,13 +1116,13 @@ short table::setKeyValuesPacked(const uchar* ptr, int size)
         KEY_PART_INFO& seg = key.key_part[j];
         if (seg.null_bit)
         {
-            m_keybuf[to++] = 0x00;
-            seg.field->set_notnull();
+            m_keybuf[to++] = 0x00;   // set null to mysql null indicator. 
+            seg.field->set_notnull();// Ignore null for read.
         }
         if (seg.null_bit && isNisField(seg.field->field_name))
         {
-            m_keybuf[to++] = 0x00;
-            seg.field->set_notnull();
+            m_keybuf[to++] = 0x00; // set null to nis field. 
+            //continue next segment
         }
         else
         {
@@ -1793,6 +1811,7 @@ void table::stepFirst()
     }
     else
     {
+        m_keyNum = -1;
         if (setNonKey(true))
         {
             unlockRow(m_delayAutoCommit);
@@ -2068,11 +2087,7 @@ bool table::isNisKey(char num) const
     if ((num >= 0) && (num < (short)m_table->s->keys))
     {
         Field* fd = m_table->key_info[num].key_part[0].field;
-        // Nis is only in a head segment.
-        if (isNisField(fd->field_name))
-            return true;
-        else if ((fd->pack_length() == 1) && (fd->type() == MYSQL_TYPE_TINY) &&
-                 fd->null_bit)
+        if (fd->null_bit)
             return true;
     }
     return false;
@@ -2160,9 +2175,6 @@ __int64 table::insert(bool ncc)
 
     {
         autoincSetup setup(m_table);
-        if (!ncc)
-            key_copy(&m_nonNccKeybuf[0], m_table->record[1],
-                     &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
         setKeyNullFlags();
         setFiledNullFlags();
 
@@ -2179,9 +2191,9 @@ __int64 table::insert(bool ncc)
     if (m_stat == 0)
     {
         ++m_insCount;
-        if (!ncc) // innodb default is ncc=-1.
-            m_nonNcc = true;
-        else if (!m_bulkInserting)
+        // innodb default is ncc=-1.
+        m_nonNcc = !ncc;
+        if (!ncc && !m_bulkInserting)
             key_copy(&m_keybuf[0], m_table->record[0],
                      &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
         
@@ -2199,15 +2211,10 @@ void table::beginUpdate(char keyNum)
     if (m_stat == 0)
     {
         if (keyNum >= 0)
-        {
-            key_copy(&m_nonNccKeybuf[0], m_table->record[0],
-                     &m_table->key_info[keyNum], KEYLEN_ALLCOPY);
-            setKeyNum(keyNum);
-        }
+           setKeyNum(keyNum);
         store_record(m_table, record[1]);
     }
 }
-
 void table::beginDel()
 {
     if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type < TL_WRITE))
@@ -2278,14 +2285,11 @@ void table::update(bool ncc)
                     const KEY& key = m_table->key_info[m_keyNum];
                     key_copy(&m_keybuf[0], m_table->record[0], (KEY*)&key,
                              KEYLEN_ALLCOPY);
-                    if (memcmp(&m_nonNccKeybuf[0], &m_keybuf[0],
-                               key.key_length))
-                    {
-                        // Since the NULL key was set, a current position is
-                        // lost.
-                        if (nullFieldsOfCurrentKey == 0)
-                            m_nonNcc = true;
-                    }
+
+                    // Since the NULL key was set, a current position is
+                    // lost.
+                    if (nullFieldsOfCurrentKey == 0)
+                        m_nonNcc = true;
                 }
             }
             /* Do not change to m_changed = false */

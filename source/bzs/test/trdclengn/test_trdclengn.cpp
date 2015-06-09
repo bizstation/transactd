@@ -18,8 +18,16 @@
  ================================================================= */
 //#define BOOST_TEST_MODULE
 
-
+#if defined(__BCPLUSPLUS__)
+#pragma warn -8012
+#pragma warn -8022
+#endif
 #include <boost/test/included/unit_test.hpp>
+#if defined(__BCPLUSPLUS__)
+#pragma warn .8012
+#pragma warn .8022
+#endif
+
 #include <bzs/db/protocol/tdap/client/database.h>
 #include <bzs/db/protocol/tdap/client/table.h>
 #include <bzs/db/protocol/tdap/client/dbDef.h>
@@ -452,9 +460,13 @@ void testInsert(database* db)
         tb->insert();
     }
     tb->commitBulkInsert();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "Insert2");
     db->endTrn();
 
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "Insert2");
+    uint_td v = tb->recordCount(false);
+    BOOST_CHECK_MESSAGE(20002 == v,
+                        "RecordCount count = " << v);
+
     tb->release();
 }
 
@@ -1662,7 +1674,7 @@ void testTransactionLockReadCommited(database* db)
     
     //insert test row
     tb2->setFV(fdi_id, 29999);
-    tb2->insert();
+    tb2->insert(false);
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->insert stat = " << tb2->stat());
 
     tb->seekLast();  
@@ -1675,7 +1687,7 @@ void testTransactionLockReadCommited(database* db)
     
     //cleanup
     tb2->del(); // last id = 29999
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->del");
+    BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->del");
 
     /* -------------------------------------------------*/
     /* TAbort test                                      */
@@ -1907,7 +1919,9 @@ bool isMySQL5_7(database* db)
         (7 == vv.versions[1].minorVersion));
   
 }
-
+#if defined(__BCPLUSPLUS__)
+#pragma warn -8004
+#endif
 void testExclusive()
 {
    
@@ -1983,12 +1997,17 @@ void testExclusive()
     /* -------------------------------------------------*/
     tb = openTable(db, TD_OPEN_NORMAL);
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF);
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2 open stat = " << db2->stat());
             
     table* tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
     //Check tb2 Exclusive
     table* tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
-    BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
-                                    , "Write Exclusive open");
+    if (tb3) //For don't use tb3;
+        BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
+                                    , "Write Exclusive open" << db2->stat());
+    else
+        BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
+                                    , "Write Exclusive open" << db2->stat());
     //if (tb2->recordCount(false) == 0)
     {
         for (int i = 1 ; i < 5 ; ++i)
@@ -2037,7 +2056,9 @@ void testExclusive()
     tb2 = db->openTable(_T("group"), TD_OPEN_EXCLUSIVE);
     BOOST_CHECK_MESSAGE(0 == db->stat(), "open group stat = " << db->stat()) ;
     //Check tb2 Exclusive
+
     tb3 = db2->openTable(_T("group"), TD_OPEN_NORMAL);
+
     BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
                                     , "Write Exclusive open");
     db->beginTrn();
@@ -2068,8 +2089,9 @@ void testExclusive()
     database::destroy(db);
     database::destroy(db2);
 }
-
-
+#if defined(__BCPLUSPLUS__)
+#pragma warn .8004
+#endif
 /* Multi database */
 void testMultiDatabase(database* db)
 {
@@ -2121,11 +2143,12 @@ void testMissingUpdate(database* db)
     db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
     BOOST_CHECK_MESSAGE(0 == db2->stat(), "connect");
     db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF); 
-    BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2->open");
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "db2->open stat = " << db2->stat());
     table* tb2 = db2->openTable(_T("user"));
     {
+
         boost::scoped_ptr<worker> w(new worker(tb2));
-    
+#ifdef TEST_SEEK_RETRY    
         // Inserting  target, The InnoDB is good!
         tb->setFV(fdi_id, 300000);
         tb2->setFV(fdi_id, 300000);
@@ -2172,6 +2195,7 @@ void testMissingUpdate(database* db)
                     
             tb2->unlock();
         }
+#endif
         
         // Deleting  target, The InnoDB is good!
         tb->setFV(fdi_id, 300000);
@@ -2225,20 +2249,21 @@ void testDelete(database* db)
 
     // estimate number
     int count = tb->recordCount(true);
-    bool c = (abs(count - 20003) < 5000);
+    bool c = (abs(count - 20002) < 5000);
     BOOST_CHECK_MESSAGE(c == true, "RecordCount1");
     if (!c)
     {
         char tmp[256];
         sprintf_s(
             tmp, 256,
-            "true record count = 20003 as estimate recordCount count = %d ",
+            "true record count = 20002 as estimate recordCount count = %d ",
             count);
         BOOST_CHECK_MESSAGE(false, tmp);
     }
     // true number
-    BOOST_CHECK_MESSAGE((uint_td)20003 == tb->recordCount(false),
-                        "RecordCount2");
+    uint_td v = tb->recordCount(false);
+    BOOST_CHECK_MESSAGE(20002 == v,
+                        "RecordCount2 count = " << v);
     int vv = 15001;
     tb->clearBuffer();
     tb->setFV(fdi_id, vv);
@@ -2472,7 +2497,7 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType,
     td.charsetIndex = charset;
 
     def->insertTable(&td);
-    BOOST_CHECK_MESSAGE(0 == def->stat(), "insertTable");
+    BOOST_CHECK_MESSAGE(0 == def->stat(), "insertTable stat = " << def->stat());
 
     fielddef* fd = def->insertField(id, 0);
     fd->setName(_T("id"));
@@ -3206,7 +3231,7 @@ void doInsertStringFileter(table* tb)
     tb->setFV(_T("name"), _T("あいうえおかきくこ"));
     tb->setFV(_T("namew"), _T("あいうえおかきくこ"));
     tb->insert();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 1");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 1 stst = " << tb->stat());
 
     tb->clearBuffer();
     id = 2;
@@ -4537,7 +4562,7 @@ void testServerPrepareJoin(database* db)
     BOOST_CHECK_MESSAGE(rs.size() == 100, "hasManyJoin  rs.size()== 100");
     q.all().optimize(queryBase::joinHasOneOrHasMany);
     atu.index(1).join(rs, q, _T("code"));
-    BOOST_CHECK_MESSAGE(rs.size() == 20000, "hasManyJoin  rs.size()== 20000");
+    BOOST_CHECK_MESSAGE(rs.size() == 20000, "hasManyJoin  rs.size()== 20000 size = " << rs.size());
 
     //hasManyJoin outer
     rs.clear();
@@ -4546,7 +4571,7 @@ void testServerPrepareJoin(database* db)
     BOOST_CHECK_MESSAGE(rs.size() == 100, "hasManyJoin  rs.size()== 100");
     q.all().optimize(queryBase::joinHasOneOrHasMany);
     atu.index(1).outerJoin(rs, q, _T("code"));
-    BOOST_CHECK_MESSAGE(rs.size() == 20095, "hasManyJoin  rs.size()== 20095");
+    BOOST_CHECK_MESSAGE(rs.size() == 20095, "hasManyJoin  rs.size()== 20095 size = " << rs.size());
 
 
     // restore record
@@ -5539,7 +5564,7 @@ BOOST_FIXTURE_TEST_CASE(new_delete, fixtureQuery)
 BOOST_FIXTURE_TEST_CASE(join, fixtureQuery)
 {
     testJoin(db());
-    testRecordsetClone(db());
+    //testRecordsetClone(db());
     testPrepareJoin(db());
     testServerPrepareJoin(db());
     testWirtableRecord(db());

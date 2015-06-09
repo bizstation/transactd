@@ -35,7 +35,7 @@ class database;
 class table;
 class dbdef;
 
-#if (defined(__BORLANDC__) && !defined(__clang__))
+#if (defined(__BORLANDC__) && !defined(__APPLE__) && !defined(__clang__))
 typedef bool __stdcall (*deleteRecordFn)(database* db, table* tb, bool inkey);
 typedef short __stdcall (*schemaMgrFn)(database* db);
 typedef void __stdcall (*copyDataFn)(database* db, int recordCount, int count,
@@ -84,6 +84,7 @@ protected:
                                     bool& cancel);
     virtual void doConvertTable(short tableIndex, bool turbo,
                                 const _TCHAR* ownerName);
+    virtual bool doReopenDatabaseSchema();
 
 public:
     virtual void release();
@@ -111,7 +112,7 @@ public:
     void create(const _TCHAR* uri, short type = TYPE_SCHEMA_BDF);
     void drop();
     void dropTable(const _TCHAR* tableName);
-    void close();
+    void close(bool withDropDefaultSchema = false);
     short aclReload();
     short continuous(char_td op = TD_BACKUP_START, bool inclideRepfile = false);
     short assignSchemaData(dbdef* src);

@@ -393,11 +393,8 @@ public:
             f->init(mdls.fieldDefs());
 
             if (f->resultKey() == (int)mdls.fieldDefs()->size())
-            {
-                groupFuncBase::numeric_type dummy = 0;
                 mdls.appendField(f->resultName(), f->resultType(),
                                   f->resultLen());
-            }
         }
 
         grouping_comp<recordsetImple> groupingComp(mdls, keyFields);
@@ -584,8 +581,8 @@ public:
 
     inline groupFuncBaseImple(const groupFuncBaseImple& r)
         : m_targetNames(r.m_targetNames), m_resultName(r.m_resultName),
-          m_resultKey(r.m_resultKey), m_resultType(r.m_resultType), 
-          m_resultLen(r.m_resultLen),
+          m_resultKey(r.m_resultKey), 
+          m_resultLen(r.m_resultLen), m_resultType(r.m_resultType), 
           m_values(r.m_values), m_counts(r.m_counts)
     {
         copyStrings(r.m_strings);  

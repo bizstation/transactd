@@ -244,3 +244,9 @@ STDMETHODIMP CDbDef::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
         m_dbDef->tdapErr((HWND)hWnd);
     return S_OK;
 }
+
+STDMETHODIMP CDbDef::ValidateTableDef(short TableIndex, short* Value)
+{
+    *Value = m_dbDef->validateTableDef(TableIndex);
+    return S_OK;
+}

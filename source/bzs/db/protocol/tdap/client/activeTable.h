@@ -94,8 +94,14 @@ class DLLLIB activeTable
 public:
     explicit activeTable(idatabaseManager* mgr, const _TCHAR* tableName);
     explicit activeTable(dbmanager_ptr& mgr, const _TCHAR* tableName);
-    explicit activeTable(database_ptr& db, const _TCHAR* tableName);
-    explicit activeTable(database* db, const _TCHAR* tableName);
+    explicit activeTable(database_ptr& db, const _TCHAR* tableName,
+                                            short mode = TD_OPEN_NORMAL);
+    explicit activeTable(database* db, const _TCHAR* tableName,
+                                            short mode = TD_OPEN_NORMAL);
+    explicit activeTable(database_ptr& db, short tableIndex,
+                                            short mode = TD_OPEN_NORMAL);
+    explicit activeTable(database* db, short tableIndex,
+                                            short mode = TD_OPEN_NORMAL);
 
     ~activeTable();
 
@@ -319,8 +325,15 @@ public:
 
     static activeTable* create(idatabaseManager* mgr, const _TCHAR* tableName);
     static activeTable* create(dbmanager_ptr& mgr, const _TCHAR* tableName);
-    static activeTable* create(database_ptr& db, const _TCHAR* tableName);
-    static activeTable* create(database* db, const _TCHAR* tableName);
+    static activeTable* create(database_ptr& db, const _TCHAR* tableName,
+                                                short mode = TD_OPEN_NORMAL);
+    static activeTable* create(database* db, const _TCHAR* tableName,
+                                                short mode = TD_OPEN_NORMAL);
+    static activeTable* create(database_ptr& db, short tableIndex,
+                                                short mode = TD_OPEN_NORMAL);
+    static activeTable* create(database* db, short tableIndex,
+                                                short mode = TD_OPEN_NORMAL);
+
     void release();
     void releaseTable();
 };

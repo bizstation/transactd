@@ -211,13 +211,13 @@ extern "C" PACKAGE_OSX short_td __STDCALL
 			client_t->req().paramMask = P_MASK_NOKEYBUF;
             break;
         case TD_UNLOCK:
+        case TD_CLOSETABLE:
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
             break;
         case TD_UPDATE_PART:
             client_t->cleanup();
             return 0;
         case TD_REC_DELETE:
-        case TD_CLOSETABLE:
         case TD_CLEAR_OWNERNAME:
         case TD_AUTOMEKE_SCHEMA:
             client_t->req().paramMask = P_MASK_POSBLK;
@@ -371,37 +371,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
     }
     catch (boost::system::system_error& e)
     {
-        switch (e.code().value())
-        {
-        case 11004:
-        case 11001:
-            ret = ERROR_TD_HOSTNAME_NOT_FOUND;
-            break;
-        case 10060:
-        case 10057: //blocking fire wall
-        case 110:   //connect: Connection timed out
-        case 121:   //timeout sema
-        case 11:    //EAGAIN
-            ret = ERROR_TD_NET_TIMEOUT;
-            break;
-        case 32:    //write:brokn pipe
-        case 111:   //connect: Connection refused
-        case 10061:
-            ret = ERROR_TD_CONNECTION_FAILURE;
-            break;
-        case 104:   //write: Connection reset by peer
-        case 10054:
-            ret = ERROR_TD_NET_REMOTE_DISCONNECT;
-            break;
-        case 232:
-        case 109:
-        case 2:
-        case 1:
-            ret = ERROR_TD_INVALID_CLINETHOST;
-            break;
-        default:
-            ret = ERROR_TD_NET_OTHER;
-        }
+        ret = errorCode(e.code());
         OutputDebugString(e.what());
         char tmp[512];
         sprintf_s(tmp, 512, "%d %s", e.code().value(), e.what());

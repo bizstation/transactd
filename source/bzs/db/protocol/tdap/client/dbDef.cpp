@@ -42,6 +42,7 @@ namespace client
 #define FORMAT_VERSON_BTRV_DEF 0
 #define FORMAT_VERSON_CURRENT 1
 
+/* BDFFORMAT_VERSION used in the databaseSchema.cpp listSchemaTable() */
 static const _TCHAR BDFFORMAT_VERSION[] = _T("2.000.00");
 static const _TCHAR ow0[11] = { 46, 46, 83, 67, 46, 46, 46, 46, 93, 4, 0 };
 static const _TCHAR ow1[11] = { 46, 46, 83, 67, 46, 46, 46, 46, 66, 5, 0 };
@@ -220,25 +221,23 @@ void dbdef::setCodePage(tabledef* td)
     }
 }
 
-void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
+short dbdef::validateTableDef(short TableIndex)
 {
     m_stat = STATUS_SUCCESS;
     tabledef* td = tableDefs(TableIndex);
-    short i, j, ret, Fnum;
-    uchar_td type;
 
     td->optionFlags.bitA = false; // reset valiable type
     td->optionFlags.bitB = false;
-    for (i = 0; i < td->fieldCount; ++i)
+    for (short i = 0; i < td->fieldCount; ++i)
     {
-        ret = fieldNumByName(TableIndex, td->fieldDefs[i].name());
+        short ret = fieldNumByName(TableIndex, td->fieldDefs[i].name());
         if ((ret != -1) && (ret != i))
         {
             m_stat = STATUS_DUPLICATE_FIELDNAME;
-            return;
+            return m_stat;
         }
         // Check field length.
-        type = td->fieldDefs[i].type;
+        uchar_td type = td->fieldDefs[i].type;
 
         // reset update indicator
         td->fieldDefs[i].enableFlags.bitE = false;
@@ -247,7 +246,7 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
         if (!ret)
         {
             m_stat = STATUS_INVALID_FIELDLENGTH;
-            return;
+            return m_stat;
         }
         // Note or Lvar type must be the last of fields.
         if ((type == ft_note) || (type == ft_lvar))
@@ -255,7 +254,7 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
             if (i != td->fieldCount - 1)
             {
                 m_stat = STATUS_LVAR_NOTE_NOT_LAST;
-                return;
+                return m_stat;
             }
         }
 
@@ -265,7 +264,7 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
             (type != ft_note) && (type != ft_lvar))
         {
             m_stat = STATUS_INVALID_VARIABLETABLE;
-            return;
+            return m_stat;
         }
         if ((type == ft_myvarchar) || (type == ft_mywvarchar) ||
             (type == ft_myvarbinary) || (type == ft_mywvarbinary) ||
@@ -276,36 +275,44 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
     }
 
     // Check invalid key type
-    for (i = 0; i < td->keyCount; i++)
+    for (short i = 0; i < td->keyCount; i++)
     {
-        for (j = 0; j < td->keyDefs[i].segmentCount; j++)
+        for (short j = 0; j < td->keyDefs[i].segmentCount; j++)
         {
-            Fnum = td->keyDefs[i].segments[j].fieldNum;
-            ret = isPassKey(td->fieldDefs[Fnum].type);
+            short fnum = td->keyDefs[i].segments[j].fieldNum;
+            short ret = isPassKey(td->fieldDefs[fnum].type);
             if (!ret)
             {
                 m_stat = STATUS_INVALID_KEYTYPE;
-                return;
+                return m_stat;
             }
         }
     }
 
     // Chack duplicate table name.
-    for (i = 1; i < m_impl->tableCount; i++)
+    for (short i = 1; i < m_impl->tableCount; i++)
     {
         if ((tableDefs(i)) && (i != TableIndex))
         {
             if (strcmp(tableDefs(i)->tableNameA(), td->tableNameA()) == 0)
             {
                 m_stat = STATUS_DUPPLICATE_KEYVALUE;
-                return;
+                return m_stat;
             }
         }
     }
     setCodePage(td);
-
     setRecordLen(TableIndex);
-    td = tableDefs(TableIndex);
+    return m_stat;
+}
+
+void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
+{
+    if ((m_stat = validateTableDef(TableIndex)) != 0)
+        return;
+
+    tabledef* td = tableDefs(TableIndex);
+
     if (m_impl->noWriteMode)
     {
         m_stat = STATUS_ACCESS_DENIED;
@@ -716,10 +723,9 @@ tabledef* dbdef::tableDefs(int index)
         }
         m_datalen =
             fixVariableLenBug(isUseTransactd(), (tabledef*)m_pdata, m_datalen);
-
-        m_impl->tableDefs[index] = def =
-            (tabledef*)malloc(getNewVersionSize((tabledef*)m_pdata));
-
+        size_t size = getNewVersionSize((tabledef*)m_pdata);
+        def = (tabledef*)malloc(size);
+        m_impl->tableDefs[index] = def;
         if (def == NULL)
         {
             m_stat = STATUS_CANT_ALLOC_MEMORY;
@@ -1709,7 +1715,11 @@ void dbdef::pushBackup(short TableIndex)
     }
 
     setFieldsCharsetIndex(tableDefs(TableIndex));
-    memcpy(m_impl->tableDefs[TABLE_NUM_TMP], tableDefs(TableIndex), blen);
+    tabledef* td = m_impl->tableDefs[TABLE_NUM_TMP];
+    memcpy(td, tableDefs(TableIndex), blen);
+    td->fieldDefs = getFieldDef(td);
+    td->keyDefs = getKeyDef(td);
+
 }
 
 bool dbdef::compAsBackup(short TableIndex)
@@ -1745,10 +1755,10 @@ void dbdef::popBackup(short TableIndex)
     int len = totalDefLength(TABLE_NUM_TMP);
     m_impl->tableDefs[TableIndex] =
         (tabledef*)realloc(tableDefs(TableIndex), len);
-    memcpy(tableDefs(TableIndex), tableDefs(TABLE_NUM_TMP), len);
-    tableDefs(TableIndex)->fieldDefs = getFieldDef(tableDefs(TableIndex));
-    tableDefs(TableIndex)->keyDefs = getKeyDef(tableDefs(TableIndex));
-
+    tabledef* td = m_impl->tableDefs[TableIndex];
+    memcpy(td, tableDefs(TABLE_NUM_TMP), len);
+    td->fieldDefs = getFieldDef(td);
+    td->keyDefs = getKeyDef(td);
     updateTableDef(TableIndex);
 }
 

@@ -47,14 +47,14 @@ show variables like 'version';
 ```
 ダウンロードするファイルは
 
-  * Windowsの場合 transactd-[platform]-2.3.0_[mysql-version].zip
-  * Linuxの場合 transactd-linux-x86_64-2.3.0_[mysql-version].tar.gz
+  * Windowsの場合 transactd-[platform]-2.4.0_[mysql-version].zip
+  * Linuxの場合 transactd-linux-x86_64-2.4.0_[mysql-version].tar.gz
 
 といった形式です。
 [platform]はwin32またはwin64、[mysql-version]はmysql-5.x.xまたはmariadb-5.5.xです。
 たとえば、Linux-x86_64bit mysql-5.6.14用の完全なURLは以下の通りです。
 
-http://www.bizstation.jp/al/transactd/download/transactd-2.3.0/transactd-linux-x86_64-2.3.0_mysql-5.6.14.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-2.4.0/transactd-linux-x86_64-2.4.0_mysql-5.6.14.tar.gz
 
 また、ソースをダウンロードしてビルドすることもできます。その場合は、
 MySQL/MariaDBのソースコードも必要です。ビルド方法はソースコード内の
@@ -99,8 +99,8 @@ MySQL/MariaDBのバイナリに変更を加えることなく、所定の位置�
 
 2. ダウンロードしたtar.gzを解凍し、解凍したフォルダに移動します。
    ```
-   tar zxf transactd-linux-x86_64-2.3.0_mysql-5.6.14.tar.gz
-   cd transactd-linux-x86_64-2.3.0_mysql-5.6.14
+   tar zxf transactd-linux-x86_64-2.4.0_mysql-5.6.14.tar.gz
+   cd transactd-linux-x86_64-2.4.0_mysql-5.6.14
    ```
 
 3. [MySQL|MariaDBインストールフォルダ]/lib/pluginに、libtransactd.soをコピー
@@ -131,13 +131,13 @@ Transactd Pluginを介してデータにアクセスするにはTransactdクラ�
 プラットフォームに合ったビルド済Transactdクライアントをダウンロードします。
 ダウンロードするファイルは
 
-  * Windowsの場合 transactd-client-[platform]_with_sdk-2.3.0.zip
-  * Linuxの場合 transactd-client-linux-x86_64_with_sdk-2.3.0.tar.gz
+  * Windowsの場合 transactd-client-[platform]_with_sdk-2.4.0.zip
+  * Linuxの場合 transactd-client-linux-x86_64_with_sdk-2.4.0.tar.gz
 
 といった形式です。[platform]はwin32またはwin64です。
 たとえば、LINUXの完全なURLは以下の通りです。
 
-http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-2.3.0.tar.gz
+http://www.bizstation.jp/al/transactd/download/transactd-client/transactd-client-linux-x86_64_with_sdk-2.4.0.tar.gz
 
 
 
@@ -145,11 +145,11 @@ Transactdクライアントのインストール
 -------------------------------------------------------------------------------
 
 ### Windowsでのインストール 
-1. ダウンロードしたtransactd-client-[platform]_with_sdk-2.3.0.zipを開きます。
-2. ルートフォルダーのtransactd-client-[platform]_with_sdk-2.3.0ごと適当なフォルダに
+1. ダウンロードしたtransactd-client-[platform]_with_sdk-2.4.0.zipを開きます。
+2. ルートフォルダーのtransactd-client-[platform]_with_sdk-2.4.0ごと適当なフォルダに
    コピーします。
-3. transactd-client-[platform]_with_sdk-2.3.0直下にあるinstall.cmdを実行します。
-   これによりtransactd-client-[platform]_with_sdk-2.3.0\binフォルダをシステム環境変数
+3. transactd-client-[platform]_with_sdk-2.4.0直下にあるinstall.cmdを実行します。
+   これによりtransactd-client-[platform]_with_sdk-2.4.0\binフォルダをシステム環境変数
    PATHに追加します。
 
 C++クライアントは binフォルダに配置された以下の３つのDLLからなります。
@@ -161,13 +161,11 @@ C++クライアントは binフォルダに配置された以下の３つのDLL�
 このうち下の２つはC++のクラスをエクスポートするための、コンパイラごとに異なった
 モジュールです。また、それを利用したテストやベンチマーク、その他のプログラムも
 コンパイラごとになっていますです。それらはbin配下にコンパイラの名前のフォルダに
-配置されています。
-開発コンパイラが特定されている場合には、不要なモジュールは削除しても構いません。
+配置されています。これらのバイナリーはMicrosoft Visual studio 2010にてビルドされ
+ています。
+Embarcadero C++Builderで使用する場合は、下記をご覧ください。
+http://www.bizstation.jp/ja/transactd/documents/BUILD_WIN.html
 
-ビルド済みバイナリーが含まれるコンパイラは以下の7種類です。
-
-  * Microsoft Visual studio 2010用 (ActiveX(COM)クライアントを含みます)
-  * Embarcadero C++Builder XE～XE6シリーズ用
 
 
 ### Linuxでのインストール 
@@ -178,8 +176,8 @@ C++クライアントは binフォルダに配置された以下の３つのDLL�
 
 2. ダウンロードしたtar.gzを解凍し、解凍したフォルダに移動します。
    ```
-   tar zxf transactd-client-linux-x86_64_with_sdk-2.3.0.tar.gz
-   cd transactd-client-linux-x86_64_with_sdk-2.3.0
+   tar zxf transactd-client-linux-x86_64_with_sdk-2.4.0.tar.gz
+   cd transactd-client-linux-x86_64_with_sdk-2.4.0
    ```
 
 3. インストールスクリプトを実行します。
@@ -254,7 +252,7 @@ Transactd Pluginとクライアントのインストールが済んだら、テ�
 ### Windowsでの起動
 1. クライアントのインストールで解凍したフォルダに移動します
    ```
-   cd transactd-client-[platform]_with_sdk-2.3.0
+   cd transactd-client-[platform]_with_sdk-2.4.0
    ```
 
 2. テストの起動
@@ -281,7 +279,7 @@ Transactd Pluginとクライアントのインストールが済んだら、テ�
 ### Linuxでの起動
 1. クライアントのインストールで解凍したフォルダに移動します
    ```
-   cd transactd-client-linux-x86_64_with_sdk-2.3.0
+   cd transactd-client-linux-x86_64_with_sdk-2.4.0
    ```
 
 2. テストの起動
@@ -305,7 +303,9 @@ http://www.bizstation.jp/ja/transactd/client/sdk/doc/
 source/bzs/exampleフォルダに、簡単なサンプルコードがあります。
 
 build/exampleフォルダにコンパイラに応じたプロジェクトファイル(Windows)があります。
-または、make_example.shスクリプト(Linux)でこれらをビルドできます。
+または、make_example.shスクリプト(Linux)でこれらをビルドできます。(Linuxでのビルド
+の際にはMakefileのTI_BOOST_ROOTの値をインストールされたboostのフォルダに変更してく
+ださい。)
 
 Visual C++ 2010のExpress版 64Bitでコンパイルする際は、各プロジェクトの[オプション]
 -[構成プロパティー]-[全般]-[プラットフォームツールセット]を"v100"から"Windows7.1SDK"

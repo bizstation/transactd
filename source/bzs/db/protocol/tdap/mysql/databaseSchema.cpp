@@ -66,26 +66,6 @@ uint_td copyToRecordImage(uchar* rec, void* p, uint_td size, uint_td offset)
     return offset + size;
 }
 
-bool isStringType(char type)
-{
-    switch (type)
-    {
-    case ft_zstring:
-    case ft_string:
-    case ft_mychar:
-    case ft_myvarchar:
-    case ft_myvarbinary:
-    case ft_wzstring:
-    case ft_wstring:
-    case ft_mywchar:
-    case ft_mywvarchar:
-    case ft_mywvarbinary:
-        return true;
-    default:
-        return false;
-    }
-}
-
 uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
                        bool unicode)
 {
@@ -226,7 +206,7 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
                 sg.flags.bit4 = (j != kd.segmentCount - 1); // segment
                 sg.flags.bit8 = 1; // extend key type
                 sg.flags.bit9 = ks.null_bit ? 1 : 0; // null key
-                if (isStringType(convFieldType(
+                if (isStringTypeForIndex(convFieldType(
                         src->fieldType(sg.fieldNum),
                         src->fieldFlags(sg.fieldNum),
                         isBinary(src->fieldCharset(i)),
@@ -252,10 +232,10 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
     return mtb->stat();
 }
 
-bool isFrmFile(const std::string& name)
+bool isFrmFile(const std::string& name, bool notschema=true)
 {
     size_t pos = name.find(TRANSACTD_SCHEMANAME);
-    if (pos != std::string::npos)
+    if (pos != std::string::npos && notschema)
         return false;
     // First of name is '#' that is alter table temp file.
     if (name.size() && name[0] == '#')
@@ -264,6 +244,48 @@ bool isFrmFile(const std::string& name)
     if (pos != std::string::npos)
         return pos == name.size() - 4;
     return false;
+}
+
+void schemaBuilder::listSchemaTable(database* db, std::vector<std::string>& shcemaNames)
+{
+    char path[FN_REFLEN + 1];
+    build_table_filename(path, sizeof(path) - 1, db->name().c_str(), "", "", 0);
+    std::string s = path;
+    fs::path p = s;
+    fs::directory_iterator it(p);
+    fs::directory_iterator end;
+    shcemaNames.clear();
+    
+    for (fs::directory_iterator it(p); it != end; ++it)
+    {
+        if (!is_directory(*it))
+        {
+            std::string s = it->path().filename().string();
+            if (isFrmFile(s, false))
+            {
+                filename_to_tablename(it->path().stem().string().c_str(), path,
+                                      FN_REFLEN);
+                table* tb = NULL;
+                try
+                {
+                    tb = db->openTable(path, TD_OPEN_READONLY, NULL);
+                }
+                catch(...){}
+                if (!tb) break;
+                if (!tb->isView())
+                {
+                    LEX_STRING& comment = tb->internalTable()->s->comment; 
+                    const char* p = comment.str;
+                    if ((comment.length > 8) && strstr(p,"%@%02.000") &&              
+                        (tb->fields() == 2) && (tb->keys() == 1))
+                    {
+                        shcemaNames.push_back(tb->name());    
+                    }
+                }
+                db->closeTable(tb);
+            }
+        }
+    }
 }
 
 short schemaBuilder::execute(database* db, table* mtb)
@@ -277,7 +299,8 @@ short schemaBuilder::execute(database* db, table* mtb)
     fs::directory_iterator end;
     int id = 0;
     short stat = 0;
-    smartTransction trn(db);
+    std::vector<table*> tables;
+    
     for (fs::directory_iterator it(p); it != end; ++it)
     {
         if (!is_directory(*it))
@@ -288,17 +311,28 @@ short schemaBuilder::execute(database* db, table* mtb)
                 filename_to_tablename(it->path().stem().string().c_str(), path,
                                       FN_REFLEN);
                 table* tb = db->openTable(path, TD_OPEN_READONLY, NULL);
-                if (!tb)
-                    return db->stat();
+                if (!tb) break;
                 if (!tb->isView())
-                {
-                    if ((stat = insertMetaRecord(mtb, tb, ++id)) != 0)
-                        return stat;
-                }
+                    tables.push_back(tb);
+                else
+                    db->closeTable(tb);
             }
         }
     }
-    trn.end();
+    if (db->stat()) return db->stat();
+
+    {
+        smartTransction trn(db);
+        for (size_t i = 0; i < tables.size(); ++i)
+        {
+            if ((stat = insertMetaRecord(mtb, tables[i], ++id)) != 0)
+                    break;
+        }
+        if (stat == 0) trn.end();
+            
+    }
+    for (size_t i = 0; i < tables.size(); ++i)
+        db->closeTable(tables[i]);
     return stat;
 }
 

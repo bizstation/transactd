@@ -127,7 +127,7 @@ int wmemcmp16(const char16_t* sl, const char16_t* sr, size_t n)
         ++sl;
         ++sr;
     }
-    return 0 - *sr;
+    //return 0 - *sr;
 }
 
 

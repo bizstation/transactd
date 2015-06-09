@@ -43,7 +43,7 @@ void CActiveTable::FinalRelease()
         m_at->release();
 }
 
-STDMETHODIMP CActiveTable::SetDatabase(VARIANT Value, BSTR tableName)
+STDMETHODIMP CActiveTable::SetDatabase(VARIANT Value, BSTR tableName, short mode)
 {
     try
     {
@@ -64,7 +64,7 @@ STDMETHODIMP CActiveTable::SetDatabase(VARIANT Value, BSTR tableName)
         CDatabase* p = dynamic_cast<CDatabase*>(Value.pdispVal);
         if (p)
         {
-            m_at = activeTable::create(p->database(), tableName);
+            m_at = activeTable::create(p->database(), tableName, mode);
             m_at->table()->setOptionalData((void*)p->database());
             return S_OK;
         }

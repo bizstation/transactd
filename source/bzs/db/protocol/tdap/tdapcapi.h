@@ -29,10 +29,22 @@ typedef void           void_td;
 typedef short          short_td;
 typedef unsigned char  uchar_td;
 typedef char           char_td;
-typedef uint_td        bookmark_td;
 typedef int            percentage_td;
-
 typedef ushort_td      keylen_td;
+
+/* Wnen change MAX_BOOKMARK_SIZE, database.h REF_SIZE_MAX too */
+#define MAX_BOOKMARK_SIZE 112     // innodb unique key max 767 byte
+struct BOOKMARK
+{
+    uchar_td val[MAX_BOOKMARK_SIZE];
+    bool empty;
+    BOOKMARK():empty(true){}
+    bool isEmpty()
+    {
+        return empty;
+    }
+};
+typedef BOOKMARK bookmark_td;
 
 /** tdap c interface
  */
@@ -64,6 +76,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 /** buffer size
  */
 #define POS_BLOCK_SIZE                  128
+#define BTRV_BOOKMARK_SIZE                4
 #ifndef MAX_KEYLEN
 #define MAX_KEYLEN                      0X3FF   // 1023
 #endif
@@ -167,7 +180,9 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define TD_STSTCS_READ                  0
 #define TD_STSTCS_DISCONNECT_ONE        1
 #define TD_STSTCS_DISCONNECT_ALL        2
-
+#define TD_STSTCS_DATABASE_LIST         3
+#define TD_STSTCS_SYSTEM_VARIABLES      4
+#define TD_STSTCS_SCHEMA_TABLE_LIST     5
 /** connect sub operation
  */
 
@@ -394,6 +409,13 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 #define ERROR_TD_C_CLIENT_UNKNOWN       3811
 #define ERROR_TD_RECONNECTED            3900
 
+inline bool canRecoverNetError(short code)
+{
+    return (code >= ERROR_TD_CONNECTION_FAILURE) &&
+        (code < ERROR_TD_RECONNECTED) &&
+        (code != ERROR_TD_NET_TOO_BIGDATA);
+}
+
 
 #define TRANSACTD_SCHEMANAME            _T("transactd_schema")
 #define TYPE_SCHEMA_BDF                 0
@@ -401,6 +423,7 @@ typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
 
 #define FILTER_CURRENT_TYPE_NOTINC      0
 #define FILTER_CURRENT_TYPE_INC         1
+#define FILTER_TYPE_SEEKS_BOOKMARKS     1 //with FILTER_TYPE_SEEKS only 
 #define FILTER_CURRENT_TYPE_NOBOOKMARK  2
 #define FILTER_TYPE_SUPPLYVALUE         4
 #define FILTER_TYPE_FORWORD             4 //at preparing only 
@@ -453,13 +476,33 @@ struct handshale_t
 
 #define HST_OPTION_NO_SCRAMBLE 1
 
+/* server system variables index */
+#define TD_VER_DB                 0 
+#define TD_VER_SERVER             1
+#define TD_VAR_LISTENADDRESS      2
+#define TD_VAR_LISTENPORT         3
+#define TD_VAR_HOSTCHECKNAME      4
+#define TD_VAR_MAXTCPCONNECTIONS  5
+#define TD_VAR_TABLENAMELOWER     6
+#define TD_VAR_POOLTHREADS        7
+#define TD_VAR_TCPSERVERTYPE      8
+#define TD_VAR_LOCKWAITTIMEOUT    9
+#define TD_VAR_ISOLATION          10
+#define TD_VAR_AUTHTYPE           11
+#define TD_VAR_PIPESHAREMEMSIZE   12
+#define TD_VAR_MAXPIPECONNECTIONS 13
+#define TD_VAR_USEPIPE            14
+#define TD_VAR_HSLISTENPORT       15
+#define TD_VAR_USEHS              16
+#define TD_VAR_SIZE               17
+
 /** @endcond */
 
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.
  If you change this version then you need change The ($TargetName) project options too.
  */
 #define C_INTERFACE_VER_MAJOR "2"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "3"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "4"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
@@ -523,7 +566,7 @@ struct handshale_t
  */
 
 #define CPP_INTERFACE_VER_MAJOR "2"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "3"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "4"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
@@ -540,7 +583,7 @@ struct handshale_t
 #endif
 
 #define TRANSACTD_VER_MAJOR 2//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 3//##8 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 4//##8 Build marker! Don't remove
 #define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

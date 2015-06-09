@@ -15,6 +15,7 @@
         <BCVER Condition="'$(ProductVersion)'&gt;='12.0' and '$(ProductVersion)' &lt; '13.0'">190</BCVER>
         <BCVER Condition="'$(ProductVersion)'&gt;='14.0' and '$(ProductVersion)' &lt; '15.0'">200</BCVER>
         <BCVER Condition="'$(ProductVersion)'&gt;='15.0' and '$(ProductVersion)' &lt; '16.0'">210</BCVER>
+        <BCVER Condition="'$(ProductVersion)'&gt;='16.0' and '$(ProductVersion)' &lt; '17.0'">220</BCVER>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
         <Base>true</Base>
@@ -147,7 +148,7 @@
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
         <TD_VER_MAJOR>2</TD_VER_MAJOR>
-        <TD_VER_MINOR>3</TD_VER_MINOR>
+        <TD_VER_MINOR>4</TD_VER_MINOR>
         <DllSuffix>$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
         <TD_CPU>32</TD_CPU>
     </PropertyGroup>

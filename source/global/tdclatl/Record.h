@@ -90,7 +90,7 @@ public:
     STDMETHOD(Insert)();
     STDMETHOD(Del)(VARIANT_BOOL KeysetAlrady);
     STDMETHOD(Update)();
-    STDMETHOD(Read)(VARIANT_BOOL KeysetAlrady, VARIANT_BOOL* retVal);
+    STDMETHOD(Read)(VARIANT KeysetAlradyOrBookmark, VARIANT_BOOL* retVal);
     STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
     STDMETHOD(get_IsInvalidRecord)(VARIANT_BOOL* retVal);
 };

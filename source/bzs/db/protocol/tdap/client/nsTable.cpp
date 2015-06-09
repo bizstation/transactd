@@ -49,7 +49,8 @@ namespace client
 struct nstimpl
 {
     nstimpl()
-        : refCount(1), bulkIns(NULL), mode(0), shared(false), isOpen(false)
+        : refCount(1), bulkIns(NULL), percentage(0),bookmarkLen(0),mode(0),
+            shared(false), isOpen(false)
     {
         memset(posblk, 0 ,POS_BLOCK_SIZE);
     }
@@ -57,6 +58,7 @@ struct nstimpl
     bulkInsert* bulkIns;
     nsdatabase* nsdb;
     percentage_td percentage;
+    ushort_td bookmarkLen;
     bookmark_td bookmark;
     _TCHAR uri[MAX_PATH];
     uchar_td posblk[POS_BLOCK_SIZE];
@@ -126,14 +128,19 @@ _TCHAR* nstable::getErrorMessage(int errorCode, _TCHAR* buf, size_t size)
                    : bm and keynumber are ingored.
         )
  */
-void nstable::unlock(bookmark_td bm)
+void nstable::unlock(bookmark_td& bm)
 {
     void* db = m_pdata;
     if (m_keynum == -1)
         m_pdata = &bm;
-    m_datalen = 4;
+    m_datalen = bookmarkLen();
     tdap(TD_UNLOCK);
     m_pdata = db;
+}
+
+void nstable::unlock()
+{
+    tdap(TD_UNLOCK);
 }
 
 bool nstable::isUseTransactd() const
@@ -347,10 +354,6 @@ char_td nstable::mode() const
 
 void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
 {
-    void* svm_keybuf = m_keybuf;
-    char_td svm_keynum = m_keynum;
-    keylen_td svm_keybuflen = m_keylen;
-
     if (m_impl->nsdb == NULL)
     {
         m_stat = STATUS_LMITS_MAX_TABLES;
@@ -376,6 +379,11 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         }
     }
 
+    void* svm_keybuf = m_keybuf;
+    char_td svm_keynum = m_keynum;
+    keylen_td svm_keybuflen = m_keylen;
+    void* data_bak = m_pdata;
+
     // convert utf8 string
     char tmpName[MAX_PATH] = { 0x00 };
     const char* p = nsdatabase::toServerUri(tmpName, MAX_PATH, m_impl->uri,
@@ -389,6 +397,7 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         m_keynum = mode;
 
     char ownerNameBuf[OWNERNAME_SIZE] = { 0x00 };
+
     if (NULL != ownerName && 0x00 != ownerName[0])
     {
         const char* p2 = toChar(ownerNameBuf, ownerName, OWNERNAME_SIZE);
@@ -397,21 +406,34 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         if (m_datalen > 11)
         {
             m_stat = STATUS_TOO_LONG_OWNERNAME;
-            return;
+            goto clean;
         }
+        if (m_datalen < sizeof(unsigned int))
+            m_datalen = sizeof(unsigned int);/* for bookmarklen*/
     }
     else
-        m_datalen = 0;
-
+    {
+        m_impl->bookmarkLen = 0;
+        m_pdata = &m_impl->bookmarkLen;
+        m_datalen = sizeof(ushort_td);/* for bookmarklen*/
+    }
     tdap(TD_OPENTABLE);
     if (m_stat == STATUS_SUCCESS)
     {
         m_impl->isOpen = true;
         m_impl->mode = mode;
+        if (!isUseTransactd())
+            m_impl->bookmarkLen = BTRV_BOOKMARK_SIZE;
+        else if (m_impl->bookmarkLen == 0)
+            m_impl->bookmarkLen = BTRV_BOOKMARK_SIZE;
+        else if (m_impl->bookmarkLen == 0xFFFF) //No primary
+            m_impl->bookmarkLen = 0;
     }
+clean:
     m_keybuf = svm_keybuf;
     m_keynum = svm_keynum;
     m_keylen = svm_keybuflen;
+    m_pdata = data_bak;
 }
 
 void nstable::doUpdate(eUpdateType type)
@@ -518,9 +540,9 @@ ushort_td nstable::doInsert(bool ncc)
             m_impl->bulkIns->insert((const char*)data(), m_datalen, this);
     else
     {
-        tdap(TD_REC_INSERT);
         if (ncc)
             m_keynum = -1;
+        tdap(TD_REC_INSERT);
         if (m_stat == STATUS_SUCCESS)
             ins_rows = 1;
     }
@@ -570,25 +592,48 @@ void nstable::doAbortBulkInsert()
     m_stat = STATUS_SUCCESS;
 }
 
+ushort_td nstable::bookmarkLen() const
+{
+    return m_impl->bookmarkLen;
+}
+
 bookmark_td nstable::bookmark()
 {
     void* db = m_pdata;
-
+    m_impl->bookmark.empty = true;
     m_pdata = &m_impl->bookmark;
-    m_datalen = sizeof(bookmark_td);
+    m_datalen = m_impl->bookmarkLen;
     tdap(TD_BOOKMARK);
+    if (m_stat == 0)
+        m_impl->bookmark.empty = false;
     m_pdata = db;
 
     return m_impl->bookmark;
 }
 
-void nstable::seekByBookmark(bookmark_td bm, ushort_td LockBias)
+void nstable::seekByBookmark(bookmark_td& bm, ushort_td lockBias)
 {
+    seekByBookmark(&bm, lockBias);
+}
+
+void nstable::seekByBookmark(bookmark_td* bm, ushort_td lockBias)
+{
+    if (!bm)
+    {
+        m_stat = STATUS_INVALID_BOOKMARK;
+        return;
+    }
+
     int count = 0;
-    memcpy(m_pdata, &bm, sizeof(bookmark_td));
+    if (m_buflen < (uint_td)m_impl->bookmarkLen)
+    {
+        m_buflen = m_impl->bookmarkLen;
+        m_pdata = realloc(m_pdata, m_buflen);
+    }
+    memcpy(m_pdata, bm, m_impl->bookmarkLen);
     m_datalen = m_buflen;
     m_keylen = m_keybuflen;
-    tdap((ushort_td)(TD_MOVE_BOOKMARK + LockBias));
+    tdap((ushort_td)(TD_MOVE_BOOKMARK + lockBias));
     if (m_stat == STATUS_SUCCESS)
         onReadAfter();
     // TODO: This code has some problem.
@@ -598,7 +643,7 @@ void nstable::seekByBookmark(bookmark_td bm, ushort_td LockBias)
         m_buflen = m_buflen * 2;
         m_datalen = m_buflen;
         m_pdata = realloc(m_pdata, m_buflen);
-        memcpy(m_pdata, &bm, sizeof(bookmark_td));
+        memcpy(m_pdata, bm, m_impl->bookmarkLen);
         tdap(TD_MOVE_BOOKMARK);
         if (m_stat == STATUS_SUCCESS)
         {
@@ -622,21 +667,17 @@ percentage_td nstable::getPercentage()
     return m_impl->percentage;
 }
 
-percentage_td nstable::getPercentage(bookmark_td bm)
+percentage_td nstable::getPercentage(bookmark_td& bm)
 {
-    void* db = m_pdata;
     char_td ky = m_keynum;
 
-    m_pdata = &m_impl->percentage;
-    m_datalen = sizeof(percentage_td);
+    memcpy(m_pdata, &bm, bookmarkLen());
+    m_datalen = std::max<int>(bookmarkLen(), sizeof(percentage_td));
     m_keynum = -1;
-
-    m_impl->percentage = bm;
     m_keylen = m_keybuflen;
     tdap(TD_GET_PER);
+    memcpy(&m_impl->percentage, m_pdata, sizeof(percentage_td));
     m_impl->percentage &= 0xffff;
-
-    m_pdata = db;
     m_keynum = ky;
 
     return m_impl->percentage;
@@ -812,8 +853,17 @@ void nstable::tdap(ushort_td op)
         case STATUS_FILE_LOCKED:
             Sleep(m_impl->nsdb->lockWaitTime());
             break;
-
         default:
+#ifdef TEST_RECONNECT
+            if (canRecoverNetError(m_stat))
+            {
+                m_impl->nsdb->reconnect();
+                if (m_stat) return;
+                m_stat = ERROR_TD_NET_TIMEOUT;
+                LoopCount = -1;
+                break;
+            }
+#endif
             return;
         }
     } while ((m_stat != STATUS_SUCCESS) &&
