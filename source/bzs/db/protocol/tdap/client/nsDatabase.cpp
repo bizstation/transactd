@@ -786,7 +786,7 @@ bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
 
     char uri_a[MAX_PATH] = { 0x00 };
     const char* p = toServerUri(uri_a, MAX_PATH, URI, isUseTransactd());
-    char_td keyNum = newConnection ? 3 : 0;
+    char_td keyNum = (isUseTransactd() == false) ? 0 : newConnection ? 3 : 0;
     m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, (void*)p,
                          (keylen_td)(strlen(p) + 1), keyNum, clientID());
     if (m_stat)
