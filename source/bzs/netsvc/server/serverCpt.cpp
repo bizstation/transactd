@@ -200,6 +200,7 @@ public:
     {
         m_ios.reset();
         m_socket.set_option(boost::asio::ip::tcp::no_delay(true));
+        m_socket.set_option(boost::asio::socket_base::keep_alive(true));
         boost::system::error_code ec;
         m_socket.set_option(
             boost::asio::socket_base::receive_buffer_size(512 * 1024), ec);
