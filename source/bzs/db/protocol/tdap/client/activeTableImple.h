@@ -157,9 +157,13 @@ class activeTableImple : public activeObject<map_orm>
                 if (f.len > FIXED_VALUE_BUF_SIZE)
                     THROW_BZS_ERROR_WITH_MSG(_T("Join fixed key field is too long")
                                      _T(" field.\n This field can not use join."));
-                field fd(joinFields[i].fixedValue, f, fds);
-                fd = s.c_str() +1;
-                joinFields[i].len = f.len;
+                field fd(joinFields[i].fixedValue - f.pos, f, fds);
+                size_t pos = s.find(_T(']'), 1);
+                if (pos == std::_tstring::npos)
+                    THROW_BZS_ERROR_WITH_MSG(_T("Join fixed key field is invalid format")
+                                     _T(".\n This field can not use join."));
+                fd = s.substr(1, pos - 1).c_str();
+                joinFields[i].len = f.isStringType() ? 0xff : f.len;
                 joinFields[i].type = JOIN_KEYVALUE_TYPE_PTR;
 
             }
@@ -173,7 +177,7 @@ class activeTableImple : public activeObject<map_orm>
                     convertFieldType(
                         td->fieldDefs[kd->segments[i].fieldNum].type))
                 {
-                    joinFields[i].len = fd.len;
+                    joinFields[i].len = fd.isStringType() ? 0xff : fd.len;
                     joinFields[i].type = JOIN_KEYVALUE_TYPE_PTR;
                 }
                 else
@@ -211,10 +215,16 @@ class activeTableImple : public activeObject<map_orm>
     template <class Container>
     inline void addSeekValues(row& mdl, pq_handle& q,
                   std::vector<typename Container::key_type>& fieldIndexes,
-                  std::vector<joinInfo>& joinFields)
+                  std::vector<joinInfo>& joinFields,
+                  const fielddefs* fds)
     {
         const uchar_td* ptr[8];
         int len[8];
+        uchar_td buf[MAX_KEYLEN];
+        uchar_td* buf_ptr = buf;
+        const tabledef* td = table()->tableDef();
+        const keydef* kd = &td->keyDefs[table()->keyNum()];
+
         for (int i = 0; i < (int)fieldIndexes.size(); ++i)
         {
             if (fieldIndexes[i] == -1)
@@ -223,15 +233,19 @@ class activeTableImple : public activeObject<map_orm>
                 len[i] = joinFields[i].len;
             }
             else if (joinFields[i].type == JOIN_KEYVALUE_TYPE_PTR)
-            {    
+            {
                 ptr[i] = (const uchar_td*)mdl[fieldIndexes[i]].ptr();
                 len[i] = joinFields[i].len;
             }
             else
             {
-                const _TCHAR* p = mdl[fieldIndexes[i]].c_str();
-                ptr[i] = (const uchar_td*)p;
-                len[i] = (int)_tcslen(p);
+                // if target field type is different then we need convrt type
+                const fielddef& f = td->fieldDefs[kd->segments[i].fieldNum];
+                field fd(buf_ptr - f.pos, f, fds);
+                fd = mdl[fieldIndexes[i]].c_str();
+                ptr[i] = buf_ptr;
+                len[i] = f.isStringType() ? 0xff : f.len;
+                buf_ptr += f.len;
             }
         }
     
@@ -293,7 +307,7 @@ class activeTableImple : public activeObject<map_orm>
             while (it1 != ite1)
             {
                 row& mdl = *(mdls.getRow((*it1)[0]));
-                addSeekValues<Container>(mdl, stmt, fieldIndexes, joinFields);
+                addSeekValues<Container>(mdl, stmt, fieldIndexes, joinFields, fds);
                 ++it1;
             }
         }
@@ -303,7 +317,7 @@ class activeTableImple : public activeObject<map_orm>
             while (it != ite)
             {
                 row& mdl = *(*it);
-                addSeekValues<Container>(mdl, stmt, fieldIndexes, joinFields);
+                addSeekValues<Container>(mdl, stmt, fieldIndexes, joinFields, fds);
                 ++it;
             }
         }

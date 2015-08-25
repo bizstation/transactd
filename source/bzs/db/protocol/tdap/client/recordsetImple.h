@@ -580,7 +580,8 @@ public:
         m_fds->push_back(&fd);
         for (int i = 0; i < (int)m_unionFds.size(); ++i)
             m_unionFds[i]->push_back(&fd);
-        registerMemoryBlock(NULL, fd.len * size(), fd.len, mra_outerjoin);
+        if (size())
+            registerMemoryBlock(NULL, fd.len * size(), fd.len, mra_outerjoin);
     }
 
     inline recordsetImple& operator+=(const recordsetImple& r)
