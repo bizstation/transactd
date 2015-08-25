@@ -28,10 +28,8 @@
 #if (BOOST_VERSION > 104900)
 #include <boost/asio/deadline_timer.hpp>
 #else
-#ifdef __APPLE__
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#endif
 #endif
 
 

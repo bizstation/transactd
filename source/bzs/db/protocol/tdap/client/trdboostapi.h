@@ -106,7 +106,11 @@ public:
         {
             _TCHAR tmp[10];
             _tcscpy_s(tmp, 10, uri + len - 4);
+#ifdef _tcsupr_s
             _tcsupr_s(tmp, 10);
+#else
+            _tcsupr(tmp);
+#endif
             if (_tcscmp(tmp, _T(".DDF"))==0)
                 m_type = TYPE_SCHEMA_DDF;
         }
