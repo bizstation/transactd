@@ -233,38 +233,58 @@ public:
         }
     }
 
+    inline char* moveCurrentData(char* ptr, unsigned short& len, int& sqnum)
+    {
+        len = *((unsigned short*)ptr);
+        ptr += DATASIZE_BYTE;
+        sqnum = *((int*)(ptr));
+        ptr += sizeof(int);
+        ptr += len;
+        return ptr;
+    }
+
     inline void hasManyJoinMra(int rowCount, uchar_td* data)
     {
         int rowOffset = 0;
-        int row = 0; // zero start
+        int row = 0;
         int count = 0;
-        char* ptr = (char*)data + DATASIZE_BYTE; // rowCount
+        int sqnum = 0;
         unsigned short len = 0;
-        for (int i = 0; i < (int)rowCount; ++i)
-        {
-            ptr += len;
-            len = *((unsigned short*)ptr);
-            ptr += DATASIZE_BYTE;
 
-            // get sequential number
-            int tmp = *((int*)(ptr));
-            ptr += sizeof(int);
-            // If len == 0 then next first record read error
-            if ((len == 0) || (tmp != row))
+        char* ptr = (char*)data + DATASIZE_BYTE; // rowCount
+        ptr = moveCurrentData(ptr, len, sqnum);  // getFirst
+        for (int i = 1; i < (int)rowCount; ++i)
+        {
+            if (sqnum == row)
             {
-                if (count)
+                ++count;
+
+                //if row == 0
+                if (len == 0)
+                {
+                    ++row;
+                    count = 0;
+                }
+
+            }else if(sqnum != row)
+            {
+                if (--count > 0)
                 {
                     m_tb->m_impl->mraPtr->duplicateRow(row + rowOffset, count);
                     rowOffset += count;
                 }
                 ++row;
-                count = 0;
+                count = (len == 0) ? 0 : 1;
+
             }
-            else if (i != 0)
-                ++count;
+            ptr = moveCurrentData(ptr, len, sqnum);
         }
-        if (count)
+        if (sqnum == row)
+            count = (len == 0) ? 0 : count + 1;
+
+        if (--count > 0)
             m_tb->m_impl->mraPtr->duplicateRow(row + rowOffset, count);
+
     }
 
     inline void reset(filter* p, uchar_td* data, unsigned int totalSize,
@@ -291,7 +311,6 @@ public:
             const tabledef* td = m_tb->tableDef();
             ushort_td fieldCount = m_filter->fieldCount();
             m_tmpPtr = mra->ptr(m_row, mra_current_block);
-            int resultOffset = 0;
 
             while (m_row < m_rowCount)
             {
@@ -302,7 +321,7 @@ public:
                     if (m_filter->fieldSelected())
                     {
                         uchar_td* fieldPtr = m_ptr;
-                        resultOffset = 0;
+                        int resultOffset = 0;
                         int blobFieldNum = 0;
                         for (int i = 0; i < fieldCount; i++)
                         {
@@ -325,20 +344,16 @@ public:
                             memset(m_tmpPtr, 0, td->maxRecordLen);
                             memcpy(m_tmpPtr, m_ptr, m_len);
                             m_unpackLen = td->unPack((char*)m_tmpPtr, m_len);
-                            resultOffset = m_unpackLen; 
                         }
                         else
-                        {
                             memcpy(m_tmpPtr, m_ptr, m_len);
-                            resultOffset = m_len;
-                        }
                         if (bd)
                             bd = m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd, bd);
                     }
                 }
                 ++m_row;
                 moveNextRow(bookmarkSize);
-                m_tmpPtr += resultOffset;
+                m_tmpPtr += recordLen;
             }
         }
         //prebuilt next ead operation
