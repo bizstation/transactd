@@ -324,7 +324,7 @@ public:
                         {
                             memset(m_tmpPtr, 0, td->maxRecordLen);
                             memcpy(m_tmpPtr, m_ptr, m_len);
-                            m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
+                            m_unpackLen = td->unPack((char*)m_tmpPtr, m_len);
                             resultOffset = m_unpackLen; 
                         }
                         else
@@ -407,7 +407,7 @@ public:
             {
                 memset(m_tmpPtr, 0, td->maxRecordLen);
                 memcpy(m_tmpPtr, m_ptr, m_len);
-                m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
+                m_unpackLen = td->unPack((char*)m_tmpPtr, m_len);
             }
             else
                 m_tmpPtr = m_ptr;
@@ -1388,7 +1388,7 @@ void* table::attachBuffer(void* NewPtr, bool unpack, size_t size)
     m_pdata = NewPtr;
     ushort_td len = (*m_tableDef)->maxRecordLen; 
     if (unpack)
-        len = unPack((char*)m_pdata, size);
+        len = (*m_tableDef)->unPack((char*)m_pdata, size);
     m_datalen = len;
     return oldptr;
 }
@@ -1458,38 +1458,17 @@ keylen_td table::writeKeyData()
     return writeKeyDataTo((uchar_td*)m_impl->keybuf, 0);
 }
 
+
+uint_td table::unPack(char* ptr, size_t size)
+{
+    m_impl->dataPacked = false;
+    return tableDef()->unPack(ptr, size);
+}
+
 uint_td table::pack(char* ptr, size_t size)
 {
-    char* pos = ptr;
-    char* end = pos + size;
-    int movelen;
-    for (int i = 0; i < (*m_tableDef)->fieldCount; i++)
-    {
-        fielddef& fd = (*m_tableDef)->fieldDefs[i];
-        if (fd.type == ft_myfixedbinary)
-        {
-            memmove(pos + 2, pos, fd.len - 2); // move as size pace in the field
-            *((unsigned short*)(pos)) = fd.len - 2; // fixed size
-            pos += fd.len;
-        }
-        else
-        {
-            int blen = fd.varLenBytes();
-            int dl = fd.len; // length
-            if (blen == 1)
-                dl = *((unsigned char*)(pos)) + blen;
-            else if (blen == 2)
-                dl = *((unsigned short*)(pos)) + blen;
-            pos += dl;
-            if ((movelen = fd.len - dl) != 0)
-            {
-                end -= movelen;
-                memmove(pos, pos + movelen, end - pos);
-            }
-        }
-    }
     m_impl->dataPacked = true;
-    return (uint_td)(pos - ptr);
+    return tableDef()->pack(ptr, size);
 }
 
 uint_td table::doGetWriteImageLen()
@@ -1548,49 +1527,6 @@ uint_td table::doGetWriteImageLen()
 
         return (uint_td)len;
     }
-}
-
-uint_td table::unPack(char* ptr, size_t size)
-{
-    char* pos = ptr;
-    const char* end = pos + size;
-    tabledef* td = *m_tableDef;
-    const char* max = pos + td->maxRecordLen;
-    int movelen;
-    for (int i = 0; i < td->fieldCount; i++)
-    {
-        fielddef& fd = td->fieldDefs[i];
-        if (fd.type == ft_myfixedbinary)
-        {
-            int dl = *((unsigned short*)(pos));
-            memmove(pos, pos + 2, dl);
-            pos += fd.len - 2;
-            *((unsigned short*)(pos)) = 0x00;
-            ;
-            pos += 2;
-        }
-        else
-        {
-            int blen = fd.varLenBytes();
-            int dl = fd.len; // length
-            if (blen == 1)
-                dl = *((unsigned char*)(pos)) + blen;
-            else if (blen == 2)
-                dl = *((unsigned short*)(pos)) + blen;
-            if ((movelen = fd.len - dl) != 0)
-            {
-                if (max < end + movelen)
-                    return 0;
-                char* src = pos + dl;
-                memmove(pos + fd.len, src, end - src);
-                memset(src, 0, movelen);
-                end += movelen;
-            }
-            pos += fd.len;
-        }
-    }
-    m_impl->dataPacked = false;
-    return (uint_td)(pos - ptr);
 }
 
 void table::addBlobEndRow()
