@@ -311,7 +311,7 @@ class table : private boost::noncopyable
 
     inline uint keylen() const
     {
-        return m_table->key_info[m_keyNum].key_length;
+        return m_table->key_info[(int)m_keyNum].key_length;
     }
     void setKeyValues(const uchar* ptr, int size);
     void setBlobFieldPointer(const bzs::db::blobHeader* hd);
@@ -446,7 +446,7 @@ public:
 
     inline bool isUniqueKey()
     {
-        return (m_table->key_info[m_keyNum].flags & HA_NOSAME);
+        return (m_table->key_info[(int)m_keyNum].flags & HA_NOSAME);
     }
 
     /*
@@ -475,7 +475,7 @@ public:
 
     inline key_part_map keymap()
     {
-        return (1U << m_table->key_info[m_keyNum].user_defined_key_parts) - 1;
+        return (1U << m_table->key_info[(int)m_keyNum].user_defined_key_parts) - 1;
     }
     unsigned long long tableFlags() const { return m_table->file->ha_table_flags();}
     void seekKey(enum ha_rkey_function find_flag, key_part_map keyMap);
@@ -604,7 +604,7 @@ public:
 
     inline const KEY& keyDef(char keyNum) const
     {
-        return m_table->key_info[keyNum];
+        return m_table->key_info[(int)keyNum];
     }
 
     inline const KEY* primaryKey() const

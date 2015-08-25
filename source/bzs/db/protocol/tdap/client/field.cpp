@@ -1659,7 +1659,7 @@ double field::getFVnumeric() const
     char dp[] = "{ABCDEFGHI}JKLMNOPQR";
     char dpsa[] = "PQRSTUVWXYpqrstuvwxy";
     char* pdp = NULL;
-    char i;
+    int i;
     char buf[20] = { 0x00 };
     char dummy[20];
 

@@ -756,7 +756,7 @@ public:
                 (m_map.compKeyValue(mdlb, mdl, m_tb->keyNum()) == true))
             {
                 m_map.setKeyValues(mdl, fds, m_tb->keyNum());
-                keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
+                keydef* kd = &m_tb->tableDef()->keyDefs[(int)m_tb->keyNum()];
                 for (int i = 0; i < kd->segmentCount; ++i)
                     q.addSeekKeyValue(fds[kd->segments[i].fieldNum].c_str());
             }

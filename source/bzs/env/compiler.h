@@ -143,6 +143,14 @@
 
 
 // compiler name
+#if (_MSC_VER == 1400)
+#define COMPILER_VERSTR "vc80"
+#endif
+
+#if (_MSC_VER == 1500)
+#define COMPILER_VERSTR "vc90"
+#endif
+
 #if (_MSC_VER == 1600)
 #define COMPILER_VERSTR "vc100"
 #endif
@@ -153,6 +161,10 @@
 
 #if (_MSC_VER == 1800)
 #define COMPILER_VERSTR "vc120"
+#endif
+
+#if (_MSC_VER == 1900)
+#define COMPILER_VERSTR "vc140"
 #endif
 
 #if (__BCPLUSPLUS__ >= 0x630 && (__BCPLUSPLUS__ < 0x640))

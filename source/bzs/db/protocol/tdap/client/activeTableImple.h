@@ -140,7 +140,7 @@ class activeTableImple : public activeObject<map_orm>
         joinFields.resize(fnsCount);
         fieldIndexes.resize(fnsCount);
         const tabledef* td = table()->tableDef();
-        const keydef* kd = &td->keyDefs[table()->keyNum()];
+        const keydef* kd = &td->keyDefs[(int)table()->keyNum()];
         if (kd->segmentCount < fnsCount)
             THROW_BZS_ERROR_WITH_MSG(_T("Join key fields are too many.\n ")
                                      _T("Check index number and field count."));
@@ -223,7 +223,7 @@ class activeTableImple : public activeObject<map_orm>
         uchar_td buf[MAX_KEYLEN];
         uchar_td* buf_ptr = buf;
         const tabledef* td = table()->tableDef();
-        const keydef* kd = &td->keyDefs[table()->keyNum()];
+        const keydef* kd = &td->keyDefs[(int)table()->keyNum()];
 
         for (int i = 0; i < (int)fieldIndexes.size(); ++i)
         {

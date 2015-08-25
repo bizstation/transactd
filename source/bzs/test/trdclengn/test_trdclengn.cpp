@@ -113,7 +113,7 @@ const _TCHAR* makeUri(const _TCHAR* protocol, const _TCHAR* host,
                       const _TCHAR* dbname, const _TCHAR* dbfile=_T(""))
 {
     connectParams cp(protocol, host, dbname, dbfile, g_userName, g_password);
-    _tcscpy(g_uri, cp.uri());
+    _tcscpy_s(g_uri, 260, cp.uri());
     /*if (dbfile)
         _stprintf_s(g_uri, MAX_PATH, _T("%s://%s/%s?dbfile=%s"), protocol, host,
                     dbname, dbfile);
@@ -3648,7 +3648,7 @@ void testGetEqualKanji(database* db)
 void testResultField(database* db)
 {
     table* tb = openTable(db);
-    resultField rf;
+    resultField rf = {0, 0};
     rf.setParam(tb, _T("name"));
 
     BOOST_CHECK_MESSAGE(rf.len == 33, " resultField.setParam");

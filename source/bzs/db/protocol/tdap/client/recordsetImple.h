@@ -152,7 +152,7 @@ private:
                 m_fds->copyFrom(tb);
             if (tb && (addtype == mra_nojoin))
             {
-                const keydef& kd = tb->tableDef()->keyDefs[tb->keyNum()];
+                const keydef& kd = tb->tableDef()->keyDefs[(int)tb->keyNum()];
                 m_uniqueReadMaxField = (kd.segments[0].flags.bit0 == false)
                                            ? (short)m_fds->size()
                                            : 0;

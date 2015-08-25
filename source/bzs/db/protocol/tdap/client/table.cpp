@@ -1233,7 +1233,7 @@ void table::getKeySpec(keySpec* ks, bool SpecifyKeyNum)
     short FieldNum;
     int j;
     tabledef* td = (*m_tableDef);
-    KeyDef = &td->keyDefs[m_keynum];
+    KeyDef = &td->keyDefs[(int)m_keynum];
     for (j = 0; j < KeyDef->segmentCount; j++)
     {
         FieldNum = KeyDef->segments[j].fieldNum;
@@ -1276,7 +1276,7 @@ void table::doCreateIndex(bool SpecifyKeyNum)
     }
     else
     {
-        int segmentCount = (*m_tableDef)->keyDefs[m_keynum].segmentCount;
+        int segmentCount = (*m_tableDef)->keyDefs[(int)m_keynum].segmentCount;
         keySpec* ks = (keySpec*)malloc(sizeof(keySpec) * segmentCount);
         memset(ks, 0, sizeof(keySpec) * segmentCount);
         getKeySpec(ks, SpecifyKeyNum);
@@ -1305,7 +1305,7 @@ bool table::isUniqeKey(char_td keynum)
 {
     if ((keynum >= 0) && (keynum < (*m_tableDef)->keyCount))
     {
-        keydef* kd = &(*m_tableDef)->keyDefs[m_keynum];
+        keydef* kd = &(*m_tableDef)->keyDefs[(int)m_keynum];
         return !(kd->segments[0].flags.bit0);
     }
     return false;
@@ -1451,7 +1451,7 @@ keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
     if ((*m_tableDef)->keyCount)
     {
         keydef& keydef =
-            (*m_tableDef)->keyDefs[(short)m_impl->keyNumIndex[m_keynum]];
+            (*m_tableDef)->keyDefs[(int)m_impl->keyNumIndex[(int)m_keynum]];
         uchar_td* start = to;
         if (keySize == 0)
             keySize = keydef.segmentCount;
@@ -1966,7 +1966,7 @@ short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 bool table::setSeekValueField(int row)
 {
     const std::vector<client::seek>& keyValues = m_impl->filterPtr->seeks();
-    keydef* kd = &tableDef()->keyDefs[keyNum()];
+    keydef* kd = &tableDef()->keyDefs[(int)keyNum()];
     if (keyValues.size() % kd->segmentCount)
         return false;
     // Check uniqe key
@@ -2006,9 +2006,9 @@ void table::keyValueDescription(_TCHAR* buf, int bufsize)
     if (stat() == STATUS_NOT_FOUND_TI)
     {
 
-        for (int i = 0; i < tableDef()->keyDefs[keyNum()].segmentCount; i++)
+        for (int i = 0; i < tableDef()->keyDefs[(int)keyNum()].segmentCount; i++)
         {
-            short fnum = tableDef()->keyDefs[keyNum()].segments[i].fieldNum;
+            short fnum = tableDef()->keyDefs[(int)keyNum()].segments[i].fieldNum;
             s += std::_tstring(tableDef()->fieldDefs[fnum].name()) + _T(" = ") +
                  getFVstr(fnum) + _T("\n");
         }

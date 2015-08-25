@@ -333,6 +333,7 @@ typedef char _TUCHAR;
 #define _tcsset _strset
 #define _tcslwr _strlwr
 #define _tcsupr _strupr
+#define _tcsupr_s(a, b) (_strupr(a))
 #define _tcsxfrm strxfrm
 #define _tcscoll strcoll
 #define _tcsicoll _stricoll
