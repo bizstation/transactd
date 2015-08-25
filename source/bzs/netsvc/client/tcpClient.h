@@ -405,9 +405,8 @@ public:
 
 /** Implementation of The TCP connection.
  */
-#if defined(LINUX)
 #define USE_CONNECT_TIMER
-#endif
+
 
 template <class T>
 class tcpConnection : public connectionImple<asio::ip::tcp::socket>
