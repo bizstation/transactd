@@ -827,7 +827,9 @@ enum eCompType
     eLess = 3,
     eNotEq = 4,
     eGreaterEq = 5,
-    eLessEq = 6
+    eLessEq = 6,
+    eBitAnd = 8,
+    eNotBitAnd = 9
 };
 
 PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr);

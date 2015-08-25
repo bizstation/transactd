@@ -173,8 +173,8 @@ public:
     bool read(bool KeysetAlrady = false);
     bool read(bookmark_td& bm);
     void insert();
-    void del(bool KeysetAlrady = false);
-    void update();
+    void del(bool KeysetAlrady = false, bool noSeek = false);
+    void update(bool KeysetAlrady = false, bool noSeek = false);
     void save();
 
 };

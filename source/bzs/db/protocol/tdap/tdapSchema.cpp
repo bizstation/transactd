@@ -591,6 +591,10 @@ PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr)
         return (uchar_td)eLessEq;
     else if (_tcscmp(cmpstr, _T("<=")) == 0)
         return (uchar_td)eLessEq;
+    else if (_tcscmp(cmpstr, _T("&")) == 0)
+        return (uchar_td)eBitAnd;
+    else if (_tcscmp(cmpstr, _T("!&")) == 0)
+        return (uchar_td)eNotBitAnd;
     else if (_tcscmp(cmpstr, _T("=i")) == 0)
         return (uchar_td)eEqual | CMPLOGICAL_CASEINSENSITIVE;
     else if (_tcscmp(cmpstr, _T(">i")) == 0)

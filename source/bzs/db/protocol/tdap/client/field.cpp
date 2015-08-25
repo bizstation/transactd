@@ -1836,6 +1836,20 @@ inline int compNumber(const field& l, const field& r, char logType)
     return compare<T>((const char*)l.ptr(), (const char*)r.ptr());
 }
 
+template <class T>
+inline int compBitAnd(const field& l, const field& r, char logType)
+{
+    return bitMask<T>((const char*)l.ptr(), (const char*)r.ptr());
+}
+
+inline int compBitAnd24(const field& l, const field& r, char logType)
+{
+
+    int lv = ((*((int*)(const char*)l.ptr()) & 0xFFFFFF) << 8) / 0x100;
+    int rv = ((*((int*)(const char*)r.ptr()) & 0xFFFFFF) << 8) / 0x100;
+    return bitMask<int>((const char*)&lv, (const char*)&rv);
+}
+
 inline int compNumber24(const field& l, const field& r, char logType)
 {
     return compareInt24((const char*)l.ptr(), (const char*)r.ptr());
@@ -1899,18 +1913,37 @@ compFieldFunc field::getCompFunc(char logType) const
     case ft_autoinc:
     case ft_currency:
     {
-        switch (m_fd->len)
+        if (logType & eBitAnd)
         {
-        case 1:
-            return &compNumber<char>;
-        case 2:
-            return &compNumber<short>;
-        case 3:
-            return &compNumber24;
-        case 4:
-            return &compNumber<int>;
-        case 8:
-            return &compNumber<__int64>;
+
+            switch (m_fd->len)
+            {
+            case 1:
+                return &compBitAnd<char>;
+            case 2:
+                return &compBitAnd<short>;
+            case 3:
+                return &compBitAnd24;
+            case 4:
+                return &compBitAnd<int>;
+            case 8:
+                return &compBitAnd<__int64>;
+            }
+        }else
+        {
+            switch (m_fd->len)
+            {
+            case 1:
+                return &compNumber<char>;
+            case 2:
+                return &compNumber<short>;
+            case 3:
+                return &compNumber24;
+            case 4:
+                return &compNumber<int>;
+            case 8:
+                return &compNumber<__int64>;
+            }
         }
     }
     case ft_mychar:
@@ -1931,18 +1964,36 @@ compFieldFunc field::getCompFunc(char logType) const
     case ft_timestamp:
     case ft_mydate:
     {
-        switch (m_fd->len)
+        if (logType & eBitAnd)
         {
-        case 1:
-            return &compNumber<unsigned char>;
-        case 2:
-            return &compNumber<unsigned short>;
-        case 3:
-            return &compNumberU24;
-        case 4:
-            return &compNumber<unsigned int>;
-        case 8:
-            return &compNumber<unsigned __int64>;
+            switch (m_fd->len)
+            {
+            case 1:
+                return &compBitAnd<unsigned char>;
+            case 2:
+                return &compBitAnd<unsigned short>;
+            case 3:
+                return &compBitAnd24;
+            case 4:
+                return &compBitAnd<unsigned int>;
+            case 8:
+                return &compBitAnd<unsigned __int64>;
+            }
+        }else
+        {
+            switch (m_fd->len)
+            {
+            case 1:
+                return &compNumber<unsigned char>;
+            case 2:
+                return &compNumber<unsigned short>;
+            case 3:
+                return &compNumberU24;
+            case 4:
+                return &compNumber<unsigned int>;
+            case 8:
+                return &compNumber<unsigned __int64>;
+            }
         }
     }
     case ft_mytime:

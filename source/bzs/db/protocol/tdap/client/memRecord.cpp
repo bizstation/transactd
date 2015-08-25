@@ -336,22 +336,29 @@ void writableRecord::insert()
     copyFromBuffer(m_tb);
 }
 
-void writableRecord::del(bool KeysetAlrady)
+void writableRecord::del(bool KeysetAlrady, bool noSeek)
 {
     if (!KeysetAlrady)
         copyToBuffer(m_tb);
-    m_tb->seek();
-    if (m_tb->stat())
-        nstable::throwError(_T("activeTable delete "), m_tb->stat());
+    if (noSeek == false)
+    {
+        m_tb->seek();
+        if (m_tb->stat())
+            nstable::throwError(_T("activeTable delete "), m_tb->stat());
+    }
     deleteRecord(m_tb);
 }
 
-void writableRecord::update()
+void writableRecord::update(bool KeysetAlrady, bool noSeek)
 {
-    copyToBuffer(m_tb);
-    m_tb->seek();
-    if (m_tb->stat())
-        nstable::throwError(_T("activeTable update "), m_tb->stat());
+    if (!KeysetAlrady)
+        copyToBuffer(m_tb);
+    if (noSeek == false)
+    {
+        m_tb->seek();
+        if (m_tb->stat())
+            nstable::throwError(_T("activeTable update "), m_tb->stat());
+    }
     copyToBuffer(m_tb, true /*only changed*/);
     updateRecord(m_tb);
 }

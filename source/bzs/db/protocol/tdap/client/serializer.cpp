@@ -647,6 +647,13 @@ struct queryStatementsImple
         }
     }
 
+    void move(int from, int to)
+    {
+        executable* p = statements[from];
+		statements.erase(statements.begin() + from);
+		statements.insert(statements.begin() + to, p);
+    }
+
 private:
     friend class boost::serialization::access;
     template <class Archive>
@@ -1103,6 +1110,11 @@ void queryStatements::execute(recordset& rs,
 void queryStatements::clear()
 {
     m_impl->reset();
+}
+
+void queryStatements::move(int from, int to)
+{
+    m_impl->move(from, to);
 }
 
 int queryStatements::statementType(int index)

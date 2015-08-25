@@ -268,10 +268,11 @@ void recordsetQuery::init(const fielddefs* fdinfo)
 
 bool recordsetQuery::isMatch(int ret, unsigned char compType) const
 {
-    compType &= 0xf; // lower then 15
+    compType &= 0xf; // lower than 15
     switch ((eCompType)compType)
     {
     case eEqual:
+    case eBitAnd:
         return (ret == 0);
     case eGreaterEq:
         return (ret >= 0);
@@ -282,6 +283,7 @@ bool recordsetQuery::isMatch(int ret, unsigned char compType) const
     case eLess:
         return (ret < 0);
     case eNotEq:
+    case eNotBitAnd:
         return (ret != 0);
     }
     return false;
