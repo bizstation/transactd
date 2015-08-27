@@ -28,8 +28,12 @@
 #if (BOOST_VERSION > 104900)
 #include <boost/asio/deadline_timer.hpp>
 #else
+#if (!defined(__BCPLUSPLUS__) || defined(__clang__) || (__BCPLUSPLUS__ > 0x0651))
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#else
+#define NO_CONNECT_TIMER
+#endif
 #endif
 
 
@@ -403,8 +407,9 @@ public:
 
 /** Implementation of The TCP connection.
  */
+#ifndef NO_CONNECT_TIMER
 #define USE_CONNECT_TIMER
-
+#endif
 
 template <class T>
 class tcpConnection : public connectionImple<asio::ip::tcp::socket>

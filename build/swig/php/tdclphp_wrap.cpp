@@ -30542,7 +30542,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_activeTable__SWIG_1) {
   bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
   short arg3 = TD_OPEN_NORMAL;
-  zval **args[2];
+  zval **args[3];
   bzs::db::protocol::tdap::client::activeTable *result = 0 ;
   int argc = ZEND_NUM_ARGS();
   

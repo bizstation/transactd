@@ -291,10 +291,14 @@ add_custom_command(TARGET ${this_target} POST_BUILD
 # install 
 # ==========================================================
 if (${PHPLIBS_FOUND} STREQUAL "TRUE")
-  install(FILES  "${TRANSACTD_BINARY_ROOT}/bin/transactd.php" DESTINATION
-            "${PHP_INFO_INCLUDE}/")
   install(FILES  "${TRANSACTD_BINARY_ROOT}/bin/php_transactd.so" DESTINATION
              "${PHP_EXTENSION_DIR}/")
+  if (NOT PHP_INFO_INCLUDE)
+      install(CODE "MESSAGE(\"Warning! php include path is not found. Do not install ${TRANSACTD_BINARY_ROOT}/bin/transactd.php .\")")
+  else()  
+     install(FILES  "${TRANSACTD_BINARY_ROOT}/bin/transactd.php" DESTINATION
+            "${PHP_INFO_INCLUDE}/")
+  endif()
   if(${PHP_TRANSACTD_ENABLED} STREQUAL "NO")
       install(CODE "file(APPEND ${PHP_INFO_FILE} \"extension=php_transactd.so\\n\")")
   endif()
