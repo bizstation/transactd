@@ -1,4 +1,42 @@
 Release note
+================================================================================
+Version 2.4.2 2015/08/31
+================================================================================
+New Features
+--------------------------------------------------------------------------------
+* Added a bit AND operator to queryBase and recordsetQuery.
+  In addition to the operators of the past, you can use the '&' and '!&'.
+  '&' operator performs the value and bit operation of the field. If the same as 
+  the specified value matches.
+  '!&' operator performs the value and bit operation of the field. If the not
+  same as the specified value matches. 
+ 
+  ex)flags & 8 and flags !& 16
+
+
+Other Modifications
+--------------------------------------------------------------------------------
+* Changed method
+  field::addAllFileds(tabledef* def) : Chnaged from protected to public.
+
+* Added method parameters
+  writableRecord::del and writableRecord::update,added option of "bool noSeek=false". 
+  If true the noSeek, current record as an established, omit the read operation 
+  in the delete or update operation.
+
+* Added method 
+  void queryStatements::move(int from, int to)
+
+* It was fixed a bug that connection timeout does not work as configured on 
+  windows.
+
+* If there is no record to Join in HasManyJoin, Fixed a bug that may not be 
+  processed correctly.
+
+* In the Join, When the binding key is a string, Fixed a problem that may not
+  be able to properly search. 
+
+
 
 ================================================================================
 Version 2.4.0 2015/06/03
