@@ -44,6 +44,7 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>Windows7.1SDK</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -63,22 +64,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|Win32'">
     <IncludePath>$(TI_BOOST_ROOT_32);../../source;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\lib\;$(TI_BOOST_ROOT_32)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(TI_BOOST_ROOT_32)\stage\lib;$(SolutionDir)\..\lib\;$(TI_BOOST_ROOT_32)\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Unicode|x64'">
     <IncludePath>$(TI_BOOST_ROOT_64);../../source;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\lib\;$(TI_BOOST_ROOT_64)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(TI_BOOST_ROOT_64)\stage\lib;$(SolutionDir)\..\lib\;$(TI_BOOST_ROOT_64)\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|Win32'">
     <IncludePath>$(TI_BOOST_ROOT_32);../../source;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\lib\;$(TI_BOOST_ROOT_32)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(TI_BOOST_ROOT_32)\stage\lib;$(SolutionDir)\..\lib\;$(TI_BOOST_ROOT_32)\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Unicode|x64'">
     <IncludePath>$(TI_BOOST_ROOT_64);../../source;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\lib\;$(TI_BOOST_ROOT_64)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(TI_BOOST_ROOT_64)\stage\lib;$(SolutionDir)\..\lib\;$(TI_BOOST_ROOT_64)\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\bin\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
