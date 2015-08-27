@@ -69,12 +69,8 @@ endif()
 # ==========================================================
 # add library path
 # ==========================================================
-if (MSVC)
-   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
-   message(STATUS "library directory ${TRANSACTD_BINARY_ROOT}/lib")
-else()
-   link_directories("../tdclcpp")
-endif()
+link_directories("${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common")
+
 
 # ==========================================================
 # add swig wrapper source file
@@ -166,7 +162,7 @@ endif()
 target_link_libraries(${this_target} "${TRANSACTD_RUBY_LIBRARY_PATH}")
 transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
 #tdclcpp_x on windows is auto link
-if(NOT MSVC)
+if(NOT WIN32)
   target_link_libraries(${this_target} "tdclcpp_64m")
 endif()
 
