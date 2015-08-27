@@ -69,7 +69,11 @@ endif()
 # ==========================================================
 # add library path
 # ==========================================================
-link_directories("${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common")
+if(WIN32)
+  link_directories("${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common")
+else()
+ link_directories("../tdclcpp")
+endif()
 
 
 # ==========================================================
