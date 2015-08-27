@@ -92,16 +92,37 @@ endif()
 # ==========================================================
 add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 
+# ==========================================================
+# add dependencie projects
+# ==========================================================
+add_dependencies(${this_target} tdclc)
+
 
 # ==========================================================
 # Add compile options
 # ==========================================================
-if(TDCL_CPP_USE_RUNTIME_LIBS)
-  transactd_set_MTMD("MD")
+transactd_reset_MTMD()
+if (MSVC)
+  if((TRANSACTD_RUBY_GEM) OR (TRANSACTD_PHP))
+    bz_add_cxx_flag("/MD" "_RELEASE")
+    bz_add_cxx_flag("/MDd" "_DEBUG")
+    bz_add_cxx_flag("/MD" "_RELWITHDEBINFO")
+    bz_add_cxx_flag("/MD" "_MINSIZEREL")
+  else()
+    bz_add_cxx_flag("/MT" "_RELEASE")
+    bz_add_cxx_flag("/MTd" "_DEBUG")
+    bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
+    bz_add_cxx_flag("/MD" "_MINSIZEREL")
+  endif()
+  foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
+    bz_add_cxx_flag("/wd4996" "${build_type}")
+  endforeach()
 else()
-  transactd_set_MTMD("MT")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELEASE")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_DEBUG")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_MINSIZEREL")
 endif()
-
 
 # ==========================================================
 # Add compile definitions
@@ -154,12 +175,16 @@ if(WIN32)
   ## Windows tdclcpp[_Compiler]_[32|64][m|u|mr]_[MAJOR]_[MINOR].dll
   bz_get_compiler()
   set(TDCL_CPP_NAME_TMP "tdclcpp${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
-  if(TDCL_CPP_USE_RUNTIME_LIBS)
-    set(TDCL_CPP_NAME_TMP "${TDCL_CPP_NAME_TMP}r")
-  endif()
+  
+  foreach(BUILD_TYPE DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+    transactd_has_MD_option("${CMAKE_CXX_FLAGS_${BUILD_TYPE}}")
+    if("${IS_MD}" STREQUAL "ON")
+      set_target_properties(${this_target} PROPERTIES OUTPUT_NAME_${BUILD_TYPE} "${TDCL_CPP_NAME_TMP}r_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
+    else()
+      set_target_properties(${this_target} PROPERTIES OUTPUT_NAME_${BUILD_TYPE} "${TDCL_CPP_NAME_TMP}_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
+    endif()
+  endforeach()
   set_target_properties(${this_target} PROPERTIES PREFIX "")
-  set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
-    "${TDCL_CPP_NAME_TMP}_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
   set_target_properties(${this_target} PROPERTIES SUFFIX ".dll")
 else()
   ## Linux   libtdclcpp_[32|64][m|u].so.[MAJOR].[MINOR].[RELEASE]

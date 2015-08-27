@@ -240,6 +240,22 @@ endif()
 
 
 # ==========================================================
+#   transactd_has_MD_option
+# ==========================================================
+if(NOT COMMAND transactd_has_MD_option)
+macro(transactd_has_MD_option option_string)
+  set(IS_MD OFF)
+  if(MSVC)
+    if( ("${option_string}" MATCHES "(.* )?/MD( .*)?$") OR
+        ("${option_string}" MATCHES "(.* )?/MDd( .*)?$") )
+      set(IS_MD ON)
+    endif()
+  endif()
+endmacro()
+endif()
+
+
+# ==========================================================
 #   transactd_link_boost_libraries MACRO
 #     boost_components  : "system;chrono;thread;filesystem"
 # ==========================================================
@@ -294,24 +310,27 @@ macro(transactd_link_boost_libraries boost_components)
     endif()
     set(boost_libs_listlen 0)
     # buildtype-specified libraries
-    foreach(BT_NAME "" ${CMAKE_CONFIGURATION_TYPES})
+    foreach(BUILD_TYPE DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+      set(BT_NAME "${BUILD_TYPE}")
       if(NOT("${BT_NAME}" STREQUAL ""))
         set(BT_NAME "_${BT_NAME}")
         string(TOUPPER "${BT_NAME}" BT_NAME)
       endif()
-      transactd_has_MTMD_option("${CMAKE_CXX_FLAGS${BT_NAME}}")
-      if("${transactd_has_MTMD_option_return}" STREQUAL "ON")
-        # find buildtype-specified boost libraries
-        get_boost_libs_from_compiler_flags("${CMAKE_CXX_FLAGS${BT_NAME}}")
-        set(boost_libs_for${BT_NAME} "${get_boost_libs_from_compiler_flags_return}")
+      
+      transactd_has_MD_option("${CMAKE_CXX_FLAGS_${BUILD_TYPE}}")
+      message(STATUS "CMAKE_CXX_FLAGS_${BUILD_TYPE} = ${CMAKE_CXX_FLAGS_${BUILD_TYPE}} IS_MD=${IS_MD}")
+      if ("${IS_MD}" STREQUAL "ON")
+         if("${BUILD_TYPE}" STREQUAL "DEBUG")
+           set(boost_libs_for${BT_NAME} "${Boost_LIBRARIES_STATIC_USE_RUNTIME_DEBUG}")
+         else()
+           set(boost_libs_for${BT_NAME} "${Boost_LIBRARIES_STATIC_USE_RUNTIME_NO_DEBUG}")
+         endif()
+      elseif("${BUILD_TYPE}" STREQUAL "DEBUG")
+         set(boost_libs_for${BT_NAME} "${Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME_DEBUG}")
       else()
-        # use project-specified libaries if buildtype-specified option is not set
-        if("${boost_libs_for_${this_target}}" STREQUAL "")
-          set(boost_libs_for${BT_NAME} "${Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME_NO_DEBUG}")
-        else()
-          set(boost_libs_for${BT_NAME} "${boost_libs_for_${this_target}}")
-        endif()
+         set(boost_libs_for${BT_NAME} "${Boost_LIBRARIES_STATIC_NOTUSE_RUNTIME_NO_DEBUG}")
       endif()
+      
       # check number of boost libaries
       string(REGEX REPLACE ";$" "" boost_libs_for${BT_NAME} "${boost_libs_for${BT_NAME}}")
       list(LENGTH boost_libs_for${BT_NAME} boost_libs_listlen${BT_NAME})
