@@ -40,6 +40,7 @@ typedef wchar_t _TUCHAR;
 #else // NOT _UNICODE
 
 #define _tcsncpy_s strncpy_s
+#define _tcsupr_s(a, b) (_strupr(a))
 
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5) // 4.5 and lesser
 #define _tcscpy_s strcpy_s

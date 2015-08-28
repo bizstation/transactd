@@ -1077,7 +1077,7 @@ void table::fillNull(uchar* ptr, int size)
 
 void table::setKeyValues(const uchar* ptr, int size)
 {
-    KEY& key = m_table->key_info[m_keyNum];
+    KEY& key = m_table->key_info[(int)m_keyNum];
     memcpy(&m_keybuf[0], ptr, std::min(MAX_KEYLEN, size));
     int pos = 0;
     for (int j = 0; j < (int)key.user_defined_key_parts; j++)
@@ -1107,7 +1107,7 @@ void table::setKeyValues(const uchar* ptr, int size)
  */
 short table::setKeyValuesPacked(const uchar* ptr, int size)
 {
-    KEY& key = m_table->key_info[m_keyNum];
+    KEY& key = m_table->key_info[(int)m_keyNum];
     int to = 0;
     const uchar* from = ptr;
     int ret = -1;
@@ -1166,7 +1166,7 @@ uint table::keyPackCopy(uchar* ptr)
     if (m_keyNum < 0)
         return 0;
 
-    KEY& key = m_table->key_info[m_keyNum];
+    KEY& key = m_table->key_info[(int)m_keyNum];
     if ((key.flags & HA_NULL_PART_KEY) || (key.flags & HA_VAR_LENGTH_KEY))
     {
         int from = 0;
@@ -1488,7 +1488,7 @@ void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
         {
             if (find_flag != HA_READ_KEY_EXACT)
                 key_copy(&m_keybuf[0], m_table->record[0],
-                         &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
+                         &m_table->key_info[(int)m_keyNum], KEYLEN_ALLCOPY);
         }
     }
     else
@@ -1508,7 +1508,7 @@ void table::moveKey(boost::function<int()> func)
         setCursorStaus();
         if (m_stat == 0)
             key_copy(&m_keybuf[0], m_table->record[0],
-                     &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
+                     &m_table->key_info[(int)m_keyNum], KEYLEN_ALLCOPY);
     }
     else
         m_stat = STATUS_INVALID_KEYNUM;
@@ -1528,7 +1528,7 @@ void table::getNextSame(key_part_map keyMap)
         if (m_stat == 0)
         {
             key_copy(&m_keybuf[0], m_table->record[0],
-                     &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
+                     &m_table->key_info[(int)m_keyNum], KEYLEN_ALLCOPY);
         }
     }
     else
@@ -1603,7 +1603,7 @@ bool table::keyCheckForPercent()
     if (m_keyNum == -1)
         m_keyNum = m_table->s->primary_key;
     // The value of the beginning of a key
-    KEY& key = m_table->key_info[m_keyNum];
+    KEY& key = m_table->key_info[(int)m_keyNum];
     if (key.key_length > 128)
         return false;
     return true;
@@ -1611,7 +1611,7 @@ bool table::keyCheckForPercent()
 
 void table::preBuildPercent(uchar* first, uchar* last)
 {
-    KEY& key = m_table->key_info[m_keyNum];
+    KEY& key = m_table->key_info[(int)m_keyNum];
     getFirst();
     if (m_stat == 0)
     {
@@ -1661,7 +1661,7 @@ void table::getByPercentage(unsigned short per)
         uchar* st = keybufFirst;
         uchar* en = keybufLast;
         uchar* cu = (uchar*)keybuf();
-        KEY& key = m_table->key_info[m_keyNum];
+        KEY& key = m_table->key_info[(int)m_keyNum];
         uint keylen = key.key_length + 10;
         boost::shared_array<uchar> stbuf(new uchar[keylen]);
         boost::shared_array<uchar> lsbuf(new uchar[keylen]);
@@ -1749,7 +1749,7 @@ void table::getByPercentage(unsigned short per)
 
 int table::percentage(uchar* first, uchar* last, uchar* cur)
 {
-    KEY& key = m_table->key_info[m_keyNum];
+    KEY& key = m_table->key_info[(int)m_keyNum];
     // 1 cur to last
     key_range minkey;
     minkey.key = cur;
@@ -1786,7 +1786,7 @@ void table::calcPercentage()
     m_percentResult = 0;
     // The present key value is copied.
     uchar keybufCur[MAX_KEYLEN] = { 0x00 };
-    key_copy(keybufCur, m_table->record[0], &m_table->key_info[m_keyNum],
+    key_copy(keybufCur, m_table->record[0], &m_table->key_info[(int)m_keyNum],
              KEYLEN_ALLCOPY);
 
     uchar keybufFirst[MAX_KEYLEN] = { 0x00 };
@@ -1982,7 +1982,7 @@ void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
         if (m_keyNum != keyNum)
         { // need key change
             key_copy(&m_keybuf[0], m_table->record[0],
-                     &m_table->key_info[keyNum], KEYLEN_ALLCOPY);
+                     &m_table->key_info[(int)keyNum], KEYLEN_ALLCOPY);
             // It seek(s) until ref becomes the same, since it is a duplication
             // key.
             setKeyNum(keyNum);
@@ -2086,7 +2086,7 @@ bool table::isNisKey(char num) const
 {
     if ((num >= 0) && (num < (short)m_table->s->keys))
     {
-        Field* fd = m_table->key_info[num].key_part[0].field;
+        Field* fd = m_table->key_info[(int)num].key_part[0].field;
         if (fd->null_bit)
             return true;
     }
@@ -2195,7 +2195,7 @@ __int64 table::insert(bool ncc)
         m_nonNcc = !ncc;
         if (!ncc && !m_bulkInserting)
             key_copy(&m_keybuf[0], m_table->record[0],
-                     &m_table->key_info[m_keyNum], KEYLEN_ALLCOPY);
+                     &m_table->key_info[(int)m_keyNum], KEYLEN_ALLCOPY);
         
         /* Do not change to m_changed = false */
         m_changed = true;
@@ -2282,7 +2282,7 @@ void table::update(bool ncc)
                 // Only when the present key value is changed
                 if (m_keyNum >= 0)
                 {
-                    const KEY& key = m_table->key_info[m_keyNum];
+                    const KEY& key = m_table->key_info[(int)m_keyNum];
                     key_copy(&m_keybuf[0], m_table->record[0], (KEY*)&key,
                              KEYLEN_ALLCOPY);
 
@@ -2354,7 +2354,7 @@ const char* table::keyName(char keyNum)
 {
     if ((keyNum >= 0) && (keyNum < (short)m_table->s->keys))
     {
-        KEY& key = m_table->key_info[keyNum];
+        KEY& key = m_table->key_info[(int)keyNum];
         return key.name;
     }
     return "";
@@ -2387,7 +2387,7 @@ void table::endBulkInsert()
 {
     if (m_bulkInserting)
     {
-        key_copy(&m_keybuf[0], m_table->record[0], &m_table->key_info[m_keyNum],
+        key_copy(&m_keybuf[0], m_table->record[0], &m_table->key_info[(int)m_keyNum],
                  KEYLEN_ALLCOPY);
         m_bulkInserting = false;
         m_table->file->ha_release_auto_increment();
@@ -2441,7 +2441,7 @@ inline void setSegmentValue(const KEY_PART_INFO& segment, const std::string& v)
 void table::setKeyValues(const std::vector<std::string>& values, int keypart,
                          const std::string* inValue)
 {
-    KEY& key = m_table->key_info[m_keyNum];
+    KEY& key = m_table->key_info[(int)m_keyNum];
     for (int i = 0; i < (int)key.user_defined_key_parts; i++)
         if (i < (int)values.size())
             setSegmentValue(key.key_part[i], values[i]);

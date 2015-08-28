@@ -31,7 +31,6 @@ include(../common/get_boost_libs.cmake)
 
 
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE bench_query "" TDCL_CPP_CHARSET "${this_target}")
 project(${this_target})
 
 
@@ -51,6 +50,15 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   set(TRANSACTD_BINARY_ROOT "${CMAKE_BINARY_DIR}")
 endif()
 
+# ==========================================================
+# add library path
+# ==========================================================
+if (MSVC)
+   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
+   message(STATUS "library directory ${TRANSACTD_BINARY_ROOT}/lib")
+else()
+   link_directories("../tdclcpp")
+endif()
 
 # ==========================================================
 # source files
@@ -98,9 +106,26 @@ endif()
 
 
 # ==========================================================
+# add dependencie projects
+# ==========================================================
+add_dependencies(${this_target} tdclc tdclcpp)
+
+# ==========================================================
 # Add compile options
 # ==========================================================
-transactd_set_MTMD("MT")
+transactd_reset_MTMD()
+if (MSVC)
+  bz_add_cxx_flag("/MT" "_RELEASE")
+  bz_add_cxx_flag("/MTd" "_DEBUG")
+  bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD" "_MINSIZEREL")
+else()
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELEASE")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_DEBUG")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_MINSIZEREL")
+endif()
+
 
 
 # ==========================================================
@@ -129,14 +154,12 @@ endif()
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("timer;program_options")
-if(TARGET tdclcpp${TDCL_CPP_CHARSET})
-  target_link_libraries(${this_target} "tdclcpp${TDCL_CPP_CHARSET}")
-else()
+transactd_link_boost_libraries("timer;program_options;system;chrono")
+
+#tdclcpp_x on windows is auto link
+if(NOT MSVC)
   bz_get_compiler_bitness()
   target_link_libraries(${this_target} "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
-endif()
-if(UNIX)
   target_link_libraries(${this_target} dl)
 endif()
 

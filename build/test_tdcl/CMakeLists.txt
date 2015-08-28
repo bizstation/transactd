@@ -27,10 +27,10 @@ include(../common/transactd_common.cmake)
 include(../common/options.cmake)
 include(../common/system.cmake)
 include(../common/get_boost_libs.cmake)
+check_for_link_iconv()
 
 
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE test_tdcl "" TDCL_CPP_CHARSET "${this_target}")
 project(${this_target})
 
 
@@ -50,6 +50,15 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   set(TRANSACTD_BINARY_ROOT "${CMAKE_BINARY_DIR}")
 endif()
 
+# ==========================================================
+# add library path
+# ==========================================================
+if (MSVC)
+   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
+   message(STATUS "library directory ${TRANSACTD_BINARY_ROOT}/lib")
+else()
+   link_directories("../tdclcpp")
+endif()
 
 # ==========================================================
 # source files
@@ -95,11 +104,26 @@ else()
     OUTPUT_NAME "test_tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
 endif()
 
+# ==========================================================
+# add dependencie projects
+# ==========================================================
+add_dependencies(${this_target} tdclc tdclcpp)
 
 # ==========================================================
 # Add compile options
 # ==========================================================
-transactd_set_MTMD("MT")
+transactd_reset_MTMD()
+if (MSVC)
+  bz_add_cxx_flag("/MT" "_RELEASE")
+  bz_add_cxx_flag("/MTd" "_DEBUG")
+  bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD" "_MINSIZEREL")
+else()
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_RELEASE")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_DEBUG")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_MINSIZEREL")
+endif()
 
 
 # ==========================================================
@@ -128,14 +152,15 @@ endif()
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("")
-if(TARGET tdclcpp${TDCL_CPP_CHARSET})
-  target_link_libraries(${this_target} "tdclcpp${TDCL_CPP_CHARSET}")
-else()
+transactd_link_boost_libraries("thread;system")
+if(CAN_LINK_ICONV)
+  target_link_libraries(${this_target} "${ICONV_LIBRARY}")
+endif()
+
+#tdclcpp_x on windows is auto link
+if(NOT MSVC)
   bz_get_compiler_bitness()
   target_link_libraries(${this_target} "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
-endif()
-if(UNIX)
   target_link_libraries(${this_target} dl pthread)
 endif()
 

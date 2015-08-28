@@ -67,28 +67,28 @@
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\..\source;$(TI_BOOST_ROOT_32);$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_32)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_32)\stage\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)../../bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>..\..\source;$(TI_BOOST_ROOT_64);$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_64)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_64)\stage\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)../../bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\..\source;$(TI_BOOST_ROOT_32);$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_32)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_32)\stage\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)../../bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>..\..\source;$(TI_BOOST_ROOT_64);$(IncludePath)</IncludePath>
-    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_64)\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\lib;$(TI_BOOST_ROOT_64)\stage\lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)../../bin/</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

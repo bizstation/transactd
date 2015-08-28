@@ -224,8 +224,7 @@ int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
     smartDbsReopen reopen(thd, m_dbs);
 
     thd->clear_error();
-    int result = dispatch_command(COM_QUERY, thd, (char*)sql_stmt.c_str(),
-                                  (uint)sql_stmt.size());
+	int result = cp_query_command(thd, (char*)sql_stmt.c_str());
     //if (!thd->cp_isOk())
     //    result = 1;
     if (thd->is_error())

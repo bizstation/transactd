@@ -719,6 +719,9 @@ struct PACKAGE tabledef
         strncpy_s(m_tableName, TABLE_NAME_SIZE, s, sizeof(m_tableName) - 1);
     }
 
+    uint_td unPack(char* ptr, size_t size) const;
+    uint_td pack(char* ptr, size_t size) const;
+
     ushort_td id; // table id
 
 #ifdef SWIG
@@ -824,7 +827,9 @@ enum eCompType
     eLess = 3,
     eNotEq = 4,
     eGreaterEq = 5,
-    eLessEq = 6
+    eLessEq = 6,
+    eBitAnd = 8,
+    eNotBitAnd = 9
 };
 
 PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr);

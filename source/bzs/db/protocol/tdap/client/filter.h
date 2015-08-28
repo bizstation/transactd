@@ -806,7 +806,7 @@ class filter
     {
         int keySize = q->getJoinKeySize();
         uchar_td* dataBuf;
-        keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
+        keydef* kd = &m_tb->tableDef()->keyDefs[(int)m_tb->keyNum()];
         
         if (!prebuiltSeeks(kd, keyValues.size(), q, keySize, &dataBuf))
              return false;
@@ -1098,7 +1098,7 @@ public:
     bool supplySeekValues(const T& values, size_t size, int keySize)
     {
         uchar_td* dataBuf;
-        keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
+        keydef* kd = &m_tb->tableDef()->keyDefs[(int)m_tb->keyNum()];
 
         if (!prebuiltSeeks(kd, size, NULL, keySize, &dataBuf))
              return false;
@@ -1113,7 +1113,7 @@ public:
 
     bool beginSupplySeekValues(size_t size, int keySize)
     {
-        keydef* kd = &m_tb->tableDef()->keyDefs[m_tb->keyNum()];
+        keydef* kd = &m_tb->tableDef()->keyDefs[(int)m_tb->keyNum()];
 
         if (!prebuiltSeeks(kd, size, NULL, keySize, &m_buftmp))
              return false;
@@ -1126,7 +1126,7 @@ public:
     bool supplySeekValue(const uchar_td* ptr[] , int len[], int keySize, int& index)
     {
         const tabledef* td = m_tb->tableDef();
-        keydef* kd = &td->keyDefs[m_tb->keyNum()];
+        keydef* kd = &td->keyDefs[(int)m_tb->keyNum()];
         fielddef* fds = td->fieldDefs;
 
         seek& l = m_seeks[index];

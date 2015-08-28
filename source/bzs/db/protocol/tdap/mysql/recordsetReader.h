@@ -136,6 +136,21 @@ inline unsigned short position::packLen(const resultField* rf) const
     return m_tb->fieldDataLen(rf->fieldNum);
 }
 
+template <class T> inline 
+int bitMask(const char* l, const char* r)
+{
+    T v = *((T*)l) & *((T*)r);
+    return (int)(*((T*)r) - v);
+}
+
+inline int bitMask24(const char* l, const char* r)
+{
+    int lv = ((*((int*)l) & 0xFFFFFF) << 8) / 0x100;
+    int rv = ((*((int*)r) & 0xFFFFFF) << 8) / 0x100;
+    int v = lv & rv;
+    return rv - v;
+}
+
 inline int compareUint24(const char* l, const char* r)
 {
     unsigned int lv = *((unsigned int*)l) & 0xFFFFFF;
@@ -302,18 +317,36 @@ public:
         case ft_autoinc:
         case ft_currency:
         {
-            switch (len)
+            if (logType & 8)
             {
-            case 1:
-                return compare<char>(l, r);
-            case 2:
-                return compare<short>(l, r);
-            case 3:
-                return compareInt24(l, r);
-            case 4:
-                return compare<int>(l, r);
-            case 8:
-                return compare<__int64>(l, r);
+                switch (len)
+                {
+                case 1:
+                    return bitMask<char>(l, r);
+                case 2:
+                    return bitMask<short>(l, r);
+                case 3:
+                    return bitMask24(l, r);
+                case 4:
+                    return bitMask<int>(l, r);
+                case 8:
+                    return bitMask<__int64>(l, r);
+                }
+            }else
+            {
+                switch (len)
+                {
+                case 1:
+                    return compare<char>(l, r);
+                case 2:
+                    return compare<short>(l, r);
+                case 3:
+                    return compareInt24(l, r);
+                case 4:
+                    return compare<int>(l, r);
+                case 8:
+                    return compare<__int64>(l, r);
+                }
             }
         }
         case ft_mychar:
@@ -334,18 +367,36 @@ public:
         case ft_timestamp:
         case ft_mydate:
         {
-            switch (len)
+            if (logType & 8)
             {
-            case 1:
-                return compare<unsigned char>(l, r);
-            case 2:
-                return compare<unsigned short>(l, r);
-            case 3:
-                return compareUint24(l, r);
-            case 4:
-                return compare<unsigned int>(l, r);
-            case 8:
-                return compare<unsigned __int64>(l, r);
+                switch (len)
+                {
+                case 1:
+                    return bitMask<char>(l, r);
+                case 2:
+                    return bitMask<short>(l, r);
+                case 3:
+                    return bitMask24(l, r);
+                case 4:
+                    return bitMask<int>(l, r);
+                case 8:
+                    return bitMask<__int64>(l, r);
+                }
+            }else
+            {
+                switch (len)
+                {
+                case 1:
+                    return compare<unsigned char>(l, r);
+                case 2:
+                    return compare<unsigned short>(l, r);
+                case 3:
+                    return compareUint24(l, r);
+                case 4:
+                    return compare<unsigned int>(l, r);
+                case 8:
+                    return compare<unsigned __int64>(l, r);
+                }
             }
         }
 
@@ -391,6 +442,18 @@ public:
         return 0;
     };
 #else // COMP_USE_FUNCTION_POINTER
+    template <class T>
+    inline int compBitAnd(const char* l, const char* r, int sizeByte) const
+    {
+        return bitMask<T>(l, r);
+    }
+
+    inline int compBitAnd24(const char* l, const char* r, int sizeByte) const
+    {
+        int lv = ((*((int*)l) & 0xFFFFFF) << 8) / 0x100;
+        int rv = ((*((int*)r) & 0xFFFFFF) << 8) / 0x100;
+        return bitMask<int>((const char*)&lv, (const char*)&rv);
+    }
 
     template <class T>
     int compNumber(const char* l, const char* r, int sizeByte) const
@@ -450,7 +513,7 @@ public:
         return compareBlobType(l, r, type == ft_myblob, logType, sizeByte);
     }
 
-    compFunc getCompFunc(int sizeByte) const
+    compFunc getCompFunc(int sizeByte, char opr) const
     {
         switch (type)
         {
@@ -458,18 +521,36 @@ public:
         case ft_autoinc:
         case ft_currency:
         {
-            switch (len)
+            if (opr & 8)
             {
-            case 1:
-                return &logicalField::compNumber<char>;
-            case 2:
-                return &logicalField::compNumber<short>;
-            case 3:
-                return &logicalField::compNumber24;
-            case 4:
-                return &logicalField::compNumber<int>;
-            case 8:
-                return &logicalField::compNumber<__int64>;
+                switch (len)
+                {
+                case 1:
+                    return &logicalField::compBitAnd<char>;
+                case 2:
+                    return &logicalField::compBitAnd<short>;
+                case 3:
+                    return &logicalField::compBitAnd24;
+                case 4:
+                    return &logicalField::compBitAnd<int>;
+                case 8:
+                    return &logicalField::compBitAnd<__int64>;
+                }
+            }else
+            {
+                switch (len)
+                {
+                case 1:
+                    return &logicalField::compNumber<char>;
+                case 2:
+                    return &logicalField::compNumber<short>;
+                case 3:
+                    return &logicalField::compNumber24;
+                case 4:
+                    return &logicalField::compNumber<int>;
+                case 8:
+                    return &logicalField::compNumber<__int64>;
+                }
             }
         }
         case ft_mychar:
@@ -490,18 +571,36 @@ public:
         case ft_timestamp:
         case ft_mydate:
         {
-            switch (len)
+            if (opr & 8)
             {
-            case 1:
-                return &logicalField::compNumber<unsigned char>;
-            case 2:
-                return &logicalField::compNumber<unsigned short>;
-            case 3:
-                return &logicalField::compNumberU24;
-            case 4:
-                return &logicalField::compNumber<unsigned int>;
-            case 8:
-                return &logicalField::compNumber<unsigned __int64>;
+                switch (len)
+                {
+                case 1:
+                    return &logicalField::compBitAnd<char>;
+                case 2:
+                    return &logicalField::compBitAnd<short>;
+                case 3:
+                    return &logicalField::compBitAnd24;
+                case 4:
+                    return &logicalField::compBitAnd<int>;
+                case 8:
+                    return &logicalField::compBitAnd<__int64>;
+                }
+            }else
+            {
+                switch (len)
+                {
+                case 1:
+                    return &logicalField::compNumber<unsigned char>;
+                case 2:
+                    return &logicalField::compNumber<unsigned short>;
+                case 3:
+                    return &logicalField::compNumberU24;
+                case 4:
+                    return &logicalField::compNumber<unsigned int>;
+                case 8:
+                    return &logicalField::compNumber<unsigned __int64>;
+                }
             }
         }
         case ft_mytime:
@@ -668,7 +767,7 @@ public:
         if (m_placeHolderNum)
             const_cast<logicalField*>(fd)->opr &= ~FILTER_COMBINE_PREPARE;
 #ifdef COMP_USE_FUNCTION_POINTER
-        m_compFunc = fd->getCompFunc(m_sizeBytes);
+        m_compFunc = fd->getCompFunc(m_sizeBytes, fd->opr);
         setWstringCompLen();
 #endif
         if (fd->opr == 2)
@@ -794,6 +893,7 @@ public:
             switch (log)
             {
             case 1:
+            case 8:
                 fda.m_isMatchFunc = isMatch1;
                 break;
             case 2:
@@ -803,6 +903,7 @@ public:
                 fda.m_isMatchFunc = isMatch3;
                 break;
             case 4:
+            case 9:
                 fda.m_isMatchFunc = isMatch4;
                 break;
             case 5:

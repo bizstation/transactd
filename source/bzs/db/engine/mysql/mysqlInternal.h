@@ -65,6 +65,7 @@ extern "C" {
 	extern void * my_malloc(PSI_memory_key key, size_t size, myf_t flags);
 	extern void * my_realloc(PSI_memory_key key, void *ptr, size_t size, myf_t flags);
 	extern void my_free(void *ptr);
+	extern void my_claim(void *ptr);
 	extern void * my_memdup(PSI_memory_key key, const void *from, size_t length, myf_t flags);
 	extern char * my_strdup(PSI_memory_key key, const char *from, myf_t flags);
 	extern char * my_strndup(PSI_memory_key key, const char *from, size_t length, myf_t flags);
@@ -170,9 +171,12 @@ extern "C" {
 #   endif
 #endif // MySQL 5.5 Only
 
-#if ((MYSQL_VERSION_NUM > 50600) && (MYSQL_VERSION_NUM < 50700)) // MySQL 5.6 Only
+#if ((MYSQL_VERSION_NUM > 50600) && (MYSQL_VERSION_NUM < 1000000)) // MySQL 5.6.25 or later
 #   if (MYSQL_VERSION_NUM >= 50625)
 #       define FINDFILE_6PRAMS
+#		if (MYSQL_VERSION_NUM >= 50708)
+#			define MYSQL_578_LATER
+#		endif
 #   endif
 #endif
 
@@ -363,6 +367,15 @@ inline void cp_open_error_release(THD* /*thd*/, TABLE_LIST& /*tables*/)
     ;
 }
 
+inline bool cp_query_command(THD* thd, char* str)
+{
+	COM_DATA com_data;
+	com_data.com_query.query = (char*)str;
+	com_data.com_query.length = (uint)strlen(str);
+	return dispatch_command(thd, &com_data, COM_QUERY);
+}
+
+
 #else //Not MySQL 5.7
 #define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
 
@@ -461,6 +474,10 @@ inline void cp_open_error_release(THD* thd, TABLE_LIST& tables)
    
 }
 
+inline bool cp_query_command(THD* thd, char* str)
+{
+	return dispatch_command(COM_QUERY, thd, str, (uint)strlen(str));
+}
 
 #endif
 
@@ -490,7 +507,11 @@ inline void cp_open_error_release(THD* thd, TABLE_LIST& tables)
     {
 #ifdef FINDFILE_6PRAMS
         MEM_ROOT tmp_mem_root;
-        init_sql_alloc(&tmp_mem_root, TABLE_ALLOC_BLOCK_SIZE, 0);
+#		ifdef MYSQL_578_LATER
+			init_sql_alloc(key_memory_get_all_tables, &tmp_mem_root, TABLE_ALLOC_BLOCK_SIZE, 0);
+#		else
+			init_sql_alloc(&tmp_mem_root, TABLE_ALLOC_BLOCK_SIZE, 0);
+#		endif
         return find_files(thd, files, NullS,  mysql_data_home, "", true, &tmp_mem_root);
 #else
         return find_files(thd, files, NullS,  mysql_data_home, "", true);

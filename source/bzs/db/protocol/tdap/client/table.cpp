@@ -233,38 +233,58 @@ public:
         }
     }
 
+    inline char* moveCurrentData(char* ptr, unsigned short& len, int& sqnum)
+    {
+        len = *((unsigned short*)ptr);
+        ptr += DATASIZE_BYTE;
+        sqnum = *((int*)(ptr));
+        ptr += sizeof(int);
+        ptr += len;
+        return ptr;
+    }
+
     inline void hasManyJoinMra(int rowCount, uchar_td* data)
     {
         int rowOffset = 0;
-        int row = 0; // zero start
+        int row = 0;
         int count = 0;
-        char* ptr = (char*)data + DATASIZE_BYTE; // rowCount
+        int sqnum = 0;
         unsigned short len = 0;
-        for (int i = 0; i < (int)rowCount; ++i)
-        {
-            ptr += len;
-            len = *((unsigned short*)ptr);
-            ptr += DATASIZE_BYTE;
 
-            // get sequential number
-            int tmp = *((int*)(ptr));
-            ptr += sizeof(int);
-            // If len == 0 then next first record read error
-            if ((len == 0) || (tmp != row))
+        char* ptr = (char*)data + DATASIZE_BYTE; // rowCount
+        ptr = moveCurrentData(ptr, len, sqnum);  // getFirst
+        for (int i = 1; i < (int)rowCount; ++i)
+        {
+            if (sqnum == row)
             {
-                if (count)
+                ++count;
+
+                //if row == 0
+                if (len == 0)
+                {
+                    ++row;
+                    count = 0;
+                }
+
+            }else if(sqnum != row)
+            {
+                if (--count > 0)
                 {
                     m_tb->m_impl->mraPtr->duplicateRow(row + rowOffset, count);
                     rowOffset += count;
                 }
                 ++row;
-                count = 0;
+                count = (len == 0) ? 0 : 1;
+
             }
-            else if (i != 0)
-                ++count;
+            ptr = moveCurrentData(ptr, len, sqnum);
         }
-        if (count)
+        if (sqnum == row)
+            count = (len == 0) ? 0 : count + 1;
+
+        if (--count > 0)
             m_tb->m_impl->mraPtr->duplicateRow(row + rowOffset, count);
+
     }
 
     inline void reset(filter* p, uchar_td* data, unsigned int totalSize,
@@ -291,7 +311,6 @@ public:
             const tabledef* td = m_tb->tableDef();
             ushort_td fieldCount = m_filter->fieldCount();
             m_tmpPtr = mra->ptr(m_row, mra_current_block);
-            int resultOffset = 0;
 
             while (m_row < m_rowCount)
             {
@@ -302,7 +321,7 @@ public:
                     if (m_filter->fieldSelected())
                     {
                         uchar_td* fieldPtr = m_ptr;
-                        resultOffset = 0;
+                        int resultOffset = 0;
                         int blobFieldNum = 0;
                         for (int i = 0; i < fieldCount; i++)
                         {
@@ -324,21 +343,17 @@ public:
                         {
                             memset(m_tmpPtr, 0, td->maxRecordLen);
                             memcpy(m_tmpPtr, m_ptr, m_len);
-                            m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
-                            resultOffset = m_unpackLen; 
+                            m_unpackLen = td->unPack((char*)m_tmpPtr, m_len);
                         }
                         else
-                        {
                             memcpy(m_tmpPtr, m_ptr, m_len);
-                            resultOffset = m_len;
-                        }
                         if (bd)
                             bd = m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd, bd);
                     }
                 }
                 ++m_row;
                 moveNextRow(bookmarkSize);
-                m_tmpPtr += resultOffset;
+                m_tmpPtr += recordLen;
             }
         }
         //prebuilt next ead operation
@@ -407,7 +422,7 @@ public:
             {
                 memset(m_tmpPtr, 0, td->maxRecordLen);
                 memcpy(m_tmpPtr, m_ptr, m_len);
-                m_unpackLen = m_tb->unPack((char*)m_tmpPtr, m_len);
+                m_unpackLen = td->unPack((char*)m_tmpPtr, m_len);
             }
             else
                 m_tmpPtr = m_ptr;
@@ -1218,7 +1233,7 @@ void table::getKeySpec(keySpec* ks, bool SpecifyKeyNum)
     short FieldNum;
     int j;
     tabledef* td = (*m_tableDef);
-    KeyDef = &td->keyDefs[m_keynum];
+    KeyDef = &td->keyDefs[(int)m_keynum];
     for (j = 0; j < KeyDef->segmentCount; j++)
     {
         FieldNum = KeyDef->segments[j].fieldNum;
@@ -1261,7 +1276,7 @@ void table::doCreateIndex(bool SpecifyKeyNum)
     }
     else
     {
-        int segmentCount = (*m_tableDef)->keyDefs[m_keynum].segmentCount;
+        int segmentCount = (*m_tableDef)->keyDefs[(int)m_keynum].segmentCount;
         keySpec* ks = (keySpec*)malloc(sizeof(keySpec) * segmentCount);
         memset(ks, 0, sizeof(keySpec) * segmentCount);
         getKeySpec(ks, SpecifyKeyNum);
@@ -1290,7 +1305,7 @@ bool table::isUniqeKey(char_td keynum)
 {
     if ((keynum >= 0) && (keynum < (*m_tableDef)->keyCount))
     {
-        keydef* kd = &(*m_tableDef)->keyDefs[m_keynum];
+        keydef* kd = &(*m_tableDef)->keyDefs[(int)m_keynum];
         return !(kd->segments[0].flags.bit0);
     }
     return false;
@@ -1388,7 +1403,7 @@ void* table::attachBuffer(void* NewPtr, bool unpack, size_t size)
     m_pdata = NewPtr;
     ushort_td len = (*m_tableDef)->maxRecordLen; 
     if (unpack)
-        len = unPack((char*)m_pdata, size);
+        len = (*m_tableDef)->unPack((char*)m_pdata, size);
     m_datalen = len;
     return oldptr;
 }
@@ -1436,7 +1451,7 @@ keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
     if ((*m_tableDef)->keyCount)
     {
         keydef& keydef =
-            (*m_tableDef)->keyDefs[(short)m_impl->keyNumIndex[m_keynum]];
+            (*m_tableDef)->keyDefs[(int)m_impl->keyNumIndex[(int)m_keynum]];
         uchar_td* start = to;
         if (keySize == 0)
             keySize = keydef.segmentCount;
@@ -1458,38 +1473,17 @@ keylen_td table::writeKeyData()
     return writeKeyDataTo((uchar_td*)m_impl->keybuf, 0);
 }
 
+
+uint_td table::unPack(char* ptr, size_t size)
+{
+    m_impl->dataPacked = false;
+    return tableDef()->unPack(ptr, size);
+}
+
 uint_td table::pack(char* ptr, size_t size)
 {
-    char* pos = ptr;
-    char* end = pos + size;
-    int movelen;
-    for (int i = 0; i < (*m_tableDef)->fieldCount; i++)
-    {
-        fielddef& fd = (*m_tableDef)->fieldDefs[i];
-        if (fd.type == ft_myfixedbinary)
-        {
-            memmove(pos + 2, pos, fd.len - 2); // move as size pace in the field
-            *((unsigned short*)(pos)) = fd.len - 2; // fixed size
-            pos += fd.len;
-        }
-        else
-        {
-            int blen = fd.varLenBytes();
-            int dl = fd.len; // length
-            if (blen == 1)
-                dl = *((unsigned char*)(pos)) + blen;
-            else if (blen == 2)
-                dl = *((unsigned short*)(pos)) + blen;
-            pos += dl;
-            if ((movelen = fd.len - dl) != 0)
-            {
-                end -= movelen;
-                memmove(pos, pos + movelen, end - pos);
-            }
-        }
-    }
     m_impl->dataPacked = true;
-    return (uint_td)(pos - ptr);
+    return tableDef()->pack(ptr, size);
 }
 
 uint_td table::doGetWriteImageLen()
@@ -1548,49 +1542,6 @@ uint_td table::doGetWriteImageLen()
 
         return (uint_td)len;
     }
-}
-
-uint_td table::unPack(char* ptr, size_t size)
-{
-    char* pos = ptr;
-    const char* end = pos + size;
-    tabledef* td = *m_tableDef;
-    const char* max = pos + td->maxRecordLen;
-    int movelen;
-    for (int i = 0; i < td->fieldCount; i++)
-    {
-        fielddef& fd = td->fieldDefs[i];
-        if (fd.type == ft_myfixedbinary)
-        {
-            int dl = *((unsigned short*)(pos));
-            memmove(pos, pos + 2, dl);
-            pos += fd.len - 2;
-            *((unsigned short*)(pos)) = 0x00;
-            ;
-            pos += 2;
-        }
-        else
-        {
-            int blen = fd.varLenBytes();
-            int dl = fd.len; // length
-            if (blen == 1)
-                dl = *((unsigned char*)(pos)) + blen;
-            else if (blen == 2)
-                dl = *((unsigned short*)(pos)) + blen;
-            if ((movelen = fd.len - dl) != 0)
-            {
-                if (max < end + movelen)
-                    return 0;
-                char* src = pos + dl;
-                memmove(pos + fd.len, src, end - src);
-                memset(src, 0, movelen);
-                end += movelen;
-            }
-            pos += fd.len;
-        }
-    }
-    m_impl->dataPacked = false;
-    return (uint_td)(pos - ptr);
 }
 
 void table::addBlobEndRow()
@@ -2015,7 +1966,7 @@ short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 bool table::setSeekValueField(int row)
 {
     const std::vector<client::seek>& keyValues = m_impl->filterPtr->seeks();
-    keydef* kd = &tableDef()->keyDefs[keyNum()];
+    keydef* kd = &tableDef()->keyDefs[(int)keyNum()];
     if (keyValues.size() % kd->segmentCount)
         return false;
     // Check uniqe key
@@ -2055,9 +2006,9 @@ void table::keyValueDescription(_TCHAR* buf, int bufsize)
     if (stat() == STATUS_NOT_FOUND_TI)
     {
 
-        for (int i = 0; i < tableDef()->keyDefs[keyNum()].segmentCount; i++)
+        for (int i = 0; i < tableDef()->keyDefs[(int)keyNum()].segmentCount; i++)
         {
-            short fnum = tableDef()->keyDefs[keyNum()].segments[i].fieldNum;
+            short fnum = tableDef()->keyDefs[(int)keyNum()].segments[i].fieldNum;
             s += std::_tstring(tableDef()->fieldDefs[fnum].name()) + _T(" = ") +
                  getFVstr(fnum) + _T("\n");
         }
@@ -2475,7 +2426,7 @@ const _TCHAR* queryBase::toString() const
     for (size_t i = 0; i < wheres.size(); i += 4)
     {
         if (i + 1 < wheres.size())
-            s += wheres[i] + _T(" ") + wheres[i + 1];
+            s += wheres[i] + _T(" ") + escape_value(wheres[i + 1]);
         if (i + 2 < wheres.size())
             s += _T(" '") + escape_value(wheres[i + 2]) + _T("' ");
         if (i + 3 < wheres.size())

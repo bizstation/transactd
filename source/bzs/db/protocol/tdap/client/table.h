@@ -133,6 +133,7 @@ protected:
     int dataBufferLen() const;
     uint_td unPack(char* ptr, size_t size);
     uint_td pack(char* ptr, size_t size);
+
     keylen_td writeKeyData(); // orverride
     keylen_td writeKeyDataTo(uchar_td* to, int keySize);
 

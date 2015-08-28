@@ -85,8 +85,9 @@ class DLLLIB fielddefs : public fieldShare
     friend class recordsetQuery;
     friend struct recordsetQueryImple;
     friend class fieldsBase;
-
+public:
     void addAllFileds(tabledef* def);
+protected:
     void copyFrom(const class table* tb);
     bool canUnion(const fielddefs& r) const;
     size_t totalFieldLen() const;
@@ -95,6 +96,7 @@ class DLLLIB fielddefs : public fieldShare
     void push_back(const fielddef* p, bool rePosition = false);
     void remove(int index);
     void reserve(size_t size);
+public:
     void clear();
 
 public:

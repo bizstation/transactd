@@ -172,7 +172,7 @@ public:
         if (keynum < td.keyCount)
         {
             tb->clearBuffer();
-            const keydef kd = td.keyDefs[keynum];
+            const keydef kd = td.keyDefs[(int)keynum];
             if (kd.segmentCount > 0)
                 tb->setFV(kd.segments[0].fieldNum, kv0);
             if (kd.segmentCount > 1)

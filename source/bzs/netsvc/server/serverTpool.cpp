@@ -313,6 +313,9 @@ public:
         {
             const boost::asio::ip::tcp::no_delay nodelay(true);
             m_newConnection->socket().set_option(nodelay);
+            m_newConnection->socket().set_option(
+                        boost::asio::socket_base::keep_alive(true));
+
             boost::system::error_code ec;
             tcp::endpoint endpoint =
                 m_newConnection->socket().remote_endpoint(ec);

@@ -1018,9 +1018,9 @@ short dbdef::fieldNumByName(short TableIndex, const _TCHAR* name)
 uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
 { // return MaxLen or MinLen or DefaultLen or Dec of field type
 
-    uint_td maxlen;
-    uint_td minlen;
-    uint_td defaultlen;
+    uint_td maxlen = 0;
+    uint_td minlen = 0;
+    uint_td defaultlen = 0;
     int dec = -1;
     switch (FieldType)
     {

@@ -90,6 +90,11 @@ endif()
 include_directories(
   ${TRANSACTD_MYSQL_SOURCE_ROOT};
   ${TRANSACTD_MYSQL_SOURCE_ROOT}/extra/yassl/include;
+  ${TRANSACTD_MYSQL_SOURCE_ROOT}/include/mysql;
+  ${TRANSACTD_MYSQL_SOURCE_ROOT}/libbinlogevents/export;
+  ${TRANSACTD_MYSQL_SOURCE_ROOT}/libbinlogevents/include;
+  ${TRANSACTD_MYSQL_SOURCE_ROOT}/zlib;
+  ${TRANSACTD_MYSQL_BINARY_ROOT}/libbinlogevents/include;
   ${TRANSACTD_ROOT}/source;)
 if(UNIX)
   include_directories(${TRANSACTD_ROOT}/source/linux;)
@@ -113,29 +118,27 @@ foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
   bz_remove_cxx_flag("/EHsc" "${build_type}")
   bz_remove_cxx_flag("/EHs" "${build_type}")
   if(MSVC)
-    bz_add_cxx_flag("/EHa /wd4068 /DTRANSACTD_EXPORTS" "${build_type}")
+    bz_add_cxx_flag("/EHa /wd4068 /wd4267 /wd4102 /wd4800 /DTRANSACTD_EXPORTS" "${build_type}")
   else()
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-      bz_add_cxx_flag("-std=c++11 -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register" "${build_type}")
+      bz_add_cxx_flag("-std=c++11 -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare" "${build_type}")
     else()
       # Add c++0x option to some files.
-      # The option could not be added to whole project because the GCC bug:
-      # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48406
-      set_source_files_properties(
-        "${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/tdapCommandExecuter.cpp"
-        PROPERTIES COMPILE_FLAGS "-std=c++0x -std=gnu++0x")
-      set_source_files_properties(
-        "${TRANSACTD_ROOT}/source/bzs/env/crosscompile.cpp"
-        PROPERTIES COMPILE_FLAGS "-std=c++0x -std=gnu++0x")
+      bz_add_cxx_flag("-std=c++0x -std=gnu++0x -Wno-ignored-qualifiers -Wno-missing-field-initializers" "${build_type}")
     endif()
-    bz_add_cxx_flag("-fPIC -fexceptions -fno-omit-frame-pointer" "${build_type}")
+    bz_add_cxx_flag("-fPIC -fexceptions -fno-omit-frame-pointer -Wno-unknown-pragmas" "${build_type}")
     bz_add_cxx_flag("-fno-strict-aliasing -fpermissive -frtti -D_REENTRANT" "${build_type}")
     if(NOT MINGW)
       bz_add_cxx_flag("-DLINUX" "${build_type}")
     endif()
   endif()
 endforeach()
-
+if(MSVC)
+    bz_add_cxx_flag("/MT" "_RELEASE")
+    bz_add_cxx_flag("/MTd" "_DEBUG")
+    bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
+    bz_add_cxx_flag("/MD" "_MINSIZEREL")
+endif()
 
 # ==========================================================
 # add resource file (for Windows Visual Studio)

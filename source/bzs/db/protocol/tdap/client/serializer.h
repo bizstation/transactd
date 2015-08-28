@@ -274,6 +274,7 @@ public:
 
     void clear();
     int size() const;
+    void move(int from, int to);
     void save(const _TCHAR* filename);
     void load(const _TCHAR* filename);
     void save(std::stringstream& sf);

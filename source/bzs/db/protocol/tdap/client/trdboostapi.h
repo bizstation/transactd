@@ -101,6 +101,19 @@ public:
         : m_type(TYPE_SCHEMA_BDF), m_mode(TD_OPEN_READONLY)
     {
         _tcscpy_s(m_buf, MAX_PATH, uri);
+        size_t len = _tcslen(uri);
+        if (len > 5)
+        {
+            _TCHAR tmp[10];
+            _tcscpy_s(tmp, 10, uri + len - 4);
+#ifdef _tcsupr_s
+            _tcsupr_s(tmp, 10);
+#else
+            _tcsupr(tmp);
+#endif
+            if (_tcscmp(tmp, _T(".DDF"))==0)
+                m_type = TYPE_SCHEMA_DDF;
+        }
     }
     inline void setMode(char_td v) { m_mode = v; }
 

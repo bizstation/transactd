@@ -26,8 +26,8 @@ set INSMSG=..\..\..\install.log
 set ERRMSG=errormsg.log
 
 @REM BUILD
-echo BUILD tdcl.sln %date% %time% >> "%BLDMSG%"
-msbuild tdcl.sln /p:Configuration=Release /m:2 >> "%BLDMSG%" 2>&1
+echo BUILD TransactdRubyClient.sln %date% %time% >> "%BLDMSG%"
+msbuild TransactdRubyClient.sln /p:Configuration=Release /m:2 >> "%BLDMSG%" 2>&1
 if ERRORLEVEL 1 (
   echo ************************************************************** 1>&2
   echo EROOR MESSAGE 1>&2

@@ -297,6 +297,80 @@ unsigned int fielddef::charNum(/* int index */) const
     return len;
 }
 
+uint_td tabledef::unPack(char* ptr, size_t size) const
+{
+    char* pos = ptr;
+    const char* end = pos + size;
+    const char* max = pos + maxRecordLen;
+    int movelen;
+    for (int i = 0; i < fieldCount; i++)
+    {
+        fielddef& fd = fieldDefs[i];
+        if (fd.type == ft_myfixedbinary)
+        {
+            int dl = *((unsigned short*)(pos));
+            memmove(pos, pos + 2, dl);
+            pos += fd.len - 2;
+            *((unsigned short*)(pos)) = 0x00;
+            ;
+            pos += 2;
+        }
+        else
+        {
+            int blen = fd.varLenBytes();
+            int dl = fd.len; // length
+            if (blen == 1)
+                dl = *((unsigned char*)(pos)) + blen;
+            else if (blen == 2)
+                dl = *((unsigned short*)(pos)) + blen;
+            if ((movelen = fd.len - dl) != 0)
+            {
+                if (max < end + movelen)
+                    return 0;
+                char* src = pos + dl;
+                memmove(pos + fd.len, src, end - src);
+                memset(src, 0, movelen);
+                end += movelen;
+            }
+            pos += fd.len;
+        }
+    }
+    return (uint_td)(pos - ptr);
+}
+
+uint_td tabledef::pack(char* ptr, size_t size) const
+{
+    char* pos = ptr;
+    char* end = pos + size;
+    int movelen;
+    for (int i = 0; i < fieldCount; i++)
+    {
+        fielddef& fd = fieldDefs[i];
+        if (fd.type == ft_myfixedbinary)
+        {
+            memmove(pos + 2, pos, fd.len - 2); // move as size pace in the field
+            *((unsigned short*)(pos)) = fd.len - 2; // fixed size
+            pos += fd.len;
+        }
+        else
+        {
+            int blen = fd.varLenBytes();
+            int dl = fd.len; // length
+            if (blen == 1)
+                dl = *((unsigned char*)(pos)) + blen;
+            else if (blen == 2)
+                dl = *((unsigned short*)(pos)) + blen;
+            pos += dl;
+            if ((movelen = fd.len - dl) != 0)
+            {
+                end -= movelen;
+                memmove(pos, pos + movelen, end - pos);
+            }
+        }
+    }
+    return (uint_td)(pos - ptr);
+}
+
 ushort_td lenByCharnum(uchar_td type, uchar_td charsetIndex, ushort_td charnum)
 {
     ushort_td len = charnum;
@@ -517,6 +591,10 @@ PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr)
         return (uchar_td)eLessEq;
     else if (_tcscmp(cmpstr, _T("<=")) == 0)
         return (uchar_td)eLessEq;
+    else if (_tcscmp(cmpstr, _T("&")) == 0)
+        return (uchar_td)eBitAnd;
+    else if (_tcscmp(cmpstr, _T("!&")) == 0)
+        return (uchar_td)eNotBitAnd;
     else if (_tcscmp(cmpstr, _T("=i")) == 0)
         return (uchar_td)eEqual | CMPLOGICAL_CASEINSENSITIVE;
     else if (_tcscmp(cmpstr, _T(">i")) == 0)

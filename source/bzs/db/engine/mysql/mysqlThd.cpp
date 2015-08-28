@@ -139,9 +139,10 @@ THD* buildTHD()
     assert(thd->mysys_var);
 	cp_set_mysys_var(thd->mysys_var);
     thd->system_thread = NON_SYSTEM_THREAD;
+#ifndef MYSQL_578_LATER
     const NET v = { 0 };
     thd->net = v;
-
+#endif
     thd->variables.option_bits |= OPTION_BIN_LOG;
     thd->variables.tx_isolation = (ulong)getTransactdIsolation();
 
@@ -149,7 +150,7 @@ THD* buildTHD()
     char tmp[256];
     sprintf_s(tmp, 256, "set innodb_lock_wait_timeout=%d;",
               g_lock_wait_timeout);
-    dispatch_command(COM_QUERY, thd, tmp, (uint)strlen(tmp));
+	cp_query_command(thd, tmp);
 
 	
 	cp_set_db(thd, td_strdup("bizstation", MYF(0)));

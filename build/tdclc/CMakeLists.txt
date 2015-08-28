@@ -103,6 +103,12 @@ endif()
 # Add compile options
 # ==========================================================
 transactd_set_MTMD("MT")
+if(NOT MSVC)
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELEASE")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_DEBUG")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_MINSIZEREL")
+endif()
 
 
 # ==========================================================
@@ -134,6 +140,8 @@ if(NOT MSVC)
   target_link_libraries(${this_target} pthread)
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     ## target_link_libraries(${this_target} "${TRANSACTD_ROOT}/build/tdclc/libtdclcm.map")
+  elseif(APPLE)
+    target_link_libraries(${this_target} -Wl,-map,"${TRANSACTD_ROOT}/build/tdclc/libtdclcm.map")
   else()
     target_link_libraries(${this_target} -Wl,--version-script,"${TRANSACTD_ROOT}/build/tdclc/libtdclcm.map")
   endif()

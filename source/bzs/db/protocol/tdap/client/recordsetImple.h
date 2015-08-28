@@ -152,7 +152,7 @@ private:
                 m_fds->copyFrom(tb);
             if (tb && (addtype == mra_nojoin))
             {
-                const keydef& kd = tb->tableDef()->keyDefs[tb->keyNum()];
+                const keydef& kd = tb->tableDef()->keyDefs[(int)tb->keyNum()];
                 m_uniqueReadMaxField = (kd.segments[0].flags.bit0 == false)
                                            ? (short)m_fds->size()
                                            : 0;
@@ -580,7 +580,8 @@ public:
         m_fds->push_back(&fd);
         for (int i = 0; i < (int)m_unionFds.size(); ++i)
             m_unionFds[i]->push_back(&fd);
-        registerMemoryBlock(NULL, fd.len * size(), fd.len, mra_outerjoin);
+        if (size())
+            registerMemoryBlock(NULL, fd.len * size(), fd.len, mra_outerjoin);
     }
 
     inline recordsetImple& operator+=(const recordsetImple& r)

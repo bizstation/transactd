@@ -66,6 +66,15 @@ if("${TRANSACTD_RUBY_GEM_ROOT_PATH}" STREQUAL "")
   set(TRANSACTD_RUBY_GEM_ROOT_PATH "${TRANSACTD_BINARY_ROOT}")
 endif()
 
+# ==========================================================
+# add library path
+# ==========================================================
+if(WIN32)
+  link_directories("${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common")
+else()
+ link_directories("../tdclcpp")
+endif()
+
 
 # ==========================================================
 # add swig wrapper source file
@@ -104,6 +113,16 @@ endif()
 # ==========================================================
 add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 
+# ==========================================================
+# add dependencie projects
+# ==========================================================
+if(WIN32)
+  if(MSVC)
+    add_dependencies(${this_target} tdclcpp)
+  endif()
+else()
+  add_dependencies(${this_target} tdclc tdclcpp)
+endif()
 
 # ==========================================================
 # Add compile options
@@ -127,7 +146,7 @@ endif()
 if(MSVC)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     WIN32 _WIN32 _WINDOWS _USRDLL BOOST_ALL_NO_LIB 
-    LIB_TDCLCPP TRDCL_AUTOLINK_OFF TRDCLENGN_EXPORTS _CRT_SECURE_NO_WARNINGS)
+    LIB_TDCLCPP TRDCL_AUTOLINK TRDCLENGN_EXPORTS _CRT_SECURE_NO_WARNINGS)
 else()
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     PIC _REENTRANT BOOST_ALL_NO_LIB)
@@ -145,20 +164,10 @@ endif()
 # add link / include
 # ==========================================================
 target_link_libraries(${this_target} "${TRANSACTD_RUBY_LIBRARY_PATH}")
-if(WIN32 AND (NOT MSVC))
-  transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
-else()
-  transactd_link_boost_libraries("timer")
-  if(MSVC)
-    target_link_libraries(${this_target} "tdclcppmr")
-  else()
-    if(NOT TRANSACTD_WITHOUT_C_CPP_CLIENTS)
-      target_link_libraries(${this_target} "tdclcppm")
-    else()
-      transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
-      target_link_libraries(${this_target} "tdclcpp_64m")
-    endif()
-  endif()
+transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
+#tdclcpp_x on windows is auto link
+if(NOT WIN32)
+  target_link_libraries(${this_target} "tdclcpp_64m")
 endif()
 
 

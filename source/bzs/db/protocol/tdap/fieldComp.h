@@ -55,6 +55,12 @@ template <class T> inline int compare(const char* l, const char* r)
     return 0;
 }
 
+template <class T> inline int bitMask(const char* l, const char* r)
+{
+    T v = *((T*)l) & *((T*)r);
+    return (int)(*((T*)r) - v);
+}
+
 template <class T> inline int compare(T l, T r)
 {
     if (l < r)

@@ -1722,7 +1722,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb = $this->openTable($db);
         Bz\pooledDbManager::setMaxConnections(3);
         // Lock last record and insert to next of it
-        $w = new SeekLessThanWorker();
+        /*$w = new SeekLessThanWorker();
         $tb->setFV(FDI_ID, 300000);
         $tb->seekLessThan(false, Bz\transactd::ROW_LOCK_X);
         $this->assertEquals($tb->stat(), 0);
@@ -1755,7 +1755,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
                 $tb->del();
                 $this->assertEquals($tb->stat(), 0);
             }
-        }
+        }*/
         // Lock last record and delete it
         $w = new SeekLessThanWorker();
         $tb->setFV(FDI_ID, 300000);

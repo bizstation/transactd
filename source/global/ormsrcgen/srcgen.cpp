@@ -533,8 +533,7 @@ string cppSrcGen::makeMapWriteString()
 string cppSrcGen::makeMapKeyCompString()
 {
     string ret;
-    if ((m_tabledef->primaryKeyNum >= 0) &&
-        (m_tabledef->primaryKeyNum < m_tabledef->keyCount))
+    if (m_tabledef->primaryKeyNum < m_tabledef->keyCount)
     {
         keydef* kd = &m_tabledef->keyDefs[m_tabledef->primaryKeyNum];
         string idt = "\t";

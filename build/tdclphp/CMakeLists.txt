@@ -33,6 +33,36 @@ project(${this_target})
 
 
 # ==========================================================
+# find php package
+# ==========================================================
+set(PHPLIBS_FOUND "FALSE")
+if (NOT TRANSACTD_PHP_SOURCE_ROOT)
+  set(PHPLibs_DIR "./")
+  find_package(PHPLibs)
+
+  if (${PHPLIBS_FOUND} STREQUAL "TRUE")
+     set(TRANSACTD_PHP_SOURCE_ROOT ${PHP_INCLUDE_DIR})
+     set(TRANSACTD_PHP_ZTS ${PHP_ZTS})
+  endif()
+
+  message(STATUS  "PHPLIBS_FOUND = ${PHPLIBS_FOUND}")
+  message(STATUS  "PHP_VERSION_STRING = ${PHP_VERSION_STRING}")
+  message(STATUS  "PHP_LIBRARIES = ${PHP_LIBRARIES}")
+  message(STATUS  "PHP_INCLUDE_DIRS = ${PHP_INCLUDE_DIRS}")
+  message(STATUS  "PHP_INCLUDE_DIR = ${PHP_INCLUDE_DIR}")
+  message(STATUS  "PHP_EXTENSION_DIR = ${PHP_EXTENSION_DIR}")
+  message(STATUS  "PHP_EXECUTABLE = ${PHP_EXECUTABLE}")
+  message(STATUS  "PHP_INSTALL_PREFIX = ${PHP_INSTALL_PREFIX}")
+  message(STATUS  "PHP_ZTS = ${PHP_ZTS}")
+  message(STATUS  "PHP_INFO_INCLUDE = ${PHP_INFO_INCLUDE}")
+  message(STATUS  "PHP_INFO_FILE = ${PHP_INFO_FILE}")
+  message(STATUS  "PHP_TRANSACTD_ENABLED = ${PHP_TRANSACTD_ENABLED}")
+
+endif()
+
+
+
+# ==========================================================
 # options
 # ==========================================================
 if(NOT TRANSACTD_CLIENTS_PREFIX)
@@ -55,6 +85,14 @@ file(TO_CMAKE_PATH "${TRANSACTD_PHP_LIBRARY_PATH}" TRANSACTD_PHP_LIBRARY_PATH)
 message(STATUS "  TRANSACTD_PHP_SOURCE_ROOT  ${TRANSACTD_PHP_SOURCE_ROOT}")
 message(STATUS "  TRANSACTD_PHP_LIBRARY_PATH ${TRANSACTD_PHP_LIBRARY_PATH}")
 
+# ==========================================================
+# add library path
+# ==========================================================
+if (MSVC)
+   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
+else()
+   link_directories("../tdclcpp")
+endif()
 
 # ==========================================================
 # read PHP version from header
@@ -138,12 +176,20 @@ else()
   add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 endif()
 
+# ==========================================================
+# add dependencie projects
+# ==========================================================
+add_dependencies(${this_target} tdclc tdclcpp)
 
 # ==========================================================
 # Add compile options
 # ==========================================================
 transactd_set_MTMD("MD")
-
+if (MSVC)
+  foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
+    bz_add_cxx_flag("/wd4267 /wd4102 /wd4800" "${build_type}")
+  endforeach()
+endif()
 
 # ==========================================================
 # Add compile definitions
@@ -172,7 +218,7 @@ set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS_MINSIZEREL
   ZEND_DEBUG=0)
 if(MSVC)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS ZEND_WIN32 PHP_WIN32 ZEND_WIN32_FORCE_INLINE)
+    WIN32 _WIN32 _WINDOWS ZEND_WIN32 PHP_WIN32 ZEND_WIN32_FORCE_INLINE TRDCL_AUTOLINK)
   if(TRANSACTD_PHP_USE_32BIT_TIME_T AND ("${BZ_BITNESS}" STREQUAL "32"))
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       _USE_32BIT_TIME_T)
@@ -194,16 +240,10 @@ endif()
 # add link / include
 # ==========================================================
 target_link_libraries(${this_target} "${TRANSACTD_PHP_LIBRARY_PATH}")
-transactd_link_boost_libraries("timer")
-if(MSVC)
-  target_link_libraries(${this_target} "tdclcppmr")
-else()
-  if(NOT TRANSACTD_WITHOUT_C_CPP_CLIENTS)
-    target_link_libraries(${this_target} "tdclcppm")
-  else()
-    transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
-    target_link_libraries(${this_target} "tdclcpp_64m")
-  endif()
+transactd_link_boost_libraries("timer;filesystem;thread;chrono;system")
+#tdclcpp_x on windows is auto link
+if(NOT MSVC)
+  target_link_libraries(${this_target} "tdclcpp_64m")
 endif()
 
 
@@ -246,3 +286,20 @@ add_custom_command(TARGET ${this_target} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy
   ${TRANSACTD_ROOT}/build/swig/php/${TRANSACTD_PHP_FILENAME}
   ${TRANSACTD_BINARY_ROOT}/bin/transactd.php)
+
+# ==========================================================
+# install 
+# ==========================================================
+if (${PHPLIBS_FOUND} STREQUAL "TRUE")
+  install(FILES  "${TRANSACTD_BINARY_ROOT}/bin/php_transactd.so" DESTINATION
+             "${PHP_EXTENSION_DIR}/")
+  if (NOT PHP_INFO_INCLUDE)
+      install(CODE "MESSAGE(\"Warning! php include path is not found. Do not install ${TRANSACTD_BINARY_ROOT}/bin/transactd.php .\")")
+  else()  
+     install(FILES  "${TRANSACTD_BINARY_ROOT}/bin/transactd.php" DESTINATION
+            "${PHP_INFO_INCLUDE}/")
+  endif()
+  if(${PHP_TRANSACTD_ENABLED} STREQUAL "NO")
+      install(CODE "file(APPEND ${PHP_INFO_FILE} \"extension=php_transactd.so\\n\")")
+  endif()
+endif()

@@ -344,7 +344,7 @@ static st_mysql_show_var g_statusVariables[] = {
     { "trnsctd_pipe_wait_threads", (char*)&pipe::g_waitThread, SHOW_INT },
 #endif
     { "trnsctd_cur_open_databases", (char*)&g_openDatabases, SHOW_INT },
-    { 0, 0, (enum_mysql_show_type)0 }
+    { NULL, NULL, (enum_mysql_show_type)0 }
 };
 
 /** plugin struct.

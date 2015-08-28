@@ -31,7 +31,6 @@ include(../common/get_boost_libs.cmake)
 
 
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(REPLACE tdclstmt "" TDCL_STMT_CHARSET "${this_target}")
 project(${this_target})
 
 
@@ -51,6 +50,15 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   set(TRANSACTD_BINARY_ROOT "${CMAKE_BINARY_DIR}")
 endif()
 
+# ==========================================================
+# add library path
+# ==========================================================
+if (MSVC)
+   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
+   message(STATUS "library directory ${TRANSACTD_BINARY_ROOT}/lib")
+else()
+   link_directories("../tdclcpp")
+endif()
 
 # ==========================================================
 # add source / include dir , set compiler / linker options
@@ -76,11 +84,26 @@ endif()
 # ==========================================================
 add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 
+# ==========================================================
+# add dependencie projects
+# ==========================================================
+add_dependencies(${this_target} tdclc tdclcpp)
 
 # ==========================================================
 # Add compile options
 # ==========================================================
-transactd_set_MTMD("MT")
+transactd_reset_MTMD()
+if (MSVC)
+  bz_add_cxx_flag("/MT" "_RELEASE")
+  bz_add_cxx_flag("/MTd" "_DEBUG")
+  bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD" "_MINSIZEREL")
+else()
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELEASE")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_DEBUG")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_MINSIZEREL")
+endif()
 
 
 # ==========================================================
@@ -112,14 +135,11 @@ endif()
 # ==========================================================
 # add link / include
 # ==========================================================
-if(TARGET tdclcpp${TDCL_CPP_CHARSET})
-  target_link_libraries(${this_target} "tdclcpp${TDCL_CPP_CHARSET}")
-else()
+transactd_link_boost_libraries("serialization")
+#tdclcpp_x on windows is auto link
+if(NOT MSVC)
   bz_get_compiler_bitness()
   target_link_libraries(${this_target} "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
-endif()
-transactd_link_boost_libraries("serialization")
-if(NOT WIN32)
   target_link_libraries(${this_target} dl)
 endif()
 
@@ -131,9 +151,13 @@ bz_get_compiler_bitness()
 if(WIN32)
   ## Windows tdclstmt[_Compiler]_[32|64][m|u]_[MAJOR]_[MINOR].dll
   bz_get_compiler()
+  set(TDCL_CPP_NAME_TMP "tdclstmt${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
+  set_target_properties(${this_target} PROPERTIES OUTPUT_NAME_DEBUG "${TDCL_CPP_NAME_TMP}_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
+  set_target_properties(${this_target} PROPERTIES OUTPUT_NAME_RELEASE "${TDCL_CPP_NAME_TMP}_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
+  set_target_properties(${this_target} PROPERTIES OUTPUT_NAME_RELWITHDEBINFO "${TDCL_CPP_NAME_TMP}_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
+  set_target_properties(${this_target} PROPERTIES OUTPUT_NAME_MINSIZEREL "${TDCL_CPP_NAME_TMP}r_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
+
   set_target_properties(${this_target} PROPERTIES PREFIX "")
-  set_target_properties(${this_target} PROPERTIES OUTPUT_NAME
-    "tdclstmt${BZ_COMPILER}_${BZ_BITNESS}${TDCL_CPP_CHARSET}_${TD_RC_VER_MAJOR}_${TD_RC_VER_MINOR}")
   set_target_properties(${this_target} PROPERTIES SUFFIX ".dll")
 else()
   ## Linux   libtdclstmt_[32|64][m|u].so.[MAJOR].[MINOR].[RELEASE]
