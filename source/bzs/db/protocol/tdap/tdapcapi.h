@@ -567,7 +567,7 @@ struct handshale_t
 
 #define CPP_INTERFACE_VER_MAJOR "2"//##4 Build marker! Don't remove
 #define CPP_INTERFACE_VER_MINOR "4"//##5 Build marker! Don't remove
-#define CPP_INTERFACE_VER_RELEASE "2"//##6 Build marker! Don't remove
+#define CPP_INTERFACE_VER_RELEASE "3"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
 #if (__BCPLUSPLUS__ || _MSC_VER)
