@@ -72,7 +72,7 @@ class multiRecordAlocatorImple : public multiRecordAlocator
     const std::vector<std::vector<int> >* m_joinRowMap;
     int m_rowOffset;
     int m_addType;
-    int m_curFirstFiled;
+    int m_curFirstField;
 
 public:
     inline multiRecordAlocatorImple(recordsetImple* rs);
@@ -83,7 +83,7 @@ public:
     inline void setRowOffset(int v) { m_rowOffset = v; }
     inline void setJoinType(int v) { m_addType = v; }
     inline void setInvalidRecord(size_t row, bool v);
-    inline void setCurFirstFiled(int v) { m_curFirstFiled = v; }
+    inline void setCurFirstField(int v) { m_curFirstField = v; }
     inline void setJoinRowMap(const std::vector<std::vector<int> >* v)
     {
         m_joinRowMap = v;
@@ -103,7 +103,6 @@ class recordsetImple
     boost::shared_ptr<multiRecordAlocatorImple> m_mra;
     std::vector<row_ptr> m_recordset;
     std::vector<boost::shared_ptr<autoMemory> > m_memblock;
-    std::vector<boost::shared_ptr<fielddefs> > m_unionFds;
 
     /* for registerMemoryBlock temp data */
     size_t m_joinRows;
@@ -147,7 +146,7 @@ private:
         {
             m_joinRows = 0;
             m_mra->setRowOffset(0);
-            m_mra->setCurFirstFiled((int)m_fds->size());
+            m_mra->setCurFirstField((int)m_fds->size());
             if (tb)
                 m_fds->copyFrom(tb);
             if (tb && (addtype == mra_nojoin))
@@ -256,8 +255,8 @@ public:
 
     inline recordsetImple(const recordsetImple& r)
         : m_fds(r.m_fds),m_mra(r.m_mra), m_recordset(r.m_recordset),
-          m_memblock(r.m_memblock), m_unionFds(r.m_unionFds),
-          m_joinRows(r.m_joinRows), m_uniqueReadMaxField(r.m_uniqueReadMaxField)
+          m_memblock(r.m_memblock), m_joinRows(r.m_joinRows),
+          m_uniqueReadMaxField(r.m_uniqueReadMaxField)
     {
         for (size_t i = 0; i < m_recordset.size(); ++i)
             m_recordset[i]->addref();
@@ -279,7 +278,6 @@ public:
             m_mra = r.m_mra;
             m_recordset = r.m_recordset;
             m_memblock = r.m_memblock;
-            m_unionFds = r.m_unionFds;
             m_joinRows = r.m_joinRows;
             m_uniqueReadMaxField = r.m_uniqueReadMaxField;
             for (size_t i = 0; i < m_recordset.size(); ++i)
@@ -296,7 +294,6 @@ public:
         recordsetImple* p = new recordsetImple();
         p->m_joinRows = m_joinRows;
         p->m_uniqueReadMaxField = m_uniqueReadMaxField;
-        p->m_unionFds = m_unionFds;
         p->m_fds.reset(m_fds->clone(), boost::bind(&fielddefs::release, _1));
 
         std::vector<size_t> offsets;
@@ -391,7 +388,6 @@ public:
         {
             clearRecords();
             m_fds->clear();
-            m_unionFds.clear();
             m_memblock.clear();
         }
     }
@@ -480,8 +476,6 @@ public:
     inline void removeField(int index)
     {
         m_fds->remove(index);
-        for (int i = 0; i < (int)m_unionFds.size(); ++i)
-            m_unionFds[i]->remove(index);
 
         for (int i = 0; i < (int)m_memblock.size(); ++i)
         {
@@ -578,8 +572,6 @@ public:
         if (fd.blobLenBytes())
             THROW_BZS_ERROR_WITH_MSG(_T("Can not append Blob or Text field."));
         m_fds->push_back(&fd);
-        for (int i = 0; i < (int)m_unionFds.size(); ++i)
-            m_unionFds[i]->push_back(&fd);
         if (size())
             registerMemoryBlock(NULL, fd.len * size(), fd.len, mra_outerjoin);
     }
@@ -590,9 +582,11 @@ public:
             THROW_BZS_ERROR_WITH_MSG(_T("Recordsets are different format"));
 
         m_recordset.reserve(m_recordset.size() + r.size());
-        m_unionFds.push_back(r.m_fds);
         for (size_t i = 0; i < r.size(); ++i)
+        {
             push_back(r.m_recordset[i]);
+            r.m_recordset[i]->setFielddefs(m_fds.get());
+        }
         for (size_t i = 0; i < r.m_memblock.size(); ++i)
             m_memblock.push_back(r.m_memblock[i]);
         return *this;
@@ -622,7 +616,7 @@ public:
 
 inline multiRecordAlocatorImple::multiRecordAlocatorImple(recordsetImple* rs)
     : m_rs(rs), m_joinRowMap(NULL), m_rowOffset(0), m_addType(0),
-      m_curFirstFiled(0)
+      m_curFirstField(0)
 {
 }
 
@@ -640,7 +634,7 @@ unsigned char* multiRecordAlocatorImple::allocBlobBlock(size_t size)
 
 inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
 {
-    int col = (stat == mra_current_block) ? m_curFirstFiled : 0;
+    int col = (stat == mra_current_block) ? m_curFirstField : 0;
     size_t rowNum = m_joinRowMap ? (*m_joinRowMap)[row + m_rowOffset][0]
                                  : row + m_rowOffset;
     return (*m_rs)[rowNum].ptr(col);
