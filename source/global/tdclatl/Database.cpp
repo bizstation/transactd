@@ -59,9 +59,9 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode,
                                   BSTR Uri, ITable** ret)
 {
 
-    if (!m_db->dbDef())
-        return Error("database is not opened. ", IID_IDatabase);
-
+    //if (!m_db->dbDef())
+    //    return Error("database is not opened. ", IID_IDatabase);
+    *ret = NULL;
     table* tb = NULL;
     if (TableID.vt == VT_BSTR)
         tb = m_db->openTable(TableID.bstrVal, Mode, (bool)AutoCreate, OwnerName,
@@ -70,8 +70,9 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode,
         tb = m_db->openTable(TableID.iVal, Mode, (bool)AutoCreate, OwnerName,
                              Uri);
 
-    if (tb == NULL)
-        return Error("Invalid tableid", IID_IDatabase);
+    if (m_db->stat() != 0)
+        return S_OK;
+        //return Error("Invalid tableid", IID_IDatabase);
 
     CComObject<CTableTd>* ptb;
     CComObject<CTableTd>::CreateInstance(&ptb);
@@ -86,8 +87,7 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode,
         *ret = itb;
         m_IsAtatchOK = false;
     }
-    else
-        *ret = NULL;
+        
 
     return S_OK;
 }

@@ -625,6 +625,7 @@ STDMETHODIMP CTableTd::SetQuery(IQueryBase* Value, VARIANT_BOOL ServerPrepare, I
 {
     if (Value)
     {
+        *retVal = NULL;
         CQueryBase* p = dynamic_cast<CQueryBase*>(Value);
         if (p)
         {
@@ -641,13 +642,15 @@ STDMETHODIMP CTableTd::SetQuery(IQueryBase* Value, VARIANT_BOOL ServerPrepare, I
                 rsObj->QueryInterface(IID_IPreparedQuery, (void**)&pd);
                 _ASSERTE(pd);
                 *retVal = pd;
-                return S_OK;
-            }else
+                
+            }
+            return S_OK;
+            /*else
             {
                 _TCHAR buf[1024];
                 client::table::tdapErr(NULL, m_tb->stat(), m_tb->tableDef()->tableName(), buf);
                 return Error(buf, IID_ITable);
-            }
+            }*/
         }
     }
     return S_FALSE;

@@ -34,22 +34,20 @@ STDMETHODIMP CDbDef::get_TableCount(short* Value)
 
 STDMETHODIMP CDbDef::TableDef(short Index, ITableDef** Value)
 {
-    if (!m_dbDef->tableDefs(Index))
-        return Error("Invalid index.", IID_IDbDef);
-
-    CComObject<CTableDef>* piObj = NULL;
-    CComObject<CTableDef>::CreateInstance(&piObj);
-    if (piObj)
+    *Value = 0;
+    if (m_dbDef->tableDefs(Index))
     {
-        piObj->m_tabledefPtr = m_dbDef->tableDefPtr(Index);
-        ITableDef* tbd;
-        piObj->QueryInterface(IID_ITableDef, (void**)&tbd);
-        _ASSERTE(tbd);
-        *Value = tbd;
+        CComObject<CTableDef>* piObj = NULL;
+        CComObject<CTableDef>::CreateInstance(&piObj);
+        if (piObj)
+        {
+            piObj->m_tabledefPtr = m_dbDef->tableDefPtr(Index);
+            ITableDef* tbd;
+            piObj->QueryInterface(IID_ITableDef, (void**)&tbd);
+            _ASSERTE(tbd);
+            *Value = tbd;
+        }
     }
-    else
-        *Value = 0;
-
     return S_OK;
 }
 
@@ -89,24 +87,22 @@ STDMETHODIMP CDbDef::InsertField(short TableIndex, short InsertIndex,
                                  IFieldDef** Param3)
 
 {
+    *Param3 = 0;
     fielddef* fdPtr = m_dbDef->insertField(TableIndex, InsertIndex);
-    if (!fdPtr)
-        return Error("Invalid index.", IID_IDbDef);
-
-    CComObject<CFieldDef>* piObj;
-    CComObject<CFieldDef>::CreateInstance(&piObj);
-    if (piObj)
-    {
-        piObj->m_tabledefPtr = m_dbDef->tableDefPtr(TableIndex);
-        piObj->m_index = InsertIndex;
-        IFieldDef* fd;
-        piObj->QueryInterface(IID_IFieldDef, (void**)&fd);
-        _ASSERTE(fd);
-        *Param3 = piObj;
+    if (fdPtr)
+    {    
+        CComObject<CFieldDef>* piObj;
+        CComObject<CFieldDef>::CreateInstance(&piObj);
+        if (piObj)
+        {
+            piObj->m_tabledefPtr = m_dbDef->tableDefPtr(TableIndex);
+            piObj->m_index = InsertIndex;
+            IFieldDef* fd;
+            piObj->QueryInterface(IID_IFieldDef, (void**)&fd);
+            _ASSERTE(fd);
+            *Param3 = piObj;
+        }
     }
-    else
-        *Param3 = 0;
-
     return S_OK;
 }
 
@@ -114,23 +110,23 @@ STDMETHODIMP CDbDef::InsertKey(short TableIndex, short InsertIndex,
                                IKeyDef** Param3)
 
 {
+    *Param3 = 0;
     keydef* keyPtr = m_dbDef->insertKey(TableIndex, InsertIndex);
-    if (!keyPtr)
-        return Error("Invalid index.", IID_IDbDef);
-    CComObject<CKeyDef>* piObj;
-    CComObject<CKeyDef>::CreateInstance(&piObj);
-    if (piObj)
-    {
-        piObj->m_tabledefPtr = m_dbDef->tableDefPtr(TableIndex);
-        ;
-        piObj->m_index = InsertIndex;
-        IKeyDef* kb;
-        piObj->QueryInterface(IID_IKeyDef, (void**)&kb);
-        _ASSERTE(kb);
-        *Param3 = piObj;
+    if (keyPtr)
+    {    
+        CComObject<CKeyDef>* piObj;
+        CComObject<CKeyDef>::CreateInstance(&piObj);
+        if (piObj)
+        {
+            piObj->m_tabledefPtr = m_dbDef->tableDefPtr(TableIndex);
+            ;
+            piObj->m_index = InsertIndex;
+            IKeyDef* kb;
+            piObj->QueryInterface(IID_IKeyDef, (void**)&kb);
+            _ASSERTE(kb);
+            *Param3 = piObj;
+        }
     }
-    else
-        *Param3 = 0;
     return S_OK;
 }
 
