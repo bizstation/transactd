@@ -76,5 +76,6 @@ public:
     STDMETHOD(put_Version)(int Value);
     STDMETHOD(get_Stat)(eStatus* Value);
     STDMETHOD(TdapErr)(OLE_HANDLE hWnd, BSTR* Value);
+    STDMETHOD(StatMsg)(BSTR* Value);
     STDMETHOD(ValidateTableDef)(short TableIndex, short* Value);
 };

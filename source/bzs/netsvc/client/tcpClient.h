@@ -58,6 +58,10 @@ using namespace boost::system;
 #define ERROR_TD_NET_TOO_BIGDATA        3802
 #define MAX_DATA_SIZE 10485760 // 10MB
 
+#ifdef _WIN32
+extern bool win_thread_pool_shutdown;
+#endif
+
 namespace bzs
 {
 namespace netsvc
@@ -149,7 +153,7 @@ class connectionBase : public connection
 protected:
     friend class connections;
 
-    asio::io_service m_ios;
+    asio::io_service* m_ios;
     asio::ip::tcp::endpoint m_ep;
     idirectReadHandler* m_reader;
     size_t m_readLen;
@@ -175,9 +179,19 @@ protected:
   
 public:
     connectionBase(asio::ip::tcp::endpoint& ep)
-        : m_ep(ep), m_reader(NULL), m_refCount(0),
+        : m_ios(new asio::io_service),
+          m_ep(ep), m_reader(NULL), m_refCount(0),
           m_charsetServer(-1), m_connected(false), m_isHandShakable(true)
     {
+    }
+    virtual ~connectionBase()
+    {
+        #ifdef _WIN32
+        if (!win_thread_pool_shutdown)
+            delete m_ios;
+        #else
+        delete m_ios;
+        #endif
     }
     void setDirectReadHandler(idirectReadHandler* p){ m_reader = p; }
     bool isHandShakable() const {return m_isHandShakable;};
@@ -358,9 +372,9 @@ protected:
         {
             try
             {
-                m_ios.stop();
+                m_ios->stop();
                 m_socket.close();
-                m_ios.reset();
+                m_ios->reset();
             }
             catch (...)
             {
@@ -390,14 +404,14 @@ protected:
     void reconnect(asio::ip::tcp::endpoint& ep)
     {
         cleanup();
-        m_ios.reset();
+        m_ios->reset();
         m_ep = ep;
         connect();
     }
 
 public:
     connectionImple(asio::ip::tcp::endpoint& ep)
-        : connectionBase(ep)/*, m_datalen(0)*/, m_socket(m_ios)
+        : connectionBase(ep)/*, m_datalen(0)*/, m_socket(*m_ios)
     {
     }
 };
@@ -512,8 +526,8 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
         setTimer(connections::connectTimeout);
         m_socket.async_connect(m_ep,
             bind(&tcpConnection::on_connect, this, _error_holder));
-        m_ios.run();
-        m_ios.reset();
+        m_ios->run();
+        m_ios->reset();
     }
 #else
     void connect()
@@ -522,7 +536,7 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
         m_socket.connect(m_ep);
         m_e = error_code(getErrorCode(), SYSTEM_CATEGORY);
         on_connect(m_e);
-        m_ios.reset();
+        m_ios->reset();
     }
 #endif
 
@@ -595,7 +609,7 @@ public:
     tcpConnection(asio::ip::tcp::endpoint& ep)
         : connectionImple<asio::ip::tcp::socket>(ep),s_io(m_socket)
 #ifdef USE_CONNECT_TIMER
-        , m_timer(m_ios)
+        , m_timer(*m_ios)
 #endif
     {
         m_readbuf.resize(READBUF_SIZE);

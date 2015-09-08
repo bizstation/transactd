@@ -23,6 +23,20 @@
 #include "TdVersion.h"
 
 using namespace bzs::db::protocol::tdap::client;
+STDMETHODIMP CDatabase::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IDatabase
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
 
 STDMETHODIMP CDatabase::Open(BSTR Uri, eSchemaType SchemaType, eOpenMode Mode,
                              BSTR Dir, BSTR Ownername, VARIANT_BOOL* Param6)
@@ -59,9 +73,9 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode,
                                   BSTR Uri, ITable** ret)
 {
 
-    if (!m_db->dbDef())
-        return Error("database is not opened. ", IID_IDatabase);
-
+    //if (!m_db->dbDef())
+    //    return Error("database is not opened. ", IID_IDatabase);
+    *ret = NULL;
     table* tb = NULL;
     if (TableID.vt == VT_BSTR)
         tb = m_db->openTable(TableID.bstrVal, Mode, (bool)AutoCreate, OwnerName,
@@ -70,8 +84,9 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode,
         tb = m_db->openTable(TableID.iVal, Mode, (bool)AutoCreate, OwnerName,
                              Uri);
 
-    if (tb == NULL)
-        return Error("Invalid tableid", IID_IDatabase);
+    if (m_db->stat() != 0)
+        return S_OK;
+        //return Error("Invalid tableid", IID_IDatabase);
 
     CComObject<CTableTd>* ptb;
     CComObject<CTableTd>::CreateInstance(&ptb);
@@ -86,8 +101,7 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode,
         *ret = itb;
         m_IsAtatchOK = false;
     }
-    else
-        *ret = NULL;
+        
 
     return S_OK;
 }
@@ -353,6 +367,14 @@ STDMETHODIMP CDatabase::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
     }
     else
         m_db->tdapErr((HWND)hWnd);
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::StatMsg(BSTR* Value)
+{
+    wchar_t tmp[1024] = { NULL };
+    m_db->statMsg(tmp);
+    *Value = ::SysAllocString(tmp);
     return S_OK;
 }
 

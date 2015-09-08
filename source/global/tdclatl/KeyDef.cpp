@@ -32,7 +32,7 @@ STDMETHODIMP CKeyDef::put_SegmentCount(unsigned char Value)
     return S_OK;
 }
 
-STDMETHODIMP CKeyDef::Segments(short Index, IKeySegment** Value)
+STDMETHODIMP CKeyDef::get_Segments(short Index, IKeySegment** Value)
 {
     CComObject<CKeySegment>* piObj;
     CComObject<CKeySegment>::CreateInstance(&piObj);

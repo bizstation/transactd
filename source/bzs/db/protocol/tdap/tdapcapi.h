@@ -71,7 +71,7 @@ typedef short_td(__STDCALL* BTRCALLID_PTR)(ushort_td, void*, void*, uint_td*,
                                            void*, keylen_td, char_td,
                                            uchar_td*);
 
-typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
+typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 
 /** buffer size
  */
@@ -503,7 +503,7 @@ struct handshale_t
  */
 #define C_INTERFACE_VER_MAJOR "2"//##1 Build marker! Don't remove
 #define C_INTERFACE_VER_MINOR "4"//##2 Build marker! Don't remove
-#define C_INTERFACE_VER_RELEASE "2"//##3 Build marker! Don't remove
+#define C_INTERFACE_VER_RELEASE "4"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
  The default extention of Mac is ".boudle", Therefore ".so" is popular. */
@@ -567,7 +567,7 @@ struct handshale_t
 
 #define CPP_INTERFACE_VER_MAJOR "2"//##4 Build marker! Don't remove
 #define CPP_INTERFACE_VER_MINOR "4"//##5 Build marker! Don't remove
-#define CPP_INTERFACE_VER_RELEASE "3"//##6 Build marker! Don't remove
+#define CPP_INTERFACE_VER_RELEASE "4"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
 #if (__BCPLUSPLUS__ || _MSC_VER)
@@ -584,6 +584,6 @@ struct handshale_t
 
 #define TRANSACTD_VER_MAJOR 2//##7 Build marker! Don't remove
 #define TRANSACTD_VER_MINOR 4//##8 Build marker! Don't remove
-#define TRANSACTD_VER_RELEASE 2//##9 Build marker! Don't remove
+#define TRANSACTD_VER_RELEASE 4//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

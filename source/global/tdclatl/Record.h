@@ -28,6 +28,7 @@ class CFieldDefs;
 class ATL_NO_VTABLE CRecord
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CRecord, &CLSID_Record>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IRecord, &IID_IRecord, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>
 {
@@ -42,7 +43,10 @@ public:
     BEGIN_COM_MAP(CRecord)
     COM_INTERFACE_ENTRY(IRecord)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
@@ -59,6 +63,7 @@ public:
 class ATL_NO_VTABLE CWritableRecord
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CWritableRecord, &CLSID_Record>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IWritableRecord, &IID_IWritableRecord,
                            &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
 {
@@ -74,7 +79,10 @@ public:
     BEGIN_COM_MAP(CWritableRecord)
     COM_INTERFACE_ENTRY(IWritableRecord)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 

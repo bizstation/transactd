@@ -85,6 +85,10 @@ end
 def testOpenDatabase(db)
   db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
   expect(db.stat()).to eq 0
+  # test statMsg
+  msg = db.statMsg()
+  expect(msg).to eq ''
+
 end
 
 def testCreateTable(db)
@@ -168,6 +172,10 @@ def testCreateTable(db)
   dbdef.updateTableDef(table_id)
   expect(dbdef.stat()).to eq 0
   
+  # test statMsg
+  msg = dbdef.statMsg()
+  expect(msg).to eq ''
+  
   kd = dbdef.insertKey(table_id, 0)
   kd.segment(0).fieldNum = 0
   kd.segment(0).flags.bit8 = 1
@@ -225,6 +233,29 @@ def testVersion()
   db.close()
 end
 
+def testReadDatabaseDirectory()
+  db = Transactd::Database.new()
+  tb = testOpenTable(db)
+  expect(tb).not_to be nil
+  s = db.readDatabaseDirectory()
+  expect(s).not_to eq ''
+end
+
+def testGetFileName()
+  s = ''
+  if RUBY_PLATFORM =~ /mswin(?!ce)|mingw|cygwin|bccwin/
+    s = Transactd::Nstable::getFileName('test\abcdefghijklnmopqrstuvwxyz1234567890.txt')
+  else
+    s = Transactd::Nstable::getFileName('test/abcdefghijklnmopqrstuvwxyz1234567890.txt')
+  end
+  expect(s).to eq 'abcdefghijklnmopqrstuvwxyz1234567890.txt'
+end
+
+def testGetDirURI()
+   s = Transactd::Nstable::getDirURI('tdap://localhost/test?dbfile=test.bdf')
+   expect(s).to eq 'tdap://localhost/test?dbfile='
+end
+
 def testInsert()
   db = Transactd::Database.new()
   tb = testOpenTable(db)
@@ -235,6 +266,9 @@ def testInsert()
     tb.setFV(FDI_NAME, 'kosaka')
     tb.insert()
     expect(tb.stat()).to eq 0
+    # test statMsg
+    msg = tb.statMsg()
+    expect(msg).to eq ''
   end
   db.beginTrn()
   n = 1

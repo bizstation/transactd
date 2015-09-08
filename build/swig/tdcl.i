@@ -359,6 +359,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::dbdef::pushBackup;
 %ignore bzs::db::protocol::tdap::client::dbdef::relateData;
 %ignore bzs::db::protocol::tdap::client::dbdef::setStat;
+%ignore bzs::db::protocol::tdap::client::dbdef::tdapErr;
 
 // * bzs/db/protocol/tdap/client/field.h *
 %ignore bzs::db::protocol::tdap::client::compBlob;
@@ -585,6 +586,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getTrnsctdEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrvEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::setBtrvEntryPoint;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::tdapErr;
+
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
 %ignore bzs::db::protocol::tdap::client::nstable::buflen;
@@ -595,7 +598,9 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nstable::tdap;
 %ignore bzs::db::protocol::tdap::client::nstable::test;
 %ignore bzs::db::protocol::tdap::client::nstable::throwError;
-%rename(tdapLastErr) bzs::db::protocol::tdap::client::nstable::tdapErr(HWND, _TCHAR*);
+%ignore bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, _TCHAR* retbuf=NULL);
+%ignore bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* tableName = NULL, _TCHAR* retbuf = NULL);
+
 
 // * bzs/db/protocol/tdap/client/pooledDatabaseManager.h *
 %ignore bzs::db::protocol::tdap::client::xaTransaction;
@@ -751,21 +756,21 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::filterdIterator::operator==;
 %ignore bzs::db::protocol::tdap::client::filterdIterator::operator!=;
 %ignore bzs::db::protocol::tdap::client::filterdIterator::operator*;
-%ignore bzs::db::protocol::tdap::client::filterdIterator::operator->;
-%ignore bzs::db::protocol::tdap::client::find;
-%ignore bzs::db::protocol::tdap::client::findRv;
-%ignore bzs::db::protocol::tdap::client::for_each;
-%ignore bzs::db::protocol::tdap::client::getFindIterator;
+//%ignore bzs::db::protocol::tdap::client::filterdIterator::operator->;
+//%ignore bzs::db::protocol::tdap::client::find;
+//%ignore bzs::db::protocol::tdap::client::findRv;
+//%ignore bzs::db::protocol::tdap::client::for_each;
+//%ignore bzs::db::protocol::tdap::client::getFindIterator;
 %ignore bzs::db::protocol::tdap::client::getTable;
 %ignore bzs::db::protocol::tdap::client::insertField;
 %ignore bzs::db::protocol::tdap::client::insertKey;
 %ignore bzs::db::protocol::tdap::client::insertRecord;
 %ignore bzs::db::protocol::tdap::client::insertTable;
-%ignore bzs::db::protocol::tdap::client::deleteTable
-%ignore bzs::db::protocol::tdap::client::renumberTable
-%ignore bzs::db::protocol::tdap::client::deleteField
-%ignore bzs::db::protocol::tdap::client::deleteKey
-%ignore bzs::db::protocol::tdap::client::validateTableDef
+//%ignore bzs::db::protocol::tdap::client::deleteTable
+//%ignore bzs::db::protocol::tdap::client::renumberTable
+//%ignore bzs::db::protocol::tdap::client::deleteField
+//%ignore bzs::db::protocol::tdap::client::deleteKey
+//%ignore bzs::db::protocol::tdap::client::validateTableDef
 %ignore bzs::db::protocol::tdap::client::isSameUri;
 %ignore bzs::db::protocol::tdap::client::lexical_cast;
 %ignore bzs::db::protocol::tdap::client::openDatabase;
@@ -1043,19 +1048,78 @@ using namespace bzs::db::protocol::tdap::client;
 #undef pragma_pop
 #define pragma_pop
 %include bzs/db/protocol/tdap/tdapcapi.h
+
+// -- typemap for tabledef::toChar
+%typemap(in, numinputs=0) (char* buf, const char* s, int size)
+{
+  int n = 0;
+  if (s) n = strlen(s)*2;
+  $3 = n;
+  if (n) $1 = new char[n];
+}
+%typemap(freearg) (char* buf, const char* s, int size)
+{
+  delete [] $1;
+}
 %include bzs/db/protocol/tdap/tdapSchema.h
+%clear char* buf, const char* s, int size;
+// --
+
+// -- typemap for nstable::getFilename, getDirUri, statMsg
+%typemap(in, numinputs=0) (_TCHAR* retbuf)
+{
+  _TCHAR tmpbuf[1024];
+  $1=tmpbuf; 
+}
 %include bzs/db/protocol/tdap/client/nsTable.h
+%clear char * retbuf;
+// --
+
+
+
+// -- typemap for dbdef::statMsg
+%typemap(in, numinputs=0) (_TCHAR* retbuf)
+{
+  _TCHAR tmpbuf[1024];
+  $1=tmpbuf; 
+}
 %include bzs/db/protocol/tdap/client/dbDef.h
+%clear char * retbuf;
+// --
+
+
 %include bzs/db/protocol/tdap/client/table.h
+
+// -- typemap for nsDatabase::readDatabaseDirectory
+%typemap(in, numinputs=0) (_TCHAR* retbuf, uchar_td len)
+{
+  char tmpbuf[255];
+  $1=tmpbuf; 
+  $2=255;
+}
+// nsDatabase::statMsg
+%typemap(in, numinputs=0) (_TCHAR* retbuf)
+{
+  _TCHAR tmpbuf[1024];
+  $1=tmpbuf; 
+}
+
 %include bzs/db/protocol/tdap/client/nsDatabase.h
+%clear _TCHAR* retBuf, uchar_td len;
+%clear _TCHAR* retbuf;
+// --
+
+
 %include bzs/db/protocol/tdap/client/database.h
 %include bzs/rtl/benchmark.h
 %include bzs/db/protocol/tdap/mysql/characterset.h
-// typemap for btrTimeStamp::toString/btrdtoa/btrttoa/btrstoa --
+
+// -- typemap for btrTimeStamp::toString/btrdtoa/btrttoa/btrstoa 
 %typemap(in,numinputs=0) (char * retbuf) (char tmpbuf[255]) { $1=tmpbuf; }
 %include bzs/db/protocol/tdap/btrDate.h
 %clear char * retbuf;
-// clear typemap for typemap for btrTimeStamp::toString/btrdtoa/btrttoa/btrstoa --
+// --
+
 %include bzs/db/protocol/tdap/client/field.h
 %include bzs/db/protocol/tdap/client/fields.h
 %include bzs/db/protocol/tdap/client/memRecord.h

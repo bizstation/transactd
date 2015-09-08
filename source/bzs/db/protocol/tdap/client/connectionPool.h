@@ -60,12 +60,7 @@ template <class Database_Ptr> class connectionPool
     mutable boost::condition m_busy;
     int m_maxConnections;
     Database_Ptr addOne(const connectParams& param);
-#if (__BCPLUSPLUS__)
-public:
-#endif
-    DLLUNLOADCALLBACK_PTR m_regitfunc;
-    friend short __STDCALL dllUnloadCallbackFunc();
-
+    WIN_TPOOL_SHUTDOWN_PTR m_shutdownFunc;
 public:
     connectionPool(int maxConnections = 0);
     ~connectionPool();

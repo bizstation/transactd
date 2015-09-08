@@ -24,6 +24,21 @@
 
 using namespace bzs::db::protocol::tdap::client;
 
+STDMETHODIMP CGroupQuery::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IGroupQuery
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 void CGroupQuery::setResult(IGroupQuery** retVal)
 {
     this->QueryInterface(IID_IGroupQuery, (void**)retVal);

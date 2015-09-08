@@ -26,6 +26,7 @@ using namespace ATL;
 class ATL_NO_VTABLE CPreparedQuery
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CPreparedQuery, &CLSID_PreparedQuery>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IPreparedQuery, &IID_IPreparedQuery, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>
 {
@@ -44,7 +45,10 @@ public:
     BEGIN_COM_MAP(CPreparedQuery)
     COM_INTERFACE_ENTRY(IPreparedQuery)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 

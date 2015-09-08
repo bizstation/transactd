@@ -28,6 +28,7 @@ class CFieldDef;
 class ATL_NO_VTABLE CFieldDefs
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CFieldDefs, &CLSID_FieldDefs>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IFieldDefs, &IID_IFieldDefs, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>
 {
@@ -41,7 +42,10 @@ public:
     BEGIN_COM_MAP(CFieldDefs)
     COM_INTERFACE_ENTRY(IFieldDefs)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 

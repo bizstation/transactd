@@ -207,6 +207,8 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd->len = 33;
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
+        //test statMsg
+        $this->assertEquals($dbdef->statMsg(), '');
         
         $kd = $dbdef->insertKey($tableid, 0);
         $kd->segment(0)->fieldNum = 0;
@@ -217,12 +219,19 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
         $this->assertEquals($dbdef->validateTableDef($tableid), 0);
+        
+        //test toChar
+        $s = $td->toChar('abcdefg');
+        $this->assertEquals($s, 'abcdefg');
+        
     }
     private function openTable($db)
     {
         $this->openDatabase($db);
         $tb = $db->openTable(TABLENAME);
         $this->assertEquals($db->stat(), 0);
+        //test statMsg
+        $this->assertEquals($db->statMsg(), '');
         return $tb;
     }
     
@@ -328,6 +337,28 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($engine_ver->minorVersion, Bz\transactd::TRANSACTD_VER_MINOR);
         $this->assertEquals(chr($engine_ver->type), 'T');
     }
+    public function testReadDatabaseDirectory()
+    {
+       $db = new Bz\database();
+       $tb = $this->openTable($db);
+       $this->assertNotEquals($tb, NULL);
+       $s = $db->readDatabaseDirectory();
+       $this->assertNotEquals($s, '');
+    }
+    public function testGetFileName()
+    {
+        $s = '';
+        if (PHP_OS == 'WIN32' || PHP_OS == 'WINNT')
+           $s = Bz\nstable::getFileName('test\abcdefghijklnmopqrstuvwxyz1234567890.txt');
+        else
+           $s = Bz\nstable::getFileName('test/abcdefghijklnmopqrstuvwxyz1234567890.txt');
+        $this->assertEquals($s, 'abcdefghijklnmopqrstuvwxyz1234567890.txt');
+    }
+    public function testGetDirURI()
+    {
+       $s = Bz\nstable::getDirURI('tdap://localhost/test?dbfile=test.bdf');
+       $this->assertEquals($s, 'tdap://localhost/test?dbfile=');
+    }
     public function testInsert()
     {
         $db = new Bz\database();
@@ -339,6 +370,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDI_NAME, 'kosaka');
         $tb->insert();
         $this->assertEquals($tb->stat(), 0);
+        //test statMsg
+        $this->assertEquals($tb->statMsg(), '');
+
         $db->beginTrn();
         $n = 1;
         $tb->seekLast();

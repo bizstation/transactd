@@ -21,6 +21,21 @@
 #include "Table.h"
 #include "Bookmark.h"
 
+STDMETHODIMP CQueryBase::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IQueryBase
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 STDMETHODIMP CQueryBase::Reset(IQueryBase** retVal)
 {
     m_qb.reset();

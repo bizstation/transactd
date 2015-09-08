@@ -26,6 +26,7 @@ using namespace ATL;
 class ATL_NO_VTABLE CPooledDbManager
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CPooledDbManager, &CLSID_PooledDbManager>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IPooledDbManager, &IID_IPooledDbManager,
                            &LIBID_transactd, /* wMajor = */ 1, /* wMinor = */ 0>
 {
@@ -40,7 +41,10 @@ public:
     BEGIN_COM_MAP(CPooledDbManager)
     COM_INTERFACE_ENTRY(IPooledDbManager)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 

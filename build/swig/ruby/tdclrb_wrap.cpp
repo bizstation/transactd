@@ -51,13 +51,13 @@ template <typename T> T SwigValueInit() {
 
 struct SWIG_CHAR
 {
-	int alloc;
-	char* str;
-	SWIG_CHAR() :alloc(0), str(0){}
-	~SWIG_CHAR()
-	{
-		if (alloc) delete[] str;
-	}
+    int alloc;
+    char* str;
+    SWIG_CHAR() :alloc(0), str(0){}
+    ~SWIG_CHAR()
+    {
+        if (alloc) delete[] str;
+    }
 };
 
 /* -----------------------------------------------------------------------------
@@ -2804,115 +2804,115 @@ _wrap_BOOKMARK_allocate(int argc, VALUE *argv, VALUE self) {
 #endif
 
 
-	VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_BOOKMARK);
+    VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_BOOKMARK);
 #ifndef HAVE_RB_DEFINE_ALLOC_FUNC
-	rb_obj_call_init(vresult, argc, argv);
+    rb_obj_call_init(vresult, argc, argv);
 #endif
-	return vresult;
+    return vresult;
 }
 
 
 SWIGINTERN VALUE
 _wrap_new_BOOKMARK(int argc, VALUE *argv, VALUE self) {
-	BOOKMARK *result = 0;
+    BOOKMARK *result = 0;
 
-	if ((argc < 0) || (argc > 0)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
-	}
-	{
-		try {
-			result = (BOOKMARK *)new BOOKMARK();
-			DATA_PTR(self) = result;
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	return self;
+    if ((argc < 0) || (argc > 0)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
+    }
+    {
+        try {
+            result = (BOOKMARK *)new BOOKMARK();
+            DATA_PTR(self) = result;
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    return self;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE
 _wrap_BOOKMARK_isEmpty(int argc, VALUE *argv, VALUE self) {
-	BOOKMARK *arg1 = (BOOKMARK *)0;
-	void *argp1 = 0;
-	int res1 = 0;
-	bool result;
-	VALUE vresult = Qnil;
+    BOOKMARK *arg1 = (BOOKMARK *)0;
+    void *argp1 = 0;
+    int res1 = 0;
+    bool result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 0) || (argc > 0)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_BOOKMARK, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "BOOKMARK *", "isEmpty", 1, self));
-	}
-	arg1 = reinterpret_cast< BOOKMARK * >(argp1);
-	{
-		try {
-			result = (bool)(arg1)->isEmpty();
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_bool(static_cast< bool >(result));
-	return vresult;
+    if ((argc < 0) || (argc > 0)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_BOOKMARK, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "BOOKMARK *", "isEmpty", 1, self));
+    }
+    arg1 = reinterpret_cast< BOOKMARK * >(argp1);
+    {
+        try {
+            result = (bool)(arg1)->isEmpty();
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_bool(static_cast< bool >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN void
 free_BOOKMARK(BOOKMARK *arg1) {
-	delete arg1;
+    delete arg1;
 }
 
 SWIGINTERN VALUE
 _wrap_canRecoverNetError(int argc, VALUE *argv, VALUE self) {
-	short arg1;
-	short val1;
-	int ecode1 = 0;
-	bool result;
-	VALUE vresult = Qnil;
+    short arg1;
+    short val1;
+    int ecode1 = 0;
+    bool result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	ecode1 = SWIG_AsVal_short(argv[0], &val1);
-	if (!SWIG_IsOK(ecode1)) {
-		SWIG_exception_fail(SWIG_ArgError(ecode1), Ruby_Format_TypeError("", "short", "canRecoverNetError", 1, argv[0]));
-	}
-	arg1 = static_cast< short >(val1);
-	{
-		try {
-			result = (bool)canRecoverNetError(arg1);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_bool(static_cast< bool >(result));
-	return vresult;
+    if ((argc < 1) || (argc > 1)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
+    }
+    ecode1 = SWIG_AsVal_short(argv[0], &val1);
+    if (!SWIG_IsOK(ecode1)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode1), Ruby_Format_TypeError("", "short", "canRecoverNetError", 1, argv[0]));
+    }
+    arg1 = static_cast< short >(val1);
+    {
+        try {
+            result = (bool)canRecoverNetError(arg1);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_bool(static_cast< bool >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -5894,15 +5894,10 @@ _wrap_tabledef_toChar(int argc, VALUE *argv, VALUE self) {
   int res2 ;
   char *buf2 = 0 ;
   int alloc2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  int val4 ;
-  int ecode4 = 0 ;
   char *result = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 3) || (argc > 3)) {
+  if (argc != 1) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 3)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__tabledef, 0 |  0 );
@@ -5910,24 +5905,19 @@ _wrap_tabledef_toChar(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::tabledef *","toChar", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::tabledef * >(argp1);
+  
   res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "char *","toChar", 2, argv[0] ));
   }
   arg2 = reinterpret_cast< char * >(buf2);
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "char const *","toChar", 3, argv[1] ));
-  }
-  arg3 = reinterpret_cast< char * >(buf3);
-  ecode4 = SWIG_AsVal_int(argv[2], &val4);
-  if (!SWIG_IsOK(ecode4)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode4), Ruby_Format_TypeError( "", "int","toChar", 4, argv[2] ));
-  } 
-  arg4 = static_cast< int >(val4);
+  
+  arg4 = strlen(arg2) * 2;
+  arg3 = new char[arg4];
+  
   {
     try {
-      result = (char *)(arg1)->toChar(arg2,(char const *)arg3,arg4);
+      result = (char *)(arg1)->toChar(arg3,(char const *)arg2,arg4);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -5940,11 +5930,11 @@ _wrap_tabledef_toChar(int argc, VALUE *argv, VALUE self) {
     vresult = rb_enc_str_new(result, strlen(result), rb_enc_find_from_codepage(CP_UTF8));
   }
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  delete [] arg3;
   return vresult;
 fail:
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  delete [] arg3;
   return Qnil;
 }
 
@@ -8761,113 +8751,6 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_nstable_tdapLastErr(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  HWND arg2 ;
-  _TCHAR *arg3 = (_TCHAR *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 ;
-  int res2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  short_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nstable *","tdapErr", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-  {
-    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_HWND,  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "HWND","tdapErr", 2, argv[0] )); 
-    }  
-    if (!argp2) {
-      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "HWND","tdapErr", 2, argv[0]));
-    } else {
-      arg2 = *(reinterpret_cast< HWND * >(argp2));
-    }
-  }
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR *","tdapErr", 3, argv[1] ));
-  }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
-  {
-    try {
-      result = (short_td)(arg1)->tdapErr(arg2,arg3);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_From_short(static_cast< short >(result));
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return vresult;
-fail:
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_nstable_tdapErr__SWIG_0(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  HWND arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 ;
-  int res2 = 0 ;
-  short_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nstable *","tdapErr", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-  {
-    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_HWND,  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "HWND","tdapErr", 2, argv[0] )); 
-    }  
-    if (!argp2) {
-      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "HWND","tdapErr", 2, argv[0]));
-    } else {
-      arg2 = *(reinterpret_cast< HWND * >(argp2));
-    }
-  }
-  {
-    try {
-      result = (short_td)(arg1)->tdapErr(arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_From_short(static_cast< short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
 _wrap_nstable_beginBulkInsert(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
   int arg2 ;
@@ -10203,37 +10086,37 @@ fail:
 
 SWIGINTERN VALUE
 _wrap_nstable_bookmarkLen(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
-	void *argp1 = 0;
-	int res1 = 0;
-	ushort_td result;
-	VALUE vresult = Qnil;
+    bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
+    void *argp1 = 0;
+    int res1 = 0;
+    ushort_td result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 0) || (argc > 0)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable const *", "bookmarkLen", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-	{
-		try {
-			result = (ushort_td)((bzs::db::protocol::tdap::client::nstable const *)arg1)->bookmarkLen();
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_unsigned_SS_short(static_cast< unsigned short >(result));
-	return vresult;
+    if ((argc < 0) || (argc > 0)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable const *", "bookmarkLen", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
+    {
+        try {
+            result = (ushort_td)((bzs::db::protocol::tdap::client::nstable const *)arg1)->bookmarkLen();
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_unsigned_SS_short(static_cast< unsigned short >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -10273,322 +10156,322 @@ fail:
 
 SWIGINTERN VALUE
 _wrap_nstable_seekByBookmark__SWIG_2(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
-	bookmark_td *arg2 = 0;
-	ushort_td arg3;
-	void *argp1 = 0;
-	int res1 = 0;
-	void *argp2 = 0;
-	int res2 = 0;
-	unsigned short val3;
-	int ecode3 = 0;
+    bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
+    bookmark_td *arg2 = 0;
+    ushort_td arg3;
+    void *argp1 = 0;
+    int res1 = 0;
+    void *argp2 = 0;
+    int res2 = 0;
+    unsigned short val3;
+    int ecode3 = 0;
 
-	if ((argc < 2) || (argc > 2)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "seekByBookmark", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-	res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
-	if (!SWIG_IsOK(res2)) {
-		SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "seekByBookmark", 2, argv[0]));
-	}
-	if (!argp2) {
-		SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "seekByBookmark", 2, argv[0]));
-	}
-	arg2 = reinterpret_cast< bookmark_td * >(argp2);
-	ecode3 = SWIG_AsVal_unsigned_SS_short(argv[1], &val3);
-	if (!SWIG_IsOK(ecode3)) {
-		SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError("", "ushort_td", "seekByBookmark", 3, argv[1]));
-	}
-	arg3 = static_cast< ushort_td >(val3);
-	{
-		try {
-			(arg1)->seekByBookmark(*arg2, arg3);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	return Qnil;
+    if ((argc < 2) || (argc > 2)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "seekByBookmark", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
+    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
+    if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "seekByBookmark", 2, argv[0]));
+    }
+    if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "seekByBookmark", 2, argv[0]));
+    }
+    arg2 = reinterpret_cast< bookmark_td * >(argp2);
+    ecode3 = SWIG_AsVal_unsigned_SS_short(argv[1], &val3);
+    if (!SWIG_IsOK(ecode3)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError("", "ushort_td", "seekByBookmark", 3, argv[1]));
+    }
+    arg3 = static_cast< ushort_td >(val3);
+    {
+        try {
+            (arg1)->seekByBookmark(*arg2, arg3);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    return Qnil;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE
 _wrap_nstable_seekByBookmark__SWIG_3(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
-	bookmark_td *arg2 = 0;
-	void *argp1 = 0;
-	int res1 = 0;
-	void *argp2 = 0;
-	int res2 = 0;
+    bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
+    bookmark_td *arg2 = 0;
+    void *argp1 = 0;
+    int res1 = 0;
+    void *argp2 = 0;
+    int res2 = 0;
 
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "seekByBookmark", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-	res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
-	if (!SWIG_IsOK(res2)) {
-		SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "seekByBookmark", 2, argv[0]));
-	}
-	if (!argp2) {
-		SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "seekByBookmark", 2, argv[0]));
-	}
-	arg2 = reinterpret_cast< bookmark_td * >(argp2);
-	{
-		try {
-			(arg1)->seekByBookmark(*arg2);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	return Qnil;
+    if ((argc < 1) || (argc > 1)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "seekByBookmark", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
+    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
+    if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "seekByBookmark", 2, argv[0]));
+    }
+    if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "seekByBookmark", 2, argv[0]));
+    }
+    arg2 = reinterpret_cast< bookmark_td * >(argp2);
+    {
+        try {
+            (arg1)->seekByBookmark(*arg2);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    return Qnil;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE
 _wrap_nstable_seekByBookmark__SWIG_4(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
-	void *argp1 = 0;
-	int res1 = 0;
+    bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
+    void *argp1 = 0;
+    int res1 = 0;
 
-	if ((argc < 0) || (argc > 0)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "seekByBookmark", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-	{
-		try {
-			(arg1)->seekByBookmark();
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	return Qnil;
+    if ((argc < 0) || (argc > 0)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "seekByBookmark", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
+    {
+        try {
+            (arg1)->seekByBookmark();
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    return Qnil;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE _wrap_nstable_seekByBookmark(int nargs, VALUE *args, VALUE self) {
-	int argc;
-	VALUE argv[4];
-	int ii;
+    int argc;
+    VALUE argv[4];
+    int ii;
 
-	argc = nargs + 1;
-	argv[0] = self;
-	if (argc > 4) SWIG_fail;
-	for (ii = 1; (ii < argc); ++ii) {
-		argv[ii] = args[ii - 1];
-	}
-	if (argc == 1) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			return _wrap_nstable_seekByBookmark__SWIG_4(nargs, args, self);
-		}
-	}
-	if (argc == 2) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			void *vptr = 0;
-			int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
-			_v = SWIG_CheckState(res);
-			if (_v) {
-				return _wrap_nstable_seekByBookmark__SWIG_3(nargs, args, self);
-			}
-		}
-	}
-	if (argc == 3) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			void *vptr = 0;
-			int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
-			_v = SWIG_CheckState(res);
-			if (_v) {
-				{
-					int res = SWIG_AsVal_unsigned_SS_short(argv[2], NULL);
-					_v = SWIG_CheckState(res);
-				}
-				if (_v) {
-					return _wrap_nstable_seekByBookmark__SWIG_2(nargs, args, self);
-				}
-			}
-		}
-	}
+    argc = nargs + 1;
+    argv[0] = self;
+    if (argc > 4) SWIG_fail;
+    for (ii = 1; (ii < argc); ++ii) {
+        argv[ii] = args[ii - 1];
+    }
+    if (argc == 1) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            return _wrap_nstable_seekByBookmark__SWIG_4(nargs, args, self);
+        }
+    }
+    if (argc == 2) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            void *vptr = 0;
+            int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
+            _v = SWIG_CheckState(res);
+            if (_v) {
+                return _wrap_nstable_seekByBookmark__SWIG_3(nargs, args, self);
+            }
+        }
+    }
+    if (argc == 3) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            void *vptr = 0;
+            int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
+            _v = SWIG_CheckState(res);
+            if (_v) {
+                {
+                    int res = SWIG_AsVal_unsigned_SS_short(argv[2], NULL);
+                    _v = SWIG_CheckState(res);
+                }
+                if (_v) {
+                    return _wrap_nstable_seekByBookmark__SWIG_2(nargs, args, self);
+                }
+            }
+        }
+    }
 
 fail:
-	Ruby_Format_OverloadedError(argc, 4, "nstable.seekByBookmark",
-		"    void nstable.seekByBookmark(bookmark_td &bm, ushort_td lockBias)\n"
-		"    void nstable.seekByBookmark(bookmark_td &bm)\n"
-		"    void nstable.seekByBookmark()\n");
+    Ruby_Format_OverloadedError(argc, 4, "nstable.seekByBookmark",
+        "    void nstable.seekByBookmark(bookmark_td &bm, ushort_td lockBias)\n"
+        "    void nstable.seekByBookmark(bookmark_td &bm)\n"
+        "    void nstable.seekByBookmark()\n");
 
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE
 _wrap_nstable_getPercentage__SWIG_0(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
-	void *argp1 = 0;
-	int res1 = 0;
-	percentage_td result;
-	VALUE vresult = Qnil;
+    bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
+    void *argp1 = 0;
+    int res1 = 0;
+    percentage_td result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 0) || (argc > 0)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "getPercentage", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-	{
-		try {
-			result = (percentage_td)(arg1)->getPercentage();
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_int(static_cast< int >(result));
-	return vresult;
+    if ((argc < 0) || (argc > 0)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "getPercentage", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
+    {
+        try {
+            result = (percentage_td)(arg1)->getPercentage();
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_int(static_cast< int >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE
 _wrap_nstable_getPercentage__SWIG_1(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
-	bookmark_td *arg2 = 0;
-	void *argp1 = 0;
-	int res1 = 0;
-	void *argp2 = 0;
-	int res2 = 0;
-	percentage_td result;
-	VALUE vresult = Qnil;
+    bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
+    bookmark_td *arg2 = 0;
+    void *argp1 = 0;
+    int res1 = 0;
+    void *argp2 = 0;
+    int res2 = 0;
+    percentage_td result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "getPercentage", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-	res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
-	if (!SWIG_IsOK(res2)) {
-		SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "getPercentage", 2, argv[0]));
-	}
-	if (!argp2) {
-		SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "getPercentage", 2, argv[0]));
-	}
-	arg2 = reinterpret_cast< bookmark_td * >(argp2);
-	{
-		try {
-			result = (percentage_td)(arg1)->getPercentage(*arg2);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_int(static_cast< int >(result));
-	return vresult;
+    if ((argc < 1) || (argc > 1)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "getPercentage", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
+    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
+    if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "getPercentage", 2, argv[0]));
+    }
+    if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "getPercentage", 2, argv[0]));
+    }
+    arg2 = reinterpret_cast< bookmark_td * >(argp2);
+    {
+        try {
+            result = (percentage_td)(arg1)->getPercentage(*arg2);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_int(static_cast< int >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE _wrap_nstable_getPercentage(int nargs, VALUE *args, VALUE self) {
-	int argc;
-	VALUE argv[3];
-	int ii;
+    int argc;
+    VALUE argv[3];
+    int ii;
 
-	argc = nargs + 1;
-	argv[0] = self;
-	if (argc > 3) SWIG_fail;
-	for (ii = 1; (ii < argc); ++ii) {
-		argv[ii] = args[ii - 1];
-	}
-	if (argc == 1) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			return _wrap_nstable_getPercentage__SWIG_0(nargs, args, self);
-		}
-	}
-	if (argc == 2) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			void *vptr = 0;
-			int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
-			_v = SWIG_CheckState(res);
-			if (_v) {
-				return _wrap_nstable_getPercentage__SWIG_1(nargs, args, self);
-			}
-		}
-	}
+    argc = nargs + 1;
+    argv[0] = self;
+    if (argc > 3) SWIG_fail;
+    for (ii = 1; (ii < argc); ++ii) {
+        argv[ii] = args[ii - 1];
+    }
+    if (argc == 1) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            return _wrap_nstable_getPercentage__SWIG_0(nargs, args, self);
+        }
+    }
+    if (argc == 2) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            void *vptr = 0;
+            int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
+            _v = SWIG_CheckState(res);
+            if (_v) {
+                return _wrap_nstable_getPercentage__SWIG_1(nargs, args, self);
+            }
+        }
+    }
 
 fail:
-	Ruby_Format_OverloadedError(argc, 3, "nstable.getPercentage",
-		"    percentage_td nstable.getPercentage()\n"
-		"    percentage_td nstable.getPercentage(bookmark_td &bm)\n");
+    Ruby_Format_OverloadedError(argc, 3, "nstable.getPercentage",
+        "    percentage_td nstable.getPercentage()\n"
+        "    percentage_td nstable.getPercentage(bookmark_td &bm)\n");
 
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -11084,122 +10967,122 @@ fail:
 
 SWIGINTERN VALUE
 _wrap_nstable_unlock__SWIG_0(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
-	bookmark_td *arg2 = 0;
-	void *argp1 = 0;
-	int res1 = 0;
-	void *argp2 = 0;
-	int res2 = 0;
+    bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
+    bookmark_td *arg2 = 0;
+    void *argp1 = 0;
+    int res1 = 0;
+    void *argp2 = 0;
+    int res2 = 0;
 
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "unlock", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-	res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
-	if (!SWIG_IsOK(res2)) {
-		SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "unlock", 2, argv[0]));
-	}
-	if (!argp2) {
-		SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "unlock", 2, argv[0]));
-	}
-	arg2 = reinterpret_cast< bookmark_td * >(argp2);
-	{
-		try {
-			(arg1)->unlock(*arg2);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	return Qnil;
+    if ((argc < 1) || (argc > 1)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "unlock", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
+    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
+    if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "unlock", 2, argv[0]));
+    }
+    if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "unlock", 2, argv[0]));
+    }
+    arg2 = reinterpret_cast< bookmark_td * >(argp2);
+    {
+        try {
+            (arg1)->unlock(*arg2);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    return Qnil;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE
 _wrap_nstable_unlock__SWIG_1(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
-	void *argp1 = 0;
-	int res1 = 0;
+    bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0;
+    void *argp1 = 0;
+    int res1 = 0;
 
-	if ((argc < 0) || (argc > 0)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "unlock", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
-	{
-		try {
-			(arg1)->unlock();
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	return Qnil;
+    if ((argc < 0) || (argc > 0)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::nstable *", "unlock", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
+    {
+        try {
+            (arg1)->unlock();
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    return Qnil;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE _wrap_nstable_unlock(int nargs, VALUE *args, VALUE self) {
-	int argc;
-	VALUE argv[3];
-	int ii;
+    int argc;
+    VALUE argv[3];
+    int ii;
 
-	argc = nargs + 1;
-	argv[0] = self;
-	if (argc > 3) SWIG_fail;
-	for (ii = 1; (ii < argc); ++ii) {
-		argv[ii] = args[ii - 1];
-	}
-	if (argc == 1) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			return _wrap_nstable_unlock__SWIG_1(nargs, args, self);
-		}
-	}
-	if (argc == 2) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			void *vptr = 0;
-			int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
-			_v = SWIG_CheckState(res);
-			if (_v) {
-				return _wrap_nstable_unlock__SWIG_0(nargs, args, self);
-			}
-		}
-	}
+    argc = nargs + 1;
+    argv[0] = self;
+    if (argc > 3) SWIG_fail;
+    for (ii = 1; (ii < argc); ++ii) {
+        argv[ii] = args[ii - 1];
+    }
+    if (argc == 1) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            return _wrap_nstable_unlock__SWIG_1(nargs, args, self);
+        }
+    }
+    if (argc == 2) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            void *vptr = 0;
+            int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
+            _v = SWIG_CheckState(res);
+            if (_v) {
+                return _wrap_nstable_unlock__SWIG_0(nargs, args, self);
+            }
+        }
+    }
 
 fail:
-	Ruby_Format_OverloadedError(argc, 3, "nstable.unlock",
-		"    void nstable.unlock(bookmark_td &bm)\n"
-		"    void nstable.unlock()\n");
+    Ruby_Format_OverloadedError(argc, 3, "nstable.unlock",
+        "    void nstable.unlock(bookmark_td &bm)\n"
+        "    void nstable.unlock()\n");
 
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -11240,29 +11123,22 @@ fail:
 SWIGINTERN VALUE
 _wrap_nstable_getFileName(int argc, VALUE *argv, VALUE self) {
   _TCHAR *arg1 = (_TCHAR *) 0 ;
-  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  _TCHAR arg2[1024] = {NULL} ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
   _TCHAR *result = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  if (argc != 1){
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
   res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "_TCHAR const *","bzs::db::protocol::tdap::client::nstable::getFileName", 1, argv[0] ));
   }
   arg1 = reinterpret_cast< _TCHAR * >(buf1);
-  res2 = SWIG_AsCharPtrAndSize(argv[1], &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR *","bzs::db::protocol::tdap::client::nstable::getFileName", 2, argv[1] ));
-  }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
+
   {
     try {
       result = (_TCHAR *)bzs::db::protocol::tdap::client::nstable::getFileName((char const *)arg1,arg2);
@@ -11278,66 +11154,34 @@ _wrap_nstable_getFileName(int argc, VALUE *argv, VALUE self) {
     vresult = rb_enc_str_new(result, strlen(result), rb_enc_find_from_codepage(CP_UTF8));
   }
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return vresult;
 fail:
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return Qnil;
 }
 
 
 SWIGINTERN VALUE
-_wrap_nstable_tdapErr__SWIG_1(int argc, VALUE *argv, VALUE self) {
-  HWND arg1 ;
-  short_td arg2 ;
-  _TCHAR *arg3 = (_TCHAR *) 0 ;
-  _TCHAR *arg4 = (_TCHAR *) 0 ;
-  void *argp1 ;
+_wrap_nstable_statMsg(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
+  _TCHAR arg2[1024] = {NULL};
+  void *argp1 = 0 ;
   int res1 = 0 ;
-  short val2 ;
-  int ecode2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  int res4 ;
-  char *buf4 = 0 ;
-  int alloc4 = 0 ;
-  short_td result;
+  _TCHAR *result = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 4) || (argc > 4)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 4)",argc); SWIG_fail;
+  if (argc != 0){
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
-  {
-    res1 = SWIG_ConvertPtr(argv[0], &argp1, SWIGTYPE_p_HWND,  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "HWND","bzs::db::protocol::tdap::client::nstable::tdapErr", 1, argv[0] )); 
-    }  
-    if (!argp1) {
-      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "HWND","bzs::db::protocol::tdap::client::nstable::tdapErr", 1, argv[0]));
-    } else {
-      arg1 = *(reinterpret_cast< HWND * >(argp1));
-    }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nstable *","statMsg", 1, self )); 
   }
-  ecode2 = SWIG_AsVal_short(argv[1], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "short_td","bzs::db::protocol::tdap::client::nstable::tdapErr", 2, argv[1] ));
-  } 
-  arg2 = static_cast< short_td >(val2);
-  res3 = SWIG_AsCharPtrAndSize(argv[2], &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR const *","bzs::db::protocol::tdap::client::nstable::tdapErr", 3, argv[2] ));
-  }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
-  res4 = SWIG_AsCharPtrAndSize(argv[3], &buf4, NULL, &alloc4);
-  if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), Ruby_Format_TypeError( "", "_TCHAR *","bzs::db::protocol::tdap::client::nstable::tdapErr", 4, argv[3] ));
-  }
-  arg4 = reinterpret_cast< _TCHAR * >(buf4);
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nstable * >(argp1);
   {
     try {
-      result = (short_td)bzs::db::protocol::tdap::client::nstable::tdapErr(arg1,arg2,(char const *)arg3,arg4);
+      arg1->tdapErr((HWND)0, arg2);
+      result = arg2;
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -11346,213 +11190,11 @@ _wrap_nstable_tdapErr__SWIG_1(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
-  vresult = SWIG_From_short(static_cast< short >(result));
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
+  {
+    vresult = rb_enc_str_new(result, strlen(result), rb_enc_find_from_codepage(CP_UTF8));
+  }
   return vresult;
 fail:
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_nstable_tdapErr__SWIG_2(int argc, VALUE *argv, VALUE self) {
-  HWND arg1 ;
-  short_td arg2 ;
-  _TCHAR *arg3 = (_TCHAR *) 0 ;
-  void *argp1 ;
-  int res1 = 0 ;
-  short val2 ;
-  int ecode2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  short_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 3) || (argc > 3)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 3)",argc); SWIG_fail;
-  }
-  {
-    res1 = SWIG_ConvertPtr(argv[0], &argp1, SWIGTYPE_p_HWND,  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "HWND","bzs::db::protocol::tdap::client::nstable::tdapErr", 1, argv[0] )); 
-    }  
-    if (!argp1) {
-      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "HWND","bzs::db::protocol::tdap::client::nstable::tdapErr", 1, argv[0]));
-    } else {
-      arg1 = *(reinterpret_cast< HWND * >(argp1));
-    }
-  }
-  ecode2 = SWIG_AsVal_short(argv[1], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "short_td","bzs::db::protocol::tdap::client::nstable::tdapErr", 2, argv[1] ));
-  } 
-  arg2 = static_cast< short_td >(val2);
-  res3 = SWIG_AsCharPtrAndSize(argv[2], &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR const *","bzs::db::protocol::tdap::client::nstable::tdapErr", 3, argv[2] ));
-  }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
-  {
-    try {
-      result = (short_td)bzs::db::protocol::tdap::client::nstable::tdapErr(arg1,arg2,(char const *)arg3);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_From_short(static_cast< short >(result));
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return vresult;
-fail:
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_nstable_tdapErr__SWIG_3(int argc, VALUE *argv, VALUE self) {
-  HWND arg1 ;
-  short_td arg2 ;
-  void *argp1 ;
-  int res1 = 0 ;
-  short val2 ;
-  int ecode2 = 0 ;
-  short_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
-  }
-  {
-    res1 = SWIG_ConvertPtr(argv[0], &argp1, SWIGTYPE_p_HWND,  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "HWND","bzs::db::protocol::tdap::client::nstable::tdapErr", 1, argv[0] )); 
-    }  
-    if (!argp1) {
-      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "HWND","bzs::db::protocol::tdap::client::nstable::tdapErr", 1, argv[0]));
-    } else {
-      arg1 = *(reinterpret_cast< HWND * >(argp1));
-    }
-  }
-  ecode2 = SWIG_AsVal_short(argv[1], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "short_td","bzs::db::protocol::tdap::client::nstable::tdapErr", 2, argv[1] ));
-  } 
-  arg2 = static_cast< short_td >(val2);
-  {
-    try {
-      result = (short_td)bzs::db::protocol::tdap::client::nstable::tdapErr(arg1,arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_From_short(static_cast< short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE _wrap_nstable_tdapErr(int nargs, VALUE *args, VALUE self) {
-  int argc;
-  VALUE argv[4];
-  int ii;
-  
-  argc = nargs;
-  if (argc > 4) SWIG_fail;
-  for (ii = 0; (ii < argc); ++ii) {
-    argv[ii] = args[ii];
-  }
-  if (argc == 2) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      void *vptr = 0;
-      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_HWND, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        return _wrap_nstable_tdapErr__SWIG_0(nargs, args, self);
-      }
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_HWND, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      {
-        int res = SWIG_AsVal_short(argv[1], NULL);
-        _v = SWIG_CheckState(res);
-      }
-      if (_v) {
-        return _wrap_nstable_tdapErr__SWIG_3(nargs, args, self);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_HWND, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      {
-        int res = SWIG_AsVal_short(argv[1], NULL);
-        _v = SWIG_CheckState(res);
-      }
-      if (_v) {
-        int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
-        _v = SWIG_CheckState(res);
-        if (_v) {
-          return _wrap_nstable_tdapErr__SWIG_2(nargs, args, self);
-        }
-      }
-    }
-  }
-  if (argc == 4) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_HWND, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      {
-        int res = SWIG_AsVal_short(argv[1], NULL);
-        _v = SWIG_CheckState(res);
-      }
-      if (_v) {
-        int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
-        _v = SWIG_CheckState(res);
-        if (_v) {
-          int res = SWIG_AsCharPtrAndSize(argv[3], 0, NULL, 0);
-          _v = SWIG_CheckState(res);
-          if (_v) {
-            return _wrap_nstable_tdapErr__SWIG_1(nargs, args, self);
-          }
-        }
-      }
-    }
-  }
-  
-fail:
-  Ruby_Format_OverloadedError( argc, 4, "nstable.tdapErr", 
-    "    short_td nstable.tdapErr(bzs::db::protocol::tdap::client::nstable *self, HWND hWnd)\n"
-    "    short_td nstable.tdapErr(HWND hWnd, short_td status, _TCHAR const *tableName, _TCHAR *retbuf)\n"
-    "    short_td nstable.tdapErr(HWND hWnd, short_td status, _TCHAR const *tableName)\n"
-    "    short_td nstable.tdapErr(HWND hWnd, short_td status)\n");
-  
   return Qnil;
 }
 
@@ -11560,29 +11202,22 @@ fail:
 SWIGINTERN VALUE
 _wrap_nstable_getDirURI(int argc, VALUE *argv, VALUE self) {
   _TCHAR *arg1 = (_TCHAR *) 0 ;
-  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  _TCHAR arg2[1024] = {NULL};
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
   _TCHAR *result = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
   }
   res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "_TCHAR const *","bzs::db::protocol::tdap::client::nstable::getDirURI", 1, argv[0] ));
   }
   arg1 = reinterpret_cast< _TCHAR * >(buf1);
-  res2 = SWIG_AsCharPtrAndSize(argv[1], &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR *","bzs::db::protocol::tdap::client::nstable::getDirURI", 2, argv[1] ));
-  }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
+
   {
     try {
       result = (_TCHAR *)bzs::db::protocol::tdap::client::nstable::getDirURI((char const *)arg1,arg2);
@@ -11598,11 +11233,9 @@ _wrap_nstable_getDirURI(int argc, VALUE *argv, VALUE self) {
     vresult = rb_enc_str_new(result, strlen(result), rb_enc_find_from_codepage(CP_UTF8));
   }
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return vresult;
 fail:
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return Qnil;
 }
 
@@ -11907,45 +11540,45 @@ fail:
 
 SWIGINTERN VALUE
 _wrap_dbdef_validateTableDef(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0;
-	short arg2;
-	void *argp1 = 0;
-	int res1 = 0;
-	short val2;
-	int ecode2 = 0;
-	short result;
-	VALUE vresult = Qnil;
+    bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0;
+    short arg2;
+    void *argp1 = 0;
+    int res1 = 0;
+    short val2;
+    int ecode2 = 0;
+    short result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::dbdef *", "validateTableDef", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::dbdef * >(argp1);
-	ecode2 = SWIG_AsVal_short(argv[0], &val2);
-	if (!SWIG_IsOK(ecode2)) {
-		SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError("", "short", "validateTableDef", 2, argv[0]));
-	}
-	arg2 = static_cast< short >(val2);
-	{
-		try {
-			result = (short)(arg1)->validateTableDef(arg2);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_short(static_cast< short >(result));
-	return vresult;
+    if ((argc < 1) || (argc > 1)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::dbdef *", "validateTableDef", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::dbdef * >(argp1);
+    ecode2 = SWIG_AsVal_short(argv[0], &val2);
+    if (!SWIG_IsOK(ecode2)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError("", "short", "validateTableDef", 2, argv[0]));
+    }
+    arg2 = static_cast< short >(val2);
+    {
+        try {
+            result = (short)(arg1)->validateTableDef(arg2);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_short(static_cast< short >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -12652,47 +12285,26 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_dbdef_tdapErr__SWIG_0(int argc, VALUE *argv, VALUE self) {
+_wrap_dbdef_statMsg(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
-  HWND arg2 ;
-  _TCHAR *arg3 = (_TCHAR *) 0 ;
+  _TCHAR arg2[1024] = {NULL};
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 ;
-  int res2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  short_td result;
+  _TCHAR *result = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  if (argc != 0){
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::dbdef *","tdapErr", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::dbdef *","statMsg", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::dbdef * >(argp1);
   {
-    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_HWND,  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "HWND","tdapErr", 2, argv[0] )); 
-    }  
-    if (!argp2) {
-      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "HWND","tdapErr", 2, argv[0]));
-    } else {
-      arg2 = *(reinterpret_cast< HWND * >(argp2));
-    }
-  }
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR *","tdapErr", 3, argv[1] ));
-  }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
-  {
     try {
-      result = (short_td)(arg1)->tdapErr(arg2,arg3);
+      arg1->tdapErr((HWND)0, arg2);
+      result = arg2;
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -12701,112 +12313,11 @@ _wrap_dbdef_tdapErr__SWIG_0(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
-  vresult = SWIG_From_short(static_cast< short >(result));
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  {
+    vresult = rb_enc_str_new(result, strlen(result), rb_enc_find_from_codepage(CP_UTF8));
+  }
   return vresult;
 fail:
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_dbdef_tdapErr__SWIG_1(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
-  HWND arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 ;
-  int res2 = 0 ;
-  short_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::dbdef *","tdapErr", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::dbdef * >(argp1);
-  {
-    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_HWND,  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "HWND","tdapErr", 2, argv[0] )); 
-    }  
-    if (!argp2) {
-      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "HWND","tdapErr", 2, argv[0]));
-    } else {
-      arg2 = *(reinterpret_cast< HWND * >(argp2));
-    }
-  }
-  {
-    try {
-      result = (short_td)(arg1)->tdapErr(arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_From_short(static_cast< short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE _wrap_dbdef_tdapErr(int nargs, VALUE *args, VALUE self) {
-  int argc;
-  VALUE argv[4];
-  int ii;
-  
-  argc = nargs + 1;
-  argv[0] = self;
-  if (argc > 4) SWIG_fail;
-  for (ii = 1; (ii < argc); ++ii) {
-    argv[ii] = args[ii-1];
-  }
-  if (argc == 2) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      void *vptr = 0;
-      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_HWND, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        return _wrap_dbdef_tdapErr__SWIG_1(nargs, args, self);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      void *vptr = 0;
-      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_HWND, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
-        _v = SWIG_CheckState(res);
-        if (_v) {
-          return _wrap_dbdef_tdapErr__SWIG_0(nargs, args, self);
-        }
-      }
-    }
-  }
-  
-fail:
-  Ruby_Format_OverloadedError( argc, 4, "dbdef.tdapErr", 
-    "    short_td dbdef.tdapErr(HWND hWnd, _TCHAR *retbuf)\n"
-    "    short_td dbdef.tdapErr(HWND hWnd)\n");
-  
   return Qnil;
 }
 
@@ -13351,45 +12862,45 @@ fail:
 
 SWIGINTERN VALUE
 _wrap_table_bookmarks(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0;
-	unsigned int arg2;
-	void *argp1 = 0;
-	int res1 = 0;
-	unsigned int val2;
-	int ecode2 = 0;
-	bookmark_td result;
-	VALUE vresult = Qnil;
+    bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0;
+    unsigned int arg2;
+    void *argp1 = 0;
+    int res1 = 0;
+    unsigned int val2;
+    int ecode2 = 0;
+    bookmark_td result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::table const *", "bookmarks", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::table * >(argp1);
-	ecode2 = SWIG_AsVal_unsigned_SS_int(argv[0], &val2);
-	if (!SWIG_IsOK(ecode2)) {
-		SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError("", "unsigned int", "bookmarks", 2, argv[0]));
-	}
-	arg2 = static_cast< unsigned int >(val2);
-	{
-		try {
-			result = ((bzs::db::protocol::tdap::client::table const *)arg1)->bookmarks(arg2);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_NewPointerObj((new bookmark_td(static_cast< const bookmark_td& >(result))), SWIGTYPE_p_BOOKMARK, SWIG_POINTER_OWN | 0);
-	return vresult;
+    if ((argc < 1) || (argc > 1)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::table const *", "bookmarks", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::table * >(argp1);
+    ecode2 = SWIG_AsVal_unsigned_SS_int(argv[0], &val2);
+    if (!SWIG_IsOK(ecode2)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError("", "unsigned int", "bookmarks", 2, argv[0]));
+    }
+    arg2 = static_cast< unsigned int >(val2);
+    {
+        try {
+            result = ((bzs::db::protocol::tdap::client::table const *)arg1)->bookmarks(arg2);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_NewPointerObj((new bookmark_td(static_cast< const bookmark_td& >(result))), SWIGTYPE_p_BOOKMARK, SWIG_POINTER_OWN | 0);
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -15403,8 +14914,8 @@ _wrap_table_setFV(int argc, VALUE *argv, VALUE self) {
       }
       index = (short)v;
     }else if (type == T_STRING){
-	  SWIG_CHAR v1;
-	  int ret = SWIG_AsCharPtrAndSize(argv[0], &v1.str, NULL, &v1.alloc);
+      SWIG_CHAR v1;
+      int ret = SWIG_AsCharPtrAndSize(argv[0], &v1.str, NULL, &v1.alloc);
       if (!SWIG_IsOK(ret)) {
         SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","setFV", 2, argv[0]));
       }
@@ -15422,10 +14933,10 @@ _wrap_table_setFV(int argc, VALUE *argv, VALUE self) {
       arg1->setFV(index, v);
     }
     else if (type == T_STRING){
-	  SWIG_CHAR v2;
-	  int ret = 0;
-	  
-	  SWIG_AsCharPtrAndSize(argv[1], &v2.str, NULL, &v2.alloc);
+      SWIG_CHAR v2;
+      int ret = 0;
+      
+      SWIG_AsCharPtrAndSize(argv[1], &v2.str, NULL, &v2.alloc);
       if (!SWIG_IsOK(ret)) {
         SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","setFV", 3, argv[1]));
       }
@@ -15437,7 +14948,7 @@ _wrap_table_setFV(int argc, VALUE *argv, VALUE self) {
         if (!SWIG_IsOK(ecode4)) {
           SWIG_exception_fail(SWIG_ArgError(ecode4), Ruby_Format_TypeError( "", "uint_td","setFV", 4, argv[2] ));
         }
-		arg1->setFV(index, v2.str, val4);
+        arg1->setFV(index, v2.str, val4);
       }
     }
     else if (type == T_FLOAT){
@@ -16094,145 +15605,145 @@ fail:
 
 
 SWIGINTERN VALUE _wrap_queryBase_addSeekKeyValue(int nargs, VALUE *args, VALUE self) {
-	long long lv = 0;
-	double dv = 0;
-	bool reset = false;
-	SWIG_CHAR buf;
-	int res = 0;
-	bzs::db::protocol::tdap::client::queryBase *q = 0;
-	void* q_tmp;
+    long long lv = 0;
+    double dv = 0;
+    bool reset = false;
+    SWIG_CHAR buf;
+    int res = 0;
+    bzs::db::protocol::tdap::client::queryBase *q = 0;
+    void* q_tmp;
 
-	if (nargs < 1) goto fail2;
+    if (nargs < 1) goto fail2;
 
-	if (nargs > 2) goto fail2;
-	
-	res = SWIG_ConvertPtr(self, &q_tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
-	if (!SWIG_IsOK(res)) {
-		SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::queryBase *", "addSeekKeyValue", 1, self));
-	}
-	q = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(q_tmp);
+    if (nargs > 2) goto fail2;
+    
+    res = SWIG_ConvertPtr(self, &q_tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
+    if (!SWIG_IsOK(res)) {
+        SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::queryBase *", "addSeekKeyValue", 1, self));
+    }
+    q = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(q_tmp);
 
-	try
-	{
+    try
+    {
 
-		VALUE type = TYPE(args[0]);
-		if ((type == T_FIXNUM) || (type == T_BIGNUM)){
-			res = SWIG_AsVal_long_SS_long(args[0], &lv);
-			if (!SWIG_IsOK(res)) {
-				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "__int64", "addSeekKeyValue", 2, args[0]));
-			}
-		}
-		else if (type == T_STRING){
-			res = SWIG_AsCharPtrAndSize(args[0], &buf.str, NULL, &buf.alloc);
-			if (!SWIG_IsOK(res)) {
-				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "char *const", "addSeekKeyValue", 2, args[0]));
-			}
-		}
-		else if (type == T_FLOAT){
-			res = SWIG_AsVal_double(args[0], &dv);
-			if (!SWIG_IsOK(res)) {
-				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "double", "addSeekKeyValue", 2, args[0]));
-			}
-		}
-		else
-			goto fail2;
+        VALUE type = TYPE(args[0]);
+        if ((type == T_FIXNUM) || (type == T_BIGNUM)){
+            res = SWIG_AsVal_long_SS_long(args[0], &lv);
+            if (!SWIG_IsOK(res)) {
+                SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "__int64", "addSeekKeyValue", 2, args[0]));
+            }
+        }
+        else if (type == T_STRING){
+            res = SWIG_AsCharPtrAndSize(args[0], &buf.str, NULL, &buf.alloc);
+            if (!SWIG_IsOK(res)) {
+                SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "char *const", "addSeekKeyValue", 2, args[0]));
+            }
+        }
+        else if (type == T_FLOAT){
+            res = SWIG_AsVal_double(args[0], &dv);
+            if (!SWIG_IsOK(res)) {
+                SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "double", "addSeekKeyValue", 2, args[0]));
+            }
+        }
+        else
+            goto fail2;
 
-		if (nargs > 1)
-		{
-			res = SWIG_AsVal_bool(args[1], &reset);
-			if (!SWIG_IsOK(res)) {
-				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bool", "addSeekKeyValue", 3, args[1]));
-			}
-		}
-		if ((type == T_FIXNUM) || (type == T_BIGNUM))
-			q->addSeekKeyValue(lexical_cast(lv).c_str(), reset);
-		else if (type == T_STRING)
-			q->addSeekKeyValue(buf.str, reset);
-		else if (type == T_FLOAT)
-			q->addSeekKeyValue(lexical_cast(dv).c_str(), reset);
+        if (nargs > 1)
+        {
+            res = SWIG_AsVal_bool(args[1], &reset);
+            if (!SWIG_IsOK(res)) {
+                SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bool", "addSeekKeyValue", 3, args[1]));
+            }
+        }
+        if ((type == T_FIXNUM) || (type == T_BIGNUM))
+            q->addSeekKeyValue(lexical_cast(lv).c_str(), reset);
+        else if (type == T_STRING)
+            q->addSeekKeyValue(buf.str, reset);
+        else if (type == T_FLOAT)
+            q->addSeekKeyValue(lexical_cast(dv).c_str(), reset);
 
-	}
-	catch (bzs::rtl::exception& e)
-	{
-		static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-		rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-	}
-	catch (std::exception &e)
-	{
-		static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-		rb_raise(cpp_std_error, e.what());
-	}
-	return Qnil;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+        rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+    }
+    catch (std::exception &e)
+    {
+        static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+        rb_raise(cpp_std_error, e.what());
+    }
+    return Qnil;
 fail:
-	return Qnil;
+    return Qnil;
 fail2:
-	Ruby_Format_OverloadedError(nargs + 1, 5, "queryBase.addSeekKeyValue",
-		"    void queryBase.addSeekKeyValue(const T value, bool reset)\n"
-		"    void queryBase.addSeekKeyValue(const T value)\n");
+    Ruby_Format_OverloadedError(nargs + 1, 5, "queryBase.addSeekKeyValue",
+        "    void queryBase.addSeekKeyValue(const T value, bool reset)\n"
+        "    void queryBase.addSeekKeyValue(const T value)\n");
 
-	return Qnil;
+    return Qnil;
 }
 
 SWIGINTERN VALUE _wrap_queryBase_addSeekBookmark(int nargs, VALUE *args, VALUE self) {
-	bookmark_td *bm = 0;
-	int len = 0;
-	bool reset = false;
-	int res = 0;
-	bzs::db::protocol::tdap::client::queryBase *q = 0;
-	void* q_tmp;
+    bookmark_td *bm = 0;
+    int len = 0;
+    bool reset = false;
+    int res = 0;
+    bzs::db::protocol::tdap::client::queryBase *q = 0;
+    void* q_tmp;
 
-	if (nargs < 2) goto fail2;
+    if (nargs < 2) goto fail2;
 
-	if (nargs > 3) goto fail2;
+    if (nargs > 3) goto fail2;
 
-	res = SWIG_ConvertPtr(self, &q_tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
-	if (!SWIG_IsOK(res)) {
-		SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::queryBase *", "addSeekBookmark", 1, self));
-	}
-	q = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(q_tmp);
+    res = SWIG_ConvertPtr(self, &q_tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0);
+    if (!SWIG_IsOK(res)) {
+        SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::queryBase *", "addSeekBookmark", 1, self));
+    }
+    q = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(q_tmp);
 
-	try
-	{
-		void* bm_tmp = 0;
-		res = SWIG_ConvertPtr(args[0], &bm_tmp, SWIGTYPE_p_BOOKMARK, 0);
-		if (!SWIG_IsOK(res)) {
-			SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bookmark_td *", "addSeekBookmark", 2, args[0]));
-		}
-		bm = reinterpret_cast< bookmark_td* >(bm_tmp);
+    try
+    {
+        void* bm_tmp = 0;
+        res = SWIG_ConvertPtr(args[0], &bm_tmp, SWIGTYPE_p_BOOKMARK, 0);
+        if (!SWIG_IsOK(res)) {
+            SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bookmark_td *", "addSeekBookmark", 2, args[0]));
+        }
+        bm = reinterpret_cast< bookmark_td* >(bm_tmp);
 
-		res = SWIG_AsVal_int(args[1], &len);
-		if (!SWIG_IsOK(res)) {
-			SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "int", "addSeekBookmark", 3, args[1]));
-		}
-		if (nargs > 2)
-		{
-			res = SWIG_AsVal_bool(args[2], &reset);
-			if (!SWIG_IsOK(res)) {
-				SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bool", "addSeekBookmark", 4, args[2]));
-			}
-		}
+        res = SWIG_AsVal_int(args[1], &len);
+        if (!SWIG_IsOK(res)) {
+            SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "int", "addSeekBookmark", 3, args[1]));
+        }
+        if (nargs > 2)
+        {
+            res = SWIG_AsVal_bool(args[2], &reset);
+            if (!SWIG_IsOK(res)) {
+                SWIG_exception_fail(SWIG_ArgError(res), Ruby_Format_TypeError("", "bool", "addSeekBookmark", 4, args[2]));
+            }
+        }
 
-		q->addSeekBookmark(*bm, len, reset);
-	}
-	catch (bzs::rtl::exception& e)
-	{
-		static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-		rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-	}
-	catch (std::exception &e)
-	{
-		static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-		rb_raise(cpp_std_error, e.what());
-	}
-	return Qnil;
+        q->addSeekBookmark(*bm, len, reset);
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+        rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+    }
+    catch (std::exception &e)
+    {
+        static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+        rb_raise(cpp_std_error, e.what());
+    }
+    return Qnil;
 fail:
-	return Qnil;
+    return Qnil;
 fail2:
-	Ruby_Format_OverloadedError(nargs + 1, 5, "queryBase.addSeekBookmark",
-		"    void queryBase.addSeekBookmark(const T value, bool reset)\n"
-		"    void queryBase.addSeekBookmark(const T value)\n");
+    Ruby_Format_OverloadedError(nargs + 1, 5, "queryBase.addSeekBookmark",
+        "    void queryBase.addSeekBookmark(const T value, bool reset)\n"
+        "    void queryBase.addSeekBookmark(const T value)\n");
 
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -17263,37 +16774,37 @@ fail:
 
 SWIGINTERN VALUE
 _wrap_queryBase_isSeekByBookmarks(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0;
-	void *argp1 = 0;
-	int res1 = 0;
-	bool result;
-	VALUE vresult = Qnil;
+    bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0;
+    void *argp1 = 0;
+    int res1 = 0;
+    bool result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 0) || (argc > 0)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::queryBase const *", "isSeekByBookmarks", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(argp1);
-	{
-		try {
-			result = (bool)((bzs::db::protocol::tdap::client::queryBase const *)arg1)->isSeekByBookmarks();
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_bool(static_cast< bool >(result));
-	return vresult;
+    if ((argc < 0) || (argc > 0)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::queryBase const *", "isSeekByBookmarks", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::queryBase * >(argp1);
+    {
+        try {
+            result = (bool)((bzs::db::protocol::tdap::client::queryBase const *)arg1)->isSeekByBookmarks();
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_bool(static_cast< bool >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -17471,12 +16982,12 @@ _wrap_query_where(int argc, VALUE *argv, VALUE self) {
         arg1->where(arg2, arg3, v);
       }
       else if (type == T_STRING){
-		SWIG_CHAR buf4;
-		int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
+        SWIG_CHAR buf4;
+        int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","where", 3, argv[2]));
         }
-		arg1->where(arg2, arg3, buf4.str);
+        arg1->where(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -17549,12 +17060,12 @@ _wrap_query_and_(int argc, VALUE *argv, VALUE self) {
         arg1->and_(arg2, arg3, v);
       }
       else if (type == T_STRING){
-		SWIG_CHAR buf4;
-		int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
+        SWIG_CHAR buf4;
+        int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","and_", 3, argv[2]));
         }
-		arg1->and_(arg2, arg3, buf4.str);
+        arg1->and_(arg2, arg3, buf4.str);
 
       }
       else if (type == T_FLOAT){
@@ -17626,12 +17137,12 @@ _wrap_query_or_(int argc, VALUE *argv, VALUE self) {
         arg1->or_(arg2, arg3, v);
       }
       else if (type == T_STRING){
-		SWIG_CHAR buf4;
-		int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
+        SWIG_CHAR buf4;
+        int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","or_", 3, argv[2]));
         }
-		arg1->or_(arg2, arg3, buf4.str);
+        arg1->or_(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -17688,12 +17199,12 @@ _wrap_query_in(int nargs, VALUE *args, VALUE self) {
         arg1->addSeekKeyValue(lexical_cast(v).c_str());
       }
       else if (type == T_STRING){
-		  SWIG_CHAR buf;
-		  int ret = SWIG_AsCharPtrAndSize(args[i], &buf.str, NULL, &buf.alloc);
+          SWIG_CHAR buf;
+          int ret = SWIG_AsCharPtrAndSize(args[i], &buf.str, NULL, &buf.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","in", i+1, args[i]));
         }
-		arg1->addSeekKeyValue(buf.str);
+        arg1->addSeekKeyValue(buf.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -18647,47 +18158,26 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_nsdatabase_tdapErr__SWIG_0(int argc, VALUE *argv, VALUE self) {
+_wrap_nsdatabase_statMsg(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
-  HWND arg2 ;
-  _TCHAR *arg3 = (_TCHAR *) 0 ;
+  _TCHAR arg2[1024] = {NULL};
   void *argp1 = 0 ;
   int res1 = 0 ;
-  void *argp2 ;
-  int res2 = 0 ;
-  int res3 ;
-  char *buf3 = 0 ;
-  int alloc3 = 0 ;
-  short_td result;
+  _TCHAR *result = 0 ;
   VALUE vresult = Qnil;
   
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  if (argc != 0){
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","tdapErr", 1, self )); 
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","statMsg", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
   {
-    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_HWND,  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "HWND","tdapErr", 2, argv[0] )); 
-    }  
-    if (!argp2) {
-      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "HWND","tdapErr", 2, argv[0]));
-    } else {
-      arg2 = *(reinterpret_cast< HWND * >(argp2));
-    }
-  }
-  res3 = SWIG_AsCharPtrAndSize(argv[1], &buf3, NULL, &alloc3);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), Ruby_Format_TypeError( "", "_TCHAR *","tdapErr", 3, argv[1] ));
-  }
-  arg3 = reinterpret_cast< _TCHAR * >(buf3);
-  {
     try {
-      result = (short_td)(arg1)->tdapErr(arg2,arg3);
+      arg1->tdapErr((HWND)0, arg2);
+      result = arg2;
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -18696,112 +18186,11 @@ _wrap_nsdatabase_tdapErr__SWIG_0(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
-  vresult = SWIG_From_short(static_cast< short >(result));
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
+  {
+    vresult = rb_enc_str_new(result, strlen(result), rb_enc_find_from_codepage(CP_UTF8));
+  }
   return vresult;
 fail:
-  if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
-_wrap_nsdatabase_tdapErr__SWIG_1(int argc, VALUE *argv, VALUE self) {
-  bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
-  HWND arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  void *argp2 ;
-  int res2 = 0 ;
-  short_td result;
-  VALUE vresult = Qnil;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","tdapErr", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
-  {
-    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_HWND,  0 );
-    if (!SWIG_IsOK(res2)) {
-      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "HWND","tdapErr", 2, argv[0] )); 
-    }  
-    if (!argp2) {
-      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "HWND","tdapErr", 2, argv[0]));
-    } else {
-      arg2 = *(reinterpret_cast< HWND * >(argp2));
-    }
-  }
-  {
-    try {
-      result = (short_td)(arg1)->tdapErr(arg2);
-    } catch (bzs::rtl::exception& e) {
-      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-      rb_raise(cpp_std_error, e.what());
-    }
-  }
-  vresult = SWIG_From_short(static_cast< short >(result));
-  return vresult;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE _wrap_nsdatabase_tdapErr(int nargs, VALUE *args, VALUE self) {
-  int argc;
-  VALUE argv[4];
-  int ii;
-  
-  argc = nargs + 1;
-  argv[0] = self;
-  if (argc > 4) SWIG_fail;
-  for (ii = 1; (ii < argc); ++ii) {
-    argv[ii] = args[ii-1];
-  }
-  if (argc == 2) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      void *vptr = 0;
-      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_HWND, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        return _wrap_nsdatabase_tdapErr__SWIG_1(nargs, args, self);
-      }
-    }
-  }
-  if (argc == 3) {
-    int _v;
-    void *vptr = 0;
-    int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      void *vptr = 0;
-      int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_HWND, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        int res = SWIG_AsCharPtrAndSize(argv[2], 0, NULL, 0);
-        _v = SWIG_CheckState(res);
-        if (_v) {
-          return _wrap_nsdatabase_tdapErr__SWIG_0(nargs, args, self);
-        }
-      }
-    }
-  }
-  
-fail:
-  Ruby_Format_OverloadedError( argc, 4, "nsdatabase.tdapErr", 
-    "    short_td nsdatabase.tdapErr(HWND hWnd, _TCHAR *retbuf)\n"
-    "    short_td nsdatabase.tdapErr(HWND hWnd)\n");
-  
   return Qnil;
 }
 
@@ -18995,37 +18384,25 @@ fail:
 SWIGINTERN VALUE
 _wrap_nsdatabase_readDatabaseDirectory(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
-  _TCHAR *arg2 = (_TCHAR *) 0 ;
-  uchar_td arg3 ;
+  _TCHAR arg2[255] = {NULL} ;
+  uchar_td arg3 = 255 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  int res2 ;
-  char *buf2 = 0 ;
-  int alloc2 = 0 ;
-  unsigned char val3 ;
-  int ecode3 = 0 ;
+  VALUE vresult = Qnil;
+
   
-  if ((argc < 2) || (argc > 2)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 2)",argc); SWIG_fail;
+  if (argc != 0) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::nsdatabase *","readDatabaseDirectory", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::nsdatabase * >(argp1);
-  res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR *","readDatabaseDirectory", 2, argv[0] ));
-  }
-  arg2 = reinterpret_cast< _TCHAR * >(buf2);
-  ecode3 = SWIG_AsVal_unsigned_SS_char(argv[1], &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), Ruby_Format_TypeError( "", "uchar_td","readDatabaseDirectory", 3, argv[1] ));
-  } 
-  arg3 = static_cast< uchar_td >(val3);
+ 
   {
     try {
-      (arg1)->readDatabaseDirectory(arg2,arg3);
+      (arg1)->readDatabaseDirectory(arg2, arg3);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -19034,10 +18411,11 @@ _wrap_nsdatabase_readDatabaseDirectory(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
-  return Qnil;
+  {
+    vresult = rb_enc_str_new(arg2, strlen(arg2), rb_enc_find_from_codepage(CP_UTF8));
+  }
+  return vresult;
 fail:
-  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return Qnil;
 }
 
@@ -20475,120 +19853,120 @@ fail:
 
 SWIGINTERN VALUE
 _wrap_database_close__SWIG_0(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0;
-	bool arg2;
-	void *argp1 = 0;
-	int res1 = 0;
-	bool val2;
-	int ecode2 = 0;
+    bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0;
+    bool arg2;
+    void *argp1 = 0;
+    int res1 = 0;
+    bool val2;
+    int ecode2 = 0;
 
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::database *", "close", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::database * >(argp1);
-	ecode2 = SWIG_AsVal_bool(argv[0], &val2);
-	if (!SWIG_IsOK(ecode2)) {
-		SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError("", "bool", "close", 2, argv[0]));
-	}
-	arg2 = static_cast< bool >(val2);
-	{
-		try {
-			(arg1)->close(arg2);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	return Qnil;
+    if ((argc < 1) || (argc > 1)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::database *", "close", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::database * >(argp1);
+    ecode2 = SWIG_AsVal_bool(argv[0], &val2);
+    if (!SWIG_IsOK(ecode2)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError("", "bool", "close", 2, argv[0]));
+    }
+    arg2 = static_cast< bool >(val2);
+    {
+        try {
+            (arg1)->close(arg2);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    return Qnil;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE
 _wrap_database_close__SWIG_1(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0;
-	void *argp1 = 0;
-	int res1 = 0;
+    bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0;
+    void *argp1 = 0;
+    int res1 = 0;
 
-	if ((argc < 0) || (argc > 0)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::database *", "close", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::database * >(argp1);
-	{
-		try {
-			(arg1)->close();
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	return Qnil;
+    if ((argc < 0) || (argc > 0)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::database *", "close", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::database * >(argp1);
+    {
+        try {
+            (arg1)->close();
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    return Qnil;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE _wrap_database_close(int nargs, VALUE *args, VALUE self) {
-	int argc;
-	VALUE argv[3];
-	int ii;
+    int argc;
+    VALUE argv[3];
+    int ii;
 
-	argc = nargs + 1;
-	argv[0] = self;
-	if (argc > 3) SWIG_fail;
-	for (ii = 1; (ii < argc); ++ii) {
-		argv[ii] = args[ii - 1];
-	}
-	if (argc == 1) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			return _wrap_database_close__SWIG_1(nargs, args, self);
-		}
-	}
-	if (argc == 2) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			{
-				int res = SWIG_AsVal_bool(argv[1], NULL);
-				_v = SWIG_CheckState(res);
-			}
-			if (_v) {
-				return _wrap_database_close__SWIG_0(nargs, args, self);
-			}
-		}
-	}
+    argc = nargs + 1;
+    argv[0] = self;
+    if (argc > 3) SWIG_fail;
+    for (ii = 1; (ii < argc); ++ii) {
+        argv[ii] = args[ii - 1];
+    }
+    if (argc == 1) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            return _wrap_database_close__SWIG_1(nargs, args, self);
+        }
+    }
+    if (argc == 2) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            {
+                int res = SWIG_AsVal_bool(argv[1], NULL);
+                _v = SWIG_CheckState(res);
+            }
+            if (_v) {
+                return _wrap_database_close__SWIG_0(nargs, args, self);
+            }
+        }
+    }
 
 fail:
-	Ruby_Format_OverloadedError(argc, 3, "database.close",
-		"    void database.close(bool withDropDefaultSchema)\n"
-		"    void database.close()\n");
+    Ruby_Format_OverloadedError(argc, 3, "database.close",
+        "    void database.close(bool withDropDefaultSchema)\n"
+        "    void database.close()\n");
 
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -26879,188 +26257,188 @@ static swig_class SwigClassWritableRecord;
 
 SWIGINTERN VALUE
 _wrap_writableRecord_read__SWIG_0(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
-	bool arg2;
-	void *argp1 = 0;
-	int res1 = 0;
-	bool val2;
-	int ecode2 = 0;
-	bool result;
-	VALUE vresult = Qnil;
+    bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
+    bool arg2;
+    void *argp1 = 0;
+    int res1 = 0;
+    bool val2;
+    int ecode2 = 0;
+    bool result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::writableRecord *", "read", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::writableRecord * >(argp1);
-	ecode2 = SWIG_AsVal_bool(argv[0], &val2);
-	if (!SWIG_IsOK(ecode2)) {
-		SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError("", "bool", "read", 2, argv[0]));
-	}
-	arg2 = static_cast< bool >(val2);
-	{
-		try {
-			result = (bool)(arg1)->read(arg2);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_bool(static_cast< bool >(result));
-	return vresult;
+    if ((argc < 1) || (argc > 1)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::writableRecord *", "read", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::writableRecord * >(argp1);
+    ecode2 = SWIG_AsVal_bool(argv[0], &val2);
+    if (!SWIG_IsOK(ecode2)) {
+        SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError("", "bool", "read", 2, argv[0]));
+    }
+    arg2 = static_cast< bool >(val2);
+    {
+        try {
+            result = (bool)(arg1)->read(arg2);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_bool(static_cast< bool >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE
 _wrap_writableRecord_read__SWIG_1(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
-	void *argp1 = 0;
-	int res1 = 0;
-	bool result;
-	VALUE vresult = Qnil;
+    bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
+    void *argp1 = 0;
+    int res1 = 0;
+    bool result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 0) || (argc > 0)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::writableRecord *", "read", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::writableRecord * >(argp1);
-	{
-		try {
-			result = (bool)(arg1)->read();
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_bool(static_cast< bool >(result));
-	return vresult;
+    if ((argc < 0) || (argc > 0)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::writableRecord *", "read", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::writableRecord * >(argp1);
+    {
+        try {
+            result = (bool)(arg1)->read();
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_bool(static_cast< bool >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE
 _wrap_writableRecord_read__SWIG_2(int argc, VALUE *argv, VALUE self) {
-	bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
-	bookmark_td *arg2 = 0;
-	void *argp1 = 0;
-	int res1 = 0;
-	void *argp2 = 0;
-	int res2 = 0;
-	bool result;
-	VALUE vresult = Qnil;
+    bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
+    bookmark_td *arg2 = 0;
+    void *argp1 = 0;
+    int res1 = 0;
+    void *argp2 = 0;
+    int res2 = 0;
+    bool result;
+    VALUE vresult = Qnil;
 
-	if ((argc < 1) || (argc > 1)) {
-		rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
-	}
-	res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0 | 0);
-	if (!SWIG_IsOK(res1)) {
-		SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::writableRecord *", "read", 1, self));
-	}
-	arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::writableRecord * >(argp1);
-	res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
-	if (!SWIG_IsOK(res2)) {
-		SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "read", 2, argv[0]));
-	}
-	if (!argp2) {
-		SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "read", 2, argv[0]));
-	}
-	arg2 = reinterpret_cast< bookmark_td * >(argp2);
-	{
-		try {
-			result = (bool)(arg1)->read(*arg2);
-		}
-		catch (bzs::rtl::exception& e) {
-			static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
-			rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
-		}
-		catch (std::exception &e) {
-			static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
-			rb_raise(cpp_std_error, e.what());
-		}
-	}
-	vresult = SWIG_From_bool(static_cast< bool >(result));
-	return vresult;
+    if ((argc < 1) || (argc > 1)) {
+        rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)", argc); SWIG_fail;
+    }
+    res1 = SWIG_ConvertPtr(self, &argp1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0 | 0);
+    if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("", "bzs::db::protocol::tdap::client::writableRecord *", "read", 1, self));
+    }
+    arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::writableRecord * >(argp1);
+    res2 = SWIG_ConvertPtr(argv[0], &argp2, SWIGTYPE_p_BOOKMARK, 0);
+    if (!SWIG_IsOK(res2)) {
+        SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError("", "bookmark_td &", "read", 2, argv[0]));
+    }
+    if (!argp2) {
+        SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ", "bookmark_td &", "read", 2, argv[0]));
+    }
+    arg2 = reinterpret_cast< bookmark_td * >(argp2);
+    {
+        try {
+            result = (bool)(arg1)->read(*arg2);
+        }
+        catch (bzs::rtl::exception& e) {
+            static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+            rb_raise(bzs_rtl_error, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+            rb_raise(cpp_std_error, e.what());
+        }
+    }
+    vresult = SWIG_From_bool(static_cast< bool >(result));
+    return vresult;
 fail:
-	return Qnil;
+    return Qnil;
 }
 
 
 SWIGINTERN VALUE _wrap_writableRecord_read(int nargs, VALUE *args, VALUE self) {
-	int argc;
-	VALUE argv[3];
-	int ii;
+    int argc;
+    VALUE argv[3];
+    int ii;
 
-	argc = nargs + 1;
-	argv[0] = self;
-	if (argc > 3) SWIG_fail;
-	for (ii = 1; (ii < argc); ++ii) {
-		argv[ii] = args[ii - 1];
-	}
-	if (argc == 1) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			return _wrap_writableRecord_read__SWIG_1(nargs, args, self);
-		}
-	}
-	if (argc == 2) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			void *vptr = 0;
-			int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
-			_v = SWIG_CheckState(res);
-			if (_v) {
-				return _wrap_writableRecord_read__SWIG_2(nargs, args, self);
-			}
-		}
-	}
-	if (argc == 2) {
-		int _v;
-		void *vptr = 0;
-		int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0);
-		_v = SWIG_CheckState(res);
-		if (_v) {
-			{
-				int res = SWIG_AsVal_bool(argv[1], NULL);
-				_v = SWIG_CheckState(res);
-			}
-			if (_v) {
-				return _wrap_writableRecord_read__SWIG_0(nargs, args, self);
-			}
-		}
-	}
+    argc = nargs + 1;
+    argv[0] = self;
+    if (argc > 3) SWIG_fail;
+    for (ii = 1; (ii < argc); ++ii) {
+        argv[ii] = args[ii - 1];
+    }
+    if (argc == 1) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            return _wrap_writableRecord_read__SWIG_1(nargs, args, self);
+        }
+    }
+    if (argc == 2) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            void *vptr = 0;
+            int res = SWIG_ConvertPtr(argv[1], &vptr, SWIGTYPE_p_BOOKMARK, 0);
+            _v = SWIG_CheckState(res);
+            if (_v) {
+                return _wrap_writableRecord_read__SWIG_2(nargs, args, self);
+            }
+        }
+    }
+    if (argc == 2) {
+        int _v;
+        void *vptr = 0;
+        int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0);
+        _v = SWIG_CheckState(res);
+        if (_v) {
+            {
+                int res = SWIG_AsVal_bool(argv[1], NULL);
+                _v = SWIG_CheckState(res);
+            }
+            if (_v) {
+                return _wrap_writableRecord_read__SWIG_0(nargs, args, self);
+            }
+        }
+    }
 
 fail:
-	Ruby_Format_OverloadedError(argc, 3, "writableRecord.read",
-		"    bool writableRecord.read(bool KeysetAlrady)\n"
-		"    bool writableRecord.read()\n"
-		"    bool writableRecord.read(bookmark_td &bm)\n");
+    Ruby_Format_OverloadedError(argc, 3, "writableRecord.read",
+        "    bool writableRecord.read(bool KeysetAlrady)\n"
+        "    bool writableRecord.read()\n"
+        "    bool writableRecord.read(bookmark_td &bm)\n");
 
-	return Qnil;
+    return Qnil;
 }
 
 
@@ -27303,13 +26681,13 @@ _wrap_writableRecord___setitem__(int argc, VALUE *argv, VALUE self) {
           SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError( "", "uint_td","__setitem__", 2, argv[0] ));
         }
     }else if (type == T_STRING){
-		SWIG_CHAR buf;
-		int ret = SWIG_AsCharPtrAndSize(argv[0], &buf.str, NULL, &buf.alloc);
+        SWIG_CHAR buf;
+        int ret = SWIG_AsCharPtrAndSize(argv[0], &buf.str, NULL, &buf.alloc);
       if (!SWIG_IsOK(ret)) {
         SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","__setitem__", 2, argv[0]));
       }
       try {
-		  index = arg1->indexByName(buf.str);
+          index = arg1->indexByName(buf.str);
       }
       catch (bzs::rtl::exception& e) {
         static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
@@ -27334,12 +26712,12 @@ _wrap_writableRecord___setitem__(int argc, VALUE *argv, VALUE self) {
         arg1->operator[]((short)index) = v;
       }
       else if (type == T_STRING){
-		  SWIG_CHAR buf;
-		  int ret = SWIG_AsCharPtrAndSize(argv[1], &buf.str, NULL, &buf.alloc);
+          SWIG_CHAR buf;
+          int ret = SWIG_AsCharPtrAndSize(argv[1], &buf.str, NULL, &buf.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","__setitem__", 3, argv[1]));
         }
-		arg1->operator[]((short)index) = buf.str;
+        arg1->operator[]((short)index) = buf.str;
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -28644,12 +28022,12 @@ _wrap_recordsetQuery_when(int argc, VALUE *argv, VALUE self) {
         arg1->when(arg2, arg3, v);
       }
       else if (type == T_STRING){
-		  SWIG_CHAR buf4;
-		  int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
+          SWIG_CHAR buf4;
+          int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","when", 3, argv[2]));
         }
-		arg1->when(arg2, arg3, buf4.str);
+        arg1->when(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -28719,12 +28097,12 @@ _wrap_recordsetQuery_and_(int argc, VALUE *argv, VALUE self) {
         arg1->and_(arg2, arg3, v);
       }
       else if (type == T_STRING){
-		  SWIG_CHAR buf4;
-		  int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
+          SWIG_CHAR buf4;
+          int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","and_", 3, argv[2]));
         }
-		arg1->and_(arg2, arg3, buf4.str);
+        arg1->and_(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -28794,12 +28172,12 @@ _wrap_recordsetQuery_or_(int argc, VALUE *argv, VALUE self) {
         arg1->or_(arg2, arg3, v);
       }
       else if (type == T_STRING){
-		  SWIG_CHAR buf4;
-		  int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
+          SWIG_CHAR buf4;
+          int ret = SWIG_AsCharPtrAndSize(argv[2], &buf4.str, NULL, &buf4.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","or_", 3, argv[2]));
         }
-		arg1->or_(arg2, arg3, buf4.str);
+        arg1->or_(arg2, arg3, buf4.str);
       }
       else if (type == T_FLOAT){
         double v = 0;
@@ -32144,15 +31522,15 @@ _wrap_new_activeTable__SWIG_1(int argc, VALUE *argv, VALUE self) {
 
   if (argc == 3)
   {
-	  VALUE type = TYPE(argv[2]);
-	  if ((type == T_FIXNUM) || (type == T_BIGNUM))
-	  {
-		  long long val = 0;
-		  int ecode = SWIG_AsVal_long_SS_long(argv[2], &val);
-		  if (!SWIG_IsOK(ecode))
-			  SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError("", "short", "mode", 3, argv[2]));
-		  arg3 = (short)val;
-	  }
+      VALUE type = TYPE(argv[2]);
+      if ((type == T_FIXNUM) || (type == T_BIGNUM))
+      {
+          long long val = 0;
+          int ecode = SWIG_AsVal_long_SS_long(argv[2], &val);
+          if (!SWIG_IsOK(ecode))
+              SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError("", "short", "mode", 3, argv[2]));
+          arg3 = (short)val;
+      }
   }
 
   {
@@ -32214,17 +31592,17 @@ SWIGINTERN VALUE _wrap_new_activeTable(int nargs, VALUE *args, VALUE self) {
   }
 
   if (argc == 3) {
-	  int _v;
-	  void *vptr = 0;
-	  int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0);
-	  _v = SWIG_CheckState(res);
-	  if (_v) {
-		  int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
-		  _v = SWIG_CheckState(res);
-		  if (_v) {
-			  return _wrap_new_activeTable__SWIG_1(nargs, args, self);
-		  }
-	  }
+      int _v;
+      void *vptr = 0;
+      int res = SWIG_ConvertPtr(argv[0], &vptr, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0);
+      _v = SWIG_CheckState(res);
+      if (_v) {
+          int res = SWIG_AsCharPtrAndSize(argv[1], 0, NULL, 0);
+          _v = SWIG_CheckState(res);
+          if (_v) {
+              return _wrap_new_activeTable__SWIG_1(nargs, args, self);
+          }
+      }
   }
   
 fail:
@@ -32336,8 +31714,8 @@ _wrap_activeTable_read__SWIG_1(int argc, VALUE *argv, VALUE self) {
         arg2->addValue((__int64)val);
       }
       else if (type == T_STRING){
-		  SWIG_CHAR buf;
-		  int ret = SWIG_AsCharPtrAndSize(argv[i], &buf.str, NULL, &buf.alloc);
+          SWIG_CHAR buf;
+          int ret = SWIG_AsCharPtrAndSize(argv[i], &buf.str, NULL, &buf.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","read", i+2, argv[i]));
         }
@@ -32898,8 +32276,8 @@ SWIGINTERN VALUE _wrap_activeTable_keyValue(int nargs, VALUE *args, VALUE self) 
         tb->setFV(fnum, (__int64)val);
       }
       else if (type == T_STRING){
-		  SWIG_CHAR buf;
-		  int ret = SWIG_AsCharPtrAndSize(args[i], &buf.str, NULL, &buf.alloc);
+          SWIG_CHAR buf;
+          int ret = SWIG_AsCharPtrAndSize(args[i], &buf.str, NULL, &buf.alloc);
         if (!SWIG_IsOK(ret)) {
           SWIG_exception_fail(SWIG_ArgError(ret), Ruby_Format_TypeError( "", "char *const","keyValue", i+1, args[i]));
         }
@@ -35150,7 +34528,6 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassNstable.klass, "createIndex", VALUEFUNC(_wrap_nstable_createIndex), -1);
   rb_define_method(SwigClassNstable.klass, "dropIndex", VALUEFUNC(_wrap_nstable_dropIndex), -1);
   rb_define_method(SwigClassNstable.klass, "recordCount", VALUEFUNC(_wrap_nstable_recordCount), -1);
-  rb_define_method(SwigClassNstable.klass, "tdapLastErr", VALUEFUNC(_wrap_nstable_tdapLastErr), -1);
   rb_define_method(SwigClassNstable.klass, "beginBulkInsert", VALUEFUNC(_wrap_nstable_beginBulkInsert), -1);
   rb_define_method(SwigClassNstable.klass, "abortBulkInsert", VALUEFUNC(_wrap_nstable_abortBulkInsert), -1);
   rb_define_method(SwigClassNstable.klass, "commitBulkInsert", VALUEFUNC(_wrap_nstable_commitBulkInsert), -1);
@@ -35176,8 +34553,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassNstable.klass, "stats", VALUEFUNC(_wrap_nstable_stats), -1);
   rb_define_method(SwigClassNstable.klass, "unlock", VALUEFUNC(_wrap_nstable_unlock), -1);
   rb_define_method(SwigClassNstable.klass, "mode", VALUEFUNC(_wrap_nstable_mode), -1);
+  rb_define_method(SwigClassNstable.klass, "statMsg", VALUEFUNC(_wrap_nstable_statMsg), -1);
   rb_define_singleton_method(SwigClassNstable.klass, "getFileName", VALUEFUNC(_wrap_nstable_getFileName), -1);
-  rb_define_singleton_method(SwigClassNstable.klass, "tdapErr", VALUEFUNC(_wrap_nstable_tdapErr), -1);
   rb_define_singleton_method(SwigClassNstable.klass, "getDirURI", VALUEFUNC(_wrap_nstable_getDirURI), -1);
   rb_define_singleton_method(SwigClassNstable.klass, "existsFile", VALUEFUNC(_wrap_nstable_existsFile), -1);
   SwigClassNstable.mark = 0;
@@ -35212,7 +34589,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassDbdef.klass, "findKeynumByFieldNum", VALUEFUNC(_wrap_dbdef_findKeynumByFieldNum), -1);
   rb_define_method(SwigClassDbdef.klass, "fieldNumByName", VALUEFUNC(_wrap_dbdef_fieldNumByName), -1);
   rb_define_method(SwigClassDbdef.klass, "fieldValidLength", VALUEFUNC(_wrap_dbdef_fieldValidLength), -1);
-  rb_define_method(SwigClassDbdef.klass, "tdapErr", VALUEFUNC(_wrap_dbdef_tdapErr), -1);
+  rb_define_method(SwigClassDbdef.klass, "statMsg", VALUEFUNC(_wrap_dbdef_statMsg), -1);
   rb_define_method(SwigClassDbdef.klass, "reopen", VALUEFUNC(_wrap_dbdef_reopen), -1);
   rb_define_method(SwigClassDbdef.klass, "mode", VALUEFUNC(_wrap_dbdef_mode), -1);
   SwigClassDbdef.mark = 0;
@@ -35348,7 +34725,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassNsdatabase.klass, "endSnapshot", VALUEFUNC(_wrap_nsdatabase_endSnapshot), -1);
   rb_define_method(SwigClassNsdatabase.klass, "trxIsolationServer", VALUEFUNC(_wrap_nsdatabase_trxIsolationServer), -1);
   rb_define_method(SwigClassNsdatabase.klass, "trxLockWaitTimeoutServer", VALUEFUNC(_wrap_nsdatabase_trxLockWaitTimeoutServer), -1);
-  rb_define_method(SwigClassNsdatabase.klass, "tdapErr", VALUEFUNC(_wrap_nsdatabase_tdapErr), -1);
+  rb_define_method(SwigClassNsdatabase.klass, "statMsg", VALUEFUNC(_wrap_nsdatabase_statMsg), -1);
   rb_define_method(SwigClassNsdatabase.klass, "useLongFilename", VALUEFUNC(_wrap_nsdatabase_useLongFilename), -1);
   rb_define_method(SwigClassNsdatabase.klass, "setUseLongFilename", VALUEFUNC(_wrap_nsdatabase_setUseLongFilename), -1);
   rb_define_method(SwigClassNsdatabase.klass, "setUseTransactd", VALUEFUNC(_wrap_nsdatabase_setUseTransactd), -1);

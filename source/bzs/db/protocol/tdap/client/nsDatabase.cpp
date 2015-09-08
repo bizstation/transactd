@@ -760,13 +760,13 @@ bool nsdatabase::isUseTransactd() const
     return (m_btrcallid == getTrnsctdEntryPoint());
 }
 
-void nsdatabase::readDatabaseDirectory(_TCHAR* retBuf, uchar_td buflen)
+void nsdatabase::readDatabaseDirectory(_TCHAR* retbuf, uchar_td buflen)
 {
     // keynum is drive name A=1 B=2 C=3 0=default
     char tmp[128];
     m_stat = m_btrcallid(TD_GETDIRECTORY, NULL, NULL, NULL, tmp, 128, 0,
                          m_nsimpl->cidPtr);
-    toTChar(retBuf, tmp, buflen);
+    toTCharCopy(retbuf, tmp, buflen);
 }
 
 bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
@@ -982,14 +982,15 @@ void nsdatabase::setCheckTablePtr(bool v)
     g_checkTablePtr = v;
 }
 
-DLLUNLOADCALLBACK_PTR nsdatabase::getDllUnloadCallbackFunc()
+WIN_TPOOL_SHUTDOWN_PTR nsdatabase::getWinTPoolShutdownFunc()
 {
     if (hTrsdDLL == NULL)
         hTrsdDLL = LoadLibraryA(LIB_PREFIX TDCLC_LIBNAME);
     if (hTrsdDLL)
-        return (DLLUNLOADCALLBACK_PTR)GetProcAddress((HINSTANCE)hTrsdDLL,
-                                                     "CallbackRegist");
+        return (WIN_TPOOL_SHUTDOWN_PTR)GetProcAddress((HINSTANCE)hTrsdDLL,
+                                                     "BeginWinThreadPoolShutdown");
     return NULL;
+
 }
 
 } // namespace client

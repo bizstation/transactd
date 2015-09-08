@@ -130,10 +130,4 @@ class transactdPoolTest extends PHPUnit_Framework_TestCase
         }
         $this->assertEquals(true, true);
     }
-    
-    public function testReset()
-    {
-        $dbm1 = new Bz\pooledDbManager();
-        $dbm1->reset(0);
-    }
 }

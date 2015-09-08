@@ -27,6 +27,7 @@ using namespace ATL;
 class ATL_NO_VTABLE CFieldDef
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CFieldDef, &CLSID_FieldDef>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IFieldDef, &IID_IFieldDef, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>
 {
@@ -58,7 +59,10 @@ public:
     BEGIN_COM_MAP(CFieldDef)
     COM_INTERFACE_ENTRY(IFieldDef)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 

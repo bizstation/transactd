@@ -29,6 +29,7 @@ class CFieldDefs;
 class ATL_NO_VTABLE CARecordset
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CARecordset, &CLSID_Recordset>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IRecordset, &IID_IRecordset, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>
 {
@@ -51,7 +52,10 @@ public:
     BEGIN_COM_MAP(CARecordset)
     COM_INTERFACE_ENTRY(IRecordset)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
@@ -60,7 +64,7 @@ public:
     void FinalRelease();
 
 public:
-    STDMETHOD(Record)(unsigned long Index, IRecord** retVal);
+    STDMETHOD(get_Record)(unsigned long Index, IRecord** retVal);
     STDMETHOD(First)(IRecord** retVal);
     STDMETHOD(Last)(IRecord** retVal);
     STDMETHOD(Top)(unsigned long Num, IRecordset** retVal);

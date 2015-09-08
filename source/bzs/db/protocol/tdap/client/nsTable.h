@@ -186,6 +186,11 @@ public:
     {
         return doBtrvErr(hWnd, retbuf);
     }
+    inline _TCHAR* statMsg(_TCHAR* retbuf)
+    {
+        doBtrvErr(0, retbuf);
+        return retbuf;
+    }
 
     void beginBulkInsert(int maxBuflen);
     void abortBulkInsert() { doAbortBulkInsert(); }
@@ -220,7 +225,7 @@ public:
     void unlock(bookmark_td& bm);
     void unlock();
     char_td mode() const;
-    static _TCHAR* getFileName(const _TCHAR* uri, _TCHAR* filename);
+    static _TCHAR* getFileName(const _TCHAR* uri, _TCHAR* retbuf);
     static short_td tdapErr(HWND hWnd, short_td status,
                             const _TCHAR* tableName = NULL,
                             _TCHAR* retbuf = NULL);

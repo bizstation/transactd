@@ -30,6 +30,21 @@
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
 
+STDMETHODIMP CActiveTable::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IActiveTable
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 void CActiveTable::setResult(IActiveTable** retVal)
 {
     this->QueryInterface(IID_IActiveTable, (void**)retVal);

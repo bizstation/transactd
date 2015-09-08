@@ -27,6 +27,7 @@ using namespace ATL;
 class ATL_NO_VTABLE CRecordsetQuery
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CRecordsetQuery, &CLSID_RecordsetQuery>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IRecordsetQuery, &IID_IRecordsetQuery,
                            &LIBID_transactd, /*wMajor =*/1, /*wMinor =*/0>
 {
@@ -42,7 +43,10 @@ public:
     BEGIN_COM_MAP(CRecordsetQuery)
     COM_INTERFACE_ENTRY(IRecordsetQuery)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
@@ -118,7 +122,7 @@ public:
 public:
     STDMETHOD(Add)(BSTR Name, VARIANT_BOOL Asc);
     STDMETHOD(get_Size)(int* Value);
-    STDMETHOD(Item)(int Index, ISortField** retVal);
+    STDMETHOD(get_Item)(int Index, ISortField** retVal);
     STDMETHOD(Clear)();
 };
 

@@ -114,13 +114,18 @@ public:
     ushort_td trxIsolationServer() const ;
     ushort_td trxLockWaitTimeoutServer() const ;
     short_td tdapErr(HWND hWnd, _TCHAR* retbuf = NULL);
+    inline _TCHAR* statMsg(_TCHAR* retbuf)
+    {
+        tdapErr(0, retbuf);
+        return retbuf;
+    }
     bool useLongFilename();
     void setUseLongFilename(bool value);
     void getBtrVersion(btrVersions* versions, uchar_td* posblk);
     bool setUseTransactd();
     bool isTransactdUri(const _TCHAR* uri);
     bool isUseTransactd() const;
-    void readDatabaseDirectory(_TCHAR* retBuf, uchar_td len);
+    void readDatabaseDirectory(_TCHAR* retbuf, uchar_td len);
     bool connect(const _TCHAR* uri, bool newConnection = false);
     bool disconnect(const _TCHAR* uri = _T(""));
     bool disconnectForReconnectTest(); //for connection brokn emulate
@@ -134,7 +139,7 @@ public:
     /** @cond INTERNAL */
     void setTestPtrIgnore(bool v);
     bool isTestPtrIgnore() const;
-    static DLLUNLOADCALLBACK_PTR getDllUnloadCallbackFunc();
+    static WIN_TPOOL_SHUTDOWN_PTR getWinTPoolShutdownFunc();
     static bool testTablePtr(nstable* ptr);
     static void setCheckTablePtr(bool v);
     /** @endcond */

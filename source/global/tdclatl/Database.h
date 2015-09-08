@@ -35,6 +35,7 @@ bool __stdcall onDeleteRecord(bzs::db::protocol::tdap::client::database* db,
 class ATL_NO_VTABLE CDatabase
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CDatabase, &CLSID_Database>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IDatabase, &IID_IDatabase, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>,
       public IConnectionPointContainerImpl<CDatabase>,
@@ -61,7 +62,10 @@ public:
     COM_INTERFACE_ENTRY(IDatabase)
     COM_INTERFACE_ENTRY(IDispatch)
     COM_INTERFACE_ENTRY(IConnectionPointContainer)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     BEGIN_CONNECTION_POINT_MAP(CDatabase)
     CONNECTION_POINT_ENTRY(__uuidof(_IDatabaseEvents))
@@ -127,6 +131,7 @@ public:
     STDMETHOD(Rename)(BSTR oldUri, BSTR newUri);
     STDMETHOD(get_Uri)(BSTR* uri);
     STDMETHOD(TdapErr)(OLE_HANDLE hWnd, BSTR* Value);
+    STDMETHOD(StatMsg)(BSTR* Value);
     STDMETHOD(Clone)(IDatabase** Value);
     STDMETHOD(AssignSchemaData)(IDbDef* Src, short* Value);
     STDMETHOD(Continuous)(eContinusOpr Op, VARIANT_BOOL inclideRepfile,
@@ -152,6 +157,7 @@ public:
     STDMETHOD(get_MaxTables)(int* Value);
     STDMETHOD(get_TrxIsolationServer)(eSrvIsorationType* Value);
     STDMETHOD(get_TrxLockWaitTimeoutServer)(int* Value);
+
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)

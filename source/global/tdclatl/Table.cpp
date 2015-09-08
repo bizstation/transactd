@@ -28,6 +28,21 @@
 
 using namespace bzs::db::protocol::tdap;
 
+STDMETHODIMP CTableTd::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_ITable
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 short CTableTd::GetFieldNum(VARIANT* Index)
 {
     short index = -1;
@@ -522,6 +537,14 @@ STDMETHODIMP CTableTd::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
     return S_OK;
 }
 
+STDMETHODIMP CTableTd::StatMsg(BSTR* Value)
+{
+    wchar_t tmp[1024] = { NULL };
+    m_tb->tdapErr(0, tmp);
+    *Value = ::SysAllocString(tmp);
+    return S_OK;
+}
+
 STDMETHODIMP CTableTd::Unlock_()
 {
     m_tb->unlock();
@@ -617,6 +640,7 @@ STDMETHODIMP CTableTd::SetQuery(IQueryBase* Value, VARIANT_BOOL ServerPrepare, I
 {
     if (Value)
     {
+        *retVal = NULL;
         CQueryBase* p = dynamic_cast<CQueryBase*>(Value);
         if (p)
         {
@@ -633,13 +657,15 @@ STDMETHODIMP CTableTd::SetQuery(IQueryBase* Value, VARIANT_BOOL ServerPrepare, I
                 rsObj->QueryInterface(IID_IPreparedQuery, (void**)&pd);
                 _ASSERTE(pd);
                 *retVal = pd;
-                return S_OK;
-            }else
+                
+            }
+            return S_OK;
+            /*else
             {
                 _TCHAR buf[1024];
                 client::table::tdapErr(NULL, m_tb->stat(), m_tb->tableDef()->tableName(), buf);
                 return Error(buf, IID_ITable);
-            }
+            }*/
         }
     }
     return S_FALSE;

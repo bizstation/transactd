@@ -27,6 +27,7 @@ using namespace ATL;
 class ATL_NO_VTABLE CGroupQuery
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CGroupQuery, &CLSID_GroupQuery>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IGroupQuery, &IID_IGroupQuery, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>
 {
@@ -43,7 +44,10 @@ public:
     BEGIN_COM_MAP(CGroupQuery)
     COM_INTERFACE_ENTRY(IGroupQuery)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 

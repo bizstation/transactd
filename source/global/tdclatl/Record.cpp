@@ -37,6 +37,21 @@ short CRecord::GetFieldNum(VARIANT* Index)
     return index;
 }
 
+STDMETHODIMP CRecord::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IRecord
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 STDMETHODIMP CRecord::get_Size(short* retVal)
 {
     *retVal = (short)m_rec->size();
@@ -79,6 +94,21 @@ STDMETHODIMP CRecord::get_IsInvalidRecord(VARIANT_BOOL* retVal)
 
 
 //---------------------------------------------------------------------
+STDMETHODIMP CWritableRecord::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IWritableRecord
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 void CWritableRecord::FinalRelease()
 {
     if (m_fieldDefsObj != NULL)
