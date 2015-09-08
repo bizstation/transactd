@@ -19,6 +19,20 @@
 #include "stdafx.h"
 #include "FieldDefs.h"
 #include "FieldDef.h"
+STDMETHODIMP CFieldDefs::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IFieldDefs
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
 
 void CFieldDefs::FinalRelease()
 {

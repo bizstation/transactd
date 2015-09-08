@@ -27,6 +27,7 @@ using namespace ATL;
 class ATL_NO_VTABLE CQueryBase
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CQueryBase, &CLSID_QueryBase>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IQueryBase, &IID_IQueryBase, &LIBID_transactd,
                            /*wMajor =*/1, /*wMinor =*/0>
 {
@@ -43,7 +44,10 @@ public:
     BEGIN_COM_MAP(CQueryBase)
     COM_INTERFACE_ENTRY(IQueryBase)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 

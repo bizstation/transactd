@@ -19,6 +19,21 @@
 #include "stdafx.h"
 #include "PreparedQuery.h"
 
+STDMETHODIMP CPreparedQuery::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IPreparedQuery
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 STDMETHODIMP CPreparedQuery::SupplyValue(int Index, VARIANT Value, VARIANT_BOOL* retVal)
 {
     if (Value.vt != VT_BSTR)

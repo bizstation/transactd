@@ -24,6 +24,21 @@
 
 using namespace bzs::db::protocol::tdap::client;
 
+STDMETHODIMP CPooledDbManager::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IPooledDbManager
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 STDMETHODIMP CPooledDbManager::put_MaxConnections(int n)
 {
     pooledDbManager::setMaxConnections(n);

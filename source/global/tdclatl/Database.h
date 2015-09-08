@@ -35,6 +35,7 @@ bool __stdcall onDeleteRecord(bzs::db::protocol::tdap::client::database* db,
 class ATL_NO_VTABLE CDatabase
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CDatabase, &CLSID_Database>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IDatabase, &IID_IDatabase, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>,
       public IConnectionPointContainerImpl<CDatabase>,
@@ -61,7 +62,10 @@ public:
     COM_INTERFACE_ENTRY(IDatabase)
     COM_INTERFACE_ENTRY(IDispatch)
     COM_INTERFACE_ENTRY(IConnectionPointContainer)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     BEGIN_CONNECTION_POINT_MAP(CDatabase)
     CONNECTION_POINT_ENTRY(__uuidof(_IDatabaseEvents))

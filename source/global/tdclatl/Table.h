@@ -31,6 +31,7 @@ void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
 class ATL_NO_VTABLE CTableTd
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CTableTd, &CLSID_Table>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<ITable, &IID_ITable, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>,
       public IConnectionPointContainerImpl<CTableTd>,
@@ -56,7 +57,10 @@ public:
     COM_INTERFACE_ENTRY(ITable)
     COM_INTERFACE_ENTRY(IDispatch)
     COM_INTERFACE_ENTRY(IConnectionPointContainer)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     BEGIN_CONNECTION_POINT_MAP(CTableTd)
     CONNECTION_POINT_ENTRY(__uuidof(_ITableEvents))

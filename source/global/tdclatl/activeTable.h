@@ -29,6 +29,7 @@ class CARecordset;
 class ATL_NO_VTABLE CActiveTable
     : public CComObjectRootEx<CComSingleThreadModel>,
       public CComCoClass<CActiveTable, &CLSID_ActiveTable>,
+	  public ISupportErrorInfo,
       public IDispatchImpl<IActiveTable, &IID_IActiveTable, &LIBID_transactd,
                            /* wMajor = */ 1, /* wMinor = */ 0>
 {
@@ -45,7 +46,10 @@ public:
     BEGIN_COM_MAP(CActiveTable)
     COM_INTERFACE_ENTRY(IActiveTable)
     COM_INTERFACE_ENTRY(IDispatch)
+    COM_INTERFACE_ENTRY(ISupportErrorInfo)
     END_COM_MAP()
+// ISupportsErrorInfo
+	STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid);
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 

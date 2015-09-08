@@ -28,6 +28,21 @@
 
 using namespace bzs::db::protocol::tdap;
 
+STDMETHODIMP CTableTd::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_ITable
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 short CTableTd::GetFieldNum(VARIANT* Index)
 {
     short index = -1;

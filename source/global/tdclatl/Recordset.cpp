@@ -51,6 +51,21 @@ void CARecordset::setResult(IRecordset** retVal)
     this->QueryInterface(IID_IRecordset, (void**)retVal);
 }
 
+STDMETHODIMP CARecordset::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IRecordset
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
+
 STDMETHODIMP CARecordset::Record(unsigned long Index, IRecord** retVal)
 {
     if (Index >= 0 && Index < m_rs->size())

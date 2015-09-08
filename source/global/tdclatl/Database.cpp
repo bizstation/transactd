@@ -23,6 +23,20 @@
 #include "TdVersion.h"
 
 using namespace bzs::db::protocol::tdap::client;
+STDMETHODIMP CDatabase::InterfaceSupportsErrorInfo(REFIID riid)
+{
+	static const IID* const arr[] = 
+	{
+		&IID_IDatabase
+	};
+
+	for (int i=0; i < sizeof(arr) / sizeof(arr[0]); i++)
+	{
+		if (InlineIsEqualGUID(*arr[i],riid))
+			return S_OK;
+	}
+	return S_FALSE;
+}
 
 STDMETHODIMP CDatabase::Open(BSTR Uri, eSchemaType SchemaType, eOpenMode Mode,
                              BSTR Dir, BSTR Ownername, VARIANT_BOOL* Param6)
