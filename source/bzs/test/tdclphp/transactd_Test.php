@@ -207,6 +207,8 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd->len = 33;
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
+        //test statMsg
+        $this->assertEquals($dbdef->statMsg(), '');
         
         $kd = $dbdef->insertKey($tableid, 0);
         $kd->segment(0)->fieldNum = 0;
@@ -217,12 +219,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
         $this->assertEquals($dbdef->validateTableDef($tableid), 0);
+        
     }
     private function openTable($db)
     {
         $this->openDatabase($db);
         $tb = $db->openTable(TABLENAME);
         $this->assertEquals($db->stat(), 0);
+        //test statMsg
+        $this->assertEquals($db->statMsg(), '');
         return $tb;
     }
     
@@ -339,6 +344,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDI_NAME, 'kosaka');
         $tb->insert();
         $this->assertEquals($tb->stat(), 0);
+        //test statMsg
+        $this->assertEquals($tb->statMsg(), '');
+
         $db->beginTrn();
         $n = 1;
         $tb->seekLast();

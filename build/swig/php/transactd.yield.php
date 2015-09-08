@@ -1192,11 +1192,6 @@ abstract class nstable {
 		return nstable_recordCount($this->_cPtr,$estimate,$fromCurrent);
 	}
 
-	function tdapLastErr($hWnd,$retbuf) {
-		$r=nstable_tdapLastErr($this->_cPtr,$hWnd,$retbuf);
-		return $r;
-	}
-
 	function beginBulkInsert($maxBuflen) {
 		nstable_beginBulkInsert($this->_cPtr,$maxBuflen);
 	}
@@ -1310,17 +1305,12 @@ abstract class nstable {
 		return nstable_mode($this->_cPtr);
 	}
 
-	static function getFileName($uri,$filename) {
-		return nstable_getFileName($uri,$filename);
+	function statMsg() {
+		return nstable_statMsg($this->_cPtr); 
 	}
 
-	static function tdapErr($self_or_hWnd,$hWnd_or_status,$tableName=null,$retbuf=null) {
-		switch (func_num_args()) {
-		case 2: $r=nstable_tdapErr($self_or_hWnd,$hWnd_or_status); break;
-		case 3: $r=nstable_tdapErr($self_or_hWnd,$hWnd_or_status,$tableName); break;
-		default: $r=nstable_tdapErr($self_or_hWnd,$hWnd_or_status,$tableName,$retbuf);
-		}
-		return $r;
+	static function getFileName($uri,$filename) {
+		return nstable_getFileName($uri,$filename);
 	}
 
 	static function getDirURI($uri,$retbuf) {
@@ -1451,12 +1441,8 @@ class dbdef {
 		return dbdef_fieldValidLength($this->_cPtr,$query,$fieldType);
 	}
 
-	function tdapErr($hWnd,$retbuf=null) {
-		switch (func_num_args()) {
-		case 1: $r=dbdef_tdapErr($this->_cPtr,$hWnd); break;
-		default: $r=dbdef_tdapErr($this->_cPtr,$hWnd,$retbuf);
-		}
-		return $r;
+	function statMsg() {
+		return dbdef_statMsg($this->_cPtr); 
 	}
 
 	function reopen($mode=-2) {
@@ -2007,12 +1993,8 @@ class nsdatabase {
 		return nsdatabase_trxLockWaitTimeoutServer($this->_cPtr);
 	}
 
-	function tdapErr($hWnd,$retbuf=null) {
-		switch (func_num_args()) {
-		case 1: $r=nsdatabase_tdapErr($this->_cPtr,$hWnd); break;
-		default: $r=nsdatabase_tdapErr($this->_cPtr,$hWnd,$retbuf);
-		}
-		return $r;
+	function statMsg() {
+		return nsdatabase_statMsg($this->_cPtr); 
 	}
 
 	function useLongFilename() {

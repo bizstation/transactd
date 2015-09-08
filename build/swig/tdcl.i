@@ -359,6 +359,16 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::dbdef::pushBackup;
 %ignore bzs::db::protocol::tdap::client::dbdef::relateData;
 %ignore bzs::db::protocol::tdap::client::dbdef::setStat;
+%extend bzs::db::protocol::tdap::client::dbdef {
+  _TCHAR* statMsg(_TCHAR* retbuf) {
+    self->tdapErr((HWND)0, retbuf);
+    return retbuf;
+  }
+}
+
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::dbdef::tdapErr;
+
 
 // * bzs/db/protocol/tdap/client/field.h *
 %ignore bzs::db::protocol::tdap::client::compBlob;
@@ -585,8 +595,24 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getTrnsctdEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrvEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::setBtrvEntryPoint;
+%extend bzs::db::protocol::tdap::client::nsdatabase {
+  _TCHAR * statMsg(_TCHAR *retbuf) {
+    self->tdapErr((HWND)0, retbuf);
+  return retbuf;
+  }
+}
+
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::nsdatabase::tdapErr;
+
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
+%extend bzs::db::protocol::tdap::client::nstable {
+  _TCHAR* statMsg(_TCHAR* retbuf) {
+     self->tdapErr((HWND)0, retbuf);
+  return retbuf;
+  }
+}
 %ignore bzs::db::protocol::tdap::client::nstable::buflen;
 %ignore bzs::db::protocol::tdap::client::nstable::data;
 %ignore bzs::db::protocol::tdap::client::nstable::setBuflen;
@@ -595,7 +621,13 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nstable::tdap;
 %ignore bzs::db::protocol::tdap::client::nstable::test;
 %ignore bzs::db::protocol::tdap::client::nstable::throwError;
-%rename(tdapLastErr) bzs::db::protocol::tdap::client::nstable::tdapErr(HWND, _TCHAR*);
+//%rename(tdapErrEx) bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* tableName = NULL, _TCHAR* retbuf = NULL);
+
+  // ignore original methods
+%ignore bzs::db::protocol::tdap::client::nsdatabase::tdapErr;
+%ignore bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, _TCHAR* retbuf=NULL);
+%ignore bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* tableName = NULL, _TCHAR* retbuf = NULL);
+
 
 // * bzs/db/protocol/tdap/client/pooledDatabaseManager.h *
 %ignore bzs::db::protocol::tdap::client::xaTransaction;
@@ -751,21 +783,21 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::filterdIterator::operator==;
 %ignore bzs::db::protocol::tdap::client::filterdIterator::operator!=;
 %ignore bzs::db::protocol::tdap::client::filterdIterator::operator*;
-%ignore bzs::db::protocol::tdap::client::filterdIterator::operator->;
-%ignore bzs::db::protocol::tdap::client::find;
-%ignore bzs::db::protocol::tdap::client::findRv;
-%ignore bzs::db::protocol::tdap::client::for_each;
-%ignore bzs::db::protocol::tdap::client::getFindIterator;
+//%ignore bzs::db::protocol::tdap::client::filterdIterator::operator->;
+//%ignore bzs::db::protocol::tdap::client::find;
+//%ignore bzs::db::protocol::tdap::client::findRv;
+//%ignore bzs::db::protocol::tdap::client::for_each;
+//%ignore bzs::db::protocol::tdap::client::getFindIterator;
 %ignore bzs::db::protocol::tdap::client::getTable;
 %ignore bzs::db::protocol::tdap::client::insertField;
 %ignore bzs::db::protocol::tdap::client::insertKey;
 %ignore bzs::db::protocol::tdap::client::insertRecord;
 %ignore bzs::db::protocol::tdap::client::insertTable;
-%ignore bzs::db::protocol::tdap::client::deleteTable
-%ignore bzs::db::protocol::tdap::client::renumberTable
-%ignore bzs::db::protocol::tdap::client::deleteField
-%ignore bzs::db::protocol::tdap::client::deleteKey
-%ignore bzs::db::protocol::tdap::client::validateTableDef
+//%ignore bzs::db::protocol::tdap::client::deleteTable
+//%ignore bzs::db::protocol::tdap::client::renumberTable
+//%ignore bzs::db::protocol::tdap::client::deleteField
+//%ignore bzs::db::protocol::tdap::client::deleteKey
+//%ignore bzs::db::protocol::tdap::client::validateTableDef
 %ignore bzs::db::protocol::tdap::client::isSameUri;
 %ignore bzs::db::protocol::tdap::client::lexical_cast;
 %ignore bzs::db::protocol::tdap::client::openDatabase;
