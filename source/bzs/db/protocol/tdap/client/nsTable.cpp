@@ -957,12 +957,12 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
 /* Get file name from full path name.
  *
  */
-_TCHAR* nstable::getFileName(const _TCHAR* path, _TCHAR* filename)
+_TCHAR* nstable::getFileName(const _TCHAR* path, _TCHAR* retbuf)
 {
 
     _TUCHAR* p = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)path, PSEPARATOR_C);
     _TUCHAR* p2 = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)path, '=');
-    filename[0] = 0x00;
+    retbuf[0] = 0x00;
     if (p2 > p)
         p = p2;
 
@@ -970,12 +970,12 @@ _TCHAR* nstable::getFileName(const _TCHAR* path, _TCHAR* filename)
     {
         p++;
         if (*p)
-            _tcscpy(filename, (_TCHAR*)p);
+            _tcscpy(retbuf, (_TCHAR*)p);
     }
     else
-        _tcscpy(filename, path);
+        _tcscpy(retbuf, path);
 
-    return filename;
+    return retbuf;
 }
 
 bool nstable::existsFile(const _TCHAR* filename)

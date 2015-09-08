@@ -760,13 +760,13 @@ bool nsdatabase::isUseTransactd() const
     return (m_btrcallid == getTrnsctdEntryPoint());
 }
 
-void nsdatabase::readDatabaseDirectory(_TCHAR* retBuf, uchar_td buflen)
+void nsdatabase::readDatabaseDirectory(_TCHAR* retbuf, uchar_td buflen)
 {
     // keynum is drive name A=1 B=2 C=3 0=default
     char tmp[128];
     m_stat = m_btrcallid(TD_GETDIRECTORY, NULL, NULL, NULL, tmp, 128, 0,
                          m_nsimpl->cidPtr);
-    toTCharCopy(retBuf, tmp, buflen);
+    toTCharCopy(retbuf, tmp, buflen);
 }
 
 bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)

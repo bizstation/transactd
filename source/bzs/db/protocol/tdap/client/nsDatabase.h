@@ -125,7 +125,7 @@ public:
     bool setUseTransactd();
     bool isTransactdUri(const _TCHAR* uri);
     bool isUseTransactd() const;
-    void readDatabaseDirectory(_TCHAR* retBuf, uchar_td len);
+    void readDatabaseDirectory(_TCHAR* retbuf, uchar_td len);
     bool connect(const _TCHAR* uri, bool newConnection = false);
     bool disconnect(const _TCHAR* uri = _T(""));
     bool disconnectForReconnectTest(); //for connection brokn emulate

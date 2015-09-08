@@ -1048,19 +1048,78 @@ using namespace bzs::db::protocol::tdap::client;
 #undef pragma_pop
 #define pragma_pop
 %include bzs/db/protocol/tdap/tdapcapi.h
+
+// -- typemap for tabledef::toChar
+%typemap(in, numinputs=0) (char* buf, const char* s, int size)
+{
+  int n = 0;
+  if (s) n = strlen(s)*2;
+  $3 = n;
+  if (n) $1 = new char[n];
+}
+%typemap(freearg) (char* buf, const char* s, int size)
+{
+  delete [] $1;
+}
 %include bzs/db/protocol/tdap/tdapSchema.h
+%clear char* buf, const char* s, int size;
+// --
+
+// -- typemap for nstable::getFilename, getDirUri, statMsg
+%typemap(in, numinputs=0) (_TCHAR* retbuf)
+{
+  _TCHAR tmpbuf[1024];
+  $1=tmpbuf; 
+}
 %include bzs/db/protocol/tdap/client/nsTable.h
+%clear char * retbuf;
+// --
+
+
+
+// -- typemap for dbdef::statMsg
+%typemap(in, numinputs=0) (_TCHAR* retbuf)
+{
+  _TCHAR tmpbuf[1024];
+  $1=tmpbuf; 
+}
 %include bzs/db/protocol/tdap/client/dbDef.h
+%clear char * retbuf;
+// --
+
+
 %include bzs/db/protocol/tdap/client/table.h
+
+// -- typemap for nsDatabase::readDatabaseDirectory
+%typemap(in, numinputs=0) (_TCHAR* retbuf, uchar_td len)
+{
+  char tmpbuf[255];
+  $1=tmpbuf; 
+  $2=255;
+}
+// nsDatabase::statMsg
+%typemap(in, numinputs=0) (_TCHAR* retbuf)
+{
+  _TCHAR tmpbuf[1024];
+  $1=tmpbuf; 
+}
+
 %include bzs/db/protocol/tdap/client/nsDatabase.h
+%clear _TCHAR* retBuf, uchar_td len;
+%clear _TCHAR* retbuf;
+// --
+
+
 %include bzs/db/protocol/tdap/client/database.h
 %include bzs/rtl/benchmark.h
 %include bzs/db/protocol/tdap/mysql/characterset.h
-// typemap for btrTimeStamp::toString/btrdtoa/btrttoa/btrstoa --
+
+// -- typemap for btrTimeStamp::toString/btrdtoa/btrttoa/btrstoa 
 %typemap(in,numinputs=0) (char * retbuf) (char tmpbuf[255]) { $1=tmpbuf; }
 %include bzs/db/protocol/tdap/btrDate.h
 %clear char * retbuf;
-// clear typemap for typemap for btrTimeStamp::toString/btrdtoa/btrttoa/btrstoa --
+// --
+
 %include bzs/db/protocol/tdap/client/field.h
 %include bzs/db/protocol/tdap/client/fields.h
 %include bzs/db/protocol/tdap/client/memRecord.h

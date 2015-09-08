@@ -225,7 +225,7 @@ public:
     void unlock(bookmark_td& bm);
     void unlock();
     char_td mode() const;
-    static _TCHAR* getFileName(const _TCHAR* uri, _TCHAR* filename);
+    static _TCHAR* getFileName(const _TCHAR* uri, _TCHAR* retbuf);
     static short_td tdapErr(HWND hWnd, short_td status,
                             const _TCHAR* tableName = NULL,
                             _TCHAR* retbuf = NULL);
