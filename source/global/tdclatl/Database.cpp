@@ -356,6 +356,14 @@ STDMETHODIMP CDatabase::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::StatMsg(BSTR* Value)
+{
+    wchar_t tmp[1024] = { NULL };
+    m_db->statMsg(tmp);
+    *Value = ::SysAllocString(tmp);
+    return S_OK;
+}
+
 STDMETHODIMP CDatabase::Clone(IDatabase** Value)
 {
     CComObject<CDatabase>* ptb;

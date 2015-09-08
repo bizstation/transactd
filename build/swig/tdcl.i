@@ -359,16 +359,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::dbdef::pushBackup;
 %ignore bzs::db::protocol::tdap::client::dbdef::relateData;
 %ignore bzs::db::protocol::tdap::client::dbdef::setStat;
-%extend bzs::db::protocol::tdap::client::dbdef {
-  _TCHAR* statMsg(_TCHAR* retbuf) {
-    self->tdapErr((HWND)0, retbuf);
-    return retbuf;
-  }
-}
-
-  // ignore original methods
 %ignore bzs::db::protocol::tdap::client::dbdef::tdapErr;
-
 
 // * bzs/db/protocol/tdap/client/field.h *
 %ignore bzs::db::protocol::tdap::client::compBlob;
@@ -595,24 +586,10 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getTrnsctdEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrvEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::setBtrvEntryPoint;
-%extend bzs::db::protocol::tdap::client::nsdatabase {
-  _TCHAR * statMsg(_TCHAR *retbuf) {
-    self->tdapErr((HWND)0, retbuf);
-  return retbuf;
-  }
-}
-
-  // ignore original methods
 %ignore bzs::db::protocol::tdap::client::nsdatabase::tdapErr;
 
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
-%extend bzs::db::protocol::tdap::client::nstable {
-  _TCHAR* statMsg(_TCHAR* retbuf) {
-     self->tdapErr((HWND)0, retbuf);
-  return retbuf;
-  }
-}
 %ignore bzs::db::protocol::tdap::client::nstable::buflen;
 %ignore bzs::db::protocol::tdap::client::nstable::data;
 %ignore bzs::db::protocol::tdap::client::nstable::setBuflen;
@@ -621,10 +598,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nstable::tdap;
 %ignore bzs::db::protocol::tdap::client::nstable::test;
 %ignore bzs::db::protocol::tdap::client::nstable::throwError;
-//%rename(tdapErrEx) bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* tableName = NULL, _TCHAR* retbuf = NULL);
-
-  // ignore original methods
-%ignore bzs::db::protocol::tdap::client::nsdatabase::tdapErr;
 %ignore bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, _TCHAR* retbuf=NULL);
 %ignore bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* tableName = NULL, _TCHAR* retbuf = NULL);
 

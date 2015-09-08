@@ -139,6 +139,7 @@ public:
     STDMETHOD(SetAccessRights)(unsigned char curd);
     STDMETHOD(SetOwnerName)(BSTR* name, short enctype);
     STDMETHOD(TdapErr)(OLE_HANDLE hWnd, BSTR* Value);
+    STDMETHOD(StatMsg)(BSTR* Value);
     STDMETHOD(Unlock_)();
     STDMETHOD(get_BlobFieldUsed)(VARIANT_BOOL* Value);
     STDMETHOD(get_BookmarkFindCurrent)(IBookmark** Value);

@@ -507,7 +507,9 @@ interface IDatabase : IDispatch
   HRESULT _stdcall DisconnectForReconnectTest([out, retval] VARIANT_BOOL* Value);
   [id(0x000000F8)]
   HRESULT _stdcall Reconnect([out, retval] VARIANT_BOOL* Value);
-  
+  [id(0x000000F9)]
+  HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
+
 };
 
 
@@ -572,7 +574,9 @@ interface IDbDef : IDispatch
   HRESULT _stdcall TdapErr([in]OLE_HANDLE hWnd, [out, retval] BSTR* Value);
   [id(0x000000DF)]
   HRESULT _stdcall ValidateTableDef([in]short TableIndex, [out, retval] short* Value);
-  
+  [id(0x000000E0)]
+  HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
+
 };
 [
 	object,
@@ -751,6 +755,8 @@ interface ITable : IDispatch
   HRESULT _stdcall BookmarkLen([out, retval] unsigned short* Value);
   [propget, id(0x000000E4)]
   HRESULT _stdcall Bookmarks([in] long index, [out, retval] IBookmark** Value);
+  [id(0x000000E5)]
+  HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
 
   
 

@@ -126,6 +126,11 @@ public:
     {
         return nstable::tdapErr(hWnd, retbuf);
     }
+    inline _TCHAR* statMsg(_TCHAR* retbuf)
+    {
+        nstable::tdapErr(0, retbuf);
+        return retbuf;
+    }
 
     void reopen(char_td mode = TD_OPEN_READONLY);
     using nstable::setStat;

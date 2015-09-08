@@ -127,6 +127,7 @@ public:
     STDMETHOD(Rename)(BSTR oldUri, BSTR newUri);
     STDMETHOD(get_Uri)(BSTR* uri);
     STDMETHOD(TdapErr)(OLE_HANDLE hWnd, BSTR* Value);
+    STDMETHOD(StatMsg)(BSTR* Value);
     STDMETHOD(Clone)(IDatabase** Value);
     STDMETHOD(AssignSchemaData)(IDbDef* Src, short* Value);
     STDMETHOD(Continuous)(eContinusOpr Op, VARIANT_BOOL inclideRepfile,
@@ -152,6 +153,7 @@ public:
     STDMETHOD(get_MaxTables)(int* Value);
     STDMETHOD(get_TrxIsolationServer)(eSrvIsorationType* Value);
     STDMETHOD(get_TrxLockWaitTimeoutServer)(int* Value);
+
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)

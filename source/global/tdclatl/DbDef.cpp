@@ -245,6 +245,14 @@ STDMETHODIMP CDbDef::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
     return S_OK;
 }
 
+STDMETHODIMP CDbDef::StatMsg(BSTR* Value)
+{
+    wchar_t tmp[1024] = { NULL };
+    m_dbDef->tdapErr(0, tmp);
+    *Value = ::SysAllocString(tmp);
+    return S_OK;
+}
+
 STDMETHODIMP CDbDef::ValidateTableDef(short TableIndex, short* Value)
 {
     *Value = m_dbDef->validateTableDef(TableIndex);

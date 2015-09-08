@@ -186,6 +186,11 @@ public:
     {
         return doBtrvErr(hWnd, retbuf);
     }
+    inline _TCHAR* statMsg(_TCHAR* retbuf)
+    {
+        doBtrvErr(0, retbuf);
+        return retbuf;
+    }
 
     void beginBulkInsert(int maxBuflen);
     void abortBulkInsert() { doAbortBulkInsert(); }

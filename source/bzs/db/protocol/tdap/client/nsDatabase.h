@@ -114,6 +114,11 @@ public:
     ushort_td trxIsolationServer() const ;
     ushort_td trxLockWaitTimeoutServer() const ;
     short_td tdapErr(HWND hWnd, _TCHAR* retbuf = NULL);
+    inline _TCHAR* statMsg(_TCHAR* retbuf)
+    {
+        tdapErr(0, retbuf);
+        return retbuf;
+    }
     bool useLongFilename();
     void setUseLongFilename(bool value);
     void getBtrVersion(btrVersions* versions, uchar_td* posblk);

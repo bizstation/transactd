@@ -522,6 +522,14 @@ STDMETHODIMP CTableTd::TdapErr(OLE_HANDLE hWnd, BSTR* Value)
     return S_OK;
 }
 
+STDMETHODIMP CTableTd::StatMsg(BSTR* Value)
+{
+    wchar_t tmp[1024] = { NULL };
+    m_tb->tdapErr(0, tmp);
+    *Value = ::SysAllocString(tmp);
+    return S_OK;
+}
+
 STDMETHODIMP CTableTd::Unlock_()
 {
     m_tb->unlock();
