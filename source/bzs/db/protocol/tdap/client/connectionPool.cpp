@@ -93,7 +93,9 @@ template <class Database_Ptr> connectionPool<Database_Ptr>::~connectionPool()
     if (m_shutdownFunc)
     {
         m_shutdownFunc();
+#ifndef SWIGRUBY
         reset(0);
+#endif
     }
 }
 
