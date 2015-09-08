@@ -71,7 +71,7 @@ typedef short_td(__STDCALL* BTRCALLID_PTR)(ushort_td, void*, void*, uint_td*,
                                            void*, keylen_td, char_td,
                                            uchar_td*);
 
-typedef short_td(__STDCALL* DLLUNLOADCALLBACK_PTR)(dllUnloadCallback func);
+typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 
 /** buffer size
  */

@@ -71,12 +71,6 @@ void busyWait(busyWaitArguments* args)
 }
 #endif // TRANSACTD_RB_CALL_WITHOUT_GVL
 
-short __STDCALL dllUnloadCallbackFunc()
-{
-    cpool.reset(0);
-    cpool.m_regitfunc = NULL;
-    return 0;
-}
 
 void releaseConnection(stdDbmCconnectionPool* pool)
 {
@@ -87,19 +81,20 @@ template <class Database_Ptr>
 connectionPool<Database_Ptr>::connectionPool(int maxConnections)
     : m_maxConnections(maxConnections)
 {
-#ifdef USE_DLLUNLOAD_CALLBACK
-    m_regitfunc = nsdatabase::getDllUnloadCallbackFunc();
-    if (m_regitfunc)
-        m_regitfunc(dllUnloadCallbackFunc);
+#ifdef _WIN32
+    m_shutdownFunc = nsdatabase::getWinTPoolShutdownFunc();
 #else
-    m_regitfunc = NULL;
+    m_shutdownFunc = NULL;
 #endif
 }
 
 template <class Database_Ptr> connectionPool<Database_Ptr>::~connectionPool()
 {
-    if (m_regitfunc)
-        m_regitfunc(NULL);
+    if (m_shutdownFunc)
+    {
+        m_shutdownFunc();
+        reset(0);
+    }
 }
 
 template <class Database_Ptr>
@@ -231,7 +226,7 @@ bool connectionPool<Database_Ptr>::reset(int waitSec)
     lck.lock();
 #endif
     bool flag = true;
-    for (int j = 0; j < waitSec * 100; j++)
+    for (int j = 0; j < waitSec * 10; j++)
     {
         flag = false;
         for (size_t i = 0; i < m_dbs.size(); i++)

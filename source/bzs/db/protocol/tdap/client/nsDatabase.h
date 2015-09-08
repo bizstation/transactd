@@ -134,7 +134,7 @@ public:
     /** @cond INTERNAL */
     void setTestPtrIgnore(bool v);
     bool isTestPtrIgnore() const;
-    static DLLUNLOADCALLBACK_PTR getDllUnloadCallbackFunc();
+    static WIN_TPOOL_SHUTDOWN_PTR getWinTPoolShutdownFunc();
     static bool testTablePtr(nstable* ptr);
     static void setCheckTablePtr(bool v);
     /** @endcond */

@@ -41,7 +41,7 @@ using namespace bzs::netsvc::client;
 #endif
 
 void writeErrorLog(int err, const char* msg);
-dllUnloadCallback dllUnloadCallbackFunc = NULL;
+bool win_thread_pool_shutdown = false;
 
 #ifdef USETLS
 tls_key g_tlsiID1;
@@ -105,9 +105,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
     {
         try
         {
-        if (dllUnloadCallbackFunc)
-            dllUnloadCallbackFunc();
-        delete m_cons;
+        	delete m_cons;
         }
         catch(...){}
         m_cons = NULL;
@@ -154,8 +152,6 @@ void onUnloadLibrary(void)
 {
     if (m_cons)
     {
-        if (dllUnloadCallbackFunc)
-            dllUnloadCallbackFunc();
         delete m_cons;
         m_cons = NULL;
 #ifdef USETLS
@@ -507,8 +503,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
     return BTRCALLID(op, pbk, data, datalen, keybuf, keylen, keyNum, cid);
 }
 
-extern "C" PACKAGE_OSX short_td __STDCALL CallbackRegist(dllUnloadCallback func)
+extern "C" PACKAGE_OSX void __STDCALL BeginWinThreadPoolShutdown()
 {
-    dllUnloadCallbackFunc = func;
-    return 0;
+    win_thread_pool_shutdown = true;
 }

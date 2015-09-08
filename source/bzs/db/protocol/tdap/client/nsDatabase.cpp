@@ -982,14 +982,15 @@ void nsdatabase::setCheckTablePtr(bool v)
     g_checkTablePtr = v;
 }
 
-DLLUNLOADCALLBACK_PTR nsdatabase::getDllUnloadCallbackFunc()
+WIN_TPOOL_SHUTDOWN_PTR nsdatabase::getWinTPoolShutdownFunc()
 {
     if (hTrsdDLL == NULL)
         hTrsdDLL = LoadLibraryA(LIB_PREFIX TDCLC_LIBNAME);
     if (hTrsdDLL)
-        return (DLLUNLOADCALLBACK_PTR)GetProcAddress((HINSTANCE)hTrsdDLL,
-                                                     "CallbackRegist");
+        return (WIN_TPOOL_SHUTDOWN_PTR)GetProcAddress((HINSTANCE)hTrsdDLL,
+                                                     "BeginWinThreadPoolShutdown");
     return NULL;
+
 }
 
 } // namespace client

@@ -4808,7 +4808,7 @@ void testDbPool()
         BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
     }
     poolMgr.endSnapshot();
-    poolMgr.reset(0);
+
 }
 
 //--------------------------------------------------------------------------------------
