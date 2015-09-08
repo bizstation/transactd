@@ -5362,7 +5362,7 @@ ZEND_NAMED_FUNCTION(_wrap_tabledef_toChar) {
   char *result = 0 ;
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, args) != SUCCESS) {
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -5382,28 +5382,21 @@ ZEND_NAMED_FUNCTION(_wrap_tabledef_toChar) {
   }
   /*@SWIG@*/;
   
+  if(!arg2) SWIG_PHP_Error(E_ERROR, "input pointer is NULL");
   
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,62,CONVERT_STRING_IN@*/
-  if ((*args[2])->type==IS_NULL) {
-    arg3 = (char *) 0;
-  } else {
-    convert_to_string_ex(args[2]);
-    arg3 = (char *) Z_STRVAL_PP(args[2]);
-  }
-  /*@SWIG@*/;
-  
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
-  convert_to_long_ex(args[3]);
-  arg4 = (int) Z_LVAL_PP(args[3]);
-  /*@SWIG@*/;
+  arg4 = strlen(arg2) * 4
+  arg3 = new char[arg4];
   
   {
     try {
       result = (char *)(arg1)->toChar(arg2,(char const *)arg3,arg4);
     } catch (bzs::rtl::exception& e) {
+      delete [] arg3;
+      arg3 = NULL;
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
+      delete [] arg3;
+      arg3 = NULL;
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
@@ -5414,8 +5407,11 @@ ZEND_NAMED_FUNCTION(_wrap_tabledef_toChar) {
       ZVAL_STRING(return_value, (char *)result, 1);
     }
   }
+  
+  delete [] arg3;
   return;
 fail:
+  delete [] arg3;
   SWIG_FAIL(TSRMLS_C);
 }
 

@@ -959,8 +959,8 @@ class tabledef {
 		tabledef_setTableName($this->_cPtr,$s);
 	}
 
-	function toChar($buf,$s,$size) {
-		return tabledef_toChar($this->_cPtr,$buf,$s,$size);
+	function toChar($buf) {
+		return tabledef_toChar($this->_cPtr);
 	}
 
 	function fieldDef($index) {

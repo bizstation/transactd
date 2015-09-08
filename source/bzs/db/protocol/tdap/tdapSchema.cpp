@@ -264,9 +264,8 @@ const char* tabledef::toChar(char* buf, const char* s, int size)
 #ifdef LINUX
     if (schemaCodePage != CP_UTF8)
     {
-        char* p = namebufA();
-        u8tombc(s, strlen(s), p, size);
-        return p;
+        u8tombc(s, strlen(s), buf, size);
+        return buf;
     }
 #endif
     strncpy_s(buf, size, s, size - 1);
