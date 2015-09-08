@@ -53,6 +53,6 @@ public:
 
 public:
     STDMETHOD(get_SegmentCount)(unsigned char* Value);
-    STDMETHOD(Segments)(short Index, IKeySegment** Value);
+    STDMETHOD(get_Segments)(short Index, IKeySegment** Value);
     STDMETHOD(put_SegmentCount)(unsigned char Value);
 };

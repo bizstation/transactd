@@ -66,7 +66,7 @@ STDMETHODIMP CARecordset::InterfaceSupportsErrorInfo(REFIID riid)
 	return S_FALSE;
 }
 
-STDMETHODIMP CARecordset::Record(unsigned long Index, IRecord** retVal)
+STDMETHODIMP CARecordset::get_Record(unsigned long Index, IRecord** retVal)
 {
     if (Index >= 0 && Index < m_rs->size())
     {
@@ -96,12 +96,12 @@ STDMETHODIMP CARecordset::Record(unsigned long Index, IRecord** retVal)
 
 STDMETHODIMP CARecordset::First(IRecord** retVal)
 {
-    return Record(0, retVal);
+    return get_Record(0, retVal);
 }
 
 STDMETHODIMP CARecordset::Last(IRecord** retVal)
 {
-    return Record((short)m_rs->size() - 1, retVal);
+    return get_Record((short)m_rs->size() - 1, retVal);
 }
 
 STDMETHODIMP CARecordset::Top(unsigned long Num, IRecordset** retVal)

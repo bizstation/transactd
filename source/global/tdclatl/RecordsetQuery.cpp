@@ -108,7 +108,7 @@ STDMETHODIMP CSortFields::get_Size(int* Value)
     return S_OK;
 }
 
-STDMETHODIMP CSortFields::Item(int Index, ISortField** retVal)
+STDMETHODIMP CSortFields::get_Item(int Index, ISortField** retVal)
 {
     CComObject<CSortField>* obj;
 

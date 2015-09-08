@@ -122,7 +122,7 @@ public:
 public:
     STDMETHOD(Add)(BSTR Name, VARIANT_BOOL Asc);
     STDMETHOD(get_Size)(int* Value);
-    STDMETHOD(Item)(int Index, ISortField** retVal);
+    STDMETHOD(get_Item)(int Index, ISortField** retVal);
     STDMETHOD(Clear)();
 };
 

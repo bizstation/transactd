@@ -940,7 +940,7 @@ interface IKeyDef : IDispatch
   HRESULT _stdcall SegmentCount([out, retval] unsigned char* Value);
   [propput, id(0x00000001)]
   HRESULT _stdcall SegmentCount([in] unsigned char Value);
-  [id(0x000000C9)]
+  [propget, id(0x00000000)]
   HRESULT _stdcall Segments([in] short Index, [out, retval] IKeySegment** Value);
 
 };
@@ -953,9 +953,9 @@ interface IKeyDef : IDispatch
 ]
 interface IFlags : IDispatch
 {
-  [propget, id(0x00000001)]
+  [propget, id(0x00000000)]
   HRESULT _stdcall Bits([in] short Index, [out, retval] VARIANT_BOOL* Value);
-  [propput, id(0x00000001)]
+  [propput, id(0x00000000)]
   HRESULT _stdcall Bits([in] short Index, [in] VARIANT_BOOL Value);
   [id(0x000000C9)]
   HRESULT _stdcall All([out] unsigned short* Value);
@@ -1217,7 +1217,7 @@ interface IActiveTable : IDispatch
 interface IRecordset : IDispatch
 {
 
-  [id(0x0000002)]
+  [propget,id(0x0000000)]
   HRESULT _stdcall Record([in] unsigned long Index, [out, retval] IRecord** retVal);
   [id(0x0000003)]
   HRESULT _stdcall First([out, retval] IRecord** retVal);
@@ -1284,7 +1284,7 @@ interface IRecord : IDispatch
 {
   [propget, id(0x0000001)]
   HRESULT _stdcall Size([out, retval] short* retVal);
-  [propget, id(0x0000002)]
+  [propget, id(0x0000000)]
   HRESULT _stdcall Field([in] VARIANT Index, [out, retval] IField** retVal);
   [propget, id(0x0000003)]
   HRESULT _stdcall IsInvalidRecord( [out, retval] VARIANT_BOOL* retVal);
@@ -1374,7 +1374,7 @@ interface IFieldDefs : IDispatch
 {
   [id(0x0000001)]
   HRESULT _stdcall IndexByName([in] BSTR Name, [out, retval] short* retVal);
-  [propget, id(0x0000002)]
+  [propget, id(0x0000000)]
   HRESULT _stdcall FieldDef([in] VARIANT Name, [out, retval] IFieldDef** retVal);
   [propget, id(0x0000003)]
   HRESULT _stdcall Size([out, retval] short* retVal);
@@ -1414,7 +1414,7 @@ interface ISortFields : IDispatch
   HRESULT _stdcall Add([in] BSTR Name, [in] VARIANT_BOOL asc);
   [propget, id(2)]
   HRESULT _stdcall Size([out, retval] int* Value);
-  [id(3)]
+  [propget, id(0)]
   HRESULT _stdcall Item([in] int index, [out, retval] ISortField** retVal);
   [id(4)]
   HRESULT _stdcall Clear();
@@ -1440,7 +1440,7 @@ interface IFieldNames : IDispatch
   HRESULT _stdcall Count([out, retval] int* Value);
   [id(3)]
   HRESULT _stdcall addValue([in] BSTR val);
-  [propget, id(4)]
+  [propget, id(0)]
   HRESULT _stdcall Value([in] int index, [out, retval] BSTR* retVal);
   [id(5)]
   HRESULT _stdcall addValues([in] BSTR val, [in] BSTR delm);

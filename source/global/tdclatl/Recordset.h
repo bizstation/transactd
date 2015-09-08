@@ -64,7 +64,7 @@ public:
     void FinalRelease();
 
 public:
-    STDMETHOD(Record)(unsigned long Index, IRecord** retVal);
+    STDMETHOD(get_Record)(unsigned long Index, IRecord** retVal);
     STDMETHOD(First)(IRecord** retVal);
     STDMETHOD(Last)(IRecord** retVal);
     STDMETHOD(Top)(unsigned long Num, IRecordset** retVal);
