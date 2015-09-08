@@ -1,4 +1,26 @@
 Release note
+
+================================================================================
+Version 2.4.4 2015/09/08
+================================================================================
+Modifications 
+--------------------------------------------------------------------------------
+* In Windows of pooledDbManager, Fixed a bug that may be deadlock in 
+  tdclc_xxx.dll to at the end of the process.
+
+* Added a statMsg method to nstable,nsdatabase and dbdef class. This method is 
+  the same function as the already tdapErr method. Other than the difference of 
+  the arguments and return values
+
+* In PHP and Ruby interface, it was fixed a bug that tdapErr method does not work
+  properly. In this two interfaces, tdapErr method has been changed to statMsg.
+  Also, we added a statMsg method in C ++ and COM interfaces.
+
+* We added a IErrorInfo the COM interface. In addition, we have set the default
+  property to IRecordset,IRecord,IKeyDef,IFlags,IFieldDefs,ISortFields,
+  IFieldNames interfaces.
+
+
 ================================================================================
 Version 2.4.3 2015/08/31
 ================================================================================
