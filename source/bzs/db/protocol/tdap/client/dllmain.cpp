@@ -282,7 +282,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_DATA |
                                         P_MASK_DATALEN | P_MASK_EX_SENDLEN;
             break;
-        case TD_GETDIRECTORY:
         case TD_SETDIRECTORY:
             break;
         case TD_VERSION:
@@ -349,6 +348,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
                 P_MASK_DATALEN | P_MASK_KEYBUF | P_MASK_KEYNUM;
             break;
         case TD_RESET_CLIENT:
+        case TD_GETDIRECTORY:
             client_t->req().paramMask = P_MASK_KEYONLY;
             break;
         case TD_BUILD_INDEX:

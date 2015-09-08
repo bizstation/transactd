@@ -133,9 +133,14 @@ public:
         if (P_MASK_DATALEN & paramMask)
             memcpy(datalenPtr, (const char*)&resultLen, sizeof(uint_td));
 
-        if (tb && (P_MASK_KEYBUF & paramMask))
+        if (P_MASK_KEYBUF & paramMask)
         {
-            keylen = tb->keyPackCopy((uchar*)p + sizeof(keylen_td));
+            if (tb)
+                keylen = tb->keyPackCopy((uchar*)p + sizeof(keylen_td));
+            else if (keylen && keylen < MAX_KEYLEN)
+                memcpy((uchar*)p + sizeof(keylen_td), keybuf, keylen);
+            else
+                keylen = 0;
             memcpy(p, (const char*)&keylen, sizeof(keylen_td));
             p += sizeof(keylen_td);
             p += keylen;
