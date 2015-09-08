@@ -263,6 +263,9 @@ void testCreateNewDataBase(database* db)
              TD_OPEN_NORMAL);
     BOOST_CHECK_MESSAGE(0 == db->stat(),
                         "createNewDataBase 1 stat = " << db->stat());
+    _TCHAR buf[255];
+    db->readDatabaseDirectory(buf, 255);
+    BOOST_CHECK_MESSAGE(_tstring(buf) != _tstring(_T("")), "readDatabaseDirectory" << buf);
 
     dbdef* def = db->dbDef();
     if (def)

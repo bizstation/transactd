@@ -17309,7 +17309,7 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_readDatabaseDirectory) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
   _TCHAR arg2[255] = {NULL} ;
-  int arg3 = 255;
+  uchar_td arg3 = 255;
   zval **args[3];
   _TCHAR* result = 0;
   

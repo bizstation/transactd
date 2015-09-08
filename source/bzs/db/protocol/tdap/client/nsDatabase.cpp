@@ -766,7 +766,7 @@ void nsdatabase::readDatabaseDirectory(_TCHAR* retBuf, uchar_td buflen)
     char tmp[128];
     m_stat = m_btrcallid(TD_GETDIRECTORY, NULL, NULL, NULL, tmp, 128, 0,
                          m_nsimpl->cidPtr);
-    toTChar(retBuf, tmp, buflen);
+    toTCharCopy(retBuf, tmp, buflen);
 }
 
 bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
