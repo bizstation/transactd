@@ -960,7 +960,7 @@ class tabledef {
 	}
 
 	function toChar($buf) {
-		return tabledef_toChar($this->_cPtr);
+		return tabledef_toChar($this->_cPtr, $buf);
 	}
 
 	function fieldDef($index) {
@@ -1309,12 +1309,12 @@ abstract class nstable {
 		return nstable_statMsg($this->_cPtr); 
 	}
 
-	static function getFileName($uri,$filename) {
-		return nstable_getFileName($uri,$filename);
+	static function getFileName($uri) {
+		return nstable_getFileName($uri);
 	}
 
-	static function getDirURI($uri,$retbuf) {
-		return nstable_getDirURI($uri,$retbuf);
+	static function getDirURI($uri) {
+		return nstable_getDirURI($uri);
 	}
 
 	static function existsFile($filename) {
@@ -2017,8 +2017,8 @@ class nsdatabase {
 		return nsdatabase_isUseTransactd($this->_cPtr);
 	}
 
-	function readDatabaseDirectory($retBuf,$len) {
-		nsdatabase_readDatabaseDirectory($this->_cPtr,$retBuf,$len);
+	function readDatabaseDirectory() {
+		return nsdatabase_readDatabaseDirectory($this->_cPtr);
 	}
 
 	function connect($uri,$newConnection=false) {

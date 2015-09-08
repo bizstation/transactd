@@ -233,6 +233,29 @@ def testVersion()
   db.close()
 end
 
+def testReadDatabaseDirectory()
+  db = Transactd::Database.new()
+  tb = testOpenTable(db)
+  expect(tb).not_to be nil
+  s = db.readDatabaseDirectory()
+  expect(s).not_to eq ''
+end
+
+def testGetFileName()
+  s = ''
+  if RUBY_PLATFORM =~ /mswin(?!ce)|mingw|cygwin|bccwin/
+    s = Transactd::Nstable::getFileName('test\abcdefghijklnmopqrstuvwxyz1234567890.txt')
+  else
+    s = Transactd::Nstable::getFileName('test/abcdefghijklnmopqrstuvwxyz1234567890.txt')
+  end
+  expect(s).to eq 'abcdefghijklnmopqrstuvwxyz1234567890.txt'
+end
+
+def testGetDirURI()
+   s = Transactd::Nstable::getDirURI('tdap://localhost/test?dbfile=test.bdf')
+   expect(s).to eq 'tdap://localhost/test?dbfile='
+end
+
 def testInsert()
   db = Transactd::Database.new()
   tb = testOpenTable(db)

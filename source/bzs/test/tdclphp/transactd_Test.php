@@ -220,6 +220,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($dbdef->stat(), 0);
         $this->assertEquals($dbdef->validateTableDef($tableid), 0);
         
+        //test toChar
+        $s = $td->toChar('abcdefg');
+        $this->assertEquals($s, 'abcdefg');
+        
     }
     private function openTable($db)
     {
@@ -332,6 +336,28 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($engine_ver->majorVersion, Bz\transactd::TRANSACTD_VER_MAJOR);
         $this->assertEquals($engine_ver->minorVersion, Bz\transactd::TRANSACTD_VER_MINOR);
         $this->assertEquals(chr($engine_ver->type), 'T');
+    }
+    public function testReadDatabaseDirectory()
+    {
+       $db = new Bz\database();
+       $tb = $this->openTable($db);
+       $this->assertNotEquals($tb, NULL);
+       $s = $db->readDatabaseDirectory();
+       $this->assertNotEquals($s, '');
+    }
+    public function testGetFileName()
+    {
+        $s = '';
+        if (PHP_OS == 'WIN32' || PHP_OS == 'WINNT')
+           $s = Bz\nstable::getFileName('test\abcdefghijklnmopqrstuvwxyz1234567890.txt');
+        else
+           $s = Bz\nstable::getFileName('test/abcdefghijklnmopqrstuvwxyz1234567890.txt');
+        $this->assertEquals($s, 'abcdefghijklnmopqrstuvwxyz1234567890.txt');
+    }
+    public function testGetDirURI()
+    {
+       $s = Bz\nstable::getDirURI('tdap://localhost/test?dbfile=test.bdf');
+       $this->assertEquals($s, 'tdap://localhost/test?dbfile=');
     }
     public function testInsert()
     {
