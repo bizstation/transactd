@@ -49,7 +49,7 @@ elseif("${this_target}" STREQUAL "tdclcppmr")
   set(TDCL_CPP_CHARSET m)
   set(TDCL_CPP_USE_RUNTIME_LIBS ON)
 else()
-  message(ERROR "Invalid project name ${this_target}")
+  set(TDCL_CPP_USE_RUNTIME_LIBS OFF)
 endif()
 
 

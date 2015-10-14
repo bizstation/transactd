@@ -82,8 +82,8 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
 endif()
 file(TO_CMAKE_PATH "${TRANSACTD_PHP_SOURCE_ROOT}" TRANSACTD_PHP_SOURCE_ROOT)
 file(TO_CMAKE_PATH "${TRANSACTD_PHP_LIBRARY_PATH}" TRANSACTD_PHP_LIBRARY_PATH)
-message(STATUS "  TRANSACTD_PHP_SOURCE_ROOT  ${TRANSACTD_PHP_SOURCE_ROOT}")
-message(STATUS "  TRANSACTD_PHP_LIBRARY_PATH ${TRANSACTD_PHP_LIBRARY_PATH}")
+#message(STATUS "  TRANSACTD_PHP_SOURCE_ROOT  ${TRANSACTD_PHP_SOURCE_ROOT}")
+#message(STATUS "  TRANSACTD_PHP_LIBRARY_PATH ${TRANSACTD_PHP_LIBRARY_PATH}")
 
 # ==========================================================
 # add library path
@@ -292,14 +292,14 @@ add_custom_command(TARGET ${this_target} POST_BUILD
 # ==========================================================
 if (${PHPLIBS_FOUND} STREQUAL "TRUE")
   install(FILES  "${TRANSACTD_BINARY_ROOT}/bin/php_transactd.so" DESTINATION
-             "${PHP_EXTENSION_DIR}/")
+    "${PHP_EXTENSION_DIR}/")
   if (NOT PHP_INFO_INCLUDE)
-      install(CODE "MESSAGE(\"Warning! php include path is not found. Do not install ${TRANSACTD_BINARY_ROOT}/bin/transactd.php .\")")
+    install(CODE "MESSAGE(STATUS \"Warning! php include path is not found. ${TRANSACTD_BINARY_ROOT}/bin/transactd.php will not be installed automatically.\")")
   else()  
-     install(FILES  "${TRANSACTD_BINARY_ROOT}/bin/transactd.php" DESTINATION
-            "${PHP_INFO_INCLUDE}/")
+    install(FILES  "${TRANSACTD_BINARY_ROOT}/bin/transactd.php" DESTINATION
+      "${PHP_INFO_INCLUDE}/")
   endif()
   if(${PHP_TRANSACTD_ENABLED} STREQUAL "NO")
-      install(CODE "file(APPEND ${PHP_INFO_FILE} \"extension=php_transactd.so\\n\")")
+    install(CODE "file(APPEND ${PHP_INFO_FILE} \"extension=php_transactd.so\\n\")")
   endif()
 endif()

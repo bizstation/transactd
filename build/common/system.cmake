@@ -121,4 +121,3 @@ macro(bz_get_win_sysdir)
   endif()
 endmacro()
 endif()
-
