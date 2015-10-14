@@ -22,6 +22,7 @@
 #include "groupQuery.h"
 #ifdef _DEBUG
 #include <iostream>
+#include <iomanip>
 #endif
 
 namespace bzs
@@ -34,6 +35,86 @@ namespace tdap
 {
 namespace client
 {
+
+#ifdef _DEBUG
+
+/*
+ Print record set whole row like a mysql command line tool.
+*/
+template <class RS>
+class dumpRecordset
+{
+    std::vector<size_t> m_widths;
+    std::vector<std::ios::fmtflags> m_ailgns;
+
+    void cacheWidthAndAlign(RS& rs)
+    {
+        const fielddefs& fds = *rs.fieldDefs();
+        m_widths.clear();
+        m_widths.resize(fds.size());
+        m_ailgns.clear();
+        m_ailgns.resize(fds.size());
+
+        for (size_t col = 0; col < fds.size(); ++col)
+        {
+            m_widths[col] = std::max(_tcslen(fds[col].name()), m_widths[col]);
+            m_ailgns[col] = fds[col].isStringType() ? std::ios::left : std::ios::right;
+        }
+        for(size_t i = 0; i < rs.size(); ++i)
+        {
+            row& rec = rs[i];
+            for (size_t col = 0; col < fds.size(); ++col)
+                m_widths[col] = std::max(_tcslen(rec[col].c_str()), m_widths[col]);
+        }
+    }
+
+    std::_tstring makeLine()
+    {
+        std::_tstring s = _T("+");
+        for (size_t i = 0;i < m_widths.size(); ++i)
+        {
+            s += std::_tstring(m_widths[i] + 2, _T('-'));
+            s += _T('+');
+        }
+        s += _T("\n");
+        return s;
+    }
+
+    void printValue(size_t width, std::ios::fmtflags f, const _TCHAR* value)
+    {
+        std::tcout.setf(f, std::ios::adjustfield);
+        std::tcout << _T(" ")  << std::setw(width) << value << _T(" |");
+    }
+
+    const _TCHAR* value(const fielddef& fd) {return fd.name();}
+    const _TCHAR* value(const field& fd) {return fd.c_str();}
+
+    template <class T>
+    void printRecord(const T& coll)
+    {
+        std::tcout  << _T("|");
+        for (size_t col = 0; col < m_widths.size(); ++col)
+            printValue(m_widths[col], m_ailgns[col], value(coll[col]));
+        std::tcout << std::endl;
+    }
+public:
+    void operator()(RS& rs)
+    {
+        cacheWidthAndAlign(rs);
+        std::_tstring line = makeLine();
+        //header
+        std::tcout << line;
+        printRecord(*rs.fieldDefs());
+        std::tcout << line;
+
+        //field value
+        for(size_t i = 0; i < rs.size(); ++i)
+            printRecord(rs[i]);
+        std::tcout << line;
+    }
+};
+#endif
+
 
 struct sortDescription
 {
@@ -595,21 +676,8 @@ public:
 #ifdef _DEBUG
     void dump()
     {
-        const fielddefs& fields = *fieldDefs();
-        for (int j = 0; j < (int)fields.size(); ++j)
-            std::tcout << fields[j].name() << _T("\t");
-        std::tcout << _T("\n");
-
-        for (int i = 0; i < (int)size(); ++i)
-        {
-            row& m = (operator[](i));
-            for (int j = 0; j < (int)m.size(); ++j)
-            {
-                std::tcout << m[(short)j].c_str() << _T("\t");
-                if (j == (int)m.size() - 1)
-                    std::tcout << _T("\n");
-            }
-        }
+        dumpRecordset<recordsetImple> dumpRs;
+        dumpRs(*this);
     }
 #endif
 };
