@@ -247,14 +247,23 @@ inline bool cp_has_update_default_function(Field* fd)
 
 inline void cp_evaluate_insert_default_function(Field* fd)
 {
-    Field_timestamp* ft = dynamic_cast<Field_timestamp*>(fd);
+#if (MYSQL_VERSION_ID > 50600)
+    Field* ft = fd;
+#else
+    Field_timestamp* ft = (Field_timestamp*)(fd);
+#endif
     if (ft)
         ft->set_time();
 }
 
 inline void cp_evaluate_update_default_function(Field* fd)
 {
-    Field_timestamp* ft = dynamic_cast<Field_timestamp*>(fd);
+
+#if (MYSQL_VERSION_ID > 50600)
+    Field* ft = fd;
+#else
+    Field_timestamp* ft = (Field_timestamp*)(fd);
+#endif
     if (ft)
         ft->set_time();
 }

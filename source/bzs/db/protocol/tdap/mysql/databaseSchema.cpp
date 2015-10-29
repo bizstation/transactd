@@ -95,17 +95,17 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
 	case MYSQL_TYPE_NEWDATE:
         return ft_mydate;
     case MYSQL_TYPE_TIME:
-#if(MYSQL_VERSION_NUM > 50600)
+#if(MYSQL_VERSION_ID > 50600)
     case MYSQL_TYPE_TIME2:
 #endif
         return ft_mytime;
     case MYSQL_TYPE_DATETIME:
-#if(MYSQL_VERSION_NUM > 50600)
+#if(MYSQL_VERSION_ID > 50600)
     case MYSQL_TYPE_DATETIME2:
 #endif
         return ft_mydatetime;
     case MYSQL_TYPE_TIMESTAMP:
-#if(MYSQL_VERSION_NUM > 50600)
+#if(MYSQL_VERSION_ID > 50600)
     case MYSQL_TYPE_TIMESTAMP2:
 #endif
         return ft_mytimestamp;
