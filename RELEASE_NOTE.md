@@ -5,6 +5,17 @@ Version 2.4.4 2015/09/08
 ================================================================================
 Modifications 
 --------------------------------------------------------------------------------
+* Support MySQL 5.7.9 and MariaDB 10.1.8.
+
+* Support MYSQL_TYPE_NEWDATE, MYSQL_TYPE_TIME2, MYSQL_TYPE_DATETIME2 and
+  MYSQL_TYPE_TIMESTAMP2.
+
+
+================================================================================
+Version 2.4.4 2015/09/08
+================================================================================
+Modifications 
+--------------------------------------------------------------------------------
 * In Windows of pooledDbManager, Fixed a bug that may be deadlock in 
   tdclc_xxx.dll to at the end of the process.
 
