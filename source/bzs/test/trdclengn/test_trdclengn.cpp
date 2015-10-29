@@ -410,7 +410,8 @@ void testVersion(database* db)
                 "mysql_server_Major = " << vv.versions[1].majorVersion);
             BOOST_CHECK_MESSAGE(
                 ((5 <= vv.versions[1].minorVersion) ||
-                 (0 == vv.versions[1].minorVersion)),
+                 (0 == vv.versions[1].minorVersion) ||
+                 (1 == vv.versions[1].minorVersion)),
                 "mysql_server_Miner = " << vv.versions[1].minorVersion);
             BOOST_CHECK_MESSAGE((int)'M' == (int)vv.versions[1].type,
                                 "mysql_server_Type = " << vv.versions[1].type);

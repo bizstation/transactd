@@ -233,7 +233,7 @@ const connManager::records& connManager::getDefinedDatabaseList() const
             cp_security_ctx(thd)->skip_grants();
             SQL_Strings files;
             db_list(thd, &files);
-#ifdef MARIADDB_10_0
+#if defined(MARIADDB_10_0) || defined(MARIADDB_10_1)
             for (int i = 0; i < (int)files.elements(); ++i)
                 appenDbList(m_records, files.at(i));
 #else

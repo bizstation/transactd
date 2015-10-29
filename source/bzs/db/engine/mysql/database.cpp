@@ -114,7 +114,9 @@ void tableCacheCounter::release(const std::string& dbname,
 bool lockTable(THD* thd, TABLE* tb)
 {
     bool append = (thd->lock != 0);
-
+#ifdef MARIADDB_10_1
+    thd->variables.option_bits |= OPTION_TABLE_LOCK;
+#endif
     MYSQL_LOCK* lock = mysql_lock_tables(thd, &tb, 1, 0);
     if (!append)
         thd->lock = lock;
@@ -2248,7 +2250,7 @@ void table::beginDel()
                 movePos(position(true), -1, true);
 
             // Has blob fields then ignore conflicts.
-            if ((m_table->s->blob_fields == 0) &&
+            if ((m_stat == 0) && (m_table->s->blob_fields == 0) &&
                 cmp_record(m_table, record[1]))
                 m_stat = STATUS_CHANGE_CONFLICT;
 
