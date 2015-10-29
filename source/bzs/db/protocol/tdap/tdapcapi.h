@@ -236,7 +236,8 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define ft_myblob                       51
 #define ft_autoIncUnsigned              52
 #define ft_myfixedbinary                53
-
+#define ft_enum                         54
+#define ft_set                          55
 #define ft_nullindicator                255
 
 /** charset type number

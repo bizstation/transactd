@@ -985,6 +985,17 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
                 m_nonKeySegNullFields.push_back(fd);
         }
     }
+    // Chash timestamp field
+    for (int i = 0; i < (int)m_table->s->fields; ++i)
+    {
+        Field* fd = m_table->field[i];
+        if (fd->unireg_check == Field::TIMESTAMP_UN_FIELD ||
+            fd->unireg_check == Field::TIMESTAMP_DNUN_FIELD ||
+            fd->unireg_check == Field::TIMESTAMP_DN_FIELD)
+        {
+            m_timeStampFields.push_back(fd);
+        }
+    }
 }
 
 table::~table()
@@ -2166,6 +2177,30 @@ void table::setFiledNullFlags()
     }
 }
 
+void table::setTimeStamp(bool insert)
+{
+    if (m_timeStampFields.size())
+        m_db.setCurTime();
+    std::vector<Field*>::iterator it = m_timeStampFields.begin();
+    while (it != m_timeStampFields.end())
+    {
+        /*if (g_timestamp_always)
+        {
+            if ((insert && cp_has_insert_default_function((*it))) ||
+                (!insert && cp_has_update_default_function((*it))))
+                (*it)->store(0.0f);
+        }*/
+        if (/*!(*it)->is_null() &&*/ ((*it)->val_real() == 0))
+        {
+            if (insert)
+                cp_evaluate_insert_default_function((*it));
+            else
+                cp_evaluate_update_default_function((*it));
+        }
+        ++it;
+    }  
+}
+
 __int64 table::insert(bool ncc)
 {
     if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type < TL_WRITE))
@@ -2179,6 +2214,7 @@ __int64 table::insert(bool ncc)
         autoincSetup setup(m_table);
         setKeyNullFlags();
         setFiledNullFlags();
+		setTimeStamp(true /* insert */);
 
         m_stat = m_table->file->ha_write_row(m_table->record[0]);
         autoincValue = m_table->file->insert_id_for_cur_row;
@@ -2273,6 +2309,7 @@ void table::update(bool ncc)
     {
         int nullFieldsOfCurrentKey = setKeyNullFlags();
         setFiledNullFlags();
+		setTimeStamp(false /* update */);
         m_stat = m_table->file->ha_update_row(m_table->record[1],
                                               m_table->record[0]);
         if (m_stat == 0 || (m_stat == HA_ERR_RECORD_IS_THE_SAME))

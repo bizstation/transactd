@@ -85,19 +85,29 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
             return ft_uinteger;
         return ft_integer;
     case MYSQL_TYPE_ENUM:
-        return ft_integer;
     case MYSQL_TYPE_SET:
+    case MYSQL_TYPE_BIT:
         return ft_uinteger;
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
         return ft_float;
     case MYSQL_TYPE_DATE:
+	case MYSQL_TYPE_NEWDATE:
         return ft_mydate;
     case MYSQL_TYPE_TIME:
+#if(MYSQL_VERSION_NUM > 50600)
+    case MYSQL_TYPE_TIME2:
+#endif
         return ft_mytime;
     case MYSQL_TYPE_DATETIME:
+#if(MYSQL_VERSION_NUM > 50600)
+    case MYSQL_TYPE_DATETIME2:
+#endif
         return ft_mydatetime;
     case MYSQL_TYPE_TIMESTAMP:
+#if(MYSQL_VERSION_NUM > 50600)
+    case MYSQL_TYPE_TIMESTAMP2:
+#endif
         return ft_mytimestamp;
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_VAR_STRING: //?
@@ -115,15 +125,16 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
         if (flags & BINARY_FLAG)
             return ft_myblob;
         return ft_mytext;
-    default:
-        return unicode ? ft_wzstring : ft_zstring;
+    default: // MYSQL_TYPE_NEWDECIMAL MYSQL_TYPE_GEOMETRY
+        return unicode ? ft_wstring : ft_string;
     }
     return 0;
 }
 
 bool isUnicode(const CHARSET_INFO& cs)
 {
-    return (charsetIndex(cs.csname) == CHARSET_UTF16LE);
+    int index = charsetIndex(cs.csname);
+    return (index == CHARSET_UTF16LE) || (index == CHARSET_USC2);
 }
 
 bool isBinary(const CHARSET_INFO& cs)

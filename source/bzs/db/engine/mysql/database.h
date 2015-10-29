@@ -195,6 +195,7 @@ public:
     }
 
     short aclReload();
+    inline void setCurTime(){m_thd->set_current_time();}
 
     static tableCacheCounter tableRef;
 
@@ -267,6 +268,7 @@ class table : private boost::noncopyable
     String m_str;
     keynumConvert m_keyconv;
     IblobBuffer* m_blobBuffer;
+	std::vector<Field*> m_timeStampFields;
     std::vector<Field*> m_nonKeySegNullFields;
     unsigned int m_readCount;
     unsigned int m_updCount;
@@ -300,6 +302,7 @@ class table : private boost::noncopyable
     void seekPos(const uchar* pos);
     int setKeyNullFlags();
     void setFiledNullFlags();
+	void setTimeStamp(bool insert);
 
     bookmarks* bms();
     int percentage(uchar* first, uchar* last, uchar* cur);
