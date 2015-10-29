@@ -45,13 +45,20 @@
 #pragma warning(disable : 4996)
 #pragma warning(disable : 4805)
 #pragma warning(disable : 4005)
+#pragma warning(disable : 4101)
 #define NOMINMAX 
 #endif
 #include <my_config.h>
 #include <mysql_version.h>
-#if defined(MARIADB_BASE_VERSION) && (MYSQL_VERSION_ID > 100000)
-#define MARIADDB_10_0 MYSQL_VERSION_ID
+
+#if defined(MARIADB_BASE_VERSION) && (MYSQL_VERSION_ID > 100107)
+#   define MARIADDB_10_1 MYSQL_VERSION_ID
+#else 
+#   if defined(MARIADB_BASE_VERSION) && (MYSQL_VERSION_ID > 100000)
+#       define MARIADDB_10_0 MYSQL_VERSION_ID
+#   endif
 #endif
+
 
 #include <sql/sql_const.h>
 #include "my_global.h"
@@ -117,6 +124,7 @@ extern "C" {
 #pragma warning(default : 4800)
 #pragma warning(default : 4805)
 #pragma warning(default : 4005)
+#pragma warning(default : 4101)
 #endif
 
 #undef min
@@ -216,9 +224,56 @@ inline bool cp_thd_get_global_read_only(THD* thd)
 inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
                           Open_table_context* ot_act)
 {
+#if defined(MARIADDB_10_1)
+    return open_table(thd, tables, ot_act);
+#else
     return open_table(thd, tables, thd->mem_root, ot_act);
+#endif
 }
 #define set_mysys_var(A)
+
+
+inline bool cp_has_insert_default_function(Field* fd) 
+{
+    return fd->unireg_check == Field::TIMESTAMP_DN_FIELD ||
+        fd->unireg_check == Field::TIMESTAMP_DNUN_FIELD;
+}
+
+inline bool cp_has_update_default_function(Field* fd)
+{
+    return fd->unireg_check == Field::TIMESTAMP_UN_FIELD ||
+        fd->unireg_check == Field::TIMESTAMP_DNUN_FIELD;
+}
+
+inline void cp_evaluate_insert_default_function(Field* fd)
+{
+#if (MYSQL_VERSION_ID > 50600)
+    Field* ft = fd;
+#else
+    Field_timestamp* ft = (Field_timestamp*)(fd);
+#endif
+    if (ft)
+        ft->set_time();
+}
+
+inline void cp_evaluate_update_default_function(Field* fd)
+{
+
+#if (MYSQL_VERSION_ID > 50600)
+    Field* ft = fd;
+#else
+    Field_timestamp* ft = (Field_timestamp*)(fd);
+#endif
+    if (ft)
+        ft->set_time();
+}
+
+inline unsigned char* cp_null_ptr(Field* fd, unsigned char* /*record*/)
+{
+    return (unsigned char*)fd->null_ptr;   
+}
+    
+
 #else
 
 
@@ -227,14 +282,12 @@ inline void cp_thd_release_resources(THD* thd)
     thd->release_resources();
 }
 
-inline void cp_set_mysys_var(st_my_thread_var* var)
-{
 #if(MYSQL_VERSION_NUM < 50700)
+inline void cp_set_mysys_var(struct st_my_thread_var* var)
+{
     set_mysys_var(var);
-#else
-	set_mysys_thread_var(var);
-#endif
 }
+#endif
 
 inline void cp_restore_globals(THD* thd)
 {
@@ -256,6 +309,33 @@ inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
 {
     return open_table(thd, tables, ot_act);
 }
+
+inline bool cp_has_insert_default_function(Field* fd) 
+{
+    return fd->has_insert_default_function();
+}
+
+inline bool cp_has_update_default_function(Field* fd)
+{
+    return fd->has_update_default_function();
+
+}
+
+inline void cp_evaluate_insert_default_function(Field* fd)
+{
+    fd->evaluate_insert_default_function();
+}
+
+inline void cp_evaluate_update_default_function(Field* fd)
+{
+    fd->evaluate_update_default_function();
+}
+
+inline unsigned char* cp_null_ptr(Field* fd, unsigned char* record)
+{
+    return fd->null_offset() + record;
+}
+
 #endif
 
 #if (MYSQL_VERSION_NUM < 50611)
@@ -485,16 +565,18 @@ inline bool cp_query_command(THD* thd, char* str)
    make_db_list function is not static, but it is not list in sql_show.h.  
 */
 
-#ifdef MARIADDB_10_0
+#if (defined(MARIADDB_10_0) || defined(MARIADDB_10_1))
     typedef Dynamic_array<LEX_STRING*> SQL_Strings;
+#if (!defined(MARIADDB_10_1))
     typedef struct st_lookup_field_values
     {
         LEX_STRING db_value, table_value;
         bool wild_db_value, wild_table_value;
     } LOOKUP_FIELD_VALUES;
-
+#endif
     extern int make_db_list(THD *thd, Dynamic_array<LEX_STRING*> *files,
                  LOOKUP_FIELD_VALUES *lookup_field_vals);
+
     inline int db_list(THD *thd, SQL_Strings *files)
     {
         LOOKUP_FIELD_VALUES lv;

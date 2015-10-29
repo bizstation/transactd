@@ -229,7 +229,9 @@ loose-transactd_hostcheck_username = yourUserName
 ```
 Replace yourUserName to an actual user name.
 
-
+### Setting of firewall
+Transactd Plugin is used TCP port 8610 as default. If this port is blocked, 
+please be able to access from your client host.
 
 Execution of test and benchmark program
 -------------------------------------------------------------------------------

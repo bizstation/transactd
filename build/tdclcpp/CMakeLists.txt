@@ -49,7 +49,7 @@ elseif("${this_target}" STREQUAL "tdclcppmr")
   set(TDCL_CPP_CHARSET m)
   set(TDCL_CPP_USE_RUNTIME_LIBS ON)
 else()
-  message(ERROR "Invalid project name ${this_target}")
+  set(TDCL_CPP_USE_RUNTIME_LIBS OFF)
 endif()
 
 
@@ -139,7 +139,7 @@ else()
       LINUX)
   else()
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
-      WIN32 _WIN32)
+      WIN32 _WIN32 _SYS_TIME_H_ _GETTIMEOFDAY_DEFINED)
   endif()
 endif()
 if(TRANSACTD_RUBY_GEM OR TRANSACTD_PHP)

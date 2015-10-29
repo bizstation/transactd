@@ -55,7 +55,6 @@ endif()
 # ==========================================================
 if (MSVC)
    link_directories("${TRANSACTD_BINARY_ROOT}/lib")
-   message(STATUS "library directory ${TRANSACTD_BINARY_ROOT}/lib")
 else()
    link_directories("../tdclcpp")
 endif()

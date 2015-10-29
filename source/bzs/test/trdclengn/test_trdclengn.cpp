@@ -23,6 +23,9 @@
 #pragma warn -8022
 #endif
 #include <boost/test/included/unit_test.hpp>
+#ifndef BOOST_TEST_MESSAGE
+#define BOOST_TEST_MESSAGE BOOST_MESSAGE
+#endif
 #if defined(__BCPLUSPLUS__)
 #pragma warn .8012
 #pragma warn .8022
@@ -410,7 +413,8 @@ void testVersion(database* db)
                 "mysql_server_Major = " << vv.versions[1].majorVersion);
             BOOST_CHECK_MESSAGE(
                 ((5 <= vv.versions[1].minorVersion) ||
-                 (0 == vv.versions[1].minorVersion)),
+                 (0 == vv.versions[1].minorVersion) ||
+                 (1 == vv.versions[1].minorVersion)),
                 "mysql_server_Miner = " << vv.versions[1].minorVersion);
             BOOST_CHECK_MESSAGE((int)'M' == (int)vv.versions[1].type,
                                 "mysql_server_Type = " << vv.versions[1].type);
@@ -2420,7 +2424,7 @@ void testLogin(database* db)
 #ifndef _UNICODE
         TCHAR buf[256];
         sprintf_s(buf, 256, "bad host db->stat()=%d", db->stat());
-        BOOST_MESSAGE(buf);
+        BOOST_TEST_MESSAGE(buf);
 #endif
     }
 
@@ -2750,7 +2754,7 @@ void doTestverField(table* tb, bool unicodeField, bool varCharField)
         bool f = string(tb->getFVAstr(1)) == string("0松本");
         BOOST_CHECK_MESSAGE(f, "Get Set A3");
         if (!f)
-            BOOST_MESSAGE(tb->getFVAstr(1));
+            BOOST_TEST_MESSAGE(tb->getFVAstr(1));
     }
     BOOST_CHECK_MESSAGE(string(tb->getFVAstr(2)) == string("68"), "Orverrun 2");
 
@@ -2845,13 +2849,13 @@ void testVarField(database* db)
     BOOST_CHECK_MESSAGE(0 == db->stat(), "open 1");
     table* tb = db->openTable(_T("user1"));
     BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable");
-    BOOST_MESSAGE("Start acp varchar");
+    BOOST_TEST_MESSAGE("Start acp varchar");
     doTestverField(tb, false, true);
     tb->release();
 
     tb = db->openTable(_T("user2"));
     BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable2");
-    BOOST_MESSAGE("Start acp varbinary");
+    BOOST_TEST_MESSAGE("Start acp varbinary");
     doTestverField(tb, false, false);
     tb->release();
 
@@ -2859,19 +2863,19 @@ void testVarField(database* db)
     {
         tb = db->openTable(_T("user3"));
         BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable3");
-        BOOST_MESSAGE("Start unicode varchar");
+        BOOST_TEST_MESSAGE("Start unicode varchar");
         doTestverField(tb, true, true);
         tb->release();
     }
     tb = db->openTable(_T("user4"));
     BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable4");
-    BOOST_MESSAGE("Start unicode varbinary");
+    BOOST_TEST_MESSAGE("Start unicode varbinary");
     doTestverField(tb, true, false);
     tb->release();
 
     tb = db->openTable(_T("user5"));
     BOOST_CHECK_MESSAGE(0 == db->stat(), "openTable5");
-    BOOST_MESSAGE("Start utf8 varchar");
+    BOOST_TEST_MESSAGE("Start utf8 varchar");
     doTestverField(tb, true, true);
 
     tb->release();
