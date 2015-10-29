@@ -136,10 +136,10 @@ THD* buildTHD()
     
     thd->thread_stack = reinterpret_cast<char*>(&thd);
     thd->store_globals();
-    assert(thd->mysys_var);
-	cp_set_mysys_var(thd->mysys_var);
-    thd->system_thread = NON_SYSTEM_THREAD;
+	thd->system_thread = NON_SYSTEM_THREAD;
 #ifndef MYSQL_578_LATER
+	assert(thd->mysys_var);
+	cp_set_mysys_var(thd->mysys_var);
     const NET v = { 0 };
     thd->net = v;
 #endif
@@ -168,11 +168,15 @@ THD* attachThd(THD* thd)
     else
     {
         initThread(thd);
+#ifndef MYSQL_578_LATER
         assert(thd->mysys_var);
+#endif
         if (curThd != thd)
         {
             thd->store_globals();
+#ifndef MYSQL_578_LATER
 			cp_set_mysys_var(thd->mysys_var);
+#endif
         }
     }
     return curThd;
