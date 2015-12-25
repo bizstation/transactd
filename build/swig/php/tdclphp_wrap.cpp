@@ -737,6 +737,7 @@ SWIG_UnpackDataName(const char *c, void *ptr, size_t sz, const char *name) {
  *
  * PHP runtime library
  * ----------------------------------------------------------------------------- */
+#include <string>  //FIX Visual studio 2015 compile error
 
 #ifdef __cplusplus
 extern "C" {
@@ -34494,3 +34495,5 @@ PHP_MINFO_FUNCTION(transactd)
 
 }
 /* end init section */
+
+
