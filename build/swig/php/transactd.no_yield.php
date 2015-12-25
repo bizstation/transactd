@@ -2231,6 +2231,14 @@ class database extends nsdatabase {
 		$this->__construct($r);
 	}
 
+	function createTable($utf8Sql_or_fileNum,$uri=null) {
+		switch (func_num_args()) {
+		case 1: $r=database_createTable($this->_cPtr,$utf8Sql_or_fileNum); break;
+		default: $r=database_createTable($this->_cPtr,$utf8Sql_or_fileNum,$uri);
+		}
+		return $r;
+	}
+
 	function getSqlStringForCreateTable($tableName) {
 		return database_getSqlStringForCreateTable($this->_cPtr,$tableName);
 	}

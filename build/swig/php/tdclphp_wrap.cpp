@@ -18169,6 +18169,65 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_database_createTable) {
+  bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
+  short arg2 ;
+  _TCHAR * arg2_s ;
+  char *arg3 = (_TCHAR *) 0 ;
+  zval **args[3];
+  bool result;
+  int argc = ZEND_NUM_ARGS();
+  
+  SWIG_ResetError(TSRMLS_C);
+  if((argc < 2 && argc > 3) || zend_get_parameters_array_ex(argc, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of database_createTable. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__database");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  if ((*args[1])->type == IS_LONG)
+  {
+    convert_to_long_ex(args[1]);
+    arg2 = (short) Z_LVAL_PP(args[1]);
+  }else if ((*args[1])->type == IS_STRING)
+  {
+     arg2_s = (char *) Z_STRVAL_PP(args[1]);
+  }
+  
+  if (argc == 3)
+  {
+    if ((*args[2])->type != IS_NULL) {
+      convert_to_string_ex(args[2]);
+      arg3 = (_TCHAR *) Z_STRVAL_PP(args[2]);
+    }
+  }
+  
+  {
+    try {
+      if (arg2_s)
+        result = (bool)(arg1)->createTable(arg2_s);
+      else
+        result = (bool)(arg1)->createTable(arg2,(_TCHAR const *)arg3);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_database_getSqlStringForCreateTable) {
   bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
@@ -31978,6 +32037,10 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database___clone, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_createtable, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_getsqlstringforcreatetable, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
@@ -33182,6 +33245,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(database_settablereadonly,_wrap_database_setTableReadOnly,swig_arginfo_database_settablereadonly)
  SWIG_ZEND_NAMED_FE(database_open,_wrap_database_open,swig_arginfo_database_open)
  SWIG_ZEND_NAMED_FE(database___clone,_wrap_database___clone,swig_arginfo_database___clone)
+ SWIG_ZEND_NAMED_FE(database_createtable,_wrap_database_createTable,swig_arginfo_database_createtable)
  SWIG_ZEND_NAMED_FE(database_getsqlstringforcreatetable,_wrap_database_getSqlStringForCreateTable,swig_arginfo_database_getsqlstringforcreatetable)
  SWIG_ZEND_NAMED_FE(database_create,_wrap_database_create,swig_arginfo_database_create)
  SWIG_ZEND_NAMED_FE(database_drop,_wrap_database_drop,swig_arginfo_database_drop)

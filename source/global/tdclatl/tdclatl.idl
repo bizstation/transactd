@@ -511,7 +511,7 @@ interface IDatabase : IDispatch
   HRESULT _stdcall CopyTableData([in] ITable* Dest, [in] ITable* Src, [in] VARIANT_BOOL Turbo,
 	  [in, defaultvalue(-1)] short KeyNum, [in, defaultvalue(-1)] int MaxSkip, [out, retval] short* Value);
   [id(0x000000E8)]
-  HRESULT _stdcall CreateTable([in] short FileNum, [in, defaultvalue("")] BSTR Uri, [out, retval] VARIANT_BOOL* Value);
+  HRESULT _stdcall CreateTable([in] VARIANT FileNumOrSql, [in, defaultvalue("")] BSTR Uri, [out, retval] VARIANT_BOOL* Value);
   [id(0x000000E9)]
   HRESULT _stdcall ExistsTableFile([in] short TableIndex, [in, defaultvalue("")] BSTR OwnerName);
   [propget, id(0x000000EB)]

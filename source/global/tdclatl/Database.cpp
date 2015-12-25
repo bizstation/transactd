@@ -431,10 +431,20 @@ STDMETHODIMP CDatabase::CopyTableData(ITable* Dest, ITable* Src,
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::CreateTable(short FileNum, BSTR Uri,
+STDMETHODIMP CDatabase::CreateTable(VARIANT FileNumOrSql, BSTR Uri,
                                     VARIANT_BOOL* Value)
 {
-    *Value = m_db->createTable(FileNum, Uri);
+    if (FileNumOrSql.vt == VT_BSTR && Uri[0]==0x00)
+    {
+        
+        int size = WideCharToMultiByte(CP_UTF8, 0, FileNumOrSql.bstrVal, -1, NULL, 0, NULL, NULL);
+        char* p = new char[size + 1];
+        WideCharToMultiByte(CP_UTF8, 0, FileNumOrSql.bstrVal, -1, p, size + 1, NULL, NULL);
+        *Value = m_db->createTable(p);
+        delete [] p;
+    }
+    else
+        *Value = m_db->createTable(FileNumOrSql.iVal, Uri);
     return S_OK;
 }
 

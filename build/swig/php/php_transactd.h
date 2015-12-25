@@ -386,6 +386,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_tableReadOnly);
 ZEND_NAMED_FUNCTION(_wrap_database_setTableReadOnly);
 ZEND_NAMED_FUNCTION(_wrap_database_open);
 ZEND_NAMED_FUNCTION(_wrap_database___clone);
+ZEND_NAMED_FUNCTION(_wrap_database_createTable);
 ZEND_NAMED_FUNCTION(_wrap_database_getSqlStringForCreateTable);
 ZEND_NAMED_FUNCTION(_wrap_database_create);
 ZEND_NAMED_FUNCTION(_wrap_database_drop);
