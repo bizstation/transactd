@@ -587,7 +587,7 @@ bool fielddef::operator==(const fielddef& r) const
             (userOption == r.userOption) &&
             (lookDBNum == r.lookDBNum) &&
             (keylen == r.keylen) &&
-            (m_options == r.m_options) &&
+            ((m_options & ~FIELD_OPTION_MARIADB) == (r.m_options & ~FIELD_OPTION_MARIADB)) &&
             (enableFlags.all == r.enableFlags.all);
 }
 
@@ -889,7 +889,7 @@ void tabledef::calcReclordlen(bool force)
                 firstTimeStamp = false;
             }
 
-            if (fd.type == ft_mytimestamp)
+            if (fd.type == ft_mytimestamp && fd.decimals == 0)
                 fd.decimals = (fd.len - 4) * 2;
             else if (fd.type == ft_mydatetime)
             {
@@ -897,11 +897,12 @@ void tabledef::calcReclordlen(bool force)
                     fd.m_options |= FIELD_OPTION_MARIADB;
                 else
                     fd.m_options &= ~FIELD_OPTION_MARIADB;
-                fd.decimals = (fd.len - 5) * 2;
+                // datetime decimals is different by server version 
+                if (fd.decimals == 0)
+                    fd.decimals = (fd.len - 5) * 2;
             }
-            else if (fd.type == ft_mytime)
+            else if (fd.type == ft_mytime && fd.decimals == 0)
                 fd.decimals = (fd.len - 3) * 2;
-
             else if (defaultValue && (fd.type == ft_myblob || fd.type == ft_mytext))
                 fd.setDefaultValue(0.0f);
 

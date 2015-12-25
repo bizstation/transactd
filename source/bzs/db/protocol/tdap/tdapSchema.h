@@ -802,6 +802,7 @@ public:
 #endif
     inline uchar_td nullbit() const {return m_nullbit;} // bit number for null indicator
     inline uchar_td nullbytes() const {return m_nullbytes;} // byte of null indicator which head of record memory block.
+    inline void setOptions(uchar_td v) {m_options = v;}
 private:
     uint_td compDataLen(const uchar_td* ptr, bool part) const;
     short synchronize(const fielddef* td);

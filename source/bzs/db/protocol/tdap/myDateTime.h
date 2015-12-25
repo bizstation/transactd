@@ -48,7 +48,7 @@ struct PACKAGE myDate
 	    int i;
 	};
     inline myDate() {};
-    inline myDate(int /*size*/, bool /*bigendian*/) {};
+    inline myDate(int /*dec*/, bool /*bigendian*/) {};
     void setValue(int v, bool btrvValue = false);
     int getValue(bool btrvValue = false);
     char* toStr(char* p, bool btrvValue = false);
@@ -64,7 +64,7 @@ struct PACKAGE myDate
 struct PACKAGE myTime
 {
 
-private:
+protected:
     int m_dec;
     bool m_bigendian;
 public:
@@ -84,10 +84,9 @@ public:
     };
 
 public:
-    inline myTime(int size, bool bigendian) : m_dec((size - 3) * 2 * (int)bigendian),
-                m_bigendian(bigendian){};
-    void setValue(__int64 v, bool btrvValue = false);
-    __int64 getValue(bool btrvValue = false);
+    inline myTime(int dec, bool bigendian) : m_dec(dec), m_bigendian(bigendian){};
+    virtual void setValue(__int64 v, bool btrvValue = false);
+    virtual __int64 getValue(bool btrvValue = false);
     char* toStr(char* p);
     myTime& operator=(const char* p);
 #ifdef _WIN32
@@ -98,6 +97,17 @@ public:
     void setInternalValue(__int64 v) { i64 = v; }
 };
 
+struct PACKAGE maTime : public  myTime
+{
+    virtual void setValue(__int64 v, bool btrvValue = false);
+    virtual __int64 getValue(bool btrvValue = false);
+public:
+    inline maTime(int dec, bool bigendian) : myTime(dec, bigendian){};
+    maTime& operator=(const char* p);
+#ifdef _WIN32
+    maTime& operator=(const wchar_t* p) ;
+#endif
+};
 
 struct PACKAGE myDateTime
 {
@@ -120,8 +130,7 @@ public:
         __int64 i64;
     };
 
-    inline myDateTime(int size, bool bigendian) : m_dec((size - 5) * 2 * (int)bigendian),
-                 m_bigendian(bigendian){};
+    inline myDateTime(int dec, bool bigendian) : m_dec(dec), m_bigendian(bigendian){};
     virtual void setValue(__int64 v);
     virtual __int64 getValue();
     inline char* toStr(char* p) const{ return dateTime_str(p, m_dec); }
@@ -149,7 +158,7 @@ struct PACKAGE maDateTime : public  myDateTime
     virtual void setValue(__int64 v);
     virtual __int64 getValue();
 public:
-    inline maDateTime(int size, bool bigendian) : myDateTime(size, bigendian){};
+    inline maDateTime(int dec, bool bigendian) : myDateTime(dec, bigendian){};
     maDateTime& operator=(const char* p);
 #ifdef _WIN32
     maDateTime& operator=(const wchar_t* p) ;
@@ -173,8 +182,7 @@ public:
         __int64 i64;
     };
 
-    inline myTimeStamp(int size, bool bigendian) : m_dec((size - 4) * 2 * (int)bigendian),
-                 m_bigendian(bigendian){};
+    inline myTimeStamp(int dec, bool bigendian) : m_dec(dec), m_bigendian(bigendian){};
     void setValue(__int64 v);
     __int64 getValue();
     char* toStr(char* p);
@@ -195,12 +203,13 @@ inline int btrdateToMydate(int btrd)
     return myd.getValue(true);
 }
 
+/* Do not work at maridab
 inline __int64 btrtimeToMytime(int btrt, bool bigendian)
 {
     myTime myt(4, bigendian);
     myt.setValue(btrt, true);
     return myt.getValue(true);
-}
+}*/
 
 inline int mydateToBtrdate(int mydate)
 {
@@ -209,42 +218,42 @@ inline int mydateToBtrdate(int mydate)
     return myd.getValue(true);
 }
 
-inline int mytimeToBtrtime(__int64 mytime, bool bigendian, int size)
+inline int mytimeToBtrtime(__int64 mytime, bool bigendian, int dec)
 {
-    myTime myt(size, bigendian);
+    myTime myt(dec, bigendian);
     myt.setValue(mytime);
     return (int)myt.getValue(true);
 }
 
 template <class T>
-__int64 getLittleEndianValue(int len, __int64 value)
+__int64 getLittleEndianValue(int dec, __int64 value)
 {
-    T t(len, true);
+    T t(dec, true);
     t.setValue(value);
     return t.internalValue();
 }
 
 template <class T>
-__int64 getBigEndianValue(int len, __int64 value)
+__int64 getBigEndianValue(int dec, __int64 value)
 {
-    T t(len, true);
+    T t(dec, true);
     t.setInternalValue(value);
     return t.getValue();
 }
 
 #pragma warning(disable : 4244)
 template <class T, typename CHAR>
-const CHAR* date_time_str(int len, bool bigendian, __int64 value, CHAR* buf)
+const CHAR* date_time_str(int dec, bool bigendian, __int64 value, CHAR* buf)
 {
-    T t(len, bigendian);
+    T t(dec, bigendian);
     t.setValue(value);
     return t.toStr(buf);
 }
 
 template <class T, class T2>
-inline __int64 str_to_64(int len, bool bigendian, const T2* data)
+inline __int64 str_to_64(int dec, bool bigendian, const T2* data)
 {
-    T t(len, bigendian);
+    T t(dec, bigendian);
     t = data;
     return t.getValue();
 }

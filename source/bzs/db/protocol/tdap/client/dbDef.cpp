@@ -289,6 +289,34 @@ short dbdef::validateTableDef(short TableIndex)
         //force use pad char
         if ((type == ft_mychar) || (type == ft_mywchar))
             td->fieldDefs[i].m_padCharOptions |= USE_PAD_CHAR;
+
+        if (type == ft_mytimestamp && (fd.decimals != 0))
+        {
+            int dec = (fd.len - 4) * 2;
+            if (fd.decimals > dec || fd.decimals < dec -1)
+            {
+                m_stat = STATUS_INVALID_FIELDLENGTH;
+                return m_stat;
+            }
+        }
+        if (type == ft_mytime && (fd.decimals != 0))
+        {
+            int dec = (fd.len - 3) * 2;
+            if (fd.decimals > dec || fd.decimals < dec -1)
+            {
+                m_stat = STATUS_INVALID_FIELDLENGTH;
+                return m_stat;
+            }
+        }
+        if (type == ft_mydatetime && (fd.decimals != 0))
+        {
+            int dec = (fd.len - 5) * 2;
+            if (fd.decimals > dec || fd.decimals < dec -1)
+            {
+                m_stat = STATUS_INVALID_FIELDLENGTH;
+                return m_stat;
+            }
+        }
     }
 
     // Check invalid key type
@@ -483,55 +511,60 @@ void dbdef::deleteKey(short TableIndex, short DeleteIndex)
     updateTableDef(TableIndex);
 }
 
-void dbdef::insertTable(tabledef* TableDef)
+void dbdef::insertTable(tabledef* td)
 {
     m_stat = STATUS_SUCCESS;
-    if (TableDef->id > TABLE_NUM_TMP)
+    if (td->id > TABLE_NUM_TMP)
     {
         m_stat = STATUS_TOO_MANY_TABLES;
         return;
     }
-    if (tableDefs(TableDef->id) != NULL)
+    if (tableDefs(td->id) != NULL)
     {
         m_stat = STATUS_DUPPLICATE_KEYVALUE;
         return;
     }
 
-    if (tableNumByName(TableDef->tableName()) != -1)
+    if (tableNumByName(td->tableName()) != -1)
     {
         m_stat = STATUS_DUPPLICATE_KEYVALUE;
         return;
     }
-    if (TableDef->fieldCount > 512)
+    if (td->fieldCount > 512)
     {
         m_stat = STATUS_TOO_MANY_FIELDS;
         return;
     }
-    m_dimpl->tableDefs[TableDef->id] =
+
+    // set temp server version
+    td->m_useInMariadb = true;
+    td->m_srvMinorVer = 0;
+
+    m_dimpl->tableDefs[td->id] =
         (tabledef*)malloc(USHRT_MAX /* sizeof(tabledef) */);
-    if (m_dimpl->tableDefs[TableDef->id] == NULL)
+    if (m_dimpl->tableDefs[td->id] == NULL)
     {
         m_stat = STATUS_CANT_ALLOC_MEMORY;
         return;
     }
-    if ((TableDef->ddfid == 0) && (m_dimpl->deftype == TYPE_SCHEMA_DDF))
-        TableDef->ddfid = getDDFNewTableIndex();
-    memcpy(m_dimpl->tableDefs[TableDef->id], TableDef, sizeof(tabledef));
+    if ((td->ddfid == 0) && (m_dimpl->deftype == TYPE_SCHEMA_DDF))
+        td->ddfid = getDDFNewTableIndex();
+    memcpy(m_dimpl->tableDefs[td->id], td, sizeof(tabledef));
     if (m_dimpl->noWriteMode)
     {
-        if (m_dimpl->tableCount < TableDef->id)
-            m_dimpl->tableCount = TableDef->id;
+        if (m_dimpl->tableCount < td->id)
+            m_dimpl->tableCount = td->id;
         return;
     }
-    TableDef->formatVersion = FORMAT_VERSON_CURRENT;
+    td->formatVersion = FORMAT_VERSON_CURRENT;
     if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
-        saveDDF(TableDef->id, 2);
+        saveDDF(td->id, 2);
     else
     {
-        memcpy(m_dimpl->bdf, TableDef, sizeof(tabledef));
+        memcpy(m_dimpl->bdf, td, sizeof(tabledef));
         m_pdata = m_dimpl->bdf;
 
-        memcpy(m_keybuf, &TableDef->id, 2);
+        memcpy(m_keybuf, &td->id, 2);
         m_buflen = sizeof(tabledef);
         insert();
         m_pdata = m_dimpl->bdf;
@@ -539,13 +572,13 @@ void dbdef::insertTable(tabledef* TableDef)
     }
     if (m_stat != 0)
     {
-        free(m_dimpl->tableDefs[TableDef->id]);
-        m_dimpl->tableDefs[TableDef->id] = NULL;
+        free(m_dimpl->tableDefs[td->id]);
+        m_dimpl->tableDefs[td->id] = NULL;
     }
     else
     {
-        if (m_dimpl->tableCount < TableDef->id)
-            m_dimpl->tableCount = TableDef->id;
+        if (m_dimpl->tableCount < td->id)
+            m_dimpl->tableCount = td->id;
     }
 }
 
