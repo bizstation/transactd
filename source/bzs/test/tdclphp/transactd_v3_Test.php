@@ -419,7 +419,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
 
         $q->select("id", "name", "group", "tel")->where("id", "<=", 10);
         $rs = $atu->index(0)->keyValue(1)->read($q);
-        return;
         $this->assertEquals($rs->count(), 10);
         $rec = $rs->first();
         $this->assertEquals($rec[3]->isNull(), true);
