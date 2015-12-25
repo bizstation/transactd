@@ -344,6 +344,8 @@ ZEND_NAMED_FUNCTION(_wrap_query_in);
 ZEND_NAMED_FUNCTION(_wrap_new_bitset);
 ZEND_NAMED_FUNCTION(_wrap_bitset_set);
 ZEND_NAMED_FUNCTION(_wrap_bitset_get);
+ZEND_NAMED_FUNCTION(_wrap_bitset_equals);
+ZEND_NAMED_FUNCTION(_wrap_bitset_contains);
 ZEND_NAMED_FUNCTION(_wrap_new_nsdatabase);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_enableTrn);
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_stat);

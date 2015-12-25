@@ -388,12 +388,12 @@ using namespace bzs::db::protocol::tdap::client;
 
   // bitset for field class
 %extend bzs::db::protocol::tdap::client::field {
-  bitset* getBits() {
+  bitset* getBits() const {
     bitset* b = new bitset(self->i64());
     return b;
   }
 };
-%ignore bzs::db::protocol::tdap::client::fielddefs::getBits;
+%ignore bzs::db::protocol::tdap::client::field::getBits;
 
 
   // create and release methods for fielddefs class
@@ -694,8 +694,10 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::getFVsht;
 %ignore bzs::db::protocol::tdap::client::table::getFVlng;
 %ignore bzs::db::protocol::tdap::client::table::getFVflt;
-
 %ignore bzs::db::protocol::tdap::client::table::insertBookmarks;
+%rename(equals) bzs::db::protocol::tdap::client::bitset::operator==;
+%ignore bzs::db::protocol::tdap::client::bitset::operator[];
+%ignore bzs::db::protocol::tdap::client::bitset::internalValue;
 
   // create and release methods for query class
 %extend bzs::db::protocol::tdap::client::query {

@@ -13721,7 +13721,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_setFV) {
         }
         if(!b) SWIG_PHP_Error(E_ERROR, "bitset pointer is NULL");
         {
-          tb->setFV(index, b->i64());
+          tb->setFV(index, b->internalValue());
         }
       }
       else
@@ -16379,6 +16379,96 @@ ZEND_NAMED_FUNCTION(_wrap_bitset_get) {
   {
     try {
       result = (bool)(arg1)->get(arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_bitset_equals) {
+  bzs::db::protocol::tdap::client::bitset *arg1 = (bzs::db::protocol::tdap::client::bitset *) 0 ;
+  bzs::db::protocol::tdap::client::bitset *arg2 = 0 ;
+  zval **args[2];
+  bool result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__bitset, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of bitset_equals. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__bitset");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if(SWIG_ConvertPtr(*args[1], (void **) &arg2, SWIGTYPE_p_bzs__db__protocol__tdap__client__bitset, 0) < 0 || arg2 == NULL) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of bitset_equals. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__bitset");
+    }
+  }
+  {
+    try {
+      result = (bool)((bzs::db::protocol::tdap::client::bitset const *)arg1)->operator ==((bzs::db::protocol::tdap::client::bitset const &)*arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_bitset_contains) {
+  bzs::db::protocol::tdap::client::bitset *arg1 = (bzs::db::protocol::tdap::client::bitset *) 0 ;
+  bzs::db::protocol::tdap::client::bitset *arg2 = 0 ;
+  bool arg3 = true ;
+  zval **args[3];
+  bool result;
+  int argc = ZEND_NUM_ARGS();
+  SWIG_ResetError(TSRMLS_C);
+  if((argc < 2) || (argc > 3) || zend_get_parameters_array_ex(argc, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__bitset, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of bitset_contains. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__bitset");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if(SWIG_ConvertPtr(*args[1], (void **) &arg2, SWIGTYPE_p_bzs__db__protocol__tdap__client__bitset, 0) < 0 || arg2 == NULL) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of bitset_contains. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__bitset");
+    }
+  }
+  
+  if (argc == 3)
+  {
+    /*@SWIG:F:\buildtools\swigwin-3.0.2\Lib\php\utils.i,2,CONVERT_BOOL_IN@*/
+    convert_to_boolean_ex(args[2]);
+    arg3 = (bool) Z_LVAL_PP(args[2]);
+    /*@SWIG@*/;
+  }
+  
+  {
+    try {
+      result = (bool)((bzs::db::protocol::tdap::client::bitset const *)arg1)->contains((bzs::db::protocol::tdap::client::bitset const &)*arg2,arg3);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -22857,7 +22947,7 @@ ZEND_NAMED_FUNCTION(_wrap_field_setFV) {
       
       if(!b) SWIG_PHP_Error(E_ERROR, "bitset pointer is NULL");
       {
-        arg2_64 = b->i64();
+        arg2_64 = b->internalValue();
       }
     }
     default: {
@@ -29194,7 +29284,7 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_keyValue) {
         }
         if(!b) SWIG_PHP_Error(E_ERROR, "bitset pointer is NULL");
         {
-          tb->setFV(fnum, b->i64());
+          tb->setFV(fnum, b->internalValue());
         }
       }
       else
@@ -31750,6 +31840,15 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_bitset_get, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_bitset_equals, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_bitset_contains, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_supplyvalues, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
@@ -33091,6 +33190,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(new_bitset,_wrap_new_bitset,swig_arginfo_new_bitset)
  SWIG_ZEND_NAMED_FE(bitset_set,_wrap_bitset_set,swig_arginfo_bitset_set)
  SWIG_ZEND_NAMED_FE(bitset_get,_wrap_bitset_get,swig_arginfo_bitset_get)
+ SWIG_ZEND_NAMED_FE(bitset_equals,_wrap_bitset_equals,swig_arginfo_bitset_equals)
+ SWIG_ZEND_NAMED_FE(bitset_contains,_wrap_bitset_contains,swig_arginfo_bitset_contains)
  SWIG_ZEND_NAMED_FE(new_nsdatabase,_wrap_new_nsdatabase,swig_arginfo_new_nsdatabase)
  SWIG_ZEND_NAMED_FE(nsdatabase_enabletrn,_wrap_nsdatabase_enableTrn,swig_arginfo_nsdatabase_enabletrn)
  SWIG_ZEND_NAMED_FE(nsdatabase_stat,_wrap_nsdatabase_stat,swig_arginfo_nsdatabase_stat)

@@ -2035,6 +2035,14 @@ class bitset implements \ArrayAccess {
 	function get($index) {
 		return bitset_get($this->_cPtr,$index);
 	}
+
+	function equals($r_) {
+		return bitset_equals($this->_cPtr,$r_);
+	}
+
+	function contains($r_,$all=true) {
+		return bitset_contains($this->_cPtr,$r_,$all);
+	}
 	
 	// ArrayAccess
 	public function offsetExists($offset) {

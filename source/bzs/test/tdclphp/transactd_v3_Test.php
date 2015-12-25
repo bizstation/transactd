@@ -686,4 +686,24 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($bits[13], false);
 
     }
+    
+    public function test_bitset()
+    {
+        $bits1 = new  bz\bitset();
+        $bits2 = new  bz\bitset();
+        $bits1[0] = true;
+        $bits1[1] = true;
+        $bits1[63] = true;
+        
+        $bits2[0] = true;
+        $bits2[1] = false;
+        $bits2[63] = true;
+        
+        $this->assertEquals($bits1->equals($bits2), false);
+        $this->assertEquals($bits1->contains($bits2), true);
+        $this->assertEquals($bits2->contains($bits1), false);
+        
+        $all = false;
+        $this->assertEquals($bits2->contains($bits1, $all), true);
+    }
 }

@@ -177,14 +177,18 @@ class DLLLIB field
 #ifdef _UNICODE
     inline const wchar_t* getFVstr() const { return getFVWstr(); };
     inline void setFV(const wchar_t* data) { setFVW(data); };
+    inline void setFV(const std::wstring& p)  { setFVW(p.c_str()); }
 #else
     inline const char* getFVstr() const { return getFVAstr(); };
-    inline void setFV(const char* data) { setFVA(data); };
 #endif
+    inline void setFV(const char* data) { setFVA(data); };
     inline void setFV(float data){ setFV((double)data); }
     inline void setFV(unsigned char data) { setFV((__int64)data); }
     inline void setFV(short data)  { setFV((__int64)data); }
     inline void setFV(int data)  { setFV((__int64)data); }
+    inline void setFV(const std::string& p) { setFVA(p.c_str()); };
+    inline void setFV(const bitset& v) { setFV(v.internalValue()); };
+    
     //  ---- end regacy interfaces ----  //
 
 /** @cond INTERNAL */
@@ -253,69 +257,11 @@ public:
     bool isNull() const;
 
     void setNull(bool v);
-
-    inline field& operator=(const _TCHAR* p)
+    
+    template <class T>
+    inline field& operator=(const T c)
     {
-        setFV(p);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-    inline field& operator=(const std::_tstring& p)
-    {
-        setFV(p.c_str());
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-#ifdef _UNICODE
-    inline field& operator=(const char* p)
-    {
-        setFVA(p);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-    inline field& operator=(const std::string& p)
-    {
-        setFVA(p.c_str());
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-#endif
-
-    inline field& operator=(int v)
-    {
-        setFV(v);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-    inline field& operator=(__int64 v)
-    {
-        setFV(v);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-    inline field& operator=(float v)
-    {
-        setFV(v);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-    inline field& operator=(double v)
-    {
-        setFV(v);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-    inline field& operator=(const bitset& v)
-    {
-        setFV(v.i64());
+        setFV(c);
         m_fd->enableFlags.bitE = true;
         return *this;
     }
