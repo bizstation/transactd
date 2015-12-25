@@ -23085,56 +23085,18 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_Record_getField__SWIG_0) {
-  bzs::db::protocol::tdap::client::fieldsBase *arg1 = (bzs::db::protocol::tdap::client::fieldsBase *) 0 ;
-  short arg2 ;
-  zval **args[2];
-  bzs::db::protocol::tdap::client::field result;
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of Record_getField. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
-  convert_to_long_ex(args[1]);
-  arg2 = (short) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  {
-    try {
-      result = ((bzs::db::protocol::tdap::client::fieldsBase const *)arg1)->operator [](arg2);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  {
-    bzs::db::protocol::tdap::client::field * resultobj = new bzs::db::protocol::tdap::client::field((const bzs::db::protocol::tdap::client::field &) result);
-    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 1);
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_Record_getField__SWIG_1) {
+ZEND_NAMED_FUNCTION(_wrap_Record_getField) {
   bzs::db::protocol::tdap::client::fieldsBase *arg1 = (bzs::db::protocol::tdap::client::fieldsBase *) 0 ;
   _TCHAR *arg2 = (_TCHAR *) 0 ;
+  short arg2_s = -1;
   zval **args[2];
   bzs::db::protocol::tdap::client::field result;
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+
+  int argc = ZEND_NUM_ARGS();
+
+  if(argc != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -23145,14 +23107,21 @@ ZEND_NAMED_FUNCTION(_wrap_Record_getField__SWIG_1) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
-    if ((*args[1])->type != IS_NULL) {
+    if ((*args[1])->type == IS_LONG)
+    {
+      convert_to_long_ex(args[1]);
+      arg2_s = (short) Z_LVAL_PP(args[1]);
+    }
+    else if ((*args[1])->type != IS_NULL) {
       convert_to_string_ex(args[1]);
       arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
     }
   }
   {
     try {
-      result = ((bzs::db::protocol::tdap::client::fieldsBase const *)arg1)->operator []((_TCHAR const *)arg2);
+      if (arg2_s == -1)
+         arg2_s = arg1->indexByName(arg2);
+      result = ((bzs::db::protocol::tdap::client::fieldsBase const *)arg1)->operator [](arg2_s);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -23165,47 +23134,6 @@ ZEND_NAMED_FUNCTION(_wrap_Record_getField__SWIG_1) {
   }
   return;
 fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_Record_getField) {
-  int argc;
-  zval **argv[2];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc,argv);
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(*argv[0], (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, 0) >= 0);
-    }
-    if (_v) {
-      _v = (Z_TYPE_PP(argv[1]) == IS_LONG); 
-      if (_v) {
-        _wrap_Record_getField__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(*argv[0], (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, 0) >= 0);
-    }
-    if (_v) {
-      {
-        _v = 1;
-      }
-      if (_v) {
-        _wrap_Record_getField__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
-  }
-  
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'Record_getField'";
   SWIG_FAIL(TSRMLS_C);
 }
 

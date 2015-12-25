@@ -3546,10 +3546,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $rs = $atu->keyValue(1)->read($stmt1, 15000);
         $ate->outerJoin($rs, $stmt2, 'id');
         $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs[NO_RECORD_ID - 1]->isInvalidRecord(), true);
         $atg->outerJoin($rs, $stmt3, 'group');
         $this->assertEquals($rs->size(), 15000);
         
-        $this->assertEquals($rs[NO_RECORD_ID - 1]->isInvalidRecord(), true);
         $this->assertEquals($rs[NO_RECORD_ID]['comment'], '' . (NO_RECORD_ID + 1) . ' comment');
         $this->assertEquals($rs[NO_RECORD_ID]['blob'], '' . (NO_RECORD_ID + 1) . ' blob');
         
@@ -3561,13 +3561,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $ate->outerJoin($rs, $stmt2, 'id');
         $this->assertEquals($rs->size(), 15000);
         $this->assertEquals($rs[NO_RECORD_ID - 1]->isInvalidRecord(), true);
+        $this->assertEquals($rs[NO_RECORD_ID - 1]->getField('comment')->isNull(), true);
         $this->assertEquals($rs[NO_RECORD_ID]['comment'], '' . (NO_RECORD_ID + 1) . ' comment');
         $this->assertEquals($rs[NO_RECORD_ID]['blob'], '' . (NO_RECORD_ID + 1) . ' blob');
         
         // Test clone blob field
         $rs2 = clone($rs);
         $this->assertEquals($rs2->size(), 15000);
-        $this->assertEquals($rs2[NO_RECORD_ID - 1]->isInvalidRecord(), true);
+        //$this->assertEquals($rs2[NO_RECORD_ID - 1]->isInvalidRecord(), true);
+        $this->assertEquals($rs2[NO_RECORD_ID - 1]->getField('comment')->isNull(), true);
         $this->assertEquals($rs2[NO_RECORD_ID]['comment'], '' . (NO_RECORD_ID + 1) . ' comment');
         $this->assertEquals($rs2[NO_RECORD_ID]['blob'], '' . (NO_RECORD_ID + 1) . ' blob');
         
