@@ -4190,8 +4190,7 @@ void testJoin(database* db)
     gq.addFunction(&count3).keyField(_T("group")); //.resultField(_T("count"));
     rs.groupBy(gq);
     BOOST_CHECK_MESSAGE(rs.size() == 5,
-                        "group by2  rs.size()==" << rsv->size());
-
+                        "group by2  rs.size()==" << rs.size());
     // having
     recordsetQuery rq;
     rq.when(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
@@ -4422,10 +4421,10 @@ void testServerPrepareJoin(database* db)
     atu.keyValue(1).read(rs, stmt1, 15000);
     ate.outerJoin(rs, stmt2, _T("id"));
     BOOST_CHECK_MESSAGE(rs.size() == 15000, "outerJoin  rs.size()== 15000");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
     atg.outerJoin(rs, stmt3, _T("group"));
     BOOST_CHECK_MESSAGE(rs.size() == 15000, "join2  rs.size()== 15000");
 
-    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
     BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID][_T("comment")].i() == NO_RECORD_ID+1, "row of 6 = '6 comment'");
     vs = rs[NO_RECORD_ID][_T("blob")].c_str();
     ret = _tcscmp(vs, _T("6 blob")) == 0; 
@@ -4439,6 +4438,7 @@ void testServerPrepareJoin(database* db)
     ate.outerJoin(rs, stmt2, _T("id"));
     BOOST_CHECK_MESSAGE(rs.size() == 15000, "outerJoin  rs.size()== 15000");
     BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1][_T("comment")].isNull() == true, "outerJoin NULL");
     BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID][_T("comment")].i() == NO_RECORD_ID+1, "row of 6 = '6 comment'");
     vs = rs[NO_RECORD_ID][_T("blob")].c_str();
     ret = _tcscmp(vs, _T("6 blob")) == 0; 
@@ -4451,7 +4451,8 @@ void testServerPrepareJoin(database* db)
     // Test clone blob field
     recordset& rs2 = *rs.clone();
     BOOST_CHECK_MESSAGE(rs2.size() == 15000, "outerJoin  rs2.size()== 15000");
-    BOOST_CHECK_MESSAGE(rs2[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
+    //BOOST_CHECK_MESSAGE(rs2[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1][_T("comment")].isNull() == true, "outerJoin NULL");
     BOOST_CHECK_MESSAGE(rs2[NO_RECORD_ID][_T("comment")].i() == NO_RECORD_ID+1, "row of 6 = '6 comment'");
     vs = rs2[NO_RECORD_ID][_T("blob")].c_str();
     ret = _tcscmp(vs, _T("6 blob")) == 0; 

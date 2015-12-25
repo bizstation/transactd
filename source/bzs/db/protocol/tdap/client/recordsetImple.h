@@ -439,6 +439,7 @@ public:
 #pragma warn .8072
                     autoMemory* a = amar + amindex;
                     const boost::shared_ptr<autoMemory>& am = p->m_memblock[index];
+                    // isInvalidRecord will be reset.
                     mr->setRecordData(a, ptr, mb.size, am->endFieldIndex, mb.owner);
                     ++amindex;
                 }

@@ -167,10 +167,10 @@ protected:
     virtual void setRecordData(autoMemory* am, unsigned char* ptr, size_t size,
                                short* endFieldIndex, bool owner = false){};
 
-    inline void setInvalidRecord(short v) 
+    inline void setInvalidRecord(short index) 
     { 
-        int num = memoryBlockIndex(v);
-        m_InvalidFlags |= (1L << num);  
+        int num = memoryBlockIndex(index);
+        m_InvalidFlags |= ((2L << num) | 1L);  
     }
 
     /** @endcond */
@@ -178,13 +178,18 @@ public:
 
     virtual ~fieldsBase(){};
 
-    inline bool isInvalidRecord() const { return (m_InvalidFlags & 1) != 0; }
+    inline bool isInvalidRecord() const 
+    { 
+        return (m_InvalidFlags & 1) != 0; 
+    }
 
     inline field getFieldNoCheck(short index) const
     {
         unsigned char* p = ptr(index);
-        return field(p, (*m_fns)[index], m_fns,
-            (m_InvalidFlags & (1L << memoryBlockIndexCache())) != 0);
+        bool nullfield = (m_InvalidFlags &
+                            (2L << memoryBlockIndexCache())) != 0;
+
+        return field(p, (*m_fns)[index], m_fns, nullfield);
     }
 
     inline field operator[](short index) const

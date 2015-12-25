@@ -204,6 +204,7 @@ void memoryRecord::setRecordData(autoMemory* am, unsigned char* ptr,
     m_memblock[m_memblockSize] = am;
     ++m_memblockSize;
 #endif
+    m_InvalidFlags &= ~1L;  
 }
 
 void memoryRecord::copyToBuffer(table* tb, bool updateOnly) const
