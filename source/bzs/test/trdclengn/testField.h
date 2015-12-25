@@ -304,6 +304,183 @@ short createTestInMany(database* db)
     return 1;
 }
 
+short createTestNull(database* db)
+{
+    try
+    {
+        dbdef* def = db->dbDef();
+        short tableid = 5;
+
+        insertTable(def, tableid,  _T("nullvalue"), g_td_charsetIndex);
+        tabledef* td = def->tableDefs(tableid);
+        td->primaryKeyNum = 0;
+        
+        short fieldnum = 0;
+        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
+        fd = insertField(def, tableid, ++fieldnum, _T("id2"), ft_integer, 4);
+        fd->setNullable(true);
+        fd = insertField(def, tableid, ++fieldnum, _T("id3"), ft_integer, 4);
+        fd->setNullable(true);
+        fd = insertField(def, tableid, ++fieldnum, _T("name"), ft_myvarchar, 151);
+        fd->setLenByCharnum(50);
+        fd->setNullable(true);
+
+        keydef* kd = insertKey(def, tableid, 0);
+        kd->segments[0].fieldNum = 0;
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segmentCount = 1;
+
+        kd = insertKey(def, tableid, 1);
+        kd->segments[0].fieldNum = 1;
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segments[0].flags.kf_duplicatable = 1;
+        kd->segmentCount = 1;
+
+        kd = insertKey(def, tableid, 2);
+        kd->segments[0].fieldNum = 1;
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segments[0].flags.kf_duplicatable = 1;
+        kd->segments[1].fieldNum = 2;
+        kd->segments[1].flags.kf_extend = 1;
+        kd->segments[1].flags.kf_changeatable = 1;
+        kd->segments[1].flags.kf_duplicatable = 1;
+        kd->segmentCount = 2;
+        updateTableDef(def, tableid);
+        return 0;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        _tprintf(_T("Error! %s\n"), (*getMsg(e)).c_str());
+    }
+    return 1;
+}
+
+short createTestGroups(database* db)
+{
+    try
+    {
+        dbdef* def = db->dbDef();
+        short tableid = 6;
+
+        insertTable(def, tableid,  _T("groups"), g_td_charsetIndex);
+        tabledef* td = def->tableDefs(tableid);
+        td->primaryKeyNum = 0;
+        
+        short fieldnum = 0;
+        fielddef* fd = insertField(def, tableid, fieldnum, _T("pri_id"), ft_autoinc, 4);
+        fd = insertField(def, tableid, ++fieldnum, _T("id"), ft_integer, 4);
+        fd->setNullable(true);
+        fd = insertField(def, tableid, ++fieldnum, _T("name"), ft_myvarchar, 151);
+        fd->setLenByCharnum(50);
+
+        keydef* kd = insertKey(def, tableid, 0);
+        kd->segments[0].fieldNum = 0;
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segmentCount = 1;
+
+        kd = insertKey(def, tableid, 1);
+        kd->segments[0].fieldNum = 1;
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segments[0].flags.kf_duplicatable = 1;
+        kd->segmentCount = 1;
+
+        kd = insertKey(def, tableid, 2);
+        kd->segments[0].fieldNum = 0;
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segments[1].fieldNum = 1;
+        kd->segments[1].flags.kf_extend = 1;
+        kd->segments[1].flags.kf_changeatable = 1;
+        kd->segments[1].flags.kf_duplicatable = 1;
+        kd->segmentCount = 2;
+        updateTableDef(def, tableid);
+        return 0;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        _tprintf(_T("Error! %s\n"), (*getMsg(e)).c_str());
+    }
+    return 1;
+}
+
+short createTestUsers(database* db)
+{
+    try
+    {
+        dbdef* def = db->dbDef();
+        short tableid = 7;
+
+        insertTable(def, tableid,  _T("users"), g_td_charsetIndex);
+        tabledef* td = def->tableDefs(tableid);
+        td->primaryKeyNum = 0;
+        
+        short fieldnum = 0;
+        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
+        fd = insertField(def, tableid, ++fieldnum, _T("group"), ft_integer, 4);
+        fd->setNullable(true);
+        fd = insertField(def, tableid, ++fieldnum, _T("class"), ft_integer, 4);
+        fd->setNullable(true);
+        fd = insertField(def, tableid, ++fieldnum, _T("name"), ft_myvarchar, 151);
+        fd->setLenByCharnum(50);
+
+        keydef* kd = insertKey(def, tableid, 0);
+        kd->segments[0].fieldNum = 0;
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segmentCount = 1;
+
+        kd = insertKey(def, tableid, 1);
+        kd->segments[0].fieldNum = 1;
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segments[0].flags.kf_duplicatable = 1;
+        kd->segmentCount = 1;
+        updateTableDef(def, tableid);
+        return 0;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        _tprintf(_T("Error! %s\n"), (*getMsg(e)).c_str());
+    }
+    return 1;
+}
+
+short createTestScores(database* db)
+{
+    try
+    {
+        dbdef* def = db->dbDef();
+        short tableid = 8;
+
+        insertTable(def, tableid,  _T("scores"), g_td_charsetIndex);
+        tabledef* td = def->tableDefs(tableid);
+        td->primaryKeyNum = 0;
+        
+        short fieldnum = 0;
+        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
+        fd = insertField(def, tableid, ++fieldnum, _T("subject"), ft_integer, 4);
+        fd = insertField(def, tableid, ++fieldnum, _T("score"), ft_integer, 4);
+        fd->setNullable(true);
+
+        keydef* kd = insertKey(def, tableid, 0);
+        kd->segments[0].fieldNum = 0;
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segmentCount = 1;
+        updateTableDef(def, tableid);
+        return 0;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        _tprintf(_T("Error! %s\n"), (*getMsg(e)).c_str());
+    }
+    return 1;
+}
 
 class fixtureFieldStore
 {
@@ -346,6 +523,14 @@ public:
                         ret = createTestTableHA_OPTION_PACK_RECORD(m_db);
                     if (ret == 0)
                         ret = createTestInMany(m_db);
+                    if (ret == 0)
+                        ret = createTestNull(m_db);
+                    if (ret == 0)
+                        ret = createTestGroups(m_db);
+                    if (ret == 0)
+                        ret = createTestUsers(m_db);
+                    if (ret == 0)
+                        ret = createTestScores(m_db);
 
                     if (ret == 0)
                         m_db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
@@ -986,8 +1171,6 @@ void test_NOT_HA_OPTION_PACK_RECORD(database* db)
 
 }
 
-
-
 void insertInManyData(table_ptr tb)
 {
     short fieldNum = 0;
@@ -1037,18 +1220,231 @@ void insertInManyData(table_ptr tb)
     tb->setFV(++fieldNum, (_TCHAR*)NULL);
     tb->insert();
     BOOST_CHECK(tb->stat() == 0);
+}
 
+void insertGroupsData(table_ptr tb)
+{
+    short fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, _T("Administrators"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 2);
+    tb->setFV(++fieldNum, _T("Users"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, _T("Guests"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, _T("Unknowns"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+}
+
+void insertUsersData(table_ptr tb)
+{
+    short fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, _T("John"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 2);
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, _T("Alice"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, _T("Pochi"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 2);
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, _T("Bob"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, 2);
+    tb->setFV(++fieldNum, _T("Tama"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 4);
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, _T("Microsoft"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 2);
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, _T("Susie"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, _T("Taro"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 4);
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, _T("Google"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, _T("Lee"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, _T("Hanako"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+}
+
+void insertScoresData(table_ptr tb)
+{
+    short fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, 80);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, 70);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, 50);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 2);
+    tb->setFV(++fieldNum, 90);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 2);
+    tb->setFV(++fieldNum, 85);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, 80);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, 70);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, 50);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, 0);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, 60);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 2);
+    tb->setFV(++fieldNum, 87);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+    
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, 90);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
 }
 
 void testInMany(database* db)
 {
     short tableid = 4;
-    //db = database::create();
-    //db->open(makeUri(PROTOCOL, _T("192.168.3.159"), _T("nulltest"), _T("transactd_schema")), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
     {
         table_ptr tb = openTable(db, tableid, TD_OPEN_NORMAL);
         insertInManyData(tb);
-    }
+    } 
     activeTable atv(db, _T("nullkey"));
     atv.index(1);
     query q;
@@ -1115,6 +1511,566 @@ void testInMany(database* db)
     BOOST_CHECK(rs.size() == 2);
     BOOST_CHECK(rs[0][_T("id")] == 4);
     BOOST_CHECK(rs[1][_T("id")] == 5);
+}
+
+void testNullValue(database* db)
+{
+    {
+        short tableid = 5;
+        table_ptr tb = openTable(db, tableid, TD_OPEN_NORMAL);
+        insertInManyData(tb);
+        tableid = 6;
+        table_ptr tbg = openTable(db, tableid, TD_OPEN_NORMAL);
+        insertGroupsData(tbg);
+        tableid = 7;
+        table_ptr tbu = openTable(db, tableid, TD_OPEN_NORMAL);
+        insertUsersData(tbu);
+        tableid = 8;
+        table_ptr tbs = openTable(db, tableid, TD_OPEN_NORMAL);
+        insertScoresData(tbs);
+    }
+    activeTable atv(db, _T("nullvalue"));
+    atv.index(1);
+    activeTable atg(db, "groups");
+    atg.alias(_T("id"), _T("group_id")).alias(_T("name"), _T("group_name"));
+    atg.index(1);
+    activeTable atu(db, "users");
+    atu.index(0);
+    activeTable ats(db, "scores");
+    ats.index(0);
+    query q;
+    recordsetQuery rq;
+    groupQuery gq;
+    recordset rs;
+    fieldNames fns;
+    fns.keyField(_T("score"));
+    bzs::db::protocol::tdap::client::count countFunc(_T("row_count"));
+    bzs::db::protocol::tdap::client::count  countField(fns, _T("valid_row"));
+    bzs::db::protocol::tdap::client::sum    sumField(fns, _T("sum"));
+    bzs::db::protocol::tdap::client::avg    avgField(fns, _T("avg"));
+    bzs::db::protocol::tdap::client::min    minField(fns, _T("min"));
+    bzs::db::protocol::tdap::client::max    maxField(fns, _T("max"));
+    
+    // [1] WHERE id2 = 0
+    // query
+    rs.clear();
+    q.reset().where(_T("id2"), _T("="), 0).reject(0);
+    atv.keyValue((char *)NULL).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 0);
+    // query reverse
+    rs.clear();
+    q.reset().where(_T("id2"), _T("="), 0).reject(0).direction(table::eFindType::findBackForword);
+    atv.keyValue(100).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 0);
+    // recordsetQuery
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    rq.reset();
+    rq.when(_T("id2"), _T("="), 0);
+    rs.matchBy(rq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 0);
+    
+    // [2] WHERE id2 <> 0
+    // query
+    rs.clear();
+    q.reset().where(_T("id2"), _T("<>"), 0).reject(0);
+    atv.keyValue((char *)NULL).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1][_T("id")] == 3);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    BOOST_CHECK(rs[3][_T("id")] == 5);
+    // query reverse
+    rs.clear();
+    q.reset().where(_T("id2"), _T("<>"), 0).reject(0).direction(table::eFindType::findBackForword);
+    atv.keyValue(100).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 5);
+    BOOST_CHECK(rs[1][_T("id")] == 4);
+    BOOST_CHECK(rs[2][_T("id")] == 3);
+    BOOST_CHECK(rs[3][_T("id")] == 1);
+    // recordsetQuery
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    rq.reset();
+    rq.when(_T("id2"), _T("<>"), 0);
+    rs.matchBy(rq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1][_T("id")] == 3);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    BOOST_CHECK(rs[3][_T("id")] == 5);
+    
+    // [3] WHERE id2 >= 0
+    // query
+    rs.clear();
+    q.reset().where(_T("id2"), _T(">="), 0).reject(0);
+    atv.keyValue((char *)NULL).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1][_T("id")] == 3);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    BOOST_CHECK(rs[3][_T("id")] == 5);
+    // query reverse
+    rs.clear();
+    q.reset().where(_T("id2"), _T(">="), 0).reject(0).direction(table::eFindType::findBackForword);
+    atv.keyValue(100).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 5);
+    BOOST_CHECK(rs[1][_T("id")] == 4);
+    BOOST_CHECK(rs[2][_T("id")] == 3);
+    BOOST_CHECK(rs[3][_T("id")] == 1);
+    // recordsetQuery
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    rq.reset();
+    rq.when(_T("id2"), _T(">="), 0);
+    rs.matchBy(rq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1][_T("id")] == 3);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    BOOST_CHECK(rs[3][_T("id")] == 5);
+    
+    // [4] WHERE id2 <= 5
+    // query
+    rs.clear();
+    q.reset().where(_T("id2"), _T("<="), 5).reject(0);
+    atv.keyValue(0).read(rs, q); // set keyValue as 0, CAN NOT USE NULL IN THIS OPERATION.
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1][_T("id")] == 3);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    BOOST_CHECK(rs[3][_T("id")] == 5);
+    // query reverse
+    rs.clear();
+    q.reset().where(_T("id2"), _T("<="), 5).reject(0).direction(table::eFindType::findBackForword);
+    atv.keyValue(100).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 5);
+    BOOST_CHECK(rs[1][_T("id")] == 4);
+    BOOST_CHECK(rs[2][_T("id")] == 3);
+    BOOST_CHECK(rs[3][_T("id")] == 1);
+    // recordsetQuery
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    rq.reset();
+    rq.when(_T("id2"), _T("<="), 5);
+    rs.matchBy(rq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1][_T("id")] == 3);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    BOOST_CHECK(rs[3][_T("id")] == 5);
+    
+    // [5] WHERE name like 'test%'
+    // query
+    rs.clear();
+    q.reset().where(_T("name"), _T("="), _T("test*")).reject(0);
+    atv.keyValue((char *)NULL).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 3);
+    BOOST_CHECK(rs[0][_T("id")] == 2);
+    BOOST_CHECK(rs[1][_T("id")] == 1);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    // query reverse
+    rs.clear();
+    q.reset().where(_T("name"), _T("="), _T("test*")).reject(0).direction(table::eFindType::findBackForword);
+    atv.keyValue(100).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 3);
+    BOOST_CHECK(rs[0][_T("id")] == 4);
+    BOOST_CHECK(rs[1][_T("id")] == 1);
+    BOOST_CHECK(rs[2][_T("id")] == 2);
+    // recordsetQuery
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    rq.reset();
+    rq.when(_T("name"), _T("="), _T("test*"));
+    rs.matchBy(rq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 3);
+    BOOST_CHECK(rs[0][_T("id")] == 2);
+    BOOST_CHECK(rs[1][_T("id")] == 1);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    
+    // [6] WHERE name not like 'test%'
+    // query
+    rs.clear();
+    q.reset().where(_T("name"), _T("<>"), _T("test*")).reject(0);
+    atv.keyValue((char *)NULL).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 1);
+    BOOST_CHECK(rs[0][_T("id")] == 3);
+    // query reverse
+    rs.clear();
+    q.reset().where(_T("name"), _T("<>"), _T("test*")).reject(0).direction(table::eFindType::findBackForword);
+    atv.keyValue(100).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 1);
+    BOOST_CHECK(rs[0][_T("id")] == 3);
+    // recordsetQuery
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    rq.reset();
+    rq.when(_T("name"), _T("<>"), _T("test*"));
+    rs.matchBy(rq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 1);
+    BOOST_CHECK(rs[0][_T("id")] == 3);
+    
+    // [7] WHERE id2 IS NULL
+    // query
+    rs.clear();
+    q.reset().whereIsNull(_T("id2")).reject(0);
+    atv.keyValue((char *)NULL).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 2);
+    BOOST_CHECK(rs[0][_T("id")] == 2);
+    BOOST_CHECK(rs[1][_T("id")] == 6);
+    // query reverse
+    rs.clear();
+    q.reset().whereIsNull(_T("id2")).reject(0).direction(table::eFindType::findBackForword);
+    atv.keyValue(100).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 2);
+    BOOST_CHECK(rs[0][_T("id")] == 6);
+    BOOST_CHECK(rs[1][_T("id")] == 2);
+    // recordsetQuery
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    rq.reset();
+    rq.whenIsNull(_T("id2"));
+    rs.matchBy(rq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 2);
+    BOOST_CHECK(rs[0][_T("id")] == 2);
+    BOOST_CHECK(rs[1][_T("id")] == 6);
+    
+    // [8] WHERE id2 IS NOT NULL
+    // query
+    rs.clear();
+    q.reset().whereIsNotNull(_T("id2")).reject(0);
+    atv.keyValue((char *)NULL).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1][_T("id")] == 3);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    BOOST_CHECK(rs[3][_T("id")] == 5);
+    // query reverse
+    rs.clear();
+    q.reset().whereIsNotNull(_T("id2")).reject(0).direction(table::eFindType::findBackForword);
+    atv.keyValue(100).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 5);
+    BOOST_CHECK(rs[1][_T("id")] == 4);
+    BOOST_CHECK(rs[2][_T("id")] == 3);
+    BOOST_CHECK(rs[3][_T("id")] == 1);
+    // recordsetQuery
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    rq.reset();
+    rq.whenIsNotNull(_T("id2"));
+    rs.matchBy(rq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 4);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1][_T("id")] == 3);
+    BOOST_CHECK(rs[2][_T("id")] == 4);
+    BOOST_CHECK(rs[3][_T("id")] == 5);
+    
+    // [9] WHERE id2 IN (1, 2, 3
+    // query
+    rs.clear();
+    q.reset().in(1, 2, 3).reject(0);
+    atv.keyValue((char *)NULL).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 3);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1].isInvalidRecord() == true);
+    BOOST_CHECK(rs[2][_T("id")] == 3);
+    // query reverse
+    rs.clear();
+    q.reset().in(1, 2, 3).reject(0).direction(table::eFindType::findBackForword);
+    atv.keyValue(100).read(rs, q);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 3);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1].isInvalidRecord() == true);
+    BOOST_CHECK(rs[2][_T("id")] == 3);
+
+    // [10] select * from `values` join `groups` on `values`.id2 = `groups`.id;
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    atg.join(rs, q, _T("id2"));
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 2);
+    BOOST_CHECK(rs[0][_T("id2")] == 1);
+    BOOST_CHECK(rs[0][_T("group_name")] == _T("Administrators"));
+    BOOST_CHECK(rs[1][_T("id2")] == 3);
+    BOOST_CHECK(rs[1][_T("group_name")] == _T("Guests"));
+    
+    // [11] select * from `values` join `groups` on `values`.id2 = `groups`.pri_id and `values`.id3 = `groups`.id;
+    atv.index(2);
+    atg.index(2);
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    atg.join(rs, q, _T("id2"), _T("id3"));
+    atv.index(1);
+    atg.index(1);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 1);
+    BOOST_CHECK(rs[0][_T("id2")] == 1);
+    BOOST_CHECK(rs[0][_T("group_name")] == _T("Administrators"));
+    
+    // [12] select * from `values` left outer join `groups` on `values`.id2 = `groups`.id;
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL).read(rs, q);
+    atg.outerJoin(rs, q, _T("id2"));
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 6);
+    BOOST_CHECK(rs[0].isInvalidRecord() == true);
+    BOOST_CHECK(rs[1].isInvalidRecord() == true);
+    BOOST_CHECK(rs[2][_T("id2")] == 1);
+    BOOST_CHECK(rs[2][_T("group_name")] == _T("Administrators"));
+    BOOST_CHECK(rs[3][_T("id2")] == 3);
+    BOOST_CHECK(rs[3][_T("group_name")] == _T("Guests"));
+    BOOST_CHECK(rs[4].isInvalidRecord() == true);
+    BOOST_CHECK(rs[5].isInvalidRecord() == true);
+    
+    // [13] select * from `values` left outer join `groups` on `values`.id2 = `groups`.pri_id and `values`.id3 = `groups`.id;
+    atv.index(2);
+    atg.index(2);
+    rs.clear();
+    q.reset().all();
+    atv.keyValue((char *)NULL, (char *)NULL).read(rs, q);
+    atg.outerJoin(rs, q, _T("id2"), _T("id3"));
+    atv.index(1);
+    atg.index(1);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 6);
+    BOOST_CHECK(rs[0].isInvalidRecord() == true);
+    BOOST_CHECK(rs[1].isInvalidRecord() == true);
+    BOOST_CHECK(rs[2][_T("id2")] == 1);
+    BOOST_CHECK(rs[2][_T("group_name")] == _T("Administrators"));
+    BOOST_CHECK(rs[3].isInvalidRecord() == true);
+    BOOST_CHECK(rs[4].isInvalidRecord() == true);
+    BOOST_CHECK(rs[5].isInvalidRecord() == true);
+
+    // [14] select id2 from `values` order by id2;
+    rs.clear();
+    q.reset().select(_T("id2"));
+    atv.keyValue((char *)NULL).read(rs, q);
+    rs.orderBy(_T("id2"));
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 6);
+    BOOST_CHECK(rs[0][_T("id2")].isNull() == true);
+    BOOST_CHECK(rs[1][_T("id2")].isNull() == true);
+    BOOST_CHECK(rs[2][_T("id2")] == 1);
+    BOOST_CHECK(rs[3][_T("id2")] == 3);
+    BOOST_CHECK(rs[4][_T("id2")] == 4);
+    BOOST_CHECK(rs[5][_T("id2")] == 4);
+    
+    // [15] select id2 from `values` order by id2 DESC;
+    rs.clear();
+    q.reset().select(_T("id2"));
+    atv.keyValue((char *)NULL).read(rs, q);
+    sortFields orders;
+    orders.add(_T("id2"), false); // DESC
+    rs.orderBy(orders);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 6);
+    BOOST_CHECK(rs[0][_T("id2")] == 4);
+    BOOST_CHECK(rs[1][_T("id2")] == 4);
+    BOOST_CHECK(rs[2][_T("id2")] == 3);
+    BOOST_CHECK(rs[3][_T("id2")] == 1);
+    BOOST_CHECK(rs[4][_T("id2")].isNull() == true);
+    BOOST_CHECK(rs[5][_T("id2")].isNull() == true);
+    
+    // [16] select * from users2 group by `group`;
+    rs.clear();
+    q.reset().all();
+    atu.keyValue((char *)NULL).read(rs, q);
+    gq.reset();
+    gq.keyField(_T("group"));
+    rs.groupBy(gq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 5);
+    BOOST_CHECK(rs[0][_T("group")].isNull() == true);
+    BOOST_CHECK(rs[1][_T("group")] == 1);
+    BOOST_CHECK(rs[2][_T("group")] == 2);
+    BOOST_CHECK(rs[3][_T("group")] == 3);
+    BOOST_CHECK(rs[4][_T("group")] == 4);
+    
+    // [17] select * from users2 group by `group`, `class`;
+    rs.clear();
+    q.reset().all();
+    atu.keyValue((char *)NULL).read(rs, q);
+    gq.reset();
+    gq.keyField(_T("group"), _T("class"));
+    rs.groupBy(gq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 9);
+    BOOST_CHECK(rs[0][_T("group")].isNull() == true);
+    BOOST_CHECK(rs[0][_T("class")] == 2);
+    BOOST_CHECK(rs[1][_T("group")].isNull() == true);
+    BOOST_CHECK(rs[1][_T("class")] == 3);
+    BOOST_CHECK(rs[2][_T("group")] == 1);
+    BOOST_CHECK(rs[2][_T("class")] == 1);
+    BOOST_CHECK(rs[3][_T("group")] == 1);
+    BOOST_CHECK(rs[3][_T("class")] == 3);
+    BOOST_CHECK(rs[4][_T("group")] == 2);
+    BOOST_CHECK(rs[4][_T("class")].isNull() == true);
+    BOOST_CHECK(rs[5][_T("group")] == 2);
+    BOOST_CHECK(rs[5][_T("class")] == 1);
+    BOOST_CHECK(rs[6][_T("group")] == 3);
+    BOOST_CHECK(rs[6][_T("class")].isNull() == true);
+    BOOST_CHECK(rs[7][_T("group")] == 3);
+    BOOST_CHECK(rs[7][_T("class")] == 1);
+    BOOST_CHECK(rs[8][_T("group")] == 4);
+    BOOST_CHECK(rs[8][_T("class")] == 3);
+    
+    // [18] select `group`, count(*) from users2 group by `group`;
+    rs.clear();
+    q.reset().all();
+    atu.keyValue((char *)NULL).read(rs, q);
+    gq.reset();
+    gq.keyField(_T("group"));
+    gq.addFunction(&countFunc);
+    rs.groupBy(gq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 5);
+    BOOST_CHECK(rs[0][_T("group")].isNull() == true);
+    BOOST_CHECK(rs[0][_T("row_count")] == 2);
+    BOOST_CHECK(rs[1][_T("group")] == 1);
+    BOOST_CHECK(rs[1][_T("row_count")] == 2);
+    BOOST_CHECK(rs[2][_T("group")] == 2);
+    BOOST_CHECK(rs[2][_T("row_count")] == 3);
+    BOOST_CHECK(rs[3][_T("group")] == 3);
+    BOOST_CHECK(rs[3][_T("row_count")] == 2);
+    BOOST_CHECK(rs[4][_T("group")] == 4);
+    BOOST_CHECK(rs[4][_T("row_count")] == 2);
+    
+    // [19] select `group`, `class`, count(*) from users2 group by `group`, `class`;
+    rs.clear();
+    q.reset().all();
+    atu.keyValue((char *)NULL).read(rs, q);
+    gq.reset();
+    gq.keyField(_T("group"), _T("class"));
+    gq.addFunction(&countFunc);
+    rs.groupBy(gq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 9);
+    BOOST_CHECK(rs[0][_T("group")].isNull() == true);
+    BOOST_CHECK(rs[0][_T("class")] == 2);
+    BOOST_CHECK(rs[0][_T("row_count")] == 1);
+    BOOST_CHECK(rs[1][_T("group")].isNull() == true);
+    BOOST_CHECK(rs[1][_T("class")] == 3);
+    BOOST_CHECK(rs[1][_T("row_count")] == 1);
+    BOOST_CHECK(rs[2][_T("group")] == 1);
+    BOOST_CHECK(rs[2][_T("class")] == 1);
+    BOOST_CHECK(rs[2][_T("row_count")] == 1);
+    BOOST_CHECK(rs[3][_T("group")] == 1);
+    BOOST_CHECK(rs[3][_T("class")] == 3);
+    BOOST_CHECK(rs[3][_T("row_count")] == 1);
+    BOOST_CHECK(rs[4][_T("group")] == 2);
+    BOOST_CHECK(rs[4][_T("class")].isNull() == true);
+    BOOST_CHECK(rs[4][_T("row_count")] == 2);
+    BOOST_CHECK(rs[5][_T("group")] == 2);
+    BOOST_CHECK(rs[5][_T("class")] == 1);
+    BOOST_CHECK(rs[5][_T("row_count")] == 1);
+    BOOST_CHECK(rs[6][_T("group")] == 3);
+    BOOST_CHECK(rs[6][_T("class")].isNull() == true);
+    BOOST_CHECK(rs[6][_T("row_count")] == 1);
+    BOOST_CHECK(rs[7][_T("group")] == 3);
+    BOOST_CHECK(rs[7][_T("class")] == 1);
+    BOOST_CHECK(rs[7][_T("row_count")] == 1);
+    BOOST_CHECK(rs[8][_T("group")] == 4);
+    BOOST_CHECK(rs[8][_T("class")] == 3);
+    BOOST_CHECK(rs[8][_T("row_count")] == 2);
+
+    // [20] select count(*) as cnt1, count(score) as cnt2, sum(score) as sum, avg(score) as avg, min(score) as min, max(score) as max from subjectscores;
+    rs.clear();
+    q.reset().all();
+    ats.keyValue((char *)NULL).read(rs, q);
+    gq.reset();
+    gq.addFunction(&countFunc);
+    gq.addFunction(&countField);
+    gq.addFunction(&sumField);
+    gq.addFunction(&avgField);
+    gq.addFunction(&minField);
+    gq.addFunction(&maxField);
+    rs.groupBy(gq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 1);
+    BOOST_CHECK(rs[0][_T("row_count")] == 13);
+    BOOST_CHECK(rs[0][_T("valid_row")] == 12);
+    BOOST_CHECK(rs[0][_T("sum")] == 812);
+    BOOST_CHECK(rs[0][_T("avg")] == (812/12));
+    BOOST_CHECK(rs[0][_T("min")] == 0);
+    BOOST_CHECK(rs[0][_T("max")] == 90);
+    
+    // [21] select count(*) as cnt1, count(score) as cnt2, sum(score) as sum, avg(score) as avg, min(score) as min, max(score) as max from subjectscores group by subject;
+    rs.clear();
+    q.reset().all();
+    ats.keyValue((char *)NULL).read(rs, q);
+    gq.reset();
+    gq.addFunction(&countFunc);
+    gq.addFunction(&countField);
+    gq.addFunction(&sumField);
+    gq.addFunction(&avgField);
+    gq.addFunction(&minField);
+    gq.addFunction(&maxField);
+    gq.keyField(_T("subject"));
+    rs.groupBy(gq);
+    //rs.dump();
+    BOOST_CHECK(rs.size() == 3);
+    BOOST_CHECK(rs[0][_T("subject")] == 1);
+    BOOST_CHECK(rs[0][_T("row_count")] == 5);
+    BOOST_CHECK(rs[0][_T("valid_row")] == 4);
+    BOOST_CHECK(rs[0][_T("sum")] == 260);
+    BOOST_CHECK(rs[0][_T("avg")] == (260/4));
+    BOOST_CHECK(rs[0][_T("min")] == 50);
+    BOOST_CHECK(rs[0][_T("max")] == 80);
+    BOOST_CHECK(rs[1][_T("subject")] == 2);
+    BOOST_CHECK(rs[1][_T("row_count")] == 3);
+    BOOST_CHECK(rs[1][_T("valid_row")] == 3);
+    BOOST_CHECK(rs[1][_T("sum")] == 262);
+    BOOST_CHECK(rs[1][_T("avg")] == (262/3));
+    BOOST_CHECK(rs[1][_T("min")] == 85);
+    BOOST_CHECK(rs[1][_T("max")] == 90);
+    BOOST_CHECK(rs[2][_T("subject")] == 3);
+    BOOST_CHECK(rs[2][_T("row_count")] == 5);
+    BOOST_CHECK(rs[2][_T("valid_row")] == 5);
+    BOOST_CHECK(rs[2][_T("sum")] == 290);
+    BOOST_CHECK(rs[2][_T("avg")] == (290/5));
+    BOOST_CHECK(rs[2][_T("min")] == 0);
+    BOOST_CHECK(rs[2][_T("max")] == 90);
 }
 
 #pragma warning(default : 4996) 

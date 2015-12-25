@@ -984,7 +984,7 @@ BOOST_FIXTURE_TEST_CASE(fieldstore, fixtureFieldStore)
         testStoreTime(db(), isMysql56TimeFormat(), isSupportMultiTimeStamp());
     test_NOT_HA_OPTION_PACK_RECORD(db());
     testInMany(db());
-    //
+    testNullValue(db());
 }
 
 BOOST_AUTO_TEST_CASE(null_comp)
