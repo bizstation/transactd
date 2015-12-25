@@ -1147,7 +1147,12 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
         if (FieldType == 17)
             minlen = 2;
         break;
-
+    case ft_mydecimal:
+        minlen = 1;
+        maxlen = 32;
+        defaultlen = 5;
+        dec = 0;
+        break;
     case ft_note:
         minlen = 2;
         maxlen = 32761;
@@ -1170,8 +1175,14 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
         defaultlen = 4;
         break;
     case ft_bit:
+    case ft_set:
         minlen = 1;
-        maxlen = 1;
+        maxlen = 8;
+        defaultlen = 1;
+        break;
+    case ft_enum:
+        minlen = 1;
+        maxlen = 2;
         defaultlen = 1;
         break;
     case ft_timestamp:

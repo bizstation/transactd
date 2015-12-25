@@ -261,6 +261,7 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define ft_myyear                       59
 #define ft_mygeometry                   60
 #define ft_myjson                       61
+#define ft_mydecimal                    62
 #define ft_nullindicator                255
 
 /* compair types */
@@ -401,6 +402,7 @@ enum combineType
 #define STATUS_INVALID_VALLEN           -37
 #define STATUS_FIELDTYPE_NOTSUPPORT     -42
 #define STATUS_INVALID_NULLMODE         -43
+#define STATUS_TOO_LARGE_VALUE          -44
 
 #define STATUS_SUCCESS                  0
 #define STATUS_PROGRAM_ERROR            1

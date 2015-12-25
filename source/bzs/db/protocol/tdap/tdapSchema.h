@@ -284,6 +284,11 @@ inline bool isStringType(uchar_td type)
 #define FIELD_OPTION_REGACY_TIME  4
 
 #define DEFAULT_VALUE_SIZE      8
+
+//For decimals
+#define DIGITS_INT32 9
+static const int decimalBytesBySurplus[DIGITS_INT32 + 1] = {0, 1, 1, 2, 2, 3, 3, 4, 4, 4};
+
 /** @endcond */
 
 /* Mark of ** that BizStation Corp internal use only.
@@ -314,7 +319,11 @@ protected:
     char m_chainChar[2];
 
 public:
-    ushort_td ddfid; // ddf field id
+union 
+{
+    ushort_td ddfid;  // ddf field id
+    ushort_td digits; // for ft_myDecimal
+};
     ushort_td filterId; // ** filter id for reference
     uchar_td filterKeynum; // ** key number for reference
     uchar_td nullValue; // null value for P.SQL 
@@ -430,6 +439,25 @@ struct PACKAGE fielddef : public fielddef_t_my
             i64 = str_to_64<myDateTime, char>(7, true, s);
             memcpy(m_defValue, &i64, 7);
             return;
+        case ft_integer:
+        case ft_autoinc:
+        {
+            __int64 v = _atoi64(s);
+            memcpy(m_defValue, &v, 8);
+            return;
+        }
+        case ft_uinteger:
+        case ft_logical:
+        case ft_set:
+        case ft_bit:
+        case ft_enum:
+        case ft_autoIncUnsigned:
+        case ft_myyear:
+        {
+            unsigned __int64 v = strtoull(s, NULL, 10);
+            memcpy(m_defValue, &v, 8);
+            return;
+        }
         }
     
         if (isNumericType())
@@ -469,6 +497,18 @@ struct PACKAGE fielddef : public fielddef_t_my
     {
         len = lenByCharnum(type, m_charsetIndex, charnum);
     }
+
+    inline void setDecimalDigits(int dig, int dec)
+    {
+        assert(sizeof(int) == 4);
+        decimals = (uchar_td)dec;
+        digits = dig;
+        int intdeg = digits - dec;
+        len = (ushort_td) (((intdeg / DIGITS_INT32) * sizeof(int)) + 
+            decimalBytesBySurplus[intdeg % DIGITS_INT32]) + 
+            (ushort_td) (((dec / DIGITS_INT32) * sizeof(int)) +
+            decimalBytesBySurplus[dec % DIGITS_INT32]) ;
+    }
 #endif // MYSQL_DYNAMIC_PLUGIN
 
 public:
@@ -485,6 +525,13 @@ public:
     {
         return ((type == ft_mychar) || (type == ft_mywchar) ||
                 (type == ft_string) || (type == ft_wstring));
+    }
+
+    inline bool isIntegerType() const
+    {
+        return ((type == ft_integer) || (type == ft_logical) || (type == ft_uinteger) || 
+                (type == ft_autoinc) || (type == ft_set) || (type == ft_bit) || 
+                (type == ft_enum) || (type == ft_autoIncUnsigned) || (type == ft_myyear));
     }
 
     inline bool isNumericType() const
@@ -570,6 +617,35 @@ public:
         }
     }
 
+    void setDefaultValue(__int64 v)
+    {
+        assert(sizeof(__int64) == 8);
+        if (isBlob())
+        {
+            memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
+            return;
+        }
+        enableFlags.bitF = false;
+        switch(type)
+        {
+        case ft_integer:
+        case ft_autoinc:
+        case ft_uinteger:
+        case ft_logical:
+        case ft_set:
+        case ft_bit:
+        case ft_enum:
+        case ft_autoIncUnsigned:
+        case ft_myyear:
+        case ft_mytimestamp:
+        case ft_mydatetime:
+            memcpy(m_defValue, &v, 8);
+            return;
+        default:
+            setDefaultValue((double)v);
+        }
+    }
+
     void setDefaultValue(double v)
     { 
         assert(sizeof(double) == 8);
@@ -578,14 +654,25 @@ public:
             memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
             return;
         }
-        if (type == ft_mytimestamp || type == ft_mydatetime)
-        {
-            __int64 i64 = (__int64)v;
-            memcpy(m_defValue, &i64, 7);
-        }
-        else
-            *((double*)m_defValue) = v;
         enableFlags.bitF = false;
+        switch(type)
+        {
+        case ft_integer:
+        case ft_autoinc:
+        case ft_uinteger:
+        case ft_logical:
+        case ft_set:
+        case ft_bit:
+        case ft_enum:
+        case ft_autoIncUnsigned:
+        case ft_myyear:
+        case ft_mytimestamp:
+        case ft_mydatetime:
+            setDefaultValue((__int64) v);
+            return;
+        default:
+            *((double*)m_defValue) = v;
+        }
     }
 
     void setTimeStampOnUpdate(bool v)
@@ -601,18 +688,8 @@ public:
         return false;
     }
 
-    #pragma warn -8056
-    inline double defaultValue() const
-    {
-        assert(sizeof(double) == 8);
-
-        if (isDateTimeType())
-            return (double)(*((__int64*)m_defValue) & (0x00FFFFFFFFFFFFFFLL));
-        else
-            return *((double*)m_defValue);
-
-    }
-    #pragma warn .8056
+    double defaultValue() const;
+    __int64 defaultValue64() const;
 
     inline bool isDefaultNull() const
     {

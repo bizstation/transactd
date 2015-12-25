@@ -17,7 +17,8 @@
    02111-1307, USA.
 =================================================================*/
 #include "myDateTime.h"
-#include <bzs/env/tstring.h>
+#include <bzs/db/protocol/tdap/btrDate.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>

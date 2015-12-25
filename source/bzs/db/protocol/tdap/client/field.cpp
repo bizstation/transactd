@@ -19,6 +19,7 @@
 #include "field.h"
 #include "fields.h"
 #include "nsDatabase.h"
+#include <bzs/db/protocol/tdap/btrDate.h>
 #include <bzs/db/protocol/tdap/myDateTime.h>
 #include <bzs/db/protocol/tdap/fieldComp.h>
 #include "stringConverter.h"
@@ -45,6 +46,269 @@ namespace tdap
 {
 namespace client
 {
+typedef int int32;
+class myDecimal
+{
+	int32 m_data[8];
+	int32 m_sign;
+	uchar_td m_digit;
+	uchar_td m_dec;
+	uchar_td m_intBytes;
+	uchar_td m_decBytes;
+	uchar_td m_intSurplusBytes;
+	uchar_td m_decSurplusBytes;
+	uchar_td m_error;
+
+	int32 changeEndian(int32 v, int len)
+	{
+	    int32 ret = 0;
+	    char* l = (char*)&ret;
+	    char* r = (char*)&v;
+        if (len == 4) {
+            l[0] = r[3]; l[1] = r[2]; l[2] = r[1]; l[3] = r[0];
+        }else if (len == 3) {
+	        l[0] = r[2]; l[1] = r[1]; l[2] = r[0];
+        }else if (len == 2) {
+	        l[0] = r[1]; l[1] = r[0];
+        }else if (len == 1)
+            ret = v;
+	    return ret;
+	}
+	
+	int32 readInt32One(const char* ptr, int len)
+	{
+		int32 v = *((int32*)ptr);
+		return  changeEndian(v ^ m_sign, len) ;
+	}
+
+	int32 readSurplus(const char* ptr, int len)
+	{
+		assert(len <= 4);
+		int32 v = 0;
+        switch(len)
+        {
+        case 1: v = *((char*)ptr); break;
+        case 2: v = *((short*)ptr); break;
+        case 3: v = (*((int32*)ptr) & 0x00FFFFFF); break;
+        case 4: v = *((int32*)ptr); break;
+        }
+		return readInt32One((const char*)&v, len);
+	}
+	
+	char* write(char* ptr, int len, int32 v)
+	{
+		v = changeEndian(v, len) ^ m_sign;
+		memcpy(ptr, &v , len);
+        return ptr + len; 
+	}
+    
+    int32 fromString(const char* p, size_t len)
+    {
+        assert(len <= 9);
+        char tmp[10]={0};
+        strncpy(tmp, p, len);
+        return atoi(tmp);
+    }
+
+public:
+	myDecimal(uchar_td digit, uchar_td dec) : m_digit(digit), m_dec(dec), m_sign(0), m_error(0) 
+	{
+		assert(sizeof(int32) == 4);
+		assert(digit > 0);
+        assert(m_digit <= 65);
+        assert(m_dec <= 30);
+
+		// integer part
+		int dig = digit - dec;
+		m_intSurplusBytes = (uchar_td)decimalBytesBySurplus[dig % DIGITS_INT32];
+		m_intBytes = (uchar_td)((dig / DIGITS_INT32) * sizeof(int32));
+
+		// dec part
+		m_decSurplusBytes = (uchar_td)(decimalBytesBySurplus[dec % DIGITS_INT32]);
+		m_decBytes = (uchar_td)((dec / DIGITS_INT32) * sizeof(int32));
+	}
+	
+	void store(char* ptr)
+	{
+		int32* data = m_data;
+		char* p = ptr;
+		if (m_intSurplusBytes)
+			p = write(p, m_intSurplusBytes, *(data++));
+		for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+			p = write(p, sizeof(int32), *(data++));
+		for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+			p = write(p, sizeof(int32), *(data++));
+		if (m_decSurplusBytes)
+			write(p, m_decSurplusBytes, *data);
+		//reverse first bit
+		*(ptr) ^= 0x80;
+	}
+	
+    void read(const char* ptr)
+	{
+		m_sign = ((*ptr) & 0x80) ? 0 : -1;
+		int32* data = m_data;
+		const char* p = ptr;
+		//reverse first bit
+		*(const_cast<char*>(ptr)) ^= 0x80;
+		if (m_intSurplusBytes)
+		{
+			*(data++) = readSurplus(p, m_intSurplusBytes);
+			p += m_intSurplusBytes;
+		}
+		for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+		{
+			*(data++) = readInt32One(p, sizeof(int32));
+			p += sizeof(int32);
+		}
+		for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+		{
+			*(data++) = readInt32One(p, sizeof(int32));
+			p += sizeof(int32);
+		}
+		if (m_decSurplusBytes)
+			*data = readSurplus(p, m_decSurplusBytes);
+		//restore first bit
+		*(const_cast<char*>(ptr)) ^= 0x80;
+	}
+
+    char* toString(char* ptr, int size)
+	{
+		assert(size >= m_digit + 1);
+
+        char* p = ptr;
+		if (m_sign)
+			*(p++) = '-';
+        char* p_cache = p;
+        *p = '0';
+        int32* data = m_data;
+		if (m_intSurplusBytes)
+        {
+		    if (*data)
+                p += sprintf(p, "%d", *data);
+            ++data;
+        }
+		for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+        {
+   		    if (*data || p != p_cache)
+                p += sprintf(p, p != p_cache ? "%09d" : "%d", *data);
+            ++data;
+        }
+        if (p_cache == p) ++p;
+        if (m_dec)
+        {
+		    int dec_n = m_dec;
+            *(p++) = '.';
+		    for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+            {
+			    p += sprintf(p, "%09d", *(data++));
+                dec_n -= DIGITS_INT32;
+            }
+		    if (m_decSurplusBytes)
+			    p += sprintf(p, "%0*d", dec_n, *data);
+        }
+		return ptr;
+	}
+ 
+    myDecimal& operator=(const char* p)
+    {
+        m_error = 0;
+        m_sign = (*p) == '-' ? -1 : 0;
+        if (m_sign) ++p;
+        const char* point = strchr(p, '.');
+        
+        int32* data = m_data;
+        memset(m_data, 0, sizeof(m_data));
+        char tmp[67];
+        if (m_digit - m_dec)
+        {
+            size_t intchars = point ? (point - p) : strlen(p);
+            int offset = (m_digit - m_dec) - (int)intchars;
+            if (offset < 0 || (intchars + offset > 65))
+            {
+                m_error = STATUS_TOO_LARGE_VALUE;
+                return *this;
+            }
+            if (offset)
+            {
+                sprintf(tmp, "%0*d%s", offset, 0, p);
+                p = tmp;
+            }
+            int len = (m_digit - m_dec) % DIGITS_INT32;
+            *(data++) = fromString(p, len);
+            p += len;
+            for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+            {
+                *(data++) =  fromString(p, DIGITS_INT32);
+                p += DIGITS_INT32;
+            }
+        }
+        if (point)
+        {
+            p = point + 1;
+            size_t len = strlen(p);
+            if (len < m_dec)
+            {
+                sprintf(tmp, "%s000000000", p);
+                p = tmp;
+            }
+            const char* endp = len + p;
+            for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+            {
+                *(data++) =  fromString(p, DIGITS_INT32);
+                p += DIGITS_INT32;
+                if (p > endp) break;
+            }
+            if (p <= endp)
+                *data =  fromString(p, endp - p + 1);
+        }
+        return *this;
+    }
+
+    double d()
+	{
+        char tmp[100];
+        return atof(toString(tmp, 100));
+    }
+
+    __int64 i64()
+	{
+        char tmp[100];
+        return _atoi64(toString(tmp, 100));
+    }
+
+#ifdef _WIN32
+    wchar_t* toString(wchar_t* ptr, int size)
+	{
+        char tmp[100];
+        toString(tmp, 100);
+        MultiByteToWideChar(CP_ACP, 0, tmp, -1, ptr, size);
+        return ptr;
+    }
+
+    myDecimal& operator=(const wchar_t* p)
+    {
+        char tmp[100];
+        WideCharToMultiByte(CP_ACP, 0, p, -1, tmp, 100, NULL, NULL);
+        return operator=(tmp);
+    }
+#endif
+
+    myDecimal& operator=(const double v)
+    {
+        char tmp[100];
+        sprintf(tmp, "%.*lf", m_dec, v);
+        return operator=(tmp);
+    }
+
+    myDecimal& operator=(const __int64 v)
+    {
+        char tmp[100];
+        sprintf(tmp, "%lld", v);
+        return operator=(tmp);
+    }
+};
+
 
 //------------------------------------------------------------------------------
 //       class fieldShare
@@ -1101,6 +1365,13 @@ void field::setFVA(const char* data)
     CASE_DECIMAL
         storeValueDecimal(atof(data));
         return;
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d = data;
+        d.store(p);
+        return;
+    }
     CASE_INT
         value = _atoi64(data);
         break;
@@ -1184,6 +1455,13 @@ void field::setFVW(const wchar_t* data)
     CASE_DECIMAL
         storeValueDecimal(_wtof(data));
         return;
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d = data;
+        d.store(p);
+        return;
+    }
     CASE_INT
         value = _wtoi64(data);
         break;
@@ -1302,6 +1580,13 @@ void field::setFV(__int64 data)
     CASE_DECIMAL
         storeValueDecimal((double)data);
         break;
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d = data;
+        d.store((char*)m_ptr + m_fd->pos);
+        break;
+    }
 #ifdef LINUX
     CASE_TEXTW
 #endif
@@ -1388,6 +1673,13 @@ void field::setFV(double data)
     CASE_DECIMAL
         storeValueDecimal(data);
         break;
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d = data;
+        d.store((char*)m_ptr + m_fd->pos);
+        break;
+    }
 #ifdef LINUX
     CASE_TEXTW
 #endif
@@ -1482,7 +1774,7 @@ const char* field::getFVAstr() const
         return readValueStrA();
     }
 
-    char* p = m_fds->strBufs()->getPtrA(max(m_fd->len * 2, 50));
+    char* p = m_fds->strBufs()->getPtrA(max(m_fd->len * 2, 70));
     switch (m_fd->type)
     {
     CASE_INT
@@ -1538,6 +1830,12 @@ const char* field::getFVAstr() const
     case ft_mygeometry:
     case ft_myjson:
         return "";
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d.read((char*)m_ptr + m_fd->pos);
+        return d.toString(p, 70);
+    }
     }
 
     double v = 0;
@@ -1572,7 +1870,7 @@ const wchar_t* field::getFVWstr() const
         return readValueStrW();
     }
 
-    wchar_t* p = (wchar_t*)m_fds->strBufs()->getPtrW(max(m_fd->len * 2, 50));
+    wchar_t* p = (wchar_t*)m_fds->strBufs()->getPtrW(max(m_fd->len * 2, 70));
     switch (m_fd->type)
     {
     CASE_INT
@@ -1628,6 +1926,12 @@ const wchar_t* field::getFVWstr() const
     case ft_mygeometry:
     case ft_myjson:
         return L"";
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d.read((char*)m_ptr + m_fd->pos);
+        return d.toString(p, 70);
+    }
     }
 
     double v = 0;
@@ -1665,6 +1969,12 @@ double field::getFVdbl() const
         return (double)readValueNumeric();
     CASE_DECIMAL
         return (double)readValueDecimal();
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d.read((char*)m_ptr + m_fd->pos);
+        return d.d();
+    }
     CASE_INT
         return  (double)readValue64();
     case ft_myyear:
@@ -1786,6 +2096,12 @@ __int64 field::getFV64() const
         return (__int64)readValueNumeric();
     CASE_DECIMAL
         return (__int64)readValueDecimal();
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d.read((char*)m_ptr + m_fd->pos);
+        return d.i64();
+    }
 #ifdef LINUX
     CASE_TEXTW
 #endif

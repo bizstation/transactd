@@ -16,13 +16,12 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include <bzs/env/compiler.h>
-#include <bzs/env/tstring.h>
 #include "btrDate.h"
 #include <bzs/rtl/datetime.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <bzs/env/crosscompile.h>
 
 #ifdef LINUX
 #include <bzs/env/mbcswchrLinux.h>

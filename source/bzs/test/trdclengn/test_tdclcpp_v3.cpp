@@ -92,7 +92,6 @@ CREATE TABLE `nulltest` (`id` INT NOT NULL ,`fd1` INT NULL DEFAULT NULL,`fd2` IN
 */
 short createTestTable(database* db, bool timestampNull = true, bool supportDateTimeTimeStamp = true)
 {
-    
     try
     {
         openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
@@ -118,7 +117,7 @@ short createTestTable(database* db, bool timestampNull = true, bool supportDateT
         fd->setNullable(true);
         fd = insertField(def, tableid, ++fieldnum, _T("fd5"), ft_integer, 4);
         fd->setNullable(timestampNull, false);
-        fd->setDefaultValue(-1);
+        fd->setDefaultValue(-1LL);
         fd = insertField(def, tableid, ++fieldnum, _T("fd6"), ft_myvarchar, 49);
         fd->setNullable(true, false);
         fd->setDefaultValue(_T("-123456"));
@@ -1045,7 +1044,7 @@ BOOST_AUTO_TEST_CASE(field_comp)
     testCompWString();
 #endif
     testCompBlob();
-
+    testCompDecimal();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

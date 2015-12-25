@@ -118,6 +118,17 @@
 #define PACKAGE_IMPORT __declspec(dllimport)
 #endif
 
+
+//__int64 basic type
+#if (defined(LINUX))
+#ifndef __int64
+#define __int64 long long int
+#endif
+#ifndef NULL
+#define NULL 0
+#endif
+#endif
+
 // data alignment
 #if (_MSC_VER || (__BORLANDC__ && __clang__))
 #define pragma_pack1 __pragma(pack(push, 1))

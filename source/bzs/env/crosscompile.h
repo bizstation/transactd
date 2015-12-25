@@ -53,8 +53,11 @@ int gettimeofday(struct timeval*, struct timezone*);
 #include <wctype.h>
 #include <wchar.h>
 /* c c++ runtime library */
-#define _strnicmp strncasecmp
+#ifndef __int64
 #define __int64 long long int
+#endif
+
+#define _strnicmp strncasecmp
 #define _atoi64 atoll
 #define _access access
 #define sprintf_s snprintf

@@ -100,6 +100,8 @@ const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
         if (size == 8)
             return "BIGINT";
     case ft_bit:
+        sprintf_s(g_buf, TMP_BUFSIZE, "BIT(%d)", size * 8);
+        return g_buf;
     case ft_enum:
     case ft_set:
     case ft_uinteger:
@@ -166,6 +168,9 @@ const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
             return "FLOAT";
         if (size == 8)
             return "DOUBLE";
+    case ft_mydecimal:
+        sprintf_s(g_buf, TMP_BUFSIZE, "DECIMAL(%d, %d)", fd.digits, decimals);
+        return g_buf;
     case ft_string:
     case ft_wstring:
         sprintf_s(g_buf, TMP_BUFSIZE, "BINARY(%d)", size);
@@ -250,6 +255,26 @@ char* removeTimeStampOptionDecimal(const char* s, char* buf, size_t size)
     return buf;
 }
 
+char* getBitDefalutValue(char* buf, size_t size, unsigned __int64 v)
+{
+    char* p = buf;
+    for (int i = 0; i< 64;++i)
+    {
+        if (v & (1ULL << (63 - i)))
+        {
+            *p = '1';
+            ++p;
+        }
+        else if (p != buf)
+        {
+            *p = '0';
+            ++p;
+        }
+    }
+    *p = 0x00;
+    return buf;
+}
+
 std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::string>& fdl, const clsrv_ver* ver)
 {
     std::string s;
@@ -301,6 +326,12 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
                     }
                     else
                         s += p;
+                }else if (fd.type == ft_bit)
+                {
+                    s += " NULL DEFAULT b'";
+                    char tmp[100] = {NULL};
+                    s += getBitDefalutValue(tmp, 100, (unsigned __int64)fd.defaultValue64());
+                    s += "'";
                 }
                 else
                 {
@@ -340,6 +371,12 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
                     }
                     else
                         s += p;
+                }else if (fd.type == ft_bit)
+                {
+                    s += "DEFAULT b'";
+                    char tmp[100] = {NULL};
+                    s += getBitDefalutValue(tmp, 100, (unsigned __int64)fd.defaultValue());
+                    s += "'";
                 }
                 else
                 {

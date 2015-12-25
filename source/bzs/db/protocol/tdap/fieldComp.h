@@ -557,6 +557,7 @@ inline comp1Func getCompFunc(uchar_td type, ushort_td len, char logType, int siz
     case ft_mytime:
     case ft_mydatetime:
     case ft_mytimestamp:
+    case ft_mydecimal:
         return &compMem;
     case ft_float:
         switch (len)

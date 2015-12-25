@@ -181,6 +181,13 @@ const wchar_t* fielddef::defaultValue_str() const
         }
         //restore
         *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
+    }else if (isIntegerType())
+    {
+        __int64 *v = (__int64*)m_defValue;
+        if ((type == ft_integer) || (type == ft_autoinc))
+            _i64tow(*v, p, 10);
+        else
+            _ui64tow((unsigned __int64)(*v), p, 10);
     }else
          doubleToStr(*((double*)m_defValue), decimals, p, MYSQL_FDNAME_SIZE);
     return p;
@@ -230,6 +237,25 @@ void fielddef::setDefaultValue(const wchar_t* s)
         i64 = str_to_64<myDateTime, wchar_t>(7, true, s);
         memcpy(m_defValue, &i64, 7);
         return;
+    case ft_integer:
+    case ft_autoinc:
+    {
+        __int64 v = _wtoi64(s);
+        memcpy(m_defValue, &v, 8);
+        return;
+    }
+    case ft_uinteger:
+    case ft_logical:
+    case ft_set:
+    case ft_bit:
+    case ft_enum:
+    case ft_autoIncUnsigned:
+    case ft_myyear:
+    {
+        unsigned __int64 v = wcstoull(s, NULL, 10);
+        memcpy(m_defValue, &v, 8);
+        return;
+    }
     }
 
     if (isNumericType())
@@ -383,8 +409,14 @@ const char* fielddef::defaultValue_strA() const
         }
          //restore
         *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
-    }
-    else
+    }else if (isIntegerType())
+    {
+        __int64 *v = (__int64*)m_defValue;
+        if ((type == ft_integer) || (type == ft_autoinc))
+            _i64toa_s(*v, p, MYSQL_FDNAME_SIZE, 10);
+        else
+            _ui64toa_s((unsigned __int64)(*v), p, MYSQL_FDNAME_SIZE, 10);
+    }else
         doubleToStr(*((double*)m_defValue), decimals, p, MYSQL_FDNAME_SIZE);
 
     return p;
@@ -439,6 +471,25 @@ void fielddef::setDefaultValue(const char* s)
         i64 = str_to_64<myDateTime, char>(7, true, s);
         memcpy(m_defValue, &i64, 7);
         return;
+    case ft_integer:
+    case ft_autoinc:
+    {
+        __int64 v = _atoi64(s);
+        memcpy(m_defValue, &v, 8);
+        return;
+    }
+    case ft_uinteger:
+    case ft_logical:
+    case ft_set:
+    case ft_bit:
+    case ft_enum:
+    case ft_autoIncUnsigned:
+    case ft_myyear:
+    {
+        unsigned __int64 v = strtoull(s, NULL, 10);
+        memcpy(m_defValue, &v, 8);
+        return;
+    }
     }
     
     if (isNumericType())
@@ -728,6 +779,53 @@ short fielddef::synchronize(const fielddef* fd)
         decimals = fd->decimals;
     return 0;
 }
+
+#pragma warn -8056
+double fielddef::defaultValue() const
+{
+    assert(sizeof(double) == 8);
+
+    if (isDateTimeType())
+        return (double)(*((__int64*)m_defValue) & (0x00FFFFFFFFFFFFFFLL));
+    
+    switch(type)
+    {
+    case ft_integer:
+    case ft_autoinc:
+    case ft_uinteger:
+    case ft_logical:
+    case ft_set:
+    case ft_bit:
+    case ft_enum:
+    case ft_autoIncUnsigned:
+    case ft_myyear:
+        return (double)(*((__int64*)m_defValue));
+    }
+    return *((double*)m_defValue);
+}
+
+__int64 fielddef::defaultValue64() const
+{
+    assert(sizeof(double) == 8);
+
+    if (isDateTimeType())
+        return (*((__int64*)m_defValue) & (0x00FFFFFFFFFFFFFFLL));
+    switch(type)
+    {
+    case ft_integer:
+    case ft_autoinc:
+    case ft_uinteger:
+    case ft_logical:
+    case ft_set:
+    case ft_bit:
+    case ft_enum:
+    case ft_autoIncUnsigned:
+    case ft_myyear:
+        return *((__int64*)m_defValue);
+    }
+    return (__int64)(*((double*)m_defValue));
+}
+#pragma warn .8056
 
 //--------------------------------------------------------------------
 //   struvt tabledef
@@ -1226,6 +1324,8 @@ const _TCHAR* getTypeName(short type)
         return _T("AutoIncUnsigned");
     case ft_myfixedbinary:
         return _T("myFixedBinary");
+    case ft_mydecimal:
+        return _T("myDecimal");
     case ft_nullindicator:
         return _T("Nullindicator");
     default:

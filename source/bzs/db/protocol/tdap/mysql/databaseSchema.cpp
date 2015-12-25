@@ -72,7 +72,8 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
     switch (type)
     {
     case MYSQL_TYPE_DECIMAL:
-        return ft_decimal;
+    case MYSQL_TYPE_NEWDECIMAL:
+        return ft_mydecimal;
     case MYSQL_TYPE_TINY:
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_LONG:
@@ -223,6 +224,12 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
                         fd.m_options |= FIELD_OPTION_MARIADB;
                 #endif
             }
+
+            if (fd.type == ft_mydecimal)
+            {
+                fd.digits = my_decimal_length_to_precision(f->field_length, f->decimals(),
+								(f->flags & UNSIGNED_FLAG) != 0);
+            }
  
             fd.setPadCharSettings(false, true);
             if (fd.isStringType())
@@ -234,6 +241,8 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
                 if (cp_has_insert_default_function(f)) 
                     fd.setDefaultValue(DFV_TIMESTAMP_DEFAULT);
             }
+            else if (fd.isIntegerType())
+                fd.setDefaultValue((__int64)f->val_int());
             else
             {
                 f->val_str(&str, &str);

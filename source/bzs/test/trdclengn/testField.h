@@ -19,6 +19,7 @@
  02111-1307, USA.
  ================================================================= */
 #include "testbase.h"
+#include <bzs/db/protocol/tdap/btrDate.h>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -70,7 +71,7 @@ short createTestTable1(database* db)
         
         insertTable(def, tableid,  _T("fieldtest"), g_td_charsetIndex);
         short fieldnum = 0;
-        insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
+        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
 
         int lens[5] = {1, 2, 3, 4, 8};
         _TCHAR buf[50];
@@ -78,15 +79,23 @@ short createTestTable1(database* db)
         for (int i=1; i < 6 ; ++i)
         {
             _stprintf_s(buf, 50, _T("int_%d_byte"), lens[i-1]);
-            insertField(def, tableid, ++fieldnum, buf, ft_integer, lens[i-1]);
+            fd = insertField(def, tableid, ++fieldnum, buf, ft_integer, lens[i-1]);
+            if (i==4)
+                fd->setDefaultValue((__int64)INT_MIN);
+            if (i==5)
+                fd->setDefaultValue(LLONG_MIN);
+
         }
 
         //unsigned int
         for (int i=1; i < 6 ; ++i)
         {
-            
             _stprintf_s(buf, 50, _T("uint_%d_byte"), lens[i-1]);
-            insertField(def, tableid, ++fieldnum, buf, ft_uinteger, lens[i-1]);
+            fd = insertField(def, tableid, ++fieldnum, buf, ft_uinteger, lens[i-1]);
+            if (i==4)
+                fd->setDefaultValue((__int64)UINT_MAX);
+            if (i==5)
+                fd->setDefaultValue((__int64)ULLONG_MAX);
         }
 
         //myyear
@@ -101,13 +110,43 @@ short createTestTable1(database* db)
  
         //double
         insertField(def, tableid, ++fieldnum, _T("double4.0"), ft_float, 4);
-        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("double4.4"), ft_float, 4);
+        fd = insertField(def, tableid, ++fieldnum, _T("double4.4"), ft_float, 4);
         fd->decimals = 4;
 
         insertField(def, tableid, ++fieldnum, _T("double8.0"), ft_float, 8);
         fd = insertField(def, tableid, ++fieldnum, _T("double8.5"), ft_float, 8);
         fd->decimals = 15;
 
+        //decimal
+        /*for (int i=1; i < 66 ; ++i)
+        {
+            _stprintf_s(buf, 50, _T("dec_%d_digits"), i);
+            fd = insertField(def, tableid, ++fieldnum, buf, ft_mydecimal, 0);
+            fd->setLenByDecimal(i,  (i-1) % 30);
+        }*/
+        fd = insertField(def, tableid, ++fieldnum, _T("dec1"), ft_mydecimal, 1);
+        fd->setDecimalDigits(15, 5);
+
+        fd = insertField(def, tableid, ++fieldnum, _T("dec2"), ft_mydecimal, 1);
+        fd->setDecimalDigits(65, 30);
+
+        fd = insertField(def, tableid, ++fieldnum, _T("dec3"), ft_mydecimal, 1);
+        fd->setDecimalDigits(1, 0);
+
+        fd = insertField(def, tableid, ++fieldnum, _T("dec4"), ft_mydecimal, 1);
+        fd->setDecimalDigits(11, 11);
+
+        fd = insertField(def, tableid, ++fieldnum, _T("dec5"), ft_mydecimal, 1);
+        fd->setDecimalDigits(15, 5);
+
+        fd = insertField(def, tableid, ++fieldnum, _T("dec6"), ft_mydecimal, 1);
+        fd->setDecimalDigits(65, 30);
+
+        fd = insertField(def, tableid, ++fieldnum, _T("dec7"), ft_mydecimal, 1);
+        fd->setDecimalDigits(1, 0);
+
+        fd = insertField(def, tableid, ++fieldnum, _T("dec8"), ft_mydecimal, 1);
+        fd->setDecimalDigits(11, 11);
 
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
@@ -610,8 +649,34 @@ void testModeMacro()
 #define FLOAT_V1 -1234.0f
 #define FLOAT_V2 1234.1234f
 
-#define DOUBLE_V1 (double)-12345678.0f
-#define DOUBLE_V2 (double)0.1234567890123f
+#define DOUBLE_V1 (double)-12345678.0
+#define DOUBLE_V2 (double)0.1234567890123
+
+#define DEC_V1 (double)1234567890.12345
+#define DEC_V1LL 1234567890LL
+
+#define DEC_V2 (double)5.0000010000500001
+#define DEC_V2LL 5LL
+#define DEC_V2S _T("5.000001000050000100000000000000")
+
+#define DEC_V3 (double)3.0
+#define DEC_V3LL 3LL
+
+#define DEC_V4 (double)0.23456789010
+#define DEC_V4LL 0LL
+
+#define DEC_V5 (double)-1234567890.12345
+#define DEC_V5LL -1234567890LL
+
+#define DEC_V6 (double)-5.0000010000500001
+#define DEC_V6LL -5LL
+#define DEC_V6S _T("-5.000001000050000100000000000000")
+
+#define DEC_V7 (double)-3.0
+#define DEC_V7LL -3LL
+
+#define DEC_V8 (double)-0.23456789010
+#define DEC_V8LL -0LL
 
 void checkIntValue(table_ptr tb)
 {
@@ -639,8 +704,17 @@ void checkIntValue(table_ptr tb)
     BOOST_CHECK(tb->getFVint(++fieldnum) == FLOAT_V1); //double
     ++fieldnum;//BOOST_CHECK(tb->getFVint(++fieldnum) == FLOAT_V2);
     BOOST_CHECK(tb->getFV64(++fieldnum) == DOUBLE_V1); 
+    ++fieldnum;
+    BOOST_CHECK(tb->getFV64(++fieldnum) == DEC_V1LL); //decimal
+    BOOST_CHECK(tb->getFV64(++fieldnum) == DEC_V2LL); //decimal
+    BOOST_CHECK(tb->getFV64(++fieldnum) == DEC_V3LL); //decimal
+    BOOST_CHECK(tb->getFV64(++fieldnum) == DEC_V4LL); //decimal
+    BOOST_CHECK(tb->getFV64(++fieldnum) == DEC_V5LL); //decimal
+    BOOST_CHECK(tb->getFV64(++fieldnum) == DEC_V6LL); //decimal
+    BOOST_CHECK(tb->getFV64(++fieldnum) == DEC_V7LL); //decimal
+    BOOST_CHECK(tb->getFV64(++fieldnum) == DEC_V8LL); //decimal
 
-
+    
     // read by double
     BOOST_CHECK(tb->getFVdbl(1) == SCHAR_MAX);
     BOOST_CHECK(tb->getFVdbl(3) == MINT_MIN);
@@ -669,7 +743,16 @@ void checkIntValue(table_ptr tb)
         v = v - DOUBLE_V2;
 
     BOOST_CHECK(v < 0.000000001f);
-
+    
+    //decimal
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == DEC_V1); 
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == DEC_V2); 
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == DEC_V3); 
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == DEC_V4); 
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == DEC_V5); 
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == DEC_V6); 
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == DEC_V7); 
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == DEC_V8); 
 
     //read by string
     _TCHAR buf[50];
@@ -697,6 +780,24 @@ void checkIntValue(table_ptr tb)
     _stprintf(tmp, _T("%0.15lf"), DOUBLE_V2);
     BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //double
 
+    _stprintf(tmp, _T("%0.5lf"), DEC_V1);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //decimal
+    _stprintf(tmp, _T("%s"), DEC_V2S);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //decimal
+    _stprintf(tmp, _T("%0.0lf"), DEC_V3);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //decimal
+    _stprintf(tmp, _T("%0.11lf"), DEC_V4);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //decimal
+
+    _stprintf(tmp, _T("%0.5lf"), DEC_V5);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //decimal
+    _stprintf(tmp, _T("%s"), DEC_V6S);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //decimal
+    _stprintf(tmp, _T("%0.0lf"), DEC_V7);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //decimal
+    _stprintf(tmp, _T("%0.11lf"), DEC_V8);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //decimal
+
 }
 
 void testStoreInt(database* db)
@@ -712,14 +813,19 @@ void testStoreInt(database* db)
     tb->setFV(++fieldnum, (short)SCHAR_MAX);
     tb->setFV(++fieldnum, (short)SHRT_MAX);
     tb->setFV(++fieldnum, (int)MINT_MIN);
-    tb->setFV(++fieldnum, (int)INT_MAX);
-    tb->setFV(++fieldnum, (__int64)LLONG_MAX);
+
+    BOOST_CHECK(tb->getFVint(++fieldnum) == INT_MIN);// check default value
+    tb->setFV(fieldnum, (int)INT_MAX);
+    BOOST_CHECK(tb->getFV64(++fieldnum) == LLONG_MIN);// check default value
+    tb->setFV(fieldnum, (__int64)LLONG_MAX);
 
     tb->setFV(++fieldnum, (short)(UCHAR_MAX - 1));
     tb->setFV(++fieldnum, (int)(USHRT_MAX - 1));
     tb->setFV(++fieldnum, (int)(UMINT_MAX - 1));
-    tb->setFV(++fieldnum, (__int64)(UINT_MAX - 1));
-    tb->setFV(++fieldnum, (__int64)(ULLONG_MAX - 1)); 
+    BOOST_CHECK(tb->getFV64(++fieldnum) == UINT_MAX);// check default value
+    tb->setFV(fieldnum, (__int64)(UINT_MAX - 1));
+    BOOST_CHECK((unsigned __int64)tb->getFV64(++fieldnum) == ULLONG_MAX);// check default value
+    tb->setFV(fieldnum, (__int64)(ULLONG_MAX - 1)); 
     tb->setFV(++fieldnum, 2000); 
     tb->setFV(++fieldnum, 254);   //logi1
     tb->setFV(++fieldnum, (int)65000); //logi2
@@ -729,6 +835,14 @@ void testStoreInt(database* db)
     tb->setFV(++fieldnum, FLOAT_V2);
     tb->setFV(++fieldnum, (__int64)DOUBLE_V1);
     tb->setFV(++fieldnum, DOUBLE_V2);
+    tb->setFV(++fieldnum, DEC_V1);
+    tb->setFV(++fieldnum, DEC_V2);
+    tb->setFV(++fieldnum, DEC_V3);
+    tb->setFV(++fieldnum, DEC_V4);
+    tb->setFV(++fieldnum, DEC_V5);
+    tb->setFV(++fieldnum, DEC_V6);
+    tb->setFV(++fieldnum, DEC_V7);
+    tb->setFV(++fieldnum, DEC_V8);
     tb->insert();
 
     tb->clearBuffer();
@@ -768,7 +882,22 @@ void testStoreInt(database* db)
     tb->setFV(++fieldnum, buf);
     _stprintf(buf, _T("%.20lf"), DOUBLE_V2);
     tb->setFV(++fieldnum, buf);
-   
+    _stprintf(buf, _T("%.5lf"), DEC_V1);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.16lf"), DEC_V2);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.1lf"), DEC_V3);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.11lf"), DEC_V4);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.5lf"), DEC_V5);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.16lf"), DEC_V6);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.1lf"), DEC_V7);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.11lf"), DEC_V8);
+    tb->setFV(++fieldnum, buf);
 
     tb->insert();
         
@@ -803,8 +932,14 @@ void testStoreInt(database* db)
     tb->setFV(++fieldnum, FLOAT_V2);
     tb->setFV(++fieldnum, DOUBLE_V1);
     tb->setFV(++fieldnum, DOUBLE_V2);
-
-
+    tb->setFV(++fieldnum, DEC_V1);
+    tb->setFV(++fieldnum, DEC_V2);
+    tb->setFV(++fieldnum, DEC_V3);
+    tb->setFV(++fieldnum, DEC_V4);
+    tb->setFV(++fieldnum, DEC_V5);
+    tb->setFV(++fieldnum, DEC_V6);
+    tb->setFV(++fieldnum, DEC_V7);
+    tb->setFV(++fieldnum, DEC_V8);
     tb->insert();
         
     tb->clearBuffer();
@@ -860,6 +995,22 @@ void testStoreInt(database* db)
     values += "\t17\t";sprintf_s(buf2, 50, "%.0lf", DOUBLE_V1);
     values += buf2;
     values += "\t18\t";sprintf_s(buf2, 50, "%.20lf", DOUBLE_V2);
+    values += buf2;
+    values += "\t19\t";sprintf_s(buf2, 50, "%.5lf", DEC_V1);
+    values += buf2;
+    values += "\t20\t";sprintf_s(buf2, 50, "%.16lf", DEC_V2);
+    values += buf2;
+    values += "\t21\t";sprintf_s(buf2, 50, "%.1lf", DEC_V3);
+    values += buf2;
+    values += "\t22\t";sprintf_s(buf2, 50, "%.11lf", DEC_V4);
+    values += buf2;
+    values += "\t23\t";sprintf_s(buf2, 50, "%.5lf", DEC_V5);
+    values += buf2;
+    values += "\t24\t";sprintf_s(buf2, 50, "%.16lf", DEC_V6);
+    values += buf2;
+    values += "\t25\t";sprintf_s(buf2, 50, "%.1lf", DEC_V7);
+    values += buf2;
+    values += "\t26\t";sprintf_s(buf2, 50, "%.11lf", DEC_V8);
     values += buf2;
     
 
@@ -3129,6 +3280,13 @@ void testCompBlob()
     doTestCompBlob(ft_myblob, 2);
     doTestCompBlob(ft_myblob, 3);
     doTestCompBlob(ft_myblob, 4);
+}
+
+void testCompDecimal()
+{
+    comp1Func compFunc = getCompFunc(ft_mydecimal, 0, 0, 0);
+    BOOST_CHECK(compFunc != NULL);
+
 }
 
 #pragma warning(default : 4996) 

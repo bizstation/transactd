@@ -19,7 +19,7 @@
    02111-1307, USA.
 =================================================================*/
 #include <tchar.h>
-#include <bzs/db/protocol/tdap/btrDate.h>
+#include <bzs/env/compiler.h>
 
 namespace bzs
 {
