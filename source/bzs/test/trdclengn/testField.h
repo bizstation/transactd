@@ -836,11 +836,11 @@ void testStoreInt(database* db)
     tb->setFV(++fieldnum, (__int64)DOUBLE_V1);
     tb->setFV(++fieldnum, DOUBLE_V2);
     tb->setFV(++fieldnum, DEC_V1);
-    tb->setFV(++fieldnum, DEC_V2);
+    tb->setFV(++fieldnum, DEC_V2S);
     tb->setFV(++fieldnum, DEC_V3);
     tb->setFV(++fieldnum, DEC_V4);
     tb->setFV(++fieldnum, DEC_V5);
-    tb->setFV(++fieldnum, DEC_V6);
+    tb->setFV(++fieldnum, DEC_V6S);
     tb->setFV(++fieldnum, DEC_V7);
     tb->setFV(++fieldnum, DEC_V8);
     tb->insert();
@@ -933,11 +933,11 @@ void testStoreInt(database* db)
     tb->setFV(++fieldnum, DOUBLE_V1);
     tb->setFV(++fieldnum, DOUBLE_V2);
     tb->setFV(++fieldnum, DEC_V1);
-    tb->setFV(++fieldnum, DEC_V2);
+    tb->setFV(++fieldnum, DEC_V2S);
     tb->setFV(++fieldnum, DEC_V3);
     tb->setFV(++fieldnum, DEC_V4);
     tb->setFV(++fieldnum, DEC_V5);
-    tb->setFV(++fieldnum, DEC_V6);
+    tb->setFV(++fieldnum, DEC_V6S);
     tb->setFV(++fieldnum, DEC_V7);
     tb->setFV(++fieldnum, DEC_V8);
     tb->insert();

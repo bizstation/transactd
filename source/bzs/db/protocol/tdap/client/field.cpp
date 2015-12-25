@@ -49,42 +49,42 @@ namespace client
 typedef int int32;
 class myDecimal
 {
-	int32 m_data[8];
-	int32 m_sign;
-	uchar_td m_digit;
-	uchar_td m_dec;
-	uchar_td m_intBytes;
-	uchar_td m_decBytes;
-	uchar_td m_intSurplusBytes;
-	uchar_td m_decSurplusBytes;
-	uchar_td m_error;
+    int32 m_data[8];
+    int32 m_sign;
+    uchar_td m_digit;
+    uchar_td m_dec;
+    uchar_td m_intBytes;
+    uchar_td m_decBytes;
+    uchar_td m_intSurplusBytes;
+    uchar_td m_decSurplusBytes;
+    uchar_td m_error;
 
-	int32 changeEndian(int32 v, int len)
-	{
-	    int32 ret = 0;
-	    char* l = (char*)&ret;
-	    char* r = (char*)&v;
+    int32 changeEndian(int32 v, int len)
+    {
+        int32 ret = 0;
+        char* l = (char*)&ret;
+        char* r = (char*)&v;
         if (len == 4) {
             l[0] = r[3]; l[1] = r[2]; l[2] = r[1]; l[3] = r[0];
         }else if (len == 3) {
-	        l[0] = r[2]; l[1] = r[1]; l[2] = r[0];
+            l[0] = r[2]; l[1] = r[1]; l[2] = r[0];
         }else if (len == 2) {
-	        l[0] = r[1]; l[1] = r[0];
+            l[0] = r[1]; l[1] = r[0];
         }else if (len == 1)
             ret = v;
-	    return ret;
-	}
-	
-	int32 readInt32One(const char* ptr, int len)
-	{
-		int32 v = *((int32*)ptr);
-		return  changeEndian(v ^ m_sign, len) ;
-	}
+        return ret;
+    }
+    
+    int32 readInt32One(const char* ptr, int len)
+    {
+        int32 v = *((int32*)ptr);
+        return  changeEndian(v ^ m_sign, len) ;
+    }
 
-	int32 readSurplus(const char* ptr, int len)
-	{
-		assert(len <= 4);
-		int32 v = 0;
+    int32 readSurplus(const char* ptr, int len)
+    {
+        assert(len <= 4);
+        int32 v = 0;
         switch(len)
         {
         case 1: v = *((char*)ptr); break;
@@ -92,15 +92,15 @@ class myDecimal
         case 3: v = (*((int32*)ptr) & 0x00FFFFFF); break;
         case 4: v = *((int32*)ptr); break;
         }
-		return readInt32One((const char*)&v, len);
-	}
-	
-	char* write(char* ptr, int len, int32 v)
-	{
-		v = changeEndian(v, len) ^ m_sign;
-		memcpy(ptr, &v , len);
+        return readInt32One((const char*)&v, len);
+    }
+    
+    char* write(char* ptr, int len, int32 v)
+    {
+        v = changeEndian(v, len) ^ m_sign;
+        memcpy(ptr, &v , len);
         return ptr + len; 
-	}
+    }
     
     int32 fromString(const char* p, size_t len)
     {
@@ -111,104 +111,104 @@ class myDecimal
     }
 
 public:
-	myDecimal(uchar_td digit, uchar_td dec) : m_digit(digit), m_dec(dec), m_sign(0), m_error(0) 
-	{
-		assert(sizeof(int32) == 4);
-		assert(digit > 0);
+    myDecimal(uchar_td digit, uchar_td dec) : m_digit(digit), m_dec(dec), m_sign(0), m_error(0) 
+    {
+        assert(sizeof(int32) == 4);
+        assert(digit > 0);
         assert(m_digit <= 65);
         assert(m_dec <= 30);
 
-		// integer part
-		int dig = digit - dec;
-		m_intSurplusBytes = (uchar_td)decimalBytesBySurplus[dig % DIGITS_INT32];
-		m_intBytes = (uchar_td)((dig / DIGITS_INT32) * sizeof(int32));
+        // integer part
+        int dig = digit - dec;
+        m_intSurplusBytes = (uchar_td)decimalBytesBySurplus[dig % DIGITS_INT32];
+        m_intBytes = (uchar_td)((dig / DIGITS_INT32) * sizeof(int32));
 
-		// dec part
-		m_decSurplusBytes = (uchar_td)(decimalBytesBySurplus[dec % DIGITS_INT32]);
-		m_decBytes = (uchar_td)((dec / DIGITS_INT32) * sizeof(int32));
-	}
-	
-	void store(char* ptr)
-	{
-		int32* data = m_data;
-		char* p = ptr;
-		if (m_intSurplusBytes)
-			p = write(p, m_intSurplusBytes, *(data++));
-		for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
-			p = write(p, sizeof(int32), *(data++));
-		for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
-			p = write(p, sizeof(int32), *(data++));
-		if (m_decSurplusBytes)
-			write(p, m_decSurplusBytes, *data);
-		//reverse first bit
-		*(ptr) ^= 0x80;
-	}
-	
+        // dec part
+        m_decSurplusBytes = (uchar_td)(decimalBytesBySurplus[dec % DIGITS_INT32]);
+        m_decBytes = (uchar_td)((dec / DIGITS_INT32) * sizeof(int32));
+    }
+    
+    void store(char* ptr)
+    {
+        int32* data = m_data;
+        char* p = ptr;
+        if (m_intSurplusBytes)
+            p = write(p, m_intSurplusBytes, *(data++));
+        for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+            p = write(p, sizeof(int32), *(data++));
+        for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+            p = write(p, sizeof(int32), *(data++));
+        if (m_decSurplusBytes)
+            write(p, m_decSurplusBytes, *data);
+        //reverse first bit
+        *(ptr) ^= 0x80;
+    }
+    
     void read(const char* ptr)
-	{
-		m_sign = ((*ptr) & 0x80) ? 0 : -1;
-		int32* data = m_data;
-		const char* p = ptr;
-		//reverse first bit
-		*(const_cast<char*>(ptr)) ^= 0x80;
-		if (m_intSurplusBytes)
-		{
-			*(data++) = readSurplus(p, m_intSurplusBytes);
-			p += m_intSurplusBytes;
-		}
-		for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
-		{
-			*(data++) = readInt32One(p, sizeof(int32));
-			p += sizeof(int32);
-		}
-		for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
-		{
-			*(data++) = readInt32One(p, sizeof(int32));
-			p += sizeof(int32);
-		}
-		if (m_decSurplusBytes)
-			*data = readSurplus(p, m_decSurplusBytes);
-		//restore first bit
-		*(const_cast<char*>(ptr)) ^= 0x80;
-	}
+    {
+        m_sign = ((*ptr) & 0x80) ? 0 : -1;
+        int32* data = m_data;
+        const char* p = ptr;
+        //reverse first bit
+        *(const_cast<char*>(ptr)) ^= 0x80;
+        if (m_intSurplusBytes)
+        {
+            *(data++) = readSurplus(p, m_intSurplusBytes);
+            p += m_intSurplusBytes;
+        }
+        for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+        {
+            *(data++) = readInt32One(p, sizeof(int32));
+            p += sizeof(int32);
+        }
+        for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+        {
+            *(data++) = readInt32One(p, sizeof(int32));
+            p += sizeof(int32);
+        }
+        if (m_decSurplusBytes)
+            *data = readSurplus(p, m_decSurplusBytes);
+        //restore first bit
+        *(const_cast<char*>(ptr)) ^= 0x80;
+    }
 
     char* toString(char* ptr, int size)
-	{
-		assert(size >= m_digit + 1);
+    {
+        assert(size >= m_digit + 1);
 
         char* p = ptr;
-		if (m_sign)
-			*(p++) = '-';
+        if (m_sign)
+            *(p++) = '-';
         char* p_cache = p;
         *p = '0';
         int32* data = m_data;
-		if (m_intSurplusBytes)
+        if (m_intSurplusBytes)
         {
-		    if (*data)
+            if (*data)
                 p += sprintf(p, "%d", *data);
             ++data;
         }
-		for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+        for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
         {
-   		    if (*data || p != p_cache)
+            if (*data || p != p_cache)
                 p += sprintf(p, p != p_cache ? "%09d" : "%d", *data);
             ++data;
         }
         if (p_cache == p) ++p;
         if (m_dec)
         {
-		    int dec_n = m_dec;
+            int dec_n = m_dec;
             *(p++) = '.';
-		    for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+            for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
             {
-			    p += sprintf(p, "%09d", *(data++));
+                p += sprintf(p, "%09d", *(data++));
                 dec_n -= DIGITS_INT32;
             }
-		    if (m_decSurplusBytes)
-			    p += sprintf(p, "%0*d", dec_n, *data);
+            if (m_decSurplusBytes)
+                p += sprintf(p, "%0*d", dec_n, *data);
         }
-		return ptr;
-	}
+        return ptr;
+    }
  
     myDecimal& operator=(const char* p)
     {
@@ -266,20 +266,20 @@ public:
     }
 
     double d()
-	{
+    {
         char tmp[100];
         return atof(toString(tmp, 100));
     }
 
     __int64 i64()
-	{
+    {
         char tmp[100];
         return _atoi64(toString(tmp, 100));
     }
 
 #ifdef _WIN32
     wchar_t* toString(wchar_t* ptr, int size)
-	{
+    {
         char tmp[100];
         toString(tmp, 100);
         MultiByteToWideChar(CP_ACP, 0, tmp, -1, ptr, size);

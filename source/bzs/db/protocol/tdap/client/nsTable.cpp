@@ -952,8 +952,10 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
         _tfullpath(buf, path, MAX_PATH);
     else
 #endif
-        stripAuth(path, buf, MAX_PATH);
+    stripAuth(path, buf, MAX_PATH);
     _TUCHAR* p = _tcsmrchr((_TUCHAR*)buf, PSEPARATOR_C);
+    _TUCHAR* p1 = _tcsmrchr((_TUCHAR*)buf, '?');
+    if (p1 && (p1 > p)) p = p1;
     _TUCHAR* p2 = _tcsmrchr((_TUCHAR*)buf, '=');
     if (p && p2)
     {
