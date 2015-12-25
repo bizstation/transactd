@@ -85,7 +85,7 @@ public:
     STDMETHOD(get_TableDef)(ITableDef** Value);
     STDMETHOD(Insert)(eUpdateType ncc);
     STDMETHOD(Delete)(VARIANT_BOOL inkey);
-    STDMETHOD(ClearBuffer)();
+    STDMETHOD(ClearBuffer)(eNullReset resetType);
     STDMETHOD(Close)();
     STDMETHOD(SeekFirst)(eLockType lockBias);
     STDMETHOD(SeekLast)(eLockType lockBias);
@@ -165,5 +165,7 @@ public:
     STDMETHOD(get_LastFindDirection)(short* Value);
     STDMETHOD(get_BookmarkLen)(unsigned short* Value);
     STDMETHOD(get_Bookmarks)(long index, IBookmark** Value);
+    STDMETHOD(get_Null)(VARIANT Index, VARIANT_BOOL* Value);
+    STDMETHOD(put_Null)(VARIANT Index, VARIANT_BOOL Value);
 
 };

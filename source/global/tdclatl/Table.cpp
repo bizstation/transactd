@@ -90,6 +90,24 @@ STDMETHODIMP CTableTd::put_Vlng(VARIANT Index, int Value)
     return S_OK;
 }
 
+STDMETHODIMP CTableTd::put_Null(VARIANT Index, VARIANT_BOOL Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    m_tb->setFVNull(index, Value != 0);
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::get_Null(VARIANT Index, VARIANT_BOOL* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    *Value = m_tb->getFVNull(index);
+    return S_OK;
+}
+
 STDMETHODIMP CTableTd::get_V64(VARIANT Index, __int64* Value)
 {
     short index = GetFieldNum(&Index);
@@ -182,9 +200,11 @@ STDMETHODIMP CTableTd::Delete(VARIANT_BOOL inkey)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::ClearBuffer()
+STDMETHODIMP CTableTd::ClearBuffer(eNullReset resetType)
 {
-    m_tb->clearBuffer();
+  
+    m_tb->clearBuffer((resetType == defaultNull) ? 
+            client::table::defaultNull : client::table::clearNull);
     return S_OK;
 }
 

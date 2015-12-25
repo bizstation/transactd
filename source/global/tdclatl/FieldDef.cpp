@@ -122,20 +122,6 @@ STDMETHODIMP CFieldDef::put_Min(double Value)
     return S_OK;
 }
 
-STDMETHODIMP CFieldDef::get_DefValue(double* Value)
-{
-    *Value = const_fielddef()->defValue;
-    return S_OK;
-}
-
-STDMETHODIMP CFieldDef::put_DefValue(double Value)
-{
-    if (!isWritabale())
-        return write_error();
-    fielddef()->defValue = Value;
-    return S_OK;
-}
-
 STDMETHODIMP CFieldDef::get_LookTable(unsigned char* Value)
 {
     *Value = const_fielddef()->lookTable;
@@ -308,3 +294,82 @@ STDMETHODIMP CFieldDef::get_TrimPadChar(VARIANT_BOOL* Value)
 	*Value = fielddef()->trimPadChar();
     return S_OK;
 }
+
+STDMETHODIMP CFieldDef::put_DefaultValue(VARIANT Value)
+{
+    if (Value.vt == VT_BSTR)
+        fielddef()->setDefaultValue(Value.bstrVal);
+    else if (Value.vt == VT_R8)
+        fielddef()->setDefaultValue(Value.dblVal);
+    else if (Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT)
+        fielddef()->setDefaultValue((double)Value.llVal);
+    else
+    {
+        VariantChangeType( &Value, &Value, 0, VT_BSTR );
+        fielddef()->setDefaultValue(Value.bstrVal);
+    }
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_DefaultValue(VARIANT* Value)
+{
+    CComBSTR ret;
+    ret = const_fielddef()->defaultValue_str();
+
+    VariantClear(Value);
+    Value->vt = VT_BSTR;
+    Value->bstrVal = ret.Copy();
+
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_PadCharType(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isPadCharType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_DateTimeType(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isDateTimeType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_ValidateCharNum(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->validateCharNum();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_Nullable(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->nullable();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::SetNullable(VARIANT_BOOL Value, VARIANT_BOOL DefaultNull)
+{
+	fielddef()->setNullable(Value != 0, DefaultNull != 0);
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::put_TimeStampOnUpdate(VARIANT_BOOL Value)
+{
+	fielddef()->setTimeStampOnUpdate(Value != 0);
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_TimeStampOnUpdate(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isTimeStampOnUpdate();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_DefaultNull(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isDefaultNull();
+    return S_OK;
+}
+
+
+

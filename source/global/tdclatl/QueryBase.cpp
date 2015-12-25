@@ -367,3 +367,47 @@ STDMETHODIMP CQueryBase::IsSeekByBookmarks(VARIANT_BOOL* retVal)
     *retVal = m_qb.isSeekByBookmarks();
     return S_OK;
 }
+
+
+STDMETHODIMP CQueryBase::WhereIsNull(BSTR Name, IQueryBase** retVal)
+{
+    m_qb.addLogic(Name, _T("<==>"), _T(""));
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::AndIsNull(BSTR Name,IQueryBase** retVal)
+{
+    m_qb.addLogic(_T("and"), Name, _T("<==>"), _T(""));
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::OrIsNull(BSTR Name, IQueryBase** retVal)
+{
+    m_qb.addLogic(_T("or"), Name, _T("<==>"), _T(""));
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::WhereIsNotNull(BSTR Name, IQueryBase** retVal)
+{
+    m_qb.addLogic(Name, _T("<!=>"), _T(""));
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::AndIsNotNull(BSTR Name,IQueryBase** retVal)
+{
+    m_qb.addLogic(_T("and"), Name, _T("<!=>"), _T(""));
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::OrIsNotNull(BSTR Name, IQueryBase** retVal)
+{
+    m_qb.addLogic(_T("or"), Name, _T("<!=>"), _T(""));
+    setResult(retVal);
+    return S_OK;
+}
+

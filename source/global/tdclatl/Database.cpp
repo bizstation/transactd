@@ -418,8 +418,7 @@ STDMETHODIMP CDatabase::ConvertTable(short TableIndex, VARIANT_BOOL Turbo,
 }
 
 STDMETHODIMP CDatabase::CopyTableData(ITable* Dest, ITable* Src,
-                                      VARIANT_BOOL Turbo, int Offset,
-                                      short KeyNum, int MaxSkip, short* Value)
+                                      VARIANT_BOOL Turbo, short KeyNum, int MaxSkip, short* Value)
 {
     CTableTd* dest = dynamic_cast<CTableTd*>(Dest);
     CTableTd* src = dynamic_cast<CTableTd*>(Src);
@@ -442,14 +441,6 @@ STDMETHODIMP CDatabase::CreateTable(short FileNum, BSTR Uri,
 STDMETHODIMP CDatabase::ExistsTableFile(short TableIndex, BSTR OwnerName)
 {
     m_db->existsTableFile(TableIndex, OwnerName);
-    return S_OK;
-}
-
-STDMETHODIMP CDatabase::GetTableUri(short FileNum, BSTR* Value)
-{
-    wchar_t tmp[MAX_PATH] = { NULL };
-    m_db->getTableUri(tmp, FileNum);
-    *Value = ::SysAllocString(tmp);
     return S_OK;
 }
 
@@ -531,6 +522,31 @@ STDMETHODIMP CDatabase::get_TrxLockWaitTimeoutServer(int* Value)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::put_AutoSchemaUseNullkey(VARIANT_BOOL Value)
+{
+    m_db->setAutoSchemaUseNullkey(Value);
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::get_AutoSchemaUseNullkey(VARIANT_BOOL* Value)
+{
+    *Value = m_db->autoSchemaUseNullkey();
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::put_ComaptibleMode(int Value)
+{
+    database::setCompatibleMode(Value);
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::get_ComaptibleMode(int* Value)
+{
+    *Value = database::comaptibleMode();
+    return S_OK;
+}
+
+
 void __stdcall onCopyData(database* db, int recordCount, int count,
                           bool& cancel)
 {
@@ -557,3 +573,5 @@ bool __stdcall onDeleteRecord(database* db, table* tb, bool inkey)
     cdb->Fire_OnDeleteRecord(dbPtr, tbPtr, &tmp);
     return (tmp != 0);
 }
+
+

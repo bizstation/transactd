@@ -80,9 +80,13 @@ public:
     STDMETHOD(put_PrimaryKeyNum)(unsigned char Value);
     STDMETHOD(get_FixedRecordLen)(unsigned short* Value);
     STDMETHOD(put_FixedRecordLen)(unsigned short Value);
-    STDMETHOD(get_MaxRecordLen)(unsigned short* Value);
-    STDMETHOD(put_MaxRecordLen)(unsigned short Value);
+    STDMETHOD(get_RecordLen)(unsigned short* Value);
     STDMETHOD(get_SchemaCodePage)(unsigned int* Value);
     STDMETHOD(put_SchemaCodePage)(unsigned int Value);
     STDMETHOD(get_Version)(unsigned short* Value);
+    STDMETHOD(get_FieldNumByName)(BSTR Name, short* Value);
+    STDMETHOD(get_Nullfields)(short* Value);
+    STDMETHOD(get_InUse)(short* Value);
+    STDMETHOD(get_MysqlNullMode)(VARIANT_BOOL* Value);
+    STDMETHOD(get_Size)(int* Value);
 };

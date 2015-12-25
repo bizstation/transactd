@@ -85,3 +85,16 @@ STDMETHODIMP CField::put_Vdbl(double Value)
     m_fd.operator=(Value);
     return S_OK;
 }
+
+STDMETHODIMP CField::put_Null(VARIANT_BOOL Value)
+{
+    m_fd.setNull(Value);
+    return S_OK;
+}
+
+STDMETHODIMP CField::get_Null(VARIANT_BOOL* Value)
+{
+    *Value = m_fd.isNull();
+    return S_OK;
+}
+

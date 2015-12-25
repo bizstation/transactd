@@ -146,6 +146,7 @@ enum eStatus
 	STATUS_INVALID_FIELDVALUE	= -36,
 	STATUS_INVALID_VALLEN		= -37,
 	STATUS_FIELDTYPE_NOTSUPPORT = -42,
+    STATUS_FIELDTYPE_NOTSUPPORT = -43,
 	STATUS_SUCCESS				= 0,
 	STATUS_PROGRAM_ERROR		= 1,
 	STATUS_IO_ERROR				= 2,
@@ -373,6 +374,16 @@ enum eOptimize
 	combineCondition = 2
 }eOptimize;
 
+typedef
+[
+  helpstring("table cleabuffer option")
+]
+enum eNullReset
+{
+	clearNull = 0,
+	defaultNull = 1
+
+}eNullReset;
 
 
 
@@ -469,14 +480,12 @@ interface IDatabase : IDispatch
   [id(0x000000E6)]
   HRESULT _stdcall ConvertTable([in] short TableIndex, [in, defaultvalue(-1)] VARIANT_BOOL Turbo, [in, defaultvalue("")] BSTR OwnerName);
   [id(0x000000E7)]
-  HRESULT _stdcall CopyTableData([in] ITable* Dest, [in] ITable* Src, [in] VARIANT_BOOL Turbo, [in, defaultvalue(0)] int Offset
-	  , [in, defaultvalue(-1)] short KeyNum, [in, defaultvalue(-1)] int MaxSkip, [out, retval] short* Value);
+  HRESULT _stdcall CopyTableData([in] ITable* Dest, [in] ITable* Src, [in] VARIANT_BOOL Turbo,
+	  [in, defaultvalue(-1)] short KeyNum, [in, defaultvalue(-1)] int MaxSkip, [out, retval] short* Value);
   [id(0x000000E8)]
   HRESULT _stdcall CreateTable([in] short FileNum, [in, defaultvalue("")] BSTR Uri, [out, retval] VARIANT_BOOL* Value);
   [id(0x000000E9)]
   HRESULT _stdcall ExistsTableFile([in] short TableIndex, [in, defaultvalue("")] BSTR OwnerName);
-  [id(0x000000EA)]
-  HRESULT _stdcall GetTableUri([in] short FileNum, [out, retval] BSTR* Value);
   [propget, id(0x000000EB)]
   HRESULT _stdcall IsOpened([out, retval] VARIANT_BOOL* Value);
   [propget, id(0x000000EC)]
@@ -509,6 +518,15 @@ interface IDatabase : IDispatch
   HRESULT _stdcall Reconnect([out, retval] VARIANT_BOOL* Value);
   [id(0x000000F9)]
   HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
+  [propput, id(0x000000FA)]
+  HRESULT _stdcall AutoSchemaUseNullkey([in] VARIANT_BOOL Value);
+  [propget, id(0x000000FA)]
+  HRESULT _stdcall AutoSchemaUseNullkey([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000FB)]
+  HRESULT _stdcall ComaptibleMode([in] int Value);
+  [propget, id(0x000000FB)]
+  HRESULT _stdcall ComaptibleMode([out, retval] int* Value);
+
 
 };
 
@@ -552,8 +570,6 @@ interface IDbDef : IDispatch
   HRESULT _stdcall FieldValidLength([in] eFieldQuery Query, [in] short FieldType, [out, retval] unsigned int* Value);
   [id(0x000000D5)]
   HRESULT _stdcall FindKeynumByFieldNum([in] short TableIndex, [in] short Index, [out, retval] unsigned short* Value);
-  [id(0x000000D6)]
-  HRESULT _stdcall GetRecordLen([in] short TableIndex, [out, retval] unsigned short* Value);
   [propget, id(0x000000D7)]
   HRESULT _stdcall OpenMode([out, retval] eOpenMode* Value);
   [id(0x000000D8)]
@@ -576,6 +592,9 @@ interface IDbDef : IDispatch
   HRESULT _stdcall ValidateTableDef([in]short TableIndex, [out, retval] short* Value);
   [id(0x000000E0)]
   HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
+  [id(0x000000E1)]
+  HRESULT _stdcall SynchronizeSeverSchema([in] short TableIndex);
+ 
 
 };
 [
@@ -604,7 +623,7 @@ interface ITable : IDispatch
   [id(0x00000006)]
   HRESULT _stdcall Delete([in, defaultvalue(0)] VARIANT_BOOL inkey);
   [id(0x00000007)]
-  HRESULT _stdcall ClearBuffer(void);
+  HRESULT _stdcall ClearBuffer([in, defaultvalue(defaultNull)] eNullReset resetType);
   [id(0x00000019)]
   HRESULT _stdcall Close(void);
   [id(0x0000001A)]
@@ -757,8 +776,10 @@ interface ITable : IDispatch
   HRESULT _stdcall Bookmarks([in] long index, [out, retval] IBookmark** Value);
   [id(0x000000E5)]
   HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
-
-  
+  [propget, id(0x000000E6)]
+  HRESULT _stdcall Null([in] VARIANT Index, [out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000E6)]
+  HRESULT _stdcall Null([in] VARIANT Index, [in] VARIANT_BOOL Value);
 
 };
 [
@@ -827,9 +848,7 @@ interface ITableDef : IDispatch
   [propput, id(0x000000CC)]
   HRESULT _stdcall FixedRecordLen([in] unsigned short Value);
   [propget, id(0x000000CD)]
-  HRESULT _stdcall MaxRecordLen([out, retval] unsigned short* Value);
-  [propput, id(0x000000CD)]
-  HRESULT _stdcall MaxRecordLen([in] unsigned short Value);
+  HRESULT _stdcall RecordLen([out, retval] unsigned short* Value);
   [propget, id(0x000000CF)]
   HRESULT _stdcall SchemaCodePage([out, retval] unsigned int* Value);
   [propput, id(0x000000CF)]
@@ -840,6 +859,17 @@ interface ITableDef : IDispatch
   HRESULT _stdcall FieldDef([in] short Index, [out, retval] IFieldDef** Value);
   [propget, id(0x000000CB)]
   HRESULT _stdcall KeyDef([in] short Index, [out, retval] IKeyDef** Value);
+  [propget, id(0x000000CE)]
+  HRESULT _stdcall FieldNumByName([in] BSTR Name, [out, retval] short* Value);
+
+  [propget, id(0x000000D1)]
+  HRESULT _stdcall Nullfields([out, retval] short* Value);
+  [propget, id(0x000000D2)]
+  HRESULT _stdcall InUse([out, retval] short* Value);
+  [propget, id(0x000000D3)]
+  HRESULT _stdcall MysqlNullMode([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x000000D4)]
+  HRESULT _stdcall Size([out, retval] int* Value);
 };
 [
 	object,
@@ -874,10 +904,6 @@ interface IFieldDef : IDispatch
   HRESULT _stdcall Min([out, retval] double* Value);
   [propput, id(0x00000006)]
   HRESULT _stdcall Min([in] double Value);
-  [propget, id(0x00000007)]
-  HRESULT _stdcall DefValue([out, retval] double* Value);
-  [propput, id(0x00000007)]
-  HRESULT _stdcall DefValue([in] double Value);
   [propget, id(0x00000008), hidden]
   HRESULT _stdcall LookTable([out, retval] unsigned char* Value);
   [propput, id(0x00000008), hidden]
@@ -926,6 +952,29 @@ interface IFieldDef : IDispatch
   HRESULT _stdcall UsePadChar([out, retval] VARIANT_BOOL* Value);
   [propget, id(0x00000018)]
   HRESULT _stdcall TrimPadChar([out, retval] VARIANT_BOOL* Value);
+
+  [propget, id(0x00000019)]
+  HRESULT _stdcall DefaultValue([out, retval] VARIANT* Value);
+  [propput, id(0x00000019)]
+  HRESULT _stdcall DefaultValue([in] VARIANT Value);
+  [propget, id(0x0000001A)]
+  HRESULT _stdcall PadCharType([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000001B)]
+  HRESULT _stdcall DateTimeType([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000001C)]
+  HRESULT _stdcall ValidateCharNum([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000001D)]
+  HRESULT _stdcall Nullable([out, retval] VARIANT_BOOL* Value);
+  [id(0x0000001E)]
+  HRESULT _stdcall SetNullable([in] VARIANT_BOOL Value, [in , defaultvalue(1)] VARIANT_BOOL DefaultNull);
+  [propget, id(0x00000020)]
+  HRESULT _stdcall TimeStampOnUpdate([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x00000020)]
+  HRESULT _stdcall TimeStampOnUpdate([in] VARIANT_BOOL Value);
+  [propget, id(0x00000021)]
+  HRESULT _stdcall DefaultNull([out, retval] VARIANT_BOOL* Value);
+  
+
 };
 [
 	object,
@@ -1016,6 +1065,13 @@ interface IField : IDispatch
   HRESULT _stdcall Vbin([out, retval] BSTR* Value);
   [propput, id(0x000000CD)]
   HRESULT _stdcall Vbin([in] BSTR Value);
+  [propget, id(0x000000CE)]
+  HRESULT _stdcall Null([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000CE)]
+  HRESULT _stdcall Null([in] VARIANT_BOOL Value);
+
+
+
 };
 
 [
@@ -1143,6 +1199,21 @@ interface IQueryBase : IDispatch
   [id(0x0000020)]
   HRESULT _stdcall AddSeekBookmark([in] VARIANT Value, [in, defaultvalue(0)] VARIANT_BOOL Reset);
  
+  [id(0x0000021)]
+  HRESULT _stdcall WhereIsNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000022)]
+  HRESULT _stdcall AndIsNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000023)]
+  HRESULT _stdcall OrIsNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000024)]
+  HRESULT _stdcall WhereIsNotNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000025)]
+  HRESULT _stdcall AndIsNotNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000026)]
+  HRESULT _stdcall OrIsNotNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+ 
+
+
 };
 
 [
@@ -1378,6 +1449,12 @@ interface IFieldDefs : IDispatch
   HRESULT _stdcall FieldDef([in] VARIANT Name, [out, retval] IFieldDef** retVal);
   [propget, id(0x0000003)]
   HRESULT _stdcall Size([out, retval] short* retVal);
+  /*[id(0x0000004)]
+  HRESULT _stdcall AddAllFileds([in] ITableDef* Def);
+  [id(0x0000005)]
+  HRESULT _stdcall AddSelectedFields([in] ITable* Table);
+  */
+
 };
 
 

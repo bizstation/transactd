@@ -66,7 +66,6 @@ public:
                                 unsigned int* Value);
     STDMETHOD(FindKeynumByFieldNum)(short TableIndex, short Index,
                                     unsigned short* Value);
-    STDMETHOD(GetRecordLen)(short TableIndex, unsigned short* Value);
     STDMETHOD(get_OpenMode)(eOpenMode* Value);
     STDMETHOD(PopBackup)(short TableIndex);
     STDMETHOD(PushBackup)(short TableIndex);
@@ -78,4 +77,6 @@ public:
     STDMETHOD(TdapErr)(OLE_HANDLE hWnd, BSTR* Value);
     STDMETHOD(StatMsg)(BSTR* Value);
     STDMETHOD(ValidateTableDef)(short TableIndex, short* Value);
+    STDMETHOD(SynchronizeSeverSchema)(short TableIndex);
+
 };

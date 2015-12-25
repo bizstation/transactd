@@ -59,4 +59,7 @@ public:
     STDMETHOD(get_Vdbl)(double* Value);
     STDMETHOD(put_Vbin)(BSTR Value);
     STDMETHOD(put_Vdbl)(double Value);
+    STDMETHOD(put_Null)(VARIANT_BOOL Value);
+    STDMETHOD(get_Null)(VARIANT_BOOL* Value);
+
 };

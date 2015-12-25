@@ -19,6 +19,9 @@
 #include "stdafx.h"
 #include "FieldDefs.h"
 #include "FieldDef.h"
+#include "TableDef.h"
+#include "Table.h"
+
 STDMETHODIMP CFieldDefs::InterfaceSupportsErrorInfo(REFIID riid)
 {
 	static const IID* const arr[] = 
@@ -81,3 +84,51 @@ STDMETHODIMP CFieldDefs::get_Size(short* retVal)
     *retVal = (short)m_fds->size();
     return S_OK;
 }
+
+/*
+STDMETHODIMP CFieldDefs::AddAllFileds(ITableDef* Def)
+{
+    try
+    {
+        if (Def)
+        {
+            CTableDef* def = dynamic_cast<CTableDef*>(Def);
+            if (def)
+            {
+                const_cast<bzs::db::protocol::tdap::client::fielddefs*>(m_fds)
+                    ->addAllFileds(*(def->m_tabledefPtr));
+                return S_OK;
+            }
+        }
+        return Error("Invalid param Def", IID_IFieldDefs);
+        
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IFieldDefs);
+    }
+}
+
+STDMETHODIMP CFieldDefs::AddSelectedFields(ITable* Table)
+{
+    try
+    {
+        if (Table)
+        {
+            CTableTd* tb = dynamic_cast<CTableTd*>(Table);
+            if (tb)
+            {
+                const_cast<bzs::db::protocol::tdap::client::fielddefs*>(m_fds)
+                    ->addSelectedFields(tb->m_tb.get());
+                return S_OK;
+            }
+        }
+        return Error("Invalid param Def", IID_IFieldDefs);
+        
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IFieldDefs);
+    }
+
+}*/
