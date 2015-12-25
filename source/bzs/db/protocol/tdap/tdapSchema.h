@@ -682,7 +682,8 @@ private:
                 return to + 1 + keylen - keyVarlen;
             }else
                 ++to;
-        }else if(!isNull)
+        }
+        if(!isNull)
         {
             if (keyVarlen)
             {

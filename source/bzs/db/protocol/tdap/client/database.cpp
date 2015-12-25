@@ -1157,13 +1157,15 @@ void database::doConvertTable(short TableIndex, bool Turbo,
     tabledef* td = m_impl->dbDef->tableDefs(TABLE_NUM_TMP);
     td->setFielddefsPtr();
     td->setKeydefsPtr();
+    short id = td->id;
+    td->id = TABLE_NUM_TMP;
     short mode = TD_OPEN_EXCLUSIVE +
                     (isUseTransactd() ? TD_OPEN_MASK_MYSQL_NULL: 0);
 
     src = openTable(TABLE_NUM_TMP, mode, false, OwnerName);
+    td->id = id;
     if (!src)
         return;
-
     td = m_impl->dbDef->tableDefs(TableIndex);
     short len = td->recordlen();
 

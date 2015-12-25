@@ -219,6 +219,8 @@ public:
         }
     }
 /** @endcond */
+
+    /* swig using copy constructor */
     inline field(const field& r) : m_fd(r.m_fd), m_ptr(r.m_ptr), m_fds(r.m_fds),
             m_cachedNullPtr(r.m_cachedNullPtr), m_nullbit(r.m_nullbit)
     {

@@ -474,7 +474,7 @@ void checkAutoTimeStamp(__int64& oldValue, __int64 newValue)
     _TCHAR tmp[30];
     myTimeStamp ts_auto(0, false);
     ts_auto.i64 = newValue;
-    BOOST_CHECK(_tcscmp(btrdtoa(getNowDate(),(wchar_t*)NULL, true), ts_auto.dateStr(tmp)) == 0);
+    BOOST_CHECK(_tcscmp(btrdtoa(getNowDate(),(_TCHAR*)NULL, true), ts_auto.dateStr(tmp)) == 0);
 
     oldValue = newValue;
 }
