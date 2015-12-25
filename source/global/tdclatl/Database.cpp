@@ -83,11 +83,12 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode,
         tb = m_db->openTable(TableID.iVal, Mode, (bool)AutoCreate, OwnerName, Uri);
     else if (TableID.vt == VT_I4)
         tb = m_db->openTable((short)TableID.lVal, Mode, (bool)AutoCreate, OwnerName, Uri);
-                             
+    else
+        return Error("Invalid param 1 OpenTable ", IID_IDatabase);
 
     if (m_db->stat() != 0)
         return S_OK;
-        //return Error("Invalid tableid", IID_IDatabase);
+ 
 
     CComObject<CTableTd>* ptb;
     CComObject<CTableTd>::CreateInstance(&ptb);

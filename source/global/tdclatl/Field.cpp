@@ -103,7 +103,9 @@ STDMETHODIMP CField::SetValue(VARIANT Value)
 {
     if (Value.vt == VT_BSTR)
         m_fd = Value.bstrVal;
-    else if (Value.vt == VT_R8 || Value.vt == VT_R4)
+    else if (Value.vt == VT_R4)
+        m_fd = Value.fltVal;
+    else if (Value.vt == VT_R8)
         m_fd = Value.dblVal;
     else if (Value.vt == VT_I2)
         m_fd = Value.iVal;

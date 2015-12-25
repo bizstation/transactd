@@ -301,11 +301,13 @@ STDMETHODIMP CFieldDef::put_DefaultValue(VARIANT Value)
 {
     if (Value.vt == VT_BSTR)
         fielddef()->setDefaultValue(Value.bstrVal);
-    else if (Value.vt == VT_R8 || Value.vt == VT_R4)
+    else if (Value.vt == VT_R4)
+        fielddef()->setDefaultValue(Value.fltVal);
+    else if (Value.vt == VT_R8)
         fielddef()->setDefaultValue(Value.dblVal);
     else if (Value.vt == VT_I2)
         fielddef()->setDefaultValue((__int64)Value.iVal);
-    else if (Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT)
+    else if (Value.vt == VT_I4 || Value.vt == VT_INT)
         fielddef()->setDefaultValue((__int64)Value.lVal);
     else if (Value.vt == VT_I8)
         fielddef()->setDefaultValue((__int64)Value.llVal);

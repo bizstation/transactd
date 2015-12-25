@@ -157,7 +157,9 @@ STDMETHODIMP CTableTd::SetFV(VARIANT Index, VARIANT Value)
 
     if (Value.vt == VT_BSTR)
         m_tb->setFV(index, Value.bstrVal);
-    else if (Value.vt == VT_R8 || Value.vt == VT_R4)
+    else if (Value.vt == VT_R4)
+        m_tb->setFV(index, Value.fltVal);
+    else if (Value.vt == VT_R8)
         m_tb->setFV(index, Value.dblVal);
     else if (Value.vt == VT_I2)
         m_tb->setFV(index, Value.iVal);
@@ -176,7 +178,10 @@ STDMETHODIMP CTableTd::SetFV(VARIANT Index, VARIANT Value)
     else
     {
         VariantChangeType( &Value, &Value, 0, VT_BSTR );
-        m_tb->setFV(index, Value.bstrVal);
+        if (Value.bstrVal[0])
+            m_tb->setFV(index, Value.bstrVal);
+        else
+            m_tb->setFV(index, L"");
     }
     return S_OK;
 }
