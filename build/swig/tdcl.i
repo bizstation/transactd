@@ -738,12 +738,12 @@ using namespace bzs::db::protocol::tdap::client;
     self->setPrepare(q->getFilter());
   }
 
-  bitset* getFVBits(short index) {
+  bitset* getFVbits(short index) {
     bitset* b = new bitset(self->getFV64(index));
     return b;
   }
 
-  bitset* getFVBits(const _TCHAR* fieldName) {
+  bitset* getFVbits(const _TCHAR* fieldName) {
     bitset* b = new bitset(self->getFV64(fieldName));
     return b;
   }
@@ -760,7 +760,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::setQuery;
 %ignore bzs::db::protocol::tdap::client::table::setPrepare;
 %ignore bzs::db::protocol::tdap::client::table::tableDefPtr;
-%ignore bzs::db::protocol::tdap::client::table::getFVBits;
+%ignore bzs::db::protocol::tdap::client::table::getFVbits;
 
   // create and release methods for table class
 %extend bzs::db::protocol::tdap::client::table {
@@ -1246,17 +1246,17 @@ using namespace bzs::db::protocol::tdap::client;
 // --
 
 // database::getSqlStringForCreateTable
-%typemap(in, numinputs=0) (const _TCHAR* tableName, char* retbuf, uint_td* size)
+%typemap(in, numinputs=0) (char* retbuf, uint_td* size)
 {
   uint_td n = 65000;
   uint_td* n_p = &n;
   char* p = new char[n];
-  $2 = p;
-  $3 = n_p;
+  $1 = p;
+  $2 = n_p;
 }
-%typemap(freearg) (const _TCHAR* tableName, char* retbuf, uint_td* size)
+%typemap(freearg) (char* retbuf, uint_td* size)
 {
-  delete [] $2;
+  delete [] $1;
 }
 
 %include bzs/db/protocol/tdap/client/database.h

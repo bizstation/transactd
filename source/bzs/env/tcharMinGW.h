@@ -23,6 +23,7 @@
 #ifdef _UNICODE
 
 #define _tcsncpy_s wcsncpy_s
+#define _tcslwr _wcslwr
 
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5) // 4.5 and lesser
 #define _tcscpy_s wcscpy_s
@@ -41,6 +42,7 @@ typedef wchar_t _TUCHAR;
 
 #define _tcsncpy_s strncpy_s
 #define _tcsupr_s(a, b) (_strupr(a))
+#define _tcslwr _mbslwr
 
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5) // 4.5 and lesser
 #define _tcscpy_s strcpy_s
