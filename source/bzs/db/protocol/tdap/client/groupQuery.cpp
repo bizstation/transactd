@@ -466,7 +466,7 @@ public:
             for (int j = 0; j < (int)m_funcs.size(); ++j)
             {
                 if (m_funcs[j]->isNull(i))
-                    (*cur).setInvalidRecord(m_funcs[j]->resultKey());
+                    (*cur).setInvalidMemblock(m_funcs[j]->resultKey());
                 else if (m_funcs[j]->resultType() == ft_float)
                     setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->numericResult(i));
                 else

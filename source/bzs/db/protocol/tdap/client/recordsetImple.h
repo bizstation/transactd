@@ -169,7 +169,7 @@ public:
     inline unsigned char* ptr(size_t row, int stat);
     inline void setRowOffset(int v) { m_rowOffset = v; }
     inline void setJoinType(int v) { m_addType = v; }
-    inline void setInvalidRecord(size_t row, bool v);
+    inline void setInvalidMemblock(size_t row, bool v);
     inline void setCurFirstField(int v) { m_curFirstField = v; }
     inline void setJoinRowMap(const std::vector<std::vector<int> >* v)
     {
@@ -721,16 +721,16 @@ inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
     return (*m_rs)[rowNum].nullPtr(col);
 }
 
-inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
+inline void multiRecordAlocatorImple::setInvalidMemblock(size_t row, bool v)
 {
     if (m_joinRowMap)
     {
         const std::vector<int>& map = (*m_joinRowMap)[row + m_rowOffset];
         for (int j = 0; j < (int)map.size(); ++j)
-            (*m_rs)[map[j]].setInvalidRecord(v ? m_curFirstField : 0);
+            (*m_rs)[map[j]].setInvalidMemblock(v ? m_curFirstField : 0);
     }
     else
-        (*m_rs)[row + m_rowOffset].setInvalidRecord(v ? m_curFirstField : 0);
+        (*m_rs)[row + m_rowOffset].setInvalidMemblock(v ? m_curFirstField : 0);
 }
 
 inline void multiRecordAlocatorImple::duplicateRow(int row, int count)

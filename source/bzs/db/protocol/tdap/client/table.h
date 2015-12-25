@@ -73,7 +73,7 @@ public:
     virtual unsigned char* allocBlobBlock(size_t size) = 0;
     virtual unsigned char* ptr(size_t row, int stat) = 0;
     virtual void setJoinType(int v) = 0;
-    virtual void setInvalidRecord(size_t row, bool v) = 0;
+    virtual void setInvalidMemblock(size_t row, bool v) = 0;
     virtual void setJoinRowMap(
         const std::vector<std::vector<int> >* v /*, size_t size*/) = 0;
     virtual const std::vector<std::vector<int> >* joinRowMap() const = 0;

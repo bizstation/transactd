@@ -309,7 +309,7 @@ public:
             while (m_row < m_rowCount)
             {
                 if ((m_len == 0) && m_filter->isSeeksMode() && fieldCount)
-                    mra->setInvalidRecord(m_row, true);
+                    mra->setInvalidMemblock(m_row, true);
                 else
                 {
                     if (m_filter->fieldSelected())
@@ -884,7 +884,7 @@ bool table::doSeekMultiAfter(int row)
     else if (!checkStatus(m_stat))
         return false;
     if (m_stat)
-        m_impl->mraPtr->setInvalidRecord(row, true);
+        m_impl->mraPtr->setInvalidMemblock(row, true);
     else
     {
         uchar_td* dst = m_impl->mraPtr->ptr(row, mra_current_block);
@@ -954,7 +954,7 @@ void table::btrvSeekMulti()
                 }
             }
             else
-                m_impl->mraPtr->setInvalidRecord(0, true);
+                m_impl->mraPtr->setInvalidMemblock(0, true);
         }
         else
         {

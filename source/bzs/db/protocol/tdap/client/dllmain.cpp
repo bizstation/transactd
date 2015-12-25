@@ -386,6 +386,8 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_SET_TIMESTAMP_MODE:
             client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
             break;
+        case TD_STOP_ENGINE:
+            return 0;
         default:
             return STATUS_NOSUPPORT_OP;
         }

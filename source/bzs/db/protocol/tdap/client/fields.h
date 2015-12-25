@@ -122,10 +122,10 @@ class autoMemory;
 /* copyable */
 class fieldsBase : public refarymem
 {
-    friend class multiRecordAlocatorImple; // null_ptr setInvalidRecord ...
+    friend class multiRecordAlocatorImple; // null_ptr setInvalidMemblock ...
     friend class recordsetImple;           // setRecordData  setFielddefs
     friend class recordsetQuery;           // setRecordData
-    friend class groupQueryImple;          // setInvalidRecord
+    friend class groupQueryImple;          // setInvalidMemblock
 
     virtual unsigned char* ptr(int index) const = 0;
     virtual unsigned char* nullPtr(int index) const = 0;
@@ -167,7 +167,7 @@ protected:
     virtual void setRecordData(autoMemory* am, unsigned char* ptr, size_t size,
                                short* endFieldIndex, bool owner = false){};
 
-    inline void setInvalidRecord(short index) 
+    inline void setInvalidMemblock(short index) 
     { 
         int num = memoryBlockIndex(index);
         m_InvalidFlags |= ((2L << num) | 1L);  
@@ -181,6 +181,14 @@ public:
     inline bool isInvalidRecord() const 
     { 
         return (m_InvalidFlags & 1) != 0; 
+    }
+
+    inline void setInvalidRecord(bool v)
+    {
+        if (v)
+            m_InvalidFlags |= 1L;
+        else
+            m_InvalidFlags &= ~1L;
     }
 
     inline field getFieldNoCheck(short index) const
