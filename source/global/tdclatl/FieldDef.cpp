@@ -304,7 +304,7 @@ STDMETHODIMP CFieldDef::put_DefaultValue(VARIANT Value)
     else if (Value.vt == VT_R8)
         fielddef()->setDefaultValue(Value.dblVal);
     else if (Value.vt == VT_I8 || Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT)
-        fielddef()->setDefaultValue((double)Value.llVal);
+        fielddef()->setDefaultValue(Value.llVal);
     else if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
     {
         CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
