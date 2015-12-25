@@ -375,6 +375,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::field::offsetBlobPtr;
 %ignore bzs::db::protocol::tdap::client::field::ptr;
 %ignore bzs::db::protocol::tdap::client::fielddefs::create;
+%ignore bzs::db::protocol::tdap::client::fielddefs::addAllFileds;
+%ignore bzs::db::protocol::tdap::client::fielddefs::addSelectedFields;
 %ignore bzs::db::protocol::tdap::client::getFieldType;
   // create and release methods for fielddefs class
 %extend bzs::db::protocol::tdap::client::fielddefs {
@@ -587,7 +589,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrvEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::setBtrvEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::tdapErr;
-
+%ignore bzs::db::protocol::tdap::client::reconnectSharedConnection;
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
 %ignore bzs::db::protocol::tdap::client::nstable::buflen;
@@ -802,6 +804,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::host;
 %ignore bzs::db::protocol::tdap::client::dbname;
 %ignore bzs::db::protocol::tdap::client::schemaTable;
+%ignore bzs::db::protocol::tdap::client::synchronizeSeverSchema;
 
 // * bzs/db/protocol/tdap/client/trdormapi.h *
 %ignore bzs::db::protocol::tdap::client::setValue;
@@ -941,16 +944,58 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore trdVersiton;
 %ignore handshale_t;
 %ignore MYSQL_SCRAMBLE_LENGTH;
+%ignore MYSQL_USERNAME_MAX;
+%ignore HST_OPTION_NO_SCRAMBLE;
+%ignore clsrv_ver;
+%ignore TD_VER_DB;
+%ignore TD_VER_SERVER;
+%ignore TD_VAR_LISTENADDRESS;
+%ignore TD_VAR_LISTENPORT;
+%ignore TD_VAR_HOSTCHECKNAME;
+%ignore TD_VAR_MAXTCPCONNECTIONS;
+%ignore TD_VAR_TABLENAMELOWER;
+%ignore TD_VAR_POOLTHREADS;
+%ignore TD_VAR_TCPSERVERTYPE;
+%ignore TD_VAR_LOCKWAITTIMEOUT;
+%ignore TD_VAR_ISOLATION;
+%ignore TD_VAR_AUTHTYPE;
+%ignore TD_VAR_PIPESHAREMEMSIZE;
+%ignore TD_VAR_MAXPIPECONNECTIONS;
+%ignore TD_VAR_USEPIPE;
+%ignore TD_VAR_HSLISTENPORT;
+%ignore TD_VAR_USEHS;
+%ignore TD_VAR_TIMESTAMPMODE;
+%ignore TD_VAR_SIZE;
+
 
 // * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore DLLUNLOADCALLBACK_PTR;
 %ignore dllUnloadCallback;
+%ignore TABLEDEF_FILLER_SIZE
+%ignore MYSQL_FDNAME_SIZE;
+%ignore MYSQL_TBNAME_SIZE;
+%ignore PERVASIVE_FDNAME_SIZE;
+%ignore FIELD_NAME_SIZE;
+%ignore TABLE_NAME_SIZE;
+%ignore FILE_NAME_SIZE;
+%ignore PAD_CHAR_OPTION_SAVED;
+%ignore USE_PAD_CHAR;
+%ignore TRIM_PAD_CHAR;
+%ignore FIELD_OPTION_NULLABLE;
+%ignore DEFAULT_VALUE_SIZE;
+%ignore bzs::db::protocol::tdap::updateTimeStampStr;
+%ignore bzs::db::protocol::tdap::updateTimeStampStr;
+%ignore bzs::db::protocol::tdap::dataLen;
+%ignore bzs::db::protocol::tdap::blobDataLen;
+%ignore bzs::db::protocol::tdap::blobLenBytes;
 %ignore bzs::db::protocol::tdap::keySpec;
 %ignore bzs::db::protocol::tdap::fileSpec;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataLen;
+%ignore bzs::db::protocol::tdap::fielddef::blobLenBytes;
 %ignore bzs::db::protocol::tdap::fielddef::chainChar;
 %ignore bzs::db::protocol::tdap::fielddef::dataLen;
+%ignore bzs::db::protocol::tdap::fielddef::defaultValue_strA;
 %ignore bzs::db::protocol::tdap::fielddef::getKeyValueFromKeybuf;
 %ignore bzs::db::protocol::tdap::fielddef::isBlob;
 %ignore bzs::db::protocol::tdap::fielddef::keyCopy;
@@ -963,6 +1008,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::fielddef::setNameA;
 %ignore bzs::db::protocol::tdap::fielddef::unPackCopy;
 %ignore bzs::db::protocol::tdap::fielddef::varLenByteForKey;
+%ignore bzs::db::protocol::tdap::fielddef::varLenBytes;
 %ignore bzs::db::protocol::tdap::fielddef_t::defValue;
 %ignore bzs::db::protocol::tdap::fielddef_t::defViewWidth;
 %ignore bzs::db::protocol::tdap::fielddef_t::enableFlags;
@@ -991,6 +1037,14 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::tabledef::treeIndex;
 %ignore bzs::db::protocol::tdap::tabledef::setFileNameA;
 %ignore bzs::db::protocol::tdap::tabledef::setTableNameA;
+%ignore bzs::db::protocol::tdap::tabledef::toChar;
+%ignore bzs::db::protocol::tdap::tabledef::nullbytes;
+%ignore bzs::db::protocol::tdap::tabledef::unPack;
+%ignore bzs::db::protocol::tdap::tabledef::parent;
+%ignore bzs::db::protocol::tdap::tabledef::fieldDefs;
+%ignore bzs::db::protocol::tdap::tabledef::keyDefs;
+
+
   // add methods
 %extend bzs::db::protocol::tdap::keydef {
   keySegment* segment(const int index)

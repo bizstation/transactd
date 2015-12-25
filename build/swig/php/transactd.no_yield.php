@@ -299,6 +299,8 @@ abstract class transactd {
 
 	const STATUS_FIELDTYPE_NOTSUPPORT = STATUS_FIELDTYPE_NOTSUPPORT;
 
+	const STATUS_INVALID_NULLMODE = STATUS_INVALID_NULLMODE;
+
 	const STATUS_SUCCESS = STATUS_SUCCESS;
 
 	const STATUS_PROGRAM_ERROR = STATUS_PROGRAM_ERROR;
@@ -427,6 +429,8 @@ abstract class transactd {
 
 	const TD_BACKUP_MODE_SERVER_ERROR = TD_BACKUP_MODE_SERVER_ERROR;
 
+	const DFV_TIMESTAMP_DEFAULT = DFV_TIMESTAMP_DEFAULT;
+
 	const CPP_INTERFACE_VER_MAJOR = CPP_INTERFACE_VER_MAJOR;
 
 	const CPP_INTERFACE_VER_MINOR = CPP_INTERFACE_VER_MINOR;
@@ -440,34 +444,6 @@ abstract class transactd {
 	const TRANSACTD_VER_RELEASE = TRANSACTD_VER_RELEASE;
 
 	const MAX_KEY_SEGMENT = MAX_KEY_SEGMENT;
-
-	static function MYSQL_FDNAME_SIZE_get() {
-		return MYSQL_FDNAME_SIZE_get();
-	}
-
-	static function MYSQL_TBNAME_SIZE_get() {
-		return MYSQL_TBNAME_SIZE_get();
-	}
-
-	static function PERVASIVE_FDNAME_SIZE_get() {
-		return PERVASIVE_FDNAME_SIZE_get();
-	}
-
-	static function FIELD_NAME_SIZE_get() {
-		return FIELD_NAME_SIZE_get();
-	}
-
-	static function TABLE_NAME_SIZE_get() {
-		return TABLE_NAME_SIZE_get();
-	}
-
-	static function FILE_NAME_SIZE_get() {
-		return FILE_NAME_SIZE_get();
-	}
-
-	static function TABLEDEF_FILLER_SIZE_get() {
-		return TABLEDEF_FILLER_SIZE_get();
-	}
 
 	static function getTypeName($type) {
 		return getTypeName($type);
@@ -502,6 +478,15 @@ abstract class transactd {
 	const eGreaterEq = 5;
 
 	const eLessEq = 6;
+
+	const eBitAnd = 8;
+
+	const eNotBitAnd = 9;
+
+	const eIsNull = 10;
+
+	const eIsNotNull = 11;
+
 
 	static function getFilterLogicTypeCode($cmpstr) {
 		return getFilterLogicTypeCode($cmpstr);
@@ -830,6 +815,10 @@ class fielddef extends fielddef_t_my {
 		return fielddef_t_my::__isset($var);
 	}
 
+	function defaultValue_str() {
+		return fielddef_defaultValue_str($this->_cPtr);
+	}
+
 	function setName($s) {
 		fielddef_setName($this->_cPtr,$s);
 	}
@@ -854,12 +843,24 @@ class fielddef extends fielddef_t_my {
 		return fielddef_isStringType($this->_cPtr);
 	}
 
+	function isPadCharType() {
+		return fielddef_isPadCharType($this->_cPtr);
+	}
+
 	function isNumericType() {
 		return fielddef_isNumericType($this->_cPtr);
 	}
 
+	function isDateTimeType() {
+		return fielddef_isDateTimeType($this->_cPtr);
+	}
+
 	function charNum() {
 		return fielddef_charNum($this->_cPtr);
+	}
+
+	function validateCharNum() {
+		return fielddef_validateCharNum($this->_cPtr);
 	}
 
 	function setCharsetIndex($index) {
@@ -869,13 +870,33 @@ class fielddef extends fielddef_t_my {
 	function charsetIndex() {
 		return fielddef_charsetIndex($this->_cPtr);
 	}
-
-	function varLenBytes() {
-		return fielddef_varLenBytes($this->_cPtr);
+	
+	function nullable() {
+		return fielddef_nullable($this->_cPtr);
 	}
 
-	function blobLenBytes() {
-		return fielddef_blobLenBytes($this->_cPtr);
+	function setNullable($v,$defaultNull=true) {
+		fielddef_setNullable($this->_cPtr,$v,$defaultNull);
+	}
+
+	function setDefaultValue($s_or_v) {
+		fielddef_setDefaultValue($this->_cPtr,$s_or_v);
+	}
+
+	function setTimeStampOnUpdate($v) {
+		fielddef_setTimeStampOnUpdate($this->_cPtr,$v);
+	}
+
+	function isTimeStampOnUpdate() {
+		return fielddef_isTimeStampOnUpdate($this->_cPtr);
+	}
+
+	function defaultValue() {
+		return fielddef_defaultValue($this->_cPtr);
+	}
+
+	function isDefaultNull() {
+		return fielddef_isDefaultNull($this->_cPtr);
 	}
 
 	function name() {
@@ -959,8 +980,28 @@ class tabledef {
 		tabledef_setTableName($this->_cPtr,$s);
 	}
 
-	function toChar($buf) {
-		return tabledef_toChar($this->_cPtr, $buf);
+	function nullfields() {
+		return tabledef_nullfields($this->_cPtr);
+	}
+
+	function inUse() {
+		return tabledef_inUse($this->_cPtr);
+	}
+
+	function size() {
+		return tabledef_size($this->_cPtr);
+	}
+
+	function fieldNumByName($name) {
+		return tabledef_fieldNumByName($this->_cPtr,$name);
+	}
+
+	function recordlen() {
+		return tabledef_recordlen($this->_cPtr);
+	}
+
+	function mysqlNullMode() {
+		return tabledef_mysqlNullMode($this->_cPtr);
 	}
 
 	function fieldDef($index) {
@@ -1305,6 +1346,10 @@ abstract class nstable {
 		return nstable_mode($this->_cPtr);
 	}
 
+	function synchronizeSeverSchema($tableIndex) {
+		dbdef_synchronizeSeverSchema($this->_cPtr,$tableIndex);
+	}
+
 	function statMsg() {
 		return nstable_statMsg($this->_cPtr); 
 	}
@@ -1425,10 +1470,6 @@ class dbdef {
 		return dbdef_tableNumByName($this->_cPtr,$tableName);
 	}
 
-	function getRecordLen($tableIndex) {
-		return dbdef_getRecordLen($this->_cPtr,$tableIndex);
-	}
-
 	function findKeynumByFieldNum($tableIndex,$index) {
 		return dbdef_findKeynumByFieldNum($this->_cPtr,$tableIndex,$index);
 	}
@@ -1475,6 +1516,10 @@ class table extends nstable {
 	function __construct($h) {
 		$this->_cPtr=$h;
 	}
+	
+	const clearNull = 0;
+
+	const defaultNull = table_defaultNull;
 
 	function tableDef() {
 		$r=table_tableDef($this->_cPtr);
@@ -1534,8 +1579,8 @@ class table extends nstable {
 		return $r;
 	}
 
-	function clearBuffer() {
-		table_clearBuffer($this->_cPtr);
+	function clearBuffer($resetType=table_defaultNull) {
+		table_clearBuffer($this->_cPtr, $resetType);
 	}
 
 	function getRecordHash() {
@@ -1615,6 +1660,14 @@ class table extends nstable {
 
 	function getFVdbl($index_or_fieldName) {
 		return table_getFVdbl($this->_cPtr,$index_or_fieldName);
+	}
+
+	function getFVNull($index_or_fieldName) {
+		return table_getFVNull($this->_cPtr,$index_or_fieldName);
+	}
+
+	function setFVNull($index_or_fieldName,$v) {
+		table_setFVNull($this->_cPtr,$index_or_fieldName,$v);
 	}
 
 	function getFVstr($index_or_fieldName) {
@@ -1845,6 +1898,66 @@ class query extends queryBase {
 	function select($name,$name1=null,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null,$name9=null,$name10=null) {
 		query_select($this->_cPtr,$name,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8,$name9,$name10);
 		return $this;
+	}
+
+	function whereIsNull($name) {
+		$r=query_whereIsNull($this->_cPtr,$name);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new query($r);
+		}
+		return $r;
+	}
+
+	function whereIsNotNull($name) {
+		$r=query_whereIsNotNull($this->_cPtr,$name);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new query($r);
+		}
+		return $r;
+	}
+
+	function andIsNull($name) {
+		$r=query_andIsNull($this->_cPtr,$name);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new query($r);
+		}
+		return $r;
+	}
+
+	function andIsNotNull($name) {
+		$r=query_andIsNotNull($this->_cPtr,$name);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new query($r);
+		}
+		return $r;
+	}
+
+	function orIsNull($name) {
+		$r=query_orIsNull($this->_cPtr,$name);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new query($r);
+		}
+		return $r;
+	}
+
+	function orIsNotNull($name) {
+		$r=query_orIsNotNull($this->_cPtr,$name);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new query($r);
+		}
+		return $r;
 	}
 
 	function __construct($res=null) {
@@ -2162,10 +2275,6 @@ class database extends nsdatabase {
 		return $r;
 	}
 
-	function getTableUri($buf,$fileNum) {
-		return database_getTableUri($this->_cPtr,$buf,$fileNum);
-	}
-
 	function getBtrVersion($versions) {
 		database_getBtrVersion($this->_cPtr,$versions);
 	}
@@ -2177,6 +2286,26 @@ class database extends nsdatabase {
 	function mode() {
 		return database_mode($this->_cPtr);
 	}
+
+	function autoSchemaUseNullkey() {
+		return database_autoSchemaUseNullkey($this->_cPtr);
+	}
+
+	function setAutoSchemaUseNullkey($v) {
+		database_setAutoSchemaUseNullkey($this->_cPtr,$v);
+	}
+
+	static function setCompatibleMode($mode) {
+		database_setCompatibleMode($mode);
+	}
+
+	static function comaptibleMode() {
+		return database_comaptibleMode();
+	}
+
+	const CMP_MODE_MYSQL_NULL = database_CMP_MODE_MYSQL_NULL;
+
+	const CMP_MODE_OLD_NULL = database_CMP_MODE_OLD_NULL;
 
 	function __construct($res=null) {
 		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__database') {
@@ -2598,6 +2727,15 @@ class field {
 	function len() {
 		return field_len($this->_cPtr);
 	}
+
+	function isNull() {
+		return field_isNull($this->_cPtr);
+	}
+
+	function setNull($v) {
+		field_setNull($this->_cPtr,$v);
+	}
+
 
 	function setFV($p_or_v_or_data,$size=null) {
 		switch (func_num_args()) {
