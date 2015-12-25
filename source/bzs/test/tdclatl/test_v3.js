@@ -235,7 +235,14 @@ function checkNotEqual(a, b, on)
 {
 	if (a === b)
 	{
-		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
+		try
+		{
+		WScript.Echo("error on " + on + " " + a.toString() + " == " + b.toString());	
+		}
+		catch(e)
+		{
+			WScript.Echo("check object error on " + on);	
+		}
 		resultCode = 1;
 	}
 }
