@@ -272,6 +272,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_TABLE_INFO:
             if (client_t->req().keyNum == ST_SUB_GETSQL_BY_TABLEDEF)
             {
+                client_t->req().result = 0;
                 client_t->getSqlCreate();
                 client_t->cleanup();
                 return client_t->req().result;

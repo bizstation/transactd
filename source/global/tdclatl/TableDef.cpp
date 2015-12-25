@@ -330,5 +330,11 @@ STDMETHODIMP CTableDef::get_Size(int* Value)
     return S_OK;
 }
 
+STDMETHODIMP CTableDef::SetValidationTarget(VARIANT_BOOL isMariadb, short srvMinorVersion)
+{
+    (*m_tabledefPtr)->setValidationTarget(isMariadb, (uchar_td)srvMinorVersion);
+    return S_OK;
+}
+
 
 

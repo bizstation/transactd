@@ -809,6 +809,12 @@ STDMETHODIMP CTableTd::get_Bookmarks(long index, IBookmark** retVal)
     return S_OK;
 }
 
+STDMETHODIMP CTableTd::SetTimestampMode(eTimeStampMode mode)
+{
+    m_tb->setTimestampMode((int)mode);
+    return S_OK;
+}
+
 void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
                           int count, bool& cancel)
 {

@@ -172,6 +172,9 @@ var COMP_LOG_NOT = 5;
 var DIRECTION_FORWORD = 0;
 var DIRECTION_BACKFORWORD = 1;
 
+var TIMESTAMP_VALUE_CONTROL = 0;
+var TIMESTAMP_ALWAYS = 1;
+
 var fsum = 0;
 var fcount = 1;
 var favg = 2;
@@ -587,8 +590,24 @@ function test(atu, ate, db)
 	fd = td.FieldDef(3);
 	checkEqual(fd.Nullable, true, "Nullable");
 
+	// getSqlStringForCreateTable
+	var sql = db.GetSqlStringForCreateTable("extention");
+	checkEqual(db.Stat, 0, "GetSqlStringForCreateTable");
+	checkEqual(sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL, UNIQUE key0(`id`)) ENGINE=InnoDB default charset=cp932',
+		 "GetSqlStringForCreateTable");
+
+	// setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
+	td = dbdef.TableDef(1);
+	td.SetValidationTarget(true, 0);
+
 	// isNull setNull
 	initQuery();
+	
+	// segmentsForInValue
+	checkEqual(q.SegmentsForInValue(3).GetJoinKeySize(), 3, "SegmentsForInValue");
+	q.Reset();
+	checkEqual(q.GetJoinKeySize(), 0, "GetJoinKeySize");
+
 	atu.Alias("–¼‘O", "name");
 	q.Select("id", "name", "group", "tel").Where("id", "<=", 10);
 	var rs = atu.Index(0).KeyValue(null).Read(q);
@@ -746,6 +765,10 @@ function test(atu, ate, db)
 	checkEqual(tb.getFVstr("update_datetime").substr(0, 10), date);
 	if (!isMySQL5_5(db))
 		checkEqual(tb.getFVstr("create_datetime").substr(0, 10), date);
+
+	// setTimestampMode
+	tb.SetTimestampMode(TIMESTAMP_VALUE_CONTROL);
+	tb.SetTimestampMode(TIMESTAMP_ALWAYS);
 
 	// MysqlNullMode
 	checkEqual(tb.TableDef.MysqlNullMode , true, "MysqlNullMode 2");

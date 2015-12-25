@@ -5715,6 +5715,51 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_tabledef_setValidationTarget) {
+  bzs::db::protocol::tdap::tabledef *arg1 = (bzs::db::protocol::tdap::tabledef *) 0 ;
+  bool arg2 ;
+  uchar_td arg3 ;
+  zval **args[3];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__tabledef, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of tabledef_setValidationTarget. Expected SWIGTYPE_p_bzs__db__protocol__tdap__tabledef");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:F:\buildtools\swigwin-3.0.2\Lib\php\utils.i,2,CONVERT_BOOL_IN@*/
+  convert_to_boolean_ex(args[1]);
+  arg2 = (bool) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  
+  /*@SWIG:F:\buildtools\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  convert_to_long_ex(args[2]);
+  arg3 = (uchar_td) Z_LVAL_PP(args[2]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      (arg1)->setValidationTarget(arg2,arg3);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_tabledef_isMysqlNullMode) {
   bzs::db::protocol::tdap::tabledef *arg1 = (bzs::db::protocol::tdap::tabledef *) 0 ;
   zval **args[1];
@@ -10512,6 +10557,44 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_mode) {
   {
     ZVAL_LONG(return_value,result);
   }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_nstable_setTimestampMode) {
+  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
+  int arg2 ;
+  zval **args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_setTimestampMode. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:F:\buildtools\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  convert_to_long_ex(args[1]);
+  arg2 = (int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      (arg1)->setTimestampMode(arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
@@ -15454,6 +15537,43 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_queryBase_joinKeySize) {
+  bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0 ;
+  int arg2 ;
+  zval **args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of queryBase_joinKeySize. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:F:\buildtools\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  convert_to_long_ex(args[1]);
+  arg2 = (int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      arg1->joinKeySize(arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_queryBase_stopAtLimit) {
   bzs::db::protocol::tdap::client::queryBase *arg1 = (bzs::db::protocol::tdap::client::queryBase *) 0 ;
   bool arg2 ;
@@ -18046,6 +18166,57 @@ ZEND_NAMED_FUNCTION(_wrap_database___clone) {
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_database_getSqlStringForCreateTable) {
+  bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  char* arg3 = NULL;
+  uint_td arg4 = 65000 ;
+  zval **args[2];
+  char *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of database_getSqlStringForCreateTable. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__database");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if ((*args[1])->type != IS_NULL) {
+      convert_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  
+  {
+    try {
+      arg3 = new char[arg4];
+      result = arg1->getSqlStringForCreateTable((_TCHAR const *)arg2, arg3, &arg4);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    if(!result) {
+      ZVAL_NULL(return_value);
+    } else {
+      ZVAL_STRING(return_value, (char *)result, 1);
+    }
+  }
+  delete [] arg3;
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+  delete [] arg3;
 }
 
 
@@ -30914,6 +31085,11 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_tabledef_recordlen, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_tabledef_setvalidationtarget, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_tabledef_ismysqlnullmode, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -31212,6 +31388,10 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_unlock, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_mode, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_settimestampmode, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_getfilename, 0, 0, 0)
@@ -31517,6 +31697,10 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_isall, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_joinkeysize, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_querybase_getjoinkeysize, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -31792,6 +31976,10 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_open, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database___clone, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_getsqlstringforcreatetable, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_create, 0, 0, 0)
@@ -32748,6 +32936,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(tabledef_size,_wrap_tabledef_size,swig_arginfo_tabledef_size)
  SWIG_ZEND_NAMED_FE(tabledef_fieldnumbyname,_wrap_tabledef_fieldNumByName,swig_arginfo_tabledef_fieldnumbyname)
  SWIG_ZEND_NAMED_FE(tabledef_recordlen,_wrap_tabledef_recordlen,swig_arginfo_tabledef_recordlen)
+ SWIG_ZEND_NAMED_FE(tabledef_setvalidationtarget,_wrap_tabledef_setValidationTarget,swig_arginfo_tabledef_setvalidationtarget)
  SWIG_ZEND_NAMED_FE(tabledef_ismysqlnullmode,_wrap_tabledef_isMysqlNullMode,swig_arginfo_tabledef_ismysqlnullmode)
  SWIG_ZEND_NAMED_FE(tabledef_id_set,_wrap_tabledef_id_set,swig_arginfo_tabledef_id_set)
  SWIG_ZEND_NAMED_FE(tabledef_id_get,_wrap_tabledef_id_get,swig_arginfo_tabledef_id_get)
@@ -32838,6 +33027,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(nstable_stats,_wrap_nstable_stats,swig_arginfo_nstable_stats)
  SWIG_ZEND_NAMED_FE(nstable_unlock,_wrap_nstable_unlock,swig_arginfo_nstable_unlock)
  SWIG_ZEND_NAMED_FE(nstable_mode,_wrap_nstable_mode,swig_arginfo_nstable_mode)
+ SWIG_ZEND_NAMED_FE(nstable_settimestampmode,_wrap_nstable_setTimestampMode,swig_arginfo_nstable_settimestampmode)
  SWIG_ZEND_NAMED_FE(nstable_getfilename,_wrap_nstable_getFileName,swig_arginfo_nstable_getfilename)
  SWIG_ZEND_NAMED_FE(nstable_statmsg,_wrap_nstable_statMsg,swig_arginfo_nstable_statmsg)
  SWIG_ZEND_NAMED_FE(nstable_getdiruri,_wrap_nstable_getDirURI,swig_arginfo_nstable_getdiruri)
@@ -32930,6 +33120,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(querybase_getwheretoken,_wrap_queryBase_getWhereToken,swig_arginfo_querybase_getwheretoken)
  SWIG_ZEND_NAMED_FE(querybase_setwheretoken,_wrap_queryBase_setWhereToken,swig_arginfo_querybase_setwheretoken)
  SWIG_ZEND_NAMED_FE(querybase_reversealiasname,_wrap_queryBase_reverseAliasName,swig_arginfo_querybase_reversealiasname)
+ SWIG_ZEND_NAMED_FE(querybase_joinkeysize,_wrap_queryBase_joinKeySize,swig_arginfo_querybase_joinkeysize)
  SWIG_ZEND_NAMED_FE(querybase_stopatlimit,_wrap_queryBase_stopAtLimit,swig_arginfo_querybase_stopatlimit)
  SWIG_ZEND_NAMED_FE(querybase_isstopatlimit,_wrap_queryBase_isStopAtLimit,swig_arginfo_querybase_isstopatlimit)
  SWIG_ZEND_NAMED_FE(query_reset,_wrap_query_reset,swig_arginfo_query_reset)
@@ -32991,6 +33182,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(database_settablereadonly,_wrap_database_setTableReadOnly,swig_arginfo_database_settablereadonly)
  SWIG_ZEND_NAMED_FE(database_open,_wrap_database_open,swig_arginfo_database_open)
  SWIG_ZEND_NAMED_FE(database___clone,_wrap_database___clone,swig_arginfo_database___clone)
+ SWIG_ZEND_NAMED_FE(database_getsqlstringforcreatetable,_wrap_database_getSqlStringForCreateTable,swig_arginfo_database_getsqlstringforcreatetable)
  SWIG_ZEND_NAMED_FE(database_create,_wrap_database_create,swig_arginfo_database_create)
  SWIG_ZEND_NAMED_FE(database_drop,_wrap_database_drop,swig_arginfo_database_drop)
  SWIG_ZEND_NAMED_FE(database_droptable,_wrap_database_dropTable,swig_arginfo_database_droptable)
@@ -33069,12 +33261,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(field_type,_wrap_field_type,swig_arginfo_field_type)
  SWIG_ZEND_NAMED_FE(field_len,_wrap_field_len,swig_arginfo_field_len)
  SWIG_ZEND_NAMED_FE(field_c_str,_wrap_field_c_str,swig_arginfo_field_c_str)
-// SWIG_ZEND_NAMED_FE(field_a_str,_wrap_field_a_str,swig_arginfo_field_a_str)
  SWIG_ZEND_NAMED_FE(field_i,_wrap_field_i,swig_arginfo_field_i)
- //SWIG_ZEND_NAMED_FE(field_i8,_wrap_field_i8,swig_arginfo_field_i8)
- //SWIG_ZEND_NAMED_FE(field_i16,_wrap_field_i16,swig_arginfo_field_i16)
  SWIG_ZEND_NAMED_FE(field_i64,_wrap_field_i64,swig_arginfo_field_i64)
- //SWIG_ZEND_NAMED_FE(field_f,_wrap_field_f,swig_arginfo_field_f)
  SWIG_ZEND_NAMED_FE(field_d,_wrap_field_d,swig_arginfo_field_d)
  SWIG_ZEND_NAMED_FE(field_isnull,_wrap_field_isNull,swig_arginfo_field_isnull)
  SWIG_ZEND_NAMED_FE(field_setnull,_wrap_field_setNull,swig_arginfo_field_setnull)
@@ -33724,6 +33912,9 @@ SWIG_LONG_CONSTANT(ft_mytext, ft_mytext);
 SWIG_LONG_CONSTANT(ft_myblob, ft_myblob);
 SWIG_LONG_CONSTANT(ft_autoIncUnsigned, ft_autoIncUnsigned);
 SWIG_LONG_CONSTANT(ft_myfixedbinary, ft_myfixedbinary);
+SWIG_LONG_CONSTANT(ft_myjson, ft_myjson);
+SWIG_LONG_CONSTANT(ft_mygeometry, ft_mygeometry);
+SWIG_LONG_CONSTANT(ft_myyear, ft_myyear);
 SWIG_LONG_CONSTANT(ft_nullindicator, ft_nullindicator);
 SWIG_LONG_CONSTANT(CMPLOGICAL_VAR_COMP_ALL, CMPLOGICAL_VAR_COMP_ALL);
 SWIG_LONG_CONSTANT(CMPLOGICAL_CMPACS, CMPLOGICAL_CMPACS);
@@ -33873,6 +34064,8 @@ SWIG_LONG_CONSTANT(TRANSACTD_VER_MAJOR, TRANSACTD_VER_MAJOR);
 SWIG_LONG_CONSTANT(TRANSACTD_VER_MINOR, TRANSACTD_VER_MINOR);
 SWIG_LONG_CONSTANT(TRANSACTD_VER_RELEASE, TRANSACTD_VER_RELEASE);
 SWIG_LONG_CONSTANT(MAX_KEY_SEGMENT, MAX_KEY_SEGMENT);
+SWIG_LONG_CONSTANT(TIMESTAMP_ALWAYS, TIMESTAMP_ALWAYS);
+SWIG_LONG_CONSTANT(TIMESTAMP_VALUE_CONTROL, TIMESTAMP_VALUE_CONTROL);
 SWIG_LONG_CONSTANT(eCend, eCend);
 SWIG_LONG_CONSTANT(eCand, eCand);
 SWIG_LONG_CONSTANT(eCor, eCor);

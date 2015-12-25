@@ -139,6 +139,12 @@ abstract class transactd {
 
 	const ft_myfixedbinary = ft_myfixedbinary;
 
+	const ft_myjson = ft_myjson;
+
+	const ft_mygeometry = ft_mygeometry;
+
+	const ft_myyear = ft_myyear;
+
 	const ft_nullindicator = ft_nullindicator;
 
 	const CMPLOGICAL_VAR_COMP_ALL = CMPLOGICAL_VAR_COMP_ALL;
@@ -432,6 +438,10 @@ abstract class transactd {
 	const TRANSACTD_VER_RELEASE = TRANSACTD_VER_RELEASE;
 
 	const MAX_KEY_SEGMENT = MAX_KEY_SEGMENT;
+	
+	const TIMESTAMP_ALWAYS = TIMESTAMP_ALWAYS;
+	
+	const TIMESTAMP_VALUE_CONTROL = TIMESTAMP_VALUE_CONTROL;
 
 	static function getTypeName($type) {
 		return getTypeName($type);
@@ -1012,6 +1022,10 @@ class tabledef {
 		return tabledef_recordlen($this->_cPtr);
 	}
 
+	function setValidationTarget($isMariadb,$srvMinorVersion) {
+		tabledef_setValidationTarget($this->_cPtr,$isMariadb,$srvMinorVersion);
+	}
+
 	function isMysqlNullMode() {
 		return tabledef_isMysqlNullMode($this->_cPtr);
 	}
@@ -1356,6 +1370,10 @@ abstract class nstable {
 
 	function mode() {
 		return nstable_mode($this->_cPtr);
+	}
+
+	function setTimestampMode($mode) {
+		nstable_setTimestampMode($this->_cPtr,$mode);
 	}
 
 	function statMsg() {
@@ -1865,6 +1883,11 @@ abstract class queryBase {
 		queryBase_reverseAliasName($this->_cPtr,$alias,$src);
 	}
 	
+	function joinKeySize($v) {
+		queryBase_joinKeySize($this->_cPtr,$v);
+		return $this;
+	}
+	
 	function stopAtLimit($v) {
 		queryBase_stopAtLimit($this->_cPtr,$v);
 		return $this;
@@ -1927,6 +1950,11 @@ class query extends queryBase {
 
 	function orIsNull($name) {
 		query_orIsNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function segmentsForInValue($v) {
+		queryBase_joinKeySize($this->_cPtr,$v);
 		return $this;
 	}
 
@@ -2201,6 +2229,10 @@ class database extends nsdatabase {
 	function __clone() {
 		$r=database___clone($this->_cPtr);
 		$this->__construct($r);
+	}
+
+	function getSqlStringForCreateTable($tableName) {
+		return database_getSqlStringForCreateTable($this->_cPtr,$tableName);
 	}
 
 	function create($uri,$type=0) {

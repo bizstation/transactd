@@ -172,5 +172,6 @@ public:
     STDMETHOD(GetFVdbl)(VARIANT Index, double* Value);
     STDMETHOD(GetFVstr)(VARIANT Index, BSTR* Value);
     STDMETHOD(SetFV)(VARIANT Index, VARIANT Value);
+    STDMETHOD(SetTimestampMode)(eTimeStampMode mode);
 
 };

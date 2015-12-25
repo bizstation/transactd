@@ -381,8 +381,23 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd = $td->fieldDef(3);
         $this->assertEquals($fd->isNullable(), true);
         
+        // getSqlStringForCreateTable
+        $sql = $db->getSqlStringForCreateTable("extention");
+        $this->assertEquals($db->stat(), 0);
+        $this->assertEquals($sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL, UNIQUE key0(`id`)) ENGINE=InnoDB default charset=utf8');
+        
+        // setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
+        $td = $dbdef->tableDefs(1);
+        $td->setValidationTarget(true, 0);
+        
+        
         $q = new bz\query();
         $atu = new bz\activeTable($db, "user");
+        
+        // segmentsSizeForInValue
+        $this->assertEquals($q->segmentsForInValue(3)->getJoinKeySize(), 3);
+        $q->reset();
+        $this->assertEquals($q->getJoinKeySize(), 0);
         
         // keyValue null
         $tb1 = $atu->table();
@@ -565,6 +580,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(mb_substr($tb->getFVstr("update_datetime"), 0, 10), $date);
         if ($mysql_5_5 == false)
              $this->assertEquals(mb_substr($tb->getFVstr("create_datetime"), 0, 10), $date);
+        
+        // setTimestampMode
+        $tb->setTimestampMode(bz\transactd::TIMESTAMP_VALUE_CONTROL);
+        $tb->setTimestampMode(bz\transactd::TIMESTAMP_ALWAYS);
         
         //isMysqlNullMode
         $this->assertEquals($tb->tableDef()->isMysqlNullMode(), true);

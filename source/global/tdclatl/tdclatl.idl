@@ -252,6 +252,9 @@ enum eFieldType
 	ft_myblob 		= 51,
 	ft_autoIncUnsigned	= 52,
 	ft_myfixedbinary 	= 53,
+    ft_myyear           = 59,
+    ft_mygeometry       = 60,
+    ft_myjson           = 61,
 	ft_nullindicator	= 255
 }eFieldType;
 
@@ -401,6 +404,16 @@ enum eVersionType
 }eVersionType;
 
 
+typedef
+[
+  helpstring("Timestamp mode enum")
+]
+enum eTimeStampMode
+{
+	TIMESTAMP_VALUE_CONTROL = 0,
+	TIMESTAMP_ALWAYS = 1
+}eTimeStampMode;
+
 
 [
   object,
@@ -541,8 +554,8 @@ interface IDatabase : IDispatch
   HRESULT _stdcall CompatibleMode([in] int Value);
   [propget, id(0x000000FB)]
   HRESULT _stdcall CompatibleMode([out, retval] int* Value);
-
-
+  [id(0x000000FC)]
+  HRESULT _stdcall GetSqlStringForCreateTable([in] BSTR tableName, [out, retval]  BSTR* retValue);
 };
 
 
@@ -805,6 +818,8 @@ interface ITable : IDispatch
   HRESULT _stdcall GetFVstr([in] VARIANT Index, [out, retval] BSTR* Value);
   [id(0x000000EC)]
   HRESULT _stdcall SetFV([in] VARIANT Index, [in] VARIANT Value);
+  [id(0x000000ED)]
+  HRESULT _stdcall SetTimestampMode([in] eTimeStampMode mode);
 
 };
 [
@@ -895,6 +910,8 @@ interface ITableDef : IDispatch
   HRESULT _stdcall MysqlNullMode([out, retval] VARIANT_BOOL* Value);
   [propget, id(0x000000D4)]
   HRESULT _stdcall Size([out, retval] int* Value);
+  [id(0x000000D5)]
+  HRESULT _stdcall SetValidationTarget([in] VARIANT_BOOL isMariadb, [in] short srvMinorVersion);
 };
 [
 	object,
@@ -1253,7 +1270,12 @@ interface IQueryBase : IDispatch
   HRESULT _stdcall AndIsNotNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
   [id(0x0000026)]
   HRESULT _stdcall OrIsNotNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
- 
+  [id(0x0000027)]
+  HRESULT _stdcall SegmentsForInValue([in] int Value, [out, retval] IQueryBase** retVal);
+  [id(0x0000028)]
+  HRESULT _stdcall JoinKeySize([in] int Value, [out, retval] IQueryBase** retVal);
+  [id(0x0000029)]
+  HRESULT _stdcall GetJoinKeySize([out, retval] int* retVal);
 
 
 };

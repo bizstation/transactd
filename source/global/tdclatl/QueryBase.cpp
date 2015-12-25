@@ -411,3 +411,24 @@ STDMETHODIMP CQueryBase::OrIsNotNull(BSTR Name, IQueryBase** retVal)
     return S_OK;
 }
 
+STDMETHODIMP CQueryBase::SegmentsForInValue(int Value, IQueryBase** retVal)
+{
+    m_qb.joinKeySize(Value);
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::JoinKeySize(int Value, IQueryBase** retVal)
+{
+    m_qb.joinKeySize(Value);
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CQueryBase::GetJoinKeySize(int* retVal)
+{
+    *retVal = m_qb.getJoinKeySize();
+    return S_OK;
+}
+
+

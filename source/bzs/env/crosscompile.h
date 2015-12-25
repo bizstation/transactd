@@ -88,7 +88,7 @@ inline char* _i64toa_s(__int64 v, char* tmp, unsigned long size, int radix)
 
 inline char* _ui64toa_s(unsigned __int64 v, char* tmp, unsigned long size, int radix)
 {
-    snprintf(tmp, size, "%" PRIu64, v);
+    snprintf(tmp, size, "%llu", v);
     return tmp;
 }
 

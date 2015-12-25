@@ -228,7 +228,8 @@ def testVersion()
   my5x = (server_ver.majorVersion == 5) && (server_ver.minorVersion >= 5)
   maria10 = (server_ver.majorVersion == 10) && (server_ver.minorVersion <= 1)
   expect(my5x || maria10).to be true
-  expect(server_ver.type.chr).to eq 'M'
+  tmp = (server_ver.type.chr == 'M') || (server_ver.type.chr == 'A')
+  expect(tmp).to be true
   expect(engine_ver.majorVersion.to_s).to eq Transactd::TRANSACTD_VER_MAJOR.to_s
   expect(engine_ver.minorVersion.to_s).to eq Transactd::TRANSACTD_VER_MINOR.to_s
   expect(engine_ver.type.chr).to eq 'T'

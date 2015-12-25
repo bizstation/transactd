@@ -89,4 +89,5 @@ public:
     STDMETHOD(get_InUse)(short* Value);
     STDMETHOD(get_MysqlNullMode)(VARIANT_BOOL* Value);
     STDMETHOD(get_Size)(int* Value);
+    STDMETHOD(SetValidationTarget)(VARIANT_BOOL isMariadb, short srvMinorVersion);
 };

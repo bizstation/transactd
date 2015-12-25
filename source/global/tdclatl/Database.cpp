@@ -546,6 +546,18 @@ STDMETHODIMP CDatabase::get_CompatibleMode(int* Value)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::GetSqlStringForCreateTable(BSTR tableName, BSTR* retVal)
+{
+    uint_td size = 65000;
+    char* tmp = new char[size];
+    CComBSTR ret;
+
+    ret = m_db->getSqlStringForCreateTable(tableName, tmp, &size);
+    *retVal = ret.Copy();
+    delete [] tmp;
+    return S_OK;
+}
+
 void __stdcall onCopyData(database* db, int recordCount, int count,
                           bool& cancel)
 {

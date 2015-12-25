@@ -160,6 +160,7 @@ public:
     STDMETHOD(get_AutoSchemaUseNullkey)(VARIANT_BOOL* Value);
     STDMETHOD(put_CompatibleMode)(int Value);
     STDMETHOD(get_CompatibleMode)(int* Value);
+    STDMETHOD(GetSqlStringForCreateTable)(BSTR tableName, BSTR* retValue);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)
