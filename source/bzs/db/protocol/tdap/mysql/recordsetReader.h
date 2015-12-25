@@ -94,6 +94,11 @@ public:
         unsigned char* null_ptr = (unsigned char*)cp_null_ptr(fd, (unsigned char*)m_tb->internalTable()->record[0]);
         return (unsigned char)((unsigned char*)m_tb->fieldPos(0) -  null_ptr); 
     }
+
+    bool isLegacyTimeFormat(int fieldNum) const
+    {
+        return m_tb->isLegacyTimeFormat(fieldNum);
+    }
 };
 
 /** If get all field then len = record length.
@@ -375,6 +380,9 @@ public:
         case ft_time:
         case ft_timestamp:
         case ft_mydate:
+        case ft_mytime_num_cmp:
+        case ft_mydatetime_num_cmp:
+        case ft_mytimestamp_num_cmp:
         {
             if (logType & 8)
             {
@@ -579,6 +587,9 @@ public:
         case ft_time:
         case ft_timestamp:
         case ft_mydate:
+        case ft_mytime_num_cmp:
+        case ft_mydatetime_num_cmp:
+        case ft_mytimestamp_num_cmp:
         {
             if (opr & 8)
             {
@@ -794,6 +805,20 @@ public:
                 m_nullbitCompFd = position.nullbit(fnum);
             }
         }
+        
+        // Chnage compare type
+        if (fd->type == ft_mytime || fd->type == ft_mydatetime || fd->type == ft_mytimestamp)
+        {
+            bool regacy = position.isLegacyTimeFormat(num);
+            if (regacy)
+            {
+                if (fd->type == ft_mytime) const_cast<logicalField*>(fd)->type = ft_mytime_num_cmp; 
+                if (fd->type == ft_mydatetime) const_cast<logicalField*>(fd)->type = ft_mydatetime_num_cmp; 
+                if (fd->type == ft_mytimestamp) const_cast<logicalField*>(fd)->type = ft_mytimestamp_num_cmp; 
+            }
+        }
+
+
 
         // Cacheing compare isNull ?
         eCompType log = (eCompType)(m_fd->logType & 0xf);
@@ -992,7 +1017,6 @@ public:
                 fda.m_isMatchFunc = isMatch6;
                 break;
             }
-
             fd = fd->next();
             if (fda.m_fd->opr == 2 && (lastIndex == req.logicalCount))
                 lastIndex = i; // the first 'or' index

@@ -147,7 +147,7 @@ const wchar_t* fielddef::defaultValue_str() const
         bool tsu = isTimeStampOnUpdate();
         *(const_cast<char*>(m_defValue) + 7) = 0x00;
         __int64 i64 = *((__int64*)m_defValue);
-        myDateTime dt(7);
+        myDateTime dt(7, true);
         dt.setValue(i64);
         p[0] = 0x00;
         switch(type)
@@ -159,20 +159,19 @@ const wchar_t* fielddef::defaultValue_str() const
             break;
         case ft_time:
         case ft_mytime:
-            if (dt.internalValue()) 
+            if (dt.internalValue())
                 dt.time_str(p, decimals);
             break;
         case ft_datetime:
         case ft_timestamp:
-            if (dt.internalValue()) 
+            if (dt.internalValue())
                 dt.dateTime_str(p, decimals);
             break;
         case ft_mydatetime:
         case ft_mytimestamp:
         {
-            int size = (type == ft_mytimestamp) ? (len - 4) * 2 : (len - 5) * 2;
             if (i64 == DFV_TIMESTAMP_DEFAULT)
-                swprintf_s(p, MYSQL_FDNAME_SIZE, L"CURRENT_TIMESTAMP(%d)", size);
+                p = DFV_TIMESTAMP_DEFAULT_WSTR;
             else if (dt.internalValue()) 
                 dt.dateTime_str(p, decimals);
             break;
@@ -217,7 +216,7 @@ void fielddef::setDefaultValue(const wchar_t* s)
     case ft_time:
     case ft_mytime:
     {
-        myDateTime dt(7);
+        myDateTime dt(7, true);
         dt.setTime(s);
         i64 = dt.getValue();
         memcpy(m_defValue, &i64, 7);
@@ -228,7 +227,7 @@ void fielddef::setDefaultValue(const wchar_t* s)
     case ft_datetime:
     case ft_mytimestamp:
     case ft_mydatetime:
-        i64 = str_to_64<myDateTime, wchar_t>(7, s);
+        i64 = str_to_64<myDateTime, wchar_t>(7, true, s);
         memcpy(m_defValue, &i64, 7);
         return;
     }
@@ -346,7 +345,7 @@ const char* fielddef::defaultValue_strA() const
         bool tsu = isTimeStampOnUpdate();
         *(const_cast<char*>(m_defValue) + 7) = 0x00;
         __int64 i64 = *((__int64*)m_defValue);
-        myDateTime dt(7);
+        myDateTime dt(7, true);
         dt.setValue(i64); // i64 not equal dt.internalValue();
         p[0] = 0x00;
 
@@ -370,10 +369,8 @@ const char* fielddef::defaultValue_strA() const
         case ft_mydatetime:
         case ft_mytimestamp:
         {
-            int size = (type == ft_mytimestamp) ? (len - 4) * 2 : (len - 5) * 2;
-            
             if (i64 == DFV_TIMESTAMP_DEFAULT)
-                sprintf_s(p, MYSQL_FDNAME_SIZE, "CURRENT_TIMESTAMP(%d)", size);
+                p = DFV_TIMESTAMP_DEFAULT_ASTR;
             else if (dt.internalValue()) 
                 dt.toStr(p);
             break;
@@ -425,7 +422,7 @@ void fielddef::setDefaultValue(const char* s)
     case ft_time:
     case ft_mytime:
     {
-        myDateTime dt(7);
+        myDateTime dt(7, true);
         dt.setTime(s);
         i64 = dt.getValue();
         memcpy(m_defValue, &i64, 7);
@@ -436,7 +433,7 @@ void fielddef::setDefaultValue(const char* s)
     case ft_datetime:
     case ft_mytimestamp:
     case ft_mydatetime:
-        i64 = str_to_64<myDateTime, char>(7, s);
+        i64 = str_to_64<myDateTime, char>(7, true, s);
         memcpy(m_defValue, &i64, 7);
         return;
     }
@@ -891,14 +888,30 @@ void tabledef::calcReclordlen(bool force)
                 fd.setTimeStampOnUpdate(true);
                 firstTimeStamp = false;
             }
+
             if (fd.type == ft_mytimestamp)
                 fd.decimals = (fd.len - 4) * 2;
             else if (fd.type == ft_mydatetime)
+            {
+                if (m_useInMariadb)
+                    fd.m_options |= FIELD_OPTION_MARIADB;
+                else
+                    fd.m_options &= ~FIELD_OPTION_MARIADB;
                 fd.decimals = (fd.len - 5) * 2;
+            }
             else if (fd.type == ft_mytime)
                 fd.decimals = (fd.len - 3) * 2;
+
             else if (defaultValue && (fd.type == ft_myblob || fd.type == ft_mytext))
                 fd.setDefaultValue(0.0f);
+
+            if (isLegacyTimeFormat(fd))
+            {
+                fd.m_options |= FIELD_OPTION_REGACY_TIME;
+                fd.decimals = 0;
+            }
+            else
+                fd.m_options &= ~FIELD_OPTION_REGACY_TIME;
         }
 
         m_nullfields += nisFieldNum;

@@ -1090,16 +1090,19 @@ void field::setFVA(const char* data)
     case ft_datetime:
         value = atobtrs((const char*)data).i64;
     case ft_mydate:
-        value = str_to_64<myDate, char>(m_fd->len, data);
+        value = str_to_64<myDate, char>(m_fd->len, true, data);
         break;
     case ft_mytime:
-        value = str_to_64<myTime, char>(m_fd->len, data);
+        value = str_to_64<myTime, char>(m_fd->len, !m_fd->isLegacyTimeFormat(), data);
         break;
     case ft_mytimestamp:
-        value = str_to_64<myTimeStamp, char>(m_fd->len, data);
+        value = str_to_64<myTimeStamp, char>(m_fd->len, !m_fd->isLegacyTimeFormat(), data);
         break;
     case ft_mydatetime:
-        value = str_to_64<myDateTime, char>(m_fd->len, data);
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            value = str_to_64<maDateTime, char>(m_fd->len, !m_fd->isLegacyTimeFormat(), data);
+        else
+            value = str_to_64<myDateTime, char>(m_fd->len, !m_fd->isLegacyTimeFormat(), data);
         break;
     case ft_currency:
         value = (__int64)(atof(data) * 10000);
@@ -1155,16 +1158,19 @@ void field::setFVW(const wchar_t* data)
         value = atobtrs(data).i64;
         break;
     case ft_mydate:
-        value = str_to_64<myDate, wchar_t>(m_fd->len, data);
+        value = str_to_64<myDate, wchar_t>(m_fd->len, true, data);
         break;
     case ft_mytime:
-        value = str_to_64<myTime, wchar_t>(m_fd->len, data);
+        value = str_to_64<myTime, wchar_t>(m_fd->len, !m_fd->isLegacyTimeFormat(), data);
         break;
     case ft_mytimestamp:
-        value = str_to_64<myTimeStamp, wchar_t>(m_fd->len, data);
+        value = str_to_64<myTimeStamp, wchar_t>(m_fd->len, !m_fd->isLegacyTimeFormat(), data);
         break;
     case ft_mydatetime:
-        value = str_to_64<myDateTime, wchar_t>(m_fd->len, data);
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            value = str_to_64<maDateTime, wchar_t>(m_fd->len, !m_fd->isLegacyTimeFormat(), data);
+        else
+            value = str_to_64<myDateTime, wchar_t>(m_fd->len, !m_fd->isLegacyTimeFormat(), data);
         break;
     case ft_currency:
         value = (__int64)(_wtof(data) * 10000);
@@ -1187,14 +1193,22 @@ void field::setFV(__int64 data)
     case ft_mydatetime:
     case ft_mytimestamp:
         //Convert big endian
-        if (m_fd->type == ft_mydatetime) 
-            data = getBigEndianValue<myDateTime>(m_fd->len, data);
-        else if (m_fd->type == ft_mytimestamp) 
-            data = getBigEndianValue<myTimeStamp>(m_fd->len, data);
-        else if(m_fd->type == ft_mytime)
-            data = getBigEndianValue<myTime>(m_fd->len, data);
+        if (!m_fd->isLegacyTimeFormat())
+        {
+            if (m_fd->type == ft_mydatetime)
+            {
+                if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                    data = getBigEndianValue<maDateTime>(m_fd->len, data);
+                else
+                    data = getBigEndianValue<myDateTime>(m_fd->len, data);
+            }
+            else if (m_fd->type == ft_mytimestamp)
+                data = getBigEndianValue<myTimeStamp>(m_fd->len, data);
+            else if(m_fd->type == ft_mytime)
+                data = getBigEndianValue<myTime>(m_fd->len, data);
+        }
         //fall through
-    case ft_date: 
+    case ft_date:
     case ft_time:
     case ft_datetime:
     case ft_mydate:
@@ -1247,16 +1261,24 @@ void field::setFV(double data)
     case ft_mytimestamp:
     case ft_currency:
         //Convert big endian
-        if (m_fd->type == ft_mydatetime) 
-            i64 = getBigEndianValue<myDateTime>(m_fd->len, i64);
-        else if (m_fd->type == ft_mytimestamp) 
-            i64 = getBigEndianValue<myTimeStamp>(m_fd->len, i64);
-        else if(m_fd->type == ft_mytime)
-            i64 = getBigEndianValue<myTime>(m_fd->len, i64);
-        else if(m_fd->type == ft_currency)
-            i64 = (__int64)(data * 10000 + 0.5);
+        if (!m_fd->isLegacyTimeFormat())
+        {
+            if (m_fd->type == ft_mydatetime)
+            {
+                if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                    i64 = getBigEndianValue<maDateTime>(m_fd->len, i64);
+                else
+                    i64 = getBigEndianValue<myDateTime>(m_fd->len, i64);
+            }
+            else if (m_fd->type == ft_mytimestamp)
+                i64 = getBigEndianValue<myTimeStamp>(m_fd->len, i64);
+            else if(m_fd->type == ft_mytime)
+                i64 = getBigEndianValue<myTime>(m_fd->len, i64);
+            else if(m_fd->type == ft_currency)
+                i64 = (__int64)(data * 10000 + 0.5);
+        }
         //fall through
-    case ft_date: 
+    case ft_date:
     case ft_time:
     case ft_datetime: 
     case ft_mydate:
@@ -1403,13 +1425,16 @@ const char* field::getFVAstr() const
     case ft_timestamp:
         return btrTimeStamp(readValue64()).toString(p);
     case ft_mydate:
-        return date_time_str<myDate, char>(m_fd->len, readValue64(), p);
+        return date_time_str<myDate, char>(m_fd->len, true, readValue64(), p);
     case ft_mytime:
-        return date_time_str<myTime, char>(m_fd->len, readValue64(), p);
+        return date_time_str<myTime, char>(m_fd->len, !m_fd->isLegacyTimeFormat(), readValue64(), p);
     case ft_mydatetime:
-        return date_time_str<myDateTime, char>(m_fd->len, readValue64(), p);
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            return date_time_str<maDateTime, char>(m_fd->len, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+        else
+            return date_time_str<myDateTime, char>(m_fd->len, !m_fd->isLegacyTimeFormat(), readValue64(), p);
     case ft_mytimestamp:
-        return date_time_str<myTimeStamp, char>(m_fd->len, readValue64(), p);
+        return date_time_str<myTimeStamp, char>(m_fd->len, !m_fd->isLegacyTimeFormat(), readValue64(), p);
     }
 
     double v = 0;
@@ -1473,13 +1498,16 @@ const wchar_t* field::getFVWstr() const
     case ft_timestamp:
         return btrTimeStamp(readValue64()).toString(p);
     case ft_mydate:
-        return date_time_str<myDate, wchar_t>(m_fd->len, readValue64(), p);
+        return date_time_str<myDate, wchar_t>(m_fd->len, true, readValue64(), p);
     case ft_mytime:
-        return date_time_str<myTime, wchar_t>(m_fd->len, readValue64(), p);
+        return date_time_str<myTime, wchar_t>(m_fd->len, !m_fd->isLegacyTimeFormat(), readValue64(), p);
     case ft_mydatetime:
-        return date_time_str<myDateTime, wchar_t>(m_fd->len, readValue64(), p);
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            return date_time_str<maDateTime, wchar_t>(m_fd->len, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+        else
+            return date_time_str<myDateTime, wchar_t>(m_fd->len, !m_fd->isLegacyTimeFormat(), readValue64(), p);
     case ft_mytimestamp:
-        return date_time_str<myTimeStamp, wchar_t>(m_fd->len, readValue64(), p);
+        return date_time_str<myTimeStamp, wchar_t>(m_fd->len, !m_fd->isLegacyTimeFormat(), readValue64(), p);
     }
 
     double v = 0;
@@ -1529,12 +1557,20 @@ double field::getFVdbl() const
     case ft_mytimestamp:
     {
         __int64 v = readValue64();
-        if (m_fd->type ==  ft_mytime)
-            return (double)getLittleEndianValue<myTime>(m_fd->len, v);
-        else if (m_fd->type ==  ft_mydatetime)
-            return (double)getLittleEndianValue<myDateTime>(m_fd->len, v);
-        else if (m_fd->type ==  ft_mytimestamp)
-            return (double)getLittleEndianValue<myTimeStamp>(m_fd->len, v);
+        if (!m_fd->isLegacyTimeFormat())
+        {
+            if (m_fd->type ==  ft_mytime)
+                return (double)getLittleEndianValue<myTime>(m_fd->len, v);
+            else if (m_fd->type ==  ft_mydatetime)
+            {
+                if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                    return (double)getLittleEndianValue<maDateTime>(m_fd->len, v);
+                else
+                    return (double)getLittleEndianValue<myDateTime>(m_fd->len, v);
+            }
+            else if (m_fd->type ==  ft_mytimestamp)
+                return (double)getLittleEndianValue<myTimeStamp>(m_fd->len, v);
+        }
         return (double)v;
     }
     CASE_UINT
@@ -1566,15 +1602,21 @@ __int64 field::getFV64() const
     case ft_mydatetime:
     case ft_mytimestamp:
     {
-        __int64 v = readValue64(); 
-        switch (m_fd->type)
+        __int64 v = readValue64();
+        if (!m_fd->isLegacyTimeFormat())
         {
-        case ft_mytime:
-            return getLittleEndianValue<myTime>(m_fd->len, v);
-        case ft_mydatetime:
-            return getLittleEndianValue<myDateTime>(m_fd->len, v);
-        case ft_mytimestamp:
-            return getLittleEndianValue<myTimeStamp>(m_fd->len, v);
+            switch (m_fd->type)
+            {
+            case ft_mytime:
+                return getLittleEndianValue<myTime>(m_fd->len, v);
+            case ft_mydatetime:
+                if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                    return getLittleEndianValue<maDateTime>(m_fd->len, v);
+                else
+                    return getLittleEndianValue<myDateTime>(m_fd->len, v);
+            case ft_mytimestamp:
+                return getLittleEndianValue<myTimeStamp>(m_fd->len, v);
+            }
         }
         return v;
     }

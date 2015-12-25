@@ -303,7 +303,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
                 ++v;
                 v->majorVersion = client_t->ver().srvMysqlMajor;
                 v->minorVersion = client_t->ver().srvMysqlMinor;
-                v->type = 'M';
+                v->type = client_t->ver().srvMysqlType;
                 client_t->req().result = 0;
             }
             if (datalen >= sizeof(btrVersion) * 3)

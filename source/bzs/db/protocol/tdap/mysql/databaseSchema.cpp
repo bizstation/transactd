@@ -95,19 +95,10 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
 	case MYSQL_TYPE_NEWDATE:
         return ft_mydate;
     case MYSQL_TYPE_TIME:
-#if(MYSQL_VERSION_ID > 50600)
-    case MYSQL_TYPE_TIME2:
-#endif
         return ft_mytime;
     case MYSQL_TYPE_DATETIME:
-#if(MYSQL_VERSION_ID > 50600)
-    case MYSQL_TYPE_DATETIME2:
-#endif
         return ft_mydatetime;
     case MYSQL_TYPE_TIMESTAMP:
-#if(MYSQL_VERSION_ID > 50600)
-    case MYSQL_TYPE_TIMESTAMP2:
-#endif
         return ft_mytimestamp;
     case MYSQL_TYPE_VARCHAR:
     case MYSQL_TYPE_VAR_STRING: //?
@@ -125,6 +116,14 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
         if (flags & BINARY_FLAG)
             return ft_myblob;
         return ft_mytext;
+#if(MYSQL_VERSION_ID > 50600)
+    case MYSQL_TYPE_TIME2:
+        return ft_mytime;
+    case MYSQL_TYPE_DATETIME2:
+        return ft_mydatetime;
+    case MYSQL_TYPE_TIMESTAMP2:
+        return ft_mytimestamp;
+#endif
     default: // MYSQL_TYPE_NEWDECIMAL MYSQL_TYPE_GEOMETRY
         return unicode ? ft_wstring : ft_string;
     }
@@ -175,7 +174,10 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
     td.m_maxRecordLen = (ushort_td)src->recordLenCl();
     td.optionFlags.bitA = ((src->recordFormatType() & RF_VALIABLE_LEN) != 0);
     td.optionFlags.bitB = (src->blobFields() != 0);
-
+#if defined(MARIADB_BASE_VERSION)
+    td.m_useInMariadb = true;
+#endif
+    td.m_srvMinorVer = (MYSQL_VERSION_ID / 100) % 100;
     datalen += sizeof(tabledef);
     td.fieldDefs = (fielddef*)(rec + datalen);
     // field
@@ -196,17 +198,29 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
             fd.type = convFieldType(src->fieldRealType(i), src->fieldFlags(i),
                                     isBinary(src->fieldCharset(i)),
                                     isUnicode(src->fieldCharset(i)));
+            if ((fd.type == ft_mytime) || (fd.type == ft_mydatetime) || (fd.type == ft_mytimestamp))
+            {
+                if (src->isLegacyTimeFormat(i))
+                    fd.m_options |= FIELD_OPTION_REGACY_TIME;
+
+                //for mariadb
+                #if defined(MARIADB_BASE_VERSION)
+                    fd.m_options |= FIELD_OPTION_MARIADB;
+                #endif
+            }
+ 
             fd.setPadCharSettings(false, true);
             if (fd.isStringType())
                 fd.setCharsetIndex(charsetIndex(src->fieldCharset(i).csname));
 
-            if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp ) && (f->val_real() == 0))
+            if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp) && (f->val_real() == 0))
             {// No constant value
                 fd.setDefaultValue(0.0f);
 				if (cp_has_insert_default_function(f)) 
 					fd.setDefaultValue(DFV_TIMESTAMP_DEFAULT);
             }
-            else if (fd.type == ft_mydatetime || fd.type == ft_mytimestamp || fd.type == ft_mytime || fd.type == ft_mydate)
+            else if (fd.type == ft_mydatetime || fd.type == ft_mytimestamp || fd.type == ft_mytime ||
+                     fd.type == ft_mydate)
                 fd.setDefaultValue(f->val_real());
             else
             {
@@ -215,13 +229,21 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
             }
             fd.setNullable(f->null_bit != 0, f->is_null());
             if (fd.isNullable()) ++td.m_nullfields;
-            if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp ) && 
+            if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp) && 
                                     cp_has_update_default_function(f))
                 fd.setTimeStampOnUpdate(true); 
 
             fd.decimals = (uchar_td)f->decimals();
             if (fd.decimals == NOT_FIXED_DEC)
                 fd.decimals = 0;
+
+            if (td.isLegacyTimeFormat(fd))
+            {
+                fd.m_options |= FIELD_OPTION_REGACY_TIME;
+                fd.decimals = 0;
+            }
+            else
+                fd.m_options &= ~FIELD_OPTION_REGACY_TIME;
             pos += fd.len;
             datalen =
                 copyToRecordImage(rec, &fd, sizeof(fielddef), datalen);

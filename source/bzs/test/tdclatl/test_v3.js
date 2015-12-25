@@ -186,45 +186,84 @@ var clearNull = 0;
 var defaultNull = 1;
 
 var DFV_TIMESTAMP_DEFAULT = 1;
+var MYSQL_TYPE_MYSQL = 77;//'M'
+var MYSQL_TYPE_MARIA = 65;//'A'
 
+/*--------------------------------------------------------------------------------*/
+function bench()
+{
+	var tick=0;
+
+	this.report = function(func, p1, p2, p3, p4, p5, p6, p7, p8)
+	{
+		var now = new Date();
+		ticks = now.getTime();
+		var ret = func(p1, p2, p3, p4, p5, p6, p7, p8);
+		now = new Date();
+		ticks = (now.getTime() - ticks)/1000;
+		return ret;
+	}
+
+	this.time = function(){return tick;}
+	this.show = function(){WScript.Echo("(exec time " + ticks + " sec)\n");}
+}
+/*--------------------------------------------------------------------------------*/
+function checkEqual(a, b, on)
+{
+	if (a !== b)
+	{
+		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
+		resultCode = 1;
+	}
+}
+
+/*--------------------------------------------------------------------------------*/
+function checkNotEqual(a, b, on)
+{
+	if (a === b)
+	{
+		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
+		resultCode = 1;
+	}
+}
+/*--------------------------------------------------------------------------------*/
 function createRecordsetQuery()
 {
 	return new ActiveXObject('transactd.recordsetQuery');
 }
-
-	
+/*--------------------------------------------------------------------------------*/
 function createQuery()
 {
 	return new ActiveXObject('transactd.query');
 }
-
+/*--------------------------------------------------------------------------------*/
 function createDatabaseObject()
 {
 	return new ActiveXObject("transactd.database");
 }
-
+/*--------------------------------------------------------------------------------*/
 function createGroupQuery()
 {
 	return new ActiveXObject("transactd.groupQuery");
 }
-
+/*--------------------------------------------------------------------------------*/
 function createActiveTable(db, tableName)
 {
 	var at =  new ActiveXObject("transactd.activeTable");
 	at.SetDatabase(db, tableName);
 	return at;
 }
-
+/*--------------------------------------------------------------------------------*/
 function createSortFields()
 {
 	return new ActiveXObject("transactd.sortFields");
 }
-
+/*--------------------------------------------------------------------------------*/
 function createFieldNames()
 {
 	return new ActiveXObject("transactd.fieldNames");
 }
-
+/*--------------------------------------------------------------------------------*/
 var sep = "-------------------------------------------------------------------------------";
 var FMT_LEFT = 0;
 var FMT_CENTER = 1;
@@ -234,7 +273,25 @@ var resultCode = 0;
 var q;
 
 WScript.quit(main());
-
+/*--------------------------------------------------------------------------------*/
+function initQuery()
+{
+	q.Reset();
+	gq.Reset();
+}
+/*--------------------------------------------------------------------------------*/
+function isMySQL5_5(db)
+{
+    var ver = db.GetBtrVersion(1);
+    return (db.Stat == 0) && ((5 == ver.MajorVersion) && (5 == ver.MinorVersion));
+}
+/*--------------------------------------------------------------------------------*/
+function isLegacyTimeFormat(db)
+{
+	var ver = db.GetBtrVersion(1);
+	return (db.Stat == 0) && ((5 == ver.MajorVersion) && (5 == ver.MinorVersion)
+    	&&  ver.Type == MYSQL_TYPE_MYSQL);
+}
 /*--------------------------------------------------------------------------------*/
 function createUserTable(db)
 {
@@ -284,7 +341,10 @@ function createUserTable(db)
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "update_datetime";
 	fd.Type = ft_mytimestamp;
-	fd.Len = 7;
+	if (isLegacyTimeFormat(db))
+		fd.Len = 4;
+	else
+		fd.Len = 7;
 	fd.DefaultValue = DFV_TIMESTAMP_DEFAULT;
 	fd.TimeStampOnUpdate = true;
 	checkEqual(fd.TimeStampOnUpdate, true, "TimeStampOnUpdate 1-");
@@ -293,9 +353,17 @@ function createUserTable(db)
 	++filedIndex;
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "create_datetime";
-	fd.Type = ft_mytimestamp;
-	fd.Len = 4;
-	fd.DefaultValue = DFV_TIMESTAMP_DEFAULT;
+	if (isMySQL5_5(db))
+	{
+		fd.Type = ft_mydatetime;
+		fd.Len = 8;
+	}
+	else
+	{
+		fd.Type = ft_mytimestamp;
+		fd.Len = 4;
+		fd.DefaultValue = DFV_TIMESTAMP_DEFAULT;
+	}
 	fd.TimeStampOnUpdate = false;
 	checkEqual(fd.PadCharType, false, "isPadCharType ");
 	checkEqual(fd.DateTimeType, true, "isDateTimeType");
@@ -327,7 +395,6 @@ function createUserTable(db)
 	dbdef = null;
 	return true;
 }
-
 /*--------------------------------------------------------------------------------*/
 function createUserExtTable(db)
 {
@@ -373,32 +440,6 @@ function createUserExtTable(db)
 }
 
 /*--------------------------------------------------------------------------------*/
-function bench()
-{
-	var tick=0;
-
-	this.report = function(func, p1, p2, p3, p4, p5, p6, p7, p8)
-	{
-		var now = new Date();
-		ticks = now.getTime();
-		var ret = func(p1, p2, p3, p4, p5, p6, p7, p8);
-		now = new Date();
-		ticks = (now.getTime() - ticks)/1000;
-		return ret;
-	}
-
-	this.time = function(){return tick;}
-	this.show = function(){WScript.Echo("(exec time " + ticks + " sec)\n");}
-}
-
-/*--------------------------------------------------------------------------------*/
-function initQuery()
-{
-	q.Reset();
-	gq.Reset();
-}
-
-/*--------------------------------------------------------------------------------*/
 function createDatabase(db, uri)
 {
 	db.Create(uri);
@@ -419,8 +460,10 @@ function createDatabase(db, uri)
 /*--------------------------------------------------------------------------------*/
 function insertData(db)
 {
-	var tb = db.OpenTable("user", OPEN_NORMAL); 
+	var tb = db.OpenTable("user", OPEN_NORMAL);
+	checkEqual(db.Stat, 0, "OpenTable user"); 
 	var tb3 = db.OpenTable("extention", OPEN_NORMAL); 
+	checkEqual(db.Stat, 0, "OpenTable extention"); 
 
 	try
 	{
@@ -450,25 +493,15 @@ function insertData(db)
 	}
 }
 /*--------------------------------------------------------------------------------*/
-function checkEqual(a, b, on)
+function todayStr()
 {
-	if (a !== b)
-	{
-		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
-		resultCode = 1;
-	}
+	var d = new Date();
+	var m =  d.getMonth()+1;
+	var dt = d.getDate()
+	if (m < 10)	m = "0" + m;
+	if (dt < 10) dt = "0" + dt;
+	return d.getFullYear() + "-" + m + "-" + dt;
 }
-
-/*--------------------------------------------------------------------------------*/
-function checkNotEqual(a, b, on)
-{
-	if (a === b)
-	{
-		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
-		resultCode = 1;
-	}
-}
-
 /*--------------------------------------------------------------------------------*/
 function test(atu, ate, db)
 {
@@ -494,8 +527,13 @@ function test(atu, ate, db)
 	
 	//MysqlNullMode
 	checkEqual(td.MysqlNullMode , true, "MysqlNullMode");
-	checkEqual(td.RecordLen , 104, "recordlen");
 	
+	var len = 104;
+	if (isMySQL5_5(db))
+		len += 4;
+	if (isLegacyTimeFormat(db))
+		len -= 3;
+	checkEqual(td.RecordLen , len, "recordlen");
 	//InUse
 	checkEqual(td.InUse , 2, "InUse");
 
@@ -516,6 +554,7 @@ function test(atu, ate, db)
 	fd = td.FieldDef(3);
 	checkEqual(fd.DefaultNull, true, "DefaultNull");
 	fd = td.FieldDef(4);
+	checkEqual(fd.DefaultValue, String(DFV_TIMESTAMP_DEFAULT), "default value timestamp");
 	checkEqual(fd.TimeStampOnUpdate, true, "TimeStampOnUpdate 1");
 	fd = td.FieldDef(5);
 	checkEqual(fd.TimeStampOnUpdate, false, "TimeStampOnUpdate 2");
@@ -702,16 +741,18 @@ function test(atu, ate, db)
 	checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
 	checkEqual(tb.GetFVstr("id"), "10", "tb.SetFV");
 
+	// timestamp format
+	var date = todayStr();
+	checkEqual(tb.getFVstr("update_datetime").substr(0, 10), date);
+	if (!isMySQL5_5(db))
+		checkEqual(tb.getFVstr("create_datetime").substr(0, 10), date);
 
+	// MysqlNullMode
 	checkEqual(tb.TableDef.MysqlNullMode , true, "MysqlNullMode 2");
 	checkEqual(td.InUse , 2, "InUse2");
-
-	
 	
 	WScript.Echo(" -- End Test -- ");
-
 }
-
 /*--------------------------------------------------------------------------------*/
 function main()
 {

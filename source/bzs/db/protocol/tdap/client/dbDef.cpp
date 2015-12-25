@@ -1144,7 +1144,6 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
         maxlen = 8;
         defaultlen = 5;
         break;
-
     case ft_nullindicator:
         minlen = 0;
         maxlen = 0;

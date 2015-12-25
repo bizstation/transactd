@@ -141,37 +141,51 @@ void myTime::setValue(__int64 v, bool btrvValue)
         ms = btrt.uu * 10000;
         return;
     }
-    char* p = (char*)&i64;
-    char* src = (char*)&v;
-    if (m_dec)
+    if (m_bigendian)
     {
-        p[0] = src[5];
-        p[1] = src[4];
-        p[2] = src[3];
-        ms = ms >> (3 - m_dec / 2) * 8;
+        char* p = (char*)&i64;
+        char* src = (char*)&v;
+        if (m_dec)
+        {
+            p[0] = src[5];
+            p[1] = src[4];
+            p[2] = src[3];
+            ms = ms >> (3 - m_dec / 2) * 8;
+        }
+        p[3] = src[2];
+        p[4] = src[1];
+        p[5] = src[0];
+        sign = 0;
+    }else
+    {//DDÅ~24Å~3600 + HHÅ~3600 + MMÅ~60 + SS
+        hh = v / 3600;
+        nn = (v % 3600) / 60;
+        ss = v % 60;
     }
-    p[3] = src[2];
-    p[4] = src[1];
-    p[5] = src[0];
-    sign = 0;
 }
 
 __int64 myTime::getValue(bool btrvValue)
 {
     __int64 v = 0;
     sign = 1;
-    char* src = (char*)&i64;
-    char* p = (char*)&v;
-    p[2] = src[3];
-    p[1] = src[4];
-    p[0] = src[5];
-    if (m_dec)
+    if (m_bigendian)
     {
-        ms = ms << (3 - m_dec / 2) * 8;
-        p[3] = src[2];
-        p[4] = src[1];
-        p[5] = src[0];
-    }
+        char* src = (char*)&i64;
+        char* p = (char*)&v;
+        p[2] = src[3];
+        p[1] = src[4];
+        p[0] = src[5];
+        if (m_dec)
+        {
+            ms = ms << (3 - m_dec / 2) * 8;
+            p[3] = src[2];
+            p[4] = src[1];
+            p[5] = src[0];
+        }
+    }else
+        v =  (hh * 3600) + (nn * 60) + ss;
+    sign = 0;
+
     if (btrvValue)
     {
         btrTime btrt;
@@ -181,7 +195,6 @@ __int64 myTime::getValue(bool btrvValue)
         btrt.uu = (char)(ms / 100000);
         return btrt.i;
     }
-    sign = 0;
     return v;
 }
 
@@ -261,20 +274,33 @@ myTime& myTime::operator=(const wchar_t* p)
 void myDateTime::setValue(__int64 v)
 {
     i64 = 0;
-    char* p = (char*)&i64;
-    char* src = (char*)&v;
-       
-    p[3] = src[4];
-    p[4] = src[3];
-    p[5] = src[2];
-    p[6] = src[1];
-    p[7] = src[0];
-    if (i64 && m_dec)
+    if (m_bigendian)
     {
-        p[0] = src[7];
-        p[1] = src[6];
-        p[2] = src[5];
-        ms = ms >> (3 - m_dec / 2) * 8;
+        char* p = (char*)&i64;
+        char* src = (char*)&v;
+
+        p[3] = src[4];
+        p[4] = src[3];
+        p[5] = src[2];
+        p[6] = src[1];
+        p[7] = src[0];
+        if (i64 && m_dec)
+        {
+            p[0] = src[7];
+            p[1] = src[6];
+            p[2] = src[5];
+            ms = ms >> (3 - m_dec / 2) * 8;
+        }
+
+    }else
+    {   // YYYYÅ~10000 + MMÅ~100 + DD  HHÅ~10000 + MMÅ~100 + SS
+        __int64 yy = v / 10000000000LL;
+        __int64 m = (v / 100000000LL) % 100;
+        yymm = yy*13 + m;
+        dd = (v / 1000000L) % 100;
+        hh = (v / 10000L) % 100;
+        nn = (v / 100L) % 100;
+        ss = v % 100;
     }
     sign = 0;
 }
@@ -283,19 +309,29 @@ __int64 myDateTime::getValue()
 {
     __int64 v = 0;
     sign = 1;
-    char* src = (char*)&i64;
-    char* p = (char*)&v;
-    p[4] = src[3];
-    p[3] = src[4];
-    p[2] = src[5];
-    p[1] = src[6];
-    p[0] = src[7];
-    if (v && m_dec)
+    if (m_bigendian)
     {
-        ms = ms << (3 - m_dec / 2) * 8;
-        p[5] = src[2];
-        p[6] = src[1];
-        p[7] = src[0];
+        char* src = (char*)&i64;
+        char* p = (char*)&v;
+        p[4] = src[3];
+        p[3] = src[4];
+        p[2] = src[5];
+        p[1] = src[6];
+        p[0] = src[7];
+        if (v && m_dec)
+        {
+            ms = ms << (3 - m_dec / 2) * 8;
+            p[5] = src[2];
+            p[6] = src[1];
+            p[7] = src[0];
+        }
+
+    }else
+    { // YYYYÅ~10000 + MMÅ~100 + DD  HHÅ~10000 + MMÅ~100 + SS
+        __int64 yy = yymm / 13;
+        __int64 m =  yymm % 13;
+        v = (yy * 10000000000) + (m * 100000000LL) + (dd * 1000000LL) +
+             (hh * 10000LL) + (nn * 100LL) + ss;
     }
     sign = 0;
     return v;
@@ -484,44 +520,103 @@ wchar_t* myDateTime::dateTime_str(wchar_t* p, int decimals) const
 }
 
 #endif
+//-------------------------------------------------------------
 
-//------------------------------------------------------------- 
+void maDateTime::setValue(__int64 v)
+{
+    myDateTime::setValue(v);
+    if (m_bigendian)
+    {
+        __int64 v = i64;
+        ms = v % 1000000LL; v /= 1000000LL;
+        ss = v % 60; v /= 60;
+        nn = v % 60; v /= 60;
+        hh = v % 24; v /= 24;
+        dd = v % 32; v /= 32;
+        __int64 mm = v % 13; v /= 13;
+        __int64 yy = v;
+        yymm = yy*13 + mm;
+    }
+}
+
+__int64 maDateTime::getValue()
+{
+    if (!m_bigendian) return myDateTime::getValue();
+    __int64 i64t = ((((( yymm) * 32 + dd) * 24 + hh) * 60 + nn) * 60 +
+                ss) * 1000000LL + ms;
+    __int64 v;
+    char* src = (char*)&i64t;
+    char* p = (char*)&v;
+    p[4] = src[3];
+    p[3] = src[4];
+    p[2] = src[5];
+    p[1] = src[6];
+    p[0] = src[7];
+    p[5] = src[2];
+    p[6] = src[1];
+    p[7] = src[0];
+    return v;
+}
+
+maDateTime& maDateTime::operator=(const char* p)
+{
+    myDateTime::operator=(p);
+    return *this;
+}
+
+#ifdef _WIN32
+maDateTime& maDateTime::operator=(const wchar_t* p)
+{
+    myDateTime::operator=(p);
+    return *this;
+}
+#endif
+
+//-------------------------------------------------------------
 void myTimeStamp::setValue(__int64 v)
 {
     i64 = 0;
-    char* p = (char*)&i64;
-    char* src = (char*)&v;
-    p[3] = src[3];
-    p[4] = src[2];
-    p[5] = src[1];
-    p[6] = src[0];
-    if (m_dec && datetime)
+    if (m_bigendian)
     {
-        p[0] = src[6];
-        p[1] = src[5];
-        p[2] = src[4];
-        ms = ms >> (3 - m_dec / 2) * 8;
-    }
+        char* p = (char*)&i64;
+        char* src = (char*)&v;
+        p[3] = src[3];
+        p[4] = src[2];
+        p[5] = src[1];
+        p[6] = src[0];
+        if (m_dec && datetime)
+        {
+            p[0] = src[6];
+            p[1] = src[5];
+            p[2] = src[4];
+            ms = ms >> (3 - m_dec / 2) * 8;
+        }
+    }else
+        datetime = v;
 }
 
 __int64 myTimeStamp::getValue()
 {
-    __int64 v = 0;
-    char* src = (char*)&i64;
-    char* p = (char*)&v;
-
-    p[3] = src[3];
-    p[2] = src[4];
-    p[1] = src[5];
-    p[0] = src[6];
-    if (m_dec)
+    if (m_bigendian)
     {
-        ms = ms << (3 - m_dec / 2) * 8;
-        p[4] = src[2];
-        p[5] = src[1];
-        p[6] = src[0];
+        __int64 v = 0;
+        char* src = (char*)&i64;
+        char* p = (char*)&v;
+
+        p[3] = src[3];
+        p[2] = src[4];
+        p[1] = src[5];
+        p[0] = src[6];
+        if (m_dec)
+        {
+            ms = ms << (3 - m_dec / 2) * 8;
+            p[4] = src[2];
+            p[5] = src[1];
+            p[6] = src[0];
+        }
+        return v;
     }
-    return v;
+    return datetime;
 }
 
 char* myTimeStamp::toStr(char* p)
@@ -595,8 +690,14 @@ wchar_t* myTimeStamp::toStr(wchar_t* p)
     if (datetime)
     {
         time_t v = (time_t)datetime;
-
+        errno = 0;
         struct tm* st = localtime(&v);
+        if (st == NULL)
+        {
+            //p[0] = 0x00;
+            swprintf_s(p, 100, L"er:%d %s", errno,_tcserror(errno));
+            return p;
+        }
         if (m_dec)
             swprintf_s(p, 50, wdatetime_format_ms, st->tm_year + 1900,
                         st->tm_mon + 1, st->tm_mday, st->tm_hour, st->tm_min,

@@ -48,7 +48,7 @@ struct PACKAGE myDate
 	    int i;
 	};
     inline myDate() {};
-    inline myDate(int /*size*/) {};
+    inline myDate(int /*size*/, bool /*bigendian*/) {};
     void setValue(int v, bool btrvValue = false);
     int getValue(bool btrvValue = false);
     char* toStr(char* p, bool btrvValue = false);
@@ -66,7 +66,7 @@ struct PACKAGE myTime
 
 private:
     int m_dec;
-
+    bool m_bigendian;
 public:
     union
     {
@@ -84,7 +84,8 @@ public:
     };
 
 public:
-    inline myTime(int size) : m_dec((size - 3) * 2){};
+    inline myTime(int size, bool bigendian) : m_dec((size - 3) * 2 * (int)bigendian),
+                m_bigendian(bigendian){};
     void setValue(__int64 v, bool btrvValue = false);
     __int64 getValue(bool btrvValue = false);
     char* toStr(char* p);
@@ -97,11 +98,12 @@ public:
     void setInternalValue(__int64 v) { i64 = v; }
 };
 
+
 struct PACKAGE myDateTime
 {
-private:
+protected:
     int m_dec;
-
+    bool m_bigendian;
 public:
     union
     {
@@ -118,9 +120,10 @@ public:
         __int64 i64;
     };
 
-    inline myDateTime(int size) : m_dec((size - 5) * 2){};
-    void setValue(__int64 v);
-    __int64 getValue();
+    inline myDateTime(int size, bool bigendian) : m_dec((size - 5) * 2 * (int)bigendian),
+                 m_bigendian(bigendian){};
+    virtual void setValue(__int64 v);
+    virtual __int64 getValue();
     inline char* toStr(char* p) const{ return dateTime_str(p, m_dec); }
     myDateTime& operator=(const char* p);
     char* date_str(char* p) const;
@@ -141,11 +144,23 @@ public:
     void setInternalValue(__int64 v) { i64 = v; }
 };
 
+struct PACKAGE maDateTime : public  myDateTime
+{
+    virtual void setValue(__int64 v);
+    virtual __int64 getValue();
+public:
+    inline maDateTime(int size, bool bigendian) : myDateTime(size, bigendian){};
+    maDateTime& operator=(const char* p);
+#ifdef _WIN32
+    maDateTime& operator=(const wchar_t* p) ;
+#endif
+};
+
 struct PACKAGE myTimeStamp
 {
 private:
     int m_dec;
-
+    bool m_bigendian;
 public:
     union
     {
@@ -158,7 +173,8 @@ public:
         __int64 i64;
     };
 
-    inline myTimeStamp(int size) : m_dec((size - 4) * 2){};
+    inline myTimeStamp(int size, bool bigendian) : m_dec((size - 4) * 2 * (int)bigendian),
+                 m_bigendian(bigendian){};
     void setValue(__int64 v);
     __int64 getValue();
     char* toStr(char* p);
@@ -179,9 +195,9 @@ inline int btrdateToMydate(int btrd)
     return myd.getValue(true);
 }
 
-inline __int64 btrtimeToMytime(int btrt)
+inline __int64 btrtimeToMytime(int btrt, bool bigendian)
 {
-    myTime myt(4);
+    myTime myt(4, bigendian);
     myt.setValue(btrt, true);
     return myt.getValue(true);
 }
@@ -193,42 +209,42 @@ inline int mydateToBtrdate(int mydate)
     return myd.getValue(true);
 }
 
-inline int mytimeToBtrtime(__int64 mytime, int size)
+inline int mytimeToBtrtime(__int64 mytime, bool bigendian, int size)
 {
-    myTime myt(size);
+    myTime myt(size, bigendian);
     myt.setValue(mytime);
     return (int)myt.getValue(true);
 }
 
 template <class T>
-__int64 getLittleEndianValue(int len, __int64 bigendianValue)
+__int64 getLittleEndianValue(int len, __int64 value)
 {
-    T t(len);
-    t.setValue(bigendianValue);
+    T t(len, true);
+    t.setValue(value);
     return t.internalValue();
 }
 
 template <class T>
-__int64 getBigEndianValue(int len, __int64 ltendianValue)
+__int64 getBigEndianValue(int len, __int64 value)
 {
-    T t(len);
-    t.setInternalValue(ltendianValue);
+    T t(len, true);
+    t.setInternalValue(value);
     return t.getValue();
 }
 
 #pragma warning(disable : 4244)
 template <class T, typename CHAR>
-const CHAR* date_time_str(int len, __int64 bigendianValue, CHAR* buf)
+const CHAR* date_time_str(int len, bool bigendian, __int64 value, CHAR* buf)
 {
-    T t(len);
-    t.setValue(bigendianValue);
+    T t(len, bigendian);
+    t.setValue(value);
     return t.toStr(buf);
 }
 
 template <class T, class T2>
-inline __int64 str_to_64(int len, const T2* data)
+inline __int64 str_to_64(int len, bool bigendian, const T2* data)
 {
-    T t(len);
+    T t(len, bigendian);
     t = data;
     return t.getValue();
 }

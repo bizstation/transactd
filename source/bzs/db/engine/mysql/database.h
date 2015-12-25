@@ -598,6 +598,11 @@ public:
     {
         return m_table->field[fieldNum]->flags;
     }
+    
+    inline bool isLegacyTimeFormat(int fieldNum) const
+    {
+        return m_table->field[fieldNum]->key_type() != HA_KEYTYPE_BINARY;
+    }
 
     inline unsigned short fields() const { return m_table->s->fields; }
 

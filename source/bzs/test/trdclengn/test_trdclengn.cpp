@@ -407,33 +407,33 @@ void testVersion(database* db)
         if (_tcscmp(PROTOCOL, _T("tdap")) == 0)
         {
             BOOST_CHECK_MESSAGE(
-                atoi(CPP_INTERFACE_VER_MAJOR) == vv.versions[0].majorVersion,
-                "clent_Major = " << vv.versions[0].majorVersion);
+                atoi(CPP_INTERFACE_VER_MAJOR) == vv.versions[VER_IDX_CLINET].majorVersion,
+                "clent_Major = " << vv.versions[VER_IDX_CLINET].majorVersion);
             BOOST_CHECK_MESSAGE(
-                atoi(CPP_INTERFACE_VER_MINOR) == vv.versions[0].minorVersion,
-                "clent_Miner = " << vv.versions[0].minorVersion);
-            BOOST_CHECK_MESSAGE((int)'N' == (int)vv.versions[0].type,
-                                "clent_Type = " << vv.versions[0].type);
+                atoi(CPP_INTERFACE_VER_MINOR) == vv.versions[VER_IDX_CLINET].minorVersion,
+                "clent_Miner = " << vv.versions[VER_IDX_CLINET].minorVersion);
+            BOOST_CHECK_MESSAGE((int)'N' == (int)vv.versions[VER_IDX_CLINET].type,
+                                "clent_Type = " << vv.versions[VER_IDX_CLINET].type);
 
             BOOST_CHECK_MESSAGE(
-                ((5 == vv.versions[1].majorVersion) ||
-                 (10 == vv.versions[1].majorVersion)),
-                "mysql_server_Major = " << vv.versions[1].majorVersion);
+                ((5 == vv.versions[VER_IDX_DB_SERVER].majorVersion) ||
+                 (10 == vv.versions[VER_IDX_DB_SERVER].majorVersion)),
+                "mysql_server_Major = " << vv.versions[VER_IDX_DB_SERVER].majorVersion);
             BOOST_CHECK_MESSAGE(
-                ((5 <= vv.versions[1].minorVersion) ||
-                 (1 >= vv.versions[1].minorVersion)),
-                "mysql_server_Miner = " << vv.versions[1].minorVersion);
-            BOOST_CHECK_MESSAGE((int)'M' == (int)vv.versions[1].type,
-                                "mysql_server_Type = " << vv.versions[1].type);
+                ((5 <= vv.versions[VER_IDX_DB_SERVER].minorVersion) ||
+                 (1 >= vv.versions[VER_IDX_DB_SERVER].minorVersion)),
+                "mysql_server_Miner = " << vv.versions[VER_IDX_DB_SERVER].minorVersion);
+            BOOST_CHECK_MESSAGE((int)'M' == (int)vv.versions[VER_IDX_DB_SERVER].type,
+                                "mysql_server_Type = " << vv.versions[VER_IDX_DB_SERVER].type);
 
             BOOST_CHECK_MESSAGE(
-                TRANSACTD_VER_MAJOR == vv.versions[2].majorVersion,
-                "server_Major = " << vv.versions[2].majorVersion);
+                TRANSACTD_VER_MAJOR == vv.versions[VER_IDX_PLUGIN].majorVersion,
+                "server_Major = " << vv.versions[VER_IDX_PLUGIN].majorVersion);
             BOOST_CHECK_MESSAGE(
-                TRANSACTD_VER_MINOR == vv.versions[2].minorVersion,
-                "server_Miner = " << vv.versions[2].minorVersion);
-            BOOST_CHECK_MESSAGE((int)'T' == (int)vv.versions[2].type,
-                                "server_Type = " << vv.versions[2].type);
+                TRANSACTD_VER_MINOR == vv.versions[VER_IDX_PLUGIN].minorVersion,
+                "server_Miner = " << vv.versions[VER_IDX_PLUGIN].minorVersion);
+            BOOST_CHECK_MESSAGE((int)'T' == (int)vv.versions[VER_IDX_PLUGIN].type,
+                                "server_Type = " << vv.versions[VER_IDX_PLUGIN].type);
         }
     }
 }

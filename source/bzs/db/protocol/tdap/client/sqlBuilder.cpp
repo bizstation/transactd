@@ -71,7 +71,7 @@ char g_buf[TMP_BUFSIZE];
 #define NOTE_TYPE 12
 #define VAR_TYPE 13
 
-const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
+const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
                              const char* charsetName)
 {
     const char* bin_ptr = nobinary ? "" : "binary";
@@ -80,8 +80,7 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
         strcat_s(charsetString, 128, charsetName);
     else
         charsetString[0] = 0x00;
-
-    switch (fieldType)
+    switch (fd.type)
     {
     case ft_integer:
     case ft_autoinc:
@@ -119,13 +118,22 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
     case ft_mydate:
         return "DATE";
     case ft_mytime:
-        sprintf_s(g_buf, TMP_BUFSIZE, "TIME(%d)", (size - 3) * 2);
+        if(fd.isLegacyTimeFormat())
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIME");
+        else
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIME(%d)", (size - 3) * 2);
         return g_buf;
     case ft_mydatetime:
-        sprintf_s(g_buf, TMP_BUFSIZE, "DATETIME(%d)", (size - 5) * 2);
+        if(fd.isLegacyTimeFormat())
+            sprintf_s(g_buf, TMP_BUFSIZE, "DATETIME");
+        else
+            sprintf_s(g_buf, TMP_BUFSIZE, "DATETIME(%d)", (size - 5) * 2);
         return g_buf;
     case ft_mytimestamp:
-        sprintf_s(g_buf, TMP_BUFSIZE, "TIMESTAMP(%d)", (size - 4) * 2);
+        if(fd.isLegacyTimeFormat())
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIMESTAMP");
+        else
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIMESTAMP(%d)", (size - 4) * 2);
         return g_buf;
     case ft_mytext:
         if (size - 8 == 4)
@@ -236,6 +244,7 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
 {
     std::string s;
     int len;
+    char timestamp_tmp[64];
     for (int i = 0; i < table->fieldCount; i++)
     {
         const fielddef& fd = table->fieldDefs[i];
@@ -260,12 +269,14 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
         if (fd.charsetIndex() != table->charsetIndex)
             charsetName = mysql::charsetName(fd.charsetIndex());
 
-        s += getFieldTypeName(fd.type, len, f.bitA, charsetName);
+        s += getFieldTypeName(fd, len, f.bitA, charsetName);
         const char* p = fd.defaultValue_strA();
-        /*bool isNullkeyseg = isNULLKeySegment(table, i);*/
-        if (/*isNullkeyseg ||*/ fd.isNullable())
+        if ((fd.defaultValue() == DFV_TIMESTAMP_DEFAULT) && 
+            ((fd.type == ft_mytimestamp) || (fd.type == ft_mydatetime)))
+            p = timeStampDefaultStr(fd, timestamp_tmp, 64);
+        if (fd.isNullable())
         {
-            if (/*isNullkeyseg || */fd.isDefaultNull())
+            if (fd.isDefaultNull())
                 s += " NULL DEFAULT NULL";
             else if (p[0])
             {

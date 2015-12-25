@@ -245,7 +245,9 @@ inline bool isStringType(uchar_td type)
 #define USE_PAD_CHAR            2
 #define TRIM_PAD_CHAR           4
 
-#define FIELD_OPTION_NULLABLE   1
+#define FIELD_OPTION_NULLABLE     1
+#define FIELD_OPTION_MARIADB      2
+#define FIELD_OPTION_REGACY_TIME  4
 
 #define DEFAULT_VALUE_SIZE      8
 /** @endcond */
@@ -531,7 +533,7 @@ public:
     bool isTimeStampOnUpdate() const 
     { 
         if (type == ft_mytimestamp || type == ft_mydatetime)
-            return (m_defValue[7] == 1); 
+            return (m_defValue[7] == 1);
         return false;
     }
 
@@ -549,8 +551,13 @@ public:
     #pragma warn .8056
 
     inline bool isDefaultNull() const
-    { 
+    {
         return enableFlags.bitF;
+    }
+
+    inline bool isLegacyTimeFormat() const
+    {
+        return (m_options & FIELD_OPTION_REGACY_TIME) != 0;
     }
 
     inline uint_td blobLenBytes() const
@@ -825,14 +832,24 @@ private:
 /** @cond INTERNAL */
 inline void updateTimeStampStr(const fielddef* fd, char* p, size_t size)
 {
-    int dec = (fd->type == ft_mytimestamp) ? (fd->len - 4) * 2 : (fd->len - 5) * 2;
-    sprintf_s(p, 64, " ON UPDATE CURRENT_TIMESTAMP(%d)",dec);
+    if (fd->isLegacyTimeFormat())
+        sprintf_s(p, 64, " ON UPDATE CURRENT_TIMESTAMP");
+    else
+    {
+        int dec = (fd->type == ft_mytimestamp) ? (fd->len - 4) * 2 : (fd->len - 5) * 2;
+        sprintf_s(p, 64, " ON UPDATE CURRENT_TIMESTAMP(%d)",dec);
+    }
 }
 
 inline void updateTimeStampStr(const fielddef* fd, wchar_t* p, size_t size)
 {
-    int dec = (fd->type == ft_mytimestamp) ? (fd->len - 4) * 2 : (fd->len - 5) * 2;
-    swprintf_s(p, 64, L" ON UPDATE CURRENT_TIMESTAMP(%d)",dec);
+    if (fd->isLegacyTimeFormat())
+        swprintf_s(p, 64, L" ON UPDATE CURRENT_TIMESTAMP");
+    else
+    {
+        int dec = (fd->type == ft_mytimestamp) ? (fd->len - 4) * 2 : (fd->len - 5) * 2;
+        swprintf_s(p, 64, L" ON UPDATE CURRENT_TIMESTAMP(%d)",dec);
+    }
 }
 
 inline uint_td dataLen(const fielddef& fd, const uchar_td* ptr)
@@ -849,6 +866,24 @@ inline uint_td blobLenBytes(const fielddef& fd)
 {
 	return fd.blobLenBytes();
 }
+
+inline _TCHAR* timeStampDefaultStr(const fielddef& fd, _TCHAR* buf, size_t bufsize)
+{
+    if (fd.type == ft_mytimestamp || fd.type == ft_mydatetime)
+    {
+        buf[0] = 0x00;
+        if (fd.isLegacyTimeFormat())
+            _stprintf_s(buf, bufsize, _T("CURRENT_TIMESTAMP"));
+        else
+        {
+            int size = (fd.type == ft_mytimestamp) ? (fd.len - 4) * 2 : (fd.len - 5) * 2;
+            _stprintf_s(buf, bufsize, _T("CURRENT_TIMESTAMP(%d)"), size);
+        }
+    }
+    return buf;
+}
+
+
 /** @endcond */
 
 
@@ -945,6 +980,23 @@ public:
 
     inline bool isMysqlNullMode() const { return m_mysqlNullMode; }
 
+    inline bool isLegacyTimeFormat(const fielddef& fd)
+    {
+        if (fd.type == ft_mytime || fd.type == ft_mydatetime ||
+                            fd.type == ft_mytimestamp)
+        {
+            if (m_useInMariadb)
+            {
+                if (fd.decimals == 0 && m_srvMinorVer < 1) return true;
+            }
+            else
+            {
+                if (m_srvMinorVer < 6) return true;
+            }
+        }
+        return false;
+    }
+
 private:
     short synchronize(const tabledef* td);
     bool isNullKey(const keydef& key) const;
@@ -973,6 +1025,7 @@ private:
     {
         return fieldDefs = (fielddef*)((char*)this + sizeof(tabledef));
     }
+
 public:
     ushort_td id; // table id
 
@@ -1006,8 +1059,10 @@ private:
     uchar_td m_nullfields;    // number of nullable field
     uchar_td m_nullbytes;     // number of null indicator byte
     uchar_td m_inUse;
-    bool     m_mysqlNullMode; // use in mysqlnull mode
-    uchar_td m_filler0[13];   // reserved
+    bool m_mysqlNullMode ;    // use in mysqlnull mode
+    bool m_useInMariadb  ;    // use in mariadb
+    uchar_td m_srvMinorVer;   // server minor version;
+    uchar_td m_filler0[11];   // reserved
 public:
     FLAGS flags; // file flags
     uchar_td primaryKeyNum; // Primary key number. -1 is no primary.
@@ -1071,6 +1126,13 @@ struct btrVersions
 {
     btrVersion versions[4];
 };
+
+#define VER_IDX_CLINET    0
+#define VER_IDX_DB_SERVER 1
+#define VER_IDX_PLUGIN    2
+
+
+
 
 #pragma pack(pop)
 pragma_pop;

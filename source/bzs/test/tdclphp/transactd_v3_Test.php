@@ -76,6 +76,9 @@ if(class_exists('Thread')){
 
 class transactdTest extends PHPUnit_Framework_TestCase
 {
+    const MYSQL_TYPE_MYSQL = 77;//'M'
+    const MYSQL_TYPE_MARIA = 65;//'A'
+
     private function dropDatabase($db)
     {
         $db->open(URL);
@@ -96,6 +99,25 @@ class transactdTest extends PHPUnit_Framework_TestCase
     private function openDatabase($db)
     {
         return $db->open(URL, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+    }
+    private function isMySQL5_5($db)
+    {
+        $vv = new Bz\btrVersions();
+        $db->getBtrVersion($vv);
+        $server_ver = $vv->version(1);
+        return ($db->stat() == 0) && 
+            ((5 == $server_ver->majorVersion) &&
+            (5 == $server_ver->minorVersion));
+    }
+    private function isLegacyTimeFormat($db)
+    {
+        $vv = new Bz\btrVersions();
+        $db->getBtrVersion($vv);
+        $server_ver = $vv->version(1);
+        return ($db->stat() == 0) && 
+            ((5 == $server_ver->majorVersion) &&
+            (5 == $server_ver->minorVersion)) &&
+            ($server_ver->type == transactdTest::MYSQL_TYPE_MYSQL);
     }
     private function createUserTable($db)
     {
@@ -146,19 +168,31 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('update_datetime');
         $fd->type = bz\transactd::ft_mytimestamp;
-        $fd->len = 7;
+        if ($this->isLegacyTimeFormat($db))
+            $fd->len = 4;
+        else
+            $fd->len = 7;
         $fd->setDefaultValue(bz\transactd::DFV_TIMESTAMP_DEFAULT);
         $fd->setTimeStampOnUpdate(true);
         $this->assertEquals($fd->isTimeStampOnUpdate(), true);
         
+        
+
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('create_datetime');
-        $fd->type = bz\transactd::ft_mytimestamp;
-        $fd->len = 4;
-        $fd->setDefaultValue(bz\transactd::DFV_TIMESTAMP_DEFAULT);
+        if ($this->isMySQL5_5($db))
+        {
+            $fd->type = bz\transactd::ft_mydatetime;
+            $fd->len = 8;
+        }
+        else
+        {
+            $fd->type = bz\transactd::ft_mytimestamp;
+            $fd->len = 4;
+            $fd->setDefaultValue(bz\transactd::DFV_TIMESTAMP_DEFAULT);
+        }
         $fd->setTimeStampOnUpdate(false);
         $this->assertEquals($fd->isTimeStampOnUpdate(), false);
-        
         $this->assertEquals($fd->isPadCharType(), false);
         $this->assertEquals($fd->isDateTimeType(), true);
         
@@ -274,6 +308,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->createUserTable($db);
         $this->createUserExtTable($db);
         $this->insertData($db);
+        $mysql_5_5 = $this->isMySQL5_5($db);
 
         $db->setAutoSchemaUseNullkey(true);
         $this->assertEquals($db->autoSchemaUseNullkey(), true);
@@ -290,18 +325,26 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         $dbdef = $db->dbDef();
         $td = $dbdef->tableDefs(1);
-        //isMysqlNullMode
+        //isMysqlNullMode //size()
         $this->assertEquals($td->isMysqlNullMode() , true);
-        $this->assertEquals($td->recordlen() , 145);
         
+        //recordlen()
+        $len = 145;
+        if ($mysql_5_5)  $len += 4;
+        if ($this->isLegacyTimeFormat($db)) $len -= 3;
+        $this->assertEquals($td->recordlen() , $len);
+        
+        //size()
+        $this->assertEquals($td->size() , 1184);
+
         //InUse
         $this->assertEquals($td->inUse() , 0);
         
         //nullfields
         $this->assertEquals($td->nullfields(), 1);
             
-        //size()
-        $this->assertEquals($td->size() , 1184);
+        
+       
         //fieldNumByName
         $this->assertEquals($td->fieldNumByName("tel") , 3);
         
@@ -313,6 +356,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd = $td->fieldDef(3);
         $this->assertEquals($fd->isDefaultNull(), true);
         $fd = $td->fieldDef(4);
+        $this->assertEquals($fd->defaultValue(), bz\transactd::DFV_TIMESTAMP_DEFAULT);
         $this->assertEquals($fd->isTimeStampOnUpdate(), true);
         $fd = $td->fieldDef(5);
         $this->assertEquals($fd->isTimeStampOnUpdate(), false);
@@ -346,7 +390,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         $q = new bz\query();
         $atu = new bz\activeTable($db, "user");
-        bz\transactd::setRecordValueMode(bz\transactd::RECORD_KEYVALUE_FIELDOBJECT);
         
         // isNull setNull
         $atu->alias("名前", "name");
@@ -501,7 +544,20 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->setFVNull("tel", true);
         $this->assertEquals($tb->getFVNull("tel"), true);
         
+        //timestamp format
+        $date  = bz\transactd::btrdtoa(bz\transactd::getNowDate(), true);
+        $this->assertEquals(mb_substr($tb->getFVstr("update_datetime"), 0, 10), $date);
+        if ($mysql_5_5 == false)
+             $this->assertEquals(mb_substr($tb->getFVstr("create_datetime"), 0, 10), $date);
+        
+        //isMysqlNullMode
         $this->assertEquals($tb->tableDef()->isMysqlNullMode(), true);
         $this->assertEquals($td->inUse() , 2);
+        
+        unset($atu);
+        $this->assertEquals($td->inUse() , 1);
+        $tb->release();
+        $this->assertEquals($td->inUse() , 0);
+        
     }
 }

@@ -1483,7 +1483,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 ++v;
                 v->majorVersion = MYSQL_VERSION_ID / 10000;
                 v->minorVersion = (MYSQL_VERSION_ID / 100) % 100;
-                v->type = 'M';
+                #if defined(MARIADB_BASE_VERSION)
+                    v->type = MYSQL_TYPE_MARIA;
+                #else
+                    v->type = MYSQL_TYPE_MYSQL;
+                #endif
                 ++v;
                 v->majorVersion = TRANSACTD_VER_MAJOR;
                 v->minorVersion = TRANSACTD_VER_MINOR;
@@ -1629,6 +1633,11 @@ size_t dbExecuter::getAcceptMessage(char* message, size_t size)
     ver->desc.srvMysqlMajor = MYSQL_VERSION_ID / 10000;
     ver->desc.srvMysqlMinor = (MYSQL_VERSION_ID / 100) % 100;
     ver->desc.srvMysqlRelease = MYSQL_VERSION_ID % 100;
+#if defined(MARIADB_BASE_VERSION)
+    ver->desc.srvMysqlType = MYSQL_TYPE_MARIA;
+#else
+    ver->desc.srvMysqlType = MYSQL_TYPE_MYSQL;
+#endif
     ver->desc.srvMajor = TRANSACTD_VER_MAJOR;
     ver->desc.srvMinor = TRANSACTD_VER_MINOR;
     ver->desc.srvRelease = TRANSACTD_VER_RELEASE;

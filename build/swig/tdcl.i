@@ -999,6 +999,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::dataLen;
 %ignore bzs::db::protocol::tdap::blobDataLen;
 %ignore bzs::db::protocol::tdap::blobLenBytes;
+%ignore bzs::db::protocol::tdap::timeStampDefaultStr;
 %ignore bzs::db::protocol::tdap::keySpec;
 %ignore bzs::db::protocol::tdap::fileSpec;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;
@@ -1007,6 +1008,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::fielddef::chainChar;
 %ignore bzs::db::protocol::tdap::fielddef::dataLen;
 %ignore bzs::db::protocol::tdap::fielddef::defaultValue_strA;
+%ignore bzs::db::protocol::tdap::fielddef::defaultValue_str;
 %ignore bzs::db::protocol::tdap::fielddef::getKeyValueFromKeybuf;
 %ignore bzs::db::protocol::tdap::fielddef::isBlob;
 %ignore bzs::db::protocol::tdap::fielddef::keyCopy;
@@ -1080,6 +1082,14 @@ using namespace bzs::db::protocol::tdap::client;
   }
 }
 %ignore bzs::db::protocol::tdap::fielddef::name;
+%extend bzs::db::protocol::tdap::fielddef {
+  const char* defaultValue() const
+  {
+     return self->defaultValue_strA();
+  }
+}
+%ignore bzs::db::protocol::tdap::fielddef::defaultValue;
+
 %extend bzs::db::protocol::tdap::btrVersions {
   btrVersion* version(const int index) {
     return &(self->versions[index]);

@@ -615,7 +615,7 @@ abstract class transactd {
 	
 	static $fieldValueMode = self::FIELDVALUEMODE_NORETURNNULL;
 	
-	static $recordValueMode = self::RECORD_KEYVALUE_FIELDVALUE;
+	static $recordValueMode = self::RECORD_KEYVALUE_FIELDOBJECT;
 	
 	static function setFieldValueMode($mode) {
 		self::$fieldValueMode = $mode;
@@ -830,7 +830,7 @@ class fielddef extends fielddef_t_my {
 	}
 
 	function defaultValue() {
-		return fielddef_defaultValue_str($this->_cPtr);
+		return fielddef_defaultValue($this->_cPtr);
 	}
 
 	function setName($s) {
@@ -2275,8 +2275,8 @@ class database extends nsdatabase {
 		database_setCompatibleMode($mode);
 	}
 
-	static function comaptibleMode() {
-		return database_comaptibleMode();
+	static function compatibleMode() {
+		return database_compatibleMode();
 	}
 
 	const CMP_MODE_MYSQL_NULL = database_CMP_MODE_MYSQL_NULL;
@@ -2704,6 +2704,10 @@ class field {
 			$this->_cPtr=new_field();
 		else
 			$this->_cPtr=new_field($ptr_or_r);
+	}
+
+	function __toString() {
+		return field_c_str($this->_cPtr);
 	}
 
 	function type() {

@@ -239,6 +239,9 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define ft_myfixedbinary                53
 #define ft_enum                         54
 #define ft_set                          55
+#define ft_mytime_num_cmp               56  //for comare use only
+#define ft_mydatetime_num_cmp           57  //for comare use only
+#define ft_mytimestamp_num_cmp          58  //for comare use only
 #define ft_nullindicator                255
 
 /** extruct row comp bias
@@ -451,8 +454,9 @@ inline bool canRecoverNetError(short code)
 #define TD_BACKUP_MODE_NOT_PERMIT       41
 #define TD_BACKUP_MODE_SERVER_ERROR     91
 
-#define DFV_TIMESTAMP_DEFAULT 1.0f
-
+#define DFV_TIMESTAMP_DEFAULT           1.0f
+#define DFV_TIMESTAMP_DEFAULT_ASTR      "1"
+#define DFV_TIMESTAMP_DEFAULT_WSTR      L"1"
 
 /** @cond INTERNAL */
 struct clsrv_ver
@@ -460,19 +464,20 @@ struct clsrv_ver
     union
     {
         ushort_td clMajor;
-        uchar_td srvMysqlMajor;
+        ushort_td srvMysqlMajor;
     };
     union
     {
         ushort_td clMinor;
-        uchar_td srvMysqlMinor;
+        ushort_td srvMysqlMinor;
     };
     union
     {
         ushort_td clRelease;
-        uchar_td srvMysqlRelease;
+        ushort_td srvMysqlRelease;
     };
-    ushort_td srvMajor;
+    uchar_td  srvMysqlType;
+    uchar_td  srvMajor;
     ushort_td srvMinor;
     ushort_td srvRelease;
     inline bool isSupportDateTimeTimeStamp()
@@ -482,6 +487,9 @@ struct clsrv_ver
         return false;
     }
 };
+#define MYSQL_TYPE_MYSQL 'M'
+#define MYSQL_TYPE_MARIA 'A'
+
 
 struct trdVersiton
 {

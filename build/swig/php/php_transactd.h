@@ -104,7 +104,7 @@ ZEND_NAMED_FUNCTION(_wrap_fielddef_t_my_nullValue_get);
 ZEND_NAMED_FUNCTION(_wrap_fielddef_t_my_keylen_set);
 ZEND_NAMED_FUNCTION(_wrap_fielddef_t_my_keylen_get);
 ZEND_NAMED_FUNCTION(_wrap_new_fielddef_t_my);
-ZEND_NAMED_FUNCTION(_wrap_fielddef_defaultValue_str);
+ZEND_NAMED_FUNCTION(_wrap_fielddef_defaultValue);
 ZEND_NAMED_FUNCTION(_wrap_fielddef_setName);
 ZEND_NAMED_FUNCTION(_wrap_fielddef_typeName);
 ZEND_NAMED_FUNCTION(_wrap_fielddef_align);

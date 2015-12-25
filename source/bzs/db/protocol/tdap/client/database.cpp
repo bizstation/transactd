@@ -378,7 +378,7 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
         }
         if (m_impl->noPreloadSchema)
         {
-            if ((comaptibleMode() & CMP_MODE_MYSQL_NULL) == 0)
+            if ((compatibleMode() & CMP_MODE_MYSQL_NULL) == 0)
                 m_stat = STATUS_INVALID_NULLMODE;
             else if (connect(_uri))
             {
@@ -593,13 +593,7 @@ short database::testOpenTable()
         return STATUS_DB_YET_OPEN;
     if (m_impl->rootDir[0] == 0x00)
         return  STATUS_DB_YET_OPEN;
-    if (database::comaptibleMode() & database::CMP_MODE_MYSQL_NULL)
-    {
-        btrVersions vv;
-        getBtrVersion(&vv);
-        if (m_stat != 0 || vv.versions[2].majorVersion < 3)
-            return STATUS_INVALID_NULLMODE;
-    }
+
     return 0;
 }
 
@@ -613,6 +607,8 @@ struct openTablePrams
     bool autoCreate;
     bool getSchema;
     bool getDefaultImage;
+    bool useInMariadb;
+    bool isTransactd;
     
     openTablePrams(bool autoCreate_p) : autoCreate(autoCreate_p), getDefaultImage(false),
         getSchema(false)
@@ -622,6 +618,7 @@ struct openTablePrams
 
     short setParam(tabledef* def, short v,  bool isTransactd, bool readOnly, bool noPreloadSchema)
     {
+        this->isTransactd = isTransactd;
         mode = v;
         td = def;
         mysqlnull = false;
@@ -629,7 +626,7 @@ struct openTablePrams
         {
             if (IS_MODE_MYSQL_NULL(mode))
                 mysqlnull = true;
-            else if (database::comaptibleMode() & database::CMP_MODE_MYSQL_NULL)
+            else if (database::compatibleMode() & database::CMP_MODE_MYSQL_NULL)
             {
                 mode += TD_OPEN_MASK_MYSQL_NULL;
                 mysqlnull = true;
@@ -690,9 +687,28 @@ struct openTablePrams
 table* database::doOpenTable(openTablePrams* pm, const _TCHAR* ownerName)
 {
     m_stat = testOpenTable();
-
     if (m_stat) return NULL;
+
     tabledef* td = pm->td;
+
+    if (pm->isTransactd)
+    {
+        btrVersions vv;
+        getBtrVersion(&vv);
+        if (m_stat) return NULL;
+        if ((database::compatibleMode() & database::CMP_MODE_MYSQL_NULL) &&
+                vv.versions[VER_IDX_PLUGIN].majorVersion < 3)
+        {
+            m_stat = STATUS_INVALID_NULLMODE;
+            return NULL;
+        }
+        if (td && td->inUse() == 0)
+        {
+            td->m_useInMariadb = (vv.versions[VER_IDX_DB_SERVER].type == MYSQL_TYPE_MARIA);
+            td->m_srvMinorVer = (uchar_td)vv.versions[VER_IDX_DB_SERVER].minorVersion;
+        }
+    }
+
     short tableIndex = td ? td->id : -1;
 
     if (!m_impl->noPreloadSchema && !td)
@@ -809,6 +825,7 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
         if (setUseTransactd() == false)
             return false;
 
+        td->calcReclordlen(true);
         char buf2[MAX_PATH] = { 0x00 };
         _TCHAR posblk[128] = { 0x00 };
 
@@ -1238,7 +1255,7 @@ void database::setCompatibleMode(int mode)
     dbimple::m_compatibleMode = mode;
 }
 
-int database::comaptibleMode()
+int database::compatibleMode()
 {
     return  dbimple::m_compatibleMode;
 }

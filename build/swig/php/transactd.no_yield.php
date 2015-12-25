@@ -614,7 +614,7 @@ abstract class transactd {
 
 	static $fieldValueMode = self::FIELDVALUEMODE_NORETURNNULL;
 	
-	static $recordValueMode = self::RECORD_KEYVALUE_FIELDVALUE;
+	static $recordValueMode = self::RECORD_KEYVALUE_FIELDOBJECT;
 
 	static function setFieldValueMode($mode) {
 		self::$fieldValueMode = $mode;
@@ -828,7 +828,7 @@ class fielddef extends fielddef_t_my {
 	}
 
 	function defaultValue() {
-		return fielddef_defaultValue_str($this->_cPtr);
+		return fielddef_defaultValue($this->_cPtr);
 	}
 
 	function setName($s) {
@@ -2270,8 +2270,8 @@ class database extends nsdatabase {
 		database_setCompatibleMode($mode);
 	}
 
-	static function comaptibleMode() {
-		return database_comaptibleMode();
+	static function compatibleMode() {
+		return database_compatibleMode();
 	}
 
 	const CMP_MODE_MYSQL_NULL = database_CMP_MODE_MYSQL_NULL;
@@ -2637,10 +2637,9 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
 
 class field {
 	public function getFV() {
-		if (transactd::recordValueMode() === transactd::RECORD_KEYVALUE_FIELDVALUE)
-			return $this->_field->getFV();
-		else
-			return $this->_field;
+		if ((transactd::fieldValueMode() === transactd::FIELDVALUEMODE_RETURNNULL)
+				&& $this->isNull() === true)
+			return null;
 		switch ($this->type()) {
 			case transactd::ft_integer:
 			case transactd::ft_uinteger:
@@ -2694,6 +2693,10 @@ class field {
 		else
 			$this->_cPtr=new_field($ptr_or_r);
 	}
+	
+	function __toString() {
+		return field_c_str($this->_cPtr);
+	}
 
 	function type() {
 		return field_type($this->_cPtr);
@@ -2710,7 +2713,6 @@ class field {
 	function setNull($v) {
 		field_setNull($this->_cPtr,$v);
 	}
-
 
 	function setFV($p_or_v_or_data,$size=null) {
 		switch (func_num_args()) {
@@ -2750,7 +2752,6 @@ class field {
 	}
 }
 
-}
 
 class RecordIterator implements \Iterator {
 	private $_record_cPtr = null;
