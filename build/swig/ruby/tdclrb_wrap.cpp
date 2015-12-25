@@ -15230,6 +15230,9 @@ _wrap_table_setFV(int argc, VALUE *argv, VALUE self) {
       }
       arg1->setFV(index, v);
     }
+    else if (type == T_NIL) {
+      arg1->setFV(index, (const char *)NULL);
+    }
     else{
       SWIG_exception_fail(SWIG_TypeError, Ruby_Format_TypeError( "", "__int64 or char *const or double","setFV", 3, argv[1]));
     }
@@ -33115,6 +33118,9 @@ SWIGINTERN VALUE _wrap_activeTable_keyValue(int nargs, VALUE *args, VALUE self) 
           SWIG_exception_fail(SWIG_ArgError(ecode), Ruby_Format_TypeError( "", "double","keyValue", i+1, args[i]));
         }
         tb->setFV(fnum, val);
+      }
+      else if (type == T_NIL) {
+        tb->setFV(fnum, (const char*)NULL);
       }
       else
         tb->setFV(fnum, (int)0);

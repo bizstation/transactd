@@ -327,9 +327,6 @@ void setRecordValueMode(short mode) {
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(short, uint_td&);
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(const _TCHAR *, uint_td&);
 
-// * bzs/db/protocol/tdap/tdapSchema.h *
-%rename(defaultValue) bzs::db::protocol::tdap::fielddef::defaultValue_str;
-
 
 /* ===============================================
   add code to init section

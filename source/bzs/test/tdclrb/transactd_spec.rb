@@ -3307,10 +3307,10 @@ def testServerPrepareJoin()
   rs = atu.keyValue(1).read(stmt1, 15000)
   ate.outerJoin(rs, stmt2, 'id')
   expect(rs.size()).to eq 15000
+  expect(rs[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
   atg.outerJoin(rs, stmt3, 'group')
   expect(rs.size()).to eq 15000
   
-  expect(rs[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
   expect(rs[NO_RECORD_ID]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
   expect(rs[NO_RECORD_ID]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
   
@@ -3322,13 +3322,15 @@ def testServerPrepareJoin()
   ate.outerJoin(rs, stmt2, 'id')
   expect(rs.size()).to eq 15000
   expect(rs[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
+  expect(rs[NO_RECORD_ID - 1].getField('comment').isNull()).to eq true
   expect(rs[NO_RECORD_ID]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
   expect(rs[NO_RECORD_ID]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
   
   # Test clone blob field
   rs2 = rs.clone()
   expect(rs2.size()).to eq 15000
-  expect(rs2[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
+  #expect(rs2[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
+  expect(rs2[NO_RECORD_ID - 1].getField('comment').isNull()).to eq true
   expect(rs2[NO_RECORD_ID]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
   expect(rs2[NO_RECORD_ID]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
   
