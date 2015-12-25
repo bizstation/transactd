@@ -71,8 +71,7 @@ bool readInputValues(const char* filename,
     FILE* fp = fopen(filename, "rt");
     if (!fp)
     {
-        _ftprintf(stderr, _T("Error ! Can not open the input file (%hs)\n"),
-                  filename);
+        fprintf(stderr, "Error ! Can not open the input file (%s)\n", filename);
         return false;
     }
     char tmp[5];

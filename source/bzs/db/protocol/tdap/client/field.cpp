@@ -111,7 +111,7 @@ class myDecimal
     }
 
 public:
-    myDecimal(uchar_td digit, uchar_td dec) : m_digit(digit), m_dec(dec), m_sign(0), m_error(0) 
+    myDecimal(uchar_td digit, uchar_td dec) : m_sign(0), m_digit(digit), m_dec(dec), m_error(0) 
     {
         assert(sizeof(int32) == 4);
         assert(digit > 0);

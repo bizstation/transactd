@@ -217,7 +217,7 @@ public:
 
     /* swig using copy constructor */
     inline field(const field& r) : m_fd(r.m_fd), m_ptr(r.m_ptr), m_fds(r.m_fds),
-            m_nullSign(r.m_nullSign), m_cachedNullPtr(NULL),m_nullbit(r.m_nullbit)
+            m_cachedNullPtr(NULL),m_nullbit(r.m_nullbit), m_nullSign(r.m_nullSign)
     {
         if (r.m_cachedNullPtr == (unsigned char*)&r.m_nullSign)
             m_cachedNullPtr = (unsigned char*)&m_nullSign;

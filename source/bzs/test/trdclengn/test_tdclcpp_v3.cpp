@@ -644,8 +644,6 @@ public:
     fixtureTimestamp() : m_db(NULL)
     {
         nsdatabase::setCheckTablePtr(true);
-        bool db_created = g_db_created;
-
         m_db = database::create();
         if (!m_db)
             printf("Error database::create()\n");

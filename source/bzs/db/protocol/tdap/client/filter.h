@@ -762,7 +762,6 @@ class filter
                 {
                     const keyValuePtr& v = keyValues[i + j];
                     fielddef& fd = fds[kd->segments[j].fieldNum];
-                    FLAGS f = kd->segments[j].flags;
                     has_null |= (v.ptr == NULL);
                     to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len, (v.ptr == NULL));
                 }
@@ -1149,7 +1148,6 @@ public:
         for (int j = 0; j < keySize; ++j)
         {
             fielddef& fd = fds[kd->segments[j].fieldNum];
-            FLAGS f = kd->segments[j].flags;
             to = fd.keyCopy(to, (uchar_td*)ptr[j], len[j], (ptr[j]==NULL));
             has_null |= (ptr[j] == NULL);
         }

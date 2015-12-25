@@ -674,8 +674,8 @@ struct openTablePrams
     bool useInMariadb;
     bool isTransactd;
     
-    openTablePrams(bool autoCreate_p) : autoCreate(autoCreate_p), getDefaultImage(false),
-        getSchema(false)
+    openTablePrams(bool autoCreate_p) : autoCreate(autoCreate_p),
+        getSchema(false), getDefaultImage(false)
     {
         uri[0] = 0x00;
     }

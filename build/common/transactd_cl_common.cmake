@@ -24,6 +24,7 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
   set(${this_target}_SOURCE_FILES
     ${${this_target}_SOURCE_FILES}
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/btrDate.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/tdapSchema.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/activeTable.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connMgr.cpp
@@ -48,11 +49,7 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
     ${TRANSACTD_ROOT}/source/bzs/rtl/stringBuffers.cpp
     ${TRANSACTD_ROOT}/source/bzs/rtl/strtrim.cpp
   )
-  if(WIN32)
-    set(${this_target}_SOURCE_FILES ${${this_target}_SOURCE_FILES}
-      ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
-    )
-  else()
+  if(UNIX)
     set(${this_target}_SOURCE_FILES ${${this_target}_SOURCE_FILES}
       ${TRANSACTD_ROOT}/source/bzs/env/crosscompile.cpp
       ${TRANSACTD_ROOT}/source/bzs/env/mbcswchrLinux.cpp
