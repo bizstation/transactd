@@ -172,9 +172,10 @@ public:
         *(const_cast<char*>(ptr)) ^= 0x80;
     }
 
-    char* toString(char* ptr, int size)
+    char* toString(char* ptr, size_t size)
     {
-        assert(size >= m_digit + 1);
+        // This function is internal use only.
+        assert(size >= (size_t)m_digit + 1);
 
         char* p = ptr;
         if (m_sign)
@@ -247,7 +248,7 @@ public:
         {
             p = point + 1;
             size_t len = strlen(p);
-            if (len < m_dec)
+            if (len < (size_t)m_dec)
             {
                 sprintf(tmp, "%s000000000", p);
                 p = tmp;
@@ -297,14 +298,14 @@ public:
     myDecimal& operator=(const double v)
     {
         char tmp[100];
-        sprintf(tmp, "%.*lf", m_dec, v);
+        sprintf_s(tmp, 100, "%.*lf", m_dec, v);
         return operator=(tmp);
     }
 
     myDecimal& operator=(const __int64 v)
     {
         char tmp[100];
-        sprintf(tmp, "%lld", v);
+        sprintf_s(tmp, 100, "%lld", v);
         return operator=(tmp);
     }
 };
@@ -609,6 +610,7 @@ void fielddefs::release()
 //       class field
 //------------------------------------------------------------------------------
 static fielddef fdDummy;
+#define NUMBUFSIZE 70
 
 DLLLIB const fielddef& dummyFd()
 {
@@ -1048,8 +1050,8 @@ const WCHAR* field::readValueStrW() const
 void field::storeValueNumeric(double data)
 { // Double  -> Numeric
 
-    char buf[30] = "%+0";
-    char dummy[30];
+    char buf[NUMBUFSIZE] = "%+0";
+    char dummy[NUMBUFSIZE];
     int point;
     int n;
     char dp[] = "{ABCDEFGHI}JKLMNOPQR";
@@ -1059,13 +1061,13 @@ void field::storeValueNumeric(double data)
 
     point = m_fd->len + 1;
 
-    _ltoa_s(point, dummy, 30, 10);
+    _ltoa_s(point, dummy, NUMBUFSIZE, 10);
     strcat(buf, dummy);
     strcat(buf, ".");
-    _ltoa_s(m_fd->decimals, dummy, 30, 10);
+    _ltoa_s(m_fd->decimals, dummy, NUMBUFSIZE, 10);
     strcat(buf, dummy);
     strcat(buf, "lf");
-    sprintf(dummy, buf, data);
+    sprintf_s(dummy, NUMBUFSIZE, buf, data);
     if (dummy[0] == '-')
         sign = true;
 
@@ -1105,8 +1107,8 @@ double field::readValueNumeric() const
     char dpsa[] = "PQRSTUVWXYpqrstuvwxy";
     char* pdp = NULL;
     int i;
-    char buf[20] = { 0x00 };
-    char dummy[20];
+    char buf[NUMBUFSIZE] = { 0x00 };
+    char dummy[NUMBUFSIZE];
 
     buf[0] = '+';
     strncpy(buf + 1, (char*)((char*)m_ptr + m_fd->pos), m_fd->len);
@@ -1157,8 +1159,8 @@ double field::readValueNumeric() const
 void field::storeValueDecimal(double data)
 { // Double  -> Decimal
     assert(m_fd->type == ft_decimal || m_fd->type == ft_money);
-    char buf[30] = "%+0";
-    char dummy[30];
+    char buf[NUMBUFSIZE] = "%+0";
+    char dummy[NUMBUFSIZE];
     int point;
     bool sign = false;
     unsigned char n;
@@ -1167,13 +1169,13 @@ void field::storeValueDecimal(double data)
     bool offset = false;
     
     point = (m_fd->len) * 2;
-    _ltoa_s(point, dummy, 30, 10);
+    _ltoa_s(point, dummy, NUMBUFSIZE, 10);
     strcat(buf, dummy);
     strcat(buf, ".");
-    _ltoa_s(m_fd->decimals, dummy, 30, 10);
+    _ltoa_s(m_fd->decimals, dummy, NUMBUFSIZE, 10);
     strcat(buf, dummy);
     strcat(buf, "lf");
-    sprintf(dummy, buf, data);
+    sprintf_s(dummy, NUMBUFSIZE, buf, data);
     if (dummy[0] == '-')
         sign = true;
 
@@ -1592,16 +1594,16 @@ void field::setFV(__int64 data)
 #endif
     CASE_TEXTA
     {
-        char buf[50];
-         _i64toa_s(data, buf, 50, 10);
+        char buf[NUMBUFSIZE];
+         _i64toa_s(data, buf, NUMBUFSIZE, 10);
         storeValueStrA(buf);
         break;
     }
 #ifndef LINUX
     CASE_TEXTW
     {
-        WCHAR buf[50];
-         _i64tow_s(data, buf, 50, 10);
+        WCHAR buf[NUMBUFSIZE];
+         _i64tow_s(data, buf, NUMBUFSIZE, 10);
         storeValueStrW(buf);
         break;
     }
@@ -1685,16 +1687,16 @@ void field::setFV(double data)
 #endif
     CASE_TEXTA
     {
-        char buf[100];
-        sprintf(buf, "%f", data);
+        char buf[NUMBUFSIZE];
+        sprintf_s(buf, NUMBUFSIZE, "%lf", data);
         storeValueStrA(buf);
         break;
     }
 #ifndef LINUX
     CASE_TEXTW
     {
-        WCHAR buf[100];
-        swprintf_s((wchar_t*)buf, 50, L"%f", data);
+        WCHAR buf[NUMBUFSIZE];
+        swprintf_s((wchar_t*)buf, NUMBUFSIZE, L"%lf", data);
         storeValueStrW(buf);
         break;
     }
@@ -1774,23 +1776,23 @@ const char* field::getFVAstr() const
         return readValueStrA();
     }
 
-    char* p = m_fds->strBufs()->getPtrA(max(m_fd->len * 2, 70));
+    char* p = m_fds->strBufs()->getPtrA(max(m_fd->len * 2, NUMBUFSIZE));
     switch (m_fd->type)
     {
     CASE_INT
-        _i64toa_s(readValue64(), p, 50, 10);
+        _i64toa_s(readValue64(), p, NUMBUFSIZE, 10);
         return p;
     CASE_UINT
-        _ui64toa_s(readValue64(), p, 50, 10);
+        _ui64toa_s(readValue64(), p, NUMBUFSIZE, 10);
         return p;
     case ft_bit:
-        _ui64toa_s(changeEndian(readValue64(), m_fd->len), p, 50, 10);
+        _ui64toa_s(changeEndian(readValue64(), m_fd->len), p, NUMBUFSIZE, 10);
         break;
     case ft_myyear:
     {
         __int64 v = readValue64();
         if (v) v += 1900;
-        _i64toa_s(v , p, 50, 10);
+        _i64toa_s(v , p, NUMBUFSIZE, 10);
         return p;
     }
     case ft_logical:
@@ -1799,7 +1801,7 @@ const char* field::getFVAstr() const
         if (m_fds->logicalToString)
             return v ? "Yes": "No";
         else
-            _ltoa_s(v, p, 50, 10);
+            _ltoa_s(v, p, NUMBUFSIZE, 10);
         return p;
     }
     case ft_date:
@@ -1811,22 +1813,22 @@ const char* field::getFVAstr() const
     case ft_timestamp:
         return btrTimeStamp(readValue64()).toString(p);
     case ft_mydate:
-        return date_time_str<myDate, char>(m_fd->len, true, readValue64(), p);
+        return date_time_str<myDate, char>(m_fd->len, true, readValue64(), p, NUMBUFSIZE);
     case ft_mytime:
         if (m_fd->m_options & FIELD_OPTION_MARIADB)
-            return date_time_str<maTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<maTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
         else
-            return date_time_str<myTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<myTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
     case ft_mydatetime:
         if (m_fd->m_options & FIELD_OPTION_MARIADB)
-            return date_time_str<maDateTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<maDateTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
         else
-            return date_time_str<myDateTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<myDateTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
     case ft_mytimestamp:
         if (m_fd->m_options & FIELD_OPTION_MARIADB)
-            return date_time_str<maTimeStamp, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<maTimeStamp, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
         else
-            return date_time_str<myTimeStamp, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<myTimeStamp, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
     case ft_mygeometry:
     case ft_myjson:
         return "";
@@ -1834,7 +1836,7 @@ const char* field::getFVAstr() const
     {
         myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
         d.read((char*)m_ptr + m_fd->pos);
-        return d.toString(p, 70);
+        return d.toString(p, NUMBUFSIZE);
     }
     }
 
@@ -1855,7 +1857,7 @@ const char* field::getFVAstr() const
         break;
 
     }
-    sprintf(p, "%.*lf", m_fd->decimals, v);
+    sprintf_s(p, NUMBUFSIZE, "%.*lf", m_fd->decimals, v);
     return p;
 }
 
@@ -1870,23 +1872,23 @@ const wchar_t* field::getFVWstr() const
         return readValueStrW();
     }
 
-    wchar_t* p = (wchar_t*)m_fds->strBufs()->getPtrW(max(m_fd->len * 2, 70));
+    wchar_t* p = (wchar_t*)m_fds->strBufs()->getPtrW(max(m_fd->len * 2, NUMBUFSIZE));
     switch (m_fd->type)
     {
     CASE_INT
-        _i64tow_s(readValue64(), p, 50, 10);
+        _i64tow_s(readValue64(), p, NUMBUFSIZE, 10);
         return p;
     CASE_UINT
-        _ui64tow_s(readValue64(), p, 50, 10);
+        _ui64tow_s(readValue64(), p, NUMBUFSIZE, 10);
         return p;
     case ft_bit:
-        _ui64tow_s(changeEndian(readValue64(), m_fd->len), p, 50, 10);
+        _ui64tow_s(changeEndian(readValue64(), m_fd->len), p, NUMBUFSIZE, 10);
         break;
     case ft_myyear:
     {
          __int64 v = readValue64();
         if (v) v += 1900;
-        _i64tow_s(v, p, 50, 10);
+        _i64tow_s(v, p, NUMBUFSIZE, 10);
         return p;
     }
     case ft_logical:
@@ -1895,7 +1897,7 @@ const wchar_t* field::getFVWstr() const
         if (m_fds->logicalToString)
             return v ? L"Yes": L"No";
         else
-            _ltow_s(v, p, 50, 10);
+            _ltow_s(v, p, NUMBUFSIZE, 10);
         return p;
     }
     case ft_date:
@@ -1907,22 +1909,22 @@ const wchar_t* field::getFVWstr() const
     case ft_timestamp:
         return btrTimeStamp(readValue64()).toString(p);
     case ft_mydate:
-        return date_time_str<myDate, wchar_t>(m_fd->decimals, true, readValue64(), p);
+        return date_time_str<myDate, wchar_t>(m_fd->decimals, true, readValue64(), p, NUMBUFSIZE);
     case ft_mytime:
         if (m_fd->m_options & FIELD_OPTION_MARIADB)
-            return date_time_str<maTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<maTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
         else
-            return date_time_str<myTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<myTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
     case ft_mydatetime:
         if (m_fd->m_options & FIELD_OPTION_MARIADB)
-            return date_time_str<maDateTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<maDateTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
         else
-            return date_time_str<myDateTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<myDateTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
     case ft_mytimestamp:
         if (m_fd->m_options & FIELD_OPTION_MARIADB)
-            return date_time_str<maTimeStamp, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<maTimeStamp, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
         else
-            return date_time_str<myTimeStamp, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+            return date_time_str<myTimeStamp, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
     case ft_mygeometry:
     case ft_myjson:
         return L"";
@@ -1930,7 +1932,7 @@ const wchar_t* field::getFVWstr() const
     {
         myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
         d.read((char*)m_ptr + m_fd->pos);
-        return d.toString(p, 70);
+        return d.toString(p, NUMBUFSIZE);
     }
     }
 
@@ -1950,7 +1952,7 @@ const wchar_t* field::getFVWstr() const
         v = readValueDecimal();
         break;
     }
-    swprintf_s(p, 50, L"%.*lf",m_fd->decimals, v);
+    swprintf_s(p, NUMBUFSIZE, L"%.*lf",m_fd->decimals, v);
 
     return p;
 }

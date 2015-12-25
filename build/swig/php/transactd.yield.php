@@ -144,6 +144,8 @@ abstract class transactd {
 	const ft_mygeometry = ft_mygeometry;
 
 	const ft_myyear = ft_myyear;
+	
+	const ft_mydecimal = ft_mydecimal;
 
 	const ft_nullindicator = ft_nullindicator;
 
@@ -294,6 +296,8 @@ abstract class transactd {
 	const STATUS_FIELDTYPE_NOTSUPPORT = STATUS_FIELDTYPE_NOTSUPPORT;
 	
 	const STATUS_INVALID_NULLMODE = STATUS_INVALID_NULLMODE;
+
+	const STATUS_TOO_LARGE_VALUE = STATUS_TOO_LARGE_VALUE;
 
 	const STATUS_SUCCESS = STATUS_SUCCESS;
 
@@ -797,6 +801,7 @@ class fielddef_t_my {
 	protected $_pData=array();
 
 	function __set($var,$value) {
+		if ($var == 'digits') $var = 'ddfid';// union name
 		$func = 'fielddef_t_my_'.$var.'_set';
 		if (function_exists($func)) return call_user_func($func,$this->_cPtr,$value);
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
@@ -804,6 +809,7 @@ class fielddef_t_my {
 	}
 
 	function __get($var) {
+		if ($var == 'digits') $var = 'ddfid';// union name
 		$func = 'fielddef_t_my_'.$var.'_get';
 		if (function_exists($func)) return call_user_func($func,$this->_cPtr);
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
@@ -811,6 +817,7 @@ class fielddef_t_my {
 	}
 
 	function __isset($var) {
+		if ($var == 'digits') $var = 'ddfid';// union name
 		if (function_exists('fielddef_t_my_'.$var.'_get')) return true;
 		if ($var === 'thisown') return true;
 		return array_key_exists($var, $this->_pData);
@@ -863,6 +870,10 @@ class fielddef extends fielddef_t_my {
 		fielddef_setLenByCharnum($this->_cPtr,$charnum);
 	}
 
+	function setDecimalDigits($dig,$dec) {
+		fielddef_setDecimalDigits($this->_cPtr,$dig,$dec);
+	}
+
 	function codePage() {
 		return fielddef_codePage($this->_cPtr);
 	}
@@ -873,6 +884,10 @@ class fielddef extends fielddef_t_my {
 
 	function isPadCharType() {
 		return fielddef_isPadCharType($this->_cPtr);
+	}
+
+	function isIntegerType() {
+		return fielddef_isIntegerType($this->_cPtr);
 	}
 
 	function isNumericType() {
@@ -1734,7 +1749,7 @@ class table extends nstable {
 		$r=table_getFVBits($this->_cPtr,$index_or_fieldName);
 		if (!is_resource($r)) return $r;
 		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__bitset': return new bitset($r);
+		case '_p_bzs__db__protocol__tdap__bitset': return new bitset($r);
 		default: return new bitset($r);
 		}
 	}
@@ -2026,7 +2041,7 @@ class bitset implements \ArrayAccess {
 	}
 
 	function __construct($res=null) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__bitset') {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__bitset') {
 			$this->_cPtr=$res;
 			return;
 		}

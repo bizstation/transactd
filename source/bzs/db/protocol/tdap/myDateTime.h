@@ -20,6 +20,7 @@
 =================================================================*/
 #include <tchar.h>
 #include <bzs/env/compiler.h>
+#include <stddef.h>
 
 namespace bzs
 {
@@ -51,10 +52,10 @@ struct PACKAGE myDate
     inline myDate(int /*dec*/, bool /*bigendian*/) {};
     void setValue(int v, bool btrDate_i = false);
     int getValue(bool btrvValue = false);
-    char* toString(char* p, bool w3_format = false);
+    char* toString(char* p, size_t size, bool w3_format = false);
     myDate& operator=(const char* p);
 #ifdef _WIN32
-    wchar_t* toString(wchar_t* p, bool w3_format = false);
+    wchar_t* toString(wchar_t* p, size_t size, bool w3_format = false);
     myDate& operator=(const wchar_t* p);
 #endif
     inline __int64 internalValue() const { return i; }
@@ -88,10 +89,10 @@ public:
         m_bigendian(bigendian){};
     virtual void setValue(__int64 v, bool btrTime_i = false);
     virtual __int64 getValue(bool btrTime_i = false);
-    char* toString(char* p);
+    char* toString(char* p, size_t size);
     myTime& operator=(const char* p);
 #ifdef _WIN32
-    wchar_t* toString(wchar_t* p);
+    wchar_t* toString(wchar_t* p, size_t size);
     myTime& operator=(const wchar_t* p);
 #endif
     inline __int64 internalValue() const { return i64; }
@@ -134,17 +135,17 @@ public:
     inline myDateTime(int dec, bool bigendian) : m_dec(dec), m_bigendian(bigendian){};
     virtual void setValue(__int64 v);
     virtual __int64 getValue();
-    char* toString(char* p) const;
+    char* toString(char* p, size_t size) const;
     myDateTime& operator=(const char* p);
-    char* dateStr(char* p) const;
-    char* timeStr(char* p) const;
+    char* dateStr(char* p, size_t size) const;
+    char* timeStr(char* p, size_t size) const;
     void setTime(const char* p);
 
 #ifdef _WIN32
-    wchar_t* toString(wchar_t* p) const ;
+    wchar_t* toString(wchar_t* p, size_t size) const ;
     myDateTime& operator=(const wchar_t* p) ;
-    wchar_t* dateStr(wchar_t* p) const;
-    wchar_t* timeStr(wchar_t*) const;
+    wchar_t* dateStr(wchar_t* p, size_t size) const;
+    wchar_t* timeStr(wchar_t*, size_t size) const;
     void setTime(const wchar_t* p);
 #endif
     inline __int64 internalValue() const { return i64; }
@@ -186,16 +187,16 @@ public:
     	m_bigendian(bigendian), m_mariadb(false){};
     void setValue(__int64 v);
     __int64 getValue();
-    char* toString(char* p);
+    char* toString(char* p, size_t size);
     myTimeStamp& operator=(const char* p);
-    char* dateStr(char* p) const;
-    char* timeStr(char* p) const;
+    char* dateStr(char* p, size_t size) const;
+    char* timeStr(char* p, size_t size) const;
 
 #ifdef _WIN32
-    wchar_t* toString(wchar_t* p);
+    wchar_t* toString(wchar_t* p, size_t size);
     myTimeStamp& operator=(const wchar_t* p);
-    wchar_t* dateStr(wchar_t* p) const;
-    wchar_t* timeStr(wchar_t* p) const;
+    wchar_t* dateStr(wchar_t* p, size_t size) const;
+    wchar_t* timeStr(wchar_t* p, size_t size) const;
 #endif
     inline __int64 internalValue() const { return i64; }
     inline void setInternalValue(__int64 v) { i64 = v; }
@@ -262,11 +263,11 @@ __int64 getStoreValue(int dec, bool bigendian, __int64 value)
 
 #pragma warning(disable : 4244)
 template <class T, typename CHAR>
-const CHAR* date_time_str(int dec, bool bigendian, __int64 value, CHAR* buf)
+const CHAR* date_time_str(int dec, bool bigendian, __int64 value, CHAR* buf, size_t size)
 {
     T t(dec, bigendian);
     t.setValue(value);
-    return t.toString(buf);
+    return t.toString(buf, size);
 }
 
 template <class T, class T2>

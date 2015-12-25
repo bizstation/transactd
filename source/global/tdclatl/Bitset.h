@@ -25,7 +25,7 @@ class ATL_NO_VTABLE CBitset :
 {
 
 public:
-    bzs::db::protocol::tdap::client::bitset m_bitset;
+    bzs::db::protocol::tdap::bitset m_bitset;
 
 	CBitset()
 	{

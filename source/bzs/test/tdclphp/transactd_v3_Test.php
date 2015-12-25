@@ -705,4 +705,39 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $all = false;
         $this->assertEquals($bits2->contains($bits1, $all), true);
     }
+    
+    public function test_decimal()
+    {
+        $db = new bz\database();
+        $this->openDatabase($db);
+        $dbdef = $db->dbDef();
+        $this->assertNotEquals($dbdef, NULL);
+        $td = new bz\tabledef();
+        
+        $td->schemaCodePage = bz\transactd::CP_UTF8;
+        $td->setTableName("decimal");
+        $td->setFileName("decimal");
+        $td->charsetIndex = bz\transactd::CHARSET_UTF8;
+        $tableid = 10;
+        $td->id = $tableid;
+        $dbdef->insertTable($td);
+        $this->assertEquals($dbdef->stat(), 0);
+        
+        $fieldIndex = 0;
+        $fd = $dbdef->insertField($tableid, $fieldIndex);
+        $fd->setName('id');
+        $fd->type = bz\transactd::ft_mydecimal;
+        $fd->setDecimalDigits(65, 30);
+        $this->assertEquals($fd->digits, 65);
+        $this->assertEquals($fd->decimals, 30);
+        $this->assertEquals($fd->isIntegerType(), false);
+        $this->assertEquals($fd->isNumericType(), true);
+        
+        $bits1 = new  bz\bitset();
+        $bits1[2] = true;
+        $fd->type = bz\transactd::ft_integer;
+        $fd->len = 4;
+        $fd->setDefaultValue($bits1);
+        $this->assertEquals($fd->defaultValue(), '4');
+    }
 }

@@ -19,6 +19,8 @@
 #include "stdafx.h"
 #include "FieldDef.h"
 #include "Flags.h"
+#include "Bitset.h"
+
 STDMETHODIMP CFieldDef::InterfaceSupportsErrorInfo(REFIID riid)
 {
 	static const IID* const arr[] = 
@@ -301,8 +303,16 @@ STDMETHODIMP CFieldDef::put_DefaultValue(VARIANT Value)
         fielddef()->setDefaultValue(Value.bstrVal);
     else if (Value.vt == VT_R8)
         fielddef()->setDefaultValue(Value.dblVal);
-    else if (Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT)
+    else if (Value.vt == VT_I8 || Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT)
         fielddef()->setDefaultValue((double)Value.llVal);
+    else if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
+    {
+        CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
+        if (b)
+            fielddef()->setDefaultValue(b->m_bitset.internalValue());
+        else
+            return Error("FieldDef DefaultValue param", IID_IFieldDef);
+    }
     else
     {
         VariantChangeType( &Value, &Value, 0, VT_BSTR );
@@ -370,6 +380,45 @@ STDMETHODIMP CFieldDef::get_DefaultNull(VARIANT_BOOL* Value)
 	*Value = const_fielddef()->isDefaultNull();
     return S_OK;
 }
+
+STDMETHODIMP CFieldDef::put_Digits(short Value)
+{
+	fielddef()->digits = Value;
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_Digits(short* Value)
+{
+	*Value = fielddef()->digits;
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_IsIntegerType(VARIANT_BOOL* Value)
+{
+	*Value = fielddef()->isIntegerType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_IsNumericType(VARIANT_BOOL* Value)
+{
+	*Value = fielddef()->isNumericType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_IsDateTimeType(VARIANT_BOOL* Value)
+{
+	*Value = fielddef()->isDateTimeType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::SetDecimalDigits(int Digits, int Decimals)
+{
+	fielddef()->setDecimalDigits(Digits, Decimals);
+    return S_OK;
+}
+
+
+
 
 
 

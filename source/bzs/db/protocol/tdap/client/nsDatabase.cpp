@@ -934,7 +934,7 @@ const char* nsdatabase::toServerUri(char* buf, int buflen, const _TCHAR* src,
     if (trd)
     {
         stringConverter cv(CP_UTF8, GetACP());
-        cv.convert(buf, buflen, src, strlen_t(src));
+        cv.convert(buf, buflen, src, strlen_t(src)+1);// convert include null.
         return buf;
     }
 #endif

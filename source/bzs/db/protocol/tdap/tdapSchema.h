@@ -291,6 +291,43 @@ static const int decimalBytesBySurplus[DIGITS_INT32 + 1] = {0, 1, 1, 2, 2, 3, 3,
 
 /** @endcond */
 
+class bitset
+{
+    unsigned __int64 m_i64;
+
+public:
+    bitset() : m_i64(0) { }
+
+    bitset(__int64 v) : m_i64(v) { }
+
+    inline void set(int index, bool value)
+    {
+        unsigned __int64 bits = 1ULL << index;
+        m_i64 = value ? m_i64 | bits : m_i64 & ~bits;
+    }
+
+    inline bool get(int index) const
+    {
+        unsigned __int64 bits = 1ULL << index;
+        return (m_i64 & bits) != 0;
+    }
+
+    inline __int64 internalValue() const { return (__int64)m_i64; }
+
+    inline bool operator[](int index) const {return get(index); };
+
+    inline bool operator==(const bitset& r) const
+    {
+        return (m_i64 == r.m_i64);
+    }
+
+    inline bool contains(const bitset& r, bool all=true) const
+    {
+        return all ? ((m_i64 & r.m_i64) == r.m_i64) : ((m_i64 & r.m_i64) != 0);
+    }
+
+};
+
 /* Mark of ** that BizStation Corp internal use only.
  */
 template <int N> struct fielddef_t
@@ -394,11 +431,11 @@ struct PACKAGE fielddef : public fielddef_t_my
 
 #ifdef MYSQL_DYNAMIC_PLUGIN
 
-    inline const char* name() const { return m_name; };
+    //inline const char* name() const { return m_name; };
 
-    inline const char* chainChar() const { return m_chainChar; };
+    //inline const char* chainChar() const { return m_chainChar; };
 
-    inline const char* defaultValue_str() const{return m_defValue; }
+    //inline const char* defaultValue_str() const{return m_defValue; }
 
     inline void setName(const char* s)
     {
@@ -441,11 +478,8 @@ struct PACKAGE fielddef : public fielddef_t_my
             return;
         case ft_integer:
         case ft_autoinc:
-        {
-            __int64 v = _atoi64(s);
-            memcpy(m_defValue, &v, 8);
+            *((__int64*)m_defValue) = _atoi64(s);
             return;
-        }
         case ft_uinteger:
         case ft_logical:
         case ft_set:
@@ -453,41 +487,61 @@ struct PACKAGE fielddef : public fielddef_t_my
         case ft_enum:
         case ft_autoIncUnsigned:
         case ft_myyear:
-        {
-            unsigned __int64 v = strtoull(s, NULL, 10);
-            memcpy(m_defValue, &v, 8);
+            *((unsigned __int64*)m_defValue) = strtoull(s, NULL, 10);
             return;
-        }
         }
     
         if (isNumericType())
         {
-            double d = atof(s);
-            setDefaultValue(d);
+            *((double*)m_defValue) = atof(s);
             return;
         }
         strncpy_s(m_defValue, 8, s, sizeof(m_defValue) - 1);
     }
 
+    inline void setDefaultValue(double v)
+    {
+        *((double*)m_defValue) = v;
+    }
+
+    inline void setDefaultValue(__int64 v)
+    {
+        *((__int64*)m_defValue) = v;
+    }
+
+
 #else // NOT MYSQL_DYNAMIC_PLUGIN
     const char* name() const;
     const char* name(char* buf) const;
     const char* chainChar() const;
-    const char* defaultValue_str() const {return defaultValue_strA();}
+    const char* defaultValue_str() const;
     void setName(const char* s);
     void setChainChar(const char* s);
-    void setDefaultValue(const char* s);
 #endif // NOT MYSQL_DYNAMIC_PLUGIN
 #endif // NOT _UNICODE
-    inline const char* nameA() const { return m_name; };
 
-    const char* defaultValue_strA() const;
+    inline const char* nameA() const { return m_name; };
 
     inline void setNameA(const char* s)
     {
         strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);
     }
+
 #ifndef MYSQL_DYNAMIC_PLUGIN
+    void setDefaultValue(const char* s);
+
+    void setDefaultValue(__int64 v);
+
+    void setDefaultValue(double v);
+
+    void setDefaultValue(const bitset& v)
+    {
+        setDefaultValue(v.internalValue());
+    }
+
+    double defaultValue() const;
+
+    __int64 defaultValue64() const;
 
     inline const _TCHAR* typeName() const { return getTypeName(type); };
 
@@ -498,20 +552,9 @@ struct PACKAGE fielddef : public fielddef_t_my
         len = lenByCharnum(type, m_charsetIndex, charnum);
     }
 
-    inline void setDecimalDigits(int dig, int dec)
-    {
-        assert(sizeof(int) == 4);
-        decimals = (uchar_td)dec;
-        digits = dig;
-        int intdeg = digits - dec;
-        len = (ushort_td) (((intdeg / DIGITS_INT32) * sizeof(int)) + 
-            decimalBytesBySurplus[intdeg % DIGITS_INT32]) + 
-            (ushort_td) (((dec / DIGITS_INT32) * sizeof(int)) +
-            decimalBytesBySurplus[dec % DIGITS_INT32]) ;
-    }
+    void setDecimalDigits(int dig, int dec);
 #endif // MYSQL_DYNAMIC_PLUGIN
 
-public:
     inline unsigned int codePage() const
     {
         return mysql::codePage((unsigned short)m_charsetIndex);
@@ -542,7 +585,7 @@ public:
                 (type == ft_uinteger) || (type == ft_autoinc) || (type == ft_set) ||
                 (type == ft_bit) || (type == ft_enum) || (type == ft_numericsts) ||
                 (type == ft_numericsa) || (type == ft_autoIncUnsigned) ||
-                (type == ft_myyear));
+                (type == ft_myyear) || (type == ft_mydecimal));
     }
 
     inline bool isDateTimeType() const
@@ -617,64 +660,6 @@ public:
         }
     }
 
-    void setDefaultValue(__int64 v)
-    {
-        assert(sizeof(__int64) == 8);
-        if (isBlob())
-        {
-            memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
-            return;
-        }
-        enableFlags.bitF = false;
-        switch(type)
-        {
-        case ft_integer:
-        case ft_autoinc:
-        case ft_uinteger:
-        case ft_logical:
-        case ft_set:
-        case ft_bit:
-        case ft_enum:
-        case ft_autoIncUnsigned:
-        case ft_myyear:
-        case ft_mytimestamp:
-        case ft_mydatetime:
-            memcpy(m_defValue, &v, 8);
-            return;
-        default:
-            setDefaultValue((double)v);
-        }
-    }
-
-    void setDefaultValue(double v)
-    { 
-        assert(sizeof(double) == 8);
-        if (isBlob())
-        {
-            memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
-            return;
-        }
-        enableFlags.bitF = false;
-        switch(type)
-        {
-        case ft_integer:
-        case ft_autoinc:
-        case ft_uinteger:
-        case ft_logical:
-        case ft_set:
-        case ft_bit:
-        case ft_enum:
-        case ft_autoIncUnsigned:
-        case ft_myyear:
-        case ft_mytimestamp:
-        case ft_mydatetime:
-            setDefaultValue((__int64) v);
-            return;
-        default:
-            *((double*)m_defValue) = v;
-        }
-    }
-
     void setTimeStampOnUpdate(bool v)
     {
         if (type == ft_mytimestamp || type == ft_mydatetime)
@@ -687,9 +672,6 @@ public:
             return (m_defValue[7] == 1);
         return false;
     }
-
-    double defaultValue() const;
-    __int64 defaultValue64() const;
 
     inline bool isDefaultNull() const
     {
@@ -723,6 +705,7 @@ public:
     bool operator==(const fielddef& r) const;
 
 private:
+    const char* defaultValue_strA(char* p, size_t size) const;
     /* data length
      */
     inline uint_td dataLen(const uchar_td* ptr) const

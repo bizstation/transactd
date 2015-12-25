@@ -87,43 +87,6 @@ typedef boost::shared_ptr<filter> pq_handle;
 
 /** @endcond */
 
-class bitset
-{
-    unsigned __int64 m_i64;
-
-public:
-    bitset() : m_i64(0) { }
-
-    bitset(__int64 v) : m_i64(v) { }
-
-    inline void set(int index, bool value)
-    {
-        unsigned __int64 bits = 1ULL << index;
-        m_i64 = value ? m_i64 | bits : m_i64 & ~bits;
-    }
-
-    inline bool get(int index) const
-    {
-        unsigned __int64 bits = 1ULL << index;
-        return (m_i64 & bits) != 0;
-    }
-
-    inline __int64 internalValue() const { return (__int64)m_i64; }
-
-    inline bool operator[](int index) const {return get(index); };
-
-    inline bool operator==(const bitset& r) const
-    {
-        return (m_i64 == r.m_i64);
-    }
-
-    inline bool contains(const bitset& r, bool all=true) const
-    {
-        return all ? ((m_i64 & r.m_i64) == r.m_i64) : ((m_i64 & r.m_i64) != 0);
-    }
-
-};
-
 
 class DLLLIB table : public nstable
 {

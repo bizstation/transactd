@@ -71,7 +71,8 @@ short createTestTable1(database* db)
         
         insertTable(def, tableid,  _T("fieldtest"), g_td_charsetIndex);
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
+        fielddef* fd;
+        insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
 
         int lens[5] = {1, 2, 3, 4, 8};
         _TCHAR buf[50];
@@ -1100,10 +1101,10 @@ void checkLegacyTimeValue(table_ptr tb)
 void checkAutoTimeStamp(__int64& oldValue, __int64 newValue)
 {
     BOOST_CHECK(oldValue != newValue);
-    _TCHAR tmp[30];
+    _TCHAR tmp[70];
     myTimeStamp ts_auto(0, false);
     ts_auto.i64 = newValue;
-    BOOST_CHECK(_tcscmp(btrdtoa(getNowDate(),(_TCHAR*)NULL, true), ts_auto.dateStr(tmp)) == 0);
+    BOOST_CHECK(_tcscmp(btrdtoa(getNowDate(),(_TCHAR*)NULL, true), ts_auto.dateStr(tmp, 70)) == 0);
 
     oldValue = newValue;
 }

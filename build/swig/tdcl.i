@@ -695,9 +695,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::getFVlng;
 %ignore bzs::db::protocol::tdap::client::table::getFVflt;
 %ignore bzs::db::protocol::tdap::client::table::insertBookmarks;
-%rename(equals) bzs::db::protocol::tdap::client::bitset::operator==;
-%ignore bzs::db::protocol::tdap::client::bitset::operator[];
-%ignore bzs::db::protocol::tdap::client::bitset::internalValue;
 
   // create and release methods for query class
 %extend bzs::db::protocol::tdap::client::query {
@@ -755,7 +752,6 @@ using namespace bzs::db::protocol::tdap::client;
 
 };
   // ignore original methods
-%ignore bzs::db::protocol::tdap::client::bitset::bitset(__int64 v);
 %ignore bzs::db::protocol::tdap::client::table::prepare;
 %ignore bzs::db::protocol::tdap::client::table::setQuery;
 %ignore bzs::db::protocol::tdap::client::table::setPrepare;
@@ -1057,8 +1053,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::fielddef::blobLenBytes;
 %ignore bzs::db::protocol::tdap::fielddef::chainChar;
 %ignore bzs::db::protocol::tdap::fielddef::dataLen;
-%ignore bzs::db::protocol::tdap::fielddef::defaultValue_strA;
 %ignore bzs::db::protocol::tdap::fielddef::defaultValue_str;
+%ignore bzs::db::protocol::tdap::fielddef::defaultValue64;
 %ignore bzs::db::protocol::tdap::fielddef::getKeyValueFromKeybuf;
 %ignore bzs::db::protocol::tdap::fielddef::isBlob;
 %ignore bzs::db::protocol::tdap::fielddef::isLegacyTimeFormat;
@@ -1115,7 +1111,10 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::btrVersion::isMariaDB;
 %ignore bzs::db::protocol::tdap::btrVersion::isMysql56TimeFormat;
 %ignore bzs::db::protocol::tdap::btrVersion::isFullLegacyTimeFormat;
-
+%rename(equals) bzs::db::protocol::tdap::bitset::operator==;
+%ignore bzs::db::protocol::tdap::bitset::operator[];
+%ignore bzs::db::protocol::tdap::bitset::internalValue;
+%ignore bzs::db::protocol::tdap::bitset::bitset(__int64 v);
 
 
 

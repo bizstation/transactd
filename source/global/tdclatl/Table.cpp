@@ -832,7 +832,7 @@ STDMETHODIMP CTableTd::GetFVbits(VARIANT Index, IBitset** Value)
     CComObject<CBitset>::CreateInstance(&b);
     if (!b)
         return Error("CreateInstance Bitset", IID_ITable);
-    b->m_bitset = bzs::db::protocol::tdap::client::bitset(m_tb->getFV64(index));
+    b->m_bitset = bzs::db::protocol::tdap::bitset(m_tb->getFV64(index));
     CBitset* bi;
     b->QueryInterface(IID_IBitset, (void**)&bi);
     _ASSERTE(bi);

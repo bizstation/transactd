@@ -113,7 +113,9 @@ STDMETHODIMP CField::SetValue(VARIANT Value)
     {
         CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
         if (b)
-            m_fd = b->m_bitset.internalValue();    
+            m_fd = b->m_bitset.internalValue();
+        else
+            return Error("Field SetValue param", IID_IField);
     }
     else
     {
@@ -180,7 +182,7 @@ STDMETHODIMP CField::GetBits(IBitset** Value)
     CComObject<CBitset>::CreateInstance(&b);
     if (!b)
         return Error("CreateInstance Bitset", IID_ITable);
-    b->m_bitset = bzs::db::protocol::tdap::client::bitset(m_fd.i64());
+    b->m_bitset = bzs::db::protocol::tdap::bitset(m_fd.i64());
     CBitset* bi;
     b->QueryInterface(IID_IBitset, (void**)&bi);
     _ASSERTE(bi);

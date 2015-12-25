@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <algorithm>
+#include <bzs/env/crosscompile.h>
 
 namespace bzs
 {
@@ -73,12 +74,12 @@ int myDate::getValue(bool btrDate_i)
     return i;
 }
 
-char* myDate::toString(char* p, bool w3_format)
+char* myDate::toString(char* p, size_t size, bool w3_format)
 {
     if (w3_format)
-        sprintf(p, "%04d/%02d/%02d", yy, mm, dd);
+        sprintf_s(p, size, "%04d/%02d/%02d", yy, mm, dd);
     else
-        sprintf(p, "%04d-%02d-%02d", yy, mm, dd);
+        sprintf_s(p, size, "%04d-%02d-%02d", yy, mm, dd);
     return p;
 }
 
@@ -100,12 +101,12 @@ myDate& myDate::operator=(const char* p)
 }
 
 #ifdef _WIN32
-wchar_t* myDate::toString(wchar_t* p, bool w3_format)
+wchar_t* myDate::toString(wchar_t* p, size_t size, bool w3_format)
 {
     if (w3_format)
-        swprintf_s(p, 11, L"%04d/%02d/%02d", yy, mm, dd);
+        swprintf_s(p, size, L"%04d/%02d/%02d", yy, mm, dd);
     else
-        swprintf_s(p, 11, L"%04d-%02d-%02d", yy, mm, dd);
+        swprintf_s(p, size, L"%04d-%02d-%02d", yy, mm, dd);
     return p;
 }
 
@@ -201,13 +202,13 @@ __int64 myTime::getValue(bool btrTime_i)
     return v;
 }
 
-char* myTime::toString(char* p)
+char* myTime::toString(char* p, size_t size)
 {
     if (m_dec)
-        sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss,
+        sprintf_s(p, size, time_format_ms, (int)hh, (int)nn, (int)ss,
                 m_dec, (unsigned int)ms);
     else
-        sprintf(p, time_format, (int)hh, (int)nn, (int)ss);
+        sprintf_s(p, size, time_format, (int)hh, (int)nn, (int)ss);
     return p;
 }
 
@@ -237,13 +238,13 @@ myTime& myTime::operator=(const char* p)
 }
 
 #ifdef _WIN32
-wchar_t* myTime::toString(wchar_t* p)
+wchar_t* myTime::toString(wchar_t* p, size_t size)
 {
     if (m_dec)
-        swprintf_s(p, 17, wtime_format_ms, (int)hh, (int)nn, (int)ss,
+        swprintf_s(p, size, wtime_format_ms, (int)hh, (int)nn, (int)ss,
                     m_dec, (unsigned int)ms);
     else
-        swprintf_s(p, 9, wtime_format, (int)hh, (int)nn, (int)ss);
+        swprintf_s(p, size, wtime_format, (int)hh, (int)nn, (int)ss);
     return p;
 }
 
@@ -464,32 +465,32 @@ void myDateTime::setTime(const char* p)
 }
 
 
-char* myDateTime::dateStr(char* p) const
+char* myDateTime::dateStr(char* p, size_t size) const
 {
-    sprintf(p, "%04d-%02d-%02d", (int)(yymm / 13),
+    sprintf_s(p, size, "%04d-%02d-%02d", (int)(yymm / 13),
                     (int)(yymm % 13), (int)dd);
     return p;
 }
 
-char* myDateTime::timeStr(char* p) const
+char* myDateTime::timeStr(char* p, size_t size) const
 {
     if (m_dec)
-        sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss,
+        sprintf_s(p, size, time_format_ms, (int)hh, (int)nn, (int)ss,
                     m_dec, (unsigned int)ms);
     else
-        sprintf(p, time_format, (int)hh, (int)nn, (int)ss);
+        sprintf_s(p, size, time_format, (int)hh, (int)nn, (int)ss);
     return p;
 }
 
-char* myDateTime::toString(char* p) const
+char* myDateTime::toString(char* p, size_t size) const
 {
     if (m_dec)
     {
-        sprintf(p, datetime_format_ms, (int)(yymm / 13), (int)(yymm % 13),
+        sprintf_s(p, size, datetime_format_ms, (int)(yymm / 13), (int)(yymm % 13),
                 (int)dd, (int)hh, (int)nn, (int)ss, m_dec, (unsigned int)ms);
     }
     else
-        sprintf(p, datetime_format, (int)(yymm / 13), (int)(yymm % 13),
+        sprintf_s(p, size, datetime_format, (int)(yymm / 13), (int)(yymm % 13),
                 (int)dd, (int)hh, (int)nn, (int)ss);
     return p;
 }
@@ -556,31 +557,31 @@ void myDateTime::setTime(const wchar_t* p)
     }
 }
 
-wchar_t* myDateTime::dateStr(wchar_t* p) const
+wchar_t* myDateTime::dateStr(wchar_t* p, size_t size) const
 {
-    swprintf(p, L"%04d-%02d-%02d", (int)(yymm / 13),
+    swprintf_s(p, size, L"%04d-%02d-%02d", (int)(yymm / 13),
                     (int)(yymm % 13), (int)dd);
     return p;
 }
 
-wchar_t* myDateTime::timeStr(wchar_t* p) const
+wchar_t* myDateTime::timeStr(wchar_t* p, size_t size) const
 {
     if (m_dec)
-        swprintf(p, wtime_format_ms, (int)hh, (int)nn, (int)ss,
+        swprintf_s(p, size, wtime_format_ms, (int)hh, (int)nn, (int)ss,
                     m_dec, (unsigned int)ms);
     else
-        swprintf(p, wtime_format, (int)hh, (int)nn, (int)ss);
+        swprintf_s(p, size, wtime_format, (int)hh, (int)nn, (int)ss);
     return p;
 }
 
-wchar_t* myDateTime::toString(wchar_t* p) const
+wchar_t* myDateTime::toString(wchar_t* p, size_t size) const
 {
     if (m_dec)
-        swprintf(p, wdatetime_format_ms, (int)(yymm / 13),
+        swprintf_s(p, size, wdatetime_format_ms, (int)(yymm / 13),
                     (int)(yymm % 13), (int)dd, (int)hh, (int)nn, (int)ss,
                     m_dec, (unsigned int)ms);
     else
-        swprintf(p, wdatetime_format, (int)(yymm / 13),
+        swprintf_s(p, size, wdatetime_format, (int)(yymm / 13),
                     (int)(yymm % 13), (int)dd, (int)hh, (int)nn, (int)ss);
     return p;
 }
@@ -702,7 +703,7 @@ __int64 myTimeStamp::getValue()
     return datetime;
 }
 
-char* myTimeStamp::toString(char* p)
+char* myTimeStamp::toString(char* p, size_t size)
 {
     if (datetime)
     {
@@ -710,18 +711,18 @@ char* myTimeStamp::toString(char* p)
         struct tm* st = localtime(&v);
 
         if (m_dec)
-            sprintf(p, datetime_format_ms, st->tm_year + 1900, st->tm_mon + 1,
+            sprintf_s(p, size, datetime_format_ms, st->tm_year + 1900, st->tm_mon + 1,
                     st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec,
                     m_dec, (unsigned int)ms);
         else
-            sprintf(p, datetime_format, st->tm_year + 1900, st->tm_mon + 1,
+            sprintf_s(p, size, datetime_format, st->tm_year + 1900, st->tm_mon + 1,
                     st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
     }else
     {
         if (m_dec)
-            sprintf(p, datetime_format_ms, 0, 0, 0, 0, 0, 0, m_dec, 0);
+            sprintf_s(p, size, datetime_format_ms, 0, 0, 0, 0, 0, 0, m_dec, 0);
         else
-            sprintf(p, datetime_format, 0, 0, 0, 0, 0, 0);
+            sprintf_s(p, size, datetime_format, 0, 0, 0, 0, 0, 0);
 
     }
     return p;
@@ -767,19 +768,19 @@ myTimeStamp& myTimeStamp::operator=(const char* p)
     return *this;
 }
 
-char* myTimeStamp::dateStr(char* p) const
+char* myTimeStamp::dateStr(char* p, size_t size) const
 {
     if (datetime)
     {
         time_t v = (time_t)datetime;
         struct tm* st = localtime(&v);
-        sprintf(p, "%04d-%02d-%02d", st->tm_year + 1900, st->tm_mon + 1,st->tm_mday);
+        sprintf_s(p, size, "%04d-%02d-%02d", st->tm_year + 1900, st->tm_mon + 1,st->tm_mday);
     }else
-        sprintf(p, "%04d-%02d-%02d", 0, 0, 0);
+        sprintf_s(p, size, "%04d-%02d-%02d", 0, 0, 0);
     return p;
 }
 
-char* myTimeStamp::timeStr(char* p) const
+char* myTimeStamp::timeStr(char* p, size_t size) const
 {
     if (datetime)
     {
@@ -787,22 +788,22 @@ char* myTimeStamp::timeStr(char* p) const
         struct tm* st = localtime(&v);
 
         if (m_dec)
-            sprintf(p, time_format_ms, st->tm_hour, st->tm_min, st->tm_sec,
+            sprintf_s(p, size, time_format_ms, st->tm_hour, st->tm_min, st->tm_sec,
                     m_dec, (unsigned int)ms);
         else
-            sprintf(p, time_format, st->tm_hour, st->tm_min, st->tm_sec);
+            sprintf_s(p, size, time_format, st->tm_hour, st->tm_min, st->tm_sec);
     }else
     {
         if (m_dec)
-            sprintf(p, time_format_ms,  0, 0, 0, m_dec, 0);
+            sprintf_s(p, size, time_format_ms,  0, 0, 0, m_dec, 0);
         else
-            sprintf(p, time_format,  0, 0, 0);
+            sprintf_s(p, size, time_format,  0, 0, 0);
     }
     return p;
 }
 
 #ifdef _WIN32
-wchar_t* myTimeStamp::toString(wchar_t* p)
+wchar_t* myTimeStamp::toString(wchar_t* p, size_t size)
 {
     if (datetime)
     {
@@ -812,23 +813,23 @@ wchar_t* myTimeStamp::toString(wchar_t* p)
         if (st == NULL)
         {
             //p[0] = 0x00;
-            swprintf_s(p, 100, L"er:%d %s", errno,_tcserror(errno));
+            swprintf_s(p, size, L"er:%d %s", errno,_tcserror(errno));
             return p;
         }
         if (m_dec)
-            swprintf_s(p, 50, wdatetime_format_ms, st->tm_year + 1900,
+            swprintf_s(p, size, wdatetime_format_ms, st->tm_year + 1900,
                         st->tm_mon + 1, st->tm_mday, st->tm_hour, st->tm_min,
                         st->tm_sec, m_dec, (unsigned int)ms);
         else
-            swprintf_s(p, 50, wdatetime_format, st->tm_year + 1900,
+            swprintf_s(p, size, wdatetime_format, st->tm_year + 1900,
                         st->tm_mon + 1, st->tm_mday, st->tm_hour, st->tm_min,
                         st->tm_sec);
     }else
     {
         if (m_dec)
-            swprintf_s(p, 50, wdatetime_format_ms, 0, 0, 0, 0, 0, 0, m_dec, 0);
+            swprintf_s(p, size, wdatetime_format_ms, 0, 0, 0, 0, 0, 0, m_dec, 0);
         else
-            swprintf_s(p, 50, wdatetime_format, 0, 0, 0, 0, 0, 0);
+            swprintf_s(p, size, wdatetime_format, 0, 0, 0, 0, 0, 0);
     }
     return p;
 }
@@ -873,19 +874,19 @@ myTimeStamp& myTimeStamp::operator=(const wchar_t* p)
     return *this;
 }
 
-wchar_t* myTimeStamp::dateStr(wchar_t* p) const
+wchar_t* myTimeStamp::dateStr(wchar_t* p, size_t size) const
 {
     if (datetime)
     {
         time_t v = (time_t)datetime;
         struct tm* st = localtime(&v);
-        swprintf(p, L"%04d-%02d-%02d", st->tm_year + 1900, st->tm_mon + 1,st->tm_mday);
+        swprintf_s(p, size, L"%04d-%02d-%02d", st->tm_year + 1900, st->tm_mon + 1,st->tm_mday);
     }else
-        swprintf(p, L"%04d-%02d-%02d", 0, 0, 0);
+        swprintf_s(p, size, L"%04d-%02d-%02d", 0, 0, 0);
     return p;
 }
 
-wchar_t* myTimeStamp::timeStr(wchar_t* p) const
+wchar_t* myTimeStamp::timeStr(wchar_t* p, size_t size) const
 {
     if (datetime)
     {
@@ -893,16 +894,16 @@ wchar_t* myTimeStamp::timeStr(wchar_t* p) const
         struct tm* st = localtime(&v);
 
         if (m_dec)
-            swprintf(p, wtime_format_ms, st->tm_hour, st->tm_min, st->tm_sec,
+            swprintf_s(p, size, wtime_format_ms, st->tm_hour, st->tm_min, st->tm_sec,
                     m_dec, (unsigned int)ms);
         else
-            swprintf(p, wtime_format, st->tm_hour, st->tm_min, st->tm_sec);
+            swprintf_s(p, size, wtime_format, st->tm_hour, st->tm_min, st->tm_sec);
     }else
     {
         if (m_dec)
-            swprintf(p, wtime_format_ms,  0, 0, 0, m_dec, 0);
+            swprintf_s(p, size, wtime_format_ms,  0, 0, 0, m_dec, 0);
         else
-            swprintf(p, wtime_format,  0, 0, 0);
+            swprintf_s(p, size, wtime_format,  0, 0, 0);
     }
     return p;
 }

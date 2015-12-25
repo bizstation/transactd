@@ -148,6 +148,7 @@ enum eStatus
 	STATUS_INVALID_VALLEN		= -37,
 	STATUS_FIELDTYPE_NOTSUPPORT = -42,
     STATUS_INVALID_NULLMODE     = -43,
+    STATUS_TOO_LARGE_VALUE      = -44,
 	STATUS_SUCCESS				= 0,
 	STATUS_PROGRAM_ERROR		= 1,
 	STATUS_IO_ERROR				= 2,
@@ -256,6 +257,7 @@ enum eFieldType
     ft_myyear           = 59,
     ft_mygeometry       = 60,
     ft_myjson           = 61,
+    ft_mydecimal        = 62,
 	ft_nullindicator	= 255
 }eFieldType;
 
@@ -1019,7 +1021,18 @@ interface IFieldDef : IDispatch
   HRESULT _stdcall TimeStampOnUpdate([in] VARIANT_BOOL Value);
   [propget, id(0x00000021)]
   HRESULT _stdcall DefaultNull([out, retval] VARIANT_BOOL* Value);
-  
+  [propget, id(0x00000022)]
+  HRESULT _stdcall Digits([out, retval] short* Value);
+  [propput, id(0x00000022)]
+  HRESULT _stdcall Digits([in] short Value);
+  [propget, id(0x00000023)]
+  HRESULT _stdcall IsIntegerType([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x00000024)]
+  HRESULT _stdcall IsNumericType([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x00000025)]
+  HRESULT _stdcall IsDateTimeType([out, retval] VARIANT_BOOL* Value);
+  [id(0x00000026)]
+  HRESULT _stdcall SetDecimalDigits([in] int Digits, [in ] int Decimals);
 
 };
 [

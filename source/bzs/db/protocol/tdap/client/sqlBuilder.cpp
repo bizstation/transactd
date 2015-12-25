@@ -261,15 +261,9 @@ char* getBitDefalutValue(char* buf, size_t size, unsigned __int64 v)
     for (int i = 0; i< 64;++i)
     {
         if (v & (1ULL << (63 - i)))
-        {
-            *p = '1';
-            ++p;
-        }
+            *(p++) = '1';
         else if (p != buf)
-        {
-            *p = '0';
-            ++p;
-        }
+            *(p++) = '0';
     }
     *p = 0x00;
     return buf;
@@ -305,7 +299,7 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
             charsetName = mysql::charsetName(fd.charsetIndex());
 
         s += getFieldTypeName(fd, len, f.bitA, charsetName, fd.decimals);
-        const char* p = fd.defaultValue_strA();
+        const char* p = fd.defaultValue_str();
         if ((fd.defaultValue() == DFV_TIMESTAMP_DEFAULT) && 
             ((fd.type == ft_mytimestamp) || (fd.type == ft_mydatetime)))
             p = timeStampDefaultStr(fd, timestamp_tmp, 64);

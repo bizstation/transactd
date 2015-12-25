@@ -120,5 +120,11 @@ public:
     STDMETHOD(put_TimeStampOnUpdate)(VARIANT_BOOL Value);
     STDMETHOD(get_TimeStampOnUpdate)(VARIANT_BOOL* Value);
     STDMETHOD(get_DefaultNull)(VARIANT_BOOL* Value);
-   
+    STDMETHOD(put_Digits)(short Value);
+    STDMETHOD(get_Digits)(short* Value);
+    STDMETHOD(get_IsIntegerType)(VARIANT_BOOL* Value);
+    STDMETHOD(get_IsNumericType)(VARIANT_BOOL* Value);
+    STDMETHOD(get_IsDateTimeType)(VARIANT_BOOL* Value);
+    STDMETHOD(SetDecimalDigits)(int Digits, int Decimals);
+
 };

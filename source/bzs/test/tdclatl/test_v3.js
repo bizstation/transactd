@@ -80,6 +80,7 @@ var ft_set          = 55;
 var ft_myyear       = 59;
 var ft_mygeometry   = 60;
 var ft_myjson       = 61;
+var ft_mydecimal    = 62;
 
 //file flag
 var table_varlen   = 0;
@@ -639,6 +640,24 @@ function test_bitset()
 	var all = false;
 	checkEqual(bits2.contains(bits1, all), true);
 }
+
+/*--------------------------------------------------------------------------------*/
+function test_decimal(fd)
+{
+	fd.type = ft_mydecimal;
+	fd.setDecimalDigits(65, 30);
+	checkEqual(fd.digits, 65);
+	checkEqual(fd.decimals, 30);
+	checkEqual(fd.isIntegerType, false);
+	checkEqual(fd.isNumericType, true);
+	var bits1 = new  ActiveXObject("transactd.Bitset");
+	bits1(2) = true;
+	fd.type = ft_integer;
+	fd.len = 4;
+	fd.DefaultValue = bits1;
+	checkEqual(fd.DefaultValue, 4);
+}
+
 /*--------------------------------------------------------------------------------*/
 function test(atu, ate, db)
 {
@@ -924,7 +943,7 @@ function test(atu, ate, db)
 	
 	test_bit(ate, db);
 	test_bitset();
-
+	test_decimal(ate.TableDef.FieldDef(0));
 	//WScript.Echo(" -- End Test -- ");
 }
 /*--------------------------------------------------------------------------------*/

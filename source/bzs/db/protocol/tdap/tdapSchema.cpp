@@ -70,40 +70,12 @@ inline wchar_t* namebuf()
 #endif
 }
 
-
-char* doubleToStr(double v, int decimals, char* p, int psize)
-{
-    if (decimals)
-    {
-        char buf[10] = "%0.";
-        _ltoa_s(decimals, p, psize, 10);
-        strcat_s(buf, 10, p);
-        strcat_s(buf, 10, "lf");
-        sprintf_s(p, psize, buf, v);
-    }else
-        sprintf_s(p, psize, "%0.0lf", v);
-    return p;
-}
-
 inline char* namebufA()
 {
     return (char*)namebuf();
 }
 
 #ifdef _UNICODE
-wchar_t* doubleToStr(double v, int decimals, wchar_t* p, int psize)
-{
-    if (decimals)
-    {
-        wchar_t buf[10] = L"%0.";
-        _ltow_s(decimals, p, psize, 10);
-        wcscat_s(buf, 10, p);
-        wcscat_s(buf, 10, L"lf");
-        swprintf(p, psize, buf, v);
-    }else
-        swprintf(p, psize, L"%0.0lf", v);
-    return p;
-}
 
 const wchar_t* fielddef::name() const
 {
@@ -129,67 +101,12 @@ const wchar_t* fielddef::chainChar() const
 
 const wchar_t* fielddef::defaultValue_str() const
 {
-    if (*((__int64*)m_defValue) == 0) return L"";
+    char tmp[MYSQL_FDNAME_SIZE];
+    const char* src = defaultValue_strA(tmp, MYSQL_FDNAME_SIZE);
     wchar_t* p = namebuf();
-    if (isStringTypeForIndex(type))
-    {
-        wchar_t* p = namebuf();
-        MultiByteToWideChar(m_schemaCodePage,
+    MultiByteToWideChar(m_schemaCodePage,
                             (m_schemaCodePage == CP_UTF8) ? 0 : MB_PRECOMPOSED,
-                            m_defValue, -1, p, MYSQL_FDNAME_SIZE);
-        return p;
-    }
-    if (isDateTimeType())
-    {
-        bool tsu = isTimeStampOnUpdate();
-        *(const_cast<char*>(m_defValue) + 7) = 0x00;
-        __int64 i64 = *((__int64*)m_defValue);
-        myDateTime dt(4, true);
-        dt.setValue(i64);
-        p[0] = 0x00;
-        switch(type)
-        {
-        case ft_date:
-        case ft_mydate:
-            if (dt.internalValue()) 
-                dt.dateStr(p);
-            break;
-        case ft_time:
-        case ft_mytime:
-            if (dt.internalValue())
-                dt.timeStr(p);
-            break;
-        case ft_datetime:
-        case ft_timestamp:
-            if (dt.internalValue())
-                dt.toString(p);
-            break;
-        case ft_mydatetime:
-        case ft_mytimestamp:
-        {
-            if (i64 == DFV_TIMESTAMP_DEFAULT)
-            {
-                *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
-                return DFV_TIMESTAMP_DEFAULT_WSTR;
-            }
-            else if (dt.internalValue()) 
-                dt.toString(p);
-            break;
-        }
-        default:
-            assert(0);    
-        }
-        //restore
-        *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
-    }else if (isIntegerType())
-    {
-        __int64 *v = (__int64*)m_defValue;
-        if ((type == ft_integer) || (type == ft_autoinc))
-            _i64tow(*v, p, 10);
-        else
-            _ui64tow((unsigned __int64)(*v), p, 10);
-    }else
-         doubleToStr(*((double*)m_defValue), decimals, p, MYSQL_FDNAME_SIZE);
+                            src, -1, p, MYSQL_FDNAME_SIZE);
     return p;
 }
 
@@ -210,64 +127,15 @@ void fielddef::setChainChar(const wchar_t* s)
 
 void fielddef::setDefaultValue(const wchar_t* s)
 {
-    if (isBlob())
-    {
-        memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
-        return;
-    }
-
-    enableFlags.bitF = false;
-    __int64 i64 = 0;
-    switch(type)
-    {
-    case ft_time:
-    case ft_mytime:
-    {
-        myDateTime dt(7, true);
-        dt.setTime(s);
-        i64 = dt.getValue();
-        memcpy(m_defValue, &i64, 7);
-        return;
-    }
-    case ft_date:
-    case ft_mydate:
-    case ft_datetime:
-    case ft_mytimestamp:
-    case ft_mydatetime:
-        i64 = str_to_64<myDateTime, wchar_t>(7, true, s);
-        memcpy(m_defValue, &i64, 7);
-        return;
-    case ft_integer:
-    case ft_autoinc:
-    {
-        __int64 v = _wtoi64(s);
-        memcpy(m_defValue, &v, 8);
-        return;
-    }
-    case ft_uinteger:
-    case ft_logical:
-    case ft_set:
-    case ft_bit:
-    case ft_enum:
-    case ft_autoIncUnsigned:
-    case ft_myyear:
-    {
-        unsigned __int64 v = wcstoull(s, NULL, 10);
-        memcpy(m_defValue, &v, 8);
-        return;
-    }
-    }
-
-    if (isNumericType())
-    {
-        double d = _wtof(s);
-        setDefaultValue(d);
-        return;
-    } 
+    int size = WideCharToMultiByte(m_schemaCodePage,
+                        (m_schemaCodePage == CP_UTF8) ? 0 : WC_COMPOSITECHECK,
+                        s, -1, NULL, 0, NULL, NULL);
+    char* p = new char[size + 1];
     WideCharToMultiByte(m_schemaCodePage,
                         (m_schemaCodePage == CP_UTF8) ? 0 : WC_COMPOSITECHECK,
-                        s, -1, m_defValue, 8, NULL, NULL);
-   
+                        s, -1, p, size + 1, NULL, NULL);
+    setDefaultValue(p);
+    delete [] p;
 }
 
 const wchar_t* tabledef::fileName() const
@@ -349,77 +217,10 @@ const char* fielddef::chainChar() const
     return m_chainChar;
 }
 
-const char* fielddef::defaultValue_strA() const
+const char* fielddef::defaultValue_str() const
 {
-    if (*((__int64*)m_defValue) == 0) return "";
-    char* p = namebufA();
-    if (isStringTypeForIndex(type))
-    {
-    #ifdef LINUX
-        if (m_schemaCodePage != CP_UTF8)
-        {
-            char* p = namebufA();
-            mbctou8(m_defValue, strlen(m_defValue), p, MYSQL_FDNAME_SIZE);
-            return p;
-        }
-    #endif
-        return m_defValue;
-    }
-
-    if (isDateTimeType())
-    {
-        bool tsu = isTimeStampOnUpdate();
-        *(const_cast<char*>(m_defValue) + 7) = 0x00;
-        __int64 i64 = *((__int64*)m_defValue);
-        myDateTime dt(4, true);
-        dt.setValue(i64); // i64 not equal dt.internalValue();
-        p[0] = 0x00;
-
-        switch(type)
-        {
-        case ft_date:
-        case ft_mydate:
-             if (dt.internalValue())
-                dt.dateStr(p);
-             break;
-        case ft_time:
-        case ft_mytime:
-            if (dt.internalValue())
-                dt.timeStr(p);
-            break;
-        case ft_datetime:
-        case ft_timestamp:
-            if (dt.internalValue())
-                dt.toString(p);
-            break;
-        case ft_mydatetime:
-        case ft_mytimestamp:
-        {
-            if (i64 == DFV_TIMESTAMP_DEFAULT)
-            {
-                *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
-                return DFV_TIMESTAMP_DEFAULT_ASTR;
-            }
-            else if (dt.internalValue()) 
-                dt.toString(p);
-            break;
-        }
-        default:
-            assert(0);
-        }
-         //restore
-        *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
-    }else if (isIntegerType())
-    {
-        __int64 *v = (__int64*)m_defValue;
-        if ((type == ft_integer) || (type == ft_autoinc))
-            _i64toa_s(*v, p, MYSQL_FDNAME_SIZE, 10);
-        else
-            _ui64toa_s((unsigned __int64)(*v), p, MYSQL_FDNAME_SIZE, 10);
-    }else
-        doubleToStr(*((double*)m_defValue), decimals, p, MYSQL_FDNAME_SIZE);
-
-    return p;
+    char* p = (char*)namebuf();
+    return defaultValue_strA(p, MYSQL_FDNAME_SIZE);
 }
 
 void fielddef::setName(const char* s)
@@ -440,71 +241,6 @@ void fielddef::setChainChar(const char* s)
     else
 #endif
         strncpy_s(m_chainChar, 2, s, sizeof(m_chainChar) - 1);
-}
-
-void fielddef::setDefaultValue(const char* s)
-{
-    if (isBlob())
-    {
-        memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
-        return;
-    }
-
-    enableFlags.bitF = false;
-    __int64 i64 = 0;
-    switch(type)
-    {
-    case ft_time:
-    case ft_mytime:
-    {
-        myDateTime dt(7, true);
-        dt.setTime(s);
-        i64 = dt.getValue();
-        memcpy(m_defValue, &i64, 7);
-        return;
-    }
-    case ft_date:
-    case ft_mydate:
-    case ft_datetime:
-    case ft_mytimestamp:
-    case ft_mydatetime:
-        i64 = str_to_64<myDateTime, char>(7, true, s);
-        memcpy(m_defValue, &i64, 7);
-        return;
-    case ft_integer:
-    case ft_autoinc:
-    {
-        __int64 v = _atoi64(s);
-        memcpy(m_defValue, &v, 8);
-        return;
-    }
-    case ft_uinteger:
-    case ft_logical:
-    case ft_set:
-    case ft_bit:
-    case ft_enum:
-    case ft_autoIncUnsigned:
-    case ft_myyear:
-    {
-        unsigned __int64 v = strtoull(s, NULL, 10);
-        memcpy(m_defValue, &v, 8);
-        return;
-    }
-    }
-    
-    if (isNumericType())
-    {
-        double d = atof(s);
-        setDefaultValue(d);
-        return;
-    }
-#ifdef LINUX
-    if (m_schemaCodePage != CP_UTF8)
-        u8tombc(s, strlen(s), m_defValue, 8);
-    else
-#endif
-        strncpy_s(m_defValue, 8, s, sizeof(m_defValue) - 1);
-    
 }
 
 const char* tabledef::fileName() const
@@ -597,6 +333,183 @@ short keydef::synchronize(const keydef* kd)
 //--------------------------------------------------------------------
 //   struct fielddef
 //--------------------------------------------------------------------
+void fielddef::setDefaultValue(const char* s)
+{
+    if (isBlob())
+    {
+        memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
+        return;
+    }
+
+    enableFlags.bitF = false;
+    __int64 i64 = 0;
+    switch(type)
+    {
+    case ft_time:
+    case ft_mytime:
+    {
+        myDateTime dt(7, true);
+        dt.setTime(s);
+        i64 = dt.getValue();
+        memcpy(m_defValue, &i64, 7);
+        return;
+    }
+    case ft_date:
+    case ft_mydate:
+    case ft_datetime:
+    case ft_mytimestamp:
+    case ft_mydatetime:
+        i64 = str_to_64<myDateTime, char>(7, true, s);
+        memcpy(m_defValue, &i64, 7);
+        return;
+    case ft_integer:
+    case ft_autoinc:
+    {
+        *((__int64*)m_defValue) =  _atoi64(s);
+        return;
+    }
+    case ft_uinteger:
+    case ft_logical:
+    case ft_set:
+    case ft_bit:
+    case ft_enum:
+    case ft_autoIncUnsigned:
+    case ft_myyear:
+    {
+        *((unsigned __int64*)m_defValue) = strtoull(s, NULL, 10);
+        return;
+    }
+    }
+
+    if (isNumericType())
+    {
+        *((double*)m_defValue) = atof(s);
+        return;
+    }
+    m_defValue[7] = 0x00;
+#ifdef LINUX
+    if (m_schemaCodePage != CP_UTF8)
+        u8tombc(s, strlen(s), m_defValue, 8);
+    else
+#endif
+        strncpy_s(m_defValue, 8, s, sizeof(m_defValue) - 1);
+
+}
+
+void fielddef::setDefaultValue(__int64 v)
+{
+    if ((v == DFV_TIMESTAMP_DEFAULT) && 
+            ((type == ft_mytimestamp) || (type == ft_mytimestamp)))
+    {
+        *((__int64*)m_defValue) = v;
+        return;
+    }
+    char tmp[100];
+    sprintf_s(tmp, 100, "%lld", v);
+    setDefaultValue(tmp);
+}
+
+void fielddef::setDefaultValue(double v)
+{
+    if ((v == DFV_TIMESTAMP_DEFAULT) && 
+            ((type == ft_mytimestamp) || (type == ft_mytimestamp)))
+    {
+        *((__int64*)m_defValue) = (__int64)v;
+        return;
+    }
+    char tmp[100];
+    sprintf_s(tmp, 100, "%.*lf", decimals, v);
+    setDefaultValue(tmp);
+}
+
+const char* fielddef::defaultValue_strA(char* p, size_t size) const
+{
+    if (*((__int64*)m_defValue) == 0) return "";
+    //char* p = namebufA();
+    if (isStringTypeForIndex(type))
+    {
+    #ifdef LINUX
+        if (m_schemaCodePage != CP_UTF8)
+        {
+            char* p = namebufA();
+            mbctou8(m_defValue, strlen(m_defValue), p, size);
+            return p;
+        }
+    #endif
+        return m_defValue;
+    }
+
+    if (isDateTimeType())
+    {
+        bool tsu = isTimeStampOnUpdate();
+        *(const_cast<char*>(m_defValue) + 7) = 0x00;
+        __int64 i64 = *((__int64*)m_defValue);
+        myDateTime dt(4, true);
+        dt.setValue(i64); // i64 not equal dt.internalValue();
+        p[0] = 0x00;
+
+        switch(type)
+        {
+        case ft_date:
+        case ft_mydate:
+             if (dt.internalValue())
+                dt.dateStr(p, size);
+             break;
+        case ft_time:
+        case ft_mytime:
+            if (dt.internalValue())
+                dt.timeStr(p, size);
+            break;
+        case ft_datetime:
+        case ft_timestamp:
+            if (dt.internalValue())
+                dt.toString(p, size);
+            break;
+        case ft_mydatetime:
+        case ft_mytimestamp:
+        {
+            if (i64 == DFV_TIMESTAMP_DEFAULT)
+            {
+                *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
+                return DFV_TIMESTAMP_DEFAULT_ASTR;
+            }
+            else if (dt.internalValue())
+                dt.toString(p, size);
+            break;
+        }
+        default:
+            assert(0);
+        }
+         //restore
+        *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
+    }else if (isIntegerType())
+    {
+        __int64 *v = (__int64*)m_defValue;
+        if ((type == ft_integer) || (type == ft_autoinc))
+            _i64toa_s(*v, p, size, 10);
+        else
+            _ui64toa_s((unsigned __int64)(*v), p, size, 10);
+    }else
+        sprintf_s(p, size, "%.*lf", decimals, *((double*)m_defValue));
+
+    return p;
+}
+
+void fielddef::setDecimalDigits(int dig, int dec)
+{
+    assert(sizeof(int) == 4);
+    if (type == ft_mydecimal)
+    {
+        decimals = (uchar_td)dec;
+        digits = dig;
+        int intdeg = digits - dec;
+        len = (ushort_td) (((intdeg / DIGITS_INT32) * sizeof(int)) +
+            decimalBytesBySurplus[intdeg % DIGITS_INT32]) +
+            (ushort_td) (((dec / DIGITS_INT32) * sizeof(int)) +
+            decimalBytesBySurplus[dec % DIGITS_INT32]) ;
+    }
+}
+
 bool fielddef::operator==(const fielddef& r) const
 {
     //ignore  m_nullbit m_nullbytes
@@ -780,50 +693,64 @@ short fielddef::synchronize(const fielddef* fd)
     return 0;
 }
 
+
 #pragma warn -8056
+
+#define CASE_DOUBLE_TYPE \
+    case ft_float: \
+    case ft_decimal: \
+    case ft_bfloat: \
+    case ft_numeric: \
+    case ft_money: \
+    case ft_currency: \
+    case ft_numericsts: \
+    case ft_numericsa: \
+    case ft_mydecimal:
+
+#define CASE_INT_TYPE \
+    case ft_integer:  \
+    case ft_autoinc: \
+    case ft_uinteger: \
+    case ft_logical: \
+    case ft_set: \
+    case ft_bit: \
+    case ft_enum: \
+    case ft_autoIncUnsigned: \
+    case ft_myyear:
+
 double fielddef::defaultValue() const
 {
     assert(sizeof(double) == 8);
-
     if (isDateTimeType())
         return (double)(*((__int64*)m_defValue) & (0x00FFFFFFFFFFFFFFLL));
-    
     switch(type)
     {
-    case ft_integer:
-    case ft_autoinc:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_set:
-    case ft_bit:
-    case ft_enum:
-    case ft_autoIncUnsigned:
-    case ft_myyear:
-        return (double)(*((__int64*)m_defValue));
+    CASE_INT_TYPE
+        return (double)*((__int64*)m_defValue);
+    CASE_DOUBLE_TYPE
+        return *((double*)m_defValue);
     }
-    return *((double*)m_defValue);
+    if (isStringType())
+        return atof(m_defValue);
+    return 0;
 }
 
 __int64 fielddef::defaultValue64() const
 {
-    assert(sizeof(double) == 8);
+    assert(sizeof(__int64) == 8);
 
     if (isDateTimeType())
         return (*((__int64*)m_defValue) & (0x00FFFFFFFFFFFFFFLL));
     switch(type)
     {
-    case ft_integer:
-    case ft_autoinc:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_set:
-    case ft_bit:
-    case ft_enum:
-    case ft_autoIncUnsigned:
-    case ft_myyear:
+    CASE_INT_TYPE
         return *((__int64*)m_defValue);
+    CASE_DOUBLE_TYPE
+        return (__int64)*((double*)m_defValue);
     }
-    return (__int64)(*((double*)m_defValue));
+    if (isStringType())
+        return _atoi64(m_defValue);
+    return 0;
 }
 #pragma warn .8056
 
