@@ -2302,7 +2302,7 @@ __int64 table::insert(bool ncc)
         setKeyNullFlags();
         if (!m_mysqlNull) setFieldNullFlags();
 		setTimeStamp(true /* insert */);
-
+        cp_setup_rpl_bitmap(m_table);
         m_stat = m_table->file->ha_write_row(m_table->record[0]);
         autoincValue = m_table->file->insert_id_for_cur_row;
 
@@ -2397,6 +2397,8 @@ void table::update(bool ncc)
         int nullFieldsOfCurrentKey = setKeyNullFlags();
         if (!m_mysqlNull) setFieldNullFlags();
 		setTimeStamp(false /* update */);
+        cp_setup_rpl_bitmap(m_table);
+
         m_stat = m_table->file->ha_update_row(m_table->record[1],
                                               m_table->record[0]);
         if (m_stat == 0 || (m_stat == HA_ERR_RECORD_IS_THE_SAME))

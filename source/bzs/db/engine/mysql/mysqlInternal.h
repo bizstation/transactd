@@ -612,4 +612,17 @@ inline void cp_lex_clear(THD* thd)
     }
 #endif
 
+
+#if (defined(MARIADDB_10_1) && MARIADDB_10_1 > 100108)
+inline void cp_setup_rpl_bitmap(TABLE* table)
+{
+    bitmap_set_all(table->write_set);
+    table->rpl_write_set = table->write_set;
+}
+#else
+
+inline void cp_setup_rpl_bitmap(TABLE* table){};
+
+#endif
+
 #endif // BZS_DB_ENGINE_MYSQL_MYSQLINTERNAL_H
