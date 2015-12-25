@@ -404,7 +404,8 @@ inline bool dbExecuter::doCreateTable(request& req)
         std::string cmd;
         if (isMetaDb(req))
         { // for database operation
-            if ((req.keyNum == 0) && (db->existsDatabase() == false))
+            if (((req.keyNum == CR_SUBOP_CREATE_DBONLY) || (req.keyNum == 0)) &&
+                    (db->existsDatabase() == false))
             {
                 req.result = ddl_createDataBase(db->thd(), dbSqlname);
                 if (req.result == ER_DB_CREATE_EXISTS + MYSQL_ERROR_OFFSET)
@@ -454,7 +455,7 @@ inline bool dbExecuter::doCreateTable(request& req)
                         dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
                         tableSqlName /*newName*/);
                 }
-                else
+                else if (req.keyNum != CR_SUBOP_CREATE_DBONLY)
                 { // create
                     if (req.data == NULL)
                         req.result = 1;

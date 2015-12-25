@@ -175,6 +175,24 @@ short createTestTable(database* db, bool timestampNull = true, bool supportDateT
     return 1;
 }
 
+void testNoSchema(database* db)
+{
+    db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3));
+    if (db->stat()==0)
+        db->drop();
+    
+    db->create(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3));
+    BOOST_CHECK_MESSAGE(db->stat() == 0, "create stat = " << db->stat());
+
+    db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3));
+    BOOST_CHECK_MESSAGE(db->stat() == 0, "open stat = " << db->stat());
+    if (db->stat()==0)
+    {
+        db->drop();
+        BOOST_CHECK_MESSAGE(db->stat() == 0, "drop stat = " << db->stat());
+    }
+}
+
 void testFielddefs(database* db)
 {
     short ret = createTestDataBase(db);
@@ -264,7 +282,6 @@ void testFieldValue(database* db)
         _tprintf(_T("Error ! %s\n"), (*getMsg(e)).c_str());
     }
 }
-
 
 void testWriatbleRecordFieldValue(database* db)
 {
@@ -946,7 +963,12 @@ void testMyDateTimeStore()
 }
 
 
-BOOST_AUTO_TEST_SUITE(test_null)
+BOOST_AUTO_TEST_SUITE(test_v3)
+
+BOOST_FIXTURE_TEST_CASE(noschema, fixture)
+{
+    testNoSchema(db());
+}
 
 BOOST_FIXTURE_TEST_CASE(nullbit, fixture)
 {

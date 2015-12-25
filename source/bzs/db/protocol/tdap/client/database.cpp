@@ -197,12 +197,48 @@ void database::setAutoSchemaUseNullkey(bool v)
     m_impl->autoSchemaUseNullkey = v;
 }
 
-void database::create(const _TCHAR* fullpath, short type)
+void database::create(const _TCHAR* uri, short type)
 {
     if (!m_impl->dbDef)
         m_impl->dbDef = new dbdef(this, type); // Create TabelDef here.
-    m_impl->dbDef->create(fullpath);
-    m_stat = m_impl->dbDef->stat();
+    
+    _TCHAR buf[MAX_PATH];
+    schemaTable(uri, buf, MAX_PATH);
+    if (buf[0])
+    {
+        m_impl->dbDef->create(uri);
+        m_stat = m_impl->dbDef->stat();
+    }
+    else
+    {
+        if (isTransactdUri(uri))
+        {
+            if (setUseTransactd() == false)
+                m_stat = ERROR_LOAD_CLIBRARY;
+            else
+            {
+                _TCHAR uri_tmp[MAX_PATH];
+                stripParam(uri, buf, MAX_PATH);
+                _tcscpy_s(uri_tmp, MAX_PATH, buf);
+                _tcscat(uri_tmp, _T("?dbfile="));
+                _tcscat(uri_tmp, TRANSACTD_SCHEMANAME);
+                passwd(uri, buf, MAX_PATH);
+                if (buf[0])
+                {
+                    _tcscat(uri_tmp, _T("&pwd="));
+                    _tcscat(uri_tmp, buf);
+                }
+
+                _TCHAR posblk[128] = { 0x00 };
+                const char* p = toServerUri((char*)buf, MAX_PATH, uri_tmp, true);
+                uint_td len = 0;
+                m_stat = m_btrcallid(TD_CREATETABLE, posblk, NULL, &len,
+                     (void*)p, (uchar_td)strlen(p), CR_SUBOP_CREATE_DBONLY , clientID());
+            }
+        }
+        else
+            m_stat = STATUS_NOSUPPORT_OP;
+    }
 }
 
 void database::drop()
@@ -229,24 +265,32 @@ void database::drop()
         }
     }
     size_t len = _tcslen(m_impl->dbDef->uri());
-    _TCHAR* s(new _TCHAR[len + 1]);
-    _tcscpy(s, m_impl->dbDef->uri());
-   
-    fileNames[count++] = s;
-    BTRCALLID_PTR ptr = m_btrcallid;
-    m_btrcallid = NULL;
-    close();
-    m_btrcallid = ptr;
-    for (int i = 0; i < count; i++)
+    if (len)
     {
-        nsdatabase::dropTable(fileNames[i]);
-        if (m_stat && (m_stat == STATUS_TABLE_NOTOPEN))
-            break;
-    }
+        _TCHAR* s(new _TCHAR[len + 1]);
+        _tcscpy(s, m_impl->dbDef->uri());
+   
+        fileNames[count++] = s;
+        BTRCALLID_PTR ptr = m_btrcallid;
+        m_btrcallid = NULL;
+        close();
+        m_btrcallid = ptr;
+        for (int i = 0; i < count; i++)
+        {
+            nsdatabase::dropTable(fileNames[i]);
+            if (m_stat && (m_stat == STATUS_TABLE_NOTOPEN))
+                break;
+        }
 
-    for (int i = 0; i < count; i++)
-        delete [] fileNames[i];
-    
+        for (int i = 0; i < count; i++)
+            delete [] fileNames[i];
+    }else
+    {
+        _TCHAR s[MAX_PATH];
+        _tcscpy(s, rootDir());
+        _tcscat(s, TRANSACTD_SCHEMANAME);
+        nsdatabase::dropTable(s);
+    }
     if (m_stat)
         return;
     nsdatabase::reset();

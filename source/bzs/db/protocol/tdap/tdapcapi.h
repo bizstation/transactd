@@ -167,6 +167,7 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define CR_SUBOP_DROP                   -128
 #define CR_SUBOP_RENAME                 -127
 #define CR_SUBOP_SWAPNAME               -126
+#define CR_SUBOP_CREATE_DBONLY          -125
 #define CR_SUBOP_BY_FILESPEC            -1
 #define CR_SUBOP_BY_FILESPEC_NOCKECK    0
 #define CR_SUBOP_BY_TABLEDEF            1
