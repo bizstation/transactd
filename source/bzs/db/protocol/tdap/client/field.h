@@ -112,14 +112,6 @@ public:
     static fielddefs* create();
 };
 
-/** @cond INTERNAL */
-
-typedef int (*compFieldFunc)(const class field& l, const class field& r,
-                             char logType);
-extern int compWString(const field& l, const field& r, char logType);
-extern int compiWString(const field& l, const field& r, char logType);
-
-/** @endcond */
 class DLLLIB field
 {
     friend class table;
@@ -160,7 +152,6 @@ class DLLLIB field
     int nullComp(char log) const;
     bool isCompPartAndMakeValue();
     void offsetBlobPtr(size_t offset);
-    compFieldFunc getCompFunc(char logType) const;
 
     //  ---- bigin regacy interfaces ----  //
     const char* getFVAstr() const;

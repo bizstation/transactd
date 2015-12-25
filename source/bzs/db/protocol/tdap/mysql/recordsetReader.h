@@ -156,11 +156,6 @@ inline unsigned short position::packLen(const resultField* rf) const
 #define REC_NOMACTH 1
 #define REC_NOMACTH_NOMORE 2
 
-//#define COMP_USE_SWITCHCASE
-#ifndef COMP_USE_SWITCHCASE
-#define COMP_USE_FUNCTION_POINTER
-#endif
-
 struct seek
 {
     struct
@@ -183,9 +178,6 @@ struct seek
     }
 };
 
-struct logicalField;
-typedef int (logicalField::*compFunc)(const char* l, const char* r,
-                                      int sizeByte) const;
 struct logicalField
 {
 
@@ -208,355 +200,12 @@ public:
     }
 
 public:
-#ifdef COMP_USE_SWITCHCASE
-    int comp(const char* record, int sizeByte) const
-    {
-        const char* r = (const char*)ptr;
-        if (logType & CMPLOGICAL_FIELD)
-            r = record + offset;
-        const char* l = record + pos;
-        switch (type)
-        {
-        case ft_integer:
-        case ft_autoinc:
-        case ft_currency:
-        {
-            if (logType & 8)
-            {
-                switch (len)
-                {
-                case 1:
-                    return bitMask<char>(l, r);
-                case 2:
-                    return bitMask<short>(l, r);
-                case 3:
-                    return bitMask24(l, r);
-                case 4:
-                    return bitMask<int>(l, r);
-                case 8:
-                    return bitMask<__int64>(l, r);
-                }
-            }else
-            {
-                switch (len)
-                {
-                case 1:
-                    return compare<char>(l, r);
-                case 2:
-                    return compare<short>(l, r);
-                case 3:
-                    return compareInt24(l, r);
-                case 4:
-                    return compare<int>(l, r);
-                case 8:
-                    return compare<__int64>(l, r);
-                }
-            }
-        }
-        case ft_mychar:
-        case ft_string:
-            if (logType & CMPLOGICAL_CASEINSENSITIVE)
-                return _strnicmp(l, r, len);
-            return memcmp(l, r, len);
-        case ft_zstring:
-        case ft_note:
-            if (logType & CMPLOGICAL_CASEINSENSITIVE)
-                return _strnicmp(l, r, len);
-            return strncmp(l, r, len);
-        case ft_logical:
-        case ft_uinteger:
-        case ft_autoIncUnsigned:
-        case ft_date:
-        case ft_time:
-        case ft_timestamp:
-        case ft_year:
-        case ft_mydate:
-        case ft_mytime_num_cmp:
-        case ft_mydatetime_num_cmp:
-        case ft_mytimestamp_num_cmp:
-        {
-            if (logType & 8)
-            {
-                switch (len)
-                {
-                case 1:
-                    return bitMask<char>(l, r);
-                case 2:
-                    return bitMask<short>(l, r);
-                case 3:
-                    return bitMask24(l, r);
-                case 4:
-                    return bitMask<int>(l, r);
-                case 8:
-                    return bitMask<__int64>(l, r);
-                }
-            }else
-            {
-                switch (len)
-                {
-                case 1:
-                    return compare<unsigned char>(l, r);
-                case 2:
-                    return compare<unsigned short>(l, r);
-                case 3:
-                    return compareUint24(l, r);
-                case 4:
-                    return compare<unsigned int>(l, r);
-                case 8:
-                    return compare<unsigned __int64>(l, r);
-                }
-            }
-        }
 
-        case ft_mytime:
-        case ft_mydatetime:
-        case ft_mytimestamp:
-            return memcmp(l, r, len);
-        case ft_float:
-            switch (len)
-            {
-            case 4:
-                return compare<float>(l, r);
-            case 8:
-                return compare<double>(l, r);
-            }
-        case ft_mywchar:
-        case ft_wstring:
-        case ft_wzstring:
-            if (logType & CMPLOGICAL_CASEINSENSITIVE)
-                return wcsnicmp16((char16_t*)l, (char16_t*)r, len/sizeof(char16_t));
-            if ((type == ft_wstring) || (type == ft_mywchar))
-                return memcmp(l, r, len);
-            return wcsncmp16((char16_t*)l, (char16_t*)r, len/sizeof(char16_t));
-        case ft_lstring:
-        case ft_myvarchar:
-        case ft_myvarbinary:
-            if (sizeByte == 1)
-                return compareVartype<unsigned char>(
-                    l, r, type == ft_myvarbinary, logType);
-            return compareVartype<unsigned short>(l, r, type == ft_myvarbinary,
-                                                  logType);
-        case ft_mywvarchar:
-        case ft_mywvarbinary:
-            if (sizeByte == 1)
-                return compareWvartype<unsigned char>(
-                    l, r, type == ft_mywvarbinary, logType);
-            return compareWvartype<unsigned short>(
-                l, r, type == ft_mywvarbinary, logType);
-        case ft_mytext:
-        case ft_myblob:
-        case ft_myjson:      //TODO Json binary comp
-        case ft_mygeometry:  //TODO geometory binary comp
-            return compareBlobType(l, r, type != ft_mytext, logType, sizeByte);
-        }
-        return 0;
-    };
-#else // COMP_USE_FUNCTION_POINTER
-    template <class T>
-    inline int compBitAnd(const char* l, const char* r, int sizeByte) const
+    comp1Func getCompFunc(int sizeByte) const
     {
-        return bitMask<T>(l, r);
+        return ::getCompFunc(type, len, logType, sizeByte);
     }
 
-    inline int compBitAnd24(const char* l, const char* r, int sizeByte) const
-    {
-        int lv = int24toInt(l);
-        int rv = int24toInt(r);
-        return bitMask<int>((const char*)&lv, (const char*)&rv);
-    }
-
-    template <class T>
-    int compNumber(const char* l, const char* r, int sizeByte) const
-    {
-        return compare<T>(l, r);
-    }
-
-    int compNumber24(const char* l, const char* r, int sizeByte) const
-    {
-        return compareInt24(l, r);
-    }
-
-    int compNumberU24(const char* l, const char* r, int sizeByte) const
-    {
-        return compareUint24(l, r);
-    }
-
-    int compMem(const char* l, const char* r, int sizeByte) const
-    {
-        return memcmp(l, r, len);
-    }
-
-    int compString(const char* l, const char* r, int sizeByte) const
-    {
-        return strncmp(l, r, len);
-    }
-
-    int compiString(const char* l, const char* r, int sizeByte) const
-    {
-        return _strnicmp(l, r, len);
-    }
-
-    int compWString(const char* l, const char* r, int sizeByte) const
-    {
-        return wcsncmp16((char16_t*)l, (char16_t*)r, len);
-    }
-
-    int compiWString(const char* l, const char* r, int sizeByte) const
-    {
-        return wcsnicmp16((char16_t*)l, (char16_t*)r, len);
-    }
-
-    template <class T>
-    int compVarString(const char* l, const char* r, int sizeByte) const
-    {
-        return compareVartype<T>(l, r, type == ft_myvarbinary, logType);
-    }
-
-    template <class T>
-    int compWVarString(const char* l, const char* r, int sizeByte) const
-    {
-        return compareWvartype<T>(l, r, type == ft_mywvarbinary, logType);
-    }
-
-    int compBlob(const char* l, const char* r, int sizeByte) const
-    {
-        return compareBlobType(l, r, type != ft_mytext, logType, sizeByte);
-    }
-
-    compFunc getCompFunc(int sizeByte, char opr) const
-    {
-        switch (type)
-        {
-        case ft_integer:
-        case ft_autoinc:
-        case ft_currency:
-        {
-            if (opr & (char)eBitAnd)
-            {
-                switch (len)
-                {
-                case 1:
-                    return &logicalField::compBitAnd<char>;
-                case 2:
-                    return &logicalField::compBitAnd<short>;
-                case 3:
-                    return &logicalField::compBitAnd24;
-                case 4:
-                    return &logicalField::compBitAnd<int>;
-                case 8:
-                    return &logicalField::compBitAnd<__int64>;
-                }
-            }else
-            {
-                switch (len)
-                {
-                case 1:
-                    return &logicalField::compNumber<char>;
-                case 2:
-                    return &logicalField::compNumber<short>;
-                case 3:
-                    return &logicalField::compNumber24;
-                case 4:
-                    return &logicalField::compNumber<int>;
-                case 8:
-                    return &logicalField::compNumber<__int64>;
-                }
-            }
-        }
-        case ft_mychar:
-        case ft_string:
-            if (logType & CMPLOGICAL_CASEINSENSITIVE)
-                return &logicalField::compiString;
-            return &logicalField::compMem;
-        case ft_zstring:
-        case ft_note:
-            if (logType & CMPLOGICAL_CASEINSENSITIVE)
-                return &logicalField::compiString;
-            return &logicalField::compString;
-        case ft_logical:
-        case ft_uinteger:
-        case ft_autoIncUnsigned:
-        case ft_date:
-        case ft_time:
-        case ft_timestamp:
-        case ft_myyear:
-        case ft_mydate:
-        case ft_mytime_num_cmp:
-        case ft_mydatetime_num_cmp:
-        case ft_mytimestamp_num_cmp:
-        {
-            if (opr & 8)
-            {
-                switch (len)
-                {
-                case 1:
-                    return &logicalField::compBitAnd<char>;
-                case 2:
-                    return &logicalField::compBitAnd<short>;
-                case 3:
-                    return &logicalField::compBitAnd24;
-                case 4:
-                    return &logicalField::compBitAnd<int>;
-                case 8:
-                    return &logicalField::compBitAnd<__int64>;
-                }
-            }else
-            {
-                switch (len)
-                {
-                case 1:
-                    return &logicalField::compNumber<unsigned char>;
-                case 2:
-                    return &logicalField::compNumber<unsigned short>;
-                case 3:
-                    return &logicalField::compNumberU24;
-                case 4:
-                    return &logicalField::compNumber<unsigned int>;
-                case 8:
-                    return &logicalField::compNumber<unsigned __int64>;
-                }
-            }
-        }
-        case ft_mytime:
-        case ft_mydatetime:
-        case ft_mytimestamp:
-            return &logicalField::compMem;
-        case ft_float:
-            switch (len)
-            {
-            case 4:
-                return &logicalField::compNumber<float>;
-            case 8:
-                return &logicalField::compNumber<double>;
-            }
-        case ft_mywchar:
-        case ft_wstring:
-        case ft_wzstring:
-            if (logType & CMPLOGICAL_CASEINSENSITIVE)
-                return &logicalField::compiWString;
-            if ((type == ft_wstring) || (type == ft_mywchar))
-                return &logicalField::compMem;
-            return &logicalField::compWString;
-        case ft_lstring:
-        case ft_myvarchar:
-        case ft_myvarbinary:
-            if (sizeByte == 1)
-                return &logicalField::compVarString<unsigned char>;
-            return &logicalField::compVarString<unsigned short>;
-        case ft_mywvarchar:
-        case ft_mywvarbinary:
-            if (sizeByte == 1)
-                return &logicalField::compWVarString<unsigned char>;
-            return &logicalField::compWVarString<unsigned short>;
-        case ft_mytext:
-        case ft_myblob:
-        case ft_myjson:      //TODO Json binary comp
-        case ft_mygeometry:  //TODO geometory binary comp
-            return &logicalField::compBlob;
-        }
-        return NULL;
-    }
-#endif
     extResultDef* resultDef() const
     {
         if ((opr == 0) || (opr == FILTER_COMBINE_PREPARE))
@@ -635,9 +284,7 @@ class fieldAdapter
     const logicalField* m_fd;
     fieldAdapter* m_next;
     bool (*m_isMatchFunc)(int);
-#ifdef COMP_USE_FUNCTION_POINTER
-    compFunc m_compFunc;
-#endif
+    comp1Func m_compFunc;
     unsigned short m_placeHolderNum;
     unsigned char m_keySeg;
     char m_judgeType;
@@ -654,16 +301,7 @@ class fieldAdapter
     mutable bool m_mysqlnull : 1;
     mutable bool m_nulllog : 1;
     };
-#ifdef COMP_USE_FUNCTION_POINTER
-    void setWstringCompLen()
-    {
-        if ((m_compFunc == &logicalField::compiWString) ||
-            (m_compFunc == &logicalField::compWString))
-            const_cast<logicalField*>(m_fd)->len /= sizeof(char16_t);
-    }
-#else
-    void setWstringCompLen(){};
-#endif
+
 public:
     friend class fields;
 
@@ -713,9 +351,6 @@ public:
                 if (fd->type == ft_mytimestamp) const_cast<logicalField*>(fd)->type = ft_mytimestamp_num_cmp; 
             }
         }
-
-
-
         // Cacheing compare isNull ?
         eCompType log = (eCompType)(m_fd->logType & 0xf);
         m_nulllog = ((log == eIsNull) || (log == eIsNotNull));
@@ -724,10 +359,7 @@ public:
         m_placeHolderNum = fd->opr & FILTER_COMBINE_PREPARE;// temporary marking
         if (m_placeHolderNum)
             const_cast<logicalField*>(fd)->opr &= ~FILTER_COMBINE_PREPARE;
-#ifdef COMP_USE_FUNCTION_POINTER
-        m_compFunc = fd->getCompFunc(m_sizeBytes, fd->opr);
-        setWstringCompLen();
-#endif
+        m_compFunc = fd->getCompFunc(m_sizeBytes);
         if (fd->opr == 2)
         {
             m_judgeType = 0;
@@ -768,7 +400,7 @@ public:
     {
         const_cast<logicalField*>(p)->opr = opr;
         m_fd = p;
-        setWstringCompLen();
+        m_compFunc = m_fd->getCompFunc(m_sizeBytes);
     }
 
     inline int checkNomore(bool typeNext, eCompType log) const
@@ -819,11 +451,7 @@ public:
             const char* l = record + m_fd->pos;
             if (m_fd->logType & CMPLOGICAL_FIELD)
                 r = record + m_fd->offset;
-    #ifdef COMP_USE_SWITCHCASE
-            v = m_fd->comp(record, m_sizeBytes);
-    #else // COMP_USE_FUNCTION_POINTER
-            v = (m_fd->*m_compFunc)(l, r, m_sizeBytes);
-    #endif
+            v = (m_compFunc)(l, r, m_fd->len);
             ret = m_isMatchFunc(v);
         }
             

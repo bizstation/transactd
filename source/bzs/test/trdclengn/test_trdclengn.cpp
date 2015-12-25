@@ -5019,12 +5019,12 @@ void testFilterOfServer(database* db)
     }
 }
 
-void doTestMatchBy(int num, recordset& rs, recordsetQuery& rq, int compSize, const _TCHAR* msg)
+void doTestMatchBy(int num, recordset& rs, recordsetQuery& rq, int compSize, const char* msg)
 {
     recordset* rss = rs.clone();
     rss->matchBy(rq);
     BOOST_CHECK_MESSAGE(compSize == (int)rss->size(),
-                num << msg << _T(" rss->size = ") << rss->size());
+                num << " " << msg << " rss->size = " << rss->size());
     rss->release();
 }
 
@@ -5045,45 +5045,45 @@ void testFilterOfMatchBy(database* db)
             int n = 3;
             if (atu.table()->tableDef()->fieldDefs[i+1].isUsePadChar())
                 n += 1;
-            doTestMatchBy(i, rs, rq, n, _T(" = "));
+            doTestMatchBy(i, rs, rq, n, " = ");
             rq.reset().when(fdf_names[i], _T("=i"), _T(""));
-            doTestMatchBy(i, rs, rq, n, _T(" =i "));
+            doTestMatchBy(i, rs, rq, n, " =i ");
 
             
             // wildcard
             rq.reset().when(fdf_names[i], _T("="), _T("09*"));
-            doTestMatchBy(i, rs, rq, 5, _T(" = 09*"));
+            doTestMatchBy(i, rs, rq, 5, " = 09*");
             rq.reset().when(fdf_names[i], _T("=i"), _T("09*"));
-            doTestMatchBy(i, rs, rq, 5, _T(" =i 09*"));
+            doTestMatchBy(i, rs, rq, 5, " =i 09*");
             
             // match complate
             rq.reset().when(fdf_names[i], _T("="), _T("070"));
-            doTestMatchBy(i, rs, rq, 1, _T(" = 070"));
+            doTestMatchBy(i, rs, rq, 1, " = 070");
             rq.reset().when(fdf_names[i], _T("=i"), _T("070"));
-            doTestMatchBy(i, rs, rq, 1, _T(" =i 070"));
+            doTestMatchBy(i, rs, rq, 1, " =i 070");
 
             // match complate
             rq.reset().when(fdf_names[i], _T("<"), _T("09"));
-            doTestMatchBy(i, rs, rq, 7, _T(" < 09"));
+            doTestMatchBy(i, rs, rq, 7, " < 09");
 
             rq.reset().when(fdf_names[i], _T("<i"), _T("09"));
-            doTestMatchBy(i, rs, rq, 7, _T(" <i 09"));
+            doTestMatchBy(i, rs, rq, 7, " <i 09");
 
             // ascii
             rq.reset().when(fdf_names[i], _T("="), _T("a*"));
-            doTestMatchBy(i, rs, rq, 1, _T(" = a*"));
+            doTestMatchBy(i, rs, rq, 1, " = a*");
 
             rq.reset().when(fdf_names[i], _T("=i"), _T("a*"));
-            doTestMatchBy(i, rs, rq, 3, _T(" =i a*"));
+            doTestMatchBy(i, rs, rq, 3, " =i a*");
 
             rq.reset().when(fdf_names[i], _T("=i"), _T("A*"));
-            doTestMatchBy(i, rs, rq, 3, _T(" =i A*"));
+            doTestMatchBy(i, rs, rq, 3, " =i A*");
 
             rq.reset().when(fdf_names[i], _T("="), _T("AA0*"));
-            doTestMatchBy(i, rs, rq, 0, _T(" = AA0*"));
+            doTestMatchBy(i, rs, rq, 0, " = AA0*");
 
             rq.reset().when(fdf_names[i], _T("=i"), _T("AA0*"));
-            doTestMatchBy(i, rs, rq, 1, _T(" =i Aa0*"));
+            doTestMatchBy(i, rs, rq, 1, " =i Aa0*");
 
             
             BOOST_CHECK_MESSAGE(FILTER_RECORDS == rs.size(), " rs.size() = " << rs.size());

@@ -508,8 +508,8 @@ interface IDatabase : IDispatch
   [id(0x000000E6)]
   HRESULT _stdcall ConvertTable([in] short TableIndex, [in, defaultvalue(-1)] VARIANT_BOOL Turbo, [in, defaultvalue("")] BSTR OwnerName);
   [id(0x000000E7)]
-  HRESULT _stdcall CopyTableData([in] ITable* Dest, [in] ITable* Src, [in] VARIANT_BOOL Turbo,
-	  [in, defaultvalue(-1)] short KeyNum, [in, defaultvalue(-1)] int MaxSkip, [out, retval] short* Value);
+  HRESULT _stdcall CopyTableData([in] ITable* Dest, [in] ITable* Src, [in] VARIANT_BOOL Turbo
+	  , [in, defaultvalue(-1)] short KeyNum, [in, defaultvalue(-1)] int MaxSkip, [out, retval] short* Value);
   [id(0x000000E8)]
   HRESULT _stdcall CreateTable([in] VARIANT FileNumOrSql, [in, defaultvalue("")] BSTR Uri, [out, retval] VARIANT_BOOL* Value);
   [id(0x000000E9)]
@@ -811,7 +811,7 @@ interface ITable : IDispatch
   [id(0x000000E8)]
   HRESULT _stdcall GetFVint([in] VARIANT Index, [out, retval] int* Value);
   [id(0x000000E9)]
-  HRESULT _stdcall GetFV64([in] VARIANT Index, [out, retval] __int64* Value);
+  HRESULT _stdcall GetFV64([in] VARIANT Index, [out, retval] hyper* Value);
   [id(0x000000EA)]
   HRESULT _stdcall GetFVdbl([in] VARIANT Index, [out, retval] double* Value);
   [id(0x000000EB)]
@@ -1008,7 +1008,7 @@ interface IFieldDef : IDispatch
   [propget, id(0x0000001D)]
   HRESULT _stdcall Nullable([out, retval] VARIANT_BOOL* Value);
   [id(0x0000001E)]
-  HRESULT _stdcall SetNullable([in] VARIANT_BOOL Value, [in , defaultvalue(1)] VARIANT_BOOL DefaultNull);
+  HRESULT _stdcall SetNullable([in] VARIANT_BOOL Value, [in , defaultvalue(-1)] VARIANT_BOOL DefaultNull);
   [propget, id(0x00000020)]
   HRESULT _stdcall TimeStampOnUpdate([out, retval] VARIANT_BOOL* Value);
   [propput, id(0x00000020)]
@@ -1449,9 +1449,6 @@ interface IWritableRecord : IRecord
   HRESULT _stdcall Read([in, optional]VARIANT KeysetAlradyOrBookmark, [out, retval] VARIANT_BOOL* retVal);
   [id(0x0000016)]
   HRESULT _stdcall Clear();
-  [propget,id(0x0000017)]
-  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
-  
 };
 
 [
@@ -1528,12 +1525,6 @@ interface IFieldDefs : IDispatch
   HRESULT _stdcall FieldDef([in] VARIANT Name, [out, retval] IFieldDef** retVal);
   [propget, id(0x0000003)]
   HRESULT _stdcall Size([out, retval] short* retVal);
-  /*[id(0x0000004)]
-  HRESULT _stdcall AddAllFileds([in] ITableDef* Def);
-  [id(0x0000005)]
-  HRESULT _stdcall AddSelectedFields([in] ITable* Table);
-  */
-
 };
 
 
@@ -1650,9 +1641,9 @@ interface IPooledDbManager : IDispatch
   [id(0x0000000F)]
   HRESULT _stdcall Db([out, retval]IDatabase** retVal);
   [propput, id(0x00000010)]
-  HRESULT _stdcall Option([in] __int64 Value);
+  HRESULT _stdcall Option([in] hyper Value);
   [propget, id(0x00000010)]
-  HRESULT _stdcall Option([out, retval] __int64* Value);
+  HRESULT _stdcall Option([out, retval] hyper* Value);
   [propget, id(0x00000011)]
   HRESULT _stdcall Mode([out, retval] short* Value);
 };

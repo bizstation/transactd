@@ -218,7 +218,14 @@ function checkEqual(a, b, on)
 {
 	if (a !== b)
 	{
+		try
+		{
 		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
+		}
+		catch(e)
+		{
+			WScript.Echo("check object error on " + on);	
+		}
 		resultCode = 1;
 	}
 }
@@ -231,6 +238,12 @@ function checkNotEqual(a, b, on)
 		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
 		resultCode = 1;
 	}
+}
+/*--------------------------------------------------------------------------------*/
+function isX86()
+{
+	var shell = new ActiveXObject('WScript.Shell');
+	return (shell.Environment('Process').Item('PROCESSOR_ARCHITECTURE') === 'x86');
 }
 /*--------------------------------------------------------------------------------*/
 function createRecordsetQuery()
@@ -509,6 +522,7 @@ function todayStr()
 function test(atu, ate, db)
 {
 	WScript.Echo(" -- Start Test -- ");
+	var x86 = isX86();
 	
 	db.AutoSchemaUseNullkey = true;
 	checkEqual(db.AutoSchemaUseNullkey, true, "AutoSchemaUseNullkey");
@@ -622,7 +636,8 @@ function test(atu, ate, db)
 	var last = ate.Index(0).Join(rs, q.Select("comment").Optimize(hasOneJoin), "id").Reverse().First();
 	checkEqual(rs.Count, 10, "ate rs.Count = 10 ");
 	checkEqual(last.Field("id").i(), 10, "last.id = 10 ");
-	checkEqual(last.Field("id").i64(), 10, "last.id = 10 ");
+	if (!x86)
+		checkEqual(last.Field("id").i64(), 10, "last.id = 10 ");
 	checkEqual(last.Field("id").d(), 10, "last.id = 10 ");
 	checkEqual(rec(4).IsNull(), false, "Join NULL1");
 	rec(4).setValue(null);
@@ -752,12 +767,24 @@ function test(atu, ate, db)
 	checkEqual(tb.GetFVNull(3), false, "tb.Null");
 	tb.SetFVNull("tel", true);
 	checkEqual(tb.GetFVNull("tel"), true, "tb.Null");
-	tb.SetFV("id", 10)
-	checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
-	tb.SetFV("id", "10")
-	checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
-	tb.SetFV("id", 10.00);
-	checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
+	if (x86)
+	{
+		tb.SetFV("id", 10);
+		checkEqual(tb.GetFVint("id"), 10, "tb.SetFV");
+		tb.SetFV("id", "10");
+		checkEqual(tb.GetFVint("id"), 10, "tb.SetFV");
+		tb.SetFV("id", 10.00);
+		checkEqual(tb.GetFVint("id"), 10, "tb.SetFV");
+	}
+	else
+	{
+		tb.SetFV("id", 10);
+		checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
+		tb.SetFV("id", "10");
+		checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
+		tb.SetFV("id", 10.00);
+		checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
+	}
 	checkEqual(tb.GetFVstr("id"), "10", "tb.SetFV");
 
 	// timestamp format

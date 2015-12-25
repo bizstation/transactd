@@ -24,6 +24,113 @@
 #include <string.h>
 
 
+__int64 changeEndian2(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[1];
+    l[1] = r[0];
+    return ret;
+}
+
+__int64 changeEndian3(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[2];
+    l[1] = r[1];
+    l[2] = r[0];
+    return ret;
+}
+
+__int64 changeEndian4(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[3];
+    l[1] = r[2];
+    l[2] = r[1];
+    l[3] = r[0];
+    return ret;
+}
+
+__int64 changeEndian5(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[4];
+    l[1] = r[3];
+    l[2] = r[2];
+    l[3] = r[1];
+    l[4] = r[0];
+    return ret;
+}
+
+__int64 changeEndian6(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[5];
+    l[1] = r[4];
+    l[2] = r[3];
+    l[3] = r[2];
+    l[4] = r[1];
+    l[5] = r[0];
+    return ret;
+}
+
+__int64 changeEndian7(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[6];
+    l[1] = r[5];
+    l[2] = r[4];
+    l[3] = r[3];
+    l[4] = r[2];
+    l[5] = r[1];
+    l[6] = r[0];
+    return ret;
+}
+
+__int64 changeEndian8(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[7];
+    l[1] = r[6];
+    l[2] = r[5];
+    l[3] = r[4];
+    l[4] = r[3];
+    l[5] = r[2];
+    l[6] = r[1];
+    l[7] = r[0];
+    return ret;
+}
+
+__int64 changeEndian(__int64 v, int len)
+{
+    switch(len)
+    {
+    case 1: return v;
+    case 2: return changeEndian2(v);
+    case 3: return changeEndian3(v);
+    case 4: return changeEndian4(v);
+    case 5: return changeEndian5(v);
+    case 6: return changeEndian6(v);
+    case 7: return changeEndian7(v);
+    case 8: return changeEndian8(v);
+    }
+    return v;
+}
+
 inline int int24toInt(const char* p)
 {
     return ((*((int*)p) & 0xFFFFFF) << 8) / 0x100;
@@ -32,6 +139,13 @@ inline int int24toInt(const char* p)
 inline unsigned int int24toUint(const char* p)
 {
     return *((unsigned int*)p) & 0xFFFFFF;
+}
+
+inline __int64 myBittoInt64(const char* p, int len)
+{
+    __int64 v = 0;
+    memcpy(&v, p, len);
+    return changeEndian8(v);
 }
 
 inline void storeInt24(int v, char* p)
@@ -92,30 +206,30 @@ template <class T> inline int compare(T l, T r)
 }
 
 template <class T>
-inline int compareVartype(const char* l, const char* r, bool bin, char logType)
+inline int compareVartype(const char* l, const char* r, bool bin, bool all, bool incase)
 {
     int llen = (*(T*)l);
     int rlen = (*(T*)r);
     int tmp = std::min<int>(llen, rlen);
-    if (logType & CMPLOGICAL_CASEINSENSITIVE)
+    if (incase)
         tmp = _strnicmp(l + sizeof(T), r + sizeof(T), tmp);
     else if (bin)
         tmp = memcmp(l + sizeof(T), r + sizeof(T), tmp);
     else
         tmp = strncmp(l + sizeof(T), r + sizeof(T), tmp);
 
-    if (logType & CMPLOGICAL_VAR_COMP_ALL)
+    if (all)
         return (tmp == 0) ? compare<int>(llen, rlen) : tmp; // match complete
     return (tmp == 0 && (llen < rlen)) ? -1 : tmp; // match a part
 }
 
 template <class T>
-inline int compareWvartype(const char* l, const char* r, bool bin, char logType)
+inline int compareWvartype(const char* l, const char* r, bool bin, bool all, bool incase)
 {
     int llen = (*(T*)l) / sizeof(char16_t);
     int rlen = (*(T*)r) / sizeof(char16_t);
     int tmp = std::min<int>(llen, rlen);
-    if (logType & CMPLOGICAL_CASEINSENSITIVE)
+    if (incase)
         tmp = wcsnicmp16((char16_t*)(l + sizeof(T)), (char16_t*)(r + sizeof(T)),
                          tmp);
     else if (bin)
@@ -124,12 +238,12 @@ inline int compareWvartype(const char* l, const char* r, bool bin, char logType)
     else
         tmp = wcsncmp16((char16_t*)(l + sizeof(T)), (char16_t*)(r + sizeof(T)),
                         tmp);
-    if (logType & CMPLOGICAL_VAR_COMP_ALL)
+    if (all)
         return (tmp == 0) ? compare<int>(llen, rlen) : tmp; // match complete
     return (tmp == 0 && (llen < rlen)) ? -1 : tmp; // match a part
 }
 
-inline int compareBlobType(const char* l, const char* r, bool bin, char logType,
+inline int compareBlobType(const char* l, const char* r, bool bin, bool all, bool incase,
                            int sizeByte)
 {
     int llen = 0;
@@ -139,14 +253,14 @@ inline int compareBlobType(const char* l, const char* r, bool bin, char logType,
     int tmp = std::min<int>(llen, rlen);
     const char* lptr = *((const char**)(l + sizeByte));
     const char* rptr = r + sizeByte;
-    if (logType & CMPLOGICAL_CASEINSENSITIVE)
+    if (incase)
         tmp = _strnicmp(lptr, rptr, tmp);
     else if (bin)
         tmp = memcmp(lptr, rptr, tmp);
     else
         tmp = strncmp(lptr, rptr, tmp);
 
-    if (logType & CMPLOGICAL_VAR_COMP_ALL)
+    if (all)
         return (tmp == 0) ? compare<int>(llen, rlen) : tmp;
     return (tmp == 0 && (llen < rlen)) ? -1 : tmp;
 }
@@ -182,6 +296,455 @@ inline int nullComp(bool lnull, bool rnull, char log)
     else if (rnull)
         return (log == eIsNull) ? 1 : 0;
     return 2;
+}
+
+template <class T>
+int compBitAnd(const char* l, const char* r, int len)
+{
+    return bitMask<T>(l, r);
+}
+
+int compBitAnd24(const char* l, const char* r, int len)
+{
+    int lv = int24toInt(l);
+    int rv = int24toInt(r);
+    return bitMask<int>((const char*)&lv, (const char*)&rv);
+}
+
+int compBitAnd64(const char* l, const char* r, int len) 
+{
+    __int64 lv = 0;
+    __int64 rv = 0;
+    memcpy(&lv, l, len);
+    memcpy(&rv, r, len);
+    return bitMask<__int64>((const char*)&lv, (const char*)&rv);
+}
+
+template <class T>
+int compNumber(const char* l, const char* r, int len)
+{
+    return compare<T>(l, r);
+}
+
+int compNumber24(const char* l, const char* r, int len)
+{
+    return compareInt24(l, r);
+}
+
+int compNumberU24(const char* l, const char* r, int len)
+{
+    return compareUint24(l, r);
+}
+
+int compMem(const char* l, const char* r, int len)
+{
+    return memcmp(l, r, len);
+}
+
+int compString(const char* l, const char* r, int len) 
+{
+    return strncmp(l, r, len);
+}
+
+int compiString(const char* l, const char* r, int len) 
+{
+    return _strnicmp(l, r, len);
+}
+
+int compWString(const char* l, const char* r, int len) 
+{
+    return wcsncmp16((char16_t*)l, (char16_t*)r, len/2);
+}
+
+int compiWString(const char* l, const char* r, int len)
+{
+    return wcsnicmp16((char16_t*)l, (char16_t*)r, len/2);
+}
+
+#define T_BIN true
+#define T_STR false
+
+#define T_INCASE true
+#define T_CASE false
+
+#define T_CMP_ALL true
+#define T_CMP_PART false
+
+
+template <class T, bool all>
+int compVarString(const char* l, const char* r, int len)
+{
+    return compareVartype<T>(l, r, T_STR, all, T_CASE);
+}
+
+template <class T, bool all>
+int compVarString_bin(const char* l, const char* r, int len)
+{
+    return compareVartype<T>(l, r, T_BIN, all, T_CASE);
+}
+template <class T, bool all>
+int compVarString_i(const char* l, const char* r, int len)
+{
+    return compareVartype<T>(l, r, T_STR, all, T_INCASE);
+}
+
+template <class T, bool all>
+int compVarString_bin_i(const char* l, const char* r, int len)
+{
+    return compareVartype<T>(l, r, T_BIN, all, T_INCASE);
+}
+
+template <class T, bool all>
+int compWVarString(const char* l, const char* r, int len)
+{
+    return compareWvartype<T>(l, r, T_STR, all, T_CASE);
+}
+
+template <class T, bool all>
+int compWVarString_bin(const char* l, const char* r, int len) 
+{
+    return compareWvartype<T>(l, r, T_BIN, all, T_CASE);
+}
+
+template <class T, bool all>
+int compWVarString_i(const char* l, const char* r, int len)
+{
+    return compareWvartype<T>(l, r, T_STR, all, T_INCASE);
+}
+
+template <class T, bool all>
+int compWVarString_bin_i(const char* l, const char* r, int len) 
+{
+    return compareWvartype<T>(l, r, T_BIN, all, T_INCASE);
+}
+
+template <int sizeByte, bool all>
+int compBlob(const char* l, const char* r, int len)
+{
+    return compareBlobType(l, r, T_STR, all, T_CASE, sizeByte);
+}
+
+template <int sizeByte, bool all>
+int compBlob_bin(const char* l, const char* r, int len)
+{
+    return compareBlobType(l, r, T_BIN, all, T_CASE, sizeByte);
+}
+
+template <int sizeByte, bool all>
+int compBlob_i(const char* l, const char* r, int len)
+{
+    return compareBlobType(l, r, T_STR, all, T_INCASE, sizeByte);
+}
+
+template <int sizeByte, bool all>
+int compBlob_bin_i(const char* l, const char* r, int len)
+{
+    return compareBlobType(l, r, T_BIN, all, T_INCASE, sizeByte);
+}
+
+inline bool isCompAll(char logType) { return (logType & CMPLOGICAL_VAR_COMP_ALL) != 0;}
+inline bool isCompIncase(char logType) { return (logType & CMPLOGICAL_CASEINSENSITIVE) != 0;}
+
+typedef int (*comp1Func)(const char* l, const char* r,int len);
+
+comp1Func getCompFunc(uchar_td type, ushort_td len, /*char opr,*/  char logType, int sizeByte)
+{
+    bool compAll = (logType & CMPLOGICAL_VAR_COMP_ALL) != 0;
+    bool incase = (logType & CMPLOGICAL_CASEINSENSITIVE) != 0;
+    switch (type)
+    {
+    case ft_integer:
+    case ft_autoinc:
+    case ft_currency:
+    {
+        if (logType & (char)eBitAnd)
+        {
+            switch (len)
+            {
+            case 1:
+                return &compBitAnd<char>;
+            case 2:
+                return &compBitAnd<short>;
+            case 3:
+                return &compBitAnd24;
+            case 4:
+                return &compBitAnd<int>;
+            case 8:
+                return &compBitAnd<__int64>;
+            }
+        }else
+        {
+            switch (len)
+            {
+            case 1:
+                return &compNumber<char>;
+            case 2:
+                return &compNumber<short>;
+            case 3:
+                return &compNumber24;
+            case 4:
+                return &compNumber<int>;
+            case 8:
+                return &compNumber<__int64>;
+            }
+        }
+    }
+    case ft_mychar:
+    case ft_string:
+        if (incase)
+            return &compiString;
+        return &compMem;
+    case ft_zstring:
+    case ft_note:
+        if (incase)
+            return &compiString;
+        return &compString;
+    case ft_logical:
+    case ft_uinteger:
+    case ft_autoIncUnsigned:
+    case ft_date:
+    case ft_time:
+    case ft_timestamp:
+    case ft_myyear:
+    case ft_mydate:
+    case ft_mytime_num_cmp:
+    case ft_mydatetime_num_cmp:
+    case ft_mytimestamp_num_cmp:
+    case ft_set:
+    case ft_enum:
+    {
+        if (logType & (char)eBitAnd)
+        {
+            switch (len)
+            {
+            case 1:
+                return &compBitAnd<char>;
+            case 2:
+                return &compBitAnd<short>;
+            case 3:
+                return &compBitAnd24;
+            case 4:
+                return &compBitAnd<int>;
+            case 8:
+                return &compBitAnd<__int64>;
+            }
+        }else
+        {
+            switch (len)
+            {
+            case 1:
+                return &compNumber<unsigned char>;
+            case 2:
+                return &compNumber<unsigned short>;
+            case 3:
+                return &compNumberU24;
+            case 4:
+                return &compNumber<unsigned int>;
+            case 8:
+                return &compNumber<unsigned __int64>;
+            }
+        }
+    }
+    case ft_bit:
+        if (logType & (char)eBitAnd)
+            return &compBitAnd64;
+        return &compMem;
+    case ft_mytime:
+    case ft_mydatetime:
+    case ft_mytimestamp:
+        return &compMem;
+    case ft_float:
+        switch (len)
+        {
+        case 4:
+            return &compNumber<float>;
+        case 8:
+            return &compNumber<double>;
+        }
+    case ft_mywchar:
+    case ft_wstring:
+    case ft_wzstring:
+        if (incase)
+            return &compiWString;
+        if ((type == ft_wstring) || (type == ft_mywchar))
+            return &compMem;
+        return &compWString;
+    case ft_lstring:
+    case ft_myvarchar:
+        if (sizeByte == 1)
+        {
+            if (incase)
+            {
+                if (compAll)
+                    return &compVarString_i<unsigned char, T_CMP_ALL>;
+                return &compVarString_i<unsigned char, T_CMP_PART>;
+            }else
+            {
+                if (compAll)
+                    return &compVarString<unsigned char, T_CMP_ALL>;
+                return &compVarString<unsigned char, T_CMP_PART>;
+            }
+        }
+        if (incase)
+        {
+            if (compAll)
+                return &compVarString_i<unsigned short, T_CMP_ALL>;
+            return &compVarString_i<unsigned short, T_CMP_PART>;
+        }
+        if (compAll)
+            return &compVarString<unsigned short, T_CMP_ALL>;
+        return &compVarString<unsigned short, T_CMP_PART>;
+    case ft_myvarbinary:
+        if (sizeByte == 1)
+        {
+            if (incase)
+            {
+                if (compAll)
+                    return &compVarString_bin_i<unsigned char, T_CMP_ALL>;
+                return &compVarString_bin_i<unsigned char, T_CMP_PART>;
+            }
+            if (compAll)
+                return &compVarString_bin<unsigned char, T_CMP_ALL>;
+            return &compVarString_bin<unsigned char, T_CMP_PART>;
+        }
+        if (incase)
+        {
+            if (compAll)
+                return &compVarString_bin_i<unsigned short, T_CMP_ALL>;
+            return &compVarString_bin_i<unsigned short, T_CMP_PART>;
+        }
+        if (compAll)
+            return &compVarString_bin<unsigned short, T_CMP_ALL>;
+        return &compVarString_bin<unsigned short, T_CMP_PART>;
+    case ft_mywvarchar:
+        if (sizeByte == 1)
+        {
+            if (incase)
+            {
+                if (compAll)
+                    return &compWVarString_i<unsigned char, T_CMP_ALL>;
+                return &compWVarString_i<unsigned char, T_CMP_PART>;
+            }
+            if (compAll)
+                return &compWVarString<unsigned char, T_CMP_ALL>;
+            return &compWVarString<unsigned char, T_CMP_PART>;
+        }
+        if (incase)
+        {
+            if (compAll)
+                return &compWVarString_i<unsigned short, T_CMP_ALL>;
+            return &compWVarString_i<unsigned short, T_CMP_PART>;
+        }
+        if (compAll)
+            return &compWVarString<unsigned short, T_CMP_ALL>;
+        return &compWVarString<unsigned short, T_CMP_PART>;
+    case ft_mywvarbinary:
+        if (sizeByte == 1)
+        {
+            if (incase)
+            {
+                if (compAll)
+                    return &compWVarString_bin_i<unsigned char, T_CMP_ALL>;
+                return &compWVarString_bin_i<unsigned char, T_CMP_PART>;
+            }
+            if (compAll)
+                return &compWVarString_bin<unsigned char, T_CMP_ALL>;
+            return &compWVarString_bin<unsigned char, T_CMP_PART>;
+        }
+        if (incase)
+        {
+            if (compAll)
+                return &compWVarString_bin_i<unsigned short, T_CMP_ALL>;
+            return &compWVarString_bin_i<unsigned short, T_CMP_PART>;
+        }
+        if (compAll)
+            return &compWVarString_bin<unsigned short, T_CMP_ALL>;
+        return &compWVarString_bin<unsigned short, T_CMP_PART>;
+    case ft_mytext:
+    {
+        if (compAll)
+        {
+            if (incase)
+            {
+                switch(sizeByte)
+                {
+                case 1:return &compBlob_i<1, T_CMP_ALL>;
+                case 2:return &compBlob_i<2, T_CMP_ALL>;
+                case 3:return &compBlob_i<3, T_CMP_ALL>;
+                case 4:return &compBlob_i<4, T_CMP_ALL>;
+                }
+            }
+            switch(sizeByte)
+            {
+            case 1:return &compBlob<1, T_CMP_ALL>;
+            case 2:return &compBlob<2, T_CMP_ALL>;
+            case 3:return &compBlob<3, T_CMP_ALL>;
+            case 4:return &compBlob<4, T_CMP_ALL>;
+            }
+        }
+        if (incase)
+        {
+            switch(sizeByte)
+            {
+            case 1:return &compBlob_i<1, T_CMP_PART>;
+            case 2:return &compBlob_i<2, T_CMP_PART>;
+            case 3:return &compBlob_i<3, T_CMP_PART>;
+            case 4:return &compBlob_i<4, T_CMP_PART>;
+            }
+        }
+        switch(sizeByte)
+        {
+        case 1:return &compBlob<1, T_CMP_PART>;
+        case 2:return &compBlob<2, T_CMP_PART>;
+        case 3:return &compBlob<3, T_CMP_PART>;
+        case 4:return &compBlob<4, T_CMP_PART>;
+        }
+    }
+    case ft_myblob:
+    case ft_myjson:      //TODO Json binary comp
+    case ft_mygeometry:  //TODO geometory binary comp
+    {
+        if (compAll)
+        {
+            if (incase)
+            {
+                switch(sizeByte)
+                {
+                case 1:return &compBlob_bin_i<1, T_CMP_ALL>;
+                case 2:return &compBlob_bin_i<2, T_CMP_ALL>;
+                case 3:return &compBlob_bin_i<3, T_CMP_ALL>;
+                case 4:return &compBlob_bin_i<4, T_CMP_ALL>;
+                }
+            }
+            switch(sizeByte)
+            {
+            case 1:return &compBlob_bin<1, T_CMP_ALL>;
+            case 2:return &compBlob_bin<2, T_CMP_ALL>;
+            case 3:return &compBlob_bin<3, T_CMP_ALL>;
+            case 4:return &compBlob_bin<4, T_CMP_ALL>;
+            }
+        }
+        if (incase)
+        {
+            switch(sizeByte)
+            {
+            case 1:return &compBlob_bin_i<1, T_CMP_PART>;
+            case 2:return &compBlob_bin_i<2, T_CMP_PART>;
+            case 3:return &compBlob_bin_i<3, T_CMP_PART>;
+            case 4:return &compBlob_bin_i<4, T_CMP_PART>;
+            }
+        }
+        switch(sizeByte)
+        {
+        case 1:return &compBlob_bin<1, T_CMP_PART>;
+        case 2:return &compBlob_bin<2, T_CMP_PART>;
+        case 3:return &compBlob_bin<3, T_CMP_PART>;
+        case 4:return &compBlob_bin<4, T_CMP_PART>;
+        }
+        assert(0);
+    }
+    }
+    return NULL;
 }
 
 #endif

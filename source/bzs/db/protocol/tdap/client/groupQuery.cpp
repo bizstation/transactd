@@ -231,7 +231,7 @@ struct recordsetQueryImple
     row_ptr row;
     struct compItem
     {
-        compFieldFunc compFunc;
+        comp1Func compFunc;
         short index;
         unsigned char compType;
         char combine;
@@ -333,11 +333,8 @@ void recordsetQuery::init(const fielddefs* fdinfo)
             itm.compType |= CMPLOGICAL_VAR_COMP_ALL;
         fielddef& fdd = const_cast<fielddef&>(m_imple->compFields[index]);
         fdd.len = m_imple->compFields[index].compDataLen((const uchar_td*)fd.ptr(), part);
-        itm.compFunc = fd.getCompFunc(itm.compType);
-
-        // When use wide string functions, len convert to wide char num. 
-        if ((itm.compFunc == compiWString) || (itm.compFunc == compWString))
-            fdd.len /= sizeof(char16_t);
+        itm.compFunc = getCompFunc(fdd.type, fdd.len, itm.compType, 
+                fdd.varLenBytes() + fdd.blobLenBytes());
 
         if (i + 3 < (int)tokns.size())
         {
@@ -378,24 +375,6 @@ bool recordsetQuery::isMatch(int ret, unsigned char compType) const
     return false;
 }
 
-int nullComp(const field& l, char log)
-{
-    bool rnull = (log == eIsNull) || (log == eIsNotNull);
-    bool lnull = l.isNull();
-            
-    if (lnull || rnull)
-    {
-        if (lnull && (log == eIsNull))
-            return 1;
-        else if (lnull && (log == eIsNotNull))
-            return -1;
-        else if (log == eIsNull)
-            return -1;
-        return 1; //(log == (char)eIsNotNull)
-    }
-    return 0;
-}
-
 bool recordsetQuery::match(const row_ptr row) const
 {
     for (int i = 0; i < (int)m_imple->compItems.size(); ++i)
@@ -409,7 +388,7 @@ bool recordsetQuery::match(const row_ptr row) const
         if (nullJudge < 2)
             ret = (nullJudge == 0) ? true : false;
         else
-            ret = isMatch(itm.compFunc(f, (*m_imple->row)[i], itm.compType), itm.compType);
+            ret = isMatch(itm.compFunc((const char*)f.ptr(), (const char*)((*m_imple->row)[i].ptr()), (*m_imple->row)[i].len()), itm.compType);
 
         if (itm.combine == eCend)
             return ret;
