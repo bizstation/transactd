@@ -1541,6 +1541,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             {
                 nw->asyncWrite(NULL, td->varSize + sizeof(unsigned short), netsvc::server::netWriter::curSeekOnly);
                 nw->writeHeadar(P_MASK_DATA | P_MASK_DATALEN, (short_td)errorCode(db->stat()));
+                unsigned int* totalLen = (unsigned int*)nw->ptr();
+                nw->datalen = *totalLen = nw->resultLen();
             }
             else
                 nw->writeHeadar(0, STATUS_BUFFERTOOSMALL);
