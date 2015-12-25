@@ -379,6 +379,9 @@ __int64 field::readValue64() const
         case 2:
             ret = *((short*)ptr);
             break;
+        case 3:
+            ret = int24toInt((const char*)ptr);
+            break;
         case 4:
             ret = *((int*)ptr);
             break;
@@ -403,6 +406,9 @@ __int64 field::readValue64() const
             break;
         case 2:
             ret = *((unsigned short*)ptr);
+            break;
+        case 3:
+            ret = int24toUint((const char*)ptr);
             break;
         case 4:
             ret = *((unsigned int*)ptr);
@@ -457,6 +463,9 @@ void field::storeValue64(__int64 value)
         case 2:
             *((short*)ptr) = (short)value;
             break;
+        case 3:
+            storeInt24((int)value, (char*) ptr);
+            break;
         case 4:
             *((int*)ptr) = (int)value;
             break;
@@ -483,6 +492,9 @@ void field::storeValue64(__int64 value)
             break;
         case 2:
             *((unsigned short*)ptr) = (unsigned short)value;
+            break;
+        case 3:
+            storeUint24((int)value, (char*) ptr);
             break;
         case 4:
             *((unsigned int*)ptr) = (unsigned int)value;
@@ -1120,7 +1132,7 @@ void field::setFVA(const char* data)
     case ft_currency:
         value = (__int64)(atof(data) * 10000);
         break;
-    default: // ft_lvar ft_geometry
+    default: // ft_lvar ft_mygeometry ft_myjson
         return;
     }
     storeValue64(value);
@@ -1197,7 +1209,7 @@ void field::setFVW(const wchar_t* data)
     case ft_currency:
         value = (__int64)(_wtof(data) * 10000);
         break;
-    default: // ft_lvar ft_geometry
+    default: // ft_lvar ft_mygeometry ft_myjson
         return;
     }
     storeValue64(value);
@@ -1272,7 +1284,7 @@ void field::setFV(__int64 data)
         storeValueStrW(buf);
         break;
     }
-    default: //lvar ft_geometry
+    default: // ft_lvar ft_mygeometry ft_myjson
         break;
     }
 }
@@ -1347,7 +1359,7 @@ void field::setFV(double data)
         storeValueStrW(buf);
         break;
     }
-    default:// lvar ft_geometry
+    default: // ft_lvar ft_mygeometry ft_myjson
         break;
     }
 }
@@ -1411,24 +1423,6 @@ void field::setFV(const void* data, uint_td size)
 //---------------------------------------------------------------------------
 //                       getFV functions
 //---------------------------------------------------------------------------
-template <class T> 
-T* trimZero(T* p, size_t len)
-{
-    while (1)
-    {
-        if (p[len] == '0')
-            p[len] = 0x00;
-        else if (p[len] == '.')
-        {
-            p[len] = 0x00;
-            break;
-        }
-        else
-            break;
-        len--;
-    }
-    return p;
-}
 
 const char* field::getFVAstr() const
 {
@@ -1447,14 +1441,14 @@ const char* field::getFVAstr() const
         _i64toa_s(readValue64(), p, 50, 10);
         return p;
     CASE_UINT
-        sprintf_s(p, 50, "%llu", (unsigned __int64)readValue64());
+        _ui64toa_s(readValue64(), p, 50, 10);
         return p;
     case ft_myyear:
     {
         __int64 v = readValue64();
         if (v) v += 1900;
         _i64toa_s(v , p, 50, 10);
-        break;
+        return p;
     }
     case ft_logical:
     {
@@ -1509,7 +1503,7 @@ const char* field::getFVAstr() const
         break;
 
     }
-    sprintf(p, "%.*f", m_fd->decimals, v);
+    sprintf(p, "%.*lf", m_fd->decimals, v);
     return p;
 }
 
@@ -1531,7 +1525,7 @@ const wchar_t* field::getFVWstr() const
         _i64tow_s(readValue64(), p, 50, 10);
         return p;
     CASE_UINT
-        swprintf_s(p, 50, L"%llu", (unsigned __int64)readValue64());
+        _ui64tow_s(readValue64(), p, 50, 10);
         return p;
     case ft_myyear:
     {
@@ -1592,7 +1586,7 @@ const wchar_t* field::getFVWstr() const
         v = readValueDecimal();
         break;
     }
-    swprintf_s(p, 50, L"%.*f",m_fd->decimals, v);
+    swprintf_s(p, 50, L"%.*lf",m_fd->decimals, v);
 
     return p;
 }
@@ -1612,11 +1606,22 @@ double field::getFVdbl() const
     CASE_DECIMAL
         return (double)readValueDecimal();
     CASE_INT
+        return  (double)readValue64();
+    case ft_myyear:
+    {
+         __int64 v = readValue64();
+        if (v) v += 1900;
+        return (double)(v);
+    }
+    case ft_currency:
+        return ((double)readValue64() / (double)10000);
+    CASE_UINT
     case ft_mydate:
     case ft_time:
     case ft_date:
     case ft_datetime:
     case ft_logical:
+        return  (double)((unsigned __int64)readValue64());
     case ft_mytime:
     case ft_mydatetime:
     case ft_mytimestamp:
@@ -1626,35 +1631,27 @@ double field::getFVdbl() const
         if (m_fd->type ==  ft_mytime)
         {
             if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                return (double)getInternalValue<maTime>(m_fd->decimals, bigendian, v);
+                return (double)((unsigned __int64)getInternalValue<maTime>(m_fd->decimals, bigendian, v));
             else
-                return (double)getInternalValue<myTime>(m_fd->decimals, bigendian, v);
+                return (double)((unsigned __int64)getInternalValue<myTime>(m_fd->decimals, bigendian, v));
         }
         else if (m_fd->type ==  ft_mydatetime)
         {
             if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                return (double)getInternalValue<maDateTime>(m_fd->decimals, bigendian, v);
+                return (double)((unsigned __int64)getInternalValue<maDateTime>(m_fd->decimals, bigendian, v));
             else
-                return (double)getInternalValue<myDateTime>(m_fd->decimals, bigendian, v);
+                return (double)((unsigned __int64)getInternalValue<myDateTime>(m_fd->decimals, bigendian, v));
         }
         else if (m_fd->type ==  ft_mytimestamp)
-            return (double)getInternalValue<myTimeStamp>(m_fd->decimals, bigendian, v);
+            return (double)((unsigned __int64)getInternalValue<myTimeStamp>(m_fd->decimals, bigendian, v));
+        assert(0);
     }
-    CASE_UINT
-        return (double)(unsigned __int64)readValue64();
-    case ft_myyear:
-    {
-         __int64 v = readValue64();
-        if (v) v += 1900;
-        return (double)(v);
-    }
-    case ft_currency:
-        return ((double)readValue64() / (double)10000);
+
     CASE_TEXTA
         return atof(readValueStrA());
     CASE_TEXTW
         return _wtof(readValueStrW());
-    default: //ft_geometry:
+    default: // ft_lvar ft_mygeometry ft_myjson
          break;
     }
     return ret;
@@ -1672,6 +1669,7 @@ __int64 field::getFV64() const
     case ft_date:
     case ft_datetime:
     case ft_logical:
+    case ft_currency:
         return readValue64();
     case ft_myyear:
     {
@@ -1701,6 +1699,7 @@ __int64 field::getFV64() const
         }
         else if (m_fd->type ==  ft_mytimestamp)
             return getInternalValue<myTimeStamp>(m_fd->decimals, bigendian, v);
+        assert(0);
     }
     CASE_FLOAT
     case ft_timestamp:
@@ -1713,7 +1712,7 @@ __int64 field::getFV64() const
         return _atoi64(readValueStrA());
     CASE_TEXTW
         return _wtoi64(readValueStrW());
-    default: //ft_geometry:
+    default: // ft_lvar ft_mygeometry ft_myjson
          break;
     }
     return 0;
@@ -1894,7 +1893,6 @@ compFieldFunc field::getCompFunc(char logType) const
     {
         if (logType & eBitAnd)
         {
-
             switch (m_fd->len)
             {
             case 1:
@@ -2002,6 +2000,8 @@ compFieldFunc field::getCompFunc(char logType) const
             return &compNumber<float>;
         case 8:
             return &compNumber<double>;
+        case 10:
+            return &compNumber<long double>;
         }
     case ft_mywchar:
     case ft_wstring:
@@ -2024,8 +2024,8 @@ compFieldFunc field::getCompFunc(char logType) const
         return &compWVarString<unsigned short>;
     case ft_mytext:
     case ft_myblob:
-    case ft_myjson:
-    case ft_mygeometry:
+    case ft_myjson:      //TODO Json binary comp
+    case ft_mygeometry:  //TODO geometory binary comp
         return &compBlob;
     }
     return NULL;

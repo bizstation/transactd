@@ -648,7 +648,7 @@ public:
         return *this;
     }
 
-    inline void appendField(const _TCHAR* name, int type, short len)
+    inline void appendField(const _TCHAR* name, int type, short len, uchar_td decimals=0)
     {
         assert(m_fds->size());
         
@@ -657,6 +657,7 @@ public:
         fd.len = len;
         fd.pos = 0;
         fd.type = type;
+        fd.decimals = decimals;
         fd.setName(name);
         if (blobLenBytes(fd))
             THROW_BZS_ERROR_WITH_MSG(_T("Can not append Blob or Text field."));

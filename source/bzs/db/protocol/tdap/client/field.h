@@ -351,11 +351,11 @@ public:
     inline void* getBin(uint_td& size) const { return getFVbin(size); };
 
     int comp(const field& r, char logType = CMPLOGICAL_VAR_COMP_ALL) const;
-
-
 };
 
+
 /** @cond INTERNAL */
+#ifndef SWIG
 /* For template tget type num by type.*/
 
 inline int getFieldType(int)
@@ -425,6 +425,7 @@ inline const _TCHAR* fieldValue(const field& fd, const _TCHAR*)
 
 DLLLIB const fielddef& dummyFd();
 
+#endif // ndef SWIG
 /** @endcond */
 
 } // namespace client

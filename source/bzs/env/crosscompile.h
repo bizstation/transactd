@@ -134,6 +134,8 @@ typedef unsigned __int32 char32_t; // 32bit
 #define _i64tot_s(A, B, C, D) _i64tot(A, B, D)
 #define _i64tow_s(A, B, C, D) _i64tow(A, B, D)
 #define _i64toa_s(A, B, C, D) _i64toa(A, B, D)
+#define _ui64toa_s(A, B, C, D) _ui64toa(A, B, D)
+#define _ui64tow_s(A, B, C, D) _ui64tow(A, B, D)
 #define _strlwr_s(A, B) strlwr(A)
 #ifndef _tcslwr_s
 #define _tcslwr_s(A, B) _tcslwr(A)

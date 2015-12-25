@@ -1692,14 +1692,14 @@ void* table::fieldPtr(short index) const
 {
     if (!checkIndex(index))
         return NULL;
-    return m_impl->fields[index].ptr();
+    return m_impl->fields.getFieldNoCheck(index).ptr();
 }
 
 void table::setFVA(short index, const char* data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFVA(data);
+    m_impl->fields.getFieldNoCheck(index).setFVA(data);
 }
 
 #ifdef _WIN32
@@ -1708,7 +1708,7 @@ void table::setFVW(short index, const wchar_t* data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFVW(data);
+    m_impl->fields.getFieldNoCheck(index).setFVW(data);
 }
 
 void table::setFVW(const _TCHAR* FieldName, const wchar_t* data)
@@ -1716,7 +1716,7 @@ void table::setFVW(const _TCHAR* FieldName, const wchar_t* data)
     short index = fieldNumByName(FieldName);
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFVW(data);
+    m_impl->fields.getFieldNoCheck(index).setFVW(data);
 }
 
 #endif //_WIN32
@@ -1733,14 +1733,14 @@ void table::setFV(short index, int data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFV(data);
+    m_impl->fields.getFieldNoCheck(index).setFV(data);
 }
 
 void table::setFV(short index, double data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFV(data);
+    m_impl->fields.getFieldNoCheck(index).setFV(data);
 }
 
 void table::setFV(short index, short data)
@@ -1768,7 +1768,7 @@ int table::getFVlng(short index) const
 {
     if (!checkIndex(index))
         return 0;
-    return m_impl->fields[index].getFVlng();
+    return m_impl->fields.getFieldNoCheck(index).getFVlng();
 }
 
 float table::getFVflt(short index) const
@@ -1780,7 +1780,7 @@ double table::getFVdbl(short index) const
 {
     if (!checkIndex(index))
         return 0;
-    return m_impl->fields[index].getFVdbl();
+    return m_impl->fields.getFieldNoCheck(index).getFVdbl();
 }
 
 unsigned char table::getFVbyt(short index) const
@@ -1794,7 +1794,7 @@ const wchar_t* table::getFVWstr(short index) const
 {
     if (!checkIndex(index))
         return NULL;
-    return m_impl->fields[index].getFVWstr();
+    return m_impl->fields.getFieldNoCheck(index).getFVWstr();
 }
 
 const wchar_t* table::getFVWstr(const _TCHAR* FieldName) const
@@ -1808,7 +1808,7 @@ const char* table::getFVAstr(short index) const
 {
     if (index == -1)
         return NULL;
-    return m_impl->fields[index].getFVAstr();
+    return m_impl->fields.getFieldNoCheck(index).getFVAstr();
 }
 
 int table::getFVint(short index) const
@@ -1910,14 +1910,14 @@ __int64 table::getFV64(short index) const
 {
     if (!checkIndex(index))
         return 0;
-    return m_impl->fields[index].getFV64();
+    return m_impl->fields.getFieldNoCheck(index).getFV64();
 }
 
 void table::setFV(short index, __int64 data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFV(data);
+    m_impl->fields.getFieldNoCheck(index).setFV(data);
 }
 
 void table::setFV(const _TCHAR* FieldName, const void* data, uint_td size)
@@ -1930,7 +1930,7 @@ bool table::getFVNull(short index) const
 {
     if (!checkIndex(index))
         return false;
-    return m_impl->fields[index].isNull();
+    return m_impl->fields.getFieldNoCheck(index).isNull();
 }
 
 bool table::getFVNull(const _TCHAR* FieldName) const
@@ -1943,7 +1943,7 @@ void table::setFVNull(short index, bool v)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setNull(v);
+    m_impl->fields.getFieldNoCheck(index).setNull(v);
 }
 
 void table::setFVNull(const _TCHAR* FieldName, bool v)
@@ -1959,7 +1959,7 @@ void table::setFV(short index, const void* data, uint_td size)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFV(data, size);
+    m_impl->fields.getFieldNoCheck(index).setFV(data, size);
 }
 
 void* table::getFVbin(const _TCHAR* FieldName, uint_td& size) const
@@ -1975,7 +1975,7 @@ void* table::getFVbin(short index, uint_td& size) const
 {
     if (!checkIndex(index))
         return NULL;
-    return m_impl->fields[index].getFVbin(size);
+    return m_impl->fields.getFieldNoCheck(index).getFVbin(size);
 }
 
 bool table::checkIndex(short index) const

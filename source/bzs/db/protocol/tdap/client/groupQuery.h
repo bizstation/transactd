@@ -193,16 +193,17 @@ protected:
     class groupFuncBaseImple* m_imple;
 
     void init(const fielddefs* fdinfo);
-    unsigned char* stringResult(int groupIndex) const;
+    unsigned char* stringResult(int index) const;
     uchar_td resultType() const;
     ushort_td resultLen() const;
     void operator()(const row_ptr& row, int index, bool insert);
 
     virtual void initResultVariable(int index);
-    virtual void doCalc(const row_ptr& row, int groupIndex);
+    virtual void doCalcEachkey(const field& fd, int index);
+    virtual void doCalc(const row_ptr& row, int index);
     virtual void doReset();
     virtual void doInit(const fielddefs* fdinfo);
-    virtual numeric_type numericResult(int groupIndex) const;
+    virtual numeric_type numericResult(int index) const;
     bool insertFlag() const ;
     void clearInsertFlag();
 
@@ -220,7 +221,9 @@ public:
     int resultKey() const;
     void reset();
     bool isNull(int groupIndex) const;
+    uchar_td decimals() const;
     virtual groupFuncBase* clone() = 0;
+    
 };
 
 class recordsetImple;
@@ -255,10 +258,10 @@ public:
 class DLLLIB sum : public groupFuncBase
 {
 protected:
-    void doCalc(const row_ptr& row, int index);
+    virtual void doCalcEachkey(const field& fd, int index);
     groupFuncBase* clone();
 public:
-    sum() {}
+    sum() : groupFuncBase() {}
     sum(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static sum* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
@@ -268,10 +271,11 @@ class DLLLIB count : public groupFuncBase
 {
 protected:
     groupFuncBase* clone();
+    void doCalcEachkey(const field& fd, int index);
     void doCalc(const row_ptr& row, int index);
     void initResultVariable(int index);
 public:
-    count(){}
+    count(): groupFuncBase(){}
     count(const _TCHAR* resultName);
     count(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static count* create(const _TCHAR* resultName);
@@ -279,44 +283,44 @@ public:
                        const _TCHAR* resultName = NULL);
 };
 
-class DLLLIB avg : public sum
+class DLLLIB avg : public groupFuncBase
 {
     void initResultVariable(int index);
-    void doCalc(const row_ptr& row, int index);
+    void doCalcEachkey(const field& fd, int index);
     numeric_type numericResult(int index) const;
     groupFuncBase* clone();
-
 public:
-    avg() {}
+    avg();
     avg(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static avg* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
+
 };
 
 #undef min
-class DLLLIB min : public sum
+class DLLLIB min : public groupFuncBase
 {
 protected:
-    void doCalc(const row_ptr& row, int index);
+    void doCalcEachkey(const field& fd, int index);
     groupFuncBase* clone();
     min& operator=(const min& r);
 
 public:
-    min() {}
+    min() : groupFuncBase() {}
     min(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static min* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
 
 #undef max
-class DLLLIB max : public sum
+class DLLLIB max : public groupFuncBase
 {
-    void doCalc(const row_ptr& row, int index);
+    void doCalcEachkey(const field& fd, int index);
     groupFuncBase* clone();
     max& operator=(const max& r);
 
 public:
-    max() {}
+    max() : groupFuncBase(){}
     max(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static max* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
@@ -329,8 +333,9 @@ protected:
     void doCalc(const row_ptr& row, int index);
     void doInit(const fielddefs* fdinfo);
     groupFuncBase* clone();
+    void storeValue(const row_ptr& row, int index);
 public:
-    last() {}
+    last() : groupFuncBase(){}
     last(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static last* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
@@ -345,7 +350,7 @@ protected:
     groupFuncBase* clone();
     first& operator=(const first& r);
 public:
-    first() {}
+    first() : last() {}
     first(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static first* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);

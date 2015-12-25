@@ -23,10 +23,31 @@
 #include <algorithm>
 #include <string.h>
 
+
+inline int int24toInt(const char* p)
+{
+    return ((*((int*)p) & 0xFFFFFF) << 8) / 0x100;
+}
+
+inline unsigned int int24toUint(const char* p)
+{
+    return *((unsigned int*)p) & 0xFFFFFF;
+}
+
+inline void storeInt24(int v, char* p)
+{
+    memcpy(p, &v, 3);
+}
+
+inline void storeUint24(unsigned int v, char* p)
+{
+    memcpy(p, &v, 3);
+}
+
 inline int compareUint24(const char* l, const char* r)
 {
-    unsigned int lv = *((unsigned int*)l) & 0xFFFFFF;
-    unsigned int rv = *((unsigned int*)r) & 0xFFFFFF;
+    unsigned int lv = int24toUint(l);
+    unsigned int rv = int24toUint(r);;
     if (lv < rv)
         return -1;
     if (lv > rv)
@@ -36,8 +57,8 @@ inline int compareUint24(const char* l, const char* r)
 
 inline int compareInt24(const char* l, const char* r)
 {
-    int lv = ((*((int*)l) & 0xFFFFFF) << 8) / 0x100;
-    int rv = ((*((int*)r) & 0xFFFFFF) << 8) / 0x100;
+    int lv = int24toInt(l);
+    int rv = int24toInt(r);
 
     if (lv < rv)
         return -1;

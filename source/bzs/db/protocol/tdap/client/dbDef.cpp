@@ -1225,7 +1225,7 @@ bool dbdef::validLen(uchar_td FieldType, uint_td FieldLen)
     {
         if ((FieldType == ft_integer) || (FieldType == ft_uinteger))
         {
-            if ((FieldLen == 1) || (FieldLen == 2) || (FieldLen == 4) ||
+            if ((FieldLen == 1) || (FieldLen == 2) || (FieldLen == 3) || (FieldLen == 4) ||
                 (FieldLen == 8))
                 return true;
             else
@@ -1233,7 +1233,7 @@ bool dbdef::validLen(uchar_td FieldType, uint_td FieldLen)
         }
         else if ((FieldType == ft_autoinc) || (FieldType == ft_autoIncUnsigned))
         {
-            if ((FieldLen == 2) || (FieldLen == 4) || (FieldLen == 8))
+            if ((FieldLen == 2) || (FieldLen == 3) || (FieldLen == 4) || (FieldLen == 8))
                 return true;
             else
                 return false;

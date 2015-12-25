@@ -47,17 +47,17 @@ short createTestTable1(database* db)
         short fieldnum = 0;
         fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
 
-        int lens[4] = {1, 2, 4, 8};
+        int lens[5] = {1, 2, 3, 4, 8};
         _TCHAR buf[50];
         //int
-        for (int i=1; i < 5 ; ++i)
+        for (int i=1; i < 6 ; ++i)
         {
             _stprintf_s(buf, _T("int_%d_byte"), lens[i-1]);
             fd = insertField(def, tableid, ++fieldnum, buf, ft_integer, lens[i-1]);
         }
         
         //unsigned int
-        for (int i=1; i < 5 ; ++i)
+        for (int i=1; i < 6 ; ++i)
         {
             
             _stprintf_s(buf, _T("uint_%d_byte"), lens[i-1]);
@@ -74,6 +74,16 @@ short createTestTable1(database* db)
         //mydate
         fd = insertField(def, tableid, ++fieldnum, _T("date"), ft_mydate, 3);
  
+        //double
+        fd = insertField(def, tableid, ++fieldnum, _T("double4.0"), ft_float, 4);
+        fd = insertField(def, tableid, ++fieldnum, _T("double4.4"), ft_float, 4);
+        fd->decimals = 4;
+
+        fd = insertField(def, tableid, ++fieldnum, _T("double8.0"), ft_float, 8);
+        fd = insertField(def, tableid, ++fieldnum, _T("double8.5"), ft_float, 8);
+        fd->decimals = 15;
+
+
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
         kd->segments[0].flags.bit8 = 1; // extended key type
@@ -295,17 +305,28 @@ void testModeMacro()
     BOOST_CHECK_MESSAGE(IS_MODE_GETSCHEMA(mode) == false, "IS_MODE_GETSCHEMA false");
 }
 #pragma warning(disable : 4996)
+
+#define MINT_MIN -8388608
+#define UMINT_MAX 16777215
+#define FLOAT_V1 -1234.0f
+#define FLOAT_V2 1234.1234f
+
+#define DOUBLE_V1 (double)-12345678.0f
+#define DOUBLE_V2 (double)0.1234567890123f
+
 void checkIntValue(table_ptr tb)
 {
     short fieldnum = 0;
     // read by int64
     BOOST_CHECK(tb->getFVbyt(++fieldnum) == SCHAR_MAX);
     BOOST_CHECK(tb->getFVsht(++fieldnum) == SHRT_MAX);
+    BOOST_CHECK(tb->getFVint(++fieldnum) == MINT_MIN);
     BOOST_CHECK(tb->getFVint(++fieldnum) == INT_MAX);
     BOOST_CHECK(tb->getFV64(++fieldnum) == LLONG_MAX);
 
     BOOST_CHECK(tb->getFVsht(++fieldnum) == UCHAR_MAX - 1);
     BOOST_CHECK(tb->getFVint(++fieldnum) == USHRT_MAX - 1);
+    BOOST_CHECK(tb->getFVint(++fieldnum) == UMINT_MAX - 1);
     BOOST_CHECK(tb->getFV64(++fieldnum) == UINT_MAX - 1);
     BOOST_CHECK((unsigned __int64)tb->getFV64(++fieldnum) == ULLONG_MAX - 1); 
 
@@ -316,26 +337,60 @@ void checkIntValue(table_ptr tb)
     d = TEST_DATE;
     BOOST_CHECK(tb->getFVint(++fieldnum) == d.i); //date
 
+    BOOST_CHECK(tb->getFVint(++fieldnum) == FLOAT_V1); //double
+    ++fieldnum;//BOOST_CHECK(tb->getFVint(++fieldnum) == FLOAT_V2);
+    BOOST_CHECK(tb->getFV64(++fieldnum) == DOUBLE_V1); 
+    ++fieldnum;//BOOST_CHECK(tb->getFV64(++fieldnum) == DOUBLE_V2);
+
+
     // read by double
     BOOST_CHECK(tb->getFVdbl(1) == SCHAR_MAX);
-    BOOST_CHECK(tb->getFVdbl(4) == LLONG_MAX);
-    BOOST_CHECK(tb->getFVdbl(5) == UCHAR_MAX - 1);
-    BOOST_CHECK(tb->getFVdbl(8) == ULLONG_MAX - 1);
-    BOOST_CHECK(tb->getFVdbl(9) == 2000);
-    BOOST_CHECK(tb->getFVdbl(10) == 254);  //logi1
-    BOOST_CHECK(tb->getFVdbl(11) == 65000); //logi2
-    BOOST_CHECK(tb->getFVdbl(12) == (double)d.i); //date
+    BOOST_CHECK(tb->getFVdbl(3) == MINT_MIN);
+    double v = tb->getFVdbl(5);
+    BOOST_CHECK(v == ((double)LLONG_MAX));
+    BOOST_CHECK(tb->getFVdbl(6) == UCHAR_MAX - 1);
+    BOOST_CHECK(tb->getFVdbl(8) == UMINT_MAX - 1);
+    fieldnum = 9;
+    v = tb->getFVdbl(++fieldnum);
+    BOOST_CHECK(v == ((double)ULLONG_MAX - 1));
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == 2000);
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == 254);  //logi1
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == 65000); //logi2
+    BOOST_CHECK(tb->getFVdbl(++fieldnum) == (double)d.i); //date
+    
+    float f = tb->getFVflt(++fieldnum);
+    BOOST_CHECK(f == FLOAT_V1); //double
+    f = tb->getFVflt(++fieldnum);
+    BOOST_CHECK(f == FLOAT_V2);
+    v = tb->getFVdbl(++fieldnum);
+    BOOST_CHECK(v == DOUBLE_V1); 
+    v = tb->getFVdbl(++fieldnum);
+    BOOST_CHECK(v == DOUBLE_V2);
+
 
     //read by string
     _TCHAR buf[50];
     BOOST_CHECK(_tcscmp(tb->getFVstr(1), _ltot(SCHAR_MAX, buf, 10)) == 0);
-    BOOST_CHECK(_tcscmp(tb->getFVstr(4), _i64tot(LLONG_MAX, buf, 10)) == 0);
-    BOOST_CHECK(_tcscmp(tb->getFVstr(5), _ultot(UCHAR_MAX - 1, buf, 10)) == 0);
-    BOOST_CHECK(_tcscmp(tb->getFVstr(8), _ui64tot(ULLONG_MAX - 1, buf, 10)) == 0);
-    BOOST_CHECK(_tcscmp(tb->getFVstr(9), _ltot(2000, buf, 10)) == 0);
-    BOOST_CHECK(_tcscmp(tb->getFVstr(10), _ltot(254, buf, 10)) == 0);   //logi1
-    BOOST_CHECK(_tcscmp(tb->getFVstr(11), _ltot(65000, buf, 10)) == 0); //logi2
-    BOOST_CHECK(_tcscmp(tb->getFVstr(12), TEST_DATE) == 0);             //date
+    BOOST_CHECK(_tcscmp(tb->getFVstr(3), _ltot(MINT_MIN, buf, 10)) == 0);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(5), _i64tot(LLONG_MAX, buf, 10)) == 0);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(6), _ultot(UCHAR_MAX - 1, buf, 10)) == 0);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(8), _ultot(UMINT_MAX - 1, buf, 10)) == 0);
+    fieldnum = 9;
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ui64tot(ULLONG_MAX - 1, buf, 10)) == 0);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ltot(2000, buf, 10)) == 0);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ltot(254, buf, 10)) == 0);   //logi1
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ltot(65000, buf, 10)) == 0); //logi2
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), TEST_DATE) == 0);             //date
+
+    _TCHAR tmp[64];
+    _stprintf(tmp, _T("%0.0f"), FLOAT_V1);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //double
+    _stprintf(tmp, _T("%0.4f"), FLOAT_V2);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //double
+    _stprintf(tmp, _T("%0.0f"), DOUBLE_V1);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //double
+    _stprintf(tmp, _T("%0.15lf"), DOUBLE_V2);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), tmp) == 0); //double
 
 }
 
@@ -344,23 +399,31 @@ void testStoreInt(database* db)
     short tableid = 1;
     short fieldnum = 0;
     table_ptr tb = openTable(db, tableid, TD_OPEN_NORMAL);
+
+    //int64 store
     tb->clearBuffer();
     tb->setFV(_T("id"), 1);
 
     tb->setFV(++fieldnum, (short)SCHAR_MAX);
     tb->setFV(++fieldnum, (short)SHRT_MAX);
+    tb->setFV(++fieldnum, (int)MINT_MIN);
     tb->setFV(++fieldnum, (int)INT_MAX);
     tb->setFV(++fieldnum, (__int64)LLONG_MAX);
 
-    tb->setFV(++fieldnum, (short)UCHAR_MAX - 1);
-    tb->setFV(++fieldnum, (int)USHRT_MAX - 1);
-    tb->setFV(++fieldnum, (__int64)UINT_MAX - 1);
-    tb->setFV(++fieldnum, (__int64)ULLONG_MAX - 1); 
+    tb->setFV(++fieldnum, (short)(UCHAR_MAX - 1));
+    tb->setFV(++fieldnum, (int)(USHRT_MAX - 1));
+    tb->setFV(++fieldnum, (int)(UMINT_MAX - 1));
+    tb->setFV(++fieldnum, (__int64)(UINT_MAX - 1));
+    tb->setFV(++fieldnum, (__int64)(ULLONG_MAX - 1)); 
     tb->setFV(++fieldnum, 2000); 
     tb->setFV(++fieldnum, 254);   //logi1
     tb->setFV(++fieldnum, (int)65000); //logi2
     myDate d; d = TEST_DATE;
     tb->setFV(++fieldnum, d.i);
+    tb->setFV(++fieldnum, (int)FLOAT_V1);
+    tb->setFV(++fieldnum, FLOAT_V2);
+    tb->setFV(++fieldnum, (__int64)DOUBLE_V1);
+    tb->setFV(++fieldnum, DOUBLE_V2);
     tb->insert();
 
     tb->clearBuffer();
@@ -369,23 +432,37 @@ void testStoreInt(database* db)
     BOOST_CHECK(tb->stat() == 0);
     checkIntValue(tb);
 
+    // char* or wchar* store
     tb->clearBuffer();
     tb->setFV(_T("id"), 2);
     _TCHAR buf[50];
     fieldnum = 0;
     tb->setFV(++fieldnum, _ltot(SCHAR_MAX, buf, 10));
     tb->setFV(++fieldnum, _ltot(SHRT_MAX, buf, 10));
+    tb->setFV(++fieldnum, _ltot(MINT_MIN, buf, 10));
     tb->setFV(++fieldnum, _ltot(INT_MAX, buf, 10));
     tb->setFV(++fieldnum, _i64tot(LLONG_MAX, buf, 10));
 
     tb->setFV(++fieldnum, _ltot(UCHAR_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ltot(USHRT_MAX - 1, buf, 10));
+    tb->setFV(++fieldnum, _ltot(UMINT_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ultot(UINT_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ui64tot(ULLONG_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ltot(2000, buf, 10));
     tb->setFV(++fieldnum, _ltot(254, buf, 10));  //logi1
     tb->setFV(++fieldnum, _ltot(65000, buf, 10)); //logi2
-    tb->setFV(++fieldnum, TEST_DATE); 
+    tb->setFV(++fieldnum, TEST_DATE);
+
+    _stprintf(buf, _T("%.0f"), FLOAT_V1);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.4f"), FLOAT_V2);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.0lf"), DOUBLE_V1);
+    tb->setFV(++fieldnum, buf);
+    _stprintf(buf, _T("%.20lf"), DOUBLE_V2);
+    tb->setFV(++fieldnum, buf);
+   
+
     tb->insert();
         
     tb->clearBuffer();
@@ -394,8 +471,45 @@ void testStoreInt(database* db)
     BOOST_CHECK(tb->stat() == 0);
     checkIntValue(tb);
 
+    // double store
     tb->clearBuffer();
-    tb->setFV(_T("id"), 2);
+    tb->setFV(_T("id"), 3);
+    fieldnum = 0;
+    tb->setFV(++fieldnum, (double)SCHAR_MAX);
+    tb->setFV(++fieldnum, (double)SHRT_MAX);
+    tb->setFV(++fieldnum, (double)MINT_MIN);
+    tb->setFV(++fieldnum, (double)INT_MAX);
+    // LLONG_MAX double store not support, because happen truncation
+    //tb->setFV(++fieldnum, (double)LLONG_MAX);
+    tb->setFV(++fieldnum, (__int64)LLONG_MAX);
+    tb->setFV(++fieldnum, (double)(UCHAR_MAX - 1));
+    tb->setFV(++fieldnum, (double)(USHRT_MAX - 1));
+    tb->setFV(++fieldnum, (double)(UMINT_MAX - 1));
+    tb->setFV(++fieldnum, (double)(UINT_MAX - 1));
+    //tb->setFV(++fieldnum, (double)(ULLONG_MAX - 1));
+    tb->setFV(++fieldnum, (__int64)(ULLONG_MAX - 1));
+    tb->setFV(++fieldnum, (double)2000); 
+    tb->setFV(++fieldnum, (double)254);   //logi1
+    tb->setFV(++fieldnum, (double)65000); //logi2
+    tb->setFV(++fieldnum, (double)d.i);
+    tb->setFV(++fieldnum, FLOAT_V1);
+    tb->setFV(++fieldnum, FLOAT_V2);
+    tb->setFV(++fieldnum, DOUBLE_V1);
+    tb->setFV(++fieldnum, DOUBLE_V2);
+
+
+    tb->insert();
+        
+    tb->clearBuffer();
+    tb->setFV(_T("id"), 3);
+    tb->seek();
+    BOOST_CHECK(tb->stat() == 0);
+    checkIntValue(tb);
+
+
+    // cleanup id 3
+    tb->clearBuffer();
+    tb->setFV(_T("id"), 3);
     tb->update();
     BOOST_CHECK(tb->stat() == 0);
 
@@ -406,30 +520,43 @@ void testStoreInt(database* db)
     values += "\t2\t";
     values += ltoa(SHRT_MAX, buf2, 10);
     values += "\t3\t";
-    values += ltoa(INT_MAX, buf2, 10);
+    values += ltoa(MINT_MIN, buf2, 10);
     values += "\t4\t";
-    values += _i64toa(LLONG_MAX, buf2, 10);
+    values += ltoa(INT_MAX, buf2, 10);
     values += "\t5\t";
-    values += ltoa(UCHAR_MAX - 1, buf2, 10);
+    values += _i64toa(LLONG_MAX, buf2, 10);
     values += "\t6\t";
-    values += ltoa(USHRT_MAX - 1, buf2, 10);
+    values += ltoa(UCHAR_MAX - 1, buf2, 10);
     values += "\t7\t";
-    values += _i64toa(UINT_MAX - 1, buf2, 10);
+    values += ltoa(USHRT_MAX - 1, buf2, 10);
     values += "\t8\t";
-    values += _ui64toa(ULLONG_MAX - 1, buf2, 10);
+    values += ltoa(UMINT_MAX - 1, buf2, 10);
     values += "\t9\t";
-    values += ltoa(2000, buf2, 10);
+    values += _i64toa(UINT_MAX - 1, buf2, 10);
     values += "\t10\t";
-    values += ltoa(254, buf2, 10);
+    values += _ui64toa(ULLONG_MAX - 1, buf2, 10);
     values += "\t11\t";
-    values += ltoa(65000, buf2, 10);
+    values += ltoa(2000, buf2, 10);
     values += "\t12\t";
+    values += ltoa(254, buf2, 10);
+    values += "\t13\t";
+    values += ltoa(65000, buf2, 10);
+    values += "\t14\t";
     values += TEST_DATEA;
+    values += "\t15\t";sprintf_s(buf2, 50, "%.0f", FLOAT_V1);
+    values += buf2;
+    values += "\t16\t";sprintf_s(buf2, 50, "%.4f", FLOAT_V2);
+    values += buf2;
+    values += "\t17\t";sprintf_s(buf2, 50, "%.0lf", DOUBLE_V1);
+    values += buf2;
+    values += "\t18\t";sprintf_s(buf2, 50, "%.20lf", DOUBLE_V2);
+    values += buf2;
+    
 
     tb->test_store(values.c_str());
     BOOST_CHECK(tb->stat() == 0);
     tb->clearBuffer();
-    tb->setFV(_T("id"), 2);
+    tb->setFV(_T("id"), 3);
     tb->seek();
     BOOST_CHECK(tb->stat() == 0);
     checkIntValue(tb);

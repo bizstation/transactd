@@ -93,6 +93,8 @@ const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
             return "TINYINT";
         if (size == 2)
             return "SMALLINT";
+        if (size == 3)
+            return "MEDIUMINT";
         if (size == 4)
             return "INT";
         if (size == 8)
@@ -106,6 +108,8 @@ const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
             return "TINYINT UNSIGNED";
         if (size == 2)
             return "SMALLINT UNSIGNED";
+        if (size == 3)
+            return "MEDIUMINT UNSIGNED";
         if (size == 4)
             return "INT UNSIGNED";
         if (size == 8)
