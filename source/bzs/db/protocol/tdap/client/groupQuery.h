@@ -203,7 +203,8 @@ protected:
     virtual void doReset();
     virtual void doInit(const fielddefs* fdinfo);
     virtual numeric_type numericResult(int groupIndex) const;
-    
+    bool insertFlag() const ;
+    void clearInsertFlag();
 
 public:
     groupFuncBase();
@@ -293,7 +294,6 @@ public:
 class DLLLIB min : public sum
 {
 protected:
-    bool m_flag;
     void doCalc(const row_ptr& row, int index);
     groupFuncBase* clone();
     min& operator=(const min& r);
@@ -308,7 +308,6 @@ public:
 #undef max
 class DLLLIB max : public sum
 {
-    bool m_flag;
     void doCalc(const row_ptr& row, int index);
     groupFuncBase* clone();
     max& operator=(const max& r);
@@ -337,7 +336,6 @@ public:
 
 class DLLLIB first : public last
 {
-    bool m_readed;
 protected:
     void doCalc(const row_ptr& row, int index);
     void doReset();

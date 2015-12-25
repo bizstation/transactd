@@ -577,6 +577,7 @@ private:
     std::vector<int> m_targetKeys;
     ushort_td m_resultLen;
     uchar_td m_resultType;
+    bool m_insertFlag;
     void clearStrings()
     {
         std::vector<unsigned char*>::iterator it = m_strings.begin();
@@ -688,6 +689,7 @@ public:
         if (index)
             it += index;
         m_nulls.insert(it, true);
+        m_insertFlag = true;
     }
 
     inline void init(const fielddefs* fdinfo)
@@ -732,6 +734,10 @@ public:
     }
 
     inline int targetKeys() const { return (int)m_targetKeys.size(); }
+
+    bool insertFlag() const { return m_insertFlag; }
+    void clearFlag() { m_insertFlag = false;}
+
 };
 
 // ---------------------------------------------------------------------------
@@ -787,6 +793,16 @@ void groupFuncBase::doInit(const fielddefs* fdinfo)
 void groupFuncBase::init(const fielddefs* fdinfo)
 {
     doInit(fdinfo);
+}
+
+bool groupFuncBase::insertFlag() const
+{
+    return m_imple->insertFlag();
+}
+
+void groupFuncBase::clearInsertFlag()
+{
+    m_imple->clearFlag();
 }
 
 groupFuncBase& groupFuncBase::operator=(const recordsetQuery& v)
@@ -973,7 +989,7 @@ min* min::create(const fieldNames& targetNames, const _TCHAR* resultName)
 }
 
 min::min(const fieldNames& targetNames, const _TCHAR* resultName)
-    : sum(targetNames, resultName), m_flag(true)
+    : sum(targetNames, resultName)
 {
 }
 
@@ -983,9 +999,9 @@ void min::doCalc(const row_ptr& row, int index)
     for (int i = 0; i < m_imple->targetKeys(); ++i)
     {
         tmp = fieldValue((*row)[m_imple->targetKey(i)], tmp);
-        if (m_flag || m_imple->m_values[index] > tmp)
-            m_flag = false;
-        m_imple->m_values[index] = tmp;
+        if (insertFlag() || (tmp < m_imple->m_values[index]))
+            m_imple->m_values[index] = tmp;
+        clearInsertFlag();
     }
     m_imple->m_nulls[index] = false;
 }
@@ -1000,10 +1016,7 @@ groupFuncBase* min::clone()
 min& min::operator=(const min& r)
 {
     if (this != &r)
-    {
-        m_flag = r.m_flag;
         groupFuncBase::operator=(r);
-    }
     return *this;
 
 }
@@ -1017,7 +1030,7 @@ max* max::create(const fieldNames& targetNames, const _TCHAR* resultName)
 }
 
 max::max(const fieldNames& targetNames, const _TCHAR* resultName)
-    : sum(targetNames, resultName), m_flag(true)
+    : sum(targetNames, resultName)
 {
 }
 
@@ -1027,11 +1040,11 @@ void max::doCalc(const row_ptr& row, int index)
     for (int i = 0; i < m_imple->targetKeys(); ++i)
     {
         tmp = fieldValue((*row)[m_imple->targetKey(i)], tmp);
-        if (m_flag || m_imple->m_values[index] < tmp)
-            m_flag = false;
-        m_imple->m_values[index] = tmp;
-        m_imple->m_nulls[index] = false;
+        if (insertFlag() || (tmp > m_imple->m_values[index]))
+            m_imple->m_values[index] = tmp;
+        clearInsertFlag();
     }
+    m_imple->m_nulls[index] = false;
 }
 
 groupFuncBase* max::clone()
@@ -1044,10 +1057,7 @@ groupFuncBase* max::clone()
 max& max::operator=(const max& r)
 {
     if (this != &r)
-    {
-        m_flag = r.m_flag;
         groupFuncBase::operator=(r);
-    }
     return *this;
 }
 
@@ -1111,14 +1121,14 @@ first* first::create(const fieldNames& targetNames, const _TCHAR* resultName)
 }
 
 first::first(const fieldNames& targetNames, const _TCHAR* resultName)
-    : last(targetNames, resultName),m_readed(false)
+    : last(targetNames, resultName)
 {
 
 }
 
 void first::doCalc(const row_ptr& row, int index)
 {
-    if (m_readed == false)
+    if (insertFlag())
     {
         if (m_imple->targetKeys())
         {
@@ -1133,8 +1143,8 @@ void first::doCalc(const row_ptr& row, int index)
                 memcpy(p, (*row)[m_imple->targetKey(0)].ptr(), len);
             }
         }
-        m_readed = true;
         m_imple->m_nulls[index] = false;
+        clearInsertFlag();
     }
 }
 
@@ -1147,17 +1157,13 @@ groupFuncBase* first::clone()
 
 void  first::doReset()
 {
-    m_readed = false;
     groupFuncBase::reset();
 }
 
 first& first::operator=(const first& r)
 {
     if (this != &r)
-    {
-        m_readed = r.m_readed;
         last::operator=(r);
-    }
     return *this;
 }
 
