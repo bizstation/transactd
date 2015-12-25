@@ -260,6 +260,29 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define ft_myjson                       61
 #define ft_nullindicator                255
 
+/* compair types */
+enum eCompType
+{
+    eEqual = 1,
+    eGreater = 2,
+    eLess = 3,
+    eNotEq = 4,
+    eGreaterEq = 5,
+    eLessEq = 6,
+    eBitAnd = 8,
+    eNotBitAnd = 9,
+    eIsNull = 10,
+    eIsNotNull = 11
+};
+
+/* filter cobine type */
+enum combineType
+{
+    eCend,
+    eCand,
+    eCor
+};
+
 /** extruct row comp bias
  */
 // In the case of a var type, it is copare as whole length. 

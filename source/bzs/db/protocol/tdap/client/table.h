@@ -666,6 +666,8 @@ public:
         return *this;
     }
 
+    inline query& chunkSizeForInValue(int v) { joinKeySize(v); return *this;}
+
     static query* create(); // implemet int activeTable.cpp
 };
 

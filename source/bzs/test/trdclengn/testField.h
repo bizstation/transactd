@@ -1068,16 +1068,53 @@ void testInMany(database* db)
     // read records all, that include null value
     atv.index(2).keyValue((const _TCHAR*)NULL).read(rs, q);
     BOOST_CHECK(rs.size() == 6);
+    rs.orderBy(_T("id2"));
+    BOOST_CHECK(rs[0][_T("id2")].isNull() == true);
+    BOOST_CHECK(rs[1][_T("id2")].isNull() == true);
+    BOOST_CHECK(rs[2][_T("id2")].isNull() == false);
+
+    sortFields sf;
+    sf.add(_T("id2"), false);
+    rs.orderBy(sf);
+    BOOST_CHECK(rs[5][_T("id2")].isNull() == true);
+    BOOST_CHECK(rs[4][_T("id2")].isNull() == true);
+    BOOST_CHECK(rs[3][_T("id2")].isNull() == false);
+
+    recordset& rs2 = *rs.clone();
+    recordsetQuery rq;
+    rq.whenIsNotNull(_T("id2"));
+    rs2.matchBy(rq);
+    BOOST_CHECK(rs2.size() == 4);
+    //rs2.release();
+
+    rs2 = *rs.clone();
+    rq.whenIsNull(_T("id2"));
+    rs2.matchBy(rq);
+    BOOST_CHECK(rs2.size() == 2);
+    //rs2.release();
+
+    rs2 = *rs.clone();
+    rq.when(_T("id2"), _T("="), 4);
+    rs2.matchBy(rq);
+    BOOST_CHECK(rs2.size() == 2);
+
+    rs2 = *rs.clone();
+    rq.when(_T("id2"), _T("<"), 3);
+    rs2.matchBy(rq);
+    BOOST_CHECK(rs2.size() == 1);
+
+    rs2.release();
 
     // read records after null.
     atv.index(2).keyValue(0).read(rs, q);
     BOOST_CHECK(rs.size() == 4);
 
     // read in has_many.
-    //q.reset().in(4);
-    //atv.index(2).read(rs, q);
-    //BOOST_CHECK(rs.size() == 2);
-
+    q.reset().chunkSizeForInValue(1).in(4);
+    atv.index(2).read(rs, q);
+    BOOST_CHECK(rs.size() == 2);
+    BOOST_CHECK(rs[0][_T("id")] == 4);
+    BOOST_CHECK(rs[1][_T("id")] == 5);
 }
 
 #pragma warning(default : 4996) 

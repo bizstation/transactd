@@ -151,4 +151,37 @@ inline int compareBlobType(const char* l, const char* r, bool bin, char logType,
     return (tmp == 0 && (llen < rlen)) ? -1 : tmp;
 }
 
+/* int nullComp(bool lnull, bool rnull, char log)
+    
+    lnull rnull log        ret 
+    -----------------------------------------------
+    true  true  isNull      0
+    true  true  isNotNull   -1
+    true  false 0           -1
+    false true  isNull      1
+    false true  isNotNull   0
+    false false 0           2
+    -----------------------------------------------
+
+    real value example
+
+    lval  rval        ret
+    -----------------------------------------------
+    NULL  isNull      0
+    NULL  isNotNull  -1
+    NULL  2          -1
+    1     isNull      1
+    1     isNotNull   0
+    1     2           2
+    -----------------------------------------------
+*/ 
+inline int nullComp(bool lnull, bool rnull, char log)
+{
+    if (lnull)
+        return (log == eIsNull) ? 0 : -1;
+    else if (rnull)
+        return (log == eIsNull) ? 1 : 0;
+    return 2;
+}
+
 #endif

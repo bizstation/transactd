@@ -5150,24 +5150,24 @@ BOOST_FIXTURE_TEST_CASE(createNewDataBase, fixture)
     bool ret = db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
     if (ret)
     {
-        btrVersions v;
-        db()->getBtrVersion(&v);
-        if (db()->stat() ==0)
-        {
-            _tprintf(_T("%s-%d.%d with Transactd plugin %d.%d\n"), 
-                v.versions[VER_IDX_DB_SERVER].type == 'M' ? _T("mysql") : _T("mariadb"),
-                v.versions[VER_IDX_DB_SERVER].majorVersion,
-                v.versions[VER_IDX_DB_SERVER].minorVersion,
-                v.versions[VER_IDX_PLUGIN].majorVersion,
-                v.versions[VER_IDX_PLUGIN].minorVersion
-                );    
-        }
         db()->drop();
         if (db()->stat())
         {
             printf("test database drop error No.%d\nTest is stopped !" , db()->stat());
             exit(1);
         }
+    }
+    btrVersions v;
+    db()->getBtrVersion(&v);
+    if (db()->stat() ==0)
+    {
+        _tprintf(_T("%s-%d.%d with Transactd plugin %d.%d\n"), 
+            v.versions[VER_IDX_DB_SERVER].type == 'M' ? _T("mysql") : _T("mariadb"),
+            v.versions[VER_IDX_DB_SERVER].majorVersion,
+            v.versions[VER_IDX_DB_SERVER].minorVersion,
+            v.versions[VER_IDX_PLUGIN].majorVersion,
+            v.versions[VER_IDX_PLUGIN].minorVersion
+            );    
     }
     testCreateNewDataBase(db());
 }

@@ -2065,19 +2065,8 @@ int field::nullComp(char log) const
 {
     bool rnull = (log == eIsNull) || (log == eIsNotNull);
     bool lnull = isNull();
-            
-    if (lnull || rnull)
-    {
-        if (lnull && (log == eIsNull))
-            return 0;
-        else if (lnull && (log == eIsNotNull))
-            return -1;
-        else if (log == eIsNull)
-            return 1;
-        return 0; //(log == (char)eIsNotNull)
-    }
-    return 2;
-}
+    return ::nullComp(lnull, rnull, log);
+} 
 
 int field::nullComp(const field& r, char log) const
 {

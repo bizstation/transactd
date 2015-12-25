@@ -1190,29 +1190,6 @@ struct btrVersions
 #pragma pack(pop)
 pragma_pop;
 
-/* filter cobine type */
-enum combineType
-{
-    eCend,
-    eCand,
-    eCor
-};
-
-/* compair types */
-enum eCompType
-{
-    eEqual = 1,
-    eGreater = 2,
-    eLess = 3,
-    eNotEq = 4,
-    eGreaterEq = 5,
-    eLessEq = 6,
-    eBitAnd = 8,
-    eNotBitAnd = 9,
-    eIsNull = 10,
-    eIsNotNull = 11
-
-};
 
 PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr);
 

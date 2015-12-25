@@ -801,29 +801,18 @@ public:
         }
         bool rnull = m_nulllog;
         bool lnull = (*(record - m_nullOffset) & m_nullbit) != 0;
-            
-        if (lnull || rnull)
-        {
-            if (lnull && (log == eIsNull))
-                return 1;
-            else if (lnull && (log == eIsNotNull))
-                return -1;
-            else if (log == eIsNull)
-                return -1;
-            return 1; //(log == (char)eIsNotNull)
-        }
-        return 0;
+        return ::nullComp(lnull, rnull, log);    
     }
 
     int match(const char* record, bool typeNext) const
     {
         bool ret;
-        int v = 0, nullJudge = 0;
+        int v = 2;
        
         if (m_mysqlnull && (m_nullbit || m_nullbitCompFd || m_nulllog))
-            nullJudge = nullComp(record, (eCompType)(m_fd->logType & 0xf));
-        if (nullJudge)
-            ret = (nullJudge == 1) ? true : false;
+            v = nullComp(record, (eCompType)(m_fd->logType & 0xf));
+        if (v < 2)
+            ret = (v == 0) ? true : false;
         else
         {
             const char* r = (const char*)m_fd->ptr;

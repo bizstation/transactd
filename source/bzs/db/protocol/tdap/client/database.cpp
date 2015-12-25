@@ -25,7 +25,6 @@
 #include <vector>
 #include "stringConverter.h"
 #include <bzs/db/protocol/tdap/uri.h>
-#include <boost/shared_array.hpp>
 
 #pragma package(smart_init)
 

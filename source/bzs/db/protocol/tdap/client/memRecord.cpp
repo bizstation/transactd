@@ -54,7 +54,7 @@ void autoMemory::setParams(unsigned char* p, size_t s, short* endIndex, bool own
     endFieldIndex = endIndex;
     if (owner)
     {
-        ptr = new unsigned char[s];
+        ptr = new unsigned char[s+1];
         if (p)
             memcpy(ptr, p, size);
         else
@@ -122,7 +122,7 @@ autoMemory* autoMemory::create()
 //---------------------------------------------------------------------------
 //    class memoryRecord
 //---------------------------------------------------------------------------
-inline memoryRecord::memoryRecord() : fieldsBase(NULL)
+inline memoryRecord::memoryRecord() : fieldsBase(NULL), m_blockIndexCache(0)
 {
 #ifdef JOIN_UNLIMIT
     m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
@@ -131,7 +131,8 @@ inline memoryRecord::memoryRecord() : fieldsBase(NULL)
 #endif
 }
 
-inline memoryRecord::memoryRecord(fielddefs& fdinfo) : fieldsBase(&fdinfo)
+inline memoryRecord::memoryRecord(fielddefs& fdinfo) : fieldsBase(&fdinfo),
+        m_blockIndexCache(0)
 {
 #ifdef JOIN_UNLIMIT
     m_memblock.reserve(ROW_MEM_BLOCK_RESERVE);
@@ -141,7 +142,7 @@ inline memoryRecord::memoryRecord(fielddefs& fdinfo) : fieldsBase(&fdinfo)
 }
 
 memoryRecord::memoryRecord(const memoryRecord& r)
-    : fieldsBase(r.m_fns)
+    : fieldsBase(r.m_fns),m_blockIndexCache(r.m_blockIndexCache)
 {
 #ifdef JOIN_UNLIMIT
     m_memblock = r.m_memblock;
@@ -166,6 +167,7 @@ memoryRecord& memoryRecord::operator=(const memoryRecord& r)
      if (this != &r)
      {
          m_fns = r.m_fns;
+         m_blockIndexCache = r.m_blockIndexCache;
 #ifdef JOIN_UNLIMIT
          m_memblock = r.m_memblock;
 #endif
