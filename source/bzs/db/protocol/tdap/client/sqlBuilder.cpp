@@ -250,7 +250,7 @@ char* removeTimeStampOptionDecimal(const char* s, char* buf, size_t size)
     return buf;
 }
 
-std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::string>& fdl, clsrv_ver& ver)
+std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::string>& fdl, const clsrv_ver* ver)
 {
     std::string s;
     int len;
@@ -294,7 +294,7 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
                     (fd.type == ft_mydatetime))
                 {  
                     s += " NULL DEFAULT ";
-                    if (!ver.isSupportDateTimeTimeStamp())
+                    if (!ver->isSupportDateTimeTimeStamp())
                     {
                         char tmp[100];
                         s += removeTimeStampOptionDecimal(p, tmp, 100);
@@ -333,7 +333,7 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
                     (fd.type == ft_mydatetime))
                 {   
                     s += "DEFAULT ";
-                    if (!ver.isSupportDateTimeTimeStamp())
+                    if (!ver->isSupportDateTimeTimeStamp())
                     {
                         char tmp[100];
                         s += removeTimeStampOptionDecimal(p, tmp, 100);
@@ -353,7 +353,7 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
         {
             char buf[64];
             updateTimeStampStr(&fd, buf, 64);
-            if (!ver.isSupportDateTimeTimeStamp())
+            if (!ver->isSupportDateTimeTimeStamp())
             {
                 char tmp[100];
                 s += removeTimeStampOptionDecimal(buf, tmp, 100);
@@ -496,7 +496,7 @@ void makeSuffixNamesList(const tabledef* table, std::vector<std::string>& fds)
 }
 
 std::string sqlBuilder::sqlCreateTable(const char* name /* utf8 */, tabledef* table,
-                           uchar_td charsetIndexServer, clsrv_ver& ver)
+                           uchar_td charsetIndexServer, const clsrv_ver* ver)
 {
     // Duplication of a name is inspected and, in duplication, _1 is added.
     // It does not correspond to two or more duplications.
@@ -533,7 +533,7 @@ std::string sqlBuilder::sqlCreateTable(const char* name /* utf8 */, tabledef* ta
 }
 
 std::string sqlBuilder::sqlCreateIndex(const tabledef* table, int keyNum,
-        bool specifyKeyNum, uchar_td charsetIndexServer, clsrv_ver& ver)
+        bool specifyKeyNum, uchar_td charsetIndexServer, const clsrv_ver* ver)
 {
     std::string s;
     std::vector<std::string> fds;// suffix added names list
@@ -692,7 +692,7 @@ void makeTableDef(tabledef* TableDef, fileSpec* fs, std::vector<fielddef>& fds)
 }
 
 std::string sqlBuilder::sqlCreateTable(const char* fileName, fileSpec* fs,
-                           uchar_td charsetIndexServer, clsrv_ver& ver)
+                           uchar_td charsetIndexServer, const clsrv_ver* ver)
 {
     tabledef table;
     memset(&table, 0, sizeof(tabledef));

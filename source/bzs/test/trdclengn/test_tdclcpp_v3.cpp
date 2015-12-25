@@ -640,6 +640,12 @@ public:
             printf("Error createDataBase\n");
             return;
         }
+        m_db->connect(makeUri(PROTOCOL, HOSTNAME, _T("")));
+        if (m_db->stat())
+        {    
+            printf("Error db connect\n");
+            return;
+        }
         btrVersions vs;
         m_db->getBtrVersion(&vs);
         if (m_db->stat())

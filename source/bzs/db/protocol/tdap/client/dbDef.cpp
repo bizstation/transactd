@@ -40,8 +40,6 @@ namespace tdap
 namespace client
 {
 
-#define FORMAT_VERSON_BTRV_DEF 0
-#define FORMAT_VERSON_CURRENT 1
 
 /* BDFFORMAT_VERSION used in the databaseSchema.cpp listSchemaTable() */
 static const _TCHAR BDFFORMAT_VERSION[] = _T("2.000.00");

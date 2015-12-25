@@ -209,58 +209,34 @@ const char* dateFormatString(const char*)
 {
     return "%04d/%02d/%02d";
 }
-const wchar_t* dateFormatString(const wchar_t*)
-{
-    return L"%04d/%02d/%02d";
-}
 
 const char* dateFormatString_h(const char*)
 {
     return "%04d-%02d-%02d";
-}
-const wchar_t* dateFormatString_h(const wchar_t*)
-{
-    return L"%04d-%02d-%02d";
 }
 
 const char* timeFormatString(const char*)
 {
     return "%02d:%02d:%02d";
 }
-const wchar_t* timeFormatString(const wchar_t*)
-{
-    return L"%02d:%02d:%02d";
-}
 
 const char* timeFormatString_h(const char*)
 {
     return "%02d-%02d-%02d";
 }
-const wchar_t* timeFormatString_h(const wchar_t*)
-{
-    return L"%02d-%02d-%02d";
-}
 
 template <class T> size_t _tcslen_(const T* p);
+
+template <class T> int _ttoi_(const T* p);
 
 template <> size_t _tcslen_(const char* p)
 {
     return strlen(p);
 }
-template <> size_t _tcslen_(const wchar_t* p)
-{
-    return wcslen(p);
-}
-
-template <class T> int _ttoi_(const T* p);
 
 template <> int _ttoi_(const char* p)
 {
     return atoi(p);
-}
-template <> int _ttoi_(const wchar_t* p)
-{
-    return _wtoi(p);
 }
 
 template <class T> T* formatDate(T* p, const btrDate& d, bool type_vb);
@@ -271,15 +247,6 @@ template <> char* formatDate(char* p, const btrDate& d, bool type_vb)
         sprintf_s(p, 20, dateFormatString_h(p), d.yy, d.mm, d.dd);
     else
         sprintf_s(p, 20, dateFormatString(p), d.yy, d.mm, d.dd);
-    return p;
-}
-
-template <> wchar_t* formatDate(wchar_t* p, const btrDate& d, bool type_vb)
-{
-    if (type_vb)
-        swprintf_s(p, 20, dateFormatString_h(p), d.yy, d.mm, d.dd);
-    else
-        swprintf_s(p, 20, dateFormatString(p), d.yy, d.mm, d.dd);
     return p;
 }
 
@@ -294,6 +261,46 @@ template <> char* formatTime(char* p, const btrTime& t, bool type_vb)
     return p;
 }
 
+#ifdef _WIN32
+const wchar_t* dateFormatString(const wchar_t*)
+{
+    return L"%04d/%02d/%02d";
+}
+
+const wchar_t* dateFormatString_h(const wchar_t*)
+{
+    return L"%04d-%02d-%02d";
+}
+
+const wchar_t* timeFormatString(const wchar_t*)
+{
+    return L"%02d:%02d:%02d";
+}
+
+const wchar_t* timeFormatString_h(const wchar_t*)
+{
+    return L"%02d-%02d-%02d";
+}
+
+template <> size_t _tcslen_(const wchar_t* p)
+{
+    return wcslen(p);
+}
+
+template <> int _ttoi_(const wchar_t* p)
+{
+    return _wtoi(p);
+}
+
+template <> wchar_t* formatDate(wchar_t* p, const btrDate& d, bool type_vb)
+{
+    if (type_vb)
+        swprintf_s(p, 20, dateFormatString_h(p), d.yy, d.mm, d.dd);
+    else
+        swprintf_s(p, 20, dateFormatString(p), d.yy, d.mm, d.dd);
+    return p;
+}
+
 template <> wchar_t* formatTime(wchar_t* p, const btrTime& t, bool type_vb)
 {
     if (type_vb)
@@ -302,6 +309,7 @@ template <> wchar_t* formatTime(wchar_t* p, const btrTime& t, bool type_vb)
         swprintf_s(p, 20, timeFormatString(p), t.hh, t.nn, t.ss);
     return p;
 }
+#endif
 
 template <class T> btrDate atobtrd(const T* date)
 {
@@ -435,6 +443,7 @@ btrDateTime atobtrs(const char* p)
     return s;
 }
 
+#ifdef _WIN32
 btrDateTime atobtrs(const wchar_t* p)
 {
     btrDateTime s;
@@ -447,6 +456,7 @@ btrDateTime atobtrs(const wchar_t* p)
         s.time = atobtrt(tmp + 1);
     return s;
 }
+#endif
 
 int getNowDate()
 {

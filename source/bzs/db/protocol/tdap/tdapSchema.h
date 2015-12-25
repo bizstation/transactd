@@ -181,7 +181,7 @@ struct keydef
     keySegment segments[MAX_KEY_SEGMENT];
     uchar_td keyNumber;
 
-    bool keydef::operator==(const keydef& r) const
+    bool operator==(const keydef& r) const
     {
         if (this == &r) return true;
         bool ret = (segmentCount == r.segmentCount) && (keyNumber == r.keyNumber);
@@ -203,8 +203,8 @@ struct keydef
 
 private:
     short synchronize(const keydef* kd);
- 	friend struct tabledef;
- 	friend class client::dbdef;
+    friend struct tabledef;
+    friend class client::dbdef;
 };
 
 static const int MYSQL_FDNAME_SIZE = 64;
@@ -528,7 +528,7 @@ public:
         return (type == ft_myblob) || (type == ft_mytext) || (type == ft_mygeometry) || (type == ft_myjson);
     }
 
-	inline void setPadCharSettings(bool set, bool trim)
+    inline void setPadCharSettings(bool set, bool trim)
     {
         m_padCharOptions = 0;
         m_padCharOptions |= PAD_CHAR_OPTION_SAVED;
@@ -546,8 +546,8 @@ public:
                 m_padCharOptions |= TRIM_PAD_CHAR;
         }
     }
-	
-	/* When ft_string or ft_wstring, fill by pad char at write. */
+    
+    /* When ft_string or ft_wstring, fill by pad char at write. */
     inline bool isUsePadChar() const {return (m_padCharOptions & USE_PAD_CHAR) == USE_PAD_CHAR;}
 
     /* When ft_string or ft_wstring or ft_mychar or  ft_mywchar,
@@ -871,8 +871,27 @@ public:
     inline uchar_td nullbytes() const {return m_nullbytes;} // byte of null indicator which head of record memory block.
     inline void setOptions(uchar_td v) {m_options = v;}
 private:
-    uint_td compDataLen(const uchar_td* ptr, bool part) const;
+
+    /** Length of compare
+     * if part of string or zstring then return strlen * sizeof(char or wchar).
+     */
+    inline uint_td compDataLen(const uchar_td* ptr, bool part) const
+    {
+        uint_td length = keyDataLen(ptr);
+        if (part)
+        {
+            if ((type == ft_string) || (type == ft_zstring) ||
+                            (type == ft_note) || (type == ft_mychar))
+                length = (uint_td)strlen((const char*)ptr);
+            else if ((type == ft_wstring) || (type == ft_wzstring) ||
+                            (type == ft_mywchar))
+                length = (uint_td)strlen16((char16_t*)ptr)*sizeof(char16_t);
+        }
+        return length;
+    }
+    
     short synchronize(const fielddef* td);
+
     void fixCharnum_bug();
 
     friend class client::database;
@@ -906,6 +925,7 @@ inline void updateTimeStampStr(const fielddef* fd, char* p, size_t size)
         sprintf_s(p, 64, " ON UPDATE CURRENT_TIMESTAMP(%d)", fd->decimals);
 }
 
+#ifdef _WIN32
 inline void updateTimeStampStr(const fielddef* fd, wchar_t* p, size_t size)
 {
     if (fd->isLegacyTimeFormat())
@@ -916,20 +936,21 @@ inline void updateTimeStampStr(const fielddef* fd, wchar_t* p, size_t size)
         swprintf_s(p, 64, L" ON UPDATE CURRENT_TIMESTAMP(%d)",dec);
     }
 }
+#endif
 
 inline uint_td dataLen(const fielddef& fd, const uchar_td* ptr)
 {
-	return fd.dataLen(ptr);
+    return fd.dataLen(ptr);
 }
 
 inline uint_td blobDataLen(const fielddef& fd, const uchar_td* ptr)
 {
-	return fd.blobDataLen(ptr);
+    return fd.blobDataLen(ptr);
 }
 
 inline uint_td blobLenBytes(const fielddef& fd)
 {
-	return fd.blobLenBytes();
+    return fd.blobLenBytes();
 }
 
 inline _TCHAR* timeStampDefaultStr(const fielddef& fd, _TCHAR* buf, size_t bufsize)
@@ -947,6 +968,9 @@ inline _TCHAR* timeStampDefaultStr(const fielddef& fd, _TCHAR* buf, size_t bufsi
 
 
 /** @endcond */
+
+#define FORMAT_VERSON_BTRV_DEF 0
+#define FORMAT_VERSON_CURRENT 1
 
 
 /* Mark of ** that BizStation Corp internal use only.
@@ -972,7 +996,7 @@ struct PACKAGE tabledef
     void cleanup()
     {
         memset(this, 0, sizeof(tabledef));
-        formatVersion = 1;
+        formatVersion = FORMAT_VERSON_CURRENT;
         primaryKeyNum = -1;
         parentKeyNum = -1;
         replicaKeyNum = -1;

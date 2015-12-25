@@ -273,7 +273,6 @@ myTime& myTime::operator=(const wchar_t* p)
 #endif
 //-------------------------------------------------------------
 static int digit_logs[7] = {1, 10, 100, 1000, 10000, 100000, 1000000}; // digit 0 to 6
-static int str_logs[7] = {1, 10,1,10,1,10,1};
 #define ZEROPOINT_SEC 3020400ULL 
 
 void maTime::setValue(__int64 v, bool btrvValue)

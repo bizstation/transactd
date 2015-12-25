@@ -105,7 +105,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
     {
         try
         {
-        	delete m_cons;
+            delete m_cons;
         }
         catch(...){}
         m_cons = NULL;
@@ -204,7 +204,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_MOVE_BOOKMARK:
         case TD_MOVE_PER:
-			client_t->req().paramMask = P_MASK_NOKEYBUF;
+            client_t->req().paramMask = P_MASK_NOKEYBUF;
             break;
         case TD_UNLOCK:
         case TD_CLOSETABLE:
@@ -295,11 +295,14 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_VERSION:
         {
-            ushort_td datalen = *client_t->req().datalen;
+            if (!client_t->req().cid->con)
+                 return ERROR_TD_NOT_CONNECTED;
+
+            ushort_td datalen = *(client_t->req().datalen);
             btrVersion* v = (btrVersion*)(client_t->req().data);
+            const clsrv_ver* ver = client_t->ver();
             if (datalen >= sizeof(btrVersion))
             {
-                
                 v->majorVersion = atoi(CPP_INTERFACE_VER_MAJOR);
                 v->minorVersion = atoi(CPP_INTERFACE_VER_MINOR);
                 v->type = 'N';
@@ -310,20 +313,27 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             if (datalen >= sizeof(btrVersion) * 2)
             {
                 ++v;
-                v->majorVersion = client_t->ver().srvMysqlMajor;
-                v->minorVersion = client_t->ver().srvMysqlMinor;
-                v->type = client_t->ver().srvMysqlType;
-                client_t->req().result = 0;
+                if (ver)
+                {
+                    v->majorVersion = ver->srvMysqlMajor;
+                    v->minorVersion = ver->srvMysqlMinor;
+                    v->type = ver->srvMysqlType;
+                    client_t->req().result = 0;
+                }else
+                    memset(v, 0, sizeof(btrVersion));
             }
             if (datalen >= sizeof(btrVersion) * 3)
             {
                 ++v;
-                v->majorVersion = client_t->ver().srvMajor;
-                v->minorVersion = client_t->ver().srvMinor;
-                v->type = 'T';
+                if (ver)
+                {
+                    v->majorVersion = ver->srvMajor;
+                    v->minorVersion = ver->srvMinor;
+                    v->type = 'T';
+                }else
+                    memset(v, 0, sizeof(btrVersion));
                 client_t->req().result = 0;
             }
-            client_t->cleanup();
             return client_t->req().result;
         }
         case TD_OPENTABLE:

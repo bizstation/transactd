@@ -346,8 +346,6 @@ void fielddefs::release()
 //------------------------------------------------------------------------------
 static fielddef fdDummy;
 
-//unsigned char field::m_nullSign = 0xff;
-
 DLLLIB const fielddef& dummyFd()
 {
     fdDummy.type = ft_integer;
@@ -393,12 +391,14 @@ __int64 field::readValue64() const
     case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
-    case ft_bit:
     case ft_date:
     case ft_time:
     case ft_timestamp:
     case ft_currency:
     case ft_myyear:
+    case ft_enum: // 1 - 2 byte      0 - 65535
+    case ft_set:  // 1 2 3 4 8 byte  64 item
+    case ft_bit:  // 1 - 8 byte      64 item
         switch (m_fd->len)
         {
         case 1:
@@ -415,6 +415,11 @@ __int64 field::readValue64() const
             break;
         case 8:
             ret = *((__int64*)ptr);
+            break;
+        case 5:
+        case 6:
+        case 7:
+            memcpy(&ret, ptr, m_fd->len);// for bit
             break;
         }
         break;
@@ -478,12 +483,14 @@ void field::storeValue64(__int64 value)
     case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
-    case ft_bit:
     case ft_date:
     case ft_time:
     case ft_timestamp:
     case ft_currency:
     case ft_myyear:
+    case ft_enum: // 1 - 2 byte      0 - 65535
+    case ft_set:  // 1 2 3 4 8 byte  64 item
+    case ft_bit:  // 1 - 8 byte      64 item
     {
         switch (m_fd->len)
         {
@@ -501,6 +508,11 @@ void field::storeValue64(__int64 value)
             break;
         case 8:
             *((__int64*)ptr) = value;
+            break;
+        case 5:
+        case 6:
+        case 7:
+            memcpy(ptr, &value, m_fd->len); // for bit
             break;
         }
         break;
@@ -675,7 +687,7 @@ const char* field::readValueStrA() const
     }
 }
 
-//#ifdef _WIN32
+#ifdef _WIN32
 void field::storeValueStrW(const WCHAR* data)
 {
     char* p = (char*)m_ptr + m_fd->pos;
@@ -767,6 +779,7 @@ const WCHAR* field::readValueStrW() const
         return NULL;
     }
 }
+#endif //_WIN32
 
 void field::storeValueNumeric(double data)
 { // Double  -> Numeric
@@ -1012,7 +1025,6 @@ double field::readValueDecimal() const
 
 #define CASE_UINT case ft_uinteger: \
     case ft_autoIncUnsigned:  \
-    case ft_bit: \
     case ft_set: \
     case ft_enum:
 
@@ -1027,7 +1039,112 @@ double field::readValueDecimal() const
 #define CASE_DECIMAL case ft_decimal: \
     case ft_money: 
    
+__int64 changeEndian2(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[1];
+    l[1] = r[0];
+    return ret;
+}
 
+__int64 changeEndian3(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[2];
+    l[1] = r[1];
+    l[2] = r[0];
+    return ret;
+}
+
+__int64 changeEndian4(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[3];
+    l[1] = r[2];
+    l[2] = r[1];
+    l[3] = r[0];
+    return ret;
+}
+
+__int64 changeEndian5(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[4];
+    l[1] = r[3];
+    l[2] = r[2];
+    l[3] = r[1];
+    l[4] = r[0];
+    return ret;
+}
+
+__int64 changeEndian6(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[5];
+    l[1] = r[4];
+    l[2] = r[3];
+    l[3] = r[2];
+    l[4] = r[1];
+    l[5] = r[0];
+    return ret;
+}
+
+__int64 changeEndian7(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[6];
+    l[1] = r[5];
+    l[2] = r[4];
+    l[3] = r[3];
+    l[4] = r[2];
+    l[5] = r[1];
+    l[6] = r[0];
+    return ret;
+}
+
+__int64 changeEndian8(__int64 v)
+{
+    __int64 ret = 0;
+    char* l = (char*)&ret;
+    char* r = (char*)&v;
+    l[0] = r[7];
+    l[1] = r[6];
+    l[2] = r[5];
+    l[3] = r[4];
+    l[4] = r[3];
+    l[5] = r[2];
+    l[6] = r[1];
+    l[7] = r[0];
+    return ret;
+}
+
+__int64 changeEndian(__int64 v, int len)
+{
+    switch(len)
+    {
+    case 1: return v;
+    case 2: return changeEndian2(v);
+    case 3: return changeEndian3(v);
+    case 4: return changeEndian4(v);
+    case 5: return changeEndian5(v);
+    case 6: return changeEndian6(v);
+    case 7: return changeEndian7(v);
+    case 8: return changeEndian8(v);
+    }
+    return v;
+}
 
 inline __int64 logical_str_to_64(bool logicalToString, const char* data)
 {
@@ -1044,6 +1161,7 @@ inline __int64 logical_str_to_64(bool logicalToString, const char* data)
         return atol(data);
 }
 
+#ifdef _WIN32
 inline __int64 logical_str_to_64(bool logicalToString, const wchar_t* data)
 {
     if (logicalToString)
@@ -1058,6 +1176,7 @@ inline __int64 logical_str_to_64(bool logicalToString, const wchar_t* data)
     else
         return _wtol(data);
 }
+#endif
 
 //---------------------------------------------------------------------------
 //      set functions
@@ -1094,6 +1213,9 @@ void field::setFVA(const char* data)
         break;
     CASE_UINT
         value = (__int64)strtoull(data, NULL, 10);
+        break;
+    case ft_bit:
+        value = changeEndian((__int64)strtoull(data, NULL, 10), m_fd->len);
         break;
     case ft_logical:
         value = logical_str_to_64(m_fds->logicalToString, data);
@@ -1174,6 +1296,9 @@ void field::setFVW(const wchar_t* data)
         break;
     CASE_UINT
         value = (__int64)wcstoull(data, NULL, 10);
+        break;
+    case ft_bit:
+        value = changeEndian((__int64)wcstoull(data, NULL, 10), m_fd->len);
         break;
     case ft_logical:
         value = logical_str_to_64(m_fds->logicalToString, data);
@@ -1268,6 +1393,9 @@ void field::setFV(__int64 data)
     CASE_UINT
         storeValue64(data);
         break;
+    case ft_bit:
+        storeValue64(changeEndian(data, m_fd->len));
+        break;
     case ft_myyear:
         if (data > 1900) data -= 1900;
         storeValue64(data);
@@ -1281,6 +1409,9 @@ void field::setFV(__int64 data)
     CASE_DECIMAL
         storeValueDecimal((double)data);
         break;
+#ifdef LINUX
+    CASE_TEXTW
+#endif
     CASE_TEXTA
     {
         char buf[50];
@@ -1288,6 +1419,7 @@ void field::setFV(__int64 data)
         storeValueStrA(buf);
         break;
     }
+#ifndef LINUX
     CASE_TEXTW
     {
         WCHAR buf[50];
@@ -1295,6 +1427,7 @@ void field::setFV(__int64 data)
         storeValueStrW(buf);
         break;
     }
+#endif
     default: // ft_lvar ft_mygeometry ft_myjson
         break;
     }
@@ -1349,6 +1482,9 @@ void field::setFV(double data)
     CASE_UINT
         storeValue64(i64);
         break;
+    case ft_bit:
+        storeValue64(changeEndian(i64, m_fd->len));
+        break;
     case ft_myyear:
         if (i64 > 1900) i64 -= 1900;
         storeValue64(i64);
@@ -1359,6 +1495,9 @@ void field::setFV(double data)
     CASE_DECIMAL
         storeValueDecimal(data);
         break;
+#ifdef LINUX
+    CASE_TEXTW
+#endif
     CASE_TEXTA
     {
         char buf[100];
@@ -1366,6 +1505,7 @@ void field::setFV(double data)
         storeValueStrA(buf);
         break;
     }
+#ifndef LINUX
     CASE_TEXTW
     {
         WCHAR buf[100];
@@ -1373,6 +1513,7 @@ void field::setFV(double data)
         storeValueStrW(buf);
         break;
     }
+#endif
     default: // ft_lvar ft_mygeometry ft_myjson
         break;
     }
@@ -1457,6 +1598,9 @@ const char* field::getFVAstr() const
     CASE_UINT
         _ui64toa_s(readValue64(), p, 50, 10);
         return p;
+    case ft_bit:
+        _ui64toa_s(changeEndian(readValue64(), m_fd->len), p, 50, 10);
+        break;
     case ft_myyear:
     {
         __int64 v = readValue64();
@@ -1544,6 +1688,9 @@ const wchar_t* field::getFVWstr() const
     CASE_UINT
         _ui64tow_s(readValue64(), p, 50, 10);
         return p;
+    case ft_bit:
+        _ui64tow_s(changeEndian(readValue64(), m_fd->len), p, 50, 10);
+        break;
     case ft_myyear:
     {
          __int64 v = readValue64();
@@ -1642,6 +1789,8 @@ double field::getFVdbl() const
     case ft_datetime:
     case ft_logical:
         return  (double)((unsigned __int64)readValue64());
+    case ft_bit:
+        return (double)((unsigned __int64)changeEndian(readValue64(), m_fd->len));
     case ft_mytime:
     case ft_mydatetime:
     case ft_mytimestamp:
@@ -1671,11 +1820,15 @@ double field::getFVdbl() const
         }
         assert(0);
     }
-
+#ifdef LINUX
+    CASE_TEXTW
+#endif
     CASE_TEXTA
         return atof(readValueStrA());
+#ifndef LINUX
     CASE_TEXTW
         return _wtof((const wchar_t*)readValueStrW());
+#endif
     default: // ft_lvar ft_mygeometry ft_myjson
          break;
     }
@@ -1696,6 +1849,8 @@ __int64 field::getFV64() const
     case ft_logical:
     case ft_currency:
         return readValue64();
+    case ft_bit:
+        return changeEndian(readValue64(), m_fd->len);
     case ft_myyear:
     {
          __int64 v = readValue64();
@@ -1738,10 +1893,15 @@ __int64 field::getFV64() const
         return (__int64)readValueNumeric();
     CASE_DECIMAL
         return (__int64)readValueDecimal();
+#ifdef LINUX
+    CASE_TEXTW
+#endif
     CASE_TEXTA
         return _atoi64(readValueStrA());
+#ifndef LINUX
     CASE_TEXTW
-        return _wtoi64((wchar_t*)readValueStrW());
+        return _wtoi64(readValueStrW());
+#endif
     default: // ft_lvar ft_mygeometry ft_myjson
          break;
     }
@@ -1828,7 +1988,7 @@ bool field::isNull() const
 void field::setNull(bool v)
 {
     nullPtrCache();
-    if (m_nullbit && m_cachedNullPtr != &field::m_nullSign)
+    if (m_nullbit && m_cachedNullPtr != &m_nullSign)
     {
          if (v)
             (*m_cachedNullPtr) |= (unsigned char)m_nullbit;

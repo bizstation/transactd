@@ -148,6 +148,7 @@ public:
 
 /** Implementation of Part of the connection interface
  */
+#define VER_ST_SIZE 12
 class connectionBase : public connection
 {
 protected:
@@ -159,6 +160,7 @@ protected:
     size_t m_readLen;
     int m_refCount;
     int m_charsetServer;
+    char m_vers[VER_ST_SIZE];
     bool m_connected;
     bool m_isHandShakable;
     boost::system::error_code m_e;
@@ -183,6 +185,7 @@ public:
           m_ep(ep), m_reader(NULL), m_refCount(0),
           m_charsetServer(-1), m_connected(false), m_isHandShakable(true)
     {
+        memset(m_vers, 0, VER_ST_SIZE);
     }
     virtual ~connectionBase()
     {
@@ -196,6 +199,8 @@ public:
     void setDirectReadHandler(idirectReadHandler* p){ m_reader = p; }
     bool isHandShakable() const {return m_isHandShakable;};
     const boost::system::error_code& error() const { return m_e; };
+
+    void* versions() {return (void*)m_vers;};
 };
 
 #ifdef __APPLE__

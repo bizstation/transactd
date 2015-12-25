@@ -901,6 +901,8 @@ public:
             case 6:
                 fda.m_isMatchFunc = isMatch6;
                 break;
+            default:
+                break;
             }
             fd = fd->next();
             if (fda.m_fd->opr == 2 && (lastIndex == req.logicalCount))
@@ -1079,8 +1081,8 @@ class resultWriter
                     nullPtr = (unsigned char*)m_nw->curPtr();
                     memset(nullPtr, 0, m_nullbytes);
                     m_nw->asyncWrite(NULL, m_nullbytes, netsvc::server::netWriter::curSeekOnly);
-					recLen += m_nullbytes;
-				}            
+                    recLen += m_nullbytes;
+                }            
                 // write each fields by field num.
                 for (int i = 0; i < m_def->fieldCount; i++)
                 {

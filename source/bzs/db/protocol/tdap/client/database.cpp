@@ -597,6 +597,7 @@ bool database::defaultImageCopy(const void* data, short& tableIndex)
         else
         {
             schemaImage* si = (schemaImage*)(((uchar_td*)p) + sizeof(ushort_td) * 2 + size);
+            if (si->schemaSize == 0) return false;
             ret = m_impl->dbDef->addSchemaImage(&si->td, si->schemaSize, tableIndex);
             if (ret)
                 ret = m_impl->dbDef->setDefaultImage(tableIndex, (uchar_td*)++p, (ushort_td)size);
@@ -701,8 +702,6 @@ struct openTablePrams
 
 table* database::doOpenTable(openTablePrams* pm, const _TCHAR* ownerName)
 {
-    m_stat = testOpenTable();
-    if (m_stat) return NULL;
 
     tabledef* td = pm->td;
 
@@ -791,6 +790,9 @@ table* database::doOpenTable(openTablePrams* pm, const _TCHAR* ownerName)
 table* database::openTable(const _TCHAR* tableName, short mode, bool autoCreate,
                            const _TCHAR* ownerName, const _TCHAR* path)
 {
+    m_stat = testOpenTable();
+    if (m_stat) return NULL;
+
     openTablePrams pm(autoCreate);
  
     short tableIndex = m_impl->dbDef->tableNumByName(tableName);
@@ -812,6 +814,9 @@ table* database::openTable(const _TCHAR* tableName, short mode, bool autoCreate,
 table* database::openTable(short tableIndex, short mode, bool autoCreate,
                            const _TCHAR* ownerName, const _TCHAR* path)
 {
+    m_stat = testOpenTable();
+    if (m_stat) return NULL;
+
     openTablePrams pm(autoCreate);
     tabledef* td = m_impl->dbDef->tableDefs(tableIndex);
     if (td)

@@ -63,6 +63,7 @@ short errorCode(const boost::system::error_code& e)
     case 32:    //write:brokn pipe
     case 111:   //connect: Connection refused
     case 10061:
+    case 10053:
         ret = ERROR_TD_CONNECTION_FAILURE;
         break;
     case 104:   //write: Connection reset by peer

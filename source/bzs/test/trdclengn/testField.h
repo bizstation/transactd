@@ -52,7 +52,7 @@ short createTestTable1(database* db)
         //int
         for (int i=1; i < 6 ; ++i)
         {
-            _stprintf_s(buf, _T("int_%d_byte"), lens[i-1]);
+            _stprintf_s(buf, 50, _T("int_%d_byte"), lens[i-1]);
             fd = insertField(def, tableid, ++fieldnum, buf, ft_integer, lens[i-1]);
         }
         
@@ -60,7 +60,7 @@ short createTestTable1(database* db)
         for (int i=1; i < 6 ; ++i)
         {
             
-            _stprintf_s(buf, _T("uint_%d_byte"), lens[i-1]);
+            _stprintf_s(buf, 50, _T("uint_%d_byte"), lens[i-1]);
             fd = insertField(def, tableid, ++fieldnum, buf, ft_uinteger, lens[i-1]);
         }
 
@@ -782,31 +782,31 @@ void testStoreInt(database* db)
     char buf2[50];
     std::string values;
     values += "1\t";
-    values += ltoa(SCHAR_MAX, buf2, 10);
+    values += _ltoa(SCHAR_MAX, buf2, 10);
     values += "\t2\t";
-    values += ltoa(SHRT_MAX, buf2, 10);
+    values += _ltoa(SHRT_MAX, buf2, 10);
     values += "\t3\t";
-    values += ltoa(MINT_MIN, buf2, 10);
+    values += _ltoa(MINT_MIN, buf2, 10);
     values += "\t4\t";
-    values += ltoa(INT_MAX, buf2, 10);
+    values += _ltoa(INT_MAX, buf2, 10);
     values += "\t5\t";
     values += _i64toa(LLONG_MAX, buf2, 10);
     values += "\t6\t";
-    values += ltoa(UCHAR_MAX - 1, buf2, 10);
+    values += _ltoa(UCHAR_MAX - 1, buf2, 10);
     values += "\t7\t";
-    values += ltoa(USHRT_MAX - 1, buf2, 10);
+    values += _ltoa(USHRT_MAX - 1, buf2, 10);
     values += "\t8\t";
-    values += ltoa(UMINT_MAX - 1, buf2, 10);
+    values += _ltoa(UMINT_MAX - 1, buf2, 10);
     values += "\t9\t";
     values += _i64toa(UINT_MAX - 1, buf2, 10);
     values += "\t10\t";
     values += _ui64toa(ULLONG_MAX - 1, buf2, 10);
     values += "\t11\t";
-    values += ltoa(2000, buf2, 10);
+    values += _ltoa(2000, buf2, 10);
     values += "\t12\t";
-    values += ltoa(254, buf2, 10);
+    values += _ltoa(254, buf2, 10);
     values += "\t13\t";
-    values += ltoa(65000, buf2, 10);
+    values += _ltoa(65000, buf2, 10);
     values += "\t14\t";
     values += TEST_DATEA;
     values += "\t15\t";sprintf_s(buf2, 50, "%.0f", FLOAT_V1);
@@ -1531,12 +1531,12 @@ void testNullValue(database* db)
     }
     activeTable atv(db, _T("nullvalue"));
     atv.index(1);
-    activeTable atg(db, "groups");
+    activeTable atg(db, _T("groups"));
     atg.alias(_T("id"), _T("group_id")).alias(_T("name"), _T("group_name"));
     atg.index(1);
-    activeTable atu(db, "users");
+    activeTable atu(db, _T("users"));
     atu.index(0);
-    activeTable ats(db, "scores");
+    activeTable ats(db, _T("scores"));
     ats.index(0);
     query q;
     recordsetQuery rq;
@@ -1560,7 +1560,7 @@ void testNullValue(database* db)
     BOOST_CHECK(rs.size() == 0);
     // query reverse
     rs.clear();
-    q.reset().where(_T("id2"), _T("="), 0).reject(0).direction(table::eFindType::findBackForword);
+    q.reset().where(_T("id2"), _T("="), 0).reject(0).direction(table::findBackForword);
     atv.keyValue(100).read(rs, q);
     //rs.dump();
     BOOST_CHECK(rs.size() == 0);
@@ -1587,7 +1587,7 @@ void testNullValue(database* db)
     BOOST_CHECK(rs[3][_T("id")] == 5);
     // query reverse
     rs.clear();
-    q.reset().where(_T("id2"), _T("<>"), 0).reject(0).direction(table::eFindType::findBackForword);
+    q.reset().where(_T("id2"), _T("<>"), 0).reject(0).direction(table::findBackForword);
     atv.keyValue(100).read(rs, q);
     //rs.dump();
     BOOST_CHECK(rs.size() == 4);
@@ -1622,7 +1622,7 @@ void testNullValue(database* db)
     BOOST_CHECK(rs[3][_T("id")] == 5);
     // query reverse
     rs.clear();
-    q.reset().where(_T("id2"), _T(">="), 0).reject(0).direction(table::eFindType::findBackForword);
+    q.reset().where(_T("id2"), _T(">="), 0).reject(0).direction(table::findBackForword);
     atv.keyValue(100).read(rs, q);
     //rs.dump();
     BOOST_CHECK(rs.size() == 4);
@@ -1657,7 +1657,7 @@ void testNullValue(database* db)
     BOOST_CHECK(rs[3][_T("id")] == 5);
     // query reverse
     rs.clear();
-    q.reset().where(_T("id2"), _T("<="), 5).reject(0).direction(table::eFindType::findBackForword);
+    q.reset().where(_T("id2"), _T("<="), 5).reject(0).direction(table::findBackForword);
     atv.keyValue(100).read(rs, q);
     //rs.dump();
     BOOST_CHECK(rs.size() == 4);
@@ -1691,7 +1691,7 @@ void testNullValue(database* db)
     BOOST_CHECK(rs[2][_T("id")] == 4);
     // query reverse
     rs.clear();
-    q.reset().where(_T("name"), _T("="), _T("test*")).reject(0).direction(table::eFindType::findBackForword);
+    q.reset().where(_T("name"), _T("="), _T("test*")).reject(0).direction(table::findBackForword);
     atv.keyValue(100).read(rs, q);
     //rs.dump();
     BOOST_CHECK(rs.size() == 3);
@@ -1721,7 +1721,7 @@ void testNullValue(database* db)
     BOOST_CHECK(rs[0][_T("id")] == 3);
     // query reverse
     rs.clear();
-    q.reset().where(_T("name"), _T("<>"), _T("test*")).reject(0).direction(table::eFindType::findBackForword);
+    q.reset().where(_T("name"), _T("<>"), _T("test*")).reject(0).direction(table::findBackForword);
     atv.keyValue(100).read(rs, q);
     //rs.dump();
     BOOST_CHECK(rs.size() == 1);
@@ -1748,7 +1748,7 @@ void testNullValue(database* db)
     BOOST_CHECK(rs[1][_T("id")] == 6);
     // query reverse
     rs.clear();
-    q.reset().whereIsNull(_T("id2")).reject(0).direction(table::eFindType::findBackForword);
+    q.reset().whereIsNull(_T("id2")).reject(0).direction(table::findBackForword);
     atv.keyValue(100).read(rs, q);
     //rs.dump();
     BOOST_CHECK(rs.size() == 2);
@@ -1779,7 +1779,7 @@ void testNullValue(database* db)
     BOOST_CHECK(rs[3][_T("id")] == 5);
     // query reverse
     rs.clear();
-    q.reset().whereIsNotNull(_T("id2")).reject(0).direction(table::eFindType::findBackForword);
+    q.reset().whereIsNotNull(_T("id2")).reject(0).direction(table::findBackForword);
     atv.keyValue(100).read(rs, q);
     //rs.dump();
     BOOST_CHECK(rs.size() == 4);
@@ -1813,7 +1813,7 @@ void testNullValue(database* db)
     BOOST_CHECK(rs[2][_T("id")] == 3);
     // query reverse
     rs.clear();
-    q.reset().in(1, 2, 3).reject(0).direction(table::eFindType::findBackForword);
+    q.reset().in(1, 2, 3).reject(0).direction(table::findBackForword);
     atv.keyValue(100).read(rs, q);
     //rs.dump();
     BOOST_CHECK(rs.size() == 3);

@@ -84,9 +84,11 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
             return ft_uinteger;
         return ft_integer;
     case MYSQL_TYPE_ENUM:
+        return ft_enum;
     case MYSQL_TYPE_SET:
+        return ft_set;
     case MYSQL_TYPE_BIT:
-        return ft_uinteger;
+        return ft_bit;
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
         return ft_float;
@@ -292,13 +294,8 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
                         !(src->fieldFlags(sg.fieldNum) & BINARY_FLAG);// case in-sencitive
 
                 Field* f = src->field(sg.fieldNum);
-                unsigned short slen = f->pack_length();
-                unsigned short mlen = ks.length + var_bytes_if(f);
                 if (f->pack_length() != ks.length + var_bytes_if(f))
-                {
-                    // suppot prefix key
-                    td.fieldDefs[sg.fieldNum].keylen = ks.length ;
-                }
+                    td.fieldDefs[sg.fieldNum].keylen = ks.length ; // suppot prefix key
                 ++segNum;
             }
         }

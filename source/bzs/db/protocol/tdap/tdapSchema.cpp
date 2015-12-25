@@ -627,70 +627,52 @@ void fielddef::fixCharnum_bug()
         len = num * mysql::charsize(CHARSET_UTF16LE) + varLenBytes();
 }
 
-/** Length of compare
- * if part of string or zstring then return strlen * sizeof(char or wchar).
- */
-inline uint_td fielddef::compDataLen(const uchar_td* ptr, bool part) const
-{
-    uint_td length = keyDataLen(ptr);
-    if (part)
-    {
-        if ((type == ft_string) || (type == ft_zstring) ||
-                        (type == ft_note) || (type == ft_mychar))
-            length = (uint_td)strlen((const char*)ptr);
-        else if ((type == ft_wstring) || (type == ft_wzstring) ||
-                        (type == ft_mywchar))
-            length = (uint_td)strlen16((char16_t*)ptr)*sizeof(char16_t);
-    }
-    return length;
-}
-
 bool isCompatibleType(uchar_td l, uchar_td r, ushort_td rlen, uchar_td rchar)
 {
-	if (l == ft_integer) 
+    if (l == ft_integer) 
     {
         if ((r == ft_currency) && (rlen == 8)) return true;
-	    if ((r == ft_currency) && (rlen == 8)) return true;
-	    if ((r == ft_date) && (rlen == 4)) return true;
-	    if ((r == ft_time) && (rlen == 4)) return true;
-	    if ((r == ft_datetime) && (rlen == 8)) return true;
-	    if ((r == ft_timestamp) && (rlen == 8)) return true;
+        if ((r == ft_currency) && (rlen == 8)) return true;
+        if ((r == ft_date) && (rlen == 4)) return true;
+        if ((r == ft_time) && (rlen == 4)) return true;
+        if ((r == ft_datetime) && (rlen == 8)) return true;
+        if ((r == ft_timestamp) && (rlen == 8)) return true;
     }
-	else if (l == ft_uinteger)
+    else if (l == ft_uinteger)
     {
         if ((r == ft_logical) && (rlen <= 2)) return true;
-	    if ((r == ft_bit) && (rlen <= 8)) return true;
-	    if ((r == ft_enum) && (rlen <= 8)) return true;
-	    if ((r == ft_set) && (rlen <= 8)) return true;
+        if ((r == ft_bit) && (rlen <= 8)) return true;
+        if ((r == ft_enum) && (rlen <= 8)) return true;
+        if ((r == ft_set) && (rlen <= 8)) return true;
     }
-	
+    
 
-	// mywchar --> mywchar OK!
-	// string  --> string  OK!
-	// mychar  --> mychar  OK!
-	// mywchar --> mywchar OK!
+    // mywchar --> mywchar OK!
+    // string  --> string  OK!
+    // mychar  --> mychar  OK!
+    // mywchar --> mywchar OK!
 
-	if (l == ft_myvarbinary)
+    if (l == ft_myvarbinary)
     {
         if (r == ft_myvarbinary) return true;
         if (r == ft_mywvarbinary && rchar == CHARSET_UTF16LE) return true;
-	    if (r == ft_lstring) return true;
-	    if (r == ft_lvar) return true;
-	    if (r == ft_note) return true;
-	    if (r == ft_myfixedbinary) return true;
+        if (r == ft_lstring) return true;
+        if (r == ft_lvar) return true;
+        if (r == ft_note) return true;
+        if (r == ft_myfixedbinary) return true;
     }
-	else if (l == ft_string)
+    else if (l == ft_string)
     {
          if (r == ft_string) return true;
 
          // zstring --> string
-	     if ((r == ft_zstring) && (rchar != CHARSET_UTF16LE)) return true;
-	
-	     // wzstring --> string 
-	     if ((r == ft_wzstring) && (rchar == CHARSET_UTF16LE)) return true;
+         if ((r == ft_zstring) && (rchar != CHARSET_UTF16LE)) return true;
+    
+         // wzstring --> string 
+         if ((r == ft_wzstring) && (rchar == CHARSET_UTF16LE)) return true;
 
-	     // wstring --> string 
-	     if ((r == ft_wstring) && (rchar == CHARSET_UTF16LE)) return true;
+         // wstring --> string 
+         if ((r == ft_wstring) && (rchar == CHARSET_UTF16LE)) return true;
          if (r == ft_decimal) return true;
          if (r == ft_money) return true;
          if (r == ft_numeric) return true;

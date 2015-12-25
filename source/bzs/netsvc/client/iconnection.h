@@ -107,6 +107,7 @@ public:
     virtual char* read() = 0;
     virtual bool isHandShakable() const = 0;
     virtual const boost::system::error_code& error() const = 0;
+    virtual void* versions() = 0;
 };
 
 #define CONNECTION_FUNCTION_DIRECT_READ 1

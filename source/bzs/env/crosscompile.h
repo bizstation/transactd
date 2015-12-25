@@ -56,13 +56,8 @@ int gettimeofday(struct timeval*, struct timezone*);
 #define _strnicmp strncasecmp
 #define __int64 long long int
 #define _atoi64 atoll
-#define _wtoi(W) wcstol(W, NULL, 10)
-#define _wtol(W) wcstol(W, NULL, 10)
-#define _wtoi64(W) wcstoll(W, NULL, 10)
-#define _wtof(W) wcstod(W, NULL)
 #define _access access
 #define sprintf_s snprintf
-#define swprintf_s swprintf
 #define localtime_s localtime_r
 #define strncpy_s(A, B, C, D) strncpy(A, C, D)
 #define strcpy_s(A, B, C) strcpy(A, C)
@@ -92,17 +87,42 @@ inline char* _ui64toa_s(unsigned __int64 v, char* tmp, unsigned long size, int r
     return tmp;
 }
 
-inline char16_t* _i64tow_s(__int64 v, char16_t* tmp, unsigned long size, int radix)
-{
-    swprintf((wchar_t*)tmp, size, L"%lld", v);
-    return tmp;
-}
-
 inline char* _ltoa_s(int v, char* tmp, unsigned long size, int radix)
 {
     snprintf(tmp, size, "%d", v);
     return tmp;
 }
+
+inline char* _ultoa_s(int v, char* tmp, unsigned long size, int radix)
+{
+    snprintf(tmp, size, "%u", v);
+    return tmp;
+}
+
+inline char* _i64toa(__int64 v, char* tmp, int radix)
+{
+    sprintf(tmp, "%lld", v);
+    return tmp;
+}
+
+inline char* _ui64toa(unsigned __int64 v, char* tmp, int radix)
+{
+    sprintf(tmp, "%llu", v);
+    return tmp;
+}
+
+inline char* _ltoa(int v, char* tmp, int radix)
+{
+    sprintf(tmp, "%d", v);
+    return tmp;
+}
+
+inline char* _ultoa(int v, char* tmp, int radix)
+{
+    sprintf(tmp, "%u", v);
+    return tmp;
+}
+
 
 char16_t* _strupr16(char16_t* s);
 char16_t* _strlwr16(char16_t* s);

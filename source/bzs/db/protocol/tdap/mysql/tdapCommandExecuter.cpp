@@ -343,7 +343,7 @@ bool dbExecuter::getDatabaseWithAuth(request& req, database** db, bool connect)
 {
     *db = NULL;
     bool created = false;
-	std::string dbname = getDatabaseName(req);
+    std::string dbname = getDatabaseName(req);
     bool ret = false;
     if (connect && dbname == "")
         dbname = "mysql";
@@ -353,11 +353,11 @@ bool dbExecuter::getDatabaseWithAuth(request& req, database** db, bool connect)
     {
         *db = getDatabase(dbname.c_str(), req.cid, created);
         if (*db)
-			ret = doAuthentication(req, *db);
+            ret = doAuthentication(req, *db);
         if (connect || (created && !ret))
         {
             dbManager::releaseDatabase(req.cid);
-		    *db = NULL;
+            *db = NULL;
         }
     }else
         req.result = 1;
@@ -373,9 +373,9 @@ bool dbExecuter::connect(request& req)
     req.paramMask = 0;
     if (req.keyNum == LG_SUBOP_DISCONNECT)
     {
-		dbManager::releaseDatabase(req.cid);
-		return true;
-	}
+        dbManager::releaseDatabase(req.cid);
+        return true;
+    }
     database* db = NULL;
     bool ret = getDatabaseWithAuth(req, &db, true);
     if (ret &&  (req.result == 0) && db)
@@ -1128,7 +1128,7 @@ inline void dbExecuter::doStat(request& req)
         memcpy((char*)req.data, &len, sizeof(ushort_td));
         uint rows = (uint)m_tb->recordCount((req.keyNum != 0));
         memcpy((char*)req.data + 6, &rows, sizeof(uint));
-		req.result = errorCodeSht(m_tb->stat());
+        req.result = errorCodeSht(m_tb->stat());
     }
     else
         req.result = STATUS_BUFFERTOOSMALL;
@@ -1280,7 +1280,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_RECONNECT:
             nw->resize(*req.datalen);
-            if (!doOpenTable(req, nw->ptr(), true))
+            resultBuffer = nw->ptr();
+            if (!doOpenTable(req, resultBuffer, true))
             {
                 if (req.result == 0)
                     req.result = ERROR_TD_INVALID_CLINETHOST;
@@ -1431,6 +1432,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_OPENTABLE:
             nw->resize(*req.datalen);
+            resultBuffer = nw->ptr();
             if (!doOpenTable(req, nw->ptr(), false))
             {
                 if (req.result == 0)
@@ -1484,9 +1486,9 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         }
         case TD_VERSION:
-			if (*req.datalen >= sizeof(btrVersion)* 3)
+            if (*req.datalen >= sizeof(btrVersion)* 3)
             {
-				btrVersion* v = (btrVersion*)req.data;
+                btrVersion* v = (btrVersion*)req.data;
                 ++v;
                 v->majorVersion = MYSQL_VERSION_ID / 10000;
                 v->minorVersion = (MYSQL_VERSION_ID / 100) % 100;
@@ -1500,7 +1502,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 v->minorVersion = TRANSACTD_VER_MINOR;
                 v->type = 'T';
                 req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
-				req.resultLen = sizeof(btrVersion)* 3;
+                req.resultLen = sizeof(btrVersion)* 3;
             }
             else
                 req.result = STATUS_BUFFERTOOSMALL;
@@ -1543,7 +1545,6 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         }
         case TD_STORE_TEST:
         {   
-            database* db = getDatabaseCid(req.cid);
             m_tb = getTable(req.pbk->handle, SQLCOM_UPDATE);
             bool ncc = (req.keyNum == -1);
             m_tb->beginUpdate(req.keyNum);
@@ -1554,7 +1555,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 split(ss, s, "\t");
                 if ( ss.size() >= 2)
                 {
-                    for (int i = 0; i < ss.size() ; i+=2)
+                    for (int i = 0; i < (int)ss.size() ; i+=2)
                         m_tb->setValue((short)atol(ss[i].c_str()), ss[i + 1], 0);
                     m_tb->update(ncc);
                     req.result = errorCodeSht(m_tb->stat());
@@ -1570,7 +1571,6 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         }
         case TD_SET_TIMESTAMP_MODE:
         {
-            database* db = getDatabaseCid(req.cid);
             m_tb = getTable(req.pbk->handle);
             bool always = req.keyNum == TIMESTAMP_ALWAYS;
             m_tb->setTimestampAlways(always);
@@ -1663,7 +1663,7 @@ void makeRandomKey(unsigned char *buf, unsigned int size)
 size_t dbExecuter::getAcceptMessage(char* message, size_t size)
 {
     // make handshake packet
-	m_authChecked = false;
+    m_authChecked = false;
     assert(size >= sizeof(trdVersiton));
 
     handshale_t* hst = (handshale_t*)message;

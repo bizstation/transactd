@@ -5157,6 +5157,8 @@ BOOST_FIXTURE_TEST_CASE(createNewDataBase, fixture)
             exit(1);
         }
     }
+    db()->connect(makeUri(PROTOCOL, HOSTNAME, _T("")));
+
     btrVersions v;
     db()->getBtrVersion(&v);
     if (db()->stat() ==0)

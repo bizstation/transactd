@@ -35,7 +35,7 @@ namespace client
 
 class sqlBuilder
 {
-    static std::string getFieldList(const tabledef* table, std::vector<std::string>& fdl, clsrv_ver& ver);
+    static std::string getFieldList(const tabledef* table, std::vector<std::string>& fdl, const clsrv_ver* ver);
     static void insertNisFields(const tabledef* td, std::vector<std::string>& fdl, std::string& s);
     static std::string& getKey(const tabledef* td, std::vector<std::string>& fdl, 
                                     int index, std::string& s, bool specifyKeyNum=false);  
@@ -48,12 +48,12 @@ public:
      *  @param charsetIndexServer server default charset
      */
     static std::string sqlCreateTable(const char* name, tabledef* table,
-                               uchar_td charsetIndexServer, clsrv_ver& ver);
+                               uchar_td charsetIndexServer, const clsrv_ver* ver);
     static std::string sqlCreateTable(const char* fileName, fileSpec* fs,
-                               uchar_td charsetIndexServer, clsrv_ver& ver);
+                               uchar_td charsetIndexServer, const clsrv_ver* ver);
 
     static std::string sqlCreateIndex(const tabledef* table, int keyNum,
-                      bool specifyKeyNum, uchar_td charsetIndexServer, clsrv_ver& ver);
+                      bool specifyKeyNum, uchar_td charsetIndexServer, const clsrv_ver* ver);
 };
 
 } // namespace client

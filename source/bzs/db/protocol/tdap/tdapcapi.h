@@ -526,6 +526,8 @@ struct clsrv_ver
         return false;
     }
 };
+#define VER_ST_SIZE 12
+
 #define MYSQL_TYPE_MYSQL 'M'
 #define MYSQL_TYPE_MARIA 'A'
 

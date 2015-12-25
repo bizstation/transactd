@@ -120,7 +120,6 @@ extern int compWString(const field& l, const field& r, char logType);
 extern int compiWString(const field& l, const field& r, char logType);
 
 /** @endcond */
-
 class DLLLIB field
 {
     friend class table;
@@ -138,8 +137,8 @@ class DLLLIB field
     const class fielddefs* m_fds;
     mutable unsigned char* m_cachedNullPtr;
     mutable unsigned char m_nullbit;
-    static const unsigned char m_nullSign = 0xff;
-
+    unsigned char m_nullSign;
+    
     void nullPtrCache() const;
     int blobLenBytes() const { return m_fd->blobLenBytes(); }
     __int64 readValue64() const;
@@ -148,8 +147,10 @@ class DLLLIB field
     void storeValueDbl(double value);
     void storeValueStrA(const char* data);
     const char* readValueStrA() const;
+#ifdef _WIN32
     void storeValueStrW(const WCHAR* data);
     const WCHAR* readValueStrW() const;
+#endif
     void storeValueNumeric(double data);
     double readValueNumeric() const;
     void storeValueDecimal(double data);
@@ -212,7 +213,8 @@ public:
     {
         if (nullField)
         {
-            m_cachedNullPtr = (unsigned char*)&field::m_nullSign;
+            m_cachedNullPtr = (unsigned char*)&m_nullSign;
+            m_nullSign = 0xff;
             m_nullbit = 1;
         }
     }
@@ -229,6 +231,7 @@ public:
         m_fd = r.m_fd;
         m_ptr = r.m_ptr;
         m_fds = r.m_fds;
+        m_nullSign = r.m_nullSign;
         m_cachedNullPtr = r.m_cachedNullPtr;
         m_nullbit = r.m_nullbit;
         return *this;
