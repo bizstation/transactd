@@ -245,11 +245,11 @@ describe Transactd, 'V3Features' do
     expect(db.autoSchemaUseNullkey()).to eq true
     db.setAutoSchemaUseNullkey(false)
     expect(db.autoSchemaUseNullkey()).to eq false
-    expect(Transactd::Database::comaptibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
+    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
     Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_OLD_NULL)
-    expect(Transactd::Database::comaptibleMode()).to eq Transactd::Database::CMP_MODE_OLD_NULL
+    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_OLD_NULL
     Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_MYSQL_NULL)
-    expect(Transactd::Database::comaptibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
+    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
     db.close()
   end
   

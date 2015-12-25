@@ -21697,7 +21697,7 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_database_comaptibleMode(int argc, VALUE *argv, VALUE self) {
+_wrap_database_compatibleMode(int argc, VALUE *argv, VALUE self) {
   int result;
   VALUE vresult = Qnil;
   
@@ -21706,7 +21706,7 @@ _wrap_database_comaptibleMode(int argc, VALUE *argv, VALUE self) {
   }
   {
     try {
-      result = (int)bzs::db::protocol::tdap::client::database::comaptibleMode();
+      result = (int)bzs::db::protocol::tdap::client::database::compatibleMode();
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -35705,7 +35705,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassDatabase.klass, "autoSchemaUseNullkey", VALUEFUNC(_wrap_database_autoSchemaUseNullkey), -1);
   rb_define_method(SwigClassDatabase.klass, "setAutoSchemaUseNullkey", VALUEFUNC(_wrap_database_setAutoSchemaUseNullkey), -1);
   rb_define_singleton_method(SwigClassDatabase.klass, "setCompatibleMode", VALUEFUNC(_wrap_database_setCompatibleMode), -1);
-  rb_define_singleton_method(SwigClassDatabase.klass, "comaptibleMode", VALUEFUNC(_wrap_database_comaptibleMode), -1);
+  rb_define_singleton_method(SwigClassDatabase.klass, "compatibleMode", VALUEFUNC(_wrap_database_compatibleMode), -1);
   rb_define_const(SwigClassDatabase.klass, "CMP_MODE_MYSQL_NULL", SWIG_From_int(static_cast< int >(bzs::db::protocol::tdap::client::database::CMP_MODE_MYSQL_NULL)));
   rb_define_const(SwigClassDatabase.klass, "CMP_MODE_OLD_NULL", SWIG_From_int(static_cast< int >(bzs::db::protocol::tdap::client::database::CMP_MODE_OLD_NULL)));
   rb_define_method(SwigClassDatabase.klass, "openTable", VALUEFUNC(_wrap_database_openTable), -1);

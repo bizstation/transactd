@@ -542,7 +542,7 @@ STDMETHODIMP CDatabase::put_CompatibleMode(int Value)
 
 STDMETHODIMP CDatabase::get_CompatibleMode(int* Value)
 {
-    *Value = database::comaptibleMode();
+    *Value = database::compatibleMode();
     return S_OK;
 }
 

@@ -86,7 +86,7 @@ filter
                         1 and 
                         2 or
                         +32 prepare placeholder (Only transactd)
-    data        2 or n  field position (if compare type +64) or comapre value
+    data        2 or n  field position (if compare type +64) or compare value
     --- end repeat   ---
 -----------------------------------
 result
@@ -330,7 +330,7 @@ public:
         fdd.pos = 0;
         uchar_td* buf = allocBuffer(fdd.len);
 
-        // Comapare value don't use NULL
+        // Compare value don't use NULL
         // If logType is eIsNull or eIsNotNull, ingored this value
         field fd(buf, fdd, tb->m_fddefs/*, NULL, 0*/);
         fd = value; // operator=()

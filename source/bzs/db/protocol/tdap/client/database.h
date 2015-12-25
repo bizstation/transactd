@@ -140,7 +140,7 @@ public:
      */
     static void destroy(database* db);
     static void setCompatibleMode(int mode);
-    static int comaptibleMode();
+    static int compatibleMode();
     static const int CMP_MODE_MYSQL_NULL = 1; //default
     static const int CMP_MODE_OLD_NULL =  0;
 };

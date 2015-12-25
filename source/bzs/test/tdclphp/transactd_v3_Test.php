@@ -315,13 +315,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db->setAutoSchemaUseNullkey(false);
         $this->assertEquals($db->autoSchemaUseNullkey(), false);
         
-        $this->assertEquals($db::comaptibleMode(), bz\database::CMP_MODE_MYSQL_NULL);
+        $this->assertEquals($db::compatibleMode(), bz\database::CMP_MODE_MYSQL_NULL);
         
         bz\database::setCompatibleMode(bz\database::CMP_MODE_OLD_NULL);
-        $this->assertEquals(bz\database::comaptibleMode(), bz\database::CMP_MODE_OLD_NULL);
+        $this->assertEquals(bz\database::compatibleMode(), bz\database::CMP_MODE_OLD_NULL);
         
         bz\database::setCompatibleMode(bz\database::CMP_MODE_MYSQL_NULL);
-        $this->assertEquals(bz\database::comaptibleMode(), bz\database::CMP_MODE_MYSQL_NULL);
+        $this->assertEquals(bz\database::compatibleMode(), bz\database::CMP_MODE_MYSQL_NULL);
         
         $dbdef = $db->dbDef();
         $td = $dbdef->tableDefs(1);

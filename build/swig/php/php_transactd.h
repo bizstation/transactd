@@ -399,7 +399,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_mode);
 ZEND_NAMED_FUNCTION(_wrap_database_autoSchemaUseNullkey);
 ZEND_NAMED_FUNCTION(_wrap_database_setAutoSchemaUseNullkey);
 ZEND_NAMED_FUNCTION(_wrap_database_setCompatibleMode);
-ZEND_NAMED_FUNCTION(_wrap_database_comaptibleMode);
+ZEND_NAMED_FUNCTION(_wrap_database_compatibleMode);
 ZEND_NAMED_FUNCTION(_wrap_new_database);
 ZEND_NAMED_FUNCTION(_wrap_database_openTable);
 ZEND_NAMED_FUNCTION(_wrap_benchmark_start);
