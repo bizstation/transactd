@@ -29,7 +29,7 @@ namespace protocol
 {
 namespace tdap
 {
-
+/** @cond INTERNAL */
 
 #pragma pack(push, 1)
 pragma_pack1;
@@ -49,16 +49,16 @@ struct PACKAGE myDate
 	};
     inline myDate() {};
     inline myDate(int /*dec*/, bool /*bigendian*/) {};
-    void setValue(int v, bool btrvValue = false);
+    void setValue(int v, bool btrDate_i = false);
     int getValue(bool btrvValue = false);
-    char* toString(char* p, bool btrvValue = false);
+    char* toString(char* p, bool w3_format = false);
     myDate& operator=(const char* p);
 #ifdef _WIN32
-    wchar_t* toString(wchar_t* p, bool btrvValue = false);
+    wchar_t* toString(wchar_t* p, bool w3_format = false);
     myDate& operator=(const wchar_t* p);
 #endif
-    __int64 internalValue() const { return i; }
-    void setInternalValue(__int64 v) { i = (int)v; }
+    inline __int64 internalValue() const { return i; }
+    inline void setInternalValue(__int64 v) { i = (int)v; }
 };
 
 struct PACKAGE myTime
@@ -86,22 +86,22 @@ public:
 public:
     inline myTime(int dec, bool bigendian) : m_dec(dec), 
         m_bigendian(bigendian){};
-    virtual void setValue(__int64 v, bool btrvValue = false);
-    virtual __int64 getValue(bool btrvValue = false);
+    virtual void setValue(__int64 v, bool btrTime_i = false);
+    virtual __int64 getValue(bool btrTime_i = false);
     char* toString(char* p);
     myTime& operator=(const char* p);
 #ifdef _WIN32
     wchar_t* toString(wchar_t* p);
     myTime& operator=(const wchar_t* p);
 #endif
-    __int64 internalValue() const { return i64; }
-    void setInternalValue(__int64 v) { i64 = v; }
+    inline __int64 internalValue() const { return i64; }
+    inline void setInternalValue(__int64 v) { i64 = v; }
 };
 
 struct PACKAGE maTime : public  myTime
 {
-    virtual void setValue(__int64 v, bool btrvValue = false);
-    virtual __int64 getValue(bool btrvValue = false);
+    virtual void setValue(__int64 v, bool btrTime_i = false);
+    virtual __int64 getValue(bool btrTime_i = false);
 public:
     inline maTime(int dec, bool bigendian) : myTime(dec, bigendian){}
     maTime& operator=(const char* p);
@@ -147,8 +147,8 @@ public:
     wchar_t* timeStr(wchar_t*) const;
     void setTime(const wchar_t* p);
 #endif
-    __int64 internalValue() const { return i64; }
-    void setInternalValue(__int64 v) { i64 = v; }
+    inline __int64 internalValue() const { return i64; }
+    inline void setInternalValue(__int64 v) { i64 = v; }
 };
 
 struct PACKAGE maDateTime : public  myDateTime
@@ -197,8 +197,8 @@ public:
     wchar_t* dateStr(wchar_t* p) const;
     wchar_t* timeStr(wchar_t* p) const;
 #endif
-    __int64 internalValue() const { return i64; }
-    void setInternalValue(__int64 v) { i64 = v; }
+    inline __int64 internalValue() const { return i64; }
+    inline void setInternalValue(__int64 v) { i64 = v; }
 };
 
 
@@ -209,9 +209,9 @@ struct PACKAGE maTimeStamp : public myTimeStamp
     {
         m_mariadb = true;
     }
-    maTimeStamp& operator=(const char* p){ myTimeStamp::operator=(p); return *this;}
+    inline maTimeStamp& operator=(const char* p){ myTimeStamp::operator=(p); return *this;}
 #ifdef _WIN32
-    maTimeStamp& operator=(const wchar_t* p) { myTimeStamp::operator=(p); return *this; }
+    inline maTimeStamp& operator=(const wchar_t* p) { myTimeStamp::operator=(p); return *this; }
 #endif
 };
 
@@ -223,24 +223,24 @@ inline int btrdateToMydate(int btrd)
 }
 
 // Do not work at maridab
-inline __int64 btrtimeToMytime(int btrt, bool bigendian)
+inline __int64 btrtimeToMytime(int btrTime_i, bool bigendian)
 {
     myTime myt(4, bigendian);
-    myt.setValue(btrt, true);
+    myt.setValue(btrTime_i, true);
     return myt.getValue(true);
 }
 
-inline int mydateToBtrdate(int mydate)
+inline int mydateToBtrdate(int myDate_i)
 {
     myDate myd;
-    myd.setValue(mydate, false);
+    myd.setValue(myDate_i, false);
     return myd.getValue(true);
 }
 
-inline int mytimeToBtrtime(__int64 mytime, bool bigendian, int dec)
+inline int mytimeToBtrtime(__int64 myTime_i, bool bigendian, int dec)
 {
     myTime myt(dec, bigendian);
-    myt.setValue(mytime, false);
+    myt.setValue(myTime_i, false);
     return (int)myt.getValue(true);
 }
 
@@ -283,6 +283,7 @@ inline __int64 str_to_64(int dec, bool bigendian, const T2* data)
 
 #pragma pack(pop)
 pragma_pop;
+/** @endcond */
 
 } // namespace tdap
 } // namespace protocol

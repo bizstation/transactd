@@ -565,18 +565,18 @@ abstract class transactd {
 		return $r;
 	}
 
-	static function btrdtoa($d_or_date,$type_vb=false) {
-		$r=btrdtoa($d_or_date,$type_vb);
+	static function btrdtoa($d_or_date,$w3_format=false) {
+		$r=btrdtoa($d_or_date,$w3_format);
 		return $r;
 	}
 
-	static function btrttoa($t_or_time,$type_vb=false) {
-		$r=btrttoa($t_or_time,$type_vb);
+	static function btrttoa($t_or_time) {
+		$r=btrttoa($t_or_time);
 		return $r;
 	}
 
-	static function btrstoa($d,$type_vb=false) {
-		return btrstoa($d,$type_vb);
+	static function btrstoa($d,$w3_format=false) {
+		return btrstoa($d,$w3_format);
 	}
 
 	static function atobtrs($p) {

@@ -220,10 +220,10 @@ const char* timeFormatString(const char*)
     return "%02d:%02d:%02d";
 }
 
-const char* timeFormatString_h(const char*)
+/*const char* timeFormatString_h(const char*)
 {
     return "%02d-%02d-%02d";
-}
+}*/
 
 template <class T> size_t _tcslen_(const T* p);
 
@@ -239,24 +239,24 @@ template <> int _ttoi_(const char* p)
     return atoi(p);
 }
 
-template <class T> T* formatDate(T* p, const btrDate& d, bool type_vb);
+template <class T> T* formatDate(T* p, const btrDate& d, bool w3_format);
 
-template <> char* formatDate(char* p, const btrDate& d, bool type_vb)
+template <> char* formatDate(char* p, const btrDate& d, bool w3_format)
 {
-    if (type_vb)
+    if (w3_format)
         sprintf_s(p, 20, dateFormatString_h(p), d.yy, d.mm, d.dd);
     else
         sprintf_s(p, 20, dateFormatString(p), d.yy, d.mm, d.dd);
     return p;
 }
 
-template <class T> T* formatTime(T* p, const btrTime& d, bool type_vb);
+template <class T> T* formatTime(T* p, const btrTime& t/*, bool w3_format*/);
 
-template <> char* formatTime(char* p, const btrTime& t, bool type_vb)
+template <> char* formatTime(char* p, const btrTime& t/*, bool w3_format*/)
 {
-    if (type_vb)
+    /*if (w3_format)
         sprintf_s(p, 20, timeFormatString_h(p), t.hh, t.nn, t.ss);
-    else
+    else*/
         sprintf_s(p, 20, timeFormatString(p), t.hh, t.nn, t.ss);
     return p;
 }
@@ -277,10 +277,10 @@ const wchar_t* timeFormatString(const wchar_t*)
     return L"%02d:%02d:%02d";
 }
 
-const wchar_t* timeFormatString_h(const wchar_t*)
+/*const wchar_t* timeFormatString_h(const wchar_t*)
 {
     return L"%02d-%02d-%02d";
-}
+}*/
 
 template <> size_t _tcslen_(const wchar_t* p)
 {
@@ -292,20 +292,20 @@ template <> int _ttoi_(const wchar_t* p)
     return _wtoi(p);
 }
 
-template <> wchar_t* formatDate(wchar_t* p, const btrDate& d, bool type_vb)
+template <> wchar_t* formatDate(wchar_t* p, const btrDate& d, bool w3_format)
 {
-    if (type_vb)
+    if (w3_format)
         swprintf_s(p, 20, dateFormatString_h(p), d.yy, d.mm, d.dd);
     else
         swprintf_s(p, 20, dateFormatString(p), d.yy, d.mm, d.dd);
     return p;
 }
 
-template <> wchar_t* formatTime(wchar_t* p, const btrTime& t, bool type_vb)
+template <> wchar_t* formatTime(wchar_t* p, const btrTime& t/*, bool w3_format*/)
 {
-    if (type_vb)
+    /*if (w3_format)
         swprintf_s(p, 20, timeFormatString_h(p), t.hh, t.nn, t.ss);
-    else
+    else*/
         swprintf_s(p, 20, timeFormatString(p), t.hh, t.nn, t.ss);
     return p;
 }
@@ -326,20 +326,20 @@ template <class T> btrDate atobtrd(const T* date)
     return bt;
 }
 
-template <class T> const T* btrdtoa(const btrDate& d, T* retbuf, bool type_vb)
+template <class T> const T* btrdtoa(const btrDate& d, T* retbuf, bool w3_format)
 {
     T* p = retbuf;
     if (p == NULL)
         p = (T*)databuf();
-    return formatDate(p, d, type_vb);
+    return formatDate(p, d, w3_format);
 }
 
-template <class T> const T* btrttoa(const btrTime& t, T* retbuf, bool type_vb)
+template <class T> const T* btrttoa(const btrTime& t, T* retbuf/*, bool w3_format*/)
 {
     T* p = retbuf;
     if (p == NULL)
         p = (T*)databuf();
-    return formatTime(p, t, type_vb);
+    return formatTime(p, t/*, w3_format*/);
 }
 
 template <class T> btrTime atobtrt(const T* p)
@@ -362,23 +362,23 @@ btrDate atobtrd(const char* p)
     return atobtrd<char>(p);
 }
 
-const char* btrdtoa(const btrDate& d, char* retbuf, bool type_vb)
+const char* btrdtoa(const btrDate& d, char* retbuf, bool w3_format)
 {
-    return btrdtoa<char>(d, retbuf, type_vb);
+    return btrdtoa<char>(d, retbuf, w3_format);
 }
 
-const char* btrttoa(const btrTime& t, char* retbuf, bool type_vb)
+const char* btrttoa(const btrTime& t, char* retbuf/*, bool w3_format*/)
 {
-    return btrttoa<char>(t, retbuf, type_vb);
+    return btrttoa<char>(t, retbuf/*, w3_format*/);
 }
 
-const char* btrstoa(const btrDateTime& s, char* retbuf, bool type_vb)
+const char* btrstoa(const btrDateTime& s, char* retbuf, bool w3_format)
 {
     char* p = retbuf;
     const btrDate& d = s.date;
     const btrTime& t = s.time;
     if (p == NULL) p = (char*)databuf();
-    if (type_vb)
+    if (w3_format)
         sprintf_s(p, 21, ("%04d-%02d-%02dT%02d:%02d:%02d"), d.yy, d.mm,
                     d.dd, t.hh, t.nn, t.ss);
     else
@@ -393,23 +393,23 @@ btrTime atobtrt(const char* p)
 }
 
 #ifdef _WIN32
-const wchar_t* btrdtoa(const btrDate& d, wchar_t* retbuf, bool type_vb)
+const wchar_t* btrdtoa(const btrDate& d, wchar_t* retbuf, bool w3_format)
 {
-    return btrdtoa<wchar_t>(d, retbuf, type_vb);
+    return btrdtoa<wchar_t>(d, retbuf, w3_format);
 }
 
-const wchar_t* btrttoa(const btrTime& t, wchar_t* retbuf, bool type_vb)
+const wchar_t* btrttoa(const btrTime& t, wchar_t* retbuf/*, bool w3_format*/)
 {
-    return btrttoa<wchar_t>(t, retbuf, type_vb);
+    return btrttoa<wchar_t>(t, retbuf/*, w3_format*/);
 }
 
-const wchar_t* btrstoa(const btrDateTime& s, wchar_t* retbuf, bool type_vb)
+const wchar_t* btrstoa(const btrDateTime& s, wchar_t* retbuf, bool w3_format)
 {
     wchar_t* p = retbuf;
     const btrDate& d = s.date;
     const btrTime& t = s.time;
     if (p == NULL) p = (wchar_t*)databuf();
-    if (type_vb)
+    if (w3_format)
         swprintf_s(p, 21, L"%04d-%02d-%02dT%02d:%02d:%02d", d.yy, d.mm,
                     d.dd, t.hh, t.nn, t.ss);
     else

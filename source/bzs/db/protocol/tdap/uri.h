@@ -39,6 +39,8 @@ namespace protocol
 namespace tdap
 {
 
+/** @cond INTERNAL */
+
 inline const _TCHAR* protocol(const _TCHAR* uri)
 {
     const _TCHAR* st = _tcsstr(uri, _T("tdap://"));
@@ -326,6 +328,7 @@ inline unsigned char* hexTobin(unsigned char* retVal, const char *src, int size)
     return retVal;
 }
 
+/** @endcond */
 
 } // namespace tdap
 } // namespace protocol

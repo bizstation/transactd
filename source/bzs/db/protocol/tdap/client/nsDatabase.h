@@ -56,7 +56,9 @@ class DLLLIB nsdatabase
 {
     friend class nstable;
     friend class dbdef;
+/** @cond INTERNAL */
     friend bool reconnectSharedConnection(const void* ptr);
+/** @endcond */
     struct nsdbimpl* m_nsimpl;
     nsdatabase(const nsdatabase&);
     static unsigned int m_execCodepage;

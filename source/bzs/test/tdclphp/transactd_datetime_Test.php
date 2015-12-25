@@ -46,19 +46,14 @@ class transactdDatetimeTest extends PHPUnit_Framework_TestCase
     {
         $i_nowtime = Bz\transactd::getNowTime(); // get now time as integer
         $s_i_nowtime  = Bz\transactd::btrttoa($i_nowtime);
-        $s_i_nowtime2 = Bz\transactd::btrttoa($i_nowtime, true);
         //print_r($i_nowtime);
         //print_r($s_i_nowtime);
-        //print_r($s_i_nowtime2);
         $nowtime = new Bz\btrTime();
         $nowtime->i = $i_nowtime;  // get now time as BtrTime
         $s_nowtime  = Bz\transactd::btrttoa($nowtime);
-        $s_nowtime2 = Bz\transactd::btrttoa($nowtime, true);
         //print_r($nowtime);
         //print_r($s_nowtime);
-        //print_r($s_nowtime2);
         $this->assertEquals($s_i_nowtime, $s_nowtime);
-        $this->assertEquals($s_i_nowtime2, $s_nowtime2);
     }
     public function testGetBtrdatetime()
     {

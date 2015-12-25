@@ -230,7 +230,7 @@ public:
     void setResultName(const _TCHAR* v);
     int resultKey() const;
     void reset();
-    bool isNull(int groupIndex) const;
+    bool isNull(int index) const;
     uchar_td decimals() const;
     virtual groupFuncBase* clone() = 0;
     

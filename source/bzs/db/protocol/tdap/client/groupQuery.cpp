@@ -911,9 +911,9 @@ int groupFuncBase::resultKey() const
     return m_imple->resultKey();
 }
 
-bool groupFuncBase::isNull(int groupIndex) const
+bool groupFuncBase::isNull(int index) const
 {
-    return m_imple->m_nulls[groupIndex];
+    return m_imple->m_nulls[index];
 }
 
 void groupFuncBase::reset()

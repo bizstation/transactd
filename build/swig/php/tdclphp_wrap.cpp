@@ -21289,55 +21289,6 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_btrttoa__SWIG_0) {
-  bzs::db::protocol::tdap::btrTime *arg1 = 0 ;
-  char *arg2 = (char *) 0 ;
-  bool arg3 ;
-  char tmpbuf2[255] ;
-  zval **args[2];
-  char *result = 0 ;
-  
-  {
-    arg2=tmpbuf2; 
-  }
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__btrTime, 0) < 0 || arg1 == NULL) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of btrttoa. Expected SWIGTYPE_p_bzs__db__protocol__tdap__btrTime");
-    }
-  }
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,2,CONVERT_BOOL_IN@*/
-  convert_to_boolean_ex(args[1]);
-  arg3 = (bool) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  {
-    try {
-      result = (char *)bzs::db::protocol::tdap::btrttoa((bzs::db::protocol::tdap::btrTime const &)*arg1,arg2,arg3);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  {
-    if(!result) {
-      ZVAL_NULL(return_value);
-    } else {
-      ZVAL_STRING(return_value, (char *)result, 1);
-    }
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
 ZEND_NAMED_FUNCTION(_wrap_btrttoa__SWIG_1) {
   bzs::db::protocol::tdap::btrTime *arg1 = 0 ;
   char *arg2 = (char *) 0 ;
@@ -21564,56 +21515,6 @@ ZEND_NAMED_FUNCTION(_wrap_btrdtoa) {
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_btrttoa__SWIG_2) {
-  int arg1 ;
-  char *arg2 = (char *) 0 ;
-  bool arg3 ;
-  char tmpbuf2[255] ;
-  zval **args[2];
-  char *result = 0 ;
-  
-  {
-    arg2=tmpbuf2; 
-  }
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
-  convert_to_long_ex(args[0]);
-  arg1 = (int) Z_LVAL_PP(args[0]);
-  /*@SWIG@*/;
-  
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,2,CONVERT_BOOL_IN@*/
-  convert_to_boolean_ex(args[1]);
-  arg3 = (bool) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  {
-    try {
-      result = (char *)bzs::db::protocol::tdap::btrttoa(arg1,arg2,arg3);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  {
-    if(!result) {
-      ZVAL_NULL(return_value);
-    } else {
-      ZVAL_STRING(return_value, (char *)result, 1);
-    }
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
 ZEND_NAMED_FUNCTION(_wrap_btrttoa__SWIG_3) {
   int arg1 ;
   char *arg2 = (char *) 0 ;
@@ -21678,29 +21579,6 @@ ZEND_NAMED_FUNCTION(_wrap_btrttoa) {
     _v = (Z_TYPE_PP(argv[0]) == IS_LONG); 
     if (_v) {
       _wrap_btrttoa__SWIG_3(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(*argv[0], (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrTime, 0) >= 0);
-    }
-    if (_v) {
-      _v = (Z_TYPE_PP(argv[1]) == IS_BOOL); 
-      if (_v) {
-        _wrap_btrttoa__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    _v = (Z_TYPE_PP(argv[0]) == IS_LONG); 
-    if (_v) {
-      _v = (Z_TYPE_PP(argv[1]) == IS_BOOL); 
-      if (_v) {
-        _wrap_btrttoa__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
     }
   }
   

@@ -44,9 +44,9 @@ const char datetime_format_ms[] =   "%04d-%02d-%02d %02d:%02d:%02d.%0*u";
 const char datetime_format[] =      "%04d-%02d-%02d %02d:%02d:%02d";
 
 //-------------------------------------------------------------
-void myDate::setValue(int v, bool btrvValue)
+void myDate::setValue(int v, bool btrDate_i)
 {
-    if (btrvValue)
+    if (btrDate_i)
     {
         btrDate btrd;
         btrd.i = v;
@@ -59,9 +59,9 @@ void myDate::setValue(int v, bool btrvValue)
         i = v;
 }
 
-int myDate::getValue(bool btrvValue)
+int myDate::getValue(bool btrDate_i)
 {
-    if (btrvValue)
+    if (btrDate_i)
     {
         btrDate btrd;
         btrd.yy = yy;
@@ -72,9 +72,9 @@ int myDate::getValue(bool btrvValue)
     return i;
 }
 
-char* myDate::toString(char* p, bool btrvValue)
+char* myDate::toString(char* p, bool w3_format)
 {
-    if (btrvValue)
+    if (w3_format)
         sprintf(p, "%04d/%02d/%02d", yy, mm, dd);
     else
         sprintf(p, "%04d-%02d-%02d", yy, mm, dd);
@@ -99,9 +99,9 @@ myDate& myDate::operator=(const char* p)
 }
 
 #ifdef _WIN32
-wchar_t* myDate::toString(wchar_t* p, bool btrvValue)
+wchar_t* myDate::toString(wchar_t* p, bool w3_format)
 {
-    if (btrvValue)
+    if (w3_format)
         swprintf_s(p, 11, L"%04d/%02d/%02d", yy, mm, dd);
     else
         swprintf_s(p, 11, L"%04d-%02d-%02d", yy, mm, dd);
@@ -128,10 +128,10 @@ myDate& myDate::operator=(const wchar_t* p)
 
 
 //-------------------------------------------------------------
-void myTime::setValue(__int64 v, bool btrvValue)
+void myTime::setValue(__int64 v, bool btrTime_i)
 {
     i64 = 0;
-    if (btrvValue)
+    if (btrTime_i)
     {
         btrTime btrt;
         btrt.i = (int)v;
@@ -165,9 +165,9 @@ void myTime::setValue(__int64 v, bool btrvValue)
     }
 }
 
-__int64 myTime::getValue(bool btrvValue)
+__int64 myTime::getValue(bool btrTime_i)
 {
-    if (btrvValue)
+    if (btrTime_i)
     {
         btrTime btrt;
         btrt.hh = hh;
@@ -275,9 +275,9 @@ myTime& myTime::operator=(const wchar_t* p)
 static int digit_logs[7] = {1, 10, 100, 1000, 10000, 100000, 1000000}; // digit 0 to 6
 #define ZEROPOINT_SEC 3020400ULL 
 
-void maTime::setValue(__int64 v, bool btrvValue)
+void maTime::setValue(__int64 v, bool btrTime_i)
 {
-    if (m_bigendian && !btrvValue)
+    if (m_bigendian && !btrTime_i)
     {
         i64 = 0;
         char* p = (char*)&i64;
@@ -298,12 +298,12 @@ void maTime::setValue(__int64 v, bool btrvValue)
         hh = v % 24;
         sign = 0;
     }else
-        myTime::setValue(v, btrvValue);
+        myTime::setValue(v, btrTime_i);
 }
 
-__int64 maTime::getValue(bool btrvValue)
+__int64 maTime::getValue(bool btrTime_i)
 {
-    if (!m_bigendian || btrvValue) return myTime::getValue(btrvValue);
+    if (!m_bigendian || btrTime_i) return myTime::getValue(btrTime_i);
     unsigned __int64 i64t = (((hh) * 60ULL +  nn) * 60ULL + ss) * digit_logs[m_dec] +  ms;
     if (i64t)
         i64t += ZEROPOINT_SEC * digit_logs[m_dec];
