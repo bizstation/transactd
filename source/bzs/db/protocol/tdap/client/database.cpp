@@ -593,6 +593,13 @@ short database::testOpenTable()
         return STATUS_DB_YET_OPEN;
     if (m_impl->rootDir[0] == 0x00)
         return  STATUS_DB_YET_OPEN;
+    if (database::comaptibleMode() & database::CMP_MODE_MYSQL_NULL)
+    {
+        btrVersions vv;
+        getBtrVersion(&vv);
+        if (m_stat != 0 || vv.versions[2].majorVersion < 3)
+            return STATUS_INVALID_NULLMODE;
+    }
     return 0;
 }
 

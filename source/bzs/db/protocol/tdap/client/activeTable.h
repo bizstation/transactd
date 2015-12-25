@@ -152,7 +152,7 @@ public:
     {
         _supplyValue(q, 0, v0);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1>
@@ -161,7 +161,7 @@ public:
         _supplyValue(q, 0, v0);
         _supplyValue(q, 1, v1);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2>
@@ -172,7 +172,7 @@ public:
         _supplyValue(q, 1, v1);
         _supplyValue(q, 2, v2);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3>
@@ -184,7 +184,7 @@ public:
         _supplyValue(q, 2, v2);
         _supplyValue(q, 3, v3);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3, class T4>
@@ -197,7 +197,7 @@ public:
         _supplyValue(q, 3, v3);
         _supplyValue(q, 4, v4);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3, class T4, class T5>
@@ -211,7 +211,7 @@ public:
         _supplyValue(q, 4, v4);
         _supplyValue(q, 5, v5);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3, class T4, class T5, class T6>
@@ -227,7 +227,7 @@ public:
         _supplyValue(q, 5, v5);
         _supplyValue(q, 6, v6);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
@@ -245,7 +245,7 @@ public:
         _supplyValue(q, 6, v6);
         _supplyValue(q, 7, v7);
         read(rs, q);
-        return *this;
+        return rs;
     }
     /** @endcond */
 
