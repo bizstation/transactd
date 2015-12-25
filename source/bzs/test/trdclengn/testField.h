@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#define DBNAMEV3 _T("test_v3")
 
 const char* sql = "CREATE TABLE `setenumbit` ("
   "`id` int(11) NOT NULL AUTO_INCREMENT,"
@@ -44,15 +45,16 @@ const char* test_records = "INSERT INTO `setenumbit` (`id`, `set5`, `set64`, `en
   "(4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);";
 
 
+
 short createFieldStoreDataBase(database* db)
 {
-    db->create(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
+    db->create(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
     if (db->stat() == STATUS_TABLE_EXISTS_ERROR)
     {
-        db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
+        db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
         if (db->stat()) return db->stat();
         db->drop();
-        db->create(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
+        db->create(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
     }
     if (db->stat()) return db->stat();
     return 0;
@@ -62,7 +64,7 @@ short createTestTable1(database* db)
 {
     try
     {
-        openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
+        openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
         dbdef* def = db->dbDef();
         short tableid = 1;
         
@@ -558,7 +560,7 @@ public:
                         ret = createTestScores(m_db);
 
                     if (ret == 0)
-                        m_db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
+                        m_db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
                     if (m_db->stat() == 0)
                     {
                         m_db->createTable(sql); //  This table is not listed in test.bdf
@@ -661,7 +663,12 @@ void checkIntValue(table_ptr tb)
     v = tb->getFVdbl(++fieldnum);
     BOOST_CHECK(v == DOUBLE_V1); 
     v = tb->getFVdbl(++fieldnum);
-    BOOST_CHECK(v == DOUBLE_V2);
+    if (DOUBLE_V2 > v)
+        v = DOUBLE_V2 - v;
+    else
+        v = v - DOUBLE_V2;
+
+    BOOST_CHECK(v < 0.000000001f);
 
 
     //read by string
@@ -2115,7 +2122,7 @@ void testNullValue(database* db)
 void testSetEnumBit()
 {
     database* db = database::create();
-    db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+    db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3));
     
     activeTable ats(db, SEB_DB_TABLE_NAME);
     ats.index(0);

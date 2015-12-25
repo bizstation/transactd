@@ -55,13 +55,13 @@ short createTestDataBase(database* db)
 {
     if (g_db_created == false)
     {
-        db->create(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
+        db->create(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
         if (db->stat() == STATUS_TABLE_EXISTS_ERROR)
         {
-            db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
+            db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
             if (db->stat()) return db->stat();
             db->drop();
-            db->create(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
+            db->create(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
         }
         if (db->stat()) return db->stat();
         
@@ -95,7 +95,7 @@ short createTestTable(database* db, bool timestampNull = true, bool supportDateT
     
     try
     {
-        openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
+        openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
         dbdef* def = db->dbDef();
         short tableid = 1;
         db->dropTable(_T("nulltest"));
@@ -318,7 +318,7 @@ public:
             ret = createTestTable(m_db);
         else
         {
-             m_db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
+             m_db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
              ret = m_db->stat();
         }
         if (ret)
@@ -568,7 +568,7 @@ void testUnuseSchema(database* db)
     try
     {
         db->close();
-        bool ret = db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, _T("")), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
+        bool ret = db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, _T("")), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
         BOOST_CHECK_MESSAGE(ret == true, "db open stat = " << db->stat());
         table_ptr tb = openTable(db, _T("nulltest"), TD_OPEN_NORMAL);
         tb->setKeyNum(0);
