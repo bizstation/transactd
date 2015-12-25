@@ -19,7 +19,6 @@
 ===================================================================
 =end
 require 'transactd'
-RECORD_KEYVALUE_FIELDOBJECT = 1
 
 require 'rbconfig'
 IS_WINDOWS = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
@@ -68,6 +67,25 @@ def openDatabase(db)
   return db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
 end
 
+def isMySQL5_5(db)
+  vv = Transactd::BtrVersions.new()
+  db.getBtrVersion(vv)
+  server_ver = vv.version(1)
+  return (db.stat() == 0) &&
+    (5 == server_ver.majorVersion) &&
+    (5 == server_ver.minorVersion)
+end
+
+def isLegacyTimeFormat(db)
+  vv = Transactd::BtrVersions.new()
+  db.getBtrVersion(vv)
+  server_ver = vv.version(1)
+  return (db.stat() == 0) &&
+    (5 == server_ver.majorVersion) &&
+    (5 == server_ver.minorVersion) &&
+    (server_ver.type == Transactd::MYSQL_TYPE_MYSQL)
+end
+
 def createUserTable(db)
   dbdef = db.dbDef()
   expect(dbdef).not_to eq nil
@@ -114,16 +132,25 @@ def createUserTable(db)
   fd = dbdef.insertField(tableid, fieldIndex)
   fd.setName('update_datetime')
   fd.type = Transactd::Ft_mytimestamp
-  fd.len = 7
+  if (isLegacyTimeFormat(db))
+    fd.len = 4
+  else
+    fd.len = 7
+  end
   fd.setDefaultValue(Transactd::DFV_TIMESTAMP_DEFAULT)
   fd.setTimeStampOnUpdate(true)
   expect(fd.isTimeStampOnUpdate()).to eq true
   fieldIndex += 1
   fd = dbdef.insertField(tableid, fieldIndex)
   fd.setName('create_datetime')
-  fd.type = Transactd::Ft_mytimestamp
-  fd.len = 4
-  fd.setDefaultValue(Transactd::DFV_TIMESTAMP_DEFAULT)
+  if (isMySQL5_5(db))
+    fd.type = Transactd::Ft_mydatetime
+    fd.len = 8
+  else
+    fd.type = Transactd::Ft_mytimestamp
+    fd.len = 4
+    fd.setDefaultValue(Transactd::DFV_TIMESTAMP_DEFAULT)
+  end
   fd.setTimeStampOnUpdate(false)
   expect(fd.isTimeStampOnUpdate()).to eq false
   expect(fd.isPadCharType()).to eq false
@@ -259,16 +286,21 @@ describe Transactd, 'V3Features' do
     openDatabase(db)
     openTableOnce(db)
     dbdef = db.dbDef()
+    mysql_5_5 = isMySQL5_5(db)
     td = dbdef.tableDefs(1)
     # isMysqlNullMode
     expect(td.isMysqlNullMode()).to eq true
-    expect(td.recordlen()).to eq 145
+    # recordlen
+    len = 145
+    len += 4 if (mysql_5_5)
+    len -= 3 if (isLegacyTimeFormat(db))
+    expect(td.recordlen()).to eq len
+    # size
+    expect(td.size()).to eq 1184
     # InUse
     expect(td.inUse()).to eq 0
     # nullfields
     expect(td.nullfields()).to eq 1
-    # size
-    expect(td.size()).to eq 1184
     # fieldNumByName
     expect(td.fieldNumByName("tel")).to eq 3
     # default value
@@ -279,6 +311,7 @@ describe Transactd, 'V3Features' do
     fd = td.fieldDef(3)
     expect(fd.isDefaultNull()).to eq true
     fd = td.fieldDef(4)
+    expect(fd.defaultValue()).to eq Transactd::DFV_TIMESTAMP_DEFAULT.to_i().to_s()
     expect(fd.isTimeStampOnUpdate()).to eq true
     fd = td.fieldDef(5)
     expect(fd.isTimeStampOnUpdate()).to eq false
@@ -316,7 +349,6 @@ describe Transactd, 'V3Features' do
     expect(fd.isNullable()).to eq true
     q = Transactd::Query.new()
     atu = Transactd::ActiveTable.new(db, "user")
-    Transactd::setRecordValueMode(Transactd::RECORD_KEYVALUE_FIELDOBJECT)
     # isNull setNull
     atu.alias("名前", "name")
     q.select("id", "name", "group", "tel").where("id", "<=", 10)
@@ -434,6 +466,7 @@ describe Transactd, 'V3Features' do
   it 'default null' do
     db = Transactd::Database.new()
     openDatabase(db)
+    mysql_5_5 = isMySQL5_5(db)
     dbdef = db.dbDef()
     td = dbdef.tableDefs(1)
     # table::default NULL
@@ -454,9 +487,18 @@ describe Transactd, 'V3Features' do
     expect(tb.getFVNull(3)).to eq false
     tb.setFVNull("tel", true)
     expect(tb.getFVNull("tel")).to eq true
+    # timestamp format
+    date = Transactd::btrdtoa(Transactd::getNowDate(), true)
+    expect(tb.getFVstr("update_datetime")[0...10]).to eq date
+    if (! mysql_5_5)
+      expect(tb.getFVstr("create_datetime")[0...10]).to eq date
+    end
+    # isMysqlNullMode
     expect(tb.tableDef().isMysqlNullMode()).to eq true
     expect(td.inUse()).to eq 1
     tb.close()
+    tb.release()
+    expect(td.inUse()).to eq 0
     db.close()
   end
 end

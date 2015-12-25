@@ -45,6 +45,10 @@ if (!extension_loaded('transactd')) {
 
 
 abstract class transactd {
+	const MYSQL_TYPE_MYSQL = MYSQL_TYPE_MYSQL;
+
+	const MYSQL_TYPE_MARIA = MYSQL_TYPE_MARIA;
+
 	const CP_ACP = CP_ACP;
 
 	const CP_UTF8 = CP_UTF8;

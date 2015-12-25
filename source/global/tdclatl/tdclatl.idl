@@ -386,6 +386,21 @@ enum eNullReset
 }eNullReset;
 
 
+typedef
+[
+  helpstring("Version type enum")
+]
+enum eVersionType
+{
+	MySQLServer = 77,
+	MariaDBServer = 65,
+	TransactdServer = 84,
+	TransactdClient = 78,
+	PSQLWorkgroup = 57,
+	PSQLLinuxServer = 85
+}eVersionType;
+
+
 
 [
   object,

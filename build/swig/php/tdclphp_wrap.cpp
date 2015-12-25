@@ -33733,13 +33733,13 @@ CG(active_class_entry) = NULL;
 /* end oinit subsection */
 
 /* cinit subsection */
-// ---- patch begin ---
+SWIG_LONG_CONSTANT(MYSQL_TYPE_MYSQL, 77);
+SWIG_LONG_CONSTANT(MYSQL_TYPE_MARIA, 65);
 #ifdef _WIN32
 SWIG_LONG_CONSTANT(CP_ACP, 0);
 #else
 SWIG_LONG_CONSTANT(CP_ACP, 65001);
 #endif
-// ---- patch end ---
 SWIG_LONG_CONSTANT(CP_UTF8, CP_UTF8);
 SWIG_LONG_CONSTANT(TD_ACL_RELOAD, TD_ACL_RELOAD); 
 SWIG_LONG_CONSTANT(ft_string, ft_string);

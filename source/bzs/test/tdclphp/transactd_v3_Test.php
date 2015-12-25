@@ -76,9 +76,6 @@ if(class_exists('Thread')){
 
 class transactdTest extends PHPUnit_Framework_TestCase
 {
-    const MYSQL_TYPE_MYSQL = 77;//'M'
-    const MYSQL_TYPE_MARIA = 65;//'A'
-
     private function dropDatabase($db)
     {
         $db->open(URL);
@@ -102,7 +99,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     }
     private function isMySQL5_5($db)
     {
-        $vv = new Bz\btrVersions();
+        $vv = new bz\btrVersions();
         $db->getBtrVersion($vv);
         $server_ver = $vv->version(1);
         return ($db->stat() == 0) && 
@@ -111,13 +108,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
     }
     private function isLegacyTimeFormat($db)
     {
-        $vv = new Bz\btrVersions();
+        $vv = new bz\btrVersions();
         $db->getBtrVersion($vv);
         $server_ver = $vv->version(1);
         return ($db->stat() == 0) && 
             ((5 == $server_ver->majorVersion) &&
             (5 == $server_ver->minorVersion)) &&
-            ($server_ver->type == transactdTest::MYSQL_TYPE_MYSQL);
+            ($server_ver->type == bz\MYSQL_TYPE_MYSQL);
     }
     private function createUserTable($db)
     {
