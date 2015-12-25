@@ -359,6 +359,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::dbdef::pushBackup;
 %ignore bzs::db::protocol::tdap::client::dbdef::relateData;
 %ignore bzs::db::protocol::tdap::client::dbdef::setStat;
+%ignore bzs::db::protocol::tdap::client::dbdef::tableDefPtr;
 %ignore bzs::db::protocol::tdap::client::dbdef::tdapErr;
 
 // * bzs/db/protocol/tdap/client/field.h *
@@ -724,6 +725,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::prepare;
 %ignore bzs::db::protocol::tdap::client::table::setQuery;
 %ignore bzs::db::protocol::tdap::client::table::setPrepare;
+%ignore bzs::db::protocol::tdap::client::table::tableDefPtr;
   // create and release methods for table class
 %extend bzs::db::protocol::tdap::client::table {
   void release() {
@@ -980,7 +982,7 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore DLLUNLOADCALLBACK_PTR;
 %ignore dllUnloadCallback;
-%ignore TABLEDEF_FILLER_SIZE
+%ignore TABLEDEF_FILLER_SIZE;
 %ignore MYSQL_FDNAME_SIZE;
 %ignore MYSQL_TBNAME_SIZE;
 %ignore PERVASIVE_FDNAME_SIZE;

@@ -23,6 +23,8 @@ require 'transactd'
 require 'rbconfig'
 IS_WINDOWS = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
 
+Transactd::setRecordValueMode(Transactd::RECORD_KEYVALUE_FIELDVALUE)
+
 def getEnv(valuename)
   return ENV[valuename] if ENV[valuename] != nil
   return ''
@@ -116,11 +118,11 @@ def testCreateTable(db)
   #test padChar
   fd.type = Transactd::Ft_string
   fd.setPadCharSettings(true, false)
-  expect(fd.usePadChar()).to eq true;
-  expect(fd.trimPadChar()).to eq false;
+  expect(fd.isUsePadChar()).to eq true;
+  expect(fd.isTrimPadChar()).to eq false;
   fd.setPadCharSettings(false, true)
-  expect(fd.usePadChar()).to eq false;
-  expect(fd.trimPadChar()).to eq true;
+  expect(fd.isUsePadChar()).to eq false;
+  expect(fd.isTrimPadChar()).to eq true;
   
   fd.type = Transactd::Ft_zstring
   dbdef.updateTableDef(1)
@@ -2368,6 +2370,22 @@ def testFilterVar()
   db.close()
 end
 
+def varLenBytes(fd)
+  if ((fd.type >= Transactd::Ft_myvarchar && fd.type <= Transactd::Ft_mywvarbinary) || fd.type == Transactd::Ft_lstring)
+    return (fd.len < 256) ? 1 : 2
+  elsif (fd.type == Transactd::Ft_lvar)
+    return 2
+  end
+  return 0
+end
+
+def blobLenBytes(fd)
+  if (fd.type == Transactd::Ft_myblob || fd.type == Transactd::Ft_mytext)
+    return fd.len - 8
+  end
+  return 0
+end
+
 def testCreateTableStringFilter(db, id, name, type, type2)
   # create table
   dbdef = db.dbDef()
@@ -2390,11 +2408,12 @@ def testCreateTableStringFilter(db, id, name, type, type2)
   fd.setName('name')
   fd.type = type
   fd.len = 44
-  if (fd.varLenBytes() != 0)
-    fd.len = fd.varLenBytes() + 44
+  vlen = varLenBytes(fd)
+  if (vlen != 0)
+    fd.len = vlen + 44
     fd.keylen = fd.len
   end
-  if (fd.blobLenBytes() != 0)
+  if (blobLenBytes(fd) != 0)
     fd.len = 12 # 8+4
   end
   fd.keylen = fd.len
@@ -2404,11 +2423,12 @@ def testCreateTableStringFilter(db, id, name, type, type2)
   fd.setName('namew')
   fd.type = type2
   fd.len = 44
-  if (fd.varLenBytes() != 0)
-    fd.len = fd.varLenBytes() + 44
+  vlen = varLenBytes(fd)
+  if (vlen != 0)
+    fd.len = vlen + 44
     fd.keylen = fd.len
   end
-  if (fd.blobLenBytes() != 0)
+  if (blobLenBytes(fd) != 0)
     fd.len = 12 # 8+4
   end
   fd.keylen = fd.len

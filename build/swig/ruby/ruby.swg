@@ -105,6 +105,35 @@ static void mark_activeTable(void* ptr) {
 
 
 /* ===============================================
+  record value mode
+=============================================== */
+%ignore g_fieldValueMode;
+%ignore g_recordValueMode;
+%inline %{
+#define FIELDVALUEMODE_RETURNNULL   0
+#define FIELDVALUEMODE_NORETURNNULL 1
+#define RECORD_KEYVALUE_FIELDVALUE  0
+#define RECORD_KEYVALUE_FIELDOBJECT 1
+
+static short g_fieldValueMode = FIELDVALUEMODE_NORETURNNULL;
+static short g_recordValueMode = RECORD_KEYVALUE_FIELDOBJECT;
+
+short fieldValueMode() {
+  return g_fieldValueMode;
+}
+void setFieldValueMode(short mode) {
+  g_fieldValueMode = mode;
+}
+short recordValueMode() {
+  return g_recordValueMode;
+}
+void setRecordValueMode(short mode) {
+  g_recordValueMode = mode;
+}
+%}
+
+
+/* ===============================================
   ignore / rename functions
 =============================================== */
 // * bzs/db/protocol/tdap/client/activeTable.h *
@@ -162,34 +191,51 @@ static void mark_activeTable(void* ptr) {
 %rename(getField) bzs::db::protocol::tdap::client::fieldsBase::operator[] (const _TCHAR* name) const;
   // typemap and expand for get field value.
 %typemap(argout) (short fieldsBase_getitem_index) {
-  bzs::db::protocol::tdap::client::field f = arg1->operator[]($1);
-  __int64 tmp_i64;
-  double tmp_d;
-  const _TCHAR* tmp_c_str;
-  switch (f.type()) {
-    case ft_integer:
-    case ft_uinteger:
-    case ft_autoinc:
-    case ft_autoIncUnsigned:
-    case ft_logical:
-    case ft_bit:
-      tmp_i64 = f.i64();
-      $result = SWIG_From_long_SS_long(static_cast< long long >(tmp_i64));
-      break;
-    case ft_float:
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_bfloat:
-    case ft_numericsts:
-    case ft_numericsa:
-    case ft_currency:
-      tmp_d = f.d();
-      $result = SWIG_From_double(static_cast< double >(tmp_d));
-      break;
-    default:
-      tmp_c_str = f.c_str();
-      $result = rb_enc_str_new(tmp_c_str, strlen(tmp_c_str), rb_enc_find_from_codepage(CP_UTF8));
+  bzs::db::protocol::tdap::client::field f;
+  try {
+    f = arg1->operator[]($1);
+  } catch (bzs::rtl::exception& e) {
+    static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+    rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+  } catch (std::exception &e) {
+    static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+    rb_raise(cpp_std_error, e.what());
+  }
+  if (recordValueMode() == RECORD_KEYVALUE_FIELDVALUE) { // value mode
+    if (fieldValueMode() == FIELDVALUEMODE_RETURNNULL && f.isNull()) { // return null
+      $result = Qnil;
+    } else {
+      __int64 tmp_i64;
+      double tmp_d;
+      const _TCHAR* tmp_c_str;
+      switch (f.type()) {
+        case ft_integer:
+        case ft_uinteger:
+        case ft_autoinc:
+        case ft_autoIncUnsigned:
+        case ft_logical:
+        case ft_bit:
+          tmp_i64 = f.i64();
+          $result = SWIG_From_long_SS_long(static_cast< long long >(tmp_i64));
+          break;
+        case ft_float:
+        case ft_decimal:
+        case ft_money:
+        case ft_numeric:
+        case ft_bfloat:
+        case ft_numericsts:
+        case ft_numericsa:
+        case ft_currency:
+          tmp_d = f.d();
+          $result = SWIG_From_double(static_cast< double >(tmp_d));
+          break;
+        default:
+          tmp_c_str = f.c_str();
+          $result = rb_enc_str_new(tmp_c_str, strlen(tmp_c_str), rb_enc_find_from_codepage(CP_UTF8));
+      }
+    }
+  } else { // field object mode
+    $result = SWIG_NewPointerObj(new bzs::db::protocol::tdap::client::field(f), SWIGTYPE_p_bzs__db__protocol__tdap__client__field, SWIG_POINTER_OWN |  0 );
   }
 }
 %apply short fieldsBase_getitem_index { const _TCHAR* fieldsBase_getitem_index };
@@ -206,7 +252,18 @@ static void mark_activeTable(void* ptr) {
 %rename(__getitem__) bzs::db::protocol::tdap::client::sortFields::operator[];
 
 // * bzs/db/protocol/tdap/client/memRecord.h *
+%ignore bzs::db::protocol::tdap::client::field::operator=(const char*);
+%ignore bzs::db::protocol::tdap::client::field::operator=(const std::string&);
+%ignore bzs::db::protocol::tdap::client::field::operator=(int);
+%ignore bzs::db::protocol::tdap::client::field::operator=(float);
+%rename(str) bzs::db::protocol::tdap::client::field::c_str;
+%alias bzs::db::protocol::tdap::client::field::getBin "bin";
+%rename(__setitem__) bzs::db::protocol::tdap::client::field::operator=(const _TCHAR*);
+%rename(__setitem__) bzs::db::protocol::tdap::client::field::operator=(__int64);
+%rename(__setitem__) bzs::db::protocol::tdap::client::field::operator=(double);
 %rename(__setitem__) bzs::db::protocol::tdap::client::field::setBin;
+%alias bzs::db::protocol::tdap::client::field::setBin "setBin";
+%alias bzs::db::protocol::tdap::client::field::setBin "setValue";
 %extend bzs::db::protocol::tdap::client::writableRecord {
   void __setitem__(short writableRecord_setitem_index, const _TCHAR* v) {
     self->operator[](writableRecord_setitem_index) = v;
@@ -269,6 +326,9 @@ static void mark_activeTable(void* ptr) {
 };
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(short, uint_td&);
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(const _TCHAR *, uint_td&);
+
+// * bzs/db/protocol/tdap/tdapSchema.h *
+%rename(defaultValue) bzs::db::protocol::tdap::fielddef::defaultValue_str;
 
 
 /* ===============================================
