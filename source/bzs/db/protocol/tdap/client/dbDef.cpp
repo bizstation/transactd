@@ -254,7 +254,7 @@ short dbdef::validateTableDef(short TableIndex)
         const_cast<fielddef&>(fd).enableFlags.bitE = false;
 
         ret = validLen(type, fd.len);
-        if (!ret || !fd.validateCharNum())
+        if (!ret || !fd.isValidCharNum())
         {
             m_stat = STATUS_INVALID_FIELDLENGTH;
             return m_stat;
@@ -1781,7 +1781,7 @@ void dbdef::synchronizeSeverSchema(short tableIndex)
             return;
         }
         tabledef* td = (tabledef*)m_pdata;
-        td->m_mysqlNullMode = tdold->mysqlNullMode(); 
+        td->m_mysqlNullMode = tdold->isMysqlNullMode();
         td = initReadAfter(tableIndex, td, m_datalen);
         if (td)
         {

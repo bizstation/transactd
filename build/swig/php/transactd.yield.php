@@ -137,22 +137,6 @@ abstract class transactd {
 
 	const ft_nullindicator = ft_nullindicator;
 
-	const charset_none = charset_none;
-
-	const charset_latin1 = charset_latin1;
-
-	const charset_ascii = charset_ascii;
-
-	const charset_sjis = charset_sjis;
-
-	const charset_cp932 = charset_cp932;
-
-	const charset_utf8 = charset_utf8;
-
-	const charset_utf8mb4 = charset_utf8mb4;
-
-	const charset_usc2 = charset_usc2;
-
 	const CMPLOGICAL_VAR_COMP_ALL = CMPLOGICAL_VAR_COMP_ALL;
 
 	const CMPLOGICAL_CMPACS = CMPLOGICAL_CMPACS;
@@ -620,6 +604,35 @@ abstract class transactd {
 		$this->_cPtr = $r;
 		return $this;
 	}
+	
+	const FIELDVALUEMODE_RETURNNULL = 0;
+	
+	const FIELDVALUEMODE_NORETURNNULL = 1;
+	
+	const RECORD_KEYVALUE_FIELDVALUE = 0;
+	
+	const RECORD_KEYVALUE_FIELDOBJECT = 1;
+	
+	static $fieldValueMode = self::FIELDVALUEMODE_NORETURNNULL;
+	
+	static $recordValueMode = self::RECORD_KEYVALUE_FIELDVALUE;
+	
+	static function setFieldValueMode($mode) {
+		self::$fieldValueMode = $mode;
+	}
+
+	static function fieldValueMode() {
+		return  self::$fieldValueMode;
+	}
+	
+	static function setRecordValueMode($mode) {
+		self::$recordValueMode = $mode;
+	}
+
+	static function recordValueMode() {
+		return  self::$recordValueMode;
+	}
+
 }
 
 /* PHP Proxy Classes */
@@ -816,7 +829,7 @@ class fielddef extends fielddef_t_my {
 		return fielddef_t_my::__isset($var);
 	}
 
-	function defaultValue_str() {
+	function defaultValue() {
 		return fielddef_defaultValue_str($this->_cPtr);
 	}
 
@@ -860,8 +873,8 @@ class fielddef extends fielddef_t_my {
 		return fielddef_charNum($this->_cPtr);
 	}
 
-	function validateCharNum() {
-		return fielddef_validateCharNum($this->_cPtr);
+	function isValidCharNum() {
+		return fielddef_isValidCharNum($this->_cPtr);
 	}
 
 	function setCharsetIndex($index) {
@@ -872,8 +885,8 @@ class fielddef extends fielddef_t_my {
 		return fielddef_charsetIndex($this->_cPtr);
 	}
 
-	function nullable() {
-		return fielddef_nullable($this->_cPtr);
+	function isNullable() {
+		return fielddef_isNullable($this->_cPtr);
 	}
 
 	function setNullable($v,$defaultNull=true) {
@@ -892,10 +905,6 @@ class fielddef extends fielddef_t_my {
 		return fielddef_isTimeStampOnUpdate($this->_cPtr);
 	}
 
-	function defaultValue() {
-		return fielddef_defaultValue($this->_cPtr);
-	}
-
 	function isDefaultNull() {
 		return fielddef_isDefaultNull($this->_cPtr);
 	}
@@ -904,12 +913,12 @@ class fielddef extends fielddef_t_my {
 		return fielddef_name($this->_cPtr);
 	}
 
-	function trimPadChar() {
-		return fielddef_trimPadChar($this->_cPtr);
+	function isTrimPadChar() {
+		return fielddef_isTrimPadChar($this->_cPtr);
 	}
 
-	function usePadChar() {
-		return fielddef_usePadChar($this->_cPtr);
+	function isUsePadChar() {
+		return fielddef_isUsePadChar($this->_cPtr);
 	}
 
 	function setPadCharSettings($set, $trim) {
@@ -1001,8 +1010,8 @@ class tabledef {
 		return tabledef_recordlen($this->_cPtr);
 	}
 
-	function mysqlNullMode() {
-		return tabledef_mysqlNullMode($this->_cPtr);
+	function isMysqlNullMode() {
+		return tabledef_isMysqlNullMode($this->_cPtr);
 	}
 
 
@@ -1348,10 +1357,6 @@ abstract class nstable {
 		return nstable_mode($this->_cPtr);
 	}
 
-	function synchronizeSeverSchema($tableIndex) {
-		dbdef_synchronizeSeverSchema($this->_cPtr,$tableIndex);
-	}
-
 	function statMsg() {
 		return nstable_statMsg($this->_cPtr); 
 	}
@@ -1495,6 +1500,11 @@ class dbdef {
 	function mode() {
 		return dbdef_mode($this->_cPtr);
 	}
+
+	function synchronizeSeverSchema($tableIndex) {
+		dbdef_synchronizeSeverSchema($this->_cPtr,$tableIndex);
+	}
+
 }
 
 class table extends nstable {
@@ -2678,6 +2688,9 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
 
 class field {
 	public function getFV() {
+		if ((transactd::fieldValueMode() === transactd::FIELDVALUEMODE_RETURNNULL)
+				&& $this->isNull() === true)
+			return null;
 		switch ($this->type()) {
 			case transactd::ft_integer:
 			case transactd::ft_uinteger:
@@ -2748,7 +2761,6 @@ class field {
 		field_setNull($this->_cPtr,$v);
 	}
 
-
 	function setFV($p_or_v_or_data,$size=null) {
 		switch (func_num_args()) {
 		case 1: $r=field_setFV($this->_cPtr,$p_or_v_or_data); break;
@@ -2767,6 +2779,23 @@ class field {
 
 	function comp($r_,$logType=16) {
 		return field_comp($this->_cPtr,$r_,$logType);
+	}
+	
+	function i() { return field_i($this->_cPtr); }
+	
+	function i64() { return field_i64($this->_cPtr); }
+
+	function d() { return field_d($this->_cPtr); }
+
+	function str() { return field_c_str($this->_cPtr); }
+
+	function bin() { return field_getBin($this->_cPtr); }
+	
+	function setValue($p_or_v_or_data,$size=null) {
+		switch (func_num_args()) {
+		case 1: field_setFV($this->_cPtr,$p_or_v_or_data); break;
+		default: field_setFV($this->_cPtr,$p_or_v_or_data,$size);
+		}
 	}
 }
 
@@ -2843,7 +2872,10 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 			default:
 				throw new \OutOfRangeException();
 		}
-		return $this->_field->getFV();
+		if (transactd::recordValueMode() === transactd::RECORD_KEYVALUE_FIELDVALUE)
+			return $this->_field->getFV();
+		else
+			return $this->_field;
 	}
 
 	public function offsetSet($offset, $value) {
@@ -4022,12 +4054,12 @@ class activeTable {
 
 	function join($rs,$q,$name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
 		activeTable_join($this->_cPtr,$rs,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
-		return $this;
+		return $rs;
 	}
 
 	function outerJoin($rs,$q,$name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
 		activeTable_outerJoin($this->_cPtr,$rs,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
-		return $this;
+		return $rs;
 	}
 
 	function __construct($mgr_or_db,$tableName=null) {

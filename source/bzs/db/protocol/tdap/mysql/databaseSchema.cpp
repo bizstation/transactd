@@ -214,7 +214,7 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
                 fd.setDefaultValue(str.c_ptr());
             }
             fd.setNullable(f->null_bit != 0, f->is_null());
-            if (fd.nullable()) ++td.m_nullfields;
+            if (fd.isNullable()) ++td.m_nullfields;
             if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp ) && 
                                     cp_has_update_default_function(f))
                 fd.setTimeStampOnUpdate(true); 

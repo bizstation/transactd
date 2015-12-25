@@ -234,7 +234,7 @@ void recordsetQuery::init(const fielddefs* fdinfo)
         recordsetQueryImple::compItem itm;
         itm.index = fdinfo->indexByName(tokns[i].c_str());
         if (itm.index >= 0)
-            itm.nullable = (*fdinfo)[itm.index].nullable();
+            itm.nullable = (*fdinfo)[itm.index].isNullable();
         m_imple->compItems.push_back(itm);
         m_imple->compFields.push_back(&((*fdinfo)[itm.index]));
     }

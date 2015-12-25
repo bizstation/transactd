@@ -86,6 +86,7 @@ STDMETHODIMP CField::put_Vdbl(double Value)
     return S_OK;
 }
 
+/*
 STDMETHODIMP CField::put_Null(VARIANT_BOOL Value)
 {
     m_fd.setNull(Value);
@@ -95,6 +96,79 @@ STDMETHODIMP CField::put_Null(VARIANT_BOOL Value)
 STDMETHODIMP CField::get_Null(VARIANT_BOOL* Value)
 {
     *Value = m_fd.isNull();
+    return S_OK;
+}*/
+
+
+STDMETHODIMP CField::IsNull(VARIANT_BOOL* Value)
+{
+    *Value = m_fd.isNull();
+    return S_OK;
+}
+
+STDMETHODIMP CField::SetNull(VARIANT_BOOL Value)
+{
+    m_fd.setNull(Value != 0);
+    return S_OK;
+}
+
+STDMETHODIMP CField::SetValue(VARIANT Value)
+{
+    if (Value.vt == VT_BSTR)
+        m_fd = Value.bstrVal;
+    else if (Value.vt == VT_R8 || Value.vt == VT_R4)
+        m_fd = Value.dblVal;
+    else if (Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT || Value.vt == VT_I8)
+        m_fd = Value.llVal;
+    else
+    {
+        VariantChangeType( &Value, &Value, 0, VT_BSTR );
+        m_fd = Value.bstrVal;
+    }
+    return S_OK;
+}
+
+STDMETHODIMP CField::I(int* Value)
+{
+    *Value = m_fd.i();
+    return S_OK;
+}
+
+STDMETHODIMP CField::I64(__int64* Value)
+{
+    *Value = m_fd.i64();
+    return S_OK;
+}
+
+STDMETHODIMP CField::D(double* Value)
+{
+    *Value = m_fd.d();
+    return S_OK;
+}
+
+STDMETHODIMP CField::Bin(BSTR* Value)
+{
+    uint_td size;
+    void* p = m_fd.getFVbin(size);
+    *Value = ::SysAllocStringByteLen((char*)p, size);
+    return S_OK;
+}
+
+STDMETHODIMP CField::Str(BSTR* Value)
+{
+    *Value = ::SysAllocString(m_fd.getFVstr());
+    return S_OK;
+}
+
+STDMETHODIMP CField::get_Type(short* Value)
+{
+    *Value = m_fd.type();
+    return S_OK;
+}
+
+STDMETHODIMP CField::get_Len(short* Value)
+{
+    *Value = m_fd.len();
     return S_OK;
 }
 

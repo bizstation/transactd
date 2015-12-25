@@ -168,7 +168,7 @@ void fielddefs::calcFieldPos(int startIndex, bool mysqlNull)
         pos += fd->len;
         fd->m_nullbytes = 0;
         fd->m_nullbit = 0;
-        if (fd->nullable())
+        if (fd->isNullable())
         {
             fd->m_nullbit = nullfields;
             if (mysqlNull)
@@ -194,7 +194,7 @@ void fielddefs::push_back(const fielddef* p)
     // convert field name of table charset to recordset schema charset.
     _TCHAR tmp[FIELD_NAME_SIZE * 3];
     pp->setName(p->name(tmp));
-    if (pp->nullable() && pp->nullbytes())
+    if (pp->isNullable() && pp->nullbytes())
         ++m_imple->mysqlnullEnable;
     // reset update indicator
     pp->enableFlags.bitE = false;
@@ -325,7 +325,7 @@ bool fielddefs::canUnion(const fielddefs& src) const
             return false;
         if (l.charsetIndex() != r.charsetIndex())
             return false;
-        if (l.nullable() != r.nullable())
+        if (l.isNullable() != r.isNullable())
             return false;
     }
     return true;
@@ -576,7 +576,7 @@ void field::storeValueStrA(const char* data)
     switch (m_fd->type)
     {
     case ft_string:
-        if (m_fd->usePadChar())
+        if (m_fd->isUsePadChar())
             return store<stringStore, char, char>(p, data, *m_fd, m_fds->cv());
         return store<binaryStore, char, char>(p, data, *m_fd, m_fds->cv());
     case ft_note:
@@ -585,7 +585,7 @@ void field::storeValueStrA(const char* data)
     case ft_wzstring:
         return store<wzstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
-        if (m_fd->usePadChar())
+        if (m_fd->isUsePadChar())
             return store<wstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
         return store<wbinaryStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_mychar:
@@ -620,7 +620,7 @@ const char* field::readValueStrA() const
     {
     case ft_string:
         return read<stringStore, char, char>(data, m_fds->strBufs(), *m_fd,
-                                             m_fds->cv(), m_fd->trimPadChar());
+                                             m_fds->cv(), m_fd->isTrimPadChar());
     case ft_note:
     case ft_zstring:
         return read<zstringStore, char, char>(data, m_fds->strBufs(), *m_fd,
@@ -630,10 +630,10 @@ const char* field::readValueStrA() const
                                                 m_fds->cv());
     case ft_wstring:
         return read<wstringStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
-                                               m_fds->cv(), m_fd->trimPadChar());
+                                               m_fds->cv(), m_fd->isTrimPadChar());
     case ft_mychar:
         return read<myCharStore, char, char>(data, m_fds->strBufs(), *m_fd,
-                                             m_fds->cv(), m_fd->trimPadChar());
+                                             m_fds->cv(), m_fd->isTrimPadChar());
     case ft_myvarchar:
         return read<myVarCharStore, char, char>(data, m_fds->strBufs(), *m_fd,
                                                 m_fds->cv());
@@ -643,7 +643,7 @@ const char* field::readValueStrA() const
                                                   m_fds->cv());
     case ft_mywchar:
         return read<myWcharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
-                                               m_fds->cv(), m_fd->trimPadChar());
+                                               m_fds->cv(), m_fd->isTrimPadChar());
     case ft_mywvarchar:
         return read<myWvarCharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
                                                   m_fds->cv());
@@ -666,7 +666,7 @@ void field::storeValueStrW(const wchar_t* data)
     switch (m_fd->type)
     {
     case ft_string:
-        if (m_fd->usePadChar())
+        if (m_fd->isUsePadChar())
             return store<stringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
         return store<binaryStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_note:
@@ -675,7 +675,7 @@ void field::storeValueStrW(const wchar_t* data)
     case ft_wzstring:
         return store<wzstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
-        if (m_fd->usePadChar())
+        if (m_fd->isUsePadChar())
             return store<wstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
         return store<wbinaryStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_mychar:
@@ -713,7 +713,7 @@ const wchar_t* field::readValueStrW() const
     {
     case ft_string:
         return read<stringStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
-                                              m_fds->cv(), m_fd->trimPadChar());
+                                              m_fds->cv(), m_fd->isTrimPadChar());
     case ft_note:
     case ft_zstring:
         return read<zstringStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
@@ -723,10 +723,10 @@ const wchar_t* field::readValueStrW() const
                                                  m_fds->cv());
     case ft_wstring:
         return read<wstringStore, WCHAR, WCHAR>(
-            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->trimPadChar());
+            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->isTrimPadChar());
     case ft_mychar:
         return read<myCharStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
-                                              m_fds->cv(), m_fd->trimPadChar());
+                                              m_fds->cv(), m_fd->isTrimPadChar());
     case ft_myvarchar:
         return read<myVarCharStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
                                                  m_fds->cv());
@@ -736,7 +736,7 @@ const wchar_t* field::readValueStrW() const
                                                    *m_fd, m_fds->cv());
     case ft_mywchar:
         return read<myWcharStore, WCHAR, WCHAR>(
-            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->trimPadChar());
+            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->isTrimPadChar());
     case ft_mywvarchar:
         return read<myWvarCharStore, WCHAR, WCHAR>(data, m_fds->strBufs(),
                                                    *m_fd, m_fds->cv());
@@ -1652,7 +1652,7 @@ void* field::nullPtr() const
 
 void field::nullPtrCache() const
 {
-    if (m_nullbit == 0 && m_fd->nullable() && m_fd->nullbytes())
+    if (m_nullbit == 0 && m_fd->isNullable() && m_fd->nullbytes())
     {
         m_cachedNullPtr =  (unsigned char*)nullPtr();
         m_cachedNullPtr += (m_fd->nullbit() / 8);

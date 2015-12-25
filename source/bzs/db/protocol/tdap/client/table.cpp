@@ -421,7 +421,7 @@ public:
                     fieldPtr += fd.unPackCopy(m_tmpPtr + fd.pos + td->nullbytes(), fieldPtr);
 
                     //Copy null results
-                    if (selNullbytes && fd.nullable() && fd.nullbytes())
+                    if (selNullbytes && fd.isNullable() && fd.nullbytes())
                     {
                         uchar_td* p = m_ptr + (nullfields + 7) / 8;
                         bool nullResult = (*p & (1L << (nullfields % 8))) != 0;
@@ -1245,7 +1245,7 @@ void table::clearBuffer(eNullReset resetType)
     m_impl->rc->reset();
     m_pdata = m_impl->dataBak;
     tabledef* td = (*m_tableDef);
-    if (td->mysqlNullMode() && td->defaultImage)
+    if (td->isMysqlNullMode() && td->defaultImage)
     {
         memcpy(m_pdata, td->defaultImage, m_buflen);
         if (resetType == clearNull)

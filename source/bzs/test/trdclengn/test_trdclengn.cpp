@@ -312,11 +312,11 @@ void testCreateNewDataBase(database* db)
         //test padChar only string or wstring
         fd->type = ft_string;
         fd->setPadCharSettings(true, false);
-        BOOST_CHECK(fd->usePadChar() ==  true);
-        BOOST_CHECK(fd->trimPadChar() == false);
+        BOOST_CHECK(fd->isUsePadChar() ==  true);
+        BOOST_CHECK(fd->isTrimPadChar() == false);
         fd->setPadCharSettings(false, true);
-        BOOST_CHECK(fd->usePadChar() ==  false);
-        BOOST_CHECK(fd->trimPadChar() == true);
+        BOOST_CHECK(fd->isUsePadChar() ==  false);
+        BOOST_CHECK(fd->isTrimPadChar() == true);
 
         //fd->type = ft_zstring;
         fd->type = NAMEFIELD_TYPE;
@@ -5042,7 +5042,7 @@ void testFilterOfServer(database* db)
             q.reset().where(fdf_names[i], _T("="), _T(""));
             int n = 3;
             fielddef* fd = &atu.table()->tableDef()->fieldDefs[i+1];
-            if (fd->usePadChar())
+            if (fd->isUsePadChar())
                 n += 1;
             doTestReadByQuery(i, atu, rs, q, n, "");
             q.where(fdf_names[i], _T("=i"), _T(""));
@@ -5157,7 +5157,7 @@ void testFilterOfMatchBy(database* db)
             recordsetQuery rq;
             rq.when(fdf_names[i], _T("="), _T(""));
             int n = 3;
-            if (atu.table()->tableDef()->fieldDefs[i+1].usePadChar())
+            if (atu.table()->tableDef()->fieldDefs[i+1].isUsePadChar())
                 n += 1;
             doTestMatchBy(i, rs, rq, n, _T(" = "));
             rq.reset().when(fdf_names[i], _T("=i"), _T(""));

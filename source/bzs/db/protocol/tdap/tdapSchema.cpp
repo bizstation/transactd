@@ -561,7 +561,7 @@ bool fielddef::operator==(const fielddef& r) const
     if (this == &r) return true;
     if (isStringType() && (m_charsetIndex != r.m_charsetIndex))
     if (isPadCharType() && 
-        ((usePadChar() != r.usePadChar()) || (trimPadChar() != r.trimPadChar())))
+        ((isUsePadChar() != r.isUsePadChar()) || (isTrimPadChar() != r.isTrimPadChar())))
         return false;
 
     _TCHAR tmp[256];
@@ -609,7 +609,7 @@ unsigned int fielddef::charNum() const
     return len;
 }
 
-bool fielddef::validateCharNum() const
+bool fielddef::isValidCharNum() const
 {
     unsigned int num = charNum();
     if (type == ft_mychar)
@@ -877,14 +877,14 @@ void tabledef::calcReclordlen(bool force)
             m_maxRecordLen += fd.len;
             fd.m_nullbytes = 0;
             fd.m_nullbit = 0;
-            if (fd.nullable())
+            if (fd.isNullable())
             {
                 fd.m_nullbit = m_nullfields;
                 if (m_mysqlNullMode)
                     ++m_nullfields;
             }
             double defaultValue = fd.defaultValue();
-            if (fd.type == ft_mytimestamp && fd.nullable() == false &&
+            if (fd.type == ft_mytimestamp && fd.isNullable() == false &&
                 (defaultValue == 0 || defaultValue == DFV_TIMESTAMP_DEFAULT) && firstTimeStamp)
             {
                 fd.setDefaultValue(DFV_TIMESTAMP_DEFAULT);
@@ -932,7 +932,7 @@ uint_td tabledef::unPack(char* ptr, size_t size) const
     {
         fielddef& fd = fieldDefs[i];
         bool isNull = false;
-        if (fd.nullable() && m_nullbytes)
+        if (fd.isNullable() && m_nullbytes)
         {
             isNull = (*null_ptr & null_bit) != 0;
             if (null_bit == (unsigned char)128)
@@ -993,7 +993,7 @@ uint_td tabledef::pack(char* ptr, size_t size) const
     {
         fielddef& fd = fieldDefs[i];
         bool isNull = false;
-        if (fd.nullable() && m_nullbytes)
+        if (fd.isNullable() && m_nullbytes)
         {
             isNull = (*null_ptr & null_bit) != 0;
             if (null_bit == (unsigned char)128)

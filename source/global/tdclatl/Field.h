@@ -49,17 +49,26 @@ public:
     void FinalRelease() {}
 
 public:
-    STDMETHOD(get_Text)(BSTR* Value);
-    STDMETHOD(get_Vlng)(int* Value);
     STDMETHOD(put_Text)(BSTR Value);
+    STDMETHOD(get_Text)(BSTR* Value);
     STDMETHOD(put_Vlng)(int Value);
-    STDMETHOD(get_V64)(__int64* Value);
+    STDMETHOD(get_Vlng)(int* Value);
     STDMETHOD(put_V64)(__int64 Value);
-    STDMETHOD(get_Vbin)(BSTR* Value);
+    STDMETHOD(get_V64)(__int64* Value);
+    STDMETHOD(put_Vdbl)(double Value);
     STDMETHOD(get_Vdbl)(double* Value);
     STDMETHOD(put_Vbin)(BSTR Value);
-    STDMETHOD(put_Vdbl)(double Value);
-    STDMETHOD(put_Null)(VARIANT_BOOL Value);
-    STDMETHOD(get_Null)(VARIANT_BOOL* Value);
+    STDMETHOD(get_Vbin)(BSTR* Value);
+
+    STDMETHOD(IsNull)(VARIANT_BOOL* Value);
+    STDMETHOD(SetNull)(VARIANT_BOOL Value);
+    STDMETHOD(SetValue)(VARIANT Value);
+    STDMETHOD(I)(int* Value);
+    STDMETHOD(I64)(__int64* Value);
+    STDMETHOD(D)(double* Value);
+    STDMETHOD(Bin)(BSTR* Value);
+    STDMETHOD(Str)(BSTR* Value);
+    STDMETHOD(get_Type)(short* Value);
+    STDMETHOD(get_Len)(short* Value);
 
 };

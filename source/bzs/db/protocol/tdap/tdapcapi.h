@@ -241,18 +241,6 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define ft_set                          55
 #define ft_nullindicator                255
 
-/** charset type number
- */
-#define charset_none                    0
-#define charset_latin1                  1
-#define charset_ascii                   2
-#define charset_sjis                    3
-#define charset_cp932                   4
-
-#define charset_utf8                    100
-#define charset_utf8mb4                 101
-#define charset_usc2                    102
-
 /** extruct row comp bias
  */
 // In the case of a var type, it is copare as whole length. 

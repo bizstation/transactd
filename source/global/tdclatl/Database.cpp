@@ -534,18 +534,17 @@ STDMETHODIMP CDatabase::get_AutoSchemaUseNullkey(VARIANT_BOOL* Value)
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::put_ComaptibleMode(int Value)
+STDMETHODIMP CDatabase::put_CompatibleMode(int Value)
 {
     database::setCompatibleMode(Value);
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::get_ComaptibleMode(int* Value)
+STDMETHODIMP CDatabase::get_CompatibleMode(int* Value)
 {
     *Value = database::comaptibleMode();
     return S_OK;
 }
-
 
 void __stdcall onCopyData(database* db, int recordCount, int count,
                           bool& cancel)

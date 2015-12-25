@@ -285,13 +285,13 @@ STDMETHODIMP CFieldDef::SetPadCharSettings(VARIANT_BOOL set, VARIANT_BOOL trim)
 
 STDMETHODIMP CFieldDef::get_UsePadChar(VARIANT_BOOL* Value)
 {
-	*Value = fielddef()->usePadChar();
+	*Value = fielddef()->isUsePadChar();
     return S_OK;
 }
 
 STDMETHODIMP CFieldDef::get_TrimPadChar(VARIANT_BOOL* Value)
 {
-	*Value = fielddef()->trimPadChar();
+	*Value = fielddef()->isTrimPadChar();
     return S_OK;
 }
 
@@ -335,15 +335,15 @@ STDMETHODIMP CFieldDef::get_DateTimeType(VARIANT_BOOL* Value)
     return S_OK;
 }
 
-STDMETHODIMP CFieldDef::get_ValidateCharNum(VARIANT_BOOL* Value)
+STDMETHODIMP CFieldDef::get_ValidCharNum(VARIANT_BOOL* Value)
 {
-	*Value = const_fielddef()->validateCharNum();
+	*Value = const_fielddef()->isValidCharNum();
     return S_OK;
 }
 
 STDMETHODIMP CFieldDef::get_Nullable(VARIANT_BOOL* Value)
 {
-	*Value = const_fielddef()->nullable();
+	*Value = const_fielddef()->isNullable();
     return S_OK;
 }
 

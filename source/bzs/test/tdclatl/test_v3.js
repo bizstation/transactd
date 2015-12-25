@@ -258,9 +258,9 @@ function createUserTable(db)
 	fd.Name = "–¼‘O";
 	fd.Type = ft_varchar;
 	fd.len = 2;
-	checkEqual(fd.ValidateCharNum, false, "validateCharNum 1");
+	checkEqual(fd.ValidCharNum, false, "validCharNum 1");
 	fd.SetLenByCharnum(20);
-	checkEqual(fd.ValidateCharNum, true, "validateCharNum 2");
+	checkEqual(fd.ValidCharNum, true, "validCharNum 2");
 	fd.DefaultValue = "John";
 	checkEqual(fd.PadCharType, false, "isPadCharType ");
 	checkEqual(fd.DateTimeType, false, "isDateTimeType");
@@ -480,13 +480,13 @@ function test(atu, ate, db)
 	db.AutoSchemaUseNullkey = false;
 	checkEqual(db.AutoSchemaUseNullkey, false, "AutoSchemaUseNullkey");
 	
-	checkEqual(db.ComaptibleMode, CMP_MODE_MYSQL_NULL, "ComaptibleMode 1");
+	checkEqual(db.CompatibleMode, CMP_MODE_MYSQL_NULL, "CompatibleMode 1");
 
-	db.ComaptibleMode = CMP_MODE_OLD_NULL;
-	checkEqual(db.ComaptibleMode, CMP_MODE_OLD_NULL, "ComaptibleMode 2");
+	db.CompatibleMode = CMP_MODE_OLD_NULL;
+	checkEqual(db.CompatibleMode, CMP_MODE_OLD_NULL, "CompatibleMode 2");
 
-	db.ComaptibleMode = CMP_MODE_MYSQL_NULL;
-	checkEqual(db.ComaptibleMode, CMP_MODE_MYSQL_NULL, "ComaptibleMode 3");
+	db.CompatibleMode = CMP_MODE_MYSQL_NULL;
+	checkEqual(db.CompatibleMode, CMP_MODE_MYSQL_NULL, "CompatibleMode 3");
 	
 
 	
@@ -556,30 +556,30 @@ function test(atu, ate, db)
 	var rs = atu.Index(0).KeyValue(1).Read(q);
 	checkEqual(rs.Count, 10, "atu rs.Count = 10 ");
 	var rec = rs.First();
-	checkEqual(rec(3).Null, true, "NULL true");
-	rec(3).Null = false;
-	checkEqual(rec(3).Null, false, "NULL false");
+	checkEqual(rec(3).IsNull(), true, "NULL true");
+	rec(3).setNull(false);
+	checkEqual(rec(3).IsNull(), false, "NULL false");
 	
 	//Join null
 	initQuery();
 	var last = ate.Index(0).Join(rs, q.Select("comment").Optimize(hasOneJoin), "id").Reverse().First();
 	checkEqual(rs.Count, 10, "ate rs.Count = 10 ");
 	checkEqual(last.Field("id").Vlng, 10, "last.id = 10 ");
-	checkEqual(rec(4).Null, false, "Join NULL1");
-	rec(4).Null = true;
-	checkEqual(rec(4).Null, true, "Join NULL2");
+	checkEqual(rec(4).IsNull(), false, "Join NULL1");
+	rec(4).setNull(true);
+	checkEqual(rec(4).IsNull(), true, "Join NULL2");
 	
 	//WritableRecord.clear()
-	var wr = atu.GetWritableRecord();
+	var wr = atu.getWritableRecord();
 	wr.Clear();
-	wr("id").Vlng = 5;
-	wr("tel").Text = "0236-99-9999";
+	wr("id").setValue(5);
+	wr("tel").setValue("0236-99-9999");
 	wr.Update();
 	wr.Clear();
-	wr("id").Vlng = 5;
+	wr("id").setValue(5);
 
 	checkEqual(wr.Read(), true, "wr.Read");
-	checkEqual(wr("tel").Text, "0236-99-9999", "tel ");
+	checkEqual(wr("tel").str(), "0236-99-9999", "tel ");
 
 	//whereIsNull
 	initQuery();

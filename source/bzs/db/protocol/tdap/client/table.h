@@ -161,7 +161,7 @@ protected:
 
     inline unsigned int nullBytes() const
     {
-        return (m_tableDef && (*m_tableDef)->mysqlNullMode()) ?
+        return (m_tableDef && (*m_tableDef)->isMysqlNullMode()) ?
                           (*m_tableDef)->nullbytes() : 0;
     }
 

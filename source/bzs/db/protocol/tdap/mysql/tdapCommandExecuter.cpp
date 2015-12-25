@@ -1477,19 +1477,19 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         }
         case TD_VERSION:
-            if (*req.datalen >= sizeof(version) * 3)
+			if (*req.datalen >= sizeof(btrVersion)* 3)
             {
-                version* v = (version*)req.data;
+				btrVersion* v = (btrVersion*)req.data;
                 ++v;
                 v->majorVersion = MYSQL_VERSION_ID / 10000;
                 v->minorVersion = (MYSQL_VERSION_ID / 100) % 100;
-                v->Type = 'M';
+                v->type = 'M';
                 ++v;
                 v->majorVersion = TRANSACTD_VER_MAJOR;
                 v->minorVersion = TRANSACTD_VER_MINOR;
-                v->Type = 'T';
+                v->type = 'T';
                 req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
-                req.resultLen = sizeof(version) * 3;
+				req.resultLen = sizeof(btrVersion)* 3;
             }
             else
                 req.result = STATUS_BUFFERTOOSMALL;

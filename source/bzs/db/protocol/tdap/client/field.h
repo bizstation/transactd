@@ -125,8 +125,11 @@ class DLLLIB field
 {
     friend class table;
     friend class fieldsBase;
-    friend class CField; // atl interface
-    friend class memoryRecord; // nullPtr()
+    friend class CField;         // atl interface
+    friend class memoryRecord;   // nullPtr()
+    friend class recordsetQuery; //nullcomp
+    friend class recordsetImple; //offsetBlobPtr
+    friend struct logic;         //isCompPartAndMakeValue
     /** @cond INTERNAL */
     friend int compBlob(const field& l, const field& r, char logType);
     /** @endcond */
@@ -153,7 +156,11 @@ class DLLLIB field
     void storeValueDecimal(double data);
     double readValueDecimal() const;
     void* nullPtr() const;
-
+    int nullComp(const field& r, char log) const;
+    int nullComp(char log) const;
+    bool isCompPartAndMakeValue();
+    void offsetBlobPtr(size_t offset);
+    compFieldFunc getCompFunc(char logType) const;
 
     //  ---- bigin regacy interfaces ----  //
     const char* getFVAstr() const;
@@ -334,16 +341,9 @@ public:
     }
     inline void* getBin(uint_td& size) const { return getFVbin(size); };
 
-    int nullComp(const field& r, char log) const;
-    int nullComp(char log) const;
-
     int comp(const field& r, char logType = CMPLOGICAL_VAR_COMP_ALL) const;
 
-    /** @cond INTERNAL */
-    bool isCompPartAndMakeValue();
-    void offsetBlobPtr(size_t offset);
-    compFieldFunc getCompFunc(char logType) const;
-    /** @endcond */
+
 };
 
 /** @cond INTERNAL */

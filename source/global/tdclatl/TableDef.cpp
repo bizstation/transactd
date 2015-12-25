@@ -320,7 +320,7 @@ STDMETHODIMP CTableDef::get_InUse(short* Value)
 
 STDMETHODIMP CTableDef::get_MysqlNullMode(VARIANT_BOOL* Value)
 {
-    *Value = (*m_tabledefPtr)->mysqlNullMode();
+    *Value = (*m_tabledefPtr)->isMysqlNullMode();
     return S_OK;
 }
 

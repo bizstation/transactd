@@ -646,8 +646,8 @@ struct openTablePrams
         {
             if (td->inUse())
             {
-                if ((td->mysqlNullMode() == true && mysqlnull == false)
-                    || (td->mysqlNullMode() == false && mysqlnull))
+                if ((td->isMysqlNullMode() == true && mysqlnull == false)
+                    || (td->isMysqlNullMode() == false && mysqlnull))
                     return STATUS_INVALID_NULLMODE;
             }else
             {

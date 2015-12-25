@@ -146,7 +146,7 @@ enum eStatus
 	STATUS_INVALID_FIELDVALUE	= -36,
 	STATUS_INVALID_VALLEN		= -37,
 	STATUS_FIELDTYPE_NOTSUPPORT = -42,
-    STATUS_FIELDTYPE_NOTSUPPORT = -43,
+    STATUS_INVALID_NULLMODE     = -43,
 	STATUS_SUCCESS				= 0,
 	STATUS_PROGRAM_ERROR		= 1,
 	STATUS_IO_ERROR				= 2,
@@ -523,9 +523,9 @@ interface IDatabase : IDispatch
   [propget, id(0x000000FA)]
   HRESULT _stdcall AutoSchemaUseNullkey([out, retval] VARIANT_BOOL* Value);
   [propput, id(0x000000FB)]
-  HRESULT _stdcall ComaptibleMode([in] int Value);
+  HRESULT _stdcall CompatibleMode([in] int Value);
   [propget, id(0x000000FB)]
-  HRESULT _stdcall ComaptibleMode([out, retval] int* Value);
+  HRESULT _stdcall CompatibleMode([out, retval] int* Value);
 
 
 };
@@ -962,7 +962,7 @@ interface IFieldDef : IDispatch
   [propget, id(0x0000001B)]
   HRESULT _stdcall DateTimeType([out, retval] VARIANT_BOOL* Value);
   [propget, id(0x0000001C)]
-  HRESULT _stdcall ValidateCharNum([out, retval] VARIANT_BOOL* Value);
+  HRESULT _stdcall ValidCharNum([out, retval] VARIANT_BOOL* Value);
   [propget, id(0x0000001D)]
   HRESULT _stdcall Nullable([out, retval] VARIANT_BOOL* Value);
   [id(0x0000001E)]
@@ -1065,12 +1065,27 @@ interface IField : IDispatch
   HRESULT _stdcall Vbin([out, retval] BSTR* Value);
   [propput, id(0x000000CD)]
   HRESULT _stdcall Vbin([in] BSTR Value);
-  [propget, id(0x000000CE)]
-  HRESULT _stdcall Null([out, retval] VARIANT_BOOL* Value);
-  [propput, id(0x000000CE)]
-  HRESULT _stdcall Null([in] VARIANT_BOOL Value);
 
-
+  [id(0x000000CF)]
+  HRESULT _stdcall IsNull([out, retval] VARIANT_BOOL* Value);
+  [id(0x000000D0)]
+  HRESULT _stdcall SetNull([in] VARIANT_BOOL Value);
+  [id(0x000000D1)]
+  HRESULT _stdcall SetValue([in] VARIANT Value);
+  [id(0x000000D2)]
+  HRESULT _stdcall I([out, retval] int* Value);
+  [id(0x000000D3)]
+  HRESULT _stdcall I64([out, retval] __int64* Value);
+  [id(0x000000D5)]
+  HRESULT _stdcall D([out, retval] double* Value);
+  [id(0x000000D6)]
+  HRESULT _stdcall Bin([out, retval] BSTR* Value);
+  [id(0x000000D4)]
+  HRESULT _stdcall Str([out, retval] BSTR* Value);
+  [propget, id(0x000000D8)]
+  HRESULT _stdcall Type([out, retval] short* Value);
+  [propget, id(0x000000D9)]
+  HRESULT _stdcall Len([out, retval] short* Value);
 
 };
 

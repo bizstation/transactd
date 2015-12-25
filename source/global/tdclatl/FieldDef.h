@@ -114,7 +114,7 @@ public:
 
     STDMETHOD(get_PadCharType)(VARIANT_BOOL* Value);
     STDMETHOD(get_DateTimeType)(VARIANT_BOOL* Value);
-    STDMETHOD(get_ValidateCharNum)(VARIANT_BOOL* Value);
+    STDMETHOD(get_ValidCharNum)(VARIANT_BOOL* Value);
     STDMETHOD(get_Nullable)(VARIANT_BOOL* Value);
     STDMETHOD(SetNullable)(VARIANT_BOOL Value, VARIANT_BOOL DefaultNull);
     STDMETHOD(put_TimeStampOnUpdate)(VARIANT_BOOL Value);

@@ -4775,7 +4775,7 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_fielddef_validateCharNum) {
+ZEND_NAMED_FUNCTION(_wrap_fielddef_isValidCharNum) {
   bzs::db::protocol::tdap::fielddef *arg1 = (bzs::db::protocol::tdap::fielddef *) 0 ;
   zval **args[1];
   bool result;
@@ -4787,13 +4787,13 @@ ZEND_NAMED_FUNCTION(_wrap_fielddef_validateCharNum) {
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__fielddef, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_validateCharNum. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_isValidCharNum. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->validateCharNum();
+      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->isValidCharNum();
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -4880,7 +4880,7 @@ fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
-ZEND_NAMED_FUNCTION(_wrap_fielddef_nullable) {
+ZEND_NAMED_FUNCTION(_wrap_fielddef_isNullable) {
   bzs::db::protocol::tdap::fielddef *arg1 = (bzs::db::protocol::tdap::fielddef *) 0 ;
   zval **args[1];
   bool result;
@@ -4892,13 +4892,13 @@ ZEND_NAMED_FUNCTION(_wrap_fielddef_nullable) {
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__fielddef, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_nullable. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_isNullable. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->nullable();
+      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->isNullable();
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -5093,40 +5093,6 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_fielddef_defaultValue) {
-  bzs::db::protocol::tdap::fielddef *arg1 = (bzs::db::protocol::tdap::fielddef *) 0 ;
-  zval **args[1];
-  double result;
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, args) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__fielddef, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_defaultValue. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      result = (double)((bzs::db::protocol::tdap::fielddef const *)arg1)->defaultValue();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  {
-    ZVAL_DOUBLE(return_value,result);
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
 ZEND_NAMED_FUNCTION(_wrap_fielddef_isDefaultNull) {
   bzs::db::protocol::tdap::fielddef *arg1 = (bzs::db::protocol::tdap::fielddef *) 0 ;
   zval **args[1];
@@ -5199,7 +5165,7 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_fielddef_trimPadChar) {
+ZEND_NAMED_FUNCTION(_wrap_fielddef_isTrimPadChar) {
   bzs::db::protocol::tdap::fielddef *arg1 = 0;
   zval **args[1];
   bool result;
@@ -5211,13 +5177,13 @@ ZEND_NAMED_FUNCTION(_wrap_fielddef_trimPadChar) {
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__fielddef, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_trimPadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_isTrimPadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->trimPadChar();
+      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->isTrimPadChar();
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -5233,7 +5199,7 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_fielddef_usePadChar) {
+ZEND_NAMED_FUNCTION(_wrap_fielddef_isUsePadChar) {
   bzs::db::protocol::tdap::fielddef *arg1 = (bzs::db::protocol::tdap::fielddef *) 0 ;
   zval **args[1];
   bool result;
@@ -5245,13 +5211,13 @@ ZEND_NAMED_FUNCTION(_wrap_fielddef_usePadChar) {
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__fielddef, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_usePadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_isUsePadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->usePadChar();
+      result = (bool)((bzs::db::protocol::tdap::fielddef const *)arg1)->isUsePadChar();
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -5280,7 +5246,7 @@ ZEND_NAMED_FUNCTION(_wrap_fielddef_setPadCharSettings) {
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__fielddef, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_setUsePadChar. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of fielddef_setPadCharSettings. Expected SWIGTYPE_p_bzs__db__protocol__tdap__fielddef");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
@@ -5755,7 +5721,7 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_tabledef_mysqlNullMode) {
+ZEND_NAMED_FUNCTION(_wrap_tabledef_isMysqlNullMode) {
   bzs::db::protocol::tdap::tabledef *arg1 = (bzs::db::protocol::tdap::tabledef *) 0 ;
   zval **args[1];
   bool result;
@@ -5767,13 +5733,13 @@ ZEND_NAMED_FUNCTION(_wrap_tabledef_mysqlNullMode) {
   
   {
     if(SWIG_ConvertPtr(*args[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__tabledef, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of tabledef_mysqlNullMode. Expected SWIGTYPE_p_bzs__db__protocol__tdap__tabledef");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of tabledef_isMysqlNullMode. Expected SWIGTYPE_p_bzs__db__protocol__tdap__tabledef");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      result = (bool)((bzs::db::protocol::tdap::tabledef const *)arg1)->mysqlNullMode();
+      result = (bool)((bzs::db::protocol::tdap::tabledef const *)arg1)->isMysqlNullMode();
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -24015,7 +23981,7 @@ fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
-
+/*
 ZEND_NAMED_FUNCTION(_wrap_field_a_str) {
   bzs::db::protocol::tdap::client::field *arg1 = (bzs::db::protocol::tdap::client::field *) 0 ;
   zval **args[1];
@@ -24051,7 +24017,7 @@ ZEND_NAMED_FUNCTION(_wrap_field_a_str) {
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
-}
+}*/
 
 
 ZEND_NAMED_FUNCTION(_wrap_field_i) {
@@ -24087,7 +24053,7 @@ fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
-
+/*
 ZEND_NAMED_FUNCTION(_wrap_field_i8) {
   bzs::db::protocol::tdap::client::field *arg1 = (bzs::db::protocol::tdap::client::field *) 0 ;
   zval **args[1];
@@ -24153,7 +24119,7 @@ ZEND_NAMED_FUNCTION(_wrap_field_i16) {
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
-}
+}*/
 
 
 ZEND_NAMED_FUNCTION(_wrap_field_i64) {
@@ -24195,7 +24161,7 @@ fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
-
+/*
 ZEND_NAMED_FUNCTION(_wrap_field_f) {
   bzs::db::protocol::tdap::client::field *arg1 = (bzs::db::protocol::tdap::client::field *) 0 ;
   zval **args[1];
@@ -24228,7 +24194,7 @@ ZEND_NAMED_FUNCTION(_wrap_field_f) {
 fail:
   SWIG_FAIL(TSRMLS_C);
 }
-
+*/
 
 ZEND_NAMED_FUNCTION(_wrap_field_d) {
   bzs::db::protocol::tdap::client::field *arg1 = (bzs::db::protocol::tdap::client::field *) 0 ;
@@ -32430,7 +32396,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_charnum, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_validatecharnum, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_isvalidcharnum, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_setcharsetindex, 0, 0, 0)
@@ -32440,7 +32406,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_charsetindex, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_nullable, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_isnullable, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_setnullable, 0, 0, 0)
@@ -32458,19 +32424,16 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_istimestamponupdate, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_defaultvalue, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_isdefaultnull, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_name, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_trimpadchar, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_istrimpadchar, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_usepadchar, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_isusepadchar, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fielddef_setpadcharsettings, 0, 0, 0)
@@ -32515,7 +32478,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_tabledef_recordlen, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_tabledef_mysqlnullmode, 0, 0, 0)
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_tabledef_ismysqlnullmode, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_tabledef_id_set, 0, 0, 0)
@@ -33673,24 +33636,25 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_c_str, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+/*
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_a_str, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
+ZEND_END_ARG_INFO()*/
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_i, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_i8, 0, 0, 0)
+/*ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_i8, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_i16, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
+ZEND_END_ARG_INFO()*/
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_i64, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_f, 0, 0, 0)
+/*ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_f, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
+ZEND_END_ARG_INFO()*/
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_d, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -34322,19 +34286,18 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(fielddef_isnumerictype,_wrap_fielddef_isNumericType,swig_arginfo_fielddef_isnumerictype)
  SWIG_ZEND_NAMED_FE(fielddef_isdatetimetype,_wrap_fielddef_isDateTimeType,swig_arginfo_fielddef_isdatetimetype)
  SWIG_ZEND_NAMED_FE(fielddef_charnum,_wrap_fielddef_charNum,swig_arginfo_fielddef_charnum)
- SWIG_ZEND_NAMED_FE(fielddef_validatecharnum,_wrap_fielddef_validateCharNum,swig_arginfo_fielddef_validatecharnum)
+ SWIG_ZEND_NAMED_FE(fielddef_isvalidcharnum,_wrap_fielddef_isValidCharNum,swig_arginfo_fielddef_isvalidcharnum)
  SWIG_ZEND_NAMED_FE(fielddef_setcharsetindex,_wrap_fielddef_setCharsetIndex,swig_arginfo_fielddef_setcharsetindex)
  SWIG_ZEND_NAMED_FE(fielddef_charsetindex,_wrap_fielddef_charsetIndex,swig_arginfo_fielddef_charsetindex)
- SWIG_ZEND_NAMED_FE(fielddef_nullable,_wrap_fielddef_nullable,swig_arginfo_fielddef_nullable)
+ SWIG_ZEND_NAMED_FE(fielddef_isnullable,_wrap_fielddef_isNullable,swig_arginfo_fielddef_isnullable)
  SWIG_ZEND_NAMED_FE(fielddef_setnullable,_wrap_fielddef_setNullable,swig_arginfo_fielddef_setnullable)
  SWIG_ZEND_NAMED_FE(fielddef_setdefaultvalue,_wrap_fielddef_setDefaultValue,swig_arginfo_fielddef_setdefaultvalue)
  SWIG_ZEND_NAMED_FE(fielddef_settimestamponupdate,_wrap_fielddef_setTimeStampOnUpdate,swig_arginfo_fielddef_settimestamponupdate)
  SWIG_ZEND_NAMED_FE(fielddef_istimestamponupdate,_wrap_fielddef_isTimeStampOnUpdate,swig_arginfo_fielddef_istimestamponupdate)
- SWIG_ZEND_NAMED_FE(fielddef_defaultvalue,_wrap_fielddef_defaultValue,swig_arginfo_fielddef_defaultvalue)
  SWIG_ZEND_NAMED_FE(fielddef_isdefaultnull,_wrap_fielddef_isDefaultNull,swig_arginfo_fielddef_isdefaultnull)
  SWIG_ZEND_NAMED_FE(fielddef_name,_wrap_fielddef_name,swig_arginfo_fielddef_name)
- SWIG_ZEND_NAMED_FE(fielddef_trimpadchar,_wrap_fielddef_trimPadChar,swig_arginfo_fielddef_trimpadchar)
- SWIG_ZEND_NAMED_FE(fielddef_usepadchar,_wrap_fielddef_usePadChar,swig_arginfo_fielddef_usepadchar)
+ SWIG_ZEND_NAMED_FE(fielddef_istrimpadchar,_wrap_fielddef_isTrimPadChar,swig_arginfo_fielddef_istrimpadchar)
+ SWIG_ZEND_NAMED_FE(fielddef_isusepadchar,_wrap_fielddef_isUsePadChar,swig_arginfo_fielddef_isusepadchar)
  SWIG_ZEND_NAMED_FE(fielddef_setpadcharsettings,_wrap_fielddef_setPadCharSettings,swig_arginfo_fielddef_setpadcharsettings)
  SWIG_ZEND_NAMED_FE(new_fielddef,_wrap_new_fielddef,swig_arginfo_new_fielddef)
  SWIG_ZEND_NAMED_FE(new_tabledef,_wrap_new_tabledef,swig_arginfo_new_tabledef)
@@ -34343,10 +34306,12 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(tabledef_tablename,_wrap_tabledef_tableName,swig_arginfo_tabledef_tablename)
  SWIG_ZEND_NAMED_FE(tabledef_setfilename,_wrap_tabledef_setFileName,swig_arginfo_tabledef_setfilename)
  SWIG_ZEND_NAMED_FE(tabledef_settablename,_wrap_tabledef_setTableName,swig_arginfo_tabledef_settablename)
+ SWIG_ZEND_NAMED_FE(tabledef_nullfields,_wrap_tabledef_nullfields,swig_arginfo_tabledef_nullfields)
+ SWIG_ZEND_NAMED_FE(tabledef_inuse,_wrap_tabledef_inUse,swig_arginfo_tabledef_inuse)
  SWIG_ZEND_NAMED_FE(tabledef_size,_wrap_tabledef_size,swig_arginfo_tabledef_size)
  SWIG_ZEND_NAMED_FE(tabledef_fieldnumbyname,_wrap_tabledef_fieldNumByName,swig_arginfo_tabledef_fieldnumbyname)
  SWIG_ZEND_NAMED_FE(tabledef_recordlen,_wrap_tabledef_recordlen,swig_arginfo_tabledef_recordlen)
- SWIG_ZEND_NAMED_FE(tabledef_mysqlnullmode,_wrap_tabledef_mysqlNullMode,swig_arginfo_tabledef_mysqlnullmode)
+ SWIG_ZEND_NAMED_FE(tabledef_ismysqlnullmode,_wrap_tabledef_isMysqlNullMode,swig_arginfo_tabledef_ismysqlnullmode)
  SWIG_ZEND_NAMED_FE(tabledef_id_set,_wrap_tabledef_id_set,swig_arginfo_tabledef_id_set)
  SWIG_ZEND_NAMED_FE(tabledef_id_get,_wrap_tabledef_id_get,swig_arginfo_tabledef_id_get)
  SWIG_ZEND_NAMED_FE(tabledef_pagesize_set,_wrap_tabledef_pageSize_set,swig_arginfo_tabledef_pagesize_set)
@@ -34673,12 +34638,12 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(field_type,_wrap_field_type,swig_arginfo_field_type)
  SWIG_ZEND_NAMED_FE(field_len,_wrap_field_len,swig_arginfo_field_len)
  SWIG_ZEND_NAMED_FE(field_c_str,_wrap_field_c_str,swig_arginfo_field_c_str)
- SWIG_ZEND_NAMED_FE(field_a_str,_wrap_field_a_str,swig_arginfo_field_a_str)
+// SWIG_ZEND_NAMED_FE(field_a_str,_wrap_field_a_str,swig_arginfo_field_a_str)
  SWIG_ZEND_NAMED_FE(field_i,_wrap_field_i,swig_arginfo_field_i)
- SWIG_ZEND_NAMED_FE(field_i8,_wrap_field_i8,swig_arginfo_field_i8)
- SWIG_ZEND_NAMED_FE(field_i16,_wrap_field_i16,swig_arginfo_field_i16)
+ //SWIG_ZEND_NAMED_FE(field_i8,_wrap_field_i8,swig_arginfo_field_i8)
+ //SWIG_ZEND_NAMED_FE(field_i16,_wrap_field_i16,swig_arginfo_field_i16)
  SWIG_ZEND_NAMED_FE(field_i64,_wrap_field_i64,swig_arginfo_field_i64)
- SWIG_ZEND_NAMED_FE(field_f,_wrap_field_f,swig_arginfo_field_f)
+ //SWIG_ZEND_NAMED_FE(field_f,_wrap_field_f,swig_arginfo_field_f)
  SWIG_ZEND_NAMED_FE(field_d,_wrap_field_d,swig_arginfo_field_d)
  SWIG_ZEND_NAMED_FE(field_isnull,_wrap_field_isNull,swig_arginfo_field_isnull)
  SWIG_ZEND_NAMED_FE(field_setnull,_wrap_field_setNull,swig_arginfo_field_setnull)
@@ -35325,14 +35290,6 @@ SWIG_LONG_CONSTANT(ft_myblob, ft_myblob);
 SWIG_LONG_CONSTANT(ft_autoIncUnsigned, ft_autoIncUnsigned);
 SWIG_LONG_CONSTANT(ft_myfixedbinary, ft_myfixedbinary);
 SWIG_LONG_CONSTANT(ft_nullindicator, ft_nullindicator);
-SWIG_LONG_CONSTANT(charset_none, charset_none);
-SWIG_LONG_CONSTANT(charset_latin1, charset_latin1);
-SWIG_LONG_CONSTANT(charset_ascii, charset_ascii);
-SWIG_LONG_CONSTANT(charset_sjis, charset_sjis);
-SWIG_LONG_CONSTANT(charset_cp932, charset_cp932);
-SWIG_LONG_CONSTANT(charset_utf8, charset_utf8);
-SWIG_LONG_CONSTANT(charset_utf8mb4, charset_utf8mb4);
-SWIG_LONG_CONSTANT(charset_usc2, charset_usc2);
 SWIG_LONG_CONSTANT(CMPLOGICAL_VAR_COMP_ALL, CMPLOGICAL_VAR_COMP_ALL);
 SWIG_LONG_CONSTANT(CMPLOGICAL_CMPACS, CMPLOGICAL_CMPACS);
 SWIG_LONG_CONSTANT(CMPLOGICAL_FIELD, CMPLOGICAL_FIELD);

@@ -158,10 +158,8 @@ public:
     STDMETHOD(get_TrxLockWaitTimeoutServer)(int* Value);
     STDMETHOD(put_AutoSchemaUseNullkey)(VARIANT_BOOL Value);
     STDMETHOD(get_AutoSchemaUseNullkey)(VARIANT_BOOL* Value);
-    STDMETHOD(put_ComaptibleMode)(int Value);
-    STDMETHOD(get_ComaptibleMode)(int* Value);
-
-
+    STDMETHOD(put_CompatibleMode)(int Value);
+    STDMETHOD(get_CompatibleMode)(int* Value);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)

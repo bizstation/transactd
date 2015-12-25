@@ -148,11 +148,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         //test padChar only string or wstring
         $fd->type = Bz\transactd::ft_string;
         $fd->setPadCharSettings(true, false);
-        $this->assertEquals($fd->usePadChar(), true);
-        $this->assertEquals($fd->trimPadChar(), false);
+        $this->assertEquals($fd->isUsePadChar(), true);
+        $this->assertEquals($fd->isTrimPadChar(), false);
         $fd->setPadCharSettings(false, true);
-        $this->assertEquals($fd->usePadChar(), false);
-        $this->assertEquals($fd->trimPadChar(), true);
+        $this->assertEquals($fd->isUsePadChar(), false);
+        $this->assertEquals($fd->isTrimPadChar(), true);
         
         $fd->type = Bz\transactd::ft_zstring;
         $dbdef->updateTableDef($tableid);

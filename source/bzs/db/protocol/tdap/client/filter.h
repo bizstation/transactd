@@ -628,7 +628,7 @@ class filter
             bsize.select += r.size();
             bsize.retRowSize += r.len;
 
-            if (m_tb->tableDef()->fieldDefs[fieldNum].nullable())
+            if (m_tb->tableDef()->fieldDefs[fieldNum].isNullable())
             {
                 ++bsize.nullfields;
                 bsize.nullbytes = (bsize.nullfields + 7) / 8;

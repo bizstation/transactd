@@ -444,7 +444,7 @@ public:
      */
     unsigned int charNum() const;
 
-    bool validateCharNum() const;
+    bool isValidCharNum() const;
 
     inline void setCharsetIndex(uchar_td index)
     {
@@ -482,13 +482,13 @@ public:
     }
 	
 	/* When ft_string or ft_wstring, fill by pad char at write. */
-    inline bool usePadChar() const {return (m_padCharOptions & USE_PAD_CHAR) == USE_PAD_CHAR;}
+    inline bool isUsePadChar() const {return (m_padCharOptions & USE_PAD_CHAR) == USE_PAD_CHAR;}
 
     /* When ft_string or ft_wstring or ft_mychar or  ft_mywchar,
        remove pad char at read.*/
-    inline bool trimPadChar() const {return (m_padCharOptions & TRIM_PAD_CHAR) == TRIM_PAD_CHAR;}
+    inline bool isTrimPadChar() const {return (m_padCharOptions & TRIM_PAD_CHAR) == TRIM_PAD_CHAR;}
 
-    inline bool nullable() const {return (m_options & FIELD_OPTION_NULLABLE) == FIELD_OPTION_NULLABLE;}
+    inline bool isNullable() const {return (m_options & FIELD_OPTION_NULLABLE) == FIELD_OPTION_NULLABLE;}
 
     void setNullable(bool v, bool defaultNull = true)
     {
@@ -664,7 +664,7 @@ private:
         ushort_td copylen = std::min<ushort_td>(keylen, datalen);
 
         memset(to, 0x00, keylen + 1); //clear plus null byte
-        if (nullable() || isNull)
+        if (isNullable() || isNull)
         {
             // mysql only
             if (isNull)
@@ -770,7 +770,7 @@ private:
 
     inline void setPadCharDefaultSettings()
     {
-        if (!padCharOptionSaved())
+        if (!isPadCharOptionSaved())
         {
             // For compatibility with conventional.
             if ((type == ft_string) || (type == ft_wstring) ||
@@ -786,7 +786,7 @@ private:
 
     /* PadChar options are saved at schema.
         This is for compatibility with conventional.*/
-    bool padCharOptionSaved() const
+    bool isPadCharOptionSaved() const
     {
         return (m_padCharOptions & PAD_CHAR_OPTION_SAVED) == PAD_CHAR_OPTION_SAVED;
     }
@@ -943,7 +943,7 @@ public:
 
     uint_td unPack(char* ptr, size_t size) const;
 
-    inline bool mysqlNullMode() const { return m_mysqlNullMode; }
+    inline bool isMysqlNullMode() const { return m_mysqlNullMode; }
 
 private:
     short synchronize(const tabledef* td);

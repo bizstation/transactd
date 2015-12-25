@@ -263,7 +263,7 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
         s += getFieldTypeName(fd.type, len, f.bitA, charsetName);
         const char* p = fd.defaultValue_strA();
         /*bool isNullkeyseg = isNULLKeySegment(table, i);*/
-        if (/*isNullkeyseg ||*/ fd.nullable())
+        if (/*isNullkeyseg ||*/ fd.isNullable())
         {
             if (/*isNullkeyseg || */fd.isDefaultNull())
                 s += " NULL DEFAULT NULL";
