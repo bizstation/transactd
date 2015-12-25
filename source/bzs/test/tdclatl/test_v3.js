@@ -820,7 +820,7 @@ function main()
 
 	if (WScript.arguments.length > 1)
 		host = WScript.arguments(1);
-	var URI  = "tdap://" + host + "/testv3?dbfile=test.bdf";
+	var URI  = "tdap://" + host + "/test_v3?dbfile=test.bdf";
 
 
 	WScript.Echo(URI);

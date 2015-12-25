@@ -41,7 +41,7 @@ USERPART = USERNAME == '' ? '' : USERNAME + '@'
 PASSWORD = getEnv('TRANSACTD_RSPEC_PASS')
 PASSPART = PASSWORD == '' ? '' : '&pwd=' + PASSWORD
 PASSPART2 = PASSWORD == '' ? '' : '?pwd=' + PASSWORD
-DBNAME = 'testv3'
+DBNAME = 'test_v3'
 TABLENAME = 'user'
 PROTOCOL = 'tdap://'
 BDFNAME = '?dbfile=test.bdf'

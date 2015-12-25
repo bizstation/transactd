@@ -42,7 +42,7 @@ define("USERPART", strlen(USERNAME) == 0 ? '' : USERNAME . '@');
 define("PASSWORD", getenv('TRANSACTD_PHPUNIT_PASS'));
 define("PASSPART", strlen(PASSWORD) == 0 ? '' : '&pwd=' . PASSWORD);
 define("PASSPART2", strlen(PASSWORD) == 0 ? '' : '?pwd=' . PASSWORD);
-define("DBNAME", "testv3");
+define("DBNAME", "test_v3");
 define("TABLENAME", "user");
 define("PROTOCOL", "tdap://");
 define("BDFNAME", "?dbfile=test.bdf");
