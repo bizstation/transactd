@@ -71,5 +71,6 @@ public:
     STDMETHOD(Str)(BSTR* Value);
     STDMETHOD(get_Type)(short* Value);
     STDMETHOD(get_Len)(short* Value);
+    STDMETHOD(GetBits)(IBitset** Value);
 
 };

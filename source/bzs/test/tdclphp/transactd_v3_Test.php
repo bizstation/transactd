@@ -236,6 +236,12 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd->SetLenByCharnum(60);
         $fd->setNullable(true);
         $this->assertEquals($fd->isDefaultNull(), true);
+
+        $fd = $dbdef->insertField($tableid, ++$fieldIndex);
+        $fd->setName('bits');
+        $fd->type = bz\transactd::ft_integer;
+        $fd->len = 8;
+        $this->assertEquals($fd->isDefaultNull(), false);
         
         $keynum = 0;
         $kd = $dbdef->insertKey($tableid, $keynum);
@@ -384,7 +390,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // getSqlStringForCreateTable
         $sql = $db->getSqlStringForCreateTable("extention");
         $this->assertEquals($db->stat(), 0);
-        $this->assertEquals($sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL, UNIQUE key0(`id`)) ENGINE=InnoDB default charset=utf8');
+        $this->assertEquals($sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL,`bits` BIGINT NOT NULL , UNIQUE key0(`id`)) ENGINE=InnoDB default charset=utf8');
         
         // setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
         $td = $dbdef->tableDefs(1);
@@ -594,5 +600,90 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->release();
         $this->assertEquals($td->inUse() , 0);
         
+    }
+    
+    public function test_bit()
+    {
+        $db = new bz\database();
+        $this->openDatabase($db);
+        $tb = $db->openTable("extention");
+        $this->assertEquals($db->stat(), 0);
+        $tb->setKeyNum(0);
+        $tb->setFV('id', 1);
+        $tb->seek();
+        $this->assertEquals($tb->stat(), 0);
+        $bits = new  bz\bitset();
+        /*
+        $bits->set(63, true);
+        $bits->set(2, true);
+        $bits->set(5, true);
+        */
+        $bits[63] = true;
+        $bits[2] =  true;
+        $bits[5] =  true;
+        
+        $tb->setFV('bits', $bits);
+        $tb->update();
+        $this->assertEquals($tb->stat(), 0);
+        
+        $q = new bz\query();
+        $at = new bz\activeTable($db, "extention");
+        $q->where('id', '=', 1);
+        $rs = $at->index(0)->keyValue(1)->read($q);
+        $this->assertEquals($rs->size(), 1);
+        $bits = $rs[0]['bits']->getBits();
+
+        $this->assertEquals($bits->get(63), true);
+        $this->assertEquals($bits->get(2), true);
+        $this->assertEquals($bits->get(5), true);
+        $this->assertEquals($bits->get(62), false);
+        $this->assertEquals($bits->get(0), false);
+        $this->assertEquals($bits->get(12), false);
+        
+        $this->assertEquals($bits[63], true);
+        $this->assertEquals($bits[2], true);
+        $this->assertEquals($bits[5], true);
+        $this->assertEquals($bits[62], false);
+        $this->assertEquals($bits[0], false);
+        $this->assertEquals($bits[12], false);
+    
+        $wr = $at->getWritableRecord();
+        $wr['id'] = 1;
+        /*
+        $bits->set(63, false);
+        $bits->set(12, true);
+        $bits->set(0, true);
+        $bits->set(62, true);
+        */
+        $bits[63] = false;
+        $bits[12] = true;
+        $bits[0] =  true;
+        $bits[62] =  true;
+
+        $wr['bits'] = $bits;
+        $wr->update();
+        $tb->setFV('id', 1);
+        $tb->seek();
+        $this->assertEquals($tb->stat(), 0);
+        $bits = $tb->getFVbits('bits');
+        
+        $this->assertEquals($bits->get( 63), false);
+        $this->assertEquals($bits->get( 2), true);
+        $this->assertEquals($bits->get( 5), true);
+        $this->assertEquals($bits->get( 12), true);
+        $this->assertEquals($bits->get( 0), true);
+        $this->assertEquals($bits->get( 62), true);
+        $this->assertEquals($bits->get( 11), false);
+        $this->assertEquals($bits->get( 13), false);
+        
+        $this->assertEquals($bits[63], false);
+        $this->assertEquals($bits[2], true);
+        $this->assertEquals($bits[5], true);
+        $this->assertEquals($bits[12], true);
+        $this->assertEquals($bits[0], true);
+        $this->assertEquals($bits[62], true);
+        $this->assertEquals($bits[11], false);
+        $this->assertEquals($bits[13], false);
+
     }
 }

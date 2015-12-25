@@ -26,6 +26,7 @@
 #include "PooledDbManager.h"
 #include "PreparedQuery.h"
 #include "Table.h"
+#include "Bitset.h"
 
 using namespace bzs::db::protocol::tdap::client;
 using namespace bzs::db::protocol::tdap;
@@ -108,14 +109,27 @@ STDMETHODIMP CActiveTable::Index(short Value, IActiveTable** retVal)
 wchar_t* convWCHAR(VARIANT& Value)
 {
     wchar_t* v = NULL;
+    
+    if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
+    {
+        CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
+        if (b)
+        {
+            VariantInit(&Value);
+            Value.vt = VT_UI8;
+            Value.ullVal = b->m_bitset.i64(); 
+        }
+    }
     if (Value.vt == VT_NULL)
         v = NULL;
     else if (Value.vt != VT_BSTR)
     {
         VariantChangeType(&Value, &Value, 0, VT_BSTR);
         v = Value.bstrVal;
-    }else
+    } 
+    else
         v = Value.bstrVal;
+
     return v;
 
 }

@@ -87,6 +87,33 @@ typedef boost::shared_ptr<filter> pq_handle;
 
 /** @endcond */
 
+class bitset
+{
+    unsigned __int64 m_v;
+
+public:
+    bitset() : m_v(0) { }
+
+    bitset(__int64 v) : m_v(v) { }
+
+    inline void set(int index, bool value)
+    {
+        unsigned __int64 bits = 1ULL << index;
+        m_v = value ? m_v | bits : m_v & ~bits;
+    }
+
+    inline bool get(int index)
+    {
+        unsigned __int64 bits = 1ULL << index;
+        return (m_v & bits) != 0;
+    }
+
+    inline __int64 i64() { return (__int64)m_v; }
+
+    inline bool operator[](int index) {return get(index); };
+};
+
+
 class DLLLIB table : public nstable
 {
     static void* __STDCALL DDBA(client::table* tb, uint_td size);
@@ -688,6 +715,7 @@ bool DLLLIB supplyValue(pq_handle& filter, int index, int v);
 bool DLLLIB supplyValue(pq_handle& filter, int index, __int64 v);
 bool DLLLIB supplyValue(pq_handle& filter, int index, float v);
 bool DLLLIB supplyValue(pq_handle& filter, int index, double v);
+
 
 #pragma warning(default : 4251)
 

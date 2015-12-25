@@ -330,14 +330,14 @@ function createUserTable(db)
 	tableDef.CharsetIndex = CHARSET_CP932;
 	tableDef.SchemaCodePage = CP_UTF8;
 
-	var filedIndex = 0;
-	var fd =  dbdef.InsertField(tableid, filedIndex);
+	var fieldIndex = 0;
+	var fd =  dbdef.InsertField(tableid, fieldIndex);
 	fd.Name = "id";
 	fd.Type = ft_autoinc;
 	fd.Len = 4;
 
-	++filedIndex;
-	fd =  dbdef.InsertField(tableid, filedIndex);
+	++fieldIndex;
+	fd =  dbdef.InsertField(tableid, fieldIndex);
 	fd.Name = "–¼‘O";
 	fd.Type = ft_myvarchar;
 	fd.len = 2;
@@ -349,22 +349,22 @@ function createUserTable(db)
 	checkEqual(fd.DateTimeType, false, "isDateTimeType");
 
 
-	++filedIndex;
-	fd =  dbdef.InsertField(tableid, filedIndex);
+	++fieldIndex;
+	fd =  dbdef.InsertField(tableid, fieldIndex);
 	fd.Name = "group";
 	fd.Type = ft_integer;
 	fd.Len = 4;
 	fd.DefaultValue = 10;
 
-	++filedIndex;
-	fd =  dbdef.InsertField(tableid, filedIndex);
+	++fieldIndex;
+	fd =  dbdef.InsertField(tableid, fieldIndex);
 	fd.Name = "tel";
 	fd.Type = ft_myvarchar;
 	fd.SetLenByCharnum(21);
 	fd.SetNullable(true);
 	
-	++filedIndex;
-	fd =  dbdef.InsertField(tableid, filedIndex);
+	++fieldIndex;
+	fd =  dbdef.InsertField(tableid, fieldIndex);
 	fd.Name = "update_datetime";
 	fd.Type = ft_mytimestamp;
 	fd.Len = 7;
@@ -373,8 +373,8 @@ function createUserTable(db)
 	checkEqual(fd.TimeStampOnUpdate, true, "TimeStampOnUpdate 1-");
 
 
-	++filedIndex;
-	fd =  dbdef.InsertField(tableid, filedIndex);
+	++fieldIndex;
+	fd =  dbdef.InsertField(tableid, fieldIndex);
 	fd.Name = "create_datetime";
 	if (isMySQL5_5(db))
 	{
@@ -430,19 +430,26 @@ function createUserExtTable(db)
 	tableDef.CharsetIndex = CHARSET_CP932;
 	tableDef.SchemaCodePage = CP_UTF8;
 	
-	var filedIndex = 0;
-	var fd =  dbdef.InsertField(tableid, filedIndex);
+	var fieldIndex = 0;
+	var fd =  dbdef.InsertField(tableid, fieldIndex);
 	fd.Name = "id";
 	fd.Type = ft_integer;
 	fd.Len = 4;
 
-	++filedIndex;
-	fd =  dbdef.InsertField(tableid, filedIndex);
+	++fieldIndex;
+	fd =  dbdef.InsertField(tableid, fieldIndex);
 	fd.Name = "comment";
 	fd.Type = ft_myvarchar;
 	fd.SetLenByCharnum(60);
 	fd.SetNullable(true);
 	checkEqual(fd.DefaultNull, true, "DefaultNull 1");
+
+	++fieldIndex;
+	fd =  dbdef.InsertField(tableid, fieldIndex);
+	fd.Name = "bits";
+	fd.Type = ft_integer;
+	fd.len = 8;
+
 
 	var keyNum = 0;
 	var key = dbdef.InsertKey(tableid, keyNum);
@@ -524,6 +531,88 @@ function todayStr()
 	if (m < 10)	m = "0" + m;
 	if (dt < 10) dt = "0" + dt;
 	return d.getFullYear() + "-" + m + "-" + dt;
+}
+/*--------------------------------------------------------------------------------*/
+function test_bit(ate, db)
+{
+	var tb = ate.table();
+
+	tb.KeyNum = 0;
+	tb.setFV('id', 1);
+	tb.seek();
+	checkEqual(tb.Stat, 0);
+	var bits = new  ActiveXObject("transactd.Bitset");
+	/*
+	bits.bit(63, true);
+	bits.bit(2, true);
+	bits.bit(5, true);
+	*/
+	bits(63) = true;
+	bits(2) =  true;
+	bits(5) =  true;
+	
+	tb.setFV('bits', bits);
+	tb.update();
+	checkEqual(tb.Stat, 0);
+	
+	initQuery();
+	q.Where('id', '=', 1);
+	var rs = ate.index(0).keyValue(1).read(q);
+	checkEqual(rs.size , 1);
+	bits = rs(0)('bits').GetBits();
+
+	checkEqual(bits.bit(63), true);
+	checkEqual(bits.bit(2), true);
+	checkEqual(bits.bit(5), true);
+	checkEqual(bits.bit(62), false);
+	checkEqual(bits.bit(0), false);
+	checkEqual(bits.bit(12), false);
+	
+	checkEqual(bits(63), true);
+	checkEqual(bits(2), true);
+	checkEqual(bits(5), true);
+	checkEqual(bits(62), false);
+	checkEqual(bits(0), false);
+	checkEqual(bits(12), false);
+
+	var wr = ate.getWritableRecord();
+	wr('id').SetValue(1);
+	/*
+	bits.bit(63) = false;
+	bits.bit(12) = true;
+	bits.bit(0) = true;
+	bits.bit(62) = true;
+	*/
+	bits(63) = false;
+	bits(12) = true;
+	bits(0) =  true;
+	bits(62) =  true;
+
+	wr('bits').SetValue(bits);
+	wr.update();
+	tb.setFV('id', 1);
+	tb.seek();
+	checkEqual(tb.Stat, 0);
+	bits = tb.getFVbits('bits');
+	
+	checkEqual(bits.bit( 63), false);
+	checkEqual(bits.bit( 2), true);
+	checkEqual(bits.bit( 5), true);
+	checkEqual(bits.bit( 12), true);
+	checkEqual(bits.bit( 0), true);
+	checkEqual(bits.bit( 62), true);
+	checkEqual(bits.bit( 11), false);
+	checkEqual(bits.bit( 13), false);
+	
+	checkEqual(bits(63), false);
+	checkEqual(bits(2), true);
+	checkEqual(bits(5), true);
+	checkEqual(bits(12), true);
+	checkEqual(bits(0), true);
+	checkEqual(bits(62), true);
+	checkEqual(bits(11), false);
+	checkEqual(bits(13), false);
+
 }
 /*--------------------------------------------------------------------------------*/
 function test(atu, ate, db)
@@ -614,7 +703,7 @@ function test(atu, ate, db)
 	// getSqlStringForCreateTable
 	var sql = db.GetSqlStringForCreateTable("extention");
 	checkEqual(db.Stat, 0, "GetSqlStringForCreateTable");
-	checkEqual(sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL, UNIQUE key0(`id`)) ENGINE=InnoDB default charset=cp932',
+	checkEqual(sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL,`bits` BIGINT NOT NULL , UNIQUE key0(`id`)) ENGINE=InnoDB default charset=cp932',
 		 "GetSqlStringForCreateTable");
 
 	// setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
@@ -808,6 +897,8 @@ function test(atu, ate, db)
 	checkEqual(tb.TableDef.MysqlNullMode , true, "MysqlNullMode 2");
 	checkEqual(td.InUse , 2, "InUse2");
 	
+	test_bit(ate, db);
+
 	WScript.Echo(" -- End Test -- ");
 }
 /*--------------------------------------------------------------------------------*/

@@ -46,6 +46,7 @@ interface IConnectParams;
 interface IPooledDbManager;
 interface IPreparedQuery;
 interface IBookmark;
+interface IBitset;
 
 typedef
 [
@@ -820,6 +821,9 @@ interface ITable : IDispatch
   HRESULT _stdcall SetFV([in] VARIANT Index, [in] VARIANT Value);
   [id(0x000000ED)]
   HRESULT _stdcall SetTimestampMode([in] eTimeStampMode mode);
+  [id(0x000000EE)]
+  HRESULT _stdcall GetFVbits([in] VARIANT Index, [out, retval] IBitset** Value);
+
 
 };
 [
@@ -1130,6 +1134,8 @@ interface IField : IDispatch
   HRESULT _stdcall Type([out, retval] short* Value);
   [propget, id(0x000000D9)]
   HRESULT _stdcall Len([out, retval] short* Value);
+  [id(0x000000DA)]
+  HRESULT _stdcall GetBits([out, retval] IBitset** Value);
 
 };
 
@@ -1709,6 +1715,21 @@ interface IBookmark : IDispatch
 
 
 [
+	object,
+	uuid(E7EA0FFF-577E-4CF5-B890-0C13AD968784),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IBitset : IDispatch{
+
+  [propput, id(0)]
+  HRESULT _stdcall Bit([in] short index, [in] VARIANT_BOOL val);
+  [propget, id(0)]
+  HRESULT _stdcall Bit([in] short index, [out, retval] VARIANT_BOOL* retVal);
+};
+
+[
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
 	version(1.0),
 ]
@@ -1959,6 +1980,14 @@ library transactd
 		
 	};
 		
+	[
+		uuid(71107F47-2E0A-400B-9E62-C87D84A50008)		
+	]
+	coclass Bitset
+	{
+		[default] interface IBitset;
+	};
+   
 };
 
 import "shobjidl.idl";

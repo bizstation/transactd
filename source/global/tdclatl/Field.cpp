@@ -18,6 +18,7 @@
 =================================================================*/
 #include "stdafx.h"
 #include "Field.h"
+#include "Bitset.h"
 
 STDMETHODIMP CField::get_Text(BSTR* Value)
 {
@@ -86,20 +87,6 @@ STDMETHODIMP CField::put_Vdbl(double Value)
     return S_OK;
 }
 
-/*
-STDMETHODIMP CField::put_Null(VARIANT_BOOL Value)
-{
-    m_fd.setNull(Value);
-    return S_OK;
-}
-
-STDMETHODIMP CField::get_Null(VARIANT_BOOL* Value)
-{
-    *Value = m_fd.isNull();
-    return S_OK;
-}*/
-
-
 STDMETHODIMP CField::IsNull(VARIANT_BOOL* Value)
 {
     *Value = m_fd.isNull();
@@ -122,6 +109,12 @@ STDMETHODIMP CField::SetValue(VARIANT Value)
         m_fd = Value.llVal;
     else if(Value.vt == VT_NULL)
         m_fd = (wchar_t*)NULL;
+    else if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
+    {
+        CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
+        if (b)
+            m_fd = b->m_bitset.i64();    
+    }
     else
     {
         VariantChangeType( &Value, &Value, 0, VT_BSTR );
@@ -180,4 +173,19 @@ STDMETHODIMP CField::get_Len(short* Value)
     *Value = m_fd.len();
     return S_OK;
 }
+
+STDMETHODIMP CField::GetBits(IBitset** Value)
+{
+    CComObject<CBitset>* b;
+    CComObject<CBitset>::CreateInstance(&b);
+    if (!b)
+        return Error("CreateInstance Bitset", IID_ITable);
+    b->m_bitset = bzs::db::protocol::tdap::client::bitset(m_fd.i64());
+    CBitset* bi;
+    b->QueryInterface(IID_IBitset, (void**)&bi);
+    _ASSERTE(bi);
+    *Value = bi;
+    return S_OK;
+}
+
 

@@ -25,6 +25,7 @@
 #include "PreparedQuery.h"
 #include <bzs/db/protocol/tdap/client/fields.h>
 #include "Bookmark.h"
+#include "Bitset.h"
 
 using namespace bzs::db::protocol::tdap;
 
@@ -160,6 +161,12 @@ STDMETHODIMP CTableTd::SetFV(VARIANT Index, VARIANT Value)
         m_tb->setFV(index, Value.llVal);
     else if (Value.vt == VT_NULL)
         m_tb->setFV(index, (wchar_t*)NULL);
+    else if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
+    {
+        CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
+        if (b)
+            m_tb->setFV(index, b->m_bitset.i64());    
+    }
     else
     {
         VariantChangeType( &Value, &Value, 0, VT_BSTR );
@@ -814,6 +821,25 @@ STDMETHODIMP CTableTd::SetTimestampMode(eTimeStampMode mode)
     m_tb->setTimestampMode((int)mode);
     return S_OK;
 }
+
+STDMETHODIMP CTableTd::GetFVbits(VARIANT Index, IBitset** Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    
+    CComObject<CBitset>* b;
+    CComObject<CBitset>::CreateInstance(&b);
+    if (!b)
+        return Error("CreateInstance Bitset", IID_ITable);
+    b->m_bitset = bzs::db::protocol::tdap::client::bitset(m_tb->getFV64(index));
+    CBitset* bi;
+    b->QueryInterface(IID_IBitset, (void**)&bi);
+    _ASSERTE(bi);
+    *Value = bi;
+    return S_OK;
+}
+   
 
 void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
                           int count, bool& cancel)

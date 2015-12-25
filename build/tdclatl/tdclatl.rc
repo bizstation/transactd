@@ -123,7 +123,7 @@ IDR_SORTFIELDS          REGISTRY                "sortFields.rgs"
 IDR_FIELDNAMES          REGISTRY                "fieldNames.rgs"
 IDR_POOLEDDBMGR         REGISTRY                "pooledDbMgr.rgs"
 IDR_CONNECTPARAM        REGISTRY                "connectParams.rgs"
-
+IDR_BITSET              REGISTRY                "Bitset.rgs"
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table

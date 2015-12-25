@@ -239,6 +239,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\activeTable.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\Bitset.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Bookmark.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\ConnectParams.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Database.cpp" />
@@ -287,6 +288,7 @@
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\pooledDatabaseManager.h" />
     <ClInclude Include="..\..\source\global\tdclatl\activeTable.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\Bitset.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Bookmark.h" />
     <ClInclude Include="..\..\source\global\tdclatl\ConnectParams.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Database.h" />
@@ -318,6 +320,7 @@
   <ItemGroup>
     <None Include="..\..\source\global\tdclatl\tdclatl.def" />
     <None Include="ActiveTable.rgs" />
+    <None Include="Bitset.rgs" />
     <None Include="connectParams.rgs" />
     <None Include="database.rgs" />
     <None Include="fieldNames.rgs" />

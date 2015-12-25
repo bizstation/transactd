@@ -1730,6 +1730,15 @@ class table extends nstable {
 		table_setPrepare($this->_cPtr,$q);
 	}
 
+	function getFVBits($index_or_fieldName) {
+		$r=table_getFVBits($this->_cPtr,$index_or_fieldName);
+		if (!is_resource($r)) return $r;
+		switch (get_resource_type($r)) {
+		case '_p_bzs__db__protocol__tdap__client__bitset': return new bitset($r);
+		default: return new bitset($r);
+		}
+	}
+
 	function release() {
 		table_release($this->_cPtr);
 	}
@@ -1995,6 +2004,60 @@ class query extends queryBase {
 		query_in($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
 		return $this;
 	}
+}
+
+class bitset implements \ArrayAccess {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__bitset') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_bitset();
+	}
+
+	function set($index,$value) {
+		bitset_set($this->_cPtr,$index,$value);
+	}
+
+	function get($index) {
+		return bitset_get($this->_cPtr,$index);
+	}
+	
+	// ArrayAccess
+	public function offsetExists($offset) {
+		return \gettype($offset) !== 'integer' && $offset >= 0 && $offset < 63;
+	}
+
+	public function offsetGet($offset) {
+		return bitset_get($this->_cPtr,$offset);
+	}
+
+	public function offsetSet($offset, $value) {
+		bitset_set($this->_cPtr,$offset,$value);
+	}
+
+	public function offsetUnset($offset) {
+		bitset_set($this->_cPtr,$offset,false);
+	}
+
 }
 
 class nsdatabase {
@@ -2788,6 +2851,16 @@ class field {
 
 	function comp($r_,$logType=16) {
 		return field_comp($this->_cPtr,$r_,$logType);
+	}
+
+	function getBits() {
+		$r=field_getBits($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new bitset($r);
+		}
+		return $r;
 	}
 	
 	function i() { return field_i($this->_cPtr); }

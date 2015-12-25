@@ -385,6 +385,16 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::fielddefs::addAllFileds;
 %ignore bzs::db::protocol::tdap::client::fielddefs::addSelectedFields;
 %ignore bzs::db::protocol::tdap::client::getFieldType;
+
+  // bitset for field class
+%extend bzs::db::protocol::tdap::client::field {
+  bitset* getBits() {
+    bitset* b = new bitset(self->i64());
+    return b;
+  }
+};
+
+
   // create and release methods for fielddefs class
 %extend bzs::db::protocol::tdap::client::fielddefs {
   fielddefs() {
@@ -724,8 +734,21 @@ using namespace bzs::db::protocol::tdap::client;
   void setPrepare(preparedQuery* q) {
     self->setPrepare(q->getFilter());
   }
+
+  bitset* getFVBits(short index) {
+    bitset* b = new bitset(self->getFV64(index));
+    return b;
+  }
+
+  bitset* getFVBits(const _TCHAR* fieldName) {
+    bitset* b = new bitset(self->getFV64(fieldName));
+    return b;
+  }
+
+
 };
   // ignore original methods
+%ignore bzs::db::protocol::tdap::client::bitset::bitset(__int64 v);
 %ignore bzs::db::protocol::tdap::client::table::prepare;
 %ignore bzs::db::protocol::tdap::client::table::setQuery;
 %ignore bzs::db::protocol::tdap::client::table::setPrepare;
