@@ -30,10 +30,11 @@
 #pragma package(smart_init)
 
 /* TODO: To be support internal started transction with original flag.*/
-#ifdef __x86_64__
-#define MEM_FREED_MAGIC_NUMBER (nstimpl*)0x0FEEEFEEEFEEEFEEE
-#else
+
+#if (defined(__x86_32__) || defined(__APPLE_32__))
 #define MEM_FREED_MAGIC_NUMBER (nstimpl*)0x0FEEEFEEE
+#else
+#define MEM_FREED_MAGIC_NUMBER (nstimpl*)0x0FEEEFEEEFEEEFEEE
 #endif
 namespace bzs
 {

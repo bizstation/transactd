@@ -67,7 +67,7 @@ struct blobHeader
     unsigned short fieldCount;
     mutable unsigned short curRow;
     mutable blobField* nextField;
-#ifndef __x86_64__
+#if (defined(__x86_32__) || defined(__APPLE_32__))
     blobField* dymmySpace32; // 8byte size space for 32bit
 #endif
 
