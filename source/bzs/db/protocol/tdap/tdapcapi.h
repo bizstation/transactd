@@ -171,6 +171,8 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define CR_SUBOP_BY_FILESPEC_NOCKECK    0
 #define CR_SUBOP_BY_TABLEDEF            1
 #define CR_SUBOP_BY_TABLEDEF_NOCKECK    2
+#define CR_SUBOP_BY_SQL                 3
+#define CR_SUBOP_BY_SQL_NOCKECK         4
 
 #define CR_SUB_FLAG_EXISTCHECK          -1
 

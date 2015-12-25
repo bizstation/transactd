@@ -140,22 +140,25 @@ std::string getTableName(const std::string& src, bool forSql)
     if (pos != std::string::npos)
     {
         pos += strlen(TableNameTitle);
-        while ((name[pos] == '/') || (name[pos] == '\\'))
+        if (name.size() > pos)
         {
-            if (++pos == name.size())
-                return "";
-        }
-        size_t pos2 = name.find(".", pos);
-        if (pos2 == std::string::npos)
-            pos2 = name.size();
-        size_t pos3 = name.find("&", pos);
-        if (pos3 != std::string::npos && (pos3 < pos2))
-            pos2 = pos3;
+            while ((name[pos] == '/') || (name[pos] == '\\'))
+            {
+                if (++pos == name.size())
+                    return "";
+            }
+            size_t pos2 = name.find(".", pos);
+            if (pos2 == std::string::npos)
+                pos2 = name.size();
+            size_t pos3 = name.find("&", pos);
+            if (pos3 != std::string::npos && (pos3 < pos2))
+                pos2 = pos3;
 
-        name = name.substr(pos, pos2 - pos);
-        if (g_tableNmaeLower)
-            toLowerCaseName(name, forSql);
-        return name;
+            name = name.substr(pos, pos2 - pos);
+            if (g_tableNmaeLower)
+                toLowerCaseName(name, forSql);
+            return name;
+        }
     }
 
     return "";
@@ -457,7 +460,7 @@ inline bool dbExecuter::doCreateTable(request& req)
                         req.result = 1;
                     else
                     { //-1 is overwrite
-                        if (req.keyNum == CR_SUB_FLAG_EXISTCHECK)
+                        if (req.keyNum == CR_SUB_FLAG_EXISTCHECK && tableName.size())
                         {
                             req.result = ddl_dropTable(db, tableName, dbSqlname,
                                                        tableSqlName);

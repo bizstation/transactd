@@ -883,6 +883,28 @@ char* database::getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf
     return retbuf;
 }
 
+bool database::createTable(const char* utf8Sql)
+{
+    if (testOpenTable()) return false;
+    if (isUseTransactd())
+    {
+        if (setUseTransactd() == false)
+            m_stat = ERROR_LOAD_CLIBRARY;
+        else
+        {
+            char buf2[MAX_PATH] = { 0x00 };
+            _TCHAR posblk[128] = { 0x00 };
+            const char* p = toServerUri(buf2, MAX_PATH, rootDir(), true);
+            uint_td len = (uint_td)strlen(utf8Sql);
+            m_stat = m_btrcallid(TD_CREATETABLE, posblk, (void*)utf8Sql, &len,
+                 (void*)p, (uchar_td)strlen(p), CR_SUBOP_BY_SQL , clientID());
+        }
+    }
+    else
+        m_stat = STATUS_NOSUPPORT_OP;
+    return (m_stat == 0);
+}
+
 bool database::createTable(short fileNum, const _TCHAR* uri)
 {
     tabledef* td = m_impl->dbDef->tableDefs(fileNum);

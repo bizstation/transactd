@@ -355,11 +355,18 @@ public:
                 m_preResult = ERROR_TD_NOT_CONNECTED;
                 return; 
             }
-            if ((m_req.keyNum == 1) || (m_req.keyNum == 2)) // make by tabledef
+            if ((m_req.keyNum == CR_SUBOP_BY_TABLEDEF) || 
+                    (m_req.keyNum == CR_SUBOP_BY_TABLEDEF_NOCKECK)) // make by tabledef
             {
                 m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
                                        charsetIndexServer, ver());
-                m_req.keyNum -= 2; // 1= exists check 2 = no exists check
+                m_req.keyNum -= 2; // -1= exists check 0 = no exists check
+            }
+            else if ((m_req.keyNum == CR_SUBOP_BY_SQL) || 
+                    (m_req.keyNum == CR_SUBOP_BY_SQL_NOCKECK)) // make by sql
+            {
+                m_sql = (char*)m_req.data;
+                m_req.keyNum -= 4; // -1= exists check 0 = no exists check
             }
             else
                 m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,

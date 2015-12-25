@@ -20,6 +20,22 @@
  ================================================================= */
 #include "testbase.h"
 #include <limits.h>
+#include <stdlib.h>
+
+
+const char* sql = "CREATE TABLE `setenumbit` ("
+  "`id` int(11) NOT NULL AUTO_INCREMENT,"
+  "`set5` set('A','B','C','D','E') DEFAULT '',"
+  "`set64` set('a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'd0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9', 'e0', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'g0', 'g1', 'g2', 'g3') DEFAULT '',"
+  "`enum2` enum('Y','N') DEFAULT 'N', "
+  "`enum260` enum('a0', 'a1', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'a9', 'b0', 'b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7', 'b8', 'b9', 'c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8', 'c9', 'd0', 'd1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8', 'd9', 'e0', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'f0', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'g0', 'g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9', 'h0', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8', 'h9', 'i0', 'i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9', 'j0', 'j1', 'j2', 'j3', 'j4', 'j5', 'j6', 'j7', 'j8', 'j9', 'k0', 'k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'l0', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7', 'l8', 'l9', 'm0', 'm1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'n0', 'n1', 'n2', 'n3', 'n4', 'n5', 'n6', 'n7', 'n8', 'n9', 'o0', 'o1', 'o2', 'o3', 'o4', 'o5', 'o6', 'o7', 'o8', 'o9', 'p0', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'q0', 'q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9', 'r0', 'r1', 'r2', 'r3', 'r4', 'r5', 'r6', 'r7', 'r8', 'r9', 's0', 's1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 't0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 'u0', 'u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'u7', 'u8', 'u9', 'v0', 'v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w9', 'x0', 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', 'x9', 'y0', 'y1', 'y2', 'y3', 'y4', 'y5', 'y6', 'y7', 'y8', 'y9', 'z0', 'z1', 'z2', 'z3', 'z4', 'z5', 'z6', 'z7', 'z8', 'z9') DEFAULT 'a0',"
+  "`bit1` bit(1) DEFAULT b'0',"
+  "`bit8` bit(8) DEFAULT b'0',"
+  "`bit32` bit(32) DEFAULT b'0',"
+  "`bit64` bit(64) DEFAULT b'0',"
+  "PRIMARY KEY (`id`) "
+") ENGINE=InnoDB DEFAULT CHARSET=utf8;"; 
+
 
 short createFieldStoreDataBase(database* db)
 {
@@ -534,6 +550,8 @@ public:
 
                     if (ret == 0)
                         m_db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
+                    if (m_db->stat() == 0)
+                        m_db->createTable(sql); //  This table is not listed in test.bdf
                 }
             }
             ret = m_db->stat();
@@ -637,11 +655,13 @@ void checkIntValue(table_ptr tb)
     _TCHAR buf[50];
     BOOST_CHECK(_tcscmp(tb->getFVstr(1), _ltot(SCHAR_MAX, buf, 10)) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(3), _ltot(MINT_MIN, buf, 10)) == 0);
-    BOOST_CHECK(_tcscmp(tb->getFVstr(5), _i64tot_s(LLONG_MAX, buf, 50, 10)) == 0);
+    _i64tot_s(LLONG_MAX, buf, 50, 10);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(5), buf) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(6), _ultot(UCHAR_MAX - 1, buf, 10)) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(8), _ultot(UMINT_MAX - 1, buf, 10)) == 0);
     fieldnum = 9;
-    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ui64tot_s(ULLONG_MAX - 1, buf, 50, 10)) == 0);
+    _ui64tot_s(ULLONG_MAX - 1, buf, 50, 10);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), buf) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ltot(2000, buf, 10)) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ltot(254, buf, 10)) == 0);   //logi1
     BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ltot(65000, buf, 10)) == 0); //logi2
@@ -706,13 +726,15 @@ void testStoreInt(database* db)
     tb->setFV(++fieldnum, _ltot(SHRT_MAX, buf, 10));
     tb->setFV(++fieldnum, _ltot(MINT_MIN, buf, 10));
     tb->setFV(++fieldnum, _ltot(INT_MAX, buf, 10));
-    tb->setFV(++fieldnum, _i64tot_s(LLONG_MAX, buf, 50, 10));
+    _i64tot_s(LLONG_MAX, buf, 50, 10);
+    tb->setFV(++fieldnum, buf);
 
     tb->setFV(++fieldnum, _ltot(UCHAR_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ltot(USHRT_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ltot(UMINT_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ultot(UINT_MAX - 1, buf, 10));
-    tb->setFV(++fieldnum, _ui64tot_s(ULLONG_MAX - 1, buf, 50, 10));
+    _ui64tot_s(ULLONG_MAX - 1, buf, 50, 10);
+    tb->setFV(++fieldnum, buf);
     tb->setFV(++fieldnum, _ltot(2000, buf, 10));
     tb->setFV(++fieldnum, _ltot(254, buf, 10));  //logi1
     tb->setFV(++fieldnum, _ltot(65000, buf, 10)); //logi2
@@ -789,7 +811,8 @@ void testStoreInt(database* db)
     values += "\t4\t";
     values += _ltoa(INT_MAX, buf2, 10);
     values += "\t5\t";
-    values += _i64toa_s(LLONG_MAX, buf2, 50, 10);
+    _i64toa_s(LLONG_MAX, buf2, 50, 10);
+    values += buf2;
     values += "\t6\t";
     values += _ltoa(UCHAR_MAX - 1, buf2, 10);
     values += "\t7\t";
@@ -797,9 +820,11 @@ void testStoreInt(database* db)
     values += "\t8\t";
     values += _ltoa(UMINT_MAX - 1, buf2, 10);
     values += "\t9\t";
-    values += _i64toa_s(UINT_MAX - 1, buf2, 50, 10);
+    _i64toa_s(UINT_MAX - 1, buf2, 50, 10);
+    values += buf2;
     values += "\t10\t";
-    values += _ui64toa_s(ULLONG_MAX - 1, buf2, 50, 10);
+    _ui64toa_s(ULLONG_MAX - 1, buf2, 50, 10);
+    values += buf2;
     values += "\t11\t";
     values += _ltoa(2000, buf2, 10);
     values += "\t12\t";

@@ -114,6 +114,7 @@ public:
                      bool autoCreate = true, const _TCHAR* ownerName = NULL,
                      const _TCHAR* uri = NULL);
     database* clone();
+    bool createTable(const char* utf8Sql);
     bool createTable(short fileNum, const _TCHAR* uri = NULL);
     char* getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf, uint_td* size);
     void create(const _TCHAR* uri, short type = TYPE_SCHEMA_BDF);
