@@ -289,9 +289,9 @@ public:
         if (!mra) return;
         if (m_rowCount)
         {
-
             unsigned char* bd = NULL; //blob data
-            if (m_filter->hasManyJoin())
+            if (m_filter->hasManyJoin() && 
+                    ((mra->joinType() & mra_innerjoin) || mra->joinType() & mra_outerjoin))
                 hasManyJoinMra(m_rowCount, data);
             size_t recordLen = m_filter->fieldSelected()
                                     ? m_filter->totalFieldLen()
@@ -1506,7 +1506,7 @@ keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
             FLAGS f = keydef.segments[j].flags;
             bool isNull = getFVNull(fdnum);
             if ((f.bit9 | f.bit3) && (transactd == true))
-                isNull = true;
+                isNull = false;
             fielddef& fd = (*m_tableDef)->fieldDefs[fdnum];
             to = fd.keyCopy(to, (uchar_td*)fieldPtr(fdnum), 0xff, isNull);
         }

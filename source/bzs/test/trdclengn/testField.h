@@ -86,8 +86,8 @@ short createTestTable1(database* db)
 
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
-        kd->segments[0].flags.bit8 = 1; // extended key type
-        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segments[0].flags.kf_extend = 1; // extended key type
+        kd->segments[0].flags.kf_changeatable = 1; // changeable
         kd->segmentCount = 1;
 
         tabledef* td = def->tableDefs(tableid);
@@ -126,8 +126,8 @@ short createTestTableLegacyTimeTable(database* db)
  
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
-        kd->segments[0].flags.bit8 = 1; // extended key type
-        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segments[0].flags.kf_extend = 1; // extended key type
+        kd->segments[0].flags.kf_changeatable = 1; // changeable
         kd->segmentCount = 1;
 
         tabledef* td = def->tableDefs(tableid);
@@ -162,8 +162,8 @@ short createTestTableHA_OPTION_PACK_RECORD(database* db)
 
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
-        kd->segments[0].flags.bit8 = 1; // extended key type
-        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segments[0].flags.kf_extend = 1; // extended key type
+        kd->segments[0].flags.kf_changeatable = 1; // changeable
         kd->segmentCount = 1;
 
         tabledef* td = def->tableDefs(tableid);
@@ -229,8 +229,8 @@ short createTestTableTime(database* db, bool isMariadb, uchar_td minorVersion, b
         }
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
-        kd->segments[0].flags.bit8 = 1; // extended key type
-        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segments[0].flags.kf_extend = 1; // extended key type
+        kd->segments[0].flags.kf_changeatable = 1; // changeable
         kd->segmentCount = 1;
 
         
@@ -252,7 +252,7 @@ short createTestInMany(database* db)
         dbdef* def = db->dbDef();
         short tableid = 4;
 
-        insertTable(def, tableid,  _T("values"), g_td_charsetIndex);
+        insertTable(def, tableid,  _T("nullkey"), g_td_charsetIndex);
         tabledef* td = def->tableDefs(tableid);
         td->primaryKeyNum = 0;
         
@@ -271,26 +271,27 @@ short createTestInMany(database* db)
         
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
-        kd->segments[0].flags.bit8 = 1; // extended key type
-        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
         kd->segmentCount = 1;
 
         kd = insertKey(def, tableid, 1);
         kd->segments[0].fieldNum = 1;
-        kd->segments[0].flags.bit8 = 1; // extended key type
-        kd->segments[0].flags.bit1 = 1; // changeable
-        kd->segments[0].flags.bit0 = 1; // duplicatable
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segments[0].flags.kf_duplicatable = 1;
+        kd->segments[0].flags.kf_allseg_nullkey = 1;
         kd->segmentCount = 1;
 
         kd = insertKey(def, tableid, 2);
         kd->segments[0].fieldNum = 1;
-        kd->segments[0].flags.bit8 = 1; // extended key type
-        kd->segments[0].flags.bit1 = 1; // changeable
-        kd->segments[0].flags.bit0 = 1; // duplicatable
+        kd->segments[0].flags.kf_extend = 1;
+        kd->segments[0].flags.kf_changeatable = 1;
+        kd->segments[0].flags.kf_duplicatable = 1;
         kd->segments[1].fieldNum = 2;
-        kd->segments[1].flags.bit8 = 1; // extended key type
-        kd->segments[1].flags.bit1 = 1; // changeable
-        kd->segments[1].flags.bit0 = 1; // duplicatable
+        kd->segments[1].flags.kf_extend = 1;
+        kd->segments[1].flags.kf_changeatable = 1;
+        kd->segments[1].flags.kf_duplicatable = 1;
         kd->segmentCount = 2;
         updateTableDef(def, tableid);
         return 0;
@@ -1023,7 +1024,7 @@ void insertInManyData(table_ptr tb)
 
     fieldNum = 0;
     tb->clearBuffer();
-    tb->setFV(++fieldNum, 5);
+    tb->setFV(++fieldNum, 4);
     tb->setFV(++fieldNum, 5);
     tb->setFV(++fieldNum, (_TCHAR*)NULL);
     tb->insert();
@@ -1042,13 +1043,13 @@ void insertInManyData(table_ptr tb)
 void testInMany(database* db)
 {
     short tableid = 4;
-    //database* db1 = database::create();
-    //db1->open(makeUri(PROTOCOL, _T("192.168.3.159"), _T("nulltest"), _T("transactd_schema")), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
+    //db = database::create();
+    //db->open(makeUri(PROTOCOL, _T("192.168.3.159"), _T("nulltest"), _T("transactd_schema")), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
     {
         table_ptr tb = openTable(db, tableid, TD_OPEN_NORMAL);
         insertInManyData(tb);
     }
-    activeTable atv(db, _T("values"));
+    activeTable atv(db, _T("nullkey"));
     atv.index(1);
     query q;
     recordset rs;
@@ -1058,7 +1059,25 @@ void testInMany(database* db)
     BOOST_CHECK(rs[0][_T("id")] == 1);
     BOOST_CHECK(rs[1].isInvalidRecord() == true);
     BOOST_CHECK(rs[2][_T("id")] == 3);
-    //rs.dump();
+
+    // read by nullkey
+    q.reset();
+    atv.index(1).keyValue(0).read(rs, q);
+    BOOST_CHECK(rs.size() == 4);
+
+    // read records all, that include null value
+    atv.index(2).keyValue((const _TCHAR*)NULL).read(rs, q);
+    BOOST_CHECK(rs.size() == 6);
+
+    // read records after null.
+    atv.index(2).keyValue(0).read(rs, q);
+    BOOST_CHECK(rs.size() == 4);
+
+    // read in has_many.
+    //q.reset().in(4);
+    //atv.index(2).read(rs, q);
+    //BOOST_CHECK(rs.size() == 2);
+
 }
 
 #pragma warning(default : 4996) 

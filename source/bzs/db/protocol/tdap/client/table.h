@@ -79,6 +79,7 @@ public:
     virtual const std::vector<std::vector<int> >* joinRowMap() const = 0;
     virtual void duplicateRow(int row, int count) = 0;
     virtual void removeLastMemBlock(int row) = 0;
+    virtual int joinType() const = 0;
 };
 
 class filter;

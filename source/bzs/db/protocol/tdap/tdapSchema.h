@@ -159,6 +159,18 @@ struct keySegment
     FLAGS flags; // key flags. 11 to 15bit is not use.
 };
 
+/** keySegment::flags
+*/
+#define kf_duplicatable   bit0
+#define kf_changeatable   bit1
+#define kf_allseg_nullkey bit3
+#define kf_order_desc     bit6
+#define kf_extend         bit8
+#define kf_seg_nullkey    bit9
+#define kf_incase         bitA
+
+
+
 /* brief A key infomation
  */
 #define MAX_KEY_SEGMENT 8

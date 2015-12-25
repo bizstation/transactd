@@ -1140,18 +1140,19 @@ short table::setKeyValuesPacked(const uchar* ptr, int size)
     for (int j = 0; j < (int)key.user_defined_key_parts; j++)
     {
         KEY_PART_INFO& seg = key.key_part[j];
-        if (seg.null_bit)
-        {
-            m_keybuf[to++] = *from;
-            ++from;
-        }
         if (seg.null_bit && isNisField(seg.field->field_name))
         {
-            m_keybuf[to++] = 0x00; // set not null to nis field. 
+            m_keybuf[to++] = 0x00; // set not null to nis field.
+            m_keybuf[to++] = 0x00; // set value to nis field. 
             //continue next segment
         }
         else
         {
+            if (seg.null_bit)
+            {
+                m_keybuf[to++] = *from;
+                ++from;
+            }
             unsigned short copylen = seg.length; // length = store_len - varlen
             unsigned short copyspace = copylen;
             if (seg.key_part_flag & HA_BLOB_PART ||

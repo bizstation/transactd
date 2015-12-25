@@ -169,6 +169,7 @@ public:
     inline unsigned char* ptr(size_t row, int stat);
     inline void setRowOffset(int v) { m_rowOffset = v; }
     inline void setJoinType(int v) { m_addType = v; }
+    inline int joinType() const {return m_addType; };
     inline void setInvalidMemblock(size_t row, bool v);
     inline void setCurFirstField(int v) { m_curFirstField = v; }
     inline void setJoinRowMap(const std::vector<std::vector<int> >* v)
