@@ -505,16 +505,6 @@ abstract class transactd {
 
 	const eDecimals = eDecimals;
 
-	const null_str = null_str;
-
-	const KEYVALUE_PTR = KEYVALUE_PTR;
-
-	const KEYVALUE_STR = KEYVALUE_STR;
-
-	const KEYVALUE_NEED_COPY = KEYVALUE_NEED_COPY;
-
-	const KEYVALUE_STR_NEED_COPY = KEYVALUE_STR_NEED_COPY;
-
 	const MAX_CHAR_INFO = MAX_CHAR_INFO;
 
 	const CHARSET_LATIN1 = CHARSET_LATIN1;
@@ -598,8 +588,6 @@ abstract class transactd {
 	static function getNowTime() {
 		return getNowTime();
 	}
-
-	const ROW_MEM_BLOCK_RESERVE = ROW_MEM_BLOCK_RESERVE;
 
 	static function new_fieldsBase_p_p() {
 		return new_fieldsBase_p_p();

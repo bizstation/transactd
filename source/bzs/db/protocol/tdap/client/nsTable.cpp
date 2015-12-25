@@ -911,7 +911,7 @@ short_td nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* TableName,
     }
 #pragma warning(default : 4996)
 
-    if ((int)hWnd <= 0)
+    if (hWnd == 0)
         return errorCode;
 
 #ifdef _WIN32

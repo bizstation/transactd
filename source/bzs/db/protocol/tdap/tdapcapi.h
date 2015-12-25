@@ -665,6 +665,26 @@ struct handshale_t
 #endif
 #endif
 
+
+
+#define TD_CPP_LIB_NAME                                                        \
+    LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR SHARED_LIB_EXTENTION
+
+#ifdef LINUX
+#ifdef __APPLE__
+#define TD_CPP_SO_NAME                                                        \
+    LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR ".dylib"
+#else // NOT __APPLE__
+#define TD_CPP_SO_NAME                                                        \
+    LIB_PREFIX TD_CPP_LIB_PRE ".so." CPP_INTERFACE_VER_MAJOR "." CPP_INTERFACE_VER_MINOR
+#endif // NOT __APPLE__
+#else // NOT LINUX
+#define TD_CPP_SO_NAME                                                        \
+    LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR ".dll"
+#endif // NOT LINUX
+
+
+
 #define TRANSACTD_VER_MAJOR 3//##7 Build marker! Don't remove
 #define TRANSACTD_VER_MINOR 0//##8 Build marker! Don't remove
 #define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove

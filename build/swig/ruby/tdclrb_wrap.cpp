@@ -36180,7 +36180,6 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassDbdef.klass, "mode", VALUEFUNC(_wrap_dbdef_mode), -1);
   SwigClassDbdef.mark = 0;
   SwigClassDbdef.trackObjects = 0;
-  rb_define_const(mTransactd, "Null_str", SWIG_FromCharPtr(null_str));
   
   SwigClassBitset.klass = rb_define_class_under(mTransactd, "Bitset", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__bitset, (void *) &SwigClassBitset);
@@ -36243,10 +36242,6 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassTable.mark = 0;
   SwigClassTable.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_table;
   SwigClassTable.trackObjects = 0;
-  rb_define_const(mTransactd, "KEYVALUE_PTR", SWIG_From_int(static_cast< int >(KEYVALUE_PTR)));
-  rb_define_const(mTransactd, "KEYVALUE_STR", SWIG_From_int(static_cast< int >(KEYVALUE_STR)));
-  rb_define_const(mTransactd, "KEYVALUE_NEED_COPY", SWIG_From_int(static_cast< int >(KEYVALUE_NEED_COPY)));
-  rb_define_const(mTransactd, "KEYVALUE_STR_NEED_COPY", SWIG_From_int(static_cast< int >(KEYVALUE_STR_NEED_COPY)));
   
   SwigClassQueryBase.klass = rb_define_class_under(mTransactd, "QueryBase", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, (void *) &SwigClassQueryBase);
@@ -36536,7 +36531,6 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassRecord.mark = 0;
   SwigClassRecord.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_fieldsBase;
   SwigClassRecord.trackObjects = 0;
-  rb_define_const(mTransactd, "ROW_MEM_BLOCK_RESERVE", SWIG_From_int(static_cast< int >(ROW_MEM_BLOCK_RESERVE)));
     
   SwigClassWritableRecord.klass = rb_define_class_under(mTransactd, "WritableRecord", ((swig_class *) SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase->clientdata)->klass);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, (void *) &SwigClassWritableRecord);

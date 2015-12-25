@@ -570,6 +570,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::sum::~sum;
 
 // * bzs/db/protocol/tdap/client/memRecord.h *
+%ignore ROW_MEM_BLOCK_RESERVE;
 %ignore bzs::db::protocol::tdap::client::autoMemory;
 %ignore bzs::db::protocol::tdap::client::autoMemory::operator=;
 %ignore bzs::db::protocol::tdap::client::JOINLIMIT_PER_RECORD;
@@ -694,6 +695,11 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::getFVlng;
 %ignore bzs::db::protocol::tdap::client::table::getFVflt;
 %ignore bzs::db::protocol::tdap::client::table::insertBookmarks;
+%ignore null_str;
+%ignore KEYVALUE_PTR;
+%ignore KEYVALUE_STR;
+%ignore KEYVALUE_NEED_COPY;
+%ignore KEYVALUE_STR_NEED_COPY;
 
   // create and release methods for query class
 %extend bzs::db::protocol::tdap::client::query {

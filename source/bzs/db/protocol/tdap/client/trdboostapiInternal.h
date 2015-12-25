@@ -24,7 +24,6 @@
 #include "fields.h"
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
-#include <boost/type_traits.hpp>
 
 namespace bzs
 {

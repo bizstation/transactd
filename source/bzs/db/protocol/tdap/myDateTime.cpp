@@ -813,7 +813,7 @@ wchar_t* myTimeStamp::toString(wchar_t* p, size_t size)
         if (st == NULL)
         {
             //p[0] = 0x00;
-            swprintf_s(p, size, L"er:%d %s", errno,_tcserror(errno));
+            swprintf_s(p, size, L"er:%d %hs", errno,_tcserror(errno));
             return p;
         }
         if (m_dec)
