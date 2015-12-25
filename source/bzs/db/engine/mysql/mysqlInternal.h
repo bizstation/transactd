@@ -456,6 +456,11 @@ inline bool cp_query_command(THD* thd, char* str)
 	return dispatch_command(thd, &com_data, COM_QUERY);
 }
 
+inline void cp_lex_clear(THD* thd)
+{
+    thd->lex->reset();
+}
+
 
 #else //Not MySQL 5.7
 #define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
@@ -558,6 +563,11 @@ inline void cp_open_error_release(THD* thd, TABLE_LIST& tables)
 inline bool cp_query_command(THD* thd, char* str)
 {
 	return dispatch_command(COM_QUERY, thd, str, (uint)strlen(str));
+}
+
+inline void cp_lex_clear(THD* thd)
+{
+    thd->lex->many_values.empty();
 }
 
 #endif
