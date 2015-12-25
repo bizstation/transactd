@@ -989,6 +989,7 @@ BOOST_FIXTURE_TEST_CASE(fieldstore, fixtureFieldStore)
     test_NOT_HA_OPTION_PACK_RECORD(db());
     testInMany(db());
     testNullValue(db());
+    testSetEnumBit();
 }
 
 BOOST_AUTO_TEST_CASE(null_comp)
@@ -999,10 +1000,7 @@ BOOST_AUTO_TEST_CASE(null_comp)
     BOOST_CHECK_EQUAL(nullComp(false, true, (char)eIsNull),    1); 
     BOOST_CHECK_EQUAL(nullComp(false, true, (char)eIsNotNull), 0); 
     BOOST_CHECK_EQUAL(nullComp(false, false, (char)0),         2); 
-}
 
-BOOST_AUTO_TEST_CASE(fuga)
-{
     BOOST_CHECK_EQUAL(2 * 3, 6);
 }
 

@@ -402,6 +402,7 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
                 {
                     m_impl->isOpened = true;
                     m_impl->autoSchemaUseNullkey = true;
+                    getBtrVersion(&m_impl->vers);
                     return true;
                 }
             }

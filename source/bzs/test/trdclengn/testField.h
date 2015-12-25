@@ -37,6 +37,13 @@ const char* sql = "CREATE TABLE `setenumbit` ("
 ") ENGINE=InnoDB DEFAULT CHARSET=utf8;"; 
 
 
+const char* test_records = "INSERT INTO `setenumbit` (`id`, `set5`, `set64`, `enum2`, `enum260`, `bit1`, `bit8`, `bit32`, `bit64`) VALUES"
+  "(1, 'A', 'a0', 'N', 'a0', b'1', b'1', b'1', b'1'),"
+  "(2, 'A,B,C,D,E', 'a0,g3', 'Y', 'z9', b'1', b'11111111', b'11111111111111111111111111111111', b'1111111111111111111111111111111111111111111111111111111111111111'),"
+  "(3, '', '', '0', '0', b'0', b'00000000', b'00000000', b'00000000'),"
+  "(4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);";
+
+
 short createFieldStoreDataBase(database* db)
 {
     db->create(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
@@ -498,6 +505,8 @@ short createTestScores(database* db)
     return 1;
 }
 
+#define exec_sql createTable //exec sql for no result recordset. like a createTable.
+
 class fixtureFieldStore
 {
     mutable database* m_db;
@@ -551,7 +560,11 @@ public:
                     if (ret == 0)
                         m_db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
                     if (m_db->stat() == 0)
+                    {
                         m_db->createTable(sql); //  This table is not listed in test.bdf
+                        if (m_db->stat() == 0)
+                            m_db->exec_sql(test_records);
+                    }
                 }
             }
             ret = m_db->stat();
@@ -2096,6 +2109,68 @@ void testNullValue(database* db)
     BOOST_CHECK(rs[2][_T("min")] == 0);
     BOOST_CHECK(rs[2][_T("max")] == 90);
 }
+
+#define SEB_DB_TABLE_NAME _T("setenumbit")
+
+void testSetEnumBit()
+{
+    database* db = database::create();
+    db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME));
+    
+    activeTable ats(db, SEB_DB_TABLE_NAME);
+    ats.index(0);
+    recordset rs;
+    query q;
+    q.reset().all();
+    ats.keyValue((char *)NULL).read(rs, q);
+#ifdef _DEBUG
+    //rs.dump();
+#endif
+
+    BOOST_CHECK(rs.size() == 4);
+    
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[0][_T("set5")].i64() == 1);
+    BOOST_CHECK(rs[0][_T("set64")].i64() == 1);
+    BOOST_CHECK(rs[0][_T("enum2")].i64() == 2);
+    BOOST_CHECK(rs[0][_T("enum260")].i64() == 1);
+    BOOST_CHECK(rs[0][_T("bit1")].i64() == 1);
+    BOOST_CHECK(rs[0][_T("bit8")].i64() == 1);
+    BOOST_CHECK(rs[0][_T("bit32")].i64() == 1);
+    BOOST_CHECK(rs[0][_T("bit64")].i64() == 1);
+
+    BOOST_CHECK(rs[1][_T("id")] == 2);
+    BOOST_CHECK(rs[1][_T("set5")].i64() == 31);
+    BOOST_CHECK(rs[1][_T("set64")].i64() == 0x8000000000000001);
+    BOOST_CHECK(rs[1][_T("enum2")].i64() == 1);
+    BOOST_CHECK(rs[1][_T("enum260")].i64() == 260);
+    BOOST_CHECK(rs[1][_T("bit1")].i64() == 1);
+    BOOST_CHECK(rs[1][_T("bit8")].i64() == 0xFF);
+    BOOST_CHECK(rs[1][_T("bit32")].i64() == 0xFFFFFFFF);
+    BOOST_CHECK(rs[1][_T("bit64")].i64() == 0xFFFFFFFFFFFFFFFF);
+
+    BOOST_CHECK(rs[2][_T("id")] == 3);
+    BOOST_CHECK(rs[2][_T("set5")].i64() == 0);
+    BOOST_CHECK(rs[2][_T("set64")].i64() == 0);
+    BOOST_CHECK(rs[2][_T("enum2")].i64() == 0);
+    BOOST_CHECK(rs[2][_T("enum260")].i64() == 0);
+    BOOST_CHECK(rs[2][_T("bit1")].i64() == 0);
+    BOOST_CHECK(rs[2][_T("bit8")].i64() == 0);
+    BOOST_CHECK(rs[2][_T("bit32")].i64() == 0);
+    BOOST_CHECK(rs[2][_T("bit64")].i64() == 0);
+
+    BOOST_CHECK(rs[3][_T("id")] == 4);
+    BOOST_CHECK(rs[3][_T("set5")].isNull() == true);
+    BOOST_CHECK(rs[3][_T("set64")].isNull() == true);
+    BOOST_CHECK(rs[3][_T("enum2")].isNull() == true);
+    BOOST_CHECK(rs[3][_T("enum260")].isNull() == true);
+    BOOST_CHECK(rs[3][_T("bit1")].isNull() == true);
+    BOOST_CHECK(rs[3][_T("bit8")].isNull() == true);
+    BOOST_CHECK(rs[3][_T("bit32")].isNull() == true);
+    BOOST_CHECK(rs[3][_T("bit64")].isNull() == true);
+    db->release();
+}
+
 
 #pragma warning(default : 4996) 
 
