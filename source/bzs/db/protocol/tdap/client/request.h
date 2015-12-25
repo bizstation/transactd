@@ -18,9 +18,10 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-
+#pragma warning(disable : 4005) //BOOST_ASIO_ERROR_CATEGORY_NOEXCEPT redefine bug 
 #include <bzs/db/protocol/tdap/tdapRequest.h>
 #include <bzs/netsvc/client/iconnection.h>
+#pragma warning(default : 4005)
 
 #ifdef USE_DATA_COMPRESS
 #include <bzs/rtl/lzss.h>

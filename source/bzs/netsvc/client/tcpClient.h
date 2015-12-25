@@ -19,10 +19,12 @@
  02111-1307, USA.
  ================================================================= */
 
+#pragma warning(disable : 4005) //BOOST_ASIO_ERROR_CATEGORY_NOEXCEPT redefine bug 
 #include <bzs/netsvc/client/iconnection.h>
-
 #include <boost/asio/write.hpp>
 #include <boost/asio/read.hpp>
+#pragma warning(default : 4005)
+
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #if (BOOST_VERSION > 104900)

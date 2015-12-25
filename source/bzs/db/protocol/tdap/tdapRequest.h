@@ -20,13 +20,15 @@
  ================================================================= */
 
 #include <bzs/db/protocol/tdap/tdapcapi.h>
+#pragma warning(disable : 4005) //BOOST_ASIO_ERROR_CATEGORY_NOEXCEPT redefine bug 
 #include <bzs/db/blobBuffer.h>
+#include <boost/asio/buffer.hpp>
+#pragma warning(default : 4005)
 #include <iostream>
 #include <vector>
 #include <string.h>
-#include <boost/asio/buffer.hpp>
-#include <bzs/env/compiler.h>
 
+#include <bzs/env/compiler.h>
 namespace bzs
 {
 namespace netsvc

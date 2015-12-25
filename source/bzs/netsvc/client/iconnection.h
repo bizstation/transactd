@@ -21,10 +21,11 @@
 #ifdef __BCPLUSPLUS__
 #pragma warn -8012
 #endif
-
 #include <boost/version.hpp>
 #if (BOOST_VERSION > 104900)
+
 #include <boost/asio.hpp>
+
 #else
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/buffer.hpp>
