@@ -655,7 +655,7 @@ function test_decimal(fd)
 	fd.type = ft_integer;
 	fd.len = 4;
 	fd.DefaultValue = bits1;
-	checkEqual(fd.DefaultValue, 4);
+	checkEqual(fd.DefaultValue, '4');
 }
 
 /*--------------------------------------------------------------------------------*/
