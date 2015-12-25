@@ -418,10 +418,10 @@ short createTestGroups(database* db)
         kd->segments[0].fieldNum = 0;
         kd->segments[0].flags.kf_extend = 1;
         kd->segments[0].flags.kf_changeatable = 1;
+
         kd->segments[1].fieldNum = 1;
         kd->segments[1].flags.kf_extend = 1;
         kd->segments[1].flags.kf_changeatable = 1;
-        kd->segments[1].flags.kf_duplicatable = 1;
         kd->segmentCount = 2;
         updateTableDef(def, tableid);
         return 0;

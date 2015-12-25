@@ -555,6 +555,9 @@ bool fielddef::operator==(const fielddef& r) const
         ((isUsePadChar() != r.isUsePadChar()) || (isTrimPadChar() != r.isTrimPadChar())))
         return false;
 
+    if (type != ft_float && (decimals != r.decimals))
+        return false;
+
     _TCHAR tmp[256];
     _tcscpy_s(tmp, 256, r.defaultValue_str());
     bool ret =  _tcscmp(defaultValue_str(), tmp) == 0;
@@ -562,7 +565,6 @@ bool fielddef::operator==(const fielddef& r) const
             _tcscmp(name(), r.name(tmp)) == 0) &&
             (type == r.type) &&
             (len == r.len) &&
-            (decimals == r.decimals) &&
             (viewNum == r.viewNum) &&
             (viewWidth == r.viewWidth) &&
             (max == r.max) &&
@@ -721,6 +723,9 @@ short fielddef::synchronize(const fielddef* fd)
     }
     if (type == ft_lvar || type == ft_myfixedbinary)
         setDefaultValue(0.0f);
+
+    if (type == ft_float)
+        decimals = fd->decimals;
     return 0;
 }
 
