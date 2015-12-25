@@ -311,6 +311,8 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/protocol/tdap/client/database.h *
 %ignore bzs::db::protocol::tdap::client::database::operator=;
 %ignore bzs::db::protocol::tdap::client::database::defaultAutoIncSpace;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable(short, _TCHAR const *);
+%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable(short);
   // NOTE: ignore * STATIC * create only
 %ignore bzs::db::protocol::tdap::client::database::create();
   // create and release methods for database class
@@ -581,7 +583,8 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/protocol/tdap/client/nsDatabase.h *
 %ignore bzs::db::protocol::tdap::client::nsdatabase::btrvFunc;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::operator=;
-%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable(fileSpec *, uint_td, const _TCHAR *, short_td);
+%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable(fileSpec *, uint_td, const _TCHAR *);
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrVersion(btrVersions*, uchar_td*);
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getDllUnloadCallbackFunc;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::isTestPtrIgnore;
@@ -1214,7 +1217,7 @@ using namespace bzs::db::protocol::tdap::client;
 %typemap(in, numinputs=0) (const _TCHAR* tableName, char* retbuf, uint_td* size)
 {
   uint_td n = 65000;
-  uint_td* n_p = &p;
+  uint_td* n_p = &n;
   char* p = new char[n];
   $2 = p;
   $3 = n_p;
