@@ -544,15 +544,6 @@ short keydef::synchronize(const keydef* kd)
     return 0;
 }
 
-bool keydef::operator==(const keydef& r) const
-{
-    if (this == &r) return true;
-    bool ret = (segmentCount == r.segmentCount) && (keyNumber == keyNumber);
-    if (ret)
-       ret = memcmp(segments, r.segments, sizeof(keySegment) * segmentCount) == 0;
-    return ret;
-}
-
 //--------------------------------------------------------------------
 //   struct fielddef
 //--------------------------------------------------------------------

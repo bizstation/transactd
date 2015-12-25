@@ -337,11 +337,11 @@ public:
             return;
         fielddef fdd = tb->tableDef()->fieldDefs[fieldNum];
         fdd.pos = 0;
-        uchar_td* buf = allocBuffer(fdd.len);
-
+        uchar_td* buf = allocBuffer(fdd.len + fdd.nullbytes());
+        uchar_td* ptr = buf + fdd.nullbytes();
         // Compare value don't use NULL
         // If logType is eIsNull or eIsNotNull, ingored this value
-        field fd(buf, fdd, tb->m_fddefs/*, NULL, 0*/);
+        field fd(ptr, fdd, tb->m_fddefs/*, NULL, 0*/);
         fd = value; // operator=()
         bool part = fd.isCompPartAndMakeValue();
         int varlen = fdd.varLenByteForKey();
@@ -351,8 +351,8 @@ public:
         {
             data = new unsigned char[len + 2];
             if (varlen)
-                memcpy(data, buf, varlen);
-            memcpy(data + varlen, fdd.keyData(buf), copylen);
+                memcpy(data, ptr, varlen);
+            memcpy(data + varlen, fdd.keyData(ptr), copylen);
             delete [] buf;
         }
         

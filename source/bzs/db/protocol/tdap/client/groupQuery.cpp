@@ -38,11 +38,19 @@ namespace client
 // ---------------------------------------------------------------------------
 // struct fieldNamesImple
 // ---------------------------------------------------------------------------
+struct valueItem
+{
+    std::_tstring value;
+    bool null;
+};
+
 struct fieldNamesImple
 {
-    std::vector<std::_tstring> keyFields;
+    std::vector<valueItem> keyFields;
     fieldNamesImple() {}
 };
+
+
 
 // ---------------------------------------------------------------------------
 // class fieldNames
@@ -87,6 +95,14 @@ fieldNames& fieldNames::reset()
     return *this;
 }
 
+void fieldNames::doAddValue(const _TCHAR* v, bool isNull)
+{
+    valueItem itm;
+    itm.value = v;
+    itm.null = isNull;
+    m_impl->keyFields.push_back(itm);
+}
+
 fieldNames& fieldNames::keyField(const _TCHAR* name, const _TCHAR* name1,
                                  const _TCHAR* name2, const _TCHAR* name3,
                                  const _TCHAR* name4, const _TCHAR* name5,
@@ -96,27 +112,49 @@ fieldNames& fieldNames::keyField(const _TCHAR* name, const _TCHAR* name1,
 {
     m_impl->keyFields.clear();
     if (name)
-        m_impl->keyFields.push_back(name);
-    if (name1)
-        m_impl->keyFields.push_back(name1);
-    if (name2)
-        m_impl->keyFields.push_back(name2);
-    if (name3)
-        m_impl->keyFields.push_back(name3);
-    if (name4)
-        m_impl->keyFields.push_back(name4);
-    if (name5)
-        m_impl->keyFields.push_back(name5);
-    if (name6)
-        m_impl->keyFields.push_back(name6);
-    if (name7)
-        m_impl->keyFields.push_back(name7);
-    if (name8)
-        m_impl->keyFields.push_back(name8);
-    if (name9)
-        m_impl->keyFields.push_back(name9);
-    if (name10)
-        m_impl->keyFields.push_back(name10);
+    {
+        doAddValue(name, false);
+        if (name1)
+        {
+            doAddValue(name1, false);
+            if (name2)
+            {
+                doAddValue(name2, false);
+                if (name3)
+                {
+                    doAddValue(name3, false);
+                    if (name4)
+                    {
+                        doAddValue(name4, false);
+                        {
+                            if (name5)
+                            {
+                                doAddValue(name5, false);
+                                if (name6)
+                                {
+                                    doAddValue(name6, false);
+                                    if (name7)
+                                    {
+                                        doAddValue(name7, false);
+                                        if (name8)
+                                        {
+                                           doAddValue(name8, false);
+                                            if (name9)
+                                            {
+                                                doAddValue(name9, false);
+                                                if (name10)
+                                                    doAddValue(name10, false);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     return *this;
 }
 
@@ -128,24 +166,62 @@ int fieldNames::count() const
 const _TCHAR* fieldNames::getValue(int index) const
 {
     assert(index >= 0 && index < count());
-    return m_impl->keyFields[index].c_str();
+    return m_impl->keyFields[index].value.c_str();
 }
 
 const _TCHAR* fieldNames::operator[](int index) const
 {
     assert(index >= 0 && index < count());
-    return m_impl->keyFields[index].c_str();
+    return m_impl->keyFields[index].value.c_str();
 }
 
 void fieldNames::addValue(const _TCHAR* v)
 {
-    m_impl->keyFields.push_back(v);
+    doAddValue(v, false);
 }
 
 void fieldNames::addValues(const _TCHAR* values, const _TCHAR* delmi)
 {
-    boost::algorithm::split(m_impl->keyFields, values, boost::is_any_of(delmi));
+    std::vector<std::_tstring> tmp;
+    boost::algorithm::split(tmp, values, boost::is_any_of(delmi));
+    valueItem itm;
+    itm.null = false;
+    for (int i=0;i < (int)tmp.size(); ++i)
+    {
+        itm.value = tmp[i];
+        m_impl->keyFields.push_back(itm);
+    }
+
 }
+
+// ---------------------------------------------------------------------------
+// class fieldValues
+// ---------------------------------------------------------------------------
+fieldValues::fieldValues() : fieldNames() {}
+
+fieldValues::fieldValues(const fieldValues& r): fieldNames(r) {}
+
+fieldValues& fieldValues::operator=(const fieldValues& r)
+{
+    if (this != &r)
+    {
+        fieldNames::operator=(r);
+    }
+    return *this;
+}
+
+void fieldValues::addValue(const _TCHAR* v, bool isNull)
+{
+    doAddValue(v, isNull);
+}
+
+bool fieldValues::isNull(int index) const
+{
+    assert(index >= 0 && index < count());
+    return m_impl->keyFields[index].null;
+
+}
+
 
 // ---------------------------------------------------------------------------
 // struct recordsetQueryImple
@@ -367,7 +443,7 @@ class groupQueryImple : public fieldNames
             bool enabled = false;
             for (int j = 0; j < (int)m_impl->keyFields.size(); ++j)
             {
-                if (m_impl->keyFields[j] == fds[i].name())
+                if (m_impl->keyFields[j].value == fds[i].name())
                 {
                     enabled = true;
                     break;
@@ -423,7 +499,7 @@ public:
         std::vector<recordsetImple::key_type> keyFields;
 
         for (int i = 0; i < (int)m_impl->keyFields.size(); ++i)
-            keyFields.push_back(resolvKeyValue(mdls, m_impl->keyFields[i]));
+            keyFields.push_back(resolvKeyValue(mdls, m_impl->keyFields[i].value));
 
         for (int i = 0; i < (int)m_funcs.size(); ++i)
         {

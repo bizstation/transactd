@@ -106,17 +106,21 @@ class dumpRecordset
 public:
     void operator()(RS& rs)
     {
-        cacheWidthAndAlign(rs);
-        std::_tstring line = makeLine();
-        //header
-        std::tcout << line;
-        printRecord(*rs.fieldDefs());
-        std::tcout << line;
+        if (rs.size())
+        {
+            cacheWidthAndAlign(rs);
+            std::_tstring line = makeLine();
+            //header
+            std::tcout << line;
+            printRecord(*rs.fieldDefs());
+            std::tcout << line;
 
-        //field value
-        for(size_t i = 0; i < rs.size(); ++i)
-            printRecord(rs[i]);
-        std::tcout << line;
+            //field value
+            for(size_t i = 0; i < rs.size(); ++i)
+                printRecord(rs[i]);
+            std::tcout << line;
+        }else
+            std::tcout << _T("Empty set ") << std::endl;
     }
 };
 #endif

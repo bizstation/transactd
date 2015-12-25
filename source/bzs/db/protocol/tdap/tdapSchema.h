@@ -174,15 +174,35 @@ struct keySegment
 /* brief A key infomation
  */
 #define MAX_KEY_SEGMENT 8
-
+#define COMP_KEY_FLAGS(l, r, NAME) (l.NAME == r.NAME)
 struct keydef
 {
-    uchar_td segmentCount; // Number of segment
-    keySegment segments[MAX_KEY_SEGMENT]; // key segments . max 8 segments
-    uchar_td keyNumber; // key number
+    uchar_td segmentCount;
+    keySegment segments[MAX_KEY_SEGMENT];
+    uchar_td keyNumber;
+
+    bool keydef::operator==(const keydef& r) const
+    {
+        if (this == &r) return true;
+        bool ret = (segmentCount == r.segmentCount) && (keyNumber == r.keyNumber);
+        if (!ret) return false;
+        for (int i = 0;i < segmentCount; ++i)
+        {
+            FLAGS f = segments[i].flags;
+            FLAGS rf = r.segments[i].flags;
+            ret = COMP_KEY_FLAGS(f, rf, kf_duplicatable) &&
+                  COMP_KEY_FLAGS(f, rf, kf_changeatable) &&
+                  COMP_KEY_FLAGS(f, rf, kf_allseg_nullkey) &&
+                  COMP_KEY_FLAGS(f, rf, kf_order_desc) &&
+                  COMP_KEY_FLAGS(f, rf, kf_seg_nullkey) &&
+                  COMP_KEY_FLAGS(f, rf, kf_incase);
+            if (!ret) return false;
+        }
+        return true;
+    }
+
 private:
     short synchronize(const keydef* kd);
-    bool operator==(const keydef& r) const;
  	friend struct tabledef;
  	friend class client::dbdef;
 };
@@ -593,6 +613,9 @@ public:
             return 2;
         return 0;
     }
+
+    bool operator==(const fielddef& r) const;
+
 private:
     /* data length
      */
@@ -669,8 +692,6 @@ private:
     /* max key segment length. not include sizeBytes.
      */
     inline ushort_td maxKeylen() const { return keylen ? keylen : len; };
-
-    bool operator==(const fielddef& r) const;
 
     /* copy key data for send to mysql and btrv
      *  return next copy address.
@@ -1017,6 +1038,7 @@ public:
         }
         return false;
     }
+    bool operator==(const tabledef& r) const;
 
 private:
     short synchronize(const tabledef* td);
@@ -1034,7 +1056,6 @@ private:
     void setDefaultCharsetIfZero(); // if charsetInex = 0  then set as mysql::charsetIndex(GetACP())
     void setMysqlNullMode(bool v);
     void calcReclordlen(bool force= false);
-    bool operator==(const tabledef& r) const;
     inline keydef* setKeydefsPtr()
     {
         return keyDefs = (keydef*)((char*)this + sizeof(tabledef) +
@@ -1046,8 +1067,8 @@ private:
         return fieldDefs = (fielddef*)((char*)this + sizeof(tabledef));
     }
 
-    inline bool isMariaTimeFormat() const 
-    { 
+    inline bool isMariaTimeFormat() const
+    {
         return (m_useInMariadb && (m_srvMajorVer == 5 || m_srvMinorVer == 0));
     }
 

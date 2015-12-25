@@ -38,7 +38,7 @@ protected:
     /** @cond INTERNAL */
     struct fieldNamesImple* m_impl;
     /** @endcond */
-
+    void doAddValue(const _TCHAR* v, bool isNull);
 public:
     fieldNames();
     fieldNames(const fieldNames& r);
@@ -61,6 +61,16 @@ public:
                    const _TCHAR* delmi); // delmi = boost::is_any_of
     static fieldNames* create();
     void release();
+};
+
+class DLLLIB fieldValues : public fieldNames
+{
+public:
+    fieldValues();
+    fieldValues(const fieldValues& r);
+    fieldValues& operator=(const fieldValues& r);
+    void addValue(const _TCHAR* v, bool isNull);
+    bool isNull(int index) const;
 };
 
 struct sortField
