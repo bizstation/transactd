@@ -301,10 +301,14 @@ STDMETHODIMP CFieldDef::put_DefaultValue(VARIANT Value)
 {
     if (Value.vt == VT_BSTR)
         fielddef()->setDefaultValue(Value.bstrVal);
-    else if (Value.vt == VT_R8)
+    else if (Value.vt == VT_R8 || Value.vt == VT_R4)
         fielddef()->setDefaultValue(Value.dblVal);
-    else if (Value.vt == VT_I8 || Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT)
-        fielddef()->setDefaultValue(Value.llVal);
+    else if (Value.vt == VT_I2)
+        fielddef()->setDefaultValue((__int64)Value.iVal);
+    else if (Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT)
+        fielddef()->setDefaultValue((__int64)Value.lVal);
+    else if (Value.vt == VT_I8)
+        fielddef()->setDefaultValue((__int64)Value.llVal);
     else if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
     {
         CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
@@ -316,7 +320,8 @@ STDMETHODIMP CFieldDef::put_DefaultValue(VARIANT Value)
     else
     {
         VariantChangeType( &Value, &Value, 0, VT_BSTR );
-        fielddef()->setDefaultValue(Value.bstrVal);
+        if (Value.bstrVal[0])
+            fielddef()->setDefaultValue(Value.bstrVal);
     }
     return S_OK;
 }

@@ -34,8 +34,10 @@ short CRecord::GetFieldNum(VARIANT* Index)
     short index = -1;
     if (Index->vt == VT_BSTR)
         index = m_rec->indexByName(Index->bstrVal);
-    else if ((Index->vt == VT_I2) || (Index->vt == VT_I4))
+    else if (Index->vt == VT_I2)
         index = Index->iVal;
+    else if (Index->vt == VT_I4)
+        index = (short)Index->lVal;
     return index;
 }
 
@@ -149,8 +151,10 @@ short CWritableRecord::GetFieldNum(VARIANT* Index)
     short index = -1;
     if (Index->vt == VT_BSTR)
         index = m_rec->indexByName(Index->bstrVal);
-    else if ((Index->vt == VT_I2) || (Index->vt == VT_I4))
+    else if (Index->vt == VT_I2)
         index = Index->iVal;
+    else if (Index->vt == VT_I4)
+        index = (short)Index->lVal;
     return index;
 }
 

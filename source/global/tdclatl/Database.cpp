@@ -78,11 +78,12 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode,
     *ret = NULL;
     table* tb = NULL;
     if (TableID.vt == VT_BSTR)
-        tb = m_db->openTable(TableID.bstrVal, Mode, (bool)AutoCreate, OwnerName,
-                             Uri);
-    else if ((TableID.vt == VT_I2) || (TableID.vt == VT_I4))
-        tb = m_db->openTable(TableID.iVal, Mode, (bool)AutoCreate, OwnerName,
-                             Uri);
+        tb = m_db->openTable(TableID.bstrVal, Mode, (bool)AutoCreate, OwnerName, Uri);
+    else if (TableID.vt == VT_I2)
+        tb = m_db->openTable(TableID.iVal, Mode, (bool)AutoCreate, OwnerName, Uri);
+    else if (TableID.vt == VT_I4)
+        tb = m_db->openTable((short)TableID.lVal, Mode, (bool)AutoCreate, OwnerName, Uri);
+                             
 
     if (m_db->stat() != 0)
         return S_OK;

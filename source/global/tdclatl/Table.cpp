@@ -49,8 +49,10 @@ short CTableTd::GetFieldNum(VARIANT* Index)
     short index = -1;
     if (Index->vt == VT_BSTR)
         index = m_tb->fieldNumByName(Index->bstrVal);
-    else if ((Index->vt == VT_I2) || (Index->vt == VT_I4))
+    else if (Index->vt == VT_I2)
         index = Index->iVal;
+    else if (Index->vt == VT_I4)
+        index = (short)Index->lVal;
     return index;
 }
 
@@ -157,7 +159,11 @@ STDMETHODIMP CTableTd::SetFV(VARIANT Index, VARIANT Value)
         m_tb->setFV(index, Value.bstrVal);
     else if (Value.vt == VT_R8 || Value.vt == VT_R4)
         m_tb->setFV(index, Value.dblVal);
-    else if (Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT || Value.vt == VT_I8)
+    else if (Value.vt == VT_I2)
+        m_tb->setFV(index, Value.iVal);
+    else if (Value.vt == VT_I4 || Value.vt == VT_INT)
+        m_tb->setFV(index, Value.lVal);
+    else if (Value.vt == VT_I8)
         m_tb->setFV(index, Value.llVal);
     else if (Value.vt == VT_NULL)
         m_tb->setFV(index, (wchar_t*)NULL);
