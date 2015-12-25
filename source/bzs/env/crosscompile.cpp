@@ -23,6 +23,7 @@
 #include <wctype.h>
 #include <wchar.h>
 
+
 char16_t* _strupr16(char16_t* s)
 {
     char16_t* p = s;
@@ -65,18 +66,6 @@ char* _strlwr(char* s)
         ++s;
     }
     return p;
-}
-
-char* _i64toa_s(__int64 v, char* tmp, unsigned long size, int radix)
-{
-    snprintf(tmp, size, "%lld", v);
-    return tmp;
-}
-
-char* _ltoa_s(int v, char* tmp, unsigned long size, int radix)
-{
-    snprintf(tmp, size, "%d", v);
-    return tmp;
 }
 
 int wcsnicmp16(const char16_t* sl, const char16_t* sr, size_t n)

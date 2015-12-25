@@ -316,7 +316,6 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             }
             client_t->cleanup();
             return client_t->req().result;
-            break;
         }
         case TD_OPENTABLE:
         case TD_CREATETABLE:

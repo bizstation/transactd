@@ -86,6 +86,12 @@ char* doubleToStr(double v, int decimals, char* p, int psize)
     return p;
 }
 
+inline char* namebufA()
+{
+    return (char*)namebuf();
+}
+
+#ifdef _UNICODE
 wchar_t* doubleToStr(double v, int decimals, wchar_t* p, int psize)
 {
     if (decimals)
@@ -99,14 +105,6 @@ wchar_t* doubleToStr(double v, int decimals, wchar_t* p, int psize)
         swprintf(p, psize, L"%0.0lf", v);
     return p;
 }
-
-
-inline char* namebufA()
-{
-    return (char*)namebuf();
-}
-
-#ifdef _UNICODE
 
 const wchar_t* fielddef::name() const
 {
@@ -171,7 +169,10 @@ const wchar_t* fielddef::defaultValue_str() const
         case ft_mytimestamp:
         {
             if (i64 == DFV_TIMESTAMP_DEFAULT)
-                p = DFV_TIMESTAMP_DEFAULT_WSTR;
+            {
+                *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
+                return DFV_TIMESTAMP_DEFAULT_WSTR;
+            }
             else if (dt.internalValue()) 
                 dt.toString(p);
             break;
@@ -370,7 +371,10 @@ const char* fielddef::defaultValue_strA() const
         case ft_mytimestamp:
         {
             if (i64 == DFV_TIMESTAMP_DEFAULT)
-                p = DFV_TIMESTAMP_DEFAULT_ASTR;
+            {
+                *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
+                return DFV_TIMESTAMP_DEFAULT_ASTR;
+            }
             else if (dt.internalValue()) 
                 dt.toString(p);
             break;
@@ -383,7 +387,7 @@ const char* fielddef::defaultValue_strA() const
     }
     else
         doubleToStr(*((double*)m_defValue), decimals, p, MYSQL_FDNAME_SIZE);
-   
+
     return p;
 }
 
@@ -887,17 +891,20 @@ void tabledef::calcReclordlen(bool force)
                 fd.setTimeStampOnUpdate(true);
                 firstTimeStamp = false;
             }
-
-            if (fd.type == ft_mytimestamp && fd.decimals == 0)
-                fd.decimals = (fd.len - 4) * 2;
-            else if (fd.type == ft_mydatetime)
+            if (fd.type == ft_mydatetime || fd.type == ft_mytime)
             {
                 if (isMariaTimeFormat())
                     fd.m_options |= FIELD_OPTION_MARIADB;
                 else
                     fd.m_options &= ~FIELD_OPTION_MARIADB;
+            }
+
+            if (fd.type == ft_mytimestamp && fd.decimals == 0)
+                fd.decimals = (fd.len - 4) * 2;
+            else if (fd.type == ft_mydatetime)
+            {
                 // datetime decimals is different by server version 
-                if (fd.decimals == 0)
+                if (fd.decimals == 0 && !isLegacyTimeFormat(fd))
                     fd.decimals = (fd.len - 5) * 2;
             }
             else if (fd.type == ft_mytime && fd.decimals == 0)

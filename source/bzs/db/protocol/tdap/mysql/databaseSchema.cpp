@@ -183,6 +183,8 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
     td.optionFlags.bitB = (src->blobFields() != 0);
 #if defined(MARIADB_BASE_VERSION)
     td.m_useInMariadb = true;
+#else
+    td.m_useInMariadb = false;
 #endif
     td.m_srvMinorVer = (MYSQL_VERSION_ID / 100) % 100;
     datalen += sizeof(tabledef);

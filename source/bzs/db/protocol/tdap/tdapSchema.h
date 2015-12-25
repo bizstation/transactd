@@ -922,6 +922,9 @@ struct PACKAGE tabledef
         replicaKeyNum = -1;
         pageSize = 2048;
         schemaCodePage = 65001;//CP_UTF8
+
+        // set temp server version
+        m_useInMariadb = true;
     }
 
 #ifdef _UNICODE
@@ -983,6 +986,12 @@ public:
     inline ushort_td recordlen() const { return m_maxRecordLen; }
 
     uint_td unPack(char* ptr, size_t size) const;
+
+    inline void setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
+    {
+        m_useInMariadb = isMariadb;
+        m_srvMinorVer = srvMinorVersion;
+    }
 
     inline bool isMysqlNullMode() const { return m_mysqlNullMode; }
 

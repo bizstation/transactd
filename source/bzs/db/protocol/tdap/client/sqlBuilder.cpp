@@ -72,7 +72,7 @@ char g_buf[TMP_BUFSIZE];
 #define VAR_TYPE 13
 
 const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
-                             const char* charsetName)
+                             const char* charsetName, int decimals)
 {
     const char* bin_ptr = nobinary ? "" : "binary";
     char charsetString[128] = { " CHARACTER SET " };
@@ -127,19 +127,19 @@ const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
         if(fd.isLegacyTimeFormat())
             sprintf_s(g_buf, TMP_BUFSIZE, "TIME");
         else
-            sprintf_s(g_buf, TMP_BUFSIZE, "TIME(%d)", (size - 3) * 2);
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIME(%d)", decimals);
         return g_buf;
     case ft_mydatetime:
         if(fd.isLegacyTimeFormat())
             sprintf_s(g_buf, TMP_BUFSIZE, "DATETIME");
         else
-            sprintf_s(g_buf, TMP_BUFSIZE, "DATETIME(%d)", (size - 5) * 2);
+            sprintf_s(g_buf, TMP_BUFSIZE, "DATETIME(%d)", decimals);
         return g_buf;
     case ft_mytimestamp:
         if(fd.isLegacyTimeFormat())
             sprintf_s(g_buf, TMP_BUFSIZE, "TIMESTAMP");
         else
-            sprintf_s(g_buf, TMP_BUFSIZE, "TIMESTAMP(%d)", (size - 4) * 2);
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIMESTAMP(%d)", decimals);
         return g_buf;
     case ft_mytext:
         if (size - 8 == 4)
@@ -279,7 +279,7 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
         if (fd.charsetIndex() != table->charsetIndex)
             charsetName = mysql::charsetName(fd.charsetIndex());
 
-        s += getFieldTypeName(fd, len, f.bitA, charsetName);
+        s += getFieldTypeName(fd, len, f.bitA, charsetName, fd.decimals);
         const char* p = fd.defaultValue_strA();
         if ((fd.defaultValue() == DFV_TIMESTAMP_DEFAULT) && 
             ((fd.type == ft_mytimestamp) || (fd.type == ft_mydatetime)))

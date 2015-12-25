@@ -84,7 +84,8 @@ public:
     };
 
 public:
-    inline myTime(int dec, bool bigendian) : m_dec(dec), m_bigendian(bigendian){};
+    inline myTime(int dec, bool bigendian) : m_dec(dec), 
+        m_bigendian(bigendian){};
     virtual void setValue(__int64 v, bool btrvValue = false);
     virtual __int64 getValue(bool btrvValue = false);
     char* toString(char* p);
@@ -102,7 +103,7 @@ struct PACKAGE maTime : public  myTime
     virtual void setValue(__int64 v, bool btrvValue = false);
     virtual __int64 getValue(bool btrvValue = false);
 public:
-    inline maTime(int dec, bool bigendian) : myTime(dec, bigendian){};
+    inline maTime(int dec, bool bigendian) : myTime(dec, bigendian){}
     maTime& operator=(const char* p);
 #ifdef _WIN32
     maTime& operator=(const wchar_t* p) ;

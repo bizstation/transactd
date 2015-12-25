@@ -151,6 +151,7 @@ void myTime::setValue(__int64 v, bool btrvValue)
             p[1] = src[4];
             p[2] = src[3];
             ms = ms >> (3 - ((m_dec + 1) / 2)) * 8;
+            ms /= ((m_dec % 2) ? 10 : 1);
         }
         p[3] = src[2];
         p[4] = src[1];
@@ -188,12 +189,13 @@ __int64 myTime::getValue(bool btrvValue)
         if (m_dec)
         {
             ms = ms << (3 - ((m_dec + 1) / 2)) * 8;
+            ms *= ((m_dec % 2) ? 10 : 1);
             p[3] = src[2];
             p[4] = src[1];
             p[5] = src[0];
         }
     }else
-        v =  (hh * 10000) + (nn * 100) + ss;
+        v =  (hh * 10000LL) + (nn * 100LL) + ss;
     sign = 0;
     return v;
 }
@@ -271,6 +273,9 @@ myTime& myTime::operator=(const wchar_t* p)
 #endif
 //-------------------------------------------------------------
 static int digit_logs[7] = {1, 10, 100, 1000, 10000, 100000, 1000000}; // digit 0 to 6
+static int str_logs[7] = {1, 10,1,10,1,10,1};
+#define ZEROPOINT_SEC 3020400ULL 
+
 void maTime::setValue(__int64 v, bool btrvValue)
 {
     if (m_bigendian && !btrvValue)
@@ -286,19 +291,24 @@ void maTime::setValue(__int64 v, bool btrvValue)
         p[5] = src[0];
         i64 = i64 >> (3 - ((m_dec + 1) / 2)) * 8;
         __int64 v = i64;
+        if (v)
+            v -= (ZEROPOINT_SEC * digit_logs[m_dec]);
         ms = v % digit_logs[m_dec]; v /= digit_logs[m_dec];
         ss = v % 60; v /= 60;
         nn = v % 60; v /= 60;
-        hh = v % 24; v /= 24;
+        hh = v % 24;
         sign = 0;
     }else
-        maTime::setValue(v, btrvValue);
+        myTime::setValue(v, btrvValue);
 }
 
 __int64 maTime::getValue(bool btrvValue)
 {
     if (!m_bigendian || btrvValue) return myTime::getValue(btrvValue);
-    __int64 i64t = ((hh * 60 + nn) * 60 + ss) * digit_logs[m_dec] + ms;
+    unsigned __int64 i64t = (((hh) * 60ULL +  nn) * 60ULL + ss) * digit_logs[m_dec] +  ms;
+    if (i64t)
+        i64t += ZEROPOINT_SEC * digit_logs[m_dec];
+
     __int64 v = 0;
     char* src = (char*)&i64t;
     char* p = (char*)&v;
@@ -345,6 +355,7 @@ void myDateTime::setValue(__int64 v)
             p[1] = src[6];
             p[2] = src[5];
             ms = ms >> (3 - ((m_dec + 1) / 2)) * 8;
+            ms /= ((m_dec % 2) ? 10 : 1);
         }
 
     }else
@@ -376,6 +387,7 @@ __int64 myDateTime::getValue()
         if (v && m_dec)
         {
             ms = ms << (3 - ((m_dec + 1) / 2)) * 8;
+            ms *= ((m_dec % 2) ? 10 : 1);
             p[5] = src[2];
             p[6] = src[1];
             p[7] = src[0];
@@ -579,6 +591,7 @@ void maDateTime::setValue(__int64 v)
 {
     if (m_bigendian)
     {
+        i64 = 0;
         char* p = (char*)&i64;
         char* src = (char*)&v;
         p[3] = src[4];
@@ -607,8 +620,8 @@ void maDateTime::setValue(__int64 v)
 __int64 maDateTime::getValue()
 {
     if (!m_bigendian) return myDateTime::getValue();
-    __int64 i64t = ((((( yymm) * 32 + dd) * 24 + hh) * 60 + nn) * 60 +
-                ss) * digit_logs[m_dec] + ms;
+    unsigned __int64 i64t = (((((yymm) * 32ULL + dd) * 24ULL + hh) * 60ULL + nn) * 60ULL +
+                                ss) * digit_logs[m_dec] + ms;
     __int64 v;
     char* src = (char*)&i64t;
     char* p = (char*)&v;
@@ -656,6 +669,7 @@ void myTimeStamp::setValue(__int64 v)
             p[1] = src[5];
             p[2] = src[4];
             ms = ms >> (3 - ((m_dec + 1) / 2)) * 8;
+            ms /= ((m_dec % 2) ? 10 : 1);
         }
     }else
         datetime = v;
@@ -676,6 +690,7 @@ __int64 myTimeStamp::getValue()
         if (m_dec)
         {
             ms = ms << (3 - ((m_dec + 1) / 2)) * 8;
+            ms *= ((m_dec % 2) ? 10 : 1);
             p[4] = src[2];
             p[5] = src[1];
             p[6] = src[0];
@@ -779,11 +794,10 @@ char* myTimeStamp::timeStr(char* p) const
         if (m_dec)
             sprintf(p, time_format_ms,  0, 0, 0, m_dec, 0);
         else
-            sprintf(p, time_format_ms,  0, 0, 0);
+            sprintf(p, time_format,  0, 0, 0);
     }
     return p;
 }
-
 
 #ifdef _WIN32
 wchar_t* myTimeStamp::toString(wchar_t* p)

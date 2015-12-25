@@ -47,11 +47,19 @@ int gettimeofday(struct timeval*, struct timezone*);
 #include <ctype.h>
 #include <stddef.h>
 #include <linuxTypes.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <string.h>
+#include <wctype.h>
+#include <wchar.h>
 /* c c++ runtime library */
 #define _strnicmp strncasecmp
 #define __int64 long long int
 #define _atoi64 atoll
 #define _wtoi(W) wcstol(W, NULL, 10)
+#define _wtol(W) wcstol(W, NULL, 10)
+#define _wtoi64(W) wcstoll(W, NULL, 10)
+#define _wtof(W) wcstod(W, NULL)
 #define _access access
 #define sprintf_s snprintf
 #define swprintf_s swprintf
@@ -71,8 +79,31 @@ int gettimeofday(struct timeval*, struct timezone*);
 
 char* _strupr(char* s);
 char* _strlwr(char* s);
-char* _ltoa_s(int v, char* tmp, unsigned long size, int radix);
-char* _i64toa_s(__int64 v, char* tmp, unsigned long size, int radix);
+
+inline char* _i64toa_s(__int64 v, char* tmp, unsigned long size, int radix)
+{
+    snprintf(tmp, size, "%lld", v);
+    return tmp;
+}
+
+inline char* _ui64toa_s(unsigned __int64 v, char* tmp, unsigned long size, int radix)
+{
+    snprintf(tmp, size, "%" PRIu64, v);
+    return tmp;
+}
+
+inline char16_t* _i64tow_s(__int64 v, char16_t* tmp, unsigned long size, int radix)
+{
+    swprintf((wchar_t*)tmp, size, L"%lld", v);
+    return tmp;
+}
+
+inline char* _ltoa_s(int v, char* tmp, unsigned long size, int radix)
+{
+    snprintf(tmp, size, "%d", v);
+    return tmp;
+}
+
 char16_t* _strupr16(char16_t* s);
 char16_t* _strlwr16(char16_t* s);
 size_t strlen16(const char16_t* src);

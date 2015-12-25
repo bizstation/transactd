@@ -675,8 +675,8 @@ const char* field::readValueStrA() const
     }
 }
 
-#ifdef _WIN32
-void field::storeValueStrW(const wchar_t* data) 
+//#ifdef _WIN32
+void field::storeValueStrW(const WCHAR* data)
 {
     char* p = (char*)m_ptr + m_fd->pos;
     switch (m_fd->type)
@@ -722,7 +722,7 @@ void field::storeValueStrW(const wchar_t* data)
     }
 }
 
-const wchar_t* field::readValueStrW() const
+const WCHAR* field::readValueStrW() const
 {
     char* data = (char*)m_ptr + m_fd->pos;
     switch (m_fd->type)
@@ -767,7 +767,6 @@ const wchar_t* field::readValueStrW() const
         return NULL;
     }
 }
-#endif
 
 void field::storeValueNumeric(double data)
 { // Double  -> Numeric
@@ -1049,9 +1048,9 @@ inline __int64 logical_str_to_64(bool logicalToString, const wchar_t* data)
 {
     if (logicalToString)
     {
-        wchar_t tmp[5];
-        wcsncpy(tmp, data, 5);
-        if (wcscmp(_wcsupr(tmp), L"YES") == 0)
+        WCHAR tmp[5];
+        wcsncpy((wchar_t*)tmp, data, 5);
+        if (wcscmp((const wchar_t*)_wcsupr(tmp), L"YES") == 0)
             return 1;
         else
             return 0;
@@ -1107,6 +1106,7 @@ void field::setFVA(const char* data)
         break;
     case ft_datetime:
         value = atobtrs((const char*)data).i64;
+        break;
     case ft_myyear:
         value = _atoi64(data);
         if (value > 1900) value -= 1900;
@@ -1279,7 +1279,7 @@ void field::setFV(__int64 data)
     }
     CASE_TEXTW
     {
-        wchar_t buf[50];
+        WCHAR buf[50];
          _i64tow_s(data, buf, 50, 10);
         storeValueStrW(buf);
         break;
@@ -1354,8 +1354,8 @@ void field::setFV(double data)
     }
     CASE_TEXTW
     {
-        wchar_t buf[100];
-        swprintf_s(buf, 50, L"%f", data);
+        WCHAR buf[100];
+        swprintf_s((wchar_t*)buf, 50, L"%f", data);
         storeValueStrW(buf);
         break;
     }
@@ -1650,7 +1650,7 @@ double field::getFVdbl() const
     CASE_TEXTA
         return atof(readValueStrA());
     CASE_TEXTW
-        return _wtof(readValueStrW());
+        return _wtof((const wchar_t*)readValueStrW());
     default: // ft_lvar ft_mygeometry ft_myjson
          break;
     }
@@ -1711,7 +1711,7 @@ __int64 field::getFV64() const
     CASE_TEXTA
         return _atoi64(readValueStrA());
     CASE_TEXTW
-        return _wtoi64(readValueStrW());
+        return _wtoi64((wchar_t*)readValueStrW());
     default: // ft_lvar ft_mygeometry ft_myjson
          break;
     }

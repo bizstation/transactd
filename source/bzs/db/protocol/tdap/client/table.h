@@ -424,14 +424,14 @@ inline std::_tstring lexical_cast(char v)
 inline std::_tstring lexical_cast(double v)
 {
     _TCHAR tmp[256];
-    _stprintf_s(tmp, 256, _T("%.*f"), 15, v);
+    _stprintf_s(tmp, 256, _T("%.*f"), 16, v);
     return std::_tstring(tmp);
 }
 
 inline std::_tstring lexical_cast(float v)
 {
     _TCHAR tmp[256];
-    _stprintf_s(tmp, 256, _T("%.*f"), 15, v);
+    _stprintf_s(tmp, 256, _T("%.*f"), 16, v);
     return std::_tstring(tmp);
 }
 
@@ -439,8 +439,11 @@ inline std::_tstring lexical_cast(const _TCHAR* v)
 {
     if (v)
         return std::_tstring(v);
+    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR,
+                                         _T("Invalid the value, The value is NULL."));
     return std::_tstring(_T(""));
 }
+
 
 class qlogic
 {

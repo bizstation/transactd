@@ -547,10 +547,6 @@ void dbdef::insertTable(tabledef* td)
         return;
     }
 
-    // set temp server version
-    td->m_useInMariadb = true;
-    td->m_srvMinorVer = 0;
-
     m_dimpl->tableDefs[td->id] =
         (tabledef*)malloc(USHRT_MAX /* sizeof(tabledef) */);
     if (m_dimpl->tableDefs[td->id] == NULL)

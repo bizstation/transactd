@@ -1135,6 +1135,7 @@ public:
         return true;
     }
     
+    /* Used by activeTbale join. Must be support NULL pointer */
     bool supplySeekValue(const uchar_td* ptr[] , int len[],
                  int keySize, int& index)
     {

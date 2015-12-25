@@ -103,14 +103,14 @@ short createTestTable1(database* db)
     return 1;
 }
 
-short createTestTableLegacyTime(database* db)
+short createTestTableLegacyTimeTable(database* db)
 {
     try
     {
         dbdef* def = db->dbDef();
         short tableid = 2;
         
-        insertTable(def, tableid,  _T("timetest"), g_td_charsetIndex);
+        insertTable(def, tableid,  _T("timetestLegacy"), g_td_charsetIndex);
         short fieldnum = 0;
         fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
 
@@ -179,34 +179,50 @@ short createTestTableHA_OPTION_PACK_RECORD(database* db)
     return 1;
 }
 
-short createTestTableTime(database* db)
+short createTestTableTime(database* db, bool isMariadb, uchar_td minorVersion)
 {
     try
     {
         dbdef* def = db->dbDef();
         short tableid = 2;
-        
+
         insertTable(def, tableid,  _T("timetest"), g_td_charsetIndex);
+        tabledef* td = def->tableDefs(tableid);
+        td->primaryKeyNum = 0;
+        td->setValidationTarget(isMariadb, minorVersion);
+
         short fieldnum = 0;
         fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
 
         //time
         fd = insertField(def, tableid, ++fieldnum, _T("time3"), ft_mytime, 3);
         fd = insertField(def, tableid, ++fieldnum, _T("time4"), ft_mytime, 4);
+        fd->decimals = 2;
         fd = insertField(def, tableid, ++fieldnum, _T("time5"), ft_mytime, 5);
+        fd->decimals = 3;
         fd = insertField(def, tableid, ++fieldnum, _T("time6"), ft_mytime, 6);
+        fd->decimals = 6;
 
         //datetime
         fd = insertField(def, tableid, ++fieldnum, _T("datetime5"), ft_mydatetime, 5);
         fd = insertField(def, tableid, ++fieldnum, _T("datetime6"), ft_mydatetime, 6);
+        fd->decimals = 2;
         fd = insertField(def, tableid, ++fieldnum, _T("datetime7"), ft_mydatetime, 7);
+        fd->decimals = 3;
         fd = insertField(def, tableid, ++fieldnum, _T("datetime8"), ft_mydatetime, 8);
+        fd->decimals = 6;
 
         //timestamp
         fd = insertField(def, tableid, ++fieldnum, _T("timestamp4"), ft_mytimestamp, 4);
         fd = insertField(def, tableid, ++fieldnum, _T("timestamp5"), ft_mytimestamp, 5);
+        fd->decimals = 2;
+        fd->setNullable(true);
         fd = insertField(def, tableid, ++fieldnum, _T("timestamp6"), ft_mytimestamp, 6);
+        fd->decimals = 3;
+        fd->setNullable(true);
         fd = insertField(def, tableid, ++fieldnum, _T("timestamp7"), ft_mytimestamp, 7);
+        fd->decimals = 6;
+        fd->setNullable(true);
  
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
@@ -214,8 +230,7 @@ short createTestTableTime(database* db)
         kd->segments[0].flags.bit1 = 1; // changeable
         kd->segmentCount = 1;
 
-        tabledef* td = def->tableDefs(tableid);
-        td->primaryKeyNum = 0;
+        
         updateTableDef(def, tableid);
         return 0;
    
@@ -262,9 +277,9 @@ public:
                 legacyTimeFormat = v.isFullLegacyTimeFormat();
                 if (ret == 0)
                 {   if (legacyTimeFormat)
-                        ret = createTestTableLegacyTime(m_db);
+                        ret = createTestTableLegacyTimeTable(m_db);
                     else 
-                        ret = createTestTableTime(m_db);
+                        ret = createTestTableTime(m_db, v.isMariaDB(), (uchar_td)v.minorVersion);
                     if (ret == 0)
                         ret = createTestTableHA_OPTION_PACK_RECORD(m_db);
                     if (ret == 0)
@@ -568,6 +583,47 @@ void testStoreInt(database* db)
 #define TEST_DATETIME0 _T("2015-11-09 12:31:56")
 #define TEST_DATETIME0A "2015-11-09 12:31:56"
 
+const _TCHAR*  TEST_TIME[7] = {
+    _T("23:41:12"),
+    L"",
+    _T("23:41:12.34"),
+    _T("23:41:12.987"),
+    L"",
+    L"",
+    _T("23:41:12.123456") 
+};
+
+const char* TEST_TIMEA[7] = {
+    "23:41:12",
+    "",
+    "23:41:12.34",
+    "23:41:12.987",
+    "",
+    "",
+    "23:41:12.123456" 
+};
+
+const _TCHAR* TEST_DATETIME[7] = {
+    _T("2015-11-09 12:31:56"),
+    L"",
+    _T("2015-11-09 12:31:56.98"),
+    _T("2015-11-09 12:31:56.987"),
+    L"",
+    L"",
+    _T("2015-11-09 12:31:56.123456")
+};
+
+const char* TEST_DATETIMEA[7] = {
+    "2015-11-09 12:31:56",
+    "",
+    "2015-11-09 12:31:56.98",
+    "2015-11-09 12:31:56.987",
+    "",
+    "",
+    "2015-11-09 12:31:56.123456"
+};
+
+
 void checkLegacyTimeValue(table_ptr tb)
 {
     short fieldnum = 0;
@@ -580,13 +636,13 @@ void checkLegacyTimeValue(table_ptr tb)
 
     myTimeStamp ts(0, false); ts = TEST_DATETIME0;
     BOOST_CHECK(tb->getFV64(++fieldnum) == ts.i64);
-    ++fieldnum;
+
     // read by double
     fieldnum = 0;
     BOOST_CHECK(tb->getFVdbl(++fieldnum) == (double)t.i64);
     BOOST_CHECK(tb->getFVdbl(++fieldnum) == (double)dt.i64);
     BOOST_CHECK(tb->getFVdbl(++fieldnum) == (double)ts.i64);
-    ++fieldnum;
+
     //read by string
     fieldnum = 0;
     BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), TEST_TIME0) == 0);
@@ -676,9 +732,150 @@ void testStoreLegacyTime(database* db)
     checkLegacyTimeValue(tb);
 }
 
-void testStoreTime(database* db)
+void checkTimeValue(table_ptr tb, short fieldIndex, int decimals, bool mySql56timeFormat)
+{
+    // read by int64
+    myTime t(decimals, true); 
+    t = TEST_TIME[decimals]; 
+    BOOST_CHECK_MESSAGE(tb->getFV64(fieldIndex) == t.i64, "myTime  decimals = " << decimals);
+    myDateTime dt(decimals, true); 
+    maDateTime dta(decimals, true); 
+    if (mySql56timeFormat)
+    {
+        dt = TEST_DATETIME[decimals]; 
+        BOOST_CHECK_MESSAGE(tb->getFV64(fieldIndex + 4) == dt.i64, "myDateTime decimals = " << decimals);
+    }
+    else
+    {
+        dta = TEST_DATETIME[decimals]; 
+        BOOST_CHECK_MESSAGE(tb->getFV64(fieldIndex + 4) == dta.i64, "maDateTime decimals = " << decimals);
+    }
+    myTimeStamp ts(decimals, true); 
+    ts = TEST_DATETIME[decimals]; 
+    BOOST_CHECK_MESSAGE(tb->getFV64(fieldIndex + 8) == ts.i64, "myTimeStamp decimals = " << decimals);
+
+
+    //read by string
+    BOOST_CHECK_MESSAGE(_tcscmp(tb->getFVstr(fieldIndex), TEST_TIME[decimals]) == 0, "myTime  decimals = " << decimals);
+    BOOST_CHECK_MESSAGE(_tcscmp(tb->getFVstr(fieldIndex + 4), TEST_DATETIME[decimals]) == 0, "dateTime  decimals = " << decimals);
+    BOOST_CHECK_MESSAGE(_tcscmp(tb->getFVstr(fieldIndex + 8), TEST_DATETIME[decimals]) == 0, "myTimeStamp  decimals = " << decimals);
+}
+
+void checkTimeValues(table_ptr tb, bool mySql56timeFormat)
+{
+    short fieldnum = 0;
+//    if (!mySql56timeFormat)
+    checkTimeValue(tb, ++fieldnum, 0, mySql56timeFormat); //0 decimal
+    checkTimeValue(tb, ++fieldnum, 2, mySql56timeFormat); //2 decimals
+    checkTimeValue(tb, ++fieldnum, 3, mySql56timeFormat); //3 decimals
+    checkTimeValue(tb, ++fieldnum, 6, mySql56timeFormat); //6 decimals 
+}
+
+void setTimeValue64(table_ptr tb, short fieldIndex, int decimals, bool mySql56timeFormat)
+{
+    myTime t(decimals, true); 
+    t = TEST_TIME[decimals];  tb->setFV(fieldIndex, t.i64);
+    myDateTime dt(decimals, true); 
+    maDateTime dta(decimals, true); 
+    if (mySql56timeFormat)
+    {
+        dt = TEST_DATETIME[decimals]; tb->setFV(fieldIndex + 4, dt.i64);
+    }
+    else
+    {
+        dta = TEST_DATETIME[decimals]; tb->setFV(fieldIndex + 4, dta.i64);
+    }
+    myTimeStamp ts(decimals, true); 
+    ts = TEST_DATETIME[decimals]; tb->setFV(fieldIndex + 8, ts.i64);
+}
+
+void testStoreTime(database* db, bool mySql56timeFormat)
 {
 
+    short tableid = 2;
+    short fieldnum = 0;
+    
+    table_ptr tb = openTable(db, tableid, TD_OPEN_NORMAL);
+    tb->setTimestampMode(TIMESTAMP_VALUE_CONTROL);
+    BOOST_CHECK(tb->stat() == 0);
+
+    tb->clearBuffer();
+    tb->setFV(_T("id"), 1);
+
+    setTimeValue64(tb, ++fieldnum, 0, mySql56timeFormat);
+    setTimeValue64(tb, ++fieldnum, 2, mySql56timeFormat);
+    setTimeValue64(tb, ++fieldnum, 3, mySql56timeFormat);
+    setTimeValue64(tb, ++fieldnum, 6, mySql56timeFormat);
+    tb->insert();
+
+    tb->clearBuffer();
+    tb->setFV(_T("id"), 1);
+    tb->seek();
+    BOOST_CHECK(tb->stat() == 0);
+    checkTimeValues(tb, mySql56timeFormat);
+    
+ 
+    tb->clearBuffer();
+    tb->setFV(_T("id"), 2);
+    fieldnum = 0;
+    setTimeValue64(tb, ++fieldnum, 0, mySql56timeFormat);
+    setTimeValue64(tb, ++fieldnum, 2, mySql56timeFormat);
+    setTimeValue64(tb, ++fieldnum, 3, mySql56timeFormat);
+    setTimeValue64(tb, ++fieldnum, 6, mySql56timeFormat);
+    tb->insert();
+        
+    tb->clearBuffer();
+    tb->setFV(_T("id"), 2);
+    tb->seek();
+    BOOST_CHECK(tb->stat() == 0);
+    checkTimeValues(tb, mySql56timeFormat);
+    __int64 ts_auto_i = tb->getFV64(9);
+
+    tb->clearBuffer();
+    tb->setFV(_T("id"), 2);
+    tb->update();
+    BOOST_CHECK(tb->stat() == 0);
+    tb->seek();
+    BOOST_CHECK(tb->stat() == 0);
+    checkAutoTimeStamp(ts_auto_i, tb->getFV64(9));
+    
+
+    std::string values;
+    values += "1\t";
+    values += TEST_TIMEA[0];
+    values += "\t2\t";
+    values += TEST_TIMEA[2];
+    values += "\t3\t";
+    values += TEST_TIMEA[3];
+    values += "\t4\t";
+    values += TEST_TIMEA[6];
+    
+    values += "\t5\t";
+    values += TEST_DATETIMEA[0];
+    values += "\t6\t";
+    values += TEST_DATETIMEA[2];
+    values += "\t7\t";
+    values += TEST_DATETIMEA[3];
+    values += "\t8\t";
+    values += TEST_DATETIMEA[6];
+    
+    values += "\t9\t";
+    values += TEST_DATETIMEA[0];
+    values += "\t10\t";
+    values += TEST_DATETIMEA[2];
+    values += "\t11\t";
+    values += TEST_DATETIMEA[3];
+    values += "\t12\t";
+    values += TEST_DATETIMEA[6];
+
+
+    tb->test_store(values.c_str());
+    BOOST_CHECK(tb->stat() == 0);
+    tb->clearBuffer();
+    tb->setFV(_T("id"), 2);
+    tb->seek();
+    BOOST_CHECK(tb->stat() == 0);
+    checkTimeValues(tb, mySql56timeFormat);
 }
 
 void test_NOT_HA_OPTION_PACK_RECORD(database* db)

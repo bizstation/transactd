@@ -148,10 +148,8 @@ class DLLLIB field
     void storeValueDbl(double value);
     void storeValueStrA(const char* data);
     const char* readValueStrA() const;
-#ifdef _WIN32
-    void storeValueStrW(const wchar_t* data);
-    const wchar_t* readValueStrW() const;
-#endif
+    void storeValueStrW(const WCHAR* data);
+    const WCHAR* readValueStrW() const;
     void storeValueNumeric(double data);
     double readValueNumeric() const;
     void storeValueDecimal(double data);

@@ -2633,6 +2633,12 @@ int makeSupplyValues(const _TCHAR* values[], int size,
 {
     if (size == 0) return 0;
     memset(values, sizeof(_TCHAR*), size);
+    if (value == NULL)
+    {
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR,
+                                         _T("Invalid the value, The value is NULL."));
+        return 0;
+    }
     values[0] = value;
     if (size < 2 || !value1) return 1;
     values[1] = value1;
@@ -2664,6 +2670,12 @@ bool supplyValues(pq_handle& filter, const _TCHAR* values[], int size)
 
 bool supplyValue(pq_handle& filter, int index, const _TCHAR* v)
 {
+    if (v == NULL)
+    {
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR,
+                                         _T("Invalid the supplyValue, The supplyValue is NULL."));
+        return 0;
+    }
     return filter->supplyValue(index, v);
 }
 
