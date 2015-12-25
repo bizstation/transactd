@@ -269,11 +269,14 @@ class DLLLIB count : public groupFuncBase
 protected:
     groupFuncBase* clone();
     void doCalc(const row_ptr& row, int index);
-
+    void initResultVariable(int index);
 public:
-    count() {}
+    count(){}
     count(const _TCHAR* resultName);
+    count(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static count* create(const _TCHAR* resultName);
+    static count* create(const fieldNames& targetNames,
+                       const _TCHAR* resultName = NULL);
 };
 
 class DLLLIB avg : public sum

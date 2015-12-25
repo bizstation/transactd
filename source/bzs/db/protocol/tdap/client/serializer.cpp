@@ -470,7 +470,10 @@ groupFuncBase& groupByStatement::addFunction(eFunc v,
         func = new client::sum(targetNames, resultName);
         break;
     case fcount:
-        func = new client::count(resultName);
+        if (targetNames.count())
+            func = new client::count(targetNames, resultName);
+        else
+            func = new client::count(resultName);
         break;
     case favg:
         func = new client::avg(targetNames, resultName);

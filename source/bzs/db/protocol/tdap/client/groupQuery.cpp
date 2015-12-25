@@ -922,15 +922,34 @@ count* count::create(const _TCHAR* resultName)
     return new count(resultName);
 }
 
+count* count::create(const fieldNames& targetNames, const _TCHAR* resultName)
+{
+    return new count(targetNames, resultName);
+}
+
 count::count(const _TCHAR* resultName) : groupFuncBase()
 {
     setResultName(resultName);
 }
 
+count::count(const fieldNames& targetNames, const _TCHAR* resultName)
+     : groupFuncBase(targetNames, resultName) {}
+
+void count::initResultVariable(int index)
+{
+    groupFuncBase::initResultVariable(index);
+    m_imple->m_nulls[index] = false;
+}
+
 void count::doCalc(const row_ptr& row, int index)
 {
-    m_imple->m_nulls[index] = false;
-    m_imple->m_values[index] = m_imple->m_values[index] + 1;
+    if (m_imple->targetKeys())
+    {
+        for (int i = 0; i < m_imple->targetKeys(); ++i)
+            m_imple->m_values[index] = m_imple->m_values[index] + 1;
+    }else
+        m_imple->m_values[index] = m_imple->m_values[index] + 1;
+
 }
 
 groupFuncBase* count::clone()
