@@ -360,13 +360,13 @@ typedef
 ]
 enum eGroupFunc
 {
-	fsum = 0,
-	fcount = 1,
-	favg = 2,
-	fmin = 3,
-	fmax = 4,
-    ffirst = 5,
-    flast = 6
+	f_sum = 0,
+	f_count = 1,
+	f_avg = 2,
+	f_min = 3,
+	f_max = 4,
+    f_first = 5,
+    f_last = 6
 }eGroupFunc;
 
 typedef

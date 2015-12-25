@@ -803,6 +803,7 @@ char* myTimeStamp::timeStr(char* p, size_t size) const
 }
 
 #ifdef _WIN32
+#pragma warning(disable : 4477)
 wchar_t* myTimeStamp::toString(wchar_t* p, size_t size)
 {
     if (datetime)
@@ -812,8 +813,7 @@ wchar_t* myTimeStamp::toString(wchar_t* p, size_t size)
         struct tm* st = localtime(&v);
         if (st == NULL)
         {
-            //p[0] = 0x00;
-            swprintf_s(p, size, L"er:%d %hs", errno,_tcserror(errno));
+            swprintf_s(p, size, L"er:%d %s", errno, _tcserror(errno));
             return p;
         }
         if (m_dec)
@@ -833,6 +833,7 @@ wchar_t* myTimeStamp::toString(wchar_t* p, size_t size)
     }
     return p;
 }
+#pragma warning(default : 4477)
 
 myTimeStamp& myTimeStamp::operator=(const wchar_t* p)
 {

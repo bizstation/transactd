@@ -92,25 +92,25 @@ STDMETHODIMP CGroupQuery::AddFunction(eGroupFunc func, VARIANT targetNames,
     if (targetNames.vt == VT_DISPATCH)
         fn = dynamic_cast<CFieldNames*>(targetNames.pdispVal);
         
-    if ((func != fcount) && !fn)
+    if ((func != f_count) && !fn)
         return Error("Invalid targetNames", IID_IGroupQuery);
     if (fn)
         fns = fn->m_fnsPtr;
     boost::shared_ptr<groupFuncBase> f;
     
-    if (func == fsum)
+    if (func == f_sum)
         f.reset(sum::create(*fns, resultName), boost::bind(&sum::release, _1));
-    else if (func == fmin)
+    else if (func == f_min)
         f.reset(min::create(*fns, resultName), boost::bind(&min::release, _1));
-    else if (func == fmax)
+    else if (func == f_max)
         f.reset(max::create(*fns, resultName), boost::bind(&max::release, _1));
-    else if (func == favg)
+    else if (func == f_avg)
         f.reset(avg::create(*fns, resultName), boost::bind(&avg::release, _1));
-    else if (func == ffirst)
+    else if (func == f_first)
         f.reset(first::create(*fns, resultName), boost::bind(&first::release, _1));
-    else if (func == flast)
+    else if (func == f_last)
         f.reset(last::create(*fns, resultName), boost::bind(&last::release, _1));
-    else if (func == fcount)
+    else if (func == f_count)
     {
         if (resultName[0])
             f.reset(count::create(resultName), boost::bind(&count::release, _1));

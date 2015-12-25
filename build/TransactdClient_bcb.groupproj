@@ -15,6 +15,9 @@
 			<Projects Include="test_tdcl\test_tdclcpp_bc.cbproj">
 				<Dependencies/>
 			</Projects>
+			<Projects Include="test_tdcl\test_tdclcpp_v3_bc.cbproj">
+				<Dependencies/>
+			</Projects>
 			<Projects Include="bench_td\bench_tdclcpp_bc.cbproj">
 				<Dependencies/>
 			</Projects>
@@ -74,6 +77,15 @@
 		<Target Name="test_tdclcpp_bc:Make">
 			<MSBuild Projects="test_tdcl\test_tdclcpp_bc.cbproj" Targets="Make"/>
 		</Target>
+		<Target Name="test_tdclcpp_v3_bc">
+			<MSBuild Projects="test_tdcl\test_tdclcpp_v3_bc.cbproj"/>
+		</Target>
+		<Target Name="test_tdclcpp_v3_bc:Clean">
+			<MSBuild Projects="test_tdcl\test_tdclcpp_v3_bc.cbproj" Targets="Clean"/>
+		</Target>
+		<Target Name="test_tdclcpp_v3_bc:Make">
+			<MSBuild Projects="test_tdcl\test_tdclcpp_v3_bc.cbproj" Targets="Make"/>
+		</Target>
 		<Target Name="bench_tdclcpp_bc">
 			<MSBuild Projects="bench_td\bench_tdclcpp_bc.cbproj"/>
 		</Target>
@@ -120,13 +132,13 @@
 			<MSBuild Projects="querystmts\querystmts.cbproj" Targets="Make"/>
 		</Target>
 		<Target Name="Build">
-			<CallTarget Targets="tdclc;tdclcpp_bc;tdclstmt_bc;test_tdclcpp_bc;bench_tdclcpp_bc;bench_tdclcpp_c_bc;bench_query_bc;ormsrcgen;querystmts"/>
+			<CallTarget Targets="tdclc;tdclcpp_bc;tdclstmt_bc;test_tdclcpp_bc;test_tdclcpp_v3_bc;bench_tdclcpp_bc;bench_tdclcpp_c_bc;bench_query_bc;ormsrcgen;querystmts"/>
 		</Target>
 		<Target Name="Clean">
-			<CallTarget Targets="tdclc:Clean;tdclcpp_bc:Clean;tdclstmt_bc:Clean;test_tdclcpp_bc:Clean;bench_tdclcpp_bc:Clean;bench_tdclcpp_c_bc:Clean;bench_query_bc:Clean;ormsrcgen:Clean;querystmts:Clean"/>
+			<CallTarget Targets="tdclc:Clean;tdclcpp_bc:Clean;tdclstmt_bc:Clean;test_tdclcpp_bc:Clean;test_tdclcpp_v3_bc:Clean;bench_tdclcpp_bc:Clean;bench_tdclcpp_c_bc:Clean;bench_query_bc:Clean;ormsrcgen:Clean;querystmts:Clean"/>
 		</Target>
 		<Target Name="Make">
-			<CallTarget Targets="tdclc:Make;tdclcpp_bc:Make;tdclstmt_bc:Make;test_tdclcpp_bc:Make;bench_tdclcpp_bc:Make;bench_tdclcpp_c_bc:Make;bench_query_bc:Make;ormsrcgen:Make;querystmts:Make"/>
+			<CallTarget Targets="tdclc:Make;tdclcpp_bc:Make;tdclstmt_bc:Make;test_tdclcpp_bc:Make;test_tdclcpp_v3_bc:Make;bench_tdclcpp_bc:Make;bench_tdclcpp_c_bc:Make;bench_query_bc:Make;ormsrcgen:Make;querystmts:Make"/>
 		</Target>
 		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')" Project="$(BDS)\Bin\CodeGear.Group.Targets"/>
 	</Project>
