@@ -148,6 +148,8 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_KEY_LE_PREV_MULTI            73
 #define TD_FILTER_PREPARE               74
 #define TD_CONNECT                      78
+#define TD_STORE_TEST                   79 // For test only
+#define TD_SET_TIMESTAMP_MODE           80
 #define TD_BEGIN_SHAPSHOT               88
 #define TD_END_SNAPSHOT                 89
 #define TD_AUTOMEKE_SCHEMA              90
@@ -192,6 +194,13 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define LG_SUBOP_NEWCONNECT             3
 #define LG_SUBOP_RECONNECT              4 
 #define LG_SUBOP_DISCONNECT_EX          5 //for reconnect test
+
+/** TIMESTAMP_MODE
+*/
+#define TIMESTAMP_VALUE_CONTROL         0
+#define TIMESTAMP_ALWAYS                1
+
+
 /** field types
  */
 #define ft_string                       0
@@ -242,6 +251,9 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define ft_mytime_num_cmp               56  //for comare use only
 #define ft_mydatetime_num_cmp           57  //for comare use only
 #define ft_mytimestamp_num_cmp          58  //for comare use only
+#define ft_myyear                       59
+#define ft_mygeometry                   60
+#define ft_myjson                       61
 #define ft_nullindicator                255
 
 /** extruct row comp bias
@@ -313,7 +325,7 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define IS_MODE_GETDEFAULTIMAGE(mode)  (((0 - mode) & 64) != 0)
 /** @endcond */
 
-/** filed algin
+/** field algin
  */
 #define BT_AL_LEFT                      0
 #define BT_AL_CENTER                    2
@@ -480,7 +492,7 @@ struct clsrv_ver
     uchar_td  srvMajor;
     ushort_td srvMinor;
     ushort_td srvRelease;
-    inline bool isSupportDateTimeTimeStamp()
+    inline bool isSupportDateTimeTimeStamp() const
     {
         if (srvMysqlMajor >= 10) return true;
         if ((srvMysqlMajor == 5) && (srvMysqlMinor > 5)) return true;

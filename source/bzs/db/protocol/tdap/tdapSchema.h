@@ -231,6 +231,8 @@ inline bool isStringType(uchar_td type)
 {
     switch (type)
     {
+    case ft_mygeometry:
+    case ft_myjson:
     case ft_myblob:
     case ft_mytext:
     case ft_lstring:
@@ -431,7 +433,8 @@ public:
                 (type == ft_numeric) || (type == ft_bfloat) || (type == ft_float) ||
                 (type == ft_uinteger) || (type == ft_autoinc) || (type == ft_set) ||
                 (type == ft_bit) || (type == ft_enum) || (type == ft_numericsts) ||
-                (type == ft_numericsa) || (type == ft_autoIncUnsigned));
+                (type == ft_numericsa) || (type == ft_autoIncUnsigned) ||
+                (type == ft_myyear));
     }
 
     inline bool isDateTimeType() const
@@ -461,7 +464,7 @@ public:
     
     inline bool isBlob() const
     {
-        return (type == ft_myblob) || (type == ft_mytext);
+        return (type == ft_myblob) || (type == ft_mytext) || (type == ft_mygeometry) || (type == ft_myjson);
     }
 
 	inline void setPadCharSettings(bool set, bool trim)
@@ -509,7 +512,7 @@ public:
     void setDefaultValue(double v)
     { 
         assert(sizeof(double) == 8);
-        if (type == ft_myblob || type == ft_mytext)
+        if (isBlob())
         {
             memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
             return;
@@ -562,7 +565,7 @@ public:
 
     inline uint_td blobLenBytes() const
     {
-        if ((type == ft_myblob) || (type == ft_mytext))
+        if (isBlob())
             return len - 8;
         return 0;
     }
@@ -608,7 +611,7 @@ private:
             return (len < 256) ? len - 1 : len - 2;
         else if (type == ft_lvar)
             return len - 4;
-        else if ((type == ft_myblob) || (type == ft_mytext))
+        else if (isBlob())
         {
             switch (len - 8)
             {
@@ -631,7 +634,7 @@ private:
      */
     inline const uchar_td* keyData(const uchar_td* ptr) const
     {
-        if ((type == ft_myblob) || (type == ft_mytext))
+        if (isBlob())
             return blobDataPtr(ptr);
         int sizeByte = varLenBytes();
         return ptr + sizeByte;
@@ -639,7 +642,7 @@ private:
 
     inline uint_td keyDataLen(const uchar_td* ptr) const
     {
-        if ((type == ft_myblob) || (type == ft_mytext))
+        if (isBlob())
             return blobDataLen(ptr);
         return dataLen(ptr);
     }
@@ -648,8 +651,7 @@ private:
      */
     inline bool isKeyVarType() const
     {
-        return (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
-                (type == ft_myblob) || (type == ft_mytext));
+        return (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) || isBlob());
     }
 
     /* max key segment length. not include sizeBytes.
@@ -677,7 +679,7 @@ private:
             if (isNull)
             {
                 *to = 1;
-                return to + keylen - keyVarlen;
+                return to + 1 + keylen - keyVarlen;
             }else
                 ++to;
         }
@@ -723,7 +725,7 @@ private:
         if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
             (type == ft_lstring))
             return len < 256 ? 1 : 2;
-        else if ((type == ft_myblob) || (type == ft_mytext))
+        else if (isBlob())
             return len - 8;
         return 0;
     }
@@ -981,7 +983,7 @@ public:
 
     inline bool isMysqlNullMode() const { return m_mysqlNullMode; }
 
-    inline bool isLegacyTimeFormat(const fielddef& fd)
+    inline bool isLegacyTimeFormat(const fielddef& fd) const
     {
         if (fd.type == ft_mytime || fd.type == ft_mydatetime ||
                             fd.type == ft_mytimestamp)
@@ -1011,7 +1013,6 @@ private:
     bool isNeedNis(const keydef& key) const;
     bool isNULLFieldFirstKeySegField(const keydef& key) const;
     bool isNullValueZeroAll(const keydef& key) const;
-    void cacheFieldPos();
     void setDefaultCharsetIfZero(); // if charsetInex = 0  then set as mysql::charsetIndex(GetACP())
     void setMysqlNullMode(bool v);
     void calcReclordlen(bool force= false);
@@ -1025,6 +1026,11 @@ private:
     inline fielddef* setFielddefsPtr()
     {
         return fieldDefs = (fielddef*)((char*)this + sizeof(tabledef));
+    }
+
+    inline bool isMariaTimeFormat() const 
+    { 
+        return (m_useInMariadb && (m_srvMajorVer == 5 || m_srvMinorVer == 0));
     }
 
 public:
@@ -1062,8 +1068,9 @@ private:
     uchar_td m_inUse;
     bool m_mysqlNullMode ;    // use in mysqlnull mode
     bool m_useInMariadb  ;    // use in mariadb
+    uchar_td m_srvMajorVer;   // server major version;
     uchar_td m_srvMinorVer;   // server minor version;
-    uchar_td m_filler0[11];   // reserved
+    uchar_td m_filler0[10];   // reserved
 public:
     FLAGS flags; // file flags
     uchar_td primaryKeyNum; // Primary key number. -1 is no primary.
@@ -1121,6 +1128,33 @@ struct PACKAGE btrVersion
 
     const _TCHAR* moduleVersionShortString(_TCHAR* buf);
     const _TCHAR* moduleTypeString();
+
+    inline bool isSupportDateTimeTimeStamp() const
+    {
+        if (majorVersion >= 10) return true;
+        if ((majorVersion == 5) && (minorVersion > 5)) return true;
+        return false;
+    }
+
+    inline bool isSupportMultiTimeStamp() const
+    {
+        return isSupportDateTimeTimeStamp();
+    }
+
+    inline bool isMariaDB() const { return type == MYSQL_TYPE_MARIA; }
+
+    inline bool isMysql56TimeFormat() const 
+    {
+        if ((majorVersion == 10) && (minorVersion >= 1)) return true;
+        if ((majorVersion == 5) && (minorVersion >= 6)) return true;
+        return false;
+    }
+
+    inline bool isFullLegacyTimeFormat() const 
+    {
+        return !isMariaDB() && (minorVersion < 6);
+    }
+
 };
 
 struct btrVersions

@@ -1279,7 +1279,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             nw->resize(*req.datalen);
             if (!doOpenTable(req, nw->ptr(), true))
             {
-                req.result = ERROR_TD_INVALID_CLINETHOST;
+                if (req.result == 0)
+                    req.result = ERROR_TD_INVALID_CLINETHOST;
                 break;
             }
             {
@@ -1428,7 +1429,10 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_OPENTABLE:
             nw->resize(*req.datalen);
             if (!doOpenTable(req, nw->ptr(), false))
-                req.result = ERROR_TD_INVALID_CLINETHOST;
+            {
+                if (req.result == 0)
+                    req.result = ERROR_TD_INVALID_CLINETHOST;
+            }
             break;
         case TD_CLOSETABLE:
             m_tb = getTable(req.pbk->handle);
@@ -1533,6 +1537,42 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             else
                 nw->writeHeadar(0, STATUS_BUFFERTOOSMALL);
             return EXECUTE_RESULT_SUCCESS;
+        }
+        case TD_STORE_TEST:
+        {   
+            database* db = getDatabaseCid(req.cid);
+            m_tb = getTable(req.pbk->handle, SQLCOM_UPDATE);
+            bool ncc = (req.keyNum == -1);
+            m_tb->beginUpdate(req.keyNum);
+            if (m_tb->stat() == 0)
+            {
+                std::vector<std::string> ss;
+                std::string s((const char*)req.data);
+                split(ss, s, "\t");
+                if ( ss.size() >= 2)
+                {
+                    for (int i = 0; i < ss.size() ; i+=2)
+                        m_tb->setValue((short)atol(ss[i].c_str()), ss[i + 1], 0);
+                    m_tb->update(ncc);
+                    req.result = errorCodeSht(m_tb->stat());
+                    req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
+                    if (!m_tb->cursor())
+                        req.paramMask |= P_MASK_PB_ERASE_BM;
+                }else
+                    req.result = STATUS_INVALID_FIELDVALUE;
+            }else
+                req.result = errorCodeSht(m_tb->stat());
+           
+            break;
+        }
+        case TD_SET_TIMESTAMP_MODE:
+        {
+            database* db = getDatabaseCid(req.cid);
+            m_tb = getTable(req.pbk->handle);
+            bool always = req.keyNum == TIMESTAMP_ALWAYS;
+            m_tb->setTimestampAlways(always);
+            req.result = STATUS_SUCCESS;
+            break;
         }
         default:
             req.result = STATUS_NOSUPPORT_OP;

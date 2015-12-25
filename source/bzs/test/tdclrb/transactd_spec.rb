@@ -1890,7 +1890,7 @@ def isUtf16leSupport(db)
   vv = Transactd::BtrVersions.new()
   db.getBtrVersion(vv)
   server_ver = vv.version(1)
-  if ('M' == server_ver.type.chr)
+  if ('M' == server_ver.type.chr || 'A' == server_ver.type.chr)
     if (server_ver.majorVersion <= 4)
       return false
     elsif (server_ver.majorVersion == 5)

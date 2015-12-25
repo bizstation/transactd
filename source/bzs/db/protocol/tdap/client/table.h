@@ -183,7 +183,7 @@ public:
 
     inline bool valiableFormatType() const
     {
-        return (*m_tableDef)->optionFlags.bitA;
+        return (*m_tableDef)->optionFlags.bitA || (*m_tableDef)->m_nullbytes;
     }
 
     inline bool blobFieldUsed() const { return (*m_tableDef)->optionFlags.bitB; }

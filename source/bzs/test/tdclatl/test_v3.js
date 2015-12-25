@@ -77,6 +77,9 @@ var ft_autoIncUnsigned = 52;
 var ft_myfixedbinary = 53;
 var ft_enum         = 54;
 var ft_set          = 55;
+var ft_myyear       = 59;
+var ft_mygeometry   = 60;
+var ft_myjson       = 61;
 
 //file flag
 var table_varlen   = 0;
@@ -341,10 +344,7 @@ function createUserTable(db)
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "update_datetime";
 	fd.Type = ft_mytimestamp;
-	if (isLegacyTimeFormat(db))
-		fd.Len = 4;
-	else
-		fd.Len = 7;
+	fd.Len = 7;
 	fd.DefaultValue = DFV_TIMESTAMP_DEFAULT;
 	fd.TimeStampOnUpdate = true;
 	checkEqual(fd.TimeStampOnUpdate, true, "TimeStampOnUpdate 1-");

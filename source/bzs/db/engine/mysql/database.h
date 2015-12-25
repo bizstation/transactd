@@ -112,16 +112,16 @@ public:
 private:
     std::string m_dbname;
     mutable THD* m_thd;
+    table* m_inAutoTransaction;
+    tableList m_tables;
+    ulong m_privilege;
     int m_inTransaction;
     int m_inSnapshot;
     int m_stat;
     int m_usingExclusive;
-    table* m_inAutoTransaction;
     short m_trnType;
     short m_cid;
     enum_tx_isolation m_iso;
-    tableList m_tables;
-    ulong m_privilege;
    
     TABLE* doOpenTable(const std::string& name, short mode,
                                 const char* ownerName);
@@ -285,6 +285,7 @@ class table : private boost::noncopyable
     unsigned int m_delCount;
     unsigned int m_insCount;
     char m_keyNum;
+    unsigned char m_nullBytesCl;
     struct
     {
         bool m_nonNcc : 1;
@@ -299,7 +300,8 @@ class table : private boost::noncopyable
     struct
     {
         bool m_forceConsistentRead : 1;
-        bool m_mysqlNull;
+        bool m_mysqlNull : 1;
+        bool m_timestampAlways : 1;
     };
 
     table(TABLE* table, database& db, const std::string& name, short mode,
@@ -777,13 +779,15 @@ public:
 
     void restoreRecord() { restore_record(m_table, s->default_values);}
 
-    inline  unsigned int readCount() const { return m_readCount; }
+    inline unsigned int readCount() const { return m_readCount; }
 
-    inline  unsigned int updCount() const { return m_updCount; }
+    inline unsigned int updCount() const { return m_updCount; }
 
-    inline  unsigned int delCount() const { return m_delCount; }
+    inline unsigned int delCount() const { return m_delCount; }
 
-    inline  unsigned int insCount() const { return m_insCount; }
+    inline unsigned int insCount() const { return m_insCount; }
+
+    inline void setTimestampAlways(bool v) { m_timestampAlways = v;}
 };
 
 class fieldBitmap

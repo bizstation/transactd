@@ -225,6 +225,7 @@ public:
     void unlock(bookmark_td& bm);
     void unlock();
     char_td mode() const;
+    void setTimestampMode(int mode);
     static _TCHAR* getFileName(const _TCHAR* uri, _TCHAR* retbuf);
     static short_td tdapErr(HWND hWnd, short_td status,
                             const _TCHAR* tableName = NULL,
@@ -235,6 +236,7 @@ public:
     static bool existsFile(const _TCHAR* filename);
     /** @cond INTERNAL */
     static bool test(nstable* p);
+    void test_store(const char* values);
     /** @endcond*/
 };
 

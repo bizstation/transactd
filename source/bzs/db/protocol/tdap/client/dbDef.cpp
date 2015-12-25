@@ -189,6 +189,14 @@ bool dbdef::setDefaultImage(short tableIndex, const uchar_td* p, ushort_td size)
     tabledef* td = m_dimpl->tableDefs[tableIndex];
     if (td)
     {
+        if (td->defaultImage)
+        {
+            free(td->defaultImage);
+            td->defaultImage = NULL;
+        }
+        if (!p || size == 0)
+            return true;
+
         td->defaultImage = malloc(size);
         if (td->defaultImage)
         {
@@ -282,7 +290,8 @@ short dbdef::validateTableDef(short TableIndex)
             (type == ft_myvarbinary) || (type == ft_mywvarbinary) ||
             (type == ft_myfixedbinary))
             td->optionFlags.bitA = true;
-        if ((type == ft_myblob) || (type == ft_mytext))
+        if ((type == ft_myblob) || (type == ft_mytext) || (type == ft_mygeometry)
+            || (type == ft_myjson))
             td->optionFlags.bitB = true;
         if (type == ft_myfixedbinary)
             td->optionFlags.bitC = true;
@@ -349,7 +358,7 @@ short dbdef::validateTableDef(short TableIndex)
     }
     td->setDefaultCharsetIfZero();
     if (td->inUse() == 0)
-        td->calcReclordlen(0);
+        td->calcReclordlen();
     return m_stat;
 }
 
@@ -375,11 +384,12 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
         {
             m_pdata = td;
             m_buflen = td->size();
-            td->cacheFieldPos();
             td->formatVersion = FORMAT_VERSON_CURRENT;
             update();
             m_pdata = m_dimpl->bdf;
             m_buflen = m_dimpl->bdfLen;
+            if (m_stat == STATUS_SUCCESS)
+                setDefaultImage(TableIndex, NULL, 0);
         }
     }
 }
@@ -409,6 +419,7 @@ void dbdef::deleteTable(short TableIndex)
     }
     if (m_stat == STATUS_SUCCESS)
     {
+        setDefaultImage(TableIndex, NULL, 0);
         free(td);
         m_dimpl->tableDefs[TableIndex] = NULL;
     }
@@ -742,7 +753,7 @@ tabledef* dbdef::initReadAfter(short tableIndex, const tabledef* data, uint_td d
     td->autoIncExSpace = ((database*)nsdb())->defaultAutoIncSpace();
     td->setDefaultCharsetIfZero();
     //Fix:Bug of maxRecordLen is mistake value saved, recalculate maxRecordLen.
-    td->calcReclordlen(true);
+    td->calcReclordlen();
     if (td->fieldDefs[td->fieldCount -1].type == ft_myfixedbinary)
         td->optionFlags.bitC = true;
     td->id = tableIndex;
@@ -1058,7 +1069,13 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
     case ft_mytext:
         minlen = 9;
         maxlen = 12;
-        defaultlen = 1;
+        defaultlen = 9;
+        break;
+    case ft_mygeometry:
+    case ft_myjson:
+        minlen = 12;
+        maxlen = 12;
+        defaultlen = 12;
         break;
     case ft_mywchar:
     case ft_wstring:
@@ -1081,6 +1098,11 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
         minlen = 256;
         maxlen = 60000;
         defaultlen = 1024;
+        break;
+    case ft_myyear:
+        minlen = 1;
+        maxlen = 1;
+        defaultlen = 1;
         break;
     case ft_mydate:
         minlen = 3;
@@ -1231,43 +1253,12 @@ bool dbdef::validLen(uchar_td FieldType, uint_td FieldLen)
 
 bool dbdef::isPassKey(uchar_td FieldType)
 {
-    if (FieldType == ft_autoIncUnsigned)
-        return true;
-    if (FieldType == ft_wstring)
-        return true;
-    if (FieldType == ft_wzstring)
-        return true;
-    if (FieldType == ft_myvarchar)
-        return true;
-    if (FieldType == ft_myvarbinary)
-        return true;
-    if (FieldType == ft_mywvarchar)
-        return true;
-    if (FieldType == ft_mywvarbinary)
-        return true;
-    if (FieldType == ft_mychar)
-        return true;
-    if (FieldType == ft_mywchar)
-        return true;
-
-    if (FieldType == ft_mytext)
-        return true;
-    if (FieldType == ft_myblob)
-        return true;
-
-    if (FieldType == ft_mydate)
-        return true;
-    if (FieldType == ft_mytime)
-        return true;
-    if (FieldType == ft_mydatetime)
-        return true;
     if (FieldType == ft_myfixedbinary)
         return false;
-
     if (FieldType == ft_bit)
         return false;
-    if (FieldType > ft_numericsts)
-        return false;
+    //if (FieldType > ft_numericsts)
+    //    return false;
     if (FieldType == ft_note)
         return false;
     if (FieldType == ft_lvar)

@@ -77,7 +77,6 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
     case MYSQL_TYPE_SHORT:
     case MYSQL_TYPE_LONG:
     case MYSQL_TYPE_LONGLONG:
-    case MYSQL_TYPE_YEAR:
     case MYSQL_TYPE_INT24:
         if (flags & AUTO_INCREMENT_FLAG)
             return (flags & UNSIGNED_FLAG) ? ft_autoIncUnsigned : ft_autoinc;
@@ -91,8 +90,10 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
     case MYSQL_TYPE_FLOAT:
     case MYSQL_TYPE_DOUBLE:
         return ft_float;
+    case MYSQL_TYPE_YEAR:
+        return ft_myyear;
     case MYSQL_TYPE_DATE:
-	case MYSQL_TYPE_NEWDATE:
+    case MYSQL_TYPE_NEWDATE:
         return ft_mydate;
     case MYSQL_TYPE_TIME:
         return ft_mytime;
@@ -116,6 +117,12 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
         if (flags & BINARY_FLAG)
             return ft_myblob;
         return ft_mytext;
+    case MYSQL_TYPE_GEOMETRY:
+        return ft_mygeometry;
+#if ((MYSQL_VERSION_ID > 50700) && (MYSQL_VERSION_ID < 100000))
+    case MYSQL_TYPE_JSON:
+        return ft_myjson;
+#endif
 #if(MYSQL_VERSION_ID > 50600)
     case MYSQL_TYPE_TIME2:
         return ft_mytime;
@@ -205,7 +212,8 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
 
                 //for mariadb
                 #if defined(MARIADB_BASE_VERSION)
-                    fd.m_options |= FIELD_OPTION_MARIADB;
+                    if(td.isMariaTimeFormat())
+                        fd.m_options |= FIELD_OPTION_MARIADB;
                 #endif
             }
  
@@ -216,12 +224,9 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
             if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp) && (f->val_real() == 0))
             {// No constant value
                 fd.setDefaultValue(0.0f);
-				if (cp_has_insert_default_function(f)) 
-					fd.setDefaultValue(DFV_TIMESTAMP_DEFAULT);
+                if (cp_has_insert_default_function(f)) 
+                    fd.setDefaultValue(DFV_TIMESTAMP_DEFAULT);
             }
-            else if (fd.type == ft_mydatetime || fd.type == ft_mytimestamp || fd.type == ft_mytime ||
-                     fd.type == ft_mydate)
-                fd.setDefaultValue(f->val_real());
             else
             {
                 f->val_str(&str, &str);

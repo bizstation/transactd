@@ -49,6 +49,7 @@ struct dbimple
     deleteRecordFn m_deleteRecordFn;
     copyDataFn m_copyDataFn;
     uint_td openBuflen;
+    btrVersions vers;
     struct
     {
         bool isOpened : 1;
@@ -63,6 +64,7 @@ struct dbimple
           lockReadOnly(false), autoSchemaUseNullkey(false), noPreloadSchema(false)
     {
         rootDir[0] = 0x00;
+        memset(&vers, 0 , sizeof(btrVersions));
     }
 
     dbimple& operator=(const dbimple& rt)
@@ -79,9 +81,14 @@ struct dbimple
             m_copyDataFn = rt.m_copyDataFn;
             autoSchemaUseNullkey = rt.autoSchemaUseNullkey;
             noPreloadSchema = rt.noPreloadSchema;
+            vers = rt.vers;
         }
         return *this;
     }
+
+    const btrVersion& mysqlVer() const { return vers.versions[VER_IDX_DB_SERVER];}
+    const btrVersion& pluginVer() const { return vers.versions[VER_IDX_PLUGIN];}
+    
 };
 
 int dbimple::m_compatibleMode = database::CMP_MODE_MYSQL_NULL;
@@ -258,9 +265,12 @@ void database::dropTable(const _TCHAR* TableName)
     _tcscat(FullPath, PSEPARATOR);
     short index = m_impl->dbDef->tableNumByName(TableName);
     if (index == -1)
+    {
         m_stat = STATUS_TABLENAME_NOTFOUND;
-    else
-        _tcscat(FullPath, m_impl->dbDef->tableDefs(index)->fileName());
+        return;
+    }
+    tabledef* td = m_impl->dbDef->tableDefs(index);
+    _tcscat(FullPath, td->fileName());
 
     int i = 0;
     while (1)
@@ -271,7 +281,12 @@ void database::dropTable(const _TCHAR* TableName)
         if (++i == 10) 
             break;
         Sleep(50);
-    } 
+    }
+    if (m_stat == 0)
+    {
+        m_impl->dbDef->setDefaultImage(index, NULL, 0);
+        td->m_inUse = 0;
+    }
 }
 
 void database::setDir(const _TCHAR* directory)
@@ -417,8 +432,12 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
         }
     }
     if (m_impl->isOpened && onOpenAfter())
-        return true;
-
+    {
+        if (isUseTransactd())
+            getBtrVersion(&m_impl->vers);
+        if (m_stat == 0)
+            return true;
+    }
     m_impl->isOpened = false;
     m_impl->dbDef->close();
     m_impl->dbDef->release();
@@ -654,10 +673,7 @@ struct openTablePrams
                     || (td->isMysqlNullMode() == false && mysqlnull))
                     return STATUS_INVALID_NULLMODE;
             }else
-            {
-                td->cacheFieldPos();
                 td->setMysqlNullMode(mysqlnull);
-            }
         }
         return 0;
     }
@@ -693,19 +709,19 @@ table* database::doOpenTable(openTablePrams* pm, const _TCHAR* ownerName)
 
     if (pm->isTransactd)
     {
-        btrVersions vv;
-        getBtrVersion(&vv);
         if (m_stat) return NULL;
         if ((database::compatibleMode() & database::CMP_MODE_MYSQL_NULL) &&
-                vv.versions[VER_IDX_PLUGIN].majorVersion < 3)
+                m_impl->pluginVer().majorVersion < 3)
         {
             m_stat = STATUS_INVALID_NULLMODE;
             return NULL;
         }
         if (td && td->inUse() == 0)
         {
-            td->m_useInMariadb = (vv.versions[VER_IDX_DB_SERVER].type == MYSQL_TYPE_MARIA);
-            td->m_srvMinorVer = (uchar_td)vv.versions[VER_IDX_DB_SERVER].minorVersion;
+            td->m_useInMariadb = m_impl->mysqlVer().isMariaDB();
+            td->m_srvMajorVer = (uchar_td)m_impl->mysqlVer().majorVersion;
+            td->m_srvMinorVer = (uchar_td)m_impl->mysqlVer().minorVersion;
+            td->calcReclordlen();
         }
     }
 

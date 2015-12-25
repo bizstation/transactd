@@ -16,120 +16,12 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-//#define BOOST_TEST_MODULE
-
-#if defined(__BCPLUSPLUS__)
-#pragma warn -8012
-#pragma warn -8022
-#endif
-#include <boost/test/included/unit_test.hpp>
-#ifndef BOOST_TEST_MESSAGE
-#define BOOST_TEST_MESSAGE BOOST_MESSAGE
-#endif
-#if defined(__BCPLUSPLUS__)
-#pragma warn .8012
-#pragma warn .8022
-#endif
-
-#include <bzs/db/protocol/tdap/client/database.h>
-#include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/dbDef.h>
-#include <bzs/db/protocol/tdap/mysql/characterset.h>
-#include <bzs/db/protocol/tdap/tdapcapi.h>
-#include <bzs/db/protocol/tdap/client/stringConverter.h>
-#include <stdio.h>
-#include <bzs/db/protocol/tdap/client/filter.h>
-#include <bzs/example/queryData.h>
-#include <bzs/db/protocol/tdap/client/activeTable.h>
+#include "testbase.h"
 #include <bzs/db/protocol/tdap/client/pooledDatabaseManager.h>
 #include <boost/thread.hpp>
 
-
-using namespace bzs::db::protocol::tdap::client;
-using namespace bzs::db::protocol::tdap;
-using namespace std;
-
-#define TDAP
-#ifdef TDAP
-#define PROTOCOL _T("tdap")
-#else
-#define PROTOCOL _T("btrv")
-#endif
-static _TCHAR HOSTNAME[MAX_PATH] = { _T("127.0.0.1") };
-#define DBNAME _T("test")
-#define BDFNAME _T("test")
-// #define ISOLATION_REPEATABLE_READ
-#define ISOLATION_READ_COMMITTED
-
-static _TCHAR g_uri[MAX_PATH];
-static _TCHAR g_userName[MYSQL_USERNAME_MAX + 1]={0x00};
-static _TCHAR g_password[MAX_PATH]={0x00};
-
 static const short fdi_id = 0;
 static const short fdi_name = 1;
-
-static bool use_nullfield = false;
-static bool use_mysqlNullMode = false;
-
-
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]);
-
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
-{
-    for (int i = 1; i < argc; ++i)
-    {
-        if (strstr(argv[i], "--host=") == argv[i])
-        {
-#ifdef _UNICODE
-            MultiByteToWideChar(CP_ACP,
-                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
-                                argv[i] + 7, -1, HOSTNAME, MAX_PATH);
-#else
-            strcpy_s(HOSTNAME, MAX_PATH, argv[i] + 7);
-#endif
-        }
-        if (strstr(argv[i], "--user=") == argv[i])
-        {
-#ifdef _UNICODE
-            MultiByteToWideChar(CP_ACP,
-                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
-                                argv[i] + 7, -1, g_userName, MYSQL_USERNAME_MAX+1);
-#else
-            strcpy_s(g_userName, MYSQL_USERNAME_MAX+1, argv[i] + 7);
-#endif        
-        }
-        
-        if (strstr(argv[i], "--pwd=") == argv[i])
-        {
-#ifdef _UNICODE
-            MultiByteToWideChar(CP_ACP,
-                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
-                                argv[i] + 6, -1, g_password, MAX_PATH);
-#else
-            strcpy_s(g_password, MAX_PATH, argv[i] + 6);
-#endif        
-        }
-        if (strstr(argv[i], "--nullfield=") == argv[i])
-            use_nullfield = atol(argv[i] + 12) != 0;  
-        if (strstr(argv[i], "--mysqlnull=") == argv[i])
-            use_mysqlNullMode = atol(argv[i] + 12) != 0; 
-    }
-    printf("Transactd test ... \nMay look like progress is stopped, \n"
-            "but it is such as record lock test, please wait.\n");
-    if (!use_mysqlNullMode)
-        database::setCompatibleMode(database::CMP_MODE_OLD_NULL);
-    return 0;
-}
-
-
-
-const _TCHAR* makeUri(const _TCHAR* protocol, const _TCHAR* host,
-                      const _TCHAR* dbname, const _TCHAR* dbfile=_T(""))
-{
-    connectParams cp(protocol, host, dbname, dbfile, g_userName, g_password);
-    _tcscpy_s(g_uri, 260, cp.uri());
-    return g_uri;
-}
 
 class fixture
 {
@@ -423,7 +315,8 @@ void testVersion(database* db)
                 ((5 <= vv.versions[VER_IDX_DB_SERVER].minorVersion) ||
                  (1 >= vv.versions[VER_IDX_DB_SERVER].minorVersion)),
                 "mysql_server_Miner = " << vv.versions[VER_IDX_DB_SERVER].minorVersion);
-            BOOST_CHECK_MESSAGE((int)'M' == (int)vv.versions[VER_IDX_DB_SERVER].type,
+            int type = (int)vv.versions[VER_IDX_DB_SERVER].type;
+            BOOST_CHECK_MESSAGE(((int)'M' == type) || ((int)'A' == type),
                                 "mysql_server_Type = " << vv.versions[VER_IDX_DB_SERVER].type);
 
             BOOST_CHECK_MESSAGE(
@@ -752,7 +645,7 @@ void testPrepareServer(database* db)
     v = 50;
     tb->setFV((short)0, v);
     tb->seek();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seek");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seek stat = " << tb->stat());
     tb->findNext(false);
     findNextLoop(tb, v, 100);
 
@@ -2492,22 +2385,14 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType,
     // create table
     dbdef* def = db->dbDef();
     tabledef td;
-    memset(&td, 0, sizeof(td));
     td.setTableName(name);
     _TCHAR buf[267];
     _tcscpy_s(buf, 100, name);
     _tcscat_s(buf, 100, _T(".dat"));
     td.setFileName(buf);
     td.id = id;
-    td.keyCount = 0;
-    td.fieldCount = 0;
-    td.flags.all = 0;
 
-    td.primaryKeyNum = -1;
-    td.parentKeyNum = -1;
-    td.replicaKeyNum = -1;
-
-    td.pageSize = 2048;
+    td.primaryKeyNum = 0;
 
     td.charsetIndex = charset;
 
@@ -2579,7 +2464,7 @@ bool isUtf16leSupport(database* db)
 {
     btrVersions vv;
     db->getBtrVersion(&vv);
-    if ((int)'M' == (int)vv.versions[1].type)
+    if ((int)'M' == (int)vv.versions[1].type || (int)'A' == (int)vv.versions[1].type)
     {
         if (vv.versions[1].majorVersion > 5)
             return true;

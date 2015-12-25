@@ -72,7 +72,7 @@ int myDate::getValue(bool btrvValue)
     return i;
 }
 
-char* myDate::toStr(char* p, bool btrvValue)
+char* myDate::toString(char* p, bool btrvValue)
 {
     if (btrvValue)
         sprintf(p, "%04d/%02d/%02d", yy, mm, dd);
@@ -99,7 +99,7 @@ myDate& myDate::operator=(const char* p)
 }
 
 #ifdef _WIN32
-wchar_t* myDate::toStr(wchar_t* p, bool btrvValue)
+wchar_t* myDate::toString(wchar_t* p, bool btrvValue)
 {
     if (btrvValue)
         swprintf_s(p, 11, L"%04d/%02d/%02d", yy, mm, dd);
@@ -158,9 +158,9 @@ void myTime::setValue(__int64 v, bool btrvValue)
         sign = 0;
     }else
     {//DDÅ~24Å~3600 + HHÅ~3600 + MMÅ~60 + SS
-        hh = v / 3600;
-        nn = (v % 3600) / 60;
-        ss = v % 60;
+        hh = v / 10000;
+        nn = (v % 10000) / 100;
+        ss = v % 100;
     }
 }
 
@@ -193,12 +193,12 @@ __int64 myTime::getValue(bool btrvValue)
             p[5] = src[0];
         }
     }else
-        v =  (hh * 3600) + (nn * 60) + ss;
+        v =  (hh * 10000) + (nn * 100) + ss;
     sign = 0;
     return v;
 }
 
-char* myTime::toStr(char* p)
+char* myTime::toString(char* p)
 {
     if (m_dec)
         sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss,
@@ -234,7 +234,7 @@ myTime& myTime::operator=(const char* p)
 }
 
 #ifdef _WIN32
-wchar_t* myTime::toStr(wchar_t* p)
+wchar_t* myTime::toString(wchar_t* p)
 {
     if (m_dec)
         swprintf_s(p, 17, wtime_format_ms, (int)hh, (int)nn, (int)ss,
@@ -452,30 +452,29 @@ void myDateTime::setTime(const char* p)
 }
 
 
-char* myDateTime::date_str(char* p) const
+char* myDateTime::dateStr(char* p) const
 {
     sprintf(p, "%04d-%02d-%02d", (int)(yymm / 13),
                     (int)(yymm % 13), (int)dd);
     return p;
 }
 
-char* myDateTime::time_str(char* p, int decimals) const
+char* myDateTime::timeStr(char* p) const
 {
-    if (decimals)
+    if (m_dec)
         sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss,
-                    std::min<int>(decimals, m_dec), (unsigned int)ms);
+                    m_dec, (unsigned int)ms);
     else
         sprintf(p, time_format, (int)hh, (int)nn, (int)ss);
     return p;
 }
 
-char* myDateTime::dateTime_str(char* p, int decimals) const
+char* myDateTime::toString(char* p) const
 {
-    if (decimals)
+    if (m_dec)
     {
         sprintf(p, datetime_format_ms, (int)(yymm / 13), (int)(yymm % 13),
-                (int)dd, (int)hh, (int)nn, (int)ss,
-                            std::min<int>(decimals, m_dec), (unsigned int)ms);
+                (int)dd, (int)hh, (int)nn, (int)ss, m_dec, (unsigned int)ms);
     }
     else
         sprintf(p, datetime_format, (int)(yymm / 13), (int)(yymm % 13),
@@ -545,29 +544,29 @@ void myDateTime::setTime(const wchar_t* p)
     }
 }
 
-wchar_t* myDateTime::date_str(wchar_t* p) const
+wchar_t* myDateTime::dateStr(wchar_t* p) const
 {
     swprintf(p, L"%04d-%02d-%02d", (int)(yymm / 13),
                     (int)(yymm % 13), (int)dd);
     return p;
 }
 
-wchar_t* myDateTime::time_str(wchar_t* p, int decimals ) const
+wchar_t* myDateTime::timeStr(wchar_t* p) const
 {
-    if (decimals)
+    if (m_dec)
         swprintf(p, wtime_format_ms, (int)hh, (int)nn, (int)ss,
-                    std::min<int>(decimals, m_dec), (unsigned int)ms);
+                    m_dec, (unsigned int)ms);
     else
         swprintf(p, wtime_format, (int)hh, (int)nn, (int)ss);
     return p;
 }
 
-wchar_t* myDateTime::dateTime_str(wchar_t* p, int decimals) const
+wchar_t* myDateTime::toString(wchar_t* p) const
 {
-    if (decimals)
+    if (m_dec)
         swprintf(p, wdatetime_format_ms, (int)(yymm / 13),
                     (int)(yymm % 13), (int)dd, (int)hh, (int)nn, (int)ss,
-                    std::min<int>(decimals, m_dec), (unsigned int)ms);
+                    m_dec, (unsigned int)ms);
     else
         swprintf(p, wdatetime_format, (int)(yymm / 13),
                     (int)(yymm % 13), (int)dd, (int)hh, (int)nn, (int)ss);
@@ -600,7 +599,7 @@ void maDateTime::setValue(__int64 v)
         __int64 mm = v % 13; v /= 13;
         __int64 yy = v;
         yymm = yy*13 + mm;
-        sign = 0;
+        
     }else
         myDateTime::setValue(v);
 }
@@ -686,7 +685,7 @@ __int64 myTimeStamp::getValue()
     return datetime;
 }
 
-char* myTimeStamp::toStr(char* p)
+char* myTimeStamp::toString(char* p)
 {
     if (datetime)
     {
@@ -751,8 +750,43 @@ myTimeStamp& myTimeStamp::operator=(const char* p)
     return *this;
 }
 
+char* myTimeStamp::dateStr(char* p) const
+{
+    if (datetime)
+    {
+        time_t v = (time_t)datetime;
+        struct tm* st = localtime(&v);
+        sprintf(p, "%04d-%02d-%02d", st->tm_year + 1900, st->tm_mon + 1,st->tm_mday);
+    }else
+        sprintf(p, "%04d-%02d-%02d", 0, 0, 0);
+    return p;
+}
+
+char* myTimeStamp::timeStr(char* p) const
+{
+    if (datetime)
+    {
+        time_t v = (time_t)datetime;
+        struct tm* st = localtime(&v);
+
+        if (m_dec)
+            sprintf(p, time_format_ms, st->tm_hour, st->tm_min, st->tm_sec,
+                    m_dec, (unsigned int)ms);
+        else
+            sprintf(p, time_format, st->tm_hour, st->tm_min, st->tm_sec);
+    }else
+    {
+        if (m_dec)
+            sprintf(p, time_format_ms,  0, 0, 0, m_dec, 0);
+        else
+            sprintf(p, time_format_ms,  0, 0, 0);
+    }
+    return p;
+}
+
+
 #ifdef _WIN32
-wchar_t* myTimeStamp::toStr(wchar_t* p)
+wchar_t* myTimeStamp::toString(wchar_t* p)
 {
     if (datetime)
     {
@@ -821,6 +855,40 @@ myTimeStamp& myTimeStamp::operator=(const wchar_t* p)
     }
     datetime = (__int64)mktime(&st); 
     return *this;
+}
+
+wchar_t* myTimeStamp::dateStr(wchar_t* p) const
+{
+    if (datetime)
+    {
+        time_t v = (time_t)datetime;
+        struct tm* st = localtime(&v);
+        swprintf(p, L"%04d-%02d-%02d", st->tm_year + 1900, st->tm_mon + 1,st->tm_mday);
+    }else
+        swprintf(p, L"%04d-%02d-%02d", 0, 0, 0);
+    return p;
+}
+
+wchar_t* myTimeStamp::timeStr(wchar_t* p) const
+{
+    if (datetime)
+    {
+        time_t v = (time_t)datetime;
+        struct tm* st = localtime(&v);
+
+        if (m_dec)
+            swprintf(p, wtime_format_ms, st->tm_hour, st->tm_min, st->tm_sec,
+                    m_dec, (unsigned int)ms);
+        else
+            swprintf(p, wtime_format, st->tm_hour, st->tm_min, st->tm_sec);
+    }else
+    {
+        if (m_dec)
+            swprintf(p, wtime_format_ms,  0, 0, 0, m_dec, 0);
+        else
+            swprintf(p, wtime_format,  0, 0, 0);
+    }
+    return p;
 }
 #endif
 

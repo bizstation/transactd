@@ -180,4 +180,9 @@ int gettimeofday(struct timeval * tp, struct timezone * tzp);
 #define tls_setspecific(A, B) pthread_setspecific(A, B)
 #endif
 
+#if (defined(_MSC_VER) && (_MSC_VER < 1800))
+#define strtoull _strtoui64
+#define wcstoull _wcstoui64 
+#endif
+
 #endif // BZS_ENV_CROSSCOMPILE_H

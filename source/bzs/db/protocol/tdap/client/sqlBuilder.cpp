@@ -115,6 +115,8 @@ const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
             return "TINYINT UNSIGNED";
         if (size == 2)
             return "SMALLINT UNSIGNED";
+    case ft_myyear:
+        return "YEAR";
     case ft_mydate:
         return "DATE";
     case ft_mytime:
@@ -151,6 +153,10 @@ const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
         else if (size - 8 == 2)
             return "BLOB";
         return "TINYBLOB";
+    case ft_myjson:
+         return "JSON";
+    case ft_mygeometry:
+         return "GEOMETRY";
     case ft_float:
         if (size == 4)
             return "FLOAT";

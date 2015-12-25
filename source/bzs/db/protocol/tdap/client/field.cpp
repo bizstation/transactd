@@ -393,6 +393,7 @@ __int64 field::readValue64() const
     case ft_time:
     case ft_timestamp:
     case ft_currency:
+    case ft_myyear:
         switch (m_fd->len)
         {
         case 1:
@@ -471,6 +472,7 @@ void field::storeValue64(__int64 value)
     case ft_time:
     case ft_timestamp:
     case ft_currency:
+    case ft_myyear:
     {
         switch (m_fd->len)
         {
@@ -1075,8 +1077,10 @@ void field::setFVA(const char* data)
         storeValueDecimal(atof(data));
         return;
     CASE_INT
-    CASE_UINT
         value = _atoi64(data);
+        break;
+    CASE_UINT
+        value = (__int64)strtoull(data, NULL, 10);
         break;
     case ft_logical:
         value = logical_str_to_64(m_fds->logicalToString, data);
@@ -1089,6 +1093,10 @@ void field::setFVA(const char* data)
         break;
     case ft_datetime:
         value = atobtrs((const char*)data).i64;
+    case ft_myyear:
+        value = _atoi64(data);
+        if (value > 1900) value -= 1900;
+        break;
     case ft_mydate:
         value = str_to_64<myDate, char>(m_fd->decimals, true, data);
         break;
@@ -1110,7 +1118,7 @@ void field::setFVA(const char* data)
     case ft_currency:
         value = (__int64)(atof(data) * 10000);
         break;
-    default: // ft_lvar
+    default: // ft_lvar ft_geometry
         return;
     }
     storeValue64(value);
@@ -1145,8 +1153,10 @@ void field::setFVW(const wchar_t* data)
         storeValueDecimal(_wtof(data));
         return;
     CASE_INT
-    CASE_UINT
         value = _wtoi64(data);
+        break;
+    CASE_UINT
+        value = (__int64)wcstoull(data, NULL, 10);
         break;
     case ft_logical:
         value = logical_str_to_64(m_fds->logicalToString, data);
@@ -1159,6 +1169,10 @@ void field::setFVW(const wchar_t* data)
         break;
     case ft_datetime:
         value = atobtrs(data).i64;
+        break;
+    case ft_myyear:
+        value = _wtoi64(data);
+        if (value > 1900) value -= 1900;
         break;
     case ft_mydate:
         value = str_to_64<myDate, wchar_t>(m_fd->decimals, true, data);
@@ -1181,7 +1195,7 @@ void field::setFVW(const wchar_t* data)
     case ft_currency:
         value = (__int64)(_wtof(data) * 10000);
         break;
-    default: // ft_lvar
+    default: // ft_lvar ft_geometry
         return;
     }
     storeValue64(value);
@@ -1198,27 +1212,27 @@ void field::setFV(__int64 data)
     case ft_mytime:
     case ft_mydatetime:
     case ft_mytimestamp:
+    {
         //Convert big endian
-        if (!m_fd->isLegacyTimeFormat())
+        bool bigendian = !m_fd->isLegacyTimeFormat();
+        if (m_fd->type == ft_mydatetime)
         {
-            if (m_fd->type == ft_mydatetime)
-            {
-                if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                    data = getBigEndianValue<maDateTime>(m_fd->decimals, data);
-                else
-                    data = getBigEndianValue<myDateTime>(m_fd->decimals, data);
-            }
-            else if (m_fd->type == ft_mytimestamp)
-                data = getBigEndianValue<myTimeStamp>(m_fd->decimals, data);
-            else if(m_fd->type == ft_mytime)
-            {
-                if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                    data = getBigEndianValue<maTime>(m_fd->decimals, data);
-                else
-                    data = getBigEndianValue<myTime>(m_fd->decimals, data);
-            }
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                data = getStoreValue<maDateTime>(m_fd->decimals, bigendian, data);
+            else
+                data = getStoreValue<myDateTime>(m_fd->decimals, bigendian, data);
+        }
+        else if (m_fd->type == ft_mytimestamp)
+            data = getStoreValue<myTimeStamp>(m_fd->decimals, bigendian, data);
+        else if(m_fd->type == ft_mytime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                data = getStoreValue<maTime>(m_fd->decimals, bigendian, data);
+            else
+                data = getStoreValue<myTime>(m_fd->decimals, bigendian, data);
         }
         //fall through
+    }
     case ft_date:
     case ft_time:
     case ft_datetime:
@@ -1227,6 +1241,10 @@ void field::setFV(__int64 data)
     case ft_logical:
     CASE_INT
     CASE_UINT
+        storeValue64(data);
+        break;
+    case ft_myyear:
+        if (data > 1900) data -= 1900;
         storeValue64(data);
         break;
     CASE_FLOAT
@@ -1252,7 +1270,7 @@ void field::setFV(__int64 data)
         storeValueStrW(buf);
         break;
     }
-    default://lvar
+    default: //lvar ft_geometry
         break;
     }
 }
@@ -1271,29 +1289,29 @@ void field::setFV(double data)
     case ft_mydatetime:
     case ft_mytimestamp:
     case ft_currency:
+    {
         //Convert big endian
-        if (!m_fd->isLegacyTimeFormat())
+        bool bigendian = !m_fd->isLegacyTimeFormat();
+        if (m_fd->type == ft_mydatetime)
         {
-            if (m_fd->type == ft_mydatetime)
-            {
-                if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                    i64 = getBigEndianValue<maDateTime>(m_fd->decimals, i64);
-                else
-                    i64 = getBigEndianValue<myDateTime>(m_fd->decimals, i64);
-            }
-            else if (m_fd->type == ft_mytimestamp)
-                i64 = getBigEndianValue<myTimeStamp>(m_fd->decimals, i64);
-            else if(m_fd->type == ft_mytime)
-            {
-                if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                    i64 = getBigEndianValue<maTime>(m_fd->decimals, i64);
-                else
-                    i64 = getBigEndianValue<myTime>(m_fd->decimals, i64);
-            }
-            else if(m_fd->type == ft_currency)
-                i64 = (__int64)(data * 10000 + 0.5);
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                i64 = getStoreValue<maDateTime>(m_fd->decimals, bigendian, i64);
+            else
+                i64 = getStoreValue<myDateTime>(m_fd->decimals, bigendian, i64);
         }
+        else if (m_fd->type == ft_mytimestamp)
+            i64 = getStoreValue<myTimeStamp>(m_fd->decimals, bigendian, i64);
+        else if(m_fd->type == ft_mytime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                i64 = getStoreValue<maTime>(m_fd->decimals, bigendian, i64);
+            else
+                i64 = getStoreValue<myTime>(m_fd->decimals, bigendian, i64);
+        }
+        else if(m_fd->type == ft_currency)
+            i64 = (__int64)(data * 10000 + 0.5);
         //fall through
+    }
     case ft_date:
     case ft_time:
     case ft_datetime: 
@@ -1301,6 +1319,10 @@ void field::setFV(double data)
     case ft_logical:
     CASE_INT
     CASE_UINT
+        storeValue64(i64);
+        break;
+    case ft_myyear:
+        if (i64 > 1900) i64 -= 1900;
         storeValue64(i64);
         break;
     CASE_NUMERIC
@@ -1323,7 +1345,7 @@ void field::setFV(double data)
         storeValueStrW(buf);
         break;
     }
-    default:// lvar
+    default:// lvar ft_geometry
         break;
     }
 }
@@ -1357,6 +1379,8 @@ void field::setFV(const void* data, uint_td size)
         memcpy(p + sizeByte, data, size);
         break;
     }
+    case ft_myjson:
+    case ft_mygeometry:
     case ft_myblob:
     case ft_mytext:
     {
@@ -1423,6 +1447,13 @@ const char* field::getFVAstr() const
     CASE_UINT
         sprintf_s(p, 50, "%llu", (unsigned __int64)readValue64());
         return p;
+    case ft_myyear:
+    {
+        __int64 v = readValue64();
+        if (v) v += 1900;
+        _i64toa_s(v , p, 50, 10);
+        break;
+    }
     case ft_logical:
     {
         int v = (int)readValue64();
@@ -1454,6 +1485,9 @@ const char* field::getFVAstr() const
             return date_time_str<myDateTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
     case ft_mytimestamp:
         return date_time_str<myTimeStamp, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+    case ft_mygeometry:
+    case ft_myjson:
+        return "";
     }
 
     double v = 0;
@@ -1499,6 +1533,13 @@ const wchar_t* field::getFVWstr() const
     CASE_UINT
         swprintf_s(p, 50, L"%llu", (unsigned __int64)readValue64());
         return p;
+    case ft_myyear:
+    {
+         __int64 v = readValue64();
+        if (v) v += 1900;
+        _i64tow_s(v, p, 50, 10);
+        return p;
+    }
     case ft_logical:
     {
         int v = (int)readValue64();
@@ -1530,6 +1571,9 @@ const wchar_t* field::getFVWstr() const
             return date_time_str<myDateTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
     case ft_mytimestamp:
         return date_time_str<myTimeStamp, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p);
+    case ft_mygeometry:
+    case ft_myjson:
+        return L"";
     }
 
     double v = 0;
@@ -1579,35 +1623,40 @@ double field::getFVdbl() const
     case ft_mytimestamp:
     {
         __int64 v = readValue64();
-        if (!m_fd->isLegacyTimeFormat())
+        bool bigendian = !m_fd->isLegacyTimeFormat();
+        if (m_fd->type ==  ft_mytime)
         {
-            if (m_fd->type ==  ft_mytime)
-            {
-                if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                    return (double)getLittleEndianValue<maTime>(m_fd->decimals, v);
-                else
-                    return (double)getLittleEndianValue<myTime>(m_fd->decimals, v);
-            }
-            else if (m_fd->type ==  ft_mydatetime)
-            {
-                if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                    return (double)getLittleEndianValue<maDateTime>(m_fd->decimals, v);
-                else
-                    return (double)getLittleEndianValue<myDateTime>(m_fd->decimals, v);
-            }
-            else if (m_fd->type ==  ft_mytimestamp)
-                return (double)getLittleEndianValue<myTimeStamp>(m_fd->decimals, v);
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return (double)getInternalValue<maTime>(m_fd->decimals, bigendian, v);
+            else
+                return (double)getInternalValue<myTime>(m_fd->decimals, bigendian, v);
         }
-        return (double)v;
+        else if (m_fd->type ==  ft_mydatetime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return (double)getInternalValue<maDateTime>(m_fd->decimals, bigendian, v);
+            else
+                return (double)getInternalValue<myDateTime>(m_fd->decimals, bigendian, v);
+        }
+        else if (m_fd->type ==  ft_mytimestamp)
+            return (double)getInternalValue<myTimeStamp>(m_fd->decimals, bigendian, v);
     }
     CASE_UINT
         return (double)(unsigned __int64)readValue64();
+    case ft_myyear:
+    {
+         __int64 v = readValue64();
+        if (v) v += 1900;
+        return (double)(v);
+    }
     case ft_currency:
         return ((double)readValue64() / (double)10000);
     CASE_TEXTA
         return atof(readValueStrA());
     CASE_TEXTW
         return _wtof(readValueStrW());
+    default: //ft_geometry:
+         break;
     }
     return ret;
 }
@@ -1625,30 +1674,34 @@ __int64 field::getFV64() const
     case ft_datetime:
     case ft_logical:
         return readValue64();
+    case ft_myyear:
+    {
+         __int64 v = readValue64();
+        if (v) v += 1900;
+        return v;
+    }
     case ft_mytime:
     case ft_mydatetime:
     case ft_mytimestamp:
     {
         __int64 v = readValue64();
-        if (!m_fd->isLegacyTimeFormat())
+        bool bigendian = !m_fd->isLegacyTimeFormat();
+        if (m_fd->type ==  ft_mytime)
         {
-            switch (m_fd->type)
-            {
-            case ft_mytime:
-                if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                    return getLittleEndianValue<maTime>(m_fd->decimals, v);
-                else
-                    return getLittleEndianValue<myTime>(m_fd->decimals, v);
-            case ft_mydatetime:
-                if (m_fd->m_options & FIELD_OPTION_MARIADB)
-                    return getLittleEndianValue<maDateTime>(m_fd->decimals, v);
-                else
-                    return getLittleEndianValue<myDateTime>(m_fd->decimals, v);
-            case ft_mytimestamp:
-                return getLittleEndianValue<myTimeStamp>(m_fd->decimals, v);
-            }
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return getInternalValue<maTime>(m_fd->decimals, bigendian, v);
+            else
+                return getInternalValue<myTime>(m_fd->decimals, bigendian, v);
         }
-        return v;
+        else if (m_fd->type ==  ft_mydatetime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return getInternalValue<maDateTime>(m_fd->decimals, bigendian, v);
+            else
+                return getInternalValue<myDateTime>(m_fd->decimals, bigendian, v);
+        }
+        else if (m_fd->type ==  ft_mytimestamp)
+            return getInternalValue<myTimeStamp>(m_fd->decimals, bigendian, v);
     }
     CASE_FLOAT
     case ft_timestamp:
@@ -1661,6 +1714,8 @@ __int64 field::getFV64() const
         return _atoi64(readValueStrA());
     CASE_TEXTW
         return _wtoi64(readValueStrW());
+    default: //ft_geometry:
+         break;
     }
     return 0;
 }
@@ -1686,6 +1741,8 @@ void* field::getFVbin(uint_td& size) const
         memcpy(&size, p, sizeByte);
         return (void*)(p + sizeByte);
     }
+    case ft_myjson:
+    case ft_mygeometry:
     case ft_myblob:
     case ft_mytext:
     {
@@ -1825,7 +1882,7 @@ inline int compWVarString(const field& l, const field& r, char logType)
 inline int compBlob(const field& l, const field& r, char logType)
 {
     return compareBlobType((const char*)l.ptr(), (const char*)r.ptr(),
-                           l.type() == ft_myblob, logType, l.blobLenBytes());
+                           l.type() != ft_mytext, logType, l.blobLenBytes());
 }
 
 compFieldFunc field::getCompFunc(char logType) const
@@ -1886,6 +1943,7 @@ compFieldFunc field::getCompFunc(char logType) const
     case ft_time:
     case ft_timestamp:
     case ft_mydate:
+    case ft_myyear:
     {
         if (logType & eBitAnd)
         {
@@ -1967,6 +2025,8 @@ compFieldFunc field::getCompFunc(char logType) const
         return &compWVarString<unsigned short>;
     case ft_mytext:
     case ft_myblob:
+    case ft_myjson:
+    case ft_mygeometry:
         return &compBlob;
     }
     return NULL;

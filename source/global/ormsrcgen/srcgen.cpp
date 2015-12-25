@@ -144,7 +144,7 @@ int cppSrcGen::typeNum(int type)
         t = 1;
     else if (t == ft_logical)
         t = 1;
-    else if (t == ft_uinteger)
+    else if (t == ft_uinteger || t == ft_myyear)
         t = 1;
     else if (t == ft_currency)
         t = 1;
@@ -161,7 +161,7 @@ int cppSrcGen::typeNum(int type)
         t = 4;
     else if ((t == ft_datetime) || (t == ft_mydatetime))
         t = 30;
-    else if ((t == ft_lvar) || (t == ft_blob) || (t == ft_myblob))
+    else if ((t == ft_lvar) || (t == ft_blob) || (t == ft_myblob)|| (t == ft_mygeometry) || (t == ft_myjson))
         t = ft_lvar;
     return t;
 }
@@ -225,10 +225,8 @@ const char* cppSrcGen::typeString(int type, int size)
             return "double";
         THROW_BZS_ERROR_WITH_MSG(_T("Invalid float size"));
     case ft_date:
-    case ft_mydate:
         return "td::btrDate";
     case ft_time:
-    case ft_mytime:
         return "td::btrTime";
     case ft_datetime:
     case ft_timestamp:
@@ -247,6 +245,9 @@ const char* cppSrcGen::typeString(int type, int size)
         return "_tstring";
     case ft_uinteger:
     case ft_autoIncUnsigned:
+    case ft_bit:
+    case ft_set:
+    case ft_enum:
         if (size == 1)
             return "unsigned char";
         else if (size == 2)
@@ -256,14 +257,24 @@ const char* cppSrcGen::typeString(int type, int size)
         else if (size == 8)
             return "unsigned __int64";
         THROW_BZS_ERROR_WITH_MSG(_T("Invalid uint size"));
+    case ft_myyear:
+        return "unsigned short";
     case ft_lvar:
     case ft_myblob:
+    case ft_mygeometry:
+    case ft_myjson:
         return "void*";
+    case ft_mydate:
+        return "td::myDate";
+    case ft_mytime:
+        return "td::myTime";
+    case ft_mydatetime:
+        return "td::myDateTime";
+    case ft_mytimestamp:
+        return "td::myTimeStamp";
     case ft_numericsts:
     case ft_numericsa:
     case ft_decimal:
-    case ft_mydatetime:
-    case ft_mytimestamp:
         THROW_BZS_ERROR_WITH_MSG(_T("non support type"));
     default:
         THROW_BZS_ERROR_WITH_MSG(_T("invalid field type"));
@@ -297,9 +308,9 @@ string cppSrcGen::makeDataMembaInitString()
                     retVal += LF "\t\t";
             }
         }
-        if ((t == ft_time) || (t == ft_date))
+        if ((t == ft_time) || (t == ft_date) || (t == ft_mydate))
             retVal2 = retVal2 + "\t\t" + name + ".i = 0;" LF;
-        else if (t == ft_datetime)
+        else if ((t == ft_datetime) || (t == ft_mytime) || (t == ft_mydatetime)|| (t == ft_mytimestamp))
             retVal2 = retVal2 + "\t\t" + name + ".i64 = 0;" LF;
     }
     removeEndchar(retVal);
@@ -507,9 +518,9 @@ string cppSrcGen::makeMapWriteStringLine(int index)
     int t = typeNum(fd->type);
 
     string s = "\tfds[m_fdi." + name + "] = m." + membaNameGet(name) + "()";
-    if ((t == ft_time) || (t == ft_date))
+    if ((t == ft_time) || (t == ft_date) || (t == ft_mydate))
         s += string(".i");
-    else if (t == ft_datetime)
+    else if ((t == ft_datetime) || (t == ft_mytime) || (t == ft_mydatetime)|| (t == ft_mytimestamp))
         s += string(".i64");
     else if (t == ft_lvar)
     {
@@ -556,9 +567,9 @@ string cppSrcGen::makeMapKeyCompString()
                 tostr = "";
                 tostrend = "";
             }
-            if ((t == ft_time) || (t == ft_date))
+            if ((t == ft_time) || (t == ft_date) || (t == ft_mydate))
                 s += string(".i");
-            else if (t == ft_datetime)
+            else if ((t == ft_datetime) || (t == ft_mytime) || (t == ft_mydatetime)|| (t == ft_mytimestamp))
                 s += string(".i64");
             string tmp;
             size_t size = 0;

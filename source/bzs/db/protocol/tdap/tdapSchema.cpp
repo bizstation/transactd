@@ -147,7 +147,7 @@ const wchar_t* fielddef::defaultValue_str() const
         bool tsu = isTimeStampOnUpdate();
         *(const_cast<char*>(m_defValue) + 7) = 0x00;
         __int64 i64 = *((__int64*)m_defValue);
-        myDateTime dt(7, true);
+        myDateTime dt(4, true);
         dt.setValue(i64);
         p[0] = 0x00;
         switch(type)
@@ -155,17 +155,17 @@ const wchar_t* fielddef::defaultValue_str() const
         case ft_date:
         case ft_mydate:
             if (dt.internalValue()) 
-                dt.date_str(p);
+                dt.dateStr(p);
             break;
         case ft_time:
         case ft_mytime:
             if (dt.internalValue())
-                dt.time_str(p, decimals);
+                dt.timeStr(p);
             break;
         case ft_datetime:
         case ft_timestamp:
             if (dt.internalValue())
-                dt.dateTime_str(p, decimals);
+                dt.toString(p);
             break;
         case ft_mydatetime:
         case ft_mytimestamp:
@@ -173,7 +173,7 @@ const wchar_t* fielddef::defaultValue_str() const
             if (i64 == DFV_TIMESTAMP_DEFAULT)
                 p = DFV_TIMESTAMP_DEFAULT_WSTR;
             else if (dt.internalValue()) 
-                dt.dateTime_str(p, decimals);
+                dt.toString(p);
             break;
         }
         default:
@@ -203,7 +203,7 @@ void fielddef::setChainChar(const wchar_t* s)
 
 void fielddef::setDefaultValue(const wchar_t* s)
 {
-    if (type == ft_myblob || type == ft_mytext)
+    if (isBlob())
     {
         memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
         return;
@@ -345,7 +345,7 @@ const char* fielddef::defaultValue_strA() const
         bool tsu = isTimeStampOnUpdate();
         *(const_cast<char*>(m_defValue) + 7) = 0x00;
         __int64 i64 = *((__int64*)m_defValue);
-        myDateTime dt(7, true);
+        myDateTime dt(4, true);
         dt.setValue(i64); // i64 not equal dt.internalValue();
         p[0] = 0x00;
 
@@ -354,17 +354,17 @@ const char* fielddef::defaultValue_strA() const
         case ft_date:
         case ft_mydate:
              if (dt.internalValue())
-                dt.date_str(p);
+                dt.dateStr(p);
              break;
         case ft_time:
         case ft_mytime:
             if (dt.internalValue())
-                dt.time_str(p, decimals);
+                dt.timeStr(p);
             break;
         case ft_datetime:
         case ft_timestamp:
             if (dt.internalValue())
-                dt.dateTime_str(p, decimals);
+                dt.toString(p);
             break;
         case ft_mydatetime:
         case ft_mytimestamp:
@@ -372,7 +372,7 @@ const char* fielddef::defaultValue_strA() const
             if (i64 == DFV_TIMESTAMP_DEFAULT)
                 p = DFV_TIMESTAMP_DEFAULT_ASTR;
             else if (dt.internalValue()) 
-                dt.toStr(p);
+                dt.toString(p);
             break;
         }
         default:
@@ -409,7 +409,7 @@ void fielddef::setChainChar(const char* s)
 
 void fielddef::setDefaultValue(const char* s)
 {
-    if (type == ft_myblob || type == ft_mytext)
+    if (isBlob())
     {
         memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
         return;
@@ -871,7 +871,6 @@ void tabledef::calcReclordlen(bool force)
         for (int i = 0; i < fieldCount; i++)
         {
             fielddef& fd = fieldDefs[i];
-            m_maxRecordLen += fd.len;
             fd.m_nullbytes = 0;
             fd.m_nullbit = 0;
             if (fd.isNullable())
@@ -893,7 +892,7 @@ void tabledef::calcReclordlen(bool force)
                 fd.decimals = (fd.len - 4) * 2;
             else if (fd.type == ft_mydatetime)
             {
-                if (m_useInMariadb)
+                if (isMariaTimeFormat())
                     fd.m_options |= FIELD_OPTION_MARIADB;
                 else
                     fd.m_options &= ~FIELD_OPTION_MARIADB;
@@ -903,16 +902,25 @@ void tabledef::calcReclordlen(bool force)
             }
             else if (fd.type == ft_mytime && fd.decimals == 0)
                 fd.decimals = (fd.len - 3) * 2;
-            else if (defaultValue && (fd.type == ft_myblob || fd.type == ft_mytext))
+            else if (defaultValue && fd.isBlob())
                 fd.setDefaultValue(0.0f);
 
             if (isLegacyTimeFormat(fd))
             {
                 fd.m_options |= FIELD_OPTION_REGACY_TIME;
                 fd.decimals = 0;
+                if (fd.type == ft_mydatetime)
+                    fd.len = 8;
+                else if (fd.type == ft_mytime)
+                    fd.len = 3;
+                else if (fd.type == ft_mytimestamp)
+                    fd.len = 4;
             }
             else
                 fd.m_options &= ~FIELD_OPTION_REGACY_TIME;
+            fd.pos = m_maxRecordLen;
+            fd.fixCharnum_bug();
+            m_maxRecordLen += fd.len;
         }
 
         m_nullfields += nisFieldNum;
@@ -928,7 +936,7 @@ void tabledef::calcReclordlen(bool force)
         if ((fixedRecordLen == 0) || (flags.bit0 == false))
             fixedRecordLen = m_maxRecordLen;
     }else
-        assert(0);
+        ;//assert(0);
 }
 
 uint_td tabledef::unPack(char* ptr, size_t size) const
@@ -1045,18 +1053,6 @@ uint_td tabledef::pack(char* ptr, size_t size) const
         
     }
     return (uint_td)(pos - ptr);
-}
-
-void tabledef::cacheFieldPos()
-{
-    ushort_td pos = 0;
-    for (short i = 0; i < fieldCount; i++)
-    {
-        fielddef& fd = fieldDefs[i];
-        fd.pos = pos;
-        fd.fixCharnum_bug();
-        pos += fd.len;
-    }
 }
 
 int tabledef::size() const
@@ -1228,6 +1224,8 @@ const _TCHAR* getTypeName(short type)
         return _T("myChar");
     case ft_mywchar:
         return _T("myWChar");
+    case ft_myyear:
+        return _T("myYear");
     case ft_mydate:
         return _T("myDate");
     case ft_mytime:
@@ -1240,6 +1238,10 @@ const _TCHAR* getTypeName(short type)
         return _T("myText");
     case ft_myblob:
         return _T("myBlob");
+    case ft_mygeometry:
+        return _T("myGeometry");
+    case ft_myjson:
+        return _T("myJson");
     case ft_autoIncUnsigned:
         return _T("AutoIncUnsigned");
     case ft_myfixedbinary:
@@ -1270,11 +1272,14 @@ int getTypeAlign(short type)
     case ft_mywchar:
     case ft_mywvarchar:
     case ft_mywvarbinary:
+    case ft_myyear:
     case ft_mydate:
     case ft_mytime:
     case ft_mydatetime:
     case ft_mytimestamp:
     case ft_myblob:
+    case ft_mygeometry:
+    case ft_myjson:
     case ft_myfixedbinary:
     case ft_mytext:
         return BT_AL_LEFT;

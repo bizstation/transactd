@@ -51,10 +51,10 @@ struct PACKAGE myDate
     inline myDate(int /*dec*/, bool /*bigendian*/) {};
     void setValue(int v, bool btrvValue = false);
     int getValue(bool btrvValue = false);
-    char* toStr(char* p, bool btrvValue = false);
+    char* toString(char* p, bool btrvValue = false);
     myDate& operator=(const char* p);
 #ifdef _WIN32
-    wchar_t* toStr(wchar_t* p, bool btrvValue = false);
+    wchar_t* toString(wchar_t* p, bool btrvValue = false);
     myDate& operator=(const wchar_t* p);
 #endif
     __int64 internalValue() const { return i; }
@@ -87,10 +87,10 @@ public:
     inline myTime(int dec, bool bigendian) : m_dec(dec), m_bigendian(bigendian){};
     virtual void setValue(__int64 v, bool btrvValue = false);
     virtual __int64 getValue(bool btrvValue = false);
-    char* toStr(char* p);
+    char* toString(char* p);
     myTime& operator=(const char* p);
 #ifdef _WIN32
-    wchar_t* toStr(wchar_t* p);
+    wchar_t* toString(wchar_t* p);
     myTime& operator=(const wchar_t* p);
 #endif
     __int64 internalValue() const { return i64; }
@@ -133,21 +133,18 @@ public:
     inline myDateTime(int dec, bool bigendian) : m_dec(dec), m_bigendian(bigendian){};
     virtual void setValue(__int64 v);
     virtual __int64 getValue();
-    inline char* toStr(char* p) const{ return dateTime_str(p, m_dec); }
+    char* toString(char* p) const;
     myDateTime& operator=(const char* p);
-    char* date_str(char* p) const;
-    char* time_str(char* p, int decimals = 0) const;
+    char* dateStr(char* p) const;
+    char* timeStr(char* p) const;
     void setTime(const char* p);
 
-    char* dateTime_str(char* p, int decimals = 0) const;
 #ifdef _WIN32
-    inline wchar_t* toStr(wchar_t* p) const { return dateTime_str(p, m_dec); }
+    wchar_t* toString(wchar_t* p) const ;
     myDateTime& operator=(const wchar_t* p) ;
-    wchar_t* date_str(wchar_t* p) const;
-    wchar_t* time_str(wchar_t*, int decimals = 0) const;
+    wchar_t* dateStr(wchar_t* p) const;
+    wchar_t* timeStr(wchar_t*) const;
     void setTime(const wchar_t* p);
-
-    wchar_t* dateTime_str(wchar_t*, int decimals = 0) const;
 #endif
     __int64 internalValue() const { return i64; }
     void setInternalValue(__int64 v) { i64 = v; }
@@ -185,12 +182,16 @@ public:
     inline myTimeStamp(int dec, bool bigendian) : m_dec(dec), m_bigendian(bigendian){};
     void setValue(__int64 v);
     __int64 getValue();
-    char* toStr(char* p);
+    char* toString(char* p);
     myTimeStamp& operator=(const char* p);
+    char* dateStr(char* p) const;
+    char* timeStr(char* p) const;
 
 #ifdef _WIN32
-    wchar_t* toStr(wchar_t* p);
+    wchar_t* toString(wchar_t* p);
     myTimeStamp& operator=(const wchar_t* p);
+    wchar_t* dateStr(wchar_t* p) const;
+    wchar_t* timeStr(wchar_t* p) const;
 #endif
     __int64 internalValue() const { return i64; }
     void setInternalValue(__int64 v) { i64 = v; }
@@ -203,40 +204,40 @@ inline int btrdateToMydate(int btrd)
     return myd.getValue(true);
 }
 
-/* Do not work at maridab
+// Do not work at maridab
 inline __int64 btrtimeToMytime(int btrt, bool bigendian)
 {
     myTime myt(4, bigendian);
     myt.setValue(btrt, true);
     return myt.getValue(true);
-}*/
+}
 
 inline int mydateToBtrdate(int mydate)
 {
     myDate myd;
-    myd.setValue(mydate);
+    myd.setValue(mydate, false);
     return myd.getValue(true);
 }
 
 inline int mytimeToBtrtime(__int64 mytime, bool bigendian, int dec)
 {
     myTime myt(dec, bigendian);
-    myt.setValue(mytime);
+    myt.setValue(mytime, false);
     return (int)myt.getValue(true);
 }
 
 template <class T>
-__int64 getLittleEndianValue(int dec, __int64 value)
+__int64 getInternalValue(int dec, bool bigendian, __int64 value)
 {
-    T t(dec, true);
+    T t(dec, bigendian);
     t.setValue(value);
     return t.internalValue();
 }
 
 template <class T>
-__int64 getBigEndianValue(int dec, __int64 value)
+__int64 getStoreValue(int dec, bool bigendian, __int64 value)
 {
-    T t(dec, true);
+    T t(dec, bigendian);
     t.setInternalValue(value);
     return t.getValue();
 }
@@ -247,7 +248,7 @@ const CHAR* date_time_str(int dec, bool bigendian, __int64 value, CHAR* buf)
 {
     T t(dec, bigendian);
     t.setValue(value);
-    return t.toStr(buf);
+    return t.toString(buf);
 }
 
 template <class T, class T2>

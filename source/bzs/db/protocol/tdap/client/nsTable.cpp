@@ -1023,6 +1023,25 @@ bool nstable::test(nstable* p)
     return false;
 }
 
+void nstable::test_store(const char* values)
+{
+    void* svm_pdata = m_pdata;
+    m_stat = STATUS_SUCCESS;
+    m_keylen = m_keybuflen;
+    m_datalen = (uint_td)strlen(values) + 1;
+    m_pdata = (void*)values;
+    tdap(TD_STORE_TEST);
+    m_pdata = svm_pdata;
+}
+
+void nstable::setTimestampMode(int mode)
+{
+    char_td keynum = m_keynum;
+    m_keynum = (char_td)mode;
+    tdap(TD_SET_TIMESTAMP_MODE);
+    m_keynum = keynum;
+}
+
 } // namespace client
 } // namespace tdap
 } // namespace protocol

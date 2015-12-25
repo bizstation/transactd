@@ -379,6 +379,7 @@ public:
         case ft_date:
         case ft_time:
         case ft_timestamp:
+        case ft_year:
         case ft_mydate:
         case ft_mytime_num_cmp:
         case ft_mydatetime_num_cmp:
@@ -454,7 +455,9 @@ public:
                 l, r, type == ft_mywvarbinary, logType);
         case ft_mytext:
         case ft_myblob:
-            return compareBlobType(l, r, type == ft_myblob, logType, sizeByte);
+        case ft_mygeometry:
+        case ft_myjson:
+            return compareBlobType(l, r, type != ft_mytext, logType, sizeByte);
         }
         return 0;
     };
@@ -527,7 +530,7 @@ public:
 
     int compBlob(const char* l, const char* r, int sizeByte) const
     {
-        return compareBlobType(l, r, type == ft_myblob, logType, sizeByte);
+        return compareBlobType(l, r, type != ft_mytext, logType, sizeByte);
     }
 
     compFunc getCompFunc(int sizeByte, char opr) const
@@ -586,6 +589,7 @@ public:
         case ft_date:
         case ft_time:
         case ft_timestamp:
+        case ft_myyear:
         case ft_mydate:
         case ft_mytime_num_cmp:
         case ft_mydatetime_num_cmp:
@@ -656,6 +660,8 @@ public:
             return &logicalField::compWVarString<unsigned short>;
         case ft_mytext:
         case ft_myblob:
+        case ft_mygeometry:
+        case ft_myjson:
             return &logicalField::compBlob;
         }
         return NULL;

@@ -165,15 +165,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('update_datetime');
         $fd->type = bz\transactd::ft_mytimestamp;
-        if ($this->isLegacyTimeFormat($db))
-            $fd->len = 4;
-        else
-            $fd->len = 7;
+        $fd->len = 7;
         $fd->setDefaultValue(bz\transactd::DFV_TIMESTAMP_DEFAULT);
         $fd->setTimeStampOnUpdate(true);
         $this->assertEquals($fd->isTimeStampOnUpdate(), true);
-        
-        
 
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('create_datetime');

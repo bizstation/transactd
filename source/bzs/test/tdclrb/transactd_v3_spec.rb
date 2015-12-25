@@ -132,11 +132,7 @@ def createUserTable(db)
   fd = dbdef.insertField(tableid, fieldIndex)
   fd.setName('update_datetime')
   fd.type = Transactd::Ft_mytimestamp
-  if (isLegacyTimeFormat(db))
-    fd.len = 4
-  else
-    fd.len = 7
-  end
+  fd.len = 7
   fd.setDefaultValue(Transactd::DFV_TIMESTAMP_DEFAULT)
   fd.setTimeStampOnUpdate(true)
   expect(fd.isTimeStampOnUpdate()).to eq true

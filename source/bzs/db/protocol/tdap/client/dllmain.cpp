@@ -380,6 +380,14 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             else
                 return STATUS_NOSUPPORT_OP;
             break;
+        case TD_STORE_TEST:
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN | P_MASK_KEYNUM;
+            break;
+        case TD_SET_TIMESTAMP_MODE:
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
+            break;
+        default:
+            return STATUS_NOSUPPORT_OP;
         }
         short_td ret = client_t->execute();
         client_t->cleanup();

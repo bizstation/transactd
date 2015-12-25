@@ -190,11 +190,11 @@ bool unlockTables(bool releaseStatementLock, THD* thd, bool rollback, database::
 tableCacheCounter database::tableRef;
 
 database::database(const char* name, short cid)
-    : m_dbname(name), m_thd(createThdForThread()), 
-      m_inTransaction(0), m_inSnapshot(0), m_stat(0), m_usingExclusive(false),
-      m_inAutoTransaction(NULL), m_trnType(0), m_cid(cid), m_privilege(0xFFFF)
+    : m_dbname(name), m_thd(createThdForThread()),m_inAutoTransaction(NULL), 
+       m_privilege(0xFFFF), m_inTransaction(0), m_inSnapshot(0), m_stat(0),
+       m_usingExclusive(false), m_trnType(0), m_cid(cid)
 {
-	cp_security_ctx(m_thd)->skip_grants();
+    cp_security_ctx(m_thd)->skip_grants();
 }
 
 #ifdef _MSC_VER
@@ -944,7 +944,8 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
       m_readCount(0), m_updCount(0), m_delCount(0), m_insCount(0),
       m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
       m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false),
-      m_delayAutoCommit(false),m_forceConsistentRead(false), m_mysqlNull(mysqlnull)
+      m_delayAutoCommit(false),m_forceConsistentRead(false), m_mysqlNull(mysqlnull),
+      m_timestampAlways(g_timestamp_always != 0)
 {
 
     m_table->read_set = &m_table->s->all_set;
@@ -975,6 +976,27 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
 #endif
     if (m_nisNullFields)
         m_recordFormatType |= RF_INCLUDE_NIS;
+
+    // Cache null fields ,timestamp fields and  no null mode null fields lists
+    int nullbits = 0;
+    for (int i = 0; i < (int)m_table->s->fields; ++i)
+    {
+        Field* fd = m_table->field[i];
+        if (fd->null_bit)
+        {
+            if (m_mysqlNull)
+                ++nullbits;
+            else if (fd->part_of_key.is_clear_all())
+                m_noNullModeNullFieldList.push_back(fd);
+        }
+
+        if (fd->unireg_check == Field::TIMESTAMP_UN_FIELD ||
+                fd->unireg_check == Field::TIMESTAMP_DNUN_FIELD ||
+                fd->unireg_check == Field::TIMESTAMP_DN_FIELD)
+            m_timeStampFields.push_back(fd);
+    }
+    m_nullBytesCl = (nullbits + 7) / 8; 
+
 #ifdef USE_BTRV_VARIABLE_LEN
     m_recordLenCl = (uint)(m_table->s->reclength - m_table->s->null_bytes -
                            m_nisNullFields - m_lastVarLenBytes);
@@ -982,27 +1004,11 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
     m_recordLenCl =
         (uint)(m_table->s->reclength - m_table->s->null_bytes - m_nisNullFields);
 #endif
-    // Cache null fields
-    if (!m_mysqlNull && m_table->s->null_fields)
-    {
-        for (int i = 0; i < (int)m_table->s->fields; ++i)
-        {
-            Field* fd = m_table->field[i];
-            if (fd->null_bit && fd->part_of_key.is_clear_all())
-                m_noNullModeNullFieldList.push_back(fd);
-        }
-    }
-    // Chash timestamp field
-    for (int i = 0; i < (int)m_table->s->fields; ++i)
-    {
-        Field* fd = m_table->field[i];
-        if (fd->unireg_check == Field::TIMESTAMP_UN_FIELD ||
-            fd->unireg_check == Field::TIMESTAMP_DNUN_FIELD ||
-            fd->unireg_check == Field::TIMESTAMP_DN_FIELD)
-        {
-            m_timeStampFields.push_back(fd);
-        }
-    }
+    
+#if (MYSQL_VERSION_ID < 50600)
+    m_table->timestamp_field_type = TIMESTAMP_NO_AUTO_SET;
+#endif
+
 }
 
 table::~table()
@@ -1136,12 +1142,12 @@ short table::setKeyValuesPacked(const uchar* ptr, int size)
         KEY_PART_INFO& seg = key.key_part[j];
         if (seg.null_bit)
         {
-            m_keybuf[to++] = ((*from) > 0) ? 0 : 1;
+            m_keybuf[to++] = *from;
             ++from;
         }
         if (seg.null_bit && isNisField(seg.field->field_name))
         {
-            m_keybuf[to++] = 0x00; // set null to nis field. 
+            m_keybuf[to++] = 0x00; // set not null to nis field. 
             //continue next segment
         }
         else
@@ -1229,12 +1235,12 @@ void table::setRecord(void* ptr, unsigned short size, int offset)
 {
     m_cursor = false;
     unsigned char* p;
-    if (m_mysqlNull && m_table->s->null_fields)
+    /*if (m_mysqlNull && m_table->s->null_fields)
     {
         p = m_table->record[0];
         size = std::min(size, (unsigned short)recordLen());
     }
-    else
+    else*/
     {
         p = (unsigned char*)record();
         size = std::min(size, (unsigned short)recordLenCl());
@@ -1328,7 +1334,7 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size,
                                 const bzs::db::blobHeader* hd)
 {
     const uchar* p = packedPtr;
-
+    bool nullable = (m_mysqlNull && m_table->s->null_fields);
 #ifdef USE_BTRV_VARIABLE_LEN
     if (recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
     {
@@ -1354,31 +1360,35 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size,
              (recordFormatType() & RF_INCLUDE_NIS))
     {
 #else
-    if ((recordFormatType() & RF_VALIABLE_LEN) ||
+    if (nullable || (recordFormatType() & RF_VALIABLE_LEN) ||
         (recordFormatType() & RF_INCLUDE_NIS))
     {
 #endif
         //copy null bits
-        bool nullable = (m_mysqlNull && m_table->s->null_fields);
-        if (nullable)
-        {
-            memcpy(m_table->record[0], p, m_table->s->null_bytes);
-            p += m_table->s->null_bytes;
-        }
-
+        
+        
         // It copies for every field.
         // But if null then not recived field image
-        unsigned char* null_ptr = m_table->record[0];
-        
+        unsigned char* null_ptr = (unsigned char*)p;
+        unsigned char null_bit = 1; 
+        p += m_nullBytesCl;
         for (uint i = 0; i < m_table->s->fields; ++i)
         {
             Field* fd = m_table->field[i];
             bool isNull = false;
             if (fd->null_bit && nullable)
             {
-                isNull = (*null_ptr & fd->null_bit) != 0;
-                if (fd->null_bit == (uchar)128)
+                isNull = (*null_ptr & null_bit) != 0;
+                if (isNull)
+                    fd->set_null();
+                else
+                    fd->set_notnull();
+                if (null_bit == (uchar)128)
+                {
                     ++null_ptr;
+                    null_bit = 1;
+                }else
+                    null_bit = null_bit << 1;
             }
 
             if (isNisField(fd->field_name))
@@ -1449,32 +1459,34 @@ uint table::recordPackCopy(char* buf, uint maxsize)
              (recordFormatType() & RF_INCLUDE_NIS))
     {
 #else
-    if ((recordFormatType() & RF_VALIABLE_LEN) ||
+    if (nullable || (recordFormatType() & RF_VALIABLE_LEN) ||
         (recordFormatType() & RF_INCLUDE_NIS))
     {
 #endif
         int blobs = 0;
-        
-        
-        if (nullable)
-        {
-            memcpy(p, m_table->record[0], m_table->s->null_bytes);
-            p += m_table->s->null_bytes;
-        }
-
-        unsigned char* null_ptr = m_table->record[0];
-
+        p = buf + m_nullBytesCl;
+        unsigned char* null_ptr = (unsigned char*)buf;//m_table->record[0];
+        *null_ptr = 0x00;
+        unsigned char null_bit = 1; 
         for (uint i = 0; i < m_table->s->fields; i++)
         {
             Field* fd = m_table->field[i];
             bool isNull = false;
             if (fd->null_bit && nullable)
             {
-                isNull = (*null_ptr & fd->null_bit) != 0;
-                if (fd->null_bit == (uchar)128)
+                //copy null bit
+                isNull = fd->is_null();
+                if (isNull) 
+                    *null_ptr |= null_bit;
+                
+                if (null_bit == (uchar)128)
+                {
                     ++null_ptr;
+                    *null_ptr = 0x00;
+                    null_bit = 1;
+                }else
+                    null_bit = null_bit << 1;
             }
-
             if (isNisField(fd->field_name))
                 ;
             // The Nis field is not sent to a client.
@@ -1500,11 +1512,6 @@ uint table::recordPackCopy(char* buf, uint maxsize)
     {
         const uchar* data = (const uchar*)record();
         int len = recordLenCl();
-        if (nullable)
-        {
-            data = m_table->record[0];
-            len += m_table->s->null_bytes;
-        }
         memcpy(p, data, len);
         p += len;
     }
@@ -2261,7 +2268,7 @@ void table::setTimeStamp(bool insert)
     std::vector<Field*>::iterator it = m_timeStampFields.begin();
     while (it != m_timeStampFields.end())
     {
-        if (g_timestamp_always)
+        if (m_timestampAlways)
         {
             if ((insert && cp_has_insert_default_function((*it))) ||
                 (!insert && cp_has_update_default_function((*it))))
@@ -2566,6 +2573,41 @@ void table::setKeyValues(const std::vector<std::string>& values, int keypart,
     key_copy(&m_keybuf[0], m_table->record[0], &key, KEYLEN_ALLCOPY);
 }
 
+unsigned int table::writeDefaultImage(unsigned char* p, size_t size)
+{
+    unsigned short cllen = (unsigned short)recordLenCl();
+    unsigned short len = cllen + m_nullBytesCl;
+    int offset = m_table->s->null_bytes;
+    memcpy(p, &len, sizeof(unsigned short));
+    p += sizeof(ushort_td);
+    if (size - 2 >= len)
+        memcpy(p + m_nullBytesCl, m_table->s->default_values + offset, cllen);
+    
+    unsigned char* src = m_table->s->default_values;
+    for (int i = 0 ; i < m_nullBytesCl; ++i)
+    {
+        *p = *src;
+        if (!(m_table->s->db_create_options & HA_OPTION_PACK_RECORD))
+        {
+            *p = *p >> 1;
+            *p |= (*(src + 1) & 1) ? 0xf0 : 0;
+        }
+        ++p; ++src;
+    }
+    return len + sizeof(unsigned short);
+}
+
+unsigned int table::writeSchemaImage(unsigned char* p, size_t size)
+{
+    protocol::tdap::tabledef* td = schemaBuilder().getTabledef(this, 0, m_mysqlNull, p + 2, size - 2);
+    unsigned short len = 0;
+    if (td)
+        len = td->varSize + 4;
+    memcpy(p, &len, sizeof(unsigned short));
+    return len + sizeof(unsigned short);
+}
+
+
 #ifdef USE_HANDLERSOCKET
 
 int table::fieldIndexByName(const char* name) const
@@ -2622,31 +2664,6 @@ void table::checkFiledIndex(int index)
     assert(index >= 0);
 }
 
-unsigned int table::writeDefaultImage(unsigned char* p, size_t size)
-{
-    int offset = 0;
-    unsigned short len = (unsigned short)recordLenCl();
-    if (m_table->s->null_fields)
-        len += m_table->s->null_bytes;
-    else
-        offset = m_table->s->null_bytes;
-    memcpy(p, &len, sizeof(unsigned short));
-    
-    p += sizeof(ushort_td);
-    if (size - 2 >= len)
-        memcpy(p, m_table->s->default_values + offset, len);
-    return len + sizeof(unsigned short);
-}
-
-unsigned int table::writeSchemaImage(unsigned char* p, size_t size)
-{
-    protocol::tdap::tabledef* td = schemaBuilder().getTabledef(this, 0, m_mysqlNull, p + 2, size - 2);
-    unsigned short len = 0;
-    if (td)
-        len = td->varSize + 4;
-    memcpy(p, &len, sizeof(unsigned short));
-    return len + sizeof(unsigned short);
-}
 
 #endif // USE_HANDLERSOCKET
 

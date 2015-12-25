@@ -1972,7 +1972,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $vv = new Bz\btrVersions();
         $db->getBtrVersion($vv);
         $server_ver = $vv->version(1);
-        if ('M' == chr($server_ver->type))
+        if ('M' == chr($server_ver->type) || 'A' == chr($server_ver->type))
         {
           if ($server_ver->majorVersion <= 4)
             return false;
