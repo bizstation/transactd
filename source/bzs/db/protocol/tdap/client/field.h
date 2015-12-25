@@ -313,6 +313,13 @@ public:
         return *this;
     }
 
+    inline field& operator=(const bitset& v)
+    {
+        setFV(v.i64());
+        m_fd->enableFlags.bitE = true;
+        return *this;
+    }
+
     inline bool operator!=(const _TCHAR* p) const { return !operator==(p); }
 
     inline bool operator==(const _TCHAR* p) const
@@ -341,6 +348,8 @@ public:
         m_fd->enableFlags.bitE = true;
     }
     inline void* getBin(uint_td& size) const { return getFVbin(size); };
+
+    inline bitset getBits() const { return bitset(i64());}
 
     int comp(const field& r, char logType = CMPLOGICAL_VAR_COMP_ALL) const;
 };

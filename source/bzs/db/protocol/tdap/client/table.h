@@ -102,15 +102,15 @@ public:
         m_v = value ? m_v | bits : m_v & ~bits;
     }
 
-    inline bool get(int index)
+    inline bool get(int index) const
     {
         unsigned __int64 bits = 1ULL << index;
         return (m_v & bits) != 0;
     }
 
-    inline __int64 i64() { return (__int64)m_v; }
+    inline __int64 i64() const { return (__int64)m_v; }
 
-    inline bool operator[](int index) {return get(index); };
+    inline bool operator[](int index) const {return get(index); };
 };
 
 
@@ -270,6 +270,17 @@ public:
     void* getFVbin(const _TCHAR* fieldName, uint_td& size) const;
     bool getFVNull(short index) const ;
     bool getFVNull(const _TCHAR* fieldName) const;
+
+    inline bitset getFVbits(short index) const
+    {
+        return bitset(getFV64(index));
+    }
+
+    inline bitset getFVbits(const _TCHAR* fieldName) const
+    {
+        return bitset(getFV64(fieldName));
+    }
+
     void setFV(short index, double data);
     void setFV(short index, float data);
     void setFV(short index, unsigned char data);
@@ -318,6 +329,15 @@ public:
         setFVW(fieldName, data);
     };
 #endif
+    inline void setFV(short index, const bitset& bits)
+    {
+        setFV(index, bits.i64());
+    }
+
+    inline void setFV(const _TCHAR* fieldName, const bitset& bits)
+    {
+        setFV(fieldName, bits.i64());
+    }
 
     void setFV(const _TCHAR* fieldName, double data);
     void setFV(const _TCHAR* fieldName, float data);

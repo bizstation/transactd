@@ -393,6 +393,7 @@ using namespace bzs::db::protocol::tdap::client;
     return b;
   }
 };
+%ignore bzs::db::protocol::tdap::client::fielddefs::getBits;
 
 
   // create and release methods for fielddefs class
@@ -745,6 +746,10 @@ using namespace bzs::db::protocol::tdap::client;
     return b;
   }
 
+  void setFV(const bitset& v) {
+    self->setFV(v.i64());
+  }
+
 
 };
   // ignore original methods
@@ -753,6 +758,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::setQuery;
 %ignore bzs::db::protocol::tdap::client::table::setPrepare;
 %ignore bzs::db::protocol::tdap::client::table::tableDefPtr;
+%ignore bzs::db::protocol::tdap::client::table::getFVBits;
+
   // create and release methods for table class
 %extend bzs::db::protocol::tdap::client::table {
   void release() {
