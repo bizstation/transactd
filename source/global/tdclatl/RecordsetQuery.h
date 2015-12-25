@@ -64,6 +64,14 @@ public:
                    IRecordsetQuery** retVal);
     STDMETHOD(Or)(BSTR Name, BSTR Logic, VARIANT Value,
                   IRecordsetQuery** retVal);
+
+    STDMETHOD(WhenIsNull)(BSTR Name, IRecordsetQuery** retVal);
+    STDMETHOD(AndIsNull)(BSTR Name,IRecordsetQuery** retVal);
+    STDMETHOD(OrIsNull)(BSTR Name, IRecordsetQuery** retVal);
+    STDMETHOD(WhenIsNotNull)(BSTR Name, IRecordsetQuery** retVal);
+    STDMETHOD(AndIsNotNull)(BSTR Name,IRecordsetQuery** retVal);
+    STDMETHOD(OrIsNotNull)(BSTR Name, IRecordsetQuery** retVal);
+
 };
 
 class ATL_NO_VTABLE CSortField

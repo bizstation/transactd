@@ -1902,63 +1902,33 @@ class query extends queryBase {
 	}
 
 	function whereIsNull($name) {
-		$r=query_whereIsNull($this->_cPtr,$name);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new query($r);
-		}
-		return $r;
+		query_whereIsNull($this->_cPtr,$name);
+		return $this;
 	}
 
 	function whereIsNotNull($name) {
-		$r=query_whereIsNotNull($this->_cPtr,$name);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new query($r);
-		}
-		return $r;
+		query_whereIsNotNull($this->_cPtr,$name);
+		return $this;
 	}
 
 	function andIsNull($name) {
-		$r=query_andIsNull($this->_cPtr,$name);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new query($r);
-		}
-		return $r;
+		query_andIsNull($this->_cPtr,$name);
+		return $this;
 	}
 
 	function andIsNotNull($name) {
-		$r=query_andIsNotNull($this->_cPtr,$name);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new query($r);
-		}
-		return $r;
+		query_andIsNotNull($this->_cPtr,$name);
+		return $this;
 	}
 
 	function orIsNull($name) {
-		$r=query_orIsNull($this->_cPtr,$name);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new query($r);
-		}
-		return $r;
+		query_orIsNull($this->_cPtr,$name);
+		return $this;
 	}
 
 	function orIsNotNull($name) {
-		$r=query_orIsNotNull($this->_cPtr,$name);
-		if (is_resource($r)) {
-			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
-			if (class_exists($c)) return new $c($r);
-			return new query($r);
-		}
-		return $r;
+		query_orIsNotNull($this->_cPtr,$name);
+		return $this;
 	}
 
 	function __construct($res=null) {
@@ -3291,6 +3261,36 @@ class recordsetQuery {
 
 	function reset() {
 		recordsetQuery_reset($this->_cPtr);
+		return $this;
+	}
+
+	function whenIsNull($name) {
+		recordsetQuery_whenIsNull($this->_cPtr,$name);
+		return $this;;
+	}
+
+	function whenIsNotNull($name) {
+		recordsetQuery_whenIsNotNull($this->_cPtr,$name);
+		return $this;;
+	}
+
+	function andIsNull($name) {
+		recordsetQuery_andIsNull($this->_cPtr,$name);
+		return $this;;
+	}
+
+	function andIsNotNull($name) {
+		recordsetQuery_andIsNotNull($this->_cPtr,$name);
+		return $this;;
+	}
+
+	function orIsNull($name) {
+		recordsetQuery_orIsNull($this->_cPtr,$name);
+		return $this;;
+	}
+
+	function orIsNotNull($name) {
+		recordsetQuery_orIsNotNull($this->_cPtr,$name);
 		return $this;
 	}
 

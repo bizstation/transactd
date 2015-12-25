@@ -1459,6 +1459,19 @@ interface IRecordsetQuery : IDispatch
   [id(0x0000007)]
   HRESULT _stdcall Or([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IRecordsetQuery** retVal);
 
+  [id(0x0000021)]
+  HRESULT _stdcall WhenIsNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000022)]
+  HRESULT _stdcall AndIsNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000023)]
+  HRESULT _stdcall OrIsNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000024)]
+  HRESULT _stdcall WhenIsNotNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000025)]
+  HRESULT _stdcall AndIsNotNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000026)]
+  HRESULT _stdcall OrIsNotNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+
 };
 
 [

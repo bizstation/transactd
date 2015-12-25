@@ -618,6 +618,54 @@ function test(atu, ate, db)
 	rs = atu.Index(0).KeyValue(0).Read(q);
 	checkEqual(rs.Count, 10, "atu rs.Count = 10 ");
 
+	//test recordset query
+	q.Reset();
+	q.Select("id", "name", "group", "tel");
+	rs = atu.Index(0).KeyValue(0).Read(q);
+	checkEqual(rs.Count, 1000, "rs.Count = 1000 ");
+	
+	// recordset whenIsNull
+	var rq = createRecordsetQuery();
+	rq.WhenIsNull("tel");
+	rs2 = rs.Clone();
+	rs2 = rs2.MatchBy(rq);
+	checkEqual(rs2.Count, 999, "rs.Count = 999 ");
+	
+	//recordset whenIsNotNull
+	rq.Reset();
+	rq.WhenIsNotNull("tel");
+	rs2 = rs.Clone();
+	rs2 = rs2.MatchBy(rq);
+	checkEqual(rs2.Count, 1, "rs.Count = 1 ");
+	
+	//recordset andIsNull
+	rq.Reset();
+	rq.When("id", "<=", 10).AndIsNull("tel");
+	rs2 = rs.Clone();
+	rs2 = rs2.MatchBy(rq);
+	checkEqual(rs2.Count, 9, "rs.Count = 9 ");
+	
+	//recordset andIsNotNull
+	rq.Reset();
+	rq.When("id", "<", 10).AndIsNotNull("tel");
+	rs2 = rs.Clone();
+	rs2 = rs2.MatchBy(rq);
+	checkEqual(rs2.Count, 1, "rs.Count = 1 ");
+	
+	// recordset orIsNull
+	rq.Reset();
+	rq.When("id", "<=", 10).OrIsNull("tel");
+	rs2 = rs.Clone();
+	rs2 = rs2.MatchBy(rq);
+	checkEqual(rs2.Count, 1000, "rs.Count = 1000 ");
+	
+	//recordset orIsNotNull
+	rq.Reset();
+	rq.When("id", "<=", 10).OrIsNotNull("tel");
+	rs2 = rs.Clone();
+	rs2 = rs2.MatchBy(rq);
+	checkEqual(rs2.Count, 10, "rs.Count = 10 ");
+
 	//setBin bin
 	var bin = String.fromCharCode(0xFF01,0xFF02);
 	wr("tel").SetBin(bin);

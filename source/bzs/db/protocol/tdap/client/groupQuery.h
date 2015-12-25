@@ -139,6 +139,42 @@ public:
         return *this;
     }
 
+    inline recordsetQuery& whenIsNull(const _TCHAR* name)
+    {
+        query::whereIsNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& whenIsNotNull(const _TCHAR* name)
+    {
+        query::whereIsNotNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& andIsNull(const _TCHAR* name)
+    {
+        query::andIsNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& andIsNotNull(const _TCHAR* name)
+    {
+        query::andIsNotNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& orIsNull(const _TCHAR* name)
+    {
+        query::orIsNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& orIsNotNull(const _TCHAR* name)
+    {
+        query::orIsNotNull(name);
+        return *this;
+    }
+
     inline const _TCHAR* toString() const { return queryBase::toString(); }
 
     inline query* internalQuery() { return this; }
