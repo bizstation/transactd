@@ -46,7 +46,7 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "BizStation Corp."
-            VALUE "FileDescription", "Transactd client test program"
+            VALUE "FileDescription", "Transactd client test program V3"
             VALUE "FileVersion", "3.0.0.120"
             VALUE "LegalCopyright", "Copyright(C) 2014 BizStation Corp"
             VALUE "ProductVersion", "3.0.0.120"
