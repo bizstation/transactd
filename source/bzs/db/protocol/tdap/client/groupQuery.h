@@ -109,7 +109,6 @@ class DLLLIB recordsetQuery : protected query
 
     struct recordsetQueryImple* m_imple;
     void init(const fielddefs* fdinfo);
-    bool isMatch(int ret, unsigned char compType) const;
     bool match(const row_ptr row) const;
 
 public:

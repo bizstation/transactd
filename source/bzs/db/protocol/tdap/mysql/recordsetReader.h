@@ -253,37 +253,12 @@ struct extRequestSeeks
 #pragma pack(pop)
 pragma_pop;
 
-bool isMatch1(int v)
-{
-    return (v == 0);
-}
-bool isMatch2(int v)
-{
-    return (v > 0);
-}
-bool isMatch3(int v)
-{
-    return (v < 0);
-}
-bool isMatch4(int v)
-{
-    return (v != 0);
-}
-bool isMatch5(int v)
-{
-    return (v >= 0);
-}
-bool isMatch6(int v)
-{
-    return (v <= 0);
-}
-
 class fields;
 class fieldAdapter
 {
     const logicalField* m_fd;
     fieldAdapter* m_next;
-    bool (*m_isMatchFunc)(int);
+    judgeFunc m_isMatchFunc;
     comp1Func m_compFunc;
     unsigned short m_placeHolderNum;
     unsigned char m_keySeg;
@@ -463,8 +438,7 @@ public:
             if ((m_fd->opr != 0) && m_judge && (v == 0) && m_next->m_judgeType)
                 m_next->m_judge = true;
         }
-        bool end = (m_fd->opr == 0) || (!ret && (m_fd->opr == 1)) ||
-                   (ret && (m_fd->opr == 2));
+        bool end = isEndComp(m_fd->opr, ret);
         if (!end)
             return m_next->match(record, typeNext);
         return ret ? REC_MACTH
@@ -505,33 +479,7 @@ public:
             fieldAdapter& fda = m_fields[i];
             fda.init(fd, position, key, forword);
             fda.m_placeHolderNum = i;
-            
-            eCompType log = (eCompType)(fd->logType & 0xF);
-            switch (log)
-            {
-            case 1:
-            case 8:
-                fda.m_isMatchFunc = isMatch1;
-                break;
-            case 2:
-                fda.m_isMatchFunc = isMatch2;
-                break;
-            case 3:
-                fda.m_isMatchFunc = isMatch3;
-                break;
-            case 4:
-            case 9:
-                fda.m_isMatchFunc = isMatch4;
-                break;
-            case 5:
-                fda.m_isMatchFunc = isMatch5;
-                break;
-            case 6:
-                fda.m_isMatchFunc = isMatch6;
-                break;
-            default:
-                break;
-            }
+            fda.m_isMatchFunc = getJudgeFunc((eCompType)fd->logType);
             fd = fd->next();
             if (fda.m_fd->opr == 2 && (lastIndex == req.logicalCount))
                 lastIndex = i; // the first 'or' index

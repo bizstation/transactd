@@ -21,6 +21,7 @@
 #include "groupQuery.h"
 #include "recordsetImple.h"
 #include "filter.h"
+#include <bzs/db/protocol/tdap/fieldComp.h>
 #include <boost/algorithm/string.hpp>
 #pragma warning(default : 4996)
 
@@ -233,9 +234,10 @@ struct recordsetQueryImple
     row_ptr row;
     struct compItem
     {
+        judgeFunc isMatchFunc;
         comp1Func compFunc;
         short index;
-        unsigned char compType;
+        uchar_td compType;
         char combine;
         struct
         {
@@ -345,6 +347,7 @@ void recordsetQuery::init(const fielddefs* fdinfo)
 
         itm.compFunc = getCompFunc(type, fdd.len, itm.compType, 
                 fdd.varLenBytes() + fdd.blobLenBytes());
+        itm.isMatchFunc = getJudgeFunc((eCompType)itm.compType);
 
         if (i + 3 < (int)tokns.size())
         {
@@ -360,31 +363,6 @@ void recordsetQuery::init(const fielddefs* fdinfo)
     }
 }
 
-bool recordsetQuery::isMatch(int ret, unsigned char compType) const
-{
-    compType &= 0xf; // lower than 15
-    switch ((eCompType)compType)
-    {
-    case eEqual:
-    case eBitAnd:
-        return (ret == 0);
-    case eGreaterEq:
-        return (ret >= 0);
-    case eLessEq:
-        return (ret <= 0);
-    case eGreater:
-        return (ret > 0);
-    case eLess:
-        return (ret < 0);
-    case eNotEq:
-    case eNotBitAnd:
-        return (ret != 0);
-    default:
-        break;
-    }
-    return false;
-}
-
 bool recordsetQuery::match(const row_ptr row) const
 {
     for (int i = 0; i < (int)m_imple->compItems.size(); ++i)
@@ -398,14 +376,9 @@ bool recordsetQuery::match(const row_ptr row) const
         if (nullJudge < 2)
             ret = (nullJudge == 0) ? true : false;
         else
-            ret = isMatch(itm.compFunc((const char*)f.ptr(), (const char*)((*m_imple->row)[i].ptr()), (*m_imple->row)[i].len()), itm.compType);
+            ret = itm.isMatchFunc(itm.compFunc((const char*)f.ptr(), (const char*)((*m_imple->row)[i].ptr()), (*m_imple->row)[i].len()));
 
-        if (itm.combine == eCend)
-            return ret;
-        if (ret && itm.combine == eCor)
-            return true;
-        if (!ret && itm.combine == eCand)
-            return false;
+        if (isEndComp(itm.combine, ret)) return ret;
     }
     assert(0);
     return false;

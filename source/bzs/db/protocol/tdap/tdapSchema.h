@@ -1271,9 +1271,4 @@ PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr);
 } // namespace db
 } // namespace bzs
 
-/** @cond INTERNAL */
-typedef int (*comp1Func)(const char* l, const char* r,int len);
-extern comp1Func getCompFunc(uchar_td type, ushort_td len, char logType, int sizeByte);
-/** @endcond */
-
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPSCHEMA_H

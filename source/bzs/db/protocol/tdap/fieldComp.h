@@ -24,7 +24,7 @@
 #include <string.h>
 
 
-__int64 changeEndian2(__int64 v)
+inline __int64 changeEndian2(__int64 v)
 {
     __int64 ret = 0;
     char* l = (char*)&ret;
@@ -34,7 +34,7 @@ __int64 changeEndian2(__int64 v)
     return ret;
 }
 
-__int64 changeEndian3(__int64 v)
+inline __int64 changeEndian3(__int64 v)
 {
     __int64 ret = 0;
     char* l = (char*)&ret;
@@ -45,7 +45,7 @@ __int64 changeEndian3(__int64 v)
     return ret;
 }
 
-__int64 changeEndian4(__int64 v)
+inline __int64 changeEndian4(__int64 v)
 {
     __int64 ret = 0;
     char* l = (char*)&ret;
@@ -57,7 +57,7 @@ __int64 changeEndian4(__int64 v)
     return ret;
 }
 
-__int64 changeEndian5(__int64 v)
+inline __int64 changeEndian5(__int64 v)
 {
     __int64 ret = 0;
     char* l = (char*)&ret;
@@ -70,7 +70,7 @@ __int64 changeEndian5(__int64 v)
     return ret;
 }
 
-__int64 changeEndian6(__int64 v)
+inline __int64 changeEndian6(__int64 v)
 {
     __int64 ret = 0;
     char* l = (char*)&ret;
@@ -84,7 +84,7 @@ __int64 changeEndian6(__int64 v)
     return ret;
 }
 
-__int64 changeEndian7(__int64 v)
+inline __int64 changeEndian7(__int64 v)
 {
     __int64 ret = 0;
     char* l = (char*)&ret;
@@ -99,7 +99,7 @@ __int64 changeEndian7(__int64 v)
     return ret;
 }
 
-__int64 changeEndian8(__int64 v)
+inline __int64 changeEndian8(__int64 v)
 {
     __int64 ret = 0;
     char* l = (char*)&ret;
@@ -115,7 +115,7 @@ __int64 changeEndian8(__int64 v)
     return ret;
 }
 
-__int64 changeEndian(__int64 v, int len)
+inline __int64 changeEndian(__int64 v, int len)
 {
     switch(len)
     {
@@ -304,19 +304,19 @@ inline int nullComp(bool lnull, bool rnull, char log)
 }
 
 template <class T>
-int compBitAnd(const char* l, const char* r, int len)
+inline int compBitAnd(const char* l, const char* r, int len)
 {
     return bitMask<T>(l, r);
 }
 
-int compBitAnd24(const char* l, const char* r, int len)
+inline int compBitAnd24(const char* l, const char* r, int len)
 {
     int lv = int24toInt(l);
     int rv = int24toInt(r);
     return bitMask<int>((const char*)&lv, (const char*)&rv);
 }
 
-int compBitAnd64(const char* l, const char* r, int len) 
+inline int compBitAnd64(const char* l, const char* r, int len) 
 {
     __int64 lv = 0;
     __int64 rv = 0;
@@ -326,42 +326,42 @@ int compBitAnd64(const char* l, const char* r, int len)
 }
 
 template <class T>
-int compNumber(const char* l, const char* r, int len)
+inline int compNumber(const char* l, const char* r, int len)
 {
     return compare<T>(l, r);
 }
 
-int compNumber24(const char* l, const char* r, int len)
+inline int compNumber24(const char* l, const char* r, int len)
 {
     return compareInt24(l, r);
 }
 
-int compNumberU24(const char* l, const char* r, int len)
+inline int compNumberU24(const char* l, const char* r, int len)
 {
     return compareUint24(l, r);
 }
 
-int compMem(const char* l, const char* r, int len)
+inline int compMem(const char* l, const char* r, int len)
 {
     return memcmp(l, r, len);
 }
 
-int compString(const char* l, const char* r, int len) 
+inline int compString(const char* l, const char* r, int len) 
 {
     return strncmp(l, r, len);
 }
 
-int compiString(const char* l, const char* r, int len) 
+inline int compiString(const char* l, const char* r, int len) 
 {
     return _strnicmp(l, r, len);
 }
 
-int compWString(const char* l, const char* r, int len) 
+inline int compWString(const char* l, const char* r, int len) 
 {
     return wcsncmp16((char16_t*)l, (char16_t*)r, len/2);
 }
 
-int compiWString(const char* l, const char* r, int len)
+inline int compiWString(const char* l, const char* r, int len)
 {
     return wcsnicmp16((char16_t*)l, (char16_t*)r, len/2);
 }
@@ -377,77 +377,82 @@ int compiWString(const char* l, const char* r, int len)
 
 
 template <class T, bool all>
-int compVarString(const char* l, const char* r, int len)
+inline int compVarString(const char* l, const char* r, int len)
 {
     return compareVartype<T>(l, r, T_STR, all, T_CASE);
 }
 
 template <class T, bool all>
-int compVarString_bin(const char* l, const char* r, int len)
+inline int compVarString_bin(const char* l, const char* r, int len)
 {
     return compareVartype<T>(l, r, T_BIN, all, T_CASE);
 }
 template <class T, bool all>
-int compVarString_i(const char* l, const char* r, int len)
+inline int compVarString_i(const char* l, const char* r, int len)
 {
     return compareVartype<T>(l, r, T_STR, all, T_INCASE);
 }
 
 template <class T, bool all>
-int compVarString_bin_i(const char* l, const char* r, int len)
+inline int compVarString_bin_i(const char* l, const char* r, int len)
 {
     return compareVartype<T>(l, r, T_BIN, all, T_INCASE);
 }
 
 template <class T, bool all>
-int compWVarString(const char* l, const char* r, int len)
+inline int compWVarString(const char* l, const char* r, int len)
 {
     return compareWvartype<T>(l, r, T_STR, all, T_CASE);
 }
 
 template <class T, bool all>
-int compWVarString_bin(const char* l, const char* r, int len) 
+inline int compWVarString_bin(const char* l, const char* r, int len) 
 {
     return compareWvartype<T>(l, r, T_BIN, all, T_CASE);
 }
 
 template <class T, bool all>
-int compWVarString_i(const char* l, const char* r, int len)
+inline int compWVarString_i(const char* l, const char* r, int len)
 {
     return compareWvartype<T>(l, r, T_STR, all, T_INCASE);
 }
 
 template <class T, bool all>
-int compWVarString_bin_i(const char* l, const char* r, int len) 
+inline int compWVarString_bin_i(const char* l, const char* r, int len) 
 {
     return compareWvartype<T>(l, r, T_BIN, all, T_INCASE);
 }
 
 template <int sizeByte, bool all>
-int compBlob(const char* l, const char* r, int len)
+inline int compBlob(const char* l, const char* r, int len)
 {
     return compareBlobType(l, r, T_STR, all, T_CASE, sizeByte);
 }
 
 template <int sizeByte, bool all>
-int compBlob_bin(const char* l, const char* r, int len)
+inline int compBlob_bin(const char* l, const char* r, int len)
 {
     return compareBlobType(l, r, T_BIN, all, T_CASE, sizeByte);
 }
 
 template <int sizeByte, bool all>
-int compBlob_i(const char* l, const char* r, int len)
+inline int compBlob_i(const char* l, const char* r, int len)
 {
     return compareBlobType(l, r, T_STR, all, T_INCASE, sizeByte);
 }
 
 template <int sizeByte, bool all>
-int compBlob_bin_i(const char* l, const char* r, int len)
+inline int compBlob_bin_i(const char* l, const char* r, int len)
 {
     return compareBlobType(l, r, T_BIN, all, T_INCASE, sizeByte);
 }
 
-comp1Func getCompFunc(uchar_td type, ushort_td len, char logType, int sizeByte)
+
+typedef int (*comp1Func)(const char* l, const char* r,int len);
+
+typedef bool (*judgeFunc)(int);
+
+inline comp1Func getCompFunc(uchar_td type, ushort_td len, char logType, int sizeByte)
 {
     bool compAll = (logType & CMPLOGICAL_VAR_COMP_ALL) != 0;
     bool incase = (logType & CMPLOGICAL_CASEINSENSITIVE) != 0;
@@ -745,6 +750,64 @@ comp1Func getCompFunc(uchar_td type, ushort_td len, char logType, int sizeByte)
     }
     }
     return NULL;
+}
+
+inline bool isMatch1(int v) // eEqual eBitAnd
+{
+    return (v == 0);
+}
+
+inline bool isMatch2(int v) // eGreater
+{
+    return (v > 0);
+}
+
+inline bool isMatch3(int v) // eLess
+{
+    return (v < 0);
+}
+
+inline bool isMatch4(int v) // eNotEq eNotBitAnd
+{
+    return (v != 0);
+}
+
+inline bool isMatch5(int v) // eGreaterEq
+{
+    return (v >= 0);
+}
+
+inline bool isMatch6(int v) // eLessEq
+{
+    return (v <= 0);
+}
+
+inline judgeFunc getJudgeFunc(eCompType log)
+{
+    switch (log & 0xF)
+    {
+    case eEqual:
+    case eBitAnd: 
+        return isMatch1;
+    case eGreater: 
+        return isMatch2;
+    case eLess: 
+        return isMatch3;
+    case eNotEq: 
+        return isMatch4;
+    case eNotBitAnd:
+    case eGreaterEq:
+        return isMatch5;
+    case eLessEq: 
+        return isMatch6;
+    }
+    assert(0);
+    return NULL;
+}
+
+inline bool isEndComp(uchar_td opr, bool ret)
+{
+    return (opr == eCend) || (!ret && (opr == eCand)) || (ret && (opr == eCor));
 }
 
 #endif
