@@ -515,8 +515,8 @@ struct clsrv_ver
         ushort_td clRelease;
         ushort_td srvMysqlRelease;
     };
-    uchar_td  srvMysqlType;
     uchar_td  srvMajor;
+    uchar_td  srvMysqlType;
     ushort_td srvMinor;
     ushort_td srvRelease;
     inline bool isSupportDateTimeTimeStamp() const

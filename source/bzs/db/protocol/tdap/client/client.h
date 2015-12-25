@@ -158,7 +158,10 @@ class client
         if (min || auth)
         {
             if (!checkVersion(hst->ver.desc))
+            {
+                m_preResult = SERVER_CLIENT_NOT_COMPATIBLE; 
                 return false;
+            }
             c->setCharsetServer(mysql::charsetIndex(hst->ver.cherserServer));
             m_req.cid->lock_wait_timeout = hst->lock_wait_timeout;
             m_req.cid->transaction_isolation = hst->transaction_isolation;
@@ -266,6 +269,7 @@ public:
     {
         if (!m_req.cid->con)
         {
+            m_preResult = 0;
             endpoint_t ep;
             endPoint((const char*)m_req.keybuf, &ep);
             if (ep.host[0] == 0x00)
@@ -277,7 +281,7 @@ public:
                 setCon(c);
                 m_connecting = true;
             }
-            else
+            else if (m_preResult == 0)
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
         }
         m_disconnected = !m_req.cid->con;
