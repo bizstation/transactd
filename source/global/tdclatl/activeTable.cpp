@@ -105,85 +105,40 @@ STDMETHODIMP CActiveTable::Index(short Value, IActiveTable** retVal)
     }
 }
 
+wchar_t* convWCHAR(VARIANT& Value)
+{
+    wchar_t* v = NULL;
+    if (Value.vt == VT_NULL)
+        v = NULL;
+    else if (Value.vt != VT_BSTR)
+    {
+        VariantChangeType(&Value, &Value, 0, VT_BSTR);
+        v = Value.bstrVal;
+    }else
+        v = Value.bstrVal;
+    return v;
+
+}
+
 STDMETHODIMP CActiveTable::KeyValue(VARIANT Value0, VARIANT Value1,
                                     VARIANT Value2, VARIANT Value3,
                                     VARIANT Value4, VARIANT Value5,
                                     VARIANT Value6, VARIANT Value7,
                                     IActiveTable** retVal)
 {
-
     try
     {
-        if (Value0.vt != VT_BSTR)
-            VariantChangeType(&Value0, &Value0, 0, VT_BSTR);
+        wchar_t* v[8] = {NULL};
+        v[0] = convWCHAR(Value0);
+        v[1] = convWCHAR(Value1);
+        v[2] = convWCHAR(Value2);
+        v[3] = convWCHAR(Value3);
+        v[4] = convWCHAR(Value4);
+        v[5] = convWCHAR(Value5);
+        v[6] = convWCHAR(Value6);
+        v[7] = convWCHAR(Value7);
 
-        if (Value1.vt != VT_BSTR)
-            VariantChangeType(&Value1, &Value1, 0, VT_BSTR);
-        if (!Value1.bstrVal || !Value1.bstrVal[0])
-        {
-            m_at->keyValue(Value0.bstrVal);
-            setResult(retVal);
-            return S_OK;
-        }
-
-        if (Value2.vt != VT_BSTR)
-            VariantChangeType(&Value2, &Value2, 0, VT_BSTR);
-        if (!Value2.bstrVal || !Value2.bstrVal[0])
-        {
-            m_at->keyValue(Value0.bstrVal, Value1.bstrVal);
-            setResult(retVal);
-            return S_OK;
-        }
-        if (Value3.vt != VT_BSTR)
-            VariantChangeType(&Value3, &Value3, 0, VT_BSTR);
-        if (!Value3.bstrVal || !Value3.bstrVal[0])
-        {
-            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal);
-            setResult(retVal);
-            return S_OK;
-        }
-        if (Value4.vt != VT_BSTR)
-            VariantChangeType(&Value4, &Value4, 0, VT_BSTR);
-        if (!Value4.bstrVal || !Value4.bstrVal[0])
-        {
-            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
-                           Value3.bstrVal);
-            setResult(retVal);
-            return S_OK;
-        }
-
-        if (Value5.vt != VT_BSTR)
-            VariantChangeType(&Value5, &Value5, 0, VT_BSTR);
-        if (!Value5.bstrVal || !Value5.bstrVal[0])
-        {
-            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
-                           Value3.bstrVal, Value4.bstrVal);
-            setResult(retVal);
-            return S_OK;
-        }
-        if (Value6.vt != VT_BSTR)
-            VariantChangeType(&Value6, &Value6, 0, VT_BSTR);
-        if (!Value6.bstrVal || !Value6.bstrVal[0])
-        {
-            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
-                           Value3.bstrVal, Value4.bstrVal, Value5.bstrVal);
-            setResult(retVal);
-            return S_OK;
-        }
-
-        if (Value7.vt != VT_BSTR)
-            VariantChangeType(&Value7, &Value7, 0, VT_BSTR);
-        if (!Value7.bstrVal || !Value7.bstrVal[0])
-        {
-            m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
-                           Value3.bstrVal, Value4.bstrVal, Value5.bstrVal,
-                           Value6.bstrVal);
-            setResult(retVal);
-            return S_OK;
-        }
-        m_at->keyValue(Value0.bstrVal, Value1.bstrVal, Value2.bstrVal,
-                       Value3.bstrVal, Value4.bstrVal, Value5.bstrVal,
-                       Value6.bstrVal, Value7.bstrVal);
+        m_at->keyValue(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
         setResult(retVal);
         return S_OK;
     }

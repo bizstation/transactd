@@ -1401,6 +1401,8 @@ interface IRecord : IDispatch
   HRESULT _stdcall Field([in] VARIANT Index, [out, retval] IField** retVal);
   [propget, id(0x0000003)]
   HRESULT _stdcall IsInvalidRecord( [out, retval] VARIANT_BOOL* retVal);
+  [propget, id(0x0000004)]
+  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
 
 };
 

@@ -120,6 +120,8 @@ STDMETHODIMP CField::SetValue(VARIANT Value)
         m_fd = Value.dblVal;
     else if (Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT || Value.vt == VT_I8)
         m_fd = Value.llVal;
+    else if(Value.vt == VT_NULL)
+        m_fd = (wchar_t*)NULL;
     else
     {
         VariantChangeType( &Value, &Value, 0, VT_BSTR );

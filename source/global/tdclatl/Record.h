@@ -34,11 +34,12 @@ class ATL_NO_VTABLE CRecord
 {
 
     CComObject<CField>* m_fieldObj;
+    CComObject<CFieldDefs>* m_fieldDefsObj;
     short GetFieldNum(VARIANT* Index);
 
 public:
     bzs::db::protocol::tdap::client::fieldsBase* m_rec;
-    CRecord() : m_fieldObj(NULL) {}
+    CRecord() : m_fieldObj(NULL), m_fieldDefsObj(NULL) {}
 
     BEGIN_COM_MAP(CRecord)
     COM_INTERFACE_ENTRY(IRecord)
@@ -57,6 +58,7 @@ public:
 public:
     STDMETHOD(get_Size)(short* retVal);
     STDMETHOD(get_Field)(VARIANT Index, IField** retVal);
+    STDMETHOD(get_FieldDefs)(IFieldDefs** retVal);
     STDMETHOD(get_IsInvalidRecord)(VARIANT_BOOL* retVal);
 };
 

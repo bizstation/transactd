@@ -591,7 +591,7 @@ function test(atu, ate, db)
 	initQuery();
 	atu.Alias("–¼‘O", "name");
 	q.Select("id", "name", "group", "tel").Where("id", "<=", 10);
-	var rs = atu.Index(0).KeyValue(1).Read(q);
+	var rs = atu.Index(0).KeyValue(null).Read(q);
 	checkEqual(rs.Count, 10, "atu rs.Count = 10 ");
 	var rec = rs.First();
 	checkEqual(rec(3).IsNull(), true, "NULL true");
@@ -606,7 +606,7 @@ function test(atu, ate, db)
 	checkEqual(last.Field("id").i64(), 10, "last.id = 10 ");
 	checkEqual(last.Field("id").d(), 10, "last.id = 10 ");
 	checkEqual(rec(4).IsNull(), false, "Join NULL1");
-	rec(4).setNull(true);
+	rec(4).setValue(null);
 	checkEqual(rec(4).IsNull(), true, "Join NULL2");
 	
 	//WritableRecord.clear()

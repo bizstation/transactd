@@ -24,6 +24,8 @@
 
 void CRecord::FinalRelease()
 {
+    if (m_fieldDefsObj != NULL)
+        m_fieldDefsObj->Release();
     if (m_fieldObj != NULL)
         m_fieldObj->Release();
 }
@@ -85,6 +87,31 @@ STDMETHODIMP CRecord::get_Field(VARIANT Index, IField** retVal)
         return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IRecord);
     }
 }
+
+STDMETHODIMP CRecord::get_FieldDefs(IFieldDefs** retVal)
+{
+    if (m_fieldDefsObj == NULL)
+    {
+        CComObject<CFieldDefs>::CreateInstance(&m_fieldDefsObj);
+        if (!m_fieldDefsObj)
+            return Error("CreateInstance FieldDefs", IID_IWritableRecord);
+        m_fieldDefsObj->AddRef();
+    }
+    try
+    {
+        m_fieldDefsObj->m_fds = m_rec->fieldDefs();
+        IFieldDefs* fds;
+        m_fieldDefsObj->QueryInterface(IID_IFieldDefs, (void**)&fds);
+        _ASSERTE(fds);
+        *retVal = fds;
+        return S_OK;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        return Error((*bzs::rtl::getMsg(e)).c_str(), IID_IWritableRecord);
+    }
+}
+
 
 STDMETHODIMP CRecord::get_IsInvalidRecord(VARIANT_BOOL* retVal)
 {
