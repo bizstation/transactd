@@ -822,6 +822,9 @@ void tabledef::calcReclordlen(bool force)
     if (m_inUse == 0 || force)
     {
         if (force) m_inUse = 0;
+        if (charsetIndex == 0)
+            charsetIndex = mysql::charsetIndex(GetACP());
+
         int nisFieldNum = 0;
         bool firstTimeStamp = true;
         m_nullfields = 0;
@@ -847,6 +850,10 @@ void tabledef::calcReclordlen(bool force)
         for (int i = 0; i < fieldCount; i++)
         {
             fielddef& fd = fieldDefs[i];
+            if (fd.charsetIndex() == 0)
+                fd.setCharsetIndex(charsetIndex);
+            fd.setSchemaCodePage(schemaCodePage);
+
             fd.m_nullbytes = 0;
             fd.m_nullbit = 0;
             if (fd.isNullable())
@@ -1066,20 +1073,6 @@ short tabledef::findKeynumByFieldNum(short fieldNum) const
             return i;
     }
     return -1;
-}
-
-void tabledef::setDefaultCharsetIfZero()
-{
-    if (charsetIndex == 0)
-        charsetIndex = mysql::charsetIndex(GetACP());
-
-    for (short i = 0; i < fieldCount; i++)
-    {
-        fielddef& fd = fieldDefs[i];
-        if (fd.charsetIndex() == 0)
-            fd.setCharsetIndex(charsetIndex);
-        fd.setSchemaCodePage(schemaCodePage);
-    }
 }
 
 short tabledef::synchronize(const tabledef* td)

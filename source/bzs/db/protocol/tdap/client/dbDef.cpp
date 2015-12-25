@@ -354,7 +354,6 @@ short dbdef::validateTableDef(short TableIndex)
             }
         }
     }
-    td->setDefaultCharsetIfZero();
     if (td->inUse() == 0)
         td->calcReclordlen();
     return m_stat;
@@ -656,7 +655,6 @@ fielddef* dbdef::insertField(short TableIndex, short InsertIndex)
     td->setKeydefsPtr();
     renumberFieldNum(TableIndex, InsertIndex, 2);
     memset(&(td->fieldDefs[InsertIndex]), 0, sizeof(fielddef));
-    td->calcReclordlen();
     fielddef* fd = &(td->fieldDefs[InsertIndex]);
     fd->setCharsetIndex(td->charsetIndex);
     fd->setSchemaCodePage(td->schemaCodePage);
@@ -745,7 +743,6 @@ tabledef* dbdef::initReadAfter(short tableIndex, const tabledef* data, uint_td d
     td->setFielddefsPtr();
     td->setKeydefsPtr();
     td->autoIncExSpace = ((database*)nsdb())->defaultAutoIncSpace();
-    td->setDefaultCharsetIfZero();
     //Fix:Bug of maxRecordLen is mistake value saved, recalculate maxRecordLen.
     td->calcReclordlen();
     if (td->fieldDefs[td->fieldCount -1].type == ft_myfixedbinary)

@@ -1106,7 +1106,6 @@ private:
     bool isNeedNis(const keydef& key) const;
     bool isNULLFieldFirstKeySegField(const keydef& key) const;
     bool isNullValueZeroAll(const keydef& key) const;
-    void setDefaultCharsetIfZero(); // if charsetInex = 0  then set as mysql::charsetIndex(GetACP())
     void setMysqlNullMode(bool v);
     void calcReclordlen(bool force= false);
     inline keydef* setKeydefsPtr()

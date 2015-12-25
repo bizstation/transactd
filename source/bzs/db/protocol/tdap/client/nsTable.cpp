@@ -953,8 +953,8 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
     else
 #endif
         stripAuth(path, buf, MAX_PATH);
-    _TUCHAR* p = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, PSEPARATOR_C);
-    _TUCHAR* p2 = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, '=');
+    _TCHAR* p = _tcsmrchr(buf, PSEPARATOR_C);
+    _TCHAR* p2 = _tcsmrchr(buf, '=');
     if (p && p2)
     {
         if (p2 > p)
@@ -967,7 +967,13 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
     if (p2)
         *(p2 + 1) = 0x00;
     if (uri && !_tcsstr(buf, _T("dbfile=")))
-        _tcscat(buf, _T("dbfile="));
+    {
+        p = _tcsmrchr(buf, '?');
+        if (!p)
+            _tcscat(buf, _T("?dbfile="));
+        else
+            _tcscat(buf, _T("dbfile="));
+    }
     return buf;
 }
 
