@@ -138,7 +138,7 @@ class DLLLIB field
     const class fielddefs* m_fds;
     mutable unsigned char* m_cachedNullPtr;
     mutable unsigned char m_nullbit;
-    static unsigned char m_nullSign;
+    static const unsigned char m_nullSign = 0xff;
 
     void nullPtrCache() const;
     int blobLenBytes() const { return m_fd->blobLenBytes(); }
@@ -214,7 +214,7 @@ public:
     {
         if (nullField)
         {
-            m_cachedNullPtr = &field::m_nullSign;
+            m_cachedNullPtr = (unsigned char*)&field::m_nullSign;
             m_nullbit = 1;
         }
     }

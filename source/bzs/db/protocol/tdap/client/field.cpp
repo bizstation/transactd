@@ -346,7 +346,7 @@ void fielddefs::release()
 //------------------------------------------------------------------------------
 static fielddef fdDummy;
 
-unsigned char field::m_nullSign = 0xff;
+//unsigned char field::m_nullSign = 0xff;
 
 DLLLIB const fielddef& dummyFd()
 {
