@@ -19,6 +19,7 @@
  02111-1307, USA.
  ================================================================= */
 #include <tchar.h>
+#include <cstddef>
 #include <bzs/env/compiler.h>
 
 

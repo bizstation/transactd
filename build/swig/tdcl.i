@@ -77,7 +77,6 @@ validatablePointerList g_vPtrList;
 #include <bzs/rtl/datetime.h>
 #include <bzs/rtl/stringBuffers.h>
 #include <bzs/rtl/strtrim.h>
-#include <bzs/db/protocol/tdap/btrDate.h>
 #include <bzs/db/protocol/tdap/myDateTime.cpp>
 #include <bzs/db/protocol/tdap/client/sharedData.h>
 #include <bzs/db/protocol/tdap/tdapcapi.h>
@@ -1145,7 +1144,7 @@ using namespace bzs::db::protocol::tdap::client;
 %extend bzs::db::protocol::tdap::fielddef {
   const char* defaultValue() const
   {
-     return self->defaultValue_strA();
+     return self->defaultValue_str();
   }
 }
 %ignore bzs::db::protocol::tdap::fielddef::defaultValue;
