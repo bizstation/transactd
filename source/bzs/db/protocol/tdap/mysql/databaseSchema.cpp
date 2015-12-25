@@ -43,7 +43,7 @@ namespace tdap
 namespace mysql
 {
 
-schemaBuilder::schemaBuilder(void)
+schemaBuilder::schemaBuilder(void): m_stat(0)
 {
 }
 
@@ -158,8 +158,11 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
     size_t tdSizelen =  (sizeof(tabledef) + (sizeof(fielddef) * src->fields()) +
                             (sizeof(keydef) * src->keys()));
 
-    if (size < tdSizelen) return NULL;
-
+    if (size < tdSizelen)
+    {
+        m_stat = STATUS_BUFFERTOOSMALL;
+        return NULL;
+    }
     // index
     keynumConvert kc(&src->keyDef(0), src->keys());
 
@@ -320,7 +323,11 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
 tabledef* schemaBuilder::getTabledef(database* db, const char* tablename, uchar* rec, size_t size)
 {
     table* tb = db->openTable(tablename, TD_OPEN_READONLY, NULL);
-    if (db->stat()) return NULL;
+    if (db->stat()) 
+    {
+        m_stat = db->stat();
+        return NULL;
+    }
     tabledef* td = getTabledef(tb, 0, true, rec, size);
     db->closeTable(tb);
     return td;

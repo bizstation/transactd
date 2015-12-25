@@ -1535,17 +1535,19 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             nw->setClientBuffferSize(*(req.datalen));
             nw->beginExt(false);
             char* p = nw->curPtr() - sizeof(unsigned short);// orver write row space
-            protocol::tdap::tabledef* td = schemaBuilder().getTabledef(db, getTableName(req).c_str(), 
+            schemaBuilder sb;
+            protocol::tdap::tabledef* td = sb.getTabledef(db, getTableName(req).c_str(), 
                     (unsigned char*)p, *req.datalen);
             if (td)
             {
                 nw->asyncWrite(NULL, td->varSize + sizeof(unsigned short), netsvc::server::netWriter::curSeekOnly);
                 nw->writeHeadar(P_MASK_DATA | P_MASK_DATALEN, (short_td)errorCode(db->stat()));
-                unsigned int* totalLen = (unsigned int*)nw->ptr();
-                nw->datalen = *totalLen = nw->resultLen();
+                
             }
             else
-                nw->writeHeadar(0, STATUS_BUFFERTOOSMALL);
+                nw->writeHeadar(0, errorCodeSht(sb.stat()));
+            unsigned int* totalLen = (unsigned int*)nw->ptr();
+            nw->datalen = *totalLen = nw->resultLen();
             return EXECUTE_RESULT_SUCCESS;
         }
         case TD_STORE_TEST:
