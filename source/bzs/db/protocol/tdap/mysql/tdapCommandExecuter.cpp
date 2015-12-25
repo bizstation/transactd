@@ -888,42 +888,45 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
 
     for (int i = 0; i < ereq->logicalCount; ++i)
     {
-        m_tb->setKeyValuesPacked(fd->ptr, fd->len);
-        m_tb->seekKey(HA_READ_KEY_EXACT, keyMap);
-        if (m_tb->stat() == 0)
+        /* If NULL even any one segment, all be NULL 
+           The fd->ptr[0] is null Indicator. 
+        */
+        if (fd->null == 0)
         {
+            m_tb->setKeyValuesPacked(fd->ptr, fd->len);
+            m_tb->seekKey(HA_READ_KEY_EXACT, keyMap);
+            if (m_tb->stat() == 0)
+            {
+                if (seg)
+                {
+                    // If duplicate records , bookmark space is request row number.
+                    stat = m_readHandler->write((uchar*)&i, 4);
+                }
+                else if (noBookmark)
+                    stat = m_readHandler->write((const unsigned char *)_T("dummy"), 0);
+                else
+                    stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
+            }
+            else
+                stat = m_readHandler->write(NULL, 0);
+
+            if (stat) break;
+            // for hasMany join
             if (seg)
             {
-                // If duplicate records , bookmark space is request row number.
-                stat = m_readHandler->write((uchar*)&i, 4);
+                while (m_tb->stat() == 0)
+                {
+                    m_tb->getNextSame(keyMap);
+                    if (m_tb->stat() == 0)
+                        stat = m_readHandler->write(
+                            (uchar*)&i, 4); // write seek sequential number
+                    if (stat) break;
+                }
+                if (stat) break;
             }
-            else if (noBookmark)
-                stat = m_readHandler->write((const unsigned char *)_T("dummy"), 0);
-            else
-                stat =
-                    m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
-        }
-        else
+        }else
             stat = m_readHandler->write(NULL, 0);
-        if (stat)
-            break;
-
-        // for hasMany join
-        if (seg)
-        {
-            while (m_tb->stat() == 0)
-            {
-                m_tb->getNextSame(keyMap);
-                if (m_tb->stat() == 0)
-                    stat = m_readHandler->write(
-                        (uchar*)&i, 4); // write seek sequential number
-                if (stat)
-                    break;
-            }
-            if (stat)
-                break;
-        }
-
+        if (stat)  break;
         fd = fd->next();
     }
     if (stat == 0)

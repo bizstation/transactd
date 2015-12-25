@@ -218,6 +218,7 @@ public:
     void setResultName(const _TCHAR* v);
     int resultKey() const;
     void reset();
+    bool isNull(int groupIndex) const;
     virtual groupFuncBase* clone() = 0;
 };
 

@@ -138,6 +138,7 @@ class DLLLIB field
     const class fielddefs* m_fds;
     mutable unsigned char* m_cachedNullPtr;
     mutable unsigned char m_nullbit;
+    static unsigned char m_nullSign;
 
     void nullPtrCache() const;
     int blobLenBytes() const { return m_fd->blobLenBytes(); }
@@ -207,9 +208,15 @@ public:
 public:
 /** @cond INTERNAL */
     // nullPtr and nullbit is all field same.
-    inline field(unsigned char* ptr, const fielddef& fd, const fielddefs* fds) 
-        : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds),m_cachedNullPtr(NULL), m_nullbit(0)
+    inline field(unsigned char* ptr, const fielddef& fd, const fielddefs* fds, 
+        bool nullField = false) 
+        : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds), m_cachedNullPtr(NULL), m_nullbit(0)
     {
+        if (nullField)
+        {
+            m_cachedNullPtr = &field::m_nullSign;
+            m_nullbit = 1;
+        }
     }
 /** @endcond */
     inline field(const field& r) : m_fd(r.m_fd), m_ptr(r.m_ptr), m_fds(r.m_fds),

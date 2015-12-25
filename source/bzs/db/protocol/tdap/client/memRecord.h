@@ -77,47 +77,38 @@ class DLLLIB memoryRecord : public fieldsBase
     autoMemory* m_memblock[JOINLIMIT_PER_RECORD];
     int m_memblockSize;
 #endif
-
+    mutable int m_blockIndexCache;
     static memoryRecord* create(fielddefs& fdinfo, int n);
     static memoryRecord* create(const memoryRecord& m, int n);
 
-protected:
-    /** @cond INTERNAL */
 
-    inline memoryRecord();
-    inline memoryRecord(fielddefs& fdinfo);
-    memoryRecord(const memoryRecord& r);
-    ~memoryRecord();
-    memoryRecord& operator=(const memoryRecord& r);
-    void copyToBuffer(table* tb, bool updateOnly = false) const;
+    /** @cond INTERNAL */
 
     /* return memory block first address which not field ptr address */
     inline unsigned char* ptr(int index) const
     {
         return nullPtr(index) + (*m_fns)[index].nullbytes();
-        /*for (int i = 0; i < memBlockSize(); ++i)
-            if (*(m_memblock[i]->endFieldIndex) > index)
-                return m_memblock[i]->ptr + (*m_fns)[index].nullbytes();
-        assert(0);
-        return NULL;*/
     }
 
     inline unsigned char* nullPtr(int index) const
     {
+        return m_memblock[memoryBlockIndex(index)]->ptr;
+    }
+
+    inline int memoryBlockIndex(int index) const 
+    { 
         for (int i = 0; i < memBlockSize(); ++i)
             if (*(m_memblock[i]->endFieldIndex) > index)
-                return m_memblock[i]->ptr;
+                return m_blockIndexCache = i;
         assert(0);
-        return NULL;
+        return 0;
     }
+
+    int memoryBlockIndexCache() const { return m_blockIndexCache;}
 
     inline const autoMemory& memBlockByField(int index) const
     {
-        for (int i = 0; i < memBlockSize(); ++i)
-            if (*(m_memblock[i]->endFieldIndex) > index)
-                return *m_memblock[i];
-        assert(0);
-        return *((autoMemory*)0);
+        return *m_memblock[memoryBlockIndex(index)];
     }
 
     inline const autoMemory& memBlock(int index) const
@@ -129,10 +120,6 @@ protected:
 #else
     inline int memBlockSize() const { return m_memblockSize; }
 #endif
-    inline void copyFromBuffer(const table* tb)
-    {
-        memcpy(nullPtr(0), tb->data(), m_fns->totalFieldLen());
-    }
 
     void removeLastMemBlock() 
     { 
@@ -147,9 +134,21 @@ protected:
         }
     }
 
+    void releaseMemory();
+
+protected:
+    inline memoryRecord();
+    inline memoryRecord(fielddefs& fdinfo);
+    memoryRecord(const memoryRecord& r);
+    ~memoryRecord();
+    memoryRecord& operator=(const memoryRecord& r);
+    void copyToBuffer(table* tb, bool updateOnly = false) const;
+    inline void copyFromBuffer(const table* tb)
+    {
+        memcpy(nullPtr(0), tb->data(), m_fns->totalFieldLen());
+    }
     void setRecordData(autoMemory* am, unsigned char* ptr, size_t size,
                        short* endFieldIndex, bool owner = false);
-    void releaseMemory();
 
     /** @endcond */
 public:

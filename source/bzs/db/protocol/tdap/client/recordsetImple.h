@@ -428,7 +428,8 @@ public:
                     dynamic_cast<memoryRecord*>(m_recordset[i]);
                 memoryRecord* mr = recs + i;
                 p->push_back(mr);
-                mr->m_invalidRecord = row->m_invalidRecord;
+                mr->m_InvalidFlags = row->m_InvalidFlags;
+                
                 for (int j = 0; j < (int)row->memBlockSize(); ++j)
                 {
                     const autoMemory& mb = row->memBlock(j);
@@ -725,10 +726,10 @@ inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
     {
         const std::vector<int>& map = (*m_joinRowMap)[row + m_rowOffset];
         for (int j = 0; j < (int)map.size(); ++j)
-            (*m_rs)[map[j]].setInvalidRecord(v);
+            (*m_rs)[map[j]].setInvalidRecord(v ? m_curFirstField : 0);
     }
     else
-        (*m_rs)[row + m_rowOffset].setInvalidRecord(v);
+        (*m_rs)[row + m_rowOffset].setInvalidRecord(v ? m_curFirstField : 0);
 }
 
 inline void multiRecordAlocatorImple::duplicateRow(int row, int count)

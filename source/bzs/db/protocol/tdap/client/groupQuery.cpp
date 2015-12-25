@@ -465,7 +465,9 @@ public:
 
             for (int j = 0; j < (int)m_funcs.size(); ++j)
             {
-                if (m_funcs[j]->resultType() == ft_float)
+                if (m_funcs[j]->isNull(i))
+                    (*cur).setInvalidRecord(m_funcs[j]->resultKey());
+                else if (m_funcs[j]->resultType() == ft_float)
                     setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->numericResult(i));
                 else
                     memcpy((*cur)[m_funcs[j]->resultKey()].ptr() ,
@@ -598,6 +600,7 @@ public:
     std::vector<groupFuncBase::numeric_type> m_values;
     std::vector<__int64> m_counts;
     std::vector<unsigned char*> m_strings;
+    std::vector<bool> m_nulls;
 
     inline groupFuncBaseImple() : m_resultKey(-1),
                                m_resultLen(sizeof(double)),
@@ -622,9 +625,9 @@ public:
         : m_targetNames(r.m_targetNames), m_resultName(r.m_resultName),
           m_resultKey(r.m_resultKey), 
           m_resultLen(r.m_resultLen), m_resultType(r.m_resultType), 
-          m_values(r.m_values), m_counts(r.m_counts)
+          m_values(r.m_values), m_counts(r.m_counts),m_nulls(r.m_nulls)
     {
-        copyStrings(r.m_strings);  
+        copyStrings(r.m_strings);
     }
 
     groupFuncBaseImple& operator=(const groupFuncBaseImple& r)
@@ -638,6 +641,7 @@ public:
             m_resultLen = r.m_resultLen;
             m_values = r.m_values;
             m_counts = r.m_counts;
+            m_nulls = r.m_nulls;
             m_strings.clear();
             copyStrings(r.m_strings); 
         }
@@ -655,9 +659,9 @@ public:
         m_resultLen = len;
     }
 
-    inline uchar_td resultType() { return m_resultType; }
+    inline uchar_td resultType() const { return m_resultType; }
 
-    inline ushort_td resultLen() { return m_resultLen; }
+    inline ushort_td resultLen() const { return m_resultLen; }
 
     inline void appendStringBuffer(int index)
     {
@@ -680,6 +684,10 @@ public:
         }
         else
             appendStringBuffer(index);
+        std::vector<bool>::iterator it = m_nulls.begin();
+        if (index)
+            it += index;
+        m_nulls.insert(it, true);
     }
 
     inline void init(const fielddefs* fdinfo)
@@ -807,6 +815,11 @@ int groupFuncBase::resultKey() const
     return m_imple->resultKey();
 }
 
+bool groupFuncBase::isNull(int groupIndex) const
+{
+    return m_imple->m_nulls[groupIndex];
+}
+
 void groupFuncBase::reset()
 {
     recordsetQuery::reset();
@@ -827,7 +840,11 @@ void groupFuncBase::operator()(const row_ptr& row, int index, bool insert)
     if (!flag)
         flag = match(row);
     if (flag)
+    {
+        for (int i = 0; i < m_imple->targetKeys(); ++i)
+           if ((*row)[m_imple->targetKey(i)].isNull()) return;
         doCalc(row, index);
+    }
 }
 
 groupFuncBase::numeric_type groupFuncBase::numericResult(int groupIndex) const
@@ -867,8 +884,11 @@ void sum::doCalc(const row_ptr& row, int index)
 {
     numeric_type tmp = 0;
     for (int i = 0; i < m_imple->targetKeys(); ++i)
+    {
         m_imple->m_values[index] +=
             fieldValue((*row)[m_imple->targetKey(i)], tmp);
+        m_imple->m_nulls[index] = false;
+    }
 }
 
 groupFuncBase* sum::clone()
@@ -893,6 +913,7 @@ count::count(const _TCHAR* resultName) : groupFuncBase()
 
 void count::doCalc(const row_ptr& row, int index)
 {
+    m_imple->m_nulls[index] = false;
     m_imple->m_values[index] = m_imple->m_values[index] + 1;
 }
 
@@ -926,11 +947,14 @@ void avg::doCalc(const row_ptr& row, int index)
 {
     sum::doCalc(row, index);
     m_imple->m_counts[index] = m_imple->m_counts[index] + 1;
+    m_imple->m_nulls[index] = false;
 }
 
 avg::numeric_type avg::numericResult(int index) const
 {
-    return m_imple->m_values[index] / m_imple->m_counts[index];
+    if (m_imple->m_counts[index])
+        return m_imple->m_values[index] / m_imple->m_counts[index];
+    return 0;
 }
 
 groupFuncBase* avg::clone()
@@ -963,6 +987,7 @@ void min::doCalc(const row_ptr& row, int index)
             m_flag = false;
         m_imple->m_values[index] = tmp;
     }
+    m_imple->m_nulls[index] = false;
 }
 
 groupFuncBase* min::clone()
@@ -1005,6 +1030,7 @@ void max::doCalc(const row_ptr& row, int index)
         if (m_flag || m_imple->m_values[index] < tmp)
             m_flag = false;
         m_imple->m_values[index] = tmp;
+        m_imple->m_nulls[index] = false;
     }
 }
 
@@ -1065,6 +1091,7 @@ void last::doCalc(const row_ptr& row, int index)
             unsigned char* p = m_imple->m_strings[index];
             memcpy(p, (*row)[m_imple->targetKey(0)].ptr(), len);
         }
+       m_imple->m_nulls[index] = false;
     }
 }
 
@@ -1107,6 +1134,7 @@ void first::doCalc(const row_ptr& row, int index)
             }
         }
         m_readed = true;
+        m_imple->m_nulls[index] = false;
     }
 }
 

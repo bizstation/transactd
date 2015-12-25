@@ -277,7 +277,11 @@ inline int compareBlobType(const char* l, const char* r, bool bin, char logType,
 
 struct seek
 {
-    unsigned short len;
+    struct
+    {
+        unsigned short len  : 15;
+        unsigned short null : 1;
+    };
     unsigned char ptr[1]; // variable
     seek* next() const
     {

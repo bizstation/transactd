@@ -346,6 +346,8 @@ void fielddefs::release()
 //------------------------------------------------------------------------------
 static fielddef fdDummy;
 
+unsigned char field::m_nullSign = 0xff;
+
 DLLLIB const fielddef& dummyFd()
 {
     fdDummy.type = ft_integer;
@@ -1797,7 +1799,7 @@ bool field::isNull() const
 void field::setNull(bool v)
 {
     nullPtrCache();
-    if (m_nullbit)
+    if (m_nullbit && m_cachedNullPtr != &field::m_nullSign)
     {
          if (v)
             (*m_cachedNullPtr) |= (unsigned char)m_nullbit;

@@ -190,14 +190,23 @@ struct resultDef
 struct seek
 {
     unsigned char* data;
-    unsigned short len;
+    union
+    {
+        unsigned short len_ptr;
+        struct
+        {
+            unsigned short len  : 15;
+            unsigned short null : 1;
+        };
+    };
 
 public:
     // setParam from keyValue
-    bool setParam(uchar_td* buf, ushort_td keylen)
+    bool setParam(uchar_td* buf, ushort_td keylen, bool isNull)
     {
         len = keylen;
         data = buf;
+        null = isNull ? 1 : 0;
         return true;
     }
 
@@ -205,15 +214,15 @@ public:
     { 
         if (!isTransactd)
             return len;
-        return sizeof(len) + len; 
+        return sizeof(unsigned short) + len; 
     }
 
     unsigned char* writeBuffer(unsigned char* p, bool end,
                                bool isTransactd) const
     {
-        int n = sizeof(len);
+        int n = sizeof(unsigned short);
         if (isTransactd)
-            memcpy(p, &len, n);
+            memcpy(p, &len_ptr, n);
         else
             n = 0;
         memcpy(p + n, data, len);
@@ -718,7 +727,7 @@ class filter
                 m_tb->setFV(kd->segments[j].fieldNum, c_str_v(keyValues[i + j]));
             seek& l = m_seeks[index];
             ushort_td len = m_tb->writeKeyDataTo(dataBuf, joinKeySize);
-            if (!l.setParam(dataBuf, len))
+            if (!l.setParam(dataBuf, len, false))
                 return false;
             bsize.seeks += l.size(m_isTransactd);
             dataBuf += len;
@@ -737,6 +746,8 @@ class filter
         {
             seek& l = m_seeks[index];
             uchar_td* to = dataBuf;
+            /* If NULL even any one segment, all be NULL */
+            bool has_null = false;
             if (m_seekByBookmarks)
             {
                 const keyValuePtr& v = keyValues[i];
@@ -750,10 +761,11 @@ class filter
                     const keyValuePtr& v = keyValues[i + j];
                     fielddef& fd = fds[kd->segments[j].fieldNum];
                     FLAGS f = kd->segments[j].flags;
+                    has_null |= (v.ptr == NULL);
                     to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len, (v.ptr == NULL));
                 }
             }
-            if (!l.setParam(dataBuf, (ushort_td)(to - dataBuf)))
+            if (!l.setParam(dataBuf, (ushort_td)(to - dataBuf), has_null))
                 return false;
             bsize.seeks += l.size(m_isTransactd);
             dataBuf = to;
@@ -1132,13 +1144,16 @@ public:
 
         seek& l = m_seeks[index];
         uchar_td* to = m_buftmp;
+        /* If NULL even any one segment, all be NULL */
+        bool has_null = false;
         for (int j = 0; j < keySize; ++j)
         {
             fielddef& fd = fds[kd->segments[j].fieldNum];
             FLAGS f = kd->segments[j].flags;
             to = fd.keyCopy(to, (uchar_td*)ptr[j], len[j], (ptr[j]==NULL));
+            has_null |= (ptr[j] == NULL);
         }
-        if (!l.setParam(m_buftmp, (ushort_td)(to - m_buftmp)))
+        if (!l.setParam(m_buftmp, (ushort_td)(to - m_buftmp), has_null))
             return false;
         bsize.seeks += l.size(m_isTransactd);
         m_buftmp = to;

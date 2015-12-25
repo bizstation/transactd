@@ -673,7 +673,7 @@ private:
         ushort_td copylen = std::min<ushort_td>(keylen, datalen);
 
         memset(to, 0x00, keylen + 1); //clear plus null byte
-        if (isNullable() || isNull)
+        if (isNullable())
         {
             // mysql only
             if (isNull)
@@ -682,19 +682,21 @@ private:
                 return to + 1 + keylen - keyVarlen;
             }else
                 ++to;
-        }
-        if (keyVarlen)
+        }else if(!isNull)
         {
-            if (datalen==0xff)
-                copylen = (ushort_td)std::min<uint_td>((uint_td)copylen,
-                                                   keyDataLen(from));
-            // Var size is allways 2byte for key.
-            memcpy(to, &copylen, 2);
-            to += 2;
-            if (datalen==0xff)
-                from = keyData(from);
+            if (keyVarlen)
+            {
+                if (datalen==0xff)
+                    copylen = (ushort_td)std::min<uint_td>((uint_td)copylen,
+                                                       keyDataLen(from));
+                // Var size is allways 2byte for key.
+                memcpy(to, &copylen, 2);
+                to += 2;
+                if (datalen==0xff)
+                    from = keyData(from);
+            }
+            memcpy(to, from, copylen);
         }
-        memcpy(to, from, copylen);
         return to + keylen - keyVarlen;// incremnt 2 +  (store_len - varlen)
     }
 
