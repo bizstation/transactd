@@ -658,7 +658,8 @@ void testModeMacro()
 
 #define DEC_V2 (double)5.0000010000500001
 #define DEC_V2LL 5LL
-#define DEC_V2S _T("5.000001000050000100000000000000")
+#define DEC_V2SA "5.000001000050000100000000000000"
+#define DEC_V2S _T(DEC_V2SA)
 
 #define DEC_V3 (double)3.0
 #define DEC_V3LL 3LL
@@ -671,7 +672,8 @@ void testModeMacro()
 
 #define DEC_V6 (double)-5.0000010000500001
 #define DEC_V6LL -5LL
-#define DEC_V6S _T("-5.000001000050000100000000000000")
+#define DEC_V6SA "-5.000001000050000100000000000000"
+#define DEC_V6S _T(DEC_V6SA)
 
 #define DEC_V7 (double)-3.0
 #define DEC_V7LL -3LL
@@ -885,16 +887,24 @@ void testStoreInt(database* db)
     tb->setFV(++fieldnum, buf);
     _stprintf(buf, _T("%.5lf"), DEC_V1);
     tb->setFV(++fieldnum, buf);
+#if (__BCPLUSPLUS__)
+    tb->setFV(++fieldnum, DEC_V2S);
+#else
     _stprintf(buf, _T("%.16lf"), DEC_V2);
     tb->setFV(++fieldnum, buf);
+#endif
     _stprintf(buf, _T("%.1lf"), DEC_V3);
     tb->setFV(++fieldnum, buf);
     _stprintf(buf, _T("%.11lf"), DEC_V4);
     tb->setFV(++fieldnum, buf);
     _stprintf(buf, _T("%.5lf"), DEC_V5);
     tb->setFV(++fieldnum, buf);
+#if (__BCPLUSPLUS__)
+    tb->setFV(++fieldnum, DEC_V6S);
+#else
     _stprintf(buf, _T("%.16lf"), DEC_V6);
     tb->setFV(++fieldnum, buf);
+#endif
     _stprintf(buf, _T("%.1lf"), DEC_V7);
     tb->setFV(++fieldnum, buf);
     _stprintf(buf, _T("%.11lf"), DEC_V8);
@@ -999,16 +1009,16 @@ void testStoreInt(database* db)
     values += buf2;
     values += "\t19\t";sprintf_s(buf2, 50, "%.5lf", DEC_V1);
     values += buf2;
-    values += "\t20\t";sprintf_s(buf2, 50, "%.16lf", DEC_V2);
-    values += buf2;
+    values += "\t20\t";
+    values += DEC_V2SA;
     values += "\t21\t";sprintf_s(buf2, 50, "%.1lf", DEC_V3);
     values += buf2;
     values += "\t22\t";sprintf_s(buf2, 50, "%.11lf", DEC_V4);
     values += buf2;
     values += "\t23\t";sprintf_s(buf2, 50, "%.5lf", DEC_V5);
     values += buf2;
-    values += "\t24\t";sprintf_s(buf2, 50, "%.16lf", DEC_V6);
-    values += buf2;
+    values += "\t24\t";
+    values += DEC_V6SA;
     values += "\t25\t";sprintf_s(buf2, 50, "%.1lf", DEC_V7);
     values += buf2;
     values += "\t26\t";sprintf_s(buf2, 50, "%.11lf", DEC_V8);
