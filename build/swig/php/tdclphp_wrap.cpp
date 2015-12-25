@@ -13557,7 +13557,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVNull) {
     }
   }
   {
-    ZVAL_BOOL(return_value,(result)?1:0);
+    ZVAL_BOOL(return_value, result);
   }
   return;
 fail:
@@ -13670,6 +13670,9 @@ ZEND_NAMED_FUNCTION(_wrap_table_setFV) {
         convert_to_double_ex(args[2]);
         double v  = (double) Z_DVAL_PP(args[2]);
         tb->setFV(index, v);
+      }
+      else if (type == IS_NULL){
+        tb->setFVA(index, (char*)NULL);
       }
       else
         tb->setFV(index, (int)0);
@@ -22767,6 +22770,9 @@ ZEND_NAMED_FUNCTION(_wrap_field_setFV) {
       convert_to_string_ex(args[1]);
       arg2_c = (_TCHAR *) Z_STRVAL_PP(args[1]);
       break;
+    case IS_NULL:
+      arg2_c = (_TCHAR *) NULL;
+      break;
     default: {
       if(SWIG_ConvertPtr(*args[1], (void **) &arg2, 0, 0) < 0) {
         SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of field_setFV. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__field");
@@ -22796,6 +22802,8 @@ ZEND_NAMED_FUNCTION(_wrap_field_setFV) {
       else if ((*(args[1]))->type == IS_LONG)
         (bzs::db::protocol::tdap::client::field *) &(arg1)->operator =(arg2_64);
       else if ((*(args[1]))->type == IS_STRING)
+        (bzs::db::protocol::tdap::client::field *) &(arg1)->operator =(arg2_c);
+      else if ((*(args[1]))->type == IS_NULL)
         (bzs::db::protocol::tdap::client::field *) &(arg1)->operator =(arg2_c);
       else 
         (bzs::db::protocol::tdap::client::field *) &(arg1)->operator =(arg2_d);
@@ -29142,7 +29150,7 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_keyValue) {
     
     tb->clearBuffer();
     for (int i = 1; i < argc; ++i){
-      if (kd->segmentCount < i)
+      if (i > kd->segmentCount)
         break;
       ushort_td fnum = kd->segments[i-1].fieldNum;
       int type = (*args[i])->type;
@@ -29160,6 +29168,9 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_keyValue) {
         convert_to_double_ex(args[i]);
         double v  = (double) Z_DVAL_PP(args[i]);
         tb->setFV(fnum, v);
+      }
+      else if (type == IS_NULL){
+        tb->setFVA(fnum, (char*)NULL);
       }
       else
         tb->setFV(fnum, (int)0);

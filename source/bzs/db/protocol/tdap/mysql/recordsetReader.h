@@ -1385,6 +1385,7 @@ public:
                                   const extResultDef* rd, bool seeksMode, bool seekBookmark)
     {
         int blobs = 0;
+        int nullfields = 0;
         m_fields->nullbytes = 0;
         bm.setTable(tb);
         for (int i = 0; i < rd->fieldCount; i++)
@@ -1398,8 +1399,10 @@ public:
             if (m_position.isBlobField(&fd))
                 ++blobs;
             if (m_position.isNullable(num))
-                ++m_fields->nullbytes;
+                ++nullfields;
+                
         }
+        m_fields->nullbytes = (nullfields + 7)/8;
 
         if (!seeksMode)
         {

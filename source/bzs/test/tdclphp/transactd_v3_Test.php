@@ -114,7 +114,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         return ($db->stat() == 0) && 
             ((5 == $server_ver->majorVersion) &&
             (5 == $server_ver->minorVersion)) &&
-            ($server_ver->type == bz\MYSQL_TYPE_MYSQL);
+            ($server_ver->type == bz\transactd::MYSQL_TYPE_MYSQL);
     }
     private function createUserTable($db)
     {
@@ -153,6 +153,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd->setName('group');
         $fd->type = bz\transactd::ft_integer;
         $fd->len = 4;
+        $fd->setNullable(true, false);
         $fd->setDefaultValue(10);
         
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
@@ -333,7 +334,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($td->inUse() , 0);
         
         //nullfields
-        $this->assertEquals($td->nullfields(), 1);
+        $this->assertEquals($td->nullfields(), 2);
             
         
        
@@ -383,16 +384,27 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $q = new bz\query();
         $atu = new bz\activeTable($db, "user");
         
+        // keyValue null
+        $tb1 = $atu->table();
+        $tb1->setFV(2, null);
+        $this->assertEquals($tb1->getFVNull(2), true);
+        $tb1->setFVNull(2, false);
+        $this->assertEquals($tb1->getFVNull(2), false);
+        $atu->index(1)->keyValue(null);
+        $this->assertEquals($tb1->getFVNull(2), true);
+     
         // isNull setNull
         $atu->alias("名前", "name");
+
         $q->select("id", "name", "group", "tel")->where("id", "<=", 10);
         $rs = $atu->index(0)->keyValue(1)->read($q);
+        return;
         $this->assertEquals($rs->count(), 10);
         $rec = $rs->first();
         $this->assertEquals($rec[3]->isNull(), true);
         $rec[3]->setNull(false);
         $this->assertEquals($rec[3]->isNull(), false);
-        
+
         //Join null
         $q->reset();
         $ate = new bz\activeTable($db, "extention");
@@ -404,6 +416,12 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($last["id"]->d(), 10);
         $this->assertEquals($rec[4]->isNull(), false);
         $rec[4]->setNull(true);
+        
+        //setValue null
+        $this->assertEquals($rec[4]->isNull(), true);
+        $rec[4]->setNull(false);
+        $this->assertEquals($rec[4]->isNull(), false);
+        $rec[4]->setValue(null);
         $this->assertEquals($rec[4]->isNull(), true);
         
         //WritableRecord.clear()
@@ -533,7 +551,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVNull("tel"), true);
         $tb->setFVNull(3, false);
         $this->assertEquals($tb->getFVNull(3), false);
+        
+        //setFV null
         $tb->setFVNull("tel", true);
+        $this->assertEquals($tb->getFVNull("tel"), true);
+        $tb->setFVNull("tel", false);
+        $this->assertEquals($tb->getFVNull("tel"), false);
+        $tb->setFV("tel", null);
         $this->assertEquals($tb->getFVNull("tel"), true);
         
         //timestamp format
