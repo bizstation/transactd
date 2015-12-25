@@ -193,7 +193,7 @@ class client
     }
 
 public:
-    client() : m_cryptPwd(NULL), m_disconnected(true), m_connecting(false)
+    client() : m_cryptPwd(NULL), m_disconnected(false), m_connecting(false)
     {
     }
 

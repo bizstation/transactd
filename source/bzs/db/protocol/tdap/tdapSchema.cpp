@@ -1011,7 +1011,8 @@ uint_td tabledef::unPack(char* ptr, size_t size) const
                 if (max < end + movelen)
                     return 0;
                 char* src = pos + dl;
-                memmove(pos + fd.len, src, end - src);
+                if (end > src)
+                    memmove(pos + fd.len, src, end - src);
                 memset(src, 0, movelen);
                 end += movelen;
             }
