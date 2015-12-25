@@ -2178,6 +2178,958 @@ void testSetEnumBit()
     db->release();
 }
 
+#include <bzs/db/protocol/tdap/fieldComp.h>
+void testCompInt()
+{
+    for (ushort_td len = 1; len < 6; ++len)
+    {
+        if (len == 5) len = 8;
+        comp1Func compFunc = getCompFunc(ft_integer, len, eEqual, 0);
+        __int64 l; __int64 r;
+        l = 0; r = 1; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+        l = 0; r = 0; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = 1; r = 0; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        l = -1;r = 0; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+        l = -1;r = -1; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = -1;r = -2; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+    }
+}
+
+void testCompUint()
+{
+    for (ushort_td len = 1; len < 6; ++len)
+    {
+        if (len == 5) len = 8;
+        comp1Func compFunc = getCompFunc(ft_uinteger, len, eEqual, 0);
+        unsigned __int64 l; unsigned __int64 r;
+        l = 0; r = ULLONG_MAX; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+        l = 0; r = 0;          BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = 1; r = 0;          BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        l = ULLONG_MAX;  r = 0;  BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        l = ULLONG_MAX;  r = ULLONG_MAX; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = ULLONG_MAX-1;r = ULLONG_MAX; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+    }
+}
+void testCompDouble()
+{
+    ushort_td len = 4;
+    comp1Func compFunc = getCompFunc(ft_float, len, eEqual, 0);
+    {
+        float l; float r;
+        l = (float)-0.2; r = 0;    BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+        l = (float)-0.2; r = (float)-0.2; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = (float)0.2; r = 0;    BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+    }
+    {
+        double l; double r;
+        len = 8;
+        compFunc = getCompFunc(ft_float, len, eEqual, 0);
+        l = -0.000000000000002; r = 0;    BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+        l = -0.000000000000002; r = -0.000000000000002; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = 0.000000000000002; r = 0;    BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+    }
+}
+
+void testCompBit()
+{
+    for (ushort_td len = 1; len < 8; ++len)
+    {
+        // equal comp
+        comp1Func compFunc = getCompFunc(ft_bit, len, eEqual, 0);
+        unsigned __int64 l; unsigned __int64 r;
+
+        l = 0; r = 0xF0; l = changeEndian(l, len);r = changeEndian(r, len);
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+
+        l = 0; r = 0; l = changeEndian(l, len);r = changeEndian(r, len);          
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        
+        l = 1; r = 0; l = changeEndian(l, len);r = changeEndian(r, len);          
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        
+        l = 0xF0;  r = 0; l = changeEndian(l, len);r = changeEndian(r, len);  
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        
+        l = 0xF0;  r = 0xF0; l = changeEndian(l, len);r = changeEndian(r, len);
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        
+        l = 0xF0-1;r = 0xF0; l = changeEndian(l, len);r = changeEndian(r, len);
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+
+        // bit comp
+        compFunc = getCompFunc(ft_bit, len, eBitAnd, 0);
+        l = 0xFF; r = 0xF0; l = changeEndian(l, len);r = changeEndian(r, len);
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = 0xF0; r = 0xF; l = changeEndian(l, len);r = changeEndian(r, len);
+        int v = compFunc((const char*)&l, (const char*)&r, len);
+        BOOST_CHECK(v == 1);
+
+        compFunc = getCompFunc(ft_bit, len, eNotBitAnd, 0);
+        l = 0xFF; r = 0xF0; l = changeEndian(l, len);r = changeEndian(r, len);
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+    }
+}
+
+void testCompSet()
+{
+    for (ushort_td len = 1; len < 5; ++len)
+    {
+        if (len == 5) len = 8;
+        // equal comp
+        comp1Func compFunc = getCompFunc(ft_set, len, eEqual, 0);
+        unsigned __int64 l; unsigned __int64 r;
+        l = 0; r = 0xF0;
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+        l = 0; r = 0;
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = 1; r = 0; 
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        l = 0xF0;  r = 0;
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        l = 0xF0;  r = 0xF0;
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = 0xF0-1;r = 0xF0;
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+
+        // bit comp
+        compFunc = getCompFunc(ft_set, len, eBitAnd, 0);
+        l = 0xFF; r = 0xF0;
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = 0xF0; r = 0xF;
+        int v = compFunc((const char*)&l, (const char*)&r, len);
+        BOOST_CHECK(v == 1);
+        compFunc = getCompFunc(ft_set, len, eNotBitAnd, 0);
+        l = 0xFF; r = 0xF0;
+        BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+    }
+}
+
+void testCompEnum()
+{
+    for (ushort_td len = 1; len < 3; ++len)
+    {
+        comp1Func compFunc = getCompFunc(ft_enum, len, eEqual, 0);
+        unsigned short l; unsigned short r;
+        l = 0; r = USHRT_MAX; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+        l = 0; r = 0;          BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = 1; r = 0;          BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        l = USHRT_MAX;  r = 0;  BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        l = USHRT_MAX;  r = USHRT_MAX; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+        l = USHRT_MAX-1;r = USHRT_MAX; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+    }
+}
+
+void testCompYear()
+{
+    ushort_td len = 1;
+    comp1Func compFunc = getCompFunc(ft_myyear, len, eEqual, 0);
+    unsigned char l; unsigned char r;
+    l = 0; r = 0XFF; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+    l = 0; r = 0; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+    l = 0XFF; r = 0; BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+}
+
+void testCompDate()
+{
+    ushort_td len = 3;
+    comp1Func compFunc = getCompFunc(ft_mydate, len, eEqual, 0);
+    myDate ld, rd;
+    int l, r;
+
+    ld = _T("1900-01-01"); rd = _T("1900-01-02"); l = ld.getValue(); r = rd.getValue();
+    BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+    ld = _T("1900-01-01"); rd = _T("1900-01-01"); l = ld.getValue(); r = rd.getValue();
+    BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+    ld = _T("1900-01-02"); rd = _T("1900-01-01"); l = ld.getValue(); r = rd.getValue();
+    BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+    
+}
+
+void testCompTime()
+{
+    __int64 l, r;
+    {
+        ushort_td len = 3;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime_num_cmp, len, eEqual, 0);
+            myTime ld(0, false), rd(0, false);
+            ld = _T("00:00:59"); rd = _T("16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:01"); rd = _T("00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("16:59:00"); rd = _T("00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            myTime ld(0, true), rd(0, true);
+            ld = _T("00:00:59"); rd = _T("16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:01"); rd = _T("00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("16:59:00"); rd = _T("00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 4;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            myTime ld(1, true), rd(1, true);
+            ld = _T("00:00:59.1"); rd = _T("00:00:59.2"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.1"); rd = _T("00:00:59.1"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.1"); rd = _T("00:00:59.0"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            myTime ld(2, true), rd(2, true);
+            ld = _T("00:00:59.01"); rd = _T("00:00:59.02"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.01"); rd = _T("00:00:59.01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.01"); rd = _T("00:00:59.00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        len = 5;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            myTime ld(3, true), rd(3, true);
+            ld = _T("00:00:59.001"); rd = _T("00:00:59.002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.001"); rd = _T("00:00:59.001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.001"); rd = _T("00:00:59.000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            myTime ld(4, true), rd(4, true);
+            ld = _T("00:00:59.0000"); rd = _T("00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.0001"); rd = _T("00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.0001"); rd = _T("00:00:59.0000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 6;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            myTime ld(5, true), rd(5, true);
+            ld = _T("00:00:59.00001"); rd = _T("00:00:59.00002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.00001"); rd = _T("00:00:59.00001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.00001"); rd = _T("00:00:59.00000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            myTime ld(6, true), rd(6, true);
+            ld = _T("01:00:59.999999"); rd = _T("10:00:59.100001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.000001"); rd = _T("00:00:59.000001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("10:00:59.000000"); rd = _T("10:00:58.999999"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+    }
+}
+
+void testCompDateTime()
+{
+    __int64 l, r;
+    {
+        ushort_td len = 5;
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            myDateTime ld(0, true), rd(0, true);
+            ld = _T("1900-01-02 00:00:59"); rd = _T("1900-01-02 16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:01"); rd = _T("1900-01-02 00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 16:59:00"); rd = _T("1900-01-02 00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 6;
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            myDateTime ld(1, true), rd(1, true);
+            ld = _T("1900-01-02 00:00:59.1"); rd = _T("1900-01-02 00:00:59.2"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.1"); rd = _T("1900-01-02 00:00:59.1"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.1"); rd = _T("1900-01-02 00:00:59.0"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            myDateTime ld(2, true), rd(2, true);
+            ld = _T("1900-01-02 00:00:59.01"); rd = _T("1900-01-02 00:00:59.02"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.01"); rd = _T("1900-01-02 00:00:59.01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.01"); rd = _T("1900-01-02 00:00:59.00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        len = 7;
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            myDateTime ld(3, true), rd(3, true);
+            ld = _T("1900-01-02 00:00:59.001"); rd = _T("1900-01-02 00:00:59.002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.001"); rd = _T("1900-01-02 00:00:59.001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.001"); rd = _T("1900-01-02 00:00:59.000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            myDateTime ld(4, true), rd(4, true);
+            ld = _T("1900-01-02 00:00:59.0000"); rd = _T("1900-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.0001"); rd = _T("1900-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.0001"); rd = _T("1900-01-02 00:00:59.0000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 8;
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            myDateTime ld(5, true), rd(5, true);
+            ld = _T("1900-01-02 00:00:59.00001"); rd = _T("1900-01-02 00:00:59.00002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.00001"); rd = _T("1900-01-02 00:00:59.00001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.00001"); rd = _T("1900-01-02 00:00:59.00000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            myDateTime ld(6, true), rd(6, true);
+            ld = _T("1900-01-02 01:00:59.999999"); rd = _T("1900-01-02 10:00:59.100001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.000001"); rd = _T("1900-01-02 00:00:59.000001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 10:00:59.000000"); rd = _T("1900-01-02 10:00:58.999999"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime_num_cmp, len, eEqual, 0);
+            myDateTime ld(0, false), rd(0, false);
+            ld = _T("1900-01-02 00:00:59"); rd = _T("1900-01-02 16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:01"); rd = _T("1900-01-02 00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 16:59:00"); rd = _T("1900-01-02 00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+    }
+}
+
+void testCompTimeStamp()
+{
+    __int64 l, r;
+    {
+        ushort_td len = 4;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            myTimeStamp ld(0, true), rd(0, true);
+            ld = _T("1970-01-02 00:00:59"); rd = _T("1970-01-02 16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:01"); rd = _T("1970-01-02 00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 16:59:00"); rd = _T("1970-01-02 00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp_num_cmp, len, eEqual, 0);
+            myTimeStamp ld(0, false), rd(0, false);
+            ld = _T("1970-01-02 00:00:59"); rd = _T("1970-01-02 16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:01"); rd = _T("1970-01-02 00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 16:59:00"); rd = _T("1970-01-02 00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 5;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            myTimeStamp ld(1, true), rd(1, true);
+            ld = _T("1970-01-02 00:00:59.1"); rd = _T("1970-01-02 00:00:59.2"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.1"); rd = _T("1970-01-02 00:00:59.1"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.1"); rd = _T("1970-01-02 00:00:59.0"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            myTimeStamp ld(2, true), rd(2, true);
+            ld = _T("1970-01-02 00:00:59.01"); rd = _T("1970-01-02 00:00:59.02"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.01"); rd = _T("1970-01-02 00:00:59.01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.01"); rd = _T("1970-01-02 00:00:59.00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        len = 6;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            myTimeStamp ld(3, true), rd(3, true);
+            ld = _T("1970-01-02 00:00:59.001"); rd = _T("1970-01-02 00:00:59.002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.001"); rd = _T("1970-01-02 00:00:59.001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.001"); rd = _T("1970-01-02 00:00:59.000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            myTimeStamp ld(4, true), rd(4, true);
+            ld = _T("1970-01-02 00:00:59.0000"); rd = _T("1970-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.0001"); rd = _T("1970-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.0001"); rd = _T("1970-01-02 00:00:59.0000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 7;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            myTimeStamp ld(5, true), rd(5, true);
+            ld = _T("1970-01-02 00:00:59.00001"); rd = _T("1970-01-02 00:00:59.00002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.00001"); rd = _T("1970-01-02 00:00:59.00001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.00001"); rd = _T("1970-01-02 00:00:59.00000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            myTimeStamp ld(6, true), rd(6, true);
+            ld = _T("1970-01-02 01:00:59.999999"); rd = _T("1970-01-02 10:00:59.100001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.000001"); rd = _T("1970-01-02 00:00:59.000001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 10:00:59.000000"); rd = _T("1970-01-02 10:00:58.999999"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+    }
+}
+
+void testCompTimeMa()
+{
+    __int64 l, r;
+    {
+        ushort_td len = 3;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime_num_cmp, len, eEqual, 0);
+            maTime ld(0, false), rd(0, false);
+            ld = _T("00:00:59"); rd = _T("16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:01"); rd = _T("00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("16:59:00"); rd = _T("00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            maTime ld(0, true), rd(0, true);
+            ld = _T("00:00:59"); rd = _T("16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:01"); rd = _T("00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("16:59:00"); rd = _T("00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 4;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            maTime ld(1, true), rd(1, true);
+            ld = _T("00:00:59.1"); rd = _T("00:00:59.2"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.1"); rd = _T("00:00:59.1"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.1"); rd = _T("00:00:59.0"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            maTime ld(2, true), rd(2, true);
+            ld = _T("00:00:59.01"); rd = _T("00:00:59.02"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.01"); rd = _T("00:00:59.01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.01"); rd = _T("00:00:59.00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        len = 5;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            maTime ld(3, true), rd(3, true);
+            ld = _T("00:00:59.001"); rd = _T("00:00:59.002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.001"); rd = _T("00:00:59.001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.001"); rd = _T("00:00:59.000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            maTime ld(4, true), rd(4, true);
+            ld = _T("00:00:59.0000"); rd = _T("00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.0001"); rd = _T("00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.0001"); rd = _T("00:00:59.0000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 6;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            maTime ld(5, true), rd(5, true);
+            ld = _T("00:00:59.00001"); rd = _T("00:00:59.00002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.00001"); rd = _T("00:00:59.00001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("00:00:59.00001"); rd = _T("00:00:59.00000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytime, len, eEqual, 0);
+            maTime ld(6, true), rd(6, true);
+            ld = _T("01:00:59.999999"); rd = _T("10:00:59.100001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("00:00:59.000001"); rd = _T("00:00:59.000001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("10:00:59.000000"); rd = _T("10:00:58.999999"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+    }
+}
+
+void testCompDateTimeMa()
+{
+    __int64 l, r;
+    {
+        ushort_td len = 5;
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            maDateTime ld(0, true), rd(0, true);
+            ld = _T("1900-01-02 00:00:59"); rd = _T("1900-01-02 16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:01"); rd = _T("1900-01-02 00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 16:59:00"); rd = _T("1900-01-02 00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 6;
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            maDateTime ld(1, true), rd(1, true);
+            ld = _T("1900-01-02 00:00:59.1"); rd = _T("1900-01-02 00:00:59.2"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.1"); rd = _T("1900-01-02 00:00:59.1"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.1"); rd = _T("1900-01-02 00:00:59.0"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            maDateTime ld(2, true), rd(2, true);
+            ld = _T("1900-01-02 00:00:59.01"); rd = _T("1900-01-02 00:00:59.02"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.01"); rd = _T("1900-01-02 00:00:59.01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.01"); rd = _T("1900-01-02 00:00:59.00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        len = 7;
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            maDateTime ld(3, true), rd(3, true);
+            ld = _T("1900-01-02 00:00:59.001"); rd = _T("1900-01-02 00:00:59.002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.001"); rd = _T("1900-01-02 00:00:59.001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.001"); rd = _T("1900-01-02 00:00:59.000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            maDateTime ld(4, true), rd(4, true);
+            ld = _T("1900-01-02 00:00:59.0000"); rd = _T("1900-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.0001"); rd = _T("1900-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.0001"); rd = _T("1900-01-02 00:00:59.0000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 8;
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            maDateTime ld(5, true), rd(5, true);
+            ld = _T("1900-01-02 00:00:59.00001"); rd = _T("1900-01-02 00:00:59.00002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.00001"); rd = _T("1900-01-02 00:00:59.00001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 00:00:59.00001"); rd = _T("1900-01-02 00:00:59.00000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime, len, eEqual, 0);
+            maDateTime ld(6, true), rd(6, true);
+            ld = _T("1900-01-02 01:00:59.999999"); rd = _T("1900-01-02 10:00:59.100001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:59.000001"); rd = _T("1900-01-02 00:00:59.000001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 10:00:59.000000"); rd = _T("1900-01-02 10:00:58.999999"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mydatetime_num_cmp, len, eEqual, 0);
+            maDateTime ld(0, false), rd(0, false);
+            ld = _T("1900-01-02 00:00:59"); rd = _T("1900-01-02 16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1900-01-02 00:00:01"); rd = _T("1900-01-02 00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1900-01-02 16:59:00"); rd = _T("1900-01-02 00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+    }
+}
+
+void testCompTimeStampMa()
+{
+    __int64 l, r;
+    {
+        ushort_td len = 4;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            maTimeStamp ld(0, true), rd(0, true);
+            ld = _T("1970-01-02 00:00:59"); rd = _T("1970-01-02 16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:01"); rd = _T("1970-01-02 00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 16:59:00"); rd = _T("1970-01-02 00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp_num_cmp, len, eEqual, 0);
+            maTimeStamp ld(0, false), rd(0, false);
+            ld = _T("1970-01-02 00:00:59"); rd = _T("1970-01-02 16:59:00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:01"); rd = _T("1970-01-02 00:00:01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 16:59:00"); rd = _T("1970-01-02 00:00:59"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 5;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            maTimeStamp ld(1, true), rd(1, true);
+            ld = _T("1970-01-02 00:00:59.1"); rd = _T("1970-01-02 00:00:59.2"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.1"); rd = _T("1970-01-02 00:00:59.1"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.1"); rd = _T("1970-01-02 00:00:59.0"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            maTimeStamp ld(2, true), rd(2, true);
+            ld = _T("1970-01-02 00:00:59.01"); rd = _T("1970-01-02 00:00:59.02"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.01"); rd = _T("1970-01-02 00:00:59.01"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.01"); rd = _T("1970-01-02 00:00:59.00"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        len = 6;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            maTimeStamp ld(3, true), rd(3, true);
+            ld = _T("1970-01-02 00:00:59.001"); rd = _T("1970-01-02 00:00:59.002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.001"); rd = _T("1970-01-02 00:00:59.001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.001"); rd = _T("1970-01-02 00:00:59.000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            maTimeStamp ld(4, true), rd(4, true);
+            ld = _T("1970-01-02 00:00:59.0000"); rd = _T("1970-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.0001"); rd = _T("1970-01-02 00:00:59.0001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.0001"); rd = _T("1970-01-02 00:00:59.0000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+        
+        len = 7;
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            maTimeStamp ld(5, true), rd(5, true);
+            ld = _T("1970-01-02 00:00:59.00001"); rd = _T("1970-01-02 00:00:59.00002"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.00001"); rd = _T("1970-01-02 00:00:59.00001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 00:00:59.00001"); rd = _T("1970-01-02 00:00:59.00000"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+
+        {
+            comp1Func compFunc = getCompFunc(ft_mytimestamp, len, eEqual, 0);
+            maTimeStamp ld(6, true), rd(6, true);
+            ld = _T("1970-01-02 01:00:59.999999"); rd = _T("1970-01-02 10:00:59.100001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == -1);
+            ld = _T("1970-01-02 00:00:59.000001"); rd = _T("1970-01-02 00:00:59.000001"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 0);
+            ld = _T("1970-01-02 10:00:59.000000"); rd = _T("1970-01-02 10:00:58.999999"); l = ld.getValue(); r = rd.getValue();
+            BOOST_CHECK(compFunc((const char*)&l, (const char*)&r, len) == 1);
+        }
+    }
+}
+
+void doTestCompStringOne(const char* lt , const char* rt, int ret, int len,
+                    int sizeByte, comp1Func compFunc)
+{
+    char l[128] = {0x00};
+    char r[128] = {0x00};
+    strcpy(l + sizeByte, lt); strcpy(r + sizeByte, rt);
+    if (sizeByte)
+    {
+        l[0] =  strlen(lt);
+        r[0] = (char)len;
+    }
+    int v = compFunc((const char*)l, (const char*)r, len);
+    if (ret > 0)
+        BOOST_CHECK( v > 0);
+    else if (ret == 0)
+        BOOST_CHECK( v == 0);
+    else
+        BOOST_CHECK( v < 0);
+}
+
+void doTestCompString(uchar_td type, int sizeByte)
+{
+    uchar_td logType = eEqual; 
+    ushort_td len = 2;
+    comp1Func compFunc = getCompFunc(type, 0, logType, sizeByte);
+    doTestCompStringOne("abcc", "ac",  -1, len, sizeByte, compFunc);
+    doTestCompStringOne("a", "ac",     -1, len, sizeByte, compFunc);
+    doTestCompStringOne("ab99", "abcc", 0, len, sizeByte, compFunc);
+    doTestCompStringOne("accc", "ab0",  1, len, sizeByte, compFunc);
+
+    logType |= CMPLOGICAL_CASEINSENSITIVE;
+    compFunc = getCompFunc(type, 0, logType, sizeByte);
+
+    doTestCompStringOne("Abc", "ac", -1, len, sizeByte, compFunc);
+    doTestCompStringOne("Abc", "aBc", 0, len, sizeByte, compFunc);
+    doTestCompStringOne("acc", "Abc", 1, len, sizeByte, compFunc);
+
+    logType = eEqual | CMPLOGICAL_VAR_COMP_ALL;
+    compFunc = getCompFunc(type, 0, logType, sizeByte);
+    doTestCompStringOne("ab", "ac", -1, len, sizeByte, compFunc);
+    doTestCompStringOne("ab", "ab", 0, len, sizeByte, compFunc);
+    doTestCompStringOne("ac", "ab", 1, len, sizeByte, compFunc);
+
+    
+    logType |= CMPLOGICAL_CASEINSENSITIVE;
+    compFunc = getCompFunc(type, 0, logType, sizeByte);
+    doTestCompStringOne("Ab", "ac", -1, len, sizeByte, compFunc);
+    doTestCompStringOne("Ab", "aB", 0, len, sizeByte, compFunc);
+    doTestCompStringOne("ac", "Ab", 1, len, sizeByte, compFunc);
+
+}
+
+void testCompString()
+{
+    doTestCompString(ft_mychar, 0);
+    doTestCompString(ft_string, 0);
+    doTestCompString(ft_zstring, 0);
+    doTestCompString(ft_note, 0);
+    doTestCompString(ft_myvarchar, 1);
+    doTestCompString(ft_myvarchar, 2);
+    doTestCompString(ft_myvarbinary, 1);
+    doTestCompString(ft_myvarbinary, 2);
+    doTestCompString(ft_lstring, 1);
+    doTestCompString(ft_lstring, 2);
+}
+
+#ifdef _WIN32
+void doTestCompWStringOne(const wchar_t* lt , const wchar_t* rt, int ret, int len,
+                    int sizeByte, comp1Func compFunc)
+{
+    char l[128] = {0x00};
+    char r[128] = {0x00};
+    wcscpy((wchar_t*)(l + sizeByte), lt); wcscpy((wchar_t*)(r + sizeByte), rt);
+    
+    if (sizeByte)
+    {
+        l[0] = wcslen(lt) * 2;
+        r[0] = (char)len;
+    }
+    int v = compFunc((const char*)l, (const char*)r, len);
+    if (ret > 0)
+        BOOST_CHECK( v > 0);
+    else if (ret == 0)
+        BOOST_CHECK( v == 0);
+    else
+        BOOST_CHECK( v < 0);
+}
+
+void doTestCompWString(uchar_td type, int sizeByte)
+{
+    uchar_td logType = eEqual; 
+    ushort_td len = 4;
+    comp1Func compFunc = getCompFunc(type, 0, logType, sizeByte);
+    doTestCompWStringOne(L"abcc", L"ac",  -1, len, sizeByte, compFunc);
+    doTestCompWStringOne(L"a", L"ac",     -1, len, sizeByte, compFunc);
+    doTestCompWStringOne(L"ab99", L"abcc", 0, len, sizeByte, compFunc);
+    doTestCompWStringOne(L"accc", L"ab0",  1, len, sizeByte, compFunc);
+
+    logType |= CMPLOGICAL_CASEINSENSITIVE;
+    compFunc = getCompFunc(type, 0, logType, sizeByte);
+
+    doTestCompWStringOne(L"Abc", L"ac", -1, len, sizeByte, compFunc);
+    doTestCompWStringOne(L"Abc", L"aBc", 0, len, sizeByte, compFunc);
+    doTestCompWStringOne(L"acc", L"Abc", 1, len, sizeByte, compFunc);
+
+    logType = eEqual | CMPLOGICAL_VAR_COMP_ALL;
+    compFunc = getCompFunc(type, 0, logType, sizeByte);
+    doTestCompWStringOne(L"ab", L"ac", -1, len, sizeByte, compFunc);
+    doTestCompWStringOne(L"ab", L"ab", 0, len, sizeByte, compFunc);
+    doTestCompWStringOne(L"ac", L"ab", 1, len, sizeByte, compFunc);
+
+    
+    logType |= CMPLOGICAL_CASEINSENSITIVE;
+    compFunc = getCompFunc(type, 0, logType, sizeByte);
+    doTestCompWStringOne(L"Ab", L"ac", -1, len, sizeByte, compFunc);
+    doTestCompWStringOne(L"Ab", L"aB", 0, len, sizeByte, compFunc);
+    doTestCompWStringOne(L"ac", L"Ab", 1, len, sizeByte, compFunc);
+
+}
+
+void testCompWString()
+{
+    doTestCompWString(ft_mywchar, 0);
+    doTestCompWString(ft_wstring, 0);
+    doTestCompWString(ft_wzstring, 0);
+    doTestCompWString(ft_mywvarchar, 1);
+    doTestCompWString(ft_mywvarchar, 2);
+    doTestCompWString(ft_mywvarbinary, 1);
+    doTestCompWString(ft_mywvarbinary, 2);
+}
+
+#endif
+
+
+
+void doTestCompBlobOne(const char* lt , const char* rt, int ret, int len,
+                    int sizeByte, comp1Func compFunc)
+{
+    char l[128] = {0x00};
+    char lb[128] = {0x00};
+    char r[128] = {0x00};
+    strcpy(lb, lt); strcpy(r + sizeByte, rt);
+    l[0] =  strlen(lt);
+    char** p = (char**)(l + sizeByte);
+    *p = lb;
+    
+    r[0] = (char)len;
+    int v = compFunc((const char*)l, (const char*)r, len);
+    if (ret > 0)
+        BOOST_CHECK( v > 0);
+    else if (ret == 0)
+        BOOST_CHECK( v == 0);
+    else
+        BOOST_CHECK( v < 0);
+}
+
+void doTestCompBlob(uchar_td type, int sizeByte)
+{
+    uchar_td logType = eEqual; 
+    ushort_td len = 2;
+    comp1Func compFunc = getCompFunc(type, 0, logType, sizeByte);
+    doTestCompBlobOne("abcc", "ac",  -1, len, sizeByte, compFunc);
+    doTestCompBlobOne("a", "ac",     -1, len, sizeByte, compFunc);
+    doTestCompBlobOne("ab99", "abcc", 0, len, sizeByte, compFunc);
+    doTestCompBlobOne("accc", "ab0",  1, len, sizeByte, compFunc);
+
+    logType |= CMPLOGICAL_CASEINSENSITIVE;
+    compFunc = getCompFunc(type, 0, logType, sizeByte);
+
+    doTestCompBlobOne("Abc", "ac", -1, len, sizeByte, compFunc);
+    doTestCompBlobOne("Abc", "aBc", 0, len, sizeByte, compFunc);
+    doTestCompBlobOne("acc", "Abc", 1, len, sizeByte, compFunc);
+
+    logType = eEqual | CMPLOGICAL_VAR_COMP_ALL;
+    compFunc = getCompFunc(type, 0, logType, sizeByte);
+    doTestCompBlobOne("ab", "ac", -1, len, sizeByte, compFunc);
+    doTestCompBlobOne("ab", "ab", 0, len, sizeByte, compFunc);
+    doTestCompBlobOne("ac", "ab", 1, len, sizeByte, compFunc);
+
+    
+    logType |= CMPLOGICAL_CASEINSENSITIVE;
+    compFunc = getCompFunc(type, 0, logType, sizeByte);
+    doTestCompBlobOne("Ab", "ac", -1, len, sizeByte, compFunc);
+    doTestCompBlobOne("Ab", "aB", 0, len, sizeByte, compFunc);
+    doTestCompBlobOne("ac", "Ab", 1, len, sizeByte, compFunc);
+
+}
+
+void testCompBlob()
+{
+    doTestCompBlob(ft_mytext, 1);
+    doTestCompBlob(ft_mytext, 2);
+    doTestCompBlob(ft_mytext, 3);
+    doTestCompBlob(ft_mytext, 4);
+    doTestCompBlob(ft_myblob, 1);
+    doTestCompBlob(ft_myblob, 2);
+    doTestCompBlob(ft_myblob, 3);
+    doTestCompBlob(ft_myblob, 4);
+}
 
 #pragma warning(default : 4996) 
 

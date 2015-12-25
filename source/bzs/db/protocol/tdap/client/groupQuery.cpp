@@ -17,10 +17,12 @@
    02111-1307, USA.
 =================================================================*/
 #pragma hdrstop
+#pragma warning(disable : 4996)
 #include "groupQuery.h"
 #include "recordsetImple.h"
 #include "filter.h"
 #include <boost/algorithm/string.hpp>
+#pragma warning(default : 4996)
 
 #pragma package(smart_init)
 
@@ -333,7 +335,15 @@ void recordsetQuery::init(const fielddefs* fdinfo)
             itm.compType |= CMPLOGICAL_VAR_COMP_ALL;
         fielddef& fdd = const_cast<fielddef&>(m_imple->compFields[index]);
         fdd.len = m_imple->compFields[index].compDataLen((const uchar_td*)fd.ptr(), part);
-        itm.compFunc = getCompFunc(fdd.type, fdd.len, itm.compType, 
+        uchar_td type = fdd.type; 
+        if (fdd.isLegacyTimeFormat())
+        {
+            if (type == ft_mytime) type = ft_mytime_num_cmp; 
+            if (type == ft_mydatetime) type = ft_mydatetime_num_cmp; 
+            if (type == ft_mytimestamp) type = ft_mytimestamp_num_cmp; 
+        }
+
+        itm.compFunc = getCompFunc(type, fdd.len, itm.compType, 
                 fdd.varLenBytes() + fdd.blobLenBytes());
 
         if (i + 3 < (int)tokns.size())
@@ -1250,3 +1260,4 @@ first& first::operator=(const first& r)
 } // namespace protocol
 } // namespace db
 } // namespace bzs
+

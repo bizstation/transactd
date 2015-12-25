@@ -1000,8 +1000,30 @@ BOOST_AUTO_TEST_CASE(null_comp)
     BOOST_CHECK_EQUAL(nullComp(false, true, (char)eIsNull),    1); 
     BOOST_CHECK_EQUAL(nullComp(false, true, (char)eIsNotNull), 0); 
     BOOST_CHECK_EQUAL(nullComp(false, false, (char)0),         2); 
+}
 
-    BOOST_CHECK_EQUAL(2 * 3, 6);
+BOOST_AUTO_TEST_CASE(field_comp)
+{
+    testCompInt();
+    testCompUint();
+    testCompDouble();
+    testCompBit();
+    testCompSet();
+    testCompEnum();
+    testCompYear();
+    testCompDate();
+    testCompTime();
+    testCompDateTime();
+    testCompTimeStamp();
+    testCompTimeMa();
+    testCompDateTimeMa();
+    testCompTimeStampMa();
+    testCompString();
+#ifdef _WIN32
+    testCompWString();
+#endif
+    testCompBlob();
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

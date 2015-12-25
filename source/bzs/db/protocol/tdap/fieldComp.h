@@ -193,7 +193,12 @@ template <class T> inline int compare(const char* l, const char* r)
 template <class T> inline int bitMask(const char* l, const char* r)
 {
     T v = *((T*)l) & *((T*)r);
-    return (int)(*((T*)r) - v);
+    v = (*((T*)r) - v);
+    /* 
+       When T is __int64 then v is incoreect value. 
+       Because return size is int.    
+    */
+    return  (v > 0) ? 1 : ((v < 0) ? -1 : 0); 
 }
 
 template <class T> inline int compare(T l, T r)
@@ -442,12 +447,7 @@ int compBlob_bin_i(const char* l, const char* r, int len)
     return compareBlobType(l, r, T_BIN, all, T_INCASE, sizeByte);
 }
 
-inline bool isCompAll(char logType) { return (logType & CMPLOGICAL_VAR_COMP_ALL) != 0;}
-inline bool isCompIncase(char logType) { return (logType & CMPLOGICAL_CASEINSENSITIVE) != 0;}
-
-typedef int (*comp1Func)(const char* l, const char* r,int len);
-
-comp1Func getCompFunc(uchar_td type, ushort_td len, /*char opr,*/  char logType, int sizeByte)
+comp1Func getCompFunc(uchar_td type, ushort_td len, char logType, int sizeByte)
 {
     bool compAll = (logType & CMPLOGICAL_VAR_COMP_ALL) != 0;
     bool incase = (logType & CMPLOGICAL_CASEINSENSITIVE) != 0;

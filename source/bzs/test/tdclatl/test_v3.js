@@ -220,7 +220,7 @@ function checkEqual(a, b, on)
 	{
 		try
 		{
-		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
+			WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
 		}
 		catch(e)
 		{
@@ -237,7 +237,7 @@ function checkNotEqual(a, b, on)
 	{
 		try
 		{
-		WScript.Echo("error on " + on + " " + a.toString() + " == " + b.toString());	
+			WScript.Echo("error on " + on + " " + a.toString() + " == " + b.toString());	
 		}
 		catch(e)
 		{
