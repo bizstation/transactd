@@ -1110,7 +1110,7 @@ void testInMany(database* db)
     BOOST_CHECK(rs.size() == 4);
 
     // read in has_many.
-    q.reset().chunkSizeForInValue(1).in(4);
+    q.reset().segmentsForInValue(1).in(4);
     atv.index(2).read(rs, q);
     BOOST_CHECK(rs.size() == 2);
     BOOST_CHECK(rs[0][_T("id")] == 4);

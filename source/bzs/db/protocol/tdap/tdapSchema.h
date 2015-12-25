@@ -29,7 +29,7 @@
 #include <bzs/db/protocol/tdap/mysql/characterset.h>
 #include <bzs/db/blobStructs.h>
 #include <assert.h>
-
+#include <bzs/db/protocol/tdap/myDateTime.h>
 namespace bzs
 {
 namespace db
@@ -403,13 +403,42 @@ struct PACKAGE fielddef : public fielddef_t_my
 
     inline void setDefaultValue(const char* s)
     {
-        if (isNumericType())
+        if (isBlob())
         {
-            setDefaultValue(atof(s));
+            memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
             return;
         }
-        strncpy_s((char*)m_defValue, 8, s, sizeof(m_defValue) - 1);
+
         enableFlags.bitF = false;
+        __int64 i64 = 0;
+        switch(type)
+        {
+        case ft_time:
+        case ft_mytime:
+        {
+            myDateTime dt(7, true);
+            dt.setTime(s);
+            i64 = dt.getValue();
+            memcpy(m_defValue, &i64, 7);
+            return;
+        }
+        case ft_date:
+        case ft_mydate:
+        case ft_datetime:
+        case ft_mytimestamp:
+        case ft_mydatetime:
+            i64 = str_to_64<myDateTime, char>(7, true, s);
+            memcpy(m_defValue, &i64, 7);
+            return;
+        }
+    
+        if (isNumericType())
+        {
+            double d = atof(s);
+            setDefaultValue(d);
+            return;
+        }
+        strncpy_s(m_defValue, 8, s, sizeof(m_defValue) - 1);
     }
 
 #else // NOT MYSQL_DYNAMIC_PLUGIN

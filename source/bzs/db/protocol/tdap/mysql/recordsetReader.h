@@ -567,8 +567,8 @@ public:
 
 struct extRequest
 {
-    int ilen : 28;
-    int itype : 4;
+    unsigned int ilen : 28;
+    unsigned int itype : 4;
     union
     {
         unsigned short rejectCount;

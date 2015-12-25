@@ -22,7 +22,6 @@
 
 #include <bzs/db/protocol/tdap/tdapSchema.h>
 #include <bzs/db/protocol/tdap/mysql/characterset.h>
-#include <bzs/db/protocol/tdap/myDateTime.h>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -903,19 +902,22 @@ void tabledef::calcReclordlen(bool force)
             else if (defaultValue && fd.isBlob())
                 fd.setDefaultValue(0.0f);
 
-            if (isLegacyTimeFormat(fd))
+            if (m_srvMajorVer)
             {
-                fd.m_options |= FIELD_OPTION_REGACY_TIME;
-                fd.decimals = 0;
-                if (fd.type == ft_mydatetime)
-                    fd.len = 8;
-                else if (fd.type == ft_mytime)
-                    fd.len = 3;
-                else if (fd.type == ft_mytimestamp)
-                    fd.len = 4;
+                if (isLegacyTimeFormat(fd))
+                {
+                    fd.m_options |= FIELD_OPTION_REGACY_TIME;
+                    fd.decimals = 0;
+                    if (fd.type == ft_mydatetime)
+                        fd.len = 8;
+                    else if (fd.type == ft_mytime)
+                        fd.len = 3;
+                    else if (fd.type == ft_mytimestamp)
+                        fd.len = 4;
+                }
+                else
+                    fd.m_options &= ~FIELD_OPTION_REGACY_TIME;
             }
-            else
-                fd.m_options &= ~FIELD_OPTION_REGACY_TIME;
             fd.pos = m_maxRecordLen;
             fd.fixCharnum_bug();
             m_maxRecordLen += fd.len;
@@ -977,7 +979,7 @@ uint_td tabledef::unPack(char* ptr, size_t size) const
             int dl = fd.len; // length
             if (isNull) 
                 dl = 0;
-            else
+            else if (blen)
             {
                 if (blen == 1)
                     dl = *((unsigned char*)(pos)) + blen;
