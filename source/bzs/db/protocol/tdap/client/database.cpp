@@ -828,15 +828,66 @@ table* database::openTable(short tableIndex, short mode, bool autoCreate,
     return NULL;
 }
 
-bool database::createTable(short FileNum, const _TCHAR* FilePath)
+char* database::getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf, uint_td* size)
 {
-    tabledef* td = m_impl->dbDef->tableDefs(FileNum);
+    retbuf[0] = 0x00;
+    short tableIndex = m_impl->dbDef->tableNumByName(tableName);
+    tabledef* td = NULL;
+    if (tableIndex != -1)
+        td = m_impl->dbDef->tableDefs(tableIndex);
+
+    if (!td || td->fieldCount == 0)
+    {
+        m_stat = STATUS_INVALID_FIELD_OFFSET;
+        return retbuf;
+    }
+    if (td->size() > (int)*size)
+    {
+        m_stat = STATUS_BUFFERTOOSMALL;
+        return retbuf;
+    }
+    
+    _TCHAR uri[MAX_PATH];
+    getTableUri(uri, td->id);
+
+    if (!isTransactdUri(uri))
+    {
+        m_stat = STATUS_NOSUPPORT_OP;
+        return retbuf;
+    }
+
+    if (setUseTransactd() == false)
+    {
+        m_stat = STATUS_NOSUPPORT_OP;
+        return retbuf;
+    }
+    memcpy(retbuf, td, td->size());
+    td = (tabledef*)retbuf;
+    td->setFielddefsPtr();
+    td->setKeydefsPtr();
+
+    td->calcReclordlen(true);
+    char buf2[MAX_PATH] = { 0x00 };
+    _TCHAR posblk[128] = { 0x00 };
+
+    const char* p = toServerUri(buf2, MAX_PATH, uri, isUseTransactd());
+    
+    m_stat = m_btrcallid(
+        TD_TABLE_INFO, posblk, td,
+            size, (void*)p, (uchar_td)strlen(p),
+            ST_SUB_GETSQL_BY_TABLEDEF, clientID());
+    return retbuf;
+}
+
+bool database::createTable(short fileNum, const _TCHAR* uri)
+{
+    tabledef* td = m_impl->dbDef->tableDefs(fileNum);
     if (!td || td->fieldCount == 0)
     {
         m_stat = STATUS_INVALID_FIELD_OFFSET;
         return false;
     }
-    if (isTransactdUri(FilePath))
+    if (uri && isTransactdUri(uri))
     {
         if (setUseTransactd() == false)
             return false;
@@ -845,7 +896,7 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
         char buf2[MAX_PATH] = { 0x00 };
         _TCHAR posblk[128] = { 0x00 };
 
-        const char* p = toServerUri(buf2, MAX_PATH, FilePath, isUseTransactd());
+        const char* p = toServerUri(buf2, MAX_PATH, uri, isUseTransactd());
 
         m_stat = m_btrcallid(
             TD_CREATETABLE, posblk, td,
@@ -861,9 +912,9 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
             m_stat = STATUS_CANT_ALLOC_MEMORY;
             return false;
         }
-        m_impl->dbDef->getFileSpec(fs, FileNum);
-        if (FilePath)
-            buf = FilePath;
+        m_impl->dbDef->getFileSpec(fs, fileNum);
+        if (uri)
+            buf = uri;
         else
             buf = td->fileName();
         nsdatabase::createTable(fs, 1024, buf, CR_SUBOP_BY_FILESPEC);

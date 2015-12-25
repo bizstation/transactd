@@ -168,6 +168,8 @@ struct PACKAGE myTimeStamp
 private:
     int m_dec;
     bool m_bigendian;
+protected:
+    bool m_mariadb;
 public:
     union
     {
@@ -180,7 +182,8 @@ public:
         __int64 i64;
     };
 
-    inline myTimeStamp(int dec, bool bigendian) : m_dec(dec), m_bigendian(bigendian){};
+    inline myTimeStamp(int dec, bool bigendian) : m_dec(dec), 
+    	m_bigendian(bigendian), m_mariadb(false){};
     void setValue(__int64 v);
     __int64 getValue();
     char* toString(char* p);
@@ -196,6 +199,20 @@ public:
 #endif
     __int64 internalValue() const { return i64; }
     void setInternalValue(__int64 v) { i64 = v; }
+};
+
+
+struct PACKAGE maTimeStamp : public myTimeStamp
+{
+
+    inline maTimeStamp (int dec, bool bigendian) : myTimeStamp(dec, bigendian)
+    {
+        m_mariadb = true;
+    }
+    maTimeStamp& operator=(const char* p){ myTimeStamp::operator=(p); return *this;}
+#ifdef _WIN32
+    maTimeStamp& operator=(const wchar_t* p) { myTimeStamp::operator=(p); return *this; }
+#endif
 };
 
 inline int btrdateToMydate(int btrd)

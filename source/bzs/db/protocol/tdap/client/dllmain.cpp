@@ -267,7 +267,15 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_GET_PER:
         case TD_SET_OWNERNAME:
+            client_t->req().paramMask = P_MASK_ALL;
+            break;
         case TD_TABLE_INFO:
+            if (client_t->req().keyNum == ST_SUB_GETSQL_BY_TABLEDEF)
+            {
+                client_t->getSqlCreate();
+                client_t->cleanup();
+                return client_t->req().result;
+            }
             client_t->req().paramMask = P_MASK_ALL;
             break;
         case TD_BOOKMARK:

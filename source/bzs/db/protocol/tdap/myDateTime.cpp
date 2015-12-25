@@ -669,7 +669,8 @@ void myTimeStamp::setValue(__int64 v)
             p[1] = src[5];
             p[2] = src[4];
             ms = ms >> (3 - ((m_dec + 1) / 2)) * 8;
-            ms /= ((m_dec % 2) ? 10 : 1);
+            if (!m_mariadb)
+                ms /= ((m_dec % 2) ? 10 : 1);
         }
     }else
         datetime = v;
@@ -690,7 +691,8 @@ __int64 myTimeStamp::getValue()
         if (m_dec)
         {
             ms = ms << (3 - ((m_dec + 1) / 2)) * 8;
-            ms *= ((m_dec % 2) ? 10 : 1);
+            if (!m_mariadb)
+                ms *= ((m_dec % 2) ? 10 : 1);
             p[4] = src[2];
             p[5] = src[1];
             p[6] = src[0];

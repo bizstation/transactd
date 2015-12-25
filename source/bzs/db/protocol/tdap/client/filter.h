@@ -716,7 +716,7 @@ class filter
 
     // Need covert data types
     template <class T>
-    bool doSsetSeekValues(keydef* kd, int joinKeySize, const T& keyValues, size_t size, uchar_td* dataBuf )
+    bool doSetSeekValues(keydef* kd, int joinKeySize, const T& keyValues, size_t size, uchar_td* dataBuf )
     {
         autoBackup recb(m_tb, m_recordBackup);
         int index = 0;
@@ -737,7 +737,7 @@ class filter
     }
 
     // no need covert data types
-    bool doSsetSeekValues(keydef* kd, int joinKeySize, const std::vector<keyValuePtr>& keyValues, size_t size, uchar_td* dataBuf )
+    bool doSetSeekValues(keydef* kd, int joinKeySize, const std::vector<keyValuePtr>& keyValues, size_t size, uchar_td* dataBuf )
     {
         int index = 0;
         bsize.seeks = 0;
@@ -790,16 +790,13 @@ class filter
             if (keySize == 0)
                 keySize = kd->segmentCount;
             else if (kd->segmentCount < keySize)
-                    return false;
+                return false;
             if (size % keySize)
                 return false;
 
             m_hasManyJoin = (kd->segmentCount != keySize) || kd->segments[0].flags.bit0;
             if (m_hasManyJoin)
                 m_withBookmark = true;
-            if (q && m_hasManyJoin &&
-                    !(q->getOptimize() & queryBase::joinHasOneOrHasMany))
-                return false;
             m_seeks.resize(size / keySize);
             for (int j = 0; j < keySize; ++j)
                 maxKeylen +=
@@ -823,7 +820,7 @@ class filter
         if (!prebuiltSeeks(kd, keyValues.size(), q, keySize, &dataBuf))
              return false;
         
-        if (!doSsetSeekValues(kd, keySize, keyValues, keyValues.size(), dataBuf))
+        if (!doSetSeekValues(kd, keySize, keyValues, keyValues.size(), dataBuf))
             return false;
 
         return true;
@@ -1115,7 +1112,7 @@ public:
         if (!prebuiltSeeks(kd, size, NULL, keySize, &dataBuf))
              return false;
 
-        if (!doSsetSeekValues(kd, keySize, values, size, dataBuf))
+        if (!doSetSeekValues(kd, keySize, values, size, dataBuf))
             return false;
 
         m_seeksMode = true;

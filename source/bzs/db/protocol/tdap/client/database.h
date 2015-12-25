@@ -115,6 +115,7 @@ public:
                      const _TCHAR* uri = NULL);
     database* clone();
     bool createTable(short fileNum, const _TCHAR* uri = NULL);
+    char* getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf, uint_td* size);
     void create(const _TCHAR* uri, short type = TYPE_SCHEMA_BDF);
     void drop();
     void dropTable(const _TCHAR* tableName);

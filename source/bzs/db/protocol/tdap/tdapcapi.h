@@ -174,6 +174,10 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 
 #define CR_SUB_FLAG_EXISTCHECK          -1
 
+/** TD_TABLE_INFO sub operations
+ */
+#define ST_SUB_GETSQL_BY_TABLEDEF       -1
+
 /** TD_ADD_SENDBLOB  sub operations
  */
 #define TD_ASBLOB_ENDROW                -125

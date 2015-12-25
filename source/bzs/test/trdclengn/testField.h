@@ -179,7 +179,7 @@ short createTestTableHA_OPTION_PACK_RECORD(database* db)
     return 1;
 }
 
-short createTestTableTime(database* db, bool isMariadb, uchar_td minorVersion)
+short createTestTableTime(database* db, bool isMariadb, uchar_td minorVersion, bool isSupportMultiTimeStamp)
 {
     try
     {
@@ -195,35 +195,38 @@ short createTestTableTime(database* db, bool isMariadb, uchar_td minorVersion)
         fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
 
         //time
+        fd = insertField(def, tableid, ++fieldnum, _T("time5"), ft_mytime, 5);
+        fd->decimals = 3;
         fd = insertField(def, tableid, ++fieldnum, _T("time3"), ft_mytime, 3);
         fd = insertField(def, tableid, ++fieldnum, _T("time4"), ft_mytime, 4);
         fd->decimals = 2;
-        fd = insertField(def, tableid, ++fieldnum, _T("time5"), ft_mytime, 5);
-        fd->decimals = 3;
         fd = insertField(def, tableid, ++fieldnum, _T("time6"), ft_mytime, 6);
         fd->decimals = 6;
 
         //datetime
+        fd = insertField(def, tableid, ++fieldnum, _T("datetime7"), ft_mydatetime, 7);
+        fd->decimals = 3;
         fd = insertField(def, tableid, ++fieldnum, _T("datetime5"), ft_mydatetime, 5);
         fd = insertField(def, tableid, ++fieldnum, _T("datetime6"), ft_mydatetime, 6);
         fd->decimals = 2;
-        fd = insertField(def, tableid, ++fieldnum, _T("datetime7"), ft_mydatetime, 7);
-        fd->decimals = 3;
         fd = insertField(def, tableid, ++fieldnum, _T("datetime8"), ft_mydatetime, 8);
         fd->decimals = 6;
 
         //timestamp
-        fd = insertField(def, tableid, ++fieldnum, _T("timestamp4"), ft_mytimestamp, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("timestamp5"), ft_mytimestamp, 5);
-        fd->decimals = 2;
-        fd->setNullable(true);
         fd = insertField(def, tableid, ++fieldnum, _T("timestamp6"), ft_mytimestamp, 6);
         fd->decimals = 3;
-        fd->setNullable(true);
-        fd = insertField(def, tableid, ++fieldnum, _T("timestamp7"), ft_mytimestamp, 7);
-        fd->decimals = 6;
-        fd->setNullable(true);
- 
+        
+        if (isSupportMultiTimeStamp)
+        {
+            fd = insertField(def, tableid, ++fieldnum, _T("timestamp4"), ft_mytimestamp, 4);
+            fd->setNullable(true);
+            fd = insertField(def, tableid, ++fieldnum, _T("timestamp5"), ft_mytimestamp, 5);
+            fd->decimals = 2;
+            fd->setNullable(true);
+            fd = insertField(def, tableid, ++fieldnum, _T("timestamp7"), ft_mytimestamp, 7);
+            fd->decimals = 6;
+            fd->setNullable(true);
+        }
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
         kd->segments[0].flags.bit8 = 1; // extended key type
@@ -242,12 +245,70 @@ short createTestTableTime(database* db, bool isMariadb, uchar_td minorVersion)
     return 1;
 }
 
+short createTestInMany(database* db)
+{
+    try
+    {
+        dbdef* def = db->dbDef();
+        short tableid = 4;
+
+        insertTable(def, tableid,  _T("values"), g_td_charsetIndex);
+        tabledef* td = def->tableDefs(tableid);
+        td->primaryKeyNum = 0;
+        
+        short fieldnum = 0;
+        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
+
+        //time
+        fd = insertField(def, tableid, ++fieldnum, _T("id2"), ft_integer, 4);
+        fd->setNullable(true);
+        fd = insertField(def, tableid, ++fieldnum, _T("id3"), ft_integer, 4);
+        fd->setNullable(true);
+        fd = insertField(def, tableid, ++fieldnum, _T("name"), ft_myvarchar, 151);
+        fd->setLenByCharnum(50);
+        fd->setNullable(true);
+
+        
+        keydef* kd = insertKey(def, tableid, 0);
+        kd->segments[0].fieldNum = 0;
+        kd->segments[0].flags.bit8 = 1; // extended key type
+        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segmentCount = 1;
+
+        kd = insertKey(def, tableid, 1);
+        kd->segments[0].fieldNum = 1;
+        kd->segments[0].flags.bit8 = 1; // extended key type
+        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segments[0].flags.bit0 = 1; // duplicatable
+        kd->segmentCount = 1;
+
+        kd = insertKey(def, tableid, 2);
+        kd->segments[0].fieldNum = 1;
+        kd->segments[0].flags.bit8 = 1; // extended key type
+        kd->segments[0].flags.bit1 = 1; // changeable
+        kd->segments[0].flags.bit0 = 1; // duplicatable
+        kd->segments[1].fieldNum = 2;
+        kd->segments[1].flags.bit8 = 1; // extended key type
+        kd->segments[1].flags.bit1 = 1; // changeable
+        kd->segments[1].flags.bit0 = 1; // duplicatable
+        kd->segmentCount = 2;
+        updateTableDef(def, tableid);
+        return 0;
+   
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        _tprintf(_T("Error! %s\n"), (*getMsg(e)).c_str());
+    }
+    return 1;
+}
+
 
 class fixtureFieldStore
 {
     mutable database* m_db;
-    bool mysql56TimeFormat;
-    bool legacyTimeFormat;
+    btrVersion ver;
+
 public:
     fixtureFieldStore() : m_db(NULL)
     {
@@ -272,16 +333,19 @@ public:
                     printf("Error getBtrVersion\n");
                     return;
                 }
-                btrVersion& v = vs.versions[1];
-                mysql56TimeFormat =  v.isMysql56TimeFormat();
-                legacyTimeFormat = v.isFullLegacyTimeFormat();
+                ver = vs.versions[1];
+
                 if (ret == 0)
-                {   if (legacyTimeFormat)
+                {   if (isLegacyTimeFormat())
                         ret = createTestTableLegacyTimeTable(m_db);
                     else 
-                        ret = createTestTableTime(m_db, v.isMariaDB(), (uchar_td)v.minorVersion);
+                        ret = createTestTableTime(m_db, ver.isMariaDB(), (uchar_td)ver.minorVersion, 
+                                    isSupportMultiTimeStamp());
                     if (ret == 0)
                         ret = createTestTableHA_OPTION_PACK_RECORD(m_db);
+                    if (ret == 0)
+                        ret = createTestInMany(m_db);
+
                     if (ret == 0)
                         m_db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
                 }
@@ -299,8 +363,9 @@ public:
     }
     ::database* db() const { return m_db; }
 
-    bool isMysql56TimeFormat() const {return mysql56TimeFormat;}
-    bool isLegacyTimeFormat() const{return legacyTimeFormat;}
+    bool isMysql56TimeFormat() const { return ver.isMysql56TimeFormat(); }
+    bool isLegacyTimeFormat() const{ return ver.isFullLegacyTimeFormat(); }
+    bool isSupportMultiTimeStamp() const { return ver.isSupportMultiTimeStamp(); }
 };
 #define TEST_DATE _T("2015-11-10")
 #define TEST_DATEA "2015-11-10"
@@ -666,7 +731,7 @@ void testStoreLegacyTime(database* db)
 {
     short tableid = 2;
     short fieldnum = 0;
-    
+
     table_ptr tb = openTable(db, tableid, TD_OPEN_NORMAL);
     tb->setTimestampMode(TIMESTAMP_VALUE_CONTROL);
     BOOST_CHECK(tb->stat() == 0);
@@ -732,7 +797,8 @@ void testStoreLegacyTime(database* db)
     checkLegacyTimeValue(tb);
 }
 
-void checkTimeValue(table_ptr tb, short fieldIndex, int decimals, bool mySql56timeFormat)
+void checkTimeValue(table_ptr tb, short fieldIndex, int decimals, bool mySql56timeFormat,
+        bool isSupportMultiTimeStamp)
 {
     // read by int64
     myTime t(decimals, true); 
@@ -750,28 +816,30 @@ void checkTimeValue(table_ptr tb, short fieldIndex, int decimals, bool mySql56ti
         dta = TEST_DATETIME[decimals]; 
         BOOST_CHECK_MESSAGE(tb->getFV64(fieldIndex + 4) == dta.i64, "maDateTime decimals = " << decimals);
     }
-    myTimeStamp ts(decimals, true); 
-    ts = TEST_DATETIME[decimals]; 
-    BOOST_CHECK_MESSAGE(tb->getFV64(fieldIndex + 8) == ts.i64, "myTimeStamp decimals = " << decimals);
-
-
+    if (isSupportMultiTimeStamp || decimals == 3)
+    {
+        myTimeStamp ts(decimals, true); 
+        ts = TEST_DATETIME[decimals]; 
+        BOOST_CHECK_MESSAGE(tb->getFV64(fieldIndex + 8) == ts.i64, "myTimeStamp decimals = " << decimals);
+    }
     //read by string
     BOOST_CHECK_MESSAGE(_tcscmp(tb->getFVstr(fieldIndex), TEST_TIME[decimals]) == 0, "myTime  decimals = " << decimals);
     BOOST_CHECK_MESSAGE(_tcscmp(tb->getFVstr(fieldIndex + 4), TEST_DATETIME[decimals]) == 0, "dateTime  decimals = " << decimals);
-    BOOST_CHECK_MESSAGE(_tcscmp(tb->getFVstr(fieldIndex + 8), TEST_DATETIME[decimals]) == 0, "myTimeStamp  decimals = " << decimals);
+    if (isSupportMultiTimeStamp || decimals == 3)
+        BOOST_CHECK_MESSAGE(_tcscmp(tb->getFVstr(fieldIndex + 8), TEST_DATETIME[decimals]) == 0, "myTimeStamp  decimals = " << decimals);
 }
 
-void checkTimeValues(table_ptr tb, bool mySql56timeFormat)
+void checkTimeValues(table_ptr tb, bool mySql56timeFormat, bool isSupportMultiTimeStamp)
 {
     short fieldnum = 0;
-//    if (!mySql56timeFormat)
-    checkTimeValue(tb, ++fieldnum, 0, mySql56timeFormat); //0 decimal
-    checkTimeValue(tb, ++fieldnum, 2, mySql56timeFormat); //2 decimals
-    checkTimeValue(tb, ++fieldnum, 3, mySql56timeFormat); //3 decimals
-    checkTimeValue(tb, ++fieldnum, 6, mySql56timeFormat); //6 decimals 
+    checkTimeValue(tb, ++fieldnum, 3, mySql56timeFormat, isSupportMultiTimeStamp); //3 decimals
+    checkTimeValue(tb, ++fieldnum, 0, mySql56timeFormat, isSupportMultiTimeStamp); //0 decimal
+    checkTimeValue(tb, ++fieldnum, 2, mySql56timeFormat, isSupportMultiTimeStamp); //2 decimals
+    checkTimeValue(tb, ++fieldnum, 6, mySql56timeFormat, isSupportMultiTimeStamp); //6 decimals 
 }
 
-void setTimeValue64(table_ptr tb, short fieldIndex, int decimals, bool mySql56timeFormat)
+void setTimeValue64(table_ptr tb, short fieldIndex, int decimals, bool mySql56timeFormat, 
+            bool isSupportMultiTimeStamp)
 {
     myTime t(decimals, true); 
     t = TEST_TIME[decimals];  tb->setFV(fieldIndex, t.i64);
@@ -785,16 +853,24 @@ void setTimeValue64(table_ptr tb, short fieldIndex, int decimals, bool mySql56ti
     {
         dta = TEST_DATETIME[decimals]; tb->setFV(fieldIndex + 4, dta.i64);
     }
+    if (!isSupportMultiTimeStamp && decimals != 3) return;
+
     myTimeStamp ts(decimals, true); 
     ts = TEST_DATETIME[decimals]; tb->setFV(fieldIndex + 8, ts.i64);
 }
 
-void testStoreTime(database* db, bool mySql56timeFormat)
+void testStoreTime(database* db, bool mySql56timeFormat, bool isSupportMultiTimeStamp)
 {
-
     short tableid = 2;
     short fieldnum = 0;
-    
+
+
+#if (defined(_DEBUG) && defined(_WIN32))
+    char sqlTemp[10240];
+    uint_td datalen = 10240;
+    db->getSqlStringForCreateTable(_T("timetest"), sqlTemp, &datalen);
+    OutputDebugStringA(sqlTemp);
+#endif    
     table_ptr tb = openTable(db, tableid, TD_OPEN_NORMAL);
     tb->setTimestampMode(TIMESTAMP_VALUE_CONTROL);
     BOOST_CHECK(tb->stat() == 0);
@@ -802,33 +878,33 @@ void testStoreTime(database* db, bool mySql56timeFormat)
     tb->clearBuffer();
     tb->setFV(_T("id"), 1);
 
-    setTimeValue64(tb, ++fieldnum, 0, mySql56timeFormat);
-    setTimeValue64(tb, ++fieldnum, 2, mySql56timeFormat);
-    setTimeValue64(tb, ++fieldnum, 3, mySql56timeFormat);
-    setTimeValue64(tb, ++fieldnum, 6, mySql56timeFormat);
+    setTimeValue64(tb, ++fieldnum, 3, mySql56timeFormat, isSupportMultiTimeStamp);
+    setTimeValue64(tb, ++fieldnum, 0, mySql56timeFormat, isSupportMultiTimeStamp);
+    setTimeValue64(tb, ++fieldnum, 2, mySql56timeFormat, isSupportMultiTimeStamp);
+    setTimeValue64(tb, ++fieldnum, 6, mySql56timeFormat, isSupportMultiTimeStamp);
     tb->insert();
 
     tb->clearBuffer();
     tb->setFV(_T("id"), 1);
     tb->seek();
     BOOST_CHECK(tb->stat() == 0);
-    checkTimeValues(tb, mySql56timeFormat);
+    checkTimeValues(tb, mySql56timeFormat, isSupportMultiTimeStamp);
     
  
     tb->clearBuffer();
     tb->setFV(_T("id"), 2);
     fieldnum = 0;
-    setTimeValue64(tb, ++fieldnum, 0, mySql56timeFormat);
-    setTimeValue64(tb, ++fieldnum, 2, mySql56timeFormat);
-    setTimeValue64(tb, ++fieldnum, 3, mySql56timeFormat);
-    setTimeValue64(tb, ++fieldnum, 6, mySql56timeFormat);
+    setTimeValue64(tb, ++fieldnum, 3, mySql56timeFormat, isSupportMultiTimeStamp);
+    setTimeValue64(tb, ++fieldnum, 0, mySql56timeFormat, isSupportMultiTimeStamp);
+    setTimeValue64(tb, ++fieldnum, 2, mySql56timeFormat, isSupportMultiTimeStamp);
+    setTimeValue64(tb, ++fieldnum, 6, mySql56timeFormat, isSupportMultiTimeStamp);
     tb->insert();
         
     tb->clearBuffer();
     tb->setFV(_T("id"), 2);
     tb->seek();
     BOOST_CHECK(tb->stat() == 0);
-    checkTimeValues(tb, mySql56timeFormat);
+    checkTimeValues(tb, mySql56timeFormat, isSupportMultiTimeStamp);
     __int64 ts_auto_i = tb->getFV64(9);
 
     tb->clearBuffer();
@@ -842,32 +918,34 @@ void testStoreTime(database* db, bool mySql56timeFormat)
 
     std::string values;
     values += "1\t";
-    values += TEST_TIMEA[0];
-    values += "\t2\t";
-    values += TEST_TIMEA[2];
-    values += "\t3\t";
     values += TEST_TIMEA[3];
+    values += "\t2\t";
+    values += TEST_TIMEA[0];
+    values += "\t3\t";
+    values += TEST_TIMEA[2];
     values += "\t4\t";
     values += TEST_TIMEA[6];
     
     values += "\t5\t";
-    values += TEST_DATETIMEA[0];
-    values += "\t6\t";
-    values += TEST_DATETIMEA[2];
-    values += "\t7\t";
     values += TEST_DATETIMEA[3];
+    values += "\t6\t";
+    values += TEST_DATETIMEA[0];
+    values += "\t7\t";
+    values += TEST_DATETIMEA[2];
     values += "\t8\t";
     values += TEST_DATETIMEA[6];
     
     values += "\t9\t";
-    values += TEST_DATETIMEA[0];
-    values += "\t10\t";
-    values += TEST_DATETIMEA[2];
-    values += "\t11\t";
     values += TEST_DATETIMEA[3];
-    values += "\t12\t";
-    values += TEST_DATETIMEA[6];
-
+    if (isSupportMultiTimeStamp)
+    {
+        values += "\t10\t";
+        values += TEST_DATETIMEA[0];
+        values += "\t11\t";
+        values += TEST_DATETIMEA[2];
+        values += "\t12\t";
+        values += TEST_DATETIMEA[6];
+    }
 
     tb->test_store(values.c_str());
     BOOST_CHECK(tb->stat() == 0);
@@ -875,7 +953,7 @@ void testStoreTime(database* db, bool mySql56timeFormat)
     tb->setFV(_T("id"), 2);
     tb->seek();
     BOOST_CHECK(tb->stat() == 0);
-    checkTimeValues(tb, mySql56timeFormat);
+    checkTimeValues(tb, mySql56timeFormat, isSupportMultiTimeStamp);
 }
 
 void test_NOT_HA_OPTION_PACK_RECORD(database* db)
@@ -905,6 +983,82 @@ void test_NOT_HA_OPTION_PACK_RECORD(database* db)
     BOOST_CHECK(tb->stat() == 0);
     BOOST_CHECK(tb->getFVNull(fieldnum) == true);
 
+}
+
+
+
+void insertInManyData(table_ptr tb)
+{
+    short fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, 1);
+    tb->setFV(++fieldNum, _T("test"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, 2);
+    tb->setFV(++fieldNum, _T("test2"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 3);
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, _T(""));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 4);
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, _T("test4"));
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, 5);
+    tb->setFV(++fieldNum, 5);
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+    fieldNum = 0;
+    tb->clearBuffer();
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->setFV(++fieldNum, (_TCHAR*)NULL);
+    tb->insert();
+    BOOST_CHECK(tb->stat() == 0);
+
+}
+
+void testInMany(database* db)
+{
+    short tableid = 4;
+    //database* db1 = database::create();
+    //db1->open(makeUri(PROTOCOL, _T("192.168.3.159"), _T("nulltest"), _T("transactd_schema")), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
+    {
+        table_ptr tb = openTable(db, tableid, TD_OPEN_NORMAL);
+        insertInManyData(tb);
+    }
+    activeTable atv(db, _T("values"));
+    atv.index(1);
+    query q;
+    recordset rs;
+    q.in(1, 2, 3);
+    atv.read(rs, q);
+    BOOST_CHECK(rs.size() == 3);
+    BOOST_CHECK(rs[0][_T("id")] == 1);
+    BOOST_CHECK(rs[1].isInvalidRecord() == true);
+    BOOST_CHECK(rs[2][_T("id")] == 3);
+    //rs.dump();
 }
 
 #pragma warning(default : 4996) 

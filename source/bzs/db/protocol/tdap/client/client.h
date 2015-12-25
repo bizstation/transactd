@@ -298,6 +298,24 @@ public:
         m_req.datalen = &m_tmplen;
     }
 
+    inline void getSqlCreate()
+    {
+         _TCHAR tmp[MAX_PATH*2]={0};
+        stripAuth((const char*)m_req.keybuf, tmp, MAX_PATH);
+        std::string name = getTableName(tmp);
+        int charsetIndexServer =  getServerCharsetIndex();
+        std::string sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
+                                       charsetIndexServer, m_ver);
+        uint_td  datalen = *m_req.datalen;
+        *m_req.datalen = (uint_td)(sql.size() + 1);
+        if (datalen <= sql.size())
+        {
+            m_req.result = STATUS_BUFFERTOOSMALL;
+            return;
+        }
+        strcpy_s((char*)m_req.data, *m_req.datalen, sql.c_str());
+    }
+
     inline void create()
     {
         m_req.paramMask = P_MASK_ALL;

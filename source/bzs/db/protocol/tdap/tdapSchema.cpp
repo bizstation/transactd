@@ -891,7 +891,7 @@ void tabledef::calcReclordlen(bool force)
                 fd.setTimeStampOnUpdate(true);
                 firstTimeStamp = false;
             }
-            if (fd.type == ft_mydatetime || fd.type == ft_mytime)
+            if (fd.type == ft_mydatetime || fd.type == ft_mytime || fd.type == ft_mytimestamp)
             {
                 if (isMariaTimeFormat())
                     fd.m_options |= FIELD_OPTION_MARIADB;

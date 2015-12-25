@@ -449,6 +449,7 @@ bool checkVersion(database_ptr db)
                 return (tb->recordCount(false) == 20000);
             }
         }
+        td = def->tableDefs(1);
     }
     return false;
 }
@@ -464,6 +465,9 @@ int prebuiltData(database_ptr db, const connectParams& param, bool foceCreate,
                 dropDatabase(db);
             else
                 return 0;
+        }else if (db->stat() == STATUS_INVALID_DATASIZE)
+        {
+            dropDatabase(db);
         }
         std::tcout << _T("\nInserting query test data. Please wait... ")
                    << std::flush;

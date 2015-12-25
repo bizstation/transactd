@@ -841,10 +841,7 @@ inline void updateTimeStampStr(const fielddef* fd, char* p, size_t size)
     if (fd->isLegacyTimeFormat())
         sprintf_s(p, 64, " ON UPDATE CURRENT_TIMESTAMP");
     else
-    {
-        int dec = (fd->type == ft_mytimestamp) ? (fd->len - 4) * 2 : (fd->len - 5) * 2;
-        sprintf_s(p, 64, " ON UPDATE CURRENT_TIMESTAMP(%d)",dec);
-    }
+        sprintf_s(p, 64, " ON UPDATE CURRENT_TIMESTAMP(%d)", fd->decimals);
 }
 
 inline void updateTimeStampStr(const fielddef* fd, wchar_t* p, size_t size)
@@ -881,10 +878,7 @@ inline _TCHAR* timeStampDefaultStr(const fielddef& fd, _TCHAR* buf, size_t bufsi
         if (fd.isLegacyTimeFormat())
             _stprintf_s(buf, bufsize, _T("CURRENT_TIMESTAMP"));
         else
-        {
-            int size = (fd.type == ft_mytimestamp) ? (fd.len - 4) * 2 : (fd.len - 5) * 2;
-            _stprintf_s(buf, bufsize, _T("CURRENT_TIMESTAMP(%d)"), size);
-        }
+            _stprintf_s(buf, bufsize, _T("CURRENT_TIMESTAMP(%d)"), fd.decimals);
     }
     return buf;
 }
@@ -1002,7 +996,7 @@ public:
         {
             if (m_useInMariadb)
             {
-                if (fd.decimals == 0 && m_srvMinorVer < 1) return true;
+                if (fd.decimals == 0 && (m_srvMinorVer == 5 || m_srvMinorVer == 0)) return true;
             }
             else
             {
