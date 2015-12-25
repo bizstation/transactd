@@ -211,13 +211,14 @@ function bench()
 	}
 
 	this.time = function(){return tick;}
-	this.show = function(){WScript.Echo("(exec time " + ticks + " sec)\n");}
+	this.show = function(){WScript.Echo("\n(exec time " + ticks + " sec)\n");}
 }
 /*--------------------------------------------------------------------------------*/
 function checkEqual(a, b, on)
 {
 	if (a !== b)
 	{
+		if (typeof(on) === 'undefined') on = "";
 		try
 		{
 			WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
@@ -227,7 +228,8 @@ function checkEqual(a, b, on)
 			WScript.Echo("check object error on " + on);	
 		}
 		resultCode = 1;
-	}
+	}else
+		WScript.StdOut.Write(".");
 }
 
 /*--------------------------------------------------------------------------------*/
@@ -235,6 +237,8 @@ function checkNotEqual(a, b, on)
 {
 	if (a === b)
 	{
+		if (typeof(on) === 'undefined') on = "";
+		    
 		try
 		{
 			WScript.Echo("error on " + on + " " + a.toString() + " == " + b.toString());	
@@ -244,7 +248,8 @@ function checkNotEqual(a, b, on)
 			WScript.Echo("check object error on " + on);	
 		}
 		resultCode = 1;
-	}
+	}else
+		WScript.StdOut.Write(".");
 }
 /*--------------------------------------------------------------------------------*/
 function isX86()
@@ -615,9 +620,29 @@ function test_bit(ate, db)
 
 }
 /*--------------------------------------------------------------------------------*/
+function test_bitset()
+{
+	var bits1 = new  ActiveXObject("transactd.Bitset");
+	var bits2 = new  ActiveXObject("transactd.Bitset");
+	bits1(0) = true;
+	bits1(1) = true;
+	bits1(63) = true;
+	
+	bits2(0) = true;
+	bits2(1) = false;
+	bits2(63) = true;
+	
+	checkEqual(bits1.equals(bits2), false);
+	checkEqual(bits1.contains(bits2), true);
+	checkEqual(bits2.contains(bits1), false);
+	
+	var all = false;
+	checkEqual(bits2.contains(bits1, all), true);
+}
+/*--------------------------------------------------------------------------------*/
 function test(atu, ate, db)
 {
-	WScript.Echo(" -- Start Test -- ");
+	//WScript.Echo(" -- Start Test -- ");
 	var x86 = isX86();
 	
 	db.AutoSchemaUseNullkey = true;
@@ -898,8 +923,9 @@ function test(atu, ate, db)
 	checkEqual(td.InUse , 2, "InUse2");
 	
 	test_bit(ate, db);
+	test_bitset();
 
-	WScript.Echo(" -- End Test -- ");
+	//WScript.Echo(" -- End Test -- ");
 }
 /*--------------------------------------------------------------------------------*/
 function main()

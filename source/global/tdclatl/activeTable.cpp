@@ -117,7 +117,7 @@ wchar_t* convWCHAR(VARIANT& Value)
         {
             VariantInit(&Value);
             Value.vt = VT_UI8;
-            Value.ullVal = b->m_bitset.i64(); 
+            Value.ullVal = b->m_bitset.internalValue(); 
         }
     }
     if (Value.vt == VT_NULL)

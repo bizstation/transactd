@@ -1727,6 +1727,11 @@ interface IBitset : IDispatch{
   HRESULT _stdcall Bit([in] short index, [in] VARIANT_BOOL val);
   [propget, id(0)]
   HRESULT _stdcall Bit([in] short index, [out, retval] VARIANT_BOOL* retVal);
+  [id(1)]
+  HRESULT _stdcall Equals([in] IBitset* bitset, [out, retval] VARIANT_BOOL* retVal);
+  [id(2)]
+  HRESULT _stdcall Contains([in] IBitset* bitset, [in, defaultvalue(-1)] VARIANT_BOOL all, [out, retval] VARIANT_BOOL* retVal);
+
 };
 
 [

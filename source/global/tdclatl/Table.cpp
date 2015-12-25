@@ -165,7 +165,7 @@ STDMETHODIMP CTableTd::SetFV(VARIANT Index, VARIANT Value)
     {
         CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
         if (b)
-            m_tb->setFV(index, b->m_bitset.i64());    
+            m_tb->setFV(index, b->m_bitset.internalValue());    
     }
     else
     {

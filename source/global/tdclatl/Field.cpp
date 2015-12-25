@@ -113,7 +113,7 @@ STDMETHODIMP CField::SetValue(VARIANT Value)
     {
         CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
         if (b)
-            m_fd = b->m_bitset.i64();    
+            m_fd = b->m_bitset.internalValue();    
     }
     else
     {
