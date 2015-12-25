@@ -100,13 +100,6 @@ typedef void*(__STDCALL* DDBA_PTR)(client::table* tb, uint_td size);
 #pragma pack(push, 1)
 pragma_pack1;
 
-struct version
-{
-    ushort_td majorVersion;
-    ushort_td minorVersion;
-    uchar_td Type;
-};
-
 struct posblk
 {
     posblk() { memset(this, 0, sizeof(posblk)); }

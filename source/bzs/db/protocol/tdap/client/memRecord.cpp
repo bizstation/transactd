@@ -208,16 +208,25 @@ void memoryRecord::setRecordData(autoMemory* am, unsigned char* ptr,
 
 void memoryRecord::copyToBuffer(table* tb, bool updateOnly) const
 {
-    if (!updateOnly)
-        memcpy(tb->fieldPtr(0), ptr(0), m_fns->totalFieldLen());
-    else
+    if (m_fns->size())
     {
-        for (int i = 0; i < (int)m_fns->size(); ++i)
+        short index = 0;
+        if (!updateOnly)
+            memcpy(tb->fields()[index].nullPtr(), nullPtr(index),
+                    m_fns->totalFieldLen());
+        else
         {
-            const fielddef& fd = (*m_fns)[i];
-            // ptr() return memory block first address
-            if (fd.enableFlags.bitE)
-                memcpy(tb->fieldPtr(i), ptr(i) + fd.pos, fd.len);
+            for (int i = 0; i < (int)m_fns->size(); ++i)
+            {
+                const fielddef& fd = (*m_fns)[i];
+                // ptr() return memory block first address
+                if (fd.enableFlags.bitE)
+                {
+                    memcpy(tb->fieldPtr(i), ptr(i) + fd.pos, fd.len);
+                    //copy null bits
+                    tb->setFVNull(i, operator[](i).isNull());
+                }
+            }
         }
     }
 }
@@ -294,7 +303,7 @@ writableRecord::writableRecord(table* tb, const aliasMap_type* alias)
     m_tb->clearBuffer();
     m_fddefs->clear();
     m_fddefs->setAliases(alias);
-    m_fddefs->copyFrom(m_tb);
+    m_fddefs->addSelectedFields(m_tb);
     setRecordData(autoMemory::create(), 0, 0, &m_endIndex, true);
 }
 
@@ -374,6 +383,12 @@ void writableRecord::save()
         copyToBuffer(m_tb);
         updateRecord(m_tb);
     }
+}
+
+void writableRecord::clear()
+{
+    m_tb->clearBuffer(table::defaultNull);
+    copyFromBuffer(m_tb);
 }
 
 writableRecord* writableRecord::create(table* tb, const aliasMap_type* alias)

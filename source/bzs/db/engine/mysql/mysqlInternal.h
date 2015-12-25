@@ -248,25 +248,26 @@ inline bool cp_has_update_default_function(Field* fd)
 inline void cp_evaluate_insert_default_function(Field* fd)
 {
 #if (MYSQL_VERSION_ID > 50600)
-    Field* ft = fd;
+	Field* ft = fd;
 #else
-    Field_timestamp* ft = (Field_timestamp*)(fd);
+	Field_timestamp* ft = (Field_timestamp*)(fd);
 #endif
-    if (ft)
-        ft->set_time();
+	if (ft)
+		ft->set_time();
 }
 
 inline void cp_evaluate_update_default_function(Field* fd)
 {
 
 #if (MYSQL_VERSION_ID > 50600)
-    Field* ft = fd;
+	Field* ft = fd;
 #else
-    Field_timestamp* ft = (Field_timestamp*)(fd);
+	Field_timestamp* ft = (Field_timestamp*)(fd);
 #endif
-    if (ft)
-        ft->set_time();
+	if (ft)
+		ft->set_time();
 }
+
 
 inline unsigned char* cp_null_ptr(Field* fd, unsigned char* /*record*/)
 {

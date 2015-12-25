@@ -55,6 +55,7 @@ DLLLIB BTRCALLID_PTR getTrnsctdEntryPoint();
 class DLLLIB nsdatabase
 {
     friend class nstable;
+    friend class dbdef;
     friend bool reconnectSharedConnection(const void* ptr);
     struct nsdbimpl* m_nsimpl;
     nsdatabase(const nsdatabase&);
@@ -79,7 +80,7 @@ protected:
     void internalRelease() { nsdatabase::release(); }
     void doReconnect(nstable* tb);
     virtual bool doReopenDatabaseSchema(){ return true; }
-    
+    virtual void* getExtendBufferForOpen(uint_td& size){ return NULL; };
 public:
     nsdatabase();
     virtual void release();

@@ -364,6 +364,21 @@ const char* btrttoa(const btrTime& t, char* retbuf, bool type_vb)
     return btrttoa<char>(t, retbuf, type_vb);
 }
 
+const char* btrstoa(const btrDateTime& s, char* retbuf, bool type_vb)
+{
+    char* p = retbuf;
+    const btrDate& d = s.date;
+    const btrTime& t = s.time;
+    if (p == NULL) p = (char*)databuf();
+    if (type_vb)
+        sprintf_s(p, 21, ("%04d-%02d-%02dT%02d:%02d:%02d"), d.yy, d.mm,
+                    d.dd, t.hh, t.nn, t.ss);
+    else
+        sprintf_s(p, 21, ("%04d/%02d/%02d %02d:%02d:%02d"), d.yy, d.mm,
+                    d.dd, t.hh, t.nn, t.ss);
+    return p;
+}
+
 btrTime atobtrt(const char* p)
 {
     return atobtrt<char>(p);
@@ -380,6 +395,21 @@ const wchar_t* btrttoa(const btrTime& t, wchar_t* retbuf, bool type_vb)
     return btrttoa<wchar_t>(t, retbuf, type_vb);
 }
 
+const wchar_t* btrstoa(const btrDateTime& s, wchar_t* retbuf, bool type_vb)
+{
+    wchar_t* p = retbuf;
+    const btrDate& d = s.date;
+    const btrTime& t = s.time;
+    if (p == NULL) p = (wchar_t*)databuf();
+    if (type_vb)
+        swprintf_s(p, 21, L"%04d-%02d-%02dT%02d:%02d:%02d", d.yy, d.mm,
+                    d.dd, t.hh, t.nn, t.ss);
+    else
+        swprintf_s(p, 21, L"%04d/%02d/%02d %02d:%02d:%02d", d.yy, d.mm,
+                    d.dd, t.hh, t.nn, t.ss);
+    return p;
+}
+
 btrDate atobtrd(const wchar_t* p)
 {
     return atobtrd<wchar_t>(p);
@@ -392,32 +422,28 @@ btrTime atobtrt(const wchar_t* p)
 
 #endif
 
-const _TCHAR* btrstoa(const btrDateTime& s, _TCHAR* retbuf, bool type_vb)
-{
-    _TCHAR* p = retbuf;
-    const btrDate& d = s.date;
-    const btrTime& t = s.time;
-    if (p == NULL)
-        p = databuf();
-    ;
-    if (type_vb)
-        _stprintf_s(p, 21, _T("%04d-%02d-%02dT%02d:%02d:%02d"), d.yy, d.mm,
-                    d.dd, t.hh, t.nn, t.ss);
-    else
-        _stprintf_s(p, 21, _T("%04d/%02d/%02d %02d:%02d:%02d"), d.yy, d.mm,
-                    d.dd, t.hh, t.nn, t.ss);
-    return p;
-}
-
-btrDateTime atobtrs(const _TCHAR* p)
+btrDateTime atobtrs(const char* p)
 {
     btrDateTime s;
     s.i64 = 0;
     s.date = atobtrd(p);
-    const _TCHAR* tmp = _tcsstr(p, _T("T"));
+    const char* tmp = strstr(p, "T");
     if (tmp)
         s.time = atobtrt(tmp + 1);
-    else if ((tmp = _tcsstr(p, _T(" "))) != NULL)
+    else if ((tmp = strstr(p, " ")) != NULL)
+        s.time = atobtrt(tmp + 1);
+    return s;
+}
+
+btrDateTime atobtrs(const wchar_t* p)
+{
+    btrDateTime s;
+    s.i64 = 0;
+    s.date = atobtrd(p);
+    const wchar_t* tmp = wcsstr(p, L"T");
+    if (tmp)
+        s.time = atobtrt(tmp + 1);
+    else if ((tmp = wcsstr(p, L" ")) != NULL)
         s.time = atobtrt(tmp + 1);
     return s;
 }

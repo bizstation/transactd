@@ -16,11 +16,12 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
+#include "myDateTime.h"
 #include <bzs/env/tstring.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-#include <bzs/db/protocol/tdap/btrDate.h>
+#include <algorithm>
 
 namespace bzs
 {
@@ -30,474 +31,635 @@ namespace protocol
 {
 namespace tdap
 {
-
-#pragma pack(push, 1)
-pragma_pack1;
-
-#ifdef _WIN32
-
-const wchar_t wtime_format_ms[] = L"%02d:%02d:%02d.%u";
-const wchar_t wtime_format[] = L"%02d:%02d:%02d";
-const wchar_t wdatetime_format_ms[] = L"%04d-%02d-%02d %02d:%02d:%02d.%u";
-const wchar_t wdatetime_format[] = L"%04d-%02d-%02d %02d:%02d:%02d";
-const wchar_t wdatetime_format_ms_i[] = L"%04d-%02d-%02d %02d:%02d:%02d.%u";
-const wchar_t wdatetime_format_i[] = L"%04d-%02d-%02d %02d:%02d:%02d";
-
-inline size_t _ttol_(const wchar_t* v)
-{
-    return _wtol(v);
-}
-inline size_t _tcslen_(const wchar_t* v)
-{
-    return wcslen(v);
-}
-inline wchar_t* _tcsncpy_(wchar_t* d, const wchar_t* s, size_t n)
-{
-    return wcsncpy(d, s, n);
-}
-
-#endif
-
-const char time_format_ms[] = "%02d:%02d:%02d.%u";
-const char time_format[] = "%02d:%02d:%02d";
-const char datetime_format_ms[] = "%04d-%02d-%02d %02d:%02d:%02d.%u";
-const char datetime_format[] = "%04d-%02d-%02d %02d:%02d:%02d";
-const char datetime_format_ms_i[] = "%04d-%02d-%02d %02d:%02d:%02d.%u";
-const char datetime_format_i[] = "%04d-%02d-%02d %02d:%02d:%02d";
-
-inline size_t _ttol_(const char* v)
-{
-    return atol(v);
-}
-inline size_t _tcslen_(const char* v)
-{
-    return strlen(v);
-}
-inline char* _tcsncpy_(char* d, const char* s, size_t n)
-{
-    return strncpy(d, s, n);
-}
-
 #pragma warning(disable : 4996)
-union myDate
+#ifdef _WIN32
+const wchar_t wtime_format_ms[] = L"%02d:%02d:%02d.%0*u";
+const wchar_t wtime_format[] = L"%02d:%02d:%02d";
+const wchar_t wdatetime_format_ms[] = L"%04d-%02d-%02d %02d:%02d:%02d.%0*u";
+const wchar_t wdatetime_format[] = L"%04d-%02d-%02d %02d:%02d:%02d";
+#endif
+const char time_format_ms[] = "%02d:%02d:%02d.%0*u";
+const char time_format[] = "%02d:%02d:%02d";
+const char datetime_format_ms[] =   "%04d-%02d-%02d %02d:%02d:%02d.%0*u";
+const char datetime_format[] =      "%04d-%02d-%02d %02d:%02d:%02d";
+
+//-------------------------------------------------------------
+void myDate::setValue(int v, bool btrvValue)
 {
-    struct
+    if (btrvValue)
     {
-        unsigned int dd : 5;
-        unsigned int mm : 4;
-        unsigned int yy : 15;
-        unsigned int tmp : 8;
-    };
+        btrDate btrd;
+        btrd.i = v;
+        yy = btrd.yy;
+        mm = btrd.mm;
+        dd = btrd.dd;
+        tmp = 0;
+    }
+    else
+        i = v;
+}
 
-    int i;
-
-    inline void setValue(int v, bool btrvValue = false)
+int myDate::getValue(bool btrvValue)
+{
+    if (btrvValue)
     {
-        if (btrvValue)
+        btrDate btrd;
+        btrd.yy = yy;
+        btrd.mm = mm;
+        btrd.dd = dd;
+        return btrd.i;
+    }
+    return i;
+}
+
+char* myDate::toStr(char* p, bool btrvValue)
+{
+    if (btrvValue)
+        sprintf(p, "%04d/%02d/%02d", yy, mm, dd);
+    else
+        sprintf(p, "%04d-%02d-%02d", yy, mm, dd);
+    return p;
+}
+
+myDate& myDate::operator=(const char* p)
+{
+    size_t len = strlen(p);
+    i = 0;
+    if (len > 3)
+    {
+        yy = atol(p);
+        if (len > 6)
         {
-            btrDate btrd;
-            btrd.i = v;
-            yy = btrd.yy;
-            mm = btrd.mm;
-            dd = btrd.dd;
-            tmp = 0;
+            mm = atol(p + 5);
+            if (len > 9)
+                dd = atol(p + 8);
         }
-        else
-            i = v;
     }
-
-    inline int getValue(bool btrvValue = false)
-    {
-        if (btrvValue)
-        {
-            btrDate btrd;
-            btrd.yy = yy;
-            btrd.mm = mm;
-            btrd.dd = dd;
-            return btrd.i;
-        }
-        return i;
-    }
-
-    inline char* toStr(char* p, bool btrvValue)
-    {
-        if (btrvValue)
-            sprintf(p, "%04d/%02d/%02d", yy, mm, dd);
-        else
-            sprintf(p, "%04d-%02d-%02d", yy, mm, dd);
-        return p;
-    }
+    return *this;
+}
 
 #ifdef _WIN32
-    inline wchar_t* toStr(wchar_t* p, bool btrvValue)
+wchar_t* myDate::toStr(wchar_t* p, bool btrvValue)
+{
+    if (btrvValue)
+        swprintf_s(p, 11, L"%04d/%02d/%02d", yy, mm, dd);
+    else
+        swprintf_s(p, 11, L"%04d-%02d-%02d", yy, mm, dd);
+    return p;
+}
+
+myDate& myDate::operator=(const wchar_t* p)
+{
+    size_t len = wcslen(p);
+    i = 0;
+    if (len > 3)
     {
-        if (btrvValue)
-            swprintf_s(p, 11, L"%04d/%02d/%02d", yy, mm, dd);
-        else
-            swprintf_s(p, 11, L"%04d-%02d-%02d", yy, mm, dd);
-        return p;
+        yy = _wtol(p);
+        if (len > 6)
+        {
+            mm = _wtol(p + 5);
+            if (len > 9)
+                dd = _wtol(p + 8);
+        }
     }
+    return *this;
+}
 #endif
 
-    template <class T> inline myDate& operator=(const T* p)
-    {
-        tmp = 0;
-        yy = _ttol_(p);
-        mm = _ttol_(p + 5);
-        dd = _ttol_(p + 8);
-        return *this;
-    }
-};
 
-struct myTime
+//-------------------------------------------------------------
+void myTime::setValue(__int64 v, bool btrvValue)
 {
-
-private:
-    int m_dec;
-
-public:
-    union
+    i64 = 0;
+    if (btrvValue)
     {
-        struct
-        {
-            unsigned __int64 ms : 24;
-            unsigned __int64 ss : 6;
-            unsigned __int64 nn : 6;
-            unsigned __int64 hh : 10;
-            unsigned __int64 unused : 1;
-            unsigned __int64 sign : 1;
-            unsigned __int64 tmp : 16;
-        };
-        __int64 i64;
-    };
-
-public:
-    inline myTime(int size) : m_dec((size - 3) * 2){};
-
-    inline void setValue(__int64 v, bool btrvValue = false)
+        btrTime btrt;
+        btrt.i = (int)v;
+        hh = btrt.hh;
+        nn = btrt.nn;
+        ss = btrt.ss;
+        ms = btrt.uu * 10000;
+        return;
+    }
+    char* p = (char*)&i64;
+    char* src = (char*)&v;
+    if (m_dec)
     {
+        p[0] = src[5];
+        p[1] = src[4];
+        p[2] = src[3];
+        ms = ms >> (3 - m_dec / 2) * 8;
+    }
+    p[3] = src[2];
+    p[4] = src[1];
+    p[5] = src[0];
+    sign = 0;
+}
 
-        if (btrvValue)
-        {
-            btrTime btrt;
-            btrt.i = (int)v;
-            hh = btrt.hh;
-            nn = btrt.nn;
-            ss = btrt.ss;
-            ms = btrt.uu * 10000;
-            tmp = 0;
-            sign = 1;
-            unused = 0;
-            return;
-        }
-        char* p = (char*)&i64;
-        char* src = (char*)&v;
-        if (m_dec)
-        {
-            p[0] = src[5];
-            p[1] = src[4];
-            p[2] = src[3];
-            ms = ms >> (3 - m_dec / 2) * 8;
-        }
+__int64 myTime::getValue(bool btrvValue)
+{
+    __int64 v = 0;
+    sign = 1;
+    char* src = (char*)&i64;
+    char* p = (char*)&v;
+    p[2] = src[3];
+    p[1] = src[4];
+    p[0] = src[5];
+    if (m_dec)
+    {
+        ms = ms << (3 - m_dec / 2) * 8;
         p[3] = src[2];
         p[4] = src[1];
         p[5] = src[0];
     }
-
-    inline __int64 getValue(bool btrvValue = false)
+    if (btrvValue)
     {
-        __int64 v = 0;
-        char* src = (char*)&i64;
-        char* p = (char*)&v;
-        p[2] = src[3];
-        p[1] = src[4];
-        p[0] = src[5];
-        if (m_dec)
-        {
-            ms = ms << (3 - m_dec / 2) * 8;
-            p[3] = src[2];
-            p[4] = src[1];
-            p[5] = src[0];
-        }
-        if (btrvValue)
-        {
-            btrTime btrt;
-            btrt.hh = hh;
-            btrt.nn = nn;
-            btrt.ss = ss;
-            btrt.uu = (char)(ms / 100000);
-            return btrt.i;
-        }
-        return v;
+        btrTime btrt;
+        btrt.hh = hh;
+        btrt.nn = nn;
+        btrt.ss = ss;
+        btrt.uu = (char)(ms / 100000);
+        return btrt.i;
     }
+    sign = 0;
+    return v;
+}
 
-    inline char* toStr(char* p)
+char* myTime::toStr(char* p)
+{
+    if (m_dec)
+        sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss,
+                m_dec, (unsigned int)ms);
+    else
+        sprintf(p, time_format, (int)hh, (int)nn, (int)ss);
+    return p;
+}
+
+myTime& myTime::operator=(const char* p)
+{
+    i64 = 0;
+    size_t len = strlen(p);
+    if (len > 1)
     {
-        if (m_dec)
-            sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss,
-                    (unsigned int)ms);
-        else
-            sprintf(p, time_format, (int)hh, (int)nn, (int)ss);
-        return p;
+        hh = atol(p);
+        if (len > 4)
+        {
+            nn = atol(p + 3);
+            if (len > 7)
+            {
+                ss = atol(p + 6);
+                if (m_dec && len > 9)
+                {
+                    char tmp[10] = { 0x00 };
+                    strncpy(tmp, p + 9, (size_t)m_dec);
+                    ms = atol(tmp);
+                }
+            }
+        }
     }
+    return *this;
+}
 
 #ifdef _WIN32
-    inline wchar_t* toStr(wchar_t* p)
+wchar_t* myTime::toStr(wchar_t* p)
+{
+    if (m_dec)
+        swprintf_s(p, 17, wtime_format_ms, (int)hh, (int)nn, (int)ss,
+                    m_dec, (unsigned int)ms);
+    else
+        swprintf_s(p, 9, wtime_format, (int)hh, (int)nn, (int)ss);
+    return p;
+}
+
+myTime& myTime::operator=(const wchar_t* p)
+{
+    i64 = 0;
+    size_t len = wcslen(p);
+    if (len > 1)
     {
-        if (m_dec)
-            swprintf_s(p, 17, wtime_format_ms, (int)hh, (int)nn, (int)ss,
-                       (unsigned int)ms);
-        else
-            swprintf_s(p, 9, wtime_format, (int)hh, (int)nn, (int)ss);
-        return p;
+        hh = _wtol(p);
+        if (len > 4)
+        {
+            nn = _wtol(p + 3);
+            if (len > 7)
+            {
+                ss = _wtol(p + 6);
+                if (m_dec && len > 9)
+                {
+                    wchar_t tmp[10] = { 0x00 };
+                    wcsncpy(tmp, p + 9, (size_t)m_dec);
+                    ms = _wtol(tmp);
+                }
+            }
+        }
     }
+    return *this;
+}
 #endif
 
-    template <class T> inline myTime& operator=(const T* p)
-    {
-        sign = 1;
-        unused = 0;
-        ms = 0;
-        hh = _ttol_(p);
-        nn = _ttol_(p + 3);
-        ss = _ttol_(p + 6);
-        if (m_dec && _tcslen_(p) > 9)
-        {
-            T tmp[10] = { 0x00 };
-            _tcsncpy_(tmp, p + 9, (size_t)m_dec);
-            ms = _ttol_(tmp);
-        }
-        return *this;
-    }
-};
-
-struct myDateTime
+//-------------------------------------------------------------
+void myDateTime::setValue(__int64 v)
 {
-private:
-    int m_dec;
-
-public:
-    union
+    i64 = 0;
+    char* p = (char*)&i64;
+    char* src = (char*)&v;
+       
+    p[3] = src[4];
+    p[4] = src[3];
+    p[5] = src[2];
+    p[6] = src[1];
+    p[7] = src[0];
+    if (i64 && m_dec)
     {
-        struct
-        {
-            unsigned __int64 ms : 24;
-            unsigned __int64 ss : 6;
-            unsigned __int64 nn : 6;
-            unsigned __int64 hh : 5;
-            unsigned __int64 dd : 5;
-            unsigned __int64 yymm : 17; // yy*13+mm   (yy 0-9999, mm 0-12)
-            unsigned __int64 sign : 1;
-        };
-        __int64 i64;
-    };
+        p[0] = src[7];
+        p[1] = src[6];
+        p[2] = src[5];
+        ms = ms >> (3 - m_dec / 2) * 8;
+    }
+    sign = 0;
+}
 
-    inline myDateTime(int size) : m_dec((size - 5) * 2){};
-
-    inline void setValue(__int64 v)
+__int64 myDateTime::getValue()
+{
+    __int64 v = 0;
+    sign = 1;
+    char* src = (char*)&i64;
+    char* p = (char*)&v;
+    p[4] = src[3];
+    p[3] = src[4];
+    p[2] = src[5];
+    p[1] = src[6];
+    p[0] = src[7];
+    if (v && m_dec)
     {
-        char* p = (char*)&i64;
-        char* src = (char*)&v;
-        if (m_dec)
-        {
-            p[0] = src[7];
-            p[1] = src[6];
-            p[2] = src[5];
-            ms = ms >> (3 - m_dec / 2) * 8;
-        }
-        p[3] = src[4];
-        p[4] = src[3];
+        ms = ms << (3 - m_dec / 2) * 8;
         p[5] = src[2];
         p[6] = src[1];
         p[7] = src[0];
     }
+    sign = 0;
+    return v;
+}
 
-    inline __int64 getValue()
+myDateTime& myDateTime::operator=(const char* p)
+{
+    size_t len = strlen(p);
+    i64 = 0;
+
+    if (len > 6)
     {
-        __int64 v = 0;
-        char* src = (char*)&i64;
-        char* p = (char*)&v;
-        p[4] = src[3];
-        p[3] = src[4];
-        p[2] = src[5];
-        p[1] = src[6];
-        p[0] = src[7];
-        if (m_dec)
+        yymm = atol(p) * 13 + atol(p + 5);
+        if (len > 9)
         {
-            ms = ms << (3 - m_dec / 2) * 8;
-            p[5] = src[2];
-            p[6] = src[1];
-            p[7] = src[0];
+            dd = atol(p + 8);
+            if (len > 12)
+            {
+                hh = atol(p + 11);
+                if (len > 15)
+                {
+                    nn = atol(p + 14);
+                    if (len > 18)
+                    {
+                        ss = atol(p + 17);
+                        if (m_dec && len > 20)
+                        {
+                            char tmp[10] = { 0x00 };
+                            strncpy(tmp, p + 20, (size_t)m_dec);
+                            ms = atol(tmp);
+                        }
+                    }
+                }
+            }
         }
-        return v;
     }
+    return *this;
+}
 
-    inline char* toStr(char* p)
+
+void myDateTime::setTime(const char* p)
+{
+    i64 = 0;
+    size_t len = strlen(p);
+    if (len > 1)
     {
-        if (m_dec)
-            sprintf(p, datetime_format_ms, (int)(yymm / 13), (int)(yymm % 13),
-                    (int)dd, (int)hh, (int)nn, (int)ss, (unsigned int)ms);
-        else
-            sprintf(p, datetime_format, (int)(yymm / 13), (int)(yymm % 13),
-                    (int)dd, (int)hh, (int)nn, (int)ss);
-        return p;
+        hh = atol(p);
+        if (len > 4)
+        {
+            nn = atol(p + 3);
+            if (len > 7)
+            {
+                ss = atol(p + 6);
+                if (m_dec && len > 9)
+                {
+                    char tmp[10] = { 0x00 };
+                    strncpy(tmp, p + 9, (size_t)m_dec);
+                    ms = atol(tmp);
+                }
+            }
+        }
     }
+}
+
+
+char* myDateTime::date_str(char* p) const
+{
+    sprintf(p, "%04d-%02d-%02d", (int)(yymm / 13),
+                    (int)(yymm % 13), (int)dd);
+    return p;
+}
+
+char* myDateTime::time_str(char* p, int decimals) const
+{
+    if (decimals)
+        sprintf(p, time_format_ms, (int)hh, (int)nn, (int)ss,
+                    std::min<int>(decimals, m_dec), (unsigned int)ms);
+    else
+        sprintf(p, time_format, (int)hh, (int)nn, (int)ss);
+    return p;
+}
+
+char* myDateTime::dateTime_str(char* p, int decimals) const
+{
+    if (decimals)
+    {
+        sprintf(p, datetime_format_ms, (int)(yymm / 13), (int)(yymm % 13),
+                (int)dd, (int)hh, (int)nn, (int)ss,
+                            std::min<int>(decimals, m_dec), (unsigned int)ms);
+    }
+    else
+        sprintf(p, datetime_format, (int)(yymm / 13), (int)(yymm % 13),
+                (int)dd, (int)hh, (int)nn, (int)ss);
+    return p;
+}
+
 
 #ifdef _WIN32
-    inline wchar_t* toStr(wchar_t* p)
+
+
+myDateTime& myDateTime::operator=(const wchar_t* p)
+{
+    size_t len = wcslen(p);
+    i64 = 0;
+    
+    if (len > 6)
     {
-        if (m_dec)
-            swprintf_s(p, 26, wdatetime_format_ms, (int)(yymm / 13),
-                       (int)(yymm % 13), (int)dd, (int)hh, (int)nn, (int)ss,
-                       (unsigned int)ms);
-        else
-            swprintf_s(p, 20, wdatetime_format, (int)(yymm / 13),
-                       (int)(yymm % 13), (int)dd, (int)hh, (int)nn, (int)ss);
-        return p;
+        yymm = _wtol(p) * 13 + _wtol(p + 5);
+        if (len > 9)
+        {
+            dd = _wtol(p + 8);
+            if (len > 12)
+            {
+                hh = _wtol(p + 11);
+                if (len > 15)
+                {
+                    nn = _wtol(p + 14);
+                    if (len > 18)
+                    {
+                        ss = _wtol(p + 17);
+                        if (m_dec && len > 20)
+                        {
+                            wchar_t tmp[10] = { 0x00 };
+                            wcsncpy(tmp, p + 20, (size_t)m_dec);
+                            ms = _wtol(tmp);
+                        }
+                    }
+                }
+            }
+        }
     }
+    return *this;
+}
+
+void myDateTime::setTime(const wchar_t* p)
+{
+    i64 = 0;
+    size_t len = wcslen(p);
+    if (len > 1)
+    {
+        hh = _wtol(p);
+        if (len > 4)
+        {
+            nn = _wtol(p + 3);
+            if (len > 7)
+            {
+                ss = _wtol(p + 6);
+                if (m_dec && len > 9)
+                {
+                    wchar_t tmp[10] = { 0x00 };
+                    wcsncpy(tmp, p + 9, (size_t)m_dec);
+                    ms = _wtol(tmp);
+                }
+            }
+        }
+    }
+}
+
+wchar_t* myDateTime::date_str(wchar_t* p) const
+{
+    swprintf(p, L"%04d-%02d-%02d", (int)(yymm / 13),
+                    (int)(yymm % 13), (int)dd);
+    return p;
+}
+
+wchar_t* myDateTime::time_str(wchar_t* p, int decimals ) const
+{
+    if (decimals)
+        swprintf(p, wtime_format_ms, (int)hh, (int)nn, (int)ss,
+                    std::min<int>(decimals, m_dec), (unsigned int)ms);
+    else
+        swprintf(p, wtime_format, (int)hh, (int)nn, (int)ss);
+    return p;
+}
+
+wchar_t* myDateTime::dateTime_str(wchar_t* p, int decimals) const
+{
+    if (decimals)
+        swprintf(p, wdatetime_format_ms, (int)(yymm / 13),
+                    (int)(yymm % 13), (int)dd, (int)hh, (int)nn, (int)ss,
+                    std::min<int>(decimals, m_dec), (unsigned int)ms);
+    else
+        swprintf(p, wdatetime_format, (int)(yymm / 13),
+                    (int)(yymm % 13), (int)dd, (int)hh, (int)nn, (int)ss);
+    return p;
+}
+
 #endif
 
-    template <class T> myDateTime& operator=(const T* p)
-    {
-        sign = 1;
-        ms = 0;
-        yymm = _ttol_(p) * 13 + _ttol_(p + 5);
-        dd = _ttol_(p + 8);
-        hh = _ttol_(p + 11);
-        nn = _ttol_(p + 14);
-        ss = _ttol_(p + 17);
-        if (m_dec && _tcslen_(p) > 20)
-        {
-            T tmp[10] = { 0x00 };
-            _tcsncpy_(tmp, p + 20, (size_t)m_dec);
-            ms = _ttol_(tmp);
-        }
-        return *this;
-    }
-};
-
-struct myTimeStamp
+//------------------------------------------------------------- 
+void myTimeStamp::setValue(__int64 v)
 {
-private:
-    int m_dec;
-
-public:
-    union
+    i64 = 0;
+    char* p = (char*)&i64;
+    char* src = (char*)&v;
+    p[3] = src[3];
+    p[4] = src[2];
+    p[5] = src[1];
+    p[6] = src[0];
+    if (m_dec && datetime)
     {
-        struct
-        {
-            unsigned __int64 ms : 24;
-            unsigned __int64 datetime : 32;
-            unsigned __int64 tmp : 8;
-        };
-        __int64 i64;
-    };
+        p[0] = src[6];
+        p[1] = src[5];
+        p[2] = src[4];
+        ms = ms >> (3 - m_dec / 2) * 8;
+    }
+}
 
-    inline myTimeStamp(int size) : m_dec((size - 4) * 2){};
+__int64 myTimeStamp::getValue()
+{
+    __int64 v = 0;
+    char* src = (char*)&i64;
+    char* p = (char*)&v;
 
-    inline void setValue(__int64 v)
+    p[3] = src[3];
+    p[2] = src[4];
+    p[1] = src[5];
+    p[0] = src[6];
+    if (m_dec)
     {
-        char* p = (char*)&i64;
-        char* src = (char*)&v;
-        if (m_dec)
-        {
-            p[0] = src[6];
-            p[1] = src[5];
-            p[2] = src[4];
-            ms = ms >> (3 - m_dec / 2) * 8;
-        }
-        p[3] = src[3];
+        ms = ms << (3 - m_dec / 2) * 8;
         p[4] = src[2];
         p[5] = src[1];
         p[6] = src[0];
     }
+    return v;
+}
 
-    inline __int64 getValue()
+char* myTimeStamp::toStr(char* p)
+{
+    if (datetime)
     {
-        __int64 v = 0;
-        char* src = (char*)&i64;
-        char* p = (char*)&v;
+        time_t v = (time_t)datetime;
+        struct tm* st = localtime(&v);
 
-        p[3] = src[3];
-        p[2] = src[4];
-        p[1] = src[5];
-        p[0] = src[6];
         if (m_dec)
-        {
-            ms = ms << (3 - m_dec / 2) * 8;
-            p[4] = src[2];
-            p[5] = src[1];
-            p[6] = src[0];
-        }
-        return v;
+            sprintf(p, datetime_format_ms, st->tm_year + 1900, st->tm_mon + 1,
+                    st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec,
+                    m_dec, (unsigned int)ms);
+        else
+            sprintf(p, datetime_format, st->tm_year + 1900, st->tm_mon + 1,
+                    st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
+    }else
+    {
+        if (m_dec)
+            sprintf(p, datetime_format_ms, 0, 0, 0, 0, 0, 0, m_dec, 0);
+        else
+            sprintf(p, datetime_format, 0, 0, 0, 0, 0, 0);
+
     }
+    return p;
+}
+
+myTimeStamp& myTimeStamp::operator=(const char* p)
+{
+    size_t len = strlen(p);
+    struct tm st;
+    memset(&st, 0, sizeof(tm));
+    i64 = 0;
+    if (len > 3)
+    {
+        st.tm_year = (int)atol(p) - 1900;
+        if (len > 6)
+        {
+            st.tm_mon =  (int)atol(p + 5) - 1;
+            if (len > 9)
+            {
+                st.tm_mday = (int)atol(p + 8);
+                if (len > 12)
+                {
+                    st.tm_hour = (int)atol(p + 11);
+                    if (len > 15)
+                    {
+                        st.tm_min = (int)atol(p + 14);
+                        if (len > 18)
+                        {
+                            st.tm_sec = (int)atol(p + 17);
+                            if (m_dec && len > 20)
+                            {
+                                char tmp[10] = { 0x00 };
+                                strncpy(tmp, p + 20, (size_t)m_dec);
+                                ms = atol(tmp);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    datetime = (__int64)mktime(&st); 
+    return *this;
+}
 
 #ifdef _WIN32
-    inline wchar_t* toStr(wchar_t* p)
+wchar_t* myTimeStamp::toStr(wchar_t* p)
+{
+    if (datetime)
     {
-        struct tm* st;
         time_t v = (time_t)datetime;
-        st = localtime(&v);
 
+        struct tm* st = localtime(&v);
         if (m_dec)
-            swprintf_s(p, 26, wdatetime_format_ms_i, st->tm_year + 1900,
-                       st->tm_mon + 1, st->tm_mday, st->tm_hour, st->tm_min,
-                       st->tm_sec, (unsigned int)ms);
+            swprintf_s(p, 50, wdatetime_format_ms, st->tm_year + 1900,
+                        st->tm_mon + 1, st->tm_mday, st->tm_hour, st->tm_min,
+                        st->tm_sec, m_dec, (unsigned int)ms);
         else
-            swprintf_s(p, 20, wdatetime_format_i, st->tm_year + 1900,
-                       st->tm_mon + 1, st->tm_mday, st->tm_hour, st->tm_min,
-                       st->tm_sec);
-        return p;
+            swprintf_s(p, 50, wdatetime_format, st->tm_year + 1900,
+                        st->tm_mon + 1, st->tm_mday, st->tm_hour, st->tm_min,
+                        st->tm_sec);
+    }else
+    {
+        if (m_dec)
+            swprintf_s(p, 50, wdatetime_format_ms, 0, 0, 0, 0, 0, 0, m_dec, 0);
+        else
+            swprintf_s(p, 50, wdatetime_format, 0, 0, 0, 0, 0, 0);
     }
+    return p;
+}
+
+myTimeStamp& myTimeStamp::operator=(const wchar_t* p)
+{
+    size_t len = wcslen(p);
+    struct tm st;
+    memset(&st, 0, sizeof(tm));
+    i64 = 0;
+    if (len > 3)
+    {
+        st.tm_year = (int)_wtol(p) - 1900;
+        if (len > 6)
+        {
+            st.tm_mon =  (int)_wtol(p + 5) - 1;
+            if (len > 9)
+            {
+                st.tm_mday = (int)_wtol(p + 8);
+                if (len > 12)
+                {
+                    st.tm_hour = (int)_wtol(p + 11);
+                    if (len > 15)
+                    {
+                        st.tm_min = (int)_wtol(p + 14);
+                        if (len > 18)
+                        {
+                            st.tm_sec = (int)_wtol(p + 17);
+                            if (m_dec && len > 20)
+                            {
+                                wchar_t tmp[10] = { 0x00 };
+                                wcsncpy(tmp, p + 20, (size_t)m_dec);
+                                ms = _wtol(tmp);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    datetime = (__int64)mktime(&st); 
+    return *this;
+}
 #endif
 
-    inline char* toStr(char* p)
-    {
-        struct tm* st;
-        time_t v = (time_t)datetime;
-        st = localtime(&v);
 
-        if (m_dec)
-            sprintf(p, datetime_format_ms_i, st->tm_year + 1900, st->tm_mon + 1,
-                    st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec,
-                    (unsigned int)ms);
-        else
-            sprintf(p, datetime_format_i, st->tm_year + 1900, st->tm_mon + 1,
-                    st->tm_mday, st->tm_hour, st->tm_min, st->tm_sec);
-        return p;
-    }
-};
-inline int btrdateToMydate(int btrd)
-{
-    myDate myd;
-    myd.setValue(btrd, true);
-    return myd.getValue(true);
-}
 
-inline __int64 btrtimeToMytime(int btrt)
-{
-    myTime myt(4);
-    myt.setValue(btrt, true);
-    return myt.getValue(true);
-}
+#pragma warning(default : 4996)    
 
-inline int mydateToBtrdate(int mydate)
-{
-    myDate myd;
-    myd.setValue(mydate);
-    return myd.getValue(true);
-}
-
-inline int mytimeToBtrtime(__int64 mytime, int size)
-{
-    myTime myt(size);
-    myt.setValue(mytime);
-    return (int)myt.getValue(true);
-}
-#pragma warning(default : 4996)
-
-#pragma pack(pop)
-pragma_pop;
 
 } // namespace tdap
 } // namespace protocol

@@ -216,7 +216,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_REC_DELETE:
         case TD_CLEAR_OWNERNAME:
         case TD_AUTOMEKE_SCHEMA:
-            client_t->req().paramMask = P_MASK_POSBLK;
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
             break;
         case TD_END_TRANSACTION:
         case TD_BEGIN_TRANSACTION:
@@ -287,21 +287,35 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_VERSION:
         {
             ushort_td datalen = *client_t->req().datalen;
+            btrVersion* v = (btrVersion*)(client_t->req().data);
             if (datalen >= sizeof(btrVersion))
             {
-                btrVersion& v = (btrVersion&)*((char*)client_t->req().data);
-                v.majorVersion = atoi(CPP_INTERFACE_VER_MAJOR);
-                v.minorVersion = atoi(CPP_INTERFACE_VER_MINOR);
-                v.type = 'N';
-                client_t->req().paramMask = P_MASK_DATA | P_MASK_DATALEN;
+                
+                v->majorVersion = atoi(CPP_INTERFACE_VER_MAJOR);
+                v->minorVersion = atoi(CPP_INTERFACE_VER_MINOR);
+                v->type = 'N';
+                client_t->req().result = 0;
             }
             else
                 client_t->req().result = STATUS_BUFFERTOOSMALL;
-            if (datalen < sizeof(btrVersion) * 2)
+            if (datalen >= sizeof(btrVersion) * 2)
             {
-                client_t->cleanup();
-                return 0;
+                ++v;
+                v->majorVersion = client_t->ver().srvMysqlMajor;
+                v->minorVersion = client_t->ver().srvMysqlMinor;
+                v->type = 'M';
+                client_t->req().result = 0;
             }
+            if (datalen >= sizeof(btrVersion) * 3)
+            {
+                ++v;
+                v->majorVersion = client_t->ver().srvMajor;
+                v->minorVersion = client_t->ver().srvMinor;
+                v->type = 'T';
+                client_t->req().result = 0;
+            }
+            client_t->cleanup();
+            return client_t->req().result;
             break;
         }
         case TD_OPENTABLE:
@@ -359,6 +373,12 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_ACL_RELOAD:
             client_t->req().paramMask = 0;
+            break;
+        case TD_GET_SCHEMA:
+            if (client_t->isSupportFunction(TD_GET_SCHEMA))
+                client_t->req().paramMask = P_MASK_DATALEN | P_MASK_KEYBUF;
+            else
+                return STATUS_NOSUPPORT_OP;
             break;
         }
         short_td ret = client_t->execute();

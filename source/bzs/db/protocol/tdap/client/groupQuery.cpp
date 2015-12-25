@@ -159,14 +159,20 @@ struct recordsetQueryImple
         short index;
         unsigned char compType;
         char combine;
+        struct
+        {
+            bool nullable : 1;
+            bool nulllog  : 1;
+        };
     };
     std::vector<compItem> compItems;
-
-    short endIndex;
     fielddefs compFields;
-    recordsetQueryImple() : row(NULL) {}
+    short endIndex;
+    bool mysqlnull;
+
+    recordsetQueryImple() : row(NULL),mysqlnull(false) {}
     recordsetQueryImple(const recordsetQueryImple& r)
-        : row(r.row), compItems(r.compItems), compFields(r.compFields)
+        : row(r.row), compItems(r.compItems), compFields(r.compFields), mysqlnull(r.mysqlnull)
     {
         if (row)
             row->addref();
@@ -219,6 +225,7 @@ recordsetQuery::~recordsetQuery()
 
 void recordsetQuery::init(const fielddefs* fdinfo)
 {
+    m_imple->mysqlnull = fdinfo->mysqlnullEnable();
     const std::vector<std::_tstring>& tokns = getWheres();
     m_imple->compFields.clear();
     m_imple->compItems.clear();
@@ -226,9 +233,12 @@ void recordsetQuery::init(const fielddefs* fdinfo)
     {
         recordsetQueryImple::compItem itm;
         itm.index = fdinfo->indexByName(tokns[i].c_str());
+        if (itm.index >= 0)
+            itm.nullable = (*fdinfo)[itm.index].nullable();
         m_imple->compItems.push_back(itm);
-        m_imple->compFields.push_back(&((*fdinfo)[itm.index]), true /*rePosition*/);
+        m_imple->compFields.push_back(&((*fdinfo)[itm.index]));
     }
+    m_imple->compFields.calcFieldPos(0 /*startIndex*/, true);
     m_imple->row = memoryRecord::create(m_imple->compFields);
     m_imple->row->addref();
     m_imple->row->setRecordData(autoMemory::create(), 0, 0, &m_imple->endIndex, true);
@@ -241,11 +251,12 @@ void recordsetQuery::init(const fielddefs* fdinfo)
         fd = tokns[i + 2].c_str();
         bool part = fd.isCompPartAndMakeValue();
         itm.compType = getFilterLogicTypeCode(tokns[i + 1].c_str());
+        eCompType log = (eCompType)(itm.compType & 0xf);
+        itm.nulllog = ((log == eIsNull) || (log == eIsNotNull));
         if (!part)
             itm.compType |= CMPLOGICAL_VAR_COMP_ALL;
         fielddef& fdd = const_cast<fielddef&>(m_imple->compFields[index]);
-        fdd.len = compDataLen(m_imple->compFields[index],
-                                    (const uchar_td*)fd.ptr(), part);
+        fdd.len = m_imple->compFields[index].compDataLen((const uchar_td*)fd.ptr(), part);
         itm.compFunc = fd.getCompFunc(itm.compType);
 
         // When use wide string functions, len convert to wide char num. 
@@ -285,8 +296,28 @@ bool recordsetQuery::isMatch(int ret, unsigned char compType) const
     case eNotEq:
     case eNotBitAnd:
         return (ret != 0);
+    default:
+        break;
     }
     return false;
+}
+
+int nullComp(const field& l, char log)
+{
+    bool rnull = (log == eIsNull) || (log == eIsNotNull);
+    bool lnull = l.isNull();
+            
+    if (lnull || rnull)
+    {
+        if (lnull && (log == eIsNull))
+            return 1;
+        else if (lnull && (log == eIsNotNull))
+            return -1;
+        else if (log == eIsNull)
+            return -1;
+        return 1; //(log == (char)eIsNotNull)
+    }
+    return 0;
 }
 
 bool recordsetQuery::match(const row_ptr row) const
@@ -294,9 +325,15 @@ bool recordsetQuery::match(const row_ptr row) const
     for (int i = 0; i < (int)m_imple->compItems.size(); ++i)
     {
         recordsetQueryImple::compItem& itm = m_imple->compItems[i];
-        bool ret = isMatch(
-                itm.compFunc((*row)[itm.index], (*m_imple->row)[i], itm.compType)
-                ,itm.compType);
+        bool ret;
+        int nullJudge = 2;
+        const field& f = (*row)[itm.index];
+        if (m_imple->mysqlnull && (itm.nullable || itm.nulllog))
+            nullJudge = f.nullComp((eCompType)(itm.compType & 0xf));
+        if (nullJudge < 2)
+            ret = (nullJudge == 0) ? true : false;
+        else
+            ret = isMatch(itm.compFunc(f, (*m_imple->row)[i], itm.compType), itm.compType);
 
         if (itm.combine == eCend)
             return ret;
@@ -784,7 +821,7 @@ void groupFuncBase::doReset()
 void groupFuncBase::operator()(const row_ptr& row, int index, bool insert)
 {
     if (insert)
-        initResultVariable(index); // setNullValue
+        initResultVariable(index);
     bool flag = (whereTokens() == 0);
 
     if (!flag)

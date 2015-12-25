@@ -145,3 +145,26 @@ char16_t* wmemcpy(char16_t* dest, const char16_t* src, size_t count)
 }
 
 #endif // LINUX
+
+#if (defined(_WIN32) && !defined(__MINGW32__))
+#include <windows.h>
+#include "crosscompile.h"
+
+static const __int64 EPOCH = ((__int64) 116444736000000000ULL);
+int gettimeofday(struct timeval * tp, struct timezone * tzp)
+{
+
+    SYSTEMTIME  system_time;
+    FILETIME    file_time;
+    __int64    time;
+
+    GetSystemTime( &system_time );
+    SystemTimeToFileTime( &system_time, &file_time );
+    time =  ((__int64)file_time.dwLowDateTime )      ;
+    time += ((__int64)file_time.dwHighDateTime) << 32;
+
+    tp->tv_sec  = (long) ((time - EPOCH) / 10000000L);
+    tp->tv_usec = (long) (system_time.wMilliseconds * 1000);
+    return 0;
+}
+#endif //(defined(_WIN32) && !defined(__MINGW32__))

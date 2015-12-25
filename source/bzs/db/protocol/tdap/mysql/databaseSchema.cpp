@@ -142,67 +142,102 @@ bool isBinary(const CHARSET_INFO& cs)
     return (&cs == &my_charset_bin);
 }
 
-short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
-{
+tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id, 
+                        bool nouseNullkey, uchar* rec, size_t size)
+{   
+    
+    src->restoreRecord();
+    size_t tdSizelen =  (sizeof(tabledef) + (sizeof(fielddef) * src->fields()) +
+                            (sizeof(keydef) * src->keys()));
+
+    if (size < tdSizelen) return NULL;
+
+    // index
+    keynumConvert kc(&src->keyDef(0), src->keys());
+
     uint_td datalen = 0;
-    boost::shared_array<uchar> rec(new uchar[65000]);
     // table
-    tabledef& tdef = (tabledef&)(*rec.get());
-    initTableDef(src, tdef, id);
-    tdef.fieldCount = (uchar_td)src->fields();
-    tdef.keyCount = (uchar_td)src->keys();
-    tdef.charsetIndex = charsetIndex(src->charset().csname);
-    tdef.primaryKeyNum =
-        (src->primarykey() < tdef.keyCount) ? src->primarykey() : -1;
+    tabledef& td = (*((tabledef*)rec));
+    initTableDef(src, td, id);
+    td.fieldCount = (uchar_td)src->fields();
+    td.keyCount = (uchar_td)src->keys();
+    td.charsetIndex = charsetIndex(src->charset().csname);
+    td.primaryKeyNum =
+        (src->primarykeyNum() < td.keyCount) ? kc.clientKeynum(src->primarykeyNum()) : -1;
 #ifdef USE_BTRV_VARIABLE_LEN
-    tdef.flags.bit0 = (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN);
+    td.flags.bit0 = (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN);
     if (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)
-        tdef.fixedRecordLen =
+        td.fixedRecordLen =
             (ushort_td)(src->recordLenCl() - src->lastVarFieldDataLen());
     else
 #endif
-        tdef.fixedRecordLen = (ushort_td)src->recordLenCl();
-    tdef.maxRecordLen = (ushort_td)src->recordLenCl();
-    tdef.pageSize = 2048;
-    tdef.optionFlags.bitA = ((src->recordFormatType() & RF_VALIABLE_LEN) != 0);
-    tdef.optionFlags.bitB = (src->blobFields() != 0);
+        td.fixedRecordLen = (ushort_td)src->recordLenCl();
+    td.m_maxRecordLen = (ushort_td)src->recordLenCl();
+    td.optionFlags.bitA = ((src->recordFormatType() & RF_VALIABLE_LEN) != 0);
+    td.optionFlags.bitB = (src->blobFields() != 0);
 
     datalen += sizeof(tabledef);
-    tdef.fieldDefs = (fielddef*)(rec.get() + datalen);
+    td.fieldDefs = (fielddef*)(rec + datalen);
     // field
     ushort_td pos = 0;
+    String str;
     for (int i = 0; i < src->fields(); ++i)
     {
         if (isNisField(src->fieldName(i)))
-            --tdef.fieldCount;
+            --td.fieldCount;
         else
         {
             fielddef fd;
-            memset(&fd, 0, sizeof(fielddef));
+            Field* f = src->field(i);
+            memset(&fd, 0, sizeof(fd));
             fd.setName(src->fieldName(i));
             fd.len = src->fieldLen(i); // filed->pack_length();
             fd.pos = pos;
             fd.type = convFieldType(src->fieldRealType(i), src->fieldFlags(i),
                                     isBinary(src->fieldCharset(i)),
                                     isUnicode(src->fieldCharset(i)));
-            bool usePadChar = ((fd.type == ft_mychar) || (fd.type == ft_mywchar)); 
-            fd.setPadCharSettings(usePadChar, true);
-            fd.setCharsetIndex(charsetIndex(src->fieldCharset(i).csname));
+            fd.setPadCharSettings(false, true);
+            if (fd.isStringType())
+                fd.setCharsetIndex(charsetIndex(src->fieldCharset(i).csname));
+
+            if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp ) && (f->val_real() == 0))
+            {// No constant value
+                fd.setDefaultValue(0.0f);
+				if (cp_has_insert_default_function(f)) 
+					fd.setDefaultValue(DFV_TIMESTAMP_DEFAULT);
+            }
+            else if (fd.type == ft_mydatetime || fd.type == ft_mytimestamp || fd.type == ft_mytime || fd.type == ft_mydate)
+                fd.setDefaultValue(f->val_real());
+            else
+            {
+                f->val_str(&str, &str);
+                fd.setDefaultValue(str.c_ptr());
+            }
+            fd.setNullable(f->null_bit != 0, f->is_null());
+            if (fd.nullable()) ++td.m_nullfields;
+            if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp ) && 
+                                    cp_has_update_default_function(f))
+                fd.setTimeStampOnUpdate(true); 
+
+            fd.decimals = (uchar_td)f->decimals();
+            if (fd.decimals == NOT_FIXED_DEC)
+                fd.decimals = 0;
             pos += fd.len;
             datalen =
-                copyToRecordImage(rec.get(), &fd, sizeof(fielddef), datalen);
+                copyToRecordImage(rec, &fd, sizeof(fielddef), datalen);
         }
     }
+    td.m_nullbytes = (td.m_nullfields + 7) / 8;
 
-    // index
     for (int i = 0; i < src->keys(); ++i)
     {
-        const KEY& key = src->keyDef(i);
+        const KEY& key = src->keyDef(kc.keyNumByMakeOrder(i));
         keydef kd;
         memset(&kd, 0, sizeof(keydef));
         kd.segmentCount = key.user_defined_key_parts;
         kd.keyNumber = i;
         int segNum = 0;
+        bool allNullkey = true;
         for (int j = 0; j < (int)key.user_defined_key_parts; ++j)
         {
             keySegment& sg = kd.segments[segNum];
@@ -216,7 +251,9 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
                 sg.flags.bit1 = 1; // change able
                 sg.flags.bit4 = (j != kd.segmentCount - 1); // segment
                 sg.flags.bit8 = 1; // extend key type
-                sg.flags.bit9 = ks.null_bit ? 1 : 0; // null key
+                if (nouseNullkey == false)
+                    sg.flags.bit9 = ks.null_bit ? 1 : 0; // null key
+                allNullkey = allNullkey & sg.flags.bit9;
                 if (isStringTypeForIndex(convFieldType(
                         src->fieldType(sg.fieldNum),
                         src->fieldFlags(sg.fieldNum),
@@ -224,21 +261,52 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id)
                         isUnicode(src->fieldCharset(sg.fieldNum)))))
                     sg.flags.bitA =
                         !(src->fieldFlags(sg.fieldNum) & BINARY_FLAG);// case in-sencitive
-                if (src->fieldDataLen(sg.fieldNum) != ks.length)
+
+                Field* f = src->field(sg.fieldNum);
+                unsigned short slen = f->pack_length();
+                unsigned short mlen = ks.length + var_bytes_if(f);
+                if (f->pack_length() != ks.length + var_bytes_if(f))
                 {
-                    fielddef& fd = tdef.fieldDefs[sg.fieldNum];
                     // suppot prefix key
-                    fd.keylen = ks.length;
+                    td.fieldDefs[sg.fieldNum].keylen = ks.length ;
                 }
                 ++segNum;
             }
         }
-        datalen = copyToRecordImage(rec.get(), &kd, sizeof(keydef), datalen);
+        if (allNullkey)
+        {
+            for (int i=0;i<kd.segmentCount; ++i)
+            {
+                kd.segments[segNum].flags.bit9 = 0; //part segment null key
+                kd.segments[segNum].flags.bit3 = 1; //all segment null key
+            }
+        }
+        datalen = copyToRecordImage(rec, &kd, sizeof(keydef), datalen);
     }
-    tdef = (tabledef&)(*rec.get());
-    tdef.varSize = datalen - 4;
+    td = (tabledef&)(*rec);
+    td.varSize = datalen - 4;
+    td.setFielddefsPtr();
+    td.setKeydefsPtr();
+
+    return &td;
+}
+
+tabledef* schemaBuilder::getTabledef(database* db, const char* tablename, uchar* rec, size_t size)
+{
+    table* tb = db->openTable(tablename, TD_OPEN_READONLY, NULL);
+    if (db->stat()) return NULL;
+    tabledef* td = getTabledef(tb, 0, true, rec, size);
+    db->closeTable(tb);
+    return td;
+}
+
+short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id, bool nouseNullkey)
+{
+    boost::shared_array<uchar> rec(new uchar[65000]);
+    
+    tabledef* td = getTabledef(src, id, nouseNullkey, rec.get(), 65000);
     mtb->clearBuffer();
-    mtb->setRecordFromPacked(rec.get(), datalen, NULL);
+    mtb->setRecordFromPacked(rec.get(), td->varSize + 4, NULL);
     mtb->insert(true);
     return mtb->stat();
 }
@@ -299,7 +367,7 @@ void schemaBuilder::listSchemaTable(database* db, std::vector<std::string>& shce
     }
 }
 
-short schemaBuilder::execute(database* db, table* mtb)
+short schemaBuilder::execute(database* db, table* mtb, bool nouseNullkey)
 {
     char path[FN_REFLEN + 1];
     build_table_filename(path, sizeof(path) - 1, db->name().c_str(), "", "", 0);
@@ -336,7 +404,7 @@ short schemaBuilder::execute(database* db, table* mtb)
         smartTransction trn(db);
         for (size_t i = 0; i < tables.size(); ++i)
         {
-            if ((stat = insertMetaRecord(mtb, tables[i], ++id)) != 0)
+            if ((stat = insertMetaRecord(mtb, tables[i], ++id, nouseNullkey)) != 0)
                     break;
         }
         if (stat == 0) trn.end();

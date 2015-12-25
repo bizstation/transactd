@@ -94,6 +94,16 @@ protected:
     /* return memory block first address which not field ptr address */
     inline unsigned char* ptr(int index) const
     {
+        return nullPtr(index) + (*m_fns)[index].nullbytes();
+        /*for (int i = 0; i < memBlockSize(); ++i)
+            if (*(m_memblock[i]->endFieldIndex) > index)
+                return m_memblock[i]->ptr + (*m_fns)[index].nullbytes();
+        assert(0);
+        return NULL;*/
+    }
+
+    inline unsigned char* nullPtr(int index) const
+    {
         for (int i = 0; i < memBlockSize(); ++i)
             if (*(m_memblock[i]->endFieldIndex) > index)
                 return m_memblock[i]->ptr;
@@ -121,7 +131,7 @@ protected:
 #endif
     inline void copyFromBuffer(const table* tb)
     {
-        memcpy(ptr(0), tb->fieldPtr(0), m_fns->totalFieldLen());
+        memcpy(nullPtr(0), tb->data(), m_fns->totalFieldLen());
     }
 
     void removeLastMemBlock() 
@@ -176,6 +186,7 @@ public:
     void del(bool KeysetAlrady = false, bool noSeek = false);
     void update(bool KeysetAlrady = false, bool noSeek = false);
     void save();
+    void clear();// orverride
 
 };
 

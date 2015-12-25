@@ -39,26 +39,6 @@ namespace client
 
 #define DATASIZE_BYTE 2
 
-
-/** Length of compare
- * if part of string or zstring then return strlen * sizeof(char or wchar).
- */
-inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
-{
-    uint_td length = fd.keyDataLen(ptr);
-    if (part)
-    {
-        if ((fd.type == ft_string) || (fd.type == ft_zstring) ||
-                        (fd.type == ft_note) || (fd.type == ft_mychar))
-            length = (uint_td)strlen((const char*)ptr);
-        else if ((fd.type == ft_wstring) || (fd.type == ft_wzstring) ||
-                        (fd.type == ft_mywchar))
-            length = (uint_td)strlen16((char16_t*)ptr)*sizeof(char16_t);
-    }
-    return length;
-}
-
-
 inline bool verType(uchar_td type)
 {
     if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
@@ -349,11 +329,14 @@ public:
         fielddef fdd = tb->tableDef()->fieldDefs[fieldNum];
         fdd.pos = 0;
         uchar_td* buf = allocBuffer(fdd.len);
-        field fd(buf, fdd, tb->m_fddefs);
-        fd = value;
+
+        // Comapare value don't use NULL
+        // If logType is eIsNull or eIsNotNull, ingored this value
+        field fd(buf, fdd, tb->m_fddefs/*, NULL, 0*/);
+        fd = value; // operator=()
         bool part = fd.isCompPartAndMakeValue();
         int varlen = fdd.varLenByteForKey();
-        int copylen = compDataLen(fdd, buf, part);
+        int copylen = fdd.compDataLen(buf, part);
         len = varlen + copylen;
         if (fdd.blobLenBytes())
         {
@@ -546,7 +529,7 @@ class autoBackup
     int m_len;
 public:
     autoBackup(table* tb, std::vector<char>& b):m_tb(tb),
-        m_len(m_tb->tableDef()->maxRecordLen)
+        m_len(m_tb->tableDef()->recordlen())
     {
         b.resize(m_len);
         m_buf = &b[0]; 
@@ -602,12 +585,19 @@ class filter
 
     struct bufSize
     {
-        bufSize():logic(0), seeks(0), select(0),retRowSize(0) {}
-        void clear() { logic = 0; seeks = 0; select = 0; retRowSize = 0;}
+        bufSize():logic(0), seeks(0), select(0),retRowSize(0),
+            nullfields(0), nullbytes(0) {}
+        void clear()
+        {
+            logic = 0; seeks = 0; select = 0; retRowSize = 0;
+            nullfields = 0; nullbytes = 0;
+        }
         int logic;
         int seeks;
         int select;
         int retRowSize;
+        short nullfields;
+        short nullbytes;
     }bsize;
 
     inline int maxDataBuffer()
@@ -620,10 +610,13 @@ class filter
     {
         m_fields.resize(1);
         resultField& r = m_fields[0];
-        r.len = (ushort_td)m_tb->tableDef()->maxRecordLen;
+        const tabledef* td = m_tb->tableDef();
+        r.len = (ushort_td)td->recordlenServer();
         r.pos = 0;
         bsize.select = r.size();
         bsize.retRowSize = r.len;
+        bsize.nullbytes = (short)td->nullbytes();
+        bsize.nullfields = (short)td->nullfields();
     }
 
     bool addSelect(resultField& r, const _TCHAR* name)
@@ -634,6 +627,12 @@ class filter
             m_selectFieldIndexes.push_back(fieldNum);
             bsize.select += r.size();
             bsize.retRowSize += r.len;
+
+            if (m_tb->tableDef()->fieldDefs[fieldNum].nullable())
+            {
+                ++bsize.nullfields;
+                bsize.nullbytes = (bsize.nullfields + 7) / 8;
+            }
             return true;
         }
         return false;
@@ -750,7 +749,8 @@ class filter
                 {
                     const keyValuePtr& v = keyValues[i + j];
                     fielddef& fd = fds[kd->segments[j].fieldNum];
-                    to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len);
+                    FLAGS f = kd->segments[j].flags;
+                    to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len, (v.ptr == NULL));
                 }
             }
             if (!l.setParam(dataBuf, (ushort_td)(to - dataBuf)))
@@ -857,7 +857,7 @@ class filter
     {
         int recordLen = bookmarkSize() + DATASIZE_BYTE;
         if (!ignoreFields)
-            recordLen += bsize.retRowSize;
+            recordLen += (bsize.retRowSize + bsize.nullbytes);
         return recordLen;
     }
 
@@ -959,7 +959,7 @@ class filter
         // m_hd.len = len;//lost 2byte data at transactd
         m_extendBuflen = (int)resultBufferNeedSize();
         if (fieldSelected() || m_tb->valiableFormatType())
-            m_extendBuflen += m_tb->tableDef()->maxRecordLen;
+            m_extendBuflen += m_tb->tableDef()->recordlen();
         m_tb->reallocDataBuffer(m_ddba ? len : m_extendBuflen);
         return true;
     }
@@ -1123,7 +1123,8 @@ public:
         return true;
     }
     
-    bool supplySeekValue(const uchar_td* ptr[] , int len[], int keySize, int& index)
+    bool supplySeekValue(const uchar_td* ptr[] , int len[],
+                 int keySize, int& index)
     {
         const tabledef* td = m_tb->tableDef();
         keydef* kd = &td->keyDefs[(int)m_tb->keyNum()];
@@ -1134,7 +1135,8 @@ public:
         for (int j = 0; j < keySize; ++j)
         {
             fielddef& fd = fds[kd->segments[j].fieldNum];
-            to = fd.keyCopy(to, (uchar_td*)ptr[j], len[j]);
+            FLAGS f = kd->segments[j].flags;
+            to = fd.keyCopy(to, (uchar_td*)ptr[j], len[j], (ptr[j]==NULL));
         }
         if (!l.setParam(m_buftmp, (ushort_td)(to - m_buftmp)))
             return false;
@@ -1196,7 +1198,7 @@ public:
     uint_td exDataBufLen() const
     {
         if (fieldSelected() || m_tb->valiableFormatType())
-            return m_extendBuflen - m_tb->tableDef()->maxRecordLen;
+            return m_extendBuflen - m_tb->tableDef()->recordlen();
         return m_extendBuflen;
     }
 
@@ -1217,10 +1219,7 @@ public:
 
     ushort_td totalSelectFieldLen() const
     {
-        ushort_td recordLen = 0;
-        for (size_t i = 0; i < m_fields.size(); ++i)
-            recordLen += m_fields[i].len;
-        return recordLen;
+        return bsize.nullbytes + bsize.retRowSize;
     }
 
     inline ushort_td fieldOffset(int index) const
@@ -1254,7 +1253,7 @@ public:
     {
         return !((m_fields.size() == 1) && (m_fields[0].pos == 0) &&
                  (m_fields[0].len ==
-                  (ushort_td)m_tb->tableDef()->maxRecordLen));
+                  (ushort_td)m_tb->tableDef()->recordlenServer()));
     }
 
     inline bool ignoreFields() const { return m_ignoreFields; }
@@ -1269,6 +1268,7 @@ public:
     /* The Ignore fields option don't use with multi seek operation.
        because if a server are not found a record then a server return
        error code in a bookmark field.
+       This is used in recordCount().
     */
     inline void setIgnoreFields(bool v) { m_ignoreFields = v; }
     inline bool isSeeksMode() const { return m_seeksMode; }
@@ -1284,6 +1284,7 @@ public:
     {
         return m_selectFieldIndexes;
     }
+    inline int selectedNullbytes() const { return bsize.nullbytes; };
     inline const std::vector<seek>& seeks() const { return m_seeks; }
     inline short stat() const { return m_stat; };
     inline void setStat(short v) { m_stat = v; }

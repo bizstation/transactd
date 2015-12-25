@@ -18,6 +18,7 @@
  ================================================================= */
 #include "dbDef.h"
 #include "database.h"
+#include <bzs/db/protocol/tdap/uri.h>
 #include <bzs/rtl/strtrim.h>
 #include <limits.h>
 #include <stdio.h>
@@ -59,8 +60,8 @@ public:
     using nstable::open;
 };
 
-static const int BDFMAXBUFFER = 32384;
-
+static const int BDFMAXBUFFER_BTRV = 32384;
+static const int BDFMAXBUFFER = MAX_SCHEMASIZE + 0xFFFF;
 struct dbdimple
 {
     tabledef* tableDefs[TABLE_NUM_TMP + 1];
@@ -72,7 +73,7 @@ struct dbdimple
     short openMode;
     short deftype;
     _TCHAR userName[20];
-    int bdfLen;
+    uint_td bdfLen;
     _TCHAR version[9];
     bool noWriteMode;
 
@@ -83,71 +84,80 @@ struct dbdimple
         memset(tableDefs, 0, (TABLE_NUM_TMP + 1) * sizeof(tabledef*));
         _tcscpy(version, (const _TCHAR*)BDFFORMAT_VERSION);
     }
+
+    ~dbdimple()
+    {
+        for (int i = 0; i <= tableCount; i++)
+        {
+            tabledef* td = tableDefs[i];
+            if (td && (td != (tabledef*)-1) && (td != bdf))
+            {
+                if (td->defaultImage)
+                    free(td->defaultImage);
+                free(td);
+                tableDefs[i] = NULL;
+            }
+        }
+        if (bdf)
+            free(bdf);
+        if (tableDefs[TABLE_NUM_TMP])
+            free(tableDefs[TABLE_NUM_TMP]);
+        if (relateData)
+            free(relateData);
+    }
 };
 
 dbdef::dbdef(nsdatabase* pbe, short DefType) : nstable(pbe)
 {
-    m_impl = new dbdimple();
-    m_impl->deftype = DefType;
+    m_dimpl = new dbdimple();
+    m_dimpl->deftype = DefType;
     m_keybuflen = 128;
-    m_keybuf = &m_impl->keybuf[0];
+    m_keybuf = &m_dimpl->keybuf[0];
     setShared();
 }
 
 dbdef::~dbdef()
 {
-    if (m_impl->bdf)
-        free(m_impl->bdf);
-
-    for (int i = 0; i <= m_impl->tableCount; i++)
-    {
-        if (m_impl->tableDefs[i] && (m_impl->tableDefs[i] != (tabledef*)-1) &&
-            (m_impl->tableDefs[i] != m_impl->bdf))
-            free(m_impl->tableDefs[i]);
-    }
-    if (m_impl->tableDefs[TABLE_NUM_TMP])
-        free(m_impl->tableDefs[TABLE_NUM_TMP]);
-    if (m_impl->relateData)
-        free(m_impl->relateData);
-    delete m_impl;
+    delete m_dimpl;
+    m_dimpl = NULL;
 }
 
 void dbdef::setDefType(short defType)
 {
-    m_impl->deftype = defType;
+    m_dimpl->deftype = defType;
 }
 
 short dbdef::tableCount() const
 {
-    return m_impl->tableCount;
+    return m_dimpl->tableCount;
 }
 
 void* dbdef::relateData() const
 {
-    return m_impl->relateData;
+    return m_dimpl->relateData;
 }
 
 short dbdef::openMode() const
 {
-    return m_impl->openMode;
+    return m_dimpl->openMode;
 }
 
 int dbdef::version() const
 {
-    return m_impl->version[7] - '0';
+    return m_dimpl->version[7] - '0';
 };
 
 void dbdef::setVersion(int v)
 {
-    m_impl->version[7] = (char)v;
+    m_dimpl->version[7] = (char)v;
 }
 
 void* dbdef::allocRelateData(int size)
 {
-    if (m_impl->relateData)
-        free(m_impl->relateData);
-    m_impl->relateData = malloc(size);
-    return m_impl->relateData;
+    if (m_dimpl->relateData)
+        free(m_dimpl->relateData);
+    m_dimpl->relateData = malloc(size);
+    return m_dimpl->relateData;
 }
 keylen_td dbdef::writeKeyData()
 {
@@ -157,97 +167,99 @@ void dbdef::moveById(short id)
 {
     while (1)
     {
-        m_pdata = m_impl->bdf;
-        m_buflen = m_impl->bdfLen;
+        m_pdata = m_dimpl->bdf;
+        m_buflen = m_dimpl->bdfLen;
         memcpy(m_keybuf, &id, 2);
         seek();
         if (m_stat == STATUS_BUFFERTOOSMALL)
-        {
-            if (!resizeReadBuf())
-                return;
-        }
+            return;
         else
             break;
     }
 }
 
-bool dbdef::resizeReadBuf(void)
+void* dbdef::getBufferPtr(uint_td& size)
 {
-    m_impl->bdf =
-        (tabledef*)realloc(m_impl->bdf, m_impl->bdfLen + BDFMAXBUFFER);
-    if (m_impl->bdf == NULL)
+    size = m_dimpl->bdfLen;
+    return m_dimpl->bdf;
+}
+
+bool dbdef::setDefaultImage(short tableIndex, const uchar_td* p, ushort_td size)
+{
+    tabledef* td = m_dimpl->tableDefs[tableIndex];
+    if (td)
     {
-        m_stat = STATUS_CANT_ALLOC_MEMORY;
-        return false;
+        td->defaultImage = malloc(size);
+        if (td->defaultImage)
+        {
+            memcpy(td->defaultImage, p, size);
+            return true;
+        }
     }
-    m_impl->bdfLen += BDFMAXBUFFER;
+    return false;
+}
+
+bool dbdef::addSchemaImage(const tabledef* p, ushort_td size, short& tableIndex)
+{
+    tableIndex = ++m_dimpl->tableCount;
+    initReadAfter(tableIndex, p, size);
     return true;
 }
 
-keydef* dbdef::getKeyDef(tabledef* p)
+void dbdef::allocDatabuffer()
 {
-    // keydefPos = size of tabledef { size of fielddef x number
-    return (keydef*)((char*)p + sizeof(tabledef) +
-                     (p->fieldCount * sizeof(fielddef)));
-}
-
-fielddef* dbdef::getFieldDef(tabledef* p)
-{
-
-    return (fielddef*)((char*)p + sizeof(tabledef));
-}
-
-void dbdef::setRecordLen(short TableIndex)
-{
-    tabledef* td = tableDefs(TableIndex);
-    td->maxRecordLen = getRecordLen(TableIndex);
-
-    // If valible length then specifing fixed length.
-    if ((td->fixedRecordLen == 0) || (td->flags.bit0 == false))
-        td->fixedRecordLen = td->maxRecordLen;
-}
-
-void dbdef::setCodePage(tabledef* td)
-{
-    if (td->charsetIndex == 0)
-        td->charsetIndex = mysql::charsetIndex(GetACP());
-
-    for (short i = 0; i < td->fieldCount; i++)
+    m_stat = 0;
+    if (m_dimpl->bdf == NULL)
     {
-        fielddef& fd = td->fieldDefs[i];
-        if (fd.charsetIndex() == 0)
-            fd.setCharsetIndex(td->charsetIndex);
-        fd.setSchemaCodePage(td->schemaCodePage);
+        if (!nsdb()->isUseTransactd())
+            m_dimpl->bdfLen = BDFMAXBUFFER_BTRV;
+        m_dimpl->bdf =
+        (tabledef*)malloc(m_dimpl->bdfLen);
+        if (m_dimpl->bdf == NULL)
+            m_stat = STATUS_CANT_ALLOC_MEMORY;
     }
+}
+
+bool dbdef::testTablePtr(tabledef* td)
+{
+    if (td == NULL)
+    {
+        m_stat = STATUS_INVALID_TABLE_IDX;
+        return false;
+    }
+    return true;
 }
 
 short dbdef::validateTableDef(short TableIndex)
 {
     m_stat = STATUS_SUCCESS;
     tabledef* td = tableDefs(TableIndex);
+    if (!testTablePtr(td)) return m_stat;
 
     td->optionFlags.bitA = false; // reset valiable type
     td->optionFlags.bitB = false;
     for (short i = 0; i < td->fieldCount; ++i)
     {
-        short ret = fieldNumByName(TableIndex, td->fieldDefs[i].name());
+        const fielddef& fd = td->fieldDefs[i];
+        short ret = fieldNumByName(TableIndex, fd.name());
         if ((ret != -1) && (ret != i))
         {
             m_stat = STATUS_DUPLICATE_FIELDNAME;
             return m_stat;
         }
         // Check field length.
-        uchar_td type = td->fieldDefs[i].type;
+        uchar_td type = fd.type;
 
         // reset update indicator
-        td->fieldDefs[i].enableFlags.bitE = false;
+        const_cast<fielddef&>(fd).enableFlags.bitE = false;
 
-        ret = validLen(type, td->fieldDefs[i].len);
-        if (!ret)
+        ret = validLen(type, fd.len);
+        if (!ret || !fd.validateCharNum())
         {
             m_stat = STATUS_INVALID_FIELDLENGTH;
             return m_stat;
         }
+
         // Note or Lvar type must be the last of fields.
         if ((type == ft_note) || (type == ft_lvar))
         {
@@ -272,6 +284,11 @@ short dbdef::validateTableDef(short TableIndex)
             td->optionFlags.bitA = true;
         if ((type == ft_myblob) || (type == ft_mytext))
             td->optionFlags.bitB = true;
+        if (type == ft_myfixedbinary)
+            td->optionFlags.bitC = true;
+        //force use pad char
+        if ((type == ft_mychar) || (type == ft_mywchar))
+            td->fieldDefs[i].m_padCharOptions |= USE_PAD_CHAR;
     }
 
     // Check invalid key type
@@ -290,10 +307,11 @@ short dbdef::validateTableDef(short TableIndex)
     }
 
     // Chack duplicate table name.
-    for (short i = 1; i < m_impl->tableCount; i++)
+    for (short i = 1; i < m_dimpl->tableCount; i++)
     {
         if ((tableDefs(i)) && (i != TableIndex))
         {
+            m_stat = 0;
             if (strcmp(tableDefs(i)->tableNameA(), td->tableNameA()) == 0)
             {
                 m_stat = STATUS_DUPPLICATE_KEYVALUE;
@@ -301,8 +319,9 @@ short dbdef::validateTableDef(short TableIndex)
             }
         }
     }
-    setCodePage(td);
-    setRecordLen(TableIndex);
+    td->setDefaultCharsetIfZero();
+    if (td->inUse() == 0)
+        td->calcReclordlen(0);
     return m_stat;
 }
 
@@ -312,13 +331,14 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
         return;
 
     tabledef* td = tableDefs(TableIndex);
+    if (!testTablePtr(td)) return;
 
-    if (m_impl->noWriteMode)
+    if (m_dimpl->noWriteMode)
     {
         m_stat = STATUS_ACCESS_DENIED;
         return;
     }
-    if (m_impl->deftype == TYPE_SCHEMA_DDF)
+    if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
         saveDDF(TableIndex, 3, forPsqlDdf);
     else
     {
@@ -326,44 +346,43 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
         if (m_stat == STATUS_SUCCESS)
         {
             m_pdata = td;
-            m_buflen = totalDefLength(TableIndex);
-            cacheFieldPos(td);
+            m_buflen = td->size();
+            td->cacheFieldPos();
             td->formatVersion = FORMAT_VERSON_CURRENT;
             update();
-            m_pdata = m_impl->bdf;
-            m_buflen = m_impl->bdfLen;
+            m_pdata = m_dimpl->bdf;
+            m_buflen = m_dimpl->bdfLen;
         }
     }
 }
 
 void dbdef::deleteTable(short TableIndex)
 {
-    m_stat = STATUS_SUCCESS;
-    if (m_impl->noWriteMode)
-    {
-        free(tableDefs(TableIndex));
-        m_impl->tableDefs[TableIndex] = NULL;
-        return;
-    }
+    tabledef* td = tableDefs(TableIndex); 
+    if (!testTablePtr(td)) return;
 
-    if (m_impl->deftype == TYPE_SCHEMA_DDF)
-        saveDDF(TableIndex, 4);
-    else
+    m_stat = STATUS_SUCCESS;
+    if (m_dimpl->noWriteMode == false)
     {
-        moveById(tableDefs(TableIndex)->id);
-        if (m_stat == STATUS_SUCCESS)
+        if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
+            saveDDF(TableIndex, 4);
+        else
         {
-            m_pdata = tableDefs(TableIndex);
-            m_buflen = totalDefLength(TableIndex);
-            del();
-            m_pdata = m_impl->bdf;
-            m_buflen = m_impl->bdfLen;
+            moveById(td->id);
+            if (m_stat == STATUS_SUCCESS)
+            {
+                m_pdata = td;
+                m_buflen = td->size();
+                del();
+                m_pdata = m_dimpl->bdf;
+                m_buflen = m_dimpl->bdfLen;
+            }
         }
     }
     if (m_stat == STATUS_SUCCESS)
     {
-        free(tableDefs(TableIndex));
-        m_impl->tableDefs[TableIndex] = NULL;
+        free(td);
+        m_dimpl->tableDefs[TableIndex] = NULL;
     }
 }
 
@@ -372,9 +391,12 @@ void dbdef::renumberFieldNum(short TableIndex, short Index, short op)
     int i, j;
     keydef* KeyDef;
 
-    for (i = 0; i < tableDefs(TableIndex)->keyCount; i++)
+    tabledef* td = tableDefs(TableIndex);
+    if (!testTablePtr(td)) return;
+
+    for (i = 0; i < td->keyCount; i++)
     {
-        KeyDef = &(tableDefs(TableIndex)->keyDefs[i]);
+        KeyDef = &(td->keyDefs[i]);
 
         for (j = 0; j < KeyDef->segmentCount; j++)
         {
@@ -397,10 +419,12 @@ bool dbdef::isUsedField(short TableIndex, short DeleteIndex)
 {
     int i, j;
     keydef* KeyDef;
+    tabledef* td = tableDefs(TableIndex);
+    if (!testTablePtr(td)) return false;
 
-    for (i = 0; i < tableDefs(TableIndex)->keyCount; i++)
+    for (i = 0; i < td->keyCount; i++)
     {
-        KeyDef = &(tableDefs(TableIndex)->keyDefs[i]);
+        KeyDef = &(td->keyDefs[i]);
         for (j = 0; j < KeyDef->segmentCount; j++)
         {
             if (KeyDef->segments[j].fieldNum == DeleteIndex)
@@ -426,11 +450,11 @@ void dbdef::deleteField(short TableIndex, short DeleteIndex)
     else
     {
         memmove(&td->fieldDefs[DeleteIndex], &td->fieldDefs[DeleteIndex + 1],
-                totalDefLength(TableIndex) + (char*)td -
+                td->size() + (char*)td -
                     (char*)&(td->fieldDefs[DeleteIndex + 1]));
     }
     td->fieldCount--;
-    td->keyDefs = getKeyDef(tableDefs(TableIndex));
+    td->setKeydefsPtr();
     updateTableDef(TableIndex);
 }
 
@@ -438,10 +462,11 @@ void dbdef::deleteKey(short TableIndex, short DeleteIndex)
 {
     m_stat = STATUS_SUCCESS;
     tabledef* td = tableDefs(TableIndex);
+    if (!testTablePtr(td)) return ;
     if (DeleteIndex != td->keyCount - 1)
     {
         memmove(&td->keyDefs[DeleteIndex], &td->keyDefs[DeleteIndex + 1],
-                totalDefLength(TableIndex) + (char*)td -
+                td->size() + (char*)td -
                     (char*)&(td->keyDefs[DeleteIndex + 1]));
     }
     td->keyCount--;
@@ -482,52 +507,53 @@ void dbdef::insertTable(tabledef* TableDef)
         m_stat = STATUS_TOO_MANY_FIELDS;
         return;
     }
-    m_impl->tableDefs[TableDef->id] =
+    m_dimpl->tableDefs[TableDef->id] =
         (tabledef*)malloc(USHRT_MAX /* sizeof(tabledef) */);
-    if (m_impl->tableDefs[TableDef->id] == NULL)
+    if (m_dimpl->tableDefs[TableDef->id] == NULL)
     {
         m_stat = STATUS_CANT_ALLOC_MEMORY;
         return;
     }
-    if ((TableDef->ddfid == 0) && (m_impl->deftype == TYPE_SCHEMA_DDF))
+    if ((TableDef->ddfid == 0) && (m_dimpl->deftype == TYPE_SCHEMA_DDF))
         TableDef->ddfid = getDDFNewTableIndex();
-    memcpy(m_impl->tableDefs[TableDef->id], TableDef, sizeof(tabledef));
-    if (m_impl->noWriteMode)
+    memcpy(m_dimpl->tableDefs[TableDef->id], TableDef, sizeof(tabledef));
+    if (m_dimpl->noWriteMode)
     {
-        if (m_impl->tableCount < TableDef->id)
-            m_impl->tableCount = TableDef->id;
+        if (m_dimpl->tableCount < TableDef->id)
+            m_dimpl->tableCount = TableDef->id;
         return;
     }
     TableDef->formatVersion = FORMAT_VERSON_CURRENT;
-    if (m_impl->deftype == TYPE_SCHEMA_DDF)
+    if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
         saveDDF(TableDef->id, 2);
     else
     {
-        memcpy(m_impl->bdf, TableDef, sizeof(tabledef));
-        m_pdata = m_impl->bdf;
+        memcpy(m_dimpl->bdf, TableDef, sizeof(tabledef));
+        m_pdata = m_dimpl->bdf;
 
         memcpy(m_keybuf, &TableDef->id, 2);
         m_buflen = sizeof(tabledef);
-        if (isUseTransactd())
-            m_impl->bdf->varSize = m_buflen - 4;
         insert();
-        m_pdata = m_impl->bdf;
-        m_buflen = m_impl->bdfLen;
+        m_pdata = m_dimpl->bdf;
+        m_buflen = m_dimpl->bdfLen;
     }
     if (m_stat != 0)
     {
-        free(m_impl->tableDefs[TableDef->id]);
-        m_impl->tableDefs[TableDef->id] = NULL;
+        free(m_dimpl->tableDefs[TableDef->id]);
+        m_dimpl->tableDefs[TableDef->id] = NULL;
     }
     else
     {
-        if (m_impl->tableCount < TableDef->id)
-            m_impl->tableCount = TableDef->id;
+        if (m_dimpl->tableCount < TableDef->id)
+            m_dimpl->tableCount = TableDef->id;
     }
 }
 
 bool dbdef::resizeAt(short TableIndex, bool key)
 {
+    tabledef* def = m_dimpl->tableDefs[TableIndex];
+    if (!key && def->m_inUse != 0) return false;
+
     uint_td addsize;
 
     if (key == true)
@@ -535,47 +561,43 @@ bool dbdef::resizeAt(short TableIndex, bool key)
     else
         addsize = sizeof(fielddef);
 
-    uint_td size = totalDefLength(TableIndex) + addsize;
-    tabledef* def = m_impl->tableDefs[TableIndex];
+    uint_td size = def->size() + addsize;
+ 
     void* p = malloc(size);
     if (p)
     {
-        memcpy(p, def, totalDefLength(TableIndex));
+        memcpy(p, def, def->size());
         free(def);
-        m_impl->tableDefs[TableIndex] = def = (tabledef*)p;
+        m_dimpl->tableDefs[TableIndex] = def = (tabledef*)p;
+        // init for memcpy
+        def->setFielddefsPtr();
+        def->setKeydefsPtr();
+        return true;
     }
-    else
-    {
-        m_stat = STATUS_CANT_ALLOC_MEMORY;
-        return false;
-    }
-    // init for resize
-    def->fieldDefs = getFieldDef(def);
-    def->keyDefs = getKeyDef(def);
-    return true;
+    m_stat = STATUS_CANT_ALLOC_MEMORY;
+    return false;
 }
 
 keydef* dbdef::insertKey(short TableIndex, short InsertIndex)
 {
-
     if (resizeAt(TableIndex, true) == false)
         return NULL;
 
+    tabledef* td = m_dimpl->tableDefs[TableIndex];
     if (InsertIndex < tableDefs(TableIndex)->keyCount)
     {
-        memmove(&tableDefs(TableIndex)->keyDefs[InsertIndex + 1],
-                &tableDefs(TableIndex)->keyDefs[InsertIndex],
-                totalDefLength(TableIndex) + (char*)tableDefs(TableIndex) -
-                    (char*)&(tableDefs(TableIndex)->keyDefs[InsertIndex]));
+        memmove(&td->keyDefs[InsertIndex + 1],
+                &td->keyDefs[InsertIndex],
+                td->size() + (char*)td - (char*)&(td->keyDefs[InsertIndex]));
     }
-    tableDefs(TableIndex)->keyCount++;
-    memset(&(tableDefs(TableIndex)->keyDefs[InsertIndex]), 0, sizeof(keydef));
+    td->keyCount++;
+    memset(&(td->keyDefs[InsertIndex]), 0, sizeof(keydef));
 
-    if ((!m_impl->noWriteMode) && (m_impl->deftype != TYPE_SCHEMA_DDF))
+    if ((!m_dimpl->noWriteMode) && (m_dimpl->deftype != TYPE_SCHEMA_DDF))
         updateTableDef(TableIndex);
     else
-        setRecordLen(TableIndex);
-    return &(tableDefs(TableIndex)->keyDefs[InsertIndex]);
+        td->calcReclordlen();
+    return &(td->keyDefs[InsertIndex]);
 }
 
 fielddef* dbdef::insertField(short TableIndex, short InsertIndex)
@@ -589,29 +611,19 @@ fielddef* dbdef::insertField(short TableIndex, short InsertIndex)
 
         memmove(&(td->fieldDefs[InsertIndex + 1]),
                 &(td->fieldDefs[InsertIndex]),
-                totalDefLength(TableIndex) + (char*)td -
+                td->size() + (char*)td -
                     (char*)&(td->fieldDefs[InsertIndex]));
     }
     td->fieldCount++;
-    td->keyDefs = getKeyDef(td);
+    td->setKeydefsPtr();
     renumberFieldNum(TableIndex, InsertIndex, 2);
     memset(&(td->fieldDefs[InsertIndex]), 0, sizeof(fielddef));
-    setRecordLen(TableIndex);
+    td->calcReclordlen();
     fielddef* fd = &(td->fieldDefs[InsertIndex]);
     fd->setCharsetIndex(td->charsetIndex);
     fd->setSchemaCodePage(td->schemaCodePage);
     fd->setPadCharSettings(false, true);
     return fd;
-}
-
-int dbdef::totalDefLength(short TableIndex)
-{
-    tabledef* td = tableDefs(TableIndex);
-    int len = (int)(sizeof(tabledef) + (sizeof(fielddef) * td->fieldCount) +
-                    (sizeof(keydef) * td->keyCount));
-    if (isUseTransactd())
-        td->varSize = len - 4;
-    return len;
 }
 
 inline fielddef_t_my& dbdef::convert(fielddef_t_my& fd_my,
@@ -626,11 +638,11 @@ inline fielddef_t_my& dbdef::convert(fielddef_t_my& fd_my,
     return fd_my;
 }
 
-inline int fixVariableLenBug(bool isUseTransactd, tabledef* src, size_t size)
+inline int fixVariableLenBug(bool isUseTransactd, const tabledef* src, size_t size)
 {
     if (isUseTransactd)
     { // A Transactd server format changed to nosupport FIXED_PLUS_VARIABLELEN
-        if (src->pageSize + 4 == (int)size)
+        if (src->varSize + 4 == (int)size)
         { // This is a chagned server
             if (src->preAlloc &&
                 ((src->preAlloc % 512 == 0) || (src->fieldCount > 255) ||
@@ -645,22 +657,21 @@ inline int fixVariableLenBug(bool isUseTransactd, tabledef* src, size_t size)
     return (int)size;
 }
 
-size_t getNewVersionSize(tabledef* src)
+size_t getNewVersionSize(const tabledef* src)
 {
     return src->fieldCount * sizeof(fielddef) + sizeof(tabledef) +
            src->keyCount * sizeof(keydef) + 1;
 }
 
-void dbdef::tableDefCopy(tabledef* dest, tabledef* src, size_t size)
+void dbdef::tableDefCopy(tabledef* dest, const tabledef* src, size_t size)
 {
-
     if (src->formatVersion == FORMAT_VERSON_BTRV_DEF)
     {
         size_t len = 0;
         memcpy(dest, src, sizeof(tabledef));
         len += sizeof(tabledef);
-        fielddef_t_my* fd = (fielddef_t_my*)dbdef::getFieldDef(dest);
-        fielddef_t_pv* src_fd = (fielddef_t_pv*)dbdef::getFieldDef(src);
+        fielddef_t_my* fd = (fielddef_t_my*)dest->setFielddefsPtr();
+        fielddef_t_pv* src_fd = (fielddef_t_pv*)const_cast<tabledef*>(src)->setFielddefsPtr();
         for (int i = 0; i < dest->fieldCount; ++i)
         {
             convert(*fd, *src_fd);
@@ -678,7 +689,32 @@ void dbdef::tableDefCopy(tabledef* dest, tabledef* src, size_t size)
 tabledef** dbdef::tableDefPtr(int index)
 {
     tableDefs(index);
-    return &m_impl->tableDefs[index];
+    return &m_dimpl->tableDefs[index];
+}
+
+tabledef* dbdef::initReadAfter(short tableIndex, const tabledef* data, uint_td datalen)
+{
+    m_datalen = fixVariableLenBug(isUseTransactd(), data, datalen);
+    size_t size = getNewVersionSize(data);
+    tabledef* td = (tabledef*)malloc(size + 10);
+    if (td == NULL)
+    {
+        m_stat = STATUS_CANT_ALLOC_MEMORY;
+        return NULL;
+    }
+    m_dimpl->tableDefs[tableIndex] = td;
+    tableDefCopy(td, data, min<size_t>(m_datalen, size));
+    td->setFielddefsPtr();
+    td->setKeydefsPtr();
+    td->autoIncExSpace = ((database*)nsdb())->defaultAutoIncSpace();
+    td->setDefaultCharsetIfZero();
+    //Fix:Bug of maxRecordLen is mistake value saved, recalculate maxRecordLen.
+    td->calcReclordlen(true);
+    if (td->fieldDefs[td->fieldCount -1].type == ft_myfixedbinary)
+        td->optionFlags.bitC = true;
+    td->id = tableIndex;
+    td->defaultImage = NULL;
+    return td;
 }
 
 #pragma warn -8004
@@ -686,28 +722,25 @@ tabledef* dbdef::tableDefs(int index)
 {
     if (index > TABLE_NUM_TMP)
         return NULL;
-    tabledef* def = m_impl->tableDefs[index];
+    tabledef* td = m_dimpl->tableDefs[index];
 
     if (index == TABLE_NUM_TMP)
-        return def;
-    if (m_impl->tableCount < index)
+        return td;
+    if (m_dimpl->tableCount < index)
         return NULL;
-    if (def == NULL)
+    if (td == NULL)
     {
-        if (m_impl->deftype == TYPE_SCHEMA_DDF)
+        if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
             return NULL;
         while (1)
         {
-            m_pdata = m_impl->bdf;
-            m_buflen = m_impl->bdfLen;
-            m_impl->bdf->id = (short)index;
-            memcpy(m_keybuf, &m_impl->bdf->id, 2);
+            m_pdata = m_dimpl->bdf;
+            m_buflen = m_dimpl->bdfLen;
+            m_dimpl->bdf->id = (short)index;
+            memcpy(m_keybuf, &m_dimpl->bdf->id, 2);
             seek();
             if (m_stat == STATUS_BUFFERTOOSMALL)
-            {
-                if (!resizeReadBuf())
-                    return NULL;
-            }
+                return NULL;
             else
                 break;
         }
@@ -717,97 +750,78 @@ tabledef* dbdef::tableDefs(int index)
         }
         if (m_stat)
         {
-            def = (tabledef*)-1;
+            td = (tabledef*)-1;
             m_stat = 0;
             return NULL;
         }
-        m_datalen =
-            fixVariableLenBug(isUseTransactd(), (tabledef*)m_pdata, m_datalen);
-        size_t size = getNewVersionSize((tabledef*)m_pdata);
-        def = (tabledef*)malloc(size);
-        m_impl->tableDefs[index] = def;
-        if (def == NULL)
-        {
-            m_stat = STATUS_CANT_ALLOC_MEMORY;
-            return NULL;
-        }
-        tableDefCopy(def, (tabledef*)m_pdata, m_datalen);
-        def->fieldDefs = getFieldDef(def);
-        def->keyDefs = getKeyDef(def);
-        def->autoIncExSpace = ((database*)nsdb())->defaultAutoIncSpace();
-
-        setCodePage(def);
-        //Fix:Bug of maxRecordLen is mistake value saved, recalculate maxRecordLen.
-        setRecordLen(index);
+        td = initReadAfter(index, (tabledef*)m_pdata, m_datalen);
     }
-    else if (def == (tabledef*)-1)
+    else if (td == (tabledef*)-1)
         return NULL;
 
-    return def;
+    return td;
 }
 #pragma warn .8004
 
-void dbdef::doOpen(const _TCHAR* FullPath, char_td mode, const _TCHAR* OnerName)
+void dbdef::doOpen(const _TCHAR* uri, char_td mode, const _TCHAR* onerName)
 {
-    m_impl->noWriteMode = true;
+    m_dimpl->noWriteMode = true;
 
-    if (m_impl->deftype == TYPE_SCHEMA_DDF)
+    if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
     {
 
-        openDdf(((database*)nsdb())->rootDir(), mode, OnerName); // DDF
+        openDdf(((database*)nsdb())->rootDir(), mode, onerName); // DDF
         if (mode != TD_OPEN_READONLY)
-            m_impl->noWriteMode = false;
+            m_dimpl->noWriteMode = false;
         return;
     }
 
     // version check
-    m_impl->version[7] = '0';
-    nstable::doOpen(FullPath, mode, m_impl->version);
+    m_dimpl->version[7] = '0';
+    nstable::doOpen(uri, mode, m_dimpl->version);
     if (m_stat == STATUS_INVALID_OWNERNAME)
     {
         while (m_stat == STATUS_INVALID_OWNERNAME)
         {
-            m_impl->version[7]++;
-            nstable::doOpen(FullPath, mode, m_impl->version);
-            if (m_impl->version[7] > '9')
+            m_dimpl->version[7]++;
+            nstable::doOpen(uri, mode, m_dimpl->version);
+            if (m_dimpl->version[7] > '9')
                 return;
         }
     }
-    if (m_stat)
-        return;
+    if (m_stat) return;
 
-    if (m_impl->bdf == NULL)
-        m_impl->bdf = (tabledef*)malloc(m_impl->bdfLen);
-    m_pdata = m_impl->bdf;
-    memcpy(m_keybuf, &m_impl->bdf->id, 2);
-    m_buflen = m_impl->bdfLen;
+    if (m_dimpl->bdf == NULL)
+        allocDatabuffer();
+    if (m_stat) return;
+    
+    m_pdata = m_dimpl->bdf;
+    m_buflen = m_dimpl->bdfLen;
     m_keynum = 0;
-
     seekLast();
     if (m_stat == STATUS_SUCCESS)
-        m_impl->tableCount = m_impl->bdf->id;
+        m_dimpl->tableCount = m_dimpl->bdf->id;
     if (m_stat == STATUS_EOF)
         m_stat = STATUS_SUCCESS;
     if (mode != TD_OPEN_READONLY)
-        m_impl->noWriteMode = false;
-    m_impl->openMode = mode;
+        m_dimpl->noWriteMode = false;
+    m_dimpl->openMode = mode;
 }
 
 void dbdef::doClose()
 {
     nstable::doClose();
-    if (m_impl->bdf)
+    if (m_dimpl->bdf)
     {
-        free(m_impl->bdf);
-        m_impl->bdf = NULL;
+        free(m_dimpl->bdf);
+        m_dimpl->bdf = NULL;
     }
-    m_impl->openMode = 1;
+    m_dimpl->openMode = 1;
 }
 
 void dbdef::create(const _TCHAR* fullpath)
 {
-
-    if (m_impl->deftype == TYPE_SCHEMA_DDF)
+    if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
     {
         createDDF(fullpath);
         return;
@@ -845,25 +859,6 @@ void dbdef::drop()
     m_stat = nsdb()->stat();
 }
 
-ushort_td dbdef::getRecordLen(short TableIndex)
-{
-    ushort_td ret = 0;
-    short i;
-    tabledef* td = tableDefs(TableIndex);
-    for (i = 0; i < td->fieldCount; i++)
-        ret += td->fieldDefs[i].len/* + td->fieldDefs[i].varLenBytes()*/;
-    return ret;
-}
-
-ushort_td dbdef::getFieldPosition(tabledef* TableDef, short FieldNum)
-{
-    short i;
-    ushort_td pos = 1;
-    for (i = 0; i < FieldNum; i++)
-        pos += TableDef->fieldDefs[i].len;
-    return pos;
-}
-
 void dbdef::getFileSpec(fileSpec* fs, short TableIndex)
 {
     keySpec* ks;
@@ -887,7 +882,7 @@ void dbdef::getFileSpec(fileSpec* fs, short TableIndex)
         {
             FieldNum = KeyDef->segments[j].fieldNum;
             ks = &(fs->keySpecs[k]);
-            ks->keyPos = getFieldPosition(TableDef, FieldNum);
+            ks->keyPos = TableDef->fieldDefs[FieldNum].pos;
             ks->keyLen = TableDef->fieldDefs[FieldNum].len;
             ks->keyFlag.all = KeyDef->segments[j].flags.all;
             ks->keyCount = 0;
@@ -919,83 +914,72 @@ void dbdef::renumberTable(short OldIndex, short NewIndex)
         m_stat = STATUS_TOO_MANY_TABLES;
         return;
     }
-    if (m_impl->noWriteMode)
+    tabledef* td = tableDefs(OldIndex);
+    if (m_dimpl->noWriteMode)
     {
-        tableDefs(OldIndex)->id = NewIndex;
-        m_impl->tableDefs[NewIndex] = tableDefs(OldIndex);
-        m_impl->tableDefs[OldIndex] = NULL;
-        if (NewIndex > m_impl->tableCount)
-            m_impl->tableCount = NewIndex;
+        td->id = NewIndex;
+        m_dimpl->tableDefs[NewIndex] = td;
+        m_dimpl->tableDefs[OldIndex] = NULL;
+        if (NewIndex > m_dimpl->tableCount)
+            m_dimpl->tableCount = NewIndex;
         return;
     }
-    moveById(tableDefs(OldIndex)->id);
+    moveById(td->id);
     if (m_stat == STATUS_SUCCESS)
     {
-        m_pdata = tableDefs(OldIndex);
-        m_buflen = totalDefLength(OldIndex);
-        tableDefs(OldIndex)->id = NewIndex;
+        
+        m_pdata = td;
+        m_buflen = td->size();
+        td->id = NewIndex;
         update();
-        m_pdata = m_impl->bdf;
-        m_buflen = m_impl->bdfLen;
+        m_pdata = m_dimpl->bdf;
+        m_buflen = m_dimpl->bdfLen;
 
         if (m_stat == STATUS_SUCCESS)
         {
-            m_impl->tableDefs[NewIndex] = tableDefs(OldIndex);
-            m_impl->tableDefs[OldIndex] = NULL;
-            if (NewIndex > m_impl->tableCount)
-                m_impl->tableCount = NewIndex;
+            m_dimpl->tableDefs[NewIndex] = td;
+            m_dimpl->tableDefs[OldIndex] = NULL;
+            if (NewIndex > m_dimpl->tableCount)
+                m_dimpl->tableCount = NewIndex;
         }
         else
-            tableDefs(OldIndex)->id = OldIndex;
+            td->id = OldIndex;
     }
-}
-
-void dbdef::cacheFieldPos(tabledef* TableDef)
-{
-
-    short i;
-    for (i = 0; i < TableDef->fieldCount; i++)
-        TableDef->fieldDefs[i].pos =
-            (ushort_td)(getFieldPosition(TableDef, i) - 1);
 }
 
 short dbdef::fieldNumByViewNum(short TableIndex, short index)
 {
-    short i;
-    tabledef* TableDef = tableDefs(TableIndex);
-    for (i = 0; i < TableDef->fieldCount; i++)
+    tabledef* td = tableDefs(TableIndex);
+    if (td)
     {
-        if ((TableDef->fieldDefs[i].viewNum == index) &&
-            (TableDef->fieldDefs[i].enableFlags.bit0))
-            return i;
+        for (short i = 0; i < td->fieldCount; i++)
+        {
+            if ((td->fieldDefs[i].viewNum == index) &&
+                (td->fieldDefs[i].enableFlags.bit0))
+                return i;
+        }
     }
     return -1;
 }
 
 short dbdef::findKeynumByFieldNum(short TableIndex, short index)
 {
-    short i;
-    tabledef* TableDef = tableDefs(TableIndex);
-
-    for (i = 0; i < TableDef->keyCount; i++)
-    {
-        if (TableDef->keyDefs[i].segments[0].fieldNum == index)
-            return i;
-    }
+    tabledef* td = tableDefs(TableIndex);
+    if (td)
+        return td->findKeynumByFieldNum(index);
     return -1;
 }
 
 short dbdef::tableNumByName(const _TCHAR* tableName)
 {
-    short i;
     char buf[74];
-
-    for (i = 1; i <= m_impl->tableCount; i++)
+    for (short i = 1; i <= m_dimpl->tableCount; i++)
     {
-        if (tableDefs(i))
+        tabledef* td = tableDefs(i);
+        if (td)
         {
-            const char* p = tableDefs(i)->toChar(buf, tableName, 74);
-            if (strcmp(tableDefs(i)->tableNameA(), p) == 0)
+            const char* p = td->toChar(buf, tableName, 74);
+            if (strcmp(td->tableNameA(), p) == 0)
                 return i;
         }
     }
@@ -1004,14 +988,9 @@ short dbdef::tableNumByName(const _TCHAR* tableName)
 
 short dbdef::fieldNumByName(short TableIndex, const _TCHAR* name)
 {
-    short i;
-    char buf[74];
-    const char* p = tableDefs(TableIndex)->toChar(buf, name, 74);
-    for (i = 0; i < tableDefs(TableIndex)->fieldCount; i++)
-    {
-        if (strcmp(tableDefs(TableIndex)->fieldDefs[i].nameA(), p) == 0)
-            return i;
-    }
+    tabledef* td = tableDefs(TableIndex);
+    if (td)
+        return td->fieldNumByName(name);
     return -1;
 }
 
@@ -1264,8 +1243,9 @@ bool dbdef::isPassKey(uchar_td FieldType)
     return true;
 }
 
-void dbdef::autoMakeSchema()
+void dbdef::autoMakeSchema(bool nouseNullkey)
 {
+    m_keynum = (int)nouseNullkey;
     tdap(TD_AUTOMEKE_SCHEMA);
 }
 
@@ -1327,11 +1307,11 @@ void dbdef::saveDDF(short TableIndex, short opration, bool forPsqlDdf)
 
     if ((tb) && (fd) && (id))
     {
-        if (m_impl->userName[0] != 0x00)
+        if (m_dimpl->userName[0] != 0x00)
         {
-            own[0] = (const _TCHAR*)m_impl->userName;
-            own[1] = (const _TCHAR*)m_impl->userName;
-            own[2] = (const _TCHAR*)m_impl->userName;
+            own[0] = (const _TCHAR*)m_dimpl->userName;
+            own[1] = (const _TCHAR*)m_dimpl->userName;
+            own[2] = (const _TCHAR*)m_dimpl->userName;
         }
         else
         {
@@ -1491,14 +1471,14 @@ void dbdef::openDdf(const _TCHAR* dir, short Mode, const _TCHAR* OwnerName)
             own[0] = OwnerName;
             own[1] = OwnerName;
             own[2] = OwnerName;
-            _tcscpy(m_impl->userName, OwnerName);
+            _tcscpy(m_dimpl->userName, OwnerName);
         }
         else
         {
             own[0] = (_TCHAR*)ow0;
             own[1] = (_TCHAR*)ow1;
             own[2] = (_TCHAR*)ow2;
-            m_impl->userName[0] = 0x00;
+            m_dimpl->userName[0] = 0x00;
         }
 
         tb->open(dir, (char_td)Mode, own[0]);
@@ -1595,9 +1575,9 @@ void dbdef::openDdf(const _TCHAR* dir, short Mode, const _TCHAR* OwnerName)
                 fd->seekNext();
             }
 
-            tableDefs(tbid)->maxRecordLen = getRecordLen(tbid);
+            tableDefs(tbid)->calcReclordlen();
 
-            tableDefs(tbid)->fixedRecordLen = tableDefs(tbid)->maxRecordLen;
+            tableDefs(tbid)->fixedRecordLen = tableDefs(tbid)->recordlen();
             tableDefs(tbid)->parentKeyNum = -1;
             tableDefs(tbid)->replicaKeyNum = -1;
             tableDefs(tbid)->primaryKeyNum = -1;
@@ -1653,7 +1633,7 @@ ushort_td dbdef::getDDFNewTableIndex()
 {
     int i;
     int max_id = 0;
-    for (i = 0; i <= m_impl->tableCount; i++)
+    for (i = 0; i <= m_dimpl->tableCount; i++)
     {
         if (tableDefs(i) != NULL)
         {
@@ -1668,22 +1648,22 @@ ushort_td dbdef::getDDFNewTableIndex()
 ushort_td dbdef::getDDFNewFieldIndex()
 {
     int i, j;
-    if (m_impl->maxid == 0)
+    if (m_dimpl->maxid == 0)
     {
-        for (i = 0; i <= m_impl->tableCount; i++)
+        for (i = 0; i <= m_dimpl->tableCount; i++)
         {
             if (tableDefs(i) != NULL)
             {
                 for (j = 0; j < tableDefs(i)->fieldCount; j++)
                 {
-                    if (tableDefs(i)->fieldDefs[j].ddfid > m_impl->maxid)
-                        m_impl->maxid = tableDefs(i)->fieldDefs[j].ddfid;
+                    if (tableDefs(i)->fieldDefs[j].ddfid > m_dimpl->maxid)
+                        m_dimpl->maxid = tableDefs(i)->fieldDefs[j].ddfid;
                 }
             }
         }
     }
-    m_impl->maxid++;
-    return (ushort_td)m_impl->maxid;
+    m_dimpl->maxid++;
+    return (ushort_td)m_dimpl->maxid;
 }
 
 void setFieldsCharsetIndex(tabledef* def)
@@ -1701,71 +1681,115 @@ void setFieldsCharsetIndex(tabledef* def)
 void dbdef::pushBackup(short TableIndex)
 {
     int blen;
+    tabledef* td = m_dimpl->tableDefs[TableIndex];
 
-    blen = totalDefLength(TableIndex);
+    blen = td->size();
     if (!tableDefs(TABLE_NUM_TMP))
-        m_impl->tableDefs[TABLE_NUM_TMP] = (tabledef*)malloc(blen);
+        m_dimpl->tableDefs[TABLE_NUM_TMP] = (tabledef*)malloc(blen);
     else
-        m_impl->tableDefs[TABLE_NUM_TMP] =
+        m_dimpl->tableDefs[TABLE_NUM_TMP] =
             (tabledef*)realloc(tableDefs(TABLE_NUM_TMP), blen);
-    if (!tableDefs(TABLE_NUM_TMP))
+
+    tabledef* tdt = m_dimpl->tableDefs[TABLE_NUM_TMP];
+    if (!tdt)
     {
         m_stat = STATUS_CANT_ALLOC_MEMORY;
         return;
     }
-
-    setFieldsCharsetIndex(tableDefs(TableIndex));
-    tabledef* td = m_impl->tableDefs[TABLE_NUM_TMP];
-    memcpy(td, tableDefs(TableIndex), blen);
-    td->fieldDefs = getFieldDef(td);
-    td->keyDefs = getKeyDef(td);
+    setFieldsCharsetIndex(td);
+    memcpy(tdt, td, blen);
+    tdt->m_inUse = 0;
+    tdt->setFielddefsPtr();
+    tdt->setKeydefsPtr();
 
 }
 
 bool dbdef::compAsBackup(short TableIndex)
 {
-    if (m_impl->tableCount < TableIndex)
+    if (m_dimpl->tableCount < TableIndex)
         return false;
 
-    int len = totalDefLength(TABLE_NUM_TMP);
-    int len2 = totalDefLength(TableIndex);
-    if (len != len2)
-        return true;
     tabledef* tds = tableDefs(TableIndex);
     tabledef* tdo = tableDefs(TABLE_NUM_TMP);
 
-    if (memcmp(tds, tdo, ((char*)(&(tdo->fieldDefs))) - ((char*)tdo)))
+    if (tds->size() != tdo->size())
         return true;
+
+    //tabledef
+    bool isSame = (*tds == *tdo);
+    if (!isSame) return true;
 
     for (int i = 0; i < tds->fieldCount; i++)
     {
-        if (memcmp(&tds->fieldDefs[i], &tdo->fieldDefs[i], sizeof(fielddef)))
-            return true;
+        isSame = (tds->fieldDefs[i] == tdo->fieldDefs[i]);
+        if (!isSame) return true;
     }
     for (int i = 0; i < tds->keyCount; i++)
     {
-        if (memcmp(&tds->keyDefs[i], &tdo->keyDefs[i], sizeof(keydef)))
-            return true;
+        isSame = (tds->keyDefs[i] == tdo->keyDefs[i]);
+        if (!isSame) return true;
     }
     return false;
 }
 
 void dbdef::popBackup(short TableIndex)
 {
-    int len = totalDefLength(TABLE_NUM_TMP);
-    m_impl->tableDefs[TableIndex] =
-        (tabledef*)realloc(tableDefs(TableIndex), len);
-    tabledef* td = m_impl->tableDefs[TableIndex];
-    memcpy(td, tableDefs(TABLE_NUM_TMP), len);
-    td->fieldDefs = getFieldDef(td);
-    td->keyDefs = getKeyDef(td);
-    updateTableDef(TableIndex);
+    tabledef* tdt = tableDefs(TABLE_NUM_TMP);
+    tabledef* td = m_dimpl->tableDefs[TableIndex];
+    if (tdt && td)
+    {
+        m_dimpl->tableDefs[TableIndex] = td = (tabledef*)realloc(td, tdt->size());
+        memcpy(td, tdt, tdt->size());
+        td->setFielddefsPtr();
+        td->setKeydefsPtr();
+        updateTableDef(TableIndex);
+    }
 }
 
 void dbdef::reopen(char_td mode)
 {
     close();
     open(uri(), mode, NULL);
+}
+
+void dbdef::synchronizeSeverSchema(short tableIndex)
+{
+    if (!isUseTransactd()) return;
+
+    tabledef* tdold = tableDefs(tableIndex);
+    if (!tdold) return;
+
+    void* tmp = m_keybuf;
+
+    _TCHAR dummyUrl[MAX_PATH] = _T("tdap://srv/db?dbfile=");
+    _tcscat(dummyUrl, tdold->fileName());
+
+    char tmpName[MAX_PATH] = { 0x00 };
+    const char* p = nsdatabase::toServerUri(tmpName, MAX_PATH, dummyUrl, true);
+    m_keybuf = (void*)p;
+    m_keylen = (keylen_td)strlen(p) + 1;
+    m_pdata = m_dimpl->bdf;
+    m_buflen = m_datalen = m_dimpl->bdfLen;
+    m_dimpl->bdf->id = tableIndex;
+    tdap((ushort_td)TD_GET_SCHEMA);
+    if (m_stat == STATUS_SUCCESS)
+    {
+        if (m_datalen == 0)
+        {
+            m_stat = STATUS_NOSUPPORT_OP;
+            m_keybuf = tmp;
+            return;
+        }
+        tabledef* td = (tabledef*)m_pdata;
+        td->m_mysqlNullMode = tdold->mysqlNullMode(); 
+        td = initReadAfter(tableIndex, td, m_datalen);
+        if (td)
+        {
+            m_stat = td->synchronize(tdold);
+            delete tdold;
+        }
+    }
+    m_keybuf = tmp;
 }
 
 } // namespace client

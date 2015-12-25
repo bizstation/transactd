@@ -74,6 +74,7 @@ class client
     std::string m_sql;
     std::string m_serverCharData;
     char* m_cryptPwd;
+    clsrv_ver m_ver;
     blobBuffer m_blobBuffer;
     uint_td m_tmplen;
     bool m_logout;
@@ -82,10 +83,11 @@ class client
 
     std::vector<char> m_sendbuf;
 
-    bool checkVersion(trdVersiton& ver)
+    bool checkVersion(clsrv_ver& ver)
     {
         if ((ver.srvMajor < 2) || ((ver.srvMajor == 2) && (ver.srvMinor < 3)))
             return false;
+        m_ver = ver;
         return true;
     }
 
@@ -155,7 +157,7 @@ class client
         
         if (min || auth)
         {
-            if (!checkVersion(hst->ver))
+            if (!checkVersion(hst->ver.desc))
                 return false;
             c->setCharsetServer(mysql::charsetIndex(hst->ver.cherserServer));
             m_req.cid->lock_wait_timeout = hst->lock_wait_timeout;
@@ -190,7 +192,10 @@ class client
     }
 
 public:
-    client() : m_cryptPwd(NULL), m_disconnected(true), m_connecting(false) {}
+    client() : m_cryptPwd(NULL), m_disconnected(true), m_connecting(false) 
+    {
+        memset(&m_ver, 0, sizeof(m_ver));
+    }
     ~client()
     {
         if (m_cryptPwd)
@@ -215,6 +220,14 @@ public:
     }
 
     inline request& req() { return m_req; }
+
+    inline const clsrv_ver& ver(){ return m_ver; }
+    inline bool isSupportFunction(short op)
+    {
+        if (op == TD_GET_SCHEMA)
+            return (m_ver.srvMajor > 2) || ((m_ver.srvMajor == 2) && (m_ver.srvMinor >= 6));
+        return false;
+    }
 
     inline void setParam(ushort_td op, posblk* pbk, void_td* data,
                          uint_td* datalen, void_td* keybuf, keylen_td keylen,
@@ -278,8 +291,8 @@ public:
         bool specifyKeyNum = (keynum >= 0x80);
         if (keynum >= 0x80)
             keynum -= 0x80;
-        m_sql = sqlCreateIndex((tabledef*)m_req.data, keynum, 
-                            specifyKeyNum, charsetIndexServer);
+        m_sql = sqlBuilder::sqlCreateIndex((tabledef*)m_req.data, keynum, 
+                            specifyKeyNum, charsetIndexServer, m_ver);
         m_req.data = (ushort_td*)m_sql.c_str();
         m_tmplen = (uint_td)(m_sql.size() + 1);
         m_req.datalen = &m_tmplen;
@@ -300,13 +313,13 @@ public:
             int charsetIndexServer =  getServerCharsetIndex();
             if ((m_req.keyNum == 1) || (m_req.keyNum == 2)) // make by tabledef
             {
-                m_sql = sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
-                                       charsetIndexServer);
+                m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
+                                       charsetIndexServer, m_ver);
                 m_req.keyNum -= 2; // 1= exists check 2 = no exists check
             }
             else
-                m_sql = sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,
-                                       charsetIndexServer);
+                m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,
+                                       charsetIndexServer, m_ver);
             m_req.data = (ushort_td*)m_sql.c_str();
             m_tmplen = (uint_td)(m_sql.size() + 1);
             m_req.datalen = &m_tmplen;

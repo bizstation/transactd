@@ -217,13 +217,13 @@ class bookmarks;
  */
 class keynumConvert
 {
-    KEY* m_key;
+    const KEY* m_key;
     int m_keyCount;
     char m_keyNum;
     char m_convNum;
 
 public:
-    keynumConvert(KEY* key, int count)
+    keynumConvert(const KEY* key, int count)
         : m_key(key), m_keyCount(count), m_keyNum(-1), m_convNum(-1)
     {
     }
@@ -241,6 +241,16 @@ public:
                 return m_convNum = i;
         return m_convNum = num; // If not found, a value as it is returned.
     }
+
+    char clientKeynum(char num)
+    {
+        if (num < m_keyCount)
+        {
+            if (strstr(m_key[num].name, "key"))
+                return m_key[num].name[3] - '0';
+        }
+        return -1;
+    }
 };
 
 class table : private boost::noncopyable
@@ -252,7 +262,7 @@ class table : private boost::noncopyable
     std::string m_name;
 
     short m_mode;
-    unsigned short m_nullFields;
+    unsigned short m_nisNullFields;
     int m_id;
     uint m_recordLenCl;
     int m_recordFormatType;
@@ -268,8 +278,8 @@ class table : private boost::noncopyable
     String m_str;
     keynumConvert m_keyconv;
     IblobBuffer* m_blobBuffer;
-	std::vector<Field*> m_timeStampFields;
-    std::vector<Field*> m_nonKeySegNullFields;
+    std::vector<Field*> m_noNullModeNullFieldList;
+    std::vector<Field*> m_timeStampFields;
     unsigned int m_readCount;
     unsigned int m_updCount;
     unsigned int m_delCount;
@@ -289,10 +299,11 @@ class table : private boost::noncopyable
     struct
     {
         bool m_forceConsistentRead : 1;
+        bool m_mysqlNull;
     };
 
     table(TABLE* table, database& db, const std::string& name, short mode,
-          int id);
+          int id, bool mysqlnull);
     void moveKey(boost::function<int()> func);
     void readRecords(IReadRecordsHandler* handler, bool includeCurrent,
                      int type, bool noBookmark);
@@ -301,7 +312,7 @@ class table : private boost::noncopyable
     void preBuildPercent(uchar* first, uchar* last);
     void seekPos(const uchar* pos);
     int setKeyNullFlags();
-    void setFiledNullFlags();
+    void setFieldNullFlags();
 	void setTimeStamp(bool insert);
 
     bookmarks* bms();
@@ -550,7 +561,7 @@ public:
                              const bzs::db::blobHeader* hd);
     uint recordPackCopy(char* buf, uint maxsize = 0);
 
-    ushort fieldPackCopy(unsigned char* dest, short fieldNum);
+    ushort fieldPackCopy(unsigned char* nullPtr, int& nullbit, unsigned char* dest, short fieldNum);
 
     inline uint fieldSizeByte(int fieldNum)
     {
@@ -590,7 +601,9 @@ public:
 
     inline unsigned short fields() const { return m_table->s->fields; }
 
-    inline unsigned int nisFields() const { return m_nullFields; }
+    inline bool isMysqlNull() const { return m_mysqlNull; }
+
+    inline unsigned int nisFields() const { return m_nisNullFields; }
 
     inline const char* fieldName(int fieldNum) const
     {
@@ -612,14 +625,14 @@ public:
 
     inline const KEY* primaryKey() const
     {
-        return (m_table->s->primary_key != MAX_KEY)
+        return (m_table->s->primary_key <= MAX_KEY)
                    ? &m_table->key_info[m_table->s->primary_key]
                    : NULL;
     }
 
     inline Field* field(int fieldNum) const { return m_table->field[fieldNum]; }
 
-    inline char primarykey() const { return m_table->s->primary_key; }
+    inline char primarykeyNum() const { return m_table->s->primary_key; }
 
     /** is this view. not table */
     inline bool isView() const { return m_table->s->is_view; }
@@ -751,6 +764,13 @@ public:
     }
     void setKeyValues(const std::vector<std::string>& values, int keypart,
                     const std::string* inValue = NULL);
+
+    unsigned int writeDefaultImage(unsigned char* p, size_t size);
+
+    unsigned int writeSchemaImage(unsigned char* p, size_t size);
+
+
+    void restoreRecord() { restore_record(m_table, s->default_values);}
 
     inline  unsigned int readCount() const { return m_readCount; }
 

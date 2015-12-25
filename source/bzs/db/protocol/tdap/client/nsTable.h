@@ -72,9 +72,9 @@ private:
 
 protected:
     void* m_pdata;
+    void* m_keybuf;
     uint_td m_buflen;
     uint_td m_datalen;
-    void* m_keybuf;
     ushort_td m_op;
     keylen_td m_keybuflen;
     keylen_td m_keylen;

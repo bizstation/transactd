@@ -20,6 +20,7 @@
 =================================================================*/
 #include "trdormapi.h"
 #include "groupQuery.h"
+#include <bzs/rtl/stringBuffers.h>
 #ifdef _DEBUG
 #include <iostream>
 #include <iomanip>
@@ -57,14 +58,14 @@ class dumpRecordset
 
         for (size_t col = 0; col < fds.size(); ++col)
         {
-            m_widths[col] = std::max(_tcslen(fds[col].name()), m_widths[col]);
-            m_ailgns[col] = fds[col].isStringType() ? std::ios::left : std::ios::right;
+            m_widths[col] = std::max(_tcslen(fds[(short)col].name()), (size_t)4);
+            m_ailgns[col] = (fds[(short)col].isStringType() ? std::ios::left : std::ios::right);
         }
         for(size_t i = 0; i < rs.size(); ++i)
         {
             row& rec = rs[i];
             for (size_t col = 0; col < fds.size(); ++col)
-                m_widths[col] = std::max(_tcslen(rec[col].c_str()), m_widths[col]);
+                m_widths[col] = std::max(_tcslen(rec[(short)col].c_str()), m_widths[col]);
         }
     }
 
@@ -87,14 +88,19 @@ class dumpRecordset
     }
 
     const _TCHAR* value(const fielddef& fd) {return fd.name();}
-    const _TCHAR* value(const field& fd) {return fd.c_str();}
+    const _TCHAR* value(const field& fd) 
+    {
+        if (fd.isNull())
+            return _T("NULL");
+        return fd.c_str();
+    }
 
     template <class T>
     void printRecord(const T& coll)
     {
         std::tcout  << _T("|");
         for (size_t col = 0; col < m_widths.size(); ++col)
-            printValue(m_widths[col], m_ailgns[col], value(coll[col]));
+            printValue(m_widths[col], m_ailgns[col], value(coll[(short)col]));
         std::tcout << std::endl;
     }
 public:
@@ -229,7 +235,7 @@ private:
             m_mra->setRowOffset(0);
             m_mra->setCurFirstField((int)m_fds->size());
             if (tb)
-                m_fds->copyFrom(tb);
+                m_fds->addSelectedFields(tb);
             if (tb && (addtype == mra_nojoin))
             {
                 const keydef& kd = tb->tableDef()->keyDefs[(int)tb->keyNum()];
@@ -407,11 +413,11 @@ public:
             std::vector<short> offsetIndex;
             for (int j = 0; j < (int)m_fds->size(); ++j)
             {
-                if (m_fds->operator[](j).blobLenBytes())
+                if (blobLenBytes(m_fds->operator[](j)))
                 {
                     blobs.push_back((short)j);
                     unsigned char* p = (unsigned char*)(*m_recordset[0])[j].ptr()
-                                        + m_fds->operator[](j).blobLenBytes();
+                                        + blobLenBytes(m_fds->operator[](j));
                     short index = (short)getMemBlockIndex(p);
                     offsetIndex.push_back(index);
                 }
@@ -650,7 +656,7 @@ public:
         fd.pos = 0;
         fd.type = type;
         fd.setName(name);
-        if (fd.blobLenBytes())
+        if (blobLenBytes(fd))
             THROW_BZS_ERROR_WITH_MSG(_T("Can not append Blob or Text field."));
         m_fds->push_back(&fd);
         if (size())
@@ -671,6 +677,11 @@ public:
         for (size_t i = 0; i < r.m_memblock.size(); ++i)
             m_memblock.push_back(r.m_memblock[i]);
         return *this;
+    }
+
+    inline void clearStringBuffer()
+    {
+        m_fds->strBufs()->clear();
     }
 
 #ifdef _DEBUG
@@ -705,7 +716,7 @@ inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
     int col = (stat == mra_current_block) ? m_curFirstField : 0;
     size_t rowNum = m_joinRowMap ? (*m_joinRowMap)[row + m_rowOffset][0]
                                  : row + m_rowOffset;
-    return (*m_rs)[rowNum].ptr(col);
+    return (*m_rs)[rowNum].nullPtr(col);
 }
 
 inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)

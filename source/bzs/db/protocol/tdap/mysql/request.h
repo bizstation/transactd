@@ -58,12 +58,13 @@ public:
                                         netsvc::server::netWriter* nw)
     {
         // The result contents is copied or sent allready.
-
-        paramMask = nw->getParamMask(tb->getBlobFieldCount() != 0);
         unsigned int allreadysent = nw->allreadySent();
-        nw->writeHeadar(paramMask, result);
-
-        if (paramMask & P_MASK_KEYBUF)
+        if (tb)
+        {
+            paramMask = nw->getParamMask(tb->getBlobFieldCount() != 0);
+            nw->writeHeadar(paramMask, result);
+        }
+        if (paramMask & P_MASK_KEYBUF && tb)
         {
             keylen = tb->keyPackCopy((uchar*)nw->curPtr() + sizeof(keylen_td));
             nw->write((const char*)&keylen, sizeof(keylen_td));

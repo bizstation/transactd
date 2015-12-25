@@ -135,6 +135,9 @@ typedef unsigned __int32 char32_t; // 32bit
 #define _i64tow_s(A, B, C, D) _i64tow(A, B, D)
 #define _i64toa_s(A, B, C, D) _i64toa(A, B, D)
 #define _strlwr_s(A, B) strlwr(A)
+#ifndef _tcslwr_s
+#define _tcslwr_s(A, B) _tcslwr(A)
+#endif
 #endif
 
 #if defined(__BORLANDC__)
@@ -157,6 +160,7 @@ typedef unsigned __int32 char32_t; // 32bit
 /* muliti byete char */
 typedef unsigned char mbchar;
 typedef unsigned char char_m;
+int gettimeofday(struct timeval * tp, struct timezone * tzp);
 
 #endif // defined(LINUX)
 

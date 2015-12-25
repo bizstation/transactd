@@ -448,7 +448,7 @@ public:
 
     inline size_t maxStoreBytes() const { return m_fd.len - 1; };
 
-    inline int padChar() const { return 0; };
+    inline int padChar() const { return -1; };
 
     inline int storeOffsetBytes() const { return 0; };
 
@@ -466,7 +466,7 @@ public:
 
     inline size_t maxStoreBytes() const { return m_fd.len - sizeof(short); };
 
-    inline int padChar() const { return 0; };
+    inline int padChar() const { return -1; };
 
     inline int storeOffsetBytes() const { return 0; };
 
@@ -527,8 +527,7 @@ inline WCHAR* memset_t(WCHAR* dest, int c, size_t count)
 }
 
 template <typename _SF, typename store_type, typename T>
-void store(char* ptr, const T* data, const fielddef& fd, stringConverter* cv,
-           bool usePad = true)
+void store(char* ptr, const T* data, const fielddef& fd, stringConverter* cv)
 {
     _SF sf(fd);
 
@@ -551,8 +550,7 @@ void store(char* ptr, const T* data, const fielddef& fd, stringConverter* cv,
             memcpy_t(strPtr, data, len);
         }
     }
-    int fc = usePad ? sf.padChar() : -1;
-
+    int fc = sf.padChar();
     // Trim by max charctor number (not char type length) and invalid mbc lead
     // byte.
     int maxCharnum = sf.maxCharNum();
@@ -600,7 +598,7 @@ const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, const fielddef& fd,
     if ((typeid(T) != typeid(store_type)) ||
         (cv->isNeedConvert() && (typeid(T) == typeid(char))))
     {
-        len = fd.dataLen((const uchar_td*)ptr) / sizeof(store_type);
+        len = dataLen(fd, (const uchar_td*)ptr) / sizeof(store_type);
         size_t olen =
             len * 2 * sizeof(store_type) + 1; // utf8‚Ö‚Í2”{‚Ì‰Â”\«‚ª‚ ‚é
         result = strBufs->getPtr<T>(olen);
@@ -608,7 +606,7 @@ const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, const fielddef& fd,
     }
     else if (sf.isNeedReadCopy())
     {
-        len = fd.dataLen((const uchar_td*)ptr);
+        len = dataLen(fd, (const uchar_td*)ptr);
         if (len == sf.maxStoreBytes())
         {
             result = (T*)strBufs->getPtrA(len + 2);
@@ -665,8 +663,8 @@ template <typename T>
 const T* readBlob(char* ptr, ::bzs::rtl::stringBuffer* strBufs,
                   const fielddef& fd, stringConverter* cv)
 {
-    int offset = fd.blobLenBytes();
-    size_t len = fd.blobDataLen((const uchar_td*)ptr);
+    int offset = blobLenBytes(fd);
+    size_t len = blobDataLen(fd, (const uchar_td*)ptr);
     T* result;
     if (len)
     {

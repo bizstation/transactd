@@ -158,6 +158,11 @@ PACKAGE const char* btrttoa(const btrTime& t, char* retbuf,
 
 PACKAGE btrTime atobtrt(const char* p);
 
+PACKAGE btrDateTime atobtrs(const char* p);
+
+PACKAGE const char* btrstoa(const btrDateTime& d, char* retbuf,
+                              bool type_vb = false);
+
 inline const char* btrdtoa(int date, char* retbuf, bool type_vb = false)
 {
     btrDate d;
@@ -172,6 +177,14 @@ inline const char* btrttoa(int time, char* retbuf, bool type_vb = false)
     return btrttoa(t, retbuf, type_vb);
 }
 
+inline const char* btrstoa(__int64 datetime, char* retbuf, bool type_vb = false)
+{
+    btrDateTime t;
+    t.i64 = datetime;
+    return btrstoa(t, retbuf, type_vb);
+}
+
+#ifndef SWIG
 #ifdef _WIN32
 PACKAGE btrDate atobtrd(const wchar_t* date);
 
@@ -182,6 +195,11 @@ PACKAGE const wchar_t* btrttoa(const btrTime& t, wchar_t* retbuf,
                                bool type_vb = false);
 
 PACKAGE btrTime atobtrt(const wchar_t* p);
+
+PACKAGE btrDateTime atobtrs(const wchar_t* p);
+
+PACKAGE const wchar_t* btrstoa(const btrDateTime& d, wchar_t* retbuf,
+                              bool type_vb = false);
 
 inline const wchar_t* btrdtoa(int date, wchar_t* retbuf, bool type_vb = false)
 {
@@ -197,12 +215,18 @@ inline const wchar_t* btrttoa(int time, wchar_t* retbuf, bool type_vb = false)
     return btrttoa(t, retbuf, type_vb);
 }
 
+inline const wchar_t* btrstoa(__int64 datetime, wchar_t* retbuf, bool type_vb = false)
+{
+    btrDateTime t;
+    t.i64 = datetime;
+    return btrstoa(t, retbuf, type_vb);
+}
+
+#endif
 #endif
 
-PACKAGE const _TCHAR* btrstoa(const btrDateTime& d, _TCHAR* retbuf = NULL,
-                              bool type_vb = false);
 
-PACKAGE btrDateTime atobtrs(const _TCHAR* p);
+
 
 inline const _TCHAR* c_str(const btrDate& d)
 {

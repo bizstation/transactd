@@ -46,14 +46,13 @@ enum eFieldQuery
 class DLLLIB dbdef : private nstable
 {
     friend class database;
-    struct dbdimple* m_impl;
+    struct dbdimple* m_dimpl;
     dbdef(const dbdef&);
     dbdef& operator=(const dbdef&);
 
     bool isUsedField(short tableIndex, short deleteIndex);
     void renumberFieldNum(short tableIndex, short Index, short op);
     bool resizeAt(short tableIndex, bool key);
-    bool resizeReadBuf(void);
     void moveById(short id);
     bool validLen(uchar_td FieldType, uint_td FieldLen);
     bool isPassKey(uchar_td FieldType);
@@ -62,10 +61,6 @@ class DLLLIB dbdef : private nstable
     void saveDDF(short tableIndex, short opration, bool forPsqlDdf = true);
     ushort_td getDDFNewTableIndex();
     ushort_td getDDFNewFieldIndex();
-    int totalDefLength(short tableIndex);
-    void setRecordLen(short tableIndex);
-    void setCodePage(tabledef* rd);
-
     void doOpen(const _TCHAR* uri, char_td mode = 0,
                 const _TCHAR* ownername = NULL);
     void doClose();
@@ -76,16 +71,19 @@ class DLLLIB dbdef : private nstable
     inline nstable* table() { return this; }
     inline fielddef_t_my& convert(fielddef_t_my& fd_my,
                                   const fielddef_t_pv& fd_pv);
-    void tableDefCopy(tabledef* dest, tabledef* src, size_t size);
+    void tableDefCopy(tabledef* dest, const tabledef* src, size_t size);
 
     ~dbdef();
     dbdef(nsdatabase* pbe, short defType);
     void create(const _TCHAR* uri);
-    void autoMakeSchema();
+    void autoMakeSchema(bool noUseNullkey);
     void setDefType(short defType);
-    static keydef* getKeyDef(tabledef* p);
-    static fielddef* getFieldDef(tabledef* p);
-
+    bool testTablePtr(tabledef* td);
+    tabledef* initReadAfter(short tableIndex, const tabledef* data, uint_td datalen);
+    void* getBufferPtr(uint_td& size);
+    bool setDefaultImage(short tableIndex, const uchar_td* p, ushort_td size);
+    bool addSchemaImage(const tabledef* p, ushort_td size, short& tableIndex);
+    void allocDatabuffer();
 public:
     using nstable::addref;
     using nstable::release;
@@ -109,23 +107,22 @@ public:
     void deleteTable(short tableIndex);
     void renumberTable(short oldIndex, short newIndex);
     short tableNumByName(const _TCHAR* tableName);
-    ushort_td getRecordLen(short tableIndex);
-
     void getFileSpec(fileSpec* fs, short tableIndex);
     short findKeynumByFieldNum(short tableIndex, short index);
     short fieldNumByViewNum(short tableIndex, short index);
     short fieldNumByName(short tableIndex, const _TCHAR* name);
     void* allocRelateData(int size);
-
     uint_td fieldValidLength(eFieldQuery query, uchar_td fieldType);
     void pushBackup(short tableIndex);
     bool compAsBackup(short tableIndex);
     void popBackup(short tableIndex);
+    void synchronizeSeverSchema(short tableIndex);
 
     inline short_td tdapErr(HWND hWnd, _TCHAR* retbuf = NULL)
     {
         return nstable::tdapErr(hWnd, retbuf);
     }
+
     inline _TCHAR* statMsg(_TCHAR* retbuf)
     {
         nstable::tdapErr(0, retbuf);
@@ -134,9 +131,6 @@ public:
 
     void reopen(char_td mode = TD_OPEN_READONLY);
     using nstable::setStat;
-    static ushort_td getFieldPosition(tabledef* tableDef, short fieldNum);
-    static void cacheFieldPos(tabledef* tableDef);
-
     using nstable::mode;
 };
 

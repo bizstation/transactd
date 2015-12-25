@@ -91,6 +91,7 @@ const fielddefs* recordset::fieldDefs() const
 row& recordset::operator[](size_t index) const
 {
     m_imple->checkIndex(index);
+    m_imple->clearStringBuffer();
     return (*m_imple)[index];
 }
 

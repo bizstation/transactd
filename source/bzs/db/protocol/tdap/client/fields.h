@@ -127,6 +127,7 @@ class fieldsBase : public refarymem
     friend class recordsetQuery;
 
     virtual unsigned char* ptr(int index) const = 0;
+    virtual unsigned char* nullPtr(int index) const = 0;
 
 protected:
     /** @cond INTERNAL */
@@ -229,7 +230,12 @@ class fields : public fieldsBase
 
     inline unsigned char* ptr(int index) const
     {
-        return (unsigned char*)m_tb.data();
+        return nullPtr(index) + (*m_fns)[index].nullbytes();
+    }
+
+    inline unsigned char* nullPtr(int index) const
+    {
+        return ((unsigned char*)m_tb.data());
     }
 
     table* tbptr() const { return &m_tb; }

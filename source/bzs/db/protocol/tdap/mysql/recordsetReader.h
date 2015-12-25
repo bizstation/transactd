@@ -81,9 +81,18 @@ public:
     {
         return m_tb->fieldSizeByte(fieldNum);
     }
-    inline ushort fieldPackCopy(unsigned char* dest, short fieldNum)
+    inline ushort fieldPackCopy(unsigned char* nullPtr, int& nullbit, unsigned char* dest, short fieldNum)
     {
-        return m_tb->fieldPackCopy(dest, fieldNum);
+        return m_tb->fieldPackCopy(nullPtr, nullbit, dest, fieldNum);
+    }
+    inline bool isMysqlNull() const { return m_tb->isMysqlNull();}
+    inline bool isNullable(int index) const { return m_tb->field(index)->null_bit != 0; }
+    inline unsigned char nullbit(int index) const { return m_tb->field(index)->null_bit; } 
+    inline unsigned char nullOffset(int index) const 
+    { 
+        Field* fd = m_tb->field(index);
+        unsigned char* null_ptr = (unsigned char*)cp_null_ptr(fd, (unsigned char*)m_tb->internalTable()->record[0]);
+        return (unsigned char)((unsigned char*)m_tb->fieldPos(0) -  null_ptr); 
     }
 };
 
@@ -521,7 +530,7 @@ public:
         case ft_autoinc:
         case ft_currency:
         {
-            if (opr & 8)
+            if (opr & (char)eBitAnd)
             {
                 switch (len)
                 {
@@ -727,10 +736,16 @@ class fieldAdapter
     char m_judgeType;
     char m_sizeBytes;
     char opr;
+    unsigned char m_nullOffset;
+    unsigned char m_nullbit;
+    unsigned char m_nullOffsetCompFd;
+    unsigned char m_nullbitCompFd;
     struct
     {
     mutable bool m_judge : 1;
     mutable bool m_matched : 1;
+    mutable bool m_mysqlnull : 1;
+    mutable bool m_nulllog : 1;
     };
 #ifdef COMP_USE_FUNCTION_POINTER
     void setWstringCompLen()
@@ -753,15 +768,37 @@ public:
         m_judge = false;
         m_matched = false;
         m_placeHolderNum = 0;
+        m_nullOffset = 0;
+        m_nullbit = 0;
+        m_nullOffsetCompFd = 0;
+        m_nullbitCompFd = 0;
     }
 
     int init(const logicalField* fd, position& position, const KEY* key, bool forword)
     {
         reset();
         m_fd = fd;
+        m_mysqlnull = position.isMysqlNull();
         int num = position.getFieldNumByPos(fd->pos);
         if (num == -1)
             return STATUS_INVALID_FIELD_OFFSET;
+        
+        if (position.isNullable(num))
+        {
+            m_nullOffset = position.nullOffset(num);
+            m_nullbit = position.nullbit(num);
+            if (fd->logType & CMPLOGICAL_FIELD)
+            {
+                int fnum = position.getFieldNumByPos(fd->offset);
+                m_nullOffsetCompFd = position.nullOffset(fnum);
+                m_nullbitCompFd = position.nullbit(fnum);
+            }
+        }
+
+        // Cacheing compare isNull ?
+        eCompType log = (eCompType)(m_fd->logType & 0xf);
+        m_nulllog = ((log == eIsNull) || (log == eIsNotNull));
+
         m_sizeBytes = (char)position.fieldSizeByte(num);
         m_placeHolderNum = fd->opr & FILTER_COMBINE_PREPARE;// temporary marking
         if (m_placeHolderNum)
@@ -827,18 +864,59 @@ public:
         return REC_NOMACTH;
     }
 
+    /* nullComp
+       @result 1 true
+              -1 false
+               0 no judge
+       
+    */
+    int nullComp(const char* record, eCompType log) const
+    {
+        if (m_nullbitCompFd)
+        {
+            // (? = NULL) return false, ? <> NULL return false, ? > NULL return false
+            if ((*(record - m_nullOffsetCompFd) & m_nullbitCompFd) != 0)
+                return -1;
+        }
+        bool rnull = m_nulllog;
+        bool lnull = (*(record - m_nullOffset) & m_nullbit) != 0;
+            
+        if (lnull || rnull)
+        {
+            if (lnull && (log == eIsNull))
+                return 1;
+            else if (lnull && (log == eIsNotNull))
+                return -1;
+            else if (log == eIsNull)
+                return -1;
+            return 1; //(log == (char)eIsNotNull)
+        }
+        return 0;
+    }
+
     int match(const char* record, bool typeNext) const
     {
-#ifdef COMP_USE_SWITCHCASE
-        int v = m_fd->comp(record, m_sizeBytes);
-#else // COMP_USE_FUNCTION_POINTER
-        const char* r = (const char*)m_fd->ptr;
-        if (m_fd->logType & CMPLOGICAL_FIELD)
-            r = record + m_fd->offset;
-        const char* l = record + m_fd->pos;
-        int v = (m_fd->*m_compFunc)(l, r, m_sizeBytes);
-#endif
-        bool ret = m_isMatchFunc(v);
+        bool ret;
+        int v = 0, nullJudge = 0;
+       
+        if (m_mysqlnull && (m_nullbit || m_nullbitCompFd || m_nulllog))
+            nullJudge = nullComp(record, (eCompType)(m_fd->logType & 0xf));
+        if (nullJudge)
+            ret = (nullJudge == 1) ? true : false;
+        else
+        {
+            const char* r = (const char*)m_fd->ptr;
+            const char* l = record + m_fd->pos;
+            if (m_fd->logType & CMPLOGICAL_FIELD)
+                r = record + m_fd->offset;
+    #ifdef COMP_USE_SWITCHCASE
+            v = m_fd->comp(record, m_sizeBytes);
+    #else // COMP_USE_FUNCTION_POINTER
+            v = (m_fd->*m_compFunc)(l, r, m_sizeBytes);
+    #endif
+            ret = m_isMatchFunc(v);
+        }
+            
         if (ret && m_judgeType)
         {
             m_matched = true;
@@ -871,9 +949,11 @@ class fields
     std::vector<fieldAdapter> m_fields;
 
 public:
+    unsigned char nullbytes;    
 
     void init(const extRequest& req, position& position, const KEY* key, bool forword)
     {
+        nullbytes = 0;
         if (req.logicalCount == 0)
             return ;
 
@@ -886,7 +966,6 @@ public:
         {
             fieldAdapter& fda = m_fields[i];
             fda.init(fd, position, key, forword);
-
             fda.m_placeHolderNum = i;
             
             eCompType log = (eCompType)(fd->logType & 0xF);
@@ -982,7 +1061,6 @@ public:
         }
         m_fields[m_fields.size() - 1].oprCache(); 
     }
-    
 };
 
 
@@ -1051,6 +1129,7 @@ class resultWriter
     netsvc::server::netWriter* m_nw;
     const extResultDef* m_def;
     bool m_noBookmark;
+    unsigned char m_nullbytes;
 
     short doWrite(position* pos, const unsigned char* bookmark, int bmlen)
     {
@@ -1083,13 +1162,23 @@ class resultWriter
             }
             else
             {
+                //null support
+                unsigned char* nullPtr = NULL;
+                int nullbit = 0;
+                if (m_nullbytes)
+                {
+                    nullPtr = (unsigned char*)m_nw->curPtr();
+                    memset(nullPtr, 0, m_nullbytes);
+                    m_nw->asyncWrite(NULL, m_nullbytes, netsvc::server::netWriter::curSeekOnly);
+					recLen += m_nullbytes;
+				}            
                 // write each fields by field num.
                 for (int i = 0; i < m_def->fieldCount; i++)
                 {
                     const resultField& fd = m_def->field[i];
                     if (m_nw->bufferSpace() > fd.len)
                     {
-                        uint len = pos->fieldPackCopy(
+                        uint len = pos->fieldPackCopy(nullPtr, nullbit,
                             (unsigned char*)m_nw->curPtr(), fd.fieldNum);
                         m_nw->asyncWrite(
                             NULL, len, netsvc::server::netWriter::curSeekOnly);
@@ -1112,14 +1201,15 @@ class resultWriter
     }
 
 public:
-    resultWriter() : m_nw(NULL), m_def(NULL){}
+    resultWriter() : m_nw(NULL), m_def(NULL), m_noBookmark(false), m_nullbytes(0){}
 
     void init(netsvc::server::netWriter* nw, const extResultDef* def,
-                 bool noBookmark)
+                 bool noBookmark, unsigned char nullbytes)
     {
          m_nw = nw;
          m_def = def;
          m_noBookmark = noBookmark;
+         m_nullbytes = nullbytes;
     }
 
     short write(position* pos, const unsigned char* bookmark, int len)
@@ -1191,7 +1281,7 @@ public:
         tb->setBlobFieldCount(p->blobs);
         nw->beginExt(tb->blobFields() != 0);
         const extResultDef* rd = p->rd;
-        m_writer.init(nw, rd, noBookmark);
+        m_writer.init(nw, rd, noBookmark, m_fields->nullbytes);
         m_maxRows = p->rd->maxRows;
         return 0;
     }
@@ -1237,7 +1327,7 @@ public:
                             (req->itype & FILTER_TYPE_SEEKS_BOOKMARKS) != 0);
 
         nw->beginExt(tb->blobFields() != 0);
-        m_writer.init(nw, rd, noBookmark);
+        m_writer.init(nw, rd, noBookmark, m_fields->nullbytes);
         m_maxRows = rd->maxRows; 
         // DEBUG_RECORDS_BEGIN(m_resultDef, m_req)
 
@@ -1265,6 +1355,7 @@ public:
                                   const extResultDef* rd, bool seeksMode, bool seekBookmark)
     {
         int blobs = 0;
+        m_fields->nullbytes = 0;
         bm.setTable(tb);
         for (int i = 0; i < rd->fieldCount; i++)
         {
@@ -1276,6 +1367,8 @@ public:
             bm.setReadBitmap(num);
             if (m_position.isBlobField(&fd))
                 ++blobs;
+            if (m_position.isNullable(num))
+                ++m_fields->nullbytes;
         }
 
         if (!seeksMode)

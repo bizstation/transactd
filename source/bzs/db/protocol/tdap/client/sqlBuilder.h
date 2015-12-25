@@ -20,6 +20,7 @@
  ================================================================= */
 #include <bzs/db/protocol/tdap/tdapSchema.h>
 #include <string>
+#include <vector>
 
 namespace bzs
 {
@@ -32,18 +33,28 @@ namespace tdap
 namespace client
 {
 
-/** create statement charset must be server default charset.
- *  server default charset writen in my.cnf.
- *
- *  @param charsetIndexServer server default charset
- */
-std::string sqlCreateTable(const char* name, tabledef* table,
-                           uchar_td charsetIndexServer);
-std::string sqlCreateTable(const char* fileName, fileSpec* fs,
-                           uchar_td charsetIndexServer);
+class sqlBuilder
+{
+    static std::string getFieldList(const tabledef* table, std::vector<std::string>& fdl, clsrv_ver& ver);
+    static void insertNisFields(const tabledef* td, std::vector<std::string>& fdl, std::string& s);
+    static std::string& getKey(const tabledef* td, std::vector<std::string>& fdl, 
+                                    int index, std::string& s, bool specifyKeyNum=false);  
+    static std::string getKeyList(const tabledef* table, std::vector<std::string>& fdl);
 
-std::string sqlCreateIndex(const tabledef* table, int keyNum,
-                  bool specifyKeyNum, uchar_td charsetIndexServer);
+public:
+    /** create statement charset must be server default charset.
+     *  server default charset writen in my.cnf.
+     *
+     *  @param charsetIndexServer server default charset
+     */
+    static std::string sqlCreateTable(const char* name, tabledef* table,
+                               uchar_td charsetIndexServer, clsrv_ver& ver);
+    static std::string sqlCreateTable(const char* fileName, fileSpec* fs,
+                               uchar_td charsetIndexServer, clsrv_ver& ver);
+
+    static std::string sqlCreateIndex(const tabledef* table, int keyNum,
+                      bool specifyKeyNum, uchar_td charsetIndexServer, clsrv_ver& ver);
+};
 
 } // namespace client
 } // namespace tdap

@@ -234,7 +234,8 @@ class activeTableImple : public activeObject<map_orm>
             }
             else if (joinFields[i].type == JOIN_KEYVALUE_TYPE_PTR)
             {
-                ptr[i] = (const uchar_td*)mdl[fieldIndexes[i]].ptr();
+                ptr[i] =  (mdl[fieldIndexes[i]].isNull()) ? NULL :
+                            (const uchar_td*)mdl[fieldIndexes[i]].ptr();
                 len[i] = joinFields[i].len;
             }
             else
@@ -242,10 +243,15 @@ class activeTableImple : public activeObject<map_orm>
                 // if target field type is different then we need convrt type
                 const fielddef& f = td->fieldDefs[kd->segments[i].fieldNum];
                 field fd(buf_ptr - f.pos, f, fds);
-                fd = mdl[fieldIndexes[i]].c_str();
-                ptr[i] = buf_ptr;
                 len[i] = f.isStringType() ? 0xff : f.len;
-                buf_ptr += f.len;
+                if (mdl[fieldIndexes[i]].isNull())
+                    ptr[i] = NULL;
+                else
+                {
+                    fd = mdl[fieldIndexes[i]].c_str();// operator=(const _TCHAR* p)
+                    ptr[i] = buf_ptr;
+                    buf_ptr += f.len;
+                }
             }
         }
     
