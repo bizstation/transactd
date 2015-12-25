@@ -182,6 +182,7 @@ typedef wchar_t _TUCHAR;
 #define _i64tot     _i64tow
 #define _i64tot_s   _i64tow_s
 #define _ui64tot    _ui64tow
+#define _ui64tot_s   _i64tow_s
 #define _tasctime   _wasctime
 #define _tctime     _wctime
 #define _tstrdate   _wstrdate
@@ -401,6 +402,7 @@ typedef char _TUCHAR;
 #define _i64tot _i64toa
 #define _i64tot_s _i64toa_s
 #define _ui64tot _ui64toa
+#define _ui64tot_s _i64toa_s
 #define _tcsnccoll _strncoll
 #define _tcsncoll _strncoll
 #define _tcsncicoll _strnicoll

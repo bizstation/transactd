@@ -104,8 +104,8 @@ short createTestTable(database* db, bool timestampNull = true, bool supportDateT
         short fieldnum = 0;
         insertTable(def, tableid,  _T("nulltest"), g_td_charsetIndex);
 
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("fd1"), ft_integer, 4);
+        insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
+        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("fd1"), ft_integer, 4);
         fd->setNullable(true);
         //fd->nullbit = 100;
         //fd->nullbytes = 30;
@@ -570,7 +570,6 @@ void testUnuseSchema(database* db)
         db->close();
         bool ret = db->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, _T("")), TYPE_SCHEMA_BDF,TD_OPEN_NORMAL);
         BOOST_CHECK_MESSAGE(ret == true, "db open stat = " << db->stat());
-        short tableid = 1;
         table_ptr tb = openTable(db, _T("nulltest"), TD_OPEN_NORMAL);
         tb->setKeyNum(0);
         tb->clearBuffer();
@@ -692,7 +691,6 @@ void testTimestamp(database* db)
     try
     {
         short tableid = 1;
-        __int64 v = 0;
         {
             table_ptr tb = openTable(db, tableid, TD_OPEN_NORMAL+TD_OPEN_MASK_MYSQL_NULL);
             tb->setKeyNum(0);
@@ -709,7 +707,7 @@ void testTimestamp(database* db)
             tb->seek();
             BOOST_CHECK_MESSAGE(tb->stat() == 0, "testTimestamp seek stat = " << tb->stat());
 
-            v = fds[_T("fd8")].i64();
+            __int64 v = fds[_T("fd8")].i64();
             BOOST_CHECK_MESSAGE(v != 0, "Timestamp is 0 ");
             
             BOOST_CHECK_MESSAGE(fds[_T("fd10")].isNull() == true, "Timestamp2 not null" );

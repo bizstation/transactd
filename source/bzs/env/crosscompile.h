@@ -75,6 +75,7 @@ int gettimeofday(struct timeval*, struct timezone*);
 char* _strupr(char* s);
 char* _strlwr(char* s);
 
+
 inline char* _i64toa_s(__int64 v, char* tmp, unsigned long size, int radix)
 {
     snprintf(tmp, size, "%lld", v);
@@ -99,18 +100,6 @@ inline char* _ultoa_s(int v, char* tmp, unsigned long size, int radix)
     return tmp;
 }
 
-inline char* _i64toa(__int64 v, char* tmp, int radix)
-{
-    sprintf(tmp, "%lld", v);
-    return tmp;
-}
-
-inline char* _ui64toa(unsigned __int64 v, char* tmp, int radix)
-{
-    sprintf(tmp, "%llu", v);
-    return tmp;
-}
-
 inline char* _ltoa(int v, char* tmp, int radix)
 {
     sprintf(tmp, "%d", v);
@@ -123,6 +112,19 @@ inline char* _ultoa(int v, char* tmp, int radix)
     return tmp;
 }
 
+#if !defined(__BORLANDC__)
+inline char* _i64toa(__int64 v, char* tmp, int radix)
+{
+    sprintf(tmp, "%lld", v);
+    return tmp;
+}
+
+inline char* _ui64toa(unsigned __int64 v, char* tmp, int radix)
+{
+    sprintf(tmp, "%llu", v);
+    return tmp;
+}
+#endif
 
 char16_t* _strupr16(char16_t* s);
 char16_t* _strlwr16(char16_t* s);
@@ -178,14 +180,12 @@ typedef unsigned __int32 char32_t; // 32bit
 /* c c++ runtime library */
 #include <tchar.h>
 #if defined(__BORLANDC__) || defined(__MINGW32__)
+
 #define _ltow_s(A, B, C, D) _ltow(A, B, D)
 #define _ltoa_s(A, B, C, D) _ltoa(A, B, D)
 #define _ltot_s(A, B, C, D) _ltot(A, B, D)
 #define _ultot_s(A, B, C, D) _ultot(A, B, D)
-#define _i64tot_s(A, B, C, D) _i64tot(A, B, D)
 #define _i64tow_s(A, B, C, D) _i64tow(A, B, D)
-#define _i64toa_s(A, B, C, D) _i64toa(A, B, D)
-#define _ui64toa_s(A, B, C, D) _ui64toa(A, B, D)
 #define _ui64tow_s(A, B, C, D) _ui64tow(A, B, D)
 #define _strlwr_s(A, B) strlwr(A)
 #ifndef _tcslwr_s

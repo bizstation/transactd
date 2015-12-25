@@ -45,7 +45,7 @@ short createTestTable1(database* db)
         
         insertTable(def, tableid,  _T("fieldtest"), g_td_charsetIndex);
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
+        insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
 
         int lens[5] = {1, 2, 3, 4, 8};
         _TCHAR buf[50];
@@ -53,33 +53,33 @@ short createTestTable1(database* db)
         for (int i=1; i < 6 ; ++i)
         {
             _stprintf_s(buf, 50, _T("int_%d_byte"), lens[i-1]);
-            fd = insertField(def, tableid, ++fieldnum, buf, ft_integer, lens[i-1]);
+            insertField(def, tableid, ++fieldnum, buf, ft_integer, lens[i-1]);
         }
-        
+
         //unsigned int
         for (int i=1; i < 6 ; ++i)
         {
             
             _stprintf_s(buf, 50, _T("uint_%d_byte"), lens[i-1]);
-            fd = insertField(def, tableid, ++fieldnum, buf, ft_uinteger, lens[i-1]);
+            insertField(def, tableid, ++fieldnum, buf, ft_uinteger, lens[i-1]);
         }
 
         //myyear
-        fd = insertField(def, tableid, ++fieldnum, _T("year"), ft_myyear, 1);
-        
+        insertField(def, tableid, ++fieldnum, _T("year"), ft_myyear, 1);
+
         //logical
-        fd = insertField(def, tableid, ++fieldnum, _T("logical1"), ft_logical, 1);
-        fd = insertField(def, tableid, ++fieldnum, _T("logical2"), ft_logical, 2);
-        
+        insertField(def, tableid, ++fieldnum, _T("logical1"), ft_logical, 1);
+        insertField(def, tableid, ++fieldnum, _T("logical2"), ft_logical, 2);
+
         //mydate
-        fd = insertField(def, tableid, ++fieldnum, _T("date"), ft_mydate, 3);
+        insertField(def, tableid, ++fieldnum, _T("date"), ft_mydate, 3);
  
         //double
-        fd = insertField(def, tableid, ++fieldnum, _T("double4.0"), ft_float, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("double4.4"), ft_float, 4);
+        insertField(def, tableid, ++fieldnum, _T("double4.0"), ft_float, 4);
+        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("double4.4"), ft_float, 4);
         fd->decimals = 4;
 
-        fd = insertField(def, tableid, ++fieldnum, _T("double8.0"), ft_float, 8);
+        insertField(def, tableid, ++fieldnum, _T("double8.0"), ft_float, 8);
         fd = insertField(def, tableid, ++fieldnum, _T("double8.5"), ft_float, 8);
         fd->decimals = 15;
 
@@ -112,16 +112,16 @@ short createTestTableLegacyTimeTable(database* db)
         
         insertTable(def, tableid,  _T("timetestLegacy"), g_td_charsetIndex);
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
+        insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
 
         //time
-        fd = insertField(def, tableid, ++fieldnum, _T("time"), ft_mytime, 3);
+        insertField(def, tableid, ++fieldnum, _T("time"), ft_mytime, 3);
 
         //datetime
-        fd = insertField(def, tableid, ++fieldnum, _T("datetime"), ft_mydatetime, 8);
+        insertField(def, tableid, ++fieldnum, _T("datetime"), ft_mydatetime, 8);
 
         //timestamp
-        fd = insertField(def, tableid, ++fieldnum, _T("timestamp"), ft_mytimestamp, 4);
+        insertField(def, tableid, ++fieldnum, _T("timestamp"), ft_mytimestamp, 4);
 
  
         keydef* kd = insertKey(def, tableid, 0);
@@ -192,12 +192,12 @@ short createTestTableTime(database* db, bool isMariadb, uchar_td minorVersion, b
         td->setValidationTarget(isMariadb, minorVersion);
 
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
+        insertField(def, tableid, fieldnum, _T("id"), ft_integer, 4);
 
         //time
-        fd = insertField(def, tableid, ++fieldnum, _T("time5"), ft_mytime, 5);
+        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("time5"), ft_mytime, 5);
         fd->decimals = 3;
-        fd = insertField(def, tableid, ++fieldnum, _T("time3"), ft_mytime, 3);
+        insertField(def, tableid, ++fieldnum, _T("time3"), ft_mytime, 3);
         fd = insertField(def, tableid, ++fieldnum, _T("time4"), ft_mytime, 4);
         fd->decimals = 2;
         fd = insertField(def, tableid, ++fieldnum, _T("time6"), ft_mytime, 6);
@@ -206,7 +206,7 @@ short createTestTableTime(database* db, bool isMariadb, uchar_td minorVersion, b
         //datetime
         fd = insertField(def, tableid, ++fieldnum, _T("datetime7"), ft_mydatetime, 7);
         fd->decimals = 3;
-        fd = insertField(def, tableid, ++fieldnum, _T("datetime5"), ft_mydatetime, 5);
+        insertField(def, tableid, ++fieldnum, _T("datetime5"), ft_mydatetime, 5);
         fd = insertField(def, tableid, ++fieldnum, _T("datetime6"), ft_mydatetime, 6);
         fd->decimals = 2;
         fd = insertField(def, tableid, ++fieldnum, _T("datetime8"), ft_mydatetime, 8);
@@ -257,10 +257,10 @@ short createTestInMany(database* db)
         td->primaryKeyNum = 0;
         
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
+        insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
 
         //time
-        fd = insertField(def, tableid, ++fieldnum, _T("id2"), ft_integer, 4);
+        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("id2"), ft_integer, 4);
         fd->setNullable(true);
         fd = insertField(def, tableid, ++fieldnum, _T("id3"), ft_integer, 4);
         fd->setNullable(true);
@@ -316,8 +316,8 @@ short createTestNull(database* db)
         td->primaryKeyNum = 0;
         
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("id2"), ft_integer, 4);
+        insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
+        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("id2"), ft_integer, 4);
         fd->setNullable(true);
         fd = insertField(def, tableid, ++fieldnum, _T("id3"), ft_integer, 4);
         fd->setNullable(true);
@@ -370,8 +370,8 @@ short createTestGroups(database* db)
         td->primaryKeyNum = 0;
         
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("pri_id"), ft_autoinc, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("id"), ft_integer, 4);
+        insertField(def, tableid, fieldnum, _T("pri_id"), ft_autoinc, 4);
+        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("id"), ft_integer, 4);
         fd->setNullable(true);
         fd = insertField(def, tableid, ++fieldnum, _T("name"), ft_myvarchar, 151);
         fd->setLenByCharnum(50);
@@ -420,8 +420,8 @@ short createTestUsers(database* db)
         td->primaryKeyNum = 0;
         
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("group"), ft_integer, 4);
+        insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
+        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("group"), ft_integer, 4);
         fd->setNullable(true);
         fd = insertField(def, tableid, ++fieldnum, _T("class"), ft_integer, 4);
         fd->setNullable(true);
@@ -606,7 +606,6 @@ void checkIntValue(table_ptr tb)
     BOOST_CHECK(tb->getFVint(++fieldnum) == FLOAT_V1); //double
     ++fieldnum;//BOOST_CHECK(tb->getFVint(++fieldnum) == FLOAT_V2);
     BOOST_CHECK(tb->getFV64(++fieldnum) == DOUBLE_V1); 
-    ++fieldnum;//BOOST_CHECK(tb->getFV64(++fieldnum) == DOUBLE_V2);
 
 
     // read by double
@@ -638,11 +637,11 @@ void checkIntValue(table_ptr tb)
     _TCHAR buf[50];
     BOOST_CHECK(_tcscmp(tb->getFVstr(1), _ltot(SCHAR_MAX, buf, 10)) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(3), _ltot(MINT_MIN, buf, 10)) == 0);
-    BOOST_CHECK(_tcscmp(tb->getFVstr(5), _i64tot(LLONG_MAX, buf, 10)) == 0);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(5), _i64tot_s(LLONG_MAX, buf, 50, 10)) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(6), _ultot(UCHAR_MAX - 1, buf, 10)) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(8), _ultot(UMINT_MAX - 1, buf, 10)) == 0);
     fieldnum = 9;
-    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ui64tot(ULLONG_MAX - 1, buf, 10)) == 0);
+    BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ui64tot_s(ULLONG_MAX - 1, buf, 50, 10)) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ltot(2000, buf, 10)) == 0);
     BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ltot(254, buf, 10)) == 0);   //logi1
     BOOST_CHECK(_tcscmp(tb->getFVstr(++fieldnum), _ltot(65000, buf, 10)) == 0); //logi2
@@ -707,13 +706,13 @@ void testStoreInt(database* db)
     tb->setFV(++fieldnum, _ltot(SHRT_MAX, buf, 10));
     tb->setFV(++fieldnum, _ltot(MINT_MIN, buf, 10));
     tb->setFV(++fieldnum, _ltot(INT_MAX, buf, 10));
-    tb->setFV(++fieldnum, _i64tot(LLONG_MAX, buf, 10));
+    tb->setFV(++fieldnum, _i64tot_s(LLONG_MAX, buf, 50, 10));
 
     tb->setFV(++fieldnum, _ltot(UCHAR_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ltot(USHRT_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ltot(UMINT_MAX - 1, buf, 10));
     tb->setFV(++fieldnum, _ultot(UINT_MAX - 1, buf, 10));
-    tb->setFV(++fieldnum, _ui64tot(ULLONG_MAX - 1, buf, 10));
+    tb->setFV(++fieldnum, _ui64tot_s(ULLONG_MAX - 1, buf, 50, 10));
     tb->setFV(++fieldnum, _ltot(2000, buf, 10));
     tb->setFV(++fieldnum, _ltot(254, buf, 10));  //logi1
     tb->setFV(++fieldnum, _ltot(65000, buf, 10)); //logi2
@@ -790,7 +789,7 @@ void testStoreInt(database* db)
     values += "\t4\t";
     values += _ltoa(INT_MAX, buf2, 10);
     values += "\t5\t";
-    values += _i64toa(LLONG_MAX, buf2, 10);
+    values += _i64toa_s(LLONG_MAX, buf2, 50, 10);
     values += "\t6\t";
     values += _ltoa(UCHAR_MAX - 1, buf2, 10);
     values += "\t7\t";
@@ -798,9 +797,9 @@ void testStoreInt(database* db)
     values += "\t8\t";
     values += _ltoa(UMINT_MAX - 1, buf2, 10);
     values += "\t9\t";
-    values += _i64toa(UINT_MAX - 1, buf2, 10);
+    values += _i64toa_s(UINT_MAX - 1, buf2, 50, 10);
     values += "\t10\t";
-    values += _ui64toa(ULLONG_MAX - 1, buf2, 10);
+    values += _ui64toa_s(ULLONG_MAX - 1, buf2, 50, 10);
     values += "\t11\t";
     values += _ltoa(2000, buf2, 10);
     values += "\t12\t";

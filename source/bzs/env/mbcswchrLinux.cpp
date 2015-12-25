@@ -40,8 +40,8 @@ void cleanupTls(void* p)
 
 void initCvtProcess()
 {
-    int ret = pthread_key_create(&g_tls1, cleanupTls);
-    assert(ret == 0);
+    pthread_key_create(&g_tls1, cleanupTls);
+    //assert(ret == 0);
     pthread_setspecific(g_tls1, NULL);
 }
 

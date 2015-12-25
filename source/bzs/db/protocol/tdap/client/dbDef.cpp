@@ -1695,11 +1695,15 @@ void setFieldsCharsetIndex(tabledef* def)
     }
 }
 
-void dbdef::pushBackup(short TableIndex)
+void dbdef::pushBackup(short tableIndex)
 {
     int blen;
-    tabledef* td = m_dimpl->tableDefs[TableIndex];
-
+    tabledef* td = tableDefs(tableIndex);
+    if (!td)
+    {
+        m_stat = STATUS_INVALID_TABLE_IDX;
+        return;
+    }
     blen = td->size();
     if (!tableDefs(TABLE_NUM_TMP))
         m_dimpl->tableDefs[TABLE_NUM_TMP] = (tabledef*)malloc(blen);
@@ -1721,12 +1725,12 @@ void dbdef::pushBackup(short TableIndex)
 
 }
 
-bool dbdef::compAsBackup(short TableIndex)
+bool dbdef::compAsBackup(short tableIndex)
 {
-    if (m_dimpl->tableCount < TableIndex)
+    if (m_dimpl->tableCount < tableIndex)
         return false;
 
-    tabledef* tds = tableDefs(TableIndex);
+    tabledef* tds = tableDefs(tableIndex);
     tabledef* tdo = tableDefs(TABLE_NUM_TMP);
 
     if (tds->size() != tdo->size())
@@ -1749,17 +1753,17 @@ bool dbdef::compAsBackup(short TableIndex)
     return false;
 }
 
-void dbdef::popBackup(short TableIndex)
+void dbdef::popBackup(short tableIndex)
 {
     tabledef* tdt = tableDefs(TABLE_NUM_TMP);
-    tabledef* td = m_dimpl->tableDefs[TableIndex];
+    tabledef* td = m_dimpl->tableDefs[tableIndex];
     if (tdt && td)
     {
-        m_dimpl->tableDefs[TableIndex] = td = (tabledef*)realloc(td, tdt->size());
+        m_dimpl->tableDefs[tableIndex] = td = (tabledef*)realloc(td, tdt->size());
         memcpy(td, tdt, tdt->size());
         td->setFielddefsPtr();
         td->setKeydefsPtr();
-        updateTableDef(TableIndex);
+        updateTableDef(tableIndex);
     }
 }
 

@@ -87,28 +87,33 @@ int _tmain(int argc, _TCHAR* argv[])
     {
         // backup current user table schema
         db->dbDef()->pushBackup(tablenum_user);
-
-        if (changeUserTable(db->dbDef()))
+        if (db->dbDef()->stat() == 0)
         {
-            // convert table if table exist;
-            if (db->existsTableFile(tablenum_user, NULL))
+            if (changeUserTable(db->dbDef()))
             {
-                db->setOnCopyData(onCopyData);
+                // convert table if table exist;
+                if (db->existsTableFile(TABLE_NUM_TMP, NULL))
+                {
+                    db->setOnCopyData(onCopyData);
 
-                db->convertTable(tablenum_user, false, NULL);
-                if (db->stat())
-                    showError(_T("convert table"), NULL, db->stat());
+                    db->convertTable(tablenum_user, false, NULL);
+                    if (db->stat())
+                        showError(_T("convert table"), NULL, db->stat());
+                }
             }
-        }
 
-        if (db->stat())
-        {
-            result = db->stat();
-            // restore user table schema
-            db->dbDef()->popBackup(tablenum_user);
-        }
-        else
-            _tprintf(_T("\nchange schema success. \n"));
+            if (db->stat())
+            {
+                result = db->stat();
+                // restore user table schema
+                db->dbDef()->popBackup(tablenum_user);
+            }
+            else
+                _tprintf(_T("\nchange schema success. \n"));
+            
+        }else
+            showError(_T("backup table def"), NULL, db->dbDef()->stat());
+
         db->close();
     }
     database::destroy(db);
