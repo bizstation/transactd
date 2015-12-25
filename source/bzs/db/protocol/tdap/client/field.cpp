@@ -1507,9 +1507,7 @@ const char* field::getFVAstr() const
         break;
 
     }
-    sprintf(p, "%.*lf", m_fd->decimals, v);
-    if (m_fd->decimals == 0)
-        trimZero(p, strlen(p) - 1);
+    sprintf(p, "%.*f", m_fd->decimals, v);
     return p;
 }
 
@@ -1592,9 +1590,8 @@ const wchar_t* field::getFVWstr() const
         v = readValueDecimal();
         break;
     }
-    swprintf_s(p, 50, L"%.0*lf", v, m_fd->decimals);
-    if (m_fd->decimals == 0)
-        trimZero(p, wcslen(p) - 1);
+    swprintf_s(p, 50, L"%.*f",m_fd->decimals, v);
+
     return p;
 }
 #endif //_WIN32
@@ -2052,9 +2049,18 @@ int field::nullComp(char log) const
 
 int field::nullComp(const field& r, char log) const
 {
-    bool rnull = (log == eIsNull) || (log == eIsNotNull);
-    if (!rnull && r.isNull()) log = eIsNull;
-    return nullComp(log);
+    if ((log == eIsNull) || (log == eIsNotNull))
+        return nullComp(log);
+
+    bool lnull = isNull();
+    bool rnull = r.isNull();
+    if (lnull || rnull)
+    {
+        if (lnull > rnull) return -1;
+        if (lnull < rnull) return 1;
+        return 0;
+    }
+    return 2;
 }
 
 int field::comp(const field& r, char log) const
