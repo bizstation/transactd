@@ -800,6 +800,9 @@ inline judgeFunc getJudgeFunc(eCompType log)
         return isMatch5;
     case eLessEq: 
         return isMatch6;
+    case eIsNull:
+    case eIsNotNull:
+        return NULL;
     }
     assert(0);
     return NULL;

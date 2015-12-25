@@ -2939,7 +2939,7 @@ void doTestCompStringOne(const char* lt , const char* rt, int ret, int len,
     strcpy(l + sizeByte, lt); strcpy(r + sizeByte, rt);
     if (sizeByte)
     {
-        l[0] =  (char)strlen(lt);
+        l[0] = (char)strlen(lt);
         r[0] = (char)len;
     }
     int v = compFunc((const char*)l, (const char*)r, len);
@@ -3007,7 +3007,7 @@ void doTestCompWStringOne(const wchar_t* lt , const wchar_t* rt, int ret, int le
     
     if (sizeByte)
     {
-        l[0] = wcslen(lt) * 2;
+        l[0] = (char)wcslen(lt) * 2;
         r[0] = (char)len;
     }
     int v = compFunc((const char*)l, (const char*)r, len);
@@ -3073,7 +3073,7 @@ void doTestCompBlobOne(const char* lt , const char* rt, int ret, int len,
     char lb[128] = {0x00};
     char r[128] = {0x00};
     strcpy(lb, lt); strcpy(r + sizeByte, rt);
-    l[0] =  strlen(lt);
+    l[0] = (char)strlen(lt);
     char** p = (char**)(l + sizeByte);
     *p = lb;
     
