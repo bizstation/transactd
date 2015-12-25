@@ -61,8 +61,8 @@ var ft_wstring      = 25;
 var ft_wzstring     = 26;
 var ft_guid         = 27;
 var ft_datatime     = 30;
-var ft_varchar      = 40;
-var ft_varbinary    = 41;
+var ft_myvarchar      = 40;
+var ft_myvarbinary    = 41;
 var ft_wvarchar     = 42;
 var ft_wvarbinary   = 43;
 var ft_char         = 44;
@@ -256,7 +256,7 @@ function createUserTable(db)
 	++filedIndex;
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "–¼‘O";
-	fd.Type = ft_varchar;
+	fd.Type = ft_myvarchar;
 	fd.len = 2;
 	checkEqual(fd.ValidCharNum, false, "validCharNum 1");
 	fd.SetLenByCharnum(20);
@@ -276,7 +276,7 @@ function createUserTable(db)
 	++filedIndex;
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "tel";
-	fd.Type = ft_varchar;
+	fd.Type = ft_myvarchar;
 	fd.SetLenByCharnum(21);
 	fd.SetNullable(true);
 	
@@ -299,7 +299,6 @@ function createUserTable(db)
 	fd.TimeStampOnUpdate = false;
 	checkEqual(fd.PadCharType, false, "isPadCharType ");
 	checkEqual(fd.DateTimeType, true, "isDateTimeType");
-
 
 	var keyNum = 0;
 	var key = dbdef.InsertKey(tableid, keyNum);
@@ -350,7 +349,7 @@ function createUserExtTable(db)
 	++filedIndex;
 	fd =  dbdef.InsertField(tableid, filedIndex);
 	fd.Name = "comment";
-	fd.Type = ft_varchar;
+	fd.Type = ft_myvarchar;
 	fd.SetLenByCharnum(60);
 	fd.SetNullable(true);
 	checkEqual(fd.DefaultNull, true, "DefaultNull 1");
@@ -429,17 +428,17 @@ function insertData(db)
 		tb.ClearBuffer();
 		for (var i= 1;i<= 1000;++i)
 		{
-			tb.Vlng(0) = i;
-			tb.Text(1) = i.toString() + " user";
-			tb.Vlng("group") = ((i-1) % 5)+1;
+			tb.SetFV(0, i);
+			tb.SetFV(1, i.toString() + " user");
+			tb.SetFV("group", ((i-1) % 5)+1);
 			tb.Insert();
 		}
 		
 		tb3.ClearBuffer();
 		for (var i= 1;i<= 1000;++i)
 		{
-			tb3.Vlng(0) = i;
-			tb3.Text(1) = i.toString() + " comment";
+			tb3.SetFV(0, i);
+			tb3.SetFV(1, i.toString() + " comment");
 			tb3.Insert();
 		}
 		db.EndTrn();
@@ -564,7 +563,9 @@ function test(atu, ate, db)
 	initQuery();
 	var last = ate.Index(0).Join(rs, q.Select("comment").Optimize(hasOneJoin), "id").Reverse().First();
 	checkEqual(rs.Count, 10, "ate rs.Count = 10 ");
-	checkEqual(last.Field("id").Vlng, 10, "last.id = 10 ");
+	checkEqual(last.Field("id").i(), 10, "last.id = 10 ");
+	checkEqual(last.Field("id").i64(), 10, "last.id = 10 ");
+	checkEqual(last.Field("id").d(), 10, "last.id = 10 ");
 	checkEqual(rec(4).IsNull(), false, "Join NULL1");
 	rec(4).setNull(true);
 	checkEqual(rec(4).IsNull(), true, "Join NULL2");
@@ -617,31 +618,47 @@ function test(atu, ate, db)
 	rs = atu.Index(0).KeyValue(0).Read(q);
 	checkEqual(rs.Count, 10, "atu rs.Count = 10 ");
 
+	//setBin bin
+	var bin = String.fromCharCode(0xFF01,0xFF02);
+	wr("tel").SetBin(bin);
+	var ret = wr("tel").Bin();
+	checkEqual(ret.charCodeAt(0), 0xFF01, "SetBin Bin");
+	checkEqual(ret.charCodeAt(1), 0xFF02, "SetBin Bin");
 
+	
 	// table::default NULL
 	var tb = db.OpenTable("user");
 	checkEqual(db.Stat, 0, "");
 	tb.KeyNum = 0;
 	tb.ClearBuffer();
-	checkEqual(tb.Null(3), true, "Default NULL");
+	checkEqual(tb.GetFVNull(3), true, "Default NULL");
 	
 	tb.ClearBuffer(clearNull);
-	checkEqual(tb.Null(3), false, "clearNull NULL");
+	checkEqual(tb.GetFVNull(3), false, "clearNull NULL");
 
 	// table NULL
-	tb.Vlng("id") = 1;
+	tb.SetFV("id", 1);
 	tb.Seek();
 	checkEqual(tb.Stat, 0, "Seek");
-	checkEqual(tb.Null(3), true, "Default NULL");
-	checkEqual(tb.Null("tel"), true, "Default NULL");
-	tb.Null(3) = false;
-	checkEqual(tb.Null(3), false, "tb.Null");
-	tb.Null("tel") = true;
-	checkEqual(tb.Null("tel"), true, "tb.Null");
+	checkEqual(tb.GetFVNull(3), true, "Default NULL");
+	checkEqual(tb.GetFVNull("tel"), true, "Default NULL");
+	tb.SetFVNull(3, false);
+	checkEqual(tb.GetFVNull(3), false, "tb.Null");
+	tb.SetFVNull("tel", true);
+	checkEqual(tb.GetFVNull("tel"), true, "tb.Null");
+	tb.SetFV("id", 10)
+	checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
+	tb.SetFV("id", "10")
+	checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
+	tb.SetFV("id", 10.00);
+	checkEqual(tb.GetFV64("id"), 10, "tb.SetFV");
+	checkEqual(tb.GetFVstr("id"), "10", "tb.SetFV");
+
 
 	checkEqual(tb.TableDef.MysqlNullMode , true, "MysqlNullMode 2");
 	checkEqual(td.InUse , 2, "InUse2");
 
+	
 	
 	WScript.Echo(" -- End Test -- ");
 

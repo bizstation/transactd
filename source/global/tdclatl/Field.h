@@ -63,6 +63,7 @@ public:
     STDMETHOD(IsNull)(VARIANT_BOOL* Value);
     STDMETHOD(SetNull)(VARIANT_BOOL Value);
     STDMETHOD(SetValue)(VARIANT Value);
+    STDMETHOD(SetBin)(BSTR Value);
     STDMETHOD(I)(int* Value);
     STDMETHOD(I64)(__int64* Value);
     STDMETHOD(D)(double* Value);

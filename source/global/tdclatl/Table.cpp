@@ -90,7 +90,7 @@ STDMETHODIMP CTableTd::put_Vlng(VARIANT Index, int Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::put_Null(VARIANT Index, VARIANT_BOOL Value)
+STDMETHODIMP CTableTd::SetFVNull(VARIANT Index, VARIANT_BOOL Value)
 {
     short index = GetFieldNum(&Index);
     if (index < 0)
@@ -99,7 +99,7 @@ STDMETHODIMP CTableTd::put_Null(VARIANT Index, VARIANT_BOOL Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::get_Null(VARIANT Index, VARIANT_BOOL* Value)
+STDMETHODIMP CTableTd::GetFVNull(VARIANT Index, VARIANT_BOOL* Value)
 {
     short index = GetFieldNum(&Index);
     if (index < 0)
@@ -107,6 +107,65 @@ STDMETHODIMP CTableTd::get_Null(VARIANT Index, VARIANT_BOOL* Value)
     *Value = m_tb->getFVNull(index);
     return S_OK;
 }
+
+
+STDMETHODIMP CTableTd::GetFVint(VARIANT Index, int* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    *Value = m_tb->getFVint(index);
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::GetFV64(VARIANT Index, __int64* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    *Value = m_tb->getFV64(index);
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::GetFVdbl(VARIANT Index, double* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    *Value = m_tb->getFVdbl(index);
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::GetFVstr(VARIANT Index, BSTR* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+
+    *Value = ::SysAllocString(m_tb->getFVstr(index));
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::SetFV(VARIANT Index, VARIANT Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+
+    if (Value.vt == VT_BSTR)
+        m_tb->setFV(index, Value.bstrVal);
+    else if (Value.vt == VT_R8 || Value.vt == VT_R4)
+        m_tb->setFV(index, Value.dblVal);
+    else if (Value.vt == VT_I4 || Value.vt == VT_I2 || Value.vt == VT_INT || Value.vt == VT_I8)
+        m_tb->setFV(index, Value.llVal);
+    else
+    {
+        VariantChangeType( &Value, &Value, 0, VT_BSTR );
+        m_tb->setFV(index, Value.bstrVal);
+    }
+    return S_OK;
+}
+
 
 STDMETHODIMP CTableTd::get_V64(VARIANT Index, __int64* Value)
 {

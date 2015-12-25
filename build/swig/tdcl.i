@@ -674,6 +674,11 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::setMra;
 %ignore bzs::db::protocol::tdap::client::table::setFVA;
 %ignore bzs::db::protocol::tdap::client::table::getFVAstr;
+%ignore bzs::db::protocol::tdap::client::table::getFVbyt;
+%ignore bzs::db::protocol::tdap::client::table::getFVsht;
+%ignore bzs::db::protocol::tdap::client::table::getFVlng;
+%ignore bzs::db::protocol::tdap::client::table::getFVflt;
+
 %ignore bzs::db::protocol::tdap::client::table::insertBookmarks;
 
   // create and release methods for query class

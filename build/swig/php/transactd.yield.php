@@ -1413,10 +1413,6 @@ class dbdef {
 		return $r;
 	}
 
-	function tableDefPtr($index) {
-		return dbdef_tableDefPtr($this->_cPtr,$index);
-	}
-
 	function setVersion($v) {
 		dbdef_setVersion($this->_cPtr,$v);
 	}
@@ -1504,7 +1500,6 @@ class dbdef {
 	function synchronizeSeverSchema($tableIndex) {
 		dbdef_synchronizeSeverSchema($this->_cPtr,$tableIndex);
 	}
-
 }
 
 class table extends nstable {
@@ -1539,10 +1534,6 @@ class table extends nstable {
 			return new tabledef($r);
 		}
 		return $r;
-	}
-
-	function tableDefPtr() {
-		return table_tableDefPtr($this->_cPtr);
 	}
 
 	function valiableFormatType() {
@@ -1647,11 +1638,11 @@ class table extends nstable {
 	}
 
 	function getFVbyt($index_or_fieldName) {
-		return table_getFVbyt($this->_cPtr,$index_or_fieldName);
+		return table_getFVint($this->_cPtr,$index_or_fieldName);
 	}
 
 	function getFVsht($index_or_fieldName) {
-		return table_getFVsht($this->_cPtr,$index_or_fieldName);
+		return table_getFVint($this->_cPtr,$index_or_fieldName);
 	}
 
 	function getFVint($index_or_fieldName) {
@@ -1659,7 +1650,7 @@ class table extends nstable {
 	}
 
 	function getFVlng($index_or_fieldName) {
-		return table_getFVlng($this->_cPtr,$index_or_fieldName);
+		return table_getFVint($this->_cPtr,$index_or_fieldName);
 	}
 
 	function getFV64($index_or_fieldName) {
@@ -1667,7 +1658,7 @@ class table extends nstable {
 	}
 
 	function getFVflt($index_or_fieldName) {
-		return table_getFVflt($this->_cPtr,$index_or_fieldName);
+		return table_getFVdbl($this->_cPtr,$index_or_fieldName);
 	}
 
 	function getFVdbl($index_or_fieldName) {
@@ -2774,7 +2765,7 @@ class field {
 	}
 
 	function setBin($str) {
-		return field_setFV($this->_cPtr,$st, strlen($str));
+		return field_setFV($this->_cPtr, $str, strlen($str));
 	}
 
 	function comp($r_,$logType=16) {

@@ -154,6 +154,13 @@ STDMETHODIMP CField::Bin(BSTR* Value)
     return S_OK;
 }
 
+STDMETHODIMP CField::SetBin(BSTR Value)
+{
+    int len = ::SysStringByteLen(Value);
+    m_fd.setBin(Value, len);
+    return S_OK;
+}
+
 STDMETHODIMP CField::Str(BSTR* Value)
 {
     *Value = ::SysAllocString(m_fd.getFVstr());

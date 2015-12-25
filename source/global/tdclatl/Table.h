@@ -165,7 +165,12 @@ public:
     STDMETHOD(get_LastFindDirection)(short* Value);
     STDMETHOD(get_BookmarkLen)(unsigned short* Value);
     STDMETHOD(get_Bookmarks)(long index, IBookmark** Value);
-    STDMETHOD(get_Null)(VARIANT Index, VARIANT_BOOL* Value);
-    STDMETHOD(put_Null)(VARIANT Index, VARIANT_BOOL Value);
+    STDMETHOD(GetFVNull)(VARIANT Index, VARIANT_BOOL* Value);
+    STDMETHOD(SetFVNull)(VARIANT Index, VARIANT_BOOL Value);
+    STDMETHOD(GetFVint)(VARIANT Index, int* Value);
+    STDMETHOD(GetFV64)(VARIANT Index, __int64* Value);
+    STDMETHOD(GetFVdbl)(VARIANT Index, double* Value);
+    STDMETHOD(GetFVstr)(VARIANT Index, BSTR* Value);
+    STDMETHOD(SetFV)(VARIANT Index, VARIANT Value);
 
 };

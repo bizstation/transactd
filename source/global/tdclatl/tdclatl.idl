@@ -776,10 +776,20 @@ interface ITable : IDispatch
   HRESULT _stdcall Bookmarks([in] long index, [out, retval] IBookmark** Value);
   [id(0x000000E5)]
   HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
-  [propget, id(0x000000E6)]
-  HRESULT _stdcall Null([in] VARIANT Index, [out, retval] VARIANT_BOOL* Value);
-  [propput, id(0x000000E6)]
-  HRESULT _stdcall Null([in] VARIANT Index, [in] VARIANT_BOOL Value);
+  [id(0x000000E6)]
+  HRESULT _stdcall GetFVNull([in] VARIANT Index, [out, retval] VARIANT_BOOL* Value);
+  [id(0x000000E7)]
+  HRESULT _stdcall SetFVNull([in] VARIANT Index, [in] VARIANT_BOOL Value);
+  [id(0x000000E8)]
+  HRESULT _stdcall GetFVint([in] VARIANT Index, [out, retval] int* Value);
+  [id(0x000000E9)]
+  HRESULT _stdcall GetFV64([in] VARIANT Index, [out, retval] __int64* Value);
+  [id(0x000000EA)]
+  HRESULT _stdcall GetFVdbl([in] VARIANT Index, [out, retval] double* Value);
+  [id(0x000000EB)]
+  HRESULT _stdcall GetFVstr([in] VARIANT Index, [out, retval] BSTR* Value);
+  [id(0x000000EC)]
+  HRESULT _stdcall SetFV([in] VARIANT Index, [in] VARIANT Value);
 
 };
 [
@@ -1072,6 +1082,8 @@ interface IField : IDispatch
   HRESULT _stdcall SetNull([in] VARIANT_BOOL Value);
   [id(0x000000D1)]
   HRESULT _stdcall SetValue([in] VARIANT Value);
+  [id(0x000000D7)]
+  HRESULT _stdcall SetBin([in] BSTR Value);
   [id(0x000000D2)]
   HRESULT _stdcall I([out, retval] int* Value);
   [id(0x000000D3)]
