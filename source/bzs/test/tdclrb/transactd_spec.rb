@@ -224,7 +224,7 @@ def testVersion()
   expect(client_ver.minorVersion.to_s).to eq Transactd::CPP_INTERFACE_VER_MINOR.to_s
   expect(client_ver.type.chr).to eq 'N'
   my5x = (server_ver.majorVersion == 5) && (server_ver.minorVersion >= 5)
-  maria10 = (server_ver.majorVersion == 10) && (server_ver.minorVersion == 0)
+  maria10 = (server_ver.majorVersion == 10) && (server_ver.minorVersion <= 1)
   expect(my5x || maria10).to be true
   expect(server_ver.type.chr).to eq 'M'
   expect(engine_ver.majorVersion.to_s).to eq Transactd::TRANSACTD_VER_MAJOR.to_s
@@ -1875,7 +1875,7 @@ def testLogin()
   # invalid database name
   testDropDatabase(db)
   db.disconnect()
-  expect(db.stat()).to eq 0
+  expect(db.stat()).to eq 1
   db.connect(URL_DB)
   expect(db.stat()).to eq (Transactd::ERROR_NO_DATABASE)
   db.disconnect()

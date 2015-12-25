@@ -271,21 +271,15 @@ bool createTestDataBase(client::database* db, const _TCHAR* uri)
         client::dbdef* def = db->dbDef();
 
         tabledef td;
-        memset(&td, 0, sizeof(td));
         td.setTableName(_T("user"));
         td.setFileName(_T("user.dat"));
         td.id = 1;
-        td.primaryKeyNum = -1;
-        td.parentKeyNum = -1;
-        td.replicaKeyNum = -1;
-        td.pageSize = 2048;
         def->insertTable(&td);
 
         fielddef* fd = def->insertField(td.id, 0);
         fd->setName(_T("id"));
         fd->type = ft_integer;
         fd->len = (ushort_td)4;
-        def->updateTableDef(1);
 
         fd = def->insertField(td.id, 1);
         fd->setName(_T("name"));
@@ -294,9 +288,7 @@ bool createTestDataBase(client::database* db, const _TCHAR* uri)
         else
             fd->type = ft_zstring;
 
-        fd->len = (ushort_td)100;
-        def->updateTableDef(td.id);
-
+        fd->setLenByCharnum(49);
         keydef* kd = def->insertKey(td.id, 0);
         kd->segments[0].fieldNum = 0;
         kd->segments[0].flags.bit8 = 1; // extend key type
@@ -305,7 +297,9 @@ bool createTestDataBase(client::database* db, const _TCHAR* uri)
 
         td.primaryKeyNum = 0;
         def->updateTableDef(td.id);
-        return true;
+        if (def->stat())
+            printf("crate daatabse erorr No:%d\r\n", def->stat());
+        return def->stat() == 0;
     }
     else
         printf("open daatabse erorr No:%d\r\n", db->stat());
@@ -392,61 +386,64 @@ int _tmain(int argc, _TCHAR* argv[])
     printHeader(uri, count);
 
     if (!db->open(uri, TYPE_BDF, TD_OPEN_NORMAL, _T(""), _T("")))
-        printf("open table erorr No:%d\r\n", db->stat());
+        printf("open database erorr No:%d\r\n", db->stat());
     else
     {
         client::table* tb = openTable(db, _T("user"), TD_OPEN_NORMAL);
-
-        if ((exeType == -1) || (exeType == 0))
+        if (tb)
         {
-            if (insertBeforeNoDelete || deleteAll(db, tb, start, end))
+            if ((exeType == -1) || (exeType == 0))
+            {
+                if (insertBeforeNoDelete || deleteAll(db, tb, start, end))
+                    benchmark::report(
+                        boost::bind(Inserts, db, tb, start, end, USE_NORMAL, 1),
+                        ": Insert");
+                else
+                    printf("deleteAll erorr No:%d\r\n", tb->stat());
+            }
+            if ((exeType == -1) || (exeType == 1))
+            {
+                if (insertBeforeNoDelete || deleteAll(db, tb, start, end))
+                    benchmark::report(
+                        boost::bind(Inserts, db, tb, start, end, USE_TRANS, 20),
+                        ": Insert in transaction. 20rec x 1000times.");
+                else
+                    printf("deleteAll erorr No:%d\r\n", tb->stat());
+            }
+            if ((exeType == -1) || (exeType == 2))
+            {
+                if (insertBeforeNoDelete || deleteAll(db, tb, start, end))
+                    benchmark::report(
+                        boost::bind(Inserts, db, tb, start, end, USE_BALKINS, 20),
+                        ": Insert by bulkmode. 20rec x 1000times.");
+                else
+                    printf("deleteAll erorr No:%d\r\n", tb->stat());
+            }
+            if ((exeType == -1) || (exeType == 3))
+                benchmark::report(boost::bind(Read, db, tb, start, end, USE_NORMAL),
+                                  ": read each record.");
+            if ((exeType == -1) || (exeType == 4))
                 benchmark::report(
-                    boost::bind(Inserts, db, tb, start, end, USE_NORMAL, 1),
-                    ": Insert");
-            else
-                printf("deleteAll erorr No:%d\r\n", tb->stat());
-        }
-        if ((exeType == -1) || (exeType == 1))
-        {
-            if (insertBeforeNoDelete || deleteAll(db, tb, start, end))
+                    boost::bind(Read, db, tb, start, end, USE_SNAPSHOT),
+                    ": read each record with snapshpot.");
+            if ((exeType == -1) || (exeType == 5))
                 benchmark::report(
-                    boost::bind(Inserts, db, tb, start, end, USE_TRANS, 20),
-                    ": Insert in transaction. 20rec x 1000times.");
-            else
-                printf("deleteAll erorr No:%d\r\n", tb->stat());
-        }
-        if ((exeType == -1) || (exeType == 2))
-        {
-            if (insertBeforeNoDelete || deleteAll(db, tb, start, end))
+                    boost::bind(Reads, db, tb, start, end, 20, USE_NORMAL),
+                    ": read range. 20rec x 1000times.");
+            if ((exeType == -1) || (exeType == 6))
                 benchmark::report(
-                    boost::bind(Inserts, db, tb, start, end, USE_BALKINS, 20),
-                    ": Insert by bulkmode. 20rec x 1000times.");
-            else
-                printf("deleteAll erorr No:%d\r\n", tb->stat());
-        }
-        if ((exeType == -1) || (exeType == 3))
-            benchmark::report(boost::bind(Read, db, tb, start, end, USE_NORMAL),
-                              ": read each record.");
-        if ((exeType == -1) || (exeType == 4))
-            benchmark::report(
-                boost::bind(Read, db, tb, start, end, USE_SNAPSHOT),
-                ": read each record with snapshpot.");
-        if ((exeType == -1) || (exeType == 5))
-            benchmark::report(
-                boost::bind(Reads, db, tb, start, end, 20, USE_NORMAL),
-                ": read range. 20rec x 1000times.");
-        if ((exeType == -1) || (exeType == 6))
-            benchmark::report(
-                boost::bind(Reads, db, tb, start, end, 20, USE_SNAPSHOT),
-                ": read range with snapshpot. 20rec x 1000times.");
-        if ((exeType == -1) || (exeType == 7))
-            benchmark::report(
-                boost::bind(Updates, db, tb, start, end, USE_NORMAL, 1),
-                ": update.");
-        if ((exeType == -1) || (exeType == 8))
-            benchmark::report(
-                boost::bind(Updates, db, tb, start, end, USE_TRANS, 20),
-                ": update in transaction. 20rec x 1000times.");
+                    boost::bind(Reads, db, tb, start, end, 20, USE_SNAPSHOT),
+                    ": read range with snapshpot. 20rec x 1000times.");
+            if ((exeType == -1) || (exeType == 7))
+                benchmark::report(
+                    boost::bind(Updates, db, tb, start, end, USE_NORMAL, 1),
+                    ": update.");
+            if ((exeType == -1) || (exeType == 8))
+                benchmark::report(
+                    boost::bind(Updates, db, tb, start, end, USE_TRANS, 20),
+                    ": update in transaction. 20rec x 1000times.");
+        }else
+            printf("open table erorr No:%d\r\n", db->stat());
     }
     client::database::destroy(db);
     printTail();
