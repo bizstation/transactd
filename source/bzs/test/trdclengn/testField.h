@@ -2939,7 +2939,7 @@ void doTestCompStringOne(const char* lt , const char* rt, int ret, int len,
     strcpy(l + sizeByte, lt); strcpy(r + sizeByte, rt);
     if (sizeByte)
     {
-        l[0] =  strlen(lt);
+        l[0] =  (char)strlen(lt);
         r[0] = (char)len;
     }
     int v = compFunc((const char*)l, (const char*)r, len);
