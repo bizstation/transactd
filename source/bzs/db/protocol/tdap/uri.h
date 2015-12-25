@@ -117,13 +117,15 @@ inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf, size_t size)
     if (st)
     {
         st = _tcsstr(st + 3, _T("/"));
-        if (st)
+        if (st && *(++st))
         {
-            const _TCHAR* en = _tcsstr(st + 1, _T("?"));
+            const _TCHAR* en = _tcsstr(st, _T("?"));
+            if (!en)
+                en = _tcslen(st) + st;
             if (en && en > st)
             {
-                _tcsncpy_s(buf, size, st + 1, en - (st + 1));
-                buf[en - (st + 1)] = 0x00;
+                _tcsncpy_s(buf, size, st, en - st);
+                buf[en - st] = 0x00;
             }
         }
     }
