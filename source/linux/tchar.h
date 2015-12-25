@@ -402,7 +402,7 @@ typedef char _TUCHAR;
 #define _i64tot _i64toa
 #define _i64tot_s _i64toa_s
 #define _ui64tot _ui64toa
-#define _ui64tot_s _i64toa_s
+#define _ui64tot_s _ui64toa_s
 #define _tcsnccoll _strncoll
 #define _tcsncoll _strncoll
 #define _tcsncicoll _strnicoll
