@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014,2015 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -17,10 +17,13 @@
    02111-1307, USA.
 =================================================================*/
 #pragma hdrstop
+#pragma warning(disable : 4996)
 #include "groupQuery.h"
 #include "recordsetImple.h"
 #include "filter.h"
+#include <bzs/db/protocol/tdap/fieldComp.h>
 #include <boost/algorithm/string.hpp>
+#pragma warning(default : 4996)
 
 #pragma package(smart_init)
 
@@ -38,11 +41,19 @@ namespace client
 // ---------------------------------------------------------------------------
 // struct fieldNamesImple
 // ---------------------------------------------------------------------------
+struct valueItem
+{
+    std::_tstring value;
+    bool null;
+};
+
 struct fieldNamesImple
 {
-    std::vector<std::_tstring> keyFields;
+    std::vector<valueItem> keyFields;
     fieldNamesImple() {}
 };
+
+
 
 // ---------------------------------------------------------------------------
 // class fieldNames
@@ -87,6 +98,14 @@ fieldNames& fieldNames::reset()
     return *this;
 }
 
+void fieldNames::doAddValue(const _TCHAR* v, bool isNull)
+{
+    valueItem itm;
+    itm.value = v;
+    itm.null = isNull;
+    m_impl->keyFields.push_back(itm);
+}
+
 fieldNames& fieldNames::keyField(const _TCHAR* name, const _TCHAR* name1,
                                  const _TCHAR* name2, const _TCHAR* name3,
                                  const _TCHAR* name4, const _TCHAR* name5,
@@ -96,27 +115,49 @@ fieldNames& fieldNames::keyField(const _TCHAR* name, const _TCHAR* name1,
 {
     m_impl->keyFields.clear();
     if (name)
-        m_impl->keyFields.push_back(name);
-    if (name1)
-        m_impl->keyFields.push_back(name1);
-    if (name2)
-        m_impl->keyFields.push_back(name2);
-    if (name3)
-        m_impl->keyFields.push_back(name3);
-    if (name4)
-        m_impl->keyFields.push_back(name4);
-    if (name5)
-        m_impl->keyFields.push_back(name5);
-    if (name6)
-        m_impl->keyFields.push_back(name6);
-    if (name7)
-        m_impl->keyFields.push_back(name7);
-    if (name8)
-        m_impl->keyFields.push_back(name8);
-    if (name9)
-        m_impl->keyFields.push_back(name9);
-    if (name10)
-        m_impl->keyFields.push_back(name10);
+    {
+        doAddValue(name, false);
+        if (name1)
+        {
+            doAddValue(name1, false);
+            if (name2)
+            {
+                doAddValue(name2, false);
+                if (name3)
+                {
+                    doAddValue(name3, false);
+                    if (name4)
+                    {
+                        doAddValue(name4, false);
+                        {
+                            if (name5)
+                            {
+                                doAddValue(name5, false);
+                                if (name6)
+                                {
+                                    doAddValue(name6, false);
+                                    if (name7)
+                                    {
+                                        doAddValue(name7, false);
+                                        if (name8)
+                                        {
+                                           doAddValue(name8, false);
+                                            if (name9)
+                                            {
+                                                doAddValue(name9, false);
+                                                if (name10)
+                                                    doAddValue(name10, false);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     return *this;
 }
 
@@ -128,24 +169,62 @@ int fieldNames::count() const
 const _TCHAR* fieldNames::getValue(int index) const
 {
     assert(index >= 0 && index < count());
-    return m_impl->keyFields[index].c_str();
+    return m_impl->keyFields[index].value.c_str();
 }
 
 const _TCHAR* fieldNames::operator[](int index) const
 {
     assert(index >= 0 && index < count());
-    return m_impl->keyFields[index].c_str();
+    return m_impl->keyFields[index].value.c_str();
 }
 
 void fieldNames::addValue(const _TCHAR* v)
 {
-    m_impl->keyFields.push_back(v);
+    doAddValue(v, false);
 }
 
 void fieldNames::addValues(const _TCHAR* values, const _TCHAR* delmi)
 {
-    boost::algorithm::split(m_impl->keyFields, values, boost::is_any_of(delmi));
+    std::vector<std::_tstring> tmp;
+    boost::algorithm::split(tmp, values, boost::is_any_of(delmi));
+    valueItem itm;
+    itm.null = false;
+    for (int i=0;i < (int)tmp.size(); ++i)
+    {
+        itm.value = tmp[i];
+        m_impl->keyFields.push_back(itm);
+    }
+
 }
+
+// ---------------------------------------------------------------------------
+// class fieldValues
+// ---------------------------------------------------------------------------
+fieldValues::fieldValues() : fieldNames() {}
+
+fieldValues::fieldValues(const fieldValues& r): fieldNames(r) {}
+
+fieldValues& fieldValues::operator=(const fieldValues& r)
+{
+    if (this != &r)
+    {
+        fieldNames::operator=(r);
+    }
+    return *this;
+}
+
+void fieldValues::addValue(const _TCHAR* v, bool isNull)
+{
+    doAddValue(v, isNull);
+}
+
+bool fieldValues::isNull(int index) const
+{
+    assert(index >= 0 && index < count());
+    return m_impl->keyFields[index].null;
+
+}
+
 
 // ---------------------------------------------------------------------------
 // struct recordsetQueryImple
@@ -155,18 +234,25 @@ struct recordsetQueryImple
     row_ptr row;
     struct compItem
     {
-        compFieldFunc compFunc;
+        judgeFunc isMatchFunc;
+        comp1Func compFunc;
         short index;
-        unsigned char compType;
+        uchar_td compType;
         char combine;
+        struct
+        {
+            bool nullable : 1;
+            bool nulllog  : 1;
+        };
     };
     std::vector<compItem> compItems;
-
-    short endIndex;
     fielddefs compFields;
-    recordsetQueryImple() : row(NULL) {}
+    short endIndex;
+    bool mysqlnull;
+
+    recordsetQueryImple() : row(NULL),mysqlnull(false) {}
     recordsetQueryImple(const recordsetQueryImple& r)
-        : row(r.row), compItems(r.compItems), compFields(r.compFields)
+        : row(r.row), compItems(r.compItems), compFields(r.compFields), mysqlnull(r.mysqlnull)
     {
         if (row)
             row->addref();
@@ -219,6 +305,7 @@ recordsetQuery::~recordsetQuery()
 
 void recordsetQuery::init(const fielddefs* fdinfo)
 {
+    m_imple->mysqlnull = fdinfo->mysqlnullEnable();
     const std::vector<std::_tstring>& tokns = getWheres();
     m_imple->compFields.clear();
     m_imple->compItems.clear();
@@ -226,9 +313,12 @@ void recordsetQuery::init(const fielddefs* fdinfo)
     {
         recordsetQueryImple::compItem itm;
         itm.index = fdinfo->indexByName(tokns[i].c_str());
+        if (itm.index >= 0)
+            itm.nullable = (*fdinfo)[itm.index].isNullable();
         m_imple->compItems.push_back(itm);
-        m_imple->compFields.push_back(&((*fdinfo)[itm.index]), true /*rePosition*/);
+        m_imple->compFields.push_back(&((*fdinfo)[itm.index]));
     }
+    m_imple->compFields.calcFieldPos(0 /*startIndex*/, true);
     m_imple->row = memoryRecord::create(m_imple->compFields);
     m_imple->row->addref();
     m_imple->row->setRecordData(autoMemory::create(), 0, 0, &m_imple->endIndex, true);
@@ -241,16 +331,23 @@ void recordsetQuery::init(const fielddefs* fdinfo)
         fd = tokns[i + 2].c_str();
         bool part = fd.isCompPartAndMakeValue();
         itm.compType = getFilterLogicTypeCode(tokns[i + 1].c_str());
+        eCompType log = (eCompType)(itm.compType & 0xf);
+        itm.nulllog = ((log == eIsNull) || (log == eIsNotNull));
         if (!part)
             itm.compType |= CMPLOGICAL_VAR_COMP_ALL;
         fielddef& fdd = const_cast<fielddef&>(m_imple->compFields[index]);
-        fdd.len = compDataLen(m_imple->compFields[index],
-                                    (const uchar_td*)fd.ptr(), part);
-        itm.compFunc = fd.getCompFunc(itm.compType);
+        fdd.len = m_imple->compFields[index].compDataLen((const uchar_td*)fd.ptr(), part);
+        uchar_td type = fdd.type; 
+        if (fdd.isLegacyTimeFormat())
+        {
+            if (type == ft_mytime) type = ft_mytime_num_cmp; 
+            if (type == ft_mydatetime) type = ft_mydatetime_num_cmp; 
+            if (type == ft_mytimestamp) type = ft_mytimestamp_num_cmp; 
+        }
 
-        // When use wide string functions, len convert to wide char num. 
-        if ((itm.compFunc == compiWString) || (itm.compFunc == compWString))
-            fdd.len /= sizeof(char16_t);
+        itm.compFunc = getCompFunc(type, fdd.len, itm.compType, 
+                fdd.varLenBytes() + fdd.blobLenBytes());
+        itm.isMatchFunc = getJudgeFunc((eCompType)itm.compType);
 
         if (i + 3 < (int)tokns.size())
         {
@@ -266,44 +363,22 @@ void recordsetQuery::init(const fielddefs* fdinfo)
     }
 }
 
-bool recordsetQuery::isMatch(int ret, unsigned char compType) const
-{
-    compType &= 0xf; // lower than 15
-    switch ((eCompType)compType)
-    {
-    case eEqual:
-    case eBitAnd:
-        return (ret == 0);
-    case eGreaterEq:
-        return (ret >= 0);
-    case eLessEq:
-        return (ret <= 0);
-    case eGreater:
-        return (ret > 0);
-    case eLess:
-        return (ret < 0);
-    case eNotEq:
-    case eNotBitAnd:
-        return (ret != 0);
-    }
-    return false;
-}
-
 bool recordsetQuery::match(const row_ptr row) const
 {
     for (int i = 0; i < (int)m_imple->compItems.size(); ++i)
     {
         recordsetQueryImple::compItem& itm = m_imple->compItems[i];
-        bool ret = isMatch(
-                itm.compFunc((*row)[itm.index], (*m_imple->row)[i], itm.compType)
-                ,itm.compType);
+        bool ret;
+        int nullJudge = 2;
+        const field& f = (*row)[itm.index];
+        if (m_imple->mysqlnull && (itm.nullable || itm.nulllog))
+            nullJudge = f.nullComp((eCompType)(itm.compType & 0xf));
+        if (nullJudge < 2)
+            ret = (nullJudge == 0) ? true : false;
+        else
+            ret = itm.isMatchFunc(itm.compFunc((const char*)f.ptr(), (const char*)((*m_imple->row)[i].ptr()), (*m_imple->row)[i].len()));
 
-        if (itm.combine == eCend)
-            return ret;
-        if (ret && itm.combine == eCor)
-            return true;
-        if (!ret && itm.combine == eCand)
-            return false;
+        if (isEndComp(itm.combine, ret)) return ret;
     }
     assert(0);
     return false;
@@ -330,7 +405,7 @@ class groupQueryImple : public fieldNames
             bool enabled = false;
             for (int j = 0; j < (int)m_impl->keyFields.size(); ++j)
             {
-                if (m_impl->keyFields[j] == fds[i].name())
+                if (m_impl->keyFields[j].value == fds[i].name())
                 {
                     enabled = true;
                     break;
@@ -386,17 +461,16 @@ public:
         std::vector<recordsetImple::key_type> keyFields;
 
         for (int i = 0; i < (int)m_impl->keyFields.size(); ++i)
-            keyFields.push_back(resolvKeyValue(mdls, m_impl->keyFields[i]));
+            keyFields.push_back(resolvKeyValue(mdls, m_impl->keyFields[i].value));
 
         for (int i = 0; i < (int)m_funcs.size(); ++i)
         {
-
             groupFuncBase* f = m_funcs[i];
             f->init(mdls.fieldDefs());
 
             if (f->resultKey() == (int)mdls.fieldDefs()->size())
                 mdls.appendField(f->resultName(), f->resultType(),
-                                  f->resultLen());
+                                     f->resultLen(), f->decimals());
         }
 
         grouping_comp<recordsetImple> groupingComp(mdls, keyFields);
@@ -407,8 +481,7 @@ public:
         while (it != ite)
         {
             bool found = false;
-            i = binary_search(n, index, 0, (int)index.size(), groupingComp,
-                              found);
+            i = binary_search(n, index, 0, (int)index.size(), groupingComp, found);
             if (!found)
                 index.insert(index.begin() + i, n);
             for (int j = 0; j < (int)m_funcs.size(); ++j)
@@ -428,12 +501,13 @@ public:
 
             for (int j = 0; j < (int)m_funcs.size(); ++j)
             {
-                if (m_funcs[j]->resultType() == ft_float)
+                if (m_funcs[j]->isNull(i))
+                    (*cur).setInvalidMemblock(m_funcs[j]->resultKey());
+                else if (m_funcs[j]->resultType() == ft_float)
                     setValue(cur, m_funcs[j]->resultKey(), m_funcs[j]->numericResult(i));
                 else
                     memcpy((*cur)[m_funcs[j]->resultKey()].ptr() ,
-                            m_funcs[j]->stringResult(i),
-                            m_funcs[j]->resultLen());
+                            m_funcs[j]->stringResult(i), m_funcs[j]->resultLen());
             }
             mdls.push_back(cur);
         }
@@ -534,10 +608,12 @@ private:
     friend class groupQueryImple;
     fieldNames m_targetNames;
     std::_tstring m_resultName;
-    int m_resultKey;
     std::vector<int> m_targetKeys;
+    int m_resultKey;
     ushort_td m_resultLen;
     uchar_td m_resultType;
+    uchar_td m_decimals;
+    bool m_insertFlag;
     void clearStrings()
     {
         std::vector<unsigned char*>::iterator it = m_strings.begin();
@@ -561,33 +637,32 @@ public:
     std::vector<groupFuncBase::numeric_type> m_values;
     std::vector<__int64> m_counts;
     std::vector<unsigned char*> m_strings;
+    std::vector<bool> m_nulls;
 
     inline groupFuncBaseImple() : m_resultKey(-1),
-                               m_resultLen(sizeof(double)),
-                               m_resultType(ft_float)
+                               m_resultLen(sizeof(double)),  m_resultType(ft_float),
+                               m_decimals(0)
+
     {
     }
 
-    inline groupFuncBaseImple(const fieldNames& targetNames,
-                              const _TCHAR* resultName = NULL)
-                             : m_resultKey(-1),
-                               m_resultLen(sizeof(double)),
-                               m_resultType(ft_float)
+    inline groupFuncBaseImple(const fieldNames& targetNames, const _TCHAR* resultName = NULL)
+        : m_resultKey(-1), m_resultLen(sizeof(double)), m_resultType(ft_float), m_decimals(0)
+                               
     {
         m_targetNames = targetNames;
         m_resultName = (m_targetNames.count() &&
                         ((resultName == NULL) || resultName[0] == 0x00))
-                           ? targetNames[0]
-                           : resultName;
+                           ? targetNames[0] : resultName;
     }
 
     inline groupFuncBaseImple(const groupFuncBaseImple& r)
         : m_targetNames(r.m_targetNames), m_resultName(r.m_resultName),
           m_resultKey(r.m_resultKey), 
-          m_resultLen(r.m_resultLen), m_resultType(r.m_resultType), 
-          m_values(r.m_values), m_counts(r.m_counts)
+          m_resultLen(r.m_resultLen), m_resultType(r.m_resultType), m_decimals(r.m_decimals),
+          m_values(r.m_values), m_counts(r.m_counts),m_nulls(r.m_nulls)
     {
-        copyStrings(r.m_strings);  
+        copyStrings(r.m_strings);
     }
 
     groupFuncBaseImple& operator=(const groupFuncBaseImple& r)
@@ -599,8 +674,10 @@ public:
             m_resultKey = r.m_resultKey;
             m_resultType = r.m_resultType; 
             m_resultLen = r.m_resultLen;
+            m_decimals = r.m_decimals;
             m_values = r.m_values;
             m_counts = r.m_counts;
+            m_nulls = r.m_nulls;
             m_strings.clear();
             copyStrings(r.m_strings); 
         }
@@ -618,9 +695,9 @@ public:
         m_resultLen = len;
     }
 
-    inline uchar_td resultType() { return m_resultType; }
+    inline uchar_td resultType() const { return m_resultType; }
 
-    inline ushort_td resultLen() { return m_resultLen; }
+    inline ushort_td resultLen() const { return m_resultLen; }
 
     inline void appendStringBuffer(int index)
     {
@@ -643,15 +720,26 @@ public:
         }
         else
             appendStringBuffer(index);
+        std::vector<bool>::iterator it = m_nulls.begin();
+        if (index)
+            it += index;
+        m_nulls.insert(it, true);
+        m_insertFlag = true;
     }
 
     inline void init(const fielddefs* fdinfo)
     {
         m_targetKeys.clear();
         for (int i = 0; i < m_targetNames.count(); ++i)
-            m_targetKeys.push_back((m_targetNames[i][0] != 0x00)
-                                       ? fdinfo->indexByName(m_targetNames[i])
-                                       : -1);
+        {
+            int index = (m_targetNames[i][0] != 0x00)
+                                       ? fdinfo->indexByName(m_targetNames[i]) : -1;
+            m_targetKeys.push_back(index);
+
+            //Auto set decimals
+            if (index != -1)
+                m_decimals = std::max<uchar_td>(m_decimals, (*fdinfo)[index].decimals);
+        }
         m_resultKey = fdinfo->indexByName(m_resultName);
         if (m_resultKey == -1)
             m_resultKey = (int)fdinfo->size();
@@ -687,6 +775,15 @@ public:
     }
 
     inline int targetKeys() const { return (int)m_targetKeys.size(); }
+
+    inline bool insertFlag() const { return m_insertFlag; }
+
+    inline void clearFlag() { m_insertFlag = false;}
+
+    inline void setDecimals(uchar_td v) { m_decimals = v; }
+
+    inline uchar_td decimals() const { return m_decimals; }
+
 };
 
 // ---------------------------------------------------------------------------
@@ -727,10 +824,6 @@ void groupFuncBase::initResultVariable(int index)
     m_imple->initResultVariable(index);
 }
 
-void groupFuncBase::doCalc(const row_ptr& row, int groupIndex)
-{
-}
-
 void groupFuncBase::doInit(const fielddefs* fdinfo)
 {
     if (whereTokens() != 0)
@@ -742,6 +835,16 @@ void groupFuncBase::doInit(const fielddefs* fdinfo)
 void groupFuncBase::init(const fielddefs* fdinfo)
 {
     doInit(fdinfo);
+}
+
+bool groupFuncBase::insertFlag() const
+{
+    return m_imple->insertFlag();
+}
+
+void groupFuncBase::clearInsertFlag()
+{
+    m_imple->clearFlag();
 }
 
 groupFuncBase& groupFuncBase::operator=(const recordsetQuery& v)
@@ -770,6 +873,11 @@ int groupFuncBase::resultKey() const
     return m_imple->resultKey();
 }
 
+bool groupFuncBase::isNull(int index) const
+{
+    return m_imple->m_nulls[index];
+}
+
 void groupFuncBase::reset()
 {
     recordsetQuery::reset();
@@ -781,10 +889,25 @@ void groupFuncBase::doReset()
     m_imple->reset();
 }
 
+void groupFuncBase::doCalcEachkey(const field& fd, int index) {}
+
+void groupFuncBase::doCalc(const row_ptr& row, int index)
+{
+    for (int i = 0; i < m_imple->targetKeys(); ++i)
+    {
+        const field& fd = (*row)[m_imple->targetKey(i)];
+        if (!fd.isNull())
+        {
+            doCalcEachkey(fd, index);
+            m_imple->m_nulls[index] = false;
+        }
+    }
+}
+
 void groupFuncBase::operator()(const row_ptr& row, int index, bool insert)
 {
     if (insert)
-        initResultVariable(index); // setNullValue
+        initResultVariable(index);
     bool flag = (whereTokens() == 0);
 
     if (!flag)
@@ -813,6 +936,8 @@ uchar_td groupFuncBase::resultType() const
     return m_imple->resultType();
 }
 
+uchar_td groupFuncBase::decimals() const { return m_imple->decimals();}
+
 // ---------------------------------------------------------------------------
 // class sum
 // ---------------------------------------------------------------------------
@@ -826,12 +951,10 @@ sum::sum(const fieldNames& targetNames, const _TCHAR* resultName)
 {
 }
 
-void sum::doCalc(const row_ptr& row, int index)
+void sum::doCalcEachkey(const field& fd, int index)
 {
     numeric_type tmp = 0;
-    for (int i = 0; i < m_imple->targetKeys(); ++i)
-        m_imple->m_values[index] +=
-            fieldValue((*row)[m_imple->targetKey(i)], tmp);
+    m_imple->m_values[index] += fieldValue(fd, tmp);
 }
 
 groupFuncBase* sum::clone()
@@ -849,14 +972,36 @@ count* count::create(const _TCHAR* resultName)
     return new count(resultName);
 }
 
+count* count::create(const fieldNames& targetNames, const _TCHAR* resultName)
+{
+    return new count(targetNames, resultName);
+}
+
 count::count(const _TCHAR* resultName) : groupFuncBase()
 {
     setResultName(resultName);
 }
 
-void count::doCalc(const row_ptr& row, int index)
+count::count(const fieldNames& targetNames, const _TCHAR* resultName)
+     : groupFuncBase(targetNames, resultName) {}
+
+void count::initResultVariable(int index)
+{
+    groupFuncBase::initResultVariable(index);
+    m_imple->m_nulls[index] = false;
+}
+
+void count::doCalcEachkey(const field& fd, int index)
 {
     m_imple->m_values[index] = m_imple->m_values[index] + 1;
+}
+
+void count::doCalc(const row_ptr& row, int index)
+{
+    if (m_imple->targetKeys())
+        groupFuncBase::doCalc(row, index);
+    else
+        m_imple->m_values[index] = m_imple->m_values[index] + 1;
 }
 
 groupFuncBase* count::clone()
@@ -874,26 +1019,35 @@ avg* avg::create(const fieldNames& targetNames, const _TCHAR* resultName)
     return new avg(targetNames, resultName);
 }
 
-avg::avg(const fieldNames& targetNames, const _TCHAR* resultName)
-    : sum(targetNames, resultName)
+avg::avg() : groupFuncBase()
 {
+     m_imple->setDecimals(4);
+}
+
+avg::avg(const fieldNames& targetNames, const _TCHAR* resultName)
+    : groupFuncBase(targetNames, resultName)
+{
+    m_imple->setDecimals(4);
 }
 
 void avg::initResultVariable(int index)
 {
-    sum::initResultVariable(index);
+    groupFuncBase::initResultVariable(index);
     m_imple->m_counts.insert(m_imple->m_counts.begin() + index, 0);
 }
 
-void avg::doCalc(const row_ptr& row, int index)
+void avg::doCalcEachkey(const field& fd, int index)
 {
-    sum::doCalc(row, index);
+    numeric_type tmp = 0;
+    m_imple->m_values[index] += fieldValue(fd, tmp);
     m_imple->m_counts[index] = m_imple->m_counts[index] + 1;
 }
 
 avg::numeric_type avg::numericResult(int index) const
 {
-    return m_imple->m_values[index] / m_imple->m_counts[index];
+    if (m_imple->m_counts[index])
+        return m_imple->m_values[index] / m_imple->m_counts[index];
+    return 0;
 }
 
 groupFuncBase* avg::clone()
@@ -912,20 +1066,17 @@ min* min::create(const fieldNames& targetNames, const _TCHAR* resultName)
 }
 
 min::min(const fieldNames& targetNames, const _TCHAR* resultName)
-    : sum(targetNames, resultName), m_flag(true)
+    : groupFuncBase(targetNames, resultName)
 {
 }
 
-void min::doCalc(const row_ptr& row, int index)
+void min::doCalcEachkey(const field& fd, int index)
 {
     numeric_type tmp = 0;
-    for (int i = 0; i < m_imple->targetKeys(); ++i)
-    {
-        tmp = fieldValue((*row)[m_imple->targetKey(i)], tmp);
-        if (m_flag || m_imple->m_values[index] > tmp)
-            m_flag = false;
+    tmp = fieldValue(fd, tmp);
+    if (insertFlag() || (tmp < m_imple->m_values[index]))
         m_imple->m_values[index] = tmp;
-    }
+    clearInsertFlag();
 }
 
 groupFuncBase* min::clone()
@@ -938,10 +1089,7 @@ groupFuncBase* min::clone()
 min& min::operator=(const min& r)
 {
     if (this != &r)
-    {
-        m_flag = r.m_flag;
         groupFuncBase::operator=(r);
-    }
     return *this;
 
 }
@@ -955,20 +1103,17 @@ max* max::create(const fieldNames& targetNames, const _TCHAR* resultName)
 }
 
 max::max(const fieldNames& targetNames, const _TCHAR* resultName)
-    : sum(targetNames, resultName), m_flag(true)
+    : groupFuncBase(targetNames, resultName)
 {
 }
 
-void max::doCalc(const row_ptr& row, int index)
+void max::doCalcEachkey(const field& fd, int index)
 {
     numeric_type tmp = 0;
-    for (int i = 0; i < m_imple->targetKeys(); ++i)
-    {
-        tmp = fieldValue((*row)[m_imple->targetKey(i)], tmp);
-        if (m_flag || m_imple->m_values[index] < tmp)
-            m_flag = false;
+    tmp = fieldValue(fd, tmp);
+    if (insertFlag() || (tmp > m_imple->m_values[index]))
         m_imple->m_values[index] = tmp;
-    }
+    clearInsertFlag();
 }
 
 groupFuncBase* max::clone()
@@ -981,10 +1126,7 @@ groupFuncBase* max::clone()
 max& max::operator=(const max& r)
 {
     if (this != &r)
-    {
-        m_flag = r.m_flag;
         groupFuncBase::operator=(r);
-    }
     return *this;
 }
 
@@ -1014,21 +1156,29 @@ void last::doInit(const fielddefs* fdinfo)
     }
 }
 
-void last::doCalc(const row_ptr& row, int index)
+void last::storeValue(const row_ptr& row, int index)
 {
-    if (m_imple->targetKeys())
+    const field& fd = (*row)[m_imple->targetKey(0)];
+    if (!fd.isNull())
     {
         numeric_type tmp = 0;
         if (m_imple->resultType() == ft_float)
-            m_imple->m_values[index] =
-                fieldValue((*row)[m_imple->targetKey(0)], tmp);
+            m_imple->m_values[index] = fieldValue(fd, tmp);
         else
         {
             ushort_td len = m_imple->resultLen();
             unsigned char* p = m_imple->m_strings[index];
-            memcpy(p, (*row)[m_imple->targetKey(0)].ptr(), len);
+            memcpy(p, fd.ptr(), len);
         }
+        m_imple->m_nulls[index] = false;
+        clearInsertFlag();
     }
+}
+
+void last::doCalc(const row_ptr& row, int index)
+{
+    if (m_imple->targetKeys())
+        storeValue(row, index);
 }
 
 groupFuncBase* last::clone()
@@ -1047,30 +1197,15 @@ first* first::create(const fieldNames& targetNames, const _TCHAR* resultName)
 }
 
 first::first(const fieldNames& targetNames, const _TCHAR* resultName)
-    : last(targetNames, resultName),m_readed(false)
+    : last(targetNames, resultName)
 {
 
 }
 
 void first::doCalc(const row_ptr& row, int index)
 {
-    if (m_readed == false)
-    {
-        if (m_imple->targetKeys())
-        {
-            numeric_type tmp = 0;
-            if (m_imple->resultType() == ft_float)
-                m_imple->m_values[index] =
-                    fieldValue((*row)[m_imple->targetKey(0)], tmp);
-            else
-            {
-                ushort_td len = m_imple->resultLen();
-                unsigned char* p = m_imple->m_strings[index];
-                memcpy(p, (*row)[m_imple->targetKey(0)].ptr(), len);
-            }
-        }
-        m_readed = true;
-    }
+    if (insertFlag() && m_imple->targetKeys())
+        storeValue(row, index);
 }
 
 groupFuncBase* first::clone()
@@ -1082,17 +1217,13 @@ groupFuncBase* first::clone()
 
 void  first::doReset()
 {
-    m_readed = false;
     groupFuncBase::reset();
 }
 
 first& first::operator=(const first& r)
 {
     if (this != &r)
-    {
-        m_readed = r.m_readed;
         last::operator=(r);
-    }
     return *this;
 }
 
@@ -1102,3 +1233,4 @@ first& first::operator=(const first& r)
 } // namespace protocol
 } // namespace db
 } // namespace bzs
+

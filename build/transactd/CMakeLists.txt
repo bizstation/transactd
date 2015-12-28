@@ -65,6 +65,7 @@ set(${this_target}_SOURCE_FILES
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/errorMessage.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mydebuglog.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlThd.cpp
+  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/tdapCommandExecuter.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/characterset.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/databaseSchema.cpp

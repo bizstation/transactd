@@ -72,10 +72,10 @@ tar xzf mysql-5.6.25.tar.gz
 pluginディレクトリに展開します。
 ```
 cd ~
-wget http://www.bizstation.jp/al/transactd/download/transactd-2.4.2/transactd-source-2.4.2.zip
+wget http://www.bizstation.jp/al/transactd/download/transactd-3.0.0/transactd-source-3.0.0.zip
 #Mac OS Xでは
-#curl -O http://www.bizstation.jp/al/transactd/download/transactd-2.4.2/transactd-source-2.4.2.zip
-unzip -q transactd-source-2.4.2.zip -d transactd
+#curl -O http://www.bizstation.jp/al/transactd/download/transactd-3.0.0/transactd-source-3.0.0.zip
+unzip -q transactd-source-3.0.0.zip -d transactd
 mv transactd ~/mysql-5.6.25/plugin/
 ```
 
@@ -129,10 +129,10 @@ make install
 からソースコードをダウンロードします。
 ```
 cd ~
-wget http://www.bizstation.jp/al/transactd/download/transactd-2.4.2/transactd-source-2.4.2.zip
+wget http://www.bizstation.jp/al/transactd/download/transactd-3.0.0/transactd-source-3.0.0.zip
 #Mac OS Xでは
-#curl curl -O http://www.bizstation.jp/al/transactd/download/transactd-2.4.2/transactd-source-2.4.2.zip
-unzip -q transactd-source-2.4.2.zip -d transactd
+#curl curl -O http://www.bizstation.jp/al/transactd/download/transactd-3.0.0/transactd-source-3.0.0.zip
+unzip -q transactd-source-3.0.0.zip -d transactd
 ```
 
 ### 5-2 CMakeの実行

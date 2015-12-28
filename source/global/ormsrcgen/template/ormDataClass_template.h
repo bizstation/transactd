@@ -5,6 +5,8 @@
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <bzs/db/protocol/tdap/btrDate.h>
+#include <bzs/db/protocol/tdap/myDateTime.h>
+
 namespace td = bzs::db::protocol::tdap;
 
 % nameSpaceBegin %

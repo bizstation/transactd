@@ -21,10 +21,11 @@
 #ifdef __BCPLUSPLUS__
 #pragma warn -8012
 #endif
-
 #include <boost/version.hpp>
 #if (BOOST_VERSION > 104900)
+
 #include <boost/asio.hpp>
+
 #else
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/buffer.hpp>
@@ -107,6 +108,7 @@ public:
     virtual char* read() = 0;
     virtual bool isHandShakable() const = 0;
     virtual const boost::system::error_code& error() const = 0;
+    virtual void* versions() = 0;
 };
 
 #define CONNECTION_FUNCTION_DIRECT_READ 1

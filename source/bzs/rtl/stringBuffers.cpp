@@ -30,6 +30,7 @@ namespace rtl
 {
 
 static const int MEMORY_UNIT = 8192;
+static const size_t MAX_STRING_BUFFER = 196608; // MAX_USHORT * 3
 
 stringBuffer::stringBuffer(size_t size) : m_ptr(NULL), m_len(0), m_pos(0)
 {
@@ -59,6 +60,12 @@ size_t stringBuffer::alloc(size_t size)
 
 size_t stringBuffer::re_alloc(size_t size)
 {
+    if ((size - m_pos) < MAX_STRING_BUFFER && m_len > MAX_STRING_BUFFER)
+    {
+        m_pos = 0;
+        return m_len;
+    }
+
     size =
         ((size / MEMORY_UNIT) + ((size % MEMORY_UNIT) ? 1 : 0)) * MEMORY_UNIT;
     m_ptr = (char*)::realloc(m_ptr, size);

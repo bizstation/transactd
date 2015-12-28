@@ -47,14 +47,20 @@ int gettimeofday(struct timeval*, struct timezone*);
 #include <ctype.h>
 #include <stddef.h>
 #include <linuxTypes.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <string.h>
+#include <wctype.h>
+#include <wchar.h>
 /* c c++ runtime library */
-#define _strnicmp strncasecmp
+#ifndef __int64
 #define __int64 long long int
+#endif
+
+#define _strnicmp strncasecmp
 #define _atoi64 atoll
-#define _wtoi(W) wcstol(W, NULL, 10)
 #define _access access
 #define sprintf_s snprintf
-#define swprintf_s swprintf
 #define localtime_s localtime_r
 #define strncpy_s(A, B, C, D) strncpy(A, C, D)
 #define strcpy_s(A, B, C) strcpy(A, C)
@@ -71,8 +77,58 @@ int gettimeofday(struct timeval*, struct timezone*);
 
 char* _strupr(char* s);
 char* _strlwr(char* s);
-char* _ltoa_s(int v, char* tmp, unsigned long size, int radix);
-char* _i64toa_s(__int64 v, char* tmp, unsigned long size, int radix);
+
+
+inline char* _i64toa_s(__int64 v, char* tmp, unsigned long size, int radix)
+{
+    snprintf(tmp, size, "%lld", v);
+    return tmp;
+}
+
+inline char* _ui64toa_s(unsigned __int64 v, char* tmp, unsigned long size, int radix)
+{
+    snprintf(tmp, size, "%llu", v);
+    return tmp;
+}
+
+inline char* _ltoa_s(int v, char* tmp, unsigned long size, int radix)
+{
+    snprintf(tmp, size, "%d", v);
+    return tmp;
+}
+
+inline char* _ultoa_s(int v, char* tmp, unsigned long size, int radix)
+{
+    snprintf(tmp, size, "%u", v);
+    return tmp;
+}
+
+inline char* _ltoa(int v, char* tmp, int radix)
+{
+    sprintf(tmp, "%d", v);
+    return tmp;
+}
+
+inline char* _ultoa(int v, char* tmp, int radix)
+{
+    sprintf(tmp, "%u", v);
+    return tmp;
+}
+
+#if !defined(__BORLANDC__)
+inline char* _i64toa(__int64 v, char* tmp, int radix)
+{
+    sprintf(tmp, "%lld", v);
+    return tmp;
+}
+
+inline char* _ui64toa(unsigned __int64 v, char* tmp, int radix)
+{
+    sprintf(tmp, "%llu", v);
+    return tmp;
+}
+#endif
+
 char16_t* _strupr16(char16_t* s);
 char16_t* _strlwr16(char16_t* s);
 size_t strlen16(const char16_t* src);
@@ -127,14 +183,21 @@ typedef unsigned __int32 char32_t; // 32bit
 /* c c++ runtime library */
 #include <tchar.h>
 #if defined(__BORLANDC__) || defined(__MINGW32__)
+
 #define _ltow_s(A, B, C, D) _ltow(A, B, D)
 #define _ltoa_s(A, B, C, D) _ltoa(A, B, D)
 #define _ltot_s(A, B, C, D) _ltot(A, B, D)
 #define _ultot_s(A, B, C, D) _ultot(A, B, D)
 #define _i64tot_s(A, B, C, D) _i64tot(A, B, D)
-#define _i64tow_s(A, B, C, D) _i64tow(A, B, D)
 #define _i64toa_s(A, B, C, D) _i64toa(A, B, D)
+#define _i64tow_s(A, B, C, D) _i64tow(A, B, D)
+#define _ui64tot_s(A, B, C, D) _ui64tot(A, B, D)
+#define _ui64toa_s(A, B, C, D) _ui64toa(A, B, D)
+#define _ui64tow_s(A, B, C, D) _ui64tow(A, B, D)
 #define _strlwr_s(A, B) strlwr(A)
+#ifndef _tcslwr_s
+#define _tcslwr_s(A, B) _tcslwr(A)
+#endif
 #endif
 
 #if defined(__BORLANDC__)
@@ -157,6 +220,7 @@ typedef unsigned __int32 char32_t; // 32bit
 /* muliti byete char */
 typedef unsigned char mbchar;
 typedef unsigned char char_m;
+int gettimeofday(struct timeval * tp, struct timezone * tzp);
 
 #endif // defined(LINUX)
 
@@ -174,6 +238,11 @@ typedef unsigned char char_m;
 #define tls_key pthread_key_t
 #define tls_getspecific(A) pthread_getspecific(A)
 #define tls_setspecific(A, B) pthread_setspecific(A, B)
+#endif
+
+#if (defined(_MSC_VER) && (_MSC_VER < 1800))
+#define strtoull _strtoui64
+#define wcstoull _wcstoui64 
 #endif
 
 #endif // BZS_ENV_CROSSCOMPILE_H

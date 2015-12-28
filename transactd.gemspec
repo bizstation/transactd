@@ -59,7 +59,7 @@ spec_build = Gem::Specification.new do |s|
     s.files      += Dir.glob('build/common/copyifgreater.*')
     s.files      += Dir.glob('build/common/system.*')
     s.files      += Dir.glob('source/bzs/test/tdclrb/*')
-    s.files      += Dir.glob('./*')
+    s.files      += Dir.glob('./*').reject { |f| f.match(/RELEASE_NOTE/) || f.match(/BUILD_/) }
   else
     #
     # source code package
@@ -72,7 +72,7 @@ spec_build = Gem::Specification.new do |s|
     s.files      += Dir.glob('build/swig/*') + Dir.glob('build/swig/ruby/*')
     s.files      += Dir.glob('build/swig/ruby/**/*') + Dir.glob('build/tdclrb/**/*')
     s.files      += Dir.glob('build/tdclc/**/*') + Dir.glob('build/tdclcpp/**/*')
-    s.files      += Dir.glob('./*')
+    s.files      += Dir.glob('./*').reject { |f| f.match(/RELEASE_NOTE/) || f.match(/BUILD_/) }
     if RUBY_PLATFORM =~ /mswin/ || RUBY_PLATFORM =~ /mingw/
       # add prebuilt binary
       tdclc_file  = File.join('bin', 'common', 'tdclc_*.*')

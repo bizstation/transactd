@@ -122,16 +122,21 @@ class autoMemory;
 /* copyable */
 class fieldsBase : public refarymem
 {
-    friend class multiRecordAlocatorImple;
-    friend class recordsetImple;
-    friend class recordsetQuery;
+    friend class multiRecordAlocatorImple; // null_ptr setInvalidMemblock ...
+    friend class recordsetImple;           // setRecordData  setFielddefs
+    friend class recordsetQuery;           // setRecordData
+    friend class groupQueryImple;          // setInvalidMemblock
 
     virtual unsigned char* ptr(int index) const = 0;
+    virtual unsigned char* nullPtr(int index) const = 0;
+    virtual int memoryBlockIndex(int index) const { return 0;}
+    virtual int memoryBlockIndexCache() const { return 0;}
 
 protected:
     /** @cond INTERNAL */
     fielddefs* m_fns;
-    bool m_invalidRecord;
+    unsigned int m_InvalidFlags;
+
     virtual table* tbptr() const { return NULL; }
 
     void throwIndexError(short index) const
@@ -151,7 +156,7 @@ protected:
     }
     
     explicit inline fieldsBase(fielddefs* fns)
-        : refarymem(), m_fns(fns), m_invalidRecord(false)
+        : refarymem(), m_fns(fns), m_InvalidFlags(0)
     {
     }
 
@@ -161,24 +166,44 @@ protected:
 
     virtual void setRecordData(autoMemory* am, unsigned char* ptr, size_t size,
                                short* endFieldIndex, bool owner = false){};
+
+    inline void setInvalidMemblock(short index) 
+    { 
+        int num = memoryBlockIndex(index);
+        m_InvalidFlags |= ((2L << num) | 1L);  
+    }
+
     /** @endcond */
 public:
 
     virtual ~fieldsBase(){};
 
-    inline void setInvalidRecord(bool v) { m_invalidRecord = v; }
+    inline bool isInvalidRecord() const 
+    { 
+        return (m_InvalidFlags & 1) != 0; 
+    }
 
-    inline bool isInvalidRecord() const { return m_invalidRecord; }
+    inline void setInvalidRecord(bool v)
+    {
+        if (v)
+            m_InvalidFlags |= 1L;
+        else
+            m_InvalidFlags &= ~1L;
+    }
 
     inline field getFieldNoCheck(short index) const
     {
-        return field(ptr((short)index), (*m_fns)[(short)index], m_fns);
+        unsigned char* p = ptr(index);
+        bool nullfield = (m_InvalidFlags &
+                            (2L << memoryBlockIndexCache())) != 0;
+
+        return field(p, (*m_fns)[index], m_fns, nullfield);
     }
 
     inline field operator[](short index) const
     {
         if (m_fns->checkIndex(index))
-            return field(ptr((short)index), (*m_fns)[(short)index], m_fns);
+            return getFieldNoCheck(index);
 
         throwIndexError(index);
         return field(NULL, dummyFd(), m_fns);
@@ -229,7 +254,12 @@ class fields : public fieldsBase
 
     inline unsigned char* ptr(int index) const
     {
-        return (unsigned char*)m_tb.data();
+        return nullPtr(index) + (*m_fns)[index].nullbytes();
+    }
+
+    inline unsigned char* nullPtr(int index) const
+    {
+        return ((unsigned char*)m_tb.data());
     }
 
     table* tbptr() const { return &m_tb; }

@@ -96,6 +96,16 @@ public:
     STDMETHOD(IsSeekByBookmarks)(VARIANT_BOOL* retVal);
     STDMETHOD(AddSeekKeyValue)(VARIANT Value, VARIANT_BOOL Reset);
     STDMETHOD(AddSeekBookmark)(VARIANT Value, VARIANT_BOOL Reset);
+    STDMETHOD(WhereIsNull)(BSTR Name, IQueryBase** retVal);
+    STDMETHOD(AndIsNull)(BSTR Name,IQueryBase** retVal);
+    STDMETHOD(OrIsNull)(BSTR Name, IQueryBase** retVal);
+    STDMETHOD(WhereIsNotNull)(BSTR Name, IQueryBase** retVal);
+    STDMETHOD(AndIsNotNull)(BSTR Name,IQueryBase** retVal);
+    STDMETHOD(OrIsNotNull)(BSTR Name, IQueryBase** retVal);
+    STDMETHOD(SegmentsForInValue)(int Value, IQueryBase** retVal);
+    STDMETHOD(JoinKeySize)(int Value, IQueryBase** retVal);
+    STDMETHOD(GetJoinKeySize)(int* retVal);
+
 
 };
 

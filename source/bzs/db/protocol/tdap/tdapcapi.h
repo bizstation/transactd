@@ -148,6 +148,8 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_KEY_LE_PREV_MULTI            73
 #define TD_FILTER_PREPARE               74
 #define TD_CONNECT                      78
+#define TD_STORE_TEST                   79 // For test only
+#define TD_SET_TIMESTAMP_MODE           80
 #define TD_BEGIN_SHAPSHOT               88
 #define TD_END_SNAPSHOT                 89
 #define TD_AUTOMEKE_SCHEMA              90
@@ -158,18 +160,26 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_KEY_SEEK_MULTI               95
 #define TD_ACL_RELOAD                   96
 #define TD_RECONNECT                    97
+#define TD_GET_SCHEMA                   98
 
 /** create sub operations
  */
 #define CR_SUBOP_DROP                   -128
 #define CR_SUBOP_RENAME                 -127
 #define CR_SUBOP_SWAPNAME               -126
+#define CR_SUBOP_CREATE_DBONLY          -125
 #define CR_SUBOP_BY_FILESPEC            -1
 #define CR_SUBOP_BY_FILESPEC_NOCKECK    0
 #define CR_SUBOP_BY_TABLEDEF            1
 #define CR_SUBOP_BY_TABLEDEF_NOCKECK    2
+#define CR_SUBOP_BY_SQL                 3
+#define CR_SUBOP_BY_SQL_NOCKECK         4
 
 #define CR_SUB_FLAG_EXISTCHECK          -1
+
+/** TD_TABLE_INFO sub operations
+ */
+#define ST_SUB_GETSQL_BY_TABLEDEF       -1
 
 /** TD_ADD_SENDBLOB  sub operations
  */
@@ -191,6 +201,13 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define LG_SUBOP_NEWCONNECT             3
 #define LG_SUBOP_RECONNECT              4 
 #define LG_SUBOP_DISCONNECT_EX          5 //for reconnect test
+
+/** TIMESTAMP_MODE
+*/
+#define TIMESTAMP_VALUE_CONTROL         0
+#define TIMESTAMP_ALWAYS                1
+
+
 /** field types
  */
 #define ft_string                       0
@@ -238,19 +255,37 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define ft_myfixedbinary                53
 #define ft_enum                         54
 #define ft_set                          55
+#define ft_mytime_num_cmp               56  //for comare use only
+#define ft_mydatetime_num_cmp           57  //for comare use only
+#define ft_mytimestamp_num_cmp          58  //for comare use only
+#define ft_myyear                       59
+#define ft_mygeometry                   60
+#define ft_myjson                       61
+#define ft_mydecimal                    62
 #define ft_nullindicator                255
 
-/** charset type number
- */
-#define charset_none                    0
-#define charset_latin1                  1
-#define charset_ascii                   2
-#define charset_sjis                    3
-#define charset_cp932                   4
+/* compair types */
+enum eCompType
+{
+    eEqual = 1,
+    eGreater = 2,
+    eLess = 3,
+    eNotEq = 4,
+    eGreaterEq = 5,
+    eLessEq = 6,
+    eBitAnd = 8,
+    eNotBitAnd = 9,
+    eIsNull = 10,
+    eIsNotNull = 11
+};
 
-#define charset_utf8                    100
-#define charset_utf8mb4                 101
-#define charset_usc2                    102
+/* filter cobine type */
+enum combineType
+{
+    eCend,
+    eCand,
+    eCor
+};
 
 /** extruct row comp bias
  */
@@ -308,7 +343,20 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_OPEN_EXCLUSIVE               -4
 #define TD_OPEN_READONLY_EXCLUSIVE      (TD_OPEN_READONLY + TD_OPEN_EXCLUSIVE)
 
-/** filed algin
+/** @cond INTERNAL */
+#define TD_OPEN_MASK_SIMPLE_NULL        0
+#define TD_OPEN_MASK_MYSQL_NULL         -16
+#define TD_OPEN_MASK_GETSHCHEMA         -32
+#define TD_OPEN_MASK_GETDEFAULTIMAGE    -64
+
+#define IS_MODE_READONLY(mode)  (((0 - mode) & 2) != 0)
+#define IS_MODE_EXCLUSIVE(mode)  (((0 - mode) & 4) != 0)
+#define IS_MODE_MYSQL_NULL(mode)  (((0 - mode) & 16) != 0)
+#define IS_MODE_GETSCHEMA(mode)  (((0 - mode) & 32) != 0)
+#define IS_MODE_GETDEFAULTIMAGE(mode)  (((0 - mode) & 64) != 0)
+/** @endcond */
+
+/** field algin
  */
 #define BT_AL_LEFT                      0
 #define BT_AL_CENTER                    2
@@ -353,7 +401,8 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define STATUS_INVALID_FIELDVALUE       -36
 #define STATUS_INVALID_VALLEN           -37
 #define STATUS_FIELDTYPE_NOTSUPPORT     -42
-
+#define STATUS_INVALID_NULLMODE         -43
+#define STATUS_TOO_LARGE_VALUE          -44
 
 #define STATUS_SUCCESS                  0
 #define STATUS_PROGRAM_ERROR            1
@@ -449,17 +498,49 @@ inline bool canRecoverNetError(short code)
 #define TD_BACKUP_MODE_NOT_PERMIT       41
 #define TD_BACKUP_MODE_SERVER_ERROR     91
 
+#define DFV_TIMESTAMP_DEFAULT           1.0f
+#define DFV_TIMESTAMP_DEFAULT_ASTR      "1"
+#define DFV_TIMESTAMP_DEFAULT_WSTR      L"1"
 
 /** @cond INTERNAL */
+struct clsrv_ver
+{
+    union
+    {
+        ushort_td clMajor;
+        ushort_td srvMysqlMajor;
+    };
+    union
+    {
+        ushort_td clMinor;
+        ushort_td srvMysqlMinor;
+    };
+    union
+    {
+        ushort_td clRelease;
+        ushort_td srvMysqlRelease;
+    };
+    uchar_td  srvMajor;
+    uchar_td  srvMysqlType;
+    ushort_td srvMinor;
+    ushort_td srvRelease;
+    inline bool isSupportDateTimeTimeStamp() const
+    {
+        if (srvMysqlMajor >= 10) return true;
+        if ((srvMysqlMajor == 5) && (srvMysqlMinor > 5)) return true;
+        return false;
+    }
+};
+#define VER_ST_SIZE 12
+
+#define MYSQL_TYPE_MYSQL 'M'
+#define MYSQL_TYPE_MARIA 'A'
+
+
 struct trdVersiton
 {
     char cherserServer[128];
-    ushort_td clMajor;
-    ushort_td clMinor;
-    ushort_td clRelease;
-    ushort_td srvMajor;
-    ushort_td srvMinor;
-    ushort_td srvRelease;
+    clsrv_ver desc;
 };
 
 #define MYSQL_SCRAMBLE_LENGTH 20
@@ -495,16 +576,17 @@ struct handshale_t
 #define TD_VAR_USEPIPE            14
 #define TD_VAR_HSLISTENPORT       15
 #define TD_VAR_USEHS              16
-#define TD_VAR_SIZE               17
+#define TD_VAR_TIMESTAMPMODE      17
+#define TD_VAR_SIZE               18
 
 /** @endcond */
 
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.
  If you change this version then you need change The ($TargetName) project options too.
  */
-#define C_INTERFACE_VER_MAJOR "2"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "4"//##2 Build marker! Don't remove
-#define C_INTERFACE_VER_RELEASE "5"//##3 Build marker! Don't remove
+#define C_INTERFACE_VER_MAJOR "3"//##1 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "0"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
  The default extention of Mac is ".boudle", Therefore ".so" is popular. */
@@ -566,9 +648,9 @@ struct handshale_t
 
  */
 
-#define CPP_INTERFACE_VER_MAJOR "2"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "4"//##5 Build marker! Don't remove
-#define CPP_INTERFACE_VER_RELEASE "5"//##6 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MAJOR "3"//##4 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "0"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
 #if (__BCPLUSPLUS__ || _MSC_VER)
@@ -583,8 +665,28 @@ struct handshale_t
 #endif
 #endif
 
-#define TRANSACTD_VER_MAJOR 2//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 4//##8 Build marker! Don't remove
-#define TRANSACTD_VER_RELEASE 5//##9 Build marker! Don't remove
+
+
+#define TD_CPP_LIB_NAME                                                        \
+    LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR SHARED_LIB_EXTENTION
+
+#ifdef LINUX
+#ifdef __APPLE__
+#define TD_CPP_SO_NAME                                                        \
+    LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR ".dylib"
+#else // NOT __APPLE__
+#define TD_CPP_SO_NAME                                                        \
+    LIB_PREFIX TD_CPP_LIB_PRE ".so." CPP_INTERFACE_VER_MAJOR "." CPP_INTERFACE_VER_MINOR
+#endif // NOT __APPLE__
+#else // NOT LINUX
+#define TD_CPP_SO_NAME                                                        \
+    LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR ".dll"
+#endif // NOT LINUX
+
+
+
+#define TRANSACTD_VER_MAJOR 3//##7 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 0//##8 Build marker! Don't remove
+#define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

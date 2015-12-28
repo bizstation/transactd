@@ -63,6 +63,7 @@ short errorCode(const boost::system::error_code& e)
     case 32:    //write:brokn pipe
     case 111:   //connect: Connection refused
     case 10061:
+    case 10053:
         ret = ERROR_TD_CONNECTION_FAILURE;
         break;
     case 104:   //write: Connection reset by peer
@@ -95,15 +96,15 @@ int client::getServerCharsetIndex()
         
     request req = m_req;
     req.paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN;
-    trdVersiton ver;
-    memset(&ver, 0, sizeof(trdVersiton));
-    ver.cherserServer[0] = 0x00;
+    trdVersiton vers;
+    memset(&vers, 0, sizeof(trdVersiton));
+    clsrv_ver& ver = vers.desc;
     ver.clMajor = (ushort_td)atoi(C_INTERFACE_VER_MAJOR);
     ver.clMinor = (ushort_td)atoi(C_INTERFACE_VER_MINOR);
     ver.clRelease = (ushort_td)atoi(C_INTERFACE_VER_RELEASE);
     uint_td len = sizeof(trdVersiton);
     req.op = TD_GETSERVER_CHARSET;
-    req.data = &ver;
+    req.data = &vers;
     req.datalen = &len;
 
     mutex::scoped_lock lck(m_mutex);
@@ -117,7 +118,7 @@ int client::getServerCharsetIndex()
         {
             if (!checkVersion(ver))
                 return -1;
-            c->setCharsetServer(mysql::charsetIndex(ver.cherserServer));
+            c->setCharsetServer(mysql::charsetIndex(vers.cherserServer));
             return  c->charsetServer();
         }
     }

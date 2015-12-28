@@ -150,7 +150,7 @@ public:
     static reverseOrderStatement* create();
 };
 
-class DLLLIBSTMT readStatement : public fieldNames,
+class DLLLIBSTMT readStatement : public fieldValues,
                                  public query,
                                  public executable
 {

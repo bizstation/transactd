@@ -229,6 +229,7 @@ int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
     //    result = 1;
     if (thd->is_error())
         result = errorCode(thd->cp_get_sql_error());
+    cp_lex_clear(thd); // reset values for insert
     return result;
 }
 

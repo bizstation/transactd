@@ -25,6 +25,7 @@
 #include "PreparedQuery.h"
 #include <bzs/db/protocol/tdap/client/fields.h>
 #include "Bookmark.h"
+#include "Bitset.h"
 
 using namespace bzs::db::protocol::tdap;
 
@@ -48,8 +49,10 @@ short CTableTd::GetFieldNum(VARIANT* Index)
     short index = -1;
     if (Index->vt == VT_BSTR)
         index = m_tb->fieldNumByName(Index->bstrVal);
-    else if ((Index->vt == VT_I2) || (Index->vt == VT_I4))
+    else if (Index->vt == VT_I2)
         index = Index->iVal;
+    else if (Index->vt == VT_I4)
+        index = (short)Index->lVal;
     return index;
 }
 
@@ -89,6 +92,100 @@ STDMETHODIMP CTableTd::put_Vlng(VARIANT Index, int Value)
     m_tb->setFV(index, Value);
     return S_OK;
 }
+
+STDMETHODIMP CTableTd::SetFVNull(VARIANT Index, VARIANT_BOOL Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    m_tb->setFVNull(index, Value != 0);
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::GetFVNull(VARIANT Index, VARIANT_BOOL* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    *Value = m_tb->getFVNull(index);
+    return S_OK;
+}
+
+
+STDMETHODIMP CTableTd::GetFVint(VARIANT Index, int* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    *Value = m_tb->getFVint(index);
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::GetFV64(VARIANT Index, __int64* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    *Value = m_tb->getFV64(index);
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::GetFVdbl(VARIANT Index, double* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    *Value = m_tb->getFVdbl(index);
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::GetFVstr(VARIANT Index, BSTR* Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+
+    *Value = ::SysAllocString(m_tb->getFVstr(index));
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::SetFV(VARIANT Index, VARIANT Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+
+    if (Value.vt == VT_BSTR)
+        m_tb->setFV(index, Value.bstrVal);
+    else if (Value.vt == VT_R4)
+        m_tb->setFV(index, Value.fltVal);
+    else if (Value.vt == VT_R8)
+        m_tb->setFV(index, Value.dblVal);
+    else if (Value.vt == VT_I2)
+        m_tb->setFV(index, Value.iVal);
+    else if (Value.vt == VT_I4 || Value.vt == VT_INT)
+        m_tb->setFV(index, Value.lVal);
+    else if (Value.vt == VT_I8)
+        m_tb->setFV(index, Value.llVal);
+    else if (Value.vt == VT_NULL)
+        m_tb->setFV(index, (wchar_t*)NULL);
+    else if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
+    {
+        CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
+        if (b)
+            m_tb->setFV(index, b->m_bitset.internalValue());    
+    }
+    else
+    {
+        VariantChangeType( &Value, &Value, 0, VT_BSTR );
+        if (Value.bstrVal[0])
+            m_tb->setFV(index, Value.bstrVal);
+        else
+            m_tb->setFV(index, L"");
+    }
+    return S_OK;
+}
+
 
 STDMETHODIMP CTableTd::get_V64(VARIANT Index, __int64* Value)
 {
@@ -182,9 +279,11 @@ STDMETHODIMP CTableTd::Delete(VARIANT_BOOL inkey)
     return S_OK;
 }
 
-STDMETHODIMP CTableTd::ClearBuffer()
+STDMETHODIMP CTableTd::ClearBuffer(eNullReset resetType)
 {
-    m_tb->clearBuffer();
+  
+    m_tb->clearBuffer((resetType == defaultNull) ? 
+            client::table::defaultNull : client::table::clearNull);
     return S_OK;
 }
 
@@ -727,6 +826,31 @@ STDMETHODIMP CTableTd::get_Bookmarks(long index, IBookmark** retVal)
     *retVal = b;
     return S_OK;
 }
+
+STDMETHODIMP CTableTd::SetTimestampMode(eTimeStampMode mode)
+{
+    m_tb->setTimestampMode((int)mode);
+    return S_OK;
+}
+
+STDMETHODIMP CTableTd::GetFVbits(VARIANT Index, IBitset** Value)
+{
+    short index = GetFieldNum(&Index);
+    if (index < 0)
+        return Error("Invalid index", IID_ITable);
+    
+    CComObject<CBitset>* b;
+    CComObject<CBitset>::CreateInstance(&b);
+    if (!b)
+        return Error("CreateInstance Bitset", IID_ITable);
+    b->m_bitset = bzs::db::protocol::tdap::bitset(m_tb->getFV64(index));
+    CBitset* bi;
+    b->QueryInterface(IID_IBitset, (void**)&bi);
+    _ASSERTE(bi);
+    *Value = bi;
+    return S_OK;
+}
+   
 
 void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
                           int count, bool& cancel)

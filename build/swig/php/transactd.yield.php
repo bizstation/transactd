@@ -45,6 +45,10 @@ if (!extension_loaded('transactd')) {
 
 
 abstract class transactd {
+	const MYSQL_TYPE_MYSQL = MYSQL_TYPE_MYSQL;
+
+	const MYSQL_TYPE_MARIA = MYSQL_TYPE_MARIA;
+
 	const CP_ACP = CP_ACP;
 
 	const CP_UTF8 = CP_UTF8;
@@ -135,23 +139,15 @@ abstract class transactd {
 
 	const ft_myfixedbinary = ft_myfixedbinary;
 
+	const ft_myjson = ft_myjson;
+
+	const ft_mygeometry = ft_mygeometry;
+
+	const ft_myyear = ft_myyear;
+	
+	const ft_mydecimal = ft_mydecimal;
+
 	const ft_nullindicator = ft_nullindicator;
-
-	const charset_none = charset_none;
-
-	const charset_latin1 = charset_latin1;
-
-	const charset_ascii = charset_ascii;
-
-	const charset_sjis = charset_sjis;
-
-	const charset_cp932 = charset_cp932;
-
-	const charset_utf8 = charset_utf8;
-
-	const charset_utf8mb4 = charset_utf8mb4;
-
-	const charset_usc2 = charset_usc2;
 
 	const CMPLOGICAL_VAR_COMP_ALL = CMPLOGICAL_VAR_COMP_ALL;
 
@@ -298,6 +294,10 @@ abstract class transactd {
 	const STATUS_INVALID_VALLEN = STATUS_INVALID_VALLEN;
 
 	const STATUS_FIELDTYPE_NOTSUPPORT = STATUS_FIELDTYPE_NOTSUPPORT;
+	
+	const STATUS_INVALID_NULLMODE = STATUS_INVALID_NULLMODE;
+
+	const STATUS_TOO_LARGE_VALUE = STATUS_TOO_LARGE_VALUE;
 
 	const STATUS_SUCCESS = STATUS_SUCCESS;
 
@@ -427,6 +427,8 @@ abstract class transactd {
 
 	const TD_BACKUP_MODE_SERVER_ERROR = TD_BACKUP_MODE_SERVER_ERROR;
 
+	const DFV_TIMESTAMP_DEFAULT = DFV_TIMESTAMP_DEFAULT;
+
 	const CPP_INTERFACE_VER_MAJOR = CPP_INTERFACE_VER_MAJOR;
 
 	const CPP_INTERFACE_VER_MINOR = CPP_INTERFACE_VER_MINOR;
@@ -440,34 +442,10 @@ abstract class transactd {
 	const TRANSACTD_VER_RELEASE = TRANSACTD_VER_RELEASE;
 
 	const MAX_KEY_SEGMENT = MAX_KEY_SEGMENT;
-
-	static function MYSQL_FDNAME_SIZE_get() {
-		return MYSQL_FDNAME_SIZE_get();
-	}
-
-	static function MYSQL_TBNAME_SIZE_get() {
-		return MYSQL_TBNAME_SIZE_get();
-	}
-
-	static function PERVASIVE_FDNAME_SIZE_get() {
-		return PERVASIVE_FDNAME_SIZE_get();
-	}
-
-	static function FIELD_NAME_SIZE_get() {
-		return FIELD_NAME_SIZE_get();
-	}
-
-	static function TABLE_NAME_SIZE_get() {
-		return TABLE_NAME_SIZE_get();
-	}
-
-	static function FILE_NAME_SIZE_get() {
-		return FILE_NAME_SIZE_get();
-	}
-
-	static function TABLEDEF_FILLER_SIZE_get() {
-		return TABLEDEF_FILLER_SIZE_get();
-	}
+	
+	const TIMESTAMP_ALWAYS = TIMESTAMP_ALWAYS;
+	
+	const TIMESTAMP_VALUE_CONTROL = TIMESTAMP_VALUE_CONTROL;
 
 	static function getTypeName($type) {
 		return getTypeName($type);
@@ -503,6 +481,16 @@ abstract class transactd {
 
 	const eLessEq = 6;
 
+	const eBitAnd = 8;
+
+	const eNotBitAnd = 9;
+
+	const eIsNull = 10;
+
+	const eIsNotNull = 11;
+
+
+
 	static function getFilterLogicTypeCode($cmpstr) {
 		return getFilterLogicTypeCode($cmpstr);
 	}
@@ -516,16 +504,6 @@ abstract class transactd {
 	const eDefaultlen = eDefaultlen;
 
 	const eDecimals = eDecimals;
-
-	const null_str = null_str;
-
-	const KEYVALUE_PTR = KEYVALUE_PTR;
-
-	const KEYVALUE_STR = KEYVALUE_STR;
-
-	const KEYVALUE_NEED_COPY = KEYVALUE_NEED_COPY;
-
-	const KEYVALUE_STR_NEED_COPY = KEYVALUE_STR_NEED_COPY;
 
 	const MAX_CHAR_INFO = MAX_CHAR_INFO;
 
@@ -581,18 +559,18 @@ abstract class transactd {
 		return $r;
 	}
 
-	static function btrdtoa($d_or_date,$type_vb=false) {
-		$r=btrdtoa($d_or_date,$type_vb);
+	static function btrdtoa($d_or_date,$w3_format=false) {
+		$r=btrdtoa($d_or_date,$w3_format);
 		return $r;
 	}
 
-	static function btrttoa($t_or_time,$type_vb=false) {
-		$r=btrttoa($t_or_time,$type_vb);
+	static function btrttoa($t_or_time) {
+		$r=btrttoa($t_or_time);
 		return $r;
 	}
 
-	static function btrstoa($d,$type_vb=false) {
-		return btrstoa($d,$type_vb);
+	static function btrstoa($d,$w3_format=false) {
+		return btrstoa($d,$w3_format);
 	}
 
 	static function atobtrs($p) {
@@ -610,8 +588,6 @@ abstract class transactd {
 	static function getNowTime() {
 		return getNowTime();
 	}
-
-	const ROW_MEM_BLOCK_RESERVE = ROW_MEM_BLOCK_RESERVE;
 
 	static function new_fieldsBase_p_p() {
 		return new_fieldsBase_p_p();
@@ -634,6 +610,35 @@ abstract class transactd {
 		$this->_cPtr = $r;
 		return $this;
 	}
+	
+	const FIELDVALUEMODE_RETURNNULL = 0;
+	
+	const FIELDVALUEMODE_NORETURNNULL = 1;
+	
+	const RECORD_KEYVALUE_FIELDVALUE = 0;
+	
+	const RECORD_KEYVALUE_FIELDOBJECT = 1;
+	
+	static $fieldValueMode = self::FIELDVALUEMODE_NORETURNNULL;
+	
+	static $recordValueMode = self::RECORD_KEYVALUE_FIELDOBJECT;
+	
+	static function setFieldValueMode($mode) {
+		self::$fieldValueMode = $mode;
+	}
+
+	static function fieldValueMode() {
+		return  self::$fieldValueMode;
+	}
+	
+	static function setRecordValueMode($mode) {
+		self::$recordValueMode = $mode;
+	}
+
+	static function recordValueMode() {
+		return  self::$recordValueMode;
+	}
+
 }
 
 /* PHP Proxy Classes */
@@ -784,6 +789,7 @@ class fielddef_t_my {
 	protected $_pData=array();
 
 	function __set($var,$value) {
+		if ($var == 'digits') $var = 'ddfid';// union name
 		$func = 'fielddef_t_my_'.$var.'_set';
 		if (function_exists($func)) return call_user_func($func,$this->_cPtr,$value);
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
@@ -791,6 +797,7 @@ class fielddef_t_my {
 	}
 
 	function __get($var) {
+		if ($var == 'digits') $var = 'ddfid';// union name
 		$func = 'fielddef_t_my_'.$var.'_get';
 		if (function_exists($func)) return call_user_func($func,$this->_cPtr);
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
@@ -798,6 +805,7 @@ class fielddef_t_my {
 	}
 
 	function __isset($var) {
+		if ($var == 'digits') $var = 'ddfid';// union name
 		if (function_exists('fielddef_t_my_'.$var.'_get')) return true;
 		if ($var === 'thisown') return true;
 		return array_key_exists($var, $this->_pData);
@@ -830,6 +838,10 @@ class fielddef extends fielddef_t_my {
 		return fielddef_t_my::__isset($var);
 	}
 
+	function defaultValue() {
+		return fielddef_defaultValue($this->_cPtr);
+	}
+
 	function setName($s) {
 		fielddef_setName($this->_cPtr,$s);
 	}
@@ -846,6 +858,10 @@ class fielddef extends fielddef_t_my {
 		fielddef_setLenByCharnum($this->_cPtr,$charnum);
 	}
 
+	function setDecimalDigits($dig,$dec) {
+		fielddef_setDecimalDigits($this->_cPtr,$dig,$dec);
+	}
+
 	function codePage() {
 		return fielddef_codePage($this->_cPtr);
 	}
@@ -854,12 +870,28 @@ class fielddef extends fielddef_t_my {
 		return fielddef_isStringType($this->_cPtr);
 	}
 
+	function isPadCharType() {
+		return fielddef_isPadCharType($this->_cPtr);
+	}
+
+	function isIntegerType() {
+		return fielddef_isIntegerType($this->_cPtr);
+	}
+
 	function isNumericType() {
 		return fielddef_isNumericType($this->_cPtr);
 	}
 
+	function isDateTimeType() {
+		return fielddef_isDateTimeType($this->_cPtr);
+	}
+
 	function charNum() {
 		return fielddef_charNum($this->_cPtr);
+	}
+
+	function isValidCharNum() {
+		return fielddef_isValidCharNum($this->_cPtr);
 	}
 
 	function setCharsetIndex($index) {
@@ -870,24 +902,40 @@ class fielddef extends fielddef_t_my {
 		return fielddef_charsetIndex($this->_cPtr);
 	}
 
-	function varLenBytes() {
-		return fielddef_varLenBytes($this->_cPtr);
+	function isNullable() {
+		return fielddef_isNullable($this->_cPtr);
 	}
 
-	function blobLenBytes() {
-		return fielddef_blobLenBytes($this->_cPtr);
+	function setNullable($v,$defaultNull=true) {
+		fielddef_setNullable($this->_cPtr,$v,$defaultNull);
+	}
+
+	function setDefaultValue($s_or_v) {
+		fielddef_setDefaultValue($this->_cPtr,$s_or_v);
+	}
+
+	function setTimeStampOnUpdate($v) {
+		fielddef_setTimeStampOnUpdate($this->_cPtr,$v);
+	}
+
+	function isTimeStampOnUpdate() {
+		return fielddef_isTimeStampOnUpdate($this->_cPtr);
+	}
+
+	function isDefaultNull() {
+		return fielddef_isDefaultNull($this->_cPtr);
 	}
 
 	function name() {
 		return fielddef_name($this->_cPtr);
 	}
 
-	function trimPadChar() {
-		return fielddef_trimPadChar($this->_cPtr);
+	function isTrimPadChar() {
+		return fielddef_isTrimPadChar($this->_cPtr);
 	}
 
-	function usePadChar() {
-		return fielddef_usePadChar($this->_cPtr);
+	function isUsePadChar() {
+		return fielddef_isUsePadChar($this->_cPtr);
 	}
 
 	function setPadCharSettings($set, $trim) {
@@ -959,9 +1007,34 @@ class tabledef {
 		tabledef_setTableName($this->_cPtr,$s);
 	}
 
-	function toChar($buf) {
-		return tabledef_toChar($this->_cPtr, $buf);
+	function nullfields() {
+		return tabledef_nullfields($this->_cPtr);
 	}
+
+	function inUse() {
+		return tabledef_inUse($this->_cPtr);
+	}
+
+	function size() {
+		return tabledef_size($this->_cPtr);
+	}
+
+	function fieldNumByName($name) {
+		return tabledef_fieldNumByName($this->_cPtr,$name);
+	}
+
+	function recordlen() {
+		return tabledef_recordlen($this->_cPtr);
+	}
+
+	function setValidationTarget($isMariadb,$srvMinorVersion) {
+		tabledef_setValidationTarget($this->_cPtr,$isMariadb,$srvMinorVersion);
+	}
+
+	function isMysqlNullMode() {
+		return tabledef_isMysqlNullMode($this->_cPtr);
+	}
+
 
 	function fieldDef($index) {
 		$r=tabledef_fieldDef($this->_cPtr,$index);
@@ -1305,6 +1378,10 @@ abstract class nstable {
 		return nstable_mode($this->_cPtr);
 	}
 
+	function setTimestampMode($mode) {
+		nstable_setTimestampMode($this->_cPtr,$mode);
+	}
+
 	function statMsg() {
 		return nstable_statMsg($this->_cPtr); 
 	}
@@ -1359,10 +1436,6 @@ class dbdef {
 			return new tabledef($r);
 		}
 		return $r;
-	}
-
-	function tableDefPtr($index) {
-		return dbdef_tableDefPtr($this->_cPtr,$index);
 	}
 
 	function setVersion($v) {
@@ -1425,10 +1498,6 @@ class dbdef {
 		return dbdef_tableNumByName($this->_cPtr,$tableName);
 	}
 
-	function getRecordLen($tableIndex) {
-		return dbdef_getRecordLen($this->_cPtr,$tableIndex);
-	}
-
 	function findKeynumByFieldNum($tableIndex,$index) {
 		return dbdef_findKeynumByFieldNum($this->_cPtr,$tableIndex,$index);
 	}
@@ -1451,6 +1520,10 @@ class dbdef {
 
 	function mode() {
 		return dbdef_mode($this->_cPtr);
+	}
+
+	function synchronizeSeverSchema($tableIndex) {
+		dbdef_synchronizeSeverSchema($this->_cPtr,$tableIndex);
 	}
 }
 
@@ -1475,6 +1548,10 @@ class table extends nstable {
 	function __construct($h) {
 		$this->_cPtr=$h;
 	}
+	
+	const clearNull = 0;
+
+	const defaultNull = table_defaultNull;
 
 	function tableDef() {
 		$r=table_tableDef($this->_cPtr);
@@ -1482,10 +1559,6 @@ class table extends nstable {
 			return new tabledef($r);
 		}
 		return $r;
-	}
-
-	function tableDefPtr() {
-		return table_tableDefPtr($this->_cPtr);
 	}
 
 	function valiableFormatType() {
@@ -1534,8 +1607,8 @@ class table extends nstable {
 		return $r;
 	}
 
-	function clearBuffer() {
-		table_clearBuffer($this->_cPtr);
+	function clearBuffer($resetType=table_defaultNull) {
+		table_clearBuffer($this->_cPtr, $resetType);
 	}
 
 	function getRecordHash() {
@@ -1590,11 +1663,11 @@ class table extends nstable {
 	}
 
 	function getFVbyt($index_or_fieldName) {
-		return table_getFVbyt($this->_cPtr,$index_or_fieldName);
+		return table_getFVint($this->_cPtr,$index_or_fieldName);
 	}
 
 	function getFVsht($index_or_fieldName) {
-		return table_getFVsht($this->_cPtr,$index_or_fieldName);
+		return table_getFVint($this->_cPtr,$index_or_fieldName);
 	}
 
 	function getFVint($index_or_fieldName) {
@@ -1602,7 +1675,7 @@ class table extends nstable {
 	}
 
 	function getFVlng($index_or_fieldName) {
-		return table_getFVlng($this->_cPtr,$index_or_fieldName);
+		return table_getFVint($this->_cPtr,$index_or_fieldName);
 	}
 
 	function getFV64($index_or_fieldName) {
@@ -1610,11 +1683,19 @@ class table extends nstable {
 	}
 
 	function getFVflt($index_or_fieldName) {
-		return table_getFVflt($this->_cPtr,$index_or_fieldName);
+		return table_getFVdbl($this->_cPtr,$index_or_fieldName);
 	}
 
 	function getFVdbl($index_or_fieldName) {
 		return table_getFVdbl($this->_cPtr,$index_or_fieldName);
+	}
+
+	function getFVNull($index_or_fieldName) {
+		return table_getFVNull($this->_cPtr,$index_or_fieldName);
+	}
+
+	function setFVNull($index_or_fieldName,$v) {
+		table_setFVNull($this->_cPtr,$index_or_fieldName,$v);
 	}
 
 	function getFVstr($index_or_fieldName) {
@@ -1650,6 +1731,15 @@ class table extends nstable {
 
 	function setPrepare($q) {
 		table_setPrepare($this->_cPtr,$q);
+	}
+
+	function getFVBits($index_or_fieldName) {
+		$r=table_getFVBits($this->_cPtr,$index_or_fieldName);
+		if (!is_resource($r)) return $r;
+		switch (get_resource_type($r)) {
+		case '_p_bzs__db__protocol__tdap__bitset': return new bitset($r);
+		default: return new bitset($r);
+		}
 	}
 
 	function release() {
@@ -1810,6 +1900,11 @@ abstract class queryBase {
 		queryBase_reverseAliasName($this->_cPtr,$alias,$src);
 	}
 	
+	function joinKeySize($v) {
+		queryBase_joinKeySize($this->_cPtr,$v);
+		return $this;
+	}
+	
 	function stopAtLimit($v) {
 		queryBase_stopAtLimit($this->_cPtr,$v);
 		return $this;
@@ -1850,6 +1945,41 @@ class query extends queryBase {
 		return $this;
 	}
 
+	function whereIsNull($name) {
+		query_whereIsNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function whereIsNotNull($name) {
+		query_whereIsNotNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function andIsNull($name) {
+		query_andIsNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function andIsNotNull($name) {
+		query_andIsNotNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function orIsNull($name) {
+		query_orIsNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function orIsNotNull($name) {
+		query_orIsNotNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function segmentsForInValue($v) {
+		queryBase_joinKeySize($this->_cPtr,$v);
+		return $this;
+	}
+
 	function __construct($res=null) {
 		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__query') {
 			$this->_cPtr=$res;
@@ -1877,6 +2007,68 @@ class query extends queryBase {
 		query_in($this->_cPtr,$kv0,$kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
 		return $this;
 	}
+}
+
+class bitset implements \ArrayAccess {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__bitset') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_bitset();
+	}
+
+	function set($index,$value) {
+		bitset_set($this->_cPtr,$index,$value);
+	}
+
+	function get($index) {
+		return bitset_get($this->_cPtr,$index);
+	}
+
+	function equals($r_) {
+		return bitset_equals($this->_cPtr,$r_);
+	}
+
+	function contains($r_,$all=true) {
+		return bitset_contains($this->_cPtr,$r_,$all);
+	}
+	
+	// ArrayAccess
+	public function offsetExists($offset) {
+		return \gettype($offset) !== 'integer' && $offset >= 0 && $offset < 63;
+	}
+
+	public function offsetGet($offset) {
+		return bitset_get($this->_cPtr,$offset);
+	}
+
+	public function offsetSet($offset, $value) {
+		bitset_set($this->_cPtr,$offset,$value);
+	}
+
+	public function offsetUnset($offset) {
+		bitset_set($this->_cPtr,$offset,false);
+	}
+
 }
 
 class nsdatabase {
@@ -2118,6 +2310,18 @@ class database extends nsdatabase {
 		$this->__construct($r);
 	}
 
+	function createTable($utf8Sql_or_fileNum,$uri=null) {
+		switch (func_num_args()) {
+		case 1: $r=database_createTable($this->_cPtr,$utf8Sql_or_fileNum); break;
+		default: $r=database_createTable($this->_cPtr,$utf8Sql_or_fileNum,$uri);
+		}
+		return $r;
+	}
+	
+	function getSqlStringForCreateTable($tableName) {
+		return database_getSqlStringForCreateTable($this->_cPtr,$tableName);
+	}
+
 	function create($uri,$type=0) {
 		database_create($this->_cPtr,$uri,$type);
 	}
@@ -2165,10 +2369,6 @@ class database extends nsdatabase {
 		return $r;
 	}
 
-	function getTableUri($buf,$fileNum) {
-		return database_getTableUri($this->_cPtr,$buf,$fileNum);
-	}
-
 	function getBtrVersion($versions) {
 		database_getBtrVersion($this->_cPtr,$versions);
 	}
@@ -2181,6 +2381,26 @@ class database extends nsdatabase {
 		return database_mode($this->_cPtr);
 	}
 
+	function autoSchemaUseNullkey() {
+		return database_autoSchemaUseNullkey($this->_cPtr);
+	}
+
+	function setAutoSchemaUseNullkey($v) {
+		database_setAutoSchemaUseNullkey($this->_cPtr,$v);
+	}
+
+	static function setCompatibleMode($mode) {
+		database_setCompatibleMode($mode);
+	}
+
+	static function compatibleMode() {
+		return database_compatibleMode();
+	}
+
+	const CMP_MODE_MYSQL_NULL = database_CMP_MODE_MYSQL_NULL;
+
+	const CMP_MODE_OLD_NULL = database_CMP_MODE_OLD_NULL;
+	
 	function __construct($res=null) {
 		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__database') {
 			$this->_cPtr=$res;
@@ -2547,6 +2767,9 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
 
 class field {
 	public function getFV() {
+		if ((transactd::fieldValueMode() === transactd::FIELDVALUEMODE_RETURNNULL)
+				&& $this->isNull() === true)
+			return null;
 		switch ($this->type()) {
 			case transactd::ft_integer:
 			case transactd::ft_uinteger:
@@ -2601,12 +2824,24 @@ class field {
 			$this->_cPtr=new_field($ptr_or_r);
 	}
 
+	function __toString() {
+		return field_c_str($this->_cPtr);
+	}
+
 	function type() {
 		return field_type($this->_cPtr);
 	}
 
 	function len() {
 		return field_len($this->_cPtr);
+	}
+
+	function isNull() {
+		return field_isNull($this->_cPtr);
+	}
+
+	function setNull($v) {
+		field_setNull($this->_cPtr,$v);
 	}
 
 	function setFV($p_or_v_or_data,$size=null) {
@@ -2622,11 +2857,38 @@ class field {
 	}
 
 	function setBin($str) {
-		return field_setFV($this->_cPtr,$st, strlen($str));
+		return field_setFV($this->_cPtr, $str, strlen($str));
 	}
 
 	function comp($r_,$logType=16) {
 		return field_comp($this->_cPtr,$r_,$logType);
+	}
+
+	function getBits() {
+		$r=field_getBits($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new bitset($r);
+		}
+		return $r;
+	}
+	
+	function i() { return field_i($this->_cPtr); }
+	
+	function i64() { return field_i64($this->_cPtr); }
+
+	function d() { return field_d($this->_cPtr); }
+
+	function str() { return field_c_str($this->_cPtr); }
+
+	function bin() { return field_getBin($this->_cPtr); }
+	
+	function setValue($p_or_v_or_data,$size=null) {
+		switch (func_num_args()) {
+		case 1: field_setFV($this->_cPtr,$p_or_v_or_data); break;
+		default: field_setFV($this->_cPtr,$p_or_v_or_data,$size);
+		}
 	}
 }
 
@@ -2703,7 +2965,10 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 			default:
 				throw new \OutOfRangeException();
 		}
-		return $this->_field->getFV();
+		if (transactd::recordValueMode() === transactd::RECORD_KEYVALUE_FIELDVALUE)
+			return $this->_field->getFV();
+		else
+			return $this->_field;
 	}
 
 	public function offsetSet($offset, $value) {
@@ -3114,6 +3379,36 @@ class recordsetQuery {
 
 	function reset() {
 		recordsetQuery_reset($this->_cPtr);
+		return $this;
+	}
+
+	function whenIsNull($name) {
+		recordsetQuery_whenIsNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function whenIsNotNull($name) {
+		recordsetQuery_whenIsNotNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function andIsNull($name) {
+		recordsetQuery_andIsNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function andIsNotNull($name) {
+		recordsetQuery_andIsNotNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function orIsNull($name) {
+		recordsetQuery_orIsNull($this->_cPtr,$name);
+		return $this;
+	}
+
+	function orIsNotNull($name) {
+		recordsetQuery_orIsNotNull($this->_cPtr,$name);
 		return $this;
 	}
 
@@ -3882,12 +4177,12 @@ class activeTable {
 
 	function join($rs,$q,$name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
 		activeTable_join($this->_cPtr,$rs,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
-		return $this;
+		return $rs;
 	}
 
 	function outerJoin($rs,$q,$name1,$name2=null,$name3=null,$name4=null,$name5=null,$name6=null,$name7=null,$name8=null) {
 		activeTable_outerJoin($this->_cPtr,$rs,$q,$name1,$name2,$name3,$name4,$name5,$name6,$name7,$name8);
-		return $this;
+		return $rs;
 	}
 
 	function __construct($mgr_or_db,$tableName=null) {

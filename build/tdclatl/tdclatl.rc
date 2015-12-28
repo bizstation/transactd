@@ -75,8 +75,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,4,5,103
- PRODUCTVERSION 2,4,5,103
+ FILEVERSION 3,0,0,120
+ PRODUCTVERSION 3,0,0,120
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -93,9 +93,9 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "Transactd ATL client"
-            VALUE "FileVersion", "2.4.5.103"
+            VALUE "FileVersion", "3.0.0.120"
             VALUE "LegalCopyright", "Copyright(C) 2013 BizStation Corp"
-            VALUE "ProductVersion", "2.4.5.103"
+            VALUE "ProductVersion", "3.0.0.120"
             VALUE "ProductName", "Transactd Client (GPL V2)"
             VALUE "InternalName", "tdclatl.dll"
             VALUE "OriginalFilename", "tdclatl.dll"
@@ -123,7 +123,7 @@ IDR_SORTFIELDS          REGISTRY                "sortFields.rgs"
 IDR_FIELDNAMES          REGISTRY                "fieldNames.rgs"
 IDR_POOLEDDBMGR         REGISTRY                "pooledDbMgr.rgs"
 IDR_CONNECTPARAM        REGISTRY                "connectParams.rgs"
-
+IDR_BITSET              REGISTRY                "Bitset.rgs"
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table

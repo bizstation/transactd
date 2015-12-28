@@ -71,10 +71,8 @@ char g_buf[TMP_BUFSIZE];
 #define NOTE_TYPE 12
 #define VAR_TYPE 13
 
-#define NIS_FD_KEYSEG_LIMIT 1
-
-const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
-                             const char* charsetName)
+const char* getFieldTypeName(const fielddef& fd, int size, bool nobinary,
+                             const char* charsetName, int decimals)
 {
     const char* bin_ptr = nobinary ? "" : "binary";
     char charsetString[128] = { " CHARACTER SET " };
@@ -82,47 +80,68 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
         strcat_s(charsetString, 128, charsetName);
     else
         charsetString[0] = 0x00;
-
-    switch (fieldType)
+    switch (fd.type)
     {
-
     case ft_integer:
     case ft_autoinc:
     case ft_currency:
     case ft_date:
     case ft_time:
+    case ft_datetime:
     case ft_timestamp:
         if (size == 1)
             return "TINYINT";
         if (size == 2)
             return "SMALLINT";
+        if (size == 3)
+            return "MEDIUMINT";
         if (size == 4)
             return "INT";
         if (size == 8)
             return "BIGINT";
+    case ft_bit:
+        sprintf_s(g_buf, TMP_BUFSIZE, "BIT(%d)", size * 8);
+        return g_buf;
+    case ft_enum:
+    case ft_set:
     case ft_uinteger:
     case ft_autoIncUnsigned:
         if (size == 1)
             return "TINYINT UNSIGNED";
         if (size == 2)
             return "SMALLINT UNSIGNED";
+        if (size == 3)
+            return "MEDIUMINT UNSIGNED";
         if (size == 4)
             return "INT UNSIGNED";
         if (size == 8)
             return "BIGINT UNSIGNED";
     case ft_logical:
-        return "TINYINT UNSIGNED";
+        if (size == 1)
+            return "TINYINT UNSIGNED";
+        if (size == 2)
+            return "SMALLINT UNSIGNED";
+    case ft_myyear:
+        return "YEAR";
     case ft_mydate:
         return "DATE";
     case ft_mytime:
-        sprintf_s(g_buf, TMP_BUFSIZE, "TIME(%d)", (size - 3) * 2);
+        if(fd.isLegacyTimeFormat())
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIME");
+        else
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIME(%d)", decimals);
         return g_buf;
     case ft_mydatetime:
-        sprintf_s(g_buf, TMP_BUFSIZE, "DATETIME(%d)", (size - 5) * 2);
+        if(fd.isLegacyTimeFormat())
+            sprintf_s(g_buf, TMP_BUFSIZE, "DATETIME");
+        else
+            sprintf_s(g_buf, TMP_BUFSIZE, "DATETIME(%d)", decimals);
         return g_buf;
     case ft_mytimestamp:
-
-        sprintf_s(g_buf, TMP_BUFSIZE, "TIMESTAMP(%d)", (size - 4) * 2);
+        if(fd.isLegacyTimeFormat())
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIMESTAMP");
+        else
+            sprintf_s(g_buf, TMP_BUFSIZE, "TIMESTAMP(%d)", decimals);
         return g_buf;
     case ft_mytext:
         if (size - 8 == 4)
@@ -140,11 +159,18 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
         else if (size - 8 == 2)
             return "BLOB";
         return "TINYBLOB";
+    case ft_myjson:
+         return "JSON";
+    case ft_mygeometry:
+         return "GEOMETRY";
     case ft_float:
         if (size == 4)
             return "FLOAT";
         if (size == 8)
             return "DOUBLE";
+    case ft_mydecimal:
+        sprintf_s(g_buf, TMP_BUFSIZE, "DECIMAL(%d, %d)", fd.digits, decimals);
+        return g_buf;
     case ft_string:
     case ft_wstring:
         sprintf_s(g_buf, TMP_BUFSIZE, "BINARY(%d)", size);
@@ -157,6 +183,7 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
     case ft_lvar: // var
         sprintf_s(g_buf, TMP_BUFSIZE, "VARBINARY(%d)", size);
         return g_buf;
+    case ft_lstring:
     case ft_myvarbinary:
     case ft_myfixedbinary:
         sprintf_s(g_buf, TMP_BUFSIZE, "VARBINARY(%d)", size);
@@ -164,7 +191,6 @@ const char* getFieldTypeName(uchar_td fieldType, int size, bool nobinary,
     case ft_mywvarbinary:
         sprintf_s(g_buf, TMP_BUFSIZE, "VARBINARY(%d)", size);
         return g_buf;
-
     case ft_mywvarchar:
         sprintf_s(g_buf, TMP_BUFSIZE, "VARCHAR(%d) %s CHARACTER SET utf16le",
                   size, bin_ptr);
@@ -220,36 +246,34 @@ bool isNumericFieldName(const char* name)
     return false;
 }
 
-bool isNULLKeySegment(const tabledef* table, short fieldIndex)
+char* removeTimeStampOptionDecimal(const char* s, char* buf, size_t size)
 {
-    bool ret = 0;
-    for (int i = 0; i < table->keyCount; i++)
-    {
-        const keydef& key = table->keyDefs[i];
-        for (int j = 0; j < key.segmentCount; j++)
-        {
-            if (key.segments[j].fieldNum == fieldIndex)
-            {
-                // bit3 all segment NULL key
-                // bit9 part segment NULL key
-                // if fd.nullValue != 0x00 then this field is type of not null .
-                const fielddef& fd = table->fieldDefs[fieldIndex];
-                if (((key.segments[j].flags.bit3 ||
-                      key.segments[j].flags.bit9)) &&
-                    (fd.nullValue == 0x00))
-                    ret = true;
-                else
-                    return false;
-            }
-        }
-    }
-    return ret;
+    strcpy_s(buf, size, s);
+    char* p = strrchr(buf, '(');
+    if (p)
+        *p = 0x00;
+    return buf;
 }
 
-std::string getFiledList(const tabledef* table, std::vector<std::string>& fdl)
+char* getBitDefalutValue(char* buf, size_t size, unsigned __int64 v)
+{
+    char* p = buf;
+    for (int i = 0; i< 64;++i)
+    {
+        if (v & (1ULL << (63 - i)))
+            *(p++) = '1';
+        else if (p != buf)
+            *(p++) = '0';
+    }
+    *p = 0x00;
+    return buf;
+}
+
+std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::string>& fdl, const clsrv_ver* ver)
 {
     std::string s;
     int len;
+    char timestamp_tmp[64];
     for (int i = 0; i < table->fieldCount; i++)
     {
         const fielddef& fd = table->fieldDefs[i];
@@ -274,11 +298,101 @@ std::string getFiledList(const tabledef* table, std::vector<std::string>& fdl)
         if (fd.charsetIndex() != table->charsetIndex)
             charsetName = mysql::charsetName(fd.charsetIndex());
 
-        s += getFieldTypeName(fd.type, len, f.bitA, charsetName);
-        if (isNULLKeySegment(table, i))
-            s += " NULL";
+        s += getFieldTypeName(fd, len, f.bitA, charsetName, fd.decimals);
+        const char* p = fd.defaultValue_str();
+        if ((fd.defaultValue() == DFV_TIMESTAMP_DEFAULT) && 
+            ((fd.type == ft_mytimestamp) || (fd.type == ft_mydatetime)))
+            p = timeStampDefaultStr(fd, timestamp_tmp, 64);
+        if (fd.isNullable())
+        {
+            if (fd.isDefaultNull())
+                s += " NULL DEFAULT NULL";
+            else if (p[0])
+            {
+                if ((fd.type == ft_mytimestamp) || 
+                    (fd.type == ft_mydatetime))
+                {  
+                    s += " NULL DEFAULT ";
+                    if (!ver->isSupportDateTimeTimeStamp())
+                    {
+                        char tmp[100];
+                        s += removeTimeStampOptionDecimal(p, tmp, 100);
+                    }
+                    else
+                        s += p;
+                }else if (fd.type == ft_bit)
+                {
+                    s += " NULL DEFAULT b'";
+                    char tmp[100] = {NULL};
+                    s += getBitDefalutValue(tmp, 100, (unsigned __int64)fd.defaultValue64());
+                    s += "'";
+                }
+                else
+                {
+                    s += " NULL DEFAULT '";
+                    s += p;
+                    s += "'";
+                }
+            }else
+            {
+                if (isStringTypeForIndex(fd.type))
+                    s += " NULL DEFAULT ''";
+                else if (fd.type == ft_mydatetime || fd.type == ft_mytimestamp)
+                    s += " NULL DEFAULT '0000-00-00 00:00:00'";
+                else if (fd.type == ft_mydate)
+                    s += " NULL DEFAULT '0000-00-00'";
+                else if (fd.type == ft_mytime)
+                    s += " NULL DEFAULT '00:00:00'";
+                else if (fd.isNumericType() || fd.isDateTimeType()/*P.SQL date time*/ )
+                    s += " NULL DEFAULT '0'";
+                else
+                    s += " NULL";
+            }
+        }
         else
-            s += " NOT NULL";
+        {
+            s += " NOT NULL ";
+            if (p[0])
+            {
+                if ((fd.type == ft_mytimestamp) ||
+                    (fd.type == ft_mydatetime))
+                {   
+                    s += "DEFAULT ";
+                    if (!ver->isSupportDateTimeTimeStamp())
+                    {
+                        char tmp[100];
+                        s += removeTimeStampOptionDecimal(p, tmp, 100);
+                    }
+                    else
+                        s += p;
+                }else if (fd.type == ft_bit)
+                {
+                    s += "DEFAULT b'";
+                    char tmp[100] = {NULL};
+                    s += getBitDefalutValue(tmp, 100, (unsigned __int64)fd.defaultValue());
+                    s += "'";
+                }
+                else
+                {
+                    s += "DEFAULT '";
+                    s += p;
+                    s += "'";
+                }
+            }    
+        }
+        if (fd.isTimeStampOnUpdate())
+        {
+            char buf[64];
+            updateTimeStampStr(&fd, buf, 64);
+            if (!ver->isSupportDateTimeTimeStamp())
+            {
+                char tmp[100];
+                s += removeTimeStampOptionDecimal(buf, tmp, 100);
+            }
+            else
+                s += buf;
+        }
+
         if ((fd.type == ft_autoinc) || (fd.type == ft_autoIncUnsigned))
             s += " AUTO_INCREMENT";
         s += ",";
@@ -286,50 +400,42 @@ std::string getFiledList(const tabledef* table, std::vector<std::string>& fdl)
     return s;
 }
 
-bool isNeedNis(const tabledef* table, const keydef& key)
-{
-    if (key.segmentCount > NIS_FD_KEYSEG_LIMIT)
-    {
-        // If a first segment is not 1 byte of Logical
-        const fielddef& fd = table->fieldDefs[key.segments[0].fieldNum];
-        return (!((fd.len == 1) && (fd.type == ft_logical)));
-    }
-    return false;
-}
-
-void insertNisFields(const tabledef* table, std::vector<std::string>& fdl,
+void sqlBuilder::insertNisFields(const tabledef* td, std::vector<std::string>& fdl,
                      std::string& s)
 {
     char buf[20];
-    for (int i = 0; i < table->keyCount; i++)
+    for (int i = 0; i < td->keyCount; i++)
     {
         _ltoa_s(i, buf, 20, 10);
         std::string fddef = "";
-        const keydef& key = table->keyDefs[i];
-        if (isNeedNis(table, key))
+        const keydef& key = td->keyDefs[i];
+        if (td->isNullKey(key))
         {
-            if (key.segments[0].flags.bit9)
-                fddef = std::string("`") + "$nfn" + buf +
-                        "` TINYINT UNSIGNED NULL,";
-            else if (key.segments[0].flags.bit3)
-                fddef = std::string("`") + "$nfa" + buf +
-                        "` TINYINT UNSIGNED NULL,";
+            if (td->isNeedNis(key))
+            {
+                if (key.segments[0].flags.bit9)
+                    fddef = std::string("`") + "$nfn" + buf +
+                            "` TINYINT UNSIGNED NULL,";
+                else if (key.segments[0].flags.bit3)
+                    fddef = std::string("`") + "$nfa" + buf +
+                            "` TINYINT UNSIGNED NULL,";
+            }
         }
         if (fddef != "")
             s += fddef;
     }
 }
 
-std::string& getKey(const tabledef* table, std::vector<std::string>& fdl, 
-                                    int index, std::string& s, bool specifyKeyNum=false)
+std::string& sqlBuilder::getKey(const tabledef* td, std::vector<std::string>& fdl, 
+                                    int index, std::string& s, bool specifyKeyNum)
 {
     char buf[20];
-    const keydef& key = table->keyDefs[index];
+    const keydef& key = td->keyDefs[index];
     if (specifyKeyNum)
         _ltoa_s(key.keyNumber, buf, 20, 10);     
     else
         _ltoa_s(index, buf, 20, 10);
-    if ((table->primaryKeyNum == index) &&
+    if ((td->primaryKeyNum == index) &&
         (fdl[key.segments[0].fieldNum] == "auto_id_field"))
         s += " PRIMARY KEY ";
     else
@@ -345,7 +451,7 @@ std::string& getKey(const tabledef* table, std::vector<std::string>& fdl,
     s += "(";
 
     // "nf" segment is added to a head.
-    if (isNeedNis(table, key))
+    if (td->isNeedNis(key))
     {
         if (key.segments[0].flags.bit9)
             s += std::string("`") + "$nfn" + buf + "`,";
@@ -359,7 +465,7 @@ std::string& getKey(const tabledef* table, std::vector<std::string>& fdl,
         s += "`";
 
         // part key
-        const fielddef& fd = table->fieldDefs[key.segments[j].fieldNum];
+        const fielddef& fd = td->fieldDefs[key.segments[j].fieldNum];
         if (fd.keylen && ((fd.keylen != fd.len) || fd.blobLenBytes()))
         {
             sprintf_s(buf, 20, "(%d)", fd.keylen);
@@ -375,7 +481,7 @@ std::string& getKey(const tabledef* table, std::vector<std::string>& fdl,
     return s;
 }
 
-std::string getKeyList(const tabledef* table, std::vector<std::string>& fdl)
+std::string sqlBuilder::getKeyList(const tabledef* table, std::vector<std::string>& fdl)
 {
     std::string s;
     for (int i = 0; i < table->keyCount; i++)
@@ -420,8 +526,8 @@ void makeSuffixNamesList(const tabledef* table, std::vector<std::string>& fds)
     }
 }
 
-std::string sqlCreateTable(const char* name /* utf8 */, tabledef* table,
-                           uchar_td charsetIndexServer)
+std::string sqlBuilder::sqlCreateTable(const char* name /* utf8 */, tabledef* table,
+                           uchar_td charsetIndexServer, const clsrv_ver* ver)
 {
     // Duplication of a name is inspected and, in duplication, _1 is added.
     // It does not correspond to two or more duplications.
@@ -441,7 +547,7 @@ std::string sqlCreateTable(const char* name /* utf8 */, tabledef* table,
     }
     else
         s += getFileName(table->fileNameA()) + "` (";
-    s += getFiledList(table, fds);
+    s += getFieldList(table, fds, ver);
     insertNisFields(table, fds, s);
     s += getKeyList(table, fds);
     if (s[s.size() - 1] == ',')
@@ -457,15 +563,15 @@ std::string sqlCreateTable(const char* name /* utf8 */, tabledef* table,
     return s;
 }
 
-std::string sqlCreateIndex(const tabledef* table, int keyNum,
-        bool specifyKeyNum, uchar_td charsetIndexServer)
+std::string sqlBuilder::sqlCreateIndex(const tabledef* table, int keyNum,
+        bool specifyKeyNum, uchar_td charsetIndexServer, const clsrv_ver* ver)
 {
     std::string s;
     std::vector<std::string> fds;// suffix added names list
     makeSuffixNamesList(table, fds);
     uint_td schemaCodePage =
         table->schemaCodePage ? table->schemaCodePage : GetACP();
-    s += getFiledList(table, fds);
+    s += getFieldList(table, fds, ver);
     insertNisFields(table, fds, s);
     s = "`";
     s+= getFileName(table->fileNameA());
@@ -616,8 +722,8 @@ void makeTableDef(tabledef* TableDef, fileSpec* fs, std::vector<fielddef>& fds)
     TableDef->fieldCount = (ushort_td)fds.size();
 }
 
-std::string sqlCreateTable(const char* fileName, fileSpec* fs,
-                           uchar_td charsetIndexServer)
+std::string sqlBuilder::sqlCreateTable(const char* fileName, fileSpec* fs,
+                           uchar_td charsetIndexServer, const clsrv_ver* ver)
 {
     tabledef table;
     memset(&table, 0, sizeof(tabledef));
@@ -632,7 +738,7 @@ std::string sqlCreateTable(const char* fileName, fileSpec* fs,
         table.keyDefs = &kds[0];
     makeTableDef(&table, fs, fds);
 
-    return sqlCreateTable(fileName, &table, charsetIndexServer);
+    return sqlCreateTable(fileName, &table, charsetIndexServer, ver);
 }
 
 } // namespace client

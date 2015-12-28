@@ -75,6 +75,12 @@ var ft_mytimestamp  = 49;
 var ft_mytext       = 50;
 var ft_myblob       = 51;
 var ft_autoIncUnsigned = 52;
+var ft_myfixedbinary = 53;
+var ft_enum         = 54;
+var ft_set          = 55;
+var ft_myyear       = 59;
+var ft_mygeometry   = 60;
+var ft_myjson       = 61;
 
 //file flag
 var table_varlen   = 0;
@@ -475,7 +481,14 @@ function checkEqual(a, b, on)
 {
 	if (a !== b)
 	{
-		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
+		try
+		{
+			WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
+		}
+		catch(e)
+		{
+			WScript.Echo("check object error on " + on);	
+		}
 		resultCode = 1;
 	}
 }
@@ -485,7 +498,14 @@ function checkNotEqual(a, b, on)
 {
 	if (a === b)
 	{
-		WScript.Echo("error on " + on + " " + a.toString() + " != " + b.toString());	
+		try
+		{
+			WScript.Echo("error on " + on + " " + a.toString() + " == " + b.toString());	
+		}
+		catch(e)
+		{
+			WScript.Echo("check object error on " + on);	
+		}
 		resultCode = 1;
 	}
 }

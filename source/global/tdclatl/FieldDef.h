@@ -77,14 +77,12 @@ public:
     STDMETHOD(get_Decimals)(unsigned char* Value);
     STDMETHOD(get_Max)(double* Value);
     STDMETHOD(get_Min)(double* Value);
-    STDMETHOD(get_DefValue)(double* Value);
     STDMETHOD(get_LookTable)(unsigned char* Value);
     STDMETHOD(get_LookField)(unsigned char* Value);
     STDMETHOD(get_LookViewField)(short Index, unsigned char* Value);
     STDMETHOD(get_EnableFlags)(IFlags** Value);
 
     STDMETHOD(put_Decimals)(unsigned char Value);
-    STDMETHOD(put_DefValue)(double Value);
     STDMETHOD(put_EnableFlags)(IFlags* Value);
     STDMETHOD(put_Len)(short Value);
     STDMETHOD(put_LookField)(unsigned char Value);
@@ -110,5 +108,23 @@ public:
 	STDMETHOD(SetPadCharSettings)(VARIANT_BOOL set, VARIANT_BOOL trim);
 	STDMETHOD(get_UsePadChar)(VARIANT_BOOL* Value);
 	STDMETHOD(get_TrimPadChar)(VARIANT_BOOL* Value);
+    
+    STDMETHOD(put_DefaultValue)(VARIANT Value);
+    STDMETHOD(get_DefaultValue)(VARIANT* Value);
+
+    STDMETHOD(get_PadCharType)(VARIANT_BOOL* Value);
+    STDMETHOD(get_DateTimeType)(VARIANT_BOOL* Value);
+    STDMETHOD(get_ValidCharNum)(VARIANT_BOOL* Value);
+    STDMETHOD(get_Nullable)(VARIANT_BOOL* Value);
+    STDMETHOD(SetNullable)(VARIANT_BOOL Value, VARIANT_BOOL DefaultNull);
+    STDMETHOD(put_TimeStampOnUpdate)(VARIANT_BOOL Value);
+    STDMETHOD(get_TimeStampOnUpdate)(VARIANT_BOOL* Value);
+    STDMETHOD(get_DefaultNull)(VARIANT_BOOL* Value);
+    STDMETHOD(put_Digits)(short Value);
+    STDMETHOD(get_Digits)(short* Value);
+    STDMETHOD(get_IsIntegerType)(VARIANT_BOOL* Value);
+    STDMETHOD(get_IsNumericType)(VARIANT_BOOL* Value);
+    STDMETHOD(get_IsDateTimeType)(VARIANT_BOOL* Value);
+    STDMETHOD(SetDecimalDigits)(int Digits, int Decimals);
 
 };

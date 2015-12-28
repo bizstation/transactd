@@ -82,7 +82,7 @@ class client
 
     std::vector<char> m_sendbuf;
 
-    bool checkVersion(trdVersiton& ver)
+    bool checkVersion(clsrv_ver& ver)
     {
         if ((ver.srvMajor < 2) || ((ver.srvMajor == 2) && (ver.srvMinor < 3)))
             return false;
@@ -150,13 +150,16 @@ class client
         handshale_t* hst  = (handshale_t*)c->read();
         if (c->error()) return false;
         bool auth = (hst->size == sizeof(handshale_t));
-        bool min = (hst->size == (sizeof(handshale_t) 
-         									-  sizeof(hst->scramble)));
-        
+        bool min = (hst->size == (sizeof(handshale_t) -  sizeof(hst->scramble)));
+        memcpy(c->versions(), &hst->ver.desc, sizeof(clsrv_ver));
+
         if (min || auth)
         {
-            if (!checkVersion(hst->ver))
+            if (!checkVersion(hst->ver.desc))
+            {
+                m_preResult = SERVER_CLIENT_NOT_COMPATIBLE; 
                 return false;
+            }
             c->setCharsetServer(mysql::charsetIndex(hst->ver.cherserServer));
             m_req.cid->lock_wait_timeout = hst->lock_wait_timeout;
             m_req.cid->transaction_isolation = hst->transaction_isolation;
@@ -190,7 +193,10 @@ class client
     }
 
 public:
-    client() : m_cryptPwd(NULL), m_disconnected(true), m_connecting(false) {}
+    client() : m_cryptPwd(NULL), m_disconnected(false), m_connecting(false)
+    {
+    }
+
     ~client()
     {
         if (m_cryptPwd)
@@ -215,6 +221,23 @@ public:
     }
 
     inline request& req() { return m_req; }
+
+    inline const clsrv_ver* ver()
+    { 
+        if (m_req.cid->con)
+            return (clsrv_ver*)m_req.cid->con->versions();
+        return NULL; 
+    }
+    inline bool isSupportFunction(short op)
+    {
+        if (op == TD_GET_SCHEMA)
+        {
+            const clsrv_ver* v = ver();
+            if (!v) return false;
+            return (v->srvMajor > 2) || ((v->srvMajor == 2) && (v->srvMinor >= 6));
+        }
+        return false;
+    }
 
     inline void setParam(ushort_td op, posblk* pbk, void_td* data,
                          uint_td* datalen, void_td* keybuf, keylen_td keylen,
@@ -253,6 +276,7 @@ public:
     {
         if (!m_req.cid->con)
         {
+            m_preResult = 0;
             endpoint_t ep;
             endPoint((const char*)m_req.keybuf, &ep);
             if (ep.host[0] == 0x00)
@@ -264,7 +288,7 @@ public:
                 setCon(c);
                 m_connecting = true;
             }
-            else
+            else if (m_preResult == 0)
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
         }
         m_disconnected = !m_req.cid->con;
@@ -272,17 +296,45 @@ public:
 
     inline void createIndex()
     {
+        if (!ver())
+        {
+            m_preResult = ERROR_TD_NOT_CONNECTED;
+            return; 
+        }
         m_req.paramMask = P_MASK_NOKEYBUF;
         int charsetIndexServer =  getServerCharsetIndex();
         unsigned char keynum = m_req.keyNum;
         bool specifyKeyNum = (keynum >= 0x80);
         if (keynum >= 0x80)
             keynum -= 0x80;
-        m_sql = sqlCreateIndex((tabledef*)m_req.data, keynum, 
-                            specifyKeyNum, charsetIndexServer);
+        m_sql = sqlBuilder::sqlCreateIndex((tabledef*)m_req.data, keynum, 
+                            specifyKeyNum, charsetIndexServer, ver());
         m_req.data = (ushort_td*)m_sql.c_str();
         m_tmplen = (uint_td)(m_sql.size() + 1);
         m_req.datalen = &m_tmplen;
+    }
+
+    inline void getSqlCreate()
+    {
+        if (!ver())
+        {
+            m_req.result = ERROR_TD_NOT_CONNECTED;
+            return; 
+        }
+        _TCHAR tmp[MAX_PATH*2]={0};
+        stripAuth((const char*)m_req.keybuf, tmp, MAX_PATH);
+        std::string name = getTableName(tmp);
+        int charsetIndexServer =  getServerCharsetIndex();
+        std::string sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
+                                       charsetIndexServer, ver());
+        uint_td  datalen = *m_req.datalen;
+        *m_req.datalen = (uint_td)(sql.size() + 1);
+        if (datalen <= sql.size())
+        {
+            m_req.result = STATUS_BUFFERTOOSMALL;
+            return;
+        }
+        strcpy_s((char*)m_req.data, *m_req.datalen, sql.c_str());
     }
 
     inline void create()
@@ -298,15 +350,27 @@ public:
             m_req.paramMask &= ~P_MASK_POSBLK;
             std::string name = getTableName(tmp);
             int charsetIndexServer =  getServerCharsetIndex();
-            if ((m_req.keyNum == 1) || (m_req.keyNum == 2)) // make by tabledef
+            if (!ver())
             {
-                m_sql = sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
-                                       charsetIndexServer);
-                m_req.keyNum -= 2; // 1= exists check 2 = no exists check
+                m_preResult = ERROR_TD_NOT_CONNECTED;
+                return; 
+            }
+            if ((m_req.keyNum == CR_SUBOP_BY_TABLEDEF) || 
+                    (m_req.keyNum == CR_SUBOP_BY_TABLEDEF_NOCKECK)) // make by tabledef
+            {
+                m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
+                                       charsetIndexServer, ver());
+                m_req.keyNum -= 2; // -1= exists check 0 = no exists check
+            }
+            else if ((m_req.keyNum == CR_SUBOP_BY_SQL) || 
+                    (m_req.keyNum == CR_SUBOP_BY_SQL_NOCKECK)) // make by sql
+            {
+                m_sql = (char*)m_req.data;
+                m_req.keyNum -= 4; // -1= exists check 0 = no exists check
             }
             else
-                m_sql = sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,
-                                       charsetIndexServer);
+                m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,
+                                       charsetIndexServer, ver());
             m_req.data = (ushort_td*)m_sql.c_str();
             m_tmplen = (uint_td)(m_sql.size() + 1);
             m_req.datalen = &m_tmplen;
@@ -379,7 +443,10 @@ public:
                         m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
                 }
                 else
+                {
                     buildDualChasetKeybuf();
+                    m_disconnected = false;
+                }
             }
             else
                 m_preResult = errorCode(m_cons->connectError());

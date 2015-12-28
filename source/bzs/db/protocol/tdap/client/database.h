@@ -58,10 +58,19 @@ typedef void(__STDCALL* copyDataFn)(database* db, int recordCount, int count,
 
 class DLLLIB database : public nsdatabase
 {
+    friend struct openTablePrams;
     struct dbimple* m_impl;
 
     void setDir(const _TCHAR* directory);
     virtual table* createTableObject();
+    bool defaultImageCopy(const void* data, short& tableIndex);
+    short testOpenTable();
+    table* doOpenTable(struct openTablePrams* pm, const _TCHAR* ownerName);
+    void* getExtendBufferForOpen(uint_td& size); // orverload
+    _TCHAR* getTableUri(_TCHAR* buf, short fileNum);
+    _TCHAR* getTableUri(_TCHAR* buf, const _TCHAR* filename);
+    inline void copyEachFieldData(table* dest, table* src, struct filedChnageInfo* fci);
+
 
 protected:
     database& operator=(const database&);
@@ -75,10 +84,7 @@ protected:
     virtual bool onOpenAfter() { return true; };
 
     virtual bool onTableOpened(table* tb, short fileNum, short mode,
-                               bool isCreated)
-    {
-        return true;
-    };
+                        bool isCreated) {return true;}
     virtual char* getContinuousList(int option);
     virtual void onCopyDataInternal(table* tb, int recordCount, int count,
                                     bool& cancel);
@@ -108,7 +114,9 @@ public:
                      bool autoCreate = true, const _TCHAR* ownerName = NULL,
                      const _TCHAR* uri = NULL);
     database* clone();
+    bool createTable(const char* utf8Sql);
     bool createTable(short fileNum, const _TCHAR* uri = NULL);
+    char* getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf, uint_td* size);
     void create(const _TCHAR* uri, short type = TYPE_SCHEMA_BDF);
     void drop();
     void dropTable(const _TCHAR* tableName);
@@ -116,15 +124,16 @@ public:
     short aclReload();
     short continuous(char_td op = TD_BACKUP_START, bool inclideRepfile = false);
     short assignSchemaData(dbdef* src);
-    short copyTableData(table* dest, table* src, bool turbo, int offset = 0,
+    short copyTableData(table* dest, table* src, bool turbo,
                         short keyNum = -1, int maxSkip = -1);
     void convertTable(short tableIndex, bool turbo,
                       const _TCHAR* ownerName = NULL);
     bool existsTableFile(short tableIndex, const _TCHAR* ownerName = NULL);
-    _TCHAR* getTableUri(_TCHAR* buf, short fileNum);
     void getBtrVersion(btrVersions* versions);
     bool isOpened() const;
     char_td mode() const;
+    bool autoSchemaUseNullkey() const;
+    void setAutoSchemaUseNullkey(bool v);
 
     virtual int defaultAutoIncSpace() const { return 0; };
     static database* create();
@@ -132,6 +141,10 @@ public:
      This method is ignore refarence count of nsdatabse.
      */
     static void destroy(database* db);
+    static void setCompatibleMode(int mode);
+    static int compatibleMode();
+    static const int CMP_MODE_MYSQL_NULL = 1; //default
+    static const int CMP_MODE_OLD_NULL =  0;
 };
 
 } // namespace client

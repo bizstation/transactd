@@ -1,0 +1,27 @@
+HKCR
+{
+	transactd.bitset.1 = s 'bitset Class'
+	{
+		CLSID = s '{71107F47-2E0A-400B-9E62-C87D84A50008}'
+	}
+	transactd.bitset = s 'bitset Class'
+	{		
+		CurVer = s 'transactd.bitset.1'
+	}
+	
+	NoRemove CLSID
+	{
+		ForceRemove {71107F47-2E0A-400B-9E62-C87D84A50008} = s 'bitset Class'
+		{
+			ProgID = s 'transactd.bitset.1'
+			VersionIndependentProgID = s 'transactd.bitset'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}

@@ -66,7 +66,8 @@ BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::reverseOrderStatement,
 
 BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::groupFuncBase, 1)
 BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::queryBase, 1)
-
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::readStatement, 1)
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::readHasMany, 1)
 namespace bzs
 {
 namespace db
@@ -178,11 +179,15 @@ void serialize(Archive& /*ar*/, reverseOrderStatement& q,
 }
 
 template <class Archive>
-void serialize(Archive& ar, readStatement& q, const unsigned int /*version*/)
+void serialize(Archive& ar, readStatement& q, const unsigned int version)
 {
     boost::serialization::base_object<executable>(q);
-    ar& boost::serialization::make_nvp(
-        "keyFields", boost::serialization::base_object<fieldNames>(q));
+    if (version < 1)
+        ar& boost::serialization::make_nvp(
+            "keyFields", boost::serialization::base_object<fieldNames>(q));
+    else
+        ar& boost::serialization::make_nvp(
+            "keyValues", boost::serialization::base_object<fieldValues>(q));
     ar& boost::serialization::make_nvp(
         "query", boost::serialization::base_object<query>(q));
     ar& boost::serialization::make_nvp("params", *q.internalPtr());
@@ -191,7 +196,6 @@ void serialize(Archive& ar, readStatement& q, const unsigned int /*version*/)
 template <class Archive>
 void serialize(Archive& ar, readHasMany& q, const unsigned int /*version*/)
 {
-
     ar& boost::serialization::make_nvp(
         "readStatement", boost::serialization::base_object<readStatement>(q));
     ar& boost::serialization::make_nvp("params", *q.internalPtr());
@@ -282,6 +286,31 @@ void serialize(Archive& ar, fieldNames& q, const unsigned int /*version*/)
         {
             s = q.getValue(i);
             serialize_string(ar, "value", s);
+        }
+    }
+}
+
+template <class Archive>
+void serialize(Archive& ar, fieldValues& q, const unsigned int /*version*/)
+{
+    int count = q.count();
+    ar& boost::serialization::make_nvp("count", count);
+    std::_tstring s;
+    bool isNull;
+    for (int i = 0; i < count; i++)
+    {
+        if (Archive::is_loading::value)
+        {
+            serialize_string(ar, "value", s);
+            ar& boost::serialization::make_nvp("isNull", isNull);
+            q.addValue(s.c_str(), isNull);
+        }
+        else
+        {
+            s = q.getValue(i);
+            serialize_string(ar, "value", s);
+            isNull = q.isNull(i);
+            ar& boost::serialization::make_nvp("isNull", isNull);
         }
     }
 }
@@ -470,7 +499,10 @@ groupFuncBase& groupByStatement::addFunction(eFunc v,
         func = new client::sum(targetNames, resultName);
         break;
     case fcount:
-        func = new client::count(resultName);
+        if (targetNames.count())
+            func = new client::count(targetNames, resultName);
+        else
+            func = new client::count(resultName);
         break;
     case favg:
         func = new client::avg(targetNames, resultName);
@@ -669,7 +701,7 @@ struct queryStatementImple
     std::_tstring database;
     std::_tstring table;
     int option;
-    fieldNames* keyFields;
+    fieldValues* keyFields;
     client::query* query;
     readStatement::eReadType readType;
     short index;
@@ -707,6 +739,9 @@ struct queryStatementImple
         const _TCHAR* keys[8] = { NULL };
         for (int i = 0; i < keyFields->count(); ++i)
             keys[i] = parent->pv.replace(keyFields->getValue(i));
+        for (int i = 0; i < keyFields->count(); ++i)
+            if(keyFields->isNull(i))
+                keys[i] =  NULL;
 
         client::query q;
         client::query* tq = replaceQueryParams(query, q, parent);
@@ -1279,12 +1314,12 @@ void readHasMany::execute(recordset& rs)
 
     for (int i = 0; i < (int)rs.size(); ++i)
     {
-        fieldNames::reset();
+        fieldValues::reset();
         // setkey values
         for (int j = 0; j < (int)indexes.size(); ++j)
         {
             const _TCHAR* p = rs[i][indexes[j]].c_str();
-            addValue(p);
+            addValue(p, rs[i][indexes[j]].isNull());
             if (j == 0)
                 addLogic(getkeyValueColumn(j), _T("="), p);
             else

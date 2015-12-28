@@ -23,6 +23,8 @@ require 'transactd'
 require 'rbconfig'
 IS_WINDOWS = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
 
+Transactd::setRecordValueMode(Transactd::RECORD_KEYVALUE_FIELDVALUE)
+
 def getEnv(valuename)
   return ENV[valuename] if ENV[valuename] != nil
   return ''
@@ -116,11 +118,11 @@ def testCreateTable(db)
   #test padChar
   fd.type = Transactd::Ft_string
   fd.setPadCharSettings(true, false)
-  expect(fd.usePadChar()).to eq true;
-  expect(fd.trimPadChar()).to eq false;
+  expect(fd.isUsePadChar()).to eq true;
+  expect(fd.isTrimPadChar()).to eq false;
   fd.setPadCharSettings(false, true)
-  expect(fd.usePadChar()).to eq false;
-  expect(fd.trimPadChar()).to eq true;
+  expect(fd.isUsePadChar()).to eq false;
+  expect(fd.isTrimPadChar()).to eq true;
   
   fd.type = Transactd::Ft_zstring
   dbdef.updateTableDef(1)
@@ -224,9 +226,10 @@ def testVersion()
   expect(client_ver.minorVersion.to_s).to eq Transactd::CPP_INTERFACE_VER_MINOR.to_s
   expect(client_ver.type.chr).to eq 'N'
   my5x = (server_ver.majorVersion == 5) && (server_ver.minorVersion >= 5)
-  maria10 = (server_ver.majorVersion == 10) && (server_ver.minorVersion == 0)
+  maria10 = (server_ver.majorVersion == 10) && (server_ver.minorVersion <= 1)
   expect(my5x || maria10).to be true
-  expect(server_ver.type.chr).to eq 'M'
+  tmp = (server_ver.type.chr == 'M') || (server_ver.type.chr == 'A')
+  expect(tmp).to be true
   expect(engine_ver.majorVersion.to_s).to eq Transactd::TRANSACTD_VER_MAJOR.to_s
   expect(engine_ver.minorVersion.to_s).to eq Transactd::TRANSACTD_VER_MINOR.to_s
   expect(engine_ver.type.chr).to eq 'T'
@@ -1875,7 +1878,7 @@ def testLogin()
   # invalid database name
   testDropDatabase(db)
   db.disconnect()
-  expect(db.stat()).to eq 0
+  expect(db.stat()).to eq 1
   db.connect(URL_DB)
   expect(db.stat()).to eq (Transactd::ERROR_NO_DATABASE)
   db.disconnect()
@@ -1888,7 +1891,7 @@ def isUtf16leSupport(db)
   vv = Transactd::BtrVersions.new()
   db.getBtrVersion(vv)
   server_ver = vv.version(1)
-  if ('M' == server_ver.type.chr)
+  if ('M' == server_ver.type.chr || 'A' == server_ver.type.chr)
     if (server_ver.majorVersion <= 4)
       return false
     elsif (server_ver.majorVersion == 5)
@@ -2368,6 +2371,22 @@ def testFilterVar()
   db.close()
 end
 
+def varLenBytes(fd)
+  if ((fd.type >= Transactd::Ft_myvarchar && fd.type <= Transactd::Ft_mywvarbinary) || fd.type == Transactd::Ft_lstring)
+    return (fd.len < 256) ? 1 : 2
+  elsif (fd.type == Transactd::Ft_lvar)
+    return 2
+  end
+  return 0
+end
+
+def blobLenBytes(fd)
+  if (fd.type == Transactd::Ft_myblob || fd.type == Transactd::Ft_mytext)
+    return fd.len - 8
+  end
+  return 0
+end
+
 def testCreateTableStringFilter(db, id, name, type, type2)
   # create table
   dbdef = db.dbDef()
@@ -2390,11 +2409,12 @@ def testCreateTableStringFilter(db, id, name, type, type2)
   fd.setName('name')
   fd.type = type
   fd.len = 44
-  if (fd.varLenBytes() != 0)
-    fd.len = fd.varLenBytes() + 44
+  vlen = varLenBytes(fd)
+  if (vlen != 0)
+    fd.len = vlen + 44
     fd.keylen = fd.len
   end
-  if (fd.blobLenBytes() != 0)
+  if (blobLenBytes(fd) != 0)
     fd.len = 12 # 8+4
   end
   fd.keylen = fd.len
@@ -2404,11 +2424,12 @@ def testCreateTableStringFilter(db, id, name, type, type2)
   fd.setName('namew')
   fd.type = type2
   fd.len = 44
-  if (fd.varLenBytes() != 0)
-    fd.len = fd.varLenBytes() + 44
+  vlen = varLenBytes(fd)
+  if (vlen != 0)
+    fd.len = vlen + 44
     fd.keylen = fd.len
   end
-  if (fd.blobLenBytes() != 0)
+  if (blobLenBytes(fd) != 0)
     fd.len = 12 # 8+4
   end
   fd.keylen = fd.len
@@ -3287,10 +3308,10 @@ def testServerPrepareJoin()
   rs = atu.keyValue(1).read(stmt1, 15000)
   ate.outerJoin(rs, stmt2, 'id')
   expect(rs.size()).to eq 15000
+  expect(rs[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
   atg.outerJoin(rs, stmt3, 'group')
   expect(rs.size()).to eq 15000
   
-  expect(rs[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
   expect(rs[NO_RECORD_ID]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
   expect(rs[NO_RECORD_ID]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
   
@@ -3302,13 +3323,15 @@ def testServerPrepareJoin()
   ate.outerJoin(rs, stmt2, 'id')
   expect(rs.size()).to eq 15000
   expect(rs[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
+  expect(rs[NO_RECORD_ID - 1].getField('comment').isNull()).to eq true
   expect(rs[NO_RECORD_ID]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
   expect(rs[NO_RECORD_ID]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
   
   # Test clone blob field
   rs2 = rs.clone()
   expect(rs2.size()).to eq 15000
-  expect(rs2[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
+  #expect(rs2[NO_RECORD_ID - 1].isInvalidRecord()).to eq true
+  expect(rs2[NO_RECORD_ID - 1].getField('comment').isNull()).to eq true
   expect(rs2[NO_RECORD_ID]['comment']).to eq "#{NO_RECORD_ID + 1} comment"
   expect(rs2[NO_RECORD_ID]['blob']).to eq "#{NO_RECORD_ID + 1} blob"
   

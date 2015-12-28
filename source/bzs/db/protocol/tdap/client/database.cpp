@@ -41,21 +41,29 @@ namespace client
 
 struct dbimple
 {
+    static int m_compatibleMode;
     dbdef* dbDef;
     void* optionalData;
     _TCHAR rootDir[MAX_PATH];
     deleteRecordFn m_deleteRecordFn;
     copyDataFn m_copyDataFn;
-    bool isOpened;
-    bool isTableReadOnly;
-    bool lockReadOnly;
-
+    uint_td openBuflen;
+    btrVersions vers;
+    struct
+    {
+        bool isOpened : 1;
+        bool isTableReadOnly : 1;
+        bool lockReadOnly : 1;
+        bool autoSchemaUseNullkey : 1;
+        bool noPreloadSchema : 1;
+    };
     dbimple()
         : dbDef(NULL), optionalData(NULL), m_deleteRecordFn(NULL),
-          m_copyDataFn(NULL), isOpened(false), isTableReadOnly(false),
-          lockReadOnly(false)
+          m_copyDataFn(NULL), openBuflen(0), isOpened(false), isTableReadOnly(false),
+          lockReadOnly(false), autoSchemaUseNullkey(false), noPreloadSchema(false)
     {
         rootDir[0] = 0x00;
+        memset(&vers, 0 , sizeof(btrVersions));
     }
 
     dbimple& operator=(const dbimple& rt)
@@ -70,10 +78,19 @@ struct dbimple
             lockReadOnly = rt.lockReadOnly;
             m_deleteRecordFn = rt.m_deleteRecordFn;
             m_copyDataFn = rt.m_copyDataFn;
+            autoSchemaUseNullkey = rt.autoSchemaUseNullkey;
+            noPreloadSchema = rt.noPreloadSchema;
+            vers = rt.vers;
         }
         return *this;
     }
+
+    const btrVersion& mysqlVer() const { return vers.versions[VER_IDX_DB_SERVER];}
+    const btrVersion& pluginVer() const { return vers.versions[VER_IDX_PLUGIN];}
+    
 };
+
+int dbimple::m_compatibleMode = database::CMP_MODE_MYSQL_NULL;
 
 void database::destroy(database* db)
 {
@@ -170,12 +187,58 @@ char_td database::mode() const
     return m_impl->dbDef->mode();
 }
 
-void database::create(const _TCHAR* fullpath, short type)
+bool database::autoSchemaUseNullkey() const
+{
+    return m_impl->autoSchemaUseNullkey;
+}
+
+void database::setAutoSchemaUseNullkey(bool v)
+{
+    m_impl->autoSchemaUseNullkey = v;
+}
+
+void database::create(const _TCHAR* uri, short type)
 {
     if (!m_impl->dbDef)
         m_impl->dbDef = new dbdef(this, type); // Create TabelDef here.
-    m_impl->dbDef->create(fullpath);
-    m_stat = m_impl->dbDef->stat();
+    
+    _TCHAR buf[MAX_PATH];
+    schemaTable(uri, buf, MAX_PATH);
+    if (buf[0])
+    {
+        m_impl->dbDef->create(uri);
+        m_stat = m_impl->dbDef->stat();
+    }
+    else
+    {
+        if (isTransactdUri(uri))
+        {
+            if (setUseTransactd() == false)
+                m_stat = ERROR_LOAD_CLIBRARY;
+            else
+            {
+                _TCHAR uri_tmp[MAX_PATH];
+                stripParam(uri, buf, MAX_PATH);
+                _tcscpy_s(uri_tmp, MAX_PATH, buf);
+                _tcscat(uri_tmp, _T("?dbfile="));
+                _tcscat(uri_tmp, TRANSACTD_SCHEMANAME);
+                passwd(uri, buf, MAX_PATH);
+                if (buf[0])
+                {
+                    _tcscat(uri_tmp, _T("&pwd="));
+                    _tcscat(uri_tmp, buf);
+                }
+
+                _TCHAR posblk[128] = { 0x00 };
+                const char* p = toServerUri((char*)buf, MAX_PATH, uri_tmp, true);
+                uint_td len = 0;
+                m_stat = m_btrcallid(TD_CREATETABLE, posblk, NULL, &len,
+                     (void*)p, (uchar_td)strlen(p), CR_SUBOP_CREATE_DBONLY , clientID());
+            }
+        }
+        else
+            m_stat = STATUS_NOSUPPORT_OP;
+    }
 }
 
 void database::drop()
@@ -186,39 +249,71 @@ void database::drop()
         return;
     }
     _TCHAR FullPath[MAX_PATH];
-    std::vector<std::_tstring> fileNames;
+    _TCHAR* fileNames[255] = {NULL};
+    int count = 0;
     for (int i = 0; i <= m_impl->dbDef->tableCount(); i++)
     {
-        if (m_impl->dbDef->tableDefs(i))
+        tabledef* td = m_impl->dbDef->tableDefs(i);
+        if (td)
         {
             _stprintf_s(FullPath, MAX_PATH, _T("%s") PSEPARATOR _T("%s"),
-                        rootDir(), m_impl->dbDef->tableDefs(i)->fileName());
-            fileNames.push_back(FullPath);
+                        rootDir(), td->fileName());
+            size_t len = _tcslen(FullPath);
+            _TCHAR* s(new _TCHAR[len + 1]);
+            _tcscpy(s, FullPath);
+            fileNames[count++] = s;
         }
     }
-    fileNames.push_back(m_impl->dbDef->uri());
-    close();
+    size_t len = _tcslen(m_impl->dbDef->uri());
+    if (len)
+    {
+        _TCHAR* s(new _TCHAR[len + 1]);
+        _tcscpy(s, m_impl->dbDef->uri());
+   
+        fileNames[count++] = s;
+        BTRCALLID_PTR ptr = m_btrcallid;
+        m_btrcallid = NULL;
+        close();
+        m_btrcallid = ptr;
+        for (int i = 0; i < count; i++)
+        {
+            nsdatabase::dropTable(fileNames[i]);
+            if (m_stat && (m_stat == STATUS_TABLE_NOTOPEN))
+                break;
+        }
+
+        for (int i = 0; i < count; i++)
+            delete [] fileNames[i];
+    }else
+    {
+        _TCHAR s[MAX_PATH];
+        _tcscpy(s, rootDir());
+        _tcscat(s, TRANSACTD_SCHEMANAME);
+        nsdatabase::dropTable(s);
+    }
     if (m_stat)
         return;
-
-    for (size_t i = 0; i < fileNames.size(); i++)
-    {
-        nsdatabase::dropTable(fileNames[i].c_str());
-        if (m_stat && (m_stat == STATUS_TABLE_NOTOPEN))
-            return;
-    }
+    nsdatabase::reset();
 }
 
 void database::dropTable(const _TCHAR* TableName)
 {
+    if (m_impl->dbDef == NULL)
+    {
+        m_stat = STATUS_DB_YET_OPEN;
+        return;
+    }
     _TCHAR FullPath[MAX_PATH];
     _tcscpy(FullPath, rootDir());
     _tcscat(FullPath, PSEPARATOR);
     short index = m_impl->dbDef->tableNumByName(TableName);
     if (index == -1)
+    {
         m_stat = STATUS_TABLENAME_NOTFOUND;
-    else
-        _tcscat(FullPath, m_impl->dbDef->tableDefs(index)->fileName());
+        return;
+    }
+    tabledef* td = m_impl->dbDef->tableDefs(index);
+    _tcscat(FullPath, td->fileName());
 
     int i = 0;
     while (1)
@@ -229,7 +324,12 @@ void database::dropTable(const _TCHAR* TableName)
         if (++i == 10) 
             break;
         Sleep(50);
-    } 
+    }
+    if (m_stat == 0)
+    {
+        m_impl->dbDef->setDefaultImage(index, NULL, 0);
+        td->m_inUse = 0;
+    }
 }
 
 void database::setDir(const _TCHAR* directory)
@@ -243,7 +343,8 @@ database& database::operator=(const database& rt)
     {
         nsdatabase::operator=(rt);
         m_impl->dbimple::operator=(*(rt.m_impl));
-        rt.m_impl->dbDef->addref();
+        if (rt.m_impl->dbDef)
+            rt.m_impl->dbDef->addref();
         addref();
     }
     return *this;
@@ -300,6 +401,7 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
 
     _TCHAR buf[MAX_PATH+50];
     m_stat = STATUS_SUCCESS;
+    m_impl->noPreloadSchema = false;
     if (!m_impl->isOpened)
     {
         if (setUri(_uri) == false)
@@ -323,30 +425,63 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
         if (!m_impl->dbDef)
             m_impl->dbDef = new dbdef(this, type);
 
-        doOpen(_uri, type, mode, ownername);
-        m_impl->isOpened = (m_stat == STATUS_SUCCESS); // important
-        if ((m_stat == STATUS_TABLE_NOTOPEN) && isUseTransactd() &&
-            _tcsstr(_uri, TRANSACTD_SCHEMANAME))
-        {
-            // Specified TRANSACTD_SCHEMANAME and no table
-            // Auto make schema.
-            create(_uri, TYPE_SCHEMA_BDF);
-            if (m_stat == STATUS_SUCCESS)
+        if (type == TYPE_SCHEMA_BDF)
+        {// BDF
+            if (isTransactdUri(_uri))
             {
-                //Open mode force normal
-                doOpen(_uri, type, TD_OPEN_NORMAL, ownername);
+                _TCHAR scmtable[256];
+                schemaTable(_uri, scmtable, 256);
+                m_impl->noPreloadSchema = (scmtable[0] == 0x00);
+            }
+        }
+        if (m_impl->noPreloadSchema)
+        {
+            if ((compatibleMode() & CMP_MODE_MYSQL_NULL) == 0)
+                m_stat = STATUS_INVALID_NULLMODE;
+            else if (connect(_uri))
+            {
+                m_impl->dbDef->allocDatabuffer();
+                m_stat = m_impl->dbDef->stat();
+                if (m_stat == 0)
+                {
+                    m_impl->isOpened = true;
+                    m_impl->autoSchemaUseNullkey = true;
+                    getBtrVersion(&m_impl->vers);
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            doOpen(_uri, type, mode, ownername);
+            m_impl->isOpened = (m_stat == STATUS_SUCCESS); // important
+            if ((m_stat == STATUS_TABLE_NOTOPEN) && isUseTransactd() &&
+                _tcsstr(_uri, TRANSACTD_SCHEMANAME))
+            {
+                // Specified TRANSACTD_SCHEMANAME and no table
+                // Auto make schema.
+                create(_uri, TYPE_SCHEMA_BDF);
                 if (m_stat == STATUS_SUCCESS)
                 {
-                    m_impl->dbDef->autoMakeSchema();
-                    m_impl->dbDef->close();
-                    doOpen(_uri, type, mode, ownername);
+                    //Open mode force normal
+                    doOpen(_uri, type, TD_OPEN_NORMAL, ownername);
+                    if (m_stat == STATUS_SUCCESS)
+                    {
+                        m_impl->dbDef->autoMakeSchema(autoSchemaUseNullkey());
+                        m_impl->dbDef->close();
+                        doOpen(_uri, type, mode, ownername);
+                    }
                 }
             }
         }
     }
     if (m_impl->isOpened && onOpenAfter())
-        return true;
-
+    {
+        if (isUseTransactd())
+            getBtrVersion(&m_impl->vers);
+        if (m_stat == 0)
+            return true;
+    }
     m_impl->isOpened = false;
     m_impl->dbDef->close();
     m_impl->dbDef->release();
@@ -414,10 +549,11 @@ short database::continuous(char_td IsEnd, bool inclideRepfile)
 void database::doClose()
 {
     m_stat = STATUS_SUCCESS;
-
     if (m_impl->dbDef)
     {
-        m_impl->dbDef->release();
+        dbdef* def = m_impl->dbDef;
+        m_impl->dbDef = NULL;
+        def->release();
         nsdatabase::reset();
     }
     m_impl->dbDef = NULL;
@@ -446,44 +582,26 @@ bool database::doReopenDatabaseSchema()
     return true;
 }
 
-_TCHAR* database::getTableUri(_TCHAR* buf, short FileNum)
+_TCHAR* database::getTableUri(_TCHAR* buf, short tableIndex)
 {
     m_stat = STATUS_SUCCESS;
     if ((m_impl->dbDef) && (m_impl->isOpened))
     {
-        if (_tcsstr(m_impl->dbDef->tableDefs(FileNum)->fileName(),
-                    PSEPARATOR) == NULL)
-            _stprintf_s(buf, MAX_PATH, _T("%s") PSEPARATOR _T("%s"),
-                        m_impl->rootDir,
-                        m_impl->dbDef->tableDefs(FileNum)->fileName());
-        else
-            _tcscpy(buf, m_impl->dbDef->tableDefs(FileNum)->fileName());
-        return buf;
+        tabledef* td = m_impl->dbDef->tableDefs(tableIndex);
+        if (td)
+            return getTableUri(buf, td->fileName());
     }
     m_stat = STATUS_DB_YET_OPEN;
     return NULL;
 }
 
-table* database::openTable(const _TCHAR* TableName, short mode, bool AutoCreate,
-                           const _TCHAR* OrnerName, const _TCHAR* pPath)
+_TCHAR* database::getTableUri(_TCHAR* buf, const _TCHAR* filename)
 {
-    short filenum;
-    m_stat = 0;
-    if ((m_impl->dbDef) && (m_impl->isOpened))
-    {
-        filenum = m_impl->dbDef->tableNumByName(TableName);
-        if (filenum == -1)
-        {
-            m_stat = m_impl->dbDef->m_stat;
-            if (m_stat == STATUS_SUCCESS)
-                m_stat = STATUS_TABLENAME_NOTFOUND;
-
-            return NULL;
-        }
-        return openTable(filenum, mode, AutoCreate, OrnerName, pPath);
-    }
-    m_stat = STATUS_DB_YET_OPEN;
-    return NULL;
+    if (_tcsstr(filename, PSEPARATOR) == NULL)
+        _stprintf_s(buf, MAX_PATH, _T("%s") PSEPARATOR _T("%s"), m_impl->rootDir, filename);
+    else
+        _tcscpy(buf, filename);
+    return buf;
 }
 
 table* database::createTableObject()
@@ -491,61 +609,187 @@ table* database::createTableObject()
     return new table(this);
 }
 
-table* database::openTable(short FileNum, short mode, bool AutoCreate,
-                           const _TCHAR* OrnerName, const _TCHAR* path)
+void* database::getExtendBufferForOpen(uint_td& size)
 {
-    /* Select directory
-     - Fiest, Specify Direct.
-     - Second, specified in filename.
-     - Thard, Smae as schem table.
-     */
+    void* p =  m_impl->dbDef->getBufferPtr(size);
+    if (!p)
+        size = 0;
+    else if (m_impl->openBuflen)
+        size = m_impl->openBuflen;
+    return p;
+}
 
-    _TCHAR buf[MAX_PATH];
-    bool regularDir = false;
-    bool NewFile = false;
-    m_stat = 0;
+bool database::defaultImageCopy(const void* data, short& tableIndex)
+{
+    struct extraImage
+    {
+        ushort_td bookmarklen;
+        ushort_td recordSize;
+    };
+    struct schemaImage
+    {
+        ushort_td schemaSize;
+        tabledef td;
+    };
 
+    extraImage* p = (extraImage*)data;
+    size_t size = p->recordSize;
+    bool ret = false;
+    if (size)
+    {
+        if (tableIndex > 0)
+            ret = m_impl->dbDef->setDefaultImage(tableIndex, (uchar_td*)(++p), (ushort_td)size);
+        else
+        {
+            schemaImage* si = (schemaImage*)(((uchar_td*)p) + sizeof(ushort_td) * 2 + size);
+            if (si->schemaSize == 0) return false;
+            ret = m_impl->dbDef->addSchemaImage(&si->td, si->schemaSize, tableIndex);
+            if (ret)
+                ret = m_impl->dbDef->setDefaultImage(tableIndex, (uchar_td*)++p, (ushort_td)size);
+        }
+    }
+    return ret;
+}
+
+short database::testOpenTable()
+{
     if ((!m_impl->dbDef) || (!m_impl->isOpened))
-    {
-        m_stat = STATUS_DB_YET_OPEN;
-        return NULL;
-    }
+        return STATUS_DB_YET_OPEN;
     if (m_impl->rootDir[0] == 0x00)
+        return  STATUS_DB_YET_OPEN;
+
+    return 0;
+}
+
+struct openTablePrams
+{
+    tabledef* td;
+    _TCHAR uri[MAX_PATH];
+    short mode;
+    bool mysqlnull;
+    bool regularDir;
+    bool autoCreate;
+    bool getSchema;
+    bool getDefaultImage;
+    bool useInMariadb;
+    bool isTransactd;
+    
+    openTablePrams(bool autoCreate_p) : autoCreate(autoCreate_p),
+        getSchema(false), getDefaultImage(false)
     {
-        m_stat = STATUS_DB_YET_OPEN;
-        return NULL;
+        uri[0] = 0x00;
     }
-    tabledef* td = m_impl->dbDef->tableDefs(FileNum);
-    if (!td)
+
+    short setParam(tabledef* def, short v,  bool isTransactd, bool readOnly, bool noPreloadSchema)
     {
-        m_stat = STATUS_INVALID_TABLE_IDX;
+        this->isTransactd = isTransactd;
+        mode = v;
+        td = def;
+        mysqlnull = false;
+        if (isTransactd)
+        {
+            if (IS_MODE_MYSQL_NULL(mode))
+                mysqlnull = true;
+            else if (database::compatibleMode() & database::CMP_MODE_MYSQL_NULL)
+            {
+                mode += TD_OPEN_MASK_MYSQL_NULL;
+                mysqlnull = true;
+            }
+            if (mysqlnull && (!td || td->defaultImage == NULL))
+            {
+                mode += TD_OPEN_MASK_GETDEFAULTIMAGE;
+                getDefaultImage = true;
+            }
+            if (!td && noPreloadSchema)
+            {
+                mode += TD_OPEN_MASK_GETSHCHEMA;
+                getSchema = true;
+                autoCreate = false;
+            }
+        }
+        if (readOnly && !IS_MODE_READONLY(mode))
+            mode += TD_OPEN_READONLY;
+
+        if (td)
+        {
+            if (td->inUse())
+            {
+                if ((td->isMysqlNullMode() == true && mysqlnull == false)
+                    || (td->isMysqlNullMode() == false && mysqlnull))
+                    return STATUS_INVALID_NULLMODE;
+            }else
+                td->setMysqlNullMode(mysqlnull);
+        }
+        return 0;
+    }
+
+    void setPath(const _TCHAR* path, database* db)
+    {
+        regularDir = false;
+        if (td)
+        {
+            if ((path == NULL) || (path[0] == 0x00))
+            {
+                if (_tcsstr(td->fileName(), PSEPARATOR) == NULL)
+                {
+                    db->getTableUri(uri, td->id);
+                    regularDir = true;
+                }
+                else
+                    _tcscpy(uri, td->fileName());
+            }
+            else
+                _tcscpy(uri, path);
+        }else if (path) 
+            db->getTableUri(uri, path);
+    }
+};
+
+table* database::doOpenTable(openTablePrams* pm, const _TCHAR* ownerName)
+{
+
+    tabledef* td = pm->td;
+
+    if (pm->isTransactd)
+    {
+        if (m_stat) return NULL;
+        if ((database::compatibleMode() & database::CMP_MODE_MYSQL_NULL) &&
+                m_impl->pluginVer().majorVersion < 3)
+        {
+            m_stat = STATUS_INVALID_NULLMODE;
+            return NULL;
+        }
+        if (td && td->inUse() == 0)
+        {
+            td->m_useInMariadb = m_impl->mysqlVer().isMariaDB();
+            td->m_srvMajorVer = (uchar_td)m_impl->mysqlVer().majorVersion;
+            td->m_srvMinorVer = (uchar_td)m_impl->mysqlVer().minorVersion;
+            td->calcReclordlen();
+        }
+    }
+
+    short tableIndex = td ? td->id : -1;
+
+    if (!m_impl->noPreloadSchema && !td)
+    {
+        m_stat = STATUS_TABLENAME_NOTFOUND;
         return NULL;
     }
     table* tb = createTableObject();
-    dbdef::cacheFieldPos(td);
-
-    if ((path == NULL) || (path[0] == 0x00))
+    if (pm->mysqlnull)
     {
-        if (_tcsstr(td->fileName(), PSEPARATOR) == NULL)
-        {
-            getTableUri(buf, FileNum);
-            regularDir = true;
-        }
-        else
-            _tcscpy(buf, td->fileName());
+        m_impl->openBuflen = 0;
+        if (td)
+            m_impl->openBuflen = td->recordlenServer() + (sizeof(ushort_td) * 2);
     }
-    else
-        _tcscpy(buf, path);
-
-    if (m_impl->isTableReadOnly)
-        mode = TD_OPEN_READONLY;
-    tb->open(buf, (char_td)mode, OrnerName);
+    bool tableCreated = false;
+    tb->open(pm->uri, (char_td)pm->mode, ownerName);
     if ((tb->m_stat == STATUS_TABLE_NOTOPEN) ||
         (tb->m_stat == ERROR_NOSPECIFY_TABLE))
     {
-        if (AutoCreate)
+        if (pm->autoCreate)
         {
-            createTable(FileNum, buf);
+            createTable(tableIndex, pm->uri);
             if (m_stat != STATUS_SUCCESS)
             {
                 tb->release();
@@ -553,10 +797,10 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate,
             }
             else
             {
-                tb->open(buf, (char_td)mode);
-                if ((OrnerName) && (OrnerName[0]))
-                    tb->setOwnerName(OrnerName);
-                NewFile = true;
+                tb->open(pm->uri, (char_td)pm->mode);
+                if ((ownerName) && (ownerName[0]))
+                    tb->setOwnerName(ownerName);
+                tableCreated = true;
             }
         }
         else
@@ -567,10 +811,19 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate,
         }
     }
     if (tb->m_stat == 0)
-        tb->init(m_impl->dbDef->tableDefPtr(FileNum), FileNum, regularDir);
-
+    {
+        // register tabledef to dbdef
+        uint_td size;
+        bool ret = true;
+        if (pm->getDefaultImage || pm->getSchema)
+            ret = defaultImageCopy(m_impl->dbDef->getBufferPtr(size), tableIndex);
+        if (ret)
+            tb->init(m_impl->dbDef->tableDefPtr(tableIndex), tableIndex, pm->regularDir, pm->mysqlnull); 
+        else
+            m_stat = STATUS_PROGRAM_ERROR;
+    }
     if ((m_stat != 0) || (tb->m_stat != 0) ||
-        !onTableOpened(tb, FileNum, mode, NewFile))
+        !onTableOpened(tb, tableIndex, pm->mode, tableCreated))
     {
         m_stat = tb->m_stat;
         tb->release();
@@ -579,23 +832,142 @@ table* database::openTable(short FileNum, short mode, bool AutoCreate,
     return tb;
 }
 
-bool database::createTable(short FileNum, const _TCHAR* FilePath)
+table* database::openTable(const _TCHAR* tableName, short mode, bool autoCreate,
+                           const _TCHAR* ownerName, const _TCHAR* path)
 {
-    tabledef* td = m_impl->dbDef->tableDefs(FileNum);
+    m_stat = testOpenTable();
+    if (m_stat) return NULL;
+
+    openTablePrams pm(autoCreate);
+ 
+    short tableIndex = m_impl->dbDef->tableNumByName(tableName);
+    tabledef* td = NULL;
+    if (tableIndex != -1)
+        td = m_impl->dbDef->tableDefs(tableIndex);
+    m_stat = pm.setParam(td, mode, isUseTransactd(), m_impl->isTableReadOnly, m_impl->noPreloadSchema);
+    if (m_stat == 0)
+    {
+        if (td)
+            pm.setPath(path, this);
+        else
+            pm.setPath(tableName, this);
+        return doOpenTable(&pm, ownerName);
+    }
+    return NULL;
+}
+
+table* database::openTable(short tableIndex, short mode, bool autoCreate,
+                           const _TCHAR* ownerName, const _TCHAR* path)
+{
+    m_stat = testOpenTable();
+    if (m_stat) return NULL;
+
+    openTablePrams pm(autoCreate);
+    tabledef* td = m_impl->dbDef->tableDefs(tableIndex);
+    if (td)
+    {
+        if (pm.setParam(td, mode, isUseTransactd(), m_impl->isTableReadOnly, m_impl->noPreloadSchema) == 0)
+        {
+            pm.setPath(path, this);
+            return doOpenTable(&pm, ownerName);
+        }
+        return NULL;
+    }
+    m_stat = STATUS_INVALID_TABLE_IDX;
+    return NULL;
+}
+
+char* database::getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf, uint_td* size)
+{
+    retbuf[0] = 0x00;
+    short tableIndex = m_impl->dbDef->tableNumByName(tableName);
+    tabledef* td = NULL;
+    if (tableIndex != -1)
+        td = m_impl->dbDef->tableDefs(tableIndex);
+
+    if (!td || td->fieldCount == 0)
+    {
+        m_stat = STATUS_INVALID_FIELD_OFFSET;
+        return retbuf;
+    }
+    if (td->size() > (int)*size)
+    {
+        m_stat = STATUS_BUFFERTOOSMALL;
+        return retbuf;
+    }
+    
+    _TCHAR uri[MAX_PATH];
+    getTableUri(uri, td->id);
+
+    if (!isTransactdUri(uri))
+    {
+        m_stat = STATUS_NOSUPPORT_OP;
+        return retbuf;
+    }
+
+    if (setUseTransactd() == false)
+    {
+        m_stat = STATUS_NOSUPPORT_OP;
+        return retbuf;
+    }
+    memcpy(retbuf, td, td->size());
+    td = (tabledef*)retbuf;
+    td->setFielddefsPtr();
+    td->setKeydefsPtr();
+
+    td->calcReclordlen(true);
+    char buf2[MAX_PATH] = { 0x00 };
+    _TCHAR posblk[128] = { 0x00 };
+
+    const char* p = toServerUri(buf2, MAX_PATH, uri, isUseTransactd());
+    
+    m_stat = m_btrcallid(
+        TD_TABLE_INFO, posblk, td,
+            size, (void*)p, (uchar_td)strlen(p),
+            ST_SUB_GETSQL_BY_TABLEDEF, clientID());
+    return retbuf;
+}
+
+bool database::createTable(const char* utf8Sql)
+{
+    if (testOpenTable()) return false;
+    if (isUseTransactd())
+    {
+        if (setUseTransactd() == false)
+            m_stat = ERROR_LOAD_CLIBRARY;
+        else
+        {
+            char buf2[MAX_PATH] = { 0x00 };
+            _TCHAR posblk[128] = { 0x00 };
+            const char* p = toServerUri(buf2, MAX_PATH, rootDir(), true);
+            uint_td len = (uint_td)strlen(utf8Sql);
+            m_stat = m_btrcallid(TD_CREATETABLE, posblk, (void*)utf8Sql, &len,
+                 (void*)p, (uchar_td)strlen(p), CR_SUBOP_BY_SQL , clientID());
+        }
+    }
+    else
+        m_stat = STATUS_NOSUPPORT_OP;
+    return (m_stat == 0);
+}
+
+bool database::createTable(short fileNum, const _TCHAR* uri)
+{
+    tabledef* td = m_impl->dbDef->tableDefs(fileNum);
     if (!td || td->fieldCount == 0)
     {
         m_stat = STATUS_INVALID_FIELD_OFFSET;
         return false;
     }
-    if (isTransactdUri(FilePath))
+    if (uri && isTransactdUri(uri))
     {
         if (setUseTransactd() == false)
             return false;
 
+        td->calcReclordlen(true);
         char buf2[MAX_PATH] = { 0x00 };
         _TCHAR posblk[128] = { 0x00 };
 
-        const char* p = toServerUri(buf2, MAX_PATH, FilePath, isUseTransactd());
+        const char* p = toServerUri(buf2, MAX_PATH, uri, isUseTransactd());
 
         m_stat = m_btrcallid(
             TD_CREATETABLE, posblk, td,
@@ -611,9 +983,9 @@ bool database::createTable(short FileNum, const _TCHAR* FilePath)
             m_stat = STATUS_CANT_ALLOC_MEMORY;
             return false;
         }
-        m_impl->dbDef->getFileSpec(fs, FileNum);
-        if (FilePath)
-            buf = FilePath;
+        m_impl->dbDef->getFileSpec(fs, fileNum);
+        if (uri)
+            buf = uri;
         else
             buf = td->fileName();
         nsdatabase::createTable(fs, 1024, buf, CR_SUBOP_BY_FILESPEC);
@@ -707,7 +1079,7 @@ void makeChangeInfo(const tabledef* ddef, const tabledef* sdef,
     }
 }
 
-inline void copyEachFieldData(table* dest, table* src, filedChnageInfo* fci)
+inline void database::copyEachFieldData(table* dest, table* src, filedChnageInfo* fci)
 {
     const tabledef* ddef = dest->tableDef();
     const tabledef* sdef = src->tableDef();
@@ -720,6 +1092,7 @@ inline void copyEachFieldData(table* dest, table* src, filedChnageInfo* fci)
 
         if (dindex != -1)
         {
+            dest->setFVNull(dindex, src->getFVNull(i));
             // src valiable len and last field;
             if ((fci[i].changed == false) || (fdd.type == ft_myfixedbinary))
             {
@@ -795,7 +1168,7 @@ inline void moveFirstRecord(table* src, short keyNum)
  */
 #pragma warn -8004
 
-short database::copyTableData(table* dest, table* src, bool turbo, int offset,
+short database::copyTableData(table* dest, table* src, bool turbo,
                               short keyNum, int maxSkip)
 {
     src->setKeyNum((char_td)keyNum);
@@ -844,12 +1217,10 @@ short database::copyTableData(table* dest, table* src, bool turbo, int offset,
         dest->clearBuffer();
         if (turbo)
         {
-            if (dest->m_buflen + offset < src->datalen())
+            if (dest->m_buflen  < src->datalen())
                 return STATUS_CANT_ALLOC_MEMORY;
-            if (offset)
-                memset(dest->fieldPtr(0), 0, offset);
-            memcpy((char*)dest->fieldPtr(0) + offset, src->fieldPtr(0),
-                   src->datalen());
+
+            memcpy((char*)dest->m_pdata, src->data(), src->datalen());
         }
         else
             copyEachFieldData(dest, src, fci);
@@ -905,20 +1276,24 @@ void database::doConvertTable(short TableIndex, bool Turbo,
         return;
     }
 
-    tabledef* TableDef = m_impl->dbDef->tableDefs(TABLE_NUM_TMP);
-    TableDef->fieldDefs = dbdef::getFieldDef(TableDef);
-    TableDef->keyDefs = dbdef::getKeyDef(TableDef);
+    tabledef* td = m_impl->dbDef->tableDefs(TABLE_NUM_TMP);
+    td->setFielddefsPtr();
+    td->setKeydefsPtr();
+    short id = td->id;
+    td->id = TABLE_NUM_TMP;
+    short mode = TD_OPEN_EXCLUSIVE +
+                    (isUseTransactd() ? TD_OPEN_MASK_MYSQL_NULL: 0);
 
-    src = openTable(TABLE_NUM_TMP, TD_OPEN_EXCLUSIVE, false, OwnerName);
+    src = openTable(TABLE_NUM_TMP, mode, false, OwnerName);
+    td->id = id;
     if (!src)
         return;
+    td = m_impl->dbDef->tableDefs(TableIndex);
+    short len = td->recordlen();
 
-    TableDef = m_impl->dbDef->tableDefs(TableIndex);
-    short len = TableDef->maxRecordLen;
-
-    TableDef->preAlloc =
-        (ushort_td)(src->recordCount() / TableDef->pageSize / len);
-    TableDef->flags.bit2 = true;
+    td->preAlloc =
+        (ushort_td)(src->recordCount() / td->pageSize / len);
+    td->flags.bit2 = true;
 
     _tcscpy(szTempPath, getTableUri(buf, TableIndex));
     _TCHAR* p = _tcsstr(szTempPath, _T("dbfile="));
@@ -935,7 +1310,7 @@ void database::doConvertTable(short TableIndex, bool Turbo,
     _tcscat(szTempPath, _T("_conv_dest_tmp"));
 
     createTable(TableIndex, szTempPath);
-    dest = openTable(TableIndex, TD_OPEN_EXCLUSIVE, true, NULL, szTempPath);
+    dest = openTable(TableIndex, mode, true, NULL, szTempPath);
     if (!dest)
     {
         src->release();
@@ -992,10 +1367,14 @@ bool database::existsTableFile(short TableIndex, const _TCHAR* OwnerName)
 
     if (TableIndex == TABLE_NUM_TMP)
     {
-        m_impl->dbDef->tableDefs(TABLE_NUM_TMP)->fieldDefs =
-            dbdef::getFieldDef(m_impl->dbDef->tableDefs(TABLE_NUM_TMP));
-        m_impl->dbDef->tableDefs(TABLE_NUM_TMP)->keyDefs =
-            dbdef::getKeyDef(m_impl->dbDef->tableDefs(512));
+        tabledef* td = m_impl->dbDef->tableDefs(TABLE_NUM_TMP);
+        if (!td)
+        {
+            m_stat = STATUS_INVALID_TABLE_IDX;
+            return false;
+        }
+        td->setFielddefsPtr();
+        td->setKeydefsPtr();
     }
     table* bao = openTable(TableIndex, TD_OPEN_READONLY, false, OwnerName);
     bool ret = false;
@@ -1009,6 +1388,16 @@ bool database::existsTableFile(short TableIndex, const _TCHAR* OwnerName)
         bao->release();
     m_stat = 0;
     return ret;
+}
+
+void database::setCompatibleMode(int mode)
+{
+    dbimple::m_compatibleMode = mode;
+}
+
+int database::compatibleMode()
+{
+    return  dbimple::m_compatibleMode;
 }
 
 } // namespace client

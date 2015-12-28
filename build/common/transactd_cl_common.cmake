@@ -24,6 +24,7 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
   set(${this_target}_SOURCE_FILES
     ${${this_target}_SOURCE_FILES}
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/btrDate.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/tdapSchema.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/activeTable.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/connMgr.cpp
@@ -48,11 +49,7 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
     ${TRANSACTD_ROOT}/source/bzs/rtl/stringBuffers.cpp
     ${TRANSACTD_ROOT}/source/bzs/rtl/strtrim.cpp
   )
-  if(WIN32)
-    set(${this_target}_SOURCE_FILES ${${this_target}_SOURCE_FILES}
-      ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
-    )
-  else()
+  if(UNIX)
     set(${this_target}_SOURCE_FILES ${${this_target}_SOURCE_FILES}
       ${TRANSACTD_ROOT}/source/bzs/env/crosscompile.cpp
       ${TRANSACTD_ROOT}/source/bzs/env/mbcswchrLinux.cpp
@@ -87,7 +84,7 @@ macro(tdcl_set_compiler_flags)
       bz_remove_cxx_flag("/MTd" "${build_type}")
       bz_remove_cxx_flag("/MD" "${build_type}")
       bz_remove_cxx_flag("/MT" "${build_type}")
-      bz_add_cxx_flag(" /nologo /W3 /WX- /Oy- /EHa /errorReport:prompt" "${build_type}")
+      bz_add_cxx_flag(" /nologo /Zi /W3 /WX- /Oy- /EHa /errorReport:prompt" "${build_type}")
       bz_add_cxx_flag(" /fp:precise /Zc:wchar_t /Zc:forScope /GS /Gd" "${build_type}")
       bz_add_cxx_flag(" /wd4068 /wd4275 /wd4819 /wd4251" "${build_type}")
       bz_remove_cxx_flag("-DUNICODE"  "${build_type}")

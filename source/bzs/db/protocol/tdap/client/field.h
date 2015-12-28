@@ -72,12 +72,6 @@ protected:
 
 class DLLLIB fielddefs : public fieldShare
 {
-    struct infoImple* m_imple;
-    void aliasing(fielddef* p) const;
-    fielddefs();
-    ~fielddefs();
-    fielddefs(const fielddefs& r);
-    fielddefs& operator=(const fielddefs& r);
     friend class table;
     friend class recordsetImple;
     friend class writableRecord;
@@ -85,21 +79,26 @@ class DLLLIB fielddefs : public fieldShare
     friend class recordsetQuery;
     friend struct recordsetQueryImple;
     friend class fieldsBase;
-public:
-    void addAllFileds(tabledef* def);
-protected:
-    void copyFrom(const class table* tb);
+    friend class fields;
+    friend class field;
+
+    struct infoImple* m_imple;
+    void aliasing(fielddef* p) const;
+    fielddefs();
+    ~fielddefs();
+    fielddefs(const fielddefs& r);
+    fielddefs& operator=(const fielddefs& r);
+    bool mysqlnullEnable() const;
     bool canUnion(const fielddefs& r) const;
     size_t totalFieldLen() const;
     void resetUpdateIndicator();
     void setAliases(const aliasMap_type* p);
-    void push_back(const fielddef* p, bool rePosition = false);
+    void push_back(const fielddef* p);
+    void calcFieldPos(int startIndex, bool mysqlNull);
     void remove(int index);
     void reserve(size_t size);
 public:
     void clear();
-
-public:
     fielddefs* clone() const;
     int indexByName(const std::_tstring& name) const;
     const fielddef& operator[](int index) const;
@@ -107,69 +106,90 @@ public:
     const fielddef& operator[](const std::_tstring& name) const;
     bool checkIndex(int index) const;
     size_t size() const;
+    void addAllFileds(const tabledef* def);
+    void addSelectedFields(const class table* tb);
     void release();
     static fielddefs* create();
 };
-
-/** @cond INTERNAL */
-
-typedef int (*compFieldFunc)(const class field& l, const class field& r,
-                             char logType);
-extern int compWString(const field& l, const field& r, char logType);
-extern int compiWString(const field& l, const field& r, char logType);
-
-/** @endcond */
 
 class DLLLIB field
 {
     friend class table;
     friend class fieldsBase;
-    friend class CField; // atl interface
+    friend class CField;         // atl interface
+    friend class memoryRecord;   // nullPtr()
+    friend class recordsetQuery; //nullcomp
+    friend class recordsetImple; //offsetBlobPtr
+    friend struct logic;         //isCompPartAndMakeValue
     /** @cond INTERNAL */
     friend int compBlob(const field& l, const field& r, char logType);
     /** @endcond */
     fielddef* m_fd;
     unsigned char* m_ptr;
     const class fielddefs* m_fds;
-
+    mutable unsigned char* m_cachedNullPtr;
+    mutable unsigned char m_nullbit;
+    unsigned char m_nullSign;
+    
+    void nullPtrCache() const;
     int blobLenBytes() const { return m_fd->blobLenBytes(); }
+    __int64 readValue64() const;
+    void storeValue64(__int64 value);
+    double readValueDbl() const;
+    void storeValueDbl(double value);
+    void storeValueStrA(const char* data);
+    const char* readValueStrA() const;
+#ifdef _WIN32
+    void storeValueStrW(const WCHAR* data);
+    const WCHAR* readValueStrW() const;
+#endif
+    void storeValueNumeric(double data);
+    double readValueNumeric() const;
+    void storeValueDecimal(double data);
+    double readValueDecimal() const;
+    void* nullPtr() const;
+    int nullComp(const field& r, char log) const;
+    int nullComp(char log) const;
+    bool isCompPartAndMakeValue();
+    void offsetBlobPtr(size_t offset);
 
-private:
     //  ---- bigin regacy interfaces ----  //
-    unsigned char getFVbyt() const;
-    short getFVsht() const;
-    int getFVint() const;
-    int getFVlng() const;
-    __int64 getFV64() const;
-    float getFVflt() const;
-    double getFVdbl() const;
-    void* getFVbin(uint_td& size) const;
     const char* getFVAstr() const;
 #ifdef _WIN32
     const wchar_t* getFVWstr() const;
+#endif
+    __int64 getFV64() const;
+    double getFVdbl() const;
+    void* getFVbin(uint_td& size) const;
+    inline unsigned char getFVbyt() const { return (unsigned char)getFV64();}
+    inline short getFVsht() const { return (short)getFV64();}
+    inline int getFVint() const  { return (int)getFV64();}
+    inline int getFVlng() const  { return (int)getFV64();}
+    inline float getFVflt() const { return (float)getFVdbl();}
+
+#ifdef _WIN32
     void setFVW(const wchar_t* data);
 #endif
-    void setFV(float data);
     void setFV(double data);
-    void setFV(unsigned char data);
-    void setFV(short data);
-    void setFV(int data);
     void setFV(__int64 data);
     void setFVA(const char* data);
     void setFV(const void* data, uint_td size);
 #ifdef _UNICODE
     inline const wchar_t* getFVstr() const { return getFVWstr(); };
     inline void setFV(const wchar_t* data) { setFVW(data); };
+    inline void setFV(const std::wstring& p)  { setFVW(p.c_str()); }
 #else
     inline const char* getFVstr() const { return getFVAstr(); };
-    inline void setFV(const char* data) { setFVA(data); };
 #endif
-    double getFVnumeric() const;
-    double getFVDecimal() const;
-    void setFVDecimal(double data);
-    void setFVNumeric(double data);
+    inline void setFV(const char* data) { setFVA(data); };
+    inline void setFV(float data){ setFV((double)data); }
+    inline void setFV(unsigned char data) { setFV((__int64)data); }
+    inline void setFV(short data)  { setFV((__int64)data); }
+    inline void setFV(int data)  { setFV((__int64)data); }
+    inline void setFV(const std::string& p) { setFVA(p.c_str()); };
+    inline void setFV(const bitset& v) { setFV(v.internalValue()); };
+    
     //  ---- end regacy interfaces ----  //
-
 
 /** @cond INTERNAL */
 #if defined(SWIG) ||                                                           \
@@ -181,13 +201,26 @@ public:
 
 public:
 /** @cond INTERNAL */
-    inline field(unsigned char* ptr, const fielddef& fd, const fielddefs* fds)
-        : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds){};
+    // nullPtr and nullbit is all field same.
+    inline field(unsigned char* ptr, const fielddef& fd, const fielddefs* fds, 
+        bool nullField = false) 
+        : m_fd((fielddef*)&fd), m_ptr(ptr), m_fds(fds), m_cachedNullPtr(NULL), m_nullbit(0)
+    {
+        if (nullField)
+        {
+            m_cachedNullPtr = (unsigned char*)&m_nullSign;
+            m_nullSign = 0xff;
+            m_nullbit = 1;
+        }
+    }
 /** @endcond */
 
-    // To inline
-    inline field(const field& r) : m_fd(r.m_fd), m_ptr(r.m_ptr), m_fds(r.m_fds)
+    /* swig using copy constructor */
+    inline field(const field& r) : m_fd(r.m_fd), m_ptr(r.m_ptr), m_fds(r.m_fds),
+            m_cachedNullPtr(NULL),m_nullbit(r.m_nullbit), m_nullSign(r.m_nullSign)
     {
+        if (r.m_cachedNullPtr == (unsigned char*)&r.m_nullSign)
+            m_cachedNullPtr = (unsigned char*)&m_nullSign;
     }
 
     inline field& operator=(const field& r)
@@ -195,6 +228,12 @@ public:
         m_fd = r.m_fd;
         m_ptr = r.m_ptr;
         m_fds = r.m_fds;
+        m_nullSign = r.m_nullSign;
+        m_nullbit = r.m_nullbit;
+        if (r.m_cachedNullPtr == (unsigned char*)&r.m_nullSign)
+            m_cachedNullPtr = (unsigned char*)&m_nullSign;
+        else
+            m_cachedNullPtr = NULL;
         return *this;
     }
 
@@ -220,106 +259,55 @@ public:
 
     inline double d() const { return getFVdbl(); }
 
-    inline field& operator=(const _TCHAR* p)
+    bool isNull() const;
+
+    void setNull(bool v);
+    
+    template <class T>
+    inline field& operator=(const T c)
     {
-        setFV(p);
+        setFV(c);
         m_fd->enableFlags.bitE = true;
         return *this;
     }
 
-    inline field& operator=(const std::_tstring& p)
+    inline bool operator!=(const _TCHAR* p) const { return !operator==(p); }
+
+    inline bool operator==(const _TCHAR* p) const
     {
-        setFV(p.c_str());
-        m_fd->enableFlags.bitE = true;
-        return *this;
+        return (isNull() == false) && (_tcscmp(p, c_str()) == 0);
     }
 
-#ifdef _UNICODE
-    inline field& operator=(const char* p)
-    {
-        setFVA(p);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
+    inline bool operator!=(int v) const { return !operator==(v); }
+    inline bool operator==(int v) const { return (isNull() == false) && (v == i()); }
 
-    inline field& operator=(const std::string& p)
-    {
-        setFVA(p.c_str());
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
+    inline bool operator!=(short v) const { return !operator==(v); }
+    inline bool operator==(short v) const { return (isNull() == false) && (v == i16()); }
 
-#endif
+    inline bool operator!=(__int64 v) const { return !operator==(v); }
+    inline bool operator==(__int64 v) const { return (isNull() == false) && (v == i64()); }
 
-    inline field& operator=(int v)
-    {
-        setFV(v);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
+    inline bool operator!=(float v) const { return !operator==(v); }
+    inline bool operator==(float v) const { return (isNull() == false) && (v == f()); }
 
-    inline field& operator=(__int64 v)
-    {
-        setFV(v);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-    inline field& operator=(float v)
-    {
-        setFV(v);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-    inline field& operator=(double v)
-    {
-        setFV(v);
-        m_fd->enableFlags.bitE = true;
-        return *this;
-    }
-
-    inline bool operator!=(const _TCHAR* p)
-    {
-        return (_tcscmp(p, c_str()) != 0);
-    };
-    inline bool operator==(const _TCHAR* p)
-    {
-        return (_tcscmp(p, c_str()) == 0);
-    };
-
-    inline bool operator!=(int v) { return (v != i()); };
-    inline bool operator==(int v) { return (v == i()); };
-
-    inline bool operator!=(short v) { return (v != i16()); };
-    inline bool operator==(short v) { return (v == i16()); };
-
-    inline bool operator!=(__int64 v) { return (v != i64()); };
-    inline bool operator==(__int64 v) { return (v == i64()); };
-
-    inline bool operator!=(float v) { return (v != f()); };
-    inline bool operator==(float v) { return (v == f()); };
-
-    inline bool operator!=(double v) { return (v != d()); };
-    inline bool operator==(double v) { return (v == d()); };
+    inline bool operator!=(double v) const { return !operator==(v); }
+    inline bool operator==(double v) const { return (isNull() == false) && (v == d()); }
 
     inline void setBin(const void* data, uint_td size)
     {
         setFV(data, size);
         m_fd->enableFlags.bitE = true;
     }
-    inline void* getBin(uint_td& size) { return getFVbin(size); };
+    inline void* getBin(uint_td& size) const { return getFVbin(size); };
+
+    inline bitset getBits() const { return bitset(i64());}
 
     int comp(const field& r, char logType = CMPLOGICAL_VAR_COMP_ALL) const;
-
-    /** @cond INTERNAL */
-    bool isCompPartAndMakeValue();
-    void offsetBlobPtr(size_t offset);
-    compFieldFunc getCompFunc(char logType) const;
-    /** @endcond */
 };
 
+
 /** @cond INTERNAL */
+#ifndef SWIG
 /* For template tget type num by type.*/
 
 inline int getFieldType(int)
@@ -389,6 +377,7 @@ inline const _TCHAR* fieldValue(const field& fd, const _TCHAR*)
 
 DLLLIB const fielddef& dummyFd();
 
+#endif // ndef SWIG
 /** @endcond */
 
 } // namespace client

@@ -22,6 +22,8 @@ mb_internal_encoding('UTF-8');
 require_once("transactd.php");
 use BizStation\Transactd as Bz;
 
+Bz\transactd::setRecordValueMode(Bz\transactd::RECORD_KEYVALUE_FIELDVALUE);
+
 function getHost()
 {
     $host = getenv('TRANSACTD_PHPUNIT_HOST');
@@ -148,11 +150,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         //test padChar only string or wstring
         $fd->type = Bz\transactd::ft_string;
         $fd->setPadCharSettings(true, false);
-        $this->assertEquals($fd->usePadChar(), true);
-        $this->assertEquals($fd->trimPadChar(), false);
+        $this->assertEquals($fd->isUsePadChar(), true);
+        $this->assertEquals($fd->isTrimPadChar(), false);
         $fd->setPadCharSettings(false, true);
-        $this->assertEquals($fd->usePadChar(), false);
-        $this->assertEquals($fd->trimPadChar(), true);
+        $this->assertEquals($fd->isUsePadChar(), false);
+        $this->assertEquals($fd->isTrimPadChar(), true);
         
         $fd->type = Bz\transactd::ft_zstring;
         $dbdef->updateTableDef($tableid);
@@ -219,10 +221,6 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
         $this->assertEquals($dbdef->validateTableDef($tableid), 0);
-        
-        //test toChar
-        $s = $td->toChar('abcdefg');
-        $this->assertEquals($s, 'abcdefg');
         
     }
     private function openTable($db)
@@ -330,9 +328,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($client_ver->minorVersion, Bz\transactd::CPP_INTERFACE_VER_MINOR);
         $this->assertEquals(chr($client_ver->type), 'N');
         $my5x = ($server_ver->majorVersion == 5) && ($server_ver->minorVersion >= 5);
-        $maria10 = ($server_ver->majorVersion == 10) && ($server_ver->minorVersion == 0);
+        $maria10 = ($server_ver->majorVersion == 10) && ($server_ver->minorVersion <= 1);
         $this->assertTrue($my5x || $maria10);
-        $this->assertEquals(chr($server_ver->type), 'M');
+        $tmp = (chr($server_ver->type) == 'M') || (chr($server_ver->type) == 'A');
+        $this->assertTrue($tmp);
         $this->assertEquals($engine_ver->majorVersion, Bz\transactd::TRANSACTD_VER_MAJOR);
         $this->assertEquals($engine_ver->minorVersion, Bz\transactd::TRANSACTD_VER_MINOR);
         $this->assertEquals(chr($engine_ver->type), 'T');
@@ -1566,6 +1565,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb2->seekFirst(Bz\transactd::ROW_LOCK_S);
         $this->assertEquals(Bz\transactd::STATUS_INVALID_LOCKTYPE, $tb2->stat());
     }
+    private function isMySQL5_7($db)
+    {
+        $vv = new Bz\btrVersions();
+        $db->getBtrVersion($vv);
+        $server_ver = $vv->version(1);
+        return ($db->stat() == 0) && 
+            ((5 == $server_ver->majorVersion) &&
+            (7 == $server_ver->minorVersion));
+    }
     public function testExclusive()
     {
         // db mode exclusive
@@ -1597,15 +1605,24 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb = $db->openTable(TABLENAME, Bz\transactd::TD_OPEN_READONLY_EXCLUSIVE);
         $this->assertEquals($db->stat(), 0);
         
+        $mysql5_7 = $this->isMySQL5_7($db);
+        
         // Read only open
         $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF);
         $this->assertEquals($db2->stat(), 0);
         $db2->close();
         
         // Normal open
+        //      Since MySQL 5.7 : D_OPEN_READONLY_EXCLUSIVE + TD_OPEN_NORMAL is fail,
+        //      It's correct.
+        //
+        
         $db2->connect(URL_DB, true);
         $db2->open(URL, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
-        $this->assertEquals($db2->stat(), 0);
+        if ($mysql5_7 == true)
+           $this->assertEquals($db2->stat(), Bz\transactd::STATUS_CANNOT_LOCK_TABLE);
+        else
+           $this->assertEquals($db2->stat(), 0);
         $db2->close();
         
         // Write Exclusive open
@@ -1935,7 +1952,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // invalid database name
         $this->dropDatabase($db);
         $db->disconnect();
-        $this->assertEquals($db->stat(), 0);
+        $this->assertEquals($db->stat(), 1);
         $db->connect(URL_DB);
         $this->assertEquals($db->stat(), Bz\transactd::ERROR_NO_DATABASE);
         $db->disconnect();
@@ -1956,7 +1973,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $vv = new Bz\btrVersions();
         $db->getBtrVersion($vv);
         $server_ver = $vv->version(1);
-        if ('M' == chr($server_ver->type))
+        if ('M' == chr($server_ver->type) || 'A' == chr($server_ver->type))
         {
           if ($server_ver->majorVersion <= 4)
             return false;
@@ -2468,6 +2485,21 @@ class transactdTest extends PHPUnit_Framework_TestCase
     //-----------------------------------------------------
     //    transactd StringFilter
     //-----------------------------------------------------
+    private function varLenBytes($fd)
+    {
+        if ((($fd->type >= ft_myvarchar) && ($fd->type <= ft_mywvarbinary)) || $fd->type == ft_lstring)
+            return $fd->len < 256 ? 1 : 2;
+        else if ($fd->type == ft_lvar)
+            return 2;
+        return 0;
+    }
+
+    private function blobLenBytes($fd)
+    {
+        if (($fd->type== ft_myblob) || ($fd->type == ft_mytext))
+            return $fd->len - 8;
+        return 0;
+    }
     
     private function createTableStringFilter($db, $id, $name, $type, $type2)
     {
@@ -2492,12 +2524,12 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd->setName('name');
         $fd->type = $type;
         $fd->len = 44;
-        if ($fd->varLenBytes() != 0)
+        if ($this->varLenBytes($fd) != 0)
         {
-            $fd->len = $fd->varLenBytes() + 44;
+            $fd->len = $this->varLenBytes($fd) + 44;
             $fd->keylen = $fd->len;
         }
-        if ($fd->blobLenBytes() != 0)
+        if ($this->blobLenBytes($fd) != 0)
             $fd->len = 12; // 8+4
         $fd->keylen = $fd->len;
         $dbdef->updateTableDef($id);
@@ -2506,12 +2538,12 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd->setName('namew');
         $fd->type = $type2;
         $fd->len = 44;
-        if ($fd->varLenBytes() != 0)
+        if ($this->varLenBytes($fd) != 0)
         {
-            $fd->len = $fd->varLenBytes() + 44;
+            $fd->len = $this->varLenBytes($fd) + 44;
             $fd->keylen = $fd->len;
         }
-        if ($fd->blobLenBytes() != 0)
+        if ($this->blobLenBytes($fd) != 0)
             $fd->len = 12; // 8+4
         $fd->keylen = $fd->len;
         $dbdef->updateTableDef($id);
@@ -3515,10 +3547,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $rs = $atu->keyValue(1)->read($stmt1, 15000);
         $ate->outerJoin($rs, $stmt2, 'id');
         $this->assertEquals($rs->size(), 15000);
+        $this->assertEquals($rs[NO_RECORD_ID - 1]->isInvalidRecord(), true);
         $atg->outerJoin($rs, $stmt3, 'group');
         $this->assertEquals($rs->size(), 15000);
         
-        $this->assertEquals($rs[NO_RECORD_ID - 1]->isInvalidRecord(), true);
         $this->assertEquals($rs[NO_RECORD_ID]['comment'], '' . (NO_RECORD_ID + 1) . ' comment');
         $this->assertEquals($rs[NO_RECORD_ID]['blob'], '' . (NO_RECORD_ID + 1) . ' blob');
         
@@ -3530,13 +3562,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $ate->outerJoin($rs, $stmt2, 'id');
         $this->assertEquals($rs->size(), 15000);
         $this->assertEquals($rs[NO_RECORD_ID - 1]->isInvalidRecord(), true);
+        $this->assertEquals($rs[NO_RECORD_ID - 1]->getField('comment')->isNull(), true);
         $this->assertEquals($rs[NO_RECORD_ID]['comment'], '' . (NO_RECORD_ID + 1) . ' comment');
         $this->assertEquals($rs[NO_RECORD_ID]['blob'], '' . (NO_RECORD_ID + 1) . ' blob');
         
         // Test clone blob field
         $rs2 = clone($rs);
         $this->assertEquals($rs2->size(), 15000);
-        $this->assertEquals($rs2[NO_RECORD_ID - 1]->isInvalidRecord(), true);
+        //$this->assertEquals($rs2[NO_RECORD_ID - 1]->isInvalidRecord(), true);
+        $this->assertEquals($rs2[NO_RECORD_ID - 1]->getField('comment')->isNull(), true);
         $this->assertEquals($rs2[NO_RECORD_ID]['comment'], '' . (NO_RECORD_ID + 1) . ' comment');
         $this->assertEquals($rs2[NO_RECORD_ID]['blob'], '' . (NO_RECORD_ID + 1) . ' blob');
         

@@ -42,19 +42,14 @@ describe Transactd, 'datetime' do
   it 'get BtrTime' do
     i_nowtime = Transactd::getNowTime()   # get now time as integer
     s_i_nowtime  = Transactd::btrttoa(i_nowtime)
-    s_i_nowtime2 = Transactd::btrttoa(i_nowtime, true)
     #p i_nowtime
     #p s_i_nowtime + ' ' + s_i_nowtime.encoding.to_s
-    #p s_i_nowtime2 + ' ' + s_i_nowtime2.encoding.to_s
     nowtime = Transactd::BtrTime.new()
     nowtime.i = i_nowtime                 # get now time as BtrTime
     s_nowtime  = Transactd::btrttoa(nowtime)
-    s_nowtime2 = Transactd::btrttoa(nowtime, true)
     #p nowtime
     #p s_nowtime + ' ' + s_nowtime.encoding.to_s
-    #p s_nowtime2 + ' ' + s_nowtime2.encoding.to_s
     expect(s_i_nowtime).to eq s_nowtime
-    expect(s_i_nowtime2).to eq s_nowtime2
   end
   
   it 'get BtrDateTime' do

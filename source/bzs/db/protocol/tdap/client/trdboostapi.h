@@ -67,6 +67,8 @@ enum eFindCurrntType
     ePosNeedPrev = -1
 };
 
+#pragma warning(disable : 4996)
+
 class connectParams
 {
     _TCHAR m_buf[MAX_PATH];
@@ -142,6 +144,7 @@ public:
 
     inline short type() const { return m_type; };
 };
+#pragma warning(default : 4996)
 
 /* databaseManager interface
    If use some databases, implemnt a this interface and set the activeTable
@@ -1054,6 +1057,20 @@ inline void updateTableDef(dbdef* def, short tableid)
                             def->stat());
     }
 }
+
+inline void synchronizeSeverSchema(dbdef* def, short tableid)
+{
+    def->synchronizeSeverSchema(tableid);
+    if (def->stat() != 0)
+    {
+        std::_tstring s;
+        if (def->tableDefs(tableid))
+            s = def->tableDefs(tableid)->tableName();
+        nstable::throwError((std::_tstring(_T("synchronize Sever Schema ")) + s).c_str(),
+                            def->stat());
+    }
+}
+
 
 /** @cond INTERNAL */
 

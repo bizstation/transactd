@@ -139,11 +139,10 @@ public:
     STDMETHOD(ConvertTable)(short TableIndex, VARIANT_BOOL Turbo,
                             BSTR OwnerName);
     STDMETHOD(CopyTableData)(ITable* Dest, ITable* Src, VARIANT_BOOL Turbo,
-                             int Offset, short KeyNum, int MaxSkip,
+                             short KeyNum, int MaxSkip,
                              short* Value);
-    STDMETHOD(CreateTable)(short FileNum, BSTR Uri, VARIANT_BOOL* Value);
+    STDMETHOD(CreateTable)(VARIANT FileNumOrSql, BSTR Uri, VARIANT_BOOL* Value);
     STDMETHOD(ExistsTableFile)(short TableIndex, BSTR OwnerName);
-    STDMETHOD(GetTableUri)(short FileNum, BSTR* Value);
     STDMETHOD(get_IsOpened)(VARIANT_BOOL* Value);
     STDMETHOD(get_TableReadOnly)(VARIANT_BOOL* Value);
     STDMETHOD(put_TableReadOnly)(VARIANT_BOOL Value);
@@ -157,7 +156,11 @@ public:
     STDMETHOD(get_MaxTables)(int* Value);
     STDMETHOD(get_TrxIsolationServer)(eSrvIsorationType* Value);
     STDMETHOD(get_TrxLockWaitTimeoutServer)(int* Value);
-
+    STDMETHOD(put_AutoSchemaUseNullkey)(VARIANT_BOOL Value);
+    STDMETHOD(get_AutoSchemaUseNullkey)(VARIANT_BOOL* Value);
+    STDMETHOD(put_CompatibleMode)(int Value);
+    STDMETHOD(get_CompatibleMode)(int* Value);
+    STDMETHOD(GetSqlStringForCreateTable)(BSTR tableName, BSTR* retValue);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)

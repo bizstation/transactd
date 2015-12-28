@@ -16,114 +16,12 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-//#define BOOST_TEST_MODULE
-
-#if defined(__BCPLUSPLUS__)
-#pragma warn -8012
-#pragma warn -8022
-#endif
-#include <boost/test/included/unit_test.hpp>
-#ifndef BOOST_TEST_MESSAGE
-#define BOOST_TEST_MESSAGE BOOST_MESSAGE
-#endif
-#if defined(__BCPLUSPLUS__)
-#pragma warn .8012
-#pragma warn .8022
-#endif
-
-#include <bzs/db/protocol/tdap/client/database.h>
-#include <bzs/db/protocol/tdap/client/table.h>
-#include <bzs/db/protocol/tdap/client/dbDef.h>
-#include <bzs/db/protocol/tdap/mysql/characterset.h>
-#include <bzs/db/protocol/tdap/tdapcapi.h>
-#include <bzs/db/protocol/tdap/client/stringConverter.h>
-#include <stdio.h>
-#include <bzs/db/protocol/tdap/client/filter.h>
-#include <bzs/example/queryData.h>
-#include <bzs/db/protocol/tdap/client/activeTable.h>
+#include "testbase.h"
 #include <bzs/db/protocol/tdap/client/pooledDatabaseManager.h>
 #include <boost/thread.hpp>
 
-using namespace bzs::db::protocol::tdap::client;
-using namespace bzs::db::protocol::tdap;
-using namespace std;
-
-#define TDAP
-#ifdef TDAP
-#define PROTOCOL _T("tdap")
-#else
-#define PROTOCOL _T("btrv")
-#endif
-static _TCHAR HOSTNAME[MAX_PATH] = { _T("127.0.0.1") };
-#define DBNAME _T("test")
-#define BDFNAME _T("test")
-// #define ISOLATION_REPEATABLE_READ
-#define ISOLATION_READ_COMMITTED
-
-static _TCHAR g_uri[MAX_PATH];
-static _TCHAR g_userName[MYSQL_USERNAME_MAX + 1]={0x00};
-static _TCHAR g_password[MAX_PATH]={0x00};
-
 static const short fdi_id = 0;
 static const short fdi_name = 1;
-
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]);
-
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
-{
-    for (int i = 1; i < argc; ++i)
-    {
-        if (strstr(argv[i], "--host=") == argv[i])
-        {
-#ifdef _UNICODE
-            MultiByteToWideChar(CP_ACP,
-                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
-                                argv[i] + 7, -1, HOSTNAME, MAX_PATH);
-#else
-            strcpy_s(HOSTNAME, MAX_PATH, argv[i] + 7);
-#endif
-        }
-        if (strstr(argv[i], "--user=") == argv[i])
-        {
-#ifdef _UNICODE
-            MultiByteToWideChar(CP_ACP,
-                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
-                                argv[i] + 7, -1, g_userName, MYSQL_USERNAME_MAX+1);
-#else
-            strcpy_s(g_userName, MYSQL_USERNAME_MAX+1, argv[i] + 7);
-#endif        
-        }
-                if (strstr(argv[i], "--pwd=") == argv[i])
-        {
-#ifdef _UNICODE
-            MultiByteToWideChar(CP_ACP,
-                                (CP_ACP == CP_UTF8) ? 0 : MB_PRECOMPOSED,
-                                argv[i] + 6, -1, g_password, MAX_PATH);
-#else
-            strcpy_s(g_password, MAX_PATH, argv[i] + 6);
-#endif        
-        }
-    }
-    printf("Transactd test ... \nMay look like progress is stopped, \n"
-            "but it is such as record lock test, please wait.\n");
-
-    return 0;
-}
-
-
-
-const _TCHAR* makeUri(const _TCHAR* protocol, const _TCHAR* host,
-                      const _TCHAR* dbname, const _TCHAR* dbfile=_T(""))
-{
-    connectParams cp(protocol, host, dbname, dbfile, g_userName, g_password);
-    _tcscpy_s(g_uri, 260, cp.uri());
-    /*if (dbfile)
-        _stprintf_s(g_uri, MAX_PATH, _T("%s://%s/%s?dbfile=%s"), protocol, host,
-                    dbname, dbfile);
-    else
-        _stprintf_s(g_uri, MAX_PATH, _T("%s://%s/%s"), protocol, host, dbname);*/
-    return g_uri;
-}
 
 class fixture
 {
@@ -250,6 +148,8 @@ void testClone(database* db)
     BOOST_CHECK_MESSAGE(ret == false, "testTablePtr");
 }
 
+
+#define NAMEFIELD_TYPE ft_myvarbinary 
 void testCreateNewDataBase(database* db)
 {
 
@@ -275,14 +175,10 @@ void testCreateNewDataBase(database* db)
     {
         /*  user table */
         tabledef td;
-        memset(&td, 0, sizeof(tabledef));
         td.setTableName(_T("user"));
         td.setFileName(_T("user.dat"));
         td.id = 1;
-        td.primaryKeyNum = -1;
-        td.parentKeyNum = -1;
-        td.replicaKeyNum = -1;
-        td.pageSize = 2048;
+
 #ifdef _WIN32
         td.charsetIndex = CHARSET_CP932;
 #else
@@ -308,13 +204,15 @@ void testCreateNewDataBase(database* db)
         //test padChar only string or wstring
         fd->type = ft_string;
         fd->setPadCharSettings(true, false);
-        BOOST_CHECK(fd->usePadChar() ==  true);
-        BOOST_CHECK(fd->trimPadChar() == false);
+        BOOST_CHECK(fd->isUsePadChar() ==  true);
+        BOOST_CHECK(fd->isTrimPadChar() == false);
         fd->setPadCharSettings(false, true);
-        BOOST_CHECK(fd->usePadChar() ==  false);
-        BOOST_CHECK(fd->trimPadChar() == true);
+        BOOST_CHECK(fd->isUsePadChar() ==  false);
+        BOOST_CHECK(fd->isTrimPadChar() == true);
 
-        fd->type = ft_zstring;
+        //fd->type = ft_zstring;
+        fd->type = NAMEFIELD_TYPE;
+        fd->setNullable(use_nullfield);
         def->updateTableDef(1);
         BOOST_CHECK_MESSAGE(0 == def->stat(),
                             "updateTableDef 2 stat = " << def->stat());
@@ -323,6 +221,7 @@ void testCreateNewDataBase(database* db)
         fd->setName(_T("select"));
         fd->type = ft_integer;
         fd->len = (ushort_td)4;
+        fd->setNullable(use_nullfield);
         def->updateTableDef(1);
         BOOST_CHECK_MESSAGE(0 == def->stat(),
                             "updateTableDef 2 stat = " << def->stat());
@@ -331,6 +230,7 @@ void testCreateNewDataBase(database* db)
         fd->setName(_T("in"));
         fd->type = ft_integer;
         fd->len = (ushort_td)4;
+        fd->setNullable(use_nullfield);
         def->updateTableDef(1);
         BOOST_CHECK_MESSAGE(0 == def->stat(),
                             "updateTableDef 2 stat = " << def->stat());
@@ -399,34 +299,34 @@ void testVersion(database* db)
         if (_tcscmp(PROTOCOL, _T("tdap")) == 0)
         {
             BOOST_CHECK_MESSAGE(
-                atoi(CPP_INTERFACE_VER_MAJOR) == vv.versions[0].majorVersion,
-                "clent_Major = " << vv.versions[0].majorVersion);
+                atoi(CPP_INTERFACE_VER_MAJOR) == vv.versions[VER_IDX_CLINET].majorVersion,
+                "clent_Major = " << vv.versions[VER_IDX_CLINET].majorVersion);
             BOOST_CHECK_MESSAGE(
-                atoi(CPP_INTERFACE_VER_MINOR) == vv.versions[0].minorVersion,
-                "clent_Miner = " << vv.versions[0].minorVersion);
-            BOOST_CHECK_MESSAGE((int)'N' == (int)vv.versions[0].type,
-                                "clent_Type = " << vv.versions[0].type);
+                atoi(CPP_INTERFACE_VER_MINOR) == vv.versions[VER_IDX_CLINET].minorVersion,
+                "clent_Miner = " << vv.versions[VER_IDX_CLINET].minorVersion);
+            BOOST_CHECK_MESSAGE((int)'N' == (int)vv.versions[VER_IDX_CLINET].type,
+                                "clent_Type = " << vv.versions[VER_IDX_CLINET].type);
 
             BOOST_CHECK_MESSAGE(
-                ((5 == vv.versions[1].majorVersion) ||
-                 (10 == vv.versions[1].majorVersion)),
-                "mysql_server_Major = " << vv.versions[1].majorVersion);
+                ((5 == vv.versions[VER_IDX_DB_SERVER].majorVersion) ||
+                 (10 == vv.versions[VER_IDX_DB_SERVER].majorVersion)),
+                "mysql_server_Major = " << vv.versions[VER_IDX_DB_SERVER].majorVersion);
             BOOST_CHECK_MESSAGE(
-                ((5 <= vv.versions[1].minorVersion) ||
-                 (0 == vv.versions[1].minorVersion) ||
-                 (1 == vv.versions[1].minorVersion)),
-                "mysql_server_Miner = " << vv.versions[1].minorVersion);
-            BOOST_CHECK_MESSAGE((int)'M' == (int)vv.versions[1].type,
-                                "mysql_server_Type = " << vv.versions[1].type);
+                ((5 <= vv.versions[VER_IDX_DB_SERVER].minorVersion) ||
+                 (1 >= vv.versions[VER_IDX_DB_SERVER].minorVersion)),
+                "mysql_server_Miner = " << vv.versions[VER_IDX_DB_SERVER].minorVersion);
+            int type = (int)vv.versions[VER_IDX_DB_SERVER].type;
+            BOOST_CHECK_MESSAGE(((int)'M' == type) || ((int)'A' == type),
+                                "mysql_server_Type = " << vv.versions[VER_IDX_DB_SERVER].type);
 
             BOOST_CHECK_MESSAGE(
-                TRANSACTD_VER_MAJOR == vv.versions[2].majorVersion,
-                "server_Major = " << vv.versions[2].majorVersion);
+                TRANSACTD_VER_MAJOR == vv.versions[VER_IDX_PLUGIN].majorVersion,
+                "server_Major = " << vv.versions[VER_IDX_PLUGIN].majorVersion);
             BOOST_CHECK_MESSAGE(
-                TRANSACTD_VER_MINOR == vv.versions[2].minorVersion,
-                "server_Miner = " << vv.versions[2].minorVersion);
-            BOOST_CHECK_MESSAGE((int)'T' == (int)vv.versions[2].type,
-                                "server_Type = " << vv.versions[2].type);
+                TRANSACTD_VER_MINOR == vv.versions[VER_IDX_PLUGIN].minorVersion,
+                "server_Miner = " << vv.versions[VER_IDX_PLUGIN].minorVersion);
+            BOOST_CHECK_MESSAGE((int)'T' == (int)vv.versions[VER_IDX_PLUGIN].type,
+                                "server_Type = " << vv.versions[VER_IDX_PLUGIN].type);
         }
     }
 }
@@ -462,8 +362,6 @@ void testInsert(database* db)
         tb->clearBuffer();
         tb->setFV((short)0, i);
         tb->setFV((short)1, i);
-        if (i == 87170)
-            i = 87170;
         tb->insert();
     }
     tb->commitBulkInsert();
@@ -747,7 +645,7 @@ void testPrepareServer(database* db)
     v = 50;
     tb->setFV((short)0, v);
     tb->seek();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seek");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "seek stat = " << tb->stat());
     tb->findNext(false);
     findNextLoop(tb, v, 100);
 
@@ -1557,7 +1455,7 @@ void testTransactionLockReadCommited(database* db)
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb->seekNext");
     // Try lock(X) whith lock(IX)
     tb2->update();
-    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->update");
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->update stat = " << tb2->stat());
 
     /* ---------------------------------------------------------*/
     /* Test single record lock Transaction and Transaction lock */
@@ -1663,7 +1561,7 @@ void testTransactionLockReadCommited(database* db)
     tb2->seekFirst();
     BOOST_CHECK_MESSAGE(0 == tb2->stat(), "tb2->seekFirst");
     tb2->update();
-    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->update");
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb2->update stat = " << tb2->stat());
 
     db->endTrn();
     /* -------------------------------------------------*/
@@ -1972,15 +1870,18 @@ void testExclusive()
     db2->close();
     
     // Normal open
+    /*  Since MySQL 5.7 : D_OPEN_READONLY_EXCLUSIVE + TD_OPEN_NORMAL is fail,
+        It's correct.
+    */
+
     db2->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME), true);
-    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME),
-            TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
+    db2->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME), TYPE_SCHEMA_BDF, TD_OPEN_NORMAL);
+
     if (MySQL5_7)
-        BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat()
-                                    , "Normal open");
+        BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat() , "Normal open");
     else
-        BOOST_CHECK_MESSAGE(0 == db2->stat()
-                                    , "Normal open");
+        BOOST_CHECK_MESSAGE(0 == db2->stat(), "Normal open");
+                                    
     db2->close();
 
     // Write Exclusive open
@@ -2339,11 +2240,11 @@ void testReconnect(database* db)
     //Check restore lock
     tb2->setFV(fdi_id, 10);
     tb2->seek(ROW_LOCK_X);
-    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seek stat = " << tb2->stat());
+    BOOST_CHECK_MESSAGE(STATUS_LOCK_ERROR == tb2->stat(), "tb->seek stat = " << tb2->stat()); //0
 
     tb->seekNext();
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seek stat = " << tb->stat());
-    BOOST_CHECK_MESSAGE(11 == tb->getFVint(fdi_id), "getFVint 11 bad = " << tb->getFVint(fdi_id));
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "tb->seek stat = " << tb->stat());//8
+    BOOST_CHECK_MESSAGE(11 == tb->getFVint(fdi_id), "getFVint 11 bad = " << tb->getFVint(fdi_id));//10
 
     tb2->setFV(fdi_id, 11);
     tb2->seek(ROW_LOCK_X);
@@ -2452,7 +2353,7 @@ void testLogin(database* db)
     // invalid database name
     testDropDatabase(db);
     db->disconnect();
-    BOOST_CHECK_MESSAGE(0 == db->stat(),
+    BOOST_CHECK_MESSAGE(STATUS_PROGRAM_ERROR == db->stat(),
                         "databese disconnect db->stat() = " << db->stat());
 
     db->connect(makeUri(PROTOCOL, HOSTNAME, DBNAME));
@@ -2461,7 +2362,7 @@ void testLogin(database* db)
 
     //connect is failed, no need disconnet.
     db->disconnect();
-    BOOST_CHECK_MESSAGE(1 == db->stat(),
+    BOOST_CHECK_MESSAGE(STATUS_PROGRAM_ERROR == db->stat(),
                         "databese disconnect db->stat() = " << db->stat());
 }
 
@@ -2484,22 +2385,14 @@ void doCreateVarTable(database* db, int id, const _TCHAR* name, char fieldType,
     // create table
     dbdef* def = db->dbDef();
     tabledef td;
-    memset(&td, 0, sizeof(td));
     td.setTableName(name);
     _TCHAR buf[267];
     _tcscpy_s(buf, 100, name);
     _tcscat_s(buf, 100, _T(".dat"));
     td.setFileName(buf);
     td.id = id;
-    td.keyCount = 0;
-    td.fieldCount = 0;
-    td.flags.all = 0;
 
-    td.primaryKeyNum = -1;
-    td.parentKeyNum = -1;
-    td.replicaKeyNum = -1;
-
-    td.pageSize = 2048;
+    td.primaryKeyNum = 0;
 
     td.charsetIndex = charset;
 
@@ -2571,7 +2464,7 @@ bool isUtf16leSupport(database* db)
 {
     btrVersions vv;
     db->getBtrVersion(&vv);
-    if ((int)'M' == (int)vv.versions[1].type)
+    if ((int)'M' == (int)vv.versions[1].type || (int)'A' == (int)vv.versions[1].type)
     {
         if (vv.versions[1].majorVersion > 5)
             return true;
@@ -3272,8 +3165,9 @@ void doInsertStringFileter(table* tb)
     tb->setFV(_T("namew"), _T("おめでとうございます。"));
     tb->insert();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 4");
-    tb->commitBulkInsert();
+    int n = tb->commitBulkInsert();
     BOOST_CHECK_MESSAGE(0 == tb->stat(), "InsertStringFileter 5");
+    BOOST_CHECK_MESSAGE(n == 3, "InsertStringFileter 5");
 }
 
 void doTestReadSF(table* tb)
@@ -3682,18 +3576,22 @@ void testLogic(database* db)
 {
     table* tb = openTable(db);
     logic lc;
+    db->dbDef()->tableDefs(1)->fieldDefs[1].type = ft_zstring;
 
     lc.setParam(tb, _T("name"), _T("="), _T("abc"), eCend);
 
     BOOST_CHECK_MESSAGE(lc.type == ft_zstring, " logic.type");
-    BOOST_CHECK_MESSAGE(lc.len == 33, " logic.len");
+    
     BOOST_CHECK_MESSAGE(lc.pos == 4, " logic.pos");
     BOOST_CHECK_MESSAGE(lc.logType == 1, " logic.logType");
     BOOST_CHECK_MESSAGE(lc.opr == eCend, " logic.opr");
-    BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc") == 0, " logic.data");
-
     int len = lc.size();
+    BOOST_CHECK_MESSAGE(lc.len == 33, " logic.len");
+    BOOST_CHECK_MESSAGE(strcmp((char*)lc.data, "abc") == 0, " logic.data");
     BOOST_CHECK_MESSAGE(len == 7 + 33, " logic.writeBuffer");
+   
+   
+    
 
     // compField invalid filed name
     bool ret = lc.setParam(tb, _T("name"), _T("="), _T("1"), eCend, true);
@@ -4292,8 +4190,7 @@ void testJoin(database* db)
     gq.addFunction(&count3).keyField(_T("group")); //.resultField(_T("count"));
     rs.groupBy(gq);
     BOOST_CHECK_MESSAGE(rs.size() == 5,
-                        "group by2  rs.size()==" << rsv->size());
-
+                        "group by2  rs.size()==" << rs.size());
     // having
     recordsetQuery rq;
     rq.when(_T("gropu1_count"), _T("="), 1).or_(_T("gropu1_count"), _T("="), 2);
@@ -4524,10 +4421,10 @@ void testServerPrepareJoin(database* db)
     atu.keyValue(1).read(rs, stmt1, 15000);
     ate.outerJoin(rs, stmt2, _T("id"));
     BOOST_CHECK_MESSAGE(rs.size() == 15000, "outerJoin  rs.size()== 15000");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
     atg.outerJoin(rs, stmt3, _T("group"));
     BOOST_CHECK_MESSAGE(rs.size() == 15000, "join2  rs.size()== 15000");
 
-    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
     BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID][_T("comment")].i() == NO_RECORD_ID+1, "row of 6 = '6 comment'");
     vs = rs[NO_RECORD_ID][_T("blob")].c_str();
     ret = _tcscmp(vs, _T("6 blob")) == 0; 
@@ -4541,6 +4438,7 @@ void testServerPrepareJoin(database* db)
     ate.outerJoin(rs, stmt2, _T("id"));
     BOOST_CHECK_MESSAGE(rs.size() == 15000, "outerJoin  rs.size()== 15000");
     BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1][_T("comment")].isNull() == true, "outerJoin NULL");
     BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID][_T("comment")].i() == NO_RECORD_ID+1, "row of 6 = '6 comment'");
     vs = rs[NO_RECORD_ID][_T("blob")].c_str();
     ret = _tcscmp(vs, _T("6 blob")) == 0; 
@@ -4553,7 +4451,8 @@ void testServerPrepareJoin(database* db)
     // Test clone blob field
     recordset& rs2 = *rs.clone();
     BOOST_CHECK_MESSAGE(rs2.size() == 15000, "outerJoin  rs2.size()== 15000");
-    BOOST_CHECK_MESSAGE(rs2[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
+    //BOOST_CHECK_MESSAGE(rs2[NO_RECORD_ID-1].isInvalidRecord() == true, "outerJoin isInvalidRecord");
+    BOOST_CHECK_MESSAGE(rs[NO_RECORD_ID-1][_T("comment")].isNull() == true, "outerJoin NULL");
     BOOST_CHECK_MESSAGE(rs2[NO_RECORD_ID][_T("comment")].i() == NO_RECORD_ID+1, "row of 6 = '6 comment'");
     vs = rs2[NO_RECORD_ID][_T("blob")].c_str();
     ret = _tcscmp(vs, _T("6 blob")) == 0; 
@@ -4940,10 +4839,10 @@ void createFilterTestDb(database* db)
         td.setTableName(_T("user"));
         td.setFileName(_T("user.dat"));
         td.id = 1;
-        td.primaryKeyNum = -1;
+        /*td.primaryKeyNum = -1;
         td.parentKeyNum = -1;
         td.replicaKeyNum = -1;
-        td.pageSize = 2048;
+        td.pageSize = 2048;*/
 #ifdef _WIN32
         td.charsetIndex = CHARSET_CP932;
 #else
@@ -5011,7 +4910,7 @@ void doTestReadByQuery(int num, activeTable& at, recordset& rs, Q& q,
     setReject(q);
     at.index(0).keyValue(0).read(rs, q);
     BOOST_CHECK_MESSAGE(compSize == (int)rs.size(),
-            num << " " << msg << " rs.size() = " << rs.size());
+            num << " " << msg << " " << compSize << " --> bad rs.size() = " << rs.size());
 }
 
 void testFilterOfServer(database* db)
@@ -5028,7 +4927,8 @@ void testFilterOfServer(database* db)
             
             q.reset().where(fdf_names[i], _T("="), _T(""));
             int n = 3;
-            if (atu.table()->tableDef()->fieldDefs[i+1].usePadChar())
+            fielddef* fd = &atu.table()->tableDef()->fieldDefs[i+1];
+            if (fd->isUsePadChar())
                 n += 1;
             doTestReadByQuery(i, atu, rs, q, n, "");
             q.where(fdf_names[i], _T("=i"), _T(""));
@@ -5119,12 +5019,12 @@ void testFilterOfServer(database* db)
     }
 }
 
-void doTestMatchBy(int num, recordset& rs, recordsetQuery& rq, int compSize, const _TCHAR* msg)
+void doTestMatchBy(int num, recordset& rs, recordsetQuery& rq, int compSize, const char* msg)
 {
     recordset* rss = rs.clone();
     rss->matchBy(rq);
     BOOST_CHECK_MESSAGE(compSize == (int)rss->size(),
-                num << msg << _T(" rss->size = ") << rss->size());
+                num << " " << msg << " rss->size = " << rss->size());
     rss->release();
 }
 
@@ -5143,47 +5043,47 @@ void testFilterOfMatchBy(database* db)
             recordsetQuery rq;
             rq.when(fdf_names[i], _T("="), _T(""));
             int n = 3;
-            if (atu.table()->tableDef()->fieldDefs[i+1].usePadChar())
+            if (atu.table()->tableDef()->fieldDefs[i+1].isUsePadChar())
                 n += 1;
-            doTestMatchBy(i, rs, rq, n, _T(" = "));
+            doTestMatchBy(i, rs, rq, n, " = ");
             rq.reset().when(fdf_names[i], _T("=i"), _T(""));
-            doTestMatchBy(i, rs, rq, n, _T(" =i "));
+            doTestMatchBy(i, rs, rq, n, " =i ");
 
             
             // wildcard
             rq.reset().when(fdf_names[i], _T("="), _T("09*"));
-            doTestMatchBy(i, rs, rq, 5, _T(" = 09*"));
+            doTestMatchBy(i, rs, rq, 5, " = 09*");
             rq.reset().when(fdf_names[i], _T("=i"), _T("09*"));
-            doTestMatchBy(i, rs, rq, 5, _T(" =i 09*"));
+            doTestMatchBy(i, rs, rq, 5, " =i 09*");
             
             // match complate
             rq.reset().when(fdf_names[i], _T("="), _T("070"));
-            doTestMatchBy(i, rs, rq, 1, _T(" = 070"));
+            doTestMatchBy(i, rs, rq, 1, " = 070");
             rq.reset().when(fdf_names[i], _T("=i"), _T("070"));
-            doTestMatchBy(i, rs, rq, 1, _T(" =i 070"));
+            doTestMatchBy(i, rs, rq, 1, " =i 070");
 
             // match complate
             rq.reset().when(fdf_names[i], _T("<"), _T("09"));
-            doTestMatchBy(i, rs, rq, 7, _T(" < 09"));
+            doTestMatchBy(i, rs, rq, 7, " < 09");
 
             rq.reset().when(fdf_names[i], _T("<i"), _T("09"));
-            doTestMatchBy(i, rs, rq, 7, _T(" <i 09"));
+            doTestMatchBy(i, rs, rq, 7, " <i 09");
 
             // ascii
             rq.reset().when(fdf_names[i], _T("="), _T("a*"));
-            doTestMatchBy(i, rs, rq, 1, _T(" = a*"));
+            doTestMatchBy(i, rs, rq, 1, " = a*");
 
             rq.reset().when(fdf_names[i], _T("=i"), _T("a*"));
-            doTestMatchBy(i, rs, rq, 3, _T(" =i a*"));
+            doTestMatchBy(i, rs, rq, 3, " =i a*");
 
             rq.reset().when(fdf_names[i], _T("=i"), _T("A*"));
-            doTestMatchBy(i, rs, rq, 3, _T(" =i A*"));
+            doTestMatchBy(i, rs, rq, 3, " =i A*");
 
             rq.reset().when(fdf_names[i], _T("="), _T("AA0*"));
-            doTestMatchBy(i, rs, rq, 0, _T(" = AA0*"));
+            doTestMatchBy(i, rs, rq, 0, " = AA0*");
 
             rq.reset().when(fdf_names[i], _T("=i"), _T("AA0*"));
-            doTestMatchBy(i, rs, rq, 1, _T(" =i Aa0*"));
+            doTestMatchBy(i, rs, rq, 1, " =i Aa0*");
 
             
             BOOST_CHECK_MESSAGE(FILTER_RECORDS == rs.size(), " rs.size() = " << rs.size());
@@ -5218,7 +5118,7 @@ void testBinaryField()
     fdd.len = 255;
     fdd.pos = 0;
 
-    client::field fd(buf, fdd, NULL);
+    client::field fd(buf, fdd, NULL/*, NULL, 0*/);
     for (int i = 0 ; i < 10; ++i)
     {
         fdd.type = field_types[i];
@@ -5247,8 +5147,30 @@ BOOST_FIXTURE_TEST_CASE(createNewDataBase, fixture)
 {
     connectParams cp(PROTOCOL, HOSTNAME, DBNAME, BDFNAME, g_userName);
     _tprintf(_T("URI = %s\n"), cp.uri());
-    if (db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME)))
+    bool ret = db()->open(makeUri(PROTOCOL, HOSTNAME, DBNAME, BDFNAME));
+    if (ret)
+    {
         db()->drop();
+        if (db()->stat())
+        {
+            printf("test database drop error No.%d\nTest is stopped !" , db()->stat());
+            exit(1);
+        }
+    }
+    db()->connect(makeUri(PROTOCOL, HOSTNAME, _T("")));
+
+    btrVersions v;
+    db()->getBtrVersion(&v);
+    if (db()->stat() ==0)
+    {
+        _tprintf(_T("%s-%d.%d with Transactd plugin %d.%d\n"), 
+            v.versions[VER_IDX_DB_SERVER].type == 'M' ? _T("mysql") : _T("mariadb"),
+            v.versions[VER_IDX_DB_SERVER].majorVersion,
+            v.versions[VER_IDX_DB_SERVER].minorVersion,
+            v.versions[VER_IDX_PLUGIN].majorVersion,
+            v.versions[VER_IDX_PLUGIN].minorVersion
+            );    
+    }
     testCreateNewDataBase(db());
 }
 BOOST_FIXTURE_TEST_CASE(clone, fixture)

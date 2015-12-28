@@ -20,6 +20,7 @@
 =================================================================*/
 #include "trdormapi.h"
 #include "groupQuery.h"
+#include <bzs/rtl/stringBuffers.h>
 #ifdef _DEBUG
 #include <iostream>
 #include <iomanip>
@@ -57,14 +58,14 @@ class dumpRecordset
 
         for (size_t col = 0; col < fds.size(); ++col)
         {
-            m_widths[col] = std::max(_tcslen(fds[col].name()), m_widths[col]);
-            m_ailgns[col] = fds[col].isStringType() ? std::ios::left : std::ios::right;
+            m_widths[col] = std::max(_tcslen(fds[(short)col].name()), (size_t)4);
+            m_ailgns[col] = (fds[(short)col].isStringType() ? std::ios::left : std::ios::right);
         }
         for(size_t i = 0; i < rs.size(); ++i)
         {
             row& rec = rs[i];
             for (size_t col = 0; col < fds.size(); ++col)
-                m_widths[col] = std::max(_tcslen(rec[col].c_str()), m_widths[col]);
+                m_widths[col] = std::max(_tcslen(rec[(short)col].c_str()), m_widths[col]);
         }
     }
 
@@ -87,30 +88,39 @@ class dumpRecordset
     }
 
     const _TCHAR* value(const fielddef& fd) {return fd.name();}
-    const _TCHAR* value(const field& fd) {return fd.c_str();}
+    const _TCHAR* value(const field& fd) 
+    {
+        if (fd.isNull())
+            return _T("NULL");
+        return fd.c_str();
+    }
 
     template <class T>
     void printRecord(const T& coll)
     {
         std::tcout  << _T("|");
         for (size_t col = 0; col < m_widths.size(); ++col)
-            printValue(m_widths[col], m_ailgns[col], value(coll[col]));
+            printValue(m_widths[col], m_ailgns[col], value(coll[(short)col]));
         std::tcout << std::endl;
     }
 public:
     void operator()(RS& rs)
     {
-        cacheWidthAndAlign(rs);
-        std::_tstring line = makeLine();
-        //header
-        std::tcout << line;
-        printRecord(*rs.fieldDefs());
-        std::tcout << line;
+        if (rs.size())
+        {
+            cacheWidthAndAlign(rs);
+            std::_tstring line = makeLine();
+            //header
+            std::tcout << line;
+            printRecord(*rs.fieldDefs());
+            std::tcout << line;
 
-        //field value
-        for(size_t i = 0; i < rs.size(); ++i)
-            printRecord(rs[i]);
-        std::tcout << line;
+            //field value
+            for(size_t i = 0; i < rs.size(); ++i)
+                printRecord(rs[i]);
+            std::tcout << line;
+        }else
+            std::tcout << _T("Empty set ") << std::endl;
     }
 };
 #endif
@@ -163,7 +173,8 @@ public:
     inline unsigned char* ptr(size_t row, int stat);
     inline void setRowOffset(int v) { m_rowOffset = v; }
     inline void setJoinType(int v) { m_addType = v; }
-    inline void setInvalidRecord(size_t row, bool v);
+    inline int joinType() const {return m_addType; };
+    inline void setInvalidMemblock(size_t row, bool v);
     inline void setCurFirstField(int v) { m_curFirstField = v; }
     inline void setJoinRowMap(const std::vector<std::vector<int> >* v)
     {
@@ -229,7 +240,7 @@ private:
             m_mra->setRowOffset(0);
             m_mra->setCurFirstField((int)m_fds->size());
             if (tb)
-                m_fds->copyFrom(tb);
+                m_fds->addSelectedFields(tb);
             if (tb && (addtype == mra_nojoin))
             {
                 const keydef& kd = tb->tableDef()->keyDefs[(int)tb->keyNum()];
@@ -407,11 +418,11 @@ public:
             std::vector<short> offsetIndex;
             for (int j = 0; j < (int)m_fds->size(); ++j)
             {
-                if (m_fds->operator[](j).blobLenBytes())
+                if (blobLenBytes(m_fds->operator[](j)))
                 {
                     blobs.push_back((short)j);
                     unsigned char* p = (unsigned char*)(*m_recordset[0])[j].ptr()
-                                        + m_fds->operator[](j).blobLenBytes();
+                                        + blobLenBytes(m_fds->operator[](j));
                     short index = (short)getMemBlockIndex(p);
                     offsetIndex.push_back(index);
                 }
@@ -422,7 +433,8 @@ public:
                     dynamic_cast<memoryRecord*>(m_recordset[i]);
                 memoryRecord* mr = recs + i;
                 p->push_back(mr);
-                mr->m_invalidRecord = row->m_invalidRecord;
+                mr->m_InvalidFlags = row->m_InvalidFlags;
+                
                 for (int j = 0; j < (int)row->memBlockSize(); ++j)
                 {
                     const autoMemory& mb = row->memBlock(j);
@@ -432,6 +444,7 @@ public:
 #pragma warn .8072
                     autoMemory* a = amar + amindex;
                     const boost::shared_ptr<autoMemory>& am = p->m_memblock[index];
+                    // isInvalidRecord will be reset.
                     mr->setRecordData(a, ptr, mb.size, am->endFieldIndex, mb.owner);
                     ++amindex;
                 }
@@ -640,7 +653,7 @@ public:
         return *this;
     }
 
-    inline void appendField(const _TCHAR* name, int type, short len)
+    inline void appendField(const _TCHAR* name, int type, short len, uchar_td decimals=0)
     {
         assert(m_fds->size());
         
@@ -649,8 +662,9 @@ public:
         fd.len = len;
         fd.pos = 0;
         fd.type = type;
+        fd.decimals = decimals;
         fd.setName(name);
-        if (fd.blobLenBytes())
+        if (blobLenBytes(fd))
             THROW_BZS_ERROR_WITH_MSG(_T("Can not append Blob or Text field."));
         m_fds->push_back(&fd);
         if (size())
@@ -671,6 +685,11 @@ public:
         for (size_t i = 0; i < r.m_memblock.size(); ++i)
             m_memblock.push_back(r.m_memblock[i]);
         return *this;
+    }
+
+    inline void clearStringBuffer()
+    {
+        m_fds->strBufs()->clear();
     }
 
 #ifdef _DEBUG
@@ -705,19 +724,19 @@ inline unsigned char* multiRecordAlocatorImple::ptr(size_t row, int stat)
     int col = (stat == mra_current_block) ? m_curFirstField : 0;
     size_t rowNum = m_joinRowMap ? (*m_joinRowMap)[row + m_rowOffset][0]
                                  : row + m_rowOffset;
-    return (*m_rs)[rowNum].ptr(col);
+    return (*m_rs)[rowNum].nullPtr(col);
 }
 
-inline void multiRecordAlocatorImple::setInvalidRecord(size_t row, bool v)
+inline void multiRecordAlocatorImple::setInvalidMemblock(size_t row, bool v)
 {
     if (m_joinRowMap)
     {
         const std::vector<int>& map = (*m_joinRowMap)[row + m_rowOffset];
         for (int j = 0; j < (int)map.size(); ++j)
-            (*m_rs)[map[j]].setInvalidRecord(v);
+            (*m_rs)[map[j]].setInvalidMemblock(v ? m_curFirstField : 0);
     }
     else
-        (*m_rs)[row + m_rowOffset].setInvalidRecord(v);
+        (*m_rs)[row + m_rowOffset].setInvalidMemblock(v ? m_curFirstField : 0);
 }
 
 inline void multiRecordAlocatorImple::duplicateRow(int row, int count)

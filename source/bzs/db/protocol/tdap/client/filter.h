@@ -39,26 +39,6 @@ namespace client
 
 #define DATASIZE_BYTE 2
 
-
-/** Length of compare
- * if part of string or zstring then return strlen * sizeof(char or wchar).
- */
-inline uint_td compDataLen(const fielddef& fd, const uchar_td* ptr, bool part)
-{
-    uint_td length = fd.keyDataLen(ptr);
-    if (part)
-    {
-        if ((fd.type == ft_string) || (fd.type == ft_zstring) ||
-                        (fd.type == ft_note) || (fd.type == ft_mychar))
-            length = (uint_td)strlen((const char*)ptr);
-        else if ((fd.type == ft_wstring) || (fd.type == ft_wzstring) ||
-                        (fd.type == ft_mywchar))
-            length = (uint_td)strlen16((char16_t*)ptr)*sizeof(char16_t);
-    }
-    return length;
-}
-
-
 inline bool verType(uchar_td type)
 {
     if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
@@ -106,7 +86,7 @@ filter
                         1 and 
                         2 or
                         +32 prepare placeholder (Only transactd)
-    data        2 or n  field position (if compare type +64) or comapre value
+    data        2 or n  field position (if compare type +64) or compare value
     --- end repeat   ---
 -----------------------------------
 result
@@ -210,14 +190,23 @@ struct resultDef
 struct seek
 {
     unsigned char* data;
-    unsigned short len;
+    union
+    {
+        unsigned short len_ptr;
+        struct
+        {
+            unsigned short len  : 15;
+            unsigned short null : 1;
+        };
+    };
 
 public:
     // setParam from keyValue
-    bool setParam(uchar_td* buf, ushort_td keylen)
+    bool setParam(uchar_td* buf, ushort_td keylen, bool isNull)
     {
         len = keylen;
         data = buf;
+        null = isNull ? 1 : 0;
         return true;
     }
 
@@ -225,15 +214,15 @@ public:
     { 
         if (!isTransactd)
             return len;
-        return sizeof(len) + len; 
+        return sizeof(unsigned short) + len; 
     }
 
     unsigned char* writeBuffer(unsigned char* p, bool end,
                                bool isTransactd) const
     {
-        int n = sizeof(len);
+        int n = sizeof(unsigned short);
         if (isTransactd)
-            memcpy(p, &len, n);
+            memcpy(p, &len_ptr, n);
         else
             n = 0;
         memcpy(p + n, data, len);
@@ -348,12 +337,17 @@ public:
             return;
         fielddef fdd = tb->tableDef()->fieldDefs[fieldNum];
         fdd.pos = 0;
+        fdd.m_nullbytes = 0;
+        fdd.m_nullbit = 0;
         uchar_td* buf = allocBuffer(fdd.len);
-        field fd(buf, fdd, tb->m_fddefs);
-        fd = value;
+
+        // Compare value don't use NULL
+        // If logType is eIsNull or eIsNotNull, ingored this value
+        field fd(buf, fdd, tb->m_fddefs/*, NULL, 0*/);
+        fd = value; // operator=()
         bool part = fd.isCompPartAndMakeValue();
         int varlen = fdd.varLenByteForKey();
-        int copylen = compDataLen(fdd, buf, part);
+        int copylen = fdd.compDataLen(buf, part);
         len = varlen + copylen;
         if (fdd.blobLenBytes())
         {
@@ -546,7 +540,7 @@ class autoBackup
     int m_len;
 public:
     autoBackup(table* tb, std::vector<char>& b):m_tb(tb),
-        m_len(m_tb->tableDef()->maxRecordLen)
+        m_len(m_tb->tableDef()->recordlen())
     {
         b.resize(m_len);
         m_buf = &b[0]; 
@@ -602,12 +596,19 @@ class filter
 
     struct bufSize
     {
-        bufSize():logic(0), seeks(0), select(0),retRowSize(0) {}
-        void clear() { logic = 0; seeks = 0; select = 0; retRowSize = 0;}
+        bufSize():logic(0), seeks(0), select(0),retRowSize(0),
+            nullfields(0), nullbytes(0) {}
+        void clear()
+        {
+            logic = 0; seeks = 0; select = 0; retRowSize = 0;
+            nullfields = 0; nullbytes = 0;
+        }
         int logic;
         int seeks;
         int select;
         int retRowSize;
+        short nullfields;
+        short nullbytes;
     }bsize;
 
     inline int maxDataBuffer()
@@ -620,10 +621,13 @@ class filter
     {
         m_fields.resize(1);
         resultField& r = m_fields[0];
-        r.len = (ushort_td)m_tb->tableDef()->maxRecordLen;
+        const tabledef* td = m_tb->tableDef();
+        r.len = (ushort_td)td->recordlenServer();
         r.pos = 0;
         bsize.select = r.size();
         bsize.retRowSize = r.len;
+        bsize.nullbytes = (short)td->nullbytes();
+        bsize.nullfields = (short)td->nullfields();
     }
 
     bool addSelect(resultField& r, const _TCHAR* name)
@@ -634,6 +638,12 @@ class filter
             m_selectFieldIndexes.push_back(fieldNum);
             bsize.select += r.size();
             bsize.retRowSize += r.len;
+
+            if (m_tb->tableDef()->fieldDefs[fieldNum].isNullable())
+            {
+                ++bsize.nullfields;
+                bsize.nullbytes = (bsize.nullfields + 7) / 8;
+            }
             return true;
         }
         return false;
@@ -708,7 +718,7 @@ class filter
 
     // Need covert data types
     template <class T>
-    bool doSsetSeekValues(keydef* kd, int joinKeySize, const T& keyValues, size_t size, uchar_td* dataBuf )
+    bool doSetSeekValues(keydef* kd, int joinKeySize, const T& keyValues, size_t size, uchar_td* dataBuf )
     {
         autoBackup recb(m_tb, m_recordBackup);
         int index = 0;
@@ -719,7 +729,7 @@ class filter
                 m_tb->setFV(kd->segments[j].fieldNum, c_str_v(keyValues[i + j]));
             seek& l = m_seeks[index];
             ushort_td len = m_tb->writeKeyDataTo(dataBuf, joinKeySize);
-            if (!l.setParam(dataBuf, len))
+            if (!l.setParam(dataBuf, len, false))
                 return false;
             bsize.seeks += l.size(m_isTransactd);
             dataBuf += len;
@@ -729,7 +739,7 @@ class filter
     }
 
     // no need covert data types
-    bool doSsetSeekValues(keydef* kd, int joinKeySize, const std::vector<keyValuePtr>& keyValues, size_t size, uchar_td* dataBuf )
+    bool doSetSeekValues(keydef* kd, int joinKeySize, const std::vector<keyValuePtr>& keyValues, size_t size, uchar_td* dataBuf )
     {
         int index = 0;
         bsize.seeks = 0;
@@ -738,6 +748,8 @@ class filter
         {
             seek& l = m_seeks[index];
             uchar_td* to = dataBuf;
+            /* If NULL even any one segment, all be NULL */
+            bool has_null = false;
             if (m_seekByBookmarks)
             {
                 const keyValuePtr& v = keyValues[i];
@@ -750,10 +762,11 @@ class filter
                 {
                     const keyValuePtr& v = keyValues[i + j];
                     fielddef& fd = fds[kd->segments[j].fieldNum];
-                    to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len);
+                    has_null |= (v.ptr == NULL);
+                    to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len, (v.ptr == NULL));
                 }
             }
-            if (!l.setParam(dataBuf, (ushort_td)(to - dataBuf)))
+            if (!l.setParam(dataBuf, (ushort_td)(to - dataBuf), has_null))
                 return false;
             bsize.seeks += l.size(m_isTransactd);
             dataBuf = to;
@@ -778,16 +791,13 @@ class filter
             if (keySize == 0)
                 keySize = kd->segmentCount;
             else if (kd->segmentCount < keySize)
-                    return false;
+                return false;
             if (size % keySize)
                 return false;
 
             m_hasManyJoin = (kd->segmentCount != keySize) || kd->segments[0].flags.bit0;
             if (m_hasManyJoin)
                 m_withBookmark = true;
-            if (q && m_hasManyJoin &&
-                    !(q->getOptimize() & queryBase::joinHasOneOrHasMany))
-                return false;
             m_seeks.resize(size / keySize);
             for (int j = 0; j < keySize; ++j)
                 maxKeylen +=
@@ -811,7 +821,7 @@ class filter
         if (!prebuiltSeeks(kd, keyValues.size(), q, keySize, &dataBuf))
              return false;
         
-        if (!doSsetSeekValues(kd, keySize, keyValues, keyValues.size(), dataBuf))
+        if (!doSetSeekValues(kd, keySize, keyValues, keyValues.size(), dataBuf))
             return false;
 
         return true;
@@ -857,7 +867,7 @@ class filter
     {
         int recordLen = bookmarkSize() + DATASIZE_BYTE;
         if (!ignoreFields)
-            recordLen += bsize.retRowSize;
+            recordLen += (bsize.retRowSize + bsize.nullbytes);
         return recordLen;
     }
 
@@ -959,7 +969,7 @@ class filter
         // m_hd.len = len;//lost 2byte data at transactd
         m_extendBuflen = (int)resultBufferNeedSize();
         if (fieldSelected() || m_tb->valiableFormatType())
-            m_extendBuflen += m_tb->tableDef()->maxRecordLen;
+            m_extendBuflen += m_tb->tableDef()->recordlen();
         m_tb->reallocDataBuffer(m_ddba ? len : m_extendBuflen);
         return true;
     }
@@ -1103,7 +1113,7 @@ public:
         if (!prebuiltSeeks(kd, size, NULL, keySize, &dataBuf))
              return false;
 
-        if (!doSsetSeekValues(kd, keySize, values, size, dataBuf))
+        if (!doSetSeekValues(kd, keySize, values, size, dataBuf))
             return false;
 
         m_seeksMode = true;
@@ -1123,7 +1133,9 @@ public:
         return true;
     }
     
-    bool supplySeekValue(const uchar_td* ptr[] , int len[], int keySize, int& index)
+    /* Used by activeTbale join. Must be support NULL pointer */
+    bool supplySeekValue(const uchar_td* ptr[] , int len[],
+                 int keySize, int& index)
     {
         const tabledef* td = m_tb->tableDef();
         keydef* kd = &td->keyDefs[(int)m_tb->keyNum()];
@@ -1131,12 +1143,15 @@ public:
 
         seek& l = m_seeks[index];
         uchar_td* to = m_buftmp;
+        /* If NULL even any one segment, all be NULL */
+        bool has_null = false;
         for (int j = 0; j < keySize; ++j)
         {
             fielddef& fd = fds[kd->segments[j].fieldNum];
-            to = fd.keyCopy(to, (uchar_td*)ptr[j], len[j]);
+            to = fd.keyCopy(to, (uchar_td*)ptr[j], len[j], (ptr[j]==NULL));
+            has_null |= (ptr[j] == NULL);
         }
-        if (!l.setParam(m_buftmp, (ushort_td)(to - m_buftmp)))
+        if (!l.setParam(m_buftmp, (ushort_td)(to - m_buftmp), has_null))
             return false;
         bsize.seeks += l.size(m_isTransactd);
         m_buftmp = to;
@@ -1196,7 +1211,7 @@ public:
     uint_td exDataBufLen() const
     {
         if (fieldSelected() || m_tb->valiableFormatType())
-            return m_extendBuflen - m_tb->tableDef()->maxRecordLen;
+            return m_extendBuflen - m_tb->tableDef()->recordlen();
         return m_extendBuflen;
     }
 
@@ -1217,10 +1232,7 @@ public:
 
     ushort_td totalSelectFieldLen() const
     {
-        ushort_td recordLen = 0;
-        for (size_t i = 0; i < m_fields.size(); ++i)
-            recordLen += m_fields[i].len;
-        return recordLen;
+        return bsize.nullbytes + bsize.retRowSize;
     }
 
     inline ushort_td fieldOffset(int index) const
@@ -1254,7 +1266,7 @@ public:
     {
         return !((m_fields.size() == 1) && (m_fields[0].pos == 0) &&
                  (m_fields[0].len ==
-                  (ushort_td)m_tb->tableDef()->maxRecordLen));
+                  (ushort_td)m_tb->tableDef()->recordlenServer()));
     }
 
     inline bool ignoreFields() const { return m_ignoreFields; }
@@ -1269,6 +1281,7 @@ public:
     /* The Ignore fields option don't use with multi seek operation.
        because if a server are not found a record then a server return
        error code in a bookmark field.
+       This is used in recordCount().
     */
     inline void setIgnoreFields(bool v) { m_ignoreFields = v; }
     inline bool isSeeksMode() const { return m_seeksMode; }
@@ -1284,6 +1297,7 @@ public:
     {
         return m_selectFieldIndexes;
     }
+    inline int selectedNullbytes() const { return bsize.nullbytes; };
     inline const std::vector<seek>& seeks() const { return m_seeks; }
     inline short stat() const { return m_stat; };
     inline void setStat(short v) { m_stat = v; }

@@ -38,7 +38,7 @@ protected:
     /** @cond INTERNAL */
     struct fieldNamesImple* m_impl;
     /** @endcond */
-
+    void doAddValue(const _TCHAR* v, bool isNull);
 public:
     fieldNames();
     fieldNames(const fieldNames& r);
@@ -61,6 +61,16 @@ public:
                    const _TCHAR* delmi); // delmi = boost::is_any_of
     static fieldNames* create();
     void release();
+};
+
+class DLLLIB fieldValues : public fieldNames
+{
+public:
+    fieldValues();
+    fieldValues(const fieldValues& r);
+    fieldValues& operator=(const fieldValues& r);
+    void addValue(const _TCHAR* v, bool isNull);
+    bool isNull(int index) const;
 };
 
 struct sortField
@@ -99,7 +109,6 @@ class DLLLIB recordsetQuery : protected query
 
     struct recordsetQueryImple* m_imple;
     void init(const fielddefs* fdinfo);
-    bool isMatch(int ret, unsigned char compType) const;
     bool match(const row_ptr row) const;
 
 public:
@@ -139,6 +148,42 @@ public:
         return *this;
     }
 
+    inline recordsetQuery& whenIsNull(const _TCHAR* name)
+    {
+        query::whereIsNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& whenIsNotNull(const _TCHAR* name)
+    {
+        query::whereIsNotNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& andIsNull(const _TCHAR* name)
+    {
+        query::andIsNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& andIsNotNull(const _TCHAR* name)
+    {
+        query::andIsNotNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& orIsNull(const _TCHAR* name)
+    {
+        query::orIsNull(name);
+        return *this;
+    }
+
+    inline recordsetQuery& orIsNotNull(const _TCHAR* name)
+    {
+        query::orIsNotNull(name);
+        return *this;
+    }
+
     inline const _TCHAR* toString() const { return queryBase::toString(); }
 
     inline query* internalQuery() { return this; }
@@ -157,17 +202,19 @@ protected:
     class groupFuncBaseImple* m_imple;
 
     void init(const fielddefs* fdinfo);
-    unsigned char* stringResult(int groupIndex) const;
+    unsigned char* stringResult(int index) const;
     uchar_td resultType() const;
     ushort_td resultLen() const;
     void operator()(const row_ptr& row, int index, bool insert);
 
     virtual void initResultVariable(int index);
-    virtual void doCalc(const row_ptr& row, int groupIndex);
+    virtual void doCalcEachkey(const field& fd, int index);
+    virtual void doCalc(const row_ptr& row, int index);
     virtual void doReset();
     virtual void doInit(const fielddefs* fdinfo);
-    virtual numeric_type numericResult(int groupIndex) const;
-    
+    virtual numeric_type numericResult(int index) const;
+    bool insertFlag() const ;
+    void clearInsertFlag();
 
 public:
     groupFuncBase();
@@ -182,7 +229,10 @@ public:
     void setResultName(const _TCHAR* v);
     int resultKey() const;
     void reset();
+    bool isNull(int index) const;
+    uchar_td decimals() const;
     virtual groupFuncBase* clone() = 0;
+    
 };
 
 class recordsetImple;
@@ -217,10 +267,10 @@ public:
 class DLLLIB sum : public groupFuncBase
 {
 protected:
-    void doCalc(const row_ptr& row, int index);
+    virtual void doCalcEachkey(const field& fd, int index);
     groupFuncBase* clone();
 public:
-    sum() {}
+    sum() : groupFuncBase() {}
     sum(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static sum* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
@@ -230,54 +280,56 @@ class DLLLIB count : public groupFuncBase
 {
 protected:
     groupFuncBase* clone();
+    void doCalcEachkey(const field& fd, int index);
     void doCalc(const row_ptr& row, int index);
-
-public:
-    count() {}
-    count(const _TCHAR* resultName);
-    static count* create(const _TCHAR* resultName);
-};
-
-class DLLLIB avg : public sum
-{
     void initResultVariable(int index);
-    void doCalc(const row_ptr& row, int index);
-    numeric_type numericResult(int index) const;
-    groupFuncBase* clone();
-
 public:
-    avg() {}
-    avg(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
-    static avg* create(const fieldNames& targetNames,
+    count(): groupFuncBase(){}
+    count(const _TCHAR* resultName);
+    count(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
+    static count* create(const _TCHAR* resultName);
+    static count* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
 
+class DLLLIB avg : public groupFuncBase
+{
+    void initResultVariable(int index);
+    void doCalcEachkey(const field& fd, int index);
+    numeric_type numericResult(int index) const;
+    groupFuncBase* clone();
+public:
+    avg();
+    avg(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
+    static avg* create(const fieldNames& targetNames,
+                       const _TCHAR* resultName = NULL);
+
+};
+
 #undef min
-class DLLLIB min : public sum
+class DLLLIB min : public groupFuncBase
 {
 protected:
-    bool m_flag;
-    void doCalc(const row_ptr& row, int index);
+    void doCalcEachkey(const field& fd, int index);
     groupFuncBase* clone();
     min& operator=(const min& r);
 
 public:
-    min() {}
+    min() : groupFuncBase() {}
     min(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static min* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
 };
 
 #undef max
-class DLLLIB max : public sum
+class DLLLIB max : public groupFuncBase
 {
-    bool m_flag;
-    void doCalc(const row_ptr& row, int index);
+    void doCalcEachkey(const field& fd, int index);
     groupFuncBase* clone();
     max& operator=(const max& r);
 
 public:
-    max() {}
+    max() : groupFuncBase(){}
     max(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static max* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
@@ -290,8 +342,9 @@ protected:
     void doCalc(const row_ptr& row, int index);
     void doInit(const fielddefs* fdinfo);
     groupFuncBase* clone();
+    void storeValue(const row_ptr& row, int index);
 public:
-    last() {}
+    last() : groupFuncBase(){}
     last(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static last* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);
@@ -300,14 +353,13 @@ public:
 
 class DLLLIB first : public last
 {
-    bool m_readed;
 protected:
     void doCalc(const row_ptr& row, int index);
     void doReset();
     groupFuncBase* clone();
     first& operator=(const first& r);
 public:
-    first() {}
+    first() : last() {}
     first(const fieldNames& targetNames, const _TCHAR* resultName = NULL);
     static first* create(const fieldNames& targetNames,
                        const _TCHAR* resultName = NULL);

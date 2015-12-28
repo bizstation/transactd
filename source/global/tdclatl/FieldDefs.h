@@ -57,4 +57,7 @@ public:
     STDMETHOD(IndexByName)(BSTR Name, short* retVal);
     STDMETHOD(get_FieldDef)(VARIANT Name, IFieldDef** retVal);
     STDMETHOD(get_Size)(short* retVal);
+    //STDMETHOD(AddAllFileds)(ITableDef* Def);
+    //STDMETHOD(AddSelectedFields)(ITable* Table);
+
 };

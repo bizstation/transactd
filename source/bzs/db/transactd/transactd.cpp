@@ -55,6 +55,7 @@ unsigned int g_lock_wait_timeout = 1;
 char* g_transaction_isolation = NULL;
 char* g_auth_type = NULL;
 unsigned int g_pipeCommSharememSize = PIPE_SHARE_MEM_SIZE;
+unsigned int g_timestamp_always = 1;
 //int g_grant_apply = 0;//skip
 
 
@@ -273,6 +274,10 @@ static MYSQL_SYSVAR_STR(hs_port, g_hs_listenPort,
                         NULL, "9999");
 static MYSQL_SYSVAR_INT(use_handlersocket, g_use_hs, PLUGIN_VAR_READONLY, "", 0,
                         0, 0, 0, 1, 0);
+
+static MYSQL_SYSVAR_UINT(timestamp_always, g_timestamp_always, PLUGIN_VAR_READONLY, "", 0,
+                        0, 1, 0, 1, 0);
+
 #endif
 
 /** system valiables struct.
@@ -289,6 +294,7 @@ static struct st_mysql_sys_var* g_systemVariables[] =
     MYSQL_SYSVAR(lock_wait_timeout),
     MYSQL_SYSVAR(transaction_isolation),
     MYSQL_SYSVAR(auth_type),
+    MYSQL_SYSVAR(timestamp_always),
 #ifdef PIPE_SERVER
     MYSQL_SYSVAR(pipe_comm_sharemem_size), 
     MYSQL_SYSVAR(max_pipe_connections),
@@ -315,6 +321,7 @@ const char* get_trd_sys_var(int index)
     case TD_VAR_LOCKWAITTIMEOUT:return (const char*)&g_lock_wait_timeout;
     case TD_VAR_ISOLATION:return g_transaction_isolation;
     case TD_VAR_AUTHTYPE:return g_auth_type;
+    case TD_VAR_TIMESTAMPMODE:return (const char*)&g_timestamp_always; 
 #ifdef PIPE_SERVER
     case TD_VAR_PIPESHAREMEMSIZE:return (const char*)&g_pipeCommSharememSize;
     case TD_VAR_MAXPIPECONNECTIONS:return (const char*)&g_maxPipeConnections;

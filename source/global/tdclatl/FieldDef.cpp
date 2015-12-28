@@ -19,6 +19,8 @@
 #include "stdafx.h"
 #include "FieldDef.h"
 #include "Flags.h"
+#include "Bitset.h"
+
 STDMETHODIMP CFieldDef::InterfaceSupportsErrorInfo(REFIID riid)
 {
 	static const IID* const arr[] = 
@@ -119,20 +121,6 @@ STDMETHODIMP CFieldDef::put_Min(double Value)
     if (!isWritabale())
         return write_error();
     fielddef()->min = Value;
-    return S_OK;
-}
-
-STDMETHODIMP CFieldDef::get_DefValue(double* Value)
-{
-    *Value = const_fielddef()->defValue;
-    return S_OK;
-}
-
-STDMETHODIMP CFieldDef::put_DefValue(double Value)
-{
-    if (!isWritabale())
-        return write_error();
-    fielddef()->defValue = Value;
     return S_OK;
 }
 
@@ -299,12 +287,145 @@ STDMETHODIMP CFieldDef::SetPadCharSettings(VARIANT_BOOL set, VARIANT_BOOL trim)
 
 STDMETHODIMP CFieldDef::get_UsePadChar(VARIANT_BOOL* Value)
 {
-	*Value = fielddef()->usePadChar();
+	*Value = fielddef()->isUsePadChar();
     return S_OK;
 }
 
 STDMETHODIMP CFieldDef::get_TrimPadChar(VARIANT_BOOL* Value)
 {
-	*Value = fielddef()->trimPadChar();
+	*Value = fielddef()->isTrimPadChar();
     return S_OK;
 }
+
+STDMETHODIMP CFieldDef::put_DefaultValue(VARIANT Value)
+{
+    if (Value.vt == VT_BSTR)
+        fielddef()->setDefaultValue(Value.bstrVal);
+    else if (Value.vt == VT_R4)
+        fielddef()->setDefaultValue(Value.fltVal);
+    else if (Value.vt == VT_R8)
+        fielddef()->setDefaultValue(Value.dblVal);
+    else if (Value.vt == VT_I2)
+        fielddef()->setDefaultValue((__int64)Value.iVal);
+    else if (Value.vt == VT_I4 || Value.vt == VT_INT)
+        fielddef()->setDefaultValue((__int64)Value.lVal);
+    else if (Value.vt == VT_I8)
+        fielddef()->setDefaultValue((__int64)Value.llVal);
+    else if ((Value.vt == VT_DISPATCH) && Value.pdispVal)
+    {
+        CBitset* b = dynamic_cast<CBitset*>(Value.pdispVal);
+        if (b)
+            fielddef()->setDefaultValue(b->m_bitset.internalValue());
+        else
+            return Error("FieldDef DefaultValue param", IID_IFieldDef);
+    }
+    else
+    {
+        VariantChangeType( &Value, &Value, 0, VT_BSTR );
+        if (Value.bstrVal[0])
+            fielddef()->setDefaultValue(Value.bstrVal);
+    }
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_DefaultValue(VARIANT* Value)
+{
+    CComBSTR ret;
+    ret = const_fielddef()->defaultValue_str();
+
+    VariantClear(Value);
+    Value->vt = VT_BSTR;
+    Value->bstrVal = ret.Copy();
+
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_PadCharType(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isPadCharType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_DateTimeType(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isDateTimeType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_ValidCharNum(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isValidCharNum();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_Nullable(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isNullable();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::SetNullable(VARIANT_BOOL Value, VARIANT_BOOL DefaultNull)
+{
+	fielddef()->setNullable(Value != 0, DefaultNull != 0);
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::put_TimeStampOnUpdate(VARIANT_BOOL Value)
+{
+	fielddef()->setTimeStampOnUpdate(Value != 0);
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_TimeStampOnUpdate(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isTimeStampOnUpdate();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_DefaultNull(VARIANT_BOOL* Value)
+{
+	*Value = const_fielddef()->isDefaultNull();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::put_Digits(short Value)
+{
+	fielddef()->digits = Value;
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_Digits(short* Value)
+{
+	*Value = fielddef()->digits;
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_IsIntegerType(VARIANT_BOOL* Value)
+{
+	*Value = fielddef()->isIntegerType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_IsNumericType(VARIANT_BOOL* Value)
+{
+	*Value = fielddef()->isNumericType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::get_IsDateTimeType(VARIANT_BOOL* Value)
+{
+	*Value = fielddef()->isDateTimeType();
+    return S_OK;
+}
+
+STDMETHODIMP CFieldDef::SetDecimalDigits(int Digits, int Decimals)
+{
+	fielddef()->setDecimalDigits(Digits, Decimals);
+    return S_OK;
+}
+
+
+
+
+
+

@@ -105,7 +105,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
     {
         try
         {
-        	delete m_cons;
+            delete m_cons;
         }
         catch(...){}
         m_cons = NULL;
@@ -204,7 +204,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_MOVE_BOOKMARK:
         case TD_MOVE_PER:
-			client_t->req().paramMask = P_MASK_NOKEYBUF;
+            client_t->req().paramMask = P_MASK_NOKEYBUF;
             break;
         case TD_UNLOCK:
         case TD_CLOSETABLE:
@@ -216,7 +216,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_REC_DELETE:
         case TD_CLEAR_OWNERNAME:
         case TD_AUTOMEKE_SCHEMA:
-            client_t->req().paramMask = P_MASK_POSBLK;
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
             break;
         case TD_END_TRANSACTION:
         case TD_BEGIN_TRANSACTION:
@@ -267,7 +267,16 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_GET_PER:
         case TD_SET_OWNERNAME:
+            client_t->req().paramMask = P_MASK_ALL;
+            break;
         case TD_TABLE_INFO:
+            if (client_t->req().keyNum == ST_SUB_GETSQL_BY_TABLEDEF)
+            {
+                client_t->req().result = 0;
+                client_t->getSqlCreate();
+                client_t->cleanup();
+                return client_t->req().result;
+            }
             client_t->req().paramMask = P_MASK_ALL;
             break;
         case TD_BOOKMARK:
@@ -286,23 +295,46 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_VERSION:
         {
-            ushort_td datalen = *client_t->req().datalen;
+            if (!client_t->req().cid->con)
+                 return ERROR_TD_NOT_CONNECTED;
+
+            ushort_td datalen = *(client_t->req().datalen);
+            btrVersion* v = (btrVersion*)(client_t->req().data);
+            const clsrv_ver* ver = client_t->ver();
             if (datalen >= sizeof(btrVersion))
             {
-                btrVersion& v = (btrVersion&)*((char*)client_t->req().data);
-                v.majorVersion = atoi(CPP_INTERFACE_VER_MAJOR);
-                v.minorVersion = atoi(CPP_INTERFACE_VER_MINOR);
-                v.type = 'N';
-                client_t->req().paramMask = P_MASK_DATA | P_MASK_DATALEN;
+                v->majorVersion = atoi(CPP_INTERFACE_VER_MAJOR);
+                v->minorVersion = atoi(CPP_INTERFACE_VER_MINOR);
+                v->type = 'N';
+                client_t->req().result = 0;
             }
             else
                 client_t->req().result = STATUS_BUFFERTOOSMALL;
-            if (datalen < sizeof(btrVersion) * 2)
+            if (datalen >= sizeof(btrVersion) * 2)
             {
-                client_t->cleanup();
-                return 0;
+                ++v;
+                if (ver)
+                {
+                    v->majorVersion = ver->srvMysqlMajor;
+                    v->minorVersion = ver->srvMysqlMinor;
+                    v->type = ver->srvMysqlType;
+                    client_t->req().result = 0;
+                }else
+                    memset(v, 0, sizeof(btrVersion));
             }
-            break;
+            if (datalen >= sizeof(btrVersion) * 3)
+            {
+                ++v;
+                if (ver)
+                {
+                    v->majorVersion = ver->srvMajor;
+                    v->minorVersion = ver->srvMinor;
+                    v->type = 'T';
+                }else
+                    memset(v, 0, sizeof(btrVersion));
+                client_t->req().result = 0;
+            }
+            return client_t->req().result;
         }
         case TD_OPENTABLE:
         case TD_CREATETABLE:
@@ -360,6 +392,22 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_ACL_RELOAD:
             client_t->req().paramMask = 0;
             break;
+        case TD_GET_SCHEMA:
+            if (client_t->isSupportFunction(TD_GET_SCHEMA))
+                client_t->req().paramMask = P_MASK_DATALEN | P_MASK_KEYBUF;
+            else
+                return STATUS_NOSUPPORT_OP;
+            break;
+        case TD_STORE_TEST:
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN | P_MASK_KEYNUM;
+            break;
+        case TD_SET_TIMESTAMP_MODE:
+            client_t->req().paramMask = P_MASK_POSBLK | P_MASK_KEYNUM;
+            break;
+        case TD_STOP_ENGINE:
+            return 0;
+        default:
+            return STATUS_NOSUPPORT_OP;
         }
         short_td ret = client_t->execute();
         client_t->cleanup();

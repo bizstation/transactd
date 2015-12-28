@@ -78,15 +78,17 @@ STDMETHODIMP CDatabase::OpenTable(VARIANT TableID, eOpenMode Mode,
     *ret = NULL;
     table* tb = NULL;
     if (TableID.vt == VT_BSTR)
-        tb = m_db->openTable(TableID.bstrVal, Mode, (bool)AutoCreate, OwnerName,
-                             Uri);
-    else if ((TableID.vt == VT_I2) || (TableID.vt == VT_I4))
-        tb = m_db->openTable(TableID.iVal, Mode, (bool)AutoCreate, OwnerName,
-                             Uri);
+        tb = m_db->openTable(TableID.bstrVal, Mode, (bool)AutoCreate, OwnerName, Uri);
+    else if (TableID.vt == VT_I2)
+        tb = m_db->openTable(TableID.iVal, Mode, (bool)AutoCreate, OwnerName, Uri);
+    else if (TableID.vt == VT_I4)
+        tb = m_db->openTable((short)TableID.lVal, Mode, (bool)AutoCreate, OwnerName, Uri);
+    else
+        return Error("Invalid param 1 OpenTable ", IID_IDatabase);
 
     if (m_db->stat() != 0)
         return S_OK;
-        //return Error("Invalid tableid", IID_IDatabase);
+ 
 
     CComObject<CTableTd>* ptb;
     CComObject<CTableTd>::CreateInstance(&ptb);
@@ -418,8 +420,7 @@ STDMETHODIMP CDatabase::ConvertTable(short TableIndex, VARIANT_BOOL Turbo,
 }
 
 STDMETHODIMP CDatabase::CopyTableData(ITable* Dest, ITable* Src,
-                                      VARIANT_BOOL Turbo, int Offset,
-                                      short KeyNum, int MaxSkip, short* Value)
+                                      VARIANT_BOOL Turbo, short KeyNum, int MaxSkip, short* Value)
 {
     CTableTd* dest = dynamic_cast<CTableTd*>(Dest);
     CTableTd* src = dynamic_cast<CTableTd*>(Src);
@@ -432,24 +433,26 @@ STDMETHODIMP CDatabase::CopyTableData(ITable* Dest, ITable* Src,
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::CreateTable(short FileNum, BSTR Uri,
+STDMETHODIMP CDatabase::CreateTable(VARIANT FileNumOrSql, BSTR Uri,
                                     VARIANT_BOOL* Value)
 {
-    *Value = m_db->createTable(FileNum, Uri);
+    if (FileNumOrSql.vt == VT_BSTR && Uri[0]==0x00)
+    {
+        
+        int size = WideCharToMultiByte(CP_UTF8, 0, FileNumOrSql.bstrVal, -1, NULL, 0, NULL, NULL);
+        char* p = new char[size + 1];
+        WideCharToMultiByte(CP_UTF8, 0, FileNumOrSql.bstrVal, -1, p, size + 1, NULL, NULL);
+        *Value = m_db->createTable(p);
+        delete [] p;
+    }
+    else
+        *Value = m_db->createTable(FileNumOrSql.iVal, Uri);
     return S_OK;
 }
 
 STDMETHODIMP CDatabase::ExistsTableFile(short TableIndex, BSTR OwnerName)
 {
     m_db->existsTableFile(TableIndex, OwnerName);
-    return S_OK;
-}
-
-STDMETHODIMP CDatabase::GetTableUri(short FileNum, BSTR* Value)
-{
-    wchar_t tmp[MAX_PATH] = { NULL };
-    m_db->getTableUri(tmp, FileNum);
-    *Value = ::SysAllocString(tmp);
     return S_OK;
 }
 
@@ -531,6 +534,42 @@ STDMETHODIMP CDatabase::get_TrxLockWaitTimeoutServer(int* Value)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::put_AutoSchemaUseNullkey(VARIANT_BOOL Value)
+{
+    m_db->setAutoSchemaUseNullkey(Value);
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::get_AutoSchemaUseNullkey(VARIANT_BOOL* Value)
+{
+    *Value = m_db->autoSchemaUseNullkey();
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::put_CompatibleMode(int Value)
+{
+    database::setCompatibleMode(Value);
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::get_CompatibleMode(int* Value)
+{
+    *Value = database::compatibleMode();
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::GetSqlStringForCreateTable(BSTR tableName, BSTR* retVal)
+{
+    uint_td size = 65000;
+    char* tmp = new char[size];
+    CComBSTR ret;
+
+    ret = m_db->getSqlStringForCreateTable(tableName, tmp, &size);
+    *retVal = ret.Copy();
+    delete [] tmp;
+    return S_OK;
+}
+
 void __stdcall onCopyData(database* db, int recordCount, int count,
                           bool& cancel)
 {
@@ -557,3 +596,5 @@ bool __stdcall onDeleteRecord(database* db, table* tb, bool inkey)
     cdb->Fire_OnDeleteRecord(dbPtr, tbPtr, &tmp);
     return (tmp != 0);
 }
+
+

@@ -22,7 +22,6 @@
 
 #include <bzs/db/protocol/tdap/tdapSchema.h>
 #include <bzs/db/protocol/tdap/mysql/characterset.h>
-#include <stdio.h>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -100,6 +99,18 @@ const wchar_t* fielddef::chainChar() const
     return p;
 }
 
+const wchar_t* fielddef::defaultValue_str() const
+{
+    char tmp[MYSQL_FDNAME_SIZE];
+    const char* src = defaultValue_strA(tmp, MYSQL_FDNAME_SIZE);
+    wchar_t* p = namebuf();
+    MultiByteToWideChar(m_schemaCodePage,
+                            (m_schemaCodePage == CP_UTF8) ? 0 : MB_PRECOMPOSED,
+                            src, -1, p, MYSQL_FDNAME_SIZE);
+    return p;
+}
+
+
 void fielddef::setName(const wchar_t* s)
 {
     WideCharToMultiByte(m_schemaCodePage,
@@ -112,6 +123,19 @@ void fielddef::setChainChar(const wchar_t* s)
     WideCharToMultiByte(m_schemaCodePage,
                         (m_schemaCodePage == CP_UTF8) ? 0 : WC_COMPOSITECHECK,
                         s, -1, m_chainChar, 2, NULL, NULL);
+}
+
+void fielddef::setDefaultValue(const wchar_t* s)
+{
+    int size = WideCharToMultiByte(m_schemaCodePage,
+                        (m_schemaCodePage == CP_UTF8) ? 0 : WC_COMPOSITECHECK,
+                        s, -1, NULL, 0, NULL, NULL);
+    char* p = new char[size + 1];
+    WideCharToMultiByte(m_schemaCodePage,
+                        (m_schemaCodePage == CP_UTF8) ? 0 : WC_COMPOSITECHECK,
+                        s, -1, p, size + 1, NULL, NULL);
+    setDefaultValue(p);
+    delete [] p;
 }
 
 const wchar_t* tabledef::fileName() const
@@ -132,7 +156,7 @@ const wchar_t* tabledef::tableName() const
     return p;
 }
 
-const char* tabledef::toChar(char* buf, const wchar_t* s, int size)
+const char* tabledef::toChar(char* buf, const wchar_t* s, int size) const
 {
     WideCharToMultiByte(schemaCodePage,
                         (schemaCodePage == CP_UTF8) ? 0 : WC_COMPOSITECHECK, s,
@@ -191,6 +215,12 @@ const char* fielddef::chainChar() const
     }
 #endif
     return m_chainChar;
+}
+
+const char* fielddef::defaultValue_str() const
+{
+    char* p = (char*)namebuf();
+    return defaultValue_strA(p, MYSQL_FDNAME_SIZE);
 }
 
 void fielddef::setName(const char* s)
@@ -259,7 +289,7 @@ void tabledef::setTableName(const char* s)
         setTableNameA(s);
 }
 
-const char* tabledef::toChar(char* buf, const char* s, int size)
+const char* tabledef::toChar(char* buf, const char* s, int size) const
 {
 #ifdef LINUX
     if (schemaCodePage != CP_UTF8)
@@ -275,13 +305,253 @@ const char* tabledef::toChar(char* buf, const char* s, int size)
 #endif // NOT _UNICODE
 
 
-
-bool fielddef::isStringType() const
+//--------------------------------------------------------------------
+//   struct keydef
+//--------------------------------------------------------------------
+short keydef::synchronize(const keydef* kd)
 {
-    return tdap::isStringType(type);
+    for (int i = 0; i < kd->segmentCount; ++i)
+    {
+        if (i < segmentCount)
+        {
+            if (segments[i].fieldNum == kd->segments[i].fieldNum)
+            {
+                const FLAGS f = kd->segments[i].flags;
+                segments[i].flags.bit1 = f.bit1;
+                segments[i].flags.bit2 = f.bit2;
+                segments[i].flags.bit3 = f.bit3;
+                segments[i].flags.bit7 = f.bit7;
+                segments[i].flags.bit8 = f.bit8;
+                segments[i].flags.bit9 = f.bit9;
+            }
+        }
+    }
+    keyNumber = kd->keyNumber;
+    return 0;
 }
 
-unsigned int fielddef::charNum(/* int index */) const
+//--------------------------------------------------------------------
+//   struct fielddef
+//--------------------------------------------------------------------
+void fielddef::setDefaultValue(const char* s)
+{
+    if (isBlob())
+    {
+        memset(m_defValue, 0, DEFAULT_VALUE_SIZE);
+        return;
+    }
+
+    enableFlags.bitF = false;
+    __int64 i64 = 0;
+    switch(type)
+    {
+    case ft_time:
+    case ft_mytime:
+    {
+        myDateTime dt(7, true);
+        dt.setTime(s);
+        i64 = dt.getValue();
+        memcpy(m_defValue, &i64, 7);
+        return;
+    }
+    case ft_date:
+    case ft_mydate:
+    case ft_datetime:
+    case ft_mytimestamp:
+    case ft_mydatetime:
+        i64 = str_to_64<myDateTime, char>(7, true, s);
+        memcpy(m_defValue, &i64, 7);
+        return;
+    case ft_integer:
+    case ft_autoinc:
+    {
+        *((__int64*)m_defValue) =  _atoi64(s);
+        return;
+    }
+    case ft_uinteger:
+    case ft_logical:
+    case ft_set:
+    case ft_bit:
+    case ft_enum:
+    case ft_autoIncUnsigned:
+    case ft_myyear:
+    {
+        *((unsigned __int64*)m_defValue) = strtoull(s, NULL, 10);
+        return;
+    }
+    }
+
+    if (isNumericType())
+    {
+        *((double*)m_defValue) = atof(s);
+        return;
+    }
+    m_defValue[7] = 0x00;
+#ifdef LINUX
+    if (m_schemaCodePage != CP_UTF8)
+        u8tombc(s, strlen(s), m_defValue, 8);
+    else
+#endif
+        strncpy_s(m_defValue, 8, s, sizeof(m_defValue) - 1);
+
+}
+
+void fielddef::setDefaultValue(__int64 v)
+{
+    if ((v == DFV_TIMESTAMP_DEFAULT) && 
+            ((type == ft_mytimestamp) || (type == ft_mytimestamp)))
+    {
+        *((__int64*)m_defValue) = v;
+        return;
+    }
+    char tmp[100];
+    sprintf_s(tmp, 100, "%lld", v);
+    setDefaultValue(tmp);
+}
+
+void fielddef::setDefaultValue(double v)
+{
+    if ((v == DFV_TIMESTAMP_DEFAULT) && 
+            ((type == ft_mytimestamp) || (type == ft_mytimestamp)))
+    {
+        *((__int64*)m_defValue) = (__int64)v;
+        return;
+    }
+    char tmp[100];
+    sprintf_s(tmp, 100, "%.*lf", decimals, v);
+    setDefaultValue(tmp);
+}
+
+const char* fielddef::defaultValue_strA(char* p, size_t size) const
+{
+    if (*((__int64*)m_defValue) == 0) return "";
+    //char* p = namebufA();
+    if (isStringTypeForIndex(type))
+    {
+    #ifdef LINUX
+        if (m_schemaCodePage != CP_UTF8)
+        {
+            char* p = namebufA();
+            mbctou8(m_defValue, strlen(m_defValue), p, size);
+            return p;
+        }
+    #endif
+        return m_defValue;
+    }
+
+    if (isDateTimeType())
+    {
+        bool tsu = isTimeStampOnUpdate();
+        *(const_cast<char*>(m_defValue) + 7) = 0x00;
+        __int64 i64 = *((__int64*)m_defValue);
+        myDateTime dt(4, true);
+        dt.setValue(i64); // i64 not equal dt.internalValue();
+        p[0] = 0x00;
+
+        switch(type)
+        {
+        case ft_date:
+        case ft_mydate:
+             if (dt.internalValue())
+                dt.dateStr(p, size);
+             break;
+        case ft_time:
+        case ft_mytime:
+            if (dt.internalValue())
+                dt.timeStr(p, size);
+            break;
+        case ft_datetime:
+        case ft_timestamp:
+            if (dt.internalValue())
+                dt.toString(p, size);
+            break;
+        case ft_mydatetime:
+        case ft_mytimestamp:
+        {
+            if (i64 == DFV_TIMESTAMP_DEFAULT)
+            {
+                *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
+                return DFV_TIMESTAMP_DEFAULT_ASTR;
+            }
+            else if (dt.internalValue())
+                dt.toString(p, size);
+            break;
+        }
+        default:
+            assert(0);
+        }
+         //restore
+        *(const_cast<char*>(m_defValue) + 7) = tsu ? 1: 0;
+    }else if (isIntegerType())
+    {
+        __int64 *v = (__int64*)m_defValue;
+        if ((type == ft_integer) || (type == ft_autoinc))
+            _i64toa_s(*v, p, size, 10);
+        else
+            _ui64toa_s((unsigned __int64)(*v), p, size, 10);
+    }else
+        sprintf_s(p, size, "%.*lf", decimals, *((double*)m_defValue));
+
+    return p;
+}
+
+void fielddef::setDecimalDigits(int dig, int dec)
+{
+    assert(sizeof(int) == 4);
+    if (type == ft_mydecimal)
+    {
+        decimals = (uchar_td)dec;
+        digits = dig;
+        int intdeg = digits - dec;
+        len = (ushort_td) (((intdeg / DIGITS_INT32) * sizeof(int)) +
+            decimalBytesBySurplus[intdeg % DIGITS_INT32]) +
+            (ushort_td) (((dec / DIGITS_INT32) * sizeof(int)) +
+            decimalBytesBySurplus[dec % DIGITS_INT32]) ;
+    }
+}
+
+bool fielddef::operator==(const fielddef& r) const
+{
+    //ignore  m_nullbit m_nullbytes
+    if (this == &r) return true;
+    if (isStringType() && (m_charsetIndex != r.m_charsetIndex))
+    if (isPadCharType() && 
+        ((isUsePadChar() != r.isUsePadChar()) || (isTrimPadChar() != r.isTrimPadChar())))
+        return false;
+
+    if (type != ft_float && (decimals != r.decimals))
+        return false;
+
+    _TCHAR tmp[256];
+    _tcscpy_s(tmp, 256, r.defaultValue_str());
+    bool ret =  _tcscmp(defaultValue_str(), tmp) == 0;
+    return (ret &&
+            _tcscmp(name(), r.name(tmp)) == 0) &&
+            (type == r.type) &&
+            (len == r.len) &&
+            (viewNum == r.viewNum) &&
+            (viewWidth == r.viewWidth) &&
+            (max == r.max) &&
+            (min == r.min) &&
+            (lookTable == r.lookTable) &&
+            (lookField == r.lookField) &&
+            (memcmp(lookFields, r.lookFields, 3) == 0) &&
+            (pos == r.pos) &&
+            (m_nullbit == r.m_nullbit) &&
+            (m_nullbytes == r.m_nullbytes) &&
+            (memcmp(m_chainChar, r.m_chainChar, 2) == 0) &&
+            (ddfid == r.ddfid) &&
+            (filterId == r.filterId) &&
+            (filterKeynum == r.filterKeynum) &&
+            (nullValue == r.nullValue) &&
+            (userOption == r.userOption) &&
+            (lookDBNum == r.lookDBNum) &&
+            (keylen == r.keylen) &&
+            ((m_options & ~FIELD_OPTION_MARIADB) == (r.m_options & ~FIELD_OPTION_MARIADB)) &&
+            (enableFlags.all == r.enableFlags.all);
+}
+
+unsigned int fielddef::charNum() const
 {
     if (type == ft_mychar)
         return (unsigned int)len / mysql::charsize(m_charsetIndex);
@@ -296,38 +566,453 @@ unsigned int fielddef::charNum(/* int index */) const
     return len;
 }
 
+bool fielddef::isValidCharNum() const
+{
+    unsigned int num = charNum();
+    if (type == ft_mychar)
+        return ((unsigned int)len == num * mysql::charsize(m_charsetIndex));
+    else if (type == ft_mywchar)
+        return ((unsigned int)len == num * mysql::charsize(CHARSET_UTF16LE));
+    else if (type == ft_myvarchar)
+        return ((unsigned int)(len - varLenBytes()) == num * mysql::charsize(m_charsetIndex));
+    else if (type == ft_mywvarchar)
+        return ((unsigned int)(len - varLenBytes()) == num * mysql::charsize(CHARSET_UTF16LE));
+    return true;
+}
+
+void fielddef::fixCharnum_bug()
+{
+    unsigned int num = charNum();
+    if (type == ft_mychar)
+        len = num * mysql::charsize(m_charsetIndex);
+    else if (type == ft_mywchar)
+        len = num * mysql::charsize(CHARSET_UTF16LE);
+    else if (type == ft_myvarchar)
+        len = num * mysql::charsize(m_charsetIndex) + varLenBytes();
+    else if (type == ft_mywvarchar)
+        len = num * mysql::charsize(CHARSET_UTF16LE) + varLenBytes();
+}
+
+bool isCompatibleType(uchar_td l, uchar_td r, ushort_td rlen, uchar_td rchar)
+{
+    if (l == ft_integer) 
+    {
+        if ((r == ft_currency) && (rlen == 8)) return true;
+        if ((r == ft_currency) && (rlen == 8)) return true;
+        if ((r == ft_date) && (rlen == 4)) return true;
+        if ((r == ft_time) && (rlen == 4)) return true;
+        if ((r == ft_datetime) && (rlen == 8)) return true;
+        if ((r == ft_timestamp) && (rlen == 8)) return true;
+    }
+    else if (l == ft_uinteger)
+    {
+        if ((r == ft_logical) && (rlen <= 2)) return true;
+        if ((r == ft_bit) && (rlen <= 8)) return true;
+        if ((r == ft_enum) && (rlen <= 8)) return true;
+        if ((r == ft_set) && (rlen <= 8)) return true;
+    }
+    
+
+    // mywchar --> mywchar OK!
+    // string  --> string  OK!
+    // mychar  --> mychar  OK!
+    // mywchar --> mywchar OK!
+
+    if (l == ft_myvarbinary)
+    {
+        if (r == ft_myvarbinary) return true;
+        if (r == ft_mywvarbinary && rchar == CHARSET_UTF16LE) return true;
+        if (r == ft_lstring) return true;
+        if (r == ft_lvar) return true;
+        if (r == ft_note) return true;
+        if (r == ft_myfixedbinary) return true;
+    }
+    else if (l == ft_string)
+    {
+         if (r == ft_string) return true;
+
+         // zstring --> string
+         if ((r == ft_zstring) && (rchar != CHARSET_UTF16LE)) return true;
+    
+         // wzstring --> string 
+         if ((r == ft_wzstring) && (rchar == CHARSET_UTF16LE)) return true;
+
+         // wstring --> string 
+         if ((r == ft_wstring) && (rchar == CHARSET_UTF16LE)) return true;
+         if (r == ft_decimal) return true;
+         if (r == ft_money) return true;
+         if (r == ft_numeric) return true;
+         if (r == ft_bfloat) return true;
+         if (r == ft_numericsts) return true;
+         if (r == ft_numericsa) return true;
+         if (r == ft_guid) return true;
+    }
+    return false;
+}
+
+short fielddef::synchronize(const fielddef* fd)
+{
+    viewNum = fd->viewNum;
+    viewWidth = fd->viewWidth;
+    max = fd->max;
+    min = fd->min;
+    lookTable = fd->lookTable;
+    lookField = fd->lookField;
+    memcpy(lookFields, fd->lookFields, sizeof(uchar_td) * 3);
+    m_chainChar[0] = fd->m_chainChar[0];
+    m_chainChar[1] = fd->m_chainChar[1];
+    ddfid = fd->ddfid;
+    filterId = fd->filterId;
+    filterKeynum = fd->filterKeynum;
+    nullValue = fd->nullValue;
+    userOption = fd->userOption;
+    lookDBNum = fd->lookDBNum;
+    uchar_td nullable = m_options & FIELD_OPTION_NULLABLE;
+    m_options = fd->m_options;
+    m_options |= nullable;
+    bool defaultNull = enableFlags.bitF;
+    enableFlags = fd->enableFlags;
+    enableFlags.bitF = defaultNull;
+    if (type == ft_mychar || type == ft_string || type == ft_mywchar || type == ft_wstring)
+        m_padCharOptions = fd->m_padCharOptions;
+    if (fd->type == ft_myfixedbinary && len - 2 == fd->len)
+    {
+        len = fd->len ;
+        type = fd->type;
+    }
+    if (len == fd->len && isCompatibleType(type, fd->type, fd->len, fd->m_charsetIndex))
+    {
+        type = fd->type;
+        m_charsetIndex = fd->m_charsetIndex;
+    }
+    if (type == ft_lvar || type == ft_myfixedbinary)
+        setDefaultValue(0.0f);
+
+    if (type == ft_float)
+        decimals = fd->decimals;
+    return 0;
+}
+
+
+#pragma warn -8056
+
+#define CASE_DOUBLE_TYPE \
+    case ft_float: \
+    case ft_decimal: \
+    case ft_bfloat: \
+    case ft_numeric: \
+    case ft_money: \
+    case ft_currency: \
+    case ft_numericsts: \
+    case ft_numericsa: \
+    case ft_mydecimal:
+
+#define CASE_INT_TYPE \
+    case ft_integer:  \
+    case ft_autoinc: \
+    case ft_uinteger: \
+    case ft_logical: \
+    case ft_set: \
+    case ft_bit: \
+    case ft_enum: \
+    case ft_autoIncUnsigned: \
+    case ft_myyear:
+
+double fielddef::defaultValue() const
+{
+    assert(sizeof(double) == 8);
+    if (isDateTimeType())
+        return (double)(*((__int64*)m_defValue) & (0x00FFFFFFFFFFFFFFLL));
+    switch(type)
+    {
+    CASE_INT_TYPE
+        return (double)*((__int64*)m_defValue);
+    CASE_DOUBLE_TYPE
+        return *((double*)m_defValue);
+    }
+    if (isStringType())
+        return atof(m_defValue);
+    return 0;
+}
+
+__int64 fielddef::defaultValue64() const
+{
+    assert(sizeof(__int64) == 8);
+
+    if (isDateTimeType())
+        return (*((__int64*)m_defValue) & (0x00FFFFFFFFFFFFFFLL));
+    switch(type)
+    {
+    CASE_INT_TYPE
+        return *((__int64*)m_defValue);
+    CASE_DOUBLE_TYPE
+        return (__int64)*((double*)m_defValue);
+    }
+    if (isStringType())
+        return _atoi64(m_defValue);
+    return 0;
+}
+#pragma warn .8056
+
+//--------------------------------------------------------------------
+//   struvt tabledef
+//--------------------------------------------------------------------
+bool tabledef::operator==(const tabledef& r) const
+{
+    if (this == &r) return true;
+    // remove file extention
+    _TCHAR tmp[256];
+    _TCHAR tmp2[256];
+    _tcscpy_s(tmp, 256, r.fileName());
+    _tcscpy_s(tmp2, 256, fileName());
+    _tcslwr_s(tmp, 256);
+    _tcslwr_s(tmp2, 256);
+    _TCHAR* p = _tcsrchr(tmp, _T('.'));
+    _TCHAR* p2 = _tcsrchr(tmp2, _T('.'));
+    if (p && !p2) *p = 0x00;
+    if( !p && p2) *p2 = 0x00;
+
+    bool ret =  _tcscmp(tmp2, tmp) == 0;
+    if (!ret) return ret;
+    _tcscpy_s(tmp, 256, r.tableName());
+    ret =  _tcscmp(tableName(), tmp) == 0;
+
+    return  (ret) &&
+            (varSize == r.varSize) &&
+            (preAlloc == r.preAlloc) &&
+            (fieldCount == r.fieldCount) &&
+            (keyCount == r.keyCount) &&
+            (version == r.version) &&
+            (charsetIndex == r.charsetIndex) &&
+            (m_nullfields == r.m_nullfields) &&
+            (m_nullbytes == r.m_nullbytes) &&
+            (flags.all == r.flags.all) &&
+            (primaryKeyNum == r.primaryKeyNum) &&
+            (parentKeyNum == r.parentKeyNum) &&
+            (replicaKeyNum == r.replicaKeyNum) &&
+            (optionFlags.all == r.optionFlags.all) &&
+            (convertFileNum == r.convertFileNum) &&
+            (treeIndex == r.treeIndex) &&
+            (iconIndex == r.iconIndex) &&
+            (ddfid == r.ddfid) &&
+            (iconIndex2 == r.iconIndex2) &&
+            (iconIndex3 == r.iconIndex3) &&
+            (formatVersion == r.formatVersion) &&
+            (varSize == r.varSize) ;
+}
+
+bool tabledef::isNullKey(const keydef& key) const
+{
+    if (key.segments[0].flags.bit3 || key.segments[0].flags.bit9)
+    {
+        for (int j=0;j < key.segmentCount; ++j)
+        {
+            const fielddef& fd = fieldDefs[key.segments[j].fieldNum];
+            if (fd.nullValue != 0x00) 
+                return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool tabledef::isNeedNis(const keydef& key) const
+{
+    /* bit3 all segment NULL key
+       bit9 part segment NULL key
+       if fd.nullValue != 0x00 then this field is type of not null.
+    */
+    if (!isNULLFieldFirstKeySegField(key))
+        return isNullKey(key);
+     return false;
+}
+
+bool tabledef::isNULLFieldFirstKeySegField(const keydef& key) const
+{
+    // logical 1 byte and segmentCount = 1 and nullValue = 0x00
+    if ((key.segments[0].flags.bit3 || key.segments[0].flags.bit9) && key.segmentCount == 1)
+    {
+        const fielddef& fd = fieldDefs[key.segments[0].fieldNum];
+        return ((fd.len == 1) && (fd.type == ft_logical) && fd.nullValue == 0x00);
+    }
+    return false;
+}
+
+void tabledef::setMysqlNullMode(bool v)
+{
+    if (m_mysqlNullMode != v)
+    {
+        m_mysqlNullMode = v;
+        calcReclordlen();
+    }
+}
+
+void tabledef::calcReclordlen(bool force)
+{
+    if (m_inUse == 0 || force)
+    {
+        if (force) m_inUse = 0;
+        if (charsetIndex == 0)
+            charsetIndex = mysql::charsetIndex(GetACP());
+
+        int nisFieldNum = 0;
+        bool firstTimeStamp = true;
+        m_nullfields = 0;
+        m_nullbytes = 0;
+        m_maxRecordLen = 0;
+
+        // Check Null Key
+        for (int i = 0; i < keyCount; i++)
+        {
+            keydef& kd = keyDefs[i];
+            if (isNullKey(kd))
+            {
+                if (m_mysqlNullMode)
+                    nisFieldNum += (isNeedNis(kd) ? 1 : 0);
+                if (isNULLFieldFirstKeySegField(kd))
+                {
+                    fielddef& fd = fieldDefs[kd.segments[0].fieldNum];
+                    fd.setNullable(true, true);
+                }
+            }
+        }
+
+        for (int i = 0; i < fieldCount; i++)
+        {
+            fielddef& fd = fieldDefs[i];
+            if (fd.charsetIndex() == 0)
+                fd.setCharsetIndex(charsetIndex);
+            fd.setSchemaCodePage(schemaCodePage);
+
+            fd.m_nullbytes = 0;
+            fd.m_nullbit = 0;
+            if (fd.isNullable())
+            {
+                fd.m_nullbit = m_nullfields;
+                if (m_mysqlNullMode)
+                    ++m_nullfields;
+            }
+            double defaultValue = fd.defaultValue();
+            if (fd.type == ft_mytimestamp && fd.isNullable() == false &&
+                (defaultValue == 0 || defaultValue == DFV_TIMESTAMP_DEFAULT) && firstTimeStamp)
+            {
+                fd.setDefaultValue(DFV_TIMESTAMP_DEFAULT);
+                fd.setTimeStampOnUpdate(true);
+                firstTimeStamp = false;
+            }
+            if (fd.type == ft_mydatetime || fd.type == ft_mytime || fd.type == ft_mytimestamp)
+            {
+                if (isMariaTimeFormat())
+                    fd.m_options |= FIELD_OPTION_MARIADB;
+                else
+                    fd.m_options &= ~FIELD_OPTION_MARIADB;
+            }
+
+            if (fd.type == ft_mytimestamp && fd.decimals == 0)
+                fd.decimals = (fd.len - 4) * 2;
+            else if (fd.type == ft_mydatetime)
+            {
+                // datetime decimals is different by server version 
+                if (fd.decimals == 0 && !isLegacyTimeFormat(fd))
+                    fd.decimals = (fd.len - 5) * 2;
+            }
+            else if (fd.type == ft_mytime && fd.decimals == 0)
+                fd.decimals = (fd.len - 3) * 2;
+            else if (defaultValue && fd.isBlob())
+                fd.setDefaultValue(0.0f);
+
+            if (m_srvMajorVer)
+            {
+                if (isLegacyTimeFormat(fd))
+                {
+                    fd.m_options |= FIELD_OPTION_REGACY_TIME;
+                    fd.decimals = 0;
+                    if (fd.type == ft_mydatetime)
+                        fd.len = 8;
+                    else if (fd.type == ft_mytime)
+                        fd.len = 3;
+                    else if (fd.type == ft_mytimestamp)
+                        fd.len = 4;
+                }
+                else
+                    fd.m_options &= ~FIELD_OPTION_REGACY_TIME;
+            }
+            fd.pos = m_maxRecordLen;
+            fd.fixCharnum_bug();
+            m_maxRecordLen += fd.len;
+        }
+
+        m_nullfields += nisFieldNum;
+
+        if (m_nullfields)
+        {
+            m_nullbytes = (m_nullfields + 7) / 8;
+            for (int i = 0; i < fieldCount; i++)
+                fieldDefs[i].m_nullbytes = m_nullbytes;
+        }
+        m_maxRecordLen += m_nullbytes;
+        // If valible length then specifing fixed length.
+        if ((fixedRecordLen == 0) || (flags.bit0 == false))
+            fixedRecordLen = m_maxRecordLen;
+    }else
+        ;//assert(0);
+}
+
 uint_td tabledef::unPack(char* ptr, size_t size) const
 {
-    char* pos = ptr;
+    char* pos = ptr + m_nullbytes;
     const char* end = pos + size;
-    const char* max = pos + maxRecordLen;
+    const char* max = pos + m_maxRecordLen;
     int movelen;
+
+    // if null then not recieved field data
+    unsigned char null_bit = 1;
+    unsigned char* null_ptr = (unsigned char*)ptr;
+
     for (int i = 0; i < fieldCount; i++)
     {
         fielddef& fd = fieldDefs[i];
+        bool isNull = false;
+        if (fd.isNullable() && m_nullbytes)
+        {
+            isNull = (*null_ptr & null_bit) != 0;
+            if (null_bit == (unsigned char)128)
+            {
+                ++null_ptr;
+                null_bit = 1;
+            }else
+                null_bit = null_bit << 1;
+        }
+
         if (fd.type == ft_myfixedbinary)
         {
             int dl = *((unsigned short*)(pos));
             memmove(pos, pos + 2, dl);
             pos += fd.len - 2;
             *((unsigned short*)(pos)) = 0x00;
-            ;
             pos += 2;
         }
         else
         {
             int blen = fd.varLenBytes();
             int dl = fd.len; // length
-            if (blen == 1)
-                dl = *((unsigned char*)(pos)) + blen;
-            else if (blen == 2)
-                dl = *((unsigned short*)(pos)) + blen;
+            if (isNull) 
+                dl = 0;
+            else if (blen)
+            {
+                if (blen == 1)
+                    dl = *((unsigned char*)(pos)) + blen;
+                else if (blen == 2)
+                    dl = *((unsigned short*)(pos)) + blen;
+            }
+                
             if ((movelen = fd.len - dl) != 0)
             {
                 if (max < end + movelen)
                     return 0;
                 char* src = pos + dl;
-                memmove(pos + fd.len, src, end - src);
+                if (end > src)
+                    memmove(pos + fd.len, src, end - src);
                 memset(src, 0, movelen);
                 end += movelen;
             }
@@ -339,12 +1024,28 @@ uint_td tabledef::unPack(char* ptr, size_t size) const
 
 uint_td tabledef::pack(char* ptr, size_t size) const
 {
-    char* pos = ptr;
+    char* pos = ptr + m_nullbytes;
     char* end = pos + size;
     int movelen;
+
+    // if null then not copy field image (field length move)
+    unsigned char null_bit = 1;
+    unsigned char* null_ptr = (unsigned char*)ptr;
     for (int i = 0; i < fieldCount; i++)
     {
         fielddef& fd = fieldDefs[i];
+        bool isNull = false;
+        if (fd.isNullable() && m_nullbytes)
+        {
+            isNull = (*null_ptr & null_bit) != 0;
+            if (null_bit == (unsigned char)128)
+            {
+                ++null_ptr;
+                null_bit = 1;
+            }else
+                null_bit = null_bit << 1;
+        }
+        
         if (fd.type == ft_myfixedbinary)
         {
             memmove(pos + 2, pos, fd.len - 2); // move as size pace in the field
@@ -359,15 +1060,86 @@ uint_td tabledef::pack(char* ptr, size_t size) const
                 dl = *((unsigned char*)(pos)) + blen;
             else if (blen == 2)
                 dl = *((unsigned short*)(pos)) + blen;
-            pos += dl;
+            if (isNull)
+                dl = 0;
+            else
+                pos += dl;
             if ((movelen = fd.len - dl) != 0)
             {
                 end -= movelen;
                 memmove(pos, pos + movelen, end - pos);
             }
         }
+        
     }
     return (uint_td)(pos - ptr);
+}
+
+int tabledef::size() const
+{
+    int len =  (int)(sizeof(tabledef) + (sizeof(fielddef) * fieldCount) +
+                    (sizeof(keydef) * keyCount));
+    const ushort_td* p = &varSize;
+    *(const_cast<ushort_td*>(p)) = len - 4;
+    return len;
+}
+
+short tabledef::fieldNumByName(const _TCHAR* name) const
+{
+    char buf[74];
+    const char* p = toChar(buf, name, 74);
+    for (short i = 0; i < fieldCount; i++)
+    {
+        if (strcmp(fieldDefs[i].nameA(), p) == 0)
+            return i;
+    }
+    return -1;
+}
+
+short tabledef::findKeynumByFieldNum(short fieldNum) const
+{
+    for (short i = 0; i < keyCount; i++)
+    {
+        if (keyDefs[i].segments[0].fieldNum == fieldNum)
+            return i;
+    }
+    return -1;
+}
+
+short tabledef::synchronize(const tabledef* td)
+{
+    id = td->id;
+    setTableName(td->tableName());
+    preAlloc = td->preAlloc;
+    version = td->version;
+    m_inUse = td->m_inUse;
+    m_mysqlNullMode = td->m_mysqlNullMode;
+    parentKeyNum = td->parentKeyNum;
+    replicaKeyNum = td->replicaKeyNum;
+    optionFlags = td->optionFlags;
+    convertFileNum = td->convertFileNum;
+    treeIndex = td->treeIndex;
+    iconIndex = td->iconIndex;
+    ddfid = td->ddfid;
+    autoIncExSpace = td->autoIncExSpace;
+    iconIndex2 = td->iconIndex2;
+    iconIndex3 = td->iconIndex3;
+    formatVersion = td->formatVersion;
+    parent = td->parent;
+    flags = td->flags;
+    for (int i=0;i<td->fieldCount; ++i)
+    {
+        fielddef* fd = &td->fieldDefs[i];
+        short index = fieldNumByName(fd->name());
+        if (index != -1)
+            fieldDefs[index].synchronize(fd);
+    }
+    for (int i=0;i<td->keyCount; ++i)
+    {
+        if (i < keyCount)
+            keyDefs[i].synchronize(&td->keyDefs[i]);
+    }
+    return 0;
 }
 
 ushort_td lenByCharnum(uchar_td type, uchar_td charsetIndex, ushort_td charnum)
@@ -424,6 +1196,10 @@ const _TCHAR* getTypeName(short type)
         return _T("AutoIncrement");
     case ft_bit:
         return _T("Bit");
+    case ft_enum:
+        return _T("Enum");
+    case ft_set:
+        return _T("Set");
     case ft_numericsts:
         return _T("Numericsts");
     case ft_numericsa:
@@ -454,6 +1230,8 @@ const _TCHAR* getTypeName(short type)
         return _T("myChar");
     case ft_mywchar:
         return _T("myWChar");
+    case ft_myyear:
+        return _T("myYear");
     case ft_mydate:
         return _T("myDate");
     case ft_mytime:
@@ -466,10 +1244,16 @@ const _TCHAR* getTypeName(short type)
         return _T("myText");
     case ft_myblob:
         return _T("myBlob");
+    case ft_mygeometry:
+        return _T("myGeometry");
+    case ft_myjson:
+        return _T("myJson");
     case ft_autoIncUnsigned:
         return _T("AutoIncUnsigned");
     case ft_myfixedbinary:
         return _T("myFixedBinary");
+    case ft_mydecimal:
+        return _T("myDecimal");
     case ft_nullindicator:
         return _T("Nullindicator");
     default:
@@ -496,11 +1280,14 @@ int getTypeAlign(short type)
     case ft_mywchar:
     case ft_mywvarchar:
     case ft_mywvarbinary:
+    case ft_myyear:
     case ft_mydate:
     case ft_mytime:
     case ft_mydatetime:
     case ft_mytimestamp:
     case ft_myblob:
+    case ft_mygeometry:
+    case ft_myjson:
     case ft_myfixedbinary:
     case ft_mytext:
         return BT_AL_LEFT;
@@ -610,6 +1397,10 @@ PACKAGE uchar_td getFilterLogicTypeCode(const _TCHAR* cmpstr)
         return (uchar_td)eLessEq | CMPLOGICAL_CASEINSENSITIVE;
     else if (_tcscmp(cmpstr, _T("<=i")) == 0)
         return (uchar_td)eLessEq | CMPLOGICAL_CASEINSENSITIVE;
+    else if (_tcscmp(cmpstr, _T("<==>")) == 0)
+        return (uchar_td)eIsNull;
+    else if (_tcscmp(cmpstr, _T("<!=>")) == 0)
+        return (uchar_td)eIsNotNull;
     return 255;
 }
 

@@ -224,9 +224,7 @@ void createUserTableSchema(dbdef* def)
 
     short fieldNum = 0;
     insertField(def, tableid, fieldNum, _T("id"), ft_integer, 4);
-    insertField(def, tableid, ++fieldNum, _T("name"), ft_myvarchar, 100);
-    updateTableDef(def, tableid);
-
+    insertField(def, tableid, ++fieldNum, _T("name"), ft_myvarchar, 99);
     short keyNum = 0;
     keydef* kd = insertKey(def, tableid, keyNum);
     kd->segments[0].fieldNum = 0;

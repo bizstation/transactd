@@ -19,10 +19,12 @@
  02111-1307, USA.
  ================================================================= */
 
+#pragma warning(disable : 4005) //BOOST_ASIO_ERROR_CATEGORY_NOEXCEPT redefine bug 
 #include <bzs/netsvc/client/iconnection.h>
-
 #include <boost/asio/write.hpp>
 #include <boost/asio/read.hpp>
+#pragma warning(default : 4005)
+
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #if (BOOST_VERSION > 104900)
@@ -148,6 +150,7 @@ public:
 
 /** Implementation of Part of the connection interface
  */
+#define VER_ST_SIZE 12
 class connectionBase : public connection
 {
 protected:
@@ -159,6 +162,7 @@ protected:
     size_t m_readLen;
     int m_refCount;
     int m_charsetServer;
+    char m_vers[VER_ST_SIZE];
     bool m_connected;
     bool m_isHandShakable;
     boost::system::error_code m_e;
@@ -183,6 +187,7 @@ public:
           m_ep(ep), m_reader(NULL), m_refCount(0),
           m_charsetServer(-1), m_connected(false), m_isHandShakable(true)
     {
+        memset(m_vers, 0, VER_ST_SIZE);
     }
     virtual ~connectionBase()
     {
@@ -196,6 +201,8 @@ public:
     void setDirectReadHandler(idirectReadHandler* p){ m_reader = p; }
     bool isHandShakable() const {return m_isHandShakable;};
     const boost::system::error_code& error() const { return m_e; };
+
+    void* versions() {return (void*)m_vers;};
 };
 
 #ifdef __APPLE__
@@ -672,8 +679,8 @@ class pipeConnection : public connectionImple<platform_stream>
     {
         char* p = buf;
         DWORD processId = GetCurrentProcessId();
-        __int64 clientid = (__int64) this;
-        sprintf_s(p, 120, "%s_%u_%Lu", name, processId, clientid);
+		unsigned __int64 clientid = (unsigned __int64) this;
+        sprintf_s(p, 120, "%s_%u_%llu", name, processId, clientid);
         return p;
     }
 

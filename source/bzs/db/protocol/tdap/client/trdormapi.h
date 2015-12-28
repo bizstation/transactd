@@ -22,7 +22,7 @@
 #include "fieldNameAlias.h"
 #include "memRecord.h"
 #include "groupComp.h"
-#include "filter.h"
+#include <bzs/db/protocol/tdap/client/filter.h>
 #include <boost/shared_array.hpp>
 #include <vector>
 

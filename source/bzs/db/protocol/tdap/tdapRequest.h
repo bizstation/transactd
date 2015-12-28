@@ -20,13 +20,15 @@
  ================================================================= */
 
 #include <bzs/db/protocol/tdap/tdapcapi.h>
+#pragma warning(disable : 4005) //BOOST_ASIO_ERROR_CATEGORY_NOEXCEPT redefine bug 
 #include <bzs/db/blobBuffer.h>
+#include <boost/asio/buffer.hpp>
+#pragma warning(default : 4005)
 #include <iostream>
 #include <vector>
 #include <string.h>
-#include <boost/asio/buffer.hpp>
-#include <bzs/env/compiler.h>
 
+#include <bzs/env/compiler.h>
 namespace bzs
 {
 namespace netsvc
@@ -99,13 +101,6 @@ typedef void*(__STDCALL* DDBA_PTR)(client::table* tb, uint_td size);
  */
 #pragma pack(push, 1)
 pragma_pack1;
-
-struct version
-{
-    ushort_td majorVersion;
-    ushort_td minorVersion;
-    uchar_td Type;
-};
 
 struct posblk
 {

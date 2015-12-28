@@ -28,8 +28,6 @@ library path in project option.
 #ifdef TRDCL_AUTOLINK
 #include <bzs/env/compiler.h>
 #include <bzs/db/protocol/tdap/tdapcapi.h>
-#define TD_CPP_LIB_NAME                                                        \
-    LIB_PREFIX TD_CPP_LIB_PRE CPP_INTERFACE_VERSTR SHARED_LIB_EXTENTION
 #pragma comment(lib, TD_CPP_LIB_NAME)
 #endif // TRDCL_AUTOLINK
 

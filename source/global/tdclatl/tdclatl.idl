@@ -46,6 +46,7 @@ interface IConnectParams;
 interface IPooledDbManager;
 interface IPreparedQuery;
 interface IBookmark;
+interface IBitset;
 
 typedef
 [
@@ -146,6 +147,8 @@ enum eStatus
 	STATUS_INVALID_FIELDVALUE	= -36,
 	STATUS_INVALID_VALLEN		= -37,
 	STATUS_FIELDTYPE_NOTSUPPORT = -42,
+    STATUS_INVALID_NULLMODE     = -43,
+    STATUS_TOO_LARGE_VALUE      = -44,
 	STATUS_SUCCESS				= 0,
 	STATUS_PROGRAM_ERROR		= 1,
 	STATUS_IO_ERROR				= 2,
@@ -251,6 +254,10 @@ enum eFieldType
 	ft_myblob 		= 51,
 	ft_autoIncUnsigned	= 52,
 	ft_myfixedbinary 	= 53,
+    ft_myyear           = 59,
+    ft_mygeometry       = 60,
+    ft_myjson           = 61,
+    ft_mydecimal        = 62,
 	ft_nullindicator	= 255
 }eFieldType;
 
@@ -353,13 +360,13 @@ typedef
 ]
 enum eGroupFunc
 {
-	fsum = 0,
-	fcount = 1,
-	favg = 2,
-	fmin = 3,
-	fmax = 4,
-    ffirst = 5,
-    flast = 6
+	f_sum = 0,
+	f_count = 1,
+	f_avg = 2,
+	f_min = 3,
+	f_max = 4,
+    f_first = 5,
+    f_last = 6
 }eGroupFunc;
 
 typedef
@@ -373,7 +380,42 @@ enum eOptimize
 	combineCondition = 2
 }eOptimize;
 
+typedef
+[
+  helpstring("table cleabuffer option")
+]
+enum eNullReset
+{
+	clearNull = 0,
+	defaultNull = 1
 
+}eNullReset;
+
+
+typedef
+[
+  helpstring("Version type enum")
+]
+enum eVersionType
+{
+	MySQLServer = 77,
+	MariaDBServer = 65,
+	TransactdServer = 84,
+	TransactdClient = 78,
+	PSQLWorkgroup = 57,
+	PSQLLinuxServer = 85
+}eVersionType;
+
+
+typedef
+[
+  helpstring("Timestamp mode enum")
+]
+enum eTimeStampMode
+{
+	TIMESTAMP_VALUE_CONTROL = 0,
+	TIMESTAMP_ALWAYS = 1
+}eTimeStampMode;
 
 
 [
@@ -469,14 +511,12 @@ interface IDatabase : IDispatch
   [id(0x000000E6)]
   HRESULT _stdcall ConvertTable([in] short TableIndex, [in, defaultvalue(-1)] VARIANT_BOOL Turbo, [in, defaultvalue("")] BSTR OwnerName);
   [id(0x000000E7)]
-  HRESULT _stdcall CopyTableData([in] ITable* Dest, [in] ITable* Src, [in] VARIANT_BOOL Turbo, [in, defaultvalue(0)] int Offset
+  HRESULT _stdcall CopyTableData([in] ITable* Dest, [in] ITable* Src, [in] VARIANT_BOOL Turbo
 	  , [in, defaultvalue(-1)] short KeyNum, [in, defaultvalue(-1)] int MaxSkip, [out, retval] short* Value);
   [id(0x000000E8)]
-  HRESULT _stdcall CreateTable([in] short FileNum, [in, defaultvalue("")] BSTR Uri, [out, retval] VARIANT_BOOL* Value);
+  HRESULT _stdcall CreateTable([in] VARIANT FileNumOrSql, [in, defaultvalue("")] BSTR Uri, [out, retval] VARIANT_BOOL* Value);
   [id(0x000000E9)]
   HRESULT _stdcall ExistsTableFile([in] short TableIndex, [in, defaultvalue("")] BSTR OwnerName);
-  [id(0x000000EA)]
-  HRESULT _stdcall GetTableUri([in] short FileNum, [out, retval] BSTR* Value);
   [propget, id(0x000000EB)]
   HRESULT _stdcall IsOpened([out, retval] VARIANT_BOOL* Value);
   [propget, id(0x000000EC)]
@@ -509,7 +549,16 @@ interface IDatabase : IDispatch
   HRESULT _stdcall Reconnect([out, retval] VARIANT_BOOL* Value);
   [id(0x000000F9)]
   HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
-
+  [propput, id(0x000000FA)]
+  HRESULT _stdcall AutoSchemaUseNullkey([in] VARIANT_BOOL Value);
+  [propget, id(0x000000FA)]
+  HRESULT _stdcall AutoSchemaUseNullkey([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x000000FB)]
+  HRESULT _stdcall CompatibleMode([in] int Value);
+  [propget, id(0x000000FB)]
+  HRESULT _stdcall CompatibleMode([out, retval] int* Value);
+  [id(0x000000FC)]
+  HRESULT _stdcall GetSqlStringForCreateTable([in] BSTR tableName, [out, retval]  BSTR* retValue);
 };
 
 
@@ -552,8 +601,6 @@ interface IDbDef : IDispatch
   HRESULT _stdcall FieldValidLength([in] eFieldQuery Query, [in] short FieldType, [out, retval] unsigned int* Value);
   [id(0x000000D5)]
   HRESULT _stdcall FindKeynumByFieldNum([in] short TableIndex, [in] short Index, [out, retval] unsigned short* Value);
-  [id(0x000000D6)]
-  HRESULT _stdcall GetRecordLen([in] short TableIndex, [out, retval] unsigned short* Value);
   [propget, id(0x000000D7)]
   HRESULT _stdcall OpenMode([out, retval] eOpenMode* Value);
   [id(0x000000D8)]
@@ -576,6 +623,9 @@ interface IDbDef : IDispatch
   HRESULT _stdcall ValidateTableDef([in]short TableIndex, [out, retval] short* Value);
   [id(0x000000E0)]
   HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
+  [id(0x000000E1)]
+  HRESULT _stdcall SynchronizeSeverSchema([in] short TableIndex);
+ 
 
 };
 [
@@ -604,7 +654,7 @@ interface ITable : IDispatch
   [id(0x00000006)]
   HRESULT _stdcall Delete([in, defaultvalue(0)] VARIANT_BOOL inkey);
   [id(0x00000007)]
-  HRESULT _stdcall ClearBuffer(void);
+  HRESULT _stdcall ClearBuffer([in, defaultvalue(defaultNull)] eNullReset resetType);
   [id(0x00000019)]
   HRESULT _stdcall Close(void);
   [id(0x0000001A)]
@@ -757,8 +807,25 @@ interface ITable : IDispatch
   HRESULT _stdcall Bookmarks([in] long index, [out, retval] IBookmark** Value);
   [id(0x000000E5)]
   HRESULT _stdcall StatMsg([out, retval] BSTR* Value);
+  [id(0x000000E6)]
+  HRESULT _stdcall GetFVNull([in] VARIANT Index, [out, retval] VARIANT_BOOL* Value);
+  [id(0x000000E7)]
+  HRESULT _stdcall SetFVNull([in] VARIANT Index, [in] VARIANT_BOOL Value);
+  [id(0x000000E8)]
+  HRESULT _stdcall GetFVint([in] VARIANT Index, [out, retval] int* Value);
+  [id(0x000000E9)]
+  HRESULT _stdcall GetFV64([in] VARIANT Index, [out, retval] hyper* Value);
+  [id(0x000000EA)]
+  HRESULT _stdcall GetFVdbl([in] VARIANT Index, [out, retval] double* Value);
+  [id(0x000000EB)]
+  HRESULT _stdcall GetFVstr([in] VARIANT Index, [out, retval] BSTR* Value);
+  [id(0x000000EC)]
+  HRESULT _stdcall SetFV([in] VARIANT Index, [in] VARIANT Value);
+  [id(0x000000ED)]
+  HRESULT _stdcall SetTimestampMode([in] eTimeStampMode mode);
+  [id(0x000000EE)]
+  HRESULT _stdcall GetFVbits([in] VARIANT Index, [out, retval] IBitset** Value);
 
-  
 
 };
 [
@@ -827,9 +894,7 @@ interface ITableDef : IDispatch
   [propput, id(0x000000CC)]
   HRESULT _stdcall FixedRecordLen([in] unsigned short Value);
   [propget, id(0x000000CD)]
-  HRESULT _stdcall MaxRecordLen([out, retval] unsigned short* Value);
-  [propput, id(0x000000CD)]
-  HRESULT _stdcall MaxRecordLen([in] unsigned short Value);
+  HRESULT _stdcall RecordLen([out, retval] unsigned short* Value);
   [propget, id(0x000000CF)]
   HRESULT _stdcall SchemaCodePage([out, retval] unsigned int* Value);
   [propput, id(0x000000CF)]
@@ -840,6 +905,19 @@ interface ITableDef : IDispatch
   HRESULT _stdcall FieldDef([in] short Index, [out, retval] IFieldDef** Value);
   [propget, id(0x000000CB)]
   HRESULT _stdcall KeyDef([in] short Index, [out, retval] IKeyDef** Value);
+  [propget, id(0x000000CE)]
+  HRESULT _stdcall FieldNumByName([in] BSTR Name, [out, retval] short* Value);
+
+  [propget, id(0x000000D1)]
+  HRESULT _stdcall Nullfields([out, retval] short* Value);
+  [propget, id(0x000000D2)]
+  HRESULT _stdcall InUse([out, retval] short* Value);
+  [propget, id(0x000000D3)]
+  HRESULT _stdcall MysqlNullMode([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x000000D4)]
+  HRESULT _stdcall Size([out, retval] int* Value);
+  [id(0x000000D5)]
+  HRESULT _stdcall SetValidationTarget([in] VARIANT_BOOL isMariadb, [in] short srvMinorVersion);
 };
 [
 	object,
@@ -874,10 +952,6 @@ interface IFieldDef : IDispatch
   HRESULT _stdcall Min([out, retval] double* Value);
   [propput, id(0x00000006)]
   HRESULT _stdcall Min([in] double Value);
-  [propget, id(0x00000007)]
-  HRESULT _stdcall DefValue([out, retval] double* Value);
-  [propput, id(0x00000007)]
-  HRESULT _stdcall DefValue([in] double Value);
   [propget, id(0x00000008), hidden]
   HRESULT _stdcall LookTable([out, retval] unsigned char* Value);
   [propput, id(0x00000008), hidden]
@@ -926,6 +1000,40 @@ interface IFieldDef : IDispatch
   HRESULT _stdcall UsePadChar([out, retval] VARIANT_BOOL* Value);
   [propget, id(0x00000018)]
   HRESULT _stdcall TrimPadChar([out, retval] VARIANT_BOOL* Value);
+
+  [propget, id(0x00000019)]
+  HRESULT _stdcall DefaultValue([out, retval] VARIANT* Value);
+  [propput, id(0x00000019)]
+  HRESULT _stdcall DefaultValue([in] VARIANT Value);
+  [propget, id(0x0000001A)]
+  HRESULT _stdcall PadCharType([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000001B)]
+  HRESULT _stdcall DateTimeType([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000001C)]
+  HRESULT _stdcall ValidCharNum([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x0000001D)]
+  HRESULT _stdcall Nullable([out, retval] VARIANT_BOOL* Value);
+  [id(0x0000001E)]
+  HRESULT _stdcall SetNullable([in] VARIANT_BOOL Value, [in , defaultvalue(-1)] VARIANT_BOOL DefaultNull);
+  [propget, id(0x00000020)]
+  HRESULT _stdcall TimeStampOnUpdate([out, retval] VARIANT_BOOL* Value);
+  [propput, id(0x00000020)]
+  HRESULT _stdcall TimeStampOnUpdate([in] VARIANT_BOOL Value);
+  [propget, id(0x00000021)]
+  HRESULT _stdcall DefaultNull([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x00000022)]
+  HRESULT _stdcall Digits([out, retval] short* Value);
+  [propput, id(0x00000022)]
+  HRESULT _stdcall Digits([in] short Value);
+  [propget, id(0x00000023)]
+  HRESULT _stdcall IsIntegerType([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x00000024)]
+  HRESULT _stdcall IsNumericType([out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x00000025)]
+  HRESULT _stdcall IsDateTimeType([out, retval] VARIANT_BOOL* Value);
+  [id(0x00000026)]
+  HRESULT _stdcall SetDecimalDigits([in] int Digits, [in ] int Decimals);
+
 };
 [
 	object,
@@ -1016,6 +1124,32 @@ interface IField : IDispatch
   HRESULT _stdcall Vbin([out, retval] BSTR* Value);
   [propput, id(0x000000CD)]
   HRESULT _stdcall Vbin([in] BSTR Value);
+
+  [id(0x000000CF)]
+  HRESULT _stdcall IsNull([out, retval] VARIANT_BOOL* Value);
+  [id(0x000000D0)]
+  HRESULT _stdcall SetNull([in] VARIANT_BOOL Value);
+  [id(0x000000D1)]
+  HRESULT _stdcall SetValue([in] VARIANT Value);
+  [id(0x000000D7)]
+  HRESULT _stdcall SetBin([in] BSTR Value);
+  [id(0x000000D2)]
+  HRESULT _stdcall I([out, retval] int* Value);
+  [id(0x000000D3)]
+  HRESULT _stdcall I64([out, retval] __int64* Value);
+  [id(0x000000D5)]
+  HRESULT _stdcall D([out, retval] double* Value);
+  [id(0x000000D6)]
+  HRESULT _stdcall Bin([out, retval] BSTR* Value);
+  [id(0x000000D4)]
+  HRESULT _stdcall Str([out, retval] BSTR* Value);
+  [propget, id(0x000000D8)]
+  HRESULT _stdcall Type([out, retval] short* Value);
+  [propget, id(0x000000D9)]
+  HRESULT _stdcall Len([out, retval] short* Value);
+  [id(0x000000DA)]
+  HRESULT _stdcall GetBits([out, retval] IBitset** Value);
+
 };
 
 [
@@ -1143,6 +1277,26 @@ interface IQueryBase : IDispatch
   [id(0x0000020)]
   HRESULT _stdcall AddSeekBookmark([in] VARIANT Value, [in, defaultvalue(0)] VARIANT_BOOL Reset);
  
+  [id(0x0000021)]
+  HRESULT _stdcall WhereIsNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000022)]
+  HRESULT _stdcall AndIsNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000023)]
+  HRESULT _stdcall OrIsNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000024)]
+  HRESULT _stdcall WhereIsNotNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000025)]
+  HRESULT _stdcall AndIsNotNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000026)]
+  HRESULT _stdcall OrIsNotNull([in] BSTR Name, [out, retval] IQueryBase** retVal);
+  [id(0x0000027)]
+  HRESULT _stdcall SegmentsForInValue([in] int Value, [out, retval] IQueryBase** retVal);
+  [id(0x0000028)]
+  HRESULT _stdcall JoinKeySize([in] int Value, [out, retval] IQueryBase** retVal);
+  [id(0x0000029)]
+  HRESULT _stdcall GetJoinKeySize([out, retval] int* retVal);
+
+
 };
 
 [
@@ -1288,6 +1442,8 @@ interface IRecord : IDispatch
   HRESULT _stdcall Field([in] VARIANT Index, [out, retval] IField** retVal);
   [propget, id(0x0000003)]
   HRESULT _stdcall IsInvalidRecord( [out, retval] VARIANT_BOOL* retVal);
+  [propget, id(0x0000004)]
+  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
 
 };
 
@@ -1312,9 +1468,6 @@ interface IWritableRecord : IRecord
   HRESULT _stdcall Read([in, optional]VARIANT KeysetAlradyOrBookmark, [out, retval] VARIANT_BOOL* retVal);
   [id(0x0000016)]
   HRESULT _stdcall Clear();
-  [propget,id(0x0000017)]
-  HRESULT _stdcall FieldDefs([out, retval] IFieldDefs** retVal);
-  
 };
 
 [
@@ -1360,6 +1513,19 @@ interface IRecordsetQuery : IDispatch
   HRESULT _stdcall And([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IRecordsetQuery** retVal);
   [id(0x0000007)]
   HRESULT _stdcall Or([in] BSTR Name, [in] BSTR Logic, [in] VARIANT Value, [out, retval] IRecordsetQuery** retVal);
+
+  [id(0x0000021)]
+  HRESULT _stdcall WhenIsNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000022)]
+  HRESULT _stdcall AndIsNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000023)]
+  HRESULT _stdcall OrIsNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000024)]
+  HRESULT _stdcall WhenIsNotNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000025)]
+  HRESULT _stdcall AndIsNotNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
+  [id(0x0000026)]
+  HRESULT _stdcall OrIsNotNull([in] BSTR Name, [out, retval] IRecordsetQuery** retVal);
 
 };
 
@@ -1494,9 +1660,9 @@ interface IPooledDbManager : IDispatch
   [id(0x0000000F)]
   HRESULT _stdcall Db([out, retval]IDatabase** retVal);
   [propput, id(0x00000010)]
-  HRESULT _stdcall Option([in] __int64 Value);
+  HRESULT _stdcall Option([in] hyper Value);
   [propget, id(0x00000010)]
-  HRESULT _stdcall Option([out, retval] __int64* Value);
+  HRESULT _stdcall Option([out, retval] hyper* Value);
   [propget, id(0x00000011)]
   HRESULT _stdcall Mode([out, retval] short* Value);
 };
@@ -1560,6 +1726,26 @@ interface IBookmark : IDispatch
   HRESULT _stdcall IsEmpty([out, retval] VARIANT_BOOL* retVal);
 };
 
+
+[
+	object,
+	uuid(E7EA0FFF-577E-4CF5-B890-0C13AD968784),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IBitset : IDispatch{
+
+  [propput, id(0)]
+  HRESULT _stdcall Bit([in] short index, [in] VARIANT_BOOL val);
+  [propget, id(0)]
+  HRESULT _stdcall Bit([in] short index, [out, retval] VARIANT_BOOL* retVal);
+  [id(1)]
+  HRESULT _stdcall Equals([in] IBitset* bitset, [out, retval] VARIANT_BOOL* retVal);
+  [id(2)]
+  HRESULT _stdcall Contains([in] IBitset* bitset, [in, defaultvalue(-1)] VARIANT_BOOL all, [out, retval] VARIANT_BOOL* retVal);
+
+};
 
 [
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
@@ -1812,6 +1998,14 @@ library transactd
 		
 	};
 		
+	[
+		uuid(71107F47-2E0A-400B-9E62-C87D84A50008)		
+	]
+	coclass Bitset
+	{
+		[default] interface IBitset;
+	};
+   
 };
 
 import "shobjidl.idl";

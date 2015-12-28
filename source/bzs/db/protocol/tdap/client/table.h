@@ -73,18 +73,20 @@ public:
     virtual unsigned char* allocBlobBlock(size_t size) = 0;
     virtual unsigned char* ptr(size_t row, int stat) = 0;
     virtual void setJoinType(int v) = 0;
-    virtual void setInvalidRecord(size_t row, bool v) = 0;
+    virtual void setInvalidMemblock(size_t row, bool v) = 0;
     virtual void setJoinRowMap(
         const std::vector<std::vector<int> >* v /*, size_t size*/) = 0;
     virtual const std::vector<std::vector<int> >* joinRowMap() const = 0;
     virtual void duplicateRow(int row, int count) = 0;
     virtual void removeLastMemBlock(int row) = 0;
+    virtual int joinType() const = 0;
 };
 
 class filter;
 typedef boost::shared_ptr<filter> pq_handle; 
 
 /** @endcond */
+
 
 class DLLLIB table : public nstable
 {
@@ -94,6 +96,7 @@ class DLLLIB table : public nstable
     friend class database;
     friend class filter;
     friend class fields;
+    friend class writableRecord;
     friend struct logic;
 
     struct tbimpl* m_impl;
@@ -119,11 +122,13 @@ class DLLLIB table : public nstable
     uint_td doRecordCount(bool estimate, bool fromCurrent); // orverride
     short_td doBtrvErr(HWND hWnd, _TCHAR* retbuf = NULL); // orverride
     void doFind(ushort_td op, bool notIncCurrent);
+    void* getExtendBufferForOpen(uint_td& size); // orverride
     bool setSeekValueField(int row);
     void btrvSeekMulti();
     bool doSeekMultiAfter(int row);
     void* doDdba(uint_td size);
     bool isReadContinue(ushort_td& op);
+    void incTabledefRefCount(tabledef* td, bool mysqlMullmode);
 
 protected:
     explicit table(nsdatabase* pbe); // Inheritance is impossible
@@ -151,12 +156,18 @@ protected:
 
     void onInsertAfter(int beforeResult); // orverride
     bool isUniqeKey(char_td keynum); // orverride
-    void init(tabledef** def, short filenum, bool regularDir);
+    void init(tabledef** def, short filenum, bool regularDir, bool mysqlnull);
     void* attachBuffer(void* newPtr, bool unpack = false, size_t size = 0);
     void dettachBuffer();
     bool doPrepare();
 
-    virtual void doInit(tabledef** def, short filenum, bool regularDir);
+    inline unsigned int nullBytes() const
+    {
+        return (m_tableDef && (*m_tableDef)->isMysqlNullMode()) ?
+                          (*m_tableDef)->nullbytes() : 0;
+    }
+
+    virtual void doInit(tabledef** def, short filenum, bool regularDir, bool mysqlnull);
 
     virtual void onRecordCounting(size_t count, bool& cancel);
 
@@ -164,6 +175,7 @@ protected:
 
 public:
     using nstable::eFindType;
+    enum eNullReset{clearNull, defaultNull};
 
     inline const tabledef* tableDef() const { return *m_tableDef; };
     inline const tabledef** tableDefPtr() const
@@ -173,7 +185,7 @@ public:
 
     inline bool valiableFormatType() const
     {
-        return (*m_tableDef)->optionFlags.bitA;
+        return (*m_tableDef)->optionFlags.bitA || (*m_tableDef)->m_nullbytes;
     }
 
     inline bool blobFieldUsed() const { return (*m_tableDef)->optionFlags.bitB; }
@@ -187,7 +199,7 @@ public:
     int bookmarksCount() const;
     void moveBookmarks(unsigned int index);
     bookmark_td bookmarks(unsigned int index) const;
-    void clearBuffer();
+    void clearBuffer(eNullReset resetType = defaultNull);
     unsigned int getRecordHash();
     void smartUpdate();
 
@@ -211,25 +223,38 @@ public:
 
     void setFilter(const _TCHAR* str, ushort_td rejectCount,
                    ushort_td cacheCount, bool autoEscape = true);
-    short fieldNumByName(const _TCHAR* name);
-    unsigned char getFVbyt(short index);
-    short getFVsht(short index);
-    int getFVint(short index);
-    int getFVlng(short index);
-    __int64 getFV64(short index);
-    float getFVflt(short index);
-    double getFVdbl(short index);
-    const char* getFVAstr(short index);
-    void* getFVbin(short index, uint_td& size);
-    unsigned char getFVbyt(const _TCHAR* fieldName);
-    short getFVsht(const _TCHAR* fieldName);
-    int getFVint(const _TCHAR* fieldName);
-    int getFVlng(const _TCHAR* fieldName);
-    __int64 getFV64(const _TCHAR* fieldName);
-    float getFVflt(const _TCHAR* fieldName);
-    double getFVdbl(const _TCHAR* fieldName);
-    const char* getFVAstr(const _TCHAR* fieldName);
-    void* getFVbin(const _TCHAR* fieldName, uint_td& size);
+    short fieldNumByName(const _TCHAR* name) const ;
+    unsigned char getFVbyt(short index) const;
+    short getFVsht(short index) const;
+    int getFVint(short index) const;
+    int getFVlng(short index) const;
+    __int64 getFV64(short index) const;
+    float getFVflt(short index) const;
+    double getFVdbl(short index) const;
+    const char* getFVAstr(short index) const;
+    void* getFVbin(short index, uint_td& size) const;
+    unsigned char getFVbyt(const _TCHAR* fieldName) const;
+    short getFVsht(const _TCHAR* fieldName) const;
+    int getFVint(const _TCHAR* fieldName) const;
+    int getFVlng(const _TCHAR* fieldName) const;
+    __int64 getFV64(const _TCHAR* fieldName) const;
+    float getFVflt(const _TCHAR* fieldName) const;
+    double getFVdbl(const _TCHAR* fieldName) const;
+    const char* getFVAstr(const _TCHAR* fieldName) const;
+    void* getFVbin(const _TCHAR* fieldName, uint_td& size) const;
+    bool getFVNull(short index) const ;
+    bool getFVNull(const _TCHAR* fieldName) const;
+
+    inline bitset getFVbits(short index) const
+    {
+        return bitset(getFV64(index));
+    }
+
+    inline bitset getFVbits(const _TCHAR* fieldName) const
+    {
+        return bitset(getFV64(fieldName));
+    }
+
     void setFV(short index, double data);
     void setFV(short index, float data);
     void setFV(short index, unsigned char data);
@@ -239,23 +264,25 @@ public:
     void setFV(short index, const void* data, uint_td size);
     void setFV(const _TCHAR* fieldName, int data);
     void setFVA(const _TCHAR* fieldName, const char* data);
+    void setFVNull(short index, bool v);
+    void setFVNull(const _TCHAR* fieldName, bool v);
 
 #ifdef _WIN32
-    const wchar_t* getFVWstr(const _TCHAR* fieldName);
-    const wchar_t* getFVWstr(short index);
+    const wchar_t* getFVWstr(const _TCHAR* fieldName) const;
+    const wchar_t* getFVWstr(short index) const;
     void setFVW(short index, const wchar_t* data);
     void setFVW(const _TCHAR* fieldName, const wchar_t* data);
 #endif
 
 #ifdef _UNICODE
-    inline const wchar_t* getFVstr(short index) { return getFVWstr(index); };
-    inline const wchar_t* getFVstr(const wchar_t* fieldName)
+    inline const wchar_t* getFVstr(short index) const { return getFVWstr(index); };
+    inline const wchar_t* getFVstr(const wchar_t* fieldName) const
     {
         return getFVWstr(fieldName);
     };
 #else
-    inline const char* getFVstr(short index) { return getFVAstr(index); };
-    inline const char* getFVstr(const char* fieldName)
+    inline const char* getFVstr(short index) const { return getFVAstr(index); };
+    inline const char* getFVstr(const char* fieldName) const
     {
         return getFVAstr(fieldName);
     };
@@ -276,6 +303,17 @@ public:
         setFVW(fieldName, data);
     };
 #endif
+    
+    inline void setFV(short index, const bitset& bits)
+    {
+        setFV(index, bits.internalValue());
+    }
+
+    inline void setFV(const _TCHAR* fieldName, const bitset& bits)
+    {
+        setFV(fieldName, bits.internalValue());
+    }
+    
 
     void setFV(const _TCHAR* fieldName, double data);
     void setFV(const _TCHAR* fieldName, float data);
@@ -410,14 +448,14 @@ inline std::_tstring lexical_cast(char v)
 inline std::_tstring lexical_cast(double v)
 {
     _TCHAR tmp[256];
-    _stprintf_s(tmp, 256, _T("%.*f"), 15, v);
+    _stprintf_s(tmp, 256, _T("%.*f"), 16, v);
     return std::_tstring(tmp);
 }
 
 inline std::_tstring lexical_cast(float v)
 {
     _TCHAR tmp[256];
-    _stprintf_s(tmp, 256, _T("%.*f"), 15, v);
+    _stprintf_s(tmp, 256, _T("%.*f"), 16, v);
     return std::_tstring(tmp);
 }
 
@@ -425,8 +463,11 @@ inline std::_tstring lexical_cast(const _TCHAR* v)
 {
     if (v)
         return std::_tstring(v);
+    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR,
+                                         _T("Invalid the value, The value is NULL."));
     return std::_tstring(_T(""));
 }
+
 
 class qlogic
 {
@@ -502,6 +543,18 @@ public:
         return *this;
     }
 
+    query& whereIsNull(const _TCHAR* name)
+    {
+        addLogic(name, _T("<==>"), _T(""));
+        return *this;
+    }
+
+    query& whereIsNotNull(const _TCHAR* name)
+    {
+        addLogic(name, _T("<!=>"), _T(""));
+        return *this;
+    }
+
     template <class T>
     query& and_(const _TCHAR* name, const _TCHAR* qlogic, T value)
     {
@@ -510,6 +563,18 @@ public:
                                          _T("Invalid function call."));
 
         addLogic(_T("and"), name, qlogic, lexical_cast(value).c_str());
+        return *this;
+    }
+
+    query& andIsNull(const _TCHAR* name)
+    {
+        addLogic(_T("and"), name, _T("<==>"), _T(""));
+        return *this;
+    }
+
+    query& andIsNotNull(const _TCHAR* name)
+    {
+        addLogic(_T("and"), name, _T("<!=>"), _T(""));
         return *this;
     }
 
@@ -523,6 +588,19 @@ public:
         addLogic(_T("or"), name, qlogic, lexical_cast(value).c_str());
         return *this;
     }
+
+    query& orIsNull(const _TCHAR* name)
+    {
+        addLogic(_T("or"), name, _T("<==>"), _T(""));
+        return *this;
+    }
+
+    query& orIsNotNull(const _TCHAR* name)
+    {
+        addLogic(_T("or"), name, _T("<!=>"), _T(""));
+        return *this;
+    }
+
 
     template <class T0, class T1, class T2, class T3, class T4, class T5,
               class T6, class T7>
@@ -611,6 +689,8 @@ public:
         return *this;
     }
 
+    inline query& segmentsForInValue(int v) { joinKeySize(v); return *this;}
+
     static query* create(); // implemet int activeTable.cpp
 };
 
@@ -631,11 +711,6 @@ bool DLLLIB supplyValue(pq_handle& filter, int index, int v);
 bool DLLLIB supplyValue(pq_handle& filter, int index, __int64 v);
 bool DLLLIB supplyValue(pq_handle& filter, int index, float v);
 bool DLLLIB supplyValue(pq_handle& filter, int index, double v);
-
-//bool DLLLIB supplyInValues(pq_handle& filter, const _TCHAR* values[], size_t size, int segments);
-
-
-
 
 
 #pragma warning(default : 4251)

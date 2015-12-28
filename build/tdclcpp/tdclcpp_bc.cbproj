@@ -152,8 +152,8 @@
         <FinalOutputDir>..\..\bin\</FinalOutputDir>
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
-        <TD_VER_MAJOR>2</TD_VER_MAJOR>
-        <TD_VER_MINOR>4</TD_VER_MINOR>
+        <TD_VER_MAJOR>3</TD_VER_MAJOR>
+        <TD_VER_MINOR>0</TD_VER_MINOR>
         <DllSuffix>$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
         <TD_CPU>32</TD_CPU>
     </PropertyGroup>
@@ -309,9 +309,6 @@
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\sharedData.cpp">
             <BuildOrder>13</BuildOrder>
-        </CppCompile>
-        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\sqlBuilder.cpp">
-            <BuildOrder>14</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\table.cpp">
             <BuildOrder>15</BuildOrder>

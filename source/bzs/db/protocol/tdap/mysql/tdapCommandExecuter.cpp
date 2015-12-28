@@ -140,22 +140,25 @@ std::string getTableName(const std::string& src, bool forSql)
     if (pos != std::string::npos)
     {
         pos += strlen(TableNameTitle);
-        while ((name[pos] == '/') || (name[pos] == '\\'))
+        if (name.size() > pos)
         {
-            if (++pos == name.size())
-                return "";
-        }
-        size_t pos2 = name.find(".", pos);
-        if (pos2 == std::string::npos)
-            pos2 = name.size();
-        size_t pos3 = name.find("&", pos);
-        if (pos3 != std::string::npos && (pos3 < pos2))
-            pos2 = pos3;
+            while ((name[pos] == '/') || (name[pos] == '\\'))
+            {
+                if (++pos == name.size())
+                    return "";
+            }
+            size_t pos2 = name.find(".", pos);
+            if (pos2 == std::string::npos)
+                pos2 = name.size();
+            size_t pos3 = name.find("&", pos);
+            if (pos3 != std::string::npos && (pos3 < pos2))
+                pos2 = pos3;
 
-        name = name.substr(pos, pos2 - pos);
-        if (g_tableNmaeLower)
-            toLowerCaseName(name, forSql);
-        return name;
+            name = name.substr(pos, pos2 - pos);
+            if (g_tableNmaeLower)
+                toLowerCaseName(name, forSql);
+            return name;
+        }
     }
 
     return "";
@@ -343,7 +346,7 @@ bool dbExecuter::getDatabaseWithAuth(request& req, database** db, bool connect)
 {
     *db = NULL;
     bool created = false;
-	std::string dbname = getDatabaseName(req);
+    std::string dbname = getDatabaseName(req);
     bool ret = false;
     if (connect && dbname == "")
         dbname = "mysql";
@@ -353,11 +356,11 @@ bool dbExecuter::getDatabaseWithAuth(request& req, database** db, bool connect)
     {
         *db = getDatabase(dbname.c_str(), req.cid, created);
         if (*db)
-			ret = doAuthentication(req, *db);
+            ret = doAuthentication(req, *db);
         if (connect || (created && !ret))
         {
             dbManager::releaseDatabase(req.cid);
-		    *db = NULL;
+            *db = NULL;
         }
     }else
         req.result = 1;
@@ -373,9 +376,9 @@ bool dbExecuter::connect(request& req)
     req.paramMask = 0;
     if (req.keyNum == LG_SUBOP_DISCONNECT)
     {
-		dbManager::releaseDatabase(req.cid);
-		return true;
-	}
+        dbManager::releaseDatabase(req.cid);
+        return true;
+    }
     database* db = NULL;
     bool ret = getDatabaseWithAuth(req, &db, true);
     if (ret &&  (req.result == 0) && db)
@@ -401,7 +404,8 @@ inline bool dbExecuter::doCreateTable(request& req)
         std::string cmd;
         if (isMetaDb(req))
         { // for database operation
-            if ((req.keyNum == 0) && (db->existsDatabase() == false))
+            if (((req.keyNum == CR_SUBOP_CREATE_DBONLY) || (req.keyNum == 0)) &&
+                    (db->existsDatabase() == false))
             {
                 req.result = ddl_createDataBase(db->thd(), dbSqlname);
                 if (req.result == ER_DB_CREATE_EXISTS + MYSQL_ERROR_OFFSET)
@@ -451,13 +455,13 @@ inline bool dbExecuter::doCreateTable(request& req)
                         dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
                         tableSqlName /*newName*/);
                 }
-                else
+                else if (req.keyNum != CR_SUBOP_CREATE_DBONLY)
                 { // create
                     if (req.data == NULL)
                         req.result = 1;
                     else
                     { //-1 is overwrite
-                        if (req.keyNum == CR_SUB_FLAG_EXISTCHECK)
+                        if (req.keyNum == CR_SUB_FLAG_EXISTCHECK && tableName.size())
                         {
                             req.result = ddl_dropTable(db, tableName, dbSqlname,
                                                        tableSqlName);
@@ -475,14 +479,20 @@ inline bool dbExecuter::doCreateTable(request& req)
     return ret;
 }
 
-
 // open table and assign handle
-inline bool dbExecuter::doOpenTable(request& req, bool reconnect)
+inline bool dbExecuter::doOpenTable(request& req, char* buf, bool reconnect)
 {
     database* db;
     bool ret = getDatabaseWithAuth(req, &db);
     if (ret && req.result == 0)
     {
+        short mode = req.keyNum;
+        bool getschema = IS_MODE_GETSCHEMA(mode);
+        if (getschema)
+            mode -= TD_OPEN_MASK_GETSHCHEMA; 
+        bool getDefaultImage = IS_MODE_GETDEFAULTIMAGE(mode);
+        if (getDefaultImage)
+            mode -= TD_OPEN_MASK_GETDEFAULTIMAGE; 
         table* tb = NULL;
         {// Lock open table by another thread
             boost::mutex::scoped_lock lck(g_mutex_opentable);
@@ -495,7 +505,7 @@ inline bool dbExecuter::doOpenTable(request& req, bool reconnect)
                 }
             }
              // if error occured that throw no exception
-            tb = db->openTable(getTableName(req), req.keyNum, getOwnerName(req)); 
+            tb = db->openTable(getTableName(req), mode, getOwnerName(req)); 
             if (db->stat())
                 req.result = (short_td)errorCode(db->stat());
         }
@@ -509,15 +519,56 @@ inline bool dbExecuter::doOpenTable(request& req, bool reconnect)
                 m_tb = getTable(hdl);
                 req.pbk->handle = hdl;
                 if (!reconnect)
-                {
-                    ushort_td len = m_tb->posPtrLen();
+                {   //return bookmark size
+                    req.paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN;
+                    unsigned int len = m_tb->posPtrLen();
+                    unsigned char* p = (unsigned char*)req.data;
+                    //no primary key
                     if ((m_tb->tableFlags() & HA_PRIMARY_KEY_REQUIRED_FOR_POSITION) && !m_tb->primaryKey())
                         len = 0xFFFF;
-                    memcpy(req.data, &len , sizeof(ushort_td));
+                    memcpy(p, &len , sizeof(ushort_td));
                     req.resultLen = sizeof(ushort_td);
-                    req.paramMask = P_MASK_POSBLK | P_MASK_DATA | P_MASK_DATALEN;
-                }else
-                    req.paramMask = P_MASK_POSBLK;
+                    //copy default record image
+                    if (getDefaultImage)
+                    {
+                        if (!m_tb->isMysqlNull())
+                        {
+                            req.result = STATUS_INVALID_NULLMODE;
+                            return false;
+                        }
+                        p += sizeof(ushort_td);
+                        len = m_tb->writeDefaultImage(p, *req.datalen - req.resultLen);
+                        req.resultLen += len;
+                        if (!getschema && *req.datalen != req.resultLen)
+                        {
+                            req.result = STATUS_INVALID_DATASIZE;
+                            return false;
+                        }
+                    }else if(getschema)
+                    {
+                        if (*req.datalen < 4)
+                        {
+                            req.result = STATUS_BUFFERTOOSMALL;
+                            return false;
+                        }
+                        p += sizeof(ushort_td);
+                        p[0] = 0x00;
+                        p[1] = 0x00;
+                        len = 2;
+                        req.resultLen += len;
+                    }
+                    if (getschema)
+                    {
+                        p += len;
+                        len = m_tb->writeSchemaImage(p , *req.datalen - req.resultLen);
+                        if (len == sizeof(ushort_td))
+                        {
+                            req.result = STATUS_BUFFERTOOSMALL;
+                            return false;
+                        }
+                        req.resultLen += len;
+                    }
+                }
             }
             catch (bzs::rtl::exception& e)
             {
@@ -841,42 +892,45 @@ inline short dbExecuter::seekEach(extRequestSeeks* ereq, bool noBookmark)
 
     for (int i = 0; i < ereq->logicalCount; ++i)
     {
-        m_tb->setKeyValuesPacked(fd->ptr, fd->len);
-        m_tb->seekKey(HA_READ_KEY_EXACT, keyMap);
-        if (m_tb->stat() == 0)
+        /* If NULL even any one segment, all be NULL 
+           The fd->ptr[0] is null Indicator. 
+        */
+        if (fd->null == 0)
         {
+            m_tb->setKeyValuesPacked(fd->ptr, fd->len);
+            m_tb->seekKey(HA_READ_KEY_EXACT, keyMap);
+            if (m_tb->stat() == 0)
+            {
+                if (seg)
+                {
+                    // If duplicate records , bookmark space is request row number.
+                    stat = m_readHandler->write((uchar*)&i, 4);
+                }
+                else if (noBookmark)
+                    stat = m_readHandler->write((const unsigned char *)_T("dummy"), 0);
+                else
+                    stat = m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
+            }
+            else
+                stat = m_readHandler->write(NULL, 0);
+
+            if (stat) break;
+            // for hasMany join
             if (seg)
             {
-                // If duplicate records , bookmark space is request row number.
-                stat = m_readHandler->write((uchar*)&i, 4);
+                while (m_tb->stat() == 0)
+                {
+                    m_tb->getNextSame(keyMap);
+                    if (m_tb->stat() == 0)
+                        stat = m_readHandler->write(
+                            (uchar*)&i, 4); // write seek sequential number
+                    if (stat) break;
+                }
+                if (stat) break;
             }
-            else if (noBookmark)
-                stat = m_readHandler->write((const unsigned char *)_T("dummy"), 0);
-            else
-                stat =
-                    m_readHandler->write(m_tb->position(), m_tb->posPtrLen());
-        }
-        else
+        }else
             stat = m_readHandler->write(NULL, 0);
-        if (stat)
-            break;
-
-        // for hasMany join
-        if (seg)
-        {
-            while (m_tb->stat() == 0)
-            {
-                m_tb->getNextSame(keyMap);
-                if (m_tb->stat() == 0)
-                    stat = m_readHandler->write(
-                        (uchar*)&i, 4); // write seek sequential number
-                if (stat)
-                    break;
-            }
-            if (stat)
-                break;
-        }
-
+        if (stat)  break;
         fd = fd->next();
     }
     if (stat == 0)
@@ -1078,7 +1132,7 @@ inline void dbExecuter::doStat(request& req)
         memcpy((char*)req.data, &len, sizeof(ushort_td));
         uint rows = (uint)m_tb->recordCount((req.keyNum != 0));
         memcpy((char*)req.data + 6, &rows, sizeof(uint));
-		req.result = errorCodeSht(m_tb->stat());
+        req.result = errorCodeSht(m_tb->stat());
     }
     else
         req.result = STATUS_BUFFERTOOSMALL;
@@ -1229,10 +1283,12 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.resultLen = m_tb->posPtrLen();
             break;
         case TD_RECONNECT:
-
-            if (!doOpenTable(req, true))
+            nw->resize(*req.datalen);
+            resultBuffer = nw->ptr();
+            if (!doOpenTable(req, resultBuffer, true))
             {
-                req.result = ERROR_TD_INVALID_CLINETHOST;
+                if (req.result == 0)
+                    req.result = ERROR_TD_INVALID_CLINETHOST;
                 break;
             }
             {
@@ -1348,13 +1404,16 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 trdVersiton* ver = (trdVersiton*)req.data;
                 strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
                          global_system_variables.collation_server->csname);
-                ver->srvMajor = TRANSACTD_VER_MAJOR;
-                ver->srvMinor = TRANSACTD_VER_MINOR;
-                ver->srvRelease = TRANSACTD_VER_RELEASE;
+
+                ver->desc.srvMysqlMajor = MYSQL_VERSION_ID / 10000;
+                ver->desc.srvMysqlMinor = (MYSQL_VERSION_ID / 100) % 100;
+                ver->desc.srvMysqlRelease = MYSQL_VERSION_ID % 100;
+                ver->desc.srvMajor = TRANSACTD_VER_MAJOR;
+                ver->desc.srvMinor = TRANSACTD_VER_MINOR;
+                ver->desc.srvRelease = TRANSACTD_VER_RELEASE;
                 req.resultLen = sizeof(trdVersiton);
                 req.paramMask |= P_MASK_DATA | P_MASK_DATALEN;
-            }
-            else
+            }else
                 req.result = SERVER_CLIENT_NOT_COMPATIBLE;
             break;
         }
@@ -1369,15 +1428,20 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_AUTOMEKE_SCHEMA:
             m_tb = getTable(req.pbk->handle, SQLCOM_INSERT);
-            req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb);
+            req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb, (req.keyNum==1));
             break;
         case TD_CREATETABLE:
             if (!doCreateTable(req))
                 req.result = ERROR_TD_INVALID_CLINETHOST;
             break;
         case TD_OPENTABLE:
-            if (!doOpenTable(req))
-                req.result = ERROR_TD_INVALID_CLINETHOST;
+            nw->resize(*req.datalen);
+            resultBuffer = nw->ptr();
+            if (!doOpenTable(req, nw->ptr(), false))
+            {
+                if (req.result == 0)
+                    req.result = ERROR_TD_INVALID_CLINETHOST;
+            }
             break;
         case TD_CLOSETABLE:
             m_tb = getTable(req.pbk->handle);
@@ -1426,19 +1490,23 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         }
         case TD_VERSION:
-            if (*req.datalen >= sizeof(version) * 3)
+            if (*req.datalen >= sizeof(btrVersion)* 3)
             {
-                version* v = (version*)req.data;
+                btrVersion* v = (btrVersion*)req.data;
                 ++v;
                 v->majorVersion = MYSQL_VERSION_ID / 10000;
                 v->minorVersion = (MYSQL_VERSION_ID / 100) % 100;
-                v->Type = 'M';
+                #if defined(MARIADB_BASE_VERSION)
+                    v->type = MYSQL_TYPE_MARIA;
+                #else
+                    v->type = MYSQL_TYPE_MYSQL;
+                #endif
                 ++v;
                 v->majorVersion = TRANSACTD_VER_MAJOR;
                 v->minorVersion = TRANSACTD_VER_MINOR;
-                v->Type = 'T';
+                v->type = 'T';
                 req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
-                req.resultLen = sizeof(version) * 3;
+                req.resultLen = sizeof(btrVersion)* 3;
             }
             else
                 req.result = STATUS_BUFFERTOOSMALL;
@@ -1461,6 +1529,64 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         }
         case TD_ACL_RELOAD:
             req.result = getDatabaseCid(req.cid)->aclReload();
+            break;
+        case TD_GET_SCHEMA:
+        {
+            database* db = getDatabaseCid(req.cid);
+            nw->setClientBuffferSize(*(req.datalen));
+            nw->beginExt(false);
+            char* p = nw->curPtr() - sizeof(unsigned short);// orver write row space
+            schemaBuilder sb;
+            protocol::tdap::tabledef* td = sb.getTabledef(db, getTableName(req).c_str(), 
+                    (unsigned char*)p, *req.datalen);
+            if (td)
+            {
+                nw->asyncWrite(NULL, td->varSize + sizeof(unsigned short), netsvc::server::netWriter::curSeekOnly);
+                nw->writeHeadar(P_MASK_DATA | P_MASK_DATALEN, (short_td)errorCode(db->stat()));
+                
+            }
+            else
+                nw->writeHeadar(0, errorCodeSht(sb.stat()));
+            unsigned int* totalLen = (unsigned int*)nw->ptr();
+            nw->datalen = *totalLen = nw->resultLen();
+            return EXECUTE_RESULT_SUCCESS;
+        }
+        case TD_STORE_TEST:
+        {   
+            m_tb = getTable(req.pbk->handle, SQLCOM_UPDATE);
+            bool ncc = (req.keyNum == -1);
+            m_tb->beginUpdate(req.keyNum);
+            if (m_tb->stat() == 0)
+            {
+                std::vector<std::string> ss;
+                std::string s((const char*)req.data);
+                split(ss, s, "\t");
+                if ( ss.size() >= 2)
+                {
+                    for (int i = 0; i < (int)ss.size() ; i+=2)
+                        m_tb->setValue((short)atol(ss[i].c_str()), ss[i + 1], 0);
+                    m_tb->update(ncc);
+                    req.result = errorCodeSht(m_tb->stat());
+                    req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
+                    if (!m_tb->cursor())
+                        req.paramMask |= P_MASK_PB_ERASE_BM;
+                }else
+                    req.result = STATUS_INVALID_FIELDVALUE;
+            }else
+                req.result = errorCodeSht(m_tb->stat());
+           
+            break;
+        }
+        case TD_SET_TIMESTAMP_MODE:
+        {
+            m_tb = getTable(req.pbk->handle);
+            bool always = req.keyNum == TIMESTAMP_ALWAYS;
+            m_tb->setTimestampAlways(always);
+            req.result = STATUS_SUCCESS;
+            break;
+        }
+        default:
+            req.result = STATUS_NOSUPPORT_OP;
             break;
         }
         DEBUG_WRITELOG2(op, req)
@@ -1545,7 +1671,7 @@ void makeRandomKey(unsigned char *buf, unsigned int size)
 size_t dbExecuter::getAcceptMessage(char* message, size_t size)
 {
     // make handshake packet
-	m_authChecked = false;
+    m_authChecked = false;
     assert(size >= sizeof(trdVersiton));
 
     handshale_t* hst = (handshale_t*)message;
@@ -1555,9 +1681,18 @@ size_t dbExecuter::getAcceptMessage(char* message, size_t size)
 
     strcpy_s(ver->cherserServer, sizeof(ver->cherserServer),
                 global_system_variables.collation_server->csname);
-    ver->srvMajor = TRANSACTD_VER_MAJOR;
-    ver->srvMinor = TRANSACTD_VER_MINOR;
-    ver->srvRelease = TRANSACTD_VER_RELEASE;
+    ver->desc.srvMysqlMajor = MYSQL_VERSION_ID / 10000;
+    ver->desc.srvMysqlMinor = (MYSQL_VERSION_ID / 100) % 100;
+    ver->desc.srvMysqlRelease = MYSQL_VERSION_ID % 100;
+#if defined(MARIADB_BASE_VERSION)
+    ver->desc.srvMysqlType = MYSQL_TYPE_MARIA;
+#else
+    ver->desc.srvMysqlType = MYSQL_TYPE_MYSQL;
+#endif
+    ver->desc.srvMajor = TRANSACTD_VER_MAJOR;
+    ver->desc.srvMinor = TRANSACTD_VER_MINOR;
+    ver->desc.srvRelease = TRANSACTD_VER_RELEASE;
+
     hst->transaction_isolation = (unsigned short)getTransactdIsolation();
     hst->lock_wait_timeout = getTransactdLockWaitTimeout();
     if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR) == 0)

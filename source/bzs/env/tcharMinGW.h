@@ -23,10 +23,12 @@
 #ifdef _UNICODE
 
 #define _tcsncpy_s wcsncpy_s
+#define _tcslwr _wcslwr
 
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5) // 4.5 and lesser
 #define _tcscpy_s wcscpy_s
 #define _tcscat_s wcscat_s
+#define _tcserror _wcserror
 typedef wchar_t _TUCHAR;
 #elseif __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) // 4.6 and grater
 #define _tcsstr wcsstr
@@ -41,10 +43,12 @@ typedef wchar_t _TUCHAR;
 
 #define _tcsncpy_s strncpy_s
 #define _tcsupr_s(a, b) (_strupr(a))
+#define _tcslwr _strlwr
 
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5) // 4.5 and lesser
 #define _tcscpy_s strcpy_s
 #define _tcscat_s strcat_s
+#define _tcserror strerror
 typedef char _TUCHAR;
 #elif __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) // 4.6 and grater
 #define _tcsstr strstr

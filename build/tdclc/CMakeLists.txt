@@ -55,6 +55,7 @@ endif()
 # ==========================================================
 set(${this_target}_SOURCE_FILES
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/tdapSchema.cpp
+  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/client.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/dllmain.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/sqlBuilder.cpp

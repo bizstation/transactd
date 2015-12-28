@@ -75,6 +75,48 @@ STDMETHODIMP CRecordsetQuery::Or(BSTR Name, BSTR Logic, VARIANT Value,
     return S_OK;
 }
 
+STDMETHODIMP CRecordsetQuery::WhenIsNull(BSTR Name, IRecordsetQuery** retVal)
+{
+    m_qb.whenIsNull(Name);
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CRecordsetQuery::AndIsNull(BSTR Name, IRecordsetQuery** retVal)
+{
+    m_qb.andIsNull(Name);
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CRecordsetQuery::OrIsNull(BSTR Name, IRecordsetQuery** retVal)
+{
+    m_qb.orIsNull(Name);
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CRecordsetQuery::WhenIsNotNull(BSTR Name, IRecordsetQuery** retVal)
+{
+    m_qb.whenIsNotNull(Name);
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CRecordsetQuery::AndIsNotNull(BSTR Name, IRecordsetQuery** retVal)
+{
+    m_qb.andIsNotNull(Name);
+    setResult(retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CRecordsetQuery::OrIsNotNull(BSTR Name, IRecordsetQuery** retVal)
+{
+    m_qb.orIsNotNull(Name);
+    setResult(retVal);
+    return S_OK;
+}
+
 STDMETHODIMP CSortField::get_Name(BSTR* Value)
 {
     return S_OK;

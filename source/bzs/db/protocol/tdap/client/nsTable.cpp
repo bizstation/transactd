@@ -30,10 +30,11 @@
 #pragma package(smart_init)
 
 /* TODO: To be support internal started transction with original flag.*/
-#ifdef __x86_64__
-#define MEM_FREED_MAGIC_NUMBER (nstimpl*)0x0FEEEFEEEFEEEFEEE
-#else
+
+#if (defined(__x86_32__) || defined(__APPLE_32__))
 #define MEM_FREED_MAGIC_NUMBER (nstimpl*)0x0FEEEFEEE
+#else
+#define MEM_FREED_MAGIC_NUMBER (nstimpl*)0x0FEEEFEEEFEEEFEEE
 #endif
 namespace bzs
 {
@@ -49,14 +50,15 @@ namespace client
 struct nstimpl
 {
     nstimpl()
-        : refCount(1), bulkIns(NULL), percentage(0),bookmarkLen(0),mode(0),
+        : bulkIns(NULL), refCount(1), percentage(0), bookmarkLen(0), tableid(0), mode(0),
             shared(false), isOpen(false)
     {
         memset(posblk, 0 ,POS_BLOCK_SIZE);
+        uri[0] = 0x00;
     }
-    int refCount;
     bulkInsert* bulkIns;
     nsdatabase* nsdb;
+    int refCount;
     percentage_td percentage;
     ushort_td bookmarkLen;
     bookmark_td bookmark;
@@ -211,7 +213,6 @@ void nstable::addref(void)
 
 void nstable::release()
 {
-
     /* If before called database::drop() database::close() etc then
        nstable::destory called.
        Client cache nstable pointer that is invalid.
@@ -227,6 +228,7 @@ void nstable::release()
     }
     catch (...)
     {
+
     }
 }
 
@@ -240,7 +242,8 @@ void nstable::doClose()
 {
     if (test(this) && m_impl && (m_impl->isOpen))
     {
-        tdap(TD_CLOSETABLE);
+        if (m_impl->nsdb->btrvFunc())
+            tdap(TD_CLOSETABLE);
         if (m_stat == STATUS_SUCCESS)
             m_impl->isOpen = false;
     }
@@ -366,7 +369,7 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
     else
 #endif
     {
-        if (m_impl->uri != name)
+        if (_tcscmp(m_impl->uri, name))
             _tcscpy_s(m_impl->uri, MAX_PATH, name);
     }
     // for trnasctd
@@ -396,27 +399,35 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
     else
         m_keynum = mode;
 
-    char ownerNameBuf[OWNERNAME_SIZE] = { 0x00 };
-
+    char ownerNameBuf[OWNERNAME_SIZE];// = { 0x00 };
+    uint_td size = 0;
+    char* buf = (char*)nsdb()->getExtendBufferForOpen(size);
+    if (!buf)
+        buf = ownerNameBuf;
+    
+    m_pdata = (void*)buf;
     if (NULL != ownerName && 0x00 != ownerName[0])
     {
-        const char* p2 = toChar(ownerNameBuf, ownerName, OWNERNAME_SIZE);
-        m_pdata = (void*)p2;
-        m_datalen = (uint_td)strlen(p2) + 1;
+        toCharCpy(buf, ownerName, OWNERNAME_SIZE);
+        m_datalen = (uint_td)strlen(buf) + 1;
+        
         if (m_datalen > 11)
         {
             m_stat = STATUS_TOO_LONG_OWNERNAME;
             goto clean;
         }
-        if (m_datalen < sizeof(unsigned int))
-            m_datalen = sizeof(unsigned int);/* for bookmarklen*/
+        if (m_datalen < sizeof(ushort_td))
+            m_datalen = sizeof(ushort_td);/* for bookmarklen*/
     }
     else
     {
         m_impl->bookmarkLen = 0;
-        m_pdata = &m_impl->bookmarkLen;
+        memcpy(buf, &m_impl->bookmarkLen, sizeof(ushort_td));
+        //m_pdata = &m_impl->bookmarkLen;
         m_datalen = sizeof(ushort_td);/* for bookmarklen*/
     }
+    if (size)
+        m_datalen = size;
     tdap(TD_OPENTABLE);
     if (m_stat == STATUS_SUCCESS)
     {
@@ -424,10 +435,15 @@ void nstable::doOpen(const _TCHAR* name, char_td mode, const _TCHAR* ownerName)
         m_impl->mode = mode;
         if (!isUseTransactd())
             m_impl->bookmarkLen = BTRV_BOOKMARK_SIZE;
-        else if (m_impl->bookmarkLen == 0)
-            m_impl->bookmarkLen = BTRV_BOOKMARK_SIZE;
-        else if (m_impl->bookmarkLen == 0xFFFF) //No primary
-            m_impl->bookmarkLen = 0;
+        else
+        {
+            ushort_td* p = (ushort_td*)m_pdata;
+            m_impl->bookmarkLen = *p;
+            if (m_impl->bookmarkLen == 0)
+                m_impl->bookmarkLen = BTRV_BOOKMARK_SIZE;
+            else if (m_impl->bookmarkLen == 0xFFFF) //No primary
+                m_impl->bookmarkLen = 0;
+        }
     }
 clean:
     m_keybuf = svm_keybuf;
@@ -896,7 +912,7 @@ short_td nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* TableName,
     }
 #pragma warning(default : 4996)
 
-    if ((int)hWnd <= 0)
+    if (hWnd == 0)
         return errorCode;
 
 #ifdef _WIN32
@@ -937,9 +953,11 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
         _tfullpath(buf, path, MAX_PATH);
     else
 #endif
-        stripAuth(path, buf, MAX_PATH);
-    _TUCHAR* p = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, PSEPARATOR_C);
-    _TUCHAR* p2 = (_TUCHAR*)_tcsmrchr((const _TUCHAR*)buf, '=');
+    stripAuth(path, buf, MAX_PATH);
+    _TUCHAR* p = _tcsmrchr((_TUCHAR*)buf, PSEPARATOR_C);
+    _TUCHAR* p1 = _tcsmrchr((_TUCHAR*)buf, '?');
+    if (p1 && (p1 > p)) p = p1;
+    _TUCHAR* p2 = _tcsmrchr((_TUCHAR*)buf, '=');
     if (p && p2)
     {
         if (p2 > p)
@@ -951,6 +969,14 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
         *p = 0x00;
     if (p2)
         *(p2 + 1) = 0x00;
+    if (uri && !_tcsstr(buf, _T("dbfile=")))
+    {
+        p = _tcsmrchr((_TUCHAR*)buf, '?');
+        if (!p)
+            _tcscat(buf, _T("?dbfile="));
+        else
+            _tcscat(buf, _T("dbfile="));
+    }
     return buf;
 }
 
@@ -1004,6 +1030,25 @@ bool nstable::test(nstable* p)
     {
     };
     return false;
+}
+
+void nstable::test_store(const char* values)
+{
+    void* svm_pdata = m_pdata;
+    m_stat = STATUS_SUCCESS;
+    m_keylen = m_keybuflen;
+    m_datalen = (uint_td)strlen(values) + 1;
+    m_pdata = (void*)values;
+    tdap(TD_STORE_TEST);
+    m_pdata = svm_pdata;
+}
+
+void nstable::setTimestampMode(int mode)
+{
+    char_td keynum = m_keynum;
+    m_keynum = (char_td)mode;
+    tdap(TD_SET_TIMESTAMP_MODE);
+    m_keynum = keynum;
 }
 
 } // namespace client

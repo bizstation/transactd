@@ -276,15 +276,9 @@ STDMETHODIMP CTableDef::put_FixedRecordLen(unsigned short Value)
     return S_OK;
 }
 
-STDMETHODIMP CTableDef::get_MaxRecordLen(unsigned short* Value)
+STDMETHODIMP CTableDef::get_RecordLen(unsigned short* Value)
 {
-    *Value = (*m_tabledefPtr)->maxRecordLen;
-    return S_OK;
-}
-
-STDMETHODIMP CTableDef::put_MaxRecordLen(unsigned short Value)
-{
-    (*m_tabledefPtr)->maxRecordLen = Value;
+    *Value = (*m_tabledefPtr)->recordlen();
     return S_OK;
 }
 
@@ -305,3 +299,42 @@ STDMETHODIMP CTableDef::get_Version(unsigned short* Value)
     *Value = (*m_tabledefPtr)->version;
     return S_OK;
 }
+
+STDMETHODIMP CTableDef::get_FieldNumByName(BSTR Name, short* Value)
+{
+    *Value = (*m_tabledefPtr)->fieldNumByName(Name);
+    return S_OK;
+}
+
+STDMETHODIMP CTableDef::get_Nullfields(short* Value)
+{
+    *Value = (*m_tabledefPtr)->nullfields();
+    return S_OK;
+}
+
+STDMETHODIMP CTableDef::get_InUse(short* Value)
+{
+    *Value = (*m_tabledefPtr)->inUse();
+    return S_OK;
+}
+
+STDMETHODIMP CTableDef::get_MysqlNullMode(VARIANT_BOOL* Value)
+{
+    *Value = (*m_tabledefPtr)->isMysqlNullMode();
+    return S_OK;
+}
+
+STDMETHODIMP CTableDef::get_Size(int* Value)
+{
+    *Value = (*m_tabledefPtr)->size();
+    return S_OK;
+}
+
+STDMETHODIMP CTableDef::SetValidationTarget(VARIANT_BOOL isMariadb, short srvMinorVersion)
+{
+    (*m_tabledefPtr)->setValidationTarget(isMariadb, (uchar_td)srvMinorVersion);
+    return S_OK;
+}
+
+
+

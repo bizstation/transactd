@@ -25,7 +25,7 @@
 #include "bulkInsert.h"
 #include <bzs/db/protocol/tdap/tdapRequest.h>
 #include <bzs/rtl/strtrim.h>
-#include <bzs/db/protocol/tdap/myDateTime.cpp>
+#include <bzs/db/protocol/tdap/myDateTime.h>
 #include <bzs/rtl/stringBuffers.h>
 #include "stringConverter.h"
 #include <boost/timer.hpp>
@@ -80,16 +80,19 @@ struct tbimpl
 
     struct
     {
-        unsigned char exBookMarking : 1;
+        unsigned char exBookMarking   : 1;
         unsigned char smartUpDateFlag : 1;
-        unsigned char dataPacked : 1;
+        unsigned char dataPacked      : 1;
+        unsigned char useIncrimented  : 1;
+        unsigned char getSchemaOpen   : 1;
     };
 
     tbimpl(table& tb)
         : bookMarks(NULL), fields(tb), rc(NULL), mraPtr(NULL),
           dataBak(NULL), smartUpDate(NULL), bfAtcPtr(NULL), optionalData(NULL),
           dataBufferLen(0), bookMarksMemSize(0), maxBookMarkedCount(0),
-          onRecordCountFunc(NULL), smartUpDateFlag(false), dataPacked(false)
+          onRecordCountFunc(NULL), smartUpDateFlag(false), dataPacked(false), useIncrimented(false),
+          getSchemaOpen(false)
     {
         memset(&keyNumIndex[0], 0, 128);
     }
@@ -118,15 +121,6 @@ struct tbimpl
             return bookMarks + pos;
         return NULL;
     }
-
-    /*inline bookmark_td* bookmarksPtr(unsigned int index)
-    {
-        boost::mutex::scoped_lock lck(bookmarkMutex);
-        unsigned int pos = index * 6 + 2;
-        if ((index < maxBookMarkedCount) && bookMarks)
-            return (bookmark_td*)((char*)bookMarks + pos);
-        return NULL;
-    }*/
 
     inline short insertBookmarks(unsigned int start, void* data, ushort_td len,
                          ushort_td count)
@@ -295,34 +289,43 @@ public:
         if (!mra) return;
         if (m_rowCount)
         {
-
             unsigned char* bd = NULL; //blob data
-            if (m_filter->hasManyJoin())
+            if (m_filter->hasManyJoin() && 
+                    ((mra->joinType() & mra_innerjoin) || mra->joinType() & mra_outerjoin))
                 hasManyJoinMra(m_rowCount, data);
             size_t recordLen = m_filter->fieldSelected()
                                     ? m_filter->totalFieldLen()
-                                    : m_tb->tableDef()->maxRecordLen;
+                                    : m_tb->tableDef()->recordlen();
             mra->init(m_rowCount, recordLen, m_memblockType, m_tb);
             if (hd)
-                bd = mra->allocBlobBlock(hd->dataSize);       
+                bd = mra->allocBlobBlock(hd->dataSize);
             
             // copy each row data
             int bookmarkSize = m_filter->bookmarkSize();
             const tabledef* td = m_tb->tableDef();
             ushort_td fieldCount = m_filter->fieldCount();
             m_tmpPtr = mra->ptr(m_row, mra_current_block);
-
+            int selNullbytes = m_filter->selectedNullbytes();
             while (m_row < m_rowCount)
             {
                 if ((m_len == 0) && m_filter->isSeeksMode() && fieldCount)
-                    mra->setInvalidRecord(m_row, true);
+                    mra->setInvalidMemblock(m_row, true);
                 else
                 {
                     if (m_filter->fieldSelected())
                     {
-                        uchar_td* fieldPtr = m_ptr;
                         int resultOffset = 0;
                         int blobFieldNum = 0;
+                        uchar_td* fieldPtr = m_ptr;
+
+                        //Copy null bytes
+                        if (selNullbytes)
+                        {
+                            memcpy(m_tmpPtr, fieldPtr, selNullbytes);
+                            fieldPtr += selNullbytes;
+                            resultOffset += selNullbytes;
+                        }
+                        
                         for (int i = 0; i < fieldCount; i++)
                         {
                             const fielddef& fd =
@@ -341,7 +344,7 @@ public:
                     {
                         if (m_tb->valiableFormatType())
                         {
-                            memset(m_tmpPtr, 0, td->maxRecordLen);
+                            memset(m_tmpPtr, 0, td->recordlen());
                             memcpy(m_tmpPtr, m_ptr, m_len);
                             m_unpackLen = td->unPack((char*)m_tmpPtr, m_len);
                         }
@@ -399,7 +402,7 @@ public:
         {
 
             m_seekMultiStat = STATUS_NOT_FOUND_TI;
-            memset(m_tmpPtr, 0, td->maxRecordLen);
+            memset(m_tmpPtr, 0, td->recordlen());
             return m_tmpPtr;
         }
         else
@@ -407,20 +410,34 @@ public:
             m_seekMultiStat = 0;
             if (m_filter->fieldSelected())
             {
-                int resultOffset = 0;
-                uchar_td* fieldPtr = m_ptr;
-                memset(m_tmpPtr, 0, td->maxRecordLen);
+                int selNullbytes = m_filter->selectedNullbytes();
+                uchar_td* fieldPtr = m_ptr + selNullbytes;
+                memset(m_tmpPtr, 0, td->recordlen());
+                int nullfields = 0;
                 for (int i = 0; i < fieldCount; i++)
                 {
                     const fielddef& fd =
                         td->fieldDefs[m_filter->selectFieldIndexes()[i]];
-                    resultOffset = fd.pos;
-                    fieldPtr += fd.unPackCopy(m_tmpPtr + resultOffset, fieldPtr);
+                    fieldPtr += fd.unPackCopy(m_tmpPtr + fd.pos + td->nullbytes(), fieldPtr);
+
+                    //Copy null results
+                    if (selNullbytes && fd.isNullable() && fd.nullbytes())
+                    {
+                        uchar_td* p = m_ptr + (nullfields + 7) / 8;
+                        bool nullResult = (*p & (1L << (nullfields % 8))) != 0;
+                        p = m_tmpPtr + (fd.nullbit() / 8);
+                        int bit = fd.nullbit() % 8 ;
+                        if (nullResult)
+                            (*p) |= (unsigned char)(1L << bit);
+                        else
+                            (*p) &= (unsigned char)~(1L << bit);
+                        ++nullfields;
+                    }
                 }
             }
             else if (m_tb->valiableFormatType())
             {
-                memset(m_tmpPtr, 0, td->maxRecordLen);
+                memset(m_tmpPtr, 0, td->recordlen());
                 memcpy(m_tmpPtr, m_ptr, m_len);
                 m_unpackLen = td->unPack((char*)m_tmpPtr, m_len);
             }
@@ -481,6 +498,11 @@ table::table(nsdatabase* pbe) : nstable(pbe)
 
 table::~table()
 {
+    if (m_impl->useIncrimented)
+    {
+        if (((database*)nsdb())->dbDef())
+            --((*m_tableDef)->m_inUse);
+    }
     delete m_impl->rc;
     m_fddefs->release();
     delete m_impl;
@@ -494,7 +516,7 @@ void* __STDCALL table::DDBA(client::table* tb, uint_td size)
 void* table::doDdba(uint_td size)
 {
     if (m_impl->filterPtr)
-        size += tableDef()->maxRecordLen;;
+        size += tableDef()->recordlen();
     return reallocDataBuffer(size);
 }
 
@@ -765,7 +787,7 @@ void table::btrvGetExtend(ushort_td op)
         if (m_impl->rc->rowCount() && (!m_impl->exBookMarking))
         {
             m_pdata = (void*)m_impl->rc->setRow(0);
-            m_datalen = tableDef()->maxRecordLen;
+            m_datalen = tableDef()->recordlen();
 
             m_stat = m_impl->rc->seekMultiStat();
         }else if (!filter->isStatContinue())
@@ -862,7 +884,7 @@ bool table::doSeekMultiAfter(int row)
     else if (!checkStatus(m_stat))
         return false;
     if (m_stat)
-        m_impl->mraPtr->setInvalidRecord(row, true);
+        m_impl->mraPtr->setInvalidMemblock(row, true);
     else
     {
         uchar_td* dst = m_impl->mraPtr->ptr(row, mra_current_block);
@@ -893,7 +915,7 @@ void table::btrvSeekMulti()
     m_impl->rc->reset();
     size_t recordLen = m_impl->filterPtr->fieldSelected()
                            ? m_impl->filterPtr->totalSelectFieldLen()
-                           : tableDef()->maxRecordLen;
+                           : tableDef()->recordlen();
     if (!hasManyJoin)
         m_impl->mraPtr->init(seeks.size(), recordLen, mra_first, this);
 
@@ -932,7 +954,7 @@ void table::btrvSeekMulti()
                 }
             }
             else
-                m_impl->mraPtr->setInvalidRecord(0, true);
+                m_impl->mraPtr->setInvalidMemblock(0, true);
         }
         else
         {
@@ -984,7 +1006,7 @@ void table::doFind(ushort_td op, bool notIncCurrent)
             setSeekValueField(row);
 
         // m_datalen = m_impl->rc->len();
-        m_datalen = tableDef()->maxRecordLen;
+        m_datalen = tableDef()->recordlen();
     }
     else if (m_impl->rc->isEndOfRow(row))
     {
@@ -1218,11 +1240,19 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount,
     }
 }
 
-void table::clearBuffer()
+void table::clearBuffer(eNullReset resetType)
 {
     m_impl->rc->reset();
     m_pdata = m_impl->dataBak;
-    memset(m_pdata, 0x00, m_buflen);
+    tabledef* td = (*m_tableDef);
+    if (td->isMysqlNullMode() && td->defaultImage)
+    {
+        memcpy(m_pdata, td->defaultImage, m_buflen);
+        if (resetType == clearNull)
+            memset(m_pdata, 0x00, td->nullbytes());    
+    }
+    else
+        memset(m_pdata, 0x00, m_buflen);
     if ((bulkIns() == NULL) && blobFieldUsed())
         resetSendBlob();
 }
@@ -1266,7 +1296,7 @@ void table::doCreateIndex(bool SpecifyKeyNum)
     {
         uint_td len = m_datalen;
         m_pdata = (*m_tableDef);  
-        m_datalen = (*m_tableDef)->varSize + 4;
+        m_datalen = (*m_tableDef)->size();
         // tdclc check datalen, m_pdata is tabledef if bigger than sizeof(keySpec) * 8 
         if (m_datalen <= sizeof(keySpec) * 8)
             m_datalen = sizeof(keySpec) * 8 + 10; 
@@ -1291,10 +1321,10 @@ void table::doCreateIndex(bool SpecifyKeyNum)
 void table::smartUpdate()
 {
     if (!m_impl->smartUpDate)
-        m_impl->smartUpDate = malloc((*m_tableDef)->maxRecordLen);
+        m_impl->smartUpDate = malloc((*m_tableDef)->recordlen());
     if (m_impl->smartUpDate)
     {
-        memcpy(m_impl->smartUpDate, data(), (*m_tableDef)->maxRecordLen);
+        memcpy(m_impl->smartUpDate, data(), (*m_tableDef)->recordlen());
         m_impl->smartUpDateFlag = true;
     }
     else
@@ -1338,7 +1368,7 @@ bool table::onUpdateCheck(eUpdateType type)
     else if (m_impl->smartUpDateFlag)
     {
         m_stat = 0;
-        if (memcmp(m_impl->smartUpDate, data(), (*m_tableDef)->maxRecordLen) == 0)
+        if (memcmp(m_impl->smartUpDate, data(), (*m_tableDef)->recordlen()) == 0)
         {
             m_impl->smartUpDateFlag = false;
             return false;
@@ -1401,7 +1431,7 @@ void* table::attachBuffer(void* NewPtr, bool unpack, size_t size)
         m_impl->bfAtcPtr = m_pdata;
     oldptr = m_pdata;
     m_pdata = NewPtr;
-    ushort_td len = (*m_tableDef)->maxRecordLen; 
+    ushort_td len = (*m_tableDef)->recordlen();
     if (unpack)
         len = (*m_tableDef)->unPack((char*)m_pdata, size);
     m_datalen = len;
@@ -1415,18 +1445,32 @@ void table::dettachBuffer()
     m_impl->bfAtcPtr = NULL;
 }
 
-void table::init(tabledef** Def, short fnum, bool regularDir)
+inline void table::incTabledefRefCount(tabledef* td, bool mysqlMullmode)
 {
-    doInit(Def, fnum, regularDir);
+    if (m_impl->useIncrimented == false)
+    {
+        td->m_mysqlNullMode = mysqlMullmode;
+        if (td->m_inUse == 0)
+            td->calcReclordlen();
+        ++td->m_inUse;
+        m_impl->useIncrimented = true;
+    }
 }
 
-void table::doInit(tabledef** Def, short fnum, bool /*regularDir*/)
+void table::init(tabledef** Def, short fnum, bool regularDir, bool mysqlnull)
+{
+    doInit(Def, fnum, regularDir, mysqlnull);
+}
+
+void table::doInit(tabledef** Def, short fnum, bool /*regularDir*/, bool mysqlnull)
 {
     m_tableDef = Def;
     tabledef* td = *m_tableDef; 
+
+    incTabledefRefCount(td, mysqlnull);
     m_fddefs->addAllFileds(td);
     m_fddefs->cv()->setCodePage(mysql::codePage(td->charsetIndex));
-    ushort_td len = td->maxRecordLen;
+    ushort_td len = td->recordlen();
     if (len == 0)
     {
         m_stat = STATUS_INVALID_RECLEN;
@@ -1455,13 +1499,16 @@ keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
         uchar_td* start = to;
         if (keySize == 0)
             keySize = keydef.segmentCount;
-
+        bool transactd = isUseTransactd();
         for (int j = 0; j < keySize; j++)
         {
             int fdnum = keydef.segments[j].fieldNum;
+            FLAGS f = keydef.segments[j].flags;
+            bool isNull = getFVNull(fdnum);
+            if ((f.bit9 | f.bit3) && (transactd == true))
+                isNull = false;
             fielddef& fd = (*m_tableDef)->fieldDefs[fdnum];
-            uchar_td* from = (uchar_td*)m_pdata + fd.pos;
-            to = fd.keyCopy(to, from);
+            to = fd.keyCopy(to, (uchar_td*)fieldPtr(fdnum), 0xff, isNull);
         }
         return (keylen_td)(to - start);
     }
@@ -1472,7 +1519,6 @@ keylen_td table::writeKeyData()
 {
     return writeKeyDataTo((uchar_td*)m_impl->keybuf, 0);
 }
-
 
 uint_td table::unPack(char* ptr, size_t size)
 {
@@ -1491,7 +1537,7 @@ uint_td table::doGetWriteImageLen()
     tabledef* td = (*m_tableDef);
     if (!blobFieldUsed() && !valiableFormatType() &&
         (td->flags.bit0 == false))
-        return td->maxRecordLen;
+        return td->recordlen();
     // Make blob pointer list
     if (blobFieldUsed())
     {
@@ -1512,7 +1558,7 @@ uint_td table::doGetWriteImageLen()
         addSendBlob(NULL);
 
     if (valiableFormatType())
-        return pack((char*)m_pdata, td->maxRecordLen);
+        return pack((char*)m_pdata, td->recordlen());
     else
     {
         fielddef* fd = &td->fieldDefs[td->fieldCount - 1];
@@ -1633,11 +1679,11 @@ void table::onReadAfter()
         const blobHeader* hd = getBlobHeader();
         setBlobFieldPointer((char*)m_pdata, hd);
     }
-    if ((*m_tableDef)->maxRecordLen - m_datalen > 0)
-        memset((char*)m_pdata + m_datalen, 0, (*m_tableDef)->maxRecordLen - m_datalen);
+    if ((*m_tableDef)->recordlen() - m_datalen > 0)
+        memset((char*)m_pdata + m_datalen, 0, (*m_tableDef)->recordlen() - m_datalen);
 }
 
-short table::fieldNumByName(const _TCHAR* name)
+short table::fieldNumByName(const _TCHAR* name) const
 {
     return m_fddefs->indexByName(name);
 }
@@ -1646,14 +1692,14 @@ void* table::fieldPtr(short index) const
 {
     if (!checkIndex(index))
         return NULL;
-    return m_impl->fields[index].ptr();
+    return m_impl->fields.getFieldNoCheck(index).ptr();
 }
 
 void table::setFVA(short index, const char* data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFVA(data);
+    m_impl->fields.getFieldNoCheck(index).setFVA(data);
 }
 
 #ifdef _WIN32
@@ -1662,7 +1708,7 @@ void table::setFVW(short index, const wchar_t* data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFVW(data);
+    m_impl->fields.getFieldNoCheck(index).setFVW(data);
 }
 
 void table::setFVW(const _TCHAR* FieldName, const wchar_t* data)
@@ -1670,7 +1716,7 @@ void table::setFVW(const _TCHAR* FieldName, const wchar_t* data)
     short index = fieldNumByName(FieldName);
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFVW(data);
+    m_impl->fields.getFieldNoCheck(index).setFVW(data);
 }
 
 #endif //_WIN32
@@ -1687,14 +1733,14 @@ void table::setFV(short index, int data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFV(data);
+    m_impl->fields.getFieldNoCheck(index).setFV(data);
 }
 
 void table::setFV(short index, double data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFV(data);
+    m_impl->fields.getFieldNoCheck(index).setFV(data);
 }
 
 void table::setFV(short index, short data)
@@ -1713,100 +1759,100 @@ void table::setFV(short index, float data)
     setFV(index, value);
 }
 
-short table::getFVsht(short index)
+short table::getFVsht(short index) const
 {
     return (short)getFVlng(index);
 }
 
-int table::getFVlng(short index)
+int table::getFVlng(short index) const
 {
     if (!checkIndex(index))
         return 0;
-    return m_impl->fields[index].getFVlng();
+    return m_impl->fields.getFieldNoCheck(index).getFVlng();
 }
 
-float table::getFVflt(short index)
+float table::getFVflt(short index) const
 {
     return (float)getFVdbl(index);
 }
 
-double table::getFVdbl(short index)
+double table::getFVdbl(short index) const
 {
     if (!checkIndex(index))
         return 0;
-    return m_impl->fields[index].getFVdbl();
+    return m_impl->fields.getFieldNoCheck(index).getFVdbl();
 }
 
-unsigned char table::getFVbyt(short index)
+unsigned char table::getFVbyt(short index) const
 {
     return (unsigned char)getFVlng(index);
 }
 
 #ifdef _WIN32
 
-const wchar_t* table::getFVWstr(short index)
+const wchar_t* table::getFVWstr(short index) const
 {
     if (!checkIndex(index))
         return NULL;
-    return m_impl->fields[index].getFVWstr();
+    return m_impl->fields.getFieldNoCheck(index).getFVWstr();
 }
 
-const wchar_t* table::getFVWstr(const _TCHAR* FieldName)
+const wchar_t* table::getFVWstr(const _TCHAR* FieldName) const
 {
     short index = fieldNumByName(FieldName);
     return getFVWstr(index);
 }
 #endif //_WIN32
 
-const char* table::getFVAstr(short index)
+const char* table::getFVAstr(short index) const
 {
     if (index == -1)
         return NULL;
-    return m_impl->fields[index].getFVAstr();
+    return m_impl->fields.getFieldNoCheck(index).getFVAstr();
 }
 
-int table::getFVint(short index)
+int table::getFVint(short index) const
 {
     return (int)getFVlng(index);
 }
 
-int table::getFVint(const _TCHAR* FieldName)
+int table::getFVint(const _TCHAR* FieldName) const
 {
     short index = fieldNumByName(FieldName);
     return (int)getFVlng(index);
 }
 
-int table::getFVlng(const _TCHAR* FieldName)
+int table::getFVlng(const _TCHAR* FieldName) const
 {
     short index = fieldNumByName(FieldName);
     return getFVlng(index);
 }
 
-const char* table::getFVAstr(const _TCHAR* FieldName)
+const char* table::getFVAstr(const _TCHAR* FieldName) const
 {
     short index = fieldNumByName(FieldName);
     return getFVAstr(index);
 }
 
-double table::getFVdbl(const _TCHAR* FieldName)
+double table::getFVdbl(const _TCHAR* FieldName) const
 {
     short index = fieldNumByName(FieldName);
     return getFVdbl(index);
 }
 
-unsigned char table::getFVbyt(const _TCHAR* FieldName)
+unsigned char table::getFVbyt(const _TCHAR* FieldName) const
 {
     short index = fieldNumByName(FieldName);
     return getFVbyt(index);
 }
 
-short table::getFVsht(const _TCHAR* FieldName)
+short table::getFVsht(const _TCHAR* FieldName) const
 {
     short index = fieldNumByName(FieldName);
     return getFVsht(index);
 }
 
-float table::getFVflt(const _TCHAR* FieldName)
+float table::getFVflt(const _TCHAR* FieldName) const
 {
     short index = fieldNumByName(FieldName);
     return getFVflt(index);
@@ -1848,7 +1894,7 @@ void table::setFV(const _TCHAR* FieldName, short data)
     setFV(index, data);
 }
 
-__int64 table::getFV64(const _TCHAR* FieldName)
+__int64 table::getFV64(const _TCHAR* FieldName) const
 {
     short index = fieldNumByName(FieldName);
     return getFV64(index);
@@ -1860,24 +1906,50 @@ void table::setFV(const _TCHAR* FieldName, __int64 data)
     setFV(index, data);
 }
 
-__int64 table::getFV64(short index)
+__int64 table::getFV64(short index) const
 {
     if (!checkIndex(index))
         return 0;
-    return m_impl->fields[index].getFV64();
+    return m_impl->fields.getFieldNoCheck(index).getFV64();
 }
 
 void table::setFV(short index, __int64 data)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFV(data);
+    m_impl->fields.getFieldNoCheck(index).setFV(data);
 }
 
 void table::setFV(const _TCHAR* FieldName, const void* data, uint_td size)
 {
     short index = fieldNumByName(FieldName);
     setFV(index, data, size);
+}
+
+bool table::getFVNull(short index) const
+{
+    if (!checkIndex(index))
+        return false;
+    return m_impl->fields.getFieldNoCheck(index).isNull();
+}
+
+bool table::getFVNull(const _TCHAR* FieldName) const
+{
+    short index = fieldNumByName(FieldName);
+    return getFVNull(index);
+}
+
+void table::setFVNull(short index, bool v)
+{
+    if (!checkIndex(index))
+        return;
+    m_impl->fields.getFieldNoCheck(index).setNull(v);
+}
+
+void table::setFVNull(const _TCHAR* FieldName, bool v)
+{
+    short index = fieldNumByName(FieldName);
+    setFVNull(index, v);
 }
 
 /* if blob and text ,set binary data that is only set pointer. it is not copied.
@@ -1887,10 +1959,10 @@ void table::setFV(short index, const void* data, uint_td size)
 {
     if (!checkIndex(index))
         return;
-    m_impl->fields[index].setFV(data, size);
+    m_impl->fields.getFieldNoCheck(index).setFV(data, size);
 }
 
-void* table::getFVbin(const _TCHAR* FieldName, uint_td& size)
+void* table::getFVbin(const _TCHAR* FieldName, uint_td& size) const
 {
     short index = fieldNumByName(FieldName);
     return getFVbin(index, size);
@@ -1899,11 +1971,11 @@ void* table::getFVbin(const _TCHAR* FieldName, uint_td& size)
 /* offset is writen at data that is first address of data
  *  text is not converted to unicode form stored charset.
  */
-void* table::getFVbin(short index, uint_td& size)
+void* table::getFVbin(short index, uint_td& size) const
 {
     if (!checkIndex(index))
         return NULL;
-    return m_impl->fields[index].getFVbin(size);
+    return m_impl->fields.getFieldNoCheck(index).getFVbin(size);
 }
 
 bool table::checkIndex(short index) const
@@ -1951,11 +2023,6 @@ bookmark_td table::bookmarks(unsigned int index) const
     }
     return bm;
 }
-
-/*bookmark_td* table::bookmarksPtr(unsigned int index) const
-{
-    return m_impl->bookmarksPtr(index);
-}*/
 
 short_td table::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 {
@@ -2566,6 +2633,12 @@ int makeSupplyValues(const _TCHAR* values[], int size,
 {
     if (size == 0) return 0;
     memset(values, sizeof(_TCHAR*), size);
+    if (value == NULL)
+    {
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR,
+                                         _T("Invalid the value, The value is NULL."));
+        //return 0;
+    }
     values[0] = value;
     if (size < 2 || !value1) return 1;
     values[1] = value1;
@@ -2597,6 +2670,12 @@ bool supplyValues(pq_handle& filter, const _TCHAR* values[], int size)
 
 bool supplyValue(pq_handle& filter, int index, const _TCHAR* v)
 {
+    if (v == NULL)
+    {
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILTERSTRING_ERROR,
+                                         _T("Invalid the supplyValue, The supplyValue is NULL."));
+        //return 0;
+    }
     return filter->supplyValue(index, v);
 }
 

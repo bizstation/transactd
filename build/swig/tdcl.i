@@ -77,7 +77,6 @@ validatablePointerList g_vPtrList;
 #include <bzs/rtl/datetime.h>
 #include <bzs/rtl/stringBuffers.h>
 #include <bzs/rtl/strtrim.h>
-#include <bzs/db/protocol/tdap/btrDate.h>
 #include <bzs/db/protocol/tdap/myDateTime.cpp>
 #include <bzs/db/protocol/tdap/client/sharedData.h>
 #include <bzs/db/protocol/tdap/tdapcapi.h>
@@ -311,6 +310,8 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/protocol/tdap/client/database.h *
 %ignore bzs::db::protocol::tdap::client::database::operator=;
 %ignore bzs::db::protocol::tdap::client::database::defaultAutoIncSpace;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable(short, _TCHAR const *);
+%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable(short);
   // NOTE: ignore * STATIC * create only
 %ignore bzs::db::protocol::tdap::client::database::create();
   // create and release methods for database class
@@ -359,6 +360,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::dbdef::pushBackup;
 %ignore bzs::db::protocol::tdap::client::dbdef::relateData;
 %ignore bzs::db::protocol::tdap::client::dbdef::setStat;
+%ignore bzs::db::protocol::tdap::client::dbdef::tableDefPtr;
 %ignore bzs::db::protocol::tdap::client::dbdef::tdapErr;
 
 // * bzs/db/protocol/tdap/client/field.h *
@@ -374,8 +376,25 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::field::isCompPartAndMakeValue;
 %ignore bzs::db::protocol::tdap::client::field::offsetBlobPtr;
 %ignore bzs::db::protocol::tdap::client::field::ptr;
+%ignore bzs::db::protocol::tdap::client::field::i8;
+%ignore bzs::db::protocol::tdap::client::field::i16;
+%ignore bzs::db::protocol::tdap::client::field::f;
+%ignore bzs::db::protocol::tdap::client::field::a_str;
 %ignore bzs::db::protocol::tdap::client::fielddefs::create;
+%ignore bzs::db::protocol::tdap::client::fielddefs::addAllFileds;
+%ignore bzs::db::protocol::tdap::client::fielddefs::addSelectedFields;
 %ignore bzs::db::protocol::tdap::client::getFieldType;
+
+  // bitset for field class
+%extend bzs::db::protocol::tdap::client::field {
+  bitset* getBits() const {
+    bitset* b = new bitset(self->i64());
+    return b;
+  }
+};
+%ignore bzs::db::protocol::tdap::client::field::getBits;
+
+
   // create and release methods for fielddefs class
 %extend bzs::db::protocol::tdap::client::fielddefs {
   fielddefs() {
@@ -551,6 +570,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::sum::~sum;
 
 // * bzs/db/protocol/tdap/client/memRecord.h *
+%ignore ROW_MEM_BLOCK_RESERVE;
 %ignore bzs::db::protocol::tdap::client::autoMemory;
 %ignore bzs::db::protocol::tdap::client::autoMemory::operator=;
 %ignore bzs::db::protocol::tdap::client::JOINLIMIT_PER_RECORD;
@@ -574,7 +594,8 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/protocol/tdap/client/nsDatabase.h *
 %ignore bzs::db::protocol::tdap::client::nsdatabase::btrvFunc;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::operator=;
-%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable(fileSpec *, uint_td, const _TCHAR *, short_td);
+%ignore bzs::db::protocol::tdap::client::nsdatabase::createTable(fileSpec *, uint_td, const _TCHAR *);
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrVersion(btrVersions*, uchar_td*);
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getDllUnloadCallbackFunc;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::isTestPtrIgnore;
@@ -587,7 +608,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrvEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::setBtrvEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::tdapErr;
-
+%ignore bzs::db::protocol::tdap::client::reconnectSharedConnection;
 
 // * bzs/db/protocol/tdap/client/nsTable.h *
 %ignore bzs::db::protocol::tdap::client::nstable::buflen;
@@ -597,6 +618,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nstable::setStat;
 %ignore bzs::db::protocol::tdap::client::nstable::tdap;
 %ignore bzs::db::protocol::tdap::client::nstable::test;
+%ignore bzs::db::protocol::tdap::client::nstable::test_store;
 %ignore bzs::db::protocol::tdap::client::nstable::throwError;
 %ignore bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, _TCHAR* retbuf=NULL);
 %ignore bzs::db::protocol::tdap::client::nstable::tdapErr(HWND hWnd, short_td status, const _TCHAR* tableName = NULL, _TCHAR* retbuf = NULL);
@@ -651,7 +673,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::queryBase::addLogic;
 %ignore bzs::db::protocol::tdap::client::queryBase::addSeekKeyValuePtr;
 %ignore bzs::db::protocol::tdap::client::queryBase::create;
-%ignore bzs::db::protocol::tdap::client::queryBase::joinKeySize;
 %ignore bzs::db::protocol::tdap::client::queryBase::queryBase;
 %ignore bzs::db::protocol::tdap::client::queryBase::~queryBase;
 %ignore bzs::db::protocol::tdap::client::queryBase::reserveSeekKeyValuePtrSize;
@@ -668,7 +689,17 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::table::setMra;
 %ignore bzs::db::protocol::tdap::client::table::setFVA;
 %ignore bzs::db::protocol::tdap::client::table::getFVAstr;
+%ignore bzs::db::protocol::tdap::client::table::getFVWstr;
+%ignore bzs::db::protocol::tdap::client::table::getFVbyt;
+%ignore bzs::db::protocol::tdap::client::table::getFVsht;
+%ignore bzs::db::protocol::tdap::client::table::getFVlng;
+%ignore bzs::db::protocol::tdap::client::table::getFVflt;
 %ignore bzs::db::protocol::tdap::client::table::insertBookmarks;
+%ignore null_str;
+%ignore KEYVALUE_PTR;
+%ignore KEYVALUE_STR;
+%ignore KEYVALUE_NEED_COPY;
+%ignore KEYVALUE_STR_NEED_COPY;
 
   // create and release methods for query class
 %extend bzs::db::protocol::tdap::client::query {
@@ -708,11 +739,30 @@ using namespace bzs::db::protocol::tdap::client;
   void setPrepare(preparedQuery* q) {
     self->setPrepare(q->getFilter());
   }
+
+  bitset* getFVbits(short index) {
+    bitset* b = new bitset(self->getFV64(index));
+    return b;
+  }
+
+  bitset* getFVbits(const _TCHAR* fieldName) {
+    bitset* b = new bitset(self->getFV64(fieldName));
+    return b;
+  }
+
+  void setFV(const bitset& v) {
+    self->setFV(v.i64());
+  }
+
+
 };
   // ignore original methods
 %ignore bzs::db::protocol::tdap::client::table::prepare;
 %ignore bzs::db::protocol::tdap::client::table::setQuery;
 %ignore bzs::db::protocol::tdap::client::table::setPrepare;
+%ignore bzs::db::protocol::tdap::client::table::tableDefPtr;
+%ignore bzs::db::protocol::tdap::client::table::getFVbits;
+
   // create and release methods for table class
 %extend bzs::db::protocol::tdap::client::table {
   void release() {
@@ -802,6 +852,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::host;
 %ignore bzs::db::protocol::tdap::client::dbname;
 %ignore bzs::db::protocol::tdap::client::schemaTable;
+%ignore bzs::db::protocol::tdap::client::synchronizeSeverSchema;
 
 // * bzs/db/protocol/tdap/client/trdormapi.h *
 %ignore bzs::db::protocol::tdap::client::setValue;
@@ -941,18 +992,77 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore trdVersiton;
 %ignore handshale_t;
 %ignore MYSQL_SCRAMBLE_LENGTH;
+%ignore MYSQL_USERNAME_MAX;
+%ignore HST_OPTION_NO_SCRAMBLE;
+%ignore clsrv_ver;
+%ignore TD_VER_DB;
+%ignore TD_VER_SERVER;
+%ignore TD_VAR_LISTENADDRESS;
+%ignore TD_VAR_LISTENPORT;
+%ignore TD_VAR_HOSTCHECKNAME;
+%ignore TD_VAR_MAXTCPCONNECTIONS;
+%ignore TD_VAR_TABLENAMELOWER;
+%ignore TD_VAR_POOLTHREADS;
+%ignore TD_VAR_TCPSERVERTYPE;
+%ignore TD_VAR_LOCKWAITTIMEOUT;
+%ignore TD_VAR_ISOLATION;
+%ignore TD_VAR_AUTHTYPE;
+%ignore TD_VAR_PIPESHAREMEMSIZE;
+%ignore TD_VAR_MAXPIPECONNECTIONS;
+%ignore TD_VAR_USEPIPE;
+%ignore TD_VAR_HSLISTENPORT;
+%ignore TD_VAR_USEHS;
+%ignore TD_VAR_TIMESTAMPMODE;
+%ignore TD_VAR_SIZE;
+%ignore ft_mytime_num_cmp;
+%ignore ft_mydatetime_num_cmp;
+%ignore ft_mytimestamp_num_cmp;
+%ignore DFV_TIMESTAMP_DEFAULT_ASTR;
+%ignore DFV_TIMESTAMP_DEFAULT_WSTR;
+%constant unsigned char MYSQL_TYPE_MYSQL = 77;
+%constant unsigned char MYSQL_TYPE_MARIA = 65;
+%ignore MYSQL_TYPE_MYSQL;
+%ignore MYSQL_TYPE_MARIA;
+
 
 // * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore DLLUNLOADCALLBACK_PTR;
 %ignore dllUnloadCallback;
+%ignore TABLEDEF_FILLER_SIZE;
+%ignore MYSQL_FDNAME_SIZE;
+%ignore MYSQL_TBNAME_SIZE;
+%ignore PERVASIVE_FDNAME_SIZE;
+%ignore FIELD_NAME_SIZE;
+%ignore TABLE_NAME_SIZE;
+%ignore FILE_NAME_SIZE;
+%ignore PAD_CHAR_OPTION_SAVED;
+%ignore USE_PAD_CHAR;
+%ignore TRIM_PAD_CHAR;
+%ignore FIELD_OPTION_NULLABLE;
+%ignore DEFAULT_VALUE_SIZE;
+%ignore VER_IDX_CLINET;
+%ignore VER_IDX_DB_SERVER;
+%ignore VER_IDX_PLUGIN;
+%ignore FIELD_OPTION_MARIADB;
+%ignore FIELD_OPTION_REGACY_TIME;
+%ignore bzs::db::protocol::tdap::updateTimeStampStr;
+%ignore bzs::db::protocol::tdap::updateTimeStampStr;
+%ignore bzs::db::protocol::tdap::dataLen;
+%ignore bzs::db::protocol::tdap::blobDataLen;
+%ignore bzs::db::protocol::tdap::blobLenBytes;
+%ignore bzs::db::protocol::tdap::timeStampDefaultStr;
 %ignore bzs::db::protocol::tdap::keySpec;
 %ignore bzs::db::protocol::tdap::fileSpec;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataPtr;
 %ignore bzs::db::protocol::tdap::fielddef::blobDataLen;
+%ignore bzs::db::protocol::tdap::fielddef::blobLenBytes;
 %ignore bzs::db::protocol::tdap::fielddef::chainChar;
 %ignore bzs::db::protocol::tdap::fielddef::dataLen;
+%ignore bzs::db::protocol::tdap::fielddef::defaultValue_str;
+%ignore bzs::db::protocol::tdap::fielddef::defaultValue64;
 %ignore bzs::db::protocol::tdap::fielddef::getKeyValueFromKeybuf;
 %ignore bzs::db::protocol::tdap::fielddef::isBlob;
+%ignore bzs::db::protocol::tdap::fielddef::isLegacyTimeFormat;
 %ignore bzs::db::protocol::tdap::fielddef::keyCopy;
 %ignore bzs::db::protocol::tdap::fielddef::keyData;
 %ignore bzs::db::protocol::tdap::fielddef::keyDataLen;
@@ -963,7 +1073,8 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::fielddef::setNameA;
 %ignore bzs::db::protocol::tdap::fielddef::unPackCopy;
 %ignore bzs::db::protocol::tdap::fielddef::varLenByteForKey;
-%ignore bzs::db::protocol::tdap::fielddef_t::defValue;
+%ignore bzs::db::protocol::tdap::fielddef::varLenBytes;
+%ignore bzs::db::protocol::tdap::fielddef::operator==;
 %ignore bzs::db::protocol::tdap::fielddef_t::defViewWidth;
 %ignore bzs::db::protocol::tdap::fielddef_t::enableFlags;
 %ignore bzs::db::protocol::tdap::fielddef_t::filterId;
@@ -983,6 +1094,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::tabledef::iconIndex;
 %ignore bzs::db::protocol::tdap::tabledef::iconIndex2;
 %ignore bzs::db::protocol::tdap::tabledef::iconIndex3;
+%ignore bzs::db::protocol::tdap::tabledef::isLegacyTimeFormat;
 %ignore bzs::db::protocol::tdap::tabledef::optionFlags;
 %ignore bzs::db::protocol::tdap::tabledef::parentKeyNum;
 %ignore bzs::db::protocol::tdap::tabledef::replicaKeyNum;
@@ -991,6 +1103,26 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::tabledef::treeIndex;
 %ignore bzs::db::protocol::tdap::tabledef::setFileNameA;
 %ignore bzs::db::protocol::tdap::tabledef::setTableNameA;
+%ignore bzs::db::protocol::tdap::tabledef::toChar;
+%ignore bzs::db::protocol::tdap::tabledef::nullbytes;
+%ignore bzs::db::protocol::tdap::tabledef::unPack;
+%ignore bzs::db::protocol::tdap::tabledef::parent;
+%ignore bzs::db::protocol::tdap::tabledef::fieldDefs;
+%ignore bzs::db::protocol::tdap::tabledef::keyDefs;
+%ignore bzs::db::protocol::tdap::tabledef::operator==;
+%ignore bzs::db::protocol::tdap::keydef::operator==;
+%ignore bzs::db::protocol::tdap::btrVersion::isSupportDateTimeTimeStamp;
+%ignore bzs::db::protocol::tdap::btrVersion::isSupportMultiTimeStamp;
+%ignore bzs::db::protocol::tdap::btrVersion::isMariaDB;
+%ignore bzs::db::protocol::tdap::btrVersion::isMysql56TimeFormat;
+%ignore bzs::db::protocol::tdap::btrVersion::isFullLegacyTimeFormat;
+%rename(equals) bzs::db::protocol::tdap::bitset::operator==;
+%ignore bzs::db::protocol::tdap::bitset::operator[];
+%ignore bzs::db::protocol::tdap::bitset::internalValue;
+%ignore bzs::db::protocol::tdap::bitset::bitset(__int64 v);
+
+
+
   // add methods
 %extend bzs::db::protocol::tdap::keydef {
   keySegment* segment(const int index)
@@ -1015,6 +1147,14 @@ using namespace bzs::db::protocol::tdap::client;
   }
 }
 %ignore bzs::db::protocol::tdap::fielddef::name;
+%extend bzs::db::protocol::tdap::fielddef {
+  const char* defaultValue() const
+  {
+     return self->defaultValue_str();
+  }
+}
+%ignore bzs::db::protocol::tdap::fielddef::defaultValue;
+
 %extend bzs::db::protocol::tdap::btrVersions {
   btrVersion* version(const int index) {
     return &(self->versions[index]);
@@ -1109,8 +1249,24 @@ using namespace bzs::db::protocol::tdap::client;
 %clear _TCHAR* retbuf;
 // --
 
+// database::getSqlStringForCreateTable
+%typemap(in, numinputs=0) (char* retbuf, uint_td* size)
+{
+  uint_td n = 65000;
+  uint_td* n_p = &n;
+  char* p = new char[n];
+  $1 = p;
+  $2 = n_p;
+}
+%typemap(freearg) (char* retbuf, uint_td* size)
+{
+  delete [] $1;
+}
 
 %include bzs/db/protocol/tdap/client/database.h
+%clear const _TCHAR* tableName, char* retbuf, uint_td* size;
+// --
+
 %include bzs/rtl/benchmark.h
 %include bzs/db/protocol/tdap/mysql/characterset.h
 

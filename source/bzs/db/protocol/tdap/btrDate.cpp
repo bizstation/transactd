@@ -16,13 +16,12 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include <bzs/env/compiler.h>
-#include <bzs/env/tstring.h>
 #include "btrDate.h"
 #include <bzs/rtl/datetime.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <bzs/env/crosscompile.h>
 
 #ifdef LINUX
 #include <bzs/env/mbcswchrLinux.h>
@@ -209,99 +208,107 @@ const char* dateFormatString(const char*)
 {
     return "%04d/%02d/%02d";
 }
-const wchar_t* dateFormatString(const wchar_t*)
-{
-    return L"%04d/%02d/%02d";
-}
 
 const char* dateFormatString_h(const char*)
 {
     return "%04d-%02d-%02d";
-}
-const wchar_t* dateFormatString_h(const wchar_t*)
-{
-    return L"%04d-%02d-%02d";
 }
 
 const char* timeFormatString(const char*)
 {
     return "%02d:%02d:%02d";
 }
-const wchar_t* timeFormatString(const wchar_t*)
-{
-    return L"%02d:%02d:%02d";
-}
 
-const char* timeFormatString_h(const char*)
+/*const char* timeFormatString_h(const char*)
 {
     return "%02d-%02d-%02d";
-}
-const wchar_t* timeFormatString_h(const wchar_t*)
-{
-    return L"%02d-%02d-%02d";
-}
+}*/
 
 template <class T> size_t _tcslen_(const T* p);
+
+template <class T> int _ttoi_(const T* p);
 
 template <> size_t _tcslen_(const char* p)
 {
     return strlen(p);
 }
-template <> size_t _tcslen_(const wchar_t* p)
-{
-    return wcslen(p);
-}
-
-template <class T> int _ttoi_(const T* p);
 
 template <> int _ttoi_(const char* p)
 {
     return atoi(p);
 }
-template <> int _ttoi_(const wchar_t* p)
-{
-    return _wtoi(p);
-}
 
-template <class T> T* formatDate(T* p, const btrDate& d, bool type_vb);
+template <class T> T* formatDate(T* p, const btrDate& d, bool w3_format);
 
-template <> char* formatDate(char* p, const btrDate& d, bool type_vb)
+template <> char* formatDate(char* p, const btrDate& d, bool w3_format)
 {
-    if (type_vb)
+    if (w3_format)
         sprintf_s(p, 20, dateFormatString_h(p), d.yy, d.mm, d.dd);
     else
         sprintf_s(p, 20, dateFormatString(p), d.yy, d.mm, d.dd);
     return p;
 }
 
-template <> wchar_t* formatDate(wchar_t* p, const btrDate& d, bool type_vb)
+template <class T> T* formatTime(T* p, const btrTime& t/*, bool w3_format*/);
+
+template <> char* formatTime(char* p, const btrTime& t/*, bool w3_format*/)
 {
-    if (type_vb)
+    /*if (w3_format)
+        sprintf_s(p, 20, timeFormatString_h(p), t.hh, t.nn, t.ss);
+    else*/
+        sprintf_s(p, 20, timeFormatString(p), t.hh, t.nn, t.ss);
+    return p;
+}
+
+#ifdef _WIN32
+const wchar_t* dateFormatString(const wchar_t*)
+{
+    return L"%04d/%02d/%02d";
+}
+
+const wchar_t* dateFormatString_h(const wchar_t*)
+{
+    return L"%04d-%02d-%02d";
+}
+
+const wchar_t* timeFormatString(const wchar_t*)
+{
+    return L"%02d:%02d:%02d";
+}
+
+/*const wchar_t* timeFormatString_h(const wchar_t*)
+{
+    return L"%02d-%02d-%02d";
+}*/
+
+template <> size_t _tcslen_(const wchar_t* p)
+{
+    return wcslen(p);
+}
+
+template <> int _ttoi_(const wchar_t* p)
+{
+    return _wtoi(p);
+}
+
+template <> wchar_t* formatDate(wchar_t* p, const btrDate& d, bool w3_format)
+{
+    if (w3_format)
         swprintf_s(p, 20, dateFormatString_h(p), d.yy, d.mm, d.dd);
     else
         swprintf_s(p, 20, dateFormatString(p), d.yy, d.mm, d.dd);
     return p;
 }
 
-template <class T> T* formatTime(T* p, const btrTime& d, bool type_vb);
-
-template <> char* formatTime(char* p, const btrTime& t, bool type_vb)
+template <> wchar_t* formatTime(wchar_t* p, const btrTime& t/*, bool w3_format*/)
 {
-    if (type_vb)
-        sprintf_s(p, 20, timeFormatString_h(p), t.hh, t.nn, t.ss);
-    else
-        sprintf_s(p, 20, timeFormatString(p), t.hh, t.nn, t.ss);
-    return p;
-}
-
-template <> wchar_t* formatTime(wchar_t* p, const btrTime& t, bool type_vb)
-{
-    if (type_vb)
+    /*if (w3_format)
         swprintf_s(p, 20, timeFormatString_h(p), t.hh, t.nn, t.ss);
-    else
+    else*/
         swprintf_s(p, 20, timeFormatString(p), t.hh, t.nn, t.ss);
     return p;
 }
+#endif
 
 template <class T> btrDate atobtrd(const T* date)
 {
@@ -318,20 +325,20 @@ template <class T> btrDate atobtrd(const T* date)
     return bt;
 }
 
-template <class T> const T* btrdtoa(const btrDate& d, T* retbuf, bool type_vb)
+template <class T> const T* btrdtoa(const btrDate& d, T* retbuf, bool w3_format)
 {
     T* p = retbuf;
     if (p == NULL)
         p = (T*)databuf();
-    return formatDate(p, d, type_vb);
+    return formatDate(p, d, w3_format);
 }
 
-template <class T> const T* btrttoa(const btrTime& t, T* retbuf, bool type_vb)
+template <class T> const T* btrttoa(const btrTime& t, T* retbuf/*, bool w3_format*/)
 {
     T* p = retbuf;
     if (p == NULL)
         p = (T*)databuf();
-    return formatTime(p, t, type_vb);
+    return formatTime(p, t/*, w3_format*/);
 }
 
 template <class T> btrTime atobtrt(const T* p)
@@ -354,14 +361,29 @@ btrDate atobtrd(const char* p)
     return atobtrd<char>(p);
 }
 
-const char* btrdtoa(const btrDate& d, char* retbuf, bool type_vb)
+const char* btrdtoa(const btrDate& d, char* retbuf, bool w3_format)
 {
-    return btrdtoa<char>(d, retbuf, type_vb);
+    return btrdtoa<char>(d, retbuf, w3_format);
 }
 
-const char* btrttoa(const btrTime& t, char* retbuf, bool type_vb)
+const char* btrttoa(const btrTime& t, char* retbuf/*, bool w3_format*/)
 {
-    return btrttoa<char>(t, retbuf, type_vb);
+    return btrttoa<char>(t, retbuf/*, w3_format*/);
+}
+
+const char* btrstoa(const btrDateTime& s, char* retbuf, bool w3_format)
+{
+    char* p = retbuf;
+    const btrDate& d = s.date;
+    const btrTime& t = s.time;
+    if (p == NULL) p = (char*)databuf();
+    if (w3_format)
+        sprintf_s(p, 21, ("%04d-%02d-%02dT%02d:%02d:%02d"), d.yy, d.mm,
+                    d.dd, t.hh, t.nn, t.ss);
+    else
+        sprintf_s(p, 21, ("%04d/%02d/%02d %02d:%02d:%02d"), d.yy, d.mm,
+                    d.dd, t.hh, t.nn, t.ss);
+    return p;
 }
 
 btrTime atobtrt(const char* p)
@@ -370,14 +392,29 @@ btrTime atobtrt(const char* p)
 }
 
 #ifdef _WIN32
-const wchar_t* btrdtoa(const btrDate& d, wchar_t* retbuf, bool type_vb)
+const wchar_t* btrdtoa(const btrDate& d, wchar_t* retbuf, bool w3_format)
 {
-    return btrdtoa<wchar_t>(d, retbuf, type_vb);
+    return btrdtoa<wchar_t>(d, retbuf, w3_format);
 }
 
-const wchar_t* btrttoa(const btrTime& t, wchar_t* retbuf, bool type_vb)
+const wchar_t* btrttoa(const btrTime& t, wchar_t* retbuf/*, bool w3_format*/)
 {
-    return btrttoa<wchar_t>(t, retbuf, type_vb);
+    return btrttoa<wchar_t>(t, retbuf/*, w3_format*/);
+}
+
+const wchar_t* btrstoa(const btrDateTime& s, wchar_t* retbuf, bool w3_format)
+{
+    wchar_t* p = retbuf;
+    const btrDate& d = s.date;
+    const btrTime& t = s.time;
+    if (p == NULL) p = (wchar_t*)databuf();
+    if (w3_format)
+        swprintf_s(p, 21, L"%04d-%02d-%02dT%02d:%02d:%02d", d.yy, d.mm,
+                    d.dd, t.hh, t.nn, t.ss);
+    else
+        swprintf_s(p, 21, L"%04d/%02d/%02d %02d:%02d:%02d", d.yy, d.mm,
+                    d.dd, t.hh, t.nn, t.ss);
+    return p;
 }
 
 btrDate atobtrd(const wchar_t* p)
@@ -392,35 +429,33 @@ btrTime atobtrt(const wchar_t* p)
 
 #endif
 
-const _TCHAR* btrstoa(const btrDateTime& s, _TCHAR* retbuf, bool type_vb)
-{
-    _TCHAR* p = retbuf;
-    const btrDate& d = s.date;
-    const btrTime& t = s.time;
-    if (p == NULL)
-        p = databuf();
-    ;
-    if (type_vb)
-        _stprintf_s(p, 21, _T("%04d-%02d-%02dT%02d:%02d:%02d"), d.yy, d.mm,
-                    d.dd, t.hh, t.nn, t.ss);
-    else
-        _stprintf_s(p, 21, _T("%04d/%02d/%02d %02d:%02d:%02d"), d.yy, d.mm,
-                    d.dd, t.hh, t.nn, t.ss);
-    return p;
-}
-
-btrDateTime atobtrs(const _TCHAR* p)
+btrDateTime atobtrs(const char* p)
 {
     btrDateTime s;
     s.i64 = 0;
     s.date = atobtrd(p);
-    const _TCHAR* tmp = _tcsstr(p, _T("T"));
+    const char* tmp = strstr(p, "T");
     if (tmp)
         s.time = atobtrt(tmp + 1);
-    else if ((tmp = _tcsstr(p, _T(" "))) != NULL)
+    else if ((tmp = strstr(p, " ")) != NULL)
         s.time = atobtrt(tmp + 1);
     return s;
 }
+
+#ifdef _WIN32
+btrDateTime atobtrs(const wchar_t* p)
+{
+    btrDateTime s;
+    s.i64 = 0;
+    s.date = atobtrd(p);
+    const wchar_t* tmp = wcsstr(p, L"T");
+    if (tmp)
+        s.time = atobtrt(tmp + 1);
+    else if ((tmp = wcsstr(p, L" ")) != NULL)
+        s.time = atobtrt(tmp + 1);
+    return s;
+}
+#endif
 
 int getNowDate()
 {

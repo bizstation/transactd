@@ -71,8 +71,7 @@ bool readInputValues(const char* filename,
     FILE* fp = fopen(filename, "rt");
     if (!fp)
     {
-        _ftprintf(stderr, _T("Error ! Can not open the input file (%s)\n"),
-                  filename);
+        fprintf(stderr, "Error ! Can not open the input file (%s)\n", filename);
         return false;
     }
     char tmp[5];
@@ -215,7 +214,7 @@ int _tmain(int argc, _TCHAR* argv[])
         if (pm.print)
             printResult(rs);
         char tmp[120];
-        sprintf_s(tmp, 120, "OK, %lu record(s) :", rs.size());
+        sprintf_s(tmp, 120, "OK, %lu record(s) :", (unsigned long)rs.size());
         bzs::rtl::benchmark::showTimes(t, tmp);
 
         fflush(stdout);

@@ -39,6 +39,8 @@ namespace protocol
 namespace tdap
 {
 
+/** @cond INTERNAL */
+
 inline const _TCHAR* protocol(const _TCHAR* uri)
 {
     const _TCHAR* st = _tcsstr(uri, _T("tdap://"));
@@ -117,13 +119,15 @@ inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf, size_t size)
     if (st)
     {
         st = _tcsstr(st + 3, _T("/"));
-        if (st)
+        if (st && *(++st))
         {
-            const _TCHAR* en = _tcsstr(st + 1, _T("?"));
+            const _TCHAR* en = _tcsstr(st, _T("?"));
+            if (!en)
+                en = _tcslen(st) + st;
             if (en && en > st)
             {
-                _tcsncpy_s(buf, size, st + 1, en - (st + 1));
-                buf[en - (st + 1)] = 0x00;
+                _tcsncpy_s(buf, size, st, en - st);
+                buf[en - st] = 0x00;
             }
         }
     }
@@ -133,17 +137,17 @@ inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf, size_t size)
 inline const _TCHAR* schemaTable(const _TCHAR* uri, _TCHAR* buf, size_t size)
 {
     buf[0] = 0x00;
-    const _TCHAR* st = _tcsstr(uri, _T("dbfile="));
+    _TCHAR* st = _tcsstr((_TCHAR*)uri, _T("dbfile="));
     if (st)
     {
         st+= 7;
-        const _TCHAR* en = _tcsrchr(uri, _T('.'));
+        _tcscpy_s(buf, size, st);
+        st = _tcschr(buf, _T('&'));
+        if (st) *st = 0x00;
+        st = buf;
+        const _TCHAR* en = _tcsrchr(st, _T('.'));
         if (en && en > st)
-        {
-            _tcsncpy_s(buf, size, st, en - st);
             buf[en - st] = 0x00;
-        }else if (_tcsstr(st, TRANSACTD_SCHEMANAME))
-            _tcscpy_s(buf, size, TRANSACTD_SCHEMANAME);
     }
     return buf;
 }
@@ -169,9 +173,44 @@ inline const _TCHAR* userName(const _TCHAR* uri, _TCHAR* buf, size_t size)
 inline const _TCHAR* passwd(const _TCHAR* uri, _TCHAR* buf, size_t size)
 {
     buf[0] = 0x00;
-    const _TCHAR* st = _tcsstr(uri, _T("pwd="));
+    _TCHAR* st = _tcsstr((_TCHAR*)uri, _T("pwd="));
     if (st)
+    {
         _tcscpy_s(buf, size, st+4);
+        st = _tcschr(buf, _T('&'));
+        if (st) *st = 0x00;
+    }
+    return buf;
+}
+
+
+inline _TCHAR* stripParam(const _TCHAR* uri, _TCHAR* buf, size_t size)
+{
+    buf[0] = 0x00;
+    _TCHAR* st = _tcsstr((_TCHAR*)uri, _T("://"));
+    if (st)
+    {
+        st = _tcsstr(st + 3, _T("/"));
+        if (st && *(++st))
+        {
+            _tcscpy_s(buf, size, uri);
+            _TCHAR* en = _tcschr(buf, _T('?'));
+            if (en) *en = 0x00;
+        }
+    }
+    return buf;
+}
+
+inline const _TCHAR* stripPasswd(const _TCHAR* uri, _TCHAR* buf, size_t size)
+{
+    _tcscpy_s(buf, size, uri);
+    _TCHAR* st = _tcsstr(buf, _T("://"));
+    if (st)
+    {
+        st = _tcsstr(st, _T("pwd="));
+        if (st)
+            *(st + 4) = 0x00;
+    }
     return buf;
 }
 
@@ -191,40 +230,8 @@ inline const _TCHAR* stripAuth(const _TCHAR* uri, _TCHAR* buf, size_t size)
             else
             {
                 st2 = _tcsstr(st, _T("?pwd="));
-                if (st2) *st2 = 0x00;
+                if (st2) *(st2 + 1) = 0x00;
             }
-        }
-    }
-    return buf;
-}
-
-inline const _TCHAR* stripPasswd(const _TCHAR* uri, _TCHAR* buf, size_t size)
-{
-    _tcscpy_s(buf, size, uri);
-    _TCHAR* st = _tcsstr(buf, _T("://"));
-    if (st)
-    {
-        st = _tcsstr(st, _T("pwd="));
-        if (st)
-            *(st + 4) = 0x00;
-    }
-    return buf;
-}
-
-inline const _TCHAR* stripPasswdParam(const _TCHAR* uri, _TCHAR* buf, size_t size)
-{
-    _tcscpy_s(buf, size, uri);
-    _TCHAR* st = _tcsstr(buf, _T("://"));
-    if (st)
-    {
-        _TCHAR* st2 = _tcsstr(st, _T("&pwd="));
-        if (st2)
-            *(st2) = 0x00;
-        else
-        {
-            st2 = _tcsstr(st, _T("?pwd="));
-            if (st2)
-                *(st2) = 0x00;
         }
     }
     return buf;
@@ -324,6 +331,7 @@ inline unsigned char* hexTobin(unsigned char* retVal, const char *src, int size)
     return retVal;
 }
 
+/** @endcond */
 
 } // namespace tdap
 } // namespace protocol

@@ -19,7 +19,8 @@
 #include "field.h"
 #include "fields.h"
 #include "nsDatabase.h"
-#include <bzs/db/protocol/tdap/myDateTime.cpp>
+#include <bzs/db/protocol/tdap/btrDate.h>
+#include <bzs/db/protocol/tdap/myDateTime.h>
 #include <bzs/db/protocol/tdap/fieldComp.h>
 #include "stringConverter.h"
 #include <bzs/rtl/stringBuffers.h>
@@ -45,6 +46,270 @@ namespace tdap
 {
 namespace client
 {
+typedef int int32;
+class myDecimal
+{
+    int32 m_data[8];
+    int32 m_sign;
+    uchar_td m_digit;
+    uchar_td m_dec;
+    uchar_td m_intBytes;
+    uchar_td m_decBytes;
+    uchar_td m_intSurplusBytes;
+    uchar_td m_decSurplusBytes;
+    uchar_td m_error;
+
+    int32 changeEndian(int32 v, int len)
+    {
+        int32 ret = 0;
+        char* l = (char*)&ret;
+        char* r = (char*)&v;
+        if (len == 4) {
+            l[0] = r[3]; l[1] = r[2]; l[2] = r[1]; l[3] = r[0];
+        }else if (len == 3) {
+            l[0] = r[2]; l[1] = r[1]; l[2] = r[0];
+        }else if (len == 2) {
+            l[0] = r[1]; l[1] = r[0];
+        }else if (len == 1)
+            ret = v;
+        return ret;
+    }
+    
+    int32 readInt32One(const char* ptr, int len)
+    {
+        int32 v = *((int32*)ptr);
+        return  changeEndian(v ^ m_sign, len) ;
+    }
+
+    int32 readSurplus(const char* ptr, int len)
+    {
+        assert(len <= 4);
+        int32 v = 0;
+        switch(len)
+        {
+        case 1: v = *((char*)ptr); break;
+        case 2: v = *((short*)ptr); break;
+        case 3: v = (*((int32*)ptr) & 0x00FFFFFF); break;
+        case 4: v = *((int32*)ptr); break;
+        }
+        return readInt32One((const char*)&v, len);
+    }
+    
+    char* write(char* ptr, int len, int32 v)
+    {
+        v = changeEndian(v, len) ^ m_sign;
+        memcpy(ptr, &v , len);
+        return ptr + len; 
+    }
+    
+    int32 fromString(const char* p, size_t len)
+    {
+        assert(len <= 9);
+        char tmp[10]={0};
+        strncpy(tmp, p, len);
+        return atoi(tmp);
+    }
+
+public:
+    myDecimal(uchar_td digit, uchar_td dec) : m_sign(0), m_digit(digit), m_dec(dec), m_error(0) 
+    {
+        assert(sizeof(int32) == 4);
+        assert(digit > 0);
+        assert(m_digit <= 65);
+        assert(m_dec <= 30);
+
+        // integer part
+        int dig = digit - dec;
+        m_intSurplusBytes = (uchar_td)decimalBytesBySurplus[dig % DIGITS_INT32];
+        m_intBytes = (uchar_td)((dig / DIGITS_INT32) * sizeof(int32));
+
+        // dec part
+        m_decSurplusBytes = (uchar_td)(decimalBytesBySurplus[dec % DIGITS_INT32]);
+        m_decBytes = (uchar_td)((dec / DIGITS_INT32) * sizeof(int32));
+    }
+    
+    void store(char* ptr)
+    {
+        int32* data = m_data;
+        char* p = ptr;
+        if (m_intSurplusBytes)
+            p = write(p, m_intSurplusBytes, *(data++));
+        for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+            p = write(p, sizeof(int32), *(data++));
+        for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+            p = write(p, sizeof(int32), *(data++));
+        if (m_decSurplusBytes)
+            write(p, m_decSurplusBytes, *data);
+        //reverse first bit
+        *(ptr) ^= 0x80;
+    }
+    
+    void read(const char* ptr)
+    {
+        m_sign = ((*ptr) & 0x80) ? 0 : -1;
+        int32* data = m_data;
+        const char* p = ptr;
+        //reverse first bit
+        *(const_cast<char*>(ptr)) ^= 0x80;
+        if (m_intSurplusBytes)
+        {
+            *(data++) = readSurplus(p, m_intSurplusBytes);
+            p += m_intSurplusBytes;
+        }
+        for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+        {
+            *(data++) = readInt32One(p, sizeof(int32));
+            p += sizeof(int32);
+        }
+        for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+        {
+            *(data++) = readInt32One(p, sizeof(int32));
+            p += sizeof(int32);
+        }
+        if (m_decSurplusBytes)
+            *data = readSurplus(p, m_decSurplusBytes);
+        //restore first bit
+        *(const_cast<char*>(ptr)) ^= 0x80;
+    }
+
+    char* toString(char* ptr, size_t size)
+    {
+        // This function is internal use only.
+        assert(size >= (size_t)m_digit + 1);
+
+        char* p = ptr;
+        if (m_sign)
+            *(p++) = '-';
+        char* p_cache = p;
+        *p = '0';
+        int32* data = m_data;
+        if (m_intSurplusBytes)
+        {
+            if (*data)
+                p += sprintf(p, "%d", *data);
+            ++data;
+        }
+        for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+        {
+            if (*data || p != p_cache)
+                p += sprintf(p, p != p_cache ? "%09d" : "%d", *data);
+            ++data;
+        }
+        if (p_cache == p) ++p;
+        if (m_dec)
+        {
+            int dec_n = m_dec;
+            *(p++) = '.';
+            for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+            {
+                p += sprintf(p, "%09d", *(data++));
+                dec_n -= DIGITS_INT32;
+            }
+            if (m_decSurplusBytes)
+                p += sprintf(p, "%0*d", dec_n, *data);
+        }
+        return ptr;
+    }
+ 
+    myDecimal& operator=(const char* p)
+    {
+        m_error = 0;
+        m_sign = (*p) == '-' ? -1 : 0;
+        if (m_sign) ++p;
+        const char* point = strchr(p, '.');
+        
+        int32* data = m_data;
+        memset(m_data, 0, sizeof(m_data));
+        char tmp[67];
+        if (m_digit - m_dec)
+        {
+            size_t intchars = point ? (point - p) : strlen(p);
+            int offset = (m_digit - m_dec) - (int)intchars;
+            if (offset < 0 || (intchars + offset > 65))
+            {
+                m_error = STATUS_TOO_LARGE_VALUE;
+                return *this;
+            }
+            if (offset)
+            {
+                sprintf(tmp, "%0*d%s", offset, 0, p);
+                p = tmp;
+            }
+            int len = (m_digit - m_dec) % DIGITS_INT32;
+            *(data++) = fromString(p, len);
+            p += len;
+            for (int i = 0; i < (int)(m_intBytes/sizeof(int32)) ; ++i)
+            {
+                *(data++) =  fromString(p, DIGITS_INT32);
+                p += DIGITS_INT32;
+            }
+        }
+        if (point)
+        {
+            p = point + 1;
+            size_t len = strlen(p);
+            if (len < (size_t)m_dec)
+            {
+                sprintf(tmp, "%s000000000", p);
+                p = tmp;
+            }
+            const char* endp = len + p;
+            for (int i = 0; i < (int)(m_decBytes/sizeof(int32)) ; ++i)
+            {
+                *(data++) =  fromString(p, DIGITS_INT32);
+                p += DIGITS_INT32;
+                if (p > endp) break;
+            }
+            if (p <= endp)
+                *data =  fromString(p, endp - p + 1);
+        }
+        return *this;
+    }
+
+    double d()
+    {
+        char tmp[100];
+        return atof(toString(tmp, 100));
+    }
+
+    __int64 i64()
+    {
+        char tmp[100];
+        return _atoi64(toString(tmp, 100));
+    }
+
+#ifdef _WIN32
+    wchar_t* toString(wchar_t* ptr, int size)
+    {
+        char tmp[100];
+        toString(tmp, 100);
+        MultiByteToWideChar(CP_ACP, 0, tmp, -1, ptr, size);
+        return ptr;
+    }
+
+    myDecimal& operator=(const wchar_t* p)
+    {
+        char tmp[100];
+        WideCharToMultiByte(CP_ACP, 0, p, -1, tmp, 100, NULL, NULL);
+        return operator=(tmp);
+    }
+#endif
+
+    myDecimal& operator=(const double v)
+    {
+        char tmp[100];
+        sprintf_s(tmp, 100, "%.*lf", m_dec, v);
+        return operator=(tmp);
+    }
+
+    myDecimal& operator=(const __int64 v)
+    {
+        char tmp[100];
+        sprintf_s(tmp, 100, "%lld", v);
+        return operator=(tmp);
+    }
+};
+
 
 //------------------------------------------------------------------------------
 //       class fieldShare
@@ -103,10 +368,10 @@ struct infoImple
     std::vector<fielddef> fields;
     boost::unordered_map<std::_tstring, int> map;
     const aliasMap_type* aliasMap;
-
-    infoImple() : aliasMap(NULL) {}
+    int  mysqlnullEnable;
+    infoImple() : aliasMap(NULL), mysqlnullEnable(0){}
     infoImple(const infoImple& r)
-        : fields(r.fields), map(r.map), aliasMap(r.aliasMap){};
+        : fields(r.fields), map(r.map), aliasMap(r.aliasMap), mysqlnullEnable(r.mysqlnullEnable){};
 };
 
 fielddefs::fielddefs() : fieldShare(), m_imple(new infoImple)
@@ -123,9 +388,7 @@ fielddefs::fielddefs(const fielddefs& r)
 fielddefs& fielddefs::operator=(const fielddefs& r)
 {
     if (this != &r)
-    {
         *m_imple = *r.m_imple;
-    }
     return *this;
 }
 
@@ -155,18 +418,39 @@ void fielddefs::setAliases(const aliasMap_type* p)
     m_imple->aliasMap = p;
 }
 
-void fielddefs::addAllFileds(tabledef* def)
+/* calcFieldPos used by recordsetQuery::init()
+   Query values hold in a memoryRecord.
+   And used by this->addSelectedFields().
+*/
+void fielddefs::calcFieldPos(int startIndex, bool mysqlNull)
 {
-    m_imple->fields.clear();
-    for (int i = 0; i < def->fieldCount; ++i)
+    ushort_td pos = 0;
+    int nullfields = 0;
+    for (size_t i = startIndex;i < m_imple->fields.size(); ++i)
     {
-        fielddef* fd = &def->fieldDefs[i];
-        fd->setPadCharDefaultSettings();
-        push_back(fd);
+        fielddef* fd = &m_imple->fields[i];
+        fd->pos = pos;
+        pos += fd->len;
+        fd->m_nullbytes = 0;
+        fd->m_nullbit = 0;
+        if (fd->isNullable())
+        {
+            fd->m_nullbit = nullfields;
+            if (mysqlNull)
+                ++nullfields;
+            else
+                fd->setNullable(false);
+        }
+    }
+    if (nullfields)
+    {
+        int nullbytes = (nullfields + 7) / 8;
+        for (size_t i = startIndex ;i < m_imple->fields.size(); ++i)
+            m_imple->fields[i].m_nullbytes = nullbytes;
     }
 }
 
-void fielddefs::push_back(const fielddef* p, bool rePosition)
+void fielddefs::push_back(const fielddef* p)
 {
     m_imple->fields.push_back(*p);
     int index = (int)m_imple->fields.size() - 1;
@@ -175,17 +459,8 @@ void fielddefs::push_back(const fielddef* p, bool rePosition)
     // convert field name of table charset to recordset schema charset.
     _TCHAR tmp[FIELD_NAME_SIZE * 3];
     pp->setName(p->name(tmp));
-
-    if (rePosition)
-    {
-        if (index == 0)
-            pp->pos = 0;
-        else
-        {
-            fielddef* bf = &m_imple->fields[index - 1];
-            pp->pos = bf->pos + bf->len;
-        }
-    }
+    if (pp->isNullable() && pp->nullbytes())
+        ++m_imple->mysqlnullEnable;
     // reset update indicator
     pp->enableFlags.bitE = false;
     aliasing(pp);
@@ -215,6 +490,7 @@ void fielddefs::clear()
 {
     m_imple->fields.clear();
     m_imple->map.clear();
+    m_imple->mysqlnullEnable = 0;
 }
 
 void fielddefs::resetUpdateIndicator()
@@ -265,25 +541,37 @@ size_t fielddefs::size() const
 size_t fielddefs::totalFieldLen() const
 {
     const fielddef& fd = m_imple->fields[m_imple->fields.size() - 1];
-    return fd.pos + fd.len;
+    return fd.pos + fd.len + fd.nullbytes();
 }
 
-void fielddefs::copyFrom(const table* tb)
+void fielddefs::addAllFileds(const tabledef* def)
+{
+    m_imple->fields.clear();
+    m_imple->mysqlnullEnable = 0;
+    for (int i = 0; i < def->fieldCount; ++i)
+    {
+        const fielddef* fd = &def->fieldDefs[i];
+        push_back(fd);
+        m_imple->fields[m_imple->fields.size() - 1].setPadCharDefaultSettings();
+    }
+}
+
+void fielddefs::addSelectedFields(const table* tb)
 {
     int n = tb->getCurProcFieldCount();
     m_imple->fields.reserve(n + size());
     const tabledef* def = tb->tableDef();
-    int pos = 0;
+    int  startIndex = (int)m_imple->fields.size();
     for (int i = 0; i < n; ++i)
-    {
-        fielddef fd = def->fieldDefs[tb->getCurProcFieldIndex(i)];
-        fd.pos = pos;
-        push_back(&fd);
-        pos += fd.len;
-    }
-
+        push_back(&def->fieldDefs[tb->getCurProcFieldIndex(i)]);
+    calcFieldPos(startIndex, (def->nullfields() != 0));
     // Defalut field charset
     cv()->setCodePage(mysql::codePage(def->charsetIndex));
+}
+
+bool fielddefs::mysqlnullEnable() const
+{
+    return (m_imple->mysqlnullEnable != 0);
 }
 
 bool fielddefs::canUnion(const fielddefs& src) const
@@ -301,6 +589,8 @@ bool fielddefs::canUnion(const fielddefs& src) const
         if (l.type != r.type)
             return false;
         if (l.charsetIndex() != r.charsetIndex())
+            return false;
+        if (l.isNullable() != r.isNullable())
             return false;
     }
     return true;
@@ -320,6 +610,7 @@ void fielddefs::release()
 //       class field
 //------------------------------------------------------------------------------
 static fielddef fdDummy;
+#define NUMBUFSIZE 70
 
 DLLLIB const fielddef& dummyFd()
 {
@@ -330,152 +621,256 @@ DLLLIB const fielddef& dummyFd()
     return fdDummy;
 }
 
-// const field fieldDummy(NULL, initDummy(), NULL);
+/* 
+    For not string type
+    Cast is faster than memcopy.
 
-inline __int64 getValue64(const fielddef& fd, const uchar_td* ptr)
+    Currency : if get by int64 pure value, if get by double 1/10000 value.
+*/
+__int64 field::readValue64() const
 {
+    const uchar_td* ptr = (uchar_td*)m_ptr + m_fd->pos;
     __int64 ret = 0;
-    if (ptr)
+    switch (m_fd->type)
     {
-        switch (fd.type)
+    case ft_integer:
+    case ft_autoinc:
+        switch (m_fd->len)
         {
-        case ft_integer:
-        case ft_autoinc:
-            switch (fd.len)
-            {
-            case 1:
-                ret = *((char*)(ptr + fd.pos));
-                break;
-            case 2:
-                ret = *((short*)(ptr + fd.pos));
-                break;
-            case 4:
-                ret = *((int*)(ptr + fd.pos));
-                break;
-            case 8:
-                ret = *((__int64*)(ptr + fd.pos));
-                break;
-            }
-        case ft_autoIncUnsigned:
-        case ft_uinteger:
-        case ft_logical:
-        case ft_bit:
-        case ft_date:
-        case ft_time:
-        case ft_timestamp:
-        case ft_mydate:
-        case ft_mytime:
-        case ft_mydatetime:
-        case ft_mytimestamp:
-            switch (fd.len)
-            {
-            case 1:
-                ret = *((unsigned char*)(ptr + fd.pos));
-                break;
-            case 2:
-                ret = *((unsigned short*)(ptr + fd.pos));
-                break;
-            case 4:
-                ret = *((unsigned int*)(ptr + fd.pos));
-                break;
-            case 3:
-            case 5:
-            case 6:
-            case 7:
-                memcpy(&ret, ptr + fd.pos, fd.len);
-                break;
-            case 8:
-                ret = *((__int64*)(ptr + fd.pos));
-                break;
-            }
+        case 1:
+            ret = *((char*)ptr);
             break;
-        case ft_currency:
-            ret = (*((__int64*)((char*)ptr + fd.pos)) / 10000);
+        case 2:
+            ret = *((short*)ptr);
             break;
-        case ft_bfloat:
-        case ft_float:
-            switch (fd.len)
-            {
-            case 4:
-                ret = (__int64)*((float*)((char*)ptr + fd.pos));
-                break;
-            case 8:
-                ret = (__int64)*((double*)((char*)ptr + fd.pos));
-            case 10: // long double
-                ret = (__int64)*((long double*)((char*)ptr + fd.pos));
-                break;
-            }
+        case 3:
+            ret = int24toInt((const char*)ptr);
+            break;
+        case 4:
+            ret = *((int*)ptr);
+            break;
+        case 8:
+            ret = *((__int64*)ptr);
             break;
         }
+        break;
+    case ft_autoIncUnsigned:
+    case ft_uinteger:
+    case ft_logical:
+    case ft_date:
+    case ft_time:
+    case ft_timestamp:
+    case ft_currency:
+    case ft_myyear:
+    case ft_enum: // 1 - 2 byte      0 - 65535
+    case ft_set:  // 1 2 3 4 8 byte  64 item
+    case ft_bit:  // 1 - 8 byte      64 item
+        switch (m_fd->len)
+        {
+        case 1:
+            ret = *((unsigned char*)ptr);
+            break;
+        case 2:
+            ret = *((unsigned short*)ptr);
+            break;
+        case 3:
+            ret = int24toUint((const char*)ptr);
+            break;
+        case 4:
+            ret = *((unsigned int*)ptr);
+            break;
+        case 8:
+            ret = *((__int64*)ptr);
+            break;
+        case 5:
+        case 6:
+        case 7:
+            memcpy(&ret, ptr, m_fd->len);// for bit
+            break;
+        }
+        break;
+    case ft_mydate:
+    case ft_mytime:
+    case ft_mydatetime:
+    case ft_mytimestamp:
+        //get big endian value
+        switch (m_fd->len)
+        {
+        case 3:
+        case 5:
+        case 6:
+        case 7:
+            memcpy(&ret, ptr, m_fd->len);
+            break;
+        case 4:
+            ret = *((unsigned int*)ptr);
+            break;
+        case 8:
+            ret = *((__int64*)ptr);
+            break;
+        default:
+            return ret;
+        }
+        break;
+    default:
+        assert(0);
     }
     return ret;
 }
 
-inline void setValue(const fielddef& fd, uchar_td* ptr, __int64 value)
+void field::storeValue64(__int64 value)
 {
-    if (!ptr)
-        return;
-    switch (fd.type)
+    uchar_td* ptr = (uchar_td*)m_ptr + m_fd->pos;
+    switch (m_fd->type)
     {
     case ft_integer:
     case ft_autoinc:
     {
-        switch (fd.len)
+        switch (m_fd->len)
         {
         case 1:
-            *((char*)(ptr + fd.pos)) = (char)value;
+            *((char*)ptr) = (char)value;
             break;
         case 2:
-            *((short*)(ptr + fd.pos)) = (short)value;
+            *((short*)ptr) = (short)value;
+            break;
+        case 3:
+            storeInt24((int)value, (char*) ptr);
             break;
         case 4:
-            *((int*)(ptr + fd.pos)) = (int)value;
+            *((int*)ptr) = (int)value;
             break;
         case 8:
-            *((__int64*)(ptr + fd.pos)) = value;
+            *((__int64*)ptr) = value;
             break;
         }
+        break;
     }
     case ft_autoIncUnsigned:
     case ft_uinteger:
     case ft_logical:
-    case ft_bit:
-    case ft_currency:
     case ft_date:
     case ft_time:
     case ft_timestamp:
-    case ft_mytime:
-    case ft_mydate:
-    case ft_mydatetime:
-    case ft_mytimestamp:
-        memcpy(ptr + fd.pos, &value, fd.len);
+    case ft_currency:
+    case ft_myyear:
+    case ft_enum: // 1 - 2 byte      0 - 65535
+    case ft_set:  // 1 2 3 4 8 byte  64 item
+    case ft_bit:  // 1 - 8 byte      64 item
+    {
+        switch (m_fd->len)
+        {
+        case 1:
+            *((char*)ptr) = (char)value;
+            break;
+        case 2:
+            *((unsigned short*)ptr) = (unsigned short)value;
+            break;
+        case 3:
+            storeUint24((int)value, (char*) ptr);
+            break;
+        case 4:
+            *((unsigned int*)ptr) = (unsigned int)value;
+            break;
+        case 8:
+            *((__int64*)ptr) = value;
+            break;
+        case 5:
+        case 6:
+        case 7:
+            memcpy(ptr, &value, m_fd->len); // for bit
+            break;
+        }
         break;
     }
-}
-
-void* field::ptr() const
-{
-    return m_ptr + m_fd->pos;
-}
-
-void field::setFVA(const char* data)
-{
-    if (!m_ptr)
-        return;
-    __int64 value;
-    double fltValue;
-
-    char* p = (char*)m_ptr + m_fd->pos;
-    if (data == NULL)
+    case ft_mydate:
+    case ft_mytime:
+    case ft_mydatetime:
+    case ft_mytimestamp:
     {
-        memset(p, 0, m_fd->len);
-        return;
+       switch (m_fd->len)
+        {
+        case 3:
+        case 5:
+        case 6:
+        case 7:
+            memcpy(ptr, &value, m_fd->len);
+            break;
+        case 4:
+            *((unsigned int*)ptr) = (unsigned int)value;
+            break;
+        case 8:
+            *((__int64*)ptr) = value;
+            break;
+        }
+        break;
     }
+    default:
+        assert(0);
+    }
+}
 
+double field::readValueDbl() const
+{
+    const uchar_td* ptr = (uchar_td*)m_ptr + m_fd->pos;
+    double ret = 0;
+    switch (m_fd->type)
+    {
+    case ft_bfloat:
+    case ft_float:
+        switch (m_fd->len)
+        {
+        case 4:
+            ret = (double)*((float*)ptr);
+            break;
+        case 8:
+            ret = (double)*((double*)ptr);
+            break;
+        case 10: // long double
+            ret = (double)*((long double*)ptr);
+            break;
+        }
+        break;
+    default:
+        assert(0);
+    }
+    return ret;
+}
+
+void field::storeValueDbl(double value)
+{
+    uchar_td* ptr = (uchar_td*)m_ptr + m_fd->pos;
+    switch (m_fd->type)
+    {
+    case ft_bfloat:
+    case ft_float:
+    {
+        switch (m_fd->len)
+        {
+        case 4:
+            *((float*)ptr) = (float)value;
+            break;
+        case 8:
+            *((double*)ptr) = (double)value;
+            break;
+        case 10: // long double
+            *((long double*)ptr) = (long double)value;
+            break;
+        }
+        break;
+    }
+    default:
+        assert(0);
+    }
+}
+
+void field::storeValueStrA(const char* data) 
+{
+    char* p = (char*)m_ptr + m_fd->pos;
     switch (m_fd->type)
     {
     case ft_string:
-        if (m_fd->usePadChar())
+        if (m_fd->isUsePadChar())
             return store<stringStore, char, char>(p, data, *m_fd, m_fds->cv());
         return store<binaryStore, char, char>(p, data, *m_fd, m_fds->cv());
     case ft_note:
@@ -484,7 +879,7 @@ void field::setFVA(const char* data)
     case ft_wzstring:
         return store<wzstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
-        if (m_fd->usePadChar())
+        if (m_fd->isUsePadChar())
             return store<wstringStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
         return store<wbinaryStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_mychar:
@@ -499,107 +894,73 @@ void field::setFVA(const char* data)
     case ft_mywvarchar:
         return store<myWvarCharStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_mywvarbinary:
-        return store<myWvarBinaryStore, WCHAR, char>(p, data, *m_fd,
-                                                     m_fds->cv());
+        return store<myWvarBinaryStore, WCHAR, char>(p, data, *m_fd, m_fds->cv());
     case ft_myblob:
     case ft_mytext:
     {
         char* tmp = blobStore<char>(p, data, *m_fd, m_fds->cv());
         const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
-        return;
-    }
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_bfloat:
-    case ft_numericsts:
-    case ft_numericsa:
-    case ft_currency: // currecy
-    case ft_float: // float double
-        fltValue = atof(data);
-        setFV(fltValue);
-        return;
-    case ft_lvar: // Lvar
-        return;
-
-    case ft_date: // date mm/dd/yy
-        value = /*StrToBtrDate*/ atobtrd((const char*)data).i;
-        break;
-    case ft_time: // time hh:nn:ss
-        value = /*StrToBtrTime*/ atobtrt((const char*)data).i;
-        break;
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_integer:
-    case ft_autoinc:
-    case ft_bit:
-        value = _atoi64(data);
-        break;
-    case ft_logical:
-        if (m_fds->logicalToString)
-        {
-            char tmp[5];
-            strncpy(tmp, data, 5);
-            if (strcmp(_strupr(tmp), "YES") == 0)
-                value = 1;
-            else
-                value = 0;
-        }
-        else
-            value = atol(data);
-        break;
-    case ft_timestamp:
-    case ft_mytimestamp:
-        value = 0;
-        break;
-    case ft_mydate:
-    {
-        myDate d;
-        d = data;
-        value = d.getValue();
-        break;
-    }
-    case ft_mytime:
-    {
-        myTime t(m_fd->len);
-        t = data;
-        value = t.getValue();
-        break;
-    }
-
-    case ft_mydatetime:
-    {
-        myDateTime t(m_fd->len);
-        t = data;
-        value = t.getValue();
         break;
     }
     default:
-        return;
+        assert(0);
     }
-    setValue(*m_fd, (uchar_td*)m_ptr, value);
 }
 
-#ifdef _WIN32
-
-void field::setFVW(const wchar_t* data)
+const char* field::readValueStrA() const
 {
-    if (!m_ptr)
-        return;
-    int value;
-    double fltValue;
-
-    char* p = (char*)m_ptr + m_fd->pos;
-    if (data == NULL)
-    {
-        memset(p, 0, m_fd->len);
-        return;
-    }
-
+    char* data = (char*)m_ptr + m_fd->pos;
     switch (m_fd->type)
     {
     case ft_string:
-        if (m_fd->usePadChar())
+        return read<stringStore, char, char>(data, m_fds->strBufs(), *m_fd,
+                                             m_fds->cv(), m_fd->isTrimPadChar());
+    case ft_note:
+    case ft_zstring:
+        return read<zstringStore, char, char>(data, m_fds->strBufs(), *m_fd,
+                                              m_fds->cv());
+    case ft_wzstring:
+        return read<wzstringStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
+                                                m_fds->cv());
+    case ft_wstring:
+        return read<wstringStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
+                                               m_fds->cv(), m_fd->isTrimPadChar());
+    case ft_mychar:
+        return read<myCharStore, char, char>(data, m_fds->strBufs(), *m_fd,
+                                             m_fds->cv(), m_fd->isTrimPadChar());
+    case ft_myvarchar:
+        return read<myVarCharStore, char, char>(data, m_fds->strBufs(), *m_fd,
+                                                m_fds->cv());
+    case ft_lstring:
+    case ft_myvarbinary:
+        return read<myVarBinaryStore, char, char>(data, m_fds->strBufs(), *m_fd,
+                                                  m_fds->cv());
+    case ft_mywchar:
+        return read<myWcharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
+                                               m_fds->cv(), m_fd->isTrimPadChar());
+    case ft_mywvarchar:
+        return read<myWvarCharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
+                                                  m_fds->cv());
+    case ft_mywvarbinary:
+        return read<myWvarBinaryStore, WCHAR, char>(data, m_fds->strBufs(),
+                                                    *m_fd, m_fds->cv());
+    case ft_myblob:
+    case ft_mytext:
+        return readBlob<char>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
+    default:
+        assert(0);
+        return NULL;
+    }
+}
+
+#ifdef _WIN32
+void field::storeValueStrW(const WCHAR* data)
+{
+    char* p = (char*)m_ptr + m_fd->pos;
+    switch (m_fd->type)
+    {
+    case ft_string:
+        if (m_fd->isUsePadChar())
             return store<stringStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
         return store<binaryStore, char, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_note:
@@ -608,7 +969,7 @@ void field::setFVW(const wchar_t* data)
     case ft_wzstring:
         return store<wzstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_wstring:
-        if (m_fd->usePadChar())
+        if (m_fd->isUsePadChar())
             return store<wstringStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
         return store<wbinaryStore, WCHAR, WCHAR>(p, data, *m_fd, m_fds->cv());
     case ft_mychar:
@@ -634,507 +995,19 @@ void field::setFVW(const wchar_t* data)
         const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
         return;
     }
-
-    case ft_date: // date mm/dd/yy
-        value = /*StrToBtrDate*/ atobtrd(data).i;
-        setFV(value);
-        break;
-    case ft_time: // time hh:nn:ss
-        value = /*StrToBtrTime*/ atobtrt(data).i;
-        setFV(value);
-        return;
-
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_integer:
-    case ft_autoinc:
-    case ft_bit:
-    {
-        __int64 v = _wtoi64(data);
-        setFV(v);
-        break;
-    }
-    case ft_logical:
-        if (m_fds->logicalToString)
-        {
-            wchar_t tmp[5];
-            wcsncpy(tmp, data, 5);
-
-            if (wcscmp(_wcsupr(tmp), L"YES") == 0)
-                value = 1;
-            else
-                value = 0;
-        }
-        else
-            value = _wtol(data);
-        setFV(value);
-        break;
-
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_bfloat:
-    case ft_numericsts:
-    case ft_numericsa:
-    case ft_currency:
-    case ft_float:
-        fltValue = _wtof(data);
-        setFV(fltValue);
-        break;
-    case ft_timestamp:
-    {
-        __int64 v = 0;
-        setFV(v);
-        return;
-    }
-    case ft_mydate:
-    {
-        myDate d;
-        d = data;
-        setValue(*m_fd, (uchar_td*)m_ptr, d.getValue());
-        return;
-    }
-    case ft_mytime:
-    {
-        myTime t(m_fd->len);
-        t = data;
-        setValue(*m_fd, (uchar_td*)m_ptr, t.getValue());
-        return;
-    }
-    case ft_mydatetime:
-    {
-        myDateTime t(m_fd->len);
-        t = data;
-        setFV(t.getValue());
-        return;
-    }
-    case ft_mytimestamp:
-    case ft_lvar:
-        break;
-    }
-}
-
-#endif //_WIN32
-
-void field::setFV(unsigned char data)
-{
-
-    int value = (int)data;
-    setFV(value);
-}
-
-void field::setFV(int data)
-{
-    if (!m_ptr)
-        return;
-    char buf[50];
-    double d;
-    int v = data;
-    switch (m_fd->type)
-    {
-    case ft_mydate:
-    {
-        myDate myd;
-        myd.setValue(data, m_fds->myDateTimeValueByBtrv);
-        setValue(*m_fd, (uchar_td*)m_ptr, myd.getValue());
-        break;
-    }
-    case ft_mytime:
-    {
-        myTime myt(m_fd->len);
-        myt.setValue(data, m_fds->myDateTimeValueByBtrv);
-        setValue(*m_fd, (uchar_td*)m_ptr, myt.getValue());
-        break;
-    }
-    case ft_integer:
-    case ft_date:
-    case ft_time:
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_autoinc:
-    case ft_bit:
-    case ft_mydatetime:
-        switch (m_fd->len)
-        {
-        case 1:
-            *((char*)((char*)m_ptr + m_fd->pos)) = (char)v;
-            break;
-        case 2:
-            *((short*)((char*)m_ptr + m_fd->pos)) = (short)v;
-            break;
-        case 3:
-            memcpy((char*)m_ptr + m_fd->pos, &v, 3);
-            break;
-        case 4:
-            *((int*)((char*)m_ptr + m_fd->pos)) = v;
-            break;
-        case 8:
-            *((__int64*)((char*)m_ptr + m_fd->pos)) = v;
-            break;
-        }
-        break;
-
-    case ft_timestamp:
-    {
-        __int64 v = 0;
-        setFV(v);
-        return;
-    }
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_bfloat:
-    case ft_numericsts:
-    case ft_numericsa:
-
-    case ft_currency:
-    case ft_float:
-        d = (double)data;
-        setFV(d);
-        break;
-    case ft_string:
-    case ft_zstring:
-    case ft_note:
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mychar:
-        if (data == 0)
-            setFVA("");
-        else
-        {
-            _ltoa_s(data, buf, 50, 10);
-            setFVA(buf);
-        }
-        break;
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_mywchar:
-    case ft_wstring:
-    case ft_wzstring:
-    {
-        if (data == 0)
-            setFV(_T(""));
-        else
-        {
-            _TCHAR buf[50];
-            _ltot_s(data, buf, 50, 10);
-            setFV(buf);
-        }
-        break;
-    }
-    case ft_lvar:
-        break;
-    }
-}
-
-void field::setFV(double data)
-{
-    if (!m_ptr)
-        return;
-    char buf[50];
-    __int64 i64;
-    switch (m_fd->type)
-    {
-    case ft_currency: // currency
-        i64 = (__int64)(data * 10000 + 0.5);
-        setFV(i64);
-        break;
-    case ft_bfloat: // bfloat
-    case ft_float:
-        switch (m_fd->len)
-        {
-        case 4:
-            *((float*)((char*)m_ptr + m_fd->pos)) = (float)data;
-            break;
-        case 8:
-            *((double*)((char*)m_ptr + m_fd->pos)) = data;
-            break;
-        default:
-            break;
-        }
-        break;
-    case ft_decimal:
-    case ft_money:
-        setFVDecimal(data);
-        break;
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa:
-        setFVNumeric(data);
-        break;
-
-    case ft_integer:
-    case ft_date:
-    case ft_time:
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_autoinc:
-    case ft_timestamp:
-    case ft_bit:
-    case ft_mydate:
-    case ft_mytime:
-    case ft_mydatetime:
-    case ft_mytimestamp:
-        i64 = (__int64)data;
-        setFV(i64);
-        break;
-    case ft_string:
-    case ft_zstring:
-    case ft_note:
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mychar:
-        if (data == 0)
-            setFVA("");
-        else
-        {
-            sprintf(buf, "%f", data);
-            setFVA(buf);
-            break;
-        }
-    case ft_lvar:
-        break;
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_mywchar:
-    case ft_wstring:
-    case ft_wzstring:
-    {
-        if (data == 0)
-            setFV(_T(""));
-        else
-        {
-            _TCHAR buf[50];
-            _stprintf_s(buf, 50, _T("%f"), data);
-            setFV(buf);
-        }
-        break;
-    }
-    }
-}
-
-void field::setFV(short data)
-{
-    int value = (int)data;
-    setFV(value);
-}
-
-void field::setFV(float data)
-{
-    double value = (double)data;
-    setFV(value);
-}
-
-short field::getFVsht() const
-{
-    return (short)getFVlng();
-}
-
-int field::getFVlng() const
-{
-    if (!m_ptr)
-        return 0;
-    int ret = 0;
-    switch (m_fd->type)
-    {
-    case ft_integer:
-    case ft_autoinc:
-        switch (m_fd->len)
-        {
-        case 1:
-            ret = *(((char*)m_ptr + m_fd->pos));
-            break;
-        case 2:
-            ret = *((short*)((char*)m_ptr + m_fd->pos));
-            break;
-        case 3:
-            memcpy(&ret, (char*)m_ptr + m_fd->pos, 3);
-            ret = ((ret & 0xFFFFFF) << 8) / 0x100;
-            break;
-        case 8:
-        case 4:
-            ret = *((int*)((char*)m_ptr + m_fd->pos));
-            break;
-        }
-        break;
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_bit:
-    case ft_date:
-    case ft_time:
-    case ft_timestamp:
-    case ft_mydatetime:
-    case ft_mytimestamp:
-        switch (m_fd->len)
-        {
-        case 1:
-            ret = *((unsigned char*)((char*)m_ptr + m_fd->pos));
-            break;
-        case 2:
-            ret = *((unsigned short*)((char*)m_ptr + m_fd->pos));
-            break;
-        case 3:
-            memcpy(&ret, (char*)m_ptr + m_fd->pos, 3);
-            break;
-        case 8:
-        case 4:
-            ret = *((unsigned int*)((char*)m_ptr + m_fd->pos));
-            break;
-        }
-        break;
-    case ft_mydate:
-    {
-        myDate myd;
-        myd.setValue((int)getValue64(*m_fd, (const uchar_td*)m_ptr));
-        ret = myd.getValue(m_fds->myDateTimeValueByBtrv);
-        break;
-    }
-    case ft_mytime:
-    {
-        myTime myt(m_fd->len);
-        myt.setValue((int)getValue64(*m_fd, (const uchar_td*)m_ptr));
-        ret = (int)myt.getValue(m_fds->myDateTimeValueByBtrv);
-        break;
-        ;
-    }
-    case ft_string:
-    case ft_zstring:
-    case ft_note:
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mychar:
-        ret = atol(getFVAstr());
-        break;
-    case ft_wstring:
-    case ft_wzstring:
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_mywchar:
-        ret = _ttol(getFVstr());
-        break;
-    case ft_currency:
-        ret = (long)(*((__int64*)((char*)m_ptr + m_fd->pos)) / 10000);
-        break;
-    case ft_bfloat:
-    case ft_float:
-        ret = (long)getFVdbl();
-        break;
-    case ft_decimal:
-    case ft_money:
-        ret = (long)getFVDecimal();
-        break;
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa:
-        ret = (long)getFVnumeric();
-        break;
-
-    case ft_lvar:
-        break;
     default:
-        return 0;
+        assert(0);
     }
-    return ret;
 }
 
-float field::getFVflt() const
+const WCHAR* field::readValueStrW() const
 {
-    return (float)getFVdbl();
-}
-
-double field::getFVdbl() const
-{
-    if (!m_ptr)
-        return 0;
-    double ret = 0;
-    switch (m_fd->type)
-    {
-    case ft_currency:
-        ret = (double)*((__int64*)((char*)m_ptr + m_fd->pos));
-        ret = ret / 10000;
-        break;
-
-    case ft_bfloat:
-    case ft_timestamp:
-    case ft_float:
-        switch (m_fd->len)
-        {
-        case 4:
-            ret = (double)*((float*)((char*)m_ptr + m_fd->pos));
-            break;
-        case 10: // long double
-        case 8:
-            ret = (double)*((double*)((char*)m_ptr + m_fd->pos));
-            break;
-        }
-        break;
-    case ft_string:
-    case ft_zstring:
-    case ft_note:
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mychar:
-        ret = atof(getFVAstr());
-        break;
-    case ft_wstring:
-    case ft_wzstring:
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_mywchar:
-        ret = _ttof(getFVstr());
-        break;
-    case ft_integer:
-    case ft_date:
-    case ft_time:
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-    case ft_logical:
-    case ft_autoinc:
-    case ft_bit:
-    case ft_mydate:
-    case ft_mytime:
-    case ft_mydatetime:
-    case ft_mytimestamp:
-        ret = (double)getFV64();
-        break;
-
-    case ft_decimal:
-    case ft_money:
-        ret = getFVDecimal();
-        break;
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa:
-        ret = getFVnumeric();
-        break;
-    case ft_lvar:
-        break;
-    default:
-        return 0;
-    }
-    return ret;
-}
-
-unsigned char field::getFVbyt() const
-{
-    return (unsigned char)getFVlng();
-}
-
-#ifdef _WIN32
-
-const wchar_t* field::getFVWstr() const
-{
-    if (!m_ptr)
-        return L"";
     char* data = (char*)m_ptr + m_fd->pos;
     switch (m_fd->type)
     {
     case ft_string:
         return read<stringStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
-                                              m_fds->cv(), m_fd->trimPadChar());
+                                              m_fds->cv(), m_fd->isTrimPadChar());
     case ft_note:
     case ft_zstring:
         return read<zstringStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
@@ -1144,10 +1017,10 @@ const wchar_t* field::getFVWstr() const
                                                  m_fds->cv());
     case ft_wstring:
         return read<wstringStore, WCHAR, WCHAR>(
-            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->trimPadChar());
+            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->isTrimPadChar());
     case ft_mychar:
         return read<myCharStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
-                                              m_fds->cv(), m_fd->trimPadChar());
+                                              m_fds->cv(), m_fd->isTrimPadChar());
     case ft_myvarchar:
         return read<myVarCharStore, char, WCHAR>(data, m_fds->strBufs(), *m_fd,
                                                  m_fds->cv());
@@ -1157,7 +1030,7 @@ const wchar_t* field::getFVWstr() const
                                                    *m_fd, m_fds->cv());
     case ft_mywchar:
         return read<myWcharStore, WCHAR, WCHAR>(
-            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->trimPadChar());
+            data, m_fds->strBufs(), *m_fd, m_fds->cv(), m_fd->isTrimPadChar());
     case ft_mywvarchar:
         return read<myWvarCharStore, WCHAR, WCHAR>(data, m_fds->strBufs(),
                                                    *m_fd, m_fds->cv());
@@ -1167,501 +1040,75 @@ const wchar_t* field::getFVWstr() const
     case ft_myblob:
     case ft_mytext:
         return readBlob<WCHAR>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
-    }
-    wchar_t* p = (wchar_t*)m_fds->strBufs()->getPtrW(max(m_fd->len * 2, 50));
-
-    wchar_t buf[10] = L"%0.";
-
-    switch (m_fd->type)
-    {
-
-    case ft_integer:
-    case ft_bit:
-    case ft_autoinc:
-        _i64tow_s(getFV64(), p, 50, 10);
-        return p;
-    case ft_logical:
-        if (m_fds->logicalToString)
-        {
-            if (getFVlng())
-                return L"Yes";
-            else
-                return L"No";
-        }
-        else
-            _i64tow_s(getFV64(), p, 50, 10);
-
-    case ft_bfloat:
-    case ft_float:
-    case ft_currency:
-    {
-
-        swprintf_s(p, 50, L"%lf", getFVdbl());
-        int k = (int)wcslen(p) - 1;
-        while (k >= 0)
-        {
-            if (p[k] == L'0')
-                p[k] = 0x00;
-            else if (p[k] == L'.')
-            {
-                p[k] = 0x00;
-                break;
-            }
-            else
-                break;
-            k--;
-        }
-        break;
-    }
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-        swprintf_s(p, 50, L"%lu", getFV64());
-        break;
-    case ft_date:
-        return btrdtoa(getFVlng(), p);
-    case ft_time:
-        return btrttoa(getFVlng(), p);
-    case ft_mydate:
-    {
-        myDate d;
-        d.setValue((int)getValue64(*m_fd, (const uchar_td*)m_ptr));
-        return d.toStr(p, m_fds->myDateTimeValueByBtrv);
-    }
-    case ft_mytime:
-    {
-
-        myTime t(m_fd->len);
-        t.setValue(getValue64(*m_fd, (const uchar_td*)m_ptr));
-        return t.toStr(p);
-    }
-    case ft_mydatetime:
-    {
-        myDateTime t(m_fd->len);
-        t.setValue(getFV64());
-        return t.toStr(p);
-    }
-    case ft_mytimestamp:
-    {
-        myTimeStamp ts(m_fd->len);
-        ts.setValue(getFV64());
-        return ts.toStr(p);
-    }
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa:
-        _ltow_s(m_fd->decimals, p, 50, 10);
-        wcscat(buf, p);
-        wcscat(buf, L"lf");
-        swprintf(p, 50, buf, getFVdbl());
-        break;
-    case ft_lvar:
-        return NULL;
-    case ft_timestamp:
-        return btrTimeStamp(getFV64()).toString(p);
     default:
-        p[0] = 0x00;
+        assert(0);
+        return NULL;
     }
-    return p;
 }
-
 #endif //_WIN32
 
-const char* field::getFVAstr() const
-{
-    if (!m_ptr)
-        return "";
+void field::storeValueNumeric(double data)
+{ // Double  -> Numeric
 
-    char buf[10] = "%0.";
-
-    char* data = (char*)m_ptr + m_fd->pos;
-    switch (m_fd->type)
-    {
-
-    case ft_string:
-        return read<stringStore, char, char>(data, m_fds->strBufs(), *m_fd,
-                                             m_fds->cv(), m_fd->trimPadChar());
-    case ft_note:
-    case ft_zstring:
-        return read<zstringStore, char, char>(data, m_fds->strBufs(), *m_fd,
-                                              m_fds->cv());
-    case ft_wzstring:
-        return read<wzstringStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
-                                                m_fds->cv());
-    case ft_wstring:
-        return read<wstringStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
-                                               m_fds->cv(), m_fd->trimPadChar());
-    case ft_mychar:
-        return read<myCharStore, char, char>(data, m_fds->strBufs(), *m_fd,
-                                             m_fds->cv(), m_fd->trimPadChar());
-    case ft_myvarchar:
-        return read<myVarCharStore, char, char>(data, m_fds->strBufs(), *m_fd,
-                                                m_fds->cv());
-    case ft_lstring:
-    case ft_myvarbinary:
-        return read<myVarBinaryStore, char, char>(data, m_fds->strBufs(), *m_fd,
-                                                  m_fds->cv());
-    case ft_mywchar:
-        return read<myWcharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
-                                               m_fds->cv(), m_fd->trimPadChar());
-    case ft_mywvarchar:
-        return read<myWvarCharStore, WCHAR, char>(data, m_fds->strBufs(), *m_fd,
-                                                  m_fds->cv());
-    case ft_mywvarbinary:
-        return read<myWvarBinaryStore, WCHAR, char>(data, m_fds->strBufs(),
-                                                    *m_fd, m_fds->cv());
-    case ft_myblob:
-    case ft_mytext:
-        return readBlob<char>(data, m_fds->strBufs(), *m_fd, m_fds->cv());
-    }
-    char* p = m_fds->strBufs()->getPtrA(max(m_fd->len * 2, 50));
-    switch (m_fd->type)
-    {
-    case ft_integer:
-    case ft_bit:
-    case ft_autoinc:
-        _i64toa_s(getFV64(), p, 50, 10);
-        return p;
-    case ft_logical:
-        if (m_fds->logicalToString)
-        {
-            if (getFVlng())
-                return "Yes";
-            else
-                return "No";
-        }
-        else
-            _i64toa_s(getFV64(), p, 50, 10);
-        break;
-    case ft_bfloat:
-    case ft_float:
-    case ft_currency:
-    {
-        sprintf(p, "%lf", getFVdbl());
-        size_t k = strlen(p) - 1;
-        while (1)
-        {
-            if (p[k] == '0')
-                p[k] = 0x00;
-            else if (p[k] == '.')
-            {
-                p[k] = 0x00;
-                break;
-            }
-            else
-                break;
-            k--;
-        }
-        break;
-    }
-    case ft_date:
-        return btrdtoa(getFVlng(), p);
-    case ft_time:
-        return btrttoa(getFVlng(), p);
-    case ft_autoIncUnsigned:
-    case ft_uinteger:
-        sprintf_s(p, 50, "%llu", (unsigned __int64)getFV64());
-        break;
-
-    case ft_mydate:
-    {
-        myDate d;
-        d.setValue((int)getValue64(*m_fd, (const uchar_td*)m_ptr));
-        return d.toStr(p, m_fds->myDateTimeValueByBtrv);
-    }
-    case ft_mytime:
-    {
-        myTime t(m_fd->len);
-        t.setValue(getValue64(*m_fd, (const uchar_td*)m_ptr));
-        return t.toStr(p);
-    }
-    case ft_mytimestamp:
-    {
-        myTimeStamp ts(m_fd->len);
-        ts.setValue(getFV64());
-        return ts.toStr(p);
-    }
-    case ft_mydatetime:
-    {
-        myDateTime t(m_fd->len);
-        t.setValue(getFV64());
-        return t.toStr(p);
-    }
-    case ft_decimal:
-    case ft_money:
-    case ft_numeric:
-    case ft_numericsts:
-    case ft_numericsa:
-        _ltoa_s(m_fd->decimals, p, 50, 10);
-        strcat(buf, p);
-        strcat(buf, "lf");
-        sprintf_s(p, 50, buf, getFVdbl());
-        break;
-    case ft_lvar:
-        return NULL;
-    case ft_timestamp:
-        return btrTimeStamp(getFV64()).toString(p);
-    default:
-        p[0] = 0x00;
-    }
-    return p;
-}
-
-int field::getFVint() const
-{
-    return (int)getFVlng();
-}
-
-__int64 field::getFV64() const
-{
-    if (!m_ptr)
-        return 0;
-
-    switch (m_fd->len)
-    {
-    case 8:
-        switch (m_fd->type)
-        {
-        case ft_autoIncUnsigned:
-        case ft_uinteger:
-        case ft_integer:
-        case ft_logical:
-        case ft_autoinc:
-        case ft_bit:
-        case ft_currency:
-        case ft_timestamp:
-        case ft_mydatetime:
-        case ft_mytimestamp:
-            return (__int64) * ((__int64*)((char*)m_ptr + m_fd->pos));
-        case ft_float:
-            return (__int64) *((double*)((char*)m_ptr + m_fd->pos));
-        }
-        return 0;
-    case 7:
-    case 6:
-    case 5:
-        switch (m_fd->type)
-        {
-        case ft_mytime:
-        case ft_mydatetime:
-        case ft_mytimestamp:
-        {
-            __int64 v = 0;
-            memcpy(&v, (char*)m_ptr + m_fd->pos, m_fd->len);
-            return v;
-        }
-        }
-        return 0;
-    default:
-
-        return (__int64)getFVlng();
-    }
-}
-
-void field::setFV(__int64 data)
-{
-    if (!m_ptr)
-        return;
-
-    switch (m_fd->len)
-    {
-    case 8:
-        switch (m_fd->type)
-        {
-        case ft_autoIncUnsigned:
-        case ft_uinteger:
-        case ft_integer:
-        case ft_logical:
-        case ft_autoinc:
-        case ft_bit:
-        case ft_currency:
-        case ft_mydatetime:
-        case ft_mytimestamp:
-            *((__int64*)((char*)m_ptr + m_fd->pos)) = data;
-            break;
-        case ft_timestamp:
-        {
-            btrDate d;
-            d.i = getNowDate();
-            btrTime t;
-            t.i = getNowTime();
-            *((__int64*)((char*)m_ptr + m_fd->pos)) = btrTimeStamp(d, t).i64;
-            break;
-        }
-        case ft_float:
-        {
-            double d = (double)data;
-            setFV(d);
-            break;
-        }
-        }
-        break;
-    case 7:
-    case 6:
-    case 5:
-        switch (m_fd->type)
-        {
-        case ft_mytime:
-        case ft_mydatetime:
-        case ft_mytimestamp:
-            memcpy((char*)m_ptr + m_fd->pos, &data, m_fd->len);
-            break;
-        default:
-            break;
-        }
-        break;
-    default:
-    {
-        int value = (int)data;
-        setFV(value);
-        break;
-    }
-    }
-}
-
-/* if blob and text ,set binary data that is only set pointer. it is not copied.
- *  Caller must hold data until it sends to the server.
- */
-void field::setFV(const void* data, uint_td size)
-{
-    if (!m_ptr)
-        return;
-    char* p = (char*)m_ptr + m_fd->pos;
-    switch (m_fd->type)
-    {
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_lstring:
-    {
-        int sizeByte = m_fd->varLenBytes();
-        size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
-        memset(p, 0, m_fd->len);
-        memcpy(p, &size, sizeByte);
-        memcpy(p + sizeByte, data, size);
-        break;
-    }
-    case ft_myblob:
-    case ft_mytext:
-    {
-        int sizeByte = m_fd->len - 8;
-        memset(p, 0, m_fd->len);
-        memcpy(p, &size, sizeByte);
-        memcpy(p + sizeByte, &data, sizeof(char*));
-        break;
-    }
-    case ft_lvar:
-    {
-        int sizeByte = 2;
-        size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
-        memset(p, 0, m_fd->len);
-        memcpy(p, &size, sizeByte);
-        memcpy(p + sizeByte, data, size);
-        break;
-    }
-    default:
-        size = std::min<uint_td>((uint_td)m_fd->len, size);
-        memset(p, 0, m_fd->len);
-        memcpy(p, data, size);
-    }
-}
-
-/* offset is writen at data that is first address of data
- *  text is not converted to unicode form stored charset.
- */
-void* field::getFVbin(uint_td& size) const
-{
-    if (!m_ptr)
-        return 0;
-
-    char* p = (char*)m_ptr + m_fd->pos;
-    switch (m_fd->type)
-    {
-    case ft_myvarbinary:
-    case ft_myvarchar:
-    case ft_mywvarbinary:
-    case ft_mywvarchar:
-    case ft_lstring:
-    {
-        int sizeByte = m_fd->varLenBytes();
-        size = 0;
-        memcpy(&size, p, sizeByte);
-        return (void*)(p + sizeByte);
-    }
-    case ft_myblob:
-    case ft_mytext:
-    {
-        int sizeByte = m_fd->len - 8;
-        size = 0;
-        memcpy(&size, p, sizeByte);
-        if (size)
-        {
-            char** ptr = (char**)(p + sizeByte);
-            return (void*)*ptr;
-        }
-        return NULL;
-    }
-    case ft_lvar:
-    {
-        int sizeByte = 2;
-        size = 0;
-        memcpy(&size, p, sizeByte);
-        return (void*)(p + sizeByte);
-    }
-    default:
-        size = m_fd->len;
-        return (void*)(p);
-    }
-}
-
-double field::getFVDecimal() const
-{
-    if (!m_ptr)
-        return 0;
-
-    unsigned char buf[20] = { 0x00 };
-    char result[30] = { 0x00 };
-    char n[10];
-    int i;
+    char buf[NUMBUFSIZE] = "%+0";
+    char dummy[NUMBUFSIZE];
+    int point;
+    int n;
+    char dp[] = "{ABCDEFGHI}JKLMNOPQR";
+    char dpsa[] = "PQRSTUVWXYpqrstuvwxy";
+    bool sign = false;
     char* t;
-    unsigned char sign;
-    int len = m_fd->len;
-    result[0] = '+';
-    memcpy(buf, (void*)((char*)m_ptr + m_fd->pos), len);
-    sign = (unsigned char)(buf[len - 1] & 0x0F);
-    buf[len - 1] = (unsigned char)(buf[len - 1] & 0xF0);
-    for (i = 0; i < len; i++)
+
+    point = m_fd->len + 1;
+
+    _ltoa_s(point, dummy, NUMBUFSIZE, 10);
+    strcat(buf, dummy);
+    strcat(buf, ".");
+    _ltoa_s(m_fd->decimals, dummy, NUMBUFSIZE, 10);
+    strcat(buf, dummy);
+    strcat(buf, "lf");
+    sprintf_s(dummy, NUMBUFSIZE, buf, data);
+    if (dummy[0] == '-')
+        sign = true;
+
+    strcpy(buf, &dummy[point - m_fd->decimals] + 1);
+    dummy[point - m_fd->decimals] = 0x00;
+    strcat(dummy, buf);
+
+    n = atol(&dummy[m_fd->len]);
+    if (sign)
+        n += 10;
+    t = dummy + 1;
+    switch (m_fd->type)
     {
-        sprintf_s(n, 10, "%02x", buf[i]);
-        strcat(result, n);
+    case ft_numeric:
+        dummy[m_fd->len] = dp[n];
+        break;
+    case ft_numericsa:
+        dummy[m_fd->len] = dpsa[n];
+        break;
+    case ft_numericsts:
+        if (sign)
+            strcat(dummy, "-");
+        else
+            strcat(dummy, "+");
+        t += 1;
+        break;
+    default:
+        assert(0);
     }
-    i = (int)strlen(result);
-
-    if (sign == 13)
-        result[0] = '-';
-    result[i - 1] = 0x00;
-
-    t = result + (m_fd->len * 2) - m_fd->decimals;
-    strcpy((char*)buf, t);
-    *t = '.';
-    strcpy(t + 1, (char*)buf);
-    return atof(result);
+    memcpy((void*)((char*)m_ptr + m_fd->pos), t, m_fd->len);
 }
 
-double field::getFVnumeric() const
+double field::readValueNumeric() const
 {
-    if (!m_ptr)
-        return 0;
-
     char* t;
     char dp[] = "{ABCDEFGHI}JKLMNOPQR";
     char dpsa[] = "PQRSTUVWXYpqrstuvwxy";
     char* pdp = NULL;
     int i;
-    char buf[20] = { 0x00 };
-    char dummy[20];
+    char buf[NUMBUFSIZE] = { 0x00 };
+    char dummy[NUMBUFSIZE];
 
     buf[0] = '+';
     strncpy(buf + 1, (char*)((char*)m_ptr + m_fd->pos), m_fd->len);
@@ -1680,6 +1127,8 @@ double field::getFVnumeric() const
         buf[0] = *t;
         *t = 0x00;
         break;
+    default:
+        assert(0);
     }
 
     if (pdp)
@@ -1707,28 +1156,26 @@ double field::getFVnumeric() const
     return atof(buf);
 }
 
-void field::setFVDecimal(double data)
+void field::storeValueDecimal(double data)
 { // Double  -> Decimal
-    if (!m_ptr)
-        return;
-
-    char buf[30] = "%+0";
-    char dummy[30];
+    assert(m_fd->type == ft_decimal || m_fd->type == ft_money);
+    char buf[NUMBUFSIZE] = "%+0";
+    char dummy[NUMBUFSIZE];
     int point;
     bool sign = false;
     unsigned char n;
     int i, k;
     int strl;
     bool offset = false;
-    ;
+    
     point = (m_fd->len) * 2;
-    _ltoa_s(point, dummy, 30, 10);
+    _ltoa_s(point, dummy, NUMBUFSIZE, 10);
     strcat(buf, dummy);
     strcat(buf, ".");
-    _ltoa_s(m_fd->decimals, dummy, 30, 10);
+    _ltoa_s(m_fd->decimals, dummy, NUMBUFSIZE, 10);
     strcat(buf, dummy);
     strcat(buf, "lf");
-    sprintf(dummy, buf, data);
+    sprintf_s(dummy, NUMBUFSIZE, buf, data);
     if (dummy[0] == '-')
         sign = true;
 
@@ -1764,7 +1211,6 @@ void field::setFVDecimal(double data)
                     n = (unsigned char)(dummy[i] - 48);
                     n = (unsigned char)(n << 4);
                     offset = true;
-                    ;
                 }
             }
         }
@@ -1776,268 +1222,1023 @@ void field::setFVDecimal(double data)
     memcpy((void*)((char*)m_ptr + m_fd->pos), buf, m_fd->len);
 }
 
-void field::setFVNumeric(double data)
-{ // Double  -> Numeric
-    if (!m_ptr)
-        return;
-
-    char buf[30] = "%+0";
-    char dummy[30];
-    int point;
-    int n;
-    char dp[] = "{ABCDEFGHI}JKLMNOPQR";
-    char dpsa[] = "PQRSTUVWXYpqrstuvwxy";
-    bool sign = false;
+double field::readValueDecimal() const
+{
+    assert(m_fd->type == ft_decimal || m_fd->type == ft_money);
+    unsigned char buf[20] = { 0x00 };
+    char result[30] = { 0x00 };
+    char n[10];
+    int i;
     char* t;
-
-    point = m_fd->len + 1;
-
-    _ltoa_s(point, dummy, 30, 10);
-    strcat(buf, dummy);
-    strcat(buf, ".");
-    _ltoa_s(m_fd->decimals, dummy, 30, 10);
-    strcat(buf, dummy);
-    strcat(buf, "lf");
-    sprintf(dummy, buf, data);
-    if (dummy[0] == '-')
-        sign = true;
-
-    strcpy(buf, &dummy[point - m_fd->decimals] + 1);
-    dummy[point - m_fd->decimals] = 0x00;
-    strcat(dummy, buf);
-
-    n = atol(&dummy[m_fd->len]);
-    if (sign)
-        n += 10;
-    t = dummy + 1;
-    switch (m_fd->type)
+    unsigned char sign;
+    int len = m_fd->len;
+    result[0] = '+';
+    memcpy(buf, (void*)((char*)m_ptr + m_fd->pos), len);
+    sign = (unsigned char)(buf[len - 1] & 0x0F);
+    buf[len - 1] = (unsigned char)(buf[len - 1] & 0xF0);
+    for (i = 0; i < len; i++)
     {
-    case ft_numeric:
-        dummy[m_fd->len] = dp[n];
-        break;
-    case ft_numericsa:
-        dummy[m_fd->len] = dpsa[n];
-        break;
+        sprintf_s(n, 10, "%02x", buf[i]);
+        strcat(result, n);
+    }
+    i = (int)strlen(result);
+
+    if (sign == 13)
+        result[0] = '-';
+    result[i - 1] = 0x00;
+
+    t = result + (m_fd->len * 2) - m_fd->decimals;
+    strcpy((char*)buf, t);
+    *t = '.';
+    strcpy(t + 1, (char*)buf);
+    return atof(result);
+}
+
+//---------------------------------------------------------------------------
+#define CASE_TEXT case ft_string: \
+    case ft_note: \
+    case ft_zstring: \
+    case ft_wzstring: \
+    case ft_wstring: \
+    case ft_mychar: \
+    case ft_myvarchar: \
+    case ft_lstring: \
+    case ft_myvarbinary: \
+    case ft_mywchar: \
+    case ft_mywvarchar: \
+    case ft_mywvarbinary: \
+    case ft_myblob: \
+    case ft_mytext: 
+
+#define CASE_TEXTA case ft_string: \
+    case ft_note: \
+    case ft_zstring: \
+    case ft_mychar: \
+    case ft_myvarchar: \
+    case ft_lstring: \
+    case ft_myvarbinary: \
+    case ft_myblob: \
+    case ft_mytext: 
+
+#define CASE_TEXTW case ft_wzstring: \
+    case ft_wstring: \
+    case ft_mywchar: \
+    case ft_mywvarchar: \
+    case ft_mywvarbinary:
+
+#define CASE_INT case ft_integer: \
+    case ft_autoinc: 
+
+#define CASE_UINT case ft_uinteger: \
+    case ft_autoIncUnsigned:  \
+    case ft_set: \
+    case ft_enum:
+
+
+#define CASE_FLOAT case ft_bfloat: \
+    case ft_float: 
+
+#define CASE_NUMERIC case ft_numeric: \
+    case ft_numericsa: \
     case ft_numericsts:
-        if (sign)
-            strcat(dummy, "-");
+
+#define CASE_DECIMAL case ft_decimal: \
+    case ft_money: 
+   
+inline __int64 logical_str_to_64(bool logicalToString, const char* data)
+{
+    if (logicalToString)
+    {
+        char tmp[5];
+        strncpy(tmp, data, 5);
+        if (strcmp(_strupr(tmp), "YES") == 0)
+            return 1;
         else
-            strcat(dummy, "+");
-        t += 1;
+            return 0;
+    }
+    else
+        return atol(data);
+}
+
+#ifdef _WIN32
+inline __int64 logical_str_to_64(bool logicalToString, const wchar_t* data)
+{
+    if (logicalToString)
+    {
+        WCHAR tmp[5];
+        wcsncpy((wchar_t*)tmp, data, 5);
+        if (wcscmp((const wchar_t*)_wcsupr(tmp), L"YES") == 0)
+            return 1;
+        else
+            return 0;
+    }
+    else
+        return _wtol(data);
+}
+#endif
+
+//---------------------------------------------------------------------------
+//      set functions
+//---------------------------------------------------------------------------
+void field::setFVA(const char* data)
+{
+    assert(m_ptr);
+        
+    __int64 value;
+    char* p = (char*)m_ptr + m_fd->pos;
+    if (data == NULL)
+    {
+        memset(p, 0, m_fd->len);
+        setNull(true);
+        return;
+    }
+    setNull(false);
+    switch(m_fd->type)
+    {
+    CASE_TEXT
+        storeValueStrA(data);
+        return;
+    CASE_FLOAT
+        storeValueDbl(atof(data));
+        return;
+    CASE_NUMERIC
+        storeValueNumeric(atof(data));
+        return;
+    CASE_DECIMAL
+        storeValueDecimal(atof(data));
+        return;
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d = data;
+        d.store(p);
+        return;
+    }
+    CASE_INT
+        value = _atoi64(data);
         break;
-    }
-
-    memcpy((void*)((char*)m_ptr + m_fd->pos), t, m_fd->len);
-}
-
-template <class T>
-inline int compNumber(const field& l, const field& r, char logType)
-{
-    return compare<T>((const char*)l.ptr(), (const char*)r.ptr());
-}
-
-template <class T>
-inline int compBitAnd(const field& l, const field& r, char logType)
-{
-    return bitMask<T>((const char*)l.ptr(), (const char*)r.ptr());
-}
-
-inline int compBitAnd24(const field& l, const field& r, char logType)
-{
-
-    int lv = ((*((int*)(const char*)l.ptr()) & 0xFFFFFF) << 8) / 0x100;
-    int rv = ((*((int*)(const char*)r.ptr()) & 0xFFFFFF) << 8) / 0x100;
-    return bitMask<int>((const char*)&lv, (const char*)&rv);
-}
-
-inline int compNumber24(const field& l, const field& r, char logType)
-{
-    return compareInt24((const char*)l.ptr(), (const char*)r.ptr());
-}
-
-inline int compNumberU24(const field& l, const field& r, char logType)
-{
-    return compareUint24((const char*)l.ptr(), (const char*)r.ptr());
-}
-
-inline int compMem(const field& l, const field& r, char logType)
-{
-    return memcmp((const char*)l.ptr(), (const char*)r.ptr(), r.len());
-}
-
-inline int compString(const field& l, const field& r, char logType)
-{
-    return strncmp((const char*)l.ptr(), (const char*)r.ptr(), r.len());
-}
-
-inline int compiString(const field& l, const field& r, char logType)
-{
-    return _strnicmp((const char*)l.ptr(), (const char*)r.ptr(), r.len());
-}
-
-int compWString(const field& l, const field& r, char logType)
-{
-    return wcsncmp16((char16_t*)l.ptr(), (char16_t*)r.ptr(), r.len());
-}
-
-int compiWString(const field& l, const field& r, char logType)
-{
-    return wcsnicmp16((char16_t*)l.ptr(), (char16_t*)r.ptr(), r.len());
-}
-
-template <class T>
-inline int compVarString(const field& l, const field& r, char logType)
-{
-    return compareVartype<T>((const char*)l.ptr(), (const char*)r.ptr(),
-                             l.type() == ft_myvarbinary, logType);
-}
-
-template <class T>
-inline int compWVarString(const field& l, const field& r, char logType)
-{
-    return compareWvartype<T>((const char*)l.ptr(), (const char*)r.ptr(),
-                              l.type() == ft_mywvarbinary, logType);
-}
-
-inline int compBlob(const field& l, const field& r, char logType)
-{
-    return compareBlobType((const char*)l.ptr(), (const char*)r.ptr(),
-                           l.type() == ft_myblob, logType, l.blobLenBytes());
-}
-
-compFieldFunc field::getCompFunc(char logType) const
-{
-    switch (m_fd->type)
-    {
-    case ft_integer:
-    case ft_autoinc:
-    case ft_currency:
-    {
-        if (logType & eBitAnd)
-        {
-
-            switch (m_fd->len)
-            {
-            case 1:
-                return &compBitAnd<char>;
-            case 2:
-                return &compBitAnd<short>;
-            case 3:
-                return &compBitAnd24;
-            case 4:
-                return &compBitAnd<int>;
-            case 8:
-                return &compBitAnd<__int64>;
-            }
-        }else
-        {
-            switch (m_fd->len)
-            {
-            case 1:
-                return &compNumber<char>;
-            case 2:
-                return &compNumber<short>;
-            case 3:
-                return &compNumber24;
-            case 4:
-                return &compNumber<int>;
-            case 8:
-                return &compNumber<__int64>;
-            }
-        }
-    }
-    case ft_mychar:
-    case ft_string:
-        if (logType & CMPLOGICAL_CASEINSENSITIVE)
-            return &compiString;
-        return &compMem;
-    case ft_zstring:
-    case ft_note:
-        if (logType & CMPLOGICAL_CASEINSENSITIVE)
-            return &compiString;
-        return &compString;
+    CASE_UINT
+        value = (__int64)strtoull(data, NULL, 10);
+        break;
+    case ft_bit:
+        value = changeEndian((__int64)strtoull(data, NULL, 10), m_fd->len);
+        break;
     case ft_logical:
-    case ft_uinteger:
-    case ft_autoIncUnsigned:
+        value = logical_str_to_64(m_fds->logicalToString, data);
+        break;
+    case ft_date: 
+        value = atobtrd((const char*)data).i;
+        break;
+    case ft_time:
+        value = atobtrt((const char*)data).i;
+        break;
+    case ft_datetime:
+        value = atobtrs((const char*)data).i64;
+        break;
+    case ft_myyear:
+        value = _atoi64(data);
+        if (value > 1900) value -= 1900;
+        break;
+    case ft_mydate:
+        value = str_to_64<myDate, char>(m_fd->decimals, true, data);
+        break;
+    case ft_mytime:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            value = str_to_64<maTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        else
+            value = str_to_64<myTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        break;
+    case ft_mytimestamp:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            value = str_to_64<maTimeStamp, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        else
+            value = str_to_64<myTimeStamp, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        break;
+    case ft_mydatetime:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            value = str_to_64<maDateTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        else
+            value = str_to_64<myDateTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        break;
+    case ft_currency:
+        value = (__int64)(atof(data) * 10000);
+        break;
+    default: // ft_lvar ft_mygeometry ft_myjson
+        return;
+    }
+    storeValue64(value);
+}
+
+#ifdef _WIN32
+void field::setFVW(const wchar_t* data)
+{
+    assert(m_ptr);
+        
+    __int64 value;
+    char* p = (char*)m_ptr + m_fd->pos;
+    if (data == NULL)
+    {
+        memset(p, 0, m_fd->len);
+        setNull(true);
+        return;
+    }
+    setNull(false);
+    switch(m_fd->type)
+    {
+    CASE_TEXT
+        storeValueStrW(data);
+        return;
+    CASE_FLOAT
+        storeValueDbl(_wtof(data));
+        return;
+    CASE_NUMERIC
+        storeValueNumeric(_wtof(data));
+        return;
+    CASE_DECIMAL
+        storeValueDecimal(_wtof(data));
+        return;
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d = data;
+        d.store(p);
+        return;
+    }
+    CASE_INT
+        value = _wtoi64(data);
+        break;
+    CASE_UINT
+        value = (__int64)wcstoull(data, NULL, 10);
+        break;
+    case ft_bit:
+        value = changeEndian((__int64)wcstoull(data, NULL, 10), m_fd->len);
+        break;
+    case ft_logical:
+        value = logical_str_to_64(m_fds->logicalToString, data);
+        break;
+    case ft_date: 
+        value = atobtrd(data).i;
+        break;
+    case ft_time:
+        value = atobtrt(data).i;
+        break;
+    case ft_datetime:
+        value = atobtrs(data).i64;
+        break;
+    case ft_myyear:
+        value = _wtoi64(data);
+        if (value > 1900) value -= 1900;
+        break;
+    case ft_mydate:
+        value = str_to_64<myDate, wchar_t>(m_fd->decimals, true, data);
+        break;
+    case ft_mytime:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            value = str_to_64<maTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        else
+            value = str_to_64<myTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        break;
+    case ft_mytimestamp:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            value = str_to_64<maTimeStamp, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        else
+            value = str_to_64<myTimeStamp, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        break;
+    case ft_mydatetime:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            value = str_to_64<maDateTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        else
+            value = str_to_64<myDateTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), data);
+        break;
+    case ft_currency:
+        value = (__int64)(_wtof(data) * 10000);
+        break;
+    default: // ft_lvar ft_mygeometry ft_myjson
+        return;
+    }
+    storeValue64(value);
+}
+#endif //_WIN32
+
+void field::setFV(__int64 data)
+{
+    assert(m_ptr);
+    setNull(false);
+
+    switch(m_fd->type)
+    {
+    case ft_mytime:
+    case ft_mydatetime:
+    case ft_mytimestamp:
+    {
+        //Convert big endian
+        bool bigendian = !m_fd->isLegacyTimeFormat();
+        if (m_fd->type == ft_mydatetime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                data = getStoreValue<maDateTime>(m_fd->decimals, bigendian, data);
+            else
+                data = getStoreValue<myDateTime>(m_fd->decimals, bigendian, data);
+        }
+        else if (m_fd->type == ft_mytimestamp)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                data = getStoreValue<maTimeStamp>(m_fd->decimals, bigendian, data);
+            else
+                data = getStoreValue<myTimeStamp>(m_fd->decimals, bigendian, data);
+        }
+        else if(m_fd->type == ft_mytime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                data = getStoreValue<maTime>(m_fd->decimals, bigendian, data);
+            else
+                data = getStoreValue<myTime>(m_fd->decimals, bigendian, data);
+        }
+        //fall through
+    }
     case ft_date:
     case ft_time:
-    case ft_timestamp:
+    case ft_datetime:
     case ft_mydate:
+    case ft_currency:
+    case ft_logical:
+    CASE_INT
+    CASE_UINT
+        storeValue64(data);
+        break;
+    case ft_bit:
+        storeValue64(changeEndian(data, m_fd->len));
+        break;
+    case ft_myyear:
+        if (data > 1900) data -= 1900;
+        storeValue64(data);
+        break;
+    CASE_FLOAT
+        storeValueDbl((double)data);
+        break;
+    CASE_NUMERIC
+        storeValueNumeric((double)data);
+        break;
+    CASE_DECIMAL
+        storeValueDecimal((double)data);
+        break;
+    case ft_mydecimal:
     {
-        if (logType & eBitAnd)
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d = data;
+        d.store((char*)m_ptr + m_fd->pos);
+        break;
+    }
+#ifdef LINUX
+    CASE_TEXTW
+#endif
+    CASE_TEXTA
+    {
+        char buf[NUMBUFSIZE];
+         _i64toa_s(data, buf, NUMBUFSIZE, 10);
+        storeValueStrA(buf);
+        break;
+    }
+#ifndef LINUX
+    CASE_TEXTW
+    {
+        WCHAR buf[NUMBUFSIZE];
+         _i64tow_s(data, buf, NUMBUFSIZE, 10);
+        storeValueStrW(buf);
+        break;
+    }
+#endif
+    default: // ft_lvar ft_mygeometry ft_myjson
+        break;
+    }
+}
+
+void field::setFV(double data)
+{
+    assert(m_ptr);
+    setNull(false);
+    __int64 i64 = (__int64)data;
+    switch (m_fd->type)
+    {
+    CASE_FLOAT
+        storeValueDbl(data);
+        break;
+    case ft_mytime:
+    case ft_mydatetime:
+    case ft_mytimestamp:
+    case ft_currency:
+    {
+        //Convert big endian
+        bool bigendian = !m_fd->isLegacyTimeFormat();
+        if (m_fd->type == ft_mydatetime)
         {
-            switch (m_fd->len)
-            {
-            case 1:
-                return &compBitAnd<unsigned char>;
-            case 2:
-                return &compBitAnd<unsigned short>;
-            case 3:
-                return &compBitAnd24;
-            case 4:
-                return &compBitAnd<unsigned int>;
-            case 8:
-                return &compBitAnd<unsigned __int64>;
-            }
-        }else
-        {
-            switch (m_fd->len)
-            {
-            case 1:
-                return &compNumber<unsigned char>;
-            case 2:
-                return &compNumber<unsigned short>;
-            case 3:
-                return &compNumberU24;
-            case 4:
-                return &compNumber<unsigned int>;
-            case 8:
-                return &compNumber<unsigned __int64>;
-            }
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                i64 = getStoreValue<maDateTime>(m_fd->decimals, bigendian, i64);
+            else
+                i64 = getStoreValue<myDateTime>(m_fd->decimals, bigendian, i64);
         }
+        else if (m_fd->type == ft_mytimestamp)
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                i64 = getStoreValue<maTimeStamp>(m_fd->decimals, bigendian, i64);
+            else
+                i64 = getStoreValue<myTimeStamp>(m_fd->decimals, bigendian, i64);
+        else if(m_fd->type == ft_mytime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                i64 = getStoreValue<maTime>(m_fd->decimals, bigendian, i64);
+            else
+                i64 = getStoreValue<myTime>(m_fd->decimals, bigendian, i64);
+        }
+        else if(m_fd->type == ft_currency)
+            i64 = (__int64)(data * 10000 + 0.5);
+        //fall through
+    }
+    case ft_date:
+    case ft_time:
+    case ft_datetime: 
+    case ft_mydate:
+    case ft_logical:
+    CASE_INT
+    CASE_UINT
+        storeValue64(i64);
+        break;
+    case ft_bit:
+        storeValue64(changeEndian(i64, m_fd->len));
+        break;
+    case ft_myyear:
+        if (i64 > 1900) i64 -= 1900;
+        storeValue64(i64);
+        break;
+    CASE_NUMERIC
+        storeValueNumeric(data);
+        break;
+    CASE_DECIMAL
+        storeValueDecimal(data);
+        break;
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d = data;
+        d.store((char*)m_ptr + m_fd->pos);
+        break;
+    }
+#ifdef LINUX
+    CASE_TEXTW
+#endif
+    CASE_TEXTA
+    {
+        char buf[NUMBUFSIZE];
+        sprintf_s(buf, NUMBUFSIZE, "%lf", data);
+        storeValueStrA(buf);
+        break;
+    }
+#ifndef LINUX
+    CASE_TEXTW
+    {
+        WCHAR buf[NUMBUFSIZE];
+        swprintf_s((wchar_t*)buf, NUMBUFSIZE, L"%lf", data);
+        storeValueStrW(buf);
+        break;
+    }
+#endif
+    default: // ft_lvar ft_mygeometry ft_myjson
+        break;
+    }
+}
+
+/* if blob and text ,set binary data that is only set pointer. it is not copied.
+ *  Caller must hold data until it sends to the server.
+ */
+void field::setFV(const void* data, uint_td size)
+{
+    assert(m_ptr);
+    char* p = (char*)m_ptr + m_fd->pos;
+    if (data == NULL)
+    {
+        memset(p, 0, m_fd->len);
+        setNull(true);
+        return;
+    }
+    setNull(false);
+    switch (m_fd->type)
+    {
+    case ft_myvarbinary:
+    case ft_myvarchar:
+    case ft_mywvarbinary:
+    case ft_mywvarchar:
+    case ft_lstring:
+    {
+        int sizeByte = m_fd->varLenBytes();
+        size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
+        memset(p, 0, m_fd->len);
+        memcpy(p, &size, sizeByte);
+        memcpy(p + sizeByte, data, size);
+        break;
+    }
+    case ft_myjson:
+    case ft_mygeometry:
+    case ft_myblob:
+    case ft_mytext:
+    {
+        int sizeByte = m_fd->len - 8;
+        memset(p, 0, m_fd->len);
+        memcpy(p, &size, sizeByte);
+        memcpy(p + sizeByte, &data, sizeof(char*));
+        break;
+    }
+    case ft_lvar:
+    {
+        int sizeByte = 2;
+        size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
+        memset(p, 0, m_fd->len);
+        memcpy(p, &size, sizeByte);
+        memcpy(p + sizeByte, data, size);
+        break;
+    }
+    default:
+        size = std::min<uint_td>((uint_td)m_fd->len, size);
+        memset(p, 0, m_fd->len);
+        memcpy(p, data, size);
+    }
+}
+
+//---------------------------------------------------------------------------
+//                       getFV functions
+//---------------------------------------------------------------------------
+
+const char* field::getFVAstr() const
+{
+    if (!m_ptr) return "";
+  
+    switch (m_fd->type)
+    {
+    CASE_TEXT
+        return readValueStrA();
+    }
+
+    char* p = m_fds->strBufs()->getPtrA(max(m_fd->len * 2, NUMBUFSIZE));
+    switch (m_fd->type)
+    {
+    CASE_INT
+        _i64toa_s(readValue64(), p, NUMBUFSIZE, 10);
+        return p;
+    CASE_UINT
+        _ui64toa_s(readValue64(), p, NUMBUFSIZE, 10);
+        return p;
+    case ft_bit:
+        _ui64toa_s(changeEndian(readValue64(), m_fd->len), p, NUMBUFSIZE, 10);
+        break;
+    case ft_myyear:
+    {
+        __int64 v = readValue64();
+        if (v) v += 1900;
+        _i64toa_s(v , p, NUMBUFSIZE, 10);
+        return p;
+    }
+    case ft_logical:
+    {
+        int v = (int)readValue64();
+        if (m_fds->logicalToString)
+            return v ? "Yes": "No";
+        else
+            _ltoa_s(v, p, NUMBUFSIZE, 10);
+        return p;
+    }
+    case ft_date:
+        return btrdtoa((int)readValue64(), p);
+    case ft_time:
+        return btrttoa((int)readValue64(), p);
+    case ft_datetime: 
+        return btrstoa(readValue64(), p);
+    case ft_timestamp:
+        return btrTimeStamp(readValue64()).toString(p);
+    case ft_mydate:
+        return date_time_str<myDate, char>(m_fd->len, true, readValue64(), p, NUMBUFSIZE);
+    case ft_mytime:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            return date_time_str<maTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+        else
+            return date_time_str<myTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+    case ft_mydatetime:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            return date_time_str<maDateTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+        else
+            return date_time_str<myDateTime, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+    case ft_mytimestamp:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            return date_time_str<maTimeStamp, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+        else
+            return date_time_str<myTimeStamp, char>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+    case ft_mygeometry:
+    case ft_myjson:
+        return "";
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d.read((char*)m_ptr + m_fd->pos);
+        return d.toString(p, NUMBUFSIZE);
+    }
+    }
+
+    double v = 0;
+    switch (m_fd->type)
+    {
+    case ft_currency:
+        v = readValue64() / (double)10000;
+        break;
+    CASE_FLOAT
+        v = readValueDbl();
+        break;
+    CASE_NUMERIC
+        v = readValueNumeric();
+        break;
+    CASE_DECIMAL
+        v = readValueDecimal();
+        break;
+
+    }
+    sprintf_s(p, NUMBUFSIZE, "%.*lf", m_fd->decimals, v);
+    return p;
+}
+
+#ifdef _WIN32
+const wchar_t* field::getFVWstr() const
+{
+    if (!m_ptr) return L"";
+
+    switch (m_fd->type)
+    {
+    CASE_TEXT
+        return readValueStrW();
+    }
+
+    wchar_t* p = (wchar_t*)m_fds->strBufs()->getPtrW(max(m_fd->len * 2, NUMBUFSIZE));
+    switch (m_fd->type)
+    {
+    CASE_INT
+        _i64tow_s(readValue64(), p, NUMBUFSIZE, 10);
+        return p;
+    CASE_UINT
+        _ui64tow_s(readValue64(), p, NUMBUFSIZE, 10);
+        return p;
+    case ft_bit:
+        _ui64tow_s(changeEndian(readValue64(), m_fd->len), p, NUMBUFSIZE, 10);
+        break;
+    case ft_myyear:
+    {
+         __int64 v = readValue64();
+        if (v) v += 1900;
+        _i64tow_s(v, p, NUMBUFSIZE, 10);
+        return p;
+    }
+    case ft_logical:
+    {
+        int v = (int)readValue64();
+        if (m_fds->logicalToString)
+            return v ? L"Yes": L"No";
+        else
+            _ltow_s(v, p, NUMBUFSIZE, 10);
+        return p;
+    }
+    case ft_date:
+        return btrdtoa((int)readValue64(), p);
+    case ft_time:
+        return btrttoa((int)readValue64(), p);
+    case ft_datetime: 
+        return btrstoa(readValue64(), p);
+    case ft_timestamp:
+        return btrTimeStamp(readValue64()).toString(p);
+    case ft_mydate:
+        return date_time_str<myDate, wchar_t>(m_fd->decimals, true, readValue64(), p, NUMBUFSIZE);
+    case ft_mytime:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            return date_time_str<maTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+        else
+            return date_time_str<myTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+    case ft_mydatetime:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            return date_time_str<maDateTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+        else
+            return date_time_str<myDateTime, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+    case ft_mytimestamp:
+        if (m_fd->m_options & FIELD_OPTION_MARIADB)
+            return date_time_str<maTimeStamp, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+        else
+            return date_time_str<myTimeStamp, wchar_t>(m_fd->decimals, !m_fd->isLegacyTimeFormat(), readValue64(), p, NUMBUFSIZE);
+    case ft_mygeometry:
+    case ft_myjson:
+        return L"";
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d.read((char*)m_ptr + m_fd->pos);
+        return d.toString(p, NUMBUFSIZE);
+    }
+    }
+
+    double v = 0;
+    switch (m_fd->type)
+    {
+    case ft_currency:
+        v = readValue64() / (double)10000;
+        break;
+    CASE_FLOAT
+        v = readValueDbl();
+        break;
+    CASE_NUMERIC
+        v = readValueNumeric();
+        break;
+    CASE_DECIMAL
+        v = readValueDecimal();
+        break;
+    }
+    swprintf_s(p, NUMBUFSIZE, L"%.*lf",m_fd->decimals, v);
+
+    return p;
+}
+#endif //_WIN32
+
+double field::getFVdbl() const
+{
+    if (!m_ptr) return 0;
+    double ret = 0;
+    switch (m_fd->type)
+    {
+    CASE_FLOAT
+    case ft_timestamp:
+        return (double)readValueDbl();
+    CASE_NUMERIC
+        return (double)readValueNumeric();
+    CASE_DECIMAL
+        return (double)readValueDecimal();
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d.read((char*)m_ptr + m_fd->pos);
+        return d.d();
+    }
+    CASE_INT
+        return  (double)readValue64();
+    case ft_myyear:
+    {
+         __int64 v = readValue64();
+        if (v) v += 1900;
+        return (double)(v);
+    }
+    case ft_currency:
+        return ((double)readValue64() / (double)10000);
+    CASE_UINT
+    case ft_mydate:
+    case ft_time:
+    case ft_date:
+    case ft_datetime:
+    case ft_logical:
+        return  (double)((unsigned __int64)readValue64());
+    case ft_bit:
+        return (double)((unsigned __int64)changeEndian(readValue64(), m_fd->len));
+    case ft_mytime:
+    case ft_mydatetime:
+    case ft_mytimestamp:
+    {
+        __int64 v = readValue64();
+        bool bigendian = !m_fd->isLegacyTimeFormat();
+        if (m_fd->type ==  ft_mytime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return (double)((unsigned __int64)getInternalValue<maTime>(m_fd->decimals, bigendian, v));
+            else
+                return (double)((unsigned __int64)getInternalValue<myTime>(m_fd->decimals, bigendian, v));
+        }
+        else if (m_fd->type ==  ft_mydatetime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return (double)((unsigned __int64)getInternalValue<maDateTime>(m_fd->decimals, bigendian, v));
+            else
+                return (double)((unsigned __int64)getInternalValue<myDateTime>(m_fd->decimals, bigendian, v));
+        }
+        else if (m_fd->type ==  ft_mytimestamp)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return (double)((unsigned __int64)getInternalValue<maTimeStamp>(m_fd->decimals, bigendian, v));
+            else
+                return (double)((unsigned __int64)getInternalValue<myTimeStamp>(m_fd->decimals, bigendian, v));
+        }
+        assert(0);
+    }
+#ifdef LINUX
+    CASE_TEXTW
+#endif
+    CASE_TEXTA
+        return atof(readValueStrA());
+#ifndef LINUX
+    CASE_TEXTW
+        return _wtof((const wchar_t*)readValueStrW());
+#endif
+    default: // ft_lvar ft_mygeometry ft_myjson
+         break;
+    }
+    return ret;
+}
+
+__int64 field::getFV64() const
+{
+    if (!m_ptr) return 0;
+    switch (m_fd->type)
+    {
+    CASE_INT
+    CASE_UINT
+    case ft_mydate:
+    case ft_time:
+    case ft_date:
+    case ft_datetime:
+    case ft_logical:
+    case ft_currency:
+        return readValue64();
+    case ft_bit:
+        return changeEndian(readValue64(), m_fd->len);
+    case ft_myyear:
+    {
+         __int64 v = readValue64();
+        if (v) v += 1900;
+        return v;
     }
     case ft_mytime:
     case ft_mydatetime:
     case ft_mytimestamp:
-        return &compMem;
-    case ft_float:
-        switch (m_fd->len)
+    {
+        __int64 v = readValue64();
+        bool bigendian = !m_fd->isLegacyTimeFormat();
+        if (m_fd->type ==  ft_mytime)
         {
-        case 4:
-            return &compNumber<float>;
-        case 8:
-            return &compNumber<double>;
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return getInternalValue<maTime>(m_fd->decimals, bigendian, v);
+            else
+                return getInternalValue<myTime>(m_fd->decimals, bigendian, v);
         }
-    case ft_mywchar:
-    case ft_wstring:
-    case ft_wzstring:
-        if (logType & CMPLOGICAL_CASEINSENSITIVE)
-            return &compiWString;
-        if ((m_fd->type == ft_wstring) || (m_fd->type == ft_mywchar))
-            return &compMem;
-        return &compWString;
-    case ft_lstring:
-    case ft_myvarchar:
-    case ft_myvarbinary:
-        if (m_fd->varLenBytes() == 1)
-            return &compVarString<unsigned char>;
-        return &compVarString<unsigned short>;
-    case ft_mywvarchar:
-    case ft_mywvarbinary:
-        if (m_fd->varLenBytes() == 1)
-            return &compWVarString<unsigned char>;
-        return &compWVarString<unsigned short>;
-    case ft_mytext:
-    case ft_myblob:
-        return &compBlob;
+        else if (m_fd->type ==  ft_mydatetime)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return getInternalValue<maDateTime>(m_fd->decimals, bigendian, v);
+            else
+                return getInternalValue<myDateTime>(m_fd->decimals, bigendian, v);
+        }
+        else if (m_fd->type ==  ft_mytimestamp)
+        {
+            if (m_fd->m_options & FIELD_OPTION_MARIADB)
+                return getInternalValue<maTimeStamp>(m_fd->decimals, bigendian, v);
+            else
+                return getInternalValue<myTimeStamp>(m_fd->decimals, bigendian, v);
+        }
+        assert(0);
     }
-    return NULL;
+    CASE_FLOAT
+    case ft_timestamp:
+        return (__int64)readValueDbl();
+    CASE_NUMERIC
+        return (__int64)readValueNumeric();
+    CASE_DECIMAL
+        return (__int64)readValueDecimal();
+    case ft_mydecimal:
+    {
+        myDecimal d((uchar_td)m_fd->digits, m_fd->decimals);
+        d.read((char*)m_ptr + m_fd->pos);
+        return d.i64();
+    }
+#ifdef LINUX
+    CASE_TEXTW
+#endif
+    CASE_TEXTA
+        return _atoi64(readValueStrA());
+#ifndef LINUX
+    CASE_TEXTW
+        return _wtoi64(readValueStrW());
+#endif
+    default: // ft_lvar ft_mygeometry ft_myjson
+         break;
+    }
+    return 0;
 }
 
-int field::comp(const field& r, char logType) const
+/* offset is writen at data that is first address of data
+ *  text is not converted to unicode form stored charset.
+ */
+void* field::getFVbin(uint_td& size) const
 {
-    compFieldFunc f = getCompFunc(logType);
-    return f(*this, r, logType);
+    if (!m_ptr) return 0;
+
+    char* p = (char*)m_ptr + m_fd->pos;
+    switch (m_fd->type)
+    {
+    case ft_myvarbinary:
+    case ft_myvarchar:
+    case ft_mywvarbinary:
+    case ft_mywvarchar:
+    case ft_lstring:
+    {
+        int sizeByte = m_fd->varLenBytes();
+        size = 0;
+        memcpy(&size, p, sizeByte);
+        return (void*)(p + sizeByte);
+    }
+    case ft_myjson:
+    case ft_mygeometry:
+    case ft_myblob:
+    case ft_mytext:
+    {
+        int sizeByte = m_fd->len - 8;
+        size = 0;
+        memcpy(&size, p, sizeByte);
+        if (size)
+        {
+            char** ptr = (char**)(p + sizeByte);
+            return (void*)*ptr;
+        }
+        return NULL;
+    }
+    case ft_lvar:
+    {
+        int sizeByte = 2;
+        size = 0;
+        memcpy(&size, p, sizeByte);
+        return (void*)(p + sizeByte);
+    }
+    default:
+        size = m_fd->len;
+        return (void*)(p);
+    }
+}
+
+void* field::ptr() const
+{
+    return m_ptr + m_fd->pos;
+}
+
+void* field::nullPtr() const
+{
+    return m_ptr - m_fd->nullbytes();
+}
+
+void field::nullPtrCache() const
+{
+    if (m_nullbit == 0 && m_fd->isNullable() && m_fd->nullbytes())
+    {
+        m_cachedNullPtr =  (unsigned char*)nullPtr();
+        m_cachedNullPtr += (m_fd->nullbit() / 8);
+        m_nullbit = (1L << (m_fd->nullbit() % 8));
+    }
+}
+
+bool field::isNull() const
+{
+    nullPtrCache();
+    if (m_nullbit)
+        return (*m_cachedNullPtr & m_nullbit) != 0;
+    return false;
+}
+
+void field::setNull(bool v)
+{
+    nullPtrCache();
+    if (m_nullbit && m_cachedNullPtr != &m_nullSign)
+    {
+         if (v)
+            (*m_cachedNullPtr) |= (unsigned char)m_nullbit;
+        else
+            (*m_cachedNullPtr) &= (unsigned char)~m_nullbit;
+        m_fd->enableFlags.bitE = true;
+    }
+}
+
+int field::nullComp(char log) const
+{
+    bool rnull = (log == eIsNull) || (log == eIsNotNull);
+    bool lnull = isNull();
+    return ::nullComp(lnull, rnull, log);
+} 
+
+int field::nullComp(const field& r, char log) const
+{
+    if ((log == eIsNull) || (log == eIsNotNull))
+        return nullComp(log);
+
+    bool lnull = isNull();
+    bool rnull = r.isNull();
+    if (lnull || rnull)
+    {
+        if (lnull > rnull) return -1;
+        if (lnull < rnull) return 1;
+        return 0;
+    }
+    return 2;
+}
+
+int field::comp(const field& r, char log) const
+{
+    int ret = nullComp(r, log & 0xf);
+    if (ret < 2)
+        return ret;
+    comp1Func f = getCompFunc(m_fd->type, m_fd->len, log, m_fd->varLenBytes() + m_fd->blobLenBytes());
+    return f((const char*)ptr(), (const char*)r.ptr(), r.len());
 }
 
 bool field::isCompPartAndMakeValue()
@@ -2046,11 +2247,6 @@ bool field::isCompPartAndMakeValue()
     if (m_fd->isStringType())
     {
         m_fd->setPadCharSettings(false, true);
-        /*bool trim = m_fd->trimPadChar();
-        bool use = m_fd->usePadChar();
-        bool sp = (!trim || use);
-        if (sp)
-            m_fd->setPadCharSettings(false, true);*/
         _TCHAR* p = (_TCHAR*)getFVstr();
         if (p)
         {
@@ -2073,8 +2269,6 @@ bool field::isCompPartAndMakeValue()
         }
         else
             setFV(_T(""));
-        /*if (sp)
-            m_fd->setPadCharSettings(use, trim); */
     }
     return ret;
 }

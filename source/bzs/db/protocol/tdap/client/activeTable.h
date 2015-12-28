@@ -111,26 +111,26 @@ public:
 
     writableRecord& getWritableRecord();
 
-    activeTable& join(recordset& rs, queryBase& q, const _TCHAR* name1,
+    recordset& join(recordset& rs, queryBase& q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                       const _TCHAR* name8 = NULL);
 
-    activeTable&
+    recordset&
     outerJoin(recordset& rs, queryBase& q, const _TCHAR* name1,
               const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
               const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
               const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
               const _TCHAR* name8 = NULL);
 
-    activeTable& join(recordset& rs, pq_handle& q, const _TCHAR* name1,
+    recordset& join(recordset& rs, pq_handle& q, const _TCHAR* name1,
                       const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
                       const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
                       const _TCHAR* name6 = NULL, const _TCHAR* name7 = NULL,
                       const _TCHAR* name8 = NULL);
 
-    activeTable&
+    recordset&
     outerJoin(recordset& rs, pq_handle& q, const _TCHAR* name1,
               const _TCHAR* name2 = NULL, const _TCHAR* name3 = NULL,
               const _TCHAR* name4 = NULL, const _TCHAR* name5 = NULL,
@@ -141,42 +141,42 @@ public:
     table_ptr table() const;
     activeTable& option(int v);
     pq_handle prepare(queryBase& q, bool serverPrepare = false);
-    activeTable& read(recordset& rs, queryBase& q);
-    activeTable& read(recordset& rs, queryBase& q, validationFunc func);
-    activeTable& read(recordset& rs, pq_handle& q);
-    activeTable& read(recordset& rs, pq_handle& q, validationFunc func);
-    activeTable& readMore(recordset& rs);
+    recordset& read(recordset& rs, queryBase& q);
+    recordset& read(recordset& rs, queryBase& q, validationFunc func);
+    recordset& read(recordset& rs, pq_handle& q);
+    recordset& read(recordset& rs, pq_handle& q, validationFunc func);
+    recordset& readMore(recordset& rs);
     /** @cond INTERNAL */
     template<class T0>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0)
+    recordset& read(recordset& rs, pq_handle& q, const T0 v0)
     {
         _supplyValue(q, 0, v0);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1)
+    recordset& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1)
     {
         _supplyValue(q, 0, v0);
         _supplyValue(q, 1, v1);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+    recordset& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2)
     {
         _supplyValue(q, 0, v0);
         _supplyValue(q, 1, v1);
         _supplyValue(q, 2, v2);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+    recordset& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2, const T3 v3)
     {
         _supplyValue(q, 0, v0);
@@ -184,11 +184,11 @@ public:
         _supplyValue(q, 2, v2);
         _supplyValue(q, 3, v3);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3, class T4>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+    recordset& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2, const T3 v3, const T4 v4)
     {
         _supplyValue(q, 0, v0);
@@ -197,11 +197,11 @@ public:
         _supplyValue(q, 3, v3);
         _supplyValue(q, 4, v4);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3, class T4, class T5>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+    recordset& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2, const T3 v3, const T4 v4, const T5 v5)
     {
         _supplyValue(q, 0, v0);
@@ -211,11 +211,11 @@ public:
         _supplyValue(q, 4, v4);
         _supplyValue(q, 5, v5);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3, class T4, class T5, class T6>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+    recordset& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2, const T3 v3, const T4 v4, const T5 v5,
                         const T6 v6)
     {
@@ -227,12 +227,12 @@ public:
         _supplyValue(q, 5, v5);
         _supplyValue(q, 6, v6);
         read(rs, q);
-        return *this;
+        return rs;
     }
 
     template<class T0, class T1, class T2, class T3, class T4, class T5, class T6,
                 class T7>
-    activeTable& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
+    recordset& read(recordset& rs, pq_handle& q, const T0 v0, const T1 v1,
                         const T2 v2, const T3 v3, const T4 v4, const T5 v5,
                         const T6 v6, const T7 v7)
     {
@@ -245,7 +245,7 @@ public:
         _supplyValue(q, 6, v6);
         _supplyValue(q, 7, v7);
         read(rs, q);
-        return *this;
+        return rs;
     }
     /** @endcond */
 

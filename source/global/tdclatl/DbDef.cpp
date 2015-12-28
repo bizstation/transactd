@@ -175,12 +175,6 @@ STDMETHODIMP CDbDef::FindKeynumByFieldNum(short TableIndex, short Index,
     return S_OK;
 }
 
-STDMETHODIMP CDbDef::GetRecordLen(short TableIndex, unsigned short* Value)
-{
-    *Value = m_dbDef->getRecordLen(TableIndex);
-    return S_OK;
-}
-
 STDMETHODIMP CDbDef::get_OpenMode(eOpenMode* Value)
 {
     *Value = (eOpenMode)m_dbDef->openMode();
@@ -252,5 +246,11 @@ STDMETHODIMP CDbDef::StatMsg(BSTR* Value)
 STDMETHODIMP CDbDef::ValidateTableDef(short TableIndex, short* Value)
 {
     *Value = m_dbDef->validateTableDef(TableIndex);
+    return S_OK;
+}
+
+STDMETHODIMP CDbDef::SynchronizeSeverSchema(short TableIndex)
+{
+    m_dbDef->synchronizeSeverSchema(TableIndex);
     return S_OK;
 }

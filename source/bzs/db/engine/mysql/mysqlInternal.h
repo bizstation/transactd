@@ -248,25 +248,26 @@ inline bool cp_has_update_default_function(Field* fd)
 inline void cp_evaluate_insert_default_function(Field* fd)
 {
 #if (MYSQL_VERSION_ID > 50600)
-    Field* ft = fd;
+	Field* ft = fd;
 #else
-    Field_timestamp* ft = (Field_timestamp*)(fd);
+	Field_timestamp* ft = (Field_timestamp*)(fd);
 #endif
-    if (ft)
-        ft->set_time();
+	if (ft)
+		ft->set_time();
 }
 
 inline void cp_evaluate_update_default_function(Field* fd)
 {
 
 #if (MYSQL_VERSION_ID > 50600)
-    Field* ft = fd;
+	Field* ft = fd;
 #else
-    Field_timestamp* ft = (Field_timestamp*)(fd);
+	Field_timestamp* ft = (Field_timestamp*)(fd);
 #endif
-    if (ft)
-        ft->set_time();
+	if (ft)
+		ft->set_time();
 }
+
 
 inline unsigned char* cp_null_ptr(Field* fd, unsigned char* /*record*/)
 {
@@ -455,6 +456,11 @@ inline bool cp_query_command(THD* thd, char* str)
 	return dispatch_command(thd, &com_data, COM_QUERY);
 }
 
+inline void cp_lex_clear(THD* thd)
+{
+    thd->lex->reset();
+}
+
 
 #else //Not MySQL 5.7
 #define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
@@ -559,6 +565,11 @@ inline bool cp_query_command(THD* thd, char* str)
 	return dispatch_command(COM_QUERY, thd, str, (uint)strlen(str));
 }
 
+inline void cp_lex_clear(THD* thd)
+{
+    thd->lex->many_values.empty();
+}
+
 #endif
 
 /* find_files is static function in maridb. 
@@ -599,6 +610,19 @@ inline bool cp_query_command(THD* thd, char* str)
         return find_files(thd, files, NullS,  mysql_data_home, "", true);
 #endif        
     }
+#endif
+
+
+#if (defined(MARIADDB_10_1) && MARIADDB_10_1 > 100108)
+inline void cp_setup_rpl_bitmap(TABLE* table)
+{
+    bitmap_set_all(table->write_set);
+    table->rpl_write_set = table->write_set;
+}
+#else
+
+inline void cp_setup_rpl_bitmap(TABLE* table){};
+
 #endif
 
 #endif // BZS_DB_ENGINE_MYSQL_MYSQLINTERNAL_H
