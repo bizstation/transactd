@@ -1,6 +1,183 @@
 ﻿リリースノート
 
 ================================================================================
+Version 3.0.0 2015/12/26
+================================================================================
+バージョンアップ上の注意点
+--------------------------------------------------------------------------------
+* サーバー クライアントのバージョン互換性
+  サーバー/クライアントともに2.4系との相互運用が可能です。(3.0の新機能を除く）
+  但し、NULL許可フィールドの扱いが異なっています。従来と同じ扱いのモードが用意され
+  ています。データベースを開く前に、
+  database::setCompatibleMode(CMP_MODE_OLD_NULL)を呼び出してください。
+
+新機能
+--------------------------------------------------------------------------------
+* フィールドの値でNULLの設定、読み取りを可能にしました。
+  NULLを許可するフィールドの扱いの違いが問題にならないよう、従来と同じモードでの
+  動作も可能です。データベースを開く前に、
+  database::setCompatibleMode(CMP_MODE_OLD_NULL)を呼び出してください。NULLの扱い
+  が2.4系と同じになります。
+  詳細はhttp://www.bizstation.jp/ja/transactd/client/sdk/doc/page_1_0_v3.html
+  をご覧ください。
+
+* フィールドのデフォルト値に対応しました。
+  詳細はhttp://www.bizstation.jp/ja/transactd/client/sdk/doc/page_1_0_v3.html
+  をご覧ください。
+
+* スキーマテーブルを使用しないアクセスを可能にしました。
+  詳細はhttp://www.bizstation.jp/ja/transactd/client/sdk/doc/page_1_0_v3.html
+  をご覧ください。
+
+* PHP ExtensionがPHP7に対応しました。
+
+* ビット型のフィールドアクセスを簡単にするbitsetクラスを追加しました。
+  フィールドの値の取得/設定に、bistsetクラスでの受け取りと設定を行うことができま
+  す。
+
+* MySQL DECIMAL型に対応しました。
+
+* MySQL/Mariadbのバージョンによってデータ構造が異なる、
+  TIME / DATETIME / TIMESTAMP 型に完全に対応しました。
+
+* MySQL DATE型の1900年のオフセットをクライアントライブラリ内に実装しました。
+
+* MySQL 5.7 Mariadb 10.1 系に完全対応
+
+修正と変更点
+--------------------------------------------------------------------------------
+* サーバー設定
+  timestamp_always 変数を追加しました。詳しくは以下を参照してください。
+  http://www.bizstation.jp/ja/transactd/documents/admin_manual.html#mycnf
+
+* テストの追加
+  Version3の新たな機能をテストするためのテストが追加されました。
+  (test_tdclcpp_v3.cpp test_v3.js transactd_v3_Test.php transactd_v3_spec.rb)
+
+* リファクタリング
+  tdclcppのクラスのリファクタリングが行われています。
+
+* クラスの追加
+  class bitset
+
+* パブリックメソッド、メンバーの追加
+  void               fielddef::setDefaultValue(const wchar_t* s) 
+  inline void        fielddef::setDefaultValue(const char* s) 
+  void               fielddef::setDefaultValue(double v) 
+  inline const char* fielddef::defaultValue_str() const 
+  const char*        fielddef::defaultValue_strA() const 
+  const wchar_t*     fielddef::defaultValue_str() const 
+  inline bool        fielddef::isPadCharType() const 
+  inline bool        fielddef::isDateTimeType() const 
+  bool               fielddef::isValidCharNum() const
+  inline bool        fielddef::isNullable() const
+  void               fielddef::setNullable(bool v, bool defaultNull = true) 
+  void               fielddef::setTimeStampOnUpdate(bool v) 
+  bool               fielddef::isTimeStampOnUpdate() const  
+  inline double      fielddef::defaultValue() const 
+  inline double      fielddef::isDefaultNull() const 
+  uint_td            fielddef::varLenBytes() const
+  uint_td            fielddef::blobLenBytes() const 
+  void               fielddef::setDecimalDigits(int dig, int dec)
+  bool               fielddef::isIntegerType() const
+  void               fielddef::setDefaultValue(__int64 v)
+  void               fielddef::setDefaultValue(bitset& v)
+  __int64            fielddef::defaultValue64() const
+  bool               fielddef::operator==(const fielddef& r) const
+  const wchar_t*     fielddef::defaultValue_str() const 
+  inline double      fielddef::defaultValue() const 
+  ushort_td          fielddef::digits 
+  inline uchar_td    tabledef::nullbytes() const 
+  inline uchar_td    tabledef::nullfields() const 
+  inline uchar_td    tabledef::inUse() const 
+  inline bool        tabledef::isMysqlNullMode() const
+  int                tabledef::size() const 
+  short              tabledef::fieldNumByName(const _TCHAR* name) const 
+  inline ushort_td   tabledef::recordlen() const 
+  void               tabledef::setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
+  bool               tabledef::isLegacyTimeFormat(const fielddef& fd) const
+  bool               tabledef::operator==(const tabledef& r) const
+  bool               keydef::operator==(const keydef& r) const
+  void               dbdef::synchronizeSeverSchema(short tableIndex) 
+  bool               database::autoSchemaUseNullkey() const 
+  void               database::setAutoSchemaUseNullkey(bool v) 
+  static void        database::setCompatibleMode(int mode) 
+  static int         database::compatibleMode() 
+  bool               database::createTable(const char* sql)
+  char*              database::getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf, uint_td*  size)
+  static const int   database::CMP_MODE_MYSQL_NULL = 1
+  static const int   database::CMP_MODE_OLD_NULL =  0
+  void               nstable::test_store(const char* values)
+  void               nstable::setTimestampMode(int mode)
+  bool               table::getFVNull(short index) const 
+  bool               table::getFVNull(const _TCHAR* fieldName) const
+  void               table::setFVNull(short index, bool v) 
+  void               table::setFVNull(const _TCHAR* fieldName, bool v) 
+  bitset             table::getFVbits(const _TCHAR* fieldName)
+  bitset             table::getFVbits(short index)
+  void               table::setFV(short index, const bitset& )
+  void               table::setFV(const fieldName, const bitset& )
+  enum               table::eNullReset::clearNull
+  enum               table::eNullReset::defaultNull
+  void               fielddefs::addAllFileds(const tabledef* def) 
+  void               fielddefs::addSelectedFields(const class table* tb) 
+  bool               field::isNull() const 
+  void               field::setNull(bool v) 
+  bitset             field::getBits()
+  void               field::operator=(const bitset&)
+  int                field::i()
+  __int64            field::i64()
+  double             field::d()
+  const _TCHAR*      field::str()
+  const void*        field::bin()
+  void               field::setValue()
+  void               field::setBin()
+  query&             query::whereIsNull(const _TCHAR* name) 
+  query&             query::whereIsNotNull(const _TCHAR* name) 
+  query&             query::andIsNull(const _TCHAR* name) 
+  query&             query::andIsNotNull(const _TCHAR* name) 
+  query&             query::orIsNull(const _TCHAR* name) 
+  query&             query::orIsNotNull(const _TCHAR* name) 
+  query&             query::segmentsForInValue(int v)
+  void               activeTable::keyValue(const bitset& )
+  recordsetQuery&    recordsetQuery::whenIsNull
+  recordsetQuery&    recordsetQuery::whenIsNotNull
+  recordsetQuery&    recordsetQuery::andIsNull
+  recordsetQuery&    recordsetQuery::andIsNotNull
+  recordsetQuery&    recordsetQuery::orIsNull
+  recordsetQuery&    recordsetQuery::orIsNotNull
+  bool               btrVersion::isSupportDateTimeTimeStamp() const
+  bool               btrVersion::isSupportMultiTimeStamp() const
+  bool               btrVersion::isMariaDB() const
+  bool               btrVersion::isMysql56TimeFormat() const
+  bool               btrVersion::isFullLegacyTimeFormat() const
+ 
+* パブリック定数の追加
+  enum   eCompType::eBitAnd = 8,
+  enum   eCompType::eNotBitAnd = 9,
+  enum   eCompType::eIsNull = 10,
+  enum   eCompType::eIsNotNull = 11
+  #define ft_myyear                       59
+  #define ft_mygeometry                   60
+  #define ft_myjson                       61
+  #define ft_mydecimal                    62
+  #define TIMESTAMP_VALUE_CONTROL         0
+  #define TIMESTAMP_ALWAYS                1
+  #define STATUS_TOO_LARGE_VALUE          -44
+
+* 削除されたパブリックメソッド
+  ushort_td          dbdef::getRecordLen(short tableIndex) 
+  double             field::getFVnumeric() const 
+  double             field::getFVDecimal() const 
+  void               field::setFVDecimal(double data) 
+  void               field::setFVNumeric(double data) 
+
+* メソッド引数の変更
+  short             database::copyTableData(table* dest, table* src, bool turbo, short keyNum = -1, int maxSkip = -1) 
+  void              table::clearBuffer(eNullReset resetType = defaultNull) 
+
+
+================================================================================
 Version 2.4.5 2015/10/29
 ================================================================================
 修正と変更点

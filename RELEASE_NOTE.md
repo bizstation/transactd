@@ -1,6 +1,188 @@
 Release note
 
 ================================================================================
+Version 3.0.0 2015/12/26
+================================================================================
+Upgrade Notes
+--------------------------------------------------------------------------------
+* Compatibility between server plugin and clients
+  Upgrade from the Version 2.4 is easy.
+  Server plugins and clients are compatible with 2.4. (except the new features 
+  from version 3.0)
+  However, the handling of nullable field is different.
+  You can have the same handling as the previous version. Before opening the 
+  database, please call the database::setCompatibleMode(CMP_MODE_OLD_NULL).
+
+  Upgrade from the older versions than 2.4, please check the previous 
+  release notes.
+
+
+New Features
+--------------------------------------------------------------------------------
+* In the field of value, it was able to be a NULL setting and reading
+  You can compatible setting, so that the problem does not occur in the 
+  difference of NULL handling. Before opening the database, please call the 
+  database::setCompatibleMode(CMP_MODE_OLD_NULL). It will be the same as the NULL 
+  handling version 2.4.
+  Please refer to bellow for more information.
+  http://www.bizstation.jp/ja/transactd/client/sdk/doc/page_1_0_v3.html
+
+* Supports the default value for the field
+  Please refer to bellow for more information.
+  http://www.bizstation.jp/ja/transactd/client/sdk/doc/page_1_0_v3.html
+
+* Schema table-less access is available
+  Please refer to bellow for more information.
+  http://www.bizstation.jp/ja/transactd/client/sdk/doc/page_1_0_v3.html
+
+* PHP Extension now supports PHP7
+
+* Added a bitset class to simplify the field access of bit type.
+  To get/set of field values, you can do remain bistset class.
+
+* Supports MySQL DECIMAL type
+
+* Supports MySQL TIME / DATETIME / TIMESTAMP type fully compatible
+  Data structure is different depending on the version of the 
+  MySQL / Mariadb.
+
+* Implemented the offset of the MySQL DATE type 1900 in the client library.
+
+* Supports MySQL5.7 Mariadb 10.1
+
+Modifications
+--------------------------------------------------------------------------------
+* Server settings
+  Added a timestamp_always variable. Please refer to bellow for more information.
+  http://www.bizstation.jp/en/transactd/documents/admin_manual.html#mycnf
+
+* Test
+  Test for a new function of Version3 has been added.
+  (test_tdclcpp_v3.cpp test_v3.js transactd_v3_Test.php transactd_v3_spec.rb)
+
+* Refactoring of libraries of tdclcpp
+
+* Added classes
+  class bitset
+
+* Added public method or member
+  void               fielddef::setDefaultValue(const wchar_t* s) 
+  inline void        fielddef::setDefaultValue(const char* s) 
+  void               fielddef::setDefaultValue(double v) 
+  inline const char* fielddef::defaultValue_str() const 
+  const char*        fielddef::defaultValue_strA() const 
+  const wchar_t*     fielddef::defaultValue_str() const 
+  inline bool        fielddef::isPadCharType() const 
+  inline bool        fielddef::isDateTimeType() const 
+  bool               fielddef::isValidCharNum() const
+  inline bool        fielddef::isNullable() const
+  void               fielddef::setNullable(bool v, bool defaultNull = true) 
+  void               fielddef::setTimeStampOnUpdate(bool v) 
+  bool               fielddef::isTimeStampOnUpdate() const  
+  inline double      fielddef::defaultValue() const 
+  inline double      fielddef::isDefaultNull() const 
+  uint_td            fielddef::varLenBytes() const
+  uint_td            fielddef::blobLenBytes() const 
+  void               fielddef::setDecimalDigits(int dig, int dec)
+  bool               fielddef::isIntegerType() const
+  void               fielddef::setDefaultValue(__int64 v)
+  void               fielddef::setDefaultValue(bitset& v)
+  __int64            fielddef::defaultValue64() const
+  bool               fielddef::operator==(const fielddef& r) const
+  const wchar_t*     fielddef::defaultValue_str() const 
+  inline double      fielddef::defaultValue() const 
+  ushort_td          fielddef::digits 
+  inline uchar_td    tabledef::nullbytes() const 
+  inline uchar_td    tabledef::nullfields() const 
+  inline uchar_td    tabledef::inUse() const 
+  inline bool        tabledef::isMysqlNullMode() const
+  int                tabledef::size() const 
+  short              tabledef::fieldNumByName(const _TCHAR* name) const 
+  inline ushort_td   tabledef::recordlen() const 
+  void               tabledef::setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
+  bool               tabledef::isLegacyTimeFormat(const fielddef& fd) const
+  bool               tabledef::operator==(const tabledef& r) const
+  bool               keydef::operator==(const keydef& r) const
+  void               dbdef::synchronizeSeverSchema(short tableIndex) 
+  bool               database::autoSchemaUseNullkey() const 
+  void               database::setAutoSchemaUseNullkey(bool v) 
+  static void        database::setCompatibleMode(int mode) 
+  static int         database::compatibleMode() 
+  bool               database::createTable(const char* sql)
+  char*              database::getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf, uint_td*  size)
+  static const int   database::CMP_MODE_MYSQL_NULL = 1
+  static const int   database::CMP_MODE_OLD_NULL =  0
+  void               nstable::test_store(const char* values)
+  void               nstable::setTimestampMode(int mode)
+  bool               table::getFVNull(short index) const 
+  bool               table::getFVNull(const _TCHAR* fieldName) const
+  void               table::setFVNull(short index, bool v) 
+  void               table::setFVNull(const _TCHAR* fieldName, bool v) 
+  bitset             table::getFVbits(const _TCHAR* fieldName)
+  bitset             table::getFVbits(short index)
+  void               table::setFV(short index, const bitset& )
+  void               table::setFV(const fieldName, const bitset& )
+  enum               table::eNullReset::clearNull
+  enum               table::eNullReset::defaultNull
+  void               fielddefs::addAllFileds(const tabledef* def) 
+  void               fielddefs::addSelectedFields(const class table* tb) 
+  bool               field::isNull() const 
+  void               field::setNull(bool v) 
+  bitset             field::getBits()
+  void               field::operator=(const bitset&)
+  int                field::i()
+  __int64            field::i64()
+  double             field::d()
+  const _TCHAR*      field::str()
+  const void*        field::bin()
+  void               field::setValue()
+  void               field::setBin()
+  query&             query::whereIsNull(const _TCHAR* name) 
+  query&             query::whereIsNotNull(const _TCHAR* name) 
+  query&             query::andIsNull(const _TCHAR* name) 
+  query&             query::andIsNotNull(const _TCHAR* name) 
+  query&             query::orIsNull(const _TCHAR* name) 
+  query&             query::orIsNotNull(const _TCHAR* name) 
+  query&             query::segmentsForInValue(int v)
+  void               activeTable::keyValue(const bitset& )
+  recordsetQuery&    recordsetQuery::whenIsNull
+  recordsetQuery&    recordsetQuery::whenIsNotNull
+  recordsetQuery&    recordsetQuery::andIsNull
+  recordsetQuery&    recordsetQuery::andIsNotNull
+  recordsetQuery&    recordsetQuery::orIsNull
+  recordsetQuery&    recordsetQuery::orIsNotNull
+  bool               btrVersion::isSupportDateTimeTimeStamp() const
+  bool               btrVersion::isSupportMultiTimeStamp() const
+  bool               btrVersion::isMariaDB() const
+  bool               btrVersion::isMysql56TimeFormat() const
+  bool               btrVersion::isFullLegacyTimeFormat() const
+ 
+* Added public constants
+  enum   eCompType::eBitAnd = 8,
+  enum   eCompType::eNotBitAnd = 9,
+  enum   eCompType::eIsNull = 10,
+  enum   eCompType::eIsNotNull = 11
+  #define ft_myyear                       59
+  #define ft_mygeometry                   60
+  #define ft_myjson                       61
+  #define ft_mydecimal                    62
+  #define TIMESTAMP_VALUE_CONTROL         0
+  #define TIMESTAMP_ALWAYS                1
+  #define STATUS_TOO_LARGE_VALUE          -44
+
+* Deleted public method
+  ushort_td          dbdef::getRecordLen(short tableIndex) 
+  double             field::getFVnumeric() const 
+  double             field::getFVDecimal() const 
+  void               field::setFVDecimal(double data) 
+  void               field::setFVNumeric(double data) 
+
+* Changed method parameters
+  short             database::copyTableData(table* dest, table* src, bool turbo, short keyNum = -1, int maxSkip = -1) 
+  void              table::clearBuffer(eNullReset resetType = defaultNull) 
+
+
+================================================================================
 Version 2.4.5 2015/10/29
 ================================================================================
 Modifications 
