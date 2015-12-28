@@ -1,4 +1,4 @@
-﻿リリースノート
+﻿﻿リリースノート
 
 ================================================================================
 Version 3.0.0 2015/12/26
@@ -61,6 +61,7 @@ Version 3.0.0 2015/12/26
   class bitset
 
 * パブリックメソッド、メンバーの追加
+  ```
   void               fielddef::setDefaultValue(const wchar_t* s) 
   inline void        fielddef::setDefaultValue(const char* s) 
   void               fielddef::setDefaultValue(double v) 
@@ -151,8 +152,10 @@ Version 3.0.0 2015/12/26
   bool               btrVersion::isMariaDB() const
   bool               btrVersion::isMysql56TimeFormat() const
   bool               btrVersion::isFullLegacyTimeFormat() const
+  ```
  
 * パブリック定数の追加
+  ```
   enum   eCompType::eBitAnd = 8,
   enum   eCompType::eNotBitAnd = 9,
   enum   eCompType::eIsNull = 10,
@@ -164,17 +167,22 @@ Version 3.0.0 2015/12/26
   #define TIMESTAMP_VALUE_CONTROL         0
   #define TIMESTAMP_ALWAYS                1
   #define STATUS_TOO_LARGE_VALUE          -44
+  ```
 
 * 削除されたパブリックメソッド
+  ```
   ushort_td          dbdef::getRecordLen(short tableIndex) 
   double             field::getFVnumeric() const 
   double             field::getFVDecimal() const 
   void               field::setFVDecimal(double data) 
   void               field::setFVNumeric(double data) 
+  ```
 
 * メソッド引数の変更
+  ```
   short             database::copyTableData(table* dest, table* src, bool turbo, short keyNum = -1, int maxSkip = -1) 
   void              table::clearBuffer(eNullReset resetType = defaultNull) 
+  ```
 
 
 ================================================================================
