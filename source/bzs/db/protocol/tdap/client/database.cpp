@@ -983,6 +983,7 @@ bool database::createTable(short fileNum, const _TCHAR* uri)
             m_stat = STATUS_CANT_ALLOC_MEMORY;
             return false;
         }
+        memset(fs, 0, 1024);
         m_impl->dbDef->getFileSpec(fs, fileNum);
         if (uri)
             buf = uri;

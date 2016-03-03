@@ -1070,7 +1070,6 @@ uint_td tabledef::pack(char* ptr, size_t size) const
                 memmove(pos, pos + movelen, end - pos);
             }
         }
-        
     }
     return (uint_td)(pos - ptr);
 }
@@ -1079,8 +1078,6 @@ int tabledef::size() const
 {
     int len =  (int)(sizeof(tabledef) + (sizeof(fielddef) * fieldCount) +
                     (sizeof(keydef) * keyCount));
-    const ushort_td* p = &varSize;
-    *(const_cast<ushort_td*>(p)) = len - 4;
     return len;
 }
 
