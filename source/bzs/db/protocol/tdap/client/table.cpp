@@ -822,7 +822,7 @@ bool table::isReadContinue(ushort_td& op)
     // limit count control
     if (isContinue)
     {
-        if (filter->isStopAtLimit() && m_impl->rc->rowCount() == filter->maxRows())
+        if (filter->isReadLimit(m_impl->rc->rowCount()))
         {
             m_stat = STATUS_LIMMIT_OF_REJECT;
             return false;
@@ -1181,6 +1181,7 @@ void table::setPrepare(const pq_handle stmt)
     m_impl->resetBookmarks();
     if (m_impl->filterPtr != stmt)
         m_impl->filterPtr = stmt;
+    m_impl->filterPtr->resetReaded();
     if (nsdb()->isReconnected())
         m_impl->filterPtr->setServerPreparedId(0);
 }
