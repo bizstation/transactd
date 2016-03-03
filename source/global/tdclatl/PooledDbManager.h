@@ -62,7 +62,7 @@ public:
     STDMETHOD(BeginTrn)(eLockType Bias);
     STDMETHOD(EndTrn)(void);
     STDMETHOD(AbortTrn)(void);
-    STDMETHOD(BeginSnapshot)(eStLockType bias);
+    STDMETHOD(BeginSnapshot)(eStLockType bias, IBinlogPos** bpos);
     STDMETHOD(EndSnapshot)(void);
     STDMETHOD(Use)(VARIANT Uri);
     STDMETHOD(Unuse)();

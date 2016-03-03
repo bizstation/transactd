@@ -131,7 +131,7 @@ public:
                                NOWAIT_WRITE); // NoWit SingleLock
     void endTrn();
     void abortTrn();
-    void beginSnapshot(short bias = CONSISTENT_READ, binlogPos* binpos=NULL);
+    void beginSnapshot(short bias = CONSISTENT_READ, binlogPos* bpos=NULL);
     void endSnapshot();
     ushort_td trxIsolationServer() const ;
     ushort_td trxLockWaitTimeoutServer() const ;

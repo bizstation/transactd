@@ -247,6 +247,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\activeTable.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\BinlogPos.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Bitset.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Bookmark.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\ConnectParams.cpp" />
@@ -296,6 +297,7 @@
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\connectionPool.h" />
     <ClInclude Include="..\..\source\bzs\db\protocol\tdap\client\pooledDatabaseManager.h" />
     <ClInclude Include="..\..\source\global\tdclatl\activeTable.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\BinlogPos.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Bitset.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Bookmark.h" />
     <ClInclude Include="..\..\source\global\tdclatl\ConnectParams.h" />

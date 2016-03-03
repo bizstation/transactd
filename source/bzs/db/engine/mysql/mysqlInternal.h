@@ -667,8 +667,10 @@ pragma_pop;
 #if (MYSQL_VERSION_ID > 50700)
 #  define Protocol_mysql Protocol
 #  include "sql/rpl_master.h"
+#  define CP_PROTOCOL PROTOCOL_PLUGIN
 #else
 #  define Protocol_mysql Protocol
+#  define CP_PROTOCOL PROTOCOL_BINARY
 #endif //(MYSQL_VERSION_ID > 50700)
 
 class dummyProtocol : public Protocol_mysql
@@ -708,7 +710,7 @@ public:
     virtual bool store_time(MYSQL_TIME *time, uint precision){return false;}
     virtual bool store(Field *field){return false;}
     virtual bool send_out_parameters(List<Item_param> *sp_params){return false;}
-	virtual Protocol::enum_protocol_type type(void){ return PROTOCOL_BINARY; };
+	virtual Protocol::enum_protocol_type type(void){ return CP_PROTOCOL; };
 #ifdef MARIADB_BASE_VERSION      //Mariadb 5.5
     virtual bool store(MYSQL_TIME *time, int decimals){return false;}
     virtual bool store_time(MYSQL_TIME *time, int decimals){ return false;}

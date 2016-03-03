@@ -21,6 +21,7 @@
 #include "DbDef.h"
 #include "Table.h"
 #include "TdVersion.h"
+#include "BinlogPos.h"
 
 using namespace bzs::db::protocol::tdap::client;
 STDMETHODIMP CDatabase::InterfaceSupportsErrorInfo(REFIID riid)
@@ -178,9 +179,25 @@ STDMETHODIMP CDatabase::get_NativeDatabase(__int64** Value)
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::BeginSnapshot(eStLockType bias)
+STDMETHODIMP CDatabase::BeginSnapshot(eStLockType bias, IBinlogPos** bpos)
 {
-    m_db->beginSnapshot(bias);
+    binlogPos pos;
+    m_db->beginSnapshot(bias, &pos);
+    *bpos = NULL;
+    if (bias == CONSISTENT_READ_WITH_BINLOG_POS)
+    {
+        CComObject<CBinlogPos>* bposObj;
+        CComObject<CBinlogPos>::CreateInstance(&bposObj);
+        if (bposObj)
+        {
+            bposObj->m_pos = pos;
+        
+            IBinlogPos* ipos;
+            bposObj->QueryInterface(IID_IBinlogPos, (void**)&ipos);
+            _ASSERTE(ipos);
+            *bpos = ipos;
+        }
+    }
     return S_OK;
 }
 
@@ -190,9 +207,9 @@ STDMETHODIMP CDatabase::EndSnapshot()
     return S_OK;
 }
 
-STDMETHODIMP CDatabase::Drop()
+STDMETHODIMP CDatabase::Drop(BSTR Uri)
 {
-    m_db->drop();
+    m_db->drop(Uri);
     return S_OK;
 }
 
@@ -217,7 +234,6 @@ STDMETHODIMP CDatabase::Close(VARIANT_BOOL withDropDefaultSchema)
 
 STDMETHODIMP CDatabase::Connect(BSTR URI, VARIANT_BOOL newConnection,
                                 VARIANT_BOOL* Value)
-
 {
     *Value = m_db->connect(URI, newConnection);
     return S_OK;
@@ -562,22 +578,30 @@ STDMETHODIMP CDatabase::GetSqlStringForCreateTable(BSTR tableName, BSTR* retVal)
 {
     uint_td size = 65000;
     char* tmp = new char[size];
-    CComBSTR ret;
+    wchar_t* tmpw = new wchar_t[size];
 
-    ret = m_db->getSqlStringForCreateTable(tableName, tmp, &size);
+    m_db->getSqlStringForCreateTable(tableName, tmp, &size);
+    MultiByteToWideChar(CP_UTF8, 0, tmp, -1, tmpw, size);
+    CComBSTR ret = tmpw;
     *retVal = ret.Copy();
     delete [] tmp;
+    delete [] tmpw;
     return S_OK;
 }
 
-void __stdcall onCopyData(database* db, int recordCount, int count,
+void __stdcall onCopyData(database* db, table* tb, int recordCount, int count,
                           bool& cancel)
 {
     CDatabase* cdb = reinterpret_cast<CDatabase*>(db->optionalData());
     IDatabase* dbPtr = dynamic_cast<IDatabase*>(cdb);
     _ASSERTE(dbPtr);
+
+     CTableTd* ctb = reinterpret_cast<CTableTd*>(tb->optionalData());
+    ITable* tbPtr = dynamic_cast<ITable*>(ctb);
+    _ASSERTE(tbPtr);
+
     VARIANT_BOOL tmp = 0;
-    cdb->Fire_OnCopyData(dbPtr, recordCount, count, &tmp);
+    cdb->Fire_OnCopyData(dbPtr, tbPtr, recordCount, count, &tmp);
     if (tmp)
         cancel = true;
 }

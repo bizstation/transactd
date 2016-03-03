@@ -101,7 +101,10 @@ public:
 
     inline int enableTrn() { return m_db->enableTrn(); }
 
-    inline void beginSnapshot(short bias = CONSISTENT_READ) { m_db->beginSnapshot(bias); }
+    inline void beginSnapshot(short bias = CONSISTENT_READ, binlogPos* bpos=NULL)
+    {
+        m_db->beginSnapshot(bias, bpos);
+    }
 
     inline void endSnapshot() { m_db->endSnapshot(); }
 
@@ -253,7 +256,10 @@ public:
 
     inline int enableTrn() { return m_db->enableTrn(); }
 
-    inline void beginSnapshot(short bias = CONSISTENT_READ) { m_db->beginSnapshot(bias); }
+    inline void beginSnapshot(short bias = CONSISTENT_READ, binlogPos* bpos=NULL)
+    {
+        m_db->beginSnapshot(bias, bpos);
+    }
 
     inline void endSnapshot() { m_db->endSnapshot(); }
 
