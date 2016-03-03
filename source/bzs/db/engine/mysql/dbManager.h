@@ -76,7 +76,7 @@ protected:
     int ddl_execSql(THD* thd, const std::string& sql_stmt);
     int ddl_createDataBase(THD* thd, const std::string& dbname);
     int ddl_dropDataBase(THD* thd, const std::string& dbname,
-                         const std::string& dbSqlname);
+		const std::string& dbSqlname, short cid);
     int ddl_useDataBase(THD* thd, const std::string& dbSqlname);
     int ddl_dropTable(database* db, const std::string& tbname,
                       const std::string& sqldbname,

@@ -42,9 +42,9 @@ public:
         if (m_db)
         {
             // Test for SWIG interface
-            m_db->release();
+            //m_db->release();
             // Test for c++
-            // database::destroy(m_db);
+            database::destroy(m_db);
         }
     }
 
@@ -68,8 +68,9 @@ public:
 
     ~fixtureKanji()
     {
-        if (m_db)
-            m_db->release();
+        //if (m_db)
+        //    m_db->release();
+        database::destroy(m_db);
     }
     ::database* db() const { return m_db; }
 };
@@ -1848,7 +1849,6 @@ void testExclusive()
                         "open db2->stat = " << db2->stat());
     dbdef* def = db->dbDef();
     tabledef* td = def->tableDefs(1);
-    td->iconIndex = 3;
     def->updateTableDef(1);
     BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef");
     tb->release();

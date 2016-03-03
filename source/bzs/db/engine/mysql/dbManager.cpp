@@ -244,18 +244,32 @@ int dbManager::ddl_createDataBase(THD* thd, const std::string& dbname)
 }
 
 int dbManager::ddl_dropDataBase(THD* thd, const std::string& dbname,
-                                const std::string& dbSqlname)
+                                const std::string& dbSqlname, short cid)
 {
     std::string cmd = "drop database `" + dbSqlname + "`";
     smartDbsReopen::removeName = dbname;
     int ret = ddl_execSql(thd, cmd);
     smartDbsReopen::removeName = "";
     boost::mutex::scoped_lock lck(m_mutex);
-    for (int i = (int)m_dbs.size() - 1; i >= 0; i--)
-    {
-        if (m_dbs[i] && (m_dbs[i]->name() == dbname))
-            m_dbs.erase(m_dbs.begin() + i);
-    }
+	if (ret == 0)
+	{
+		int index = -1;
+		for (int i = (int)m_dbs.size() - 1; i >= 0; i--)
+		{
+			if (m_dbs[i] != NULL && (m_dbs[i]->clientID() == cid))
+			{
+				index = i;
+		        break;
+		    }
+		}
+		if (index != -1)
+		{
+			m_dbs[index].reset();
+			for (int i = (int)m_handles.size() - 1; i >= 0; i--)
+			if (m_handles[i].db == index)
+				m_handles.erase(m_handles.begin() + i);
+		}
+	}
     return ret;
 }
 

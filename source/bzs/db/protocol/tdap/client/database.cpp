@@ -199,22 +199,27 @@ void database::setAutoSchemaUseNullkey(bool v)
 
 void database::create(const _TCHAR* uri, short type)
 {
+    bool dbdefCreated = false;
+    short stat = 0;
     if (!m_impl->dbDef)
+    {
         m_impl->dbDef = new dbdef(this, type); // Create TabelDef here.
+        dbdefCreated = true;
+    }
     bool isTransactd = isTransactdUri(uri);
     _TCHAR buf[MAX_PATH];
     schemaTable(uri, buf, MAX_PATH);
     if (buf[0] || !isTransactd)
     {
         m_impl->dbDef->create(uri);
-        m_stat = m_impl->dbDef->stat();
+        stat = m_impl->dbDef->stat();
     }
     else
     {
         if (isTransactd)
         {
             if (setUseTransactd() == false)
-                m_stat = ERROR_LOAD_CLIBRARY;
+                stat = ERROR_LOAD_CLIBRARY;
             else
             {
                 _TCHAR uri_tmp[MAX_PATH];
@@ -232,13 +237,16 @@ void database::create(const _TCHAR* uri, short type)
                 _TCHAR posblk[128] = { 0x00 };
                 const char* p = toServerUri((char*)buf, MAX_PATH, uri_tmp, true);
                 uint_td len = 0;
-                m_stat = m_btrcallid(TD_CREATETABLE, posblk, NULL, &len,
+                stat = m_btrcallid(TD_CREATETABLE, posblk, NULL, &len,
                      (void*)p, (uchar_td)strlen(p), CR_SUBOP_CREATE_DBONLY , clientID());
             }
         }
         else
-            m_stat = STATUS_NOSUPPORT_OP;
+            stat = STATUS_NOSUPPORT_OP;
     }
+    if (dbdefCreated)
+        doClose();
+    m_stat = stat;
 }
 
 void database::drop(const _TCHAR* uri)
@@ -246,13 +254,14 @@ void database::drop(const _TCHAR* uri)
     _TCHAR path[MAX_PATH];
     _TCHAR* fileNames[255] = {NULL};
 
-    if (m_impl->dbDef == NULL)
+    if (((uri == NULL) || (uri[0] == 0x00)) && checkOpened())
     {
-        if (uri==NULL || (uri[0] == 0x00) || !isTransactdUri(uri))
-        {
-            m_stat = STATUS_DB_YET_OPEN;
-            return;
-        }
+        m_stat = STATUS_DB_YET_OPEN;
+        return;
+    }
+
+    if (uri && uri[0])
+    {
         stripParam(uri, path, MAX_PATH);
         _tcscat(path, _T("?dbfile="));
         _tcscat(path, TRANSACTD_SCHEMANAME);
@@ -263,7 +272,7 @@ void database::drop(const _TCHAR* uri)
     }
 
     int count = 0;
-    for (int i = 0; i <= m_impl->dbDef->tableCount(); i++)
+    for (int i = 1; i <= m_impl->dbDef->tableCount(); i++)
     {
         tabledef* td = m_impl->dbDef->tableDefs(i);
         if (td)
@@ -310,11 +319,8 @@ void database::drop(const _TCHAR* uri)
 
 void database::dropTable(const _TCHAR* TableName)
 {
-    if (m_impl->dbDef == NULL)
-    {
-        m_stat = STATUS_DB_YET_OPEN;
-        return;
-    }
+    if (checkOpened()) return;
+    
     _TCHAR FullPath[MAX_PATH];
     _tcscpy(FullPath, rootDir());
     _tcscat(FullPath, PSEPARATOR);
@@ -674,7 +680,7 @@ bool database::defaultImageCopy(const void* data, short& tableIndex)
     return ret;
 }
 
-short database::testOpenTable()
+short database::checkOpened()
 {
     if ((!m_impl->dbDef) || (!m_impl->isOpened))
         return STATUS_DB_YET_OPEN;
@@ -858,7 +864,7 @@ table* database::doOpenTable(openTablePrams* pm, const _TCHAR* ownerName)
 table* database::openTable(const _TCHAR* tableName, short mode, bool autoCreate,
                            const _TCHAR* ownerName, const _TCHAR* path)
 {
-    m_stat = testOpenTable();
+    m_stat = checkOpened();
     if (m_stat) return NULL;
 
     openTablePrams pm(autoCreate);
@@ -882,7 +888,7 @@ table* database::openTable(const _TCHAR* tableName, short mode, bool autoCreate,
 table* database::openTable(short tableIndex, short mode, bool autoCreate,
                            const _TCHAR* ownerName, const _TCHAR* path)
 {
-    m_stat = testOpenTable();
+    m_stat = checkOpened();
     if (m_stat) return NULL;
 
     openTablePrams pm(autoCreate);
@@ -903,6 +909,8 @@ table* database::openTable(short tableIndex, short mode, bool autoCreate,
 char* database::getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf, uint_td* size)
 {
     retbuf[0] = 0x00;
+    if (checkOpened()) return retbuf;
+
     short tableIndex = m_impl->dbDef->tableNumByName(tableName);
     tabledef* td = NULL;
     if (tableIndex != -1)
@@ -953,7 +961,7 @@ char* database::getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf
 
 bool database::createTable(const char* utf8Sql)
 {
-    if (testOpenTable()) return false;
+    if (checkOpened()) return false;
     if (isUseTransactd())
     {
         if (setUseTransactd() == false)
@@ -1164,7 +1172,7 @@ inline int moveVaileRecord(table* src)
     {
         bm = src->bookmark();
         if (src->stat() != STATUS_SUCCESS)
-        	break;
+            break;
         ++count;
         src->stepPrev();
     }
@@ -1205,8 +1213,8 @@ inline void moveFirstRecord(table* src, short keyNum)
 }
 
 /* Copy from src to dest table.
- * 	Copy as same field name.
- *	If turbo then copy use memcpy and offset dest of first address.
+ *  Copy as same field name.
+ *  If turbo then copy use memcpy and offset dest of first address.
  *  if a src field is variable size binary, that dest field needs to be variable
  *  size binary.
  *  if src and dest fields are different type ,then a text copy is used.

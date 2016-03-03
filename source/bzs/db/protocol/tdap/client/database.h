@@ -64,7 +64,7 @@ class DLLLIB database : public nsdatabase
     void setDir(const _TCHAR* directory);
     virtual table* createTableObject();
     bool defaultImageCopy(const void* data, short& tableIndex);
-    short testOpenTable();
+    short checkOpened();
     table* doOpenTable(struct openTablePrams* pm, const _TCHAR* ownerName);
     void* getExtendBufferForOpen(uint_td& size); // orverload
     _TCHAR* getTableUri(_TCHAR* buf, short fileNum);

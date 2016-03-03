@@ -1922,8 +1922,10 @@ int SWIG_Ruby_arity( VALUE proc, int minimal )
 #define SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField swig_types[89]
 #define SWIGTYPE_p_BOOKMARK swig_types[90]
 #define SWIGTYPE_p_bzs__db__protocol__tdap__bitset swig_types[91]
-static swig_type_info *swig_types[93];
-static swig_module_info swig_module = {swig_types, 92, 0, 0, 0, 0};
+#define SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos swig_types[92]
+
+static swig_type_info *swig_types[94];
+static swig_module_info swig_module = {swig_types, 93, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1953,7 +1955,9 @@ static VALUE mTransactd;
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ <= 5)
 #define _SYS_TIME_H_
 #else
-#define _GETTIMEOFDAY_DEFINED
+#  ifndef _GETTIMEOFDAY_DEFINED
+#    define _GETTIMEOFDAY_DEFINED
+#  endif
 #endif
 #endif
 
@@ -18416,6 +18420,137 @@ fail:
 }
 
 
+static swig_class SwigClassBinlogPos;
+
+
+SWIGINTERN VALUE
+_wrap_binlogPos_filename_get(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::binlogPos *arg1 = (bzs::db::protocol::tdap::client::binlogPos *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  char *result = 0 ;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::binlogPos *","filename", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::binlogPos * >(argp1);
+  result = (char *) ((arg1)->filename);
+  {
+    vresult = rb_enc_str_new(result, strlen(result), rb_enc_find_from_codepage(CP_UTF8));
+  }
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_binlogPos_gtid_get(int argc, VALUE *argv, VALUE self) {
+   return _wrap_binlogPos_filename_get(argc, argv, self);
+}
+
+
+SWIGINTERN VALUE
+_wrap_binlogPos_pos_get(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::binlogPos *arg1 = (bzs::db::protocol::tdap::client::binlogPos *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned long long result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::binlogPos *","pos", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::binlogPos * >(argp1);
+  result = (unsigned long long) ((arg1)->pos);
+  vresult = SWIG_From_unsigned_SS_long_SS_long(static_cast< unsigned long long >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_binlogPos_type_get(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::binlogPos *arg1 = (bzs::db::protocol::tdap::client::binlogPos *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  short result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::binlogPos *","type", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::binlogPos * >(argp1);
+  result = (short) ((arg1)->type);
+  vresult = SWIG_From_short(static_cast< short >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+#ifdef HAVE_RB_DEFINE_ALLOC_FUNC
+SWIGINTERN VALUE
+_wrap_binlogPos_allocate(VALUE self) {
+#else
+  SWIGINTERN VALUE
+  _wrap_binlogPos_allocate(int argc, VALUE *argv, VALUE self) {
+#endif
+    
+    
+    VALUE vresult = SWIG_NewClassInstance(self, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos);
+#ifndef HAVE_RB_DEFINE_ALLOC_FUNC
+    rb_obj_call_init(vresult, argc, argv);
+#endif
+    return vresult;
+  }
+  
+
+SWIGINTERN VALUE
+_wrap_new_binlogPos(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::binlogPos *result = 0 ;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::binlogPos *)new bzs::db::protocol::tdap::client::binlogPos();
+      DATA_PTR(self) = result;
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  return self;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN void
+free_bzs_db_protocol_tdap_client_binlogPos(bzs::db::protocol::tdap::client::binlogPos *arg1) {
+    delete arg1;
+}
+
+
 static swig_class SwigClassNsdatabase;
 
 #ifdef HAVE_RB_DEFINE_ALLOC_FUNC
@@ -19183,11 +19318,13 @@ SWIGINTERN VALUE _wrap_nsdatabase_beginSnapshot(int nargs, VALUE *args, VALUE se
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0x00;
   short arg2;
   short val2;
-  
+  binlogPos* bpos = new binlogPos();
+  memset(bpos, 0, sizeof(binlogPos));
   int _v;
   void *vptr = 0;
   int res;
-  
+  VALUE vresult = Qnil;
+
   argc = nargs + 1;
   argv[0] = self;
   if (argc > 3 || argc < 1) SWIG_fail;
@@ -19215,7 +19352,8 @@ SWIGINTERN VALUE _wrap_nsdatabase_beginSnapshot(int nargs, VALUE *args, VALUE se
       static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
       rb_raise(cpp_std_error, e.what());
     }
-    return Qnil;
+    vresult = SWIG_NewPointerObj(SWIG_as_voidptr(bpos), SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0 |  0 );
+    return vresult;
   }
   // check arg2
   if (argc == 2) {
@@ -19229,7 +19367,10 @@ SWIGINTERN VALUE _wrap_nsdatabase_beginSnapshot(int nargs, VALUE *args, VALUE se
     arg2 = static_cast< short >(val2);
     // call beginSnapshot(short bias)
     try {
-      (arg1)->beginSnapshot(arg2);
+        if (arg2 == CONSISTENT_READ_WITH_BINLOG_POS)
+           (arg1)->beginSnapshot(arg2, bpos);
+        else
+           (arg1)->beginSnapshot(arg2, NULL);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -19237,7 +19378,8 @@ SWIGINTERN VALUE _wrap_nsdatabase_beginSnapshot(int nargs, VALUE *args, VALUE se
       static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
       rb_raise(cpp_std_error, e.what());
     }
-    return Qnil;
+    vresult = SWIG_NewPointerObj(SWIG_as_voidptr(bpos), SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0 |  0 );
+    return vresult;
   }
   
 fail:
@@ -21079,10 +21221,14 @@ fail:
 SWIGINTERN VALUE
 _wrap_database_drop(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
-  
-  if ((argc < 0) || (argc > 0)) {
+  int res2 ;
+  char *buf2 = 0 ;
+  int alloc2 = 0 ;
+
+  if ((argc < 0) || (argc > 1)) {
     rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
   }
   res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0 |  0 );
@@ -21090,9 +21236,17 @@ _wrap_database_drop(int argc, VALUE *argv, VALUE self) {
     SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::database *","drop", 1, self )); 
   }
   arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::database * >(argp1);
+  if (argc == 1)
+  {
+    res2 = SWIG_AsCharPtrAndSize(argv[0], &buf2, NULL, &alloc2);
+    if (!SWIG_IsOK(res2)) {
+      SWIG_exception_fail(SWIG_ArgError(res2), Ruby_Format_TypeError( "", "_TCHAR const *","drop", 2, argv[0] ));
+    }
+    arg2 = reinterpret_cast< _TCHAR * >(buf2);
+  }
   {
     try {
-      (arg1)->drop();
+      (arg1)->drop(arg2);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -21101,8 +21255,10 @@ _wrap_database_drop(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return Qnil;
 fail:
+  if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   return Qnil;
 }
 
@@ -34523,10 +34679,12 @@ SWIGINTERN VALUE _wrap_pooledDbManager_beginSnapshot(int nargs, VALUE *args, VAL
   bzs::db::protocol::tdap::client::pooledDbManager *arg1 = 0x00;
   short arg2;
   short val2;
-  
+  binlogPos* bpos = new binlogPos();
+  memset(bpos, 0, sizeof(binlogPos));
   int _v;
   void *vptr = 0;
   int res;
+  VALUE vresult = Qnil;
   
   argc = nargs + 1;
   argv[0] = self;
@@ -34555,7 +34713,8 @@ SWIGINTERN VALUE _wrap_pooledDbManager_beginSnapshot(int nargs, VALUE *args, VAL
       static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
       rb_raise(cpp_std_error, e.what());
     }
-    return Qnil;
+    vresult = SWIG_NewPointerObj(SWIG_as_voidptr(bpos), SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0 |  0 );
+    return vresult;
   }
   // check arg2
   if (argc == 2) {
@@ -34569,7 +34728,10 @@ SWIGINTERN VALUE _wrap_pooledDbManager_beginSnapshot(int nargs, VALUE *args, VAL
     arg2 = static_cast< short >(val2);
     // call beginSnapshot(short bias)
     try {
-      (arg1)->beginSnapshot(arg2);
+        if (arg2 == CONSISTENT_READ_WITH_BINLOG_POS)
+           (arg1)->beginSnapshot(arg2, bpos);
+        else
+           (arg1)->beginSnapshot(arg2, NULL);
     } catch (bzs::rtl::exception& e) {
       static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
       rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
@@ -34577,7 +34739,8 @@ SWIGINTERN VALUE _wrap_pooledDbManager_beginSnapshot(int nargs, VALUE *args, VAL
       static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
       rb_raise(cpp_std_error, e.what());
     }
-    return Qnil;
+    vresult = SWIG_NewPointerObj(SWIG_as_voidptr(bpos), SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0 |  0 );
+    return vresult;
   }
   
 fail:
@@ -35000,6 +35163,7 @@ static swig_type_info _swigt__p_bzs__db__protocol__tdap__btrVersion = {"_p_bzs__
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__btrVersions = {"_p_bzs__db__protocol__tdap__btrVersions", "bzs::db::protocol::tdap::btrVersions *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__activeTable = {"_p_bzs__db__protocol__tdap__client__activeTable", "bzs::db::protocol::tdap::client::activeTable *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__avg = {"_p_bzs__db__protocol__tdap__client__avg", "bzs::db::protocol::tdap::client::avg *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__binlogPos = {"_p_bzs__db__protocol__tdap__client__binlogPos", "bzs::db::protocol::tdap::client::binlogPos *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__bitset = {"_p_bzs__db__protocol__tdap__bitset", "bzs::db::protocol::tdap::bitset *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__connectParams = {"_p_bzs__db__protocol__tdap__client__connectParams", "bzs::db::protocol::tdap::client::connectParams *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__count = {"_p_bzs__db__protocol__tdap__client__count", "bzs::db::protocol::tdap::client::count *", 0, 0, (void*)0, 0};
@@ -35095,6 +35259,7 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_bzs__db__protocol__tdap__client__activeTable,
   &_swigt__p_bzs__db__protocol__tdap__client__autoMemory,
   &_swigt__p_bzs__db__protocol__tdap__client__avg,
+  &_swigt__p_bzs__db__protocol__tdap__client__binlogPos,
   &_swigt__p_bzs__db__protocol__tdap__bitset,
   &_swigt__p_bzs__db__protocol__tdap__client__connectParams,
   &_swigt__p_bzs__db__protocol__tdap__client__count,
@@ -35187,6 +35352,7 @@ static swig_cast_info _swigc__p_bzs__db__protocol__tdap__btrVersion[] = {  {&_sw
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__btrVersions[] = {  {&_swigt__p_bzs__db__protocol__tdap__btrVersions, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__activeTable[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__activeTable, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__avg[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__avg, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__binlogPos[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__binlogPos, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__bitset[] = {  {&_swigt__p_bzs__db__protocol__tdap__bitset, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__connectParams[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__connectParams, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__count[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__count, 0, 0, 0},{0, 0, 0, 0}};
@@ -35284,6 +35450,7 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_bzs__db__protocol__tdap__client__activeTable,
   _swigc__p_bzs__db__protocol__tdap__client__autoMemory,
   _swigc__p_bzs__db__protocol__tdap__client__avg,
+  _swigc__p_bzs__db__protocol__tdap__client__binlogPos,
   _swigc__p_bzs__db__protocol__tdap__bitset,
   _swigc__p_bzs__db__protocol__tdap__client__connectParams,
   _swigc__p_bzs__db__protocol__tdap__client__count,
@@ -35733,8 +35900,12 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "MULTILOCK_NOGAP", SWIG_From_int(static_cast< int >(MULTILOCK_NOGAP)));
   rb_define_const(mTransactd, "MULTILOCK_GAP", SWIG_From_int(static_cast< int >(MULTILOCK_GAP)));
   rb_define_const(mTransactd, "CONSISTENT_READ", SWIG_From_int(static_cast< int >(CONSISTENT_READ)));
+  rb_define_const(mTransactd, "CONSISTENT_READ_WITH_BINLOG_POS", SWIG_From_int(static_cast< int >(CONSISTENT_READ_WITH_BINLOG_POS)));
   rb_define_const(mTransactd, "MULTILOCK_GAP_SHARE", SWIG_From_int(static_cast< int >(MULTILOCK_GAP_SHARE)));
   rb_define_const(mTransactd, "MULTILOCK_NOGAP_SHARE", SWIG_From_int(static_cast< int >(MULTILOCK_NOGAP_SHARE)));
+  rb_define_const(mTransactd, "REPL_POSTYPE_NONE", SWIG_From_int(static_cast< int >(REPL_POSTYPE_NONE)));
+  rb_define_const(mTransactd, "REPL_POSTYPE_MARIA_GTID", SWIG_From_int(static_cast< int >(REPL_POSTYPE_MARIA_GTID)));
+  rb_define_const(mTransactd, "REPL_POSTYPE_POS", SWIG_From_int(static_cast< int >(REPL_POSTYPE_POS)));
   rb_define_const(mTransactd, "ROW_LOCK_X", SWIG_From_int(static_cast< int >(ROW_LOCK_X)));
   rb_define_const(mTransactd, "ROW_LOCK_S", SWIG_From_int(static_cast< int >(ROW_LOCK_S)));
   rb_define_const(mTransactd, "SRV_ISO_READ_UNCOMMITED", SWIG_From_int(static_cast< int >(SRV_ISO_READ_UNCOMMITED)));
@@ -36303,6 +36474,18 @@ SWIGEXPORT void Init_transactd(void) {
   SwigClassQuery.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_query;
   SwigClassQuery.trackObjects = 0;
   
+  SwigClassBinlogPos.klass = rb_define_class_under(mTransactd, "BinlogPos", rb_cObject);
+  SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, (void *) &SwigClassBinlogPos);
+  rb_define_alloc_func(SwigClassBinlogPos.klass, _wrap_binlogPos_allocate);
+  rb_define_method(SwigClassBinlogPos.klass, "initialize", VALUEFUNC(_wrap_new_binlogPos), -1);
+  rb_define_method(SwigClassBinlogPos.klass, "pos", VALUEFUNC(_wrap_binlogPos_pos_get), -1);
+  rb_define_method(SwigClassBinlogPos.klass, "type", VALUEFUNC(_wrap_binlogPos_type_get), -1);
+  rb_define_method(SwigClassBinlogPos.klass, "filename", VALUEFUNC(_wrap_binlogPos_filename_get), -1);
+  rb_define_method(SwigClassBinlogPos.klass, "gtid", VALUEFUNC(_wrap_binlogPos_gtid_get), -1);
+  SwigClassBinlogPos.mark = 0;
+  SwigClassBinlogPos.destroy = (void (*)(void *)) free_bzs_db_protocol_tdap_client_binlogPos;
+  SwigClassBinlogPos.trackObjects = 0;
+
   SwigClassNsdatabase.klass = rb_define_class_under(mTransactd, "Nsdatabase", rb_cObject);
   SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, (void *) &SwigClassNsdatabase);
   rb_define_alloc_func(SwigClassNsdatabase.klass, _wrap_nsdatabase_allocate);

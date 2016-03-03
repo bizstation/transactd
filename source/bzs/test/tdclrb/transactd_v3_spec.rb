@@ -111,9 +111,10 @@ INSERT_SEB_TABLE_SQL = <<'EOS'
 EOS
 
 def dropDatabase(db)
-  db.open(URL)
-  expect(db.stat()).to eq 0
-  db.drop()
+  #db.open(URL)
+  #expect(db.stat()).to eq 0
+  #db.drop()
+  db.drop(URL)
   expect(db.stat()).to eq 0
 end
 
@@ -142,6 +143,16 @@ def isMySQL5_5(db)
     (5 == server_ver.majorVersion) &&
     (5 == server_ver.minorVersion)
 end
+
+def isMariaDBWithGtid(db)
+  vv = Transactd::BtrVersions.new()
+  db.getBtrVersion(vv)
+  server_ver = vv.version(1)
+  return (db.stat() == 0) &&
+    (10 == server_ver.majorVersion) &&
+    (server_ver.type == Transactd::MYSQL_TYPE_MARIA)
+end
+
 
 def isLegacyTimeFormat(db)
   vv = Transactd::BtrVersions.new()
@@ -743,6 +754,21 @@ describe Transactd, 'V3Features' do
     expect(rs[3]['bit32'].isNull()).to eq true
     expect(rs[3]['bit64'].isNull()).to eq true
     ats.release()
+    db.close()
+  end
+  it 'snapshot' do
+    db = Transactd::Database.new()
+    openDatabase(db)
+    bpos = db.beginSnapshot(Transactd::CONSISTENT_READ_WITH_BINLOG_POS)
+    if (isMariaDBWithGtid(db))
+      expect(bpos.type).to eq Transactd::REPL_POSTYPE_MARIA_GTID
+    else
+      expect(bpos.type).to eq Transactd::REPL_POSTYPE_POS
+    end
+    expect(bpos.pos).not_to eq  0
+    expect(bpos.filename).not_to eq ""
+    print "\nbinlog pos = ", bpos.filename, ":", bpos.pos, "\n"
+    db.endSnapshot();
     db.close()
   end
 end

@@ -101,9 +101,10 @@ std::string getDatabaseName(const request& req, bool forSql)
 {
     std::vector<std::string> ssc;
     std::vector<std::string> ss;
-    if (req.keybuf)
+	const char* p = (const char*)req.keybuf;
+	if (p && p[0])
     {
-        std::string s((const char*)req.keybuf);
+		std::string s(p);
         split(ssc, s, "\t");
         if (ssc.size())
         {
@@ -282,12 +283,17 @@ int dbExecuter::errorCode(int ha_error)
 bool isMetaDb(const request& req)
 {
     char buf[MAX_PATH];
-    strncpy(buf, (char*)req.keybuf, MAX_PATH);
-    _strlwr(buf);
-    char_m* st = _mbsstr((char_m*)buf, (char_m*)BdfNameTitle);
-    if (st == NULL)
-        st = (char_m*)strstr(buf, TRANSACTD_SCHEMANAME);
-    return (st != NULL);
+	const char* p = (const char*)req.keybuf;
+	char_m* st = NULL;
+	if (p && p[0])
+	{
+		strncpy(buf, p, MAX_PATH);
+		_strlwr(buf);
+		st = _mbsstr((char_m*)buf, (char_m*)BdfNameTitle);
+		if (st == NULL)
+			st = (char_m*)strstr(buf, TRANSACTD_SCHEMANAME);
+	}
+	return (st != NULL);
 }
 
 inline bool getUserPasswd(request& req, char* &user, char* &pwd)
@@ -417,7 +423,7 @@ inline bool dbExecuter::doCreateTable(request& req)
             {
                 if (req.result == 0)
                 {
-                    req.result = ddl_dropDataBase(db->thd(), db->name(), dbSqlname);
+					req.result = ddl_dropDataBase(db->thd(), db->name(), dbSqlname, req.cid);
                     if (ER_DB_DROP_EXISTS+ MYSQL_ERROR_OFFSET == req.result) req.result = 0;
                 }
                 return ret;

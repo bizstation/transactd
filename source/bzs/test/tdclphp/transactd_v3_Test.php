@@ -46,7 +46,7 @@ define("DBNAME", "test_v3");
 define("TABLENAME", "user");
 define("PROTOCOL", "tdap://");
 define("BDFNAME", "?dbfile=test.bdf");
-define("URL", PROTOCOL . USERPART . HOSTNAME . DBNAME . BDFNAME . PASSPART);
+define("URI", PROTOCOL . USERPART . HOSTNAME . DBNAME . BDFNAME . PASSPART);
 
 // multi thread test if `php_pthreads` exists.
 if(class_exists('Thread')){
@@ -58,7 +58,7 @@ if(class_exists('Thread')){
         }
         public function run()
         {
-            $dbm = new bz\pooledDbManager(new bz\connectParams(URL));
+            $dbm = new bz\pooledDbManager(new bz\connectParams(URI));
             $tb = $dbm->table('user');
             $tb->setFV(FDI_ID, 300000);
             $tb->seekLessThan(false, bz\transactd::ROW_LOCK_X);
@@ -78,24 +78,25 @@ class transactdTest extends PHPUnit_Framework_TestCase
 {
     private function dropDatabase($db)
     {
-        $db->open(URL);
-        $this->assertEquals($db->stat(), 0);
-        $db->drop();
+        // Version 3.1 or later is support drop by uri.
+        //$db->open(URI);
+        //$this->assertEquals($db->stat(), 0);
+        $db->drop(URI);
         $this->assertEquals($db->stat(), 0);
     }
     private function createDatabase($db)
     {
-        $db->create(URL);
+        $db->create(URI);
         if ($db->stat() == bz\transactd::STATUS_TABLE_EXISTS_ERROR)
         {
             $this->dropDatabase($db);
-            $db->create(URL);
+            $db->create(URI);
         }
         $this->assertEquals($db->stat(), 0);
     }
     private function openDatabase($db)
     {
-        return $db->open(URL, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        return $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
     }
     private function isMySQL5_5($db)
     {
