@@ -109,7 +109,11 @@ extern "C" {
 
 /* mysql.user password field index */
 #ifndef MYSQL_USER_FIELD_PASSWORD
-#define MYSQL_USER_FIELD_PASSWORD 2
+#  if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
+#     define MYSQL_USER_FIELD_PASSWORD 40
+#  else
+#     define MYSQL_USER_FIELD_PASSWORD 2
+#  endif
 #endif
 
 #undef test

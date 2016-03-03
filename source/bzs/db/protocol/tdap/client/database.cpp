@@ -201,17 +201,17 @@ void database::create(const _TCHAR* uri, short type)
 {
     if (!m_impl->dbDef)
         m_impl->dbDef = new dbdef(this, type); // Create TabelDef here.
-    
+    bool isTransactd = isTransactdUri(uri);
     _TCHAR buf[MAX_PATH];
     schemaTable(uri, buf, MAX_PATH);
-    if (buf[0])
+    if (buf[0] || !isTransactd)
     {
         m_impl->dbDef->create(uri);
         m_stat = m_impl->dbDef->stat();
     }
     else
     {
-        if (isTransactdUri(uri))
+        if (isTransactd)
         {
             if (setUseTransactd() == false)
                 m_stat = ERROR_LOAD_CLIBRARY;
