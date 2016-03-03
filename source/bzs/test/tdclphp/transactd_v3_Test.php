@@ -106,6 +106,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
             ((5 == $server_ver->majorVersion) &&
             (5 == $server_ver->minorVersion));
     }
+    private function isMariaDBWithGtid($db)
+    {
+        $vv = new bz\btrVersions();
+        $db->getBtrVersion($vv);
+        $server_ver = $vv->version(1);
+        return ($db->stat() == 0) && 
+            (10 == $server_ver->majorVersion) &&
+            ($server_ver->type == bz\transactd::MYSQL_TYPE_MARIA);
+    }
     private function isLegacyTimeFormat($db)
     {
         $vv = new bz\btrVersions();
@@ -739,5 +748,19 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd->len = 4;
         $fd->setDefaultValue($bits1);
         $this->assertEquals($fd->defaultValue(), '4');
+    }
+    public function test_snapshot()
+    {
+        $db = new bz\database();
+        $this->openDatabase($db);
+        $bpos = $db->beginSnapshot(bz\transactd::CONSISTENT_READ_WITH_BINLOG_POS);
+        if ($this->isMariaDBWithGtid($db))
+          $this->assertEquals($bpos->type, bz\transactd::REPL_POSTYPE_MARIA_GTID);
+        else
+          $this->assertEquals($bpos->type, bz\transactd::REPL_POSTYPE_POS);
+        $this->assertNotEquals($bpos->pos, 0);
+        $this->assertNotEquals($bpos->filename, "");
+        echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
+        $db->endSnapshot();
     }
 }
