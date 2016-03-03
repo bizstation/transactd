@@ -32,6 +32,8 @@ namespace engine
 namespace mysql
 {
 
+#define STATUS_ALREADY_INSNAPSHOT       204
+#define STATUS_ALREADY_INTRANSACTION    205
 
 class smartDbsReopen
 {
@@ -44,8 +46,12 @@ public:
     {
         for (size_t i = 0; i < m_dbs.size(); i++)
         {
-            if (m_dbs[i])
+            if (m_dbs[i] && m_dbs[i]->thd() == m_thd)
             {
+                if (m_dbs[i]->inSnapshot())
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INSNAPSHOT, "Allready in snapshot.");
+                else if (m_dbs[i]->inTransaction())
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Allready in transaction.");
                 m_dbs[i]->use();
                 m_dbs[i]->unUseTables(false);
                 m_dbs[i]->closeForReopen();
@@ -58,7 +64,7 @@ public:
     {
         for (size_t i = 0; i < m_dbs.size(); i++)
         {
-            if (m_dbs[i])
+            if (m_dbs[i] && m_dbs[i]->thd() == m_thd)
             {
                 if (removeName != m_dbs[i]->name())
                 {
@@ -225,8 +231,6 @@ int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
 
     thd->clear_error();
 	int result = cp_query_command(thd, (char*)sql_stmt.c_str());
-    //if (!thd->cp_isOk())
-    //    result = 1;
     if (thd->is_error())
         result = errorCode(thd->cp_get_sql_error());
     cp_lex_clear(thd); // reset values for insert

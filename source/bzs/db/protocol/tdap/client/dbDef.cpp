@@ -748,8 +748,7 @@ tabledef* dbdef::initReadAfter(short tableIndex, const tabledef* data, uint_td d
     td->autoIncExSpace = ((database*)nsdb())->defaultAutoIncSpace();
     //Fix:Bug of maxRecordLen is mistake value saved, recalculate maxRecordLen.
     td->calcReclordlen();
-    if (td->fieldDefs[td->fieldCount -1].type == ft_myfixedbinary)
-        td->optionFlags.bitC = true;
+    td->optionFlags.bitC = (td->fieldDefs[td->fieldCount -1].type == ft_myfixedbinary);
     td->id = tableIndex;
     td->defaultImage = NULL;
 
@@ -1093,7 +1092,7 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
         defaultlen = 3;
         break;
     case ft_myfixedbinary:
-        minlen = 256;
+        minlen = 3;
         maxlen = 60000;
         defaultlen = 1024;
         break;

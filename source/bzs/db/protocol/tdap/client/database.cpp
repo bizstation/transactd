@@ -241,26 +241,38 @@ void database::create(const _TCHAR* uri, short type)
     }
 }
 
-void database::drop()
+void database::drop(const _TCHAR* uri)
 {
+    _TCHAR path[MAX_PATH];
+    _TCHAR* fileNames[255] = {NULL};
+
     if (m_impl->dbDef == NULL)
     {
-        m_stat = STATUS_DB_YET_OPEN;
+        if (uri==NULL || (uri[0] == 0x00) || !isTransactdUri(uri))
+        {
+            m_stat = STATUS_DB_YET_OPEN;
+            return;
+        }
+        stripParam(uri, path, MAX_PATH);
+        _tcscat(path, _T("?dbfile="));
+        _tcscat(path, TRANSACTD_SCHEMANAME);
+        nsdatabase::dropTable(path);
+        if (m_stat)  return;
+        nsdatabase::reset();
         return;
     }
-    _TCHAR FullPath[MAX_PATH];
-    _TCHAR* fileNames[255] = {NULL};
+
     int count = 0;
     for (int i = 0; i <= m_impl->dbDef->tableCount(); i++)
     {
         tabledef* td = m_impl->dbDef->tableDefs(i);
         if (td)
         {
-            _stprintf_s(FullPath, MAX_PATH, _T("%s") PSEPARATOR _T("%s"),
+            _stprintf_s(path, MAX_PATH, _T("%s") PSEPARATOR _T("%s"),
                         rootDir(), td->fileName());
-            size_t len = _tcslen(FullPath);
+            size_t len = _tcslen(path);
             _TCHAR* s(new _TCHAR[len + 1]);
-            _tcscpy(s, FullPath);
+            _tcscpy(s, path);
             fileNames[count++] = s;
         }
     }
@@ -371,7 +383,7 @@ void database::onCopyDataInternal(table* tb, int recordCount, int count,
                                   bool& cancel)
 {
     if (m_impl->m_copyDataFn)
-        m_impl->m_copyDataFn(this, recordCount, count, cancel);
+        m_impl->m_copyDataFn(this, tb, recordCount, count, cancel);
 }
 
 void database::setTableReadOnly(bool value)
@@ -566,7 +578,18 @@ void database::close(bool withDropDefaultSchema)
 {
     bool flag = (m_impl->dbDef != NULL);
     if (m_impl && m_impl->dbDef)
+    {
         m_impl->dbDef->setKeyNum(withDropDefaultSchema ? CR_SUBOP_DROP : 0);
+        if (!isUseTransactd() && withDropDefaultSchema)
+        {
+            _TCHAR uri[MAX_PATH];
+            _tcscpy(uri, m_impl->dbDef->uri());
+            doClose();
+            nsdatabase::dropTable(uri);
+            nsdatabase::release();
+            return;
+        }
+    }
     doClose();
     if (flag)
         nsdatabase::release();
@@ -995,7 +1018,7 @@ bool database::createTable(short fileNum, const _TCHAR* uri)
     return (m_stat == 0);
 }
 
-short database::assignSchemaData(dbdef* src)
+short database::assignSchemaData(const dbdef* src)
 {
     beginTrn();
     int Count = 1;
@@ -1005,7 +1028,7 @@ short database::assignSchemaData(dbdef* src)
 
     for (int i = 0; i <= src->tableCount(); i++)
     {
-        tabledef* td = src->tableDefs(i);
+        const tabledef* td = const_cast<dbdef*>(src)->tableDefs(i);
         if (td)
         {
             tabledef tdtmp = *td;
@@ -1048,17 +1071,20 @@ short database::assignSchemaData(dbdef* src)
     return defDest->stat();
 }
 
-struct filedChnageInfo
+struct fieldChnageInfo
 {
-    filedChnageInfo() : fieldnum(-1), changed(0) {}
+    fieldChnageInfo() : fieldnum(-1), changed(0) {}
 
     short fieldnum;
     bool changed;
 };
 
+
+
 void makeChangeInfo(const tabledef* ddef, const tabledef* sdef,
-                    filedChnageInfo* fci)
+                    fieldChnageInfo* fci, bool& hasBlob)
 {
+    hasBlob = false;
     for (short i = 0; i < sdef->fieldCount; i++)
     {
         fielddef& fds = sdef->fieldDefs[i];
@@ -1068,10 +1094,16 @@ void makeChangeInfo(const tabledef* ddef, const tabledef* sdef,
             if (strcmp(fdd.nameA(), fds.nameA()) == 0)
             {
                 fci[i].fieldnum = j;
-                if (fds.type != fdd.type)
-                    fci[i].changed = true; // diffrent type
-                else if (fds.len != fdd.len)
-                    fci[i].changed = true; // different size
+                if (!hasBlob && fdd.isBlob()) hasBlob = true;
+                // mydatetime and mytimestmp mytime is no same binary format as different
+                // mysql versions
+                if ((fds.type != fdd.type)         ||
+                    (fds.len != fdd.len)           ||
+                    (fds.isBlob() || fdd.isBlob()) ||
+                    (fds.type== ft_mytime || fdd.type== ft_mytime) ||
+                    (fds.type== ft_mytimestamp || fdd.type== ft_mytimestamp)||
+                    (fds.type== ft_mydatetime || fdd.type== ft_mydatetime))
+                    fci[i].changed = true;
                 break;
             }
             else
@@ -1080,7 +1112,7 @@ void makeChangeInfo(const tabledef* ddef, const tabledef* sdef,
     }
 }
 
-inline void database::copyEachFieldData(table* dest, table* src, filedChnageInfo* fci)
+inline void database::copyEachFieldData(table* dest, table* src, fieldChnageInfo* fci)
 {
     const tabledef* ddef = dest->tableDef();
     const tabledef* sdef = src->tableDef();
@@ -1094,7 +1126,7 @@ inline void database::copyEachFieldData(table* dest, table* src, filedChnageInfo
         if (dindex != -1)
         {
             dest->setFVNull(dindex, src->getFVNull(i));
-            // src valiable len and last field;
+            // src variable len and last field;
             if ((fci[i].changed == false) || (fdd.type == ft_myfixedbinary))
             {
                 int len = fds.len;
@@ -1146,8 +1178,11 @@ inline int moveVaileRecord(table* src)
 
 inline void moveNextRecord(table* src, short keyNum)
 {
+
     if (keyNum == -1)
         src->stepNext();
+    else if (keyNum == -2)
+        src->findNext();
     else
         src->seekNext();
 }
@@ -1156,6 +1191,15 @@ inline void moveFirstRecord(table* src, short keyNum)
 {
     if (keyNum == -1)
         src->stepFirst();
+    else if (keyNum == -2)
+    {
+        src->setKeyNum(0);
+        query q;
+        q.all().bookmarkAlso(false).reject(0)
+            .limit(src->isUseTransactd() ? 100 : 20);
+        src->setQuery(&q);
+        src->findFirst();
+    }
     else
         src->seekFirst();
 }
@@ -1164,10 +1208,39 @@ inline void moveFirstRecord(table* src, short keyNum)
  * 	Copy as same field name.
  *	If turbo then copy use memcpy and offset dest of first address.
  *  if a src field is variable size binary, that dest field needs to be variable
- *size binary.
+ *  size binary.
  *  if src and dest fields are different type ,then a text copy is used.
+ *  Bulkinsert use default, But not use it when dest table has blob(s).
  */
 #pragma warn -8004
+
+struct smartBulkInsert
+{
+    smartBulkInsert(table* tb, bool hasBlob) : m_tb(tb), m_hasBlob(hasBlob)
+    {
+        if (m_tb->isUseTransactd() && !m_hasBlob)
+            m_tb->beginBulkInsert(BULKBUFSIZE*10);
+    }
+
+    short commit()
+    {
+        short ret = 0;
+        if (m_tb->isUseTransactd() && !m_hasBlob)
+            ret = m_tb->commitBulkInsert(false);
+        m_tb = NULL;
+        return ret;
+    }
+
+    ~smartBulkInsert()
+    {
+        if (m_tb && m_tb->isUseTransactd() && !m_hasBlob)
+            m_tb->abortBulkInsert();
+    }
+private:
+    table* m_tb;
+    bool m_hasBlob;
+
+};
 
 short database::copyTableData(table* dest, table* src, bool turbo,
                               short keyNum, int maxSkip)
@@ -1178,75 +1251,89 @@ short database::copyTableData(table* dest, table* src, bool turbo,
     const tabledef* sdef = src->tableDef();
     ushort_td ins_rows = 0;
     bool repData = (_tcsstr(ddef->fileName(), _T("rep.dat"))) ? true : false;
-    int skipCount = 0, count = 1;
+    int skipCount = 0, count = 0;
     int recordCount = src->recordCount();
-    filedChnageInfo fci[256];
-
-    makeChangeInfo(ddef, sdef, fci);
+    fieldChnageInfo fci[256];
+    bool hasBlob = false;
+    makeChangeInfo(ddef, sdef, fci, hasBlob);
     moveFirstRecord(src, keyNum);
 
-    while (1)
-    {
-        if (src->stat())
+    {// smartBulkInsert commit scope
+        smartBulkInsert smi(dest, hasBlob);
+        while (1)
         {
-            while (src->stat() != STATUS_EOF)
+            if (src->stat())
             {
-                if (maxSkip != -1)
-                    break;
-                if (recordCount < skipCount + count)
+                while (src->stat() != STATUS_EOF)
                 {
-                    if (src->stat() == STATUS_IO_ERROR)
+                    if (maxSkip != -1)
+                        break;
+                    if (recordCount < skipCount + count)
                     {
-                        int n = moveVaileRecord(src);
-                        if (n)
-                            skipCount = recordCount - n - count;
+                        if (src->stat() == STATUS_IO_ERROR)
+                        {
+                            int n = moveVaileRecord(src);
+                            if (n)
+                                skipCount = recordCount - n - count;
+                            else
+                                break;
+                        }
                         else
                             break;
                     }
-                    else
+                    moveNextRecord(src, keyNum);
+
+                    skipCount++;
+                    if (src->stat() == STATUS_SUCCESS)
                         break;
                 }
-                moveNextRecord(src, keyNum);
-
-                skipCount++;
-                if (src->stat() == STATUS_SUCCESS)
+                if (src->stat())
                     break;
             }
-            if (src->stat())
-                break;
-        }
-        dest->clearBuffer();
-        if (turbo)
-        {
-            if (dest->m_buflen  < src->datalen())
-                return STATUS_CANT_ALLOC_MEMORY;
+            dest->clearBuffer();
+            if (turbo)
+            {
+                if (dest->m_buflen  < src->datalen())
+                    return STATUS_CANT_ALLOC_MEMORY;
 
-            memcpy((char*)dest->m_pdata, src->data(), src->datalen());
-        }
-        else
-            copyEachFieldData(dest, src, fci);
+                memcpy((char*)dest->m_pdata, src->data(), src->datalen());
+            }
+            else
+                copyEachFieldData(dest, src, fci);
 
-        if (repData)
-        {
-            dest->m_datalen = src->m_datalen;
-            dest->tdap(TD_REC_INSERT);
+            if (repData)
+            {
+                dest->m_datalen = src->m_datalen;
+                dest->tdap(TD_REC_INSERT);
+            }
+            else
+                ins_rows += dest->insert(true);
+
+            if (dest->stat() != STATUS_SUCCESS)
+            {
+                if (skipCount != maxSkip)
+                {
+                    if (dest->stat() == STATUS_INVALID_VALLEN)
+                        skipCount++;
+                    else if (dest->stat() == STATUS_DUPPLICATE_KEYVALUE)
+                        skipCount++;
+                    else
+                        return dest->stat();
+                }else
+                    return dest->stat();
+            }
+            else
+                count++;
+            bool cancel = false;
+            onCopyDataInternal(dest, recordCount, count, cancel);
+            if (cancel)
+                return -1;
+
+            moveNextRecord(src, keyNum);
         }
-        else
-            ins_rows += dest->insert(true);
-        if (dest->stat() == STATUS_INVALID_VALLEN)
-            skipCount++;
-        else if (dest->stat() == STATUS_DUPPLICATE_KEYVALUE)
-            skipCount++;
-        else if (dest->stat() != STATUS_SUCCESS)
+        if (dest->stat() == 0) smi.commit();
+        if (dest->stat() != STATUS_SUCCESS)
             return dest->stat();
-        else
-            count++;
-        bool cancel = false;
-        onCopyDataInternal(dest, recordCount, count, cancel);
-        if (cancel)
-            return -1;
-
-        moveNextRecord(src, keyNum);
     }
     if ((skipCount) && (maxSkip == -1))
     {

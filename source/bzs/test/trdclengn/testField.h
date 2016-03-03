@@ -3300,6 +3300,29 @@ void testCompDecimal()
 
 }
 
+void testSnapshotWithbinlog()
+{
+    nsdatabase::setCheckTablePtr(true);
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_READONLY);
+    BOOST_CHECK(db->stat() == 0);
+    btrVersions vs;
+    db->getBtrVersion(&vs);
+    BOOST_CHECK(db->stat() == 0);
+    btrVersion ver = vs.versions[1];
+
+    binlogPos bpos;
+    db->beginSnapshot(CONSISTENT_READ_WITH_BINLOG_POS, &bpos);
+    BOOST_CHECK_MESSAGE(db->stat() == 0, "stat = " << db->stat());
+    BOOST_CHECK(bpos.filename[0] != 0);
+    BOOST_CHECK(bpos.pos != 0);
+    if (ver.isMariaDB() && ver.majorVersion > 5)
+        BOOST_CHECK(bpos.type == REPL_POSTYPE_MARIA_GTID);
+    else
+        BOOST_CHECK(bpos.type == REPL_POSTYPE_POS);
+    db->endSnapshot();
+}
+
 #pragma warning(default : 4996) 
 
 #endif // BZS_TEST_TRDCLENGN_TESTFIELD_H

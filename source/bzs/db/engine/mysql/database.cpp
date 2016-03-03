@@ -269,12 +269,26 @@ unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
     return retPtr;
 }
 
+bool setGrant(THD* thd, const char* host, const char* user,  const char* db)
+{
+    return (acl_getroot(cp_security_ctx(thd), cp_strdup(user, MYF(0)),
+		cp_strdup(host, MYF(0)), cp_strdup(host, MYF(0)), (char*)db)) == false;
+}
 
+bool copyGrant(THD* thd, THD* thdSrc, const char* db)
+{
+    Security_context* sctx = cp_security_ctx(thdSrc);
+	if (sctx->cp_master_accsess() == (ulong)~NO_ACCESS)
+    {
+        cp_security_ctx(thd)->skip_grants();
+        return true;
+    }
+	return setGrant(thd, sctx->cp_priv_host(), sctx->cp_priv_user(), db);
+}
 // true ok false fail
 bool database::setGrant(const char* host, const char* user)
 {
-	bool ret = (acl_getroot(cp_security_ctx(m_thd), cp_strdup(user, MYF(0)),
-		cp_strdup(host, MYF(0)), cp_strdup(host, MYF(0)), (char*)m_dbname.c_str())) == false;
+	bool ret = mysql::setGrant(m_thd, host, user, m_dbname.c_str());
     if (ret)
         check_access(m_thd, SELECT_ACL, m_dbname.c_str(), &m_privilege, NULL, false, true);
                 
@@ -317,23 +331,23 @@ void database::use() const
 
 void database::prebuildIsoratinMode()
 {
-    cp_thd_set_read_only(m_thd, m_inSnapshot != 0);
-    if (m_inTransaction)
+    if (m_thd->lock == 0)
     {
-        m_thd->tx_isolation = m_iso;
-        m_thd->in_lock_tables = 1;// WITH LOCK
-    }
-    else if(m_inSnapshot)
-    {
-        if (m_iso)
-        {
-            m_thd->in_lock_tables = 1;// WITH LOCK
+        cp_thd_set_read_only(m_thd, m_inSnapshot != 0);
+        if (m_inTransaction)
             m_thd->tx_isolation = m_iso;
-        }else
-            m_thd->tx_isolation = ISO_REPEATABLE_READ;
+        else if(m_inSnapshot)
+        {
+            if (m_iso)
+                m_thd->tx_isolation = m_iso;
+            else
+                m_thd->tx_isolation = ISO_REPEATABLE_READ;
+        }
+        else
+            m_thd->tx_isolation = (enum_tx_isolation)m_thd->variables.tx_isolation;
     }
-    else
-        m_thd->tx_isolation = (enum_tx_isolation)m_thd->variables.tx_isolation;
+    if (m_inTransaction || (m_inSnapshot && m_iso))
+        m_thd->in_lock_tables = 1;// WITH LOCK
 }
 
 void database::prebuildExclusieLockMode(table* tb)
@@ -499,9 +513,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
 
     checkACL(cmd);
     prebuildLocktype(tb, cmd, lck);
-    
-    if (m_thd->lock == 0)
-        prebuildIsoratinMode();
+    prebuildIsoratinMode();
 
     if (tb->isExclusveMode())
         prebuildExclusieLockMode(tb);
@@ -630,6 +642,7 @@ bool database::beginTrn(short type, enum_tx_isolation iso)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INSNAPSHOT, "Snapshot is already beginning.");        
     
     bool ret = false;
+    m_stat = STATUS_SUCCESS;
     if (m_inTransaction == 0)
     {
         m_trnType = type;
@@ -656,6 +669,7 @@ bool database::beginTrn(short type, enum_tx_isolation iso)
 
 bool database::commitTrn()
 {
+    m_stat = STATUS_SUCCESS;
     if (m_inTransaction > 0)
     {
         --m_inTransaction;
@@ -667,6 +681,7 @@ bool database::commitTrn()
 
 bool database::abortTrn()
 {
+    m_stat = STATUS_SUCCESS;
     if (m_inTransaction > 0)
     {
         --m_inTransaction;
@@ -676,12 +691,41 @@ bool database::abortTrn()
     return (m_inTransaction == 0);
 }
 
-bool database::beginSnapshot(enum_tx_isolation iso)
+void database::useAllTables()
+{
+    for (int i = 0; i < (int)m_tables.size(); ++i)
+    {
+        if (m_tables[i])
+            useTable(i, SQLCOM_SELECT, NULL);
+    }
+}
+
+// See USE_BINLOG_GTID and USE_BINLOG_VAR in mysqlInternal.h
+#ifdef NOTUSE_BINLOG_VAR 
+    // Windows MySQL can not use mysql_bin_log variable
+    inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
+    {
+        short result = 0;
+        THD* thd = createThdForThread();
+        attachThd(thd);
+        copyGrant(thd, currentThd, NULL);
+        masterStatus p(thd, bpos); 
+        cp_query_command(thd, "show master status");
+        if (thd->is_error())
+            result = thd->cp_get_sql_error();
+        deleteThdForThread(thd);
+        attachThd(currentThd);
+        return result;
+    }
+#endif 
+
+bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos)
 {
     if (m_inTransaction)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Transaction is already beginning.");        
-
+    
     bool ret = false;
+    m_stat = STATUS_SUCCESS;
     if (m_inSnapshot == 0)
     {
         m_iso = iso;
@@ -690,11 +734,27 @@ bool database::beginSnapshot(enum_tx_isolation iso)
         ret = true;
     }
     ++m_inSnapshot;
+    if (m_inSnapshot==1)
+    {
+        if (bpos)
+        {
+            safe_commit_lock commit(m_thd);
+            if (!commit.lock()) return false;
+            #ifndef NOTUSE_BINLOG_VAR
+            safe_mysql_mutex_lock lck(mysql_bin_log.get_log_lock());
+            #endif
+            m_stat = getBinlogPos(m_thd, bpos);
+            if (m_stat) return false;
+            useAllTables(); // execute scope in safe_commit_lock  
+        }else
+            useAllTables();
+    }  
     return ret;
 }
 
 bool database::endSnapshot()
 {
+    m_stat = STATUS_SUCCESS;
     if (m_inSnapshot > 0)
     {
         --m_inSnapshot;
@@ -882,14 +942,16 @@ void database::closeForReopen()
     m_usingExclusive = 0;
 }
 
-void database::reopen()
+void database::reopen(bool forceReadonly)
 {
     for (size_t i = 0; i < m_tables.size(); i++)
     {
         if (m_tables[i] && (m_tables[i]->m_table == NULL))
         {
+            if (forceReadonly)
+                m_tables[i]->m_mode = TD_OPEN_READONLY;
             TABLE* table = doOpenTable(m_tables[i]->m_name.c_str(),
-                                       m_tables[i]->m_mode, NULL);
+                                        m_tables[i]->m_mode, NULL);
             if (table)
                 m_tables[i]->resetInternalTable(table);
             else
@@ -1050,6 +1112,7 @@ void table::resetInternalTable(TABLE* table)
         m_changed = false;
         m_validCursor = false;
         m_nounlock = false;
+        m_keyconv.setKey(m_table->key_info);
     }
 }
 
@@ -2325,7 +2388,7 @@ __int64 table::insert(bool ncc)
         /* Do not change to m_changed = false */
         m_changed = true;
     }
-    m_nounlock = setCursorStaus();
+    m_nounlock = setCursorStaus(true);
     return autoincValue;
 }
 
@@ -2426,7 +2489,7 @@ void table::update(bool ncc)
                 ++m_updCount;
                 m_changed = true;
             }
-            m_nounlock = setCursorStaus();
+            m_nounlock = setCursorStaus(true);
         }
     }
 }
@@ -2515,8 +2578,9 @@ void table::endBulkInsert()
 {
     if (m_bulkInserting)
     {
-        key_copy(&m_keybuf[0], m_table->record[0], &m_table->key_info[(int)m_keyNum],
-                 KEYLEN_ALLCOPY);
+		if (m_keyNum >= 0 && m_keyNum < (char)m_table->s->keys)
+			key_copy(&m_keybuf[0], m_table->record[0], &m_table->key_info[(int)m_keyNum],
+					KEYLEN_ALLCOPY);
         m_bulkInserting = false;
         m_table->file->ha_release_auto_increment();
         m_table->file->ha_end_bulk_insert();

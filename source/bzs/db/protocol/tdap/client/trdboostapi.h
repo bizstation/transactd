@@ -135,7 +135,7 @@ public:
         m_type = v;
     }
 
-    inline const _TCHAR* uri(bool noPasswd=false) const 
+    inline const _TCHAR* uri() const
     { 
         return m_buf; 
     }
@@ -844,15 +844,16 @@ inline void connect(Database_Ptr db, const ConnectParam_type& connPrams,
 template <class Database_Ptr>
 inline void createDatabase(Database_Ptr db, const connectParams& connPrams)
 {
-    db->create(connPrams.uri());
+    db->create(connPrams.uri(), connPrams.type());
     if (db->stat())
         throwDbError(db, _T("Create database : "), connPrams.uri());
 }
 
 template <class Database_Ptr>
-inline void createDatabase(Database_Ptr db, const _TCHAR* uri)
+inline void createDatabase(Database_Ptr db, const _TCHAR* uri,
+                                short type = TYPE_SCHEMA_BDF)
 {
-    db->create(uri);
+    db->create(uri, type);
     if (db->stat())
         throwDbError(db, _T("Create database : "), uri);
 }
@@ -885,9 +886,9 @@ inline void connectOpen(Database_Ptr db, const connectParams& connPrams,
     openDatabase(db, connPrams);
 }
 
-template <class Database_Ptr> inline void dropDatabase(Database_Ptr db)
+template <class Database_Ptr> inline void dropDatabase(Database_Ptr db, const _TCHAR* uri=NULL)
 {
-    db->drop();
+    db->drop(uri);
     if (db->stat())
         nstable::throwError(std::_tstring(_T("Drop database ")).c_str(),
                             db->stat());

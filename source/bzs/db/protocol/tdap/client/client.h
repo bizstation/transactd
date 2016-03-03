@@ -314,7 +314,7 @@ public:
         m_req.datalen = &m_tmplen;
     }
 
-    inline void getSqlCreate()
+    inline void getSqlCreate(int charsetIndex = -1)
     {
         if (!ver())
         {
@@ -324,9 +324,10 @@ public:
         _TCHAR tmp[MAX_PATH*2]={0};
         stripAuth((const char*)m_req.keybuf, tmp, MAX_PATH);
         std::string name = getTableName(tmp);
-        int charsetIndexServer =  getServerCharsetIndex();
+        if (charsetIndex == -1)
+            charsetIndex =  getServerCharsetIndex();
         std::string sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
-                                       charsetIndexServer, ver());
+                                       charsetIndex, ver());
         uint_td  datalen = *m_req.datalen;
         *m_req.datalen = (uint_td)(sql.size() + 1);
         if (datalen <= sql.size())

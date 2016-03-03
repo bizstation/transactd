@@ -51,7 +51,7 @@ public:
         m_buflen = BULKBUFSIZE;
     }
 
-    ~bulkInsert() { delete[] m_buf; }
+    ~bulkInsert() { delete [] m_buf; }
 
     char* reallocBuffer(char* buf, int oldsize, int newSize)
     {

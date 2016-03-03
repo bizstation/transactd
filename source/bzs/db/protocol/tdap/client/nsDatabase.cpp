@@ -592,11 +592,12 @@ void nsdatabase::reset()
         m_btrcallid = getBtrvEntryPoint();
 }
 
-void nsdatabase::beginSnapshot(short bias)
+void nsdatabase::beginSnapshot(short bias, binlogPos* binpos)
 {
     if (m_nsimpl->snapShotCount == 0)
     {
-        m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, NULL, NULL, NULL, 0, 0,
+        uint_td datalen = (bias == CONSISTENT_READ_WITH_BINLOG_POS) ? sizeof(binlogPos) : 0;
+        m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, binpos, &datalen, NULL, 0, 0,
                              m_nsimpl->cidPtr);
 #ifdef TEST_RECONNECT
         if (canRecoverNetError(m_stat))
@@ -780,7 +781,6 @@ bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
         m_stat = 0;
         if (_tcsstr(URI, _T("://")) == NULL)
             return true;
-
     }
     uint_td datalen = 0;
 

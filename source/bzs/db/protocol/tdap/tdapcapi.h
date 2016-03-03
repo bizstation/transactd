@@ -324,8 +324,15 @@ enum combineType
 #define MULTILOCK_GAP                   MULTILOCK_REPEATABLE_READ + LOCK_MULTI_NOWAIT
 // Snapshot
 #define CONSISTENT_READ                 4000
+#define CONSISTENT_READ_WITH_BINLOG_POS 4200
 #define MULTILOCK_GAP_SHARE             TRN_ISO_REPEATABLE_READ
 #define MULTILOCK_NOGAP_SHARE           0
+#define REPL_POSTYPE_NONE               0  
+#define REPL_POSTYPE_MARIA_GTID         1  // like 0-1-50
+#define REPL_POSTYPE_POS                2  // 12345
+
+
+
 // Read row lock
 #define ROW_LOCK_X                      LOCK_SINGLE_NOWAIT
 #define ROW_LOCK_S                      5000 + LOCK_SINGLE_NOWAIT

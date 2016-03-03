@@ -541,8 +541,8 @@ void testFindIn(database* db)
     i = 0;
     while (0 == tb->stat())
     {
-
-        BOOST_CHECK_MESSAGE(++i == tb->getFVint(fdi_id), "findNext in value");
+        int v = tb->getFVint(fdi_id);
+        BOOST_CHECK_MESSAGE(++i == v, "findNext in value " << i << ": bad = " << v);
         tb->findNext(true);
     }
     BOOST_CHECK_MESSAGE(i == 10000, "findNext in count");

@@ -52,6 +52,25 @@ DLLLIB void setTrnsctdEntryPoint(BTRCALLID_PTR p);
 DLLLIB BTRCALLID_PTR getTrnsctdEntryPoint();
 /** @endcond */
 
+
+#pragma pack(push, 1)
+pragma_pack1
+#define BINLOGNAME_SIZE 119
+struct binlogPos
+{
+    unsigned long long pos;
+    char type;
+    union
+    {
+        char filename[BINLOGNAME_SIZE];
+        char gtid[BINLOGNAME_SIZE];
+    };
+};
+
+
+#pragma pack(pop)
+pragma_pop
+
 class DLLLIB nsdatabase
 {
     friend class nstable;
@@ -112,7 +131,7 @@ public:
                                NOWAIT_WRITE); // NoWit SingleLock
     void endTrn();
     void abortTrn();
-    void beginSnapshot(short bias = CONSISTENT_READ);
+    void beginSnapshot(short bias = CONSISTENT_READ, binlogPos* binpos=NULL);
     void endSnapshot();
     ushort_td trxIsolationServer() const ;
     ushort_td trxLockWaitTimeoutServer() const ;

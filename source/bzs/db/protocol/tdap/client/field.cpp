@@ -867,6 +867,7 @@ void field::storeValueDbl(double value)
 void field::storeValueStrA(const char* data) 
 {
     char* p = (char*)m_ptr + m_fd->pos;
+    m_fds->cv()->setCodePage(mysql::codePage(m_fd->charsetIndex()));
     switch (m_fd->type)
     {
     case ft_string:
@@ -910,6 +911,7 @@ void field::storeValueStrA(const char* data)
 const char* field::readValueStrA() const
 {
     char* data = (char*)m_ptr + m_fd->pos;
+    m_fds->cv()->setCodePage(mysql::codePage(m_fd->charsetIndex()));
     switch (m_fd->type)
     {
     case ft_string:
@@ -957,6 +959,7 @@ const char* field::readValueStrA() const
 void field::storeValueStrW(const WCHAR* data)
 {
     char* p = (char*)m_ptr + m_fd->pos;
+    m_fds->cv()->setCodePage(mysql::codePage(m_fd->charsetIndex()));
     switch (m_fd->type)
     {
     case ft_string:
@@ -1003,6 +1006,7 @@ void field::storeValueStrW(const WCHAR* data)
 const WCHAR* field::readValueStrW() const
 {
     char* data = (char*)m_ptr + m_fd->pos;
+    m_fds->cv()->setCodePage(mysql::codePage(m_fd->charsetIndex()));
     switch (m_fd->type)
     {
     case ft_string:
@@ -1727,6 +1731,7 @@ void field::setFV(const void* data, uint_td size)
     case ft_mywvarbinary:
     case ft_mywvarchar:
     case ft_lstring:
+    case ft_lvar:
     {
         int sizeByte = m_fd->varLenBytes();
         size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
@@ -1744,15 +1749,6 @@ void field::setFV(const void* data, uint_td size)
         memset(p, 0, m_fd->len);
         memcpy(p, &size, sizeByte);
         memcpy(p + sizeByte, &data, sizeof(char*));
-        break;
-    }
-    case ft_lvar:
-    {
-        int sizeByte = 2;
-        size = std::min<uint_td>((uint_td)(m_fd->len - sizeByte), size);
-        memset(p, 0, m_fd->len);
-        memcpy(p, &size, sizeByte);
-        memcpy(p + sizeByte, data, size);
         break;
     }
     default:
@@ -2134,6 +2130,7 @@ void* field::getFVbin(uint_td& size) const
     case ft_mywvarbinary:
     case ft_mywvarchar:
     case ft_lstring:
+    case ft_lvar:
     {
         int sizeByte = m_fd->varLenBytes();
         size = 0;
@@ -2154,13 +2151,6 @@ void* field::getFVbin(uint_td& size) const
             return (void*)*ptr;
         }
         return NULL;
-    }
-    case ft_lvar:
-    {
-        int sizeByte = 2;
-        size = 0;
-        memcpy(&size, p, sizeByte);
-        return (void*)(p + sizeByte);
     }
     default:
         size = m_fd->len;

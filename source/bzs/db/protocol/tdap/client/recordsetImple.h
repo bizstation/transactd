@@ -657,13 +657,14 @@ public:
     {
         assert(m_fds->size());
         
-        fielddef fd((*m_fds)[0]);
+        fielddef fd;
         memset(&fd, 0, sizeof(fielddef));
         fd.len = len;
         fd.pos = 0;
         fd.type = type;
         fd.decimals = decimals;
         fd.setName(name);
+        fd.setCharsetIndex((*m_fds)[0].charsetIndex());
         if (blobLenBytes(fd))
             THROW_BZS_ERROR_WITH_MSG(_T("Can not append Blob or Text field."));
         m_fds->push_back(&fd);

@@ -38,7 +38,7 @@ class dbdef;
 #if (defined(__BORLANDC__) && !defined(__APPLE__) && !defined(__clang__))
 typedef bool __stdcall (*deleteRecordFn)(database* db, table* tb, bool inkey);
 typedef short __stdcall (*schemaMgrFn)(database* db);
-typedef void __stdcall (*copyDataFn)(database* db, int recordCount, int count,
+typedef void __stdcall (*copyDataFn)(database* db, table* tb, int recordCount, int count,
                                      bool& cancel);
 #else
 /** @cond INTERNAL */
@@ -52,7 +52,7 @@ typedef bool(__STDCALL* deleteRecordFn)(database* db, table* tb, bool inkey);
 typedef short(__STDCALL* schemaMgrFn)(database* db);
 
 /** Callback function on a record was copied by convert table operation. */
-typedef void(__STDCALL* copyDataFn)(database* db, int recordCount, int count,
+typedef void(__STDCALL* copyDataFn)(database* db, table* tb, int recordCount, int count,
                                     bool& cancel);
 #endif
 
@@ -69,7 +69,7 @@ class DLLLIB database : public nsdatabase
     void* getExtendBufferForOpen(uint_td& size); // orverload
     _TCHAR* getTableUri(_TCHAR* buf, short fileNum);
     _TCHAR* getTableUri(_TCHAR* buf, const _TCHAR* filename);
-    inline void copyEachFieldData(table* dest, table* src, struct filedChnageInfo* fci);
+    inline void copyEachFieldData(table* dest, table* src, struct fieldChnageInfo* fci);
 
 
 protected:
@@ -118,12 +118,12 @@ public:
     bool createTable(short fileNum, const _TCHAR* uri = NULL);
     char* getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf, uint_td* size);
     void create(const _TCHAR* uri, short type = TYPE_SCHEMA_BDF);
-    void drop();
+    void drop(const _TCHAR* uri=NULL);
     void dropTable(const _TCHAR* tableName);
     void close(bool withDropDefaultSchema = false);
     short aclReload();
     short continuous(char_td op = TD_BACKUP_START, bool inclideRepfile = false);
-    short assignSchemaData(dbdef* src);
+    short assignSchemaData(const dbdef* src);
     short copyTableData(table* dest, table* src, bool turbo,
                         short keyNum = -1, int maxSkip = -1);
     void convertTable(short tableIndex, bool turbo,

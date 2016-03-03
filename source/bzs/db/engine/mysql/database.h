@@ -133,6 +133,7 @@ private:
     void changeIntentionLock(table* tb, thr_lock_type lock_type);
     void checkACL(enum_sql_command cmd);
     void releaseTable(size_t index);
+    void useAllTables();
 public:
     
 
@@ -165,7 +166,7 @@ public:
         return m_tables;
     }
 
-    bool beginSnapshot(enum_tx_isolation iso);
+    bool beginSnapshot(enum_tx_isolation iso, struct binlogPos* bpos);
     bool endSnapshot();
     table* openTable(const std::string& name, short mode,
                      const char* ownerName);
@@ -178,7 +179,7 @@ public:
     void closeTable(table* tb);
     void unUseTables(bool rollback);
     void closeForReopen();
-    void reopen();
+    void reopen(bool forceReadonly = false);
     void cleanTable();
 
     inline bool canUnlockRow() const
@@ -332,11 +333,12 @@ class table : private boost::noncopyable
     void setKeyValues(const uchar* ptr, int size);
     void setBlobFieldPointer(const bzs::db::blobHeader* hd);
     
-    inline bool setCursorStaus()
+    inline bool setCursorStaus(bool noCount = false)
     {
         if (m_stat == 0)
         {
-            ++m_readCount;
+            if (!noCount)
+                ++m_readCount;
             m_validCursor = true;
             m_cursor = true;
         }else

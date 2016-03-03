@@ -640,8 +640,8 @@ class filter
             m_selectFieldIndexes.push_back(fieldNum);
             bsize.select += r.size();
             bsize.retRowSize += r.len;
-
-            if (m_tb->tableDef()->fieldDefs[fieldNum].isNullable())
+            const fielddef& fd = m_tb->tableDef()->fieldDefs[fieldNum];
+            if (fd.nullbytes() && fd.isNullable())
             {
                 ++bsize.nullfields;
                 bsize.nullbytes = (bsize.nullfields + 7) / 8;

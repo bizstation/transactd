@@ -808,10 +808,9 @@ bool tabledef::isNullKey(const keydef& key) const
         for (int j=0;j < key.segmentCount; ++j)
         {
             const fielddef& fd = fieldDefs[key.segments[j].fieldNum];
-            if (fd.nullValue != 0x00) 
-                return false;
+            if (fd.nullValue == 0x00)
+                return true;
         }
-        return true;
     }
     return false;
 }
@@ -833,7 +832,7 @@ bool tabledef::isNULLFieldFirstKeySegField(const keydef& key) const
     if ((key.segments[0].flags.bit3 || key.segments[0].flags.bit9) && key.segmentCount == 1)
     {
         const fielddef& fd = fieldDefs[key.segments[0].fieldNum];
-        return ((fd.len == 1) && (fd.type == ft_logical) && fd.nullValue == 0x00);
+        return fd.isNullKeysegType();
     }
     return false;
 }
