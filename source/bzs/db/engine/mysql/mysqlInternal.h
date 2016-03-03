@@ -647,11 +647,9 @@ struct binlogPos
     char type;
     char filename[BINLOGNAME_SIZE];
 };
-
 pragma_pop;
 #define REPL_POSTYPE_MARIA_GTID         1  // see tdapapi.h
 #define REPL_POSTYPE_POS                2  // see tdapapi.h
-
 
 
 #if (MYSQL_VERSION_ID > 100000)
@@ -817,37 +815,6 @@ public:
         }
     }
 };
-
-#ifdef USE_BINLOG_GTID
-inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
-{
-    if (mysql_bin_log.is_open())
-    {
-        rpl_gtid gtid;
-        bpos->type = REPL_POSTYPE_MARIA_GTID;
-        if (mysql_bin_log.lookup_domain_in_binlog_state(currentThd->variables.gtid_domain_id,  &gtid))
-        {
-            sprintf_s(bpos->filename, FN_REFLEN, "%u-%u-%lu", gtid.domain_id, gtid.server_id, gtid.seq_no); 
-            bpos->pos = gtid.seq_no;
-        }
-    }
-    return 0;
-}
-#endif
-
-#ifdef USE_BINLOG_VAR
-    // Linux MySQL can access to the mysql_bin_log variable
-    inline short getBinlogPos(THD* , binlogPos* bpos)
-    {
-        if (mysql_bin_log.is_open())
-        {
-            strmake(bpos->filename, mysql_bin_log.get_log_fname(), sizeof(BINLOGNAME_SIZE)-1);
-            bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
-            bpos->type = REPL_POSTYPE_POS;
-        }
-        return 0;
-    }
-#endif //USE_BINLOG_VAR
 
 /*
 class safe_global_read_lock
