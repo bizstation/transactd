@@ -767,25 +767,20 @@ extern "C" {
 /* For PHP < 5.3 */
 # define Z_SET_REFCOUNT_P(z, rc) (z)->refcount = (rc)
 #endif
+
 #ifdef ZEND_ENGINE_3
-#define SWIG_LONG_CONSTANT(N, V) zend_register_long_constant((char*)#N, sizeof(#N) - 1, V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_DOUBLE_CONSTANT(N, V) zend_register_double_constant((char*)#N, sizeof(#N) - 1, V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_STRING_CONSTANT(N, V) zend_register_stringl_constant((char*)#N, sizeof(#N) - 1, (char*)(V), strlen(V), CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_CHAR_CONSTANT(N, V) do {\
-    static char swig_char = (V);\
-    zend_register_stringl_constant((char*)#N, sizeof(#N) - 1, &swig_char, 1, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC);\
-} while (0)
-
+#define SIZE_OFFSET 1
 #else
-#define SWIG_LONG_CONSTANT(N, V) zend_register_long_constant((char*)#N, sizeof(#N), V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_DOUBLE_CONSTANT(N, V) zend_register_double_constant((char*)#N, sizeof(#N), V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_STRING_CONSTANT(N, V) zend_register_stringl_constant((char*)#N, sizeof(#N), (char*)(V), strlen(V), CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
+#define SIZE_OFFSET 0
+#endif
+
+#define SWIG_LONG_CONSTANT(N, V) zend_register_long_constant((char*)#N, sizeof(#N) - SIZE_OFFSET, V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
+#define SWIG_DOUBLE_CONSTANT(N, V) zend_register_double_constant((char*)#N, sizeof(#N) - SIZE_OFFSET, V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
+#define SWIG_STRING_CONSTANT(N, V) zend_register_stringl_constant((char*)#N, sizeof(#N) - SIZE_OFFSET, (char*)(V), strlen(V), CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
 #define SWIG_CHAR_CONSTANT(N, V) do {\
     static char swig_char = (V);\
-    zend_register_stringl_constant((char*)#N, sizeof(#N), &swig_char, 1, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC);\
+    zend_register_stringl_constant((char*)#N, sizeof(#N) - SIZE_OFFSET, &swig_char, 1, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC);\
 } while (0)
-
-#endif
 
 /* These TSRMLS_ stuff should already be defined now, but with older php under
    redhat are not... */
@@ -857,83 +852,14 @@ convert_to_boolean_ex                         --> CONV_to_boolean_ex
 (Z_TYPE_PP(argv[n]) == IS_BOOL)               --> ARGV_IS_BOOL(n)
 zend_list_find((*args[n])->value.lval, &type) --> LIST_FIND(args)
 __wrap_delete_xxxx(rsrc,                      --> __wrap_delete_xxxx(RSRC,
-efree(rsrc->ptr)                              --> efree(RSRC->ptr);
+efree(rsrc->ptr)                              --> efree(RSRC->ptr)
+zval_is_true(*args[n])                        --> ARGS_IS_TRUE(n) 
 -----------------------------------------------------------------------------------------------------
 
 */
 
 /* empty zend destructor for types without one */
 static ZEND_RSRC_DTOR_FUNC(SWIG_landfill) { zend_resource *rsrc = res; (void)rsrc; }
-
-
-static void
-SWIG_ZTS_SetPointerZval(zval *z, void *ptr, swig_type_info *type, int newobject TSRMLS_DC) {
-	/*
-	* First test for Null pointers.  Return those as PHP native NULL
-	*/
-	if (!ptr) {
-		ZVAL_NULL(z);
-		return;
-	}
-	if (type->clientdata) {
-		swig_object_wrapper *value;
-		if (!(*(int *)(type->clientdata)))
-			zend_error(E_ERROR, "Type: %s failed to register with zend", type->name);
-		value = (swig_object_wrapper *)emalloc(sizeof(swig_object_wrapper));
-		value->ptr = ptr;
-		value->newobject = (newobject & 1);
-		if ((newobject & 2) == 0) {
-			/* Just register the pointer as a resource. */
-			ZVAL_RES(z, zend_register_resource(value, *(int *)(type->clientdata)));
-		}
-		else {
-			/*
-			* Wrap the resource in an object, the resource will be accessible
-			* via the "_cPtr" member. This is currently only used by
-			* directorin typemaps.
-			*/
-			zval resource;
-			zend_class_entry *ce = NULL;
-			const char *type_name = type->name + 3; /* +3 so: _p_Foo -> Foo */
-			size_t type_name_len;
-			const char * p;
-			/* Namespace__Foo -> Foo */
-			/* FIXME: ugly and goes wrong for classes with __ in their names. */
-			while ((p = strstr(type_name, "__")) != NULL) {
-				type_name = p + 2;
-			}
-			type_name_len = strlen(type_name);
-			zend_string* tn = zend_string_init(type_name, type_name_len, 0);
-
-			ZVAL_RES(&resource, zend_register_resource(value, *(int *)(type->clientdata)));
-			if (SWIG_PREFIX_LEN > 0) {
-				char * classname = (char*)emalloc(SWIG_PREFIX_LEN + type_name_len + 1);
-				strcpy(classname, SWIG_PREFIX);
-				strcpy(classname + SWIG_PREFIX_LEN, type_name);
-				zend_string* zp = zend_string_init(classname, SWIG_PREFIX_LEN + type_name_len, 0);
-				ce = zend_lookup_class(zp);
-				zend_string_release(zp);
-				efree(classname);
-			}
-			else {
-				ce = zend_lookup_class(tn);
-			}
-			if (!ce) {
-				/* class does not exist */
-				object_init(z);
-			}
-			else {
-				object_init_ex(z, ce);
-			}
-			Z_SET_REFCOUNT_P(z, 1);
-			ZVAL_MAKE_REF(z);
-			zend_hash_str_update(HASH_OF(z),  "_cPtr", sizeof("_cPtr") - 1, &resource);
-			zend_string_release(tn);
-		}
-		return;
-	}
-	zend_error(E_ERROR, "Type: %s not registered with zend", type->name);
-}
 
 //Replace 
 typedef zval zval_args_type;
@@ -950,6 +876,7 @@ typedef zval zval_args_type;
 #define ARGV_IS_BOOL(N) (Z_TYPE_ARGV(argv[N]) == IS_TRUE || Z_TYPE_ARGV(argv[N]) == IS_FALSE)
 #define RSRC res
 #define LIST_FIND(ZVAL) value = (swig_object_wrapper *)Z_RES_P(ZVAL)->ptr;
+#define ARGS_IS_TRUE(N) zval_is_true(&args[N])
 
 //Append compatible type and define
 typedef zend_resource zend_rsrc_list_entry;
@@ -959,86 +886,21 @@ typedef zend_resource zend_rsrc_list_entry;
 
 #undef  ZVAL_STRING
 #define ZVAL_STRING(z, s, dummy)                                 \
-    do {			                                             \
-		const char *_s = (s);					                 \
+    do {                                                         \
+    const char *_s = (s);                                        \
         ZVAL_NEW_STR(z, zend_string_init(_s, strlen(_s), 0));    \
-	} while (0)
+  } while (0)
 
 #undef ZVAL_STRINGL
 #define ZVAL_STRINGL(z, s, l, dummy)                             \
-    do {			                                             \
-		const char *_s = (s);					                 \
-	    ZVAL_NEW_STR(z, zend_string_init(_s, l, 0));             \
-	} while (0)
+    do {                                                         \
+    const char *_s = (s);                                        \
+      ZVAL_NEW_STR(z, zend_string_init(_s, l, 0));               \
+  } while (0)
 
 #else
+
 static ZEND_RSRC_DTOR_FUNC(SWIG_landfill) { (void)rsrc; }
-
-static void
-SWIG_ZTS_SetPointerZval(zval *z, void *ptr, swig_type_info *type, int newobject TSRMLS_DC) {
-  /*
-   * First test for Null pointers.  Return those as PHP native NULL
-   */
-  if (!ptr ) {
-    ZVAL_NULL(z);
-    return;
-  }
-  if (type->clientdata) {
-    swig_object_wrapper *value;
-    if (! (*(int *)(type->clientdata)))
-      zend_error(E_ERROR, "Type: %s failed to register with zend",type->name);
-    value=(swig_object_wrapper *)emalloc(sizeof(swig_object_wrapper));
-    value->ptr=ptr;
-    value->newobject=(newobject & 1);
-    if ((newobject & 2) == 0) {
-      /* Just register the pointer as a resource. */
-      ZEND_REGISTER_RESOURCE(z, value, *(int *)(type->clientdata));
-    } else {
-      /*
-       * Wrap the resource in an object, the resource will be accessible
-       * via the "_cPtr" member. This is currently only used by
-       * directorin typemaps.
-       */
-      zval *resource;
-      zend_class_entry **ce = NULL;
-      const char *type_name = type->name+3; /* +3 so: _p_Foo -> Foo */
-      size_t type_name_len;
-      int result;
-      const char * p;
-
-      /* Namespace__Foo -> Foo */
-      /* FIXME: ugly and goes wrong for classes with __ in their names. */
-      while ((p = strstr(type_name, "__")) != NULL) {
-        type_name = p + 2;
-      }
-      type_name_len = strlen(type_name);
-
-      MAKE_STD_ZVAL(resource);
-      ZEND_REGISTER_RESOURCE(resource, value, *(int *)(type->clientdata));
-      if (SWIG_PREFIX_LEN > 0) {
-        char * classname = (char*)emalloc(SWIG_PREFIX_LEN + type_name_len + 1);
-        strcpy(classname, SWIG_PREFIX);
-        strcpy(classname + SWIG_PREFIX_LEN, type_name);
-        result = zend_lookup_class(classname, SWIG_PREFIX_LEN + type_name_len, &ce TSRMLS_CC);
-        efree(classname);
-      } else {
-        result = zend_lookup_class((char *)type_name, type_name_len, &ce TSRMLS_CC);
-      }
-      if (result != SUCCESS) {
-        /* class does not exist */
-        object_init(z);
-      } else {
-        object_init_ex(z, *ce);
-      }
-      Z_SET_REFCOUNT_P(z, 1);
-      Z_SET_ISREF_P(z);
-      zend_hash_update(HASH_OF(z), (char*)"_cPtr", sizeof("_cPtr"), (void*)&resource, sizeof(zval), NULL);
-    }
-    return;
-  }
-  zend_error(E_ERROR, "Type: %s not registered with zend",type->name);
-}
-
 typedef long zend_long;
 typedef zval** zval_args_type;
 #define ZVAL_ARGS *args
@@ -1054,6 +916,8 @@ typedef zval** zval_args_type;
 #define ARGV_IS_BOOL(N) (Z_TYPE_ARGV(argv[N]) == IS_BOOL)
 #define RSRC rsrc
 #define LIST_FIND(ZVAL) (swig_object_wrapper *)zend_list_find((*ZVAL[0])->value.lval, &type)
+#define ARGS_IS_TRUE(N) zval_is_true(*args[N])
+
 #endif
 
 /* This pointer conversion routine takes the native pointer p (along with
@@ -1068,6 +932,108 @@ typedef zval** zval_args_type;
    SWIG_ZTS_ConvertResourcePtr which gets the type name from the resource
    and the registered zend destructors for which we have one per type each
    with the type name hard wired in. */
+   
+static void
+SWIG_ZTS_SetPointerZval(zval *z, void *ptr, swig_type_info *type, int newobject TSRMLS_DC) {
+  /*
+   * First test for Null pointers.  Return those as PHP native NULL
+   */
+  if (!ptr) {
+    ZVAL_NULL(z);
+    return;
+  }
+  if (type->clientdata) {
+    swig_object_wrapper *value;
+    if (!(*(int *)(type->clientdata)))
+      zend_error(E_ERROR, "Type: %s failed to register with zend", type->name);
+    value = (swig_object_wrapper *)emalloc(sizeof(swig_object_wrapper));
+    value->ptr = ptr;
+    value->newobject = (newobject & 1);
+    if ((newobject & 2) == 0) {
+      /* Just register the pointer as a resource. */
+      #ifdef ZEND_ENGINE_3
+      ZVAL_RES(z, zend_register_resource(value, *(int *)(type->clientdata)));
+      #else
+      ZEND_REGISTER_RESOURCE(z, value, *(int *)(type->clientdata));
+      #endif
+    } else {
+      /*
+       * Wrap the resource in an object, the resource will be accessible
+       * via the "_cPtr" member. This is currently only used by
+       * directorin typemaps.
+       */
+      #ifdef ZEND_ENGINE_3
+      zval resource;
+      zend_class_entry *ce = NULL;
+      #else
+      zval *resource;
+      zend_class_entry **ce = NULL;
+      int result;
+      #endif
+      const char *type_name = type->name + 3; /* +3 so: _p_Foo -> Foo */
+      size_t type_name_len;
+      const char * p;
+      /* Namespace__Foo -> Foo */
+      /* FIXME: ugly and goes wrong for classes with __ in their names. */
+      while ((p = strstr(type_name, "__")) != NULL) {
+        type_name = p + 2;
+      }
+      type_name_len = strlen(type_name);
+      #ifdef ZEND_ENGINE_3
+      zend_string* tn = zend_string_init(type_name, type_name_len, 0);
+      ZVAL_RES(&resource, zend_register_resource(value, *(int *)(type->clientdata)));
+      #else
+      MAKE_STD_ZVAL(resource);
+      ZEND_REGISTER_RESOURCE(resource, value, *(int *)(type->clientdata));
+      #endif
+      if (SWIG_PREFIX_LEN > 0) {
+        char * classname = (char*)emalloc(SWIG_PREFIX_LEN + type_name_len + 1);
+        strcpy(classname, SWIG_PREFIX);
+        strcpy(classname + SWIG_PREFIX_LEN, type_name);
+        #ifdef ZEND_ENGINE_3
+        zend_string* zp = zend_string_init(classname, SWIG_PREFIX_LEN + type_name_len, 0);
+        ce = zend_lookup_class(zp);
+        zend_string_release(zp);
+        #else
+        result = zend_lookup_class(classname, SWIG_PREFIX_LEN + type_name_len, &ce TSRMLS_CC);
+        #endif
+        efree(classname);
+      } else {
+        #ifdef ZEND_ENGINE_3
+        ce = zend_lookup_class(tn);
+        #else
+        result = zend_lookup_class((char *)type_name, type_name_len, &ce TSRMLS_CC);
+        #endif
+      }
+      #ifdef ZEND_ENGINE_3
+      if (!ce) {
+      #else
+      if (result != SUCCESS) {
+      #endif
+        /* class does not exist */
+        object_init(z);
+      } else {
+      #ifdef ZEND_ENGINE_3
+        object_init_ex(z, ce);
+      #else
+        object_init_ex(z, *ce);
+      #endif
+      }
+      Z_SET_REFCOUNT_P(z, 1);
+      #ifdef ZEND_ENGINE_3
+      ZVAL_MAKE_REF(z);
+      zend_hash_str_update(HASH_OF(z),  "_cPtr", sizeof("_cPtr") - 1, &resource);
+      zend_string_release(tn);
+      #else
+      Z_SET_ISREF_P(z);
+      zend_hash_update(HASH_OF(z), (char*)"_cPtr", sizeof("_cPtr"), (void*)&resource, sizeof(zval), NULL);
+      #endif
+    }
+    return;
+  }
+  zend_error(E_ERROR, "Type: %s not registered with zend",type->name);
+}
+
 static void *
 SWIG_ZTS_ConvertResourceData(void * p, const char *type_name, swig_type_info *ty TSRMLS_DC) {
   swig_cast_info *tc;
@@ -1136,23 +1102,23 @@ SWIG_ZTS_ConvertPtr(zval *z, void **ptr, swig_type_info *ty, int flags TSRMLS_DC
     case IS_OBJECT: {
       //find z->_cPtr
 #ifdef ZEND_ENGINE_3
-	  zval* _cPtr;
-	  if ((_cPtr = zend_hash_str_find(HASH_OF(z), "_cPtr",  sizeof("_cPtr")- 1)) != NULL) {
-		  if (Z_TYPE_P(_cPtr) == IS_INDIRECT)
-			  _cPtr = Z_INDIRECT_P(_cPtr);
-		  if (Z_TYPE_P(_cPtr)==IS_RESOURCE) {
-			*ptr = SWIG_ZTS_ConvertResourcePtr(_cPtr, ty, flags TSRMLS_CC);
-			return (*ptr == NULL ? -1 : 0);
-		  }
+    zval* _cPtr;
+    if ((_cPtr = zend_hash_str_find(HASH_OF(z), "_cPtr",  sizeof("_cPtr")- 1)) != NULL) {
+      if (Z_TYPE_P(_cPtr) == IS_INDIRECT)
+        _cPtr = Z_INDIRECT_P(_cPtr);
+      if (Z_TYPE_P(_cPtr)==IS_RESOURCE) {
+      *ptr = SWIG_ZTS_ConvertResourcePtr(_cPtr, ty, flags TSRMLS_CC);
+      return (*ptr == NULL ? -1 : 0);
+      }
       }
 #else
       zval **_cPtr;
-	  if (zend_hash_find(HASH_OF(z), (char*)"_cPtr", sizeof("_cPtr"), (void**)&_cPtr) == SUCCESS) {
-		  if ((*_cPtr)->type == IS_RESOURCE) {
-			  *ptr = SWIG_ZTS_ConvertResourcePtr(*_cPtr, ty, flags TSRMLS_CC);
-			  return (*ptr == NULL ? -1 : 0);
-		  }
-	  }
+    if (zend_hash_find(HASH_OF(z), (char*)"_cPtr", sizeof("_cPtr"), (void**)&_cPtr) == SUCCESS) {
+      if ((*_cPtr)->type == IS_RESOURCE) {
+        *ptr = SWIG_ZTS_ConvertResourcePtr(*_cPtr, ty, flags TSRMLS_CC);
+        return (*ptr == NULL ? -1 : 0);
+      }
+    }
 #endif
       break;
     }
@@ -1182,9 +1148,9 @@ static swig_module_info *SWIG_Php_GetModule() {
 #else
   MAKE_STD_ZVAL(pointer);
   if (zend_get_constant(const_name, sizeof(const_name) - 1, pointer TSRMLS_CC)) {
-	  if (pointer->type == IS_LONG) {
-		  ret = (swig_module_info *)pointer->value.lval;
-	  }
+    if (pointer->type == IS_LONG) {
+      ret = (swig_module_info *)pointer->value.lval;
+    }
   }
   FREE_ZVAL(pointer);
 #endif
@@ -1367,11 +1333,7 @@ ZEND_NAMED_FUNCTION(_wrap_swig_transactd_alter_newobject) {
   }
 
   value = LIST_FIND(args);
-#ifdef ZEND_ENGINE_3
-  value->newobject = zval_is_true(&args[1]);
-#else
-  value->newobject = zval_is_true(*args[1]);
-#endif
+  value->newobject = ARGS_IS_TRUE(1);
   return;
 }
 ZEND_NAMED_FUNCTION(_wrap_swig_transactd_get_newobject) {
@@ -2337,7 +2299,7 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_BOOKMARK_isEmpty) {
     BOOKMARK *arg1 = (BOOKMARK *)0;
-	zval_args_type args[1];
+    zval_args_type args[1];
     bool result;
 
     SWIG_ResetError(TSRMLS_C);
@@ -10103,7 +10065,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekByBookmark) {
     zval_args_type argv[3];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -10240,7 +10202,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_getPercentage) {
     zval_args_type argv[2];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -10805,7 +10767,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_unlock) {
     zval_args_type argv[2];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -11658,7 +11620,7 @@ ZEND_NAMED_FUNCTION(_wrap_dbdef_insertTable) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
-	if(SWIG_ConvertPtr(ZVAL_ARGS[1], (void **) &arg2, SWIGTYPE_p_bzs__db__protocol__tdap__tabledef, 0) < 0) {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[1], (void **) &arg2, SWIGTYPE_p_bzs__db__protocol__tdap__tabledef, 0) < 0) {
       SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of dbdef_insertTable. Expected SWIGTYPE_p_bzs__db__protocol__tdap__tabledef");
     }
   }
@@ -18913,7 +18875,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_create) {
     int _v;
     {
       void *tmp;
-	  _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       {
@@ -19095,7 +19057,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_close) {
     zval_args_type argv[2];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -21274,7 +21236,7 @@ ZEND_NAMED_FUNCTION(_wrap_btrDateTime_i64_get) {
   result =  ((arg1)->i64);
   
   if ((long long)LONG_MIN <= result && result <= (long long)LONG_MAX) {
-	RETVAL_LONG((long)result)
+    RETVAL_LONG((long)result)
     //return_value->value.lval = (long)(result);
     //return_value->type = IS_LONG;
   } else {
@@ -21404,7 +21366,7 @@ ZEND_NAMED_FUNCTION(_wrap_btrTimeStamp_i64_get) {
   result =  ((arg1)->i64);
   
   if (result <= (unsigned long long)LONG_MAX) {
-	  RETVAL_LONG((long)result)
+    RETVAL_LONG((long)result)
     //return_value->value.lval = (long)(result);
     //return_value->type = IS_LONG;
   } else {
@@ -24033,7 +23995,7 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_read) {
     zval_args_type argv[2];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -30073,7 +30035,7 @@ ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_option) {
   }
   
   if ((long long)LONG_MIN <= result && result <= (long long)LONG_MAX) {
-	RETVAL_LONG((long)result)
+    RETVAL_LONG((long)result)
     //return_value->value.lval = (long)(result);
     //return_value->type = IS_LONG;
   } else {
