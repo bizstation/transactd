@@ -44,7 +44,7 @@ class fields;
 class table;
 /** @endcond */
 
-#if (defined(__BORLANDC__) && !defined(__clang__))
+#if (defined(__BORLANDC__) && !defined(__APPLE__) && !defined(__clang__))
 typedef void __stdcall(* recordCountFn)(table* tb, int count, bool& complate);
 #else
 /** @cond INTERNAL */
