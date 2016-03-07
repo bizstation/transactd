@@ -742,8 +742,10 @@ inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
     {
         if (mysql_bin_log.is_open())
         {
-            strmake(bpos->filename, mysql_bin_log.get_log_fname(), sizeof(BINLOGNAME_SIZE)-1);
-            bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
+			size_t dir_len = dirname_length(mysql_bin_log.get_log_fname());
+			strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
+			bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
+			bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
             bpos->type = REPL_POSTYPE_POS;
         }
         return 0;

@@ -654,14 +654,14 @@ pragma_pop;
 
 #if (MYSQL_VERSION_ID > 100000)
 #  define USE_BINLOG_GTID  1  // like 0-1-50
-#elif (!defined(_WIN32)) 
+#elif (!defined(_WIN32) || MYSQL_VERSION_ID > 50700 || MYSQL_VERSION_ID < 50600) // Linux or MySQL 5.5 5.7
 #  define USE_BINLOG_VAR   1  
 #  if (!defined(MARIADB_BASE_VERSION) &&  MYSQL_VERSION_ID > 50600)
 #    include "sql/binlog.h"
 #  endif
 
-#else // (MySQL 5.5 5.6 5.7 MariaDb 5.5) on windows 
-   // On windows MySQL 5.6 and 5.7 can not access mysql_bin_log variable
+#else // MySQL 5.6  on windows 
+   // On windows MySQL 5.6 can not access mysql_bin_log variable
 #  define NOTUSE_BINLOG_VAR   1  
 
 #if (MYSQL_VERSION_ID > 50700)

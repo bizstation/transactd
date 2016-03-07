@@ -3314,7 +3314,7 @@ void testSnapshotWithbinlog()
     binlogPos bpos;
     db->beginSnapshot(CONSISTENT_READ_WITH_BINLOG_POS, &bpos);
     BOOST_CHECK_MESSAGE(db->stat() == 0, "stat = " << db->stat());
-    BOOST_CHECK(bpos.filename[0] != 0);
+    BOOST_CHECK(strlen(bpos.filename) >= 5);
     BOOST_CHECK(bpos.pos != 0);
     if (ver.isMariaDB() && ver.majorVersion > 5)
         BOOST_CHECK(bpos.type == REPL_POSTYPE_MARIA_GTID);
