@@ -1848,7 +1848,6 @@ void testExclusive()
     BOOST_CHECK_MESSAGE(STATUS_CANNOT_LOCK_TABLE == db2->stat(),
                         "open db2->stat = " << db2->stat());
     dbdef* def = db->dbDef();
-    tabledef* td = def->tableDefs(1);
     def->updateTableDef(1);
     BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef");
     tb->release();

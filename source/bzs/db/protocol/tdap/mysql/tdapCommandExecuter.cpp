@@ -1498,12 +1498,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 std::string tbname = m_tb->name();
                 m_tb->close();
                 m_tb = NULL;
-                if ((req.keyNum == CR_SUBOP_DROP) /*&& (tbname == TRANSACTD_SCHEMANAME)*/)
+                if (req.keyNum == CR_SUBOP_DROP)
                 {
                     database* db = getDatabaseCid(req.cid);
                     req.result = ddl_dropTable(db, tbname, db->name(), tbname);
                 }
-                
             }
             break;
         case TD_BUILD_INDEX:
