@@ -262,9 +262,16 @@ void database::drop(const _TCHAR* uri)
 
     if (uri && uri[0])
     {
+        _TCHAR pwd[MAX_PATH];
+        passwd(uri, pwd, MAX_PATH);
         stripParam(uri, path, MAX_PATH);
         _tcscat(path, _T("?dbfile="));
         _tcscat(path, TRANSACTD_SCHEMANAME);
+        if (pwd[0])
+        {
+            _tcscat(path, _T("&pwd="));
+            _tcscat(path, pwd);
+        }
         nsdatabase::dropTable(path);
         if (m_stat)  return;
         nsdatabase::reset();
