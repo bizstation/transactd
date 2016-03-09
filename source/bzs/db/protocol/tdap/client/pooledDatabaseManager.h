@@ -3,7 +3,7 @@
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_POOLEDDATABASEMANAGER_H
 
 /* =================================================================
- Copyright (C) 2014 BizStation Corp All rights reserved.
+ Copyright (C) 2014 2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License

@@ -48,7 +48,7 @@ BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "Transactd Query executer"
             VALUE "FileVersion", "3.0.0.120"
-            VALUE "LegalCopyright", "Copyright(C) 2014 BizStation Corp"
+            VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
             VALUE "ProductVersion", "3.0.0.120"
             VALUE "ProductName", "Transactd Client (GPL V2)"
         END

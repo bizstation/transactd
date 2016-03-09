@@ -48,7 +48,7 @@ BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "@TD_RC_F_DESC@"
             VALUE "FileVersion", "@TD_RC_F_VER_MAJOR@.@TD_RC_F_VER_MINOR@.@TD_RC_F_VER_RELEASE@.@TD_RC_F_VER_BUILD@"
-            VALUE "LegalCopyright", "Copyright(C) 2014 BizStation Corp"
+            VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
             VALUE "ProductVersion", "@TD_RC_P_VER_MAJOR@.@TD_RC_P_VER_MINOR@.@TD_RC_P_VER_RELEASE@.@TD_RC_P_VER_BUILD@"
             VALUE "ProductName", "@TD_RC_P_NAME@"
         END
