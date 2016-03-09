@@ -35957,6 +35957,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "STATUS_FIELDTYPE_NOTSUPPORT", SWIG_From_int(static_cast< int >(STATUS_FIELDTYPE_NOTSUPPORT)));
   rb_define_const(mTransactd, "STATUS_INVALID_NULLMODE", SWIG_From_int(static_cast< int >(STATUS_INVALID_NULLMODE)));
   rb_define_const(mTransactd, "STATUS_TOO_LARGE_VALUE", SWIG_From_int(static_cast< int >(STATUS_TOO_LARGE_VALUE)));
+  rb_define_const(mTransactd, "STATUS_SQL_PARSE_ERROR", SWIG_From_int(static_cast< int >(STATUS_SQL_PARSE_ERROR)));
   rb_define_const(mTransactd, "STATUS_SUCCESS", SWIG_From_int(static_cast< int >(STATUS_SUCCESS)));
   rb_define_const(mTransactd, "STATUS_PROGRAM_ERROR", SWIG_From_int(static_cast< int >(STATUS_PROGRAM_ERROR)));
   rb_define_const(mTransactd, "STATUS_IO_ERROR", SWIG_From_int(static_cast< int >(STATUS_IO_ERROR)));

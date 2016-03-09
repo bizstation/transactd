@@ -567,6 +567,7 @@ short database::continuous(char_td IsEnd, bool inclideRepfile)
 void database::doClose()
 {
     m_stat = STATUS_SUCCESS;
+    resetSnapshot();
     if (m_impl->dbDef)
     {
         dbdef* def = m_impl->dbDef;

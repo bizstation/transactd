@@ -3306,6 +3306,9 @@ void testSnapshotWithbinlog()
     database_ptr db = createDatabaseObject();
     openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_READONLY);
     BOOST_CHECK(db->stat() == 0);
+    table* tb = db->openTable(1, TD_OPEN_READONLY);
+    BOOST_CHECK(db->stat() == 0);
+
     btrVersions vs;
     db->getBtrVersion(&vs);
     BOOST_CHECK(db->stat() == 0);
@@ -3320,6 +3323,11 @@ void testSnapshotWithbinlog()
         BOOST_CHECK(bpos.type == REPL_POSTYPE_MARIA_GTID);
     else
         BOOST_CHECK(bpos.type == REPL_POSTYPE_POS);
+    
+    //Test invalid close 
+    tb->close();
+    BOOST_CHECK(tb->stat() == STATUS_ALREADY_INSNAPSHOT);
+
     db->endSnapshot();
 }
 

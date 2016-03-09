@@ -546,6 +546,7 @@ bool nsdatabase::findTable(nstable* tb)
 void nsdatabase::reset()
 {
     int i;
+    resetSnapshot();
 
     if (m_nsimpl->tranCount)
     {
@@ -590,6 +591,15 @@ void nsdatabase::reset()
     }
     if (getBtrvEntryPoint())
         m_btrcallid = getBtrvEntryPoint();
+}
+
+void nsdatabase::resetSnapshot()
+{
+    if (m_nsimpl->snapShotCount)
+    {
+        m_nsimpl->snapShotCount = 1;
+        endSnapshot();
+    }
 }
 
 void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)

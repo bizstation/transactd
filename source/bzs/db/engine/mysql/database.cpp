@@ -43,7 +43,7 @@ namespace mysql
 using namespace std;
 
 #define KEYLEN_ALLCOPY 0
-#define OPEN_TABLE_TIMEOUT_SEC 2
+
 
 #if (MODE_READ_ONLY != TD_OPEN_READONLY)
 #error "MODE_READ_ONLY != TD_OPEN_READONLY"
@@ -915,6 +915,8 @@ int tableUseCount(const std::vector<boost::shared_ptr<table> >& tables,
 
 void database::closeTable(table* tb)
 {
+    if (m_inSnapshot)
+        THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INSNAPSHOT, "Snapshot is already beginning."); 
     for (int i = (int)m_tables.size() - 1; i >= 0; i--)
     {
         if (m_tables[i] && (m_tables[i].get() == tb))

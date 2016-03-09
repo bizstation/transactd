@@ -90,6 +90,7 @@ protected:
                                    bool trd);
     virtual bool setUri(const _TCHAR* uri);
     void reset();
+    void resetSnapshot();
     nstable** tables();
     nsdatabase* clone() const;
     nsdatabase& operator=(const nsdatabase&);

@@ -228,7 +228,7 @@ int dbManager::addHandle(int dbid, int tableid, int assignid)
 int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
 {
     smartDbsReopen reopen(thd, m_dbs);
-
+    thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
     thd->clear_error();
 	int result = cp_query_command(thd, (char*)sql_stmt.c_str());
     if (thd->is_error())

@@ -266,7 +266,7 @@ int dbExecuter::errorCode(int ha_error)
     else if (ha_error == HA_ERR_AUTOINC_ERANGE)
         return STATUS_DUPPLICATE_KEYVALUE;
     else if (ha_error == ER_PARSE_ERROR)
-        return STATUS_CANT_CREATE;
+        return STATUS_SQL_PARSE_ERROR;
     else if (ha_error == ER_TABLE_EXISTS_ERROR)
         return STATUS_TABLE_EXISTS_ERROR;
     else if (ha_error == DBM_ERROR_TABLE_USED)

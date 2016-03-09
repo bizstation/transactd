@@ -410,6 +410,7 @@ enum combineType
 #define STATUS_FIELDTYPE_NOTSUPPORT     -42
 #define STATUS_INVALID_NULLMODE         -43
 #define STATUS_TOO_LARGE_VALUE          -44
+#define STATUS_SQL_PARSE_ERROR          -45
 
 #define STATUS_SUCCESS                  0
 #define STATUS_PROGRAM_ERROR            1

@@ -69,7 +69,7 @@ namespace mysql
 #define MODE_EXCLUSIVE -4
 #define MODE_READ_EXCLUSIVE -6
 
-
+#define OPEN_TABLE_TIMEOUT_SEC 2
 /** bookmark size
  *  btreive API is MAX 4 byte
  */
