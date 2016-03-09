@@ -56,15 +56,13 @@ DLLLIB BTRCALLID_PTR getTrnsctdEntryPoint();
 #pragma pack(push, 1)
 pragma_pack1
 #define BINLOGNAME_SIZE 119
+#define GTID_SIZE       64
 struct binlogPos
 {
     unsigned long long pos;
     char type;
-    union
-    {
-        char filename[BINLOGNAME_SIZE];
-        char gtid[BINLOGNAME_SIZE];
-    };
+    char filename[BINLOGNAME_SIZE];
+    char gtid[GTID_SIZE];
 };
 
 

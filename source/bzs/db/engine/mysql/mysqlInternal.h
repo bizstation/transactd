@@ -641,11 +641,14 @@ public:
 #include <bzs/env/compiler.h>
 pragma_pack1;
 #define BINLOGNAME_SIZE 119
+#define GTID_SIZE       64
+
 struct binlogPos
 {
     my_off_t pos;
     char type;
     char filename[BINLOGNAME_SIZE];
+    char gtid[GTID_SIZE];
 };
 pragma_pop;
 #define REPL_POSTYPE_MARIA_GTID         1  // see tdapapi.h

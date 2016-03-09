@@ -624,6 +624,7 @@ ZEND_NAMED_FUNCTION(_wrap_fieldsBase_p_p_value);
 ZEND_NAMED_FUNCTION(_wrap_binlogPos_pos_get);
 ZEND_NAMED_FUNCTION(_wrap_binlogPos_type_get);
 ZEND_NAMED_FUNCTION(_wrap_binlogPos_filename_get);
+ZEND_NAMED_FUNCTION(_wrap_binlogPos_gtid_get);
 ZEND_NAMED_FUNCTION(_wrap_new_binlogPos);
 
 #endif /* PHP_TRANSACTD_H */

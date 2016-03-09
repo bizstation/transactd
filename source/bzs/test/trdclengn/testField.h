@@ -3320,7 +3320,10 @@ void testSnapshotWithbinlog()
     BOOST_CHECK(strlen(bpos.filename) >= 5);
     BOOST_CHECK(bpos.pos != 0);
     if (ver.isMariaDB() && ver.majorVersion > 5)
+    {
         BOOST_CHECK(bpos.type == REPL_POSTYPE_MARIA_GTID);
+        BOOST_CHECK(strlen(bpos.gtid) >= 5);
+    }
     else
         BOOST_CHECK(bpos.type == REPL_POSTYPE_POS);
     

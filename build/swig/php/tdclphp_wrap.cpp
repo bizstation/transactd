@@ -16836,6 +16836,31 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_binlogPos_gtid_get) {
+  binlogPos *arg1 = (binlogPos *) 0 ;
+  zval_args_type args[1];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of binlogPos_gtid_get. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+  {
+     ZVAL_STRING(return_value, (char *)arg1->gtid, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_new_binlogPos) {
   binlogPos *result = 0 ;
   
@@ -33297,6 +33322,9 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_binlogpos_filename_get, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_binlogpos_gtid_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_binlogpos, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
@@ -33898,6 +33926,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(binlogpos_pos_get,_wrap_binlogPos_pos_get,swig_arginfo_binlogpos_pos_get)
  SWIG_ZEND_NAMED_FE(binlogpos_type_get,_wrap_binlogPos_type_get,swig_arginfo_binlogpos_type_get)
  SWIG_ZEND_NAMED_FE(binlogpos_filename_get,_wrap_binlogPos_filename_get,swig_arginfo_binlogpos_filename_get)
+ SWIG_ZEND_NAMED_FE(binlogpos_gtid_get,_wrap_binlogPos_gtid_get,swig_arginfo_binlogpos_gtid_get)
  SWIG_ZEND_NAMED_FE(new_binlogpos,_wrap_new_binlogPos,swig_arginfo_new_binlogpos)
 
 {NULL, NULL, NULL}

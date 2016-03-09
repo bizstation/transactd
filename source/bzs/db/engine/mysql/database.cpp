@@ -728,8 +728,11 @@ inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
         bpos->type = REPL_POSTYPE_MARIA_GTID;
         if (mysql_bin_log.lookup_domain_in_binlog_state(currentThd->variables.gtid_domain_id,  &gtid))
         {
-            sprintf_s(bpos->filename, BINLOGNAME_SIZE, "%u-%u-%llu", gtid.domain_id, gtid.server_id, gtid.seq_no); 
-            bpos->pos = gtid.seq_no;
+            sprintf_s(bpos->gtid, GTID_SIZE, "%u-%u-%llu", gtid.domain_id, gtid.server_id, gtid.seq_no); 
+            size_t dir_len = dirname_length(mysql_bin_log.get_log_fname());
+			strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
+			bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
+			bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
         }
     }
     return 0;

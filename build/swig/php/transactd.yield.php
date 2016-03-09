@@ -2089,7 +2089,7 @@ class binlogPos {
 		if ($var === 'type') return binlogPos_type_get($this->_cPtr);
 		if ($var === 'pos') return binlogPos_pos_get($this->_cPtr);
 		if ($var === 'filename') return binlogPos_filename_get($this->_cPtr);
-		if ($var === 'gtid') return binlogPos_filename_get($this->_cPtr);
+		if ($var === 'gtid') return binlogPos_gtid_get($this->_cPtr);
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
 		return $this->_pData[$var];
 	}
