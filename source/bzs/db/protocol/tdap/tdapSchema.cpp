@@ -808,10 +808,9 @@ bool tabledef::isNullKey(const keydef& key) const
         for (int j=0;j < key.segmentCount; ++j)
         {
             const fielddef& fd = fieldDefs[key.segments[j].fieldNum];
-            if (fd.nullValue != 0x00) 
-                return false;
+            if (fd.nullValue == 0x00)
+                return true;
         }
-        return true;
     }
     return false;
 }
@@ -833,7 +832,7 @@ bool tabledef::isNULLFieldFirstKeySegField(const keydef& key) const
     if ((key.segments[0].flags.bit3 || key.segments[0].flags.bit9) && key.segmentCount == 1)
     {
         const fielddef& fd = fieldDefs[key.segments[0].fieldNum];
-        return ((fd.len == 1) && (fd.type == ft_logical) && fd.nullValue == 0x00);
+        return fd.isNullKeysegType();
     }
     return false;
 }
@@ -1070,7 +1069,6 @@ uint_td tabledef::pack(char* ptr, size_t size) const
                 memmove(pos, pos + movelen, end - pos);
             }
         }
-        
     }
     return (uint_td)(pos - ptr);
 }
@@ -1079,8 +1077,6 @@ int tabledef::size() const
 {
     int len =  (int)(sizeof(tabledef) + (sizeof(fielddef) * fieldCount) +
                     (sizeof(keydef) * keyCount));
-    const ushort_td* p = &varSize;
-    *(const_cast<ushort_td*>(p)) = len - 4;
     return len;
 }
 

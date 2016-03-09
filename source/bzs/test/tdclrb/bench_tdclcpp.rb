@@ -125,8 +125,8 @@ def Read(db, tb, start, endid, shapshot)
     for i in start..(endid - 1) do
         tb.setFV(FN_ID, i)
         tb.seek()
-        if ((tb.stat() != 0) || (tb.getFVlng(FN_ID) != i))
-            puts("GetEqual Error stat() = #{tb.stat().to_s}  Value #{i.to_s} = #{tb.getFVlng(FN_ID).to_s}")
+        if ((tb.stat() != 0) || (tb.getFVint(FN_ID) != i))
+            puts("GetEqual Error stat() = #{tb.stat().to_s}  Value #{i.to_s} = #{tb.getFVint(FN_ID).to_s}")
             ret = false
             break
         end
@@ -151,8 +151,8 @@ def Reads(db, tb, start, endid, unit, shapshot)
     while (en != endid)
         en = st + unit
         for i in st..(en - 1) do
-            if (tb.getFVlng(FN_ID) != i)
-                puts("findNext Error stat() = #{tb.stat().to_s}  Value #{i.to_s} = #{tb.getFVlng(FN_ID).to_s}")
+            if (tb.getFVint(FN_ID) != i)
+                puts("findNext Error stat() = #{tb.stat().to_s}  Value #{i.to_s} = #{tb.getFVint(FN_ID).to_s}")
                 ret = false
                 break
             end
@@ -220,7 +220,7 @@ def createTestDataBase(db, uri)
         fd = dbdef.insertField(td.id, 1)
         fd.setName('name')
         fd.type = Transactd::Ft_myvarchar
-        fd.len = 100
+        fd.setLenByCharnum(20)
         dbdef.updateTableDef(td.id)
         
         kd = dbdef.insertKey(td.id, 0)
@@ -295,9 +295,9 @@ def main(argv)
     if (!db.open(uri, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL, '', ''))
         puts("open table erorr No:#{db.stat().to_s}")
     else
-        tb = openTable(db, 'users', Transactd::TD_OPEN_NORMAL)
+        tb = openTable(db, 'user', Transactd::TD_OPEN_NORMAL)
         if tb == nil
-          puts "can not open table 'users'"
+          puts "can not open table 'user'"
           db.close()
           return
         end

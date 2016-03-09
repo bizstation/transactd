@@ -101,9 +101,10 @@ std::string getDatabaseName(const request& req, bool forSql)
 {
     std::vector<std::string> ssc;
     std::vector<std::string> ss;
-    if (req.keybuf)
+	const char* p = (const char*)req.keybuf;
+	if (p && p[0])
     {
-        std::string s((const char*)req.keybuf);
+		std::string s(p);
         split(ssc, s, "\t");
         if (ssc.size())
         {
@@ -265,7 +266,7 @@ int dbExecuter::errorCode(int ha_error)
     else if (ha_error == HA_ERR_AUTOINC_ERANGE)
         return STATUS_DUPPLICATE_KEYVALUE;
     else if (ha_error == ER_PARSE_ERROR)
-        return STATUS_CANT_CREATE;
+        return STATUS_SQL_PARSE_ERROR;
     else if (ha_error == ER_TABLE_EXISTS_ERROR)
         return STATUS_TABLE_EXISTS_ERROR;
     else if (ha_error == DBM_ERROR_TABLE_USED)
@@ -274,18 +275,25 @@ int dbExecuter::errorCode(int ha_error)
         return ERROR_NO_DATABASE;
     else if(ha_error == ER_NO_SUCH_TABLE)
         return STATUS_TABLE_NOTOPEN;
+    else if(ha_error == ER_SPECIFIC_ACCESS_DENIED_ERROR)
+        return STATUS_ACCESS_DENIED;    
     return MYSQL_ERROR_OFFSET + ha_error;
 }
 
 bool isMetaDb(const request& req)
 {
     char buf[MAX_PATH];
-    strncpy(buf, (char*)req.keybuf, MAX_PATH);
-    _strlwr(buf);
-    char_m* st = _mbsstr((char_m*)buf, (char_m*)BdfNameTitle);
-    if (st == NULL)
-        st = (char_m*)strstr(buf, TRANSACTD_SCHEMANAME);
-    return (st != NULL);
+	const char* p = (const char*)req.keybuf;
+	char_m* st = NULL;
+	if (p && p[0])
+	{
+		strncpy(buf, p, MAX_PATH);
+		_strlwr(buf);
+		st = _mbsstr((char_m*)buf, (char_m*)BdfNameTitle);
+		if (st == NULL)
+			st = (char_m*)strstr(buf, TRANSACTD_SCHEMANAME);
+	}
+	return (st != NULL);
 }
 
 inline bool getUserPasswd(request& req, char* &user, char* &pwd)
@@ -415,7 +423,7 @@ inline bool dbExecuter::doCreateTable(request& req)
             {
                 if (req.result == 0)
                 {
-                    req.result = ddl_dropDataBase(db->thd(), db->name(), dbSqlname);
+					req.result = ddl_dropDataBase(db->thd(), db->name(), dbSqlname, req.cid);
                     if (ER_DB_DROP_EXISTS+ MYSQL_ERROR_OFFSET == req.result) req.result = 0;
                 }
                 return ret;
@@ -1075,7 +1083,7 @@ inline void dbExecuter::doInsertBulk(request& req)
             smartBulkInsert sbi(m_tb, *n);
             for (ushort_td i = 0; i < *n; i++)
             {
-                ushort_td len = *((ushort_td*)pos);
+				ushort_td len = *((ushort_td*)pos);
                 if (pos + len > (const uchar*)req.data + *req.datalen)
                 {
                     ret = STATUS_BUFFERTOOSMALL;
@@ -1147,6 +1155,11 @@ inline enum_tx_isolation getIsolationLevel(int op)
     else if(op > TRN_ISO_REPEATABLE_READ)
         return ISO_REPEATABLE_READ;
     return ISO_READ_COMMITTED;
+}
+
+inline bool snapshotWithBinlogPos(int op)
+{
+    return (op == CONSISTENT_READ_WITH_BINLOG_POS+TD_BEGIN_SHAPSHOT);
 }
 
 inline short getTrnsactionType(int op)
@@ -1248,22 +1261,57 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             doDelete(req);
             break;
         case TD_BEGIN_TRANSACTION:
-            transactionResult =
-                getDatabaseCid(req.cid)->beginTrn(getTrnsactionType(opTrn)
+        {
+            database* db = getDatabaseCid(req.cid);
+            transactionResult = db->beginTrn(getTrnsactionType(opTrn)
                                                     ,getIsolationLevel(opTrn));
+            req.result = errorCodeSht(db->stat());
             break;
+        }
         case TD_END_TRANSACTION:
-            transactionResult = getDatabaseCid(req.cid)->commitTrn();
+        {
+            database* db = getDatabaseCid(req.cid);
+            transactionResult = db->commitTrn();
+            req.result = errorCodeSht(db->stat());
             break;
+        }
         case TD_ABORT_TRANSACTION:
-            transactionResult = getDatabaseCid(req.cid)->abortTrn();
+        {
+            database* db = getDatabaseCid(req.cid);
+            transactionResult = db->abortTrn();
+            req.result = errorCodeSht(db->stat());
             break;
+        }
         case TD_BEGIN_SHAPSHOT:
-            transactionResult = getDatabaseCid(req.cid)->beginSnapshot(getIsolationLevel(opTrn));
+        {
+            bool withSnapshot = snapshotWithBinlogPos(opTrn);
+            if (withSnapshot && *req.datalen < sizeof(binlogPos))
+                req.result = STATUS_BUFFERTOOSMALL;
+            else
+            {
+                binlogPos bpos;
+                memset(&bpos, 0, sizeof(binlogPos));
+                database* db = getDatabaseCid(req.cid);
+                transactionResult = db->beginSnapshot(
+                        getIsolationLevel(opTrn), withSnapshot ? &bpos : NULL);
+                req.result = errorCodeSht(db->stat());
+                if (transactionResult && withSnapshot)
+                {   
+                    // return binlog position for replication.
+                    req.paramMask = P_MASK_STAT;
+                    memcpy(req.data, &bpos, sizeof(binlogPos));
+                    req.resultLen = sizeof(binlogPos);
+                }
+            }
             break;
+        }
         case TD_END_SNAPSHOT:
-            transactionResult = getDatabaseCid(req.cid)->endSnapshot();
+        {
+            database* db = getDatabaseCid(req.cid);
+            transactionResult = db->endSnapshot();
+            req.result = errorCodeSht(db->stat());
             break;
+        }
         case TD_TABLE_INFO: // support recordlen and recordCount only.
             doStat(req);
             break;
@@ -1450,12 +1498,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 std::string tbname = m_tb->name();
                 m_tb->close();
                 m_tb = NULL;
-                if ((req.keyNum == CR_SUBOP_DROP) && (tbname == TRANSACTD_SCHEMANAME))
+                if (req.keyNum == CR_SUBOP_DROP)
                 {
                     database* db = getDatabaseCid(req.cid);
                     req.result = ddl_dropTable(db, tbname, db->name(), tbname);
                 }
-                
             }
             break;
         case TD_BUILD_INDEX:
@@ -1604,8 +1651,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         if (transactionResult)
         {
             if ((op == TD_BEGIN_TRANSACTION) || (op == TD_BEGIN_SHAPSHOT))
-                return EXECUTE_RESULT_FORCSE_SYNC;
-            return EXECUTE_RESULT_FORCSE_ASYNC;
+                return EXECUTE_RESULT_FORCSE_SYNC; // this is begin
+            return EXECUTE_RESULT_FORCSE_ASYNC;    // this is end 
         }
         if (req.result == ERROR_TD_INVALID_CLINETHOST)
             return EXECUTE_RESULT_ACCESS_DNIED;

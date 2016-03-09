@@ -767,25 +767,20 @@ extern "C" {
 /* For PHP < 5.3 */
 # define Z_SET_REFCOUNT_P(z, rc) (z)->refcount = (rc)
 #endif
+
 #ifdef ZEND_ENGINE_3
-#define SWIG_LONG_CONSTANT(N, V) zend_register_long_constant((char*)#N, sizeof(#N) - 1, V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_DOUBLE_CONSTANT(N, V) zend_register_double_constant((char*)#N, sizeof(#N) - 1, V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_STRING_CONSTANT(N, V) zend_register_stringl_constant((char*)#N, sizeof(#N) - 1, (char*)(V), strlen(V), CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_CHAR_CONSTANT(N, V) do {\
-    static char swig_char = (V);\
-    zend_register_stringl_constant((char*)#N, sizeof(#N) - 1, &swig_char, 1, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC);\
-} while (0)
-
+#define SIZE_OFFSET 1
 #else
-#define SWIG_LONG_CONSTANT(N, V) zend_register_long_constant((char*)#N, sizeof(#N), V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_DOUBLE_CONSTANT(N, V) zend_register_double_constant((char*)#N, sizeof(#N), V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
-#define SWIG_STRING_CONSTANT(N, V) zend_register_stringl_constant((char*)#N, sizeof(#N), (char*)(V), strlen(V), CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
+#define SIZE_OFFSET 0
+#endif
+
+#define SWIG_LONG_CONSTANT(N, V) zend_register_long_constant((char*)#N, sizeof(#N) - SIZE_OFFSET, V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
+#define SWIG_DOUBLE_CONSTANT(N, V) zend_register_double_constant((char*)#N, sizeof(#N) - SIZE_OFFSET, V, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
+#define SWIG_STRING_CONSTANT(N, V) zend_register_stringl_constant((char*)#N, sizeof(#N) - SIZE_OFFSET, (char*)(V), strlen(V), CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC)
 #define SWIG_CHAR_CONSTANT(N, V) do {\
     static char swig_char = (V);\
-    zend_register_stringl_constant((char*)#N, sizeof(#N), &swig_char, 1, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC);\
+    zend_register_stringl_constant((char*)#N, sizeof(#N) - SIZE_OFFSET, &swig_char, 1, CONST_CS | CONST_PERSISTENT, module_number TSRMLS_CC);\
 } while (0)
-
-#endif
 
 /* These TSRMLS_ stuff should already be defined now, but with older php under
    redhat are not... */
@@ -857,83 +852,14 @@ convert_to_boolean_ex                         --> CONV_to_boolean_ex
 (Z_TYPE_PP(argv[n]) == IS_BOOL)               --> ARGV_IS_BOOL(n)
 zend_list_find((*args[n])->value.lval, &type) --> LIST_FIND(args)
 __wrap_delete_xxxx(rsrc,                      --> __wrap_delete_xxxx(RSRC,
-efree(rsrc->ptr)                              --> efree(RSRC->ptr);
+efree(rsrc->ptr)                              --> efree(RSRC->ptr)
+zval_is_true(*args[n])                        --> ARGS_IS_TRUE(n) 
 -----------------------------------------------------------------------------------------------------
 
 */
 
 /* empty zend destructor for types without one */
 static ZEND_RSRC_DTOR_FUNC(SWIG_landfill) { zend_resource *rsrc = res; (void)rsrc; }
-
-
-static void
-SWIG_ZTS_SetPointerZval(zval *z, void *ptr, swig_type_info *type, int newobject TSRMLS_DC) {
-	/*
-	* First test for Null pointers.  Return those as PHP native NULL
-	*/
-	if (!ptr) {
-		ZVAL_NULL(z);
-		return;
-	}
-	if (type->clientdata) {
-		swig_object_wrapper *value;
-		if (!(*(int *)(type->clientdata)))
-			zend_error(E_ERROR, "Type: %s failed to register with zend", type->name);
-		value = (swig_object_wrapper *)emalloc(sizeof(swig_object_wrapper));
-		value->ptr = ptr;
-		value->newobject = (newobject & 1);
-		if ((newobject & 2) == 0) {
-			/* Just register the pointer as a resource. */
-			ZVAL_RES(z, zend_register_resource(value, *(int *)(type->clientdata)));
-		}
-		else {
-			/*
-			* Wrap the resource in an object, the resource will be accessible
-			* via the "_cPtr" member. This is currently only used by
-			* directorin typemaps.
-			*/
-			zval resource;
-			zend_class_entry *ce = NULL;
-			const char *type_name = type->name + 3; /* +3 so: _p_Foo -> Foo */
-			size_t type_name_len;
-			const char * p;
-			/* Namespace__Foo -> Foo */
-			/* FIXME: ugly and goes wrong for classes with __ in their names. */
-			while ((p = strstr(type_name, "__")) != NULL) {
-				type_name = p + 2;
-			}
-			type_name_len = strlen(type_name);
-			zend_string* tn = zend_string_init(type_name, type_name_len, 0);
-
-			ZVAL_RES(&resource, zend_register_resource(value, *(int *)(type->clientdata)));
-			if (SWIG_PREFIX_LEN > 0) {
-				char * classname = (char*)emalloc(SWIG_PREFIX_LEN + type_name_len + 1);
-				strcpy(classname, SWIG_PREFIX);
-				strcpy(classname + SWIG_PREFIX_LEN, type_name);
-				zend_string* zp = zend_string_init(classname, SWIG_PREFIX_LEN + type_name_len, 0);
-				ce = zend_lookup_class(zp);
-				zend_string_release(zp);
-				efree(classname);
-			}
-			else {
-				ce = zend_lookup_class(tn);
-			}
-			if (!ce) {
-				/* class does not exist */
-				object_init(z);
-			}
-			else {
-				object_init_ex(z, ce);
-			}
-			Z_SET_REFCOUNT_P(z, 1);
-			ZVAL_MAKE_REF(z);
-			zend_hash_str_update(HASH_OF(z),  "_cPtr", sizeof("_cPtr") - 1, &resource);
-			zend_string_release(tn);
-		}
-		return;
-	}
-	zend_error(E_ERROR, "Type: %s not registered with zend", type->name);
-}
 
 //Replace 
 typedef zval zval_args_type;
@@ -950,6 +876,7 @@ typedef zval zval_args_type;
 #define ARGV_IS_BOOL(N) (Z_TYPE_ARGV(argv[N]) == IS_TRUE || Z_TYPE_ARGV(argv[N]) == IS_FALSE)
 #define RSRC res
 #define LIST_FIND(ZVAL) value = (swig_object_wrapper *)Z_RES_P(ZVAL)->ptr;
+#define ARGS_IS_TRUE(N) zval_is_true(&args[N])
 
 //Append compatible type and define
 typedef zend_resource zend_rsrc_list_entry;
@@ -959,86 +886,21 @@ typedef zend_resource zend_rsrc_list_entry;
 
 #undef  ZVAL_STRING
 #define ZVAL_STRING(z, s, dummy)                                 \
-    do {			                                             \
-		const char *_s = (s);					                 \
+    do {                                                         \
+    const char *_s = (s);                                        \
         ZVAL_NEW_STR(z, zend_string_init(_s, strlen(_s), 0));    \
-	} while (0)
+  } while (0)
 
 #undef ZVAL_STRINGL
 #define ZVAL_STRINGL(z, s, l, dummy)                             \
-    do {			                                             \
-		const char *_s = (s);					                 \
-	    ZVAL_NEW_STR(z, zend_string_init(_s, l, 0));             \
-	} while (0)
+    do {                                                         \
+    const char *_s = (s);                                        \
+      ZVAL_NEW_STR(z, zend_string_init(_s, l, 0));               \
+  } while (0)
 
 #else
+
 static ZEND_RSRC_DTOR_FUNC(SWIG_landfill) { (void)rsrc; }
-
-static void
-SWIG_ZTS_SetPointerZval(zval *z, void *ptr, swig_type_info *type, int newobject TSRMLS_DC) {
-  /*
-   * First test for Null pointers.  Return those as PHP native NULL
-   */
-  if (!ptr ) {
-    ZVAL_NULL(z);
-    return;
-  }
-  if (type->clientdata) {
-    swig_object_wrapper *value;
-    if (! (*(int *)(type->clientdata)))
-      zend_error(E_ERROR, "Type: %s failed to register with zend",type->name);
-    value=(swig_object_wrapper *)emalloc(sizeof(swig_object_wrapper));
-    value->ptr=ptr;
-    value->newobject=(newobject & 1);
-    if ((newobject & 2) == 0) {
-      /* Just register the pointer as a resource. */
-      ZEND_REGISTER_RESOURCE(z, value, *(int *)(type->clientdata));
-    } else {
-      /*
-       * Wrap the resource in an object, the resource will be accessible
-       * via the "_cPtr" member. This is currently only used by
-       * directorin typemaps.
-       */
-      zval *resource;
-      zend_class_entry **ce = NULL;
-      const char *type_name = type->name+3; /* +3 so: _p_Foo -> Foo */
-      size_t type_name_len;
-      int result;
-      const char * p;
-
-      /* Namespace__Foo -> Foo */
-      /* FIXME: ugly and goes wrong for classes with __ in their names. */
-      while ((p = strstr(type_name, "__")) != NULL) {
-        type_name = p + 2;
-      }
-      type_name_len = strlen(type_name);
-
-      MAKE_STD_ZVAL(resource);
-      ZEND_REGISTER_RESOURCE(resource, value, *(int *)(type->clientdata));
-      if (SWIG_PREFIX_LEN > 0) {
-        char * classname = (char*)emalloc(SWIG_PREFIX_LEN + type_name_len + 1);
-        strcpy(classname, SWIG_PREFIX);
-        strcpy(classname + SWIG_PREFIX_LEN, type_name);
-        result = zend_lookup_class(classname, SWIG_PREFIX_LEN + type_name_len, &ce TSRMLS_CC);
-        efree(classname);
-      } else {
-        result = zend_lookup_class((char *)type_name, type_name_len, &ce TSRMLS_CC);
-      }
-      if (result != SUCCESS) {
-        /* class does not exist */
-        object_init(z);
-      } else {
-        object_init_ex(z, *ce);
-      }
-      Z_SET_REFCOUNT_P(z, 1);
-      Z_SET_ISREF_P(z);
-      zend_hash_update(HASH_OF(z), (char*)"_cPtr", sizeof("_cPtr"), (void*)&resource, sizeof(zval), NULL);
-    }
-    return;
-  }
-  zend_error(E_ERROR, "Type: %s not registered with zend",type->name);
-}
-
 typedef long zend_long;
 typedef zval** zval_args_type;
 #define ZVAL_ARGS *args
@@ -1054,6 +916,8 @@ typedef zval** zval_args_type;
 #define ARGV_IS_BOOL(N) (Z_TYPE_ARGV(argv[N]) == IS_BOOL)
 #define RSRC rsrc
 #define LIST_FIND(ZVAL) (swig_object_wrapper *)zend_list_find((*ZVAL[0])->value.lval, &type)
+#define ARGS_IS_TRUE(N) zval_is_true(*args[N])
+
 #endif
 
 /* This pointer conversion routine takes the native pointer p (along with
@@ -1068,6 +932,108 @@ typedef zval** zval_args_type;
    SWIG_ZTS_ConvertResourcePtr which gets the type name from the resource
    and the registered zend destructors for which we have one per type each
    with the type name hard wired in. */
+   
+static void
+SWIG_ZTS_SetPointerZval(zval *z, void *ptr, swig_type_info *type, int newobject TSRMLS_DC) {
+  /*
+   * First test for Null pointers.  Return those as PHP native NULL
+   */
+  if (!ptr) {
+    ZVAL_NULL(z);
+    return;
+  }
+  if (type->clientdata) {
+    swig_object_wrapper *value;
+    if (!(*(int *)(type->clientdata)))
+      zend_error(E_ERROR, "Type: %s failed to register with zend", type->name);
+    value = (swig_object_wrapper *)emalloc(sizeof(swig_object_wrapper));
+    value->ptr = ptr;
+    value->newobject = (newobject & 1);
+    if ((newobject & 2) == 0) {
+      /* Just register the pointer as a resource. */
+      #ifdef ZEND_ENGINE_3
+      ZVAL_RES(z, zend_register_resource(value, *(int *)(type->clientdata)));
+      #else
+      ZEND_REGISTER_RESOURCE(z, value, *(int *)(type->clientdata));
+      #endif
+    } else {
+      /*
+       * Wrap the resource in an object, the resource will be accessible
+       * via the "_cPtr" member. This is currently only used by
+       * directorin typemaps.
+       */
+      #ifdef ZEND_ENGINE_3
+      zval resource;
+      zend_class_entry *ce = NULL;
+      #else
+      zval *resource;
+      zend_class_entry **ce = NULL;
+      int result;
+      #endif
+      const char *type_name = type->name + 3; /* +3 so: _p_Foo -> Foo */
+      size_t type_name_len;
+      const char * p;
+      /* Namespace__Foo -> Foo */
+      /* FIXME: ugly and goes wrong for classes with __ in their names. */
+      while ((p = strstr(type_name, "__")) != NULL) {
+        type_name = p + 2;
+      }
+      type_name_len = strlen(type_name);
+      #ifdef ZEND_ENGINE_3
+      zend_string* tn = zend_string_init(type_name, type_name_len, 0);
+      ZVAL_RES(&resource, zend_register_resource(value, *(int *)(type->clientdata)));
+      #else
+      MAKE_STD_ZVAL(resource);
+      ZEND_REGISTER_RESOURCE(resource, value, *(int *)(type->clientdata));
+      #endif
+      if (SWIG_PREFIX_LEN > 0) {
+        char * classname = (char*)emalloc(SWIG_PREFIX_LEN + type_name_len + 1);
+        strcpy(classname, SWIG_PREFIX);
+        strcpy(classname + SWIG_PREFIX_LEN, type_name);
+        #ifdef ZEND_ENGINE_3
+        zend_string* zp = zend_string_init(classname, SWIG_PREFIX_LEN + type_name_len, 0);
+        ce = zend_lookup_class(zp);
+        zend_string_release(zp);
+        #else
+        result = zend_lookup_class(classname, SWIG_PREFIX_LEN + type_name_len, &ce TSRMLS_CC);
+        #endif
+        efree(classname);
+      } else {
+        #ifdef ZEND_ENGINE_3
+        ce = zend_lookup_class(tn);
+        #else
+        result = zend_lookup_class((char *)type_name, type_name_len, &ce TSRMLS_CC);
+        #endif
+      }
+      #ifdef ZEND_ENGINE_3
+      if (!ce) {
+      #else
+      if (result != SUCCESS) {
+      #endif
+        /* class does not exist */
+        object_init(z);
+      } else {
+      #ifdef ZEND_ENGINE_3
+        object_init_ex(z, ce);
+      #else
+        object_init_ex(z, *ce);
+      #endif
+      }
+      Z_SET_REFCOUNT_P(z, 1);
+      #ifdef ZEND_ENGINE_3
+      ZVAL_MAKE_REF(z);
+      zend_hash_str_update(HASH_OF(z),  "_cPtr", sizeof("_cPtr") - 1, &resource);
+      zend_string_release(tn);
+      #else
+      Z_SET_ISREF_P(z);
+      zend_hash_update(HASH_OF(z), (char*)"_cPtr", sizeof("_cPtr"), (void*)&resource, sizeof(zval), NULL);
+      #endif
+    }
+    return;
+  }
+  zend_error(E_ERROR, "Type: %s not registered with zend",type->name);
+}
+
 static void *
 SWIG_ZTS_ConvertResourceData(void * p, const char *type_name, swig_type_info *ty TSRMLS_DC) {
   swig_cast_info *tc;
@@ -1136,23 +1102,23 @@ SWIG_ZTS_ConvertPtr(zval *z, void **ptr, swig_type_info *ty, int flags TSRMLS_DC
     case IS_OBJECT: {
       //find z->_cPtr
 #ifdef ZEND_ENGINE_3
-	  zval* _cPtr;
-	  if ((_cPtr = zend_hash_str_find(HASH_OF(z), "_cPtr",  sizeof("_cPtr")- 1)) != NULL) {
-		  if (Z_TYPE_P(_cPtr) == IS_INDIRECT)
-			  _cPtr = Z_INDIRECT_P(_cPtr);
-		  if (Z_TYPE_P(_cPtr)==IS_RESOURCE) {
-			*ptr = SWIG_ZTS_ConvertResourcePtr(_cPtr, ty, flags TSRMLS_CC);
-			return (*ptr == NULL ? -1 : 0);
-		  }
+    zval* _cPtr;
+    if ((_cPtr = zend_hash_str_find(HASH_OF(z), "_cPtr",  sizeof("_cPtr")- 1)) != NULL) {
+      if (Z_TYPE_P(_cPtr) == IS_INDIRECT)
+        _cPtr = Z_INDIRECT_P(_cPtr);
+      if (Z_TYPE_P(_cPtr)==IS_RESOURCE) {
+      *ptr = SWIG_ZTS_ConvertResourcePtr(_cPtr, ty, flags TSRMLS_CC);
+      return (*ptr == NULL ? -1 : 0);
+      }
       }
 #else
       zval **_cPtr;
-	  if (zend_hash_find(HASH_OF(z), (char*)"_cPtr", sizeof("_cPtr"), (void**)&_cPtr) == SUCCESS) {
-		  if ((*_cPtr)->type == IS_RESOURCE) {
-			  *ptr = SWIG_ZTS_ConvertResourcePtr(*_cPtr, ty, flags TSRMLS_CC);
-			  return (*ptr == NULL ? -1 : 0);
-		  }
-	  }
+    if (zend_hash_find(HASH_OF(z), (char*)"_cPtr", sizeof("_cPtr"), (void**)&_cPtr) == SUCCESS) {
+      if ((*_cPtr)->type == IS_RESOURCE) {
+        *ptr = SWIG_ZTS_ConvertResourcePtr(*_cPtr, ty, flags TSRMLS_CC);
+        return (*ptr == NULL ? -1 : 0);
+      }
+    }
 #endif
       break;
     }
@@ -1182,9 +1148,9 @@ static swig_module_info *SWIG_Php_GetModule() {
 #else
   MAKE_STD_ZVAL(pointer);
   if (zend_get_constant(const_name, sizeof(const_name) - 1, pointer TSRMLS_CC)) {
-	  if (pointer->type == IS_LONG) {
-		  ret = (swig_module_info *)pointer->value.lval;
-	  }
+    if (pointer->type == IS_LONG) {
+      ret = (swig_module_info *)pointer->value.lval;
+    }
   }
   FREE_ZVAL(pointer);
 #endif
@@ -1312,9 +1278,10 @@ static void SWIG_Php_SetModule(swig_module_info *pointer) {
 #define SWIGTYPE_p_bzs__db__protocol__tdap__client__last swig_types[92]
 #define SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField swig_types[93]
 #define SWIGTYPE_p_BOOKMARK swig_types[94]
+#define SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos swig_types[95]
 
-static swig_type_info *swig_types[96];
-static swig_module_info swig_module = {swig_types, 95, 0, 0, 0, 0};
+static swig_type_info *swig_types[97];
+static swig_module_info swig_module = {swig_types, 96, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1367,11 +1334,7 @@ ZEND_NAMED_FUNCTION(_wrap_swig_transactd_alter_newobject) {
   }
 
   value = LIST_FIND(args);
-#ifdef ZEND_ENGINE_3
-  value->newobject = zval_is_true(&args[1]);
-#else
-  value->newobject = zval_is_true(*args[1]);
-#endif
+  value->newobject = ARGS_IS_TRUE(1);
   return;
 }
 ZEND_NAMED_FUNCTION(_wrap_swig_transactd_get_newobject) {
@@ -1917,6 +1880,7 @@ static swig_type_info _swigt__p_unsigned_int = {"_p_unsigned_int", "bookmark_td 
 static swig_type_info _swigt__p_unsigned_short = {"_p_unsigned_short", "unsigned short *|ushort_td *|keylen_td *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_void = {"_p_void", "void *|void_td *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_BOOKMARK = { "_p_BOOKMARK", "bookmark_td *|BOOKMARK *", 0, 0, (void*)0, 0 };
+static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__binlogPos = {"_p_bzs__db__protocol__tdap__client__binlogPos", "bzs::db::protocol::tdap::client::binlogPos *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__bool,
@@ -2014,6 +1978,8 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_bzs__db__protocol__tdap__client__last,
   &_swigt__p_bzs__db__protocol__tdap__client__sortField,
   &_swigt__p_BOOKMARK,
+  &_swigt__p_bzs__db__protocol__tdap__client__binlogPos,
+
 };
 
 static swig_cast_info _swigc__bool[] = {  {&_swigt__bool, 0, 0, 0},{0, 0, 0, 0}};
@@ -2111,6 +2077,7 @@ static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0,
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__first[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__first, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__last[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__last, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_BOOKMARK[] = { { &_swigt__p_BOOKMARK, 0, 0, 0 }, { 0, 0, 0, 0 } };
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__binlogPos[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__binlogPos, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__bool,
@@ -2208,6 +2175,8 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_bzs__db__protocol__tdap__client__last,
   _swigc__p_bzs__db__protocol__tdap__client__sortField,
   _swigc__p_BOOKMARK,
+  _swigc__p_bzs__db__protocol__tdap__client__binlogPos,
+
 };
 
 
@@ -2303,6 +2272,8 @@ static int le_swig__p_bzs__db__protocol__tdap__keydef=0; /* handle for keydef */
 static int le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__idatabaseManager_t_t=0; /* handle for _p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__idatabaseManager_t_t */
 static int le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t=0; /* handle for _p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t */
 static int le_swig__p_BOOKMARK = 0; /* handle for BOOKMARK */
+static int le_swig__p_bzs__db__protocol__tdap__client__binlogPos=0; /* handle for binlogPos */
+
 /* end vdecl subsection */
 /* wrapper section */
 
@@ -2337,7 +2308,7 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_BOOKMARK_isEmpty) {
     BOOKMARK *arg1 = (BOOKMARK *)0;
-	zval_args_type args[1];
+    zval_args_type args[1];
     bool result;
 
     SWIG_ResetError(TSRMLS_C);
@@ -10103,7 +10074,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekByBookmark) {
     zval_args_type argv[3];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -10240,7 +10211,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_getPercentage) {
     zval_args_type argv[2];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -10805,7 +10776,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_unlock) {
     zval_args_type argv[2];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -11658,7 +11629,7 @@ ZEND_NAMED_FUNCTION(_wrap_dbdef_insertTable) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
-	if(SWIG_ConvertPtr(ZVAL_ARGS[1], (void **) &arg2, SWIGTYPE_p_bzs__db__protocol__tdap__tabledef, 0) < 0) {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[1], (void **) &arg2, SWIGTYPE_p_bzs__db__protocol__tdap__tabledef, 0) < 0) {
       SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of dbdef_insertTable. Expected SWIGTYPE_p_bzs__db__protocol__tdap__tabledef");
     }
   }
@@ -16781,6 +16752,168 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_binlogPos_pos_get) {
+  binlogPos *arg1 = NULL ;
+  zval_args_type args[1];
+  unsigned long long result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of binlogPos_pos_get. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (unsigned long long) ((arg1)->pos);
+  
+  if (result <= (unsigned long long)LONG_MAX) {
+    ZVAL_LONG(return_value, (long)result);
+  } else {
+    char temp[256];
+    sprintf(temp, "%llu", (unsigned long long)result);
+    ZVAL_STRING(return_value, temp, 1);
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_binlogPos_type_get) {
+  binlogPos *arg1 = NULL ;
+  zval_args_type args[1];
+  int result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of binlogPos_type_get. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (int) ((arg1)->type);
+  {
+    ZVAL_LONG(return_value, result);
+    //ZVAL_STRINGL(return_value,&result, 1, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_binlogPos_filename_get) {
+  binlogPos *arg1 = (binlogPos *) 0 ;
+  zval_args_type args[1];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of binlogPos_filename_get. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+  {
+     ZVAL_STRING(return_value, (char *)arg1->filename, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_binlogPos_gtid_get) {
+  binlogPos *arg1 = (binlogPos *) 0 ;
+  zval_args_type args[1];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of binlogPos_gtid_get. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+  {
+     ZVAL_STRING(return_value, (char *)arg1->gtid, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_binlogPos) {
+  binlogPos *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 0) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    try {
+      result = new bzs::db::protocol::tdap::client::binlogPos();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+/* This function is designed to be called by the zend list destructors */
+/* to typecast and do the actual destruction */
+static void __wrap_delete_binlogPos(zend_rsrc_list_entry *RSRC, const char *type_name TSRMLS_DC) {
+  swig_object_wrapper *value=(swig_object_wrapper *) RSRC->ptr ;
+  void *ptr=value->ptr ;
+  int newobject=value->newobject ;
+  binlogPos *arg1 = (binlogPos*)0;
+  
+  efree(value);
+  if (! newobject) return; /* can't delete it! */
+  arg1 = (binlogPos *)SWIG_ZTS_ConvertResourceData(ptr,type_name,SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos TSRMLS_CC);
+  if (! arg1) zend_error(E_ERROR, "bzs::db::protocol::tdap::client::binlogPos resource already free'd");
+  {
+    try {
+      delete arg1;
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_setBtrvEntryPoint) {
   BTRCALLID_PTR arg1 = (BTRCALLID_PTR) 0 ;
   zval_args_type args[1];
@@ -17510,6 +17643,8 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_beginSnapshot) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
   short arg2 = CONSISTENT_READ;
+  binlogPos* bpos = new binlogPos();
+  memset(bpos, 0, sizeof(binlogPos));
   zval_args_type args[2];
   int argc = ZEND_NUM_ARGS();
   SWIG_ResetError(TSRMLS_C);
@@ -17529,11 +17664,15 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_beginSnapshot) {
     CONV_to_long_ex(args[1]);
     arg2 = (short) Z_LVAL_PP(args[1]);
   }
-  
+
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      (arg1)->beginSnapshot(arg2);
+      
+      if (arg2 == CONSISTENT_READ_WITH_BINLOG_POS)
+         (arg1)->beginSnapshot(arg2, bpos);
+      else
+         (arg1)->beginSnapshot(arg2, NULL);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -17541,6 +17680,7 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_beginSnapshot) {
     }
   }
   
+  SWIG_SetPointerZval(return_value, (void *)bpos, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0);
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
@@ -18913,7 +19053,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_create) {
     int _v;
     {
       void *tmp;
-	  _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       {
@@ -18951,10 +19091,12 @@ ZEND_NAMED_FUNCTION(_wrap_database_create) {
 
 ZEND_NAMED_FUNCTION(_wrap_database_drop) {
   bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
-  zval_args_type args[1];
+  zval_args_type args[2];
+  _TCHAR* arg2 = NULL;
+  int argc = ZEND_NUM_ARGS();
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+  if(argc > 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -18964,9 +19106,18 @@ ZEND_NAMED_FUNCTION(_wrap_database_drop) {
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  if (argc == 2)
+  {
+    if (Z_TYPE_AGRS(1) != IS_NULL) {
+      CONV_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  
   {
     try {
-      (arg1)->drop();
+      (arg1)->drop(arg2);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -19095,7 +19246,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_close) {
     zval_args_type argv[2];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -21274,7 +21425,7 @@ ZEND_NAMED_FUNCTION(_wrap_btrDateTime_i64_get) {
   result =  ((arg1)->i64);
   
   if ((long long)LONG_MIN <= result && result <= (long long)LONG_MAX) {
-	RETVAL_LONG((long)result)
+    RETVAL_LONG((long)result)
     //return_value->value.lval = (long)(result);
     //return_value->type = IS_LONG;
   } else {
@@ -21404,7 +21555,7 @@ ZEND_NAMED_FUNCTION(_wrap_btrTimeStamp_i64_get) {
   result =  ((arg1)->i64);
   
   if (result <= (unsigned long long)LONG_MAX) {
-	  RETVAL_LONG((long)result)
+    RETVAL_LONG((long)result)
     //return_value->value.lval = (long)(result);
     //return_value->type = IS_LONG;
   } else {
@@ -24033,7 +24184,7 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_read) {
     zval_args_type argv[2];
 
     argc = ZEND_NUM_ARGS();
-	zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
+    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
     if (argc == 1) {
         int _v;
         {
@@ -30073,7 +30224,7 @@ ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_option) {
   }
   
   if ((long long)LONG_MIN <= result && result <= (long long)LONG_MAX) {
-	RETVAL_LONG((long)result)
+    RETVAL_LONG((long)result)
     //return_value->value.lval = (long)(result);
     //return_value->type = IS_LONG;
   } else {
@@ -30225,6 +30376,8 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_beginSnapshot) {
   bzs::db::protocol::tdap::client::pooledDbManager *arg1 = 0 ;
   short arg2 = CONSISTENT_READ;
+  binlogPos* bpos = new binlogPos();
+  memset(bpos, 0, sizeof(binlogPos));
   int argc = ZEND_NUM_ARGS();
   zval_args_type args[2];
   SWIG_ResetError(TSRMLS_C);
@@ -30244,10 +30397,14 @@ ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_beginSnapshot) {
       arg2 = (short) Z_LVAL_PP(args[1]);
     }
   }
+  
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      (arg1)->beginSnapshot(arg2);
+      if (arg2 == CONSISTENT_READ_WITH_BINLOG_POS)
+         (arg1)->beginSnapshot(arg2, bpos);
+      else
+         (arg1)->beginSnapshot(arg2, NULL);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -30255,6 +30412,8 @@ ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_beginSnapshot) {
     }
   }
   
+  SWIG_SetPointerZval(return_value, (void *)bpos, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos, 0);
+
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
@@ -31001,6 +31160,10 @@ static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_BOOKMARK) {
   /* No destructor for simple type _p_BOOKMARK */
   __wrap_delete_BOOKMARK(RSRC, SWIGTYPE_p_BOOKMARK->name TSRMLS_CC);
 }
+static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__protocol__tdap__client__binlogPos) {
+  __wrap_delete_binlogPos(RSRC, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos->name TSRMLS_CC);
+}
+
 
 /* end wrapper section */
 /* class entry subsection */
@@ -33150,6 +33313,20 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_fieldsbase_p_p_value, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_binlogpos_pos_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_binlogpos_type_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_binlogpos_filename_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_binlogpos_gtid_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_binlogpos, 0, 0, 0)
+ZEND_END_ARG_INFO()
 
 
 /* entry subsection */
@@ -33746,6 +33923,12 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(fieldsbase_p_p_value,_wrap_fieldsBase_p_p_value,swig_arginfo_fieldsbase_p_p_value)
  SWIG_ZEND_NAMED_FE(swig_transactd_alter_newobject,_wrap_swig_transactd_alter_newobject,NULL)
  SWIG_ZEND_NAMED_FE(swig_transactd_get_newobject,_wrap_swig_transactd_get_newobject,NULL)
+ SWIG_ZEND_NAMED_FE(binlogpos_pos_get,_wrap_binlogPos_pos_get,swig_arginfo_binlogpos_pos_get)
+ SWIG_ZEND_NAMED_FE(binlogpos_type_get,_wrap_binlogPos_type_get,swig_arginfo_binlogpos_type_get)
+ SWIG_ZEND_NAMED_FE(binlogpos_filename_get,_wrap_binlogPos_filename_get,swig_arginfo_binlogpos_filename_get)
+ SWIG_ZEND_NAMED_FE(binlogpos_gtid_get,_wrap_binlogPos_gtid_get,swig_arginfo_binlogpos_gtid_get)
+ SWIG_ZEND_NAMED_FE(new_binlogpos,_wrap_new_binlogPos,swig_arginfo_new_binlogpos)
+
 {NULL, NULL, NULL}
 };
 
@@ -34199,6 +34382,9 @@ le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs_
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t,&le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t);
 le_swig__p_BOOKMARK=zend_register_list_destructors_ex(_wrap_destroy_p_BOOKMARK,NULL,(char *)(SWIGTYPE_p_BOOKMARK->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_BOOKMARK, &le_swig__p_BOOKMARK);
+le_swig__p_bzs__db__protocol__tdap__client__binlogPos=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__binlogPos,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos->name),module_number);
+SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos,&le_swig__p_bzs__db__protocol__tdap__client__binlogPos);
+
 CG(active_class_entry) = NULL;
 /* end oinit subsection */
 
@@ -34282,8 +34468,12 @@ SWIG_LONG_CONSTANT(SINGLELOCK_NOGAP, SINGLELOCK_NOGAP);
 SWIG_LONG_CONSTANT(MULTILOCK_NOGAP, MULTILOCK_NOGAP);
 SWIG_LONG_CONSTANT(MULTILOCK_GAP, MULTILOCK_GAP);
 SWIG_LONG_CONSTANT(CONSISTENT_READ, CONSISTENT_READ);
+SWIG_LONG_CONSTANT(CONSISTENT_READ_WITH_BINLOG_POS, CONSISTENT_READ_WITH_BINLOG_POS);
 SWIG_LONG_CONSTANT(MULTILOCK_GAP_SHARE, MULTILOCK_GAP_SHARE);
 SWIG_LONG_CONSTANT(MULTILOCK_NOGAP_SHARE, MULTILOCK_NOGAP_SHARE);
+SWIG_LONG_CONSTANT(REPL_POSTYPE_NONE, REPL_POSTYPE_NONE);
+SWIG_LONG_CONSTANT(REPL_POSTYPE_MARIA_GTID, REPL_POSTYPE_MARIA_GTID);
+SWIG_LONG_CONSTANT(REPL_POSTYPE_POS, REPL_POSTYPE_POS);
 SWIG_LONG_CONSTANT(ROW_LOCK_X, ROW_LOCK_X);
 SWIG_LONG_CONSTANT(ROW_LOCK_S, ROW_LOCK_S);
 SWIG_LONG_CONSTANT(SRV_ISO_READ_UNCOMMITED, SRV_ISO_READ_UNCOMMITED);
@@ -34335,6 +34525,7 @@ SWIG_LONG_CONSTANT(STATUS_INVALID_VALLEN, STATUS_INVALID_VALLEN);
 SWIG_LONG_CONSTANT(STATUS_FIELDTYPE_NOTSUPPORT, STATUS_FIELDTYPE_NOTSUPPORT);
 SWIG_LONG_CONSTANT(STATUS_INVALID_NULLMODE, STATUS_INVALID_NULLMODE);
 SWIG_LONG_CONSTANT(STATUS_TOO_LARGE_VALUE, STATUS_TOO_LARGE_VALUE);
+SWIG_LONG_CONSTANT(STATUS_SQL_PARSE_ERROR, STATUS_SQL_PARSE_ERROR);
 SWIG_LONG_CONSTANT(STATUS_SUCCESS, STATUS_SUCCESS);
 SWIG_LONG_CONSTANT(STATUS_PROGRAM_ERROR, STATUS_PROGRAM_ERROR);
 SWIG_LONG_CONSTANT(STATUS_IO_ERROR, STATUS_IO_ERROR);

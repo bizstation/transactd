@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_NSDATABASE_H
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_NSDATABASE_H
 /* =================================================================
- Copyright (C) 2000-2013 BizStation Corp All rights reserved.
+ Copyright (C) 2000-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -52,6 +52,23 @@ DLLLIB void setTrnsctdEntryPoint(BTRCALLID_PTR p);
 DLLLIB BTRCALLID_PTR getTrnsctdEntryPoint();
 /** @endcond */
 
+
+#pragma pack(push, 1)
+pragma_pack1
+#define BINLOGNAME_SIZE 119
+#define GTID_SIZE       64
+struct binlogPos
+{
+    unsigned long long pos;
+    char type;
+    char filename[BINLOGNAME_SIZE];
+    char gtid[GTID_SIZE];
+};
+
+
+#pragma pack(pop)
+pragma_pop
+
 class DLLLIB nsdatabase
 {
     friend class nstable;
@@ -71,6 +88,7 @@ protected:
                                    bool trd);
     virtual bool setUri(const _TCHAR* uri);
     void reset();
+    void resetSnapshot();
     nstable** tables();
     nsdatabase* clone() const;
     nsdatabase& operator=(const nsdatabase&);
@@ -112,7 +130,7 @@ public:
                                NOWAIT_WRITE); // NoWit SingleLock
     void endTrn();
     void abortTrn();
-    void beginSnapshot(short bias = CONSISTENT_READ);
+    void beginSnapshot(short bias = CONSISTENT_READ, binlogPos* bpos=NULL);
     void endSnapshot();
     ushort_td trxIsolationServer() const ;
     ushort_td trxLockWaitTimeoutServer() const ;

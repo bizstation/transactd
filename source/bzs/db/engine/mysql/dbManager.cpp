@@ -1,5 +1,5 @@
 /* =================================================================
- Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+ Copyright (C) 2012 2013 2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -32,6 +32,8 @@ namespace engine
 namespace mysql
 {
 
+#define STATUS_ALREADY_INSNAPSHOT       204
+#define STATUS_ALREADY_INTRANSACTION    205
 
 class smartDbsReopen
 {
@@ -44,8 +46,12 @@ public:
     {
         for (size_t i = 0; i < m_dbs.size(); i++)
         {
-            if (m_dbs[i])
+            if (m_dbs[i] && m_dbs[i]->thd() == m_thd)
             {
+                if (m_dbs[i]->inSnapshot())
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INSNAPSHOT, "Allready in snapshot.");
+                else if (m_dbs[i]->inTransaction())
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Allready in transaction.");
                 m_dbs[i]->use();
                 m_dbs[i]->unUseTables(false);
                 m_dbs[i]->closeForReopen();
@@ -58,7 +64,7 @@ public:
     {
         for (size_t i = 0; i < m_dbs.size(); i++)
         {
-            if (m_dbs[i])
+            if (m_dbs[i] && m_dbs[i]->thd() == m_thd)
             {
                 if (removeName != m_dbs[i]->name())
                 {
@@ -222,11 +228,9 @@ int dbManager::addHandle(int dbid, int tableid, int assignid)
 int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
 {
     smartDbsReopen reopen(thd, m_dbs);
-
+    thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
     thd->clear_error();
 	int result = cp_query_command(thd, (char*)sql_stmt.c_str());
-    //if (!thd->cp_isOk())
-    //    result = 1;
     if (thd->is_error())
         result = errorCode(thd->cp_get_sql_error());
     cp_lex_clear(thd); // reset values for insert
@@ -240,18 +244,32 @@ int dbManager::ddl_createDataBase(THD* thd, const std::string& dbname)
 }
 
 int dbManager::ddl_dropDataBase(THD* thd, const std::string& dbname,
-                                const std::string& dbSqlname)
+                                const std::string& dbSqlname, short cid)
 {
     std::string cmd = "drop database `" + dbSqlname + "`";
     smartDbsReopen::removeName = dbname;
     int ret = ddl_execSql(thd, cmd);
     smartDbsReopen::removeName = "";
     boost::mutex::scoped_lock lck(m_mutex);
-    for (int i = (int)m_dbs.size() - 1; i >= 0; i--)
-    {
-        if (m_dbs[i] && (m_dbs[i]->name() == dbname))
-            m_dbs.erase(m_dbs.begin() + i);
-    }
+	if (ret == 0)
+	{
+		int index = -1;
+		for (int i = (int)m_dbs.size() - 1; i >= 0; i--)
+		{
+			if (m_dbs[i] != NULL && (m_dbs[i]->clientID() == cid))
+			{
+				index = i;
+		        break;
+		    }
+		}
+		if (index != -1)
+		{
+			m_dbs[index].reset();
+			for (int i = (int)m_handles.size() - 1; i >= 0; i--)
+			if (m_handles[i].db == index)
+				m_handles.erase(m_handles.begin() + i);
+		}
+	}
     return ret;
 }
 

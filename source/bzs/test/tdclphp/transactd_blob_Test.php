@@ -52,9 +52,9 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
 {
     private function dropDatabase($db, $url)
     {
-        $db->open($url);
-        $this->assertEquals($db->stat(), 0);
-        $db->drop();
+        //$db->open($url);
+        //$this->assertEquals($db->stat(), 0);
+        $db->drop($url);
         $this->assertEquals($db->stat(), 0);
     }
     private function createDatabase($db, $url)
@@ -64,6 +64,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         {
             $this->dropDatabase($db, $url);
             $db->create($url);
+            $this->assertEquals($db->stat(), 0);
         }
         $this->assertEquals($db->stat(), 0);
     }
@@ -145,6 +146,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $this->openDatabase($db, URL);
         $this->createTable($db, 1, TABLENAME);
         $tb = $this->openTable($db, TABLENAME);
+        $db->close();
     }
     public function testInsert()
     {
@@ -176,6 +178,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $tb->setFV(FDI_IMAGE, $str, strlen($str));
         $tb->insert();
         $this->assertEquals($tb->stat(), 0);
+        $db->close();
     }
     public function testSeek()
     {
@@ -210,6 +213,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
         $this->assertEquals($tb->getFVstr(FDI_BODY), "2\ntest\nテスト\n\nあいうえおあいうえお");
         $this->assertEquals($tb->getFVbin(FDI_IMAGE), "2\ntest\nテスト\n\nあいうえおあいうえお");
+        $db->close();
     }
     public function testFind()
     {
@@ -237,6 +241,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         // 3... but not found because filtered
         $tb->findNext(true);
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
+        $db->close();
     }
     public function testUpdate()
     {
@@ -274,6 +279,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVint(FDI_ID), 2);
         $this->assertEquals($tb->getFVint(FDI_USER_ID), 1);
         $this->assertEquals($tb->getFVstr(FDI_BODY), "2\nテスト\ntest\n\nABCDEFG");
+        $db->close();
     }
     public function testDelete()
     {
@@ -303,6 +309,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         // eof
         $tb->seekNext();
         $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
+        $db->close();
     }
     public function testRecord()
     {
@@ -316,6 +323,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(count($rs), 1);
         $f = $rs[0]->getField(FDI_IMAGE);
         $this->assertEquals($f->getBin(), $image);
+        $db->close();
     }
     public function testDrop()
     {

@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_TRDBOOSTAPI_H
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_TRDBOOSTAPI_H
 /*=================================================================
-   Copyright (C) 2013 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2013-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -135,7 +135,7 @@ public:
         m_type = v;
     }
 
-    inline const _TCHAR* uri(bool noPasswd=false) const 
+    inline const _TCHAR* uri() const
     { 
         return m_buf; 
     }
@@ -168,7 +168,7 @@ public:
     virtual void endTrn() = 0;
     virtual void abortTrn() = 0;
     virtual int enableTrn() = 0;
-    virtual void beginSnapshot(short bias = CONSISTENT_READ) = 0;
+    virtual void beginSnapshot(short bias = CONSISTENT_READ, binlogPos* bpos = NULL) = 0;
     virtual void endSnapshot() = 0;
     virtual const _TCHAR* uri() const = 0;
     virtual char_td mode() const = 0;
@@ -844,15 +844,16 @@ inline void connect(Database_Ptr db, const ConnectParam_type& connPrams,
 template <class Database_Ptr>
 inline void createDatabase(Database_Ptr db, const connectParams& connPrams)
 {
-    db->create(connPrams.uri());
+    db->create(connPrams.uri(), connPrams.type());
     if (db->stat())
         throwDbError(db, _T("Create database : "), connPrams.uri());
 }
 
 template <class Database_Ptr>
-inline void createDatabase(Database_Ptr db, const _TCHAR* uri)
+inline void createDatabase(Database_Ptr db, const _TCHAR* uri,
+                                short type = TYPE_SCHEMA_BDF)
 {
-    db->create(uri);
+    db->create(uri, type);
     if (db->stat())
         throwDbError(db, _T("Create database : "), uri);
 }
@@ -885,9 +886,9 @@ inline void connectOpen(Database_Ptr db, const connectParams& connPrams,
     openDatabase(db, connPrams);
 }
 
-template <class Database_Ptr> inline void dropDatabase(Database_Ptr db)
+template <class Database_Ptr> inline void dropDatabase(Database_Ptr db, const _TCHAR* uri=NULL)
 {
-    db->drop();
+    db->drop(uri);
     if (db->stat())
         nstable::throwError(std::_tstring(_T("Drop database ")).c_str(),
                             db->stat());
@@ -1265,7 +1266,10 @@ template <class DB> class snapshot
     DB m_db;
 
 public:
-    snapshot(DB db, short bias = CONSISTENT_READ) : m_db(db) { m_db->beginSnapshot(bias); }
+    snapshot(DB db, short bias = CONSISTENT_READ, binlogPos* bpos=NULL) : m_db(db)
+    {
+        m_db->beginSnapshot(bias, bpos);
+    }
 
     ~snapshot() { m_db->endSnapshot(); }
 };

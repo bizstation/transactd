@@ -1,7 +1,7 @@
 #ifndef BZS_DB_ENGINE_MYSQL_DATABASE_H
 #define BZS_DB_ENGINE_MYSQL_DATABASE_H
 /* =================================================================
- Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+ Copyright (C) 2012-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -69,7 +69,7 @@ namespace mysql
 #define MODE_EXCLUSIVE -4
 #define MODE_READ_EXCLUSIVE -6
 
-
+#define OPEN_TABLE_TIMEOUT_SEC 2
 /** bookmark size
  *  btreive API is MAX 4 byte
  */
@@ -133,6 +133,7 @@ private:
     void changeIntentionLock(table* tb, thr_lock_type lock_type);
     void checkACL(enum_sql_command cmd);
     void releaseTable(size_t index);
+    void useAllTables();
 public:
     
 
@@ -165,7 +166,7 @@ public:
         return m_tables;
     }
 
-    bool beginSnapshot(enum_tx_isolation iso);
+    bool beginSnapshot(enum_tx_isolation iso, struct binlogPos* bpos);
     bool endSnapshot();
     table* openTable(const std::string& name, short mode,
                      const char* ownerName);
@@ -178,7 +179,7 @@ public:
     void closeTable(table* tb);
     void unUseTables(bool rollback);
     void closeForReopen();
-    void reopen();
+    void reopen(bool forceReadonly = false);
     void cleanTable();
 
     inline bool canUnlockRow() const
@@ -332,11 +333,12 @@ class table : private boost::noncopyable
     void setKeyValues(const uchar* ptr, int size);
     void setBlobFieldPointer(const bzs::db::blobHeader* hd);
     
-    inline bool setCursorStaus()
+    inline bool setCursorStaus(bool noCount = false)
     {
         if (m_stat == 0)
         {
-            ++m_readCount;
+            if (!noCount)
+                ++m_readCount;
             m_validCursor = true;
             m_cursor = true;
         }else

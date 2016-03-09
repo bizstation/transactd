@@ -382,6 +382,9 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
             m_pdata = td;
             m_buflen = td->size();
             td->formatVersion = FORMAT_VERSON_CURRENT;
+            if(isUseTransactd())
+                td->varSize = td->size() - 4;
+
             update();
             m_pdata = m_dimpl->bdf;
             m_buflen = m_dimpl->bdfLen;
@@ -745,10 +748,16 @@ tabledef* dbdef::initReadAfter(short tableIndex, const tabledef* data, uint_td d
     td->autoIncExSpace = ((database*)nsdb())->defaultAutoIncSpace();
     //Fix:Bug of maxRecordLen is mistake value saved, recalculate maxRecordLen.
     td->calcReclordlen();
-    if (td->fieldDefs[td->fieldCount -1].type == ft_myfixedbinary)
-        td->optionFlags.bitC = true;
+    td->optionFlags.bitC = (td->fieldDefs[td->fieldCount -1].type == ft_myfixedbinary);
     td->id = tableIndex;
     td->defaultImage = NULL;
+
+    //Check a page size
+    if (!isUseTransactd())
+    {
+        if (td->pageSize < 512 || td->pageSize > 4096 || td->pageSize % 512)
+            td->pageSize = 2048;
+    }
     return td;
 }
 
@@ -894,45 +903,42 @@ void dbdef::drop()
     m_stat = nsdb()->stat();
 }
 
-void dbdef::getFileSpec(fileSpec* fs, short TableIndex)
+void dbdef::getFileSpec(fileSpec* fs, short tableIndex)
 {
-    keySpec* ks;
-    keydef* KeyDef;
     short i, j, k = 0;
-    short FieldNum;
-    tabledef* TableDef = tableDefs(TableIndex);
-    fs->recLen = TableDef->fixedRecordLen;
-    fs->pageSize = TableDef->pageSize;
-    fs->indexCount = TableDef->keyCount;
+    tabledef* td = tableDefs(tableIndex);
+    fs->recLen = td->fixedRecordLen;
+    fs->pageSize = td->pageSize;
+    fs->indexCount = td->keyCount;
     fs->recCount = 0;
-    fs->fileFlag.all = TableDef->flags.all;
+    fs->fileFlag.all = td->flags.all;
     fs->reserve1[0] = 0;
     fs->reserve1[1] = 0;
-    fs->preAlloc = TableDef->preAlloc;
+    fs->preAlloc = td->preAlloc;
 
-    for (i = 0; i < TableDef->keyCount; i++)
+    for (i = 0; i < td->keyCount; i++)
     {
-        KeyDef = &(TableDef->keyDefs[i]);
-        for (j = 0; j < KeyDef->segmentCount; j++)
+        keydef* kd = &(td->keyDefs[i]);
+        for (j = 0; j < kd->segmentCount; j++)
         {
-            FieldNum = KeyDef->segments[j].fieldNum;
-            ks = &(fs->keySpecs[k]);
-            ks->keyPos = TableDef->fieldDefs[FieldNum].pos;
-            ks->keyLen = TableDef->fieldDefs[FieldNum].len;
-            ks->keyFlag.all = KeyDef->segments[j].flags.all;
+            short fnum = kd->segments[j].fieldNum;
+            keySpec* ks = &(fs->keySpecs[k]);
+            ks->keyPos = td->fieldDefs[fnum].pos + 1;
+            ks->keyLen = td->fieldDefs[fnum].len;
+            ks->keyFlag.all = kd->segments[j].flags.all;
             ks->keyCount = 0;
-            ks->keyType = TableDef->fieldDefs[FieldNum].type;
+            ks->keyType = td->fieldDefs[fnum].type;
 
-            if ((ks->keyType == ft_autoinc) && (KeyDef->segmentCount > 1))
+            if ((ks->keyType == ft_autoinc) && (kd->segmentCount > 1))
                 ks->keyType = 1;
             if (ks->keyFlag.bit3 == true)
-                ks->nullValue = TableDef->fieldDefs[FieldNum].nullValue;
+                ks->nullValue = td->fieldDefs[fnum].nullValue;
             else
                 ks->nullValue = 0;
             ks->reserve2[0] = 0;
             ks->reserve2[1] = 0;
             if (fs->fileFlag.bitA == true)
-                ks->keyNo = KeyDef->keyNumber;
+                ks->keyNo = kd->keyNumber;
             else
                 ks->keyNo = 0;
             ;
@@ -1086,7 +1092,7 @@ uint_td dbdef::fieldValidLength(eFieldQuery query, uchar_td FieldType)
         defaultlen = 3;
         break;
     case ft_myfixedbinary:
-        minlen = 256;
+        minlen = 3;
         maxlen = 60000;
         defaultlen = 1024;
         break;

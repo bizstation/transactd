@@ -1,6 +1,6 @@
 #pragma once
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013 2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@ class CProxy_IDatabaseEvents
     : public ATL::IConnectionPointImpl<T, &__uuidof(_IDatabaseEvents)>
 {
 public:
-    HRESULT Fire_OnCopyData(IDatabase* db, int recordCount, int count,
+    HRESULT Fire_OnCopyData(IDatabase* db, ITable* tb, int recordCount, int count,
                             VARIANT_BOOL* cancel)
     {
         HRESULT hr = S_OK;
@@ -40,8 +40,9 @@ public:
 
             if (pConnection)
             {
-                CComVariant avarParams[4];
-                avarParams[3] = db;
+                CComVariant avarParams[5];
+                avarParams[4] = db;
+                avarParams[3] = tb;
                 avarParams[2] = recordCount;
                 avarParams[1] = count;
                 avarParams[0].byref = cancel;

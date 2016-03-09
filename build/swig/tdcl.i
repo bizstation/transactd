@@ -610,6 +610,20 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::tdapErr;
 %ignore bzs::db::protocol::tdap::client::reconnectSharedConnection;
 
+%extend bzs::db::protocol::tdap::client::nsdatabase {
+  binlogPos* beginSnapshot(short bias=CONSISTENT_READ) {
+    binlogPos* bpos = new binlogPos();
+    memset(bpos, 0, sizeof(binlogPos));
+    if (bias == CONSISTENT_READ_WITH_BINLOG_POS)
+      self->beginSnapshot(bias, bpos);
+    else
+      self->beginSnapshot(bias, NULL);
+    return bpos;
+  }
+}
+%ignore bzs::db::protocol::tdap::client::nsdatabase::beginSnapshot;
+
+
 // * bzs/db/protocol/tdap/client/nsTable.h *
 %ignore bzs::db::protocol::tdap::client::nstable::buflen;
 %ignore bzs::db::protocol::tdap::client::nstable::data;
@@ -630,8 +644,20 @@ using namespace bzs::db::protocol::tdap::client;
   table* table(const _TCHAR* name) {
     return self->table(name).get();
   }
+
+  binlogPos* beginSnapshot(short bias=CONSISTENT_READ) {
+    binlogPos* bpos = new binlogPos();
+    memset(bpos, 0, sizeof(binlogPos));
+    if (bias == CONSISTENT_READ_WITH_BINLOG_POS)
+      self->beginSnapshot(bias, bpos);
+    else
+      self->beginSnapshot(bias, NULL);
+    return bpos;
+  }
+
 }
 %ignore bzs::db::protocol::tdap::client::pooledDbManager::table;
+%ignore bzs::db::protocol::tdap::client::pooledDbManager::beginSnapshot;
 
 // * bzs/db/protocol/tdap/client/recordset.h *
 %ignore bzs::db::protocol::tdap::client::recordset::operator=;

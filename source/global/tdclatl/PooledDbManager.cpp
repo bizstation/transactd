@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014 2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -21,6 +21,7 @@
 #include "ConnectParams.h"
 #include "Table.h"
 #include "Database.h"
+#include "BinlogPos.h"
 
 using namespace bzs::db::protocol::tdap::client;
 
@@ -103,9 +104,25 @@ STDMETHODIMP CPooledDbManager::AbortTrn(void)
     return S_OK;
 }
 
-STDMETHODIMP CPooledDbManager::BeginSnapshot(eStLockType bias)
+STDMETHODIMP CPooledDbManager::BeginSnapshot(eStLockType bias, IBinlogPos** bpos)
 {
-    m_mgr.beginSnapshot(bias);
+    binlogPos pos;
+    m_mgr.beginSnapshot(bias, &pos);
+    *bpos = NULL;
+    if (bias == CONSISTENT_READ_WITH_BINLOG_POS)
+    {
+        CComObject<CBinlogPos>* bposObj;
+        CComObject<CBinlogPos>::CreateInstance(&bposObj);
+        if (bposObj)
+        {
+            bposObj->m_pos = pos;
+        
+            IBinlogPos* ipos;
+            bposObj->QueryInterface(IID_IBinlogPos, (void**)&ipos);
+            _ASSERTE(ipos);
+            *bpos = ipos;
+        }
+    }
     return S_OK;
 }
 

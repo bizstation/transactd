@@ -324,8 +324,15 @@ enum combineType
 #define MULTILOCK_GAP                   MULTILOCK_REPEATABLE_READ + LOCK_MULTI_NOWAIT
 // Snapshot
 #define CONSISTENT_READ                 4000
+#define CONSISTENT_READ_WITH_BINLOG_POS 4200
 #define MULTILOCK_GAP_SHARE             TRN_ISO_REPEATABLE_READ
 #define MULTILOCK_NOGAP_SHARE           0
+#define REPL_POSTYPE_NONE               0  
+#define REPL_POSTYPE_MARIA_GTID         1  // like 0-1-50
+#define REPL_POSTYPE_POS                2  // 12345
+
+
+
 // Read row lock
 #define ROW_LOCK_X                      LOCK_SINGLE_NOWAIT
 #define ROW_LOCK_S                      5000 + LOCK_SINGLE_NOWAIT
@@ -403,6 +410,7 @@ enum combineType
 #define STATUS_FIELDTYPE_NOTSUPPORT     -42
 #define STATUS_INVALID_NULLMODE         -43
 #define STATUS_TOO_LARGE_VALUE          -44
+#define STATUS_SQL_PARSE_ERROR          -45
 
 #define STATUS_SUCCESS                  0
 #define STATUS_PROGRAM_ERROR            1
@@ -585,7 +593,7 @@ struct handshale_t
  If you change this version then you need change The ($TargetName) project options too.
  */
 #define C_INTERFACE_VER_MAJOR "3"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "0"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "1"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
@@ -649,7 +657,7 @@ struct handshale_t
  */
 
 #define CPP_INTERFACE_VER_MAJOR "3"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "0"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "1"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
@@ -686,7 +694,7 @@ struct handshale_t
 
 
 #define TRANSACTD_VER_MAJOR 3//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 0//##8 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 1//##8 Build marker! Don't remove
 #define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

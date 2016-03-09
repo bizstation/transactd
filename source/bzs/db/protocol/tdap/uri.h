@@ -49,8 +49,10 @@ inline const _TCHAR* protocol(const _TCHAR* uri)
     else
     {
         st = _tcsstr(uri, _T("btrv://"));
-        return _T("btrv");
+        if (st)
+            return _T("btrv");
     }
+    return NULL;
 }
 
 inline void endPoint(const _TCHAR* uri, 

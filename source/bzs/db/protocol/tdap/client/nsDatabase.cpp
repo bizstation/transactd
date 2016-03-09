@@ -1,5 +1,5 @@
 /* =================================================================
- Copyright (C) 2000-2013 BizStation Corp All rights reserved.
+ Copyright (C) 2000-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -546,6 +546,7 @@ bool nsdatabase::findTable(nstable* tb)
 void nsdatabase::reset()
 {
     int i;
+    resetSnapshot();
 
     if (m_nsimpl->tranCount)
     {
@@ -592,11 +593,21 @@ void nsdatabase::reset()
         m_btrcallid = getBtrvEntryPoint();
 }
 
-void nsdatabase::beginSnapshot(short bias)
+void nsdatabase::resetSnapshot()
+{
+    if (m_nsimpl->snapShotCount)
+    {
+        m_nsimpl->snapShotCount = 1;
+        endSnapshot();
+    }
+}
+
+void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)
 {
     if (m_nsimpl->snapShotCount == 0)
     {
-        m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, NULL, NULL, NULL, 0, 0,
+        uint_td datalen = (bias == CONSISTENT_READ_WITH_BINLOG_POS) ? sizeof(binlogPos) : 0;
+        m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, bpos, &datalen, NULL, 0, 0,
                              m_nsimpl->cidPtr);
 #ifdef TEST_RECONNECT
         if (canRecoverNetError(m_stat))
@@ -780,7 +791,6 @@ bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
         m_stat = 0;
         if (_tcsstr(URI, _T("://")) == NULL)
             return true;
-
     }
     uint_td datalen = 0;
 

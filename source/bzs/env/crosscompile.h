@@ -183,6 +183,20 @@ typedef unsigned __int32 char32_t; // 32bit
 /* c c++ runtime library */
 #include <tchar.h>
 #if defined(__BORLANDC__) || defined(__MINGW32__)
+#  if defined(__MINGW32__)
+#    undef _ltow_s
+#    undef _ltoa_s
+#    undef _ltot_s
+#    undef _ultot_s
+#    undef _i64tot_s
+#    undef _i64toa_s
+#    undef _i64tow_s
+#    undef _ui64tot_s
+#    undef _ui64toa_s
+#    undef _ui64tow_s
+#    undef _strlwr_s
+#    undef _tcslwr_s
+#  endif //defined(__MINGW32__)
 
 #define _ltow_s(A, B, C, D) _ltow(A, B, D)
 #define _ltoa_s(A, B, C, D) _ltoa(A, B, D)
@@ -195,9 +209,9 @@ typedef unsigned __int32 char32_t; // 32bit
 #define _ui64toa_s(A, B, C, D) _ui64toa(A, B, D)
 #define _ui64tow_s(A, B, C, D) _ui64tow(A, B, D)
 #define _strlwr_s(A, B) strlwr(A)
-#ifndef _tcslwr_s
-#define _tcslwr_s(A, B) _tcslwr(A)
-#endif
+#  ifndef _tcslwr_s
+#    define _tcslwr_s(A, B) _tcslwr(A)
+#  endif
 #endif
 
 #if defined(__BORLANDC__)

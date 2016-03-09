@@ -1489,6 +1489,14 @@ def testConflict()
   db.close()
 end
 
+def isMySQL5_7(db)
+  vv = Transactd::BtrVersions.new()
+  db.getBtrVersion(vv)
+  return (db.stat() == 0) &&
+    ((vv.version(1).majorVersion == 5) &&
+     (vv.version(1).minorVersion == 7))
+end
+
 def testExclusive()
   # db mode exclusive
   db = Transactd::Database.new()
@@ -1507,6 +1515,10 @@ def testExclusive()
   db2.open(URL, Transactd::TYPE_SCHEMA_BDF)
   # database open error. Check database::stat()
   expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
+  dd = db.dbDef()
+  td = dd.tableDefs(1)
+  dd.updateTableDef(1)
+  expect(dd.stat()).to eq 0
   tb.close()
   db.close()
   db2.close()
@@ -1519,15 +1531,24 @@ def testExclusive()
   tb = db.openTable(TABLENAME, Transactd::TD_OPEN_READONLY_EXCLUSIVE)
   expect(db.stat()).to eq 0
   
+  # read mysql version
+  mySQL5_7 = isMySQL5_7(db)
+  
   # Read only open
   db2.open(URL, Transactd::TYPE_SCHEMA_BDF)
   expect(db2.stat()).to eq 0
   db2.close()
   
   # Normal open
+  #  Since MySQL 5.7 : D_OPEN_READONLY_EXCLUSIVE + TD_OPEN_NORMAL is fail,
+  #  It's correct.
   db2.connect(URL_DB, true)
   db2.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
-  expect(db2.stat()).to eq 0
+  if (mySQL5_7)
+    expect(db2.stat()).to eq Transactd::STATUS_CANNOT_LOCK_TABLE
+  else
+    expect(db2.stat()).to eq 0
+  end
   db2.close()
   
   # Write Exclusive open

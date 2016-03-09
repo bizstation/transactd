@@ -571,6 +571,8 @@ class filter
     uchar_td* m_buftmp;
 
     int m_extendBuflen;
+    int m_limitRows;
+    int m_readedRows;
     short m_stat;
     ushort_td m_preparedId;
     table::eFindType m_direction;
@@ -638,8 +640,8 @@ class filter
             m_selectFieldIndexes.push_back(fieldNum);
             bsize.select += r.size();
             bsize.retRowSize += r.len;
-
-            if (m_tb->tableDef()->fieldDefs[fieldNum].isNullable())
+            const fielddef& fd = m_tb->tableDef()->fieldDefs[fieldNum];
+            if (fd.nullbytes() && fd.isNullable())
             {
                 ++bsize.nullfields;
                 bsize.nullbytes = (bsize.nullfields + 7) / 8;
@@ -838,7 +840,9 @@ class filter
         m_withBookmark = q->isBookmarkAlso();
         m_cachedOptimize = q->getOptimize();
         m_stopAtLimit = q->isStopAtLimit();
-        m_seekByBookmarks = q->isSeekByBookmarks(); 
+        m_limitRows = m_stopAtLimit ? q->getLimit() : 0;
+        m_readedRows = 0;
+        m_seekByBookmarks = q->isSeekByBookmarks();
 
         if (q->isAll())
             addAllFields();
@@ -958,7 +962,9 @@ class filter
                 m_ret.maxRows =
                     (unsigned short)std::min<int>(calcMaxResultRows(), USHRT_MAX);
             else if (resultBufferNeedSize() > maxDataBuffer())
-                m_ret.maxRows = calcMaxResultRows(); 
+                m_ret.maxRows = calcMaxResultRows();
+            if (m_stopAtLimit && (m_limitRows - m_readedRows < m_ret.maxRows))
+                 m_ret.maxRows = m_limitRows - m_readedRows;
         }
     
         return len;
@@ -973,7 +979,6 @@ class filter
         m_tb->reallocDataBuffer(m_ddba ? len : m_extendBuflen);
         return true;
     }
-
 
     int doWriteBuffer()
     {
@@ -1016,10 +1021,11 @@ class filter
     
 
     filter(table* tb)
-        : m_tb(tb), m_seeksWritedCount(0), m_extendBuflen(0), m_stat(0),
-          m_preparedId(0),m_ignoreFields(false), m_seeksMode(false),
-          m_useOptimize(true),m_withBookmark(true), m_hasManyJoin(false),
-          m_preparingMode(false),m_ddba(false),m_stopAtLimit(false)
+        : m_tb(tb), m_seeksWritedCount(0), m_extendBuflen(0),
+          m_limitRows(0), m_readedRows(0), m_stat(0),
+          m_preparedId(0), m_ignoreFields(false), m_seeksMode(false),
+          m_useOptimize(true), m_withBookmark(true), m_hasManyJoin(false),
+          m_preparingMode(false), m_ddba(false), m_stopAtLimit(false)
     {
         m_isTransactd = m_tb->isUseTransactd();
         m_ddba = m_isTransactd;
@@ -1045,6 +1051,8 @@ public:
         m_preparingMode = false;
         m_preparedId = 0;
         m_stat = 0;
+        m_limitRows = 0;
+        m_readedRows = 0;
         bsize.clear();
     }
 
@@ -1344,6 +1352,17 @@ public:
     }
 
     bool withBookmark() const { return m_withBookmark; }
+
+    bool isReadLimit(int readed)
+    {
+        if (m_stopAtLimit)
+        {
+            m_readedRows += readed;
+            return (m_limitRows - m_readedRows <= 0);
+        }
+        return false;
+    }
+    void resetReaded() { m_readedRows = 0;}
 
     static filter* create(table* tb)
     {

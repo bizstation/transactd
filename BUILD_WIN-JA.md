@@ -12,13 +12,13 @@ MySQL/MariaDBのバージョンはVisual Studio Express 2010を使用してビ�
 クライアントはEmbarcaderoのコンパイラーC++ Builder XEシリーズでもビルドできます。
 [クライアントのみをビルド]の項を参照してください。）
 
-
 MySQL 5.7は以下のコンパイラをダウンロードしてインストールします。
+
 * [Visual Studio Express 2013 with Update 5 for Windows Desktop 
   ダウンロードページ（Microsoft）]
   (http://go.microsoft.com/fwlink/?LinkId=532500&clcid=0x411)
 
-MySQL 5.5/5.6、MariaDB 5.5/10.0は以下のコンパイラとSDKをダウンロードし
+MySQL 5.5/5.6、MariaDB 5.5/10.0/10.1は以下のコンパイラとSDKをダウンロードし
 てインストールします。
 
 * [Visual Studio 2010 Express ダウンロードページ（Microsoft）](
@@ -31,30 +31,31 @@ MySQL 5.5/5.6、MariaDB 5.5/10.0は以下のコンパイラとSDKをダウンロ
 ### Visual Studioコマンドプロンプトの起動方法
 後述する手順の中で、Visual Studioコマンドプロンプトを開くことがあります。
 
-MySQL 5.5/5.6、MariaDB 5.5/10.0は以下の手順でVisual Studioコマンドプロンプトを
+MySQL 5.7は以下の手順でVisual Studioコマンドプロンプトを開きます。
+
+#### 32Bit
+* [スタートメニュー]-[すべてのプログラム]-[Microsoft Visual Studio 2013]-
+[Visual Studio ツール]-[VS2013 x86 Native Tools コマンド プロンプト]を選択し起動します。
+
+#### 64Bit
+* [スタートメニュー]-[すべてのプログラム]-[Microsoft Visual Studio 2013]-
+[Visual Studio ツール]-[VS2013 x64 Cross Tools コマンド プロンプト]を選択し起動します。
+
+MySQL 5.5/5.6、MariaDB 5.5/10.0/10.1は以下の手順でVisual Studioコマンドプロンプトを
 開きます。
 
-[32Bit]
+#### 32Bit
 * [スタートメニュー]-[すべてのプログラム]-[Microsoft Visual Studio 2010 Express]-
 [Visual Studio コマンドプロンプト (2010)]を選択し起動します。
 
-[64Bit]
-*Visual Studio 2010 Express には、64bit版ビルドツール用の Visual Studioコマンド
+#### 64Bit
+* Visual Studio 2010 Express には、64bit版ビルドツール用の Visual Studioコマンド
 プロンプトが付属しません。代わりに、64bit用ビルドツールのパスを設定するための
 バッチファイルを作成し、そこから起動します。
 以下の内容のファイルを作成し、`set64env.cmd`という名前でデスクトップに保存します。
 ```
 %comspec% /k "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
 ```
-
-MySQL 5.7は以下の手順でVisual Studioコマンドプロンプトを開きます。
-[32Bit]
-* [スタートメニュー]-[すべてのプログラム]-[Microsoft Visual Studio 2013]-
-[Visual Studio ツール]-[VS2013 x86 Native Tools コマンド プロンプト]を選択し起動します。
-
-[64Bit]
-* [スタートメニュー]-[すべてのプログラム]-[Microsoft Visual Studio 2013]-
-[Visual Studio ツール]-[VS2013 x64 Cross Tools コマンド プロンプト]を選択し起動します。
 
 
 
@@ -108,8 +109,9 @@ bjam.exe toolset=msvc-12.0 threading=multi architecture=x86 ^
   --with-chrono --with-filesystem --with-system --with-thread --with-timer ^
   --with-serialization --with-program_options ^
   variant=debug,release link=static runtime-link=static,shared
-
 ```
+
+
 
 4. サーバープラグインとクライアントの両方をビルド
 ------------------------------------------------------------
@@ -124,22 +126,22 @@ bjam.exe toolset=msvc-12.0 threading=multi architecture=x86 ^
 ダウンロードした圧縮ファイルを解凍します。ここでは、以下のフォルダに保存したも
 のとします。
 ```
-C:\Users\Public\Documents\mysql-5.6.25
+C:\Users\Public\Documents\mysql-5.6.29
 ```
 
 
 ### 4-2 Transactd Pluginソースコードのダウンロード
-[Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/index.asp)
+[Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/)
 からソースコードをダウンロードします。
 ソースを展開するフォルダ transactd をMySQLのソースツリー内のpluginフォルダに作成
 します。
 ```
-md C:\Users\Public\Documents\mysql-5.6.25\plugin\transactd
+md C:\Users\Public\Documents\mysql-5.6.29\plugin\transactd
 ```
 ダウンロードしたソースコードを、上記で作成したtransactdフォルダに展開します。
 ここでは、以下のようなフォルダ構造になります。
 ```
-C:\Users\Public\Documents\mysql-5.6.25\plugin\transactd
+C:\Users\Public\Documents\mysql-5.6.29\plugin\transactd
 ```
 
 
@@ -151,15 +153,15 @@ Transactd Pluginソースコードのpatchディレクトリにmysqlのソース
 します。(パッチはmysql/mariadbのバージョンごとに異なる名前になっています。
 パッチ名のバージョンの部分は合ったものに変更してください。)
 ```
-cd C:\Users\Public\Documents\mysql-5.6.25
-copy plugin\transactd\patch\transactd-win-mysql-5.6.25.patch *
+cd C:\Users\Public\Documents\mysql-5.6.29
+copy plugin\transactd\patch\transactd-win-mysql-5.6.29.patch .\
 ```
 
 patchコマンドを使用できる環境（Cygwin、Git Bashなど）があるならば、以下の
 コマンドでパッチを適用します。
 ```
-cd C:\Users\Public\Documents\mysql-5.6.25
-patch -p0 -i transactd-win-mysql-5.6.25.patch
+cd C:\Users\Public\Documents\mysql-5.6.29
+patch -p0 -i transactd-win-mysql-5.6.29.patch
 ```
 
 patchコマンドがない場合、[宮坂 賢 氏のGNU patch 2.5.4 (Win32 版)](
@@ -171,8 +173,8 @@ C:\Program Files (x86)\patc254w
 ```
 以下のコマンドでパッチを適用します。
 ```
-cd C:\Users\Public\Documents\mysql-5.6.25
-"C:\Program Files (x86)\patc254w\patch.exe" -p0 --binary -i transactd-win-mysql-5.6.25.patch
+cd C:\Users\Public\Documents\mysql-5.6.29
+"C:\Program Files (x86)\patc254w\patch.exe" -p0 --binary -i transactd-win-mysql-5.6.29.patch
 ```
 
 #### 4-3.2 ソースコードのエンコーディングの修正
@@ -188,37 +190,36 @@ cd C:\Users\Public\Documents\mysql-5.6.25
 ### 4-4 CMakeの実行
 Visual Studioコマンドプロンプトを起動して、以下のコマンドを実行します。
 ```
-@REM Visual studio 2010 64Bitの場合 
-cd C:\Users\Public\Documents\mysql-5.6.25
+@REM Visual studio 2010 64Bitの場合
+cd C:\Users\Public\Documents\mysql-5.6.29
 md x64
 cd x64
 cmake .. -G "Visual Studio 10 Win64" ^
    -DBOOST_ROOT="C:\boost\boost_1_58_0"
 
 @REM Visual studio 2013 64Bitの場合
-cd C:\Users\Public\Documents\mysql-5.7.8
+cd C:\Users\Public\Documents\mysql-5.7.11
 md x64
 cd x64
 cmake .. -G "Visual Studio 12 Win64" ^
    -DWITH_BOOST="C:\boost\boost_1_58_0" ^
    -DBOOST_ROOT="C:\boost\boost_1_58_0"
-
 ```
 
 
 ### 4-5 ビルド
 CMakeが完了すると、以下のソリューションファイルが生成されています。
 ```
-C:\Users\Public\Documents\mysql-5.6.25\x64\MySQL.sln
+C:\Users\Public\Documents\mysql-5.6.29\x64\MySQL.sln
 ```
 MySQL.slnをVisual Studioで開きます。メニューの[ビルド]-[構成マネージャー]から構
 成を「Release」に変更し、[ビルド]-[ソリューションのビルド]をクリックします。
 
 バイナリは以下のフォルダに出力されます。
 ```
-C:\Users\Public\Documents\mysql-5.6.25\x64\sql\lib\plugin
-C:\Users\Public\Documents\mysql-5.6.25\x64\plugin\transactd\bin
-C:\Users\Public\Documents\mysql-5.6.25\x64\plugin\transactd\lib
+C:\Users\Public\Documents\mysql-5.6.29\x64\sql\lib\plugin
+C:\Users\Public\Documents\mysql-5.6.29\x64\plugin\transactd\bin
+C:\Users\Public\Documents\mysql-5.6.29\x64\plugin\transactd\lib
 ```
 
 
@@ -226,7 +227,7 @@ C:\Users\Public\Documents\mysql-5.6.25\x64\plugin\transactd\lib
 5. クライアントのみをビルド
 ------------------------------------------------------------
 ### 5-1 Transactd Pluginソースコードのダウンロード
-[Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/index.asp)
+[Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/)
 からソースコードをダウンロードします。
 
 ここでは、以下のフォルダに展開したとします。
@@ -239,22 +240,21 @@ C:\Users\Public\Documents\transactd
 ### 5-2 CMakeの実行
 Visual Studioコマンドプロンプトを起動して、以下のコマンドを実行します。
 ```
-@REM Visual studio 2010 64Bitの場合 
+@REM Visual studio 2010 64Bitの場合
 cd C:\Users\Public\Documents\transactd
 md x64
 cd x64
 cmake .. -G "Visual Studio 10 Win64" ^
-  -DBOOST_ROOT="C:\boost\boost_1_58_0"  ^
+  -DBOOST_ROOT="C:\boost\boost_1_58_0" ^
   -DWITH_TRANSACTD_SERVER=OFF -DWITH_TRANSACTD_CLIENTS=ON
 
-@REM Visual studio 2013 64Bitの場合 
+@REM Visual studio 2013 64Bitの場合
 cd C:\Users\Public\Documents\transactd
 md x64
 cd x64
 cmake .. -G "Visual Studio 12 Win64" ^
   -DBOOST_ROOT="C:\boost\boost_1_58_0" ^
   -DWITH_TRANSACTD_SERVER=OFF -DWITH_TRANSACTD_CLIENTS=ON
-
 ```
 
 

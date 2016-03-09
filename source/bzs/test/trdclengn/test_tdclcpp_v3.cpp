@@ -1044,7 +1044,14 @@ BOOST_AUTO_TEST_CASE(field_comp)
     testCompBlob();
     testCompDecimal();
 }
-
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(snapshot)
+BOOST_AUTO_TEST_CASE(snapshot_binlog)
+{
+    testSnapshotWithbinlog();
+}
+BOOST_AUTO_TEST_SUITE_END()
+
 
 // ------------------------------------------------------------------------

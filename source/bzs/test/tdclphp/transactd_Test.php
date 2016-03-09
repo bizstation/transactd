@@ -2086,6 +2086,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $db->open(URL_VAR);
             $this->assertEquals($db->stat(), 0);
         }
+        $db->close();
     }
     private function setGetVar($tb, $unicodeField, $varCharField)
     {
@@ -2267,6 +2268,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($db->stat(), 0);
         // utf8 varchar
         $this->setGetVar($tb, true, true);
+        $db->close();
     }
     private function doVarInsert($db, $name, $codePage, $str, $startid, $endid, $bulk)
     {
@@ -2321,6 +2323,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $this->doVarInsert($db, 'user4', Bz\transactd::CP_ACP,   '', $startid, $endid, $bulk);
             $this->doVarInsert($db, 'user5', Bz\transactd::CP_UTF8,  '', $startid, $endid, $bulk);
         }
+        $db->close();
     }
     private function doVarRead($db, $name, $codePage, $str, $num, $ky)
     {
@@ -2383,6 +2386,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $this->doVarRead($db, 'user4', Bz\transactd::CP_ACP,   '120', 120, $ky);
             $this->doVarRead($db, 'user5', Bz\transactd::CP_UTF8,  '120', 120, $ky);
         }
+        $db->close();
     }
     private function doVarFilter($db, $name, $codePage, $str, $num, $ky)
     {
@@ -2472,6 +2476,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $this->doVarFilter($db, 'user4', Bz\transactd::CP_ACP,   '120', 120, $ky);
             $this->doVarFilter($db, 'user5', Bz\transactd::CP_UTF8,  '120', 120, $ky);
         }
+        $db->close();
     }
     public function testDropDatabaseVar()
     {
@@ -2480,6 +2485,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($db->stat(), 0);
         $db->drop();
         $this->assertEquals($db->stat(), 0);
+        $db->close();
     }
     
     //-----------------------------------------------------
@@ -2753,6 +2759,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         else
             $this->doTestStringFilter($db, 2, 'myvarchar', Bz\transactd::ft_myvarchar, Bz\transactd::ft_myvarchar);
         $this->doTestStringFilter($db, 3, 'mytext', Bz\transactd::ft_mytext, Bz\transactd::ft_myblob);
+        $db->close();
     }
     
     public function testDropDatabaseStringFilter()
@@ -2762,6 +2769,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($db->stat(), 0);
         $db->drop();
         $this->assertEquals($db->stat(), 0);
+        $db->close();
     }
     
     public function testQuery()

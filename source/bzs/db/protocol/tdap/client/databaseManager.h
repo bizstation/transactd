@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_DATABASEMANAGER_H
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_DATABASEMANAGER_H
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014 2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -101,7 +101,10 @@ public:
 
     inline int enableTrn() { return m_db->enableTrn(); }
 
-    inline void beginSnapshot(short bias = CONSISTENT_READ) { m_db->beginSnapshot(bias); }
+    inline void beginSnapshot(short bias = CONSISTENT_READ, binlogPos* bpos=NULL)
+    {
+        m_db->beginSnapshot(bias, bpos);
+    }
 
     inline void endSnapshot() { m_db->endSnapshot(); }
 
@@ -253,7 +256,10 @@ public:
 
     inline int enableTrn() { return m_db->enableTrn(); }
 
-    inline void beginSnapshot(short bias = CONSISTENT_READ) { m_db->beginSnapshot(bias); }
+    inline void beginSnapshot(short bias = CONSISTENT_READ, binlogPos* bpos=NULL)
+    {
+        m_db->beginSnapshot(bias, bpos);
+    }
 
     inline void endSnapshot() { m_db->endSnapshot(); }
 

@@ -1,6 +1,59 @@
 Release note
 
 ================================================================================
+Version 3.1.0 2016/03/3
+================================================================================
+New Features
+--------------------------------------------------------------------------------
+* Add option to get the binary log position at the start of CONSISTENT_READ mode
+  snapshot.
+
+* Opening database is no longer required to `database::drop`. Specify uri to drop.
+  You can drop database that has broken schema table.
+
+* Bulk inserting and multi-record reading are enabled at `database::copyTableData`
+  and it increase in speed.
+
+* Add data compression option to creating table process. If `tabledef::flags.bit3`
+  is true, data compression is enabled. This feature uses `ROW_FORMAT=COMPRESSED`
+  option on MySQL `CREATE TABLE`.
+
+Modifications
+--------------------------------------------------------------------------------
+* Fix a bug that the number of result records will be less than the number which
+  was specified with `query::limit` on reading.
+
+* Fix a bug that can not create table on P.SQL.
+
+* Fix a bug that can not be authenticated on MySQL 5.7 with native_password mode.
+
+* Fix a bug that segfault occurs at re-opening table because invalid pointer was
+  held as key number resolver.
+
+* Fix a bug that the number of record reading will increase with inserting or
+  updating on record statistics.
+
+* Fix a bug that DDL operations are enabled in transaction.
+
+* Fix a bug that encoding works wrong on the fields which are encoded each
+  different character codes.
+
+* Improve transaction and snapshot APIs to return more detailed status.
+
+* Add `table` pointer parameter to `copyDataFn` callback function on `database`
+  object.
+
+* Fix the character code which will be returned from `dbdef::getSQLcreateTable`
+  to `utf8`.
+
+* Fix a bug that counting NULLable fields will be wrong on the methods like
+  `table::find`.
+
+* Fix the default `charsetIndex` of the field which was added with 
+  `recordset::appendField` to same as the `charsetIndex` of the first field.
+
+
+================================================================================
 Version 3.0.0 2015/12/26
 ================================================================================
 Upgrade Notes
@@ -15,7 +68,6 @@ Upgrade Notes
 
   Upgrade from the older versions than 2.4, please check the previous 
   release notes.
-
 
 New Features
 --------------------------------------------------------------------------------

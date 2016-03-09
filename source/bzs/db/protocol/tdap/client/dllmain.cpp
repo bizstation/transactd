@@ -221,9 +221,11 @@ extern "C" PACKAGE_OSX short_td __STDCALL
         case TD_END_TRANSACTION:
         case TD_BEGIN_TRANSACTION:
         case TD_ABORT_TRANSACTION:
-        case TD_BEGIN_SHAPSHOT:
         case TD_END_SNAPSHOT:
             client_t->req().paramMask = 0;
+            break;
+        case TD_BEGIN_SHAPSHOT:
+            client_t->req().paramMask = P_MASK_DATALEN | P_MASK_DATA;
             break;
         case TD_KEY_FIRST:
         case TD_KEY_LAST:
@@ -273,7 +275,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             if (client_t->req().keyNum == ST_SUB_GETSQL_BY_TABLEDEF)
             {
                 client_t->req().result = 0;
-                client_t->getSqlCreate();
+                client_t->getSqlCreate(CHARSET_UTF8);
                 client_t->cleanup();
                 return client_t->req().result;
             }

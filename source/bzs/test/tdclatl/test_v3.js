@@ -1,5 +1,5 @@
 /*=================================================================
-	 Copyright (C) 2015 BizStation Corp All rights reserved.
+	 Copyright (C) 2015-2016 BizStation Corp All rights reserved.
 
 	 This program is free software; you can redistribute it and/or
 	 modify it under the terms of the GNU General Public License
@@ -30,6 +30,16 @@ var S_NOWAIT_LOCK = 200;
 var M_NOWAIT_LOCK = 400;
 var CCURR_T_BIAS = 1000;
 var trans_bias = S_NOWAIT_LOCK + CCURR_T_BIAS;
+
+var MULTILOCK_NOGAP_SHARE           = 0;
+var MULTILOCK_GAP_SHARE             = 2000;
+var CONSISTENT_READ                 = 4000;
+var CONSISTENT_READ_WITH_BINLOG_POS = 4200;
+
+var REPL_POSTYPE_NONE       = 0;
+var REPL_POSTYPE_MARIA_GTID = 1;
+var REPL_POSTYPE_POS        = 2;
+
 
 // field type
 var ft_string       = 0;
@@ -253,6 +263,18 @@ function checkNotEqual(a, b, on)
 		WScript.StdOut.Write(".");
 }
 /*--------------------------------------------------------------------------------*/
+function checkNotNull(a, on)
+{
+	if (a == null)
+	{
+		WScript.Echo("error null obkect on " + on );	
+		return false;
+	}
+	WScript.StdOut.Write(".");
+	return true;
+}
+
+/*--------------------------------------------------------------------------------*/
 function isX86()
 {
 	var shell = new ActiveXObject('WScript.Shell');
@@ -317,6 +339,13 @@ function isMySQL5_5(db)
     var ver = db.GetBtrVersion(1);
     return (db.Stat == 0) && ((5 == ver.MajorVersion) && (5 == ver.MinorVersion));
 }
+/*--------------------------------------------------------------------------------*/
+function isMariaDbWithGtid(db)
+{
+    var ver = db.GetBtrVersion(1);
+    return (db.Stat == 0) && (ver.Type == MYSQL_TYPE_MARIA) &&  (10 == ver.MajorVersion);
+}
+
 /*--------------------------------------------------------------------------------*/
 function isLegacyTimeFormat(db)
 {
@@ -658,6 +687,23 @@ function test_decimal(fd)
 	checkEqual(fd.DefaultValue, '4');
 }
 
+function testBinlogPos(db)
+{
+	var bpos = db.beginSnapshot(CONSISTENT_READ_WITH_BINLOG_POS);
+	if (checkNotNull(bpos, "beginSnapshot result "))
+	{
+		if (isMariaDbWithGtid(db))
+			checkEqual(bpos.type, REPL_POSTYPE_MARIA_GTID,  "bpos.type");
+		else
+			checkEqual(bpos.type, REPL_POSTYPE_POS,  "bpos.type");
+		checkNotEqual(bpos.pos, 0,  "bpos.pos");
+		checkNotEqual(bpos.filename, "",  "bpos.filename");
+		WScript.Echo("\nBinlog pos = " + bpos.filename + ":" + bpos.pos);
+	}
+	db.endSnapshot();
+}
+
+
 /*--------------------------------------------------------------------------------*/
 function test(atu, ate, db)
 {
@@ -944,6 +990,10 @@ function test(atu, ate, db)
 	test_bit(ate, db);
 	test_bitset();
 	test_decimal(ate.TableDef.FieldDef(0));
+	
+	//binlogPos
+	testBinlogPos(db);
+	
 	//WScript.Echo(" -- End Test -- ");
 }
 /*--------------------------------------------------------------------------------*/
@@ -951,12 +1001,20 @@ function main()
 {
 	var isCreate = 1;
 	var host = "localhost";
+	var user = "root";
+	var pwd = "";
+
 	if (WScript.arguments.length > 0)
 		isCreate = 	parseInt(WScript.arguments(0), 10);
 
 	if (WScript.arguments.length > 1)
 		host = WScript.arguments(1);
-	var URI  = "tdap://" + host + "/test_v3?dbfile=test.bdf";
+	if (WScript.arguments.length > 2)
+		user = WScript.arguments(2);
+	if (WScript.arguments.length > 3)
+		pwd = WScript.arguments(3);
+
+	var URI  = "tdap://" + user + "@" + host + "/test_v3?dbfile=test.bdf&pwd=" + pwd;
 
 
 	WScript.Echo(URI);

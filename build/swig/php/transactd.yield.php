@@ -193,9 +193,17 @@ abstract class transactd {
 
 	const CONSISTENT_READ = CONSISTENT_READ;
 
+	const CONSISTENT_READ_WITH_BINLOG_POS = CONSISTENT_READ_WITH_BINLOG_POS;
+
 	const MULTILOCK_GAP_SHARE = MULTILOCK_GAP_SHARE;
 
 	const MULTILOCK_NOGAP_SHARE = MULTILOCK_NOGAP_SHARE;
+
+	const REPL_POSTYPE_NONE = REPL_POSTYPE_NONE;
+
+	const REPL_POSTYPE_MARIA_GTID = REPL_POSTYPE_MARIA_GTID;
+
+	const REPL_POSTYPE_POS = REPL_POSTYPE_POS;
 
 	const ROW_LOCK_X = ROW_LOCK_X;
 
@@ -298,6 +306,8 @@ abstract class transactd {
 	const STATUS_INVALID_NULLMODE = STATUS_INVALID_NULLMODE;
 
 	const STATUS_TOO_LARGE_VALUE = STATUS_TOO_LARGE_VALUE;
+
+	const STATUS_SQL_PARSE_ERROR = STATUS_SQL_PARSE_ERROR;
 
 	const STATUS_SUCCESS = STATUS_SUCCESS;
 
@@ -2071,6 +2081,34 @@ class bitset implements \ArrayAccess {
 
 }
 
+class binlogPos {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __get($var) {
+		if ($var === 'type') return binlogPos_type_get($this->_cPtr);
+		if ($var === 'pos') return binlogPos_pos_get($this->_cPtr);
+		if ($var === 'filename') return binlogPos_filename_get($this->_cPtr);
+		if ($var === 'gtid') return binlogPos_gtid_get($this->_cPtr);
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if (function_exists('binlogPos_'.$var.'_get')) return true;
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__binlogPos') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_binlogPos();
+	}
+}
+
 class nsdatabase {
 	public $_cPtr=null;
 	protected $_pData=array();
@@ -2170,7 +2208,11 @@ class nsdatabase {
 	}
 
 	function beginSnapshot($bias=CONSISTENT_READ) {
-		nsdatabase_beginSnapshot($this->_cPtr,$bias);
+		$r=nsdatabase_beginSnapshot($this->_cPtr,$bias);
+		if (is_resource($r)) {
+			return new binlogPos($r);
+		}
+		return $r;
 	}
 
 	function endSnapshot() {
@@ -2326,8 +2368,8 @@ class database extends nsdatabase {
 		database_create($this->_cPtr,$uri,$type);
 	}
 
-	function drop() {
-		database_drop($this->_cPtr);
+	function drop($uri=null) {
+		database_drop($this->_cPtr, $uri);
 	}
 
 	function dropTable($tableName) {
@@ -4298,7 +4340,11 @@ class pooledDbManager {
 	}
 
 	function beginSnapshot($bias=CONSISTENT_READ) {
-		pooledDbManager_beginSnapshot($this->_cPtr,$bias);
+		$r=pooledDbManager_beginSnapshot($this->_cPtr,$bias);
+		if (is_resource($r)) {
+			return new binlogPos($r);
+		}
+		return $r;
 	}
 
 	function endSnapshot() {

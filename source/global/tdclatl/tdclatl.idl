@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -47,6 +47,8 @@ interface IPooledDbManager;
 interface IPreparedQuery;
 interface IBookmark;
 interface IBitset;
+interface IBinlogPos;
+
 
 typedef
 [
@@ -149,6 +151,7 @@ enum eStatus
 	STATUS_FIELDTYPE_NOTSUPPORT = -42,
     STATUS_INVALID_NULLMODE     = -43,
     STATUS_TOO_LARGE_VALUE      = -44,
+    STATUS_SQL_PARSE_ERROR      = -45,
 	STATUS_SUCCESS				= 0,
 	STATUS_PROGRAM_ERROR		= 1,
 	STATUS_IO_ERROR				= 2,
@@ -326,9 +329,10 @@ typedef
 ]
 enum eStLockType
 {
-  MULTILOCK_NOGAP_SHARE   = 0,
-  MULTILOCK_GAP_SHARE     = 2000,
-  CONSISTENT_READ         = 4000
+  MULTILOCK_NOGAP_SHARE           = 0,
+  MULTILOCK_GAP_SHARE             = 2000,
+  CONSISTENT_READ                 = 4000,
+  CONSISTENT_READ_WITH_BINLOG_POS = 4200
 }eStLockType;
 
 typedef
@@ -450,11 +454,11 @@ interface IDatabase : IDispatch
   [propget, id(0x0000000A)]
   HRESULT _stdcall NativeDatabase([out, retval] hyper** Value);
   [id(0x000000C9)]
-  HRESULT _stdcall BeginSnapshot([in, defaultvalue(CONSISTENT_READ)] eStLockType Bias);
+  HRESULT _stdcall BeginSnapshot([in, defaultvalue(CONSISTENT_READ)] eStLockType Bias, [out, retval]IBinlogPos** bpos);
   [id(0x000000CA)]
   HRESULT _stdcall EndSnapshot(void);
   [id(0x000000CB)]
-  HRESULT _stdcall Drop(void);
+  HRESULT _stdcall Drop([in, defaultvalue("")] BSTR Uri);
   [id(0x000000CC)]
   HRESULT _stdcall DropTable([in] BSTR TableName);
   [id(0x000000CD)]
@@ -1640,7 +1644,7 @@ interface IPooledDbManager : IDispatch
   [id(0x00000004)]
   HRESULT _stdcall AbortTrn(void);
   [id(0x00000005)]
-  HRESULT _stdcall BeginSnapshot([in, defaultvalue(CONSISTENT_READ)] eStLockType Bias);
+  HRESULT _stdcall BeginSnapshot([in, defaultvalue(CONSISTENT_READ)] eStLockType Bias, [out, retval]IBinlogPos** bpos);
   [id(0x00000006)]
   HRESULT _stdcall EndSnapshot(void);
   [id(0x00000007)]
@@ -1748,125 +1752,150 @@ interface IBitset : IDispatch{
 };
 
 [
+	object,
+	uuid(316D0314-638E-4DCF-B68B-2F98624D02E4),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IBinlogPos : IDispatch{
+
+  [propget, id(0)]
+#ifdef _WIN64
+  HRESULT _stdcall Pos([out, retval] __int64* retVal);
+#else
+  HRESULT _stdcall Pos([out, retval] int* retVal);
+#endif
+  [propget, id(1)]
+  HRESULT _stdcall Type([out, retval] short* retVal);
+  [propget, id(2)]
+  HRESULT _stdcall Filename([out, retval] BSTR* retVal);
+  [propget, id(3)]
+  HRESULT _stdcall Gtid([out, retval] BSTR* retVal);
+};
+
+[
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
 	version(1.0),
 ]
 library transactd
 {
-  importlib("stdole2.tlb");
-  [
-	uuid(530AC521-AB85-4139-8F78-CA56F8B7722F)		
-  ]
-  dispinterface _IDatabaseEvents
-  {	
-	properties:
-	methods:
-		[id(1)] 
-		HRESULT OnCopyData(IDatabase* db, int recordCount, int count, VARIANT_BOOL* cancel);
-		[id(2)] 
-		HRESULT OnDeleteRecord(IDatabase* db, ITable* tb, VARIANT_BOOL* Value);
-		[id(3)] 
-		HRESULT OnSchemaMgrFn(IDatabase* db, short* Value);
-  };
+    importlib("stdole2.tlb");
+    [
+        uuid(530AC521-AB85-4139-8F78-CA56F8B7722F)		
+    ]
+    dispinterface _IDatabaseEvents
+    {	
+        properties:
+        methods:
+	    [id(1)] 
+	    HRESULT OnCopyData(IDatabase* db, ITable* tb, int recordCount, int count, VARIANT_BOOL* cancel);
+	    [id(2)] 
+	    HRESULT OnDeleteRecord(IDatabase* db, ITable* tb, VARIANT_BOOL* Value);
+	    [id(3)] 
+	    HRESULT OnSchemaMgrFn(IDatabase* db, short* Value);
+    };
 
-  [
-	uuid(439578EB-226B-41EB-9FDB-AB27915298C7)		
-  ]
-  dispinterface _ITableEvents
-  {	
-	properties:
-	methods:
-		[id(1)] 
-		HRESULT OnRecordCount(ITable* tb, int count, VARIANT_BOOL* cancel);
-  };
+    [
+        uuid(439578EB-226B-41EB-9FDB-AB27915298C7)		
+    ]
+    dispinterface _ITableEvents
+    {	
+        properties:
+        methods:
+	    [id(1)] 
+	    HRESULT OnRecordCount(ITable* tb, int count, VARIANT_BOOL* cancel);
+    };
 
-  [
-    uuid(1DF73F19-D216-47A4-847D-8CD1279E1077)
-  ]
-  coclass Database
-  {
-    [default] interface IDatabase;
-	[default, source] dispinterface _IDatabaseEvents;
-	
-  };
+    [
+        uuid(1DF73F19-D216-47A4-847D-8CD1279E1077)
+    ]
+    coclass Database
+    {
+        [default] interface IDatabase;
+        [default, source] dispinterface _IDatabaseEvents;
+    };
   
-  [
-    uuid(9B3CAC13-FCB8-42E1-993C-D81645B40FEF)
-    ,noncreatable
-  ]
-  coclass DbDef
-  {
-    [default] interface IDbDef;
-  };
-  [
-    uuid(4B8E64CA-F963-408C-AC4E-C1F9556738D4)
-    ,noncreatable
-  ]
-  coclass Table
-  {
-    [default] interface ITable;
-  };
-  [
-    uuid(D2115BB4-48CE-461C-A1C1-324DD12C37EE)
-    ,noncreatable
-  ]
-  coclass TableDef
-  {
-    [default] interface ITableDef;
-  };
-  [
-    uuid(42AE202D-A721-45A6-BB5C-2074101A8751)
-    ,noncreatable
-  ]
-  coclass FieldDef
-  {
-    [default] interface IFieldDef;
+    [
+        uuid(9B3CAC13-FCB8-42E1-993C-D81645B40FEF)
+        ,noncreatable
+    ]
+    coclass DbDef
+    {
+        [default] interface IDbDef;
+    };
 
-  };
-  [
-    uuid(38DDBD32-27D5-41C5-AAE6-B6D2D4CF0F0D)
-    ,noncreatable
-  ]
-  coclass KeyDef
-  {
-    [default] interface IKeyDef;
-  };
-  [
-    uuid(27968808-D981-4DEC-9937-A8E6A71714A8)
-    ,noncreatable
-  ]
-  coclass Flags
-  {
-    [default] interface IFlags;
-  };
+    [
+        uuid(4B8E64CA-F963-408C-AC4E-C1F9556738D4)
+        ,noncreatable
+    ]
+    coclass Table
+    {
+        [default] interface ITable;
+    };
 
+    [
+        uuid(D2115BB4-48CE-461C-A1C1-324DD12C37EE)
+        ,noncreatable
+    ]
+    coclass TableDef
+    {
+        [default] interface ITableDef;
+    };
 
-  [
-    uuid(DEC4DD3C-C661-4C41-8F6C-F579187CF2C9)
-    ,noncreatable
-  ]
-  coclass KeySegment
-  {
-    [default] interface IKeySegment;
-  };
-  [
-    uuid(692ADBB5-B156-48A6-8A32-3A6C31586698)
-    ,noncreatable
-  ]
-  coclass Field
-  {
-    [default] interface IField;
+    [
+        uuid(42AE202D-A721-45A6-BB5C-2074101A8751)
+        ,noncreatable
+    ]
+    coclass FieldDef
+    {
+        [default] interface IFieldDef;
+    };
 
-  };
+    [
+        uuid(38DDBD32-27D5-41C5-AAE6-B6D2D4CF0F0D)
+        ,noncreatable
+    ]
+    coclass KeyDef
+    {
+        [default] interface IKeyDef;
+    };
+
+    [
+        uuid(27968808-D981-4DEC-9937-A8E6A71714A8)
+        ,noncreatable
+    ]
+    coclass Flags
+    {
+        [default] interface IFlags;
+    };
+
+    [
+        uuid(DEC4DD3C-C661-4C41-8F6C-F579187CF2C9)
+        ,noncreatable
+    ]
+    coclass KeySegment
+    {
+        [default] interface IKeySegment;
+    };
+
+    [
+        uuid(692ADBB5-B156-48A6-8A32-3A6C31586698)
+        ,noncreatable
+    ]
+    coclass Field
+    {
+        [default] interface IField;
+    };
 	
-  [
-    uuid(692ADBB5-B156-48A6-8A32-3A6C31586699)
-    ,noncreatable
-  ]
-  coclass TdVersion
-  {
-    [default] interface ITdVersion;
-  };
+    [
+        uuid(692ADBB5-B156-48A6-8A32-3A6C31586699)
+        ,noncreatable
+    ]
+    coclass TdVersion
+    {
+        [default] interface ITdVersion;
+    };
   
 	[
 		uuid(CA076B05-541B-48EF-AC55-33323FB052F3)		
@@ -2004,6 +2033,15 @@ library transactd
 	coclass Bitset
 	{
 		[default] interface IBitset;
+	};
+
+    [
+        uuid(86301596-1546-442E-BAA4-FDB656834F41)
+		,noncreatable
+	]
+	coclass BinlogPos
+	{
+		[default] interface IBinlogPos;
 	};
    
 };

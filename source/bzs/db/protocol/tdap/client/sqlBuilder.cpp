@@ -526,7 +526,7 @@ void makeSuffixNamesList(const tabledef* table, std::vector<std::string>& fds)
     }
 }
 
-std::string sqlBuilder::sqlCreateTable(const char* name /* utf8 */, tabledef* table,
+std::string sqlBuilder::sqlCreateTable(const char* name /* utf8 */, tabledef* td,
                            uchar_td charsetIndexServer, const clsrv_ver* ver)
 {
     // Duplication of a name is inspected and, in duplication, _1 is added.
@@ -534,10 +534,10 @@ std::string sqlBuilder::sqlCreateTable(const char* name /* utf8 */, tabledef* ta
     std::string s = "CREATE TABLE `";
 
     std::vector<std::string> fds;// suffix added names list
-    makeSuffixNamesList(table, fds);
+    makeSuffixNamesList(td, fds);
 
     uint_td schemaCodePage =
-        table->schemaCodePage ? table->schemaCodePage : GetACP();
+        td->schemaCodePage ? td->schemaCodePage : GetACP();
     if ((name && name[0]))
     {
         std::string name2 = name;
@@ -546,14 +546,17 @@ std::string sqlBuilder::sqlCreateTable(const char* name /* utf8 */, tabledef* ta
         s += getFileName(name2.c_str()) + "` (";
     }
     else
-        s += getFileName(table->fileNameA()) + "` (";
-    s += getFieldList(table, fds, ver);
-    insertNisFields(table, fds, s);
-    s += getKeyList(table, fds);
+        s += getFileName(td->fileNameA()) + "` (";
+    s += getFieldList(td, fds, ver);
+    insertNisFields(td, fds, s);
+    s += getKeyList(td, fds);
     if (s[s.size() - 1] == ',')
         s.erase(s.end() - 1);
-    s += ") ENGINE=InnoDB default charset=" +
-         std::string(mysql::charsetName(table->charsetIndex));
+    std::string compress;
+    if (td->flags.bit3)
+        compress = "ROW_FORMAT=COMPRESSED "; 
+    s += ") ENGINE=InnoDB " + compress + "default charset=" + std::string(mysql::charsetName(td->charsetIndex));
+         
 
     // create statement charset must be server default charset.
     // server default charset writen in my.cnf.
@@ -563,20 +566,20 @@ std::string sqlBuilder::sqlCreateTable(const char* name /* utf8 */, tabledef* ta
     return s;
 }
 
-std::string sqlBuilder::sqlCreateIndex(const tabledef* table, int keyNum,
+std::string sqlBuilder::sqlCreateIndex(const tabledef* td, int keyNum,
         bool specifyKeyNum, uchar_td charsetIndexServer, const clsrv_ver* ver)
 {
     std::string s;
     std::vector<std::string> fds;// suffix added names list
-    makeSuffixNamesList(table, fds);
+    makeSuffixNamesList(td, fds);
     uint_td schemaCodePage =
-        table->schemaCodePage ? table->schemaCodePage : GetACP();
-    s += getFieldList(table, fds, ver);
-    insertNisFields(table, fds, s);
+        td->schemaCodePage ? td->schemaCodePage : GetACP();
+    s += getFieldList(td, fds, ver);
+    insertNisFields(td, fds, s);
     s = "`";
-    s+= getFileName(table->fileNameA());
+    s+= getFileName(td->fileNameA());
     s += "` ADD";
-    getKey(table, fds, keyNum, s, specifyKeyNum); 
+    getKey(td, fds, keyNum, s, specifyKeyNum); 
     s.erase(s.end() - 1);
     // create statement charset must be server default charset.
     // server default charset writen in my.cnf.

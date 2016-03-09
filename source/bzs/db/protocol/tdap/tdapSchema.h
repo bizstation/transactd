@@ -596,6 +596,14 @@ struct PACKAGE fielddef : public fielddef_t_my
                 (type == ft_mydatetime) || (type == ft_mytimestamp));
     }
 
+    inline bool isNullKeysegType() const
+    {
+        return (nullValue == 0x00) && (len <= 8) &&
+                ((type == ft_logical) || (type == ft_integer) ||
+                 (type == ft_uinteger) || (type == ft_enum)|| (type == ft_set));
+
+    }
+
     /* Charctor numbers from charset.
      */
     unsigned int charNum() const;
@@ -728,7 +736,7 @@ private:
         return v;
     }
 
-    inline int maxVarDatalen() const
+    inline uint_td maxVarDatalen() const
     {
         if (((type >= ft_myvarchar) && (type <= ft_mywvarbinary)) ||
             type == ft_lstring)

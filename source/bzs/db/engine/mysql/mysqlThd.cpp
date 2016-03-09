@@ -1,5 +1,5 @@
 /* =================================================================
- Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+ Copyright (C) 2012-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -101,10 +101,9 @@ void endThread()
 
 void waitForServerStart()
 {
-    mysql_mutex_lock(&LOCK_server_started);
+    safe_mysql_mutex_lock lck(&LOCK_server_started);
     while (!mysqld_server_started)
         mysql_cond_wait(&COND_server_started, &LOCK_server_started);
-    mysql_mutex_unlock(&LOCK_server_started);
 }
 
 int getTransactdIsolation()

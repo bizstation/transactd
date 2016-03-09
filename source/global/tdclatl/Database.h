@@ -1,6 +1,6 @@
 #pragma once
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -27,7 +27,8 @@ using namespace ATL;
 class CDbDef;
 
 void __stdcall onCopyData(bzs::db::protocol::tdap::client::database* db,
-                          int recordCount, int count, bool& cancel);
+                              bzs::db::protocol::tdap::client::table* tb,
+                              int recordCount, int count, bool& cancel);
 bool __stdcall onDeleteRecord(bzs::db::protocol::tdap::client::database* db,
                               bzs::db::protocol::tdap::client::table* tb,
                               bool inkey);
@@ -98,11 +99,10 @@ public:
     STDMETHOD(AbortTrn)();
     STDMETHOD(BeginTrn)(eLockType bias);
     STDMETHOD(EndTrn)();
-    STDMETHOD(BeginSnapshot)(eStLockType bias);
+    STDMETHOD(BeginSnapshot)(eStLockType bias, IBinlogPos** bpos);
     STDMETHOD(EndSnapshot)();
     STDMETHOD(get_NativeDatabase)(__int64** Value);
-
-    STDMETHOD(Drop)();
+    STDMETHOD(Drop)(BSTR Uri);
     STDMETHOD(DropTable)(BSTR TableName);
     STDMETHOD(Create)(BSTR URI, int type);
     STDMETHOD(Close)(VARIANT_BOOL withDropDefaultSchema = 0);

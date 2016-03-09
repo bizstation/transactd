@@ -36,7 +36,7 @@ namespace client
 class database;
 #pragma warning(disable : 4251)
 
-class DLLLIB connMgr : private nstable
+class /*DLLLIB*/ connMgr : private nstable
 {
 public:
     typedef bzs::db::transactd::connection::record record;

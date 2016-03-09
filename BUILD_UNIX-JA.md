@@ -59,46 +59,46 @@ cd ~/boost_1_58_0
 からソースコードをダウンロードし、解凍します。
 ```
 cd ~
-wget http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.25.tar.gz
-tar xzf mysql-5.6.25.tar.gz
+wget http://cdn.mysql.com/Downloads/MySQL-5.6/mysql-5.6.29.tar.gz
+tar xzf mysql-5.6.29.tar.gz
 ```
 
 
 ### 4-2 Transactd Pluginソースコードのダウンロード
-[Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/index.asp)
+[Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/)
 からソースコードをダウンロードします。
 
 ダウンロードしたソースコードは、4-1で展開したMySQLソースコードの
 pluginディレクトリに展開します。
 ```
 cd ~
-wget http://www.bizstation.jp/al/transactd/download/transactd-3.0.0/transactd-source-3.0.0.zip
+wget http://www.bizstation.jp/al/transactd/download/transactd-3.1.0/transactd-source-3.1.0.zip
 #Mac OS Xでは
-#curl -O http://www.bizstation.jp/al/transactd/download/transactd-3.0.0/transactd-source-3.0.0.zip
-unzip -q transactd-source-3.0.0.zip -d transactd
-mv transactd ~/mysql-5.6.25/plugin/
+#curl -O http://www.bizstation.jp/al/transactd/download/transactd-3.1.0/transactd-source-3.1.0.zip
+unzip -q transactd-source-3.1.0.zip -d transactd
+mv transactd ~/mysql-5.6.29/plugin/
 ```
 
 
 ### 4-3 CMakeの実行
 MySQL 5.5/5.6 MariaDB 5.5/10.0の場合は以下のコマンドを実行します。オプションの意味はコマンドの後に記載しています。
 ```
-cd ~/mysql-5.6.25
+cd ~/mysql-5.6.29
 mkdir x64
 cd x64
 cmake .. -DBOOST_ROOT=~/boost_1_58_0 \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/mysql-5.6.25 \
+  -DCMAKE_INSTALL_PREFIX=/usr/local/mysql-5.6.29 \
   -DTRANSACTD_CLIENTS_PREFIX=/usr/lib \
   -DTRANSACTD_PREFIX=/usr/local/transactd
 ```
 MySQL 5.7の場合は以下のコマンドを実行します。
 ```
-cd ~/mysql-5.7.8-rc
+cd ~/mysql-5.7.11
 mkdir x64
 cd x64
 cmake .. -DBOOST_ROOT=~/boost_1_58_0 \
   -DWITH_BOOST=~/boost_1_58_0 \
-  -DCMAKE_INSTALL_PREFIX=/usr/local/mysql-5.7.8-rc \
+  -DCMAKE_INSTALL_PREFIX=/usr/local/mysql-5.7.11 \
   -DTRANSACTD_CLIENTS_PREFIX=/usr/lib \
   -DTRANSACTD_PREFIX=/usr/local/transactd
 ```
@@ -125,14 +125,14 @@ make install
 5. クライアントライブラリのみをビルド
 ------------------------------------------------------------
 ### 5-1 Transactd Pluginソースコードのダウンロード
-[Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/index.asp)
+[Transactd Pluginのダウンロードページ](http://www.bizstation.jp/al/transactd/download/)
 からソースコードをダウンロードします。
 ```
 cd ~
-wget http://www.bizstation.jp/al/transactd/download/transactd-3.0.0/transactd-source-3.0.0.zip
+wget http://www.bizstation.jp/al/transactd/download/transactd-3.1.0/transactd-source-3.1.0.zip
 #Mac OS Xでは
-#curl curl -O http://www.bizstation.jp/al/transactd/download/transactd-3.0.0/transactd-source-3.0.0.zip
-unzip -q transactd-source-3.0.0.zip -d transactd
+#curl curl -O http://www.bizstation.jp/al/transactd/download/transactd-3.1.0/transactd-source-3.1.0.zip
+unzip -q transactd-source-3.1.0.zip -d transactd
 ```
 
 ### 5-2 CMakeの実行

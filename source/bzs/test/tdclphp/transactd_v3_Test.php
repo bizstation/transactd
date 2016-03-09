@@ -46,7 +46,7 @@ define("DBNAME", "test_v3");
 define("TABLENAME", "user");
 define("PROTOCOL", "tdap://");
 define("BDFNAME", "?dbfile=test.bdf");
-define("URL", PROTOCOL . USERPART . HOSTNAME . DBNAME . BDFNAME . PASSPART);
+define("URI", PROTOCOL . USERPART . HOSTNAME . DBNAME . BDFNAME . PASSPART);
 
 // multi thread test if `php_pthreads` exists.
 if(class_exists('Thread')){
@@ -58,7 +58,7 @@ if(class_exists('Thread')){
         }
         public function run()
         {
-            $dbm = new bz\pooledDbManager(new bz\connectParams(URL));
+            $dbm = new bz\pooledDbManager(new bz\connectParams(URI));
             $tb = $dbm->table('user');
             $tb->setFV(FDI_ID, 300000);
             $tb->seekLessThan(false, bz\transactd::ROW_LOCK_X);
@@ -78,24 +78,25 @@ class transactdTest extends PHPUnit_Framework_TestCase
 {
     private function dropDatabase($db)
     {
-        $db->open(URL);
-        $this->assertEquals($db->stat(), 0);
-        $db->drop();
+        // Version 3.1 or later is support drop by uri.
+        //$db->open(URI);
+        //$this->assertEquals($db->stat(), 0);
+        $db->drop(URI);
         $this->assertEquals($db->stat(), 0);
     }
     private function createDatabase($db)
     {
-        $db->create(URL);
+        $db->create(URI);
         if ($db->stat() == bz\transactd::STATUS_TABLE_EXISTS_ERROR)
         {
             $this->dropDatabase($db);
-            $db->create(URL);
+            $db->create(URI);
         }
         $this->assertEquals($db->stat(), 0);
     }
     private function openDatabase($db)
     {
-        return $db->open(URL, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        return $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
     }
     private function isMySQL5_5($db)
     {
@@ -105,6 +106,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
         return ($db->stat() == 0) && 
             ((5 == $server_ver->majorVersion) &&
             (5 == $server_ver->minorVersion));
+    }
+    private function isMariaDBWithGtid($db)
+    {
+        $vv = new bz\btrVersions();
+        $db->getBtrVersion($vv);
+        $server_ver = $vv->version(1);
+        return ($db->stat() == 0) && 
+            (10 == $server_ver->majorVersion) &&
+            ($server_ver->type == bz\transactd::MYSQL_TYPE_MARIA);
     }
     private function isLegacyTimeFormat($db)
     {
@@ -739,5 +749,19 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd->len = 4;
         $fd->setDefaultValue($bits1);
         $this->assertEquals($fd->defaultValue(), '4');
+    }
+    public function test_snapshot()
+    {
+        $db = new bz\database();
+        $this->openDatabase($db);
+        $bpos = $db->beginSnapshot(bz\transactd::CONSISTENT_READ_WITH_BINLOG_POS);
+        if ($this->isMariaDBWithGtid($db))
+          $this->assertEquals($bpos->type, bz\transactd::REPL_POSTYPE_MARIA_GTID);
+        else
+          $this->assertEquals($bpos->type, bz\transactd::REPL_POSTYPE_POS);
+        $this->assertNotEquals($bpos->pos, 0);
+        $this->assertNotEquals($bpos->filename, "");
+        echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
+        $db->endSnapshot();
     }
 }
