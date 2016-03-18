@@ -222,6 +222,7 @@ public:
     void clearOwnerName();
     ushort_td recordLength();
     void stats(void* databuffer, uint_td buflen, bool estimate = true);
+    char* getCreateSql(char* retbuf, uint_td* size);
     void unlock(bookmark_td& bm);
     void unlock();
     char_td mode() const;

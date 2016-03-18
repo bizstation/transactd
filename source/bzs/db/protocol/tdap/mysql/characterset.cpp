@@ -158,6 +158,7 @@ unsigned int charsetIndex(const char* name)
 
 unsigned int charsetIndex(unsigned short codePage)
 {
+    if (codePage == 932) return CHARSET_CP932;
     for (int i = 1; i < MAX_CHAR_INFO; ++i)
     {
         if (charsetInfo[i].codePage == codePage)

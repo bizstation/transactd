@@ -420,7 +420,13 @@ public:
 
     inline void cmdConnect()
     {
-        if ((m_req.keyNum == LG_SUBOP_CONNECT) ||
+        if(m_req.keyNum == LG_SUBOP_ASSOCIATE)
+        {
+            clientID* cid = (clientID*)m_req.keybuf;
+            cid->con->addref();
+            setCon(cid->con);
+        }
+        else if ((m_req.keyNum == LG_SUBOP_CONNECT) ||
             (m_req.keyNum == LG_SUBOP_NEWCONNECT))
         {
             if (con())
@@ -462,7 +468,8 @@ public:
         {
             if (con())
                 con()->cleanup();
-        }
+        }else
+        	 m_preResult = STATUS_NOSUPPORT_OP;
             
         m_req.paramMask = P_MASK_KEYONLY;
     }

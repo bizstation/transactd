@@ -77,7 +77,6 @@ class DLLLIB dbdef : private nstable
     dbdef(nsdatabase* pbe, short defType);
     void create(const _TCHAR* uri);
     void autoMakeSchema(bool noUseNullkey);
-    void setDefType(short defType);
     bool testTablePtr(tabledef* td);
     tabledef* initReadAfter(short tableIndex, const tabledef* data, uint_td datalen);
     void* getBufferPtr(uint_td& size);
@@ -97,7 +96,7 @@ public:
     int version() const;
 
     inline short_td stat() const { return m_stat; }
-    short validateTableDef(short TableIndex);
+    short validateTableDef(short tableIndex);
     void updateTableDef(short tableIndex, bool forPsqlDdf = true);
     fielddef* insertField(short tableIndex, short insertIndex);
     void deleteField(short tableIndex, short deleteIndex);

@@ -134,7 +134,7 @@ public:
     char_td mode() const;
     bool autoSchemaUseNullkey() const;
     void setAutoSchemaUseNullkey(bool v);
-
+    database* createAssociate();
     virtual int defaultAutoIncSpace() const { return 0; };
     static database* create();
     /* For C++ direct only. don't use by wrapper class for COM or SWIG

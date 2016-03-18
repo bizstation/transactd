@@ -24,8 +24,12 @@
 #include <bzs/db/protocol/tdap/mysql/databaseSchema.h>
 #include <bzs/db/engine/mysql/errorMessage.h>
 
+
 /* implemnts in transactd.cpp */
 extern const char* get_trd_sys_var(int index);
+
+
+
 
 namespace bzs
 {
@@ -38,6 +42,57 @@ using namespace engine::mysql;
 namespace transactd
 {
 
+//----------------------------------------------------------------------
+class slaveStatus : public dummyProtocol
+{
+    connManager::records& m_records;
+    connection::record& getRec()
+    {
+        m_records.push_back(connection::record());
+        return m_records[m_records.size() - 1];
+    }
+public:
+    inline slaveStatus(THD *thd_arg, connManager::records& recs) : 
+        dummyProtocol(thd_arg), m_records(recs)
+    {
+        m_records.clear();   
+    }
+    bool store_longlong(longlong from, bool unsigned_flag)
+    {
+        connection::record& rec = getRec();
+        rec.type = 0;
+        rec.longValue = from; 
+        return false;
+    }
+    bool store_null()
+    {
+        connection::record& rec = getRec();
+        rec.type = 1;
+        strncpy(rec.value, "NULL", CON_REC_VALUE_SIZE); 
+        return false;
+    }
+#if (MYSQL_VERSION_ID < 50600 || defined(MARIADB_BASE_VERSION)) // MySQL 5.5 
+    bool store(const char *from, size_t length, CHARSET_INFO *cs)
+    {
+        connection::record& rec = getRec();
+        rec.type = 1;
+        if (length && from)
+            strncpy(rec.value, from, CON_REC_VALUE_SIZE); 
+        return false;
+    }
+#else
+    bool store(const char *from, size_t length, const CHARSET_INFO *cs)
+    {
+        connection::record& rec = getRec();
+        rec.type = 1;
+        if (length && from)
+            strncpy(rec.value, from, CON_REC_VALUE_SIZE); 
+        return false;
+    }
+#endif
+};
+
+//----------------------------------------------------------------------
 connManager::~connManager()
 {
 }
@@ -222,17 +277,17 @@ inline void appenDbList(connManager::records& recs, LEX_STRING* db_name)
     rec.name[64] = 0x00;
 }
 
-const connManager::records& connManager::getDefinedDatabaseList() const
+const connManager::records& connManager::definedDatabases() const
 {
     m_records.clear();
-    THD* thd = createThdForThread();
     try
     {
-        if (thd)
+        boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+        if (thd != NULL)
         {
-            cp_security_ctx(thd)->skip_grants();
+            cp_security_ctx(thd.get())->skip_grants();
             SQL_Strings files;
-            db_list(thd, &files);
+            db_list(thd.get(), &files);
 #if (defined(MARIADDB_10_0) || defined(MARIADDB_10_1))
             for (int i = 0; i < (int)files.elements(); ++i)
                 appenDbList(m_records, files.at(i));
@@ -242,13 +297,10 @@ const connManager::records& connManager::getDefinedDatabaseList() const
             while ((db_name = it++))
                 appenDbList(m_records, db_name);
 #endif
-            deleteThdForThread(thd);
         }
     }
     catch (bzs::rtl::exception& e)
     {
-        if (thd)
-            deleteThdForThread(thd);
         const int* code = getCode(e);
         if (code)
             m_stat = *code;
@@ -261,17 +313,12 @@ const connManager::records& connManager::getDefinedDatabaseList() const
     }
     catch (...)
     {
-        try
-        {
-            m_stat = 20001;
-            deleteThdForThread(thd);
-        }
-        catch(...){}
+        m_stat = 20001;
     }
     return m_records;
 }
 
-const connManager::records& connManager::schemaTableList(const char* dbname)
+const connManager::records& connManager::getTableList(const char* dbname, int type) const
 {
     try
     {    
@@ -282,16 +329,87 @@ const connManager::records& connManager::schemaTableList(const char* dbname)
             if (db)
             {
                 std::vector<std::string> tablelist;
-                schemaBuilder::listSchemaTable(db.get(), tablelist);
+                schemaBuilder::listTable(db.get(), tablelist, type);
                 for (int i = 0; i < (int)tablelist.size(); ++i)
                 {
                     m_records.push_back(connection::record());
                     connection::record& rec = m_records[m_records.size() - 1];
                     strncpy(rec.name, tablelist[i].c_str(), 64);
                     rec.name[64] = 0x00;
+                    rec.type = (short)type;
                 }
             }
         }
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        const int* code = getCode(e);
+        if (code)
+            m_stat = *code;
+        else
+        {
+            m_stat = 20000;
+            sql_print_error("%s", boost::diagnostic_information(e).c_str());
+        }
+        printWarningMessage(code, getMsg(e));
+    }
+    catch (...)
+    {
+        m_stat = 20001;
+    }
+    return m_records;
+}
+
+const connManager::records& connManager::definedTables(const char* dbname, int type) const
+{
+    return getTableList(dbname, type);
+}
+
+const connManager::records& connManager::schemaTables(const char* dbname) const
+{
+    return getTableList(dbname, TABLE_TYPE_TD_SCHEMA);
+}
+
+bool connManager::checkGlobalACL(THD* thd, ulong wantAccess) const
+{
+    const module* mod = reinterpret_cast<const module*>(m_me);
+    if (mod->isSkipGrants())
+        cp_security_ctx(thd)->skip_grants();
+    else
+        bzs::db::engine::mysql::setGrant(thd, mod->host(), mod->user(),  NULL);
+	bool ret = (cp_masterAccess(thd) & wantAccess) != 0;
+    if (!ret)
+        m_stat = STATUS_ACCESS_DENIED;
+    return ret;
+}
+
+int connManager::execSql(THD* thd, const char* sql) const
+{
+    thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
+    thd->clear_error();
+	int result = cp_query_command(thd, (char*)sql);
+    if (thd->is_error())
+        result = errorCode(thd->cp_get_sql_error());
+    cp_lex_clear(thd); // reset values for insert
+    return result;
+}
+
+const connManager::records& connManager::readSlaveStatus() const
+{
+    m_records.clear();
+    try
+    {
+        boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+        if (thd == NULL) 
+        {
+            m_stat = 20001;
+            return m_records;
+        }
+        if (!checkGlobalACL(thd.get(), SUPER_ACL | REPL_CLIENT_ACL))
+            return m_records;
+
+        slaveStatus ss(thd.get(), m_records);
+        execSql(thd.get(), "show slave status");
     }
     catch (bzs::rtl::exception& e)
     {
@@ -321,7 +439,12 @@ void connManager::doDisconnect(unsigned __int64 conid)
             dynamic_cast<igetDatabases*>(mod->m_commandExecuter.get());
         const databases& dbs = dbm->dbs();
         if (dbs.size())
-            mod->disconnect();
+        {
+            if (dbs[0]->checkAcl(SHUTDOWN_ACL))
+                mod->disconnect();
+            else
+                m_stat = STATUS_ACCESS_DENIED; 
+        }
     }
 }
 
@@ -344,12 +467,15 @@ void connManager::disconnect(unsigned __int64 conid)
 
 void connManager::doDisconnectAll()
 {
+    short stat = 0;
     for (size_t i = 0; i < modules.size(); i++)
     {
         const module* mod = dynamic_cast<module*>(modules[i]);
         if (mod && ((unsigned __int64)mod != m_me))
             doDisconnect((unsigned __int64)mod);
+        if (stat == 0) stat = m_stat;
     }
+    m_stat = stat;
 }
 
 void connManager::disconnectAll()

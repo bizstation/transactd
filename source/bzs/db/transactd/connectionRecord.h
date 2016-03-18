@@ -32,6 +32,81 @@ namespace transactd
 {
 namespace connection
 {
+
+/* Slave status row(field) index 
+record::type data type  
+   0 longlong to longValue
+   1 string   to value
+*/
+#define SLAVE_STATUS_IO_STATE                    0
+#define SLAVE_STATUS_MASTER_HOST                 1
+#define SLAVE_STATUS_MASTER_USER                 2
+#define SLAVE_STATUS_MASTER_PORT                 3
+#define SLAVE_STATUS_CONNECT_RETRY               4
+#define SLAVE_STATUS_MASTER_LOG_FILE             5 
+#define SLAVE_STATUS_READ_MASTER_LOG_POS         6
+#define SLAVE_STATUS_RELAY_LOG_FILE              7
+#define SLAVE_STATUS_RELAY_LOG_POS               8
+#define SLAVE_STATUS_RELAY_MASTER_LOG_FILE       9
+#define SLAVE_STATUS_SLAVE_IO_RUNNING            10
+#define SLAVE_STATUS_SLAVE_SQL_RUNNING           11
+#define SLAVE_STATUS_REPLICATE_DO_DB             12
+#define SLAVE_STATUS_REPLICATE_IGNORE_DB         13 
+#define SLAVE_STATUS_REPLICATE_DO_TABLE          14
+#define SLAVE_STATUS_REPLICATE_IGNORE_TABLE      15
+#define SLAVE_STATUS_REPLICATE_WILD_DO_TABLE     16
+#define SLAVE_STATUS_REPLICATE_WILD_IGNORE_TABLE 17
+#define SLAVE_STATUS_LAST_ERRNO                  18
+#define SLAVE_STATUS_LAST_ERROR                  19
+#define SLAVE_STATUS_SKIP_COUNER                 20
+#define SLAVE_STATUS_EXEC_MASTER_LOG_POS         21 
+#define SLAVE_STATUS_RELAY_LOG_SPACE             22
+#define SLAVE_STATUS_UNTIL_CONDITION             23
+#define SLAVE_STATUS_UNTIL_LOG_FILE              24
+#define SLAVE_STATUS_UNTIL_LOG_POS               25
+#define SLAVE_STATUS_MASTER_SSL_ALLOWED          26  
+#define SLAVE_STATUS_MASTER_SSL_CA_FILE          27
+#define SLAVE_STATUS_MASTER_SSL_CA_PATH          28
+#define SLAVE_STATUS_MASTER_SSL_CERT             29
+#define SLAVE_STATUS_MASTER_SSL_CIPHER           30 
+#define SLAVE_STATUS_MASTER_SSL_KEY              31
+#define SLAVE_STATUS_SECONDS_BEHIND_MASTER       32
+#define SLAVE_STATUS_MASTER_SSL_VERIFY_SERVER_CERT 33 
+#define SLAVE_STATUS_LAST_IO_ERRNO               34
+#define SLAVE_STATUS_LAST_IO_ERROR               35
+#define SLAVE_STATUS_LAST_SQL_ERRNO              36
+#define SLAVE_STATUS_LAST_SQL_ERROR              37
+#define SLAVE_STATUS_REPLICATE_IGNORE_SERVER_IDS 38
+#define SLAVE_STATUS_MASTER_SERVER_ID            39
+#define SLAVE_STATUS_DEFAULT_SIZE                40
+
+#ifdef MARIADB_BASE_VERSION
+#  define SLAVE_STATUS_MASTER_SSL_CRL            40
+#  define SLAVE_STATUS_MASTER_SSL_CRLPATH        41
+#  define SLAVE_STATUS_USING_GTID                42
+#  define SLAVE_STATUS_GTID_IO_POS               43
+#  define SLAVE_STATUS_SIZE                      44
+#else
+#  define SLAVE_STATUS_MASTER_UUID               40
+#  define SLAVE_STATUS_MASTER_INFO_FILE          41 
+#  define SLAVE_STATUS_SQL_DELAY                 42
+#  define SLAVE_STATUS_SQL_REMAINING_DELAY       43
+#  define SLAVE_STATUS_SQL_RUNNING_STATE         44 
+#  define SLAVE_STATUS_MASTER_RETRY_COUNT        45
+#  define SLAVE_STATUS_MASTER_BIND               46
+#  define SLAVE_STATUS_LAST_IO_ERROR_TIMESTAMP   47 
+#  define SLAVE_STATUS_LAST_SQL_ERROR_TIMESTAMP  48
+#  define SLAVE_STATUS_MASTER_SSL_CRL            49 
+#  define SLAVE_STATUS_MASTER_SSL_CRLPATH        50
+#  define SLAVE_STATUS_RETRIEVED_GTID_SET        51 
+#  define SLAVE_STATUS_EXECUTED_GTID_SET         52
+#  define SLAVE_STATUS_AUTO_POSITION             53
+#  define SLAVE_STATUS_SIZE                      54
+
+#endif
+
+#define CON_REC_VALUE_SIZE 67
+
 struct record
 {
     record() : conId(0), cid(0), dbid(0), trnType(0), status(0), readCount(0), 
@@ -39,22 +114,30 @@ struct record
     {
         name[0] = 0x00;
     }
-    __int64 conId;
     union
     {
-        unsigned int cid;
+        __int64 conId;                          // 8 byte
+        __int64 longValue;  
+    };
+    union
+    {
+        unsigned int cid;                   // 4 byte
         unsigned int value_id;
     };
-    unsigned short dbid;
-    short trnType;
-    union 
+    unsigned short dbid;                    // 2 byte
+    union
     {
-        char name[67];
-        char value[67];
+        short trnType;                      // 2 byte
+        short type;
+    };
+    union                                   // 67 byte
+    {
+        char name[CON_REC_VALUE_SIZE];
+        char value[CON_REC_VALUE_SIZE];
     };
     union
     {
-        char status;
+        char status;                        // 1 byte
         struct
         {
             char inTransaction : 1;
@@ -66,11 +149,19 @@ struct record
             char dummy : 2;
         };
     };
-    unsigned int readCount;
-    unsigned int updCount;
-    unsigned int delCount;
-    unsigned int insCount;
-};
+    unsigned int readCount;                 // 4 byte
+    unsigned int updCount;                  // 4 byte
+    unsigned int delCount;                  // 4 byte
+    unsigned int insCount;                  // 4 byte
+
+    #ifdef _UNICODE
+    _TCHAR* nameW(_TCHAR* buf, int size)
+    {
+        MultiByteToWideChar(CP_UTF8, 0, name, -1, buf, size);
+        return buf;
+    }
+    #endif
+};                                          // 32 + 68 = 100
 
 } // connection
 } // transactd

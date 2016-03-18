@@ -807,6 +807,12 @@ inline database_ptr createDatabaseObject()
     return p;
 }
 
+inline database_ptr createAssociateObject(database_ptr db)
+{
+    database_ptr p(db->createAssociate(), releaseDatabase);
+    return p;
+}
+
 template <class Database_Ptr>
 inline void disconnect(Database_Ptr db, const connectParams& connPrams)
 {
@@ -889,9 +895,8 @@ inline void connectOpen(Database_Ptr db, const connectParams& connPrams,
 template <class Database_Ptr> inline void dropDatabase(Database_Ptr db, const _TCHAR* uri=NULL)
 {
     db->drop(uri);
-    if (db->stat())
-        nstable::throwError(std::_tstring(_T("Drop database ")).c_str(),
-                            db->stat());
+    if (db->stat() && (db->stat() != ERROR_NO_DATABASE))
+        throwDbError(db, _T("Drop database : "), uri ? uri : _T(""));
 }
 
 template <class Database_Ptr>

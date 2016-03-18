@@ -20,6 +20,7 @@
 =================================================================*/
 #include "nsTable.h"
 #include <bzs/db/transactd/connectionRecord.h>
+#include <boost/shared_ptr.hpp>
 #include <vector>
 
 namespace bzs
@@ -32,6 +33,9 @@ namespace tdap
 {
 namespace client
 {
+
+
+extern const char* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE];
 
 class database;
 #pragma warning(disable : 4251)
@@ -48,19 +52,23 @@ private:
     __int64 m_params[2];
     database* m_db;
     std::_tstring m_uri;
+    btrVersion m_pluginVer;
     void allocBuffer();
     void writeRecordData(){};
     void onReadAfter(){};
     const records& getRecords();
     ~connMgr();
-
+    const connMgr::records& doDefinedTables(const char* dbname, int type);
 public:
     explicit connMgr(database* db);
 
     void connect(const _TCHAR* uri);
     void disconnect();
     const records& definedDatabases();
+    const records& definedTables(const char* dbname);
+    const records& definedViews(const char* dbname);
     const records& schemaTables(const char* dbname);
+    const records& slaveStatus();
     const records& sysvars();
     const records& connections();
     const records& databases(__int64 connid);
@@ -74,6 +82,19 @@ public:
     using nstable::release;
     static connMgr* create(database* db);
 };
+
+typedef boost::shared_ptr<connMgr> connMgr_ptr;
+void removeSystemDb(connMgr::records& recs);
+
+
+inline void releaseConnMgr(connMgr* p)
+{
+    if (p)
+    {
+        p->release();
+    }
+}
+
 
 #pragma warning(default : 4251)
 

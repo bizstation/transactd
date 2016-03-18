@@ -784,8 +784,6 @@ bool tabledef::operator==(const tabledef& r) const
             (keyCount == r.keyCount) &&
             (version == r.version) &&
             (charsetIndex == r.charsetIndex) &&
-            (m_nullfields == r.m_nullfields) &&
-            (m_nullbytes == r.m_nullbytes) &&
             (flags.all == r.flags.all) &&
             (primaryKeyNum == r.primaryKeyNum) &&
             (parentKeyNum == r.parentKeyNum) &&

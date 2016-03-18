@@ -105,10 +105,11 @@ struct dbdimple
     }
 };
 
-dbdef::dbdef(nsdatabase* pbe, short DefType) : nstable(pbe)
+dbdef::dbdef(nsdatabase* pbe, short defType) : nstable(pbe)
 {
     m_dimpl = new dbdimple();
-    m_dimpl->deftype = DefType;
+    m_dimpl->deftype = defType;
+    m_dimpl->noWriteMode = (m_dimpl->deftype == TYPE_SCHEMA_BDF_NOPRELOAD);
     m_keybuflen = 128;
     m_keybuf = &m_dimpl->keybuf[0];
     setShared();
@@ -118,11 +119,6 @@ dbdef::~dbdef()
 {
     delete m_dimpl;
     m_dimpl = NULL;
-}
-
-void dbdef::setDefType(short defType)
-{
-    m_dimpl->deftype = defType;
 }
 
 short dbdef::tableCount() const
@@ -236,10 +232,10 @@ bool dbdef::testTablePtr(tabledef* td)
     return true;
 }
 
-short dbdef::validateTableDef(short TableIndex)
+short dbdef::validateTableDef(short tableIndex)
 {
     m_stat = STATUS_SUCCESS;
-    tabledef* td = tableDefs(TableIndex);
+    tabledef* td = tableDefs(tableIndex);
     if (!testTablePtr(td)) return m_stat;
 
     td->optionFlags.bitA = false; // reset valiable type
@@ -247,7 +243,7 @@ short dbdef::validateTableDef(short TableIndex)
     for (short i = 0; i < td->fieldCount; ++i)
     {
         const fielddef& fd = td->fieldDefs[i];
-        short ret = fieldNumByName(TableIndex, fd.name());
+        short ret = fieldNumByName(tableIndex, fd.name());
         if ((ret != -1) && (ret != i))
         {
             m_stat = STATUS_DUPLICATE_FIELDNAME;
@@ -344,7 +340,7 @@ short dbdef::validateTableDef(short TableIndex)
     // Chack duplicate table name.
     for (short i = 1; i < m_dimpl->tableCount; i++)
     {
-        if ((tableDefs(i)) && (i != TableIndex))
+        if ((tableDefs(i)) && (i != tableIndex))
         {
             m_stat = 0;
             if (strcmp(tableDefs(i)->tableNameA(), td->tableNameA()) == 0)
@@ -359,21 +355,22 @@ short dbdef::validateTableDef(short TableIndex)
     return m_stat;
 }
 
-void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
+void dbdef::updateTableDef(short tableIndex, bool forPsqlDdf)
 {
-    if ((m_stat = validateTableDef(TableIndex)) != 0)
+    if ((m_stat = validateTableDef(tableIndex)) != 0)
         return;
 
-    tabledef* td = tableDefs(TableIndex);
+    tabledef* td = tableDefs(tableIndex);
     if (!testTablePtr(td)) return;
 
     if (m_dimpl->noWriteMode)
     {
-        m_stat = STATUS_ACCESS_DENIED;
+        if (m_dimpl->deftype != TYPE_SCHEMA_BDF_NOPRELOAD)
+            m_stat = STATUS_ACCESS_DENIED;
         return;
     }
     if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
-        saveDDF(TableIndex, 3, forPsqlDdf);
+        saveDDF(tableIndex, 3, forPsqlDdf);
     else
     {
         moveById(td->id);
@@ -389,21 +386,21 @@ void dbdef::updateTableDef(short TableIndex, bool forPsqlDdf)
             m_pdata = m_dimpl->bdf;
             m_buflen = m_dimpl->bdfLen;
             if (m_stat == STATUS_SUCCESS)
-                setDefaultImage(TableIndex, NULL, 0);
+                setDefaultImage(tableIndex, NULL, 0);
         }
     }
 }
 
-void dbdef::deleteTable(short TableIndex)
+void dbdef::deleteTable(short tableIndex)
 {
-    tabledef* td = tableDefs(TableIndex); 
+    tabledef* td = tableDefs(tableIndex);
     if (!testTablePtr(td)) return;
 
     m_stat = STATUS_SUCCESS;
     if (m_dimpl->noWriteMode == false)
     {
         if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
-            saveDDF(TableIndex, 4);
+            saveDDF(tableIndex, 4);
         else
         {
             moveById(td->id);
@@ -419,18 +416,18 @@ void dbdef::deleteTable(short TableIndex)
     }
     if (m_stat == STATUS_SUCCESS)
     {
-        setDefaultImage(TableIndex, NULL, 0);
+        setDefaultImage(tableIndex, NULL, 0);
         free(td);
-        m_dimpl->tableDefs[TableIndex] = NULL;
+        m_dimpl->tableDefs[tableIndex] = NULL;
     }
 }
 
-void dbdef::renumberFieldNum(short TableIndex, short Index, short op)
+void dbdef::renumberFieldNum(short tableIndex, short Index, short op)
 {
     int i, j;
     keydef* KeyDef;
 
-    tabledef* td = tableDefs(TableIndex);
+    tabledef* td = tableDefs(tableIndex);
     if (!testTablePtr(td)) return;
 
     for (i = 0; i < td->keyCount; i++)
@@ -454,11 +451,11 @@ void dbdef::renumberFieldNum(short TableIndex, short Index, short op)
     }
 }
 
-bool dbdef::isUsedField(short TableIndex, short DeleteIndex)
+bool dbdef::isUsedField(short tableIndex, short deleteIndex)
 {
     int i, j;
     keydef* KeyDef;
-    tabledef* td = tableDefs(TableIndex);
+    tabledef* td = tableDefs(tableIndex);
     if (!testTablePtr(td)) return false;
 
     for (i = 0; i < td->keyCount; i++)
@@ -466,60 +463,60 @@ bool dbdef::isUsedField(short TableIndex, short DeleteIndex)
         KeyDef = &(td->keyDefs[i]);
         for (j = 0; j < KeyDef->segmentCount; j++)
         {
-            if (KeyDef->segments[j].fieldNum == DeleteIndex)
+            if (KeyDef->segments[j].fieldNum == deleteIndex)
                 return true;
         }
     }
     return false;
 }
 
-void dbdef::deleteField(short TableIndex, short DeleteIndex)
+void dbdef::deleteField(short tableIndex, short deleteIndex)
 {
     m_stat = STATUS_SUCCESS;
-    if (isUsedField(TableIndex, DeleteIndex) == true)
+    if (isUsedField(tableIndex, deleteIndex) == true)
     {
         m_stat = STATUS_USE_KEYFIELD;
         return;
     }
-    renumberFieldNum(TableIndex, DeleteIndex, 4);
-    tabledef* td = tableDefs(TableIndex);
-    if ((DeleteIndex == td->fieldCount - 1) && (td->keyCount == 0))
+    renumberFieldNum(tableIndex, deleteIndex, 4);
+    tabledef* td = tableDefs(tableIndex);
+    if ((deleteIndex == td->fieldCount - 1) && (td->keyCount == 0))
     {
     }
     else
     {
-        memmove(&td->fieldDefs[DeleteIndex], &td->fieldDefs[DeleteIndex + 1],
+        memmove(&td->fieldDefs[deleteIndex], &td->fieldDefs[deleteIndex + 1],
                 td->size() + (char*)td -
-                    (char*)&(td->fieldDefs[DeleteIndex + 1]));
+                    (char*)&(td->fieldDefs[deleteIndex + 1]));
     }
     td->fieldCount--;
     td->setKeydefsPtr();
-    updateTableDef(TableIndex);
+    updateTableDef(tableIndex);
 }
 
-void dbdef::deleteKey(short TableIndex, short DeleteIndex)
+void dbdef::deleteKey(short tableIndex, short deleteIndex)
 {
     m_stat = STATUS_SUCCESS;
-    tabledef* td = tableDefs(TableIndex);
+    tabledef* td = tableDefs(tableIndex);
     if (!testTablePtr(td)) return ;
-    if (DeleteIndex != td->keyCount - 1)
+    if (deleteIndex != td->keyCount - 1)
     {
-        memmove(&td->keyDefs[DeleteIndex], &td->keyDefs[DeleteIndex + 1],
+        memmove(&td->keyDefs[deleteIndex], &td->keyDefs[deleteIndex + 1],
                 td->size() + (char*)td -
-                    (char*)&(td->keyDefs[DeleteIndex + 1]));
+                    (char*)&(td->keyDefs[deleteIndex + 1]));
     }
     td->keyCount--;
-    if ((td->primaryKeyNum == DeleteIndex) ||
+    if ((td->primaryKeyNum == deleteIndex) ||
         (td->primaryKeyNum > td->keyCount - 1))
         td->primaryKeyNum = -1;
-    if ((td->parentKeyNum == DeleteIndex) ||
+    if ((td->parentKeyNum == deleteIndex) ||
         (td->parentKeyNum > td->keyCount - 1))
         td->parentKeyNum = -1;
-    if ((td->replicaKeyNum == DeleteIndex) ||
+    if ((td->replicaKeyNum == deleteIndex) ||
         (td->replicaKeyNum > td->keyCount - 1))
         td->replicaKeyNum = -1;
 
-    updateTableDef(TableIndex);
+    updateTableDef(tableIndex);
 }
 
 void dbdef::insertTable(tabledef* td)
@@ -557,6 +554,7 @@ void dbdef::insertTable(tabledef* td)
     if ((td->ddfid == 0) && (m_dimpl->deftype == TYPE_SCHEMA_DDF))
         td->ddfid = getDDFNewTableIndex();
     memcpy(m_dimpl->tableDefs[td->id], td, sizeof(tabledef));
+    m_dimpl->tableDefs[td->id]->defaultImage = NULL;
     if (m_dimpl->noWriteMode)
     {
         if (m_dimpl->tableCount < td->id)
@@ -589,10 +587,12 @@ void dbdef::insertTable(tabledef* td)
     }
 }
 
-bool dbdef::resizeAt(short TableIndex, bool key)
+bool dbdef::resizeAt(short tableIndex, bool key)
 {
-    tabledef* def = m_dimpl->tableDefs[TableIndex];
-    if (!key && def->m_inUse != 0) return false;
+    tabledef* td = m_dimpl->tableDefs[tableIndex];
+    if (!testTablePtr(td)) return false;
+
+    if (!key && td->m_inUse != 0) return false;
 
     uint_td addsize;
 
@@ -601,64 +601,64 @@ bool dbdef::resizeAt(short TableIndex, bool key)
     else
         addsize = sizeof(fielddef);
 
-    uint_td size = def->size() + addsize;
- 
+    uint_td size = td->size() + addsize;
+
     void* p = malloc(size);
     if (p)
     {
-        memcpy(p, def, def->size());
-        free(def);
-        m_dimpl->tableDefs[TableIndex] = def = (tabledef*)p;
+        memcpy(p, td, td->size());
+        free(td);
+        m_dimpl->tableDefs[tableIndex] = td = (tabledef*)p;
         // init for memcpy
-        def->setFielddefsPtr();
-        def->setKeydefsPtr();
+        td->setFielddefsPtr();
+        td->setKeydefsPtr();
         return true;
     }
     m_stat = STATUS_CANT_ALLOC_MEMORY;
     return false;
 }
 
-keydef* dbdef::insertKey(short TableIndex, short InsertIndex)
+keydef* dbdef::insertKey(short tableIndex, short insertIndex)
 {
-    if (resizeAt(TableIndex, true) == false)
+    if (resizeAt(tableIndex, true) == false)
         return NULL;
 
-    tabledef* td = m_dimpl->tableDefs[TableIndex];
-    if (InsertIndex < tableDefs(TableIndex)->keyCount)
+    tabledef* td = m_dimpl->tableDefs[tableIndex];
+    if (insertIndex < tableDefs(tableIndex)->keyCount)
     {
-        memmove(&td->keyDefs[InsertIndex + 1],
-                &td->keyDefs[InsertIndex],
-                td->size() + (char*)td - (char*)&(td->keyDefs[InsertIndex]));
+        memmove(&td->keyDefs[insertIndex + 1],
+                &td->keyDefs[insertIndex],
+                td->size() + (char*)td - (char*)&(td->keyDefs[insertIndex]));
     }
     td->keyCount++;
-    memset(&(td->keyDefs[InsertIndex]), 0, sizeof(keydef));
+    memset(&(td->keyDefs[insertIndex]), 0, sizeof(keydef));
 
     if ((!m_dimpl->noWriteMode) && (m_dimpl->deftype != TYPE_SCHEMA_DDF))
-        updateTableDef(TableIndex);
+        updateTableDef(tableIndex);
     else
         td->calcReclordlen();
-    return &(td->keyDefs[InsertIndex]);
+    return &(td->keyDefs[insertIndex]);
 }
 
-fielddef* dbdef::insertField(short TableIndex, short InsertIndex)
+fielddef* dbdef::insertField(short tableIndex, short insertIndex)
 {
-    if (resizeAt(TableIndex, false) == false)
+    if (resizeAt(tableIndex, false) == false)
         return NULL;
 
-    tabledef* td = tableDefs(TableIndex);
-    if ((InsertIndex < td->fieldCount) || (td->keyCount > 0))
+    tabledef* td = tableDefs(tableIndex);
+    if ((insertIndex < td->fieldCount) || (td->keyCount > 0))
     {
 
-        memmove(&(td->fieldDefs[InsertIndex + 1]),
-                &(td->fieldDefs[InsertIndex]),
+        memmove(&(td->fieldDefs[insertIndex + 1]),
+                &(td->fieldDefs[insertIndex]),
                 td->size() + (char*)td -
-                    (char*)&(td->fieldDefs[InsertIndex]));
+                    (char*)&(td->fieldDefs[insertIndex]));
     }
     td->fieldCount++;
     td->setKeydefsPtr();
-    renumberFieldNum(TableIndex, InsertIndex, 2);
-    memset(&(td->fieldDefs[InsertIndex]), 0, sizeof(fielddef));
-    fielddef* fd = &(td->fieldDefs[InsertIndex]);
+    renumberFieldNum(tableIndex, insertIndex, 2);
+    memset(&(td->fieldDefs[insertIndex]), 0, sizeof(fielddef));
+    fielddef* fd = &(td->fieldDefs[insertIndex]);
     fd->setCharsetIndex(td->charsetIndex);
     fd->setSchemaCodePage(td->schemaCodePage);
     fd->setPadCharSettings(false, true);
@@ -809,6 +809,7 @@ tabledef* dbdef::tableDefs(int index)
 
 void dbdef::doOpen(const _TCHAR* uri, char_td mode, const _TCHAR* onerName)
 {
+    assert((m_dimpl->deftype != TYPE_SCHEMA_BDF_NOPRELOAD));
     m_dimpl->noWriteMode = true;
 
     if (m_dimpl->deftype == TYPE_SCHEMA_DDF)
@@ -988,9 +989,9 @@ void dbdef::renumberTable(short OldIndex, short NewIndex)
     }
 }
 
-short dbdef::fieldNumByViewNum(short TableIndex, short index)
+short dbdef::fieldNumByViewNum(short tableIndex, short index)
 {
-    tabledef* td = tableDefs(TableIndex);
+    tabledef* td = tableDefs(tableIndex);
     if (td)
     {
         for (short i = 0; i < td->fieldCount; i++)
@@ -1003,9 +1004,9 @@ short dbdef::fieldNumByViewNum(short TableIndex, short index)
     return -1;
 }
 
-short dbdef::findKeynumByFieldNum(short TableIndex, short index)
+short dbdef::findKeynumByFieldNum(short tableIndex, short index)
 {
-    tabledef* td = tableDefs(TableIndex);
+    tabledef* td = tableDefs(tableIndex);
     if (td)
         return td->findKeynumByFieldNum(index);
     return -1;
@@ -1027,9 +1028,9 @@ short dbdef::tableNumByName(const _TCHAR* tableName)
     return -1;
 }
 
-short dbdef::fieldNumByName(short TableIndex, const _TCHAR* name)
+short dbdef::fieldNumByName(short tableIndex, const _TCHAR* name)
 {
-    tabledef* td = tableDefs(TableIndex);
+    tabledef* td = tableDefs(tableIndex);
     if (td)
         return td->fieldNumByName(name);
     return -1;
@@ -1316,11 +1317,11 @@ void dbdef::createDDF(const _TCHAR* fullpath)
         id->release();
 }
 
-void dbdef::saveDDF(short TableIndex, short opration, bool forPsqlDdf)
+void dbdef::saveDDF(short tableIndex, short opration, bool forPsqlDdf)
 {
     ushort_td chOpen = 0;
     short Mode = 0;
-    ushort_td tbid = TableIndex;
+    ushort_td tbid = tableIndex;
     ushort_td fdid;
     ushort_td keyid;
     ushort_td segid;
@@ -1789,11 +1790,18 @@ void dbdef::reopen(char_td mode)
 
 void dbdef::synchronizeSeverSchema(short tableIndex)
 {
-    if (!isUseTransactd()) return;
+    if (isUseTransactd() == false)
+    {
+        m_stat = STATUS_NOSUPPORT_OP;
+        return ;
+    }
 
     tabledef* tdold = tableDefs(tableIndex);
-    if (!tdold) return;
-
+    if (!tdold)
+    {
+        m_stat = STATUS_INVALID_TABLE_IDX;
+        return;
+    }
     void* tmp = m_keybuf;
 
     _TCHAR dummyUrl[MAX_PATH] = _T("tdap://srv/db?dbfile=");

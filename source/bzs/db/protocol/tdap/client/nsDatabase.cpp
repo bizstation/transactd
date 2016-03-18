@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <boost/thread/mutex.hpp>
+#include <bzs/db/protocol/tdap/uri.h>
 
 #ifdef LINUX
 #include <dlfcn.h>
@@ -146,27 +147,31 @@ struct nsdbimpl
     short snapShotCount;
     nstable* tables[nsdatabase::maxtables];
     uchar_td cidPtr[16];
-    uchar_td* cid() { return cidPtr; }
     _TCHAR bdfPath[MAX_PATH];
     short tableCount;
     short lockWaitCount;
     short lockWaitTime;
-    bool uriMode;
-    bool uselongFilename;
-    bool localSharing;
-    bool ignoreTestPtr;
-    bool reconnected;
+    short enginIndex;
+    struct
+    {
+        bool uriMode : 1;
+        bool uselongFilename : 1;
+        bool localSharing : 1;
+        bool ignoreTestPtr : 1;
+        bool reconnected : 1;
+        bool associateMode : 1;
+    };
     nsdbimpl()
         : refCount(1), tranCount(0), id(0), snapShotCount(0), tableCount(0),
-          lockWaitCount(10), lockWaitTime(100), uriMode(false),
+          lockWaitCount(10), lockWaitTime(100), enginIndex(0), uriMode(false),
           uselongFilename(false), localSharing(false), ignoreTestPtr(false),
-          reconnected(false)
+          reconnected(false), associateMode(false)
     {
     }
 
     void setId(unsigned short id_)
     {
-        id = id_;
+        id = enginIndex = id_;
 
         // make client id
         memset(cidPtr, 0, 12);
@@ -184,6 +189,7 @@ struct nsdbimpl
             lockWaitTime = rt.lockWaitCount;
             uselongFilename = rt.uselongFilename;
             uriMode = rt.uriMode;
+            associateMode = rt.associateMode;
         }
         return *this;
     }
@@ -241,6 +247,11 @@ nsdatabase::nsdatabase() : m_stat(0)
     m_nsimpl->setId((unsigned short)index + 1);
 }
 
+void nsdatabase::setAssociate()
+{
+    m_nsimpl->associateMode = true;
+}
+
 int nsdatabase::refCount() const
 {
     return m_nsimpl->refCount;
@@ -262,8 +273,8 @@ nsdatabase::~nsdatabase()
     reset();
 
     boost::mutex::scoped_lock lck(g_mutex);
-    if (m_nsimpl->id != 0)
-        engins()[m_nsimpl->id - 1] = NULL;
+    if (m_nsimpl->enginIndex != 0)
+        engins()[m_nsimpl->enginIndex - 1] = NULL;
     delete m_nsimpl;
     m_nsimpl = 0x00;
 #ifdef _WIN32
@@ -593,6 +604,21 @@ void nsdatabase::reset()
         m_btrcallid = getBtrvEntryPoint();
 }
 
+bool nsdatabase::checkAssociate()
+{
+    if (m_nsimpl->associateMode)
+    {
+        m_stat = STATUS_NOSUPPORT_OP;
+        return false;
+    }
+    return true;
+}
+
+bool nsdatabase::isAssociate() const
+{
+    return m_nsimpl->associateMode;
+}
+
 void nsdatabase::resetSnapshot()
 {
     if (m_nsimpl->snapShotCount)
@@ -604,6 +630,8 @@ void nsdatabase::resetSnapshot()
 
 void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)
 {
+    if (!checkAssociate()) return;
+
     if (m_nsimpl->snapShotCount == 0)
     {
         uint_td datalen = (bias == CONSISTENT_READ_WITH_BINLOG_POS) ? sizeof(binlogPos) : 0;
@@ -637,6 +665,7 @@ void nsdatabase::endSnapshot()
 
 void nsdatabase::beginTrn(short BIAS)
 {
+    if (!checkAssociate()) return;
     if (m_nsimpl->tranCount == 0)
     {
         m_stat = m_btrcallid((ushort_td)(BIAS + TD_BEGIN_TRANSACTION), NULL,
@@ -737,6 +766,28 @@ void nsdatabase::getBtrVersion(btrVersions* Vers, uchar_td* posblk)
     }
 }
 
+char* nsdatabase::getCreateViewSql(const _TCHAR* name , char* retbuf, uint_td* size)
+{
+    if (isUseTransactd() == false)
+    {
+        m_stat = STATUS_NOSUPPORT_OP;
+        return retbuf;
+    }
+    _TCHAR tmp[MAX_PATH];
+    stripParam(uri(), tmp, MAX_PATH);
+    _tcscat(tmp, _T("?dbfile="));
+    _tcscat(tmp, name);
+
+    char Uri[MAX_PATH] = { 0x00 };
+    const char* p = nsdatabase::toServerUri(Uri, MAX_PATH, tmp, true);
+    keylen_td keylen = (keylen_td)strlen(p) + 1;
+    m_stat = m_btrcallid(TD_GET_SCHEMA, NULL, retbuf, size, (void*)p, keylen,
+                             SC_SUBOP_VIEW_BY_SQL, m_nsimpl->cidPtr);
+    if (m_stat != STATUS_SUCCESS)
+        retbuf[0] = 0x00;
+    return retbuf;
+}
+
 bool nsdatabase::useLongFilename()
 {
     return m_nsimpl->uselongFilename;
@@ -782,6 +833,8 @@ void nsdatabase::readDatabaseDirectory(_TCHAR* retbuf, uchar_td buflen)
 
 bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
 {
+    if (!checkAssociate()) return false;
+
     if (isTransactdUri(URI))
     {
         if (!setUseTransactd())
@@ -806,6 +859,8 @@ bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
 
 bool nsdatabase::disconnect(const _TCHAR* URI)
 {
+    if (!checkAssociate()) return false;
+
     if (!URI || (URI[0] == 0x00) || isTransactdUri(URI))
         if (!setUseTransactd())
             return false;
@@ -819,7 +874,6 @@ bool nsdatabase::disconnect(const _TCHAR* URI)
         return false;
     return true;
 }
-
 
 bool nsdatabase::disconnectForReconnectTest()
 {
