@@ -305,7 +305,7 @@ public:
  */
 module::module(const boost::asio::ip::tcp::endpoint& endpoint,
                iconnection* connection, bool tpool, int type)
-    : m_endpoint(endpoint), m_connection(connection), m_useThreadPool(tpool)
+    : m_endpoint(endpoint), m_connection(connection), m_useThreadPool(tpool), m_skipGrants(false)
 {
     if (type & PROTOCOL_TYPE_BTRV)
         m_commandExecuter.reset(new protocol::tdap::mysql::commandExecuter(this));
@@ -433,6 +433,13 @@ bool module::checkHost(const char* hostCheckname, /*out*/char* hostName, int siz
         if (strcmp(p , "127.0.0.1") == 0)
             p = "localhost";
         strcpy(hostName, p);
+    }
+    if (ret)
+    {
+        if (hostCheckname && hostCheckname[0])
+            setUser(hostCheckname);
+        if (hostName && hostName[0])
+            setHost(hostName);
     }
     return ret;
 }

@@ -185,6 +185,11 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
  */
 #define TD_ASBLOB_ENDROW                -125
 
+/** TD_GET_SCHEMA  sub operations
+ */
+#define SC_SUBOP_BY_SQL                 -1
+#define SC_SUBOP_VIEW_BY_SQL            -2
+
 /** TD_GET_STASTISTICS sub operations
  */
 #define TD_STSTCS_READ                  0
@@ -193,6 +198,10 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_STSTCS_DATABASE_LIST         3
 #define TD_STSTCS_SYSTEM_VARIABLES      4
 #define TD_STSTCS_SCHEMA_TABLE_LIST     5
+#define TD_STSTCS_TABLE_LIST            6
+#define TD_STSTCS_VIEW_LIST             7
+#define TD_STSTCS_SLAVE_STATUS          8
+
 /** connect sub operation
  */
 
@@ -201,6 +210,14 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define LG_SUBOP_NEWCONNECT             3
 #define LG_SUBOP_RECONNECT              4 
 #define LG_SUBOP_DISCONNECT_EX          5 //for reconnect test
+#define LG_SUBOP_ASSOCIATE              6 
+
+/** TD_STSTCS_TABLE_LIST type list
+*/
+#define TABLE_TYPE_NORMAL_TABLE         1
+#define TABLE_TYPE_VIEW                 2
+#define TABLE_TYPE_TD_SCHEMA            4
+
 
 /** TIMESTAMP_MODE
 */
@@ -478,6 +495,8 @@ inline bool canRecoverNetError(short code)
 #define TRANSACTD_SCHEMANAME            _T("transactd_schema")
 #define TYPE_SCHEMA_BDF                 0
 #define TYPE_SCHEMA_DDF                 1
+#define TYPE_SCHEMA_BDF_NOPRELOAD       2
+
 
 #define FILTER_CURRENT_TYPE_NOTINC      0
 #define FILTER_CURRENT_TYPE_INC         1

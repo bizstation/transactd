@@ -146,11 +146,6 @@ database* dbManager::useDataBase(int id) const
 database* dbManager::createDatabase(const char* dbname, short cid) const
 {
     database* db = new database(dbname, cid);
-    if (m_authChecked)
-    {
-        if (m_host != "")
-            db->setGrant(m_host.c_str(), m_user.c_str());
-    }
     return db;
 }
 

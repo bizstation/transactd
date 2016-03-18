@@ -56,8 +56,10 @@ public:
     tabledef* getTabledef(engine::mysql::table* src, int id, bool nouseNullkey, uchar* rec, size_t size);
     tabledef* getTabledef(engine::mysql::database* db, const char* tablename, uchar* rec, size_t size);
     short execute(engine::mysql::database* db, engine::mysql::table* mtb, bool nouseNullkey);
-    static void listSchemaTable(engine::mysql::database* db, std::vector<std::string>& shcemaNames);
+    static void listTable(engine::mysql::database* db, std::vector<std::string>& tables, int type);
 };
+
+
 
 } // namespace mysql
 } // namespace protocol

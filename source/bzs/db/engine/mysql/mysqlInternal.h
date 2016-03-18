@@ -410,7 +410,10 @@ inline Security_context* cp_security_ctx(THD* thd)
 {
 	return thd->security_context();
 }
-
+inline ulong cp_masterAccess(THD* thd)
+{
+	return thd->security_context()->master_access();
+}
 inline int cp_record_count(handler* file, ha_rows* rows)
 {
 	return file->ha_records(rows);
@@ -472,6 +475,16 @@ inline void cp_lex_clear(THD* thd)
     thd->lex->reset();
 }
 
+inline TABLE_SHARE* cp_get_cached_table_share(THD* thd, const char *db, const char *name)
+{
+	return get_cached_table_share(thd, db, name);
+}
+
+inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+	HA_CREATE_INFO *create_info_arg, int with_db_name)
+{
+	return store_create_info(thd, table_list, packet, create_info_arg, with_db_name!=0);
+}
 
 #else //Not MySQL 5.7
 #define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
@@ -505,7 +518,10 @@ inline Security_context* cp_security_ctx(THD* thd)
 {
 	return thd->security_ctx;
 }
-
+inline ulong cp_masterAccess(THD* thd)
+{
+	return thd->security_ctx->master_access;
+}
 inline int cp_record_count(handler* file, ha_rows* rows)
 {
 	*rows = file->records();
@@ -564,7 +580,49 @@ inline void cp_lex_clear(THD* thd)
     thd->lex->many_values.empty();
 }
 
+#if defined(MARIADDB_10_1) ||  defined(MARIADDB_10_0)
+
+#define NO_LOCK_OPEN
+inline TABLE_SHARE* cp_get_cached_table_share(THD* thd, const char *db, const char *name)
+{
+	return tdc_acquire_share(thd, db, name, GTS_VIEW |GTS_TABLE );
+}
+
+    #ifdef MARIADDB_10_1
+    inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+                          void *create_info_arg, int with_db_name) 
+    {
+        return show_create_table(thd, table_list,  packet, 
+                (Table_specification_st*)create_info_arg, (enum_with_db_name) with_db_name);
+    }
+    inline void cp_tdc_release_share(TABLE_SHARE* s)
+    {
+        tdc_release_share(s);
+    }
+    #else //Mariadb 10.0
+    inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+                          HA_CREATE_INFO* create_info_arg, int with_db_name)
+    {
+        return store_create_info(thd, table_list, packet, create_info_arg, with_db_name!=0, FALSE);
+    }
+    inline void cp_tdc_release_share(TABLE_SHARE* s)
+    {
+        tdc_unlock_share(s);
+    }
+    #endif
+#else
+inline TABLE_SHARE* cp_get_cached_table_share(THD* /*thd*/, const char *db, const char *name)
+{
+	return get_cached_table_share(db, name);
+}
+inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+                          HA_CREATE_INFO *create_info_arg, int with_db_name)
+{
+    return store_create_info(thd, table_list, packet, create_info_arg, with_db_name!=0);
+}
 #endif
+
+#endif // Not MySQL 5.7
 
 /* find_files is static function in maridb. 
    make_db_list function is not static, but it is not list in sql_show.h.  
@@ -636,40 +694,8 @@ public:
     }
 };
 
-
-// REPL_POS_TYPE
-#include <bzs/env/compiler.h>
-pragma_pack1;
-#define BINLOGNAME_SIZE 119
-#define GTID_SIZE       64
-
-struct binlogPos
-{
-    my_off_t pos;
-    char type;
-    char filename[BINLOGNAME_SIZE];
-    char gtid[GTID_SIZE];
-};
-pragma_pop;
-#define REPL_POSTYPE_MARIA_GTID         1  // see tdapapi.h
-#define REPL_POSTYPE_POS                2  // see tdapapi.h
-
-
-#if (MYSQL_VERSION_ID > 100000)
-#  define USE_BINLOG_GTID  1  // like 0-1-50
-#elif (!defined(_WIN32) || MYSQL_VERSION_ID > 50700 || MYSQL_VERSION_ID < 50600) // Linux or MySQL 5.5 5.7
-#  define USE_BINLOG_VAR   1  
-#  if (!defined(MARIADB_BASE_VERSION) &&  MYSQL_VERSION_ID > 50600)
-#    include "sql/binlog.h"
-#  endif
-
-#else // MySQL 5.6  on windows 
-   // On windows MySQL 5.6 can not access mysql_bin_log variable
-#  define NOTUSE_BINLOG_VAR   1  
-
-#if (MYSQL_VERSION_ID > 50700)
+#if (MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION)
 #  define Protocol_mysql Protocol
-#  include "sql/rpl_master.h"
 #  define CP_PROTOCOL PROTOCOL_PLUGIN
 #else
 #  define Protocol_mysql Protocol
@@ -680,7 +706,7 @@ class dummyProtocol : public Protocol_mysql
 {
 	THD* m_thd;
 public:
-#if (MYSQL_VERSION_ID > 50700)
+#if (MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION)
 	inline dummyProtocol(THD *thd_arg) : Protocol_mysql()
 	{
 		m_thd = thd_arg;
@@ -698,20 +724,20 @@ public:
     virtual bool write(){return false;};
     virtual void prepare_for_resend(){}
     virtual bool store_null(){return false;}
-    virtual bool store_tiny(longlong from){return false;}
-    virtual bool store_short(longlong from){return false;}
-    virtual bool store_long(longlong from){return false;}
-    virtual bool store_longlong(longlong from, bool unsigned_flag){return false;}
+    virtual bool store_tiny(longlong from){return store_longlong(from, false);}
+    virtual bool store_short(longlong from){return store_longlong(from, false);}
+    virtual bool store_long(longlong from){return store_longlong(from, false);}
+    //virtual bool store_longlong(longlong from, bool unsigned_flag){return false;}
     virtual bool store_decimal(const my_decimal *){return false;}
-    virtual bool store(const char *from, size_t length, 
-                     const CHARSET_INFO *fromcs,
-                     const CHARSET_INFO *tocs){return false;}
     virtual bool store(float from, uint32 decimals, String *buffer){return false;}
     virtual bool store(double from, uint32 decimals, String *buffer){return false;}
     virtual bool store(MYSQL_TIME *time, uint precision){return false;}
     virtual bool store_date(MYSQL_TIME *time){return false;}
     virtual bool store_time(MYSQL_TIME *time, uint precision){return false;}
     virtual bool store(Field *field){return false;}
+    virtual bool store(const char *from, size_t length, const CHARSET_INFO *fromcs,
+                     const CHARSET_INFO* /*tocs*/){return false;}
+
     virtual bool send_out_parameters(List<Item_param> *sp_params){return false;}
 	virtual Protocol::enum_protocol_type type(void){ return CP_PROTOCOL; };
 #ifdef MARIADB_BASE_VERSION      //Mariadb 5.5
@@ -748,6 +774,42 @@ public:
 #endif
 };
 
+
+// REPL_POS_TYPE
+#include <bzs/env/compiler.h>
+pragma_pack1;
+#define BINLOGNAME_SIZE 119
+#define GTID_SIZE       64
+
+struct binlogPos
+{
+    my_off_t pos;
+    char type;
+    char filename[BINLOGNAME_SIZE];
+    char gtid[GTID_SIZE];
+};
+pragma_pop;
+#define REPL_POSTYPE_MARIA_GTID         1  // see tdapapi.h
+#define REPL_POSTYPE_POS                2  // see tdapapi.h
+
+
+#if (MYSQL_VERSION_ID > 100000)
+#  define USE_BINLOG_GTID  1  // like 0-1-50
+#elif (!defined(_WIN32) || MYSQL_VERSION_ID > 50700 || MYSQL_VERSION_ID < 50600) // Linux or MySQL 5.5 5.7
+#  define USE_BINLOG_VAR   1  
+#  if (!defined(MARIADB_BASE_VERSION) &&  MYSQL_VERSION_ID > 50600)
+#    include "sql/binlog.h"
+#  endif
+
+#else // MySQL 5.6  on windows 
+   // On windows MySQL 5.6 can not access mysql_bin_log variable
+#  define NOTUSE_BINLOG_VAR   1  
+
+#if (MYSQL_VERSION_ID > 50700)
+#  include "sql/rpl_master.h"
+#endif 
+
+
 class masterStatus : public dummyProtocol
 {
     binlogPos* m_bpos;
@@ -762,7 +824,7 @@ public:
         return false;
     }
 
-#if (MYSQL_VERSION_ID < 50600 || defined(MARIADB_BASE_VERSION)) // MySQL 5.5 
+#if (MYSQL_VERSION_ID < 50600 || defined(MARIADB_BASE_VERSION)) // mariadb 5.5 
     bool store(const char *from, size_t length, CHARSET_INFO *cs)
     {
         if (!m_writed)
@@ -773,8 +835,7 @@ public:
         return false;
     }
 #else
-    bool store(const char *from, size_t length,
-                     const CHARSET_INFO *cs)
+    bool store(const char *from, size_t length, const CHARSET_INFO *cs)
     {
         if (!m_writed)
         {

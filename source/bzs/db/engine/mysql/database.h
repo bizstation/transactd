@@ -103,6 +103,18 @@ struct rowLockMode
     bool read : 1;
 };
 
+struct sec_db
+{
+    std::string db;
+    Security_context security_ctx;
+    ulong privilege;
+    sec_db(const std::string& dbname) : 
+        db(dbname), privilege(0xFFFF){}
+};
+
+bool setGrant(THD* thd, const char* host, const char* user,  const char* db);
+
+
 class database : private boost::noncopyable
 {
     friend class table;
@@ -122,24 +134,29 @@ private:
     short m_trnType;
     short m_cid;
     enum_tx_isolation m_iso;
+    std::vector<sec_db> m_securityCtxs;
+    Security_context* m_backup_sctx;
    
     TABLE* doOpenTable(const std::string& name, short mode,
-                                const char* ownerName);
+                                const char* ownerName, std::string& dbname);
     void unUseTable(table* tb);
     size_t getNomalOpenTables(tableList& tables);
     void prebuildIsoratinMode();
     void prebuildExclusieLockMode(table* tb);
     void prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* lck) ;
     void changeIntentionLock(table* tb, thr_lock_type lock_type);
-    void checkACL(enum_sql_command cmd);
     void releaseTable(size_t index);
     void useAllTables();
+    size_t findSecurityCtxs(const std::string& dbname);
+    void addDbName(const std::string& dbname);
+    void restoreSctx();
+    void changeSctx(size_t index);
 public:
-    
-
     database(const char* name, short cid);
+
     ~database();
-    bool setGrant(const char* host, const char* user);
+
+    bool setGrant(const char* host, const char* user, const char* dbname);
 
     unsigned char* getUserSha1Passwd(const char* host, const char* user,
         unsigned char* buf);
@@ -169,7 +186,7 @@ public:
     bool beginSnapshot(enum_tx_isolation iso, struct binlogPos* bpos);
     bool endSnapshot();
     table* openTable(const std::string& name, short mode,
-                     const char* ownerName);
+                     const char* ownerName, std::string dbname);
     table* useTable(int index, enum_sql_command cmd, rowLockMode* lck);
     bool beginTrn(short type, enum_tx_isolation iso);
     bool commitTrn();
@@ -193,6 +210,11 @@ public:
     inline bool noUserTransaction() const
     {
         return ((m_inSnapshot + m_inTransaction) == 0);
+    }
+
+    inline bool checkAcl(ulong wantAccess) const 
+    {
+        return (m_privilege & wantAccess) != 0; 
     }
 
     short aclReload();
@@ -261,7 +283,7 @@ class table : private boost::noncopyable
     TABLE* m_table;
 
     std::string m_name;
-
+    std::string m_dbname;
     short m_mode;
     unsigned short m_nisNullFields;
     int m_id;
@@ -285,6 +307,7 @@ class table : private boost::noncopyable
     unsigned int m_updCount;
     unsigned int m_delCount;
     unsigned int m_insCount;
+    ulong m_privilege;
     char m_keyNum;
     unsigned char m_nullBytesCl;
     struct
@@ -377,6 +400,10 @@ public:
     std::vector<IPrepare*> preparedStatements;
 
     ~table();
+
+    inline void checkACL(enum_sql_command cmd);
+
+    inline ulong* privilegePtr() {return &m_privilege;}
 
     inline void setBlobBuffer(IblobBuffer* blobBuffer)
     {
@@ -573,36 +600,11 @@ public:
     }
     unsigned short fieldDataLen(int fieldNum) const;
 
-    inline unsigned short fieldLen(int fieldNum) const
-    {
-        return m_table->field[fieldNum]->pack_length();
-    }
-
     inline unsigned short filedVarLenBytes(int fieldNum) const
     {
         return var_bytes_if(m_table->field[fieldNum]);
     }
-
-    inline char* fieldPos(int fieldNum) const
-    {
-        return (char*)m_table->field[fieldNum]->ptr;
-    }
-
-    inline enum enum_field_types fieldType(int fieldNum) const
-    {
-        return m_table->field[fieldNum]->type();
-    }
-
-    inline enum enum_field_types fieldRealType(int fieldNum) const
-    {
-        return m_table->field[fieldNum]->real_type();
-    }
-
-    inline unsigned int fieldFlags(int fieldNum) const
-    {
-        return m_table->field[fieldNum]->flags;
-    }
-    
+        
     inline bool isLegacyTimeFormat(int fieldNum) const
     {
         return m_table->field[fieldNum]->key_type() != HA_KEYTYPE_BINARY;
@@ -613,16 +615,6 @@ public:
     inline bool isMysqlNull() const { return m_mysqlNull; }
 
     inline unsigned int nisFields() const { return m_nisNullFields; }
-
-    inline const char* fieldName(int fieldNum) const
-    {
-        return m_table->s->field[fieldNum]->field_name;
-    }
-
-    inline const CHARSET_INFO& fieldCharset(int fieldNum) const
-    {
-        return *m_table->s->field[fieldNum]->charset();
-    }
 
     /* number of key. */
     inline unsigned short keys() const { return m_table->s->keys; }
@@ -790,6 +782,8 @@ public:
     inline unsigned int insCount() const { return m_insCount; }
 
     inline void setTimestampAlways(bool v) { m_timestampAlways = v;}
+
+    void getCreateSql(String* s);
 };
 
 class fieldBitmap

@@ -114,6 +114,21 @@ inline const _TCHAR* port(const _TCHAR* uri, _TCHAR* buf, size_t size)
     return buf;
 }
 
+inline const _TCHAR* connectName(const _TCHAR* uri, _TCHAR* buf, size_t size)
+{
+    buf[0] = 0x00;
+    const _TCHAR* st = _tcsstr(uri, _T("://"));
+    if (st)
+    {
+        st = _tcsstr(st + 3, _T("/"));
+        _tcsncpy_s(buf, size, uri, ++st - uri);
+        buf[st - uri] = 0x00;
+
+    }
+    return buf;
+}
+
+
 inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf, size_t size)
 {
     buf[0] = 0x00;
@@ -130,6 +145,8 @@ inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf, size_t size)
             {
                 _tcsncpy_s(buf, size, st, en - st);
                 buf[en - st] = 0x00;
+                int n = (int)(en - st -1);
+                if (n >= 0 && buf[n] == '/') buf[n] = 0x00;
             }
         }
     }
@@ -236,6 +253,23 @@ inline const _TCHAR* stripAuth(const _TCHAR* uri, _TCHAR* buf, size_t size)
             }
         }
     }
+    return buf;
+}
+
+inline const _TCHAR* appendAuth(const _TCHAR* uri, const _TCHAR* user, const _TCHAR* passwd,
+                                    _TCHAR* buf, size_t size)
+{
+    memset(buf, 0, size);
+    if (_tcslen(uri) + _tcslen(user) + _tcslen(passwd) + _tcslen(_T("@&pwd=")) > size -1)
+        return buf;
+
+    const  _TCHAR* st = _tcsstr(uri, _T("://"));
+    _tcsncpy_s(buf, size, uri, st + 3 - uri);
+    _tcscat_s(buf, size, user);
+    _tcscat_s(buf, size, _T("@"));
+    _tcscat_s(buf, size, st+3);
+    _tcscat_s(buf, size, _T("&pwd="));
+    _tcscat_s(buf, size, passwd);
     return buf;
 }
 

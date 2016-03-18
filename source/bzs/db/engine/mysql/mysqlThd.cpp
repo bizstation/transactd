@@ -192,8 +192,12 @@ THD* createThdForThread()
 
 void deleteThdForThread(THD* thd)
 {
-    cp_restore_globals(thd);
-	cp_thd_release_resources(thd);
-	cp_dec_dbcount(thd);
-    releaseTHD(thd);
+    try
+    {
+        cp_restore_globals(thd);
+	    cp_thd_release_resources(thd);
+	    cp_dec_dbcount(thd);
+        releaseTHD(thd);
+    }
+    catch(...) {};
 }
