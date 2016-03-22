@@ -34,6 +34,7 @@ namespace mysql
 
 #define STATUS_ALREADY_INSNAPSHOT       204
 #define STATUS_ALREADY_INTRANSACTION    205
+#define STATUS_ALREADY_INEXCLUSIVE      206
 
 class smartDbsReopen
 {
@@ -52,12 +53,14 @@ public:
                     THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INSNAPSHOT, "Allready in snapshot.");
                 else if (m_dbs[i]->inTransaction())
                     THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Allready in transaction.");
+                else if(m_dbs[i]->usingExclusveMode())
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INEXCLUSIVE, "Allready in exclusive mode.");
                 m_dbs[i]->use();
                 m_dbs[i]->unUseTables(false);
                 m_dbs[i]->closeForReopen();
             }
         }
-        attachThd(m_thd);
+        //attachThd(m_thd);
     }
 
     ~smartDbsReopen()
@@ -80,12 +83,50 @@ public:
 std::string smartDbsReopen::removeName = "";
 
 
-dbManager::dbManager() : m_autoHandle(0), m_authChecked(false)
+bool setGrant(THD* thd, const char* host, const char* user,  const char* db)
+{
+    // sctx->master_access and sctx->db_access
+    return (acl_getroot(cp_security_ctx(thd), cp_strdup(user, MYF(0)),
+		cp_strdup(host, MYF(0)), cp_strdup(host, MYF(0)), (char*)db)) == false;
+}
+
+bool copyGrant(THD* thd, THD* thdSrc, const char* db)
+{
+    Security_context* sctx = cp_security_ctx(thdSrc);
+	if (sctx->cp_master_accsess() == (ulong)~NO_ACCESS)
+    {
+        cp_security_ctx(thd)->skip_grants();
+        return true;
+    }
+	return setGrant(thd, sctx->cp_priv_host(), sctx->cp_priv_user(), db);
+}
+
+void setDbName(THD* thd, const std::string& name)
+{
+	cp_set_db(thd, name.c_str());
+}
+
+dbManager::dbManager(netsvc::server::IAppModule* mod) : m_autoHandle(0), m_thd(NULL),
+       m_mod(mod), m_authChecked(false)
 {
 }
 
 dbManager::~dbManager()
 {
+    if (m_thd)
+        deleteThdForThread(m_thd);
+}
+
+THD* dbManager::getThd()
+{
+    if (!m_thd)
+    {
+        m_thd = createThdForThread();
+        
+    }
+    else
+       attachThd(m_thd);
+    return m_thd;
 }
 
 bool dbManager::isShutDown() const
@@ -220,6 +261,7 @@ int dbManager::addHandle(int dbid, int tableid, int assignid)
     return assignid;
 }
 
+/*
 int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
 {
     smartDbsReopen reopen(thd, m_dbs);
@@ -230,22 +272,52 @@ int dbManager::ddl_execSql(THD* thd, const std::string& sql_stmt)
         result = errorCode(thd->cp_get_sql_error());
     cp_lex_clear(thd); // reset values for insert
     return result;
+}*/
+
+int dbManager::ddl_execSql(database* db, const std::string& sql_stmt)
+{
+    THD* thd = getThd();
+    int result = 0;
+    if (db)
+    {
+        copyGrant(m_thd, db->thd(), db->name().c_str());
+        setDbName(m_thd, db->name());
+    }
+    else
+    {
+        if (m_mod->isSkipGrants())
+            cp_security_ctx(m_thd)->skip_grants();
+        else
+            setGrant(m_thd, m_mod->host(), m_mod->user(), "");
+        setDbName(m_thd, std::string());
+    }
+    
+    thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
+    thd->clear_error();
+	cp_query_command(thd, (char*)sql_stmt.c_str());
+    if (thd->is_error())
+        result = errorCode(thd->cp_get_sql_error());
+    cp_lex_clear(thd); // reset values for insert
+    if (db)
+        db->use();
+    return result;
 }
 
-int dbManager::ddl_createDataBase(THD* thd, const std::string& dbname)
+int dbManager::ddl_createDataBase(/*THD* thd,*/ const std::string& dbname)
 {
     std::string cmd = "create database `" + dbname + "`";
-    return ddl_execSql(thd, cmd);
+    return ddl_execSql(NULL, cmd);
 }
 
-int dbManager::ddl_dropDataBase(THD* thd, const std::string& dbname,
+int dbManager::ddl_dropDataBase(/*THD* thd,*/ const std::string& dbname,
                                 const std::string& dbSqlname, short cid)
 {
     std::string cmd = "drop database `" + dbSqlname + "`";
-    smartDbsReopen::removeName = dbname;
-    int ret = ddl_execSql(thd, cmd);
-    smartDbsReopen::removeName = "";
-    boost::mutex::scoped_lock lck(m_mutex);
+    //smartDbsReopen reopen(db->thd(), m_dbs);
+    //smartDbsReopen::removeName = dbname;
+    int ret = ddl_execSql(NULL, cmd);
+    //smartDbsReopen::removeName = "";
+    /*boost::mutex::scoped_lock lck(m_mutex);
 	if (ret == 0)
 	{
 		int index = -1;
@@ -264,10 +336,11 @@ int dbManager::ddl_dropDataBase(THD* thd, const std::string& dbname,
 			if (m_handles[i].db == index)
 				m_handles.erase(m_handles.begin() + i);
 		}
-	}
+	}*/
     return ret;
 }
 
+/*
 int dbManager::ddl_useDataBase(THD* thd, const std::string& dbSqlname)
 {
     std::string cmd = "use `" + dbSqlname + "`";
@@ -285,26 +358,43 @@ int dbManager::closeCacheTable(database* db, const std::string& tbname)
     if (close_cached_tables(db->thd(), &tables, true, 50000000L))
         return HA_ERR_LOCK_WAIT_TIMEOUT;
     return 0;
+}*/
+
+int dbManager::ddl_createTable(database* db, const char* cmd)
+{
+    return ddl_execSql(db, cmd);
 }
 
 int dbManager::ddl_dropTable(database* db, const std::string& tbname,
                              const std::string& dbSqlname,
                              const std::string& tbSqlname)
 {
-    db->closeTable(tbname.c_str(), true);
-    int ret = closeCacheTable(db, tbname);
-    if (ret)
-        return ret;
-    db->thd()->variables.lock_wait_timeout = 0;
+    //db->closeTable(tbname.c_str(), true);
+    //int ret = closeCacheTable(db, tbname);
+    //if (ret)
+    //    return ret;
+    //db->thd()->variables.lock_wait_timeout = 0;
+    smartDbsReopen reopen(db->thd(), m_dbs);
     std::string cmd = "drop table `" + dbSqlname + "`.`" + tbSqlname + "`";
-    return ddl_execSql(db->thd(), cmd);
+    return ddl_execSql(db, cmd);
 }
 
 int dbManager::ddl_addIndex(database* db, const std::string& tbname,
                         const std::string& cmd)
 {
     std::string c = "ALTER TABLE `" + db->name() + "`." + cmd;
-    return ddl_execSql(db->thd(), c);
+    smartDbsReopen reopen(db->thd(), m_dbs);
+    return ddl_execSql(db, c);
+}
+
+/** Key name of multi byte charctord is not supported. Use only ascii.
+ */
+int dbManager::ddl_dropIndex(database* db, const std::string& tbname, const char* keyname)
+{
+    std::string s = "drop index `" + std::string(keyname) + "` on `" + db->name() +
+                    "`.`" + tbname + "`";
+    smartDbsReopen reopen(db->thd(), m_dbs);
+    return ddl_execSql(db, s.c_str());
 }
 
 int dbManager::ddl_renameTable(database* db, const std::string& oldName,
@@ -312,14 +402,15 @@ int dbManager::ddl_renameTable(database* db, const std::string& oldName,
                                const std::string& oldSqlName,
                                const std::string& newSqlName)
 {
-    db->closeTable(oldName.c_str(), true);
-    int ret = closeCacheTable(db, oldName);
-    if (ret)
-        return ret;
+    //db->closeTable(oldName.c_str(), true);
+    //int ret = closeCacheTable(db, oldName);
+    //if (ret)
+    //    return ret;
 
     std::string cmd = "rename table `" + dbSqlName + "`.`" + oldSqlName +
                       "` to `" + dbSqlName + "`.`" + newSqlName + "`";
-    return ddl_execSql(db->thd(), cmd);
+    smartDbsReopen reopen(db->thd(), m_dbs);
+    return ddl_execSql(db, cmd);
 }
 
 int dbManager::ddl_replaceTable(database* db, const std::string& name1,
@@ -328,8 +419,8 @@ int dbManager::ddl_replaceTable(database* db, const std::string& name1,
                                 const std::string& nameSql1,
                                 const std::string& nameSql2)
 { // rename name1 to name2.
-    db->closeTable(name1.c_str(), true);
-    db->closeTable(name2.c_str(), true);
+    //db->closeTable(name1.c_str(), true);
+    //db->closeTable(name2.c_str(), true);
     char nameSql3[255];
 
     time_t timer_ = time(NULL);
@@ -338,23 +429,33 @@ int dbManager::ddl_replaceTable(database* db, const std::string& name1,
             t->tm_year + 1900, t->tm_mon + 1, t->tm_mday, t->tm_hour, t->tm_min,
             t->tm_sec);
 
-    int ret = closeCacheTable(db, name2);
-    if (ret)
-        return ret;
+    //int ret = closeCacheTable(db, name2);
+    //if (ret)
+    //    return ret;
 
     std::string cmd = "rename table `" + dbSqlName + "`.`" + nameSql2 +
                       "` to `" + dbSqlName + "`.`" + nameSql3 + "`,`" +
                       dbSqlName + "`.`" + nameSql1 + "` to `" + dbSqlName +
                       "`.`" + nameSql2 + "`";
-    ret = ddl_execSql(db->thd(), cmd);
+    smartDbsReopen reopen(db->thd(), m_dbs);
+    int ret = ddl_execSql(db, cmd);
     if (ret == 0)
     {
         std::string cmd = "drop table `" + dbSqlName + "`.`" + nameSql3 + "`";
-        return ddl_execSql(db->thd(), cmd);
+        return ddl_execSql(db, cmd);
     }
     return ret;
 }
 
+int dbManager::ddl_tableComment(database* db, const std::string& tbname,
+                         const char* comment)
+{
+    std::string s = "alter table `" + db->name() + "`.`" + tbname +
+                    "` comment \"" + comment + "\"";
+    smartDbsReopen reopen(db->thd(), m_dbs);
+    return ddl_execSql(db, s.c_str());
+}
+/*
 std::string
 dbManager::makeSQLChangeTableComment(const std::string& dbSqlName,
                                      const std::string& tableSqlName,
@@ -363,18 +464,7 @@ dbManager::makeSQLChangeTableComment(const std::string& dbSqlName,
     std::string s = "alter table `" + dbSqlName + "`.`" + tableSqlName +
                     "` comment \"" + comment + "\"";
     return s;
-}
-
-/** Key name of multi byte charctord is not supported. Use only ascii.
- */
-std::string dbManager::makeSQLDropIndex(const std::string& dbSqlName,
-                                        const std::string& tbSqlName,
-                                        const char* name)
-{
-    std::string s = "drop index `" + std::string(name) + "` on `" + dbSqlName +
-                    "`.`" + tbSqlName + "`";
-    return s;
-}
+}*/
 
 void dbManager::clenupNoException()
 {

@@ -246,7 +246,9 @@ int errorCode(int ha_error)
     else if(ha_error == ER_NO_SUCH_TABLE)
         return STATUS_TABLE_NOTOPEN;
     else if(ha_error == ER_SPECIFIC_ACCESS_DENIED_ERROR)
-        return STATUS_ACCESS_DENIED;    
+        return STATUS_ACCESS_DENIED; 
+    else if(ha_error == ER_TABLEACCESS_DENIED_ERROR)
+        return STATUS_ACCESS_DENIED; 
     return MYSQL_ERROR_OFFSET + ha_error;
 }
 
@@ -255,8 +257,8 @@ int errorCode(int ha_error)
 //-------------------------------------------------------------
 
 dbExecuter::dbExecuter(netsvc::server::IAppModule* mod)
-    : dbManager(), m_readHandler(new ReadRecordsHandler()),
-      m_blobBuffer(new blobBuffer()), m_mod(mod)
+    : dbManager(mod), m_readHandler(new ReadRecordsHandler()),
+      m_blobBuffer(new blobBuffer())
 {
     m_scramble[0] = 0x00;
 }
@@ -395,9 +397,8 @@ bool dbExecuter::connect(request& req)
     bool ret = getDatabaseWithAuth(req, &db, true);
     if (ret &&  (req.result == 0) && db)
     {
-        std::string dbSqlname = getDatabaseName(req, FOR_SQL);
-        dbSqlname.insert(0, "use ");
-        req.result = ddl_execSql(db->thd(), dbSqlname);
+        if (!db->existsDatabase())
+            req.result = ERROR_NO_DATABASE;
     }
     if (db && (!ret || req.result))
         dbManager::releaseDatabase(req.cid);
@@ -419,7 +420,7 @@ inline bool dbExecuter::doCreateTable(request& req)
             if (((req.keyNum == CR_SUBOP_CREATE_DBONLY) || (req.keyNum == 0)) &&
                     (db->existsDatabase() == false))
             {
-                req.result = ddl_createDataBase(db->thd(), dbSqlname);
+                req.result = ddl_createDataBase(dbSqlname);
                 if (req.result == ER_DB_CREATE_EXISTS + MYSQL_ERROR_OFFSET)
                     req.result = 0;
             }
@@ -427,7 +428,9 @@ inline bool dbExecuter::doCreateTable(request& req)
             {
                 if (req.result == 0)
                 {
-					req.result = ddl_dropDataBase(db->thd(), db->name(), dbSqlname, req.cid);
+					std::string dbname = db->name();
+                    dbManager::releaseDatabase(req.cid);
+                    req.result = ddl_dropDataBase(dbname, dbSqlname, req.cid);
                     if (ER_DB_DROP_EXISTS+ MYSQL_ERROR_OFFSET == req.result) req.result = 0;
                 }
                 return ret;
@@ -435,55 +438,51 @@ inline bool dbExecuter::doCreateTable(request& req)
         }
         if (req.result == 0)
         { // table operation
-            if ((req.result = ddl_useDataBase(db->thd(), dbSqlname)) == 0)
+            std::string tableSqlName = getTableName(req, FOR_SQL);
+            std::string tableName = getTableName(req);
+            if (req.keyNum == CR_SUBOP_DROP) // -128 is delete
             {
-                std::string tableSqlName = getTableName(req, FOR_SQL);
-                std::string tableName = getTableName(req);
-                if (req.keyNum == CR_SUBOP_DROP) // -128 is delete
-                {
-                    req.result = ddl_dropTable(db, tableName, dbSqlname,
-                                                tableSqlName);
-                    if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
-                        req.result = 0;
-                }
-                else if (req.keyNum == CR_SUBOP_RENAME)
-                { // rename new is keybuf
-                    request reqold;
-                    reqold.keybuf = req.data;
-                    reqold.keylen = *req.datalen;
-                    req.result = ddl_renameTable(
-                        db, getTableName(reqold), /*oldname*/
-                        dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
-                        tableSqlName /*newName*/);
-                }
-                else if (req.keyNum == CR_SUBOP_SWAPNAME)
-                { // swap name name2 = keybuf
-                    request reqold;
-                    reqold.keybuf = req.data;
-                    reqold.keylen = *req.datalen;
-                    req.result = ddl_replaceTable(
-                        db, getTableName(reqold), /*oldname*/
-                        tableName, /*newName*/
-                        dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
-                        tableSqlName /*newName*/);
-                }
-                else if (req.keyNum != CR_SUBOP_CREATE_DBONLY)
-                { // create
-                    if (req.data == NULL)
-                        req.result = 1;
-                    else
-                    { //-1 is overwrite
-                        if (req.keyNum == CR_SUB_FLAG_EXISTCHECK && tableName.size())
-                        {
-                            req.result = ddl_dropTable(db, tableName, dbSqlname,
-                                                       tableSqlName);
-                            if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
-                                req.result = 0;
-                        }
-                        if (req.result == 0)
-                            req.result =
-                                ddl_execSql(db->thd(), makeSQLcreateTable(req));
+                req.result = ddl_dropTable(db, tableName, dbSqlname,
+                                            tableSqlName);
+                if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
+                    req.result = 0;
+            }
+            else if (req.keyNum == CR_SUBOP_RENAME)
+            { // rename new is keybuf
+                request reqold;
+                reqold.keybuf = req.data;
+                reqold.keylen = *req.datalen;
+                req.result = ddl_renameTable(
+                    db, getTableName(reqold), /*oldname*/
+                    dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
+                    tableSqlName /*newName*/);
+            }
+            else if (req.keyNum == CR_SUBOP_SWAPNAME)
+            { // swap name name2 = keybuf
+                request reqold;
+                reqold.keybuf = req.data;
+                reqold.keylen = *req.datalen;
+                req.result = ddl_replaceTable(
+                    db, getTableName(reqold), /*oldname*/
+                    tableName, /*newName*/
+                    dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
+                    tableSqlName /*newName*/);
+            }
+            else if (req.keyNum != CR_SUBOP_CREATE_DBONLY)
+            { // create
+                if (req.data == NULL)
+                    req.result = 1;
+                else
+                { //-1 is overwrite
+                    if (req.keyNum == CR_SUB_FLAG_EXISTCHECK && tableName.size())
+                    {
+                        req.result = ddl_dropTable(db, tableName, dbSqlname,
+                                                   tableSqlName);
+                        if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
+                            req.result = 0;
                     }
+                    if (req.result == 0)
+                        req.result = ddl_createTable(db, makeSQLcreateTable(req).c_str());
                 }
             }
         }
@@ -1136,8 +1135,8 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
         std::string name = getTableName(req);
         tables.init_one_table(dbname.c_str(), dbname.size(), name.c_str(),
 		            name.size(), name.c_str(), TL_READ);
-        uint key_length= get_table_def_key(&tables, &key);
-        if (!tdc_open_view(thd, &tables, name.c_str(), key, key_length, GTS_USE_DISCOVERY|OPEN_VIEW_NO_PARSE))
+        uint key_length= cp_get_table_def_key(thd, &tables, &key);
+        if (!cp_tdc_open_view(thd, &tables, name.c_str(), key, key_length, OPEN_VIEW_NO_PARSE))
         {
             unsigned int len = (unsigned int)tables.view_body_utf8.length;
             if (len+1 <= *req.datalen)
@@ -1158,7 +1157,7 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
         String s;
         m_tb = getTable(req.pbk->handle);
         m_tb->getCreateSql(&s);
-        unsigned int len = s.length();
+		unsigned int len = (unsigned int)s.length();
         if (len+1 <= *req.datalen)
         {
             char* p = nw->curPtr() - sizeof(unsigned short);// orver write row space
@@ -1588,9 +1587,8 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         { // Key name of multi byte charctor is not supported. Use only ascii.
             database* db = getDatabaseCid(req.cid);
             m_tb = getTable(req.pbk->handle);
-            req.result = ddl_execSql(db->thd(),
-                makeSQLDropIndex(db->name(), m_tb->name(),
-                     m_tb->keyName(m_tb->keyNumByMakeOrder(req.keyNum))));
+            req.result = ddl_dropIndex(db, m_tb->name(), 
+                    m_tb->keyName(m_tb->keyNumByMakeOrder(req.keyNum)));
             break;
         }
         case TD_GETDIRECTORY:
@@ -1639,9 +1637,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             std::string s("%@%");
             s += (const char*)&num;
             s += (const char*)req.keybuf;
-            req.result = ddl_execSql(
-                db->thd(),
-                makeSQLChangeTableComment(db->name(), m_tb->name(), s.c_str()));
+            req.result = ddl_tableComment(db, m_tb->name(), s.c_str());
             break;
         }
         case TD_ACL_RELOAD:

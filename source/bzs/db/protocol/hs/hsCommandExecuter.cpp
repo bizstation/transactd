@@ -234,6 +234,10 @@ inline void setKeyValues(request& req, engine::mysql::table* tb, int index)
         tb->setKeyValues(req.table.key.values, -1);
 }
 
+dbExecuter::dbExecuter(netsvc::server::IAppModule* mod)
+    :engine::mysql::dbManager(mod){}
+
+
 void dbExecuter::doRecordOperation(request& req, engine::mysql::table* tb,
                                    resultBuffer& buf, changeFunc func)
 {
@@ -570,8 +574,8 @@ inline void setFilterVal(const std::string& src, int& parseMode, request* req)
     parseMode = PARSEREAD_FL_TYPE;
 }
 
-commandExecuter::commandExecuter(netsvc::server::IAppModule* /*mod*/)
-    : m_dbExec(new dbExecuter())
+commandExecuter::commandExecuter(netsvc::server::IAppModule* mod)
+    : m_dbExec(new dbExecuter(mod))
 {
 }
 

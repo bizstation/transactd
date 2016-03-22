@@ -118,7 +118,7 @@ void tableCacheCounter::release(const std::string& dbname,
 bool lockTable(THD* thd, TABLE* tb)
 {
     bool append = (thd->lock != 0);
-#ifdef MARIADDB_10_1
+#ifdef MARIADB_10_1
     thd->variables.option_bits |= OPTION_TABLE_LOCK;
 #endif
     MYSQL_LOCK* lock = mysql_lock_tables(thd, &tb, 1, 0);
@@ -198,7 +198,7 @@ database::database(const char* name, short cid)
     
     //backup current sctx
     m_backup_sctx = cp_security_ctx(m_thd);
-
+    setDbName(m_thd, m_dbname);
 }
 
 #ifdef _MSC_VER
@@ -273,7 +273,7 @@ unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
     return retPtr;
 }
 
-bool setGrant(THD* thd, const char* host, const char* user,  const char* db)
+/*bool setGrant(THD* thd, const char* host, const char* user,  const char* db)
 {
     // sctx->master_access and sctx->db_access
     return (acl_getroot(cp_security_ctx(thd), cp_strdup(user, MYF(0)),
@@ -289,7 +289,7 @@ bool copyGrant(THD* thd, THD* thdSrc, const char* db)
         return true;
     }
 	return setGrant(thd, sctx->cp_priv_host(), sctx->cp_priv_user(), db);
-}
+}*/
 
 size_t database::findSecurityCtxs(const std::string& dbname)
 {

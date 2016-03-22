@@ -112,9 +112,9 @@ struct sec_db
         db(dbname), privilege(0xFFFF){}
 };
 
-bool setGrant(THD* thd, const char* host, const char* user,  const char* db);
-
-
+extern bool setGrant(THD* thd, const char* host, const char* user,  const char* db);
+extern bool copyGrant(THD* thd, THD* thdSrc, const char* db);
+extern void setDbName(THD* thd, const std::string& name);
 class database : private boost::noncopyable
 {
     friend class table;
@@ -219,6 +219,7 @@ public:
 
     short aclReload();
     inline void setCurTime(){m_thd->set_current_time();}
+    inline bool usingExclusveMode() const {return m_usingExclusive != 0;}
 
     static tableCacheCounter tableRef;
 

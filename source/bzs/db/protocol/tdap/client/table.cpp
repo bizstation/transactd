@@ -1509,7 +1509,7 @@ keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
             if ((f.bit9 | f.bit3) && (transactd == true))
                 isNull = false;
             fielddef& fd = (*m_tableDef)->fieldDefs[fdnum];
-            to = fd.keyCopy(to, (uchar_td*)fieldPtr(fdnum), 0xff, isNull);
+            to = fd.keyCopy(to, (uchar_td*)fieldPtr(fdnum), 0xff, isNull, transactd);
         }
         return (keylen_td)(to - start);
     }

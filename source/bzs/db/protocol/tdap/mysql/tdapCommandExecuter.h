@@ -66,7 +66,6 @@ class dbExecuter : public engine::mysql::dbManager
     ReadRecordsHandler* m_readHandler;
     blobBuffer* m_blobBuffer;
     unsigned char m_scramble[MYSQL_SCRAMBLE_LENGTH+1];
-    netsvc::server::IAppModule* m_mod;
     void releaseDatabase(request& req, int op);
     std::string makeSQLcreateTable(const request& req);
     bool connect(request& req);

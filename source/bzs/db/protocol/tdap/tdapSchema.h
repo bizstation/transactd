@@ -796,14 +796,14 @@ private:
      *  If datalen!=0xff then From is none field formated (string) type.
      */
     inline uchar_td* keyCopy(uchar_td* to, const uchar_td* from, ushort_td datalen,
-                     bool isNull)
+                     bool isNull, bool transactd)
     {
         ushort_td keylen = maxKeylen(); // size of max key segmnet for mysql
         ushort_td keyVarlen = varLenByteForKey(); // size of var sizeByte for record.
         ushort_td copylen = std::min<ushort_td>(keylen, datalen);
 
         memset(to, 0x00, keylen + 1); //clear plus null byte
-        if (isNullable())
+        if (isNullable() && transactd)
         {
             // mysql only
             if (isNull)
