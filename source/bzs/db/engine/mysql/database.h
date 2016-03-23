@@ -147,10 +147,10 @@ private:
     void changeIntentionLock(table* tb, thr_lock_type lock_type);
     void releaseTable(size_t index);
     void useAllTables();
-    size_t findSecurityCtxs(const std::string& dbname);
+    int findSecurityCtxs(const std::string& dbname);
     void addDbName(const std::string& dbname);
     void restoreSctx();
-    void changeSctx(size_t index);
+    void changeSctx(int index);
 public:
     database(const char* name, short cid);
 

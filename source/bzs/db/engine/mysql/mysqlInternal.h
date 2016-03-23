@@ -717,6 +717,7 @@ class dummyProtocol : public Protocol_mysql
 {
 	THD* m_thd;
     Protocol_mysql* m_backup;
+    
 public:
 #if defined(MYSQL_5_7)
 	inline dummyProtocol(THD *thd_arg) : Protocol_mysql()
@@ -730,6 +731,8 @@ public:
         m_thd->set_protocol(m_backup);    
     }
 #else
+    inline dummyProtocol() : Protocol_mysql() {}
+
 	inline dummyProtocol(THD *thd_arg) : Protocol_mysql(thd_arg)
 	{
 		m_thd = thd_arg;

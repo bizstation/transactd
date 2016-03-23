@@ -291,10 +291,10 @@ bool copyGrant(THD* thd, THD* thdSrc, const char* db)
 	return setGrant(thd, sctx->cp_priv_host(), sctx->cp_priv_user(), db);
 }*/
 
-size_t database::findSecurityCtxs(const std::string& dbname)
+int database::findSecurityCtxs(const std::string& dbname)
 {
     for (size_t i=0;i < m_securityCtxs.size(); ++i)
-        if (m_securityCtxs[i].db == dbname) return i;
+        if (m_securityCtxs[i].db == dbname) return (int)i;
     return -1;
 }
 
@@ -331,7 +331,7 @@ void database::restoreSctx()
     m_backup_sctx->restore_security_context(m_thd, m_backup_sctx);
 }
 
-void database::changeSctx(size_t index)
+void database::changeSctx(int index)
 {
     m_backup_sctx->restore_security_context(m_thd, &m_securityCtxs[index].security_ctx);
 }
@@ -895,7 +895,7 @@ table* database::openTable(const std::string& name, short mode,
     if (mysql_null)
         mode -= TD_OPEN_MASK_MYSQL_NULL;
 
-    size_t index = -1;   
+    int index = -1;   
     if (dbname == "")
     {
         dbname = m_dbname;
@@ -908,7 +908,8 @@ table* database::openTable(const std::string& name, short mode,
         index =  findSecurityCtxs(dbname);
         if (index == -1)
             addDbName(dbname);
-        index =  m_securityCtxs.size() - 1;
+        index =  (int)m_securityCtxs.size() - 1;
+        assert(index >= 0);
         changeSctx(index);
     }
 
