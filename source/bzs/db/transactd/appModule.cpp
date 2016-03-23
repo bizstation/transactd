@@ -325,10 +325,12 @@ module::module(const boost::asio::ip::tcp::endpoint& endpoint,
 
 module::~module(void)
 {
-    boost::mutex::scoped_lock lck(modulesMutex);
-    modules.erase(find(modules.begin(), modules.end(), this));
-    delete m_nw;
-    m_commandExecuter.reset();
+    {
+        boost::mutex::scoped_lock lck(modulesMutex);
+        modules.erase(find(modules.begin(), modules.end(), this));
+        delete m_nw;
+        m_commandExecuter.reset();
+    }
     if (m_useThreadPool == false)
     {
         my_thread_end();

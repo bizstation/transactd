@@ -20,6 +20,7 @@
  ================================================================= */
 #include "testbase.h"
 #include <bzs/db/protocol/tdap/btrDate.h>
+#include <bzs/db/protocol/tdap/client/connMgr.h>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -45,7 +46,7 @@ const char* test_records = "INSERT INTO `setenumbit` (`id`, `set5`, `set64`, `en
   "(3, '', '', '0', '0', b'0', b'00000000', b'00000000', b'00000000'),"
   "(4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);";
 
-
+const char* test_view = "create view idessthan5 as select * from scores where id < 5";
 
 short createFieldStoreDataBase(database* db)
 {
@@ -55,6 +56,7 @@ short createFieldStoreDataBase(database* db)
         db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
         if (db->stat()) return db->stat();
         db->drop();
+        if (db->stat()) return db->stat();
         db->create(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
     }
     if (db->stat()) return db->stat();
@@ -3332,7 +3334,40 @@ void testSnapshotWithbinlog()
     BOOST_CHECK(tb->stat() == STATUS_ALREADY_INSNAPSHOT);
 
     db->endSnapshot();
+    db->createTable(test_view);// create view for next test
+    BOOST_CHECK(db->stat() == 0);
 }
+
+
+void testTableList()
+{
+    nsdatabase::setCheckTablePtr(true);
+    database_ptr db = createDatabaseObject();
+    connMgr_ptr mgr(createConnMgr(db.get()));
+    mgr->connect(makeUri(PROTOCOL, HOSTNAME, _T("")));
+    BOOST_CHECK(mgr->stat() == 0);
+    {
+        const connMgr::records& recs = mgr->tables(DBNAMEV3);
+        BOOST_CHECK(recs.size() == 10); //8 + setenumbit + test.bdf
+    }
+    {
+        const connMgr::records& recs = mgr->views(DBNAMEV3);
+        BOOST_CHECK(recs.size() == 1);
+        BOOST_CHECK(recs[0].name == std::string("idessthan5"));
+    }
+    {
+        const connMgr::records& recs = mgr->schemaTables(DBNAMEV3);
+        BOOST_CHECK(recs.size() == 1);
+        BOOST_CHECK(recs[0].name == std::string("test"));
+    }
+    {
+        const connMgr::records& recs = mgr->slaveStatus();
+        BOOST_CHECK(mgr->stat() == 0);
+    }
+    mgr->disconnect();
+
+}
+
 
 #pragma warning(default : 4996) 
 

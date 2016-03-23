@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_CTDCONNMGR_H
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_CTDCONNMGR_H
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -22,6 +22,7 @@
 #include <bzs/db/transactd/connectionRecord.h>
 #include <boost/shared_ptr.hpp>
 #include <vector>
+#pragma warning(disable : 4251)
 
 namespace bzs
 {
@@ -34,19 +35,15 @@ namespace tdap
 namespace client
 {
 
-
-extern const char* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE];
-
 class database;
-#pragma warning(disable : 4251)
+class connMgr;
+typedef boost::shared_ptr<connMgr> connMgr_ptr;
 
-class /*DLLLIB*/ connMgr : private nstable
+class DLLLIB connMgr : private nstable  // no copyable
 {
 public:
     typedef bzs::db::transactd::connection::record record;
     typedef std::vector<record> records;
-
-protected:
 private:
     std::vector<record> m_records;
     __int64 m_params[2];
@@ -58,49 +55,53 @@ private:
     void onReadAfter(){};
     const records& getRecords();
     ~connMgr();
-    const connMgr::records& doDefinedTables(const char* dbname, int type);
+    explicit connMgr(const connMgr& r);  //no copyable
+    connMgr& operator=(const connMgr& r); //no copyable
+    const connMgr::records& doDefinedTables(const _TCHAR* dbname, int type);
 public:
     explicit connMgr(database* db);
-
     void connect(const _TCHAR* uri);
     void disconnect();
-    const records& definedDatabases();
-    const records& definedTables(const char* dbname);
-    const records& definedViews(const char* dbname);
-    const records& schemaTables(const char* dbname);
+    const records& databases();
+    const records& tables(const _TCHAR* dbname);
+    const records& views(const _TCHAR* dbname);
+    const records& schemaTables(const _TCHAR* dbname);
     const records& slaveStatus();
     const records& sysvars();
     const records& connections();
-    const records& databases(__int64 connid);
-    const records& tables(__int64 connid, int dbid);
-    void disconnectOne(__int64 connid);
-    void disconnectAll();
+    const records& inUseDatabases(__int64 connid);
+    const records& inUseTables(__int64 connid, int dbid);
+    void postDisconnectOne(__int64 connid);
+    void postDisconnectAll();
     short_td stat();
-
     database* db() const;
     using nstable::tdapErr;
     using nstable::release;
+    static void removeSystemDb(connMgr::records& recs);
+    static const _TCHAR* slaveStatusName(uint_td index);
     static connMgr* create(database* db);
 };
 
-typedef boost::shared_ptr<connMgr> connMgr_ptr;
-void removeSystemDb(connMgr::records& recs);
-
-
+/**
+   Releaser for boost shared_ptr.
+   ex : boost::shared_ptr<connMgr> mgr(connMgr::create(), releaseConnMgr);
+*/
 inline void releaseConnMgr(connMgr* p)
 {
-    if (p)
-    {
-        p->release();
-    }
+    if (p) p->release();
 }
 
+inline connMgr_ptr createConnMgr(database* db)
+{
+    return connMgr_ptr(connMgr::create(db), releaseConnMgr);
+}
 
-#pragma warning(default : 4251)
 
 } // namespace client
 } // namespace tdap
 } // namespace protocol
 } // namespace db
 } // namespace bzs
+
+#pragma warning(default : 4251)
 #endif // BZS_DB_PROTOCOL_TDAP_CLIENT_CTDCONNMGR_H

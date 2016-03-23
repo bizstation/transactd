@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -32,48 +32,48 @@ namespace tdap
 namespace client
 {
 
-const char* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
+const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
 {
-    "Slave_IO_State",
-    "Master_Host",
-    "Master_User",
-    "Master_Port",
-    "Connect_Retry",
-    "Master_Log_File",
-    "Read_Master_Log_Pos",
-    "Relay_Log_File",
-    "Relay_Log_Pos",
-    "Relay_Master_Log_File",
-    "Slave_IO_Running",
-    "Slave_SQL_Running",
-    "Replicate_Do_DB",
-    "Replicate_Ignore_DB",
-    "Replicate_Do_Table",
-    "Replicate_Ignore_Table",
-    "Replicate_Wild_Do_Table",
-    "Replicate_Wild_Ignore_Table",
-    "Last_Errno",
-    "Last_Error",
-    "Skip_Counter",
-    "Exec_Master_Log_Pos",
-    "Relay_Log_Space",
-    "Until_Condition",
-    "Until_Log_File",
-    "Until_Log_Pos",
-    "Master_SSL_Allowed",
-    "Master_SSL_CA_File",
-    "Master_SSL_CA_Path",
-    "Master_SSL_Cert",
-    "Master_SSL_Cipher",
-    "Master_SSL_Key",
-    "Seconds_Behind_Master",
-    "Master_SSL_Verify_Server_Cert",
-    "Last_IO_Errno",
-    "Last_IO_Error",
-    "Last_SQL_Errno",
-    "Last_SQL_Error",
-    "Replicate_Ignore_Server_Ids",
-    "Master_Server_Id" ,
+    _T("Slave_IO_State"),
+    _T("Master_Host"),
+    _T("Master_User"),
+    _T("Master_Port"),
+    _T("Connect_Retry"),
+    _T("Master_Log_File"),
+    _T("Read_Master_Log_Pos"),
+    _T("Relay_Log_File"),
+    _T("Relay_Log_Pos"),
+    _T("Relay_Master_Log_File"),
+    _T("Slave_IO_Running"),
+    _T("Slave_SQL_Running"),
+    _T("Replicate_Do_DB"),
+    _T("Replicate_Ignore_DB"),
+    _T("Replicate_Do_Table"),
+    _T("Replicate_Ignore_Table"),
+    _T("Replicate_Wild_Do_Table"),
+    _T("Replicate_Wild_Ignore_Table"),
+    _T("Last_Errno"),
+    _T("Last_Error"),
+    _T("Skip_Counter"),
+    _T("Exec_Master_Log_Pos"),
+    _T("Relay_Log_Space"),
+    _T("Until_Condition"),
+    _T("Until_Log_File"),
+    _T("Until_Log_Pos"),
+    _T("Master_SSL_Allowed"),
+    _T("Master_SSL_CA_File"),
+    _T("Master_SSL_CA_Path"),
+    _T("Master_SSL_Cert"),
+    _T("Master_SSL_Cipher"),
+    _T("Master_SSL_Key"),
+    _T("Seconds_Behind_Master"),
+    _T("Master_SSL_Verify_Server_Cert"),
+    _T("Last_IO_Errno"),
+    _T("Last_IO_Error"),
+    _T("Last_SQL_Errno"),
+    _T("Last_SQL_Error"),
+    _T("Replicate_Ignore_Server_Ids"),
+    _T("Master_Server_Id" ),
 };
 
 connMgr::connMgr(database* db) : nstable(db)
@@ -85,9 +85,7 @@ connMgr::connMgr(database* db) : nstable(db)
     m_keylen = sizeof(m_params);
 }
 
-connMgr::~connMgr()
-{
-}
+connMgr::~connMgr() {}
 
 database* connMgr::db() const
 {
@@ -104,7 +102,6 @@ void connMgr::connect(const _TCHAR* uri)
         btrVersions vs;
         m_db->getBtrVersion(&vs);
         m_pluginVer = vs.versions[VER_IDX_PLUGIN];
-
     }
 }
 
@@ -128,7 +125,6 @@ void connMgr::allocBuffer()
     m_pdata = (void*)&m_records[0];
     memset(m_pdata, 0, m_datalen);
     setIsOpen(true);
-
 }
 
 const connMgr::records& connMgr::getRecords()
@@ -142,18 +138,22 @@ const connMgr::records& connMgr::getRecords()
     return m_records;
 }
 
-const connMgr::records& connMgr::definedDatabases()
+const connMgr::records& connMgr::databases()
 {
     m_keynum = TD_STSTCS_DATABASE_LIST;
     return getRecords();
 }
 
-const connMgr::records& connMgr::doDefinedTables(const char* dbname, int type)
+const connMgr::records& connMgr::doDefinedTables(const _TCHAR* dbname, int type)
 {
     m_keynum = type;
     allocBuffer();
     char tmp[128];
+#ifdef _UNICODE
+    WideCharToMultiByte(CP_UTF8, 0, dbname,-1, tmp, 128, NULL, NULL);
+#else
     strcpy_s(tmp, 128, dbname);
+#endif
     m_keybuf = tmp;
     m_keylen = 128;
     tdap(TD_STASTISTICS);
@@ -166,7 +166,7 @@ const connMgr::records& connMgr::doDefinedTables(const char* dbname, int type)
     return m_records;
 }
 
-const connMgr::records& connMgr::definedTables(const char* dbname)
+const connMgr::records& connMgr::tables(const _TCHAR* dbname)
 {
     if ((m_pluginVer.majorVersion >= 3) && (m_pluginVer.minorVersion >= 2))
         return doDefinedTables(dbname, TD_STSTCS_TABLE_LIST);
@@ -175,7 +175,7 @@ const connMgr::records& connMgr::definedTables(const char* dbname)
     return m_records;
 }
 
-const connMgr::records& connMgr::definedViews(const char* dbname)
+const connMgr::records& connMgr::views(const _TCHAR* dbname)
 {
     if ((m_pluginVer.majorVersion >= 3) && (m_pluginVer.minorVersion >= 2))
         return doDefinedTables(dbname, TD_STSTCS_VIEW_LIST);
@@ -184,7 +184,7 @@ const connMgr::records& connMgr::definedViews(const char* dbname)
     return m_records;
 }
 
-const connMgr::records& connMgr::schemaTables(const char* dbname)
+const connMgr::records& connMgr::schemaTables(const _TCHAR* dbname)
 {
     return doDefinedTables(dbname, TD_STSTCS_SCHEMA_TABLE_LIST);
 }
@@ -194,7 +194,10 @@ const connMgr::records& connMgr::slaveStatus()
     if ((m_pluginVer.majorVersion >= 3) && (m_pluginVer.minorVersion >= 2))
     {
         m_keynum = TD_STSTCS_SLAVE_STATUS;
-        return getRecords();
+        getRecords();
+        if (m_records.size() > SLAVE_STATUS_DEFAULT_SIZE)
+            m_records.resize(SLAVE_STATUS_DEFAULT_SIZE);
+        return m_records;
     }
     m_stat = STATUS_NOSUPPORT_OP;
     m_records.resize(0);
@@ -215,7 +218,7 @@ const connMgr::records& connMgr::connections()
     return getRecords();
 }
 
-const connMgr::records& connMgr::databases(__int64 connid)
+const connMgr::records& connMgr::inUseDatabases(__int64 connid)
 {
     m_keynum = TD_STSTCS_READ;
     m_params[0] = connid;
@@ -223,7 +226,7 @@ const connMgr::records& connMgr::databases(__int64 connid)
     return getRecords();
 }
 
-const connMgr::records& connMgr::tables(__int64 connid, int dbid)
+const connMgr::records& connMgr::inUseTables(__int64 connid, int dbid)
 {
     m_keynum = TD_STSTCS_READ;
     m_params[0] = connid;
@@ -231,7 +234,7 @@ const connMgr::records& connMgr::tables(__int64 connid, int dbid)
     return getRecords();
 }
 
-void connMgr::disconnectOne(__int64 connid)
+void connMgr::postDisconnectOne(__int64 connid)
 {
     allocBuffer();
     m_keynum = TD_STSTCS_DISCONNECT_ONE;
@@ -240,7 +243,7 @@ void connMgr::disconnectOne(__int64 connid)
     tdap(TD_STASTISTICS);
 }
 
-void connMgr::disconnectAll()
+void connMgr::postDisconnectAll()
 {
     m_keynum = TD_STSTCS_DISCONNECT_ALL;
     tdap(TD_STASTISTICS);
@@ -256,7 +259,7 @@ connMgr* connMgr::create(database* db)
     return new connMgr(db);
 }
 
-void removeSystemDb(connMgr::records& recs)
+void connMgr::removeSystemDb(connMgr::records& recs)
 {
     for (int i=(int)recs.size() -1; i >= 0; --i)
     {
@@ -266,6 +269,13 @@ void removeSystemDb(connMgr::records& recs)
             (strcmp(recs[i].name, "sys")==0))
         recs.erase(recs.begin() + i);
     }
+}
+
+const _TCHAR* connMgr::slaveStatusName(uint_td index)
+{
+    if (index < SLAVE_STATUS_DEFAULT_SIZE)
+        return SLAVE_STATUS_NAME[index];
+    return _T("");
 }
 
 } // namespace client

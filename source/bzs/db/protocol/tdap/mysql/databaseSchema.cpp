@@ -365,6 +365,9 @@ bool isFrmFile(const std::string& name, bool notschema=true)
 int isView(database* db, const char *name)
 {
 	int ret = -1;
+#ifndef NO_LOCK_OPEN
+    safe_mysql_mutex_lock lck(&LOCK_open);
+#endif
     TABLE_SHARE* s = cp_get_cached_table_share(db->thd(), db->name().c_str(), name);
     if (s)
     {
@@ -396,56 +399,52 @@ void schemaBuilder::listTable(database* db, std::vector<std::string>& tables, in
     fs::directory_iterator it(p);
     fs::directory_iterator end;
     tables.clear();
-#ifndef NO_LOCK_OPEN
-    safe_mysql_mutex_lock lck(&LOCK_open);
-#endif
+
     for (fs::directory_iterator it(p); it != end; ++it)
     {
         if (!is_directory(*it))
         {
-            std::string s = it->path().filename().string();
-            if (isFrmFile(s, false))
+            std::string s = it->path().string(); // fullpath
+            if (isFrmFile(it->path().filename().string(), false)) // filename
             {
+                enum legacy_db_type not_used;
+                
+                frm_type_enum ftype = dd_frm_type(db->thd(), (char*)s.c_str(), &not_used);
                 filename_to_tablename(it->path().stem().string().c_str(), path, FN_REFLEN);
                 std::string tablename = path;
-                bool view = false;
-                table* tb = NULL;
-                int v = isView(db, tablename.c_str());
-                if (v == -1)
-                {
-                    tb = getTable(db, tablename.c_str());   
-                    if (!tb) break;                  
-                    view = tb->isView();
-                }else
-                    view = (v == 1);
                 
-                if (((type & TABLE_TYPE_VIEW) && view) ||
-                    ((type & TABLE_TYPE_NORMAL_TABLE) && !view))
+                if (((type & TABLE_TYPE_VIEW) && (ftype == FRMTYPE_VIEW)) ||
+                    ((type & TABLE_TYPE_NORMAL_TABLE) && (ftype == FRMTYPE_TABLE)))
                     tables.push_back(tablename);  
-                else if (!view && type == TABLE_TYPE_TD_SCHEMA)
+                else if ((ftype == FRMTYPE_TABLE) && type == TABLE_TYPE_TD_SCHEMA)
                 {
                     LEX_STRING* comment;
-					TABLE_SHARE* s = cp_get_cached_table_share(db->thd(), db->name().c_str(), tablename.c_str());
-                    if (s)
                     {
-                        comment = &s->comment;
-                        #ifdef NO_LOCK_OPEN
-                        cp_tdc_release_share(s);
+                        #ifndef NO_LOCK_OPEN
+                        safe_mysql_mutex_lock lck(&LOCK_open);
                         #endif
-                    }
-                    else 
-                    {
-                        if (!tb) tb = getTable(db, tablename.c_str()); 
-                        if (!tb) break;
-                        comment = &tb->internalTable()->s->comment; 
+					    TABLE_SHARE* s = cp_get_cached_table_share(db->thd(), db->name().c_str(), tablename.c_str());
+                        if (s)
+                        {
+                            comment = &s->comment;
+                            #ifdef NO_LOCK_OPEN
+                            cp_tdc_release_share(s);
+                            #endif
+                        }
+                        else 
+                        {
+                            table* tb = getTable(db, tablename.c_str()); 
+                            if (!tb) break;
+                            comment = &tb->internalTable()->s->comment; 
+                            if (tb) db->closeTable(tb);
+                        }
                     }
                     if ((comment->length > 8) && strstr(comment->str,"%@%02.000"))
                     {  //(tb->fields() == 2) && (tb->keys() == 1))
                         tables.push_back(tablename);    
                     }
                 }
-                if (tb)
-                    db->closeTable(tb);
+                
             }
         }
     }

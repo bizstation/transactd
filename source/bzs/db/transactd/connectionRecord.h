@@ -116,7 +116,7 @@ struct record
     }
     union
     {
-        __int64 conId;                          // 8 byte
+        __int64 conId;                      // 8 byte
         __int64 longValue;  
     };
     union
@@ -155,7 +155,7 @@ struct record
     unsigned int insCount;                  // 4 byte
 
     #ifdef _UNICODE
-    _TCHAR* nameW(_TCHAR* buf, int size)
+    inline _TCHAR* nameW(_TCHAR* buf, int size)
     {
         MultiByteToWideChar(CP_UTF8, 0, name, -1, buf, size);
         return buf;

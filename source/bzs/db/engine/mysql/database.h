@@ -183,7 +183,7 @@ public:
         return m_tables;
     }
 
-    bool beginSnapshot(enum_tx_isolation iso, struct binlogPos* bpos);
+    bool beginSnapshot(enum_tx_isolation iso, struct binlogPos* bpos, THD* tmpThd);
     bool endSnapshot();
     table* openTable(const std::string& name, short mode,
                      const char* ownerName, std::string dbname);

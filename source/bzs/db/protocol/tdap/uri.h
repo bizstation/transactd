@@ -114,21 +114,6 @@ inline const _TCHAR* port(const _TCHAR* uri, _TCHAR* buf, size_t size)
     return buf;
 }
 
-inline const _TCHAR* connectName(const _TCHAR* uri, _TCHAR* buf, size_t size)
-{
-    buf[0] = 0x00;
-    const _TCHAR* st = _tcsstr(uri, _T("://"));
-    if (st)
-    {
-        st = _tcsstr(st + 3, _T("/"));
-        _tcsncpy_s(buf, size, uri, ++st - uri);
-        buf[st - uri] = 0x00;
-
-    }
-    return buf;
-}
-
-
 inline const _TCHAR* dbname(const _TCHAR* uri, _TCHAR* buf, size_t size)
 {
     buf[0] = 0x00;
@@ -202,6 +187,27 @@ inline const _TCHAR* passwd(const _TCHAR* uri, _TCHAR* buf, size_t size)
     return buf;
 }
 
+inline const _TCHAR* connectName(const _TCHAR* uri, _TCHAR* buf, size_t size)
+{
+    _TCHAR pwd[MAX_PATH];
+    passwd(uri, pwd, MAX_PATH);
+
+    buf[0] = 0x00;
+    const _TCHAR* st = _tcsstr(uri, _T("://"));
+    if (st)
+    {
+        st = _tcsstr(st + 3, _T("/"));
+        _tcsncpy_s(buf, size, uri, ++st - uri);
+        buf[st - uri] = 0x00;
+        if (pwd[0])
+        {
+            _tcscat_s(buf, MAX_PATH, _T("?pwd="));
+            _tcscat_s(buf, MAX_PATH, pwd);
+        }
+
+    }
+    return buf;
+}
 
 inline _TCHAR* stripParam(const _TCHAR* uri, _TCHAR* buf, size_t size)
 {

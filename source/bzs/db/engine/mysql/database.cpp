@@ -722,17 +722,17 @@ void database::useAllTables()
 // See USE_BINLOG_GTID and USE_BINLOG_VAR in mysqlInternal.h
 #ifdef NOTUSE_BINLOG_VAR 
     // Windows MySQL can not use mysql_bin_log variable
-    inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
+    inline short getBinlogPos(THD* currentThd, binlogPos* bpos, THD* tmpThd)
     {
         short result = 0;
         {
-            boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
-            attachThd(thd.get());
-            copyGrant(thd.get(), currentThd, NULL);
-            masterStatus p(thd.get(), bpos); 
-            cp_query_command(thd.get(), "show master status");
-            if (thd->is_error())
-                result = thd->cp_get_sql_error();
+            attachThd(tmpThd);
+            copyGrant(tmpThd, currentThd, NULL);
+            masterStatus p(tmpThd, bpos); 
+            cp_query_command(tmpThd, "show master status");
+            if (tmpThd->is_error())
+                result = tmpThd->cp_get_sql_error();
+            cp_lex_clear(tmpThd);
         }
         attachThd(currentThd);
         return result;
@@ -740,7 +740,7 @@ void database::useAllTables()
 #endif
 
 #ifdef USE_BINLOG_GTID
-inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
+inline short getBinlogPos(THD* currentThd, binlogPos* bpos, THD* /*tmpThd*/)
 {
     if (mysql_bin_log.is_open())
     {
@@ -761,7 +761,7 @@ inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
 
 #ifdef USE_BINLOG_VAR
     // Linux MySQL can access to the mysql_bin_log variable
-    inline short getBinlogPos(THD* , binlogPos* bpos)
+    inline short getBinlogPos(THD* , binlogPos* bpos, THD* /*tmpThd*/)
     {
         if (mysql_bin_log.is_open())
         {
@@ -775,7 +775,7 @@ inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
     }
 #endif //USE_BINLOG_VAR
 
-bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos)
+bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd)
 {
     if (m_inTransaction)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Transaction is already beginning.");        
@@ -799,7 +799,7 @@ bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos)
             #ifndef NOTUSE_BINLOG_VAR
             safe_mysql_mutex_lock lck(mysql_bin_log.get_log_lock());
             #endif
-            m_stat = getBinlogPos(m_thd, bpos);
+            m_stat = getBinlogPos(m_thd, bpos, tmpThd);
             if (m_stat) return false;
             useAllTables(); // execute scope in safe_commit_lock  
         }else

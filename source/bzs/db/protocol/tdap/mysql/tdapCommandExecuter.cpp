@@ -1361,8 +1361,16 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 binlogPos bpos;
                 memset(&bpos, 0, sizeof(binlogPos));
                 database* db = getDatabaseCid(req.cid);
+                THD* thd = NULL;
+                #ifdef NOTUSE_BINLOG_VAR 
+                if (withSnapshot)
+                {
+                    thd = getThd();
+                    db->use();
+                }
+                #endif
                 transactionResult = db->beginSnapshot(
-                        getIsolationLevel(opTrn), withSnapshot ? &bpos : NULL);
+                        getIsolationLevel(opTrn), withSnapshot ? &bpos : NULL, thd);
                 req.result = errorCodeSht(db->stat());
                 if (transactionResult && withSnapshot)
                 {   
