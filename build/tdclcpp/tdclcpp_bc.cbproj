@@ -265,6 +265,9 @@
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\activeTable.cpp">
             <BuildOrder>22</BuildOrder>
         </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\connMgr.cpp">
+            <BuildOrder>22</BuildOrder>
+        </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\database.cpp">
             <BuildOrder>3</BuildOrder>
         </CppCompile>

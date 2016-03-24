@@ -219,7 +219,7 @@ void database::setAutoSchemaUseNullkey(bool v)
 void database::create(const _TCHAR* uri, short type)
 {
     bool dbdefCreated = false;
-    short stat = 0;
+    short stat;
     if (!m_impl->dbDef)
     {
         m_impl->dbDef = new dbdef(this, type); // Create TabelDef here.

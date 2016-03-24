@@ -65,6 +65,7 @@ set(${this_target}_SOURCE_FILES
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/errorMessage.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mydebuglog.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlThd.cpp
+  ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlProtocol.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/tdapCommandExecuter.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/characterset.cpp
@@ -134,6 +135,14 @@ foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
     endif()
   endif()
 endforeach()
+
+#set -fno-rtti to mysqlProtocol.cpp
+if(NOT MSVC)
+  if ((DEFINED MARIADB_BASE_VERSION) OR (MYSQL_VERSION_ID VERSION_LESS 50600))
+    set_source_files_properties("${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlProtocol.cpp" PROPERTIES COMPILE_FLAGS -fno-rtti)
+  endif()
+endif()
+
 if(MSVC)
     bz_add_cxx_flag("/MT" "_RELEASE")
     bz_add_cxx_flag("/MTd" "_DEBUG")

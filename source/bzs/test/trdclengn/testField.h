@@ -529,9 +529,9 @@ short createTestScores(database* db)
         td->primaryKeyNum = 0;
         
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("subject"), ft_integer, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("score"), ft_integer, 4);
+        insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
+        insertField(def, tableid, ++fieldnum, _T("subject"), ft_integer, 4);
+        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("score"), ft_integer, 4);
         fd->setNullable(true);
 
         keydef* kd = insertKey(def, tableid, 0);
@@ -3361,7 +3361,7 @@ void testTableList()
         BOOST_CHECK(recs[0].name == std::string("test"));
     }
     {
-        const connMgr::records& recs = mgr->slaveStatus();
+        mgr->slaveStatus();
         BOOST_CHECK(mgr->stat() == 0);
     }
     mgr->disconnect();

@@ -112,6 +112,7 @@ extern "C" {
 #include "sql/sql_base.h"
 #include "sql/sql_parse.h"
 #include "sql/sql_table.h"
+#include "sql/handler.h"
 #include "sql/sql_db.h"
 #include "sql_acl.h"
 #include "sql/sql_show.h"
@@ -578,14 +579,21 @@ inline void cp_tdc_release_share(TABLE_SHARE* s)
     tdc_release_share(s);
 }
 
-    #ifdef MARIADB_10_1
+    #if defined(MARIADB_10_1)
     inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
                           void *create_info_arg, int with_db_name) 
     {
         return show_create_table(thd, table_list,  packet, 
                 (Table_specification_st*)create_info_arg, (enum_with_db_name) with_db_name);
+    } 
+    #elif (MARIADB_10_0 >= 100013)
+    inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+                          void *create_info_arg, int with_db_name) 
+    {
+        return show_create_table(thd, table_list,  packet, 
+                (HA_CREATE_INFO*)create_info_arg, (enum_with_db_name) with_db_name);
     }
-    #else //Mariadb 10.0
+    #else //Mariadb 10.0.9 - .12
     inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
                           HA_CREATE_INFO* create_info_arg, int with_db_name)
     {
