@@ -199,7 +199,7 @@ database::database(const char* name, short cid)
     
     //backup current sctx
     m_backup_sctx = cp_security_ctx(m_thd);
-    setDbName(m_thd, m_dbname);
+    setDbName(m_thd, m_dbname.c_str());
 }
 
 #ifdef _MSC_VER
@@ -274,24 +274,6 @@ unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
     return retPtr;
 }
 
-/*bool setGrant(THD* thd, const char* host, const char* user,  const char* db)
-{
-    // sctx->master_access and sctx->db_access
-    return (acl_getroot(cp_security_ctx(thd), cp_strdup(user, MYF(0)),
-		cp_strdup(host, MYF(0)), cp_strdup(host, MYF(0)), (char*)db)) == false;
-}
-
-bool copyGrant(THD* thd, THD* thdSrc, const char* db)
-{
-    Security_context* sctx = cp_security_ctx(thdSrc);
-	if (sctx->cp_master_accsess() == (ulong)~NO_ACCESS)
-    {
-        cp_security_ctx(thd)->skip_grants();
-        return true;
-    }
-	return setGrant(thd, sctx->cp_priv_host(), sctx->cp_priv_user(), db);
-}*/
-
 int database::findSecurityCtxs(const std::string& dbname)
 {
     for (size_t i=0;i < m_securityCtxs.size(); ++i)
@@ -308,7 +290,7 @@ void database::addDbName(const std::string& dbname)
     secx->security_ctx.restore_security_context(m_thd, &secx->security_ctx);
 
     //Get Grant
-    bool ret = mysql::setGrant(m_thd, m_backup_sctx->cp_priv_host(), m_backup_sctx->cp_priv_user(), dbname.c_str());
+    bool ret = ::setGrant(m_thd, m_backup_sctx->cp_priv_host(), m_backup_sctx->cp_priv_user(), dbname.c_str());
     if (ret)
         check_access(m_thd, SELECT_ACL, dbname.c_str(), &secx->privilege, NULL, false, true);
     
@@ -319,7 +301,7 @@ void database::addDbName(const std::string& dbname)
 // true ok false fail
 bool database::setGrant(const char* host, const char* user, const char* dbname)
 {
-	bool ret = mysql::setGrant(m_thd, host, user, dbname);
+	bool ret = ::setGrant(m_thd, host, user, dbname);
     if (ret)
     {
         check_access(m_thd, SELECT_ACL, dbname, &m_privilege, NULL, false, true);

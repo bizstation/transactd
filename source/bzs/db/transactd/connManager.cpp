@@ -308,7 +308,7 @@ bool connManager::checkGlobalACL(THD* thd, ulong wantAccess) const
     if (mod->isSkipGrants())
         cp_security_ctx(thd)->skip_grants();
     else
-        bzs::db::engine::mysql::setGrant(thd, mod->host(), mod->user(),  NULL);
+        ::setGrant(thd, mod->host(), mod->user(),  NULL);
 	bool ret = (cp_masterAccess(thd) & wantAccess) != 0;
     if (!ret)
         m_stat = STATUS_ACCESS_DENIED;

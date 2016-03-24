@@ -115,9 +115,6 @@ struct sec_db
         db(dbname), privilege(0xFFFF){}
 };
 
-extern bool setGrant(THD* thd, const char* host, const char* user,  const char* db);
-extern bool copyGrant(THD* thd, THD* thdSrc, const char* db);
-extern void setDbName(THD* thd, const std::string& name);
 class database : private boost::noncopyable
 {
     friend class table;

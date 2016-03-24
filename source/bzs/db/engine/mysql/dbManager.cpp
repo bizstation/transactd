@@ -84,29 +84,6 @@ public:
 std::string smartDbsReopen::removeName = "";
 
 
-bool setGrant(THD* thd, const char* host, const char* user,  const char* db)
-{
-    // sctx->master_access and sctx->db_access
-    return (acl_getroot(cp_security_ctx(thd), cp_strdup(user, MYF(0)),
-		cp_strdup(host, MYF(0)), cp_strdup(host, MYF(0)), (char*)db)) == false;
-}
-
-bool copyGrant(THD* thd, THD* thdSrc, const char* db)
-{
-    Security_context* sctx = cp_security_ctx(thdSrc);
-	if (sctx->cp_master_accsess() == (ulong)~NO_ACCESS)
-    {
-        cp_security_ctx(thd)->skip_grants();
-        return true;
-    }
-	return setGrant(thd, sctx->cp_priv_host(), sctx->cp_priv_user(), db);
-}
-
-void setDbName(THD* thd, const std::string& name)
-{
-	cp_set_db(thd, name.c_str());
-}
-
 dbManager::dbManager(netsvc::server::IAppModule* mod) : m_autoHandle(0), m_thd(NULL),
        m_mod(mod), m_authChecked(false)
 {
@@ -269,7 +246,7 @@ int dbManager::ddl_execSql(database* db, const std::string& sql_stmt)
     if (db)
     {
         copyGrant(m_thd, db->thd(), db->name().c_str());
-        setDbName(m_thd, db->name());
+        setDbName(m_thd, db->name().c_str());
     }
     else
     {
@@ -277,7 +254,7 @@ int dbManager::ddl_execSql(database* db, const std::string& sql_stmt)
             cp_security_ctx(m_thd)->skip_grants();
         else
             setGrant(m_thd, m_mod->host(), m_mod->user(), "");
-        setDbName(m_thd, std::string());
+        setDbName(m_thd, "");
     }
     result = errorCode(execSql(thd, sql_stmt.c_str()));
     if (db)
