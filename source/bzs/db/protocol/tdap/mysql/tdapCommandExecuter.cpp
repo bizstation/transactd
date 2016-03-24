@@ -21,6 +21,7 @@
 #include "recordsetReader.h"
 #include <bzs/db/blobBuffer.h>
 #include <bzs/db/engine/mysql/database.h>
+#include <bzs/db/engine/mysql/mysqlProtocol.h>
 #include <bzs/db/engine/mysql/errorMessage.h>
 #include <bzs/db/engine/mysql/mydebuglog.h>
 #include <bzs/netsvc/server/IAppModule.h> //lookup for result value
@@ -1821,7 +1822,7 @@ connMgrExecuter::connMgrExecuter(request& req, unsigned __int64 parent)
 {
 }
 
-int serialize(request& req, char* buf, size_t& size, const connManager::records& records, short stat)
+int serialize(request& req, char* buf, size_t& size, const connection::records& records, short stat)
 {
     req.reset();
     req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
@@ -1839,49 +1840,49 @@ int connMgrExecuter::read(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
     unsigned __int64* mod = (unsigned __int64*)m_req.keybuf;
-    const connManager::records& records = st.getRecords(mod[0], (int)mod[1]);
+    const connection::records& records = st.getRecords(mod[0], (int)mod[1]);
     return serialize(m_req, buf, size, records, st.stat());
 }
 
 int connMgrExecuter::definedDatabases(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-    const connManager::records& records = st.definedDatabases();
+    const connection::records& records = st.definedDatabases();
     return serialize(m_req, buf, size, records, st.stat());
 }
 
 int connMgrExecuter::systemVariables(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-    const connManager::records& records = st.systemVariables();
+    const connection::records& records = st.systemVariables();
     return serialize(m_req, buf, size, records, st.stat());
 }
 
 int connMgrExecuter::schemaTables(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-    const connManager::records& records = st.schemaTables((const char*)m_req.keybuf); 
+    const connection::records& records = st.schemaTables((const char*)m_req.keybuf); 
     return serialize(m_req, buf, size, records, st.stat());
 }
 
 int connMgrExecuter::definedTables(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-    const connManager::records& records = st.definedTables((const char*)m_req.keybuf, TABLE_TYPE_NORMAL_TABLE);
+    const connection::records& records = st.definedTables((const char*)m_req.keybuf, TABLE_TYPE_NORMAL_TABLE);
     return serialize(m_req, buf, size, records, st.stat());
 }
 
 int connMgrExecuter::definedViews(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-    const connManager::records& records = st.definedTables((const char*)m_req.keybuf, TABLE_TYPE_VIEW);
+    const connection::records& records = st.definedTables((const char*)m_req.keybuf, TABLE_TYPE_VIEW);
     return serialize(m_req, buf, size, records, st.stat());
 }
 
 int connMgrExecuter::slaveStatus(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-    const connManager::records& records = st.readSlaveStatus();
+    const connection::records& records = st.readSlaveStatus();
     return serialize(m_req, buf, size, records, st.stat());
 }
 

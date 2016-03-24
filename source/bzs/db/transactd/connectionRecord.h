@@ -20,6 +20,7 @@
 =================================================================*/
 #include <bzs/env/compiler.h>
 #include <bzs/env/crosscompile.h>
+#include <vector>
 
 #pragma pack(push, 1)
 pragma_pack1;
@@ -162,6 +163,7 @@ struct record
     }
     #endif
 };                                          // 32 + 68 = 100
+typedef std::vector<record> records;
 
 } // connection
 } // transactd

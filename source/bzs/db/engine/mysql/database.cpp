@@ -23,6 +23,7 @@
 #include "percentageKey.h"
 #include "mydebuglog.h"
 #include "mysqlThd.h"
+#include "mysqlProtocol.h"
 #include "bookmark.h"
 #include <bzs/rtl/stl_uty.h>
 #include <boost/shared_array.hpp>
@@ -719,62 +720,6 @@ void database::useAllTables()
     }
 }
 
-// See USE_BINLOG_GTID and USE_BINLOG_VAR in mysqlInternal.h
-#ifdef NOTUSE_BINLOG_VAR 
-    // Windows MySQL can not use mysql_bin_log variable
-    inline short getBinlogPos(THD* currentThd, binlogPos* bpos, THD* tmpThd)
-    {
-        short result = 0;
-        {
-            attachThd(tmpThd);
-            copyGrant(tmpThd, currentThd, NULL);
-            masterStatus p(tmpThd, bpos); 
-            cp_query_command(tmpThd, "show master status");
-            if (tmpThd->is_error())
-                result = tmpThd->cp_get_sql_error();
-            cp_lex_clear(tmpThd);
-        }
-        attachThd(currentThd);
-        return result;
-    }
-#endif
-
-#ifdef USE_BINLOG_GTID
-inline short getBinlogPos(THD* currentThd, binlogPos* bpos, THD* /*tmpThd*/)
-{
-    if (mysql_bin_log.is_open())
-    {
-        rpl_gtid gtid;
-        bpos->type = REPL_POSTYPE_MARIA_GTID;
-        if (mysql_bin_log.lookup_domain_in_binlog_state(currentThd->variables.gtid_domain_id,  &gtid))
-        {
-            sprintf_s(bpos->gtid, GTID_SIZE, "%u-%u-%llu", gtid.domain_id, gtid.server_id, gtid.seq_no); 
-            size_t dir_len = dirname_length(mysql_bin_log.get_log_fname());
-			strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
-			bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
-			bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
-        }
-    }
-    return 0;
-}
-#endif
-
-#ifdef USE_BINLOG_VAR
-    // Linux MySQL can access to the mysql_bin_log variable
-    inline short getBinlogPos(THD* , binlogPos* bpos, THD* /*tmpThd*/)
-    {
-        if (mysql_bin_log.is_open())
-        {
-			size_t dir_len = dirname_length(mysql_bin_log.get_log_fname());
-			strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
-			bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
-			bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
-            bpos->type = REPL_POSTYPE_POS;
-        }
-        return 0;
-    }
-#endif //USE_BINLOG_VAR
-
 bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd)
 {
     if (m_inTransaction)
@@ -795,10 +740,11 @@ bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd
         if (bpos)
         {
             safe_commit_lock commit(m_thd);
-            if (!commit.lock()) return false;
-            #ifndef NOTUSE_BINLOG_VAR
-            safe_mysql_mutex_lock lck(mysql_bin_log.get_log_lock());
-            #endif
+            if (!commit.lock())
+            {
+                m_stat = STATUS_LOCK_ERROR;
+                return false;
+            }
             m_stat = getBinlogPos(m_thd, bpos, tmpThd);
             if (m_stat) return false;
             useAllTables(); // execute scope in safe_commit_lock  

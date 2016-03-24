@@ -31,10 +31,12 @@
 
 class THD;
 struct TABLE;
+struct binlogPos;
 
 #ifndef MAX_KEYLEN
 #define MAX_KEYLEN 1023
 #endif
+
 
 namespace bzs
 {
@@ -44,6 +46,8 @@ namespace engine
 {
 namespace mysql
 {
+
+class table;
 
 /*
  Please comment out the following,
@@ -69,12 +73,11 @@ namespace mysql
 #define MODE_EXCLUSIVE -4
 #define MODE_READ_EXCLUSIVE -6
 
-#define OPEN_TABLE_TIMEOUT_SEC 2
 /** bookmark size
  *  btreive API is MAX 4 byte
  */
 #define REF_SIZE_MAX 112
-class table;
+
 
 
 /** Control mysql table cahche
@@ -183,7 +186,7 @@ public:
         return m_tables;
     }
 
-    bool beginSnapshot(enum_tx_isolation iso, struct binlogPos* bpos, THD* tmpThd);
+    bool beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd);
     bool endSnapshot();
     table* openTable(const std::string& name, short mode,
                      const char* ownerName, std::string dbname);
