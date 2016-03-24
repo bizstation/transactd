@@ -270,8 +270,8 @@ public:
     {
         if (num < m_keyCount)
         {
-            if (strstr(m_key[num].name, "key"))
-                return m_key[num].name[3] - '0';
+            if (strstr(m_key[(int)num].name, "key"))
+                return m_key[(int)num].name[3] - '0';
         }
         return -1;
     }

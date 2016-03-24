@@ -773,7 +773,6 @@ char* nstable::getCreateSql(char* retbuf, uint_td* size /* in out */)
     void* tmp = m_keybuf;
     char_td keynum = m_keynum;
     void* pdata = m_pdata;
-    uint_td buflen = m_buflen;
 
     char tmpName[MAX_PATH] = { 0x00 };
     const char* p = nsdatabase::toServerUri(tmpName, MAX_PATH, uri(), true);

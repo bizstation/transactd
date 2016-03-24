@@ -2312,13 +2312,13 @@ void testSetEnumBit()
 
     BOOST_CHECK(rs[1][_T("id")] == 2);
     BOOST_CHECK(rs[1][_T("set5")].i64() == 31);
-    BOOST_CHECK(rs[1][_T("set64")].i64() == 0x8000000000000001);
+    BOOST_CHECK(rs[1][_T("set64")].i64() == (__int64)0x8000000000000001);
     BOOST_CHECK(rs[1][_T("enum2")].i64() == 1);
     BOOST_CHECK(rs[1][_T("enum260")].i64() == 260);
     BOOST_CHECK(rs[1][_T("bit1")].i64() == 1);
     BOOST_CHECK(rs[1][_T("bit8")].i64() == 0xFF);
     BOOST_CHECK(rs[1][_T("bit32")].i64() == 0xFFFFFFFF);
-    BOOST_CHECK(rs[1][_T("bit64")].i64() == 0xFFFFFFFFFFFFFFFF);
+    BOOST_CHECK(rs[1][_T("bit64")].i64() == (__int64)0xFFFFFFFFFFFFFFFF);
 
     BOOST_CHECK(rs[2][_T("id")] == 3);
     BOOST_CHECK(rs[2][_T("set5")].i64() == 0);
@@ -3368,6 +3368,28 @@ void testTableList()
 
 }
 
+void testCreateInfo()
+{
+    nsdatabase::setCheckTablePtr(true);
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_READONLY);
+    BOOST_CHECK(db->stat() == 0);
+
+    char buf[2048];
+    uint_td size = 2048;
+    db->getCreateViewSql(_T("idessthan5"), buf, &size);
+    BOOST_CHECK(db->stat() == 0);
+    BOOST_CHECK(size > 20);
+
+    table* tb = db->openTable(1, TD_OPEN_READONLY);
+    BOOST_CHECK(db->stat() == 0);
+    size = 2048;
+    tb->getCreateSql(buf, &size);
+    BOOST_CHECK(db->stat() == 0);
+    BOOST_CHECK(size > 1000);
+    db->close();
+    BOOST_CHECK(db->stat() == 0);
+}
 
 #pragma warning(default : 4996) 
 
