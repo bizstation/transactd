@@ -951,8 +951,7 @@ void tabledef::calcReclordlen(bool force)
         // If valible length then specifing fixed length.
         if ((fixedRecordLen == 0) || (flags.bit0 == false))
             fixedRecordLen = m_maxRecordLen;
-    }else
-        ;//assert(0);
+    }
 }
 
 uint_td tabledef::unPack(char* ptr, size_t size) const
