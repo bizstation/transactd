@@ -1,5 +1,5 @@
 ##=================================================================
-#   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+#   Copyright (C) 2012-2016 BizStation Corp All rights reserved.
 #
 #   This program is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License
@@ -194,6 +194,13 @@ endif()
 MYSQL_ADD_PLUGIN(${this_target} ${${this_target}_SOURCE_FILES}
   MODULE_ONLY MODULE_OUTPUT_NAME "${output_name}")
 
+# ==========================================================
+# link -static-libgcc
+# ==========================================================
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc")
+  message("set -static-libgcc")
+endif()
 
 # ==========================================================
 # add SONAME
