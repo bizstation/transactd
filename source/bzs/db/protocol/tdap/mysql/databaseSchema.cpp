@@ -418,33 +418,32 @@ void schemaBuilder::listTable(database* db, std::vector<std::string>& tables, in
                     tables.push_back(tablename);  
                 else if ((ftype == FRMTYPE_TABLE) && type == TABLE_TYPE_TD_SCHEMA)
                 {
-                    LEX_STRING* comment;
                     {
                         #ifndef NO_LOCK_OPEN
                         safe_mysql_mutex_lock lck(&LOCK_open);
                         #endif
-					    TABLE_SHARE* s = cp_get_cached_table_share(db->thd(), db->name().c_str(), tablename.c_str());
+                        TABLE_SHARE* s = cp_get_cached_table_share(db->thd(), db->name().c_str(), tablename.c_str());
                         if (s)
                         {
-                            comment = &s->comment;
+                            LEX_STRING* comment = &s->comment;
+                            if (comment && (comment->length > 8) && strstr(comment->str,"%@%02.000"))
+                            tables.push_back(tablename);
                             #ifdef NO_LOCK_OPEN
                             cp_tdc_release_share(s);
                             #endif
-                        }
-                        else 
-                        {
-                            table* tb = getTable(db, tablename.c_str()); 
-                            if (!tb) break;
-                            comment = &tb->internalTable()->s->comment; 
-                            if (tb) db->closeTable(tb);
+                            continue;
                         }
                     }
-                    if ((comment->length > 8) && strstr(comment->str,"%@%02.000"))
-                    {  //(tb->fields() == 2) && (tb->keys() == 1))
+                    
+                    {
+                        table* tb = getTable(db, tablename.c_str()); 
+                        if (!tb) break;
+                        LEX_STRING* comment = &tb->internalTable()->s->comment; 
+                        if (comment && (comment->length > 8) && strstr(comment->str,"%@%02.000"))
                         tables.push_back(tablename);    
+                        if (tb) tb->close();
                     }
                 }
-                
             }
         }
     }
