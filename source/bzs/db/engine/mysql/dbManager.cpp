@@ -18,6 +18,7 @@
  ================================================================= */
 
 #include "dbManager.h"
+#include "errorMessage.h"
 #include <bzs/netsvc/server/IAppModule.h> //for result value macro.
 #include <bzs/rtl/exception.h>
 #include <time.h>
@@ -51,11 +52,15 @@ public:
             if (m_dbs[i] && m_dbs[i]->thd() == m_thd)
             {
                 if (m_dbs[i]->inSnapshot())
-                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INSNAPSHOT, "Allready in snapshot.");
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INSNAPSHOT, "Already in snapshot.");
                 else if (m_dbs[i]->inTransaction())
-                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Allready in transaction.");
+                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Already in transaction.");
                 else if(m_dbs[i]->usingExclusveMode())
-                    THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INEXCLUSIVE, "Allready in exclusive mode.");
+                {
+                    int code = STATUS_ALREADY_INEXCLUSIVE;
+                    std::string s = "Already in exclusive mode when DDL command execute.";
+                    printWarningMessage(&code, &s);
+                }
                 m_dbs[i]->use();
                 m_dbs[i]->unUseTables(false);
                 m_dbs[i]->closeForReopen();
@@ -245,18 +250,21 @@ int dbManager::ddl_execSql(database* db, const std::string& sql_stmt)
     int result = 0;
     if (db)
     {
-        copyGrant(m_thd, db->thd(), db->name().c_str());
-        setDbName(m_thd, db->name().c_str());
+        copyGrant(thd, db->thd(), db->name().c_str());
+        setDbName(thd, db->name().c_str());
     }
     else
     {
         if (m_mod->isSkipGrants())
-            cp_security_ctx(m_thd)->skip_grants();
+            cp_security_ctx(thd)->skip_grants();
         else
-            setGrant(m_thd, m_mod->host(), m_mod->user(), "");
-        setDbName(m_thd, "");
+            setGrant(thd, m_mod->host(), m_mod->user(), "");
+        setDbName(thd, "");
     }
     result = errorCode(execSql(thd, sql_stmt.c_str()));
+    if (thd->mdl_context.has_locks())
+        close_thread_tables(thd);
+    thd->mdl_context.release_transactional_locks();
     if (db)
         db->use();
     return result;
@@ -278,6 +286,7 @@ int dbManager::ddl_dropDataBase(/*THD* thd,*/ const std::string& dbname,
 
 int dbManager::ddl_createTable(database* db, const char* cmd)
 {
+    smartDbsReopen reopen(db->thd(), m_dbs);
     return ddl_execSql(db, cmd);
 }
 

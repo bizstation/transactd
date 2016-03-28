@@ -92,9 +92,9 @@ database* connMgr::db() const
     return m_db;
 }
 
-void connMgr::connect(const _TCHAR* uri)
+bool connMgr::connect(const _TCHAR* uri)
 {
-    m_db->connect(uri, true);
+    bool ret = m_db->connect(uri, true);
     m_stat = m_db->stat();
     if (m_stat == 0)
     {
@@ -103,6 +103,7 @@ void connMgr::connect(const _TCHAR* uri)
         m_db->getBtrVersion(&vs);
         m_pluginVer = vs.versions[VER_IDX_PLUGIN];
     }
+    return ret;
 }
 
 void connMgr::disconnect()

@@ -60,7 +60,7 @@ private:
     const connMgr::records& doDefinedTables(const _TCHAR* dbname, int type);
 public:
     explicit connMgr(database* db);
-    void connect(const _TCHAR* uri);
+    bool connect(const _TCHAR* uri);
     void disconnect();
     const records& databases();
     const records& tables(const _TCHAR* dbname);
@@ -77,7 +77,7 @@ public:
     database* db() const;
     using nstable::tdapErr;
     using nstable::release;
-    static void removeSystemDb(connMgr::records& recs);
+    static void removeSystemDb(records& recs);
     static const _TCHAR* slaveStatusName(uint_td index);
     static connMgr* create(database* db);
 };

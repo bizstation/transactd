@@ -56,11 +56,13 @@ struct dbimple
         bool lockReadOnly : 1;
         bool autoSchemaUseNullkey : 1;
         bool noPreloadSchema : 1;
+        bool createExistNoCheck : 1;
     };
     dbimple()
         : dbDef(NULL), optionalData(NULL), m_deleteRecordFn(NULL),
           m_copyDataFn(NULL), openBuflen(0), isOpened(false), isTableReadOnly(false),
-          lockReadOnly(false), autoSchemaUseNullkey(false), noPreloadSchema(false)
+          lockReadOnly(false), autoSchemaUseNullkey(false), noPreloadSchema(false),
+          createExistNoCheck(false)
     {
         rootDir[0] = 0x00;
         memset(&vers, 0 , sizeof(btrVersions));
@@ -1013,7 +1015,9 @@ bool database::createTable(const char* utf8Sql)
             const char* p = toServerUri(buf2, MAX_PATH, rootDir(), true);
             uint_td len = (uint_td)strlen(utf8Sql);
             m_stat = m_btrcallid(TD_CREATETABLE, posblk, (void*)utf8Sql, &len,
-                 (void*)p, (uchar_td)strlen(p), CR_SUBOP_BY_SQL , clientID());
+                 (void*)p, (uchar_td)strlen(p),
+                 (m_impl->createExistNoCheck == CR_SUB_FLAG_EXISTCHECK) ?
+                 CR_SUBOP_BY_SQL : CR_SUBOP_BY_SQL_NOCKECK, clientID());
         }
     }
     else
@@ -1043,7 +1047,9 @@ bool database::createTable(short fileNum, const _TCHAR* uri)
         m_stat = m_btrcallid(
             TD_CREATETABLE, posblk, td,
             &m_impl->dbDef->m_datalen, (void*)p, (uchar_td)strlen(p),
-            CR_SUBOP_BY_TABLEDEF /* exists check */, clientID());
+            (m_impl->createExistNoCheck == CR_SUB_FLAG_EXISTCHECK) ?
+                 CR_SUBOP_BY_TABLEDEF : CR_SUBOP_BY_TABLEDEF_NOCKECK,
+                clientID());
     }
     else
     {
@@ -1060,7 +1066,9 @@ bool database::createTable(short fileNum, const _TCHAR* uri)
             buf = uri;
         else
             buf = td->fileName();
-        nsdatabase::createTable(fs, 1024, buf, CR_SUBOP_BY_FILESPEC);
+        nsdatabase::createTable(fs, 1024, buf,
+            (m_impl->createExistNoCheck == CR_SUB_FLAG_EXISTCHECK) ?
+                CR_SUBOP_BY_FILESPEC : CR_SUBOP_BY_FILESPEC_NOCKECK);
         free(fs);
     }
     return (m_stat == 0);

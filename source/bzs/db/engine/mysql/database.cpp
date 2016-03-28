@@ -748,6 +748,15 @@ bool database::endSnapshot()
     return (m_inSnapshot == 0);
 }
 
+/*bool database::existsTable(const char* tablename)
+{
+    char path[FN_REFLEN + 1];
+    enum legacy_db_type not_used;
+    build_table_filename(path, sizeof(path) - 1, name().c_str(), tablename, "", 0);
+    frm_type_enum ftype = dd_frm_type(thd(), (char*)path, &not_used);
+    return FRMTYPE_TABLE == ftype;
+}*/
+
 /** Metadata lock, a table name is case-sensitive
  *  However, in actual opening, it is not distinguished at Windows.
  */
