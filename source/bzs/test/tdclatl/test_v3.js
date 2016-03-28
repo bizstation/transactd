@@ -703,6 +703,65 @@ function testBinlogPos(db)
 	db.endSnapshot();
 }
 
+function testConnMgr(uri)
+{
+	var mgr = new ActiveXObject('transactd.connMgr');
+	var db  = createDatabaseObject();
+	mgr.setDatabase(db);
+	mgr.connect(uri);
+	checkEqual(db.stat , 0,  "mgr.connect");
+	
+	//connections
+	var recs =  mgr.Connections();
+	checkEqual(mgr.stat , 0,  "mgr.Connections");
+	checkEqual(recs.size , 1, "mgr.Connections.size");
+	
+	//InUseDatabases
+	recs = mgr.InUseDatabases(recs(0).conid);
+	checkEqual(mgr.stat , 0,  "mgr.InUseDatabases");
+	checkEqual(recs.size , 1, "mgr.InUseDatabases.size");
+
+	//InUseTables
+	recs = mgr.InUseTables(recs(0).conid, recs(0).db);
+	checkEqual(mgr.stat , 0,  "mgr.InUseTables");
+	checkEqual(recs.size , 4, "mgr.InUseTables.size");
+	
+	//tables
+	recs =  mgr.tables("test_v3");
+	checkEqual(mgr.stat , 0,  "mgr.tables");
+	checkEqual(recs.size , 3, "mgr.tables.size");
+	
+	//views
+	recs = mgr.views("test_v3");
+	checkEqual(mgr.stat , 0,  "mgr.views");
+	checkEqual(recs.size , 1, "mgr.views.size");
+	checkEqual(recs(0).name , "idlessthan5");
+	
+	//schemaTables
+	recs = mgr.schemaTables("test_v3");
+	checkEqual(mgr.stat , 0,  "mgr.schemaTables");
+	checkEqual(recs.size , 1, "mgr.schemaTables.size");
+	checkEqual(recs(0).name , "test");
+	
+	//databases
+	recs = mgr.databases();
+	checkEqual(mgr.stat , 0,  "mgr.databases");
+	var size = recs.size;
+	mgr.RemoveSystemDb(recs);
+	checkNotEqual(size , recs.size,  "RemoveSystemDb recs");
+	
+	//slaveStatus
+	recs = mgr.slaveStatus();
+	checkEqual(mgr.stat , 0,  "mgr.slaveStatus");
+	var status;
+	for (var i = 0; i<recs.size; ++i)
+	   status += (mgr.SlaveStatusName(i) + "\t:" + recs(i).value + "\n");
+	
+	mgr.disconnect();
+	checkEqual(mgr.stat , 0,  "mgr.disconnect");
+	WScript.Echo("\n\n" + status);
+}
+
 
 /*--------------------------------------------------------------------------------*/
 function test(atu, ate, db)
@@ -993,6 +1052,23 @@ function test(atu, ate, db)
 	
 	//binlogPos
 	testBinlogPos(db);
+	
+	//getCreateViewSql
+	db.createTable("create view idlessthan5 as select * from user where id < 5");
+	var view = db.getCreateViewSql("idlessthan5");
+	checkNotEqual(view.indexOf("idlessthan5") , -1, "getCreateViewSql");
+	checkNotEqual(view.indexOf("–¼‘O") , -1, "getCreateViewSql 2");
+	//getCreateSql2
+	var sql = tb.getCreateSql();
+	checkNotEqual(sql.indexOf("CREATE TABLE") , -1, "getCreateSql");
+	checkNotEqual(view.indexOf("–¼‘O") , -1, "getCreateSql 2");
+	
+	//createAssociate()
+	var dba = db.createAssociate();
+	checkEqual(db.stat , 0, "createAssociate");
+	checkEqual(dba.IsAssociate , true, "IsAssociate");
+	// connMgr
+	testConnMgr(db.uri);
 	
 	//WScript.Echo(" -- End Test -- ");
 }

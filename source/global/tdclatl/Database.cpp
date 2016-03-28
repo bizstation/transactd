@@ -589,6 +589,42 @@ STDMETHODIMP CDatabase::GetSqlStringForCreateTable(BSTR tableName, BSTR* retVal)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::CreateAssociate(IDatabase** retVal)
+{
+    CComObject<CDatabase>* ptb;
+    CComObject<CDatabase>::CreateInstance(&ptb);
+    HRESULT ret = ptb->AtatchDatabase((__int64*)m_db->createAssociate());
+    if (ret == S_OK)
+    {
+        IDatabase* dbPtr;
+        ptb->QueryInterface(IID_IDatabase, (void**)&dbPtr);
+        _ASSERTE(dbPtr);
+        *retVal = dbPtr;
+        return S_OK;
+    }
+    return ret;
+}
+
+STDMETHODIMP CDatabase::get_IsAssociate(VARIANT_BOOL* retVal)
+{
+    *retVal = m_db->isAssociate();   
+    return S_OK;
+}
+
+STDMETHODIMP CDatabase::GetCreateViewSql(BSTR name, BSTR* retVal)
+{
+    uint_td size = 65000;
+    char* tmp = new char[size];
+    wchar_t* tmpw = new wchar_t[size];
+    m_db->getCreateViewSql(name, tmp, &size);
+    MultiByteToWideChar(CP_UTF8, 0, tmp, -1, tmpw, size);
+    CComBSTR ret = tmpw;
+    *retVal = ret.Copy();
+    delete [] tmp;
+    delete [] tmpw;
+    return S_OK;
+}
+
 void __stdcall onCopyData(database* db, table* tb, int recordCount, int count,
                           bool& cancel)
 {

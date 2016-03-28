@@ -1016,7 +1016,7 @@ bool database::createTable(const char* utf8Sql)
             uint_td len = (uint_td)strlen(utf8Sql);
             m_stat = m_btrcallid(TD_CREATETABLE, posblk, (void*)utf8Sql, &len,
                  (void*)p, (uchar_td)strlen(p),
-                 (m_impl->createExistNoCheck == CR_SUB_FLAG_EXISTCHECK) ?
+                 (m_impl->createExistNoCheck) ?
                  CR_SUBOP_BY_SQL : CR_SUBOP_BY_SQL_NOCKECK, clientID());
         }
     }
@@ -1047,7 +1047,7 @@ bool database::createTable(short fileNum, const _TCHAR* uri)
         m_stat = m_btrcallid(
             TD_CREATETABLE, posblk, td,
             &m_impl->dbDef->m_datalen, (void*)p, (uchar_td)strlen(p),
-            (m_impl->createExistNoCheck == CR_SUB_FLAG_EXISTCHECK) ?
+            (m_impl->createExistNoCheck) ?
                  CR_SUBOP_BY_TABLEDEF : CR_SUBOP_BY_TABLEDEF_NOCKECK,
                 clientID());
     }
@@ -1067,7 +1067,7 @@ bool database::createTable(short fileNum, const _TCHAR* uri)
         else
             buf = td->fileName();
         nsdatabase::createTable(fs, 1024, buf,
-            (m_impl->createExistNoCheck == CR_SUB_FLAG_EXISTCHECK) ?
+            (m_impl->createExistNoCheck) ?
                 CR_SUBOP_BY_FILESPEC : CR_SUBOP_BY_FILESPEC_NOCKECK);
         free(fs);
     }

@@ -46,7 +46,7 @@ const char* test_records = "INSERT INTO `setenumbit` (`id`, `set5`, `set64`, `en
   "(3, '', '', '0', '0', b'0', b'00000000', b'00000000', b'00000000'),"
   "(4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);";
 
-const char* test_view = "create view idessthan5 as select * from scores where id < 5";
+const char* test_view = "create view idlessthan5 as select * from scores where id < 5";
 
 short createFieldStoreDataBase(database* db)
 {
@@ -3348,15 +3348,18 @@ void testTableList()
     BOOST_CHECK(mgr->stat() == 0);
     {
         const connMgr::records& recs = mgr->tables(DBNAMEV3);
+        BOOST_CHECK(mgr->stat() == 0);
         BOOST_CHECK(recs.size() == 10); //8 + setenumbit + test.bdf
     }
     {
         const connMgr::records& recs = mgr->views(DBNAMEV3);
+        BOOST_CHECK(mgr->stat() == 0);
         BOOST_CHECK(recs.size() == 1);
-        BOOST_CHECK(recs[0].name == std::string("idessthan5"));
+        BOOST_CHECK(recs[0].name == std::string("idlessthan5"));
     }
     {
         const connMgr::records& recs = mgr->schemaTables(DBNAMEV3);
+        BOOST_CHECK(mgr->stat() == 0);
         BOOST_CHECK(recs.size() == 1);
         BOOST_CHECK(recs[0].name == std::string("test"));
     }
@@ -3377,7 +3380,7 @@ void testCreateInfo()
 
     char buf[2048];
     uint_td size = 2048;
-    db->getCreateViewSql(_T("idessthan5"), buf, &size);
+    db->getCreateViewSql(_T("idlessthan5"), buf, &size);
     BOOST_CHECK(db->stat() == 0);
     BOOST_CHECK(size > 20);
 

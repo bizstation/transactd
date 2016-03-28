@@ -53,7 +53,8 @@ private:
     void allocBuffer();
     void writeRecordData(){};
     void onReadAfter(){};
-    const records& getRecords();
+    const records& getRecords(bool isInUseTable = false);
+    void convertFromOldFormat(bool isInUseTable);
     ~connMgr();
     explicit connMgr(const connMgr& r);  //no copyable
     connMgr& operator=(const connMgr& r); //no copyable

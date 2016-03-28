@@ -124,6 +124,7 @@ IDR_FIELDNAMES          REGISTRY                "fieldNames.rgs"
 IDR_POOLEDDBMGR         REGISTRY                "pooledDbMgr.rgs"
 IDR_CONNECTPARAM        REGISTRY                "connectParams.rgs"
 IDR_BITSET              REGISTRY                "Bitset.rgs"
+IDR_CONNMGR             REGISTRY                "ConnMgr.rgs"
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table

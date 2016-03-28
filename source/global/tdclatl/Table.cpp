@@ -850,7 +850,20 @@ STDMETHODIMP CTableTd::GetFVbits(VARIANT Index, IBitset** Value)
     *Value = bi;
     return S_OK;
 }
-   
+
+STDMETHODIMP CTableTd::GetCreateSql(BSTR* retVal)
+{
+    uint_td size = 65000;
+    char* tmp = new char[size];
+    wchar_t* tmpw = new wchar_t[size];
+    m_tb->getCreateSql(tmp, &size);
+    MultiByteToWideChar(CP_UTF8, 0, tmp, -1, tmpw, size);
+    CComBSTR ret = tmpw;
+    *retVal = ret.Copy();
+    delete [] tmp;
+    delete [] tmpw;
+    return S_OK;
+}
 
 void __stdcall onRecordCount(bzs::db::protocol::tdap::client::table* tb,
                           int count, bool& cancel)

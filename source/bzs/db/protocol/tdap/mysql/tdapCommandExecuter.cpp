@@ -1140,11 +1140,11 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
         uint key_length= cp_get_table_def_key(thd, &tables, &keyPtr);
         if (!cp_tdc_open_view(thd, &tables, name.c_str(), key, key_length, OPEN_VIEW_NO_PARSE))
         {
-            unsigned int len = (unsigned int)tables.view_body_utf8.length;
-            if (len+1 <= *req.datalen)
+            unsigned int len = (unsigned int)tables.view_body_utf8.length + 17 + name.size();
+            if (len  <= *req.datalen)
             {
                 char* p = nw->curPtr() - sizeof(unsigned short);// orver write row space
-                memcpy(p, tables.view_body_utf8.str, len);
+                sprintf_s(p, *req.datalen, "CREATE VIEW %s as %s", name.c_str(), tables.view_body_utf8.str);
                 p[len] = 0x00;
                 nw->asyncWrite(NULL, len+1, netsvc::server::netWriter::curSeekOnly);
                 nw->writeHeadar(P_MASK_DATA | P_MASK_DATALEN, 0);
@@ -1826,13 +1826,16 @@ connMgrExecuter::connMgrExecuter(request& req, unsigned __int64 parent)
 int serialize(request& req, char* buf, size_t& size, const connection::records& records, short stat)
 {
     req.reset();
-    req.paramMask = P_MASK_DATA | P_MASK_DATALEN;
+    req.paramMask = P_MASK_DATA | P_MASK_DATALEN | P_MASK_KEYBUF;
     if (records.size())
         req.data = (void*)&records[0];
     else
         req.paramMask = P_MASK_DATALEN;
-    req.resultLen = (uint_td)(sizeof(record) * records.size());
+    int len = sizeof(record);
+    req.resultLen = (uint_td)(len * records.size());
     req.result = stat;
+    req.keylen = 4;
+    req.keybuf = &len;
     size = req.serialize(NULL, buf);
     return EXECUTE_RESULT_SUCCESS;
 }
@@ -1908,28 +1911,39 @@ int connMgrExecuter::disconnectAll(char* buf, size_t& size)
 
 int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
 {
-    if (m_req.keyNum == TD_STSTCS_READ)
-        return read(nw->ptr(), nw->datalen);
-    else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ONE)
+    if (m_req.keyNum == TD_STSTCS_DISCONNECT_ONE)
         return disconnectOne(nw->ptr(), nw->datalen);
-    else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ALL)
+    if (m_req.keyNum == TD_STSTCS_DISCONNECT_ALL)
         return disconnectAll(nw->ptr(), nw->datalen);
-    else if(m_req.keyNum == TD_STSTCS_DATABASE_LIST)
-        return definedDatabases(nw->ptr(), nw->datalen);
-    else if(m_req.keyNum == TD_STSTCS_SYSTEM_VARIABLES)
-        return systemVariables(nw->ptr(), nw->datalen);
-    else if(m_req.keyNum == TD_STSTCS_SCHEMA_TABLE_LIST)
-        return schemaTables(nw->ptr(), nw->datalen);
-    else if(m_req.keyNum == TD_STSTCS_TABLE_LIST)
-        return definedTables(nw->ptr(), nw->datalen);
-    else if(m_req.keyNum == TD_STSTCS_VIEW_LIST)
-        return definedViews(nw->ptr(), nw->datalen);
-    else if(m_req.keyNum == TD_STSTCS_SLAVE_STATUS)
-        return slaveStatus(nw->ptr(), nw->datalen);
 
-    // STATUS_NOSUPPORT_OP
-    m_req.reset();
-    m_req.result = STATUS_NOSUPPORT_OP;
+    if (*m_req.datalen == (uint_td)63976)
+    {
+        switch (m_req.keyNum)
+        {
+        case TD_STSTCS_READ:
+            return read(nw->ptr(), nw->datalen);
+        case TD_STSTCS_DATABASE_LIST:
+            return definedDatabases(nw->ptr(), nw->datalen);
+        case TD_STSTCS_SYSTEM_VARIABLES:
+            return systemVariables(nw->ptr(), nw->datalen);
+        case TD_STSTCS_SCHEMA_TABLE_LIST:
+            return schemaTables(nw->ptr(), nw->datalen);
+        case TD_STSTCS_TABLE_LIST:
+            return definedTables(nw->ptr(), nw->datalen);
+        case TD_STSTCS_VIEW_LIST:
+            return definedViews(nw->ptr(), nw->datalen);
+        case TD_STSTCS_SLAVE_STATUS:
+            return slaveStatus(nw->ptr(), nw->datalen);
+        default:
+            m_req.reset();
+            m_req.result = STATUS_NOSUPPORT_OP;
+            break;
+        }
+    }else
+    {
+        m_req.reset();
+        m_req.result = SERVER_CLIENT_NOT_COMPATIBLE;
+    }
     nw->datalen = m_req.serialize(NULL, nw->ptr());
     return EXECUTE_RESULT_SUCCESS;
 }

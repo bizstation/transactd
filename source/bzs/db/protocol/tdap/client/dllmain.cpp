@@ -379,8 +379,10 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         }
         case TD_STASTISTICS:
-            client_t->req().paramMask =
-                P_MASK_DATALEN | P_MASK_KEYBUF | P_MASK_KEYNUM;
+            if (client_t->isServerType2Statistics())
+                client_t->req().paramMask = P_MASK_DATALEN | P_MASK_KEYBUF | P_MASK_KEYNUM;
+            else
+                return STATUS_NOSUPPORT_OP;
             break;
         case TD_RESET_CLIENT:
         case TD_GETDIRECTORY:

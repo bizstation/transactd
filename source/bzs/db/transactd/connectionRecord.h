@@ -1,7 +1,7 @@
 #ifndef BZS_DB_TRANSACTD_CONNECTIONRECORD_H
 #define BZS_DB_TRANSACTD_CONNECTIONRECORD_H
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013 2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -23,7 +23,7 @@
 #include <vector>
 
 #pragma pack(push, 1)
-pragma_pack1;
+pragma_pack1
 
 namespace bzs
 {
@@ -110,27 +110,32 @@ record::type data type
 
 struct record
 {
-    record() : conId(0), cid(0), dbid(0), trnType(0), status(0), readCount(0), 
-        updCount(0), delCount(0), insCount(0)
+    record() : conId(0), id(0), db(0), updCount(0), status(0)
     {
         name[0] = 0x00;
     }
     union
     {
         __int64 conId;                      // 8 byte
-        __int64 longValue;  
+        __int64 longValue; 
+        struct
+        {
+            unsigned int delCount;                  
+            unsigned int insCount;                  
+        };
+    };
+    unsigned int id;                        // 4 byte
+    union
+    {
+        unsigned int db;
+        unsigned int readCount;             // 4 byte
     };
     union
     {
-        unsigned int cid;                   // 4 byte
-        unsigned int value_id;
+        unsigned int updCount;              // 4 byte
+        unsigned int type;                           
     };
-    unsigned short dbid;                    // 2 byte
-    union
-    {
-        short trnType;                      // 2 byte
-        short type;
-    };
+    
     union                                   // 67 byte
     {
         char name[CON_REC_VALUE_SIZE];
@@ -150,10 +155,7 @@ struct record
             char dummy : 2;
         };
     };
-    unsigned int readCount;                 // 4 byte
-    unsigned int updCount;                  // 4 byte
-    unsigned int delCount;                  // 4 byte
-    unsigned int insCount;                  // 4 byte
+    
 
     #ifdef _UNICODE
     inline _TCHAR* nameW(_TCHAR* buf, int size)
@@ -162,7 +164,7 @@ struct record
         return buf;
     }
     #endif
-};                                          // 32 + 68 = 100
+};                                          // 20 + 68 = 88
 typedef std::vector<record> records;
 
 } // connection
@@ -171,6 +173,6 @@ typedef std::vector<record> records;
 } // bzs
 
 #pragma pack(pop)
-pragma_pop;
+pragma_pop
 
 #endif // BZS_DB_TRANSACTD_CONNECTIONRECORD_H

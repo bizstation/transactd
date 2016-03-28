@@ -82,6 +82,13 @@ class client
 
     std::vector<char> m_sendbuf;
 
+    bool checkVersion(int major, int ninor)
+    {
+        const clsrv_ver* v = ver();
+        if (!v) return false;
+        return (v->srvMajor > major) || ((v->srvMajor == major) && (v->srvMinor >= ninor));
+    }
+
     bool checkVersion(clsrv_ver& ver)
     {
         if ((ver.srvMajor < 2) || ((ver.srvMajor == 2) && (ver.srvMinor < 3)))
@@ -231,12 +238,12 @@ public:
     inline bool isSupportFunction(short op)
     {
         if (op == TD_GET_SCHEMA)
-        {
-            const clsrv_ver* v = ver();
-            if (!v) return false;
-            return (v->srvMajor > 2) || ((v->srvMajor == 2) && (v->srvMinor >= 6));
-        }
+            return checkVersion(2, 6);
         return false;
+    }
+    inline bool isServerType2Statistics()
+    {
+        return checkVersion(3, 2);
     }
 
     inline void setParam(ushort_td op, posblk* pbk, void_td* data,

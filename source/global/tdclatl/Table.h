@@ -174,5 +174,6 @@ public:
     STDMETHOD(SetFV)(VARIANT Index, VARIANT Value);
     STDMETHOD(SetTimestampMode)(eTimeStampMode mode);
     STDMETHOD(GetFVbits)(VARIANT Index, IBitset** Value);
+    STDMETHOD(GetCreateSql)( BSTR* retVal);
 
 };

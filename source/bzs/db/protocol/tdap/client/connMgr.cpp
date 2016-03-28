@@ -76,6 +76,38 @@ const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
     _T("Master_Server_Id" ),
 };
 
+#pragma pack(push, 1)
+pragma_pack1
+struct oldRrecord
+{
+    __int64 conId;                      // 8 byte
+    unsigned int id;                    // 4 byte
+    unsigned short db;                  // 2 byte
+    short type;                         // 2 byte
+    char name[CON_REC_VALUE_SIZE];      // 67 byte
+    union
+    {
+        char status;                    // 1 byte
+        struct
+        {
+            char inTransaction : 1;
+            char inSnapshot : 1;
+            char openNormal : 1;
+            char openReadOnly : 1;
+            char openEx : 1;
+            char openReadOnlyEx : 1;
+            char dummy : 2;
+        };
+    };
+    unsigned int readCount;             // 4 byte
+    unsigned int updCount;              // 4 byte
+    unsigned int delCount;              // 4 byte    
+    unsigned int insCount;              // 4 byte 
+
+};                                      // 32 + 68 = 100
+#pragma pack(pop)
+pragma_pop
+
 connMgr::connMgr(database* db) : nstable(db)
 {
     m_db = db;
@@ -90,6 +122,35 @@ connMgr::~connMgr() {}
 database* connMgr::db() const
 {
     return m_db;
+}
+
+void connMgr::convertFromOldFormat(bool isInUseTable)
+{
+    if (m_datalen >= sizeof(oldRrecord))
+    {
+        oldRrecord* rec = (oldRrecord*)m_pdata;
+        oldRrecord* end = rec + (m_datalen / sizeof(oldRrecord));
+        int i = 0;
+        while (rec != end)
+        {
+            oldRrecord tmp = *rec;
+            m_records[i].conId =  tmp.conId;
+            m_records[i].id =  tmp.id;
+            m_records[i].db =  tmp.db;
+            m_records[i].type =  tmp.type;
+            strncpy(m_records[i].name, tmp.name, CON_REC_VALUE_SIZE);
+            if (isInUseTable)
+            {
+                m_records[i].readCount =  tmp.readCount;
+                m_records[i].updCount =  tmp.updCount;
+                m_records[i].delCount =  tmp.delCount;
+                m_records[i].insCount =  tmp.insCount;
+            }
+            ++rec;
+            ++i;
+        }
+        m_datalen =  sizeof(connMgr::record) * i;
+    }
 }
 
 bool connMgr::connect(const _TCHAR* uri)
@@ -128,10 +189,11 @@ void connMgr::allocBuffer()
     setIsOpen(true);
 }
 
-const connMgr::records& connMgr::getRecords()
+const connMgr::records& connMgr::getRecords(bool isInUseTable)
 {
-    allocBuffer();
     tdap(TD_STASTISTICS);
+    if (m_stat == 0 && *((int*)m_keybuf) != sizeof(connMgr::record))
+        convertFromOldFormat(isInUseTable);
     if (m_stat == 0)
         m_records.resize(m_datalen / sizeof(connMgr::record));
     else
@@ -142,6 +204,7 @@ const connMgr::records& connMgr::getRecords()
 const connMgr::records& connMgr::databases()
 {
     m_keynum = TD_STSTCS_DATABASE_LIST;
+    allocBuffer();
     return getRecords();
 }
 
@@ -157,11 +220,7 @@ const connMgr::records& connMgr::doDefinedTables(const _TCHAR* dbname, int type)
 #endif
     m_keybuf = tmp;
     m_keylen = 128;
-    tdap(TD_STASTISTICS);
-    if (m_stat == 0)
-        m_records.resize(m_datalen / sizeof(connMgr::record));
-    else
-        m_records.resize(0);
+    getRecords();
     m_keybuf = &m_params[0];
     m_keylen = sizeof(m_params);
     return m_records;
@@ -195,6 +254,7 @@ const connMgr::records& connMgr::slaveStatus()
     if ((m_pluginVer.majorVersion >= 3) && (m_pluginVer.minorVersion >= 2))
     {
         m_keynum = TD_STSTCS_SLAVE_STATUS;
+        allocBuffer();
         getRecords();
         if (m_records.size() > SLAVE_STATUS_DEFAULT_SIZE)
             m_records.resize(SLAVE_STATUS_DEFAULT_SIZE);
@@ -208,6 +268,7 @@ const connMgr::records& connMgr::slaveStatus()
 const connMgr::records& connMgr::sysvars()
 {
     m_keynum = TD_STSTCS_SYSTEM_VARIABLES;
+    allocBuffer();
     return getRecords();
 }
 
@@ -216,6 +277,7 @@ const connMgr::records& connMgr::connections()
     m_keynum = TD_STSTCS_READ;
     m_params[0] = 0;
     m_params[1] = 0;
+    allocBuffer();
     return getRecords();
 }
 
@@ -224,6 +286,7 @@ const connMgr::records& connMgr::inUseDatabases(__int64 connid)
     m_keynum = TD_STSTCS_READ;
     m_params[0] = connid;
     m_params[1] = -1;
+    allocBuffer();
     return getRecords();
 }
 
@@ -232,7 +295,8 @@ const connMgr::records& connMgr::inUseTables(__int64 connid, int dbid)
     m_keynum = TD_STSTCS_READ;
     m_params[0] = connid;
     m_params[1] = dbid;
-    return getRecords();
+    allocBuffer();
+    return getRecords(true);
 }
 
 void connMgr::postDisconnectOne(__int64 connid)

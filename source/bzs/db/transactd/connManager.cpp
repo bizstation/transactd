@@ -94,31 +94,31 @@ void connManager::getDatabaseList(igetDatabases* dbm, const module* mod) const
             m_records.push_back(connection::record());
             connection::record& rec = m_records[m_records.size() - 1];
             rec.conId = (unsigned __int64)mod;
-            rec.cid = db->clientID();
-            rec.dbid = (unsigned short)j;
+            rec.id = db->clientID();
+            rec.db = (unsigned short)j;
             rec.status = 0;
             rec.inTransaction = db->inTransaction();
             rec.inSnapshot = db->inSnapshot();
             if (rec.inTransaction)
             {
                 if (db->transactionIsolation() == ISO_REPEATABLE_READ)
-                    rec.trnType = MULTILOCK_GAP;
+                    rec.type = MULTILOCK_GAP;
                 else if (db->transactionIsolation() == ISO_READ_COMMITTED)
                 {
                     if (db->transactionType() == TRN_RECORD_LOCK_SINGLE)
-                        rec.trnType = SINGLELOCK_NOGAP;
+                        rec.type = SINGLELOCK_NOGAP;
                     else
-                        rec.trnType = MULTILOCK_NOGAP;
+                        rec.type = MULTILOCK_NOGAP;
                 }
             }
             if (rec.inSnapshot)
             {
                 if (db->transactionIsolation() == 0)
-                    rec.trnType = CONSISTENT_READ;
+                    rec.type = CONSISTENT_READ;
                 else if (db->transactionIsolation() == ISO_REPEATABLE_READ)
-                    rec.trnType = MULTILOCK_GAP_SHARE;
+                    rec.type = MULTILOCK_GAP_SHARE;
                 else if (db->transactionIsolation() == ISO_READ_COMMITTED)
-                    rec.trnType = MULTILOCK_NOGAP_SHARE;
+                    rec.type = MULTILOCK_NOGAP_SHARE;
             }
             strncpy_s(rec.name, 64, dbs[j]->name().c_str(), 64);
         }
@@ -164,8 +164,7 @@ const connection::records& connManager::getRecords(unsigned __int64 conid,
                             m_records.push_back(connection::record());
                             connection::record& rec =
                                 m_records[m_records.size() - 1];
-                            rec.conId = (unsigned __int64)mod;
-                            rec.cid = tb->id();
+                            rec.id = tb->id();
                             rec.readCount = tb->readCount();
                             rec.updCount = tb->updCount();
                             rec.delCount = tb->delCount();
@@ -195,7 +194,7 @@ const connection::records& connManager::systemVariables() const
         {
             m_records.push_back(connection::record());
             connection::record& rec = m_records[m_records.size() - 1];
-            rec.value_id = i;
+            rec.id = i;
             switch(i)
             {
             case TD_VER_DB:
