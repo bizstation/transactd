@@ -241,10 +241,6 @@ public:
             return checkVersion(2, 6);
         return false;
     }
-    inline bool isServerType2Statistics()
-    {
-        return checkVersion(3, 2);
-    }
 
     inline void setParam(ushort_td op, posblk* pbk, void_td* data,
                          uint_td* datalen, void_td* keybuf, keylen_td keylen,

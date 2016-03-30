@@ -845,7 +845,6 @@ ushort_td nstable::recordLength()
 
 void nstable::doCreateIndex(bool specifyKeyNum)
 {
-
     if (specifyKeyNum)
         m_keynum += ((uchar_td)0x80);
     tdap(TD_BUILD_INDEX);
