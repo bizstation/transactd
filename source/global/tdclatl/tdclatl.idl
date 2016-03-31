@@ -1792,7 +1792,7 @@ interface IConnRecord : IDispatch{
 #ifdef _WIN64
     HRESULT _stdcall ConId([out, retval] __int64* retVal);
 #else
-    HRESULT _stdcall ConId([out, retval] int* retVal);
+    HRESULT _stdcall ConId([out, retval] BSTR* retVal);
 #endif
     [propget, id(0x0000002)]
     HRESULT _stdcall Id([out, retval] int* retVal); //unsigned int value_id;
@@ -1862,19 +1862,19 @@ interface IConnMgr : IDispatch{
 #ifdef _WIN64
     HRESULT _stdcall InUseDatabases([in]__int64 connid, [out, retval] IConnRecords** retVal);
 #else
-    HRESULT _stdcall InUseDatabases([in]int connid, [out, retval] IConnRecords** retVal);
+    HRESULT _stdcall InUseDatabases([in]BSTR connid, [out, retval] IConnRecords** retVal);
 #endif
     [id(0x000000B)]
 #ifdef _WIN64
     HRESULT _stdcall InUseTables([in]__int64 connid, [in] int db, [out, retval] IConnRecords** retVal);
 #else
-    HRESULT _stdcall InUseTables([in]int connid, [in] int db, [out, retval] IConnRecords** retVal);
+    HRESULT _stdcall InUseTables([in]BSTR connid, [in] int db, [out, retval] IConnRecords** retVal);
 #endif
     [id(0x000000C)]
 #ifdef _WIN64
     HRESULT _stdcall PostDisconnectOne([in] __int64 connid);
 #else
-    HRESULT _stdcall PostDisconnectOne([in] int connid);
+    HRESULT _stdcall PostDisconnectOne([in] BSTR connid);
 #endif
     [id(0x000000D)]
     HRESULT _stdcall PostDisconnectAll();

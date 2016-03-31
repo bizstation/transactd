@@ -753,10 +753,10 @@ function testConnMgr(uri)
 	//slaveStatus
 	recs = mgr.slaveStatus();
 	checkEqual(mgr.stat , 0,  "mgr.slaveStatus");
-	var status;
-	for (var i = 0; i<recs.size; ++i)
+	var status = "";
+	/*for (var i = 0; i<recs.size; ++i)
 	   status += (mgr.SlaveStatusName(i) + "\t:" + recs(i).value + "\n");
-	
+	*/
 	mgr.disconnect();
 	checkEqual(mgr.stat , 0,  "mgr.disconnect");
 	WScript.Echo("\n\n" + status);

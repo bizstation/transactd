@@ -214,7 +214,7 @@ void connMgr::allocBuffer()
 const connMgr::records& connMgr::getRecords(bool isInUseTable)
 {
     tdap(TD_STASTISTICS);
-    if (m_stat == 0 && *((int*)m_keybuf) != sizeof(connMgr::record))
+    if (m_stat == 0 && *((int*)m_keybuf) != (int)sizeof(connMgr::record))
         convertFromOldFormat(isInUseTable);
     if (m_stat == 0)
         m_records.resize(m_datalen / sizeof(connMgr::record));
