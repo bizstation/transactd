@@ -356,8 +356,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::dbdef::fieldNumByViewNum;
 %ignore bzs::db::protocol::tdap::client::dbdef::getFieldPosition;
 %ignore bzs::db::protocol::tdap::client::dbdef::getFileSpec;
-%ignore bzs::db::protocol::tdap::client::dbdef::popBackup;
-%ignore bzs::db::protocol::tdap::client::dbdef::pushBackup;
 %ignore bzs::db::protocol::tdap::client::dbdef::relateData;
 %ignore bzs::db::protocol::tdap::client::dbdef::setStat;
 %ignore bzs::db::protocol::tdap::client::dbdef::tableDefPtr;

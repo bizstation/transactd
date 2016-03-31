@@ -1532,6 +1532,14 @@ class dbdef {
 		return dbdef_mode($this->_cPtr);
 	}
 
+	function pushBackup($tableIndex) {
+		dbdef_pushBackup($this->_cPtr,$tableIndex);
+	}
+
+	function popBackup($tableIndex) {
+		dbdef_popBackup($this->_cPtr,$tableIndex);
+	}
+
 	function synchronizeSeverSchema($tableIndex) {
 		dbdef_synchronizeSeverSchema($this->_cPtr,$tableIndex);
 	}

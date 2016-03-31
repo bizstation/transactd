@@ -11918,6 +11918,82 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_dbdef_pushBackup) {
+  bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
+  short arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of dbdef_pushBackup. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (short) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      (arg1)->pushBackup(arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_dbdef_popBackup) {
+  bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
+  short arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of dbdef_popBackup. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (short) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      (arg1)->popBackup(arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_dbdef_synchronizeSeverSchema) {
   bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
   short arg2 ;
@@ -31948,6 +32024,14 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_dbdef_fieldvalidlength, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_dbdef_pushbackup, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_dbdef_popbackup, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_dbdef_synchronizeseverschema, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
@@ -33559,6 +33643,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(dbdef_findkeynumbyfieldnum,_wrap_dbdef_findKeynumByFieldNum,swig_arginfo_dbdef_findkeynumbyfieldnum)
  SWIG_ZEND_NAMED_FE(dbdef_fieldnumbyname,_wrap_dbdef_fieldNumByName,swig_arginfo_dbdef_fieldnumbyname)
  SWIG_ZEND_NAMED_FE(dbdef_fieldvalidlength,_wrap_dbdef_fieldValidLength,swig_arginfo_dbdef_fieldvalidlength)
+ SWIG_ZEND_NAMED_FE(dbdef_pushbackup,_wrap_dbdef_pushBackup,swig_arginfo_dbdef_pushbackup)
+ SWIG_ZEND_NAMED_FE(dbdef_popbackup,_wrap_dbdef_popBackup,swig_arginfo_dbdef_popbackup)
  SWIG_ZEND_NAMED_FE(dbdef_synchronizeseverschema,_wrap_dbdef_synchronizeSeverSchema,swig_arginfo_dbdef_synchronizeseverschema)
  SWIG_ZEND_NAMED_FE(dbdef_statmsg,_wrap_dbdef_statMsg,swig_arginfo_dbdef_statmsg)
  SWIG_ZEND_NAMED_FE(dbdef_reopen,_wrap_dbdef_reopen,swig_arginfo_dbdef_reopen)

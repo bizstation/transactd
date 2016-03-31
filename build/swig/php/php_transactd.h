@@ -257,6 +257,8 @@ ZEND_NAMED_FUNCTION(_wrap_dbdef_tableNumByName);
 ZEND_NAMED_FUNCTION(_wrap_dbdef_findKeynumByFieldNum);
 ZEND_NAMED_FUNCTION(_wrap_dbdef_fieldNumByName);
 ZEND_NAMED_FUNCTION(_wrap_dbdef_fieldValidLength);
+ZEND_NAMED_FUNCTION(_wrap_dbdef_pushBackup);
+ZEND_NAMED_FUNCTION(_wrap_dbdef_popBackup);
 ZEND_NAMED_FUNCTION(_wrap_dbdef_synchronizeSeverSchema);
 ZEND_NAMED_FUNCTION(_wrap_dbdef_statMsg);
 ZEND_NAMED_FUNCTION(_wrap_dbdef_reopen);

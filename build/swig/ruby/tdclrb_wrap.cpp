@@ -12883,6 +12883,84 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_dbdef_pushBackup(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
+  short arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  short val2 ;
+  int ecode2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::dbdef *","pushBackup", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::dbdef * >(argp1);
+  ecode2 = SWIG_AsVal_short(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "short","pushBackup", 2, argv[0] ));
+  } 
+  arg2 = static_cast< short >(val2);
+  {
+    try {
+      (arg1)->pushBackup(arg2);
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_dbdef_popBackup(int argc, VALUE *argv, VALUE self) {
+  bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
+  short arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  short val2 ;
+  int ecode2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::protocol::tdap::client::dbdef *","popBackup", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::protocol::tdap::client::dbdef * >(argp1);
+  ecode2 = SWIG_AsVal_short(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "short","popBackup", 2, argv[0] ));
+  } 
+  arg2 = static_cast< short >(val2);
+  {
+    try {
+      (arg1)->popBackup(arg2);
+    } catch (bzs::rtl::exception& e) {
+      static VALUE bzs_rtl_error = rb_define_class("BZS_RTL_Error", rb_eStandardError);
+      rb_raise(bzs_rtl_error, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      static VALUE cpp_std_error = rb_define_class("CPP_STD_Error", rb_eStandardError);
+      rb_raise(cpp_std_error, e.what());
+    }
+  }
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_dbdef_synchronizeSeverSchema(int argc, VALUE *argv, VALUE self) {
   bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
   short arg2 ;
@@ -36366,6 +36444,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassDbdef.klass, "findKeynumByFieldNum", VALUEFUNC(_wrap_dbdef_findKeynumByFieldNum), -1);
   rb_define_method(SwigClassDbdef.klass, "fieldNumByName", VALUEFUNC(_wrap_dbdef_fieldNumByName), -1);
   rb_define_method(SwigClassDbdef.klass, "fieldValidLength", VALUEFUNC(_wrap_dbdef_fieldValidLength), -1);
+  rb_define_method(SwigClassDbdef.klass, "pushBackup", VALUEFUNC(_wrap_dbdef_pushBackup), -1);
+  rb_define_method(SwigClassDbdef.klass, "popBackup", VALUEFUNC(_wrap_dbdef_popBackup), -1);
   rb_define_method(SwigClassDbdef.klass, "synchronizeSeverSchema", VALUEFUNC(_wrap_dbdef_synchronizeSeverSchema), -1);
   rb_define_method(SwigClassDbdef.klass, "statMsg", VALUEFUNC(_wrap_dbdef_statMsg), -1);
   rb_define_method(SwigClassDbdef.klass, "reopen", VALUEFUNC(_wrap_dbdef_reopen), -1);
