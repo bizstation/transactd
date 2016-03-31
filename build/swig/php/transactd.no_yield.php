@@ -499,7 +499,6 @@ abstract class transactd {
 
 	const eIsNotNull = 11;
 
-
 	static function getFilterLogicTypeCode($cmpstr) {
 		return getFilterLogicTypeCode($cmpstr);
 	}
@@ -627,11 +626,11 @@ abstract class transactd {
 	const RECORD_KEYVALUE_FIELDVALUE = 0;
 	
 	const RECORD_KEYVALUE_FIELDOBJECT = 1;
-
+	
 	static $fieldValueMode = self::FIELDVALUEMODE_NORETURNNULL;
 	
 	static $recordValueMode = self::RECORD_KEYVALUE_FIELDOBJECT;
-
+	
 	static function setFieldValueMode($mode) {
 		self::$fieldValueMode = $mode;
 	}
@@ -909,7 +908,7 @@ class fielddef extends fielddef_t_my {
 	function charsetIndex() {
 		return fielddef_charsetIndex($this->_cPtr);
 	}
-	
+
 	function isNullable() {
 		return fielddef_isNullable($this->_cPtr);
 	}
@@ -937,7 +936,7 @@ class fielddef extends fielddef_t_my {
 	function name() {
 		return fielddef_name($this->_cPtr);
 	}
-	
+
 	function isTrimPadChar() {
 		return fielddef_isTrimPadChar($this->_cPtr);
 	}
@@ -1374,6 +1373,10 @@ abstract class nstable {
 		nstable_stats($this->_cPtr,$databuffer,$buflen,$estimate);
 	}
 
+	function getCreateSql() {
+		return nstable_getCreateSql($this->_cPtr);
+	}
+
 	function unlock($bm=null) {
 		switch (func_num_args()) {
 		case 0: nstable_unlock($this->_cPtr); break;
@@ -1403,6 +1406,257 @@ abstract class nstable {
 
 	static function existsFile($filename) {
 		return nstable_existsFile($filename);
+	}
+}
+
+class connRecord {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		$func = 'connRecord_'.$var.'_set';
+		if (function_exists($func)) return call_user_func($func,$this->_cPtr,$value);
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		$func = 'connRecord_'.$var.'_get';
+		if (function_exists($func)) return call_user_func($func,$this->_cPtr);
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if (function_exists('connRecord_'.$var.'_get')) return true;
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __construct($res=null) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__transactd__connection__record') {
+			$this->_cPtr=$res;
+			return;
+		}
+		$this->_cPtr=new_connRecord();
+	}
+}
+
+class connRecords implements \ArrayAccess, \Countable {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function size() {
+		return connRecords_size($this->_cPtr);
+	}
+
+	function __construct($res) {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__transactd__connection__records') {
+			$this->_cPtr=$res;
+			return;
+		}
+		//$this->_cPtr=new_connRecords();
+		throw new \BadMethodCallException();
+	}
+
+	// ArrayAccess
+	public function offsetExists($offset) {
+		return (\gettype($offset) === "integer" &&
+			$offset >= 0 && $offset < connRecords_size($this->_cPtr));
+	}
+
+	public function offsetGet($offset) {
+		if (\gettype($offset) !== "integer" ||
+			$offset < 0 || $offset >= connRecords_size($this->_cPtr))
+			throw new \OutOfRangeException();
+		$r = connRecords_getRecord($this->_cPtr,$offset);
+		if (is_resource($r))
+			return new connRecord($r);
+		return $r;
+	}
+
+	public function offsetSet($offset, $value) {
+		throw new \BadMethodCallException();
+	}
+
+	public function offsetUnset($offset) {
+		throw new \BadMethodCallException();
+	}
+
+	// Countable
+	public function count() {
+		return connRecords_size($this->_cPtr);
+	}
+}
+
+class connMgr {
+	public $_cPtr=null;
+	protected $_pData=array();
+
+	function __set($var,$value) {
+		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
+		$this->_pData[$var] = $value;
+	}
+
+	function __get($var) {
+		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
+		return $this->_pData[$var];
+	}
+
+	function __isset($var) {
+		if ($var === 'thisown') return true;
+		return array_key_exists($var, $this->_pData);
+	}
+
+	function __construct($db) {
+		$this->_cPtr=connMgr_create($db);
+	}
+
+	function connect($uri) {
+		return connMgr_connect($this->_cPtr,$uri);
+	}
+
+	function disconnect() {
+		connMgr_disconnect($this->_cPtr);
+	}
+
+	function databases() {
+		$r=connMgr_databases($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function tables($dbname) {
+		$r=connMgr_tables($this->_cPtr,$dbname);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function views($dbname) {
+		$r=connMgr_views($this->_cPtr,$dbname);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function schemaTables($dbname) {
+		$r=connMgr_schemaTables($this->_cPtr,$dbname);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function slaveStatus() {
+		$r=connMgr_slaveStatus($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function sysvars() {
+		$r=connMgr_sysvars($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function connections() {
+		$r=connMgr_connections($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function inUseDatabases($connid) {
+		$r=connMgr_inUseDatabases($this->_cPtr,$connid);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function inUseTables($connid,$dbid) {
+		$r=connMgr_inUseTables($this->_cPtr,$connid,$dbid);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function postDisconnectOne($connid) {
+		connMgr_postDisconnectOne($this->_cPtr,$connid);
+	}
+
+	function postDisconnectAll() {
+		connMgr_postDisconnectAll($this->_cPtr);
+	}
+
+	function stat() {
+		return connMgr_stat($this->_cPtr);
+	}
+
+	function db() {
+		$r=connMgr_db($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new database($r);
+		}
+		return $r;
+	}
+
+	static function removeSystemDb($recs) {
+		connMgr_removeSystemDb($recs);
+	}
+
+	static function sysvarName($index) {
+		return connMgr_sysvarName($index);
+	}
+
+	static function slaveStatusName($index) {
+		return connMgr_slaveStatusName($index);
 	}
 }
 
@@ -1456,7 +1710,7 @@ class dbdef {
 	function stat() {
 		return dbdef_stat($this->_cPtr);
 	}
-	
+
 	function validateTableDef($TableIndex) {
 		return dbdef_validateTableDef($this->_cPtr,$TableIndex);
 	}
@@ -1540,7 +1794,6 @@ class dbdef {
 	function synchronizeSeverSchema($tableIndex) {
 		dbdef_synchronizeSeverSchema($this->_cPtr,$tableIndex);
 	}
-
 }
 
 class table extends nstable {
@@ -1657,7 +1910,7 @@ class table extends nstable {
 	function findPrev($notIncCurrent=true) {
 		table_findPrev($this->_cPtr,$notIncCurrent);
 	}
-	
+
 	function statReasonOfFind() {
 		return table_statReasonOfFind($this->_cPtr);
 	}
@@ -1768,6 +2021,7 @@ abstract class queryBase {
 	public $_cPtr=null;
 	protected $_pData=array();
 	protected $_bookmarks=array();
+
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
 		$this->_pData[$var] = $value;
@@ -1809,7 +2063,9 @@ abstract class queryBase {
 	
 	function addSeekBookmark($bookmark, $len, $reset=false) {
 		if ($reset === true)
+		{
 			$this->_bookmarks=array();
+		}
 		queryBase_addSeekBookmark($this->_cPtr,$bookmark,$len,$reset);
 		array_push($this->_bookmarks, $bookmark);
 	}
@@ -1983,13 +2239,13 @@ class query extends queryBase {
 		return $this;
 	}
 
-	function segmentsForInValue($v) {
-		queryBase_joinKeySize($this->_cPtr,$v);
+	function orIsNotNull($name) {
+		query_orIsNotNull($this->_cPtr,$name);
 		return $this;
 	}
 
-	function orIsNotNull($name) {
-		query_orIsNotNull($this->_cPtr,$name);
+	function segmentsForInValue($v) {
+		queryBase_joinKeySize($this->_cPtr,$v);
 		return $this;
 	}
 
@@ -2274,6 +2530,14 @@ class nsdatabase {
 		return nsdatabase_reconnect($this->_cPtr);
 	}
 
+	function isAssociate() {
+		return nsdatabase_isAssociate($this->_cPtr);
+	}
+
+	function getCreateViewSql($name) {
+		return nsdatabase_getCreateViewSql($this->_cPtr,$name);
+	}
+
 	static function trnsactionFlushWaitStatus() {
 		return nsdatabase_trnsactionFlushWaitStatus();
 	}
@@ -2432,6 +2696,16 @@ class database extends nsdatabase {
 
 	function setAutoSchemaUseNullkey($v) {
 		database_setAutoSchemaUseNullkey($this->_cPtr,$v);
+	}
+
+	function createAssociate() {
+		$r=database_createAssociate($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new database($r);
+		}
+		return $r;
 	}
 
 	static function setCompatibleMode($mode) {
@@ -2861,7 +3135,7 @@ class field {
 		else
 			$this->_cPtr=new_field($ptr_or_r);
 	}
-	
+
 	function __toString() {
 		return field_c_str($this->_cPtr);
 	}
@@ -2912,15 +3186,15 @@ class field {
 		return $r;
 	}
 	
-	function i() { return field_i($this->_cPtr);}
+	function i() { return field_i($this->_cPtr); }
 	
-	function i64() { return field_i64($this->_cPtr);}
+	function i64() { return field_i64($this->_cPtr); }
 
-	function d() { return field_d($this->_cPtr);}
+	function d() { return field_d($this->_cPtr); }
 
-	function str() { return field_c_str($this->_cPtr);}
+	function str() { return field_c_str($this->_cPtr); }
 
-	function bin() { return field_getBin($this->_cPtr);}
+	function bin() { return field_getBin($this->_cPtr); }
 	
 	function setValue($p_or_v_or_data,$size=null) {
 		switch (func_num_args()) {
@@ -2929,7 +3203,6 @@ class field {
 		}
 	}
 }
-
 
 class RecordIterator implements \Iterator {
 	private $_record_cPtr = null;
@@ -3445,27 +3718,27 @@ class recordsetQuery {
 
 	function whenIsNull($name) {
 		recordsetQuery_whenIsNull($this->_cPtr,$name);
-		return $this;;
+		return $this;
 	}
 
 	function whenIsNotNull($name) {
 		recordsetQuery_whenIsNotNull($this->_cPtr,$name);
-		return $this;;
+		return $this;
 	}
 
 	function andIsNull($name) {
 		recordsetQuery_andIsNull($this->_cPtr,$name);
-		return $this;;
+		return $this;
 	}
 
 	function andIsNotNull($name) {
 		recordsetQuery_andIsNotNull($this->_cPtr,$name);
-		return $this;;
+		return $this;
 	}
 
 	function orIsNull($name) {
 		recordsetQuery_orIsNull($this->_cPtr,$name);
-		return $this;;
+		return $this;
 	}
 
 	function orIsNotNull($name) {
@@ -4237,7 +4510,7 @@ class activeTable {
 		}
 		return $r;
 	}
-	
+
 	function readMore() {
 		$r = activeTable_readMore($this->_cPtr);
 		if (is_resource($r)) {
@@ -4382,7 +4655,6 @@ class pooledDbManager {
 			return new binlogPos($r);
 		}
 		return $r;
-
 	}
 
 	function endSnapshot() {
@@ -4420,8 +4692,5 @@ class pooledDbManager {
 	function usingCount() {
 		return pooledDbManager_usingCount($this->_cPtr);
 	}
-
 }
-
-
 ?>

@@ -307,7 +307,78 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::releaseConnection;
 %ignore bzs::db::protocol::tdap::client::cpool;
 
+// * bzs/db/protocol/tdap/client/connMgr.h
+%ignore bzs::db::protocol::tdap::client::createConnMgr;
+%ignore bzs::db::protocol::tdap::client::connMgr_ptr;
+%ignore bzs::db::protocol::tdap::client::releaseConnMgr;
+%newobject bzs::db::protocol::tdap::client::connMgr::databases;
+%newobject bzs::db::protocol::tdap::client::connMgr::tables;
+%newobject bzs::db::protocol::tdap::client::connMgr::views;
+%newobject bzs::db::protocol::tdap::client::connMgr::schemaTables;
+%newobject bzs::db::protocol::tdap::client::connMgr::slaveStatus;
+%newobject bzs::db::protocol::tdap::client::connMgr::sysvars;
+%newobject bzs::db::protocol::tdap::client::connMgr::connections;
+%newobject bzs::db::protocol::tdap::client::connMgr::inUseDatabases;
+%newobject bzs::db::protocol::tdap::client::connMgr::inUseTables;
+%extend bzs::db::protocol::tdap::client::connMgr {
+  const bzs::db::protocol::tdap::client::connMgr::records* databases() {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->databases();
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* tables(const _TCHAR* dbname) {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->tables(dbname);
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* views(const _TCHAR* dbname) {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->views(dbname);
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* schemaTables(const _TCHAR* dbname) {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->schemaTables(dbname);
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* slaveStatus() {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->slaveStatus();
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* sysvars() {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->sysvars();
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* connections() {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->connections();
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* inUseDatabases(__int64 connid) {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->inUseDatabases(connid);
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* inUseTables(__int64 connid, int dbid) {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->inUseTables(connid, dbid);
+    return p;
+  }
+}
+%ignore bzs::db::protocol::tdap::client::connMgr::databases;
+%ignore bzs::db::protocol::tdap::client::connMgr::tables;
+%ignore bzs::db::protocol::tdap::client::connMgr::views;
+%ignore bzs::db::protocol::tdap::client::connMgr::schemaTables;
+%ignore bzs::db::protocol::tdap::client::connMgr::slaveStatus;
+%ignore bzs::db::protocol::tdap::client::connMgr::sysvars;
+%ignore bzs::db::protocol::tdap::client::connMgr::connections;
+%ignore bzs::db::protocol::tdap::client::connMgr::inUseDatabases;
+%ignore bzs::db::protocol::tdap::client::connMgr::inUseTables;
+
 // * bzs/db/protocol/tdap/client/database.h *
+%newobject bzs::db::protocol::tdap::client::database::createAssociate;
 %ignore bzs::db::protocol::tdap::client::database::operator=;
 %ignore bzs::db::protocol::tdap::client::database::defaultAutoIncSpace;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::createTable(short, _TCHAR const *);
@@ -777,8 +848,6 @@ using namespace bzs::db::protocol::tdap::client;
   void setFV(const bitset& v) {
     self->setFV(v.i64());
   }
-
-
 };
   // ignore original methods
 %ignore bzs::db::protocol::tdap::client::table::prepare;
@@ -807,6 +876,7 @@ using namespace bzs::db::protocol::tdap::client;
 
 // * bzs/db/protocol/tdap/client/trdboostapi.h *
 %ignore bzs::db::protocol::tdap::client::autoBulkinsert;
+%ignore bzs::db::protocol::tdap::client::createAssociateObject;
 %ignore bzs::db::protocol::tdap::client::createDatabaseObject;
 %ignore bzs::db::protocol::tdap::client::eFindCurrntType;
 %ignore bzs::db::protocol::tdap::client::eIndexOpType;
@@ -1145,8 +1215,6 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::bitset::internalValue;
 %ignore bzs::db::protocol::tdap::bitset::bitset(__int64 v);
 
-
-
   // add methods
 %extend bzs::db::protocol::tdap::keydef {
   keySegment* segment(const int index)
@@ -1184,6 +1252,13 @@ using namespace bzs::db::protocol::tdap::client;
     return &(self->versions[index]);
   }
 };
+
+// * bzs/db/transactd/connectionRecord.h
+%ignore bzs::db::transactd::connection::record::dummy;
+%ignore bzs::db::transactd::connection::record::status;
+%rename(connRecord) bzs::db::transactd::connection::record;
+%rename(connRecords) bzs::db::transactd::connection::records;
+
 
 // * bzs/rtl/benchmark.h *
 %ignore bzs::rtl::benchmark::report;
@@ -1235,11 +1310,26 @@ using namespace bzs::db::protocol::tdap::client;
   _TCHAR tmpbuf[1024];
   $1=tmpbuf; 
 }
+// -- typemap for nstable::getCreateSql
+%typemap(in, numinputs=0) (char* retbuf, uint_td* size)
+{
+  uint_td n = 65000;
+  uint_td* n_p = &n;
+  char* p = new char[n];
+  $1 = p;
+  $2 = n_p;
+}
+%typemap(freearg) (char* retbuf, uint_td* size)
+{
+  delete [] $1;
+}
 %include bzs/db/protocol/tdap/client/nsTable.h
+%clear char* retbuf, uint_td* size;
 %clear char * retbuf;
 // --
 
-
+%include bzs/db/transactd/connectionRecord.h
+%include bzs/db/protocol/tdap/client/connMgr.h
 
 // -- typemap for dbdef::statMsg
 %typemap(in, numinputs=0) (_TCHAR* retbuf)
@@ -1250,7 +1340,6 @@ using namespace bzs::db::protocol::tdap::client;
 %include bzs/db/protocol/tdap/client/dbDef.h
 %clear char * retbuf;
 // --
-
 
 %include bzs/db/protocol/tdap/client/table.h
 
@@ -1267,8 +1356,21 @@ using namespace bzs::db::protocol::tdap::client;
   _TCHAR tmpbuf[1024];
   $1=tmpbuf; 
 }
-
+// nsDatabase::getCreateViewSql
+%typemap(in, numinputs=0) (char* retbuf, uint_td* size)
+{
+  uint_td n = 65000;
+  uint_td* n_p = &n;
+  char* p = new char[n];
+  $1 = p;
+  $2 = n_p;
+}
+%typemap(freearg) (char* retbuf, uint_td* size)
+{
+  delete [] $1;
+}
 %include bzs/db/protocol/tdap/client/nsDatabase.h
+%clear char* retbuf, uint_td* size;
 %clear _TCHAR* retBuf, uchar_td len;
 %clear _TCHAR* retbuf;
 // --
