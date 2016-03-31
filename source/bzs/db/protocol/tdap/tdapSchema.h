@@ -1166,11 +1166,7 @@ private:
     bool isNullKey(const keydef& key) const;
     uint_td pack(char* ptr, size_t size) const;
     short findKeynumByFieldNum(short fieldNum) const;
-    inline ushort_td recordlenServer() const
-    {
-        if (optionFlags.bitC) return m_maxRecordLen + 2;
-        return m_maxRecordLen;
-    }
+    inline ushort_td recordlenServer() const {return m_maxRecordLen;}
     bool isNeedNis(const keydef& key) const;
     bool isNULLFieldFirstKeySegField(const keydef& key) const;
     bool isNullValueZeroAll(const keydef& key) const;

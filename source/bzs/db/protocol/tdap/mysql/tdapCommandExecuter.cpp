@@ -1140,7 +1140,7 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
         uint key_length= cp_get_table_def_key(thd, &tables, &keyPtr);
         if (!cp_tdc_open_view(thd, &tables, name.c_str(), key, key_length, OPEN_VIEW_NO_PARSE))
         {
-            unsigned int len = (unsigned int)tables.view_body_utf8.length + 17 + name.size();
+            unsigned int len = (unsigned int)(tables.view_body_utf8.length + 17 + name.size());
             if (len  <= *req.datalen)
             {
                 char* p = nw->curPtr() - sizeof(unsigned short);// orver write row space

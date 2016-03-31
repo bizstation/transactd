@@ -32,7 +32,29 @@ namespace tdap
 namespace client
 {
 
-const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
+static const _TCHAR* SYSVAR_NAME[TD_VAR_SIZE] =
+{
+    _T("database_version"),
+    _T("transactd_version"),
+    _T("address"),
+    _T("port"),
+    _T("hostcheck_username"),
+    _T("max_tcp_connections"),
+    _T("table_name_lowercase"),
+    _T("pool_threads"),
+    _T("tcp_server_type"),
+    _T("lock_wait_timeout"),
+    _T("transaction_isolation"),
+    _T("auth_type"),
+    _T("pipe_comm_sharemem_size"),
+    _T("max_pipe_connections"),
+    _T("use_piped_local"),
+    _T("hs_port"),
+    _T("use_handlersocket"),
+    _T("timestamp_always)")
+};
+
+static const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
 {
     _T("Slave_IO_State"),
     _T("Master_Host"),
@@ -334,6 +356,13 @@ void connMgr::removeSystemDb(connMgr::records& recs)
             (strcmp(recs[i].name, "sys")==0))
         recs.erase(recs.begin() + i);
     }
+}
+
+const _TCHAR* connMgr::sysvarName(uint_td index)
+{
+    if (index < TD_VAR_SIZE)
+        return SYSVAR_NAME[index];
+    return _T("");
 }
 
 const _TCHAR* connMgr::slaveStatusName(uint_td index)

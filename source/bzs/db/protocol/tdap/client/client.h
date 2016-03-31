@@ -369,8 +369,12 @@ public:
             else if ((m_req.keyNum == CR_SUBOP_BY_SQL) || 
                     (m_req.keyNum == CR_SUBOP_BY_SQL_NOCKECK)) // make by sql
             {
-                m_sql = (char*)m_req.data;
                 m_req.keyNum -= 4; // -1= exists check 0 = no exists check
+                if (charsetIndexServer != CHARSET_UTF8 && charsetIndexServer != CHARSET_UTF8B4)
+                    m_sql = sqlBuilder::convertString(mysql::codePage(charsetIndexServer), 65001,
+                          (const char*)m_req.data);
+                else
+                    m_sql = (const char*)m_req.data;
             }
             else
                 m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,

@@ -167,8 +167,6 @@ public:
     static WIN_TPOOL_SHUTDOWN_PTR getWinTPoolShutdownFunc();
     static bool testTablePtr(nstable* ptr);
     static void setCheckTablePtr(bool v);
-    static inline const char*  toUtf8If(char* buf, int buflen, const _TCHAR* src)
-        { return nsdatabase::toServerUri(buf, buflen, src, true);}
 
     /** @endcond */
 };

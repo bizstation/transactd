@@ -281,7 +281,8 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
         s += fdl[i];
         s += "` ";
         len = fd.len - fd.varLenBytes();
-
+        if (fd.type == ft_myfixedbinary)
+            len -= 2;
         /*
          Although len is a number of bytes in BDF, it becomes the number of
          characters in MySQL.
@@ -489,7 +490,7 @@ std::string sqlBuilder::getKeyList(const tabledef* table, std::vector<std::strin
     return s;
 }
 
-std::string convertString(unsigned int toPage, unsigned int fromPage,
+std::string sqlBuilder::convertString(unsigned int toPage, unsigned int fromPage,
                           const char* p)
 {
     std::string s;

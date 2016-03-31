@@ -59,8 +59,10 @@ private:
     explicit connMgr(const connMgr& r);  //no copyable
     connMgr& operator=(const connMgr& r); //no copyable
     const connMgr::records& doDefinedTables(const _TCHAR* dbname, int type);
-public:
     explicit connMgr(database* db);
+
+public:
+
     bool connect(const _TCHAR* uri);
     void disconnect();
     const records& databases();
@@ -79,6 +81,7 @@ public:
     using nstable::tdapErr;
     using nstable::release;
     static void removeSystemDb(records& recs);
+    static const _TCHAR* sysvarName(uint_td index);
     static const _TCHAR* slaveStatusName(uint_td index);
     static connMgr* create(database* db);
 };

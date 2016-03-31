@@ -1189,6 +1189,8 @@ inline void database::copyEachFieldData(table* dest, table* src, fieldChnageInfo
                 int len = fds.len;
                 if (fds.len > fdd.len)
                     len = fdd.len;
+                /* Move 2 byte automaticaly by tabledef::pack() and unpack()
+                   when field type is ft_myfixedbinary  */
                 memcpy(dest->fieldPtr(dindex), src->fieldPtr(i), len);
             }
             else

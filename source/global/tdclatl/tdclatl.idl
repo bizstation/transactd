@@ -1887,6 +1887,8 @@ interface IConnMgr : IDispatch{
     HRESULT _stdcall RemoveSystemDb([in, out]IConnRecords** retVal);
     [id(0x0000012)]
     HRESULT _stdcall SlaveStatusName([in]int index, [out, retval] BSTR* retVal);
+    [id(0x0000013)]
+    HRESULT _stdcall SysvarName([in]int index, [out, retval] BSTR* retVal);
 };
 
 
