@@ -1,7 +1,49 @@
 Release note
-
 ================================================================================
-Version 3.1.0 2016/03/3
+Version 3.2.0 2016/04/07
+================================================================================
+New Features
+--------------------------------------------------------------------------------
+* `connMgr` class was added. This provides following funcitons:
+  1. Get connections and usage of databases and tables by Transactd clients.
+  2. Force disconnection of Transactd clients.
+  3. Get lists of databases, tables and views.
+  4. Get status of Transactd server.
+  5. Get status of replication slave(s).
+  
+  See reference of `connMgr` class for more details.
+
+* Creation SQL statements of tables or views can be got by Transactd client.
+  These are as same as statements which got by `SHOW CREATE TABLE` SQL. You can
+  create same tables and views when you want to copy database.
+
+* The transaction across some databases in same server is available now.
+  Use the associate database objects which share connection and transaction.
+  See reference of `database::createAssociate()` for more details.
+
+Modifications
+--------------------------------------------------------------------------------
+* Return `cp932` before `sjis` when search `charsetindex` from `codePage`.
+
+* Increase max table numbers which a `database` object can handle from 50 to 150.
+
+* Fail to connect and return `STATUS_DB_YET_OPEN` to `stat()` if the database
+  was opened when `nsdatabase::connect()`.
+
+* Fix a hung-up bug when copy auto generated schema and release `database`.
+
+* Fix a server hung-up bug when specify invalid key number.
+
+* Fix a bug in counting length of `ft_myfixedbinary` field.
+
+* Fix a bug that compare-function was not check field string in full length on
+  `recordset:groupBy()`.
+
+* Fix a bug that BLOB field will not be handled well on the table which contains
+  both of NULL-able field and BLOB field.
+
+
+Version 3.1.0 2016/03/03
 ================================================================================
 New Features
 --------------------------------------------------------------------------------
