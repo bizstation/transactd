@@ -161,6 +161,9 @@
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
+        <BCC_ExtendedErrorInfo>false</BCC_ExtendedErrorInfo>
+        <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
         <TD_CPU>32</TD_CPU>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
@@ -235,6 +238,7 @@
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
+        <BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
         <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)ur_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">

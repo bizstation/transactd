@@ -30,6 +30,11 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+        <Base_Win32>true</Base_Win32>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
         <Base_Win64>true</Base_Win64>
         <CfgParent>Base</CfgParent>
@@ -80,6 +85,12 @@
         <Cfg_3>true</Cfg_3>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win32)'!=''">
+        <Cfg_3_Win32>true</Cfg_3_Win32>
+        <CfgParent>Cfg_3</CfgParent>
+        <Cfg_3>true</Cfg_3>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Config)'=='Release Unicode' or '$(Cfg_4)'!=''">
         <Cfg_4>true</Cfg_4>
         <CfgParent>Base</CfgParent>
@@ -93,12 +104,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Cfg_4)'=='true') or '$(Cfg_4_OSX32)'!=''">
         <Cfg_4_OSX32>true</Cfg_4_OSX32>
-        <CfgParent>Cfg_4</CfgParent>
-        <Cfg_4>true</Cfg_4>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_4)'=='true') or '$(Cfg_4_Win64)'!=''">
-        <Cfg_4_Win64>true</Cfg_4_Win64>
         <CfgParent>Cfg_4</CfgParent>
         <Cfg_4>true</Cfg_4>
         <Base>true</Base>
@@ -140,6 +145,12 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_OSX32)'!=''">
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
+        <Manifest_File>None</Manifest_File>
+        <BCC_ExtendedErrorInfo>false</BCC_ExtendedErrorInfo>
+        <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <TD_CPU>64</TD_CPU>
@@ -191,6 +202,10 @@
     <PropertyGroup Condition="'$(Cfg_3_OSX32)'!=''">
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
+        <BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
+        <BCC_StackFrames>true</BCC_StackFrames>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_4)'!=''">
         <BCC_PCHUsage>None</BCC_PCHUsage>
         <Defines>_UNICODE;$(Defines)</Defines>
@@ -201,9 +216,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_4_OSX32)'!=''">
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_4_Win64)'!=''">
-        <Manifest_File>None</Manifest_File>
     </PropertyGroup>
     <ItemGroup>
         <ResourceCompile Include="test_tdclcpp.rc">

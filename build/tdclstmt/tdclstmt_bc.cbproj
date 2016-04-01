@@ -155,6 +155,11 @@
     <PropertyGroup Condition="'$(Base_OSX32)'!=''">
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <BCC_ExtendedErrorInfo>false</BCC_ExtendedErrorInfo>
+        <BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
+        <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <BCC_UserSuppliedOptions>-tR</BCC_UserSuppliedOptions>
         <DynamicRTL>true</DynamicRTL>
@@ -171,6 +176,8 @@
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
+        <BCC_StackFrames>true</BCC_StackFrames>
+        <BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
         <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)mr_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">

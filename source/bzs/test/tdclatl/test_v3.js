@@ -714,17 +714,16 @@ function testConnMgr(uri)
 	//connections
 	var recs =  mgr.Connections();
 	checkEqual(mgr.stat , 0,  "mgr.Connections");
-	checkEqual(recs.size , 1, "mgr.Connections.size");
-	
 	//InUseDatabases
-	recs = mgr.InUseDatabases(recs(0).conid);
+	var recs1 = mgr.InUseDatabases(recs(0).conid);
 	checkEqual(mgr.stat , 0,  "mgr.InUseDatabases");
-	checkEqual(recs.size , 1, "mgr.InUseDatabases.size");
-
 	//InUseTables
-	recs = mgr.InUseTables(recs(0).conid, recs(0).db);
+	var recs2 = mgr.InUseTables(recs(0).conid, recs(0).db);
 	checkEqual(mgr.stat , 0,  "mgr.InUseTables");
-	checkEqual(recs.size , 4, "mgr.InUseTables.size");
+
+	checkEqual(recs.size , 1, "mgr.Connections.size");
+	checkEqual(recs1.size , 1, "mgr.InUseDatabases.size");
+	checkEqual(recs2.size , 4, "mgr.InUseTables.size");
 	
 	//tables
 	recs =  mgr.tables("test_v3");
