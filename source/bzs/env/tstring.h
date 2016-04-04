@@ -50,9 +50,11 @@ typedef stringstream _tstringstream;
 #ifdef _UNICODE
 #define tPos Pos
 #define tcout wcout
+#define tostream wostream
 #else
 #define tPos AnsiPos
 #define tcout cout
+#define tostream ostream
 #endif
 
 #ifdef _UNICODE
