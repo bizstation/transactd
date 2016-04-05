@@ -308,9 +308,7 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::cpool;
 
 // * bzs/db/protocol/tdap/client/connMgr.h
-%ignore bzs::db::protocol::tdap::client::createConnMgr;
 %ignore bzs::db::protocol::tdap::client::connMgr_ptr;
-%ignore bzs::db::protocol::tdap::client::releaseConnMgr;
 %newobject bzs::db::protocol::tdap::client::connMgr::databases;
 %newobject bzs::db::protocol::tdap::client::connMgr::tables;
 %newobject bzs::db::protocol::tdap::client::connMgr::views;
@@ -376,6 +374,19 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::connMgr::connections;
 %ignore bzs::db::protocol::tdap::client::connMgr::inUseDatabases;
 %ignore bzs::db::protocol::tdap::client::connMgr::inUseTables;
+  // create and release methods for connMgr class
+%newobject bzs::db::protocol::tdap::client::connMgr::connMgr;
+%extend bzs::db::protocol::tdap::client::connMgr {
+  connMgr(bzs::db::protocol::tdap::client::database* db) {
+    return bzs::db::protocol::tdap::client::connMgr::create(db);
+  }
+  ~connMgr() {
+    bzs::db::protocol::tdap::client::releaseConnMgr(self);
+  }
+};
+%ignore bzs::db::protocol::tdap::client::ConnMgr::create;
+%ignore bzs::db::protocol::tdap::client::createConnMgr;
+%ignore bzs::db::protocol::tdap::client::releaseConnMgr;
 
 // * bzs/db/protocol/tdap/client/database.h *
 %newobject bzs::db::protocol::tdap::client::database::createAssociate;
