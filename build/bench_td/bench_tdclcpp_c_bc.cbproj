@@ -260,6 +260,7 @@
         <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
+        <BCC_StackFrames>true</BCC_StackFrames>
         <Defines>_DEBUG;$(Defines)</Defines>
         <DllSuffix>$(BCVER)_32u</DllSuffix>
     </PropertyGroup>

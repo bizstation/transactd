@@ -25,6 +25,11 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Base)'=='true') or '$(Base_Win32)'!=''">
+        <Base_Win32>true</Base_Win32>
+        <CfgParent>Base</CfgParent>
+        <Base>true</Base>
+    </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Base)'=='true') or '$(Base_Win64)'!=''">
         <Base_Win64>true</Base_Win64>
         <CfgParent>Base</CfgParent>
@@ -158,7 +163,6 @@
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <BCC_ExtendedErrorInfo>false</BCC_ExtendedErrorInfo>
         <BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
-        <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
         <BCC_UserSuppliedOptions>-tR</BCC_UserSuppliedOptions>
