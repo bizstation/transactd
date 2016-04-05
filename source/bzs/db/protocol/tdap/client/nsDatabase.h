@@ -155,6 +155,7 @@ public:
 	bool reconnect();
     bool isReconnected() const;
     bool isAssociate() const;
+    virtual bool isOpened() const { return false;}
     char* getCreateViewSql(const _TCHAR* name, char* retbuf, uint_td* size);
 
     static const int maxtables = 150;

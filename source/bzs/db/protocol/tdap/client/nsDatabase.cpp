@@ -834,6 +834,11 @@ void nsdatabase::readDatabaseDirectory(_TCHAR* retbuf, uchar_td buflen)
 bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
 {
     if (!checkAssociate()) return false;
+    if (isOpened())
+    {
+        m_stat = STATUS_DB_YET_OPEN;
+        return false;
+    }
 
     if (isTransactdUri(URI))
     {
