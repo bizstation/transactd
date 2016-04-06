@@ -998,7 +998,7 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
         else
             p2 = NULL;
     }
-    if (p)
+    if (p && (uri == false))
         *p = 0x00;
     if (p2)
         *(p2 + 1) = 0x00;
