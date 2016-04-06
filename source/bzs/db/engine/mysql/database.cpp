@@ -1603,11 +1603,11 @@ uint table::recordPackCopy(char* buf, uint maxsize)
                     return 0;
                 memcpy(p, fd->ptr, len);
                 p += len;
-                if (isBlobType(fd->type()))
-                {
-                    ++blobs;
-                    addBlobBuffer(fd->field_index);
-                }
+            }
+            if (isBlobType(fd->type()))
+            {
+                ++blobs;
+                addBlobBuffer(fd->field_index);
             }
         }
         setBlobFieldCount(blobs);

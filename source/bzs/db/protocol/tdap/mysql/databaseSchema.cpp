@@ -117,7 +117,7 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
     case MYSQL_TYPE_BLOB:
     case MYSQL_TYPE_LONG_BLOB:
     case MYSQL_TYPE_MEDIUM_BLOB:
-        if (flags & BINARY_FLAG)
+        if (binary)
             return ft_myblob;
         return ft_mytext;
     case MYSQL_TYPE_GEOMETRY:
