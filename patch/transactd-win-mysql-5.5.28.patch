@@ -1,5 +1,5 @@
---- sql/mysqld.h	2012-08-29 17:50:46.000000000 +0900
-+++ sql/mysqld.h	2013-09-26 20:30:22.000000000 +0900
+--- sql/mysqld.h
++++ sql/mysqld.h
 @@ -153,7 +153,7 @@
  extern const double log_10[309];
  extern ulonglong keybuff_size;
@@ -38,8 +38,8 @@
  extern mysql_rwlock_t LOCK_grant, LOCK_sys_init_connect, LOCK_sys_init_slave;
  extern mysql_rwlock_t LOCK_system_variables_hash;
  extern mysql_cond_t COND_thread_count;
---- sql/sql_cache.h	2012-08-29 17:50:46.000000000 +0900
-+++ sql/sql_cache.h	2013-09-26 20:30:22.000000000 +0900
+--- sql/sql_cache.h
++++ sql/sql_cache.h
 @@ -580,5 +580,5 @@
  #define query_cache_is_cacheable_query(L) 0
  #endif /*HAVE_QUERY_CACHE*/
@@ -47,3 +47,25 @@
 -extern Query_cache query_cache;
 +extern MYSQL_PLUGIN_IMPORT Query_cache query_cache;
  #endif
+--- sql/mdl.h
++++ sql/mdl.h
+@@ -848,7 +848,7 @@ extern "C" const char* thd_enter_cond(MYSQL_THD thd, mysql_cond_t *cond,
+ extern "C" void thd_exit_cond(MYSQL_THD thd, const char *old_msg);
+ 
+ #ifndef DBUG_OFF
+-extern mysql_mutex_t LOCK_open;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_open;
+ #endif
+ 
+ 
+--- sql/sql_base.h
++++ sql/sql_base.h
+@@ -69,7 +69,7 @@ enum enum_tdc_remove_table_type {TDC_RT_REMOVE_ALL, TDC_RT_REMOVE_NOT_OWN,
+ #define RTFC_CHECK_KILLED_FLAG      0x0004
+ 
+ bool check_dup(const char *db, const char *name, TABLE_LIST *tables);
+-extern mysql_mutex_t LOCK_open;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_open;
+ bool table_cache_init(void);
+ void table_cache_free(void);
+ bool table_def_init(void);
