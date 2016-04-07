@@ -72,7 +72,7 @@ const _TCHAR* makeUri(const _TCHAR* protocol, const _TCHAR* host,
     return g_uri;
 }
 
-static bool use_nullfield = false;
+static bool use_nullfield = true;
 static bool use_mysqlNullMode = true;
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]);

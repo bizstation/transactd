@@ -3073,6 +3073,8 @@ void stringFileterCreateTable(database* db, int id, const _TCHAR* name,
     }
 
     fd->keylen = fd->len;
+    if (use_nullfield)
+        fd->setNullable(true, true);
     def->updateTableDef(id);
     BOOST_CHECK_MESSAGE(0 == def->stat(),
                         "updateTableDef 2 stat = " << def->stat());
@@ -3091,6 +3093,8 @@ void stringFileterCreateTable(database* db, int id, const _TCHAR* name,
         fd->len = 12; // 8+4
     }
     fd->keylen = fd->len;
+    if (use_nullfield)
+        fd->setNullable(true, true);
     def->updateTableDef(id);
     BOOST_CHECK_MESSAGE(0 == def->stat(), "updateTableDef 3");
 
@@ -3294,6 +3298,86 @@ void doTestSF(table* tb)
                         "doTestReadSF2 field value");
 }
 
+void doTestSF_Select(table* tb)
+{
+    tb->setKeyNum(0);
+    tb->clearBuffer();
+
+    tb->setFilter(_T("select id,name,namew name = 'あい*'"), 0, 10);
+    
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+
+    tb->seekFirst();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+
+    tb->findNext(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("あいうえおかきくこ")) ==
+                            _tstring(tb->getFVstr(1)),
+                        "doTestReadSF2");
+    BOOST_CHECK_MESSAGE(2 == (int)tb->recordCount(), "doTestReadSF2");
+
+    tb->setFilter(_T("select id,name,namew name <> 'あい*'"), 0, 10);
+    BOOST_CHECK_MESSAGE(3 == (int)tb->recordCount(), "doTestReadSF2");
+    tb->clearBuffer();
+    tb->setFilter(_T("select id,name,namew name <> 'あい*'"), 0, 10);
+    tb->seekFirst();
+    tb->findNext(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1 stat = " << tb->stat());
+    BOOST_CHECK_MESSAGE(_tstring(_T("A123456")) == _tstring(tb->getFVstr(2)),
+                        "doTestReadSF1");
+
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おはようございます")) ==
+                            _tstring(tb->getFVstr(2)),
+                        "doTestReadSF1");
+
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おめでとうございます。")) ==
+                            _tstring(tb->getFVstr(2)),
+                        "doTestReadSF1");
+    tb->findNext();
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "doTestReadSF1");
+
+    tb->clearBuffer();
+    tb->seekLast();
+    tb->findPrev(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おめでとうございます。")) ==
+                            _tstring(tb->getFVstr(2)),
+                        "doTestReadSF1");
+
+    tb->findPrev();
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("おはようございます")) ==
+                            _tstring(tb->getFVstr(2)),
+                        "doTestReadSF1");
+
+    tb->findPrev(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "doTestReadSF1");
+    BOOST_CHECK_MESSAGE(_tstring(_T("A123456")) == _tstring(tb->getFVstr(2)),
+                        "doTestReadSF1");
+
+    tb->findPrev();
+    BOOST_CHECK_MESSAGE(9 == tb->stat(), "doTestReadSF1");
+
+    tb->setFilter(_T("select id,name,namew name = 'あい'"), 0, 10);
+    BOOST_CHECK_MESSAGE(0 == (int)tb->recordCount(), "doTestReadSF2");
+
+    tb->setFilter(_T("select id,name,namew name <> ''"), 0, 10);
+    BOOST_CHECK_MESSAGE(5 == (int)tb->recordCount(), "doTestReadSF2");
+
+    // test setFilter don't change field value
+    tb->clearBuffer();
+    tb->setFV(_T("name"), _T("ABCDE"));
+    tb->setFilter(_T("select id,name,namew name = 'あい'"), 0, 10);
+    BOOST_CHECK_MESSAGE(_tstring(_T("ABCDE")) == _tstring(tb->getFVstr(1)),
+                        "doTestReadSF2 field value");
+}
+
+
 void doTestUpdateSF(table* tb)
 {
 
@@ -3344,6 +3428,7 @@ void doTestStringFileter(database* db, int id, const _TCHAR* name,
     doInsertStringFileter(tb);
     doTestReadSF(tb);
     doTestSF(tb);
+    doTestSF_Select(tb);
     doTestUpdateSF(tb);
     tb->release();
 }

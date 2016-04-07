@@ -444,7 +444,7 @@ public:
             else
                 m_tmpPtr = m_ptr;
 
-            m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
+            m_tb->setBlobFieldPointer((char*)m_tmpPtr + td->nullbytes(), m_hd);
             return m_tmpPtr;
         }
     }
@@ -1682,7 +1682,7 @@ void table::onReadAfter()
     if (blobFieldUsed())
     {
         const blobHeader* hd = getBlobHeader();
-        setBlobFieldPointer((char*)m_pdata, hd);
+        setBlobFieldPointer((char*)m_pdata + (*m_tableDef)->nullbytes(), hd);
     }
     if ((*m_tableDef)->recordlen() - m_datalen > 0)
         memset((char*)m_pdata + m_datalen, 0, (*m_tableDef)->recordlen() - m_datalen);
