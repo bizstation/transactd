@@ -60,11 +60,14 @@ namespace client
 class DLLLIBSTMT executable
 {
     friend struct queryStatementsImple;
-
+    bool m_enabled;
 public:
+    executable() : m_enabled(true){}
     virtual ~executable(){};
     virtual void execute(recordset& rs) = 0;
     void release();
+    void setEnabled(bool v) { m_enabled = v; }
+    bool isEnabled() const { return m_enabled; }
     virtual const int typeID() const = 0;
 };
 

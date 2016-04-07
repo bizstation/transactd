@@ -234,6 +234,10 @@ inline void setKeyValues(request& req, engine::mysql::table* tb, int index)
         tb->setKeyValues(req.table.key.values, -1);
 }
 
+dbExecuter::dbExecuter(netsvc::server::IAppModule* mod)
+    :engine::mysql::dbManager(mod){}
+
+
 void dbExecuter::doRecordOperation(request& req, engine::mysql::table* tb,
                                    resultBuffer& buf, changeFunc func)
 {
@@ -307,7 +311,7 @@ int dbExecuter::commandExec(std::vector<request>& requests,
             checkNewHandle(req.handle);
             bool created;
             database* db = getDatabase(req.db.name, 0 /*cid*/, created);
-            m_tb = db->openTable(req.table.name, req.table.openMode, NULL);
+            m_tb = db->openTable(req.table.name, req.table.openMode, NULL, "");
             if (m_tb)
             {
                 addHandle(getDatabaseID(0 /*cid*/), m_tb->id(), req.handle);
@@ -570,8 +574,8 @@ inline void setFilterVal(const std::string& src, int& parseMode, request* req)
     parseMode = PARSEREAD_FL_TYPE;
 }
 
-commandExecuter::commandExecuter(netsvc::server::IAppModule* /*mod*/)
-    : m_dbExec(new dbExecuter())
+commandExecuter::commandExecuter(netsvc::server::IAppModule* mod)
+    : m_dbExec(new dbExecuter(mod))
 {
 }
 

@@ -20,6 +20,7 @@
  ================================================================= */
 #include "testbase.h"
 #include <bzs/db/protocol/tdap/btrDate.h>
+#include <bzs/db/protocol/tdap/client/connMgr.h>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -45,7 +46,7 @@ const char* test_records = "INSERT INTO `setenumbit` (`id`, `set5`, `set64`, `en
   "(3, '', '', '0', '0', b'0', b'00000000', b'00000000', b'00000000'),"
   "(4, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);";
 
-
+const char* test_view = "create view idlessthan5 as select * from scores where id < 5";
 
 short createFieldStoreDataBase(database* db)
 {
@@ -55,6 +56,7 @@ short createFieldStoreDataBase(database* db)
         db->open(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
         if (db->stat()) return db->stat();
         db->drop();
+        if (db->stat()) return db->stat();
         db->create(makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME));
     }
     if (db->stat()) return db->stat();
@@ -527,9 +529,9 @@ short createTestScores(database* db)
         td->primaryKeyNum = 0;
         
         short fieldnum = 0;
-        fielddef* fd = insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("subject"), ft_integer, 4);
-        fd = insertField(def, tableid, ++fieldnum, _T("score"), ft_integer, 4);
+        insertField(def, tableid, fieldnum, _T("id"), ft_autoinc, 4);
+        insertField(def, tableid, ++fieldnum, _T("subject"), ft_integer, 4);
+        fielddef* fd = insertField(def, tableid, ++fieldnum, _T("score"), ft_integer, 4);
         fd->setNullable(true);
 
         keydef* kd = insertKey(def, tableid, 0);
@@ -2310,13 +2312,13 @@ void testSetEnumBit()
 
     BOOST_CHECK(rs[1][_T("id")] == 2);
     BOOST_CHECK(rs[1][_T("set5")].i64() == 31);
-    BOOST_CHECK(rs[1][_T("set64")].i64() == 0x8000000000000001);
+    BOOST_CHECK(rs[1][_T("set64")].i64() == (__int64)0x8000000000000001);
     BOOST_CHECK(rs[1][_T("enum2")].i64() == 1);
     BOOST_CHECK(rs[1][_T("enum260")].i64() == 260);
     BOOST_CHECK(rs[1][_T("bit1")].i64() == 1);
     BOOST_CHECK(rs[1][_T("bit8")].i64() == 0xFF);
     BOOST_CHECK(rs[1][_T("bit32")].i64() == 0xFFFFFFFF);
-    BOOST_CHECK(rs[1][_T("bit64")].i64() == 0xFFFFFFFFFFFFFFFF);
+    BOOST_CHECK(rs[1][_T("bit64")].i64() == (__int64)0xFFFFFFFFFFFFFFFF);
 
     BOOST_CHECK(rs[2][_T("id")] == 3);
     BOOST_CHECK(rs[2][_T("set5")].i64() == 0);
@@ -3332,6 +3334,64 @@ void testSnapshotWithbinlog()
     BOOST_CHECK(tb->stat() == STATUS_ALREADY_INSNAPSHOT);
 
     db->endSnapshot();
+    db->createTable(test_view);// create view for next test
+    BOOST_CHECK(db->stat() == 0);
+}
+
+
+void testTableList()
+{
+    nsdatabase::setCheckTablePtr(true);
+    database_ptr db = createDatabaseObject();
+    connMgr_ptr mgr(createConnMgr(db.get()));
+    mgr->connect(makeUri(PROTOCOL, HOSTNAME, _T("")));
+    BOOST_CHECK(mgr->stat() == 0);
+    {
+        const connMgr::records& recs = mgr->tables(DBNAMEV3);
+        BOOST_CHECK(mgr->stat() == 0);
+        BOOST_CHECK(recs.size() == 10); //8 + setenumbit + test.bdf
+    }
+    {
+        const connMgr::records& recs = mgr->views(DBNAMEV3);
+        BOOST_CHECK(mgr->stat() == 0);
+        BOOST_CHECK(recs.size() == 1);
+        BOOST_CHECK(recs[0].name == std::string("idlessthan5"));
+    }
+    {
+        const connMgr::records& recs = mgr->schemaTables(DBNAMEV3);
+        BOOST_CHECK(mgr->stat() == 0);
+        BOOST_CHECK(recs.size() == 1);
+        BOOST_CHECK(recs[0].name == std::string("test"));
+    }
+    {
+        mgr->slaveStatus();
+        BOOST_CHECK(mgr->stat() == 0);
+    }
+    mgr->disconnect();
+
+}
+
+void testCreateInfo()
+{
+    nsdatabase::setCheckTablePtr(true);
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF,TD_OPEN_READONLY);
+    BOOST_CHECK(db->stat() == 0);
+
+    char buf[2048];
+    uint_td size = 2048;
+    db->getCreateViewSql(_T("idlessthan5"), buf, &size);
+    BOOST_CHECK(db->stat() == 0);
+    BOOST_CHECK(size > 20);
+
+    table* tb = db->openTable(1, TD_OPEN_READONLY);
+    BOOST_CHECK(db->stat() == 0);
+    size = 2048;
+    tb->getCreateSql(buf, &size);
+    BOOST_CHECK(db->stat() == 0);
+    BOOST_CHECK(size > 1000);
+    db->close();
+    BOOST_CHECK(db->stat() == 0);
 }
 
 #pragma warning(default : 4996) 

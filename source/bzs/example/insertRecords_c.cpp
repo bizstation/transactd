@@ -60,7 +60,8 @@ void insertUser(fields& fds, int id, const _TCHAR* name, int groupid,
     fds[fieldnum_id] = id;
     fds[fieldnum_name] = name;
     fds[fieldnum_group] = groupid;
-    fds[fieldnum_tel] = tel;
+    if ((int)fds.size() > fieldnum_tel)
+        fds[fieldnum_tel] = tel;
 
     insertRecord(fds);
 }

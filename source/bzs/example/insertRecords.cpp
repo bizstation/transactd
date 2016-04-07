@@ -72,7 +72,8 @@ bool insertUser(table* tb, int id, const _TCHAR* name, int groupid,
     tb->setFV(fieldnum_id, id);
     tb->setFV(fieldnum_name, name);
     tb->setFV(fieldnum_group, groupid);
-    tb->setFV(fieldnum_tel, tel);
+    if (tb->tableDef()->fieldCount == 4)
+        tb->setFV(fieldnum_tel, tel);
     tb->insert();
     if (tb->stat() != 0)
         showError(_T("insert user record"), tb->tableDef()->tableName(),

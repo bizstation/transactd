@@ -368,8 +368,9 @@ extern "C" PACKAGE_OSX short_td __STDCALL
                 client_t->reconnect();
             else
                 client_t->cmdConnect();
-            if (client_t->req().keyNum == LG_SUBOP_DISCONNECT_EX)
-                return 0;
+            if ((client_t->req().keyNum == LG_SUBOP_ASSOCIATE) ||
+                    (client_t->req().keyNum == LG_SUBOP_DISCONNECT_EX))
+                return STATUS_SUCCESS;
             break;
         }
         case TD_RECONNECT:
@@ -378,8 +379,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         }
         case TD_STASTISTICS:
-            client_t->req().paramMask =
-                P_MASK_DATALEN | P_MASK_KEYBUF | P_MASK_KEYNUM;
+            client_t->req().paramMask = P_MASK_DATALEN | P_MASK_KEYBUF | P_MASK_KEYNUM;
             break;
         case TD_RESET_CLIENT:
         case TD_GETDIRECTORY:
@@ -396,7 +396,11 @@ extern "C" PACKAGE_OSX short_td __STDCALL
             break;
         case TD_GET_SCHEMA:
             if (client_t->isSupportFunction(TD_GET_SCHEMA))
-                client_t->req().paramMask = P_MASK_DATALEN | P_MASK_KEYBUF;
+            {
+                client_t->req().paramMask = P_MASK_DATALEN | P_MASK_KEYNUM | P_MASK_KEYBUF;
+                if (keyNum == SC_SUBOP_BY_SQL)
+                    client_t->req().paramMask |= P_MASK_POSBLK;
+            }
             else
                 return STATUS_NOSUPPORT_OP;
             break;

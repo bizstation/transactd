@@ -19,6 +19,10 @@
    02111-1307, USA.
 =================================================================*/
 #include "groupQuery.h"
+#ifdef _DEBUG
+    #include <iostream>
+    #include <bzs/env/tstring.h>
+#endif
 
 namespace bzs
 {
@@ -74,6 +78,17 @@ public:
 
 #ifdef _DEBUG
     void dump();
+    void dump(std::tostream& os);
+
+    /*
+      Output to file.
+
+      #include <fstream>
+      std::locale::global(std::locale("japanese"));
+      std::wofstream ost("temp.txt");
+      rs.dump(ost);
+    */
+
 #endif
 };
 

@@ -765,7 +765,7 @@ class filter
                     const keyValuePtr& v = keyValues[i + j];
                     fielddef& fd = fds[kd->segments[j].fieldNum];
                     has_null |= (v.ptr == NULL);
-                    to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len, (v.ptr == NULL));
+                    to = fd.keyCopy(to, (uchar_td*)v.ptr, v.len, (v.ptr == NULL), m_isTransactd);
                 }
             }
             if (!l.setParam(dataBuf, (ushort_td)(to - dataBuf), has_null))
@@ -1156,7 +1156,7 @@ public:
         for (int j = 0; j < keySize; ++j)
         {
             fielddef& fd = fds[kd->segments[j].fieldNum];
-            to = fd.keyCopy(to, (uchar_td*)ptr[j], len[j], (ptr[j]==NULL));
+            to = fd.keyCopy(to, (uchar_td*)ptr[j], len[j], (ptr[j]==NULL), m_isTransactd);
             has_null |= (ptr[j] == NULL);
         }
         if (!l.setParam(m_buftmp, (ushort_td)(to - m_buftmp), has_null))

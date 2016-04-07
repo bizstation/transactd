@@ -188,6 +188,9 @@
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
+        <BCC_ExtendedErrorInfo>false</BCC_ExtendedErrorInfo>
+        <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
         <Debugger_RunParams>tdap://localhost/test?dbfile=test.bdf  0 -1</Debugger_RunParams>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>1033</VerInfo_Locale>
@@ -257,6 +260,7 @@
         <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
+        <BCC_StackFrames>true</BCC_StackFrames>
         <Defines>_DEBUG;$(Defines)</Defines>
         <DllSuffix>$(BCVER)_32u</DllSuffix>
     </PropertyGroup>

@@ -54,6 +54,9 @@ public:
 
     static std::string sqlCreateIndex(const tabledef* table, int keyNum,
                       bool specifyKeyNum, uchar_td charsetIndexServer, const clsrv_ver* ver);
+
+    static std::string convertString(unsigned int toPage, unsigned int fromPage,
+                          const char* p);
 };
 
 } // namespace client

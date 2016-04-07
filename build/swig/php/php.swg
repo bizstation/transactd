@@ -219,6 +219,8 @@ typedef char  _TCHAR;
 // * bzs/db/protocol/tdap/client/trdboostapi.h *
 %rename(c_use) bzs::db::protocol::tdap::client::idatabaseManager::use(const connectParams* param = NULL);
 
+// * bzs/db/transactd/connectionRecord.h
+%rename(getRecord) bzs::db::transactd::connection::records::operator[] (int index) const;
 
 /* ===============================================
   add code to init section

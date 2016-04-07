@@ -58,7 +58,7 @@ struct extRequestSeeks;
 
 std::string getDatabaseName(const request& req, bool forSql = false);
 std::string getTableName(const request& req, bool forSql = false);
-short_td errorCode(int ha_error);
+int errorCode(int ha_error);
 bool isMetaDb(const request& req);
 
 class dbExecuter : public engine::mysql::dbManager
@@ -66,7 +66,6 @@ class dbExecuter : public engine::mysql::dbManager
     ReadRecordsHandler* m_readHandler;
     blobBuffer* m_blobBuffer;
     unsigned char m_scramble[MYSQL_SCRAMBLE_LENGTH+1];
-    netsvc::server::IAppModule* m_mod;
     void releaseDatabase(request& req, int op);
     std::string makeSQLcreateTable(const request& req);
     bool connect(request& req);
@@ -86,6 +85,7 @@ class dbExecuter : public engine::mysql::dbManager
     inline void doDelete(request& req);
     inline void doDeleteKey(request& req);
     inline void doInsertBulk(request& req);
+    inline void doGetSchema(request& req, netsvc::server::netWriter* nw);
     inline void doStat(request& req);
     inline short seekEach(extRequestSeeks* ereq, bool noBookMark);
     inline short seekBookmarkEach(extRequestSeeks* ereq, bool noBookmark);
@@ -96,11 +96,8 @@ public:
     ~dbExecuter();
     int commandExec(request& req, netsvc::server::netWriter* nw);
     size_t getAcceptMessage(char* message, size_t size);
-    int errorCode(int ha_error);
-    inline short_td errorCodeSht(int ha_error)
-    {
-        return (short_td)errorCode(ha_error);
-    }
+    inline int errorCode(int ha_error) { return tdap::mysql::errorCode(ha_error);}
+    inline short_td errorCodeSht(int ha_error) { return (short_td)tdap::mysql::errorCode(ha_error);}
     netsvc::server::IAppModule* mod() { return m_mod; };
 };
 
@@ -111,8 +108,11 @@ class connMgrExecuter
     request& m_req;
     __int64 m_modHandle;
 
-    int definedDatabaseList(char* buf, size_t& size);
-    int schemaTableList(char* buf, size_t& size);
+    int definedDatabases(char* buf, size_t& size);
+    int schemaTables(char* buf, size_t& size);
+    int definedTables(char* buf, size_t& size);
+    int definedViews(char* buf, size_t& size);
+    int slaveStatus(char* buf, size_t& size);
     int systemVariables(char* buf, size_t& size);
     int read(char* buf, size_t& size);
     int disconnectOne(char* buf, size_t& size);

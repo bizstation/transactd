@@ -111,6 +111,7 @@ bool createUserTable(dbdef* def)
     fd->setName(_T("tel"));
     fd->type = USER_STRING_TYPE;
     fd->setLenByCharnum(21);
+    fd->setNullable(true, true);
 
     char keyNum = 0;
     keydef* kd = def->insertKey(tableid, keyNum);
@@ -212,6 +213,7 @@ bool createUserExtTable(dbdef* def)
     fd = def->insertField(tableid, filedIndex);
     fd->setName(_T("blob"));
     fd->type = BLOB_TYPE;
+    fd->setNullable(true, true);
 #ifndef USE_PSQL_DATABASE
     fd->len = 10;
         ++filedIndex;
@@ -446,10 +448,11 @@ bool checkVersion(database_ptr db)
             if (td->fieldCount == 4)
             {
                 table_ptr tb = openTable(db, _T("extention"));
-                return (tb->recordCount(false) == 20000);
+                if (tb->recordCount(false) == 20000)
+                    return td->fieldDefs[2].isNullable() == true;
+                return false;
             }
         }
-        td = def->tableDefs(1);
     }
     return false;
 }

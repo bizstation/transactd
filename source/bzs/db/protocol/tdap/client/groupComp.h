@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_GROUPCOMP_H
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_GROUPCOMP_H
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -62,7 +62,7 @@ int binary_search(int key, const Container& a, int left, int right, FUNC func,
 inline int compByKey(const fieldsBase& l, const fieldsBase& r, const int& s)
 {
     assert((s < (int)l.size()) && (s < (int)r.size()));
-    return l.getFieldNoCheck(s).comp(r.getFieldNoCheck(s), 0);
+    return l.getFieldNoCheck(s).comp(r.getFieldNoCheck(s), CMPLOGICAL_VAR_COMP_ALL);
 }
 
 template <class Container> class grouping_comp

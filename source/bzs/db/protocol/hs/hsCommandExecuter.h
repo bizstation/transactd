@@ -188,6 +188,7 @@ class dbExecuter : public engine::mysql::dbManager
                          resultBuffer& buf, changeFunc func);
 
 public:
+    dbExecuter(netsvc::server::IAppModule* mod);
     int commandExec(std::vector<request>& requests,
                     netsvc::server::netWriter* nw);
     int errorCode(int ha_error) { return 0; };

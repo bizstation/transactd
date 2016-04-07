@@ -99,6 +99,8 @@ protected:
     void addref();
     void internalRelease() { nsdatabase::release(); }
     void doReconnect(nstable* tb);
+    void setAssociate();
+    bool checkAssociate();
     virtual bool doReopenDatabaseSchema(){ return true; }
     virtual void* getExtendBufferForOpen(uint_td& size){ return NULL; };
 public:
@@ -152,8 +154,11 @@ public:
     bool disconnectForReconnectTest(); //for connection brokn emulate
 	bool reconnect();
     bool isReconnected() const;
+    bool isAssociate() const;
+    virtual bool isOpened() const { return false;}
+    char* getCreateViewSql(const _TCHAR* name, char* retbuf, uint_td* size);
 
-    static const int maxtables = 50;
+    static const int maxtables = 150;
     static bool trnsactionFlushWaitStatus();
     static void setExecCodePage(unsigned int codepage);
     static unsigned int execCodePage();
@@ -163,6 +168,7 @@ public:
     static WIN_TPOOL_SHUTDOWN_PTR getWinTPoolShutdownFunc();
     static bool testTablePtr(nstable* ptr);
     static void setCheckTablePtr(bool v);
+
     /** @endcond */
 };
 

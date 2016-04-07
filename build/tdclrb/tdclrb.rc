@@ -29,8 +29,8 @@
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 3,1,0,184
- PRODUCTVERSION 3,1,0,184
+ FILEVERSION 3,2,0,184
+ PRODUCTVERSION 3,2,0,184
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -47,9 +47,9 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "BizStation Corp."
             VALUE "FileDescription", "Transactd Ruby client"
-            VALUE "FileVersion", "3.1.0.184"
+            VALUE "FileVersion", "3.2.0.184"
             VALUE "LegalCopyright", "Copyright(C) 2016 BizStation Corp"
-            VALUE "ProductVersion", "3.1.0.184"
+            VALUE "ProductVersion", "3.2.0.184"
             VALUE "ProductName", "Transactd Client (GPL V2)"
         END
     END

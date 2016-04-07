@@ -56,11 +56,13 @@ struct dbimple
         bool lockReadOnly : 1;
         bool autoSchemaUseNullkey : 1;
         bool noPreloadSchema : 1;
+        bool createExistNoCheck : 1;
     };
     dbimple()
         : dbDef(NULL), optionalData(NULL), m_deleteRecordFn(NULL),
           m_copyDataFn(NULL), openBuflen(0), isOpened(false), isTableReadOnly(false),
-          lockReadOnly(false), autoSchemaUseNullkey(false), noPreloadSchema(false)
+          lockReadOnly(false), autoSchemaUseNullkey(false), noPreloadSchema(false),
+          createExistNoCheck(false)
     {
         rootDir[0] = 0x00;
         memset(&vers, 0 , sizeof(btrVersions));
@@ -119,6 +121,25 @@ void database::release()
             (m_impl->dbDef->nsdb() == this))
             nsdatabase::release();
     }
+}
+
+database* database::createAssociate()
+{
+    if (isOpened() && !enableTrn())
+    {
+        database* db = database::create();
+        //Copy id
+        memcpy(db->clientID() + 14,  clientID() + 14, 2);
+        db->setAssociate();
+        db->m_btrcallid = m_btrcallid;
+        //Set same connection and connection->addref() in tdclc
+        m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, NULL, (void*)clientID(),
+                         16, LG_SUBOP_ASSOCIATE, db->clientID());
+        if (m_stat == 0)
+            return db;
+        database::destroy(db);
+    }
+    return NULL;
 }
 
 dbdef* database::dbDef() const
@@ -200,7 +221,7 @@ void database::setAutoSchemaUseNullkey(bool v)
 void database::create(const _TCHAR* uri, short type)
 {
     bool dbdefCreated = false;
-    short stat = 0;
+    short stat;
     if (!m_impl->dbDef)
     {
         m_impl->dbDef = new dbdef(this, type); // Create TabelDef here.
@@ -409,7 +430,6 @@ void database::doOpen(const _TCHAR* uri, short type, short mode,
                       const _TCHAR* ownername)
 {
     m_stat = STATUS_SUCCESS;
-    m_impl->dbDef->setDefType(type);
     m_impl->dbDef->open(uri, (char_td)mode, ownername);
 
     if ((m_stat == STATUS_SUCCESS) &&
@@ -447,23 +467,32 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
             if (m_stat)
                 return false;
         }
-        if (!m_impl->dbDef)
-            m_impl->dbDef = new dbdef(this, type);
 
         if (type == TYPE_SCHEMA_BDF)
         {// BDF
             if (isTransactdUri(_uri))
             {
-                _TCHAR scmtable[256];
-                schemaTable(_uri, scmtable, 256);
-                m_impl->noPreloadSchema = (scmtable[0] == 0x00);
+                _TCHAR name[128];
+                schemaTable(_uri, name, 128);
+                m_impl->noPreloadSchema = (name[0] == 0x00);
+                if (m_impl->noPreloadSchema)
+                    type = TYPE_SCHEMA_BDF_NOPRELOAD;
+                dbname(_uri, name, 128);
+                if (name[0] == 0x00)
+                {
+                    m_stat = ERROR_NO_DATABASE;
+                    return false;
+                }
             }
         }
+        if (!m_impl->dbDef)
+            m_impl->dbDef = new dbdef(this, type);
+
         if (m_impl->noPreloadSchema)
         {
             if ((compatibleMode() & CMP_MODE_MYSQL_NULL) == 0)
                 m_stat = STATUS_INVALID_NULLMODE;
-            else if (connect(_uri))
+            else if (isAssociate() || connect(_uri))
             {
                 m_impl->dbDef->allocDatabuffer();
                 m_stat = m_impl->dbDef->stat();
@@ -777,8 +806,13 @@ struct openTablePrams
             }
             else
                 _tcscpy(uri, path);
-        }else if (path) 
-            db->getTableUri(uri, path);
+        }else if (path)
+        {
+            if (_tcsstr(path, _T("://")))
+                 _tcscpy(uri, path); // another database
+            else
+                db->getTableUri(uri, path);
+        }
     }
 };
 
@@ -981,7 +1015,9 @@ bool database::createTable(const char* utf8Sql)
             const char* p = toServerUri(buf2, MAX_PATH, rootDir(), true);
             uint_td len = (uint_td)strlen(utf8Sql);
             m_stat = m_btrcallid(TD_CREATETABLE, posblk, (void*)utf8Sql, &len,
-                 (void*)p, (uchar_td)strlen(p), CR_SUBOP_BY_SQL , clientID());
+                 (void*)p, (uchar_td)strlen(p),
+                 (m_impl->createExistNoCheck) ?
+                 CR_SUBOP_BY_SQL : CR_SUBOP_BY_SQL_NOCKECK, clientID());
         }
     }
     else
@@ -1011,7 +1047,9 @@ bool database::createTable(short fileNum, const _TCHAR* uri)
         m_stat = m_btrcallid(
             TD_CREATETABLE, posblk, td,
             &m_impl->dbDef->m_datalen, (void*)p, (uchar_td)strlen(p),
-            CR_SUBOP_BY_TABLEDEF /* exists check */, clientID());
+            (m_impl->createExistNoCheck) ?
+                 CR_SUBOP_BY_TABLEDEF : CR_SUBOP_BY_TABLEDEF_NOCKECK,
+                clientID());
     }
     else
     {
@@ -1028,7 +1066,9 @@ bool database::createTable(short fileNum, const _TCHAR* uri)
             buf = uri;
         else
             buf = td->fileName();
-        nsdatabase::createTable(fs, 1024, buf, CR_SUBOP_BY_FILESPEC);
+        nsdatabase::createTable(fs, 1024, buf,
+            (m_impl->createExistNoCheck) ?
+                CR_SUBOP_BY_FILESPEC : CR_SUBOP_BY_FILESPEC_NOCKECK);
         free(fs);
     }
     return (m_stat == 0);
@@ -1042,12 +1082,13 @@ short database::assignSchemaData(const dbdef* src)
     dbdef* defDest = dbDef();
     int recordCount = src->tableCount();
 
-    for (int i = 0; i <= src->tableCount(); i++)
+    for (int i = 1; i <= src->tableCount(); i++)
     {
         const tabledef* td = const_cast<dbdef*>(src)->tableDefs(i);
         if (td)
         {
             tabledef tdtmp = *td;
+            tdtmp.m_inUse = false;
             tdtmp.fieldCount = 0;
             tdtmp.keyCount = 0;
             defDest->insertTable(&tdtmp);
@@ -1148,6 +1189,8 @@ inline void database::copyEachFieldData(table* dest, table* src, fieldChnageInfo
                 int len = fds.len;
                 if (fds.len > fdd.len)
                     len = fdd.len;
+                /* Move 2 byte automaticaly by tabledef::pack() and unpack()
+                   when field type is ft_myfixedbinary  */
                 memcpy(dest->fieldPtr(dindex), src->fieldPtr(i), len);
             }
             else

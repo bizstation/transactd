@@ -689,6 +689,8 @@ describe Transactd, 'V3Features' do
     expect(bits[62]).to eq true
     expect(bits[11]).to eq false
     expect(bits[13]).to eq false
+    tb.close()
+    db.close()
   end
   
   it 'bitset' do
@@ -754,6 +756,8 @@ describe Transactd, 'V3Features' do
     expect(rs[3]['bit32'].isNull()).to eq true
     expect(rs[3]['bit64'].isNull()).to eq true
     ats.release()
+    db.dropTable(SEB_TABLENAME);
+    expect(db.stat()).to eq 0
     db.close()
   end
   it 'snapshot' do
@@ -770,5 +774,85 @@ describe Transactd, 'V3Features' do
     print "\nbinlog pos = ", bpos.filename, ":", bpos.pos, "\n"
     db.endSnapshot();
     db.close()
+  end
+  it 'get sql' do
+    db = Transactd::Database.new()
+    openDatabase(db)
+    db.createTable("create view idlessthan5 as select * from user where id < 5")
+    view = db.getCreateViewSql("idlessthan5")
+    expect(view.include?("idlessthan5")).to eq true
+    expect(view.include?("名前")).to eq true
+    #puts("view" + view)
+    tb = db.openTable("user")
+    expect(db.stat()).to eq 0
+    sql = tb.getCreateSql()
+    #puts("sql" + sql)
+    expect(sql.include?("CREATE TABLE")).to eq true
+    expect(sql.include?("名前")).to eq true
+    tb.close()
+    db.close()
+  end
+  it 'create associate' do
+    db = Transactd::Database.new()
+    openDatabase(db)
+    dba = db.createAssociate()
+    expect(db.stat()).to eq 0
+    expect(dba.isAssociate()).to eq true
+    dba.close()
+    db.close()
+  end
+  it 'connMgr' do
+    # other database connection
+    db_other = Transactd::Database.new()
+    openDatabase(db_other)
+    tb_other = db_other.openTable("user")
+    expect(db_other.stat()).to eq 0
+    # connMgr connection
+    db = Transactd::Database.new()
+    mgr = Transactd::ConnMgr.new(db)
+    mgr.connect(db_other.uri())
+    expect(mgr.stat()).to eq 0
+    # connections
+    recs = mgr.connections()
+    expect(mgr.stat()).to eq 0
+    expect(recs.size()).to eq 1
+    # inUseDatabases
+    recs = mgr.inUseDatabases(recs[0].conId)
+    expect(mgr.stat()).to eq 0
+    expect(recs.size()).to eq 1
+    # inUseTables
+    recs = mgr.inUseTables(recs[0].conId, recs[0].db)
+    expect(mgr.stat()).to eq 0
+    expect(recs.size()).to eq 2
+    # tables, views
+    recs = mgr.tables("test_v3")
+    expect(mgr.stat()).to eq 0
+    recs1 = mgr.views("test_v3")
+    expect(mgr.stat()).to eq 0
+    expect(recs.size()).to eq 3
+    expect(recs1.size()).to eq 1
+    expect(recs1[0].name).to eq "idlessthan5"
+    # schemaTables
+    recs = mgr.schemaTables("test_v3")
+    expect(mgr.stat()).to eq 0
+    expect(recs.size()).to eq 1
+    expect(recs[0].name).to eq "test"
+    # databases
+    recs = mgr.databases()
+    expect(mgr.stat()).to eq 0
+    size = recs.size()
+    Transactd::ConnMgr::removeSystemDb(recs)
+    expect(mgr.stat()).to eq 0
+    expect(recs.size()).not_to eq size
+    # slaveStatus
+    recs = mgr.slaveStatus()
+    expect(mgr.stat()).to eq 0
+    for i in 0...recs.size() do
+      puts (Transactd::ConnMgr::slaveStatusName(i) + "\t" + recs[i].value)
+    end
+    mgr.disconnect()
+    expect(mgr.stat()).to eq 0
+    tb_other.close()
+    db_other.close()
   end
 end

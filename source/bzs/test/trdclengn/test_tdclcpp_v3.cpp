@@ -1053,5 +1053,14 @@ BOOST_AUTO_TEST_CASE(snapshot_binlog)
 }
 BOOST_AUTO_TEST_SUITE_END()
 
-
+BOOST_AUTO_TEST_SUITE(tablelist)
+BOOST_AUTO_TEST_CASE(tablelist)
+{
+    testTableList();
+}
+BOOST_AUTO_TEST_CASE(createInfo)
+{
+    testCreateInfo();
+}
+BOOST_AUTO_TEST_SUITE_END()
 // ------------------------------------------------------------------------

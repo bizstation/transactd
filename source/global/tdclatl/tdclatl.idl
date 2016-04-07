@@ -48,7 +48,7 @@ interface IPreparedQuery;
 interface IBookmark;
 interface IBitset;
 interface IBinlogPos;
-
+interface IConnMgr;
 
 typedef
 [
@@ -563,9 +563,14 @@ interface IDatabase : IDispatch
   HRESULT _stdcall CompatibleMode([out, retval] int* Value);
   [id(0x000000FC)]
   HRESULT _stdcall GetSqlStringForCreateTable([in] BSTR tableName, [out, retval]  BSTR* retValue);
+  [id(0x000000FD)]
+  HRESULT _stdcall CreateAssociate([out, retval] IDatabase** retVal);
+  [propget, id(0x000000FF)]
+  HRESULT _stdcall IsAssociate([out, retval] VARIANT_BOOL* retVal);
+  [id(0x00000100)]
+  HRESULT _stdcall GetCreateViewSql([in]BSTR name, [out, retval] BSTR* retVal);
+  
 };
-
-
 
 
 [
@@ -829,7 +834,8 @@ interface ITable : IDispatch
   HRESULT _stdcall SetTimestampMode([in] eTimeStampMode mode);
   [id(0x000000EE)]
   HRESULT _stdcall GetFVbits([in] VARIANT Index, [out, retval] IBitset** Value);
-
+  [id(0x000000EF)]
+  HRESULT _stdcall GetCreateSql([out, retval] BSTR* retVal);
 
 };
 [
@@ -1775,6 +1781,118 @@ interface IBinlogPos : IDispatch{
 };
 
 [
+	object,
+	uuid(E7A70DBE-00F0-41AD-AC80-7EBDF930E79B),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IConnRecord : IDispatch{
+    [propget, id(0x0000001)]
+#ifdef _WIN64
+    HRESULT _stdcall ConId([out, retval] __int64* retVal);
+#else
+    HRESULT _stdcall ConId([out, retval] BSTR* retVal);
+#endif
+    [propget, id(0x0000002)]
+    HRESULT _stdcall Id([out, retval] int* retVal); //unsigned int value_id;
+    [propget, id(0x0000003)]
+    HRESULT _stdcall Db([out, retval] short* retVal);
+    [propget, id(0x0000004)]
+    HRESULT _stdcall Type([out, retval] short* retVal); //trnType
+    [propget, id(0x0000005)]
+    HRESULT _stdcall Name([out, retval] BSTR* retVal); 
+    [propget, id(0x0000006)]
+    HRESULT _stdcall Value([out, retval] BSTR* retVal); 
+    [propget, id(0x0000007)]
+    HRESULT _stdcall Status([out, retval] short* retVal); 
+    [propget, id(0x0000008)]
+    HRESULT _stdcall ReadCount([out, retval] int* retVal); 
+    [propget, id(0x0000009)]
+    HRESULT _stdcall UpdCount([out, retval] int* retVal); 
+    [propget, id(0x000000A)]
+    HRESULT _stdcall DelCount([out, retval] int* retVal); 
+    [propget, id(0x000000B)]
+    HRESULT _stdcall InsCount([out, retval] int* retVal); 
+}
+
+[
+    object,
+	uuid(53076AFA-08D3-4877-A519-529BFD161F42),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IConnRecords : IDispatch{
+    [propget, id(0)]
+    HRESULT _stdcall Record([in] short index, [out, retval] IConnRecord** retVal);
+    [propget, id(1)]
+    HRESULT _stdcall Size([out, retval] int* Value);
+}
+
+[
+	object,
+	uuid(1A37F719-9B06-4A27-9BB8-073FAD6C2BDC),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IConnMgr : IDispatch{
+    [id(0x0000001)]
+    HRESULT _stdcall SetDatabase([in] VARIANT db);
+    [id(0x0000002)]
+    HRESULT _stdcall Connect([in] BSTR uri, [out, retval] VARIANT_BOOL* retVal);
+    [id(0x0000003)]
+    HRESULT _stdcall Disconnect();
+    [id(0x0000004)]
+    HRESULT _stdcall Databases([out, retval] IConnRecords** retVal);
+    [id(0x0000005)]
+    HRESULT _stdcall Tables([in]BSTR dbname, [out, retval] IConnRecords** retVal);
+    [id(0x0000006)]
+    HRESULT _stdcall Views([in]BSTR dbname, [out, retval] IConnRecords** retVal);
+    [id(0x0000007)]
+    HRESULT _stdcall SchemaTables([in]BSTR dbname, [out, retval] IConnRecords** retVal);
+    [id(0x0000008)]
+    HRESULT _stdcall Sysvars([out, retval] IConnRecords** retVal);
+    [id(0x0000011)]
+    HRESULT _stdcall SlaveStatus([out, retval] IConnRecords** retVal);
+    [id(0x0000009)]
+    HRESULT _stdcall Connections([out, retval] IConnRecords** retVal);
+    [id(0x000000A)]
+#ifdef _WIN64
+    HRESULT _stdcall InUseDatabases([in]__int64 connid, [out, retval] IConnRecords** retVal);
+#else
+    HRESULT _stdcall InUseDatabases([in]BSTR connid, [out, retval] IConnRecords** retVal);
+#endif
+    [id(0x000000B)]
+#ifdef _WIN64
+    HRESULT _stdcall InUseTables([in]__int64 connid, [in] int db, [out, retval] IConnRecords** retVal);
+#else
+    HRESULT _stdcall InUseTables([in]BSTR connid, [in] int db, [out, retval] IConnRecords** retVal);
+#endif
+    [id(0x000000C)]
+#ifdef _WIN64
+    HRESULT _stdcall PostDisconnectOne([in] __int64 connid);
+#else
+    HRESULT _stdcall PostDisconnectOne([in] BSTR connid);
+#endif
+    [id(0x000000D)]
+    HRESULT _stdcall PostDisconnectAll();
+    [propget, id(0x000000E)]
+    HRESULT _stdcall Stat([out, retval] short* retVal);
+    [id(0x000000F)]
+    HRESULT _stdcall TdapErr([in]OLE_HANDLE hWnd, [out, retval] BSTR* retVal);
+    
+    [id(0x0000010)]
+    HRESULT _stdcall RemoveSystemDb([in, out]IConnRecords** retVal);
+    [id(0x0000012)]
+    HRESULT _stdcall SlaveStatusName([in]int index, [out, retval] BSTR* retVal);
+    [id(0x0000013)]
+    HRESULT _stdcall SysvarName([in]int index, [out, retval] BSTR* retVal);
+};
+
+
+[
 	uuid(3B712514-E2EF-4040-8A3C-BCACB839EB3E),
 	version(1.0),
 ]
@@ -2042,6 +2160,32 @@ library transactd
 	coclass BinlogPos
 	{
 		[default] interface IBinlogPos;
+	};
+
+    [
+        uuid(A58AD1FB-E72C-472B-B465-93E098959046)
+		,noncreatable
+	]
+	coclass ConnRecord
+	{
+		[default] interface IConnRecord;
+	};
+
+    [
+        uuid(5D1AFE02-2BAF-494A-9512-8591903CE778)
+		,noncreatable
+	]
+	coclass ConnRecords
+	{
+		[default] interface IConnRecords;
+	};
+
+    [
+        uuid(7D8E310E-EA0A-4B54-A813-14BBB3E82EB5)
+	]
+	coclass ConnMgr
+	{
+		[default] interface IConnMgr;
 	};
    
 };

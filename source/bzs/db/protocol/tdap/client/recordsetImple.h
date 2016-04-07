@@ -81,14 +81,14 @@ class dumpRecordset
         return s;
     }
 
-    void printValue(size_t width, std::ios::fmtflags f, const _TCHAR* value)
+    void printValue(std::tostream& os, size_t width, std::ios::fmtflags f, const _TCHAR* value)
     {
-        std::tcout.setf(f, std::ios::adjustfield);
-        std::tcout << _T(" ")  << std::setw(width) << value << _T(" |");
+        os.setf(f, std::ios::adjustfield);
+        os << _T(" ")  << std::setw(width) << value << _T(" |");
     }
 
     const _TCHAR* value(const fielddef& fd) {return fd.name();}
-    const _TCHAR* value(const field& fd) 
+    const _TCHAR* value(const field& fd)
     {
         if (fd.isNull())
             return _T("NULL");
@@ -96,31 +96,31 @@ class dumpRecordset
     }
 
     template <class T>
-    void printRecord(const T& coll)
+    void printRecord(std::tostream& os, const T& coll)
     {
-        std::tcout  << _T("|");
+        os  << _T("|");
         for (size_t col = 0; col < m_widths.size(); ++col)
-            printValue(m_widths[col], m_ailgns[col], value(coll[(short)col]));
-        std::tcout << std::endl;
+            printValue(os, m_widths[col], m_ailgns[col], value(coll[(short)col]));
+        os << std::endl;
     }
 public:
-    void operator()(RS& rs)
+    void operator()(std::tostream& os, RS& rs)
     {
         if (rs.size())
         {
             cacheWidthAndAlign(rs);
             std::_tstring line = makeLine();
             //header
-            std::tcout << line;
-            printRecord(*rs.fieldDefs());
-            std::tcout << line;
+            os << line;
+            printRecord(os, *rs.fieldDefs());
+            os << line;
 
             //field value
             for(size_t i = 0; i < rs.size(); ++i)
-                printRecord(rs[i]);
-            std::tcout << line;
+                printRecord(os, rs[i]);
+            os << line;
         }else
-            std::tcout << _T("Empty set ") << std::endl;
+            os << _T("Empty set ") << std::endl;
     }
 };
 #endif
@@ -697,7 +697,12 @@ public:
     void dump()
     {
         dumpRecordset<recordsetImple> dumpRs;
-        dumpRs(*this);
+        dumpRs(std::tcout, *this);
+    }
+    void dump(std::tostream& os)
+    {
+        dumpRecordset<recordsetImple> dumpRs;
+        dumpRs(os, *this);
     }
 #endif
 };

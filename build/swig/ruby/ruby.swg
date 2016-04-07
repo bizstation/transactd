@@ -327,6 +327,9 @@ void setRecordValueMode(short mode) {
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(short, uint_td&);
 %ignore bzs::db::protocol::tdap::client::table::getFVbin(const _TCHAR *, uint_td&);
 
+// * bzs/db/transactd/connectionRecord.h
+%rename(__getitem__) bzs::db::transactd::connection::records::operator[] (int index) const;
+
 
 /* ===============================================
   add code to init section

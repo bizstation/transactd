@@ -1,5 +1,5 @@
 ##=================================================================
-#   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+#   Copyright (C) 2012-2016 BizStation Corp All rights reserved.
 #
 #   This program is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License
@@ -65,6 +65,7 @@ set(${this_target}_SOURCE_FILES
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/errorMessage.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mydebuglog.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlThd.cpp
+  ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlProtocol.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/tdapCommandExecuter.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/characterset.cpp
@@ -94,8 +95,8 @@ include_directories(
   ${TRANSACTD_MYSQL_SOURCE_ROOT}/include/mysql;
   ${TRANSACTD_MYSQL_SOURCE_ROOT}/libbinlogevents/export;
   ${TRANSACTD_MYSQL_SOURCE_ROOT}/libbinlogevents/include;
-  ${TRANSACTD_MYSQL_SOURCE_ROOT}/zlib;
   ${TRANSACTD_MYSQL_BINARY_ROOT}/libbinlogevents/include;
+  ${TRANSACTD_MYSQL_SOURCE_ROOT}/zlib;
   ${TRANSACTD_ROOT}/source;)
 if(UNIX)
   include_directories(${TRANSACTD_ROOT}/source/linux;)
@@ -134,6 +135,23 @@ foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
     endif()
   endif()
 endforeach()
+#if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+#  set(CMAKE_CXX_FLAGS "-std=c++11 -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare -fPIC -fexceptions -fno-omit-frame-pointer -Wno-unknown-pragmas -fno-strict-aliasing -fpermissive -frtti -D_REENTRANT")
+#else()
+#  set(CMAKE_CXX_FLAGS "-fPIC -std=c++0x -Wall -Wno-char-subscripts -Wno-unknown-pragmas -Wno-missing-braces -fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
+#endif()
+#if(NOT MINGW)
+#if(NOT MSVC)
+#  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-DLINUX")
+#endif()
+#endif()
+#set -fno-rtti to mysqlProtocol.cpp
+if(NOT MSVC)
+  if ((MYSQL_VERSION_ID VERSION_GREATER 100000) OR (MYSQL_VERSION_ID VERSION_LESS 50600))
+    set_source_files_properties("${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlProtocol.cpp" PROPERTIES COMPILE_FLAGS -fno-rtti)
+  endif()
+endif()
+
 if(MSVC)
     bz_add_cxx_flag("/MT" "_RELEASE")
     bz_add_cxx_flag("/MTd" "_DEBUG")
@@ -185,6 +203,17 @@ endif()
 MYSQL_ADD_PLUGIN(${this_target} ${${this_target}_SOURCE_FILES}
   MODULE_ONLY MODULE_OUTPUT_NAME "${output_name}")
 
+# ==========================================================
+# link -static-libgcc
+# ==========================================================
+#if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+#  set_target_properties(${this_target} PROPERTIES LINK_SEARCH_START_STATIC 1)
+#  set_target_properties(${this_target} PROPERTIES LINK_SEARCH_END_STATIC 1)
+#  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+#
+#  set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc")
+#  message("set -static-libgcc")
+#endif()
 
 # ==========================================================
 # add SONAME
@@ -200,6 +229,13 @@ endif()
 # ==========================================================
 transactd_link_boost_libraries("filesystem;thread;chrono;system")
 
+# linux need "-dl -stdc++" 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  target_link_libraries(${this_target} dl stdc++)
+endif()
+
+
+        
 
 # ==========================================================
 # set output path (on Visual Studio)

@@ -41,13 +41,17 @@ namespace transactd
 class module : public netsvc::server::IAppModule, private boost::noncopyable
 {
     friend class connManager;
+    friend class dbExecuter;
     boost::shared_ptr<protocol::ICommandExecuter> m_commandExecuter;
     const boost::asio::ip::tcp::endpoint m_endpoint;
     bzs::netsvc::server::iconnection* m_connection;
     const char* m_readBuf;
     size_t m_readSize;
     netsvc::server::netWriter* m_nw;
+    std::string m_user;
+    std::string m_host;
     bool m_useThreadPool;
+    bool m_skipGrants;
     bool perseLineEnd(const char* p, size_t size) const;
     size_t onRead(const char* data, size_t size, bool& complete);
     size_t onAccept(char* message, size_t bufsize);
@@ -62,8 +66,13 @@ public:
     bool isShutDown() { return m_commandExecuter->isShutDown(); }
     bool checkHost(const char* hostCheckname, /*out*/char* hostName, int size);
     void disconnect();
+    const char* user() const {return m_user.c_str();}
+    const char* host() const {return m_host.c_str();}
+    void setUser(const char* v) { m_user = v;}
+    void setHost(const char* v) { m_host = v;}
+    void skipGrants(bool v) {m_skipGrants = v;}
+    bool isSkipGrants() const {return m_skipGrants;}
 };
-
 } // namespace transactd
 } // namespace db
 } // namespace bzs

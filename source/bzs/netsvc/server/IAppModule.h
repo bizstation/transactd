@@ -82,6 +82,12 @@ public:
     virtual bool isShutDown() = 0;
     virtual bool checkHost(const char* hostCheckname, /*out*/char* hostName, int size) = 0;
     virtual void cleanup() = 0;
+    virtual const char* user() const = 0;
+    virtual const char* host() const = 0;
+    virtual void setUser(const char* v) = 0;
+    virtual void setHost(const char* v) = 0;
+    virtual void skipGrants(bool v) = 0;
+    virtual bool isSkipGrants() const = 0;
 };
 
 // Defines at Implementing of IAppModule , two variables below.

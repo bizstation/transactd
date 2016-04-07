@@ -117,7 +117,7 @@ uchar_td convFieldType(enum enum_field_types type, uint flags, bool binary,
     case MYSQL_TYPE_BLOB:
     case MYSQL_TYPE_LONG_BLOB:
     case MYSQL_TYPE_MEDIUM_BLOB:
-        if (flags & BINARY_FLAG)
+        if (binary)
             return ft_myblob;
         return ft_mytext;
     case MYSQL_TYPE_GEOMETRY:
@@ -200,19 +200,19 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
     String str;
     for (int i = 0; i < src->fields(); ++i)
     {
-        if (isNisField(src->fieldName(i)))
+        Field* f = src->field(i);
+        if (isNisField(f->field_name))
             --td.fieldCount;
         else
         {
             fielddef fd;
-            Field* f = src->field(i);
             memset(&fd, 0, sizeof(fd));
-            fd.setName(src->fieldName(i));
-            fd.len = src->fieldLen(i); // filed->pack_length();
+            fd.setName(f->field_name);
+            fd.len = f->pack_length();
             fd.pos = pos;
-            fd.type = convFieldType(src->fieldRealType(i), src->fieldFlags(i),
-                                    isBinary(src->fieldCharset(i)),
-                                    isUnicode(src->fieldCharset(i)));
+            fd.type = convFieldType(f->real_type(), f->flags,
+                                    isBinary(*(f->charset())),
+                                    isUnicode(*(f->charset())));
             if ((fd.type == ft_mytime) || (fd.type == ft_mydatetime) || (fd.type == ft_mytimestamp))
             {
                 if (src->isLegacyTimeFormat(i))
@@ -226,14 +226,12 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
             }
 
             if (fd.type == ft_mydecimal)
-            {
                 fd.digits = my_decimal_length_to_precision(f->field_length, f->decimals(),
 								(f->flags & UNSIGNED_FLAG) != 0);
-            }
  
             fd.setPadCharSettings(false, true);
-            if (fd.isStringType())
-                fd.setCharsetIndex(charsetIndex(src->fieldCharset(i).csname));
+            if (f->has_charset())
+                fd.setCharsetIndex(charsetIndex(f->charset()->csname));
 
             if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp) && (f->val_real() == 0))
             {// No constant value
@@ -297,15 +295,11 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
                 if (nouseNullkey == false)
                     sg.flags.bit9 = ks.null_bit ? 1 : 0; // null key
                 allNullkey = allNullkey & sg.flags.bit9;
-                if (isStringTypeForIndex(convFieldType(
-                        src->fieldType(sg.fieldNum),
-                        src->fieldFlags(sg.fieldNum),
-                        isBinary(src->fieldCharset(i)),
-                        isUnicode(src->fieldCharset(sg.fieldNum)))))
-                    sg.flags.bitA =
-                        !(src->fieldFlags(sg.fieldNum) & BINARY_FLAG);// case in-sencitive
-
                 Field* f = src->field(sg.fieldNum);
+                if (isStringTypeForIndex(convFieldType(f->type(),  f->flags, isBinary(*(f->charset())),
+                        isUnicode(*(f->charset()))))) 
+                     sg.flags.bitA = !(f->flags & BINARY_FLAG);// case in-sencitive      
+                          
                 if (f->pack_length() != ks.length + var_bytes_if(f))
                     td.fieldDefs[sg.fieldNum].keylen = ks.length ; // suppot prefix key
                 ++segNum;
@@ -331,7 +325,7 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
 
 tabledef* schemaBuilder::getTabledef(database* db, const char* tablename, uchar* rec, size_t size)
 {
-    table* tb = db->openTable(tablename, TD_OPEN_READONLY, NULL);
+    table* tb = db->openTable(tablename, TD_OPEN_READONLY, NULL, "");
     if (db->stat()) 
     {
         m_stat = db->stat();
@@ -367,7 +361,36 @@ bool isFrmFile(const std::string& name, bool notschema=true)
     return false;
 }
 
-void schemaBuilder::listSchemaTable(database* db, std::vector<std::string>& shcemaNames)
+
+int isView(database* db, const char *name)
+{
+	int ret = -1;
+#ifndef NO_LOCK_OPEN
+    safe_mysql_mutex_lock lck(&LOCK_open);
+#endif
+    TABLE_SHARE* s = cp_get_cached_table_share(db->thd(), db->name().c_str(), name);
+    if (s)
+    {
+        ret = (int)s->is_view;
+#ifdef NO_LOCK_OPEN
+        cp_tdc_release_share(s);
+#endif
+    }
+    return ret;
+}
+
+table* getTable(database* db, const char *name)
+{
+    table* tb = NULL;
+    try
+    {
+        tb = db->openTable(name, TD_OPEN_READONLY, NULL, "");
+    }
+    catch(...){}
+    return tb;
+}
+
+void schemaBuilder::listTable(database* db, std::vector<std::string>& tables, int type)
 {
     char path[FN_REFLEN + 1];
     build_table_filename(path, sizeof(path) - 1, db->name().c_str(), "", "", 0);
@@ -375,35 +398,52 @@ void schemaBuilder::listSchemaTable(database* db, std::vector<std::string>& shce
     fs::path p = s;
     fs::directory_iterator it(p);
     fs::directory_iterator end;
-    shcemaNames.clear();
-    
+    tables.clear();
+
     for (fs::directory_iterator it(p); it != end; ++it)
     {
         if (!is_directory(*it))
         {
-            std::string s = it->path().filename().string();
-            if (isFrmFile(s, false))
+            std::string s = it->path().string(); // fullpath
+            if (isFrmFile(it->path().filename().string(), false)) // filename
             {
-                filename_to_tablename(it->path().stem().string().c_str(), path,
-                                      FN_REFLEN);
-                table* tb = NULL;
-                try
+                enum legacy_db_type not_used;
+                
+                frm_type_enum ftype = dd_frm_type(db->thd(), (char*)s.c_str(), &not_used);
+                filename_to_tablename(it->path().stem().string().c_str(), path, FN_REFLEN);
+                std::string tablename = path;
+                
+                if (((type & TABLE_TYPE_VIEW) && (ftype == FRMTYPE_VIEW)) ||
+                    ((type & TABLE_TYPE_NORMAL_TABLE) && (ftype == FRMTYPE_TABLE)))
+                    tables.push_back(tablename);  
+                else if ((ftype == FRMTYPE_TABLE) && type == TABLE_TYPE_TD_SCHEMA)
                 {
-                    tb = db->openTable(path, TD_OPEN_READONLY, NULL);
-                }
-                catch(...){}
-                if (!tb) break;
-                if (!tb->isView())
-                {
-                    LEX_STRING& comment = tb->internalTable()->s->comment; 
-                    const char* p = comment.str;
-                    if ((comment.length > 8) && strstr(p,"%@%02.000") &&              
-                        (tb->fields() == 2) && (tb->keys() == 1))
                     {
-                        shcemaNames.push_back(tb->name());    
+                        #ifndef NO_LOCK_OPEN
+                        safe_mysql_mutex_lock lck(&LOCK_open);
+                        #endif
+                        TABLE_SHARE* s = cp_get_cached_table_share(db->thd(), db->name().c_str(), tablename.c_str());
+                        if (s)
+                        {
+                            LEX_STRING* comment = &s->comment;
+                            if (comment && (comment->length > 8) && strstr(comment->str,"%@%02.000"))
+                            tables.push_back(tablename);
+                            #ifdef NO_LOCK_OPEN
+                            cp_tdc_release_share(s);
+                            #endif
+                            continue;
+                        }
+                    }
+                    
+                    {
+                        table* tb = getTable(db, tablename.c_str()); 
+                        if (!tb) break;
+                        LEX_STRING* comment = &tb->internalTable()->s->comment; 
+                        if (comment && (comment->length > 8) && strstr(comment->str,"%@%02.000"))
+                        tables.push_back(tablename);    
+                        if (tb) tb->close();
                     }
                 }
-                db->closeTable(tb);
             }
         }
     }
@@ -431,7 +471,7 @@ short schemaBuilder::execute(database* db, table* mtb, bool nouseNullkey)
             {
                 filename_to_tablename(it->path().stem().string().c_str(), path,
                                       FN_REFLEN);
-                table* tb = db->openTable(path, TD_OPEN_READONLY, NULL);
+                table* tb = db->openTable(path, TD_OPEN_READONLY, NULL, "");
                 if (!tb) break;
                 if (!tb->isView())
                     tables.push_back(tb);

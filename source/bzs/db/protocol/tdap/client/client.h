@@ -82,6 +82,13 @@ class client
 
     std::vector<char> m_sendbuf;
 
+    bool checkVersion(int major, int ninor)
+    {
+        const clsrv_ver* v = ver();
+        if (!v) return false;
+        return (v->srvMajor > major) || ((v->srvMajor == major) && (v->srvMinor >= ninor));
+    }
+
     bool checkVersion(clsrv_ver& ver)
     {
         if ((ver.srvMajor < 2) || ((ver.srvMajor == 2) && (ver.srvMinor < 3)))
@@ -231,11 +238,7 @@ public:
     inline bool isSupportFunction(short op)
     {
         if (op == TD_GET_SCHEMA)
-        {
-            const clsrv_ver* v = ver();
-            if (!v) return false;
-            return (v->srvMajor > 2) || ((v->srvMajor == 2) && (v->srvMinor >= 6));
-        }
+            return checkVersion(2, 6);
         return false;
     }
 
@@ -366,8 +369,12 @@ public:
             else if ((m_req.keyNum == CR_SUBOP_BY_SQL) || 
                     (m_req.keyNum == CR_SUBOP_BY_SQL_NOCKECK)) // make by sql
             {
-                m_sql = (char*)m_req.data;
                 m_req.keyNum -= 4; // -1= exists check 0 = no exists check
+                if (charsetIndexServer != CHARSET_UTF8 && charsetIndexServer != CHARSET_UTF8B4)
+                    m_sql = sqlBuilder::convertString(mysql::codePage(charsetIndexServer), 65001,
+                          (const char*)m_req.data);
+                else
+                    m_sql = (const char*)m_req.data;
             }
             else
                 m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,
@@ -420,7 +427,13 @@ public:
 
     inline void cmdConnect()
     {
-        if ((m_req.keyNum == LG_SUBOP_CONNECT) ||
+        if(m_req.keyNum == LG_SUBOP_ASSOCIATE)
+        {
+            clientID* cid = (clientID*)m_req.keybuf;
+            cid->con->addref();
+            setCon(cid->con);
+        }
+        else if ((m_req.keyNum == LG_SUBOP_CONNECT) ||
             (m_req.keyNum == LG_SUBOP_NEWCONNECT))
         {
             if (con())
@@ -462,7 +475,8 @@ public:
         {
             if (con())
                 con()->cleanup();
-        }
+        }else
+        	 m_preResult = STATUS_NOSUPPORT_OP;
             
         m_req.paramMask = P_MASK_KEYONLY;
     }

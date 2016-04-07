@@ -872,7 +872,8 @@ typedef zval zval_args_type;
 #define CONV_to_boolean_ex(zv) ZVAL_LONG(&zv, (Z_TYPE(zv) == IS_TRUE) ? 1 : 0);
 #define Z_TYPE_AGRS(N) Z_TYPE_P(&args[N])
 #define Z_TYPE_ARGV(Z) Z_TYPE_P(&Z)
-#define ZVAL_ARGS_P(N) (&argv[N])
+#define ZVAL_ARGV_P(N) (&argv[N])
+#define ZVAL_ARGS_P(N) (&args[N])
 #define ARGV_IS_BOOL(N) (Z_TYPE_ARGV(argv[N]) == IS_TRUE || Z_TYPE_ARGV(argv[N]) == IS_FALSE)
 #define RSRC res
 #define LIST_FIND(ZVAL) value = (swig_object_wrapper *)Z_RES_P(ZVAL)->ptr;
@@ -912,7 +913,8 @@ typedef zval** zval_args_type;
 #define CONV_to_boolean_ex(zv) convert_to_boolean_ex(zv)
 #define Z_TYPE_AGRS(N) (ZVAL_ARGS[N])->type
 #define Z_TYPE_ARGV(Z) Z_TYPE_PP((Z))
-#define ZVAL_ARGS_P(N) (*(argv[N]))
+#define ZVAL_ARGV_P(N) (*(argv[N]))
+#define ZVAL_ARGS_P(N) (*(args[N]))
 #define ARGV_IS_BOOL(N) (Z_TYPE_ARGV(argv[N]) == IS_BOOL)
 #define RSRC rsrc
 #define LIST_FIND(ZVAL) (swig_object_wrapper *)zend_list_find((*ZVAL[0])->value.lval, &type)
@@ -1279,9 +1281,12 @@ static void SWIG_Php_SetModule(swig_module_info *pointer) {
 #define SWIGTYPE_p_bzs__db__protocol__tdap__client__sortField swig_types[93]
 #define SWIGTYPE_p_BOOKMARK swig_types[94]
 #define SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos swig_types[95]
+#define SWIGTYPE_p_bzs__db__transactd__connection__record swig_types[96]
+#define SWIGTYPE_p_bzs__db__transactd__connection__records swig_types[97]
+#define SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr swig_types[98]
 
-static swig_type_info *swig_types[97];
-static swig_module_info swig_module = {swig_types, 96, 0, 0, 0, 0};
+static swig_type_info *swig_types[100];
+static swig_module_info swig_module = {swig_types, 99, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -1458,6 +1463,54 @@ SWIGINTERN bzs::db::protocol::tdap::keydef *bzs_db_protocol_tdap_tabledef_keyDef
   }
 SWIGINTERN bzs::db::protocol::tdap::btrVersion *bzs_db_protocol_tdap_btrVersions_version(bzs::db::protocol::tdap::btrVersions *self,int const index){
     return &(self->versions[index]);
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_databases(bzs::db::protocol::tdap::client::connMgr *self){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->databases();
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_tables(bzs::db::protocol::tdap::client::connMgr *self,_TCHAR const *dbname){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->tables(dbname);
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_views(bzs::db::protocol::tdap::client::connMgr *self,_TCHAR const *dbname){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->views(dbname);
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_schemaTables(bzs::db::protocol::tdap::client::connMgr *self,_TCHAR const *dbname){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->schemaTables(dbname);
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_slaveStatus(bzs::db::protocol::tdap::client::connMgr *self){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->slaveStatus();
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_sysvars(bzs::db::protocol::tdap::client::connMgr *self){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->sysvars();
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_connections(bzs::db::protocol::tdap::client::connMgr *self){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->connections();
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_inUseDatabases(bzs::db::protocol::tdap::client::connMgr *self,__int64 connid){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->inUseDatabases(connid);
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_inUseTables(bzs::db::protocol::tdap::client::connMgr *self,__int64 connid,int dbid){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->inUseTables(connid, dbid);
+    return p;
+  }
+SWIGINTERN void delete_bzs_db_protocol_tdap_client_connMgr(bzs::db::protocol::tdap::client::connMgr *self){
+    bzs::db::protocol::tdap::client::releaseConnMgr(self);
   }
 SWIGINTERN void *bzs_db_protocol_tdap_client_table_getFVbin__SWIG_0(bzs::db::protocol::tdap::client::table *self,short index,uint_td &table_getFVbin_size){
     return self->getFVbin(index, table_getFVbin_size);
@@ -1748,6 +1801,9 @@ static void *_p_bzs__db__protocol__tdap__client__writableRecordTo_p_bzs__db__pro
 static void *_p_bzs__db__protocol__tdap__client__fieldsTo_p_bzs__db__protocol__tdap__client__refarymem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((bzs::db::protocol::tdap::client::refarymem *) (bzs::db::protocol::tdap::client::fieldsBase *) ((bzs::db::protocol::tdap::client::fields *) x));
 }
+static void *_p_bzs__db__protocol__tdap__client__connMgrTo_p_bzs__db__protocol__tdap__client__nstable(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((bzs::db::protocol::tdap::client::nstable *)  ((bzs::db::protocol::tdap::client::connMgr *) x));
+}
 static void *_p_bzs__db__protocol__tdap__client__dbdefTo_p_bzs__db__protocol__tdap__client__nstable(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((bzs::db::protocol::tdap::client::nstable *)  ((bzs::db::protocol::tdap::client::dbdef *) x));
 }
@@ -1881,6 +1937,9 @@ static swig_type_info _swigt__p_unsigned_short = {"_p_unsigned_short", "unsigned
 static swig_type_info _swigt__p_void = {"_p_void", "void *|void_td *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_BOOKMARK = { "_p_BOOKMARK", "bookmark_td *|BOOKMARK *", 0, 0, (void*)0, 0 };
 static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__binlogPos = {"_p_bzs__db__protocol__tdap__client__binlogPos", "bzs::db::protocol::tdap::client::binlogPos *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_bzs__db__transactd__connection__record = {"_p_bzs__db__transactd__connection__record", "bzs::db::transactd::connection::record *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_bzs__db__transactd__connection__records = {"_p_bzs__db__transactd__connection__records", "bzs::db::protocol::tdap::client::connMgr::records *|bzs::db::transactd::connection::records *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_bzs__db__protocol__tdap__client__connMgr = {"_p_bzs__db__protocol__tdap__client__connMgr", "bzs::db::protocol::tdap::client::connMgr *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__bool,
@@ -1979,6 +2038,9 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_bzs__db__protocol__tdap__client__sortField,
   &_swigt__p_BOOKMARK,
   &_swigt__p_bzs__db__protocol__tdap__client__binlogPos,
+  &_swigt__p_bzs__db__transactd__connection__record,
+  &_swigt__p_bzs__db__transactd__connection__records,
+  &_swigt__p_bzs__db__protocol__tdap__client__connMgr,
 
 };
 
@@ -2024,7 +2086,7 @@ static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__max[] = {  {&_s
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__memoryRecord[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__memoryRecord, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__writableRecord, _p_bzs__db__protocol__tdap__client__writableRecordTo_p_bzs__db__protocol__tdap__client__memoryRecord, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__min[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__min, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__nsdatabase[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__nsdatabase, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__database, _p_bzs__db__protocol__tdap__client__databaseTo_p_bzs__db__protocol__tdap__client__nsdatabase, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__nstable[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__table, _p_bzs__db__protocol__tdap__client__tableTo_p_bzs__db__protocol__tdap__client__nstable, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__dbdef, _p_bzs__db__protocol__tdap__client__dbdefTo_p_bzs__db__protocol__tdap__client__nstable, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__nstable, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__nstable[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__connMgr, _p_bzs__db__protocol__tdap__client__connMgrTo_p_bzs__db__protocol__tdap__client__nstable, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__table, _p_bzs__db__protocol__tdap__client__tableTo_p_bzs__db__protocol__tdap__client__nstable, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__dbdef, _p_bzs__db__protocol__tdap__client__dbdefTo_p_bzs__db__protocol__tdap__client__nstable, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__nstable, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__pooledDbManager[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__pooledDbManager, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__preparedQuery[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__preparedQuery, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__query[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__recordsetQuery, _p_bzs__db__protocol__tdap__client__recordsetQueryTo_p_bzs__db__protocol__tdap__client__query, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__sum, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__first, 0, 0, 0},{&_swigt__p_bzs__db__protocol__tdap__client__last, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__count, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__query, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__max, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__avg, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__min, 0, 0, 0},  {&_swigt__p_bzs__db__protocol__tdap__client__groupFuncBase, 0, 0, 0},{0, 0, 0, 0}};
@@ -2078,6 +2140,9 @@ static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__first[] = {  {&
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__last[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__last, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_BOOKMARK[] = { { &_swigt__p_BOOKMARK, 0, 0, 0 }, { 0, 0, 0, 0 } };
 static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__binlogPos[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__binlogPos, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__transactd__connection__record[] = {  {&_swigt__p_bzs__db__transactd__connection__record, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__transactd__connection__records[] = {  {&_swigt__p_bzs__db__transactd__connection__records, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_bzs__db__protocol__tdap__client__connMgr[] = {  {&_swigt__p_bzs__db__protocol__tdap__client__connMgr, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__bool,
@@ -2176,6 +2241,9 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_bzs__db__protocol__tdap__client__sortField,
   _swigc__p_BOOKMARK,
   _swigc__p_bzs__db__protocol__tdap__client__binlogPos,
+  _swigc__p_bzs__db__transactd__connection__record,
+  _swigc__p_bzs__db__transactd__connection__records,
+  _swigc__p_bzs__db__protocol__tdap__client__connMgr,
 
 };
 
@@ -2273,6 +2341,9 @@ static int le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__share
 static int le_swig__p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t=0; /* handle for _p_bzs__db__protocol__tdap__client__transactionT_boost__shared_ptrT_bzs__db__protocol__tdap__client__database_t_t */
 static int le_swig__p_BOOKMARK = 0; /* handle for BOOKMARK */
 static int le_swig__p_bzs__db__protocol__tdap__client__binlogPos=0; /* handle for binlogPos */
+static int le_swig__p_bzs__db__transactd__connection__record=0; /* handle for connRecord */
+static int le_swig__p_bzs__db__transactd__connection__records=0; /* handle for connRecords */
+static int le_swig__p_bzs__db__protocol__tdap__client__connMgr=0; /* handle for connMgr */
 
 /* end vdecl subsection */
 /* wrapper section */
@@ -8039,7 +8110,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_update) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_update__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -8049,7 +8120,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_update) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -8144,7 +8215,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_del) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_del__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -8154,7 +8225,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_del) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -8254,7 +8325,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_insert) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_insert__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -8264,7 +8335,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_insert) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -8358,7 +8429,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_createIndex) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_createIndex__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -8368,7 +8439,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_createIndex) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -8463,7 +8534,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_dropIndex) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_dropIndex__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -8473,7 +8544,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_dropIndex) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -8622,7 +8693,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_recordCount) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_recordCount__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -8632,7 +8703,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_recordCount) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -8645,7 +8716,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_recordCount) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -8818,7 +8889,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_commitBulkInsert) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_commitBulkInsert__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -8828,7 +8899,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_commitBulkInsert) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -8923,7 +8994,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekFirst) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_seekFirst__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -8933,7 +9004,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekFirst) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -9028,7 +9099,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekLast) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_seekLast__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -9038,7 +9109,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekLast) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -9133,7 +9204,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekPrev) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_seekPrev__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -9143,7 +9214,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekPrev) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -9238,7 +9309,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekNext) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_seekNext__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -9248,7 +9319,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekNext) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -9343,7 +9414,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seek) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_seek__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -9353,7 +9424,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seek) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -9538,7 +9609,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stepFirst) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_stepFirst__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -9548,7 +9619,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stepFirst) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -9643,7 +9714,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stepLast) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_stepLast__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -9653,7 +9724,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stepLast) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -9748,7 +9819,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stepPrev) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_stepPrev__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -9758,7 +9829,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stepPrev) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -9853,7 +9924,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stepNext) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_stepNext__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -9863,7 +9934,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stepNext) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -10079,7 +10150,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekByBookmark) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
         }
         if (_v) {
             _wrap_nstable_seekByBookmark__SWIG_4(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -10089,12 +10160,12 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekByBookmark) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
         }
         if (_v) {
             {
                 void *tmp;
-                _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
+                _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
             }
             if (_v) {
                 _wrap_nstable_seekByBookmark__SWIG_3(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -10105,12 +10176,12 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekByBookmark) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
         }
         if (_v) {
             {
                 void *tmp;
-                _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
+                _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
             }
             if (_v) {
                 _v = (Z_TYPE_ARGV(argv[2]) == IS_LONG);
@@ -10216,7 +10287,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_getPercentage) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
         }
         if (_v) {
             _wrap_nstable_getPercentage__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -10226,12 +10297,12 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_getPercentage) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
         }
         if (_v) {
             {
                 void *tmp;
-                _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
+                _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
             }
             if (_v) {
                 _wrap_nstable_getPercentage__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -10324,7 +10395,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekByPercentage) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _wrap_nstable_seekByPercentage__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -10334,7 +10405,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_seekByPercentage) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -10443,7 +10514,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_setOwnerName) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       {
@@ -10458,7 +10529,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_setOwnerName) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       {
@@ -10655,12 +10726,12 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stats) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, 0, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, 0, 0) >= 0);
       }
       if (_v) {
         _v = (Z_TYPE_ARGV(argv[2]) == IS_LONG); 
@@ -10674,12 +10745,12 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stats) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, 0, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, 0, 0) >= 0);
       }
       if (_v) {
         _v = (Z_TYPE_ARGV(argv[2]) == IS_LONG); 
@@ -10695,6 +10766,59 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_stats) {
   
   SWIG_ErrorCode() = E_ERROR;
   SWIG_ErrorMsg() = "No matching function for overloaded 'nstable_stats'";
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_nstable_getCreateSql) {
+  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
+  char *arg2 = (char *) 0 ;
+  uint_td *arg3 = (uint_td *) 0 ;
+  zval_args_type args[1];
+  char *result = 0 ;
+  
+  {
+    uint_td n = 65000;
+    uint_td* n_p = &n;
+    char* p = new char[n];
+    arg2 = p;
+    arg3 = n_p;
+  }
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_getCreateSql. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (char *)(arg1)->getCreateSql(arg2,arg3);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    if(!result) {
+      ZVAL_NULL(return_value);
+    } else {
+      ZVAL_STRING(return_value, (char *)result, 1);
+    }
+  }
+  {
+    delete [] arg2;
+  }
+  return;
+fail:
+  {
+    delete [] arg2;
+  }
   SWIG_FAIL(TSRMLS_C);
 }
 
@@ -10781,7 +10905,7 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_unlock) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
         }
         if (_v) {
             _wrap_nstable_unlock__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -10791,12 +10915,12 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_unlock) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
         }
         if (_v) {
             {
                 void *tmp;
-                _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
+                _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
             }
             if (_v) {
                 _wrap_nstable_unlock__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -11036,6 +11160,1962 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_existsFile) {
   }
   {
     ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_conId_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  __int64 arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_conId_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,12,CONVERT_LONG_LONG_IN@*/
+  switch (Z_TYPE_AGRS(1)) {
+  case IS_DOUBLE:
+    arg2 = (__int64) Z_DVAL_PP(args[1]);
+    break;
+    case IS_STRING: {
+      char * endptr;
+      errno = 0;
+      arg2 = (__int64) strtoll(Z_STRVAL_PP(args[1]), &endptr, 10);
+      if (*endptr && !errno) break;
+      /* FALL THRU */
+    }
+  default:
+    CONV_to_long_ex(args[1]);
+    arg2 = (__int64) Z_LVAL_PP(args[1]);
+  }
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->conId = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_conId_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  __int64 result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_conId_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result =  ((arg1)->conId);
+  
+  if ((long long)LONG_MIN <= result && result <= (long long)LONG_MAX) {
+    ZVAL_LONG(return_value,(long)result);
+    //return_value->value.lval = (long)(result);
+    //return_value->type = IS_LONG;
+  } else {
+    char temp[256];
+    sprintf(temp, "%lld", (long long)result);
+    ZVAL_STRING(return_value, temp, 1);
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_longValue_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  __int64 arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_longValue_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,12,CONVERT_LONG_LONG_IN@*/
+  switch (Z_TYPE_AGRS(1)) {
+  case IS_DOUBLE:
+    arg2 = (__int64) Z_DVAL_PP(args[1]);
+    break;
+    case IS_STRING: {
+      char * endptr;
+      errno = 0;
+      arg2 = (__int64) strtoll(Z_STRVAL_PP(args[1]), &endptr, 10);
+      if (*endptr && !errno) break;
+      /* FALL THRU */
+    }
+  default:
+    CONV_to_long_ex(args[1]);
+    arg2 = (__int64) Z_LVAL_PP(args[1]);
+  }
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->longValue = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_longValue_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  __int64 result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_longValue_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result =  ((arg1)->longValue);
+  
+  if ((long long)LONG_MIN <= result && result <= (long long)LONG_MAX) {
+    ZVAL_LONG(return_value,(long)result);
+    //return_value->value.lval = (long)(result);
+    //return_value->type = IS_LONG;
+  } else {
+    char temp[256];
+    sprintf(temp, "%lld", (long long)result);
+    ZVAL_STRING(return_value, temp, 1);
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_delCount_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  unsigned int arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_delCount_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (unsigned int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->delCount = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_delCount_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  unsigned int result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_delCount_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (unsigned int) ((arg1)->delCount);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_insCount_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  unsigned int arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_insCount_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (unsigned int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->insCount = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_insCount_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  unsigned int result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_insCount_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (unsigned int) ((arg1)->insCount);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_id_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  unsigned int arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_id_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (unsigned int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->id = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_id_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  unsigned int result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_id_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (unsigned int) ((arg1)->id);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_db_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  unsigned int arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_db_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (unsigned int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->db = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_db_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  unsigned int result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_db_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (unsigned int) ((arg1)->db);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_readCount_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  unsigned int arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_readCount_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (unsigned int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->readCount = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_readCount_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  unsigned int result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_readCount_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (unsigned int) ((arg1)->readCount);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_updCount_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  unsigned int arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_updCount_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (unsigned int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->updCount = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_updCount_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  unsigned int result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_updCount_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (unsigned int) ((arg1)->updCount);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_type_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  unsigned int arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_type_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (unsigned int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->type = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_type_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  unsigned int result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_type_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (unsigned int) ((arg1)->type);
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_name_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  char *arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_name_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    CONV_to_string_ex(args[1]);
+    arg2 = (char *) Z_STRVAL_PP(args[1]);
+  }
+  {
+    if(arg2) {
+      strncpy((char*)arg1->name, (const char *)arg2, 67-1);
+      arg1->name[67-1] = 0;
+    } else {
+      arg1->name[0] = 0;
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_name_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  char *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_name_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (char *) ((arg1)->name);
+  {
+    if(!result) {
+      ZVAL_NULL(return_value);
+    } else {
+      ZVAL_STRING(return_value, (char *)result, 1);
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_value_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  char *arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_value_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    CONV_to_string_ex(args[1]);
+    arg2 = (char *) Z_STRVAL_PP(args[1]);
+  }
+  {
+    if(arg2) {
+      strncpy((char*)arg1->value, (const char *)arg2, 67-1);
+      arg1->value[67-1] = 0;
+    } else {
+      arg1->value[0] = 0;
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_value_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  char *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_value_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (char *) ((arg1)->value);
+  {
+    if(!result) {
+      ZVAL_NULL(return_value);
+    } else {
+      ZVAL_STRING(return_value, (char *)result, 1);
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_inTransaction_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  char arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_inTransaction_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,57,CONVERT_CHAR_IN@*/
+  CONV_to_string_ex(args[1]);
+  arg2 = (char) *Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->inTransaction = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_inTransaction_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  char result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_inTransaction_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (char) ((arg1)->inTransaction);
+  {
+    ZVAL_STRINGL(return_value,&result, 1, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_inSnapshot_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  char arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_inSnapshot_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,57,CONVERT_CHAR_IN@*/
+  CONV_to_string_ex(args[1]);
+  arg2 = (char) *Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->inSnapshot = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_inSnapshot_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  char result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_inSnapshot_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (char) ((arg1)->inSnapshot);
+  {
+    ZVAL_STRINGL(return_value,&result, 1, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_openNormal_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  char arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_openNormal_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,57,CONVERT_CHAR_IN@*/
+  CONV_to_string_ex(args[1]);
+  arg2 = (char) *Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->openNormal = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_openNormal_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  char result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_openNormal_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (char) ((arg1)->openNormal);
+  {
+    ZVAL_STRINGL(return_value,&result, 1, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_openReadOnly_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  char arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_openReadOnly_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,57,CONVERT_CHAR_IN@*/
+  CONV_to_string_ex(args[1]);
+  arg2 = (char) *Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->openReadOnly = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_openReadOnly_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  char result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_openReadOnly_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (char) ((arg1)->openReadOnly);
+  {
+    ZVAL_STRINGL(return_value,&result, 1, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_openEx_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  char arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_openEx_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,57,CONVERT_CHAR_IN@*/
+  CONV_to_string_ex(args[1]);
+  arg2 = (char) *Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->openEx = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_openEx_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  char result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_openEx_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (char) ((arg1)->openEx);
+  {
+    ZVAL_STRINGL(return_value,&result, 1, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_openReadOnlyEx_set) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  char arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_openReadOnlyEx_set. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,57,CONVERT_CHAR_IN@*/
+  CONV_to_string_ex(args[1]);
+  arg2 = (char) *Z_STRVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  if (arg1) (arg1)->openReadOnlyEx = arg2;
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecord_openReadOnlyEx_get) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  zval_args_type args[1];
+  char result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__record, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecord_openReadOnlyEx_get. Expected SWIGTYPE_p_bzs__db__transactd__connection__record");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  result = (char) ((arg1)->openReadOnlyEx);
+  {
+    ZVAL_STRINGL(return_value,&result, 1, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_connRecord) {
+  bzs::db::transactd::connection::record *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 0) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    try {
+      result = (bzs::db::transactd::connection::record *)new bzs::db::transactd::connection::record();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__record, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+/* This function is designed to be called by the zend list destructors */
+/* to typecast and do the actual destruction */
+static void __wrap_delete_connRecord(zend_rsrc_list_entry *rsrc, const char *type_name TSRMLS_DC) {
+  swig_object_wrapper *value=(swig_object_wrapper *) rsrc->ptr ;
+  void *ptr=value->ptr ;
+  int newobject=value->newobject ;
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  
+  efree(value);
+  if (! newobject) return; /* can't delete it! */
+  arg1 = (bzs::db::transactd::connection::record *)SWIG_ZTS_ConvertResourceData(ptr,type_name,SWIGTYPE_p_bzs__db__transactd__connection__record TSRMLS_CC);
+  if (! arg1) zend_error(E_ERROR, "bzs::db::transactd::connection::record resource already free'd");
+  {
+    try {
+      delete arg1;
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecords_getRecord) {
+  bzs::db::transactd::connection::records *arg1 = (bzs::db::transactd::connection::records *) 0 ;
+  int arg2 ;
+  zval_args_type args[2];
+  bzs::db::transactd::connection::record result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__records, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecords_getRecord. Expected SWIGTYPE_p_bzs__db__transactd__connection__records");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (int) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      result = ((bzs::db::transactd::connection::records const *)arg1)->operator [](arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    bzs::db::transactd::connection::record * resultobj = new bzs::db::transactd::connection::record((const bzs::db::transactd::connection::record &) result);
+    SWIG_SetPointerZval(return_value, (void *)resultobj, SWIGTYPE_p_bzs__db__transactd__connection__record, 1);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connRecords_size) {
+  bzs::db::transactd::connection::records *arg1 = (bzs::db::transactd::connection::records *) 0 ;
+  zval_args_type args[1];
+  size_t result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__records, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connRecords_size. Expected SWIGTYPE_p_bzs__db__transactd__connection__records");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = ((bzs::db::transactd::connection::records const *)arg1)->size();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_new_connRecords) {
+  bzs::db::transactd::connection::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 0) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    try {
+      result = (bzs::db::transactd::connection::records *)new bzs::db::transactd::connection::records();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+/* This function is designed to be called by the zend list destructors */
+/* to typecast and do the actual destruction */
+static void __wrap_delete_connRecords(zend_rsrc_list_entry *rsrc, const char *type_name TSRMLS_DC) {
+  swig_object_wrapper *value=(swig_object_wrapper *) rsrc->ptr ;
+  void *ptr=value->ptr ;
+  int newobject=value->newobject ;
+  bzs::db::transactd::connection::records *arg1 = (bzs::db::transactd::connection::records *) 0 ;
+  
+  efree(value);
+  if (! newobject) return; /* can't delete it! */
+  arg1 = (bzs::db::transactd::connection::records *)SWIG_ZTS_ConvertResourceData(ptr,type_name,SWIGTYPE_p_bzs__db__transactd__connection__records TSRMLS_CC);
+  if (! arg1) zend_error(E_ERROR, "bzs::db::transactd::connection::records resource already free'd");
+  {
+    try {
+      delete arg1;
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_connect) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  zval_args_type args[2];
+  bool result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_connect. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if (Z_TYPE_AGRS(1) != IS_NULL) {
+      CONV_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  {
+    try {
+      result = (bool)(arg1)->connect((_TCHAR const *)arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_disconnect) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  zval_args_type args[1];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_disconnect. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      (arg1)->disconnect();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_databases) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  zval_args_type args[1];
+  bzs::db::protocol::tdap::client::connMgr::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_databases. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_databases(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_tables) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  zval_args_type args[2];
+  bzs::db::protocol::tdap::client::connMgr::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_tables. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if (Z_TYPE_AGRS(1) != IS_NULL) {
+      CONV_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_tables(arg1,(char const *)arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_views) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  zval_args_type args[2];
+  bzs::db::protocol::tdap::client::connMgr::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_views. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if (Z_TYPE_AGRS(1) != IS_NULL) {
+      CONV_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_views(arg1,(char const *)arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_schemaTables) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  zval_args_type args[2];
+  bzs::db::protocol::tdap::client::connMgr::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_schemaTables. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if (Z_TYPE_AGRS(1) != IS_NULL) {
+      CONV_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_schemaTables(arg1,(char const *)arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_slaveStatus) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  zval_args_type args[1];
+  bzs::db::protocol::tdap::client::connMgr::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_slaveStatus. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_slaveStatus(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_sysvars) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  zval_args_type args[1];
+  bzs::db::protocol::tdap::client::connMgr::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_sysvars. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_sysvars(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_connections) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  zval_args_type args[1];
+  bzs::db::protocol::tdap::client::connMgr::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_connections. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_connections(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_inUseDatabases) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  __int64 arg2 ;
+  zval_args_type args[2];
+  bzs::db::protocol::tdap::client::connMgr::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_inUseDatabases. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,12,CONVERT_LONG_LONG_IN@*/
+  switch (Z_TYPE_AGRS(1)) {
+  case IS_DOUBLE:
+    arg2 = (__int64) Z_DVAL_PP(args[1]);
+    break;
+    case IS_STRING: {
+      char * endptr;
+      errno = 0;
+      arg2 = (__int64) strtoll(Z_STRVAL_PP(args[1]), &endptr, 10);
+      if (*endptr && !errno) break;
+      /* FALL THRU */
+    }
+  default:
+    CONV_to_long_ex(args[1]);
+    arg2 = (__int64) Z_LVAL_PP(args[1]);
+  }
+  /*@SWIG@*/;
+  
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_inUseDatabases(arg1,arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_inUseTables) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  __int64 arg2 ;
+  int arg3 ;
+  zval_args_type args[3];
+  bzs::db::protocol::tdap::client::connMgr::records *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_inUseTables. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,12,CONVERT_LONG_LONG_IN@*/
+  switch (Z_TYPE_AGRS(1)) {
+  case IS_DOUBLE:
+    arg2 = (__int64) Z_DVAL_PP(args[1]);
+    break;
+    case IS_STRING: {
+      char * endptr;
+      errno = 0;
+      arg2 = (__int64) strtoll(Z_STRVAL_PP(args[1]), &endptr, 10);
+      if (*endptr && !errno) break;
+      /* FALL THRU */
+    }
+  default:
+    CONV_to_long_ex(args[1]);
+    arg2 = (__int64) Z_LVAL_PP(args[1]);
+  }
+  /*@SWIG@*/;
+  
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[2]);
+  arg3 = (int) Z_LVAL_PP(args[2]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_inUseTables(arg1,arg2,arg3);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__transactd__connection__records, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_postDisconnectOne) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  __int64 arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_postDisconnectOne. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,12,CONVERT_LONG_LONG_IN@*/
+  switch (Z_TYPE_AGRS(1)) {
+  case IS_DOUBLE:
+    arg2 = (__int64) Z_DVAL_PP(args[1]);
+    break;
+    case IS_STRING: {
+      char * endptr;
+      errno = 0;
+      arg2 = (__int64) strtoll(Z_STRVAL_PP(args[1]), &endptr, 10);
+      if (*endptr && !errno) break;
+      /* FALL THRU */
+    }
+  default:
+    CONV_to_long_ex(args[1]);
+    arg2 = (__int64) Z_LVAL_PP(args[1]);
+  }
+  /*@SWIG@*/;
+  
+  {
+    try {
+      (arg1)->postDisconnectOne(arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_postDisconnectAll) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  zval_args_type args[1];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_postDisconnectAll. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      (arg1)->postDisconnectAll();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_stat) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  zval_args_type args[1];
+  short_td result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_stat. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (short_td)(arg1)->stat();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_db) {
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  zval_args_type args[1];
+  bzs::db::protocol::tdap::client::database *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_db. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::database *)((bzs::db::protocol::tdap::client::connMgr const *)arg1)->db();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_removeSystemDb) {
+  bzs::db::protocol::tdap::client::connMgr::records *arg1 = 0 ;
+  zval_args_type args[1];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__transactd__connection__records, 0) < 0 || arg1 == NULL) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_removeSystemDb. Expected SWIGTYPE_p_bzs__db__transactd__connection__records");
+    }
+  }
+  {
+    try {
+      bzs::db::protocol::tdap::client::connMgr::removeSystemDb(*arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_sysvarName) {
+  uint_td arg1 ;
+  zval_args_type args[1];
+  _TCHAR *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[0]);
+  arg1 = (uint_td) Z_LVAL_PP(args[0]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      result = (_TCHAR *)bzs::db::protocol::tdap::client::connMgr::sysvarName(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    if(!result) {
+      ZVAL_NULL(return_value);
+    } else {
+      ZVAL_STRING(return_value, (char *)result, 1);
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_slaveStatusName) {
+  uint_td arg1 ;
+  zval_args_type args[1];
+  _TCHAR *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[0]);
+  arg1 = (uint_td) Z_LVAL_PP(args[0]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      result = (_TCHAR *)bzs::db::protocol::tdap::client::connMgr::slaveStatusName(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    if(!result) {
+      ZVAL_NULL(return_value);
+    } else {
+      ZVAL_STRING(return_value, (char *)result, 1);
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_connMgr_create) {
+  bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
+  zval_args_type args[1];
+  bzs::db::protocol::tdap::client::connMgr *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_create. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__database");
+    }
+  }
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::connMgr *)bzs::db::protocol::tdap::client::connMgr::create(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 1);
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+/* This function is designed to be called by the zend list destructors */
+/* to typecast and do the actual destruction */
+static void __wrap_delete_connMgr(zend_rsrc_list_entry *rsrc, const char *type_name TSRMLS_DC) {
+  swig_object_wrapper *value=(swig_object_wrapper *) rsrc->ptr ;
+  void *ptr=value->ptr ;
+  int newobject=value->newobject ;
+  bzs::db::protocol::tdap::client::connMgr *arg1 = (bzs::db::protocol::tdap::client::connMgr *) 0 ;
+  
+  efree(value);
+  if (! newobject) return; /* can't delete it! */
+  arg1 = (bzs::db::protocol::tdap::client::connMgr *)SWIG_ZTS_ConvertResourceData(ptr,type_name,SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr TSRMLS_CC);
+  if (! arg1) zend_error(E_ERROR, "bzs::db::protocol::tdap::client::connMgr resource already free'd");
+  {
+    try {
+      delete_bzs_db_protocol_tdap_client_connMgr(arg1);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
   }
   return;
 fail:
@@ -11394,7 +13474,7 @@ ZEND_NAMED_FUNCTION(_wrap_dbdef_updateTableDef) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -11407,7 +13487,7 @@ ZEND_NAMED_FUNCTION(_wrap_dbdef_updateTableDef) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -11918,6 +13998,82 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_dbdef_pushBackup) {
+  bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
+  short arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of dbdef_pushBackup. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (short) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      (arg1)->pushBackup(arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_dbdef_popBackup) {
+  bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
+  short arg2 ;
+  zval_args_type args[2];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of dbdef_popBackup. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (short) Z_LVAL_PP(args[1]);
+  /*@SWIG@*/;
+  
+  {
+    try {
+      (arg1)->popBackup(arg2);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_dbdef_synchronizeSeverSchema) {
   bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
   short arg2 ;
@@ -12077,7 +14233,7 @@ ZEND_NAMED_FUNCTION(_wrap_dbdef_reopen) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) >= 0);
     }
     if (_v) {
       _wrap_dbdef_reopen__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -12087,7 +14243,7 @@ ZEND_NAMED_FUNCTION(_wrap_dbdef_reopen) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__dbdef, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -12719,7 +14875,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_find) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _wrap_table_find__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -12729,7 +14885,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_find) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -12886,7 +15042,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findNext) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _wrap_table_findNext__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -12896,7 +15052,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findNext) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -12991,7 +15147,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findPrev) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _wrap_table_findPrev__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -13001,7 +15157,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findPrev) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -13242,7 +15398,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_setFilter) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       {
@@ -13263,7 +15419,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_setFilter) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       {
@@ -13464,7 +15620,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVint) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -13477,7 +15633,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVint) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       {
@@ -13600,7 +15756,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVdbl) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -13613,7 +15769,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVdbl) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       {
@@ -13735,7 +15891,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVstr) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -13748,7 +15904,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVstr) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_STRING); 
@@ -14097,7 +16253,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVbin) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -14110,7 +16266,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVbin) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       {
@@ -14268,12 +16424,12 @@ ZEND_NAMED_FUNCTION(_wrap_table_prepare) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
       }
       if (_v) {
         _wrap_table_prepare__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -14284,12 +16440,12 @@ ZEND_NAMED_FUNCTION(_wrap_table_prepare) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
       }
       if (_v) {
         _v = ARGV_IS_BOOL(2); 
@@ -14403,12 +16559,12 @@ ZEND_NAMED_FUNCTION(_wrap_table_setQuery) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
       }
       if (_v) {
         _wrap_table_setQuery__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -14419,12 +16575,12 @@ ZEND_NAMED_FUNCTION(_wrap_table_setQuery) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
       }
       if (_v) {
         _v = ARGV_IS_BOOL(2); 
@@ -14977,7 +17133,7 @@ ZEND_NAMED_FUNCTION(_wrap_queryBase_queryString) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
     }
     if (_v) {
       {
@@ -14992,7 +17148,7 @@ ZEND_NAMED_FUNCTION(_wrap_queryBase_queryString) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
     }
     if (_v) {
       {
@@ -17555,7 +19711,7 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_beginTrn) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
     }
     if (_v) {
       _wrap_nsdatabase_beginTrn__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -17565,7 +19721,7 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_beginTrn) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -18151,7 +20307,7 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_connect) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
     }
     if (_v) {
       {
@@ -18166,7 +20322,7 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_connect) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
     }
     if (_v) {
       {
@@ -18272,7 +20428,7 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconnect) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
     }
     if (_v) {
       _wrap_nsdatabase_disconnect__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -18282,7 +20438,7 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_disconnect) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) >= 0);
     }
     if (_v) {
       {
@@ -18364,6 +20520,100 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_reconnect) {
   }
   return;
 fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_isAssociate) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
+  zval_args_type args[1];
+  bool result;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nsdatabase_isAssociate. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bool)((bzs::db::protocol::tdap::client::nsdatabase const *)arg1)->isAssociate();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_BOOL(return_value,(result)?1:0);
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_nsdatabase_getCreateViewSql) {
+  bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  char *arg3 = (char *) 0 ;
+  uint_td *arg4 = (uint_td *) 0 ;
+  zval_args_type args[2];
+  char *result = 0 ;
+  
+  {
+    uint_td n = 65000;
+    uint_td* n_p = &n;
+    char* p = new char[n];
+    arg3 = p;
+    arg4 = n_p;
+  }
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nsdatabase_getCreateViewSql. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nsdatabase");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if (Z_TYPE_AGRS(1) != IS_NULL) {
+      CONV_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  {
+    try {
+      result = (char *)(arg1)->getCreateViewSql((_TCHAR const *)arg2,arg3,arg4);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    if(!result) {
+      ZVAL_NULL(return_value);
+    } else {
+      ZVAL_STRING(return_value, (char *)result, 1);
+    }
+  }
+  {
+    delete [] arg3;
+  }
+  return;
+fail:
+  {
+    delete [] arg3;
+  }
   SWIG_FAIL(TSRMLS_C);
 }
 
@@ -19053,7 +21303,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_create) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       {
@@ -19068,7 +21318,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_create) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       {
@@ -19251,7 +21501,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_close) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
         }
         if (_v) {
             _wrap_database_close__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -19261,7 +21511,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_close) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
         }
         if (_v) {
             _v = ARGV_IS_BOOL(1);
@@ -19444,7 +21694,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_continuous) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       _wrap_database_continuous__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -19454,7 +21704,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_continuous) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -19467,7 +21717,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_continuous) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -19705,7 +21955,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_convertTable) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -19721,7 +21971,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_convertTable) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -19844,7 +22094,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_existsTableFile) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -19857,7 +22107,7 @@ ZEND_NAMED_FUNCTION(_wrap_database_existsTableFile) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -20047,6 +22297,40 @@ ZEND_NAMED_FUNCTION(_wrap_database_setAutoSchemaUseNullkey) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
+  
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_database_createAssociate) {
+  bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
+  zval_args_type args[1];
+  bzs::db::protocol::tdap::client::database *result = 0 ;
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of database_createAssociate. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__database");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    try {
+      result = (bzs::db::protocol::tdap::client::database *)(arg1)->createAssociate();
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  
+  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0);
   
   return;
 fail:
@@ -21722,12 +24006,12 @@ ZEND_NAMED_FUNCTION(_wrap_new_btrTimeStamp) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void **)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDate, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void **)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDate, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void **)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrTime, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void **)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrTime, 0) >= 0);
       }
       if (_v) {
         _wrap_new_btrTimeStamp__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -22166,7 +24450,7 @@ ZEND_NAMED_FUNCTION(_wrap_btrdtoa) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDate, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDate, 0) >= 0);
     }
     if (_v) {
       _wrap_btrdtoa__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -22183,7 +24467,7 @@ ZEND_NAMED_FUNCTION(_wrap_btrdtoa) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDate, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDate, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -22262,7 +24546,7 @@ ZEND_NAMED_FUNCTION(_wrap_btrttoa) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrTime, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrTime, 0) >= 0);
     }
     if (_v) {
       _wrap_btrttoa__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -22502,7 +24786,7 @@ ZEND_NAMED_FUNCTION(_wrap_btrstoa) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDateTime, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDateTime, 0) >= 0);
     }
     if (_v) {
       _wrap_btrstoa__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -22519,7 +24803,7 @@ ZEND_NAMED_FUNCTION(_wrap_btrstoa) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDateTime, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__btrDateTime, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -23001,7 +25285,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_field) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
     }
     if (_v) {
       _wrap_new_field__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -23011,17 +25295,17 @@ ZEND_NAMED_FUNCTION(_wrap_new_field) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_unsigned_char, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_unsigned_char, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__fielddef, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__fielddef, 0) >= 0);
       }
       if (_v) {
         {
           void *tmp;
-          _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(2), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddefs, 0) >= 0);
+          _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(2), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fielddefs, 0) >= 0);
         }
         if (_v) {
           _wrap_new_field__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -23558,12 +25842,12 @@ ZEND_NAMED_FUNCTION(_wrap_field_comp) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
       }
       if (_v) {
         _wrap_field_comp__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -23574,12 +25858,12 @@ ZEND_NAMED_FUNCTION(_wrap_field_comp) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__field, 0) >= 0);
       }
       if (_v) {
         _v = (Z_TYPE_ARGV(argv[2]) == IS_STRING); 
@@ -24189,7 +26473,7 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_read) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
         }
         if (_v) {
             _wrap_writableRecord_read__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -24199,12 +26483,12 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_read) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
         }
         if (_v) {
             {
                 void *tmp;
-                _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
+                _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
             }
             if (_v) {
                 _wrap_writableRecord_read__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -24215,7 +26499,7 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_read) {
         int _v;
         {
             void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
+            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
         }
         if (_v) {
             _v = ARGV_IS_BOOL(1);
@@ -24338,7 +26622,7 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_del) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
     }
     if (_v) {
       _wrap_writableRecord_del__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -24348,7 +26632,7 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_del) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
     }
     if (_v) {
       _v = ARGV_IS_BOOL(1); 
@@ -26664,7 +28948,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_sum) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       _wrap_new_sum__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -26674,7 +28958,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_sum) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       {
@@ -26802,7 +29086,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_first) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       _wrap_new_first__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -26812,7 +29096,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_first) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       {
@@ -26940,7 +29224,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_last) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       _wrap_new_last__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -26950,7 +29234,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_last) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       {
@@ -27139,7 +29423,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_avg) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       _wrap_new_avg__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -27149,7 +29433,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_avg) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       {
@@ -27277,7 +29561,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_min) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       _wrap_new_min__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -27287,7 +29571,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_min) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       {
@@ -27415,7 +29699,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_max) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       _wrap_new_max__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -27425,7 +29709,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_max) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldNames, 0) >= 0);
     }
     if (_v) {
       {
@@ -27918,12 +30202,12 @@ ZEND_NAMED_FUNCTION(_wrap_Recordset_erase) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_std__vectorT_bzs__db__protocol__tdap__client__fieldsBase_p_t__iterator, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_std__vectorT_bzs__db__protocol__tdap__client__fieldsBase_p_t__iterator, 0) >= 0);
       }
       if (_v) {
         _wrap_Recordset_erase__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -27934,7 +30218,7 @@ ZEND_NAMED_FUNCTION(_wrap_Recordset_erase) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -28606,7 +30890,7 @@ ZEND_NAMED_FUNCTION(_wrap_preparedQuery_addValue) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
@@ -28619,7 +30903,7 @@ ZEND_NAMED_FUNCTION(_wrap_preparedQuery_addValue) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0) >= 0);
     }
     if (_v) {
       _v = (Z_TYPE_ARGV(argv[1]) == IS_DOUBLE); 
@@ -28632,7 +30916,7 @@ ZEND_NAMED_FUNCTION(_wrap_preparedQuery_addValue) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0) >= 0);
     }
     if (_v) {
       {
@@ -29207,12 +31491,12 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_read) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
       }
       if (_v) {
         _wrap_activeTable_read__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -29223,12 +31507,12 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_read) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__preparedQuery, 0) >= 0);
       }
       if (_v) {
         _wrap_activeTable_read__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -29376,12 +31660,12 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_prepare) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
       }
       if (_v) {
         _wrap_activeTable_prepare__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -29392,12 +31676,12 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_prepare) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__activeTable, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase, 0) >= 0);
       }
       if (_v) {
         _v = ARGV_IS_BOOL(2); 
@@ -29513,7 +31797,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_activeTable) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__idatabaseManager, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__idatabaseManager, 0) >= 0);
     }
     if (_v) {
       {
@@ -29528,7 +31812,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_activeTable) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
     }
     if (_v) {
       {
@@ -29543,7 +31827,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_activeTable) {
       int _v;
       {
           void *tmp;
-          _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
+          _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__database, 0) >= 0);
       }
       if (_v) {
           {
@@ -29790,7 +32074,7 @@ ZEND_NAMED_FUNCTION(_wrap_new_pooledDbManager) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__connectParams, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__connectParams, 0) >= 0);
     }
     if (_v) {
       _wrap_new_pooledDbManager__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -29908,7 +32192,7 @@ ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_c_use) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__pooledDbManager, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__pooledDbManager, 0) >= 0);
     }
     if (_v) {
       _wrap_pooledDbManager_c_use__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -29918,12 +32202,12 @@ ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_c_use) {
     int _v;
     {
       void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__pooledDbManager, 0) >= 0);
+      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__pooledDbManager, 0) >= 0);
     }
     if (_v) {
       {
         void *tmp;
-        _v = (SWIG_ConvertPtr(ZVAL_ARGS_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__connectParams, 0) >= 0);
+        _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__connectParams, 0) >= 0);
       }
       if (_v) {
         _wrap_pooledDbManager_c_use__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
@@ -31163,6 +33447,15 @@ static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_BOOKMARK) {
 static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__protocol__tdap__client__binlogPos) {
   __wrap_delete_binlogPos(RSRC, SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos->name TSRMLS_CC);
 }
+static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__transactd__connection__record) {
+  __wrap_delete_connRecord(RSRC, SWIGTYPE_p_bzs__db__transactd__connection__record->name TSRMLS_CC);
+}
+static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__transactd__connection__records) {
+  __wrap_delete_connRecords(RSRC, SWIGTYPE_p_bzs__db__transactd__connection__records->name TSRMLS_CC);
+}
+static ZEND_RSRC_DTOR_FUNC(_wrap_destroy_p_bzs__db__protocol__tdap__client__connMgr) {
+  __wrap_delete_connMgr(RSRC, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr->name TSRMLS_CC);
+}
 
 
 /* end wrapper section */
@@ -31845,6 +34138,9 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_stats, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_getcreatesql, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_unlock, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -31866,6 +34162,201 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_getdiruri, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_existsfile, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_conid_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_conid_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_longvalue_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_longvalue_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_delcount_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_delcount_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_inscount_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_inscount_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_id_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_id_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_db_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_db_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_readcount_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_readcount_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_updcount_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_updcount_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_type_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_type_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_name_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_name_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_value_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_value_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_intransaction_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_intransaction_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_insnapshot_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_insnapshot_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_opennormal_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_opennormal_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_openreadonly_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_openreadonly_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_openex_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_openex_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_openreadonlyex_set, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecord_openreadonlyex_get, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_connRecord, 0, 0, 0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecords_getrecord, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connRecords_size, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_connRecords, 0, 0, 0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_connect, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_disconnect, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_databases, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_tables, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_views, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_schematables, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_slavestatus, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_sysvars, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_connections, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_inusedatabases, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_inusetables, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_postdisconnectone, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_postdisconnectall, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_stat, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_db, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_removesystemdb, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_sysvarname, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_slavestatusname, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_create, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_dbdef_tablecount, 0, 0, 0)
@@ -31945,6 +34436,14 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_dbdef_fieldnumbyname, 0, 0, 0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_dbdef_fieldvalidlength, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_dbdef_pushbackup, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_dbdef_popbackup, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -32422,6 +34921,13 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_reconnect, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_isassociate, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_getcreateviewsql, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_trnsactionflushwaitstatus, 0, 0, 0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nsdatabase_setexeccodepage, 0, 0, 0)
@@ -32525,6 +35031,9 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_autoschemausenullkey, 0, 0, 0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_setautoschemausenullkey, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_createassociate, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_database_setcompatiblemode, 0, 0, 0)
@@ -33533,6 +36042,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(nstable_clearownername,_wrap_nstable_clearOwnerName,swig_arginfo_nstable_clearownername)
  SWIG_ZEND_NAMED_FE(nstable_recordlength,_wrap_nstable_recordLength,swig_arginfo_nstable_recordlength)
  SWIG_ZEND_NAMED_FE(nstable_stats,_wrap_nstable_stats,swig_arginfo_nstable_stats)
+ SWIG_ZEND_NAMED_FE(nstable_getcreatesql,_wrap_nstable_getCreateSql,swig_arginfo_nstable_getcreatesql)
  SWIG_ZEND_NAMED_FE(nstable_unlock,_wrap_nstable_unlock,swig_arginfo_nstable_unlock)
  SWIG_ZEND_NAMED_FE(nstable_mode,_wrap_nstable_mode,swig_arginfo_nstable_mode)
  SWIG_ZEND_NAMED_FE(nstable_settimestampmode,_wrap_nstable_setTimestampMode,swig_arginfo_nstable_settimestampmode)
@@ -33540,6 +36050,63 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(nstable_statmsg,_wrap_nstable_statMsg,swig_arginfo_nstable_statmsg)
  SWIG_ZEND_NAMED_FE(nstable_getdiruri,_wrap_nstable_getDirURI,swig_arginfo_nstable_getdiruri)
  SWIG_ZEND_NAMED_FE(nstable_existsfile,_wrap_nstable_existsFile,swig_arginfo_nstable_existsfile)
+ SWIG_ZEND_NAMED_FE(connRecord_conid_set,_wrap_connRecord_conId_set,swig_arginfo_connRecord_conid_set)
+ SWIG_ZEND_NAMED_FE(connRecord_conid_get,_wrap_connRecord_conId_get,swig_arginfo_connRecord_conid_get)
+ SWIG_ZEND_NAMED_FE(connRecord_longvalue_set,_wrap_connRecord_longValue_set,swig_arginfo_connRecord_longvalue_set)
+ SWIG_ZEND_NAMED_FE(connRecord_longvalue_get,_wrap_connRecord_longValue_get,swig_arginfo_connRecord_longvalue_get)
+ SWIG_ZEND_NAMED_FE(connRecord_delcount_set,_wrap_connRecord_delCount_set,swig_arginfo_connRecord_delcount_set)
+ SWIG_ZEND_NAMED_FE(connRecord_delcount_get,_wrap_connRecord_delCount_get,swig_arginfo_connRecord_delcount_get)
+ SWIG_ZEND_NAMED_FE(connRecord_inscount_set,_wrap_connRecord_insCount_set,swig_arginfo_connRecord_inscount_set)
+ SWIG_ZEND_NAMED_FE(connRecord_inscount_get,_wrap_connRecord_insCount_get,swig_arginfo_connRecord_inscount_get)
+ SWIG_ZEND_NAMED_FE(connRecord_id_set,_wrap_connRecord_id_set,swig_arginfo_connRecord_id_set)
+ SWIG_ZEND_NAMED_FE(connRecord_id_get,_wrap_connRecord_id_get,swig_arginfo_connRecord_id_get)
+ SWIG_ZEND_NAMED_FE(connRecord_db_set,_wrap_connRecord_db_set,swig_arginfo_connRecord_db_set)
+ SWIG_ZEND_NAMED_FE(connRecord_db_get,_wrap_connRecord_db_get,swig_arginfo_connRecord_db_get)
+ SWIG_ZEND_NAMED_FE(connRecord_readcount_set,_wrap_connRecord_readCount_set,swig_arginfo_connRecord_readcount_set)
+ SWIG_ZEND_NAMED_FE(connRecord_readcount_get,_wrap_connRecord_readCount_get,swig_arginfo_connRecord_readcount_get)
+ SWIG_ZEND_NAMED_FE(connRecord_updcount_set,_wrap_connRecord_updCount_set,swig_arginfo_connRecord_updcount_set)
+ SWIG_ZEND_NAMED_FE(connRecord_updcount_get,_wrap_connRecord_updCount_get,swig_arginfo_connRecord_updcount_get)
+ SWIG_ZEND_NAMED_FE(connRecord_type_set,_wrap_connRecord_type_set,swig_arginfo_connRecord_type_set)
+ SWIG_ZEND_NAMED_FE(connRecord_type_get,_wrap_connRecord_type_get,swig_arginfo_connRecord_type_get)
+ SWIG_ZEND_NAMED_FE(connRecord_name_set,_wrap_connRecord_name_set,swig_arginfo_connRecord_name_set)
+ SWIG_ZEND_NAMED_FE(connRecord_name_get,_wrap_connRecord_name_get,swig_arginfo_connRecord_name_get)
+ SWIG_ZEND_NAMED_FE(connRecord_value_set,_wrap_connRecord_value_set,swig_arginfo_connRecord_value_set)
+ SWIG_ZEND_NAMED_FE(connRecord_value_get,_wrap_connRecord_value_get,swig_arginfo_connRecord_value_get)
+ SWIG_ZEND_NAMED_FE(connRecord_intransaction_set,_wrap_connRecord_inTransaction_set,swig_arginfo_connRecord_intransaction_set)
+ SWIG_ZEND_NAMED_FE(connRecord_intransaction_get,_wrap_connRecord_inTransaction_get,swig_arginfo_connRecord_intransaction_get)
+ SWIG_ZEND_NAMED_FE(connRecord_insnapshot_set,_wrap_connRecord_inSnapshot_set,swig_arginfo_connRecord_insnapshot_set)
+ SWIG_ZEND_NAMED_FE(connRecord_insnapshot_get,_wrap_connRecord_inSnapshot_get,swig_arginfo_connRecord_insnapshot_get)
+ SWIG_ZEND_NAMED_FE(connRecord_opennormal_set,_wrap_connRecord_openNormal_set,swig_arginfo_connRecord_opennormal_set)
+ SWIG_ZEND_NAMED_FE(connRecord_opennormal_get,_wrap_connRecord_openNormal_get,swig_arginfo_connRecord_opennormal_get)
+ SWIG_ZEND_NAMED_FE(connRecord_openreadonly_set,_wrap_connRecord_openReadOnly_set,swig_arginfo_connRecord_openreadonly_set)
+ SWIG_ZEND_NAMED_FE(connRecord_openreadonly_get,_wrap_connRecord_openReadOnly_get,swig_arginfo_connRecord_openreadonly_get)
+ SWIG_ZEND_NAMED_FE(connRecord_openex_set,_wrap_connRecord_openEx_set,swig_arginfo_connRecord_openex_set)
+ SWIG_ZEND_NAMED_FE(connRecord_openex_get,_wrap_connRecord_openEx_get,swig_arginfo_connRecord_openex_get)
+ SWIG_ZEND_NAMED_FE(connRecord_openreadonlyex_set,_wrap_connRecord_openReadOnlyEx_set,swig_arginfo_connRecord_openreadonlyex_set)
+ SWIG_ZEND_NAMED_FE(connRecord_openreadonlyex_get,_wrap_connRecord_openReadOnlyEx_get,swig_arginfo_connRecord_openreadonlyex_get)
+ SWIG_ZEND_NAMED_FE(new_connRecord,_wrap_new_connRecord,swig_arginfo_new_connRecord)
+ SWIG_ZEND_NAMED_FE(connRecords_getrecord,_wrap_connRecords_getRecord,swig_arginfo_connRecords_getrecord)
+ SWIG_ZEND_NAMED_FE(connRecords_size,_wrap_connRecords_size,swig_arginfo_connRecords_size)
+ SWIG_ZEND_NAMED_FE(new_connRecords,_wrap_new_connRecords,swig_arginfo_new_connRecords)
+ SWIG_ZEND_NAMED_FE(connmgr_connect,_wrap_connMgr_connect,swig_arginfo_connmgr_connect)
+ SWIG_ZEND_NAMED_FE(connmgr_disconnect,_wrap_connMgr_disconnect,swig_arginfo_connmgr_disconnect)
+ SWIG_ZEND_NAMED_FE(connmgr_databases,_wrap_connMgr_databases,swig_arginfo_connmgr_databases)
+ SWIG_ZEND_NAMED_FE(connmgr_tables,_wrap_connMgr_tables,swig_arginfo_connmgr_tables)
+ SWIG_ZEND_NAMED_FE(connmgr_views,_wrap_connMgr_views,swig_arginfo_connmgr_views)
+ SWIG_ZEND_NAMED_FE(connmgr_schematables,_wrap_connMgr_schemaTables,swig_arginfo_connmgr_schematables)
+ SWIG_ZEND_NAMED_FE(connmgr_slavestatus,_wrap_connMgr_slaveStatus,swig_arginfo_connmgr_slavestatus)
+ SWIG_ZEND_NAMED_FE(connmgr_sysvars,_wrap_connMgr_sysvars,swig_arginfo_connmgr_sysvars)
+ SWIG_ZEND_NAMED_FE(connmgr_connections,_wrap_connMgr_connections,swig_arginfo_connmgr_connections)
+ SWIG_ZEND_NAMED_FE(connmgr_inusedatabases,_wrap_connMgr_inUseDatabases,swig_arginfo_connmgr_inusedatabases)
+ SWIG_ZEND_NAMED_FE(connmgr_inusetables,_wrap_connMgr_inUseTables,swig_arginfo_connmgr_inusetables)
+ SWIG_ZEND_NAMED_FE(connmgr_postdisconnectone,_wrap_connMgr_postDisconnectOne,swig_arginfo_connmgr_postdisconnectone)
+ SWIG_ZEND_NAMED_FE(connmgr_postdisconnectall,_wrap_connMgr_postDisconnectAll,swig_arginfo_connmgr_postdisconnectall)
+ SWIG_ZEND_NAMED_FE(connmgr_stat,_wrap_connMgr_stat,swig_arginfo_connmgr_stat)
+ SWIG_ZEND_NAMED_FE(connmgr_db,_wrap_connMgr_db,swig_arginfo_connmgr_db)
+ SWIG_ZEND_NAMED_FE(connmgr_removesystemdb,_wrap_connMgr_removeSystemDb,swig_arginfo_connmgr_removesystemdb)
+ SWIG_ZEND_NAMED_FE(connmgr_sysvarname,_wrap_connMgr_sysvarName,swig_arginfo_connmgr_sysvarname)
+ SWIG_ZEND_NAMED_FE(connmgr_slavestatusname,_wrap_connMgr_slaveStatusName,swig_arginfo_connmgr_slavestatusname)
+ SWIG_ZEND_NAMED_FE(connmgr_create,_wrap_connMgr_create,swig_arginfo_connmgr_create)
  SWIG_ZEND_NAMED_FE(dbdef_tablecount,_wrap_dbdef_tableCount,swig_arginfo_dbdef_tablecount)
  SWIG_ZEND_NAMED_FE(dbdef_openmode,_wrap_dbdef_openMode,swig_arginfo_dbdef_openmode)
  SWIG_ZEND_NAMED_FE(dbdef_tabledefs,_wrap_dbdef_tableDefs,swig_arginfo_dbdef_tabledefs)
@@ -33559,6 +36126,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(dbdef_findkeynumbyfieldnum,_wrap_dbdef_findKeynumByFieldNum,swig_arginfo_dbdef_findkeynumbyfieldnum)
  SWIG_ZEND_NAMED_FE(dbdef_fieldnumbyname,_wrap_dbdef_fieldNumByName,swig_arginfo_dbdef_fieldnumbyname)
  SWIG_ZEND_NAMED_FE(dbdef_fieldvalidlength,_wrap_dbdef_fieldValidLength,swig_arginfo_dbdef_fieldvalidlength)
+ SWIG_ZEND_NAMED_FE(dbdef_pushbackup,_wrap_dbdef_pushBackup,swig_arginfo_dbdef_pushbackup)
+ SWIG_ZEND_NAMED_FE(dbdef_popbackup,_wrap_dbdef_popBackup,swig_arginfo_dbdef_popbackup)
  SWIG_ZEND_NAMED_FE(dbdef_synchronizeseverschema,_wrap_dbdef_synchronizeSeverSchema,swig_arginfo_dbdef_synchronizeseverschema)
  SWIG_ZEND_NAMED_FE(dbdef_statmsg,_wrap_dbdef_statMsg,swig_arginfo_dbdef_statmsg)
  SWIG_ZEND_NAMED_FE(dbdef_reopen,_wrap_dbdef_reopen,swig_arginfo_dbdef_reopen)
@@ -33683,6 +36252,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(nsdatabase_disconnect,_wrap_nsdatabase_disconnect,swig_arginfo_nsdatabase_disconnect)
  SWIG_ZEND_NAMED_FE(nsdatabase_disconnectForReconnectTest,_wrap_nsdatabase_disconnectForReconnectTest,swig_arginfo_nsdatabase_disconnectForReconnectTest)
  SWIG_ZEND_NAMED_FE(nsdatabase_reconnect,_wrap_nsdatabase_reconnect,swig_arginfo_nsdatabase_reconnect)
+ SWIG_ZEND_NAMED_FE(nsdatabase_isassociate,_wrap_nsdatabase_isAssociate,swig_arginfo_nsdatabase_isassociate)
+ SWIG_ZEND_NAMED_FE(nsdatabase_getcreateviewsql,_wrap_nsdatabase_getCreateViewSql,swig_arginfo_nsdatabase_getcreateviewsql)
  SWIG_ZEND_NAMED_FE(nsdatabase_trnsactionflushwaitstatus,_wrap_nsdatabase_trnsactionFlushWaitStatus,swig_arginfo_nsdatabase_trnsactionflushwaitstatus)
  SWIG_ZEND_NAMED_FE(nsdatabase_setexeccodepage,_wrap_nsdatabase_setExecCodePage,swig_arginfo_nsdatabase_setexeccodepage)
  SWIG_ZEND_NAMED_FE(nsdatabase_execcodepage,_wrap_nsdatabase_execCodePage,swig_arginfo_nsdatabase_execcodepage)
@@ -33713,6 +36284,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(database_mode,_wrap_database_mode,swig_arginfo_database_mode)
  SWIG_ZEND_NAMED_FE(database_autoschemausenullkey,_wrap_database_autoSchemaUseNullkey,swig_arginfo_database_autoschemausenullkey)
  SWIG_ZEND_NAMED_FE(database_setautoschemausenullkey,_wrap_database_setAutoSchemaUseNullkey,swig_arginfo_database_setautoschemausenullkey)
+ SWIG_ZEND_NAMED_FE(database_createassociate,_wrap_database_createAssociate,swig_arginfo_database_createassociate)
  SWIG_ZEND_NAMED_FE(database_setcompatiblemode,_wrap_database_setCompatibleMode,swig_arginfo_database_setcompatiblemode)
  SWIG_ZEND_NAMED_FE(database_compatiblemode,_wrap_database_compatibleMode,swig_arginfo_database_compatiblemode)
  SWIG_ZEND_NAMED_FE(new_database,_wrap_new_database,swig_arginfo_new_database)
@@ -34384,6 +36956,12 @@ le_swig__p_BOOKMARK=zend_register_list_destructors_ex(_wrap_destroy_p_BOOKMARK,N
 SWIG_TypeClientData(SWIGTYPE_p_BOOKMARK, &le_swig__p_BOOKMARK);
 le_swig__p_bzs__db__protocol__tdap__client__binlogPos=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__binlogPos,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos->name),module_number);
 SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__binlogPos,&le_swig__p_bzs__db__protocol__tdap__client__binlogPos);
+le_swig__p_bzs__db__transactd__connection__record=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__transactd__connection__record,NULL,(char *)(SWIGTYPE_p_bzs__db__transactd__connection__record->name),module_number);
+SWIG_TypeClientData(SWIGTYPE_p_bzs__db__transactd__connection__record,&le_swig__p_bzs__db__transactd__connection__record);
+le_swig__p_bzs__db__transactd__connection__records=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__transactd__connection__records,NULL,(char *)(SWIGTYPE_p_bzs__db__transactd__connection__records->name),module_number);
+SWIG_TypeClientData(SWIGTYPE_p_bzs__db__transactd__connection__records,&le_swig__p_bzs__db__transactd__connection__records);
+le_swig__p_bzs__db__protocol__tdap__client__connMgr=zend_register_list_destructors_ex(_wrap_destroy_p_bzs__db__protocol__tdap__client__connMgr,NULL,(char *)(SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr->name),module_number);
+SWIG_TypeClientData(SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr,&le_swig__p_bzs__db__protocol__tdap__client__connMgr);
 
 CG(active_class_entry) = NULL;
 /* end oinit subsection */

@@ -41,10 +41,10 @@ class module;
 class connManager
 {
 public:
-    typedef std::vector<connection::record> records;
+    
 
 private:
-    mutable records m_records;
+    mutable connection::records m_records;
     unsigned __int64 m_me;
     mutable short m_stat;
     void getConnectionList() const;
@@ -54,14 +54,17 @@ private:
                 bzs::db::engine::mysql::igetDatabases* dbm, int dbid) const;
     void doDisconnect(unsigned __int64 conid);
     void doDisconnectAll();
-
+    const connection::records& getTableList(const char* dbname, int type) const;
+    bool checkGlobalACL(THD* thd, ulong wantAccess) const;
 public:
     connManager(unsigned __int64 me) : m_me(me), m_stat(0){};
     virtual ~connManager();
-    const connManager::records& systemVariables() const;
-    const records& getRecords(unsigned __int64 conid, int dbid) const;
-    const records& getDefinedDatabaseList() const;
-    const records& schemaTableList(const char* dbname);
+    const connection::records& systemVariables() const;
+    const connection::records& getRecords(unsigned __int64 conid, int dbid) const;
+    const connection::records& definedDatabases() const;
+    const connection::records& schemaTables(const char* dbname) const;
+    const connection::records& definedTables(const char* dbname, int type) const;
+    const connection::records& readSlaveStatus() const;
     void disconnect(unsigned __int64 conid);
     void disconnectAll();
     short stat() const {return m_stat;}

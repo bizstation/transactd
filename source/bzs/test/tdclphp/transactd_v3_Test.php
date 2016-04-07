@@ -297,6 +297,8 @@ class transactdTest extends PHPUnit_Framework_TestCase
             $db->abortTrn();
             $this->assertEquals(true, false);
         }
+        $tb->close();
+        $tb3->close();
     }
     private function openTable($db)
     {
@@ -311,14 +313,14 @@ class transactdTest extends PHPUnit_Framework_TestCase
     public function test()
     {
         $db = new bz\database();
-
+        
         $this->createDatabase($db);
         $this->openDatabase($db);
         $this->createUserTable($db);
         $this->createUserExtTable($db);
         $this->insertData($db);
         $mysql_5_5 = $this->isMySQL5_5($db);
-
+        
         $db->setAutoSchemaUseNullkey(true);
         $this->assertEquals($db->autoSchemaUseNullkey(), true);
         $db->setAutoSchemaUseNullkey(false);
@@ -345,15 +347,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         //size()
         $this->assertEquals($td->size() , 1184);
-
+        
         //InUse
         $this->assertEquals($td->inUse() , 0);
         
         //nullfields
         $this->assertEquals($td->nullfields(), 2);
-            
         
-       
         //fieldNumByName
         $this->assertEquals($td->fieldNumByName("tel") , 3);
         
@@ -609,6 +609,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->release();
         $this->assertEquals($td->inUse() , 0);
         
+        $db->close();
     }
     
     public function test_bit()
@@ -693,7 +694,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($bits[62], true);
         $this->assertEquals($bits[11], false);
         $this->assertEquals($bits[13], false);
-
+        
+        $tb->close();
+        $db->close();
     }
     
     public function test_bitset()
@@ -749,6 +752,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd->len = 4;
         $fd->setDefaultValue($bits1);
         $this->assertEquals($fd->defaultValue(), '4');
+        $db->close();
     }
     public function test_snapshot()
     {
@@ -761,7 +765,100 @@ class transactdTest extends PHPUnit_Framework_TestCase
           $this->assertEquals($bpos->type, bz\transactd::REPL_POSTYPE_POS);
         $this->assertNotEquals($bpos->pos, 0);
         $this->assertNotEquals($bpos->filename, "");
-        echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
+        //echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
         $db->endSnapshot();
+        $db->close();
+    }
+    public function test_getSql()
+    {
+        $db = new bz\database();
+        $this->openDatabase($db);
+        $db->createTable("create view idlessthan5 as select * from user where id < 5");
+        $view = $db->getCreateViewSql("idlessthan5");
+        $this->assertEquals((strpos($view, "idlessthan5") !== false), true);
+        $this->assertEquals((strpos($view, "名前") !== false), true);
+        //echo($view);
+        $tb = $db->openTable("user");
+        $this->assertEquals($db->stat(), 0);
+        $sql = $tb->getCreateSql();
+        //echo($sql);
+        $this->assertEquals((strpos($sql, "CREATE TABLE") !== false), true);
+        $this->assertEquals((strpos($sql, "名前") !== false), true);
+        $tb->close();
+        $db->close();
+    }
+    public function test_createAssociate()
+    {
+        $db = new bz\database();
+        $this->openDatabase($db);
+        $dba = $db->createAssociate();
+        $this->assertEquals($db->stat(), 0);
+        $this->assertEquals($dba->isAssociate(), true);
+        $dba->close();
+        $db->close();
+    }
+    public function test_ConnMgr()
+    {
+        // other database connection
+        $db_other = new bz\database();
+        $this->openDatabase($db_other);
+        $tb_other = $db_other->openTable("user");
+        $this->assertEquals($db_other->stat(), 0);
+        // connMgr connection
+        $db = new bz\database();
+        $mgr = new bz\connMgr($db);
+        $mgr->connect($db_other->uri());
+        $this->assertEquals($mgr->stat(), 0);
+        // connections
+        $recs = $mgr->connections();
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($recs->size(), count($recs));
+        $this->assertEquals($recs->size(), 1);
+        // InUseDatabases
+        $recs = $mgr->inUseDatabases($recs[0]->conId);
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($recs->size(), count($recs));
+        $this->assertEquals($recs->size(), 1);
+        // InUseTables
+        $recs = $mgr->inUseTables($recs[0]->conId, $recs[0]->db);
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($recs->size(), count($recs));
+        $this->assertEquals($recs->size(), 2);
+        // tables, views
+        $recs = $mgr->tables("test_v3");
+        $this->assertEquals($mgr->stat(), 0);
+        $recs1 = $mgr->views("test_v3");
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($recs->size(), count($recs));
+        $this->assertEquals($recs->size(), 3);
+        $this->assertEquals($recs1->size(), count($recs1));
+        $this->assertEquals($recs1->size(), 1);
+        $this->assertEquals($recs1[0]->name, "idlessthan5");
+        // schemaTables
+        $recs = $mgr->schemaTables("test_v3");
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($recs->size(), count($recs));
+        $this->assertEquals($recs->size(), 1);
+        $this->assertEquals($recs[0]->name, "test");
+        // databases
+        $recs = $mgr->databases();
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($recs->size(), count($recs));
+        $size = $recs->size();
+        $mgr->RemoveSystemDb($recs);
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($recs->size(), count($recs));
+        $this->assertNotEquals($recs->size(), $size);
+        // slaveStatus
+        $recs = $mgr->slaveStatus();
+        $this->assertEquals($mgr->stat(), 0);
+        for ($i = 0; $i < $recs->size(); $i++)
+        {
+            echo(PHP_EOL . $mgr->slaveStatusName($i) . "\t:" . $recs[$i]->value);
+        }
+        $mgr->disconnect();
+        $this->assertEquals($mgr->stat(), 0);
+        $tb_other->close();
+        $db_other->close();
     }
 }

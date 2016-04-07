@@ -69,7 +69,7 @@ bool openDbExclusive(database* db, const _TCHAR* uri)
 }
 
 void __STDCALL
-    onCopyData(database* db, int recordCount, int count, bool& cancel)
+    onCopyData(database* db, table* tb, int recordCount, int count, bool& cancel)
 {
     if (count == 0)
         _tprintf(_T("\n"));

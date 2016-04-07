@@ -66,7 +66,7 @@ class DLLLIB database : public nsdatabase
     bool defaultImageCopy(const void* data, short& tableIndex);
     short checkOpened();
     table* doOpenTable(struct openTablePrams* pm, const _TCHAR* ownerName);
-    void* getExtendBufferForOpen(uint_td& size); // orverload
+    void* getExtendBufferForOpen(uint_td& size); // orverride
     _TCHAR* getTableUri(_TCHAR* buf, short fileNum);
     _TCHAR* getTableUri(_TCHAR* buf, const _TCHAR* filename);
     inline void copyEachFieldData(table* dest, table* src, struct fieldChnageInfo* fci);
@@ -130,11 +130,11 @@ public:
                       const _TCHAR* ownerName = NULL);
     bool existsTableFile(short tableIndex, const _TCHAR* ownerName = NULL);
     void getBtrVersion(btrVersions* versions);
-    bool isOpened() const;
+    bool isOpened() const; // orverride
     char_td mode() const;
     bool autoSchemaUseNullkey() const;
     void setAutoSchemaUseNullkey(bool v);
-
+    database* createAssociate();
     virtual int defaultAutoIncSpace() const { return 0; };
     static database* create();
     /* For C++ direct only. don't use by wrapper class for COM or SWIG

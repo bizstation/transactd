@@ -36,7 +36,7 @@ void changeUserTable(dbdef* def)
 }
 
 void __STDCALL
-    onCopyData(database* db, int recordCount, int count, bool& cancel)
+    onCopyData(database* db, table* tb, int recordCount, int count, bool& cancel)
 {
     if (count == 0)
         std::cout << std::endl;

@@ -185,6 +185,11 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
  */
 #define TD_ASBLOB_ENDROW                -125
 
+/** TD_GET_SCHEMA  sub operations
+ */
+#define SC_SUBOP_BY_SQL                 -1
+#define SC_SUBOP_VIEW_BY_SQL            -2
+
 /** TD_GET_STASTISTICS sub operations
  */
 #define TD_STSTCS_READ                  0
@@ -193,6 +198,10 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_STSTCS_DATABASE_LIST         3
 #define TD_STSTCS_SYSTEM_VARIABLES      4
 #define TD_STSTCS_SCHEMA_TABLE_LIST     5
+#define TD_STSTCS_TABLE_LIST            6
+#define TD_STSTCS_VIEW_LIST             7
+#define TD_STSTCS_SLAVE_STATUS          8
+
 /** connect sub operation
  */
 
@@ -201,6 +210,14 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define LG_SUBOP_NEWCONNECT             3
 #define LG_SUBOP_RECONNECT              4 
 #define LG_SUBOP_DISCONNECT_EX          5 //for reconnect test
+#define LG_SUBOP_ASSOCIATE              6 
+
+/** TD_STSTCS_TABLE_LIST type list
+*/
+#define TABLE_TYPE_NORMAL_TABLE         1
+#define TABLE_TYPE_VIEW                 2
+#define TABLE_TYPE_TD_SCHEMA            4
+
 
 /** TIMESTAMP_MODE
 */
@@ -455,6 +472,7 @@ enum combineType
 #define STATUS_LMIT_OF_PREPAREED        203
 #define STATUS_ALREADY_INSNAPSHOT       204
 #define STATUS_ALREADY_INTRANSACTION    205
+#define STATUS_ALREADY_INEXCLUSIVE      206
 #define SERVER_CLIENT_NOT_COMPATIBLE    3003
 #define NET_BAD_SRB_FORMAT              3021
 #define ERROR_TD_HOSTNAME_NOT_FOUND     3103
@@ -478,6 +496,8 @@ inline bool canRecoverNetError(short code)
 #define TRANSACTD_SCHEMANAME            _T("transactd_schema")
 #define TYPE_SCHEMA_BDF                 0
 #define TYPE_SCHEMA_DDF                 1
+#define TYPE_SCHEMA_BDF_NOPRELOAD       2
+
 
 #define FILTER_CURRENT_TYPE_NOTINC      0
 #define FILTER_CURRENT_TYPE_INC         1
@@ -593,7 +613,7 @@ struct handshale_t
  If you change this version then you need change The ($TargetName) project options too.
  */
 #define C_INTERFACE_VER_MAJOR "3"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "1"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "2"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
@@ -657,7 +677,7 @@ struct handshale_t
  */
 
 #define CPP_INTERFACE_VER_MAJOR "3"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "1"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "2"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
@@ -694,7 +714,7 @@ struct handshale_t
 
 
 #define TRANSACTD_VER_MAJOR 3//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 1//##8 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 2//##8 Build marker! Don't remove
 #define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

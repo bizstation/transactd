@@ -23,6 +23,7 @@
 #include "percentageKey.h"
 #include "mydebuglog.h"
 #include "mysqlThd.h"
+#include "mysqlProtocol.h"
 #include "bookmark.h"
 #include <bzs/rtl/stl_uty.h>
 #include <boost/shared_array.hpp>
@@ -118,7 +119,7 @@ void tableCacheCounter::release(const std::string& dbname,
 bool lockTable(THD* thd, TABLE* tb)
 {
     bool append = (thd->lock != 0);
-#ifdef MARIADDB_10_1
+#ifdef MARIADB_10_1
     thd->variables.option_bits |= OPTION_TABLE_LOCK;
 #endif
     MYSQL_LOCK* lock = mysql_lock_tables(thd, &tb, 1, 0);
@@ -195,6 +196,10 @@ database::database(const char* name, short cid)
        m_usingExclusive(false), m_trnType(0), m_cid(cid)
 {
     cp_security_ctx(m_thd)->skip_grants();
+    
+    //backup current sctx
+    m_backup_sctx = cp_security_ctx(m_thd);
+    setDbName(m_thd, m_dbname.c_str());
 }
 
 #ifdef _MSC_VER
@@ -229,7 +234,7 @@ unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
     try
     {
         use();
-        tb2 = openTable("user", TD_OPEN_READONLY, "");
+        tb2 = openTable("user", TD_OPEN_READONLY, "", "");
         if (tb2)
         {
 	        tb = useTable(tb2->id(), SQLCOM_SELECT, NULL);
@@ -269,30 +274,49 @@ unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
     return retPtr;
 }
 
-bool setGrant(THD* thd, const char* host, const char* user,  const char* db)
+int database::findSecurityCtxs(const std::string& dbname)
 {
-    return (acl_getroot(cp_security_ctx(thd), cp_strdup(user, MYF(0)),
-		cp_strdup(host, MYF(0)), cp_strdup(host, MYF(0)), (char*)db)) == false;
+    for (size_t i=0;i < m_securityCtxs.size(); ++i)
+        if (m_securityCtxs[i].db == dbname) return (int)i;
+    return -1;
 }
 
-bool copyGrant(THD* thd, THD* thdSrc, const char* db)
+void database::addDbName(const std::string& dbname)
 {
-    Security_context* sctx = cp_security_ctx(thdSrc);
-	if (sctx->cp_master_accsess() == (ulong)~NO_ACCESS)
-    {
-        cp_security_ctx(thd)->skip_grants();
-        return true;
-    }
-	return setGrant(thd, sctx->cp_priv_host(), sctx->cp_priv_user(), db);
-}
-// true ok false fail
-bool database::setGrant(const char* host, const char* user)
-{
-	bool ret = mysql::setGrant(m_thd, host, user, m_dbname.c_str());
+    m_securityCtxs.push_back(sec_db(dbname));
+    sec_db* secx = &m_securityCtxs[m_securityCtxs.size() -1];
+    
+    // Change security_ctx
+    secx->security_ctx.restore_security_context(m_thd, &secx->security_ctx);
+
+    //Get Grant
+    bool ret = ::setGrant(m_thd, m_backup_sctx->cp_priv_host(), m_backup_sctx->cp_priv_user(), dbname.c_str());
     if (ret)
-        check_access(m_thd, SELECT_ACL, m_dbname.c_str(), &m_privilege, NULL, false, true);
-                
+        check_access(m_thd, SELECT_ACL, dbname.c_str(), &secx->privilege, NULL, false, true);
+    
+    //Restore current ctx
+    restoreSctx();
+}
+
+// true ok false fail
+bool database::setGrant(const char* host, const char* user, const char* dbname)
+{
+	bool ret = ::setGrant(m_thd, host, user, dbname);
+    if (ret)
+    {
+        check_access(m_thd, SELECT_ACL, dbname, &m_privilege, NULL, false, true);
+    }
     return ret;
+}
+
+void database::restoreSctx()
+{
+    m_backup_sctx->restore_security_context(m_thd, m_backup_sctx);
+}
+
+void database::changeSctx(int index)
+{
+    m_backup_sctx->restore_security_context(m_thd, &m_securityCtxs[index].security_ctx);
 }
 
 // for mysql database only
@@ -305,20 +329,16 @@ short database::aclReload()
     short ret = STATUS_SUCCESS;
 
     THD* thdCur = _current_thd();
-    THD* thd = NULL;
     try
     {
-        thd = createThdForThread();
-        attachThd(thd);
-        thd->clear_error();
-        acl_reload(thd);
+        boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+        attachThd(thd.get());
+        acl_reload(thd.get());
     }
     catch (...)
     {
         ret = 1;
     }
-    if (thd)
-        deleteThdForThread(thd);
     attachThd(thdCur);
     return ret;
 }
@@ -359,7 +379,6 @@ void database::prebuildExclusieLockMode(table* tb)
     else
         tb->m_table->reginfo.lock_type = TL_READ_NO_INSERT;
     m_thd->in_lock_tables = 1;
-  
 }
 
 void database::prebuildLocktype(table* tb, enum_sql_command& cmd, rowLockMode* lck) 
@@ -435,24 +454,6 @@ void database::changeIntentionLock(table* tb, thr_lock_type lock_type)
     }
 }
 
-inline void database::checkACL(enum_sql_command cmd)
-{
-    switch(cmd)
-    {
-    case SQLCOM_UPDATE: 
-        if (!(m_privilege & UPDATE_ACL)) THROW_BZS_ERROR_WITH_CODE(STATUS_ACCESS_DENIED); 
-        break;             
-    case SQLCOM_INSERT: 
-        if (!(m_privilege & INSERT_ACL)) THROW_BZS_ERROR_WITH_CODE(STATUS_ACCESS_DENIED); 
-        break;             
-    case SQLCOM_DELETE: 
-        if (!(m_privilege & DELETE_ACL)) THROW_BZS_ERROR_WITH_CODE(STATUS_ACCESS_DENIED); 
-        break;
-    default:
-        break;
-    }
-}
-
 /*
 How to set the lock value to InnoDB prebuilt->select_lock_type variable.
 
@@ -511,7 +512,8 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
         return tb;
     }
 
-    checkACL(cmd);
+    tb->checkACL(cmd);
+    //checkACL(cmd);
     prebuildLocktype(tb, cmd, lck);
     prebuildIsoratinMode();
 
@@ -700,62 +702,7 @@ void database::useAllTables()
     }
 }
 
-// See USE_BINLOG_GTID and USE_BINLOG_VAR in mysqlInternal.h
-#ifdef NOTUSE_BINLOG_VAR 
-    // Windows MySQL can not use mysql_bin_log variable
-    inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
-    {
-        short result = 0;
-        THD* thd = createThdForThread();
-        attachThd(thd);
-        copyGrant(thd, currentThd, NULL);
-        masterStatus p(thd, bpos); 
-        cp_query_command(thd, "show master status");
-        if (thd->is_error())
-            result = thd->cp_get_sql_error();
-        deleteThdForThread(thd);
-        attachThd(currentThd);
-        return result;
-    }
-#endif
-
-#ifdef USE_BINLOG_GTID
-inline short getBinlogPos(THD* currentThd, binlogPos* bpos)
-{
-    if (mysql_bin_log.is_open())
-    {
-        rpl_gtid gtid;
-        bpos->type = REPL_POSTYPE_MARIA_GTID;
-        if (mysql_bin_log.lookup_domain_in_binlog_state(currentThd->variables.gtid_domain_id,  &gtid))
-        {
-            sprintf_s(bpos->gtid, GTID_SIZE, "%u-%u-%llu", gtid.domain_id, gtid.server_id, gtid.seq_no); 
-            size_t dir_len = dirname_length(mysql_bin_log.get_log_fname());
-			strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
-			bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
-			bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
-        }
-    }
-    return 0;
-}
-#endif
-
-#ifdef USE_BINLOG_VAR
-    // Linux MySQL can access to the mysql_bin_log variable
-    inline short getBinlogPos(THD* , binlogPos* bpos)
-    {
-        if (mysql_bin_log.is_open())
-        {
-			size_t dir_len = dirname_length(mysql_bin_log.get_log_fname());
-			strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
-			bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
-			bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
-            bpos->type = REPL_POSTYPE_POS;
-        }
-        return 0;
-    }
-#endif //USE_BINLOG_VAR
-
-bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos)
+bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd)
 {
     if (m_inTransaction)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Transaction is already beginning.");        
@@ -775,11 +722,12 @@ bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos)
         if (bpos)
         {
             safe_commit_lock commit(m_thd);
-            if (!commit.lock()) return false;
-            #ifndef NOTUSE_BINLOG_VAR
-            safe_mysql_mutex_lock lck(mysql_bin_log.get_log_lock());
-            #endif
-            m_stat = getBinlogPos(m_thd, bpos);
+            if (!commit.lock())
+            {
+                m_stat = STATUS_LOCK_ERROR;
+                return false;
+            }
+            m_stat = getBinlogPos(m_thd, bpos, tmpThd);
             if (m_stat) return false;
             useAllTables(); // execute scope in safe_commit_lock  
         }else
@@ -800,18 +748,28 @@ bool database::endSnapshot()
     return (m_inSnapshot == 0);
 }
 
+/*bool database::existsTable(const char* tablename)
+{
+    char path[FN_REFLEN + 1];
+    enum legacy_db_type not_used;
+    build_table_filename(path, sizeof(path) - 1, name().c_str(), tablename, "", 0);
+    frm_type_enum ftype = dd_frm_type(thd(), (char*)path, &not_used);
+    return FRMTYPE_TABLE == ftype;
+}*/
+
 /** Metadata lock, a table name is case-sensitive
  *  However, in actual opening, it is not distinguished at Windows.
  */
 TABLE* database::doOpenTable(const std::string& name, short mode,
-                             const char* ownerName)
+                             const char* ownerName, string& dbname)
 {
-    TABLE_LIST tables;
     m_thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
-    tables.init_one_table(m_dbname.c_str(), m_dbname.size(), name.c_str(),
-		name.size(), name.c_str(), TL_READ);
-    if(!(m_privilege & SELECT_ACL) &&
-        (check_grant(m_thd, SELECT_ACL, &tables, FALSE, 1, true)))
+    TABLE_LIST tables;
+    tables.init_one_table(dbname.c_str(), dbname.size(), name.c_str(),
+		            name.size(), name.c_str(), TL_READ);
+    long want_access = SELECT_ACL;//IS_MODE_READONLY(mode) ? SELECT_ACL : SELECT_ACL|INSERT_ACL|UPDATE_ACL|DELETE_ACL; 
+    if(!(m_privilege & want_access) &&
+        (check_grant(m_thd, want_access, &tables, FALSE, 1, true)))
     {
         m_stat = STATUS_ACCESS_DENIED;
         return NULL;
@@ -863,7 +821,7 @@ TABLE* database::doOpenTable(const std::string& name, short mode,
 }
 
 table* database::openTable(const std::string& name, short mode,
-                           const char* ownerName)
+                           const char* ownerName, std::string dbname)
 {
     if (m_thd->variables.sql_log_bin && m_inTransaction)
     {
@@ -872,8 +830,27 @@ table* database::openTable(const std::string& name, short mode,
     }
     bool mysql_null = IS_MODE_MYSQL_NULL(mode);
     if (mysql_null)
-        mode -= TD_OPEN_MASK_MYSQL_NULL; 
-    TABLE* t = doOpenTable(name, mode, ownerName);
+        mode -= TD_OPEN_MASK_MYSQL_NULL;
+
+    int index = -1;   
+    if (dbname == "")
+    {
+        dbname = m_dbname;
+        restoreSctx();
+    }
+    else if (dbname == m_dbname)
+        restoreSctx();
+    else
+    {
+        index =  findSecurityCtxs(dbname);
+        if (index == -1)
+            addDbName(dbname);
+        index =  (int)m_securityCtxs.size() - 1;
+        assert(index >= 0);
+        changeSctx(index);
+    }
+
+    TABLE* t = doOpenTable(name, mode, ownerName, dbname);
     if (t)
     {
         boost::shared_ptr<table> tb(
@@ -881,14 +858,18 @@ table* database::openTable(const std::string& name, short mode,
         {
             boost::mutex::scoped_lock lck(tableRef.mutex());
             m_tables.push_back(tb);
-            tableRef.addref(m_dbname, name); // addef first then table open.
+            tableRef.addref(dbname, name); // addef first then table open.
         }
+        tb->m_dbname = dbname;
+        tb->m_privilege = (index == -1) ? this->m_privilege : m_securityCtxs[index].privilege;
         m_stat = STATUS_SUCCESS;
         if (tb->isExclusveMode())
             ++m_usingExclusive;
         
+        if (index != -1) restoreSctx();
         return tb.get();
     }
+    if (index != -1) restoreSctx();
     return NULL;
 }
 
@@ -989,7 +970,8 @@ void database::reopen(bool forceReadonly)
             if (forceReadonly)
                 m_tables[i]->m_mode = TD_OPEN_READONLY;
             TABLE* table = doOpenTable(m_tables[i]->m_name.c_str(),
-                                        m_tables[i]->m_mode, NULL);
+                                        m_tables[i]->m_mode, NULL, 
+                                        m_tables[i]->m_dbname);
             if (table)
                 m_tables[i]->resetInternalTable(table);
             else
@@ -1041,7 +1023,7 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
       m_keybuf(new unsigned char[MAX_KEYLEN]),
       m_stat(0),
       m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
-      m_readCount(0), m_updCount(0), m_delCount(0), m_insCount(0),
+      m_readCount(0), m_updCount(0), m_delCount(0), m_insCount(0), m_privilege(0xFFFF),
       m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
       m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false),
       m_delayAutoCommit(false),m_forceConsistentRead(false), m_mysqlNull(mysqlnull),
@@ -1154,6 +1136,24 @@ void table::resetInternalTable(TABLE* table)
     }
 }
 
+void table::checkACL(enum_sql_command cmd)
+{
+    switch(cmd)
+    {
+    case SQLCOM_UPDATE: 
+        if (!(m_privilege & UPDATE_ACL)) THROW_BZS_ERROR_WITH_CODE(STATUS_ACCESS_DENIED); 
+        break;             
+    case SQLCOM_INSERT: 
+        if (!(m_privilege & INSERT_ACL)) THROW_BZS_ERROR_WITH_CODE(STATUS_ACCESS_DENIED); 
+        break;             
+    case SQLCOM_DELETE: 
+        if (!(m_privilege & DELETE_ACL)) THROW_BZS_ERROR_WITH_CODE(STATUS_ACCESS_DENIED); 
+        break;
+    default:
+        break;
+    }
+}
+
 bool table::setNonKey(bool scan)
 {
     if (m_keyNum != -2)
@@ -1170,22 +1170,22 @@ bool table::setNonKey(bool scan)
 
 bool table::setKeyNum(char num, bool sorted)
 {
+    if (num < 0)
+    {
+        m_stat = STATUS_INVALID_KEYNUM;
+        return false;
+    }
     if ((m_keyNum != num) ||
         ((m_keyNum >= 0) && (m_table->file->inited == handler::NONE)))
     {
         m_table->file->ha_index_or_rnd_end();
-
-        if (keynumCheck(num))
-        {
-            m_keyNum = num;
-            m_table->file->ha_index_init(m_keyNum, sorted);
-            return true;
-        }
-        else
+        if (!keynumCheck(num))
         {
             m_stat = STATUS_INVALID_KEYNUM;
             return false;
         }
+        m_keyNum = num;
+        m_table->file->ha_index_init(m_keyNum, sorted);
     }
     return true;
 }
@@ -1603,11 +1603,11 @@ uint table::recordPackCopy(char* buf, uint maxsize)
                     return 0;
                 memcpy(p, fd->ptr, len);
                 p += len;
-                if (isBlobType(fd->type()))
-                {
-                    ++blobs;
-                    addBlobBuffer(fd->field_index);
-                }
+            }
+            if (isBlobType(fd->type()))
+            {
+                ++blobs;
+                addBlobBuffer(fd->field_index);
             }
         }
         setBlobFieldCount(blobs);
@@ -2714,6 +2714,14 @@ unsigned int table::writeSchemaImage(unsigned char* p, size_t size)
     return len + sizeof(unsigned short);
 }
 
+void table::getCreateSql(String* s)
+{
+    TABLE_LIST tables;
+    tables.init_one_table(m_dbname.c_str(), m_dbname.size(), m_name.c_str(),
+		            m_name.size(), m_name.c_str(), TL_READ);
+    tables.table = m_table;
+    cp_store_create_info(m_db.thd(), &tables, s, NULL, (int)FALSE);
+}
 
 #ifdef USE_HANDLERSOCKET
 

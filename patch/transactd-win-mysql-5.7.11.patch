@@ -1,4 +1,3 @@
-diff --git sql/mysqld.h sql/mysqld.h
 --- sql/mysqld.h
 +++ sql/mysqld.h
 @@ -298,7 +298,7 @@ extern ulong opt_ndb_wait_setup;
@@ -48,7 +47,6 @@ diff --git sql/mysqld.h sql/mysqld.h
  extern mysql_mutex_t LOCK_reset_gtid_table;
  extern mysql_mutex_t LOCK_compress_gtid_table;
  extern mysql_cond_t COND_compress_gtid_table;
-diff --git sql/sql_cache.h sql/sql_cache.h
 --- sql/sql_cache.h
 +++ sql/sql_cache.h
 @@ -544,5 +544,5 @@ struct Query_cache_query_flags
@@ -58,3 +56,25 @@ diff --git sql/sql_cache.h sql/sql_cache.h
 -extern Query_cache query_cache;
 +extern MYSQL_PLUGIN_IMPORT Query_cache query_cache;
  #endif
+--- sql/mdl.h
++++ sql/mdl.h
+@@ -1168,7 +1168,7 @@ extern "C" const char* thd_enter_cond(MYSQL_THD thd, mysql_cond_t *cond,
+ 
+ 
+ #ifndef DBUG_OFF
+-extern mysql_mutex_t LOCK_open;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_open;
+ #endif
+ 
+ 
+--- sql/sql_base.h
++++ sql/sql_base.h
+@@ -120,7 +120,7 @@ enum enum_tdc_remove_table_type {TDC_RT_REMOVE_ALL, TDC_RT_REMOVE_NOT_OWN,
+ #define RTFC_CHECK_KILLED_FLAG      0x0004
+ 
+ bool check_dup(const char *db, const char *name, TABLE_LIST *tables);
+-extern mysql_mutex_t LOCK_open;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_open;
+ bool table_cache_init(void);
+ void table_cache_free(void);
+ bool table_def_init(void);

@@ -151,8 +151,6 @@ THD* buildTHD()
               g_lock_wait_timeout);
 	cp_query_command(thd, tmp);
 
-	
-	cp_set_db(thd, td_strdup("bizstation", MYF(0)));
     if (thd->variables.sql_log_bin)
         thd->set_current_stmt_binlog_format_row();
     return thd;
@@ -192,8 +190,12 @@ THD* createThdForThread()
 
 void deleteThdForThread(THD* thd)
 {
-    cp_restore_globals(thd);
-	cp_thd_release_resources(thd);
-	cp_dec_dbcount(thd);
-    releaseTHD(thd);
+    try
+    {
+        cp_restore_globals(thd);
+	    cp_thd_release_resources(thd);
+	    cp_dec_dbcount(thd);
+        releaseTHD(thd);
+    }
+    catch(...) {};
 }

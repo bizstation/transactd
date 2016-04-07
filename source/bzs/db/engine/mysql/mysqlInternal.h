@@ -18,7 +18,9 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-
+#ifdef __GNUC__
+#pragma interface // implementation mysqlProtocol.cpp
+#endif
 #undef _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES
 #define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
 
@@ -51,19 +53,28 @@
 #include <my_config.h>
 #include <mysql_version.h>
 
-#if defined(MARIADB_BASE_VERSION) && (MYSQL_VERSION_ID > 100107)
-#   define MARIADDB_10_1 MYSQL_VERSION_ID
-#else 
-#   if defined(MARIADB_BASE_VERSION) && (MYSQL_VERSION_ID > 100000)
-#       define MARIADDB_10_0 MYSQL_VERSION_ID
-#   endif
+#if defined(MARIADB_BASE_VERSION)
+#  if (MYSQL_VERSION_ID > 100107) 
+#    define MARIADB_10_1 MYSQL_VERSION_ID
+#  elif (MYSQL_VERSION_ID > 100000)
+#    define MARIADB_10_0 MYSQL_VERSION_ID
+#  else      
+#    define MARIADB_5_5 MYSQL_VERSION_ID
+#  endif
+#else
+#  if (MYSQL_VERSION_ID > 50700) 
+#     define MYSQL_5_7 MYSQL_VERSION_ID
+#  elif (MYSQL_VERSION_ID > 50600)
+#     define MYSQL_5_6 MYSQL_VERSION_ID
+#  else
+#    define MYSQL_5_5 MYSQL_VERSION_ID
+#  endif
 #endif
-
 
 #include <sql/sql_const.h>
 #include "my_global.h"
 #include <math.h>
-#if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
+#if defined(MYSQL_5_7)
 // Not use malloc service
 #define MYSQL_SERVICE_MYSQL_ALLOC_INCLUDED
 typedef unsigned int PSI_memory_key;
@@ -78,15 +89,15 @@ extern "C" {
 	extern char * my_strndup(PSI_memory_key key, const char *from, size_t length, myf_t flags);
 }
 #include "sql/log.h"
-#endif //For MYSQL 5.7
+#endif //MYSQL_5_7
 
 #include "sql/sql_class.h"
 #include <mysql/plugin.h>
 #include "sql/mysqld.h"
 
-#if ((MYSQL_VERSION_ID >= 50600) && (MYSQL_VERSION_ID < 50700) && !defined(MARIADB_BASE_VERSION))
+#if defined(MYSQL_5_6)
 #include "sql/global_threads.h"
-#endif
+#endif //MYSQL_5_6
 
 #include "sql/sql_plugin.h"
 #include "sql/sql_cache.h"
@@ -101,6 +112,7 @@ extern "C" {
 #include "sql/sql_base.h"
 #include "sql/sql_parse.h"
 #include "sql/sql_table.h"
+#include "sql/handler.h"
 #include "sql/sql_db.h"
 #include "sql_acl.h"
 #include "sql/sql_show.h"
@@ -109,7 +121,7 @@ extern "C" {
 
 /* mysql.user password field index */
 #ifndef MYSQL_USER_FIELD_PASSWORD
-#  if ((MYSQL_VERSION_ID > 50700) && !defined(MARIADB_BASE_VERSION))
+#  if defined(MYSQL_5_7)
 #     define MYSQL_USER_FIELD_PASSWORD 40
 #  else
 #     define MYSQL_USER_FIELD_PASSWORD 2
@@ -162,7 +174,7 @@ extern "C" {
 #define cp_master_accsess() master_access
 #define cp_priv_host() priv_host
 #define cp_priv_user() priv_user
-#elif((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION)) // MySQL 5.7
+#elif (defined(MYSQL_5_7))
 #define cp_get_sql_error() get_stmt_da()->mysql_errno()
 #define query_cache_invalidate3(A, B, C) query_cache.invalidate(A, B, C)
 #define cp_isOk() get_stmt_da()->is_ok()
@@ -171,7 +183,7 @@ extern "C" {
 #define cp_master_accsess() master_access()
 #define cp_priv_host() host().str
 #define cp_priv_user() user().str
-#else                                                               // MySQL 5.6 Mariadb 10.0
+#else // MySQL 5.6 Mariadb 10.0 10.1                                                              
 #define cp_get_sql_error() get_stmt_da()->sql_errno()
 #define cp_isOk() get_stmt_da()->is_ok()
 #define cp_set_overwrite_status(A) get_stmt_da()->set_overwrite_status(A)
@@ -182,7 +194,7 @@ extern "C" {
 
 #endif
 
-#if (MYSQL_VERSION_NUM < 50600) // MySQL 5.5 Only
+#if defined(MYSQL_5_5) 
 #define ha_index_next index_next
 #define ha_index_prev index_prev
 #define ha_index_first index_first
@@ -204,22 +216,13 @@ extern "C" {
 #   endif
 #endif
 
-#if ((MYSQL_VERSION_NUM < 50600) || defined(MARIADB_BASE_VERSION))
+#if ((MYSQL_VERSION_NUM < 50600) || defined(MARIADB_BASE_VERSION)) //MySQL 5.5 Mariadb 5.5 10.0 10.1
 
-inline void add_global_thread(THD* thd)
-{
-    ;
-}
+inline void add_global_thread(THD* thd) {}
 
-inline void remove_global_thread(THD* thd)
-{
-    ;
-}
+inline void remove_global_thread(THD* thd) {}
 
-inline void cp_thd_release_resources(THD* thd)
-{
-    ;
-}
+inline void cp_thd_release_resources(THD* thd) {}
 
 inline void cp_restore_globals(THD* thd)
 {
@@ -227,27 +230,20 @@ inline void cp_restore_globals(THD* thd)
     my_pthread_setspecific_ptr(THR_MALLOC, 0);
 }
 
-inline void cp_thd_set_read_only(THD* thd, bool v)
-{
-    ;
-}
+inline void cp_thd_set_read_only(THD* thd, bool v) {}
 
-inline bool cp_thd_get_global_read_only(THD* thd)
-{
-    return false;
-}
+inline bool cp_thd_get_global_read_only(THD* thd) { return false; }
 
 inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
                           Open_table_context* ot_act)
 {
-#if defined(MARIADDB_10_1)
+#if defined(MARIADB_10_1)
     return open_table(thd, tables, ot_act);
 #else
     return open_table(thd, tables, thd->mem_root, ot_act);
 #endif
 }
 #define set_mysys_var(A)
-
 
 inline bool cp_has_insert_default_function(Field* fd) 
 {
@@ -288,7 +284,7 @@ inline unsigned char* cp_null_ptr(Field* fd, unsigned char* /*record*/)
     return (unsigned char*)fd->null_ptr;   
 }
 
-#else
+#else // MySQL 5.6. 5.7
 
 inline void cp_thd_release_resources(THD* thd)
 {
@@ -349,17 +345,17 @@ inline unsigned char* cp_null_ptr(Field* fd, unsigned char* record)
     return fd->null_offset() + record;
 }
 
-#endif
+#endif // MySQL 5.6. 5.7
 
 #if (MYSQL_VERSION_NUM < 50611)
 #define ha_index_read_map index_read_map
 #endif
 
-
 extern unsigned int g_openDatabases;
-#if((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
-#define OPEN_TABLE_FLAG_TYPE 0
 
+#if (defined(MYSQL_5_7))
+
+#define OPEN_TABLE_FLAG_TYPE 0
 #define td_malloc(A, B) my_malloc(PSI_NOT_INSTRUMENTED, A, B)
 #define td_realloc(A, B, C) my_realloc(PSI_NOT_INSTRUMENTED, A, B, C)
 #define td_strdup(A, B) my_strdup(PSI_NOT_INSTRUMENTED, A, B)
@@ -378,10 +374,8 @@ inline void releaseTHD(THD* thd)
 }
 #else
 
-inline void releaseTHD(THD* thd)
-{
-	delete thd;
-}
+inline void releaseTHD(THD* thd) { delete thd; }
+
 #endif
 
 #include <boost/thread/mutex.hpp>
@@ -411,6 +405,11 @@ inline Security_context* cp_security_ctx(THD* thd)
 	return thd->security_context();
 }
 
+inline ulong cp_masterAccess(THD* thd)
+{
+	return thd->security_context()->master_access();
+}
+
 inline int cp_record_count(handler* file, ha_rows* rows)
 {
 	return file->ha_records(rows);
@@ -418,7 +417,7 @@ inline int cp_record_count(handler* file, ha_rows* rows)
 
 #define cp_strdup(A, B) my_strdup(PSI_INSTRUMENT_ME, (A), (B))
 #define cp_set_mysys_var(A) set_mysys_thread_var(A)
-inline void cp_set_db(THD* thd, char* p)
+inline void cp_set_db(THD* thd, const char* p)
 {
 	thd->set_db(to_lex_cstring(p));
 }
@@ -435,10 +434,7 @@ inline int cp_thread_set_THR_THD(THD* thd)
 	return 0;
 }
 
-inline void cp_set_transaction_duration_for_all_locks(THD* /*thd*/)
-{
-	;
-}
+inline void cp_set_transaction_duration_for_all_locks(THD* /*thd*/) {}
 
 inline void cp_set_mdl_request_types(TABLE_LIST& tables, short mode)
 {
@@ -454,10 +450,7 @@ inline void cp_set_mdl_request_types(TABLE_LIST& tables, short mode)
 	tables.mdl_request.duration = MDL_TRANSACTION;
 }
 
-inline void cp_open_error_release(THD* /*thd*/, TABLE_LIST& /*tables*/)
-{
-    ;
-}
+inline void cp_open_error_release(THD* /*thd*/, TABLE_LIST& /*tables*/){}
 
 inline bool cp_query_command(THD* thd, char* str)
 {
@@ -472,19 +465,28 @@ inline void cp_lex_clear(THD* thd)
     thd->lex->reset();
 }
 
+inline TABLE_SHARE* cp_get_cached_table_share(THD* thd, const char *db, const char *name)
+{
+	return get_cached_table_share(thd, db, name);
+}
+
+inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+	HA_CREATE_INFO *create_info_arg, int with_db_name)
+{
+	return store_create_info(thd, table_list, packet, create_info_arg, with_db_name!=0);
+}
+
 
 #else //Not MySQL 5.7
-#define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
 
+#define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
 #define td_malloc(A, B) my_malloc(A, B)
 #define td_realloc(A, B, C) my_realloc(A, B, C)
 #define td_strdup(A, B) my_strdup(A, B)
 #define td_free(A) my_free(A)
 
-inline void releaseTHD(THD* thd)
-{
-	delete thd;
-}
+inline void releaseTHD(THD* thd) { delete thd; } 
+
 inline  void cp_set_new_thread_id(THD* thd)
 {
     mysql_mutex_lock(&LOCK_thread_count);
@@ -494,6 +496,7 @@ inline  void cp_set_new_thread_id(THD* thd)
     mysql_mutex_unlock(&LOCK_thread_count);
     thd->thread_id = thd->variables.pseudo_thread_id;
 }
+
 inline void cp_dec_dbcount(THD* thd)
 {
     mysql_mutex_lock(&LOCK_thread_count);
@@ -501,9 +504,15 @@ inline void cp_dec_dbcount(THD* thd)
     mysql_mutex_unlock(&LOCK_thread_count);
 	remove_global_thread(thd);
 }
+
 inline Security_context* cp_security_ctx(THD* thd)
 {
 	return thd->security_ctx;
+}
+
+inline ulong cp_masterAccess(THD* thd)
+{
+	return thd->security_ctx->master_access;
 }
 
 inline int cp_record_count(handler* file, ha_rows* rows)
@@ -511,13 +520,13 @@ inline int cp_record_count(handler* file, ha_rows* rows)
 	*rows = file->records();
 	return 0;
 }
+
 #define cp_strdup(A, B) my_strdup((A), (B))
 #define cp_set_mysys_var(A) set_mysys_var(A)
 
-inline void cp_set_db(THD* thd, char* p)
+inline void cp_set_db(THD* thd, const char* p)
 {
-	td_free(thd->db);
-	thd->db = p;
+	thd->set_db(p, strlen(p));
 }
 
 inline THD* cp_thread_get_THR_THD()
@@ -531,9 +540,7 @@ inline int cp_thread_set_THR_THD(THD* thd)
 	return 0;
 }
 
-inline void cp_set_transaction_duration_for_all_locks(THD* thd)
-{
-}
+inline void cp_set_transaction_duration_for_all_locks(THD* thd) {}
 
 inline void cp_set_mdl_request_types(TABLE_LIST& tables, short mode)
 {
@@ -549,10 +556,7 @@ inline void cp_set_mdl_request_types(TABLE_LIST& tables, short mode)
 	tables.mdl_request.duration = MDL_TRANSACTION;
 }
 
-inline void cp_open_error_release(THD* thd, TABLE_LIST& tables)
-{
-   
-}
+inline void cp_open_error_release(THD* thd, TABLE_LIST& tables) {}
 
 inline bool cp_query_command(THD* thd, char* str)
 {
@@ -564,15 +568,93 @@ inline void cp_lex_clear(THD* thd)
     thd->lex->many_values.empty();
 }
 
+#if defined(MARIADB_10_1) ||  defined(MARIADB_10_0)
+#define NO_LOCK_OPEN
+inline TABLE_SHARE* cp_get_cached_table_share(THD* thd, const char *db, const char *name)
+{
+	return tdc_acquire_share(thd, db, name, GTS_VIEW |GTS_TABLE );
+}
+inline void cp_tdc_release_share(TABLE_SHARE* s)
+{
+    tdc_release_share(s);
+}
+
+    #if defined(MARIADB_10_1)
+    inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+                          void *create_info_arg, int with_db_name) 
+    {
+        return show_create_table(thd, table_list,  packet, 
+                (Table_specification_st*)create_info_arg, (enum_with_db_name) with_db_name);
+    } 
+    #elif (MARIADB_10_0 >= 100013)
+    inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+                          void *create_info_arg, int with_db_name) 
+    {
+        return show_create_table(thd, table_list,  packet, 
+                (HA_CREATE_INFO*)create_info_arg, (enum_with_db_name) with_db_name);
+    }
+    #else //Mariadb 10.0.9 - .12
+    inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+                          HA_CREATE_INFO* create_info_arg, int with_db_name)
+    {
+        return store_create_info(thd, table_list, packet, create_info_arg, with_db_name!=0, FALSE);
+    }
+    
+    #endif
+#else // Not MARIADB_10_1 || MARIADB_10_0
+
+
+inline TABLE_SHARE* cp_get_cached_table_share(THD* /*thd*/, const char *db, const char *name)
+{
+	return get_cached_table_share(db, name);
+}
+inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet,
+                          HA_CREATE_INFO *create_info_arg, int with_db_name)
+{
+    return store_create_info(thd, table_list, packet, create_info_arg, with_db_name!=0);
+}
+
+#endif // Not MARIADB_10_1 || MARIADB_10_0
+
+#endif // Not MySQL 5.7
+
+
+#if (MYSQL_VERSION_ID < 50600) || defined(MARIADB_10_0) 
+    #if defined(MARIADB_10_0)
+    inline bool cp_tdc_open_view(THD *thd, TABLE_LIST *table_list, const char *alias,
+                        const char *cache_key, uint cache_key_length,  uint flags)
+    {
+        return tdc_open_view(thd, table_list, alias, cache_key , cache_key_length, thd->mem_root, flags);
+    }
+    #else
+    inline bool cp_tdc_open_view(THD *thd, TABLE_LIST *table_list, const char *alias,
+                        const char *cache_key, uint cache_key_length,  uint flags)
+    {
+        return tdc_open_view(thd, table_list, alias, (char *)cache_key , cache_key_length, thd->mem_root, flags);
+    }
+    #endif
+#else
+#define cp_tdc_open_view tdc_open_view
 #endif
 
+#if (MYSQL_VERSION_ID < 50600)
+inline uint cp_get_table_def_key(THD *thd, TABLE_LIST* tables, const char** key)
+{
+    return create_table_def_key(thd, (char *)*key, tables, 0);
+}
+#else
+inline uint cp_get_table_def_key(THD *thd, TABLE_LIST* tables, const char** key)
+{
+	return (uint)get_table_def_key(tables, key);
+}
+#endif
 /* find_files is static function in maridb. 
    make_db_list function is not static, but it is not list in sql_show.h.  
 */
 
-#if (defined(MARIADDB_10_0) || defined(MARIADDB_10_1))
+#if (defined(MARIADB_10_0) || defined(MARIADB_10_1))
     typedef Dynamic_array<LEX_STRING*> SQL_Strings;
-#if (!defined(MARIADDB_10_1))
+#if (!defined(MARIADB_10_1))
     typedef struct st_lookup_field_values
     {
         LEX_STRING db_value, table_value;
@@ -607,7 +689,7 @@ inline void cp_lex_clear(THD* thd)
 #endif
 
 
-#if (defined(MARIADDB_10_1) && MARIADDB_10_1 > 100108)
+#if (defined(MARIADB_10_1) && MARIADB_10_1 > 100108)
 inline void cp_setup_rpl_bitmap(TABLE* table)
 {
     bitmap_set_all(table->write_set);
@@ -635,221 +717,5 @@ public:
             mysql_mutex_unlock(m_lock);
     }
 };
-
-
-// REPL_POS_TYPE
-#include <bzs/env/compiler.h>
-pragma_pack1;
-#define BINLOGNAME_SIZE 119
-#define GTID_SIZE       64
-
-struct binlogPos
-{
-    my_off_t pos;
-    char type;
-    char filename[BINLOGNAME_SIZE];
-    char gtid[GTID_SIZE];
-};
-pragma_pop;
-#define REPL_POSTYPE_MARIA_GTID         1  // see tdapapi.h
-#define REPL_POSTYPE_POS                2  // see tdapapi.h
-
-
-#if (MYSQL_VERSION_ID > 100000)
-#  define USE_BINLOG_GTID  1  // like 0-1-50
-#elif (!defined(_WIN32) || MYSQL_VERSION_ID > 50700 || MYSQL_VERSION_ID < 50600) // Linux or MySQL 5.5 5.7
-#  define USE_BINLOG_VAR   1  
-#  if (!defined(MARIADB_BASE_VERSION) &&  MYSQL_VERSION_ID > 50600)
-#    include "sql/binlog.h"
-#  endif
-
-#else // MySQL 5.6  on windows 
-   // On windows MySQL 5.6 can not access mysql_bin_log variable
-#  define NOTUSE_BINLOG_VAR   1  
-
-#if (MYSQL_VERSION_ID > 50700)
-#  define Protocol_mysql Protocol
-#  include "sql/rpl_master.h"
-#  define CP_PROTOCOL PROTOCOL_PLUGIN
-#else
-#  define Protocol_mysql Protocol
-#  define CP_PROTOCOL PROTOCOL_BINARY
-#endif //(MYSQL_VERSION_ID > 50700)
-
-class dummyProtocol : public Protocol_mysql
-{
-	THD* m_thd;
-public:
-#if (MYSQL_VERSION_ID > 50700)
-	inline dummyProtocol(THD *thd_arg) : Protocol_mysql()
-	{
-		m_thd = thd_arg;
-		thd_arg->set_protocol(this);
-	}
-	inline virtual ~dummyProtocol(){}
-#else
-	inline dummyProtocol(THD *thd_arg) : Protocol_mysql(thd_arg)
-	{
-		thd_arg->protocol = this;
-	}
-    inline virtual ~dummyProtocol(){}
-#endif
-    bool send_result_set_metadata(List<Item> *list, uint flags){return false;}
-    virtual bool write(){return false;};
-    virtual void prepare_for_resend(){}
-    virtual bool store_null(){return false;}
-    virtual bool store_tiny(longlong from){return false;}
-    virtual bool store_short(longlong from){return false;}
-    virtual bool store_long(longlong from){return false;}
-    virtual bool store_longlong(longlong from, bool unsigned_flag){return false;}
-    virtual bool store_decimal(const my_decimal *){return false;}
-    virtual bool store(const char *from, size_t length, 
-                     const CHARSET_INFO *fromcs,
-                     const CHARSET_INFO *tocs){return false;}
-    virtual bool store(float from, uint32 decimals, String *buffer){return false;}
-    virtual bool store(double from, uint32 decimals, String *buffer){return false;}
-    virtual bool store(MYSQL_TIME *time, uint precision){return false;}
-    virtual bool store_date(MYSQL_TIME *time){return false;}
-    virtual bool store_time(MYSQL_TIME *time, uint precision){return false;}
-    virtual bool store(Field *field){return false;}
-    virtual bool send_out_parameters(List<Item_param> *sp_params){return false;}
-	virtual Protocol::enum_protocol_type type(void){ return CP_PROTOCOL; };
-#ifdef MARIADB_BASE_VERSION      //Mariadb 5.5
-    virtual bool store(MYSQL_TIME *time, int decimals){return false;}
-    virtual bool store_time(MYSQL_TIME *time, int decimals){ return false;}
-#elif (MYSQL_VERSION_ID < 50600) // MySQL 5.5 
-    virtual bool store_time(MYSQL_TIME *time){return true;};
-    virtual bool store(MYSQL_TIME *time){return true;}
-    virtual bool store(const char *from, size_t length, 
-        CHARSET_INFO *fromcs, CHARSET_INFO *tocs){return false;}
-#elif (MYSQL_VERSION_ID > 50700) // MySQL 5.7 
-	bool store_decimal(const my_decimal *, uint, uint){ return true; }
-	bool store(Proto_field *){ return true; }
-	void start_row(){}
-	int read_packet(void){ return 0; }
-	int get_command(COM_DATA *, enum_server_command *){ return m_thd->lex->sql_command; }
-	enum_vio_type connection_type(void){ return VIO_TYPE_PLUGIN; }
-	ulong get_client_capabilities(void){ return 0; }
-	bool has_client_capability(unsigned long){ return false; }
-	bool connection_alive(void){ return false; }
-	bool end_row(void){ return false; }
-	void abort_row(void){}
-	void end_partial_result_set(void){}
-	int shutdown(bool){ return 0; }
-	SSL_handle get_ssl(void){ return NULL; }
-	uint get_rw_status(void){ return 0; }
-	bool get_compression(void){ return false; }
-	bool start_result_metadata(uint, uint, const CHARSET_INFO *){ return false; }
-	bool send_field_metadata(Send_field *, const CHARSET_INFO *){ return false; }
-	bool end_result_metadata(void){ return false; }
-	bool send_ok(uint, uint, ulonglong, ulonglong, const char *){ return false; }
-	bool send_eof(uint, uint){ return false; }
-	bool send_error(uint, const char *, const char *){ return false; }
-#endif
-};
-
-class masterStatus : public dummyProtocol
-{
-    binlogPos* m_bpos;
-    bool m_writed;
-public:
-    inline masterStatus(THD *thd_arg, binlogPos* bpos) : 
-        dummyProtocol(thd_arg), m_bpos(bpos), m_writed(false) {}
-    bool store_longlong(longlong from, bool unsigned_flag)
-    {
-        m_bpos->pos = (ulonglong)from;
-        m_bpos->type = REPL_POSTYPE_POS;
-        return false;
-    }
-
-#if (MYSQL_VERSION_ID < 50600 || defined(MARIADB_BASE_VERSION)) // MySQL 5.5 
-    bool store(const char *from, size_t length, CHARSET_INFO *cs)
-    {
-        if (!m_writed)
-        {
-			strncpy(m_bpos->filename, from, BINLOGNAME_SIZE); 
-            m_writed = true;
-        }
-        return false;
-    }
-#else
-    bool store(const char *from, size_t length,
-                     const CHARSET_INFO *cs)
-    {
-        if (!m_writed)
-        {
-			strncpy(m_bpos->filename, from, BINLOGNAME_SIZE);
-            m_writed = true;
-        }
-        return false;
-    }
-#endif
-};
-
-#endif // NOTUSE_BINLOG_VAR
-
-class safe_commit_lock
-{
-    THD* m_thd;
-    MDL_ticket* m_commits_lock;
-public:
-    safe_commit_lock(THD* thd): m_thd(thd), m_commits_lock(NULL){}
-    bool lock()
-    {
-        if (m_thd)
-        {
-            MDL_request mdl_request;
-			#if ((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
-			mdl_request.init_with_source(MDL_key::COMMIT, "", "", MDL_SHARED, MDL_EXPLICIT, __FILE__, __LINE__);
-			#else
-			mdl_request.init(MDL_key::COMMIT, "", "", MDL_SHARED, MDL_EXPLICIT);
-			#endif
-            if (m_thd->mdl_context.acquire_lock(&mdl_request,
-                                        m_thd->variables.lock_wait_timeout))
-                return false;
-            m_commits_lock = mdl_request.ticket;
-        }
-        return true;
-    }
-    ~safe_commit_lock()
-    {
-        if (m_commits_lock)
-        {
-            m_thd->mdl_context.release_lock(m_commits_lock);
-            m_commits_lock= NULL;
-        }
-    }
-};
-
-/*
-class safe_global_read_lock
-{
-    THD* m_thd;
-public:
-    safe_global_read_lock(THD* thd): m_thd(thd){}
-    bool lock()
-    {
-        if (m_thd->global_read_lock.lock_global_read_lock(m_thd))
-        {
-            m_thd = NULL;
-            return false;
-        }
-        #ifdef NOTUSE_BINLOG_VAR
-        close_cached_tables(NULL, NULL, FALSE , 50000000L);
-        if (m_thd->global_read_lock.make_global_read_lock_block_commit(m_thd))
-        {
-            m_thd->global_read_lock.unlock_global_read_lock(m_thd);
-            m_thd = NULL;
-            return false;
-        }
-        #endif
-        return true;
-    }
-    ~safe_global_read_lock()
-    {
-        if (m_thd)
-            m_thd->global_read_lock.unlock_global_read_lock(m_thd);
-    }
-};*/
 
 #endif // BZS_DB_ENGINE_MYSQL_MYSQLINTERNAL_H

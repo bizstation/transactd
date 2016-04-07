@@ -58,7 +58,7 @@ void autoMemory::setParams(unsigned char* p, size_t s, short* endIndex, bool own
         if (p)
             memcpy(ptr, p, size);
         else
-            memset(ptr, 0, size);
+            memset(ptr, 0, size + 1);
         endFieldIndex = new short;
         if (endIndex != NULL)
             *endFieldIndex = *endIndex;

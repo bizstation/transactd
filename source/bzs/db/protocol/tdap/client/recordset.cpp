@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -207,6 +207,10 @@ recordset* recordset::create()
 void recordset::dump()
 {
     m_imple->dump();
+}
+void recordset::dump(std::tostream& os)
+{
+    m_imple->dump(os);
 }
 #endif
 

@@ -351,7 +351,7 @@ public:
                         else
                             memcpy(m_tmpPtr, m_ptr, m_len);
                         if (bd)
-                            bd = m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd, bd);
+                            bd = m_tb->setBlobFieldPointer(((char*)m_tmpPtr) + td->nullbytes(), m_hd, bd);
                     }
                 }
                 ++m_row;
@@ -444,7 +444,7 @@ public:
             else
                 m_tmpPtr = m_ptr;
 
-            m_tb->setBlobFieldPointer((char*)m_tmpPtr, m_hd);
+            m_tb->setBlobFieldPointer((char*)m_tmpPtr + td->nullbytes(), m_hd);
             return m_tmpPtr;
         }
     }
@@ -1509,7 +1509,7 @@ keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
             if ((f.bit9 | f.bit3) && (transactd == true))
                 isNull = false;
             fielddef& fd = (*m_tableDef)->fieldDefs[fdnum];
-            to = fd.keyCopy(to, (uchar_td*)fieldPtr(fdnum), 0xff, isNull);
+            to = fd.keyCopy(to, (uchar_td*)fieldPtr(fdnum), 0xff, isNull, transactd);
         }
         return (keylen_td)(to - start);
     }
@@ -1548,7 +1548,7 @@ uint_td table::doGetWriteImageLen()
             uint_td bytes = fd.blobLenBytes();
             if (bytes)
             {
-                uchar_td* fdptr = (uchar_td*)m_pdata + fd.pos;
+                uchar_td* fdptr = (uchar_td*)m_pdata + fd.pos + td->nullbytes();
                 blob b(fd.blobDataLen(fdptr), i, fd.blobDataPtr(fdptr));
                 addSendBlob(&b);
             }
@@ -1648,16 +1648,20 @@ unsigned char* table::setBlobFieldPointer(char* ptr, const blobHeader* hd, unsig
 
             //copy size byte
             memcpy(fdptr, &f->size, sizeByte);
-            const char* data = f->data();
-            //copy data
-            if (to)
+            if (f->size)
             {
-                memcpy(to, data, f->size);
-                data = (char*)to;
-                to += f->size;
-            }
-            //copy address
-            memcpy(fdptr + sizeByte, &data, sizeof(char*));
+                const char* data = f->data();
+                //copy data
+                if (to)
+                {
+                    memcpy(to, data, f->size);
+                    data = (char*)to;
+                    to += f->size;
+                }
+                //copy address
+                memcpy(fdptr + sizeByte, &data, sizeof(char*));
+            }else
+                memset(fdptr + sizeByte, 0, sizeof(char*));
             f = f->next();
         }
         ++hd->curRow;
@@ -1678,7 +1682,7 @@ void table::onReadAfter()
     if (blobFieldUsed())
     {
         const blobHeader* hd = getBlobHeader();
-        setBlobFieldPointer((char*)m_pdata, hd);
+        setBlobFieldPointer((char*)m_pdata + (*m_tableDef)->nullbytes(), hd);
     }
     if ((*m_tableDef)->recordlen() - m_datalen > 0)
         memset((char*)m_pdata + m_datalen, 0, (*m_tableDef)->recordlen() - m_datalen);

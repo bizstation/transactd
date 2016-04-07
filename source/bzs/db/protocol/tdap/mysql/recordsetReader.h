@@ -70,10 +70,10 @@ public:
     }
     int getFieldNumByPos(unsigned short pos) const
     {
+        char* start = (char*)m_tb->field(0)->ptr;
         for (int i = 0; i < m_tb->fields(); i++)
         {
-            char* start = m_tb->fieldPos(0);
-            if (m_tb->fieldPos(i) - start == pos)
+            if ((char*)m_tb->field(i)->ptr - start == pos)
                 return i;
         }
         return -1;
@@ -93,7 +93,7 @@ public:
     { 
         Field* fd = m_tb->field(index);
         unsigned char* null_ptr = (unsigned char*)cp_null_ptr(fd, (unsigned char*)m_tb->internalTable()->record[0]);
-        return (unsigned char)((unsigned char*)m_tb->fieldPos(0) -  null_ptr); 
+        return (unsigned char)((unsigned char*)m_tb->field(0)->ptr -  null_ptr); 
     }
 
     bool isLegacyTimeFormat(int fieldNum) const
@@ -136,12 +136,12 @@ inline void position::setTable(engine::mysql::table* tb)
 
 inline char* position::fieldPtr(const resultField* rf) const
 {
-    return m_tb->fieldPos(rf->fieldNum);
+    return (char*)m_tb->field(rf->fieldNum)->ptr;
 }
 
 inline bool position::isBlobField(const resultField* rf) const
 {
-    return db::engine::mysql::isBlobType(m_tb->fieldType(rf->fieldNum));
+    return db::engine::mysql::isBlobType(m_tb->field(rf->fieldNum)->type());
 }
 
 /** return data length as real rength.
@@ -486,10 +486,10 @@ public:
         }
         if (key)
         {
+            // Sort between first to before first "or";
             std::vector<fieldAdapter>::iterator begin = m_fields.begin();
             std::vector<fieldAdapter>::iterator cur = m_fields.begin();
             std::vector<fieldAdapter>::iterator end = begin + lastIndex;
-
             char tmpOpr = (lastIndex != req.logicalCount) ? end->m_fd->opr : 0;
             std::sort(begin, end);
             bool flag = true;
@@ -855,7 +855,7 @@ public:
             bm.setReadBitmap(num);
             if (m_position.isBlobField(&fd))
                 ++blobs;
-            if (m_position.isNullable(num))
+            if (m_position.isNullable(num) && m_position.isMysqlNull())
                 ++nullfields;
                 
         }

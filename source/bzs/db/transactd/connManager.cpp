@@ -21,11 +21,16 @@
 #include <bzs/db/protocol/tdap/mysql/tdapCommandExecuter.h>
 #include "connManager.h"
 #include <bzs/db/engine/mysql/mysqlThd.h>
+#include <bzs/db/engine/mysql/mysqlProtocol.h>
 #include <bzs/db/protocol/tdap/mysql/databaseSchema.h>
 #include <bzs/db/engine/mysql/errorMessage.h>
 
+
 /* implemnts in transactd.cpp */
 extern const char* get_trd_sys_var(int index);
+
+
+extern int getSlaveStatus(THD* thd, bzs::db::transactd::connection::records& recs);
 
 namespace bzs
 {
@@ -89,38 +94,38 @@ void connManager::getDatabaseList(igetDatabases* dbm, const module* mod) const
             m_records.push_back(connection::record());
             connection::record& rec = m_records[m_records.size() - 1];
             rec.conId = (unsigned __int64)mod;
-            rec.cid = db->clientID();
-            rec.dbid = (unsigned short)j;
+            rec.id = db->clientID();
+            rec.db = (unsigned short)j;
             rec.status = 0;
             rec.inTransaction = db->inTransaction();
             rec.inSnapshot = db->inSnapshot();
             if (rec.inTransaction)
             {
                 if (db->transactionIsolation() == ISO_REPEATABLE_READ)
-                    rec.trnType = MULTILOCK_GAP;
+                    rec.type = MULTILOCK_GAP;
                 else if (db->transactionIsolation() == ISO_READ_COMMITTED)
                 {
                     if (db->transactionType() == TRN_RECORD_LOCK_SINGLE)
-                        rec.trnType = SINGLELOCK_NOGAP;
+                        rec.type = SINGLELOCK_NOGAP;
                     else
-                        rec.trnType = MULTILOCK_NOGAP;
+                        rec.type = MULTILOCK_NOGAP;
                 }
             }
             if (rec.inSnapshot)
             {
                 if (db->transactionIsolation() == 0)
-                    rec.trnType = CONSISTENT_READ;
+                    rec.type = CONSISTENT_READ;
                 else if (db->transactionIsolation() == ISO_REPEATABLE_READ)
-                    rec.trnType = MULTILOCK_GAP_SHARE;
+                    rec.type = MULTILOCK_GAP_SHARE;
                 else if (db->transactionIsolation() == ISO_READ_COMMITTED)
-                    rec.trnType = MULTILOCK_NOGAP_SHARE;
+                    rec.type = MULTILOCK_NOGAP_SHARE;
             }
             strncpy_s(rec.name, 64, dbs[j]->name().c_str(), 64);
         }
     }
 }
 
-const connManager::records& connManager::getRecords(unsigned __int64 conid,
+const connection::records& connManager::getRecords(unsigned __int64 conid,
                                                     int dbid) const
 {
     //Lock module count
@@ -159,8 +164,7 @@ const connManager::records& connManager::getRecords(unsigned __int64 conid,
                             m_records.push_back(connection::record());
                             connection::record& rec =
                                 m_records[m_records.size() - 1];
-                            rec.conId = (unsigned __int64)mod;
-                            rec.cid = tb->id();
+                            rec.id = tb->id();
                             rec.readCount = tb->readCount();
                             rec.updCount = tb->updCount();
                             rec.delCount = tb->delCount();
@@ -180,7 +184,7 @@ const connManager::records& connManager::getRecords(unsigned __int64 conid,
     return m_records;
 }
 
-const connManager::records& connManager::systemVariables() const
+const connection::records& connManager::systemVariables() const
 {
     m_records.clear();
     for (int i = 0 ; i < TD_VAR_SIZE; ++i)
@@ -190,7 +194,7 @@ const connManager::records& connManager::systemVariables() const
         {
             m_records.push_back(connection::record());
             connection::record& rec = m_records[m_records.size() - 1];
-            rec.value_id = i;
+            rec.id = i;
             switch(i)
             {
             case TD_VER_DB:
@@ -214,41 +218,20 @@ const connManager::records& connManager::systemVariables() const
     return m_records;
 }
 
-inline void appenDbList(connManager::records& recs, LEX_STRING* db_name)
-{
-    recs.push_back(connection::record());
-    connection::record& rec = recs[recs.size() - 1];
-    strncpy(rec.name, db_name->str, 64);
-    rec.name[64] = 0x00;
-}
-
-const connManager::records& connManager::getDefinedDatabaseList() const
+const connection::records& connManager::definedDatabases() const
 {
     m_records.clear();
-    THD* thd = createThdForThread();
     try
     {
-        if (thd)
+        boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+        if (thd != NULL)
         {
-            cp_security_ctx(thd)->skip_grants();
-            SQL_Strings files;
-            db_list(thd, &files);
-#if (defined(MARIADDB_10_0) || defined(MARIADDB_10_1))
-            for (int i = 0; i < (int)files.elements(); ++i)
-                appenDbList(m_records, files.at(i));
-#else
-            List_iterator_fast<LEX_STRING> it(files);
-            LEX_STRING* db_name;
-            while ((db_name = it++))
-                appenDbList(m_records, db_name);
-#endif
-            deleteThdForThread(thd);
+            cp_security_ctx(thd.get())->skip_grants();
+            readDbList(thd.get(), m_records);
         }
     }
     catch (bzs::rtl::exception& e)
     {
-        if (thd)
-            deleteThdForThread(thd);
         const int* code = getCode(e);
         if (code)
             m_stat = *code;
@@ -261,17 +244,12 @@ const connManager::records& connManager::getDefinedDatabaseList() const
     }
     catch (...)
     {
-        try
-        {
-            m_stat = 20001;
-            deleteThdForThread(thd);
-        }
-        catch(...){}
+        m_stat = 20001;
     }
     return m_records;
 }
 
-const connManager::records& connManager::schemaTableList(const char* dbname)
+const connection::records& connManager::getTableList(const char* dbname, int type) const
 {
     try
     {    
@@ -282,16 +260,75 @@ const connManager::records& connManager::schemaTableList(const char* dbname)
             if (db)
             {
                 std::vector<std::string> tablelist;
-                schemaBuilder::listSchemaTable(db.get(), tablelist);
+                schemaBuilder::listTable(db.get(), tablelist, type);
                 for (int i = 0; i < (int)tablelist.size(); ++i)
                 {
                     m_records.push_back(connection::record());
                     connection::record& rec = m_records[m_records.size() - 1];
                     strncpy(rec.name, tablelist[i].c_str(), 64);
                     rec.name[64] = 0x00;
+                    rec.type = (short)type;
                 }
             }
         }
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        const int* code = getCode(e);
+        if (code)
+            m_stat = *code;
+        else
+        {
+            m_stat = 20000;
+            sql_print_error("%s", boost::diagnostic_information(e).c_str());
+        }
+        printWarningMessage(code, getMsg(e));
+    }
+    catch (...)
+    {
+        m_stat = 20001;
+    }
+    return m_records;
+}
+
+const connection::records& connManager::definedTables(const char* dbname, int type) const
+{
+    return getTableList(dbname, type);
+}
+
+const connection::records& connManager::schemaTables(const char* dbname) const
+{
+    return getTableList(dbname, TABLE_TYPE_TD_SCHEMA);
+}
+
+bool connManager::checkGlobalACL(THD* thd, ulong wantAccess) const
+{
+    const module* mod = reinterpret_cast<const module*>(m_me);
+    if (mod->isSkipGrants())
+        cp_security_ctx(thd)->skip_grants();
+    else
+        ::setGrant(thd, mod->host(), mod->user(),  NULL);
+	bool ret = (cp_masterAccess(thd) & wantAccess) != 0;
+    if (!ret)
+        m_stat = STATUS_ACCESS_DENIED;
+    return ret;
+}
+
+const connection::records& connManager::readSlaveStatus() const
+{
+    m_records.clear();
+    try
+    {
+        boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+        if (thd == NULL) 
+        {
+            m_stat = 20001;
+            return m_records;
+        }
+        if (!checkGlobalACL(thd.get(), SUPER_ACL | REPL_CLIENT_ACL))
+            return m_records;
+
+        m_stat = errorCode(getSlaveStatus(thd.get(), m_records));
     }
     catch (bzs::rtl::exception& e)
     {
@@ -321,7 +358,12 @@ void connManager::doDisconnect(unsigned __int64 conid)
             dynamic_cast<igetDatabases*>(mod->m_commandExecuter.get());
         const databases& dbs = dbm->dbs();
         if (dbs.size())
-            mod->disconnect();
+        {
+            if (dbs[0]->checkAcl(SHUTDOWN_ACL))
+                mod->disconnect();
+            else
+                m_stat = STATUS_ACCESS_DENIED; 
+        }
     }
 }
 
@@ -344,12 +386,15 @@ void connManager::disconnect(unsigned __int64 conid)
 
 void connManager::doDisconnectAll()
 {
+    short stat = 0;
     for (size_t i = 0; i < modules.size(); i++)
     {
         const module* mod = dynamic_cast<module*>(modules[i]);
         if (mod && ((unsigned __int64)mod != m_me))
             doDisconnect((unsigned __int64)mod);
+        if (stat == 0) stat = m_stat;
     }
+    m_stat = stat;
 }
 
 void connManager::disconnectAll()

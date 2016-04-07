@@ -161,6 +161,10 @@ public:
     STDMETHOD(put_CompatibleMode)(int Value);
     STDMETHOD(get_CompatibleMode)(int* Value);
     STDMETHOD(GetSqlStringForCreateTable)(BSTR tableName, BSTR* retValue);
+    STDMETHOD(CreateAssociate)(IDatabase** retVal);
+    STDMETHOD(get_IsAssociate)(VARIANT_BOOL* retVal);
+    STDMETHOD(GetCreateViewSql)(BSTR name, BSTR* retVal);
+
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)

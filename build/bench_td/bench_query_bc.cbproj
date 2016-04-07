@@ -130,6 +130,10 @@
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
+        <Manifest_File>None</Manifest_File>
+        <BCC_ExtendedErrorInfo>false</BCC_ExtendedErrorInfo>
+        <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
         <Debugger_RunParams>0 localhost 15 1</Debugger_RunParams>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <VerInfo_Locale>1033</VerInfo_Locale>
@@ -165,6 +169,9 @@
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <BCC_StackFrames>true</BCC_StackFrames>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
         <Defines>_DEBUG;__USE_PSQL_DATABASE;$(Defines)</Defines>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">

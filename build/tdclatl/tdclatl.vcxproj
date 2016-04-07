@@ -251,6 +251,9 @@
     <ClCompile Include="..\..\source\global\tdclatl\Bitset.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Bookmark.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\ConnectParams.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\ConnMgr.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\ConnRecord.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\ConnRecords.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Database.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\DbDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\dllmain.cpp">
@@ -301,6 +304,9 @@
     <ClInclude Include="..\..\source\global\tdclatl\Bitset.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Bookmark.h" />
     <ClInclude Include="..\..\source\global\tdclatl\ConnectParams.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\ConnMgr.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\ConnRecord.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\ConnRecords.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Database.h" />
     <ClInclude Include="..\..\source\global\tdclatl\DbDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\dllmain.h" />
@@ -332,6 +338,7 @@
     <None Include="ActiveTable.rgs" />
     <None Include="Bitset.rgs" />
     <None Include="connectParams.rgs" />
+    <None Include="ConnMgr.rgs" />
     <None Include="database.rgs" />
     <None Include="fieldNames.rgs" />
     <None Include="GroupQuery.rgs" />

@@ -153,7 +153,7 @@
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
         <TD_VER_MAJOR>3</TD_VER_MAJOR>
-        <TD_VER_MINOR>1</TD_VER_MINOR>
+        <TD_VER_MINOR>2</TD_VER_MINOR>
         <DllSuffix>$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
         <TD_CPU>32</TD_CPU>
     </PropertyGroup>
@@ -161,6 +161,9 @@
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
+        <BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
+        <BCC_ExtendedErrorInfo>false</BCC_ExtendedErrorInfo>
+        <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
         <TD_CPU>32</TD_CPU>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
@@ -235,6 +238,7 @@
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
+        <BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
         <DllSuffix Condition="'$(UsePackages)'=='true' or '$(DynamicRTL)'=='true' ">$(BCVER)_$(TD_CPU)ur_$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">
@@ -263,6 +267,9 @@
             <BuildOrder>0</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\activeTable.cpp">
+            <BuildOrder>22</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\connMgr.cpp">
             <BuildOrder>22</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\database.cpp">

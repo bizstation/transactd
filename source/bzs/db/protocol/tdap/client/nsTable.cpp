@@ -762,6 +762,40 @@ void nstable::clearOwnerName()
     tdap(TD_CLEAR_OWNERNAME);
 }
 
+char* nstable::getCreateSql(char* retbuf, uint_td* size /* in out */)
+{
+    if (isUseTransactd() == false)
+    {
+        m_stat = STATUS_NOSUPPORT_OP;
+        return retbuf;
+    }
+
+    void* tmp = m_keybuf;
+    char_td keynum = m_keynum;
+    void* pdata = m_pdata;
+
+    char tmpName[MAX_PATH] = { 0x00 };
+    const char* p = nsdatabase::toServerUri(tmpName, MAX_PATH, uri(), true);
+    m_keybuf = (void*)p;
+    m_keylen = (keylen_td)strlen(p) + 1;
+    m_pdata = retbuf;
+    m_datalen = *size;
+    m_keynum = SC_SUBOP_BY_SQL;
+
+    tdap((ushort_td)TD_GET_SCHEMA);
+    if (m_stat != STATUS_SUCCESS)
+    {
+        retbuf[0] = 0x00;
+        *size = 0;
+    }else
+        *size = m_datalen;
+
+    m_keybuf = tmp;
+    m_keynum = keynum;
+    m_pdata = pdata;
+    return retbuf;
+}
+
 void nstable::stats(void* dataBuf, uint_td len, bool estimate)
 {
     void* svm_pdata = m_pdata;
@@ -811,7 +845,6 @@ ushort_td nstable::recordLength()
 
 void nstable::doCreateIndex(bool specifyKeyNum)
 {
-
     if (specifyKeyNum)
         m_keynum += ((uchar_td)0x80);
     tdap(TD_BUILD_INDEX);
@@ -965,7 +998,7 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
         else
             p2 = NULL;
     }
-    if (p)
+    if (p && (uri == false))
         *p = 0x00;
     if (p2)
         *(p2 + 1) = 0x00;

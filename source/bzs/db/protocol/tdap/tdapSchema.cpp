@@ -784,8 +784,6 @@ bool tabledef::operator==(const tabledef& r) const
             (keyCount == r.keyCount) &&
             (version == r.version) &&
             (charsetIndex == r.charsetIndex) &&
-            (m_nullfields == r.m_nullfields) &&
-            (m_nullbytes == r.m_nullbytes) &&
             (flags.all == r.flags.all) &&
             (primaryKeyNum == r.primaryKeyNum) &&
             (parentKeyNum == r.parentKeyNum) &&
@@ -953,8 +951,7 @@ void tabledef::calcReclordlen(bool force)
         // If valible length then specifing fixed length.
         if ((fixedRecordLen == 0) || (flags.bit0 == false))
             fixedRecordLen = m_maxRecordLen;
-    }else
-        ;//assert(0);
+    }
 }
 
 uint_td tabledef::unPack(char* ptr, size_t size) const
