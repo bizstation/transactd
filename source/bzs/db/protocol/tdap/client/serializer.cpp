@@ -66,8 +66,14 @@ BOOST_CLASS_EXPORT_GUID(bzs::db::protocol::tdap::client::reverseOrderStatement,
 
 BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::groupFuncBase, 1)
 BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::queryBase, 1)
-BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::readStatement, 1)
 BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::readHasMany, 1)
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::executable, 2)
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::readStatement, 2)
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::groupByStatement, 2)
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::matchByStatement, 2)
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::orderByStatement, 2)
+BOOST_CLASS_VERSION(bzs::db::protocol::tdap::client::reverseOrderStatement, 2)
+
 namespace bzs
 {
 namespace db
@@ -117,8 +123,15 @@ void serialize_string(Archive& ar, const char* name, std::_tstring& v)
 }
 
 template <class Archive>
-void serialize(Archive&, executable&, const unsigned int)
+void serializeExecutable(Archive& ar, executable& exec, const unsigned int version)
 {
+    if (version >= 2)
+    {
+        int v = (int)exec.isEnabled();
+        ar& make_nvp("enabled", v);
+        if (Archive::is_loading::value)
+            exec.setEnabled(v);
+    }
 }
 
 template <class Archive>
@@ -148,40 +161,45 @@ void serialize(Archive& ar, sortFields& q, const unsigned int)
 }
 
 template <class Archive>
-void serialize(Archive& ar, groupByStatement& q, const unsigned int /*version*/)
+void serialize(Archive& ar, groupByStatement& q, const unsigned int version)
 {
     boost::serialization::base_object<executable>(q);
+    serializeExecutable(ar, q, version);
     ar& boost::serialization::make_nvp(
         "keyFields", boost::serialization::base_object<fieldNames>(q));
     ar& boost::serialization::make_nvp("functions", *q.m_statements);
 }
 
 template <class Archive>
-void serialize(Archive& ar, matchByStatement& q, const unsigned int /*version*/)
+void serialize(Archive& ar, matchByStatement& q, const unsigned int version)
 {
     boost::serialization::base_object<executable>(q);
+    serializeExecutable(ar, q, version);
     ar& make_nvp("matchByStatement",
                  boost::serialization::base_object<recordsetQuery>(q));
 }
 
 template <class Archive>
-void serialize(Archive& ar, orderByStatement& q, const unsigned int /*version*/)
+void serialize(Archive& ar, orderByStatement& q, const unsigned int version)
 {
     boost::serialization::base_object<executable>(q);
+    serializeExecutable(ar, q, version);
     ar& boost::serialization::make_nvp("sortFields", *q.m_sortFields);
 }
 
 template <class Archive>
-void serialize(Archive& /*ar*/, reverseOrderStatement& q,
-               const unsigned int /*version*/)
+void serialize(Archive& ar, reverseOrderStatement& q,
+               const unsigned int version)
 {
     boost::serialization::base_object<executable>(q);
+    serializeExecutable(ar, q, version);
 }
 
 template <class Archive>
 void serialize(Archive& ar, readStatement& q, const unsigned int version)
 {
     boost::serialization::base_object<executable>(q);
+    serializeExecutable(ar, q, version);
     if (version < 1)
         ar& boost::serialization::make_nvp(
             "keyFields", boost::serialization::base_object<fieldNames>(q));
@@ -440,7 +458,7 @@ void serialize(Archive& ar, alias_type& q, const unsigned int /*version*/)
 void executable::release()
 {
     delete this;
-};
+}
 
 //---------------------------------------------------------------------------
 //   class groupByStatement
@@ -673,9 +691,12 @@ struct queryStatementsImple
     {
         for (size_t i = 0; i < statements.size(); ++i)
         {
-            statements[i]->execute(rs);
-            if (listner)
-                listner->onExecuted(statements[i], rs);
+            if (statements[i]->isEnabled())
+            {
+                statements[i]->execute(rs);
+                if (listner)
+                    listner->onExecuted(statements[i], rs);
+            }
         }
     }
 
