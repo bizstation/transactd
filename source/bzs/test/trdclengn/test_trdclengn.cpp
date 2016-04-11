@@ -5223,6 +5223,27 @@ void testBinaryField()
     }
 }
 
+void testGetDirUri()
+{
+    _TCHAR retbuf[MAX_PATH];
+    nstable::getDirURI(_T("tdap://localhost/db?dbfile=test.bdf"), retbuf);
+    BOOST_CHECK(_tcscmp(_T("tdap://localhost/db?dbfile="), retbuf) == 0);
+    nstable::getDirURI(_T("tdap://root@localhost/db?dbfile=test.bdf&pwd=1234"), retbuf);
+    BOOST_CHECK(_tcscmp(_T("tdap://localhost/db?dbfile="), retbuf) == 0);
+    nstable::getDirURI(_T("tdap://localhost/db"), retbuf);
+    BOOST_CHECK(_tcscmp(_T("tdap://localhost/db?dbfile="), retbuf) == 0);
+    nstable::getDirURI(_T("tdap://root@localhost/db"), retbuf);
+    BOOST_CHECK(_tcscmp(_T("tdap://localhost/db?dbfile="), retbuf) == 0);
+    nstable::getDirURI(_T("tdap://root@localhost/"), retbuf);
+    BOOST_CHECK(_tcscmp(_T("tdap://localhost/?dbfile="), retbuf) == 0);
+    nstable::getDirURI(_T("btrv://root@localhost/db"), retbuf);
+    BOOST_CHECK(_tcscmp(_T("btrv://localhost/db?dbfile="), retbuf) == 0);
+#ifdef _WIN32
+    nstable::getDirURI(_T("c:\\temp\\abc\\abc.def"), retbuf);
+    BOOST_CHECK(_tcscmp(_T("c:\\temp\\abc"), retbuf) == 0);
+#endif
+}
+
 
 // ------------------------------------------------------------------------
 BOOST_AUTO_TEST_SUITE(btrv_nativ)
@@ -5628,6 +5649,14 @@ BOOST_AUTO_TEST_SUITE(field)
 BOOST_AUTO_TEST_CASE(binary)
 {
     testBinaryField();    
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(static_function)
+
+BOOST_AUTO_TEST_CASE(getDirUri)
+{
+    testGetDirUri();
 }
 
 BOOST_AUTO_TEST_CASE(fuga)
