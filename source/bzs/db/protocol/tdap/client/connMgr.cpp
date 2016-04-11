@@ -323,10 +323,8 @@ const connMgr::records& connMgr::inUseTables(__int64 connid, int dbid)
 
 void connMgr::postDisconnectOne(__int64 connid)
 {
-    allocBuffer();
     m_keynum = TD_STSTCS_DISCONNECT_ONE;
-    record& rec = m_records[0];
-    rec.conId = connid;
+    m_params[0] = connid;
     tdap(TD_STASTISTICS);
 }
 
