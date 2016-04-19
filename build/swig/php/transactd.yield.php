@@ -1409,6 +1409,36 @@ abstract class nstable {
 	}
 }
 
+abstract class RangeIterator implements \Iterator {
+	protected $_position = 0;
+	protected $_start = -1;
+	protected $_end = -1;
+
+	function __construct($start, $end) {
+		$this->_position = 0;
+		$this->_start = $start;
+		$this->_end = $end;
+	}
+
+	public function rewind() {
+		$this->_position = $this->_start;
+	}
+
+	public function valid() {
+		return $this->_position <= $this->_end;
+	}
+
+	abstract public function current();
+
+	public function key() {
+		return $this->_position;
+	}
+
+	public function next() {
+		$this->_position++;
+	}
+}
+
 class connRecord {
 	public $_cPtr=null;
 	protected $_pData=array();
@@ -1442,7 +1472,23 @@ class connRecord {
 	}
 }
 
-class connRecords implements \ArrayAccess, \Countable {
+class connRecordsIterator extends RangeIterator {
+	private $_connRecords_ptr = NULL;
+
+	function __construct($connRecords_ptr, $start, $end) {
+		$this->_connRecords_ptr = $connRecords_ptr;
+		parent::__construct($start, $end);
+	}
+
+	public function current() {
+		$r = connRecords_getRecord($this->_connRecords_ptr,$this->_position);
+		if (is_resource($r))
+			return new connRecord($r);
+		return $r;
+	}
+}
+
+class connRecords implements \ArrayAccess, \Countable , \IteratorAggregate{
 	public $_cPtr=null;
 	protected $_pData=array();
 
@@ -1472,6 +1518,11 @@ class connRecords implements \ArrayAccess, \Countable {
 		}
 		//$this->_cPtr=new_connRecords();
 		throw new \BadMethodCallException();
+	}
+
+	// IteratorAggregate
+	public function getIterator() {
+		return new connRecordsIterator($this->_cPtr, 0, (connRecords_size($this->_cPtr) - 1));
 	}
 
 	// ArrayAccess
@@ -2940,36 +2991,6 @@ class btrTimeStamp {
 
 	function fromString($p) {
 		btrTimeStamp_fromString($this->_cPtr,$p);
-	}
-}
-
-abstract class RangeIterator implements \Iterator {
-	protected $_position = 0;
-	protected $_start = -1;
-	protected $_end = -1;
-
-	function __construct($start, $end) {
-		$this->_position = 0;
-		$this->_start = $start;
-		$this->_end = $end;
-	}
-
-	public function rewind() {
-		$this->_position = $this->_start;
-	}
-
-	public function valid() {
-		return $this->_position <= $this->_end;
-	}
-
-	abstract public function current();
-
-	public function key() {
-		return $this->_position;
-	}
-
-	public function next() {
-		$this->_position++;
 	}
 }
 
