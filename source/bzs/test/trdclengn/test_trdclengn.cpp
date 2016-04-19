@@ -2170,7 +2170,7 @@ void testDelete(database* db)
     }
     // true number
     uint_td v = tb->recordCount(false);
-    BOOST_CHECK_MESSAGE(0 == tb->stat(), "recordCount2");
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "recordCount2 " << tb->stat());
     BOOST_CHECK_MESSAGE(20002 == v,
                         "RecordCount2 count = " << v);
     int vv = 15001;

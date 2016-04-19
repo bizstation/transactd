@@ -731,11 +731,11 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
             seekByBookmark(bm);
         m_impl->exBookMarking = false;
         m_stat = tmpStat;
-        if (m_stat == STATUS_EOF)
-            m_stat = 0;
     }
     else
-        return nstable::doRecordCount(estimate, fromCurrent);
+        result = nstable::doRecordCount(estimate, fromCurrent);
+    if (m_stat == STATUS_EOF)
+        m_stat = 0;
 
     return result;
 }
