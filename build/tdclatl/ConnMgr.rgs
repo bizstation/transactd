@@ -1,0 +1,24 @@
+HKCR
+{
+	transactd.connMgr.1 = s 'connMgr Class'
+	{
+		CLSID = s '{7D8E310E-EA0A-4B54-A813-14BBB3E82EB5}'
+	}
+	transactd.connMgr = s 'connMgr Class'
+	{		
+		CurVer = s 'transactd.connMgr.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {7D8E310E-EA0A-4B54-A813-14BBB3E82EB5} = s 'connMgr Class'
+		{
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}

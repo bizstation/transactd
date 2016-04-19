@@ -849,12 +849,21 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($mgr->stat(), 0);
         $this->assertEquals($recs->size(), count($recs));
         $this->assertNotEquals($recs->size(), $size);
-        // slaveStatus
+        //sysvar
+        $recs = $mgr->sysvars();
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals(bz\connMgr::sysvarName(0), "database_version");
+        //statusvar
+        $recs = $mgr->statusvars();
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals(bz\connMgr::statusvarName(0), "tcp_connections");
+        //slaveStatus
         $recs = $mgr->slaveStatus();
         $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals(bz\connMgr::slaveStatusName(0), "Slave_IO_State");
         for ($i = 0; $i < $recs->size(); $i++)
         {
-            echo(PHP_EOL . $mgr->slaveStatusName($i) . "\t:" . $recs[$i]->value);
+            echo(PHP_EOL . bz\connMgr::slaveStatusName($i) . "\t:" . $recs[$i]->value);
         }
         $mgr->disconnect();
         $this->assertEquals($mgr->stat(), 0);

@@ -22,6 +22,7 @@
 #include "IBlobBuffer.h"
 #include <assert.h>
 #include <boost/shared_array.hpp>
+#include <boost/asio/buffer.hpp>
 
 extern unsigned int g_pipeCommSharememSize;
 #define FILE_MAP_SIZE (g_pipeCommSharememSize - 1024)
@@ -109,11 +110,11 @@ public:
      *  result buffer image
      *  ---------------------------
      *  n               record image
-     *  2				fieldNum
-     *	4				dataLength
-     *  n(dataLength)	data
-     *  2				null terminate
-     *  2				fieldNum ...
+     *  2       fieldNum
+     *  4       dataLength
+     *  n(dataLength) data
+     *  2       null terminate
+     *  2       fieldNum ...
      *  ----------------------------
      */
 
@@ -165,11 +166,11 @@ public:
      *  result buffer image
      *  ---------------------------
      *  n               record image
-     *  2				fieldNum
-     *	4				dataLength
-     *  n(dataLength)	data
-     *  2				null terminate
-     *  2				fieldNum ...
+     *  2       fieldNum
+     *  4       dataLength
+     *  n(dataLength) data
+     *  2       null terminate
+     *  2       fieldNum ...
      *  ----------------------------
      */
     unsigned int writeBuffer(unsigned char* buffer, unsigned int maxsize,

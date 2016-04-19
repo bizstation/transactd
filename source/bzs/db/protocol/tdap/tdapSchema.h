@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_TDAPSCHEMA_H
 #define BZS_DB_PROTOCOL_TDAP_TDAPSCHEMA_H
 /* =================================================================
- Copyright (C) 2000-2013 BizStation Corp All rights reserved.
+ Copyright (C) 2000-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -900,10 +900,14 @@ private:
         unsigned int size = f->size;
         //Copy data size
         memcpy(dest, &size, sizeByte);
-        //Copy data 
-        memcpy(blobBlock, f->data(), size);
-        //Copy data ptr
-        memcpy(dest + sizeByte, &blobBlock, sizeof(char*));
+        //Copy data
+        if (size)
+        {
+            memcpy(blobBlock, f->data(), size);
+            //Copy data ptr
+            memcpy(dest + sizeByte, &blobBlock, sizeof(char*));
+        }else
+            memset(dest + sizeByte, 0, sizeof(char*));
         hd->nextField = (blobField*)f->next();
         if (fieldNum == hd->fieldCount - 1)
             ++hd->curRow;

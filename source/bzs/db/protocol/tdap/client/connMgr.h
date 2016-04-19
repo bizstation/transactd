@@ -37,15 +37,38 @@ namespace client
 
 class database;
 class connMgr;
+class stringBuffer;
 typedef boost::shared_ptr<connMgr> connMgr_ptr;
+
+class DLLLIB connRecords
+{
+    typedef bzs::db::transactd::connection::record record;
+	friend class connMgr;
+	std::vector<record> m_records;
+	boost::shared_ptr<stringBuffer> m_buf;
+	inline void resize(size_t size) { m_records.resize(size); }
+	inline void erase(size_t index) { m_records.erase(m_records.begin() + index); }
+
+public:
+    connRecords();
+    connRecords(const connRecords& r);
+    connRecords& operator=(const connRecords& r);
+	const record& operator[] (int index) const;
+	record& operator[] (int index);
+	size_t size() const;
+	void clear();
+    void release();
+    static connRecords* create();
+};
 
 class DLLLIB connMgr : private nstable  // no copyable
 {
+
 public:
     typedef bzs::db::transactd::connection::record record;
-    typedef std::vector<record> records;
+	typedef connRecords records;
 private:
-    std::vector<record> m_records;
+	connMgr::records m_records;
     __int64 m_params[2];
     database* m_db;
     std::_tstring m_uri;
@@ -59,6 +82,7 @@ private:
     explicit connMgr(const connMgr& r);  //no copyable
     connMgr& operator=(const connMgr& r); //no copyable
     const connMgr::records& doDefinedTables(const _TCHAR* dbname, int type);
+    void setBlobFieldPointer(const bzs::db::blobHeader* bd);
     explicit connMgr(database* db);
 
 public:
@@ -71,6 +95,7 @@ public:
     const records& schemaTables(const _TCHAR* dbname);
     const records& slaveStatus();
     const records& sysvars();
+    const records& statusvars();
     const records& connections();
     const records& inUseDatabases(__int64 connid);
     const records& inUseTables(__int64 connid, int dbid);
@@ -82,6 +107,7 @@ public:
     using nstable::release;
     static void removeSystemDb(records& recs);
     static const _TCHAR* sysvarName(uint_td index);
+    static const _TCHAR* statusvarName(uint_td index);
     static const _TCHAR* slaveStatusName(uint_td index);
     static connMgr* create(database* db);
 };

@@ -62,7 +62,7 @@
         <VerInfo_Locale>1041</VerInfo_Locale>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
         <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
-        <DllSuffix>_3_2</DllSuffix>
+        <DllSuffix>_3_3</DllSuffix>
         <DynamicRTL>false</DynamicRTL>
         <BPILibOutputDir>..\..\lib</BPILibOutputDir>
         <BCC_PCHUsage>None</BCC_PCHUsage>

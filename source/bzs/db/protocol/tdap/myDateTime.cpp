@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -34,6 +34,7 @@ namespace protocol
 namespace tdap
 {
 #pragma warning(disable : 4996)
+#pragma warn -8056
 #ifdef _WIN32
 const wchar_t wtime_format_ms[] = L"%02d:%02d:%02d.%0*u";
 const wchar_t wtime_format[] = L"%02d:%02d:%02d";
@@ -913,7 +914,7 @@ wchar_t* myTimeStamp::timeStr(wchar_t* p, size_t size) const
 
 
 #pragma warning(default : 4996)    
-
+#pragma warn .8056
 
 } // namespace tdap
 } // namespace protocol

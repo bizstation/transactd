@@ -2156,7 +2156,8 @@ void testDelete(database* db)
 
     // estimate number
     int count = tb->recordCount(true);
-    bool c = (abs(count - 20002) < 5000);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "recordCount");
+    bool c = (abs(count - 20002) < 10000);
     BOOST_CHECK_MESSAGE(c == true, "RecordCount1");
     if (!c)
     {
@@ -2169,6 +2170,7 @@ void testDelete(database* db)
     }
     // true number
     uint_td v = tb->recordCount(false);
+    BOOST_CHECK_MESSAGE(0 == tb->stat(), "recordCount2 " << tb->stat());
     BOOST_CHECK_MESSAGE(20002 == v,
                         "RecordCount2 count = " << v);
     int vv = 15001;

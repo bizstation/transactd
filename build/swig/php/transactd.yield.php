@@ -1,6 +1,6 @@
 <?php
 /* =================================================================
- Copyright (C) 2014 BizStation Corp All rights reserved.
+ Copyright (C) 2014-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -1409,6 +1409,36 @@ abstract class nstable {
 	}
 }
 
+abstract class RangeIterator implements \Iterator {
+	protected $_position = 0;
+	protected $_start = -1;
+	protected $_end = -1;
+
+	function __construct($start, $end) {
+		$this->_position = 0;
+		$this->_start = $start;
+		$this->_end = $end;
+	}
+
+	public function rewind() {
+		$this->_position = $this->_start;
+	}
+
+	public function valid() {
+		return $this->_position <= $this->_end;
+	}
+
+	abstract public function current();
+
+	public function key() {
+		return $this->_position;
+	}
+
+	public function next() {
+		$this->_position++;
+	}
+}
+
 class connRecord {
 	public $_cPtr=null;
 	protected $_pData=array();
@@ -1442,7 +1472,23 @@ class connRecord {
 	}
 }
 
-class connRecords implements \ArrayAccess, \Countable {
+class connRecordsIterator extends RangeIterator {
+	private $_connRecords_ptr = NULL;
+
+	function __construct($connRecords_ptr, $start, $end) {
+		$this->_connRecords_ptr = $connRecords_ptr;
+		parent::__construct($start, $end);
+	}
+
+	public function current() {
+		$r = connRecords_getRecord($this->_connRecords_ptr,$this->_position);
+		if (is_resource($r))
+			return new connRecord($r);
+		return $r;
+	}
+}
+
+class connRecords implements \ArrayAccess, \Countable , \IteratorAggregate{
 	public $_cPtr=null;
 	protected $_pData=array();
 
@@ -1466,12 +1512,17 @@ class connRecords implements \ArrayAccess, \Countable {
 	}
 
 	function __construct($res) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__transactd__connection__records') {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__connMgr__records') {
 			$this->_cPtr=$res;
 			return;
 		}
 		//$this->_cPtr=new_connRecords();
 		throw new \BadMethodCallException();
+	}
+
+	// IteratorAggregate
+	public function getIterator() {
+		return new connRecordsIterator($this->_cPtr, 0, (connRecords_size($this->_cPtr) - 1));
 	}
 
 	// ArrayAccess
@@ -1595,6 +1646,16 @@ class connMgr {
 		return $r;
 	}
 
+	function statusvars() {
+		$r=connMgr_statusvars($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
 	function connections() {
 		$r=connMgr_connections($this->_cPtr);
 		if (is_resource($r)) {
@@ -1657,6 +1718,9 @@ class connMgr {
 
 	static function slaveStatusName($index) {
 		return connMgr_slaveStatusName($index);
+	}
+	static function statusvarName($index) {
+		return connMgr_statusvarName($index);
 	}
 }
 
@@ -2659,8 +2723,8 @@ class database extends nsdatabase {
 		return database_assignSchemaData($this->_cPtr,$src);
 	}
 
-	function copyTableData($dest,$src,$turbo,$offset=0,$keyNum=-1,$maxSkip=-1) {
-		return database_copyTableData($this->_cPtr,$dest,$src,$turbo,$offset,$keyNum,$maxSkip);
+	function copyTableData($dest,$src,$turbo,$keyNum=-1,$maxSkip=-1) {
+		return database_copyTableData($this->_cPtr,$dest,$src,$turbo,$keyNum,$maxSkip);
 	}
 
 	function convertTable($tableIndex,$turbo,$ownerName=null) {
@@ -2927,36 +2991,6 @@ class btrTimeStamp {
 
 	function fromString($p) {
 		btrTimeStamp_fromString($this->_cPtr,$p);
-	}
-}
-
-abstract class RangeIterator implements \Iterator {
-	protected $_position = 0;
-	protected $_start = -1;
-	protected $_end = -1;
-
-	function __construct($start, $end) {
-		$this->_position = 0;
-		$this->_start = $start;
-		$this->_end = $end;
-	}
-
-	public function rewind() {
-		$this->_position = $this->_start;
-	}
-
-	public function valid() {
-		return $this->_position <= $this->_end;
-	}
-
-	abstract public function current();
-
-	public function key() {
-		return $this->_position;
-	}
-
-	public function next() {
-		$this->_position++;
 	}
 }
 

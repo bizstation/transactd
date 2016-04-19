@@ -679,15 +679,8 @@ public:
     void endBulkInsert();
 
     inline TABLE* internalTable() { return m_table; }
-    /// for debuglog
-    const char* valStr(int index, int& size);
-    /// for debuglog
 
-    /** add blob field list.
-     *  @param fieldNum field index if it is -1 then all fields of cureent row;
-     *  @return field count of listed.
-     */
-    uint makeBlobFieldList(int fieldNum);
+    const char* valStr(int index, int& size);
 
     inline void addBlobBuffer(int fieldNum)
     {

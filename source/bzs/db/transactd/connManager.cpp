@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -29,8 +29,12 @@
 /* implemnts in transactd.cpp */
 extern const char* get_trd_sys_var(int index);
 
+/* implemnts in transactd.cpp */
+extern const unsigned int* get_trd_status_var(int index);
 
-extern int getSlaveStatus(THD* thd, bzs::db::transactd::connection::records& recs);
+/* implemnts in mysqlProtocol.cpp */
+extern int getSlaveStatus(THD* thd, bzs::db::transactd::connection::records& recs, 
+         bzs::db::IblobBuffer* bb);
 
 namespace bzs
 {
@@ -195,6 +199,7 @@ const connection::records& connManager::systemVariables() const
             m_records.push_back(connection::record());
             connection::record& rec = m_records[m_records.size() - 1];
             rec.id = i;
+            rec.type = 1;
             switch(i)
             {
             case TD_VER_DB:
@@ -204,19 +209,38 @@ const connection::records& connManager::systemVariables() const
             case TD_VAR_ISOLATION:
             case TD_VAR_AUTHTYPE:
             case TD_VAR_HSLISTENPORT:
-                strncpy(rec.value, p , 65);
+                strncpy(rec.name, p , 65);
                 break;
             case TD_VER_SERVER:
-                sprintf_s(rec.value, 65, "%d.%d.%d", TRANSACTD_VER_MAJOR, TRANSACTD_VER_MINOR, TRANSACTD_VER_RELEASE);
+                sprintf_s(rec.name, 65, "%d.%d.%d", TRANSACTD_VER_MAJOR, TRANSACTD_VER_MINOR, TRANSACTD_VER_RELEASE);
                 break;
             default:
-                _ltoa_s(*((unsigned int*)p), rec.value, 65, 10);
+                _ltoa_s(*((unsigned int*)p), rec.name, 65, 10);
                 break;
             }
         }
     }
     return m_records;
 }
+
+const connection::records& connManager::statusVariables() const
+{
+    m_records.clear();
+    for (int i = 0 ; i < TD_SVAR_SIZE; ++i)
+    {
+        const unsigned int* p =  ::get_trd_status_var(i);
+        m_records.push_back(connection::record());
+        if (p)
+        {
+            connection::record& rec = m_records[m_records.size() - 1];
+            rec.type = 0;
+            rec.id = i;
+            rec.longValue = *p; 
+        }
+    }
+    return m_records;
+}
+
 
 const connection::records& connManager::definedDatabases() const
 {
@@ -308,13 +332,13 @@ bool connManager::checkGlobalACL(THD* thd, ulong wantAccess) const
         cp_security_ctx(thd)->skip_grants();
     else
         ::setGrant(thd, mod->host(), mod->user(),  NULL);
-	bool ret = (cp_masterAccess(thd) & wantAccess) != 0;
+  bool ret = (cp_masterAccess(thd) & wantAccess) != 0;
     if (!ret)
         m_stat = STATUS_ACCESS_DENIED;
     return ret;
 }
 
-const connection::records& connManager::readSlaveStatus() const
+const connection::records& connManager::readSlaveStatus(blobBuffer* bb) const
 {
     m_records.clear();
     try
@@ -328,7 +352,7 @@ const connection::records& connManager::readSlaveStatus() const
         if (!checkGlobalACL(thd.get(), SUPER_ACL | REPL_CLIENT_ACL))
             return m_records;
 
-        m_stat = errorCode(getSlaveStatus(thd.get(), m_records));
+        m_stat = errorCode(getSlaveStatus(thd.get(), m_records, bb));
     }
     catch (bzs::rtl::exception& e)
     {

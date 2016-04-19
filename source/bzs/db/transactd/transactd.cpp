@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2012-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -338,14 +338,32 @@ const char* get_trd_sys_var(int index)
     return NULL;
 }
 
+
+const unsigned int* get_trd_status_var(int index)
+{
+    switch(index)
+    {
+    case TD_SVAR_TCP_CONNECTIONS:return &cpt::g_connections;
+    case TD_SVAR_TCP_WAIT_THREADS:return &cpt::g_waitThread;
+    case TD_SVAR_TPOOL_CONNECTIONS:return &tpool::g_connections;
+    case TD_SVAR_TPOOL_WAIT_THREADS:return &tpool::server::m_threadPoolSize;
+#ifdef PIPE_SERVER
+    case TD_SVAR_PIPE_CONNECTIONS:return &pipe::g_connections;
+    case TD_SVAR_PIPE_WAIT_THREADS:return &pipe::g_waitThread;
+#endif
+    case TD_SVAR_OPEN_DBS:return &g_openDatabases;
+    };
+    return NULL;
+}
+
 /** show status struct.
  */
 static st_mysql_show_var g_statusVariables[] = {
     { "trnsctd_tcp_connections", (char*)&cpt::g_connections, SHOW_INT },
     { "trnsctd_tcp_wait_threads", (char*)&cpt::g_waitThread, SHOW_INT },
     { "trnsctd_tpool_connections", (char*)&tpool::g_connections, SHOW_INT },
-    { "trnsctd_tpool_threads", (char*)&tpool::server::m_threadPoolSize,
-      SHOW_INT },
+    { "trnsctd_tpool_threads", (char*)&tpool::server::m_threadPoolSize, SHOW_INT },
+
 #ifdef PIPE_SERVER
     { "trnsctd_pipe_connections", (char*)&pipe::g_connections, SHOW_INT },
     { "trnsctd_pipe_wait_threads", (char*)&pipe::g_waitThread, SHOW_INT },

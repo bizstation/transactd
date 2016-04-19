@@ -77,6 +77,8 @@ public:
     STDMETHOD(RemoveSystemDb)(IConnRecords** retVal);
     STDMETHOD(SlaveStatusName)(int index, BSTR* retVal);
     STDMETHOD(SysvarName)(int index, BSTR* retVal);
+    STDMETHOD(Statusvars)(IConnRecords** retVal);
+    STDMETHOD(StatusvarName)(int index, BSTR* retVal);
 
 };
 

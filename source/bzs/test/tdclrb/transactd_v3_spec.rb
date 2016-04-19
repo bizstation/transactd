@@ -844,11 +844,21 @@ describe Transactd, 'V3Features' do
     Transactd::ConnMgr::removeSystemDb(recs)
     expect(mgr.stat()).to eq 0
     expect(recs.size()).not_to eq size
+    # sysvar
+    recs = mgr.sysvars()
+    expect(mgr.stat()).to eq 0
+    expect(Transactd::ConnMgr::sysvarName(0)).to eq "database_version"
+    # statusvar
+    recs = mgr.statusvars()
+    expect(mgr.stat()).to eq 0
+    expect(Transactd::ConnMgr::statusvarName(0)).to eq "tcp_connections"
     # slaveStatus
     recs = mgr.slaveStatus()
     expect(mgr.stat()).to eq 0
+    expect(Transactd::ConnMgr::slaveStatusName(0)).to eq "Slave_IO_State"
+
     for i in 0...recs.size() do
-      puts (Transactd::ConnMgr::slaveStatusName(i) + "\t" + recs[i].value)
+      puts (Transactd::ConnMgr::slaveStatusName(i) + "\t:" + recs[i].value.to_s)
     end
     mgr.disconnect()
     expect(mgr.stat()).to eq 0

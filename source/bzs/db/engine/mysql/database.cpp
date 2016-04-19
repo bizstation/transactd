@@ -290,11 +290,19 @@ void database::addDbName(const std::string& dbname)
     secx->security_ctx.restore_security_context(m_thd, &secx->security_ctx);
 
     //Get Grant
-    bool ret = ::setGrant(m_thd, m_backup_sctx->cp_priv_host(), m_backup_sctx->cp_priv_user(), dbname.c_str());
-    if (ret)
-        check_access(m_thd, SELECT_ACL, dbname.c_str(), &secx->privilege, NULL, false, true);
-    
-    //Restore current ctx
+	if (m_backup_sctx->cp_master_accsess() == (ulong)~NO_ACCESS)
+		cp_security_ctx(m_thd)->skip_grants();
+	else
+	{
+		const char* user = m_backup_sctx->cp_priv_user();
+		const char* host = m_backup_sctx->cp_priv_host();
+		bool ret = ::setGrant(m_thd, host ? host : "", user ? user : "", dbname.c_str());
+		if (ret)
+			check_access(m_thd, SELECT_ACL, dbname.c_str(), &secx->privilege, NULL, false, true);
+		else
+			secx->privilege = 0;
+	}
+	//Restore current ctx
     restoreSctx();
 }
 
@@ -2637,26 +2645,6 @@ const char* table::valStr(int fieldNum, int& size)
         fd->val_str(&m_str, &m_str);
     size = (int)m_str.length();
     return m_str.c_ptr();
-}
-
-uint table::makeBlobFieldList(int fieldNum)
-{
-    m_blobBuffer->clear();
-    int st = fieldNum == -1 ? 0 : fieldNum;
-    int en = fieldNum == -1 ? m_table->s->fields : fieldNum + 1;
-    uint count = 0;
-    for (int i = st; i < en; i++)
-    {
-        Field* fd = m_table->field[fieldNum];
-        if (isBlobType(fd->type()))
-        {
-            m_blobBuffer->addBlob(blob_len(fd), fd->field_index,
-                                  fd->ptr + blob_var_bytes(fd));
-            count++;
-        }
-    }
-    m_blobBuffer->setFieldCount(count);
-    return count;
 }
 
 inline void setSegmentValue(const KEY_PART_INFO& segment, const std::string& v)

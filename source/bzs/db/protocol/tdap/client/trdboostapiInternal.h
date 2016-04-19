@@ -53,6 +53,13 @@ inline static void readStatusCheck(table& tb, const _TCHAR* name)
         nstable::throwError(name, tb.stat());
 }
 
+template <class T>
+void validateStatus(const T& obj, const _TCHAR* caption)
+{
+    if (obj->stat())
+        nstable::throwError(caption, obj->stat());
+}
+
 class indexNavi
 {
 

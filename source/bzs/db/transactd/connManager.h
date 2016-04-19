@@ -1,7 +1,7 @@
 #ifndef BZS_DB_TRANSACTD_CONNMANAGER_H
 #define BZS_DB_TRANSACTD_CONNMANAGER_H
 /*=================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -60,11 +60,12 @@ public:
     connManager(unsigned __int64 me) : m_me(me), m_stat(0){};
     virtual ~connManager();
     const connection::records& systemVariables() const;
+    const connection::records& statusVariables() const;
     const connection::records& getRecords(unsigned __int64 conid, int dbid) const;
     const connection::records& definedDatabases() const;
     const connection::records& schemaTables(const char* dbname) const;
     const connection::records& definedTables(const char* dbname, int type) const;
-    const connection::records& readSlaveStatus() const;
+    const connection::records& readSlaveStatus(blobBuffer* bb) const;
     void disconnect(unsigned __int64 conid);
     void disconnectAll();
     short stat() const {return m_stat;}

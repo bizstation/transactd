@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H
 #define BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H
 /* =================================================================
- Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+ Copyright (C) 2012 2013-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -201,6 +201,7 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_STSTCS_TABLE_LIST            6
 #define TD_STSTCS_VIEW_LIST             7
 #define TD_STSTCS_SLAVE_STATUS          8
+#define TD_STSTCS_STATUS_VARIABLES      9
 
 /** connect sub operation
  */
@@ -607,13 +608,22 @@ struct handshale_t
 #define TD_VAR_TIMESTAMPMODE      17
 #define TD_VAR_SIZE               18
 
+/* server status variables index */
+#define TD_SVAR_TCP_CONNECTIONS     0
+#define TD_SVAR_TCP_WAIT_THREADS    1
+#define TD_SVAR_TPOOL_CONNECTIONS   2
+#define TD_SVAR_TPOOL_WAIT_THREADS  3
+#define TD_SVAR_PIPE_CONNECTIONS    4
+#define TD_SVAR_PIPE_WAIT_THREADS   5
+#define TD_SVAR_OPEN_DBS            6
+#define TD_SVAR_SIZE                7
 /** @endcond */
 
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.
  If you change this version then you need change The ($TargetName) project options too.
  */
 #define C_INTERFACE_VER_MAJOR "3"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "2"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "3"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
@@ -677,8 +687,8 @@ struct handshale_t
  */
 
 #define CPP_INTERFACE_VER_MAJOR "3"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "2"//##5 Build marker! Don't remove
-#define CPP_INTERFACE_VER_RELEASE "1"//##6 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "3"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
 #if (__BCPLUSPLUS__ || _MSC_VER)
@@ -714,7 +724,7 @@ struct handshale_t
 
 
 #define TRANSACTD_VER_MAJOR 3//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 2//##8 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 3//##8 Build marker! Don't remove
 #define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

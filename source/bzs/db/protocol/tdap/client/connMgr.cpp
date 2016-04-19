@@ -54,6 +54,17 @@ static const _TCHAR* SYSVAR_NAME[TD_VAR_SIZE] =
     _T("timestamp_always)")
 };
 
+static const _TCHAR* STATUSVAR_NAME[TD_VAR_SIZE] =
+{
+    _T("tcp_connections"),
+    _T("tcp_wait_threads"),
+    _T("tpool_connections"),
+    _T("tpool_threads"),
+    _T("pipe_connections"),
+    _T("pipe_wait_threads"),
+    _T("cur_open_databases"),
+};
+
 static const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
 {
     _T("Slave_IO_State"),
@@ -97,6 +108,55 @@ static const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
     _T("Replicate_Ignore_Server_Ids"),
     _T("Master_Server_Id" ),
 };
+
+
+class stringBuffer
+{
+	friend class connMgr;
+	std::vector<char> m_buf;
+public:
+	inline void resize(size_t size) { m_buf.resize(size); }
+	inline char* ptr() { return &m_buf[0]; }
+	inline size_t size() const { return m_buf.size(); }
+};
+
+//-----------------------------------------------------------------------------
+//    class connRecords
+//-----------------------------------------------------------------------------
+connRecords::connRecords(){}
+
+connRecords::connRecords(const connRecords& r) :
+    m_records(r.m_records), m_buf(r.m_buf) {}
+
+connRecords& connRecords::operator=(const connRecords& r)
+{
+    if (this != &r)
+    {
+    	m_records = r.m_records;
+	    m_buf = r.m_buf;
+    }
+    return *this;
+}
+
+void connRecords::clear() { m_records.clear(); m_buf.reset(); }
+
+const connRecords::record& connRecords::operator[] (int index) const
+{
+    return m_records[index];
+}
+
+connRecords::record& connRecords::operator[] (int index)
+{
+    return m_records[index];
+}
+
+size_t connRecords::size() const { return m_records.size(); }
+
+connRecords* connRecords::create(){ return new connRecords();}
+
+void connRecords::release(){ delete this;}
+
+//-----------------------------------------------------------------------------
 
 #pragma pack(push, 1)
 pragma_pack1
@@ -271,6 +331,26 @@ const connMgr::records& connMgr::schemaTables(const _TCHAR* dbname)
     return doDefinedTables(dbname, TD_STSTCS_SCHEMA_TABLE_LIST);
 }
 
+void connMgr::setBlobFieldPointer(const blobHeader* hd)
+{
+    if (!hd) return;
+    assert(hd->curRow < hd->rows);
+    m_records.m_buf.reset(new stringBuffer());
+    m_records.m_buf->resize(hd->dataSize + 100);
+    const blobField* f = hd->nextField;
+
+    char* p = m_records.m_buf->ptr();
+    for (int i = 0; i < hd->fieldCount; ++i)
+    {
+        memcpy(p, f->data(), f->size);
+        m_records[f->fieldNum].longValue = (__int64)p;
+        p += f->size;
+        *p = 0x00;
+        ++p;
+        f = f->next();
+    }
+}
+
 const connMgr::records& connMgr::slaveStatus()
 {
     if ((m_pluginVer.majorVersion >= 3) && (m_pluginVer.minorVersion >= 2))
@@ -280,8 +360,11 @@ const connMgr::records& connMgr::slaveStatus()
         getRecords();
         if (m_records.size() > SLAVE_STATUS_DEFAULT_SIZE)
             m_records.resize(SLAVE_STATUS_DEFAULT_SIZE);
+
+        // set blob pointers
+        setBlobFieldPointer(getBlobHeader());
         return m_records;
-    }
+   }
     m_stat = STATUS_NOSUPPORT_OP;
     m_records.resize(0);
     return m_records;
@@ -290,6 +373,13 @@ const connMgr::records& connMgr::slaveStatus()
 const connMgr::records& connMgr::sysvars()
 {
     m_keynum = TD_STSTCS_SYSTEM_VARIABLES;
+    allocBuffer();
+    return getRecords();
+}
+
+const connMgr::records& connMgr::statusvars()
+{
+    m_keynum = TD_STSTCS_STATUS_VARIABLES;
     allocBuffer();
     return getRecords();
 }
@@ -352,7 +442,7 @@ void connMgr::removeSystemDb(connMgr::records& recs)
             (strcmp(recs[i].name, "performance_schema")==0) ||
             (strcmp(recs[i].name, "information_schema")==0) ||
             (strcmp(recs[i].name, "sys")==0))
-        recs.erase(recs.begin() + i);
+        recs.erase(/*recs.begin() +*/ i);
     }
 }
 
@@ -360,6 +450,13 @@ const _TCHAR* connMgr::sysvarName(uint_td index)
 {
     if (index < TD_VAR_SIZE)
         return SYSVAR_NAME[index];
+    return _T("");
+}
+
+const _TCHAR* connMgr::statusvarName(uint_td index)
+{
+    if (index < TD_SVAR_SIZE)
+        return STATUSVAR_NAME[index];
     return _T("");
 }
 

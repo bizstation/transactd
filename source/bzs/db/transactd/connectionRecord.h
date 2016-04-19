@@ -1,7 +1,7 @@
 #ifndef BZS_DB_TRANSACTD_CONNECTIONRECORD_H
 #define BZS_DB_TRANSACTD_CONNECTIONRECORD_H
 /*=================================================================
-   Copyright (C) 2013 2016 BizStation Corp All rights reserved.
+   Copyright (C) 2013-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -117,7 +117,7 @@ struct record
     union
     {
         __int64 conId;                      // 8 byte
-        __int64 longValue; 
+        __int64 longValue;
         struct
         {
             unsigned int delCount;                  
@@ -136,11 +136,7 @@ struct record
         unsigned int type;                           
     };
     
-    union                                   // 67 byte
-    {
-        char name[CON_REC_VALUE_SIZE];
-        char value[CON_REC_VALUE_SIZE];
-    };
+    char name[CON_REC_VALUE_SIZE];           // 67 byte
     union
     {
         char status;                        // 1 byte
@@ -155,17 +151,49 @@ struct record
             char dummy : 2;
         };
     };
-    
+
 
     #ifdef _UNICODE
-    inline _TCHAR* nameW(_TCHAR* buf, int size)
+    inline const wchar_t* t_name(wchar_t* buf, int size) const
     {
         MultiByteToWideChar(CP_UTF8, 0, name, -1, buf, size);
         return buf;
     }
+    const wchar_t* value(wchar_t* buf, int size) const
+    {
+        if (type == 0)
+        {
+            _i64tow_s(longValue, buf, size, 10);
+            return buf;
+        }else if (type == 1)
+        {
+            MultiByteToWideChar(CP_UTF8, 0, name, -1, buf, size);
+            return buf;
+        }
+        MultiByteToWideChar(CP_UTF8, 0, (char*)longValue, -1, buf, size);
+        return buf;
+    }
+    #else
+    inline const char* t_name(char* /*buf*/, int /*size*/) const
+    {
+        return name;
+    }
+    const char* value(char* buf, int size) const
+    {
+        if (type == 0)
+        {
+            _i64toa_s(longValue, buf, size, 10);
+            return buf;
+        }else if (type == 1)
+            return name;
+        return (char*)longValue;
+    }
     #endif
 };                                          // 20 + 68 = 88
+
+#ifdef MYSQL_DYNAMIC_PLUGIN
 typedef std::vector<record> records;
+#endif
 
 } // connection
 } // transactd

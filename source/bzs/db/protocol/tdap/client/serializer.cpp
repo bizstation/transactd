@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2014 BizStation Corp All rights reserved.
+   Copyright (C) 2014-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -130,7 +130,7 @@ void serializeExecutable(Archive& ar, executable& exec, const unsigned int versi
         int v = (int)exec.isEnabled();
         ar& make_nvp("enabled", v);
         if (Archive::is_loading::value)
-            exec.setEnabled(v);
+            exec.setEnabled(v != 0);
     }
 }
 

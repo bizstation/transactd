@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_TABLE_H
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_TABLE_H
 /* =================================================================
- Copyright (C) 2000-2013 BizStation Corp All rights reserved.
+ Copyright (C) 2000-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -106,7 +106,6 @@ class DLLLIB table : public nstable
     uchar_td charset() const;
     bool checkIndex(short index) const;
     void getKeySpec(keySpec* ks, bool SpecifyKeyNum = false);
-    const bzs::db::blobHeader* getBlobHeader();
     unsigned char* setBlobFieldPointer(char* ptr, const ::bzs::db::blobHeader* p,
                                         unsigned char* to=NULL);
     void addSendBlob(const bzs::db::blob* blob);

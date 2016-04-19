@@ -109,42 +109,28 @@ endif()
 if(TRANSACTD_HANDLERSOCKET)
   add_definitions(-DUSE_HANDLERSOCKET)
 endif()
-if(MY_PTHREAD_FASTMUTEX)
-  add_definitions(-DMY_PTHREAD_FASTMUTEX=1)
+add_definitions(-DBOOST_ALL_NO_LIB -DPACKAGE_NO_EXPORT -D_REENTRANT -DTRANSACTD_EXPORTS)
+if((NOT MSVC) AND (NOT MINGW))
+add_definitions(-DLINUX)
 endif()
+
 foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  bz_add_cxx_flag("-DBOOST_ALL_NO_LIB -DPIC -DPACKAGE_NO_EXPORT" "${build_type}")
   bz_remove_cxx_flag("-fno-exceptions" "${build_type}")
   bz_remove_cxx_flag("-fno-rtti" "${build_type}")
   bz_remove_cxx_flag("-fno-implicit-templates" "${build_type}")
   bz_remove_cxx_flag("/EHsc" "${build_type}")
   bz_remove_cxx_flag("/EHs" "${build_type}")
   if(MSVC)
-    bz_add_cxx_flag("/EHa /wd4068 /wd4267 /wd4102 /wd4800 /DTRANSACTD_EXPORTS" "${build_type}")
-  else()
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-      bz_add_cxx_flag("-std=c++11 -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare" "${build_type}")
-    else()
-      # Add c++0x option to some files.
-      bz_add_cxx_flag("-std=c++0x -std=gnu++0x -Wno-ignored-qualifiers -Wno-missing-field-initializers" "${build_type}")
-    endif()
-    bz_add_cxx_flag("-fPIC -fexceptions -fno-omit-frame-pointer -Wno-unknown-pragmas" "${build_type}")
-    bz_add_cxx_flag("-fno-strict-aliasing -fpermissive -frtti -D_REENTRANT" "${build_type}")
-    if(NOT MINGW)
-      bz_add_cxx_flag("-DLINUX" "${build_type}")
-    endif()
+    bz_add_cxx_flag("/EHa /wd4068 /wd4267 /wd4102 /wd4800" "${build_type}")
   endif()
 endforeach()
-#if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-#  set(CMAKE_CXX_FLAGS "-std=c++11 -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare -fPIC -fexceptions -fno-omit-frame-pointer -Wno-unknown-pragmas -fno-strict-aliasing -fpermissive -frtti -D_REENTRANT")
-#else()
-#  set(CMAKE_CXX_FLAGS "-fPIC -std=c++0x -Wall -Wno-char-subscripts -Wno-unknown-pragmas -Wno-missing-braces -fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
-#endif()
-#if(NOT MINGW)
-#if(NOT MSVC)
-#  set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-DLINUX")
-#endif()
-#endif()
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "-std=c++11 -frtti -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare")
+else()
+  set(CMAKE_CXX_FLAGS "-std=c++0x -frtti -Wno-unknown-pragmas")
+endif()
+
+
 #set -fno-rtti to mysqlProtocol.cpp
 if(NOT MSVC)
   if ((MYSQL_VERSION_ID VERSION_GREATER 100000) OR (MYSQL_VERSION_ID VERSION_LESS 50600))
@@ -204,18 +190,6 @@ MYSQL_ADD_PLUGIN(${this_target} ${${this_target}_SOURCE_FILES}
   MODULE_ONLY MODULE_OUTPUT_NAME "${output_name}")
 
 # ==========================================================
-# link -static-libgcc
-# ==========================================================
-#if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#  set_target_properties(${this_target} PROPERTIES LINK_SEARCH_START_STATIC 1)
-#  set_target_properties(${this_target} PROPERTIES LINK_SEARCH_END_STATIC 1)
-#  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-#
-#  set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc")
-#  message("set -static-libgcc")
-#endif()
-
-# ==========================================================
 # add SONAME
 # ==========================================================
 if(NOT APPLE)
@@ -235,7 +209,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 
-        
 
 # ==========================================================
 # set output path (on Visual Studio)
