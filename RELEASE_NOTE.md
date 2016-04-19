@@ -1,5 +1,25 @@
 Release note
 ================================================================================
+Version 3.3.0 2016/04/18
+================================================================================
+New Features
+--------------------------------------------------------------------------------
+* `records& connMgr::statusvars()` was added. This function can get 
+  Transactd status variables.
+
+* `connMgr::slaveStatus()` was made possible to get message which is larger than
+  default buffer (67 bytes).
+
+Modifications
+--------------------------------------------------------------------------------
+* Fixed the conversion failure of 64Bit integer on PHP.
+
+* Fixed a server error that occurs when the host authentication.
+
+* PHP in version 5.4 or less on windows is no longer supported. PHP 5.5 or later 
+  are supported. Linux or OSX are supported PHP version 5.4 or later.
+
+
 Version 3.2.1 2016/04/11
 ================================================================================
 Modifications
