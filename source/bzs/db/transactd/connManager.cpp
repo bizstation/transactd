@@ -34,7 +34,7 @@ extern const unsigned int* get_trd_status_var(int index);
 
 /* implemnts in mysqlProtocol.cpp */
 extern int getSlaveStatus(THD* thd, bzs::db::transactd::connection::records& recs, 
-        bzs::db::blobBuffer* bb);
+         bzs::db::IblobBuffer* bb);
 
 namespace bzs
 {
@@ -332,7 +332,7 @@ bool connManager::checkGlobalACL(THD* thd, ulong wantAccess) const
         cp_security_ctx(thd)->skip_grants();
     else
         ::setGrant(thd, mod->host(), mod->user(),  NULL);
-	bool ret = (cp_masterAccess(thd) & wantAccess) != 0;
+  bool ret = (cp_masterAccess(thd) & wantAccess) != 0;
     if (!ret)
         m_stat = STATUS_ACCESS_DENIED;
     return ret;

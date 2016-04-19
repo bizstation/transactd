@@ -16,7 +16,6 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-
 #include "tdapCommandExecuter.h"
 #include "recordsetReader.h"
 #include <bzs/db/blobBuffer.h>
@@ -102,10 +101,10 @@ std::string getDatabaseName(const request& req, bool forSql)
 {
     std::vector<std::string> ssc;
     std::vector<std::string> ss;
-	const char* p = (const char*)req.keybuf;
-	if (p && p[0])
+    const char* p = (const char*)req.keybuf;
+    if (p && p[0])
     {
-		std::string s(p);
+        std::string s(p);
         split(ssc, s, "\t");
         if (ssc.size())
         {
@@ -287,17 +286,17 @@ std::string dbExecuter::makeSQLcreateTable(const request& req)
 bool isMetaDb(const request& req)
 {
     char buf[MAX_PATH];
-	const char* p = (const char*)req.keybuf;
-	char_m* st = NULL;
-	if (p && p[0])
-	{
-		strncpy(buf, p, MAX_PATH);
-		_strlwr(buf);
-		st = _mbsstr((char_m*)buf, (char_m*)BdfNameTitle);
-		if (st == NULL)
-			st = (char_m*)strstr(buf, TRANSACTD_SCHEMANAME);
-	}
-	return (st != NULL);
+    const char* p = (const char*)req.keybuf;
+    char_m* st = NULL;
+    if (p && p[0])
+    {
+        strncpy(buf, p, MAX_PATH);
+        _strlwr(buf);
+        st = _mbsstr((char_m*)buf, (char_m*)BdfNameTitle);
+        if (st == NULL)
+            st = (char_m*)strstr(buf, TRANSACTD_SCHEMANAME);
+    }
+    return (st != NULL);
 }
 
 inline bool getUserPasswd(request& req, char* &user, char* &pwd)
@@ -429,7 +428,7 @@ inline bool dbExecuter::doCreateTable(request& req)
             {
                 if (req.result == 0)
                 {
-					std::string dbname = db->name();
+                    std::string dbname = db->name();
                     dbManager::releaseDatabase(req.cid);
                     req.result = ddl_dropDataBase(dbname, dbSqlname, req.cid);
                     if (ER_DB_DROP_EXISTS+ MYSQL_ERROR_OFFSET == req.result) req.result = 0;
@@ -1087,7 +1086,7 @@ inline void dbExecuter::doInsertBulk(request& req)
             smartBulkInsert sbi(m_tb, *n);
             for (ushort_td i = 0; i < *n; i++)
             {
-				ushort_td len = *((ushort_td*)pos);
+                ushort_td len = *((ushort_td*)pos);
                 if (pos + len > (const uchar*)req.data + *req.datalen)
                 {
                     ret = STATUS_BUFFERTOOSMALL;
@@ -1136,7 +1135,7 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
         THD* thd = db->thd();
         std::string name = getTableName(req);
         tables.init_one_table(dbname.c_str(), dbname.size(), name.c_str(),
-		            name.size(), name.c_str(), TL_READ);
+                name.size(), name.c_str(), TL_READ);
         uint key_length= cp_get_table_def_key(thd, &tables, &keyPtr);
         if (!cp_tdc_open_view(thd, &tables, name.c_str(), key, key_length, OPEN_VIEW_NO_PARSE))
         {
@@ -1159,7 +1158,7 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
         String s;
         m_tb = getTable(req.pbk->handle);
         m_tb->getCreateSql(&s);
-		unsigned int len = (unsigned int)s.length();
+        unsigned int len = (unsigned int)s.length();
         if (len+1 <= *req.datalen)
         {
             char* p = nw->curPtr() - sizeof(unsigned short);// orver write row space
@@ -1768,11 +1767,11 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
 
 void makeRandomKey(unsigned char *buf, unsigned int size)
 {
-  unsigned char *end= buf + size;
-  std::random_device rnd;
-  for (; buf < end; buf++)
-    *buf = (unsigned char)(rnd() * 94 + 33);
-  *buf= 0x00;
+	unsigned char *end= buf + size;
+	std::random_device rnd;
+	for (; buf < end; buf++)
+		*buf = (unsigned char)(rnd() * 94 + 33);
+	*buf= 0x00;
 }
 
 size_t dbExecuter::getAcceptMessage(char* message, size_t size)

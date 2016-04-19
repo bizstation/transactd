@@ -18,10 +18,11 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include <boost/asio/buffer.hpp>
+//#include <boost/asio/buffer.hpp>
 #include <vector>
 #include "blobStructs.h"
 
+namespace boost{namespace asio{class const_buffer;}}
 namespace bzs
 {
 namespace db
