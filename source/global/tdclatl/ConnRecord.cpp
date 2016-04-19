@@ -74,7 +74,7 @@ STDMETHODIMP CConnRecord::get_Name(BSTR* retVal)
 {
     CComBSTR ret;
     wchar_t tmp[256];
-    ret = m_rec.nameW(tmp, 256);
+    ret = m_rec.t_name(tmp, 256);
     *retVal = ret.Copy();
     return S_OK;
 } 
@@ -83,14 +83,22 @@ STDMETHODIMP CConnRecord::get_Value(BSTR* retVal)
 {
     CComBSTR ret;
     wchar_t tmp[256];
-    if (m_rec.name[0] == 0x00 && m_rec.longValue)
-        _i64tot_s(m_rec.longValue, tmp, 256, 10);
-    else
-        m_rec.nameW(tmp, 256);
+    m_rec.value(tmp, 256);
     ret = tmp;
     *retVal = ret.Copy();
     return S_OK;
 }
+
+STDMETHODIMP CConnRecord::get_LongValue(BSTR* retVal)
+{
+    CComBSTR ret;
+    wchar_t tmp[256];
+    _i64tow_s(m_rec.longValue, tmp, 256, 10);
+    ret = tmp;
+    *retVal = ret.Copy();
+    return S_OK;
+}
+
 
 STDMETHODIMP CConnRecord::get_Status(short* retVal)
 {

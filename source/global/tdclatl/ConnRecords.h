@@ -21,6 +21,7 @@
 
 #include "tdclatl_i.h"
 #include <bzs/db/transactd/connectionRecord.h>
+#include <bzs/db/protocol/tdap/client/connMgr.h>
 
 using namespace ATL;
 
@@ -35,7 +36,7 @@ class ATL_NO_VTABLE CConnRecords
 
 public:
     CConnRecords()  {}
-    bzs::db::transactd::connection::records m_recs;
+    bzs::db::protocol::tdap::client::connMgr::records m_recs;
 
     BEGIN_COM_MAP(CConnRecords)
     COM_INTERFACE_ENTRY(IConnRecords)

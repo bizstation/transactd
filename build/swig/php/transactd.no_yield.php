@@ -2659,8 +2659,8 @@ class database extends nsdatabase {
 		return database_assignSchemaData($this->_cPtr,$src);
 	}
 
-	function copyTableData($dest,$src,$turbo,$offset=0,$keyNum=-1,$maxSkip=-1) {
-		return database_copyTableData($this->_cPtr,$dest,$src,$turbo,$offset,$keyNum,$maxSkip);
+	function copyTableData($dest,$src,$turbo,$keyNum=-1,$maxSkip=-1) {
+		return database_copyTableData($this->_cPtr,$dest,$src,$turbo,$keyNum,$maxSkip);
 	}
 
 	function convertTable($tableIndex,$turbo,$ownerName=null) {

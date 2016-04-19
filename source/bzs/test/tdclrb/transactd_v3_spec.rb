@@ -848,7 +848,7 @@ describe Transactd, 'V3Features' do
     recs = mgr.slaveStatus()
     expect(mgr.stat()).to eq 0
     for i in 0...recs.size() do
-      puts (Transactd::ConnMgr::slaveStatusName(i) + "\t" + recs[i].value)
+      puts (Transactd::ConnMgr::slaveStatusName(i) + "\t:" + recs[i].value.to_s)
     end
     mgr.disconnect()
     expect(mgr.stat()).to eq 0

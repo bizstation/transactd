@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H
 #define BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H
 /* =================================================================
- Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+ Copyright (C) 2012 2013-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -201,6 +201,7 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_STSTCS_TABLE_LIST            6
 #define TD_STSTCS_VIEW_LIST             7
 #define TD_STSTCS_SLAVE_STATUS          8
+#define TD_STSTCS_STATUS_VARIABLES      9
 
 /** connect sub operation
  */
@@ -607,6 +608,15 @@ struct handshale_t
 #define TD_VAR_TIMESTAMPMODE      17
 #define TD_VAR_SIZE               18
 
+/* server status variables index */
+#define TD_SVAR_TCP_CONNECTIONS     0
+#define TD_SVAR_TCP_WAIT_THREADS    1
+#define TD_SVAR_TPOOL_CONNECTIONS   2
+#define TD_SVAR_TPOOL_WAIT_THREADS  3
+#define TD_SVAR_PIPE_CONNECTIONS    4
+#define TD_SVAR_PIPE_WAIT_THREADS   5
+#define TD_SVAR_OPEN_DBS            6
+#define TD_SVAR_SIZE                7
 /** @endcond */
 
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.

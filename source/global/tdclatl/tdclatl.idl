@@ -1814,6 +1814,8 @@ interface IConnRecord : IDispatch{
     HRESULT _stdcall DelCount([out, retval] int* retVal); 
     [propget, id(0x000000B)]
     HRESULT _stdcall InsCount([out, retval] int* retVal); 
+    [propget, id(0x000000C)]
+    HRESULT _stdcall LongValue([out, retval] BSTR* retVal); 
 }
 
 [
@@ -1889,6 +1891,11 @@ interface IConnMgr : IDispatch{
     HRESULT _stdcall SlaveStatusName([in]int index, [out, retval] BSTR* retVal);
     [id(0x0000013)]
     HRESULT _stdcall SysvarName([in]int index, [out, retval] BSTR* retVal);
+    [id(0x0000014)]
+    HRESULT _stdcall Statusvars([out, retval] IConnRecords** retVal);
+    [id(0x0000015)]
+    HRESULT _stdcall StatusvarName([in]int index, [out, retval] BSTR* retVal);
+
 };
 
 

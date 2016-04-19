@@ -147,6 +147,18 @@ STDMETHODIMP CConnMgr::Sysvars(IConnRecords** retVal)
     return S_OK;
 }
 
+STDMETHODIMP CConnMgr::Statusvars(IConnRecords** retVal)
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    CComObject<CConnRecords>* obj;
+    CComObject<CConnRecords>::CreateInstance(&obj);
+    if (!obj)
+        return Error("CreateInstance ConnRecords", IID_IConnMgr);
+    obj->m_recs = m_mgr->statusvars();
+    setResult(obj, retVal);
+    return S_OK;
+}
+
 STDMETHODIMP CConnMgr::SlaveStatus(IConnRecords** retVal)
 {
     if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
@@ -281,5 +293,13 @@ STDMETHODIMP CConnMgr::SysvarName(int index, BSTR* retVal)
     *retVal = ret.Copy();
     return S_OK;
 }
+
+STDMETHODIMP CConnMgr::StatusvarName(int index, BSTR* retVal)
+{
+    CComBSTR ret= connMgr::statusvarName(index);
+    *retVal = ret.Copy();
+    return S_OK;
+}
+
 
 

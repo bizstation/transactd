@@ -748,14 +748,18 @@ function testConnMgr(uri)
 	var size = recs.size;
 	mgr.RemoveSystemDb(recs);
 	checkNotEqual(size , recs.size,  "RemoveSystemDb recs");
+
+	//statusvar
+	recs = mgr.statusvars();
+	checkEqual(mgr.stat , 0,  "mgr.statusvars");
 	
 	//slaveStatus
 	recs = mgr.slaveStatus();
 	checkEqual(mgr.stat , 0,  "mgr.slaveStatus");
 	var status = "";
-	/*for (var i = 0; i<recs.size; ++i)
+	for (var i = 0; i<recs.size; ++i)
 	   status += (mgr.SlaveStatusName(i) + "\t:" + recs(i).value + "\n");
-	*/
+	
 	mgr.disconnect();
 	checkEqual(mgr.stat , 0,  "mgr.disconnect");
 	WScript.Echo("\n\n" + status);

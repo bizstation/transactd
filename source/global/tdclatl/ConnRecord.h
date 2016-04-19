@@ -65,5 +65,6 @@ public:
     STDMETHOD (get_UpdCount)(int* retVal); 
     STDMETHOD (get_DelCount)(int* retVal); 
     STDMETHOD (get_InsCount)(int* retVal); 
+    STDMETHOD (get_LongValue)(BSTR* retVal); 
 };
 

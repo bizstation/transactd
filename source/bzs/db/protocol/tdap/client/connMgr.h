@@ -38,14 +38,41 @@ namespace client
 class database;
 class connMgr;
 typedef boost::shared_ptr<connMgr> connMgr_ptr;
+class stringBuffer
+{
+	friend class connMgr;
+	std::vector<char> m_buf;
+public:
+	void resize(size_t size) { m_buf.resize(size); }
+	char* ptr() { return &m_buf[0]; }
+	size_t size() const { return m_buf.size(); }
+};
+
+class connRecords
+{
+    typedef bzs::db::transactd::connection::record record;
+	friend class connMgr;
+	std::vector<record> m_records;
+	boost::shared_ptr<stringBuffer> m_buf;
+
+	//void setRecords(std::vector<record>& recs){ m_records = recs;}
+public:
+	inline const record& operator[] (int index) const { return m_records[index]; }
+	inline record& operator[] (int index) { return m_records[index]; }
+	inline size_t size() const { return m_records.size(); }
+	inline void resize(size_t size) { m_records.resize(size); }
+	inline void erase(size_t index) { m_records.erase(m_records.begin() + index); }
+	inline void clear() { m_records.clear(); m_buf.reset(); }
+};
 
 class DLLLIB connMgr : private nstable  // no copyable
 {
+
 public:
     typedef bzs::db::transactd::connection::record record;
-    typedef std::vector<record> records;
+	typedef connRecords records;
 private:
-    std::vector<record> m_records;
+	connMgr::records m_records;
     __int64 m_params[2];
     database* m_db;
     std::_tstring m_uri;
@@ -59,6 +86,7 @@ private:
     explicit connMgr(const connMgr& r);  //no copyable
     connMgr& operator=(const connMgr& r); //no copyable
     const connMgr::records& doDefinedTables(const _TCHAR* dbname, int type);
+    void setBlobFieldPointer(const bzs::db::blobHeader* bd);
     explicit connMgr(database* db);
 
 public:
@@ -71,6 +99,7 @@ public:
     const records& schemaTables(const _TCHAR* dbname);
     const records& slaveStatus();
     const records& sysvars();
+    const records& statusvars();
     const records& connections();
     const records& inUseDatabases(__int64 connid);
     const records& inUseTables(__int64 connid, int dbid);
@@ -82,6 +111,7 @@ public:
     using nstable::release;
     static void removeSystemDb(records& recs);
     static const _TCHAR* sysvarName(uint_td index);
+    static const _TCHAR* statusvarName(uint_td index);
     static const _TCHAR* slaveStatusName(uint_td index);
     static connMgr* create(database* db);
 };

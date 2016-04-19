@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_CLIENT_NSTABLE_H
 #define BZS_DB_PROTOCOL_TDAP_CLIENT_NSTABLE_H
 /* =================================================================
- Copyright (C) 2000-2013 BizStation Corp All rights reserved.
+ Copyright (C) 2000-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -144,6 +144,7 @@ protected:
     void destroy();
     void setShared();
     void seekByBookmark(bookmark_td* bm, ushort_td lockBias = LOCK_BIAS_DEFAULT);
+    const bzs::db::blobHeader* getBlobHeader();
 public:
     explicit nstable(nsdatabase* pbe);
     void addref(void);

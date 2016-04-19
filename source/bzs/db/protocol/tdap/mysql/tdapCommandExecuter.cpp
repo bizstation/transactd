@@ -1,5 +1,5 @@
 /*=================================================================
-   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2012-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -1818,15 +1818,19 @@ size_t dbExecuter::getAcceptMessage(char* message, size_t size)
 // ---------------------------------------------------------------------------
 //      class connMgrExecuter
 // ---------------------------------------------------------------------------
-connMgrExecuter::connMgrExecuter(request& req, unsigned __int64 parent)
-    : m_req(req), m_modHandle(parent)
+connMgrExecuter::connMgrExecuter(request& req, unsigned __int64 parent, blobBuffer* bb)
+    : m_req(req), m_modHandle(parent), m_blobBuffer(bb) 
 {
+    m_blobBuffer->clear();
 }
 
-int serialize(request& req, char* buf, size_t& size, const connection::records& records, short stat)
+int serialize(request& req, char* buf, size_t& size, const connection::records& records, short stat
+        , blobBuffer* bb = NULL)
 {
     req.reset();
     req.paramMask = P_MASK_DATA | P_MASK_DATALEN | P_MASK_KEYBUF;
+    if (bb && bb->fieldCount())
+        req.paramMask |= P_MASK_BLOBBODY;
     if (records.size())
         req.data = (void*)&records[0];
     else
@@ -1862,6 +1866,13 @@ int connMgrExecuter::systemVariables(char* buf, size_t& size)
     return serialize(m_req, buf, size, records, st.stat());
 }
 
+int connMgrExecuter::statusVariables(char* buf, size_t& size)
+{
+    connManager st(m_modHandle);
+    const connection::records& records = st.statusVariables();
+    return serialize(m_req, buf, size, records, st.stat());
+}
+
 int connMgrExecuter::schemaTables(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
@@ -1883,11 +1894,16 @@ int connMgrExecuter::definedViews(char* buf, size_t& size)
     return serialize(m_req, buf, size, records, st.stat());
 }
 
-int connMgrExecuter::slaveStatus(char* buf, size_t& size)
+int connMgrExecuter::slaveStatus(netsvc::server::netWriter* nw)
 {
     connManager st(m_modHandle);
-    const connection::records& records = st.readSlaveStatus();
-    return serialize(m_req, buf, size, records, st.stat());
+    const connection::records& records = st.readSlaveStatus(m_blobBuffer);
+    int v =  serialize(m_req, nw->ptr(), nw->datalen, records, st.stat(), m_blobBuffer);
+    short dymmy = 0;
+    if ((m_req.result == 0) && m_blobBuffer->fieldCount())
+        nw->datalen = m_req.serializeBlobBody(m_blobBuffer, nw->ptr(), nw->datalen,
+                                         FILE_MAP_SIZE, nw->optionalData(), dymmy);
+    return v;
 }
 
 int connMgrExecuter::disconnectOne(char* buf, size_t& size)
@@ -1926,6 +1942,8 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
             return definedDatabases(nw->ptr(), nw->datalen);
         case TD_STSTCS_SYSTEM_VARIABLES:
             return systemVariables(nw->ptr(), nw->datalen);
+        case TD_STSTCS_STATUS_VARIABLES:
+            return statusVariables(nw->ptr(), nw->datalen);
         case TD_STSTCS_SCHEMA_TABLE_LIST:
             return schemaTables(nw->ptr(), nw->datalen);
         case TD_STSTCS_TABLE_LIST:
@@ -1933,7 +1951,7 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
         case TD_STSTCS_VIEW_LIST:
             return definedViews(nw->ptr(), nw->datalen);
         case TD_STSTCS_SLAVE_STATUS:
-            return slaveStatus(nw->ptr(), nw->datalen);
+            return slaveStatus(nw);
         default:
             m_req.reset();
             m_req.result = STATUS_NOSUPPORT_OP;

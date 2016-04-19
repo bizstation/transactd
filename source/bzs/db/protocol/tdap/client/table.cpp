@@ -1,5 +1,5 @@
 /* =================================================================
- Copyright (C) 2000-2013 BizStation Corp All rights reserved.
+ Copyright (C) 2000-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -1617,22 +1617,7 @@ void table::addSendBlob(const blob* blob)
     m_stat = stat;
 }
 
-const blobHeader* table::getBlobHeader()
-{
-    short stat = m_stat;
-    const blobHeader* p;
-    /*backup current data buffer*/
-    const void* tmp = data();
-    setData(&p);
-    tdap(TD_GET_BLOB_BUF);
-    /*restore data buffer*/
-    setData((void*)tmp);
-    std::swap(stat, m_stat);
 
-    if (stat)
-        return NULL;
-    return p;
-}
 
 unsigned char* table::setBlobFieldPointer(char* ptr, const blobHeader* hd, unsigned char* to)
 {

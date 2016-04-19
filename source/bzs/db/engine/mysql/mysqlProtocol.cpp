@@ -25,6 +25,7 @@
 #include "mysqlThd.h"
 #include <bzs/env/crosscompile.h>
 #include <bzs/db/protocol/tdap/tdapcapi.h>
+#include <bzs/db/blobBuffer.h>
 
 #if defined(USE_BINLOG_VAR) && (!defined(MARIADB_BASE_VERSION) &&  MYSQL_VERSION_ID > 50600)
 #  include "sql/binlog.h"
@@ -284,16 +285,22 @@ using namespace bzs::db::transactd;
 class slaveStatus : public dummyProtocol
 {
     connection::records& m_records;
+    bzs::db::blobBuffer* m_bb;
+    int m_blobfields;
     connection::record& getRec()
     {
         m_records.push_back(connection::record());
         return m_records[m_records.size() - 1];
     }
 public:
-    inline slaveStatus(THD *thd_arg, connection::records& recs) : 
-        dummyProtocol(thd_arg), m_records(recs)
+    inline slaveStatus(THD *thd_arg, connection::records& recs, bzs::db::blobBuffer* bb) : 
+        dummyProtocol(thd_arg), m_records(recs), m_bb(bb), m_blobfields(0)
     {
         m_records.clear();   
+    }
+    ~slaveStatus()
+    {
+        m_bb->setFieldCount(m_blobfields);
     }
     bool store_longlong(longlong from, bool unsigned_flag)
     {
@@ -306,33 +313,43 @@ public:
     {
         connection::record& rec = getRec();
         rec.type = 1;
-        strncpy(rec.value, "NULL", CON_REC_VALUE_SIZE); 
+        strncpy(rec.name, "NULL", CON_REC_VALUE_SIZE); 
         return false;
     }
-#if (MYSQL_VERSION_ID < 50600 || defined(MARIADB_BASE_VERSION)) // MySQL 5.5 
-    bool store(const char *from, size_t length, CHARSET_INFO *cs)
+    bool str_store(const char *from, size_t length)
     {
         connection::record& rec = getRec();
         rec.type = 1;
         if (length && from)
-            strncpy(rec.value, from, CON_REC_VALUE_SIZE); 
+        {
+            if (length >= CON_REC_VALUE_SIZE)
+            {
+                ++m_blobfields;
+                rec.type = 2;
+                m_bb->addBlob((unsigned int)length, (unsigned short)(m_records.size() -1),
+                        (const unsigned char*)from);
+            }else
+                strncpy(rec.name, from, CON_REC_VALUE_SIZE);
+        }
         return false;
+    }
+
+#if (MYSQL_VERSION_ID < 50600 || defined(MARIADB_BASE_VERSION)) // MySQL 5.5 
+    bool store(const char *from, size_t length, CHARSET_INFO *cs)
+    {
+        return str_store(from, length);
     }
 #else
     bool store(const char *from, size_t length, const CHARSET_INFO *cs)
     {
-        connection::record& rec = getRec();
-        rec.type = 1;
-        if (length && from)
-            strncpy(rec.value, from, CON_REC_VALUE_SIZE); 
-        return false;
+        return str_store(from, length);
     }
 #endif
 };
 
-int getSlaveStatus(THD* thd, connection::records& recs)
+int getSlaveStatus(THD* thd, connection::records& recs, bzs::db::blobBuffer* bb)
 {
-	slaveStatus ss(thd, recs);
+	slaveStatus ss(thd, recs, bb);
 	return execSql(thd, "show slave status");
 }
 

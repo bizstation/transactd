@@ -1,7 +1,7 @@
 #ifndef BZS_DB_PROTOCOL_TDAP_MYSQL_TDAPCOMMANDEXECUTER_H
 #define BZS_DB_PROTOCOL_TDAP_MYSQL_TDAPCOMMANDEXECUTER_H
 /*=================================================================
-   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2012-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -99,6 +99,7 @@ public:
     inline int errorCode(int ha_error) { return tdap::mysql::errorCode(ha_error);}
     inline short_td errorCodeSht(int ha_error) { return (short_td)tdap::mysql::errorCode(ha_error);}
     netsvc::server::IAppModule* mod() { return m_mod; };
+    friend class commandExecuter;
 };
 
 /** Command dispatcher for connectionManager
@@ -107,18 +108,19 @@ class connMgrExecuter
 {
     request& m_req;
     __int64 m_modHandle;
-
+    blobBuffer* m_blobBuffer;
     int definedDatabases(char* buf, size_t& size);
     int schemaTables(char* buf, size_t& size);
     int definedTables(char* buf, size_t& size);
     int definedViews(char* buf, size_t& size);
-    int slaveStatus(char* buf, size_t& size);
+    int slaveStatus(netsvc::server::netWriter* nw);
     int systemVariables(char* buf, size_t& size);
+    int statusVariables(char* buf, size_t& size);
     int read(char* buf, size_t& size);
     int disconnectOne(char* buf, size_t& size);
     int disconnectAll(char* buf, size_t& size);
 public:
-    connMgrExecuter(request& req, unsigned __int64 parent);
+    connMgrExecuter(request& req, unsigned __int64 parent, blobBuffer* bb);
     int commandExec(netsvc::server::netWriter* nw);
 };
 
@@ -146,8 +148,8 @@ public:
     int execute(netsvc::server::netWriter* nw)
     {
         if (m_req.op == TD_STASTISTICS)
-            return connMgrExecuter(m_req, (unsigned __int64)m_dbExec->mod())
-                                            .commandExec(nw);
+            return connMgrExecuter(m_req, (unsigned __int64)m_dbExec->mod(), 
+                        m_dbExec->m_blobBuffer).commandExec(nw);
         return m_dbExec->commandExec(m_req, nw);
     }
 

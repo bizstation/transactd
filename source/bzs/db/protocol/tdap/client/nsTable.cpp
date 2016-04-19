@@ -1,5 +1,5 @@
 /* =================================================================
- Copyright (C) 2000-2013 BizStation Corp All rights reserved.
+ Copyright (C) 2000-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -861,6 +861,23 @@ void nstable::dropIndex(bool NoRenumber)
         m_keynum -= ((uchar_td)0x80);
 }
 
+const blobHeader* nstable::getBlobHeader()
+{
+    short stat = m_stat;
+    const blobHeader* p;
+    /*backup current data buffer*/
+    const void* tmp = data();
+    setData(&p);
+    tdap(TD_GET_BLOB_BUF);
+    /*restore data buffer*/
+    setData((void*)tmp);
+    std::swap(stat, m_stat);
+
+    if (stat)
+        return NULL;
+    return p;
+}
+
 short_td nstable::doBtrvErr(HWND hWnd, _TCHAR* retbuf)
 {
     return tdapErr(hWnd, m_stat, m_impl->uri, retbuf);
@@ -976,6 +993,7 @@ void nstable::throwError(const _TCHAR* caption, nstable* tb)
     THROW_BZS_ERROR_WITH_CODEMSG(tb->stat(), tmp2);
 }
 
+#pragma warn -8060
 _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
 {
     bool uri = false;
@@ -990,7 +1008,7 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
     _TUCHAR* p = _tcsmrchr((_TUCHAR*)buf, '=');
     if (p)
         *(p+1) = 0x00;
-    else if (p = _tcsmrchr((_TUCHAR*)buf, '?'))
+    else if ((p = _tcsmrchr((_TUCHAR*)buf, '?')))
         *p = 0x00;
     else if ((p = _tcsmrchr((_TUCHAR*)buf, PSEPARATOR_C)) && (uri == false))
         *p = 0x00;
@@ -1005,6 +1023,7 @@ _TCHAR* nstable::getDirURI(const _TCHAR* path, _TCHAR* buf)
     }
     return buf;
 }
+#pragma warn .8060
 
 /* Get file name from full path name.
  *

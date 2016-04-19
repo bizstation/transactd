@@ -1,6 +1,6 @@
 <?php
 /* =================================================================
- Copyright (C) 2014 BizStation Corp All rights reserved.
+ Copyright (C) 2014-2016 BizStation Corp All rights reserved.
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -1466,7 +1466,7 @@ class connRecords implements \ArrayAccess, \Countable {
 	}
 
 	function __construct($res) {
-		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__transactd__connection__records') {
+		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__connMgr__records') {
 			$this->_cPtr=$res;
 			return;
 		}
@@ -1595,6 +1595,16 @@ class connMgr {
 		return $r;
 	}
 
+	function statusvars() {
+		$r=connMgr_statusvars($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
 	function connections() {
 		$r=connMgr_connections($this->_cPtr);
 		if (is_resource($r)) {
@@ -1657,6 +1667,9 @@ class connMgr {
 
 	static function slaveStatusName($index) {
 		return connMgr_slaveStatusName($index);
+	}
+	static function statusvarName($index) {
+		return connMgr_statusvarName($index);
 	}
 }
 
@@ -2659,8 +2672,8 @@ class database extends nsdatabase {
 		return database_assignSchemaData($this->_cPtr,$src);
 	}
 
-	function copyTableData($dest,$src,$turbo,$offset=0,$keyNum=-1,$maxSkip=-1) {
-		return database_copyTableData($this->_cPtr,$dest,$src,$turbo,$offset,$keyNum,$maxSkip);
+	function copyTableData($dest,$src,$turbo,$keyNum=-1,$maxSkip=-1) {
+		return database_copyTableData($this->_cPtr,$dest,$src,$turbo,$keyNum,$maxSkip);
 	}
 
 	function convertTable($tableIndex,$turbo,$ownerName=null) {
