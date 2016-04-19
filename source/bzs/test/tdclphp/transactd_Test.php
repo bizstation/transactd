@@ -1856,11 +1856,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
           $expected_count = $expected_count + 1;
         // estimate count
         $count = $tb->recordCount(true);
-        $is_valid_count = (abs($count - $expected_count) < 5000);
+        $this->assertEquals($tb->stat(), 0);
+        $is_valid_count = (abs($count - $expected_count) < 10000);
         $this->assertTrue($is_valid_count);
         if (! $is_valid_count)
           print("true record count = " . $expected_count . " and estimate recordCount count = " . $count);
         $this->assertEquals($tb->recordCount(false), $expected_count); // true count
+        $this->assertEquals($tb->stat(), 0);
         $vv = TEST_COUNT * 3 / 4 + 1;
         $tb->clearBuffer();
         $tb->setFV(FDI_ID, $vv);

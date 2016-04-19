@@ -1805,12 +1805,14 @@ def testDelete()
   tb = testOpenTable(db)
   # estimate count
   count = tb.recordCount(true)
-  is_valid_count = ((count - expected_count).abs < 5000)
+  expect(tb.stat()).to eq 0
+  is_valid_count = ((count - expected_count).abs < 10000)
   expect(is_valid_count).to be true
   if !is_valid_count
     puts "true record count = #{expected_count.to_s} and estimate recordCount count = #{count.to_s}"
   end
   expect(tb.recordCount(false)).to eq expected_count # true count
+  expect(tb.stat()).to eq 0
   vv = TEST_COUNT * 3 / 4 + 1
   tb.clearBuffer()
   tb.setFV(FDI_ID, vv)
