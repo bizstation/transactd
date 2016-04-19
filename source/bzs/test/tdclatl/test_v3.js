@@ -749,16 +749,23 @@ function testConnMgr(uri)
 	mgr.RemoveSystemDb(recs);
 	checkNotEqual(size , recs.size,  "RemoveSystemDb recs");
 
+	//sysvar
+	recs = mgr.sysvars();
+	checkEqual(mgr.stat , 0,  "mgr.sysvars");
+	checkEqual(mgr.sysvarName(0) , "database_version",  "mgr.sysvarName");
+
 	//statusvar
 	recs = mgr.statusvars();
 	checkEqual(mgr.stat , 0,  "mgr.statusvars");
+	checkEqual(mgr.statusvarName(0) , "tcp_connections",  "mgr.statusvarName");
 	
 	//slaveStatus
 	recs = mgr.slaveStatus();
 	checkEqual(mgr.stat , 0,  "mgr.slaveStatus");
+	checkEqual(mgr.slaveStatusName(0) , "Slave_IO_State",  "mgr.slaveStatusName");
 	var status = "";
 	for (var i = 0; i<recs.size; ++i)
-	   status += (mgr.SlaveStatusName(i) + "\t:" + recs(i).value + "\n");
+	   status += (mgr.slaveStatusName(i) + "\t:" + recs(i).value + "\n");
 	
 	mgr.disconnect();
 	checkEqual(mgr.stat , 0,  "mgr.disconnect");
