@@ -36783,7 +36783,7 @@ PHP_MINFO_FUNCTION(transactd)
 
   php_info_print_table_start();
   php_info_print_table_row(2, "Version", CPP_INTERFACE_VER_MAJOR "." CPP_INTERFACE_VER_MINOR "." CPP_INTERFACE_VER_RELEASE);
-  php_info_print_table_row(2, "Required Module", TRANSACTD_PHP_REQUIRED_MODULE_PREFIX TDCLC_LIBNAME "," TD_CPP_SO_NAME);
+  php_info_print_table_row(2, "Required Module", TRANSACTD_PHP_REQUIRED_MODULE_PREFIX TDCLC_LIBNAME);
   php_info_print_table_end();
 
 }
