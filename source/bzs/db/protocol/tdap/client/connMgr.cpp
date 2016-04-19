@@ -109,6 +109,22 @@ static const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
     _T("Master_Server_Id" ),
 };
 
+
+class stringBuffer
+{
+	friend class connMgr;
+	std::vector<char> m_buf;
+public:
+	inline void resize(size_t size) { m_buf.resize(size); }
+	inline char* ptr() { return &m_buf[0]; }
+	inline size_t size() const { return m_buf.size(); }
+};
+
+
+
+inline void connRecords::clear() { m_records.clear(); m_buf.reset(); }
+
+
 #pragma pack(push, 1)
 pragma_pack1
 struct oldRrecord
