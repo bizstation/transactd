@@ -40,7 +40,7 @@ class connMgr;
 class stringBuffer;
 typedef boost::shared_ptr<connMgr> connMgr_ptr;
 
-class connRecords
+class DLLLIB connRecords
 {
     typedef bzs::db::transactd::connection::record record;
 	friend class connMgr;
@@ -48,12 +48,17 @@ class connRecords
 	boost::shared_ptr<stringBuffer> m_buf;
 	inline void resize(size_t size) { m_records.resize(size); }
 	inline void erase(size_t index) { m_records.erase(m_records.begin() + index); }
-	void clear();
 
 public:
-	inline const record& operator[] (int index) const { return m_records[index]; }
-	inline record& operator[] (int index) { return m_records[index]; }
-	inline size_t size() const { return m_records.size(); }
+    connRecords();
+    connRecords(const connRecords& r);
+    connRecords& operator=(const connRecords& r);
+	const record& operator[] (int index) const;
+	record& operator[] (int index);
+	size_t size() const;
+	void clear();
+    void release();
+    static connRecords* create();
 };
 
 class DLLLIB connMgr : private nstable  // no copyable

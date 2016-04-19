@@ -120,10 +120,43 @@ public:
 	inline size_t size() const { return m_buf.size(); }
 };
 
+//-----------------------------------------------------------------------------
+//    class connRecords
+//-----------------------------------------------------------------------------
+connRecords::connRecords(){}
 
+connRecords::connRecords(const connRecords& r) :
+    m_records(r.m_records), m_buf(r.m_buf) {}
 
-inline void connRecords::clear() { m_records.clear(); m_buf.reset(); }
+connRecords& connRecords::operator=(const connRecords& r)
+{
+    if (this != &r)
+    {
+    	m_records = r.m_records;
+	    m_buf = r.m_buf;
+    }
+    return *this;
+}
 
+void connRecords::clear() { m_records.clear(); m_buf.reset(); }
+
+const connRecords::record& connRecords::operator[] (int index) const
+{
+    return m_records[index];
+}
+
+connRecords::record& connRecords::operator[] (int index)
+{
+    return m_records[index];
+}
+
+size_t connRecords::size() const { return m_records.size(); }
+
+connRecords* connRecords::create(){ return new connRecords();}
+
+void connRecords::release(){ delete this;}
+
+//-----------------------------------------------------------------------------
 
 #pragma pack(push, 1)
 pragma_pack1
