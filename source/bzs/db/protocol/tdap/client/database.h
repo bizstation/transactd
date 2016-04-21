@@ -136,6 +136,8 @@ public:
     void setAutoSchemaUseNullkey(bool v);
     database* createAssociate();
     virtual int defaultAutoIncSpace() const { return 0; };
+    inline bool execSql(const char* utf8Sql){return createTable(utf8Sql);}
+
     static database* create();
     /* For C++ direct only. don't use by wrapper class for COM or SWIG
      This method is ignore refarence count of nsdatabse.
