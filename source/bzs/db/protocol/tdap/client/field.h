@@ -239,11 +239,11 @@ public:
 
     void* ptr() const;
 
-    inline fielddef* def() const {return m_fd;}
+    inline const fielddef* def() const {return m_fd;}
 
-    unsigned char type() const { return m_fd->type; }
+    inline unsigned char type() const { return m_fd->type; }
 
-    unsigned short len() const { return m_fd->len; }
+    inline unsigned short len() const { return m_fd->len; }
 
     inline const _TCHAR* c_str() const { return getFVstr(); }
 

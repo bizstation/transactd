@@ -109,6 +109,36 @@ static const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
     _T("Master_Server_Id" ),
 };
 
+static const _TCHAR* SLAVE_STATUS_NAME_EX[SLAVE_STATUS_EX_SIZE] =
+{
+    _T("Master_UUID"),
+    _T("Master_Info_File"),
+    _T("SQL_Delay"),
+    _T("SQL_Remaining_Delay"),
+    _T("Slave_SQL_Running_State"),
+    _T("Master_Retry_Count"),
+    _T("Master_Bind"),
+    _T("Last_IO_Error_Timestamp"),
+    _T("Last_SQL_Error_Timestamp"),
+    _T("Master_SSL_Crl"),
+    _T("Master_SSL_Crlpath"),
+    _T("Retrieved_Gtid_Set"),
+    _T("Executed_Gtid_Set"),
+    _T("Auto_Position"),
+    _T("Replicate_Rewrite_DB"),
+    _T("Channel_Name"),
+};
+
+static const _TCHAR* SLAVE_STATUS_NAME_EX_MA[SLAVE_STATUS_EX_MA_SIZE] =
+{
+    _T("Master_SSL_Crl"),
+    _T("Master_SSL_Crlpath"),
+    _T("Using_Gtid"),
+    _T("Gtid_IO_Pos"),
+    _T("Replicate_Do_Domain_Ids"),
+    _T("Replicate_Ignore_Domain_Ids"),
+    _T("Parallel_Mode"),
+};
 
 class stringBuffer
 {
@@ -342,14 +372,11 @@ void connMgr::setBlobFieldPointer(const blobHeader* hd)
     char* p = m_records.m_buf->ptr();
     for (int i = 0; i < hd->fieldCount; ++i)
     {
-        if (f->fieldNum < SLAVE_STATUS_DEFAULT_SIZE)
-        {
-            memcpy(p, f->data(), f->size);
-            m_records[f->fieldNum].longValue = (__int64)p;
-            p += f->size;
-            *p = 0x00;
-            ++p;
-        }
+        memcpy(p, f->data(), f->size);
+        m_records[f->fieldNum].longValue = (__int64)p;
+        p += f->size;
+        *p = 0x00;
+        ++p;
         f = f->next();
     }
 }
@@ -361,9 +388,6 @@ const connMgr::records& connMgr::slaveStatus()
         m_keynum = TD_STSTCS_SLAVE_STATUS;
         allocBuffer();
         getRecords();
-        if (m_records.size() > SLAVE_STATUS_DEFAULT_SIZE)
-            m_records.resize(SLAVE_STATUS_DEFAULT_SIZE);
-
         // set blob pointers
         setBlobFieldPointer(getBlobHeader());
         return m_records;
@@ -467,6 +491,18 @@ const _TCHAR* connMgr::slaveStatusName(uint_td index)
 {
     if (index < SLAVE_STATUS_DEFAULT_SIZE)
         return SLAVE_STATUS_NAME[index];
+    return _T("");
+}
+
+const _TCHAR* connMgr::slaveStatusNameEx(uint_td index, bool mariadb)
+{
+    if (index < SLAVE_STATUS_DEFAULT_SIZE)
+        return slaveStatusName(index);
+    index -= SLAVE_STATUS_DEFAULT_SIZE;
+    if(mariadb &&  (index < SLAVE_STATUS_EX_MA_SIZE))
+        return SLAVE_STATUS_NAME_EX_MA[index];
+    else if(!mariadb &&  (index < SLAVE_STATUS_EX_SIZE))
+        return SLAVE_STATUS_NAME_EX[index];
     return _T("");
 }
 

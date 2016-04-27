@@ -1136,8 +1136,6 @@ struct fieldChnageInfo
     bool changed;
 };
 
-
-
 void makeChangeInfo(const tabledef* ddef, const tabledef* sdef,
                     fieldChnageInfo* fci, bool& hasBlob)
 {

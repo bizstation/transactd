@@ -47,28 +47,28 @@
 
 class dummyProtocol : public Protocol_mysql
 {
-  THD* m_thd;
+    THD* m_thd;
     Protocol_mysql* m_backup;
     
 public:
 #if defined(MYSQL_5_7)
-  inline dummyProtocol(THD *thd_arg) : Protocol_mysql()
-  {
-    m_thd = thd_arg;
+    inline dummyProtocol(THD *thd_arg) : Protocol_mysql()
+    {
+        m_thd = thd_arg;
         m_backup = m_thd->get_protocol();
-    m_thd->set_protocol(this);
-  }
-  inline virtual ~dummyProtocol()
+        m_thd->set_protocol(this);
+    }
+    inline virtual ~dummyProtocol()
     {
         m_thd->set_protocol(m_backup);    
     }
 #else
-  inline dummyProtocol(THD *thd_arg) : Protocol_mysql(thd_arg)
-  {
-    m_thd = thd_arg;
+    inline dummyProtocol(THD *thd_arg) : Protocol_mysql(thd_arg)
+    {
+        m_thd = thd_arg;
         m_backup = m_thd->protocol;
         m_thd->protocol = this;
-  }
+    }
     inline virtual ~dummyProtocol()
     {
         m_thd->protocol = m_backup;       
@@ -92,7 +92,7 @@ public:
                      const CHARSET_INFO* /*tocs*/){return false;}
 
     virtual bool send_out_parameters(List<Item_param> *sp_params){return false;}
-  virtual Protocol::enum_protocol_type type(void){ return CP_PROTOCOL; };
+    virtual Protocol::enum_protocol_type type(void){ return CP_PROTOCOL; };
 #ifdef MARIADB_BASE_VERSION      //Mariadb 5.5 10.0 10.1
     virtual bool store(MYSQL_TIME *time, int decimals){return false;}
     virtual bool store_time(MYSQL_TIME *time, int decimals){ return false;}
@@ -100,30 +100,30 @@ public:
     virtual bool store_time(MYSQL_TIME *time){return true;};
     virtual bool store(MYSQL_TIME *time){return true;}
     virtual bool store(const char *from, size_t length, 
-        CHARSET_INFO *fromcs, CHARSET_INFO *tocs){return false;}
+    CHARSET_INFO *fromcs, CHARSET_INFO *tocs){return false;}
 #elif defined(MYSQL_5_7) 
-  bool store_decimal(const my_decimal *, uint, uint){ return true; }
-  bool store(Proto_field *){ return true; }
-  void start_row(){}
-  int read_packet(void){ return 0; }
-  int get_command(COM_DATA *, enum_server_command *){ return m_thd->lex->sql_command; }
-  enum_vio_type connection_type(void){ return VIO_TYPE_PLUGIN; }
-  ulong get_client_capabilities(void){ return 0; }
-  bool has_client_capability(unsigned long){ return false; }
-  bool connection_alive(void){ return false; }
-  bool end_row(void){ return false; }
-  void abort_row(void){}
-  void end_partial_result_set(void){}
-  int shutdown(bool){ return 0; }
-  SSL_handle get_ssl(void){ return NULL; }
-  uint get_rw_status(void){ return 0; }
-  bool get_compression(void){ return false; }
-  bool start_result_metadata(uint, uint, const CHARSET_INFO *){ return false; }
-  bool send_field_metadata(Send_field *, const CHARSET_INFO *){ return false; }
-  bool end_result_metadata(void){ return false; }
-  bool send_ok(uint, uint, ulonglong, ulonglong, const char *){ return false; }
-  bool send_eof(uint, uint){ return false; }
-  bool send_error(uint, const char *, const char *){ return false; }
+    bool store_decimal(const my_decimal *, uint, uint){ return true; }
+    bool store(Proto_field *){ return true; }
+    void start_row(){}
+    int read_packet(void){ return 0; }
+    int get_command(COM_DATA *, enum_server_command *){ return m_thd->lex->sql_command; }
+    enum_vio_type connection_type(void){ return VIO_TYPE_PLUGIN; }
+    ulong get_client_capabilities(void){ return 0; }
+    bool has_client_capability(unsigned long){ return false; }
+    bool connection_alive(void){ return false; }
+    bool end_row(void){ return false; }
+    void abort_row(void){}
+    void end_partial_result_set(void){}
+    int shutdown(bool){ return 0; }
+    SSL_handle get_ssl(void){ return NULL; }
+    uint get_rw_status(void){ return 0; }
+    bool get_compression(void){ return false; }
+    bool start_result_metadata(uint, uint, const CHARSET_INFO *){ return false; }
+    bool send_field_metadata(Send_field *, const CHARSET_INFO *){ return false; }
+    bool end_result_metadata(void){ return false; }
+    bool send_ok(uint, uint, ulonglong, ulonglong, const char *){ return false; }
+    bool send_eof(uint, uint){ return false; }
+    bool send_error(uint, const char *, const char *){ return false; }
 #endif
 };
 
@@ -150,7 +150,7 @@ public:
     {
         if (!m_writed)
         {
-      strncpy(m_bpos->filename, from, BINLOGNAME_SIZE); 
+            strncpy(m_bpos->filename, from, BINLOGNAME_SIZE); 
             m_writed = true;
         }
         return false;
@@ -160,7 +160,7 @@ public:
     {
         if (!m_writed)
         {
-      strncpy(m_bpos->filename, from, BINLOGNAME_SIZE);
+            strncpy(m_bpos->filename, from, BINLOGNAME_SIZE);
             m_writed = true;
         }
         return false;
@@ -182,11 +182,11 @@ bool safe_commit_lock::lock()
     if (m_thd)
     {
         MDL_request mdl_request;
-    #if ((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
-    mdl_request.init_with_source(MDL_key::COMMIT, "", "", MDL_SHARED, MDL_EXPLICIT, __FILE__, __LINE__);
-    #else
-    mdl_request.init(MDL_key::COMMIT, "", "", MDL_SHARED, MDL_EXPLICIT);
-    #endif
+        #if ((MYSQL_VERSION_NUM > 50700) && !defined(MARIADB_BASE_VERSION))
+        mdl_request.init_with_source(MDL_key::COMMIT, "", "", MDL_SHARED, MDL_EXPLICIT, __FILE__, __LINE__);
+        #else
+        mdl_request.init(MDL_key::COMMIT, "", "", MDL_SHARED, MDL_EXPLICIT);
+        #endif
         if (m_thd->mdl_context.acquire_lock(&mdl_request,
                                     m_thd->variables.lock_wait_timeout))
             return false;
@@ -234,9 +234,9 @@ safe_commit_lock::~safe_commit_lock()
             {
                 sprintf_s(bpos->gtid, GTID_SIZE, "%u-%u-%llu", gtid.domain_id, gtid.server_id, gtid.seq_no); 
                 size_t dir_len = dirname_length(mysql_bin_log.get_log_fname());
-          strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
-          bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
-          bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
+                strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
+                bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
+                bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
             }
         }
         return 0;
@@ -249,10 +249,10 @@ safe_commit_lock::~safe_commit_lock()
     {
         if (mysql_bin_log.is_open())
         {
-      size_t dir_len = dirname_length(mysql_bin_log.get_log_fname());
-      strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
-      bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
-      bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
+            size_t dir_len = dirname_length(mysql_bin_log.get_log_fname());
+            strncpy(bpos->filename, mysql_bin_log.get_log_fname() + dir_len, BINLOGNAME_SIZE);
+            bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
+            bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
             bpos->type = REPL_POSTYPE_POS;
         }
         return 0;
@@ -271,7 +271,7 @@ int execSql(THD* thd, const char* sql)
 {
     thd->variables.lock_wait_timeout = OPEN_TABLE_TIMEOUT_SEC;
     thd->clear_error();
-  int result = cp_query_command(thd, (char*)sql);
+    int result = cp_query_command(thd, (char*)sql);
     if (thd->is_error())
         result = thd->cp_get_sql_error();
     cp_lex_clear(thd); // reset values for insert
@@ -349,8 +349,8 @@ public:
 
 int getSlaveStatus(THD* thd, connection::records& recs, bzs::db::IblobBuffer* bb)
 {
-  slaveStatus ss(thd, recs, bb);
-  return execSql(thd, "show slave status");
+    slaveStatus ss(thd, recs, bb);
+    return execSql(thd, "show slave status");
 }
 
 #pragma GCC diagnostic warning "-Woverloaded-virtual"
@@ -396,17 +396,17 @@ bool setGrant(THD* thd, const char* host, const char* user,  const char* db)
 bool copyGrant(THD* thd, THD* thdSrc, const char* db)
 {
     Security_context* sctx = cp_security_ctx(thdSrc);
-  if (sctx->cp_master_accsess() == (ulong)~NO_ACCESS)
+    if (sctx->cp_master_accsess() == (ulong)~NO_ACCESS)
     {
         cp_security_ctx(thd)->skip_grants();
         return true;
     }
-  return setGrant(thd, sctx->cp_priv_host(), sctx->cp_priv_user(), db);
+    return setGrant(thd, sctx->cp_priv_host(), sctx->cp_priv_user(), db);
 }
 
 void setDbName(THD* thd, const char* name)
 {
-  cp_set_db(thd, name);
+    cp_set_db(thd, name);
 }
 
 /*

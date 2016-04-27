@@ -109,6 +109,7 @@ public:
     static const _TCHAR* sysvarName(uint_td index);
     static const _TCHAR* statusvarName(uint_td index);
     static const _TCHAR* slaveStatusName(uint_td index);
+    static const _TCHAR* slaveStatusNameEx(uint_td index, bool mariadb);
     static connMgr* create(database* db);
 };
 

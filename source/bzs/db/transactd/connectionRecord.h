@@ -81,30 +81,39 @@ record::type data type
 #define SLAVE_STATUS_MASTER_SERVER_ID            39
 #define SLAVE_STATUS_DEFAULT_SIZE                40
 
-#ifdef MARIADB_BASE_VERSION
-#  define SLAVE_STATUS_MASTER_SSL_CRL            40
-#  define SLAVE_STATUS_MASTER_SSL_CRLPATH        41
-#  define SLAVE_STATUS_USING_GTID                42
-#  define SLAVE_STATUS_GTID_IO_POS               43
-#  define SLAVE_STATUS_SIZE                      44
-#else
+//#ifdef MARIADB_BASE_VERSION
+#  define SLAVE_STATUS_MA_MASTER_SSL_CRL              40
+#  define SLAVE_STATUS_MA_MASTER_SSL_CRLPATH          41
+#  define SLAVE_STATUS_MA_USING_GTID                  42
+#  define SLAVE_STATUS_MA_GTID_IO_POS                 43
+#  define SLAVE_STATUS_MA_REPLICATE_DO_DOMAIN_IDS     44
+#  define SLAVE_STATUS_MA_REPLICATE_IGNORE_DOMAIN_IDS 45
+#  define SLAVE_STATUS_MA_PARALLEL_MODE               46
+#  define SLAVE_STATUS_MA_SIZE                        47
+//#else
 #  define SLAVE_STATUS_MASTER_UUID               40
-#  define SLAVE_STATUS_MASTER_INFO_FILE          41 
+#  define SLAVE_STATUS_MASTER_INFO_FILE          41
 #  define SLAVE_STATUS_SQL_DELAY                 42
 #  define SLAVE_STATUS_SQL_REMAINING_DELAY       43
-#  define SLAVE_STATUS_SQL_RUNNING_STATE         44 
+#  define SLAVE_STATUS_SQL_RUNNING_STATE         44
 #  define SLAVE_STATUS_MASTER_RETRY_COUNT        45
 #  define SLAVE_STATUS_MASTER_BIND               46
-#  define SLAVE_STATUS_LAST_IO_ERROR_TIMESTAMP   47 
+#  define SLAVE_STATUS_LAST_IO_ERROR_TIMESTAMP   47
 #  define SLAVE_STATUS_LAST_SQL_ERROR_TIMESTAMP  48
-#  define SLAVE_STATUS_MASTER_SSL_CRL            49 
+#  define SLAVE_STATUS_MASTER_SSL_CRL            49
 #  define SLAVE_STATUS_MASTER_SSL_CRLPATH        50
-#  define SLAVE_STATUS_RETRIEVED_GTID_SET        51 
+#  define SLAVE_STATUS_RETRIEVED_GTID_SET        51
 #  define SLAVE_STATUS_EXECUTED_GTID_SET         52
 #  define SLAVE_STATUS_AUTO_POSITION             53
-#  define SLAVE_STATUS_SIZE                      54
+#  define SLAVE_STATUS_REPLICATE_REWRITE_DB      54
+#  define SLAVE_STATUS_CHANNEL_NAME              55
+#  define SLAVE_STATUS_SIZE                      56
+//#endif
+#define SLAVE_STATUS_EX_MA_SIZE SLAVE_STATUS_MA_SIZE - SLAVE_STATUS_DEFAULT_SIZE
+#define SLAVE_STATUS_EX_SIZE    SLAVE_STATUS_SIZE - SLAVE_STATUS_DEFAULT_SIZE
 
-#endif
+
+
 
 #define CON_REC_VALUE_SIZE 67
 
