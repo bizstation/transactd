@@ -39,7 +39,7 @@ struct BOOKMARK
     uchar_td val[MAX_BOOKMARK_SIZE];
     bool empty;
     BOOKMARK():empty(true){}
-    bool isEmpty()
+    bool isEmpty() const
     {
         return empty;
     }

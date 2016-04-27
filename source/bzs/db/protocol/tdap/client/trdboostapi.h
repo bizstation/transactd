@@ -1276,7 +1276,13 @@ public:
         m_db->beginSnapshot(bias, bpos);
     }
 
-    ~snapshot() { m_db->endSnapshot(); }
+    void end()
+    {
+        if (m_db) m_db->endSnapshot();
+        m_db = NULL;
+    }
+
+    ~snapshot() { end(); }
 };
 
 /** snapshot for database */

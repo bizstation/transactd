@@ -270,6 +270,27 @@ inline int compareBlobType(const char* l, const char* r, bool bin, bool all, boo
     return (tmp == 0 && (llen < rlen)) ? -1 : tmp;
 }
 
+inline int compareBlobType2(const char* l, const char* r, bool bin, bool all, bool incase,
+                           int sizeByte)
+{
+    int llen = 0;
+    int rlen = 0;
+    memcpy(&llen, l, sizeByte);
+    memcpy(&rlen, r, sizeByte);
+    int tmp = std::min<int>(llen, rlen);
+    const char* lptr = *((const char**)(l + sizeByte));
+    const char* rptr = *((const char**)(r + sizeByte));
+    if (incase)
+        tmp = _strnicmp(lptr, rptr, tmp);
+    else if (bin)
+        tmp = memcmp(lptr, rptr, tmp);
+    else
+        tmp = strncmp(lptr, rptr, tmp);
+
+    if (all)
+        return (tmp == 0) ? compare<int>(llen, rlen) : tmp;
+    return (tmp == 0 && (llen < rlen)) ? -1 : tmp;
+}
 /* int nullComp(bool lnull, bool rnull, char log)
     
     lnull rnull log        ret 
@@ -445,6 +466,30 @@ template <int sizeByte, bool all>
 inline int compBlob_bin_i(const char* l, const char* r, int len)
 {
     return compareBlobType(l, r, T_BIN, all, T_INCASE, sizeByte);
+}
+
+template <int sizeByte, bool all>
+inline int compBlob2(const char* l, const char* r, int len)
+{
+    return compareBlobType2(l, r, T_STR, all, T_CASE, sizeByte);
+}
+
+template <int sizeByte, bool all>
+inline int compBlob2_bin(const char* l, const char* r, int len)
+{
+    return compareBlobType2(l, r, T_BIN, all, T_CASE, sizeByte);
+}
+
+template <int sizeByte, bool all>
+inline int compBlob2_i(const char* l, const char* r, int len)
+{
+    return compareBlobType2(l, r, T_STR, all, T_INCASE, sizeByte);
+}
+
+template <int sizeByte, bool all>
+inline int compBlob2_bin_i(const char* l, const char* r, int len)
+{
+    return compareBlobType2(l, r, T_BIN, all, T_INCASE, sizeByte);
 }
 
 
@@ -668,84 +713,171 @@ inline comp1Func getCompFunc(uchar_td type, ushort_td len, char logType, int siz
         return &compWVarString_bin<unsigned short, T_CMP_PART>;
     case ft_mytext:
     {
-        if (compAll)
+        bool rblob =  (logType & CMPLOGICAL_FIELD) != 0;
+        if (rblob)
         {
+            if (compAll)
+            {
+                if (incase)
+                {
+                    switch(sizeByte)
+                    {
+                    case 1:return &compBlob2_i<1, T_CMP_ALL>;
+                    case 2:return &compBlob2_i<2, T_CMP_ALL>;
+                    case 3:return &compBlob2_i<3, T_CMP_ALL>;
+                    case 4:return &compBlob2_i<4, T_CMP_ALL>;
+                    }
+                }
+                switch(sizeByte)
+                {
+                case 1:return &compBlob2<1, T_CMP_ALL>;
+                case 2:return &compBlob2<2, T_CMP_ALL>;
+                case 3:return &compBlob2<3, T_CMP_ALL>;
+                case 4:return &compBlob2<4, T_CMP_ALL>;
+                }
+            }
             if (incase)
             {
                 switch(sizeByte)
                 {
-                case 1:return &compBlob_i<1, T_CMP_ALL>;
-                case 2:return &compBlob_i<2, T_CMP_ALL>;
-                case 3:return &compBlob_i<3, T_CMP_ALL>;
-                case 4:return &compBlob_i<4, T_CMP_ALL>;
+                case 1:return &compBlob2_i<1, T_CMP_PART>;
+                case 2:return &compBlob2_i<2, T_CMP_PART>;
+                case 3:return &compBlob2_i<3, T_CMP_PART>;
+                case 4:return &compBlob2_i<4, T_CMP_PART>;
                 }
             }
             switch(sizeByte)
             {
-            case 1:return &compBlob<1, T_CMP_ALL>;
-            case 2:return &compBlob<2, T_CMP_ALL>;
-            case 3:return &compBlob<3, T_CMP_ALL>;
-            case 4:return &compBlob<4, T_CMP_ALL>;
+            case 1:return &compBlob2<1, T_CMP_PART>;
+            case 2:return &compBlob2<2, T_CMP_PART>;
+            case 3:return &compBlob2<3, T_CMP_PART>;
+            case 4:return &compBlob2<4, T_CMP_PART>;
             }
-        }
-        if (incase)
+        }else
         {
+            if (compAll)
+            {
+                if (incase)
+                {
+                    switch(sizeByte)
+                    {
+                    case 1:return &compBlob_i<1, T_CMP_ALL>;
+                    case 2:return &compBlob_i<2, T_CMP_ALL>;
+                    case 3:return &compBlob_i<3, T_CMP_ALL>;
+                    case 4:return &compBlob_i<4, T_CMP_ALL>;
+                    }
+                }
+                switch(sizeByte)
+                {
+                case 1:return &compBlob<1, T_CMP_ALL>;
+                case 2:return &compBlob<2, T_CMP_ALL>;
+                case 3:return &compBlob<3, T_CMP_ALL>;
+                case 4:return &compBlob<4, T_CMP_ALL>;
+                }
+            }
+            if (incase)
+            {
+                switch(sizeByte)
+                {
+                case 1:return &compBlob_i<1, T_CMP_PART>;
+                case 2:return &compBlob_i<2, T_CMP_PART>;
+                case 3:return &compBlob_i<3, T_CMP_PART>;
+                case 4:return &compBlob_i<4, T_CMP_PART>;
+                }
+            }
             switch(sizeByte)
             {
-            case 1:return &compBlob_i<1, T_CMP_PART>;
-            case 2:return &compBlob_i<2, T_CMP_PART>;
-            case 3:return &compBlob_i<3, T_CMP_PART>;
-            case 4:return &compBlob_i<4, T_CMP_PART>;
+            case 1:return &compBlob<1, T_CMP_PART>;
+            case 2:return &compBlob<2, T_CMP_PART>;
+            case 3:return &compBlob<3, T_CMP_PART>;
+            case 4:return &compBlob<4, T_CMP_PART>;
             }
-        }
-        switch(sizeByte)
-        {
-        case 1:return &compBlob<1, T_CMP_PART>;
-        case 2:return &compBlob<2, T_CMP_PART>;
-        case 3:return &compBlob<3, T_CMP_PART>;
-        case 4:return &compBlob<4, T_CMP_PART>;
         }
     }
     case ft_myblob:
     case ft_myjson:      //TODO Json binary comp
     case ft_mygeometry:  //TODO geometory binary comp
     {
-        if (compAll)
+        bool rblob =  (logType & CMPLOGICAL_FIELD) != 0;
+        if (rblob)
         {
+            if (compAll)
+            {
+                if (incase)
+                {
+                    switch(sizeByte)
+                    {
+                    case 1:return &compBlob2_bin_i<1, T_CMP_ALL>;
+                    case 2:return &compBlob2_bin_i<2, T_CMP_ALL>;
+                    case 3:return &compBlob2_bin_i<3, T_CMP_ALL>;
+                    case 4:return &compBlob2_bin_i<4, T_CMP_ALL>;
+                    }
+                }
+                switch(sizeByte)
+                {
+                case 1:return &compBlob2_bin<1, T_CMP_ALL>;
+                case 2:return &compBlob2_bin<2, T_CMP_ALL>;
+                case 3:return &compBlob2_bin<3, T_CMP_ALL>;
+                case 4:return &compBlob2_bin<4, T_CMP_ALL>;
+                }
+            }
             if (incase)
             {
                 switch(sizeByte)
                 {
-                case 1:return &compBlob_bin_i<1, T_CMP_ALL>;
-                case 2:return &compBlob_bin_i<2, T_CMP_ALL>;
-                case 3:return &compBlob_bin_i<3, T_CMP_ALL>;
-                case 4:return &compBlob_bin_i<4, T_CMP_ALL>;
+                case 1:return &compBlob2_bin_i<1, T_CMP_PART>;
+                case 2:return &compBlob2_bin_i<2, T_CMP_PART>;
+                case 3:return &compBlob2_bin_i<3, T_CMP_PART>;
+                case 4:return &compBlob2_bin_i<4, T_CMP_PART>;
                 }
             }
             switch(sizeByte)
             {
-            case 1:return &compBlob_bin<1, T_CMP_ALL>;
-            case 2:return &compBlob_bin<2, T_CMP_ALL>;
-            case 3:return &compBlob_bin<3, T_CMP_ALL>;
-            case 4:return &compBlob_bin<4, T_CMP_ALL>;
+            case 1:return &compBlob2_bin<1, T_CMP_PART>;
+            case 2:return &compBlob2_bin<2, T_CMP_PART>;
+            case 3:return &compBlob2_bin<3, T_CMP_PART>;
+            case 4:return &compBlob2_bin<4, T_CMP_PART>;
             }
         }
-        if (incase)
+        else
         {
+            if (compAll)
+            {
+                if (incase)
+                {
+                    switch(sizeByte)
+                    {
+                    case 1:return &compBlob_bin_i<1, T_CMP_ALL>;
+                    case 2:return &compBlob_bin_i<2, T_CMP_ALL>;
+                    case 3:return &compBlob_bin_i<3, T_CMP_ALL>;
+                    case 4:return &compBlob_bin_i<4, T_CMP_ALL>;
+                    }
+                }
+                switch(sizeByte)
+                {
+                case 1:return &compBlob_bin<1, T_CMP_ALL>;
+                case 2:return &compBlob_bin<2, T_CMP_ALL>;
+                case 3:return &compBlob_bin<3, T_CMP_ALL>;
+                case 4:return &compBlob_bin<4, T_CMP_ALL>;
+                }
+            }
+            if (incase)
+            {
+                switch(sizeByte)
+                {
+                case 1:return &compBlob_bin_i<1, T_CMP_PART>;
+                case 2:return &compBlob_bin_i<2, T_CMP_PART>;
+                case 3:return &compBlob_bin_i<3, T_CMP_PART>;
+                case 4:return &compBlob_bin_i<4, T_CMP_PART>;
+                }
+            }
             switch(sizeByte)
             {
-            case 1:return &compBlob_bin_i<1, T_CMP_PART>;
-            case 2:return &compBlob_bin_i<2, T_CMP_PART>;
-            case 3:return &compBlob_bin_i<3, T_CMP_PART>;
-            case 4:return &compBlob_bin_i<4, T_CMP_PART>;
+            case 1:return &compBlob_bin<1, T_CMP_PART>;
+            case 2:return &compBlob_bin<2, T_CMP_PART>;
+            case 3:return &compBlob_bin<3, T_CMP_PART>;
+            case 4:return &compBlob_bin<4, T_CMP_PART>;
             }
-        }
-        switch(sizeByte)
-        {
-        case 1:return &compBlob_bin<1, T_CMP_PART>;
-        case 2:return &compBlob_bin<2, T_CMP_PART>;
-        case 3:return &compBlob_bin<3, T_CMP_PART>;
-        case 4:return &compBlob_bin<4, T_CMP_PART>;
         }
         assert(0);
     }

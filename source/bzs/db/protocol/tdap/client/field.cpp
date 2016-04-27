@@ -2227,7 +2227,8 @@ int field::comp(const field& r, char log) const
     int ret = nullComp(r, log & 0xf);
     if (ret < 2)
         return ret;
-    comp1Func f = getCompFunc(m_fd->type, m_fd->len, log, m_fd->varLenBytes() + m_fd->blobLenBytes());
+    comp1Func f = getCompFunc(m_fd->type, m_fd->len, log | CMPLOGICAL_FIELD,
+                         m_fd->varLenBytes() + m_fd->blobLenBytes());
     return f((const char*)ptr(), (const char*)r.ptr(), r.len());
 }
 

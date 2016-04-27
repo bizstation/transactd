@@ -239,6 +239,8 @@ public:
 
     void* ptr() const;
 
+    inline fielddef* def() const {return m_fd;}
+
     unsigned char type() const { return m_fd->type; }
 
     unsigned short len() const { return m_fd->len; }

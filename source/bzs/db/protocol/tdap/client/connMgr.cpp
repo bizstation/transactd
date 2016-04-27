@@ -342,11 +342,14 @@ void connMgr::setBlobFieldPointer(const blobHeader* hd)
     char* p = m_records.m_buf->ptr();
     for (int i = 0; i < hd->fieldCount; ++i)
     {
-        memcpy(p, f->data(), f->size);
-        m_records[f->fieldNum].longValue = (__int64)p;
-        p += f->size;
-        *p = 0x00;
-        ++p;
+        if (f->fieldNum < SLAVE_STATUS_DEFAULT_SIZE)
+        {
+            memcpy(p, f->data(), f->size);
+            m_records[f->fieldNum].longValue = (__int64)p;
+            p += f->size;
+            *p = 0x00;
+            ++p;
+        }
         f = f->next();
     }
 }

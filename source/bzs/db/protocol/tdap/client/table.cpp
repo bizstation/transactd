@@ -832,6 +832,12 @@ bool table::isReadContinue(ushort_td& op)
         op = filter->isSeeksMode() ?
                 TD_KEY_SEEK_MULTI : (filter->direction() == table::findForword) ?
                         TD_KEY_NEXT_MULTI : TD_KEY_PREV_MULTI;
+
+        if (m_keynum < 0 && op == TD_KEY_NEXT_MULTI)
+            op = TD_POS_NEXT_MULTI;
+        else if (m_keynum < 0 && op == TD_KEY_PREV_MULTI)
+            op = TD_POS_PREV_MULTI;
+
         return true;
     }
     if (m_impl->mraPtr)
@@ -1123,49 +1129,94 @@ void table::find(eFindType type)
 
 void table::findFirst()
 {
-    seekFirst();
-    if (m_stat == 0)
+    if (m_keynum >= 0)
     {
-        if (m_impl->filterPtr)
+        seekFirst();
+        if (m_stat == 0)
         {
-            m_impl->filterPtr->setPosTypeNext(false);
-            getRecords(TD_KEY_NEXT_MULTI);
+            if (m_impl->filterPtr)
+            {
+                m_impl->filterPtr->setPosTypeNext(false);
+                getRecords(TD_KEY_NEXT_MULTI);
+            }
+        }
+    }else
+    {
+        stepFirst();
+        if (m_stat == 0)
+        {
+            if (m_impl->filterPtr)
+            {
+                m_impl->filterPtr->setPosTypeNext(false);
+                getRecords(TD_POS_NEXT_MULTI);
+            }
         }
     }
 }
 
 void table::findLast()
 {
-    seekLast();
-    if (m_stat == 0)
+    if (m_keynum >= 0)
     {
-        if (m_impl->filterPtr)
+        seekLast();
+        if (m_stat == 0)
         {
-            m_impl->filterPtr->setPosTypeNext(false);
-            getRecords(TD_KEY_PREV_MULTI);
+            if (m_impl->filterPtr)
+            {
+                m_impl->filterPtr->setPosTypeNext(false);
+                getRecords(TD_KEY_PREV_MULTI);
+            }
+        }
+    }else
+    {
+        stepLast();
+        if (m_stat == 0)
+        {
+            if (m_impl->filterPtr)
+            {
+                m_impl->filterPtr->setPosTypeNext(false);
+                getRecords(TD_POS_PREV_MULTI);
+            }
         }
     }
 }
 
 void table::findNext(bool notIncCurrent)
 {
-
-    if (m_impl->filterPtr)
+    if (m_keynum >= 0)
     {
-        short op = m_impl->filterPtr->isSeeksMode() ? TD_KEY_SEEK_MULTI
-                                                    : TD_KEY_NEXT_MULTI;
-        doFind(op, notIncCurrent);
+        if (m_impl->filterPtr)
+        {
+            short op = m_impl->filterPtr->isSeeksMode() ? TD_KEY_SEEK_MULTI
+                                                        : TD_KEY_NEXT_MULTI;
+            doFind(op, notIncCurrent);
+        }
+        else if (notIncCurrent == true)
+            seekNext();
+    }else
+    {
+        if (m_impl->filterPtr)
+            doFind(TD_POS_NEXT_MULTI, notIncCurrent);
+        else if (notIncCurrent == true)
+            stepNext();
     }
-    else if (notIncCurrent == true)
-        seekNext();
 }
 
 void table::findPrev(bool notIncCurrent)
 {
-    if (m_impl->filterPtr)
-        doFind(TD_KEY_PREV_MULTI, notIncCurrent);
-    else if (notIncCurrent == true)
-        seekPrev();
+    if (m_keynum >= 0)
+    {
+        if (m_impl->filterPtr)
+            doFind(TD_KEY_PREV_MULTI, notIncCurrent);
+        else if (notIncCurrent == true)
+            seekPrev();
+    }else
+    {
+        if (m_impl->filterPtr)
+            doFind(TD_POS_PREV_MULTI, notIncCurrent);
+        else if (notIncCurrent == true)
+            stepPrev();
+    }
 }
 
 void table::setPrepare(const pq_handle stmt)

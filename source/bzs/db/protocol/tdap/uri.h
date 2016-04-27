@@ -248,7 +248,7 @@ inline const _TCHAR* stripAuth(const _TCHAR* uri, _TCHAR* buf, size_t size)
         const _TCHAR* en = _tcsstr(uri, _T("@"));
         if (en)
         {
-            _tcscpy_s(st+3, size, ++en);
+            _tcscpy_s(st+3, size - (st - buf + 3), ++en);
             _TCHAR* st2 = _tcsstr(st, _T("&pwd="));
             if (st2)
                 *st2 = 0x00;

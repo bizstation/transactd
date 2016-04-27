@@ -1336,7 +1336,8 @@ public:
     bool checkFindDirection(ushort_td op)
     {
         bool ret;
-        if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI))
+        if ((op == TD_KEY_LE_PREV_MULTI) || (op == TD_KEY_PREV_MULTI)||
+                (op == TD_POS_PREV_MULTI))
             ret = (direction() == table::findBackForword);
         else
             ret = (direction() == table::findForword);

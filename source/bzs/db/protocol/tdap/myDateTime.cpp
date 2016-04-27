@@ -129,6 +129,8 @@ myDate& myDate::operator=(const wchar_t* p)
 }
 #endif
 
+static int digit_logs[7] = {1, 10, 100, 1000, 10000, 100000, 1000000}; // digit 0 to 6
+#define ZEROPOINT_SEC 3020400ULL
 
 //-------------------------------------------------------------
 void myTime::setValue(__int64 v, bool btrTime_i)
@@ -141,7 +143,7 @@ void myTime::setValue(__int64 v, bool btrTime_i)
         hh = btrt.hh;
         nn = btrt.nn;
         ss = btrt.ss;
-        ms = btrt.uu * 10000;
+        ms = btrt.uu;
         return;
     }
     if (m_bigendian)
@@ -176,7 +178,11 @@ __int64 myTime::getValue(bool btrTime_i)
         btrt.hh = hh;
         btrt.nn = nn;
         btrt.ss = ss;
-        btrt.uu = (char)(ms / 100000);
+        btrt.uu = 0;
+        if (m_dec == 1)
+            btrt.uu = (char)(ms*10);
+        else if (m_dec >= 2)
+            btrt.uu = (char)(ms / digit_logs[m_dec - 2]);
         return btrt.i;
     }
 
@@ -275,8 +281,6 @@ myTime& myTime::operator=(const wchar_t* p)
 }
 #endif
 //-------------------------------------------------------------
-static int digit_logs[7] = {1, 10, 100, 1000, 10000, 100000, 1000000}; // digit 0 to 6
-#define ZEROPOINT_SEC 3020400ULL 
 
 void maTime::setValue(__int64 v, bool btrTime_i)
 {
