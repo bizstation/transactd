@@ -126,7 +126,7 @@ class connections
                                      boost::system::error_code& ec);
     bool isUseNamedPipe(asio::ip::tcp::endpoint& ep);
 #ifdef USE_PIPE_CLIENT
-    connection* getConnectionPipe();
+    connection* getConnectionPipe(unsigned short port);
 #endif
     inline connection* doConnect(connection* c);
     inline connection* createConnection(asio::ip::tcp::endpoint& ep, bool namedPipe);
