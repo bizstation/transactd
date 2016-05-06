@@ -211,7 +211,6 @@ void dumpStdErr(int op, request& req, table* tb)
     }
 }
 
-#define MYSQL_ERROR_OFFSET 25000
 int errorCode(int ha_error)
 { // see mysqld_error.h or my_base.h or dbManager.h share/errmsg.txt
 

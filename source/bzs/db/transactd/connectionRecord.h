@@ -89,7 +89,13 @@ record::type data type
 #  define SLAVE_STATUS_MA_REPLICATE_DO_DOMAIN_IDS     44
 #  define SLAVE_STATUS_MA_REPLICATE_IGNORE_DOMAIN_IDS 45
 #  define SLAVE_STATUS_MA_PARALLEL_MODE               46
-#  define SLAVE_STATUS_MA_SIZE                        47
+#  define SLAVE_STATUS_MA_RETRIED_TRANSACTIONS        47
+#  define SLAVE_STATUS_MA_MAX_RELAY_LOG_SIZE          48
+#  define SLAVE_STATUS_MA_EXECUTED_LOG_ENTRIES        49
+#  define SLAVE_STATUS_MA_SLAVE_RECV_HEARTBEATS       50
+#  define SLAVE_STATUS_MA_SLAVE_HEARTBEATS_PERIOD     51
+#  define SLAVE_STATUS_MA_GTID_SLAVE_POS              52
+#  define SLAVE_STATUS_MA_SIZE                        53
 //#else
 #  define SLAVE_STATUS_MASTER_UUID               40
 #  define SLAVE_STATUS_MASTER_INFO_FILE          41

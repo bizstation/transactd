@@ -163,11 +163,21 @@ _TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size)
         p = _T("Cannot create databse. Please check the database exists ")
             _T("already.");
         break;
+    case STATUS_SQL_PARSE_ERROR:
+        p = _T("Sql perse error.");
+        break;
     default:
+    {
+        const _TCHAR* s=_T("");
+        if (errorCode > MYSQL_ERROR_OFFSET)
+        {
+            s = _T(" of mysql error codes");
+            errorCode -= MYSQL_ERROR_OFFSET;
+        }
         _stprintf_s(buf, size, _T("The error occurred by database operation. ")
-                               _T("\nThe error code is %d.\nProcessing is ")
-                               _T("stopped."),
-                    errorCode);
+                               _T("\nThe error code is %d%s.\nProcessing is ")
+                               _T("stopped."), errorCode, s);
+    }
     }
     if (p)
     {

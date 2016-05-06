@@ -354,9 +354,6 @@ class connection : public iconnection, private boost::noncopyable
                     m_readLen = 0;
 
                 sentResult = m_comm->send();
-                //When named pipe, dissconnect from local client.
-                //if (ret == EXECUTE_RESULT_ACCESS_DNIED)
-                //    return;
                 m_module->cleanup();
             }
         }
@@ -365,7 +362,7 @@ class connection : public iconnection, private boost::noncopyable
     char* getUniqName(DWORD id, __int64 processid, const char* name, char* buf,
                       int size)
     {
-        sprintf_s(buf, size, "%s_%lu_%Lu", name, id, processid);
+        sprintf_s(buf, size, "%s_%lu_%llu", name, id, processid);
         return buf;
     }
 
@@ -439,10 +436,7 @@ public:
             m_exitHandler->setModule(m_module.get());
         tmp[0] = 0x00; // signe of handshakable
         memcpy(tmp + 3, &m_shareMemSize, sizeof(unsigned int));// sharemem size
-        //asio::write(m_socket, buffer(tmp, 7), e);
-        //len = asio::read(m_socket, buffer(buf, 9), e);
-        //if (len != 9)
-        //    THROW_BZS_ERROR_WITH_MSG("handshake error");
+
         //send handshake packet
         m_module->onAccept(m_sharedMem->writeBuffer(), m_sharedMem->size());
         m_comm->send();

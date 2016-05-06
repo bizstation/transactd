@@ -1264,7 +1264,7 @@ inline void moveFirstRecord(table* src, short keyNum)
 {
     if (keyNum >= MOVE_TYPE_KEY)
     {
-        src->setKeyNum(keyNum);
+        src->setKeyNum((char_td)keyNum);
         src->seekFirst();
     }
     else if (keyNum == MOVE_TYPE_NONKEY)

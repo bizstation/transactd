@@ -348,7 +348,7 @@ enum combineType
 #define REPL_POSTYPE_NONE               0  
 #define REPL_POSTYPE_MARIA_GTID         1  // like 0-1-50
 #define REPL_POSTYPE_POS                2  // 12345
-
+#define REPL_POSTYPE_GTID               3  
 
 
 // Read row lock
@@ -485,6 +485,8 @@ enum combineType
 #define ERROR_TD_NET_OTHER              3810
 #define ERROR_TD_C_CLIENT_UNKNOWN       3811
 #define ERROR_TD_RECONNECTED            3900
+
+#define MYSQL_ERROR_OFFSET              25000
 
 inline bool canRecoverNetError(short code)
 {

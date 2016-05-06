@@ -680,7 +680,7 @@ class pipeConnection : public connectionImple<platform_stream>
         char* p = buf;
         DWORD processId = GetCurrentProcessId();
 		unsigned __int64 clientid = (unsigned __int64) this;
-        sprintf_s(p, 120, "%s_%u_%llu", name, processId, clientid);
+        sprintf_s(p, 120, "%s_%lu_%llu", name, processId, clientid);
         return p;
     }
 

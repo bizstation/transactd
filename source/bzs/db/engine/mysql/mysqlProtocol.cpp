@@ -29,6 +29,7 @@
 
 #if defined(USE_BINLOG_VAR) && (!defined(MARIADB_BASE_VERSION) &&  MYSQL_VERSION_ID > 50600)
 #  include "sql/binlog.h"
+#  include "rpl_gtid.h"
 #endif
 
 //----------------------------------------------------------------------
@@ -134,10 +135,32 @@ public:
 class masterStatus : public dummyProtocol
 {
     binlogPos* m_bpos;
-    bool m_writed;
+    int m_index;
+	std::string getLastGtid(const char *from)
+	{
+		std::string s;
+		char buf[MAX_PATH];
+		strcpy_s(buf, MAX_PATH, from);
+		char* p = strrchr(buf, ',');
+		p = p ? p + 1: buf;
+		char* pp = strchr(p, ':');
+		if (pp)
+		{
+			*pp = 0x00;
+			s = p;
+			s += ":";
+			p = pp+1;
+            pp = strrchr(p, ':');
+            if (pp) p = pp +1;
+			pp = strchr(p, '-');
+			if (pp) p = pp +1;
+			s += p;
+		}
+		return s;
+	}
 public:
     inline masterStatus(THD *thd_arg, binlogPos* bpos) : 
-        dummyProtocol(thd_arg), m_bpos(bpos), m_writed(false) {}
+        dummyProtocol(thd_arg), m_bpos(bpos), m_index(0) {}
     bool store_longlong(longlong from, bool unsigned_flag)
     {
         m_bpos->pos = (ulonglong)from;
@@ -148,21 +171,27 @@ public:
 #if (MYSQL_VERSION_ID < 50600 || defined(MARIADB_BASE_VERSION)) // mariadb 5.5 
     bool store(const char *from, size_t length, CHARSET_INFO *cs)
     {
-        if (!m_writed)
-        {
+        if (m_index == 0)
             strncpy(m_bpos->filename, from, BINLOGNAME_SIZE); 
-            m_writed = true;
-        }
+        ++m_index;
         return false;
     }
 #else
     bool store(const char *from, size_t length, const CHARSET_INFO *cs)
     {
-        if (!m_writed)
-        {
+        if (m_index == 0)
             strncpy(m_bpos->filename, from, BINLOGNAME_SIZE);
-            m_writed = true;
+        else if (m_index == 3)
+        {
+			std::string g = getLastGtid(from);
+			if (g.size())
+			{
+				strncpy(m_bpos->gtid, g.c_str(), GTID_SIZE);
+				m_bpos->gtid[GTID_SIZE -1] = 0x00;
+				m_bpos->type = REPL_POSTYPE_GTID;
+			}
         }
+        ++m_index;
         return false;
     }
 #endif
@@ -244,6 +273,28 @@ safe_commit_lock::~safe_commit_lock()
 #endif
 
 #ifdef USE_BINLOG_VAR
+	inline void readGtid(binlogPos* bpos)
+	{
+		#if (MYSQL_VERSION_ID > 50600)
+		int gtid_set_size = 0;
+		char p[256] = { 0 };
+		global_sid_lock->wrlock();
+		//ToDo extruct master gtid
+		const Gtid_set* gtid_set = gtid_state->cp_get_executed_gtids();
+		rpl_sidno n = gtid_set->get_max_sidno();
+		rpl_gno gno = gtid_set->get_last_gno(n);
+		gtid_set->get_sid_map()->sidno_to_sid(n).to_string(p);
+		gtid_set_size = (int)strlen(p);
+		if (gtid_set_size > 0)
+		{
+			sprintf_s(bpos->gtid, GTID_SIZE, "%s:%lld", p, gno);
+			bpos->gtid[GTID_SIZE - 1] = 0x00;
+			bpos->type = REPL_POSTYPE_GTID;
+		}
+		global_sid_lock->unlock();
+		#endif
+	}
+
     // Linux MySQL can access to the mysql_bin_log variable
     inline short getBinlogPosInternal(THD* , binlogPos* bpos, THD* /*tmpThd*/)
     {
@@ -254,6 +305,7 @@ safe_commit_lock::~safe_commit_lock()
             bpos->pos = my_b_tell(mysql_bin_log.get_log_file());
             bpos->filename[BINLOGNAME_SIZE-1] = 0x00;
             bpos->type = REPL_POSTYPE_POS;
+			readGtid(bpos);
         }
         return 0;
     }

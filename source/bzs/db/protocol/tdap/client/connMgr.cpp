@@ -138,6 +138,12 @@ static const _TCHAR* SLAVE_STATUS_NAME_EX_MA[SLAVE_STATUS_EX_MA_SIZE] =
     _T("Replicate_Do_Domain_Ids"),
     _T("Replicate_Ignore_Domain_Ids"),
     _T("Parallel_Mode"),
+    _T("Retried_transactions"),
+    _T("Max_relay_log_size"),
+    _T("Executed_log_entries"),
+    _T("Slave_received_heartbeats"),
+    _T("Slave_heartbeat_period"),
+    _T("Gtid_Slave_Pos"),
 };
 
 class stringBuffer
