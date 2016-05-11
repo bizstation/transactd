@@ -466,6 +466,16 @@ STDMETHODIMP CDatabase::CreateTable(VARIANT FileNumOrSql, BSTR Uri,
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::ExecSql(BSTR Sql, VARIANT_BOOL* Value)
+{
+    int size = WideCharToMultiByte(CP_UTF8, 0, Sql, -1, NULL, 0, NULL, NULL);
+    char* p = new char[size + 1];
+    WideCharToMultiByte(CP_UTF8, 0, Sql, -1, p, size + 1, NULL, NULL);
+    *Value = m_db->execSql(p);
+    delete [] p;
+    return S_OK;
+}
+
 STDMETHODIMP CDatabase::ExistsTableFile(short TableIndex, BSTR OwnerName)
 {
     m_db->existsTableFile(TableIndex, OwnerName);

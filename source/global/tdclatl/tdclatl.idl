@@ -569,7 +569,9 @@ interface IDatabase : IDispatch
   HRESULT _stdcall IsAssociate([out, retval] VARIANT_BOOL* retVal);
   [id(0x00000100)]
   HRESULT _stdcall GetCreateViewSql([in]BSTR name, [out, retval] BSTR* retVal);
-  
+  [id(0x00000101)]
+  HRESULT _stdcall ExecSql([in] BSTR Sql, [out, retval] VARIANT_BOOL* Value);
+
 };
 
 

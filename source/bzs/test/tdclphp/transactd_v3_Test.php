@@ -762,7 +762,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         if ($this->isMariaDBWithGtid($db))
           $this->assertEquals($bpos->type, bz\transactd::REPL_POSTYPE_MARIA_GTID);
         else
-          $this->assertEquals($bpos->type, bz\transactd::REPL_POSTYPE_POS);
+        {
+          $ret = ($bpos->type == bz\transactd::REPL_POSTYPE_POS) || ($bpos->type == bz\transactd::REPL_POSTYPE_GTID);
+          $this->assertEquals($ret , true);
+        }
         $this->assertNotEquals($bpos->pos, 0);
         $this->assertNotEquals($bpos->filename, "");
         //echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
@@ -773,7 +776,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     {
         $db = new bz\database();
         $this->openDatabase($db);
-        $db->createTable("create view idlessthan5 as select * from user where id < 5");
+        $db->execSql("create view idlessthan5 as select * from user where id < 5");
         $view = $db->getCreateViewSql("idlessthan5");
         $this->assertEquals((strpos($view, "idlessthan5") !== false), true);
         $this->assertEquals((strpos($view, "名前") !== false), true);
@@ -860,10 +863,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         //slaveStatus
         $recs = $mgr->slaveStatus();
         $this->assertEquals($mgr->stat(), 0);
-        $this->assertEquals(bz\connMgr::slaveStatusName(0), "Slave_IO_State");
+        $this->assertEquals($mgr->slaveStatusName(0), "Slave_IO_State");
         for ($i = 0; $i < $recs->size(); $i++)
         {
-            echo(PHP_EOL . bz\connMgr::slaveStatusName($i) . "\t:" . $recs[$i]->value);
+            echo(PHP_EOL . $mgr->slaveStatusName($i) . "\t:" . $recs[$i]->value);
         }
         $mgr->disconnect();
         $this->assertEquals($mgr->stat(), 0);

@@ -164,7 +164,7 @@ public:
     STDMETHOD(CreateAssociate)(IDatabase** retVal);
     STDMETHOD(get_IsAssociate)(VARIANT_BOOL* retVal);
     STDMETHOD(GetCreateViewSql)(BSTR name, BSTR* retVal);
-
+    STDMETHOD(ExecSql)(BSTR Sql, VARIANT_BOOL* Value);
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)
