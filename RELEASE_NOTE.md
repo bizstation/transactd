@@ -1,5 +1,31 @@
 Release note
 ================================================================================
+Version 3.4.0 2016/05/11
+================================================================================
+New Features
+--------------------------------------------------------------------------------
+* `beginSnapshot()` supports GTID in MySQL 5.6 and 5.7. It returns GTID with
+  binlog position.
+
+* `connMgr::slaveStatus()` was made possible to get extended status with MySQL
+  and MariaDB GTID.
+
+* `database::execSql()` was added. It can execute SQL statement which not have
+  result record set, and returns the statement has been succeeded or not.
+
+Modifications
+--------------------------------------------------------------------------------
+* Fix a bug that clients can not connect to server because shared memory name is
+  wrong in named pipe connection on Windows 10 64bit.
+
+* Fix a bug that clients can not connect to server which have non-default port
+  number in named pipe connection.
+
+* Fix buffer overrun in `stripAuth()`.
+
+* Change `tdclcpp:fielddef::setSchemaCodePage()` to public method.
+
+
 Version 3.3.0 2016/04/18
 ================================================================================
 New Features
