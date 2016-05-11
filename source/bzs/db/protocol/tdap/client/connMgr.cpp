@@ -281,6 +281,7 @@ bool connMgr::connect(const _TCHAR* uri)
         btrVersions vs;
         m_db->getBtrVersion(&vs);
         m_pluginVer = vs.versions[VER_IDX_PLUGIN];
+        m_serverVer = vs.versions[VER_IDX_DB_SERVER];
     }
     return ret;
 }
@@ -493,17 +494,18 @@ const _TCHAR* connMgr::statusvarName(uint_td index)
     return _T("");
 }
 
-const _TCHAR* connMgr::slaveStatusName(uint_td index)
+const _TCHAR* slaveStatusName1(uint_td index)
 {
     if (index < SLAVE_STATUS_DEFAULT_SIZE)
         return SLAVE_STATUS_NAME[index];
     return _T("");
 }
 
-const _TCHAR* connMgr::slaveStatusNameEx(uint_td index, bool mariadb)
+const _TCHAR* connMgr::slaveStatusName(uint_td index) const
 {
+    bool mariadb = m_serverVer.isMariaDB();
     if (index < SLAVE_STATUS_DEFAULT_SIZE)
-        return slaveStatusName(index);
+        return slaveStatusName1(index);
     index -= SLAVE_STATUS_DEFAULT_SIZE;
     if(mariadb &&  (index < SLAVE_STATUS_EX_MA_SIZE))
         return SLAVE_STATUS_NAME_EX_MA[index];
