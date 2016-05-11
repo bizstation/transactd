@@ -615,7 +615,7 @@ inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet
     return store_create_info(thd, table_list, packet, create_info_arg, with_db_name!=0);
 }
 
-#define cp_get_executed_gtids get_executed_gtids
+#define cp_get_executed_gtids get_logged_gtids
 
 #endif // Not MARIADB_10_1 || MARIADB_10_0
 
