@@ -133,6 +133,7 @@ private:
     int m_usingExclusive;
     short m_trnType;
     short m_cid;
+    bool m_inprocessSnapshot;
     enum_tx_isolation m_iso;
     std::vector<sec_db> m_securityCtxs;
     Security_context* m_backup_sctx;
@@ -183,7 +184,7 @@ public:
         return m_tables;
     }
 
-    bool beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd);
+    bool beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd, IblobBuffer* bb);
     bool endSnapshot();
     table* openTable(const std::string& name, short mode,
                      const char* ownerName, std::string dbname);

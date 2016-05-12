@@ -19341,7 +19341,6 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_beginSnapshot) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
   short arg2 = CONSISTENT_READ;
   binlogPos* bpos = new binlogPos();
-  memset(bpos, 0, sizeof(binlogPos));
   zval_args_type args[2];
   int argc = ZEND_NUM_ARGS();
   SWIG_ResetError(TSRMLS_C);
@@ -32202,7 +32201,6 @@ ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_beginSnapshot) {
   bzs::db::protocol::tdap::client::pooledDbManager *arg1 = 0 ;
   short arg2 = CONSISTENT_READ;
   binlogPos* bpos = new binlogPos();
-  memset(bpos, 0, sizeof(binlogPos));
   int argc = ZEND_NUM_ARGS();
   zval_args_type args[2];
   SWIG_ResetError(TSRMLS_C);

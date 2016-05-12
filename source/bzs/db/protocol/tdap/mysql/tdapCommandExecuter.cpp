@@ -1370,12 +1370,13 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 }
                 #endif
                 transactionResult = db->beginSnapshot(
-                        getIsolationLevel(opTrn), withSnapshot ? &bpos : NULL, thd);
+                        getIsolationLevel(opTrn), withSnapshot ? &bpos : NULL, thd, m_blobBuffer);
                 req.result = errorCodeSht(db->stat());
                 if (transactionResult && withSnapshot)
                 {   
                     // return binlog position for replication.
                     req.paramMask = P_MASK_STAT;
+                    if (bpos.type == REPL_POSTYPE_GTID) req.paramMask |= P_MASK_BLOBBODY;
                     memcpy(req.data, &bpos, sizeof(binlogPos));
                     req.resultLen = sizeof(binlogPos);
                 }

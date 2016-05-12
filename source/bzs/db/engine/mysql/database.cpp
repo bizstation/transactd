@@ -32,6 +32,10 @@
 
 extern unsigned int g_timestamp_always;
 
+/* implemnts in mysqlProtocol.cpp */
+extern short getBinlogPos(THD* thd, binlogPos* pos, THD* tmpThd, bzs::db::IblobBuffer* bb);
+
+
 namespace bzs
 {
 namespace db
@@ -193,7 +197,7 @@ tableCacheCounter database::tableRef;
 database::database(const char* name, short cid)
     : m_dbname(name), m_thd(createThdForThread()),m_inAutoTransaction(NULL), 
        m_privilege(0xFFFF), m_inTransaction(0), m_inSnapshot(0), m_stat(0),
-       m_usingExclusive(false), m_trnType(0), m_cid(cid)
+       m_usingExclusive(false), m_trnType(0), m_cid(cid), m_inprocessSnapshot(false)
 {
     cp_security_ctx(m_thd)->skip_grants();
     
@@ -494,7 +498,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
     if (tb == NULL)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_FILE_NOT_OPENED,
                                      "Invalid table id.");
-    if (tb->m_blobBuffer && tb->blobFields())
+    if (tb->m_blobBuffer && tb->blobFields() && !m_inprocessSnapshot)
         tb->m_blobBuffer->clear();
 
     // Change to shared lock is user tranasction only.
@@ -710,7 +714,7 @@ void database::useAllTables()
     }
 }
 
-bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd)
+bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd, IblobBuffer* bb)
 {
     if (m_inTransaction)
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_ALREADY_INTRANSACTION, "Transaction is already beginning.");        
@@ -735,9 +739,14 @@ bool database::beginSnapshot(enum_tx_isolation iso, binlogPos* bpos, THD* tmpThd
                 m_stat = STATUS_LOCK_ERROR;
                 return false;
             }
-            m_stat = getBinlogPos(m_thd, bpos, tmpThd);
+            bb->clear();
+            
+            m_stat = getBinlogPos(m_thd, bpos, tmpThd, bb);
+            
             if (m_stat) return false;
-            useAllTables(); // execute scope in safe_commit_lock  
+            m_inprocessSnapshot = true;
+            useAllTables(); // execute scope in safe_commit_lock 
+            m_inprocessSnapshot = false;
         }else
             useAllTables();
     }  

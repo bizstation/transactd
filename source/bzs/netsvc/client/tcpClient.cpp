@@ -176,7 +176,7 @@ connection* connections::getConnectionPipe(unsigned short port)
     for (int i = 0; i < (int)m_conns.size(); i++)
     {
         pipeConnection* pc = dynamic_cast<pipeConnection*>(m_conns[i]);
-        if(pc->endpoint().port() == port)
+        if(pc && (pc->endpoint().port() == port))
             return pc;
     }
     return NULL;

@@ -20987,7 +20987,6 @@ SWIGINTERN VALUE _wrap_nsdatabase_beginSnapshot(int nargs, VALUE *args, VALUE se
   short arg2;
   short val2;
   binlogPos* bpos = new binlogPos();
-  memset(bpos, 0, sizeof(binlogPos));
   int _v;
   void *vptr = 0;
   int res;
@@ -36522,7 +36521,6 @@ SWIGINTERN VALUE _wrap_pooledDbManager_beginSnapshot(int nargs, VALUE *args, VAL
   short arg2;
   short val2;
   binlogPos* bpos = new binlogPos();
-  memset(bpos, 0, sizeof(binlogPos));
   int _v;
   void *vptr = 0;
   int res;
