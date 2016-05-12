@@ -78,3 +78,23 @@
  bool table_cache_init(void);
  void table_cache_free(void);
  bool table_def_init(void);
+--- sql/rpl_gtid.h
++++ sql/rpl_gtid.h
+@@ -571,7 +571,7 @@ private:
+ 
+ 
+ /// Protects Gtid_state.  See comment above gtid_state for details.
+-extern Checkable_rwlock *global_sid_lock;
++extern MYSQL_PLUGIN_IMPORT Checkable_rwlock *global_sid_lock;
+ 
+ /// One of the locks that protects GTID_MODE.  See
+ /// get_gtid_mode(enum_gtid_mode_lock).
+@@ -3102,7 +3102,7 @@ log.  So at the time the binary log begins, we just set
+   NOT_YET_DETERMINED_GROUP
+ };
+ /// Global state of GTIDs.
+-extern Gtid_state *gtid_state;
++extern MYSQL_PLUGIN_IMPORT Gtid_state *gtid_state;
+ 
+ 
+ /**
