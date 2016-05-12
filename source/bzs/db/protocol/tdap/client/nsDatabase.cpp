@@ -159,7 +159,7 @@ binlogPos::binlogPos(const binlogPos& r) : pos(r.pos), type(r.type),
     gtid = (r.gtid == r.gtid_buf) ? gtid_buf: r.gtid;
 }
 
-binlogPos::~binlogPos(){}
+binlogPos::~binlogPos(){ delete m_impl;}
 
 void binlogPos::setGtid(const char* p)
 {
