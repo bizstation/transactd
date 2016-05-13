@@ -767,7 +767,8 @@ describe Transactd, 'V3Features' do
     if (isMariaDBWithGtid(db))
       expect(bpos.type).to eq Transactd::REPL_POSTYPE_MARIA_GTID
     else
-      expect(bpos.type).to eq Transactd::REPL_POSTYPE_POS
+      ret = (bpos.type == Transactd::REPL_POSTYPE_POS) || (bpos.type == Transactd::REPL_POSTYPE_GTID)
+      expect(ret).to eq true
     end
     expect(bpos.pos).not_to eq  0
     expect(bpos.filename).not_to eq ""
@@ -778,7 +779,7 @@ describe Transactd, 'V3Features' do
   it 'get sql' do
     db = Transactd::Database.new()
     openDatabase(db)
-    db.createTable("create view idlessthan5 as select * from user where id < 5")
+    db.execSql("create view idlessthan5 as select * from user where id < 5")
     view = db.getCreateViewSql("idlessthan5")
     expect(view.include?("idlessthan5")).to eq true
     expect(view.include?("名前")).to eq true
@@ -855,10 +856,10 @@ describe Transactd, 'V3Features' do
     # slaveStatus
     recs = mgr.slaveStatus()
     expect(mgr.stat()).to eq 0
-    expect(Transactd::ConnMgr::slaveStatusName(0)).to eq "Slave_IO_State"
+    expect(mgr.slaveStatusName(0)).to eq "Slave_IO_State"
 
     for i in 0...recs.size() do
-      puts (Transactd::ConnMgr::slaveStatusName(i) + "\t:" + recs[i].value.to_s)
+      puts (mgr.slaveStatusName(i) + "\t:" + recs[i].value.to_s)
     end
     mgr.disconnect()
     expect(mgr.stat()).to eq 0

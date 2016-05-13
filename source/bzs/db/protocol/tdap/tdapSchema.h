@@ -382,8 +382,8 @@ protected:
 public:
     FLAGS enableFlags; // ** enable flags. see below
 
-private:
     inline void setSchemaCodePage(uint_td v) { m_schemaCodePage = (ushort_td)v; };
+private:
     friend class client::dbdef;
     friend class client::fielddefs;
     friend struct tabledef;

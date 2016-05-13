@@ -126,7 +126,7 @@ class connections
                                      boost::system::error_code& ec);
     bool isUseNamedPipe(asio::ip::tcp::endpoint& ep);
 #ifdef USE_PIPE_CLIENT
-    connection* getConnectionPipe();
+    connection* getConnectionPipe(unsigned short port);
 #endif
     inline connection* doConnect(connection* c);
     inline connection* createConnection(asio::ip::tcp::endpoint& ep, bool namedPipe);
@@ -680,7 +680,7 @@ class pipeConnection : public connectionImple<platform_stream>
         char* p = buf;
         DWORD processId = GetCurrentProcessId();
 		unsigned __int64 clientid = (unsigned __int64) this;
-        sprintf_s(p, 120, "%s_%u_%llu", name, processId, clientid);
+        sprintf_s(p, 120, "%s_%lu_%llu", name, processId, clientid);
         return p;
     }
 

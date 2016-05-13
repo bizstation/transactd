@@ -169,11 +169,21 @@ PACKAGE _TCHAR* getErrorMessageLocale(int errorCode, _TCHAR* buf, size_t size)
         p = _T("データベースの作成に失敗しました。既にデータベースが存在してい")
             _T("ないか確認してください。");
         break;
+    case STATUS_SQL_PARSE_ERROR:
+        p = _T("Sql perse error.");
+        break;
     default:
+    {
+        const _TCHAR* s=_T("");
+        if (errorCode > MYSQL_ERROR_OFFSET)
+        {
+            s = _T("MySqlのエラー番号");
+            errorCode -= MYSQL_ERROR_OFFSET;
+        }
         _stprintf_s(buf, 256, _T("データベースオペレーションでエラーが発生しま")
-                              _T("した。\r\nエラー番号は %d \r\n ")
-                              _T("処理を中止します。"),
-                    errorCode);
+                    _T("した。\r\nエラー番号は%s %d \r\n処理を中止します。"),
+                    s ,errorCode);
+    }
     }
     if (p)
     {

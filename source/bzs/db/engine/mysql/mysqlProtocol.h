@@ -61,8 +61,6 @@ public:
     ~safe_commit_lock();
 };
 
-short getBinlogPos(THD* thd, binlogPos* pos, THD* tmpThd);
-int getSlaveStatus(THD* thd, bzs::db::transactd::connection::records& recs);
 int execSql(THD* thd, const char* sql);
 void readDbList(THD* thd, bzs::db::transactd::connection::records& recs);
 bool setGrant(THD* thd, const char* host, const char* user,  const char* db);

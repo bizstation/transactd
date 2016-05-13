@@ -57,12 +57,24 @@ DLLLIB BTRCALLID_PTR getTrnsctdEntryPoint();
 pragma_pack1
 #define BINLOGNAME_SIZE 119
 #define GTID_SIZE       64
-struct binlogPos
+#define BINLOGPOS_SIZE  192
+struct DLLLIB binlogPos
 {
+    friend class nsdatabase;
     unsigned long long pos;
     char type;
     char filename[BINLOGNAME_SIZE];
-    char gtid[GTID_SIZE];
+private:
+    char gtid_buf[GTID_SIZE];
+    struct bpimple* m_impl;
+    void setGtid(const char* p);
+public:
+    const char* gtid;
+    binlogPos();
+    binlogPos(const binlogPos& r);
+    ~binlogPos();
+    binlogPos& operator=(const binlogPos& r);
+
 };
 
 

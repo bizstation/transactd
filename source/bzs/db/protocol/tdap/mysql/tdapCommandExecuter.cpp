@@ -211,7 +211,6 @@ void dumpStdErr(int op, request& req, table* tb)
     }
 }
 
-#define MYSQL_ERROR_OFFSET 25000
 int errorCode(int ha_error)
 { // see mysqld_error.h or my_base.h or dbManager.h share/errmsg.txt
 
@@ -1371,12 +1370,13 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 }
                 #endif
                 transactionResult = db->beginSnapshot(
-                        getIsolationLevel(opTrn), withSnapshot ? &bpos : NULL, thd);
+                        getIsolationLevel(opTrn), withSnapshot ? &bpos : NULL, thd, m_blobBuffer);
                 req.result = errorCodeSht(db->stat());
                 if (transactionResult && withSnapshot)
                 {   
                     // return binlog position for replication.
                     req.paramMask = P_MASK_STAT;
+                    if (bpos.type == REPL_POSTYPE_GTID) req.paramMask |= P_MASK_BLOBBODY;
                     memcpy(req.data, &bpos, sizeof(binlogPos));
                     req.resultLen = sizeof(binlogPos);
                 }

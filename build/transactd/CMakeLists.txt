@@ -126,8 +126,10 @@ foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
 endforeach()
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(CMAKE_CXX_FLAGS "-std=c++11 -frtti -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare")
-else()
+elseif(NOT MSVC)
   set(CMAKE_CXX_FLAGS "-std=c++0x -frtti -Wno-unknown-pragmas")
+else()
+  REMOVE_DEFINITIONS(-DWIN32_LEAN_AND_MEAN)
 endif()
 
 

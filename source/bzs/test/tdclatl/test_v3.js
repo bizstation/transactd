@@ -39,8 +39,7 @@ var CONSISTENT_READ_WITH_BINLOG_POS = 4200;
 var REPL_POSTYPE_NONE       = 0;
 var REPL_POSTYPE_MARIA_GTID = 1;
 var REPL_POSTYPE_POS        = 2;
-
-
+var REPL_POSTYPE_GTID       = 3;
 // field type
 var ft_string       = 0;
 var ft_integer      = 1;
@@ -695,10 +694,14 @@ function testBinlogPos(db)
 		if (isMariaDbWithGtid(db))
 			checkEqual(bpos.type, REPL_POSTYPE_MARIA_GTID,  "bpos.type");
 		else
-			checkEqual(bpos.type, REPL_POSTYPE_POS,  "bpos.type");
+		{
+			var ret = (bpos.type ==  REPL_POSTYPE_POS) || (bpos.type ==  REPL_POSTYPE_GTID);
+			checkEqual(ret, true,  "bpos.type");
+		}
 		checkNotEqual(bpos.pos, 0,  "bpos.pos");
 		checkNotEqual(bpos.filename, "",  "bpos.filename");
 		WScript.Echo("\nBinlog pos = " + bpos.filename + ":" + bpos.pos);
+		WScript.Echo("Binlog gtid = " + bpos.gtid);
 	}
 	db.endSnapshot();
 }
@@ -1064,7 +1067,7 @@ function test(atu, ate, db)
 	testBinlogPos(db);
 	
 	//getCreateViewSql
-	db.createTable("create view idlessthan5 as select * from user where id < 5");
+	db.execSql("create view idlessthan5 as select * from user where id < 5");
 	var view = db.getCreateViewSql("idlessthan5");
 	checkNotEqual(view.indexOf("idlessthan5") , -1, "getCreateViewSql");
 	checkNotEqual(view.indexOf("–¼‘O") , -1, "getCreateViewSql 2");

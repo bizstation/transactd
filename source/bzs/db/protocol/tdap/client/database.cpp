@@ -1136,8 +1136,6 @@ struct fieldChnageInfo
     bool changed;
 };
 
-
-
 void makeChangeInfo(const tabledef* ddef, const tabledef* sdef,
                     fieldChnageInfo* fci, bool& hasBlob)
 {
@@ -1235,32 +1233,51 @@ inline int moveVaileRecord(table* src)
     return 0;
 }
 
+#define MOVE_TYPE_KEY    0
+#define MOVE_TYPE_NONKEY -1
+#define MOVE_TYPE_MULTI  -2
+
 inline void moveNextRecord(table* src, short keyNum)
 {
-
-    if (keyNum == -1)
-        src->stepNext();
-    else if (keyNum == -2)
-        src->findNext();
-    else
+    if (keyNum >= MOVE_TYPE_KEY)
         src->seekNext();
+    else if (keyNum == MOVE_TYPE_NONKEY)
+        src->stepNext();
+    else
+        src->findNext();
+}
+
+inline char_td findUniqueKeynum(table* src)
+{
+    const tabledef* td =  src->tableDef();
+    if (td->parentKeyNum != 0xff) return td->parentKeyNum;
+    for (int i=0;i<td->keyCount;++i)
+    {
+        const keydef* kd = &td->keyDefs[i];
+        if (kd->segments[0].flags.kf_duplicatable == false)
+            return i;
+    }
+    return -1;
 }
 
 inline void moveFirstRecord(table* src, short keyNum)
 {
-    if (keyNum == -1)
-        src->stepFirst();
-    else if (keyNum == -2)
+    if (keyNum >= MOVE_TYPE_KEY)
     {
-        src->setKeyNum(0);
+        src->setKeyNum((char_td)keyNum);
+        src->seekFirst();
+    }
+    else if (keyNum == MOVE_TYPE_NONKEY)
+        src->stepFirst();
+    else
+    {
         query q;
         q.all().bookmarkAlso(false).reject(0)
-            .limit(src->isUseTransactd() ? 100 : 20);
+            .limit(src->isUseTransactd() ? 500 : 20);
         src->setQuery(&q);
+        src->setKeyNum(findUniqueKeynum(src));
         src->findFirst();
     }
-    else
-        src->seekFirst();
 }
 
 /* Copy from src to dest table.

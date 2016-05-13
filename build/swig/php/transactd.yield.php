@@ -205,6 +205,8 @@ abstract class transactd {
 
 	const REPL_POSTYPE_POS = REPL_POSTYPE_POS;
 
+	const REPL_POSTYPE_GTID = REPL_POSTYPE_GTID;
+
 	const ROW_LOCK_X = ROW_LOCK_X;
 
 	const ROW_LOCK_S = ROW_LOCK_S;
@@ -1708,6 +1710,10 @@ class connMgr {
 		return $r;
 	}
 
+	function slaveStatusName($index) {
+		return connMgr_slaveStatusName($this->_cPtr,$index);
+	}
+
 	static function removeSystemDb($recs) {
 		connMgr_removeSystemDb($recs);
 	}
@@ -1716,9 +1722,6 @@ class connMgr {
 		return connMgr_sysvarName($index);
 	}
 
-	static function slaveStatusName($index) {
-		return connMgr_slaveStatusName($index);
-	}
 	static function statusvarName($index) {
 		return connMgr_statusvarName($index);
 	}
@@ -2689,6 +2692,10 @@ class database extends nsdatabase {
 		default: $r=database_createTable($this->_cPtr,$utf8Sql_or_fileNum,$uri);
 		}
 		return $r;
+	}
+
+	function execSql($utf8Sql) {
+		return $this->createTable($utf8Sql);
 	}
 
 	function getSqlStringForCreateTable($tableName) {

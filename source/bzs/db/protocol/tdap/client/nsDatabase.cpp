@@ -23,6 +23,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
 #include <bzs/db/protocol/tdap/uri.h>
 
 #ifdef LINUX
@@ -138,6 +139,49 @@ BTRCALLID_PTR getBtrvEntryPoint()
         smartLoadLibrary();
     return BTRCALLIDX;
 }
+
+//------------------------------------------------------------------------------
+struct bpimple
+{
+    boost::shared_ptr<std::string> buf;
+};
+
+binlogPos::binlogPos() : m_impl(new bpimple), gtid(gtid_buf) 
+{
+    gtid_buf[0] = 0x00;
+}
+
+binlogPos::binlogPos(const binlogPos& r) : pos(r.pos), type(r.type),
+                        m_impl(new bpimple(*r.m_impl)) 
+{
+    strcpy_s(filename, BINLOGNAME_SIZE, r.filename);
+    strcpy_s(gtid_buf, GTID_SIZE, r.gtid_buf);
+    gtid = (r.gtid == r.gtid_buf) ? gtid_buf: r.gtid;
+}
+
+binlogPos::~binlogPos(){ delete m_impl;}
+
+void binlogPos::setGtid(const char* p)
+{
+    m_impl->buf.reset(new std::string(p));
+    gtid = m_impl->buf->c_str();
+}
+
+binlogPos& binlogPos::operator=(const binlogPos& r)
+{
+    if (&r != this)
+    {
+        pos = r.pos;
+        type = r.type;
+        strcpy_s(filename, BINLOGNAME_SIZE, r.filename);
+        strcpy_s(gtid_buf, GTID_SIZE, r.gtid_buf);
+        gtid = (r.gtid == r.gtid_buf) ? gtid_buf: r.gtid;
+        *m_impl = *r.m_impl;
+    }
+    return *this;
+}
+
+//------------------------------------------------------------------------------
 
 struct nsdbimpl
 {
@@ -634,7 +678,7 @@ void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)
 
     if (m_nsimpl->snapShotCount == 0)
     {
-        uint_td datalen = (bias == CONSISTENT_READ_WITH_BINLOG_POS) ? sizeof(binlogPos) : 0;
+        uint_td datalen = (bias == CONSISTENT_READ_WITH_BINLOG_POS) ? BINLOGPOS_SIZE : 0;
         m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, bpos, &datalen, NULL, 0, 0,
                              m_nsimpl->cidPtr);
 #ifdef TEST_RECONNECT
@@ -647,7 +691,27 @@ void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)
         }
 #endif
         if (m_stat == 0)
+        {
+            if (bias == CONSISTENT_READ_WITH_BINLOG_POS)
+            {
+                if (bpos->type == REPL_POSTYPE_MARIA_GTID)
+                    bpos->gtid = bpos->gtid_buf;
+                else if(bpos->type == REPL_POSTYPE_GTID)
+                {
+                    const blobHeader* hd;
+                    short stat = m_btrcallid(TD_GET_BLOB_BUF, NULL, &hd, NULL, NULL, 0, 0,
+                             m_nsimpl->cidPtr);
+                    if (stat == 0)
+                    {
+                        assert(hd->rows);
+                        const blobField* f = hd->nextField;
+                        bpos->setGtid(f->data());
+                    }else
+                        bpos->type = REPL_POSTYPE_POS;
+                }
+            }
             m_nsimpl->snapShotCount++;
+        }
     }
     else
         m_nsimpl->snapShotCount++;

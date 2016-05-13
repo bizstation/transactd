@@ -39,7 +39,7 @@ struct BOOKMARK
     uchar_td val[MAX_BOOKMARK_SIZE];
     bool empty;
     BOOKMARK():empty(true){}
-    bool isEmpty()
+    bool isEmpty() const
     {
         return empty;
     }
@@ -348,7 +348,7 @@ enum combineType
 #define REPL_POSTYPE_NONE               0  
 #define REPL_POSTYPE_MARIA_GTID         1  // like 0-1-50
 #define REPL_POSTYPE_POS                2  // 12345
-
+#define REPL_POSTYPE_GTID               3  
 
 
 // Read row lock
@@ -485,6 +485,8 @@ enum combineType
 #define ERROR_TD_NET_OTHER              3810
 #define ERROR_TD_C_CLIENT_UNKNOWN       3811
 #define ERROR_TD_RECONNECTED            3900
+
+#define MYSQL_ERROR_OFFSET              25000
 
 inline bool canRecoverNetError(short code)
 {
@@ -623,7 +625,7 @@ struct handshale_t
  If you change this version then you need change The ($TargetName) project options too.
  */
 #define C_INTERFACE_VER_MAJOR "3"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "3"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "4"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
@@ -687,7 +689,7 @@ struct handshale_t
  */
 
 #define CPP_INTERFACE_VER_MAJOR "3"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "3"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "4"//##5 Build marker! Don't remove
 #define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
@@ -724,7 +726,7 @@ struct handshale_t
 
 
 #define TRANSACTD_VER_MAJOR 3//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 3//##8 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 4//##8 Build marker! Don't remove
 #define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H

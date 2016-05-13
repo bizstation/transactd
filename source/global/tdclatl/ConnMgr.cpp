@@ -282,7 +282,8 @@ STDMETHODIMP CConnMgr::RemoveSystemDb(IConnRecords** retVal)
 
 STDMETHODIMP CConnMgr::SlaveStatusName(int index, BSTR* retVal)
 {
-    CComBSTR ret= connMgr::slaveStatusName(index);
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    CComBSTR ret= m_mgr->slaveStatusName(index);
     *retVal = ret.Copy();
     return S_OK;
 }

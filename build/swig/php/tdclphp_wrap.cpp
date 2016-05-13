@@ -12559,24 +12559,32 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_connMgr_slaveStatusName) {
-  uint_td arg1 ;
-  zval_args_type args[1];
+  bzs::db::protocol::tdap::client::connMgr *arg1 = 0 ;
+  uint_td arg2 ;
+  zval_args_type args[2];
   _TCHAR *result = 0 ;
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, args) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of connMgr_slaveStatusName. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:C:\Program Files (x86)\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
-  CONV_to_long_ex(args[0]);
-  arg1 = (uint_td) Z_LVAL_PP(args[0]);
+  /*@SWIG:F:\buildtools\swigwin-3.0.2\Lib\php\utils.i,7,CONVERT_INT_IN@*/
+  CONV_to_long_ex(args[1]);
+  arg2 = (uint_td) Z_LVAL_PP(args[1]);
+
   /*@SWIG@*/;
   
   {
     try {
-      result = (_TCHAR *)bzs::db::protocol::tdap::client::connMgr::slaveStatusName(arg1);
+      result = (_TCHAR *)((bzs::db::protocol::tdap::client::connMgr const *)arg1)->slaveStatusName(arg2);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -19333,7 +19341,6 @@ ZEND_NAMED_FUNCTION(_wrap_nsdatabase_beginSnapshot) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = 0 ;
   short arg2 = CONSISTENT_READ;
   binlogPos* bpos = new binlogPos();
-  memset(bpos, 0, sizeof(binlogPos));
   zval_args_type args[2];
   int argc = ZEND_NUM_ARGS();
   SWIG_ResetError(TSRMLS_C);
@@ -32194,7 +32201,6 @@ ZEND_NAMED_FUNCTION(_wrap_pooledDbManager_beginSnapshot) {
   bzs::db::protocol::tdap::client::pooledDbManager *arg1 = 0 ;
   short arg2 = CONSISTENT_READ;
   binlogPos* bpos = new binlogPos();
-  memset(bpos, 0, sizeof(binlogPos));
   int argc = ZEND_NUM_ARGS();
   zval_args_type args[2];
   SWIG_ResetError(TSRMLS_C);
@@ -33893,6 +33899,7 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_statusvarname, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_slavestatusname, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_connmgr_create, 0, 0, 0)
@@ -36576,6 +36583,7 @@ SWIG_LONG_CONSTANT(MULTILOCK_NOGAP_SHARE, MULTILOCK_NOGAP_SHARE);
 SWIG_LONG_CONSTANT(REPL_POSTYPE_NONE, REPL_POSTYPE_NONE);
 SWIG_LONG_CONSTANT(REPL_POSTYPE_MARIA_GTID, REPL_POSTYPE_MARIA_GTID);
 SWIG_LONG_CONSTANT(REPL_POSTYPE_POS, REPL_POSTYPE_POS);
+SWIG_LONG_CONSTANT(REPL_POSTYPE_GTID, REPL_POSTYPE_GTID);
 SWIG_LONG_CONSTANT(ROW_LOCK_X, ROW_LOCK_X);
 SWIG_LONG_CONSTANT(ROW_LOCK_S, ROW_LOCK_S);
 SWIG_LONG_CONSTANT(SRV_ISO_READ_UNCOMMITED, SRV_ISO_READ_UNCOMMITED);

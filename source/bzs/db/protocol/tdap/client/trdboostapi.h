@@ -1269,14 +1269,23 @@ typedef transaction<dbmanager_ptr> dbmTransaction;
 template <class DB> class snapshot
 {
     DB m_db;
+    bool m_started;
 
 public:
     snapshot(DB db, short bias = CONSISTENT_READ, binlogPos* bpos=NULL) : m_db(db)
     {
         m_db->beginSnapshot(bias, bpos);
+        m_started = true;
     }
 
-    ~snapshot() { m_db->endSnapshot(); }
+    void end()
+    {
+        if (m_started) 
+            m_db->endSnapshot();
+        m_started = false;
+    }
+
+    ~snapshot() { end(); }
 };
 
 /** snapshot for database */

@@ -3326,6 +3326,13 @@ void testSnapshotWithbinlog()
         BOOST_CHECK(bpos.type == REPL_POSTYPE_MARIA_GTID);
         BOOST_CHECK(strlen(bpos.gtid) >= 5);
     }
+    else if (ver.minorVersion > 5)
+    {   //mysql 5.6 5.7
+        bool ret = (bpos.type == REPL_POSTYPE_POS || bpos.type == REPL_POSTYPE_GTID);
+        BOOST_CHECK(ret);
+        if (bpos.type == REPL_POSTYPE_GTID)
+            BOOST_CHECK(strlen(bpos.gtid) >= 35);
+    }
     else
         BOOST_CHECK(bpos.type == REPL_POSTYPE_POS);
     

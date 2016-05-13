@@ -693,7 +693,6 @@ using namespace bzs::db::protocol::tdap::client;
 %extend bzs::db::protocol::tdap::client::nsdatabase {
   binlogPos* beginSnapshot(short bias=CONSISTENT_READ) {
     binlogPos* bpos = new binlogPos();
-    memset(bpos, 0, sizeof(binlogPos));
     if (bias == CONSISTENT_READ_WITH_BINLOG_POS)
       self->beginSnapshot(bias, bpos);
     else

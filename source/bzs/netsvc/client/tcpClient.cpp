@@ -171,12 +171,13 @@ connection* connections::getConnection(const std::string& host, const char* port
 
 #ifdef USE_PIPE_CLIENT
 
-connection* connections::getConnectionPipe()
+connection* connections::getConnectionPipe(unsigned short port)
 {
     for (int i = 0; i < (int)m_conns.size(); i++)
     {
         pipeConnection* pc = dynamic_cast<pipeConnection*>(m_conns[i]);
-        return pc;
+        if(pc && (pc->endpoint().port() == port))
+            return pc;
     }
     return NULL;
 }
@@ -323,7 +324,7 @@ connection* connections::connect(const std::string& host, const char* port, hand
 #ifdef USE_PIPE_CLIENT
     namedPipe =  (m_usePipedLocal && isUseNamedPipe(ep));
     if (namedPipe)
-        c = newConnection ? NULL : getConnectionPipe();
+        c = newConnection ? NULL : getConnectionPipe(ep.port());
     else
 #endif
         c = newConnection ? NULL : getConnection(ep);

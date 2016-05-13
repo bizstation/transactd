@@ -220,7 +220,7 @@ inline int btrdateToMydate(int btrd)
 {
     myDate myd;
     myd.setValue(btrd, true);
-    return myd.getValue(true);
+    return myd.i;
 }
 
 // Do not work at maridab
@@ -228,20 +228,20 @@ inline __int64 btrtimeToMytime(int btrTime_i, bool bigendian)
 {
     myTime myt(4, bigendian);
     myt.setValue(btrTime_i, true);
-    return myt.getValue(true);
+    return myt.i64;
 }
 
 inline int mydateToBtrdate(int myDate_i)
 {
     myDate myd;
-    myd.setValue(myDate_i, false);
+    myd.i = myDate_i;
     return myd.getValue(true);
 }
 
 inline int mytimeToBtrtime(__int64 myTime_i, bool bigendian, int dec)
 {
     myTime myt(dec, bigendian);
-    myt.setValue(myTime_i, false);
+    myt.i64 = myTime_i;
     return (int)myt.getValue(true);
 }
 

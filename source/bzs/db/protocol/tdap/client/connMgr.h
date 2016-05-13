@@ -73,6 +73,7 @@ private:
     database* m_db;
     std::_tstring m_uri;
     btrVersion m_pluginVer;
+    btrVersion m_serverVer;
     void allocBuffer();
     void writeRecordData(){};
     void onReadAfter(){};
@@ -103,12 +104,12 @@ public:
     void postDisconnectAll();
     short_td stat();
     database* db() const;
+    const _TCHAR* slaveStatusName(uint_td index) const;
     using nstable::tdapErr;
     using nstable::release;
     static void removeSystemDb(records& recs);
     static const _TCHAR* sysvarName(uint_td index);
     static const _TCHAR* statusvarName(uint_td index);
-    static const _TCHAR* slaveStatusName(uint_td index);
     static connMgr* create(database* db);
 };
 
