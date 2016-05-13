@@ -22774,6 +22774,7 @@ fail:
 }
 
 
+SWIGINTERN VALUE
 _wrap_database_execSql(int argc, VALUE *argv, VALUE self) 
 {
   bzs::db::protocol::tdap::client::database *arg1 = (bzs::db::protocol::tdap::client::database *) 0 ;
