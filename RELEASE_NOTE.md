@@ -1,5 +1,20 @@
 Release note
 ================================================================================
+Version 3.4.1 2016/05/23
+================================================================================
+Modifications
+--------------------------------------------------------------------------------
+* Fix a bug that can not get `bookmark` length correctly if the primary key
+  length is greater than 112 bytes.
+
+* Fix a bug that the length of `mychar` field had been checked by the number of
+  bytes, not characters, at field definition check in `dbdef` class.
+
+* Fix a bug that `database::getCreateView` returns 12 as `stat` if the database
+  is associate Object.
+
+
+================================================================================
 Version 3.4.0 2016/05/11
 ================================================================================
 New Features
