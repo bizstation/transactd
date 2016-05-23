@@ -2229,7 +2229,9 @@ const uchar* table::position(bool raw)
 
 uint table::posPtrLen() const
 {
-    return std::min(m_table->file->ref_length, (uint)REF_SIZE_MAX);
+    if (m_table->file->ref_length > REF_SIZE_MAX)
+        return sizeof(unsigned int);
+    return m_table->file->ref_length;
 }
 
 ha_rows table::recordCount(bool estimate)
