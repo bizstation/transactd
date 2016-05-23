@@ -1130,8 +1130,8 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
         TABLE_LIST tables; char key[256]; 
         const char* keyPtr = key;
         database* db = getDatabaseCid(req.cid);
-        std::string dbname = db->name();
         THD* thd = db->thd();
+        std::string dbname = getDatabaseName(req);;
         std::string name = getTableName(req);
         tables.init_one_table(dbname.c_str(), dbname.size(), name.c_str(),
                 name.size(), name.c_str(), TL_READ);
