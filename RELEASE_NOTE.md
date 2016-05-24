@@ -1,5 +1,20 @@
 Release note
 ================================================================================
+Version 3.4.1 2016/05/23
+================================================================================
+Modifications
+--------------------------------------------------------------------------------
+* Fix a bug that can not get `bookmark` length correctly if the primary key
+  length is greater than 112 bytes.
+
+* Fix a bug that the length of `mychar` field had been checked by the number of
+  bytes, not characters, at field definition check in `dbdef` class.
+
+* Fix a bug that `database::getCreateView` returns 12 as `stat` if the database
+  is associate Object.
+
+
+================================================================================
 Version 3.4.0 2016/05/11
 ================================================================================
 New Features
@@ -26,6 +41,7 @@ Modifications
 * Change `tdclcpp:fielddef::setSchemaCodePage()` to public method.
 
 
+================================================================================
 Version 3.3.0 2016/04/18
 ================================================================================
 New Features
@@ -46,6 +62,7 @@ Modifications
   are supported. Linux or OSX are supported PHP version 5.4 or later.
 
 
+================================================================================
 Version 3.2.1 2016/04/11
 ================================================================================
 Modifications
@@ -55,6 +72,7 @@ Modifications
 * Fix a bug that `nstable::getDirURI` returns wrong URI under some conditions.
 
 
+================================================================================
 Version 3.2.0 2016/04/07
 ================================================================================
 New Features
@@ -98,6 +116,7 @@ Modifications
   both of NULL-able field and BLOB field.
 
 
+================================================================================
 Version 3.1.0 2016/03/03
 ================================================================================
 New Features
@@ -393,7 +412,6 @@ New Features
  
   ex)flags & 8 and flags !& 16
 
-
 Other Modifications
 --------------------------------------------------------------------------------
 * Changed method
@@ -415,7 +433,6 @@ Other Modifications
 
 * In the Join, When the binding key is a string, Fixed a problem that may not
   be able to properly search. 
-
 
 
 ================================================================================
@@ -543,11 +560,9 @@ Other Modifications
   http://www.bizstation.jp/ja/transactd/documents/BUILD_WIN.html
 
 
-
 ================================================================================
 Version 2.3.0 2015-03-20
 ================================================================================
-
 Upgrade Notes
 --------------------------------------------------------------------------------
 * Compatibility between server plugin and clients

@@ -251,11 +251,10 @@ short dbdef::validateTableDef(short tableIndex)
         }
         // Check field length.
         uchar_td type = fd.type;
-
+        ushort_td len = (type == ft_mychar) ? fd.charNum() : fd.len;
         // reset update indicator
         const_cast<fielddef&>(fd).enableFlags.bitE = false;
-
-        ret = validLen(type, fd.len);
+        ret = validLen(type, len);
         if (!ret || !fd.isValidCharNum())
         {
             m_stat = STATUS_INVALID_FIELDLENGTH;
