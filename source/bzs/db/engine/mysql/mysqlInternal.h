@@ -229,11 +229,21 @@ inline void cp_restore_globals(THD* thd)
     my_pthread_setspecific_ptr(THR_THD, 0);
     my_pthread_setspecific_ptr(THR_MALLOC, 0);
 }
-
+#if (MYSQL_VERSION_ID < 50600)
 inline void cp_thd_set_read_only(THD* thd, bool v) {}
 
 inline bool cp_thd_get_global_read_only(THD* thd) { return false; }
+#else
+inline void cp_thd_set_read_only(THD* thd, bool v)
+{
+    thd->tx_read_only = (v || thd->variables.tx_read_only);
+}
 
+inline bool cp_thd_get_global_read_only(THD* thd)
+{
+    return (thd->variables.tx_read_only != 0);
+}
+#endif
 inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
                           Open_table_context* ot_act)
 {
@@ -477,6 +487,7 @@ inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet
 }
 
 #define cp_get_executed_gtids get_executed_gtids
+extern MYSQL_PLUGIN_IMPORT my_bool opt_show_slave_auth_info;
 
 #else //Not MySQL 5.7
 

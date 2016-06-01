@@ -56,16 +56,21 @@ private:
     void doDisconnectAll();
     const connection::records& getTableList(const char* dbname, int type) const;
     bool checkGlobalACL(THD* thd, ulong wantAccess) const;
+    const connection::records& readByProtocol(int type, blobBuffer* bb, 
+                                    const char* channel=NULL) const;
 public:
     connManager(unsigned __int64 me) : m_me(me), m_stat(0){};
     virtual ~connManager();
     const connection::records& systemVariables() const;
+    const connection::records& sqlVariables() const;
     const connection::records& statusVariables() const;
     const connection::records& getRecords(unsigned __int64 conid, int dbid) const;
     const connection::records& definedDatabases() const;
     const connection::records& schemaTables(const char* dbname) const;
     const connection::records& definedTables(const char* dbname, int type) const;
-    const connection::records& readSlaveStatus(blobBuffer* bb) const;
+    const connection::records& readSlaveStatus(const char* channel, blobBuffer* bb) const;
+    const connection::records& slaveHosts(blobBuffer* bb) const;
+    const connection::records& channels() const;
     void disconnect(unsigned __int64 conid);
     void disconnectAll();
     short stat() const {return m_stat;}

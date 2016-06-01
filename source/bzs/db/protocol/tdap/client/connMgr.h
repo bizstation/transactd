@@ -85,7 +85,7 @@ private:
     const connMgr::records& doDefinedTables(const _TCHAR* dbname, int type);
     void setBlobFieldPointer(const bzs::db::blobHeader* bd);
     explicit connMgr(database* db);
-
+    const records& blobOperation(int op);
 public:
 
     bool connect(const _TCHAR* uri);
@@ -94,8 +94,14 @@ public:
     const records& tables(const _TCHAR* dbname);
     const records& views(const _TCHAR* dbname);
     const records& schemaTables(const _TCHAR* dbname);
-    const records& slaveStatus();
+    const records& slaveStatus(const char* channel=0);
+#ifdef _UNICODE
+    const records& slaveStatus(const wchar_t* channel);
+#endif
+    const records& channels();
+    const records& slaveHosts();
     const records& sysvars();
+    const records& sqlvars();
     const records& statusvars();
     const records& connections();
     const records& inUseDatabases(__int64 connid);

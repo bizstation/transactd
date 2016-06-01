@@ -1056,7 +1056,7 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(tablelist)
 BOOST_AUTO_TEST_CASE(tablelist)
 {
-    testTableList();
+    testConnMgr();
 }
 BOOST_AUTO_TEST_CASE(createInfo)
 {

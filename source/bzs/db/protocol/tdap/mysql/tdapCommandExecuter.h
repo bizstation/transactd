@@ -114,8 +114,11 @@ class connMgrExecuter
     int definedTables(char* buf, size_t& size);
     int definedViews(char* buf, size_t& size);
     int slaveStatus(netsvc::server::netWriter* nw);
+    int channels(char* buf, size_t& size);
+    int slaveHosts(netsvc::server::netWriter* nw);
     int systemVariables(char* buf, size_t& size);
     int statusVariables(char* buf, size_t& size);
+    int sqlVariables(char* buf, size_t& size);
     int read(char* buf, size_t& size);
     int disconnectOne(char* buf, size_t& size);
     int disconnectAll(char* buf, size_t& size);

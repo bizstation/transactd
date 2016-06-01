@@ -67,8 +67,8 @@ struct DLLLIB binlogPos
 private:
     char gtid_buf[GTID_SIZE];
     struct bpimple* m_impl;
-    void setGtid(const char* p);
 public:
+    void setGtid(const char* p);
     const char* gtid;
     binlogPos();
     binlogPos(const binlogPos& r);

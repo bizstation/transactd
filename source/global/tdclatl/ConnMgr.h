@@ -59,7 +59,7 @@ public:
     STDMETHOD(Views)(BSTR dbname, IConnRecords** retVal);
     STDMETHOD(SchemaTables)(BSTR dbname, IConnRecords** retVal);
     STDMETHOD(Sysvars)(IConnRecords** retVal);
-    STDMETHOD(SlaveStatus)(IConnRecords** retVal);
+    STDMETHOD(SlaveStatus)(BSTR channel, IConnRecords** retVal);
     STDMETHOD(Connections)(IConnRecords** retVal);
 #ifdef _WIN64
     STDMETHOD(InUseDatabases)(__int64 connid, IConnRecords** retVal);

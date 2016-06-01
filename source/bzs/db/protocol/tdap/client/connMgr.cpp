@@ -311,8 +311,11 @@ void connMgr::allocBuffer()
 const connMgr::records& connMgr::getRecords(bool isInUseTable)
 {
     tdap(TD_STASTISTICS);
-    if (m_stat == 0 && *((int*)m_keybuf) != (int)sizeof(connMgr::record))
-        convertFromOldFormat(isInUseTable);
+    if (m_keynum < TD_STSTCS_SLAVE_STATUS)
+    {
+        if (m_stat == 0 && *((int*)m_keybuf) != (int)sizeof(connMgr::record))
+            convertFromOldFormat(isInUseTable);
+    }
     if (m_stat == 0)
         m_records.resize(m_datalen / sizeof(connMgr::record));
     else
@@ -388,20 +391,64 @@ void connMgr::setBlobFieldPointer(const blobHeader* hd)
     }
 }
 
-const connMgr::records& connMgr::slaveStatus()
+const connMgr::records& connMgr::blobOperation(int op)
 {
     if ((m_pluginVer.majorVersion >= 3) && (m_pluginVer.minorVersion >= 2))
     {
-        m_keynum = TD_STSTCS_SLAVE_STATUS;
+        m_keynum = op;
         allocBuffer();
         getRecords();
         // set blob pointers
         setBlobFieldPointer(getBlobHeader());
         return m_records;
-   }
+    }
     m_stat = STATUS_NOSUPPORT_OP;
     m_records.resize(0);
     return m_records;
+}
+
+const connMgr::records& connMgr::slaveStatus(const char* channel)
+{
+    char ch[65] = {0};
+    if (channel)
+    {
+        strcpy_s(ch, 65, channel);
+        m_keybuf = (void*)ch;
+        m_keylen = 65;
+    }
+    blobOperation(TD_STSTCS_SLAVE_STATUS);
+    m_keybuf = &m_params[0];
+    m_keylen = sizeof(m_params);
+    return m_records;
+}
+#ifdef _UNICODE
+const connMgr::records& connMgr::slaveStatus(const wchar_t* channel)
+{
+    char tmp[128] = {0};
+    if (channel)
+        WideCharToMultiByte(CP_UTF8, 0, channel,-1, tmp, 128, NULL, NULL);
+    return slaveStatus(tmp);
+}
+#endif
+
+
+const connMgr::records& connMgr::channels()
+{
+    m_keynum = TD_STSTCS_SLAVE_CHANNELS;
+    allocBuffer();
+    return getRecords();
+}
+
+const connMgr::records& connMgr::slaveHosts()
+{
+    return blobOperation(TD_STSTCS_SLAVE_HOSTS);
+}
+
+const connMgr::records& connMgr::sqlvars()
+{
+    m_keynum = TD_STSTCS_SQL_VARIABLES;
+    allocBuffer();
+    return getRecords();
 }
 
 const connMgr::records& connMgr::sysvars()

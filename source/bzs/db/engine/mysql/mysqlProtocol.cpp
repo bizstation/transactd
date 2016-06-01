@@ -41,6 +41,7 @@
 #else
 #  define Protocol_mysql Protocol
 #  define CP_PROTOCOL PROTOCOL_BINARY
+#  include <string>
 #endif
 
 
@@ -315,6 +316,7 @@ int execSql(THD* thd, const char* sql)
 using namespace bzs::db::transactd;
 class slaveStatus : public dummyProtocol
 {
+protected:
     connection::records& m_records;
     bzs::db::IblobBuffer* m_bb;
     int m_blobfields;
@@ -329,7 +331,7 @@ public:
     {
         m_records.clear();   
     }
-    ~slaveStatus()
+    virtual ~slaveStatus()
     {
         m_bb->setFieldCount(m_blobfields);
     }
@@ -378,10 +380,207 @@ public:
 #endif
 };
 
-int getSlaveStatus(THD* thd, connection::records& recs, bzs::db::IblobBuffer* bb)
+//----------------------------------------------------------------------
+//  slaveHosts  
+//----------------------------------------------------------------------
+// rec.id = server_id
+// rec.readCount = port
+// rec.name = host
+// opt_show_slave_auth_info
+class slaveInfo
+{
+public:
+    std::string host;
+    std::string user;
+    std::string passwd;
+    std::string uuid;
+    void reset()
+    {
+        host = "";
+        user = "";
+        passwd = "";
+        uuid = "";
+
+    }
+    std::string tabSeparateValue()
+    {
+        return host + "\t" + user + "\t" + passwd + "\t" + uuid;
+    }
+};
+
+
+class slaveHosts : public slaveStatus
+{
+    connection::record m_rec;
+    slaveInfo m_sinfo;
+    int m_strCount;
+public:
+    inline slaveHosts(THD *thd_arg, connection::records& recs, bzs::db::IblobBuffer* bb) :
+        slaveStatus(thd_arg, recs, bb), m_strCount(0){}
+  
+    bool store_longlong(longlong from, bool unsigned_flag)
+    {
+        if (m_rec.id == 0)
+            m_rec.id = (unsigned int)from;
+        else if (m_rec.readCount == 0)
+            m_rec.readCount = (unsigned int)from;
+        return false;
+    }
+    bool store_null()
+    {
+        return false;
+    }
+    bool str_store(const char *from, size_t length)
+    {
+        if (m_strCount == 0)
+            m_sinfo.host = from; 
+#if (defined(MYSQL_5_7))
+        else if (opt_show_slave_auth_info)
+        {
+            if (m_strCount == 1)
+                m_sinfo.user = from;
+            else if (m_strCount == 2)
+                m_sinfo.passwd = from;
+            else if (m_strCount == 3)
+                m_sinfo.uuid = from;
+        }
+#endif
+        else if (m_strCount == 1)
+            m_sinfo.uuid = from;
+
+        ++m_strCount;
+        return false;
+    }
+
+    void addHostInfo()
+    {
+        std::string s = m_sinfo.tabSeparateValue();
+        m_rec.type = 1;
+        if (s.size() >= CON_REC_VALUE_SIZE)
+        {
+            ++m_blobfields;
+            m_rec.type = 2;
+            m_bb->addBlob((unsigned int)s.size() + 1, (unsigned short)m_records.size(),
+                (const unsigned char*)s.c_str());
+        }
+        else
+            strncpy(m_rec.name, s.c_str(), CON_REC_VALUE_SIZE);
+    }
+
+#if (MYSQL_VERSION_ID < 50600 || defined(MARIADB_BASE_VERSION)) // MySQL 5.5 
+    bool store(const char *from, size_t length, CHARSET_INFO *cs)
+    {
+        return str_store(from, length);
+    }
+    bool write()
+    {
+        addHostInfo();
+        m_records.push_back(m_rec);
+        m_rec.reset();
+        m_sinfo.reset();
+        m_strCount = 0;
+        return false;
+    }
+#else
+    bool store(const char *from, size_t length, const CHARSET_INFO *cs)
+    {
+        return str_store(from, length);
+    }
+    bool end_row()
+    {
+        if (m_rec.id)
+        {
+            addHostInfo();
+            m_records.push_back(m_rec);
+        }
+        m_rec.reset();
+        m_sinfo.reset();
+        m_strCount = 0;
+        return false;
+    }
+#endif
+};
+
+
+//----------------------------------------------------------------------
+//  channel  
+//----------------------------------------------------------------------
+#pragma warning(disable : 4800)
+#pragma warning(disable : 4271)
+#pragma warning(disable : 4267)
+#pragma warning(disable : 4244)
+#if (defined(MARIADB_10_0) || defined(MARIADB_10_1))
+#include "sql/slave.h"
+#include "sql/rpl_mi.h"
+
+
+int getChannels(THD* /*thd*/, connection::records& recs)
+{
+    mysql_mutex_assert_owner(&LOCK_active_mi);
+    if (master_info_index)
+    {
+        uint_td size = master_info_index->master_info_hash.records;
+        for (uint_td i = 0;i < size; ++i)
+        {
+            Master_info* mi = (Master_info*)my_hash_element(&master_info_index->master_info_hash, i);
+            if (mi->host[0])
+            {
+                connection::record rec;
+                strcpy_s(rec.name, CON_REC_VALUE_SIZE, mi->connection_name.str);
+                recs.push_back(rec);
+            }
+        }
+    }
+    return 0;
+}
+#elif defined(MYSQL_5_7)
+#include "rpl_msr.h" //channel_map
+int getChannels(THD* thd, connection::records& recs)
+{
+    channel_map.assert_some_lock();
+
+    uint_td size = channel_map.get_num_instances();
+    for (mi_map::iterator it = channel_map.begin(); it != channel_map.end(); it++)
+    {
+        Master_info* mi = it->second;
+        if (mi && mi->host[0])
+        {
+            connection::record rec;
+            strcpy_s(rec.name, CON_REC_VALUE_SIZE, mi->get_channel());
+            recs.push_back(rec);
+        }
+    }
+    return 0;
+}
+
+#else
+int getChannels(THD* thd, connection::records& recs)
+{
+    return 0;
+}
+#endif
+#pragma warning(default : 4800)
+#pragma warning(default : 4271)
+#pragma warning(default : 4267)
+#pragma warning(default : 4244)
+//------------------------------------------------------------------------------
+
+int getSlaveStatus(THD* thd, const char* channel, connection::records& recs, bzs::db::IblobBuffer* bb)
 {
     slaveStatus ss(thd, recs, bb);
-    return execSql(thd, "show slave status");
+    char tmp[128];
+#if (defined(MYSQL_5_7))
+    sprintf_s(tmp, 128, "show slave status for channel '%s'", channel);
+#else
+    sprintf_s(tmp, 128, "show slave '%s' status", channel);
+#endif
+    return execSql(thd, tmp);
+}
+
+int getSlaveHosts(THD* thd, connection::records& recs, bzs::db::IblobBuffer* bb)
+{
+    slaveHosts ss(thd, recs, bb);
+    return execSql(thd, "show slave hosts");
 }
 
 #pragma GCC diagnostic warning "-Woverloaded-virtual"

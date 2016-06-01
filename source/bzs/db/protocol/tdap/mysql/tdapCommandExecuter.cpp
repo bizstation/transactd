@@ -1865,6 +1865,13 @@ int connMgrExecuter::systemVariables(char* buf, size_t& size)
     return serialize(m_req, buf, size, records, st.stat());
 }
 
+int connMgrExecuter::sqlVariables(char* buf, size_t& size)
+{
+    connManager st(m_modHandle);
+    const connection::records& records = st.sqlVariables();
+    return serialize(m_req, buf, size, records, st.stat());
+}
+
 int connMgrExecuter::statusVariables(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
@@ -1889,20 +1896,42 @@ int connMgrExecuter::definedTables(char* buf, size_t& size)
 int connMgrExecuter::definedViews(char* buf, size_t& size)
 {
     connManager st(m_modHandle);
-    const connection::records& records = st.definedTables((const char*)m_req.keybuf, TABLE_TYPE_VIEW);
+    const connection::records& records = 
+            st.definedTables((const char*)m_req.keybuf, TABLE_TYPE_VIEW);
     return serialize(m_req, buf, size, records, st.stat());
 }
 
 int connMgrExecuter::slaveStatus(netsvc::server::netWriter* nw)
 {
     connManager st(m_modHandle);
-    const connection::records& records = st.readSlaveStatus(m_blobBuffer);
+    const connection::records& records = 
+            st.readSlaveStatus((const char*)m_req.keybuf, m_blobBuffer);
     int v =  serialize(m_req, nw->ptr(), nw->datalen, records, st.stat(), m_blobBuffer);
     short dymmy = 0;
     if ((m_req.result == 0) && m_blobBuffer->fieldCount())
         nw->datalen = m_req.serializeBlobBody(m_blobBuffer, nw->ptr(), nw->datalen,
                                          FILE_MAP_SIZE, nw->optionalData(), dymmy);
     return v;
+}
+
+int connMgrExecuter::channels(char* buf, size_t& size)
+{
+    connManager st(m_modHandle);
+    const connection::records& records = st.channels();
+    return serialize(m_req, buf, size, records, st.stat());
+}
+
+int connMgrExecuter::slaveHosts(netsvc::server::netWriter* nw)
+{
+    connManager st(m_modHandle);
+    const connection::records& records = st.slaveHosts(m_blobBuffer);
+    int v = serialize(m_req, nw->ptr(), nw->datalen, records, st.stat(), m_blobBuffer);
+    short dymmy = 0;
+    if ((m_req.result == 0) && m_blobBuffer->fieldCount())
+        nw->datalen = m_req.serializeBlobBody(m_blobBuffer, nw->ptr(), nw->datalen,
+                                        FILE_MAP_SIZE, nw->optionalData(), dymmy);
+    return v;
+
 }
 
 int connMgrExecuter::disconnectOne(char* buf, size_t& size)
@@ -1951,6 +1980,12 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
             return definedViews(nw->ptr(), nw->datalen);
         case TD_STSTCS_SLAVE_STATUS:
             return slaveStatus(nw);
+        case TD_STSTCS_SLAVE_HOSTS:
+            return slaveHosts(nw);
+        case TD_STSTCS_SLAVE_CHANNELS:
+            return channels(nw->ptr(), nw->datalen);
+        case TD_STSTCS_SQL_VARIABLES:
+            return sqlVariables(nw->ptr(), nw->datalen);
         default:
             m_req.reset();
             m_req.result = STATUS_NOSUPPORT_OP;

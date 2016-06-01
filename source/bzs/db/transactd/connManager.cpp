@@ -33,8 +33,11 @@ extern const char* get_trd_sys_var(int index);
 extern const unsigned int* get_trd_status_var(int index);
 
 /* implemnts in mysqlProtocol.cpp */
-extern int getSlaveStatus(THD* thd, bzs::db::transactd::connection::records& recs, 
-         bzs::db::IblobBuffer* bb);
+extern int getSlaveStatus(THD* thd, const char* channel, 
+            bzs::db::transactd::connection::records& recs, bzs::db::IblobBuffer* bb);
+extern int getSlaveHosts(THD* thd, bzs::db::transactd::connection::records& recs,
+            bzs::db::IblobBuffer* bb);
+extern int getChannels(THD* thd, bzs::db::transactd::connection::records& recs);
 
 namespace bzs
 {
@@ -223,6 +226,33 @@ const connection::records& connManager::systemVariables() const
     return m_records;
 }
 
+const connection::records& connManager::sqlVariables() const
+{
+    m_records.clear();
+    for (int i = 0; i < TD_SQL_VER_SIZE; ++i)
+    {
+        m_records.push_back(connection::record());
+        connection::record& rec = m_records[m_records.size() - 1];
+        rec.id = i;
+        rec.type = 1;
+        switch (i)
+        {
+        case TD_SQL_VER_MYSQL_GTID_MODE:
+        {
+#if (defined(MYSQL_5_7))
+            rec.longValue = (long long)get_gtid_mode(GTID_MODE_LOCK_NONE);
+#else
+            rec.longValue = 0;
+#endif
+            break;
+        }
+
+        }
+    }
+
+    return m_records;
+}
+
 const connection::records& connManager::statusVariables() const
 {
     m_records.clear();
@@ -338,21 +368,68 @@ bool connManager::checkGlobalACL(THD* thd, ulong wantAccess) const
     return ret;
 }
 
-const connection::records& connManager::readSlaveStatus(blobBuffer* bb) const
+const connection::records& connManager::readByProtocol(int type, blobBuffer* bb, 
+                                const char* channel) const
 {
     m_records.clear();
     try
     {
         boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
-        if (thd == NULL) 
-        {
+        if (thd == NULL)
             m_stat = 20001;
-            return m_records;
+        else if (!checkGlobalACL(thd.get(), SUPER_ACL | REPL_CLIENT_ACL))
+            m_stat = STATUS_ACCESS_DENIED; 
+        else
+        {
+            int ret;
+            if (type == TD_STSTCS_SLAVE_STATUS)
+                ret = getSlaveStatus(thd.get(), channel, m_records, bb);
+            else
+                ret = getSlaveHosts(thd.get(), m_records, bb);
+            m_stat = errorCode(ret);
         }
-        if (!checkGlobalACL(thd.get(), SUPER_ACL | REPL_CLIENT_ACL))
-            return m_records;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        const int* code = getCode(e);
+        if (code)
+            m_stat = *code;
+        else
+        {
+            m_stat = 20000;
+            sql_print_error("%s", boost::diagnostic_information(e).c_str());
+        }
+        printWarningMessage(code, getMsg(e));
+    }
+    catch (...)
+    {
+        m_stat = 20001;
+    }
+    return m_records;
+}
 
-        m_stat = errorCode(getSlaveStatus(thd.get(), m_records, bb));
+const connection::records& connManager::readSlaveStatus(const char* channel, blobBuffer* bb) const
+{
+    return readByProtocol(TD_STSTCS_SLAVE_STATUS, bb, channel);
+}
+
+const connection::records& connManager::slaveHosts(blobBuffer* bb) const
+{
+    return readByProtocol(TD_STSTCS_SLAVE_HOSTS, bb);
+}
+
+const connection::records& connManager::channels() const
+{
+    m_records.clear();
+    try
+    {
+        boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+        if (thd == NULL)
+            m_stat = 20001;
+        else if (!checkGlobalACL(thd.get(), REPL_CLIENT_ACL))
+            m_stat = STATUS_ACCESS_DENIED; 
+        else
+            m_stat = errorCode(getChannels(thd.get(), m_records));
     }
     catch (bzs::rtl::exception& e)
     {

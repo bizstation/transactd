@@ -3346,7 +3346,7 @@ void testSnapshotWithbinlog()
 }
 
 
-void testTableList()
+void testConnMgr()
 {
     nsdatabase::setCheckTablePtr(true);
     database_ptr db = createDatabaseObject();
@@ -3374,6 +3374,23 @@ void testTableList()
         mgr->slaveStatus();
         BOOST_CHECK(mgr->stat() == 0);
     }
+    {
+        const connMgr::records& recs = mgr->sqlvars();
+        BOOST_CHECK(mgr->stat() == 0);
+        BOOST_CHECK(recs.size() == TD_SQL_VER_SIZE);
+        _tprintf(_T("\nSQL_GTID_MODE = %lld\n"), recs[0].longValue);
+    }
+    {
+        const connMgr::records& recs = mgr->slaveHosts();
+        BOOST_CHECK(mgr->stat() == 0);
+        for (int i=0;i<recs.size();++i)
+        {
+            _TCHAR tmp[1024];
+            recs[i].value(tmp, 1024);
+            _tprintf(_T("slaveHosts = %lu\t%lu\t%s\n"), recs[i].id, recs[i].readCount, tmp);
+        }
+    }
+
     mgr->disconnect();
 
 }

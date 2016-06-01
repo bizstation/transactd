@@ -1859,7 +1859,7 @@ interface IConnMgr : IDispatch{
     [id(0x0000008)]
     HRESULT _stdcall Sysvars([out, retval] IConnRecords** retVal);
     [id(0x0000011)]
-    HRESULT _stdcall SlaveStatus([out, retval] IConnRecords** retVal);
+    HRESULT _stdcall SlaveStatus([in, defaultvalue("") ]BSTR channel, [out, retval] IConnRecords** retVal);
     [id(0x0000009)]
     HRESULT _stdcall Connections([out, retval] IConnRecords** retVal);
     [id(0x000000A)]

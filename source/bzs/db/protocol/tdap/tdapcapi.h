@@ -202,6 +202,9 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_STSTCS_VIEW_LIST             7
 #define TD_STSTCS_SLAVE_STATUS          8
 #define TD_STSTCS_STATUS_VARIABLES      9
+#define TD_STSTCS_SLAVE_HOSTS          10
+#define TD_STSTCS_SLAVE_CHANNELS       11
+#define TD_STSTCS_SQL_VARIABLES        12
 
 /** connect sub operation
  */
@@ -621,6 +624,10 @@ struct handshale_t
 #define TD_SVAR_SIZE                7
 /** @endcond */
 
+/* server sql variables index */
+#define TD_SQL_VER_MYSQL_GTID_MODE  0
+#define TD_SQL_VER_SIZE             1
+/** @endcond */
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.
  If you change this version then you need change The ($TargetName) project options too.
  */

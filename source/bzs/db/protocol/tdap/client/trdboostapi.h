@@ -968,6 +968,19 @@ inline void convertTable(Database_Ptr db, const _TCHAR* name,
     convertTable(db, tablenum, func);
 }
 
+template <class Database_Ptr>
+void execSql(Database_Ptr db, const char* sql)
+{
+    db->execSql(sql);
+    #ifdef _UNICODE
+    wchar_t buf[1024];
+    MultiByteToWideChar(CP_UTF8, 0, sql, -1, buf, 1024);
+    validateStatus(db, buf);
+    #else
+    validateStatus(db, sql);
+    #endif
+}
+
 inline void insertTable(dbdef* def, short id, const _TCHAR* name,
                         unsigned short charsetIndex)
 {

@@ -159,14 +159,14 @@ STDMETHODIMP CConnMgr::Statusvars(IConnRecords** retVal)
     return S_OK;
 }
 
-STDMETHODIMP CConnMgr::SlaveStatus(IConnRecords** retVal)
+STDMETHODIMP CConnMgr::SlaveStatus(BSTR channel, IConnRecords** retVal)
 {
     if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
     CComObject<CConnRecords>* obj;
     CComObject<CConnRecords>::CreateInstance(&obj);
     if (!obj)
         return Error("CreateInstance ConnRecords", IID_IConnMgr);
-    obj->m_recs = m_mgr->slaveStatus();
+    obj->m_recs = m_mgr->slaveStatus(channel);
     setResult(obj, retVal);
     return S_OK;
 }

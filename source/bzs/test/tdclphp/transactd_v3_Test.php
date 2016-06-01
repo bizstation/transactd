@@ -768,7 +768,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         }
         $this->assertNotEquals($bpos->pos, 0);
         $this->assertNotEquals($bpos->filename, "");
-        //echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
+        echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
+        echo 'gtid (set)= '.$bpos->gtid.PHP_EOL;;
+        
         $db->endSnapshot();
         $db->close();
     }
