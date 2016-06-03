@@ -2722,6 +2722,26 @@ void table::getCreateSql(String* s)
     cp_store_create_info(m_db.thd(), &tables, s, NULL, (int)FALSE);
 }
 
+void table::setValue(int index, const std::string& v, int type)
+{
+    Field* field = *(m_table->field + index);
+    if ((v.size() == 1) && (v[0] == 0x00))
+        field->set_null();
+    else
+        field->set_notnull();
+    if ((type == UPDATE_INC) || (type == UPDATE_DEC))
+    {
+        __int64 old = field->val_int();
+        __int64 intv = _atoi64(v.c_str());
+        if (type == UPDATE_INC)
+            field->store(old + intv, false);
+        else
+            field->store(old - intv, false);
+    }
+    else
+        field->store(v.c_str(), (uint)v.size(), &my_charset_bin);
+}
+
 #ifdef USE_HANDLERSOCKET
 
 int table::fieldIndexByName(const char* name) const
@@ -2742,26 +2762,6 @@ void table::setUseFieldList(const std::string& csv)
     split(values, csv, ",");
     for (int i = 0; i < (int)values.size(); i++)
         addUseField(fieldIndexByName(values[i].c_str()));
-}
-
-void table::setValue(int index, const std::string& v, int type)
-{
-    Field* field = *(m_table->field + index);
-    if ((v.size() == 1) && (v[0] == 0x00))
-        field->set_null();
-    else
-        field->set_notnull();
-    if ((type == UPDATE_INC) || (type == UPDATE_DEC))
-    {
-        __int64 old = field->val_int();
-        __int64 intv = _atoi64(v.c_str());
-        if (type == UPDATE_INC)
-            field->store(old + intv, false);
-        else
-            field->store(old - intv, false);
-    }
-    else
-        field->store(v.c_str(), (uint)v.size(), &my_charset_bin);
 }
 
 void table::setUseValues(const std::vector<std::string>& values, int type)

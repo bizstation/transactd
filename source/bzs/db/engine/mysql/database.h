@@ -78,6 +78,9 @@ class table;
  */
 #define REF_SIZE_MAX 112
 
+#define UPDATE_REPLACE 0
+#define UPDATE_INC 1
+#define UPDATE_DEC 2
 
 
 /** Control mysql table cahche
@@ -382,18 +385,11 @@ class table : private boost::noncopyable
     std::vector<int> m_useFields;
     void checkFiledIndex(int index);
     int fieldIndexByName(const char* name) const;
-
     void addUseField(int index) { m_useFields.push_back(index); };
-
 public:
     std::vector<int>& useFields() { return m_useFields; };
     void setUseFieldList(const std::string& csv);
-    void setValue(int index, const std::string& v, int type);
     void setUseValues(const std::vector<std::string>& values, int type);
-
-#define UPDATE_REPLACE 0
-#define UPDATE_INC 1
-#define UPDATE_DEC 2
 
 #endif
 
@@ -779,6 +775,8 @@ public:
     inline void setTimestampAlways(bool v) { m_timestampAlways = v;}
 
     void getCreateSql(String* s);
+
+    void setValue(int index, const std::string& v, int type);
 };
 
 class fieldBitmap
