@@ -23,6 +23,7 @@
 #include <bzs/db/engine/mysql/mysqlProtocol.h>
 #include <bzs/db/engine/mysql/errorMessage.h>
 #include <bzs/db/engine/mysql/mydebuglog.h>
+#include <bzs/db/engine/mysql/ha.h>
 #include <bzs/netsvc/server/IAppModule.h> //lookup for result value
 #include <bzs/db/transactd/appModule.h>
 #include <bzs/rtl/stl_uty.h>
@@ -36,9 +37,11 @@
 #include <bzs/rtl/exception.h>
 #include <random>
 
-
 extern int getTransactdIsolation();
 extern unsigned int getTransactdLockWaitTimeout();
+
+/* implemnts in transactd.cpp */
+extern unsigned int g_tcpServerType;
 
 namespace bzs
 {
@@ -404,89 +407,90 @@ bool dbExecuter::connect(request& req)
     return ret;
 }
 
-inline bool dbExecuter::doCreateTable(request& req)
+inline void dbExecuter::doCreateTable(request& req)
 {
+    database* db;
+    if (!getDatabaseWithAuth(req, &db) || req.result)
+    {
+        req.result = ERROR_TD_INVALID_CLINETHOST;
+        return;
+    }
+
     // if table name is mata table and database is nothing
     //  then cretate database too.
-    database* db;
-    bool ret = getDatabaseWithAuth(req, &db);
-    if (ret && req.result == 0)
-    {
-        std::string dbSqlname = getDatabaseName(req, FOR_SQL);
-        std::string cmd;
-        if (isMetaDb(req))
-        { // for database operation
-            if (((req.keyNum == CR_SUBOP_CREATE_DBONLY) || (req.keyNum == 0)) &&
-                    (db->existsDatabase() == false))
-            {
-                req.result = ddl_createDataBase(dbSqlname);
-                if (req.result == ER_DB_CREATE_EXISTS + MYSQL_ERROR_OFFSET)
-                    req.result = 0;
-            }
-            else if (req.keyNum == CR_SUBOP_DROP)
-            {
-                if (req.result == 0)
-                {
-                    std::string dbname = db->name();
-                    dbManager::releaseDatabase(req.cid);
-                    req.result = ddl_dropDataBase(dbname, dbSqlname, req.cid);
-                    if (ER_DB_DROP_EXISTS+ MYSQL_ERROR_OFFSET == req.result) req.result = 0;
-                }
-                return ret;
-            }
+    std::string dbSqlname = getDatabaseName(req, FOR_SQL);
+    std::string cmd;
+    if (isMetaDb(req))
+    { // for database operation
+        if (((req.keyNum == CR_SUBOP_CREATE_DBONLY) || (req.keyNum == 0)) &&
+                (db->existsDatabase() == false))
+        {
+            req.result = ddl_createDataBase(dbSqlname);
+            if (req.result == ER_DB_CREATE_EXISTS + MYSQL_ERROR_OFFSET)
+                req.result = 0;
         }
-        if (req.result == 0)
-        { // table operation
-            std::string tableSqlName = getTableName(req, FOR_SQL);
-            std::string tableName = getTableName(req);
-            if (req.keyNum == CR_SUBOP_DROP) // -128 is delete
+        else if (req.keyNum == CR_SUBOP_DROP)
+        {
+            if (req.result == 0)
             {
-                req.result = ddl_dropTable(db, tableName, dbSqlname,
-                                            tableSqlName);
-                if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
-                    req.result = 0;
+                std::string dbname = db->name();
+                dbManager::releaseDatabase(req.cid);
+                req.result = ddl_dropDataBase(dbname, dbSqlname, req.cid);
+                if (ER_DB_DROP_EXISTS+ MYSQL_ERROR_OFFSET == req.result) req.result = 0;
             }
-            else if (req.keyNum == CR_SUBOP_RENAME)
-            { // rename new is keybuf
-                request reqold;
-                reqold.keybuf = req.data;
-                reqold.keylen = *req.datalen;
-                req.result = ddl_renameTable(
-                    db, getTableName(reqold), /*oldname*/
-                    dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
-                    tableSqlName /*newName*/);
-            }
-            else if (req.keyNum == CR_SUBOP_SWAPNAME)
-            { // swap name name2 = keybuf
-                request reqold;
-                reqold.keybuf = req.data;
-                reqold.keylen = *req.datalen;
-                req.result = ddl_replaceTable(
-                    db, getTableName(reqold), /*oldname*/
-                    tableName, /*newName*/
-                    dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
-                    tableSqlName /*newName*/);
-            }
-            else if (req.keyNum != CR_SUBOP_CREATE_DBONLY)
-            { // create
-                if (req.data == NULL)
-                    req.result = 1;
-                else
-                { //-1 is overwrite
-                    if (req.keyNum == CR_SUB_FLAG_EXISTCHECK && tableName.size())
-                    {
-                        req.result = ddl_dropTable(db, tableName, dbSqlname,
-                                                   tableSqlName);
-                        if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
-                            req.result = 0;
-                    }
-                    if (req.result == 0)
-                        req.result = ddl_createTable(db, makeSQLcreateTable(req).c_str());
+            return;
+        }
+    }
+    if (req.result == 0)
+    { // table operation
+        std::string tableSqlName = getTableName(req, FOR_SQL);
+        std::string tableName = getTableName(req);
+        if (req.keyNum == CR_SUBOP_DROP) // -128 is delete
+        {
+            req.result = ddl_dropTable(db, tableName, dbSqlname,
+                                        tableSqlName);
+            if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
+                req.result = 0;
+        }
+        else if (req.keyNum == CR_SUBOP_RENAME)
+        { // rename new is keybuf
+            request reqold;
+            reqold.keybuf = req.data;
+            reqold.keylen = *req.datalen;
+            req.result = ddl_renameTable(
+                db, getTableName(reqold), /*oldname*/
+                dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
+                tableSqlName /*newName*/);
+        }
+        else if (req.keyNum == CR_SUBOP_SWAPNAME)
+        { // swap name name2 = keybuf
+            request reqold;
+            reqold.keybuf = req.data;
+            reqold.keylen = *req.datalen;
+            req.result = ddl_replaceTable(
+                db, getTableName(reqold), /*oldname*/
+                tableName, /*newName*/
+                dbSqlname, getTableName(reqold, FOR_SQL), /*oldname*/
+                tableSqlName /*newName*/);
+        }
+        else if (req.keyNum != CR_SUBOP_CREATE_DBONLY)
+        { // create
+            if (req.data == NULL)
+                req.result = 1;
+            else
+            { //-1 is overwrite
+                if (req.keyNum == CR_SUB_FLAG_EXISTCHECK && tableName.size())
+                {
+                    req.result = ddl_dropTable(db, tableName, dbSqlname,
+                                                tableSqlName);
+                    if (req.result == ER_BAD_TABLE_ERROR + MYSQL_ERROR_OFFSET)
+                        req.result = 0;
                 }
+                if (req.result == 0)
+                    req.result = ddl_createTable(db, makeSQLcreateTable(req).c_str());
             }
         }
     }
-    return ret;
 }
 
 // open table and assign handle
@@ -1557,8 +1561,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb, (req.keyNum==1));
             break;
         case TD_CREATETABLE:
-            if (!doCreateTable(req))
-                req.result = ERROR_TD_INVALID_CLINETHOST;
+            doCreateTable(req);
             break;
         case TD_OPENTABLE:
             nw->resize(*req.datalen);
@@ -1801,6 +1804,8 @@ size_t dbExecuter::getAcceptMessage(char* message, size_t size)
 
     hst->transaction_isolation = (unsigned short)getTransactdIsolation();
     hst->lock_wait_timeout = getTransactdLockWaitTimeout();
+    if (getRoleMaster())
+        hst->options |= HST_OPTION_ROLE_MASTER;
     if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR) == 0)
     {
         makeRandomKey(m_scramble, MYSQL_SCRAMBLE_LENGTH);
@@ -1865,11 +1870,16 @@ int connMgrExecuter::systemVariables(char* buf, size_t& size)
     return serialize(m_req, buf, size, records, st.stat());
 }
 
-int connMgrExecuter::sqlVariables(char* buf, size_t& size)
+int connMgrExecuter::sqlVariables(netsvc::server::netWriter* nw)
 {
     connManager st(m_modHandle);
-    const connection::records& records = st.sqlVariables();
-    return serialize(m_req, buf, size, records, st.stat());
+    const connection::records& records = st.sqlVariables(m_blobBuffer);
+    int v = serialize(m_req, nw->ptr(), nw->datalen, records, st.stat(), m_blobBuffer);
+    short dymmy = 0;
+    if ((m_req.result == 0) && m_blobBuffer->fieldCount())
+        nw->datalen = m_req.serializeBlobBody(m_blobBuffer, nw->ptr(), nw->datalen,
+        FILE_MAP_SIZE, nw->optionalData(), dymmy);
+    return v;
 }
 
 int connMgrExecuter::statusVariables(char* buf, size_t& size)
@@ -1931,7 +1941,6 @@ int connMgrExecuter::slaveHosts(netsvc::server::netWriter* nw)
         nw->datalen = m_req.serializeBlobBody(m_blobBuffer, nw->ptr(), nw->datalen,
                                         FILE_MAP_SIZE, nw->optionalData(), dymmy);
     return v;
-
 }
 
 int connMgrExecuter::disconnectOne(char* buf, size_t& size)
@@ -1953,14 +1962,72 @@ int connMgrExecuter::disconnectAll(char* buf, size_t& size)
     return EXECUTE_RESULT_SUCCESS;
 }
 
+/* redefined. First defined in transactd.cpp */
+#define TCP_TPOOL_SERVER     2
+
+void connMgrExecuter::execHaCommand()
+{
+    try
+    {
+        if (g_tcpServerType == TCP_TPOOL_SERVER)
+        {
+            m_req.reset();
+            m_req.result = STATUS_NOSUPPORT_OP;
+            return;
+        }
+        bool ret = true;
+        switch ((int)m_req.keyNum)
+        {
+        case TD_STSTCS_HA_LOCK:
+            ret = haLock();
+            break;
+        case TD_STSTCS_HA_UNLOCK:
+            ret = haUnlock();
+            break;
+        case TD_STSTCS_HA_SET_ROLEMASTER:
+        case TD_STSTCS_HA_SET_ROLENONE:
+            ret = setRoleMaster(m_req.keyNum == TD_STSTCS_HA_SET_ROLEMASTER);
+            break;
+        case TD_STSTCS_HA_SET_TRXBLOCK:
+        case TD_STSTCS_HA_SET_TRXNOBLOCK:
+            ret = setTrxBlock(m_req.keyNum == TD_STSTCS_HA_SET_TRXBLOCK);
+            break;
+        case TD_STSTCS_HA_ENABLE_FO:
+        case TD_STSTCS_HA_DISBLE_FO:
+            ret = setEnableFailover(m_req.keyNum == TD_STSTCS_HA_ENABLE_FO);
+            break;
+        }
+        m_req.reset();
+        if (ret == false)
+            m_req.result = STATUS_LOCK_ERROR;
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        const int* code = getCode(e);
+        if (code)
+            m_req.result = *code;
+        else
+        {
+            m_req.result = 20000;
+            sql_print_error("Stastics operation %s", boost::diagnostic_information(e).c_str());
+        }
+        printWarningMessage(code, getMsg(e));
+    }
+    catch (...)
+    {
+        m_req.result = 20001;
+    }
+}
+
 int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
 {
     if (m_req.keyNum == TD_STSTCS_DISCONNECT_ONE)
         return disconnectOne(nw->ptr(), nw->datalen);
-    if (m_req.keyNum == TD_STSTCS_DISCONNECT_ALL)
+    else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ALL)
         return disconnectAll(nw->ptr(), nw->datalen);
-
-    if (*m_req.datalen == (uint_td)63976)
+    else if (m_req.keyNum >= TD_STSTCS_HA_LOCK && m_req.keyNum <= TD_STSTCS_HA_DISBLE_FO)
+        execHaCommand();
+    else if (*m_req.datalen == (uint_td)63976)
     {
         switch (m_req.keyNum)
         {
@@ -1985,7 +2052,7 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
         case TD_STSTCS_SLAVE_CHANNELS:
             return channels(nw->ptr(), nw->datalen);
         case TD_STSTCS_SQL_VARIABLES:
-            return sqlVariables(nw->ptr(), nw->datalen);
+            return sqlVariables(nw);
         default:
             m_req.reset();
             m_req.result = STATUS_NOSUPPORT_OP;
@@ -2011,6 +2078,20 @@ commandExecuter::commandExecuter(netsvc::server::IAppModule* mod)
 commandExecuter::~commandExecuter()
 {
     m_dbExec.reset();
+}
+
+int commandExecuter::execute(netsvc::server::netWriter* nw)
+{
+    if (m_req.op == TD_STASTISTICS)
+        return connMgrExecuter(m_req, (unsigned __int64)m_dbExec->mod(), 
+                    m_dbExec->m_blobBuffer).commandExec(nw);
+    int ret = m_dbExec->commandExec(m_req, nw);
+    
+    // Start blocking mode need lock slave servers first.
+    // therefore 
+    if (isTrxBlocking() && m_dbExec->trxProcessing() == 0)
+        return EXECUTE_RESULT_SEND_QUIT;
+    return ret;
 }
 
 size_t commandExecuter::perseRequestEnd(const char* p, size_t transfered,

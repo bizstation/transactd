@@ -69,7 +69,7 @@ class dbExecuter : public engine::mysql::dbManager
     void releaseDatabase(request& req, int op);
     std::string makeSQLcreateTable(const request& req);
     bool connect(request& req);
-    inline bool doCreateTable(request& req);
+    inline void doCreateTable(request& req);
     inline bool doOpenTable(request& req, char* buf, bool reconnect=false);
     inline void doSeekKey(request& req, int op, engine::mysql::rowLockMode* lock);
     inline void doMoveFirst(request& req, engine::mysql::rowLockMode* lock);
@@ -118,10 +118,11 @@ class connMgrExecuter
     int slaveHosts(netsvc::server::netWriter* nw);
     int systemVariables(char* buf, size_t& size);
     int statusVariables(char* buf, size_t& size);
-    int sqlVariables(char* buf, size_t& size);
+    int sqlVariables(netsvc::server::netWriter* nw);
     int read(char* buf, size_t& size);
     int disconnectOne(char* buf, size_t& size);
     int disconnectAll(char* buf, size_t& size);
+    void execHaCommand();
 public:
     connMgrExecuter(request& req, unsigned __int64 parent, blobBuffer* bb);
     int commandExec(netsvc::server::netWriter* nw);
@@ -148,13 +149,7 @@ public:
 
     bool parse(const char* p, size_t size);
 
-    int execute(netsvc::server::netWriter* nw)
-    {
-        if (m_req.op == TD_STASTISTICS)
-            return connMgrExecuter(m_req, (unsigned __int64)m_dbExec->mod(), 
-                        m_dbExec->m_blobBuffer).commandExec(nw);
-        return m_dbExec->commandExec(m_req, nw);
-    }
+    int execute(netsvc::server::netWriter* nw);
 
     bool isShutDown() { return m_dbExec->isShutDown(); }
 

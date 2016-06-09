@@ -157,6 +157,17 @@ void dbManager::releaseDatabase(short cid)
             m_handles.erase(m_handles.begin() + i);
 }
 
+int dbManager::trxProcessing()
+{
+    int transactins = 0;
+    for (size_t i = 0; i < m_dbs.size(); i++)
+    {
+        if (m_dbs[i]->inTransaction())
+            ++transactins;
+    }
+    return transactins;
+}
+
 database* dbManager::useDataBase(int id) const
 {
     if (id >= (int)m_dbs.size())
