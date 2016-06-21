@@ -52,8 +52,11 @@ int connections::netTimeout = 180;
 #define DEFAULT_CONNECT_TIMEOUT "20"
 #define DEFAULT_NET_TIMEOUT "180"
 
+/* redefine tdapapi.h */
+#define HST_OPTION_CLEAR_CACHE 8
 
-connections::connections(const char* pipeName) : m_pipeName(pipeName),m_resolver(m_ios)
+connections::connections(const char* pipeName) : m_pipeName(pipeName),
+    m_resolver(m_ios), m_haHostnameResolver(NULL)
 {
 
 #ifdef _WIN32
@@ -157,16 +160,6 @@ asio::ip::tcp::endpoint connections::endpoint(const std::string& host,
         ec.clear();
     }
     return endpoint;
-}
-
-connection* connections::getConnection(const std::string& host, const char* port)
-{
-    mutex::scoped_lock lck(m_mutex);
-    boost::system::error_code ec;
-    tcp::endpoint ep = endpoint(host, port, ec);
-    if (!ec)
-        return getConnection(ep);
-    return NULL;
 }
 
 #ifdef USE_PIPE_CLIENT
@@ -313,10 +306,25 @@ inline bool connections::doHandShake(connection* c, handshake f, void* data)
 #pragma warn -8004
 #endif
 // The connection of found from connection list of same address is returned.
-connection* connections::connect(const std::string& host, const char* port, handshake f, void* data, bool newConnection)
+connection* connections::connect(const std::string& hst, const char* port,
+        handshake f, void* data, bool newConnection, bool clearNRCache)
 {
     bool namedPipe = false;
     connection* c;
+    std::string host = hst;
+    unsigned int opt = clearNRCache ? HST_OPTION_CLEAR_CACHE : 0;
+    char buf[MAX_PATH];
+    if (m_haHostnameResolver)
+    {
+        m_haHostnameResolver(hst.c_str(), port, buf, opt);
+        char* p = strchr(buf, ':');
+        if (p)
+        {
+            *p = 0x00;
+            port = p + 1;
+        }
+        host = buf;
+    }
     mutex::scoped_lock lck(m_mutex);
     asio::ip::tcp::endpoint ep = endpoint(host, port, m_e);
     if (m_e)
@@ -330,7 +338,8 @@ connection* connections::connect(const std::string& host, const char* port, hand
         c = newConnection ? NULL : getConnection(ep);
     if (newConnection || !c)
     {
-        c = createConnection(ep, namedPipe); 
+        c = createConnection(ep, namedPipe);
+        c->setUserOptions(opt);
         c = doConnect(c);
         if (!c || !doHandShake(c, f, data))
             return NULL;
@@ -343,14 +352,29 @@ connection* connections::connect(const std::string& host, const char* port, hand
 #pragma warn .8004
 #endif
 
-bool connections::reconnect(connection* c, const std::string& host, const char* port,
+bool connections::reconnect(connection* c, const std::string& hst, const char* port,
                         handshake f, void* data)
 {
     boost::system::error_code ec;
+    std::string host = hst;
+    unsigned int opt = HST_OPTION_CLEAR_CACHE;
+    char buf[MAX_PATH];
+    if (m_haHostnameResolver)
+    {
+        m_haHostnameResolver(hst.c_str(), port, buf, opt);
+        char* p = strchr(buf, ':');
+        if (p)
+        {
+            *p = 0x00;
+            port = p + 1;
+        }
+        host = buf;
+    }
     mutex::scoped_lock lck(m_mutex);
     asio::ip::tcp::endpoint ep = endpoint(host, port, ec);
     if (ec)
         return false;
+    c->setUserOptions(opt);
     c->reconnect(ep);
     if (!c || !doHandShake(c, f, data))
         return false;
@@ -361,6 +385,13 @@ int connections::connectionCount()
 {
     return (int)m_conns.size();
 }
+
+void connections::registHostnameResolver(HOSTNAME_RESOLVER_PTR func)
+{
+    mutex::scoped_lock lck(m_mutex);
+    m_haHostnameResolver = func;    
+}
+
 
 } // namespace client
 } // namespace netsvc

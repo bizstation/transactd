@@ -214,6 +214,14 @@ struct record
             strcpy_s(buf, size, (char*)longValue);
         return buf;
     }
+    const char* value_ptr() const
+    {
+        if (type == 0)
+            return (const char*)&longValue;
+        else if(type == 1)
+            return name;
+        return (const char*)longValue;
+    }
 
 };                                          // 20 + 68 = 88
 

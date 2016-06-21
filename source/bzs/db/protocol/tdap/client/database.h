@@ -149,6 +149,21 @@ public:
     static const int CMP_MODE_OLD_NULL =  0;
 };
 
+class overrideCompatibleMode
+{
+    int mode;
+public:
+    inline overrideCompatibleMode(int v)
+    {
+        mode = database::compatibleMode();
+        database::setCompatibleMode(v);
+    }
+    inline ~overrideCompatibleMode()
+    {
+        database::setCompatibleMode(mode);
+    }
+};
+
 } // namespace client
 } // namespace tdap
 } // namespace protocol

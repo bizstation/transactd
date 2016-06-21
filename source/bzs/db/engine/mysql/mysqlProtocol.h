@@ -48,6 +48,11 @@ struct binlogPos
     char type;
     char filename[BINLOGNAME_SIZE];
     char gtid[GTID_SIZE];
+    binlogPos()
+    {
+        filename[0] = 0x00;
+        gtid[0] = 0x00;
+    }
 };
 pragma_pop
 

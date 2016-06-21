@@ -162,7 +162,7 @@ int dbManager::trxProcessing()
     int transactins = 0;
     for (size_t i = 0; i < m_dbs.size(); i++)
     {
-        if (m_dbs[i]->inTransaction())
+        if (m_dbs[i]->inTransaction() || m_dbs[i]->inSnapshot())
             ++transactins;
     }
     return transactins;

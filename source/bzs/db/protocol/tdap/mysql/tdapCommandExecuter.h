@@ -106,6 +106,7 @@ public:
  */
 class connMgrExecuter
 {
+    friend class safeLockReadChannels;
     request& m_req;
     __int64 m_modHandle;
     blobBuffer* m_blobBuffer;

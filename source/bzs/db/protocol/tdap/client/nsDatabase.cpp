@@ -61,6 +61,7 @@ extern EnginsFunc engins;
 unsigned int g_lastTrnTime = 0;
 unsigned int nsdatabase::m_execCodepage = GetACP();
 bool g_checkTablePtr = false;
+bool g_isRecoverNetError = false;
 
 PACKAGE void registEnginsPtr(EnginsFunc func)
 {
@@ -472,9 +473,8 @@ void nsdatabase::createTable(fileSpec* pfs, uint_td len,
     ;
     const char* p = toServerUri(buf2, MAX_PATH, buf, isUseTransactd());
 
-    m_stat =
-        m_btrcallid(TD_CREATETABLE, posblk, pfs, &len, (void*)p,
-                    (uchar_td)strlen(p), (char_td)mode, m_nsimpl->cidPtr);
+    m_stat = tdapEx(TD_CREATETABLE, posblk, pfs, &len, (void*)p,
+                    (uchar_td)strlen(p), (char_td)mode);
 }
 
 void nsdatabase::dropTable(const _TCHAR* pFullPath)
@@ -501,9 +501,8 @@ void nsdatabase::dropTable(const _TCHAR* pFullPath)
     char buf2[MAX_PATH] = { 0x00 };
     const char* p = toServerUri(buf2, MAX_PATH, buf, isUseTransactd());
 
-    m_stat =
-        m_btrcallid(TD_CREATETABLE, posblk, NULL, NULL, (void*)p,
-                    (uchar_td)strlen(p) + 1, CR_SUBOP_DROP, m_nsimpl->cidPtr);
+    m_stat = tdapEx(TD_CREATETABLE, posblk, NULL, NULL, (void*)p,
+                    (uchar_td)strlen(p) + 1, CR_SUBOP_DROP);
 }
 
 void nsdatabase::swapTablename(const _TCHAR* Name1, const _TCHAR* Name2)
@@ -516,9 +515,8 @@ void nsdatabase::swapTablename(const _TCHAR* Name1, const _TCHAR* Name2)
     const char* p2 = toServerUri(buf2, MAX_PATH, Name2, isUseTransactd());
     uint_td len = (uint_td)strlen(p);
 
-    m_stat = m_btrcallid(TD_CREATETABLE, posblk, (void*)p, &len, (void*)p2,
-                         (uchar_td)strlen(p2), CR_SUBOP_SWAPNAME,
-                         m_nsimpl->cidPtr);
+    m_stat = tdapEx(TD_CREATETABLE, posblk, (void*)p, &len, (void*)p2,
+                         (uchar_td)strlen(p2), CR_SUBOP_SWAPNAME);
 }
 
 void nsdatabase::rename(const _TCHAR* pFullPath, const _TCHAR* newName)
@@ -554,9 +552,8 @@ void nsdatabase::rename(const _TCHAR* pFullPath, const _TCHAR* newName)
         _tcscpy(buf, newName);
     toServerUri(bufNew, MAX_PATH, newName, isUseTransactd());
 
-    m_stat = m_btrcallid(TD_CREATETABLE, posblk, (void*)p, &len, (void*)bufNew,
-                         (uchar_td)strlen(bufNew), CR_SUBOP_RENAME,
-                         m_nsimpl->cidPtr);
+    m_stat = tdapEx(TD_CREATETABLE, posblk, (void*)p, &len, (void*)bufNew,
+                         (uchar_td)strlen(bufNew), CR_SUBOP_RENAME);
 }
 
 void nsdatabase::registerTable(nstable* tb)
@@ -637,10 +634,8 @@ void nsdatabase::reset()
     m_nsimpl->bdfPath[0] = 0x00;
     if (m_btrcallid)
     {
-        m_stat = m_btrcallid(TD_RESET_CLIENT, NULL, NULL, NULL, NULL, 0, 0,
-                             m_nsimpl->cidPtr);
-        m_stat = m_btrcallid(TD_STOP_ENGINE, NULL, NULL, NULL, NULL, 0, 0,
-                             m_nsimpl->cidPtr);
+        m_stat = tdap(TD_RESET_CLIENT, NULL, NULL, NULL, NULL, 0, 0);
+        m_stat = tdap(TD_STOP_ENGINE, NULL, NULL, NULL, NULL, 0, 0);
         if (m_stat == ERROR_TD_NOT_CONNECTED)
             m_stat = STATUS_SUCCESS;
     }
@@ -679,17 +674,7 @@ void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)
     if (m_nsimpl->snapShotCount == 0)
     {
         uint_td datalen = (bias == CONSISTENT_READ_WITH_BINLOG_POS) ? BINLOGPOS_SIZE : 0;
-        m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, bpos, &datalen, NULL, 0, 0,
-                             m_nsimpl->cidPtr);
-#ifdef TEST_RECONNECT
-        if (canRecoverNetError(m_stat))
-        {
-            reconnect();
-            if (m_stat) return;
-            m_stat = m_btrcallid(TD_BEGIN_SHAPSHOT + bias, NULL, NULL, NULL, NULL,
-                                     0, 0, m_nsimpl->cidPtr);
-        }
-#endif
+        m_stat = tdapEx(TD_BEGIN_SHAPSHOT + bias, NULL, bpos, &datalen, NULL, 0, 0);
         if (m_stat == 0)
         {
             if (bias == CONSISTENT_READ_WITH_BINLOG_POS)
@@ -699,8 +684,7 @@ void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)
                 else if(bpos->type == REPL_POSTYPE_GTID)
                 {
                     const blobHeader* hd;
-                    short stat = m_btrcallid(TD_GET_BLOB_BUF, NULL, &hd, NULL, NULL, 0, 0,
-                             m_nsimpl->cidPtr);
+                    short stat = tdap(TD_GET_BLOB_BUF, NULL, &hd, NULL, NULL, 0, 0);
                     if (stat == 0)
                     {
                         assert(hd->rows);
@@ -710,19 +694,18 @@ void nsdatabase::beginSnapshot(short bias, binlogPos* bpos)
                         bpos->type = REPL_POSTYPE_POS;
                 }
             }
-            m_nsimpl->snapShotCount++;
+            ++m_nsimpl->snapShotCount;
         }
     }
     else
-        m_nsimpl->snapShotCount++;
+        ++m_nsimpl->snapShotCount;
 }
 
 void nsdatabase::endSnapshot()
 {
     m_nsimpl->snapShotCount--;
     if (m_nsimpl->snapShotCount == 0)
-        m_stat = m_btrcallid(TD_END_SNAPSHOT, NULL, NULL, NULL, NULL, 0, 0,
-                             m_nsimpl->cidPtr);
+        m_stat = tdap(TD_END_SNAPSHOT, NULL, NULL, NULL, NULL, 0, 0);
     if (m_nsimpl->snapShotCount < 0)
         m_nsimpl->snapShotCount = 0;
 }
@@ -732,8 +715,8 @@ void nsdatabase::beginTrn(short BIAS)
     if (!checkAssociate()) return;
     if (m_nsimpl->tranCount == 0)
     {
-        m_stat = m_btrcallid((ushort_td)(BIAS + TD_BEGIN_TRANSACTION), NULL,
-                             NULL, NULL, NULL, 0, 0, m_nsimpl->cidPtr);
+        m_stat = tdapEx((ushort_td)(BIAS + TD_BEGIN_TRANSACTION), NULL,
+                             NULL, NULL, NULL, 0, 0);
         if (m_stat == 0)
             m_nsimpl->tranCount++;
     }
@@ -743,13 +726,10 @@ void nsdatabase::beginTrn(short BIAS)
 
 void nsdatabase::endTrn()
 {
-
     m_nsimpl->tranCount--;
     if (m_nsimpl->tranCount == 0)
     {
-        m_stat = m_btrcallid(TD_END_TRANSACTION, NULL, NULL, NULL, NULL, 0, 0,
-                             m_nsimpl->cidPtr);
-
+        m_stat = tdap(TD_END_TRANSACTION, NULL, NULL, NULL, NULL, 0, 0);
 #ifdef _WIN32
         g_lastTrnTime = GetTickCount();
 #endif
@@ -760,9 +740,7 @@ void nsdatabase::endTrn()
 
 void nsdatabase::abortTrn()
 {
-    m_stat = m_btrcallid(TD_ABORT_TRANSACTION, NULL, NULL, NULL, NULL, 0, 0,
-                         m_nsimpl->cidPtr);
-
+    m_stat = tdap(TD_ABORT_TRANSACTION, NULL, NULL, NULL, NULL, 0, 0);
     m_nsimpl->tranCount = 0;
 #ifdef _WIN32
     g_lastTrnTime = GetTickCount();
@@ -797,9 +775,7 @@ void nsdatabase::getBtrVersion(btrVersions* Vers, uchar_td* posblk)
         posblk = posblkTmp;
 
     uint_td datalen = sizeof(btrVersions);
-
-    m_stat = m_btrcallid(TD_VERSION, posblk, Vers, &datalen, NULL, 0, 0,
-                         m_nsimpl->cidPtr);
+    m_stat = tdapEx(TD_VERSION, posblk, Vers, &datalen, NULL, 0, 0);
     {
         bool remote = false;
         if (uriMode())
@@ -845,8 +821,8 @@ char* nsdatabase::getCreateViewSql(const _TCHAR* name , char* retbuf, uint_td* s
     char Uri[MAX_PATH] = { 0x00 };
     const char* p = nsdatabase::toServerUri(Uri, MAX_PATH, tmp, true);
     keylen_td keylen = (keylen_td)strlen(p) + 1;
-    m_stat = m_btrcallid(TD_GET_SCHEMA, NULL, retbuf, size, (void*)p, keylen,
-                             SC_SUBOP_VIEW_BY_SQL, m_nsimpl->cidPtr);
+    m_stat = tdapEx(TD_GET_SCHEMA, NULL, retbuf, size, (void*)p, keylen,
+                             SC_SUBOP_VIEW_BY_SQL);
     if (m_stat != STATUS_SUCCESS)
         retbuf[0] = 0x00;
     return retbuf;
@@ -890,8 +866,7 @@ void nsdatabase::readDatabaseDirectory(_TCHAR* retbuf, uchar_td buflen)
 {
     // keynum is drive name A=1 B=2 C=3 0=default
     char tmp[128];
-    m_stat = m_btrcallid(TD_GETDIRECTORY, NULL, NULL, NULL, tmp, 128, 0,
-                         m_nsimpl->cidPtr);
+    m_stat = tdapEx(TD_GETDIRECTORY, NULL, NULL, NULL, tmp, 128, 0);
     toTCharCopy(retbuf, tmp, buflen);
 }
 
@@ -919,8 +894,8 @@ bool nsdatabase::connect(const _TCHAR* URI, bool newConnection)
     char uri_a[MAX_PATH] = { 0x00 };
     const char* p = toServerUri(uri_a, MAX_PATH, URI, isUseTransactd());
     char_td keyNum = (isUseTransactd() == false) ? 0 : newConnection ? 3 : 0;
-    m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, (void*)p,
-                         (keylen_td)(strlen(p) + 1), keyNum, clientID());
+    m_stat = tdap(TD_CONNECT, NULL, NULL, &datalen, (void*)p,
+                         (keylen_td)(strlen(p) + 1), keyNum);
     if (m_stat)
         return false;
     return true;
@@ -936,9 +911,8 @@ bool nsdatabase::disconnect(const _TCHAR* URI)
     uint_td datalen = 0;
 
     //Transactd not use uri.
-    m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, (void*)URI,
-                         (keylen_td)(_tcslen(URI) + 1), LG_SUBOP_DISCONNECT,
-                         clientID());
+    m_stat = tdap(TD_CONNECT, NULL, NULL, &datalen, (void*)URI,
+                         (keylen_td)(_tcslen(URI) + 1), LG_SUBOP_DISCONNECT);
     if (m_stat)
         return false;
     return true;
@@ -946,14 +920,12 @@ bool nsdatabase::disconnect(const _TCHAR* URI)
 
 bool nsdatabase::disconnectForReconnectTest()
 {
-    //Transactd only
     if (!isUseTransactd())
         return false;
 
     uint_td datalen = 0;
-    m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, NULL,
-                         0, LG_SUBOP_DISCONNECT_EX,
-                         clientID());
+    m_stat = tdap(TD_CONNECT, NULL, NULL, &datalen, NULL,
+                         0, LG_SUBOP_DISCONNECT_EX);
     if (m_stat)
         return false;
     return true;
@@ -978,8 +950,8 @@ void nsdatabase::doReconnect(nstable* tb)
     memcpy(databuf + 1, &pb->bookmarkLen, pb->bookmarkLen + 1);
     const char* p = toServerUri(uri_a, MAX_PATH, tb->uri(), true);
     short offset = (pb->lock) ? ROW_LOCK_X : 0;
-    m_stat = m_btrcallid(TD_RECONNECT + offset, pb, databuf, &datalen, (void*)p,
-                    (keylen_td)(strlen(p) + 1), tb->mode(), clientID());
+    m_stat = tdap(TD_RECONNECT + offset, pb, databuf, &datalen, (void*)p,
+                    (keylen_td)(strlen(p) + 1), tb->mode());
     delete [] databuf;
 }
 
@@ -1001,8 +973,12 @@ bool nsdatabase::doReopenTables()
     return (m_stat == 0);
 }
 
+/*
+   A single thread can access to the connection ,if it is shared from some engings.
+*/
 bool reconnectSharedConnection(const void* ptr)
 {
+    //Lock engin count
     boost::mutex::scoped_lock lck(g_mutex);
     for (int i = 0; i < MAX_BTRENGIN; ++i)
     {
@@ -1030,12 +1006,29 @@ bool nsdatabase::reconnect()
     uint_td datalen = 0;
     char uri_a[MAX_PATH] = { 0x00 };
     const char* p = toServerUri(uri_a, MAX_PATH, m_nsimpl->bdfPath, true);
-    m_stat = m_btrcallid(TD_CONNECT, NULL, NULL, &datalen, (void*)p,
-                         (keylen_td)(strlen(p) + 1),
-                         LG_SUBOP_RECONNECT, clientID());
+    m_stat = tdap(TD_CONNECT, NULL, NULL, &datalen, (void*)p,
+                         (keylen_td)(strlen(p) + 1), LG_SUBOP_RECONNECT);
     if (m_stat) return false;
     return reconnectSharedConnection((*(void**)m_nsimpl->cidPtr));
+}
 
+short nsdatabase::tdapEx(ushort_td op, void* posb, void* data, uint_td* datalen,
+                        void* keybuf, keylen_td keylen, char_td keyNum)
+{
+    bool loop;
+    short stat;
+    do
+    {
+        loop = false;
+        stat = m_btrcallid(op, posb, data, datalen, keybuf, keylen, keyNum, clientID());
+        if (stat && nsdatabase::isRecoverNetError() && canRecoverNetError(m_stat))
+        {
+            reconnect();
+            if (stat) break;
+            loop = true;
+        }
+    }while (loop);
+    return stat;
 }
 
 bool nsdatabase::trnsactionFlushWaitStatus()
@@ -1125,6 +1118,27 @@ WIN_TPOOL_SHUTDOWN_PTR nsdatabase::getWinTPoolShutdownFunc()
     return NULL;
 
 }
+
+bool nsdatabase::registerHostNameResolver(HOSTNAME_RESOLVER_PTR func)
+{
+    if (hTrsdDLL == NULL)
+        hTrsdDLL = LoadLibraryA(LIB_PREFIX TDCLC_LIBNAME);
+    if (hTrsdDLL)
+    {
+        REGISTER_RESOLVER_PTR regist =  
+            (REGISTER_RESOLVER_PTR)GetProcAddress((HINSTANCE)hTrsdDLL,
+                                        "RegisterHostNameResolver");
+        if (regist)
+        {
+            regist(func);
+            g_isRecoverNetError = func != NULL;
+            return true;
+        }
+    }
+    return false;
+}
+
+
 
 } // namespace client
 } // namespace tdap

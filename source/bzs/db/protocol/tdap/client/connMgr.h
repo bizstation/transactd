@@ -53,8 +53,8 @@ public:
     connRecords();
     connRecords(const connRecords& r);
     connRecords& operator=(const connRecords& r);
-	const record& operator[] (int index) const;
-	record& operator[] (int index);
+	const record& operator[] (size_t index) const;
+	record& operator[] (size_t index);
 	size_t size() const;
 	void clear();
     void release();
@@ -98,7 +98,7 @@ public:
 #ifdef _UNICODE
     const records& slaveStatus(const wchar_t* channel);
 #endif
-    const records& channels();
+    const records& channels(bool withLock = false);
     const records& slaveHosts();
     const records& sysvars();
     const records& sqlvars();
@@ -108,6 +108,11 @@ public:
     const records& inUseTables(__int64 connid, int dbid);
     void postDisconnectOne(__int64 connid);
     void postDisconnectAll();
+    bool haLock();
+    void haUnlock();
+    bool setRole(int v);
+    bool setTrxBlock(bool v);
+    bool setEnableFailover(bool v);
     short_td stat();
     database* db() const;
     const _TCHAR* slaveStatusName(uint_td index) const;
@@ -116,6 +121,7 @@ public:
     static void removeSystemDb(records& recs);
     static const _TCHAR* sysvarName(uint_td index);
     static const _TCHAR* statusvarName(uint_td index);
+    static const _TCHAR* sqlvarName(uint_td index);
     static connMgr* create(database* db);
 };
 

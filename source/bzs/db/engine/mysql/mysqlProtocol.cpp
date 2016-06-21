@@ -220,7 +220,8 @@ safe_commit_lock::~safe_commit_lock()
         short result = 0;
         {
             attachThd(tmpThd);
-            copyGrant(tmpThd, currentThd, NULL);
+            if (tmpThd != currentThd)
+                copyGrant(tmpThd, currentThd, NULL);
             masterStatus p(tmpThd, bpos, bb); 
             cp_query_command(tmpThd, "show master status");
             if (tmpThd->is_error())
@@ -526,6 +527,7 @@ int getChannels(THD* /*thd*/, connection::records& recs)
             if (mi->host[0])
             {
                 connection::record rec;
+                rec.type = 1;
                 strcpy_s(rec.name, CON_REC_VALUE_SIZE, mi->connection_name.str);
                 recs.push_back(rec);
             }
@@ -537,8 +539,7 @@ int getChannels(THD* /*thd*/, connection::records& recs)
 #include "rpl_msr.h" //channel_map
 int getChannels(THD* thd, connection::records& recs)
 {
-    channel_map.assert_some_lock();
-
+    channel_map.rdlock();
     uint_td size = channel_map.get_num_instances();
     for (mi_map::iterator it = channel_map.begin(); it != channel_map.end(); it++)
     {
@@ -546,10 +547,12 @@ int getChannels(THD* thd, connection::records& recs)
         if (mi && mi->host[0])
         {
             connection::record rec;
+            rec.type = 1;
             strcpy_s(rec.name, CON_REC_VALUE_SIZE, mi->get_channel());
             recs.push_back(rec);
         }
     }
+    channel_map.unlock();
     return 0;
 }
 

@@ -350,7 +350,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
                     else
                     {
                         client_t->cleanup();
-                        return 1;
+                        return client_t->result();
                     }
                 }
                 else if (op == TD_OPENTABLE)
@@ -358,7 +358,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
                 if (!client_t->buildDualChasetKeybuf())
                 {
                     client_t->cleanup();
-                    return SERVER_CLIENT_NOT_COMPATIBLE;
+                    return client_t->result();
                 }
             }
             break;
@@ -560,4 +560,10 @@ extern "C" PACKAGE_OSX short_td __STDCALL
 extern "C" PACKAGE_OSX void __STDCALL BeginWinThreadPoolShutdown()
 {
     win_thread_pool_shutdown = true;
+}
+
+
+extern "C" PACKAGE_OSX void __STDCALL RegisterHostNameResolver(HOSTNAME_RESOLVER_PTR func)
+{
+    m_cons->registHostnameResolver(func);
 }

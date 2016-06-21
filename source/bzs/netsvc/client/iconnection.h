@@ -109,6 +109,8 @@ public:
     virtual bool isHandShakable() const = 0;
     virtual const boost::system::error_code& error() const = 0;
     virtual void* versions() = 0;
+    virtual unsigned int userOptions() const = 0;
+    virtual void setUserOptions(unsigned int v) = 0;
 };
 
 #define CONNECTION_FUNCTION_DIRECT_READ 1

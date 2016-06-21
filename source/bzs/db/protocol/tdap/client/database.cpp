@@ -258,8 +258,8 @@ void database::create(const _TCHAR* uri, short type)
                 _TCHAR posblk[128] = { 0x00 };
                 const char* p = toServerUri((char*)buf, MAX_PATH, uri_tmp, true);
                 uint_td len = 0;
-                stat = m_btrcallid(TD_CREATETABLE, posblk, NULL, &len,
-                     (void*)p, (uchar_td)strlen(p), CR_SUBOP_CREATE_DBONLY , clientID());
+                stat = tdapEx(TD_CREATETABLE, posblk, NULL, &len,
+                     (void*)p, (uchar_td)strlen(p), CR_SUBOP_CREATE_DBONLY);
             }
         }
         else
@@ -440,6 +440,12 @@ void database::doOpen(const _TCHAR* uri, short type, short mode,
     m_impl->isOpened = (m_stat == STATUS_SUCCESS); // important
 }
 
+bool isConnected(const uchar_td* cid)
+{
+    const void* p = *((void**)cid);
+    return p != 0;
+}
+
 bool database::open(const _TCHAR* _uri, short type, short mode,
                     const _TCHAR* dir, const _TCHAR* ownername)
 {
@@ -492,7 +498,7 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
         {
             if ((compatibleMode() & CMP_MODE_MYSQL_NULL) == 0)
                 m_stat = STATUS_INVALID_NULLMODE;
-            else if (isAssociate() || connect(_uri))
+            else if (isAssociate() || isConnected(clientID()) || connect(_uri))
             {
                 m_impl->dbDef->allocDatabuffer();
                 m_stat = m_impl->dbDef->stat();
@@ -554,8 +560,7 @@ short database::aclReload()
         return m_stat = STATUS_DB_YET_OPEN; 
     _TCHAR posblk[128] = { 0x00 };
     uint_td buflen = 0;
-    return m_stat =
-        m_btrcallid(TD_ACL_RELOAD, posblk, NULL, &buflen, 0, 0, 0, clientID());
+    return m_stat = tdapEx(TD_ACL_RELOAD, posblk, NULL, &buflen, 0, 0, 0);
 }
 
 char* database::getContinuousList(int option)
@@ -594,8 +599,7 @@ short database::continuous(char_td IsEnd, bool inclideRepfile)
     char tmp[128] = { 0x00 };
     char* buf = getContinuousList(inclideRepfile);
     uint_td buflen = (uint_td)strlen(buf) + 1;
-    m_stat =
-        m_btrcallid(TD_BACKUPMODE, tmp, buf, &buflen, 0, 0, IsEnd, clientID());
+    m_stat = tdap(TD_BACKUPMODE, tmp, buf, &buflen, 0, 0, IsEnd);
     free(buf);
     return m_stat;
 }
@@ -994,10 +998,8 @@ char* database::getSqlStringForCreateTable(const _TCHAR* tableName, char* retbuf
 
     const char* p = toServerUri(buf2, MAX_PATH, uri, isUseTransactd());
     
-    m_stat = m_btrcallid(
-        TD_TABLE_INFO, posblk, td,
-            size, (void*)p, (uchar_td)strlen(p),
-            ST_SUB_GETSQL_BY_TABLEDEF, clientID());
+    m_stat = tdap(TD_TABLE_INFO, posblk, td, size, (void*)p, 
+        (uchar_td)strlen(p), ST_SUB_GETSQL_BY_TABLEDEF);
     return retbuf;
 }
 
@@ -1014,10 +1016,10 @@ bool database::createTable(const char* utf8Sql)
             _TCHAR posblk[128] = { 0x00 };
             const char* p = toServerUri(buf2, MAX_PATH, rootDir(), true);
             uint_td len = (uint_td)strlen(utf8Sql);
-            m_stat = m_btrcallid(TD_CREATETABLE, posblk, (void*)utf8Sql, &len,
+            m_stat = tdapEx(TD_CREATETABLE, posblk, (void*)utf8Sql, &len,
                  (void*)p, (uchar_td)strlen(p),
                  (m_impl->createExistNoCheck) ?
-                 CR_SUBOP_BY_SQL : CR_SUBOP_BY_SQL_NOCKECK, clientID());
+                 CR_SUBOP_BY_SQL : CR_SUBOP_BY_SQL_NOCKECK);
         }
     }
     else
@@ -1044,12 +1046,10 @@ bool database::createTable(short fileNum, const _TCHAR* uri)
 
         const char* p = toServerUri(buf2, MAX_PATH, uri, isUseTransactd());
 
-        m_stat = m_btrcallid(
-            TD_CREATETABLE, posblk, td,
+        m_stat = tdapEx(TD_CREATETABLE, posblk, td,
             &m_impl->dbDef->m_datalen, (void*)p, (uchar_td)strlen(p),
             (m_impl->createExistNoCheck) ?
-                 CR_SUBOP_BY_TABLEDEF : CR_SUBOP_BY_TABLEDEF_NOCKECK,
-                clientID());
+                 CR_SUBOP_BY_TABLEDEF : CR_SUBOP_BY_TABLEDEF_NOCKECK);
     }
     else
     {

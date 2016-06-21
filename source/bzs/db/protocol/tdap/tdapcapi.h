@@ -46,25 +46,12 @@ struct BOOKMARK
 };
 typedef BOOKMARK bookmark_td;
 
-/** tdap c interface
- */
-#if (defined(__BORLANDC__) && !defined(__clang__))
-typedef short __stdcall (*dllUnloadCallback)();
-#else
-/** @cond INTERNAL */
-/** Callback function on a record was deleted. */
-typedef short(__STDCALL* dllUnloadCallback)();
-/** @endcond */
-#endif
-
+/* tdap c interface */
 #ifdef LIB_TDCLCPP
 extern __declspec(dllimport) short_td
     __stdcall BTRCALLID(ushort_td op, void* posb, void* data, uint_td* datalen,
                         void* keybuf, keylen_td keylen, char_td keyNum,
                         uchar_td* clientID);
-
-extern __declspec(dllimport) short_td
-    __stdcall CallbackRegist(dllUnloadCallback func);
 #endif
 
 typedef short_td(__STDCALL* BTRCALLID_PTR)(ushort_td, void*, void*, uint_td*,
@@ -72,6 +59,19 @@ typedef short_td(__STDCALL* BTRCALLID_PTR)(ushort_td, void*, void*, uint_td*,
                                            uchar_td*);
 
 typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
+
+/* HA hostname resolver */
+#if (defined(__BORLANDC__) && !defined(__clang__))
+typedef const char* __stdcall (*HOSTNAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+typedef void __stdcall (*REGISTER_RESOLVER_PTR)(HOSTNAME_RESOLVER_PTR func);
+
+#else
+/* @cond INTERNAL */
+typedef const char* (__STDCALL* HOSTNAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+typedef void  (__STDCALL* REGISTER_RESOLVER_PTR)(HOSTNAME_RESOLVER_PTR func);
+
+/* @endcond */
+#endif
 
 /** buffer size
  */
@@ -203,8 +203,19 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 #define TD_STSTCS_SLAVE_STATUS          8
 #define TD_STSTCS_STATUS_VARIABLES      9
 #define TD_STSTCS_SLAVE_HOSTS          10
-#define TD_STSTCS_SLAVE_CHANNELS       11
-#define TD_STSTCS_SQL_VARIABLES        12
+#define TD_STSTCS_SQL_VARIABLES        11
+#define TD_STSTCS_SLAVE_CHANNELS       12
+#define TD_STSTCS_SLAVE_CHANNELS_LOCK  13
+#define TD_STSTCS_HA_LOCK              14
+#define TD_STSTCS_HA_UNLOCK            15
+#define TD_STSTCS_HA_SET_ROLEMASTER    16
+#define TD_STSTCS_HA_SET_ROLESLAVE     17
+#define TD_STSTCS_HA_SET_ROLENONE      18
+#define TD_STSTCS_HA_SET_TRXBLOCK      19
+#define TD_STSTCS_HA_SET_TRXNOBLOCK    20
+#define TD_STSTCS_HA_ENABLE_FO         21
+#define TD_STSTCS_HA_DISBLE_FO         22
+
 
 /** connect sub operation
  */
@@ -487,13 +498,15 @@ enum combineType
 #define ERROR_TD_NET_TOO_BIGDATA        3802
 #define ERROR_TD_NET_OTHER              3810
 #define ERROR_TD_C_CLIENT_UNKNOWN       3811
+#define ERROR_TD_INVALID_SERVER_ROLE    3812
 #define ERROR_TD_RECONNECTED            3900
 
+#define ERROR_TD_RECONNECTED_OFFSET     1000
 #define MYSQL_ERROR_OFFSET              25000
 
 inline bool canRecoverNetError(short code)
 {
-    return (code >= ERROR_TD_CONNECTION_FAILURE) &&
+    return (code >= ERROR_TD_HOSTNAME_NOT_FOUND) &&
         (code < ERROR_TD_RECONNECTED) &&
         (code != ERROR_TD_NET_TOO_BIGDATA);
 }
@@ -591,6 +604,12 @@ struct handshale_t
 };
 
 #define HST_OPTION_NO_SCRAMBLE 1
+#define HST_OPTION_ROLE_MASTER 2
+#define HST_OPTION_ROLE_SLAVE  4
+#define HST_OPTION_CLEAR_CACHE 8
+
+
+#define CL_OPTION_CHECK_ROLE   1
 
 /* server system variables index */
 #define TD_VER_DB                 0 
@@ -611,7 +630,8 @@ struct handshale_t
 #define TD_VAR_HSLISTENPORT       15
 #define TD_VAR_USEHS              16
 #define TD_VAR_TIMESTAMPMODE      17
-#define TD_VAR_SIZE               18
+#define TD_VAR_STARTUP_HA         18
+#define TD_VAR_SIZE               19
 
 /* server status variables index */
 #define TD_SVAR_TCP_CONNECTIONS     0
@@ -621,12 +641,23 @@ struct handshale_t
 #define TD_SVAR_PIPE_CONNECTIONS    4
 #define TD_SVAR_PIPE_WAIT_THREADS   5
 #define TD_SVAR_OPEN_DBS            6
-#define TD_SVAR_SIZE                7
+#define TD_SVAR_HA                  7
+#define TD_SVAR_SIZE                8
+
+#define HA_ROLE_SLAVE               0
+#define HA_ROLE_MASTER              1
+#define HA_ROLE_NONE                2
+#define HA_RESTORE_ROLE             4
+#define HA_ENABLE_FAILOVER          8
+
 /** @endcond */
 
 /* server sql variables index */
 #define TD_SQL_VER_MYSQL_GTID_MODE  0
-#define TD_SQL_VER_SIZE             1
+#define TD_SQL_VER_BINLOG_FILE      1
+#define TD_SQL_VER_BINLOG_POS       2
+#define TD_SQL_VER_BINLOG_GTID      3
+#define TD_SQL_VER_SIZE             4
 /** @endcond */
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.
  If you change this version then you need change The ($TargetName) project options too.

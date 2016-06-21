@@ -1415,6 +1415,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         case TD_RECONNECT:
             nw->resize(*req.datalen);
             resultBuffer = nw->ptr();
+            
             if (!doOpenTable(req, resultBuffer, true))
             {
                 if (req.result == 0)
@@ -1425,8 +1426,12 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 char* p = (char*)req.data;
                 req.keyNum = *p;
                 if (*(++p) == 0)
-                    break;
+                {
+                    req.paramMask = P_MASK_POSBLK;
+                    break; // No bookmark
+                }
                 req.data = ((char*)req.data) + 2;
+                
                 if (m_tb) m_tb->unUse();
             }
             //fall through  restore position 
@@ -1804,8 +1809,11 @@ size_t dbExecuter::getAcceptMessage(char* message, size_t size)
 
     hst->transaction_isolation = (unsigned short)getTransactdIsolation();
     hst->lock_wait_timeout = getTransactdLockWaitTimeout();
-    if (getRoleMaster())
+    int role = getRole();
+    if (role == HA_ROLE_MASTER)
         hst->options |= HST_OPTION_ROLE_MASTER;
+    else if(role == HA_ROLE_SLAVE)
+        hst->options |= HST_OPTION_ROLE_SLAVE;
     if (strcmp(g_auth_type, AUTH_TYPE_MYSQL_STR) == 0)
     {
         makeRandomKey(m_scramble, MYSQL_SCRAMBLE_LENGTH);
@@ -1822,6 +1830,31 @@ size_t dbExecuter::getAcceptMessage(char* message, size_t size)
 // ---------------------------------------------------------------------------
 //      class connMgrExecuter
 // ---------------------------------------------------------------------------
+class safeLockReadChannels
+{
+    connMgrExecuter* m_exec;
+    bool m_locked;
+public:
+    safeLockReadChannels(connMgrExecuter* exec) :
+        m_exec(exec), m_locked(false){}
+    bool lock()
+    {
+        int n = 0;
+        while (!haLock())
+        {
+            Sleep(500);
+            if (++n >= 120) return false; 
+        }
+        m_locked = true;
+        return m_locked;
+    }
+    int execute(char* buf, size_t& size)
+    {
+        return m_exec->channels(buf, size);
+    }
+    ~safeLockReadChannels() { if (m_locked) haUnlock();}
+};
+
 connMgrExecuter::connMgrExecuter(request& req, unsigned __int64 parent, blobBuffer* bb)
     : m_req(req), m_modHandle(parent), m_blobBuffer(bb) 
 {
@@ -1967,103 +2000,130 @@ int connMgrExecuter::disconnectAll(char* buf, size_t& size)
 
 void connMgrExecuter::execHaCommand()
 {
+    if (g_tcpServerType == TCP_TPOOL_SERVER)
+    {
+        m_req.reset();
+        m_req.result = STATUS_NOSUPPORT_OP;
+        return;
+    }
+    bool ret = true;
+    switch ((int)m_req.keyNum)
+    {
+    case TD_STSTCS_HA_LOCK:
+        ret = haLock();
+        break;
+    case TD_STSTCS_HA_UNLOCK:
+        ret = haUnlock();
+        break;
+    case TD_STSTCS_HA_SET_ROLEMASTER:
+        ret = setRole(HA_ROLE_MASTER);
+        break;
+    case TD_STSTCS_HA_SET_ROLENONE:
+        ret = setRole(HA_ROLE_NONE);
+        break;
+    case TD_STSTCS_HA_SET_ROLESLAVE:
+        ret = setRole(HA_ROLE_SLAVE);
+        break;
+    case TD_STSTCS_HA_SET_TRXBLOCK:
+    case TD_STSTCS_HA_SET_TRXNOBLOCK:
+        ret = setTrxBlock(m_req.keyNum == TD_STSTCS_HA_SET_TRXBLOCK);
+        break;
+    case TD_STSTCS_HA_ENABLE_FO:
+    case TD_STSTCS_HA_DISBLE_FO:
+        ret = setEnableFailover(m_req.keyNum == TD_STSTCS_HA_ENABLE_FO);
+        break;
+    }
+    m_req.reset();
+    if (ret == false)
+        m_req.result = STATUS_LOCK_ERROR;
+}
+
+int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
+{
+    char_td op = m_req.keyNum;
     try
     {
-        if (g_tcpServerType == TCP_TPOOL_SERVER)
+        if (op == TD_STSTCS_DISCONNECT_ONE)
+            return disconnectOne(nw->ptr(), nw->datalen);
+        else if (op == TD_STSTCS_DISCONNECT_ALL)
+            return disconnectAll(nw->ptr(), nw->datalen);
+        else if (op >= TD_STSTCS_HA_LOCK && op <= TD_STSTCS_HA_DISBLE_FO)
+            execHaCommand();
+        else if (*m_req.datalen == (uint_td)63976)
+        {
+            switch (op)
+            {
+            case TD_STSTCS_READ:
+                return read(nw->ptr(), nw->datalen);
+            case TD_STSTCS_DATABASE_LIST:
+                return definedDatabases(nw->ptr(), nw->datalen);
+            case TD_STSTCS_SYSTEM_VARIABLES:
+                return systemVariables(nw->ptr(), nw->datalen);
+            case TD_STSTCS_STATUS_VARIABLES:
+                return statusVariables(nw->ptr(), nw->datalen);
+            case TD_STSTCS_SCHEMA_TABLE_LIST:
+                return schemaTables(nw->ptr(), nw->datalen);
+            case TD_STSTCS_TABLE_LIST:
+                return definedTables(nw->ptr(), nw->datalen);
+            case TD_STSTCS_VIEW_LIST:
+                return definedViews(nw->ptr(), nw->datalen);
+            case TD_STSTCS_SLAVE_STATUS:
+                return slaveStatus(nw);
+            case TD_STSTCS_SLAVE_HOSTS:
+                return slaveHosts(nw);
+            case TD_STSTCS_SLAVE_CHANNELS:
+                return channels(nw->ptr(), nw->datalen);
+            case TD_STSTCS_SLAVE_CHANNELS_LOCK:
+            {
+                safeLockReadChannels readChannels(this);
+                if (readChannels.lock())
+                    return readChannels.execute(nw->ptr(), nw->datalen);
+                m_req.reset();
+                m_req.result = STATUS_LOCK_ERROR;
+                break;
+            }
+            case TD_STSTCS_SQL_VARIABLES:
+                return sqlVariables(nw);
+            default:
+                m_req.reset();
+                m_req.result = STATUS_NOSUPPORT_OP;
+                break;
+            }
+        }else
         {
             m_req.reset();
-            m_req.result = STATUS_NOSUPPORT_OP;
-            return;
+            m_req.result = SERVER_CLIENT_NOT_COMPATIBLE;
         }
-        bool ret = true;
-        switch ((int)m_req.keyNum)
-        {
-        case TD_STSTCS_HA_LOCK:
-            ret = haLock();
-            break;
-        case TD_STSTCS_HA_UNLOCK:
-            ret = haUnlock();
-            break;
-        case TD_STSTCS_HA_SET_ROLEMASTER:
-        case TD_STSTCS_HA_SET_ROLENONE:
-            ret = setRoleMaster(m_req.keyNum == TD_STSTCS_HA_SET_ROLEMASTER);
-            break;
-        case TD_STSTCS_HA_SET_TRXBLOCK:
-        case TD_STSTCS_HA_SET_TRXNOBLOCK:
-            ret = setTrxBlock(m_req.keyNum == TD_STSTCS_HA_SET_TRXBLOCK);
-            break;
-        case TD_STSTCS_HA_ENABLE_FO:
-        case TD_STSTCS_HA_DISBLE_FO:
-            ret = setEnableFailover(m_req.keyNum == TD_STSTCS_HA_ENABLE_FO);
-            break;
-        }
-        m_req.reset();
-        if (ret == false)
-            m_req.result = STATUS_LOCK_ERROR;
+        nw->datalen = m_req.serialize(NULL, nw->ptr());
     }
     catch (bzs::rtl::exception& e)
     {
+        std::string s = *getMsg(e);
         const int* code = getCode(e);
         if (code)
             m_req.result = *code;
         else
         {
             m_req.result = 20000;
-            sql_print_error("Stastics operation %s", boost::diagnostic_information(e).c_str());
+            s = boost::diagnostic_information(e);
         }
-        printWarningMessage(code, getMsg(e));
+        char buf[256];
+        sprintf_s(buf, 256, "Stastics operation %d : ", (int)op);
+        s.insert(0, buf);
+        printWarningMessage(code, &s);
     }
     catch (...)
     {
-        m_req.result = 20001;
-    }
-}
-
-int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
-{
-    if (m_req.keyNum == TD_STSTCS_DISCONNECT_ONE)
-        return disconnectOne(nw->ptr(), nw->datalen);
-    else if (m_req.keyNum == TD_STSTCS_DISCONNECT_ALL)
-        return disconnectAll(nw->ptr(), nw->datalen);
-    else if (m_req.keyNum >= TD_STSTCS_HA_LOCK && m_req.keyNum <= TD_STSTCS_HA_DISBLE_FO)
-        execHaCommand();
-    else if (*m_req.datalen == (uint_td)63976)
-    {
-        switch (m_req.keyNum)
+        try
         {
-        case TD_STSTCS_READ:
-            return read(nw->ptr(), nw->datalen);
-        case TD_STSTCS_DATABASE_LIST:
-            return definedDatabases(nw->ptr(), nw->datalen);
-        case TD_STSTCS_SYSTEM_VARIABLES:
-            return systemVariables(nw->ptr(), nw->datalen);
-        case TD_STSTCS_STATUS_VARIABLES:
-            return statusVariables(nw->ptr(), nw->datalen);
-        case TD_STSTCS_SCHEMA_TABLE_LIST:
-            return schemaTables(nw->ptr(), nw->datalen);
-        case TD_STSTCS_TABLE_LIST:
-            return definedTables(nw->ptr(), nw->datalen);
-        case TD_STSTCS_VIEW_LIST:
-            return definedViews(nw->ptr(), nw->datalen);
-        case TD_STSTCS_SLAVE_STATUS:
-            return slaveStatus(nw);
-        case TD_STSTCS_SLAVE_HOSTS:
-            return slaveHosts(nw);
-        case TD_STSTCS_SLAVE_CHANNELS:
-            return channels(nw->ptr(), nw->datalen);
-        case TD_STSTCS_SQL_VARIABLES:
-            return sqlVariables(nw);
-        default:
+            DEBUG_ERROR_MEMDUMP(20001, "error", m_req.m_readBuffer, 
+                            *((unsigned int*)m_req.m_readBuffer))
             m_req.reset();
-            m_req.result = STATUS_NOSUPPORT_OP;
-            break;
+            m_req.result = 20001;
+            dumpStdErr(op, m_req, NULL);
         }
-    }else
-    {
-        m_req.reset();
-        m_req.result = SERVER_CLIENT_NOT_COMPATIBLE;
+        catch(...){}
     }
-    nw->datalen = m_req.serialize(NULL, nw->ptr());
     return EXECUTE_RESULT_SUCCESS;
 }
 

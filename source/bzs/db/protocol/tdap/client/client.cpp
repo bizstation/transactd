@@ -19,10 +19,10 @@
 #include "client.h"
 #include "sqlBuilder.h"
 #include "stringConverter.h"
-
+#include <errno.h>
 using namespace bzs::db::protocol::tdap::client;
 
-bzs::netsvc::client::connections* m_cons = NULL;
+bnet::connections* m_cons = NULL;
 
 namespace bzs
 {
@@ -51,6 +51,8 @@ short errorCode(const boost::system::error_code& e)
     {
     case 11004:
     case 11001:
+    case 109:   // destination address required
+    case 2:     //No such file or directory
         ret = ERROR_TD_HOSTNAME_NOT_FOUND;
         break;
     case 10060:
@@ -64,17 +66,16 @@ short errorCode(const boost::system::error_code& e)
     case 111:   //connect: Connection refused
     case 10061:
     case 10053:
+    case 995:   //Win32 WSA_OPERATION_ABORTED 
         ret = ERROR_TD_CONNECTION_FAILURE;
         break;
     case 104:   //write: Connection reset by peer
     case 10054:
+    case 232:
         ret = ERROR_TD_NET_REMOTE_DISCONNECT;
         break;
-    case 232:
-    case 109:
-    case 2:
-    case 1:
-        ret = ERROR_TD_INVALID_CLINETHOST;
+    case 1:    //operation not permitted
+        ret = ERROR_TD_NET_OTHER;
         break;
     default:
         ret = ERROR_TD_NET_OTHER;
@@ -87,9 +88,14 @@ short errorCode(const boost::system::error_code& e)
 
 int client::getServerCharsetIndex()
 {
-    bzs::netsvc::client::connection* c = con();
+    assert(m_preResult == 0);
+    m_preResult = 0;
+    bnet::connection* c = con();
     if (!c)
+    {
+        m_preResult = ERROR_TD_NOT_CONNECTED;
         return -1;
+    }
     int v = c->charsetServer();
     if (v != -1)
         return v;
@@ -117,11 +123,15 @@ int client::getServerCharsetIndex()
         if (req.result == 0 && req.resultLen)
         {
             if (!checkVersion(ver))
+            {
+                m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
                 return -1;
+            }
             c->setCharsetServer(mysql::charsetIndex(vers.cherserServer));
             return  c->charsetServer();
         }
     }
+    m_preResult = errorCode(con()->error());
     return -1;
 }
 

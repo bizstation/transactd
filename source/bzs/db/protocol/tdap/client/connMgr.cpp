@@ -51,10 +51,11 @@ static const _TCHAR* SYSVAR_NAME[TD_VAR_SIZE] =
     _T("use_piped_local"),
     _T("hs_port"),
     _T("use_handlersocket"),
-    _T("timestamp_always)")
+    _T("timestamp_always"),
+    _T("startup_ha")
 };
 
-static const _TCHAR* STATUSVAR_NAME[TD_VAR_SIZE] =
+static const _TCHAR* STATUSVAR_NAME[TD_SVAR_SIZE] =
 {
     _T("tcp_connections"),
     _T("tcp_wait_threads"),
@@ -63,6 +64,7 @@ static const _TCHAR* STATUSVAR_NAME[TD_VAR_SIZE] =
     _T("pipe_connections"),
     _T("pipe_wait_threads"),
     _T("cur_open_databases"),
+    _T("ha"),
 };
 
 static const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
@@ -146,6 +148,14 @@ static const _TCHAR* SLAVE_STATUS_NAME_EX_MA[SLAVE_STATUS_EX_MA_SIZE] =
     _T("Gtid_Slave_Pos"),
 };
 
+static const _TCHAR* SQLVAR_NAME[TD_SQL_VER_SIZE] =
+{
+    _T("MySQL_Gtid_Mode"),
+    _T("Binlog_File"),
+    _T("Binlog_Position"),
+    _T("Executed_Gtid_Set/Gtid_Cur_Pos")
+};
+
 class stringBuffer
 {
 	friend class connMgr;
@@ -176,12 +186,12 @@ connRecords& connRecords::operator=(const connRecords& r)
 
 void connRecords::clear() { m_records.clear(); m_buf.reset(); }
 
-const connRecords::record& connRecords::operator[] (int index) const
+const connRecords::record& connRecords::operator[] (size_t index) const
 {
     return m_records[index];
 }
 
-connRecords::record& connRecords::operator[] (int index)
+connRecords::record& connRecords::operator[] (size_t index)
 {
     return m_records[index];
 }
@@ -233,9 +243,10 @@ connMgr::connMgr(database* db) : nstable(db)
     m_params[0] = 0;
     m_params[1] = 0;
     m_keylen = sizeof(m_params);
+    m_datalen = m_buflen = 0;
 }
 
-connMgr::~connMgr() {}
+connMgr::~connMgr() {setIsOpen(false);}
 
 database* connMgr::db() const
 {
@@ -277,6 +288,7 @@ bool connMgr::connect(const _TCHAR* uri)
     m_stat = m_db->stat();
     if (m_stat == 0)
     {
+        setIsOpen(true);
         m_uri = uri;
         btrVersions vs;
         m_db->getBtrVersion(&vs);
@@ -293,7 +305,10 @@ void connMgr::disconnect()
         m_db->disconnect(m_uri.c_str());
         m_stat = m_db->stat();
         if (m_stat == 0)
+        {
             m_uri = _T("");
+            setIsOpen(false);
+        }
     }
 }
 
@@ -432,9 +447,10 @@ const connMgr::records& connMgr::slaveStatus(const wchar_t* channel)
 #endif
 
 
-const connMgr::records& connMgr::channels()
+const connMgr::records& connMgr::channels(bool withLock )
 {
-    m_keynum = TD_STSTCS_SLAVE_CHANNELS;
+    m_keynum = withLock ? 
+                TD_STSTCS_SLAVE_CHANNELS_LOCK :TD_STSTCS_SLAVE_CHANNELS;
     allocBuffer();
     return getRecords();
 }
@@ -446,9 +462,7 @@ const connMgr::records& connMgr::slaveHosts()
 
 const connMgr::records& connMgr::sqlvars()
 {
-    m_keynum = TD_STSTCS_SQL_VARIABLES;
-    allocBuffer();
-    return getRecords();
+    return blobOperation(TD_STSTCS_SQL_VARIABLES);
 }
 
 const connMgr::records& connMgr::sysvars()
@@ -496,13 +510,59 @@ void connMgr::postDisconnectOne(__int64 connid)
 {
     m_keynum = TD_STSTCS_DISCONNECT_ONE;
     m_params[0] = connid;
+    m_datalen = 0;
     tdap(TD_STASTISTICS);
 }
 
 void connMgr::postDisconnectAll()
 {
     m_keynum = TD_STSTCS_DISCONNECT_ALL;
+    m_datalen = 0;
     tdap(TD_STASTISTICS);
+}
+
+bool connMgr::haLock()
+{
+    m_keynum = TD_STSTCS_HA_LOCK;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+    return stat() == 0;
+}
+
+void connMgr::haUnlock()
+{
+    m_keynum = TD_STSTCS_HA_UNLOCK;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+
+}
+
+bool connMgr::setRole(int v)
+{
+    m_keynum = (v == HA_ROLE_MASTER) ? TD_STSTCS_HA_SET_ROLEMASTER :
+                (v == HA_ROLE_SLAVE) ? TD_STSTCS_HA_SET_ROLESLAVE :
+                                        TD_STSTCS_HA_SET_ROLENONE;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+    return stat() == 0;
+}
+
+bool connMgr::setTrxBlock(bool v)
+{
+    m_keynum = v ? TD_STSTCS_HA_SET_TRXBLOCK :
+                          TD_STSTCS_HA_SET_TRXNOBLOCK;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+    return stat() == 0;
+}
+
+bool connMgr::setEnableFailover(bool v)
+{
+    m_keynum = v ? TD_STSTCS_HA_ENABLE_FO :
+                          TD_STSTCS_HA_DISBLE_FO;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+    return stat() == 0;
 }
 
 short_td connMgr::stat()
@@ -558,6 +618,13 @@ const _TCHAR* connMgr::slaveStatusName(uint_td index) const
         return SLAVE_STATUS_NAME_EX_MA[index];
     else if(!mariadb &&  (index < SLAVE_STATUS_EX_SIZE))
         return SLAVE_STATUS_NAME_EX[index];
+    return _T("");
+}
+
+const _TCHAR* sqlvarName(uint_td index)
+{
+    if (index < TD_SQL_VER_SIZE)
+        return SQLVAR_NAME[index];
     return _T("");
 }
 

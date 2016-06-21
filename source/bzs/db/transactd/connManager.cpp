@@ -39,6 +39,8 @@ extern int getSlaveHosts(THD* thd, bzs::db::transactd::connection::records& recs
             bzs::db::IblobBuffer* bb);
 extern int getChannels(THD* thd, bzs::db::transactd::connection::records& recs);
 
+extern short getBinlogPos(THD* thd, binlogPos* bpos, THD* tmpThd, bzs::db::IblobBuffer* bb);
+
 namespace bzs
 {
 using namespace netsvc::server;
@@ -50,9 +52,7 @@ using namespace engine::mysql;
 namespace transactd
 {
 
-connManager::~connManager()
-{
-}
+connManager::~connManager(){}
 
 const module* getMod(unsigned __int64 conid)
 {
@@ -226,9 +226,19 @@ const connection::records& connManager::systemVariables() const
     return m_records;
 }
 
-const connection::records& connManager::sqlVariables() const
+const connection::records& connManager::sqlVariables(blobBuffer* bb) const
 {
     m_records.clear();
+    boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+    if (thd == NULL)
+        m_stat = 20001;
+    else if (!checkGlobalACL(thd.get(), SUPER_ACL | REPL_CLIENT_ACL))
+        m_stat = STATUS_ACCESS_DENIED;
+    if (m_stat) return m_records;
+    binlogPos bpos;
+    short ret = getBinlogPos(thd.get(), &bpos, thd.get(), bb);
+
+
     for (int i = 0; i < TD_SQL_VER_SIZE; ++i)
     {
         m_records.push_back(connection::record());
@@ -239,6 +249,7 @@ const connection::records& connManager::sqlVariables() const
         {
         case TD_SQL_VER_MYSQL_GTID_MODE:
         {
+            rec.type = 0;
 #if (defined(MYSQL_5_7))
             rec.longValue = (long long)get_gtid_mode(GTID_MODE_LOCK_NONE);
 #else
@@ -246,7 +257,19 @@ const connection::records& connManager::sqlVariables() const
 #endif
             break;
         }
-
+        case TD_SQL_VER_BINLOG_FILE:
+            strncpy(rec.name, bpos.filename, CON_REC_VALUE_SIZE);
+            break;
+        case TD_SQL_VER_BINLOG_POS:
+            rec.longValue = bpos.pos; 
+            rec.type = 0; 
+            break;
+        case TD_SQL_VER_BINLOG_GTID:
+            if (bpos.type == REPL_POSTYPE_GTID)
+                rec.type = 2; 
+            else
+                strncpy(rec.name, bpos.gtid, CON_REC_VALUE_SIZE);
+            break;
         }
     }
 
@@ -271,76 +294,37 @@ const connection::records& connManager::statusVariables() const
     return m_records;
 }
 
-
 const connection::records& connManager::definedDatabases() const
 {
     m_records.clear();
-    try
+    boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+    if (thd != NULL)
     {
-        boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
-        if (thd != NULL)
-        {
-            cp_security_ctx(thd.get())->skip_grants();
-            readDbList(thd.get(), m_records);
-        }
-    }
-    catch (bzs::rtl::exception& e)
-    {
-        const int* code = getCode(e);
-        if (code)
-            m_stat = *code;
-        else
-        {
-            m_stat = 20000;
-            sql_print_error("%s", boost::diagnostic_information(e).c_str());
-        }
-        printWarningMessage(code, getMsg(e));
-    }
-    catch (...)
-    {
-        m_stat = 20001;
+        cp_security_ctx(thd.get())->skip_grants();
+        readDbList(thd.get(), m_records);
     }
     return m_records;
 }
 
 const connection::records& connManager::getTableList(const char* dbname, int type) const
 {
-    try
-    {    
-        m_records.clear();
-        if (dbname && dbname[0])
+    m_records.clear();
+    if (dbname && dbname[0])
+    {
+        boost::shared_ptr<database> db(new database(dbname, 1));
+        if (db)
         {
-            boost::shared_ptr<database> db(new database(dbname, 1));
-            if (db)
+            std::vector<std::string> tablelist;
+            schemaBuilder::listTable(db.get(), tablelist, type);
+            for (int i = 0; i < (int)tablelist.size(); ++i)
             {
-                std::vector<std::string> tablelist;
-                schemaBuilder::listTable(db.get(), tablelist, type);
-                for (int i = 0; i < (int)tablelist.size(); ++i)
-                {
-                    m_records.push_back(connection::record());
-                    connection::record& rec = m_records[m_records.size() - 1];
-                    strncpy(rec.name, tablelist[i].c_str(), 64);
-                    rec.name[64] = 0x00;
-                    rec.type = (short)type;
-                }
+                m_records.push_back(connection::record());
+                connection::record& rec = m_records[m_records.size() - 1];
+                strncpy(rec.name, tablelist[i].c_str(), 64);
+                rec.name[64] = 0x00;
+                rec.type = (short)type;
             }
         }
-    }
-    catch (bzs::rtl::exception& e)
-    {
-        const int* code = getCode(e);
-        if (code)
-            m_stat = *code;
-        else
-        {
-            m_stat = 20000;
-            sql_print_error("%s", boost::diagnostic_information(e).c_str());
-        }
-        printWarningMessage(code, getMsg(e));
-    }
-    catch (...)
-    {
-        m_stat = 20001;
     }
     return m_records;
 }
@@ -362,7 +346,7 @@ bool connManager::checkGlobalACL(THD* thd, ulong wantAccess) const
         cp_security_ctx(thd)->skip_grants();
     else
         ::setGrant(thd, mod->host(), mod->user(),  NULL);
-  bool ret = (cp_masterAccess(thd) & wantAccess) != 0;
+    bool ret = (cp_masterAccess(thd) & wantAccess) != 0;
     if (!ret)
         m_stat = STATUS_ACCESS_DENIED;
     return ret;
@@ -372,38 +356,19 @@ const connection::records& connManager::readByProtocol(int type, blobBuffer* bb,
                                 const char* channel) const
 {
     m_records.clear();
-    try
-    {
-        boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
-        if (thd == NULL)
-            m_stat = 20001;
-        else if (!checkGlobalACL(thd.get(), SUPER_ACL | REPL_CLIENT_ACL))
-            m_stat = STATUS_ACCESS_DENIED; 
-        else
-        {
-            int ret;
-            if (type == TD_STSTCS_SLAVE_STATUS)
-                ret = getSlaveStatus(thd.get(), channel, m_records, bb);
-            else
-                ret = getSlaveHosts(thd.get(), m_records, bb);
-            m_stat = errorCode(ret);
-        }
-    }
-    catch (bzs::rtl::exception& e)
-    {
-        const int* code = getCode(e);
-        if (code)
-            m_stat = *code;
-        else
-        {
-            m_stat = 20000;
-            sql_print_error("%s", boost::diagnostic_information(e).c_str());
-        }
-        printWarningMessage(code, getMsg(e));
-    }
-    catch (...)
-    {
+    boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+    if (thd == NULL)
         m_stat = 20001;
+    else if (!checkGlobalACL(thd.get(), SUPER_ACL | REPL_CLIENT_ACL))
+        m_stat = STATUS_ACCESS_DENIED; 
+    else
+    {
+        int ret;
+        if (type == TD_STSTCS_SLAVE_STATUS)
+            ret = getSlaveStatus(thd.get(), channel, m_records, bb);
+        else
+            ret = getSlaveHosts(thd.get(), m_records, bb);
+        m_stat = errorCode(ret);
     }
     return m_records;
 }
@@ -421,32 +386,13 @@ const connection::records& connManager::slaveHosts(blobBuffer* bb) const
 const connection::records& connManager::channels() const
 {
     m_records.clear();
-    try
-    {
-        boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
-        if (thd == NULL)
-            m_stat = 20001;
-        else if (!checkGlobalACL(thd.get(), REPL_CLIENT_ACL))
-            m_stat = STATUS_ACCESS_DENIED; 
-        else
-            m_stat = errorCode(getChannels(thd.get(), m_records));
-    }
-    catch (bzs::rtl::exception& e)
-    {
-        const int* code = getCode(e);
-        if (code)
-            m_stat = *code;
-        else
-        {
-            m_stat = 20000;
-            sql_print_error("%s", boost::diagnostic_information(e).c_str());
-        }
-        printWarningMessage(code, getMsg(e));
-    }
-    catch (...)
-    {
+    boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
+    if (thd == NULL)
         m_stat = 20001;
-    }
+    else if (!checkGlobalACL(thd.get(), REPL_CLIENT_ACL))
+        m_stat = STATUS_ACCESS_DENIED; 
+    else
+        m_stat = errorCode(getChannels(thd.get(), m_records));
     return m_records;
 }
 
@@ -458,13 +404,17 @@ void connManager::doDisconnect(unsigned __int64 conid)
         igetDatabases* dbm =
             dynamic_cast<igetDatabases*>(mod->m_commandExecuter.get());
         const databases& dbs = dbm->dbs();
-        if (dbs.size())
+        for (size_t i = 0; i < dbs.size(); ++i)
         {
-            if (dbs[0]->checkAcl(SHUTDOWN_ACL))
-                mod->disconnect();
-            else
-                m_stat = STATUS_ACCESS_DENIED; 
+            if (dbs[i])
+            {
+                if (!dbs[i]->checkAcl(SHUTDOWN_ACL))
+                    m_stat = STATUS_ACCESS_DENIED;
+                break;
+            }
         }
+        if (m_stat == 0)
+            mod->disconnect();
     }
 }
 

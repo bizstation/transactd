@@ -45,7 +45,7 @@
 #include <pthread.h> 
 #include <signal.h>
 #endif
-
+#include <bzs/env/compiler.h>
 
 using namespace boost;
 using namespace boost::system;
@@ -63,6 +63,16 @@ using namespace boost::system;
 #ifdef _WIN32
 extern bool win_thread_pool_shutdown;
 #endif
+
+/* HA hostname resolver */
+/* @cond INTERNAL */
+#if (defined(__BORLANDC__) && !defined(__clang__))
+typedef const char* __stdcall (*HOSTNAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+#else
+typedef const char* (__STDCALL* HOSTNAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+#endif
+/* @endcond */
+
 
 namespace bzs
 {
@@ -118,6 +128,7 @@ class connections
     boost::asio::ip::tcp::resolver m_resolver;
     mutex m_mutex;
     boost::system::error_code m_e;
+    HOSTNAME_RESOLVER_PTR m_haHostnameResolver;
     static bool m_usePipedLocal;
 
     connection* getConnection(asio::ip::tcp::endpoint& ep);
@@ -135,14 +146,15 @@ public:
     connections(const char* pipeName);
     ~connections();
     connection* connect(const std::string& host, const char* port, handshake f,
-                        void* data, bool newConnection = false);
+                        void* data, bool newConnection, bool clearNRCache);
     bool reconnect(connection* c, const std::string& host, const char* port,
                         handshake f, void* data);
 
-    connection* getConnection(const std::string& host, const char* port);
     bool disconnect(connection* c);
     int connectionCount();
     const boost::system::error_code& connectError() const { return m_e; };
+    void registHostnameResolver(HOSTNAME_RESOLVER_PTR func);
+    HOSTNAME_RESOLVER_PTR haHostnameResolver() const {return m_haHostnameResolver;}
     static char m_port[PORTNUMBUF_SIZE];
     static int connectTimeout;
     static int netTimeout;
@@ -151,6 +163,7 @@ public:
 /** Implementation of Part of the connection interface
  */
 #define VER_ST_SIZE 12
+
 class connectionBase : public connection
 {
 protected:
@@ -162,6 +175,7 @@ protected:
     size_t m_readLen;
     int m_refCount;
     int m_charsetServer;
+    unsigned int m_options;
     char m_vers[VER_ST_SIZE];
     bool m_connected;
     bool m_isHandShakable;
@@ -203,6 +217,9 @@ public:
     const boost::system::error_code& error() const { return m_e; };
 
     void* versions() {return (void*)m_vers;};
+    unsigned int userOptions() const {return m_options;}
+    void setUserOptions(unsigned int v) { m_options = v;}
+
 };
 
 #ifdef __APPLE__
@@ -493,10 +510,10 @@ class tcpConnection : public connectionImple<asio::ip::tcp::socket>
 
     void on_connect(const boost::system::error_code& e)
     {
+        m_e = e;
 #ifdef USE_CONNECT_TIMER
         m_timer.cancel();
 #endif
-        m_e = e;
         if (!checkError(e))
             return ;
         s_io.on_connected(); 

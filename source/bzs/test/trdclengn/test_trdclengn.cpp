@@ -22,6 +22,7 @@
 
 static const short fdi_id = 0;
 static const short fdi_name = 1;
+void init_commandLine(char* argv){};
 
 class fixture
 {

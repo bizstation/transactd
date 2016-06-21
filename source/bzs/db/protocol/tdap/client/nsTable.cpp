@@ -920,16 +920,13 @@ void nstable::tdap(ushort_td op)
             Sleep(m_impl->nsdb->lockWaitTime());
             break;
         default:
-#ifdef TEST_RECONNECT
-            if (canRecoverNetError(m_stat))
+            if (nsdatabase::isRecoverNetError() && canRecoverNetError(m_stat))
             {
-                m_impl->nsdb->reconnect();
-                if (m_stat) return;
+                if (!m_impl->nsdb->reconnect()) return;
                 m_stat = ERROR_TD_NET_TIMEOUT;
                 LoopCount = -1;
                 break;
             }
-#endif
             return;
         }
     } while ((m_stat != STATUS_SUCCESS) &&

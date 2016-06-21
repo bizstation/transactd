@@ -32,12 +32,14 @@
 #pragma warning(default : 4800)
 
 #include <bzs/db/engine/mysql/mysqlThd.h>
+#include <bzs/db/engine/mysql/ha.h>
 #include "appBuilderImple.h"
 
 /** tcp server type
  */
 #define TCP_CPT_SERVER       1
 #define TCP_TPOOL_SERVER     2
+
 #define PIPE_SHARE_MEM_SIZE  6292480 // 6Mbyte + 1024
 
 using namespace bzs::netsvc::server;
@@ -47,7 +49,7 @@ using namespace bzs::netsvc::server;
 static char* g_listenAddress = NULL;
 static char* g_listenPort = NULL;
 static char* g_hostCheckUserName = NULL;
-static unsigned int g_tcpServerType = TCP_CPT_SERVER;
+unsigned int g_tcpServerType = TCP_CPT_SERVER;
 static unsigned int g_maxTcpConnections = 200;
 static unsigned int g_pool_threads = 20;
 int g_tableNmaeLower = 1; // defined in btrvProtocol.h
@@ -56,7 +58,8 @@ char* g_transaction_isolation = NULL;
 char* g_auth_type = NULL;
 unsigned int g_pipeCommSharememSize = PIPE_SHARE_MEM_SIZE;
 unsigned int g_timestamp_always = 1;
-//int g_grant_apply = 0;//skip
+unsigned int g_startup_ha = 0;
+extern unsigned int g_ha;// defined in srvrole.cpp
 
 
 /** tcp server
@@ -101,6 +104,7 @@ static int transactd_plugin_init(void* p)
 {
     try
     {
+        bzs::db::engine::mysql::initHa();
         if (g_tcpServerType == TCP_CPT_SERVER)
         {
             boost::shared_ptr<IAppModuleBuilder> app(new transctionalIF(
@@ -255,6 +259,12 @@ static MYSQL_SYSVAR_STR(transaction_isolation, g_transaction_isolation,
 static MYSQL_SYSVAR_STR(auth_type, g_auth_type,
                         PLUGIN_VAR_READONLY | PLUGIN_VAR_MEMALLOC, NULL, NULL,
                         NULL, "none"); //or "mysql_native"
+static MYSQL_SYSVAR_UINT(timestamp_always, g_timestamp_always, PLUGIN_VAR_READONLY, "", 0,
+                        0, 1, 0, 1, 0);
+static MYSQL_SYSVAR_UINT(startup_ha, g_startup_ha,
+                         PLUGIN_VAR_READONLY, "0...7", 0, 0, 0, 0, 7, 0);
+
+
 /*static MYSQL_SYSVAR_INT(grant_apply, g_grant_apply,
                         PLUGIN_VAR_READONLY, "0..1 0:none 1:all", 0, 0, 0, 0, 1, 0);
 */
@@ -275,9 +285,6 @@ static MYSQL_SYSVAR_STR(hs_port, g_hs_listenPort,
 static MYSQL_SYSVAR_INT(use_handlersocket, g_use_hs, PLUGIN_VAR_READONLY, "", 0,
                         0, 0, 0, 1, 0);
 
-static MYSQL_SYSVAR_UINT(timestamp_always, g_timestamp_always, PLUGIN_VAR_READONLY, "", 0,
-                        0, 1, 0, 1, 0);
-
 #endif
 
 /** system valiables struct.
@@ -295,6 +302,7 @@ static struct st_mysql_sys_var* g_systemVariables[] =
     MYSQL_SYSVAR(transaction_isolation),
     MYSQL_SYSVAR(auth_type),
     MYSQL_SYSVAR(timestamp_always),
+    MYSQL_SYSVAR(startup_ha),
 #ifdef PIPE_SERVER
     MYSQL_SYSVAR(pipe_comm_sharemem_size), 
     MYSQL_SYSVAR(max_pipe_connections),
@@ -321,7 +329,8 @@ const char* get_trd_sys_var(int index)
     case TD_VAR_LOCKWAITTIMEOUT:return (const char*)&g_lock_wait_timeout;
     case TD_VAR_ISOLATION:return g_transaction_isolation;
     case TD_VAR_AUTHTYPE:return g_auth_type;
-    case TD_VAR_TIMESTAMPMODE:return (const char*)&g_timestamp_always; 
+    case TD_VAR_TIMESTAMPMODE:return (const char*)&g_timestamp_always;
+    case TD_VAR_STARTUP_HA:return (const char*)&g_startup_ha; 
 #ifdef PIPE_SERVER
     case TD_VAR_PIPESHAREMEMSIZE:return (const char*)&g_pipeCommSharememSize;
     case TD_VAR_MAXPIPECONNECTIONS:return (const char*)&g_maxPipeConnections;
@@ -347,6 +356,7 @@ const unsigned int* get_trd_status_var(int index)
     case TD_SVAR_TCP_WAIT_THREADS:return &cpt::g_waitThread;
     case TD_SVAR_TPOOL_CONNECTIONS:return &tpool::g_connections;
     case TD_SVAR_TPOOL_WAIT_THREADS:return &tpool::server::m_threadPoolSize;
+    case TD_SVAR_HA:return &g_ha;
 #ifdef PIPE_SERVER
     case TD_SVAR_PIPE_CONNECTIONS:return &pipe::g_connections;
     case TD_SVAR_PIPE_WAIT_THREADS:return &pipe::g_waitThread;
@@ -363,6 +373,7 @@ static st_mysql_show_var g_statusVariables[] = {
     { "trnsctd_tcp_wait_threads", (char*)&cpt::g_waitThread, SHOW_INT },
     { "trnsctd_tpool_connections", (char*)&tpool::g_connections, SHOW_INT },
     { "trnsctd_tpool_threads", (char*)&tpool::server::m_threadPoolSize, SHOW_INT },
+    { "trnsctd_ha", (char*)&g_ha, SHOW_INT },
 
 #ifdef PIPE_SERVER
     { "trnsctd_pipe_connections", (char*)&pipe::g_connections, SHOW_INT },
