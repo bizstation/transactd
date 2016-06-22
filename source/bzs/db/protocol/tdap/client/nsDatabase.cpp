@@ -164,8 +164,13 @@ binlogPos::~binlogPos(){ delete m_impl;}
 
 void binlogPos::setGtid(const char* p)
 {
-    m_impl->buf.reset(new std::string(p));
-    gtid = m_impl->buf->c_str();
+    gtid = gtid_buf;
+    if (p)
+    {
+        m_impl->buf.reset(new std::string(p));
+        gtid = m_impl->buf->c_str();
+    }else
+        gtid_buf[0] = 0x00;
 }
 
 binlogPos& binlogPos::operator=(const binlogPos& r)

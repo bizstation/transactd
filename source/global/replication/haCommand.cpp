@@ -47,6 +47,41 @@ void split(vector<_tstring>& ss, const _TCHAR* s)
     }
 }
 
+#ifdef _UNICODE
+inline void notify(haNotify* nf, int status, const wchar_t* msg)
+{
+    if (nf) nf->onUpdateStaus(status, msg);
+}
+inline void notify(haNotify* nf, int status, const char* msg)
+{
+    if (nf)
+    {
+        wchar_t wbuf[1024];
+        MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, msg, -1, wbuf, 1024);
+        nf->onUpdateStaus(status, wbuf);
+    }
+}
+#else
+inline void notify(haNotify* nf, int status, const char* msg)
+{
+    if (nf) nf->onUpdateStaus(status, msg);
+}
+#endif
+inline void notify(haNotify* nf, int status, binlogPos& bpos)
+{
+    if (nf)
+    {
+        char buf[2048];
+        sprintf_s(buf, 1024, "%s:%u %s",bpos.filename, bpos.pos, bpos.gtid);
+        notify(nf, status, buf);
+    }
+}
+
+inline void nfSetHostName(haNotify* nf, const _TCHAR* host)
+{
+    if (nf) nf->setHostName(host);
+}
+
 database_ptr createDb(const _TCHAR* host, const _TCHAR* user, const _TCHAR* passwd, bool newConnection)
 {
     connectParams cp(_T("tdap"), host, _T("mysql"),
@@ -94,7 +129,7 @@ _TCHAR* slaveList(const node& nd, _TCHAR* slaves)
 
 void makeSlaveList(const failOverParam& pm)
 {
-    _TCHAR slaves[SLAVES_SIZE];
+    _TCHAR slaves[SLAVES_SIZE] = {0};
     slaveList(pm.master, slaves);
     pm.slaves = slaves;
 }
@@ -137,19 +172,39 @@ string getChannlName(connMgr_ptr mgr, const _TCHAR* oldMaster)
 }
 
 void changeMaster(const node& nd, const masterNode& master, database_ptr db,
-        connMgr_ptr mgr,  binlogPos* bpos)
+        connMgr_ptr mgr,  binlogPos* bpos, haNotify* nf)
 {
+    _TCHAR host[MAX_PATH];
+    _TCHAR port[20];
+    endPoint(db->uri(), host, MAX_PATH, port, 20);
+    if (port[0])
+    {
+        _tcscat_s(host, MAX_PATH -_tcslen(host), _T(":"));
+        _tcscat_s(host, MAX_PATH -_tcslen(host), port);
+    }
+
     replicationParam pm;
     pm.master = master;
     pm.type = isMariadb(db) ? REP_TYPE_GTID_MA : REP_TYPE_GTID_MY;
     pm.master.channel = getChannlName(mgr, nd.host.c_str());
+
+    nfSetHostName(nf, host);
+    notify(nf, HA_NF_CANNELNAME, pm.master.channel.c_str());
     replSlave rpl(db, pm, mgr.get());
     rpl.stop(all);
+    notify(nf, HA_SLAVE_STOP_ALL, _T(""));
     if (bpos)
+    {
         rpl.changeMaster(bpos);
+        notify(nf, HA_CHANGE_MASTER, bpos->gtid);
+    }
     else
+    {
         rpl.switchMaster(replSlave::slave_pos);
+        notify(nf, HA_SWITCH_MASTER, "slave_pos");
+    }
     rpl.start();
+    notify(nf, HA_SLAVE_START, _T(""));
 }
 
 class safeHaSalves
@@ -157,7 +212,9 @@ class safeHaSalves
     vector<connMgr_ptr> m_mgrs;
     vector<_tstring>& m_slaves;
     vector<database_ptr> m_dbs;
+    const string& m_channel;
     const node& m_nd;
+    haNotify* m_nf;
     bool m_locked;
     bool m_isSwitchOver;
     bool m_isDisableOldMasterToSalve;
@@ -202,7 +259,7 @@ class safeHaSalves
     void doChangeMaster(const masterNode& master, database_ptr db,
         connMgr_ptr mgr,  binlogPos* bpos)
     {
-        ::changeMaster(m_nd, master, db, mgr, bpos);
+        ::changeMaster(m_nd, master, db, mgr, bpos, m_nf);
     }
 
     void setMasterRoleStatus(connMgr_ptr mgr)
@@ -220,30 +277,47 @@ class safeHaSalves
         replicationParam pm;
         pm.master = master;
         pm.type = isMariadb(db) ? REP_TYPE_GTID_MA : REP_TYPE_GTID_MY;
-        pm.master.channel = getChannlName(mgr, m_nd.host.c_str());
-        const_cast<masterNode&>(master).channel = pm.master.channel;
+        if (m_isSwitchOver)
+        {
+            pm.master.channel = getChannlName(mgr, m_nd.host.c_str());
+            const_cast<masterNode&>(master).channel = pm.master.channel;
+        }
+        else
+            pm.master.channel = m_channel;
+
+        nfSetHostName(m_nf, master.host.c_str());
+        notify(m_nf, HA_NF_PROMOTE_MASTER, _T(""));
+        notify(m_nf, HA_NF_PROMOTE_CHANNEL, m_channel.c_str());
+
         replSlave rpl(db, pm, mgr.get());
 
         rpl.stop(one);
         setMasterRoleStatus(mgr);
+        notify(m_nf, HA_NF_ROLE_MASTER, _T(""));
         if (bpos)
         {   // Sync SQLthread binlog pos to old master
             rpl.startUntil(*bpos);
+            notify(m_nf, HA_NF_WAIT_POS_START, _T(""));
             rpl.waitForSlaveSync(*bpos, 2, NULL);
+            notify(m_nf, HA_NF_WAIT_POS_COMP, *bpos);
+            
             rpl.stop(one);
+            notify(m_nf, HA_SLAVE_STOP, _T(""));
         }
         rpl.resetAll(); // reset only this channel
         if (readOnlyControl)
         {
-            db->execSql("set global read_only = OFF");
-            validateStatus(db, _T("read_only"));
+            db->execSql("set global read_only=OFF");
+            validateStatus(db, _T("read_only off"));
+            notify(m_nf, HA_SET_READ_ONLY, _T(""));
         }
     }
 
 public:
 
-    safeHaSalves(vector<_tstring>& slaves, const failOverParam& pm) :
-                m_slaves(slaves), m_nd(pm.master), m_locked(false),
+    safeHaSalves(vector<_tstring>& slaves, const failOverParam& pm, haNotify* nf) :
+                m_slaves(slaves), m_channel(pm.newMaster.channel),
+                m_nd(pm.master), m_nf(nf), m_locked(false),
                 m_isSwitchOver(pm.isSwitchOver()),
                 m_isDisableOldMasterToSalve(pm.isDisableOldMasterToSalve()),
                 m_oldMasterRoleChanged(false),
@@ -269,21 +343,30 @@ public:
         int index = -1;
         for (int i = 0; i < (int)m_mgrs.size(); ++i)
         {
-            const connMgr::records& rs = m_mgrs[i]->slaveStatus();
-            validateStatus(m_mgrs[i], _T("slaveStatus"));
-            string tmp = rs[SLAVE_STATUS_MASTER_LOG_FILE].name;
-            unsigned int tmpPos = (unsigned int)rs[SLAVE_STATUS_EXEC_MASTER_LOG_POS].longValue;
-            if (tmp > fname)
+            const connMgr::records& rss = m_mgrs[i]->statusvars();
+            if (rss.size() > TD_SVAR_HA) 
             {
-                fname = tmp;
-                pos = tmpPos;
-                index = i;
-            }else if(tmp == fname)
+                int ha = (int)rss[TD_SVAR_HA].longValue;
+                if ((ha & HA_ENABLE_FAILOVER) != HA_ENABLE_FAILOVER)
+                    THROW_BZS_ERROR_WITH_MSG(_T("Failover is disabled."));
+            }    
+            const connMgr::records& rs = m_mgrs[i]->slaveStatus(m_channel.c_str());
+            if (m_mgrs[i]->stat() == 0)
             {
-                if (tmpPos > pos)
+                string tmp = rs[SLAVE_STATUS_MASTER_LOG_FILE].name;
+                unsigned int tmpPos = (unsigned int)rs[SLAVE_STATUS_EXEC_MASTER_LOG_POS].longValue;
+                if (tmp > fname)
                 {
+                    fname = tmp;
                     pos = tmpPos;
                     index = i;
+                }else if(tmp == fname)
+                {
+                    if (tmpPos > pos)
+                    {
+                        pos = tmpPos;
+                        index = i;
+                    }
                 }
             }
         }
@@ -295,7 +378,7 @@ public:
     {
         vector<database_ptr> dbs;
         createDbList(dbs);
-
+        if (dbs.size() == 0) return;
         // First promote new master
         promoteMaster(master, dbs[newMasterIndex],
                                     m_mgrs[newMasterIndex], bpos, readOnlyControl);
@@ -362,7 +445,6 @@ class masterControl
     connMgr_ptr m_mgr;
     const node& m_nd;
     bool m_locked;
-    bool m_toReadOnly;
 
     void trxLock()
     {
@@ -379,8 +461,7 @@ class masterControl
     }
 
 public:
-    masterControl(const node& nd, bool toReadOnly) : 
-        m_nd(nd), m_locked(false), m_toReadOnly(toReadOnly)
+    masterControl(const node& nd) : m_nd(nd), m_locked(false) 
     {
         m_db = createDatabaseObject();
         m_mgr = getMasterMgr(m_db, nd);
@@ -423,14 +504,6 @@ public:
             }
         }while ((trx_count != 0 || use_db_count != 0) && !cancel);
         
-        if (m_toReadOnly)
-        {
-            database_ptr db = createDb(m_nd.host.c_str(), m_nd.user.c_str(), m_nd.passwd.c_str(), true);
-            //db->execSql("flush tables with read lock");
-            //validateStatus(db, _T("flush tables"));
-            db->execSql("set global read_only = ON");
-            validateStatus(db, _T("read_only"));
-        }
         getBinlogPos(m_mgr, bpos);
 
         trxUnlock();
@@ -443,6 +516,33 @@ public:
         return true;
     }
 };
+
+class masterReadOnly
+{
+    database_ptr m_db;
+public:
+    masterReadOnly(const node& nd, bool toReadOnly)
+    {
+        if (toReadOnly)
+        {
+            m_db = createDb(nd.host.c_str(), nd.user.c_str(), nd.passwd.c_str(), true);
+            //db->execSql("flush tables with read lock");
+            //validateStatus(db, _T("flush tables"));
+            m_db->execSql("set global read_only=ON");
+            validateStatus(m_db, _T("read_only ON"));
+        }
+    }
+    void check()
+    {
+        m_db.reset();
+    }
+    ~masterReadOnly()
+    {
+        if (m_db)
+            m_db->execSql("set global read_only=OFF");
+    }
+};
+
 
 string getNewMasterPort(const string& host, const string& map)
 {
@@ -465,10 +565,12 @@ string getNewMasterPort(const string& host, const string& map)
     return "3306";
 }
 
-void doSwitchOrver(const failOverParam& pm)
+void doSwitchOrver(const failOverParam& pm, haNotify* nf)
 {
     overrideCompatibleMode cpblMode(database::CMP_MODE_MYSQL_NULL);
     size_t newMasterIndex;
+    if (pm.slaves == _T(""))
+        THROW_BZS_ERROR_WITH_MSG(_T("No slave host(s)."));
     vector<_tstring> slaves;
     split(slaves, pm.slaves.c_str());
     if (pm.isSwitchOver())
@@ -480,23 +582,36 @@ void doSwitchOrver(const failOverParam& pm)
     binlogPos bpos;
     bool readOnlyControl = (pm.option & OPT_READONLY_CONTROL) != 0;
 
-    safeHaSalves slvs(slaves, pm);
+    nfSetHostName(nf, _T(""));
+    notify(nf, HA_NF_SLAVE_LIST, pm.slaves.c_str());
+    safeHaSalves slvs(slaves, pm, nf);
     slvs.lock();
     if (pm.isSwitchOver())
     {
-        masterControl oldMaster(pm.master, readOnlyControl);
-        // block new connection to old master
-        if (oldMaster.setRole(HA_ROLE_SLAVE))
-            slvs.setOldMasterRoleChanged();
-        // wait for current transaction
-        oldMaster.waitForFinishTrx(bpos);
-        bpos_ptr = &bpos;
-        // release master trx lock
+        masterReadOnly read_only(pm.master, readOnlyControl);
+        { 
+            masterControl oldMaster(pm.master);
+            // block new connection to old master
+            if (oldMaster.setRole(HA_ROLE_SLAVE))
+            {
+                slvs.setOldMasterRoleChanged();
+                nfSetHostName(nf, pm.master.host.c_str());
+                notify(nf, HA_NF_ROLE_SLAVE, _T(""));
+            }
+            // wait for current transaction
+            notify(nf, HA_NF_WAIT_TRX_START, _T(""));
+            oldMaster.waitForFinishTrx(bpos);
+            notify(nf, HA_NF_WAIT_TRX_COMP, bpos);
+            bpos_ptr = &bpos;
+            // release master trx lock
+        }
+        read_only.check();
     }else if (pm.isFailOver())
     {
         newMasterIndex = slvs.selectPromoteHost();
         if (newMasterIndex >= slaves.size())
             THROW_BZS_ERROR_WITH_MSG(_T("Invalid new Master."));
+
         failOverParam& mp = const_cast<failOverParam&>(pm);
         mp.newMaster.host = slaves[newMasterIndex];
         mp.newMaster.repPort = getNewMasterPort(toUtf8(pm.newMaster.host), pm.portMap);
@@ -504,31 +619,34 @@ void doSwitchOrver(const failOverParam& pm)
     slvs.changeMaster(pm.newMaster, newMasterIndex, bpos_ptr, readOnlyControl);
 }
 
-void failOrver(const failOverParam& pm)
+void failOrver(const failOverParam& pm, haNotify* nf)
 {
     pm.option |= OPT_FO_FAILOVER;
     pm.option &= ~OPT_SO_AUTO_SLVAE_LIST;
-    doSwitchOrver(pm);
+    doSwitchOrver(pm, nf);
 }
 
-void switchOrver(const failOverParam& pm)
+void switchOrver(const failOverParam& pm, haNotify* nf)
 {
     if (pm.option & OPT_SO_AUTO_SLVAE_LIST)
         makeSlaveList(pm);
     pm.option &= ~OPT_FO_FAILOVER;
-    doSwitchOrver(pm);
+    doSwitchOrver(pm, nf);
 }
 
-void masterToSlave(const failOverParam& pm)
+void demoteToSlave(const failOverParam& pm, haNotify* nf)
 {
     overrideCompatibleMode cpblMode(database::CMP_MODE_MYSQL_NULL);
     database_ptr dbt = createDb(pm.master.host.c_str(), pm.master.user.c_str(),
             pm.master.passwd.c_str(), false);
+    nfSetHostName(nf, pm.master.host.c_str());
     database_ptr db = createDatabaseObject();
     connMgr_ptr mgr = getMasterMgr(db, pm.master);
+
     mgr->setRole(HA_ROLE_SLAVE);
     validateStatus(mgr, _T("setRoleMaster"));
-    changeMaster(pm.master, pm.newMaster, dbt, mgr, NULL);
+    notify(nf, HA_NF_ROLE_SLAVE, _T(""));
+    changeMaster(pm.master, pm.newMaster, dbt, mgr, NULL, nf);
     mgr.reset();
 }
 
@@ -539,13 +657,13 @@ void setEnableFailOver(const failOverParam& pm, bool v)
     vector<_tstring> slaves;
     split(slaves, pm.slaves.c_str());
     pm.option &= ~OPT_FO_FAILOVER;
-    safeHaSalves slvs(slaves, pm);
+    safeHaSalves slvs(slaves, pm, NULL);
     slvs.setEnableFailOver(v);
 }
 
 void setServerRole(const failOverParam& pm, int v)
 {
-    masterControl srv(pm.master, false);
+    masterControl srv(pm.master);
     srv.setRole(v);
 }
 

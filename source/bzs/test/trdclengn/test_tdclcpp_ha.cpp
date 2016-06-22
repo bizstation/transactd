@@ -250,21 +250,46 @@ void testSwitchLiveOpen()
     }
 }
 
-void testEnableFailOver()
+void testEnableFailOver(bool v)
 {
     failOverParam pm;
     pm.master.host = str_conv(host1);
     pm.master.user = g_userName;
     pm.master.passwd = g_password;
+    pm.option |= OPT_SO_AUTO_SLVAE_LIST;
     try
     {
-        setEnableFailOver(pm, true);        
+        setEnableFailOver(pm, v);        
         BOOST_CHECK(true);
     }
     catch (bzs::rtl::exception& e)
     {
         BOOST_CHECK_MESSAGE(false, "setEnableFailOver Error");
         _tprintf(getMsg(e)->c_str());
+    }
+}
+
+void testFailOverBlock()
+{
+    database_ptr db = createDatabaseObject();
+    start_Resolver();
+    failOverParam pm;
+    pm.master.user = g_userName;
+    pm.master.passwd = g_password;
+    char tmp[512];
+    sprintf_s(tmp, 512, "%s,%s", host2, host3);
+    pm.slaves = str_conv(tmp);
+    pm.portMap = portMap;
+    try
+    {
+        failOrver(pm);
+        bool ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
+        BOOST_CHECK_MESSAGE(false, "failorver not block");
+    }
+    catch (bzs::rtl::exception& /*e*/)
+    {
+        BOOST_CHECK(true);
+        //_tprintf(getMsg(e)->c_str());
     }
 }
 
@@ -300,7 +325,7 @@ void testMasterToSlave()
     makeSOParam(pm, str_conv(host1),  str_conv(host2));
     try
     {
-        masterToSlave(pm);
+        demoteToSlave(pm);
         bool ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
         BOOST_CHECK(db->stat() == 0);
     }
@@ -346,7 +371,9 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(FailOver)
 BOOST_AUTO_TEST_CASE(FailOver8611)
 {
-    testEnableFailOver();
+    testEnableFailOver(false);
+    testFailOverBlock();
+    testEnableFailOver(true);
     testFailOver8611();
     testMasterToSlave();
     testSwitchTo(str_conv(host2), str_conv(host1));

@@ -426,11 +426,9 @@ const connMgr::records& connMgr::slaveStatus(const char* channel)
 {
     char ch[65] = {0};
     if (channel)
-    {
         strcpy_s(ch, 65, channel);
-        m_keybuf = (void*)ch;
-        m_keylen = 65;
-    }
+    m_keybuf = (void*)ch;
+    m_keylen = 65;
     blobOperation(TD_STSTCS_SLAVE_STATUS);
     m_keybuf = &m_params[0];
     m_keylen = sizeof(m_params);

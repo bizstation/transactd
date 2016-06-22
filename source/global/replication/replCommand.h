@@ -54,20 +54,6 @@ namespace bzc = bzs::db::protocol::tdap::client;
 #define RESOLV_RESULT_YES             6
 #define RESOLV_RESULT_NO              7
 
-// Replication execute status
-#define REP_NF_SLAVE_INITED           -1
-#define REP_NF_SLAVE_STOPPED          0
-#define REP_NF_SLAVE_SNAPSHOT_STARTED 1
-#define REP_NF_SLAVE_UNTIL_STARTED    2
-#define REP_NF_SLAVE_WAIT_SUCCESS     3
-#define REP_NF_SLAVE_COPYED           4
-#define REP_NF_SLAVE_MASTER_CHANGED   5
-#define REP_NF_SLAVE_STARTED          6
-#define REP_NF_SLAVE_CHECKED          7
-#define REP_NF_SLAVE_DIFF_END         8
-#define REP_NF_WAIT                   100
-
-
 // Replication params
 struct node
 {
@@ -112,6 +98,8 @@ struct replicationParam
     void setDisableLogbin(bool v){ slave.setOption(OPT_DISABLE_LOGBIN, v);}
     replicationParam() : type(REP_TYPE_REGACY) {}
 };
+
+#define REP_NF_WAIT                   1000
 
 class replicationNotify
 {

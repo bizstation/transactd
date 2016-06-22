@@ -33,11 +33,11 @@ using namespace bzs::db::protocol::tdap::client;
 using namespace boost::program_options;
 using namespace std;
 
-static const char* cmds = "switchover,failover,master_to_slave,"
+static const char* cmds = "switchover,failover,demote_to_slave,"
                             "set_failover_enable,set_server_role";
 #define CMD_SWITCHOVER            0
 #define CMD_FAILOVER              1
-#define CMD_MASTER_TO_SLAVE       2
+#define CMD_DEMOTE_TO_SLAVE       2
 #define CMD_SET_FAILOVER_ENABLE   3
 #define CMD_SET_SERVER_ROLE       4
 
@@ -53,39 +53,74 @@ _tstring str_conv(std::string& v)
 #endif //_UNICODE
 }
 
+class haMgrNotify : public haNotify
+{
+    _tstring m_host; 
+public:
+    virtual ~haMgrNotify() {};
+    void onUpdateStaus(int status, const _TCHAR* msg)
+    {
+        _TCHAR* p=_T("");
+        switch(status)
+        {
+        case HA_NF_ROLE_SLAVE: p = _T(": set role=SLAVE ");break;
+        case HA_NF_CANNELNAME: p = _T(": channel name=");break;
+        case HA_SLAVE_STOP_ALL: p = _T(": stop slave all ");break;
+        case HA_CHANGE_MASTER: p = _T(": change master to new master, pos=");break;
+        case HA_SWITCH_MASTER: p = _T(": change master to new master, pos=");break;
+        case HA_SLAVE_START: p = _T(": start slave ");break;
+        case HA_NF_WAIT_TRX_START: p = _T(": waiting for trx...");break;
+        case HA_NF_WAIT_TRX_COMP: p = _T(": wait is completed, pos=");break;
+        case HA_NF_SLAVE_LIST: p = _T("SLAVE_LIST=");break;
+        case HA_NF_PROMOTE_MASTER: p = _T(": promote to master ");break;
+        case HA_NF_PROMOTE_CHANNEL: p = _T(": channel name=");break;
+        case HA_NF_ROLE_MASTER: p = _T(": set role=MASTER ");break;
+        case HA_NF_WAIT_POS_START: p = _T(": waiting for until...");break;
+        case HA_NF_WAIT_POS_COMP: p = _T(": wait is completed, pos=");break;
+        case HA_SLAVE_STOP: p = _T(": stop slave ");break;
+        case HA_SET_READ_ONLY: p = _T(": set READ_ONLY=1");break;
+        }
+        tcout << "  " << m_host << p << msg << endl;
+    }
+    void setHostName(const _TCHAR* host)
+    {
+        m_host = host;
+    }
+};
+
 int checkParam(failOverParam& pm, int cmd, int v)
 {
     if (cmd != CMD_FAILOVER)
     {
         if (pm.master.host == _T(""))
         {
-            std::cout << "--cur_master is requered" << std::endl;
+            cout << "--cur_master is requered" << endl;
             return 1;
         }
     }else
     {
         if (pm.slaves == _T(""))
         {
-            std::cout << "--slaves is requered" << std::endl;
+            cout << "--slaves is requered" << endl;
             return 1;
         }
     }
         
-    if (cmd == CMD_SWITCHOVER || cmd == CMD_MASTER_TO_SLAVE)
+    if (cmd == CMD_SWITCHOVER || cmd == CMD_DEMOTE_TO_SLAVE)
     {
         if (pm.newMaster.host == _T(""))
         {
-            std::cout << "--new_master is requered" << std::endl;
-            return 1;
-        }
-        if (pm.newMaster.repPort == "")
-        {
-            std::cout << "--repl_port is requered" << std::endl;
+            cout << "--new_master is requered" << endl;
             return 1;
         }
         if (pm.newMaster.repUser == "")
         {
-            std::cout << "--repl_user is requered" << std::endl;
+            cout << "--repl_user is requered" << endl;
+            return 1;
+        }
+        if (pm.newMaster.repPasswd == "")
+        {
+            cout << "--repl_passwd is requered" << endl;
             return 1;
         }
     }
@@ -94,26 +129,32 @@ int checkParam(failOverParam& pm, int cmd, int v)
 
 int getCommandLineOption(int argc, _TCHAR* argv[], failOverParam& pm, int& cmd, int& v)
 {
-    std::string c, host, newMaster, port, user, pwd, slaves;    
+    std::string c, host, newMaster, user, pwd, slaves; 
+    std::string port = "3306"; 
+    bool readonly = false;
+    bool disable_demote = false;
     options_description opt("command line option");
     opt.add_options()("command,c", value<std::string>(&c),
-                      "command [switchover | failover | master_to_slave | set_failover_enable | set_server_role]")
-        ("cur_master,m", value<std::string>(&host), "current master host name")
+                      "command [switchover | failover | demote_to_slave | set_failover_enable | set_server_role]")
+        ("cur_master,o", value<std::string>(&host), "current master host name")
         ("new_master,n", value<std::string>(&newMaster), "new master host name")
-        ("repl_port,t", value<std::string>(&pm.newMaster.repPort), "new master port")
+        ("channel,C", value<std::string>(&pm.newMaster.channel), "new master channel name")
+        ("repl_port,P", value<std::string>(&pm.newMaster.repPort), "new master port")
         ("repl_user,r", value<std::string>(&pm.newMaster.repUser), "new master repl user ")
         ("repl_passwd,d", value<std::string>(&pm.newMaster.repPasswd), "new master repl password ")
         ("slaves,s", value<std::string>(&slaves), "slave list for failover")
         ("portmap,a", value<std::string>(&pm.portMap), "port map ex:3307:8611")
         ("value,v", value<int>(&v), "value (For set_failover_enable or set_server_role)")
         ("username,u", value<std::string>(&user), "transactd username")
-        ("password,p", value<std::string>(&pwd),  "transactd password");
+        ("password,p", value<std::string>(&pwd),  "transactd password")
+        ("readonly,R", value<bool>(&readonly),  "old master set to readonly")
+        ("disable_demote,D", value<bool>(&disable_demote),  "disable old master demote");
     variables_map values;
     store(parse_command_line(argc, argv, opt), values);
     notify(values);
     if (!values.count("command"))
     {
-        std::cout << opt << std::endl;
+        cout << opt << endl;
         return 1;
     }
     vector<string> cmdList;
@@ -121,14 +162,14 @@ int getCommandLineOption(int argc, _TCHAR* argv[], failOverParam& pm, int& cmd, 
     vector<string>::iterator it = find(cmdList.begin(), cmdList.end(), c);
     if (it== cmdList.end())
     {
-        std::cout << opt << std::endl;
+        cout << opt << endl;
         return 1;
     }
     cmd = (int)(it - cmdList.begin());
     if ((cmd == CMD_SET_SERVER_ROLE || cmd == CMD_SET_FAILOVER_ENABLE) &&
             !values.count("value"))
     {
-        std::cout << opt << std::endl;
+        cout << opt << endl;
         return 1;
     }
     pm.newMaster.host = str_conv(newMaster);
@@ -136,23 +177,42 @@ int getCommandLineOption(int argc, _TCHAR* argv[], failOverParam& pm, int& cmd, 
     pm.master.user = str_conv(user);
     pm.master.passwd = str_conv(pwd);
     pm.slaves = str_conv(slaves);
+    if (readonly) pm.option |= OPT_READONLY_CONTROL;
+    if (disable_demote) pm.option |= OPT_DISABLE_OLD_TO_SLAVE;
     return checkParam(pm, cmd, v);
 }
 
-/* Command line paramater example
+/* Command line paramater 
+command line option:
+  -c [ --command ] arg        command [switchover | failover | demote_to_slave
+                              | set_failover_enable | set_server_role]
+  -o [ --cur_master ] arg     current master host name
+  -n [ --new_master ] arg     new master host name
+  -C [ --channel ] arg        new master channel name
+  -P [ --repl_port ] arg      new master port
+  -r [ --repl_user ] arg      new master repl user
+  -d [ --repl_passwd ] arg    new master repl password
+  -s [ --slaves ] arg         slave list for failover
+  -a [ --portmap ] arg        port map ex:3307:8611
+  -v [ --value ] arg          value (For set_failover_enable or
+                              set_server_role)
+  -u [ --username ] arg       transactd username
+  -p [ --password ] arg       transactd password
+  -R [ --readonly ] arg       old master set to readonly
+  -D [ --disable_demote ] arg disable old master  demote
 
-ha -c switchover -m localhost -n localhost:8611 -t 3307 -r replication_user
- -d abcd -u root -p 
+example:
+haMgr64 -c switchover -m localhost -n localhost:8611 -t 3307 -u root -p 
 
-ha -c failover -s localhost:8611,localhost:8612 -a 8610:3306,8611:3307,8612:3308
+haMgr64 -c failover -s localhost:8611,localhost:8612 -a 8610:3306,8611:3307,8612:3308
  -u root -p
 
-ha -c master_to_slave -m localhost -n localhost:8611 -t 3307 -r replication_user
+haMgr64 -c demote_to_slave -m localhost -n localhost:8611 -t 3307 -r replication_user
  -d abcd -u root -p 
 
-ha -c set_failover_enable -v 1 -m localhost -u root -p
+haMgr64 -c set_failover_enable -v 1 -m localhost -u root -p
 
-ha -c set_server_role -m localhost -v 1 -u root -p
+haMgr64 -c set_server_role -m localhost -v 1 -u root -p
 */
 
 #pragma argsused
@@ -171,17 +231,21 @@ int _tmain(int argc, _TCHAR* argv[])
         ret = getCommandLineOption(argc, argv, pm, cmd, v);
         if (ret == 0)
         {
+            haMgrNotify nf;
             switch (cmd)
             {
             case CMD_SWITCHOVER: 
                 pm.option |= OPT_SO_AUTO_SLVAE_LIST;
-                switchOrver(pm); 
+                cout << "Starting switch over..." << endl;
+                switchOrver(pm, &nf); 
                 break;
             case CMD_FAILOVER:
-                failOrver(pm); 
+                cout << "Starting fail over..." << endl;
+                failOrver(pm, &nf); 
                 break;
-            case CMD_MASTER_TO_SLAVE:  
-                masterToSlave(pm); 
+            case CMD_DEMOTE_TO_SLAVE:  
+                cout << "Starting demote to slave..." << endl;
+                demoteToSlave(pm, &nf); 
                 break;
             case CMD_SET_FAILOVER_ENABLE: 
                 pm.option |= OPT_SO_AUTO_SLVAE_LIST;
@@ -191,15 +255,16 @@ int _tmain(int argc, _TCHAR* argv[])
                 setServerRole(pm, v); 
                 break;
             }
+            cout << "Done!" << endl;
         }
     }
     catch (bzs::rtl::exception& e)
     {
-        _ftprintf(stderr, _T("Error ! %s\n"), getMsg(e)->c_str());
+        tcout << _T("Error! ") << getMsg(e)->c_str() << endl;
     }
     catch (std::exception& e)
     {
-        std::cout << e.what() << std::endl;
+        cout << "Error! " << e.what() << endl;
     }
     return ret;
 }

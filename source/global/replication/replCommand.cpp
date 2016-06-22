@@ -131,9 +131,10 @@ protected:
         if (mn.repPort != "")
             s += ", master_port=" + mn.repPort;
         if (mn.repUser != "")
+        {
             s += ", master_user='" + mn.repUser + "'";
-        if (mn.repUser != "")
             s += ", master_password='" + mn.repPasswd + "'";
+        }
         if (mn.repOption != "")
             s += "," + mn.repOption;
         return s;
