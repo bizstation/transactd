@@ -665,7 +665,7 @@ struct handshale_t
  If you change this version then you need change The ($TargetName) project options too.
  */
 #define C_INTERFACE_VER_MAJOR "3"//##1 Build marker! Don't remove
-#define C_INTERFACE_VER_MINOR "4"//##2 Build marker! Don't remove
+#define C_INTERFACE_VER_MINOR "5"//##2 Build marker! Don't remove
 #define C_INTERFACE_VER_RELEASE "0"//##3 Build marker! Don't remove
 
 /* dnamic load library name.
@@ -729,8 +729,8 @@ struct handshale_t
  */
 
 #define CPP_INTERFACE_VER_MAJOR "3"//##4 Build marker! Don't remove
-#define CPP_INTERFACE_VER_MINOR "4"//##5 Build marker! Don't remove
-#define CPP_INTERFACE_VER_RELEASE "1"//##6 Build marker! Don't remove
+#define CPP_INTERFACE_VER_MINOR "5"//##5 Build marker! Don't remove
+#define CPP_INTERFACE_VER_RELEASE "0"//##6 Build marker! Don't remove
 
 /* use autolink tdclcpp */
 #if (__BCPLUSPLUS__ || _MSC_VER)
@@ -766,7 +766,7 @@ struct handshale_t
 
 
 #define TRANSACTD_VER_MAJOR 3//##7 Build marker! Don't remove
-#define TRANSACTD_VER_MINOR 4//##8 Build marker! Don't remove
-#define TRANSACTD_VER_RELEASE 1//##9 Build marker! Don't remove
+#define TRANSACTD_VER_MINOR 5//##8 Build marker! Don't remove
+#define TRANSACTD_VER_RELEASE 0//##9 Build marker! Don't remove
 
 #endif // BZS_DB_PROTOCOL_TDAP_TDAPCAPI_H
