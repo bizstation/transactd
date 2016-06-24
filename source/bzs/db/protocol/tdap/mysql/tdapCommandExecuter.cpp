@@ -1995,8 +1995,28 @@ int connMgrExecuter::disconnectAll(char* buf, size_t& size)
     return EXECUTE_RESULT_SUCCESS;
 }
 
-/* redefined. First defined in transactd.cpp */
+/* redefined. First defined at transactd.cpp */
 #define TCP_TPOOL_SERVER     2
+void haPrintMessage(module* mod, int op, bool retVal)
+{
+    const char* p="";
+    switch (op)
+    {
+    case TD_STSTCS_HA_LOCK: p = "HA_LOCK"; break;
+    case TD_STSTCS_HA_UNLOCK: p = "HA_UNLOCK"; break;
+    case TD_STSTCS_HA_SET_ROLEMASTER: p = "HA_SET_ROLEMASTER"; break;
+    case TD_STSTCS_HA_SET_ROLENONE: p = "HA_SET_ROLENONE"; break;
+    case TD_STSTCS_HA_SET_ROLESLAVE: p = "HA_SET_ROLESLAVE"; break;
+    case TD_STSTCS_HA_SET_TRXBLOCK: p = "HA_SET_TRXBLOCK"; break;
+    case TD_STSTCS_HA_SET_TRXNOBLOCK: p = "HA_SET_TRXNOBLOCK"; break;
+    case TD_STSTCS_HA_ENABLE_FO: p = "HA_ENABLE_FO"; break;
+    case TD_STSTCS_HA_DISBLE_FO: p = "HA_DISBLE_FO"; break;
+    }
+    if (retVal)
+        sql_print_information("Transactd: %s by %s@%s", p, mod->user(), mod->host());
+    else
+        sql_print_error("Transactd: %s by %s@%s", p, mod->user(), mod->host());
+}
 
 void connMgrExecuter::execHaCommand()
 {
@@ -2033,6 +2053,9 @@ void connMgrExecuter::execHaCommand()
         ret = setEnableFailover(m_req.keyNum == TD_STSTCS_HA_ENABLE_FO);
         break;
     }
+    module* mod = dynamic_cast<module*>((module*)m_modHandle);
+    assert(mod);
+    haPrintMessage(mod, m_req.keyNum, ret);
     m_req.reset();
     if (ret == false)
         m_req.result = STATUS_LOCK_ERROR;

@@ -27,7 +27,10 @@
 #include "nsDatabase.h"
 #include "database.h"
 #include "connMgr.h"
-
+#ifdef WIN32
+#include <Shlobj.h>
+#include <direct.h>
+#endif
 
 using namespace std;
 boost::mutex g_nr_mutex;
@@ -62,11 +65,12 @@ struct portMap
 static database* g_db=NULL;
 static connMgr* g_mgr = NULL;
 static connMgr::records g_recs;
-static short g_stat = 0;
-static short g_slaveNum = 0;
 static vector<portMap> g_portMap;
 static int g_slaveIndex = 0;
-
+static short g_stat = 0;
+static short g_slaveNum = 0;
+static bool  g_failover = false;
+static bool  g_failoverError = false;
 void split(vector<string>& ss, const char* s)
 {
     const char* p = s;
@@ -224,6 +228,50 @@ void setMasterHost()
     addPort((short)atol(tmp));
 }
 
+const char* logPath(char* buf)
+{
+#ifdef _WIN32
+    SHGetFolderPathA(NULL, CSIDL_COMMON_APPDATA, NULL, SHGFP_TYPE_CURRENT, buf);
+    strcat_s(buf, MAX_PATH, PSEPARATOR_A "BizStation");
+    _mkdir(buf);
+    strcat_s(buf, MAX_PATH, PSEPARATOR_A "Transactd");
+    _mkdir(buf);
+#else
+    strcpy_s(buf, MAX_PATH, "/var/log");
+#endif
+    strcat_s(buf, MAX_PATH, PSEPARATOR_A "trnsctcl_error.log");
+    return buf;
+}
+
+int callFailover()
+{
+    char* fmt = "haMgr%d -c failover -s %s -u %s -p %s %s >> %s";
+    char tmp[4096];
+    int cpu = sizeof(char*) == 8 ? 64 :32;
+    string slaves;
+    for (size_t i = 0; i < slaveHosts.size(); ++i)
+        slaves += slaveHosts[i] + ",";
+    if (slaves.size())
+        slaves.erase(slaves.end() - 1);
+
+    string portmap;
+    for (size_t i = 0; i < g_portMap.size(); ++i)
+    {
+        if (i == 0) portmap = "-a ";
+        sprintf_s(tmp, 4096, "%d:%d,", g_portMap[i].tdPort, g_portMap[i].myPort);
+        portmap += tmp;
+    }
+    if (portmap.size())
+        portmap.erase(portmap.end() - 1);
+
+    char buf[MAX_PATH];
+    logPath(buf);
+
+    sprintf_s(tmp, 4096, fmt, cpu, slaves.c_str(), user.c_str(), passwd.c_str(),
+            portmap.size() ? portmap.c_str() : "", buf);
+    return system(tmp);
+}
+
 /* Read from the slave server's master */
 int setHosts()
 {
@@ -240,6 +288,29 @@ int setHosts()
     }else if (cache_master != "-")
         ret = RV_SLAVE_HOSTS_NOT_FOUND;
     disconnect();
+    if (g_failover && !g_failoverError)
+    {
+        g_failover = false;
+        bool fa = cache_master == "-";
+        if(!fa)
+        {
+            g_db = database::create();
+            g_mgr = connMgr::create(g_db);
+            bool ret = connect(cache_master);
+            short stat =  g_mgr->stat();
+            disconnect();
+            fa = (ret == false &&
+                stat >= ERROR_TD_HOSTNAME_NOT_FOUND &&
+                stat < ERROR_TD_NET_REMOTE_DISCONNECT);
+
+        }
+        if (fa)
+        {
+            g_failoverError = callFailover() != 0;
+            if (!g_failoverError)
+                return setHosts();
+        }
+    }
     return ret;
 }
 
@@ -300,10 +371,13 @@ void stopResolver()
 void updateRsolver()
 {
     boost::mutex::scoped_lock lck(g_nr_mutex);
+    if (g_failoverError) return;
     nsdatabase::registerHostNameResolver(NULL);
+    g_failover = true;
     boost::thread* t = new boost::thread(setHosts);
     t->join();
     delete t;
+    g_failover = false;
     nsdatabase::registerHostNameResolver(hostNameResolver);
 }
 
@@ -312,6 +386,7 @@ void clearResolver()
     boost::mutex::scoped_lock lck(g_nr_mutex);
     cache_master = "";
     cache_slave = "";
+    g_failoverError = false;
 }
 
 void addPortMap(short mysqlPort, short transactdPort)

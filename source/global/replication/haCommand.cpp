@@ -87,7 +87,8 @@ database_ptr createDb(const _TCHAR* host, const _TCHAR* user, const _TCHAR* pass
     connectParams cp(_T("tdap"), host, _T("mysql"),
                     NULL, user, passwd);
     database_ptr db = createDatabaseObject();
-    connectOpen(db, cp, newConnection);
+    if (db->connect(cp.uri(), newConnection))
+        db->open(cp.uri(), cp.type(), cp.mode());
     return db;
 }
 
@@ -215,7 +216,7 @@ class safeHaSalves
     const string& m_channel;
     const node& m_nd;
     haNotify* m_nf;
-    bool m_locked;
+    size_t m_lockSize;
     bool m_isSwitchOver;
     bool m_isDisableOldMasterToSalve;
     bool m_oldMasterRoleChanged;
@@ -227,8 +228,11 @@ class safeHaSalves
                                  m_nd.user.c_str(), m_nd.passwd.c_str());
         
         connMgr_ptr mgr = createConnMgr(db.get());
-        mgr->connect(cp.uri());
-        validateStatus(mgr, _T("connMgr connect"));
+        if (!mgr->connect(cp.uri()))
+        {
+            if (m_isSwitchOver)
+                validateStatus(mgr, _T("connMgr connect"));
+        }
         return mgr;
     }
 
@@ -247,7 +251,10 @@ class safeHaSalves
 
     void addDbs(vector<database_ptr>& dbs, const _TCHAR* host, bool newConnection)
     {
-        dbs.push_back(createDb(host, m_nd.user.c_str(), m_nd.passwd.c_str(), newConnection));
+        database_ptr db = createDb(host, m_nd.user.c_str(), m_nd.passwd.c_str(), newConnection);
+        if (m_isSwitchOver)
+            validateStatus(db, _T("database connect open"));
+        dbs.push_back(db);
     }
 
     void createDbList(vector<database_ptr>& dbs)
@@ -317,7 +324,7 @@ public:
 
     safeHaSalves(vector<_tstring>& slaves, const failOverParam& pm, haNotify* nf) :
                 m_slaves(slaves), m_channel(pm.newMaster.channel),
-                m_nd(pm.master), m_nf(nf), m_locked(false),
+                m_nd(pm.master), m_nf(nf), m_lockSize(0),
                 m_isSwitchOver(pm.isSwitchOver()),
                 m_isDisableOldMasterToSalve(pm.isDisableOldMasterToSalve()),
                 m_oldMasterRoleChanged(false),
@@ -328,11 +335,14 @@ public:
 
     void lock()
     {
-        m_locked = true;
-        for (size_t i = 0; i < m_mgrs.size(); ++i)
+        m_lockSize = m_mgrs.size();
+        for (size_t i = 0; i < m_lockSize; ++i)
         {
-            m_mgrs[i]->haLock();
-            validateStatus(m_mgrs[i], _T("haLock"));
+            if (m_mgrs[i]->isOpen())
+            {
+                m_mgrs[i]->haLock();
+                validateStatus(m_mgrs[i], _T("haLock"));
+            }
         }
     }
 
@@ -343,29 +353,32 @@ public:
         int index = -1;
         for (int i = 0; i < (int)m_mgrs.size(); ++i)
         {
-            const connMgr::records& rss = m_mgrs[i]->statusvars();
-            if (rss.size() > TD_SVAR_HA) 
+            if (m_mgrs[i]->isOpen())
             {
-                int ha = (int)rss[TD_SVAR_HA].longValue;
-                if ((ha & HA_ENABLE_FAILOVER) != HA_ENABLE_FAILOVER)
-                    THROW_BZS_ERROR_WITH_MSG(_T("Failover is disabled."));
-            }    
-            const connMgr::records& rs = m_mgrs[i]->slaveStatus(m_channel.c_str());
-            if (m_mgrs[i]->stat() == 0)
-            {
-                string tmp = rs[SLAVE_STATUS_MASTER_LOG_FILE].name;
-                unsigned int tmpPos = (unsigned int)rs[SLAVE_STATUS_EXEC_MASTER_LOG_POS].longValue;
-                if (tmp > fname)
+                const connMgr::records& rss = m_mgrs[i]->statusvars();
+                if (rss.size() > TD_SVAR_HA) 
                 {
-                    fname = tmp;
-                    pos = tmpPos;
-                    index = i;
-                }else if(tmp == fname)
+                    int ha = (int)rss[TD_SVAR_HA].longValue;
+                    if ((ha & HA_ENABLE_FAILOVER) != HA_ENABLE_FAILOVER)
+                        THROW_BZS_ERROR_WITH_MSG(_T("Failover is disabled."));
+                }    
+                const connMgr::records& rs = m_mgrs[i]->slaveStatus(m_channel.c_str());
+                if (m_mgrs[i]->stat() == 0)
                 {
-                    if (tmpPos > pos)
+                    string tmp = rs[SLAVE_STATUS_MASTER_LOG_FILE].name;
+                    unsigned int tmpPos = (unsigned int)rs[SLAVE_STATUS_EXEC_MASTER_LOG_POS].longValue;
+                    if (tmp > fname)
                     {
+                        fname = tmp;
                         pos = tmpPos;
                         index = i;
+                    }else if(tmp == fname)
+                    {
+                        if (tmpPos > pos)
+                        {
+                            pos = tmpPos;
+                            index = i;
+                        }
                     }
                 }
             }
@@ -394,7 +407,7 @@ public:
         //Slaves change master.
         for (size_t i = 0; i < dbs.size(); ++i)
         {
-            if (i != newMasterIndex)
+            if (i != newMasterIndex && dbs[i]->isOpened())
                 doChangeMaster(master, dbs[i], m_mgrs[i], NULL);
         }
     }
@@ -403,8 +416,11 @@ public:
     {
         for (size_t i = 0; i < m_mgrs.size(); ++i)
         {
-            m_mgrs[i]->setEnableFailover(v);
-            validateStatus(m_mgrs[i], _T("setEnableFailOver"));
+            if (m_mgrs[i]->isOpen())
+            {
+                m_mgrs[i]->setEnableFailover(v);
+                validateStatus(m_mgrs[i], _T("setEnableFailOver"));
+            }
         }
     }
 
@@ -430,10 +446,13 @@ public:
     ~safeHaSalves()
     {
         recoverMasterRole();
-        if (m_locked)
+        if (m_lockSize)
         {
-            for (int i = (int)m_mgrs.size() - 1; i >= 0 ; --i)
-                m_mgrs[i]->haUnlock();
+            for (int i = (int)m_lockSize - 1; i >= 0 ; --i)
+            {
+                if (m_mgrs[i]->isOpen())
+                    m_mgrs[i]->haUnlock();
+            }
         }
         m_mgrs.clear();
     }

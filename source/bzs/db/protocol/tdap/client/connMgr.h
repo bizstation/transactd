@@ -118,6 +118,7 @@ public:
     const _TCHAR* slaveStatusName(uint_td index) const;
     using nstable::tdapErr;
     using nstable::release;
+    using nstable::isOpen;
     static void removeSystemDb(records& recs);
     static const _TCHAR* sysvarName(uint_td index);
     static const _TCHAR* statusvarName(uint_td index);

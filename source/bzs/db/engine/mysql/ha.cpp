@@ -96,8 +96,12 @@ bool haLock()
 
 bool haUnlock()
 {
-    g_tmtx_ha.unlock();
-    return true;
+    if (g_tmtx_ha.locking_thread_id)
+    {
+        g_tmtx_ha.unlock();
+        return true;
+    }
+    return false;
 }
 
 bool setRole(int role)
