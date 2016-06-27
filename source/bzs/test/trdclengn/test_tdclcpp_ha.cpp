@@ -29,8 +29,8 @@
 char host1[128] = {"localhost"};
 char host2[128] = {"localhost:8611"};
 char host3[128] = {"localhost:8612"};
-char* g_repUser = "replication_user";
-char* g_repPasswd = "abcd";
+char g_repUser[128] = "replication_user";
+char g_repPasswd[128] = "abcd";
 
 char slaveHostsWithPort[512];
 static const char* portMap = "8610:3306,8611:3307,8612:3308";

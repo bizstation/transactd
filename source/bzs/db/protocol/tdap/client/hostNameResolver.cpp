@@ -245,7 +245,7 @@ const char* logPath(char* buf)
 
 int callFailover()
 {
-    char* fmt = "haMgr%d -c failover -s %s -u %s -p %s %s >> %s";
+    const char* fmt = "haMgr%d -c failover -s %s -u %s -p %s %s >> %s";
     char tmp[4096];
     int cpu = sizeof(char*) == 8 ? 64 :32;
     string slaves;

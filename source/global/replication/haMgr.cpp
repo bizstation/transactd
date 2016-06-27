@@ -62,7 +62,7 @@ public:
     virtual ~haMgrNotify() {};
     void onUpdateStaus(int status, const _TCHAR* msg)
     {
-        _TCHAR* p=_T("");
+        const _TCHAR* p=_T("");
         switch(status)
         {
         case HA_NF_ROLE_SLAVE: p = _T(": set role=SLAVE ");break;
