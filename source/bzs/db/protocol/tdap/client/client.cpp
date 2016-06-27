@@ -23,6 +23,7 @@
 using namespace bzs::db::protocol::tdap::client;
 
 bnet::connections* m_cons = NULL;
+extern void writeErrorLog(int err, const char* msg);
 
 namespace bzs
 {
@@ -78,7 +79,12 @@ short errorCode(const boost::system::error_code& e)
         ret = ERROR_TD_NET_OTHER;
         break;
     default:
+    {
+        char tmp[512];
+        sprintf_s(tmp, 512, "Socket error 3810 : native socket error code %d", e.value());
+        writeErrorLog(ret, tmp);
         ret = ERROR_TD_NET_OTHER;
+    }
     }
     return ret;
 }
