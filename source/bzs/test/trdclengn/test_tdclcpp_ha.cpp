@@ -35,6 +35,11 @@ char g_repPasswd[128] = "abcd";
 char slaveHostsWithPort[512];
 static const char* portMap = "8610:3306,8611:3307,8612:3308";
 
+/* command line ex
+
+./test_tdclcpp_ha_64m --host1=HOST --host2=HOST:8611 --host3=HOST2 --repl_user=replication_user --repl_passwd=abcd
+
+*/
 void init_commandLine(char* argv)
 {
     if (strstr(argv, "--host1=") == argv)
@@ -47,7 +52,6 @@ void init_commandLine(char* argv)
         strcpy_s(g_repUser, 128, (argv + 12)); 
     if (strstr(argv, "--repl_passwd=") == argv)
         strcpy_s(g_repPasswd, 128, (argv + 14)); 
-
 }
 
 _tstring str_conv(const char* v)

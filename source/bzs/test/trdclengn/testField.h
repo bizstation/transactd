@@ -3378,7 +3378,8 @@ void testConnMgr()
         const connMgr::records& recs = mgr->sqlvars();
         BOOST_CHECK(mgr->stat() == 0);
         BOOST_CHECK(recs.size() == TD_SQL_VER_SIZE);
-        _tprintf(_T("\nSQL_GTID_MODE = %lld\n"), recs[0].longValue);
+        _tprintf(_T("\nSQL_GTID_MODE = %lld\n"), 
+            recs[TD_SQL_VER_MYSQL_GTID_MODE].longValue);
     }
     {
         const connMgr::records& recs = mgr->slaveHosts();

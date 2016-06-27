@@ -75,6 +75,10 @@
 #include "my_global.h"
 #include <math.h>
 #if defined(MYSQL_5_7)
+#ifndef HAVE_REPLICATION
+#define HAVE_REPLICATION
+#endif
+
 // Not use malloc service
 #define MYSQL_SERVICE_MYSQL_ALLOC_INCLUDED
 typedef unsigned int PSI_memory_key;
