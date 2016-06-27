@@ -461,7 +461,7 @@ const char* dateTimeStr(char* buf, unsigned int bufsize)
     date = &tmp;
     localtime_x(date, &now);
 #endif // NOT __MINGW32__
-    sprintf_s(buf, bufsize, "%04d/%02d/%02d %02d:%02d:%02d",
+    sprintf_s(buf, bufsize, "%04d-%02d-%02dT%02d:%02d:%02d",
               date->tm_year + 1900, date->tm_mon + 1, date->tm_mday,
               date->tm_hour, date->tm_min, date->tm_sec);
     return buf;
@@ -482,7 +482,7 @@ void writeErrorLog(int err, const char* msg)
     strcpy_s(buf, MAX_PATH, "/var/log");
 #endif
 
-    strcat_s(buf, MAX_PATH, PSEPARATOR "trnsctcl_error.log");
+    strcat_s(buf, MAX_PATH, PSEPARATOR TD_CLINET_LOGNAME);
     FILE* fp = fileOpen(buf, "a+");
     if (fp)
     {

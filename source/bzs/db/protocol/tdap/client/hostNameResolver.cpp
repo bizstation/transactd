@@ -239,7 +239,7 @@ const char* logPath(char* buf)
 #else
     strcpy_s(buf, MAX_PATH, "/var/log");
 #endif
-    strcat_s(buf, MAX_PATH, PSEPARATOR_A "trnsctcl_error.log");
+    strcat_s(buf, MAX_PATH, PSEPARATOR_A TD_CLINET_LOGNAME);
     return buf;
 }
 

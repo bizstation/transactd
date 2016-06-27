@@ -650,14 +650,16 @@ struct handshale_t
 #define HA_RESTORE_ROLE             4
 #define HA_ENABLE_FAILOVER          8
 
-/** @endcond */
-
 /* server sql variables index */
 #define TD_SQL_VER_MYSQL_GTID_MODE  0
 #define TD_SQL_VER_BINLOG_FILE      1
 #define TD_SQL_VER_BINLOG_POS       2
 #define TD_SQL_VER_BINLOG_GTID      3
 #define TD_SQL_VER_SIZE             4
+
+
+#define TD_CLINET_LOGNAME           "transactd_clinet_err.log"
+
 /** @endcond */
 /* In the case of "tdclcppxxx" library of msvc, The ($TargetName) is not changed automatically.
  If you change this version then you need change The ($TargetName) project options too.

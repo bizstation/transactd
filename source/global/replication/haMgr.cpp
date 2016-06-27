@@ -23,6 +23,7 @@
 #include <vector>
 #include <boost/program_options.hpp>
 #include <bzs/rtl/stl_uty.h>
+#include <bzs/db/protocol/tdap/btrDate.h>
 
 #ifdef __BCPLUSPLUS__
 #define BZS_LINK_BOOST_PROGRAM_OPTIONS
@@ -30,6 +31,7 @@
 #endif
 
 using namespace bzs::db::protocol::tdap::client;
+using namespace bzs::db::protocol::tdap;
 using namespace boost::program_options;
 using namespace std;
 
@@ -182,6 +184,30 @@ int getCommandLineOption(int argc, _TCHAR* argv[], failOverParam& pm, int& cmd, 
     return checkParam(pm, cmd, v);
 }
 
+void printDateTime()
+{
+    btrDateTime bt;
+    char tmp[256];
+    bt.time.i = getNowTime();
+    bt.date.i = getNowDate();
+    btrstoa(bt, tmp, true);
+    cout << tmp;
+}
+
+void printMessage(const char* msg, const char* msg2="")
+{
+    printDateTime();
+    cout << " " << msg << msg2 << endl;
+}
+
+#ifdef _UNICODE
+void printMessage(const wchar_t* msg, const wchar_t* msg2=_T(""))
+{
+    printDateTime();
+    tcout << " " << msg << msg2 << endl;
+}
+#endif
+
 /* Command line paramater 
 command line option:
   -c [ --command ] arg        command [switchover | failover | demote_to_slave
@@ -202,12 +228,12 @@ command line option:
   -D [ --disable_demote ] arg disable old master  demote
 
 example:
-haMgr64 -c switchover -m localhost -n localhost:8611 -t 3307 -u root -p 
+haMgr64 -c switchover -o localhost -n localhost:8611 -P 3307 -r replication_user -d xxxx -u root -p xxxx 
 
 haMgr64 -c failover -s localhost:8611,localhost:8612 -a 8610:3306,8611:3307,8612:3308
  -u root -p
 
-haMgr64 -c demote_to_slave -m localhost -n localhost:8611 -t 3307 -r replication_user
+haMgr64 -c demote_to_slave -o localhost -n localhost:8611 -P 3307 -r replication_user -d xxxx
  -d abcd -u root -p 
 
 haMgr64 -c set_failover_enable -v 1 -m localhost -u root -p
@@ -236,15 +262,15 @@ int _tmain(int argc, _TCHAR* argv[])
             {
             case CMD_SWITCHOVER: 
                 pm.option |= OPT_SO_AUTO_SLVAE_LIST;
-                cout << "Starting switch over..." << endl;
+                printMessage("Starting switch over...");
                 switchOrver(pm, &nf); 
                 break;
             case CMD_FAILOVER:
-                cout << "Starting fail over..." << endl;
+                printMessage("Starting fail over...");
                 failOrver(pm, &nf); 
                 break;
             case CMD_DEMOTE_TO_SLAVE:  
-                cout << "Starting demote to slave..." << endl;
+                printMessage("Starting demote to slave...");
                 demoteToSlave(pm, &nf); 
                 break;
             case CMD_SET_FAILOVER_ENABLE: 
@@ -255,16 +281,16 @@ int _tmain(int argc, _TCHAR* argv[])
                 setServerRole(pm, v); 
                 break;
             }
-            cout << "Done!" << endl;
+            printMessage("Done!");
         }
     }
     catch (bzs::rtl::exception& e)
     {
-        tcout << _T("Error! ") << getMsg(e)->c_str() << endl;
+        printMessage(_T("Error! "), getMsg(e)->c_str());
     }
     catch (std::exception& e)
     {
-        cout << "Error! " << e.what() << endl;
+        printMessage("Error! ", e.what());
     }
     return ret;
 }
