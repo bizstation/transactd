@@ -237,8 +237,7 @@ const connection::records& connManager::sqlVariables(blobBuffer* bb) const
     if (m_stat) return m_records;
     binlogPos bpos;
     short ret = getBinlogPos(thd.get(), &bpos, thd.get(), bb);
-
-
+    if (ret) return m_records;
     for (int i = 0; i < TD_SQL_VER_SIZE; ++i)
     {
         m_records.push_back(connection::record());
@@ -272,7 +271,6 @@ const connection::records& connManager::sqlVariables(blobBuffer* bb) const
             break;
         }
     }
-
     return m_records;
 }
 

@@ -96,12 +96,17 @@ bool haLock()
 
 bool haUnlock()
 {
+#ifdef _WIN32
     if (g_tmtx_ha.locking_thread_id)
     {
         g_tmtx_ha.unlock();
         return true;
     }
     return false;
+#else
+    g_tmtx_ha.unlock();
+    return true;
+#endif
 }
 
 bool setRole(int role)
@@ -113,9 +118,11 @@ bool setRole(int role)
         {
             g_ha &= ~(HA_ROLE_MASTER | HA_ROLE_NONE);
             g_ha |= role;
-            bool ret =  saveRoleToFile(role);
-            g_tmtx_ha.unlock();
-            return true;
+            if (saveRoleToFile(role))
+            {
+                g_tmtx_ha.unlock();
+                return true;
+            }
         }
         return false;
     }

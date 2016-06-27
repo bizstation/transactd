@@ -54,6 +54,7 @@ short errorCode(const boost::system::error_code& e)
     case 11001:
     case 109:   // destination address required
     case 2:     //No such file or directory
+    case 1:     //operation not permitted
         ret = ERROR_TD_HOSTNAME_NOT_FOUND;
         break;
     case 10060:
@@ -75,15 +76,12 @@ short errorCode(const boost::system::error_code& e)
     case 232:
         ret = ERROR_TD_NET_REMOTE_DISCONNECT;
         break;
-    case 1:    //operation not permitted
-        ret = ERROR_TD_NET_OTHER;
-        break;
     default:
     {
-        char tmp[512];
-        sprintf_s(tmp, 512, "Socket error 3810 : native socket error code %d", e.value());
-        writeErrorLog(ret, tmp);
         ret = ERROR_TD_NET_OTHER;
+        char tmp[512];
+        sprintf_s(tmp, 512, "native socket error code %d", e.value());
+        writeErrorLog(ret, tmp);
     }
     }
     return ret;

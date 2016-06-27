@@ -215,7 +215,7 @@ safe_commit_lock::~safe_commit_lock()
 
 
 #ifdef NOTUSE_BINLOG_VAR //Only MySQL 5.6 Windows
-	inline short getBinlogPosInternal(THD* currentThd, binlogPos* bpos, THD* tmpThd, bzs::db::IblobBuffer* bb)
+    inline short getBinlogPosInternal(THD* currentThd, binlogPos* bpos, THD* tmpThd, bzs::db::IblobBuffer* bb)
     {
         short result = 0;
         {
@@ -234,7 +234,7 @@ safe_commit_lock::~safe_commit_lock()
 #endif
 
 #ifdef USE_BINLOG_GTID //MariaDB 10-
-	inline short getBinlogPosInternal(THD* currentThd, binlogPos* bpos, THD* /*tmpThd*/, bzs::db::IblobBuffer* /*bb*/)
+    inline short getBinlogPosInternal(THD* currentThd, binlogPos* bpos, THD* /*tmpThd*/, bzs::db::IblobBuffer* /*bb*/)
     {
         if (mysql_bin_log.is_open())
         {
@@ -277,7 +277,7 @@ safe_commit_lock::~safe_commit_lock()
     }
 
     // Linux MySQL can access to the mysql_bin_log variable
-	inline short getBinlogPosInternal(THD*, binlogPos* bpos, THD* /*tmpThd*/, bzs::db::IblobBuffer* bb)
+    inline short getBinlogPosInternal(THD*, binlogPos* bpos, THD* /*tmpThd*/, bzs::db::IblobBuffer* bb)
     {
         if (mysql_bin_log.is_open())
         {
@@ -536,20 +536,23 @@ int getChannels(THD* /*thd*/, connection::records& recs)
     return 0;
 }
 #elif defined(MYSQL_5_7)
-#include "rpl_msr.h" //channel_map
+#include "sql/rpl_msr.h" //channel_map
 int getChannels(THD* thd, connection::records& recs)
 {
     channel_map.rdlock();
     uint_td size = channel_map.get_num_instances();
-    for (mi_map::iterator it = channel_map.begin(); it != channel_map.end(); it++)
+    if (size)
     {
-        Master_info* mi = it->second;
-        if (mi && mi->host[0])
+        for (mi_map::iterator it = channel_map.begin(); it != channel_map.end(); it++)
         {
-            connection::record rec;
-            rec.type = 1;
-            strcpy_s(rec.name, CON_REC_VALUE_SIZE, mi->get_channel());
-            recs.push_back(rec);
+            Master_info* mi = it->second;
+            if (mi && mi->host[0])
+            {
+                connection::record rec;
+                rec.type = 1;
+                strcpy_s(rec.name, CON_REC_VALUE_SIZE, mi->get_channel());
+                recs.push_back(rec);
+            }
         }
     }
     channel_map.unlock();
