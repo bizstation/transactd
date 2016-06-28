@@ -3372,7 +3372,7 @@ void testConnMgr()
     }
     {
         mgr->slaveStatus();
-        BOOST_CHECK(mgr->stat() == 0);
+        BOOST_CHECK_MESSAGE(mgr->stat() == 0, "stat = " << mgr->stat());
     }
     {
         const connMgr::records& recs = mgr->sqlvars();

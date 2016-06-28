@@ -17,6 +17,10 @@
  02111-1307, USA.
  ================================================================= */
 /* MySQL 5.5 and Mariadb are no-rtti */
+#ifndef MYSQL_5_7
+# include <string>
+#endif
+
 #ifdef __GNUC__
 # pragma implementation "mysqlInternal.h" 
 #endif
@@ -41,7 +45,6 @@
 #else
 #  define Protocol_mysql Protocol
 #  define CP_PROTOCOL PROTOCOL_BINARY
-#  include <string>
 #endif
 
 
@@ -577,8 +580,10 @@ int getSlaveStatus(THD* thd, const char* channel, connection::records& recs, bzs
     char tmp[128];
 #if (defined(MYSQL_5_7))
     sprintf_s(tmp, 128, "show slave status for channel '%s'", channel);
-#else
+#elif (defined(MARIADB_10_1) || defined(MARIADB_10_0))
     sprintf_s(tmp, 128, "show slave '%s' status", channel);
+#else
+    sprintf_s(tmp, 128, "show slave status");
 #endif
     return execSql(thd, tmp);
 }
