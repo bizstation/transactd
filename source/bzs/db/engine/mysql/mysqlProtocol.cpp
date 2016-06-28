@@ -271,7 +271,7 @@ safe_commit_lock::~safe_commit_lock()
             if (size > 1024) buf = new char[size];
             gtid_set->to_string(buf);
             bpos->type = REPL_POSTYPE_GTID;
-            bb->addBlob((unsigned int)size, 0, (const unsigned char *)buf);
+            bb->addBlob((unsigned int)size, TD_SQL_VER_BINLOG_GTID, (const unsigned char *)buf);
             bb->setFieldCount(1);
             if (p != buf) delete[] buf;
         }

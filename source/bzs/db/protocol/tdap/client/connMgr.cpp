@@ -619,7 +619,7 @@ const _TCHAR* connMgr::slaveStatusName(uint_td index) const
     return _T("");
 }
 
-const _TCHAR* sqlvarName(uint_td index)
+const _TCHAR* connMgr::sqlvarName(uint_td index)
 {
     if (index < TD_SQL_VER_SIZE)
         return SQLVAR_NAME[index];
