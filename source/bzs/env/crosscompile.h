@@ -58,6 +58,7 @@ int gettimeofday(struct timeval*, struct timezone*);
 #endif
 
 #define _strnicmp strncasecmp
+#define _stricmp strcasecmp
 #define _atoi64 atoll
 #define _access access
 #define sprintf_s snprintf

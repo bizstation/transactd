@@ -16,8 +16,10 @@
    Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 =================================================================*/
-#include "ha.h"
+#include <my_config.h>
+# include <string>
 #include <boost/thread.hpp>
+#include "ha.h"
 #include "mysqlInternal.h"
 #include <bzs/env/fileopen.h>
 #include <bzs/db/protocol/tdap/tdapcapi.h>

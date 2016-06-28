@@ -17,15 +17,15 @@
  02111-1307, USA.
  ================================================================= */
 /* MySQL 5.5 and Mariadb are no-rtti */
-#ifndef MYSQL_5_7
+#include <my_config.h>
 # include <string>
-#endif
 
 #ifdef __GNUC__
 # pragma implementation "mysqlInternal.h" 
 #endif
 
 #include "mysqlProtocol.h"
+
 #include <bzs/env/crosscompile.h>
 #include <bzs/db/protocol/tdap/tdapcapi.h>
 #include <bzs/db/IBlobBuffer.h>
