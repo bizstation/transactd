@@ -109,10 +109,8 @@ _TCHAR* getHost(_TCHAR* hostStatus)
     return hostStatus;
 }
 
-_TCHAR* slaveList(const node& nd, _TCHAR* slaves)
+_TCHAR* slaveList(connMgr_ptr& mgr, _TCHAR* slaves)
 { // auto listup slave hosts from masetr
-    database_ptr db = createDatabaseObject();
-    connMgr_ptr mgr = getMasterMgr(db, nd);
 
     const connMgr::records& recs = mgr->slaveHosts();
     validateStatus(mgr, _T("slaveHost"));
@@ -124,15 +122,29 @@ _TCHAR* slaveList(const node& nd, _TCHAR* slaves)
         _tcscat_s(slaves, SLAVES_SIZE, _T(","));
         _tcscat_s(slaves, SLAVES_SIZE, getHost((_TCHAR*)recs[i].value(tmp, MAX_PATH)));
     }
-    mgr.reset();
     return slaves;
 }
 
-void makeSlaveList(const failOverParam& pm)
+bool isRoleMaster(connMgr_ptr& mgr)
 {
+    const connMgr::records& recs = mgr->statusvars();
+    int ha = HA_ROLE_SLAVE;
+    if (recs.size() > TD_SVAR_HA)
+        ha = (int)recs[TD_SVAR_HA].longValue;
+    return (ha & HA_ROLE_MASTER) == HA_ROLE_MASTER;
+}
+
+void makeSlaveList(const failOverParam& pm, bool* roleMaster=NULL)
+{
+    database_ptr db = createDatabaseObject();
+    connMgr_ptr mgr = getMasterMgr(db, pm.master);
+
     _TCHAR slaves[SLAVES_SIZE] = {0};
-    slaveList(pm.master, slaves);
+    slaveList(mgr, slaves);
     pm.slaves = slaves;
+    if (roleMaster)
+        *roleMaster = isRoleMaster(mgr);
+    mgr.reset();
 }
 
 void getBinlogPos(connMgr_ptr mgr, binlogPos& bpos)
@@ -165,7 +177,7 @@ string getChannlName(connMgr_ptr mgr, const _TCHAR* oldMaster)
         if (rs.size() > SLAVE_STATUS_MASTER_HOST)
         {
             _TCHAR buf[MAX_PATH];
-            if (_tcscmp(rs[SLAVE_STATUS_MASTER_HOST].value(buf, MAX_PATH), oldMaster) == 0)
+            if (_tcsicmp(rs[SLAVE_STATUS_MASTER_HOST].value(buf, MAX_PATH), oldMaster) == 0)
                 return recs[i].name;
         }
     }
@@ -208,6 +220,20 @@ void changeMaster(const node& nd, const masterNode& master, database_ptr db,
     notify(nf, HA_SLAVE_START, _T(""));
 }
 
+connMgr_ptr createMgr(database_ptr db, const _TCHAR* host, const node& nd, bool throwError)
+{
+    connectParams cp(_T("tdap"), host, _T(""), NULL,
+                                nd.user.c_str(), nd.passwd.c_str());
+        
+    connMgr_ptr mgr = createConnMgr(db.get());
+    if (!mgr->connect(cp.uri()))
+    {
+        if (throwError)
+            validateStatus(mgr, _T("connMgr connect"));
+    }
+    return mgr;
+}
+
 class safeHaSalves
 {
     vector<connMgr_ptr> m_mgrs;
@@ -222,25 +248,11 @@ class safeHaSalves
     bool m_oldMasterRoleChanged;
     bool m_newMasterRoleChanged;
 
-    connMgr_ptr createMgr(database_ptr db, const _TCHAR* host)
-    {
-        connectParams cp(_T("tdap"), host, _T(""), NULL,
-                                 m_nd.user.c_str(), m_nd.passwd.c_str());
-        
-        connMgr_ptr mgr = createConnMgr(db.get());
-        if (!mgr->connect(cp.uri()))
-        {
-            if (m_isSwitchOver)
-                validateStatus(mgr, _T("connMgr connect"));
-        }
-        return mgr;
-    }
-
     void addMgr(const _TCHAR* host)
     {
         database_ptr db = createDatabaseObject();
         m_dbs.push_back(db);
-        m_mgrs.push_back(createMgr(db, host));
+        m_mgrs.push_back(createMgr(db, host, m_nd, m_isSwitchOver));
     }
 
     void createMgrList()
@@ -435,7 +447,7 @@ public:
             if (m_newMasterRoleChanged != m_oldMasterRoleChanged)
             {
                 database_ptr db = createDatabaseObject();
-                connMgr_ptr mgr = createMgr(db, m_nd.host.c_str());
+                connMgr_ptr mgr = createMgr(db, m_nd.host.c_str(), m_nd, m_isSwitchOver);
                 mgr->setRole(HA_ROLE_MASTER);
                 mgr.reset();
             }
@@ -562,7 +574,6 @@ public:
     }
 };
 
-
 string getNewMasterPort(const string& host, const string& map)
 {
     char tmp[MAX_PATH];
@@ -684,6 +695,68 @@ void setServerRole(const failOverParam& pm, int v)
 {
     masterControl srv(pm.master);
     srv.setRole(v);
+}
+
+const _TCHAR* roleName(bool isMaster)
+{
+    return isMaster ? _T("Role = Master") : _T("Role = Slave");    
+}
+
+void notifyBrank(haNotify* nf)
+{
+    nfSetHostName(nf, _T(""));
+    notify(nf, HA_NF_BLANK, _T(""));
+}
+
+int healthCheck(const failOverParam& pm, haNotify* nf)
+{
+    int ret = 0;
+    overrideCompatibleMode cpblMode(database::CMP_MODE_MYSQL_NULL);
+    bool roleMaster;
+    makeSlaveList(pm, &roleMaster);
+
+    vector<_tstring> slaves;
+    split(slaves, pm.slaves.c_str());
+    nfSetHostName(nf, _T(""));
+    notify(nf, HA_NF_SLAVE_LIST, pm.slaves.c_str());
+    nfSetHostName(nf, pm.master.host.c_str());
+    notify(nf, roleMaster ? HA_NF_MSG_OK : HA_NF_MSG_NG, roleName(roleMaster));
+    if (!roleMaster) ++ret;
+        
+    for (size_t i=0;i < slaves.size(); ++i)
+    {
+        database_ptr db = createDatabaseObject();
+        connMgr_ptr mgr = createMgr(db, slaves[i].c_str(), pm.master, false);
+        notifyBrank(nf);
+        nfSetHostName(nf, slaves[i].c_str());
+        roleMaster = isRoleMaster(mgr);
+        notify(nf, roleMaster ? HA_NF_MSG_NG : HA_NF_MSG_OK, roleName(roleMaster));
+        if (roleMaster) ++ret;
+        string channel = getChannlName(mgr, pm.master.host.c_str());
+        notify(nf, HA_NF_CANNELNAME, channel.c_str());
+        const connMgr::records& recs = mgr->slaveStatus(channel.c_str());
+        if (recs.size() <= SLAVE_STATUS_EXEC_MASTER_LOG_POS)
+        {
+            notify(nf, HA_NF_MSG_NG, _T("Can not read slave status."));
+            ++ret;
+        }
+        else
+        {
+            bool sql_run = _stricmp(recs[SLAVE_STATUS_SLAVE_SQL_RUNNING].name, "Yes") == 0;
+            bool io_run = _stricmp(recs[SLAVE_STATUS_SLAVE_IO_RUNNING].name, "Yes") == 0;
+            notify(nf, sql_run ? HA_NF_MSG_OK : HA_NF_MSG_NG, _T("SQL thread running"));
+            notify(nf, sql_run ? HA_NF_MSG_OK : HA_NF_MSG_NG, _T("IO thread running"));
+            if (!sql_run) ++ret;
+            if (!io_run) ++ret;
+            __int64 read_pos = recs[SLAVE_STATUS_READ_MASTER_LOG_POS].longValue;
+            __int64 write_pos = recs[SLAVE_STATUS_EXEC_MASTER_LOG_POS].longValue;
+            _TCHAR tmp[50];
+            _i64tot_s(read_pos - write_pos, tmp, 50, 10);
+            notify(nf, HA_NF_DELAY, tmp);
+        }
+        mgr.reset();
+    }
+    return ret;
 }
 
 

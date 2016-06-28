@@ -63,12 +63,16 @@ public:
 #define HA_NF_WAIT_POS_START  14
 #define HA_NF_WAIT_POS_COMP   15
 #define HA_SET_READ_ONLY      16
+#define HA_NF_MSG_OK          17
+#define HA_NF_MSG_NG          18  
+#define HA_NF_DELAY           19
+#define HA_NF_BLANK           20
 
 void failOrver(const failOverParam& pm, haNotify* nf=NULL);
 void switchOrver(const failOverParam& pm, haNotify* nf=NULL);
 void demoteToSlave(const failOverParam& pm, haNotify* nf=NULL);
 void setEnableFailOver(const failOverParam& pm, bool v);
 void setServerRole(const failOverParam& pm, int v);
-
+int healthCheck(const failOverParam& pm, haNotify* nf);
 
 #endif // GLOBAL_REPLICATION_HACOMMANDH

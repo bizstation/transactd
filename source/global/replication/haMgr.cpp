@@ -36,12 +36,13 @@ using namespace boost::program_options;
 using namespace std;
 
 static const char* cmds = "switchover,failover,demote_to_slave,"
-                            "set_failover_enable,set_server_role";
+                            "set_failover_enable,set_server_role,health_check";
 #define CMD_SWITCHOVER            0
 #define CMD_FAILOVER              1
 #define CMD_DEMOTE_TO_SLAVE       2
 #define CMD_SET_FAILOVER_ENABLE   3
 #define CMD_SET_SERVER_ROLE       4
+#define CMD_HEALTH_CHECK          5
 
 
 _tstring str_conv(std::string& v)
@@ -81,6 +82,13 @@ public:
         case HA_NF_WAIT_POS_COMP: p = _T(": wait is completed, pos=");break;
         case HA_SLAVE_STOP: p = _T(": stop slave ");break;
         case HA_SET_READ_ONLY: p = _T(": set READ_ONLY=1");break;
+        case HA_NF_DELAY: p = _T(": SQL thread delay=");break;
+        case HA_NF_MSG_OK:  
+            tcout << "  " << m_host << _T(": ") << msg << _T(" OK!") << endl; 
+            return;
+        case HA_NF_MSG_NG:  
+            tcout << "  " << m_host << _T(": ") << msg << _T(" NG!") << endl; 
+            return;
         }
         tcout << "  " << m_host << p << msg << endl;
     }
@@ -137,7 +145,7 @@ int getCommandLineOption(int argc, _TCHAR* argv[], failOverParam& pm, int& cmd, 
     bool disable_demote = false;
     options_description opt("command line option");
     opt.add_options()("command,c", value<std::string>(&c),
-                      "command [switchover | failover | demote_to_slave | set_failover_enable | set_server_role]")
+                      "command [switchover | failover | demote_to_slave | set_failover_enable | set_server_role | health_check]")
         ("cur_master,o", value<std::string>(&host), "current master host name")
         ("new_master,n", value<std::string>(&newMaster), "new master host name")
         ("channel,C", value<std::string>(&pm.newMaster.channel), "new master channel name")
@@ -239,6 +247,9 @@ haMgr64 -c demote_to_slave -o localhost -n localhost:8611 -P 3307 -r replication
 haMgr64 -c set_failover_enable -v 1 -m localhost -u root -p
 
 haMgr64 -c set_server_role -m localhost -v 1 -u root -p
+
+haMgr64 -c health_check -m localhost -u root -p
+
 */
 
 #pragma argsused
@@ -279,6 +290,16 @@ int _tmain(int argc, _TCHAR* argv[])
                 break;
             case CMD_SET_SERVER_ROLE:  
                 setServerRole(pm, v); 
+                break;
+            case CMD_HEALTH_CHECK:
+                printMessage("Starting health check...");
+                int errors = healthCheck(pm, &nf);
+                char tmp[256];
+                if (errors)
+                    sprintf_s(tmp, 256, "%d errors detected.", errors);
+                else
+                    sprintf_s(tmp, 256, "No errors detected.");
+                cout << endl << "  *** " << tmp << endl << endl;
                 break;
             }
             printMessage("Done!");
