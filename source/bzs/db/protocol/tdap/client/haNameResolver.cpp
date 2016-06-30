@@ -16,8 +16,12 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include "haNameResolver.h"
+#if defined(__BORLANDC__) && defined(__clang__)
+#define BOOST_THREAD_BUILD_DLL
+#endif
 #include <boost/thread.hpp>
+#include <boost/scoped_ptr.hpp>
+#include "haNameResolver.h"
 #include <bzs/env/compiler.h>
 #include <bzs/env/crosscompile.h>
 #include <bzs/env/tstring.h>
@@ -31,6 +35,22 @@
 #include <Shlobj.h>
 #include <direct.h>
 #endif
+
+#ifdef __BCPLUSPLUS__
+#   pragma package(smart_init)
+#   define BZS_LINK_BOOST_THREAD
+#   define BZS_LINK_BOOST_FILESYSTEM
+#   define BZS_LINK_BOOST_SYSTEM
+#   ifdef _WIN64
+#       define BZS_LINK_BOOST_CHRONO
+        namespace boost { void tss_cleanup_implemented(){} }
+#   else
+        namespace boost { extern "C" void tss_cleanup_implemented() {} }
+#   endif //_WIN64
+#   include <bzs/env/boost_bcb_link.h>
+#endif // __BCPLUSPLUS__
+
+
 
 using namespace std;
 boost::mutex g_nr_mutex;
@@ -350,9 +370,10 @@ void updateRsolver()
     if (g_failoverError) return;
     nsdatabase::registerHaNameResolver(NULL);
     g_failover = true;
-    boost::thread* t = new boost::thread(setHosts);
-    t->join();
-    delete t;
+    {
+        boost::scoped_ptr<boost::thread> t(new boost::thread(setHosts));
+        t->join();
+    }
     g_failover = false;
     registerHaNameResolver(hostNameResolver);
 }

@@ -67,7 +67,7 @@ extern bool win_thread_pool_shutdown;
 /* HA hostname resolver */
 /* @cond INTERNAL */
 #if (defined(__BORLANDC__) && !defined(__clang__))
-typedef const char* __stdcall (*HANAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+typedef const char* __STDCALL (*HANAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
 #else
 typedef const char* (__STDCALL* HANAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
 #endif

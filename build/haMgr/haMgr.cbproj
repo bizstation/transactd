@@ -1,19 +1,11 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{EB31B0F7-D4C3-425D-B9E2-CB9CE8168EF4}</ProjectGuid>
-        <ProjectVersion>16.0</ProjectVersion>
+        <ProjectGuid>{81B3E4EC-18A0-4C0C-B847-E10C42C02FDD}</ProjectGuid>
+        <ProjectVersion>15.4</ProjectVersion>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release Unicode</Config>
         <AppType>Console</AppType>
         <FrameworkType>None</FrameworkType>
-        <BCVER Condition="'$(ProductVersion)'&gt;='8.0' and '$(ProductVersion)' &lt; '9.0'">150</BCVER>
-        <BCVER Condition="'$(ProductVersion)'&gt;='9.0' and '$(ProductVersion)' &lt; '10.0'">160</BCVER>
-        <BCVER Condition="'$(ProductVersion)'&gt;='10.0' and '$(ProductVersion)' &lt; '11.0'">170</BCVER>
-        <BCVER Condition="'$(ProductVersion)'&gt;='11.0' and '$(ProductVersion)' &lt; '12.0'">180</BCVER>
-        <BCVER Condition="'$(ProductVersion)'&gt;='12.0' and '$(ProductVersion)' &lt; '13.0'">190</BCVER>
-        <BCVER Condition="'$(ProductVersion)'&gt;='14.0' and '$(ProductVersion)' &lt; '15.0'">200</BCVER>
-        <BCVER Condition="'$(ProductVersion)'&gt;='15.0' and '$(ProductVersion)' &lt; '16.0'">210</BCVER>
-        <BCVER Condition="'$(ProductVersion)'&gt;='16.0' and '$(ProductVersion)' &lt; '17.0'">220</BCVER>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <TargetedPlatforms>3</TargetedPlatforms>
     </PropertyGroup>
@@ -40,7 +32,7 @@
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+    <PropertyGroup Condition="'$(Config)'=='Debug Unicode' or '$(Cfg_1)'!=''">
         <Cfg_1>true</Cfg_1>
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
@@ -51,7 +43,19 @@
         <Cfg_1>true</Cfg_1>
         <Base>true</Base>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win32)'!=''">
+        <Cfg_1_Win32>true</Cfg_1_Win32>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_1)'=='true') or '$(Cfg_1_Win64)'!=''">
+        <Cfg_1_Win64>true</Cfg_1_Win64>
+        <CfgParent>Cfg_1</CfgParent>
+        <Cfg_1>true</Cfg_1>
+        <Base>true</Base>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Config)'=='Release Unicode' or '$(Cfg_2)'!=''">
         <Cfg_2>true</Cfg_2>
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
@@ -68,79 +72,47 @@
         <Cfg_2>true</Cfg_2>
         <Base>true</Base>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Debug Unicode' or '$(Cfg_3)'!=''">
-        <Cfg_3>true</Cfg_3>
-        <CfgParent>Base</CfgParent>
+    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win32)'!=''">
+        <Cfg_2_Win32>true</Cfg_2_Win32>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
         <Base>true</Base>
     </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='iOSDevice' and '$(Cfg_3)'=='true') or '$(Cfg_3_iOSDevice)'!=''">
-        <Cfg_3_iOSDevice>true</Cfg_3_iOSDevice>
-        <CfgParent>Cfg_3</CfgParent>
-        <Cfg_3>true</Cfg_3>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Cfg_3)'=='true') or '$(Cfg_3_OSX32)'!=''">
-        <Cfg_3_OSX32>true</Cfg_3_OSX32>
-        <CfgParent>Cfg_3</CfgParent>
-        <Cfg_3>true</Cfg_3>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win32' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win32)'!=''">
-        <Cfg_3_Win32>true</Cfg_3_Win32>
-        <CfgParent>Cfg_3</CfgParent>
-        <Cfg_3>true</Cfg_3>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_3)'=='true') or '$(Cfg_3_Win64)'!=''">
-        <Cfg_3_Win64>true</Cfg_3_Win64>
-        <CfgParent>Cfg_3</CfgParent>
-        <Cfg_3>true</Cfg_3>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Config)'=='Release Unicode' or '$(Cfg_4)'!=''">
-        <Cfg_4>true</Cfg_4>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='iOSDevice' and '$(Cfg_4)'=='true') or '$(Cfg_4_iOSDevice)'!=''">
-        <Cfg_4_iOSDevice>true</Cfg_4_iOSDevice>
-        <CfgParent>Cfg_4</CfgParent>
-        <Cfg_4>true</Cfg_4>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='OSX32' and '$(Cfg_4)'=='true') or '$(Cfg_4_OSX32)'!=''">
-        <Cfg_4_OSX32>true</Cfg_4_OSX32>
-        <CfgParent>Cfg_4</CfgParent>
-        <Cfg_4>true</Cfg_4>
+    <PropertyGroup Condition="('$(Platform)'=='Win64' and '$(Cfg_2)'=='true') or '$(Cfg_2_Win64)'!=''">
+        <Cfg_2_Win64>true</Cfg_2_Win64>
+        <CfgParent>Cfg_2</CfgParent>
+        <Cfg_2>true</Cfg_2>
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <SanitizedProjectName>test_tdclcpp_v3_bc</SanitizedProjectName>
-        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
-        <Defines>TRDCL_AUTOLINK;BOOST_ALL_NO_LIB;USE_DBM_CONNECTION_POOL;$(Defines)</Defines>
-        <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
-        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
-        <VerInfo_Locale>1041</VerInfo_Locale>
+        <Manifest_File>None</Manifest_File>
+        <SanitizedProjectName>haMgr</SanitizedProjectName>
+        <Defines>BOOST_ALL_NO_LIB;TRDCL_AUTOLINK;$(Defines)</Defines>
         <VerInfo_Keys>CompanyName=;FileDescription=;FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProductName=;ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
-        <BCC_PCHUsage>None</BCC_PCHUsage>
-        <BPILibOutputDir>..\..\lib</BPILibOutputDir>
-        <NoVCL>true</NoVCL>
-        <Multithreaded>true</Multithreaded>
-        <_TCHARMapping>char</_TCHARMapping>
-        <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
+        <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
+        <VerInfo_Locale>1041</VerInfo_Locale>
+        <BCC_wrng>false</BCC_wrng>
         <ProjectType>CppConsoleApplication</ProjectType>
         <OutputExt>exe</OutputExt>
+        <BCC_wpch>false</BCC_wpch>
+        <BCC_wmls>false</BCC_wmls>
         <BCC_wiip>false</BCC_wiip>
         <ILINK_LibraryPath>..\..\lib;$(ILINK_LibraryPath)</ILINK_LibraryPath>
-        <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
+        <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
+        <BRCC_IncludePath>$(BDSINCLUDE)\windows\sdk;$(BRCC_IncludePath)</BRCC_IncludePath>
+        <IncludePath>..\..\source\;$(IncludePath)</IncludePath>
+        <NoVCL>true</NoVCL>
+        <_TCHARMapping>wchar_t</_TCHARMapping>
+        <Multithreaded>true</Multithreaded>
         <DynamicRTL>false</DynamicRTL>
+        <UsePackages>false</UsePackages>
+        <DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
         <IntermediateOutputDir>.\$(Config)\$(Platform)</IntermediateOutputDir>
         <FinalOutputDir>..\..\bin</FinalOutputDir>
         <BCC_wpar>false</BCC_wpar>
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
-        <ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\release\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
-        <TD_CPU>32</TD_CPU>
+        <DllSuffix>32</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_iOSDevice)'!=''">
         <VerInfo_BundleId>$(MSBuildProjectName)</VerInfo_BundleId>
@@ -154,15 +126,18 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
-        <Manifest_File>None</Manifest_File>
         <BCC_ExtendedErrorInfo>false</BCC_ExtendedErrorInfo>
         <BCC_HonorMemPtrPrecision>true</BCC_HonorMemPtrPrecision>
+        <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
+        <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64)'!=''">
-        <TD_CPU>64</TD_CPU>
         <Manifest_File>None</Manifest_File>
         <DynamicRTL>true</DynamicRTL>
         <UsePackages>true</UsePackages>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <Defines>TRANSACTD;$(Defines)</Defines>
+        <DllSuffix>64</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
         <BCC_OptimizeForSpeed>false</BCC_OptimizeForSpeed>
@@ -178,15 +153,21 @@
         <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
         <TASM_Debugging>Full</TASM_Debugging>
         <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
-        <ILINK_TranslatedLibraryPath>$(BDSLIB)\$(PLATFORM)\debug\$(LANGDIR);$(ILINK_TranslatedLibraryPath)</ILINK_TranslatedLibraryPath>
-        <DllSuffix>$(BCVER)_$(TD_CPU)m</DllSuffix>
+        <ILINK_LibraryPath>$(BDSLIB)\$(PLATFORM)\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_iOSDevice)'!=''">
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
+        <Defines>_DEBUG;$(Defines)</Defines>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
+        <Manifest_File>None</Manifest_File>
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <Defines>_DEBUG;$(Defines)</Defines>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <TASM_Debugging>None</TASM_Debugging>
-        <DllSuffix>$(BCVER)_$(TD_CPU)m</DllSuffix>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_iOSDevice)'!=''">
         <DCC_RemoteDebug>true</DCC_RemoteDebug>
@@ -194,64 +175,42 @@
     <PropertyGroup Condition="'$(Cfg_2_OSX32)'!=''">
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_3)'!=''">
-        <BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
-        <ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
-        <BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
-        <BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
-        <Defines>_UNICODE;$(Defines)</Defines>
-        <DllSuffix>$(BCVER)_$(TD_CPU)u</DllSuffix>
+    <PropertyGroup Condition="'$(Cfg_2_Win32)'!=''">
+        <VerInfo_Locale>1033</VerInfo_Locale>
+        <Manifest_File>None</Manifest_File>
+        <Defines>NDEBUG;$(Defines)</Defines>
     </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_3_iOSDevice)'!=''">
-        <DCC_RemoteDebug>true</DCC_RemoteDebug>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_3_OSX32)'!=''">
-        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_3_Win32)'!=''">
-        <BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
-        <BCC_StackFrames>true</BCC_StackFrames>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">
-        <Debugger_RunParams>--show_progress=yes</Debugger_RunParams>
-        <Debugger_HostApplication>D:\Library\bin\test_tdclcpp_v3_bc210_64u.exe</Debugger_HostApplication>
-        <Debugger_CWD>D:\Library\bin</Debugger_CWD>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_4)'!=''">
-        <BCC_PCHUsage>None</BCC_PCHUsage>
-        <Defines>_UNICODE;$(Defines)</Defines>
-        <DllSuffix>$(BCVER)_$(TD_CPU)u</DllSuffix>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_4_iOSDevice)'!=''">
-        <DCC_RemoteDebug>true</DCC_RemoteDebug>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Cfg_4_OSX32)'!=''">
-        <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
+    <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
+        <Defines>NDEBUG;$(Defines)</Defines>
     </PropertyGroup>
     <ItemGroup>
-        <ResourceCompile Include="test_tdclcpp_v3.rc">
-            <Form>test_tdclcpp_v3.res</Form>
-            <BuildOrder>14</BuildOrder>
+        <ResourceCompile Include="haMgr.rc">
+            <Form>haMgr.res</Form>
+            <BuildOrder>3</BuildOrder>
         </ResourceCompile>
-        <CppCompile Include="..\..\source\bzs\test\trdclengn\test_tdclcpp_v3.cpp">
+        <CppCompile Include="..\..\source\bzs\rtl\stl_uty.cpp">
+            <DependentOn>..\..\source\bzs\rtl\stl_uty.h</DependentOn>
+            <BuildOrder>1</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\global\replication\haCommand.cpp">
+            <DependentOn>..\..\source\global\replication\haCommand.h</DependentOn>
+            <BuildOrder>1</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\global\replication\replCommand.cpp">
+            <DependentOn>..\..\source\global\replication\replCommand.h</DependentOn>
+            <BuildOrder>1</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\global\replication\haMgr.cpp">
             <BuildOrder>0</BuildOrder>
         </CppCompile>
-        <BuildConfiguration Include="Release">
-            <Key>Cfg_2</Key>
-            <CfgParent>Base</CfgParent>
-        </BuildConfiguration>
         <BuildConfiguration Include="Release Unicode">
-            <Key>Cfg_4</Key>
-            <CfgParent>Base</CfgParent>
-        </BuildConfiguration>
-        <BuildConfiguration Include="Debug Unicode">
-            <Key>Cfg_3</Key>
+            <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
         </BuildConfiguration>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
-        <BuildConfiguration Include="Debug">
+        <BuildConfiguration Include="Debug Unicode">
             <Key>Cfg_1</Key>
             <CfgParent>Base</CfgParent>
         </BuildConfiguration>
@@ -290,19 +249,17 @@
                     <VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
                     <VersionInfoKeys Name="Comments"/>
                 </VersionInfoKeys>
+                <Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k200.bpl">Embarcadero C++Builder Office 2000 サーバー パッケージ</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp200.bpl">Embarcadero C++Builder Office XP サーバー パッケージ</Excluded_Packages>
+                </Excluded_Packages>
                 <ProjectProperties>
                     <ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
-                    <ProjectProperties Name="ManagePaths">False</ProjectProperties>
+                    <ProjectProperties Name="ManagePaths">True</ProjectProperties>
                     <ProjectProperties Name="VerifyPackages">True</ProjectProperties>
                     <ProjectProperties Name="IndexFiles">False</ProjectProperties>
                 </ProjectProperties>
-                <Parameters>
-                    <Parameters Name="RunParams">--show_progress=yes</Parameters>
-                </Parameters>
-                <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\bcboffice2k210.bpl">Embarcadero C++Builder Office 2000 サーバー パッケージ</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\bcbofficexp210.bpl">Embarcadero C++Builder Office XP サーバー パッケージ</Excluded_Packages>
-                </Excluded_Packages>
+                <VFOLDERS/>
             </CPlusPlusBuilder.Personality>
             <Platforms>
                 <Platform value="iOSDevice">False</Platform>

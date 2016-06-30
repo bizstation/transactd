@@ -3388,7 +3388,7 @@ void testConnMgr()
         {
             _TCHAR tmp[1024];
             recs[i].value(tmp, 1024);
-            _tprintf(_T("slaveHosts = %lu\t%lu\t%s\n"), recs[i].id, recs[i].readCount, tmp);
+            _tprintf(_T("slaveHosts = %u\t%u\t%s\n"), recs[i].id, recs[i].readCount, tmp);
         }
     }
 

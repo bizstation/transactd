@@ -1,6 +1,6 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{EB31B0F7-D4C3-425D-B9E2-CB9CE8168EF4}</ProjectGuid>
+        <ProjectGuid>{EB31B0F7-D4C3-425D-B9E2-CB9CE8168EC4}</ProjectGuid>
         <ProjectVersion>16.0</ProjectVersion>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release Unicode</Config>
@@ -115,7 +115,7 @@
         <Base>true</Base>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base)'!=''">
-        <SanitizedProjectName>test_tdclcpp_v3_bc</SanitizedProjectName>
+        <SanitizedProjectName>test_tdclcpp_ha_bc</SanitizedProjectName>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <Defines>TRDCL_AUTOLINK;BOOST_ALL_NO_LIB;USE_DBM_CONNECTION_POOL;$(Defines)</Defines>
         <BRCC_CompilerToUse>rc</BRCC_CompilerToUse>
@@ -214,7 +214,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_3_Win64)'!=''">
         <Debugger_RunParams>--show_progress=yes</Debugger_RunParams>
-        <Debugger_HostApplication>D:\Library\bin\test_tdclcpp_v3_bc210_64u.exe</Debugger_HostApplication>
+        <Debugger_HostApplication>D:\Library\bin\test_tdclcpp_ha_bc210_64u.exe</Debugger_HostApplication>
         <Debugger_CWD>D:\Library\bin</Debugger_CWD>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_4)'!=''">
@@ -229,11 +229,17 @@
         <Icns_MainIcns>$(BDS)\bin\cbuilder_PROJECTICNS.icns</Icns_MainIcns>
     </PropertyGroup>
     <ItemGroup>
-        <ResourceCompile Include="test_tdclcpp_v3.rc">
-            <Form>test_tdclcpp_v3.res</Form>
+        <ResourceCompile Include="test_tdclcpp_ha.rc">
+            <Form>test_tdclcpp_ha.res</Form>
             <BuildOrder>14</BuildOrder>
         </ResourceCompile>
-        <CppCompile Include="..\..\source\bzs\test\trdclengn\test_tdclcpp_v3.cpp">
+        <CppCompile Include="..\..\source\bzs\test\trdclengn\test_tdclcpp_ha.cpp">
+            <BuildOrder>0</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\global\replication\haCommand.cpp">
+            <BuildOrder>0</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\global\replication\replCommand.cpp">
             <BuildOrder>0</BuildOrder>
         </CppCompile>
         <BuildConfiguration Include="Release">

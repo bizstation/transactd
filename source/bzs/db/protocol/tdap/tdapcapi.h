@@ -62,8 +62,8 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 
 /* HA hostname resolver */
 #if (defined(__BORLANDC__) && !defined(__clang__))
-typedef const char* __stdcall (*HANAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
-typedef void __stdcall (*REGISTER_RESOLVER_PTR)(HANAME_RESOLVER_PTR func);
+typedef const char* __STDCALL (*HANAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+typedef void __STDCALL (*REGISTER_RESOLVER_PTR)(HANAME_RESOLVER_PTR func);
 
 #else
 /* @cond INTERNAL */

@@ -103,13 +103,13 @@ void testSetServerRole()
     pm.master.passwd = g_password;
     try
     {
-        setServerRole(pm, HA_ROLE_MASTER);     
+        setServerRole(pm, HA_ROLE_MASTER);
         BOOST_CHECK(true);
     }
     catch (bzs::rtl::exception& e)
     {
         BOOST_CHECK_MESSAGE(false, "setServerRole Error");
-        _tprintf(getMsg(e)->c_str());
+        _tprintf(_T("%s"), getMsg(e)->c_str());
     }
 }
 
@@ -166,7 +166,7 @@ void testSwitchTo(const _tstring& master, const _tstring& newMaster)
     catch (bzs::rtl::exception& e)
     {
         BOOST_CHECK(false);
-        _tprintf(getMsg(e)->c_str());
+        _tprintf(_T("%s"), getMsg(e)->c_str());
     }
 }
 
@@ -230,7 +230,7 @@ void testSwitchLiveSeek()
     catch (bzs::rtl::exception& e)
     {
         BOOST_CHECK(false);
-        _tprintf(getMsg(e)->c_str());
+        _tprintf(_T("%s"), getMsg(e)->c_str());
     }
 }
 
@@ -250,7 +250,7 @@ void testSwitchLiveOpen()
     catch (bzs::rtl::exception& e)
     {
         BOOST_CHECK(false);
-        _tprintf(getMsg(e)->c_str());
+        _tprintf(_T("%s"), getMsg(e)->c_str());
     }
 }
 
@@ -269,7 +269,7 @@ void testEnableFailOver(bool v)
     catch (bzs::rtl::exception& e)
     {
         BOOST_CHECK_MESSAGE(false, "setEnableFailOver Error");
-        _tprintf(getMsg(e)->c_str());
+        _tprintf(_T("%s"), getMsg(e)->c_str());
     }
 }
 
@@ -317,7 +317,7 @@ void testFailOver8611()
     catch (bzs::rtl::exception& e)
     {
         BOOST_CHECK_MESSAGE(false, "fail orver");
-        _tprintf(getMsg(e)->c_str());
+        _tprintf(_T("%s"), getMsg(e)->c_str());
     }
 }
 
@@ -336,7 +336,7 @@ void testMasterToSlave()
     catch (bzs::rtl::exception& e)
     {
         BOOST_CHECK(false);
-        _tprintf(getMsg(e)->c_str());
+        _tprintf(_T("%s"), getMsg(e)->c_str());
     }
 
 }
