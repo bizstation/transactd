@@ -1903,10 +1903,10 @@ int connMgrExecuter::systemVariables(char* buf, size_t& size)
     return serialize(m_req, buf, size, records, st.stat());
 }
 
-int connMgrExecuter::sqlVariables(netsvc::server::netWriter* nw)
+int connMgrExecuter::extendedVariables(netsvc::server::netWriter* nw)
 {
     connManager st(m_modHandle);
-    const connection::records& records = st.sqlVariables(m_blobBuffer);
+    const connection::records& records = st.extendedVariables(m_blobBuffer);
     int v = serialize(m_req, nw->ptr(), nw->datalen, records, st.stat(), m_blobBuffer);
     short dymmy = 0;
     if ((m_req.result == 0) && m_blobBuffer->fieldCount())
@@ -2105,8 +2105,8 @@ int connMgrExecuter::commandExec(netsvc::server::netWriter* nw)
                 m_req.result = STATUS_LOCK_ERROR;
                 break;
             }
-            case TD_STSTCS_SQL_VARIABLES:
-                return sqlVariables(nw);
+            case TD_STSTCS_EXTENDED_VARIABLES:
+                return extendedVariables(nw);
             default:
                 m_req.reset();
                 m_req.result = STATUS_NOSUPPORT_OP;

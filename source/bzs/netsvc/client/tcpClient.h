@@ -67,9 +67,9 @@ extern bool win_thread_pool_shutdown;
 /* HA hostname resolver */
 /* @cond INTERNAL */
 #if (defined(__BORLANDC__) && !defined(__clang__))
-typedef const char* __stdcall (*HOSTNAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+typedef const char* __stdcall (*HANAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
 #else
-typedef const char* (__STDCALL* HOSTNAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+typedef const char* (__STDCALL* HANAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
 #endif
 /* @endcond */
 
@@ -128,7 +128,7 @@ class connections
     boost::asio::ip::tcp::resolver m_resolver;
     mutex m_mutex;
     boost::system::error_code m_e;
-    HOSTNAME_RESOLVER_PTR m_haHostnameResolver;
+    HANAME_RESOLVER_PTR m_haNameResolver;
     static bool m_usePipedLocal;
 
     connection* getConnection(asio::ip::tcp::endpoint& ep);
@@ -153,8 +153,8 @@ public:
     bool disconnect(connection* c);
     int connectionCount();
     const boost::system::error_code& connectError() const { return m_e; };
-    void registHostnameResolver(HOSTNAME_RESOLVER_PTR func);
-    HOSTNAME_RESOLVER_PTR haHostnameResolver() const {return m_haHostnameResolver;}
+    void registHaNameResolver(HANAME_RESOLVER_PTR func);
+    HANAME_RESOLVER_PTR haNameResolver() const {return m_haNameResolver;}
     static char m_port[PORTNUMBUF_SIZE];
     static int connectTimeout;
     static int netTimeout;

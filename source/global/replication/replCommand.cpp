@@ -342,8 +342,8 @@ private:
 //------------------------------------------------------------------------------
 bool isMySqlGtidMode(connMgr* mgr)
 {
-     const connMgr::records& rec = mgr->sqlvars();
-     return  (rec.size() && (rec[TD_SQL_VER_MYSQL_GTID_MODE].longValue != 0));
+     const connMgr::records& rec = mgr->extendedvars();
+     return  (rec.size() && (rec[TD_EXTENDED_VAR_MYSQL_GTID_MODE].longValue != 0));
 }
 
 void notyfy(replicationNotify* nf, int v)

@@ -226,7 +226,7 @@ const connection::records& connManager::systemVariables() const
     return m_records;
 }
 
-const connection::records& connManager::sqlVariables(blobBuffer* bb) const
+const connection::records& connManager::extendedVariables(blobBuffer* bb) const
 {
     m_records.clear();
     boost::shared_ptr<THD> thd(createThdForThread(), deleteThdForThread);
@@ -238,7 +238,7 @@ const connection::records& connManager::sqlVariables(blobBuffer* bb) const
     binlogPos bpos;
     short ret = getBinlogPos(thd.get(), &bpos, thd.get(), bb);
     if (ret) return m_records;
-    for (int i = 0; i < TD_SQL_VER_SIZE; ++i)
+    for (int i = 0; i < TD_EXTENDED_VAR_SIZE; ++i)
     {
         m_records.push_back(connection::record());
         connection::record& rec = m_records[m_records.size() - 1];
@@ -246,7 +246,7 @@ const connection::records& connManager::sqlVariables(blobBuffer* bb) const
         rec.type = 1;
         switch (i)
         {
-        case TD_SQL_VER_MYSQL_GTID_MODE:
+        case TD_EXTENDED_VAR_MYSQL_GTID_MODE:
         {
             rec.type = 0;
 #if (defined(MYSQL_5_7))
@@ -256,14 +256,14 @@ const connection::records& connManager::sqlVariables(blobBuffer* bb) const
 #endif
             break;
         }
-        case TD_SQL_VER_BINLOG_FILE:
+        case TD_EXTENDED_VAR_BINLOG_FILE:
             strncpy(rec.name, bpos.filename, CON_REC_VALUE_SIZE);
             break;
-        case TD_SQL_VER_BINLOG_POS:
+        case TD_EXTENDED_VAR_BINLOG_POS:
             rec.longValue = bpos.pos; 
             rec.type = 0; 
             break;
-        case TD_SQL_VER_BINLOG_GTID:
+        case TD_EXTENDED_VAR_BINLOG_GTID:
             if (bpos.type == REPL_POSTYPE_GTID)
                 rec.type = 2; 
             else

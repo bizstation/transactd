@@ -148,7 +148,7 @@ static const _TCHAR* SLAVE_STATUS_NAME_EX_MA[SLAVE_STATUS_EX_MA_SIZE] =
     _T("Gtid_Slave_Pos"),
 };
 
-static const _TCHAR* SQLVAR_NAME[TD_SQL_VER_SIZE] =
+static const _TCHAR* EXTENDED_VAR_NAME[TD_EXTENDED_VAR_SIZE] =
 {
     _T("MySQL_Gtid_Mode"),
     _T("Binlog_File"),
@@ -458,9 +458,9 @@ const connMgr::records& connMgr::slaveHosts()
     return blobOperation(TD_STSTCS_SLAVE_HOSTS);
 }
 
-const connMgr::records& connMgr::sqlvars()
+const connMgr::records& connMgr::extendedvars()
 {
-    return blobOperation(TD_STSTCS_SQL_VARIABLES);
+    return blobOperation(TD_STSTCS_EXTENDED_VARIABLES);
 }
 
 const connMgr::records& connMgr::sysvars()
@@ -619,10 +619,10 @@ const _TCHAR* connMgr::slaveStatusName(uint_td index) const
     return _T("");
 }
 
-const _TCHAR* connMgr::sqlvarName(uint_td index)
+const _TCHAR* connMgr::extendedVarName(uint_td index)
 {
-    if (index < TD_SQL_VER_SIZE)
-        return SQLVAR_NAME[index];
+    if (index < TD_EXTENDED_VAR_SIZE)
+        return EXTENDED_VAR_NAME[index];
     return _T("");
 }
 

@@ -1,4 +1,4 @@
 {
-  global: BTRCALLID; BTRV;BTRVID;BTRCALL;BTRCALL32;BTRCALLID32;RegisterHostNameResolver;
+  global: BTRCALLID; BTRV;BTRVID;BTRCALL;BTRCALL32;BTRCALLID32;RegisterHaNameResolver;
   local: *;
 };

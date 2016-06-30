@@ -62,7 +62,7 @@ public:
     connManager(unsigned __int64 me) : m_me(me), m_stat(0){};
     virtual ~connManager();
     const connection::records& systemVariables() const;
-    const connection::records& sqlVariables(blobBuffer* bb) const;
+    const connection::records& extendedVariables(blobBuffer* bb) const;
     const connection::records& statusVariables() const;
     const connection::records& getRecords(unsigned __int64 conid, int dbid) const;
     const connection::records& definedDatabases() const;

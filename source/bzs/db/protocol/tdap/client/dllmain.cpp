@@ -563,7 +563,7 @@ extern "C" PACKAGE_OSX void __STDCALL BeginWinThreadPoolShutdown()
 }
 
 
-extern "C" PACKAGE_OSX void __STDCALL RegisterHostNameResolver(HOSTNAME_RESOLVER_PTR func)
+extern "C" PACKAGE_OSX void __STDCALL RegisterHaNameResolver(HANAME_RESOLVER_PTR func)
 {
-    m_cons->registHostnameResolver(func);
+    m_cons->registHaNameResolver(func);
 }

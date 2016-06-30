@@ -41,7 +41,7 @@ namespace tdap
 {
 namespace client
 {
-extern DLLLIB bool g_isRecoverNetError;
+extern DLLLIB bool g_isReconnectNetError;
 
 class dbdef;
 class nstable;
@@ -188,10 +188,10 @@ public:
     void setTestPtrIgnore(bool v);
     bool isTestPtrIgnore() const;
     static WIN_TPOOL_SHUTDOWN_PTR getWinTPoolShutdownFunc();
-    static bool registerHostNameResolver(HOSTNAME_RESOLVER_PTR func);
+    static bool registerHaNameResolver(HANAME_RESOLVER_PTR func);
     static bool testTablePtr(nstable* ptr);
     static void setCheckTablePtr(bool v);
-    static inline bool isRecoverNetError(){ return g_isRecoverNetError;}
+    static inline bool isReconnectNetError(){ return g_isReconnectNetError;}
 
     /** @endcond */
 };

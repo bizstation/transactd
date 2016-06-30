@@ -321,7 +321,7 @@ public:
             c = doConnect(ep, newConnection, false);
             if (!c)
             {
-                if (m_cons->haHostnameResolver() && 
+                if (m_cons->haNameResolver() && 
                     (m_preResult == 0 || m_preResult == ERROR_TD_INVALID_SERVER_ROLE))
                 {
                     m_preResult = 0;

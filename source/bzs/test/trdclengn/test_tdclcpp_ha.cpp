@@ -19,7 +19,7 @@
 #include "testbase.h"
 #include <bzs/db/protocol/tdap/btrDate.h>
 #include <bzs/db/protocol/tdap/client/connMgr.h>
-#include <bzs/db/protocol/tdap/client/hostNameResolver.h>
+#include <bzs/db/protocol/tdap/client/haNameResolver.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <global/replication/haCommand.h>
@@ -87,11 +87,11 @@ void start_Resolver()
 {
     const char* slaves = "slave1,slave2";
     const char* slaveHostsWithPort = getHostList();
-    addPortMap(3307, 8611);
-    addPortMap(3308, 8612);
+    haNameResolver::addPortMap(3307, 8611);
+    haNameResolver::addPortMap(3308, 8612);
     string u = toUtf8(g_userName);
     string p = toUtf8(g_password);
-    int ret = startResolver("master", slaves, slaveHostsWithPort, 1, u.c_str(), p.c_str());
+    int ret = haNameResolver::start("master", slaves, slaveHostsWithPort, 1, u.c_str(), p.c_str());
     BOOST_CHECK_MESSAGE(ret == 0, "startResolver ret = " << ret);
 }
 
@@ -116,8 +116,8 @@ void testSetServerRole()
 void testNameResover()
 {
     start_Resolver();
-    BOOST_CHECK_MESSAGE(std::string(slaveHost()) == host2, slaveHost());
-    BOOST_CHECK_MESSAGE(std::string(masterHost()) == host1, masterHost());
+    BOOST_CHECK_MESSAGE(std::string(haNameResolver::slave()) == host2, haNameResolver::slave());
+    BOOST_CHECK_MESSAGE(std::string(haNameResolver::master()) == host1, haNameResolver::master());
 
     database_ptr db = createDatabaseObject();
     bool ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
@@ -133,10 +133,10 @@ void testNameResover()
     BOOST_CHECK(ret == true);
     db->close();
 
-    clearResolver();
-    BOOST_CHECK(std::string(slaveHost()) == "");
-    BOOST_CHECK(std::string(masterHost()) == "");
-    stopResolver();
+    haNameResolver::clear();
+    BOOST_CHECK(std::string(haNameResolver::slave()) == "");
+    BOOST_CHECK(std::string(haNameResolver::master()) == "");
+    haNameResolver::stop();
     ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
     BOOST_CHECK(ret == false);
 }
@@ -156,7 +156,7 @@ void testSwitchTo(const _tstring& master, const _tstring& newMaster)
 { 
     try
     {
-        stopResolver();
+        haNameResolver::stop();
         failOverParam pm;
         pm.option |= OPT_SO_AUTO_SLVAE_LIST;
         makeSOParam(pm,master, newMaster);
@@ -173,9 +173,9 @@ void testSwitchTo(const _tstring& master, const _tstring& newMaster)
 void testNameResover8611()
 {
     start_Resolver();
-    bool ret = std::string(slaveHost()) == host2 || std::string(slaveHost()) == host3;
-    BOOST_CHECK_MESSAGE(ret = true, slaveHost());
-    BOOST_CHECK_MESSAGE(std::string(masterHost()) == host2, masterHost());
+    bool ret = std::string(haNameResolver::slave()) == host2 || std::string(haNameResolver::slave()) == host3;
+    BOOST_CHECK_MESSAGE(ret = true, haNameResolver::slave());
+    BOOST_CHECK_MESSAGE(std::string(haNameResolver::master()) == host2, haNameResolver::master());
     database_ptr db = createDatabaseObject();
     ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
     BOOST_CHECK(ret == true);
@@ -184,10 +184,10 @@ void testNameResover8611()
     BOOST_CHECK(ret == true);
     db->close();
 
-    clearResolver();
-    BOOST_CHECK(std::string(slaveHost()) == "");
-    BOOST_CHECK(std::string(masterHost()) == "");
-    stopResolver();
+    haNameResolver::clear();
+    BOOST_CHECK(std::string(haNameResolver::slave()) == "");
+    BOOST_CHECK(std::string(haNameResolver::master()) == "");
+    haNameResolver::stop();
     ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
     BOOST_CHECK(ret == false);
 }

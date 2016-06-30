@@ -101,7 +101,7 @@ public:
     const records& channels(bool withLock = false);
     const records& slaveHosts();
     const records& sysvars();
-    const records& sqlvars();
+    const records& extendedvars();
     const records& statusvars();
     const records& connections();
     const records& inUseDatabases(__int64 connid);
@@ -122,7 +122,7 @@ public:
     static void removeSystemDb(records& recs);
     static const _TCHAR* sysvarName(uint_td index);
     static const _TCHAR* statusvarName(uint_td index);
-    static const _TCHAR* sqlvarName(uint_td index);
+    static const _TCHAR* extendedVarName(uint_td index);
     static connMgr* create(database* db);
 };
 

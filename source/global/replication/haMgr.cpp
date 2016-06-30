@@ -244,11 +244,11 @@ haMgr64 -c failover -s localhost:8611,localhost:8612 -a 8610:3306,8611:3307,8612
 haMgr64 -c demote_to_slave -o localhost -n localhost:8611 -P 3307 -r replication_user -d xxxx
  -d abcd -u root -p 
 
-haMgr64 -c set_failover_enable -v 1 -m localhost -u root -p
+haMgr64 -c set_failover_enable -v 1 -o localhost -u root -p
 
-haMgr64 -c set_server_role -m localhost -v 1 -u root -p
+haMgr64 -c set_server_role -o localhost -v 1 -u root -p
 
-haMgr64 -c health_check -m localhost -u root -p
+haMgr64 -c health_check -o localhost -s localhost:8611,localhost:8612 -u root -p
 
 */
 

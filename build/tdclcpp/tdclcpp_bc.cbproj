@@ -305,7 +305,7 @@
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp">
             <BuildOrder>22</BuildOrder>
         </CppCompile>
-        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\hostNameResolver.cpp">
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\haNameResolver.cpp">
             <BuildOrder>22</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsDatabase.cpp">

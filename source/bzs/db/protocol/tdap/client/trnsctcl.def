@@ -8,5 +8,5 @@ EXPORTS
    BTRCALLID32	@5
    BTRCALL32	@6
    BeginWinThreadPoolShutdown @7
-   RegisterHostNameResolver @8
+   RegisterHaNameResolver @8
 

@@ -16,7 +16,7 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  02111-1307, USA.
  ================================================================= */
-#include "hostNameResolver.h"
+#include "haNameResolver.h"
 #include <boost/thread.hpp>
 #include <bzs/env/compiler.h>
 #include <bzs/env/crosscompile.h>
@@ -38,11 +38,8 @@ static string masterRoleName;
 static vector<string> slaveRoleNames;
 static vector<string> slaveHosts;
 
-static string cache_master;
-static string cache_slave;
 static string user;
 static string passwd;
-const char* __STDCALL hostNameResolver(const char* vhost, const char* port, char* buf, unsigned int& opt);
 
 namespace bzs
 {
@@ -55,6 +52,7 @@ namespace tdap
 namespace client
 {
 
+const char* __STDCALL hostNameResolver(const char* vhost, const char* port, char* buf, unsigned int& opt);
 struct portMap
 {
     short myPort;
@@ -66,11 +64,14 @@ static database* g_db=NULL;
 static connMgr* g_mgr = NULL;
 static connMgr::records g_recs;
 static vector<portMap> g_portMap;
+static string cache_master;
+static string cache_slave;
 static int g_slaveIndex = 0;
 static short g_stat = 0;
 static short g_slaveNum = 0;
 static bool  g_failover = false;
 static bool  g_failoverError = false;
+
 void split(vector<string>& ss, const char* s)
 {
     const char* p = s;
@@ -121,6 +122,21 @@ bool connect(const string& host)
     return false;
 }
 
+inline const char* slaveHost()
+{
+    return cache_slave.c_str();
+}
+
+inline const char* masterHost()
+{
+    return cache_master.c_str();
+}
+
+inline bool registerHaNameResolver(HANAME_RESOLVER_PTR func)
+{
+    return nsdatabase::registerHaNameResolver(func);
+}
+
 bool checkSlaveStatus(const char* chnnel)
 {
     g_recs = g_mgr->slaveStatus(chnnel);
@@ -130,7 +146,7 @@ bool checkSlaveStatus(const char* chnnel)
     return false;
 }
 
-bool readMaster(const string& host)
+bool readReplMaster(const string& host)
 {
     if (connect(host))
     {
@@ -171,7 +187,7 @@ bool selectSlave()
 {
     // First try, specified slave server
     g_slaveIndex = g_slaveNum;
-    if (g_slaveNum < (short)slaveHosts.size() && readMaster(slaveHosts[g_slaveNum]))
+    if (g_slaveNum < (short)slaveHosts.size() && readReplMaster(slaveHosts[g_slaveNum]))
         return true;
     // After, each slave of slave list
     for (size_t i=0;i < slaveHosts.size(); ++i)
@@ -179,7 +195,7 @@ bool selectSlave()
         if ((short)i != g_slaveNum)
         {
             g_slaveIndex = (int)i;
-            if (readMaster(slaveHosts[i]))
+            if (readReplMaster(slaveHosts[i]))
                 return true;
         }
     }
@@ -203,7 +219,7 @@ int setSlaveHosts()
         cache_slave =  slaveHosts[g_slaveIndex];
         return 0;
     }
-    return RV_SLAVE_HOSTS_NOT_FOUND;
+    return HNR_SLAVE_HOSTS_NOT_FOUND;
 }
 
 void addPort(short port)
@@ -279,14 +295,14 @@ int setHosts()
     g_mgr = connMgr::create(g_db);
     cache_master = "-";
     cache_slave = "-";
-    int ret = RV_INVALID_SLAVES;
+    int ret = HNR_INVALID_SLAVES;
     if (selectSlave())
     {
         setMasterHost();
         disconnect();
         ret = setSlaveHosts();
     }else if (cache_master != "-")
-        ret = RV_SLAVE_HOSTS_NOT_FOUND;
+        ret = HNR_SLAVE_HOSTS_NOT_FOUND;
     disconnect();
     if (g_failover && !g_failoverError)
     {
@@ -328,25 +344,26 @@ const char* slaveHostInternal()
     return cache_slave.c_str();
 }
 
-const char* masterHost()
+void updateRsolver()
 {
     boost::mutex::scoped_lock lck(g_nr_mutex);
-    return cache_master.c_str();
-}
-
-const char* slaveHost()
-{
-    boost::mutex::scoped_lock lck(g_nr_mutex);
-    return cache_slave.c_str();
+    if (g_failoverError) return;
+    nsdatabase::registerHaNameResolver(NULL);
+    g_failover = true;
+    boost::thread* t = new boost::thread(setHosts);
+    t->join();
+    delete t;
+    g_failover = false;
+    registerHaNameResolver(hostNameResolver);
 }
 
 /* During the startResolver,resolver dose not work. */
-int startResolver(const char* master, const char* slaves, 
-    const char* slvHosts, short slaveNum,const char* userName, 
+int haNameResolver::start(const char* master, const char* slaves,
+    const char* slvHosts, short slaveNum,const char* userName,
     const char* password)
 {
     boost::mutex::scoped_lock lck(g_nr_mutex);
-    nsdatabase::registerHostNameResolver(NULL);
+    registerHaNameResolver(NULL);
     masterRoleName = master;
     split(slaveRoleNames, slaves);
     split(slaveHosts, slvHosts);
@@ -354,34 +371,21 @@ int startResolver(const char* master, const char* slaves,
     user = userName;
     passwd = password;
     int ret = setHosts();
-    if (ret <= RV_SLAVE_HOSTS_NOT_FOUND)
+    if (ret <= HNR_SLAVE_HOSTS_NOT_FOUND)
     {
-        if (!nsdatabase::registerHostNameResolver(hostNameResolver))
-            ret = RV_REGISTER_FUNC_ERROR;
+        if (!registerHaNameResolver(hostNameResolver))
+            ret = HNR_REGISTER_FUNC_ERROR;
     }
     return ret;
 }
 
-void stopResolver()
+void haNameResolver::stop()
 {
     boost::mutex::scoped_lock lck(g_nr_mutex);
-    nsdatabase::registerHostNameResolver(NULL);
+    registerHaNameResolver(NULL);
 }
 
-void updateRsolver()
-{
-    boost::mutex::scoped_lock lck(g_nr_mutex);
-    if (g_failoverError) return;
-    nsdatabase::registerHostNameResolver(NULL);
-    g_failover = true;
-    boost::thread* t = new boost::thread(setHosts);
-    t->join();
-    delete t;
-    g_failover = false;
-    nsdatabase::registerHostNameResolver(hostNameResolver);
-}
-
-void clearResolver()
+void haNameResolver::clear()
 {
     boost::mutex::scoped_lock lck(g_nr_mutex);
     cache_master = "";
@@ -389,24 +393,29 @@ void clearResolver()
     g_failoverError = false;
 }
 
-void addPortMap(short mysqlPort, short transactdPort)
+void haNameResolver::addPortMap(short mysqlPort, short transactdPort)
 {
     boost::mutex::scoped_lock lck(g_nr_mutex);
     g_portMap.push_back(portMap(mysqlPort, transactdPort));
 }
-void clearPortMap()
+
+void haNameResolver::clearPortMap()
 {
     boost::mutex::scoped_lock lck(g_nr_mutex);
     g_portMap.clear();
 }
 
-} // namespace client
-} // namespace tdap
-} // namespace protocol
-} // namespace db
-} // namespace bzs
+const char* haNameResolver::master()
+{
+    boost::mutex::scoped_lock lck(g_nr_mutex);
+    return masterHost();
+}
 
-using namespace bzs::db::protocol::tdap::client;
+const char* haNameResolver::slave()
+{
+    boost::mutex::scoped_lock lck(g_nr_mutex);
+    return slaveHost();
+}
 
 const char* __STDCALL hostNameResolver(const char* vhost, const char* port, char* buf, unsigned int& opt)
 {
@@ -450,4 +459,9 @@ const char* __STDCALL hostNameResolver(const char* vhost, const char* port, char
     }
     return buf;
 }
+} // namespace client
+} // namespace tdap
+} // namespace protocol
+} // namespace db
+} // namespace bzs
 

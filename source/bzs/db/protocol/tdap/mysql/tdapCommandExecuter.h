@@ -119,7 +119,7 @@ class connMgrExecuter
     int slaveHosts(netsvc::server::netWriter* nw);
     int systemVariables(char* buf, size_t& size);
     int statusVariables(char* buf, size_t& size);
-    int sqlVariables(netsvc::server::netWriter* nw);
+    int extendedVariables(netsvc::server::netWriter* nw);
     int read(char* buf, size_t& size);
     int disconnectOne(char* buf, size_t& size);
     int disconnectAll(char* buf, size_t& size);

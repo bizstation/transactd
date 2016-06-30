@@ -32,19 +32,15 @@ void split(vector<_tstring>& ss, const _TCHAR* s)
 {
     const _TCHAR* p = s;
     const _TCHAR* pp = _tcschr(p, _T(','));
-    if (!pp)
-        pp = p + _tcslen(p);
-    while (*p && pp)
+    while (pp)
     {
         ss.push_back(_tstring(p, pp));
         p = pp + 1;
-        if (*p)
-        {
-            pp = _tcschr(p, _T(','));
-            if (!pp)
-                ss.push_back(_tstring(p, p + _tcslen(p)));
-        }
+        pp = _tcschr(p, _T(','));
     }
+    size_t len = _tcslen(p);
+    if (len)
+        ss.push_back(_tstring(p, p + len));
 }
 
 #ifdef _UNICODE
@@ -149,13 +145,13 @@ void makeSlaveList(const failOverParam& pm, bool* roleMaster=NULL)
 
 void getBinlogPos(connMgr_ptr mgr, binlogPos& bpos)
 {
-    const connMgr::records& rs = mgr->sqlvars();
-    validateStatus(mgr, _T("sqlvars"));
-    if (rs.size() > TD_SQL_VER_BINLOG_GTID)
+    const connMgr::records& rs = mgr->extendedvars();
+    validateStatus(mgr, _T("extendedvars"));
+    if (rs.size() > TD_EXTENDED_VAR_BINLOG_GTID)
     {
-        strcpy_s(bpos.filename, BINLOGNAME_SIZE, rs[TD_SQL_VER_BINLOG_FILE].name);
-        bpos.pos = (unsigned int)rs[TD_SQL_VER_BINLOG_POS].longValue;
-        bpos.setGtid(rs[TD_SQL_VER_BINLOG_GTID].value_ptr());
+        strcpy_s(bpos.filename, BINLOGNAME_SIZE, rs[TD_EXTENDED_VAR_BINLOG_FILE].name);
+        bpos.pos = (unsigned int)rs[TD_EXTENDED_VAR_BINLOG_POS].longValue;
+        bpos.setGtid(rs[TD_EXTENDED_VAR_BINLOG_GTID].value_ptr());
     }
 }
 
@@ -713,11 +709,42 @@ int healthCheck(const failOverParam& pm, haNotify* nf)
     int ret = 0;
     overrideCompatibleMode cpblMode(database::CMP_MODE_MYSQL_NULL);
     bool roleMaster;
-    makeSlaveList(pm, &roleMaster);
 
+    vector<_tstring> slaves_param;
+    split(slaves_param, pm.slaves.c_str());
+
+    makeSlaveList(pm, &roleMaster);
     vector<_tstring> slaves;
     split(slaves, pm.slaves.c_str());
     nfSetHostName(nf, _T(""));
+    if (slaves_param.size())
+    {
+        vector<_tstring> slaves_tmp = slaves;
+        if (slaves_param.size() != slaves_tmp.size())
+        {
+            _TCHAR tmp[256];
+            _stprintf_s(tmp, 256 ,_T("slaves count(%u) not equal real slave count(%u)"),
+                    slaves_param.size(), slaves_tmp.size());
+            notify(nf, HA_NF_BLANK, tmp);
+            ++ret;
+        }
+        std::sort(slaves_param.begin(), slaves_param.end());
+        std::sort(slaves_tmp.begin(), slaves_tmp.end());
+        size_t n = min(slaves_param.size(), slaves_tmp.size());
+        for (size_t i = 0; i < n; ++i)
+        {
+            if (slaves_param[i] != slaves_tmp[i])
+            {
+                _TCHAR tmp[1024];
+                _stprintf_s(tmp, 1024 ,_T("Unmatch host name beetween the command line and slaveHosts of master.")
+                    _T("\n   command line=%s : master detect=%s"), 
+                        slaves_param[i].c_str(), slaves_tmp[i].c_str());
+                notify(nf, HA_NF_BLANK, tmp);
+                ++ret;
+            }
+        }
+    }
+
     notify(nf, HA_NF_SLAVE_LIST, pm.slaves.c_str());
     nfSetHostName(nf, pm.master.host.c_str());
     notify(nf, roleMaster ? HA_NF_MSG_OK : HA_NF_MSG_NG, roleName(roleMaster));

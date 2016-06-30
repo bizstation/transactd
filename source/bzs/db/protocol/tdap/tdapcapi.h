@@ -62,13 +62,13 @@ typedef void(__STDCALL* WIN_TPOOL_SHUTDOWN_PTR)();
 
 /* HA hostname resolver */
 #if (defined(__BORLANDC__) && !defined(__clang__))
-typedef const char* __stdcall (*HOSTNAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
-typedef void __stdcall (*REGISTER_RESOLVER_PTR)(HOSTNAME_RESOLVER_PTR func);
+typedef const char* __stdcall (*HANAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+typedef void __stdcall (*REGISTER_RESOLVER_PTR)(HANAME_RESOLVER_PTR func);
 
 #else
 /* @cond INTERNAL */
-typedef const char* (__STDCALL* HOSTNAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
-typedef void  (__STDCALL* REGISTER_RESOLVER_PTR)(HOSTNAME_RESOLVER_PTR func);
+typedef const char* (__STDCALL* HANAME_RESOLVER_PTR)(const char* vhost, const char* port, char* retBuf, unsigned int& opt);
+typedef void  (__STDCALL* REGISTER_RESOLVER_PTR)(HANAME_RESOLVER_PTR func);
 
 /* @endcond */
 #endif
@@ -203,7 +203,7 @@ typedef void  (__STDCALL* REGISTER_RESOLVER_PTR)(HOSTNAME_RESOLVER_PTR func);
 #define TD_STSTCS_SLAVE_STATUS          8
 #define TD_STSTCS_STATUS_VARIABLES      9
 #define TD_STSTCS_SLAVE_HOSTS          10
-#define TD_STSTCS_SQL_VARIABLES        11
+#define TD_STSTCS_EXTENDED_VARIABLES   11
 #define TD_STSTCS_SLAVE_CHANNELS       12
 #define TD_STSTCS_SLAVE_CHANNELS_LOCK  13
 #define TD_STSTCS_HA_LOCK              14
@@ -651,11 +651,11 @@ struct handshale_t
 #define HA_ENABLE_FAILOVER          8
 
 /* server sql variables index */
-#define TD_SQL_VER_MYSQL_GTID_MODE  0
-#define TD_SQL_VER_BINLOG_FILE      1
-#define TD_SQL_VER_BINLOG_POS       2
-#define TD_SQL_VER_BINLOG_GTID      3
-#define TD_SQL_VER_SIZE             4
+#define TD_EXTENDED_VAR_MYSQL_GTID_MODE  0
+#define TD_EXTENDED_VAR_BINLOG_FILE      1
+#define TD_EXTENDED_VAR_BINLOG_POS       2
+#define TD_EXTENDED_VAR_BINLOG_GTID      3
+#define TD_EXTENDED_VAR_SIZE             4
 
 
 #define TD_CLINET_LOGNAME           "transactd_clinet_err.log"

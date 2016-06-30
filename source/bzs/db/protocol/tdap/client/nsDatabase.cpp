@@ -61,7 +61,7 @@ extern EnginsFunc engins;
 unsigned int g_lastTrnTime = 0;
 unsigned int nsdatabase::m_execCodepage = GetACP();
 bool g_checkTablePtr = false;
-bool g_isRecoverNetError = false;
+bool g_isReconnectNetError = false;
 
 PACKAGE void registEnginsPtr(EnginsFunc func)
 {
@@ -1026,7 +1026,7 @@ short nsdatabase::tdapEx(ushort_td op, void* posb, void* data, uint_td* datalen,
     {
         loop = false;
         stat = m_btrcallid(op, posb, data, datalen, keybuf, keylen, keyNum, clientID());
-        if (stat && nsdatabase::isRecoverNetError() && canRecoverNetError(m_stat))
+        if (stat && nsdatabase::isReconnectNetError() && canRecoverNetError(m_stat))
         {
             reconnect();
             if (stat) break;
@@ -1124,7 +1124,7 @@ WIN_TPOOL_SHUTDOWN_PTR nsdatabase::getWinTPoolShutdownFunc()
 
 }
 
-bool nsdatabase::registerHostNameResolver(HOSTNAME_RESOLVER_PTR func)
+bool nsdatabase::registerHaNameResolver(HANAME_RESOLVER_PTR func)
 {
     if (hTrsdDLL == NULL)
         hTrsdDLL = LoadLibraryA(LIB_PREFIX TDCLC_LIBNAME);
@@ -1132,11 +1132,11 @@ bool nsdatabase::registerHostNameResolver(HOSTNAME_RESOLVER_PTR func)
     {
         REGISTER_RESOLVER_PTR regist =  
             (REGISTER_RESOLVER_PTR)GetProcAddress((HINSTANCE)hTrsdDLL,
-                                        "RegisterHostNameResolver");
+                                        "RegisterHaNameResolver");
         if (regist)
         {
             regist(func);
-            g_isRecoverNetError = func != NULL;
+            g_isReconnectNetError = func != NULL;
             return true;
         }
     }

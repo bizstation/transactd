@@ -56,7 +56,7 @@ int connections::netTimeout = 180;
 #define HST_OPTION_CLEAR_CACHE 8
 
 connections::connections(const char* pipeName) : m_pipeName(pipeName),
-    m_resolver(m_ios), m_haHostnameResolver(NULL)
+    m_resolver(m_ios), m_haNameResolver(NULL)
 {
 
 #ifdef _WIN32
@@ -314,9 +314,9 @@ connection* connections::connect(const std::string& hst, const char* port,
     std::string host = hst;
     unsigned int opt = clearNRCache ? HST_OPTION_CLEAR_CACHE : 0;
     char buf[MAX_PATH];
-    if (m_haHostnameResolver)
+    if (m_haNameResolver)
     {
-        m_haHostnameResolver(hst.c_str(), port, buf, opt);
+        m_haNameResolver(hst.c_str(), port, buf, opt);
         char* p = strchr(buf, ':');
         if (p)
         {
@@ -359,9 +359,9 @@ bool connections::reconnect(connection* c, const std::string& hst, const char* p
     std::string host = hst;
     unsigned int opt = HST_OPTION_CLEAR_CACHE;
     char buf[MAX_PATH];
-    if (m_haHostnameResolver)
+    if (m_haNameResolver)
     {
-        m_haHostnameResolver(hst.c_str(), port, buf, opt);
+        m_haNameResolver(hst.c_str(), port, buf, opt);
         char* p = strchr(buf, ':');
         if (p)
         {
@@ -386,10 +386,10 @@ int connections::connectionCount()
     return (int)m_conns.size();
 }
 
-void connections::registHostnameResolver(HOSTNAME_RESOLVER_PTR func)
+void connections::registHaNameResolver(HANAME_RESOLVER_PTR func)
 {
     mutex::scoped_lock lck(m_mutex);
-    m_haHostnameResolver = func;    
+    m_haNameResolver = func;    
 }
 
 
