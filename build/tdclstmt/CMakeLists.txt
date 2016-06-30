@@ -88,32 +88,16 @@ add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 # ==========================================================
 add_dependencies(${this_target} tdclc tdclcpp)
 
-# ==========================================================
-# Add compile options
-# ==========================================================
-transactd_reset_MTMD()
-if (MSVC)
-  bz_add_cxx_flag("/MT" "_RELEASE")
-  bz_add_cxx_flag("/MTd" "_DEBUG")
-  bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("/MD" "_MINSIZEREL")
-else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELEASE")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_DEBUG")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_MINSIZEREL")
-endif()
-
 
 # ==========================================================
 # Add compile definitions
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS _USRDLL LIB_TDCLSTMT TRDCL_AUTOLINK)
+    TRDCL_AUTOLINK LIB_TDCLSTMT BOOST_DATE_TIME_NO_LIB _USRDLL TEDCLSTMT1_EXPORTS _WINDLL)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC _REENTRANT BOOST_ALL_NO_LIB)
+    PIC _REENTRANT LIB_TDCLSTMT BOOST_DATE_TIME_NO_LIB TEDCLSTMT1_EXPORTS)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -128,6 +112,25 @@ if("${TDCL_CPP_CHARSET}" STREQUAL "u")
 else()
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     _MBCS)
+endif()
+
+
+# ==========================================================
+# Add compile options and linker options
+# ==========================================================
+transactd_reset_MTMD()
+if (MSVC)
+  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /wd4819 /Gy /GL /Zi /Oi /EHsc")
+  bz_add_cxx_flag("/MT  /GR" "_RELEASE")
+  bz_add_cxx_flag("/MTd    " "_DEBUG")
+  bz_add_cxx_flag("/MT  /GR" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD  /GR" "_MINSIZEREL")
+  set(CMAKE_LINKER_FLAGS "")
+  set(CMAKE_SHARED_LINKER_FLAGS "")
+  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+    "/MANIFEST /LTCG:incremental /OPT:REF /OPT:ICF")
+else()
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "")
 endif()
 
 

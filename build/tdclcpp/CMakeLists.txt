@@ -99,41 +99,15 @@ add_dependencies(${this_target} tdclc)
 
 
 # ==========================================================
-# Add compile options
-# ==========================================================
-transactd_reset_MTMD()
-if (MSVC)
-  if((TRANSACTD_RUBY_GEM) OR (TRANSACTD_PHP))
-    bz_add_cxx_flag("/MD" "_RELEASE")
-    bz_add_cxx_flag("/MDd" "_DEBUG")
-    bz_add_cxx_flag("/MD" "_RELWITHDEBINFO")
-    bz_add_cxx_flag("/MD" "_MINSIZEREL")
-  else()
-    bz_add_cxx_flag("/MT" "_RELEASE")
-    bz_add_cxx_flag("/MTd" "_DEBUG")
-    bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
-    bz_add_cxx_flag("/MD" "_MINSIZEREL")
-  endif()
-  foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-    bz_add_cxx_flag("/wd4996" "${build_type}")
-  endforeach()
-else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELEASE")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_DEBUG")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_MINSIZEREL")
-endif()
-
-# ==========================================================
 # Add compile definitions
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS _USRDLL BOOST_ALL_NO_LIB 
-    LIB_TDCLCPP TRDCL_AUTOLINK_OFF TRDCLENGN_EXPORTS _CRT_SECURE_NO_WARNINGS)
+    _CRT_SECURE_NO_WARNINGS LIB_TDCLCPP TRDCL_AUTOLINK_OFF
+    BOOST_DATE_TIME_NO_LIB _USRDLL TRDCLENGN_EXPORTS _WINDLL)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC _REENTRANT BOOST_ALL_NO_LIB)
+    PIC _REENTRANT BOOST_DATE_TIME_NO_LIB)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -152,6 +126,32 @@ if("${TDCL_CPP_CHARSET}" STREQUAL "u")
 else()
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     _MBCS)
+endif()
+
+
+# ==========================================================
+# Add compile options and linker options
+# ==========================================================
+transactd_reset_MTMD()
+if (MSVC)
+  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /wd4275 /wd4819 /wd4251 /wd4996 /Gy /GL /Zi /Oi /EHa")
+  if((TRANSACTD_RUBY_GEM) OR (TRANSACTD_PHP))
+    bz_add_cxx_flag("/MD  /Ox /Ob2 /GR" "_RELEASE")
+    bz_add_cxx_flag("/MDd             " "_DEBUG")
+    bz_add_cxx_flag("/MD  /Ox /Ob2 /GR" "_RELWITHDEBINFO")
+    bz_add_cxx_flag("/MD  /Ox /Ob2 /GR" "_MINSIZEREL")
+  else()
+    bz_add_cxx_flag("/MT  /Ox /Ob2 /GR" "_RELEASE")
+    bz_add_cxx_flag("/MTd             " "_DEBUG")
+    bz_add_cxx_flag("/MT  /Ox /Ob2 /GR" "_RELWITHDEBINFO")
+    bz_add_cxx_flag("/MD  /Ox /Ob2 /GR" "_MINSIZEREL")
+  endif()
+  set(CMAKE_LINKER_FLAGS "")
+  set(CMAKE_SHARED_LINKER_FLAGS "")
+  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+    "/MANIFEST:NO /LTCG:incremental /OPT:REF /OPT:ICF")
+else()
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "")
 endif()
 
 

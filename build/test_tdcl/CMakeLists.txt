@@ -103,26 +103,11 @@ else()
     OUTPUT_NAME "test_tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
 endif()
 
+
 # ==========================================================
 # add dependencie projects
 # ==========================================================
 add_dependencies(${this_target} tdclc tdclcpp)
-
-# ==========================================================
-# Add compile options
-# ==========================================================
-transactd_reset_MTMD()
-if (MSVC)
-  bz_add_cxx_flag("/MT" "_RELEASE")
-  bz_add_cxx_flag("/MTd" "_DEBUG")
-  bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("/MD" "_MINSIZEREL")
-else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_RELEASE")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_DEBUG")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_MINSIZEREL")
-endif()
 
 
 # ==========================================================
@@ -130,15 +115,16 @@ endif()
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB USE_DBM_CONNECTION_POOL)
+    TRDCL_AUTOLINK BOOST_DATE_TIME_NO_LIB USE_DBM_CONNECTION_POOL)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC BOOST_ALL_NO_LIB USE_DBM_CONNECTION_POOL)
+    PIC BOOST_DATE_TIME_NO_LIB USE_DBM_CONNECTION_POOL)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
   endif()
 endif()
+# Unicode or MultiBytes
 if("${TDCL_CPP_CHARSET}" STREQUAL "u")
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     UNICODE _UNICODE)
@@ -149,9 +135,28 @@ endif()
 
 
 # ==========================================================
+# Add compile options and linker options
+# ==========================================================
+transactd_reset_MTMD()
+if (MSVC)
+  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /wd4819 /wd4231 /wd4251 /Gy /GL /Zi /GR /Oi /EHa")
+  bz_add_cxx_flag("/MT"   "_RELEASE")
+  bz_add_cxx_flag("/MTd"  "_DEBUG")
+  bz_add_cxx_flag("/MT"   "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD"   "_MINSIZEREL")
+  set(CMAKE_LINKER_FLAGS "")
+  set(CMAKE_EXE_LINKER_FLAGS "")
+  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+    "/MANIFEST:NO /LTCG:incremental /OPT:REF /OPT:ICF")
+else()
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "")
+endif()
+
+
+# ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("thread;system")
+transactd_link_boost_libraries("thread;system;chrono")
 if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()

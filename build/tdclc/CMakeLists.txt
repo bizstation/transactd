@@ -101,32 +101,37 @@ endif()
 
 
 # ==========================================================
-# Add compile options
-# ==========================================================
-transactd_set_MTMD("MT")
-if(NOT MSVC)
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELEASE")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_DEBUG")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_MINSIZEREL")
-endif()
-
-
-# ==========================================================
 # Add compile definitions
 # ==========================================================
-set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-  PACKAGE_NO_EXPORT BOOST_ALL_NO_LIB _MBCS)
 if(MSVC)
-  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS _WIN32_WINNT=0x0501 _USRDLL)
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    _WIN32_WINNT=0x0501 PACKAGE_NO_EXPORT BOOST_DATE_TIME_NO_LIB BOOST_REGEX_NO_LIB _USRDLL _MBCS)
 else()
-  set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
-    PIC _REENTRANT)
+  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
+    PIC _REENTRANT PACKAGE_NO_EXPORT BOOST_DATE_TIME_NO_LIB BOOST_REGEX_NO_LIB _MBCS)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
   endif()
+endif()
+
+
+# ==========================================================
+# Add compile options and linker options
+# ==========================================================
+transactd_reset_MTMD()
+if (MSVC)
+  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /Gy /GL /Zi /Oi /EHa")
+  bz_add_cxx_flag("/MT  /Ot /Ox /Ob2" "_RELEASE")
+  bz_add_cxx_flag("/MTd             " "_DEBUG")
+  bz_add_cxx_flag("/MT  /Ot /Ox /Ob2" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MT  /Ot /Ox /Ob2" "_MINSIZEREL")
+  set(CMAKE_LINKER_FLAGS "")
+  set(CMAKE_SHARED_LINKER_FLAGS "")
+  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+    "/MANIFEST /LTCG:incremental /OPT:REF /OPT:ICF /DEF:\"${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/trnsctcl.def\"")
+else()
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "")
 endif()
 
 
@@ -177,15 +182,6 @@ else()
       SOVERSION ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}
       VERSION   ${TD_RC_VER_MAJOR}.${TD_RC_VER_MINOR}.${TD_RC_VER_RELEASE})
   endif()
-endif()
-
-
-# ==========================================================
-# add .def file (for MSVC)
-# ==========================================================
-if(MSVC)
-  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
-    "/DEF:\"${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/trnsctcl.def\"")
 endif()
 
 

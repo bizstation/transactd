@@ -1,5 +1,5 @@
 ##=================================================================
-#   Copyright (C) 2012 2013 BizStation Corp All rights reserved.
+#   Copyright (C) 2016 BizStation Corp All rights reserved.
 #
 #   This program is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License
@@ -121,7 +121,7 @@ endif()
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    TRDCL_AUTOLINK USE_DBM_CONNECTION_POOL WIN32 TEST_FIELDDEFS)
+    TRDCL_AUTOLINK USE_DBM_CONNECTION_POOL TEST_FIELDDEFS)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
     PIC USE_DBM_CONNECTION_POOL TEST_FIELDDEFS)
@@ -141,17 +141,19 @@ endif()
 
 
 # ==========================================================
-# Add compile options
+# Add compile options and linker options
 # ==========================================================
 transactd_reset_MTMD()
 if (MSVC)
-  bz_add_cxx_flag("/MT" "_RELEASE")
-  bz_add_cxx_flag("/MTd" "_DEBUG")
-  bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("/MD" "_MINSIZEREL")
+  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /wd4819 /wd4231 /wd4251 /Gy /GL /Zi /Oi /EHa")
+  bz_add_cxx_flag("/MT"   "_RELEASE")
+  bz_add_cxx_flag("/MTd"  "_DEBUG")
+  bz_add_cxx_flag("/MT"   "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD"   "_MINSIZEREL")
+  set(CMAKE_LINKER_FLAGS "")
+  set(CMAKE_EXE_LINKER_FLAGS "")
+  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+    "/MANIFEST:NO /LTCG:incremental /OPT:REF /OPT:ICF")
 else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_RELEASE")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_DEBUG")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "_MINSIZEREL")
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "")
 endif()

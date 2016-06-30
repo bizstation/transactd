@@ -104,35 +104,17 @@ else()
     OUTPUT_NAME "ormsrcgen")
 endif()
 
+
 # ==========================================================
 # add dependencie projects
 # ==========================================================
 add_dependencies(${this_target} tdclc tdclcpp)
 
-# ==========================================================
-# Add compile options
-# ==========================================================
-transactd_reset_MTMD()
-if (MSVC)
-  bz_add_cxx_flag("/MT" "_RELEASE")
-  bz_add_cxx_flag("/MTd" "_DEBUG")
-  bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("/MD" "_MINSIZEREL")
-else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELEASE")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_DEBUG")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_MINSIZEREL")
-endif()
-
 
 # ==========================================================
 # Add compile definitions
 # ==========================================================
-if(MSVC)
-  set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB)
-else()
+if(NOT MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
     PIC BOOST_ALL_NO_LIB)
   if(NOT MINGW)
@@ -140,12 +122,32 @@ else()
       LINUX)
   endif()
 endif()
+# Unicode or MultiBytes
 if("${TDCL_CPP_CHARSET}" STREQUAL "u")
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     UNICODE _UNICODE)
 else()
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     _MBCS)
+endif()
+
+
+# ==========================================================
+# Add compile options and linker options
+# ==========================================================
+transactd_reset_MTMD()
+if (MSVC)
+  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /wd4819 /Gy /GL /Zi /Oi /EHsc")
+  bz_add_cxx_flag("/MT"   "_RELEASE")
+  bz_add_cxx_flag("/MTd"  "_DEBUG")
+  bz_add_cxx_flag("/MT"   "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD"   "_MINSIZEREL")
+  set(CMAKE_LINKER_FLAGS "")
+  set(CMAKE_EXE_LINKER_FLAGS "")
+  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+    "/MANIFEST:NO /LTCG:incremental /OPT:REF /OPT:ICF")
+else()
+  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "")
 endif()
 
 
