@@ -189,7 +189,11 @@ private:
     {
         string gtid = bpos.gtid;
         uint_td domain = domainid(gtid.c_str());
-        const connMgr::records recs = mgr->channels();
+        //const connMgr::records recs = mgr->channels();
+        connRecords_ptr recs_p  = createConnRecords(mgr->channels());
+        const connMgr::records& recs = *recs_p.get();
+
+
         validateStatus(mgr, _T("channels"));
         if (recs.size())
         {
@@ -310,7 +314,11 @@ private:
         for (size_t i=0;i<gds.size(); ++i)
             uuids.push_back(uuid(gds[i]));
 
-        const connMgr::records recs = mgr->channels();
+        //const connMgr::records recs = mgr->channels();
+        connRecords_ptr recs_p  = createConnRecords(mgr->channels());
+        const connMgr::records& recs = *recs_p.get();
+
+
         validateStatus(mgr, _T("channels"));
         for (size_t i = 0; i < recs.size(); ++i)
         {

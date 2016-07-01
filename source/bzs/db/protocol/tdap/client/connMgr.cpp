@@ -200,6 +200,8 @@ size_t connRecords::size() const { return m_records.size(); }
 
 connRecords* connRecords::create(){ return new connRecords();}
 
+connRecords* connRecords::create(const connRecords& r){ return new connRecords(r);}
+
 void connRecords::release(){ delete this;}
 
 //-----------------------------------------------------------------------------

@@ -166,7 +166,9 @@ bool isMariadb(database_ptr db)
 
 string getChannlName(connMgr_ptr mgr, const _TCHAR* oldMaster)
 {
-    connMgr::records recs = mgr->channels();
+    connRecords_ptr recs_p  = createConnRecords(mgr->channels());
+    connMgr::records& recs = *recs_p.get();
+
     for (size_t i = 0;i < recs.size(); ++i)
     {
         const connMgr::records& rs = mgr->slaveStatus(recs[i].name);
@@ -368,7 +370,7 @@ public:
                 {
                     int ha = (int)rss[TD_SVAR_HA].longValue;
                     if ((ha & HA_ENABLE_FAILOVER) != HA_ENABLE_FAILOVER)
-                        THROW_BZS_ERROR_WITH_MSG(_T("Failover is disabled."));
+                        return -2;
                 }    
                 const connMgr::records& rs = m_mgrs[i]->slaveStatus(m_channel.c_str());
                 if (m_mgrs[i]->stat() == 0)
@@ -451,9 +453,8 @@ public:
         catch(...){}
     }
 
-    ~safeHaSalves()
+    void unlock()
     {
-        recoverMasterRole();
         if (m_lockSize)
         {
             for (int i = (int)m_lockSize - 1; i >= 0 ; --i)
@@ -461,7 +462,14 @@ public:
                 if (m_mgrs[i]->isOpen())
                     m_mgrs[i]->haUnlock();
             }
+            m_lockSize = 0;
         }
+    }
+
+    ~safeHaSalves()
+    {
+        unlock();
+        recoverMasterRole();
         m_mgrs.clear();
     }
 };
@@ -506,7 +514,9 @@ public:
         bool cancel = false;
         int trx_count;
         size_t use_db_count;
-        connMgr::records recs;
+        //connMgr::records recs;
+        connRecords_ptr recs_p  = createConnRecords();
+        connMgr::records& recs = *recs_p.get();
         do
         {
             trx_count = 0;
@@ -593,11 +603,12 @@ string getNewMasterPort(const string& host, const string& map)
 
 void doSwitchOrver(const failOverParam& pm, haNotify* nf)
 {
+    vector<_tstring> slaves;
+    slaves.reserve(10);
     overrideCompatibleMode cpblMode(database::CMP_MODE_MYSQL_NULL);
     size_t newMasterIndex;
     if (pm.slaves == _T(""))
         THROW_BZS_ERROR_WITH_MSG(_T("No slave host(s)."));
-    vector<_tstring> slaves;
     split(slaves, pm.slaves.c_str());
     if (pm.isSwitchOver())
     {
@@ -634,10 +645,15 @@ void doSwitchOrver(const failOverParam& pm, haNotify* nf)
         read_only.check();
     }else if (pm.isFailOver())
     {
-        newMasterIndex = slvs.selectPromoteHost();
-        if (newMasterIndex >= slaves.size())
-            THROW_BZS_ERROR_WITH_MSG(_T("Invalid new Master."));
-
+        int index =  slvs.selectPromoteHost();
+        if (index < 0 || index >= (int)slaves.size())
+        {
+            if (index == -2)
+                THROW_BZS_ERROR_WITH_MSG(_T("Failover is disabled."));
+            else
+                THROW_BZS_ERROR_WITH_MSG(_T("Invalid new Master."));
+        }
+        newMasterIndex = (size_t)index;
         failOverParam& mp = const_cast<failOverParam&>(pm);
         mp.newMaster.host = slaves[newMasterIndex];
         mp.newMaster.repPort = getNewMasterPort(toUtf8(pm.newMaster.host), pm.portMap);
@@ -704,6 +720,15 @@ void notifyBrank(haNotify* nf)
     notify(nf, HA_NF_BLANK, _T(""));
 }
 
+bool lockTest(connMgr_ptr mgr, haNotify* nf)
+{
+    bool lock = mgr->haLock();
+    if (lock)
+        mgr->haUnlock();
+    notify(nf, lock ? HA_NF_MSG_OK : HA_NF_MSG_NG, "HA lock");
+    return lock;
+}
+
 int healthCheck(const failOverParam& pm, haNotify* nf)
 {
     int ret = 0;
@@ -749,6 +774,12 @@ int healthCheck(const failOverParam& pm, haNotify* nf)
     nfSetHostName(nf, pm.master.host.c_str());
     notify(nf, roleMaster ? HA_NF_MSG_OK : HA_NF_MSG_NG, roleName(roleMaster));
     if (!roleMaster) ++ret;
+
+    {   //master lock test
+        database_ptr db = createDatabaseObject();
+        connMgr_ptr mgr = createMgr(db, pm.master.host.c_str(), pm.master, false);
+        if (!lockTest(mgr, nf)) ++ret;
+    }
         
     for (size_t i=0;i < slaves.size(); ++i)
     {
@@ -759,6 +790,8 @@ int healthCheck(const failOverParam& pm, haNotify* nf)
         roleMaster = isRoleMaster(mgr);
         notify(nf, roleMaster ? HA_NF_MSG_NG : HA_NF_MSG_OK, roleName(roleMaster));
         if (roleMaster) ++ret;
+        if (!lockTest(mgr, nf)) ++ret;
+
         string channel = getChannlName(mgr, pm.master.host.c_str());
         notify(nf, HA_NF_CANNELNAME, channel.c_str());
         const connMgr::records& recs = mgr->slaveStatus(channel.c_str());

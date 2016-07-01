@@ -59,7 +59,26 @@ public:
 	void clear();
     void release();
     static connRecords* create();
+    static connRecords* create(const connRecords& r);
 };
+
+typedef boost::shared_ptr<connRecords> connRecords_ptr;
+
+inline void releaseConnRecords(connRecords* p)
+{
+    if (p) p->release();
+}
+
+inline connRecords_ptr createConnRecords(const connRecords& r)
+{
+    return connRecords_ptr(connRecords::create(r), releaseConnRecords);
+}
+
+inline connRecords_ptr createConnRecords()
+{
+    return connRecords_ptr(connRecords::create(), releaseConnRecords);
+}
+
 
 class DLLLIB connMgr : private nstable  // no copyable
 {

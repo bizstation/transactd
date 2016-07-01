@@ -95,20 +95,17 @@ static bool  g_failoverError = false;
 void split(vector<string>& ss, const char* s)
 {
     const char* p = s;
-    const char* pp = strchr(p, ',');
-    if (!pp)
-        pp = p + strlen(p);
-    while (*p && pp)
+    const char* pp = strchr(p, _T(','));
+    while (pp)
     {
-        ss.push_back(string(p, pp));
+        string s = string(p, pp);
+        ss.push_back(s);
         p = pp + 1;
-        if (*p)
-        {
-            pp = strchr(p, ',');
-            if (!pp) 
-                ss.push_back(string(p, p + strlen(p)));
-        }
+        pp = strchr(p, _T(','));
     }
+    size_t len = strlen(p);
+    if (len)
+        ss.push_back(string(p, p + len));
 }
 
 void disconnect()

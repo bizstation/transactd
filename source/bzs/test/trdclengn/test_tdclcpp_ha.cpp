@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <global/replication/haCommand.h>
+#pragma package(smart_init)
 
 #define DBNAMEV3 _T("test_v3")
 
@@ -173,8 +174,8 @@ void testSwitchTo(const _tstring& master, const _tstring& newMaster)
 void testNameResover8611()
 {
     start_Resolver();
-    bool ret = std::string(haNameResolver::slave()) == host2 || std::string(haNameResolver::slave()) == host3;
-    BOOST_CHECK_MESSAGE(ret = true, haNameResolver::slave());
+    bool ret = std::string(haNameResolver::slave()) == host1 || std::string(haNameResolver::slave()) == host3;
+    BOOST_CHECK_MESSAGE(ret == true, haNameResolver::slave());
     BOOST_CHECK_MESSAGE(std::string(haNameResolver::master()) == host2, haNameResolver::master());
     database_ptr db = createDatabaseObject();
     ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
@@ -245,7 +246,7 @@ void testSwitchLiveOpen()
         makeSOParam(pm, str_conv(host3), str_conv(host1));
         switchOrver(pm);
         bool ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
-        BOOST_CHECK(db->stat() == 0);
+        BOOST_CHECK(ret && (db->stat() == 0));
     }
     catch (bzs::rtl::exception& e)
     {
@@ -268,7 +269,7 @@ void testEnableFailOver(bool v)
     }
     catch (bzs::rtl::exception& e)
     {
-        BOOST_CHECK_MESSAGE(false, "setEnableFailOver Error");
+        BOOST_CHECK_MESSAGE(false, "setEnableFailOver Error v = " << v);
         _tprintf(_T("%s"), getMsg(e)->c_str());
     }
 }
@@ -287,13 +288,12 @@ void testFailOverBlock()
     try
     {
         failOrver(pm);
-        bool ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
         BOOST_CHECK_MESSAGE(false, "failorver not block");
     }
     catch (bzs::rtl::exception& /*e*/)
     {
         BOOST_CHECK(true);
-        //_tprintf(getMsg(e)->c_str());
+
     }
 }
 
@@ -312,7 +312,7 @@ void testFailOver8611()
     {
         failOrver(pm);
         bool ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
-        BOOST_CHECK(db->stat() == 0);
+        BOOST_CHECK(ret && db->stat() == 0);
     }
     catch (bzs::rtl::exception& e)
     {
@@ -331,7 +331,7 @@ void testMasterToSlave()
     {
         demoteToSlave(pm);
         bool ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
-        BOOST_CHECK(db->stat() == 0);
+        BOOST_CHECK(ret && db->stat() == 0);
     }
     catch (bzs::rtl::exception& e)
     {

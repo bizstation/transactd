@@ -58,7 +58,8 @@ int getRoleFromFile()
         if (p && *p)
             ret = atol(p);
         fclose(fp);
-    }
+    }else
+        sql_print_error("Transactd: File : %s was not opened for read", filename);
     return ret;
 }
 
@@ -75,7 +76,8 @@ bool saveRoleToFile(int role)
         fclose(fp);
         return true;
     }
-    return false;
+    sql_print_error("Transactd: File : %s was not opened for write", filename);
+    return true;
 }
 
 int initHa()
@@ -120,11 +122,9 @@ bool setRole(int role)
         {
             g_ha &= ~(HA_ROLE_MASTER | HA_ROLE_NONE);
             g_ha |= role;
-            if (saveRoleToFile(role))
-            {
-                g_tmtx_ha.unlock();
-                return true;
-            }
+            saveRoleToFile(role);
+            g_tmtx_ha.unlock();
+            return true;
         }
         return false;
     }

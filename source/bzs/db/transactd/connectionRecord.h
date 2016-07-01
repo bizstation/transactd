@@ -152,7 +152,8 @@ struct record
     union
     {
         unsigned int db;
-        unsigned int readCount;             // 4 byte
+        unsigned int readCount;
+        unsigned int port;                  // 4 byte
     };
     union
     {
@@ -198,10 +199,10 @@ struct record
         return buf;
     }
     #endif
-    inline const char* t_name(char* /*buf*/, int /*size*/) const
+    /*inline const char* t_name(char* buf, int size) const
     {
         return name;
-    }
+    }*/
     const char* value(char* buf, int size) const
     {
         if (type == 0)

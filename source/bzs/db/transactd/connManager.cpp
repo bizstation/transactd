@@ -320,7 +320,7 @@ const connection::records& connManager::getTableList(const char* dbname, int typ
                 connection::record& rec = m_records[m_records.size() - 1];
                 strncpy(rec.name, tablelist[i].c_str(), 64);
                 rec.name[64] = 0x00;
-                rec.type = (short)type;
+                rec.type = 1;
             }
         }
     }
