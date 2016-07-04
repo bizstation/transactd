@@ -134,6 +134,7 @@
       <ModuleDefinitionFile>..\..\source\global\tdclatl\tdclatl.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <RegisterOutput>false</RegisterOutput>
+      <AdditionalDependencies>comsuppw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -168,6 +169,7 @@
       <ModuleDefinitionFile>..\..\source\global\tdclatl\tdclatl.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <RegisterOutput>false</RegisterOutput>
+      <AdditionalDependencies>comsuppw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -206,6 +208,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <RegisterOutput>false</RegisterOutput>
+      <AdditionalDependencies>comsuppw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -242,6 +245,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <RegisterOutput>false</RegisterOutput>
+      <AdditionalDependencies>comsuppw.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -276,6 +280,7 @@
     <ClCompile Include="..\..\source\global\tdclatl\FieldNames.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\Flags.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\GroupQuery.cpp" />
+    <ClCompile Include="..\..\source\global\tdclatl\HaNameREsolver.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeyDef.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\KeySegment.cpp" />
     <ClCompile Include="..\..\source\global\tdclatl\PooledDbManager.cpp" />
@@ -316,6 +321,7 @@
     <ClInclude Include="..\..\source\global\tdclatl\FieldNames.h" />
     <ClInclude Include="..\..\source\global\tdclatl\Flags.h" />
     <ClInclude Include="..\..\source\global\tdclatl\GroupQuery.h" />
+    <ClInclude Include="..\..\source\global\tdclatl\HaNameREsolver.h" />
     <ClInclude Include="..\..\source\global\tdclatl\KeyDef.h" />
     <ClInclude Include="..\..\source\global\tdclatl\keySegment.h" />
     <ClInclude Include="..\..\source\global\tdclatl\PooledDbManager.h" />
@@ -342,6 +348,7 @@
     <None Include="database.rgs" />
     <None Include="fieldNames.rgs" />
     <None Include="GroupQuery.rgs" />
+    <None Include="haNameREsolver.rgs" />
     <None Include="pooledDbMgr.rgs" />
     <None Include="QueryBase.rgs" />
     <None Include="RecordsetQuery.rgs" />

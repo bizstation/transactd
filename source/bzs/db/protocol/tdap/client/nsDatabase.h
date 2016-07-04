@@ -41,7 +41,7 @@ namespace tdap
 {
 namespace client
 {
-extern DLLLIB bool g_isReconnectNetError;
+extern DLLLIB bool g_enableAutoReconnect;
 
 class dbdef;
 class nstable;
@@ -184,15 +184,14 @@ public:
     static bool trnsactionFlushWaitStatus();
     static void setExecCodePage(unsigned int codepage);
     static unsigned int execCodePage();
+    static inline bool enableAutoReconnect(){ return g_enableAutoReconnect;}
+    static bool registerHaNameResolver(HANAME_RESOLVER_PTR func);
     /** @cond INTERNAL */
     void setTestPtrIgnore(bool v);
     bool isTestPtrIgnore() const;
     static WIN_TPOOL_SHUTDOWN_PTR getWinTPoolShutdownFunc();
-    static bool registerHaNameResolver(HANAME_RESOLVER_PTR func);
     static bool testTablePtr(nstable* ptr);
     static void setCheckTablePtr(bool v);
-    static inline bool isReconnectNetError(){ return g_isReconnectNetError;}
-
     /** @endcond */
 };
 

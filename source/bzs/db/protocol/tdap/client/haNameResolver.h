@@ -46,7 +46,7 @@ public:
     static void addPortMap(short mysqlPort, short transactdPort);
     static void clearPortMap();
     static void stop();
-    static void clear();
+//    static void clear();
     static const char* master();
     static const char* slave();
 };

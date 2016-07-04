@@ -61,7 +61,7 @@ extern EnginsFunc engins;
 unsigned int g_lastTrnTime = 0;
 unsigned int nsdatabase::m_execCodepage = GetACP();
 bool g_checkTablePtr = false;
-bool g_isReconnectNetError = false;
+bool g_enableAutoReconnect = false;
 
 PACKAGE void registEnginsPtr(EnginsFunc func)
 {
@@ -1026,7 +1026,7 @@ short nsdatabase::tdapEx(ushort_td op, void* posb, void* data, uint_td* datalen,
     {
         loop = false;
         stat = m_btrcallid(op, posb, data, datalen, keybuf, keylen, keyNum, clientID());
-        if (stat && nsdatabase::isReconnectNetError() && canRecoverNetError(m_stat))
+        if (stat && nsdatabase::enableAutoReconnect() && canRecoverNetError(m_stat))
         {
             reconnect();
             if (stat) break;
@@ -1136,7 +1136,7 @@ bool nsdatabase::registerHaNameResolver(HANAME_RESOLVER_PTR func)
         if (regist)
         {
             regist(func);
-            g_isReconnectNetError = func != NULL;
+            g_enableAutoReconnect = func != NULL;
             return true;
         }
     }

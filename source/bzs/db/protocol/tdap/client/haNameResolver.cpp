@@ -403,13 +403,14 @@ void haNameResolver::stop()
     registerHaNameResolver(NULL);
 }
 
+/*
 void haNameResolver::clear()
 {
     boost::mutex::scoped_lock lck(g_nr_mutex);
     cache_master = "";
     cache_slave = "";
     g_failoverError = false;
-}
+}*/
 
 void haNameResolver::addPortMap(short mysqlPort, short transactdPort)
 {
@@ -439,6 +440,7 @@ const char* __STDCALL hostNameResolver(const char* vhost, const char* port, char
 {
     if (opt & HST_OPTION_CLEAR_CACHE)
         updateRsolver();
+  
     // Resolve a host name from a role name.
     boost::mutex::scoped_lock lck(g_nr_mutex);
 

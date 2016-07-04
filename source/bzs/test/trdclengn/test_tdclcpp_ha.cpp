@@ -134,9 +134,9 @@ void testNameResover()
     BOOST_CHECK(ret == true);
     db->close();
 
-    haNameResolver::clear();
-    BOOST_CHECK(std::string(haNameResolver::slave()) == "");
-    BOOST_CHECK(std::string(haNameResolver::master()) == "");
+    //haNameResolver::clear();
+    //BOOST_CHECK(std::string(haNameResolver::slave()) == "");
+    //BOOST_CHECK(std::string(haNameResolver::master()) == "");
     haNameResolver::stop();
     ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
     BOOST_CHECK(ret == false);
@@ -185,9 +185,9 @@ void testNameResover8611()
     BOOST_CHECK(ret == true);
     db->close();
 
-    haNameResolver::clear();
-    BOOST_CHECK(std::string(haNameResolver::slave()) == "");
-    BOOST_CHECK(std::string(haNameResolver::master()) == "");
+    //haNameResolver::clear();
+    //BOOST_CHECK(std::string(haNameResolver::slave()) == "");
+    //BOOST_CHECK(std::string(haNameResolver::master()) == "");
     haNameResolver::stop();
     ret = db->open(makeUri(PROTOCOL, _T("master"), DBNAMEV3, BDFNAME));
     BOOST_CHECK(ret == false);

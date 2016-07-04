@@ -59,6 +59,16 @@ STDMETHODIMP CBinlogPos::get_Gtid(BSTR* retVal)
     return S_OK;
 }
 
+STDMETHODIMP CBinlogPos::put_Gtid(BSTR Value)
+{
+    int size = WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, Value, -1, NULL, 0, NULL, NULL);
+    char* p = new char[size + 1];
+    WideCharToMultiByte(CP_ACP, WC_COMPOSITECHECK, Value, -1, p, size + 1, NULL, NULL);
+    m_pos.setGtid(p);
+    delete [] p;
+    return S_OK;
+}
+
 
 
     

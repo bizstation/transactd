@@ -80,6 +80,18 @@ public:
     STDMETHOD(Statusvars)(IConnRecords** retVal);
     STDMETHOD(StatusvarName)(int index, BSTR* retVal);
 
+    STDMETHOD(Extendedvars)(IConnRecords** retVal);
+    STDMETHOD(SlaveHosts)(IConnRecords** retVal);
+    STDMETHOD(Channels)(IConnRecords** retVal);
+    STDMETHOD(ExtendedVarName)(int index, BSTR* retVal);
+
+    STDMETHOD(HaLock)(VARIANT_BOOL* retVal);
+    STDMETHOD(HaUnlock)();
+    STDMETHOD(SetRole)(int v, VARIANT_BOOL* retVal);
+    STDMETHOD(SetTrxBlock)(VARIANT_BOOL v, VARIANT_BOOL* retVal);
+    STDMETHOD(SetEnableFailover)(VARIANT_BOOL v, VARIANT_BOOL* retVal);
+    STDMETHOD(get_IsOpen)(VARIANT_BOOL* retVal);
+
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(ConnMgr), CConnMgr)

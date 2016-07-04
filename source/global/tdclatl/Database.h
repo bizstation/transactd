@@ -165,6 +165,8 @@ public:
     STDMETHOD(get_IsAssociate)(VARIANT_BOOL* retVal);
     STDMETHOD(GetCreateViewSql)(BSTR name, BSTR* retVal);
     STDMETHOD(ExecSql)(BSTR Sql, VARIANT_BOOL* Value);
+    STDMETHOD(get_EnableAutoReconnect)(VARIANT_BOOL* retVal);
+
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Database), CDatabase)

@@ -303,4 +303,91 @@ STDMETHODIMP CConnMgr::StatusvarName(int index, BSTR* retVal)
 }
 
 
+STDMETHODIMP CConnMgr::Extendedvars(IConnRecords** retVal)
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    CComObject<CConnRecords>* obj;
+    CComObject<CConnRecords>::CreateInstance(&obj);
+    if (!obj)
+        return Error("CreateInstance ConnRecords", IID_IConnMgr);
+    obj->m_recs = m_mgr->extendedvars();
+    setResult(obj, retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CConnMgr::SlaveHosts(IConnRecords** retVal)
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    CComObject<CConnRecords>* obj;
+    CComObject<CConnRecords>::CreateInstance(&obj);
+    if (!obj)
+        return Error("CreateInstance ConnRecords", IID_IConnMgr);
+    obj->m_recs = m_mgr->slaveHosts();
+    setResult(obj, retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CConnMgr::Channels(IConnRecords** retVal)
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    CComObject<CConnRecords>* obj;
+    CComObject<CConnRecords>::CreateInstance(&obj);
+    if (!obj)
+        return Error("CreateInstance ConnRecords", IID_IConnMgr);
+    obj->m_recs = m_mgr->channels();
+    setResult(obj, retVal);
+    return S_OK;
+}
+
+STDMETHODIMP CConnMgr::ExtendedVarName(int index, BSTR* retVal)
+{
+    CComBSTR ret= connMgr::extendedVarName(index);
+    *retVal = ret.Copy();
+    return S_OK;
+}
+
+STDMETHODIMP CConnMgr::HaLock(VARIANT_BOOL* retVal)
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    *retVal = m_mgr->haLock();
+    return S_OK;
+}
+
+STDMETHODIMP CConnMgr::HaUnlock()
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    m_mgr->haUnlock();
+    return S_OK;
+}
+
+STDMETHODIMP CConnMgr::SetRole(int v, VARIANT_BOOL* retVal)
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    *retVal = m_mgr->setRole(v);
+    return S_OK;
+}
+
+STDMETHODIMP CConnMgr::SetTrxBlock(VARIANT_BOOL v, VARIANT_BOOL* retVal)
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    *retVal = m_mgr->setTrxBlock(v!=0);
+    return S_OK;
+}
+
+STDMETHODIMP CConnMgr::SetEnableFailover(VARIANT_BOOL v, VARIANT_BOOL* retVal)
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    *retVal = m_mgr->setEnableFailover(v!=0);
+    return S_OK;
+}
+
+STDMETHODIMP CConnMgr::get_IsOpen(VARIANT_BOOL* retVal)
+{
+    if (m_mgr == NULL) Error(_T("No database error"), IID_IConnMgr);
+    *retVal = m_mgr->isOpen();
+    return S_OK;
+}
+
+
+
 
