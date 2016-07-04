@@ -32,6 +32,7 @@ include(../common/get_boost_libs.cmake)
 
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
 project(${this_target})
+bz_force_gcc() # set compiler to gcc instead of g++
 
 
 # ==========================================================
@@ -50,13 +51,12 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   set(TRANSACTD_BINARY_ROOT "${CMAKE_BINARY_DIR}")
 endif()
 
+
 # ==========================================================
 # add library path
 # ==========================================================
 if (MSVC)
-   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
-else()
-   link_directories("../tdclcpp")
+  link_directories("${TRANSACTD_BINARY_ROOT}/lib")
 endif()
 
 
@@ -147,14 +147,17 @@ if (MSVC)
   set_target_properties(${this_target} PROPERTIES LINK_FLAGS
     "/MANIFEST:NO /LTCG:incremental /OPT:REF /OPT:ICF")
 else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "")
+  set(CMAKE_CXX_FLAGS "-fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
+  if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -lstdc++")
+  endif()
 endif()
 
 
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("program_options;system;filesystem;chrono")
+transactd_link_boost_libraries("system;filesystem;program_options")
 #tdclcpp_x on windows is auto link
 if(NOT MSVC)
   bz_get_compiler_bitness()

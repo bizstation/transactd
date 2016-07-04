@@ -32,6 +32,7 @@ include(../common/get_boost_libs.cmake)
 
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
 project(${this_target})
+bz_force_gcc() # set compiler to gcc instead of g++
 
 
 # ==========================================================
@@ -50,14 +51,14 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   set(TRANSACTD_BINARY_ROOT "${CMAKE_BINARY_DIR}")
 endif()
 
+
 # ==========================================================
 # add library path
 # ==========================================================
 if (MSVC)
-   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
-else()
-   link_directories("../tdclcpp")
+  link_directories("${TRANSACTD_BINARY_ROOT}/lib")
 endif()
+
 
 # ==========================================================
 # add source / include dir , set compiler / linker options
@@ -83,6 +84,7 @@ endif()
 # ==========================================================
 add_library(${this_target} SHARED ${${this_target}_SOURCE_FILES})
 
+
 # ==========================================================
 # add dependencie projects
 # ==========================================================
@@ -97,7 +99,7 @@ if(MSVC)
     TRDCL_AUTOLINK LIB_TDCLSTMT BOOST_DATE_TIME_NO_LIB _USRDLL TEDCLSTMT1_EXPORTS _WINDLL)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC _REENTRANT LIB_TDCLSTMT BOOST_DATE_TIME_NO_LIB TEDCLSTMT1_EXPORTS)
+    PIC BOOST_ALL_NO_LIB)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -130,7 +132,10 @@ if (MSVC)
   set_target_properties(${this_target} PROPERTIES LINK_FLAGS
     "/MANIFEST /LTCG:incremental /OPT:REF /OPT:ICF")
 else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "")
+  set(CMAKE_CXX_FLAGS "-fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
+  if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc -lstdc++")
+  endif()
 endif()
 
 

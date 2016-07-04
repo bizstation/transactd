@@ -32,25 +32,9 @@ include(../common/check_for_link_iconv.cmake)
 check_for_link_iconv()
 
 
-# ==========================================================
-# check project name and options
-# ==========================================================
-get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
-string(TOLOWER "${this_target}" this_target)
+set(this_target tdclcpp)
 project(${this_target})
-# m:multibyte u:unicode mr:multibyte-use_rtm
-if("${this_target}" STREQUAL "tdclcppm")
-  set(TDCL_CPP_CHARSET m)
-  set(TDCL_CPP_USE_RUNTIME_LIBS OFF)
-elseif("${this_target}" STREQUAL "tdclcppu")
-  set(TDCL_CPP_CHARSET u)
-  set(TDCL_CPP_USE_RUNTIME_LIBS OFF)
-elseif("${this_target}" STREQUAL "tdclcppmr")
-  set(TDCL_CPP_CHARSET m)
-  set(TDCL_CPP_USE_RUNTIME_LIBS ON)
-else()
-  set(TDCL_CPP_USE_RUNTIME_LIBS OFF)
-endif()
+bz_force_gcc() # set compiler to gcc instead of g++
 
 
 # ==========================================================
@@ -107,7 +91,7 @@ if(MSVC)
     BOOST_DATE_TIME_NO_LIB _USRDLL TRDCLENGN_EXPORTS _WINDLL)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC _REENTRANT BOOST_DATE_TIME_NO_LIB)
+    PIC BOOST_ALL_NO_LIB)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -151,14 +135,21 @@ if (MSVC)
   set_target_properties(${this_target} PROPERTIES LINK_FLAGS
     "/MANIFEST:NO /LTCG:incremental /OPT:REF /OPT:ICF")
 else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "")
+  set(CMAKE_CXX_FLAGS "-fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
+  if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc")
+  endif()
 endif()
 
 
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("filesystem;thread;chrono;system")
+if(MSVC)
+  transactd_link_boost_libraries("filesystem;system;thread;chrono")
+else()
+  transactd_link_boost_libraries("filesystem;system;thread")
+endif()
 if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()

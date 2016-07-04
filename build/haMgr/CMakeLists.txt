@@ -32,6 +32,7 @@ check_for_link_iconv()
 
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
 project(${this_target})
+bz_force_gcc() # set compiler to gcc instead of g++
 
 
 # ==========================================================
@@ -65,8 +66,6 @@ endif()
 # Add library link directories
 if (MSVC)
    link_directories("${TRANSACTD_BINARY_ROOT}/lib")
-else()
-   link_directories("../tdclcpp")
 endif()
 # Read resource file for Windows Visual Studio
 set(${this_target}_RC_FILE "${TRANSACTD_ROOT}/build/haMgr/haMgr.rc")
@@ -104,7 +103,7 @@ transactd_set_exe_output("${TRANSACTD_BINARY_ROOT}" "${TRANSACTD_PREFIX}")
 # Link libraries
 # ==========================================================
 # Link boost
-transactd_link_boost_libraries("thread;system;program_options")
+transactd_link_boost_libraries("timer;system;program_options")
 # Link iconv
 if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} "${ICONV_LIBRARY}")
@@ -113,7 +112,7 @@ endif()
 if(NOT MSVC)
   bz_get_compiler_bitness()
   target_link_libraries(${this_target} "tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
-  target_link_libraries(${this_target} dl pthread)
+  target_link_libraries(${this_target} dl)
 endif()
 
 
@@ -125,7 +124,7 @@ if(MSVC)
     TRDCL_AUTOLINK BOOST_DATE_TIME_NO_LIB)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC BOOST_DATE_TIME_NO_LIB)
+    PIC BOOST_ALL_NO_LIB)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -156,5 +155,8 @@ if (MSVC)
   set_target_properties(${this_target} PROPERTIES LINK_FLAGS
     "/MANIFEST:NO /LTCG:incremental /OPT:REF /OPT:ICF")
 else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers -Wno-overloaded-virtual -Wno-array-bounds -Wno-uninitialized" "")
+  set(CMAKE_CXX_FLAGS "-fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
+  if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    set(CMAKE_EXE_LINKER_FLAGS "-lstdc++")
+  endif()
 endif()

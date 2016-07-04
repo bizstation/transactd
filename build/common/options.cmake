@@ -59,3 +59,15 @@ macro(bz_add_cxx_flag opt build_type)
   set(CMAKE_CXX_FLAGS${build_type} "${CMAKE_CXX_FLAGS${build_type}} ${opt}")
 endmacro()
 endif()
+
+
+# ==========================================================
+# set compiler to gcc instead of g++
+# ==========================================================
+if(NOT COMMAND bz_force_gcc)
+macro(bz_force_gcc)
+  if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    set(CMAKE_CXX_COMPILER "$ENV{CC}")
+  endif()
+endmacro()
+endif()

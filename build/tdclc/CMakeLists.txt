@@ -31,6 +31,7 @@ check_for_link_iconv()
 
 set(this_target tdclc)
 project(${this_target})
+bz_force_gcc() # set compiler to gcc instead of g++
 
 
 # ==========================================================
@@ -55,7 +56,6 @@ endif()
 # ==========================================================
 set(${this_target}_SOURCE_FILES
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/tdapSchema.cpp
-  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/client.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/dllmain.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/sqlBuilder.cpp
@@ -63,6 +63,11 @@ set(${this_target}_SOURCE_FILES
   ${TRANSACTD_ROOT}/source/bzs/netsvc/client/tcpClient.cpp
   ${TRANSACTD_ROOT}/source/bzs/rtl/stl_uty.cpp
 )
+if(MSVC)
+  set(${this_target}_SOURCE_FILES ${${this_target}_SOURCE_FILES}
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
+  )
+endif()
 if(APPLE)
   set(${this_target}_SOURCE_FILES ${${this_target}_SOURCE_FILES}
     ${TRANSACTD_ROOT}/source/bzs/env/crosscompile.cpp
@@ -108,7 +113,7 @@ if(MSVC)
     _WIN32_WINNT=0x0501 PACKAGE_NO_EXPORT BOOST_DATE_TIME_NO_LIB BOOST_REGEX_NO_LIB _USRDLL _MBCS)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC _REENTRANT PACKAGE_NO_EXPORT BOOST_DATE_TIME_NO_LIB BOOST_REGEX_NO_LIB _MBCS)
+    PIC BOOST_ALL_NO_LIB)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
@@ -131,19 +136,19 @@ if (MSVC)
   set_target_properties(${this_target} PROPERTIES LINK_FLAGS
     "/MANIFEST /LTCG:incremental /OPT:REF /OPT:ICF /DEF:\"${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/trnsctcl.def\"")
 else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "")
+  set(CMAKE_CXX_FLAGS "-fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
 endif()
 
 
 # ==========================================================
 # add link / include
 # ==========================================================
-transactd_link_boost_libraries("filesystem;thread;chrono;system")
+transactd_link_boost_libraries("chrono;filesystem;system;thread")
 if(CAN_LINK_ICONV)
   target_link_libraries(${this_target} "${ICONV_LIBRARY}")
 endif()
 if(NOT MSVC)
-  target_link_libraries(${this_target} pthread)
+  target_link_libraries(${this_target} dl)
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     ## target_link_libraries(${this_target} "${TRANSACTD_ROOT}/build/tdclc/libtdclcm.map")
   elseif(APPLE)

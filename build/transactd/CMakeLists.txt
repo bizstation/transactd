@@ -31,6 +31,7 @@ include(../common/get_boost_libs.cmake)
 
 set(this_target transactd)
 project(${this_target})
+bz_force_gcc() # set compiler to gcc instead of g++
 
 
 # ==========================================================
@@ -168,7 +169,7 @@ endif()
 if(MSVC)
   remove_definitions(-DWIN32_LEAN_AND_MEAN)
 elseif(NOT MINGW)
-  add_definitions(-DLINUX)
+  add_definitions(-DLINUX -DPIC)
 endif()
 
 
@@ -199,7 +200,9 @@ else()
     set(CMAKE_CXX_FLAGS
       "-std=c++11 -frtti -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare")
   else()
-    set(CMAKE_CXX_FLAGS "-std=c++0x -frtti -Wno-unknown-pragmas")
+    set(CMAKE_CXX_FLAGS "-std=c++0x -frtti -Wno-unknown-pragmas -Wno-missing-braces -Wno-char-subscripts -Wall")
+    set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+      "-static-libgcc -lstdc++")
   endif()
 endif()
 
