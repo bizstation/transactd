@@ -30,15 +30,18 @@ namespace tdap
 {
 namespace client
 {
+
+/* haNameResolver::start() result code */
 #define HNR_SUCCESS               0
 #define HNR_SLAVE_HOSTS_NOT_FOUND 1
-#define HNR_INVALID_SLAVES        2
+#define HNR_INVALID_HOSTS         2
 #define HNR_REGISTER_FUNC_ERROR   3
 
 class DLLLIB haNameResolver
 {
 public:
-    // Slaves and slaveHosts are comma separated names.
+
+    /* The slaves and the slaveHostsWithPort can be specified comma separated names. */
     static int start(const char* master, const char* slaves,
                    const char* slaveHostsWithPort, short slaveNum,
                    const char* userName,
@@ -46,7 +49,6 @@ public:
     static void addPortMap(short mysqlPort, short transactdPort);
     static void clearPortMap();
     static void stop();
-//    static void clear();
     static const char* master();
     static const char* slave();
 };
@@ -56,4 +58,6 @@ public:
 } // namespace protocol
 } // namespace db
 } // namespace bzs
+
 #endif // BZS_DB_PROTOCOL_TDAP_CLIENT_HANAME_RESOLVER_H
+

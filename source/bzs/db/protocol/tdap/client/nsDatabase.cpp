@@ -947,7 +947,6 @@ void nsdatabase::doReconnect(nstable* tb)
 {
     uint_td datalen = 0;
     char uri_a[MAX_PATH] = { 0x00 };
-    tb->abortBulkInsert();
     datalen = tb->buflen();
     tdap::posblk* pb = (tdap::posblk*)tb->posblk();
     char* databuf = new char[datalen];
@@ -1005,9 +1004,9 @@ bool nsdatabase::reconnect()
     //Transactd only
     if (!isUseTransactd())
         return false;
-
-    m_nsimpl->tranCount = 0;
-    m_nsimpl->snapShotCount = 0;
+    if (m_nsimpl->tranCount || m_nsimpl->snapShotCount) 
+        return false;
+    
     uint_td datalen = 0;
     char uri_a[MAX_PATH] = { 0x00 };
     const char* p = toServerUri(uri_a, MAX_PATH, m_nsimpl->bdfPath, true);

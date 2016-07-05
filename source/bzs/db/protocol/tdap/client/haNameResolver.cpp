@@ -312,7 +312,7 @@ int setHosts()
     g_mgr = connMgr::create(g_db);
     cache_master = "-";
     cache_slave = "-";
-    int ret = HNR_INVALID_SLAVES;
+    int ret = HNR_INVALID_HOSTS;
     if (selectSlave())
     {
         setMasterHost();
@@ -402,15 +402,6 @@ void haNameResolver::stop()
     boost::mutex::scoped_lock lck(g_nr_mutex);
     registerHaNameResolver(NULL);
 }
-
-/*
-void haNameResolver::clear()
-{
-    boost::mutex::scoped_lock lck(g_nr_mutex);
-    cache_master = "";
-    cache_slave = "";
-    g_failoverError = false;
-}*/
 
 void haNameResolver::addPortMap(short mysqlPort, short transactdPort)
 {
