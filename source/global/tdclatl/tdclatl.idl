@@ -577,6 +577,8 @@ interface IDatabase : IDispatch
   HRESULT _stdcall ExecSql([in] BSTR Sql, [out, retval] VARIANT_BOOL* Value);
   [propget, id(0x00000102)]
   HRESULT _stdcall EnableAutoReconnect([out, retval] VARIANT_BOOL* retVal);
+  [propput, id(0x00000102)]
+  HRESULT _stdcall EnableAutoReconnect([in] VARIANT_BOOL val);
 
 };
 
@@ -1941,7 +1943,9 @@ interface IHaNameResolver : IDispatch{
     HRESULT _stdcall Start([in]BSTR master, [in]BSTR slaves,
                    [in]BSTR slaveHostsWithPort, [in]short slaveNum,
                    [in]BSTR userName,
-                   [in]BSTR password, [out, retval]int* retVal);
+                   [in]BSTR password,
+                   [in, defaultvalue(0)]int option,
+                   [out, retval]int* retVal);
     [id(0x0000002)]
     HRESULT _stdcall AddPortMap([in]short mysqlPort, [in]short transactdPort);
     [id(0x0000003)]

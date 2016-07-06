@@ -1143,7 +1143,6 @@ bool nsdatabase::registerHaNameResolver(HANAME_RESOLVER_PTR func)
 }
 
 
-
 } // namespace client
 } // namespace tdap
 } // namespace protocol

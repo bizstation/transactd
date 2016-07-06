@@ -89,8 +89,10 @@ static string cache_slave;
 static int g_slaveIndex = 0;
 static short g_stat = 0;
 static short g_slaveNum = 0;
-static bool  g_failover = false;
-static bool  g_failoverError = false;
+static bool g_failover = false;
+static bool g_failoverError = false;
+static bool g_callFailover = true;
+static bool g_readonly_control = false;
 
 void split(vector<string>& ss, const char* s)
 {
@@ -167,6 +169,7 @@ bool readReplMaster(const string& host)
 {
     if (connect(host))
     {
+        /* read channel with wait lock in the server 60 second max */
         g_recs = g_mgr->channels(true /*withLock*/);
         if (g_recs.size())
         {
@@ -236,7 +239,7 @@ int setSlaveHosts()
         cache_slave =  slaveHosts[g_slaveIndex];
         return 0;
     }
-    return HNR_SLAVE_HOSTS_NOT_FOUND;
+    return THNR_SLAVE_HOSTS_NOT_FOUND;
 }
 
 void addPort(short port)
@@ -278,7 +281,7 @@ const char* logPath(char* buf)
 
 int callFailover()
 {
-    const char* fmt = "haMgr%d -c failover -s %s -u %s -p %s %s >> %s";
+    const char* fmt = "haMgr%d -c failover -s %s -u %s -p %s %s %s >> %s";
     char tmp[4096];
     int cpu = sizeof(char*) == 8 ? 64 :32;
     string slaves;
@@ -301,7 +304,8 @@ int callFailover()
     logPath(buf);
 
     sprintf_s(tmp, 4096, fmt, cpu, slaves.c_str(), user.c_str(), passwd.c_str(),
-            portmap.size() ? portmap.c_str() : "", buf);
+            portmap.size() ? portmap.c_str() : "",
+            g_readonly_control ? "-R1": "", buf);
     return system(tmp);
 }
 
@@ -312,14 +316,14 @@ int setHosts()
     g_mgr = connMgr::create(g_db);
     cache_master = "-";
     cache_slave = "-";
-    int ret = HNR_INVALID_HOSTS;
+    int ret = THNR_INVALID_HOSTS;
     if (selectSlave())
     {
         setMasterHost();
         disconnect();
         ret = setSlaveHosts();
     }else if (cache_master != "-")
-        ret = HNR_SLAVE_HOSTS_NOT_FOUND;
+        ret = THNR_SLAVE_HOSTS_NOT_FOUND;
     disconnect();
     if (g_failover && !g_failoverError)
     {
@@ -366,7 +370,7 @@ void updateRsolver()
     boost::mutex::scoped_lock lck(g_nr_mutex);
     if (g_failoverError) return;
     nsdatabase::registerHaNameResolver(NULL);
-    g_failover = true;
+    g_failover = g_callFailover;
     {
         boost::scoped_ptr<boost::thread> t(new boost::thread(setHosts));
         t->join();
@@ -378,9 +382,11 @@ void updateRsolver()
 /* During the startResolver,resolver dose not work. */
 int haNameResolver::start(const char* master, const char* slaves,
     const char* slvHosts, short slaveNum,const char* userName,
-    const char* password)
+    const char* password, int option)
 {
     boost::mutex::scoped_lock lck(g_nr_mutex);
+    g_callFailover = (option & THNR_OPT_DISABLE_CALL_FAILOVER) == 0;
+    g_readonly_control = (option & THNR_OPT_FO_READONLY_CONTROL) == 0;
     registerHaNameResolver(NULL);
     masterRoleName = master;
     split(slaveRoleNames, slaves);
@@ -389,10 +395,15 @@ int haNameResolver::start(const char* master, const char* slaves,
     user = userName;
     passwd = password;
     int ret = setHosts();
-    if (ret <= HNR_SLAVE_HOSTS_NOT_FOUND)
+    if (ret <= THNR_SLAVE_HOSTS_NOT_FOUND)
     {
         if (!registerHaNameResolver(hostNameResolver))
-            ret = HNR_REGISTER_FUNC_ERROR;
+            ret = THNR_REGISTER_FUNC_ERROR;
+        if (ret != THNR_REGISTER_FUNC_ERROR && 
+                cache_slave == "-" &&
+                option & THNR_OPT_MASTER_CAN_CONCUR_SLAVE)
+            cache_slave = cache_master;
+            
     }
     return ret;
 }

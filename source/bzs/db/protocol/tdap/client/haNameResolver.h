@@ -32,10 +32,15 @@ namespace client
 {
 
 /* haNameResolver::start() result code */
-#define HNR_SUCCESS               0
-#define HNR_SLAVE_HOSTS_NOT_FOUND 1
-#define HNR_INVALID_HOSTS         2
-#define HNR_REGISTER_FUNC_ERROR   3
+#define THNR_SUCCESS               0
+#define THNR_SLAVE_HOSTS_NOT_FOUND 1
+#define THNR_INVALID_HOSTS         2
+#define THNR_REGISTER_FUNC_ERROR   3
+
+
+#define THNR_OPT_DISABLE_CALL_FAILOVER    1
+#define THNR_OPT_MASTER_CAN_CONCUR_SLAVE  2
+#define THNR_OPT_FO_READONLY_CONTROL      4
 
 class DLLLIB haNameResolver
 {
@@ -45,7 +50,8 @@ public:
     static int start(const char* master, const char* slaves,
                    const char* slaveHostsWithPort, short slaveNum,
                    const char* userName,
-                   const char* password);
+                   const char* password,
+                   int option = 0);
     static void addPortMap(short mysqlPort, short transactdPort);
     static void clearPortMap();
     static void stop();

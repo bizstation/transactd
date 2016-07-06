@@ -641,6 +641,13 @@ STDMETHODIMP CDatabase::get_EnableAutoReconnect(VARIANT_BOOL* retVal)
     return S_OK;
 }
 
+STDMETHODIMP CDatabase::put_EnableAutoReconnect(VARIANT_BOOL val)
+{
+    m_db->setEnableAutoReconnect(val != 0);   
+    return S_OK;
+}    
+
+
 void __stdcall onCopyData(database* db, table* tb, int recordCount, int count,
                           bool& cancel)
 {

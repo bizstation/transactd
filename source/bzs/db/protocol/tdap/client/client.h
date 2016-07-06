@@ -174,12 +174,10 @@ class client
             m_req.cid->transaction_isolation = hst->transaction_isolation;
             if (c->userOptions() & CL_OPTION_CHECK_ROLE)
             {
-                int clRole = c->userOptions() & 
-                        (HST_OPTION_ROLE_MASTER | HST_OPTION_ROLE_SLAVE);
-                int srvRole = hst->options & 
-                        (HST_OPTION_ROLE_MASTER | HST_OPTION_ROLE_SLAVE);
-
-                if (clRole != srvRole)
+                bool clRoleMaster = (c->userOptions() & HST_OPTION_ROLE_MASTER) != 0; 
+                bool srvRoleMaster = (hst->options & HA_ROLE_MASTER) != 0;
+  
+                if (clRoleMaster != srvRoleMaster)
                 {
                     m_preResult = ERROR_TD_INVALID_SERVER_ROLE; 
                     return false;

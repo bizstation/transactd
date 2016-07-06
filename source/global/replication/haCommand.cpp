@@ -121,13 +121,28 @@ _TCHAR* slaveList(connMgr_ptr& mgr, _TCHAR* slaves)
     return slaves;
 }
 
-bool isRoleMaster(connMgr_ptr& mgr)
+int readHaVar(connMgr_ptr& mgr)
 {
     const connMgr::records& recs = mgr->statusvars();
     int ha = HA_ROLE_SLAVE;
     if (recs.size() > TD_SVAR_HA)
         ha = (int)recs[TD_SVAR_HA].longValue;
+    return ha;
+}
+
+bool isEnableFailOver(int ha)
+{
+    return (ha & HA_ENABLE_FAILOVER) == HA_ENABLE_FAILOVER;
+}
+
+bool isRoleMaster(int ha)
+{
     return (ha & HA_ROLE_MASTER) == HA_ROLE_MASTER;
+}
+
+bool isRoleMaster(connMgr_ptr& mgr)
+{
+    return isRoleMaster(readHaVar(mgr));
 }
 
 void makeSlaveList(const failOverParam& pm, bool* roleMaster=NULL)
@@ -787,9 +802,15 @@ int healthCheck(const failOverParam& pm, haNotify* nf)
         connMgr_ptr mgr = createMgr(db, slaves[i].c_str(), pm.master, false);
         notifyBrank(nf);
         nfSetHostName(nf, slaves[i].c_str());
-        roleMaster = isRoleMaster(mgr);
+        int ha = readHaVar(mgr);
+        roleMaster = isRoleMaster(ha);
         notify(nf, roleMaster ? HA_NF_MSG_NG : HA_NF_MSG_OK, roleName(roleMaster));
         if (roleMaster) ++ret;
+
+        bool fo = isEnableFailOver(ha);
+        notify(nf, fo ? HA_NF_MSG_OK : HA_NF_MSG_NG, fo ? "Failover is enabled" : "Failover is disabled");
+        if (!fo) ++ret;
+        
         if (!lockTest(mgr, nf)) ++ret;
 
         string channel = getChannlName(mgr, pm.master.host.c_str());

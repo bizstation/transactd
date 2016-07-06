@@ -185,6 +185,7 @@ public:
     static void setExecCodePage(unsigned int codepage);
     static unsigned int execCodePage();
     static inline bool enableAutoReconnect(){ return g_enableAutoReconnect;}
+    static inline void setEnableAutoReconnect(bool v){ g_enableAutoReconnect = v;}
     static bool registerHaNameResolver(HANAME_RESOLVER_PTR func);
     /** @cond INTERNAL */
     void setTestPtrIgnore(bool v);
