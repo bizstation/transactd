@@ -133,8 +133,13 @@ if (MSVC)
   bz_add_cxx_flag("/MT  /Ot /Ox /Ob2" "_MINSIZEREL")
   set(CMAKE_LINKER_FLAGS "")
   set(CMAKE_SHARED_LINKER_FLAGS "")
-  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
-    "/MANIFEST /LTCG:incremental /OPT:REF /OPT:ICF /DEF:\"${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/trnsctcl.def\"")
+  if(MSVC_VERSION LESS 1800)
+    set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+      "/MANIFEST /OPT:REF /OPT:ICF /DEF:\"${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/trnsctcl.def\"")
+  else()
+    set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+      "/MANIFEST /LTCG:incremental /OPT:REF /OPT:ICF /DEF:\"${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/trnsctcl.def\"")
+  endif()
 else()
   set(CMAKE_CXX_FLAGS "-fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
 endif()

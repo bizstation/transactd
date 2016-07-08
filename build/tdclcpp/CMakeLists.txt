@@ -132,8 +132,13 @@ if (MSVC)
   endif()
   set(CMAKE_LINKER_FLAGS "")
   set(CMAKE_SHARED_LINKER_FLAGS "")
-  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
-    "/MANIFEST:NO /LTCG:incremental /OPT:REF /OPT:ICF")
+  if(MSVC_VERSION LESS 1800)
+    set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+      "/MANIFEST:NO /OPT:REF /OPT:ICF")
+  else()
+    set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+      "/MANIFEST:NO /LTCG:incremental /OPT:REF /OPT:ICF")
+  endif()
 else()
   set(CMAKE_CXX_FLAGS "-fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
   if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
