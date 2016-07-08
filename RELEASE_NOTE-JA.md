@@ -1,5 +1,54 @@
 ﻿リリースノート
 ================================================================================
+Version 3.5.0 2016/07/11
+================================================================================
+新機能
+--------------------------------------------------------------------------------
+* Transactd High Availability (THA) 高可用運用機能を追加しました。詳しくは以下を
+  参照してください。
+ https://www.bizstation.jp/ja/transactd/ja/transactd/client/sdk/html/page_ha.html
+
+修正と変更点
+--------------------------------------------------------------------------------
+* クライアントライブラリの`connMgr`クラスに以下のメソッドを追加しました。
+  ```
+  const records& slaveStatus(const _TCHAR* channel=NULL);
+  const records& extndedvars();
+  const records& slaveHosts();
+  const records& channels();
+  bool haLock();
+  void haUnlock();
+  bool setRole(int v);
+  bool setTrxBlock(bool v);
+  bool setEnableFailover(bool v);
+  bool isOpen() const;
+  static const _TCHAR* extendedVarName(uint_td id);
+  ```
+
+* クライアントライブラリの`nsdatabase`クラスに以下のメソッドを追加しました。
+  ```
+  static inline bool enableAutoReconnect();
+  static inline void setEnableAutoReconnect(bool v);
+  ```
+
+* クライアントライブラリの`binlogPos::setGtid(const char* p)`メソッドをprivate
+  からpublicに変更しました。
+
+* クライアントライブラリに`haNameResolver`クラスを追加しました。
+
+* MySQL 5.7でstatus variableがSQLコマンド`SHOW STATUS`で正しく表示されない不具合
+  を修正しました。
+
+* status variableの変数名のプレフィックス`trnsctd_`を`Transactd_`に変更しました。
+
+* MariaDBでViewがあると`transactd_schema`テーブルを正しく生成できない不具合を
+  修正しました。
+
+* tdclcライブラリ内のエラーで、処理が返す値が正しくないことがある不具合を修正し
+  ました。
+
+
+================================================================================
 Version 3.4.1 2016/05/23
 ================================================================================
 修正と変更点
