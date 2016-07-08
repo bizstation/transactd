@@ -27,7 +27,16 @@
  
  #ifdef HAVE_PSI_INTERFACE
  #ifdef HAVE_MMAP
-@@ -501,8 +501,8 @@
+@@ -507,15 +507,16 @@ extern mysql_mutex_t
+        LOCK_item_func_sleep, LOCK_status,
+        LOCK_error_log, LOCK_delayed_insert, LOCK_short_uuid_generator,
+        LOCK_delayed_status, LOCK_delayed_create, LOCK_crypt, LOCK_timezone,
+-       LOCK_slave_list, LOCK_active_mi, LOCK_manager,
++       LOCK_slave_list/*, LOCK_active_mi*/, LOCK_manager,
+        LOCK_global_system_variables, LOCK_user_conn,
+        LOCK_prepared_stmt_count, LOCK_error_messages, LOCK_connection_count;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_active_mi;
+ extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_thread_count;
  #ifdef HAVE_OPENSSL
  extern mysql_mutex_t LOCK_des_key_file;
  #endif
@@ -38,6 +47,17 @@
  extern mysql_rwlock_t LOCK_grant, LOCK_sys_init_connect, LOCK_sys_init_slave;
  extern mysql_rwlock_t LOCK_system_variables_hash;
  extern mysql_cond_t COND_thread_count;
+--- sql/slave.h
++++ sql/slave.h
+@@ -242,7 +242,7 @@ bool net_request_file(NET* net, const char* fname);
+ extern bool volatile abort_loop;
+ extern Master_info *active_mi; /* active_mi for multi-master */
+ extern Master_info *default_master_info; /* To replace active_mi */
+-extern Master_info_index *master_info_index;
++extern MYSQL_PLUGIN_IMPORT Master_info_index *master_info_index;
+ extern LEX_STRING default_master_connection_name;
+ extern my_bool replicate_same_server_id;
+ 
 --- sql/sql_cache.h
 +++ sql/sql_cache.h
 @@ -596,5 +596,5 @@

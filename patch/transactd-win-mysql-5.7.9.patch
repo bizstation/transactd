@@ -118,3 +118,19 @@
  
  
  /**
+-extern Gtid_state *gtid_state;
++extern MYSQL_PLUGIN_IMPORT Gtid_state *gtid_state;
+ 
+ 
+ /**
+--- sql/rpl_msr.h
++++ sql/rpl_msr.h
+@@ -402,7 +402,7 @@ public:
+ };
+ 
+ /* Global object for multisourced slave. */
+-extern Multisource_info channel_map;
++extern MYSQL_PLUGIN_IMPORT Multisource_info channel_map;
+ 
+ static bool inline is_slave_configured()
+ {
