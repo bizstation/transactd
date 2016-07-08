@@ -407,7 +407,13 @@ abstract class transactd {
 
 	const ERROR_TD_C_CLIENT_UNKNOWN = ERROR_TD_C_CLIENT_UNKNOWN;
 
+	const ERROR_TD_INVALID_SERVER_ROLE = ERROR_TD_INVALID_SERVER_ROLE;
+
 	const ERROR_TD_RECONNECTED = ERROR_TD_RECONNECTED;
+
+	const ERROR_TD_RECONNECTED_OFFSET = ERROR_TD_RECONNECTED_OFFSET;
+
+	const MYSQL_ERROR_OFFSET = MYSQL_ERROR_OFFSET;
 
 	const TRANSACTD_SCHEMANAME = TRANSACTD_SCHEMANAME;
 
@@ -440,6 +446,16 @@ abstract class transactd {
 	const TD_BACKUP_MODE_SERVER_ERROR = TD_BACKUP_MODE_SERVER_ERROR;
 
 	const DFV_TIMESTAMP_DEFAULT = DFV_TIMESTAMP_DEFAULT;
+
+	const HA_ROLE_SLAVE = HA_ROLE_SLAVE;
+
+	const HA_ROLE_MASTER = HA_ROLE_MASTER;
+
+	const HA_ROLE_NONE = HA_ROLE_NONE;
+
+	const HA_RESTORE_ROLE = HA_RESTORE_ROLE;
+
+	const HA_ENABLE_FAILOVER = HA_ENABLE_FAILOVER;
 
 	const CPP_INTERFACE_VER_MAJOR = CPP_INTERFACE_VER_MAJOR;
 
@@ -1446,6 +1462,7 @@ class connRecord {
 	protected $_pData=array();
 
 	function __set($var,$value) {
+		if ($var === "port") $var = "db";
 		$func = 'connRecord_'.$var.'_set';
 		if (function_exists($func)) return call_user_func($func,$this->_cPtr,$value);
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
@@ -1453,6 +1470,7 @@ class connRecord {
 	}
 
 	function __get($var) {
+		if ($var === "port") $var = "db";
 		$func = 'connRecord_'.$var.'_get';
 		if (function_exists($func)) return call_user_func($func,$this->_cPtr);
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
@@ -1460,6 +1478,7 @@ class connRecord {
 	}
 
 	function __isset($var) {
+		if ($var === "port") $var = "db";
 		if (function_exists('connRecord_'.$var.'_get')) return true;
 		if ($var === 'thisown') return true;
 		return array_key_exists($var, $this->_pData);
@@ -1628,8 +1647,11 @@ class connMgr {
 		return $r;
 	}
 
-	function slaveStatus() {
-		$r=connMgr_slaveStatus($this->_cPtr);
+	function slaveStatus($channel=null) {
+		switch (func_num_args()) {
+		case 0: $r=connMgr_slaveStatus($this->_cPtr); break;
+		default: $r=connMgr_slaveStatus($this->_cPtr,$channel);
+		}
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
@@ -1650,6 +1672,36 @@ class connMgr {
 
 	function statusvars() {
 		$r=connMgr_statusvars($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+	
+	function channels($withLock=false) {
+		$r=connMgr_channels($this->_cPtr,$withLock);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function slaveHosts() {
+		$r=connMgr_slaveHosts($this->_cPtr);
+		if (is_resource($r)) {
+			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
+			if (class_exists($c)) return new $c($r);
+			return new connRecords($r);
+		}
+		return $r;
+	}
+
+	function extendedvars() {
+		$r=connMgr_extendedvars($this->_cPtr);
 		if (is_resource($r)) {
 			$c=substr(get_resource_type($r), (strpos(get_resource_type($r), '__') ? strpos(get_resource_type($r), '__') + 2 : 3));
 			if (class_exists($c)) return new $c($r);
@@ -1695,6 +1747,26 @@ class connMgr {
 	function postDisconnectAll() {
 		connMgr_postDisconnectAll($this->_cPtr);
 	}
+	
+	function haLock() {
+		return connMgr_haLock($this->_cPtr);
+	}
+
+	function haUnlock() {
+		connMgr_haUnlock($this->_cPtr);
+	}
+
+	function setRole($v) {
+		return connMgr_setRole($this->_cPtr,$v);
+	}
+
+	function setTrxBlock($v) {
+		return connMgr_setTrxBlock($this->_cPtr,$v);
+	}
+
+	function setEnableFailover($v) {
+		return connMgr_setEnableFailover($this->_cPtr,$v);
+	}
 
 	function stat() {
 		return connMgr_stat($this->_cPtr);
@@ -1708,6 +1780,10 @@ class connMgr {
 			return new database($r);
 		}
 		return $r;
+	}
+	
+	function isOpen() {
+		return connMgr_isOpen($this->_cPtr);
 	}
 
 	function slaveStatusName($index) {
@@ -1725,6 +1801,11 @@ class connMgr {
 	static function statusvarName($index) {
 		return connMgr_statusvarName($index);
 	}
+
+ 	static function extendedVarName($index) {
+		return connMgr_extendedVarName($index);
+	}
+
 }
 
 class dbdef {
@@ -2411,6 +2492,11 @@ class binlogPos {
 	public $_cPtr=null;
 	protected $_pData=array();
 
+	function __set($var,$value) {
+		$func = 'binlogPos_'.$var.'_set';
+		if (function_exists($func)) return call_user_func($func,$this->_cPtr,$value);
+	}
+
 	function __get($var) {
 		if ($var === 'type') return binlogPos_type_get($this->_cPtr);
 		if ($var === 'pos') return binlogPos_pos_get($this->_cPtr);
@@ -2615,6 +2701,14 @@ class nsdatabase {
 
 	static function execCodePage() {
 		return nsdatabase_execCodePage();
+	}
+
+	static function enableAutoReconnect() {
+		return nsdatabase_enableAutoReconnect();
+	}
+
+	static function setEnableAutoReconnect($v) {
+		nsdatabase_setEnableAutoReconnect($v);
 	}
 
 	static function setCheckTablePtr($v) {
@@ -4734,4 +4828,32 @@ class pooledDbManager {
 		return pooledDbManager_usingCount($this->_cPtr);
 	}
 }
+
+class haNameResolver {
+
+	static function start($master,$slaves,$slaveHostsWithPort,$slaveNum,$userName,$password,$option=0) {
+		return haNameResolver_start($master,$slaves,$slaveHostsWithPort,$slaveNum,$userName,$password,$option);
+	}
+
+	static function addPortMap($mysqlPort,$transactdPort) {
+		haNameResolver_addPortMap($mysqlPort,$transactdPort);
+	}
+
+	static function clearPortMap() {
+		haNameResolver_clearPortMap();
+	}
+
+	static function stop() {
+		haNameResolver_stop();
+	}
+
+	static function master() {
+		return haNameResolver_master();
+	}
+
+	static function slave() {
+		return haNameResolver_slave();
+	}
+}
+
 ?>

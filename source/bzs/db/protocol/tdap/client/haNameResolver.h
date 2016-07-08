@@ -44,6 +44,11 @@ namespace client
 
 class DLLLIB haNameResolver
 {
+private:
+    haNameResolver();
+    haNameResolver(const haNameResolver&);
+    ~haNameResolver();
+    haNameResolver& operator=(const haNameResolver&);
 public:
 
     /* The slaves and the slaveHostsWithPort can be specified comma separated names. */

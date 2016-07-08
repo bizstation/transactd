@@ -96,6 +96,7 @@ validatablePointerList g_vPtrList;
 #include <bzs/db/protocol/tdap/client/activeTable.h>
 #include <bzs/db/protocol/tdap/client/groupQuery.h>
 #include <bzs/db/protocol/tdap/client/pooledDatabaseManager.h>
+#include <bzs/db/protocol/tdap/client/haNameResolver.h>
 
 using namespace bzs::db::protocol::tdap;
 using namespace bzs::db::protocol::tdap::client;
@@ -339,9 +340,9 @@ using namespace bzs::db::protocol::tdap::client;
     *p = self->schemaTables(dbname);
     return p;
   }
-  const bzs::db::protocol::tdap::client::connMgr::records* slaveStatus() {
+  const bzs::db::protocol::tdap::client::connMgr::records* slaveStatus(const char* channel=0) {
     bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
-    *p = self->slaveStatus();
+    *p = self->slaveStatus(channel);
     return p;
   }
   const bzs::db::protocol::tdap::client::connMgr::records* sysvars() {
@@ -384,7 +385,7 @@ using namespace bzs::db::protocol::tdap::client;
     bzs::db::protocol::tdap::client::releaseConnMgr(self);
   }
 };
-%ignore bzs::db::protocol::tdap::client::ConnMgr::create;
+%ignore bzs::db::protocol::tdap::client::connMgr::create;
 %ignore bzs::db::protocol::tdap::client::createConnMgr;
 %ignore bzs::db::protocol::tdap::client::releaseConnMgr;
 
@@ -688,8 +689,10 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::getBtrvEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::setBtrvEntryPoint;
 %ignore bzs::db::protocol::tdap::client::nsdatabase::tdapErr;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::registerHaNameResolver;
+%ignore bzs::db::protocol::tdap::client::nsdatabase::getWinTPoolShutdownFunc;
 %ignore bzs::db::protocol::tdap::client::reconnectSharedConnection;
-
+%ignore bzs::db::protocol::tdap::client::binlogPos::setGtid; // replace to gtid get/set
 %extend bzs::db::protocol::tdap::client::nsdatabase {
   binlogPos* beginSnapshot(short bias=CONSISTENT_READ) {
     binlogPos* bpos = new binlogPos();
@@ -1117,17 +1120,38 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore TD_VAR_HSLISTENPORT;
 %ignore TD_VAR_USEHS;
 %ignore TD_VAR_TIMESTAMPMODE;
+%ignore TD_VAR_STARTUP_HA;
 %ignore TD_VAR_SIZE;
+%ignore TD_SVAR_TCP_CONNECTIONS;
+%ignore TD_SVAR_TCP_WAIT_THREADS;
+%ignore TD_SVAR_TPOOL_CONNECTIONS;
+%ignore TD_SVAR_TPOOL_WAIT_THREADS;
+%ignore TD_SVAR_PIPE_CONNECTIONS;
+%ignore TD_SVAR_PIPE_WAIT_THREADS;
+%ignore TD_SVAR_OPEN_DBS;
+%ignore TD_SVAR_HA;
+%ignore TD_SVAR_SIZE;
+%ignore TD_EXTENDED_VAR_MYSQL_GTID_MODE;
+%ignore TD_EXTENDED_VAR_BINLOG_FILE;
+%ignore TD_EXTENDED_VAR_BINLOG_POS;
+%ignore TD_EXTENDED_VAR_BINLOG_GTID;
+%ignore TD_EXTENDED_VAR_SIZE;
+%ignore TD_CLINET_LOGNAME;
 %ignore ft_mytime_num_cmp;
 %ignore ft_mydatetime_num_cmp;
 %ignore ft_mytimestamp_num_cmp;
 %ignore DFV_TIMESTAMP_DEFAULT_ASTR;
 %ignore DFV_TIMESTAMP_DEFAULT_WSTR;
+%ignore VER_ST_SIZE;
+%ignore HST_OPTION_ROLE_MASTER;
+%ignore HST_OPTION_ROLE_SLAVE;
+%ignore HST_OPTION_CLEAR_CACHE;
+%ignore CL_OPTION_CHECK_ROLE;
 %constant unsigned char MYSQL_TYPE_MYSQL = 77;
 %constant unsigned char MYSQL_TYPE_MARIA = 65;
 %ignore MYSQL_TYPE_MYSQL;
 %ignore MYSQL_TYPE_MARIA;
-
+%ignore canRecoverNetError;
 
 // * bzs/db/protocol/tdap/tdapSchema.h *
 %ignore DLLUNLOADCALLBACK_PTR;
@@ -1266,6 +1290,8 @@ using namespace bzs::db::protocol::tdap::client;
 // * bzs/db/transactd/connectionRecord.h
 %ignore bzs::db::transactd::connection::record::dummy;
 %ignore bzs::db::transactd::connection::record::status;
+%ignore bzs::db::transactd::connection::record::value_ptr;
+%ignore bzs::db::transactd::connection::record::reset;
 %rename(connRecord) bzs::db::transactd::connection::record;
 %rename(connRecords) bzs::db::transactd::connection::records;
 
@@ -1420,6 +1446,7 @@ using namespace bzs::db::protocol::tdap::client;
 %include bzs/db/protocol/tdap/client/recordset.h
 %include bzs/db/protocol/tdap/client/activeTable.h
 %include bzs/db/protocol/tdap/client/pooledDatabaseManager.h
+%include bzs/db/protocol/tdap/client/haNameResolver.h
 
 
 /* ===============================================

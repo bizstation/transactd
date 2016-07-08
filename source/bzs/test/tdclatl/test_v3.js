@@ -819,6 +819,9 @@ function testConnMgr(uri)
 
 	//enableAutoReconnect
 	checkEqual(db.enableAutoReconnect, false,  "db.enableAutoReconnect");
+	db.enableAutoReconnect = true;
+	checkEqual(db.enableAutoReconnect, true,  "db.enableAutoReconnect2");
+	db.enableAutoReconnect = false;
 	mgr.disconnect();
 	checkEqual(mgr.stat , 0,  "mgr.disconnect");
 	checkEqual(mgr.isOpen , false,  "mgr.isOpen");
