@@ -493,6 +493,7 @@ inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet
 #define cp_get_executed_gtids get_executed_gtids
 extern MYSQL_PLUGIN_IMPORT my_bool opt_show_slave_auth_info;
 
+#define STATUS_VAR_SCOPE ,SHOW_SCOPE_GLOBAL
 #else //Not MySQL 5.7
 
 #define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
@@ -634,6 +635,7 @@ inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet
 
 #endif // Not MARIADB_10_1 || MARIADB_10_0
 
+#define STATUS_VAR_SCOPE 
 #endif // Not MySQL 5.7
 
 

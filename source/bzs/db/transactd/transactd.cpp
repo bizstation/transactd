@@ -369,17 +369,17 @@ const unsigned int* get_trd_status_var(int index)
 /** show status struct.
  */
 static st_mysql_show_var g_statusVariables[] = {
-    { "trnsctd_tcp_connections", (char*)&cpt::g_connections, SHOW_INT },
-    { "trnsctd_tcp_wait_threads", (char*)&cpt::g_waitThread, SHOW_INT },
-    { "trnsctd_tpool_connections", (char*)&tpool::g_connections, SHOW_INT },
-    { "trnsctd_tpool_threads", (char*)&tpool::server::m_threadPoolSize, SHOW_INT },
-    { "trnsctd_ha", (char*)&g_ha, SHOW_INT },
+    { "Transactd_tcp_connections", (char*)&cpt::g_connections, SHOW_INT STATUS_VAR_SCOPE },
+    { "Transactd_tcp_wait_threads", (char*)&cpt::g_waitThread, SHOW_INT },
+    { "Transactd_tpool_connections", (char*)&tpool::g_connections, SHOW_INT STATUS_VAR_SCOPE },
+    { "Transactd_tpool_threads", (char*)&tpool::server::m_threadPoolSize, SHOW_INT STATUS_VAR_SCOPE },
+    { "Transactd_ha", (char*)&g_ha, SHOW_INT STATUS_VAR_SCOPE },
 
 #ifdef PIPE_SERVER
-    { "trnsctd_pipe_connections", (char*)&pipe::g_connections, SHOW_INT },
-    { "trnsctd_pipe_wait_threads", (char*)&pipe::g_waitThread, SHOW_INT },
+    { "Transactd_pipe_connections", (char*)&pipe::g_connections, SHOW_INT STATUS_VAR_SCOPE },
+    { "Transactd_pipe_wait_threads", (char*)&pipe::g_waitThread, SHOW_INT STATUS_VAR_SCOPE },
 #endif
-    { "trnsctd_cur_open_databases", (char*)&g_openDatabases, SHOW_INT },
+    { "Transactd_cur_open_databases", (char*)&g_openDatabases, SHOW_INT STATUS_VAR_SCOPE },
     { NULL, NULL, (enum_mysql_show_type)0 }
 };
 

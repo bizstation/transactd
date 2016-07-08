@@ -134,14 +134,14 @@ public:
     bool setEnableFailover(bool v);
     short_td stat();
     database* db() const;
-    const _TCHAR* slaveStatusName(uint_td index) const;
+    const _TCHAR* slaveStatusName(uint_td id) const;
     using nstable::tdapErr;
     using nstable::release;
     using nstable::isOpen;
     static void removeSystemDb(records& recs);
-    static const _TCHAR* sysvarName(uint_td index);
-    static const _TCHAR* statusvarName(uint_td index);
-    static const _TCHAR* extendedVarName(uint_td index);
+    static const _TCHAR* sysvarName(uint_td id);
+    static const _TCHAR* statusvarName(uint_td id);
+    static const _TCHAR* extendedVarName(uint_td id);
     static connMgr* create(database* db);
 };
 

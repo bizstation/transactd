@@ -587,44 +587,44 @@ void connMgr::removeSystemDb(connMgr::records& recs)
     }
 }
 
-const _TCHAR* connMgr::sysvarName(uint_td index)
+const _TCHAR* connMgr::sysvarName(uint_td id)
 {
-    if (index < TD_VAR_SIZE)
-        return SYSVAR_NAME[index];
+    if (id < TD_VAR_SIZE)
+        return SYSVAR_NAME[id];
     return _T("");
 }
 
-const _TCHAR* connMgr::statusvarName(uint_td index)
+const _TCHAR* connMgr::statusvarName(uint_td id)
 {
-    if (index < TD_SVAR_SIZE)
-        return STATUSVAR_NAME[index];
+    if (id < TD_SVAR_SIZE)
+        return STATUSVAR_NAME[id];
     return _T("");
 }
 
-const _TCHAR* slaveStatusName1(uint_td index)
+const _TCHAR* slaveStatusName1(uint_td id)
 {
-    if (index < SLAVE_STATUS_DEFAULT_SIZE)
-        return SLAVE_STATUS_NAME[index];
+    if (id < SLAVE_STATUS_DEFAULT_SIZE)
+        return SLAVE_STATUS_NAME[id];
     return _T("");
 }
 
-const _TCHAR* connMgr::slaveStatusName(uint_td index) const
+const _TCHAR* connMgr::slaveStatusName(uint_td id) const
 {
     bool mariadb = m_serverVer.isMariaDB();
-    if (index < SLAVE_STATUS_DEFAULT_SIZE)
-        return slaveStatusName1(index);
-    index -= SLAVE_STATUS_DEFAULT_SIZE;
-    if(mariadb &&  (index < SLAVE_STATUS_EX_MA_SIZE))
-        return SLAVE_STATUS_NAME_EX_MA[index];
-    else if(!mariadb &&  (index < SLAVE_STATUS_EX_SIZE))
-        return SLAVE_STATUS_NAME_EX[index];
+    if (id < SLAVE_STATUS_DEFAULT_SIZE)
+        return slaveStatusName1(id);
+    id -= SLAVE_STATUS_DEFAULT_SIZE;
+    if(mariadb &&  (id < SLAVE_STATUS_EX_MA_SIZE))
+        return SLAVE_STATUS_NAME_EX_MA[id];
+    else if(!mariadb &&  (id < SLAVE_STATUS_EX_SIZE))
+        return SLAVE_STATUS_NAME_EX[id];
     return _T("");
 }
 
-const _TCHAR* connMgr::extendedVarName(uint_td index)
+const _TCHAR* connMgr::extendedVarName(uint_td id)
 {
-    if (index < TD_EXTENDED_VAR_SIZE)
-        return EXTENDED_VAR_NAME[index];
+    if (id < TD_EXTENDED_VAR_SIZE)
+        return EXTENDED_VAR_NAME[id];
     return _T("");
 }
 

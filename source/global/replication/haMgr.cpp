@@ -152,13 +152,14 @@ int getCommandLineOption(int argc, _TCHAR* argv[], failOverParam& pm, int& cmd, 
         ("repl_port,P", value<std::string>(&pm.newMaster.repPort), "new master port")
         ("repl_user,r", value<std::string>(&pm.newMaster.repUser), "new master repl user ")
         ("repl_passwd,d", value<std::string>(&pm.newMaster.repPasswd), "new master repl password ")
+        ("repl_option,O", value<std::string>(&pm.newMaster.repOption),  "option params for change master(ex: MASTER_CONNECT_RETRY=30)")
         ("slaves,s", value<std::string>(&slaves), "slave list for failover")
         ("portmap,a", value<std::string>(&pm.portMap), "port map ex:3307:8611")
         ("value,v", value<int>(&v), "value (For set_failover_enable or set_server_role)")
         ("username,u", value<std::string>(&user), "transactd username")
         ("password,p", value<std::string>(&pwd),  "transactd password")
-        ("readonly,R", value<bool>(&readonly),  "old master set to readonly")
-        ("disable_demote,D", value<bool>(&disable_demote),  "disable old master demote");
+        ("readonly,R", value<bool>(&readonly),  "0 | 1: When it is 1, the READONLY variable will be set ON to slaves and OFF to a master")
+        ("disable_demote,D", value<bool>(&disable_demote),  "0 | 1: disable old master demote");
     variables_map values;
     store(parse_command_line(argc, argv, opt), values);
     notify(values);
@@ -218,22 +219,21 @@ void printMessage(const wchar_t* msg, const wchar_t* msg2=_T(""))
 
 /* Command line paramater 
 command line option:
-  -c [ --command ] arg        command [switchover | failover | demote_to_slave
-                              | set_failover_enable | set_server_role]
-  -o [ --cur_master ] arg     current master host name
-  -n [ --new_master ] arg     new master host name
-  -C [ --channel ] arg        new master channel name
-  -P [ --repl_port ] arg      new master port
-  -r [ --repl_user ] arg      new master repl user
-  -d [ --repl_passwd ] arg    new master repl password
-  -s [ --slaves ] arg         slave list for failover
-  -a [ --portmap ] arg        port map ex:3307:8611
-  -v [ --value ] arg          value (For set_failover_enable or
-                              set_server_role)
-  -u [ --username ] arg       transactd username
-  -p [ --password ] arg       transactd password
-  -R [ --readonly ] arg       old master set to readonly
-  -D [ --disable_demote ] arg disable old master  demote
+  -c [ --command ]         command [switchover | failover | demote_to_slave | set_failover_enable | set_server_role | health_check]
+  -o [ --cur_master ]      current master host name
+  -n [ --new_master ]      new master host name
+  -C [ --channel ]         new master channel name
+  -P [ --repl_port ]       new master port
+  -r [ --repl_user ]       new master repl user
+  -d [ --repl_passwd ]     new master repl password
+  -O [ --repl_option ]     option params for change master(ex:MASTER_CONNECT_RETRY=30)
+  -s [ --slaves ]          slave list for failover
+  -a [ --portmap ]         port map ex:3307:8611
+  -v [ --value ]           value (For set_failover_enable or set_server_role)
+  -u [ --username ]        transactd username
+  -p [ --password ]        transactd password
+  -R [ --readonly ]        0 | 1: When it is 1, the READONLY variable will be set ON to slaves and OFF to a master
+  -D [ --disable_demote ]  0 | 1: disable old master demote
 
 example:
 haMgr64 -c switchover -o localhost -n localhost:8611 -P 3307 -r replication_user -d xxxx -u root -p xxxx 
@@ -300,6 +300,7 @@ int _tmain(int argc, _TCHAR* argv[])
                 else
                     sprintf_s(tmp, 256, "No errors detected.");
                 cout << endl << "  *** " << tmp << endl << endl;
+                ret = errors;
                 break;
             }
             printMessage("Done!");
@@ -308,10 +309,12 @@ int _tmain(int argc, _TCHAR* argv[])
     catch (bzs::rtl::exception& e)
     {
         printMessage(_T("Error! "), getMsg(e)->c_str());
+        ret = 1;
     }
     catch (std::exception& e)
     {
         printMessage("Error! ", e.what());
+        ret = 1;
     }
     return ret;
 }

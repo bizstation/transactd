@@ -1807,11 +1807,11 @@ interface IConnRecord : IDispatch{
     HRESULT _stdcall ConId([out, retval] BSTR* retVal);
 #endif
     [propget, id(0x0000002)]
-    HRESULT _stdcall Id([out, retval] int* retVal); //unsigned int value_id;
+    HRESULT _stdcall Id([out, retval] int* retVal);
     [propget, id(0x0000003)]
-    HRESULT _stdcall Db([out, retval] short* retVal);
+    HRESULT _stdcall Db([out, retval] int* retVal);
     [propget, id(0x0000004)]
-    HRESULT _stdcall Type([out, retval] short* retVal); //trnType
+    HRESULT _stdcall Type([out, retval] int* retVal);
     [propget, id(0x0000005)]
     HRESULT _stdcall Name([out, retval] BSTR* retVal); 
     [propget, id(0x0000006)]
@@ -1828,6 +1828,9 @@ interface IConnRecord : IDispatch{
     HRESULT _stdcall InsCount([out, retval] int* retVal); 
     [propget, id(0x000000C)]
     HRESULT _stdcall LongValue([out, retval] BSTR* retVal); 
+    [propget, id(0x000000D)]
+    HRESULT _stdcall Port([out, retval] int* retVal);
+
 }
 
 [

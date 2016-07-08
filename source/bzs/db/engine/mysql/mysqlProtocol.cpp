@@ -327,7 +327,10 @@ protected:
     connection::record& getRec()
     {
         m_records.push_back(connection::record());
-        return m_records[m_records.size() - 1];
+        size_t id = m_records.size() - 1;
+        connection::record& rec = m_records[id];
+        rec.id = (unsigned int)id;
+        return rec;
     }
 public:
     inline slaveStatus(THD *thd_arg, connection::records& recs, bzs::db::IblobBuffer* bb) : 
