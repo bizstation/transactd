@@ -57,7 +57,11 @@ endif()
 # ==========================================================
 if (MSVC)
   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
+else()
+  cmake_policy(SET CMP0015 OLD)
+  link_directories(../tdclcpp)
 endif()
+
 
 # ==========================================================
 # source files

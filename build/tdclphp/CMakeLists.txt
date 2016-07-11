@@ -89,9 +89,10 @@ file(TO_CMAKE_PATH "${TRANSACTD_PHP_LIBRARY_PATH}" TRANSACTD_PHP_LIBRARY_PATH)
 # add library path
 # ==========================================================
 if (MSVC)
-   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
+  link_directories("${TRANSACTD_BINARY_ROOT}/lib")
 else()
-   link_directories("../tdclcpp")
+  cmake_policy(SET CMP0015 OLD)
+  link_directories(../tdclcpp)
 endif()
 
 # ==========================================================

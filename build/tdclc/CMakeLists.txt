@@ -57,17 +57,14 @@ endif()
 set(${this_target}_SOURCE_FILES
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/tdapSchema.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/client.cpp
-  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/dllmain.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/sqlBuilder.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/mysql/characterset.cpp
   ${TRANSACTD_ROOT}/source/bzs/netsvc/client/tcpClient.cpp
   ${TRANSACTD_ROOT}/source/bzs/rtl/stl_uty.cpp
+  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
+  ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/dllmain.cpp
 )
-if(MSVC)
-  set(${this_target}_SOURCE_FILES ${${this_target}_SOURCE_FILES}
-    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/myDateTime.cpp
-  )
-endif()
+
 if(APPLE)
   set(${this_target}_SOURCE_FILES ${${this_target}_SOURCE_FILES}
     ${TRANSACTD_ROOT}/source/bzs/env/crosscompile.cpp

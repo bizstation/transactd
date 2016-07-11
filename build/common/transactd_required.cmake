@@ -26,3 +26,8 @@ if(WIN32)
   endif()
   include(CMakeParseArguments)
 endif()
+
+# set policies
+if (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} GREATER 3.0)
+  cmake_policy(SET CMP0054 NEW)
+endif()
