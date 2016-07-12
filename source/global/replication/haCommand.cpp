@@ -68,7 +68,7 @@ inline void notify(haNotify* nf, int status, binlogPos& bpos)
     if (nf)
     {
         char buf[2048];
-        sprintf_s(buf, 1024, "%s:%u %s",bpos.filename, bpos.pos, bpos.gtid);
+        sprintf_s(buf, 1024, "%s:%llu %s",bpos.filename, bpos.pos, bpos.gtid);
         notify(nf, status, buf);
     }
 }
@@ -764,7 +764,7 @@ int healthCheck(const failOverParam& pm, haNotify* nf)
         {
             _TCHAR tmp[256];
             _stprintf_s(tmp, 256 ,_T("slaves count(%u) not equal real slave count(%u)"),
-                    slaves_param.size(), slaves_tmp.size());
+                    (unsigned int)slaves_param.size(), (unsigned int)slaves_tmp.size());
             notify(nf, HA_NF_BLANK, tmp);
             ++ret;
         }
