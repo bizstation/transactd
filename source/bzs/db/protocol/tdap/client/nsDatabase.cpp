@@ -986,12 +986,13 @@ bool reconnectSharedConnection(const void* ptr)
     boost::mutex::scoped_lock lck(g_mutex);
     for (int i = 0; i < MAX_BTRENGIN; ++i)
     {
-        if (engins()[i])
+        nsdatabase* db = engins()[i];
+        if (db)
         {
-            void* p = (*((void**)engins()[i]->m_nsimpl->cidPtr));
+            uchar_td* p = db->m_nsimpl->cidPtr;
             if (p == ptr)
             {
-                if (!engins()[i]->doReopenTables())
+                if (!db->doReopenTables())
                     return false;
             }
         }
@@ -1004,9 +1005,22 @@ bool nsdatabase::reconnect()
     //Transactd only
     if (!isUseTransactd())
         return false;
-    if (m_nsimpl->tranCount || m_nsimpl->snapShotCount) 
+    if (m_nsimpl->tranCount || m_nsimpl->snapShotCount)
         return false;
-    
+    //check another databases has transactions
+    {
+        boost::mutex::scoped_lock lck(g_mutex);
+        for (int i = 0; i < MAX_BTRENGIN; ++i)
+        {
+            nsdatabase* db = engins()[i];
+            if (db && (db->m_nsimpl->tranCount || db->m_nsimpl->snapShotCount))
+            {
+                if (db->m_nsimpl->cidPtr == m_nsimpl->cidPtr)
+                    return false; // This is same thread
+            }
+        }
+    }
+
     uint_td datalen = 0;
     char uri_a[MAX_PATH] = { 0x00 };
     const char* p = toServerUri(uri_a, MAX_PATH, m_nsimpl->bdfPath, true);

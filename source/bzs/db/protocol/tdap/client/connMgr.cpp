@@ -304,7 +304,7 @@ void connMgr::disconnect()
 {
     if (m_uri != _T(""))
     {
-        m_db->disconnect(m_uri.c_str());
+        m_db->disconnect();
         m_stat = m_db->stat();
         if (m_stat == 0)
         {
@@ -563,11 +563,6 @@ bool connMgr::setEnableFailover(bool v)
     m_datalen = 0;
     tdap(TD_STASTISTICS);
     return stat() == 0;
-}
-
-short_td connMgr::stat()
-{
-    return m_stat;
 }
 
 connMgr* connMgr::create(database* db)

@@ -132,9 +132,9 @@ public:
     bool setRole(int v);
     bool setTrxBlock(bool v);
     bool setEnableFailover(bool v);
-    short_td stat();
     database* db() const;
     const _TCHAR* slaveStatusName(uint_td id) const;
+    using nstable::stat;
     using nstable::tdapErr;
     using nstable::release;
     using nstable::isOpen;
