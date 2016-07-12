@@ -23,15 +23,13 @@
 #include <boost/scoped_ptr.hpp>
 #include "haNameResolver.h"
 #include <bzs/env/compiler.h>
-#include <bzs/env/crosscompile.h>
-#include <bzs/env/tstring.h>
 #include <vector>
 #include <string>
 #include <algorithm>
 #include "nsDatabase.h"
 #include "database.h"
 #include "connMgr.h"
-#ifdef WIN32
+#ifdef _WIN32
 #include <Shlobj.h>
 #include <direct.h>
 #endif
@@ -403,7 +401,6 @@ int haNameResolver::start(const char* master, const char* slaves,
                 cache_slave == "-" &&
                 option & THNR_OPT_MASTER_CAN_CONCUR_SLAVE)
             cache_slave = cache_master;
-            
     }
     return ret;
 }
