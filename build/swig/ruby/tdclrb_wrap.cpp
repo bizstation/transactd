@@ -12283,6 +12283,59 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_connRecord_port_set(int argc, VALUE *argv, VALUE self) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  unsigned int arg2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int val2 ;
+  int ecode2 = 0 ;
+  
+  if ((argc < 1) || (argc > 1)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__transactd__connection__record, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::transactd::connection::record *","port", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::transactd::connection::record * >(argp1);
+  ecode2 = SWIG_AsVal_unsigned_SS_int(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "unsigned int","port", 2, argv[0] ));
+  } 
+  arg2 = static_cast< unsigned int >(val2);
+  if (arg1) (arg1)->port = arg2;
+  return Qnil;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_connRecord_port_get(int argc, VALUE *argv, VALUE self) {
+  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  unsigned int result;
+  VALUE vresult = Qnil;
+  
+  if ((argc < 0) || (argc > 0)) {
+    rb_raise(rb_eArgError, "wrong # of arguments(%d for 0)",argc); SWIG_fail;
+  }
+  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__transactd__connection__record, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::transactd::connection::record *","port", 1, self )); 
+  }
+  arg1 = reinterpret_cast< bzs::db::transactd::connection::record * >(argp1);
+  result = (unsigned int) ((arg1)->port);
+  vresult = SWIG_From_unsigned_SS_int(static_cast< unsigned int >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_connRecord_value_get(int argc, VALUE *argv, VALUE self) {
   bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
   void *argp1 = 0 ;
@@ -39194,6 +39247,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassConnRecord.klass, "openReadOnly", VALUEFUNC(_wrap_connRecord_openReadOnly_get), -1);
   rb_define_method(SwigClassConnRecord.klass, "openEx", VALUEFUNC(_wrap_connRecord_openEx_get), -1);
   rb_define_method(SwigClassConnRecord.klass, "openReadOnlyEx", VALUEFUNC(_wrap_connRecord_openReadOnlyEx_get), -1);
+  rb_define_method(SwigClassConnRecord.klass, "port=", VALUEFUNC(_wrap_connRecord_port_set), -1);
+  rb_define_method(SwigClassConnRecord.klass, "port", VALUEFUNC(_wrap_connRecord_port_get), -1);
   SwigClassConnRecord.mark = 0;
   SwigClassConnRecord.destroy = (void (*)(void *)) free_bzs_db_transactd_connection_record;
   SwigClassConnRecord.trackObjects = 0;
