@@ -23,6 +23,7 @@
 #include <bzs/db/protocol/tdap/tdapSchema.h>
 #include <bzs/rtl/exception.h>
 #include "export.h"
+#include <limits.h>
 
 namespace bzs
 {
