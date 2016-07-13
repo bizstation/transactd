@@ -1515,6 +1515,21 @@ SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_proto
     *p = self->inUseTables(connid, dbid);
     return p;
   }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_channels(bzs::db::protocol::tdap::client::connMgr *self,bool withLock){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->channels(withLock);
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_slaveHosts(bzs::db::protocol::tdap::client::connMgr *self){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->slaveHosts();
+    return p;
+  }
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_extendedvars(bzs::db::protocol::tdap::client::connMgr *self){
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->extendedvars();
+    return p;
+  }
 SWIGINTERN void delete_bzs_db_protocol_tdap_client_connMgr(bzs::db::protocol::tdap::client::connMgr *self){
     bzs::db::protocol::tdap::client::releaseConnMgr(self);
   }
@@ -11924,7 +11939,7 @@ ZEND_NAMED_FUNCTION(_wrap_connMgr_channels) {
 
 	{
 		try {
-			result = (bzs::db::protocol::tdap::client::connMgr::records *) &(arg1)->channels(arg2);
+			result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_channels(arg1, arg2);
 		}
 		catch (bzs::rtl::exception& e) {
 			SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
@@ -11960,7 +11975,7 @@ ZEND_NAMED_FUNCTION(_wrap_connMgr_slaveHosts) {
 	if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
 	{
 		try {
-			result = (bzs::db::protocol::tdap::client::connMgr::records *) &(arg1)->slaveHosts();
+			result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_slaveHosts(arg1);
 		}
 		catch (bzs::rtl::exception& e) {
 			SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
@@ -11997,7 +12012,7 @@ ZEND_NAMED_FUNCTION(_wrap_connMgr_extendedvars) {
 	if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
 	{
 		try {
-			result = (bzs::db::protocol::tdap::client::connMgr::records *) &(arg1)->extendedvars();
+			result = (bzs::db::protocol::tdap::client::connMgr::records *)bzs_db_protocol_tdap_client_connMgr_extendedvars(arg1);
 		}
 		catch (bzs::rtl::exception& e) {
 			SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
