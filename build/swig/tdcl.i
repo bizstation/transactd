@@ -365,6 +365,26 @@ using namespace bzs::db::protocol::tdap::client;
     *p = self->inUseTables(connid, dbid);
     return p;
   }
+  const bzs::db::protocol::tdap::client::connMgr::records* channels(bool withLock=false) {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->channels(withLock);
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* slaveHosts() {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->slaveHosts();
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* extendedvars() {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->extendedvars();
+    return p;
+  }
+  const bzs::db::protocol::tdap::client::connMgr::records* statusvars() {
+    bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
+    *p = self->statusvars();
+    return p;
+  }
 }
 %ignore bzs::db::protocol::tdap::client::connMgr::databases;
 %ignore bzs::db::protocol::tdap::client::connMgr::tables;
@@ -375,6 +395,10 @@ using namespace bzs::db::protocol::tdap::client;
 %ignore bzs::db::protocol::tdap::client::connMgr::connections;
 %ignore bzs::db::protocol::tdap::client::connMgr::inUseDatabases;
 %ignore bzs::db::protocol::tdap::client::connMgr::inUseTables;
+%ignore bzs::db::protocol::tdap::client::connMgr::channels;
+%ignore bzs::db::protocol::tdap::client::connMgr::slaveHosts;
+%ignore bzs::db::protocol::tdap::client::connMgr::extendedvars;
+%ignore bzs::db::protocol::tdap::client::connMgr::statusvars;
   // create and release methods for connMgr class
 %newobject bzs::db::protocol::tdap::client::connMgr::connMgr;
 %extend bzs::db::protocol::tdap::client::connMgr {
