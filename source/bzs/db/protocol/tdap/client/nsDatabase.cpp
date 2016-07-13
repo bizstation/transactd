@@ -989,7 +989,7 @@ bool reconnectSharedConnection(const void* ptr)
         nsdatabase* db = engins()[i];
         if (db)
         {
-            uchar_td* p = db->m_nsimpl->cidPtr;
+            void* p = (*((void**)db->m_nsimpl->cidPtr));
             if (p == ptr)
             {
                 if (!db->doReopenTables())

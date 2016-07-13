@@ -193,7 +193,7 @@ public:
         return retbuf;
     }
 
-    void beginBulkInsert(int maxBuflen);
+    void beginBulkInsert(int maxBuflen=BULKBUFSIZE);
     void abortBulkInsert() { doAbortBulkInsert(); }
     inline ushort_td commitBulkInsert(bool autoCommit = false)
     {

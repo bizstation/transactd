@@ -688,16 +688,24 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
     int ret = 1;
     m_tb = getTable(req.pbk->handle);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-    if (!m_tb->setKeyNum(keynum))
+    if (keynum == -1 && (op == TD_KEY_GE_NEXT_MULTI))
     {
-        req.result = m_tb->stat();
-        return ret;
+        m_tb->setNonKey(true);
+        op = TD_POS_NEXT_MULTI;
     }
+    else
+    {
+        if (!m_tb->setKeyNum(keynum))
+        {
+            req.result = m_tb->stat();
+            return ret;
+        }
 
-    m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
-    m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
-                                                : HA_READ_KEY_OR_PREV,
-                    m_tb->keymap());
+        m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
+        m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
+                                                    : HA_READ_KEY_OR_PREV,
+                        m_tb->keymap());
+    }
 
     extRequest* ereq = (extRequest*)req.data;
     bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
@@ -717,7 +725,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
         }
         else
             req.result = m_readHandler->begin(m_tb, ereq, true, nw,
-                                            (op == TD_KEY_GE_NEXT_MULTI),
+                                            (op == TD_KEY_GE_NEXT_MULTI || op == HA_READ_KEY_OR_NEXT),
                                             noBookmark);
         if (req.result != 0)
             return ret;
@@ -727,6 +735,10 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
                 m_tb->getNextExt(m_readHandler, true, noBookmark);
             else if (op == TD_KEY_LE_PREV_MULTI)
                 m_tb->getPrevExt(m_readHandler, true, noBookmark);
+            else if (op == TD_POS_NEXT_MULTI)
+                m_tb->stepNextExt(m_readHandler, false, noBookmark);
+            else if (op == TD_POS_PREV_MULTI)
+                m_tb->stepPrevExt(m_readHandler, false, noBookmark);
         }
         req.result = errorCodeSht(m_tb->stat());
         if (!m_tb->cursor())

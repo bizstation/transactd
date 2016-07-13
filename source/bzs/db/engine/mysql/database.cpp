@@ -2094,7 +2094,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
                         bool noBookmark)
 {
 
-    if ((m_table->file->inited == handler::NONE) || !m_cursor)
+    if ((m_table->file->inited == handler::NONE) || (m_table->file->inited == handler::INDEX && !m_cursor))
     {
         m_stat = STATUS_NO_CURRENT;
         return;
@@ -2108,50 +2108,58 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
     // dummy bookmark , use if bobbokmark=true
     unsigned int tmp = 0;
     const uchar* bm = (unsigned char*)&tmp;
-
+    uint poslen = posPtrLen();
+    short tmp_stat = 0;
+    bool inTrn = m_db.inSnapshot() || m_db.inTransaction();
     // Is a current position read or not?
     bool read = !includeCurrent;
     bool forword = 
         (type == READ_RECORD_GETNEXT) || (type == READ_RECORD_STEPNEXT);
+
     while ((reject != 0) && (rows != 0))
     {
         if (read)
         {
             unlockRow(false);
-
-            if (type == READ_RECORD_GETNEXT)
-                m_stat = m_table->file->ha_index_next(m_table->record[0]);
-            else if (type == READ_RECORD_GETPREV)
-                m_stat = m_table->file->ha_index_prev(m_table->record[0]);
-            else if (type == READ_RECORD_STEPNEXT)
-                m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
-            else if (type == READ_RECORD_STEPPREV)
+            switch(type)
             {
+            case READ_RECORD_GETNEXT:
+                m_stat = m_table->file->ha_index_next(m_table->record[0]);break;
+            case READ_RECORD_GETPREV:
+                m_stat = m_table->file->ha_index_prev(m_table->record[0]);break;
+            case READ_RECORD_STEPNEXT:
+                m_stat = m_table->file->ha_rnd_next(m_table->record[0]);break;
+            default: //READ_RECORD_STEPPREV
+                setCursorStaus();
                 m_stat = STATUS_NOSUPPORT_OP;
                 return;
             }
-            setCursorStaus();
+            //setCursorStaus();
         }
         else
             read = true;
 
         if (m_stat)
+        {
+            tmp_stat = m_stat;
             break;
+        }
         int ret = hdr->match(forword);
         if (ret == REC_MACTH)
         {
-
             if (!noBookmark)
                 bm = position();
-            m_stat = hdr->write(bm, posPtrLen());
-            if (m_stat)
+            tmp_stat = hdr->write(bm, poslen);
+            if (tmp_stat)
                 break;
             --rows;
         }else
         {
-            unlock();
+            if (inTrn) unlock();
+                
             if (ret == REC_NOMACTH_NOMORE)
             {
+                setCursorStaus();
                 m_stat = STATUS_REACHED_FILTER_COND;
                 return;
             }
@@ -2159,6 +2167,8 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
                 --reject;
         }
     }
+    setCursorStaus();
+    m_stat = tmp_stat;
     if (reject == 0)
         m_stat = STATUS_LIMMIT_OF_REJECT;
 }

@@ -349,7 +349,6 @@ class table : private boost::noncopyable
     bookmarks* bms();
     int percentage(uchar* first, uchar* last, uchar* cur);
 
-    bool setNonKey(bool scan = false);
     void fillNull(uchar* ptr, int size);
 
     inline void* keybuf() const { return &m_keybuf[0]; }
@@ -520,6 +519,7 @@ public:
     {
         return (1U << m_table->key_info[(int)m_keyNum].user_defined_key_parts) - 1;
     }
+    bool setNonKey(bool scan = false);
     unsigned long long tableFlags() const { return m_table->file->ha_table_flags();}
     void seekKey(enum ha_rkey_function find_flag, key_part_map keyMap);
     void getNextSame(key_part_map keyMap);

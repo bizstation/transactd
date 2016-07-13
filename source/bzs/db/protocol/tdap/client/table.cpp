@@ -631,7 +631,6 @@ uint_td table::doRecordCount(bool estimate, bool fromCurrent)
     uint_td result = 0;
     client::filter* filter = m_impl->filterPtr.get();
 
-
     if (filter)
     {
         struct smartChangePreparedId
@@ -1544,7 +1543,7 @@ void table::doInit(tabledef** Def, short fnum, bool /*regularDir*/, bool mysqlnu
 
 keylen_td table::writeKeyDataTo(uchar_td* to, int keySize)
 {
-    if ((*m_tableDef)->keyCount)
+    if ((*m_tableDef)->keyCount && m_keynum >= 0)
     {
         keydef& keydef =
             (*m_tableDef)->keyDefs[(int)m_impl->keyNumIndex[(int)m_keynum]];
