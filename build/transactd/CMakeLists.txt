@@ -200,7 +200,7 @@ else()
     set(CMAKE_CXX_FLAGS
       "-std=c++11 -frtti -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare")
   else()
-    set(CMAKE_CXX_FLAGS "-std=c++0x -frtti -Wno-unknown-pragmas -Wno-missing-braces -Wno-char-subscripts -Wall")
+    set(CMAKE_CXX_FLAGS "-std=c++0x -frtti -Wall -Wno-unknown-pragmas -Wno-missing-braces -Wno-char-subscripts")
     set_target_properties(${this_target} PROPERTIES LINK_FLAGS
       "-static-libgcc -lstdc++")
   endif()
