@@ -11949,7 +11949,7 @@ ZEND_NAMED_FUNCTION(_wrap_connMgr_channels) {
 		}
 	}
 
-	SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 0);
+	SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 1);
 
 	return;
 fail:
@@ -11985,7 +11985,7 @@ ZEND_NAMED_FUNCTION(_wrap_connMgr_slaveHosts) {
 		}
 	}
 
-	SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 0);
+	SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 1);
 
 	return;
 fail:
@@ -12022,7 +12022,7 @@ ZEND_NAMED_FUNCTION(_wrap_connMgr_extendedvars) {
 		}
 	}
 
-	SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 0);
+	SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 1);
 
 	return;
 fail:

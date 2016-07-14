@@ -319,6 +319,10 @@ using namespace bzs::db::protocol::tdap::client;
 %newobject bzs::db::protocol::tdap::client::connMgr::connections;
 %newobject bzs::db::protocol::tdap::client::connMgr::inUseDatabases;
 %newobject bzs::db::protocol::tdap::client::connMgr::inUseTables;
+%newobject bzs::db::protocol::tdap::client::connMgr::channels;
+%newobject bzs::db::protocol::tdap::client::connMgr::slaveHosts;
+%newobject bzs::db::protocol::tdap::client::connMgr::extendedvars;
+%newobject bzs::db::protocol::tdap::client::connMgr::statusvars;
 %extend bzs::db::protocol::tdap::client::connMgr {
   const bzs::db::protocol::tdap::client::connMgr::records* databases() {
     bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();

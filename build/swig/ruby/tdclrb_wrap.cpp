@@ -2597,7 +2597,7 @@ SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_proto
     *p = self->schemaTables(dbname);
     return p;
   }
-SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_slaveStatus(bzs::db::protocol::tdap::client::connMgr *self,char const *channel=0){
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_slaveStatus(bzs::db::protocol::tdap::client::connMgr *self,char const *channel){
     bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
     *p = self->slaveStatus(channel);
     return p;
@@ -2627,7 +2627,7 @@ SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_proto
     *p = self->inUseTables(connid, dbid);
     return p;
   }
-SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_channels(bzs::db::protocol::tdap::client::connMgr *self,bool withLock=false){
+SWIGINTERN bzs::db::protocol::tdap::client::connMgr::records const *bzs_db_protocol_tdap_client_connMgr_channels(bzs::db::protocol::tdap::client::connMgr *self,bool withLock){
     bzs::db::protocol::tdap::client::connMgr::records* p = new bzs::db::protocol::tdap::client::connMgr::records();
     *p = self->channels(withLock);
     return p;
@@ -12297,35 +12297,6 @@ fail:
 
 
 SWIGINTERN VALUE
-_wrap_connRecord_port_set(int argc, VALUE *argv, VALUE self) {
-  bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
-  unsigned int arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  unsigned int val2 ;
-  int ecode2 = 0 ;
-  
-  if ((argc < 1) || (argc > 1)) {
-    rb_raise(rb_eArgError, "wrong # of arguments(%d for 1)",argc); SWIG_fail;
-  }
-  res1 = SWIG_ConvertPtr(self, &argp1,SWIGTYPE_p_bzs__db__transactd__connection__record, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "bzs::db::transactd::connection::record *","port", 1, self )); 
-  }
-  arg1 = reinterpret_cast< bzs::db::transactd::connection::record * >(argp1);
-  ecode2 = SWIG_AsVal_unsigned_SS_int(argv[0], &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "unsigned int","port", 2, argv[0] ));
-  } 
-  arg2 = static_cast< unsigned int >(val2);
-  if (arg1) (arg1)->port = arg2;
-  return Qnil;
-fail:
-  return Qnil;
-}
-
-
-SWIGINTERN VALUE
 _wrap_connRecord_port_get(int argc, VALUE *argv, VALUE self) {
   bzs::db::transactd::connection::record *arg1 = (bzs::db::transactd::connection::record *) 0 ;
   void *argp1 = 0 ;
@@ -12821,7 +12792,7 @@ _wrap_connMgr_channels(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 0 |  0 );
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, SWIG_POINTER_OWN |  0 );
   return vresult;
 fail:
   return Qnil;
@@ -12855,7 +12826,7 @@ _wrap_connMgr_slaveHosts(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 0 |  0 );
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, SWIG_POINTER_OWN |  0 );
   return vresult;
 fail:
   return Qnil;
@@ -12889,7 +12860,7 @@ _wrap_connMgr_extendedvars(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 0 |  0 );
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, SWIG_POINTER_OWN |  0 );
   return vresult;
 fail:
   return Qnil;
@@ -12923,7 +12894,7 @@ _wrap_connMgr_statusvars(int argc, VALUE *argv, VALUE self) {
       rb_raise(cpp_std_error, e.what());
     }
   }
-  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, 0 |  0 );
+  vresult = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__db__protocol__tdap__client__connMgr__records, SWIG_POINTER_OWN |  0 );
   return vresult;
 fail:
   return Qnil;
@@ -39105,7 +39076,6 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassConnRecord.klass, "openReadOnly", VALUEFUNC(_wrap_connRecord_openReadOnly_get), -1);
   rb_define_method(SwigClassConnRecord.klass, "openEx", VALUEFUNC(_wrap_connRecord_openEx_get), -1);
   rb_define_method(SwigClassConnRecord.klass, "openReadOnlyEx", VALUEFUNC(_wrap_connRecord_openReadOnlyEx_get), -1);
-  rb_define_method(SwigClassConnRecord.klass, "port=", VALUEFUNC(_wrap_connRecord_port_set), -1);
   rb_define_method(SwigClassConnRecord.klass, "port", VALUEFUNC(_wrap_connRecord_port_get), -1);
   SwigClassConnRecord.mark = 0;
   SwigClassConnRecord.destroy = (void (*)(void *)) free_bzs_db_transactd_connection_record;
