@@ -7,5 +7,6 @@ build/bench_query[mu]/CMakeLists.txt
 build/ormsrcgen[mu]/CMakeLists.txt
 build/querystmts[mu]/CMakeLists.txt
 bin
-build/swig/php/gen/
-build/swig/ruby/gen/
+build/swig/php/gen*
+build/swig/ruby/gen*
+transactd-*.gem
