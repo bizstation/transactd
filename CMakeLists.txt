@@ -30,7 +30,7 @@ include(build/common/options.cmake)
 # ==========================================================
 option(WITH_TRANSACTD_SERVER    "Build Transactd server plugin"                   ON)
 option(WITH_TRANSACTD_CLIENTS   "Build Transactd client libraries"                ON)
-option(TRANSACTD_HANDLERSOCKET  "Add HandlerSocket protocol to Transactd plugin"  ON)
+option(TRANSACTD_HANDLERSOCKET  "Add HandlerSocket protocol to Transactd plugin"  OFF)
 set(TRANSACTD_PREFIX  "/usr/local/transactd"  CACHE STRING "Prefix for transactd executables")
 set(TRANSACTD_CLIENTS_PREFIX    ""            CACHE STRING "Prefix for transactd client libraries")
   # options for Ruby client
