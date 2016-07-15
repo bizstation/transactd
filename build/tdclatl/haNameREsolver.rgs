@@ -1,0 +1,27 @@
+HKCR
+{
+	transactd.haNameResolver.1 = s 'haNameResolver Class'
+	{
+		CLSID = s '{9259C707-BF39-4B9A-B013-67AF11F4B642}'
+	}
+	transactd.haNameResolver = s 'haNameResolver Class'
+	{		
+		CurVer = s 'transactd.haNameResolver.1'
+	}
+	
+	NoRemove CLSID
+	{
+		ForceRemove {9259C707-BF39-4B9A-B013-67AF11F4B642} = s 'haNameResolver Class'
+		{
+			ProgID = s 'transactd.haNameResolver.1'
+			VersionIndependentProgID = s 'transactd.haNameResolver'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{3B712514-E2EF-4040-8A3C-BCACB839EB3E}'
+			Version = s '1.0'
+		}
+	}
+}
