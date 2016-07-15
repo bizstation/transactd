@@ -324,7 +324,7 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
                 }else if (fd.type == ft_bit)
                 {
                     s += " NULL DEFAULT b'";
-                    char tmp[100] = {NULL};
+                    char tmp[100] = {0};
                     s += getBitDefalutValue(tmp, 100, (unsigned __int64)fd.defaultValue64());
                     s += "'";
                 }
@@ -369,7 +369,7 @@ std::string sqlBuilder::getFieldList(const tabledef* table, std::vector<std::str
                 }else if (fd.type == ft_bit)
                 {
                     s += "DEFAULT b'";
-                    char tmp[100] = {NULL};
+                    char tmp[100] = {0};
                     s += getBitDefalutValue(tmp, 100, (unsigned __int64)fd.defaultValue());
                     s += "'";
                 }

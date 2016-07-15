@@ -53,13 +53,32 @@ public:
     connRecords();
     connRecords(const connRecords& r);
     connRecords& operator=(const connRecords& r);
-	const record& operator[] (int index) const;
-	record& operator[] (int index);
+	const record& operator[] (size_t index) const;
+	record& operator[] (size_t index);
 	size_t size() const;
 	void clear();
     void release();
     static connRecords* create();
+    static connRecords* create(const connRecords& r);
 };
+
+typedef boost::shared_ptr<connRecords> connRecords_ptr;
+
+inline void releaseConnRecords(connRecords* p)
+{
+    if (p) p->release();
+}
+
+inline connRecords_ptr createConnRecords(const connRecords& r)
+{
+    return connRecords_ptr(connRecords::create(r), releaseConnRecords);
+}
+
+inline connRecords_ptr createConnRecords()
+{
+    return connRecords_ptr(connRecords::create(), releaseConnRecords);
+}
+
 
 class DLLLIB connMgr : private nstable  // no copyable
 {
@@ -85,7 +104,7 @@ private:
     const connMgr::records& doDefinedTables(const _TCHAR* dbname, int type);
     void setBlobFieldPointer(const bzs::db::blobHeader* bd);
     explicit connMgr(database* db);
-
+    const records& blobOperation(int op);
 public:
 
     bool connect(const _TCHAR* uri);
@@ -94,22 +113,35 @@ public:
     const records& tables(const _TCHAR* dbname);
     const records& views(const _TCHAR* dbname);
     const records& schemaTables(const _TCHAR* dbname);
-    const records& slaveStatus();
+    const records& slaveStatus(const char* channel=0);
+#ifdef _UNICODE
+    const records& slaveStatus(const wchar_t* channel);
+#endif
+    const records& channels(bool withLock = false);
+    const records& slaveHosts();
     const records& sysvars();
+    const records& extendedvars();
     const records& statusvars();
     const records& connections();
     const records& inUseDatabases(__int64 connid);
     const records& inUseTables(__int64 connid, int dbid);
     void postDisconnectOne(__int64 connid);
     void postDisconnectAll();
-    short_td stat();
+    bool haLock();
+    void haUnlock();
+    bool setRole(int v);
+    bool setTrxBlock(bool v);
+    bool setEnableFailover(bool v);
     database* db() const;
-    const _TCHAR* slaveStatusName(uint_td index) const;
+    const _TCHAR* slaveStatusName(uint_td id) const;
+    using nstable::stat;
     using nstable::tdapErr;
     using nstable::release;
+    using nstable::isOpen;
     static void removeSystemDb(records& recs);
-    static const _TCHAR* sysvarName(uint_td index);
-    static const _TCHAR* statusvarName(uint_td index);
+    static const _TCHAR* sysvarName(uint_td id);
+    static const _TCHAR* statusvarName(uint_td id);
+    static const _TCHAR* extendedVarName(uint_td id);
     static connMgr* create(database* db);
 };
 

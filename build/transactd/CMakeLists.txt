@@ -31,6 +31,7 @@ include(../common/get_boost_libs.cmake)
 
 set(this_target transactd)
 project(${this_target})
+bz_force_gcc() # set compiler to gcc instead of g++
 
 
 # ==========================================================
@@ -63,6 +64,7 @@ set(${this_target}_SOURCE_FILES
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/database.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/dbManager.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/errorMessage.cpp
+  ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/ha.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mydebuglog.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlThd.cpp
   ${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlProtocol.cpp
@@ -102,50 +104,6 @@ if(UNIX)
   include_directories(${TRANSACTD_ROOT}/source/linux;)
 endif()
 
-
-# ==========================================================
-# compiler and linker options
-# ==========================================================
-if(TRANSACTD_HANDLERSOCKET)
-  add_definitions(-DUSE_HANDLERSOCKET)
-endif()
-add_definitions(-DBOOST_ALL_NO_LIB -DPACKAGE_NO_EXPORT -D_REENTRANT -DTRANSACTD_EXPORTS)
-if((NOT MSVC) AND (NOT MINGW))
-add_definitions(-DLINUX)
-endif()
-
-foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-  bz_remove_cxx_flag("-fno-exceptions" "${build_type}")
-  bz_remove_cxx_flag("-fno-rtti" "${build_type}")
-  bz_remove_cxx_flag("-fno-implicit-templates" "${build_type}")
-  bz_remove_cxx_flag("/EHsc" "${build_type}")
-  bz_remove_cxx_flag("/EHs" "${build_type}")
-  if(MSVC)
-    bz_add_cxx_flag("/EHa /wd4068 /wd4267 /wd4102 /wd4800" "${build_type}")
-  endif()
-endforeach()
-if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "-std=c++11 -frtti -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare")
-elseif(NOT MSVC)
-  set(CMAKE_CXX_FLAGS "-std=c++0x -frtti -Wno-unknown-pragmas")
-else()
-  REMOVE_DEFINITIONS(-DWIN32_LEAN_AND_MEAN)
-endif()
-
-
-#set -fno-rtti to mysqlProtocol.cpp
-if(NOT MSVC)
-  if ((MYSQL_VERSION_ID VERSION_GREATER 100000) OR (MYSQL_VERSION_ID VERSION_LESS 50600))
-    set_source_files_properties("${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlProtocol.cpp" PROPERTIES COMPILE_FLAGS -fno-rtti)
-  endif()
-endif()
-
-if(MSVC)
-    bz_add_cxx_flag("/MT" "_RELEASE")
-    bz_add_cxx_flag("/MTd" "_DEBUG")
-    bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
-    bz_add_cxx_flag("/MD" "_MINSIZEREL")
-endif()
 
 # ==========================================================
 # add resource file (for Windows Visual Studio)
@@ -191,12 +149,61 @@ endif()
 MYSQL_ADD_PLUGIN(${this_target} ${${this_target}_SOURCE_FILES}
   MODULE_ONLY MODULE_OUTPUT_NAME "${output_name}")
 
+
 # ==========================================================
 # add SONAME
 # ==========================================================
 if(NOT APPLE)
   set_target_properties(${this_target} PROPERTIES
     SOVERSION ${TDVER_TRANSACTD_VER_MAJOR}.${TDVER_TRANSACTD_VER_MINOR}.${TDVER_TRANSACTD_VER_RELEASE})
+endif()
+
+
+# ==========================================================
+# Add compile definitions
+# ==========================================================
+add_definitions(-DBOOST_ALL_NO_LIB -DPACKAGE_NO_EXPORT)
+if(TRANSACTD_HANDLERSOCKET)
+  add_definitions(-DUSE_HANDLERSOCKET)
+endif()
+if(MSVC)
+  remove_definitions(-DWIN32_LEAN_AND_MEAN)
+elseif(NOT MINGW)
+  add_definitions(-DLINUX -DPIC)
+endif()
+
+
+# ==========================================================
+# Add compile options and linker options
+# ==========================================================
+if(MSVC)
+  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /GL /Z7 /GF /Oy- /EHa")
+  foreach(build_type "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
+    bz_remove_cxx_flag("/EHsc" "${build_type}")
+    bz_remove_cxx_flag("/EHs" "${build_type}")
+    bz_remove_cxx_flag("/Ob2" "${build_type}")
+  endforeach()
+  bz_add_cxx_flag("/MT  /Ox" "_RELEASE")
+  bz_add_cxx_flag("/MTd    " "_DEBUG")
+  bz_add_cxx_flag("/MT  /Ox" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD  /Ox" "_MINSIZEREL")
+  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+    "/OPT:REF /OPT:ICF")
+else()
+  # Set -fno-rtti to mysqlProtocol.cpp
+  if((MYSQL_VERSION_ID VERSION_GREATER 100000) OR (MYSQL_VERSION_ID VERSION_LESS 50600))
+    set_source_files_properties(
+      "${TRANSACTD_ROOT}/source/bzs/db/engine/mysql/mysqlProtocol.cpp"
+      PROPERTIES COMPILE_FLAGS -fno-rtti)
+  endif()
+  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS
+      "-std=c++11 -frtti -Wno-unknown-pragmas -Wno-char-subscripts -Wno-deprecated-register -Wno-ignored-qualifiers -Wno-missing-field-initializers -Wno-sign-compare")
+  else()
+    set(CMAKE_CXX_FLAGS "-std=c++0x -frtti -Wall -Wno-unknown-pragmas -Wno-missing-braces -Wno-char-subscripts")
+    set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+      "-static-libgcc -lstdc++")
+  endif()
 endif()
 
 

@@ -317,6 +317,12 @@ function createFieldNames()
 	return new ActiveXObject("transactd.fieldNames");
 }
 /*--------------------------------------------------------------------------------*/
+function createHaNameResolver()
+{
+	return new ActiveXObject("transactd.haNameResolver");
+}
+
+/*--------------------------------------------------------------------------------*/
 var sep = "-------------------------------------------------------------------------------";
 var FMT_LEFT = 0;
 var FMT_CENTER = 1;
@@ -702,6 +708,9 @@ function testBinlogPos(db)
 		checkNotEqual(bpos.filename, "",  "bpos.filename");
 		WScript.Echo("\nBinlog pos = " + bpos.filename + ":" + bpos.pos);
 		WScript.Echo("Binlog gtid = " + bpos.gtid);
+		bpos.gtid = "abcd";
+		checkEqual(bpos.gtid, "abcd",  "bpos.setGtid");
+
 	}
 	db.endSnapshot();
 }
@@ -727,7 +736,7 @@ function testConnMgr(uri)
 	checkEqual(recs.size , 1, "mgr.Connections.size");
 	checkEqual(recs1.size , 1, "mgr.InUseDatabases.size");
 	checkEqual(recs2.size , 4, "mgr.InUseTables.size");
-	
+
 	//tables
 	recs =  mgr.tables("test_v3");
 	checkEqual(mgr.stat , 0,  "mgr.tables");
@@ -761,17 +770,96 @@ function testConnMgr(uri)
 	recs = mgr.statusvars();
 	checkEqual(mgr.stat , 0,  "mgr.statusvars");
 	checkEqual(mgr.statusvarName(0) , "tcp_connections",  "mgr.statusvarName");
-	
 	//slaveStatus
-	recs = mgr.slaveStatus();
+	recs = mgr.slaveStatus("");
 	checkEqual(mgr.stat , 0,  "mgr.slaveStatus");
 	checkEqual(mgr.slaveStatusName(0) , "Slave_IO_State",  "mgr.slaveStatusName");
 	var status = "";
 	for (var i = 0; i<recs.size; ++i)
 	   status += (mgr.slaveStatusName(i) + "\t:" + recs(i).value + "\n");
+	//Extendedvars
+	recs = mgr.extendedvars();
+	checkEqual(recs.size, 4,  "extendedvars size");
+	checkEqual(mgr.extendedVarName(0) , "MySQL_Gtid_Mode",  "mgr.extendedVarName");
+
+	//slaveHosts
+	recs = mgr.slaveHosts();
+	checkEqual(mgr.stat , 0,  "mgr.slaveHosts");
+
+	//channels
+	recs = mgr.channels();
+	checkEqual(mgr.stat , 0,  "mgr.channels");
 	
+	//haLock
+	var ret = mgr.haLock();
+	checkEqual(mgr.stat , 0,  "mgr.haLock");
+	checkEqual(ret , true,  "mgr.haLock");
+		
+	//haUnlock
+	mgr.haUnlock();
+	checkEqual(mgr.stat , 0,  "mgr.haUnlock");
+
+	//setRole
+	ret = mgr.setRole(0);
+	checkEqual(mgr.stat , 0,  "mgr.setRole");
+	checkEqual(ret , true,  "mgr.setRole");
+
+	ret = mgr.setRole(1);
+	checkEqual(mgr.stat , 0,  "mgr.setRole");
+	checkEqual(ret , true,  "mgr.setRole");
+	
+	//setEnableFailover
+	ret = mgr.setEnableFailover(false);
+	checkEqual(mgr.stat , 0,  "mgr.setEnableFailover");
+	checkEqual(ret , true,  "mgr.setEnableFailover");
+	ret = mgr.setEnableFailover(true);
+	checkEqual(mgr.stat , 0,  "mgr.setEnableFailover");
+	checkEqual(ret , true,  "mgr.setEnableFailover");
+	checkEqual(mgr.isOpen , true,  "mgr.isOpen");
+
+	//enableAutoReconnect
+	checkEqual(db.enableAutoReconnect, false,  "db.enableAutoReconnect");
+	db.enableAutoReconnect = true;
+	checkEqual(db.enableAutoReconnect, true,  "db.enableAutoReconnect2");
+	db.enableAutoReconnect = false;
 	mgr.disconnect();
 	checkEqual(mgr.stat , 0,  "mgr.disconnect");
+	checkEqual(mgr.isOpen , false,  "mgr.isOpen");
+
+	//haNameReslover
+	var hnr = createHaNameResolver();
+	var host = "localhost";
+	var user = "root";
+	var pwd = "";
+	if (WScript.arguments.length > 1)
+		host = WScript.arguments(1);
+	if (WScript.arguments.length > 2)
+		user = WScript.arguments(2);
+	if (WScript.arguments.length > 3)
+		pwd = WScript.arguments(3);
+
+	var ret = hnr.start("master123", "slave1, slave2", host, 0, user, pwd);
+	checkEqual(ret , 1,  "hnr.start");
+	
+	//portMap
+	hnr.addPortMap(3307, 8611);
+	hnr.clearPortMap();
+	
+	//master slave name
+	checkEqual(hnr.master , host,  "hnr.master");
+	checkEqual(hnr.slave , "-",  "hnr.slave");
+
+	//connect by master roll
+	mgr.connect("tdap://" + user + "@master123/?pwd=" + pwd);
+	checkEqual(db.stat , 0,  "mgr.connect hnr");
+	checkEqual(mgr.isOpen , true,  "mgr.isOpen");
+	mgr.disconnect();
+	
+	//stop 
+	hnr.stop();
+	mgr.connect("tdap://" + user + "@master123/?pwd=" + pwd);
+	checkEqual(db.stat , ERROR_TD_HOSTNAME_NOT_FOUND,  "mgr.connect hnr");
+
 	WScript.Echo("\n\n" + status);
 }
 

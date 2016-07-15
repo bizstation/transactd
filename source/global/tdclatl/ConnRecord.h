@@ -55,9 +55,9 @@ public:
 #else
     STDMETHOD (get_ConId)(BSTR* retVal);
 #endif
-    STDMETHOD (get_Id)(int* retVal); //unsigned int value_id;
-    STDMETHOD (get_Db)(short* retVal);
-    STDMETHOD (get_Type)(short* retVal); //trnType
+    STDMETHOD (get_Id)(int* retVal); 
+    STDMETHOD (get_Db)(int* retVal);
+    STDMETHOD (get_Type)(int* retVal); 
     STDMETHOD (get_Name)(BSTR* retVal); 
     STDMETHOD (get_Value)(BSTR* retVal); 
     STDMETHOD (get_Status)(short* retVal); 
@@ -66,5 +66,6 @@ public:
     STDMETHOD (get_DelCount)(int* retVal); 
     STDMETHOD (get_InsCount)(int* retVal); 
     STDMETHOD (get_LongValue)(BSTR* retVal); 
+    STDMETHOD (get_Port)(int* retVal);
 };
 

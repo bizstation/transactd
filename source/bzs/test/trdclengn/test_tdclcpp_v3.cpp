@@ -20,6 +20,8 @@
 #include "testField.h"
 #include <bzs/db/protocol/tdap/fieldComp.h>
 
+void init_commandLine(char* argv){};
+
 class fixture
 {
     mutable database* m_db;
@@ -1056,11 +1058,14 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(tablelist)
 BOOST_AUTO_TEST_CASE(tablelist)
 {
-    testTableList();
+    testConnMgr();
 }
 BOOST_AUTO_TEST_CASE(createInfo)
 {
     testCreateInfo();
 }
 BOOST_AUTO_TEST_SUITE_END()
+
+
+    
 // ------------------------------------------------------------------------

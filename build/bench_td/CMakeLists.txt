@@ -31,6 +31,7 @@ include(../common/get_boost_libs.cmake)
 
 get_filename_component(this_target "${CMAKE_CURRENT_SOURCE_DIR}" NAME)
 project(${this_target})
+bz_force_gcc() # set compiler to gcc instead of g++
 
 
 # ==========================================================
@@ -49,14 +50,17 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
   set(TRANSACTD_BINARY_ROOT "${CMAKE_BINARY_DIR}")
 endif()
 
+
 # ==========================================================
 # add library path
 # ==========================================================
 if (MSVC)
-   link_directories("${TRANSACTD_BINARY_ROOT}/lib")
+  link_directories("${TRANSACTD_BINARY_ROOT}/lib")
 else()
-   link_directories("../tdclcpp")
+  cmake_policy(SET CMP0015 OLD)
+  link_directories(../tdclcpp)
 endif()
+
 
 # ==========================================================
 # source files
@@ -101,41 +105,28 @@ else()
     OUTPUT_NAME "bench_tdclcpp_${BZ_BITNESS}${TDCL_CPP_CHARSET}")
 endif()
 
+
 # ==========================================================
 # add dependencie projects
 # ==========================================================
 add_dependencies(${this_target} tdclc tdclcpp)
 
-# ==========================================================
-# Add compile options
-# ==========================================================
-transactd_reset_MTMD()
-if (MSVC)
-  bz_add_cxx_flag("/MT" "_RELEASE")
-  bz_add_cxx_flag("/MTd" "_DEBUG")
-  bz_add_cxx_flag("/MT" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("/MD" "_MINSIZEREL")
-else()
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELEASE")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_DEBUG")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_RELWITHDEBINFO")
-  bz_add_cxx_flag("-Wno-unknown-pragmas -Wno-ignored-qualifiers" "_MINSIZEREL")
-endif()
 
 # ==========================================================
 # Add compile definitions
 # ==========================================================
 if(MSVC)
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS TRDCL_AUTOLINK BOOST_ALL_NO_LIB)
+    TRDCL_AUTOLINK)
 else()
   set_property(TARGET ${this_target} PROPERTY COMPILE_DEFINITIONS
-    PIC BOOST_ALL_NO_LIB)
+    PIC BOOST_ALL_NO_LIB )
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)
   endif()
 endif()
+# Unicode or MultiBytes
 if("${TDCL_CPP_CHARSET}" STREQUAL "u")
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
     UNICODE _UNICODE)
@@ -146,9 +137,31 @@ endif()
 
 
 # ==========================================================
-# add link / include 
+# Add compile options and linker options
 # ==========================================================
-transactd_link_boost_libraries("timer;chrono;system")
+transactd_reset_MTMD()
+if (MSVC)
+  set(CMAKE_CXX_FLAGS "/W3 /wd4068 /wd4996 /Gy /GL /Zi /Oi /EHsc")
+  bz_add_cxx_flag("/MT  /Ox" "_RELEASE")
+  bz_add_cxx_flag("/MTd    " "_DEBUG")
+  bz_add_cxx_flag("/MT  /Ox" "_RELWITHDEBINFO")
+  bz_add_cxx_flag("/MD  /Ox" "_MINSIZEREL")
+  set(CMAKE_LINKER_FLAGS "")
+  set(CMAKE_EXE_LINKER_FLAGS "")
+  set_target_properties(${this_target} PROPERTIES LINK_FLAGS
+    "/MANIFEST:NO /OPT:REF /OPT:ICF")
+else()
+  set(CMAKE_CXX_FLAGS "-fexceptions -frtti -fpermissive -fno-strict-aliasing -fno-omit-frame-pointer")
+  if("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    set(CMAKE_EXE_LINKER_FLAGS "-lstdc++")
+  endif()
+endif()
+
+
+# ==========================================================
+# add link / include
+# ==========================================================
+transactd_link_boost_libraries("timer;system;chrono;thread")
 
 #tdclcpp_x on windows is auto link
 if(NOT MSVC)

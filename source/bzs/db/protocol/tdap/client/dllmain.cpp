@@ -350,7 +350,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
                     else
                     {
                         client_t->cleanup();
-                        return 1;
+                        return client_t->result();
                     }
                 }
                 else if (op == TD_OPENTABLE)
@@ -358,7 +358,7 @@ extern "C" PACKAGE_OSX short_td __STDCALL
                 if (!client_t->buildDualChasetKeybuf())
                 {
                     client_t->cleanup();
-                    return SERVER_CLIENT_NOT_COMPATIBLE;
+                    return client_t->result();
                 }
             }
             break;
@@ -461,7 +461,7 @@ const char* dateTimeStr(char* buf, unsigned int bufsize)
     date = &tmp;
     localtime_x(date, &now);
 #endif // NOT __MINGW32__
-    sprintf_s(buf, bufsize, "%04d/%02d/%02d %02d:%02d:%02d",
+    sprintf_s(buf, bufsize, "%04d-%02d-%02dT%02d:%02d:%02d",
               date->tm_year + 1900, date->tm_mon + 1, date->tm_mday,
               date->tm_hour, date->tm_min, date->tm_sec);
     return buf;
@@ -482,7 +482,7 @@ void writeErrorLog(int err, const char* msg)
     strcpy_s(buf, MAX_PATH, "/var/log");
 #endif
 
-    strcat_s(buf, MAX_PATH, PSEPARATOR "trnsctcl_error.log");
+    strcat_s(buf, MAX_PATH, PSEPARATOR TD_CLINET_LOGNAME);
     FILE* fp = fileOpen(buf, "a+");
     if (fp)
     {
@@ -560,4 +560,10 @@ extern "C" PACKAGE_OSX short_td __STDCALL
 extern "C" PACKAGE_OSX void __STDCALL BeginWinThreadPoolShutdown()
 {
     win_thread_pool_shutdown = true;
+}
+
+
+extern "C" PACKAGE_OSX void __STDCALL RegisterHaNameResolver(HANAME_RESOLVER_PTR func)
+{
+    m_cons->registHaNameResolver(func);
 }

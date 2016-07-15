@@ -36,7 +36,9 @@
 #include <pthread.h>
 #endif
 
-extern bzs::netsvc::client::connections* m_cons;
+namespace bnet = bzs::netsvc::client;
+
+extern bnet::connections* m_cons;
 
 namespace bzs
 {
@@ -96,16 +98,16 @@ class client
         return true;
     }
 
-    inline bzs::netsvc::client::connection* con() { return m_req.cid->con; };
+    inline bnet::connection* con() { return m_req.cid->con; };
 
-    inline void setCon(bzs::netsvc::client::connection* con)
+    inline void setCon(bnet::connection* con)
     {
         m_req.cid->con = con;
     }
 
     inline void disconnect()
     {
-        bzs::netsvc::client::connection* c = con();
+        bnet::connection* c = con();
         if (!c)
             m_req.result = 1;
         else
@@ -151,7 +153,7 @@ class client
     static void addSecondCharsetData(unsigned int destCodePage,
                                      std::string& src);
 
-    bool handshake(bzs::netsvc::client::connection* c)
+    bool handshake(bnet::connection* c)
     {
         //Implements handshake here
         handshale_t* hst  = (handshale_t*)c->read();
@@ -170,6 +172,17 @@ class client
             c->setCharsetServer(mysql::charsetIndex(hst->ver.cherserServer));
             m_req.cid->lock_wait_timeout = hst->lock_wait_timeout;
             m_req.cid->transaction_isolation = hst->transaction_isolation;
+            if (c->userOptions() & CL_OPTION_CHECK_ROLE)
+            {
+                bool clRoleMaster = (c->userOptions() & HST_OPTION_ROLE_MASTER) != 0; 
+                bool srvRoleMaster = (hst->options & HST_OPTION_ROLE_MASTER) != 0;
+  
+                if (clRoleMaster != srvRoleMaster)
+                {
+                    m_preResult = ERROR_TD_INVALID_SERVER_ROLE; 
+                    return false;
+                }
+            }
         }
         if (auth)
         {
@@ -194,7 +207,7 @@ class client
         return true;
     }
 
-    static bool handshakeCallback(bzs::netsvc::client::connection* c, void* data)
+    static bool handshakeCallback(bnet::connection* c, void* data)
     {
         return ((client*)data)->handshake(c);
     }
@@ -275,26 +288,51 @@ public:
         return false;
     }
 
-    inline void connect()
+    inline bnet::connection* doConnect(endpoint_t& ep, bool newConnection, bool clearNRCache)
     {
+        bnet::connection* c = 
+            m_cons->connect(ep.host, ep.port,
+                client::handshakeCallback, this, newConnection, clearNRCache);
+        if (c)
+        {
+            setCon(c);
+            m_connecting = true;
+        }
+        return c;
+    }
+
+    bnet::connection* connect(bool newConnection = false)
+    {
+        bnet::connection* c = NULL;
+        short errorOffset = 0;
         if (!m_req.cid->con)
         {
             m_preResult = 0;
+            m_connecting = false;
             endpoint_t ep;
             endPoint((const char*)m_req.keybuf, &ep);
             if (ep.host[0] == 0x00)
-                m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-            bzs::netsvc::client::connection* c = m_cons->connect(ep.host, ep.port,
-                                                  client::handshakeCallback, this);
-            if (c)
             {
-                setCon(c);
-                m_connecting = true;
-            }
-            else if (m_preResult == 0)
                 m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
+                return c;
+            }
+            c = doConnect(ep, newConnection, false);
+            if (!c)
+            {
+                if (m_cons->haNameResolver() && 
+                    (m_preResult == 0 || m_preResult == ERROR_TD_INVALID_SERVER_ROLE))
+                {
+                    m_preResult = 0;
+                    c = doConnect(ep, newConnection, true);
+                    errorOffset = ERROR_TD_RECONNECTED_OFFSET;
+                }
+            }
+            if (!c && (m_preResult == 0))
+                m_preResult = errorCode(m_cons->connectError());
+            if (m_preResult) m_preResult += errorOffset; 
         }
         m_disconnected = !m_req.cid->con;
+        return c;
     }
 
     inline void createIndex()
@@ -306,15 +344,18 @@ public:
         }
         m_req.paramMask = P_MASK_NOKEYBUF;
         int charsetIndexServer =  getServerCharsetIndex();
-        unsigned char keynum = m_req.keyNum;
-        bool specifyKeyNum = (keynum >= 0x80);
-        if (keynum >= 0x80)
-            keynum -= 0x80;
-        m_sql = sqlBuilder::sqlCreateIndex((tabledef*)m_req.data, keynum, 
-                            specifyKeyNum, charsetIndexServer, ver());
-        m_req.data = (ushort_td*)m_sql.c_str();
-        m_tmplen = (uint_td)(m_sql.size() + 1);
-        m_req.datalen = &m_tmplen;
+        if (charsetIndexServer != -1)
+        {
+            unsigned char keynum = m_req.keyNum;
+            bool specifyKeyNum = (keynum >= 0x80);
+            if (keynum >= 0x80)
+                keynum -= 0x80;
+            m_sql = sqlBuilder::sqlCreateIndex((tabledef*)m_req.data, keynum, 
+                                specifyKeyNum, charsetIndexServer, ver());
+            m_req.data = (ushort_td*)m_sql.c_str();
+            m_tmplen = (uint_td)(m_sql.size() + 1);
+            m_req.datalen = &m_tmplen;
+        }
     }
 
     inline void getSqlCreate(int charsetIndex = -1)
@@ -327,18 +368,20 @@ public:
         _TCHAR tmp[MAX_PATH*2]={0};
         stripAuth((const char*)m_req.keybuf, tmp, MAX_PATH);
         std::string name = getTableName(tmp);
-        if (charsetIndex == -1)
-            charsetIndex =  getServerCharsetIndex();
-        std::string sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
-                                       charsetIndex, ver());
-        uint_td  datalen = *m_req.datalen;
-        *m_req.datalen = (uint_td)(sql.size() + 1);
-        if (datalen <= sql.size())
+        charsetIndex =  getServerCharsetIndex();
+        if (charsetIndex != -1)
         {
-            m_req.result = STATUS_BUFFERTOOSMALL;
-            return;
+            std::string sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
+                                           charsetIndex, ver());
+            uint_td  datalen = *m_req.datalen;
+            *m_req.datalen = (uint_td)(sql.size() + 1);
+            if (datalen <= sql.size())
+            {
+                m_req.result = STATUS_BUFFERTOOSMALL;
+                return;
+            }
+            strcpy_s((char*)m_req.data, *m_req.datalen, sql.c_str());
         }
-        strcpy_s((char*)m_req.data, *m_req.datalen, sql.c_str());
     }
 
     inline void create()
@@ -353,51 +396,52 @@ public:
             stripAuth((const char*)m_req.keybuf, tmp, MAX_PATH);
             m_req.paramMask &= ~P_MASK_POSBLK;
             std::string name = getTableName(tmp);
-            int charsetIndexServer =  getServerCharsetIndex();
-            if (!ver())
+            int charsetIndexServer = getServerCharsetIndex();
+            if (charsetIndexServer != -1)
             {
-                m_preResult = ERROR_TD_NOT_CONNECTED;
-                return; 
-            }
-            if ((m_req.keyNum == CR_SUBOP_BY_TABLEDEF) || 
-                    (m_req.keyNum == CR_SUBOP_BY_TABLEDEF_NOCKECK)) // make by tabledef
-            {
-                m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
-                                       charsetIndexServer, ver());
-                m_req.keyNum -= 2; // -1= exists check 0 = no exists check
-            }
-            else if ((m_req.keyNum == CR_SUBOP_BY_SQL) || 
-                    (m_req.keyNum == CR_SUBOP_BY_SQL_NOCKECK)) // make by sql
-            {
-                m_req.keyNum -= 4; // -1= exists check 0 = no exists check
-                if (charsetIndexServer != CHARSET_UTF8 && charsetIndexServer != CHARSET_UTF8B4)
-                    m_sql = sqlBuilder::convertString(mysql::codePage(charsetIndexServer), 65001,
-                          (const char*)m_req.data);
+                if ((m_req.keyNum == CR_SUBOP_BY_TABLEDEF) || 
+                        (m_req.keyNum == CR_SUBOP_BY_TABLEDEF_NOCKECK)) // make by tabledef
+                {
+                    m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (tabledef*)m_req.data,
+                                           charsetIndexServer, ver());
+                    m_req.keyNum -= 2; // -1= exists check 0 = no exists check
+                }
+                else if ((m_req.keyNum == CR_SUBOP_BY_SQL) || 
+                        (m_req.keyNum == CR_SUBOP_BY_SQL_NOCKECK)) // make by sql
+                {
+                    m_req.keyNum -= 4; // -1= exists check 0 = no exists check
+                    if (charsetIndexServer != CHARSET_UTF8 && charsetIndexServer != CHARSET_UTF8B4)
+                        m_sql = sqlBuilder::convertString(mysql::codePage(charsetIndexServer), 65001,
+                              (const char*)m_req.data);
+                    else
+                        m_sql = (const char*)m_req.data;
+                }
                 else
-                    m_sql = (const char*)m_req.data;
+                    m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,
+                                           charsetIndexServer, ver());
+                m_req.data = (ushort_td*)m_sql.c_str();
+                m_tmplen = (uint_td)(m_sql.size() + 1);
+                m_req.datalen = &m_tmplen;
             }
-            else
-                m_sql = sqlBuilder::sqlCreateTable(name.c_str(), (fileSpec*)m_req.data,
-                                       charsetIndexServer, ver());
-            m_req.data = (ushort_td*)m_sql.c_str();
-            m_tmplen = (uint_td)(m_sql.size() + 1);
-            m_req.datalen = &m_tmplen;
         }
         else if ((m_req.keyNum == CR_SUBOP_SWAPNAME) ||
                  (m_req.keyNum == CR_SUBOP_RENAME))
         {
             int charsetIndexServer =  getServerCharsetIndex();
-            m_sql = (char*)m_req.data;
-            addSecondCharsetData(mysql::codePage(charsetIndexServer), m_sql);
-            m_req.data = (ushort_td*)m_sql.c_str();
-            m_tmplen = (uint_td)(m_sql.size() + 1);
-            m_req.datalen = &m_tmplen;
+            if (charsetIndexServer != -1)
+            {
+                m_sql = (char*)m_req.data;
+                addSecondCharsetData(mysql::codePage(charsetIndexServer), m_sql);
+                m_req.data = (ushort_td*)m_sql.c_str();
+                m_tmplen = (uint_td)(m_sql.size() + 1);
+                m_req.datalen = &m_tmplen;
+            }
         }
     }
 
     inline void reconnect()
     {
-        bzs::netsvc::client::connection* c = con();
+        bnet::connection* c = con();
         if (!c)
         {
             m_preResult = ERROR_TD_NOT_CONNECTED;
@@ -406,21 +450,25 @@ public:
         endpoint_t ep;
         endPoint((const char*)m_req.keybuf, &ep);
      
-        m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-        if (ep.host[0] == 0x00) return;
-
-        if (!m_cons->reconnect(c, ep.host, ep.port, handshakeCallback, this))
+        if (ep.host[0] == 0x00)
         {
-            m_preResult = errorCode(m_cons->connectError());
+            m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
             return;
         }
+        //request req = m_req;
+        if (!m_cons->reconnect(c, ep.host, ep.port, handshakeCallback, this))
+        {
+            if (m_preResult == 0)
+                m_preResult = errorCode(m_cons->connectError());
+            return;
+        }
+        //m_req = req;
         m_connecting = true;
-        if (getServerCharsetIndex() == -1)
-            m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
-        else
+        if (getServerCharsetIndex() != -1)
         {
             m_preResult = 0;
             buildDualChasetKeybuf();
+            m_disconnected = false;
         }
         m_req.paramMask = P_MASK_KEYONLY;
     }
@@ -436,34 +484,17 @@ public:
         else if ((m_req.keyNum == LG_SUBOP_CONNECT) ||
             (m_req.keyNum == LG_SUBOP_NEWCONNECT))
         {
-            if (con())
-                disconnect();
-            endpoint_t ep;
-            endPoint((const char*)m_req.keybuf, &ep);
-            if (ep.host[0] == 0x00)
-                m_preResult = ERROR_TD_HOSTNAME_NOT_FOUND;
-            bzs::netsvc::client::connection* c = m_cons->connect(
-                ep.host, ep.port, handshakeCallback, this,
-                (m_req.keyNum == LG_SUBOP_NEWCONNECT));
+            if (con()) disconnect();
+            bnet::connection* c = 
+                    connect((m_req.keyNum == LG_SUBOP_NEWCONNECT));
             if (c)
             {
-                setCon(c); // if error throw exception
-                m_connecting = true;
-                if (getServerCharsetIndex() == -1)
-                {
-                    if (c->error() || (m_req.resultLen == 0))
-                        m_preResult = ERROR_TD_INVALID_CLINETHOST;
-                    else
-                        m_preResult = SERVER_CLIENT_NOT_COMPATIBLE;
-                }
-                else
+                if (getServerCharsetIndex() != -1)
                 {
                     buildDualChasetKeybuf();
                     m_disconnected = false;
                 }
             }
-            else
-                m_preResult = errorCode(m_cons->connectError());
         }
         else if (m_req.keyNum == LG_SUBOP_DISCONNECT)
         {
@@ -485,7 +516,7 @@ public:
     {
         if (result() == 0)
         {
-            bzs::netsvc::client::connection* c = con();
+            bnet::connection* c = con();
             if (!c)
                 m_preResult = ERROR_TD_NOT_CONNECTED;
             else

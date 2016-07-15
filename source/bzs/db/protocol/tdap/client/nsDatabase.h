@@ -41,6 +41,7 @@ namespace tdap
 {
 namespace client
 {
+extern DLLLIB bool g_enableAutoReconnect;
 
 class dbdef;
 class nstable;
@@ -67,8 +68,8 @@ struct DLLLIB binlogPos
 private:
     char gtid_buf[GTID_SIZE];
     struct bpimple* m_impl;
-    void setGtid(const char* p);
 public:
+    void setGtid(const char* p);
     const char* gtid;
     binlogPos();
     binlogPos(const binlogPos& r);
@@ -95,9 +96,18 @@ class DLLLIB nsdatabase
 protected:
     BTRCALLID_PTR m_btrcallid;
     short m_stat;
-
     static const char* toServerUri(char* buf, int buflen, const _TCHAR* src,
                                    bool trd);
+    short tdapEx(ushort_td op, void* posb, void* data, uint_td* datalen,
+                        void* keybuf, keylen_td keylen, char_td keyNum);
+
+    inline short tdap(ushort_td op, void* posb, void* data, uint_td* datalen,
+                            void* keybuf, keylen_td keylen, char_td keyNum)
+    {
+        return m_btrcallid(op, posb, data, datalen, keybuf, keylen, keyNum,
+            clientID());
+    }  
+
     virtual bool setUri(const _TCHAR* uri);
     void reset();
     void resetSnapshot();
@@ -174,13 +184,15 @@ public:
     static bool trnsactionFlushWaitStatus();
     static void setExecCodePage(unsigned int codepage);
     static unsigned int execCodePage();
+    static inline bool enableAutoReconnect(){ return g_enableAutoReconnect;}
+    static inline void setEnableAutoReconnect(bool v){ g_enableAutoReconnect = v;}
+    static bool registerHaNameResolver(HANAME_RESOLVER_PTR func);
     /** @cond INTERNAL */
     void setTestPtrIgnore(bool v);
     bool isTestPtrIgnore() const;
     static WIN_TPOOL_SHUTDOWN_PTR getWinTPoolShutdownFunc();
     static bool testTablePtr(nstable* ptr);
     static void setCheckTablePtr(bool v);
-
     /** @endcond */
 };
 

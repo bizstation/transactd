@@ -37,6 +37,7 @@ macro(tdcl_add_source_files TRANSACTD_ROOT)
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fieldNameAlias.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/fileDDF.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/groupQuery.cpp
+    ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/haNameResolver.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/indexDDF.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/memRecord.cpp
     ${TRANSACTD_ROOT}/source/bzs/db/protocol/tdap/client/nsDatabase.cpp

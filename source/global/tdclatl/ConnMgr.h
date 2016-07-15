@@ -59,7 +59,7 @@ public:
     STDMETHOD(Views)(BSTR dbname, IConnRecords** retVal);
     STDMETHOD(SchemaTables)(BSTR dbname, IConnRecords** retVal);
     STDMETHOD(Sysvars)(IConnRecords** retVal);
-    STDMETHOD(SlaveStatus)(IConnRecords** retVal);
+    STDMETHOD(SlaveStatus)(BSTR channel, IConnRecords** retVal);
     STDMETHOD(Connections)(IConnRecords** retVal);
 #ifdef _WIN64
     STDMETHOD(InUseDatabases)(__int64 connid, IConnRecords** retVal);
@@ -79,6 +79,18 @@ public:
     STDMETHOD(SysvarName)(int index, BSTR* retVal);
     STDMETHOD(Statusvars)(IConnRecords** retVal);
     STDMETHOD(StatusvarName)(int index, BSTR* retVal);
+
+    STDMETHOD(Extendedvars)(IConnRecords** retVal);
+    STDMETHOD(SlaveHosts)(IConnRecords** retVal);
+    STDMETHOD(Channels)(IConnRecords** retVal);
+    STDMETHOD(ExtendedVarName)(int index, BSTR* retVal);
+
+    STDMETHOD(HaLock)(VARIANT_BOOL* retVal);
+    STDMETHOD(HaUnlock)();
+    STDMETHOD(SetRole)(int v, VARIANT_BOOL* retVal);
+    STDMETHOD(SetTrxBlock)(VARIANT_BOOL v, VARIANT_BOOL* retVal);
+    STDMETHOD(SetEnableFailover)(VARIANT_BOOL v, VARIANT_BOOL* retVal);
+    STDMETHOD(get_IsOpen)(VARIANT_BOOL* retVal);
 
 };
 

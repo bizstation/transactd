@@ -99,6 +99,7 @@ public:
     bool isShutDown() const;
     const databases& dbs() const { return m_dbs; }
     boost::mutex& mutex() { return m_mutex; }
+    int trxProcessing();
 };
 
 } // namespace mysql

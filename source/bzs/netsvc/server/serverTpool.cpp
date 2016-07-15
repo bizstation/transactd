@@ -123,7 +123,7 @@ class connection : public boost::enable_shared_from_this<connection>,
 
                     boost::asio::write(m_socket, m_optionalBuffes,
                                        boost::asio::transfer_all(), e);
-                    if (e)
+                    if (e || ret == EXECUTE_RESULT_SEND_QUIT)
                         return false;
                 }
             }
@@ -153,7 +153,7 @@ class connection : public boost::enable_shared_from_this<connection>,
 
                 if (ret == EXECUTE_RESULT_QUIT)
                     return;
-                else if(ret == EXECUTE_RESULT_ACCESS_DNIED)
+                else if(ret == EXECUTE_RESULT_ACCESS_DNIED || ret == EXECUTE_RESULT_SEND_QUIT)
                 {
                     boost::asio::write(m_socket,  buffer(&m_result[0], size),
                            boost::asio::transfer_all());
@@ -167,9 +167,7 @@ class connection : public boost::enable_shared_from_this<connection>,
                     boost::system::error_code ec;
                     boost::asio::write(m_socket, m_optionalBuffes,
                                        boost::asio::transfer_all(), ec);
-                    if (ec)
-                        return;
-                    syncReadWrite();
+                    if (ec || !syncReadWrite()) return;
                 }
                 DEBUG_PROFILE_START(1)
                 async_write(m_socket, m_optionalBuffes,

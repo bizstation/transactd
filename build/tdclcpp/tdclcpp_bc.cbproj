@@ -153,7 +153,7 @@
         <BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
         <BCC_ExtendedErrorInfo>true</BCC_ExtendedErrorInfo>
         <TD_VER_MAJOR>3</TD_VER_MAJOR>
-        <TD_VER_MINOR>4</TD_VER_MINOR>
+        <TD_VER_MINOR>5</TD_VER_MINOR>
         <DllSuffix>$(TD_VER_MAJOR)_$(TD_VER_MINOR)</DllSuffix>
         <TD_CPU>32</TD_CPU>
     </PropertyGroup>
@@ -303,6 +303,9 @@
             <BuildOrder>10</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\memRecord.cpp">
+            <BuildOrder>22</BuildOrder>
+        </CppCompile>
+        <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\haNameResolver.cpp">
             <BuildOrder>22</BuildOrder>
         </CppCompile>
         <CppCompile Include="..\..\source\bzs\db\protocol\tdap\client\nsDatabase.cpp">

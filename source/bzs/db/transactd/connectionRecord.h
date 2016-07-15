@@ -129,6 +129,15 @@ struct record
     {
         name[0] = 0x00;
     }
+    void reset()
+    {
+        name[0] = 0x00;
+        conId = 0;
+        id = 0;
+        db = 0;
+        updCount = 0;
+        status = 0;
+    }
     union
     {
         __int64 conId;                      // 8 byte
@@ -143,7 +152,8 @@ struct record
     union
     {
         unsigned int db;
-        unsigned int readCount;             // 4 byte
+        unsigned int readCount;
+        unsigned int port;                  // 4 byte
     };
     union
     {
@@ -188,22 +198,32 @@ struct record
         MultiByteToWideChar(CP_UTF8, 0, (char*)longValue, -1, buf, size);
         return buf;
     }
-    #else
-    inline const char* t_name(char* /*buf*/, int /*size*/) const
+    #endif
+    /*inline const char* t_name(char* buf, int size) const
     {
         return name;
-    }
+    }*/
     const char* value(char* buf, int size) const
     {
         if (type == 0)
         {
             _i64toa_s(longValue, buf, size, 10);
-            return buf;
+
         }else if (type == 1)
-            return name;
-        return (char*)longValue;
+            strcpy_s(buf, size, name);
+        else
+            strcpy_s(buf, size, (char*)longValue);
+        return buf;
     }
-    #endif
+    const char* value_ptr() const
+    {
+        if (type == 0)
+            return (const char*)&longValue;
+        else if(type == 1)
+            return name;
+        return (const char*)longValue;
+    }
+
 };                                          // 20 + 68 = 88
 
 #ifdef MYSQL_DYNAMIC_PLUGIN

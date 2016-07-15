@@ -75,6 +75,10 @@
 #include "my_global.h"
 #include <math.h>
 #if defined(MYSQL_5_7)
+#ifndef HAVE_REPLICATION
+#define HAVE_REPLICATION
+#endif
+
 // Not use malloc service
 #define MYSQL_SERVICE_MYSQL_ALLOC_INCLUDED
 typedef unsigned int PSI_memory_key;
@@ -229,11 +233,21 @@ inline void cp_restore_globals(THD* thd)
     my_pthread_setspecific_ptr(THR_THD, 0);
     my_pthread_setspecific_ptr(THR_MALLOC, 0);
 }
-
+#if (MYSQL_VERSION_ID < 50600)
 inline void cp_thd_set_read_only(THD* thd, bool v) {}
 
 inline bool cp_thd_get_global_read_only(THD* thd) { return false; }
+#else
+inline void cp_thd_set_read_only(THD* thd, bool v)
+{
+    thd->tx_read_only = (v || thd->variables.tx_read_only);
+}
 
+inline bool cp_thd_get_global_read_only(THD* thd)
+{
+    return (thd->variables.tx_read_only != 0);
+}
+#endif
 inline bool cp_open_table(THD* thd, TABLE_LIST* tables,
                           Open_table_context* ot_act)
 {
@@ -477,7 +491,9 @@ inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet
 }
 
 #define cp_get_executed_gtids get_executed_gtids
+extern MYSQL_PLUGIN_IMPORT my_bool opt_show_slave_auth_info;
 
+#define STATUS_VAR_SCOPE ,SHOW_SCOPE_GLOBAL
 #else //Not MySQL 5.7
 
 #define OPEN_TABLE_FLAG_TYPE MYSQL_OPEN_GET_NEW_TABLE
@@ -619,6 +635,7 @@ inline int cp_store_create_info(THD *thd, TABLE_LIST *table_list, String *packet
 
 #endif // Not MARIADB_10_1 || MARIADB_10_0
 
+#define STATUS_VAR_SCOPE 
 #endif // Not MySQL 5.7
 
 

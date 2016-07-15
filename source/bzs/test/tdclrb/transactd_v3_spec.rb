@@ -773,6 +773,10 @@ describe Transactd, 'V3Features' do
     expect(bpos.pos).not_to eq  0
     expect(bpos.filename).not_to eq ""
     print "\nbinlog pos = ", bpos.filename, ":", bpos.pos, "\n"
+    print "gtid (set)= ", bpos.gtid, "\n"
+    # setGtid
+    bpos.gtid = "ABCD"
+    expect(bpos.gtid).to eq "ABCD"
     db.endSnapshot();
     db.close()
   end
@@ -854,15 +858,78 @@ describe Transactd, 'V3Features' do
     expect(mgr.stat()).to eq 0
     expect(Transactd::ConnMgr::statusvarName(0)).to eq "tcp_connections"
     # slaveStatus
-    recs = mgr.slaveStatus()
+    recs = mgr.slaveStatus("")
     expect(mgr.stat()).to eq 0
     expect(mgr.slaveStatusName(0)).to eq "Slave_IO_State"
-
     for i in 0...recs.size() do
       puts (mgr.slaveStatusName(i) + "\t:" + recs[i].value.to_s)
     end
+    # extendedvars
+    recs = mgr.extendedvars()
+    expect(recs.size()).to eq 4
+    expect(Transactd::ConnMgr::extendedVarName(0)).to eq "MySQL_Gtid_Mode"
+    # record port
+    expect(recs[0].port).to eq 0
+    # slaveHosts
+    recs = mgr.slaveHosts()
+    expect(mgr.stat()).to eq 0
+    # channels
+    recs = mgr.channels()
+    expect(mgr.stat()).to eq 0
+    # haLock
+    ret = mgr.haLock()
+    expect(mgr.stat()).to eq 0
+    expect(ret).to eq true
+    # haUnlock
+    mgr.haUnlock()
+    expect(mgr.stat()).to eq 0
+    # setRole
+    ret = mgr.setRole(0)
+    expect(mgr.stat()).to eq 0
+    expect(ret).to eq true
+    ret = mgr.setRole(1)
+    expect(mgr.stat()).to eq 0
+    expect(ret).to eq true
+    # setEnableFailover
+    ret = mgr.setEnableFailover(false)
+    expect(mgr.stat()).to eq 0
+    expect(ret).to eq true
+    ret = mgr.setEnableFailover(true)
+    expect(mgr.stat()).to eq 0
+    expect(ret).to eq true
+    expect(mgr.isOpen()).to eq true
+    # enableAutoReconnect
+    expect(Transactd::Database::enableAutoReconnect()).to eq false
+    Transactd::Database::setEnableAutoReconnect(true)
+    expect(Transactd::Database::enableAutoReconnect()).to eq true
+    Transactd::Database::setEnableAutoReconnect(false)
     mgr.disconnect()
     expect(mgr.stat()).to eq 0
+    expect(mgr.isOpen()).to eq false
+    # haNameReslover
+    host = "localhost"
+    user = "root"
+    pwd = ""
+    ret = Transactd::HaNameResolver::start("master123", "slave1, slave2", host, 0, user, pwd)
+    expect(ret).to eq 1
+    # portMap
+    Transactd::HaNameResolver::addPortMap(3307, 8611)
+    Transactd::HaNameResolver::clearPortMap()
+    # master slave name
+    expect(Transactd::HaNameResolver::master()).to eq host
+    expect(Transactd::HaNameResolver::slave()).to eq "-"
+    # connect by master roll
+    mgr.connect("tdap://" + user + "@master123/?pwd=" + pwd)
+    expect(mgr.stat()).to eq 0
+    expect(mgr.isOpen()).to eq true
+    mgr.disconnect()
+    expect(mgr.stat()).to eq 0
+    expect(mgr.isOpen()).to eq false
+    # stop 
+    Transactd::HaNameResolver::stop()
+    mgr.connect("tdap://" + user + "@master123/?pwd=" + pwd)
+    expect(mgr.stat()).to eq Transactd::ERROR_TD_HOSTNAME_NOT_FOUND
+    mgr.disconnect()
     tb_other.close()
     db_other.close()
   end

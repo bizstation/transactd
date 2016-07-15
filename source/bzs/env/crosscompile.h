@@ -58,6 +58,7 @@ int gettimeofday(struct timeval*, struct timezone*);
 #endif
 
 #define _strnicmp strncasecmp
+#define _stricmp strcasecmp
 #define _atoi64 atoll
 #define _access access
 #define sprintf_s snprintf
@@ -217,6 +218,7 @@ typedef unsigned __int32 char32_t; // 32bit
 #if defined(__BORLANDC__)
 #define _strupr strupr
 #define _strnicmp strnicmp
+#define _stricmp stricmp
 #endif
 
 #define wcsnicmp16(A, B, C)                                                    \

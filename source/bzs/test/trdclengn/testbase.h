@@ -77,6 +77,9 @@ static bool use_mysqlNullMode = true;
 
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[]);
 
+void init_commandLine(char* argv);
+
+
 boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
 {
     for (int i = 1; i < argc; ++i)
@@ -115,7 +118,10 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
         if (strstr(argv[i], "--nullfield=") == argv[i])
             use_nullfield = atol(argv[i] + 12) != 0;  
         if (strstr(argv[i], "--mysqlnull=") == argv[i])
-            use_mysqlNullMode = atol(argv[i] + 12) != 0; 
+            use_mysqlNullMode = atol(argv[i] + 12) != 0;
+
+        init_commandLine(argv[i]);
+
     }
     printf("Transactd test ... \nMay look like progress is stopped, \n"
             "but it is such as record lock test, please wait.\n");

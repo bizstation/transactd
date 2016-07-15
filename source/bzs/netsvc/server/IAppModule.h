@@ -46,6 +46,7 @@ class iconnection;
 #define EXECUTE_RESULT_FORCSE_ASYNC 2
 #define EXECUTE_RESULT_FORCSE_SYNC 3
 #define EXECUTE_RESULT_ACCESS_DNIED 4
+#define EXECUTE_RESULT_SEND_QUIT 5
 typedef std::vector<boost::asio::const_buffer> buffers;
 typedef std::vector<char> vector_buffer;
 

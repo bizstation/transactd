@@ -78,6 +78,9 @@ class table;
  */
 #define REF_SIZE_MAX 112
 
+#define UPDATE_REPLACE 0
+#define UPDATE_INC 1
+#define UPDATE_DEC 2
 
 
 /** Control mysql table cahche
@@ -346,7 +349,6 @@ class table : private boost::noncopyable
     bookmarks* bms();
     int percentage(uchar* first, uchar* last, uchar* cur);
 
-    bool setNonKey(bool scan = false);
     void fillNull(uchar* ptr, int size);
 
     inline void* keybuf() const { return &m_keybuf[0]; }
@@ -382,18 +384,11 @@ class table : private boost::noncopyable
     std::vector<int> m_useFields;
     void checkFiledIndex(int index);
     int fieldIndexByName(const char* name) const;
-
     void addUseField(int index) { m_useFields.push_back(index); };
-
 public:
     std::vector<int>& useFields() { return m_useFields; };
     void setUseFieldList(const std::string& csv);
-    void setValue(int index, const std::string& v, int type);
     void setUseValues(const std::vector<std::string>& values, int type);
-
-#define UPDATE_REPLACE 0
-#define UPDATE_INC 1
-#define UPDATE_DEC 2
 
 #endif
 
@@ -524,6 +519,7 @@ public:
     {
         return (1U << m_table->key_info[(int)m_keyNum].user_defined_key_parts) - 1;
     }
+    bool setNonKey(bool scan = false);
     unsigned long long tableFlags() const { return m_table->file->ha_table_flags();}
     void seekKey(enum ha_rkey_function find_flag, key_part_map keyMap);
     void getNextSame(key_part_map keyMap);
@@ -779,6 +775,8 @@ public:
     inline void setTimestampAlways(bool v) { m_timestampAlways = v;}
 
     void getCreateSql(String* s);
+
+    void setValue(int index, const std::string& v, int type);
 };
 
 class fieldBitmap

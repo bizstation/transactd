@@ -1,6 +1,6 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <ProjectGuid>{EB31B0F7-D4C3-425D-B9E2-CB9CE8168EA4}</ProjectGuid>
+        <ProjectGuid>{EB31B0F7-D4C3-425D-B9E2-CB9CE8168EF4}</ProjectGuid>
         <ProjectVersion>16.0</ProjectVersion>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Release Unicode</Config>

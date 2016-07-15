@@ -72,7 +72,8 @@ endif()
 if(WIN32)
   link_directories("${TRANSACTD_RUBY_GEM_ROOT_PATH}/bin/common")
 else()
- link_directories("../tdclcpp")
+  cmake_policy(SET CMP0015 OLD)
+  link_directories(../tdclcpp)
 endif()
 
 
@@ -145,11 +146,11 @@ if(TRANSACTD_HAVE_RB_THREAD_CALL_WITHOUT_GVL)
 endif()
 if(MSVC)
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
-    WIN32 _WIN32 _WINDOWS _USRDLL BOOST_ALL_NO_LIB 
-    LIB_TDCLCPP TRDCL_AUTOLINK TRDCLENGN_EXPORTS _CRT_SECURE_NO_WARNINGS)
+    WIN32 _WIN32 _WINDOWS _USRDLL
+    TRDCL_AUTOLINK TRDCLENGN_EXPORTS _CRT_SECURE_NO_WARNINGS)
 else()
   set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
-    PIC _REENTRANT BOOST_ALL_NO_LIB)
+    PIC _REENTRANT)
   if(NOT MINGW)
     set_property(TARGET ${this_target} APPEND PROPERTY COMPILE_DEFINITIONS
       LINUX)

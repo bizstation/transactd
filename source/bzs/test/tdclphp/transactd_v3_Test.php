@@ -768,7 +768,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
         }
         $this->assertNotEquals($bpos->pos, 0);
         $this->assertNotEquals($bpos->filename, "");
-        //echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
+        echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
+        echo 'gtid (set)= '.$bpos->gtid.PHP_EOL;;
+        
+        //setGtid
+        $bpos->gtid = "ABCD";
+        $this->assertEquals($bpos->gtid , "ABCD");
+        
         $db->endSnapshot();
         $db->close();
     }
@@ -861,16 +867,96 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($mgr->stat(), 0);
         $this->assertEquals(bz\connMgr::statusvarName(0), "tcp_connections");
         //slaveStatus
-        $recs = $mgr->slaveStatus();
+        $recs = $mgr->slaveStatus("");
         $this->assertEquals($mgr->stat(), 0);
         $this->assertEquals($mgr->slaveStatusName(0), "Slave_IO_State");
         for ($i = 0; $i < $recs->size(); $i++)
         {
             echo(PHP_EOL . $mgr->slaveStatusName($i) . "\t:" . $recs[$i]->value);
         }
+        
+        //extendedvars
+        $recs = $mgr->extendedvars();
+        $this->assertEquals($recs->size(), 4);
+        $this->assertEquals($mgr->extendedVarName(0) , "MySQL_Gtid_Mode");
+        
+        // record port
+        $this->assertEquals($recs[0]->port , 0);
+        
+        //slaveHosts
+        $recs = $mgr->slaveHosts();
+        $this->assertEquals($mgr->stat() , 0);
+        //channels
+        $recs = $mgr->channels();
+        $this->assertEquals($mgr->stat() , 0);
+        //haLock
+        $ret = $mgr->haLock();
+        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($ret , true);
+        //haUnlock
+        $mgr->haUnlock();
+        $this->assertEquals($mgr->stat() , 0);
+        //setRole
+        $ret = $mgr->setRole(0);
+        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($ret , true);
+        $ret = $mgr->setRole(1);
+        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($ret , true);
+        //setEnableFailover
+        $ret = $mgr->setEnableFailover(false);
+        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($ret , true);
+        $ret = $mgr->setEnableFailover(true);
+        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($ret , true);
+        $this->assertEquals($mgr->isOpen() , true);
+        //enableAutoReconnect
+        $this->assertEquals($db->enableAutoReconnect(), false);
+        $db->setenableAutoReconnect(true);
+        $this->assertEquals($db->enableAutoReconnect(), true);
+        $db->setenableAutoReconnect(false);
         $mgr->disconnect();
-        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($mgr->isOpen(), false);
+        //haNameReslover
+        $host = "localhost";
+        $user = "root";
+        $pwd = "";
+        $ret = bz\haNameResolver::start("master123", "slave1, slave2", $host, 0, $user, $pwd);
+        $this->assertEquals($ret , 1);
+        //portMap
+        bz\haNameResolver::addPortMap(3307, 8611);
+        bz\haNameResolver::clearPortMap();
+        //master slave name
+        $this->assertEquals(bz\haNameResolver::master() , $host);
+        $this->assertEquals(bz\haNameResolver::slave() , "-");
+        //connect by master roll
+        $mgr->connect("tdap://" . $user . "@master123/?pwd=" . $pwd);
+        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($mgr->isOpen() , true);
+        $mgr->disconnect();
+        $this->assertEquals($mgr->isOpen() , false);
+        //stop 
+        bz\haNameResolver::stop();
+        $mgr->connect("tdap://" . $user . "@master123/?pwd=" . $pwd);
+        $this->assertEquals($mgr->stat() , ERROR_TD_HOSTNAME_NOT_FOUND);
         $tb_other->close();
         $db_other->close();
+        
     }
+    
+    public function test_v3_5_constant()
+    {
+        $this->assertEquals(bz\transactd::ERROR_TD_RECONNECTED_OFFSET , 1000);
+        $this->assertEquals(bz\transactd::ERROR_TD_INVALID_SERVER_ROLE , 3812);
+        $this->assertEquals(bz\transactd::ERROR_TD_RECONNECTED , 3900);
+        $this->assertEquals(bz\transactd::MYSQL_ERROR_OFFSET , 25000);
+        $this->assertEquals(bz\transactd::HA_ROLE_SLAVE , 0);
+        $this->assertEquals(bz\transactd::HA_ROLE_MASTER , 1);
+        $this->assertEquals(bz\transactd::HA_ROLE_NONE , 2);
+        $this->assertEquals(bz\transactd::HA_RESTORE_ROLE , 4);
+        $this->assertEquals(bz\transactd::HA_ENABLE_FAILOVER , 8);
+    }
+
 }

@@ -51,10 +51,11 @@ static const _TCHAR* SYSVAR_NAME[TD_VAR_SIZE] =
     _T("use_piped_local"),
     _T("hs_port"),
     _T("use_handlersocket"),
-    _T("timestamp_always)")
+    _T("timestamp_always"),
+    _T("startup_ha")
 };
 
-static const _TCHAR* STATUSVAR_NAME[TD_VAR_SIZE] =
+static const _TCHAR* STATUSVAR_NAME[TD_SVAR_SIZE] =
 {
     _T("tcp_connections"),
     _T("tcp_wait_threads"),
@@ -63,6 +64,7 @@ static const _TCHAR* STATUSVAR_NAME[TD_VAR_SIZE] =
     _T("pipe_connections"),
     _T("pipe_wait_threads"),
     _T("cur_open_databases"),
+    _T("ha"),
 };
 
 static const _TCHAR* SLAVE_STATUS_NAME[SLAVE_STATUS_DEFAULT_SIZE] =
@@ -146,6 +148,14 @@ static const _TCHAR* SLAVE_STATUS_NAME_EX_MA[SLAVE_STATUS_EX_MA_SIZE] =
     _T("Gtid_Slave_Pos"),
 };
 
+static const _TCHAR* EXTENDED_VAR_NAME[TD_EXTENDED_VAR_SIZE] =
+{
+    _T("MySQL_Gtid_Mode"),
+    _T("Binlog_File"),
+    _T("Binlog_Position"),
+    _T("Executed_Gtid_Set/Gtid_Cur_Pos")
+};
+
 class stringBuffer
 {
 	friend class connMgr;
@@ -176,12 +186,12 @@ connRecords& connRecords::operator=(const connRecords& r)
 
 void connRecords::clear() { m_records.clear(); m_buf.reset(); }
 
-const connRecords::record& connRecords::operator[] (int index) const
+const connRecords::record& connRecords::operator[] (size_t index) const
 {
     return m_records[index];
 }
 
-connRecords::record& connRecords::operator[] (int index)
+connRecords::record& connRecords::operator[] (size_t index)
 {
     return m_records[index];
 }
@@ -189,6 +199,8 @@ connRecords::record& connRecords::operator[] (int index)
 size_t connRecords::size() const { return m_records.size(); }
 
 connRecords* connRecords::create(){ return new connRecords();}
+
+connRecords* connRecords::create(const connRecords& r){ return new connRecords(r);}
 
 void connRecords::release(){ delete this;}
 
@@ -233,9 +245,10 @@ connMgr::connMgr(database* db) : nstable(db)
     m_params[0] = 0;
     m_params[1] = 0;
     m_keylen = sizeof(m_params);
+    m_datalen = m_buflen = 0;
 }
 
-connMgr::~connMgr() {}
+connMgr::~connMgr() {setIsOpen(false);}
 
 database* connMgr::db() const
 {
@@ -277,6 +290,7 @@ bool connMgr::connect(const _TCHAR* uri)
     m_stat = m_db->stat();
     if (m_stat == 0)
     {
+        setIsOpen(true);
         m_uri = uri;
         btrVersions vs;
         m_db->getBtrVersion(&vs);
@@ -290,10 +304,13 @@ void connMgr::disconnect()
 {
     if (m_uri != _T(""))
     {
-        m_db->disconnect(m_uri.c_str());
+        m_db->disconnect();
         m_stat = m_db->stat();
         if (m_stat == 0)
+        {
             m_uri = _T("");
+            setIsOpen(false);
+        }
     }
 }
 
@@ -311,8 +328,11 @@ void connMgr::allocBuffer()
 const connMgr::records& connMgr::getRecords(bool isInUseTable)
 {
     tdap(TD_STASTISTICS);
-    if (m_stat == 0 && *((int*)m_keybuf) != (int)sizeof(connMgr::record))
-        convertFromOldFormat(isInUseTable);
+    if (m_keynum < TD_STSTCS_SLAVE_STATUS)
+    {
+        if (m_stat == 0 && *((int*)m_keybuf) != (int)sizeof(connMgr::record))
+            convertFromOldFormat(isInUseTable);
+    }
     if (m_stat == 0)
         m_records.resize(m_datalen / sizeof(connMgr::record));
     else
@@ -388,20 +408,61 @@ void connMgr::setBlobFieldPointer(const blobHeader* hd)
     }
 }
 
-const connMgr::records& connMgr::slaveStatus()
+const connMgr::records& connMgr::blobOperation(int op)
 {
     if ((m_pluginVer.majorVersion >= 3) && (m_pluginVer.minorVersion >= 2))
     {
-        m_keynum = TD_STSTCS_SLAVE_STATUS;
+        m_keynum = op;
         allocBuffer();
         getRecords();
         // set blob pointers
         setBlobFieldPointer(getBlobHeader());
         return m_records;
-   }
+    }
     m_stat = STATUS_NOSUPPORT_OP;
     m_records.resize(0);
     return m_records;
+}
+
+const connMgr::records& connMgr::slaveStatus(const char* channel)
+{
+    char ch[65] = {0};
+    if (channel)
+        strcpy_s(ch, 65, channel);
+    m_keybuf = (void*)ch;
+    m_keylen = 65;
+    blobOperation(TD_STSTCS_SLAVE_STATUS);
+    m_keybuf = &m_params[0];
+    m_keylen = sizeof(m_params);
+    return m_records;
+}
+#ifdef _UNICODE
+const connMgr::records& connMgr::slaveStatus(const wchar_t* channel)
+{
+    char tmp[128] = {0};
+    if (channel)
+        WideCharToMultiByte(CP_UTF8, 0, channel,-1, tmp, 128, NULL, NULL);
+    return slaveStatus(tmp);
+}
+#endif
+
+
+const connMgr::records& connMgr::channels(bool withLock )
+{
+    m_keynum = withLock ? 
+                TD_STSTCS_SLAVE_CHANNELS_LOCK :TD_STSTCS_SLAVE_CHANNELS;
+    allocBuffer();
+    return getRecords();
+}
+
+const connMgr::records& connMgr::slaveHosts()
+{
+    return blobOperation(TD_STSTCS_SLAVE_HOSTS);
+}
+
+const connMgr::records& connMgr::extendedvars()
+{
+    return blobOperation(TD_STSTCS_EXTENDED_VARIABLES);
 }
 
 const connMgr::records& connMgr::sysvars()
@@ -449,18 +510,59 @@ void connMgr::postDisconnectOne(__int64 connid)
 {
     m_keynum = TD_STSTCS_DISCONNECT_ONE;
     m_params[0] = connid;
+    m_datalen = 0;
     tdap(TD_STASTISTICS);
 }
 
 void connMgr::postDisconnectAll()
 {
     m_keynum = TD_STSTCS_DISCONNECT_ALL;
+    m_datalen = 0;
     tdap(TD_STASTISTICS);
 }
 
-short_td connMgr::stat()
+bool connMgr::haLock()
 {
-    return m_stat;
+    m_keynum = TD_STSTCS_HA_LOCK;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+    return stat() == 0;
+}
+
+void connMgr::haUnlock()
+{
+    m_keynum = TD_STSTCS_HA_UNLOCK;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+
+}
+
+bool connMgr::setRole(int v)
+{
+    m_keynum = (v == HA_ROLE_MASTER) ? TD_STSTCS_HA_SET_ROLEMASTER :
+                (v == HA_ROLE_SLAVE) ? TD_STSTCS_HA_SET_ROLESLAVE :
+                                        TD_STSTCS_HA_SET_ROLENONE;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+    return stat() == 0;
+}
+
+bool connMgr::setTrxBlock(bool v)
+{
+    m_keynum = v ? TD_STSTCS_HA_SET_TRXBLOCK :
+                          TD_STSTCS_HA_SET_TRXNOBLOCK;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+    return stat() == 0;
+}
+
+bool connMgr::setEnableFailover(bool v)
+{
+    m_keynum = v ? TD_STSTCS_HA_ENABLE_FO :
+                          TD_STSTCS_HA_DISBLE_FO;
+    m_datalen = 0;
+    tdap(TD_STASTISTICS);
+    return stat() == 0;
 }
 
 connMgr* connMgr::create(database* db)
@@ -480,37 +582,44 @@ void connMgr::removeSystemDb(connMgr::records& recs)
     }
 }
 
-const _TCHAR* connMgr::sysvarName(uint_td index)
+const _TCHAR* connMgr::sysvarName(uint_td id)
 {
-    if (index < TD_VAR_SIZE)
-        return SYSVAR_NAME[index];
+    if (id < TD_VAR_SIZE)
+        return SYSVAR_NAME[id];
     return _T("");
 }
 
-const _TCHAR* connMgr::statusvarName(uint_td index)
+const _TCHAR* connMgr::statusvarName(uint_td id)
 {
-    if (index < TD_SVAR_SIZE)
-        return STATUSVAR_NAME[index];
+    if (id < TD_SVAR_SIZE)
+        return STATUSVAR_NAME[id];
     return _T("");
 }
 
-const _TCHAR* slaveStatusName1(uint_td index)
+const _TCHAR* slaveStatusName1(uint_td id)
 {
-    if (index < SLAVE_STATUS_DEFAULT_SIZE)
-        return SLAVE_STATUS_NAME[index];
+    if (id < SLAVE_STATUS_DEFAULT_SIZE)
+        return SLAVE_STATUS_NAME[id];
     return _T("");
 }
 
-const _TCHAR* connMgr::slaveStatusName(uint_td index) const
+const _TCHAR* connMgr::slaveStatusName(uint_td id) const
 {
     bool mariadb = m_serverVer.isMariaDB();
-    if (index < SLAVE_STATUS_DEFAULT_SIZE)
-        return slaveStatusName1(index);
-    index -= SLAVE_STATUS_DEFAULT_SIZE;
-    if(mariadb &&  (index < SLAVE_STATUS_EX_MA_SIZE))
-        return SLAVE_STATUS_NAME_EX_MA[index];
-    else if(!mariadb &&  (index < SLAVE_STATUS_EX_SIZE))
-        return SLAVE_STATUS_NAME_EX[index];
+    if (id < SLAVE_STATUS_DEFAULT_SIZE)
+        return slaveStatusName1(id);
+    id -= SLAVE_STATUS_DEFAULT_SIZE;
+    if(mariadb &&  (id < SLAVE_STATUS_EX_MA_SIZE))
+        return SLAVE_STATUS_NAME_EX_MA[id];
+    else if(!mariadb &&  (id < SLAVE_STATUS_EX_SIZE))
+        return SLAVE_STATUS_NAME_EX[id];
+    return _T("");
+}
+
+const _TCHAR* connMgr::extendedVarName(uint_td id)
+{
+    if (id < TD_EXTENDED_VAR_SIZE)
+        return EXTENDED_VAR_NAME[id];
     return _T("");
 }
 

@@ -58,13 +58,13 @@ STDMETHODIMP CConnRecord::get_Id(int* retVal)
     return S_OK;
 }
 
-STDMETHODIMP CConnRecord::get_Db(short* retVal)
+STDMETHODIMP CConnRecord::get_Db(int* retVal)
 {
     *retVal = m_rec.db;
     return S_OK;
 }
 
-STDMETHODIMP CConnRecord::get_Type(short* retVal)
+STDMETHODIMP CConnRecord::get_Type(int* retVal)
 {
     *retVal = m_rec.type;
     return S_OK;
@@ -127,5 +127,11 @@ STDMETHODIMP CConnRecord::get_DelCount(int* retVal)
 STDMETHODIMP CConnRecord::get_InsCount(int* retVal)
 {
     *retVal = m_rec.insCount;
+    return S_OK;
+}
+
+STDMETHODIMP CConnRecord::get_Port(int* retVal)
+{
+    *retVal = m_rec.port;
     return S_OK;
 }

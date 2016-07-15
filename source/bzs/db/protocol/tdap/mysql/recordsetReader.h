@@ -889,8 +889,8 @@ public:
                 }
             }
         }
-
-        tb->indexInit();
+        if (tb->keyNum() >= 0)
+            tb->indexInit();
         tb->blobBuffer()->clear();
         tb->setBlobFieldCount(blobs);
         return 0;

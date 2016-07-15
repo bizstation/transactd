@@ -469,14 +469,16 @@ short schemaBuilder::execute(database* db, table* mtb, bool nouseNullkey)
             std::string s = it->path().filename().string();
             if (isFrmFile(s))
             {
-                filename_to_tablename(it->path().stem().string().c_str(), path,
-                                      FN_REFLEN);
-                table* tb = db->openTable(path, TD_OPEN_READONLY, NULL, "");
-                if (!tb) break;
-                if (!tb->isView())
+                enum legacy_db_type not_used;
+                frm_type_enum ftype = dd_frm_type(db->thd(), (char*)it->path().string().c_str(), &not_used);
+                if (ftype == FRMTYPE_TABLE)
+                {
+                    filename_to_tablename(it->path().stem().string().c_str(), path,
+                                          FN_REFLEN);
+                    table* tb = db->openTable(path, TD_OPEN_READONLY, NULL, "");
+                    if (!tb) break;
                     tables.push_back(tb);
-                else
-                    db->closeTable(tb);
+                }
             }
         }
     }

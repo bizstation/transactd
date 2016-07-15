@@ -88,7 +88,7 @@ class connection : public iconnection, private boost::noncopyable
                 int ret = m_module->execute(buf, size, &m_optionalBuffes);
                 if (ret == EXECUTE_RESULT_QUIT)
                     return;
-                else if(ret == EXECUTE_RESULT_ACCESS_DNIED)
+                else if(ret == EXECUTE_RESULT_ACCESS_DNIED || ret == EXECUTE_RESULT_SEND_QUIT)
                 {
                     boost::asio::write(m_socket,  buffer(&m_result[0], size),
                            boost::asio::transfer_all());

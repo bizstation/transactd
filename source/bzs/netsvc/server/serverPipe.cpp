@@ -355,6 +355,8 @@ class connection : public iconnection, private boost::noncopyable
 
                 sentResult = m_comm->send();
                 m_module->cleanup();
+                if(/*ret == EXECUTE_RESULT_ACCESS_DNIED || */ret == EXECUTE_RESULT_SEND_QUIT)
+                    return;
             }
         }
     }

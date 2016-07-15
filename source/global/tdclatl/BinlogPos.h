@@ -79,6 +79,7 @@ public:
     STDMETHOD(get_Type)(short* retVal);
     STDMETHOD(get_Filename)(BSTR* retVal);
     STDMETHOD(get_Gtid)(BSTR* retVal);
+    STDMETHOD(put_Gtid)(BSTR Value);
 };
 
 //OBJECT_ENTRY_AUTO(__uuidof(Bitset), CBitset)

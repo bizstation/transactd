@@ -49,6 +49,7 @@ interface IBookmark;
 interface IBitset;
 interface IBinlogPos;
 interface IConnMgr;
+interface IHaNameResolver;
 
 typedef
 [
@@ -205,7 +206,10 @@ enum eStatus
     ERROR_TD_NET_TOO_BIGDATA    = 3802,
     ERROR_TD_NET_OTHER          = 3810,
     ERROR_TD_C_CLIENT_UNKNOWN   = 3811,
-    ERROR_TD_RECONNECTED        = 3900
+    ERROR_TD_INVALID_SERVER_ROLE= 3812,
+    ERROR_TD_RECONNECTED        = 3900,
+    ERROR_TD_RECONNECTED_OFFSET = 1000,
+    MYSQL_ERROR_OFFSET          = 25000
 }eStatus;
 
 typedef
@@ -571,6 +575,10 @@ interface IDatabase : IDispatch
   HRESULT _stdcall GetCreateViewSql([in]BSTR name, [out, retval] BSTR* retVal);
   [id(0x00000101)]
   HRESULT _stdcall ExecSql([in] BSTR Sql, [out, retval] VARIANT_BOOL* Value);
+  [propget, id(0x00000102)]
+  HRESULT _stdcall EnableAutoReconnect([out, retval] VARIANT_BOOL* retVal);
+  [propput, id(0x00000102)]
+  HRESULT _stdcall EnableAutoReconnect([in] VARIANT_BOOL val);
 
 };
 
@@ -1780,6 +1788,8 @@ interface IBinlogPos : IDispatch{
   HRESULT _stdcall Filename([out, retval] BSTR* retVal);
   [propget, id(3)]
   HRESULT _stdcall Gtid([out, retval] BSTR* retVal);
+  [propput, id(3)]
+  HRESULT _stdcall Gtid([in] BSTR Value);
 };
 
 [
@@ -1797,11 +1807,11 @@ interface IConnRecord : IDispatch{
     HRESULT _stdcall ConId([out, retval] BSTR* retVal);
 #endif
     [propget, id(0x0000002)]
-    HRESULT _stdcall Id([out, retval] int* retVal); //unsigned int value_id;
+    HRESULT _stdcall Id([out, retval] int* retVal);
     [propget, id(0x0000003)]
-    HRESULT _stdcall Db([out, retval] short* retVal);
+    HRESULT _stdcall Db([out, retval] int* retVal);
     [propget, id(0x0000004)]
-    HRESULT _stdcall Type([out, retval] short* retVal); //trnType
+    HRESULT _stdcall Type([out, retval] int* retVal);
     [propget, id(0x0000005)]
     HRESULT _stdcall Name([out, retval] BSTR* retVal); 
     [propget, id(0x0000006)]
@@ -1818,6 +1828,9 @@ interface IConnRecord : IDispatch{
     HRESULT _stdcall InsCount([out, retval] int* retVal); 
     [propget, id(0x000000C)]
     HRESULT _stdcall LongValue([out, retval] BSTR* retVal); 
+    [propget, id(0x000000D)]
+    HRESULT _stdcall Port([out, retval] int* retVal);
+
 }
 
 [
@@ -1859,7 +1872,7 @@ interface IConnMgr : IDispatch{
     [id(0x0000008)]
     HRESULT _stdcall Sysvars([out, retval] IConnRecords** retVal);
     [id(0x0000011)]
-    HRESULT _stdcall SlaveStatus([out, retval] IConnRecords** retVal);
+    HRESULT _stdcall SlaveStatus([in, defaultvalue("") ]BSTR channel, [out, retval] IConnRecords** retVal);
     [id(0x0000009)]
     HRESULT _stdcall Connections([out, retval] IConnRecords** retVal);
     [id(0x000000A)]
@@ -1897,7 +1910,57 @@ interface IConnMgr : IDispatch{
     HRESULT _stdcall Statusvars([out, retval] IConnRecords** retVal);
     [id(0x0000015)]
     HRESULT _stdcall StatusvarName([in]int index, [out, retval] BSTR* retVal);
+    [id(0x0000016)]
+    HRESULT _stdcall Extendedvars([out, retval] IConnRecords** retVal);
+    [id(0x0000017)]
+    HRESULT _stdcall SlaveHosts([out, retval] IConnRecords** retVal);
+    [id(0x0000018)]
+    HRESULT _stdcall Channels([out, retval] IConnRecords** retVal);
+    [id(0x0000019)]
+    HRESULT _stdcall ExtendedVarName([in]int index, [out, retval] BSTR* retVal);
+    [id(0x000001A)]
+    HRESULT _stdcall HaLock([out, retval] VARIANT_BOOL* retVal);
+    [id(0x000001B)]
+    HRESULT _stdcall HaUnlock();
+    [id(0x000001C)]
+    HRESULT _stdcall SetRole([in]int v, [out, retval] VARIANT_BOOL* retVal);
+    [id(0x000001D)]
+    HRESULT _stdcall SetTrxBlock([in]VARIANT_BOOL v, [out, retval] VARIANT_BOOL* retVal);
+    [id(0x000001E)]
+    HRESULT _stdcall SetEnableFailover([in]VARIANT_BOOL v, [out, retval] VARIANT_BOOL* retVal);
+    [propget, id(0x0000001F)]
+    HRESULT _stdcall IsOpen([out, retval] VARIANT_BOOL* retVal);
 
+};
+
+interface IHaNameResolver;
+[
+	object,
+	uuid(C6665527-3B17-49A3-BF38-AE3855EC073F),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IHaNameResolver : IDispatch{
+    [id(0x0000001)]
+    HRESULT _stdcall Start([in]BSTR master, [in]BSTR slaves,
+                   [in]BSTR slaveHostsWithPort, [in]short slaveNum,
+                   [in]BSTR userName,
+                   [in]BSTR password,
+                   [in, defaultvalue(0)]int option,
+                   [out, retval]int* retVal);
+    [id(0x0000002)]
+    HRESULT _stdcall AddPortMap([in]short mysqlPort, [in]short transactdPort);
+    [id(0x0000003)]
+    HRESULT _stdcall ClearPortMap();
+    [id(0x0000004)]
+    HRESULT _stdcall Stop();
+    /*[id(0x0000005)]
+    HRESULT _stdcall Clear();*/
+    [propget, id(0x0000006)]
+    HRESULT _stdcall Master([out, retval]BSTR* retVal);
+    [propget, id(0x0000007)]
+    HRESULT _stdcall Slave([out, retval]BSTR* retVal);
 };
 
 
@@ -2195,6 +2258,14 @@ library transactd
 	coclass ConnMgr
 	{
 		[default] interface IConnMgr;
+	};
+
+    [
+        uuid(9259C707-BF39-4B9A-B013-67AF11F4B642)
+	]
+	coclass HaNameResolver
+	{
+		[default] interface IHaNameResolver;
 	};
    
 };
