@@ -378,6 +378,7 @@ BOOST_AUTO_TEST_CASE(FailOver8611)
     testEnableFailOver(false);
     testFailOverBlock();
     testEnableFailOver(true);
+    Sleep(10000);
     testFailOver8611();
     testMasterToSlave();
     testSwitchTo(str_conv(host2), str_conv(host1));

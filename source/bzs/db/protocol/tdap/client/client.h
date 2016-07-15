@@ -175,7 +175,7 @@ class client
             if (c->userOptions() & CL_OPTION_CHECK_ROLE)
             {
                 bool clRoleMaster = (c->userOptions() & HST_OPTION_ROLE_MASTER) != 0; 
-                bool srvRoleMaster = (hst->options & HA_ROLE_MASTER) != 0;
+                bool srvRoleMaster = (hst->options & HST_OPTION_ROLE_MASTER) != 0;
   
                 if (clRoleMaster != srvRoleMaster)
                 {
