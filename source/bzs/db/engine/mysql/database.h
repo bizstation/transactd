@@ -380,6 +380,8 @@ class table : private boost::noncopyable
     inline void unlockRow(bool noConsistent);
     inline void tryConsistentRead(bool noConsistent);
 
+
+
 #ifdef USE_HANDLERSOCKET
     std::vector<int> m_useFields;
     void checkFiledIndex(int index);
@@ -507,7 +509,7 @@ public:
         return ((num >= 0) && (num < (short)m_table->s->keys));
     }
 
-    bool setKeyNum(char num, bool sorted = true);
+    bool setKeyNum(char num, bool sorted = true, bool force = false);
 
     inline void setKeyNum(const char* name, bool sorted = true)
     {
@@ -849,6 +851,15 @@ public:
     }
 
     inline bool isUsing() const { return (m_table != NULL); }
+
+    inline size_t size() const { return m_table->read_set->n_bits;}
+
+    inline bool is_set(uint bit) const 
+    {
+        return bitmap_is_set(m_table->read_set, bit) != 0;
+    }
+
+    inline bool isKeyRead() const {return m_keyRead;}
 
 };
 

@@ -695,7 +695,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
     }
     else
     {
-        if (!m_tb->setKeyNum(keynum))
+        if (!m_tb->setKeyNum(keynum, true, true))
         {
             req.result = m_tb->stat();
             return ret;
@@ -778,7 +778,7 @@ inline int dbExecuter::doReadMulti(request& req, int op,
     if (op == TD_KEY_SEEK_MULTI && !(ereq->itype & FILTER_TYPE_SEEKS_BOOKMARKS))
     {
         char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-        if (!m_tb->setKeyNum(keynum))
+        if (!m_tb->setKeyNum(keynum, true, true))
         {
             req.result = m_tb->stat();
             return ret;

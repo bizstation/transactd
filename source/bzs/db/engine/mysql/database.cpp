@@ -1185,14 +1185,14 @@ bool table::setNonKey(bool scan)
     return true;
 }
 
-bool table::setKeyNum(char num, bool sorted)
+bool table::setKeyNum(char num, bool sorted, bool force)
 {
     if (num < 0)
     {
         m_stat = STATUS_INVALID_KEYNUM;
         return false;
     }
-    if ((m_keyNum != num) ||
+    if (force || (m_keyNum != num) ||
         ((m_keyNum >= 0) && (m_table->file->inited == handler::NONE)))
     {
         m_table->file->ha_index_or_rnd_end();

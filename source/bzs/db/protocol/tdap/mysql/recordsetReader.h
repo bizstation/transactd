@@ -26,6 +26,7 @@
 #include <bzs/db/engine/mysql/IReadRecords.h>
 #include <bzs/db/engine/mysql/fieldAccess.h>
 #include <boost/shared_ptr.hpp>
+#include <bitset>
 
 #ifndef MAX_KEY_SEGMENT
 #define MAX_KEY_SEGMENT 8
@@ -558,9 +559,10 @@ public:
     extResultDef* rd;
     unsigned char* readMap;
     int  blobs;
-    unsigned short rejectCount;
     int readMapSize;
-    prepared() : fds(NULL), rd(NULL), readMap(NULL), readMapSize(0){}
+    unsigned short rejectCount;
+    bool keyOnly;
+    prepared() : fds(NULL), rd(NULL), readMap(NULL), readMapSize(0), keyOnly(false){}
 
     ~prepared()
     {
@@ -758,12 +760,14 @@ public:
         {
             bm.setTable(tb);
             if (m_seeksMode && !(req->itype & FILTER_TYPE_SEEKS_BOOKMARKS))
-                addKeysegFieldMap(tb);
+                makeKeyFieldBitmap(bm, tb, tb->keyNum());
+
             if (p->readMapSize)
                 p->copyBitmapTo(bm.getReadBitmap());
+            if (p->keyOnly) bm.setKeyRead(true);
         }
-        
-        tb->indexInit();
+        if (tb->keyNum() >= 0)
+            tb->indexInit();
         tb->blobBuffer()->clear();
         tb->setBlobFieldCount(p->blobs);
         nw->beginExt(tb->blobFields() != 0);
@@ -786,6 +790,7 @@ public:
              p->assignBitmap(bm.getReadBitmap());
         p->blobs = tb->getBlobFieldCount();
         p->rejectCount = m_req->rejectCount;
+        p->keyOnly = bm.isKeyRead();
         end();
         return ret;
     }
@@ -820,10 +825,11 @@ public:
 
         return ret;
     }
-
-    void addKeysegFieldMap(engine::mysql::table* tb)
+    
+    void makeKeyFieldBitmap(engine::mysql::fieldBitmap& b, 
+                        engine::mysql::table* tb, char keynum)
     {
-        const KEY* key = &tb->keyDef(tb->keyNum());
+        const KEY* key = &tb->keyDef(keynum);
         if (key)
         {
             int sgi = 0;
@@ -831,10 +837,41 @@ public:
                                             key->user_defined_key_parts);
             while (sgi < segments)
             {
-                bm.setReadBitmap(key->key_part[sgi].field->field_index);
+                b.setReadBitmap(key->key_part[sgi].field->field_index);
                 ++sgi;
             }
         }
+    }
+
+    void makeKeyFieldBitmap(std::bitset<256>& bts, 
+                        engine::mysql::table* tb, char keynum)
+    {
+        const KEY* key = &tb->keyDef(keynum);
+        if (key)
+        {
+            int sgi = 0;
+            int segments = std::min<uint>(MAX_KEY_SEGMENT,
+                                            key->user_defined_key_parts);
+            while (sgi < segments)
+            {
+                bts.set(key->key_part[sgi].field->field_index);
+                ++sgi;
+            }
+        }
+    }
+
+    bool isKeyFieldOnly(engine::mysql::table* tb)
+    {
+        std::bitset<256> bts; 
+        makeKeyFieldBitmap(bts, tb, tb->keyNum()); 
+        makeKeyFieldBitmap(bts, tb, tb->primarykeyNum()); 
+        //Compare bitmap
+        for (uint i = 0;i < bm.size(); ++i)
+        {
+            if (bm.is_set(i) && !bts[i])
+                return false;
+        }
+        return true;
     }
 
     // TODO This convert is move to client. but legacy app is need this
@@ -871,24 +908,15 @@ public:
             }
         }
         else if (!seekBookmark)
-            addKeysegFieldMap(tb);
+            makeKeyFieldBitmap(bm, tb, tb->keyNum());
 
         // if need bookmark , add primary key fields
         if (!noBookmark)
-        {
-            const KEY* key = tb->primaryKey();
-            if (key)
-            {
-                int sgi = 0;
-                int segments = std::min<uint>(MAX_KEY_SEGMENT,
-                                              key->user_defined_key_parts);
-                while (sgi < segments)
-                {
-                    bm.setReadBitmap(key->key_part[sgi].field->field_index);
-                    ++sgi;
-                }
-            }
-        }
+            makeKeyFieldBitmap(bm, tb, tb->primarykeyNum());
+        
+        if (isKeyFieldOnly(tb))
+            bm.setKeyRead(true);
+
         if (tb->keyNum() >= 0)
             tb->indexInit();
         tb->blobBuffer()->clear();
