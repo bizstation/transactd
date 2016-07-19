@@ -541,7 +541,7 @@ table* database::useTable(int index, enum_sql_command cmd, rowLockMode* lck)
     }
     if (tb->isExclusveMode())
         m_thd->variables.option_bits &= ~OPTION_TABLE_LOCK;
-    
+    /* A orver head of init_table_handle_for_HANDLER is a small */
     tb->initForHANDLER();
     tb->setLocked(true);
     m_thd->in_lock_tables = 0;

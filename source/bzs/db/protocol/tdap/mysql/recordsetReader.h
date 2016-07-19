@@ -542,12 +542,15 @@ public:
 
     void setNextPtr()
     {
-        for (int i = 0; i < (int)m_fields.size() - 1; ++i)
+        if (m_fields.size())
         {
-            m_fields[i].m_next = &m_fields[i + 1];
-            m_fields[i].oprCache();
+            for (int i = 0; i < (int)m_fields.size() - 1; ++i)
+            {
+                m_fields[i].m_next = &m_fields[i + 1];
+                m_fields[i].oprCache();
+            }
+            m_fields[m_fields.size() - 1].oprCache();
         }
-        m_fields[m_fields.size() - 1].oprCache(); 
     }
 };
 
