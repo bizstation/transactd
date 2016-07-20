@@ -139,11 +139,12 @@ void testClone(database* db)
     db->close();
     BOOST_CHECK_MESSAGE(db->stat() == 0, "db close stat = " << db->stat());
     table* tb = db2->openTable(_T("user"), TD_OPEN_NORMAL);
-    BOOST_CHECK_MESSAGE(0 == db2->stat(), "openTable" << db2->stat());
+    BOOST_CHECK_MESSAGE(0 == db2->stat(), "openTable " << db2->stat());
     if (db2)
         db2->release();
     bool ret = nsdatabase::testTablePtr(tb);
     BOOST_CHECK_MESSAGE(ret == true, "testTablePtr");
+    
     tb->release();
 
     ret = nsdatabase::testTablePtr(tb);

@@ -244,22 +244,24 @@ unsigned char* database::getUserSha1Passwd(const char* host, const char* user,
 	        tb = useTable(tb2->id(), SQLCOM_SELECT, NULL);
 	        if (tb)
 	        {
-	            tb->setKeyNum((char)0);
-	            std::vector<std::string> keyValues;
-	            keyValues.push_back(host);
-	            keyValues.push_back(user);
-	            tb->setKeyValues(keyValues, -1, NULL);
-	            tb->seekKey(HA_READ_KEY_EXACT, tb->keymap());
-	            if (tb->stat() == 0)
-	            {
-	                int size;
-	                const char* p =  tb->valStr(MYSQL_USER_FIELD_PASSWORD, size);
-	                if (strlen(p))
-	                {
-	                    get_salt_from_password(buf, p);
-	                    retPtr = buf;
-	                }
-	            }
+                if (tb->setKeyNum((char)0))
+                {
+                    std::vector<std::string> keyValues;
+                    keyValues.push_back(host);
+                    keyValues.push_back(user);
+                    tb->setKeyValues(keyValues, -1, NULL);
+                    tb->seekKey(HA_READ_KEY_EXACT, tb->keymap());
+                    if (tb->stat() == 0)
+                    {
+                        int size;
+                        const char* p = tb->valStr(MYSQL_USER_FIELD_PASSWORD, size);
+                        if (strlen(p))
+                        {
+                            get_salt_from_password(buf, p);
+                            retPtr = buf;
+                        }
+                    }
+                }
 	            tb->unUse();
 	        }
             closeTable(tb2);
@@ -1032,6 +1034,20 @@ unsigned short nisFieldNum(TABLE* tb)
     return 0;
 }
 
+/* class prepareHandler */
+void prepareHandler::setInnodbFetchExtraCols(unsigned long v)
+{
+    if (m_innodb)
+    {
+        innodb_prebuit* prebuilt = *((innodb_prebuit**)((char*)(m_table->file) + sizeof(handler)+DSMRR_SIZE));
+        if (prebuilt->magic_n == ROW_PREBUILT_ALLOCATED && prebuilt->hint_need_to_fetch_extra_cols >= 0 &&
+            prebuilt->hint_need_to_fetch_extra_cols <= ROW_RETRIEVE_ALL_COLS)
+            prebuilt->hint_need_to_fetch_extra_cols = v;
+        else
+            THROW_BZS_ERROR_WITH_CODEMSG(STATUS_PROGRAM_ERROR, "Cast error for Innodb prebuilt.");
+    }
+}
+
 bool table::noKeybufResult = true;
 
 table::table(TABLE* myTable, database& db, const std::string& name, short mode,
@@ -1041,13 +1057,11 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
       m_stat(0),
       m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
       m_readCount(0), m_updCount(0), m_delCount(0), m_insCount(0), m_privilege(0xFFFF),
-      m_keyNum(-1), m_nonNcc(false), m_validCursor(true), m_cursor(false), 
+      m_nonNcc(false), m_validCursor(true), m_cursor(false), 
       m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false),
       m_delayAutoCommit(false),m_forceConsistentRead(false), m_mysqlNull(mysqlnull),
-      m_timestampAlways(g_timestamp_always != 0)
+      m_timestampAlways(g_timestamp_always != 0), m_prepare(myTable)
 {
-
-    m_table->read_set = &m_table->s->all_set;
 
     m_recordFormatType = RF_VALIABLE_LEN;
 #ifdef USE_BTRV_VARIABLE_LEN
@@ -1144,7 +1158,7 @@ void table::resetInternalTable(TABLE* table)
     else
     {
         m_table = table;
-        m_table->read_set = &m_table->s->all_set;
+        m_prepare.init(table);
         m_locked = false;
         m_changed = false;
         m_validCursor = false;
@@ -1171,39 +1185,33 @@ void table::checkACL(enum_sql_command cmd)
     }
 }
 
-bool table::setNonKey(bool scan)
+bool table::setNonKey(bool wholeRow, bool keyRead)
 {
-    if (m_keyNum != -2)
-    {
-        m_table->file->ha_index_or_rnd_end();
-        int ret = m_table->file->ha_rnd_init(scan);
-        if (ret)
-            THROW_BZS_ERROR_WITH_CODEMSG(ERROR_INDEX_RND_INIT,
-                                         "setNonKey rnd_init error.");
-        m_keyNum = -2;
-    }
+    m_prepare.setKeyNum(-2);
+    m_prepare.ready(wholeRow, keyRead);
     return true;
 }
 
-bool table::setKeyNum(char num, bool sorted, bool force)
+bool table::setKeyNum(char num, bool wholeRow, bool keyRead)
 {
-    if (num < 0)
+    if (!keynumCheck(num))
     {
         m_stat = STATUS_INVALID_KEYNUM;
         return false;
     }
-    if (force || (m_keyNum != num) ||
-        ((m_keyNum >= 0) && (m_table->file->inited == handler::NONE)))
+    m_prepare.setKeyNum(num);
+    m_prepare.ready(wholeRow, keyRead);
+    return true;
+}
+
+bool table::setKeyNumForMultiRead(char num)
+{
+    if (num != -2 && !keynumCheck(num))
     {
-        m_table->file->ha_index_or_rnd_end();
-        if (!keynumCheck(num))
-        {
-            m_stat = STATUS_INVALID_KEYNUM;
-            return false;
-        }
-        m_keyNum = num;
-        m_table->file->ha_index_init(m_keyNum, sorted);
+        m_stat = STATUS_INVALID_KEYNUM;
+        return false;
     }
+    m_prepare.setKeyNum(num);
     return true;
 }
 
@@ -1221,7 +1229,7 @@ void table::fillNull(uchar* ptr, int size)
 
 void table::setKeyValues(const uchar* ptr, int size)
 {
-    KEY& key = m_table->key_info[(int)m_keyNum];
+    KEY& key = m_table->key_info[(int)keyNum()];
     memcpy(&m_keybuf[0], ptr, std::min(MAX_KEYLEN, size));
     int pos = 0;
     for (int j = 0; j < (int)key.user_defined_key_parts; j++)
@@ -1251,7 +1259,7 @@ void table::setKeyValues(const uchar* ptr, int size)
  */
 short table::setKeyValuesPacked(const uchar* ptr, int size)
 {
-    KEY& key = m_table->key_info[(int)m_keyNum];
+    KEY& key = m_table->key_info[(int)keyNum()];
     int to = 0;
     const uchar* from = ptr;
     int ret = -1;
@@ -1308,10 +1316,10 @@ short table::setKeyValuesPacked(const uchar* ptr, int size)
 uint table::keyPackCopy(uchar* ptr)
 {
     // if nokey and getbookmark operation then keynum = -2
-    if (m_keyNum < 0)
+    if (keyNum() < 0)
         return 0;
 
-    KEY& key = m_table->key_info[(int)m_keyNum];
+    KEY& key = m_table->key_info[(int)keyNum()];
     if ((key.flags & HA_NULL_PART_KEY) || (key.flags & HA_VAR_LENGTH_KEY))
     {
         int from = 0;
@@ -1428,7 +1436,6 @@ inline bool isNullNis(KEY& key, bool all)
 
 void table::setBlobFieldPointer(const bzs::db::blobHeader* hd)
 {
-
     if (hd)
     {
         assert(hd->curRow < hd->rows);
@@ -1695,21 +1702,16 @@ inline void table::unlockRow(bool noConsistent)
 void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
 {
     m_nonNcc = false;
-    if (keynumCheck(m_keyNum))
+    unlockRow(m_delayAutoCommit);
+    m_stat = m_table->file->ha_index_read_map(
+        m_table->record[0], &m_keybuf[0], keyMap /* keymap() */, find_flag);
+    setCursorStaus();
+    if (m_stat == 0)
     {
-        unlockRow(m_delayAutoCommit);
-        m_stat = m_table->file->ha_index_read_map(
-            m_table->record[0], &m_keybuf[0], keyMap /* keymap() */, find_flag);
-        setCursorStaus();
-        if (m_stat == 0)
-        {
-            if (find_flag != HA_READ_KEY_EXACT)
-                key_copy(&m_keybuf[0], m_table->record[0],
-                         &m_table->key_info[(int)m_keyNum], KEYLEN_ALLCOPY);
-        }
+        if (find_flag != HA_READ_KEY_EXACT)
+            key_copy(&m_keybuf[0], m_table->record[0],
+                     &m_table->key_info[(int)keyNum()], KEYLEN_ALLCOPY);
     }
-    else
-        m_stat = STATUS_INVALID_KEYNUM;
     if ((m_stat == HA_ERR_KEY_NOT_FOUND) && (find_flag != HA_READ_KEY_EXACT))
         m_stat = HA_ERR_END_OF_FILE;
 }
@@ -1717,7 +1719,7 @@ void table::seekKey(enum ha_rkey_function find_flag, key_part_map keyMap)
 void table::moveKey(boost::function<int()> func)
 {
     m_nonNcc = false;
-    if (keynumCheck(m_keyNum))
+    if (keynumCheck(keyNum()))
     {
         unlockRow(m_delayAutoCommit);
 
@@ -1725,7 +1727,7 @@ void table::moveKey(boost::function<int()> func)
         setCursorStaus();
         if (m_stat == 0)
             key_copy(&m_keybuf[0], m_table->record[0],
-                     &m_table->key_info[(int)m_keyNum], KEYLEN_ALLCOPY);
+                     &m_table->key_info[(int)keyNum()], KEYLEN_ALLCOPY);
     }
     else
         m_stat = STATUS_INVALID_KEYNUM;
@@ -1736,20 +1738,15 @@ void table::moveKey(boost::function<int()> func)
 void table::getNextSame(key_part_map keyMap)
 {
     m_nonNcc = false;
-    if (keynumCheck(m_keyNum))
+    unlockRow(false /*lock*/);
+    m_stat = m_table->file->ha_index_next_same(
+        m_table->record[0], &m_keybuf[0], keyMap /* keymap() */);
+    setCursorStaus();
+    if (m_stat == 0)
     {
-        unlockRow(false /*lock*/);
-        m_stat = m_table->file->ha_index_next_same(
-            m_table->record[0], &m_keybuf[0], keyMap /* keymap() */);
-        setCursorStaus();
-        if (m_stat == 0)
-        {
-            key_copy(&m_keybuf[0], m_table->record[0],
-                     &m_table->key_info[(int)m_keyNum], KEYLEN_ALLCOPY);
-        }
+        key_copy(&m_keybuf[0], m_table->record[0],
+                 &m_table->key_info[(int)keyNum()], KEYLEN_ALLCOPY);
     }
-    else
-        m_stat = STATUS_INVALID_KEYNUM;
 }
 
 void table::getLast()
@@ -1790,7 +1787,7 @@ void table::getNext()
     if (m_nonNcc)
     { // It moves to the position after updating.
         // Since it may be lost, ref is compared and the next is decided.
-        movePos(position(true), m_keyNum, true);
+        movePos(position(true), keyNum(), true);
         if (m_stat)
             return;
     }
@@ -1807,7 +1804,7 @@ void table::getPrev()
     }
     if (m_nonNcc)
     {
-        movePos(position(true), m_keyNum, true);
+        movePos(position(true), keyNum(), true);
         if (m_stat)
             return;
     }
@@ -1817,10 +1814,10 @@ void table::getPrev()
 
 bool table::keyCheckForPercent()
 {
-    if (m_keyNum == -1)
-        m_keyNum = m_table->s->primary_key;
+    if (keyNum() == -1)
+        setKeyNum(m_table->s->primary_key);
     // The value of the beginning of a key
-    KEY& key = m_table->key_info[(int)m_keyNum];
+    KEY& key = m_table->key_info[(int)keyNum()];
     if (key.key_length > 128)
         return false;
     return true;
@@ -1828,7 +1825,7 @@ bool table::keyCheckForPercent()
 
 void table::preBuildPercent(uchar* first, uchar* last)
 {
-    KEY& key = m_table->key_info[(int)m_keyNum];
+    KEY& key = m_table->key_info[(int)keyNum()];
     getFirst();
     if (m_stat == 0)
     {
@@ -1878,7 +1875,7 @@ void table::getByPercentage(unsigned short per)
         uchar* st = keybufFirst;
         uchar* en = keybufLast;
         uchar* cu = (uchar*)keybuf();
-        KEY& key = m_table->key_info[(int)m_keyNum];
+        KEY& key = m_table->key_info[(int)keyNum()];
         uint keylen = key.key_length + 10;
         boost::shared_array<uchar> stbuf(new uchar[keylen]);
         boost::shared_array<uchar> lsbuf(new uchar[keylen]);
@@ -1966,7 +1963,7 @@ void table::getByPercentage(unsigned short per)
 
 int table::percentage(uchar* first, uchar* last, uchar* cur)
 {
-    KEY& key = m_table->key_info[(int)m_keyNum];
+    KEY& key = m_table->key_info[(int)keyNum()];
     // 1 cur to last
     key_range minkey;
     minkey.key = cur;
@@ -1975,11 +1972,11 @@ int table::percentage(uchar* first, uchar* last, uchar* cur)
     minkey.flag = HA_READ_KEY_EXACT;
     key_range maxkey = minkey;
     maxkey.key = last;
-    ha_rows rows1 = m_table->file->records_in_range(m_keyNum, &minkey, &maxkey);
+    ha_rows rows1 = m_table->file->records_in_range(keyNum(), &minkey, &maxkey);
 
     // 2 first to last
     maxkey.key = first;
-    ha_rows rows2 = m_table->file->records_in_range(m_keyNum, &maxkey, &minkey);
+    ha_rows rows2 = m_table->file->records_in_range(keyNum(), &maxkey, &minkey);
 
     // 3 record count
     ha_rows total = recordCount(true);
@@ -2003,7 +2000,7 @@ void table::calcPercentage()
     m_percentResult = 0;
     // The present key value is copied.
     uchar keybufCur[MAX_KEYLEN] = { 0x00 };
-    key_copy(keybufCur, m_table->record[0], &m_table->key_info[(int)m_keyNum],
+    key_copy(keybufCur, m_table->record[0], &m_table->key_info[(int)keyNum()],
              KEYLEN_ALLCOPY);
 
     uchar keybufFirst[MAX_KEYLEN] = { 0x00 };
@@ -2028,8 +2025,7 @@ void table::stepFirst()
     }
     else
     {
-        m_keyNum = -1;
-        if (setNonKey(true))
+        if (setNonKey())
         {
             unlockRow(m_delayAutoCommit);
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
@@ -2061,9 +2057,9 @@ void table::stepNext()
     }
     else
     {
-        if (m_keyNum != -2)
+        if (keyNum() != -2)
         {
-            if (setNonKey(false))
+            if (setNonKey())
             {
                 unlockRow(false/*lock*/);
                 m_stat = m_table->file->ha_rnd_pos(m_table->record[0],
@@ -2180,7 +2176,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
 void table::seekPos(const uchar* rawPos)
 {
     seekKey(HA_READ_KEY_OR_NEXT, keymap());
-    if (m_keyNum == (int)m_table->s->primary_key)
+    if (keyNum() == (int)m_table->s->primary_key)
         return;
     int cmp;
     while ((m_stat == 0) &&
@@ -2192,28 +2188,30 @@ void table::seekPos(const uchar* rawPos)
     }
 }
 
-void table::movePos(const uchar* pos, char keyNum, bool sureRawValue)
+/* move by ref and change key */
+void table::movePos(const uchar* pos, char keynum, bool sureRawValue)
 {
     const uchar* rawPos = pos;
     if (!sureRawValue && (m_table->file->ref_length > REF_SIZE_MAX))
         rawPos = bms()->getRefByBm(*(unsigned int*)pos);
 
-    setNonKey();
     unlockRow(m_delayAutoCommit);
+    setNonKey();
+
     m_stat = m_table->file->ha_rnd_pos(m_table->record[0], (uchar*)rawPos);
     setCursorStaus();
-    if ((keyNum == -1) || (keyNum == -64) || (keyNum == -2))
+    if ((keynum == -1) || (keynum == -64) || (keynum == -2))
         return;
     if (m_stat == 0)
     {
-        if (m_keyNum != keyNum)
+        if (keyNum() != keynum)
         { // need key change
             key_copy(&m_keybuf[0], m_table->record[0],
-                     &m_table->key_info[(int)keyNum], KEYLEN_ALLCOPY);
+                &m_table->key_info[(int)keynum], KEYLEN_ALLCOPY);
             // It seek(s) until ref becomes the same, since it is a duplication
             // key.
-            setKeyNum(keyNum);
-            seekPos(rawPos);
+            if (setKeyNum(keynum))
+                seekPos(rawPos);
         }
     }
 }
@@ -2266,12 +2264,10 @@ ha_rows table::recordCount(bool estimate)
     }
 	
     uint n = 0;
-    fieldBitmap fb(m_table);
-    char keynum = m_keyNum;
-    int inited = m_table->file->inited;
-    m_table->file->ha_index_or_rnd_end();
-    fb.setKeyRead(true);
-    if (setKeyNum((char)0, false /* sorted */))
+    char keynum = keyNum();
+
+    /* force change keynumber */
+    if (setKeyNum(primarykeyNum(), whole_row, key_read))
     {
         m_table->file->try_semi_consistent_read(true);
         m_stat = m_table->file->ha_index_first(m_table->record[0]);
@@ -2282,17 +2278,10 @@ ha_rows table::recordCount(bool estimate)
             ++m_readCount;
             m_stat = m_table->file->ha_index_next(m_table->record[0]);
         }
-        fb.setKeyRead(false);
-
-        // restore index init
-        if ((inited == (int)handler::INDEX) && (m_keyNum != keynum))
-            setKeyNum(keynum);
-        else if (inited == (int)handler::RND)
-            setNonKey(true /* scan */);
     }
     else
     {
-        setNonKey(true /* scan */);
+        setNonKey(whole_row, key_read);
         m_table->file->try_semi_consistent_read(true);
         m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         while (m_stat == 0)
@@ -2303,6 +2292,9 @@ ha_rows table::recordCount(bool estimate)
             m_stat = m_table->file->ha_rnd_next(m_table->record[0]);
         }
     }
+    // restore keynumber 
+    m_prepare.setKeyNum(keynum);
+
     return n;
 }
 
@@ -2370,7 +2362,7 @@ int table::setKeyNullFlags()
             if (key.flags & HA_NULL_PART_KEY)
             {
                 bool nullKey = setNullIf(key, m_mysqlNull);
-                if (nullKey && (i == m_keyNum))
+                if (nullKey && (i == keyNum()))
                     ++setCount;
             }
         }
@@ -2450,7 +2442,7 @@ __int64 table::insert(bool ncc)
         m_nonNcc = !ncc;
         if (!ncc && !m_bulkInserting)
             key_copy(&m_keybuf[0], m_table->record[0],
-                     &m_table->key_info[(int)m_keyNum], KEYLEN_ALLCOPY);
+                     &m_table->key_info[(int)keyNum()], KEYLEN_ALLCOPY);
         
         /* Do not change to m_changed = false */
         m_changed = true;
@@ -2466,7 +2458,8 @@ void table::beginUpdate(char keyNum)
     if (m_stat == 0)
     {
         if (keyNum >= 0)
-           setKeyNum(keyNum);
+            setKeyNum(keyNum);
+           
         store_record(m_table, record[1]);
     }
 }
@@ -2478,12 +2471,6 @@ void table::beginDel()
         return;
     }
 
-    if (m_db.m_inAutoTransaction == this)
-    {
-        // Confirmed that hold lock(X) by innodb_lock_monitor
-        indexInit();
-    }
-
     if (m_cursor)
     {
         m_stat = 0;
@@ -2492,7 +2479,7 @@ void table::beginDel()
         if (m_validCursor == false)
         {
             store_record(m_table, record[1]);
-            if (m_keyNum >= 0)
+            if (keyNum() >= 0)
             {
                 // seek until ref is same.
                 uchar rawPos[128];
@@ -2538,9 +2525,9 @@ void table::update(bool ncc)
             if (!ncc) // innodb default is ncc=-1.
             {
                 // Only when the present key value is changed
-                if (m_keyNum >= 0)
+                if (keyNum() >= 0)
                 {
-                    const KEY& key = m_table->key_info[(int)m_keyNum];
+                    const KEY& key = m_table->key_info[(int)keyNum()];
                     key_copy(&m_keybuf[0], m_table->record[0], (KEY*)&key,
                              KEYLEN_ALLCOPY);
 
@@ -2645,8 +2632,8 @@ void table::endBulkInsert()
 {
     if (m_bulkInserting)
     {
-		if (m_keyNum >= 0 && m_keyNum < (char)m_table->s->keys)
-			key_copy(&m_keybuf[0], m_table->record[0], &m_table->key_info[(int)m_keyNum],
+		if (keyNum() >= 0 && keyNum() < (char)m_table->s->keys)
+			key_copy(&m_keybuf[0], m_table->record[0], &m_table->key_info[(int)keyNum()],
 					KEYLEN_ALLCOPY);
         m_bulkInserting = false;
         m_table->file->ha_release_auto_increment();
@@ -2680,7 +2667,7 @@ inline void setSegmentValue(const KEY_PART_INFO& segment, const std::string& v)
 void table::setKeyValues(const std::vector<std::string>& values, int keypart,
                          const std::string* inValue)
 {
-    KEY& key = m_table->key_info[(int)m_keyNum];
+    KEY& key = m_table->key_info[(int)keyNum()];
     for (int i = 0; i < (int)key.user_defined_key_parts; i++)
         if (i < (int)values.size())
             setSegmentValue(key.key_part[i], values[i]);
@@ -2751,6 +2738,19 @@ void table::setValue(int index, const std::string& v, int type)
     else
         field->store(v.c_str(), (uint)v.size(), &my_charset_bin);
 }
+
+/*void table::setInnodbFetchExtraCols(unsigned long v)
+{
+    if (m_innodb)
+    {
+        innodb_prebuit* prebuilt = *((innodb_prebuit**)((char*)(m_table->file) + sizeof(handler)+DSMRR_SIZE));
+        if (prebuilt->magic_n == ROW_PREBUILT_ALLOCATED && prebuilt->hint_need_to_fetch_extra_cols >= 0 &&
+            prebuilt->hint_need_to_fetch_extra_cols <= ROW_RETRIEVE_ALL_COLS)
+            prebuilt->hint_need_to_fetch_extra_cols = v;
+        else
+            THROW_BZS_ERROR_WITH_CODEMSG(STATUS_PROGRAM_ERROR, "Cast error for Innodb prebuilt.");
+    }
+}*/
 
 #ifdef USE_HANDLERSOCKET
 

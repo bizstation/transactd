@@ -289,8 +289,7 @@ private:
         }
         else
         { // create new record
-            size_t reserveSize = m_recordset.size() + rows;
-            m_recordset.reserve(reserveSize);
+            m_recordset.reserve(m_recordset.size() + rows);
             memoryRecord* rec = memoryRecord::create(*m_fds, (int)rows);
             autoMemory* ama = autoMemory::create((int)rows);
             for (int i = 0; i < (int)rows; ++i)
@@ -691,6 +690,11 @@ public:
     inline void clearStringBuffer()
     {
         m_fds->strBufs()->clear();
+    }
+
+    inline void reserve(size_t size)
+    {
+        m_recordset.reserve(size);
     }
 
 #ifdef _DEBUG

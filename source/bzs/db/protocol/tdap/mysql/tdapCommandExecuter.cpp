@@ -688,32 +688,18 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
     int ret = 1;
     m_tb = getTable(req.pbk->handle);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-    if (keynum == -1 && (op == TD_KEY_GE_NEXT_MULTI))
-    {
-        m_tb->setNonKey(true);
-        op = TD_POS_NEXT_MULTI;
-    }
-    else
-    {
-        if (!m_tb->setKeyNum(keynum, true, true))
-        {
-            req.result = m_tb->stat();
-            return ret;
-        }
-
-        m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
-        m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
-                                                    : HA_READ_KEY_OR_PREV,
-                        m_tb->keymap());
-    }
-
     extRequest* ereq = (extRequest*)req.data;
     bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
     bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
+    if (!m_tb->setKeyNumForMultiRead(keynum))
+    {
+        req.result = m_tb->stat();
+        return ret;
+    }
+
     // smartReadRecordsHandler scope
     {
         smartReadRecordsHandler srrh(m_readHandler);
-
         if (execPrepared)
         {
             if (m_tb->preparedStatements.size() < ereq->preparedId)
@@ -729,6 +715,15 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
                                             noBookmark);
         if (req.result != 0)
             return ret;
+        if (keynum == -1 && (op == TD_KEY_GE_NEXT_MULTI))
+            op = TD_POS_NEXT_MULTI;
+        else
+        {
+            m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
+            m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
+                : HA_READ_KEY_OR_PREV,
+                m_tb->keymap());
+        }
         if (m_tb->stat() == 0)
         {
             if (op == TD_KEY_GE_NEXT_MULTI)
@@ -778,7 +773,7 @@ inline int dbExecuter::doReadMulti(request& req, int op,
     if (op == TD_KEY_SEEK_MULTI && !(ereq->itype & FILTER_TYPE_SEEKS_BOOKMARKS))
     {
         char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
-        if (!m_tb->setKeyNum(keynum, true, true))
+        if (!m_tb->setKeyNumForMultiRead(keynum))
         {
             req.result = m_tb->stat();
             return ret;
@@ -1526,14 +1521,18 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             break;
         case TD_GET_PER:
             m_tb = getTable(req.pbk->handle);
-            m_tb->calcPercentage();
-            req.result = errorCodeSht(m_tb->stat());
-            if (m_tb->stat() == 0)
+            if (m_tb->setKeyNum(m_tb->keyNumByMakeOrder(req.keyNum)))
             {
-                req.paramMask = P_MASK_DATA | P_MASK_DATALEN ;
-                req.data = m_tb->percentResult();
-                req.resultLen = sizeof(int);
-            }
+                m_tb->calcPercentage();
+                req.result = errorCodeSht(m_tb->stat());
+                if (m_tb->stat() == 0)
+                {
+                    req.paramMask = P_MASK_DATA | P_MASK_DATALEN ;
+                    req.data = m_tb->percentResult();
+                    req.resultLen = sizeof(int);
+                }
+            }else
+                req.result = m_tb->stat();
             break;
         case TD_INSERT_BULK:
             doInsertBulk(req);

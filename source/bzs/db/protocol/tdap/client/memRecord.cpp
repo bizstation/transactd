@@ -203,6 +203,8 @@ void memoryRecord::setRecordData(autoMemory* am, unsigned char* ptr,
 #ifdef JOIN_UNLIMIT
     m_memblock.push_back(am);
 #else
+    if (m_memblockSize == JOINLIMIT_PER_RECORD)
+        THROW_BZS_ERROR_WITH_MSG(_T("The number of Join limit has been exceeded."));
     m_memblock[m_memblockSize] = am;
     ++m_memblockSize;
 #endif

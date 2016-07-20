@@ -26,7 +26,7 @@
 #include <bzs/db/engine/mysql/IReadRecords.h>
 #include <bzs/db/engine/mysql/fieldAccess.h>
 #include <boost/shared_ptr.hpp>
-#include <bitset>
+
 
 #ifndef MAX_KEY_SEGMENT
 #define MAX_KEY_SEGMENT 8
@@ -125,6 +125,17 @@ struct extResultDef
     int memSize() const
     {
         return 4 + (sizeof(resultField) * fieldCount);
+    }
+
+    bool isFieldSelect(ulong clientRecordLen) const 
+    {
+       return  ((fieldCount > 1) ||
+            ((fieldCount == 1) && (field[0].len < clientRecordLen)));
+    }
+
+    bool isAllField(ulong clientRecordLen) const
+    {
+        return  ((fieldCount == 1) && (field[0].len >= clientRecordLen));
     }
 };
 
@@ -560,38 +571,18 @@ class prepared : public engine::mysql::IPrepare
 public:
     fields* fds;
     extResultDef* rd;
-    unsigned char* readMap;
+    std::bitset<256> bits;
     int  blobs;
-    int readMapSize;
     unsigned short rejectCount;
-    bool keyOnly;
-    prepared() : fds(NULL), rd(NULL), readMap(NULL), readMapSize(0), keyOnly(false){}
+    bool wholeRow;
+    prepared() : fds(NULL), rd(NULL), wholeRow(false){}
 
     ~prepared()
     {
         if (fds)
             delete fds;
-        if (readMap)
-            delete [] readMap;
         if (rd)
             free(rd);
-    }
-
-    void copyBitmapTo(MY_BITMAP* bm)
-    {
-        if (readMap)
-            memcpy(bm->bitmap, readMap, readMapSize);
-    }
-
-    void assignBitmap(MY_BITMAP* bm)
-    {
-        if (bm)
-        {
-            assert(readMap == NULL);
-            readMapSize = ((bm->n_bits + 7)/ 8);
-            readMap = new unsigned char[readMapSize];
-            memcpy(readMap, (unsigned char*)bm->bitmap, readMapSize);
-        }
     }
 
     void assignResultDef(const extResultDef* src)
@@ -607,7 +598,6 @@ public:
         fds = new fields();
         *(fds) = *src;
         fds->setNextPtr();
-        
     }
     
     void release()
@@ -640,8 +630,7 @@ class resultWriter
         // in the client, fieldCount > 0 buf recLen=0 then this pattern
         if (pos)
         {
-            if ((m_def->fieldCount == 1) &&
-                (m_def->field[0].len >= pos->recordLenCl()))
+            if (m_def->isAllField(pos->recordLenCl()))
             { // write whole row
                 int len = pos->recordPackCopy(m_nw->curPtr(),
                                               (uint)m_nw->bufferSpace());
@@ -730,15 +719,11 @@ class ReadRecordsHandler : public engine::mysql::IReadRecordsHandler
     position m_position;
     fields* m_fields;
     fields* m_defaultFields;
-    engine::mysql::fieldBitmap bm;
     unsigned short m_maxRows;
     bool m_seeksMode;
 
 public:
-    ReadRecordsHandler():m_defaultFields(new fields())
-    {
-         
-    }
+    ReadRecordsHandler():m_defaultFields(new fields()){}
 
     ~ReadRecordsHandler()
     {
@@ -758,25 +743,16 @@ public:
             if (!m_fields->setSupplyValues(*req))
                 return STATUS_INVALID_SUPPLYVALUES;
         }
-
-        if(p->readMapSize)
-        {
-            bm.setTable(tb);
-            if (m_seeksMode && !(req->itype & FILTER_TYPE_SEEKS_BOOKMARKS))
-                makeKeyFieldBitmap(bm, tb, tb->keyNum());
-
-            if (p->readMapSize)
-                p->copyBitmapTo(bm.getReadBitmap());
-            if (p->keyOnly) bm.setKeyRead(true);
-        }
-        if (tb->keyNum() >= 0)
-            tb->indexInit();
+        engine::mysql::prepareHandler* ph = tb->getPrepareHandler();
+        ph->setReadBitmap(p->bits);
         tb->blobBuffer()->clear();
         tb->setBlobFieldCount(p->blobs);
         nw->beginExt(tb->blobFields() != 0);
         const extResultDef* rd = p->rd;
         m_writer.init(nw, rd, noBookmark, m_fields->nullbytes);
         m_maxRows = p->rd->maxRows;
+        ph->ready(p->wholeRow);
+
         return 0;
     }
 
@@ -785,15 +761,15 @@ public:
     {
         // Important! cache resultdef first.
         const extResultDef* srcRd = req->resultDef();
-
+        
         short ret = begin(tb, req, fieldCache, nw, forword, noBookmark);
         p->assignResultDef(srcRd);
         p->assignFields(m_fields);
-        if (bm.isUsing())
-             p->assignBitmap(bm.getReadBitmap());
+        engine::mysql::prepareHandler* ph = tb->getPrepareHandler();
+        p->bits = ph->getReadBitmap();
         p->blobs = tb->getBlobFieldCount();
         p->rejectCount = m_req->rejectCount;
-        p->keyOnly = bm.isKeyRead();
+        p->wholeRow = ph->isWholeRow();
         end();
         return ret;
     }
@@ -815,68 +791,25 @@ public:
                 key = &tb->keyDef(tb->keyNum());
             m_fields->init(*m_req, m_position, key, forword);
         }
-        if ((rd->fieldCount > 1) ||
-            ((rd->fieldCount == 1) &&
-             (rd->field[0].len < m_position.recordLenCl())))
+        bool whole_row = true;
+        if (rd->isFieldSelect(m_position.recordLenCl()))
+        {
             ret = convResultPosToFieldNum(tb, noBookmark, rd, m_seeksMode, 
                             (req->itype & FILTER_TYPE_SEEKS_BOOKMARKS) != 0);
-
+            if (ret) return ret;
+            whole_row = false;
+        }
+            
         nw->beginExt(tb->blobFields() != 0);
         m_writer.init(nw, rd, noBookmark, m_fields->nullbytes);
         m_maxRows = rd->maxRows; 
+        
+        engine::mysql::prepareHandler* ph = tb->getPrepareHandler();
+        ph->ready(whole_row);
         // DEBUG_RECORDS_BEGIN(m_resultDef, m_req)
-
         return ret;
     }
     
-    void makeKeyFieldBitmap(engine::mysql::fieldBitmap& b, 
-                        engine::mysql::table* tb, char keynum)
-    {
-        const KEY* key = &tb->keyDef(keynum);
-        if (key)
-        {
-            int sgi = 0;
-            int segments = std::min<uint>(MAX_KEY_SEGMENT,
-                                            key->user_defined_key_parts);
-            while (sgi < segments)
-            {
-                b.setReadBitmap(key->key_part[sgi].field->field_index);
-                ++sgi;
-            }
-        }
-    }
-
-    void makeKeyFieldBitmap(std::bitset<256>& bts, 
-                        engine::mysql::table* tb, char keynum)
-    {
-        const KEY* key = &tb->keyDef(keynum);
-        if (key)
-        {
-            int sgi = 0;
-            int segments = std::min<uint>(MAX_KEY_SEGMENT,
-                                            key->user_defined_key_parts);
-            while (sgi < segments)
-            {
-                bts.set(key->key_part[sgi].field->field_index);
-                ++sgi;
-            }
-        }
-    }
-
-    bool isKeyFieldOnly(engine::mysql::table* tb)
-    {
-        std::bitset<256> bts; 
-        makeKeyFieldBitmap(bts, tb, tb->keyNum()); 
-        makeKeyFieldBitmap(bts, tb, tb->primarykeyNum()); 
-        //Compare bitmap
-        for (uint i = 0;i < bm.size(); ++i)
-        {
-            if (bm.is_set(i) && !bts[i])
-                return false;
-        }
-        return true;
-    }
-
     // TODO This convert is move to client. but legacy app is need this
     short convResultPosToFieldNum(engine::mysql::table* tb, bool noBookmark,
                                   const extResultDef* rd, bool seeksMode, bool seekBookmark)
@@ -884,7 +817,8 @@ public:
         int blobs = 0;
         int nullfields = 0;
         m_fields->nullbytes = 0;
-        bm.setTable(tb);
+        engine::mysql::prepareHandler* ph = tb->getPrepareHandler();
+        ph->clearReadBitmap();
         for (int i = 0; i < rd->fieldCount; i++)
         {
             const resultField& fd = rd->field[i];
@@ -892,7 +826,7 @@ public:
             if (num == -1)
                 return STATUS_INVALID_FIELD_OFFSET;
             const_cast<resultField&>(fd).fieldNum = num;
-            bm.setReadBitmap(num);
+            ph->setReadBitmap(num);
             if (m_position.isBlobField(&fd))
                 ++blobs;
             if (m_position.isNullable(num) && m_position.isMysqlNull())
@@ -906,22 +840,17 @@ public:
             const logicalField* fd = &m_req->field;
             for (int i = 0; i < m_req->logicalCount; ++i)
             {
-                bm.setReadBitmap(m_position.getFieldNumByPos(fd->pos));
+                ph->setReadBitmap(m_position.getFieldNumByPos(fd->pos));
                 fd = fd->next();
             }
         }
         else if (!seekBookmark)
-            makeKeyFieldBitmap(bm, tb, tb->keyNum());
+            ph->makeCurrentKeyFieldBitmap();
 
         // if need bookmark , add primary key fields
         if (!noBookmark)
-            makeKeyFieldBitmap(bm, tb, tb->primarykeyNum());
-        
-        if (isKeyFieldOnly(tb))
-            bm.setKeyRead(true);
+            ph->makePrimaryKeyFieldBitmap();
 
-        if (tb->keyNum() >= 0)
-            tb->indexInit();
         tb->blobBuffer()->clear();
         tb->setBlobFieldCount(blobs);
         return 0;
@@ -929,10 +858,8 @@ public:
 
     unsigned int end()
     {
-        unsigned int len = m_writer.end();
         // DEBUG_RECORDS_END(m_writer.get())
-        bm.setTable(NULL);
-        return len;
+        return m_writer.end();
     }
 
     int match(bool typeNext) const
