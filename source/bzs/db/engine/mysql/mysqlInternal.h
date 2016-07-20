@@ -748,8 +748,8 @@ struct innodb_prebuit
 	void*	    table;
 	void*	    index;
 	void*		trx;
-    unsigned int dummy; // Bit flags
-    /*
+    //unsigned int dummy; // Bit flags
+    
 	unsigned	sql_stat_start:1;
 #ifndef MYSQL_5_7 
 	unsigned	mysql_has_locked:1;
@@ -759,7 +759,7 @@ struct innodb_prebuit
 	unsigned	read_just_key:1;
 	unsigned	used_in_HANDLER:1;
 	unsigned	template_type:2;
-    */
+    
     void* dummy2; //mysql_row_templ_t* mysql_template
     void* dummy3; //mem_heap_t*	heap;
     void* dummy4; //ins_node_t*	ins_node;	

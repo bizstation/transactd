@@ -688,6 +688,7 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
     int ret = 1;
     m_tb = getTable(req.pbk->handle);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
+    if (keynum < 0) keynum = -2;
     extRequest* ereq = (extRequest*)req.data;
     bool noBookmark = (ereq->itype & FILTER_CURRENT_TYPE_NOBOOKMARK) != 0;
     bool execPrepared = (ereq->itype & FILTER_TYPE_SUPPLYVALUE) != 0;
@@ -715,8 +716,13 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
                                             noBookmark);
         if (req.result != 0)
             return ret;
-        if (keynum == -1 && (op == TD_KEY_GE_NEXT_MULTI))
-            op = TD_POS_NEXT_MULTI;
+        if (keynum < 0)
+        {
+            if (op == TD_KEY_GE_NEXT_MULTI)
+                op = TD_POS_NEXT_MULTI;
+            else if (op == TD_KEY_LE_PREV_MULTI)
+                op = TD_POS_PREV_MULTI;
+        }
         else
         {
             m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
@@ -773,6 +779,15 @@ inline int dbExecuter::doReadMulti(request& req, int op,
     if (op == TD_KEY_SEEK_MULTI && !(ereq->itype & FILTER_TYPE_SEEKS_BOOKMARKS))
     {
         char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
+        if (keynum < 0)
+        {
+            if (op != TD_POS_NEXT_MULTI && op != TD_POS_PREV_MULTI)
+            {
+                req.result = STATUS_INVALID_KEYNUM;
+                return ret;
+            }
+            keynum = -2;
+        }
         if (!m_tb->setKeyNumForMultiRead(keynum))
         {
             req.result = m_tb->stat();

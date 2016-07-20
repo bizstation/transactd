@@ -358,7 +358,8 @@ class prepareHandler
         makeKeyFieldBitmap(bts, m_keyNum);
         makeKeyFieldBitmap(bts, m_table->s->primary_key);
         //Compare bitmap
-        for (uint i = 0; i < m_bts.count(); ++i)
+        uint n = (uint)m_bts.count();
+        for (uint i = 0; i < n; ++i)
         {
             if (m_bts[i] && !bts[i])
                 return false;
@@ -376,8 +377,12 @@ class prepareHandler
             {
                 keyOnly = isKeyFieldOnly();
                 bitmap_clear_all(&m_table->tmp_set);
-                for (size_t i = 0; i < m_bts.count(); ++i)
-                    bitmap_set_bit(&m_table->tmp_set, (uint)i);
+                uint n = (uint)m_bts.count();
+                for (uint i = 0; i < m_bts.count(); ++i)
+                {
+                    if (m_bts[i])
+                        bitmap_set_bit(&m_table->tmp_set, 1);
+                }
                 m_changed = true;
             }
             m_btsOld = m_bts;
@@ -395,9 +400,9 @@ class prepareHandler
         m_table->file->extra(m_keyRead ? HA_EXTRA_KEYREAD : HA_EXTRA_NO_KEYREAD);
         unsigned long fetch_col = m_wholeRow ? ROW_RETRIEVE_ALL_COLS : ROW_RETRIEVE_DEFAULT;
         /* if key_read and ROW_RETRIEVE_ALL_COLS, fetch all key fields */
-        if (m_keyRead)  fetch_col = ROW_RETRIEVE_ALL_COLS;
+        //if (m_keyRead)  fetch_col = ROW_RETRIEVE_ALL_COLS;
         setInnodbFetchExtraCols(fetch_col);
-        if (fetch_col == ROW_RETRIEVE_ALL_COLS)
+        if (m_wholeRow)
         {
             m_table->read_set = &m_table->s->all_set;
             //m_table->write_set = &m_table->s->all_set;
@@ -494,12 +499,6 @@ public:
     inline bool isKeyRead() const { return m_keyRead; }
 
     inline bool isWholeRow() const { return m_wholeRow; }
-
-    /*void keyChanged()
-    {
-        m_changed = isChengeLock();
-        if (m_changed) doChange();
-    }*/
 
     void ready(bool wholeRow = true, bool keyRead = false)
     {

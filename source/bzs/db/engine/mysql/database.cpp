@@ -1042,7 +1042,10 @@ void prepareHandler::setInnodbFetchExtraCols(unsigned long v)
         innodb_prebuit* prebuilt = *((innodb_prebuit**)((char*)(m_table->file) + sizeof(handler)+DSMRR_SIZE));
         if (prebuilt->magic_n == ROW_PREBUILT_ALLOCATED && prebuilt->hint_need_to_fetch_extra_cols >= 0 &&
             prebuilt->hint_need_to_fetch_extra_cols <= ROW_RETRIEVE_ALL_COLS)
+        {
             prebuilt->hint_need_to_fetch_extra_cols = v;
+            //prebuilt->used_in_HANDLER = (v == ROW_RETRIEVE_ALL_COLS) ? 1 : 0;
+        }
         else
             THROW_BZS_ERROR_WITH_CODEMSG(STATUS_PROGRAM_ERROR, "Cast error for Innodb prebuilt.");
     }
@@ -2130,7 +2133,6 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
                 m_stat = STATUS_NOSUPPORT_OP;
                 return;
             }
-            //setCursorStaus();
         }
         else
             read = true;
