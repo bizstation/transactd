@@ -378,7 +378,7 @@ class prepareHandler
                 keyOnly = isKeyFieldOnly();
                 bitmap_clear_all(&m_table->tmp_set);
                 uint n = (uint)m_bts.count();
-                for (uint i = 0; i < m_bts.count(); ++i)
+                for (uint i = 0; i < n; ++i)
                 {
                     if (m_bts[i])
                         bitmap_set_bit(&m_table->tmp_set, 1);
