@@ -299,7 +299,7 @@ public:
         m_sizeBytes = 0;
         m_judge = false;
         m_matched = false;
-        m_placeHolderNum = 0;
+        m_placeHolderNum = 0xffff;
         m_nullOffset = 0;
         m_nullbit = 0;
         m_nullOffsetCompFd = 0;

@@ -726,8 +726,8 @@ inline int dbExecuter::doReadMultiWithSeek(request& req, int op,
         else
         {
             m_tb->setKeyValuesPacked((const uchar*)req.keybuf, req.keylen);
-            m_tb->seekKey((op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT
-                : HA_READ_KEY_OR_PREV,
+            m_tb->seekKey(
+                (op == TD_KEY_GE_NEXT_MULTI) ? HA_READ_KEY_OR_NEXT : HA_READ_KEY_OR_PREV,
                 m_tb->keymap());
         }
         if (m_tb->stat() == 0)

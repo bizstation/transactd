@@ -384,7 +384,9 @@ class prepareHandler
                         bitmap_set_bit(&m_table->tmp_set, 1);
                 }
                 m_changed = true;
-            }
+            }else
+                keyOnly = m_keyRead;
+            
             m_btsOld = m_bts;
         }
         else if (!m_btsOld.all())

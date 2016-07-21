@@ -2741,19 +2741,6 @@ void table::setValue(int index, const std::string& v, int type)
         field->store(v.c_str(), (uint)v.size(), &my_charset_bin);
 }
 
-/*void table::setInnodbFetchExtraCols(unsigned long v)
-{
-    if (m_innodb)
-    {
-        innodb_prebuit* prebuilt = *((innodb_prebuit**)((char*)(m_table->file) + sizeof(handler)+DSMRR_SIZE));
-        if (prebuilt->magic_n == ROW_PREBUILT_ALLOCATED && prebuilt->hint_need_to_fetch_extra_cols >= 0 &&
-            prebuilt->hint_need_to_fetch_extra_cols <= ROW_RETRIEVE_ALL_COLS)
-            prebuilt->hint_need_to_fetch_extra_cols = v;
-        else
-            THROW_BZS_ERROR_WITH_CODEMSG(STATUS_PROGRAM_ERROR, "Cast error for Innodb prebuilt.");
-    }
-}*/
-
 #ifdef USE_HANDLERSOCKET
 
 int table::fieldIndexByName(const char* name) const
