@@ -1591,12 +1591,15 @@ void dbdef::openDdf(const _TCHAR* dir, short Mode, const _TCHAR* OwnerName)
                             insertKey(tbid, tableDefs(tbid)->keyCount);
 
                         KeyDef = &(tableDefs(tbid)->keyDefs[id->keyid]);
-                        if (KeyDef->segmentCount < id->segmentnum + 1)
-                            KeyDef->segmentCount =
-                                (uchar_td)(id->segmentnum + 1);
-                        KeyDef->segments[id->segmentnum].fieldNum =
-                            (uchar_td)FieldIndex;
-                        KeyDef->segments[id->segmentnum].flags.all = id->flag;
+                        if (id->segmentnum < 8)
+                        {
+                            if (KeyDef->segmentCount < id->segmentnum + 1)
+                                KeyDef->segmentCount =
+                                    (uchar_td)(id->segmentnum + 1);
+                            KeyDef->segments[id->segmentnum].fieldNum =
+                                (uchar_td)FieldIndex;
+                            KeyDef->segments[id->segmentnum].flags.all = id->flag;
+                        }
                         id->seekNext();
                     }
                 }
