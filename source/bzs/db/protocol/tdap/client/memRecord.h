@@ -141,7 +141,6 @@ protected:
     inline memoryRecord(fielddefs& fdinfo);
     memoryRecord(const memoryRecord& r);
     ~memoryRecord();
-    memoryRecord& operator=(const memoryRecord& r);
     void copyToBuffer(table* tb, bool updateOnly = false) const;
     inline void copyFromBuffer(const table* tb)
     {
@@ -153,6 +152,7 @@ protected:
     /** @endcond */
 public:
     void clear(); // orverride
+    memoryRecord& operator=(const memoryRecord& r); // For SWIG
     static memoryRecord* create(fielddefs& fdinfo); // For SWIG
 };
 

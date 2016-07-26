@@ -146,13 +146,16 @@ memoryRecord::memoryRecord(const memoryRecord& r)
 {
 #ifdef JOIN_UNLIMIT
     m_memblock = r.m_memblock;
+    for (int i = 0; i < memBlockSize(); ++i)
+        m_memblock[i]->addref();
 #else
     m_memblockSize = r.m_memblockSize;
     for (int i = 0; i < m_memblockSize; ++i)
+    {
         m_memblock[i] = r.m_memblock[i];
-#endif
-    for (int i = 0; i < memBlockSize(); ++i)
         m_memblock[i]->addref();
+    }
+#endif
 
 }
 
@@ -166,10 +169,15 @@ memoryRecord& memoryRecord::operator=(const memoryRecord& r)
 {
      if (this != &r)
      {
-         m_fns = r.m_fns;
+         for (int i = 0; i < memBlockSize(); ++i)
+             m_memblock[i]->release();
+         fieldsBase::operator=(r);
+         //m_fns = r.m_fns;
          m_blockIndexCache = r.m_blockIndexCache;
 #ifdef JOIN_UNLIMIT
          m_memblock = r.m_memblock;
+#else
+         m_memblockSize = r.m_memblockSize;
 #endif
          for (int i = 0; i < memBlockSize(); ++i)
          {
@@ -178,7 +186,6 @@ memoryRecord& memoryRecord::operator=(const memoryRecord& r)
 #endif
              m_memblock[i]->addref();
          }
-
      }
      return *this;
 }
