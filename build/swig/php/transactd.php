@@ -24,7 +24,7 @@
 
 //
 //  Transactd Client for PHP
-//      ( NO-YIELD-VERSION : for PHP 5.4.x or older )
+//      ( YIELD-VERSION : for PHP 5.5.x or later )
 //
 namespace BizStation\Transactd;
 
@@ -614,18 +614,12 @@ abstract class transactd {
 	static function getNowTime() {
 		return getNowTime();
 	}
-
-	const FIELDVALUEMODE_RETURNNULL = 0;
 	
-	const FIELDVALUEMODE_NORETURNNULL = 1;
+	const FIELD_VALUE_MODE_VALUE = 0;
 	
-	const RECORD_KEYVALUE_FIELDVALUE = 0;
+	const FIELD_VALUE_MODE_OBJECT = 1;
 	
-	const RECORD_KEYVALUE_FIELDOBJECT = 1;
-	
-	static $fieldValueMode = self::FIELDVALUEMODE_NORETURNNULL;
-	
-	static $recordValueMode = self::RECORD_KEYVALUE_FIELDOBJECT;
+	static $fieldValueMode = self::FIELD_VALUE_MODE_OBJECT;
 	
 	static function setFieldValueMode($mode) {
 		self::$fieldValueMode = $mode;
@@ -635,13 +629,27 @@ abstract class transactd {
 		return  self::$fieldValueMode;
 	}
 	
-	static function setRecordValueMode($mode) {
-		self::$recordValueMode = $mode;
+	const NULLVALUE_MODE_RETURNNULL = 0;
+		
+	const NULLVALUE_MODE_NORETURNNULL = 1;
+
+	static $nullValueMode = self::NULLVALUE_MODE_NORETURNNULL;
+
+	static function setNullValueMode($mode) {
+		self::$nullValueMode = $mode;
 	}
 
-	static function recordValueMode() {
-		return  self::$recordValueMode;
+	static function nullValueMode() {
+		return  self::$nullValueMode;
 	}
+	
+	const  FETCH_VAL_NUM       = 1;
+	const  FETCH_VAL_ASSOC     = 2;
+	const  FETCH_VAL_BOTH      = 3;
+	const  FETCH_OBJ           = 4;
+	const  FETCH_USR_CLASS     = 8;
+	const  FETCH_RECORD_INTO   = 16;
+
 }
 
 /* PHP Proxy Classes */
@@ -1515,7 +1523,6 @@ class connRecords implements \ArrayAccess, \Countable , \IteratorAggregate{
 			$this->_cPtr=$res;
 			return;
 		}
-		//$this->_cPtr=new_connRecords();
 		throw new \BadMethodCallException();
 	}
 
@@ -1657,7 +1664,7 @@ class connMgr {
 		}
 		return $r;
 	}
-	
+
 	function channels($withLock=false) {
 		$r=connMgr_channels($this->_cPtr,$withLock);
 		if (is_resource($r)) {
@@ -1725,7 +1732,7 @@ class connMgr {
 	function postDisconnectAll() {
 		connMgr_postDisconnectAll($this->_cPtr);
 	}
-	
+
 	function haLock() {
 		return connMgr_haLock($this->_cPtr);
 	}
@@ -1759,7 +1766,7 @@ class connMgr {
 		}
 		return $r;
 	}
-	
+
 	function isOpen() {
 		return connMgr_isOpen($this->_cPtr);
 	}
@@ -1779,11 +1786,10 @@ class connMgr {
 	static function statusvarName($index) {
 		return connMgr_statusvarName($index);
 	}
-
- 	static function extendedVarName($index) {
+	
+	static function extendedVarName($index) {
 		return connMgr_extendedVarName($index);
 	}
-
 }
 
 class dbdef {
@@ -1922,8 +1928,54 @@ class dbdef {
 	}
 }
 
-class table extends nstable {
+
+/*class tableIterator implements \Iterator
+{
+    protected $_table = null;
+
+    function __construct($table)
+    {
+        $this->_table = $table;
+    }
+
+    function rewind()
+    {
+        $this->_table->find();
+    }
+
+    function current()
+    {
+        return $this->_table->fields();
+    }
+
+    function key()
+    {
+        return $this->_row->key();
+    }
+
+    function next()
+    {
+        $this->_table->findNext();
+    }
+
+    function valid()
+    {
+        return ($this->_table->stat() === 0);
+    }
+}*/
+
+class table extends nstable /*implements \IteratorAggregate*/{
+	public $fetchMode = transactd::FETCH_VAL_BOTH;
+	public $fechClass = 'stdClass';
+	public $ctorArgs = null;
+
 	public $_cPtr=null;
+	
+/*	function getIterator()
+    {
+        return new tableIterator($this);
+    }
+*/	
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
@@ -2014,27 +2066,31 @@ class table extends nstable {
 		table_smartUpdate($this->_cPtr);
 	}
 
+	function findAll() {
+		return table_findAll($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs);
+	}
+	
 	function find($type=null) {
 		switch (func_num_args()) {
-		case 0: table_find($this->_cPtr); break;
-		default: table_find($this->_cPtr,$type);
+		case 0: return table_find($this->_cPtr); break;
+		default: return table_find($this->_cPtr,$type);
 		}
 	}
 
 	function findFirst() {
-		table_findFirst($this->_cPtr);
+		return table_findFirst($this->_cPtr);
 	}
 
 	function findLast() {
-		table_findLast($this->_cPtr);
+		return table_findLast($this->_cPtr);
 	}
 
 	function findNext($notIncCurrent=true) {
-		table_findNext($this->_cPtr,$notIncCurrent);
+		return table_findNext($this->_cPtr,$notIncCurrent);
 	}
 
 	function findPrev($notIncCurrent=true) {
-		table_findPrev($this->_cPtr,$notIncCurrent);
+		return table_findPrev($this->_cPtr,$notIncCurrent);
 	}
 
 	function statReasonOfFind() {
@@ -2098,7 +2154,15 @@ class table extends nstable {
 	}
 
 	function fields() {
-		return table_fields($this->_cPtr);
+		if ($this->fetchMode === transactd::FETCH_RECORD_INTO)
+			return new Record(table_fields($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs));
+		return table_fields($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs);
+	}
+	
+	function getRow() {
+		if ($this->fetchMode === transactd::FETCH_RECORD_INTO)
+			return new Record(table_fields($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs));
+		return table_fields($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs);
 	}
 
 	function setFV($index_or_fieldName,$data,$size=null) {
@@ -3127,17 +3191,15 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return fielddefs_size($this->_cPtr);
 	}
 
-	// Emulation of Generator with Iterator
+	// RangeIterator
 	function range($start = null, $end = null) {
 		$count = fielddefs_size($this->_cPtr);
-		if ((! is_numeric($start)) || $start < 0) {
+		if (\gettype($start) !== 'integer' || $start < 0) {
 			$start = 0;
 		}
-		if ((! is_numeric($end)) || $end < 0 || $end >= $count) {
+		if (\gettype($end) !== 'integer' || $end < 0 || $end >= $count) {
 			$end = $count - 1;
 		}
-		$start = (int) $start;
-		$end = (int) $end;
 		return new fielddefsIterator($this->_cPtr, $start, $end);
 	}
 
@@ -3192,7 +3254,7 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
 
 class field {
 	public function getFV() {
-		if ((transactd::fieldValueMode() === transactd::FIELDVALUEMODE_RETURNNULL)
+		if ((transactd::nullValueMode() === transactd::NULLVALUE_MODE_RETURNNULL)
 				&& $this->isNull() === true)
 			return null;
 		switch ($this->type()) {
@@ -3219,23 +3281,22 @@ class field {
 	}
 
 	public $_cPtr=null;
-	protected $_pData=array();
 
 	function __set($var,$value) {
 		if ($var === 'value') return field_setFV($this->_cPtr,$value);
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
+		throw new \BadMethodCallException();
 	}
 
 	function __get($var) {
 		if ($var === 'value') return getFV();
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
+		throw new \BadMethodCallException();
 	}
 
 	function __isset($var) {
 		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
+		return false;
 	}
 
 	function __construct($ptr_or_r=null) {
@@ -3341,11 +3402,10 @@ class RecordIterator implements \Iterator {
 	}
 
 	public function current() {
+		if (transactd::$fieldValueMode === transactd::FIELD_VALUE_MODE_VALUE)
+			return Record_getFV($this->_record_cPtr, $this->_position);
 		Record_getFieldRef($this->_record_cPtr, $this->_position, $this->_field);
-		if (transactd::recordValueMode() === transactd::RECORD_KEYVALUE_FIELDVALUE)
-			return $this->_field->getFV();
-		else
-			return $this->_field;
+		return $this->_field;
 	}
 
 	public function key() {
@@ -3354,39 +3414,6 @@ class RecordIterator implements \Iterator {
 
 	public function next() {
 		$this->_position++;
-	}
-}
-
-class RecordKeyIterator extends RangeIterator {
-	private $_fielddefs = null;
-
-	function __construct($count, $fielddefs) {
-		parent::__construct(0, $count - 1);
-		$this->_fielddefs = $fielddefs;
-	}
-
-	public function current() {
-		return $this->_fielddefs->getFielddef($this->_position)->name();
-	}
-}
-
-class RecordValueIterator extends RangeIterator {
-	private $_record_cPtr = null;
-	private $_field = null;
-
-	function __construct($record_cPtr) {
-		parent::__construct(0, Record_size($record_cPtr) - 1);
-		$this->_record_cPtr = $record_cPtr;
-		$this->_field = new field();
-	}
-
-	public function current() {
-		Record_getFieldRef($this->_record_cPtr, $this->_position, $this->_field);
-		if (transactd::recordValueMode() === transactd::RECORD_KEYVALUE_FIELDVALUE)
-			return $this->_field->getFV();
-		else
-			return $this->_field;
-
 	}
 }
 
@@ -3416,11 +3443,10 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	public function offsetGet($offset) {
+		if (transactd::$fieldValueMode === transactd::FIELD_VALUE_MODE_VALUE)
+			return Record_getFV($this->_cPtr, $offset);
 		Record_getFieldRef($this->_cPtr, $offset, $this->_field);
-		if (transactd::recordValueMode() === transactd::RECORD_KEYVALUE_FIELDVALUE)
-			return $this->_field->getFV();
-		else
-			return $this->_field;
+		return $this->_field;
 	}
 
 	public function offsetSet($offset, $value) {
@@ -3436,72 +3462,38 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return Record_size($this->_cPtr);
 	}
 
-	// Emulation of Generator with Iterator
 	function keys() {
-		return new RecordKeyIterator(Record_size($this->_cPtr), $this->_fielddefs);
+		$count = Record_size($this->_cPtr);
+		return new fielddefsIterator($this->_fielddefs, 0, $count -1);
 	}
 
 	function values() {
-		return new RecordValueIterator($this->_cPtr);
-	}
-
-	// toArray
-	function keysArray() {
-		$ret = array();
-		$count = Record_size($this->_cPtr);
-		for ($i = 0; $i < $count; $i++) {
-			$ret[] = $this->_fielddefs->getFielddef($i)->name();
-		}
-		return $ret;
-	}
-
-	function valuesArray() {
-		$ret = array();
-		$count = Record_size($this->_cPtr);
-		for ($i = 0; $i < $count; $i++) {
-			Record_getFieldRef($this->_cPtr, $i, $this->_field);
-			if (transactd::recordValueMode() === transactd::RECORD_KEYVALUE_FIELDVALUE)
-				$ret[] =  $this->_field->getFV();
-			else
-				$ret[] =  $this->_field;
-		}
-		return $ret;
-	}
-
-	function toArray() {
-		$ret = array();
-		$count = Record_size($this->_cPtr);
-		for ($i = 0; $i < $count; $i++) {
-			Record_getFieldRef($this->_cPtr, $i, $this->_field);
-			if (transactd::recordValueMode() === transactd::RECORD_KEYVALUE_FIELDVALUE)
-				$ret[$this->_fielddefs->getFielddef($i)->name()] =  $this->_field->getFV();
-			else
-				$ret[$this->_fielddefs->getFielddef($i)->name()] =  $this->_field;
-		}
-		return $ret;
+		return new RecordIterator($this->_cPtr, $this->_fielddefs);
 	}
 
 	public $_cPtr=null;
-	protected $_pData=array();
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
+		throw new \BadMethodCallException();
 	}
 
 	function __get($var) {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
+		throw new \BadMethodCallException();
 	}
 
 	function __isset($var) {
 		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
+		return false;
 	}
 
-	function __construct($h) {
+	function __construct($h, $_fielddefs_ptr=null) {
 		$this->_cPtr=$h;
-		$this->_fielddefs = $this->fieldDefs();
+		if ($_fielddefs_ptr === null)
+			$_fielddefs_ptr=Record_fieldDefs($this->_cPtr);
+		else
+			$this->_fielddefs = $_fielddefs_ptr;
 		$this->_field = new field();
 	}
 
@@ -3526,32 +3518,20 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	function fieldDefs() {
-		$r=Record_fieldDefs($this->_cPtr);
-		if (is_resource($r)) {
-			return new fielddefs($r);
-		}
-		return $r;
+		return $this->_fielddefs;
 	}
 
 	function clear() {
 		Record_clear($this->_cPtr);
 	}
+
 }
 
 class writableRecord extends Record {
 	// override ArrayAccess method (set value).
 	public function offsetSet($offset, $value) {
-		$this->offsetGet($offset);
-		switch ($this->_field->type()) {
-			case transactd::ft_string:
-			case transactd::ft_myvarbinary:
-			case transactd::ft_mywvarbinary:
-			case transactd::ft_myblob:
-				$this->_field->setFV($value, strlen($value));
-				break;
-			default:
-				$this->_field->setFV($value);
-		}
+		Record_getFieldRef($this->_cPtr, $offset, $this->_field);
+		$this->_field->setFV($value);
 	}
 
 	public $_cPtr=null;
@@ -3577,12 +3557,8 @@ class writableRecord extends Record {
 		$this->_field = new field();
 	}
 
-	function read($KeysetAlrady_or_bm=null) {
-		switch (func_num_args()) {
-		case 0: $r=writableRecord_read($this->_cPtr); break;
-		default: $r=writableRecord_read($this->_cPtr,$KeysetAlrady_or_bm);
-		}
-		return $r;
+	function read($KeysetAlrady_or_bm=false) {
+		return writableRecord_read($this->_cPtr,$KeysetAlrady_or_bm);
 	}
 
 	function insert() {
@@ -4264,70 +4240,49 @@ class max extends sum {
 	}
 }
 
-class RecordsetIterator implements \SeekableIterator {
-	private $_recordset_cPtr = null;
-	private $_position = 0;
-	private $_record = null;
-	private $_count = -1;
 
-	function __construct($recordset_cPtr, $fielddefs) {
-		$this->_recordset_cPtr = $recordset_cPtr;
-		$this->_position = 0;
-		$this->_count = Recordset_count($recordset_cPtr);
-		$this->_record = new Record(memoryRecord_createRecord($fielddefs));
-	}
+class RecordsetIterator extends RangeIterator {
+	private $_recordset = null;
 
-	public function rewind() {
-		$this->_position = 0;
-	}
-
-	public function valid() {
-		return $this->_position < $this->_count;
-	}
-
-	public function current() {
-		$this->_record->_cPtr = Recordset_getRecord($this->_recordset_cPtr, $this->_position);
-		return $this->_record;
-	}
-
-	public function key() {
-		return $this->_position;
-	}
-
-	public function next() {
-		$this->_position++;
-	}
-
-	public function seek($position) {
-		if ($position < 0 || $position >= $this->_count) {
-			throw new \OutOfBoundsException("invalid seek position ($position)");
-		}
-		$this->_position = $position;
-	}
-}
-
-class RecordsetRecordIterator extends RangeIterator {
-	private $_recordset_cPtr = null;
-	private $_record = null;
-
-	function __construct($start, $end, $recordset_cPtr, $fielddefs) {
+	function __construct($recordset, $start, $end) {
+		$this->_recordset = $recordset;
 		parent::__construct($start, $end);
-		$this->_recordset_cPtr = $recordset_cPtr;
-		$this->_record = new Record(memoryRecord_createRecord($fielddefs));
 	}
-
+	
 	public function current() {
-		$this->_record->_cPtr = Recordset_getRecord($this->_cPtr, $this->_position);
-		return $this->_record;
+		return $this->_recordset->offsetGet($this->_position);
 	}
 }
+
 
 class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 	private $_record = null;
+	private $_fielddefs = null;
+
+	public $fetchMode = transactd::FETCH_VAL_BOTH;
+	public $fechClass = 'stdClass';
+	public $ctorArgs = null;
+
+	// Arrayable
+	public function toArray() {
+		return Recordset_getAll($this->_cPtr, $this->fetchMode, $this->fechClass, $this->ctorArgs);
+	}
 
 	// IteratorAggregate
 	public function getIterator() {
-		return new RecordsetIterator($this->_cPtr, $this->fieldDefs());
+		return new RecordsetIterator($this, 0, Recordset_count($this->_cPtr) - 1);
+	}
+	
+	//RangeIterator
+	function range($start = null, $end = null) {
+		$count = Recordset_count($this->_cPtr);
+		if (\gettype($start) !== 'integer' || $start < 0) {
+			$start = 0;
+		}
+		if (\gettype($end) !== 'integer' || $end < 0 || $end >= $count) {
+			$end = $count - 1;
+		}
+		return new RecordsetIterator($this, $start, $end);
 	}
 
 	// ArrayAccess
@@ -4336,8 +4291,9 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	public function offsetGet($offset) {
-		$this->_record->_cPtr = Recordset_getRecord($this->_cPtr, $offset);
-		return $this->_record;
+		if ($this->fetchMode === transactd::FETCH_RECORD_INTO)
+			return Recordset_getRow($this->_cPtr, $offset, transactd::FETCH_RECORD_INTO, $this->_record);
+		return Recordset_getRow($this->_cPtr, $offset, $this->fetchMode, $this->fechClass, $this->ctorArgs);
 	}
 
 	public function offsetSet($offset, $value) {
@@ -4363,36 +4319,21 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return $this->offsetGet($this->count() - 1);
 	}
 
-	// Emulation of Generator with Iterator
-	function range($start = null, $end = null) {
-		$count = $this->count();
-		if ((! is_numeric($start)) || $start < 0) {
-			$start = 0;
-		}
-		if ((! is_numeric($end)) || $end < 0 || $end >= $count) {
-			$end = $count - 1;
-		}
-		$start = (int) $start;
-		$end = (int) $end;
-		return new RecordsetRecordIterator($start, $end, $this->_cPtr, $this->fieldDefs());
-	}
-
 	public $_cPtr=null;
-	protected $_pData=array();
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
-		$this->_pData[$var] = $value;
+		throw new \BadMethodCallException();
 	}
 
 	function __get($var) {
 		if ($var === 'thisown') return swig_transactd_get_newobject($this->_cPtr);
-		return $this->_pData[$var];
+		throw new \BadMethodCallException();
 	}
 
 	function __isset($var) {
 		if ($var === 'thisown') return true;
-		return array_key_exists($var, $this->_pData);
+		return false;
 	}
 
 	function __clone() {
@@ -4402,11 +4343,11 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 		} else {
 			$this->_cPtr = $r->_cPtr;
 		}
-		$this->_record = new Record(memoryRecord_createRecord($this->fieldDefs()));
+		$this->_record = new Record(memoryRecord_createRecord($this->_fielddefs), $this->_fielddefs);
 	}
 
 	function getRecord($index) {
-		return offsetGet($index);
+		return Recordset_getRow($this->_cPtr, $index, transactd::FETCH_RECORD_INTO, $this->_record);
 	}
 
 	function size() {
@@ -4422,11 +4363,7 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	function fieldDefs() {
-		$r=Recordset_fieldDefs($this->_cPtr);
-		if (is_resource($r)) {
-			return new fielddefs($r);
-		}
-		return $r;
+		return $this->_fielddefs;
 	}
 
 	function clear() {
@@ -4487,18 +4424,16 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 		return $this;
 	}
 
-	function getRow($index,$return_record) {
-		Recordset_getRow($this->_cPtr,$index,$return_record);
-	}
-
 	function __construct($res=null) {
 		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__recordset') {
 			$this->_cPtr=$res;
-			$this->_record = new Record(memoryRecord_createRecord($this->fieldDefs()));
+			$this->_fielddefs = new fielddefs(Recordset_fieldDefs($this->_cPtr));
+			$this->_record = new Record(memoryRecord_createRecord($this->_fielddefs), $this->_fielddefs);
 			return;
 		}
 		$this->_cPtr=new_Recordset();
-		$this->_record = new Record(memoryRecord_createRecord($this->fieldDefs()));
+		$this->_fielddefs = new fielddefs(Recordset_fieldDefs($this->_cPtr));
+		$this->_record = new Record(memoryRecord_createRecord($this->_fielddefs), $this->_fielddefs);
 	}
 }
 
@@ -4806,5 +4741,4 @@ class haNameResolver {
 		return haNameResolver_slave();
 	}
 }
-
 ?>

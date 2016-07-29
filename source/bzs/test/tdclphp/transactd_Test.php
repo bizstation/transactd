@@ -22,7 +22,7 @@ mb_internal_encoding('UTF-8');
 require_once("transactd.php");
 use BizStation\Transactd as Bz;
 
-Bz\transactd::setRecordValueMode(Bz\transactd::RECORD_KEYVALUE_FIELDVALUE);
+Bz\transactd::setFieldValueMode(Bz\transactd::FIELD_VALUE_MODE_VALUE);
 
 function getHost()
 {
@@ -3196,21 +3196,25 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // for
         for ($row_id = 0; $row_id < count($rs); $row_id++)
         {
-            $record = $rs[$row_id];
+            $record = $rs->getRecord($row_id);
             // for loop Record
             for ($field_id = 0; $field_id < count($record); $field_id++) {
                 $field_name = $fds[$field_id]->name();
                 $field_value = $record[$field_id];
+                $field_value = $record[$field_name];
                 //if ($row_id < 5) { echo("rs[$row_id][$field_id:$field_name] $field_value\n"); }
             }
         }
         // foreach
         $row_id = 0;
+        $rs->fetchMode = Bz\transactd::FETCH_RECORD_INTO;
         foreach ($rs as $record)
         {
             $field_id = 0;
             foreach ($record as $field_value) {
                 $field_name = $fds[$field_id]->name();
+                $field_value = $record[$field_id];
+                $field_value = $record[$field_name];
                 //if ($row_id < 5) { echo("rs[$row_id][$field_id:$field_name] $field_value\n"); }
                 $field_id++;
             }
@@ -3232,6 +3236,15 @@ class transactdTest extends PHPUnit_Framework_TestCase
         {
             // values generator
             $field_id = 0;
+            foreach ($record as $field_value) {
+                $field_name = $fds[$field_id]->name();
+                $field_value = $record[$field_id];
+                $field_value = $record[$field_name];
+                //if ($row_id < 5) { echo("rs[$row_id][$field_id:$field_name] $field_value\n"); }
+                $field_id++;
+            }
+            
+            $field_id = 0; 
             foreach ($record->values() as $field_value)
             {
                 $field_name = $fds[$field_id]->name();
@@ -3557,7 +3570,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $rs = $atu->keyValue(1)->read($stmt1, 15000);
         $ate->outerJoin($rs, $stmt2, 'id');
         $this->assertEquals($rs->size(), 15000);
-        $this->assertEquals($rs[NO_RECORD_ID - 1]->isInvalidRecord(), true);
+        $this->assertEquals($rs->getRecord(NO_RECORD_ID - 1)->isInvalidRecord(), true);
         $atg->outerJoin($rs, $stmt3, 'group');
         $this->assertEquals($rs->size(), 15000);
         
@@ -3571,8 +3584,8 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $rs = $atu->keyValue(1)->read($stmt1, 15000);
         $ate->outerJoin($rs, $stmt2, 'id');
         $this->assertEquals($rs->size(), 15000);
-        $this->assertEquals($rs[NO_RECORD_ID - 1]->isInvalidRecord(), true);
-        $this->assertEquals($rs[NO_RECORD_ID - 1]->getField('comment')->isNull(), true);
+        $this->assertEquals($rs->getRecord(NO_RECORD_ID - 1)->isInvalidRecord(), true);
+        $this->assertEquals($rs->getRecord(NO_RECORD_ID - 1)->getField('comment')->isNull(), true);
         $this->assertEquals($rs[NO_RECORD_ID]['comment'], '' . (NO_RECORD_ID + 1) . ' comment');
         $this->assertEquals($rs[NO_RECORD_ID]['blob'], '' . (NO_RECORD_ID + 1) . ' blob');
         
@@ -3580,7 +3593,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $rs2 = clone($rs);
         $this->assertEquals($rs2->size(), 15000);
         //$this->assertEquals($rs2[NO_RECORD_ID - 1]->isInvalidRecord(), true);
-        $this->assertEquals($rs2[NO_RECORD_ID - 1]->getField('comment')->isNull(), true);
+        $this->assertEquals($rs2->getRecord(NO_RECORD_ID - 1)->getField('comment')->isNull(), true);
         $this->assertEquals($rs2[NO_RECORD_ID]['comment'], '' . (NO_RECORD_ID + 1) . ' comment');
         $this->assertEquals($rs2[NO_RECORD_ID]['blob'], '' . (NO_RECORD_ID + 1) . ' blob');
         

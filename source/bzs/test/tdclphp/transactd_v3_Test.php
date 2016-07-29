@@ -429,6 +429,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
 
         $q->select("id", "name", "group", "tel")->where("id", "<=", 10);
         $rs = $atu->index(0)->keyValue(1)->read($q);
+        $rs->fetchMode = bz\transactd::FETCH_RECORD_INTO;
         $this->assertEquals($rs->count(), 10);
         $rec = $rs->first();
         $this->assertEquals($rec[3]->isNull(), true);
@@ -640,6 +641,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $at = new bz\activeTable($db, "extention");
         $q->where('id', '=', 1);
         $rs = $at->index(0)->keyValue(1)->read($q);
+        $rs->fetchMode = bz\transactd::FETCH_RECORD_INTO;
         $this->assertEquals($rs->size(), 1);
         $bits = $rs[0]['bits']->getBits();
 

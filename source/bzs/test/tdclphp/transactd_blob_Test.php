@@ -321,7 +321,7 @@ class transactdBlobTest extends PHPUnit_Framework_TestCase
         $q->where('id', '=', 1);
         $rs = $at->index(0)->keyValue(1)->read($q);
         $this->assertEquals(count($rs), 1);
-        $f = $rs[0]->getField(FDI_IMAGE);
+        $f = $rs->getRecord(0)->getField(FDI_IMAGE);
         $this->assertEquals($f->getBin(), $image);
         $db->close();
     }

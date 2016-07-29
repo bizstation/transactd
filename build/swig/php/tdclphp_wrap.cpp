@@ -744,6 +744,7 @@ extern "C" {
 #endif
 #include "zend.h"
 #include "zend_API.h"
+#include "zend_execute.h"
 #include "zend_exceptions.h"
 #include "php.h"
 #include "ext/standard/php_string.h"
@@ -805,7 +806,7 @@ extern "C" {
    pointer values out of zvals.  We need the TSRMLS_ macros for when we
    make PHP type calls later as we handle php resources */
 #define SWIG_ConvertPtr(obj,pp,type,flags) SWIG_ZTS_ConvertPtr(obj,pp,type,flags TSRMLS_CC)
-
+#define SWIG_ConvertPtr2(obj,pp,type,flags) SWIG_ZTS_ConvertPtr(obj,pp,type,flags TSRMLS_CC)
 
 #define SWIG_fail goto fail
 
@@ -878,12 +879,14 @@ typedef zval zval_args_type;
 #define RSRC res
 #define LIST_FIND(ZVAL) value = (swig_object_wrapper *)Z_RES_P(ZVAL)->ptr;
 #define ARGS_IS_TRUE(N) zval_is_true(&args[N])
+#define ZTYPE(z) Z_TYPE_P(&z)
 
 //Append compatible type and define
 typedef zend_resource zend_rsrc_list_entry;
 #define Z_DVAL_PP(zv) zv.value.dval
 #define Z_LVAL_PP(zv) zv.value.lval
 #define Z_STRVAL_PP(zv) Z_STRVAL_P(&zv)
+#define Z_STRLEN_PP(zv) Z_STRLEN_P(&zv)
 
 #undef  ZVAL_STRING
 #define ZVAL_STRING(z, s, dummy)                                 \
@@ -898,7 +901,8 @@ typedef zend_resource zend_rsrc_list_entry;
     const char *_s = (s);                                        \
       ZVAL_NEW_STR(z, zend_string_init(_s, l, 0));               \
   } while (0)
-
+#define FCI_OBJ_P(zv) Z_OBJ_P(zv)
+#define MAKE_COPY_ZVAL(zvpp, zvp) ZVAL_COPY(zvp, &zvpp)
 #else
 
 static ZEND_RSRC_DTOR_FUNC(SWIG_landfill) { (void)rsrc; }
@@ -919,7 +923,8 @@ typedef zval** zval_args_type;
 #define RSRC rsrc
 #define LIST_FIND(ZVAL) (swig_object_wrapper *)zend_list_find((*ZVAL[0])->value.lval, &type)
 #define ARGS_IS_TRUE(N) zval_is_true(*args[N])
-
+#define FCI_OBJ_P(zv) zv
+#define ZTYPE(z) Z_TYPE_PP(z)
 #endif
 
 /* This pointer conversion routine takes the native pointer p (along with
@@ -1133,6 +1138,65 @@ SWIG_ZTS_ConvertPtr(zval *z, void **ptr, swig_type_info *ty, int flags TSRMLS_DC
   }
 
   return -1;
+}
+
+static void *
+SWIG_ZTS_ConvertResourcePtr2(zval *z, swig_type_info *ty, int flags TSRMLS_DC) {
+    swig_object_wrapper *value;
+    int type;
+
+#ifdef ZEND_ENGINE_3
+    type = Z_RES_P(z)->type;
+    value = (swig_object_wrapper *)Z_RES_P(z)->ptr;
+#else
+    value = (swig_object_wrapper *)zend_list_find(z->value.lval, &type);
+#endif
+
+    if (type == -1) return NULL;
+    if (flags & SWIG_POINTER_DISOWN) {
+        value->newobject = 0;
+    }
+    return value->ptr;
+}
+static int
+SWIG_ZTS_ConvertPtr2(zval *z, void **ptr, swig_type_info *ty, int flags TSRMLS_DC) {
+    if (z == NULL) {
+        *ptr = 0;
+        return 0;
+    }
+    switch (Z_TYPE_P(z)) {
+    case IS_OBJECT: {
+        //find z->_cPtr
+#ifdef ZEND_ENGINE_3
+        zval* _cPtr;
+        if ((_cPtr = zend_hash_str_find(HASH_OF(z), "_cPtr", sizeof("_cPtr") - 1)) != NULL) {
+            if (Z_TYPE_P(_cPtr) == IS_INDIRECT)
+                _cPtr = Z_INDIRECT_P(_cPtr);
+            if (Z_TYPE_P(_cPtr) == IS_RESOURCE) {
+                *ptr = SWIG_ZTS_ConvertResourcePtr2(_cPtr, ty, flags TSRMLS_CC);
+                return (*ptr == NULL ? -1 : 0);
+            }
+        }
+#else
+        zval **_cPtr;
+        if (zend_hash_find(HASH_OF(z), (char*)"_cPtr", sizeof("_cPtr"), (void**)&_cPtr) == SUCCESS) {
+            if ((*_cPtr)->type == IS_RESOURCE) {
+                *ptr = SWIG_ZTS_ConvertResourcePtr(*_cPtr, ty, flags TSRMLS_CC);
+                return (*ptr == NULL ? -1 : 0);
+            }
+        }
+#endif
+        break;
+    }
+    case IS_RESOURCE:
+        *ptr = SWIG_ZTS_ConvertResourcePtr2(z, ty, flags TSRMLS_CC);
+        return (*ptr == NULL ? -1 : 0);
+    case IS_NULL:
+        *ptr = 0;
+        return 0;
+    }
+
+    return -1;
 }
 
 static char const_name[] = "swig_runtime_data_type_pointer";
@@ -1392,7 +1456,6 @@ extern "C" {
 #endif
 // ---- patch end ---
 
-#include "zend_exceptions.h"
 #define SWIG_exception(code, msg) zend_throw_exception(NULL, (char*)msg, code TSRMLS_CC)
 
 
@@ -14762,6 +14825,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_find__SWIG_0) {
   {
     try {
       (arg1)->find(arg2);
+      ZVAL_LONG(return_value, (arg1)->stat());
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -14793,6 +14857,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_find__SWIG_1) {
   {
     try {
       (arg1)->find();
+      ZVAL_LONG(return_value, (arg1)->stat());
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -14860,6 +14925,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findFirst) {
   {
     try {
       (arg1)->findFirst();
+      ZVAL_LONG(return_value, (arg1)->stat());
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -14891,6 +14957,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findLast) {
   {
     try {
       (arg1)->findLast();
+      ZVAL_LONG(return_value, (arg1)->stat());
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -14929,6 +14996,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findNext__SWIG_0) {
   {
     try {
       (arg1)->findNext(arg2);
+      ZVAL_LONG(return_value, (arg1)->stat());
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -14960,6 +15028,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findNext__SWIG_1) {
   {
     try {
       (arg1)->findNext();
+      ZVAL_LONG(return_value, (arg1)->stat());
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -15034,6 +15103,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findPrev__SWIG_0) {
   {
     try {
       (arg1)->findPrev(arg2);
+      ZVAL_LONG(return_value, (arg1)->stat());
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -15065,6 +15135,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_findPrev__SWIG_1) {
   {
     try {
       (arg1)->findPrev();
+      ZVAL_LONG(return_value, (arg1)->stat());
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -15860,39 +15931,9 @@ ZEND_NAMED_FUNCTION(_wrap_table_getFVstr) {
   SWIG_FAIL(TSRMLS_C);
 }
 
-
-ZEND_NAMED_FUNCTION(_wrap_table_fields) {
-  bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
-  zval_args_type args[1];
-  bzs::db::protocol::tdap::client::fields *result = 0 ;
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_fields. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      result = (bzs::db::protocol::tdap::client::fields *) &(arg1)->fields();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  SWIG_SetPointerZval(return_value, (void *)result, SWIGTYPE_p_bzs__db__protocol__tdap__client__fields, 0);
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
+/*
+END_NAMED_FUNCTION(_wrap_table_fields) move to after Recordset_getRow 
+*/
 
 
 ZEND_NAMED_FUNCTION(_wrap_table_getFVNull) {
@@ -25641,7 +25682,7 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_field_setFV) {
-  bzs::db::protocol::tdap::client::field *arg1 = (bzs::db::protocol::tdap::client::field *) 0 ;
+  bzs::db::protocol::tdap::client::field *arg1 = 0 ;
   __int64 arg2_64 =  0 ;
   char* arg2_c =  NULL ;
   double arg2_d = 0;
@@ -25676,6 +25717,18 @@ ZEND_NAMED_FUNCTION(_wrap_field_setFV) {
     case IS_STRING:
       CONV_to_string_ex(args[1]);
       arg2_c = (_TCHAR *) Z_STRVAL_PP(args[1]);
+      if (argc == 2)
+      {
+          switch (arg1->type())
+          {
+          case ft_string:
+          case ft_myvarbinary:
+          case ft_mywvarbinary:
+          case ft_myblob:
+              arg3 = Z_STRLEN_PP(args[1]);
+              break;
+          }
+      }
       break;
     case IS_NULL:
       arg2_c = (_TCHAR *) NULL;
@@ -26249,6 +26302,93 @@ fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
+
+ZEND_NAMED_FUNCTION(_wrap_Record_getFV) {
+    bzs::db::protocol::tdap::client::fieldsBase *arg1 = 0;
+    short arg2_s = -1;
+    
+    zval_args_type args[2];
+
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    {
+        if (SWIG_ConvertPtr2(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of Record_getFV. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase");
+        }
+    }
+    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+    {
+        if (Z_TYPE_AGRS(1) == IS_LONG) {
+            CONV_to_long_ex(args[1]);
+            arg2_s = (short)Z_LVAL_PP(args[1]);
+        }
+        else if ((Z_TYPE_AGRS(1) != IS_NULL) && (Z_TYPE_AGRS(1) == IS_STRING)) {
+            CONV_to_string_ex(args[1]);
+            const char* arg2 = (_TCHAR *)Z_STRVAL_PP(args[1]);
+            arg2_s = arg1->indexByName(arg2);
+        }
+        else {
+            SWIG_PHP_Error(E_ERROR, "No matching function overloaded record_getFV");
+        }
+    }
+
+    {
+        try {
+            bzs::db::protocol::tdap::client::field& fd = (*arg1)[arg2_s];
+
+            switch (fd.type()) {
+            case ft_integer:
+            case ft_uinteger:
+            case ft_autoinc:
+            case ft_autoIncUnsigned:
+            case ft_logical:
+            case ft_bit:
+            {
+                __int64 result = fd.i64();
+                if ((long long)LONG_MIN <= result && result <= (long long)LONG_MAX) 
+                {    ZVAL_LONG(return_value, (long)result);}
+                else
+                {    ZVAL_DOUBLE(return_value, (double)result);}
+                break;
+            }
+            case ft_float:
+            case ft_decimal:
+            case ft_money:
+            case ft_numeric:
+            case ft_bfloat:
+            case ft_numericsts:
+            case ft_numericsa:
+            case ft_currency:
+                ZVAL_DOUBLE(return_value, (double)fd.d());
+                break;
+            default:
+            {
+                const char* result = fd.c_str();
+                if (!result)
+				{
+                    ZVAL_NULL(return_value);
+				}
+                else 
+				{
+                    ZVAL_STRING(return_value, result, 1);
+				}
+            }
+            }
+        }
+        catch (bzs::rtl::exception& e) {
+            SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            SWIG_exception(SWIG_RuntimeError, e.what());
+        }
+    }
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
+}
 
 ZEND_NAMED_FUNCTION(_wrap_memoryRecord_createRecord) {
   bzs::db::protocol::tdap::client::fielddefs *arg1 = 0 ;
@@ -30551,48 +30691,458 @@ fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
+static const int FETCH_VAL_NUM       = 1;
+static const int FETCH_VAL_ASSOC     = 2;
+static const int FETCH_VAL_BOTH      = 3;
+static const int FETCH_OBJ           = 4;
+static const int FETCH_USR_CLASS     = 8;
+static const int FETCH_RECORD_INTO   = 16;
+
+#ifndef ZEND_ENGINE_3
+#define FC_OBJ object_ptr
+
+int zend_fcall_info_args_ex(zend_fcall_info *fci, zend_function *func, zval *args)
+{
+	if (args) 
+	{
+		HashTable* ht = Z_ARRVAL_P(args);
+		fci->param_count = 0;
+		fci->params = (zval***)safe_emalloc(sizeof(zval**), ht->nNumOfElements, 0);
+		Bucket* bk = ht->pListHead;
+		while (bk != NULL) 
+		{
+			fci->params[fci->param_count++] = (zval**)bk->pData;
+			bk = bk->pListNext;
+		}
+	}
+	return 0;
+}
+inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v TSRMLS_DC)
+{
+    if (type & FETCH_VAL_ASSOC)
+	{add_assoc_string(return_value , (char*)name, (char*)v ,1 );}
+    if (type & FETCH_VAL_NUM)
+	{add_index_string(return_value, index, (char*)v , 1);}
+    else if (type & FETCH_OBJ)
+	{add_property_string(return_value, (char*)name, (char*)v , 1);}
+}
+
+inline zend_class_entry* cp_zend_lookup_class(zval_args_type zv TSRMLS_DC)
+{
+	zend_class_entry** cep = NULL;
+	CONV_to_string_ex(zv);
+	if (zend_lookup_class(Z_STRVAL_PP(zv), Z_STRLEN_PP(zv), &cep TSRMLS_CC) != FAILURE) 
+		return *cep;
+	return NULL;
+}
+
+#else
+
+#define FC_OBJ object
+inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v)
+{
+    if (type & FETCH_VAL_ASSOC)
+	{add_assoc_string(return_value , (char*)name, (char*)v);}
+    if (type & FETCH_VAL_NUM)
+	{add_index_string(return_value, index, (char*)v);}
+    else if (type & FETCH_OBJ)
+	{add_property_string(return_value, (char*)name, (char*)v);}
+}
+
+inline zend_class_entry* cp_zend_lookup_class(zval_args_type& zv)
+{
+	return zend_lookup_class(Z_STR(zv));
+}
+
+#endif
+
+inline void addFieldValueNull(int type, zval* return_value, zend_ulong index, const char* name TSRMLS_DC)
+{
+    if (type & FETCH_VAL_ASSOC) add_assoc_null(return_value, name);
+    if (type & FETCH_VAL_NUM)
+        add_index_null(return_value, index);
+    else if (type & FETCH_OBJ)
+        add_property_null(return_value, name);
+}
+
+inline void addFieldValue(int type, zval *return_value, zend_ulong index, const char* name, double v TSRMLS_DC)
+{
+    if (type & FETCH_VAL_ASSOC)
+	{
+		add_assoc_double(return_value, name, v);
+	}
+    if (type & FETCH_VAL_NUM)
+    {
+		add_index_double(return_value, index, v);
+	}
+    else if (type & FETCH_OBJ)
+	{
+        add_property_double(return_value, name, v);
+	}
+}
+
+inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, __int64 v TSRMLS_DC)
+{
+    if ((__int64)LONG_MIN <= v && v <= (__int64)LONG_MAX)
+    {
+		if (type & FETCH_VAL_ASSOC) {add_assoc_long(return_value, name, (int)v);}
+        if (type & FETCH_VAL_NUM)
+		{add_index_long(return_value, index, (int)v);}
+        else if (type & FETCH_OBJ)
+		{add_property_long(return_value, name, (int)v);}
+    }
+    else
+	{addFieldValue(type, return_value, index, name, (double)v TSRMLS_CC);}
+}
+
+inline void addFieldValues(int type, const fieldsBase* r, zval *return_value TSRMLS_DC)
+{
+    for (size_t i = 0; i < r->size(); ++i)
+    {
+        field fd = (*r)[i];
+        const fielddef& fdd = (*(r->fieldDefs()))[i];
+        if (fd.isNull())
+            addFieldValueNull(type, return_value, i, fdd.name() TSRMLS_CC);
+        else
+        {
+            switch (fd.type()) 
+            {
+            case ft_integer:
+            case ft_uinteger:
+            case ft_autoinc:
+            case ft_autoIncUnsigned:
+            case ft_logical:
+            case ft_bit:
+                addFieldValue(type, return_value, i, fdd.name(), fd.i64() TSRMLS_CC);
+                break;
+            case ft_float:
+            case ft_decimal:
+            case ft_money:
+            case ft_numeric:
+            case ft_bfloat:
+            case ft_numericsts:
+            case ft_numericsa:
+            case ft_currency:
+                addFieldValue(type, return_value, i, fdd.name(), fd.d() TSRMLS_CC);
+                break;
+            default:
+                addFieldValue(type, return_value, i, fdd.name(), fd.c_str() TSRMLS_CC);
+            };
+        }
+    }
+}
+
+int callConstructor(zval* return_value, zend_class_entry* ce, zval* args TSRMLS_DC)
+{
+	zend_fcall_info fci;
+    fci.size = sizeof(zend_fcall_info);
+    zend_fcall_info_cache fcc;
+    fci.function_table = &ce->function_table;
+	zval retval; 
+	#ifdef ZEND_ENGINE_3
+    ZVAL_UNDEF(&fci.function_name);
+	fci.retval = &retval;
+	#else
+	zval* pval = &retval;
+	INIT_PZVAL(pval);
+	fci.retval_ptr_ptr = &pval;
+	#endif
+
+	fci.symbol_table = NULL;
+                            
+    fci.param_count = 0;
+    fci.params = NULL;
+    fci.no_separation = 1;
+    zend_fcall_info_args_ex(&fci, ce->constructor, args);
+    fcc.initialized = 1;
+    fcc.function_handler = ce->constructor;
+    fcc.calling_scope = EG(scope);
+    fcc.called_scope = ce;
+
+    fci.FC_OBJ = FCI_OBJ_P(return_value);
+    fcc.FC_OBJ = FCI_OBJ_P(return_value);
+
+    int ret = zend_call_function(&fci, &fcc TSRMLS_CC);
+	#ifndef ZEND_ENGINE_3
+	zval_dtor(pval);
+	#endif
+	return ret;
+}
+
+int copyValues(zval *return_value, int type, const fieldsBase* r, zval_args_type& className, zval* args TSRMLS_DC)
+{
+	if (type & FETCH_OBJ)
+        object_init_ex(return_value, ZEND_STANDARD_CLASS_DEF_PTR);
+    else if (type & FETCH_USR_CLASS)
+    {
+		zend_class_entry* ce = NULL;
+		
+        if (ZTYPE(className) != IS_NULL && ZTYPE(className) == IS_STRING)
+		{
+			ce = cp_zend_lookup_class(className TSRMLS_CC);
+			type = FETCH_OBJ;
+		}
+		if (ce == NULL) return -2;
+        object_init_ex(return_value, ce);
+        if (ce->constructor)
+        {
+			if (callConstructor(return_value, ce, args TSRMLS_CC) == FAILURE)
+				return FAILURE;
+        }
+    }
+    else
+        array_init_size(return_value, r->size());
+                
+    addFieldValues(type, r, return_value TSRMLS_CC);
+	return 0;
+}
+
 
 ZEND_NAMED_FUNCTION(_wrap_Recordset_getRow) {
-  bzs::db::protocol::tdap::client::recordset *arg1 = (bzs::db::protocol::tdap::client::recordset *) 0 ;
-  size_t arg2 ;
-  bzs::db::protocol::tdap::client::fieldsBase **arg3 = (bzs::db::protocol::tdap::client::fieldsBase **) 0 ;
-  zval_args_type args[3];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of Recordset_getRow. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset");
+    recordset *arg1 = 0;
+    size_t arg2;
+    int arg3 = 0;
+    memoryRecord* arg4 = 0;
+    zval_args_type args[5];
+    int argc = ZEND_NUM_ARGS();
+    
+
+    SWIG_ResetError(TSRMLS_C);
+    if (argc < 4 || argc > 5|| zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
     }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
-  CONV_to_long_ex(args[1]);
-  arg2 = (size_t) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[2], (void **) &arg3, SWIGTYPE_p_p_bzs__db__protocol__tdap__client__fieldsBase, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 3 of Recordset_getRow. Expected SWIGTYPE_p_p_bzs__db__protocol__tdap__client__fieldsBase");
+
+    {
+        if (SWIG_ConvertPtr2(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of Recordset_getRow. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset");
+        }
     }
-  }
-  {
-    try {
-      bzs_db_protocol_tdap_client_recordset_getRow(arg1,arg2,arg3);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
+    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+    CONV_to_long_ex(args[1]);
+    arg2 = (size_t)Z_LVAL_PP(args[1]);
+
+    CONV_to_long_ex(args[2]);
+    arg3 = (size_t)Z_LVAL_PP(args[2]);
+
+    if (arg3 & FETCH_RECORD_INTO)
+    {
+        if (SWIG_ConvertPtr2(ZVAL_ARGS[3], (void **)&arg4, SWIGTYPE_p_bzs__db__protocol__tdap__client__memoryRecord, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 3 of Recordset_getRow. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__memoryRecord");
+        }
     }
-  }
-  
-  return;
+
+	{
+        try 
+        {
+            if (arg3 < FETCH_RECORD_INTO)
+            {
+                const row& r = (*arg1)[arg2];
+				zval* p = (argc == 5 && Z_TYPE_AGRS(4) == IS_ARRAY) ? ZVAL_ARGS_P(4) : NULL;
+                int ret = copyValues(return_value, arg3, &r,  args[3], p TSRMLS_CC);
+				if (ret == FAILURE)
+				{SWIG_PHP_Error(E_ERROR, "Could not call class constructor");}
+				else if(ret == -2)
+				{SWIG_PHP_Error(E_ERROR, "Type error in argument 3 of Recordset_getRow. Expected class name");}					
+            }
+            else if (arg3 == FETCH_RECORD_INTO)
+            {
+                const memoryRecord& tmp = dynamic_cast<const memoryRecord& >((*arg1)[arg2]);
+                *arg4 = tmp;
+				MAKE_COPY_ZVAL(ZVAL_ARGS_ARRAY[3], return_value);
+            }
+        }
+        catch (bzs::rtl::exception& e) {
+            SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            SWIG_exception(SWIG_RuntimeError, e.what());
+        }
+    }
+
+    return;
 fail:
-  SWIG_FAIL(TSRMLS_C);
+    SWIG_FAIL(TSRMLS_C);
+
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_table_fields) {
+    table *arg1 = 0;
+    int arg3 = 0;
+    fieldsBase* arg4 = 0;
+    zval_args_type args[4];
+	int argc = ZEND_NUM_ARGS();
+
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    {
+        if (SWIG_ConvertPtr2(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_fields. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+        }
+    }
+    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+    CONV_to_long_ex(args[1]);
+    arg3 = (size_t)Z_LVAL_PP(args[1]);
+
+    {
+        try
+        {
+            if (arg3 < FETCH_RECORD_INTO)
+            {
+                const fields& r = arg1->fields();
+				zval* p = (Z_TYPE_AGRS(3) == IS_ARRAY) ? ZVAL_ARGS_P(3) : NULL;
+                int ret = copyValues(return_value, arg3, &r,  args[2], p TSRMLS_CC);
+				if (ret == FAILURE)
+				{SWIG_PHP_Error(E_ERROR, "Could not call class constructor");}
+				else if(ret == -2)
+				{SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of table_fields. Expected class name");}					
+            }
+            else if (arg3 == FETCH_RECORD_INTO)
+            {
+                SWIG_SetPointerZval(return_value, (void *)&(arg1->fields()), SWIGTYPE_p_bzs__db__protocol__tdap__client__fieldsBase, 0);
+            }
+        }
+        catch (bzs::rtl::exception& e) {
+            SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+        }
+        catch (std::exception &e) {
+            SWIG_exception(SWIG_RuntimeError, e.what());
+        }
+    }
+
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
+
+}
+
+ZEND_NAMED_FUNCTION(_wrap_Recordset_getAll) {
+
+    recordset *rs = 0;
+    zval_args_type args[4];
+
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    {
+        if (SWIG_ConvertPtr2(ZVAL_ARGS[0], (void **)&rs, SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of Recordset_getAll. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__recordset");
+        }
+    }
+    if (!rs) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+    CONV_to_long_ex(args[1]);
+    int type = (size_t)Z_LVAL_PP(args[1]);
+    if (type == FETCH_RECORD_INTO)
+        type = FETCH_VAL_BOTH;
+
+    zval* p = (Z_TYPE_AGRS(3) == IS_ARRAY) ? ZVAL_ARGS_P(3) : NULL;
+
+    int ret = 0;
+    array_init(return_value);
+
+#ifndef ZEND_ENGINE_3
+    zval* zrow=NULL;
+    for (size_t i = 0;i < rs->size(); ++i)
+    {
+        MAKE_STD_ZVAL(zrow);
+        ret = copyValues(zrow, type, &(*rs)[i], args[2], p TSRMLS_CC);
+        add_next_index_zval(return_value, zrow);
+        if (ret) break;
+    }
+    //FREE_ZVAL(zrow);
+#else
+    zval zrow;
+    for (size_t i = 0; i < rs->size(); ++i)
+    {
+        ret = copyValues(&zrow, type, &(*rs)[i], args[2], p);
+        if (ret) break;
+        zend_hash_next_index_insert_new(Z_ARRVAL_P(return_value), &zrow);
+    }
+#endif
+    if (ret == FAILURE)
+    {
+        SWIG_PHP_Error(E_ERROR, "Could not call class constructor");
+    }
+    else if (ret == -2)
+    {
+        SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of Recordset_getAll. Expected class name");
+    }
+    return;
+
+fail:
+    SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_table_findAll) {
+
+    table *tb = 0;
+    zval_args_type args[4];
+
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    {
+        if (SWIG_ConvertPtr2(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_findAll. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+        }
+    }
+    if (!tb) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+    CONV_to_long_ex(args[1]);
+    int type = (size_t)Z_LVAL_PP(args[1]);
+    if (type == FETCH_RECORD_INTO)
+        type = FETCH_VAL_BOTH;
+
+    zval* p = (Z_TYPE_AGRS(3) == IS_ARRAY) ? ZVAL_ARGS_P(3) : NULL;
+
+    int ret = 0;
+    array_init(return_value);
+    fieldsBase& row = tb->fields();
+    tb->find();
+#ifndef ZEND_ENGINE_3
+    zval* zrow=NULL;
+    while(tb->stat() == 0)
+    {
+        MAKE_STD_ZVAL(zrow);
+        ret = copyValues(zrow, type, &row, args[2], p TSRMLS_CC);
+        if (ret) break;
+        add_next_index_zval(return_value, zrow);
+        tb->findNext();
+    }
+    //FREE_ZVAL(zrow);
+#else
+    zval zrow;
+    while (tb->stat() == 0)
+    {
+        ret = copyValues(&zrow, type, &row, args[2], p);
+        if (ret) break;
+        zend_hash_next_index_insert_new(Z_ARRVAL_P(return_value), &zrow);
+        tb->findNext();
+    }
+#endif
+    if (ret == FAILURE)
+    {
+        SWIG_PHP_Error(E_ERROR, "Could not call class constructor");
+    }
+    else if (ret == -2)
+    {
+        SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of Recordset_getAll. Expected class name");
+    }
+    return;
+
+fail:
+    SWIG_FAIL(TSRMLS_C);
 }
 
 
@@ -34652,6 +35202,12 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_smartupdate, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_findall, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_find, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -34703,6 +35259,9 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_getfvstr, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_fields, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_getfvnull, 0, 0, 0)
@@ -35385,25 +35944,12 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_c_str, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-/*
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_a_str, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()*/
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_i, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-/*ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_i8, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()
-ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_i16, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()*/
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_i64, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
-/*ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_f, 0, 0, 0)
- ZEND_ARG_PASS_INFO(0)
-ZEND_END_ARG_INFO()*/
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_field_d, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -35450,6 +35996,10 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_record_clear, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_record_getfieldref, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_record_getfv, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
@@ -35775,6 +36325,10 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_recordset_getrow, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_recordset_getall, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_new_recordset, 0, 0, 0)
@@ -36295,6 +36849,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(table_clearbuffer, _wrap_table_clearBuffer, swig_arginfo_table_clearbuffer)
  SWIG_ZEND_NAMED_FE(table_getrecordhash,_wrap_table_getRecordHash,swig_arginfo_table_getrecordhash)
  SWIG_ZEND_NAMED_FE(table_smartupdate,_wrap_table_smartUpdate,swig_arginfo_table_smartupdate)
+ SWIG_ZEND_NAMED_FE(table_findall, _wrap_table_findAll, swig_arginfo_table_findall)
  SWIG_ZEND_NAMED_FE(table_find,_wrap_table_find,swig_arginfo_table_find)
  SWIG_ZEND_NAMED_FE(table_findfirst,_wrap_table_findFirst,swig_arginfo_table_findfirst)
  SWIG_ZEND_NAMED_FE(table_findlast,_wrap_table_findLast,swig_arginfo_table_findlast)
@@ -36515,6 +37070,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(record_fielddefs,_wrap_Record_fieldDefs,swig_arginfo_record_fielddefs)
  SWIG_ZEND_NAMED_FE(record_clear,_wrap_Record_clear,swig_arginfo_record_clear)
  SWIG_ZEND_NAMED_FE(record_getfieldref,_wrap_Record_getFieldRef,swig_arginfo_record_getfieldref)
+ SWIG_ZEND_NAMED_FE(record_getfv,_wrap_Record_getFV,swig_arginfo_record_getfv)
  SWIG_ZEND_NAMED_FE(memoryrecord_createrecord,_wrap_memoryRecord_createRecord,swig_arginfo_memoryrecord_createrecord)
  SWIG_ZEND_NAMED_FE(new_memoryrecord,_wrap_new_memoryRecord,swig_arginfo_new_memoryrecord)
  SWIG_ZEND_NAMED_FE(writablerecord_read,_wrap_writableRecord_read,swig_arginfo_writablerecord_read)
@@ -36596,6 +37152,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(recordset_appendfield,_wrap_Recordset_appendField,swig_arginfo_recordset_appendfield)
  SWIG_ZEND_NAMED_FE(recordset_unionrecordset,_wrap_Recordset_unionRecordset,swig_arginfo_recordset_unionrecordset)
  SWIG_ZEND_NAMED_FE(recordset_getrow,_wrap_Recordset_getRow,swig_arginfo_recordset_getrow)
+ SWIG_ZEND_NAMED_FE(recordset_getall, _wrap_Recordset_getAll, swig_arginfo_recordset_getall)
  SWIG_ZEND_NAMED_FE(new_recordset,_wrap_new_Recordset,swig_arginfo_new_recordset)
  SWIG_ZEND_NAMED_FE(new_preparedquery,_wrap_new_preparedQuery,swig_arginfo_new_preparedquery)
  SWIG_ZEND_NAMED_FE(preparedquery_supplyvalue,_wrap_preparedQuery_supplyValue,swig_arginfo_preparedquery_supplyvalue)

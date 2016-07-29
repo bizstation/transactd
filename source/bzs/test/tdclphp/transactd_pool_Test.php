@@ -21,7 +21,7 @@ mb_internal_encoding('UTF-8');
 
 require_once("transactd.php");
 use BizStation\Transactd as Bz;
-Bz\transactd::setRecordValueMode(Bz\transactd::RECORD_KEYVALUE_FIELDVALUE);
+Bz\transactd::setFieldValueMode(Bz\transactd::FIELD_VALUE_MODE_VALUE);
 
 
 function getHost()
