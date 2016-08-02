@@ -791,6 +791,9 @@ using namespace bzs::db::protocol::tdap::client;
 };
 %ignore bzs::db::protocol::tdap::client::recordset::recordset;
 %ignore bzs::db::protocol::tdap::client::recordset::~recordset;
+%ignore bzs::db::protocol::tdap::client::recordset::begin;
+%ignore bzs::db::protocol::tdap::client::recordset::end;
+
 
 // * bzs/db/protocol/tdap/client/table.h *
 %ignore bzs::db::protocol::tdap::client::keyValuePtr;

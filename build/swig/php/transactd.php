@@ -3250,6 +3250,11 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
 		}
 		$this->_cPtr=new_fielddefs();
 	}
+	
+	function toArray() {
+		return fielddefs_toArray($this->_cPtr);
+	}
+
 }
 
 class field {
@@ -4265,7 +4270,7 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 
 	// Arrayable
 	public function toArray() {
-		return Recordset_getAll($this->_cPtr, $this->fetchMode, $this->fechClass, $this->ctorArgs);
+		return Recordset_toArray($this->_cPtr, $this->fetchMode, $this->fechClass, $this->ctorArgs);
 	}
 
 	// IteratorAggregate
@@ -4376,14 +4381,6 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 			return new Recordset($r);
 		}
 		return $r;
-	}
-
-	function begin() {
-		return Recordset_begin($this->_cPtr);
-	}
-
-	function end() {
-		return Recordset_end($this->_cPtr);
 	}
 
 	function erase($index_or_it) {
