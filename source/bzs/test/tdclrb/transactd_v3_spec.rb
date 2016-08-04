@@ -203,9 +203,10 @@ def createUserTable(db)
   fieldIndex += 1
   fd = dbdef.insertField(tableid, fieldIndex)
   fd.setName('tel')
-  fd.type = Transactd::Ft_myvarchar
-  fd.len = 4
-  fd.setLenByCharnum(21)
+  #fd.type = Transactd::Ft_myvarchar
+  #fd.setLenByCharnum(21)
+  fd.type = Transactd::Ft_myvarbinary
+  fd.len = 64
   fd.setNullable(true)
   fieldIndex += 1
   fd = dbdef.insertField(tableid, fieldIndex)
@@ -570,11 +571,11 @@ describe Transactd, 'V3Features' do
     rs2 = rs2.matchBy(rq)
     expect(rs2.count()).to eq 10
     # setBin bin
-    hex_str = ['FF01FF02']
+    hex_str = ['FF00FF02']
     bin = hex_str.pack('H*')
-    wr["tel"].setBin(bin)
+    wr["tel"].setBin(bin, bin.length)
     ret = wr["tel"].bin()
-    expect(ret.unpack('H*')[0].upcase()).to eq hex_str[0]
+    expect(bin).to eq ret
     atu.release()
     ate.release()
     db.close()

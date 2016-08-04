@@ -23,7 +23,7 @@ require 'transactd'
 require 'rbconfig'
 IS_WINDOWS = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
 
-Transactd::setRecordValueMode(Transactd::RECORD_KEYVALUE_FIELDVALUE)
+Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE)
 
 def getEnv(valuename)
   return ENV[valuename] if ENV[valuename] != nil

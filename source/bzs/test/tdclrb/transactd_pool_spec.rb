@@ -21,7 +21,7 @@
 require 'transactd'
 require 'thwait'
 
-Transactd::setRecordValueMode(Transactd::RECORD_KEYVALUE_FIELDVALUE)
+Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE)
 
 def getEnv(valuename)
   return ENV[valuename] if ENV[valuename] != nil
