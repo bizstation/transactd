@@ -573,7 +573,7 @@ describe Transactd, 'V3Features' do
     # setBin bin
     hex_str = ['FF00FF02']
     bin = hex_str.pack('H*')
-    wr["tel"].setBin(bin, bin.length)
+    wr["tel"].setBin(bin)
     ret = wr["tel"].bin()
     expect(bin).to eq ret
     atu.release()

@@ -2078,17 +2078,11 @@ SWIG_pchar_descriptor(void)
 SWIGINTERNINLINE VALUE 
 SWIG_FromCharPtrAndSize(const char* carray, size_t size)
 {
-  if (carray) {
-    if (size > LONG_MAX) {
-      swig_type_info* pchar_descriptor = SWIG_pchar_descriptor();
-      return pchar_descriptor ? 
-    SWIG_NewPointerObj(const_cast< char * >(carray), pchar_descriptor, 0) : Qnil;
-    } else {
-      return rb_str_new(carray, static_cast< long >(size));
-    }
-  } else {
-    return Qnil;
-  }
+  if (!carray) return Qnil;
+  if (size <= LONG_MAX) 
+    return rb_str_new(carray, static_cast< long >(size));
+  swig_type_info* pchar_descriptor = SWIG_pchar_descriptor();
+  return pchar_descriptor ? SWIG_NewPointerObj(carray, pchar_descriptor, 0) : Qnil;
 }
 
 
@@ -18722,10 +18716,18 @@ SWIGINTERN VALUE _wrap_field_setvalue_(int argc, VALUE *argv, VALUE self) {
 
 /* The size parameter is required if set to binary data, */
 SWIGINTERN VALUE _wrap_field_setBin(int argc, VALUE *argv, VALUE self) {
-  if (!check_param_count(argc, 2, 2)) return Qnil;
+  if (!check_param_count(argc, 1, 2)) return Qnil;
   tdap::client::field* arg1 = selfPtr(self, arg1);
   int size = 0;
-  if (!obj2Integer(argv[1], size)) return Qnil;
+  if (argc == 1)
+  {
+    if (TYPE(argv[0]) == T_STRING)
+      size = StringValueLen(argv[0]);
+    else
+      rb_raise(rb_eTypeError, "Size parameter is required.");
+  }
+  else if (!obj2Integer(argv[1], size)) 
+    return Qnil;
   if (field_setvalue(argv[0], *arg1, size))
     return self;
   return Qnil;
@@ -19385,20 +19387,20 @@ _wrap_new_connectParams__SWIG_0(int argc, VALUE *argv, VALUE self) {
     } 
     CATCH_BZS_AND_STD()
   }
-  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  /*if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
   if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
-  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;*/
   return self;
 fail:
-  if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
+  /*if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   if (alloc2 == SWIG_NEWOBJ) delete[] buf2;
   if (alloc3 == SWIG_NEWOBJ) delete[] buf3;
   if (alloc4 == SWIG_NEWOBJ) delete[] buf4;
   if (alloc5 == SWIG_NEWOBJ) delete[] buf5;
-  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;
+  if (alloc6 == SWIG_NEWOBJ) delete[] buf6;*/
   return Qnil;
 }
 
