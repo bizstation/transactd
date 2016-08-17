@@ -393,12 +393,15 @@ table* getTable(database* db, const char *name)
 void schemaBuilder::listTable(database* db, std::vector<std::string>& tables, int type)
 {
     char path[FN_REFLEN + 1];
+    tables.clear();
     build_table_filename(path, sizeof(path) - 1, db->name().c_str(), "", "", 0);
     std::string s = path;
     fs::path p = s;
+    if (exists(p) == false) return;
+
     fs::directory_iterator it(p);
     fs::directory_iterator end;
-    tables.clear();
+    
 
     for (fs::directory_iterator it(p); it != end; ++it)
     {
@@ -456,6 +459,7 @@ short schemaBuilder::execute(database* db, table* mtb, bool nouseNullkey)
 
     std::string s = path;
     fs::path p = s;
+    if (exists(p) == false) return STATUS_TABLE_NOTOPEN;
     fs::directory_iterator it(p);
     fs::directory_iterator end;
     int id = 0;

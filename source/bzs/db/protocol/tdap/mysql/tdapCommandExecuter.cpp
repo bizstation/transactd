@@ -194,7 +194,7 @@ void dumpStdErr(int op, request& req, table* tb)
     sprintf_s(msg.get(), 1024,
               "[Transactd] Exception:op=%d Handle=%d tablename=%s datalen=%d"
               " keynum=%d keylen=%d \n",
-              op, req.pbk->handle, tb ? tb->name().c_str() : "", *req.datalen,
+              op, req.pbk ? req.pbk->handle : -1, tb ? tb->name().c_str() : "", *req.datalen,
               req.keyNum, req.keylen);
     sql_print_error("%s", msg.get());
     // dump Keybuf
