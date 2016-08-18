@@ -321,7 +321,8 @@ void database::drop(const _TCHAR* uri)
    
         fileNames[count++] = s;
         BTRCALLID_PTR ptr = m_btrcallid;
-        m_btrcallid = NULL;
+        if (isUseTransactd())
+            m_btrcallid = NULL;
         close();
         m_btrcallid = ptr;
         for (int i = 0; i < count; i++)
@@ -612,6 +613,7 @@ void database::doClose()
     {
         dbdef* def = m_impl->dbDef;
         m_impl->dbDef = NULL;
+        def->close();
         def->release();
         nsdatabase::reset();
     }
