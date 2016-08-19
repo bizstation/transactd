@@ -1606,14 +1606,11 @@ uint table::recordPackCopy(char* buf, uint maxsize)
                 //copy null bit
                 isNull = fd->is_null();
                 if (isNull)
-                {
-                    if (null_bit == 1)
-                        *null_ptr = 0x00;
                     *null_ptr |= null_bit;
-                }
                 if (null_bit == (uchar)128)
                 {
                     ++null_ptr;
+                    *null_ptr = 0x00;
                     null_bit = 1;
                 }else
                     null_bit = null_bit << 1;
