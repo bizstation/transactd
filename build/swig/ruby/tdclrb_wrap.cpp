@@ -2577,10 +2577,19 @@ using namespace bzs::db::protocol;
 #define FETCH_VAL_NUM               1
 #define FETCH_VAL_ASSOC             2
 #define FETCH_VAL_BOTH              3
+#define FETCH_OBJ                   4
+#define FETCH_USR_CLASS             8
 #define FETCH_RECORD_INTO           16
 
 static const VALUE g_id_fetchmode = rb_intern("@fetchmode");
+static const VALUE g_id_fetchClass = rb_intern("@fetchClass");
+static const VALUE g_id_ctorArgs = rb_intern("@ctorArgs");
 static const VALUE g_id_fields = rb_intern("@fields");
+static const VALUE g_id_field_ids = rb_intern("@field_ids");
+static const VALUE g_id_accessor_initialized = rb_intern("@accessor_initialized");
+static const VALUE g_id_aliased_fields = rb_intern("@aliased_fields");
+static const VALUE g_id_alias_map = rb_intern("alias_map");
+static const VALUE g_id_undefine_original = rb_intern("undefine_original");
 
 static short g_nullValueMode = NULLVALUE_MODE_NORETURNNULL;
 static short g_fieldValueMode = FIELD_VALUE_MODE_OBJECT;
@@ -10755,17 +10764,70 @@ SWIGINTERN VALUE _wrap_table_findPrev(int argc, VALUE *argv, VALUE self) {
 }
 
 
-VALUE getFieldsArray(const tdap::client::fielddefs& fds) {
-    rb_encoding* enc = utf8_enc;
-    size_t size = fds.size();
-    VALUE fields = rb_ary_new2(size);
-    for (size_t i = 0; i < size; ++i) {
-      const char* name = fds[i].name();
-      rb_ary_store(fields, i, rb_enc_str_new(name, strlen(name), enc));
-    }
-    return fields;
+template <typename T>
+VALUE getFieldsArray(T& fds, int size) {
+  VALUE fields = rb_ary_new2(size);
+  for (size_t i = 0; i < size; ++i) {
+    const char* name = fds[i].name();
+    rb_ary_store(fields, i, rb_enc_str_new(name, strlen(name), utf8_enc));
+  }
+  return fields;
 }
 
+template <typename T>
+VALUE getFieldIdsArray(T& fds, int size) {
+  VALUE fields = rb_ary_new2(size);
+  char buf[256];
+  for (size_t i = 0; i < size; ++i) {
+    sprintf_s(buf, 256, "@%s", fds[i].name());
+    rb_ary_store(fields, i, rb_intern(buf));
+  }
+  return fields;
+}
+
+template <typename T>
+VALUE getFieldIdsArray(T& fds, int size, VALUE aliases) {
+  if (TYPE(aliases) != T_HASH || rb_hash_size(aliases) == 0)
+    return getFieldIdsArray(fds, size);
+  VALUE fields = rb_ary_new2(size);
+  char buf[256];
+  for (size_t i = 0; i < size; ++i) {
+    const char* name = fds[i].name();
+    VALUE orig_name = rb_enc_str_new(name, strlen(name), utf8_enc);
+    VALUE aliased_name = Qnil;
+    aliased_name = rb_hash_lookup2(aliases, orig_name, Qnil);
+    if (aliased_name == Qnil)
+      aliased_name = rb_hash_lookup2(aliases, rb_to_symbol(orig_name), Qnil);
+    if (aliased_name != Qnil && rb_str_equal(aliased_name, orig_name) == Qfalse)
+      sprintf_s(buf, 256, "@%s", StringValuePtr(aliased_name));
+    else
+      sprintf_s(buf, 256, "@%s", fds[i].name());
+    rb_ary_store(fields, i, rb_intern(buf));
+  }
+  return fields;
+}
+
+VALUE getFieldsCache(VALUE vrs, const tdap::client::fielddefs& fds) {
+  VALUE fields = rb_ivar_get(vrs, g_id_fields);
+  if (fields == Qnil) {
+    fields = getFieldsArray(fds, fds.size());
+    rb_ivar_set(vrs, g_id_fields, fields);
+  }
+  return fields;
+}
+
+VALUE getFieldIdsCache(VALUE vrs, const tdap::client::fielddefs& fds, VALUE aliases = Qnil) {
+  VALUE fields = rb_ivar_get(vrs, g_id_field_ids);
+  if (fields == Qnil) {
+    fields = getFieldIdsArray(fds, fds.size(), aliases);
+    rb_ivar_set(vrs, g_id_field_ids, fields);
+  }
+  return fields;
+}
+
+void clearFieldIdsCache(VALUE vrs) {
+  rb_ivar_set(vrs, g_id_field_ids, Qnil);
+}
 
 VALUE getFieldValue(const tdap::client::field& f) 
 {
@@ -10799,6 +10861,87 @@ VALUE getFieldValue(const tdap::client::field& f)
 }
 
 
+static const VALUE g_id_method_defined = rb_intern("method_defined?");
+static const VALUE g_id_private_method_defined = rb_intern("private_method_defined?");
+bool hasMethod(VALUE klass, VALUE name) {
+  if (rb_funcall(klass, g_id_method_defined, 1, name) == Qtrue) { return true; }
+  return (rb_funcall(klass, g_id_private_method_defined, 1, name) == Qtrue);
+}
+
+
+void setGetterSetter(VALUE klass, VALUE v_name) {
+  int read = 0;
+  int write = 0;
+  const char* name = StringValuePtr(v_name);
+  char buf[1024];
+  sprintf_s(buf, 1024, "%s=", name);
+  VALUE setterName = rb_enc_str_new(buf, strlen(buf), utf8_enc);
+  if (! hasMethod(klass, v_name)) read = 1;
+  if (! hasMethod(klass, setterName)) write = 1;
+  if (read == 0 && write == 0) return;
+  rb_define_attr(klass, name, read, write);
+}
+
+void setGetterSetterAlias(VALUE klass, VALUE old_name, VALUE new_name) {
+  if (! hasMethod(klass, new_name)) {
+    rb_alias(klass, rb_intern_str(new_name), rb_intern_str(old_name));
+  }
+  char buf[1024];
+  sprintf_s(buf, 1024, "%s=", StringValuePtr(new_name));
+  VALUE new_name_setter = rb_enc_str_new(buf, strlen(buf), utf8_enc);
+  sprintf_s(buf, 1024, "%s=", StringValuePtr(old_name));
+  if (! hasMethod(klass, new_name_setter)) {
+    rb_alias(klass, rb_intern_str(new_name_setter), rb_intern(buf));
+  }
+}
+
+
+inline bool getAccessorInitialized(VALUE& obj) {
+  VALUE ai = rb_ivar_get(obj, g_id_accessor_initialized);
+  return (ai == Qtrue);
+}
+
+inline VALUE getAliasMap(VALUE& obj) {
+  VALUE ret = Qnil;
+  if (rb_respond_to(obj, g_id_alias_map)) {
+    ret = rb_funcall(obj, g_id_alias_map, 0, Qnil);
+  }
+  if (TYPE(ret) != T_HASH) return rb_hash_new();
+  return ret;
+}
+
+inline bool getUndefineOriginal(VALUE& obj) {
+  VALUE ret = Qnil;
+  if (rb_respond_to(obj, g_id_undefine_original)) {
+    ret = rb_funcall(obj, g_id_undefine_original, 0, Qnil);
+  }
+  return ret == Qtrue;
+}
+
+
+void setAccessors(VALUE klass, VALUE fields, VALUE aliases, bool undef_orig) {
+  if (getAccessorInitialized(klass)) return;
+  int length = RARRAY_LEN(fields);
+  for (size_t i = 0; i < length; ++i) {
+    VALUE orig_name = rb_ary_entry(fields, i);
+    VALUE aliased_name = Qnil;
+    aliased_name = rb_hash_lookup2(aliases, orig_name, Qnil);
+    if (aliased_name == Qnil) {
+      aliased_name = rb_hash_lookup2(aliases, rb_to_symbol(orig_name), Qnil);
+    }
+    if (aliased_name != Qnil && rb_str_equal(aliased_name, orig_name) == Qfalse) {
+      setGetterSetter(klass, aliased_name);
+      if (! undef_orig) {
+        setGetterSetterAlias(klass, aliased_name, orig_name);
+      }
+    } else {
+      setGetterSetter(klass, orig_name);
+    }
+  }
+  rb_ivar_set(klass, g_id_accessor_initialized, Qtrue);
+}
+
+
 VALUE recordToRubyArray(const fieldsBase& rec, int fetchmode, VALUE fields) {
   size_t size = rec.size();
   if (fetchmode == FETCH_VAL_NUM)
@@ -10821,6 +10964,18 @@ VALUE recordToRubyArray(const fieldsBase& rec, int fetchmode, VALUE fields) {
 }
 
 
+VALUE recordToRubyClass(const fieldsBase& rec, VALUE klass, VALUE ctorArgs, VALUE aliased_field_ids) {
+  if (TYPE(ctorArgs) != T_ARRAY) ctorArgs = rb_ary_new();
+  int ctorArgs_size = RARRAY_LEN(ctorArgs);
+  VALUE vresult = rb_class_new_instance(ctorArgs_size, RARRAY_PTR(ctorArgs), klass);
+  size_t size = rec.size();
+  for (size_t i = 0; i < size; ++i) {
+    rb_ivar_set(vresult, rb_ary_entry(aliased_field_ids, i), getFieldValue(rec[i]));
+  }
+  return vresult;
+}
+
+
 inline int getFetchMode(VALUE& obj, int defautVelue = FETCH_RECORD_INTO)
 {
   VALUE fetchmode = rb_ivar_get(obj, g_id_fetchmode);
@@ -10831,6 +10986,52 @@ inline int getFetchMode(VALUE& obj, int defautVelue = FETCH_RECORD_INTO)
   return  FIX2INT(fetchmode);
 }
 
+inline VALUE getFetchClass(VALUE& obj) {
+  VALUE fetchClass = rb_ivar_get(obj, g_id_fetchClass);
+  if (TYPE(fetchClass) == T_CLASS) return fetchClass;
+  return Qnil;
+}
+
+SWIGINTERN VALUE
+_wrap_RecordsetOrTable_fetchClass_set(int argc, VALUE *argv, VALUE self) {
+  if (!check_param_count(argc, 1, 1)) return Qnil;
+  if (TYPE(argv[0]) == T_CLASS) {
+    rb_ivar_set(self, g_id_fetchClass, argv[0]);
+    return argv[0];
+  }
+  if (TYPE(argv[0]) == T_STRING) {
+    VALUE id_klass = rb_intern_str(argv[0]);
+    if (rb_const_defined(rb_cObject, id_klass)) {
+      VALUE v_klass = rb_const_get(rb_cObject, id_klass);
+      if (v_klass != Qnil) {
+        rb_ivar_set(self, g_id_fetchClass, v_klass);
+        // clear field id cache (because if fetchClass changed, alias_map will be changed)
+        clearFieldIdsCache(self);
+        return v_klass;
+      }
+    }
+    rb_raise(rb_eArgError, "can not find such class");
+  }
+  rb_raise(rb_eArgError, "wrong arguments (not Class or String)");
+  return Qnil;
+}
+
+inline VALUE getCtorArgs(VALUE& obj) {
+  VALUE ctorArgs = rb_ivar_get(obj, g_id_ctorArgs);
+  if (TYPE(ctorArgs) == T_ARRAY) return ctorArgs;
+  return Qnil;
+}
+
+SWIGINTERN VALUE
+_wrap_RecordsetOrTable_ctorArgs_set(int argc, VALUE *argv, VALUE self) {
+  if (!check_param_count(argc, 1, 1)) return Qnil;
+  if (TYPE(argv[0]) != T_ARRAY) {
+    rb_raise(rb_eArgError, "wrong arguments (not array)");
+  }
+  rb_ivar_set(self, g_id_ctorArgs, argv[0]);
+  return argv[0];
+}
+
 
 SWIGINTERN VALUE
 _wrap_table_findAll(int argc, VALUE *argv, VALUE self) {
@@ -10839,40 +11040,64 @@ _wrap_table_findAll(int argc, VALUE *argv, VALUE self) {
   int val2 ;
   int ecode2 = 0 ;
   VALUE vresult;
+  int fetchMode;
+  VALUE fields;
+  VALUE fetchClass;
+  VALUE ctorArgs;
+  
   if (!check_param_count(argc, 0, 1)) return Qnil;
-
   arg1 = selfPtr(self, arg1);
-  if (argc == 1)
-  {
+  if (argc == 1) {
     ecode2 = SWIG_AsVal_int(argv[0], &val2);
     if (!SWIG_IsOK(ecode2)) {
       SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "tdap::client::table::eFindType","findAll", 2, argv[0] ));
     } 
     arg2 = static_cast< tdap::client::table::eFindType >(val2);
   }
-
-  vresult = rb_ary_new();
   
-  {
-    try 
-    {
-      int fetchmode = getFetchMode(self, FETCH_VAL_ASSOC);
-      fieldsBase& rec = arg1->fields();
-      //ToDo 選択したフィールドのみ取り出すようにする。
-      VALUE fields = getFieldsArray(*rec.fieldDefs());
-      arg1->find(arg2);
-      while(arg1->stat()==0)
-      {
-         rb_ary_push(vresult, recordToRubyArray(rec, fetchmode, fields));
-         if (arg2 == table::findForword)
-           arg1->findNext();
-         else
-           arg1->findPrev();
-      }
-      return vresult;
-    } 
-    CATCH_BZS_AND_STD()
+  fetchMode = getFetchMode(self, FETCH_VAL_ASSOC);
+  if (fetchMode == FETCH_RECORD_INTO) fetchMode = FETCH_VAL_BOTH;
+  
+  if (fetchMode == FETCH_USR_CLASS) {
+    fetchClass = getFetchClass(self);
+    if (fetchClass == Qnil) {
+      rb_raise(rb_eArgError, "FETCH_USR_CLASS is specified but fetchClass is not specified.");
+    }
   }
+  if (fetchMode == FETCH_OBJ) fetchClass = rb_class_new(rb_cObject);
+  
+  vresult = rb_ary_new();
+  try {
+    fieldsBase& rec = arg1->fields();
+    if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS) {
+      ctorArgs = getCtorArgs(self);
+      if (! getAccessorInitialized(fetchClass)) {
+        //ToDo 選択したフィールドのみ取り出すようにする。
+        fields = getFieldsCache(self, *rec.fieldDefs());
+        setAccessors(fetchClass, fields, getAliasMap(fetchClass), getUndefineOriginal(fetchClass));
+      }
+      //ToDo 選択したフィールドのみ取り出すようにする。
+      fields = getFieldIdsCache(self, *rec.fieldDefs(), getAliasMap(fetchClass));
+    } else {
+      //ToDo 選択したフィールドのみ取り出すようにする。
+      fields = getFieldsCache(self, *rec.fieldDefs());
+      //fields = getFieldsArray(*rec.fieldDefs(), rec.fieldDefs()->size());
+    }
+    arg1->find(arg2);
+    while(arg1->stat()==0)
+    {
+      if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS)
+        rb_ary_push(vresult, recordToRubyClass(rec, fetchClass, ctorArgs, fields));
+      else
+        rb_ary_push(vresult, recordToRubyArray(rec, fetchMode, fields));
+      if (arg2 == table::findForword)
+        arg1->findNext();
+      else
+        arg1->findPrev();
+    }
+    return vresult;
+  } 
+  CATCH_BZS_AND_STD()
 fail:
   return vresult;
 }
@@ -11084,10 +11309,45 @@ SWIGINTERN VALUE _wrap_table_getFVstr(int argc, VALUE *argv, VALUE self) {
 
 
 SWIGINTERN VALUE _wrap_table_fields(int argc, VALUE *argv, VALUE self) {
+  int fetchMode;
+  VALUE fields_cache = Qnil;
+  VALUE fetchClass = Qnil;
+  VALUE ctorArgs = Qnil;
   if (!check_param_count(argc, 0, 0)) return Qnil;
   table* arg1 = selfPtr(self, arg1);
   fields* result =  &(arg1->fields());
-  return  SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__fields, 0 |  0 );
+  
+  fetchMode = getFetchMode(self);
+  
+  if (fetchMode == FETCH_VAL_BOTH || fetchMode == FETCH_VAL_ASSOC) {
+    fields_cache = getFieldsCache(self, *(result->fieldDefs()));
+  }
+  
+  if (fetchMode == FETCH_USR_CLASS) {
+    fetchClass = getFetchClass(self);
+    if (fetchClass == Qnil) {
+      rb_raise(rb_eArgError, "FETCH_USR_CLASS is specified but fetchClass is not specified.");
+    }
+  }
+  if (fetchMode == FETCH_OBJ) fetchClass = rb_class_new(rb_cObject);
+  if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS) {
+    ctorArgs = getCtorArgs(self);
+    if (! getAccessorInitialized(fetchClass)) {
+      fields_cache = getFieldsCache(self, *(result->fieldDefs()));
+      setAccessors(fetchClass, fields_cache, getAliasMap(fetchClass), getUndefineOriginal(fetchClass));
+    }
+    fields_cache = getFieldIdsCache(self, *(result->fieldDefs()), getAliasMap(fetchClass));
+  }
+  
+  switch (fetchMode) {
+    case FETCH_RECORD_INTO:
+      return SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__fieldsBase, 0 |  0 );
+    case FETCH_OBJ:
+    case FETCH_USR_CLASS:
+      return recordToRubyClass(*result, fetchClass, ctorArgs, fields_cache);
+    default:
+      return recordToRubyArray(*result, fetchMode, fields_cache);
+  }
 }
 
 /* The size parameter is required if set to binary data, */
@@ -18325,7 +18585,7 @@ _wrap_fielddefs_to_a(int argc, VALUE *argv, VALUE self) {
   arg1 = selfPtr(self, arg1);
   try
   {
-    return getFieldsArray(*arg1);
+    return getFieldsArray(*arg1, arg1->size());
   }
   CATCH_BZS_AND_STD()
 
@@ -21850,14 +22110,6 @@ free_bzs_max(tdap::client::max *arg1) {
 static swig_class SwigClassRecordset;
 
 
-VALUE getFieldsCache(VALUE vrs, const tdap::client::fielddefs& fds) {
-  VALUE fields = rb_ivar_get(vrs, g_id_fields);
-  if (fields == Qnil) 
-    return getFieldsArray(fds);
-  return fields;
-}
-
-
 /* Application
  rs::clear 
  rs::appendField 
@@ -21868,6 +22120,7 @@ VALUE getFieldsCache(VALUE vrs, const tdap::client::fielddefs& fds) {
 */
 void clearFieldsCache(VALUE vrs) {
   rb_ivar_set(vrs, g_id_fields, Qnil);
+  clearFieldIdsCache(vrs);
 }
 
 
@@ -22460,6 +22713,9 @@ _wrap_Recordset___getitem__(int argc, VALUE *argv, VALUE self) {
   int ecode2 = 0 ;
   VALUE fields = Qnil;
   int fetchMode;
+  VALUE fetchClass = Qnil;
+  VALUE ctorArgs = Qnil;
+  
   if (!check_param_count(argc, 1, 1)) return Qnil;
   rs = selfPtr(self, rs);
   ecode2 = SWIG_AsVal_size_t(argv[0], &val2);
@@ -22474,10 +22730,32 @@ _wrap_Recordset___getitem__(int argc, VALUE *argv, VALUE self) {
     fields = getFieldsCache(self, *rs->fieldDefs());
   }
   
+  if (fetchMode == FETCH_USR_CLASS) {
+    fetchClass = getFetchClass(self);
+    if (fetchClass == Qnil) {
+      rb_raise(rb_eArgError, "FETCH_USR_CLASS is specified but fetchClass is not specified.");
+    }
+  }
+  if (fetchMode == FETCH_OBJ) fetchClass = rb_class_new(rb_cObject);
+  if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS) {
+    ctorArgs = getCtorArgs(self);
+    if (! getAccessorInitialized(fetchClass)) {
+      fields = getFieldsCache(self, *rs->fieldDefs());
+      setAccessors(fetchClass, fields, getAliasMap(fetchClass), getUndefineOriginal(fetchClass));
+    }
+    fields = getFieldIdsCache(self, *rs->fieldDefs());
+  }
+  
   try {
-    if (fetchMode == FETCH_RECORD_INTO)
-       return SWIG_NewPointerObj((void*)&((*rs)[index]), SWIGTYPE_p_bzs__fieldsBase, 0 |  0 );
-    return recordToRubyArray((*rs)[index], fetchMode, fields);
+    switch (fetchMode) {
+      case FETCH_RECORD_INTO:
+        return SWIG_NewPointerObj((void*)&((*rs)[index]), SWIGTYPE_p_bzs__fieldsBase, 0 |  0 );
+      case FETCH_OBJ:
+      case FETCH_USR_CLASS:
+        return recordToRubyClass((*rs)[index], fetchClass, ctorArgs, fields);
+      default:
+        return recordToRubyArray((*rs)[index], fetchMode, fields);
+    }
   }
   CATCH_BZS_AND_STD()
 
@@ -22497,7 +22775,7 @@ _wrap_Recordset_getRecord(int argc, VALUE *argv, VALUE self) {
   rs = selfPtr(self, rs);
   ecode2 = SWIG_AsVal_size_t(argv[0], &val2);
   if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "size_t","operator []", 2, argv[0] ));
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "size_t","getRecord", 2, argv[0] ));
   } 
   index = static_cast< size_t >(val2);
   try
@@ -22566,24 +22844,45 @@ _wrap_Recordset_to_a(int argc, VALUE *argv, VALUE self) {
   tdap::client::recordset *rs = (tdap::client::recordset *) 0 ;
   VALUE fields = Qnil;
   VALUE vresult = Qnil;
+  int fetchMode;
+  VALUE fetchClass = Qnil;
+  VALUE ctorArgs = Qnil;
   
   if (!check_param_count(argc, 0, 0)) return Qnil;
   rs = selfPtr(self, rs);
-  if (rs->size() == 0) return self;
+  if (rs->size() == 0) return rb_ary_new();
   
-  try
-  {
-    int fetchMode = getFetchMode(self);
-    if (fetchMode == FETCH_RECORD_INTO) fetchMode = FETCH_VAL_ASSOC;
-    
-    if (fetchMode == FETCH_VAL_BOTH || fetchMode == FETCH_VAL_ASSOC)
+  fetchMode = getFetchMode(self);
+  if (fetchMode == FETCH_RECORD_INTO) fetchMode = FETCH_VAL_BOTH;
+  
+  if (fetchMode == FETCH_VAL_BOTH || fetchMode == FETCH_VAL_ASSOC)
+    fields = getFieldsCache(self, *rs->fieldDefs());
+  
+  if (fetchMode == FETCH_USR_CLASS) {
+    fetchClass = getFetchClass(self);
+    if (fetchClass == Qnil) {
+      rb_raise(rb_eArgError, "FETCH_USR_CLASS is specified but fetchClass is not specified.");
+    }
+  }
+  if (fetchMode == FETCH_OBJ) fetchClass = rb_class_new(rb_cObject);
+  if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS) {
+    ctorArgs = getCtorArgs(self);
+    if (! getAccessorInitialized(fetchClass)) {
       fields = getFieldsCache(self, *rs->fieldDefs());
-    
+      setAccessors(fetchClass, fields, getAliasMap(fetchClass), getUndefineOriginal(fetchClass));
+    }
+    fields = getFieldIdsCache(self, *rs->fieldDefs());
+  }
+  
+  try {
     size_t size = rs->size();
     vresult = rb_ary_new2(size);
-    for (size_t index = 0; index < size; ++index)
-      rb_ary_store(vresult, index, recordToRubyArray((*rs)[index], fetchMode, fields));
-    
+    for (size_t index = 0; index < size; ++index) {
+      if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS)
+        rb_ary_store(vresult, index, recordToRubyClass((*rs)[index], fetchClass, ctorArgs, fields));
+      else
+        rb_ary_store(vresult, index, recordToRubyArray((*rs)[index], fetchMode, fields));
+    }
     return vresult;
   }
   CATCH_BZS_AND_STD()
@@ -25368,6 +25667,8 @@ SWIG_PropagateClientData(void) {
 }
 #endif
 
+#include "modelbase.cpp"
+
 /*
 
 */
@@ -25398,6 +25699,11 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_module_function(mTransactd, "setFieldValueMode", VALUEFUNC(_wrap_setFieldValueMode), -1);
   rb_define_module_function(mTransactd, "nullValueMode", VALUEFUNC(_wrap_nullValueMode), -1);
   rb_define_module_function(mTransactd, "setNullValueMode", VALUEFUNC(_wrap_setNullValueMode), -1);
+#ifdef TD_MODELBASE_INCLUDED
+  rb_define_module_function(mTransactd, "createModelClass", VALUEFUNC(_wrap_createModelClass), -1);
+  mTransactd_Model = rb_define_module_under(mTransactd, "Model");
+  mTransactd_Model_Base = Qnil;
+#endif // TD_MODELBASE_INCLUDED
   
   tdap::client::nsdatabase::setCheckTablePtr(true);
 #if HAVE_RB_THREAD_CALL_WITHOUT_GVL || HAVE_RB_THREAD_BLOCKING_REGION
@@ -25651,6 +25957,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_const(mTransactd, "FETCH_VAL_NUM", SWIG_From_int(static_cast< int >(FETCH_VAL_NUM)));
   rb_define_const(mTransactd, "FETCH_VAL_ASSOC", SWIG_From_int(static_cast< int >(FETCH_VAL_ASSOC)));
   rb_define_const(mTransactd, "FETCH_VAL_BOTH", SWIG_From_int(static_cast< int >(FETCH_VAL_BOTH)));
+  rb_define_const(mTransactd, "FETCH_OBJ", SWIG_From_int(static_cast< int >(FETCH_OBJ)));
+  rb_define_const(mTransactd, "FETCH_USR_CLASS", SWIG_From_int(static_cast< int >(FETCH_USR_CLASS)));
   rb_define_const(mTransactd, "FETCH_RECORD_INTO", SWIG_From_int(static_cast< int >(FETCH_RECORD_INTO)));
   
   SwigClassFLAGS.klass = rb_define_class_under(mTransactd, "FLAGS", rb_cObject);
@@ -26115,6 +26423,10 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassTable.klass, "fetchmode=", VALUEFUNC(_wrap_Recordset_fetchmode_set), -1);
   rb_define_method(SwigClassTable.klass, "fetchmode", VALUEFUNC(_wrap_Recordset_fetchmode_get), -1);
   rb_define_method(SwigClassTable.klass, "release", VALUEFUNC(_wrap_table_release), -1);
+  rb_define_attr(SwigClassTable.klass, "fetchClass", 1, 1);
+  rb_define_method(SwigClassTable.klass, "fetchClass=", VALUEFUNC(_wrap_RecordsetOrTable_fetchClass_set), -1);
+  rb_define_attr(SwigClassTable.klass, "ctorArgs", 1, 1);
+  rb_define_method(SwigClassTable.klass, "ctorArgs=", VALUEFUNC(_wrap_RecordsetOrTable_ctorArgs_set), -1);
   SwigClassTable.mark = 0;
   SwigClassTable.destroy = (void (*)(void *)) free_bzs_table;
   SwigClassTable.trackObjects = 0;
@@ -26621,6 +26933,13 @@ SWIGEXPORT void Init_transactd(void) {
 //  rb_define_method(SwigClassRecordset.klass, "each", VALUEFUNC(_wrap_Recordset_each), -1);
   rb_define_method(SwigClassRecordset.klass, "to_a", VALUEFUNC(_wrap_Recordset_to_a), -1);
   rb_define_method(SwigClassRecordset.klass, "getRecord", VALUEFUNC(_wrap_Recordset_getRecord), -1);
+  rb_define_attr(SwigClassRecordset.klass, "fetchClass", 1, 1);
+  rb_define_method(SwigClassRecordset.klass, "fetchClass=", VALUEFUNC(_wrap_RecordsetOrTable_fetchClass_set), -1);
+  rb_define_attr(SwigClassRecordset.klass, "ctorArgs", 1, 1);
+  rb_define_method(SwigClassRecordset.klass, "ctorArgs=", VALUEFUNC(_wrap_RecordsetOrTable_ctorArgs_set), -1);
+#ifdef TD_MODELBASE_INCLUDED
+  rb_define_method(SwigClassRecordset.klass, "to_class_array", VALUEFUNC(_wrap_Recordset_to_class_array), -1);
+#endif
   SwigClassRecordset.mark = 0;
   SwigClassRecordset.destroy = (void (*)(void *)) free_bzs_recordset;
   SwigClassRecordset.trackObjects = 0;
