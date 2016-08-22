@@ -930,7 +930,7 @@ void table::btrvSeekMulti()
     int rowOffset = 0;
     for (int i = 0; i < (int)seeks.size(); ++i)
     {
-
+        memset(m_impl->keybuf, 0, MAX_KEYLEN);
         seeks[i].writeBuffer((uchar_td*)m_impl->keybuf, true, transactd);
         if (hasManyJoin)
         {
