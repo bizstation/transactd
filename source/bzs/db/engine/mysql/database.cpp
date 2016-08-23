@@ -1593,9 +1593,10 @@ uint table::recordPackCopy(char* buf, uint maxsize)
     {
 #endif
         int blobs = 0;
+        if (m_nullBytesCl)
+            memset(buf, 0, m_nullBytesCl);
         p = buf + m_nullBytesCl;
         unsigned char* null_ptr = (unsigned char*)buf;//m_table->record[0];
-        *null_ptr = 0x00;
         unsigned char null_bit = 1; 
         for (uint i = 0; i < m_table->s->fields; i++)
         {
@@ -1610,7 +1611,6 @@ uint table::recordPackCopy(char* buf, uint maxsize)
                 if (null_bit == (uchar)128)
                 {
                     ++null_ptr;
-                    *null_ptr = 0x00;
                     null_bit = 1;
                 }else
                     null_bit = null_bit << 1;

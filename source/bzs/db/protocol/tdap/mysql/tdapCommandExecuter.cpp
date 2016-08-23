@@ -1153,7 +1153,7 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
     char* p = nw->curPtr() - sizeof(unsigned short);// orver write row space
     if (req.keyNum == SC_SUBOP_VIEW_BY_SQL)
     {// Return SQL statement as show create view. 
-        TABLE_LIST tables; char key[256]; 
+        TABLE_LIST tables; char key[256]={0}; 
         const char* keyPtr = key;
         database* db = getDatabaseCid(req.cid);
         THD* thd = db->thd();
