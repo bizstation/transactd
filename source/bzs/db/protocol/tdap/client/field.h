@@ -100,6 +100,7 @@ class DLLLIB fielddefs : public fieldShare
 public:
     void clear();
     fielddefs* clone() const;
+    void addAliasName(int index, const _TCHAR* name);
     int indexByName(const std::_tstring& name) const;
     const fielddef& operator[](int index) const;
     const fielddef& operator[](const _TCHAR* name) const;

@@ -463,21 +463,27 @@ void fielddefs::push_back(const fielddef* p)
         ++m_imple->mysqlnullEnable;
     // reset update indicator
     pp->enableFlags.bitE = false;
+
+    // For activeTable need replacing name
     aliasing(pp);
     m_imple->map[pp->name()] = index;
 }
 
 void fielddefs::remove(int index)
 {
-    m_imple->map.erase(m_imple->fields[index].name());
     m_imple->fields.erase(m_imple->fields.begin() + index);
     boost::unordered_map<std::_tstring, int>::iterator it =
         m_imple->map.begin();
     while (it != m_imple->map.end())
     {
-        if ((*it).second > index)
-            (*it).second--;
-        ++it;
+        if ((*it).second == index)
+            it = m_imple->map.erase(it);
+        else
+        {
+            if ((*it).second > index)
+                (*it).second--;
+            ++it;
+        }
     }
 }
 
@@ -506,6 +512,14 @@ void fielddefs::resetUpdateIndicator()
 bool fielddefs::checkIndex(int index) const
 {
     return (index >= 0 && index < (int)m_imple->fields.size());
+}
+
+void fielddefs::addAliasName(int index, const _TCHAR* name)
+{
+    assert(checkIndex(index));
+    //replace original name
+    m_imple->fields[index].setName(name);
+    m_imple->map[name] = index;
 }
 
 int fielddefs::indexByName(const std::_tstring& name) const

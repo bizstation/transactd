@@ -328,6 +328,7 @@ public:
     void setOnRecordCount(const recordCountFn v);
     recordCountFn onRecordCount() const;
     client::fields& fields();
+    void setAlias(const _TCHAR* orign, const _TCHAR* alias);
 };
 
 #define KEYVALUE_PTR 0

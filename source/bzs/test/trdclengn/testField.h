@@ -3419,6 +3419,49 @@ void testCreateInfo()
     BOOST_CHECK(db->stat() == 0);
 }
 
+void testAlias()
+{
+    try
+    {
+        database_ptr db = createDatabaseObject();
+        openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+        table_ptr tb = openTable(db, _T("users"));
+        tb->setAlias(_T("name"), _T("name_alias"));
+        tb->setAlias(_T("name"), _T("name_alias2"));
+        tb->setKeyNum(0);
+        tb->seekFirst();
+        BOOST_CHECK(tb->stat() == 0);
+        // access original 
+        BOOST_CHECK(_tstring(tb->getFVstr(_T("name"))) == _tstring(_T("John")));
+        // access alias 
+        BOOST_CHECK(_tstring(tb->getFVstr(_T("name_alias"))) == _tstring(_T("John")));
+        BOOST_CHECK(_tstring(tb->getFVstr(_T("name_alias2"))) == _tstring(_T("John")));
+        //query
+        query q;
+        q.select(_T("name_alias2_"));
+        tb->setQuery(&q);
+        BOOST_CHECK(tb->stat() != 0);
+
+        q.reset().select(_T("name_alias2"));
+        tb->setQuery(&q);
+        BOOST_CHECK(tb->stat() == 0);
+        tb->clearBuffer();
+        tb->find();
+        if (tb->stat() == 0)
+            BOOST_CHECK(_tstring(tb->getFVstr(_T("name_alias2"))) == _tstring(_T("John")));
+        while (tb->stat() == 0)
+        {
+            BOOST_CHECK(_tstring(tb->getFVstr(_T("name"))) != _tstring(_T("")));
+            tb->findNext();
+        }
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        BOOST_CHECK(false);
+        _tprintf(_T("Error! %s\n"), (*getMsg(e)).c_str());
+    }
+}
+
 #pragma warning(default : 4996) 
 
 #endif // BZS_TEST_TRDCLENGN_TESTFIELD_H

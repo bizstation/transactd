@@ -45,6 +45,7 @@ public:
     const _TCHAR* resolv(const _TCHAR* dst) const;
     void clear();
     void reverseAliasNamesQuery(queryBase& q) const;
+    size_t size() const;
 
 };
 

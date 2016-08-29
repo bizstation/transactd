@@ -1066,6 +1066,12 @@ BOOST_AUTO_TEST_CASE(createInfo)
 }
 BOOST_AUTO_TEST_SUITE_END()
 
+BOOST_AUTO_TEST_SUITE(tableAlias)
+BOOST_AUTO_TEST_CASE(tableAlias)
+{
+    testAlias();
+}
 
+BOOST_AUTO_TEST_SUITE_END()
     
 // ------------------------------------------------------------------------

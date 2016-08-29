@@ -2154,6 +2154,13 @@ short table::getCurProcFieldIndex(short index) const
     return m_impl->filterPtr->selectFieldIndexes()[index];
 }
 
+void table::setAlias(const _TCHAR* orign, const _TCHAR* alias)
+{
+    short index = fieldNumByName(orign);
+    if (index != -1)
+        const_cast<fielddefs*>(fields().fieldDefs())->addAliasName(index, alias);
+}
+
 //-------------------------------------------------------------------
 //      class queryBase
 //-------------------------------------------------------------------

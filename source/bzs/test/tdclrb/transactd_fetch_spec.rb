@@ -141,6 +141,28 @@ def insertData(db)
   end
 end
 
+
+class UserBase
+  @_alias_map = {}
+  def self.setAlias(aliased)
+    @_alias_map = (aliased ? { :group => 'group_id' } : {}) # This is reverse map
+    self
+  end
+  def self.alias_map
+    return @_alias_map
+  end
+  
+  @_nodefine_original = false
+  def self.set_nodefine_original(v)
+    @_nodefine_original = v
+    self
+  end
+  def self.nodefine_original
+    return @_nodefine_original
+  end
+end
+
+
 def openTable(db)
   tb = db.openTable(TABLENAME)
   expect(db.stat()).to eq 0
@@ -164,9 +186,7 @@ def openActiveTable(db, alias_map = nil)
   at.index(0).keyValue(0, 0)
   if alias_map.is_a?(Hash)
     at.resetAlias()
-    for k in alias_map
-      at.alias(k.to_s, alias_map[k].to_s)
-    end
+    alias_map.each {|key, orign| at.alias(orign, key.to_s) }
   else
     at.alias('group_id', 'group')
   end
@@ -179,14 +199,14 @@ def getRecordSet(at)
   return rs
 end
 
-def assertArray(rec, rec_id = 1)
+def doTestArray(rec, rec_id = 1)
   expect(rec.is_a?(Array)).to eq true
   expect(rec.length).to eq FIELDS.length
   expect(rec[0]).to eq rec_id
   expect(rec[1]).to eq "#{rec_id} user"
 end
 
-def assertHash(rec, aliased, with_number, rec_id = 1)
+def doTestHash(rec, aliased, with_number, rec_id = 1)
   expect(rec.is_a?(Hash)).to eq true
   fs = aliased ? ALIASED_FIELDS : FIELDS
   for name in fs
@@ -203,7 +223,7 @@ def assertHash(rec, aliased, with_number, rec_id = 1)
   end
 end
 
-def assertObject(rec, aliased, rec_id = 1)
+def doTestObject(rec, aliased, rec_id = 1)
   expect(rec.is_a?(Object)).to eq true
   expect(rec.is_a?(Hash)).to eq false
   expect(rec.is_a?(Array)).to eq false
@@ -220,32 +240,13 @@ def assertObject(rec, aliased, rec_id = 1)
   expect(rec.name).to eq "#{rec_id} user *"
 end
 
-class UserBase
-  @__alias_map = {}
-  def self.setAlias(aliased)
-    @__alias_map = (aliased ? { :group_id => 'group' } : {})
-    self
-  end
-  def self.alias_map
-    return @__alias_map
-  end
-  
-  @__undefine_original = false
-  def self.set_undefine_original(v)
-    @__undefine_original = v
-    self
-  end
-  def self.undefine_original
-    return @__undefine_original
-  end
-end
-
-def assertClass(rec, aliased, undefine_original, klass, rec_id = 1)
+def doTestClass(rec, klass)
+  aliased = klass.alias_map.length != 0
   expect(rec.is_a?(klass)).to eq true
   expect(rec.is_a?(Hash)).to eq false
   expect(rec.is_a?(Array)).to eq false
   expected_fields = aliased ? ALIASED_FIELDS : FIELDS
-  expected_fields += FIELDS unless undefine_original
+  expected_fields += FIELDS unless klass.nodefine_original
   expected_fields.uniq!
   not_expected_fields = (ALIASED_FIELDS | FIELDS) - expected_fields
   #p expected_fields
@@ -260,26 +261,35 @@ def assertClass(rec, aliased, undefine_original, klass, rec_id = 1)
   end
 end
 
-def assertTableAndRecordset(rs, tb, klass)
+def doTestTable(db, klass)
   # table
+  tb = openTable(db)
+  tb.fetchmode = Transactd::FETCH_USR_CLASS
   tb.fetchClass = klass
+  if klass.alias_map.length > 0
+    tb.setAlias("group_id", "group")
+  end
   rec = seekId1(tb)
-  assertClass(rec, klass.alias_map.length > 0, klass.undefine_original, klass)
+  doTestClass(rec, klass)
   for i in 2..CHECK_MAX_ID
     tb.seekNext()
     expect(tb.stat()).to eq 0
     rec = tb.fields()
-    assertClass(rec, klass.alias_map.length > 0, klass.undefine_original, klass, i)
+    doTestClass(rec,  klass)
   end
+  tb.close()
+end
+
+def doTestRecordset(rs, klass)
   # recordset
   rs.fetchClass = klass
   for i in 0...CHECK_MAX_ID
     rec = rs[i]
-    assertClass(rec, klass.alias_map.length > 0, klass.undefine_original, klass, i + 1)
+    doTestClass(rec, klass)
   end
 end
 
-def assertFieldsBase(rec, aliased, rec_id = 1)
+def doTestFieldsBase(rec, aliased, rec_id = 1)
   expect(rec.is_a?(Transactd::Record)).to eq true
   expect(rec.is_a?(Hash)).to eq false
   expect(rec.is_a?(Array)).to eq false
@@ -315,16 +325,25 @@ def getRecordSetForFindAll(at)
   return rs
 end
 
-def assertTableAndRecordsetArray(rs, tb, klass)
+def doTestTableArray(db, klass)
   # table
+  tb = openTable(db)
+  tb.fetchmode = Transactd::FETCH_USR_CLASS
   tb.fetchClass = klass
+  if klass.alias_map.length > 0
+    tb.setAlias("group_id", "group")
+  end
   arr = findAll(tb)
   expect(arr.is_a?(Array)).to eq true
   expect(arr.length).to eq CHECK_MAX_ID
   for i in 0...arr.length
     rec = arr[i]
-    assertClass(rec, klass.alias_map.length > 0, klass.undefine_original, klass, i + 1)
+    doTestClass(rec, klass)
   end
+  tb.close()
+end
+
+def doTestRecordsetArray(rs, klass)
   # recordset
   rs.fetchClass = klass
   arr = rs.to_a
@@ -332,7 +351,7 @@ def assertTableAndRecordsetArray(rs, tb, klass)
   expect(arr.length).to eq CHECK_MAX_ID
   for i in 0...arr.length
     rec = arr[i]
-    assertClass(rec, klass.alias_map.length > 0, klass.undefine_original, klass, i + 1)
+    doTestClass(rec, klass)
   end
 end
 
@@ -354,12 +373,12 @@ describe Transactd, 'FetchMode' do
     tb = openTable(db)
     tb.fetchmode = Transactd::FETCH_VAL_NUM
     rec = seekId1(tb)
-    assertArray(rec)
+    doTestArray(rec)
     for i in 2..CHECK_MAX_ID
       tb.seekNext()
       expect(tb.stat()).to eq 0
       rec = tb.fields()
-      assertArray(rec, i)
+      doTestArray(rec, i)
     end
     tb.close()
     # activeTable
@@ -368,7 +387,7 @@ describe Transactd, 'FetchMode' do
     rs.fetchmode = Transactd::FETCH_VAL_NUM
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
-      assertArray(rec, i + 1)
+      doTestArray(rec, i + 1)
     end
     at.release()
     db.close()
@@ -382,12 +401,12 @@ describe Transactd, 'FetchMode' do
     tb = openTable(db)
     tb.fetchmode = Transactd::FETCH_VAL_ASSOC
     rec = seekId1(tb)
-    assertHash(rec, false, false)
+    doTestHash(rec, false, false)
     for i in 2..CHECK_MAX_ID
       tb.seekNext()
       expect(tb.stat()).to eq 0
       rec = tb.fields()
-      assertHash(rec, false, false, i)
+      doTestHash(rec, false, false, i)
     end
     tb.close()
     # activeTable
@@ -396,7 +415,7 @@ describe Transactd, 'FetchMode' do
     rs.fetchmode = Transactd::FETCH_VAL_ASSOC
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
-      assertHash(rec, true, false, i + 1)
+      doTestHash(rec, true, false, i + 1)
     end
     at.release()
     db.close()
@@ -410,12 +429,12 @@ describe Transactd, 'FetchMode' do
     tb = openTable(db)
     tb.fetchmode = Transactd::FETCH_VAL_BOTH
     rec = seekId1(tb)
-    assertHash(rec, false, true)
+    doTestHash(rec, false, true)
     for i in 2..CHECK_MAX_ID
       tb.seekNext()
       expect(tb.stat()).to eq 0
       rec = tb.fields()
-      assertHash(rec, false, true, i)
+      doTestHash(rec, false, true, i)
     end
     tb.close()
     # activeTable
@@ -424,7 +443,7 @@ describe Transactd, 'FetchMode' do
     rs.fetchmode = Transactd::FETCH_VAL_BOTH
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
-      assertHash(rec, true, true, i + 1)
+      doTestHash(rec, true, true, i + 1)
     end
     at.release()
     db.close()
@@ -438,12 +457,12 @@ describe Transactd, 'FetchMode' do
     tb = openTable(db)
     tb.fetchmode = Transactd::FETCH_OBJ
     rec = seekId1(tb)
-    assertObject(rec, false)
+    doTestObject(rec, false)
     for i in 2..CHECK_MAX_ID
       tb.seekNext()
       expect(tb.stat()).to eq 0
       rec = tb.fields()
-      assertObject(rec, false, i)
+      doTestObject(rec, false, i)
     end
     tb.close()
     # activeTable
@@ -452,7 +471,7 @@ describe Transactd, 'FetchMode' do
     rs.fetchmode = Transactd::FETCH_OBJ
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
-      assertObject(rec, true, i + 1)
+      doTestObject(rec, true, i + 1)
     end
     at.release()
     db.close()
@@ -463,54 +482,55 @@ describe Transactd, 'FetchMode' do
     db = Transactd::Database.new()
     openDatabase(db)
     # receiver classes
-    User_NA_NUO = Class.new(UserBase).setAlias(false).set_undefine_original(false)
-    User_NA__UO = Class.new(UserBase).setAlias(false).set_undefine_original(true)
-    User__A_NUO = Class.new(UserBase).setAlias(true).set_undefine_original(false)
-    User__A__UO = Class.new(UserBase).setAlias(true).set_undefine_original(true)
+    User_NA_NUO = Class.new(UserBase).setAlias(false).set_nodefine_original(false)
+    User_NA__UO = Class.new(UserBase).setAlias(false).set_nodefine_original(true)
+    User__A_NUO = Class.new(UserBase).setAlias(true).set_nodefine_original(false)
+    User__A__UO = Class.new(UserBase).setAlias(true).set_nodefine_original(true)
     # receiver classes are not initialized by Transactd yet
-    expect(User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(User_NA__UO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(User__A_NUO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(User__A__UO.instance_variable_get(:@accessor_initialized)).to be_nil
-    # open table
-    tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_USR_CLASS
+    expect(User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(User__A__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
     # open activeTable and not aliased recordset
     at = openActiveTable(db)
     rs = getRecordSet(at)
     rs.fetchmode = Transactd::FETCH_USR_CLASS
     at.release()
-    # (1) User_NA_NUO : not aliased, not undefine_original
-    assertTableAndRecordset(rs, tb, User_NA_NUO)
-    expect(User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(User_NA__UO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(User__A_NUO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(User__A__UO.instance_variable_get(:@accessor_initialized)).to be_nil
-    # (2) User_NA__UO : not aliased, undefine_original
-    assertTableAndRecordset(rs, tb, User_NA__UO)
-    expect(User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(User_NA__UO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(User__A_NUO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(User__A__UO.instance_variable_get(:@accessor_initialized)).to be_nil
+    # (1) User_NA_NUO : not aliased, not nodefine_original
+    doTestTable(db, User_NA_NUO)
+    doTestRecordset(rs, User_NA_NUO)
+    expect(User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(User__A__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    # (2) User_NA__UO : not aliased, nodefine_original
+    doTestTable(db, User_NA__UO)
+    doTestRecordset(rs, User_NA__UO)
+    expect(User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(User__A__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
     # open activeTable and aliased recordset
     at = openActiveTable(db, User__A_NUO.alias_map)
     rs = getRecordSet(at)
     rs.fetchmode = Transactd::FETCH_USR_CLASS
     at.release()
-    # (3) User__A_NUO : aliased, not undefine_original
-    assertTableAndRecordset(rs, tb, User__A_NUO)
-    expect(User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(User_NA__UO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(User__A_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(User__A__UO.instance_variable_get(:@accessor_initialized)).to be_nil
-    # (4) User__A__UO : aliased, undefine_original
-    assertTableAndRecordset(rs, tb, User__A__UO)
-    expect(User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(User_NA__UO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(User__A_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(User__A__UO.instance_variable_get(:@accessor_initialized)).to be true
+    
+    # (3) User__A_NUO : aliased, not nodefine_original
+    doTestTable(db, User__A_NUO)
+    doTestRecordset(rs, User__A_NUO)
+    expect(User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(User__A__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    # (4) User__A__UO : aliased, nodefine_original
+    doTestTable(db, User__A__UO)
+    doTestRecordset(rs, User__A__UO)
+    expect(User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(User__A__UO.instance_variable_get(:@_accessor_initialized)).to be true
     # close all
-    tb.close()
     db.close()
   end
   
@@ -522,12 +542,12 @@ describe Transactd, 'FetchMode' do
     tb = openTable(db)
     tb.fetchmode = Transactd::FETCH_RECORD_INTO
     rec = seekId1(tb)
-    assertFieldsBase(rec, false)
+    doTestFieldsBase(rec, false)
     for i in 2..CHECK_MAX_ID
       tb.seekNext()
       expect(tb.stat()).to eq 0
       rec = tb.fields()
-      assertFieldsBase(rec, false, i)
+      doTestFieldsBase(rec, false, i)
     end
     tb.close()
     # activeTable
@@ -536,7 +556,7 @@ describe Transactd, 'FetchMode' do
     rs.fetchmode = Transactd::FETCH_RECORD_INTO
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
-      assertFieldsBase(rec, true, i + 1)
+      doTestFieldsBase(rec, true, i + 1)
     end
     at.release()
     # recordset::getRecord()
@@ -545,7 +565,7 @@ describe Transactd, 'FetchMode' do
     for i in 0...CHECK_MAX_ID
       rs.fetchmode = FETCHMODES[i % FETCHMODES.length]
       rec = rs.getRecord(i)
-      assertFieldsBase(rec, true, i + 1)
+      doTestFieldsBase(rec, true, i + 1)
     end
     at.release()
     db.close()
@@ -563,7 +583,7 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      assertArray(rec, i + 1)
+      doTestArray(rec, i + 1)
     end
     tb.close()
     # activeTable
@@ -575,7 +595,7 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      assertArray(rec, i + 1)
+      doTestArray(rec, i + 1)
     end
     at.release()
     db.close()
@@ -593,7 +613,7 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      assertHash(rec, false, false, i + 1)
+      doTestHash(rec, false, false, i + 1)
     end
     tb.close()
     # activeTable
@@ -605,7 +625,7 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      assertHash(rec, true, false, i + 1)
+      doTestHash(rec, true, false, i + 1)
     end
     at.release()
     db.close()
@@ -623,7 +643,7 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      assertHash(rec, false, true, i + 1)
+      doTestHash(rec, false, true, i + 1)
     end
     tb.close()
     # activeTable
@@ -635,7 +655,7 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      assertHash(rec, true, true, i + 1)
+      doTestHash(rec, true, true, i + 1)
     end
     at.release()
     db.close()
@@ -653,7 +673,7 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      assertObject(rec, false, i + 1)
+      doTestObject(rec, false, i + 1)
     end
     tb.close()
     # activeTable
@@ -665,7 +685,7 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      assertObject(rec, true, i + 1)
+      doTestObject(rec, true, i + 1)
     end
     at.release()
     db.close()
@@ -676,15 +696,15 @@ describe Transactd, 'FetchMode' do
     db = Transactd::Database.new()
     openDatabase(db)
     # receiver classes
-    AR_User_NA_NUO = Class.new(UserBase).setAlias(false).set_undefine_original(false)
-    AR_User_NA__UO = Class.new(UserBase).setAlias(false).set_undefine_original(true)
-    AR_User__A_NUO = Class.new(UserBase).setAlias(true).set_undefine_original(false)
-    AR_User__A__UO = Class.new(UserBase).setAlias(true).set_undefine_original(true)
+    AR_User_NA_NUO = Class.new(UserBase).setAlias(false).set_nodefine_original(false)
+    AR_User_NA__UO = Class.new(UserBase).setAlias(false).set_nodefine_original(true)
+    AR_User__A_NUO = Class.new(UserBase).setAlias(true).set_nodefine_original(false)
+    AR_User__A__UO = Class.new(UserBase).setAlias(true).set_nodefine_original(true)
     # receiver classes are not initialized by Transactd yet
-    expect(AR_User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(AR_User_NA__UO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(AR_User__A_NUO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(AR_User__A__UO.instance_variable_get(:@accessor_initialized)).to be_nil
+    expect(AR_User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(AR_User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(AR_User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(AR_User__A__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
     # open table
     tb = openTable(db)
     tb.fetchmode = Transactd::FETCH_USR_CLASS
@@ -693,35 +713,39 @@ describe Transactd, 'FetchMode' do
     rs = getRecordSetForFindAll(at)
     rs.fetchmode = Transactd::FETCH_USR_CLASS
     at.release()
-    # (1) AR_User_NA_NUO : not aliased, not undefine_original
-    assertTableAndRecordsetArray(rs, tb, AR_User_NA_NUO)
-    expect(AR_User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(AR_User_NA__UO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(AR_User__A_NUO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(AR_User__A__UO.instance_variable_get(:@accessor_initialized)).to be_nil
-    # (2) AR_User_NA__UO : not aliased, undefine_original
-    assertTableAndRecordsetArray(rs, tb, AR_User_NA__UO)
-    expect(AR_User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(AR_User_NA__UO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(AR_User__A_NUO.instance_variable_get(:@accessor_initialized)).to be_nil
-    expect(AR_User__A__UO.instance_variable_get(:@accessor_initialized)).to be_nil
+    # (1) AR_User_NA_NUO : not aliased, not nodefine_original
+    doTestTable(db, AR_User_NA_NUO)
+    doTestRecordset(rs, AR_User_NA_NUO)
+    expect(AR_User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(AR_User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(AR_User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(AR_User__A__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    # (2) AR_User_NA__UO : not aliased, nodefine_original
+    doTestTable(db, AR_User_NA__UO)
+    doTestRecordset(rs, AR_User_NA__UO)
+    expect(AR_User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(AR_User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(AR_User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    expect(AR_User__A__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
     # open activeTable and aliased recordset
     at = openActiveTable(db, AR_User__A_NUO.alias_map)
     rs = getRecordSetForFindAll(at)
     rs.fetchmode = Transactd::FETCH_USR_CLASS
     at.release()
-    # (3) AR_User__A_NUO : aliased, not undefine_original
-    assertTableAndRecordsetArray(rs, tb, AR_User__A_NUO)
-    expect(AR_User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(AR_User_NA__UO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(AR_User__A_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(AR_User__A__UO.instance_variable_get(:@accessor_initialized)).to be_nil
-    # (4) AR_User__A__UO : aliased, undefine_original
-    assertTableAndRecordsetArray(rs, tb, AR_User__A__UO)
-    expect(AR_User_NA_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(AR_User_NA__UO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(AR_User__A_NUO.instance_variable_get(:@accessor_initialized)).to be true
-    expect(AR_User__A__UO.instance_variable_get(:@accessor_initialized)).to be true
+    # (3) AR_User__A_NUO : aliased, not nodefine_original
+    doTestTable(db, AR_User__A_NUO)
+    doTestRecordset(rs, AR_User__A_NUO)
+    expect(AR_User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(AR_User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(AR_User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(AR_User__A__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
+    # (4) AR_User__A__UO : aliased, nodefine_original
+    doTestTable(db, AR_User__A__UO)
+    doTestRecordset(rs, AR_User__A__UO)
+    expect(AR_User_NA_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(AR_User_NA__UO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(AR_User__A_NUO.instance_variable_get(:@_accessor_initialized)).to be true
+    expect(AR_User__A__UO.instance_variable_get(:@_accessor_initialized)).to be true
     # close all
     tb.close()
     db.close()
@@ -739,8 +763,8 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      # same as FETCH_VAL_BOTH, not assertFieldsBase(rec, false, i + 1)
-      assertHash(rec, false, true, i + 1)
+      # same as FETCH_VAL_BOTH, not doTestFieldsBase(rec, false, i + 1)
+      doTestHash(rec, false, true, i + 1)
     end
     tb.close()
     # activeTable
@@ -752,8 +776,8 @@ describe Transactd, 'FetchMode' do
     expect(arr.length).to eq CHECK_MAX_ID
     for i in 0...arr.length
       rec = arr[i]
-      # same as FETCH_VAL_BOTH, not assertFieldsBase(rec, true, i + 1)
-      assertHash(rec, true, true, i + 1)
+      # same as FETCH_VAL_BOTH, not doTestFieldsBase(rec, true, i + 1)
+      doTestHash(rec, true, true, i + 1)
     end
     at.release()
     db.close()

@@ -115,6 +115,11 @@ void fdNmaeAlias::reverseAliasNamesQuery(queryBase& q) const
     }
 }
 
+size_t fdNmaeAlias::size() const
+{
+    return m_imple->map.size();
+}
+
 } // namespace client
 } // namespace tdap
 } // namespace protocol
