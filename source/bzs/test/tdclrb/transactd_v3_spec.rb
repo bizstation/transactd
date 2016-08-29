@@ -339,6 +339,21 @@ def createSetEnumBitTable(db)
 end
 
 describe Transactd, 'V3Features' do
+  it 'test no schema' do
+    db = Transactd::Database.new()
+    db.open(URL_AUTOSCHEMA)
+    if (db.stat == 0)
+      db.drop()
+      expect(db.stat()).to eq 0
+    end
+    db.create(URL_AUTOSCHEMA)
+    expect(db.stat()).to eq 0
+    db.open(URL_AUTOSCHEMA)
+    expect(db.stat()).to eq 0
+    db.drop()
+    expect(db.stat()).to eq 0
+  end
+  
   it 'create tables' do
     db = Transactd::Database.new()
     createDatabase(db)

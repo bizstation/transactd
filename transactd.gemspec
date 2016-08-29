@@ -25,7 +25,7 @@ spec_build = Gem::Specification.new do |s|
   s.author      = 'BizStation Corp.'
   s.email       = 'transactd@bizstation.jp'
   s.homepage    = 'http://www.bizstation.jp/ja/transactd'
-  s.license     = 'GPL v2'
+  s.license     = 'GPL-2.0'
   
   # read version from tdclrb.rc
   verfile = 'build/tdclrb/tdclrb.rc'
