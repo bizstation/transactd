@@ -2756,7 +2756,7 @@ inline void setBool(tdap::client::field& fd, bool v)
 
 /*
   vに合わせた値を返す。
-  typeには４つのタイプが返る T_FIXNUM T_FLOAT T_STRING T_NIL
+  typeには4つのタイプが返る T_FIXNUM T_FLOAT T_STRING T_NIL
 */
 bool getTypedValue(VALUE v, int& type, __int64& i64, double& d, char*& str)
 {
@@ -11044,12 +11044,12 @@ SWIGINTERN VALUE _wrap_table_setAlias(int argc, VALUE *argv, VALUE self)
 SWIGINTERN VALUE _wrap_table_defineORMapMethod(int argc, VALUE *argv, VALUE self) {
   if (!check_param_count(argc, 1, 1)) return Qnil;
   table* tb = selfPtr(self, tb);
-  if (TYPE(argv[1]) != T_CLASS) 
+  if (TYPE(argv[0]) != T_CLASS) 
     rb_raise(rb_eArgError, "param 1 class is not specified.");
   
   const fielddefs* fds = tb->fields().fieldDefs();
-  if (! isAccessorInitialized(argv[1]))
-    defineFieldAccessor(argv[1],  getFieldsArray(*fds));
+  if (! isAccessorInitialized(argv[0]))
+    defineFieldAccessor(argv[0],  getFieldsArray(*fds));
 }
 
 
@@ -22731,45 +22731,6 @@ _wrap_Recordset_fetchmode_get(int argc, VALUE *argv, VALUE self) {
 }
 
 
-/*
-SWIGINTERN VALUE
-_wrap_Recordset_each(int argc, VALUE *argv, VALUE self) {
-  tdap::client::recordset *rs = (tdap::client::recordset *) 0 ;
-  VALUE fetchmode = Qnil;
-  int fetchMode = 0;
-  VALUE fields = Qnil;
-  
-  if (!check_param_count(argc, 0, 0)) return Qnil;
-  rs = selfPtr(self, rs);
-  if (rs->size() == 0) {
-    return self;
-  }
-  
-  fetchmode = rb_ivar_get(self, g_id_fetchmode);
-  if (fetchmode == Qnil) {
-    fetchmode = INT2FIX(FETCH_RECORD_INTO);
-    rb_ivar_set(self, g_id_fetchmode, fetchmode);
-  }
-  fetchMode = FIX2INT(fetchmode);
-  
-  if (fetchMode == FETCH_VAL_BOTH || fetchMode == FETCH_VAL_ASSOC) {
-    fields = getFieldsCache(self, rs);
-  }
-  try
-  {
-    for (size_t index = 0; index < rs->size(); ++index) {
-      rb_yield(recordToRubyArray((*rs)[index], fetchMode, fields));
-    }
-    return self;
-  } 
-  CATCH_BZS_AND_STD()
-
-fail:
-  return Qnil;
-}
-*/
-
-
 SWIGINTERN VALUE
 _wrap_Recordset_to_a(int argc, VALUE *argv, VALUE self) {
   tdap::client::recordset *rs =  0 ;
@@ -26326,6 +26287,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_attr(SwigClassTable.klass, "ctorArgs", 1, 1);
   rb_define_method(SwigClassTable.klass, "ctorArgs=", VALUEFUNC(_wrap_RecordsetOrTable_ctorArgs_set), -1);
   rb_define_method(SwigClassTable.klass, "setAlias", VALUEFUNC(_wrap_table_setAlias), -1);
+  rb_define_method(SwigClassTable.klass, "defineORMapMethod", VALUEFUNC(_wrap_table_defineORMapMethod), -1);
   SwigClassTable.mark = 0;
   SwigClassTable.destroy = (void (*)(void *)) free_bzs_table;
   SwigClassTable.trackObjects = 0;
@@ -26829,7 +26791,6 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassRecordset.klass, "unionRecordset", VALUEFUNC(_wrap_Recordset_unionRecordset), -1);
   rb_define_method(SwigClassRecordset.klass, "fetchmode=", VALUEFUNC(_wrap_Recordset_fetchmode_set), -1);
   rb_define_method(SwigClassRecordset.klass, "fetchmode", VALUEFUNC(_wrap_Recordset_fetchmode_get), -1);
-//  rb_define_method(SwigClassRecordset.klass, "each", VALUEFUNC(_wrap_Recordset_each), -1);
   rb_define_method(SwigClassRecordset.klass, "to_a", VALUEFUNC(_wrap_Recordset_to_a), -1);
   rb_define_method(SwigClassRecordset.klass, "getRecord", VALUEFUNC(_wrap_Recordset_getRecord), -1);
   rb_define_attr(SwigClassRecordset.klass, "fetchClass", 1, 1);
