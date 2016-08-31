@@ -1966,7 +1966,7 @@ class dbdef {
 
 class table extends nstable /*implements \IteratorAggregate*/{
 	public $fetchMode = transactd::FETCH_VAL_BOTH;
-	public $fechClass = 'stdClass';
+	public $fetchClass = 'stdClass';
 	public $ctorArgs = null;
 
 	public $_cPtr=null;
@@ -2067,7 +2067,7 @@ class table extends nstable /*implements \IteratorAggregate*/{
 	}
 
 	function findAll() {
-		return table_findAll($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs);
+		return table_findAll($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs);
 	}
 	
 	function find($type=null) {
@@ -2155,14 +2155,14 @@ class table extends nstable /*implements \IteratorAggregate*/{
 
 	function fields() {
 		if ($this->fetchMode === transactd::FETCH_RECORD_INTO)
-			return new Record(table_fields($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs));
-		return table_fields($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs);
+			return new Record(table_fields($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs));
+		return table_fields($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs);
 	}
 	
 	function getRow() {
 		if ($this->fetchMode === transactd::FETCH_RECORD_INTO)
-			return new Record(table_fields($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs));
-		return table_fields($this->_cPtr, $this->fetchMode, $this->fechClass,  $this->ctorArgs);
+			return new Record(table_fields($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs));
+		return table_fields($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs);
 	}
 
 	function setFV($index_or_fieldName,$data,$size=null) {
@@ -4265,12 +4265,12 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 	private $_fielddefs = null;
 
 	public $fetchMode = transactd::FETCH_VAL_BOTH;
-	public $fechClass = 'stdClass';
+	public $fetchClass = 'stdClass';
 	public $ctorArgs = null;
 
 	// Arrayable
 	public function toArray() {
-		return Recordset_toArray($this->_cPtr, $this->fetchMode, $this->fechClass, $this->ctorArgs);
+		return Recordset_toArray($this->_cPtr, $this->fetchMode, $this->fetchClass, $this->ctorArgs);
 	}
 
 	// IteratorAggregate
@@ -4298,7 +4298,7 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 	public function offsetGet($offset) {
 		if ($this->fetchMode === transactd::FETCH_RECORD_INTO)
 			return Recordset_getRow($this->_cPtr, $offset, transactd::FETCH_RECORD_INTO, $this->_record);
-		return Recordset_getRow($this->_cPtr, $offset, $this->fetchMode, $this->fechClass, $this->ctorArgs);
+		return Recordset_getRow($this->_cPtr, $offset, $this->fetchMode, $this->fetchClass, $this->ctorArgs);
 	}
 
 	public function offsetSet($offset, $value) {

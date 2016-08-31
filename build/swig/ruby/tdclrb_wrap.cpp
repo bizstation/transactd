@@ -22731,6 +22731,45 @@ _wrap_Recordset_fetchmode_get(int argc, VALUE *argv, VALUE self) {
 }
 
 
+/*
+SWIGINTERN VALUE
+_wrap_Recordset_each(int argc, VALUE *argv, VALUE self) {
+  tdap::client::recordset *rs = (tdap::client::recordset *) 0 ;
+  VALUE fetchmode = Qnil;
+  int fetchMode = 0;
+  VALUE fields = Qnil;
+  
+  if (!check_param_count(argc, 0, 0)) return Qnil;
+  rs = selfPtr(self, rs);
+  if (rs->size() == 0) {
+    return self;
+  }
+  
+  fetchmode = rb_ivar_get(self, g_id_fetchmode);
+  if (fetchmode == Qnil) {
+    fetchmode = INT2FIX(FETCH_RECORD_INTO);
+    rb_ivar_set(self, g_id_fetchmode, fetchmode);
+  }
+  fetchMode = FIX2INT(fetchmode);
+  
+  if (fetchMode == FETCH_VAL_BOTH || fetchMode == FETCH_VAL_ASSOC) {
+    fields = getFieldsCache(self, rs);
+  }
+  try
+  {
+    for (size_t index = 0; index < rs->size(); ++index) {
+      rb_yield(recordToRubyArray((*rs)[index], fetchMode, fields));
+    }
+    return self;
+  } 
+  CATCH_BZS_AND_STD()
+
+fail:
+  return Qnil;
+}
+*/
+
+
 SWIGINTERN VALUE
 _wrap_Recordset_to_a(int argc, VALUE *argv, VALUE self) {
   tdap::client::recordset *rs =  0 ;
@@ -26279,8 +26318,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassTable.klass, "setPrepare", VALUEFUNC(_wrap_table_setPrepare), -1);
   rb_define_method(SwigClassTable.klass, "getFVbits", VALUEFUNC(_wrap_table_getFVbits), -1);
   rb_define_method(SwigClassTable.klass, "setFV", VALUEFUNC(_wrap_table_setFV), -1);
-  rb_define_method(SwigClassTable.klass, "fetchmode=", VALUEFUNC(_wrap_Recordset_fetchmode_set), -1);
-  rb_define_method(SwigClassTable.klass, "fetchmode", VALUEFUNC(_wrap_Recordset_fetchmode_get), -1);
+  rb_define_method(SwigClassTable.klass, "fetchMode=", VALUEFUNC(_wrap_Recordset_fetchmode_set), -1);
+  rb_define_method(SwigClassTable.klass, "fetchMode", VALUEFUNC(_wrap_Recordset_fetchmode_get), -1);
   rb_define_method(SwigClassTable.klass, "release", VALUEFUNC(_wrap_table_release), -1);
   rb_define_attr(SwigClassTable.klass, "fetchClass", 1, 1);
   rb_define_method(SwigClassTable.klass, "fetchClass=", VALUEFUNC(_wrap_RecordsetOrTable_fetchClass_set), -1);
@@ -26789,8 +26828,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassRecordset.klass, "reverse", VALUEFUNC(_wrap_Recordset_reverse), -1);
   rb_define_method(SwigClassRecordset.klass, "appendField", VALUEFUNC(_wrap_Recordset_appendField), -1);
   rb_define_method(SwigClassRecordset.klass, "unionRecordset", VALUEFUNC(_wrap_Recordset_unionRecordset), -1);
-  rb_define_method(SwigClassRecordset.klass, "fetchmode=", VALUEFUNC(_wrap_Recordset_fetchmode_set), -1);
-  rb_define_method(SwigClassRecordset.klass, "fetchmode", VALUEFUNC(_wrap_Recordset_fetchmode_get), -1);
+  rb_define_method(SwigClassRecordset.klass, "fetchMode=", VALUEFUNC(_wrap_Recordset_fetchmode_set), -1);
+  rb_define_method(SwigClassRecordset.klass, "fetchMode", VALUEFUNC(_wrap_Recordset_fetchmode_get), -1);
   rb_define_method(SwigClassRecordset.klass, "to_a", VALUEFUNC(_wrap_Recordset_to_a), -1);
   rb_define_method(SwigClassRecordset.klass, "getRecord", VALUEFUNC(_wrap_Recordset_getRecord), -1);
   rb_define_attr(SwigClassRecordset.klass, "fetchClass", 1, 1);

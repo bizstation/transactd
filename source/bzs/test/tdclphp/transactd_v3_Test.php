@@ -36,6 +36,21 @@ function getHost()
     return $host;
 }
 
+class User
+{
+    public $a = "";
+    public $b = "";
+    public $c = "";
+
+    function __construct($_a, $_b, $_c) 
+    {
+        $this->a = $_a;
+        $this->b = $_b;
+        $this->c = $_c;
+    }
+}
+
+
 define("HOSTNAME", getHost());
 define("USERNAME", getenv('TRANSACTD_PHPUNIT_USER'));
 define("USERPART", strlen(USERNAME) == 0 ? '' : USERNAME . '@');
@@ -959,6 +974,60 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(bz\transactd::HA_ROLE_NONE , 2);
         $this->assertEquals(bz\transactd::HA_RESTORE_ROLE , 4);
         $this->assertEquals(bz\transactd::HA_ENABLE_FAILOVER , 8);
+    }
+    
+    public function test_fetcMode()
+    {
+        $db = new bz\database();
+        $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        $tb = $db->openTable("user");
+        $this->assertEquals($tb->stat() , 0);
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat() , 0);
+        
+        //test fetch field type
+        bz\transactd::setFieldValueMode(bz\transactd::FIELD_VALUE_MODE_OBJECT);
+        $tb->fetchMode = bz\transactd::FETCH_RECORD_INTO;
+        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_RECORD_INTO);
+        $rec = $tb->fields();
+        $this->assertEquals($rec["id"]->i() , 1);
+        
+        bz\transactd::setFieldValueMode(bz\transactd::FIELD_VALUE_MODE_VALUE);
+        $this->assertEquals($rec["id"] , 1);
+        
+        $tb->fetchMode = bz\transactd::FETCH_VAL_NUM;
+        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_VAL_NUM);
+        $rec = $tb->fields();
+        $this->assertEquals($rec[0] , 1);
+        
+        $tb->fetchMode = bz\transactd::FETCH_VAL_ASSOC;
+        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_VAL_ASSOC);
+        $rec = $tb->fields();
+        $this->assertEquals($rec["id"] , 1);
+        
+        $tb->fetchMode = bz\transactd::FETCH_VAL_BOTH;
+        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_VAL_BOTH);
+        $rec = $tb->fields();
+        $this->assertEquals($rec[0] , 1);
+        $this->assertEquals($rec["id"] , 1);
+        
+        
+        $tb->fetchMode = bz\transactd::FETCH_OBJ;
+        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_OBJ);
+        $usr = $tb->fields();
+        $this->assertEquals($usr->id , 1);
+        
+        
+        $tb->fetchMode = bz\transactd::FETCH_USR_CLASS;
+        $tb->fetchClass = "User";
+        $tb->ctorArgs = array("1","2","3");
+        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_USR_CLASS);
+        $usr = $tb->fields();
+        $this->assertEquals($usr->id , 1);
+        $this->assertEquals($usr->a , "1");
+        $this->assertEquals($usr->b , "2");
+        $this->assertEquals($usr->c , "3");
+        $db->close();
     }
 
 }

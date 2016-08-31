@@ -264,7 +264,7 @@ end
 def doTestTable(db, klass)
   # table
   tb = openTable(db)
-  tb.fetchmode = Transactd::FETCH_USR_CLASS
+  tb.fetchMode = Transactd::FETCH_USR_CLASS
   tb.fetchClass = klass
   if klass.alias_map.length > 0
     tb.setAlias("group_id", "group")
@@ -328,7 +328,7 @@ end
 def doTestTableArray(db, klass)
   # table
   tb = openTable(db)
-  tb.fetchmode = Transactd::FETCH_USR_CLASS
+  tb.fetchMode = Transactd::FETCH_USR_CLASS
   tb.fetchClass = klass
   if klass.alias_map.length > 0
     tb.setAlias("group_id", "group")
@@ -371,7 +371,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_VAL_NUM
+    tb.fetchMode = Transactd::FETCH_VAL_NUM
     rec = seekId1(tb)
     doTestArray(rec)
     for i in 2..CHECK_MAX_ID
@@ -384,7 +384,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSet(at)
-    rs.fetchmode = Transactd::FETCH_VAL_NUM
+    rs.fetchMode = Transactd::FETCH_VAL_NUM
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
       doTestArray(rec, i + 1)
@@ -399,7 +399,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_VAL_ASSOC
+    tb.fetchMode = Transactd::FETCH_VAL_ASSOC
     rec = seekId1(tb)
     doTestHash(rec, false, false)
     for i in 2..CHECK_MAX_ID
@@ -412,7 +412,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSet(at)
-    rs.fetchmode = Transactd::FETCH_VAL_ASSOC
+    rs.fetchMode = Transactd::FETCH_VAL_ASSOC
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
       doTestHash(rec, true, false, i + 1)
@@ -427,7 +427,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_VAL_BOTH
+    tb.fetchMode = Transactd::FETCH_VAL_BOTH
     rec = seekId1(tb)
     doTestHash(rec, false, true)
     for i in 2..CHECK_MAX_ID
@@ -440,7 +440,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSet(at)
-    rs.fetchmode = Transactd::FETCH_VAL_BOTH
+    rs.fetchMode = Transactd::FETCH_VAL_BOTH
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
       doTestHash(rec, true, true, i + 1)
@@ -455,7 +455,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_OBJ
+    tb.fetchMode = Transactd::FETCH_OBJ
     rec = seekId1(tb)
     doTestObject(rec, false)
     for i in 2..CHECK_MAX_ID
@@ -468,7 +468,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSet(at)
-    rs.fetchmode = Transactd::FETCH_OBJ
+    rs.fetchMode = Transactd::FETCH_OBJ
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
       doTestObject(rec, true, i + 1)
@@ -494,7 +494,7 @@ describe Transactd, 'FetchMode' do
     # open activeTable and not aliased recordset
     at = openActiveTable(db)
     rs = getRecordSet(at)
-    rs.fetchmode = Transactd::FETCH_USR_CLASS
+    rs.fetchMode = Transactd::FETCH_USR_CLASS
     at.release()
     # (1) User_NA_NUO : not aliased, not nodefine_original
     doTestTable(db, User_NA_NUO)
@@ -513,7 +513,7 @@ describe Transactd, 'FetchMode' do
     # open activeTable and aliased recordset
     at = openActiveTable(db, User__A_NUO.alias_map)
     rs = getRecordSet(at)
-    rs.fetchmode = Transactd::FETCH_USR_CLASS
+    rs.fetchMode = Transactd::FETCH_USR_CLASS
     at.release()
     
     # (3) User__A_NUO : aliased, not nodefine_original
@@ -540,7 +540,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_RECORD_INTO
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
     rec = seekId1(tb)
     doTestFieldsBase(rec, false)
     for i in 2..CHECK_MAX_ID
@@ -553,7 +553,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSet(at)
-    rs.fetchmode = Transactd::FETCH_RECORD_INTO
+    rs.fetchMode = Transactd::FETCH_RECORD_INTO
     for i in 0...CHECK_MAX_ID
       rec = rs[i]
       doTestFieldsBase(rec, true, i + 1)
@@ -563,7 +563,7 @@ describe Transactd, 'FetchMode' do
     at = openActiveTable(db)
     rs = getRecordSet(at)
     for i in 0...CHECK_MAX_ID
-      rs.fetchmode = FETCHMODES[i % FETCHMODES.length]
+      rs.fetchMode = FETCHMODES[i % FETCHMODES.length]
       rec = rs.getRecord(i)
       doTestFieldsBase(rec, true, i + 1)
     end
@@ -577,7 +577,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_VAL_NUM
+    tb.fetchMode = Transactd::FETCH_VAL_NUM
     arr = findAll(tb)
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
@@ -589,7 +589,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSetForFindAll(at)
-    rs.fetchmode = Transactd::FETCH_VAL_NUM
+    rs.fetchMode = Transactd::FETCH_VAL_NUM
     arr = rs.to_a
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
@@ -607,7 +607,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_VAL_ASSOC
+    tb.fetchMode = Transactd::FETCH_VAL_ASSOC
     arr = findAll(tb)
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
@@ -619,7 +619,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSetForFindAll(at)
-    rs.fetchmode = Transactd::FETCH_VAL_ASSOC
+    rs.fetchMode = Transactd::FETCH_VAL_ASSOC
     arr = rs.to_a
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
@@ -637,7 +637,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_VAL_BOTH
+    tb.fetchMode = Transactd::FETCH_VAL_BOTH
     arr = findAll(tb)
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
@@ -649,7 +649,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSetForFindAll(at)
-    rs.fetchmode = Transactd::FETCH_VAL_BOTH
+    rs.fetchMode = Transactd::FETCH_VAL_BOTH
     arr = rs.to_a
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
@@ -667,7 +667,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_OBJ
+    tb.fetchMode = Transactd::FETCH_OBJ
     arr = findAll(tb)
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
@@ -679,7 +679,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSetForFindAll(at)
-    rs.fetchmode = Transactd::FETCH_OBJ
+    rs.fetchMode = Transactd::FETCH_OBJ
     arr = rs.to_a
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
@@ -707,11 +707,11 @@ describe Transactd, 'FetchMode' do
     expect(AR_User__A__UO.instance_variable_get(:@_accessor_initialized)).to be_nil
     # open table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_USR_CLASS
+    tb.fetchMode = Transactd::FETCH_USR_CLASS
     # open activeTable and not aliased recordset
     at = openActiveTable(db)
     rs = getRecordSetForFindAll(at)
-    rs.fetchmode = Transactd::FETCH_USR_CLASS
+    rs.fetchMode = Transactd::FETCH_USR_CLASS
     at.release()
     # (1) AR_User_NA_NUO : not aliased, not nodefine_original
     doTestTable(db, AR_User_NA_NUO)
@@ -730,7 +730,7 @@ describe Transactd, 'FetchMode' do
     # open activeTable and aliased recordset
     at = openActiveTable(db, AR_User__A_NUO.alias_map)
     rs = getRecordSetForFindAll(at)
-    rs.fetchmode = Transactd::FETCH_USR_CLASS
+    rs.fetchMode = Transactd::FETCH_USR_CLASS
     at.release()
     # (3) AR_User__A_NUO : aliased, not nodefine_original
     doTestTable(db, AR_User__A_NUO)
@@ -757,7 +757,7 @@ describe Transactd, 'FetchMode' do
     openDatabase(db)
     # table
     tb = openTable(db)
-    tb.fetchmode = Transactd::FETCH_RECORD_INTO
+    tb.fetchMode = Transactd::FETCH_RECORD_INTO
     arr = findAll(tb)
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
@@ -770,7 +770,7 @@ describe Transactd, 'FetchMode' do
     # activeTable
     at = openActiveTable(db)
     rs = getRecordSetForFindAll(at)
-    rs.fetchmode = Transactd::FETCH_RECORD_INTO
+    rs.fetchMode = Transactd::FETCH_RECORD_INTO
     arr = rs.to_a
     expect(arr.is_a?(Array)).to eq true
     expect(arr.length).to eq CHECK_MAX_ID
