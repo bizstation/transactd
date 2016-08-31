@@ -2200,6 +2200,12 @@ class table extends nstable /*implements \IteratorAggregate*/{
 		default: return new bitset($r);
 		}
 	}
+	
+	function setAlias($orign, $alias) {
+		table_setAlias($this->_cPtr,$orign,$alias);
+		return $this;
+	}
+
 
 	function release() {
 		table_release($this->_cPtr);
@@ -4493,8 +4499,8 @@ class activeTable {
 		return array_key_exists($var, $this->_pData);
 	}
 
-	function alias($src,$dst) {
-		activeTable_alias($this->_cPtr,$src,$dst);
+	function alias($orign, $alias) {
+		activeTable_alias($this->_cPtr,$orign,$alias);
 		return $this;
 	}
 

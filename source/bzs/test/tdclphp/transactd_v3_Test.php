@@ -976,7 +976,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals(bz\transactd::HA_ENABLE_FAILOVER , 8);
     }
     
-    public function test_fetcMode()
+    public function test_fetchMode()
     {
         $db = new bz\database();
         $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
@@ -1027,7 +1027,83 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($usr->a , "1");
         $this->assertEquals($usr->b , "2");
         $this->assertEquals($usr->c , "3");
+        $tb->close();
+        
+        $at = new bz\activeTable($db, "user");
+        $q = new bz\query();
+        $q->where("id", "<", 10);
+        $rs = $at->index(0)->keyValue(0)->read($q);
+        $rs->fetchMode = bz\transactd::FETCH_RECORD_INTO;
+        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_RECORD_INTO);
+        bz\transactd::setFieldValueMode(bz\transactd::FIELD_VALUE_MODE_OBJECT);
+        $this->assertEquals($rs[0]["id"]->i() , 1);
+        bz\transactd::setFieldValueMode(bz\transactd::FIELD_VALUE_MODE_VALUE);
+        $this->assertEquals($rs[0]["id"] , 1);
+        $this->assertEquals($rs->size() , 9);
+
+        $rs->fetchMode = bz\transactd::FETCH_VAL_NUM;
+        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_VAL_NUM);
+        $this->assertEquals($rs[0][0] , 1);
+        $this->assertEquals(count($rs) , 9);
+
+        $rs->fetchMode = bz\transactd::FETCH_VAL_ASSOC;
+        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_VAL_ASSOC);
+        $this->assertEquals($rs[0]["id"] , 1);
+        $this->assertEquals(count($rs) , 9);
+
+        $rs->fetchMode = bz\transactd::FETCH_VAL_BOTH;
+        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_VAL_BOTH);
+        $this->assertEquals($rs[0][0] , 1);
+        $this->assertEquals($rs[0]["id"] , 1);
+        $this->assertEquals(count($rs) , 9);
+
+
+        $rs->fetchMode = bz\transactd::FETCH_OBJ;
+        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_OBJ);
+        $this->assertEquals($rs[0]->id , 1);
+        $this->assertEquals(count($rs) , 9);
+
+        $rs->fetchMode = bz\transactd::FETCH_USR_CLASS;
+        $rs->fetchClass = "User";
+        $rs->ctorArgs = array("1","2","3");
+        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_USR_CLASS);
+        $this->assertEquals($rs[1]->id , 2);
+        $this->assertEquals($rs[0]->a , "1");
+        $this->assertEquals($rs[0]->b , "2");
+        $this->assertEquals($rs[0]->c , "3");
+        $this->assertEquals(count($rs) , 9);
+        
         $db->close();
+    }
+    
+    public function test_setAlias()
+    {
+        $db = new bz\database();
+        $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        $tb = $db->openTable("user");
+        $this->assertEquals($tb->stat() , 0);
+        $tb->setAlias("名前", "name");
+        $tb->setAlias("id", "user_id");
+        $this->assertEquals($tb->fieldNumByName("user_id"), 0);
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat() , 0);
+
+        $tb->fetchMode = bz\transactd::FETCH_USR_CLASS;
+        $tb->fetchClass = "User";
+        $tb->ctorArgs = array("1","2","3");
+        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_USR_CLASS);
+        $usr = $tb->fields();
+        $this->assertEquals($usr->user_id , 1);
+        $this->assertEquals($usr->name , "1 user");
+        
+        $q = new bz\query();
+        $q->select("name")->where("id", "<", 10);
+        $tb->setQuery($q);
+        $tb->clearBuffer();
+        $users = $tb->findAll();
+        $this->assertEquals(count($users) , 9);
+        $this->assertEquals($users[0]->name , "1 user");
+
     }
 
 }

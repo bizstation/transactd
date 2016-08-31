@@ -16605,6 +16605,50 @@ fail:
 }
 
 
+ZEND_NAMED_FUNCTION(_wrap_table_setAlias) {
+  bzs::db::protocol::tdap::client::table *arg1 = 0 ;
+  _TCHAR *arg2 = (_TCHAR *) 0 ;
+  _TCHAR *arg3 = (_TCHAR *) 0 ;
+  zval_args_type args[3];
+  
+  SWIG_ResetError(TSRMLS_C);
+  if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setAlias. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  {
+    if (Z_TYPE_AGRS(1) != IS_NULL) {
+      CONV_to_string_ex(args[1]);
+      arg2 = (_TCHAR *) Z_STRVAL_PP(args[1]);
+    }
+  }
+  {
+    if (Z_TYPE_AGRS(2) != IS_NULL) {
+      CONV_to_string_ex(args[2]);
+      arg3 = (_TCHAR *) Z_STRVAL_PP(args[2]);
+    }
+  }
+  {
+    try {
+      arg1->setAlias((_TCHAR const *)arg2,(_TCHAR const *)arg3);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_table_release) {
   bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
   zval_args_type args[1];
@@ -25158,7 +25202,7 @@ ZEND_NAMED_FUNCTION(_wrap_fielddefs_toArray) {
     {
         try {
             array_init(return_value);
-			
+            
             for (size_t i = 0; i < fds->size(); ++i)
                 add_index_string(return_value, i, (char*)(*fds)[i].name() AI_DUPULICATE);
         }
@@ -30884,7 +30928,6 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_table_fields) {
     table *arg1 = 0;
     int arg3 = 0;
-    fieldsBase* arg4 = 0;
     zval_args_type args[4];
     int argc = ZEND_NUM_ARGS();
 
@@ -35216,6 +35259,10 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_getfvbits, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_setalias, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_release, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -36791,6 +36838,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(table_setquery,_wrap_table_setQuery,swig_arginfo_table_setquery)
  SWIG_ZEND_NAMED_FE(table_setprepare,_wrap_table_setPrepare,swig_arginfo_table_setprepare)
  SWIG_ZEND_NAMED_FE(table_getfvbits,_wrap_table_getFVBits,swig_arginfo_table_getfvbits)
+ SWIG_ZEND_NAMED_FE(table_setalias,_wrap_table_setAlias,swig_arginfo_table_setalias)
  SWIG_ZEND_NAMED_FE(table_release,_wrap_table_release,swig_arginfo_table_release)
  SWIG_ZEND_NAMED_FE(querybase_clearseekkeyvalues,_wrap_queryBase_clearSeekKeyValues,swig_arginfo_querybase_clearseekkeyvalues)
  SWIG_ZEND_NAMED_FE(querybase_clearselectfields,_wrap_queryBase_clearSelectFields,swig_arginfo_querybase_clearselectfields)
