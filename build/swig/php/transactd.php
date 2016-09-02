@@ -2040,8 +2040,8 @@ class table extends nstable /*implements \IteratorAggregate*/{
 		return table_bookmarksCount($this->_cPtr);
 	}
 
-	function moveBookmarks($Id) {
-		table_moveBookmarks($this->_cPtr,$Id);
+	function moveBookmarks($index) {
+		table_moveBookmarks($this->_cPtr,$index);
 	}
 
 	function bookmarks($index) {
@@ -4561,12 +4561,12 @@ class activeTable {
 		return $rs;
 	}
 
-	function __construct($mgr_or_db,$tableName=null) {
+	function __construct($mgr_or_db,$tableName, $mode=transactd::TD_OPEN_READONLY) {
 		if (is_resource($mgr_or_db) && get_resource_type($mgr_or_db) === '_p_bzs__db__protocol__tdap__client__activeTable') {
 			$this->_cPtr=$mgr_or_db;
 			return;
 		}
-		$this->_cPtr=new_activeTable($mgr_or_db,$tableName);
+		$this->_cPtr=new_activeTable($mgr_or_db,$tableName,$mode);
 	}
 
 	function release() {
