@@ -343,7 +343,7 @@ public:
 
     inline bool isNeedConvert() const
     {
-        return (m_codePage != m_exec_codePage);
+        return m_codePage && (m_codePage != m_exec_codePage);
     }
 };
 
