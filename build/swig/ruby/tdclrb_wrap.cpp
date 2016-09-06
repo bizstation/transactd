@@ -2595,7 +2595,6 @@ static short g_fieldValueMode = FIELD_VALUE_MODE_OBJECT;
 
 static rb_encoding* utf8_enc=NULL; /* init at Init_transactd() */
 
-
 referenceCounter g_refCounter;
 static void mark_activeTable(void* ptr) {
   g_refCounter.mark();
@@ -2823,11 +2822,21 @@ bool setValue(VALUE v, T& fd, int size)
   }
   case T_STRING:
   {// char*
-    const char* buf2 = StringValuePtr(v);
+    switch(fd.type())
+    {
+    case ft_string:
+    case ft_lstring:
+    case ft_myvarbinary:
+    case ft_myblob:
+      if (!size && fd.def()->charsetIndex() == CHARSET_BIN)
+        size = RSTRING_LEN(v);
+      break;
+    }
+    const char* p = StringValuePtr(v);
     if (size)
-      setValueImple(fd, buf2, size);
+      setValueImple(fd, p, size);
     else
-      setValueImple(fd, buf2);
+      setValueImple(fd, p);
     break;
   }
   case T_NIL:
@@ -2858,7 +2867,6 @@ bool field_setvalue(VALUE p,  const tdap::client::field& arg1, int size)
   tdap::client::field& fd = const_cast<tdap::client::field&>(arg1);
   return setValue(p, fd, size);
 }
-
 
 
 #if HAVE_RB_THREAD_CALL_WITHOUT_GVL || HAVE_RB_THREAD_BLOCKING_REGION
@@ -10847,6 +10855,27 @@ VALUE getFieldValue(const tdap::client::field& f) {
   case ft_numericsa:
   case ft_currency:
     return SWIG_From_double(static_cast< double >(f.d()));
+  //case ft_note:
+  //case ft_wstring:
+  //case ft_zstring:
+  //case ft_wzstring:
+  //case ft_mychar:
+  //case ft_myvarchar:
+  //case ft_mywchar:
+  //case ft_mywvarchar:
+  //case ft_mytext:
+  //case ft_mywvarbinary:
+  case ft_string:
+  case ft_lstring:
+  case ft_myvarbinary:
+  case ft_myblob:
+    if (f.def()->charsetIndex() == CHARSET_BIN) 
+    {
+      uint_td size;
+      void* val = f.getBin(size);
+      return rb_str_new((const char*)val, size);
+    }
+    /* pass through */
   }
   const _TCHAR* tmp_c_str = f.c_str();
   return rb_enc_str_new(tmp_c_str, strlen(tmp_c_str), utf8_enc);
@@ -19358,6 +19387,31 @@ fail:
   return Qnil;
 }
 
+
+SWIGINTERN VALUE
+_wrap_Record_setValue(int argc, VALUE *argv, VALUE self) {
+  if (!check_param_count(argc, 1, 1)) return Qnil;
+  VALUE obj = argv[0];
+  if (TYPE(obj) != T_OBJECT)
+    rb_raise(rb_eArgError, "param 1, object is not specified.");
+  
+  tdap::client::fieldsBase* rec = selfPtr(self, rec);
+  const fielddefs* def = rec->fieldDefs();
+  for (int i = 0; i < def->size(); ++i) 
+  {
+    char name[256] = "@";
+    strcat_s(name, 256, (*def)[i].name());
+    ID id = rb_intern(name);
+    if (rb_ivar_defined(obj, id))
+    {
+      VALUE v = rb_ivar_get(obj, id);
+      field_setvalue(v, (*rec)[i], 0);
+    }
+  }
+  return Qnil;
+}
+
+
 SWIGINTERN VALUE
 _wrap_Record___setitem__(int argc, VALUE *argv, VALUE self) {
 
@@ -26487,6 +26541,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_singleton_method(SwigClassDatabase.klass, "compatibleMode", VALUEFUNC(_wrap_database_compatibleMode), -1);
   rb_define_const(SwigClassDatabase.klass, "CMP_MODE_MYSQL_NULL", SWIG_From_int(static_cast< int >(tdap::client::database::CMP_MODE_MYSQL_NULL)));
   rb_define_const(SwigClassDatabase.klass, "CMP_MODE_OLD_NULL", SWIG_From_int(static_cast< int >(tdap::client::database::CMP_MODE_OLD_NULL)));
+  rb_define_const(SwigClassDatabase.klass, "CMP_MODE_BINFD_DEFAULT_STR", SWIG_From_int(static_cast< int >(tdap::client::database::CMP_MODE_BINFD_DEFAULT_STR)));
   rb_define_method(SwigClassDatabase.klass, "openTable", VALUEFUNC(_wrap_database_openTable), -1);
   SwigClassDatabase.mark = 0;
   SwigClassDatabase.destroy = (void (*)(void *)) free_bzs_database;
@@ -26636,6 +26691,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassRecord.klass, "[]", VALUEFUNC(_wrap_Record___getitem__), -1);
   rb_define_method(SwigClassRecord.klass, "[]=", VALUEFUNC(_wrap_Record___setitem__), -1);
   rb_define_method(SwigClassRecord.klass, "getFieldByRef", VALUEFUNC(_wrap_Record_getFieldByRef), -1);
+  rb_define_method(SwigClassRecord.klass, "setValue", VALUEFUNC(_wrap_Record_setValue), -1);
   SwigClassRecord.mark = 0;
   SwigClassRecord.destroy = (void (*)(void *)) free_bzs_fieldsBase;
   SwigClassRecord.trackObjects = 0;
