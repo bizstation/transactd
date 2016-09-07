@@ -30707,6 +30707,18 @@ inline void addFieldValue(int type, zval* return_value, zend_ulong index, const 
     {add_property_string(return_value, (char*)name, (char*)v);}
 }
 
+inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v, uint_td size)
+{
+    if (type & FETCH_VAL_ASSOC)
+    {add_assoc_stringl(return_value , (char*)name, (char*)v, size);}
+    if (type & FETCH_VAL_NUM)
+    {add_index_stringl(return_value, index, (char*)v, size);}
+    else if (type & FETCH_OBJ)
+    {add_property_stringl(return_value, (char*)name, (char*)v, size);}
+
+
+}
+
 inline zend_class_entry* cp_zend_lookup_class(zval_args_type& zv)
 {
     return zend_lookup_class(Z_STR(zv));
@@ -30784,7 +30796,16 @@ inline void addFieldValues(int type, const fieldsBase* r, zval *return_value TSR
                 addFieldValue(type, return_value, i, fdd.name(), fd.d() TSRMLS_CC);
                 break;
             default:
-                addFieldValue(type, return_value, i, fdd.name(), fd.c_str() TSRMLS_CC);
+            {
+                if (fdd->charsetIndex() == CHARSET_BIN)
+                {
+                    uint_td size = 0;
+                    void* p = fd.getBin(size);
+                    addFieldValue(type, return_value, i, fdd.name(), p, size, TSRMLS_CC);
+                }
+                else
+                   addFieldValue(type, return_value, i, fdd.name(), fd.c_str() TSRMLS_CC);
+            }
             };
         }
     }

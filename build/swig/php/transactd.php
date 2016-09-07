@@ -1965,7 +1965,7 @@ class dbdef {
 }*/
 
 class table extends nstable /*implements \IteratorAggregate*/{
-	public $fetchMode = transactd::FETCH_VAL_BOTH;
+	public $fetchMode = transactd::FETCH_RECORD_INTO;
 	public $fetchClass = 'stdClass';
 	public $ctorArgs = null;
 
@@ -2253,15 +2253,14 @@ abstract class queryBase {
 	}
 
 	function addSeekKeyValue($value, $reset=false) {
-		$this->_bookmarks=array();
+		if ($reset === true)
+			$this->_bookmarks=array();
 		queryBase_addSeekKeyValue($this->_cPtr,$value,$reset);
 	}
 	
 	function addSeekBookmark($bookmark, $len, $reset=false) {
 		if ($reset === true)
-		{
 			$this->_bookmarks=array();
-		}
 		queryBase_addSeekBookmark($this->_cPtr,$bookmark,$len,$reset);
 		array_push($this->_bookmarks, $bookmark);
 	}
@@ -3461,6 +3460,8 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	public function offsetSet($offset, $value) {
+		if (transactd::$fieldValueMode === transactd::FIELD_VALUE_MODE_VALUE)
+			return Record_setFV($this->_cPtr, $offset, $value);
 		throw new \BadMethodCallException();
 	}
 
@@ -4270,7 +4271,7 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 	private $_record = null;
 	private $_fielddefs = null;
 
-	public $fetchMode = transactd::FETCH_VAL_BOTH;
+	public $fetchMode = transactd::FETCH_RECORD_INTO;
 	public $fetchClass = 'stdClass';
 	public $ctorArgs = null;
 
