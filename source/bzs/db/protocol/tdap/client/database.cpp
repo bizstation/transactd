@@ -613,7 +613,6 @@ void database::doClose()
     {
         dbdef* def = m_impl->dbDef;
         m_impl->dbDef = NULL;
-        def->close();
         def->release();
         nsdatabase::reset();
     }
