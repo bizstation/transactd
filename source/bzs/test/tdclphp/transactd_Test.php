@@ -3482,7 +3482,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $atu->alias('名前', 'name');
         $atg = new Bz\ActiveTable($db, 'groups');
         $atg->alias('name', 'group_name');
-        $ate = new Bz\ActiveTable($db, 'extention');
+        $ate = new Bz\ActiveTable($db, 'extention', Bz\transactd::TD_OPEN_NORMAL);
         $q = new Bz\query();
         
         $q->select('id', 'name', 'group')->where('id', '<=', '?');
@@ -3691,7 +3691,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db = new Bz\database();
         $db->open(URL_QT);
         $this->assertEquals($db->stat(), 0);
-        $atu = new Bz\ActiveTable($db, 'user');
+        $atu = new Bz\ActiveTable($db, 'user', Bz\transactd::TD_OPEN_NORMAL);
         
         $rec = $atu->index(0)->getWritableRecord();
         $rec['id'] = 120000;

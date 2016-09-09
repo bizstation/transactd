@@ -380,6 +380,10 @@ describe Transactd, 'V3Features' do
     expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
     Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_OLD_NULL)
     expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_OLD_NULL
+
+    Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_BINFD_DEFAULT_STR)
+    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_BINFD_DEFAULT_STR
+
     Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_MYSQL_NULL)
     expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
     db.close()

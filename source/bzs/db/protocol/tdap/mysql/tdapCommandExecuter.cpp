@@ -505,6 +505,7 @@ inline bool dbExecuter::doOpenTable(request& req, char* buf, bool reconnect)
         if (getschema)
             mode -= TD_OPEN_MASK_GETSHCHEMA; 
         bool getDefaultImage = IS_MODE_GETDEFAULTIMAGE(mode);
+        bool bin_str = IS_MODE_BIN_STR(mode);
         if (getDefaultImage)
             mode -= TD_OPEN_MASK_GETDEFAULTIMAGE; 
         table* tb = NULL;
@@ -574,7 +575,7 @@ inline bool dbExecuter::doOpenTable(request& req, char* buf, bool reconnect)
                     if (getschema)
                     {
                         p += len;
-                        len = m_tb->writeSchemaImage(p , *req.datalen - req.resultLen);
+                        len = m_tb->writeSchemaImage(p , *req.datalen - req.resultLen, bin_str);
                         if (len == sizeof(ushort_td))
                         {
                             req.result = STATUS_BUFFERTOOSMALL;
@@ -1200,7 +1201,9 @@ inline void dbExecuter::doGetSchema(request& req, netsvc::server::netWriter* nw)
     {// Return tabledef image binary.
         database* db = getDatabaseCid(req.cid);
         std::string name = getTableName(req);
-        schemaBuilder sb;
+        unsigned char bin_char_index = 
+                (req.keyNum == SC_SUBOP_TABLEDEF_BIN_STR) ? 0 : CHARSET_BIN;
+        schemaBuilder sb(bin_char_index);
         protocol::tdap::tabledef* td = sb.getTabledef(db, name.c_str(), 
                 (unsigned char*)p, *req.datalen);
         if (td)
@@ -1588,9 +1591,12 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             releaseDatabase(req, op);
             break;
         case TD_AUTOMEKE_SCHEMA:
+        {
             m_tb = getTable(req.pbk->handle, SQLCOM_INSERT);
-            req.result = schemaBuilder().execute(getDatabaseCid(req.cid), m_tb, (req.keyNum==1));
+            unsigned char bin_char_index =  (req.keyNum & 2) ? 0 : CHARSET_BIN;
+            req.result = schemaBuilder(bin_char_index).execute(getDatabaseCid(req.cid), m_tb, (req.keyNum & 1));
             break;
+        }
         case TD_CREATETABLE:
             doCreateTable(req);
             break;

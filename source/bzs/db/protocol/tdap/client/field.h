@@ -64,8 +64,9 @@ protected:
     virtual ~fieldShare();
     stringConverter* cv() const;
     bzs::rtl::stringBuffer* strBufs() const;
-    void blobPushBack(char* p);
+    char** blobPushBack(char* p);
     void blobClear();
+    void blobResize(size_t size);
 };
 
 /** @endcond */

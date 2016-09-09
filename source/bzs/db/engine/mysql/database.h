@@ -1005,7 +1005,7 @@ public:
 
     unsigned int writeDefaultImage(unsigned char* p, size_t size);
 
-    unsigned int writeSchemaImage(unsigned char* p, size_t size);
+    unsigned int writeSchemaImage(unsigned char* p, size_t size, bool bin_str);
 
 
     void restoreRecord() { restore_record(m_table, s->default_values);}

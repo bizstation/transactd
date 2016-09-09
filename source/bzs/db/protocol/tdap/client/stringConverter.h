@@ -211,6 +211,11 @@ class stringConverter
 {
     unsigned int m_codePage;
     unsigned int m_exec_codePage;
+    
+    inline bool isNotSameCodePage() const
+    {
+        return (m_codePage != m_exec_codePage);
+    }
 
 public:
     stringConverter(unsigned int src_codPage, unsigned int exec_codePage)
@@ -341,9 +346,17 @@ public:
         return size;
     }
 
-    inline bool isNeedConvert() const
+    template <typename store_type, typename T>
+    inline bool isNeedConvert()
     {
-        return m_codePage && (m_codePage != m_exec_codePage);
+        /* unicode field is no binary*/
+        bool forceUnicodeFrom = (typeid(WCHAR) == typeid(store_type) && (typeid(T) == typeid(char)));
+        bool notBinaryData = m_codePage != 0;
+        bool notSameUnicodeType = (typeid(T) != typeid(store_type));
+        bool charButNotSameCodepage = (isNotSameCodePage() && (typeid(T) == typeid(char)));
+        return forceUnicodeFrom || 
+               (notBinaryData && (notSameUnicodeType || charButNotSameCodepage));
+                        
     }
 };
 
@@ -541,8 +554,10 @@ void store(char* ptr, const T* data, const fielddef& fd, stringConverter* cv)
     else
     {
         // convert
-        if ((typeid(T) != typeid(store_type)) ||
-            (cv->isNeedConvert() && (typeid(T) == typeid(char))))
+        /*if ((typeid(WCHAR) == typeid(store_type)) ||
+            (!cv->isBinary() && (typeid(T) != typeid(store_type))) ||
+            (cv->isNeedConvert() && (typeid(T) == typeid(char))))*/
+        if (cv->isNeedConvert<store_type, T>())
             len = cv->convert(strPtr, maxlen, data, len);
         else
         {
@@ -585,6 +600,8 @@ template <class T> T* trim(T* src, T* end, int padChar)
 #pragma warn -8008
 #pragma warn -8066
 
+
+
 template <class _SF, typename store_type, typename T>
 const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, const fielddef& fd,
               stringConverter* cv, bool isTrimPadChar = false)
@@ -595,8 +612,10 @@ const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, const fielddef& fd,
     T* result = (T*)(ptr + offset);
     // convert
     size_t len;
-    if ((typeid(T) != typeid(store_type)) ||
-        (cv->isNeedConvert() && (typeid(T) == typeid(char))))
+    /*if ((typeid(WCHAR) == typeid(store_type) && (typeid(T) == typeid(char))) ||
+        (!cv->isBinary() && (typeid(T) != typeid(store_type))) ||
+        (cv->isNeedConvert() && (typeid(T) == typeid(char))))*/
+    if (cv->isNeedConvert<store_type, T>())
     {
         len = dataLen(fd, (const uchar_td*)ptr) / sizeof(store_type);
         size_t olen =
@@ -626,7 +645,7 @@ const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, const fielddef& fd,
 
 template <typename T>
 char* blobStore(char* ptr, const T* data, const fielddef& fd,
-                stringConverter* cv)
+                stringConverter* cv, char** pp)
 {
     size_t len = strlen_t(data);
     int offset = fd.len - 8;
@@ -637,8 +656,9 @@ char* blobStore(char* ptr, const T* data, const fielddef& fd,
                                                               : UINT_MAX;
     if (len != 0)
     {
-        if ((typeid(T) != typeid(char)) ||
-            (cv->isNeedConvert() && (typeid(T) == typeid(char))))
+        /*if (!cv->isBinary() && (typeid(T) != typeid(char)) ||
+            (cv->isNeedConvert() && (typeid(T) == typeid(char))))*/
+        if (cv->isNeedConvert<char, T>())
         {
             maxlen = std::min<size_t>(maxlen, len * 2 * sizeof(T) + 1);
             p = new char[maxlen];
@@ -655,7 +675,10 @@ char* blobStore(char* ptr, const T* data, const fielddef& fd,
     memset(ptr, 0, fd.len);
     memcpy(ptr, &len, offset);
     if (p)
-        memcpy(ptr + offset, &(p), sizeof(char*));
+    {
+        *pp = p;
+        memcpy(ptr + offset, pp, sizeof(char*));
+    }
     return p;
 }
 #pragma warn -8004
@@ -671,8 +694,9 @@ const T* readBlob(char* ptr, ::bzs::rtl::stringBuffer* strBufs,
         char** pc = (char**)(ptr + offset);
         size_t olen = len * 2 + 1;
         result = strBufs->getPtr<T>(olen);
-        if ((typeid(T) != typeid(char)) ||
-            (cv->isNeedConvert() && (typeid(T) == typeid(char))))
+        /*if (!cv->isBinary() && (typeid(T) != typeid(char)) ||
+            (cv->isNeedConvert() && (typeid(T) == typeid(char))))*/
+        if (cv->isNeedConvert<char, T>())
             len = cv->revert(result, olen, *pc, len);
         else if (((T*)(*pc))[len] != 0x00)
             memcpy(result, *pc, len);

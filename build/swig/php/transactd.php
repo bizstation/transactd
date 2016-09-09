@@ -2931,6 +2931,10 @@ class database extends nsdatabase {
 	const CMP_MODE_MYSQL_NULL = database_CMP_MODE_MYSQL_NULL;
 
 	const CMP_MODE_OLD_NULL = database_CMP_MODE_OLD_NULL;
+	
+	const CMP_MODE_BINFD_DEFAULT_STR = database_CMP_MODE_BINFD_DEFAULT_STR;
+	
+	const CMP_MODE_OLD_BIN = 3;//database_CMP_MODE_MYSQL_NULL | database_CMP_MODE_BINFD_DEFAULT_STR;
 
 	function __construct($res=null) {
 		if (is_resource($res) && get_resource_type($res) === '_p_bzs__db__protocol__tdap__client__database') {

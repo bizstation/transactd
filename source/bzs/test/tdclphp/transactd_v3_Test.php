@@ -345,10 +345,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         bz\database::setCompatibleMode(bz\database::CMP_MODE_OLD_NULL);
         $this->assertEquals(bz\database::compatibleMode(), bz\database::CMP_MODE_OLD_NULL);
+
+        bz\database::setCompatibleMode(bz\database::CMP_MODE_BINFD_DEFAULT_STR);
+        $this->assertEquals(bz\database::compatibleMode(), bz\database::CMP_MODE_BINFD_DEFAULT_STR);
         
         bz\database::setCompatibleMode(bz\database::CMP_MODE_MYSQL_NULL);
         $this->assertEquals(bz\database::compatibleMode(), bz\database::CMP_MODE_MYSQL_NULL);
-        
+
         $dbdef = $db->dbDef();
         $td = $dbdef->tableDefs(1);
         //isMysqlNullMode //size()
@@ -423,7 +426,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         
         $q = new bz\query();
-        $atu = new bz\activeTable($db, "user");
+        $atu = new bz\activeTable($db, "user", bz\transactd::TD_OPEN_NORMAL);
         
         // segmentsSizeForInValue
         $this->assertEquals($q->segmentsForInValue(3)->getJoinKeySize(), 3);
@@ -438,7 +441,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb1->getFVNull(2), false);
         $atu->index(1)->keyValue(null);
         $this->assertEquals($tb1->getFVNull(2), true);
-     
+        
         // isNull setNull
         $atu->alias("名前", "name");
 
@@ -632,7 +635,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     {
         $db = new bz\database();
         $this->openDatabase($db);
-        $tb = $db->openTable("extention");
+        $tb = $db->openTable("extention", bz\transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
         $tb->setKeyNum(0);
         $tb->setFV('id', 1);
@@ -653,7 +656,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->stat(), 0);
         
         $q = new bz\query();
-        $at = new bz\activeTable($db, "extention");
+        $at = new bz\activeTable($db, "extention", bz\transactd::TD_OPEN_NORMAL);
         $q->where('id', '=', 1);
         $rs = $at->index(0)->keyValue(1)->read($q);
         $rs->fetchMode = bz\transactd::FETCH_RECORD_INTO;

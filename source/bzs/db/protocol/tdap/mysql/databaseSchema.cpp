@@ -43,7 +43,7 @@ namespace tdap
 namespace mysql
 {
 
-schemaBuilder::schemaBuilder(void): m_stat(0)
+schemaBuilder::schemaBuilder(unsigned char binFdCharset): m_stat(0), m_binFdCharset(binFdCharset)
 {
 }
 
@@ -232,6 +232,9 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
             fd.setPadCharSettings(false, true);
             if (f->has_charset())
                 fd.setCharsetIndex(charsetIndex(f->charset()->csname));
+            else if (fd.type == ft_string || fd.type == ft_lstring
+                || fd.type == ft_myvarbinary || fd.type == ft_myblob)
+                fd.setCharsetIndex(m_binFdCharset);
 
             if ((fd.type == ft_mydatetime || fd.type == ft_mytimestamp) && (f->val_real() == 0))
             {// No constant value

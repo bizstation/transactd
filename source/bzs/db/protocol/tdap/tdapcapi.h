@@ -187,8 +187,10 @@ typedef void  (__STDCALL* REGISTER_RESOLVER_PTR)(HANAME_RESOLVER_PTR func);
 
 /** TD_GET_SCHEMA  sub operations
  */
+#define SC_SUBOP_TABLEDEF                0
 #define SC_SUBOP_BY_SQL                 -1
 #define SC_SUBOP_VIEW_BY_SQL            -2
+#define SC_SUBOP_TABLEDEF_BIN_STR       -3
 
 /** TD_GET_STASTISTICS sub operations
  */
@@ -387,12 +389,14 @@ enum combineType
 #define TD_OPEN_MASK_MYSQL_NULL         -16
 #define TD_OPEN_MASK_GETSHCHEMA         -32
 #define TD_OPEN_MASK_GETDEFAULTIMAGE    -64
+#define TD_OPEN_MASK_BIN_STR           -128
 
 #define IS_MODE_READONLY(mode)  (((0 - mode) & 2) != 0)
 #define IS_MODE_EXCLUSIVE(mode)  (((0 - mode) & 4) != 0)
 #define IS_MODE_MYSQL_NULL(mode)  (((0 - mode) & 16) != 0)
 #define IS_MODE_GETSCHEMA(mode)  (((0 - mode) & 32) != 0)
 #define IS_MODE_GETDEFAULTIMAGE(mode)  (((0 - mode) & 64) != 0)
+#define IS_MODE_BIN_STR(mode)  (((0 - mode) & 128) != 0)
 /** @endcond */
 
 /** field algin

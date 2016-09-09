@@ -389,7 +389,10 @@ void writableRecord::save()
     copyToBuffer(m_tb);
     m_tb->seek();
     if (m_tb->stat() == STATUS_NOT_FOUND_TI)
+    {
         insertRecord(m_tb);
+        copyFromBuffer(m_tb);
+    }
     else
     {
         copyToBuffer(m_tb);

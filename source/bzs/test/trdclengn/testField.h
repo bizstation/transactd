@@ -21,6 +21,7 @@
 #include "testbase.h"
 #include <bzs/db/protocol/tdap/btrDate.h>
 #include <bzs/db/protocol/tdap/client/connMgr.h>
+#include <bzs/db/protocol/tdap/client/stringConverter.h>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -3460,6 +3461,58 @@ void testAlias()
         BOOST_CHECK(false);
         _tprintf(_T("Error! %s\n"), (*getMsg(e)).c_str());
     }
+}
+
+void testBinaryFieldConvert()
+{
+// Ansi
+    stringConverter cv(CP_UTF8, CP_UTF8);
+    //Unicode --> utf8
+    bool ret = cv.isNeedConvert<WCHAR, char>() == true;
+    BOOST_CHECK(ret);
+
+    //utf8 --> utf8
+    ret = cv.isNeedConvert<char, char>() == false;
+    BOOST_CHECK(ret);
+    
+    //cp932 --> utf8
+    cv.setCodePage(932);
+    ret = cv.isNeedConvert<char, char>() == true;
+    BOOST_CHECK(ret);
+
+    //binnary --> utf8
+    cv.setCodePage(0);
+    ret = cv.isNeedConvert<char, char>() == false;
+    BOOST_CHECK(ret);
+
+    //binnary ? Unicode --> utf8,  Unicode fields are force convert
+    ret = cv.isNeedConvert<WCHAR, char>() == true;
+    BOOST_CHECK(ret);
+
+// Unicode
+    // Unicode --> Unicode
+    cv.setCodePage(CP_UTF8);
+    ret = cv.isNeedConvert<WCHAR, WCHAR>() == false;
+    BOOST_CHECK(ret);
+
+    //utf8 --> Unicode
+    ret = cv.isNeedConvert<char, WCHAR>() == true;
+    BOOST_CHECK(ret);
+    
+    //cp932 --> Unicode
+    cv.setCodePage(932);
+    ret = cv.isNeedConvert<char, WCHAR>() == true;
+    BOOST_CHECK(ret);
+
+    //binnary --> Unicode
+    cv.setCodePage(0);
+    ret = cv.isNeedConvert<char, WCHAR>() == false;
+    BOOST_CHECK(ret);
+
+    //binnary ? Unicode --> Unicode,  
+    ret = cv.isNeedConvert<WCHAR, WCHAR>() == false;
+    BOOST_CHECK(ret);
+
 }
 
 #pragma warning(default : 4996) 

@@ -1277,6 +1277,9 @@ bool dbdef::isPassKey(uchar_td FieldType)
 void dbdef::autoMakeSchema(bool nouseNullkey)
 {
     m_keynum = (int)nouseNullkey;
+    if (database::compatibleMode() & database::CMP_MODE_BINFD_DEFAULT_STR)
+        m_keynum += 2; // binary field defaut string
+
     tdap(TD_AUTOMEKE_SCHEMA);
 }
 
@@ -1816,7 +1819,10 @@ void dbdef::synchronizeSeverSchema(short tableIndex)
     m_pdata = m_dimpl->bdf;
     m_buflen = m_datalen = m_dimpl->bdfLen;
     m_dimpl->bdf->id = tableIndex;
+    m_keynum = SC_SUBOP_TABLEDEF;
     tdap((ushort_td)TD_GET_SCHEMA);
+    m_keybuf = tmp;
+    m_keynum = 0;
     if (m_stat == STATUS_SUCCESS)
     {
         if (m_datalen == 0)
@@ -1834,7 +1840,6 @@ void dbdef::synchronizeSeverSchema(short tableIndex)
             delete tdold;
         }
     }
-    m_keybuf = tmp;
 }
 
 } // namespace client

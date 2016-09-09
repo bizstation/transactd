@@ -776,6 +776,8 @@ struct openTablePrams
                 mode += TD_OPEN_MASK_GETSHCHEMA;
                 getSchema = true;
                 autoCreate = false;
+                if (database::compatibleMode() & database::CMP_MODE_BINFD_DEFAULT_STR)
+                    mode += TD_OPEN_MASK_BIN_STR;
             }
         }
         if (readOnly && !IS_MODE_READONLY(mode))

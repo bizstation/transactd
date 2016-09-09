@@ -314,11 +314,21 @@ public:
 //------------------------------------------------------------------------------
 //       class fieldShare
 //------------------------------------------------------------------------------
+
+struct blobPtr
+{
+    char* p;
+    blobPtr():p(NULL){}
+    blobPtr(char* v) {p = v;}
+    ~blobPtr() { if (p) delete [] p;};
+};
+
 struct Imple
 {
     stringConverter* cv;
     bzs::rtl::stringBuffer strBufs;
-    std::vector<boost::shared_array<char> > blobs;
+    //std::vector<boost::shared_array<char> > blobs;
+    std::vector<blobPtr > blobs;
 
     Imple() : strBufs(4096)
     {
@@ -349,14 +359,22 @@ bzs::rtl::stringBuffer* fieldShare::strBufs() const
     return &m_imple->strBufs;
 }
 
-void fieldShare::blobPushBack(char* p)
+char** fieldShare::blobPushBack(char* p)
 {
-    m_imple->blobs.push_back(boost::shared_array<char>(p));
+    m_imple->blobs.push_back(blobPtr(p));
+    blobPtr& bt = m_imple->blobs[m_imple->blobs.size() -1];
+    return &bt.p;
+    //m_imple->blobs.push_back(boost::shared_array<char>(p));
 }
 
 void fieldShare::blobClear()
 {
     m_imple->blobs.clear();
+}
+
+void fieldShare::blobResize(size_t size)
+{
+    m_imple->blobs.resize(size);
 }
 
 //------------------------------------------------------------------------------
@@ -562,12 +580,16 @@ void fielddefs::addAllFileds(const tabledef* def)
 {
     m_imple->fields.clear();
     m_imple->mysqlnullEnable = 0;
+    short blobCount = 0;
     for (int i = 0; i < def->fieldCount; ++i)
     {
         const fielddef* fd = &def->fieldDefs[i];
         push_back(fd);
         m_imple->fields[m_imple->fields.size() - 1].setPadCharDefaultSettings();
+        if (fd->isBlob())
+            ++blobCount;
     }
+    blobResize(blobCount);
 }
 
 void fielddefs::addSelectedFields(const table* tb)
@@ -913,8 +935,9 @@ void field::storeValueStrA(const char* data)
     case ft_myblob:
     case ft_mytext:
     {
-        char* tmp = blobStore<char>(p, data, *m_fd, m_fds->cv());
-        const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
+        //char* tmp = blobStore<char>(p, data, *m_fd, m_fds->cv());
+        char** pp = const_cast<fielddefs*>(m_fds)->blobPushBack(NULL);
+        *pp = blobStore<char>(p, data, *m_fd, m_fds->cv(), pp);
         break;
     }
     default:
@@ -1008,8 +1031,11 @@ void field::storeValueStrW(const WCHAR* data)
     case ft_myblob:
     case ft_mytext:
     {
-        char* tmp = blobStore<WCHAR>(p, data, *m_fd, m_fds->cv());
-        const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
+        //char* tmp = blobStore<WCHAR>(p, data, *m_fd, m_fds->cv());
+        //const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
+
+        char** pp = const_cast<fielddefs*>(m_fds)->blobPushBack(NULL);
+        *pp = blobStore<WCHAR>(p, data, *m_fd, m_fds->cv(), pp);
         return;
     }
     default:

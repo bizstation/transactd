@@ -145,9 +145,14 @@ public:
     static void destroy(database* db);
     static void setCompatibleMode(int mode);
     static int compatibleMode();
-    static const int CMP_MODE_MYSQL_NULL = 1; //default
     static const int CMP_MODE_OLD_NULL =  0;
+    static const int CMP_MODE_MYSQL_NULL = 1;       //default
+    static const int CMP_MODE_BINFD_DEFAULT_STR = 2;
+    static const int CMP_MODE_OLD_ALL = 2;
+    static const int CMP_MODE_OLD_BIN = 3;
 };
+
+
 
 class overrideCompatibleMode
 {

@@ -2699,9 +2699,11 @@ unsigned int table::writeDefaultImage(unsigned char* p, size_t size)
     return len + sizeof(unsigned short);
 }
 
-unsigned int table::writeSchemaImage(unsigned char* p, size_t size)
+unsigned int table::writeSchemaImage(unsigned char* p, size_t size, bool bin_str)
 {
-    protocol::tdap::tabledef* td = schemaBuilder().getTabledef(this, 0, m_mysqlNull, p + 2, size - 2);
+    unsigned char bin_char_index = bin_str ? 0 : CHARSET_BIN;
+
+    protocol::tdap::tabledef* td = schemaBuilder(bin_char_index).getTabledef(this, 0, m_mysqlNull, p + 2, size - 2);
     unsigned short len = 0;
     if (td)
         len = td->varSize + 4;
