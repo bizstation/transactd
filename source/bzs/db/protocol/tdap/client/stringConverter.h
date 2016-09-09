@@ -553,10 +553,6 @@ void store(char* ptr, const T* data, const fielddef& fd, stringConverter* cv)
         strPtr[0] = 0x00;
     else
     {
-        // convert
-        /*if ((typeid(WCHAR) == typeid(store_type)) ||
-            (!cv->isBinary() && (typeid(T) != typeid(store_type))) ||
-            (cv->isNeedConvert() && (typeid(T) == typeid(char))))*/
         if (cv->isNeedConvert<store_type, T>())
             len = cv->convert(strPtr, maxlen, data, len);
         else
@@ -612,9 +608,6 @@ const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, const fielddef& fd,
     T* result = (T*)(ptr + offset);
     // convert
     size_t len;
-    /*if ((typeid(WCHAR) == typeid(store_type) && (typeid(T) == typeid(char))) ||
-        (!cv->isBinary() && (typeid(T) != typeid(store_type))) ||
-        (cv->isNeedConvert() && (typeid(T) == typeid(char))))*/
     if (cv->isNeedConvert<store_type, T>())
     {
         len = dataLen(fd, (const uchar_td*)ptr) / sizeof(store_type);
@@ -645,7 +638,7 @@ const T* read(char* ptr, ::bzs::rtl::stringBuffer* strBufs, const fielddef& fd,
 
 template <typename T>
 char* blobStore(char* ptr, const T* data, const fielddef& fd,
-                stringConverter* cv, char** pp)
+                stringConverter* cv)
 {
     size_t len = strlen_t(data);
     int offset = fd.len - 8;
@@ -656,8 +649,6 @@ char* blobStore(char* ptr, const T* data, const fielddef& fd,
                                                               : UINT_MAX;
     if (len != 0)
     {
-        /*if (!cv->isBinary() && (typeid(T) != typeid(char)) ||
-            (cv->isNeedConvert() && (typeid(T) == typeid(char))))*/
         if (cv->isNeedConvert<char, T>())
         {
             maxlen = std::min<size_t>(maxlen, len * 2 * sizeof(T) + 1);
@@ -675,10 +666,7 @@ char* blobStore(char* ptr, const T* data, const fielddef& fd,
     memset(ptr, 0, fd.len);
     memcpy(ptr, &len, offset);
     if (p)
-    {
-        *pp = p;
-        memcpy(ptr + offset, pp, sizeof(char*));
-    }
+        memcpy(ptr + offset, &p, sizeof(char*));
     return p;
 }
 #pragma warn -8004
@@ -694,8 +682,6 @@ const T* readBlob(char* ptr, ::bzs::rtl::stringBuffer* strBufs,
         char** pc = (char**)(ptr + offset);
         size_t olen = len * 2 + 1;
         result = strBufs->getPtr<T>(olen);
-        /*if (!cv->isBinary() && (typeid(T) != typeid(char)) ||
-            (cv->isNeedConvert() && (typeid(T) == typeid(char))))*/
         if (cv->isNeedConvert<char, T>())
             len = cv->revert(result, olen, *pc, len);
         else if (((T*)(*pc))[len] != 0x00)

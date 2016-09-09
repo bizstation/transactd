@@ -315,20 +315,11 @@ public:
 //       class fieldShare
 //------------------------------------------------------------------------------
 
-struct blobPtr
-{
-    char* p;
-    blobPtr():p(NULL){}
-    blobPtr(char* v) {p = v;}
-    ~blobPtr() { if (p) delete [] p;};
-};
-
 struct Imple
 {
     stringConverter* cv;
     bzs::rtl::stringBuffer strBufs;
-    //std::vector<boost::shared_array<char> > blobs;
-    std::vector<blobPtr > blobs;
+    std::vector<boost::shared_array<char> > blobs;
 
     Imple() : strBufs(4096)
     {
@@ -359,12 +350,9 @@ bzs::rtl::stringBuffer* fieldShare::strBufs() const
     return &m_imple->strBufs;
 }
 
-char** fieldShare::blobPushBack(char* p)
+void fieldShare::blobPushBack(char* p)
 {
-    m_imple->blobs.push_back(blobPtr(p));
-    blobPtr& bt = m_imple->blobs[m_imple->blobs.size() -1];
-    return &bt.p;
-    //m_imple->blobs.push_back(boost::shared_array<char>(p));
+    m_imple->blobs.push_back(boost::shared_array<char>(p));
 }
 
 void fieldShare::blobClear()
@@ -935,9 +923,8 @@ void field::storeValueStrA(const char* data)
     case ft_myblob:
     case ft_mytext:
     {
-        //char* tmp = blobStore<char>(p, data, *m_fd, m_fds->cv());
-        char** pp = const_cast<fielddefs*>(m_fds)->blobPushBack(NULL);
-        *pp = blobStore<char>(p, data, *m_fd, m_fds->cv(), pp);
+        char* tmp = blobStore<char>(p, data, *m_fd, m_fds->cv());
+        const_cast<fielddefs*>(m_fds)->blobPushBack(NULL);
         break;
     }
     default:
@@ -1031,11 +1018,8 @@ void field::storeValueStrW(const WCHAR* data)
     case ft_myblob:
     case ft_mytext:
     {
-        //char* tmp = blobStore<WCHAR>(p, data, *m_fd, m_fds->cv());
-        //const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
-
-        char** pp = const_cast<fielddefs*>(m_fds)->blobPushBack(NULL);
-        *pp = blobStore<WCHAR>(p, data, *m_fd, m_fds->cv(), pp);
+        char* tmp = blobStore<WCHAR>(p, data, *m_fd, m_fds->cv());
+        const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
         return;
     }
     default:
