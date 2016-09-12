@@ -345,7 +345,7 @@ short schemaBuilder::insertMetaRecord(table* mtb, table* src, int id, bool nouse
     
     tabledef* td = getTabledef(src, id, nouseNullkey, rec.get(), 65000);
     mtb->clearBuffer();
-    mtb->setRecordFromPacked(rec.get(), td->varSize + 4, NULL);
+    mtb->setRecordFromPacked(rec.get(), td->varSize + 4, NULL, NULL);
     mtb->insert(true);
     return mtb->stat();
 }

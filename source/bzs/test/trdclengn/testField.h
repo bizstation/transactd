@@ -495,6 +495,9 @@ short createTestUsers(database* db)
         fd->setNullable(true);
         fd = insertField(def, tableid, ++fieldnum, _T("name"), ft_myvarchar, 151);
         fd->setLenByCharnum(50);
+        fd = insertField(def, tableid, ++fieldnum, _T("blob"), ft_myblob, 9);
+        fd->setCharsetIndex(CHARSET_BIN);
+        fd->setNullable(true);
 
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
@@ -3455,6 +3458,37 @@ void testAlias()
             BOOST_CHECK(_tstring(tb->getFVstr(_T("name"))) != _tstring(_T("")));
             tb->findNext();
         }
+    }
+    catch (bzs::rtl::exception& e)
+    {
+        BOOST_CHECK(false);
+        _tprintf(_T("Error! %s\n"), (*getMsg(e)).c_str());
+    }
+}
+
+void testAutoincWithBlob()
+{
+    try
+    {
+        database_ptr db = createDatabaseObject();
+        openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+        table_ptr tb = openTable(db, _T("users"));
+        
+        tb->setKeyNum(0);
+        tb->clearBuffer();
+        tb->setFV(_T("blob"), "abc");
+        tb->insert();
+        BOOST_CHECK(tb->stat() == 0);
+        BOOST_CHECK(tb->getFVint(_T("id")) > 0);
+        BOOST_CHECK(strcmp(tb->getFVAstr(_T("blob")), "abc") == 0);
+
+        tb->clearBuffer();
+        tb->setFVNull(_T("blob"), true);
+        tb->insert();
+        BOOST_CHECK(tb->stat() == 0);
+        BOOST_CHECK(tb->getFVint(_T("id")) > 0);
+        BOOST_CHECK(tb->getFVNull(_T("blob")) == true);
+
     }
     catch (bzs::rtl::exception& e)
     {

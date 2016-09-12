@@ -29,6 +29,7 @@
 #include "fieldAccess.h"
 #include <bzs/db/IBlobBuffer.h>
 #include <bitset>
+#include <bzs/db/protocol/tdap/tdapRequest.h>
 
 class THD;
 struct TABLE;
@@ -830,9 +831,11 @@ public:
 
     uint keyPackCopy(uchar* ptr);
 
-    void setRecord(void* ptr, unsigned short size, int offset = 0);
+    void setRecord(void* ptr, unsigned short size, int offset = 0, 
+                             bzs::db::protocol::tdap::autoIncPackInfo* ai = NULL);
     void setRecordFromPacked(const uchar* packedPtr, uint size,
-                             const bzs::db::blobHeader* hd);
+                             const bzs::db::blobHeader* hd, 
+                             bzs::db::protocol::tdap::autoIncPackInfo* ai);
     uint recordPackCopy(char* buf, uint maxsize = 0);
 
     ushort fieldPackCopy(unsigned char* nullPtr, int& nullbit, unsigned char* dest, short fieldNum);

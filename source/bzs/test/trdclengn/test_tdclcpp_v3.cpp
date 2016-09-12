@@ -1070,6 +1070,7 @@ BOOST_AUTO_TEST_SUITE(tableAlias)
 BOOST_AUTO_TEST_CASE(tableAlias)
 {
     testAlias();
+    testAutoincWithBlob();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

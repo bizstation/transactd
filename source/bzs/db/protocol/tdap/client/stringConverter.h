@@ -683,12 +683,18 @@ const T* readBlob(char* ptr, ::bzs::rtl::stringBuffer* strBufs,
         size_t olen = len * 2 + 1;
         result = strBufs->getPtr<T>(olen);
         if (cv->isNeedConvert<char, T>())
+        {
             len = cv->revert(result, olen, *pc, len);
+            result[len] = 0x00;
+        }
         else if (((T*)(*pc))[len] != 0x00)
+        {
             memcpy(result, *pc, len);
+            result[len] = 0x00;
+        }
         else
             result = (T*)*pc;
-        result[len] = 0x00;
+        
 
     }else
     {

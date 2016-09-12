@@ -64,6 +64,7 @@ namespace client {class table;}
 #define P_MASK_PB_BOOKMARK 512  // posblk bookmark writen
 #define P_MASK_PB_ERASE_BM 1024 // posblk bookmark erase command
 #define P_MASK_PB_LOCKED   2048 // posblk row locked
+#define P_MASK_DB_AINC_VAL 4096 // databuf autoinc value, packed_pos 2, size 2 value
 
 
 #define P_MASK_ALL                                                             \
@@ -130,6 +131,16 @@ struct clientID
 #endif // NOT __x86_64__
     char_td aid[2];
     ushort_td id;
+};
+
+
+struct autoIncPackInfo
+{
+    unsigned short pos;
+    unsigned short len;
+    __int64 value;
+
+    autoIncPackInfo() : pos(0), len(0), value(0){}
 };
 
 #pragma pack(pop)

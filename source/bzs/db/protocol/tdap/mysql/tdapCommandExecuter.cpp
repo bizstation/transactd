@@ -1005,16 +1005,17 @@ inline void dbExecuter::doInsert(request& req)
         }
     }
     m_tb->clearBuffer();
+    autoIncPackInfo ai;
     m_tb->setRecordFromPacked((const uchar*)req.data, *(req.datalen),
-                              req.blobHeader);
-    __int64 aincValue = m_tb->insert(ncc);
+                              req.blobHeader, &ai);
+    ai.value = m_tb->insert(ncc);
     req.result = errorCodeSht(m_tb->stat());
     if (m_tb->stat() == 0)
     {
-        if (aincValue)
+        if (ai.value && ai.len && *req.datalen >= ai.len)
         {
-            req.paramMask = P_MASK_INS_AUTOINC;
-            req.data = m_tb->record();
+            req.paramMask = P_MASK_DB_AINC_VAL | P_MASK_POSBLK | P_MASK_KEYBUF;
+            memcpy(req.datalen, &ai, sizeof(autoIncPackInfo));
         }
         else
             req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
@@ -1037,7 +1038,7 @@ inline void dbExecuter::doUpdateKey(request& req)
             if (m_tb->stat() == 0)
             {
                 m_tb->setRecordFromPacked((const uchar*)req.data,
-                                          *(req.datalen), req.blobHeader);
+                                          *(req.datalen), req.blobHeader, NULL);
                 m_tb->update(true);
             }
         }
@@ -1056,7 +1057,7 @@ inline void dbExecuter::doUpdate(request& req)
     if (m_tb->stat() == 0)
     {
         m_tb->setRecordFromPacked((const uchar*)req.data, *(req.datalen),
-                                  req.blobHeader);
+                                  req.blobHeader, NULL);
         m_tb->update(ncc);
     }
     req.result = errorCodeSht(m_tb->stat());
@@ -1122,7 +1123,7 @@ inline void dbExecuter::doInsertBulk(request& req)
                 {
                     m_tb->clearBuffer();
                     m_tb->setRecordFromPacked(pos + sizeof(ushort_td), len,
-                                              req.blobHeader);
+                                              req.blobHeader, NULL);
                     if (i == *n - 1)
                         m_tb->insert((req.keyNum != -1));
                     else

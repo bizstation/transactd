@@ -1361,20 +1361,13 @@ void* table::record() const
   @m_recordFormatType=RF_FIXED_PLUS_VALIABLE_LEN.
     ptr is excluding null flag sgement.
  */
-void table::setRecord(void* ptr, unsigned short size, int offset)
+void table::setRecord(void* ptr, unsigned short size, int offset, 
+            bzs::db::protocol::tdap::autoIncPackInfo* ai)
 {
     m_cursor = false;
     unsigned char* p;
-    /*if (m_mysqlNull && m_table->s->null_fields)
-    {
-        p = m_table->record[0];
-        size = std::min(size, (unsigned short)recordLen());
-    }
-    else*/
-    {
-        p = (unsigned char*)record();
-        size = std::min(size, (unsigned short)recordLenCl());
-    }
+    p = (unsigned char*)record();
+    size = std::min(size, (unsigned short)recordLenCl());
 #ifdef USE_BTRV_VARIABLE_LEN
     if (offset + size <=
         (unsigned short)m_table->s->reclength + lastVarLenBytes())
@@ -1390,6 +1383,11 @@ void table::setRecord(void* ptr, unsigned short size, int offset)
     }
     else
         THROW_BZS_ERROR_WITH_CODEMSG(STATUS_INVALID_DATASIZE, "");
+    if (ai && m_table->next_number_field)
+    {
+        ai->pos = (unsigned short)(m_table->next_number_field->ptr - m_table->field[0]->ptr);
+        ai->len =  m_table->next_number_field->pack_length();
+    }
 }
 
 inline bool isNullValue(Field* fd)
@@ -1460,7 +1458,8 @@ void table::setBlobFieldPointer(const bzs::db::blobHeader* hd)
 /** A packed data set to the record buffer.
  */
 void table::setRecordFromPacked(const uchar* packedPtr, uint size,
-                                const bzs::db::blobHeader* hd)
+                                const bzs::db::blobHeader* hd, 
+                                bzs::db::protocol::tdap::autoIncPackInfo* ai)
 {
     const uchar* p = packedPtr;
     bool nullable = (m_mysqlNull && m_table->s->null_fields);
@@ -1474,10 +1473,10 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size,
                            (int)recordLenCl() - varlenStartPos);
         if (len > 0)
         {
-            setRecord(&len, varlenbyte, varlenStartPos);
+            setRecord(&len, varlenbyte, varlenStartPos, ai);
             // if (len > 0)
             setRecord((void*)(p + varlenStartPos), len,
-                      varlenStartPos + varlenbyte);
+                      varlenStartPos + varlenbyte, ai);
         }
         else if (len == 0)
             ;
@@ -1504,6 +1503,12 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size,
         for (uint i = 0; i < m_table->s->fields; ++i)
         {
             Field* fd = m_table->field[i];
+            if (ai && (fd->flags & AUTO_INCREMENT_FLAG))
+            {
+                ai->pos =  (unsigned short)(p - packedPtr);
+                ai->len =  fd->pack_length();
+            }
+
             bool isNull = false;
             if (fd->null_bit && nullable)
             {
@@ -1548,7 +1553,7 @@ void table::setRecordFromPacked(const uchar* packedPtr, uint size,
             setBlobFieldPointer(hd);
     }
     else
-        setRecord((void*)p, size);
+        setRecord((void*)p, size, 0, ai);
 }
 
 /** A record image is packed, and is copied to the specified buffer, and length
