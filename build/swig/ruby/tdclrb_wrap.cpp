@@ -10985,6 +10985,7 @@ VALUE recordToRubyArray(const fieldsBase& rec, int fetchmode, VALUE fields) {
 
 
 VALUE recordToRubyClass(const fieldsBase& rec, VALUE klass, VALUE ctorArgs, VALUE fieldIds) {
+  if (rec.isInvalidRecord()) return Qnil;
   VALUE* ctorArgsPtr = NULL;
   int ctorArgs_size = 0;
   if (ctorArgs != Qnil && (TYPE(ctorArgs) == T_ARRAY))
