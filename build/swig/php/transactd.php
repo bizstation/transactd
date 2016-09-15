@@ -2066,8 +2066,8 @@ class table extends nstable /*implements \IteratorAggregate*/{
 		table_smartUpdate($this->_cPtr);
 	}
 
-	function findAll() {
-		return table_findAll($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs);
+	function findAll($type=null) {
+		return table_findAll($this->_cPtr, $type, $this->fetchMode, $this->fetchClass,  $this->ctorArgs);
 	}
 	
 	function find($type=null) {
@@ -2205,7 +2205,22 @@ class table extends nstable /*implements \IteratorAggregate*/{
 		table_setAlias($this->_cPtr,$orign,$alias);
 		return $this;
 	}
+	
+	function insertByObj($obj) {
+		table_insertByObj($this->_cPtr,$obj);
+	}
 
+	function updateByObj($obj) {
+		table_updateByObj($this->_cPtr,$obj);
+	}
+
+	function deleteByObj($obj) {
+		table_deleteByObj($this->_cPtr,$obj);
+	}
+
+	function saveByObj($obj) {
+		table_saveByObj($this->_cPtr,$obj);
+	}
 
 	function release() {
 		table_release($this->_cPtr);
@@ -2814,12 +2829,7 @@ class database extends nsdatabase {
 	}
 
 	function open($uri,$schemaType=0,$mode=-2,$dir=null,$ownerName=null) {
-		switch (func_num_args()) {
-		case 1: case 2: case 3: $r=database_open($this->_cPtr,$uri,$schemaType,$mode); break;
-		case 4: $r=database_open($this->_cPtr,$uri,$schemaType,$mode,$dir); break;
-		default: $r=database_open($this->_cPtr,$uri,$schemaType,$mode,$dir,$ownerName);
-		}
-		return $r;
+		return database_open($this->_cPtr,$uri,$schemaType,$mode,$dir,$ownerName);
 	}
 
 	function __clone() {
@@ -2944,19 +2954,14 @@ class database extends nsdatabase {
 		$this->_cPtr=new_database();
 	}
 
-	function openTable($tableName_or_fileNum,$mode=null,$autoCreate=null,$ownerName=null,$uri=null) {
-		switch (func_num_args()) {
-		case 1: $r=database_openTable($this->_cPtr,$tableName_or_fileNum); break;
-		case 2: $r=database_openTable($this->_cPtr,$tableName_or_fileNum,$mode); break;
-		case 3: $r=database_openTable($this->_cPtr,$tableName_or_fileNum,$mode,$autoCreate); break;
-		case 4: $r=database_openTable($this->_cPtr,$tableName_or_fileNum,$mode,$autoCreate,$ownerName); break;
-		default: $r=database_openTable($this->_cPtr,$tableName_or_fileNum,$mode,$autoCreate,$ownerName,$uri);
-		}
+	function openTable($tableName_or_fileNum,$mode=0,$autoCreate=true,$ownerName=null,$uri=null) {
+		$r=database_openTable($this->_cPtr,$tableName_or_fileNum,$mode,$autoCreate,$ownerName,$uri);
 		if (!is_resource($r)) return $r;
-		switch (get_resource_type($r)) {
-		case '_p_bzs__db__protocol__tdap__client__table': return new table($r);
-		default: return new table($r);
-		}
+		return new table($r);
+		//switch (get_resource_type($r)) {
+		//case '_p_bzs__db__protocol__tdap__client__table': return new table($r);
+		//default: return new table($r);
+		//}
 	}
 }
 

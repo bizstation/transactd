@@ -11122,7 +11122,7 @@ SWIGINTERN VALUE _wrap_table_findAll(int argc, VALUE *argv, VALUE self) {
     }else
       fields = getFieldsCache(self, *rec.fieldDefs());
     arg1->find(arg2);
-    while(arg1->stat()==0)
+    while (arg1->stat() == 0 || (arg1->stat() == STATUS_NOT_FOUND_TI && arg1->fields().isInvalidRecord()))
     {
       if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS)
         rb_ary_push(vresult, recordToRubyClass(rec, fetchClass, ctorArgs, fieldIds));

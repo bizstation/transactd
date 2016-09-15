@@ -16665,6 +16665,197 @@ fail:
 }
 
 
+inline char getPrimaryKeynum(table* tb)
+{
+  if (tb->tableDef()->primaryKeyNum == -1)
+      THROW_BZS_ERROR_WITH_MSG(_T("The table has no primary key"));
+  return tb->tableDef()->primaryKeyNum;
+}
+
+void setRecordValueByObj(client::table* tb, zval_args_type& obj TSRMLS_DC)
+{
+  if (ZTYPE(obj) != IS_OBJECT)
+    THROW_BZS_ERROR_WITH_MSG(_T("Type error in argument 1 of setRecordValueByObj."));
+  client::fields& fds = tb->fields();
+  const client::fielddefs& fdd = *(fds.fieldDefs());
+  for (int i = 0; i< fds.size(); ++i)
+  {
+    zval_args_type v;
+    zval* result =   zend_read_property(Z_OBJCE_P(&obj), &obj, fdd[i].name(), strlen(fdd[i].name()), 1 , &v TSRMLS_CC);
+    setValue(&fds[i], *result, 0 TSRMLS_CC);
+  }
+}
+
+// ToDO autoincは Primarykeyと仮定してしまっている
+void updateAutoincValue(client::table* tb, zval_args_type& obj TSRMLS_DC)
+{
+  char key = getPrimaryKeynum(tb);
+  short index = tb->tableDef()->keyDefs[key].segments[0].fieldNum;
+  client::field& fd = tb->fields()[index];
+  const char* name = fd.def()->name();
+  __int64 v = fd.i64();
+
+  if ((__int64)LONG_MIN <= v && v <= (__int64)LONG_MAX)
+    zend_update_property_long(Z_OBJCE_P(&obj), &obj, name, strlen(name), v);
+  else
+    zend_update_property_double(Z_OBJCE_P(&obj), &obj, name, strlen(name), (double)v);
+}
+
+void setPrimaryKeyValue(client::table* tb, zval_args_type& obj TSRMLS_DC)
+{
+  char key = getPrimaryKeynum(tb);
+  short index = tb->tableDef()->keyDefs[key].segments[0].fieldNum;
+  client::field& fd = tb->fields()[index];
+  const char* name = fd.def()->name();
+  zval_args_type v;
+  zval* result = zend_read_property(Z_OBJCE_P(&obj), &obj, name, strlen(name), 1, &v TSRMLS_CC);
+  setValue(&fd, *result, 0 TSRMLS_CC);
+}
+
+ZEND_NAMED_FUNCTION(_wrap_table_insertByObj) {
+  client::table* tb = 0;
+  zval_args_type args[2];
+  SWIG_ResetError(TSRMLS_C);
+  if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
+  }
+  {
+    if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setAlias. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+    }
+  }
+
+  try
+  {
+    tb->clearBuffer();
+    tb->setKeyNum(getPrimaryKeynum(tb));
+    setRecordValueByObj(tb, args[1]);
+    tb->insert();
+    if (tb->stat() == 0)
+       updateAutoincValue(tb, args[1] TSRMLS_DC);
+  }
+  catch (bzs::rtl::exception& e) {
+    SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+  }
+  catch (std::exception &e) {
+    SWIG_exception(SWIG_RuntimeError, e.what());
+  }
+  return;
+fail:
+  SWIG_FAIL(TSRMLS_C);
+}
+
+//キー番号を指定可能にする
+ZEND_NAMED_FUNCTION(_wrap_table_updateByObj) {
+    client::table* tb = 0;
+    zval_args_type args[2];
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setAlias. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+        }
+    }
+
+    try
+    {
+        tb->clearBuffer();
+        tb->setKeyNum(getPrimaryKeynum(tb));
+        setRecordValueByObj(tb, args[1]);
+        tb->update(nstable::changeInKey);
+    }
+    catch (bzs::rtl::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+    }
+    catch (std::exception &e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
+}
+
+
+// キー番号を指定可能にする
+ZEND_NAMED_FUNCTION(_wrap_table_deleteByObj) {
+    client::table* tb = 0;
+    zval_args_type args[2];
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setAlias. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+        }
+    }
+
+    try
+    {
+        tb->clearBuffer();
+        tb->setKeyNum(getPrimaryKeynum(tb));
+        setPrimaryKeyValue(tb, args[1]);
+        //setRecordValueByObj(tb, args[1]);
+        tb->del(true);
+    }
+    catch (bzs::rtl::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+    }
+    catch (std::exception &e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_table_saveByObj) {
+    client::table* tb = 0;
+    zval_args_type args[2];
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setAlias. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+        }
+    }
+
+    try
+    {
+        tb->clearBuffer();
+        tb->setKeyNum(getPrimaryKeynum(tb));
+        setRecordValueByObj(tb, args[1]);
+        tb->update(nstable::changeInKey);
+        if (tb->stat() == STATUS_NOT_FOUND_TI)
+            tb->insert();
+        /*
+        setPrimaryKeyValue(tb, args[1]);
+        tb->seek();
+        short stat = tb->stat();
+        setRecordValueByObj(tb, args[1]);
+        if (stat == 0)
+            tb->update();
+        else if (stat == STATUS_NOT_FOUND_TI)
+            tb->insert();*/
+    }
+    catch (bzs::rtl::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+    }
+    catch (std::exception &e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
+
+}
+
+
 ZEND_NAMED_FUNCTION(_wrap_table_release) {
   bzs::db::protocol::tdap::client::table *arg1 = (bzs::db::protocol::tdap::client::table *) 0 ;
   zval_args_type args[1];
@@ -30716,7 +30907,9 @@ inline void addFieldValue(int type, zval* return_value, zend_ulong index, const 
         {add_property_long(return_value, name, (int)v);}
     }
     else
-    {addFieldValue(type, return_value, index, name, (double)v TSRMLS_CC);}
+    {
+        addFieldValue(type, return_value, index, name, (double)v TSRMLS_CC);
+    }
 }
 
 inline void addFieldValues(int type, const fieldsBase* r, zval *return_value TSRMLS_DC)
@@ -30810,9 +31003,22 @@ int callConstructor(zval* return_value, zend_class_entry* ce, zval* args TSRMLS_
 int copyValues(zval *return_value, int type, const fieldsBase* r, zval_args_type& className, zval* args TSRMLS_DC)
 {
     if (type & FETCH_OBJ)
-        object_init_ex(return_value, ZEND_STANDARD_CLASS_DEF_PTR);
+    {
+        if (r->isInvalidRecord())
+        {
+            ZVAL_NULL(return_value);
+            return 0;
+        }
+        else
+            object_init_ex(return_value, ZEND_STANDARD_CLASS_DEF_PTR);
+    }
     else if (type & FETCH_USR_CLASS)
     {
+        if (r->isInvalidRecord())
+        {
+            ZVAL_NULL(return_value);
+            return 0;
+        }
         zend_class_entry* ce = NULL;
         
         if (ZTYPE(className) != IS_NULL && ZTYPE(className) == IS_STRING)
@@ -31022,10 +31228,10 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_table_findAll) {
 
     table *tb = 0;
-    zval_args_type args[4];
+    zval_args_type args[5];
 
     SWIG_ResetError(TSRMLS_C);
-    if (ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    if (ZEND_NUM_ARGS() != 5 || zend_get_parameters_array_ex(5, ZVAL_ARGS_ARRAY) != SUCCESS) {
         WRONG_PARAM_COUNT;
     }
 
@@ -31035,13 +31241,15 @@ ZEND_NAMED_FUNCTION(_wrap_table_findAll) {
         }
     }
     if (!tb) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-
     CONV_to_long_ex(args[1]);
-    int type = (size_t)Z_LVAL_PP(args[1]);
+    table::eFindType ftype = (table::eFindType)Z_LVAL_PP(args[1]);
+
+    CONV_to_long_ex(args[2]);
+    int type = (size_t)Z_LVAL_PP(args[2]);
     if (type == FETCH_RECORD_INTO)
         type = FETCH_VAL_BOTH;
 
-    zval* p = (Z_TYPE_AGRS(3) == IS_ARRAY) ? ZVAL_ARGS_P(3) : NULL;
+    zval* p = (Z_TYPE_AGRS(4) == IS_ARRAY) ? ZVAL_ARGS_P(4) : NULL;
 
     int ret = 0;
     array_init(return_value);
@@ -31049,23 +31257,29 @@ ZEND_NAMED_FUNCTION(_wrap_table_findAll) {
     tb->find();
 #ifndef ZEND_ENGINE_3
     zval* zrow=NULL;
-    while(tb->stat() == 0)
+    while(tb->stat() == 0 || (tb->stat() == STATUS_NOT_FOUND_TI && tb->fields().isInvalidRecord()))
     {
         MAKE_STD_ZVAL(zrow);
-        ret = copyValues(zrow, type, &row, args[2], p TSRMLS_CC);
+        ret = copyValues(zrow, type, &row, args[3], p TSRMLS_CC);
         if (ret) break;
         add_next_index_zval(return_value, zrow);
-        tb->findNext();
+        if (ftype == table::findForword)
+            tb->findNext();
+        else
+            tb->findPrev();
     }
     //FREE_ZVAL(zrow);
 #else
     zval zrow;
-    while (tb->stat() == 0)
+    while (tb->stat() == 0 || (tb->stat() == STATUS_NOT_FOUND_TI && tb->fields().isInvalidRecord()))
     {
-        ret = copyValues(&zrow, type, &row, args[2], p);
+        ret = copyValues(&zrow, type, &row, args[3], p);
         if (ret) break;
         zend_hash_next_index_insert_new(Z_ARRVAL_P(return_value), &zrow);
-        tb->findNext();
+        if (ftype == table::findForword)
+            tb->findNext();
+        else
+            tb->findPrev();
     }
 #endif
     if (ret == FAILURE)
@@ -35059,6 +35273,7 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_findall, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_find, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
@@ -35155,6 +35370,22 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_getfvbits, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_setalias, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_insertbyobj, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_updatebyobj, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_deletebyobj, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_savebyobj, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
@@ -36734,6 +36965,10 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(table_setprepare,_wrap_table_setPrepare,swig_arginfo_table_setprepare)
  SWIG_ZEND_NAMED_FE(table_getfvbits,_wrap_table_getFVBits,swig_arginfo_table_getfvbits)
  SWIG_ZEND_NAMED_FE(table_setalias,_wrap_table_setAlias,swig_arginfo_table_setalias)
+ SWIG_ZEND_NAMED_FE(table_insertbyobj, _wrap_table_insertByObj, swig_arginfo_table_insertbyobj)
+ SWIG_ZEND_NAMED_FE(table_updatebyobj, _wrap_table_updateByObj, swig_arginfo_table_updatebyobj)
+ SWIG_ZEND_NAMED_FE(table_deletebyobj, _wrap_table_deleteByObj, swig_arginfo_table_deletebyobj)
+ SWIG_ZEND_NAMED_FE(table_savebyobj, _wrap_table_saveByObj, swig_arginfo_table_savebyobj)
  SWIG_ZEND_NAMED_FE(table_release,_wrap_table_release,swig_arginfo_table_release)
  SWIG_ZEND_NAMED_FE(querybase_clearseekkeyvalues,_wrap_queryBase_clearSeekKeyValues,swig_arginfo_querybase_clearseekkeyvalues)
  SWIG_ZEND_NAMED_FE(querybase_clearselectfields,_wrap_queryBase_clearSelectFields,swig_arginfo_querybase_clearselectfields)
