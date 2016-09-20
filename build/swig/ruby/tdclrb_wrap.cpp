@@ -2589,6 +2589,7 @@ static const VALUE g_id_field_ids = rb_intern("@field_ids");
 static const VALUE g_id_accessor_initialized = rb_intern("@_accessor_initialized");
 static const VALUE g_id_alias_map = rb_intern("alias_map");
 static const VALUE g_id_nodefine_original = rb_intern("nodefine_original");
+static const VALUE g_id_new_record = rb_intern("@new_record");
 
 static short g_nullValueMode = NULLVALUE_MODE_NORETURNNULL;
 static short g_fieldValueMode = FIELD_VALUE_MODE_OBJECT;
@@ -3104,6 +3105,9 @@ SWIGINTERN tdap::client::sum *new_bzs_sum__SWIG_0(tdap::client::fieldNames const
   }
 SWIGINTERN tdap::client::count *new_bzs_count(_TCHAR const *resultName){
     return tdap::client::count::create(resultName);
+  }
+SWIGINTERN tdap::client::count *new_bzs_count_fns(tdap::client::fieldNames const &targetNames, _TCHAR const *resultName=NULL){
+    return tdap::client::count::create(targetNames, resultName);
   }
 SWIGINTERN tdap::client::avg *new_bzs_avg__SWIG_0(tdap::client::fieldNames const &targetNames,_TCHAR const *resultName=NULL){
     return tdap::client::avg::create(targetNames, resultName);
@@ -10882,6 +10886,57 @@ VALUE getFieldValue(const tdap::client::field& f) {
 }
 
 
+void setValuesFromObject(const tdap::client::fieldsBase *rec, VALUE obj) {
+  const fielddefs* def = rec->fieldDefs();
+  for (int i = 0; i < def->size(); ++i)
+  {
+    char name[256] = "@";
+    strcat_s(name, 256, (*def)[i].name());
+    ID id = rb_intern(name);
+    if (rb_ivar_defined(obj, id))
+    {
+      VALUE v = rb_ivar_get(obj, id);
+      field_setvalue(v, (*rec)[i], 0);
+    }
+  }
+}
+
+
+void setValuesToObject(const fieldsBase& rec, VALUE obj, VALUE fieldIds) {
+  size_t size = rec.size();
+  for (size_t i = 0; i < size; ++i)
+    rb_ivar_set(obj, rb_ary_entry(fieldIds, i), getFieldValue(rec[i]));
+  rb_ivar_set(obj, g_id_new_record, Qfalse);
+}
+
+
+SWIGINTERN VALUE
+_wrap_table_save(int argc, VALUE *argv, VALUE self) {
+  tdap::client::table *tb = (tdap::client::table *) 0;
+  tdap::client::fieldsBase *rec = (tdap::client::fieldsBase *) 0;
+  VALUE fieldIds;
+  
+  if (!check_param_count(argc, 1, 1)) return Qnil;
+  tb = selfPtr(self, tb);
+  if (TYPE(argv[0]) != T_OBJECT)
+    rb_raise(rb_eArgError, "param 1, object is not specified.");
+  
+  rec = &(tb->fields());
+  setValuesFromObject(rec, argv[0]);
+  
+  tb->insert();
+  if (tb->stat() != STATUS_SUCCESS) {
+    tb->update(tdap::client::table::changeInKey);
+  }
+  if (tb->stat() != STATUS_SUCCESS)
+    return Qfalse;
+  
+  fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
+  setValuesToObject(*rec, argv[0], fieldIds);
+  return Qtrue;
+}
+
+
 static const VALUE g_id_method_defined = rb_intern("method_defined?");
 static const VALUE g_id_private_method_defined = rb_intern("private_method_defined?");
 bool hasMethod(VALUE klass, VALUE name) {
@@ -10994,9 +11049,7 @@ VALUE recordToRubyClass(const fieldsBase& rec, VALUE klass, VALUE ctorArgs, VALU
     ctorArgsPtr = RARRAY_PTR(ctorArgs);
   }  
   VALUE vresult = rb_class_new_instance(ctorArgs_size, ctorArgsPtr, klass);
-  size_t size = rec.size();
-  for (size_t i = 0; i < size; ++i)
-    rb_ivar_set(vresult, rb_ary_entry(fieldIds, i), getFieldValue(rec[i]));
+  setValuesToObject(rec, vresult, fieldIds);
   return vresult;
 }
 
@@ -19397,18 +19450,7 @@ _wrap_Record_setValue(int argc, VALUE *argv, VALUE self) {
     rb_raise(rb_eArgError, "param 1, object is not specified.");
   
   tdap::client::fieldsBase* rec = selfPtr(self, rec);
-  const fielddefs* def = rec->fieldDefs();
-  for (int i = 0; i < def->size(); ++i) 
-  {
-    char name[256] = "@";
-    strcat_s(name, 256, (*def)[i].name());
-    ID id = rb_intern(name);
-    if (rb_ivar_defined(obj, id))
-    {
-      VALUE v = rb_ivar_get(obj, id);
-      field_setvalue(v, (*rec)[i], 0);
-    }
-  }
+  setValuesFromObject(rec, obj);
   return Qnil;
 }
 
@@ -21414,27 +21456,65 @@ _wrap_count_allocate(VALUE self) {
   }
   
 
+// Count.new("alias_name")
+// Count.new(objFieldNames)
+// Count.new(objFieldNames, "alias_name")
 SWIGINTERN VALUE
 _wrap_new_count(int argc, VALUE *argv, VALUE self) {
-  _TCHAR *arg1 = (_TCHAR *) 0 ;
+  tdap::client::fieldNames *arg_fns = 0 ;
+  void *argp_fns;
+  _TCHAR *arg_str = (_TCHAR *) 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
   tdap::client::count *result = 0 ;
   
-  if (!check_param_count(argc, 1, 1)) return Qnil;
-  res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1);
+  if (!check_param_count(argc, 1, 2)) return Qnil;
+  
+  // check first argument
+  res1 = SWIG_ConvertPtr(argv[0], &argp_fns, SWIGTYPE_p_bzs__fieldNames,  0); // objFieldNames ?
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError( "", "_TCHAR const *","count", 1, argv[0] ));
-  }
-  arg1 = reinterpret_cast< _TCHAR * >(buf1);
-  {
+    // Count.new("alias_name")
+    res1 = SWIG_AsCharPtrAndSize(argv[0], &buf1, NULL, &alloc1); // "alias_name" ?
+    if (!SWIG_IsOK(res1)) {
+      SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("",
+        "tdap::client::fieldNames const & or _TCHAR const *","count", 1, argv[0]));
+    }
+    arg_str = reinterpret_cast< _TCHAR * >(buf1);
     try {
-      result = (tdap::client::count *)new_bzs_count((char const *)arg1);
+      result = (tdap::client::count *)new_bzs_count((char const *)arg_str);
       DATA_PTR(self) = result;
     } 
     CATCH_BZS_AND_STD()
+  } else {
+    if (!argp_fns) {
+      SWIG_exception_fail(SWIG_ValueError, Ruby_Format_TypeError("invalid null reference ",
+        "tdap::client::fieldNames const &","count", 1, argv[0])); 
+    }
+    arg_fns = reinterpret_cast< tdap::client::fieldNames * >(argp_fns);
+    if (argc == 2 && argv[1] != Qnil) {
+      // Count.new(objFieldNames, "alias_name")
+      res1 = SWIG_AsCharPtrAndSize(argv[1], &buf1, NULL, &alloc1); // "alias_name" ?
+      if (!SWIG_IsOK(res1)) {
+        SWIG_exception_fail(SWIG_ArgError(res1), Ruby_Format_TypeError("",
+          "_TCHAR const *","count", 2, argv[1]));
+      }
+      arg_str = reinterpret_cast< _TCHAR * >(buf1);
+      try {
+        result = (tdap::client::count *)new_bzs_count_fns((tdap::client::fieldNames const &)*arg_fns,  (char const *)arg_str);
+        DATA_PTR(self) = result;
+      } 
+      CATCH_BZS_AND_STD()
+    } else {
+      // Count.new(objFieldNames)
+      try {
+        result = (tdap::client::count *)new_bzs_count_fns((tdap::client::fieldNames const &)*arg_fns);
+        DATA_PTR(self) = result;
+      } 
+      CATCH_BZS_AND_STD()
+    }
   }
+  
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   return self;
 fail:
@@ -26382,6 +26462,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassTable.klass, "ctorArgs=", VALUEFUNC(_wrap_RecordsetOrTable_ctorArgs_set), -1);
   rb_define_method(SwigClassTable.klass, "setAlias", VALUEFUNC(_wrap_table_setAlias), -1);
   rb_define_method(SwigClassTable.klass, "defineORMapMethod", VALUEFUNC(_wrap_table_defineORMapMethod), -1);
+  rb_define_method(SwigClassTable.klass, "save", VALUEFUNC(_wrap_table_save), -1);
   SwigClassTable.mark = 0;
   SwigClassTable.destroy = (void (*)(void *)) free_bzs_table;
   SwigClassTable.trackObjects = 0;
