@@ -402,12 +402,14 @@ public:
         {
 
             m_seekMultiStat = STATUS_NOT_FOUND_TI;
+            m_tb->fields().setInvalidMemblock(0);
             memset(m_tmpPtr, 0, td->recordlen());
             return m_tmpPtr;
         }
         else
         {
             m_seekMultiStat = 0;
+            m_tb->fields().setInvalidMemblock(-1);
             if (m_filter->fieldSelected())
             {
                 int selNullbytes = m_filter->selectedNullbytes();
@@ -1294,6 +1296,7 @@ void table::setFilter(const _TCHAR* str, ushort_td RejectCount,
 void table::clearBuffer(eNullReset resetType)
 {
     m_impl->rc->reset();
+    m_impl->fields.setInvalidMemblock(-1);
     m_pdata = m_impl->dataBak;
     tabledef* td = (*m_tableDef);
     if (td->isMysqlNullMode() && td->defaultImage)
@@ -2079,12 +2082,13 @@ bool table::setSeekValueField(int row)
     // Check uniqe key
     if (kd->segments[0].flags.bit0)
         return false;
-
+    
     const uchar_td* ptr = (const uchar_td*)keyValues[row].data;
     const uchar_td* data;
     ushort_td dataSize;
     if (ptr)
     {
+        fields().setInvalidMemblock(-1);
         for (int j = 0; j < kd->segmentCount; ++j)
         {
             short filedNum = kd->segments[j].fieldNum;
@@ -2100,6 +2104,7 @@ bool table::setSeekValueField(int row)
             else
                 setFV(filedNum, _T(""));
         }
+        fields().setInvalidMemblock(0);
     }
     else
         return false;
@@ -2110,17 +2115,24 @@ void table::keyValueDescription(_TCHAR* buf, int bufsize)
 {
 
     std::_tstring s;
-    if (stat() == STATUS_NOT_FOUND_TI)
+    short st = stat() ;
+    if (st == STATUS_NOT_FOUND_TI || st == 0)
     {
-
+        bool invalid = fields().isInvalidRecord();
+        fields().setInvalidMemblock(-1);
         for (int i = 0; i < tableDef()->keyDefs[(int)keyNum()].segmentCount; i++)
         {
             short fnum = tableDef()->keyDefs[(int)keyNum()].segments[i].fieldNum;
             s += std::_tstring(tableDef()->fieldDefs[fnum].name()) + _T(" = ") +
                  getFVstr(fnum) + _T("\n");
         }
+        if (invalid)
+        {
+            fields().setInvalidMemblock(0);
+            st = STATUS_NOT_FOUND_TI;
+        }
     }
-    else if (stat() == STATUS_DUPPLICATE_KEYVALUE)
+    else if (st == STATUS_DUPPLICATE_KEYVALUE)
     {
         _TCHAR tmp[50];
         for (int j = 0; j < tableDef()->keyCount; j++)
@@ -2137,7 +2149,7 @@ void table::keyValueDescription(_TCHAR* buf, int bufsize)
     }
 
     _stprintf_s(buf, bufsize, _T("table:%s\nstat:%d\n%s"),
-                tableDef()->tableName(), stat(), s.c_str());
+                tableDef()->tableName(), st, s.c_str());
 }
 
 short table::getCurProcFieldCount() const

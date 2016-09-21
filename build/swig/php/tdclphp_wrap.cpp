@@ -16665,6 +16665,293 @@ fail:
 }
 
 
+static const int FETCH_VAL_NUM = 1;
+static const int FETCH_VAL_ASSOC = 2;
+static const int FETCH_VAL_BOTH = 3;
+static const int FETCH_OBJ = 4;
+static const int FETCH_USR_CLASS = 8;
+static const int FETCH_RECORD_INTO = 16;
+
+#ifndef ZEND_ENGINE_3
+#define FC_OBJ object_ptr
+
+int zend_fcall_info_args_ex(zend_fcall_info *fci, zend_function *func, zval *args)
+{
+    if (args)
+    {
+        HashTable* ht = Z_ARRVAL_P(args);
+        fci->param_count = 0;
+        fci->params = (zval***)safe_emalloc(sizeof(zval**), ht->nNumOfElements, 0);
+        Bucket* bk = ht->pListHead;
+        while (bk != NULL)
+        {
+            fci->params[fci->param_count++] = (zval**)bk->pData;
+            bk = bk->pListNext;
+        }
+    }
+    return 0;
+}
+
+inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v, uint_td size TSRMLS_DC)
+{
+    if (type & FETCH_VAL_ASSOC)
+    {
+        add_assoc_stringl(return_value, (char*)name, (char*)v, size, 1);
+    }
+    if (type & FETCH_VAL_NUM)
+    {
+        add_index_stringl(return_value, index, (char*)v, size, 1);
+    }
+    else if (type & FETCH_OBJ)
+    {
+        add_property_stringl(return_value, (char*)name, (char*)v, size, 1);
+    }
+}
+
+inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v TSRMLS_DC)
+{
+    if (type & FETCH_VAL_ASSOC)
+    {
+        add_assoc_string(return_value, (char*)name, (char*)v, 1);
+    }
+    if (type & FETCH_VAL_NUM)
+    {
+        add_index_string(return_value, index, (char*)v, 1);
+    }
+    else if (type & FETCH_OBJ)
+    {
+        add_property_string(return_value, (char*)name, (char*)v, 1);
+    }
+}
+
+inline zend_class_entry* cp_zend_lookup_class(zval_args_type zv TSRMLS_DC)
+{
+    zend_class_entry** cep = NULL;
+    CONV_to_string_ex(zv);
+    if (zend_lookup_class(Z_STRVAL_PP(zv), Z_STRLEN_PP(zv), &cep TSRMLS_CC) != FAILURE)
+        return *cep;
+    return NULL;
+}
+
+#else
+
+#define FC_OBJ object
+inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v)
+{
+    if (type & FETCH_VAL_ASSOC)
+    {
+        add_assoc_string(return_value, (char*)name, (char*)v);
+    }
+    if (type & FETCH_VAL_NUM)
+    {
+        add_index_string(return_value, index, (char*)v);
+    }
+    else if (type & FETCH_OBJ)
+    {
+        add_property_string(return_value, (char*)name, (char*)v);
+    }
+}
+
+inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v, uint_td size TSRMLS_DC)
+{
+    if (type & FETCH_VAL_ASSOC)
+    {
+        add_assoc_stringl(return_value, (char*)name, (char*)v, size);
+    }
+    if (type & FETCH_VAL_NUM)
+    {
+        add_index_stringl(return_value, index, (char*)v, size);
+    }
+    else if (type & FETCH_OBJ)
+    {
+        add_property_stringl(return_value, (char*)name, (char*)v, size);
+    }
+
+
+}
+
+inline zend_class_entry* cp_zend_lookup_class(zval_args_type& zv)
+{
+    return zend_lookup_class(Z_STR(zv));
+}
+
+#endif
+
+inline void addFieldValueNull(int type, zval* return_value, zend_ulong index, const char* name TSRMLS_DC)
+{
+    if (type & FETCH_VAL_ASSOC) add_assoc_null(return_value, name);
+    if (type & FETCH_VAL_NUM)
+        add_index_null(return_value, index);
+    else if (type & FETCH_OBJ)
+        add_property_null(return_value, name);
+}
+
+inline void addFieldValue(int type, zval *return_value, zend_ulong index, const char* name, double v TSRMLS_DC)
+{
+    if (type & FETCH_VAL_ASSOC)
+    {
+        add_assoc_double(return_value, name, v);
+    }
+    if (type & FETCH_VAL_NUM)
+    {
+        add_index_double(return_value, index, v);
+    }
+    else if (type & FETCH_OBJ)
+    {
+        add_property_double(return_value, name, v);
+    }
+}
+
+inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, __int64 v TSRMLS_DC)
+{
+    if ((__int64)LONG_MIN <= v && v <= (__int64)LONG_MAX)
+    {
+        if (type & FETCH_VAL_ASSOC) { add_assoc_long(return_value, name, (int)v); }
+        if (type & FETCH_VAL_NUM)
+        {
+            add_index_long(return_value, index, (int)v);
+        }
+        else if (type & FETCH_OBJ)
+        {
+            add_property_long(return_value, name, (int)v);
+        }
+    }
+    else
+    {
+        addFieldValue(type, return_value, index, name, (double)v TSRMLS_CC);
+    }
+}
+
+inline void addFieldValues(int type, const fieldsBase* r, zval *return_value TSRMLS_DC)
+{
+    for (size_t i = 0; i < r->size(); ++i)
+    {
+        field fd = (*r)[i];
+        const fielddef& fdd = (*(r->fieldDefs()))[i];
+        if (fd.isNull())
+            addFieldValueNull(type, return_value, i, fdd.name() TSRMLS_CC);
+        else
+        {
+            switch (fd.type())
+            {
+            case ft_integer:
+            case ft_uinteger:
+            case ft_autoinc:
+            case ft_autoIncUnsigned:
+            case ft_logical:
+            case ft_bit:
+                addFieldValue(type, return_value, i, fdd.name(), fd.i64() TSRMLS_CC);
+                break;
+            case ft_float:
+            case ft_decimal:
+            case ft_money:
+            case ft_numeric:
+            case ft_bfloat:
+            case ft_numericsts:
+            case ft_numericsa:
+            case ft_currency:
+                addFieldValue(type, return_value, i, fdd.name(), fd.d() TSRMLS_CC);
+                break;
+            case ft_string:
+            case ft_wstring:
+            case ft_lstring:
+            case ft_myvarbinary:
+            case ft_mywvarbinary:
+            case ft_myblob:
+                if (fdd.charsetIndex() == CHARSET_BIN)
+                {
+                    uint_td size = 0;
+                    char* p = (char*)fd.getBin(size);
+                    addFieldValue(type, return_value, i, fdd.name(), p, size TSRMLS_CC);
+                    break;
+                }
+                /* pass through */
+            default:
+                addFieldValue(type, return_value, i, fdd.name(), fd.c_str() TSRMLS_CC);
+            };
+        }
+    }
+}
+
+int callConstructor(zval* return_value, zend_class_entry* ce, zval* args TSRMLS_DC)
+{
+    zend_fcall_info fci;
+    fci.size = sizeof(zend_fcall_info);
+    zend_fcall_info_cache fcc;
+    fci.function_table = &ce->function_table;
+    zval retval;
+#ifdef ZEND_ENGINE_3
+    ZVAL_UNDEF(&fci.function_name);
+    fci.retval = &retval;
+#else
+    zval* pval = &retval;
+    INIT_PZVAL(pval);
+    fci.retval_ptr_ptr = &pval;
+#endif
+
+    fci.symbol_table = NULL;
+
+    fci.param_count = 0;
+    fci.params = NULL;
+    fci.no_separation = 1;
+    zend_fcall_info_args_ex(&fci, ce->constructor, args);
+    fcc.initialized = 1;
+    fcc.function_handler = ce->constructor;
+    fcc.calling_scope = EG(scope);
+    fcc.called_scope = ce;
+
+    fci.FC_OBJ = FCI_OBJ_P(return_value);
+    fcc.FC_OBJ = FCI_OBJ_P(return_value);
+
+    int ret = zend_call_function(&fci, &fcc TSRMLS_CC);
+#ifndef ZEND_ENGINE_3
+    zval_dtor(pval);
+#endif
+    return ret;
+}
+
+int copyValues(zval *return_value, int type, const fieldsBase* r, zval_args_type& className, zval* args TSRMLS_DC)
+{
+    if (type & FETCH_OBJ)
+    {
+        if (r->isInvalidRecord())
+        {
+            ZVAL_NULL(return_value);
+            return 0;
+        }
+        else
+            object_init_ex(return_value, ZEND_STANDARD_CLASS_DEF_PTR);
+    }
+    else if (type & FETCH_USR_CLASS)
+    {
+        if (r->isInvalidRecord())
+        {
+            ZVAL_NULL(return_value);
+            return 0;
+        }
+        zend_class_entry* ce = NULL;
+
+        if (ZTYPE(className) != IS_NULL && ZTYPE(className) == IS_STRING)
+        {
+            ce = cp_zend_lookup_class(className TSRMLS_CC);
+            type = FETCH_OBJ;
+        }
+        if (ce == NULL) return -2;
+        object_init_ex(return_value, ce);
+        if (ce->constructor)
+        {
+            if (callConstructor(return_value, ce, args TSRMLS_CC) == FAILURE)
+                return FAILURE;
+        }
+    }
+    else
+        array_init_size(return_value, r->size());
+
+    addFieldValues(type, r, return_value TSRMLS_CC);
+    return 0;
+}
+
+
 inline char getPrimaryKeynum(table* tb)
 {
   if (tb->tableDef()->primaryKeyNum == -1)
@@ -16704,12 +16991,16 @@ void updateAutoincValue(client::table* tb, zval_args_type& obj TSRMLS_DC)
 void setPrimaryKeyValue(client::table* tb, zval_args_type& obj TSRMLS_DC)
 {
   char key = getPrimaryKeynum(tb);
-  short index = tb->tableDef()->keyDefs[key].segments[0].fieldNum;
-  client::field& fd = tb->fields()[index];
-  const char* name = fd.def()->name();
-  zval_args_type v;
-  zval* result = zend_read_property(Z_OBJCE_P(&obj), &obj, name, strlen(name), 1, &v TSRMLS_CC);
-  setValue(&fd, *result, 0 TSRMLS_CC);
+  int sgments = tb->tableDef()->keyDefs[key].segmentCount;
+  for (int i = 0; i < sgments; ++i)
+  {
+      short index = tb->tableDef()->keyDefs[key].segments[i].fieldNum;
+      client::field& fd = tb->fields()[index];
+      const char* name = fd.def()->name();
+      zval_args_type v;
+      zval* result = zend_read_property(Z_OBJCE_P(&obj), &obj, name, strlen(name), 1, &v TSRMLS_CC);
+      setValue(&fd, *result, 0 TSRMLS_CC);
+  }
 }
 
 ZEND_NAMED_FUNCTION(_wrap_table_insertByObj) {
@@ -16721,7 +17012,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_insertByObj) {
   }
   {
     if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setAlias. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_insertByObj. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
     }
   }
 
@@ -16746,6 +17037,41 @@ fail:
 }
 
 //キー番号を指定可能にする
+ZEND_NAMED_FUNCTION(_wrap_table_readByObj) {
+    client::table* tb = 0;
+    zval_args_type args[2];
+    SWIG_ResetError(TSRMLS_C);
+    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_readByObj. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+        }
+    }
+
+    try
+    {
+        tb->clearBuffer();
+        tb->setKeyNum(getPrimaryKeynum(tb));
+        setPrimaryKeyValue(tb, args[1]);
+        tb->seek();
+        if (tb->stat() == 0)
+            addFieldValues(FETCH_OBJ, &tb->fields(), ZVAL_P(args[1]) TSRMLS_CC);
+    }
+    catch (bzs::rtl::exception& e) {
+        SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+    }
+    catch (std::exception &e) {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
+}
+
+
+//キー番号を指定可能にする
 ZEND_NAMED_FUNCTION(_wrap_table_updateByObj) {
     client::table* tb = 0;
     zval_args_type args[2];
@@ -16755,7 +17081,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_updateByObj) {
     }
     {
         if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setAlias. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_updateByObj. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
         }
     }
 
@@ -16788,7 +17114,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_deleteByObj) {
     }
     {
         if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setAlias. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_deleteByObj. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
         }
     }
 
@@ -16821,7 +17147,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_saveByObj) {
     }
     {
         if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&tb, SWIGTYPE_p_bzs__db__protocol__tdap__client__table, 0) < 0) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_setAlias. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of table_saveByObj. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__table");
         }
     }
 
@@ -30783,264 +31109,6 @@ fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
-static const int FETCH_VAL_NUM       = 1;
-static const int FETCH_VAL_ASSOC     = 2;
-static const int FETCH_VAL_BOTH      = 3;
-static const int FETCH_OBJ           = 4;
-static const int FETCH_USR_CLASS     = 8;
-static const int FETCH_RECORD_INTO   = 16;
-
-#ifndef ZEND_ENGINE_3
-#define FC_OBJ object_ptr
-
-int zend_fcall_info_args_ex(zend_fcall_info *fci, zend_function *func, zval *args)
-{
-    if (args) 
-    {
-        HashTable* ht = Z_ARRVAL_P(args);
-        fci->param_count = 0;
-        fci->params = (zval***)safe_emalloc(sizeof(zval**), ht->nNumOfElements, 0);
-        Bucket* bk = ht->pListHead;
-        while (bk != NULL) 
-        {
-            fci->params[fci->param_count++] = (zval**)bk->pData;
-            bk = bk->pListNext;
-        }
-    }
-    return 0;
-}
-
-inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v, uint_td size TSRMLS_DC)
-{
-    if (type & FETCH_VAL_ASSOC)
-    {add_assoc_stringl(return_value , (char*)name, (char*)v, size ,1 );}
-    if (type & FETCH_VAL_NUM)
-    {add_index_stringl(return_value, index, (char*)v, size , 1);}
-    else if (type & FETCH_OBJ)
-    {add_property_stringl(return_value, (char*)name, (char*)v, size , 1);}
-}
-
-inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v TSRMLS_DC)
-{
-    if (type & FETCH_VAL_ASSOC)
-    {add_assoc_string(return_value , (char*)name, (char*)v ,1 );}
-    if (type & FETCH_VAL_NUM)
-    {add_index_string(return_value, index, (char*)v , 1);}
-    else if (type & FETCH_OBJ)
-    {add_property_string(return_value, (char*)name, (char*)v , 1);}
-}
-
-inline zend_class_entry* cp_zend_lookup_class(zval_args_type zv TSRMLS_DC)
-{
-    zend_class_entry** cep = NULL;
-    CONV_to_string_ex(zv);
-    if (zend_lookup_class(Z_STRVAL_PP(zv), Z_STRLEN_PP(zv), &cep TSRMLS_CC) != FAILURE) 
-        return *cep;
-    return NULL;
-}
-
-#else
-
-#define FC_OBJ object
-inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v)
-{
-    if (type & FETCH_VAL_ASSOC)
-    {add_assoc_string(return_value , (char*)name, (char*)v);}
-    if (type & FETCH_VAL_NUM)
-    {add_index_string(return_value, index, (char*)v);}
-    else if (type & FETCH_OBJ)
-    {add_property_string(return_value, (char*)name, (char*)v);}
-}
-
-inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, const char* v, uint_td size TSRMLS_DC)
-{
-    if (type & FETCH_VAL_ASSOC)
-    {add_assoc_stringl(return_value , (char*)name, (char*)v, size);}
-    if (type & FETCH_VAL_NUM)
-    {add_index_stringl(return_value, index, (char*)v, size);}
-    else if (type & FETCH_OBJ)
-    {add_property_stringl(return_value, (char*)name, (char*)v, size);}
-
-
-}
-
-inline zend_class_entry* cp_zend_lookup_class(zval_args_type& zv)
-{
-    return zend_lookup_class(Z_STR(zv));
-}
-
-#endif
-
-inline void addFieldValueNull(int type, zval* return_value, zend_ulong index, const char* name TSRMLS_DC)
-{
-    if (type & FETCH_VAL_ASSOC) add_assoc_null(return_value, name);
-    if (type & FETCH_VAL_NUM)
-        add_index_null(return_value, index);
-    else if (type & FETCH_OBJ)
-        add_property_null(return_value, name);
-}
-
-inline void addFieldValue(int type, zval *return_value, zend_ulong index, const char* name, double v TSRMLS_DC)
-{
-    if (type & FETCH_VAL_ASSOC)
-    {
-        add_assoc_double(return_value, name, v);
-    }
-    if (type & FETCH_VAL_NUM)
-    {
-        add_index_double(return_value, index, v);
-    }
-    else if (type & FETCH_OBJ)
-    {
-        add_property_double(return_value, name, v);
-    }
-}
-
-inline void addFieldValue(int type, zval* return_value, zend_ulong index, const char* name, __int64 v TSRMLS_DC)
-{
-    if ((__int64)LONG_MIN <= v && v <= (__int64)LONG_MAX)
-    {
-        if (type & FETCH_VAL_ASSOC) {add_assoc_long(return_value, name, (int)v);}
-        if (type & FETCH_VAL_NUM)
-        {add_index_long(return_value, index, (int)v);}
-        else if (type & FETCH_OBJ)
-        {add_property_long(return_value, name, (int)v);}
-    }
-    else
-    {
-        addFieldValue(type, return_value, index, name, (double)v TSRMLS_CC);
-    }
-}
-
-inline void addFieldValues(int type, const fieldsBase* r, zval *return_value TSRMLS_DC)
-{
-    for (size_t i = 0; i < r->size(); ++i)
-    {
-        field fd = (*r)[i];
-        const fielddef& fdd = (*(r->fieldDefs()))[i];
-        if (fd.isNull())
-            addFieldValueNull(type, return_value, i, fdd.name() TSRMLS_CC);
-        else
-        {
-            switch (fd.type()) 
-            {
-            case ft_integer:
-            case ft_uinteger:
-            case ft_autoinc:
-            case ft_autoIncUnsigned:
-            case ft_logical:
-            case ft_bit:
-                addFieldValue(type, return_value, i, fdd.name(), fd.i64() TSRMLS_CC);
-                break;
-            case ft_float:
-            case ft_decimal:
-            case ft_money:
-            case ft_numeric:
-            case ft_bfloat:
-            case ft_numericsts:
-            case ft_numericsa:
-            case ft_currency:
-                addFieldValue(type, return_value, i, fdd.name(), fd.d() TSRMLS_CC);
-                break;
-            case ft_string:
-            case ft_wstring:
-            case ft_lstring:
-            case ft_myvarbinary:
-            case ft_mywvarbinary:
-            case ft_myblob:
-                if (fdd.charsetIndex() == CHARSET_BIN)
-                {
-                    uint_td size = 0;
-                    char* p = (char*)fd.getBin(size);
-                    addFieldValue(type, return_value, i, fdd.name(), p, size TSRMLS_CC);
-                    break;
-                }
-                /* pass through */ 
-            default:
-                addFieldValue(type, return_value, i, fdd.name(), fd.c_str() TSRMLS_CC);
-            };
-        }
-    }
-}
-
-int callConstructor(zval* return_value, zend_class_entry* ce, zval* args TSRMLS_DC)
-{
-    zend_fcall_info fci;
-    fci.size = sizeof(zend_fcall_info);
-    zend_fcall_info_cache fcc;
-    fci.function_table = &ce->function_table;
-    zval retval; 
-    #ifdef ZEND_ENGINE_3
-    ZVAL_UNDEF(&fci.function_name);
-    fci.retval = &retval;
-    #else
-    zval* pval = &retval;
-    INIT_PZVAL(pval);
-    fci.retval_ptr_ptr = &pval;
-    #endif
-
-    fci.symbol_table = NULL;
-                            
-    fci.param_count = 0;
-    fci.params = NULL;
-    fci.no_separation = 1;
-    zend_fcall_info_args_ex(&fci, ce->constructor, args);
-    fcc.initialized = 1;
-    fcc.function_handler = ce->constructor;
-    fcc.calling_scope = EG(scope);
-    fcc.called_scope = ce;
-
-    fci.FC_OBJ = FCI_OBJ_P(return_value);
-    fcc.FC_OBJ = FCI_OBJ_P(return_value);
-
-    int ret = zend_call_function(&fci, &fcc TSRMLS_CC);
-    #ifndef ZEND_ENGINE_3
-    zval_dtor(pval);
-    #endif
-    return ret;
-}
-
-int copyValues(zval *return_value, int type, const fieldsBase* r, zval_args_type& className, zval* args TSRMLS_DC)
-{
-    if (type & FETCH_OBJ)
-    {
-        if (r->isInvalidRecord())
-        {
-            ZVAL_NULL(return_value);
-            return 0;
-        }
-        else
-            object_init_ex(return_value, ZEND_STANDARD_CLASS_DEF_PTR);
-    }
-    else if (type & FETCH_USR_CLASS)
-    {
-        if (r->isInvalidRecord())
-        {
-            ZVAL_NULL(return_value);
-            return 0;
-        }
-        zend_class_entry* ce = NULL;
-        
-        if (ZTYPE(className) != IS_NULL && ZTYPE(className) == IS_STRING)
-        {
-            ce = cp_zend_lookup_class(className TSRMLS_CC);
-            type = FETCH_OBJ;
-        }
-        if (ce == NULL) return -2;
-        object_init_ex(return_value, ce);
-        if (ce->constructor)
-        {
-            if (callConstructor(return_value, ce, args TSRMLS_CC) == FAILURE)
-                return FAILURE;
-        }
-    }
-    else
-        array_init_size(return_value, r->size());
-                
-    addFieldValues(type, r, return_value TSRMLS_CC);
-    return 0;
-}
-
 
 ZEND_NAMED_FUNCTION(_wrap_Recordset_getRow) {
     recordset *arg1 = 0;
@@ -35377,6 +35445,10 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_insertbyobj, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_readbyobj, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_table_updatebyobj, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
@@ -36966,6 +37038,7 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(table_getfvbits,_wrap_table_getFVBits,swig_arginfo_table_getfvbits)
  SWIG_ZEND_NAMED_FE(table_setalias,_wrap_table_setAlias,swig_arginfo_table_setalias)
  SWIG_ZEND_NAMED_FE(table_insertbyobj, _wrap_table_insertByObj, swig_arginfo_table_insertbyobj)
+ SWIG_ZEND_NAMED_FE(table_readbyobj, _wrap_table_readByObj, swig_arginfo_table_readbyobj)
  SWIG_ZEND_NAMED_FE(table_updatebyobj, _wrap_table_updateByObj, swig_arginfo_table_updatebyobj)
  SWIG_ZEND_NAMED_FE(table_deletebyobj, _wrap_table_deleteByObj, swig_arginfo_table_deletebyobj)
  SWIG_ZEND_NAMED_FE(table_savebyobj, _wrap_table_saveByObj, swig_arginfo_table_savebyobj)
@@ -38055,6 +38128,8 @@ PHP_MSHUTDOWN_FUNCTION(transactd)
 #ifdef ZTS
     ts_free_id(transactd_globals_id);
 #endif
+    pooledDbManager dbm;
+    dbm.reset(2);
     return SUCCESS;
 }
 

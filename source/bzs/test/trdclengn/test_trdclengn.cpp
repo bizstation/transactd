@@ -491,20 +491,24 @@ void testFindIn(database* db)
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 10, "find in 10");
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in 300000 stat =" << tb->stat());
+    BOOST_CHECK(tb->fields().isInvalidRecord() == true);
+
 
     _TCHAR msg[1024];
     tb->keyValueDescription(msg, 1024);
     int comp = _tcscmp(_T("table:user\nstat:4\nid = 300000\n"), msg);
-    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription");
+    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription" );
+
 
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 50, "find in 50");
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->stat() == 4, "find in -1");
+    BOOST_CHECK(tb->fields().isInvalidRecord() == true);
 
     tb->keyValueDescription(msg, 1024);
     comp = _tcscmp(_T("table:user\nstat:4\nid = -1\n"), msg);
-    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription");
+    BOOST_CHECK_MESSAGE(comp == 0, "find in keyValueDescription" );
 
     tb->findNext();
     BOOST_CHECK_MESSAGE(tb->getFVint(fdi_id) == 80, "find in 80");

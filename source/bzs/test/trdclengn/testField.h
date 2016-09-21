@@ -3388,7 +3388,7 @@ void testConnMgr()
     {
         const connMgr::records& recs = mgr->slaveHosts();
         BOOST_CHECK(mgr->stat() == 0);
-        for (int i=0;i<recs.size();++i)
+        for (int i=0;i<(int)recs.size();++i)
         {
             _TCHAR tmp[1024];
             recs[i].value(tmp, 1024);
@@ -3546,6 +3546,60 @@ void testBinaryFieldConvert()
     //binnary ? Unicode --> Unicode,  
     ret = cv.isNeedConvert<WCHAR, WCHAR>() == false;
     BOOST_CHECK(ret);
+
+}
+
+void testTableInvalidRecord()
+{
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    table_ptr tb = openTable(db, _T("users"));
+    query q;
+    q.in(1,2,-1,3,4,50000);
+    tb->clearBuffer();
+    tb->setKeyNum(0);
+    tb->setQuery(&q);
+    tb->find();
+    int i = 0;
+    int fdi = 0;
+    while (tb->stat()==0 || tb->stat() == STATUS_NOT_FOUND_TI)
+    {
+        if (i == 2 || i == 5)
+        {
+            BOOST_CHECK(tb->fields().isInvalidRecord() == true);
+            BOOST_CHECK(tb->fields()[fdi].isNull() == true);
+        }
+        else
+        {
+            BOOST_CHECK(tb->fields().isInvalidRecord() == false);
+            BOOST_CHECK(tb->fields()[fdi].isNull() == false);
+        }
+        //printf("index %d = %s\n", i, tb->fields()[fdi].isNull() ? "NULL" : "NOT NULL");
+        tb->findNext();
+        ++i;
+    }
+    BOOST_CHECK(tb->fields().isInvalidRecord() == true);
+    tb->clearBuffer();
+    BOOST_CHECK(tb->fields().isInvalidRecord() == false);
+
+    activeTable at(db, _T("users"));
+    recordset rs;
+    at.index(0).read(rs, q);
+    BOOST_CHECK(rs.size() == 6);
+
+    for  (int i = 0; i < (int)rs.size(); ++i)
+    {
+        if (i == 2 || i == 5)
+        {
+            BOOST_CHECK(rs[i].isInvalidRecord() == true);
+            BOOST_CHECK(rs[i][fdi].isNull() == true);
+        }
+        else
+        {
+            BOOST_CHECK(rs[i].isInvalidRecord() == false);
+            BOOST_CHECK(rs[i][fdi].isNull() == false);
+        }
+    }
 
 }
 

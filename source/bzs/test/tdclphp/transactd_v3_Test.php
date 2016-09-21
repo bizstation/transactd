@@ -38,6 +38,7 @@ function getHost()
 
 class User
 {
+
     public $a = "";
     public $b = "";
     public $c = "";
@@ -1108,5 +1109,27 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($users[0]->name , "1 user");
 
     }
-
+    
+    public function test_insertObject()
+    {
+      $db = new bz\database();
+      $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+      $tb = $db->openTable("user");
+      $this->assertEquals($tb->stat() , 0);
+      $tb->setAlias("名前", "name");
+      $tb->seekFirst();
+      $this->assertEquals($tb->stat() , 0);
+      $tb->fetchMode = bz\transactd::FETCH_USR_CLASS;
+      $tb->fetchClass = "User";
+      $tb->ctorArgs = array("1","2","3");
+      $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_USR_CLASS);
+      $usr = $tb->fields();
+      $usr->id = 0;
+      $usr->name = 'test_insertObject';
+      $tb->insertByObj($usr);
+      $tb->seekLast();
+      $usr = $tb->fields();
+      $this->assertEquals($usr->name , 'test_insertObject');
+      $this->assertEquals($usr->id , 1001);
+    }
 }

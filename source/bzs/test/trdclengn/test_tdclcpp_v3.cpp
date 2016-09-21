@@ -1082,5 +1082,13 @@ BOOST_AUTO_TEST_CASE(binaryFieldConvert)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(table_in)
+BOOST_AUTO_TEST_CASE(table_in_invalid)
+{
+    testTableInvalidRecord();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
     
 // ------------------------------------------------------------------------

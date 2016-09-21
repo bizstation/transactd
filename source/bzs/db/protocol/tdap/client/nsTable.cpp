@@ -180,6 +180,11 @@ void nstable::setIsOpen(bool v)
     m_impl->isOpen = v;
 }
 
+void nstable::setMode(char_td v)
+{
+    m_impl->mode = v;
+}
+
 bool nstable::isOpen() const
 {
     return m_impl->isOpen;

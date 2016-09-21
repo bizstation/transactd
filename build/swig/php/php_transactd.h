@@ -357,6 +357,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_setPrepare);
 ZEND_NAMED_FUNCTION(_wrap_table_getFVBits);
 ZEND_NAMED_FUNCTION(_wrap_table_setAlias);
 ZEND_NAMED_FUNCTION(_wrap_table_insertByObj);
+ZEND_NAMED_FUNCTION(_wrap_table_readByObj);
 ZEND_NAMED_FUNCTION(_wrap_table_updateByObj);
 ZEND_NAMED_FUNCTION(_wrap_table_deleteByObj);
 ZEND_NAMED_FUNCTION(_wrap_table_saveByObj);

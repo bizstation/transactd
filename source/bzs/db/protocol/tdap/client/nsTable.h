@@ -99,6 +99,7 @@ protected:
     const _TCHAR* uri() const;
     const uchar_td* posblk() const;
     void setIsOpen(bool v);
+    void setMode(char_td v); //For dbdef in noschema mode.
 
     bulkInsert* bulkIns() const;
     virtual bool isUniqeKey(char_td keynum)

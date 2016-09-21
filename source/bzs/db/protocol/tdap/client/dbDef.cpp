@@ -105,7 +105,7 @@ struct dbdimple
     }
 };
 
-dbdef::dbdef(nsdatabase* pbe, short defType) : nstable(pbe)
+dbdef::dbdef(nsdatabase* pbe, short defType, short mode) : nstable(pbe)
 {
     m_dimpl = new dbdimple();
     m_dimpl->deftype = defType;
@@ -113,6 +113,7 @@ dbdef::dbdef(nsdatabase* pbe, short defType) : nstable(pbe)
     m_keybuflen = 128;
     m_keybuf = &m_dimpl->keybuf[0];
     setShared();
+    setMode(mode);
 }
 
 dbdef::~dbdef()

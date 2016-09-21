@@ -224,7 +224,7 @@ void database::create(const _TCHAR* uri, short type)
     short stat;
     if (!m_impl->dbDef)
     {
-        m_impl->dbDef = new dbdef(this, type); // Create TabelDef here.
+        m_impl->dbDef = new dbdef(this, type, 0); // Create TabelDef here.
         dbdefCreated = true;
     }
     bool isTransactd = isTransactdUri(uri);
@@ -400,7 +400,7 @@ database& database::operator=(const database& rt)
 database* database::clone()
 {
     if (!m_impl->dbDef)
-        m_impl->dbDef = new dbdef(this, TYPE_SCHEMA_BDF);
+        m_impl->dbDef = new dbdef(this, TYPE_SCHEMA_BDF, 0);
     database* p = new database();
     *p = *this;
     return p;
@@ -493,7 +493,7 @@ bool database::open(const _TCHAR* _uri, short type, short mode,
             }
         }
         if (!m_impl->dbDef)
-            m_impl->dbDef = new dbdef(this, type);
+            m_impl->dbDef = new dbdef(this, type, mode);
 
         if (m_impl->noPreloadSchema)
         {
