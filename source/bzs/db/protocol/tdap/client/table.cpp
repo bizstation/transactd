@@ -1085,6 +1085,7 @@ void table::find(eFindType type)
     {
         type = m_impl->filterPtr->direction();
         op =(type == findForword) ? TD_KEY_NEXT_MULTI : TD_KEY_PREV_MULTI;
+        m_impl->filterPtr->resetReaded();
         m_stat = 0;
     }
     else if (m_impl->filterPtr->isSeeksMode())

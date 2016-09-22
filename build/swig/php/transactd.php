@@ -974,8 +974,6 @@ class tabledef {
 	}
 
 	function __get($var) {
-		if ($var === 'keyDefs') return new keydef(tabledef_keyDefs_get($this->_cPtr));
-		if ($var === 'fieldDefs') return new fielddef(tabledef_fieldDefs_get($this->_cPtr));
 		if ($var === 'flags') return new FLAGS(tabledef_flags_get($this->_cPtr));
 		if ($var === 'parent') return new dbdef(tabledef_parent_get($this->_cPtr));
 		$func = 'tabledef_'.$var.'_get';
@@ -1429,7 +1427,7 @@ abstract class RangeIterator implements \Iterator {
 	}
 
 	public function valid() {
-		return $this->_position <= $this->_end;
+		return $this->_position <== $this->_end;
 	}
 
 	abstract public function current();
@@ -1439,7 +1437,7 @@ abstract class RangeIterator implements \Iterator {
 	}
 
 	public function next() {
-		$this->_position++;
+		++$this->_position;
 	}
 }
 
@@ -1929,9 +1927,10 @@ class dbdef {
 }
 
 
-/*class tableIterator implements \Iterator
+class tableIterator implements \Iterator
 {
     protected $_table = null;
+    protected $_pos = 0;
 
     function __construct($table)
     {
@@ -1940,7 +1939,7 @@ class dbdef {
 
     function rewind()
     {
-        $this->_table->find();
+        $this->_pos = 0;
     }
 
     function current()
@@ -1950,19 +1949,21 @@ class dbdef {
 
     function key()
     {
-        return $this->_row->key();
+        return $this->_pos;
     }
 
     function next()
     {
         $this->_table->findNext();
+        ++$this->_pos;
     }
 
     function valid()
     {
         return ($this->_table->stat() === 0);
     }
-}*/
+}
+
 
 class table extends nstable /*implements \IteratorAggregate*/{
 	public $fetchMode = transactd::FETCH_RECORD_INTO;
@@ -1971,11 +1972,10 @@ class table extends nstable /*implements \IteratorAggregate*/{
 
 	public $_cPtr=null;
 	
-/*	function getIterator()
+	public function getIterator()
     {
         return new tableIterator($this);
     }
-*/	
 
 	function __set($var,$value) {
 		if ($var === 'thisown') return swig_transactd_alter_newobject($this->_cPtr,$value);
@@ -2207,19 +2207,23 @@ class table extends nstable /*implements \IteratorAggregate*/{
 	}
 	
 	function insertByObj($obj) {
-		table_insertByObj($this->_cPtr,$obj);
+		return table_insertByObj($this->_cPtr,$obj);
+	}
+	
+	function readByObj($obj) {
+		return table_readByObj($this->_cPtr,$obj);
 	}
 
 	function updateByObj($obj) {
-		table_updateByObj($this->_cPtr,$obj);
+		return table_updateByObj($this->_cPtr,$obj);
 	}
 
 	function deleteByObj($obj) {
-		table_deleteByObj($this->_cPtr,$obj);
+		return table_deleteByObj($this->_cPtr,$obj);
 	}
 
 	function saveByObj($obj) {
-		table_saveByObj($this->_cPtr,$obj);
+		return table_saveByObj($this->_cPtr,$obj);
 	}
 
 	function release() {
@@ -2229,6 +2233,7 @@ class table extends nstable /*implements \IteratorAggregate*/{
 
 /* Added "abstract".  The querybase dose not use direct from PHP.*/
 abstract class queryBase {
+	const FULL_SCAN = 0xffff;
 	public $_cPtr=null;
 	protected $_pData=array();
 	protected $_bookmarks=array();
@@ -2667,10 +2672,10 @@ class nsdatabase {
 	}
 
 	function beginTrn($bias=null) {
-		switch (func_num_args()) {
-		case 0: nsdatabase_beginTrn($this->_cPtr); break;
-		default: nsdatabase_beginTrn($this->_cPtr,$bias);
-		}
+		if ($bias === null)
+			nsdatabase_beginTrn($this->_cPtr);
+		else 
+			nsdatabase_beginTrn($this->_cPtr,$bias);
 	}
 
 	function endTrn() {
@@ -4667,8 +4672,11 @@ class pooledDbManager {
 		return pooledDbManager_option($this->_cPtr);
 	}
 
-	function beginTrn($bias) {
-		pooledDbManager_beginTrn($this->_cPtr,$bias);
+	function beginTrn($bias=null) {
+		if ($bias === null)
+			pooledDbManager_beginTrn($this->_cPtr);
+		else 
+			pooledDbManager_beginTrn($this->_cPtr,$bias);
 	}
 
 	function endTrn() {
