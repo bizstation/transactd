@@ -1019,7 +1019,8 @@ inline void dbExecuter::doInsert(request& req)
         }
         else
             req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
-    }
+    }else
+        req.paramMask = 0;
     if (!m_tb->cursor())
         req.paramMask |= P_MASK_PB_ERASE_BM;
 }

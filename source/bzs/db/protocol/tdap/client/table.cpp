@@ -175,6 +175,7 @@ class recordCache
     unsigned int m_len;
     unsigned int m_unpackLen;
     unsigned int m_rowCount;
+    unsigned int m_invalidRows;
     uchar_td* m_bookmark;
     uchar_td* m_ptr;
     uchar_td* m_tmpPtr;
@@ -192,6 +193,7 @@ public:
     {
         m_filter = NULL;
         m_row = 0;
+        m_invalidRows = 0;
         m_rowCount = 0;
         m_ptr = NULL;
         m_len = 0;
@@ -218,7 +220,7 @@ public:
         // blob pointer is allready point to next row
         if (m_hd)
         {
-            while (row - m_hd->curRow)
+            while (row - m_invalidRows - m_hd->curRow)
             {
                 for (int j = 0; j < m_hd->fieldCount; ++j)
                     m_hd->nextField = (blobField*)m_hd->nextField->next();
@@ -400,7 +402,7 @@ public:
 
         if ((m_len == 0) && m_filter->isSeeksMode() && fieldCount)
         {
-
+            ++m_invalidRows;
             m_seekMultiStat = STATUS_NOT_FOUND_TI;
             m_tb->fields().setInvalidMemblock(0);
             memset(m_tmpPtr, 0, td->recordlen());

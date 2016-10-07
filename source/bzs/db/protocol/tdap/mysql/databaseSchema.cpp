@@ -175,7 +175,7 @@ tabledef* schemaBuilder::getTabledef(engine::mysql::table* src, int id,
     td.keyCount = (uchar_td)src->keys();
     td.charsetIndex = charsetIndex(src->charset().csname);
     td.primaryKeyNum =
-        (src->primarykeyNum() < td.keyCount) ? kc.clientKeynum(src->primarykeyNum()) : -1;
+        (src->primarykeyNum() < td.keyCount) ? kc.keyNumByMakeOrder(src->primarykeyNum()) : -1;
 #ifdef USE_BTRV_VARIABLE_LEN
     td.flags.bit0 = (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN);
     if (src->recordFormatType() & RF_FIXED_PLUS_VALIABLE_LEN)

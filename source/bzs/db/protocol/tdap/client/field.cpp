@@ -924,7 +924,7 @@ void field::storeValueStrA(const char* data)
     case ft_mytext:
     {
         char* tmp = blobStore<char>(p, data, *m_fd, m_fds->cv());
-        const_cast<fielddefs*>(m_fds)->blobPushBack(NULL);
+        const_cast<fielddefs*>(m_fds)->blobPushBack(tmp);
         break;
     }
     default:

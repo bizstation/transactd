@@ -330,6 +330,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_bookmarks);
 ZEND_NAMED_FUNCTION(_wrap_table_clearBuffer);
 ZEND_NAMED_FUNCTION(_wrap_table_getRecordHash);
 ZEND_NAMED_FUNCTION(_wrap_table_smartUpdate);
+ZEND_NAMED_FUNCTION(_wrap_table_seekKeyValue);
 ZEND_NAMED_FUNCTION(_wrap_table_findAll);
 ZEND_NAMED_FUNCTION(_wrap_table_find);
 ZEND_NAMED_FUNCTION(_wrap_table_findFirst);

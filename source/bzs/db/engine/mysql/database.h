@@ -272,15 +272,6 @@ public:
         return m_convNum = num; // If not found, a value as it is returned.
     }
 
-    char clientKeynum(char num)
-    {
-        if (num < m_keyCount)
-        {
-            if (strstr(m_key[(int)num].name, "key"))
-                return m_key[(int)num].name[3] - '0';
-        }
-        return -1;
-    }
 };
 
 class prepareHandler
@@ -360,10 +351,12 @@ class prepareHandler
         makeKeyFieldBitmap(bts, m_table->s->primary_key);
         //Compare bitmap
         uint n = (uint)m_bts.count();
-        for (uint i = 0; i < n; ++i)
+        uint i = 0;
+        while (n)
         {
             if (m_bts[i] && !bts[i])
                 return false;
+            if (m_bts[i++]) --n;
         }
         return true;
     }
@@ -382,7 +375,7 @@ class prepareHandler
                 for (uint i = 0; i < n; ++i)
                 {
                     if (m_bts[i])
-                        bitmap_set_bit(&m_table->tmp_set, 1);
+                        bitmap_set_bit(&m_table->tmp_set, i);
                 }
                 m_changed = true;
             }else

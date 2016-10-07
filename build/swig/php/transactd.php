@@ -1427,7 +1427,7 @@ abstract class RangeIterator implements \Iterator {
 	}
 
 	public function valid() {
-		return $this->_position <== $this->_end;
+		return $this->_position < $this->_end;
 	}
 
 	abstract public function current();
@@ -1526,13 +1526,12 @@ class connRecords implements \ArrayAccess, \Countable , \IteratorAggregate{
 
 	// IteratorAggregate
 	public function getIterator() {
-		return new connRecordsIterator($this->_cPtr, 0, (connRecords_size($this->_cPtr) - 1));
+		return new connRecordsIterator($this->_cPtr, 0, connRecords_size($this->_cPtr));
 	}
 
 	// ArrayAccess
 	public function offsetExists($offset) {
-		return (\gettype($offset) === "integer" &&
-			$offset >= 0 && $offset < connRecords_size($this->_cPtr));
+		return ($offset >= 0 && $offset < connRecords_size($this->_cPtr));
 	}
 
 	public function offsetGet($offset) {
@@ -2065,6 +2064,13 @@ class table extends nstable /*implements \IteratorAggregate*/{
 	function smartUpdate() {
 		table_smartUpdate($this->_cPtr);
 	}
+	
+	function seekKeyValue($kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
+		if (is_array($kv1))
+			return table_seekKeyValue($this->_cPtr, ...$kv1);
+		return table_seekKeyValue($this->_cPtr, $kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
+	}
+	
 
 	function findAll($type=null) {
 		return table_findAll($this->_cPtr, $type, $this->fetchMode, $this->fetchClass,  $this->ctorArgs);
@@ -2538,7 +2544,7 @@ class bitset implements \ArrayAccess {
 	
 	// ArrayAccess
 	public function offsetExists($offset) {
-		return \gettype($offset) !== 'integer' && $offset >= 0 && $offset < 63;
+		return $offset >= 0 && $offset < 64;
 	}
 
 	public function offsetGet($offset) {
@@ -2688,9 +2694,8 @@ class nsdatabase {
 
 	function beginSnapshot($bias=CONSISTENT_READ) {
 		$r=nsdatabase_beginSnapshot($this->_cPtr,$bias);
-		if (is_resource($r)) {
+		if (is_resource($r))
 			return new binlogPos($r);
-		}
 		return $r;
 	}
 
@@ -3178,18 +3183,16 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
 
 	// IteratorAggregate
 	public function getIterator() {
-		return new fielddefsIterator($this->_cPtr, 0, (fielddefs_size($this->_cPtr) - 1));
+		return new fielddefsIterator($this->_cPtr, 0, fielddefs_size($this->_cPtr));
 	}
 
 	// ArrayAccess
 	public function offsetExists($offset) {
-		return (\gettype($offset) === "integer" &&
-			$offset >= 0 && $offset < fielddefs_size($this->_cPtr));
+		return ($offset >= 0 && $offset < fielddefs_size($this->_cPtr));
 	}
 
 	public function offsetGet($offset) {
-		if (\gettype($offset) !== "integer" ||
-			$offset < 0 || $offset >= fielddefs_size($this->_cPtr))
+		if ($offset < 0 || $offset >= fielddefs_size($this->_cPtr))
 			throw new \OutOfRangeException();
 		$r = fielddefs_getFielddef($this->_cPtr,$offset);
 		if (is_resource($r))
@@ -3213,13 +3216,9 @@ class fielddefs implements \ArrayAccess, \Countable, \IteratorAggregate {
 	// RangeIterator
 	function range($start = null, $end = null) {
 		$count = fielddefs_size($this->_cPtr);
-		if (\gettype($start) !== 'integer' || $start < 0) {
-			$start = 0;
-		}
-		if (\gettype($end) !== 'integer' || $end < 0 || $end >= $count) {
-			$end = $count - 1;
-		}
-		return new fielddefsIterator($this->_cPtr, $start, $end);
+		if ($start < 0) $start = 0;
+		if ($end < 0 || $end > $count) $end = $count;
+		return new fielddefsIterator($this->_cPtr, (int)$start, (int)$end);
 	}
 
 	function __set($var,$value) {
@@ -3489,8 +3488,7 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 	}
 
 	function keys() {
-		$count = Record_size($this->_cPtr);
-		return new fielddefsIterator($this->_fielddefs, 0, $count -1);
+		return new fielddefsIterator($this->_fielddefs, 0, Record_size($this->_cPtr));
 	}
 
 	function values() {
@@ -4296,19 +4294,15 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 
 	// IteratorAggregate
 	public function getIterator() {
-		return new RecordsetIterator($this, 0, Recordset_count($this->_cPtr) - 1);
+		return new RecordsetIterator($this, 0, Recordset_count($this->_cPtr));
 	}
 	
 	//RangeIterator
 	function range($start = null, $end = null) {
 		$count = Recordset_count($this->_cPtr);
-		if (\gettype($start) !== 'integer' || $start < 0) {
-			$start = 0;
-		}
-		if (\gettype($end) !== 'integer' || $end < 0 || $end >= $count) {
-			$end = $count - 1;
-		}
-		return new RecordsetIterator($this, $start, $end);
+		if ($start < 0) $start = 0;
+		if ($end < 0 || $end > $count) $end = $count;
+		return new RecordsetIterator($this, (int)$start, (int)$end);
 	}
 
 	// ArrayAccess
@@ -4676,7 +4670,7 @@ class pooledDbManager {
 		if ($bias === null)
 			pooledDbManager_beginTrn($this->_cPtr);
 		else 
-			pooledDbManager_beginTrn($this->_cPtr,$bias);
+			pooledDbManager_beginTrn($this->_cPtr, $bias);
 	}
 
 	function endTrn() {
