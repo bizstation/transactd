@@ -1412,12 +1412,19 @@ bool table::onUpdateCheck(eUpdateType type)
         {
             if (isUseTransactd() == false)
             {
+                __int64 v = updateConflictCheck() ? getUpdateStampValue() : 0;
                 // backup update data
                 smartUpdate();
                 seek();
                 m_impl->smartUpDateFlag = false;
                 if (m_stat)
                     return false;
+                
+                if (v && v != getUpdateStampValue())
+                {
+                    m_stat = STATUS_CHANGE_CONFLICT;
+                    return false;
+                }
                 memcpy(m_pdata, m_impl->smartUpDate, m_datalen);
             }
         }
@@ -1456,6 +1463,27 @@ bool table::onDeleteCheck(bool inkey)
         }
     }
     return true;
+}
+
+bool table::getUpdateStampEnable() const 
+{
+    return (tableDef()->m_utimeFieldNum != 0xffff);
+}
+
+__int64 table::getUpdateStampValue() const
+{
+    const tabledef* td = tableDef();
+    if (td->m_utimeFieldNum != 0xffff)
+    {
+        void* p = fieldPtr(td->m_utimeFieldNum);
+        __int64 v = 0;
+        memcpy(&v, p, td->fieldDefs[td->m_utimeFieldNum].len);
+        return v;
+    }else
+        m_stat = STATUS_INVARID_FIELD_IDX;
+        /*else if(isUseTransactd() == false)
+        return getRecordHash();*/
+    return 0;
 }
 
 ushort_td table::doCommitBulkInsert(bool autoCommit)
@@ -2034,7 +2062,7 @@ bool table::checkIndex(short index) const
     return true;
 }
 
-unsigned int table::getRecordHash()
+unsigned int table::getRecordHash() const
 {
     return hash((const char*)fieldPtr(0), datalen());
 }

@@ -113,7 +113,7 @@ dbdef::dbdef(nsdatabase* pbe, short defType, short mode) : nstable(pbe)
     m_keybuflen = 128;
     m_keybuf = &m_dimpl->keybuf[0];
     setShared();
-    setMode(mode);
+    setMode((char_td)mode);
 }
 
 dbdef::~dbdef()

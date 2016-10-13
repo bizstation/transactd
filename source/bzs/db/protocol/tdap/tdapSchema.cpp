@@ -651,7 +651,7 @@ bool isCompatibleType(uchar_td l, uchar_td r, ushort_td rlen, uchar_td rchar)
 }
 
 short fielddef::synchronize(const fielddef* fd)
-{
+{   // this is server. fd is current
     viewNum = fd->viewNum;
     viewWidth = fd->viewWidth;
     max = fd->max;
@@ -669,15 +669,16 @@ short fielddef::synchronize(const fielddef* fd)
     lookDBNum = fd->lookDBNum;
     uchar_td nullable = m_options & FIELD_OPTION_NULLABLE;
     m_options = fd->m_options;
+    m_options &= ~FIELD_OPTION_NULLABLE;
     m_options |= nullable;
     bool defaultNull = enableFlags.bitF;
-    enableFlags = fd->enableFlags;
+    enableFlags.all = fd->enableFlags.all;
     enableFlags.bitF = defaultNull;
     if (type == ft_mychar || type == ft_string || type == ft_mywchar || type == ft_wstring)
         m_padCharOptions = fd->m_padCharOptions;
     if (fd->type == ft_myfixedbinary && len - 2 == fd->len)
     {
-        len = fd->len ;
+        len = fd->len;
         type = fd->type;
     }
     if (len == fd->len && isCompatibleType(type, fd->type, fd->len, fd->m_charsetIndex))
@@ -784,6 +785,7 @@ bool tabledef::operator==(const tabledef& r) const
             (keyCount == r.keyCount) &&
             (version == r.version) &&
             (charsetIndex == r.charsetIndex) &&
+            (m_utimeFieldNum == r.m_utimeFieldNum) &&
             (flags.all == r.flags.all) &&
             (primaryKeyNum == r.primaryKeyNum) &&
             (parentKeyNum == r.parentKeyNum) &&
@@ -917,6 +919,9 @@ void tabledef::calcReclordlen(bool force)
                 fd.decimals = (fd.len - 3) * 2;
             else if (defaultValue && fd.isBlob())
                 fd.setDefaultValue(0.0f);
+
+            if (m_utimeFieldNum == 0xffff && fd.isTimeStampOnUpdate())
+                m_utimeFieldNum = i;
 
             if (m_srvMajorVer)
             {
@@ -1107,6 +1112,7 @@ short tabledef::synchronize(const tabledef* td)
     version = td->version;
     m_inUse = td->m_inUse;
     m_mysqlNullMode = td->m_mysqlNullMode;
+    m_utimeFieldNum = td->m_utimeFieldNum;
     parentKeyNum = td->parentKeyNum;
     replicaKeyNum = td->replicaKeyNum;
     optionFlags = td->optionFlags;

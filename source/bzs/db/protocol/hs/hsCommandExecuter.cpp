@@ -140,16 +140,16 @@ void writeStatus(int stat, resultBuffer& buf, int option)
 
 int update(request& req, engine::mysql::table* tb, int type)
 {
-    tb->beginUpdate(tb->keyNum());
+    tb->beginUpdate(tb->keyNum(), false);
     tb->setUseValues(req.table.values, type);
-    tb->update(true);
+    tb->update(true, 0);
     return tb->stat();
 }
 
 int del(request& req, engine::mysql::table* tb, int type)
 {
-    tb->beginDel();
-    tb->del();
+    tb->beginDel(false);
+    tb->del(0);
     return tb->stat();
 }
 

@@ -499,6 +499,10 @@ short createTestUsers(database* db)
         fd->setCharsetIndex(CHARSET_BIN);
         fd->setNullable(true);
 
+        fd = insertField(def, tableid, ++fieldnum, _T("utime"), ft_mytimestamp, 7);
+        fd->setDefaultValue(DFV_TIMESTAMP_DEFAULT);
+        fd->setTimeStampOnUpdate(true);
+
         keydef* kd = insertKey(def, tableid, 0);
         kd->segments[0].fieldNum = 0;
         kd->segments[0].flags.kf_extend = 1;
@@ -3601,6 +3605,317 @@ void testTableInvalidRecord()
         }
     }
 
+}
+
+void test_UTCC()
+{
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    table_ptr tb = openTable(db, _T("users"));
+    table_ptr tb2 = openTable(db, _T("users"));
+    // test in changeCurrentCc or changeCurrentNcc
+		
+    db->beginTrn();
+    tb->seekFirst();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->seekFirst();
+    //Sleep(1000);
+    BOOST_CHECK(tb2->stat() == 0);
+    tb->setFV(_T("name"), _T("John"));
+    tb->update();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->setFV(_T("name"), _T("mike"));
+    tb2->setUpdateConflictCheck(true);
+    tb2->update(nstable::changeCurrentCc);
+    BOOST_CHECK(tb2->stat() == STATUS_CHANGE_CONFLICT);
+    db->abortTrn();
+
+    db->beginTrn();
+    tb->seekFirst();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->seekFirst();
+    BOOST_CHECK(tb2->stat() == 0);
+    tb->setFV(_T("name"), _T("John"));
+    tb->update();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->setFV(_T("name"), _T("mike"));
+	tb2->setUpdateConflictCheck(false);	
+    tb2->update(nstable::changeCurrentCc);
+    BOOST_CHECK(tb2->stat() == 0);
+    db->abortTrn();
+		
+    db->beginTrn();
+    tb->seekFirst();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->seekFirst();
+    //Sleep(1000);
+    BOOST_CHECK(tb2->stat() == 0);
+    tb->setFV(_T("name"), _T("John"));
+    tb->update();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->setFV(_T("name"), _T("mike"));
+    // test in changeInKey
+    tb2->setUpdateConflictCheck(true);
+    tb2->update(nstable::changeInKey);
+    BOOST_CHECK(tb2->stat() == STATUS_CHANGE_CONFLICT);
+    db->abortTrn();
+
+    db->beginTrn();
+    tb->seekFirst();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->seekFirst();
+    BOOST_CHECK(tb2->stat() == 0);
+    tb->setFV(_T("name"), _T("John"));
+    tb->update();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->setFV(_T("name"), _T("mike"));
+	tb2->setUpdateConflictCheck(false);	
+    tb2->update(nstable::changeInKey);
+    BOOST_CHECK(tb2->stat() == 0);
+    db->abortTrn();
+}
+
+void test_UTCC_delete()
+{
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    table_ptr tb = openTable(db, _T("users"));
+    table_ptr tb2 = openTable(db, _T("users"));
+    // test in changeCurrentCc or changeCurrentNcc
+		
+    db->beginTrn();
+    tb->seekFirst();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->seekFirst();
+    //Sleep(1000);
+    BOOST_CHECK(tb2->stat() == 0);
+    tb->setFV(_T("name"), _T("John"));
+    tb->update();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->setUpdateConflictCheck(true);
+    tb2->del(false);
+    BOOST_CHECK(tb2->stat() == STATUS_CHANGE_CONFLICT);
+    db->abortTrn();
+
+    db->beginTrn();
+    tb->seekFirst();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->seekFirst();
+    BOOST_CHECK(tb2->stat() == 0);
+    tb->setFV(_T("name"), _T("John"));
+    tb->update();
+    BOOST_CHECK(tb->stat() == 0);
+	tb2->setUpdateConflictCheck(false);	
+    tb2->del(false);
+    BOOST_CHECK(tb2->stat() == 0);
+    db->abortTrn();
+		
+    db->beginTrn();
+    tb->seekFirst();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->seekFirst();
+    //Sleep(1000);
+    BOOST_CHECK(tb2->stat() == 0);
+    tb->setFV(_T("name"), _T("John"));
+    tb->update();
+    BOOST_CHECK(tb->stat() == 0);
+    // test in changeInKey
+    tb2->setUpdateConflictCheck(true);	
+    tb2->del(true);
+    BOOST_CHECK(tb2->stat() == STATUS_CHANGE_CONFLICT);
+    db->abortTrn();
+
+    db->beginTrn();
+    tb->seekFirst();
+    BOOST_CHECK(tb->stat() == 0);
+    tb2->seekFirst();
+    BOOST_CHECK(tb2->stat() == 0);
+    tb->setFV(_T("name"), _T("John"));
+    tb->update();
+    BOOST_CHECK(tb->stat() == 0);
+	tb2->setUpdateConflictCheck(false);		
+    tb2->del(true);
+    BOOST_CHECK(tb2->stat() == 0);
+    db->abortTrn();
+}
+
+
+void test_UTCC_wt()
+{
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    activeTable at(db, _T("users"));
+    activeTable at2(db, _T("users"));
+    writableRecord& wr = at.getWritableRecord();
+    writableRecord& wr2 = at2.getWritableRecord();
+		
+    db->beginTrn();
+    wr[_T("id")] = 1;
+    bool ret = wr.read();
+    BOOST_CHECK(ret);
+    wr2[_T("id")] = 1;
+    bool ret2 = wr2.read();
+    BOOST_CHECK(ret2);
+    wr[_T("name")] = _T("John");
+    wr.update();
+
+    wr2[_T("name")] = _T("mike");
+    at2.table()->setUpdateConflictCheck(true);
+    try
+    {
+        wr2.update(true, true);
+        BOOST_CHECK(false);
+    }
+    catch(bzs::rtl::exception& e)
+    {
+        BOOST_CHECK(*bzs::rtl::getCode(e) == STATUS_CHANGE_CONFLICT);
+    }
+    try
+    {
+        wr2.update();
+        BOOST_CHECK(false);
+    }
+    catch(bzs::rtl::exception& e)
+    {
+        BOOST_CHECK(*bzs::rtl::getCode(e) == STATUS_CHANGE_CONFLICT);
+    }
+    db->abortTrn();
+
+    db->beginTrn();
+    wr[_T("id")] = 1;
+    ret = wr.read();
+    BOOST_CHECK(ret);
+    wr2[_T("id")] = 1;
+    ret2 = wr2.read();
+    BOOST_CHECK(ret2);
+    wr[_T("name")] = _T("John");
+    wr.update();
+
+    wr2[_T("name")] = _T("mike");
+    at2.table()->setUpdateConflictCheck(false);
+    try
+    {
+        wr2.update();
+        BOOST_CHECK(true);
+    }
+    catch(bzs::rtl::exception& e)
+    {
+        BOOST_CHECK(*bzs::rtl::getCode(e) == STATUS_CHANGE_CONFLICT);
+    }
+    db->abortTrn();
+		
+    
+}
+
+void test_UTCC_wt_save()
+{
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    activeTable at(db, _T("users"));
+    activeTable at2(db, _T("users"));
+    writableRecord& wr = at.getWritableRecord();
+    writableRecord& wr2 = at2.getWritableRecord();
+		
+    db->beginTrn();
+    wr[_T("id")] = 1;
+    bool ret = wr.read();
+    BOOST_CHECK(ret);
+    wr2[_T("id")] = 1;
+    bool ret2 = wr2.read();
+    BOOST_CHECK(ret2);
+    wr[_T("name")] = _T("John");
+    wr.save();
+
+    wr2[_T("name")] = _T("mike");
+    at2.table()->setUpdateConflictCheck(true);
+    try
+    {
+        wr2.save();
+        BOOST_CHECK(false);
+    }
+    catch(bzs::rtl::exception& e)
+    {
+        BOOST_CHECK(*bzs::rtl::getCode(e) == STATUS_CHANGE_CONFLICT);
+    }
+    
+    db->abortTrn();
+
+    db->beginTrn();
+    wr[_T("id")] = 1;
+    ret = wr.read();
+    BOOST_CHECK(ret);
+    wr2[_T("id")] = 1;
+    ret2 = wr2.read();
+    BOOST_CHECK(ret2);
+    wr[_T("name")] = _T("John");
+    wr.save();
+
+    wr2[_T("name")] = _T("mike");
+    at2.table()->setUpdateConflictCheck(false);
+    try
+    {
+        wr2.save();
+        BOOST_CHECK(true);
+    }
+    catch(bzs::rtl::exception& e)
+    {
+        BOOST_CHECK(*bzs::rtl::getCode(e) == STATUS_CHANGE_CONFLICT);
+    }
+    db->abortTrn();
+		
+    
+}
+
+void test_UTCC_wt_delete()
+{
+    database_ptr db = createDatabaseObject();
+    openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    activeTable at(db, _T("users"));
+    activeTable at2(db, _T("users"));
+    writableRecord& wr = at.getWritableRecord();
+    writableRecord& wr2 = at2.getWritableRecord();
+ 		
+    db->beginTrn();
+    wr[_T("id")] = 1;
+    bool ret = wr.read();
+    BOOST_CHECK(ret);
+    wr2[_T("id")] = 1;
+    bool ret2 = wr2.read();
+    BOOST_CHECK(ret2);
+    wr[_T("name")] = _T("John");
+    wr.update();
+    at2.table()->setUpdateConflictCheck(true);
+    try
+    {
+        wr2.del();
+        BOOST_CHECK(false);
+    }
+    catch(bzs::rtl::exception& e)
+    {
+        BOOST_CHECK(*bzs::rtl::getCode(e) == STATUS_CHANGE_CONFLICT);
+    }
+    db->abortTrn();
+
+    db->beginTrn();
+    wr[_T("id")] = 1;
+    ret = wr.read();
+    BOOST_CHECK(ret);
+    wr2[_T("id")] = 1;
+    ret2 = wr2.read();
+    BOOST_CHECK(ret2);
+    wr[_T("name")] = _T("John");
+    wr.update();
+    at2.table()->setUpdateConflictCheck(false);
+    try
+    {
+        wr2.del();
+        BOOST_CHECK(true);
+    }
+    catch(bzs::rtl::exception& e)
+    {
+        BOOST_CHECK(*bzs::rtl::getCode(e) == STATUS_CHANGE_CONFLICT);
+    }
+    db->abortTrn();
 }
 
 #pragma warning(default : 4996) 

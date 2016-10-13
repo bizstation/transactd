@@ -540,6 +540,7 @@ class table : private boost::noncopyable
     IblobBuffer* m_blobBuffer;
     std::vector<Field*> m_noNullModeNullFieldList;
     std::vector<Field*> m_timeStampFields;
+    Field* m_updateAtField;
     unsigned int m_readCount;
     unsigned int m_updCount;
     unsigned int m_delCount;
@@ -810,27 +811,24 @@ public:
     inline void clearKeybuf() { memset(&m_keybuf[0], 0x00, MAX_KEYLEN); }
 
     __int64 insert(bool ncc);
-    void update(bool ncc);
-    void updateDirectkey();
-    void beginUpdate(char keyNum);
-    void del();
-    void beginDel();
-
+    double beginDel(int confrictCheck);
+    double beginUpdate(char keyNum, int confrictCheck);//return value of update_at 
+    void update(bool ncc, double updateAtBefore);
+    void del(double updateAtBefore);
+    void setUpdateTimeValue(void* data);    
     int keynumByName(const char* name) const;
 
     inline int stat() { return m_stat; }
+
     short setKeyValuesPacked(const uchar* ptr, int size);
     void* record() const;
-
     uint keyPackCopy(uchar* ptr);
-
     void setRecord(void* ptr, unsigned short size, int offset = 0, 
                              bzs::db::protocol::tdap::autoIncPackInfo* ai = NULL);
     void setRecordFromPacked(const uchar* packedPtr, uint size,
                              const bzs::db::blobHeader* hd, 
                              bzs::db::protocol::tdap::autoIncPackInfo* ai);
     uint recordPackCopy(char* buf, uint maxsize = 0);
-
     ushort fieldPackCopy(unsigned char* nullPtr, int& nullbit, unsigned char* dest, short fieldNum);
 
     inline uint fieldSizeByte(int fieldNum)

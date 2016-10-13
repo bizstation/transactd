@@ -1090,5 +1090,18 @@ BOOST_AUTO_TEST_CASE(table_in_invalid)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(table_utcc)
+BOOST_AUTO_TEST_CASE(table_utcc1)
+{
+    test_UTCC();
+    test_UTCC_delete();
+    test_UTCC_wt();
+    test_UTCC_wt_save();
+    test_UTCC_wt_delete();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+    
     
 // ------------------------------------------------------------------------

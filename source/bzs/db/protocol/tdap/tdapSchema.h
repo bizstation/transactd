@@ -1069,6 +1069,7 @@ struct PACKAGE tabledef
     {
         memset(this, 0, sizeof(tabledef));
         formatVersion = FORMAT_VERSON_CURRENT;
+        m_utimeFieldNum = -1;
         primaryKeyNum = -1;
         parentKeyNum = -1;
         replicaKeyNum = -1;
@@ -1229,7 +1230,8 @@ private:
     bool m_useInMariadb  ;    // use in mariadb
     uchar_td m_srvMajorVer;   // server major version;
     uchar_td m_srvMinorVer;   // server minor version;
-    uchar_td m_filler0[10];   // reserved
+    ushort_td m_utimeFieldNum; // uodate timestamp field number
+    uchar_td m_filler0[8];    // reserved
 public:
     FLAGS flags; // file flags
     uchar_td primaryKeyNum; // Primary key number. -1 is no primary.

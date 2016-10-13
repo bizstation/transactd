@@ -1025,8 +1025,9 @@ inline void dbExecuter::doInsert(request& req)
         req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
-inline void dbExecuter::doUpdateKey(request& req)
+inline void dbExecuter::doUpdateKey(request& req, bool confrictCheck)
 {
+
     m_tb = getTable(req.pbk->handle, SQLCOM_UPDATE);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
     if (m_tb->setKeyNum(keynum))
@@ -1035,12 +1036,12 @@ inline void dbExecuter::doUpdateKey(request& req)
         m_tb->seekKey(HA_READ_KEY_EXACT, m_tb->keymap());
         if (m_tb->stat() == 0)
         {
-            m_tb->beginUpdate(keynum);
+            double updateAtBefore = m_tb->beginUpdate(keynum, confrictCheck ? 2 : 0);
             if (m_tb->stat() == 0)
             {
                 m_tb->setRecordFromPacked((const uchar*)req.data,
                                           *(req.datalen), req.blobHeader, NULL);
-                m_tb->update(true);
+                m_tb->update(true, updateAtBefore);
             }
         }
     }
@@ -1050,16 +1051,17 @@ inline void dbExecuter::doUpdateKey(request& req)
         req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
-inline void dbExecuter::doUpdate(request& req)
+inline void dbExecuter::doUpdate(request& req, bool confrictCheck)
 {
+    
     m_tb = getTable(req.pbk->handle, SQLCOM_UPDATE);
     bool ncc = (req.keyNum == -1);
-    m_tb->beginUpdate(req.keyNum);
+    double updateAtBefore = m_tb->beginUpdate(req.keyNum, confrictCheck ? 1 : 0);
     if (m_tb->stat() == 0)
     {
         m_tb->setRecordFromPacked((const uchar*)req.data, *(req.datalen),
                                   req.blobHeader, NULL);
-        m_tb->update(ncc);
+        m_tb->update(ncc, updateAtBefore);
     }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
@@ -1067,7 +1069,7 @@ inline void dbExecuter::doUpdate(request& req)
         req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
-inline void dbExecuter::doDeleteKey(request& req)
+inline void dbExecuter::doDeleteKey(request& req, bool confrictCheck)
 {
     m_tb = getTable(req.pbk->handle, SQLCOM_DELETE);
     char keynum = m_tb->keyNumByMakeOrder(req.keyNum);
@@ -1077,9 +1079,13 @@ inline void dbExecuter::doDeleteKey(request& req)
         m_tb->seekKey(HA_READ_KEY_EXACT, m_tb->keymap());
         if (m_tb->stat() == 0)
         {
-            m_tb->beginDel();
+            double updateAtBefore = m_tb->beginDel(confrictCheck ? 2 : 0);
             if (m_tb->stat() == 0)
-                m_tb->del();
+            {
+                if (confrictCheck)
+                    m_tb->setUpdateTimeValue(req.data);    
+                m_tb->del(updateAtBefore);
+            }
         }
     }
     req.result = errorCodeSht(m_tb->stat());
@@ -1088,12 +1094,16 @@ inline void dbExecuter::doDeleteKey(request& req)
         req.paramMask |= P_MASK_PB_ERASE_BM;
 }
 
-inline void dbExecuter::doDelete(request& req)
+inline void dbExecuter::doDelete(request& req, bool confrictCheck)
 {
     m_tb = getTable(req.pbk->handle, SQLCOM_DELETE);
-    m_tb->beginDel();
+    double updateAtBefore = m_tb->beginDel(confrictCheck ? 1 : 0);
     if (m_tb->stat() == 0)
-        m_tb->del();
+    {
+        if (confrictCheck)
+            m_tb->setUpdateTimeValue(req.data);    
+        m_tb->del(updateAtBefore);
+    }
     req.result = errorCodeSht(m_tb->stat());
     req.paramMask = P_MASK_POSBLK;
     if (!m_tb->cursor())
@@ -1349,16 +1359,16 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
             doInsert(req);
             break;
         case TD_REC_UPDATEATKEY:
-            doUpdateKey(req);
+            doUpdateKey(req, opTrn > 100);
             break;
         case TD_REC_UPDATE:
-            doUpdate(req);
+            doUpdate(req, opTrn > 100);
             break;
         case TD_REC_DELLETEATKEY:
-            doDeleteKey(req);
+            doDeleteKey(req, opTrn > 100);
             break;
         case TD_REC_DELETE:
-            doDelete(req);
+            doDelete(req, opTrn > 100);
             break;
         case TD_BEGIN_TRANSACTION:
         {
@@ -1703,7 +1713,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
         {   
             m_tb = getTable(req.pbk->handle, SQLCOM_UPDATE);
             bool ncc = (req.keyNum == -1);
-            m_tb->beginUpdate(req.keyNum);
+            double v = m_tb->beginUpdate(req.keyNum, opTrn > 100);
             if (m_tb->stat() == 0)
             {
                 std::vector<std::string> ss;
@@ -1713,7 +1723,7 @@ int dbExecuter::commandExec(request& req, netsvc::server::netWriter* nw)
                 {
                     for (int i = 0; i < (int)ss.size() ; i+=2)
                         m_tb->setValue((short)atol(ss[i].c_str()), ss[i + 1], 0);
-                    m_tb->update(ncc);
+                    m_tb->update(ncc, v);
                     req.result = errorCodeSht(m_tb->stat());
                     req.paramMask = P_MASK_POSBLK | P_MASK_KEYBUF;
                     if (!m_tb->cursor())

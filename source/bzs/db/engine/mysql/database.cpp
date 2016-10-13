@@ -1058,7 +1058,7 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
     : m_table(myTable), m_name(name), m_mode(mode), m_id(id), m_db(db),
       m_keybuf(new unsigned char[MAX_KEYLEN]),
       m_stat(0),
-      m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL), 
+      m_keyconv(m_table->key_info, m_table->s->keys), m_blobBuffer(NULL),m_updateAtField(NULL), 
       m_readCount(0), m_updCount(0), m_delCount(0), m_insCount(0), m_privilege(0xFFFF),
       m_nonNcc(false), m_validCursor(true), m_cursor(false), 
       m_locked(false), m_changed(false), m_nounlock(false), m_bulkInserting(false),
@@ -1110,6 +1110,10 @@ table::table(TABLE* myTable, database& db, const std::string& name, short mode,
                 fd->unireg_check == Field::TIMESTAMP_DNUN_FIELD ||
                 fd->unireg_check == Field::TIMESTAMP_DN_FIELD)
             m_timeStampFields.push_back(fd);
+        if (m_updateAtField == NULL && 
+                (fd->unireg_check == Field::TIMESTAMP_UN_FIELD ||
+                 fd->unireg_check == Field::TIMESTAMP_DNUN_FIELD))
+            m_updateAtField = fd;
     }
     m_nullBytesCl = (nullbits + 7) / 8; 
 
@@ -2131,10 +2135,12 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
             case READ_RECORD_STEPNEXT:
                 m_stat = m_table->file->ha_rnd_next(m_table->record[0]);break;
             default: //READ_RECORD_STEPPREV
-                setCursorStaus();
+                setCursorStaus(true);
                 m_stat = STATUS_NOSUPPORT_OP;
                 return;
             }
+            if (m_stat == 0)
+                ++m_readCount;
         }
         else
             read = true;
@@ -2159,7 +2165,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
                 
             if (ret == REC_NOMACTH_NOMORE)
             {
-                setCursorStaus();
+                setCursorStaus(true);
                 m_stat = STATUS_REACHED_FILTER_COND;
                 return;
             }
@@ -2167,7 +2173,7 @@ void table::readRecords(IReadRecordsHandler* hdr, bool includeCurrent, int type,
                 --reject;
         }
     }
-    setCursorStaus();
+    setCursorStaus(true);
     m_stat = tmp_stat;
     if (reject == 0)
         m_stat = STATUS_LIMMIT_OF_REJECT;
@@ -2455,66 +2461,83 @@ __int64 table::insert(bool ncc)
     return autoincValue;
 }
 
-void table::beginUpdate(char keyNum)
+/**
+    @return value of update_at 
+*/
+double table::beginUpdate(char keyNum, int confrictCheck)
 {
     m_stat = 0;
-    beginDel();
+    double v = beginDel(confrictCheck);
     if (m_stat == 0)
     {
         if (keyNum >= 0)
             setKeyNum(keyNum);
-           
         store_record(m_table, record[1]);
     }
+    return v;
 }
-void table::beginDel()
+
+double table::beginDel(int confrictCheck)
 {
+    double v = 0;
     if ((m_mode == TD_OPEN_READONLY) || (m_table->reginfo.lock_type < TL_WRITE))
     {
         m_stat = STATUS_INVALID_LOCKTYPE;
-        return;
+        return v;
     }
-
-    if (m_cursor)
+    if (!m_cursor)
     {
-        m_stat = 0;
-        /* The current position is established in advance.
-         If not in transaction then m_validCursor=false */
-        if (m_validCursor == false)
-        {
-            store_record(m_table, record[1]);
-            if (keyNum() >= 0)
-            {
-                // seek until ref is same.
-                uchar rawPos[128];
-                memcpy(rawPos, position(true), m_table->file->ref_length);
-                seekPos(rawPos);
-            }
-            else
-                movePos(position(true), -1, true);
-
-            // Has blob fields then ignore conflicts.
-            if ((m_stat == 0) && (m_table->s->blob_fields == 0) &&
-                cmp_record(m_table, record[1]))
-                m_stat = STATUS_CHANGE_CONFLICT;
-
-            setCursorStaus();
-            if (m_stat)
-                return;
-        }
-    }
-    else
         m_stat = STATUS_NO_CURRENT;
+        return v;
+    }
+
+    m_stat = 0;
+    /* The current position is established in advance.
+        If not in transaction then m_validCursor=false */
+    if (m_validCursor == false || confrictCheck == 1)
+    {
+        store_record(m_table, record[1]);
+        if (keyNum() >= 0)
+        {
+            // seek until ref is same.
+            uchar rawPos[128];
+            memcpy(rawPos, position(true), m_table->file->ref_length);
+            seekPos(rawPos);
+        }
+        else
+            movePos(position(true), -1, true);
+
+        // Has blob fields then ignore conflicts.
+        if ((m_stat == 0) && (m_table->s->blob_fields == 0) &&
+            cmp_record(m_table, record[1]))
+            m_stat = STATUS_CHANGE_CONFLICT;
+
+        setCursorStaus();
+        if (m_stat) return v;
+    }        
+
+    if (m_updateAtField && confrictCheck)
+        v = m_updateAtField->val_real();   
+
+    return v;
 }
 
 /** Update current record.
  *  It is indispensable that there is a current record in advance
  *  and beginUpdate() is called.
  */
-void table::update(bool ncc)
+void table::update(bool ncc, double updateAtBefore)
 {
     if (m_stat == 0)
     {
+        if (updateAtBefore != 0)
+        {
+            if(updateAtBefore != m_updateAtField->val_real())
+            {
+                m_stat = STATUS_CHANGE_CONFLICT;
+                return;
+            }
+        }
         int nullFieldsOfCurrentKey = setKeyNullFlags();
         if (!m_mysqlNull) setFieldNullFlags();
 		setTimeStamp(false /* update */);
@@ -2552,14 +2575,28 @@ void table::update(bool ncc)
     }
 }
 
+void table::setUpdateTimeValue(void* data)
+{
+    if (m_updateAtField)
+        memcpy(m_updateAtField->ptr, data, m_updateAtField->pack_length());
+}
+
 /** del current record.
  *  It is indispensable that there is a current record in advance
  *  and beginDel() is called.
  */
-void table::del()
+void table::del(double updateAtBefore)
 {
     if (m_stat == 0)
     {
+        if (updateAtBefore != 0)
+        {
+            if(updateAtBefore != m_updateAtField->val_real())
+            {
+                m_stat = STATUS_CHANGE_CONFLICT;
+                return;
+            }
+        }
         m_stat = m_table->file->ha_delete_row(m_table->record[0]);
         /* Do not change to m_changed = false */
         if (m_stat == 0)
