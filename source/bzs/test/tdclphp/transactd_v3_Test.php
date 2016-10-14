@@ -419,7 +419,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         // getSqlStringForCreateTable
         $sql = $db->getSqlStringForCreateTable("extention");
         $this->assertEquals($db->stat(), 0);
-        $this->assertEquals($sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL,`bits` BIGINT NOT NULL , UNIQUE key0(`id`)) ENGINE=InnoDB default charset=utf8');
+        $this->assertEquals($sql, 'CREATE TABLE `extention` (`id` INT NOT NULL ,`comment` VARCHAR(60) binary NULL DEFAULT NULL,`bits` BIGINT NOT NULL , PRIMARY KEY(`id`)) ENGINE=InnoDB default charset=utf8');
         
         // setValidationTarget(bool isMariadb, uchar_td srvMinorVersion)
         $td = $dbdef->tableDefs(1);
@@ -1112,24 +1112,91 @@ class transactdTest extends PHPUnit_Framework_TestCase
     
     public function test_insertObject()
     {
-      $db = new bz\database();
-      $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
-      $tb = $db->openTable("user");
-      $this->assertEquals($tb->stat() , 0);
-      $tb->setAlias("名前", "name");
-      $tb->seekFirst();
-      $this->assertEquals($tb->stat() , 0);
-      $tb->fetchMode = bz\transactd::FETCH_USR_CLASS;
-      $tb->fetchClass = "User";
-      $tb->ctorArgs = array("1","2","3");
-      $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_USR_CLASS);
-      $usr = $tb->fields();
-      $usr->id = 0;
-      $usr->name = 'test_insertObject';
-      $tb->insertByObj($usr);
-      $tb->seekLast();
-      $usr = $tb->fields();
-      $this->assertEquals($usr->name , 'test_insertObject');
-      $this->assertEquals($usr->id , 1001);
+        $db = new bz\database();
+        $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        $tb = $db->openTable("user");
+        $this->assertEquals($tb->stat() , 0);
+        $tb->setAlias("名前", "name");
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat() , 0);
+        $tb->fetchMode = bz\transactd::FETCH_USR_CLASS;
+        $tb->fetchClass = "User";
+        $tb->ctorArgs = array("1","2","3");
+        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_USR_CLASS);
+        $usr = $tb->fields();
+        $usr->id = 0;
+        $usr->name = 'test_insertObject';
+        $tb->insertByObj($usr);
+        $tb->seekLast();
+        $usr = $tb->fields();
+        $this->assertEquals($usr->name , 'test_insertObject');
+        $this->assertEquals($usr->id , 1001);
     }
+    
+    public function test_UTCC()
+    {
+        $db = new bz\database();
+        $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        $tb = $db->openTable("user");
+        $tb2 = $db->openTable("user");
+		// test in changeCurrentCc or changeCurrentNcc
+		
+		$db->beginTrn();
+		$tb->seekFirst();
+		$this->assertEquals($tb->stat() , 0);
+		$tb2->seekFirst();
+		$this->assertEquals($tb2->stat() , 0);
+		$tb->setFV("名前", 'John');
+		$tb->update();
+		$this->assertEquals($tb->stat() , 0);
+		$tb2->setFV("名前", 'mike');
+		$tb2->setUpdateConflictCheck(true);
+		$tb2->update(bz\nstable::changeCurrentCc);
+		$this->assertEquals($tb2->stat() , bz\transactd::STATUS_CHANGE_CONFLICT);
+		$db->abortTrn();
+
+		$db->beginTrn();
+		$tb->seekFirst();
+		$this->assertEquals($tb->stat() , 0);
+		$tb2->seekFirst();
+		$this->assertEquals($tb2->stat() , 0);
+		$tb->setFV("名前", 'John');
+		$tb->update();
+		$this->assertEquals($tb->stat() , 0);
+		$tb2->setFV("名前", 'mike');
+		$tb2->setUpdateConflictCheck(false);
+		$tb2->update(bz\nstable::changeCurrentCc);
+		$this->assertEquals($tb2->stat(), 0);
+		$db->abortTrn();
+		
+		$db->beginTrn();
+		$tb->seekFirst();
+		$this->assertEquals($tb->stat() , 0);
+		$tb2->seekFirst();
+		$this->assertEquals($tb2->stat() , 0);
+		$tb->setFV("名前", 'John');
+		$tb->update();
+		$this->assertEquals($tb->stat() , 0);
+		$tb2->setFV("名前", 'mike');
+		// test in changeInKey
+		$tb2->setUpdateConflictCheck(true);
+		$tb2->update(bz\nstable::changeInKey);
+		$this->assertEquals($tb2->stat() , bz\transactd::STATUS_CHANGE_CONFLICT);
+		$db->abortTrn();
+
+		$db->beginTrn();
+		$tb->seekFirst();
+		$this->assertEquals($tb->stat() , 0);
+		$tb2->seekFirst();
+		$this->assertEquals($tb2->stat() , 0);
+		$tb->setFV("名前", 'John');
+		$tb->update();
+		$this->assertEquals($tb->stat() , 0);
+		$tb2->setFV("名前", 'mike');
+		$tb2->setUpdateConflictCheck(false);
+		$tb2->update(bz\nstable::changeInKey);
+		$this->assertEquals($tb2->stat(), 0);
+		$db->abortTrn();
+	}
+	
 }

@@ -1245,12 +1245,17 @@ abstract class nstable {
 	function close() {
 		nstable_close($this->_cPtr);
 	}
+	
+	function updateConflictCheck() {
+		return nstable_updateConflictCheck($this->_cPtr); 
+	}
+	
+	function setUpdateConflictCheck($v) {
+		return nstable_setUpdateConflictCheck($this->_cPtr, $v); 
+	}
 
-	function update($type=null) {
-		switch (func_num_args()) {
-		case 0: nstable_update($this->_cPtr); break;
-		default: nstable_update($this->_cPtr,$type);
-		}
+	function update($type=nstable::changeCurrentCc) {
+		nstable_update($this->_cPtr, $type); 
 	}
 
 	function del($in_key=false) {
@@ -3589,12 +3594,12 @@ class writableRecord extends Record {
 		writableRecord_insert($this->_cPtr);
 	}
 
-	function del($KeysetAlrady=false) {
-		writableRecord_del($this->_cPtr,$KeysetAlrady);
+	function del($KeysetAlrady=false, $noSeek = false) {
+		writableRecord_del($this->_cPtr,$KeysetAlrady, $noSeek);
 	}
 
-	function update() {
-		writableRecord_update($this->_cPtr);
+	function update($KeysetAlrady = false, $noSeek = false) {
+		writableRecord_update($this->_cPtr, $KeysetAlrady, $noSeek);
 	}
 
 	function save() {

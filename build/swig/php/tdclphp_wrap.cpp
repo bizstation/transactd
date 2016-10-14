@@ -8021,13 +8021,61 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_nstable_update__SWIG_0) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  bzs::db::protocol::tdap::client::nstable::eUpdateType arg2 ;
+ZEND_NAMED_FUNCTION(_wrap_nstable_setUpdateConflictCheck) {
+    client::nstable *arg1 = 0;
+    bool v = false;
+    zval_args_type args[2];
+    int argc = ZEND_NUM_ARGS();
+    SWIG_ResetError(TSRMLS_C);
+    if (argc != 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_update. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
+        }
+    }
+    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+
+    if (ARGS_IS_TRUE(1)) v = true;
+    ZVAL_BOOL(return_value, (arg1)->setUpdateConflictCheck(v));
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
+}
+
+
+ZEND_NAMED_FUNCTION(_wrap_nstable_updateConflictCheck) {
+    client::nstable *arg1 = 0;
+     zval_args_type args[1];
+    int argc = ZEND_NUM_ARGS();
+    SWIG_ResetError(TSRMLS_C);
+    if (argc != 1 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
+
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_update. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
+        }
+    }
+    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+    ZVAL_BOOL(return_value, (arg1)->updateConflictCheck());
+    return;
+fail:
+    SWIG_FAIL(TSRMLS_C);
+}
+
+ZEND_NAMED_FUNCTION(_wrap_nstable_update) {
+  client::nstable *arg1 = 0 ;
+  nstable::eUpdateType arg2 = nstable::changeCurrentCc;
   zval_args_type args[2];
-  
+  int argc = ZEND_NUM_ARGS();
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+  if(argc < 1 || argc > 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -8037,11 +8085,16 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_update__SWIG_0) {
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
-  CONV_to_long_ex(args[1]);
-  arg2 = (bzs::db::protocol::tdap::client::nstable::eUpdateType) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
+
+
+  if (argc == 2)
+  {
+      /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,7,CONVERT_INT_IN@*/
+      CONV_to_long_ex(args[1]);
+      arg2 = (bzs::db::protocol::tdap::client::nstable::eUpdateType) Z_LVAL_PP(args[1]);
+      /*@SWIG@*/;
+  }
+
   
   {
     try {
@@ -8059,247 +8112,36 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_nstable_update__SWIG_1) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  zval_args_type args[1];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_update. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      (arg1)->update();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_nstable_update) {
-  int argc;
-  zval_args_type argv[2];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
-  if (argc == 1) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
-    }
-    if (_v) {
-      _wrap_nstable_update__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
-    }
-    if (_v) {
-      _v = (Z_TYPE_ARGV(argv[1]) == IS_LONG); 
-      if (_v) {
-        _wrap_nstable_update__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
-  }
-  
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'nstable_update'";
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_nstable_del__SWIG_0) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  bool arg2 ;
-  zval_args_type args[2];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_del. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,2,CONVERT_BOOL_IN@*/
-  CONV_to_boolean_ex(args[1]);
-  arg2 = (bool) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  {
-    try {
-      (arg1)->del(arg2);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_nstable_del__SWIG_1) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  zval_args_type args[1];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_del. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      (arg1)->del();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
 ZEND_NAMED_FUNCTION(_wrap_nstable_del) {
-  int argc;
-  zval_args_type argv[2];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
-  if (argc == 1) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
-    }
-    if (_v) {
-      _wrap_nstable_del__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
-    }
-    if (_v) {
-      _v = ARGV_IS_BOOL(1); 
-      if (_v) {
-        _wrap_nstable_del__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
-  }
-  
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'nstable_del'";
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_nstable_insert__SWIG_0) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  bool arg2 ;
+  bzs::db::protocol::tdap::client::nstable *arg1 = 0 ;
+  bool inKey = false;
   zval_args_type args[2];
-  ushort_td result;
+  int argc = ZEND_NUM_ARGS();
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+  if(argc < 1 || argc > 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
   {
     if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_insert. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_del. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,2,CONVERT_BOOL_IN@*/
-  CONV_to_boolean_ex(args[1]);
-  arg2 = (bool) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
+  if (argc == 2 && ARGS_IS_TRUE(1)) inKey = true;
   
   {
     try {
-      result = (ushort_td)(arg1)->insert(arg2);
+      (arg1)->del(inKey);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
       SWIG_exception(SWIG_RuntimeError, e.what());
     }
   }
-  {
-    ZVAL_LONG(return_value,result);
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_nstable_insert__SWIG_1) {
-  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  zval_args_type args[1];
-  ushort_td result;
   
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_insert. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      result = (ushort_td)(arg1)->insert();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  {
-    ZVAL_LONG(return_value,result);
-  }
   return;
 fail:
   SWIG_FAIL(TSRMLS_C);
@@ -8307,36 +8149,40 @@ fail:
 
 
 ZEND_NAMED_FUNCTION(_wrap_nstable_insert) {
-  zval_args_type argv[2];
-  
+  bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
+  bool ncc = false;
+  zval_args_type args[2];
+  ushort_td result;
   int argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
-  if (argc == 1) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
-    }
-    if (_v) {
-      _wrap_nstable_insert__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) >= 0);
-    }
-    if (_v) {
-      _v = ARGV_IS_BOOL(1); 
-      if (_v) {
-        _wrap_nstable_insert__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
+  SWIG_ResetError(TSRMLS_C);
+  if(argc < 1 || argc > 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
   }
   
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'nstable_insert'";
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of nstable_insert. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__nstable");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  if (argc == 2 && ARGS_IS_TRUE(1)) ncc = true;
+  
+  
+  {
+    try {
+      result = (ushort_td)(arg1)->insert(ncc);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  {
+    ZVAL_LONG(return_value,result);
+  }
+  return;
+fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
@@ -17083,9 +16929,10 @@ ZEND_NAMED_FUNCTION(_wrap_table_updateByObj) {
     client::table* tb = 0;
     zval_args_type args[2];
     bool ret = false;
+    int argc = ZEND_NUM_ARGS();
 
     SWIG_ResetError(TSRMLS_C);
-    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    if (argc != 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
         WRONG_PARAM_COUNT;
     }
     {
@@ -17120,9 +16967,10 @@ ZEND_NAMED_FUNCTION(_wrap_table_deleteByObj) {
     client::table* tb = 0;
     zval_args_type args[2];
     bool ret = false;
+    int argc = ZEND_NUM_ARGS();
 
     SWIG_ResetError(TSRMLS_C);
-    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    if (argc != 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
         WRONG_PARAM_COUNT;
     }
     {
@@ -17135,9 +16983,11 @@ ZEND_NAMED_FUNCTION(_wrap_table_deleteByObj) {
     {
         tb->clearBuffer();
         tb->setKeyNum(getPrimaryKeynum(tb));
-        setPrimaryKeyValue(tb, args[1]);
-        //setRecordValueByObj(tb, args[1]);
-        tb->del(true);
+        if (tb->updateConflictCheck())
+            setRecordValueByObj(tb, args[1]);
+        else
+            setPrimaryKeyValue(tb, args[1]);
+        tb->del(true /*inKey*/);
         ret = (tb->stat() == 0);
     }
     catch (bzs::rtl::exception& e) {
@@ -17157,9 +17007,9 @@ ZEND_NAMED_FUNCTION(_wrap_table_saveByObj) {
     client::table* tb = 0;
     zval_args_type args[2];
     bool ret = false;
-
+    int argc = ZEND_NUM_ARGS();
     SWIG_ResetError(TSRMLS_C);
-    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    if (argc != 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
         WRONG_PARAM_COUNT;
     }
     {
@@ -26937,175 +26787,57 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_writableRecord_read__SWIG_0) {
-    bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
-    bool arg2;
-    zval_args_type args[2];
-    bool result;
-
-    SWIG_ResetError(TSRMLS_C);
-    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
-        WRONG_PARAM_COUNT;
-    }
-
-    {
-        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) < 0) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of writableRecord_read. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord");
-        }
-    }
-    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-
-    /*@SWIG:E:\bindings\swigwin-3.0.2\Lib\php\utils.i,2,CONVERT_BOOL_IN@*/
-    CONV_to_boolean_ex(args[1]);
-    arg2 = (bool)Z_LVAL_PP(args[1]);
-    /*@SWIG@*/;
-
-    {
-        try {
-            result = (bool)(arg1)->read(arg2);
-        }
-        catch (bzs::rtl::exception& e) {
-            SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
-        }
-        catch (std::exception &e) {
-            SWIG_exception(SWIG_RuntimeError, e.what());
-        }
-    }
-    {
-        ZVAL_BOOL(return_value, (result) ? 1 : 0);
-    }
-    return;
-fail:
-    SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_writableRecord_read__SWIG_1) {
-    bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
-    zval_args_type args[1];
-    bool result;
-
-    SWIG_ResetError(TSRMLS_C);
-    if (ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
-        WRONG_PARAM_COUNT;
-    }
-
-    {
-        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) < 0) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of writableRecord_read. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord");
-        }
-    }
-    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-    {
-        try {
-            result = (bool)(arg1)->read();
-        }
-        catch (bzs::rtl::exception& e) {
-            SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
-        }
-        catch (std::exception &e) {
-            SWIG_exception(SWIG_RuntimeError, e.what());
-        }
-    }
-    {
-        ZVAL_BOOL(return_value, (result) ? 1 : 0);
-    }
-    return;
-fail:
-    SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_writableRecord_read__SWIG_2) {
-    bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
-    bookmark_td *arg2 = 0;
-    zval_args_type args[2];
-    bool result;
-
-    SWIG_ResetError(TSRMLS_C);
-    if (ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
-        WRONG_PARAM_COUNT;
-    }
-
-    {
-        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) < 0) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of writableRecord_read. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord");
-        }
-    }
-    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-    {
-        if (SWIG_ConvertPtr(ZVAL_ARGS[1], (void **)&arg2, SWIGTYPE_p_BOOKMARK, 0) < 0 || arg2 == NULL) {
-            SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of writableRecord_read. Expected SWIGTYPE_p_BOOKMARK");
-        }
-    }
-    {
-        try {
-            result = (bool)(arg1)->read(*arg2);
-        }
-        catch (bzs::rtl::exception& e) {
-            SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
-        }
-        catch (std::exception &e) {
-            SWIG_exception(SWIG_RuntimeError, e.what());
-        }
-    }
-    {
-        ZVAL_BOOL(return_value, (result) ? 1 : 0);
-    }
-    return;
-fail:
-    SWIG_FAIL(TSRMLS_C);
-}
-
-
 ZEND_NAMED_FUNCTION(_wrap_writableRecord_read) {
-    int argc;
-    zval_args_type argv[2];
+    bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0;
+    bool KeysetAlrady = false;
+    bookmark_td* bm = NULL;
+    zval_args_type args[2];
+    bool result;
+    int argc = ZEND_NUM_ARGS();
+    SWIG_ResetError(TSRMLS_C);
+    if (argc < 1 || argc > 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
+        WRONG_PARAM_COUNT;
+    }
 
-    argc = ZEND_NUM_ARGS();
-    zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
-    if (argc == 1) {
-        int _v;
-        {
-            void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
-        }
-        if (_v) {
-            _wrap_writableRecord_read__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
+    {
+        if (SWIG_ConvertPtr(ZVAL_ARGS[0], (void **)&arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) < 0) {
+            SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of writableRecord_read. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord");
         }
     }
-    if (argc == 2) {
-        int _v;
+    if (!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
+    if (argc == 2)
+    {
+        if (ZTYPE(args[1]) == IS_TRUE || ZTYPE(args[1]) == IS_FALSE)
+            KeysetAlrady = ARGS_IS_TRUE(1) ? true : false;
+        else
         {
-            void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
-        }
-        if (_v) {
-            {
-                void *tmp;
-                _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(1), (void**)&tmp, SWIGTYPE_p_BOOKMARK, 0) >= 0);
-            }
-            if (_v) {
-                _wrap_writableRecord_read__SWIG_2(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-            }
-        }
-    }
-    if (argc == 2) {
-        int _v;
-        {
-            void *tmp;
-            _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
-        }
-        if (_v) {
-            _v = ARGV_IS_BOOL(1);
-            if (_v) {
-                _wrap_writableRecord_read__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
+            if (SWIG_ConvertPtr(ZVAL_ARGS[1], (void **)&bm, SWIGTYPE_p_BOOKMARK, 0) < 0 || bm == NULL) {
+                SWIG_PHP_Error(E_ERROR, "Type error in argument 2 of writableRecord_read. Expected SWIGTYPE_p_BOOKMARK");
             }
         }
     }
 
-    SWIG_ErrorCode() = E_ERROR;
-    SWIG_ErrorMsg() = "No matching function for overloaded 'writableRecord_read'";
+    try 
+    {
+        if (bm)
+            result = (bool)(arg1)->read(*bm);
+        else
+            result = (bool)(arg1)->read(KeysetAlrady);
+            
+    }
+    catch (bzs::rtl::exception& e) 
+    {
+        SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
+    }
+    catch (std::exception &e) 
+    {
+        SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+
+    ZVAL_BOOL(return_value, (result) ? 1 : 0);
+    return;
+fail:
     SWIG_FAIL(TSRMLS_C);
 }
 
@@ -27140,115 +26872,53 @@ fail:
 }
 
 
-ZEND_NAMED_FUNCTION(_wrap_writableRecord_del__SWIG_0) {
-  bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0 ;
-  bool arg2 ;
-  zval_args_type args[2];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 2 || zend_get_parameters_array_ex(2, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of writableRecord_del. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  
-  /*@SWIG:/usr/local/share/swig/3.0.2/php/utils.i,2,CONVERT_BOOL_IN@*/
-  CONV_to_boolean_ex(args[1]);
-  arg2 = (bool) Z_LVAL_PP(args[1]);
-  /*@SWIG@*/;
-  
-  {
-    try {
-      (arg1)->del(arg2);
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
-ZEND_NAMED_FUNCTION(_wrap_writableRecord_del__SWIG_1) {
-  bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0 ;
-  zval_args_type args[1];
-  
-  SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
-    WRONG_PARAM_COUNT;
-  }
-  
-  {
-    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) < 0) {
-      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of writableRecord_del. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord");
-    }
-  }
-  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-  {
-    try {
-      (arg1)->del();
-    } catch (bzs::rtl::exception& e) {
-      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
-    } catch (std::exception &e) {
-      SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-  }
-  return;
-fail:
-  SWIG_FAIL(TSRMLS_C);
-}
-
-
 ZEND_NAMED_FUNCTION(_wrap_writableRecord_del) {
-  int argc;
-  zval_args_type argv[2];
-  
-  argc = ZEND_NUM_ARGS();
-  zend_get_parameters_array_ex(argc, ZVAL_ARGV_ARRAY);
-  if (argc == 1) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
-    }
-    if (_v) {
-      _wrap_writableRecord_del__SWIG_1(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-    }
-  }
-  if (argc == 2) {
-    int _v;
-    {
-      void *tmp;
-      _v = (SWIG_ConvertPtr(ZVAL_ARGV_P(0), (void**)&tmp, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) >= 0);
-    }
-    if (_v) {
-      _v = ARGV_IS_BOOL(1); 
-      if (_v) {
-        _wrap_writableRecord_del__SWIG_0(INTERNAL_FUNCTION_PARAM_PASSTHRU); return;
-      }
-    }
+  bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0 ;
+  bool KeysetAlrady = false ;
+  bool noSeek = false;
+  zval_args_type args[3];
+  int argc = ZEND_NUM_ARGS();
+  SWIG_ResetError(TSRMLS_C);
+  if(argc < 1 || argc > 3 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
+    WRONG_PARAM_COUNT;
   }
   
-  SWIG_ErrorCode() = E_ERROR;
-  SWIG_ErrorMsg() = "No matching function for overloaded 'writableRecord_del'";
+  {
+    if(SWIG_ConvertPtr(ZVAL_ARGS[0], (void **) &arg1, SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord, 0) < 0) {
+      SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of writableRecord_del. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord");
+    }
+  }
+  if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+  
+  if ((argc >= 2) && ARGS_IS_TRUE(1)) KeysetAlrady = true;
+
+  if ((argc >= 3) && ARGS_IS_TRUE(2)) noSeek = true;
+
+  
+  {
+    try {
+      (arg1)->del(KeysetAlrady, noSeek);
+    } catch (bzs::rtl::exception& e) {
+      SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
+    } catch (std::exception &e) {
+      SWIG_exception(SWIG_RuntimeError, e.what());
+    }
+  }
+  return;
+fail:
   SWIG_FAIL(TSRMLS_C);
 }
 
 
 ZEND_NAMED_FUNCTION(_wrap_writableRecord_update) {
-  bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0 ;
-  zval_args_type args[1];
+  client::writableRecord *arg1 = 0;
+  bool KeysetAlrady = false;
+  bool noSeek = false;
+  int argc = ZEND_NUM_ARGS();
+  zval_args_type args[3];
   
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+  if(argc < 1 || argc > 3 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -27257,10 +26927,15 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_update) {
       SWIG_PHP_Error(E_ERROR, "Type error in argument 1 of writableRecord_update. Expected SWIGTYPE_p_bzs__db__protocol__tdap__client__writableRecord");
     }
   }
+
+  if ((argc >= 2) && ARGS_IS_TRUE(1)) KeysetAlrady = true;
+
+  if ((argc >= 3) && ARGS_IS_TRUE(2)) noSeek = true;
+
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   {
     try {
-      (arg1)->update();
+      (arg1)->update(KeysetAlrady, noSeek);
     } catch (bzs::rtl::exception& e) {
       SWIG_exception(SWIG_RuntimeError, (* bzs::rtl::getMsg(e)).c_str());
     } catch (std::exception &e) {
@@ -27277,9 +26952,9 @@ fail:
 ZEND_NAMED_FUNCTION(_wrap_writableRecord_save) {
   bzs::db::protocol::tdap::client::writableRecord *arg1 = (bzs::db::protocol::tdap::client::writableRecord *) 0 ;
   zval_args_type args[1];
-  
+  int argc = ZEND_NUM_ARGS();
   SWIG_ResetError(TSRMLS_C);
-  if(ZEND_NUM_ARGS() != 1 || zend_get_parameters_array_ex(1, ZVAL_ARGS_ARRAY) != SUCCESS) {
+  if(argc != 1 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -27289,6 +26964,7 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_save) {
     }
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
+
   {
     try {
       (arg1)->save();
@@ -34768,10 +34444,19 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_close, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_setupdateconflictcheck, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
+ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_updateconflictcheck, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
+ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_update, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_del, 0, 0, 0)
+ ZEND_ARG_PASS_INFO(0)
  ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_nstable_insert, 0, 0, 0)
@@ -36130,6 +35815,7 @@ ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_writablerecord_del, 0, 0, 0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_writablerecord_update, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
+ ZEND_ARG_PASS_INFO(0)
 ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(swig_arginfo_writablerecord_save, 0, 0, 0)
  ZEND_ARG_PASS_INFO(0)
@@ -36833,6 +36519,8 @@ static zend_function_entry transactd_functions[] = {
  SWIG_ZEND_NAMED_FE(nstable_candelete,_wrap_nstable_canDelete,swig_arginfo_nstable_candelete)
  SWIG_ZEND_NAMED_FE(nstable_getwriteimagelen,_wrap_nstable_getWriteImageLen,swig_arginfo_nstable_getwriteimagelen)
  SWIG_ZEND_NAMED_FE(nstable_close,_wrap_nstable_close,swig_arginfo_nstable_close)
+ SWIG_ZEND_NAMED_FE(nstable_updateConflictCheck, _wrap_nstable_updateConflictCheck, swig_arginfo_nstable_updateconflictcheck)
+ SWIG_ZEND_NAMED_FE(nstable_setUpdateConflictCheck, _wrap_nstable_setUpdateConflictCheck, swig_arginfo_nstable_setupdateconflictcheck)
  SWIG_ZEND_NAMED_FE(nstable_update,_wrap_nstable_update,swig_arginfo_nstable_update)
  SWIG_ZEND_NAMED_FE(nstable_del,_wrap_nstable_del,swig_arginfo_nstable_del)
  SWIG_ZEND_NAMED_FE(nstable_insert,_wrap_nstable_insert,swig_arginfo_nstable_insert)

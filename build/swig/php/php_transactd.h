@@ -202,6 +202,8 @@ ZEND_NAMED_FUNCTION(_wrap_nstable_canInsert);
 ZEND_NAMED_FUNCTION(_wrap_nstable_canDelete);
 ZEND_NAMED_FUNCTION(_wrap_nstable_getWriteImageLen);
 ZEND_NAMED_FUNCTION(_wrap_nstable_close);
+ZEND_NAMED_FUNCTION(_wrap_nstable_setUpdateConflictCheck);
+ZEND_NAMED_FUNCTION(_wrap_nstable_updateConflictCheck);
 ZEND_NAMED_FUNCTION(_wrap_nstable_update);
 ZEND_NAMED_FUNCTION(_wrap_nstable_del);
 ZEND_NAMED_FUNCTION(_wrap_nstable_insert);
