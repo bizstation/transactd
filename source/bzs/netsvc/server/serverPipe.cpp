@@ -29,6 +29,9 @@
 #include <boost/enable_shared_from_this.hpp>
 #include "IAppModule.h"
 #include <bzs/rtl/exception.h>
+#include <windows.h>
+#include <stdio.h>
+
 
 using namespace boost;
 using namespace boost::asio;
@@ -166,10 +169,41 @@ class exitCheckHnadler : public IExitCheckHandler
     bool m_cancel;
     IAppModule* m_module;
 
+    /*
+       Enable Privilege of SE_DEBUG_NAME for system process. ex IIS 
+    */
+    BOOL setPrivilege()
+    {
+        HANDLE hProc = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, GetCurrentProcessId());
+        HANDLE hToken;
+        OpenProcessToken(hProc, TOKEN_ADJUST_PRIVILEGES, &hToken);
+        CloseHandle(hProc);
+        TOKEN_PRIVILEGES tp;
+        LUID luid;
+
+        if (!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &luid))
+        {
+            CloseHandle(hToken);
+            return FALSE; 
+        }
+        tp.PrivilegeCount = 1;
+        tp.Privileges[0].Luid = luid;
+        tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+        BOOL ret = AdjustTokenPrivileges(hToken, FALSE, &tp,  sizeof(TOKEN_PRIVILEGES), 
+              (PTOKEN_PRIVILEGES) NULL, (PDWORD) NULL); 
+        CloseHandle(hToken);
+        if (!ret) return FALSE;
+        return (GetLastError() != ERROR_NOT_ALL_ASSIGNED);
+    }
+
 public:
     exitCheckHnadler(DWORD procId) : m_cancel(false), m_module(NULL)
     {
+        setPrivilege();
         m_procHandle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, procId);
+        if (!m_procHandle)
+            server::erh->printError("Pipe client process handle access denied");
     }
 
     ~exitCheckHnadler()
@@ -188,7 +222,7 @@ public:
         if (m_procHandle && GetExitCodeProcess(m_procHandle, &ExitCode))
         {
             if (STILL_ACTIVE != ExitCode)
-                return true;
+                return true;   
         }
         if (m_module && m_module->isShutDown())
             return true;
