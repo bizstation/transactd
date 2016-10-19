@@ -1597,7 +1597,7 @@ interface ISortField : IDispatch
 interface ISortFields : IDispatch
 {
   [id(1)]
-  HRESULT _stdcall Add([in] BSTR Name, [in] VARIANT_BOOL asc);
+  HRESULT _stdcall Add([in] BSTR Name, [in] VARIANT_BOOL asc, [out, retval]ISortFields** retVal);
   [propget, id(2)]
   HRESULT _stdcall Size([out, retval] int* Value);
   [propget, id(0)]

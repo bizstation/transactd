@@ -1085,6 +1085,7 @@ struct PACKAGE tabledef
     const wchar_t* tableName() const; // table name
     void setFileName(const wchar_t* s);
     void setTableName(const wchar_t* s);
+    void convertToUtf8Schema();
 private:
     const char* toChar(char* buf, const wchar_t* s, int size) const;
 #else
@@ -1108,6 +1109,7 @@ private:
     const char* tableName() const;
     void setFileName(const char* s);
     void setTableName(const char* s);
+    void convertToUtf8Schema();
 private:
     const char* toChar(char* buf, const char* s, int size) const;
 #endif // MYSQL_DYNAMIC_PLUGIN

@@ -24,11 +24,32 @@
 #include <bzs/db/protocol/tdap/mysql/characterset.h>
 #ifdef _WIN32
 #include <windows.h>
-#endif
+size_t mbcconv(const char* from, size_t fsize, char* to, size_t tsize, int fromCodePage, int toCodePage)
+{
+    assert(tsize < 511);
+    size_t size = 0;
+    WCHAR ws[512]={NULL};
+    size = MultiByteToWideChar(fromCodePage, (fromCodePage == CP_UTF8) ? 0 : MB_PRECOMPOSED,
+        from, -1, ws, (int)511);
+    to[tsize - 1] = 0x00;
+    size = WideCharToMultiByte(toCodePage, (toCodePage == CP_UTF8) ? 0 : WC_COMPOSITECHECK,
+        ws, -1, to, (int)tsize, NULL, NULL);
+    if (size == 0)
+        size = tsize - (to[tsize - 1] ? 0 : 1);
+    return size;
+}
+#endif //_WIN32
 
 #ifdef LINUX
 #include <bzs/env/mbcswchrLinux.h>
 using namespace bzs::env;
+inline size_t mbcconv(const char* from, size_t fsize, char* to, size_t tsize, int fromCodePage, int toCodePage)
+{
+    if (fromCodePage == CP_UTF8)
+        return bzs::env::u8tombc(from, fsize, to, tsize);
+    else
+        return bzs::env::mbctou8(from, fsize, to, tsize);
+}
 #endif
 #pragma package(smart_init)
 
@@ -181,39 +202,39 @@ void tabledef::setTableName(const wchar_t* s)
 
 const char* fielddef::name() const
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (m_schemaCodePage != CP_UTF8)
     {
         char* p = namebufA();
-        mbctou8(m_name, strlen(m_name), p, MYSQL_FDNAME_SIZE);
+        mbcconv(m_name, strlen(m_name), p, MYSQL_FDNAME_SIZE, m_schemaCodePage, CP_UTF8); //mbctou8(m_name, strlen(m_name), p, MYSQL_FDNAME_SIZE);
         return p;
     }
-#endif
+#endif*/
     return m_name;
 }
 
 const char* fielddef::name(char* buf) const
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (m_schemaCodePage != CP_UTF8)
     {
-        mbctou8(m_name, strlen(m_name), buf, MYSQL_FDNAME_SIZE);
+        mbcconv(m_name, strlen(m_name), buf, MYSQL_FDNAME_SIZE, m_schemaCodePage, CP_UTF8); //mbctou8(m_name, strlen(m_name), buf, MYSQL_FDNAME_SIZE);
         return buf;
     }
-#endif
+#endif*/
     return m_name;
 }
 
 const char* fielddef::chainChar() const
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (m_schemaCodePage != CP_UTF8)
     {
         char* p = namebufA();
-        mbctou8(m_chainChar, strlen(m_chainChar), p, 2);
+        mbcconv(m_chainChar, strlen(m_chainChar), p, 2, m_schemaCodePage, CP_UTF8); //mbctou8(m_chainChar, strlen(m_chainChar), p, 2);
         return p;
     }
-#endif
+#endif*/
     return m_chainChar;
 }
 
@@ -225,79 +246,80 @@ const char* fielddef::defaultValue_str() const
 
 void fielddef::setName(const char* s)
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (m_schemaCodePage != CP_UTF8)
-        u8tombc(s, strlen(s), m_name, FIELD_NAME_SIZE);
+        mbcconv(s, strlen(s), m_name, FIELD_NAME_SIZE, CP_UTF8, m_schemaCodePage); //u8tombc(s, strlen(s), m_name, FIELD_NAME_SIZE);
     else
-#endif
+#endif*/
         strncpy_s(m_name, FIELD_NAME_SIZE, s, sizeof(m_name) - 1);
 }
 
 void fielddef::setChainChar(const char* s)
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (m_schemaCodePage != CP_UTF8)
-        u8tombc(s, strlen(s), m_chainChar, 2);
+        mbcconv(s, strlen(s), m_chainChar, 2, CP_UTF8, m_schemaCodePage); //u8tombc(s, strlen(s), m_chainChar, 2);
     else
-#endif
+#endif*/
         strncpy_s(m_chainChar, 2, s, sizeof(m_chainChar) - 1);
 }
 
 const char* tabledef::fileName() const
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (schemaCodePage != CP_UTF8)
     {
         char* p = namebufA();
-        mbctou8(m_fileName, strlen(m_fileName), p, FILE_NAME_SIZE);
+        mbcconv(m_fileName, strlen(m_fileName), p, FILE_NAME_SIZE, schemaCodePage, CP_UTF8); //mbctou8(m_fileName, strlen(m_fileName), p, FILE_NAME_SIZE);
         return p;
     }
-#endif
+#endif*/
     return m_fileName;
 }
 
 const char* tabledef::tableName() const
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (schemaCodePage != CP_UTF8)
     {
         char* p = namebufA();
-        mbctou8(m_tableName, strlen(m_tableName), p, TABLE_NAME_SIZE);
+        mbcconv(m_tableName, strlen(m_tableName), p, TABLE_NAME_SIZE, schemaCodePage, CP_UTF8); //mbctou8(m_tableName, strlen(m_tableName), p, TABLE_NAME_SIZE);
         return p;
     }
-#endif
+#endif*/
     return m_tableName;
 }
 
 void tabledef::setFileName(const char* s)
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (schemaCodePage != CP_UTF8)
-        u8tombc(s, strlen(s), m_fileName, FILE_NAME_SIZE);
+        mbcconv(s, strlen(s), m_fileName, FILE_NAME_SIZE, CP_UTF8, schemaCodePage); //u8tombc(s, strlen(s), m_fileName, FILE_NAME_SIZE);
     else
-#endif
+#endif*/
         setFileNameA(s);
 }
 
 void tabledef::setTableName(const char* s)
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (schemaCodePage != CP_UTF8)
-        u8tombc(s, strlen(s), m_tableName, TABLE_NAME_SIZE);
+        mbcconv(s, strlen(s), m_tableName, TABLE_NAME_SIZE, CP_UTF8, schemaCodePage); //u8tombc(s, strlen(s), m_tableName, TABLE_NAME_SIZE);
     else
-#endif
+#endif*/
         setTableNameA(s);
 }
 
 const char* tabledef::toChar(char* buf, const char* s, int size) const
 {
-#ifdef LINUX
+/*#ifndef _UNICODE
     if (schemaCodePage != CP_UTF8)
     {
-        u8tombc(s, strlen(s), buf, size);
+        //u8tombc(s, strlen(s), buf, size);
+        mbcconv(s, strlen(s), buf, size, CP_UTF8, schemaCodePage);
         return buf;
     }
-#endif
+#endif*/
     strncpy_s(buf, size, s, size - 1);
     return buf;
 }
@@ -1139,6 +1161,27 @@ short tabledef::synchronize(const tabledef* td)
             keyDefs[i].synchronize(&td->keyDefs[i]);
     }
     return 0;
+}
+
+void tabledef::convertToUtf8Schema()
+{
+    if (schemaCodePage != CP_UTF8)
+    {
+        char* p = namebufA();
+        mbcconv(m_tableName, strlen(m_tableName), p, TABLE_NAME_SIZE, schemaCodePage, CP_UTF8);
+        strcpy_s(m_tableName, TABLE_NAME_SIZE, p);
+        mbcconv(m_fileName, strlen(m_fileName), p, FILE_NAME_SIZE, schemaCodePage, CP_UTF8);
+        strcpy_s(m_fileName, FILE_NAME_SIZE, p);
+        for (int i = 0;i < fieldCount; ++i)
+        {
+            fielddef* fd = &fieldDefs[i];
+            mbcconv(fd->m_name, strlen(fd->m_name), p, FIELD_NAME_SIZE, schemaCodePage, CP_UTF8);
+            strcpy_s(fd->m_name, FIELD_NAME_SIZE, p);
+            mbcconv(fd->m_chainChar, strlen(fd->m_chainChar), p, 2, schemaCodePage, CP_UTF8);
+            strcpy_s(fd->m_chainChar, 2, p);
+        }
+        schemaCodePage = CP_UTF8;
+    }
 }
 
 ushort_td lenByCharnum(uchar_td type, uchar_td charsetIndex, ushort_td charnum)

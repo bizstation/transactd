@@ -746,6 +746,7 @@ tabledef* dbdef::initReadAfter(short tableIndex, const tabledef* data, uint_td d
     td->setFielddefsPtr();
     td->setKeydefsPtr();
     td->autoIncExSpace = ((database*)nsdb())->defaultAutoIncSpace();
+    td->convertToUtf8Schema();
     //Fix:Bug of maxRecordLen is mistake value saved, recalculate maxRecordLen.
     td->calcReclordlen();
     td->optionFlags.bitC = (td->fieldDefs[td->fieldCount -1].type == ft_myfixedbinary);
@@ -1015,12 +1016,14 @@ short dbdef::findKeynumByFieldNum(short tableIndex, short index)
 short dbdef::tableNumByName(const _TCHAR* tableName)
 {
     char buf[74];
+    const char* p = NULL;
     for (short i = 1; i <= m_dimpl->tableCount; i++)
     {
         tabledef* td = tableDefs(i);
         if (td)
         {
-            const char* p = td->toChar(buf, tableName, 74);
+            if (!p)
+            	p = td->toChar(buf, tableName, 74);
             if (strcmp(td->tableNameA(), p) == 0)
                 return i;
         }
