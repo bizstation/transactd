@@ -1,0 +1,71 @@
+--- sql/mysqld.h
++++ sql/mysqld.h
+@@ -153,7 +153,7 @@
+ extern const double log_10[309];
+ extern ulonglong keybuff_size;
+ extern ulonglong thd_startup_options;
+-extern ulong thread_id;
++extern MYSQL_PLUGIN_IMPORT ulong thread_id;
+ extern ulong binlog_cache_use, binlog_cache_disk_use;
+ extern ulong binlog_stmt_cache_use, binlog_stmt_cache_disk_use;
+ extern ulong aborted_threads,aborted_connects;
+@@ -206,7 +206,7 @@
+ extern handlerton *heap_hton;
+ extern const char *load_default_groups[];
+ extern struct my_option my_long_options[];
+-extern int mysqld_server_started;
++extern MYSQL_PLUGIN_IMPORT int mysqld_server_started;
+ extern "C" MYSQL_PLUGIN_IMPORT int orig_argc;
+ extern "C" MYSQL_PLUGIN_IMPORT char **orig_argv;
+ extern pthread_attr_t connection_attrib;
+@@ -224,7 +224,7 @@
+   THR_MALLOC is a key which will be used to set/get MEM_ROOT** for a thread,
+   using my_pthread_setspecific_ptr()/my_thread_getspecific_ptr().
+ */
+-extern pthread_key(MEM_ROOT**,THR_MALLOC);
++extern MYSQL_PLUGIN_IMPORT pthread_key(MEM_ROOT**,THR_MALLOC);
+ 
+ #ifdef HAVE_PSI_INTERFACE
+ #ifdef HAVE_MMAP
+@@ -349,8 +349,8 @@
+ #ifdef HAVE_OPENSSL
+ extern mysql_mutex_t LOCK_des_key_file;
+ #endif
+-extern mysql_mutex_t LOCK_server_started;
+-extern mysql_cond_t COND_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_server_started;
++extern MYSQL_PLUGIN_IMPORT mysql_cond_t COND_server_started;
+ extern mysql_rwlock_t LOCK_grant, LOCK_sys_init_connect, LOCK_sys_init_slave;
+ extern mysql_rwlock_t LOCK_system_variables_hash;
+ extern mysql_cond_t COND_thread_count;
+--- sql/sql_cache.h
++++ sql/sql_cache.h
+@@ -580,5 +580,5 @@
+ #define query_cache_is_cacheable_query(L) 0
+ #endif /*HAVE_QUERY_CACHE*/
+ 
+-extern Query_cache query_cache;
++extern MYSQL_PLUGIN_IMPORT Query_cache query_cache;
+ #endif
+--- sql/mdl.h
++++ sql/mdl.h
+@@ -854,7 +854,7 @@ extern "C" const char* thd_enter_cond(MYSQL_THD thd, mysql_cond_t *cond,
+ extern "C" void thd_exit_cond(MYSQL_THD thd, const char *old_msg);
+ 
+ #ifndef DBUG_OFF
+-extern mysql_mutex_t LOCK_open;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_open;
+ #endif
+ 
+ 
+--- sql/sql_base.h
++++ sql/sql_base.h
+@@ -69,7 +69,7 @@ enum enum_tdc_remove_table_type {TDC_RT_REMOVE_ALL, TDC_RT_REMOVE_NOT_OWN,
+ #define RTFC_CHECK_KILLED_FLAG      0x0004
+ 
+ bool check_dup(const char *db, const char *name, TABLE_LIST *tables);
+-extern mysql_mutex_t LOCK_open;
++extern MYSQL_PLUGIN_IMPORT mysql_mutex_t LOCK_open;
+ bool table_cache_init(void);
+ void table_cache_free(void);
+ bool table_def_init(void);
