@@ -3607,10 +3607,24 @@ void testTableInvalidRecord()
 
 }
 
+bool checkTimeStampFormat(database_ptr db, const char* funcName)
+{
+    btrVersions versions;
+    db->getBtrVersion(&versions);
+    if(versions.versions[VER_IDX_DB_SERVER].isFullLegacyTimeFormat())
+    {
+        printf("[Warning] Server not support timstamp with microseconds.(%s is passed)\n", funcName);
+        return false;
+    }
+    return true;
+}
+
 void test_UTCC()
 {
     database_ptr db = createDatabaseObject();
     openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    if (checkTimeStampFormat(db, "test_UTCC") == false)
+        return;
     table_ptr tb = openTable(db, _T("users"));
     table_ptr tb2 = openTable(db, _T("users"));
     // test in changeCurrentCc or changeCurrentNcc
@@ -3679,6 +3693,8 @@ void test_UTCC_delete()
 {
     database_ptr db = createDatabaseObject();
     openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    if (checkTimeStampFormat(db, "test_UTCC_delete") == false)
+        return;
     table_ptr tb = openTable(db, _T("users"));
     table_ptr tb2 = openTable(db, _T("users"));
     // test in changeCurrentCc or changeCurrentNcc
@@ -3744,6 +3760,8 @@ void test_UTCC_wt()
 {
     database_ptr db = createDatabaseObject();
     openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    if (checkTimeStampFormat(db, "test_UTCC_wt") == false)
+        return;
     activeTable at(db, _T("users"));
     activeTable at2(db, _T("users"));
     writableRecord& wr = at.getWritableRecord();
@@ -3811,6 +3829,8 @@ void test_UTCC_wt_save()
 {
     database_ptr db = createDatabaseObject();
     openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    if (checkTimeStampFormat(db, "test_UTCC_wt_save") == false)
+        return;
     activeTable at(db, _T("users"));
     activeTable at2(db, _T("users"));
     writableRecord& wr = at.getWritableRecord();
@@ -3870,6 +3890,8 @@ void test_UTCC_wt_delete()
 {
     database_ptr db = createDatabaseObject();
     openDatabase(db, makeUri(PROTOCOL, HOSTNAME, DBNAMEV3, BDFNAME), TYPE_SCHEMA_BDF);
+    if (checkTimeStampFormat(db, "test_UTCC_wt_delete") == false)
+        return;
     activeTable at(db, _T("users"));
     activeTable at2(db, _T("users"));
     writableRecord& wr = at.getWritableRecord();
