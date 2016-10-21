@@ -188,7 +188,7 @@ add_dependencies(${this_target} tdclc tdclcpp)
 transactd_set_MTMD("MD")
 if (MSVC)
   foreach(build_type "" "_RELEASE" "_DEBUG" "_RELWITHDEBINFO" "_MINSIZEREL")
-    bz_add_cxx_flag("/wd4267 /wd4102 /wd4800" "${build_type}")
+    bz_add_cxx_flag("/O2 /Ot /wd4267 /wd4102 /wd4800" "${build_type}")
   endforeach()
 endif()
 

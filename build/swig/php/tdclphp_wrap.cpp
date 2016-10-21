@@ -876,6 +876,7 @@ typedef zval zval_args_type;
 #define ZVAL_ARGV_P(N) (&argv[N])
 #define ZVAL_ARGS_P(N) (&args[N])
 #define ARGV_IS_BOOL(N) (Z_TYPE_ARGV(argv[N]) == IS_TRUE || Z_TYPE_ARGV(argv[N]) == IS_FALSE)
+#define ARGS_IS_BOOL(N) (Z_TYPE_ARGV(args[N]) == IS_TRUE || Z_TYPE_ARGV(args[N]) == IS_FALSE)
 #define RSRC res
 #define LIST_FIND(ZVAL) value = (swig_object_wrapper *)Z_RES_P(ZVAL)->ptr;
 #define ARGS_IS_TRUE(N) zval_is_true(&args[N])
@@ -921,6 +922,7 @@ typedef zval** zval_args_type;
 #define ZVAL_ARGV_P(N) (*(argv[N]))
 #define ZVAL_ARGS_P(N) (*(args[N]))
 #define ARGV_IS_BOOL(N) (Z_TYPE_ARGV(argv[N]) == IS_BOOL)
+#define ARGS_IS_BOOL(N) (Z_TYPE_ARGV(args[N]) == IS_BOOL)
 #define RSRC rsrc
 #define LIST_FIND(ZVAL) (swig_object_wrapper *)zend_list_find((*ZVAL[0])->value.lval, &type)
 #define ARGS_IS_TRUE(N) zval_is_true(*args[N])
@@ -16597,8 +16599,6 @@ inline void addFieldValue(int type, zval* return_value, zend_ulong index, const 
     {
         add_property_stringl(return_value, (char*)name, (char*)v, size);
     }
-
-
 }
 
 inline zend_class_entry* cp_zend_lookup_class(zval_args_type& zv)
@@ -16721,19 +16721,16 @@ int callConstructor(zval* return_value, zend_class_entry* ce, zval* args TSRMLS_
 #endif
 
     fci.symbol_table = NULL;
-
     fci.param_count = 0;
     fci.params = NULL;
     fci.no_separation = 1;
     zend_fcall_info_args_ex(&fci, ce->constructor, args);
     fcc.initialized = 1;
     fcc.function_handler = ce->constructor;
-    fcc.calling_scope = EG(scope);
+    fcc.calling_scope = ce;
     fcc.called_scope = ce;
-
     fci.FC_OBJ = FCI_OBJ_P(return_value);
     fcc.FC_OBJ = FCI_OBJ_P(return_value);
-
     int ret = zend_call_function(&fci, &fcc TSRMLS_CC);
 #ifndef ZEND_ENGINE_3
     zval_dtor(pval);
@@ -16790,60 +16787,96 @@ inline char getPrimaryKeynum(table* tb)
   return tb->tableDef()->primaryKeyNum;
 }
 
-void setRecordValueByObj(client::table* tb, zval_args_type& obj TSRMLS_DC)
+bool hasProperty(zval* obj, zval* name TSRMLS_DC)
 {
-  if (ZTYPE(obj) != IS_OBJECT)
+	zend_class_entry* ce = Z_OBJCE_P(obj);
+	zend_property_info* property_info;
+	if (Z_OBJ_HT_P(obj)->has_property(obj, name, 2, NULL TSRMLS_CC)) return true;
+#ifdef ZEND_ENGINE_3
+    if ((property_info = (zend_property_info*)zend_hash_find_ptr(&ce->properties_info, name->value.str)) != NULL
+        && (property_info->flags & ZEND_ACC_SHADOW) == 0) 
+        return true;
+#else
+	if (zend_hash_find(&ce->properties_info, Z_STRVAL_P(name), Z_STRLEN_P(name)+1, (void**)&property_info)==SUCCESS)
+	{
+		if ((property_info->flags & ZEND_ACC_SHADOW) == 0) 
+			return true;
+	}
+#endif
+	return false;
+}
+
+void setRecordValueByObj(table* tb, zval_args_type &obj   TSRMLS_DC)
+{
+  const zend_object_handlers* handlers = ZTYPE(obj) == IS_OBJECT ? Z_OBJ_HT_P(ZVAL_P(obj)) : NULL; 
+  if (handlers == NULL)
     THROW_BZS_ERROR_WITH_MSG(_T("Type error in argument 1 of setRecordValueByObj."));
   client::fields& fds = tb->fields();
   const client::fielddefs& fdd = *(fds.fieldDefs());
-  for (int i = 0; i< fds.size(); ++i)
+  int size = fds.size();
+  for (int i = 0; i< size; ++i)
   {
-    zval_args_type v;
-    zval z;
-    ZVAL_STRING(&z, fdd[i].name(), 0);
-    if (Z_OBJ_HT_P(&obj)->has_property(&obj, &z, 2, NULL))
-    {
-        zval* result =   zend_read_property(Z_OBJCE_P(&obj), &obj, fdd[i].name(), strlen(fdd[i].name()), 1 , &v TSRMLS_CC);
-        setValue(&fds[i], *result, 0 TSRMLS_CC);
-    }
+	zval z;
+	char buf[256] = {0};
+	strcpy(buf, fdd[i].name());
+	ZVAL_STRING(&z, buf, 0);
+	if (hasProperty(ZVAL_P(obj), &z TSRMLS_CC))
+	{
+#ifdef ZEND_ENGINE_3
+		zval_args_type v;
+		zval* result = handlers->read_property(ZVAL_P(obj), &z, BP_VAR_R, NULL, &v);
+		if (result) setValue(&fds[i], *result, 0);
+		
+#else
+		zval* result = handlers->read_property(ZVAL_P(obj), &z, BP_VAR_R, NULL TSRMLS_CC);
+		if (result)
+		{
+			zval_args_type tmp = &result;
+			setValue(&fds[i], tmp, 0 TSRMLS_CC);
+		}
+#endif
+	}
   }
 }
 
 
-/*
-void updateAutoincValue(client::table* tb, zval_args_type& obj TSRMLS_DC)
-{
-  char key = getPrimaryKeynum(tb);
-  short index = tb->tableDef()->keyDefs[key].segments[0].fieldNum;
-  client::field& fd = tb->fields()[index];
-  const char* name = fd.def()->name();
-  __int64 v = fd.i64();
-
-  if ((__int64)LONG_MIN <= v && v <= (__int64)LONG_MAX)
-    zend_update_property_long(Z_OBJCE_P(&obj), &obj, name, strlen(name), v);
-  else
-    zend_update_property_double(Z_OBJCE_P(&obj), &obj, name, strlen(name), (double)v);
-}*/
 
 void setPrimaryKeyValue(client::table* tb, zval_args_type& obj TSRMLS_DC)
 {
+  const zend_object_handlers* handlers = ZTYPE(obj) == IS_OBJECT ? Z_OBJ_HT_P(ZVAL_P(obj)) : NULL; 
+  if (handlers == NULL)
+    THROW_BZS_ERROR_WITH_MSG(_T("Type error in argument 1 of setPrimaryKeyValue."));
+
   char key = getPrimaryKeynum(tb);
   int sgments = tb->tableDef()->keyDefs[key].segmentCount;
   for (int i = 0; i < sgments; ++i)
   {
-      short index = tb->tableDef()->keyDefs[key].segments[i].fieldNum;
-      client::field& fd = tb->fields()[index];
-      const char* name = fd.def()->name();
-      zval_args_type v;
-      zval_args_type z;
-      ZVAL_STRING(&z, name, 0);
-      if (Z_OBJ_HT_P(&obj)->has_property(&obj, &z, 2, NULL))
-      {
-          zval* result = zend_read_property(Z_OBJCE_P(&obj), &obj, name, strlen(name), 1, &v TSRMLS_CC);
-          setValue(&fd, *result, 0 TSRMLS_CC);
-      }
+    short index = tb->tableDef()->keyDefs[key].segments[i].fieldNum;
+    client::field& fd = tb->fields()[index];
+	char buf[256] = {0};
+	strcpy(buf, fd.def()->name());
+  	zval z;
+	ZVAL_STRING(&z, buf, 0);
+	
+	if (hasProperty(ZVAL_P(obj), &z TSRMLS_CC))
+	{
+		
+#ifdef ZEND_ENGINE_3
+		zval_args_type v;
+		zval* result = handlers->read_property(ZVAL_P(obj), &z, BP_VAR_R, NULL, &v);
+		if (result) setValue(&fd, *result, 0);
+#else
+		zval* result = handlers->read_property(ZVAL_P(obj), &z, BP_VAR_R, NULL TSRMLS_CC);
+		if (result)
+		{
+			zval_args_type tmp = &result;
+			setValue(&fd, tmp, 0 TSRMLS_CC);
+		}
+#endif
+	}
   }
 }
+
 
 ZEND_NAMED_FUNCTION(_wrap_table_insertByObj) {
   client::table* tb = 0;
@@ -16863,7 +16896,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_insertByObj) {
   {
     tb->clearBuffer();
     tb->setKeyNum(getPrimaryKeynum(tb));
-    setRecordValueByObj(tb, args[1]);
+    setRecordValueByObj(tb, args[1]  TSRMLS_CC);
     tb->insert();
     if (tb->stat() == 0)
     {
@@ -16903,7 +16936,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_readByObj) {
     {
         tb->clearBuffer();
         tb->setKeyNum(getPrimaryKeynum(tb));
-        setPrimaryKeyValue(tb, args[1]);
+        setPrimaryKeyValue(tb, args[1] TSRMLS_CC);
         tb->seek();
         if (tb->stat() == 0)
         {
@@ -16945,7 +16978,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_updateByObj) {
     {
         tb->clearBuffer();
         tb->setKeyNum(getPrimaryKeynum(tb));
-        setRecordValueByObj(tb, args[1]);
+        setRecordValueByObj(tb, args[1] TSRMLS_CC);
         tb->update(nstable::changeInKey);
         ret = (tb->stat() == 0);
     }
@@ -16984,9 +17017,9 @@ ZEND_NAMED_FUNCTION(_wrap_table_deleteByObj) {
         tb->clearBuffer();
         tb->setKeyNum(getPrimaryKeynum(tb));
         if (tb->updateConflictCheck())
-            setRecordValueByObj(tb, args[1]);
+            setRecordValueByObj(tb, args[1]  TSRMLS_CC);
         else
-            setPrimaryKeyValue(tb, args[1]);
+            setPrimaryKeyValue(tb, args[1] TSRMLS_CC);
         tb->del(true /*inKey*/);
         ret = (tb->stat() == 0);
     }
@@ -17022,7 +17055,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_saveByObj) {
     {
         tb->clearBuffer();
         tb->setKeyNum(getPrimaryKeynum(tb));
-        setRecordValueByObj(tb, args[1]);
+        setRecordValueByObj(tb, args[1] TSRMLS_CC);
         tb->update(nstable::changeInKey);
         if (tb->stat() == STATUS_NOT_FOUND_TI)
         {
@@ -17031,15 +17064,6 @@ ZEND_NAMED_FUNCTION(_wrap_table_saveByObj) {
                 addFieldValues(FETCH_OBJ, &tb->fields(), ZVAL_P(args[1]) TSRMLS_CC);// set coplete all field to defalut values.
         }
         ret = (tb->stat() == 0);
-        /*
-        setPrimaryKeyValue(tb, args[1]);
-        tb->seek();
-        short stat = tb->stat();
-        setRecordValueByObj(tb, args[1]);
-        if (stat == 0)
-            tb->update();
-        else if (stat == STATUS_NOT_FOUND_TI)
-            tb->insert();*/
     }
     catch (bzs::rtl::exception& e) {
         SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
@@ -17173,91 +17197,6 @@ ZEND_NAMED_FUNCTION(_wrap_queryBase_clearSelectFields) {
 fail:
   SWIG_FAIL(TSRMLS_C);
 }
-
-/* 
-#define INIT_PRAMS(ARGS_MIN, ARGS_MAX) \
-    zval_args_type args[ARGS_MAX + 1];         \
-    int argc = ZEND_NUM_ARGS();        \
-    SWIG_ResetError(TSRMLS_C);         \
-    if ((ARGS_MIN + 1 > 4) || (ARGS_MIN + 1 < 2) || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS){ \
-        WRONG_PARAM_COUNT;                                                                                \
-    }
-
-#define GET_TYPED_PRAMS(ARG_NUM, ARGS, VAR, TYPE_NAME)                             \
-if (SWIG_ConvertPtr(*(ARGS[ARG_NUM]), (void **)(&(VAR)), (TYPE_NAME), 0) < 0) {    \
-    SWIG_PHP_Error(E_ERROR, "Type error in argument " #ARG_NUM " of " #TYPE_NAME); \
-}                                                                                  \
-if (!VAR) SWIG_PHP_Error(E_ERROR, #TYPE_NAME " pointer is NULL");
-
-#define GET_STRING(ARG_NUM, ARGS, VAR) \
-{CONV_to_string_ex(ARGS[ARG_NUM]); VAR = (_TCHAR *)Z_STRVAL_PP(ARGS[ARG_NUM]); }
-
-#define GET_INT(ARG_NUM, ARGS, VAR) \
-{   CONV_to_long_ex(ARGS[ARG_NUM]); VAR = (int)(*(ARGS[ARG_NUM]))->value.lval; }
-
-#define GET_INT64(ARG_NUM, ARGS, VAR) \
-{   CONV_to_long_ex(ARGS[ARG_NUM]); VAR = (__int64)(*(ARGS[ARG_NUM]))->value.lval; }
-
-#define GET_BOOL(ARG_NUM, ARGS, VAR) \
-{   CONV_to_boolean_ex(ARGS[ARG_NUM]); VAR = (bool)Z_LVAL_PP(ARGS[ARG_NUM]); }
-
-#define GET_DOUBLE(ARG_NUM, ARGS, VAR) \
-{   CONV_to_double_ex(ARGS[ARG_NUM]); VAR = (*(ARGS[ARG_NUM]))->value.dval;
-
-#define SWIG_CELENUP(FUNC_NAME) \
-fail2:                      \
-SWIG_ErrorCode() = E_ERROR; \
-    SWIG_ErrorMsg() = "No matching function for overloaded '" #FUNC_NAME "'"; \
-fail:                       \
-SWIG_FAIL(TSRMLS_C);        
-
-ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekKeyValue) {
-    bzs::db::protocol::tdap::client::queryBase *q = 0;
-    _TCHAR *buf = 0;
-    bookmark_td *bm = 0;
-    int len = 0;
-    bool reset = false;
-    int type = 0;
-
-    INIT_PRAMS(1, 3);
-    GET_TYPED_PRAMS(0, args, q, SWIGTYPE_p_bzs__db__protocol__tdap__client__queryBase);
-
-    type = Z_TYPE_AGRS(1);
-    if ((type == IS_LONG) || (type == IS_STRING) || (type == IS_DOUBLE)) 
-    {
-        GET_STRING(1, args, buf);
-    }
-    else if ((type != IS_NULL) && (argc > 2))
-    {
-        GET_TYPED_PRAMS(1, args, bm, SWIGTYPE_p_BOOKMARK);
-        GET_INT(2, args, len);
-        if (argc == 4)
-            GET_BOOL(3, args, reset);
-    }
-    else
-        goto fail2;
-
-    if (bm == NULL && argc >= 3)
-        GET_BOOL(2, args, reset);
-
-    try 
-    {
-        if ((type == IS_LONG) || (type == IS_STRING) || (type == IS_DOUBLE))
-            q->addSeekKeyValue(buf, reset);
-        else
-            q->addSeekKeyValue(*bm, len, reset);
-    }
-    catch (bzs::rtl::exception& e) {
-        SWIG_exception(SWIG_RuntimeError, (*bzs::rtl::getMsg(e)).c_str());
-    }
-    catch (std::exception &e) {
-        SWIG_exception(SWIG_RuntimeError, e.what());
-    }
-    return;
-
-    SWIG_CELENUP(queryBase_addSeekKeyValue);
-
-}*/
 
 
 ZEND_NAMED_FUNCTION(_wrap_queryBase_addSeekKeyValue) {
@@ -26808,7 +26747,7 @@ ZEND_NAMED_FUNCTION(_wrap_writableRecord_read) {
 
     if (argc == 2)
     {
-        if (ZTYPE(args[1]) == IS_TRUE || ZTYPE(args[1]) == IS_FALSE)
+        if (ARGS_IS_BOOL(1))
             KeysetAlrady = ARGS_IS_TRUE(1) ? true : false;
         else
         {

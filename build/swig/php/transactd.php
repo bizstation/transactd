@@ -2070,10 +2070,23 @@ class table extends nstable /*implements \IteratorAggregate*/{
 		table_smartUpdate($this->_cPtr);
 	}
 	
-	function seekKeyValue($kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null) {
-		if (is_array($kv1))
-			return table_seekKeyValue($this->_cPtr, ...$kv1);
-		return table_seekKeyValue($this->_cPtr, $kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7);
+	function seekKeyValue($kv1=null,$kv2=null,$kv3=null,$kv4=null,$kv5=null,$kv6=null,$kv7=null,$kv8=null) {
+		if(is_array($kv1))
+		{
+			//return table_seekKeyValue($this->_cPtr, ...$kv1);
+			switch(count($kv1))
+			{
+			case 1: return table_seekKeyValue($this->_cPtr, $kv1[0]);
+			case 2: return table_seekKeyValue($this->_cPtr, $kv1[0], $kv1[1]);
+			case 3: return table_seekKeyValue($this->_cPtr, $kv1[0], $kv1[1],$kv1[2]);
+			case 4: return table_seekKeyValue($this->_cPtr, $kv1[0], $kv1[1],$kv1[2],$kv1[3]);
+			case 5: return table_seekKeyValue($this->_cPtr, $kv1[0], $kv1[1],$kv1[2],$kv1[3],$kv1[4]);
+			case 6: return table_seekKeyValue($this->_cPtr, $kv1[0], $kv1[1],$kv1[2],$kv1[3],$kv1[4],$kv1[5]);
+			case 7: return table_seekKeyValue($this->_cPtr, $kv1[0], $kv1[1],$kv1[2],$kv1[3],$kv1[4],$kv1[5],$kv1[6]);
+			case 8: return table_seekKeyValue($this->_cPtr, $kv1[0], $kv1[1],$kv1[2],$kv1[3],$kv1[4],$kv1[5],$kv1[6],$kv1[7]);
+			}
+		}
+		return table_seekKeyValue($this->_cPtr, $kv1,$kv2,$kv3,$kv4,$kv5,$kv6,$kv7,$kv8);
 	}
 	
 

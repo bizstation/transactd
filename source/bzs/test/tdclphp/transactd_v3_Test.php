@@ -1151,6 +1151,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals($tb->stat() , 0);
 		$tb2->setFV("名前", 'mike');
 		$tb2->setUpdateConflictCheck(true);
+		$this->assertEquals($tb2->updateConflictCheck() , true);
 		$tb2->update(bz\nstable::changeCurrentCc);
 		$this->assertEquals($tb2->stat() , bz\transactd::STATUS_CHANGE_CONFLICT);
 		$db->abortTrn();
@@ -1165,6 +1166,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals($tb->stat() , 0);
 		$tb2->setFV("名前", 'mike');
 		$tb2->setUpdateConflictCheck(false);
+		$this->assertEquals($tb2->updateConflictCheck() , false);
 		$tb2->update(bz\nstable::changeCurrentCc);
 		$this->assertEquals($tb2->stat(), 0);
 		$db->abortTrn();
