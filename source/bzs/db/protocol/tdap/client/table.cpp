@@ -1553,7 +1553,7 @@ void table::doInit(tabledef** Def, short fnum, bool /*regularDir*/, bool mysqlnu
     tabledef* td = *m_tableDef; 
 
     incTabledefRefCount(td, mysqlnull);
-    m_fddefs->addAllFileds(td);
+    m_fddefs->addAllFields(td);
     m_fddefs->cv()->setCodePage(mysql::codePage(td->charsetIndex));
     ushort_td len = td->recordlen();
     if (len == 0)

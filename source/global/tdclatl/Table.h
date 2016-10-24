@@ -177,5 +177,5 @@ public:
     STDMETHOD(GetCreateSql)( BSTR* retVal);
     STDMETHOD(get_UpdateConflictCheck)(VARIANT_BOOL* retVal);
     STDMETHOD(SetUpdateConflictCheck)(VARIANT_BOOL Value, VARIANT_BOOL* retVal);
-
+    STDMETHOD(SetAlias)(BSTR orign,  BSTR alias);
 };

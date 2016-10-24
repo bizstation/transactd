@@ -2096,25 +2096,25 @@ class table extends nstable /*implements \IteratorAggregate*/{
 	
 	function find($type=null) {
 		switch (func_num_args()) {
-		case 0: return table_find($this->_cPtr); break;
-		default: return table_find($this->_cPtr,$type);
+		case 0:  table_find($this->_cPtr); break;
+		default: table_find($this->_cPtr,$type);
 		}
 	}
 
 	function findFirst() {
-		return table_findFirst($this->_cPtr);
+		table_findFirst($this->_cPtr);
 	}
 
 	function findLast() {
-		return table_findLast($this->_cPtr);
+		table_findLast($this->_cPtr);
 	}
 
 	function findNext($notIncCurrent=true) {
-		return table_findNext($this->_cPtr,$notIncCurrent);
+		table_findNext($this->_cPtr,$notIncCurrent);
 	}
 
 	function findPrev($notIncCurrent=true) {
-		return table_findPrev($this->_cPtr,$notIncCurrent);
+		table_findPrev($this->_cPtr,$notIncCurrent);
 	}
 
 	function statReasonOfFind() {
@@ -2187,6 +2187,10 @@ class table extends nstable /*implements \IteratorAggregate*/{
 		if ($this->fetchMode === transactd::FETCH_RECORD_INTO)
 			return new Record(table_fields($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs));
 		return table_fields($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs);
+	}
+	
+	function getRecord() {
+		return new Record(table_fields($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs));
 	}
 
 	function setFV($index_or_fieldName,$data,$size=null) {
@@ -4386,6 +4390,10 @@ class Recordset implements \ArrayAccess, \Countable, \IteratorAggregate {
 
 	function getRecord($index) {
 		return Recordset_getRow($this->_cPtr, $index, transactd::FETCH_RECORD_INTO, $this->_record);
+	}
+	
+	function getRow($index) {
+		return Recordset_getRow($this->_cPtr, $offset, $this->fetchMode, $this->fetchClass, $this->ctorArgs);
 	}
 
 	function size() {

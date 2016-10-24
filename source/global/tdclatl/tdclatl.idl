@@ -850,7 +850,8 @@ interface ITable : IDispatch
   HRESULT _stdcall UpdateConflictCheck([out, retval] VARIANT_BOOL* retVal);
   [id(0x00000101)]
   HRESULT _stdcall SetUpdateConflictCheck([in] VARIANT_BOOL value,[out, retval] VARIANT_BOOL* retVal);
-
+  [id(0x00000102)]
+  HRESULT _stdcall SetAlias([in] BSTR orign,[in]  BSTR alias);
 };
 [
 	object,

@@ -108,7 +108,7 @@ public:
     const fielddef& operator[](const std::_tstring& name) const;
     bool checkIndex(int index) const;
     size_t size() const;
-    void addAllFileds(const tabledef* def);
+    void addAllFields(const tabledef* def);
     void addSelectedFields(const class table* tb);
     void release();
     static fielddefs* create();

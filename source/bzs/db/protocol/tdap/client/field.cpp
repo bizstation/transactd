@@ -564,7 +564,7 @@ size_t fielddefs::totalFieldLen() const
     return fd.pos + fd.len + fd.nullbytes();
 }
 
-void fielddefs::addAllFileds(const tabledef* def)
+void fielddefs::addAllFields(const tabledef* def)
 {
     m_imple->fields.clear();
     m_imple->mysqlnullEnable = 0;
