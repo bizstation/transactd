@@ -1,5 +1,106 @@
 Release note
 ================================================================================
+Version 3.6.0 2016/11/08
+================================================================================
+New Features
+--------------------------------------------------------------------------------
+* Add the function to detect whether the record which you read latest has been
+  changed by another user with timestamp fields.
+  See `nstable::setUpdateConflictCheck` for more detail.
+
+* Add `fetchMode` property to PHP and Ruby extensions. It means format of a row
+  in get methods of `recordset` and `table` classes. You can choose format from
+  Array / Hash / Object / UserClass Object / Record Object.
+  See http://www.bizstation.jp/en/transactd/documents/developer_guide.html#fetchMode
+  for more details.
+
+Modifications
+--------------------------------------------------------------------------------
+* The default value of `charsetIndex` was changed to `CHARSET_BIN` on `ft_string`
+  `ft_lstring` `ft_myvarbinary` `ft_myblob` fields. Old default value is the
+  value of `charsetIndex` of `table`. If you want to use the old default, set
+  `database::CMP_MODE_BINFD_DEFAULT_STR = 2` to `database::setCompatibleMode`.
+
+* Add `void table::setAlias(const _TCHAR* orign, const _TCHAR* alias)` method.
+  You can use alias name with `table` object.
+
+* Add `void fielddefs::addAliasName(int index, const _TCHAR* name)` method.
+
+* [PHP][Ruby] Add `getRow` method to `Table` class. It is an alias of `fields`
+  method.
+
+* [PHP][Ruby] Add `getRecord` method to `Table` and `Recordset` class. It returns
+  `record` object regardless of the value of `fetchMode`.
+
+* [PHP][Ruby] Add `findAll` method to `Table`. It do like following:
+  ```php
+  function findAll()
+  {
+    $tb->find();
+    while($tb->stat())
+      array_push($a, tb->getRow());
+    return $a;
+  }
+  ```
+
+* [PHP][Ruby] Add following methods.
+  They do CRUD operation with object parameter. These operations will be
+  processed with `primaryKey`.
+  ```php
+  table::saveByObject();
+  table::updateByObject();
+  table::insertByObject();
+  table::readByObject();
+  table::deleteByObject();
+  table::seekKeyValue();
+  record::setValueByObject();
+  ```
+  `table::seekKeyValue` seek the record with the key number which is specified
+  in advance.
+  The following are process within the extension.
+  ```php
+  function seekKeyValue($keyValues)
+  {
+    $tb->setKeyNum(primarykey);
+    $tb->clearBuffer();
+    $i = 0;
+    foreach($keyValues as $value)
+      $tb->setFV(keyseg($i++), $value);
+    $tb->seek();
+    return $tb->stat();
+  }
+  ```
+
+* [PHP] Change following name of constant values.
+  ```
+  RECORD_KEYVALUE_FIELDVALUE --> FIELD_VALUE_MODE_VALUE
+  RECORD_KEYVALUE_FIELDOBJECT --> FIELD_VALUE_MODE_OBJECT
+  FIELDVALUEMODE_RETURNNULL --> NULLVALUE_MODE_RETURNNULL
+  FIELDVALUEMODE_NORETURNNULL --> NULLVALUE_MODE_NORETURNNULL
+  ```
+
+* [PHP] Change following name of functions.
+  ```
+  recordValueMode --> fieldValueMode
+  fieldValueMode --> nullValueMode
+  setRecordValueMode --> setFieldValueMode
+  setFieldValueMode --> setNullValueMode
+  ```
+
+* [Ruby] Add `snake_case` alias for methods and properties.
+
+* Fix a bug that the value of `Antoincrement` field will not change with
+  `writableRecord::save`.
+
+* Fix a bug that can not read the value of `blob` field after `insert`.
+
+* Fix a bug that the result will be wrong in `GroupBy` with `first` or `last`
+  method if there are any NULL records.
+
+* Fix a bug that the key field will not be set well in 1:N `Join`.
+
+
+================================================================================
 Version 3.5.0 2016/07/11
 ================================================================================
 New Features
