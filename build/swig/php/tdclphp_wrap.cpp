@@ -14587,7 +14587,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_find) {
   zval_args_type args[2];
   int argc = ZEND_NUM_ARGS();
   SWIG_ResetError(TSRMLS_C);
-  if(argc > 2 || argc < 1 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
+  if(argc != 2 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
   }
   
@@ -14598,10 +14598,10 @@ ZEND_NAMED_FUNCTION(_wrap_table_find) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
   
-  if (argc == 2)
+  if (Z_TYPE_AGRS(1) != IS_NULL)
   {
       CONV_to_long_ex(args[1]);
-      arg2 = (table::eFindType) Z_LVAL_PP(args[1]);
+      arg2 = (table::eFindType)Z_LVAL_PP(args[1]);
   }
   
   {
@@ -15829,6 +15829,9 @@ short getFieldIndex(client::fieldsBase* fds, zval_args_type& v)
 ZEND_NAMED_FUNCTION(_wrap_table_seekKeyValue) {
     client::table *tb = 0;
     zval_args_type args[9];//Max 8 segment
+    client::fieldsBase* fds = 0;
+    const bzs::db::protocol::tdap::tabledef* td = 0;
+    const bzs::db::protocol::tdap::keydef* kd = 0;
     int argc = ZEND_NUM_ARGS();
     SWIG_ResetError(TSRMLS_C);
     if (argc > 9 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
@@ -15842,19 +15845,20 @@ ZEND_NAMED_FUNCTION(_wrap_table_seekKeyValue) {
     }
     if (!tb) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
 
-    const bzs::db::protocol::tdap::tabledef* td = tb->tableDef();
-    const bzs::db::protocol::tdap::keydef* kd = &td->keyDefs[tb->keyNum()];
+    td = tb->tableDef();
+    kd = &td->keyDefs[tb->keyNum()];
 
     if (tb->keyNum() >= td->keyCount) {
         SWIG_PHP_Error(E_ERROR, "Key number error. Invalid key number.");
     }
     tb->clearBuffer();
-    client::fieldsBase* fds = &tb->fields();
+    fds = &tb->fields();
     for (int i = 1; i < argc; ++i) {
         if (i > kd->segmentCount)
             break;
         ushort_td fnum = kd->segments[i - 1].fieldNum;
-        if (!setValue(&((*fds)[fnum]), args[i], 0 TSRMLS_CC))
+        client::field fd = (*fds)[fnum];
+        if (!setValue(&fd, args[i], 0 TSRMLS_CC))
             goto fail;
 
     }
@@ -15883,7 +15887,7 @@ ZEND_NAMED_FUNCTION(_wrap_table_setFV) {
   int argc = ZEND_NUM_ARGS();
   zval_args_type args[4];
   int size = 0;
-  
+  client::field fd;
   SWIG_ResetError(TSRMLS_C);
   if(argc > 4 || zend_get_parameters_array_ex(argc, ZVAL_ARGS_ARRAY) != SUCCESS) {
     WRONG_PARAM_COUNT;
@@ -15909,8 +15913,8 @@ ZEND_NAMED_FUNCTION(_wrap_table_setFV) {
      CONV_to_long_ex(args[3]);
      size = (int) Z_LVAL_PP(args[3]);
   }
-  
-  if (setValue(&((*fds)[index]), args[2], size TSRMLS_CC))
+  fd = (*fds)[index];
+  if (setValue(&fd, args[2], size TSRMLS_CC))
      return;
 fail:
   SWIG_FAIL(TSRMLS_C);
@@ -16825,14 +16829,16 @@ void setRecordValueByObj(table* tb, zval_args_type &obj   TSRMLS_DC)
 #ifdef ZEND_ENGINE_3
 		zval_args_type v;
 		zval* result = handlers->read_property(ZVAL_P(obj), &z, BP_VAR_R, NULL, &v);
-		if (result) setValue(&fds[i], *result, 0);
+		client::field fd = fds[i];
+		if (result) setValue(&fd, *result, 0);
 		
 #else
 		zval* result = handlers->read_property(ZVAL_P(obj), &z, BP_VAR_R, NULL TSRMLS_CC);
 		if (result)
 		{
 			zval_args_type tmp = &result;
-			setValue(&fds[i], tmp, 0 TSRMLS_CC);
+			client::field fd = fds[i];
+			setValue(&fd, tmp, 0 TSRMLS_CC);
 		}
 #endif
 	}
@@ -16852,10 +16858,10 @@ void setPrimaryKeyValue(client::table* tb, zval_args_type& obj TSRMLS_DC)
   for (int i = 0; i < sgments; ++i)
   {
     short index = tb->tableDef()->keyDefs[key].segments[i].fieldNum;
-    client::field& fd = tb->fields()[index];
+    client::field fd = tb->fields()[index];
 	char buf[256] = {0};
 	strcpy(buf, fd.def()->name());
-  	zval z;
+	zval z;
 	ZVAL_STRING(&z, buf, 0);
 	
 	if (hasProperty(ZVAL_P(obj), &z TSRMLS_CC))
@@ -16870,6 +16876,7 @@ void setPrimaryKeyValue(client::table* tb, zval_args_type& obj TSRMLS_DC)
 		if (result)
 		{
 			zval_args_type tmp = &result;
+			
 			setValue(&fd, tmp, 0 TSRMLS_CC);
 		}
 #endif
@@ -26495,6 +26502,7 @@ ZEND_NAMED_FUNCTION(_wrap_Record_getFieldRef) {
   short arg2_s = -1;
   bzs::db::protocol::tdap::client::field *arg3 = 0 ;
   zval_args_type args[3];
+  zend_uchar type;
   
   SWIG_ResetError(TSRMLS_C);
   if(ZEND_NUM_ARGS() != 3 || zend_get_parameters_array_ex(3, ZVAL_ARGS_ARRAY) != SUCCESS) {
@@ -26508,7 +26516,7 @@ ZEND_NAMED_FUNCTION(_wrap_Record_getFieldRef) {
   }
   if(!arg1) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
 
-  zend_uchar type = Z_TYPE_AGRS(1);
+  type = Z_TYPE_AGRS(1);
 
   if (type == IS_LONG) {
     CONV_to_long_ex(args[1]);
@@ -30816,7 +30824,15 @@ ZEND_NAMED_FUNCTION(_wrap_Recordset_toArray) {
 
     recordset *rs = 0;
     zval_args_type args[4];
-
+#ifndef ZEND_ENGINE_3
+    zval* zrow=NULL;
+#else
+    zval zrow;
+#endif
+    int ret = 0;
+    zval* p;
+    int type;
+    
     SWIG_ResetError(TSRMLS_C);
     if (ZEND_NUM_ARGS() != 4 || zend_get_parameters_array_ex(4, ZVAL_ARGS_ARRAY) != SUCCESS) {
         WRONG_PARAM_COUNT;
@@ -30830,17 +30846,16 @@ ZEND_NAMED_FUNCTION(_wrap_Recordset_toArray) {
     if (!rs) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
 
     CONV_to_long_ex(args[1]);
-    int type = (size_t)Z_LVAL_PP(args[1]);
+    type = (size_t)Z_LVAL_PP(args[1]);
     if (type == FETCH_RECORD_INTO)
         type = FETCH_VAL_BOTH;
 
-    zval* p = (Z_TYPE_AGRS(3) == IS_ARRAY) ? ZVAL_ARGS_P(3) : NULL;
+    p = (Z_TYPE_AGRS(3) == IS_ARRAY) ? ZVAL_ARGS_P(3) : NULL;
 
-    int ret = 0;
+
     array_init(return_value);
 
 #ifndef ZEND_ENGINE_3
-    zval* zrow=NULL;
     for (size_t i = 0;i < rs->size(); ++i)
     {
         MAKE_STD_ZVAL(zrow);
@@ -30848,9 +30863,8 @@ ZEND_NAMED_FUNCTION(_wrap_Recordset_toArray) {
         add_next_index_zval(return_value, zrow);
         if (ret) break;
     }
-    //FREE_ZVAL(zrow);
+
 #else
-    zval zrow;
     for (size_t i = 0; i < rs->size(); ++i)
     {
         ret = copyValues(&zrow, type, &(*rs)[i], args[2], p);
@@ -30877,7 +30891,17 @@ ZEND_NAMED_FUNCTION(_wrap_table_findAll) {
 
     table *tb = 0;
     zval_args_type args[5];
-
+#ifndef ZEND_ENGINE_3
+    zval* zrow=NULL;
+#else
+    zval zrow;
+#endif
+    int ret = 0;
+    zval* p;
+    int type;
+    table::eFindType ftype = table::findForword;
+    fieldsBase* row;
+    
     SWIG_ResetError(TSRMLS_C);
     if (ZEND_NUM_ARGS() != 5 || zend_get_parameters_array_ex(5, ZVAL_ARGS_ARRAY) != SUCCESS) {
         WRONG_PARAM_COUNT;
@@ -30889,26 +30913,27 @@ ZEND_NAMED_FUNCTION(_wrap_table_findAll) {
         }
     }
     if (!tb) SWIG_PHP_Error(E_ERROR, "this pointer is NULL");
-    CONV_to_long_ex(args[1]);
-    table::eFindType ftype = (table::eFindType)Z_LVAL_PP(args[1]);
-
+    if (Z_TYPE_AGRS(1) != IS_NULL)
+    {
+        CONV_to_long_ex(args[1]);
+        ftype = (table::eFindType)Z_LVAL_PP(args[1]);
+    }
     CONV_to_long_ex(args[2]);
-    int type = (size_t)Z_LVAL_PP(args[2]);
+
+    type = (size_t)Z_LVAL_PP(args[2]);
     if (type == FETCH_RECORD_INTO)
         type = FETCH_VAL_BOTH;
 
-    zval* p = (Z_TYPE_AGRS(4) == IS_ARRAY) ? ZVAL_ARGS_P(4) : NULL;
-
-    int ret = 0;
+    p = (Z_TYPE_AGRS(4) == IS_ARRAY) ? ZVAL_ARGS_P(4) : NULL;
+    
     array_init(return_value);
-    fieldsBase& row = tb->fields();
-    tb->find();
+    row = &tb->fields();
+    tb->find(ftype);
 #ifndef ZEND_ENGINE_3
-    zval* zrow=NULL;
     while(tb->stat() == 0 || (tb->stat() == STATUS_NOT_FOUND_TI && tb->fields().isInvalidRecord()))
     {
         MAKE_STD_ZVAL(zrow);
-        ret = copyValues(zrow, type, &row, args[3], p TSRMLS_CC);
+        ret = copyValues(zrow, type, row, args[3], p TSRMLS_CC);
         if (ret) break;
         add_next_index_zval(return_value, zrow);
         if (ftype == table::findForword)
@@ -30916,12 +30941,10 @@ ZEND_NAMED_FUNCTION(_wrap_table_findAll) {
         else
             tb->findPrev();
     }
-    //FREE_ZVAL(zrow);
 #else
-    zval zrow;
     while (tb->stat() == 0 || (tb->stat() == STATUS_NOT_FOUND_TI && tb->fields().isInvalidRecord()))
     {
-        ret = copyValues(&zrow, type, &row, args[3], p);
+        ret = copyValues(&zrow, type, row, args[3], p);
         if (ret) break;
         zend_hash_next_index_insert_new(Z_ARRVAL_P(return_value), &zrow);
         if (ftype == table::findForword)
@@ -32227,7 +32250,8 @@ ZEND_NAMED_FUNCTION(_wrap_activeTable_keyValue) {
       if (i > kd->segmentCount)
         break;
       ushort_td fnum = kd->segments[i-1].fieldNum;
-      if (!setValue(&((*fds)[fnum]), args[i], 0 TSRMLS_CC))
+      client::field fd = (*fds)[fnum];
+      if (!setValue(&fd, args[i], 0 TSRMLS_CC))
          goto fail;
       
     }

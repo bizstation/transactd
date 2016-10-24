@@ -2095,10 +2095,7 @@ class table extends nstable /*implements \IteratorAggregate*/{
 	}
 	
 	function find($type=null) {
-		switch (func_num_args()) {
-		case 0:  table_find($this->_cPtr); break;
-		default: table_find($this->_cPtr,$type);
-		}
+		table_find($this->_cPtr,$type);
 	}
 
 	function findFirst() {
