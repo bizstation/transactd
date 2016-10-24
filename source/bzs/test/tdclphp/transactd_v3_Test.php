@@ -1126,11 +1126,16 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $usr = $tb->fields();
         $usr->id = 0;
         $usr->name = 'test_insertObject';
-        $tb->insertByObj($usr);
+        $tb->insertByObject($usr);
         $tb->seekLast();
         $usr = $tb->fields();
         $this->assertEquals($usr->name , 'test_insertObject');
         $this->assertEquals($usr->id , 1001);
+        
+        $row = $tb->getRecord();
+        $row->setValueByObject($usr);
+        $usr2 = $tb->fields();
+        $this->assertEquals($usr2 , $usr);
     }
     
     public function test_UTCC()

@@ -2187,7 +2187,7 @@ class table extends nstable /*implements \IteratorAggregate*/{
 	}
 	
 	function getRecord() {
-		return new Record(table_fields($this->_cPtr, $this->fetchMode, $this->fetchClass,  $this->ctorArgs));
+		return new Record(table_fields($this->_cPtr, transactd::FETCH_RECORD_INTO, null,  null));
 	}
 
 	function setFV($index_or_fieldName,$data,$size=null) {
@@ -2231,24 +2231,24 @@ class table extends nstable /*implements \IteratorAggregate*/{
 		return $this;
 	}
 	
-	function insertByObj($obj) {
-		return table_insertByObj($this->_cPtr,$obj);
+	function insertByObject($obj) {
+		return table_insertByObject($this->_cPtr,$obj);
 	}
 	
-	function readByObj($obj) {
-		return table_readByObj($this->_cPtr,$obj);
+	function readByObject($obj) {
+		return table_readByObject($this->_cPtr,$obj);
 	}
 
-	function updateByObj($obj) {
-		return table_updateByObj($this->_cPtr,$obj);
+	function updateByObject($obj) {
+		return table_updateByObject($this->_cPtr,$obj);
 	}
 
-	function deleteByObj($obj) {
-		return table_deleteByObj($this->_cPtr,$obj);
+	function deleteByObject($obj) {
+		return table_deleteByObject($this->_cPtr,$obj);
 	}
 
-	function saveByObj($obj) {
-		return table_saveByObj($this->_cPtr,$obj);
+	function saveByObject($obj) {
+		return table_saveByObject($this->_cPtr,$obj);
 	}
 
 	function release() {
@@ -3567,7 +3567,10 @@ class Record implements \ArrayAccess, \Countable, \IteratorAggregate {
 	function clear() {
 		Record_clear($this->_cPtr);
 	}
-
+	
+	function setValueByObject($obj) {
+		Record_setValueByObject($this->_cPtr, $obj);
+	}
 }
 
 class writableRecord extends Record {
