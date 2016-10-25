@@ -1,6 +1,6 @@
 <?php
 /* ================================================================
-   Copyright (C) 2015 BizStation Corp All rights reserved.
+   Copyright (C) 2015-2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -13,24 +13,35 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 ================================================================ */
-mb_internal_encoding('UTF-8');
 
-require_once("transactd.php");
-use BizStation\Transactd as bz;
+require("transactd.php");
+
+use BizStation\Transactd\Transactd;
+use BizStation\Transactd\PooledDbManager;
+use BizStation\Transactd\ConnectParams;
+use BizStation\Transactd\Tabledef;
+use BizStation\Transactd\Database;
+use BizStation\Transactd\BtrVersions;
+use BizStation\Transactd\Nstable;
+use BizStation\Transactd\Table;
+use BizStation\Transactd\Query;
+use BizStation\Transactd\RecordsetQuery;
+use BizStation\Transactd\ActiveTable;
+use BizStation\Transactd\Bitset;
+use BizStation\Transactd\ConnMgr;
+use BizStation\Transactd\HaNameResolver;
 
 function getHost()
 {
     $host = getenv('TRANSACTD_PHPUNIT_HOST');
-    if (strlen($host) == 0)
-    {
+    if (strlen($host) == 0) {
         $host = '127.0.0.1/';
     }
-    if ($host[strlen($host) - 1] != '/')
-    {
+    if ($host[strlen($host) - 1] != '/') {
         $host = $host . '/';
     }
     return $host;
@@ -38,19 +49,17 @@ function getHost()
 
 class User
 {
-
     public $a = "";
     public $b = "";
     public $c = "";
 
-    function __construct($_a, $_b, $_c) 
+    public function __construct($_a, $_b, $_c)
     {
         $this->a = $_a;
         $this->b = $_b;
         $this->c = $_c;
     }
 }
-
 
 define("HOSTNAME", getHost());
 define("USERNAME", getenv('TRANSACTD_PHPUNIT_USER'));
@@ -65,7 +74,7 @@ define("BDFNAME", "?dbfile=test.bdf");
 define("URI", PROTOCOL . USERPART . HOSTNAME . DBNAME . BDFNAME . PASSPART);
 
 // multi thread test if `php_pthreads` exists.
-if(class_exists('Thread')){
+if (class_exists('Thread')) {
     class SeekLessThanWorker extends Thread
     {
         public function __construct()
@@ -74,10 +83,10 @@ if(class_exists('Thread')){
         }
         public function run()
         {
-            $dbm = new bz\pooledDbManager(new bz\connectParams(URI));
+            $dbm = new PooledDbManager(new ConnectParams(URI));
             $tb = $dbm->table('user');
             $tb->setFV(FDI_ID, 300000);
-            $tb->seekLessThan(false, bz\transactd::ROW_LOCK_X);
+            $tb->seekLessThan(false, Transactd::ROW_LOCK_X);
             $this->value = $tb->getFVint(FDI_ID);
             $tb->unlock();
             $tb->close();
@@ -90,7 +99,7 @@ if(class_exists('Thread')){
     }
 }
 
-class transactdTest extends PHPUnit_Framework_TestCase
+class TransactdTest extends PHPUnit_Framework_TestCase
 {
     private function dropDatabase($db)
     {
@@ -103,8 +112,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     private function createDatabase($db)
     {
         $db->create(URI);
-        if ($db->stat() == bz\transactd::STATUS_TABLE_EXISTS_ERROR)
-        {
+        if ($db->stat() == Transactd::STATUS_TABLE_EXISTS_ERROR) {
             $this->dropDatabase($db);
             $db->create(URI);
         }
@@ -112,46 +120,45 @@ class transactdTest extends PHPUnit_Framework_TestCase
     }
     private function openDatabase($db)
     {
-        return $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        return $db->open(URI, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
     }
     private function isMySQL5_5($db)
     {
-        $vv = new bz\btrVersions();
+        $vv = new BtrVersions();
         $db->getBtrVersion($vv);
         $server_ver = $vv->version(1);
-        return ($db->stat() == 0) && 
+        return ($db->stat() == 0) &&
             ((5 == $server_ver->majorVersion) &&
             (5 == $server_ver->minorVersion));
     }
     private function isMariaDBWithGtid($db)
     {
-        $vv = new bz\btrVersions();
+        $vv = new BtrVersions();
         $db->getBtrVersion($vv);
         $server_ver = $vv->version(1);
-        return ($db->stat() == 0) && 
+        return ($db->stat() == 0) &&
             (10 == $server_ver->majorVersion) &&
-            ($server_ver->type == bz\transactd::MYSQL_TYPE_MARIA);
+            ($server_ver->type == Transactd::MYSQL_TYPE_MARIA);
     }
     private function isLegacyTimeFormat($db)
     {
-        $vv = new bz\btrVersions();
+        $vv = new BtrVersions();
         $db->getBtrVersion($vv);
         $server_ver = $vv->version(1);
-        return ($db->stat() == 0) && 
+        return ($db->stat() == 0) &&
             ((5 == $server_ver->majorVersion) &&
             (5 == $server_ver->minorVersion)) &&
-            ($server_ver->type == bz\transactd::MYSQL_TYPE_MYSQL);
+            ($server_ver->type == Transactd::MYSQL_TYPE_MYSQL);
     }
     private function createUserTable($db)
     {
-        
         $dbdef = $db->dbDef();
-        $this->assertNotEquals($dbdef, NULL);
-        $td = new bz\tabledef();
-        $td->schemaCodePage = bz\transactd::CP_UTF8;
+        $this->assertNotEquals($dbdef, null);
+        $td = new Tabledef();
+        $td->schemaCodePage = Transactd::CP_UTF8;
         $td->setTableName(TABLENAME);
         $td->setFileName(TABLENAME . '.dat');
-        $td->charsetIndex = bz\transactd::CHARSET_UTF8;
+        $td->charsetIndex = Transactd::CHARSET_UTF8;
         $tableid = 1;
         $td->id = $tableid;
         $td->pageSize = 2048;
@@ -161,12 +168,12 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fieldIndex = 0;
         $fd = $dbdef->insertField($tableid, $fieldIndex);
         $fd->setName('id');
-        $fd->type = bz\transactd::ft_autoinc;
+        $fd->type = Transactd::ft_autoinc;
         $fd->len = 4;
         
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('名前');
-        $fd->type = bz\transactd::ft_myvarchar;
+        $fd->type = Transactd::ft_myvarchar;
         $fd->len = 2;
         $this->assertEquals($fd->isValidCharNum(), false);
         $fd->SetLenByCharnum(20);
@@ -177,38 +184,35 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('group');
-        $fd->type = bz\transactd::ft_integer;
+        $fd->type = Transactd::ft_integer;
         $fd->len = 4;
         $fd->setNullable(true, false);
         $fd->setDefaultValue(10);
         
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('tel');
-        $fd->type = bz\transactd::ft_myvarchar;
+        $fd->type = Transactd::ft_myvarchar;
         $fd->len = 4;
         $fd->setLenByCharnum(21);
         $fd->setNullable(true);
         
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('update_datetime');
-        $fd->type = bz\transactd::ft_mytimestamp;
+        $fd->type = Transactd::ft_mytimestamp;
         $fd->len = 7;
-        $fd->setDefaultValue(bz\transactd::DFV_TIMESTAMP_DEFAULT);
+        $fd->setDefaultValue(Transactd::DFV_TIMESTAMP_DEFAULT);
         $fd->setTimeStampOnUpdate(true);
         $this->assertEquals($fd->isTimeStampOnUpdate(), true);
 
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('create_datetime');
-        if ($this->isMySQL5_5($db))
-        {
-            $fd->type = bz\transactd::ft_mydatetime;
+        if ($this->isMySQL5_5($db)) {
+            $fd->type = Transactd::ft_mydatetime;
             $fd->len = 8;
-        }
-        else
-        {
-            $fd->type = bz\transactd::ft_mytimestamp;
+        } else {
+            $fd->type = Transactd::ft_mytimestamp;
             $fd->len = 4;
-            $fd->setDefaultValue(bz\transactd::DFV_TIMESTAMP_DEFAULT);
+            $fd->setDefaultValue(Transactd::DFV_TIMESTAMP_DEFAULT);
         }
         $fd->setTimeStampOnUpdate(false);
         $this->assertEquals($fd->isTimeStampOnUpdate(), false);
@@ -238,13 +242,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
     {
         $this->openDatabase($db);
         $dbdef = $db->dbDef();
-        $this->assertNotEquals($dbdef, NULL);
-        $td = new bz\tabledef();
+        $this->assertNotEquals($dbdef, null);
+        $td = new Tabledef();
         
-        $td->schemaCodePage = bz\transactd::CP_UTF8;
+        $td->schemaCodePage = Transactd::CP_UTF8;
         $td->setTableName("extention");
         $td->setFileName("extention");
-        $td->charsetIndex = bz\transactd::CHARSET_UTF8;
+        $td->charsetIndex = Transactd::CHARSET_UTF8;
         $tableid = 3;
         $td->id = $tableid;
         $dbdef->insertTable($td);
@@ -253,19 +257,19 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fieldIndex = 0;
         $fd = $dbdef->insertField($tableid, $fieldIndex);
         $fd->setName('id');
-        $fd->type = bz\transactd::ft_integer;
+        $fd->type = Transactd::ft_integer;
         $fd->len = 4;
         
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('comment');
-        $fd->type = bz\transactd::ft_myvarchar;
+        $fd->type = Transactd::ft_myvarchar;
         $fd->SetLenByCharnum(60);
         $fd->setNullable(true);
         $this->assertEquals($fd->isDefaultNull(), true);
 
         $fd = $dbdef->insertField($tableid, ++$fieldIndex);
         $fd->setName('bits');
-        $fd->type = bz\transactd::ft_integer;
+        $fd->type = Transactd::ft_integer;
         $fd->len = 8;
         $this->assertEquals($fd->isDefaultNull(), false);
         
@@ -284,15 +288,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
     
     private function insertData($db)
     {
-        $tb = $db->openTable("user", bz\transactd::TD_OPEN_NORMAL); 
-        $tb3 = $db->openTable("extention", bz\transactd::TD_OPEN_NORMAL); 
+        $tb = $db->openTable("user", Transactd::TD_OPEN_NORMAL);
+        $tb3 = $db->openTable("extention", Transactd::TD_OPEN_NORMAL);
         
-        try
-        {
+        try {
             $db->beginTrn();
             $tb->clearBuffer();
-            for ($i= 1;$i<= 1000;++$i)
-            {
+            for ($i= 1;$i<= 1000;++$i) {
                 $tb->setFV(0,  $i);
                 $tb->setFV(1, $i." user");
                 $tb->setFV(2, (($i-1) % 5)+1);
@@ -300,16 +302,13 @@ class transactdTest extends PHPUnit_Framework_TestCase
             }
             
             $tb3->clearBuffer();
-            for ($i= 1;$i<= 1000;++$i)
-            {
+            for ($i= 1;$i<= 1000;++$i) {
                 $tb3->setFV(0,  $i);
                 $tb3->setFV(1, $i." comment");
                 $tb3->insert();
             }
             $db->endTrn();
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $db->abortTrn();
             $this->assertEquals(true, false);
         }
@@ -328,7 +327,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
     
     public function test()
     {
-        $db = new bz\database();
+        $db = new Database();
         
         $this->createDatabase($db);
         $this->openDatabase($db);
@@ -342,39 +341,43 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db->setAutoSchemaUseNullkey(false);
         $this->assertEquals($db->autoSchemaUseNullkey(), false);
         
-        $this->assertEquals($db::compatibleMode(), bz\database::CMP_MODE_MYSQL_NULL);
+        $this->assertEquals($db::compatibleMode(), Database::CMP_MODE_MYSQL_NULL);
         
-        bz\database::setCompatibleMode(bz\database::CMP_MODE_OLD_NULL);
-        $this->assertEquals(bz\database::compatibleMode(), bz\database::CMP_MODE_OLD_NULL);
+        Database::setCompatibleMode(Database::CMP_MODE_OLD_NULL);
+        $this->assertEquals(Database::compatibleMode(), Database::CMP_MODE_OLD_NULL);
 
-        bz\database::setCompatibleMode(bz\database::CMP_MODE_BINFD_DEFAULT_STR);
-        $this->assertEquals(bz\database::compatibleMode(), bz\database::CMP_MODE_BINFD_DEFAULT_STR);
+        Database::setCompatibleMode(Database::CMP_MODE_BINFD_DEFAULT_STR);
+        $this->assertEquals(Database::compatibleMode(), Database::CMP_MODE_BINFD_DEFAULT_STR);
         
-        bz\database::setCompatibleMode(bz\database::CMP_MODE_MYSQL_NULL);
-        $this->assertEquals(bz\database::compatibleMode(), bz\database::CMP_MODE_MYSQL_NULL);
+        Database::setCompatibleMode(Database::CMP_MODE_MYSQL_NULL);
+        $this->assertEquals(Database::compatibleMode(), Database::CMP_MODE_MYSQL_NULL);
 
         $dbdef = $db->dbDef();
         $td = $dbdef->tableDefs(1);
         //isMysqlNullMode //size()
-        $this->assertEquals($td->isMysqlNullMode() , true);
+        $this->assertEquals($td->isMysqlNullMode(), true);
         
         //recordlen()
         $len = 145;
-        if ($mysql_5_5)  $len += 4;
-        if ($this->isLegacyTimeFormat($db)) $len -= 3;
-        $this->assertEquals($td->recordlen() , $len);
+        if ($mysql_5_5) {
+            $len += 4;
+        }
+        if ($this->isLegacyTimeFormat($db)) {
+            $len -= 3;
+        }
+        $this->assertEquals($td->recordlen(), $len);
         
         //size()
-        $this->assertEquals($td->size() , 1184);
+        $this->assertEquals($td->size(), 1184);
         
         //InUse
-        $this->assertEquals($td->inUse() , 0);
+        $this->assertEquals($td->inUse(), 0);
         
         //nullfields
         $this->assertEquals($td->nullfields(), 2);
         
         //fieldNumByName
-        $this->assertEquals($td->fieldNumByName("tel") , 3);
+        $this->assertEquals($td->fieldNumByName("tel"), 3);
         
         //default value
         $fd = $td->fieldDef(1);
@@ -384,7 +387,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fd = $td->fieldDef(3);
         $this->assertEquals($fd->isDefaultNull(), true);
         $fd = $td->fieldDef(4);
-        $this->assertEquals($fd->defaultValue(), bz\transactd::DFV_TIMESTAMP_DEFAULT);
+        $this->assertEquals($fd->defaultValue(), Transactd::DFV_TIMESTAMP_DEFAULT);
         $this->assertEquals($fd->isTimeStampOnUpdate(), true);
         $fd = $td->fieldDef(5);
         $this->assertEquals($fd->isTimeStampOnUpdate(), false);
@@ -395,7 +398,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         
         $fd->setLenByCharnum(19);
         $this->assertNotEquals($len, $fd->len);
-        $dbdef->synchronizeSeverSchema(1); 
+        $dbdef->synchronizeSeverSchema(1);
         $td = $dbdef->tableDefs(1);
         $fd = $td->fieldDef(1);
         $this->assertEquals($len, $fd->len);
@@ -426,8 +429,8 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $td->setValidationTarget(true, 0);
         
         
-        $q = new bz\query();
-        $atu = new bz\activeTable($db, "user", bz\transactd::TD_OPEN_NORMAL);
+        $q = new Query();
+        $atu = new ActiveTable($db, "user", Transactd::TD_OPEN_NORMAL);
         
         // segmentsSizeForInValue
         $this->assertEquals($q->segmentsForInValue(3)->getJoinKeySize(), 3);
@@ -448,7 +451,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
 
         $q->select("id", "name", "group", "tel")->where("id", "<=", 10);
         $rs = $atu->index(0)->keyValue(1)->read($q);
-        $rs->fetchMode = bz\transactd::FETCH_RECORD_INTO;
+        $rs->fetchMode = Transactd::FETCH_RECORD_INTO;
         $this->assertEquals($rs->count(), 10);
         $rec = $rs->first();
         $this->assertEquals($rec[3]->isNull(), true);
@@ -457,9 +460,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
 
         //Join null
         $q->reset();
-        $ate = new bz\activeTable($db, "extention");
+        $ate = new ActiveTable($db, "extention");
         $last = $ate->index(0)->join($rs, $q->select("comment")
-            ->optimize(bz\query::joinHasOneOrHasMany), "id")->reverse()->first();
+            ->optimize(Query::joinHasOneOrHasMany), "id")->reverse()->first();
         $this->assertEquals($rs->count(), 10);
         $this->assertEquals($last["id"]->i(), 10);
         $this->assertEquals($last["id"]->i64(), 10);
@@ -529,7 +532,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($rs->count(), 1000);
         
         // recordset whenIsNull
-        $rq = new bz\recordsetQuery();
+        $rq = new RecordsetQuery();
         $rq->whenIsNull("tel");
         $rs2 = clone $rs;
         $rs2 = $rs2->matchBy($rq);
@@ -590,7 +593,7 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->clearBuffer();
         $this->assertEquals($tb->getFVNull(3), true);
         
-        $tb->clearBuffer(bz\table::clearNull);
+        $tb->clearBuffer(Table::clearNull);
         $this->assertEquals($tb->getFVNull(3), false);
         
         // table NULL
@@ -611,38 +614,39 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVNull("tel"), true);
         
         //timestamp format
-        $date  = bz\transactd::btrdtoa(bz\transactd::getNowDate(), true);
+        $date  = Transactd::btrdtoa(Transactd::getNowDate(), true);
         $this->assertEquals(mb_substr($tb->getFVstr("update_datetime"), 0, 10), $date);
-        if ($mysql_5_5 == false)
-             $this->assertEquals(mb_substr($tb->getFVstr("create_datetime"), 0, 10), $date);
+        if ($mysql_5_5 == false) {
+            $this->assertEquals(mb_substr($tb->getFVstr("create_datetime"), 0, 10), $date);
+        }
         
         // setTimestampMode
-        $tb->setTimestampMode(bz\transactd::TIMESTAMP_VALUE_CONTROL);
-        $tb->setTimestampMode(bz\transactd::TIMESTAMP_ALWAYS);
+        $tb->setTimestampMode(Transactd::TIMESTAMP_VALUE_CONTROL);
+        $tb->setTimestampMode(Transactd::TIMESTAMP_ALWAYS);
         
         //isMysqlNullMode
         $this->assertEquals($tb->tableDef()->isMysqlNullMode(), true);
-        $this->assertEquals($td->inUse() , 2);
+        $this->assertEquals($td->inUse(), 2);
         
         unset($atu);
-        $this->assertEquals($td->inUse() , 1);
+        $this->assertEquals($td->inUse(), 1);
         $tb->release();
-        $this->assertEquals($td->inUse() , 0);
+        $this->assertEquals($td->inUse(), 0);
         
         $db->close();
     }
     
-    public function test_bit()
+    public function testBit()
     {
-        $db = new bz\database();
+        $db = new Database();
         $this->openDatabase($db);
-        $tb = $db->openTable("extention", bz\transactd::TD_OPEN_NORMAL);
+        $tb = $db->openTable("extention", Transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
         $tb->setKeyNum(0);
         $tb->setFV('id', 1);
         $tb->seek();
         $this->assertEquals($tb->stat(), 0);
-        $bits = new  bz\bitset();
+        $bits = new  Bitset();
         /*
         $bits->set(63, true);
         $bits->set(2, true);
@@ -656,11 +660,11 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->update();
         $this->assertEquals($tb->stat(), 0);
         
-        $q = new bz\query();
-        $at = new bz\activeTable($db, "extention", bz\transactd::TD_OPEN_NORMAL);
+        $q = new Query();
+        $at = new ActiveTable($db, "extention", Transactd::TD_OPEN_NORMAL);
         $q->where('id', '=', 1);
         $rs = $at->index(0)->keyValue(1)->read($q);
-        $rs->fetchMode = bz\transactd::FETCH_RECORD_INTO;
+        $rs->fetchMode = Transactd::FETCH_RECORD_INTO;
         $this->assertEquals($rs->size(), 1);
         $bits = $rs[0]['bits']->getBits();
 
@@ -698,14 +702,14 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->stat(), 0);
         $bits = $tb->getFVbits('bits');
         
-        $this->assertEquals($bits->get( 63), false);
-        $this->assertEquals($bits->get( 2), true);
-        $this->assertEquals($bits->get( 5), true);
-        $this->assertEquals($bits->get( 12), true);
-        $this->assertEquals($bits->get( 0), true);
-        $this->assertEquals($bits->get( 62), true);
-        $this->assertEquals($bits->get( 11), false);
-        $this->assertEquals($bits->get( 13), false);
+        $this->assertEquals($bits->get(63), false);
+        $this->assertEquals($bits->get(2), true);
+        $this->assertEquals($bits->get(5), true);
+        $this->assertEquals($bits->get(12), true);
+        $this->assertEquals($bits->get(0), true);
+        $this->assertEquals($bits->get(62), true);
+        $this->assertEquals($bits->get(11), false);
+        $this->assertEquals($bits->get(13), false);
         
         $this->assertEquals($bits[63], false);
         $this->assertEquals($bits[2], true);
@@ -720,10 +724,10 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $db->close();
     }
     
-    public function test_bitset()
+    public function testBitset()
     {
-        $bits1 = new  bz\bitset();
-        $bits2 = new  bz\bitset();
+        $bits1 = new Bitset();
+        $bits2 = new Bitset();
         $bits1[0] = true;
         $bits1[1] = true;
         $bits1[63] = true;
@@ -740,18 +744,18 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($bits2->contains($bits1, $all), true);
     }
     
-    public function test_decimal()
+    public function testDecimal()
     {
-        $db = new bz\database();
+        $db = new Database();
         $this->openDatabase($db);
         $dbdef = $db->dbDef();
-        $this->assertNotEquals($dbdef, NULL);
-        $td = new bz\tabledef();
+        $this->assertNotEquals($dbdef, null);
+        $td = new Tabledef();
         
-        $td->schemaCodePage = bz\transactd::CP_UTF8;
+        $td->schemaCodePage = Transactd::CP_UTF8;
         $td->setTableName("decimal");
         $td->setFileName("decimal");
-        $td->charsetIndex = bz\transactd::CHARSET_UTF8;
+        $td->charsetIndex = Transactd::CHARSET_UTF8;
         $tableid = 10;
         $td->id = $tableid;
         $dbdef->insertTable($td);
@@ -760,48 +764,47 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $fieldIndex = 0;
         $fd = $dbdef->insertField($tableid, $fieldIndex);
         $fd->setName('id');
-        $fd->type = bz\transactd::ft_mydecimal;
+        $fd->type = Transactd::ft_mydecimal;
         $fd->setDecimalDigits(65, 30);
         $this->assertEquals($fd->digits, 65);
         $this->assertEquals($fd->decimals, 30);
         $this->assertEquals($fd->isIntegerType(), false);
         $this->assertEquals($fd->isNumericType(), true);
         
-        $bits1 = new  bz\bitset();
+        $bits1 = new  Bitset();
         $bits1[2] = true;
-        $fd->type = bz\transactd::ft_integer;
+        $fd->type = Transactd::ft_integer;
         $fd->len = 4;
         $fd->setDefaultValue($bits1);
         $this->assertEquals($fd->defaultValue(), '4');
         $db->close();
     }
-    public function test_snapshot()
+    public function testSnapshot()
     {
-        $db = new bz\database();
+        $db = new Database();
         $this->openDatabase($db);
-        $bpos = $db->beginSnapshot(bz\transactd::CONSISTENT_READ_WITH_BINLOG_POS);
-        if ($this->isMariaDBWithGtid($db))
-          $this->assertEquals($bpos->type, bz\transactd::REPL_POSTYPE_MARIA_GTID);
-        else
-        {
-          $ret = ($bpos->type == bz\transactd::REPL_POSTYPE_POS) || ($bpos->type == bz\transactd::REPL_POSTYPE_GTID);
-          $this->assertEquals($ret , true);
+        $bpos = $db->beginSnapshot(Transactd::CONSISTENT_READ_WITH_BINLOG_POS);
+        if ($this->isMariaDBWithGtid($db)) {
+            $this->assertEquals($bpos->type, Transactd::REPL_POSTYPE_MARIA_GTID);
+        } else {
+            $ret = ($bpos->type == Transactd::REPL_POSTYPE_POS) || ($bpos->type == Transactd::REPL_POSTYPE_GTID);
+            $this->assertEquals($ret, true);
         }
         $this->assertNotEquals($bpos->pos, 0);
         $this->assertNotEquals($bpos->filename, "");
         echo PHP_EOL.'binlog pos = '.$bpos->filename.':'.$bpos->pos.PHP_EOL;
-        echo 'gtid (set)= '.$bpos->gtid.PHP_EOL;;
-        
+        echo 'gtid (set)= '.$bpos->gtid.PHP_EOL;
+   
         //setGtid
         $bpos->gtid = "ABCD";
-        $this->assertEquals($bpos->gtid , "ABCD");
+        $this->assertEquals($bpos->gtid, "ABCD");
         
         $db->endSnapshot();
         $db->close();
     }
-    public function test_getSql()
+    public function testGetSql()
     {
-        $db = new bz\database();
+        $db = new Database();
         $this->openDatabase($db);
         $db->execSql("create view idlessthan5 as select * from user where id < 5");
         $view = $db->getCreateViewSql("idlessthan5");
@@ -817,9 +820,9 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $tb->close();
         $db->close();
     }
-    public function test_createAssociate()
+    public function testCreateAssociate()
     {
-        $db = new bz\database();
+        $db = new Database();
         $this->openDatabase($db);
         $dba = $db->createAssociate();
         $this->assertEquals($db->stat(), 0);
@@ -827,16 +830,16 @@ class transactdTest extends PHPUnit_Framework_TestCase
         $dba->close();
         $db->close();
     }
-    public function test_ConnMgr()
+    public function testConnMgr()
     {
         // other database connection
-        $db_other = new bz\database();
+        $db_other = new Database();
         $this->openDatabase($db_other);
         $tb_other = $db_other->openTable("user");
         $this->assertEquals($db_other->stat(), 0);
         // connMgr connection
-        $db = new bz\database();
-        $mgr = new bz\connMgr($db);
+        $db = new Database();
+        $mgr = new ConnMgr($db);
         $mgr->connect($db_other->uri());
         $this->assertEquals($mgr->stat(), 0);
         // connections
@@ -882,328 +885,324 @@ class transactdTest extends PHPUnit_Framework_TestCase
         //sysvar
         $recs = $mgr->sysvars();
         $this->assertEquals($mgr->stat(), 0);
-        $this->assertEquals(bz\connMgr::sysvarName(0), "database_version");
+        $this->assertEquals(ConnMgr::sysvarName(0), "database_version");
         //statusvar
         $recs = $mgr->statusvars();
         $this->assertEquals($mgr->stat(), 0);
-        $this->assertEquals(bz\connMgr::statusvarName(0), "tcp_connections");
+        $this->assertEquals(ConnMgr::statusvarName(0), "tcp_connections");
         //slaveStatus
         $recs = $mgr->slaveStatus("");
         $this->assertEquals($mgr->stat(), 0);
         $this->assertEquals($mgr->slaveStatusName(0), "Slave_IO_State");
-        for ($i = 0; $i < $recs->size(); $i++)
-        {
+        for ($i = 0; $i < $recs->size(); $i++) {
             echo(PHP_EOL . $mgr->slaveStatusName($i) . "\t:" . $recs[$i]->value);
         }
         
         //extendedvars
         $recs = $mgr->extendedvars();
         $this->assertEquals($recs->size(), 4);
-        $this->assertEquals($mgr->extendedVarName(0) , "MySQL_Gtid_Mode");
+        $this->assertEquals($mgr->extendedVarName(0), "MySQL_Gtid_Mode");
         
         // record port
-        $this->assertEquals($recs[0]->port , 0);
+        $this->assertEquals($recs[0]->port, 0);
         
         //slaveHosts
         $recs = $mgr->slaveHosts();
-        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($mgr->stat(), 0);
         //channels
         $recs = $mgr->channels();
-        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($mgr->stat(), 0);
         //haLock
         $ret = $mgr->haLock();
-        $this->assertEquals($mgr->stat() , 0);
-        $this->assertEquals($ret , true);
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($ret, true);
         //haUnlock
         $mgr->haUnlock();
-        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($mgr->stat(), 0);
         //setRole
         $ret = $mgr->setRole(0);
-        $this->assertEquals($mgr->stat() , 0);
-        $this->assertEquals($ret , true);
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($ret, true);
         $ret = $mgr->setRole(1);
-        $this->assertEquals($mgr->stat() , 0);
-        $this->assertEquals($ret , true);
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($ret, true);
         //setEnableFailover
         $ret = $mgr->setEnableFailover(false);
-        $this->assertEquals($mgr->stat() , 0);
-        $this->assertEquals($ret , true);
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($ret, true);
         $ret = $mgr->setEnableFailover(true);
-        $this->assertEquals($mgr->stat() , 0);
-        $this->assertEquals($ret , true);
-        $this->assertEquals($mgr->isOpen() , true);
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($ret, true);
+        $this->assertEquals($mgr->isOpen(), true);
         //enableAutoReconnect
         $this->assertEquals($db->enableAutoReconnect(), false);
         $db->setenableAutoReconnect(true);
         $this->assertEquals($db->enableAutoReconnect(), true);
         $db->setenableAutoReconnect(false);
         $mgr->disconnect();
-        $this->assertEquals($mgr->stat() , 0);
+        $this->assertEquals($mgr->stat(), 0);
         $this->assertEquals($mgr->isOpen(), false);
         //haNameReslover
         $host = "localhost";
         $user = "root";
         $pwd = "";
-        $ret = bz\haNameResolver::start("master123", "slave1, slave2", $host, 0, $user, $pwd);
-        $this->assertEquals($ret , 1);
+        $ret = HaNameResolver::start("master123", "slave1, slave2", $host, 0, $user, $pwd);
+        $this->assertEquals($ret, 1);
         //portMap
-        bz\haNameResolver::addPortMap(3307, 8611);
-        bz\haNameResolver::clearPortMap();
+        HaNameResolver::addPortMap(3307, 8611);
+        HaNameResolver::clearPortMap();
         //master slave name
-        $this->assertEquals(bz\haNameResolver::master() , $host);
-        $this->assertEquals(bz\haNameResolver::slave() , "-");
+        $this->assertEquals(HaNameResolver::master(), $host);
+        $this->assertEquals(HaNameResolver::slave(), "-");
         //connect by master roll
         $mgr->connect("tdap://" . $user . "@master123/?pwd=" . $pwd);
-        $this->assertEquals($mgr->stat() , 0);
-        $this->assertEquals($mgr->isOpen() , true);
+        $this->assertEquals($mgr->stat(), 0);
+        $this->assertEquals($mgr->isOpen(), true);
         $mgr->disconnect();
-        $this->assertEquals($mgr->isOpen() , false);
-        //stop 
-        bz\haNameResolver::stop();
+        $this->assertEquals($mgr->isOpen(), false);
+        //stop
+        HaNameResolver::stop();
         $mgr->connect("tdap://" . $user . "@master123/?pwd=" . $pwd);
-        $this->assertEquals($mgr->stat() , ERROR_TD_HOSTNAME_NOT_FOUND);
+        $this->assertEquals($mgr->stat(), ERROR_TD_HOSTNAME_NOT_FOUND);
         $tb_other->close();
         $db_other->close();
-        
     }
     
-    public function test_v3_5_constant()
+    public function testV35Constant()
     {
-        $this->assertEquals(bz\transactd::ERROR_TD_RECONNECTED_OFFSET , 1000);
-        $this->assertEquals(bz\transactd::ERROR_TD_INVALID_SERVER_ROLE , 3812);
-        $this->assertEquals(bz\transactd::ERROR_TD_RECONNECTED , 3900);
-        $this->assertEquals(bz\transactd::MYSQL_ERROR_OFFSET , 25000);
-        $this->assertEquals(bz\transactd::HA_ROLE_SLAVE , 0);
-        $this->assertEquals(bz\transactd::HA_ROLE_MASTER , 1);
-        $this->assertEquals(bz\transactd::HA_ROLE_NONE , 2);
-        $this->assertEquals(bz\transactd::HA_RESTORE_ROLE , 4);
-        $this->assertEquals(bz\transactd::HA_ENABLE_FAILOVER , 8);
+        $this->assertEquals(Transactd::ERROR_TD_RECONNECTED_OFFSET, 1000);
+        $this->assertEquals(Transactd::ERROR_TD_INVALID_SERVER_ROLE, 3812);
+        $this->assertEquals(Transactd::ERROR_TD_RECONNECTED, 3900);
+        $this->assertEquals(Transactd::MYSQL_ERROR_OFFSET, 25000);
+        $this->assertEquals(Transactd::HA_ROLE_SLAVE, 0);
+        $this->assertEquals(Transactd::HA_ROLE_MASTER, 1);
+        $this->assertEquals(Transactd::HA_ROLE_NONE, 2);
+        $this->assertEquals(Transactd::HA_RESTORE_ROLE, 4);
+        $this->assertEquals(Transactd::HA_ENABLE_FAILOVER, 8);
     }
     
-    public function test_fetchMode()
+    public function testFetchMode()
     {
-        $db = new bz\database();
-        $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        $db = new Database();
+        $db->open(URI, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
         $tb = $db->openTable("user");
-        $this->assertEquals($tb->stat() , 0);
+        $this->assertEquals($tb->stat(), 0);
         $tb->seekFirst();
-        $this->assertEquals($tb->stat() , 0);
+        $this->assertEquals($tb->stat(), 0);
         
         //test fetch field type
-        bz\transactd::setFieldValueMode(bz\transactd::FIELD_VALUE_MODE_OBJECT);
-        $tb->fetchMode = bz\transactd::FETCH_RECORD_INTO;
-        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_RECORD_INTO);
+        Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_OBJECT);
+        $tb->fetchMode = Transactd::FETCH_RECORD_INTO;
+        $this->assertEquals($tb->fetchMode, Transactd::FETCH_RECORD_INTO);
         $rec = $tb->fields();
-        $this->assertEquals($rec["id"]->i() , 1);
+        $this->assertEquals($rec["id"]->i(), 1);
         
-        bz\transactd::setFieldValueMode(bz\transactd::FIELD_VALUE_MODE_VALUE);
-        $this->assertEquals($rec["id"] , 1);
+        Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE);
+        $this->assertEquals($rec["id"], 1);
         
-        $tb->fetchMode = bz\transactd::FETCH_VAL_NUM;
-        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_VAL_NUM);
+        $tb->fetchMode = Transactd::FETCH_VAL_NUM;
+        $this->assertEquals($tb->fetchMode, Transactd::FETCH_VAL_NUM);
         $rec = $tb->fields();
-        $this->assertEquals($rec[0] , 1);
+        $this->assertEquals($rec[0], 1);
         
-        $tb->fetchMode = bz\transactd::FETCH_VAL_ASSOC;
-        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_VAL_ASSOC);
+        $tb->fetchMode = Transactd::FETCH_VAL_ASSOC;
+        $this->assertEquals($tb->fetchMode, Transactd::FETCH_VAL_ASSOC);
         $rec = $tb->fields();
-        $this->assertEquals($rec["id"] , 1);
+        $this->assertEquals($rec["id"], 1);
         
-        $tb->fetchMode = bz\transactd::FETCH_VAL_BOTH;
-        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_VAL_BOTH);
+        $tb->fetchMode = Transactd::FETCH_VAL_BOTH;
+        $this->assertEquals($tb->fetchMode, Transactd::FETCH_VAL_BOTH);
         $rec = $tb->fields();
-        $this->assertEquals($rec[0] , 1);
-        $this->assertEquals($rec["id"] , 1);
+        $this->assertEquals($rec[0], 1);
+        $this->assertEquals($rec["id"], 1);
         
         
-        $tb->fetchMode = bz\transactd::FETCH_OBJ;
-        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_OBJ);
+        $tb->fetchMode = Transactd::FETCH_OBJ;
+        $this->assertEquals($tb->fetchMode, Transactd::FETCH_OBJ);
         $usr = $tb->fields();
-        $this->assertEquals($usr->id , 1);
+        $this->assertEquals($usr->id, 1);
         
         
-        $tb->fetchMode = bz\transactd::FETCH_USR_CLASS;
+        $tb->fetchMode = Transactd::FETCH_USR_CLASS;
         $tb->fetchClass = "User";
         $tb->ctorArgs = array("1","2","3");
-        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_USR_CLASS);
+        $this->assertEquals($tb->fetchMode, Transactd::FETCH_USR_CLASS);
         $usr = $tb->fields();
-        $this->assertEquals($usr->id , 1);
-        $this->assertEquals($usr->a , "1");
-        $this->assertEquals($usr->b , "2");
-        $this->assertEquals($usr->c , "3");
+        $this->assertEquals($usr->id, 1);
+        $this->assertEquals($usr->a, "1");
+        $this->assertEquals($usr->b, "2");
+        $this->assertEquals($usr->c, "3");
         $tb->close();
         
-        $at = new bz\activeTable($db, "user");
-        $q = new bz\query();
+        $at = new ActiveTable($db, "user");
+        $q = new Query();
         $q->where("id", "<", 10);
         $rs = $at->index(0)->keyValue(0)->read($q);
-        $rs->fetchMode = bz\transactd::FETCH_RECORD_INTO;
-        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_RECORD_INTO);
-        bz\transactd::setFieldValueMode(bz\transactd::FIELD_VALUE_MODE_OBJECT);
-        $this->assertEquals($rs[0]["id"]->i() , 1);
-        bz\transactd::setFieldValueMode(bz\transactd::FIELD_VALUE_MODE_VALUE);
-        $this->assertEquals($rs[0]["id"] , 1);
-        $this->assertEquals($rs->size() , 9);
+        $rs->fetchMode = Transactd::FETCH_RECORD_INTO;
+        $this->assertEquals($rs->fetchMode, Transactd::FETCH_RECORD_INTO);
+        Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_OBJECT);
+        $this->assertEquals($rs[0]["id"]->i(), 1);
+        Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE);
+        $this->assertEquals($rs[0]["id"], 1);
+        $this->assertEquals($rs->size(), 9);
 
-        $rs->fetchMode = bz\transactd::FETCH_VAL_NUM;
-        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_VAL_NUM);
-        $this->assertEquals($rs[0][0] , 1);
-        $this->assertEquals(count($rs) , 9);
+        $rs->fetchMode = Transactd::FETCH_VAL_NUM;
+        $this->assertEquals($rs->fetchMode, Transactd::FETCH_VAL_NUM);
+        $this->assertEquals($rs[0][0], 1);
+        $this->assertEquals(count($rs), 9);
 
-        $rs->fetchMode = bz\transactd::FETCH_VAL_ASSOC;
-        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_VAL_ASSOC);
-        $this->assertEquals($rs[0]["id"] , 1);
-        $this->assertEquals(count($rs) , 9);
+        $rs->fetchMode = Transactd::FETCH_VAL_ASSOC;
+        $this->assertEquals($rs->fetchMode, Transactd::FETCH_VAL_ASSOC);
+        $this->assertEquals($rs[0]["id"], 1);
+        $this->assertEquals(count($rs), 9);
 
-        $rs->fetchMode = bz\transactd::FETCH_VAL_BOTH;
-        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_VAL_BOTH);
-        $this->assertEquals($rs[0][0] , 1);
-        $this->assertEquals($rs[0]["id"] , 1);
-        $this->assertEquals(count($rs) , 9);
+        $rs->fetchMode = Transactd::FETCH_VAL_BOTH;
+        $this->assertEquals($rs->fetchMode, Transactd::FETCH_VAL_BOTH);
+        $this->assertEquals($rs[0][0], 1);
+        $this->assertEquals($rs[0]["id"], 1);
+        $this->assertEquals(count($rs), 9);
 
 
-        $rs->fetchMode = bz\transactd::FETCH_OBJ;
-        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_OBJ);
-        $this->assertEquals($rs[0]->id , 1);
-        $this->assertEquals(count($rs) , 9);
+        $rs->fetchMode = Transactd::FETCH_OBJ;
+        $this->assertEquals($rs->fetchMode, Transactd::FETCH_OBJ);
+        $this->assertEquals($rs[0]->id, 1);
+        $this->assertEquals(count($rs), 9);
 
-        $rs->fetchMode = bz\transactd::FETCH_USR_CLASS;
+        $rs->fetchMode = Transactd::FETCH_USR_CLASS;
         $rs->fetchClass = "User";
         $rs->ctorArgs = array("1","2","3");
-        $this->assertEquals($rs->fetchMode , bz\transactd::FETCH_USR_CLASS);
-        $this->assertEquals($rs[1]->id , 2);
-        $this->assertEquals($rs[0]->a , "1");
-        $this->assertEquals($rs[0]->b , "2");
-        $this->assertEquals($rs[0]->c , "3");
-        $this->assertEquals(count($rs) , 9);
+        $this->assertEquals($rs->fetchMode, Transactd::FETCH_USR_CLASS);
+        $this->assertEquals($rs[1]->id, 2);
+        $this->assertEquals($rs[0]->a, "1");
+        $this->assertEquals($rs[0]->b, "2");
+        $this->assertEquals($rs[0]->c, "3");
+        $this->assertEquals(count($rs), 9);
         
         $db->close();
     }
     
-    public function test_setAlias()
+    public function testSetAlias()
     {
-        $db = new bz\database();
-        $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        $db = new Database();
+        $db->open(URI, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
         $tb = $db->openTable("user");
-        $this->assertEquals($tb->stat() , 0);
+        $this->assertEquals($tb->stat(), 0);
         $tb->setAlias("名前", "name");
         $tb->setAlias("id", "user_id");
         $this->assertEquals($tb->fieldNumByName("user_id"), 0);
         $tb->seekFirst();
-        $this->assertEquals($tb->stat() , 0);
+        $this->assertEquals($tb->stat(), 0);
 
-        $tb->fetchMode = bz\transactd::FETCH_USR_CLASS;
+        $tb->fetchMode = Transactd::FETCH_USR_CLASS;
         $tb->fetchClass = "User";
         $tb->ctorArgs = array("1","2","3");
-        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_USR_CLASS);
+        $this->assertEquals($tb->fetchMode, Transactd::FETCH_USR_CLASS);
         $usr = $tb->fields();
-        $this->assertEquals($usr->user_id , 1);
-        $this->assertEquals($usr->name , "1 user");
+        $this->assertEquals($usr->user_id, 1);
+        $this->assertEquals($usr->name, "1 user");
         
-        $q = new bz\query();
+        $q = new Query();
         $q->select("name")->where("id", "<", 10);
         $tb->setQuery($q);
         $tb->clearBuffer();
         $users = $tb->findAll();
-        $this->assertEquals(count($users) , 9);
-        $this->assertEquals($users[0]->name , "1 user");
-
+        $this->assertEquals(count($users), 9);
+        $this->assertEquals($users[0]->name, "1 user");
     }
     
-    public function test_insertObject()
+    public function testInsertObject()
     {
-        $db = new bz\database();
-        $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        $db = new Database();
+        $db->open(URI, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
         $tb = $db->openTable("user");
-        $this->assertEquals($tb->stat() , 0);
+        $this->assertEquals($tb->stat(), 0);
         $tb->setAlias("名前", "name");
         $tb->seekFirst();
-        $this->assertEquals($tb->stat() , 0);
-        $tb->fetchMode = bz\transactd::FETCH_USR_CLASS;
+        $this->assertEquals($tb->stat(), 0);
+        $tb->fetchMode = Transactd::FETCH_USR_CLASS;
         $tb->fetchClass = "User";
         $tb->ctorArgs = array("1","2","3");
-        $this->assertEquals($tb->fetchMode , bz\transactd::FETCH_USR_CLASS);
+        $this->assertEquals($tb->fetchMode, Transactd::FETCH_USR_CLASS);
         $usr = $tb->fields();
         $usr->id = 0;
         $usr->name = 'test_insertObject';
         $tb->insertByObject($usr);
         $tb->seekLast();
         $usr = $tb->fields();
-        $this->assertEquals($usr->name , 'test_insertObject');
-        $this->assertEquals($usr->id , 1001);
+        $this->assertEquals($usr->name, 'test_insertObject');
+        $this->assertEquals($usr->id, 1001);
         
         $row = $tb->getRecord();
         $row->setValueByObject($usr);
         $usr2 = $tb->fields();
-        $this->assertEquals($usr2 , $usr);
+        $this->assertEquals($usr2, $usr);
     }
     
-    public function test_UTCC()
+    public function testUTCC()
     {
-        $db = new bz\database();
-        $db->open(URI, bz\transactd::TYPE_SCHEMA_BDF, bz\transactd::TD_OPEN_NORMAL);
+        $db = new Database();
+        $db->open(URI, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
         $tb = $db->openTable("user");
         $tb2 = $db->openTable("user");
-		// test in changeCurrentCc or changeCurrentNcc
-		
-		$db->beginTrn();
-		$tb->seekFirst();
-		$this->assertEquals($tb->stat() , 0);
-		$tb2->seekFirst();
-		$this->assertEquals($tb2->stat() , 0);
-		$tb->setFV("名前", 'John');
-		$tb->update();
-		$this->assertEquals($tb->stat() , 0);
-		$tb2->setFV("名前", 'mike');
-		$tb2->setUpdateConflictCheck(true);
-		$this->assertEquals($tb2->updateConflictCheck() , true);
-		$tb2->update(bz\nstable::changeCurrentCc);
-		$this->assertEquals($tb2->stat() , bz\transactd::STATUS_CHANGE_CONFLICT);
-		$db->abortTrn();
+        // test in changeCurrentCc or changeCurrentNcc
 
-		$db->beginTrn();
-		$tb->seekFirst();
-		$this->assertEquals($tb->stat() , 0);
-		$tb2->seekFirst();
-		$this->assertEquals($tb2->stat() , 0);
-		$tb->setFV("名前", 'John');
-		$tb->update();
-		$this->assertEquals($tb->stat() , 0);
-		$tb2->setFV("名前", 'mike');
-		$tb2->setUpdateConflictCheck(false);
-		$this->assertEquals($tb2->updateConflictCheck() , false);
-		$tb2->update(bz\nstable::changeCurrentCc);
-		$this->assertEquals($tb2->stat(), 0);
-		$db->abortTrn();
-		
-		$db->beginTrn();
-		$tb->seekFirst();
-		$this->assertEquals($tb->stat() , 0);
-		$tb2->seekFirst();
-		$this->assertEquals($tb2->stat() , 0);
-		$tb->setFV("名前", 'John');
-		$tb->update();
-		$this->assertEquals($tb->stat() , 0);
-		$tb2->setFV("名前", 'mike');
-		// test in changeInKey
-		$tb2->setUpdateConflictCheck(true);
-		$tb2->update(bz\nstable::changeInKey);
-		$this->assertEquals($tb2->stat() , bz\transactd::STATUS_CHANGE_CONFLICT);
-		$db->abortTrn();
+        $db->beginTrn();
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat(), 0);
+        $tb2->seekFirst();
+        $this->assertEquals($tb2->stat(), 0);
+        $tb->setFV("名前", 'John');
+        $tb->update();
+        $this->assertEquals($tb->stat(), 0);
+        $tb2->setFV("名前", 'mike');
+        $tb2->setUpdateConflictCheck(true);
+        $this->assertEquals($tb2->updateConflictCheck(), true);
+        $tb2->update(Nstable::changeCurrentCc);
+        $this->assertEquals($tb2->stat(), Transactd::STATUS_CHANGE_CONFLICT);
+        $db->abortTrn();
 
-		$db->beginTrn();
-		$tb->seekFirst();
-		$this->assertEquals($tb->stat() , 0);
-		$tb2->seekFirst();
-		$this->assertEquals($tb2->stat() , 0);
-		$tb->setFV("名前", 'John');
-		$tb->update();
-		$this->assertEquals($tb->stat() , 0);
-		$tb2->setFV("名前", 'mike');
-		$tb2->setUpdateConflictCheck(false);
-		$tb2->update(bz\nstable::changeInKey);
-		$this->assertEquals($tb2->stat(), 0);
-		$db->abortTrn();
-	}
-	
+        $db->beginTrn();
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat(), 0);
+        $tb2->seekFirst();
+        $this->assertEquals($tb2->stat(), 0);
+        $tb->setFV("名前", 'John');
+        $tb->update();
+        $this->assertEquals($tb->stat(), 0);
+        $tb2->setFV("名前", 'mike');
+        $tb2->setUpdateConflictCheck(false);
+        $this->assertEquals($tb2->updateConflictCheck(), false);
+        $tb2->update(Nstable::changeCurrentCc);
+        $this->assertEquals($tb2->stat(), 0);
+        $db->abortTrn();
+        
+        $db->beginTrn();
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat(), 0);
+        $tb2->seekFirst();
+        $this->assertEquals($tb2->stat(), 0);
+        $tb->setFV("名前", 'John');
+        $tb->update();
+        $this->assertEquals($tb->stat(), 0);
+        $tb2->setFV("名前", 'mike');
+        // test in changeInKey
+        $tb2->setUpdateConflictCheck(true);
+        $tb2->update(Nstable::changeInKey);
+        $this->assertEquals($tb2->stat(), Transactd::STATUS_CHANGE_CONFLICT);
+        $db->abortTrn();
+
+        $db->beginTrn();
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat(), 0);
+        $tb2->seekFirst();
+        $this->assertEquals($tb2->stat(), 0);
+        $tb->setFV("名前", 'John');
+        $tb->update();
+        $this->assertEquals($tb->stat(), 0);
+        $tb2->setFV("名前", 'mike');
+        $tb2->setUpdateConflictCheck(false);
+        $tb2->update(Nstable::changeInKey);
+        $this->assertEquals($tb2->stat(), 0);
+        $db->abortTrn();
+    }
 }

@@ -1,6 +1,6 @@
 <?php
 /* ================================================================
-   Copyright (C) 2013 BizStation Corp All rights reserved.
+   Copyright (C) 2013,2016 BizStation Corp All rights reserved.
 
    This program is free software; you can redistribute it and/or
    modify it under the terms of the GNU General Public License
@@ -13,24 +13,25 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software 
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  
+   along with this program; if not, write to the Free Software
+   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
    02111-1307, USA.
 ================================================================ */
-mb_internal_encoding('UTF-8');
 
-require_once("transactd.php");
-use BizStation\Transactd as Bz;
+require("transactd.php");
+
+use BizStation\Transactd\Transactd;
+use BizStation\Transactd\Tabledef;
+use BizStation\Transactd\Database;
+use BizStation\Transactd\Table;
 
 function getHost()
 {
     $host = getenv('TRANSACTD_PHPUNIT_HOST');
-    if (strlen($host) == 0)
-    {
+    if (strlen($host) == 0) {
         $host = '127.0.0.1/';
     }
-    if ($host[strlen($host) - 1] != '/')
-    {
+    if ($host[strlen($host) - 1] != '/') {
         $host = $host . '/';
     }
     return $host;
@@ -48,7 +49,7 @@ define("FDN_ID", "番号");
 define("FDI_NAME", 1);
 define("FDN_NAME", "名前");
 
-class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
+class TransactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
 {
     private function dropDatabase($db, $url)
     {
@@ -60,8 +61,7 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
     private function createDatabase($db, $url)
     {
         $db->create($url);
-        if ($db->stat() == Bz\transactd::STATUS_TABLE_EXISTS_ERROR)
-        {
+        if ($db->stat() == Transactd::STATUS_TABLE_EXISTS_ERROR) {
             $this->dropDatabase($db, $url);
             $db->create($url);
         }
@@ -69,22 +69,22 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
     }
     private function openDatabase($db, $url)
     {
-        $db->open($url, Bz\transactd::TYPE_SCHEMA_BDF, Bz\transactd::TD_OPEN_NORMAL);
+        $db->open($url, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
         $this->assertEquals($db->stat(), 0);
     }
     private function createTable($db, $tableid, $tablename)
     {
         $dbdef = $db->dbDef();
-        $this->assertNotEquals($dbdef, NULL);
-        $td = new Bz\tabledef();
+        $this->assertNotEquals($dbdef, null);
+        $td = new Tabledef();
         /* Set table schema codepage to UTF-8
              - codepage for field NAME and tableNAME */
-        $td->schemaCodePage = Bz\transactd::CP_UTF8;
+        $td->schemaCodePage = Transactd::CP_UTF8;
         $td->setTableName($tablename);
         $td->setFileName($tablename . '.dat');
         /* Set table default charaset index
               - default charset for field VALUE */
-        $td->charsetIndex = Bz\transactd::charsetIndex(Bz\transactd::CP_UTF8);
+        $td->charsetIndex = Transactd::charsetIndex(Transactd::CP_UTF8);
         //
         $td->id = $tableid;
         $td->pageSize = 2048;
@@ -92,19 +92,19 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($dbdef->stat(), 0);
         $fd = $dbdef->insertField($tableid, FDI_ID);
         $fd->setName(FDN_ID);
-        $fd->type = Bz\transactd::ft_integer;
+        $fd->type = Transactd::ft_integer;
         $fd->len = 4;
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
         $fd = $dbdef->insertField($tableid, FDI_NAME);
         $fd->setName(FDN_NAME);
-        $fd->type = Bz\transactd::ft_zstring;
+        $fd->type = Transactd::ft_zstring;
         $fd->len = 33;
         $dbdef->updateTableDef($tableid);
         $this->assertEquals($dbdef->stat(), 0);
         /* Set field charset index
               - charset for each field VALUE
-          $fd->setCharsetIndex(Bz\transactd::charsetIndex(Bz\transactd::CP_UTF8)) */
+          $fd->setCharsetIndex(Transactd::charsetIndex(Transactd::CP_UTF8)) */
         $kd = $dbdef->insertKey($tableid, 0);
         $kd->segment(0)->fieldNum = 0;
         $kd->segment(0)->flags->bit8 = 1;
@@ -122,7 +122,7 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
     private function insert($db, $tablename)
     {
         $tb = $this->openTable($db, $tablename);
-        $this->assertNotEquals($tb, NULL);
+        $this->assertNotEquals($tb, null);
         $tb->clearBuffer();
         $tb->setFV(FDN_ID, 1);
         $tb->setFV(FDN_NAME, '小坂');
@@ -142,7 +142,7 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
     private function getEqual($db, $tablename)
     {
         $tb = $this->openTable($db, $tablename);
-        $this->assertNotEquals($tb, NULL);
+        $this->assertNotEquals($tb, null);
         $tb->clearBuffer();
         $tb->setFV(FDN_ID, 1);
         $tb->seek();
@@ -151,12 +151,12 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
     private function find($db, $tablename)
     {
         $tb = $this->openTable($db, $tablename);
-        $this->assertNotEquals($tb, NULL);
+        $this->assertNotEquals($tb, null);
         $tb->setKeyNum(0);
         $tb->clearBuffer();
         $tb->setFilter('番号 >= 1 and 番号 < 3', 1, 0);
         $tb->setFV(FDN_ID, 1);
-        $tb->find(Bz\table::findForword);
+        $tb->find(Table::findForword);
         $this->assertEquals($tb->stat(), 0);
         $this->assertEquals($tb->getFVint(FDN_ID), 1);
         $this->assertEquals($tb->getFVstr(FDN_NAME), '小坂');
@@ -165,7 +165,7 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($tb->getFVint(FDN_ID), 2);
         $this->assertEquals($tb->getFVstr(FDN_NAME), '矢口');
         $tb->findNext(true);
-        $this->assertEquals($tb->stat(), Bz\transactd::STATUS_EOF);
+        $this->assertEquals($tb->stat(), Transactd::STATUS_EOF);
     }
     private function doWhole($db, $tableid, $tablename, $url)
     {
@@ -180,37 +180,37 @@ class transactdKanjiSchemaTest extends PHPUnit_Framework_TestCase
     
     public function testCreateDatabase()
     {
-        $db = new Bz\database();
+        $db = new Database();
         $this->createDatabase($db, URL);
     }
     public function testTableWhichHasKanjiNamedField()
     {
-        $db = new Bz\database();
+        $db = new Database();
         $this->doWhole($db, 1, 'kanji-field', URL);
     }
     public function testKanjiNamedTable()
     {
-        $db = new Bz\database();
+        $db = new Database();
         $this->doWhole($db, 2, '漢字テーブル', URL);
     }
     public function testCreateKanjiNamedDatabase()
     {
-        $db = new Bz\database();
+        $db = new Database();
         $this->createDatabase($db, URL_KANJI); // URL must be UTF-8
     }
     public function testTableWhichHasKanjiNamedFieldInKanjiNamedDatabase()
     {
-        $db = new Bz\database();
+        $db = new Database();
         $this->doWhole($db, 1, 'kanji-field', URL_KANJI);
     }
     public function testKanjiNamedTableInKanjiNamedDatabase()
     {
-        $db = new Bz\database();
+        $db = new Database();
         $this->doWhole($db, 2, '漢字テーブル', URL_KANJI);
     }
     public function testDropDatabase()
     {
-        $db = new Bz\database();
+        $db = new Database();
         $this->dropDatabase($db, URL_KANJI);
     }
 }
