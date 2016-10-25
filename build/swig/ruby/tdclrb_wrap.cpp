@@ -7883,6 +7883,56 @@ fail:
 
 
 SWIGINTERN VALUE
+_wrap_nstable_setUpdateConflictCheck(int argc, VALUE *argv, VALUE self) {
+  tdap::client::nstable *arg1 = (tdap::client::nstable *) 0 ;
+  bool arg2 ;
+  bool val2 ;
+  int ecode2 = 0 ;
+  bool result;
+  VALUE vresult = Qnil;
+  
+  if (!check_param_count(argc, 1, 1)) return Qnil;
+  arg1 = selfPtr(self, arg1);
+  ecode2 = SWIG_AsVal_bool(argv[0], &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), Ruby_Format_TypeError( "", "bool","setUpdateConflictCheck", 2, argv[0] ));
+  } 
+  arg2 = static_cast< bool >(val2);
+  {
+    try {
+      result = (bool)(arg1)->setUpdateConflictCheck(arg2);
+    }
+    CATCH_BZS_AND_STD()
+  }
+  vresult = SWIG_From_bool(static_cast< bool >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
+_wrap_nstable_updateConflictCheck(int argc, VALUE *argv, VALUE self) {
+  tdap::client::nstable *arg1 = (tdap::client::nstable *) 0 ;
+  bool result;
+  VALUE vresult = Qnil;
+  
+  if (!check_param_count(argc, 0, 0)) return Qnil;
+  arg1 = selfPtr(self, arg1);
+  {
+    try {
+      result = (bool)((bzs::db::protocol::tdap::client::nstable const *)arg1)->updateConflictCheck();
+    }
+    CATCH_BZS_AND_STD()
+  }
+  vresult = SWIG_From_bool(static_cast< bool >(result));
+  return vresult;
+fail:
+  return Qnil;
+}
+
+
+SWIGINTERN VALUE
 _wrap_nstable_getFileName(int argc, VALUE *argv, VALUE self) {
   _TCHAR *arg1 = (_TCHAR *) 0 ;
   _TCHAR arg2[1024] = {0} ;
@@ -10911,7 +10961,7 @@ void setValuesToObject(const fieldsBase& rec, VALUE obj, VALUE fieldIds) {
 
 
 SWIGINTERN VALUE
-_wrap_table_save(int argc, VALUE *argv, VALUE self) {
+_wrap_table_save_by_object(int argc, VALUE *argv, VALUE self) {
   tdap::client::table *tb = (tdap::client::table *) 0;
   tdap::client::fieldsBase *rec = (tdap::client::fieldsBase *) 0;
   VALUE fieldIds;
@@ -10934,6 +10984,108 @@ _wrap_table_save(int argc, VALUE *argv, VALUE self) {
   fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
   setValuesToObject(*rec, argv[0], fieldIds);
   return Qtrue;
+}
+
+
+SWIGINTERN VALUE
+_wrap_table_insert_by_object(int argc, VALUE *argv, VALUE self) {
+  tdap::client::table *tb = (tdap::client::table *) 0;
+  tdap::client::fieldsBase *rec = (tdap::client::fieldsBase *) 0;
+  VALUE fieldIds;
+  
+  if (!check_param_count(argc, 1, 1)) return Qnil;
+  tb = selfPtr(self, tb);
+  if (TYPE(argv[0]) != T_OBJECT)
+    rb_raise(rb_eArgError, "param 1, object is not specified.");
+  
+  rec = &(tb->fields());
+  setValuesFromObject(rec, argv[0]);
+  
+  tb->insert();
+  if (tb->stat() != STATUS_SUCCESS)
+    return Qfalse;
+  
+  fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
+  setValuesToObject(*rec, argv[0], fieldIds);
+  return Qtrue;
+}
+
+
+SWIGINTERN VALUE
+_wrap_table_update_by_object(int argc, VALUE *argv, VALUE self) {
+  tdap::client::table *tb = (tdap::client::table *) 0;
+  tdap::client::fieldsBase *rec = (tdap::client::fieldsBase *) 0;
+  VALUE fieldIds;
+  
+  if (!check_param_count(argc, 1, 1)) return Qnil;
+  tb = selfPtr(self, tb);
+  if (TYPE(argv[0]) != T_OBJECT)
+    rb_raise(rb_eArgError, "param 1, object is not specified.");
+  
+  rec = &(tb->fields());
+  setValuesFromObject(rec, argv[0]);
+  
+  tb->update(tdap::client::table::changeInKey);
+  if (tb->stat() != STATUS_SUCCESS)
+    return Qfalse;
+  
+  fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
+  setValuesToObject(*rec, argv[0], fieldIds);
+  return Qtrue;
+}
+
+
+SWIGINTERN VALUE
+_wrap_table_read_by_object(int argc, VALUE *argv, VALUE self) {
+  tdap::client::table *tb = (tdap::client::table *) 0;
+  tdap::client::fieldsBase *rec = (tdap::client::fieldsBase *) 0;
+  VALUE fieldIds;
+  
+  if (!check_param_count(argc, 1, 1)) return Qnil;
+  tb = selfPtr(self, tb);
+  if (TYPE(argv[0]) != T_OBJECT)
+    rb_raise(rb_eArgError, "param 1, object is not specified.");
+  
+  rec = &(tb->fields());
+  fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
+  setValuesToObject(*rec, argv[0], fieldIds);
+  return Qtrue;
+}
+
+
+SWIGINTERN VALUE
+_wrap_table_seek_key_value(int argc, VALUE *argv, VALUE self) {
+  tdap::client::table *tb = (tdap::client::table *) 0;
+  const bzs::db::protocol::tdap::tabledef* td = 0;
+  const bzs::db::protocol::tdap::keydef* kd = 0;
+  client::fieldsBase* fds = 0;
+  
+  if (!check_param_count(argc, 1, 8)) return Qnil; // Max 8 segment
+  tb = selfPtr(self, tb);
+  td = tb->tableDef();
+  if (tb->keyNum() >= td->keyCount || tb->keyNum() < 0)
+    rb_raise(rb_eArgError, "Invalid key number.");
+  kd = &td->keyDefs[tb->keyNum()];
+  
+  tb->clearBuffer();
+  fds = &tb->fields();
+  for (int i = 0; i < argc; i++) {
+    if (i >= kd->segmentCount)
+      break;
+    ushort_td fnum = kd->segments[i].fieldNum;
+    client::field fd = (*fds)[fnum];
+    if (! setValue(argv[i], fd, 0))
+      goto fail;
+  }
+  try {
+    tb->seek();
+  }
+  CATCH_BZS_AND_STD()
+  
+  if (tb->stat() == STATUS_SUCCESS)
+    return Qtrue;
+fail:
+  return Qfalse;
 }
 
 
@@ -26278,6 +26430,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassNstable.klass, "mode", VALUEFUNC(_wrap_nstable_mode), -1);
   rb_define_method(SwigClassNstable.klass, "statMsg", VALUEFUNC(_wrap_nstable_statMsg), -1);
   rb_define_method(SwigClassNstable.klass, "setTimestampMode", VALUEFUNC(_wrap_nstable_setTimestampMode), -1);
+  rb_define_method(SwigClassNstable.klass, "setUpdateConflictCheck", VALUEFUNC(_wrap_nstable_setUpdateConflictCheck), -1);
+  rb_define_method(SwigClassNstable.klass, "updateConflictCheck", VALUEFUNC(_wrap_nstable_updateConflictCheck), -1);
   rb_define_singleton_method(SwigClassNstable.klass, "getFileName", VALUEFUNC(_wrap_nstable_getFileName), -1);
   rb_define_singleton_method(SwigClassNstable.klass, "getDirURI", VALUEFUNC(_wrap_nstable_getDirURI), -1);
   rb_define_singleton_method(SwigClassNstable.klass, "existsFile", VALUEFUNC(_wrap_nstable_existsFile), -1);
@@ -26462,7 +26616,11 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassTable.klass, "ctorArgs=", VALUEFUNC(_wrap_RecordsetOrTable_ctorArgs_set), -1);
   rb_define_method(SwigClassTable.klass, "setAlias", VALUEFUNC(_wrap_table_setAlias), -1);
   rb_define_method(SwigClassTable.klass, "defineORMapMethod", VALUEFUNC(_wrap_table_defineORMapMethod), -1);
-  rb_define_method(SwigClassTable.klass, "save", VALUEFUNC(_wrap_table_save), -1);
+  rb_define_method(SwigClassTable.klass, "save_by_object", VALUEFUNC(_wrap_table_save_by_object), -1);
+  rb_define_method(SwigClassTable.klass, "insert_by_object", VALUEFUNC(_wrap_table_insert_by_object), -1);
+  rb_define_method(SwigClassTable.klass, "update_by_object", VALUEFUNC(_wrap_table_update_by_object), -1);
+  rb_define_method(SwigClassTable.klass, "read_by_object", VALUEFUNC(_wrap_table_read_by_object), -1);
+  rb_define_method(SwigClassTable.klass, "seek_key_value", VALUEFUNC(_wrap_table_seek_key_value), -1);
   SwigClassTable.mark = 0;
   SwigClassTable.destroy = (void (*)(void *)) free_bzs_table;
   SwigClassTable.trackObjects = 0;
@@ -26621,9 +26779,11 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassDatabase.klass, "createAssociate", VALUEFUNC(_wrap_database_createAssociate), -1);
   rb_define_singleton_method(SwigClassDatabase.klass, "setCompatibleMode", VALUEFUNC(_wrap_database_setCompatibleMode), -1);
   rb_define_singleton_method(SwigClassDatabase.klass, "compatibleMode", VALUEFUNC(_wrap_database_compatibleMode), -1);
-  rb_define_const(SwigClassDatabase.klass, "CMP_MODE_MYSQL_NULL", SWIG_From_int(static_cast< int >(tdap::client::database::CMP_MODE_MYSQL_NULL)));
   rb_define_const(SwigClassDatabase.klass, "CMP_MODE_OLD_NULL", SWIG_From_int(static_cast< int >(tdap::client::database::CMP_MODE_OLD_NULL)));
+  rb_define_const(SwigClassDatabase.klass, "CMP_MODE_MYSQL_NULL", SWIG_From_int(static_cast< int >(tdap::client::database::CMP_MODE_MYSQL_NULL)));
   rb_define_const(SwigClassDatabase.klass, "CMP_MODE_BINFD_DEFAULT_STR", SWIG_From_int(static_cast< int >(tdap::client::database::CMP_MODE_BINFD_DEFAULT_STR)));
+  rb_define_const(SwigClassDatabase.klass, "CMP_MODE_OLD_ALL", SWIG_From_int(static_cast< int >(tdap::client::database::CMP_MODE_OLD_ALL)));
+  rb_define_const(SwigClassDatabase.klass, "CMP_MODE_OLD_BIN", SWIG_From_int(static_cast< int >(tdap::client::database::CMP_MODE_OLD_BIN)));
   rb_define_method(SwigClassDatabase.klass, "openTable", VALUEFUNC(_wrap_database_openTable), -1);
   SwigClassDatabase.mark = 0;
   SwigClassDatabase.destroy = (void (*)(void *)) free_bzs_database;
