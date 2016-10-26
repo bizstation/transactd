@@ -218,7 +218,7 @@ void testFielddefs(database* db)
         BOOST_CHECK_MESSAGE(fd->nullbytes() == 2, "Invalid nullbytes = " << (int)fd->nullbytes());
         //fielddefs copy test
         fielddefs& fds = *fielddefs::create();
-        fds.addAllFileds(tb->tableDef());
+        fds.addAllFields(tb->tableDef());
         fd = &fds[1];
         BOOST_CHECK_MESSAGE(fd->nullbit() == 0, "Invalid nullbit = " << (int)fd->nullbit());
         BOOST_CHECK_MESSAGE(fd->nullbytes() == 2, "Invalid nullbytes = " << (int)fd->nullbytes());
