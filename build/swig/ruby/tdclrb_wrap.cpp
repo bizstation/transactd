@@ -10845,7 +10845,8 @@ VALUE getFieldIdsArray(const tdap::client::fielddefs& fds) {
   {
     const char* name = fds[i].name();
     sprintf_s(buf, 256, "@%s", name);
-    rb_ary_store(fields, i, rb_intern(buf));
+    VALUE v_buf = rb_enc_str_new(buf, strlen(buf), utf8_enc);
+    rb_ary_store(fields, i, rb_intern_str(v_buf));
   }
   return fields;
 }
@@ -10942,7 +10943,8 @@ void setValuesFromObject(const tdap::client::fieldsBase *rec, VALUE obj) {
   {
     char name[256] = "@";
     strcat_s(name, 256, (*def)[i].name());
-    ID id = rb_intern(name);
+    VALUE v_name = rb_enc_str_new(name, strlen(name), utf8_enc);
+    ID id = rb_intern_str(v_name);
     if (rb_ivar_defined(obj, id))
     {
       VALUE v = rb_ivar_get(obj, id);
@@ -11099,26 +11101,23 @@ bool hasMethod(VALUE klass, VALUE name) {
 
 void appendMethod(VALUE klass, VALUE v_name) {
   const char* name = StringValuePtr(v_name);
-  char buf[1024] = "%s=";
-  strcat_s(buf, 1024, name);
+  char buf[1024];
+  sprintf_s(buf, 1024, "%s=", name);
   VALUE setterName = rb_enc_str_new(buf, strlen(buf), utf8_enc);
   int read = (int)!hasMethod(klass, v_name);
   int write = (int)!hasMethod(klass, setterName);
   if (read == 0 && write == 0) return;
-  rb_define_attr(klass, name, read, write);
+  rb_attr(klass, rb_to_id(v_name), read, write, true);
 }
 
 void appendMethodAlias(VALUE klass, VALUE origin_field_name, VALUE name) {
-  //getter
-  //if (hasMethod(klass, name))
-  rb_alias(klass, rb_intern_str(name), rb_intern_str(origin_field_name));
-  //setter
   char buf[1024];
   sprintf_s(buf, 1024, "%s=", StringValuePtr(name));
   VALUE name_setter = rb_enc_str_new(buf, strlen(buf), utf8_enc);
   sprintf_s(buf, 1024, "%s=", StringValuePtr(origin_field_name));
-  //if (hasMethod(klass, name_setter))
-  rb_alias(klass, rb_intern_str(name_setter), rb_intern(buf));
+  VALUE origin_name_setter = rb_enc_str_new(buf, strlen(buf), utf8_enc);
+  rb_alias(klass, rb_intern_str(name), rb_intern_str(origin_field_name));
+  rb_alias(klass, rb_intern_str(name_setter), rb_intern_str(origin_name_setter));
 }
 
 
@@ -11150,19 +11149,24 @@ void defineFieldAccessor(VALUE/*class*/ klass, VALUE/*array*/ fields) {
   if (isAccessorInitialized(klass)) return;// check static klass::accessor_initialized
   int length = RARRAY_LEN(fields);
   bool nodef_orign = isNodefineOriginal(klass);// For transacd::model::base
+  VALUE aliases;
+  if (! nodef_orign) {
+    aliases = getAliasMap(klass);
+    if (aliases == Qnil)
+      nodef_orign = true;
+  }
   for (int i = 0; i < length; ++i) 
   {
     VALUE name = rb_ary_entry(fields, i);
     appendMethod(klass, name);
     
     // For transacd::model::base
-    if (nodef_orign == false)
+    if (! nodef_orign)
     {
-      VALUE aliases = getAliasMap(klass);
       // Important! origin_field_name is a new alias name
       VALUE origin_field_name = rb_hash_lookup2(aliases, rb_to_symbol(name), Qnil);
-      if (origin_field_name != Qnil) 
-         appendMethodAlias(klass, name, origin_field_name);
+      if (origin_field_name != Qnil)
+        appendMethodAlias(klass, name, origin_field_name);
     }
   }
   rb_ivar_set(klass, g_id_accessor_initialized, Qtrue);
@@ -11284,7 +11288,7 @@ SWIGINTERN VALUE _wrap_table_defineORMapMethod(int argc, VALUE *argv, VALUE self
   
   const fielddefs* fds = tb->fields().fieldDefs();
   if (! isAccessorInitialized(argv[0]))
-    defineFieldAccessor(argv[0],  getFieldsArray(*fds));
+    defineFieldAccessor(argv[0], getFieldsArray(*fds));
 }
 
 
@@ -11588,6 +11592,21 @@ SWIGINTERN VALUE _wrap_table_fields(int argc, VALUE *argv, VALUE self) {
       return recordToRubyArray(*result, fetchMode, fields);
   }
 }
+
+
+SWIGINTERN VALUE _wrap_table_getRecord(int argc, VALUE *argv, VALUE self) {
+  if (!check_param_count(argc, 0, 0)) return Qnil;
+  table* arg1 = selfPtr(self, arg1);
+  try
+  {
+    tdap::client::fields* result =  &(arg1->fields());
+    return SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_bzs__fieldsBase, 0 |  0 );
+  }
+  CATCH_BZS_AND_STD()
+fail:
+  return Qnil;
+}
+
 
 /* The size parameter is required if set to binary data, */
 SWIGINTERN VALUE _wrap_table_setFV(int argc, VALUE *argv, VALUE self) {
@@ -26621,6 +26640,8 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassTable.klass, "update_by_object", VALUEFUNC(_wrap_table_update_by_object), -1);
   rb_define_method(SwigClassTable.klass, "read_by_object", VALUEFUNC(_wrap_table_read_by_object), -1);
   rb_define_method(SwigClassTable.klass, "seek_key_value", VALUEFUNC(_wrap_table_seek_key_value), -1);
+  rb_define_method(SwigClassTable.klass, "getRecord", VALUEFUNC(_wrap_table_getRecord), -1);
+  rb_define_alias(SwigClassTable.klass, "get_record", "getRecord");
   SwigClassTable.mark = 0;
   SwigClassTable.destroy = (void (*)(void *)) free_bzs_table;
   SwigClassTable.trackObjects = 0;
@@ -26934,6 +26955,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassRecord.klass, "[]=", VALUEFUNC(_wrap_Record___setitem__), -1);
   rb_define_method(SwigClassRecord.klass, "getFieldByRef", VALUEFUNC(_wrap_Record_getFieldByRef), -1);
   rb_define_method(SwigClassRecord.klass, "setValue", VALUEFUNC(_wrap_Record_setValue), -1);
+  rb_define_alias(SwigClassRecord.klass, "set_value_by_object", "setValue");
   SwigClassRecord.mark = 0;
   SwigClassRecord.destroy = (void (*)(void *)) free_bzs_fieldsBase;
   SwigClassRecord.trackObjects = 0;
