@@ -313,7 +313,7 @@ def testTableGetMethods(tb)
   expect(tb.stat()).to eq 0
   tb.seekNext()
   expect(tb.stat()).to eq 0
-  Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE)
+  Transactd::set_field_value_mode(Transactd::FIELD_VALUE_MODE_VALUE)
   # get values as array
   tb.fetchMode = Transactd::FETCH_VAL_NUM
   testTableGetMethods_CheckArrayValue(tb.fields)
@@ -349,7 +349,7 @@ def testField(tb)
   expect(tb.stat()).to eq 0
   tb.seekNext()
   expect(tb.stat()).to eq 0
-  Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE)
+  Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_VALUE
   tb.fetchMode = Transactd::FETCH_RECORD_INTO
   rec = tb.fields
   # get with []
@@ -373,7 +373,7 @@ def testField(tb)
   rec[FI_binSJISNullable] = STR_VALUE
   expect(rec[FI_binSJISNullable].encoding).to eq Encoding::UTF_8
   expect(rec[FI_binSJISNullable]).to eq STR_VALUE
-  # set with setValue(obj)
+  # set with set_value_by_object(obj)
   tb.fetchMode = Transactd::FETCH_OBJ
   obj = tb.fields
   obj.strNotNull = STR_VALUE
@@ -383,7 +383,7 @@ def testField(tb)
   obj.binSJISNotNull = STR_VALUE
   obj.binSJISNullable = BIN_VALUE
   tb.clearBuffer
-  rec.setValue(obj)
+  rec.set_value_by_object(obj)
   testTableGetMethods_CheckArrayValue(rec)
 end
 

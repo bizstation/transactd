@@ -413,20 +413,23 @@ describe Transactd, 'V3Features' do
     expect(db.autoSchemaUseNullkey()).to eq true
     db.setAutoSchemaUseNullkey(false)
     expect(db.autoSchemaUseNullkey()).to eq false
-    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
-    Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_OLD_NULL)
-    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_OLD_NULL
-
-    Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_BINFD_DEFAULT_STR)
-    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_BINFD_DEFAULT_STR
-
+    # default
+    expect(Transactd::Database::compatibleMode).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
+    # CMP_MODE_OLD_NULL
+    Transactd::Database::set_compatible_mode(Transactd::Database::CMP_MODE_OLD_NULL)
+    expect(Transactd::Database::compatibleMode).to eq Transactd::Database::CMP_MODE_OLD_NULL
+    # CMP_MODE_BINFD_DEFAULT_STR
+    Transactd::Database::compatible_mode = Transactd::Database::CMP_MODE_BINFD_DEFAULT_STR
+    expect(Transactd::Database::compatibleMode).to eq Transactd::Database::CMP_MODE_BINFD_DEFAULT_STR
+    # CMP_MODE_MYSQL_NULL
     Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_MYSQL_NULL)
-    expect(Transactd::Database::compatibleMode()).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
+    expect(Transactd::Database::compatible_mode).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
     db.close()
   end
   
   it 'check' do
     Transactd::Database::setCompatibleMode(Transactd::Database::CMP_MODE_MYSQL_NULL)
+    expect(Transactd::Database::compatible_mode).to eq Transactd::Database::CMP_MODE_MYSQL_NULL
     db = Transactd::Database.new()
     openDatabase(db)
     openTableOnce(db)
@@ -1002,10 +1005,10 @@ describe Transactd, 'V3Features' do
     expect(tb.fetchMode).to eq Transactd::FETCH_RECORD_INTO
     rec = tb.fields()
     #     FIELD_VALUE_MODE_OBJECT
-    Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_OBJECT)
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_OBJECT
     expect(rec["id"].i()).to eq 1
     #     FIELD_VALUE_MODE_VALUE
-    Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE)
+    Transactd::set_field_value_mode(Transactd::FIELD_VALUE_MODE_VALUE)
     expect(rec["id"]).to eq 1
     #   FETCH_VAL_NUM
     tb.fetchMode = Transactd::FETCH_VAL_NUM
@@ -1055,7 +1058,7 @@ describe Transactd, 'V3Features' do
     Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_OBJECT)
     expect(rs[0]["id"].i()).to eq 1
     #     FIELD_VALUE_MODE_VALUE
-    Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE)
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_VALUE
     expect(rs[0]["id"]).to eq 1
     #   FETCH_VAL_NUM
     rs.fetchMode = Transactd::FETCH_VAL_NUM
@@ -1094,7 +1097,7 @@ describe Transactd, 'V3Features' do
     db.close()
   end
   it 'fetchMode, alias and UTF-8 field name' do
-    Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE)
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_VALUE
     db = Transactd::Database.new()
     db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
     # table
@@ -1183,7 +1186,7 @@ describe Transactd, 'V3Features' do
     db.close
   end
   it 'set_value_by_object, alias and UTF-8 field name' do
-    Transactd::setFieldValueMode(Transactd::FIELD_VALUE_MODE_VALUE)
+    Transactd::field_value_mode = Transactd::FIELD_VALUE_MODE_VALUE
     db = Transactd::Database.new()
     db.open(URL, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL)
     # table
