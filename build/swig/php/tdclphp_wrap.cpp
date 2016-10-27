@@ -746,10 +746,10 @@ extern "C" {
 #include "zend_API.h"
 #include "zend_execute.h"
 #include "zend_exceptions.h"
-#include "spl/spl_iterators.h"
 #include "php.h"
 #include "ext/standard/php_string.h"
 #include <stdlib.h>/* for abort(), used in generated code. */
+//#include "spl/spl_iterators.h"
 
 #ifdef ZEND_RAW_FENTRY
 /* ZEND_RAW_FENTRY was added somewhere between 5.2.0 and 5.2.3 */
@@ -10648,7 +10648,7 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_nstable_getFileName) {
   _TCHAR *arg1 = (_TCHAR *) 0 ;
-  _TCHAR arg2[1024] = {NULL};
+  _TCHAR arg2[1024] = {0};
   zval_args_type args[2];
   _TCHAR *result = 0 ;
   
@@ -10690,7 +10690,7 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_nstable_statMsg) {
   bzs::db::protocol::tdap::client::nstable *arg1 = (bzs::db::protocol::tdap::client::nstable *) 0 ;
-  _TCHAR arg2[1024] = {NULL};
+  _TCHAR arg2[1024] = {0};
   zval_args_type args[1];
   _TCHAR *result = 0 ;
   
@@ -10732,7 +10732,7 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_nstable_getDirURI) {
   _TCHAR *arg1 = (_TCHAR *) 0 ;
-  _TCHAR arg2[1024] = {NULL};
+  _TCHAR arg2[1024] = {0};
   zval_args_type args[2];
   _TCHAR *result = 0 ;
   
@@ -13701,7 +13701,7 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_dbdef_statMsg) {
   bzs::db::protocol::tdap::client::dbdef *arg1 = (bzs::db::protocol::tdap::client::dbdef *) 0 ;
-  _TCHAR arg2[1024] = {NULL};
+  _TCHAR arg2[1024] = {0};
   zval_args_type args[1];
   _TCHAR *result = 0 ;
   
@@ -16587,7 +16587,7 @@ int copyValues(zval *return_value, int type, const fieldsBase* r, zval_args_type
 
 inline char getPrimaryKeynum(table* tb)
 {
-  if (tb->tableDef()->primaryKeyNum == -1)
+  if (tb->tableDef()->primaryKeyNum == 0xff)
       THROW_BZS_ERROR_WITH_MSG(_T("The table has no primary key"));
   return tb->tableDef()->primaryKeyNum;
 }
@@ -20040,7 +20040,7 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_statMsg) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
-  _TCHAR arg2[1024]={NULL};
+  _TCHAR arg2[1024]={0};
   zval_args_type args[1];
   _TCHAR *result = 0 ;
   
@@ -20262,7 +20262,7 @@ fail:
 
 ZEND_NAMED_FUNCTION(_wrap_nsdatabase_readDatabaseDirectory) {
   bzs::db::protocol::tdap::client::nsdatabase *arg1 = (bzs::db::protocol::tdap::client::nsdatabase *) 0 ;
-  _TCHAR arg2[255] = {NULL} ;
+  _TCHAR arg2[255] = {0} ;
   uchar_td arg3 = 255;
   zval_args_type args[3];
   _TCHAR* result = 0;
