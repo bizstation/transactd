@@ -2676,6 +2676,21 @@ bool obj2Integer(VALUE v, T& retVal)
   return false;
 }
 
+#ifndef _WIN32
+template <>
+bool obj2Integer(VALUE v, size_t& retVal)
+{
+  int type = TYPE(v);
+  if (type == T_FIXNUM || type == T_BIGNUM)
+  {
+    retVal = NUM2NTV(v, (unsigned __int64*)&retVal);
+    return true;
+  }
+  rb_raise(rb_eArgError, "wrong arguments (not FIXNUM or BIGNUM)");
+  return false;
+}
+#endif
+
 bool obj2Double(VALUE v, double& retVal)
 {
   int type = TYPE(v);
@@ -11164,7 +11179,7 @@ void defineFieldAccessor(VALUE/*class*/ klass, VALUE/*array*/ fields) {
     if (! nodef_orign)
     {
       // Important! origin_field_name is a new alias name
-      VALUE origin_field_name = rb_hash_lookup2(aliases, rb_to_symbol(name), Qnil);
+      VALUE origin_field_name = rb_hash_lookup2(aliases, rb_str_intern(name), Qnil);
       if (origin_field_name != Qnil)
         appendMethodAlias(klass, name, origin_field_name);
     }
@@ -11706,7 +11721,7 @@ SWIGINTERN VALUE
 _wrap_table_setQuery(int argc, VALUE *argv, VALUE self) {
   tdap::client::table *arg1 = (tdap::client::table *) 0 ;
   tdap::client::queryBase *arg2 = (tdap::client::queryBase *) 0 ;
-  bool arg3 ;
+  bool arg3 = false;
   void *argp2 = 0 ;
   int res2 = 0 ;
   bool val3 = false;
