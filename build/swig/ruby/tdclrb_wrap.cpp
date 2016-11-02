@@ -2587,8 +2587,11 @@ static const VALUE g_id_ctorArgs = rb_intern("@ctorArgs");
 static const VALUE g_id_fields = rb_intern("@fields");
 static const VALUE g_id_field_ids = rb_intern("@field_ids");
 static const VALUE g_id_accessor_initialized = rb_intern("@_accessor_initialized");
-static const VALUE g_id_alias_map = rb_intern("alias_map");
-static const VALUE g_id_nodefine_original = rb_intern("nodefine_original");
+static const VALUE g_id_alias_map_val = rb_intern("@_alias_map");
+static const VALUE g_id_transfer_map_val = rb_intern("@_transfer_map");
+static const VALUE g_id_internal_transfer_map_val = rb_intern("@_internal_transfer_map");
+static const VALUE g_id_nodefine_original_val = rb_intern("@_nodefine_original");
+static const VALUE g_id_nodefine_original_method = rb_intern("nodefine_original");
 static const VALUE g_id_new_record = rb_intern("@new_record");
 
 static short g_nullValueMode = NULLVALUE_MODE_NORETURNNULL;
@@ -10840,6 +10843,31 @@ SWIGINTERN VALUE _wrap_table_findPrev(int argc, VALUE *argv, VALUE self) {
 }
 
 
+#if (RUBY_API_VERSION_MAJOR > 2 || (RUBY_API_VERSION_MAJOR == 2 && RUBY_API_VERSION_MINOR >= 2))
+#define RB_SYM2STR_WRAP rb_sym2str
+#define RB_TO_SYMBOL_WRAP rb_to_symbol
+#else
+#define RB_SYM2STR_WRAP rb_sym_to_s
+#define RB_TO_SYMBOL_WRAP rb_str_intern
+#endif
+
+
+ID toMemberId(const char* name) {
+  char c_name[256] = "@";
+  strcat_s(c_name, 256, name);
+  return rb_intern_str(rb_enc_str_new(c_name, strlen(c_name), utf8_enc));
+}
+
+
+ID toMemberId(VALUE name_sym) {
+  if (TYPE(name_sym) == T_SYMBOL)
+    name_sym = RB_SYM2STR_WRAP(name_sym);
+  if (TYPE(name_sym) != T_STRING)
+    return Qnil;
+  return toMemberId(StringValuePtr(name_sym));
+}
+
+
 VALUE getFieldsArray(const tdap::client::fielddefs& fds) 
 {
   int size = (int)fds.size();
@@ -10855,14 +10883,8 @@ VALUE getFieldsArray(const tdap::client::fielddefs& fds)
 VALUE getFieldIdsArray(const tdap::client::fielddefs& fds) {
   int size = (int)fds.size();
   VALUE fields = rb_ary_new2(size);
-  char buf[256];
-  for (size_t i = 0; i < size; ++i) 
-  {
-    const char* name = fds[i].name();
-    sprintf_s(buf, 256, "@%s", name);
-    VALUE v_buf = rb_enc_str_new(buf, strlen(buf), utf8_enc);
-    rb_ary_store(fields, i, rb_intern_str(v_buf));
-  }
+  for (size_t i = 0; i < size; ++i)
+    rb_ary_store(fields, i, toMemberId(fds[i].name()));
   return fields;
 }
 
@@ -10889,14 +10911,9 @@ VALUE getFieldIdsCache(VALUE vrs, const tdap::client::fielddefs& fds) {
 }
 
 
-void clearFieldIdsCache(VALUE vrs) {
-  rb_ivar_set(vrs, g_id_field_ids, Qnil);
-}
-
-
 void clearFieldsCache(VALUE vrs) {
   rb_ivar_set(vrs, g_id_fields, Qnil);
-  clearFieldIdsCache(vrs);
+  rb_ivar_set(vrs, g_id_field_ids, Qnil);
 }
 
 
@@ -10952,27 +10969,166 @@ VALUE getFieldValue(const tdap::client::field& f) {
 }
 
 
-void setValuesFromObject(const tdap::client::fieldsBase *rec, VALUE obj) {
-  const fielddefs* def = rec->fieldDefs();
-  for (int i = 0; i < def->size(); ++i)
-  {
-    char name[256] = "@";
-    strcat_s(name, 256, (*def)[i].name());
-    VALUE v_name = rb_enc_str_new(name, strlen(name), utf8_enc);
-    ID id = rb_intern_str(v_name);
-    if (rb_ivar_defined(obj, id))
-    {
-      VALUE v = rb_ivar_get(obj, id);
-      field_setvalue(v, (*rec)[i], 0);
+inline VALUE getAliasMap(VALUE& obj) {
+  VALUE ret = rb_ivar_get(obj, g_id_alias_map_val);
+  if (TYPE(ret) == T_HASH)
+    return ret;
+  return Qnil;
+}
+
+
+int doFixTransferMap(VALUE key, VALUE val, VALUE dest_hash) {
+  if (TYPE(key) != T_SYMBOL && TYPE(key) != T_STRING)
+    return ST_CONTINUE;
+  ID id_key = toMemberId(key);
+  if (TYPE(val) == T_SYMBOL || TYPE(val) == T_STRING) {
+    rb_hash_aset(dest_hash, id_key, toMemberId(val));
+    return ST_CONTINUE;
+  }
+  if (TYPE(val) == T_ARRAY) {
+    int arr_len = RARRAY_LEN(val);
+    VALUE val_arr = rb_ary_new2(arr_len);
+    for (int i = 0; i < arr_len; ++i) {
+      VALUE v = rb_ary_entry(val, i);
+      if (TYPE(v) == T_SYMBOL || TYPE(v) == T_STRING)
+        rb_ary_store(val_arr, i, toMemberId(v));
+      else
+        return ST_CONTINUE;
     }
+    rb_hash_aset(dest_hash, id_key, val_arr);
+  }
+  return ST_CONTINUE;
+}
+
+VALUE fixTransferMap(VALUE org_hash) {
+  if (TYPE(org_hash) != T_HASH)
+    return Qnil;
+  VALUE vresult = rb_hash_new();
+  rb_hash_foreach(org_hash, (int (*)(...))doFixTransferMap, vresult);
+  return vresult;
+}
+
+inline VALUE getTransferMap(VALUE& obj) {
+  VALUE h = rb_ivar_get(obj, g_id_internal_transfer_map_val);
+  if (TYPE(h) == T_HASH)
+    return h;
+  h = rb_ivar_get(obj, g_id_transfer_map_val);
+  if (TYPE(h) != T_HASH)
+    return Qnil;
+  h = fixTransferMap(h);
+  rb_ivar_set(obj, g_id_internal_transfer_map_val, h);
+  return h;
+}
+
+
+VALUE getChildObjectRecursive(VALUE obj, VALUE /*ID|Array[ID]*/ transfer_to) {
+  if (TYPE(transfer_to) == T_ARRAY) {
+    int arr_len = RARRAY_LEN(transfer_to);
+    VALUE c_obj = obj;
+    for (int i = 0; i < arr_len; ++i) {
+      VALUE c_id = rb_ary_entry(transfer_to, i);
+      c_obj = rb_ivar_get(c_obj, c_id);
+      if (c_obj == Qnil)
+        break;
+    }
+    return c_obj;
+  } else {
+    return rb_ivar_get(obj, transfer_to);
   }
 }
 
 
-void setValuesToObject(const fieldsBase& rec, VALUE obj, VALUE fieldIds) {
+void setValuesFromObject(const tdap::client::fieldsBase *rec, VALUE obj,
+                          VALUE /* id array */ fieldIds, // @field_name format ids
+                          VALUE /* class */ klass) {
+  VALUE transfer_map = getTransferMap(klass); // Qnil|Hash{ID,ID|Array[ID]}
+  const fielddefs* def = rec->fieldDefs();
+  for (int i = 0; i < def->size(); ++i) {
+    ID id;
+    const char* field_name = 0;
+    if (fieldIds == Qnil) {
+      field_name = (*def)[i].name();
+      id = toMemberId(field_name);
+    } else {
+      id = rb_ary_entry(fieldIds, i);
+    }
+    // if field name is in transfer_map, transfer value
+    if (transfer_map != Qnil) {
+      VALUE transfer_to = rb_hash_lookup2(transfer_map, id, Qnil);
+      if (transfer_to != Qnil) {
+        VALUE child = getChildObjectRecursive(obj, transfer_to);
+        if (child != Qnil) {
+          if (rb_ivar_defined(child, id))
+            field_setvalue(rb_ivar_get(child, id), (*rec)[i], 0);
+        }
+        continue;
+      }
+    }
+    if (rb_ivar_defined(obj, id))
+      field_setvalue(rb_ivar_get(obj, id), (*rec)[i], 0);
+  }
+}
+
+
+inline void setKeyValueFromObject(table* tb, VALUE obj,
+                          VALUE /* id array */ fieldIds, // @field_name format ids
+                          VALUE /* class */ klass) {
+  VALUE transfer_map = getTransferMap(klass); // Qnil|Hash{ID,ID|Array[ID]}
+  tb->setStat(0);
+  char key = tb->keyNum();
+  if (key < 0 || key >= tb->tableDef()->keyCount) {
+    tb->setStat(STATUS_INVALID_KEYNUM);
+    return;
+  }
+  tdap::keydef kd = tb->tableDef()->keyDefs[key];
+  const int segments_count = kd.segmentCount;
+  client::fieldsBase* rec = &(tb->fields());
+  for (int i = 0; i < segments_count; ++i) {
+    const char* name = 0;
+    ID id;
+    if (fieldIds == Qnil) {
+      name = tb->fields()[kd.segments[i].fieldNum].def()->name();
+      id = toMemberId(name);
+    } else {
+      id = rb_ary_entry(fieldIds, i);
+    }
+    if (transfer_map != Qnil) {
+      VALUE transfer_to = rb_hash_lookup2(transfer_map, id, Qnil);
+      if (transfer_to != Qnil) {
+        VALUE child = getChildObjectRecursive(obj, transfer_to);
+        if (child != Qnil) {
+          if (rb_ivar_defined(child, id))
+            field_setvalue(rb_ivar_get(child, id), (*rec)[i], 0);
+        }
+        continue;
+      }
+    }
+    if (rb_ivar_defined(obj, id))
+      field_setvalue(rb_ivar_get(obj, id), (*rec)[i], 0);
+  }
+}
+
+
+void setValuesToObject(const fieldsBase& rec, VALUE obj,
+                        VALUE /* id array */ fieldIds, // @field_name format ids
+                        VALUE /* class */ klass) {
+  VALUE child;
   size_t size = rec.size();
-  for (size_t i = 0; i < size; ++i)
-    rb_ivar_set(obj, rb_ary_entry(fieldIds, i), getFieldValue(rec[i]));
+  VALUE transfer_map = getTransferMap(klass); // Qnil|Hash{ID,ID|Array[ID]}
+  for (size_t i = 0; i < size; ++i) {
+    ID id = rb_ary_entry(fieldIds, i);
+    // if field name is in transfer_map, transfer value
+    if (transfer_map != Qnil) {
+      VALUE transfer_to = rb_hash_lookup2(transfer_map, id, Qnil);
+      if (transfer_to != Qnil) {
+        child = getChildObjectRecursive(obj, transfer_to);
+        if (child != Qnil)
+          rb_ivar_set(child, id, getFieldValue(rec[i]));
+        continue;
+      }
+    }
+    rb_ivar_set(obj, id, getFieldValue(rec[i]));
+  }
   rb_ivar_set(obj, g_id_new_record, Qfalse);
 }
 
@@ -10988,8 +11144,10 @@ _wrap_table_save_by_object(int argc, VALUE *argv, VALUE self) {
   if (TYPE(argv[0]) != T_OBJECT)
     rb_raise(rb_eArgError, "param 1, object is not specified.");
   
+  tb->clearBuffer();
   rec = &(tb->fields());
-  setValuesFromObject(rec, argv[0]);
+  fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
+  setValuesFromObject(rec, argv[0], fieldIds, CLASS_OF(argv[0]));
   
   tb->insert();
   if (tb->stat() != STATUS_SUCCESS) {
@@ -10998,110 +11156,142 @@ _wrap_table_save_by_object(int argc, VALUE *argv, VALUE self) {
   if (tb->stat() != STATUS_SUCCESS)
     return Qfalse;
   
-  fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
-  setValuesToObject(*rec, argv[0], fieldIds);
+  setValuesToObject(*rec, argv[0], fieldIds, CLASS_OF(argv[0]));
   return Qtrue;
+}
+
+
+inline char getPrimaryKeynum(table* tb) {
+  if (tb->tableDef()->primaryKeyNum == 0xff)
+    rb_raise(rb_eRuntimeError, "The table has no primary key");
+  return tb->tableDef()->primaryKeyNum;
 }
 
 
 SWIGINTERN VALUE
 _wrap_table_insert_by_object(int argc, VALUE *argv, VALUE self) {
-  tdap::client::table *tb = (tdap::client::table *) 0;
-  tdap::client::fieldsBase *rec = (tdap::client::fieldsBase *) 0;
   VALUE fieldIds;
-  
-  if (!check_param_count(argc, 1, 1)) return Qnil;
-  tb = selfPtr(self, tb);
+  bool ncc = false;
+  if (!check_param_count(argc, 1, 2)) return Qnil;
+  client::table* tb = selfPtr(self, tb);
   if (TYPE(argv[0]) != T_OBJECT)
     rb_raise(rb_eArgError, "param 1, object is not specified.");
-  
-  rec = &(tb->fields());
-  setValuesFromObject(rec, argv[0]);
-  
-  tb->insert();
-  if (tb->stat() != STATUS_SUCCESS)
-    return Qfalse;
-  
+  if (argc == 2) {
+    if (!obj2Bool(argv[1], ncc))
+      return Qnil;
+  }
+  tb->clearBuffer();
+  client::fieldsBase* rec = &(tb->fields());
   fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
-  setValuesToObject(*rec, argv[0], fieldIds);
-  return Qtrue;
+  setValuesFromObject(rec, argv[0], fieldIds, CLASS_OF(argv[0]));
+  tb->insert(ncc);
+  if (tb->stat() == STATUS_SUCCESS) {
+    setValuesToObject(*rec, argv[0], fieldIds, CLASS_OF(argv[0]));
+    return Qtrue;
+  }
+  return Qfalse;
 }
 
 
 SWIGINTERN VALUE
 _wrap_table_update_by_object(int argc, VALUE *argv, VALUE self) {
-  tdap::client::table *tb = (tdap::client::table *) 0;
-  tdap::client::fieldsBase *rec = (tdap::client::fieldsBase *) 0;
   VALUE fieldIds;
-  
-  if (!check_param_count(argc, 1, 1)) return Qnil;
-  tb = selfPtr(self, tb);
+  if (!check_param_count(argc, 1, 2)) return Qnil;
+  tdap::client::table* tb = selfPtr(self, tb);
   if (TYPE(argv[0]) != T_OBJECT)
     rb_raise(rb_eArgError, "param 1, object is not specified.");
-  
-  rec = &(tb->fields());
-  setValuesFromObject(rec, argv[0]);
-  
-  tb->update(tdap::client::table::changeInKey);
-  if (tb->stat() != STATUS_SUCCESS)
-    return Qfalse;
-  
+  int type = (int)client::nstable::changeInKey;
+  if (argc == 2) {
+    if (!obj2Integer(argv[1], type))
+      return Qnil;
+  }
+  tb->clearBuffer();
+  if (type == (int)nstable::changeInKey)
+     tb->setKeyNum(getPrimaryKeynum(tb));
+  tdap::client::fieldsBase* rec = &(tb->fields());
   fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
-  setValuesToObject(*rec, argv[0], fieldIds);
-  return Qtrue;
+  setValuesFromObject(rec, argv[0], fieldIds, CLASS_OF(argv[0]));
+  tb->update((nstable::eUpdateType)type);
+  if (tb->stat() == STATUS_SUCCESS)
+    return Qtrue;
+  return Qfalse;
+}
+
+
+SWIGINTERN VALUE
+_wrap_table_delete_by_object(int argc, VALUE *argv, VALUE self) {
+  VALUE fieldIds;
+  if (!check_param_count(argc, 1, 2)) return Qnil;
+  tdap::client::table* tb = selfPtr(self, tb);
+  if (TYPE(argv[0]) != T_OBJECT)
+    rb_raise(rb_eArgError, "param 1, object is not specified.");
+  bool inKey = true;
+  if (argc == 2) {
+    if (!obj2Bool(argv[1], inKey))
+      return Qnil;
+  }
+  tb->clearBuffer();
+  fieldIds = getFieldIdsCache(self, *(tb->fields().fieldDefs()));
+  if (inKey)
+    tb->setKeyNum(getPrimaryKeynum(tb));
+  if (tb->updateConflictCheck())
+    setValuesFromObject(&tb->fields(), argv[0], fieldIds, CLASS_OF(argv[0]));
+  else
+    setKeyValueFromObject(tb, argv[0], fieldIds, CLASS_OF(argv[0]));
+  if (tb->stat() == STATUS_SUCCESS)
+    tb->del(inKey);
+  if (tb->stat() == STATUS_SUCCESS)
+    return Qtrue;
+  return Qfalse;
 }
 
 
 SWIGINTERN VALUE
 _wrap_table_read_by_object(int argc, VALUE *argv, VALUE self) {
-  tdap::client::table *tb = (tdap::client::table *) 0;
-  tdap::client::fieldsBase *rec = (tdap::client::fieldsBase *) 0;
   VALUE fieldIds;
-  
-  if (!check_param_count(argc, 1, 1)) return Qnil;
-  tb = selfPtr(self, tb);
+  if (!check_param_count(argc, 1, 2)) return Qnil;
+  client::table* tb = selfPtr(self, tb);
   if (TYPE(argv[0]) != T_OBJECT)
     rb_raise(rb_eArgError, "param 1, object is not specified.");
-  
-  rec = &(tb->fields());
-  fieldIds = getFieldIdsCache(self, *(rec->fieldDefs()));
-  setValuesToObject(*rec, argv[0], fieldIds);
-  return Qtrue;
+  short keyNum = getPrimaryKeynum(tb);
+  if (argc == 2) {
+    if (!obj2Integer(argv[1], keyNum)) 
+      return Qnil;
+  }
+  fieldIds = getFieldIdsCache(self, *(tb->fields().fieldDefs()));
+  tb->setKeyNum(keyNum);
+  setKeyValueFromObject(tb, argv[0], fieldIds, CLASS_OF(argv[0]));
+  if (tb->stat() == STATUS_SUCCESS)
+    tb->seek();
+  if (tb->stat() == STATUS_SUCCESS) {
+    setValuesToObject(tb->fields(), argv[0], fieldIds, CLASS_OF(argv[0]));
+    return Qtrue;
+  }
+  return Qfalse;
 }
 
 
 SWIGINTERN VALUE
 _wrap_table_seek_key_value(int argc, VALUE *argv, VALUE self) {
-  tdap::client::table *tb = (tdap::client::table *) 0;
-  const bzs::db::protocol::tdap::tabledef* td = 0;
-  const bzs::db::protocol::tdap::keydef* kd = 0;
-  client::fieldsBase* fds = 0;
-  
   if (!check_param_count(argc, 1, 8)) return Qnil; // Max 8 segment
-  tb = selfPtr(self, tb);
-  td = tb->tableDef();
+  client::table* tb = selfPtr(self, tb);
+  const tdap::tabledef* td = tb->tableDef();
   if (tb->keyNum() >= td->keyCount || tb->keyNum() < 0)
     rb_raise(rb_eArgError, "Invalid key number.");
-  kd = &td->keyDefs[tb->keyNum()];
-  
+  const tdap::keydef* kd = &td->keyDefs[tb->keyNum()];
   tb->clearBuffer();
-  fds = &tb->fields();
-  for (int i = 0; i < argc; i++) {
+  client::fieldsBase* fds = &tb->fields();
+  for (int i = 0; i < argc; ++i) {
     if (i >= kd->segmentCount)
       break;
     ushort_td fnum = kd->segments[i].fieldNum;
     client::field fd = (*fds)[fnum];
     if (! setValue(argv[i], fd, 0))
-      goto fail;
+      return Qfalse;
   }
-  try {
-    tb->seek();
-  }
-  CATCH_BZS_AND_STD()
-  
+  tb->seek();
   if (tb->stat() == STATUS_SUCCESS)
     return Qtrue;
-fail:
   return Qfalse;
 }
 
@@ -11143,24 +11333,19 @@ inline bool isAccessorInitialized(VALUE& obj) {
 
 
 inline bool isNodefineOriginal(VALUE& obj) {
-  if (rb_respond_to(obj, g_id_nodefine_original))
-    return rb_funcall(obj, g_id_nodefine_original, 0, Qnil) == Qtrue;
+  VALUE ret = rb_ivar_get(obj, g_id_nodefine_original_val);
+  if (ret != Qnil)
+    return ret == Qtrue;
+  if (rb_respond_to(obj, g_id_nodefine_original_method))
+    return rb_funcall(obj, g_id_nodefine_original_method, 0, Qnil) == Qtrue;
   return true;
 }
 
 
-inline VALUE getAliasMap(VALUE& obj) {
-  if (rb_respond_to(obj, g_id_alias_map))
-  {
-    VALUE ret = rb_funcall(obj, g_id_alias_map, 0, Qnil);
-    if (TYPE(ret) == T_HASH)
-      return ret;
-  }
-  return Qnil;
-}
-
-
-void defineFieldAccessor(VALUE/*class*/ klass, VALUE/*array*/ fields) {
+void defineFieldAccessor(VALUE/*class*/ klass,
+                          VALUE/*string array*/ fields,
+                          VALUE /* id array */ fieldIds // @field_name format ids
+                          ) {
   if (isAccessorInitialized(klass)) return;// check static klass::accessor_initialized
   int length = RARRAY_LEN(fields);
   bool nodef_orign = isNodefineOriginal(klass);// For transacd::model::base
@@ -11170,16 +11355,24 @@ void defineFieldAccessor(VALUE/*class*/ klass, VALUE/*array*/ fields) {
     if (aliases == Qnil)
       nodef_orign = true;
   }
+  VALUE transfer_map = getTransferMap(klass); // Qnil|Hash{ID,ID|Array[ID]}
   for (int i = 0; i < length; ++i) 
   {
-    VALUE name = rb_ary_entry(fields, i);
+    // get method name
+    VALUE /* string */ name = rb_ary_entry(fields, i);
+    if (transfer_map != Qnil) {
+      ID id = rb_ary_entry(fieldIds, i);
+      VALUE transfer_to = rb_hash_lookup2(transfer_map, id, Qnil);
+      // if the name is in transfer_map, do not define the name and its alias.
+      if (transfer_to != Qnil)
+        continue;
+    }
+    // append accessor
     appendMethod(klass, name);
-    
-    // For transacd::model::base
-    if (! nodef_orign)
-    {
-      // Important! origin_field_name is a new alias name
-      VALUE origin_field_name = rb_hash_lookup2(aliases, rb_str_intern(name), Qnil);
+    // if original name is needed, append it
+    if (! nodef_orign) {
+      // Important! origin_field_name will be new alias name
+      VALUE origin_field_name = rb_hash_lookup2(aliases, RB_TO_SYMBOL_WRAP(name), Qnil);
       if (origin_field_name != Qnil)
         appendMethodAlias(klass, name, origin_field_name);
     }
@@ -11220,7 +11413,7 @@ VALUE recordToRubyClass(const fieldsBase& rec, VALUE klass, VALUE ctorArgs, VALU
     ctorArgsPtr = RARRAY_PTR(ctorArgs);
   }  
   VALUE vresult = rb_class_new_instance(ctorArgs_size, ctorArgsPtr, klass);
-  setValuesToObject(rec, vresult, fieldIds);
+  setValuesToObject(rec, vresult, fieldIds, klass);
   return vresult;
 }
 
@@ -11258,7 +11451,7 @@ _wrap_RecordsetOrTable_fetchClass_set(int argc, VALUE *argv, VALUE self) {
   {
     rb_ivar_set(self, g_id_fetchClass, v_klass);
     // clear field id cache (because if fetchClass changed, alias_map will be changed)
-    clearFieldIdsCache(self);
+    clearFieldsCache(self);
     return v_klass;
   }
   rb_raise(rb_eArgError, "wrong arguments (not Class or not found such class name)");
@@ -11302,8 +11495,11 @@ SWIGINTERN VALUE _wrap_table_defineORMapMethod(int argc, VALUE *argv, VALUE self
     rb_raise(rb_eArgError, "param 1 class is not specified.");
   
   const fielddefs* fds = tb->fields().fieldDefs();
-  if (! isAccessorInitialized(argv[0]))
-    defineFieldAccessor(argv[0], getFieldsArray(*fds));
+  if (! isAccessorInitialized(argv[0])) {
+    VALUE fields = getFieldsCache(self, *fds);
+    VALUE fieldIds = getFieldIdsCache(self, *fds);
+    defineFieldAccessor(argv[0], fields, fieldIds);
+  }
 }
 
 
@@ -11339,13 +11535,16 @@ SWIGINTERN VALUE _wrap_table_findAll(int argc, VALUE *argv, VALUE self) {
   try 
   {
     fieldsBase& rec = arg1->fields();
-    if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS) 
-    {
-      if (!isAccessorInitialized(fetchClass)) 
-        defineFieldAccessor(fetchClass, getFieldsCache(self, *rec.fieldDefs()));
-      fieldIds = getFieldIdsCache(self, *rec.fieldDefs());
-    }else
+    if (fetchMode == FETCH_VAL_ASSOC || fetchMode == FETCH_VAL_BOTH)
       fields = getFieldsCache(self, *rec.fieldDefs());
+    if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS)
+    {
+      fieldIds = getFieldIdsCache(self, *rec.fieldDefs());
+      if (!isAccessorInitialized(fetchClass)) {
+        fields = getFieldsCache(self, *rec.fieldDefs());
+        defineFieldAccessor(fetchClass, fields, fieldIds);
+      }
+    }
     arg1->find(arg2);
     while (arg1->stat() == 0 || (arg1->stat() == STATUS_NOT_FOUND_TI && arg1->fields().isInvalidRecord()))
     {
@@ -11581,6 +11780,8 @@ SWIGINTERN VALUE _wrap_table_fields(int argc, VALUE *argv, VALUE self) {
   tdap::client::fields* result =  &(arg1->fields());
   
   int fetchMode = getFetchMode(self);
+  if (fetchMode == FETCH_VAL_ASSOC || fetchMode == FETCH_VAL_BOTH)
+    fields = getFieldsCache(self, *(result->fieldDefs()));
   if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS) 
   {
     if (fetchMode == FETCH_USR_CLASS) 
@@ -11591,11 +11792,12 @@ SWIGINTERN VALUE _wrap_table_fields(int argc, VALUE *argv, VALUE self) {
       ctorArgs = getCtorArgs(self);
     }else if (fetchMode == FETCH_OBJ) 
       fetchClass = rb_class_new(rb_cObject);
-    if (! isAccessorInitialized(fetchClass))
-      defineFieldAccessor(fetchClass, getFieldsCache(self, *(result->fieldDefs())));
     fieldIds = getFieldIdsCache(self, *(result->fieldDefs()));
-  }else if (fetchMode == FETCH_VAL_BOTH || fetchMode == FETCH_VAL_ASSOC)
-    fields = getFieldsCache(self, *(result->fieldDefs()));
+    if (! isAccessorInitialized(fetchClass)) {
+      fields = getFieldsCache(self, *(result->fieldDefs()));
+      defineFieldAccessor(fetchClass, fields, fieldIds);
+    }
+  }
 
   switch (fetchMode) {
     case FETCH_RECORD_INTO:
@@ -19636,7 +19838,7 @@ _wrap_Record_setValue(int argc, VALUE *argv, VALUE self) {
     rb_raise(rb_eArgError, "param 1, object is not specified.");
   
   tdap::client::fieldsBase* rec = selfPtr(self, rec);
-  setValuesFromObject(rec, obj);
+  setValuesFromObject(rec, obj, Qnil, CLASS_OF(obj));
   return Qnil;
 }
 
@@ -22981,6 +23183,8 @@ _wrap_Recordset___getitem__(int argc, VALUE *argv, VALUE self) {
   size_t index = -1;
   if (!obj2Integer(argv[0], index)) return Qnil;
   int fetchMode = getFetchMode(self);
+  if (fetchMode == FETCH_VAL_ASSOC || fetchMode == FETCH_VAL_BOTH)
+    fields = getFieldsCache(self, *rs->fieldDefs());
   if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS) 
   {
     if (fetchMode == FETCH_USR_CLASS) 
@@ -22991,11 +23195,12 @@ _wrap_Recordset___getitem__(int argc, VALUE *argv, VALUE self) {
       ctorArgs = getCtorArgs(self);
     }else if (fetchMode == FETCH_OBJ) 
       fetchClass = rb_class_new(rb_cObject);
-    if (! isAccessorInitialized(fetchClass))
-      defineFieldAccessor(fetchClass, getFieldsCache(self, *rs->fieldDefs()));
     fieldIds = getFieldIdsCache(self, *rs->fieldDefs());
-  }else if (fetchMode == FETCH_VAL_BOTH || fetchMode == FETCH_VAL_ASSOC)
-    fields = getFieldsCache(self, *rs->fieldDefs());
+    if (! isAccessorInitialized(fetchClass)) {
+      fields = getFieldsCache(self, *rs->fieldDefs());
+      defineFieldAccessor(fetchClass, fields, fieldIds);
+    }
+  }
   
   try {
     switch (fetchMode) 
@@ -23107,6 +23312,8 @@ _wrap_Recordset_to_a(int argc, VALUE *argv, VALUE self) {
   if (fetchMode == FETCH_RECORD_INTO) 
     fetchMode = FETCH_VAL_BOTH;
   
+  if (fetchMode == FETCH_VAL_ASSOC || fetchMode == FETCH_VAL_BOTH)
+    fields = getFieldsCache(self, *rs->fieldDefs());
   if (fetchMode == FETCH_OBJ || fetchMode == FETCH_USR_CLASS) 
   {
     if (fetchMode == FETCH_USR_CLASS) 
@@ -23117,11 +23324,12 @@ _wrap_Recordset_to_a(int argc, VALUE *argv, VALUE self) {
       ctorArgs = getCtorArgs(self);
     }else if (fetchMode == FETCH_OBJ) 
       fetchClass = rb_class_new(rb_cObject);
-    if (! isAccessorInitialized(fetchClass))
-      defineFieldAccessor(fetchClass, getFieldsCache(self, *rs->fieldDefs()));
     fieldIds = getFieldIdsCache(self, *rs->fieldDefs());
-  }else if (fetchMode == FETCH_VAL_BOTH || fetchMode == FETCH_VAL_ASSOC)
-    fields = getFieldsCache(self, *rs->fieldDefs());
+    if (! isAccessorInitialized(fetchClass)) {
+      fields = getFieldsCache(self, *rs->fieldDefs());
+      defineFieldAccessor(fetchClass, fields, fieldIds);
+    }
+  }
   
   try {
     size_t size = rs->size();
@@ -26862,6 +27070,7 @@ SWIGEXPORT void Init_transactd(void) {
   rb_define_method(SwigClassTable.klass, "insert_by_object", VALUEFUNC(_wrap_table_insert_by_object), -1);
   rb_define_method(SwigClassTable.klass, "update_by_object", VALUEFUNC(_wrap_table_update_by_object), -1);
   rb_define_method(SwigClassTable.klass, "read_by_object", VALUEFUNC(_wrap_table_read_by_object), -1);
+  rb_define_method(SwigClassTable.klass, "delete_by_object", VALUEFUNC(_wrap_table_delete_by_object), -1);
   rb_define_method(SwigClassTable.klass, "seek_key_value", VALUEFUNC(_wrap_table_seek_key_value), -1);
   rb_define_method(SwigClassTable.klass, "getRecord", VALUEFUNC(_wrap_table_getRecord), -1);
   rb_define_alias(SwigClassTable.klass, "table_def", "tableDef");
