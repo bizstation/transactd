@@ -47,6 +47,67 @@ function getHost()
     return $host;
 }
 
+class Number
+{
+   
+    
+}
+
+class Phone
+{
+    protected $number; 
+    protected $number2 = null; // Mapped object is null
+    public function __construct()
+    {
+        $this->number = new Number;
+    }
+    public function __get($name)
+    {
+        if ($name === 'number2') {
+            return $this->number2;
+        } elseif ($name === 'number') {
+            return $this->number;
+        }
+    }
+}
+
+class UserT
+{
+    /**
+     *
+     * @var array field name => property name of object. Do not use __get __set magic method
+     * The mapped variable is required. If the variable is null then field values are not read or write.
+     */
+    static protected $transferMap = ['tel' => ['phone','number']];
+    protected $phone; 
+    protected $phone2 = null;// Mapped object is null
+     
+    public function __construct()
+    {
+        $this->phone = new Phone;
+    }
+    
+    static public function setTransferMap($type)
+    {
+        if ($type === 0) {
+            self::$transferMap = ['tel' => ['phone','number']];
+        } elseif ($type === 1) {
+            self::$transferMap = ['tel' => ['phone2','number']]; 
+        } elseif ($type === 2) {
+            self::$transferMap = ['tel' => ['phone','number2']];
+        }
+    }
+    
+    public function __get($name)
+    {
+        if ($name === 'phone2') {
+            return $this->phone2;
+        } elseif ($name === 'phone') {
+            return $this->phone;
+        }
+    }
+}
+
 class User
 {
     public $a = "";
@@ -59,6 +120,38 @@ class User
         $this->b = $_b;
         $this->c = $_c;
     }
+}
+
+class PropertyTest
+{
+    private $tmp = 4;
+    private $private = 1;
+    protected $protected = 2 ;       
+    public $public = 3;
+    private $duplicate = 5;
+    private $duplicateTmp = 6;
+    
+    public function __get($var)
+    {
+        if ($var === 'magic') {
+            return $this->tmp;
+        }
+    }
+    
+    public function __set($name, $value)
+    {
+        if ($name === 'magic') {
+            $this->tmp = $value;
+        } elseif ($name === 'duplicate') {
+            $this->duplicateTmp = $value;
+        }
+    }
+    
+    public function __isset($name)
+    {
+        if ($name === 'magic') return true;
+    }
+    
 }
 
 define("HOSTNAME", getHost());
@@ -1110,7 +1203,7 @@ class TransactdTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($users[0]->name, "1 user");
     }
     
-    public function testInsertObject()
+    public function testCURDByObject()
     {
         $db = new Database();
         $db->open(URI, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
@@ -1123,19 +1216,37 @@ class TransactdTest extends PHPUnit_Framework_TestCase
         $tb->fetchClass = "User";
         $tb->ctorArgs = array("1","2","3");
         $this->assertEquals($tb->fetchMode, Transactd::FETCH_USR_CLASS);
+        
+        //Insert
         $usr = $tb->fields();
         $usr->id = 0;
         $usr->name = 'test_insertObject';
-        $tb->insertByObject($usr);
+        $this->assertEquals($tb->insertByObject($usr), true);
         $tb->seekLast();
         $usr = $tb->fields();
         $this->assertEquals($usr->name, 'test_insertObject');
+        $this->assertEquals($usr->id, 1001);
+        
+        //Update
+        $usr->name = 'test_UpdateObject';
+        $this->assertEquals($tb->updateByObject($usr), true);
+        $usr->name = '';
+        
+        //Read
+        $this->assertEquals($tb->readByObject($usr), true);
+        $this->assertEquals($usr->name, 'test_UpdateObject');
         $this->assertEquals($usr->id, 1001);
         
         $row = $tb->getRecord();
         $row->setValueByObject($usr);
         $usr2 = $tb->fields();
         $this->assertEquals($usr2, $usr);
+        
+        //Delete
+        $this->assertEquals($tb->deleteByObject($usr), true);
+        $tb->seekLast();
+        $usr = $tb->fields();
+        $this->assertEquals($usr->id, 1000); 
     }
     
     public function testUTCC()
@@ -1204,5 +1315,118 @@ class TransactdTest extends PHPUnit_Framework_TestCase
         $tb2->update(Nstable::changeInKey);
         $this->assertEquals($tb2->stat(), 0);
         $db->abortTrn();
+    }
+    
+    const PROP_TEST_HAS = 1;
+    const PROP_TEST_READ= 2;
+    const PROP_TEST_WRITELONG= 3;
+
+    public function testPropertyAccess()
+    {
+         /* To orm user
+         To orm user,
+         If you nothing to declared the private variable for a property, 
+         and defined the __set and the  __get magic method, 
+         The extension is used __set magic method in read from database.
+         But the extension is not used __get magic method in write to database.
+         You need prepared variable of field name for write operation.
+         Even if you declrare both the private variable and __set methods, 
+         the extension read or write private variable directly.  
+         */
+         $p = new PropertyTest();
+         $this->assertEquals(test_property($p, 'private', self::PROP_TEST_HAS), true);
+         $this->assertEquals(test_property($p, 'protected', self::PROP_TEST_HAS), true);
+         $this->assertEquals(test_property($p, 'public', self::PROP_TEST_HAS), true);
+         
+         // Whne read data from object, use hasProperty function first. 
+         // If hasProperty returns false, skip read this field.
+         $this->assertEquals(test_property($p, 'magic', self::PROP_TEST_HAS), false);// Important
+         
+         $this->assertEquals(test_property($p, 'private', self::PROP_TEST_READ), 1);
+         $this->assertEquals(test_property($p, 'protected', self::PROP_TEST_READ), 2);
+         $this->assertEquals(test_property($p, 'public', self::PROP_TEST_READ), 3); 
+         $this->assertEquals(test_property($p, 'magic', self::PROP_TEST_READ), 4);
+         
+         test_property($p, 'private', self::PROP_TEST_WRITELONG, 2);
+         test_property($p, 'protected', self::PROP_TEST_WRITELONG, 3);
+         test_property($p, 'public', self::PROP_TEST_WRITELONG, 4);
+         test_property($p, 'magic', self::PROP_TEST_WRITELONG, 5);
+         
+         $this->assertEquals(test_property($p, 'private', self::PROP_TEST_READ), 2);
+         $this->assertEquals(test_property($p, 'protected', self::PROP_TEST_READ), 3);
+         $this->assertEquals(test_property($p, 'public', self::PROP_TEST_READ), 4);
+         $this->assertEquals(test_property($p, 'magic', self::PROP_TEST_READ), 5);
+         
+         // write private variable directly. 
+         test_property($p, 'duplicate', self::PROP_TEST_WRITELONG, 8);
+         $this->assertEquals(test_property($p, 'duplicate', self::PROP_TEST_READ), 8);
+    }
+        
+    public function testTransfer()
+    {
+        $db = new Database();
+        $db->open(URI, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
+        $tb = $db->openTable("user");
+        $this->assertEquals($tb->stat(), 0);
+        $tb->seekFirst();
+        $this->assertEquals($tb->stat(), 0);
+        
+        $tb->setAlias("名前", "name");
+        $usr = new UserT();
+        $usr->id = 5;
+        $this->assertEquals($tb->readByObject($usr), true);
+        $this->assertEquals($usr->id, 5);
+        $this->assertEquals($usr->phone->number->tel, '0236-99-9999');
+        UserT::setTransferMap(1);
+        $usr->id = 5;
+        $this->assertEquals($tb->readByObject($usr), true);// No error
+        $this->assertEquals($usr->id, 5);
+        $this->assertEquals($usr->phone2, null);
+        
+        UserT::setTransferMap(2);
+        $usr->id = 5;
+        $this->assertEquals($tb->readByObject($usr), true);// No error
+        $this->assertEquals($usr->id, 5);
+        $this->assertEquals($usr->phone->number2, null);
+    }
+    
+    public function testByObjectOption()
+    {
+        $db = new Database();
+        $db->open(URI, Transactd::TYPE_SCHEMA_BDF, Transactd::TD_OPEN_NORMAL);
+        $tb = $db->openTable("user");
+        $this->assertEquals($tb->stat(), 0); 
+        $tb->setAlias("名前", "name");
+        $usr = new UserT();
+        
+        // read option (key number)
+        $tb->setKeyNum(0);
+        $usr->id = 5;
+        $this->assertEquals($tb->readByObject($usr, 2), false);
+        $this->assertEquals($tb->keyNum(), 2); 
+
+        $this->assertEquals($tb->readByObject($usr), true);
+        $this->assertEquals($tb->keyNum(), 0);
+        
+        //update option (eUpdateType)
+        $this->assertEquals($tb->readByObject($usr, 2), false); // No currency
+        $this->assertEquals($tb->updateByObject($usr, Nstable::changeCurrentCc), false);
+        $this->assertEquals($tb->updateByObject($usr), true);  //default value  Nstable::changeInKey
+        
+        //delete option
+        $usr->id = 0;
+        $this->assertEquals($tb->insertByObject($usr), true); //Insert id = 1001
+        $tb->fetchMode = Transactd::FETCH_USR_CLASS;
+        $tb->fetchClass = "UserT";
+        $tb->seekLast();
+        $this->assertEquals($tb->stat(), 0); 
+        $usr = $tb->getRow();
+        $id = $usr->id;
+        $usr->id = 1005;
+        $this->assertEquals($tb->readByObject($usr), false); // No currency
+        $usr->id = $id;
+        $tb->setKeyNum(2);
+        $this->assertEquals($tb->deleteByObject($usr, false/*inKey*/), false);
+        $this->assertEquals($tb->deleteByObject($usr), true);  //default value true
     }
 }

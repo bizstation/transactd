@@ -694,4 +694,7 @@ ZEND_NAMED_FUNCTION(_wrap_binlogPos_gtid_set);
 ZEND_NAMED_FUNCTION(_wrap_binlogPos_gtid_get);
 ZEND_NAMED_FUNCTION(_wrap_new_binlogPos);
 
+// For test only
+ZEND_NAMED_FUNCTION(_wrap_test_property);
+
 #endif /* PHP_TRANSACTD_H */
